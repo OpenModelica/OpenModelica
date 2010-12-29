@@ -277,7 +277,7 @@ algorithm
     case(e1,e2,(crexp as DAE.CREF(componentRef = cr)),_)
       equation
         ({invCr},factors) = Util.listSplitOnTrue1(listAppend(Expression.factors(e1),Expression.factors(e2)),isInverseCref,cr);
-        rhs_1 = Expression.makeProductLst(Expression.inverseFactors(factors));
+        rhs_1 = Expression.makeProductLst(Util.listMap(factors, Expression.inverseFactors));
         false = Expression.expContains(rhs_1, crexp);
       then
         (rhs_1,{});
@@ -293,7 +293,7 @@ algorithm
         se1 = ExpressionDump.printExpStr(e1);
         se2 = ExpressionDump.printExpStr(e2);
         sa = ExpressionDump.printExpStr(a);
-        estr = stringAppendList({"Singulare expression ",se1," = ",se2," because ",sa," is Zero!"});
+        estr = stringAppendList({"Singular expression ",se1," = ",se2," because ",sa," is Zero!"});
       then
         (rhs_1,DAE.STMT_ASSERT(DAE.RELATION(a,DAE.NEQUAL(tp),z),DAE.SCONST(estr),DAE.emptyElementSource)::asserts); 
        
@@ -308,7 +308,7 @@ algorithm
         se1 = ExpressionDump.printExpStr(e1);
         se2 = ExpressionDump.printExpStr(e2);
         sa = ExpressionDump.printExpStr(a);
-        estr = stringAppendList({"Singulare expression ",se1," = ",se2," because ",sa," is Zero!"});
+        estr = stringAppendList({"Singular expression ",se1," = ",se2," because ",sa," is Zero!"});
       then
         (rhs_1,DAE.STMT_ASSERT(DAE.RELATION(a,DAE.NEQUAL(tp),z),DAE.SCONST(estr),DAE.emptyElementSource)::asserts); 
 

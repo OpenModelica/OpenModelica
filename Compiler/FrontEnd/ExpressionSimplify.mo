@@ -1781,7 +1781,7 @@ algorithm
       equation
         e1_lst = Expression.factors(e1);
         e2_lst = Expression.factors(e2);
-        e2_lst_1 = Expression.inverseFactors(e2_lst);
+        e2_lst_1 = Util.listMap(e2_lst, Expression.inverseFactors);
         e_lst = listAppend(e1_lst, e2_lst_1);
         e_lst_1 = simplifyMul(e_lst);
         res = Expression.makeProductLst(e_lst_1);

@@ -1934,104 +1934,140 @@ public function factors
   input DAE.Exp inExp;
   output list<DAE.Exp> outExpLst;
 algorithm
-  outExpLst:=
-  matchcontinue (inExp)
+  // TODO: Remove this listReverse as it is pointless.
+  // It transforms a*b to b*a, but the testsuite expects this :(
+  outExpLst := listReverse(factorsWork(inExp,{},false,false));
+end factors;
+
+protected function factorsWork
+"function: factors
+  Returns the factors of the expression if any as a list of expressions"
+  input DAE.Exp inExp;
+  input list<DAE.Exp> acc;
+  input Boolean noFactors "Decides if the default is the empty list or not";
+  input Boolean doInverseFactors "Decides if a factor e should be 1/e instead";
+  output list<DAE.Exp> outExpLst;
+algorithm
+  outExpLst := match (inExp,acc,noFactors,doInverseFactors)
     local
       list<DAE.Exp> f1,f2,f1_1,f2_1,res,f2_2;
       DAE.Exp e1,e2,e;
       ComponentRef cr;
-    case (DAE.BINARY(exp1 = e1,operator = DAE.MUL(ty = _),exp2 = e2))
+    case (DAE.BINARY(exp1 = e1,operator = DAE.MUL(ty = _),exp2 = e2),acc,noFactors,doInverseFactors)
       equation
-        f1 = factors(e1) "Both subexpression has factors" ;
-        f2 = factors(e2);
-        f1_1 = noFactors(f1, e1);
-        f2_1 = noFactors(f2, e2);
-        res = listAppend(f1_1, f2_1);
-      then
-        res;
-    case (DAE.BINARY(exp1 = e1,operator = DAE.DIV(ty = DAE.ET_REAL()),exp2 = e2))
+        acc = factorsWork(e1,acc,true,doInverseFactors);
+        acc = factorsWork(e2,acc,true,doInverseFactors);
+      then acc;
+    case (DAE.BINARY(exp1 = e1,operator = DAE.DIV(ty = DAE.ET_REAL()),exp2 = e2),acc,noFactors,doInverseFactors)
       equation
-        f1 = factors(e1);
-        f2 = factors(e2);
-        f1_1 = noFactors(f1, e1);
-        f2_1 = noFactors(f2, e2);
-        f2_2 = inverseFactors(f2_1);
-        res = listAppend(f1_1, f2_2);
-      then
-        res;
-    case ((e as DAE.CREF(componentRef = cr))) then {e};
-    case ((e as DAE.BINARY(exp1 = _))) then {e};
-    case ((e as DAE.ICONST(integer = _))) then {e};
-    case ((e as DAE.RCONST(real = _))) then {e};
-    case ((e as DAE.SCONST(string = _))) then {e};
-    case ((e as DAE.UNARY(operator = _))) then {e};
-    case ((e as DAE.IFEXP(expCond = _))) then {e};
-    case ((e as DAE.CALL(path = _))) then {e};
-    case ((e as DAE.PARTEVALFUNCTION(path = _))) then {e};
-    case ((e as DAE.ARRAY(ty = _))) then {e};
-    case ((e as DAE.MATRIX(ty = _))) then {e};
-    case ((e as DAE.RANGE(ty = _))) then {e};
-    case ((e as DAE.CAST(ty = _))) then {e};
-    case ((e as DAE.ASUB(exp = _))) then {e};
-    case ((e as DAE.SIZE(exp = _))) then {e};
-    case ((e as DAE.REDUCTION(path = _))) then {e};
-    case (_) then {};
-  end matchcontinue;
-end factors;
-
-protected function noFactors
-"function noFactors
-  Helper function to factors.
-  If a factor list is empty, the expression has no subfactors.
-  But the complete expression is then a factor for larger
-  expressions, returned by this function."
-  input list<DAE.Exp> inExpLst;
-  input DAE.Exp inExp;
-  output list<DAE.Exp> outExpLst;
-algorithm
-  outExpLst:=
-  matchcontinue (inExpLst,inExp)
-    local
-      DAE.Exp e;
-      list<DAE.Exp> lst;
-    case ({},e) then {e};
-    case (lst,_) then lst;
-  end matchcontinue;
-end noFactors;
+        acc = factorsWork(e1,acc,true,doInverseFactors);
+        acc = factorsWork(e2,acc,true,not doInverseFactors);
+      then acc;
+    case ((e as DAE.CREF(componentRef = cr)),acc,noFactors,doInverseFactors)
+      equation
+        e = Debug.bcallret1(doInverseFactors, inverseFactors, e, e);
+      then e::acc;
+    case ((e as DAE.BINARY(exp1 = _)),acc,noFactors,doInverseFactors)
+      equation
+        e = Debug.bcallret1(doInverseFactors, inverseFactors, e, e);
+      then e::acc;
+    case ((e as DAE.ICONST(integer = _)),acc,noFactors,doInverseFactors)
+      equation
+        e = Debug.bcallret1(doInverseFactors, inverseFactors, e, e);
+      then e::acc;
+    case ((e as DAE.RCONST(real = _)),acc,noFactors,doInverseFactors)
+      equation
+        e = Debug.bcallret1(doInverseFactors, inverseFactors, e, e);
+      then e::acc;
+    case ((e as DAE.SCONST(string = _)),acc,noFactors,doInverseFactors)
+      equation
+        e = Debug.bcallret1(doInverseFactors, inverseFactors, e, e);
+      then e::acc;
+    case ((e as DAE.UNARY(operator = _)),acc,noFactors,doInverseFactors)
+      equation
+        e = Debug.bcallret1(doInverseFactors, inverseFactors, e, e);
+      then e::acc;
+    case ((e as DAE.IFEXP(expCond = _)),acc,noFactors,doInverseFactors)
+      equation
+        e = Debug.bcallret1(doInverseFactors, inverseFactors, e, e);
+      then e::acc;
+    case ((e as DAE.CALL(path = _)),acc,noFactors,doInverseFactors)
+      equation
+        e = Debug.bcallret1(doInverseFactors, inverseFactors, e, e);
+      then e::acc;
+    case ((e as DAE.PARTEVALFUNCTION(path = _)),acc,noFactors,doInverseFactors)
+      equation
+        e = Debug.bcallret1(doInverseFactors, inverseFactors, e, e);
+      then e::acc;
+    case ((e as DAE.ARRAY(ty = _)),acc,noFactors,doInverseFactors)
+      equation
+        e = Debug.bcallret1(doInverseFactors, inverseFactors, e, e);
+      then e::acc;
+    case ((e as DAE.MATRIX(ty = _)),acc,noFactors,doInverseFactors)
+      equation
+        e = Debug.bcallret1(doInverseFactors, inverseFactors, e, e);
+      then e::acc;
+    case ((e as DAE.RANGE(ty = _)),acc,noFactors,doInverseFactors)
+      equation
+        e = Debug.bcallret1(doInverseFactors, inverseFactors, e, e);
+      then e::acc;
+    case ((e as DAE.CAST(ty = _)),acc,noFactors,doInverseFactors)
+      equation
+        e = Debug.bcallret1(doInverseFactors, inverseFactors, e, e);
+      then e::acc;
+    case ((e as DAE.ASUB(exp = _)),acc,noFactors,doInverseFactors)
+      equation
+        e = Debug.bcallret1(doInverseFactors, inverseFactors, e, e);
+      then e::acc;
+    case ((e as DAE.SIZE(exp = _)),acc,noFactors,doInverseFactors)
+      equation
+        e = Debug.bcallret1(doInverseFactors, inverseFactors, e, e);
+      then e::acc;
+    case ((e as DAE.REDUCTION(path = _)),acc,noFactors,doInverseFactors)
+      equation
+        e = Debug.bcallret1(doInverseFactors, inverseFactors, e, e);
+      then e::acc;
+    case (e,acc,true,doInverseFactors)
+      equation
+        e = Debug.bcallret1(doInverseFactors, inverseFactors, e, e);
+      then e::acc;
+    case (_,acc,false,_)
+      then acc;
+  end match;
+end factorsWork;
 
 public function inverseFactors
 "function inverseFactors
   Takes a list of expressions and returns
   each expression in the list inversed.
   For example: inverseFactors {a, 3+b} => {1/a, 1/3+b}"
-  input list<DAE.Exp> inExpLst;
-  output list<DAE.Exp> outExpLst;
+  input DAE.Exp inExp;
+  output DAE.Exp outExp;
 algorithm
-  outExpLst:=
-  matchcontinue (inExpLst)
+  outExp := matchcontinue (inExp)
     local
       list<DAE.Exp> es_1,es;
       Type tp2,tp;
       DAE.Exp e1,e2,e;
-    case ({}) then {};
-    case ((DAE.BINARY(exp1 = e1,operator = DAE.POW(ty = tp),exp2 = e2) :: es))
+      DAE.Operator op;
+    case (DAE.BINARY(exp1 = e1,operator = DAE.POW(ty = tp),exp2 = e2))
       equation
-        es_1 = inverseFactors(es);
         tp2 = typeof(e2);
       then
-        (DAE.BINARY(e1,DAE.POW(tp),DAE.UNARY(DAE.UMINUS(tp2),e2)) :: es_1);
-    case ((e :: es))
+        DAE.BINARY(e1,DAE.POW(tp),DAE.UNARY(DAE.UMINUS(tp2),e2));
+    case (DAE.BINARY(exp1 = e1,operator = op as DAE.DIV(ty = _),exp2 = e2))
+      then
+        DAE.BINARY(e2,op,e1);
+    case e
       equation
         DAE.ET_REAL() = typeof(e);
-        es_1 = inverseFactors(es);
       then
-        (DAE.BINARY(DAE.RCONST(1.0),DAE.DIV(DAE.ET_REAL()),e) :: es_1);
-    case ((e :: es))
+        DAE.BINARY(DAE.RCONST(1.0),DAE.DIV(DAE.ET_REAL()),e);
+    case e
       equation
         DAE.ET_INT() = typeof(e);
-        es_1 = inverseFactors(es);
       then
-        (DAE.BINARY(DAE.ICONST(1),DAE.DIV(DAE.ET_INT()),e) :: es_1);
+        DAE.BINARY(DAE.ICONST(1),DAE.DIV(DAE.ET_INT()),e);
   end matchcontinue;
 end inverseFactors;
 
