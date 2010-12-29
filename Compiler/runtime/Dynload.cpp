@@ -60,6 +60,11 @@ static int value_to_type_desc(void *value, type_description *desc)
     desc->type = TYPE_DESC_INT;
     desc->data.integer = RML_UNTAGFIXNUM(data);
   }; break;
+  case Values__ENUM_5fLITERAL_3dBOX2: {
+    void *data = RML_STRUCTDATA(value)[UNBOX_OFFSET+1];
+    desc->type = TYPE_DESC_INT;
+    desc->data.integer = RML_UNTAGFIXNUM(data);
+  }; break;
   case Values__REAL_3dBOX1: {
     void *data = RML_STRUCTDATA(value)[UNBOX_OFFSET];
     desc->type = TYPE_DESC_REAL;
@@ -141,9 +146,6 @@ static int value_to_type_desc(void *value, type_description *desc)
     /* unsupported */
   case Values__META_5fARRAY_3dBOX1:
     c_add_message(-1, "RUNTIME", "ERROR", "systemimpl.c:value_to_type_desc failed: Values.META_ARRAY\n", NULL, 0);
-    return -1;
-  case Values__ENUM_5fLITERAL_3dBOX2:
-    c_add_message(-1, "RUNTIME", "ERROR", "systemimpl.c:value_to_type_desc failed: Values.ENUM\n", NULL, 0);
     return -1;
   case Values__CODE_3dBOX1:
     c_add_message(-1, "RUNTIME", "ERROR", "systemimpl.c:value_to_type_desc failed: Values.CODE\n", NULL, 0);
