@@ -2332,7 +2332,7 @@ algorithm
       equation
         orderOfEquations = generateEquationOrder(blocks);
         n = BackendDAEUtil.equationSize(eqns);
-        orderOfEquations_1 = addMissingEquations(n, orderOfEquations);
+        orderOfEquations_1 = addMissingEquations(n, listReverse(orderOfEquations));
         // First generate checks for all when equations, in the order of the sorted equations.
         (_, helpVarInfo1) = buildWhenConditionChecks4(orderOfEquations_1, eqns, whenClauseList, 0);
         n = listLength(helpVarInfo1);
@@ -6770,7 +6770,7 @@ protected function addMissingEquations "function: addMissingEquations
   integers upto the given integer.
 "
   input Integer inInteger;
-  input list<Integer> inIntegerLst;
+  input list<Integer> inIntegerLst "accumulator; reverse the list before calling this function---";
   output list<Integer> outIntegerLst;
 algorithm
   outIntegerLst:=
@@ -6778,22 +6778,17 @@ algorithm
     local
       list<Integer> lst,lst_1,lst_2;
       Integer n_1,n;
-    case (0,lst) then lst;
+    case (0,lst) then listReverse(lst);
     case (n,lst)
       equation
-        n_1 = n - 1;
-        lst_1 = addMissingEquations(n_1, lst);
-        _ = Util.listGetMember(n, lst);
-      then
-        lst_1;
-    case (n,lst) /* missing equations must be added in correct order,
-    required in building whenConditionChecks4 */
+        true = listMember(n, lst);
+        n_1 = n-1;
+      then addMissingEquations(n_1, lst);
+    case (n,lst) /* missing equations must be added in correct order, required in building whenConditionChecks4 */
       equation
-        n_1 = n - 1;
+        n_1 = n-1;
         lst_1 = addMissingEquations(n_1, lst);
-        lst_2 = listAppend(lst_1, {n});
-      then
-        lst_2;
+      then n::lst_1;
   end matchcontinue;
 end addMissingEquations;
 
