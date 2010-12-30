@@ -445,15 +445,18 @@ void SystemImpl__setDataPort(int port)
 int SystemImpl__systemCall(const char* str)
 {
   int status = -1,ret_val = -1;
-
-  /*if (rml_trace_enabled)
-  {
-    fprintf(stderr, "System.systemCall: %s\n", str); fflush(stderr);
-  }*/
+  const int debug = 0;
+  if (debug) {
+    fprintf(stderr, "System.systemCall: %s\n", str); fflush(NULL);
+  }
 
   fflush(NULL); /* flush output so the testsuite is deterministic */
   status = system(str);
   fflush(NULL); /* flush output so the testsuite is deterministic */
+
+  if (debug) {
+    fprintf(stderr, "System.systemCall: returned\n"); fflush(NULL);
+  }
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
   ret_val = status;
@@ -464,10 +467,10 @@ int SystemImpl__systemCall(const char* str)
     ret_val = -1;
 #endif
   
-  /*if (rml_trace_enabled)
-  {
-    fprintf(stderr, "System.systemCall: returned value: %d\n", ret_val); fflush(stderr);
-  }*/
+  if (debug) {
+    fprintf(stderr, "System.systemCall: returned value: %d\n", ret_val); fflush(NULL);
+  }
+  
   return ret_val;
 }
 
