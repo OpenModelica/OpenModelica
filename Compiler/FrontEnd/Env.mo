@@ -2181,10 +2181,10 @@ protected function getHeight "Retrieve the height of a node"
   input Option<AvlTree> bt;
   output Integer height;
 algorithm
-  height := matchcontinue(bt)
+  height := match (bt)
     case(NONE()) then 0;
     case(SOME(AVLTREENODE(height = height))) then height;
-  end matchcontinue;
+  end match;
 end getHeight;
 
 public function isTopScope "Returns true if we are in the top-most scope"

@@ -289,7 +289,7 @@ algorithm
       equation
         e1_1 = simplify1(e1);
         true = Expression.isConst(e1_1);
-        b = Expression.boolExp(e1_1);
+        b = Expression.getBoolConst(e1_1);
         res = Util.if_(b,e2,e3);
         res = simplify1(res);
       then
@@ -704,7 +704,7 @@ protected function simplifyCref
   input Type inType;
   output DAE.Exp exp;
 algorithm
-  exp := matchcontinue(inCREF, inType)
+  exp := match (inCREF, inType)
     local
       Type t,t2;
       list<Subscript> ssl;
@@ -720,7 +720,7 @@ algorithm
         exp = simplifyCref2(expCref,ssl);
       then
         exp;
-  end matchcontinue;
+  end match;
 end simplifyCref;
 
 protected function simplifyCref2
@@ -1599,8 +1599,7 @@ protected function simplifyMatrixProduct
   input DAE.Exp inExp2;
   output DAE.Exp outExp;
 algorithm
-  outExp:=
-  matchcontinue (inExp1,inExp2)
+  outExp := match (inExp1,inExp2)
     local
       list<list<tuple<DAE.Exp, Boolean>>> expl_1,expl1,expl2;
       Type tp;
@@ -1613,7 +1612,7 @@ algorithm
         expl_1 = simplifyMatrixProduct2(expl1, expl2);
       then
         DAE.MATRIX(DAE.ET_ARRAY(tp, {n, p}),size1,expl_1);
-  end matchcontinue;
+  end match;
 end simplifyMatrixProduct;
 
 protected function simplifyMatrixProduct2

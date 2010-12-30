@@ -2558,8 +2558,7 @@ public function unparseVar
   input Var inVar;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inVar)
+  outString := match (inVar)
     local
       Ident t,res,n;
       Attributes attr;
@@ -2572,7 +2571,7 @@ algorithm
         res = stringAppendList({t," ",n,";\n"});
       then
         res;
-  end matchcontinue;
+  end match;
 end unparseVar;
 
 protected function unparseParam "function: unparseParam
@@ -2582,8 +2581,7 @@ protected function unparseParam "function: unparseParam
   input FuncArg inFuncArg;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inFuncArg)
+  outString := match (inFuncArg)
     local
       Ident tstr,res,id;
       Type ty;
@@ -2593,7 +2591,7 @@ algorithm
         res = stringAppendList({id,":",tstr});
       then
         res;
-  end matchcontinue;
+  end match;
 end unparseParam;
 
 public function printVarStr "function: printVar

@@ -5827,7 +5827,7 @@ public function elabBuiltinCross2 "help function to elabBuiltinCross. Public sin
   input list<DAE.Exp> v2;
   output list<DAE.Exp> res;
 algorithm
-  res := matchcontinue(v1,v2)
+  res := match (v1,v2)
   local DAE.Exp x1,x2,x3,y1,y2,y3,p1,p2,r1,r2,r3;
 
      // {x[2]*y[3]-x[3]*y[2],x[3]*y[1]-x[1]*y[3],x[1]*y[2]-x[2]*y[1]}
@@ -5836,7 +5836,7 @@ algorithm
         r2 = Expression.makeDiff(Expression.makeProductLst({x3,y1}),Expression.makeProductLst({x1,y3}));
         r3 = Expression.makeDiff(Expression.makeProductLst({x1,y2}),Expression.makeProductLst({x2,y1}));
     then {r1,r2,r3};
-  end matchcontinue;
+  end match;
 end elabBuiltinCross2;
 
 

@@ -451,19 +451,15 @@ public function newLine
   input Text inText;
   output Text outText;
 algorithm
-  outText := matchcontinue (inText)
+  outText := match (inText)
     local
       Tokens toks;
       list<tuple<Tokens,BlockType>> blstack;
       StringToken tok;
     
-    case (MEM_TEXT(
-            tokens = toks,
-            blocksStack = blstack
-            ))
-      then 
-        MEM_TEXT(ST_NEW_LINE() :: toks, blstack);
-  end matchcontinue;
+    case (MEM_TEXT(tokens = toks,blocksStack = blstack))
+      then MEM_TEXT(ST_NEW_LINE() :: toks, blstack);
+  end match;
 end newLine;
 
 

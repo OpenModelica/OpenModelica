@@ -300,6 +300,7 @@ public constant ErrorID META_DECONSTRUCTOR_NOT_PART_OF_UNIONTYPE=5021;
 public constant ErrorID META_TYPE_MISMATCH_PATTERN=5022;
 public constant ErrorID META_DECONSTRUCTOR_NOT_RECORD=5023;
 public constant ErrorID META_MATCHEXP_RESULT_TYPES=5024;
+public constant ErrorID MATCHCONTINUE_TO_MATCH_OPTIMIZATION=5025;
 
 public constant ErrorID COMPILER_WARNING = 6000;
 
@@ -679,6 +680,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (WHEN_EQ_LHS,TRANSLATION(),ERROR(),"Invalid left-hand side of when-equation: %s."),
           (GENERIC_ELAB_EXPRESSION,TRANSLATION(),ERROR(),"Failed to elaborate expression: %s"),
           (EXTENDS_EXTERNAL,TRANSLATION(),WARNING(),"Ignoring external declaration of the extended class: %s."),
+          (MATCHCONTINUE_TO_MATCH_OPTIMIZATION,TRANSLATION(),NOTIFICATION(),"This matchcontinue expression has no overlapping patterns and should be using match instead of matchcontinue."),
 
           (COMPILER_WARNING,TRANSLATION(),WARNING(),"%s")
           };
@@ -923,24 +925,12 @@ protected function lookupMessage "Private Relations
 
   Finds a message given ErrorID by looking in the message list.
 "
-  input ErrorID inErrorID;
-  output MessageType outMessageType;
-  output Severity outSeverity;
-  output String outString;
+  input ErrorID errorID;
+  output MessageType msgType;
+  output Severity severity;
+  output String msg;
 algorithm
-  (outMessageType,outSeverity,outString):=
-  matchcontinue (inErrorID)
-    local
-      MessageType msg_tp;
-      Severity severity;
-      String msg;
-      ErrorID error_id;
-    case (error_id)
-      equation
-        (msg_tp,severity,msg) = lookupMessage2(errorTable, error_id);
-      then
-        (msg_tp,severity,msg);
-  end matchcontinue;
+  (msgType,severity,msg) := lookupMessage2(errorTable, errorID);
 end lookupMessage;
 
 protected function lookupMessage2
@@ -1108,4 +1098,3 @@ algorithm
 end addCompilerWarning;
 
 end Error;
-

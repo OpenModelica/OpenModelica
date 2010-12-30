@@ -1141,7 +1141,7 @@ public function printClassStr "
   input Class inClass;
   output String outString;
 algorithm
-  outString := matchcontinue (inClass)
+  outString := match (inClass)
     local
       String s,res,id,re;
       Boolean p,en;
@@ -1154,7 +1154,7 @@ algorithm
         res = stringAppendList({"CLASS(",id,",_,_,",re,",",s,")\n"});
       then
         res;
-  end matchcontinue;
+  end match;
 end printClassStr;
 
 public function printClassdefStr
@@ -1243,11 +1243,11 @@ public function printEnumStr
   input Enum en;
   output String str;
 algorithm
-  str := matchcontinue(en)
+  str := match (en)
     local
       String s;
     case ENUM(s, _) then s;
-  end matchcontinue;
+  end match;
 end printEnumStr;
 
 public function attrVariability

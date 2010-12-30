@@ -605,11 +605,11 @@ public function listRest "function: listRest
   output list<Type_a> outTypeALst;
   replaceable type Type_a subtypeof Any;
 algorithm
-  outTypeALst:=
-  matchcontinue (inTypeALst)
-    local list<Type_a> x;
+  outTypeALst:= match (inTypeALst)
+    local
+      list<Type_a> x;
     case ((_ :: x)) then x;
-  end matchcontinue;
+  end match;
 end listRest;
 
 public function listRestOrEmpty "
@@ -4807,10 +4807,10 @@ public function tuple21 "function: tuple21
   replaceable type Type_b subtypeof Any;
 algorithm
   outTypeA:=
-  matchcontinue (inTplTypeATypeB)
+  match (inTplTypeATypeB)
     local Type_a a;
     case ((a,_)) then a;
-  end matchcontinue;
+  end match;
 end tuple21;
 
 public function tuple22 "function: tuple22
@@ -6518,15 +6518,7 @@ public function escapeModelicaStringToCString
   input String modelicaString;
   output String cString;
 algorithm
-  cString := matchcontinue (modelicaString)
-    local
-      String s, sOut;
-    case (s)
-      equation
-        sOut = System.stringReplace(s, "\n", "\\n");
-      then
-        sOut;
-  end matchcontinue;
+  cString := System.stringReplace(modelicaString, "\n", "\\n");
 end escapeModelicaStringToCString;
 
 

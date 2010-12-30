@@ -326,10 +326,9 @@ public function lunaryopSymbol
   input Operator inOperator;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inOperator)
+  outString := match (inOperator)
     case (DAE.NOT()) then " NOT ";
-  end matchcontinue;
+  end match;
 end lunaryopSymbol;
 
 public function relopSymbol
@@ -1609,7 +1608,7 @@ protected function typeVarString "help function to typeVarsStr"
   input Var v;
   output String s;
 algorithm
-  s := matchcontinue(v)
+  s := match (v)
     local 
       String name; Type tp;
     
@@ -1617,7 +1616,7 @@ algorithm
       equation
         s = name +& ":" +& typeString(tp);
       then s;
-  end matchcontinue;
+  end match;
 end typeVarString;
 
 public function debugPrintComponentRefExp "
@@ -2212,9 +2211,9 @@ public function lunaryopPriority
   input Operator inOperator;
   output Integer outInteger;
 algorithm
-  outInteger := matchcontinue (inOperator)
+  outInteger := match (inOperator)
     case (DAE.NOT()) then 11;
-  end matchcontinue;
+  end match;
 end lunaryopPriority;
 
 public function relopPriority

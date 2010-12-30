@@ -81,7 +81,7 @@ public function dump
   Prints a program, i.e. the whole AST, to the Print buffer."
   input Absyn.Program inProgram;
 algorithm
-  _ := matchcontinue (inProgram)
+  _ := match (inProgram)
     local
       list<Absyn.Class> cs;
       Absyn.Within w;
@@ -94,7 +94,7 @@ algorithm
         Print.printBuf(")\n");
       then
         ();
-  end matchcontinue;
+  end match;
 end dump;
 
 public function unparseStr
@@ -678,7 +678,7 @@ public function printInfo
   Dumps an Info to the Print buffer."
   input Absyn.Info inInfo;
 algorithm
-  _ := matchcontinue (inInfo)
+  _ := match (inInfo)
     local
       Ident s1,s2,s3,s4,filename;
       Boolean isReadOnly;
@@ -706,7 +706,7 @@ algorithm
         Print.printBuf(")");
       then
         ();
-  end matchcontinue;
+  end match;
 end printInfo;
 
 public function unparseInfoStr
@@ -717,7 +717,7 @@ public function unparseInfoStr
   output String outString;
 algorithm
   outString:=
-  matchcontinue (inInfo)
+  match (inInfo)
     local
       Ident s1,s2,s3,s4,s5,str,filename;
       Boolean isReadOnly;
@@ -734,7 +734,7 @@ algorithm
         str = stringAppendList({"Absyn.INFO(\"",filename,"\", ",s1,", ",s2,", ",s3,", ",s4,", ",s5,")\n"});
       then
         str;
-  end matchcontinue;
+  end match;
 end unparseInfoStr;
 
 protected function printClass
@@ -743,7 +743,7 @@ protected function printClass
   changed by adrpo, 2006-02-05 to use printInfo."
   input Absyn.Class inClass;
 algorithm
-  _ := matchcontinue (inClass)
+  _ := match (inClass)
     local
       Ident n;
       Boolean p,f,e;
@@ -762,7 +762,7 @@ algorithm
         Print.printBuf(")\n");
       then
         ();
-  end matchcontinue;
+  end match;
 end printClass;
 
 protected function printClassdef
@@ -1389,7 +1389,7 @@ protected function printAnnotation
   Prints an annotation to the Print buffer."
   input Absyn.Annotation inAnnotation;
 algorithm
-  _ := matchcontinue (inAnnotation)
+  _ := match (inAnnotation)
     local list<Absyn.ElementArg> mod;
     case (Absyn.ANNOTATION(elementArgs = mod))
       equation
@@ -1398,7 +1398,7 @@ algorithm
         Print.printBuf(")");
       then
         ();
-  end matchcontinue;
+  end match;
 end printAnnotation;
 
 public function unparseElementitemStrLst
@@ -1681,7 +1681,7 @@ protected function unparseConstrainclassStr
   output String outString;
 algorithm
   outString:=
-  matchcontinue (inConstrainClass)
+  match (inConstrainClass)
     local
       Ident s1,s2,res;
       Absyn.ElementSpec spec;
@@ -1693,7 +1693,7 @@ algorithm
         res = stringAppend(s1, s2);
       then
         res;
-  end matchcontinue;
+  end match;
 end unparseConstrainclassStr;
 
 protected function printInnerouter
@@ -2149,7 +2149,7 @@ public function printComponent "function: printComponent
   input Absyn.Component inComponent;
 algorithm
   _:=
-  matchcontinue (inComponent)
+  match (inComponent)
     local
       Ident n;
       list<Absyn.Subscript> a;
@@ -2165,7 +2165,7 @@ algorithm
         Print.printBuf(")");
       then
         ();
-  end matchcontinue;
+  end match;
 end printComponent;
 
 protected function printComponentitem "function: printComponentitem
@@ -2175,7 +2175,7 @@ protected function printComponentitem "function: printComponentitem
   input Absyn.ComponentItem inComponentItem;
 algorithm
   _:=
-  matchcontinue (inComponentItem)
+  match (inComponentItem)
     local
       Absyn.Component c;
       Option<Absyn.Exp> optcond;
@@ -2189,7 +2189,7 @@ algorithm
         Print.printBuf(")");
       then
         ();
-  end matchcontinue;
+  end match;
 end printComponentitem;
 
 protected function unparseComponentStr "function: unparseComponentStr
@@ -2200,7 +2200,7 @@ protected function unparseComponentStr "function: unparseComponentStr
   output String outString;
 algorithm
   outString:=
-  matchcontinue (inComponent)
+  match (inComponent)
     local
       Ident s1,s2,s3,str,n;
       list<Absyn.Subscript> a;
@@ -2213,7 +2213,7 @@ algorithm
         str = stringAppend(s2, s3);
       then
         str;
-  end matchcontinue;
+  end match;
 end unparseComponentStr;
 
 public function unparseComponentitemStr "function: unparseComponentitemStr
@@ -2221,7 +2221,7 @@ public function unparseComponentitemStr "function: unparseComponentitemStr
   input Absyn.ComponentItem inComponentItem;
   output String outString;
 algorithm
-  outString := matchcontinue (inComponentItem)
+  outString := match (inComponentItem)
     local
       Ident s1,s3,s2,str;
       Absyn.Component c;
@@ -2235,7 +2235,7 @@ algorithm
         str = stringAppendList({s1,s2,s3});
       then
         str;
-  end matchcontinue;
+  end match;
 end unparseComponentitemStr;
 
 protected function unparseComponentCondition "function: unparseComponentCondition
@@ -2823,7 +2823,7 @@ protected function printEqElseif "function: printEqElseif
   Prints an Elseif branch to the Print buffer."
   input tuple<Absyn.Exp, list<Absyn.EquationItem>> inTplAbsynExpAbsynEquationItemLst;
 algorithm
-  _ := matchcontinue (inTplAbsynExpAbsynEquationItemLst)
+  _ := match (inTplAbsynExpAbsynEquationItemLst)
     local
       Absyn.Exp e;
       list<Absyn.EquationItem> el;
@@ -2836,7 +2836,7 @@ algorithm
         printListDebug("print_eq_elseif", el, printEquationitem, ";");
       then
         ();
-  end matchcontinue;
+  end match;
 end printEqElseif;
 
 protected function unparseEqElseifStrLst "function: unparseEqElseifStrLst
@@ -2886,7 +2886,7 @@ protected function unparseEqElseifStr "function: unparseEqElseifStr
   input tuple<Absyn.Exp, list<Absyn.EquationItem>> inTplAbsynExpAbsynEquationItemLst;
   output String outString;
 algorithm
-  outString := matchcontinue (inInteger,inTplAbsynExpAbsynEquationItemLst)
+  outString := match (inInteger,inTplAbsynExpAbsynEquationItemLst)
     local
       Ident s1,s2,is,res;
       Integer i_1,i;
@@ -2902,7 +2902,7 @@ algorithm
         res = stringAppendList({"\n",is,"elseif ",s1," then\n",s2});
       then
         res;
-  end matchcontinue;
+  end match;
 end unparseEqElseifStr;
 
 protected function printAlgorithmitem "Algorithm clauses
@@ -3309,7 +3309,7 @@ protected function unparseAlgElsewhenStr "function: unparseAlgElsewhenStr
   input tuple<Absyn.Exp, list<Absyn.AlgorithmItem>> inTplAbsynExpAbsynAlgorithmItemLst;
   output String outString;
 algorithm
-  outString := matchcontinue (inInteger,inTplAbsynExpAbsynAlgorithmItemLst)
+  outString := match (inInteger,inTplAbsynExpAbsynAlgorithmItemLst)
     local
       Ident is,s1,s2,res;
       Integer i;
@@ -3324,7 +3324,7 @@ algorithm
         res = stringAppendList({"elsewhen ",s2," then\n",s1});
       then
         res;
-  end matchcontinue;
+  end match;
 end unparseAlgElsewhenStr;
 
 protected function unparseEqElsewhenStrLst "function: unparseEqElsewhenStrLst
@@ -3372,7 +3372,7 @@ protected function unparseEqElsewhenStr "function: unparseEqElsewhenStr
   input tuple<Absyn.Exp, list<Absyn.EquationItem>> inTplAbsynExpAbsynEquationItemLst;
   output String outString;
 algorithm
-  outString := matchcontinue (inInteger,inTplAbsynExpAbsynEquationItemLst)
+  outString := match (inInteger,inTplAbsynExpAbsynEquationItemLst)
     local
       Ident is,s1,s2,res;
       Integer i;
@@ -3387,14 +3387,14 @@ algorithm
         res = stringAppendList({"elsewhen ",s2," then\n",s1});
       then
         res;
-  end matchcontinue;
+  end match;
 end unparseEqElsewhenStr;
 
 protected function printAlgElseif "function: printAlgElseif
   Prints an algorithm elseif branch to the Print buffer."
   input tuple<Absyn.Exp, list<Absyn.AlgorithmItem>> inTplAbsynExpAbsynAlgorithmItemLst;
 algorithm
-  _ := matchcontinue (inTplAbsynExpAbsynAlgorithmItemLst)
+  _ := match (inTplAbsynExpAbsynAlgorithmItemLst)
     local
       Absyn.Exp e;
       list<Absyn.AlgorithmItem> el;
@@ -3407,7 +3407,7 @@ algorithm
         printListDebug("print_alg_elseif", el, printAlgorithmitem, ";");
       then
         ();
-  end matchcontinue;
+  end match;
 end printAlgElseif;
 
 protected function unparseAlgElseifStrLst "function: unparseAlgElseifStrLst
@@ -3442,7 +3442,7 @@ protected function unparseAlgElseifStr "function: unparseAlgElseifStr
   input tuple<Absyn.Exp, list<Absyn.AlgorithmItem>> inTplAbsynExpAbsynAlgorithmItemLst;
   output String outString;
 algorithm
-  outString := matchcontinue (inInteger,inTplAbsynExpAbsynAlgorithmItemLst)
+  outString := match (inInteger,inTplAbsynExpAbsynAlgorithmItemLst)
     local
       Ident s1,s2,is,str;
       Integer i_1,i;
@@ -3458,7 +3458,7 @@ algorithm
         str = stringAppendList({is,"elseif ",s1," then\n",s2});
       then
         str;
-  end matchcontinue;
+  end match;
 end unparseAlgElseifStr;
 
 public function printComponentRef "Component references and paths
@@ -4098,7 +4098,7 @@ public function printNamedArg
   input Absyn.NamedArg inNamedArg;
 algorithm
   _:=
-  matchcontinue (inNamedArg)
+  match (inNamedArg)
     local
       Ident ident;
       Absyn.Exp e;
@@ -4109,7 +4109,7 @@ algorithm
         printExp(e);
       then
         ();
-  end matchcontinue;
+  end match;
 end printNamedArg;
 
 public function printNamedArgStr
@@ -4119,7 +4119,7 @@ public function printNamedArgStr
   output String outString;
 algorithm
   outString:=
-  matchcontinue (inNamedArg)
+  match (inNamedArg)
     local
       Ident s1,s2,str,ident;
       Absyn.Exp e;
@@ -4130,7 +4130,7 @@ algorithm
         str = stringAppend(s1, s2);
       then
         str;
-  end matchcontinue;
+  end match;
 end printNamedArgStr;
 
 
@@ -5228,7 +5228,7 @@ end stdout;
 public function getAstAsCorbaString
   input Absyn.Program program;
 algorithm
-  _ := matchcontinue program
+  _ := match program
     local
       list<Absyn.Class> classes;
       Absyn.Within within_;
@@ -5244,7 +5244,7 @@ algorithm
         printTimeStampAsCorbaString(globalBuildTimes);
         Print.printBuf("\nend Absyn.PROGRAM;");
       then ();
-  end matchcontinue;
+  end match;
 end getAstAsCorbaString;
 
 protected function printPathAsCorbaString
@@ -5333,7 +5333,7 @@ end printWithinAsCorbaString;
 protected function printTimeStampAsCorbaString
   input Absyn.TimeStamp timeStamp;
 algorithm
-  _ := matchcontinue timeStamp
+  _ := match timeStamp
     local
       Real r1,r2;
     case Absyn.TIMESTAMP(lastBuildTime = r1, lastEditTime = r2)
@@ -5344,13 +5344,13 @@ algorithm
         Print.printBuf(realString(r2));
         Print.printBuf(" end Absyn.TIMESTAMP;");
       then ();
-  end matchcontinue;
+  end match;
 end printTimeStampAsCorbaString;
 
 protected function printClassAsCorbaString
   input Absyn.Class cl;
 algorithm
-  _ := matchcontinue cl
+  _ := match cl
     local
       String name;
       Boolean partialPrefix, finalPrefix, encapsulatedPrefix;
@@ -5375,13 +5375,13 @@ algorithm
         printInfoAsCorbaString(info);
         Print.printBuf(" end Absyn.CLASS;");
       then ();
-  end matchcontinue;
+  end match;
 end printClassAsCorbaString;
 
 protected function printInfoAsCorbaString
   input Absyn.Info info;
 algorithm
-  _ := matchcontinue info
+  _ := match info
     local
       String fileName;
       Boolean isReadOnly;
@@ -5405,7 +5405,7 @@ algorithm
         printTimeStampAsCorbaString(buildTimes);
         Print.printBuf(" end Absyn.INFO;");
       then ();
-  end matchcontinue;
+  end match;
 end printInfoAsCorbaString;
 
 protected function printClassDefAsCorbaString
@@ -5507,7 +5507,7 @@ end printEnumDefAsCorbaString;
 protected function printEnumLiteralAsCorbaString
   input Absyn.EnumLiteral enumLit;
 algorithm
-  _ := matchcontinue enumLit
+  _ := match enumLit
     local
       String literal;
       Option<Absyn.Comment> comment;
@@ -5519,7 +5519,7 @@ algorithm
         printOption(comment, printCommentAsCorbaString);
         Print.printBuf("end Absyn.ENUMLITERAL;");
       then ();
-  end matchcontinue;
+  end match;
 end printEnumLiteralAsCorbaString;
 
 protected function printRestrictionAsCorbaString
@@ -5701,7 +5701,7 @@ end printClassPartAsCorbaString;
 protected function printExternalDeclAsCorbaString
   input Absyn.ExternalDecl decl;
 algorithm
-  _ := matchcontinue decl
+  _ := match decl
     local
       Option<String> funcName, lang;
       Option<Absyn.ComponentRef> output_;
@@ -5721,7 +5721,7 @@ algorithm
         printOption(annotation_, printAnnotationAsCorbaString);
         Print.printBuf(" end Absyn.EXTERNALDECL;");
       then ();
-  end matchcontinue;
+  end match;
 end printExternalDeclAsCorbaString;
 
 protected function printElementItemAsCorbaString
@@ -5844,7 +5844,7 @@ end printRedeclareKeywordsAsCorbaString;
 protected function printConstrainClassAsCorbaString
   input Absyn.ConstrainClass constrainClass;
 algorithm
-  _ := matchcontinue constrainClass
+  _ := match constrainClass
     local
       Absyn.ElementSpec elementSpec;
       Option<Absyn.Comment> comment;
@@ -5856,7 +5856,7 @@ algorithm
         printOption(comment, printCommentAsCorbaString);
         Print.printBuf(" end Absyn.CONSTRAINCLASS;");
       then ();
-  end matchcontinue;
+  end match;
 end printConstrainClassAsCorbaString;
 
 protected function printElementSpecAsCorbaString
@@ -5916,7 +5916,7 @@ end printElementSpecAsCorbaString;
 protected function printComponentItemAsCorbaString
   input Absyn.ComponentItem componentItem;
 algorithm
-  _ := matchcontinue componentItem
+  _ := match componentItem
     local
       Absyn.Component component;
       Option<Absyn.ComponentCondition> condition;
@@ -5931,13 +5931,13 @@ algorithm
         printOption(comment, printCommentAsCorbaString);
         Print.printBuf(" end Absyn.COMPONENTITEM;");
       then ();
-  end matchcontinue;
+  end match;
 end printComponentItemAsCorbaString;
 
 protected function printComponentAsCorbaString
   input Absyn.Component component;
 algorithm
-  _ := matchcontinue component
+  _ := match component
     local
       String name;
       Absyn.ArrayDim arrayDim;
@@ -5952,13 +5952,13 @@ algorithm
         printOption(modification, printModificationAsCorbaString);
         Print.printBuf(" end Absyn.COMPONENT;");
       then ();
-  end matchcontinue;
+  end match;
 end printComponentAsCorbaString;
 
 protected function printModificationAsCorbaString
   input Absyn.Modification mod;
 algorithm
-  _ := matchcontinue mod
+  _ := match mod
     local
       list<Absyn.ElementArg> elementArgLst;
       Option<Absyn.Exp> expOption;
@@ -5970,7 +5970,7 @@ algorithm
         printOption(expOption, printExpAsCorbaString);
         Print.printBuf(" end Absyn.CLASSMOD;");
      then ();
-  end matchcontinue;
+  end match;
 end printModificationAsCorbaString;
 
 protected function printEquationItemAsCorbaString
@@ -6232,7 +6232,7 @@ end printEquationItemListAsCorbaString;
 protected function printAnnotationAsCorbaString
   input Absyn.Annotation annotation_;
 algorithm
-  _ := matchcontinue annotation_
+  _ := match annotation_
     local
       list<Absyn.ElementArg> elementArgs;
     case Absyn.ANNOTATION(elementArgs)
@@ -6241,13 +6241,13 @@ algorithm
         printListAsCorbaString(elementArgs, printElementArgAsCorbaString, ",");
         Print.printBuf(" end Absyn.ANNOTATION;");
       then ();
-  end matchcontinue;
+  end match;
 end printAnnotationAsCorbaString;
 
 protected function printCommentAsCorbaString
   input Absyn.Comment inComment;
 algorithm
-  _ := matchcontinue inComment
+  _ := match inComment
     local
       Option<Absyn.Annotation> annotation_;
       Option<String> comment;
@@ -6259,7 +6259,7 @@ algorithm
         printStringCommentOption(comment);
         Print.printBuf(" end Absyn.COMMENT;");
       then ();
-  end matchcontinue;
+  end match;
 end printCommentAsCorbaString;
 
 protected function printTypeSpecAsCorbaString
@@ -6349,7 +6349,7 @@ end printImportAsCorbaString;
 protected function printElementAttributesAsCorbaString
   input Absyn.ElementAttributes attr;
 algorithm
-  _ := matchcontinue attr
+  _ := match attr
     local
       Boolean flowPrefix;
       Boolean streamPrefix;
@@ -6370,7 +6370,7 @@ algorithm
         printArrayDimAsCorbaString(arrayDim);
         Print.printBuf(" end Absyn.ATTR;");
       then ();
-  end matchcontinue;
+  end match;
 end printElementAttributesAsCorbaString;
 
 protected function printVariabilityAsCorbaString
@@ -6490,7 +6490,7 @@ end printFunctionArgsAsCorbaString;
 protected function printForIteratorAsCorbaString
   input Absyn.ForIterator iter;
 algorithm
-  _ := matchcontinue iter
+  _ := match iter
     local
       String id;
       Option<Absyn.Exp> optExp;
@@ -6502,13 +6502,13 @@ algorithm
         printOption(optExp,printExpAsCorbaString);
         Print.printBuf(")");
       then ();
-  end matchcontinue;
+  end match;
 end printForIteratorAsCorbaString;
 
 protected function printNamedArgAsCorbaString
   input Absyn.NamedArg arg;
 algorithm
-  _ := matchcontinue arg
+  _ := match arg
     local
       String argName;
       Absyn.Exp argValue;
@@ -6520,7 +6520,7 @@ algorithm
         printExpAsCorbaString(argValue);
         Print.printBuf(" end Absyn.NAMEDARG;");
       then ();
-  end matchcontinue;
+  end match;
 end printNamedArgAsCorbaString;
 
 protected function printExpAsCorbaString
@@ -6873,7 +6873,7 @@ protected function printTupleAsCorbaString
     input Type_b inTypeB;
   end FuncTypeType_b;
 algorithm
-  _ := matchcontinue (inTpl,fnA,fnB)
+  _ := match (inTpl,fnA,fnB)
     local
       Type_a a;
       Type_b b;
@@ -6885,7 +6885,7 @@ algorithm
         fnB(b);
         Print.printBuf(")");
       then ();
-  end matchcontinue;
+  end match;
 end printTupleAsCorbaString;
 
 protected function printOperatorAsCorbaString

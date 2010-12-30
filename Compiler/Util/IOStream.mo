@@ -149,17 +149,7 @@ function appendList
   input list<String> inStringList;
   output IOStream outStream;
 algorithm
-  outStream := matchcontinue (inStream, inStringList)
-    local 
-      IOStream myStream;
-      
-    case (myStream, inStringList)
-      equation
-        myStream = Util.listFoldR(inStringList, append, myStream);
-      then
-        myStream;
-
-  end matchcontinue;
+  outStream := Util.listFoldR(inStringList, append, inStream);
 end appendList;
 
 function close

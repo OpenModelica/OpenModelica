@@ -293,8 +293,7 @@ protected function get1 "help function to get"
   partial function FuncKeyString input Key key; output String str; end FuncKeyString;
   partial function FuncValString input Value val; output String str; end FuncValString;
 algorithm
-  (value,indx):=
-  matchcontinue (key,hashTable)
+  (value,indx) := match (key,hashTable)
     local
       Integer hval,hashindx,indx_1,bsize,n;
       list<tuple<Key,Integer>> indexes;
@@ -314,7 +313,7 @@ algorithm
         true = keyEqual(k, key);
       then
         (v,indx);
-  end matchcontinue;
+  end match;
 end get1;
 
 protected function get2
@@ -532,9 +531,9 @@ public function valueArrayLength
   replaceable type Value subtypeof Any;
   type ValueArray = tuple<Integer,Integer,array<Option<tuple<Key,Value>>>>;
 algorithm
-  size := matchcontinue (valueArray)
+  size := match valueArray
     case ((size,_,_)) then size;
-  end matchcontinue;
+  end match;
 end valueArrayLength;
 
 public function valueArrayAdd
@@ -652,8 +651,7 @@ public function valueArrayNth
   replaceable type Value subtypeof Any;
   type ValueArray = tuple<Integer,Integer,array<Option<tuple<Key,Value>>>>;
 algorithm
-  (key, value) :=
-  matchcontinue (valueArray,pos)
+  (key, value) := match (valueArray,pos)
     local
       Key k;
       Value v;
@@ -666,7 +664,7 @@ algorithm
         SOME((k,v)) = arr[pos + 1];
       then
         (k, v);
-  end matchcontinue;
+  end match;
 end valueArrayNth;
 
 end BaseHashTable;

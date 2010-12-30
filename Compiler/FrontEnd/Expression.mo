@@ -1145,23 +1145,12 @@ algorithm
   end matchcontinue;
 end expCrefInclIfExpFactors;
 
-public function boolExp "returns the boolean constant expression of a BOOL"
-input DAE.Exp e;
-output Boolean b;
-algorithm
-  b := matchcontinue(e)
-    case(DAE.BCONST(b)) then b;
-  end matchcontinue;
-end boolExp;
-
 public function getBoolConst "returns the expression as a Boolean value.
 "
 input DAE.Exp e;
 output Boolean b;
 algorithm
-  b := matchcontinue(e)
-    case(DAE.BCONST(b)) then b;
-  end matchcontinue;
+  DAE.BCONST(b) := e;
 end getBoolConst;
 
 public function getRealConst "returns the expression as a Real value.
@@ -1169,12 +1158,12 @@ Integer constants are cast to Real"
 input DAE.Exp e;
 output Real v;
 algorithm
-  v := matchcontinue(e)
+  v := match (e)
   local Integer i;
     case(DAE.RCONST(v)) then v;
     case(DAE.CAST(_,e)) then getRealConst(e);
     case(DAE.ICONST(i)) then intReal(i);
-  end matchcontinue;
+  end match;
 end getRealConst;
 
 // stefan

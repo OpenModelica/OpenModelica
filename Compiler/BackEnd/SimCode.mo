@@ -565,7 +565,7 @@ public function makeCrefRecordExp
   input DAE.ExpVar inVar;
   output DAE.Exp outExp;
 algorithm
-  outExp := matchcontinue (inCRefRecord,inVar)
+  outExp := match (inCRefRecord,inVar)
     local
       DAE.ComponentRef cr,cr1;
       String name;
@@ -576,7 +576,7 @@ algorithm
         outExp = Expression.makeCrefExp(cr1,tp);
       then
         outExp;
-  end matchcontinue;  
+  end match;  
 end makeCrefRecordExp;
 
 public function cref2simvar
@@ -1051,8 +1051,7 @@ public function translateFunctions
   input list<DAE.Function> daeElements;
   input list<DAE.Type> metarecordTypes;
 algorithm
-  _ :=
-  matchcontinue (name, daeMainFunction, daeElements, metarecordTypes)
+  _ := match (name, daeMainFunction, daeElements, metarecordTypes)
     local
       Function mainFunction;
       list<Function> fns;
@@ -1074,7 +1073,7 @@ algorithm
         _ = Tpl.tplString(SimCodeC.translateFunctions, fnCode);
       then
         ();
-  end matchcontinue;
+  end match;
 end translateFunctions;
 
 protected function replaceLiteralExp
@@ -1713,8 +1712,7 @@ protected function fixOutputIndex
   output list<SimExtArg> simExtArgsOut;
   output SimExtArg extReturnOut;
 algorithm
-  (simExtArgsOut, extReturnOut) :=
-  matchcontinue (outVars, simExtArgsIn, extReturnIn)
+  (simExtArgsOut, extReturnOut) := match (outVars, simExtArgsIn, extReturnIn)
     local
       DAE.ComponentRef cref;
       Boolean isInput;
@@ -1728,7 +1726,7 @@ algorithm
         extReturnOut = assignOutputIndex(extReturnIn, outVars);
       then
         (simExtArgsOut, extReturnOut);
-  end matchcontinue;
+  end match;
 end fixOutputIndex;
 
 protected function assignOutputIndex
@@ -2177,8 +2175,7 @@ protected function createMakefileParams
   input list<String> libs;
   output MakefileParams makefileParams;
 algorithm
-  makefileParams :=
-  matchcontinue (libs)
+  makefileParams := match (libs)
     local
       String omhome,header,ccompiler,cxxcompiler,linker,exeext,dllext,cflags,ldflags,senddatalibs;
     case (libs)
@@ -2195,7 +2192,7 @@ algorithm
         senddatalibs = System.getSendDataLibs();
       then MAKEFILE_PARAMS(ccompiler, cxxcompiler, linker, exeext, dllext,
         omhome, cflags, ldflags, senddatalibs, libs);
-  end matchcontinue;
+  end match;
 end createMakefileParams;
 
 protected function generateHelpVarInfo
@@ -7829,8 +7826,7 @@ protected function isVarQ
 "Succeeds if inElement is a variable or constant that is not input."
   input DAE.Element inElement;
 algorithm
-  _ :=
-  matchcontinue (inElement)
+  _ := match (inElement)
     local
       DAE.VarKind vk;
       DAE.VarDirection vd;
@@ -7839,46 +7835,33 @@ algorithm
         isVarVarOrConstant(vk);
         isDirectionNotInput(vd);
       then ();
-  end matchcontinue;
+  end match;
 end isVarQ;
 
 protected function isVarVarOrConstant
   input DAE.VarKind inVarKind;
 algorithm
-  _ :=
-  matchcontinue (inVarKind)
+  _ := match (inVarKind)
     case DAE.VARIABLE() then ();
     case DAE.PARAM() then ();
-  end matchcontinue;
+  end match;
 end isVarVarOrConstant;
 
 protected function isDirectionNotInput
   input DAE.VarDirection inVarDirection;
 algorithm
-  _ :=
-  matchcontinue (inVarDirection)
+  _ := match (inVarDirection)
     case DAE.OUTPUT() then ();
     case DAE.BIDIR() then ();
-  end matchcontinue;
+  end match;
 end isDirectionNotInput;
 
 protected function filterNg
 "Sets the number of zero crossings to zero if events are disabled."
-  input Integer inInteger;
+  input Integer ng;
   output Integer outInteger;
 algorithm
-  outInteger :=
-  matchcontinue (inInteger)
-    local
-      Integer ng;
-    case _
-      equation
-        false = useZerocrossing();
-      then
-        0;
-    case ng
-    then ng;
-  end matchcontinue;
+  outInteger := Util.if_(useZerocrossing(),ng,0);
 end filterNg;
 
 protected function useZerocrossing
@@ -7894,8 +7877,7 @@ protected function hasDiscreteVar
   input list<BackendDAE.Var> inBackendDAEVarLst;
   output Boolean outBoolean;
 algorithm
-  outBoolean :=
-  matchcontinue (inBackendDAEVarLst)
+  outBoolean := match (inBackendDAEVarLst)
     local
       Boolean res;
       BackendDAE.Var v;
@@ -7909,7 +7891,7 @@ algorithm
       then
         res;
     case ({}) then false;
-  end matchcontinue;
+  end match;
 end hasDiscreteVar;
 
 protected function hasContinousVar
@@ -7917,8 +7899,7 @@ protected function hasContinousVar
   input list<BackendDAE.Var> inBackendDAEVarLst;
   output Boolean outBoolean;
 algorithm
-  outBoolean :=
-  matchcontinue (inBackendDAEVarLst)
+  outBoolean := match (inBackendDAEVarLst)
     local
       Boolean res;
       BackendDAE.Var v;
@@ -7934,7 +7915,7 @@ algorithm
       then
         res;
     case ({}) then false;
-  end matchcontinue;
+  end match;
 end hasContinousVar;
 
 protected function getCrefFromExp
@@ -7942,7 +7923,7 @@ protected function getCrefFromExp
   input DAE.Exp e;
   output Absyn.ComponentRef c;
 algorithm
-  c := matchcontinue(e)
+  c := match (e)
     local
       Expression.ComponentRef crefe;
       Absyn.ComponentRef crefa;
@@ -7953,23 +7934,22 @@ algorithm
       then
         crefa;
         
-    case(e)
+    else
       equation
         print("SimCode.getCrefFromExp failed: input was not of type DAE.CREF");
       then
         fail();
-  end matchcontinue;
+  end match;
 end getCrefFromExp;
 
 protected function indexSubscriptToExp
   input DAE.Subscript subscript;
   output DAE.Exp exp_;
 algorithm
-  exp_ :=
-  matchcontinue (subscript)
+  exp_ := match (subscript)
     case (DAE.INDEX(exp_)) then exp_;
-    case (_) then DAE.ICONST(99); // TODO: Why do we end up here?
-  end matchcontinue;
+    else DAE.ICONST(99); // TODO: Why do we end up here?
+  end match;
 end indexSubscriptToExp;
 
 protected function isNotBuiltinCall
@@ -7977,8 +7957,7 @@ protected function isNotBuiltinCall
   input DAE.Exp inExp;
   output Boolean outBoolean;
 algorithm
-  outBoolean :=
-  matchcontinue (inExp)
+  outBoolean := match (inExp)
     local
       Boolean res, builtin;
     case DAE.CALL(builtin=builtin)
@@ -7986,16 +7965,15 @@ algorithm
         res = boolNot(builtin);
       then
         res;
-    case inExp then false;
-  end matchcontinue;
+    else false;
+  end match;
 end isNotBuiltinCall;
 
 protected function typesVar
   input Types.Var inTypesVar;
   output Variable outVar;
 algorithm
-  outVar :=
-  matchcontinue(inTypesVar)
+  outVar := match (inTypesVar)
     local
       String name;
       Types.Type typesType;
@@ -8006,7 +7984,7 @@ algorithm
         expType = Types.elabType(typesType);
         cref_ = ComponentReference.makeCrefIdent(name, expType, {});
       then VARIABLE(cref_, expType,NONE(), {});
-  end matchcontinue;
+  end match;
 end typesVar;
 
 protected function dlowvarToSimvar
@@ -8014,8 +7992,7 @@ protected function dlowvarToSimvar
   input Option<BackendDAE.AliasVariables> optAliasVars;
   output SimVar simVar;
 algorithm
-  simVar :=
-  matchcontinue (dlowVar,optAliasVars)
+  simVar := match (dlowVar,optAliasVars)
     local
       Expression.ComponentRef cr, origname;
       BackendDAE.VarKind kind;
@@ -8059,7 +8036,7 @@ algorithm
         info = DAEUtil.getElementSourceFileInfo(source);
       then
         SIMVAR(cr, kind, commentStr, unit, displayUnit, indx, initVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, info);
-  end matchcontinue;
+  end match;
 end dlowvarToSimvar;
 
 protected function traversingdlowvarToSimvar
@@ -8067,8 +8044,7 @@ protected function traversingdlowvarToSimvar
   input tuple<BackendDAE.Var, list<SimVar>> inTpl;
   output tuple<BackendDAE.Var, list<SimVar>> outTpl;
 algorithm
-  outTpl:=
-  matchcontinue (inTpl)
+  outTpl := match (inTpl)
     local
       BackendDAE.Var v;
       list<SimVar> sv_lst;
@@ -8078,7 +8054,7 @@ algorithm
         sv = dlowvarToSimvar(v,NONE());
       then ((v,sv::sv_lst));
     case inTpl then inTpl; 
-  end matchcontinue;
+  end match;
 end traversingdlowvarToSimvar;
 
 protected function subsToScalar
@@ -8087,8 +8063,7 @@ scalar expression."
   input list<DAE.Subscript> inExpSubscriptLst;
   output Boolean outBoolean;
 algorithm
-  outBoolean:=
-  matchcontinue (inExpSubscriptLst)
+  outBoolean := match (inExpSubscriptLst)
     local
       Boolean b;
       list<DAE.Subscript> r;
@@ -8100,7 +8075,7 @@ algorithm
         b = subsToScalar(r);
       then
         b;
-  end matchcontinue;
+  end match;
 end subsToScalar;
 
 protected function appendNonpresentPaths

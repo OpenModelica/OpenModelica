@@ -930,7 +930,7 @@ protected function dumpAnnotationStr
   input SCode.Annotation inAnnotation;
   output String outString;
 algorithm
-  outString := matchcontinue(inAnnotation)
+  outString := match(inAnnotation)
     local
       SCode.Mod ann_mod;
       String s;
@@ -939,7 +939,7 @@ algorithm
         s = " annotation" +& SCode.printModStr(ann_mod);
       then
         s;
-  end matchcontinue;
+  end match;
 end dumpAnnotationStr;
     
 protected function dumpCommentOption "function: dumpCommentOption_str
@@ -2121,17 +2121,18 @@ end dumpDebugElist;
 public function dumpDebugDAE ""
   input DAE.DAElist dae;
   output String str;
-algorithm str := matchcontinue(dae)
-  local
-    list<DAE.Element> elems;
-  case(DAE.DAE(elementLst=elems))
-    equation
-      Print.clearBuf();
-      dumpDebugElist(elems);
-      str = Print.getString();
-    then
-      str;
-end matchcontinue;
+algorithm
+  str := match (dae)
+    local
+      list<DAE.Element> elems;
+    case(DAE.DAE(elementLst=elems))
+      equation
+        Print.clearBuf();
+        dumpDebugElist(elems);
+        str = Print.getString();
+      then
+        str;
+  end match;
 end dumpDebugDAE;
 
 public function dumpDebugElement "function: dumpDebugElement
@@ -2682,7 +2683,7 @@ public function dumpElementsStr "function: dumpElementsStr
   input list<DAE.Element> els;
   output String outString;
 algorithm
-  outString := matchcontinue (els)
+  outString := match (els)
     local      
       IOStream.IOStream myStream;
       String str;
@@ -2694,7 +2695,7 @@ algorithm
         str = IOStream.string(myStream);
       then
         str;
-  end matchcontinue;
+  end match;
 end dumpElementsStr;
 
 public function dumpAlgorithmsStr "function: dumpAlgorithmsStr
@@ -2784,7 +2785,7 @@ public function dumpElementsStream "function: dumpElementsStream
   input IOStream.IOStream inStream;
   output IOStream.IOStream outStream;
 algorithm
-  outStream := matchcontinue(l, inStream)
+  outStream := match(l, inStream)
     local  
       String s0,s1,s2,s3,s4,s5,initeqstr,initalgstr,eqstr,algstr;
       Boolean noiniteq,noinitalg,noeq,noalg;
@@ -2815,7 +2816,7 @@ algorithm
        str = dumpAlgorithmsStream(a, str);
      then
        str;
-  end matchcontinue;
+  end match;
 end dumpElementsStream;
 
 public function dumpAlgorithmsStream "function: dumpAlgorithmsStream

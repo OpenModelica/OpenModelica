@@ -62,6 +62,7 @@ protected import Inst;
 protected import InstSection;
 protected import Lookup;
 protected import MetaUtil;
+protected import RTOpts;
 protected import SCodeUtil;
 protected import Static;
 protected import Util;
@@ -523,6 +524,7 @@ algorithm
         (cache,elabCases,resType,st) = elabMatchCases(cache,env,cases,tys,impl,st,performVectorization,pre,info);
         prop = DAE.PROP(resType,DAE.C_VAR());
         et = Types.elabType(resType);
+        matchTy = optimizeMatchContinue(matchTy,elabCases,info);
       then (cache,DAE.MATCHEXPRESSION(matchTy,elabExps,matchDecls,elabCases,et),prop,st);
     else
       equation
@@ -532,6 +534,25 @@ algorithm
       then fail();
   end matchcontinue;
 end elabMatchExpression;
+
+protected function optimizeMatchContinue
+  "If a matchcontinue expression has only one case, it is optimized to match instead.
+  The same should be done for any function without overlapping patterns, but it goes on the TODO for now.
+  "
+  input Absyn.MatchType matchType;
+  input list<DAE.MatchCase> cases;
+  input Absyn.Info info;
+  output Absyn.MatchType outMatchType;
+algorithm
+  outMatchType := match (matchType,cases,info)
+    case (Absyn.MATCH(),_,_) then Absyn.MATCH();
+    case (_,{_},info)
+      equation
+        Error.assertionOrAddSourceMessage(not RTOpts.debugFlag("patternmAllInfo"), Error.MATCHCONTINUE_TO_MATCH_OPTIMIZATION, {}, info);
+      then Absyn.MATCH();
+    else Absyn.MATCHCONTINUE();
+  end match;
+end optimizeMatchContinue;
 
 protected function elabMatchCases
   input Env.Cache cache;

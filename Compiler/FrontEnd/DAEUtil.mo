@@ -1235,18 +1235,18 @@ public function isOutputVar
 "Succeeds if Element is an output variable."
   input DAE.Element inElement;
 algorithm
-  _ := matchcontinue (inElement)
+  _ := match (inElement)
     case DAE.VAR(kind = DAE.VARIABLE(),direction = DAE.OUTPUT()) then ();
-  end matchcontinue;
+  end match;
 end isOutputVar;
 
 public function isProtectedVar
 "Succeeds if Element is a protected variable."
   input DAE.Element inElement;
 algorithm
-  _ := matchcontinue (inElement)
+  _ := match (inElement)
     case DAE.VAR(protection=DAE.PROTECTED()) then ();
-  end matchcontinue;
+  end match;
 end isProtectedVar;
 
 public function isPublicVar "
@@ -1254,9 +1254,9 @@ public function isPublicVar "
 "
   input DAE.Element inElement;
 algorithm
-  _ := matchcontinue (inElement)
+  _ := match (inElement)
     case DAE.VAR(protection=DAE.PUBLIC()) then ();
-  end matchcontinue;
+  end match;
 end isPublicVar;
 
 public function isBidirVar "
@@ -1264,9 +1264,9 @@ public function isBidirVar "
 "
   input DAE.Element inElement;
 algorithm
-  _ := matchcontinue (inElement)
+  _ := match (inElement)
     case DAE.VAR(kind = DAE.VARIABLE(),direction = DAE.BIDIR()) then ();
-  end matchcontinue;
+  end match;
 end isBidirVar;
 
 public function isInputVar "
@@ -1274,9 +1274,9 @@ public function isInputVar "
 "
   input DAE.Element inElement;
 algorithm
-  _ := matchcontinue (inElement)
+  _ := match (inElement)
     case DAE.VAR(kind = DAE.VARIABLE(),direction = DAE.INPUT()) then ();
-  end matchcontinue;
+  end match;
 end isInputVar;
 
 public function isInput "
@@ -1284,9 +1284,9 @@ public function isInput "
 "
   input DAE.Element inElement;
 algorithm
-  _ := matchcontinue (inElement)
+  _ := match (inElement)
     case DAE.VAR(direction = DAE.INPUT()) then ();
-  end matchcontinue;
+  end match;
 end isInput;
 
 public function isNotVar "
@@ -1300,9 +1300,9 @@ public function isVar "
   Succeeds if Element is a variable."
   input DAE.Element inElement;
 algorithm
-  _ := matchcontinue (inElement)
+  _ := match (inElement)
     case DAE.VAR(componentRef = _) then ();
-  end matchcontinue;
+  end match;
 end isVar;
 
 public function isFunctionRefVar "
@@ -1310,10 +1310,10 @@ public function isFunctionRefVar "
   input DAE.Element inElem;
   output Boolean outBoolean;
 algorithm
-  outBoolean := matchcontinue (inElem)
+  outBoolean := match (inElem)
     case DAE.VAR(ty = (DAE.T_FUNCTION(_,_,_),_)) then true;
-    case _ then false;
-  end matchcontinue;
+    else false;
+  end match;
 end isFunctionRefVar;
 
 public function isAlgorithm "function: isAlgorithm
@@ -1322,10 +1322,9 @@ public function isAlgorithm "function: isAlgorithm
   Succeeds if Element is an algorithm."
   input DAE.Element inElement;
 algorithm
-  _:=
-  matchcontinue (inElement)
+  _ := match (inElement)
     case DAE.ALGORITHM(algorithm_ = _) then ();
-  end matchcontinue;
+  end match;
 end isAlgorithm;
 
 public function isFunctionInlineFalse "function: isFunctionInlineFalse
@@ -1335,10 +1334,10 @@ public function isFunctionInlineFalse "function: isFunctionInlineFalse
   input DAE.Function inElement;
   output Boolean res;
 algorithm
-  res := matchcontinue (inElement)
+  res := match (inElement)
     case DAE.FUNCTION(inlineType = DAE.NO_INLINE()) then true;
-    case _ then false;
-  end matchcontinue;
+    else false;
+  end match;
 end isFunctionInlineFalse;
 
 public function findElement "function: findElement
@@ -3737,15 +3736,7 @@ public function traverseDAE2
   partial function FuncExpType input tuple<DAE.Exp,Type_a> arg; output tuple<DAE.Exp,Type_a> oarg; end FuncExpType;
   replaceable type Type_a subtypeof Any;
 algorithm
-  (traversedDaeList,oextraArg) := matchcontinue(daeList,func,extraArg)
-    local
-      list<DAE.Element> lst;
-    
-    case (daeList,func,extraArg) 
-      equation
-        (lst,extraArg) = traverseDAE2_tail(daeList,func,extraArg, {});
-      then (lst,extraArg);
-  end matchcontinue;
+  (traversedDaeList,oextraArg) := traverseDAE2_tail(daeList,func,extraArg,{});
 end traverseDAE2;
 
 protected function traverseDAE2_tail 

@@ -5165,8 +5165,7 @@ public function traverseAlgorithmExps "function: traverseAlgorithmExps
     output tuple<DAE.Exp, Type_a> outTpl;
   end FuncExpType;  
 algorithm
-  outTypeA :=
-  matchcontinue (inAlgorithm,func,inTypeA)
+  outTypeA := match (inAlgorithm,func,inTypeA)
     local
       list<DAE.Statement> stmts;
       Type_a ext_arg_1;
@@ -5175,7 +5174,7 @@ algorithm
         (_,ext_arg_1) = DAEUtil.traverseDAEEquationsStmts(stmts,func,inTypeA);
       then
         ext_arg_1;
-  end matchcontinue;
+  end match;
 end traverseAlgorithmExps;
 
 end BackendDAEUtil;

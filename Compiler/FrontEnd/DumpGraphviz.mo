@@ -66,7 +66,7 @@ protected function buildGraphviz "function: buildGraphviz
   input Absyn.Program inProgram;
   output Node outNode;
 algorithm
-  outNode := matchcontinue (inProgram)
+  outNode := match (inProgram)
     local
       list<Node> nl;
       list<Absyn.Class> cs;
@@ -76,7 +76,7 @@ algorithm
         nl = printClasses(cs);
       then
         Graphviz.NODE("ROOT",{},nl);
-  end matchcontinue;
+  end match;
 end buildGraphviz;
 
 protected function printClasses "function: printClasses
@@ -107,7 +107,7 @@ protected function printClass "function: printClass
   input Absyn.Class inClass;
   output Node outNode;
 algorithm
-  outNode := matchcontinue (inClass)
+  outNode := match (inClass)
     local
       Ident rs,n;
       list<Node> nl;
@@ -121,7 +121,7 @@ algorithm
         nl = printParts(parts);
       then
         Graphviz.NODE(rs,{},nl);
-  end matchcontinue;
+  end match;
 end printClass;
 
 protected function printParts "function: printParts
@@ -230,16 +230,11 @@ end makeBoolAttr;
 
 protected function makeLeaf "function: makeLeaf
   Create a leaf Node from a string an a list of attributes."
-  input String inString;
-  input list<Graphviz.Attribute> inGraphvizAttributeLst;
+  input String str;
+  input list<Graphviz.Attribute> al;
   output Node outNode;
 algorithm
-  outNode := matchcontinue (inString,inGraphvizAttributeLst)
-    local
-      Ident str;
-      list<Graphviz.Attribute> al;
-    case (str,al) then Graphviz.NODE(str,al,{});
-  end matchcontinue;
+  outNode := Graphviz.NODE(str,al,{});
 end makeLeaf;
 
 protected function printElement "function: printElement
@@ -247,7 +242,7 @@ protected function printElement "function: printElement
   input Absyn.Element inElement;
   output Node outNode;
 algorithm
-  outNode := matchcontinue (inElement)
+  outNode := match (inElement)
     local
       Graphviz.Attribute fa;
       Graphviz.Node elsp;
@@ -260,7 +255,7 @@ algorithm
         elsp = printElementspec(spec);
       then
         Graphviz.NODE("ELEMENT",{fa},{elsp});
-  end matchcontinue;
+  end match;
 end printElement;
 
 protected function printPath "function printPath
@@ -348,7 +343,7 @@ protected function printComponentitem "function: printComponentitem
   input Absyn.ComponentItem inComponentItem;
   output Node outNode;
 algorithm
-  outNode := matchcontinue (inComponentItem)
+  outNode := match (inComponentItem)
     local
       Graphviz.Node nn;
       Ident n;
@@ -360,7 +355,7 @@ algorithm
         nn = Graphviz.NODE(n,{},{});
       then
         Graphviz.LNODE("COMPONENT",{n},{},{nn});
-  end matchcontinue;
+  end match;
 end printComponentitem;
 
 protected function printEquations "function: printEquations

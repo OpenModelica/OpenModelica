@@ -1469,7 +1469,7 @@ protected function lowerMultidimeqn
   input Integer inInteger;
   output list<BackendDAE.Equation> outEquationLst;
 algorithm
-  outEquationLst := matchcontinue (inVariables,inMultiDimEquation,inInteger)
+  outEquationLst := match (inVariables,inMultiDimEquation,inInteger)
     local
       list<DAE.Exp> expl1,expl2,expl;
       BackendDAE.Value numnodes,aindx;
@@ -1488,7 +1488,7 @@ algorithm
         lst = lowerMultidimeqn2(expl, numnodes, aindx, source);
       then
         lst;
-  end matchcontinue;
+  end match;
 end lowerMultidimeqn;
 
 protected function lowerMultidimeqn2
@@ -1912,7 +1912,7 @@ protected function processDelayExpressions
   output DAE.DAElist outDAE;
   output DAE.FunctionTree outTree;
 algorithm
-  (outDAE,outTree) := matchcontinue(inDAE,functionTree)
+  (outDAE,outTree) := match(inDAE,functionTree)
     local
       DAE.DAElist dae, dae2;
     case (dae,functionTree)
@@ -1920,7 +1920,7 @@ algorithm
         (dae,functionTree,_) = DAEUtil.traverseDAE(dae, functionTree, transformDelayExpressions, 0);
       then
         (dae,functionTree);
-  end matchcontinue;
+  end match;
 end processDelayExpressions;
 
 protected function transformDelayExpressions
@@ -2350,8 +2350,7 @@ public function isAlgebraic "function: isDiscreteExp
   input DAE.Exp inExp;
   output Boolean outBoolean;
 algorithm
-  outBoolean := 
-  matchcontinue(inExp)
+  outBoolean := match(inExp)
     local 
       Boolean b;
       list<Boolean> blst;
@@ -2360,7 +2359,7 @@ algorithm
       ((_,b)) = Expression.traverseExpTopDown(inExp, traversingisAlgebraicFinder, true);
       then
         b;
-  end matchcontinue;
+  end match;
 end isAlgebraic;
 
 protected function traversingisAlgebraicFinder "function: traversingisAlgebraicFinder
@@ -2397,15 +2396,15 @@ protected function expandDerOperator
   output list<DAE.Algorithm> outAlgs;
   output BackendDAE.Variables outVars;
 algorithm
-  (outEqns, outIeqns,outAeqns,outAlgs,outVars) :=
-  matchcontinue(vars,eqns,ieqns,aeqns,algs,functions)
-    case(vars,eqns,ieqns,aeqns,algs,functions) equation
-      (eqns,(vars,_)) = BackendEquation.traverseBackendDAEExpsEqnList(eqns,traverserexpandDerExp,(vars,functions));
-      (ieqns,(vars,_)) = BackendEquation.traverseBackendDAEExpsEqnList(ieqns,traverserexpandDerExp,(vars,functions));
-      (aeqns,(vars,_)) = expandDerOperatorArrEqns(aeqns,(vars,functions));
-      (algs,(vars,_)) = expandDerOperatorAlgs(algs,(vars,functions));
-    then(eqns,ieqns,aeqns,algs,vars);
-  end matchcontinue;
+  (outEqns, outIeqns,outAeqns,outAlgs,outVars) := match(vars,eqns,ieqns,aeqns,algs,functions)
+    case(vars,eqns,ieqns,aeqns,algs,functions)
+      equation
+        (eqns,(vars,_)) = BackendEquation.traverseBackendDAEExpsEqnList(eqns,traverserexpandDerExp,(vars,functions));
+        (ieqns,(vars,_)) = BackendEquation.traverseBackendDAEExpsEqnList(ieqns,traverserexpandDerExp,(vars,functions));
+        (aeqns,(vars,_)) = expandDerOperatorArrEqns(aeqns,(vars,functions));
+        (algs,(vars,_)) = expandDerOperatorAlgs(algs,(vars,functions));
+      then(eqns,ieqns,aeqns,algs,vars);
+  end match;
 end expandDerOperator;
 
 protected function expandDerOperatorAlgs
@@ -2416,15 +2415,18 @@ protected function expandDerOperatorAlgs
   output tuple<BackendDAE.Variables,DAE.FunctionTree> outVars;
 algorithm
   (outAlgs,outVars) := matchcontinue(algs,vars)
-  local DAE.Algorithm a;
+    local
+      DAE.Algorithm a;
     case({},vars) then ({},vars);
-    case(a::algs,vars) equation
-      (a,vars) = expandDerOperatorAlg(a,vars);
-      (algs,vars)  = expandDerOperatorAlgs(algs,vars);
-    then (a::algs,vars);
+    case(a::algs,vars)
+      equation
+        (a,vars) = expandDerOperatorAlg(a,vars);
+        (algs,vars)  = expandDerOperatorAlgs(algs,vars);
+      then (a::algs,vars);
 
-    case(_,_) equation
-      Debug.fprint("failtrace", "-BackendDAECreate.expandDerOperatorAlgs failed\n");
+    case (_,_)
+      equation
+        Debug.fprint("failtrace", "-BackendDAECreate.expandDerOperatorAlgs failed\n");
       then fail();
 
   end matchcontinue;
@@ -2438,10 +2440,12 @@ protected function expandDerOperatorAlg
   output tuple<BackendDAE.Variables,DAE.FunctionTree> outVars;
 algorithm
   (outAlg,outVars) := matchcontinue(alg,vars)
-  local list<Algorithm.Statement> stmts;
-    case(DAE.ALGORITHM_STMTS(stmts),vars) equation
-      (stmts,vars) = DAEUtil.traverseDAEEquationsStmts(stmts,traverserexpandDerExp,vars);
-    then (DAE.ALGORITHM_STMTS(stmts),vars);
+    local
+      list<Algorithm.Statement> stmts;
+    case(DAE.ALGORITHM_STMTS(stmts),vars)
+      equation
+        (stmts,vars) = DAEUtil.traverseDAEEquationsStmts(stmts,traverserexpandDerExp,vars);
+      then (DAE.ALGORITHM_STMTS(stmts),vars);
   end matchcontinue;
 end expandDerOperatorAlg;
 
@@ -2453,16 +2457,19 @@ protected function expandDerOperatorArrEqns
   output tuple<BackendDAE.Variables,DAE.FunctionTree> outVars;
 algorithm
   (outEqns,outVars) := matchcontinue(eqns,vars)
-  local BackendDAE.MultiDimEquation e;
+    local
+      BackendDAE.MultiDimEquation e;
     case({},vars) then ({},vars);
-    case(e::eqns,vars) equation
-      (e,vars) = expandDerOperatorArrEqn(e,vars);
-      (eqns,vars)  = expandDerOperatorArrEqns(eqns,vars);
-    then (e::eqns,vars);
+    case(e::eqns,vars)
+      equation
+        (e,vars) = expandDerOperatorArrEqn(e,vars);
+        (eqns,vars)  = expandDerOperatorArrEqns(eqns,vars);
+      then (e::eqns,vars);
 
-    case(_,_) equation
-      Debug.fprint("failtrace", "-BackendDAECreate.expandDerOperatorArrEqns failed\n");
-    then fail();
+    else
+      equation
+        Debug.fprint("failtrace", "-BackendDAECreate.expandDerOperatorArrEqns failed\n");
+      then fail();
   end matchcontinue;
 end expandDerOperatorArrEqns;
 
@@ -2473,7 +2480,7 @@ protected function expandDerOperatorArrEqn
   output BackendDAE.MultiDimEquation outArrEqn;
   output tuple<BackendDAE.Variables,DAE.FunctionTree> outVars;
 algorithm
-  (outArrEqn,outVars) := matchcontinue(arrEqn,vars)
+  (outArrEqn,outVars) := match (arrEqn,vars)
     local
       list<Integer> dims; DAE.Exp e1,e2;
       DAE.ElementSource source "the element source";
@@ -2482,23 +2489,23 @@ algorithm
       ((e1,vars)) = traverserexpandDerExp((e1,vars));
       ((e2,vars)) = traverserexpandDerExp((e2,vars));
     then (BackendDAE.MULTIDIM_EQUATION(dims,e1,e2,source),vars);
-  end matchcontinue;
+  end match;
 end expandDerOperatorArrEqn;
 
 protected function traverserexpandDerExp
-"Help function to e.g. traverserexpandDerExp"
+  "Help function to e.g. traverserexpandDerExp"
   input tuple<DAE.Exp,tuple<BackendDAE.Variables,DAE.FunctionTree>> tpl;
   output tuple<DAE.Exp,tuple<BackendDAE.Variables,DAE.FunctionTree>> outTpl;
 algorithm
-  outTpl := matchcontinue(tpl)
+  outTpl := match (tpl)
     local 
       DAE.Exp e,e1;
       tuple<BackendDAE.Variables,DAE.FunctionTree> ext_arg, ext_art1;
-    case((e,ext_arg)) equation
-      ((e1,ext_art1)) = Expression.traverseExp(e,expandDerExp,ext_arg);
-    then ((e1,ext_art1));
-    case tpl then tpl;
-  end matchcontinue;
+    case((e,ext_arg))
+      equation
+        ((e1,ext_art1)) = Expression.traverseExp(e,expandDerExp,ext_arg);
+      then ((e1,ext_art1));
+  end match;
 end traverserexpandDerExp;
 
 protected function expandDerExp
@@ -2557,9 +2564,9 @@ protected function zeroCrossingEquations
   input BackendDAE.ZeroCrossing zc;
   output list<Integer> lst;
 algorithm
-  lst := matchcontinue(zc)
+  lst := match (zc)
     case(BackendDAE.ZERO_CROSSING(_,lst,_)) then lst;
-  end matchcontinue;
+  end match;
 end zeroCrossingEquations;
 
 protected function mergeZeroCrossings
@@ -2619,17 +2626,15 @@ protected function sameZeroCrossing "function: sameZeroCrossing
   input BackendDAE.ZeroCrossing inZeroCrossing2;
   output Boolean outBoolean;
 algorithm
-  outBoolean:=
-  matchcontinue (inZeroCrossing1,inZeroCrossing2)
+  outBoolean := match (inZeroCrossing1,inZeroCrossing2)
     local
       Boolean res;
       DAE.Exp e1,e2;
     case (BackendDAE.ZERO_CROSSING(relation_ = e1),BackendDAE.ZERO_CROSSING(relation_ = e2))
       equation
         res = Expression.expEqual(e1, e2);
-      then
-        res;
-  end matchcontinue;
+      then res;
+  end match;
 end sameZeroCrossing;
 
 protected function differentZeroCrossing "function: differentZeroCrossing
@@ -3086,7 +3091,7 @@ public function zeroCrossingsEquations
   input BackendDAE.BackendDAE dae;
   output list<Integer> eqns;
 algorithm
-  eqns := matchcontinue(dae)
+  eqns := match (dae)
     local
       list<BackendDAE.ZeroCrossing> zcLst;
       list<list<Integer>> zcEqns;
@@ -3098,7 +3103,7 @@ algorithm
         wcEqns = whenEquationsIndices(eqnArr);
         eqns = Util.listListUnion(listAppend(zcEqns,{wcEqns}));
       then eqns;
-  end matchcontinue;
+  end match;
 end zeroCrossingsEquations;
 
 protected function makeZeroCrossing
@@ -3123,7 +3128,7 @@ protected function makeZeroCrossings
   input list<Integer> inIntegerLst3;
   output list<BackendDAE.ZeroCrossing> outZeroCrossingLst;
 algorithm
-  outZeroCrossingLst := matchcontinue (inExpExpLst1,inIntegerLst2,inIntegerLst3)
+  outZeroCrossingLst := match (inExpExpLst1,inIntegerLst2,inIntegerLst3)
     local
       BackendDAE.ZeroCrossing res;
       list<BackendDAE.ZeroCrossing> resx;
@@ -3137,7 +3142,7 @@ algorithm
         resx = makeZeroCrossings(xs, eq_ind, wc_ind);
       then
         (res :: resx);
-  end matchcontinue;
+  end match;
 end makeZeroCrossings;
 
 protected function makeWhenClauses
@@ -3340,31 +3345,31 @@ algorithm
     list<Integer> ds;
   // array types to array equations  
   case ((e1 as DAE.CREF(componentRef=cr1,ty=DAE.ET_ARRAY(arrayDimensions=ad)),e2),source,inFuncs)
-  equation 
-    ((e1_1,_)) = extendArrExp((e1,SOME(inFuncs)));
-    ((e2_1,_)) = extendArrExp((e2,SOME(inFuncs)));
-    e2_2 = ExpressionSimplify.simplify(e2_1);
-    ds = Util.listMap(ad, Expression.dimensionSize);
-  then
-    (({},{BackendDAE.MULTIDIM_EQUATION(ds,e1_1,e2_2,source)}));
+    equation 
+      ((e1_1,_)) = extendArrExp((e1,SOME(inFuncs)));
+      ((e2_1,_)) = extendArrExp((e2,SOME(inFuncs)));
+      e2_2 = ExpressionSimplify.simplify(e2_1);
+      ds = Util.listMap(ad, Expression.dimensionSize);
+    then
+      (({},{BackendDAE.MULTIDIM_EQUATION(ds,e1_1,e2_2,source)}));
   // other types  
   case ((e1 as DAE.CREF(componentRef=cr1),e2),source,inFuncs)
-  equation 
-    tp = Expression.typeof(e1);
-    false = DAEUtil.expTypeComplex(tp);
-    ((e1_1,_)) = extendArrExp((e1,SOME(inFuncs)));
-    ((e2_1,_)) = extendArrExp((e2,SOME(inFuncs)));
-    e2_2 = ExpressionSimplify.simplify(e2_1);
-    eqn = BackendEquation.generateEQUATION((e1_1,e2_2),source);
-  then
-    (({eqn},{}));    
+    equation 
+      tp = Expression.typeof(e1);
+      false = DAEUtil.expTypeComplex(tp);
+      ((e1_1,_)) = extendArrExp((e1,SOME(inFuncs)));
+      ((e2_1,_)) = extendArrExp((e2,SOME(inFuncs)));
+      e2_2 = ExpressionSimplify.simplify(e2_1);
+      eqn = BackendEquation.generateEQUATION((e1_1,e2_2),source);
+    then
+      (({eqn},{}));    
   // complex type
   case ((e1,e2),source,inFuncs)
-  equation 
-    tp = Expression.typeof(e1);
-    true = DAEUtil.expTypeComplex(tp);
-  then
-    (({BackendDAE.COMPLEX_EQUATION(-1,e1,e2,source)},{}));    
+    equation 
+      tp = Expression.typeof(e1);
+      true = DAEUtil.expTypeComplex(tp);
+    then
+      (({BackendDAE.COMPLEX_EQUATION(-1,e1,e2,source)},{}));    
  end matchcontinue;
 end generateextendedRecordEqn;
 
@@ -3374,11 +3379,11 @@ protected function isStateOrAlgvar
   input DAE.Element e;
   output Boolean out;
 algorithm
-  out := matchcontinue(e)
+  out := match (e)
     case (DAE.VAR(kind = DAE.VARIABLE())) then true;
     case (DAE.VAR(kind = DAE.DISCRETE())) then true;
-    case (_) then false;
-  end matchcontinue;
+    else false;
+  end match;
 end isStateOrAlgvar;
 
 protected function extendAlgorithm "
@@ -3449,11 +3454,11 @@ protected function whenEquationsIndices "Returns all equation-indices that conta
   input BackendDAE.EquationArray eqns;
   output list<Integer> res;
 algorithm
-   res := matchcontinue(eqns)
+   res := match (eqns)
      case(eqns) equation
          res=whenEquationsIndices2(1,BackendDAEUtil.equationSize(eqns),eqns);
        then res;
-   end matchcontinue;
+   end match;
 end whenEquationsIndices;
 
 protected function whenEquationsIndices2
@@ -3464,14 +3469,15 @@ protected function whenEquationsIndices2
   output list<Integer> eqnLst;
 algorithm
   eqnLst := matchcontinue(i,size,eqns)
-    case(i,size,eqns) equation
-      true = (i > size );
-    then {};
+    case(i,size,eqns)
+      equation
+        true = (i > size );
+      then {};
     case(i,size,eqns)
       equation
         BackendDAE.WHEN_EQUATION(whenEquation = _) = BackendDAEUtil.equationNth(eqns,i-1);
         eqnLst = whenEquationsIndices2(i+1,size,eqns);
-    then i::eqnLst;
+      then i::eqnLst;
     case(i,size,eqns)
       equation
         eqnLst=whenEquationsIndices2(i+1,size,eqns);
