@@ -451,7 +451,9 @@ int SystemImpl__systemCall(const char* str)
     fprintf(stderr, "System.systemCall: %s\n", str); fflush(stderr);
   }*/
 
+  fflush(NULL); /* flush output so the testsuite is deterministic */
   status = system(str);
+  fflush(NULL); /* flush output so the testsuite is deterministic */
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
   ret_val = status;
@@ -461,7 +463,7 @@ int SystemImpl__systemCall(const char* str)
   else
     ret_val = -1;
 #endif
-
+  
   /*if (rml_trace_enabled)
   {
     fprintf(stderr, "System.systemCall: returned value: %d\n", ret_val); fflush(stderr);
