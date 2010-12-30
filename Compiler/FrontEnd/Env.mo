@@ -2189,7 +2189,7 @@ algorithm
       Option<AvlTreeValue> v;
       AvlValue val;
       Integer hl,hr,height;
-    case(AVLTREENODE(value=v as SOME(AVLTREEVALUE(_,val)),left=l,right=r))
+    case(AVLTREENODE(value=v as SOME(_),left=l,right=r))
       equation
         hl = getHeight(l);
         hr = getHeight(r);

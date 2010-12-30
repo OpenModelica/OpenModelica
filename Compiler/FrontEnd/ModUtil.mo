@@ -604,19 +604,14 @@ algorithm
     case (path1,Absyn.FULLYQUALIFIED(path2)) then pathEqual(path1,path2);
     // ident vs. ident 
     case (Absyn.IDENT(id1),Absyn.IDENT(id2))
-      equation
-        true = stringEq(id1, id2);
-      then
-        true;
+      then stringEq(id1, id2);
     // qual ident vs. qual ident 
     case (Absyn.QUALIFIED(id1, path1),Absyn.QUALIFIED(id2, path2))
       equation
         true = stringEq(id1, id2);
-        true = pathEqual(path1, path2);
-      then
-        true;    
+      then pathEqual(path1, path2);
     // other return false
-    case (_,_) then false;
+    else false;
   end matchcontinue;
 end pathEqual;
 

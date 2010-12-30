@@ -833,7 +833,7 @@ protected function translateAnnotations
   input list<Absyn.ElementItem> inElementItemList;
   output list<SCode.Annotation> outAnnotationList;
 algorithm
-  outAnnotationList := matchcontinue(inElementItemList)
+  outAnnotationList := match (inElementItemList)
     local
       list<Absyn.ElementItem> cdr;
       Absyn.Annotation ann;
@@ -852,12 +852,12 @@ algorithm
         anns = translateAnnotations(cdr);
       then
         anns;
-    case(_)
+    else
       equation
         Debug.fprintln("failtrace","SCode.translateAnnotations failed");
       then
         fail();
-  end matchcontinue;
+  end match;
 end translateAnnotations;
 
 protected function translateAnnotationsEq
@@ -867,7 +867,7 @@ protected function translateAnnotationsEq
   input list<Absyn.EquationItem> inEquationItemList;
   output list<SCode.Annotation> outAnnotationList;
 algorithm
-  outAnnotationList := matchcontinue(inEquationItemList)
+  outAnnotationList := match (inEquationItemList)
     local
       list<Absyn.EquationItem> cdr;
       Absyn.Annotation ann;
@@ -891,7 +891,7 @@ algorithm
         Debug.fprintln("failtrace","SCode.translateAnnotationsEq failed");
       then
         fail();
-  end matchcontinue;
+  end match;
 end translateAnnotationsEq;
 
 
@@ -902,7 +902,7 @@ protected function translateAnnotationsAlg
   input list<Absyn.AlgorithmItem> inAlgorithmItemList;
   output list<SCode.Annotation> outAnnotationList;
 algorithm
-  outAnnotationList := matchcontinue(inAlgorithmItemList)
+  outAnnotationList := match (inAlgorithmItemList)
     local
       list<Absyn.AlgorithmItem> cdr;
       Absyn.Annotation ann;
@@ -926,7 +926,7 @@ algorithm
         Debug.fprintln("failtrace","SCode.translateAnnotationsAlg failed");
       then
         fail();
-  end matchcontinue;
+  end match;
 end translateAnnotationsAlg;
 
 // stefan
@@ -936,7 +936,7 @@ public function translateAnnotation
   input Absyn.Annotation inAnnotation;
   output SCode.Annotation outAnnotation;
 algorithm
-  outAnnotation := matchcontinue(inAnnotation)
+  outAnnotation := match (inAnnotation)
     local
       list<Absyn.ElementArg> args;
       SCode.Annotation res;
@@ -947,7 +947,7 @@ algorithm
         res = SCode.ANNOTATION(m);
       then
         res;
-  end matchcontinue;
+  end match;
 end translateAnnotation;
 
 public function translateElement
@@ -959,7 +959,7 @@ public function translateElement
   input Boolean inBoolean;
   output list<SCode.Element> outElementLst;
 algorithm
-  outElementLst := matchcontinue (inElement,inBoolean)
+  outElementLst := match (inElement,inBoolean)
     local
       list<SCode.Element> es;
       Boolean f,prot;
@@ -975,11 +975,12 @@ algorithm
       list<Absyn.NamedArg> args;
       String name;
 
+      /* Does the same thing as the case below...
     case (Absyn.ELEMENT(constrainClass = (cc as SOME(Absyn.CONSTRAINCLASS(elementSpec = Absyn.EXTENDS(path=p)))), finalPrefix = f,innerOuter = io, redeclareKeywords = repl,specification = s,info = info),prot)
       equation
         es = translateElementspec(cc, f, io, repl,  prot, s,SOME(info));
       then
-        es;
+        es;*/
 
     case (Absyn.ELEMENT(name = name, constrainClass = cc,finalPrefix = f,innerOuter = io, redeclareKeywords = repl,specification = s,info = info),prot)
       equation
@@ -992,7 +993,7 @@ algorithm
         expOpt = translateDefineunitParam(args,"exp");
         weightOpt = translateDefineunitParam2(args,"weight");
       then {SCode.DEFINEUNIT(name,expOpt,weightOpt)};
-  end matchcontinue;
+  end match;
 end translateElement;
 
 protected function translateDefineunitParam " help function to translateElement"
@@ -1038,7 +1039,7 @@ protected function translateElementspec
   input Option<Absyn.Info> info;
   output list<SCode.Element> outElementLst;
 algorithm
-  outElementLst := matchcontinue (cc,finalPrefix,io,inAbsynRedeclareKeywordsOption2,inBoolean3,inElementSpec4,info)
+  outElementLst := match (cc,finalPrefix,io,inAbsynRedeclareKeywordsOption2,inBoolean3,inElementSpec4,info)
     local
       SCode.ClassDef de_1;
       SCode.Restriction re_1;
@@ -1118,7 +1119,7 @@ algorithm
         // Debug.fprintln("translate", "translating import: " +& Dump.unparseImportStr(imp));
       then
         {SCode.IMPORT(imp)};
-  end matchcontinue;
+  end match;
 end translateElementspec;
 
 protected function setHasInnerOuterDefinitionsHandler
@@ -1263,7 +1264,7 @@ protected function translateComment
 	input Option<Absyn.Comment> inComment;
 	output Option<SCode.Comment> outComment;
 algorithm
-  outComment := matchcontinue(inComment)
+  outComment := match (inComment)
     local
       Absyn.Annotation absann;
       SCode.Annotation ann;
@@ -1282,7 +1283,7 @@ algorithm
         ann = translateAnnotation(absann);
       then
         SOME(SCode.COMMENT(SOME(ann),SOME(str)));
-  end matchcontinue;
+  end match;
 end translateComment;
 
 protected function translateEquation
@@ -1434,7 +1435,7 @@ public function translateMod
   input Absyn.Each inEach;
   output SCode.Mod outMod;
 algorithm
-  outMod := matchcontinue (inAbsynModificationOption,inBoolean,inEach)
+  outMod := match (inAbsynModificationOption,inBoolean,inEach)
     local
       Absyn.Exp e;
       Boolean finalPrefix;
@@ -1456,7 +1457,7 @@ algorithm
         subs = translateArgs(l);
       then
         SCode.MOD(finalPrefix,each_,subs,NONE());
-  end matchcontinue;
+  end match;
 end translateMod;
 
 protected function translateArgs
@@ -1466,7 +1467,7 @@ protected function translateArgs
   input list<Absyn.ElementArg> inAbsynElementArgLst;
   output list<SCode.SubMod> outSubModLst;
 algorithm
-  outSubModLst := matchcontinue (inAbsynElementArgLst)
+  outSubModLst := match (inAbsynElementArgLst)
     local
       list<SCode.SubMod> subs;
       SCode.Mod mod_1;
@@ -1502,7 +1503,7 @@ algorithm
       then
         (SCode.NAMEMOD(n,SCode.REDECL(finalPrefix,elist)) :: subs);
 
-  end matchcontinue;
+  end match;
 end translateArgs;
 
 protected function translateSub
@@ -1513,7 +1514,7 @@ protected function translateSub
   input SCode.Mod inMod;
   output SCode.SubMod outSubMod;
 algorithm
-  outSubMod := matchcontinue (inComponentRef,inMod)
+  outSubMod := match (inComponentRef,inMod)
     local
       String c_str,mod_str,i;
       Absyn.ComponentRef c,path;
@@ -1549,7 +1550,7 @@ algorithm
         mod_1 = translateSubSub(ss, mod);
       then
         SCode.NAMEMOD(i,mod_1);
-  end matchcontinue;
+  end match;
 end translateSub;
 
 protected function translateSubSub
@@ -1561,13 +1562,13 @@ protected function translateSubSub
   input SCode.Mod inMod;
   output SCode.Mod outMod;
 algorithm
-  outMod := matchcontinue (inSubscriptLst,inMod)
+  outMod := match (inSubscriptLst,inMod)
     local
       SCode.Mod m;
       list<SCode.Subscript> l;
     case ({},m) then m;
     case (l,m) then SCode.MOD(false,Absyn.NON_EACH(),{SCode.IDXMOD(l,m)},NONE());
-  end matchcontinue;
+  end match;
 end translateSubSub;
 
 public function translateSCodeModToNArgs
