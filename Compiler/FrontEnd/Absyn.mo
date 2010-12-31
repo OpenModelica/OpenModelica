@@ -2992,8 +2992,7 @@ public function joinPaths "function: joinPaths
   input Path inPath2;
   output Path outPath;
 algorithm
-  outPath:=
-  matchcontinue (inPath1,inPath2)
+  outPath := match (inPath1,inPath2)
     local
       Ident str;
       Path p2,p_1,p;
@@ -3005,7 +3004,7 @@ algorithm
         QUALIFIED(str,p_1);
     case(FULLYQUALIFIED(p),p2) then joinPaths(p,p2);
     case(p,FULLYQUALIFIED(p2)) then joinPaths(p,p2);
-  end matchcontinue;
+  end match;
 end joinPaths;
 
 public function joinPathsOpt "function: joinPathsOpt
@@ -3014,7 +3013,7 @@ public function joinPathsOpt "function: joinPathsOpt
   input Path inPath2;
   output Path outPath;
 algorithm
-  outPath := matchcontinue (inPath1,inPath2)
+  outPath := match (inPath1,inPath2)
     local
       Ident str;
       Path p2,p_1,p;
@@ -3027,7 +3026,7 @@ algorithm
         QUALIFIED(str,p_1);
     case(SOME(FULLYQUALIFIED(p)),p2) then joinPaths(p,p2);
     case(SOME(p),FULLYQUALIFIED(p2)) then joinPaths(p,p2);
-  end matchcontinue;
+  end match;
 end joinPathsOpt;
 
 public function selectPathsOpt "function: selectPathsOpt
@@ -3037,12 +3036,12 @@ public function selectPathsOpt "function: selectPathsOpt
   input Path inPath2;
   output Path outPath;
 algorithm
-  outPath := matchcontinue (inPath1,inPath2)
+  outPath := match (inPath1,inPath2)
     local
       Path p;
     case (NONE(), p) then p;
     case (SOME(p),_) then p;
-  end matchcontinue;
+  end match;
 end selectPathsOpt;
 
 public function optPathAppend "
@@ -3065,8 +3064,7 @@ public function pathAppendList "function: pathAppendList
   input list<Path> inPathLst;
   output Path outPath;
 algorithm
-  outPath:=
-  matchcontinue (inPathLst)
+  outPath := match (inPathLst)
     local
       Path path,res_path,first;
       list<Path> rest;
@@ -3078,7 +3076,7 @@ algorithm
         res_path = joinPaths(first, path);
       then
         res_path;
-  end matchcontinue;
+  end match;
 end pathAppendList;
 
 public function stripLast "function: stripLast
@@ -3087,8 +3085,7 @@ public function stripLast "function: stripLast
   input Path inPath;
   output Path outPath;
 algorithm
-  outPath:=
-  matchcontinue (inPath)
+  outPath := match (inPath)
     local
       Ident str;
       Path p_1,p;
@@ -3102,7 +3099,7 @@ algorithm
     case (FULLYQUALIFIED(p)) equation
       p_1 = stripLast(p);
     then FULLYQUALIFIED(p_1);
-  end matchcontinue;
+  end match;
 end stripLast;
 
 public function crefStripLast "function: stripLast
@@ -3111,8 +3108,7 @@ public function crefStripLast "function: stripLast
   input ComponentRef inPath;
   output ComponentRef outPath;
 algorithm
-  outPath:=
-  matchcontinue (inPath)
+  outPath := match (inPath)
     local
       Ident str;
       ComponentRef p_1,p;
@@ -3129,9 +3125,8 @@ algorithm
         p_1 = crefStripLast(p);
       then
         CREF_FULLYQUALIFIED(p_1);
-  end matchcontinue;
+  end match;
 end crefStripLast;
-
 
 public function splitQualAndIdentPath "
 Author BZ 2008-04

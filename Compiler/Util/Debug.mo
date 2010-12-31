@@ -360,6 +360,37 @@ algorithm
   end match;
 end bcallret2;
 
+public function bcallret3
+"Boolean controlled calling of given function (2nd arg).
+  The passed function gets 3 arguments.
+  The last parameter is returned if the given flag is not set."
+  input Boolean flag;
+  input FuncAB_C func;
+  input Type_a arg1;
+  input Type_b arg2;
+  input Type_c arg3;
+  input Type_d default;
+  output Type_d res;
+  partial function FuncAB_C
+    input Type_a inTypeA;
+    input Type_b inTypeB;
+    input Type_c inTypeC;
+    output Type_d outTypeD;
+  end FuncAB_C;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+  replaceable type Type_d subtypeof Any;
+algorithm
+  res := match (flag,func,arg1,arg2,arg3,default)
+    case (true,func,arg1,arg2,arg3,_)
+      equation
+        res = func(arg1,arg2,arg3);
+      then res;
+    else default;
+  end match;
+end bcallret3;
+
 public function bcall
 "function: bcall
   bool controlled calling of function."

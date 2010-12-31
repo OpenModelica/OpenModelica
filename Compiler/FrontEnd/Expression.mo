@@ -3504,7 +3504,7 @@ public function traverseExp
     output tuple<DAE.Exp, Type_a> outTpl;
   end FuncExpType;
 algorithm
-  outTplExpTypeA := matchcontinue (inExp,func,inTypeA)
+  outTplExpTypeA := match (inExp,func,inTypeA)
     local
       DAE.Exp e1_1,e,e1,e2_1,e2,e3_1,e_1,e3;
       Type_a ext_arg_1,ext_arg_2,ext_arg,ext_arg_3,ext_arg_4;
@@ -3777,7 +3777,7 @@ algorithm
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then
         fail();
-  end matchcontinue;
+  end match;
 end traverseExp;
 
 public function traverseSubexpressionsHelper

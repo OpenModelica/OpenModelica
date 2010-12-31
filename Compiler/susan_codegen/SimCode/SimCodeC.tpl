@@ -3256,6 +3256,7 @@ case RECORD_CONSTRUCTOR(__) then
 
   <%boxedFn%>
 
+
   >>
 end functionBodyRecordConstructor;
 
@@ -3411,7 +3412,7 @@ template mmcConstructor(ExpType type, String varName, Text &preExp, Text &varDec
   case ET_INT(__) then 'mmc_mk_icon(<%varName%>)'
   case ET_BOOL(__) then 'mmc_mk_icon(<%varName%>)'
   case ET_REAL(__) then 'mmc_mk_rcon(<%varName%>)'
-  case ET_STRING(__) then 'mmc_mk_scon(<%varName%>)'
+  case ET_STRING(__) then 'mmc_mk_string(<%varName%>)'
   case ET_ENUMERATION(__) then 'mmc_mk_icon(<%varName%>)'
   case ET_ARRAY(__) then 'mmc_mk_acon(<%varName%>)'
   case ET_COMPLEX(complexClassType = RECORD(path = path), varLst = vars) then
