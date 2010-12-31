@@ -7369,16 +7369,12 @@ should use a hash-table instead."
   replaceable type Key subtypeof Any;
   replaceable type Val subtypeof Any;
 algorithm
-  val := matchcontinue (key,lst)
+  val := match (key,lst)
     local
       Key k1,k2;
       Val v;
-    case (k1,(k2,v)::_)
-      equation
-        equality(k1 = k2);
-      then v;
-    case (k1,_::lst) then assoc(k1,lst);
-  end matchcontinue;
+    case (k1,(k2,v)::lst) then Debug.bcallret2(not valueEq(k1,k2), assoc, k1, lst, v);
+  end match;
 end assoc;
 
 end Util;

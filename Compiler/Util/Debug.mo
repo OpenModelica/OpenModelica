@@ -311,11 +311,11 @@ public function bcallret1
   Boolean-controlled calling of given function (2nd arg).
   The passed function gets 1 arguments.
   The last parameter is returned if the boolean is false."
-  input Boolean inBool;
-  input FuncTypeType_aToType_b inFuncTypeTypeAToTypeB;
-  input Type_a inTypeA;
-  input Type_b inTypeB;
-  output Type_b outTypeB;
+  input Boolean flag;
+  input FuncTypeType_aToType_b func;
+  input Type_a arg;
+  input Type_b default;
+  output Type_b res;
   partial function FuncTypeType_aToType_b
     input Type_a inTypeA;
     output Type_b outTypeB;
@@ -323,20 +323,42 @@ public function bcallret1
   replaceable type Type_a subtypeof Any;
   replaceable type Type_b subtypeof Any;
 algorithm
-  outTypeB := matchcontinue (inBool,inFuncTypeTypeAToTypeB,inTypeA,inTypeB)
-    local
-      Type_b res,def;
-      String flag;
-      FuncTypeType_aToType_b func;
-      Type_a arg;
-    case (true,func,arg,def)
+  res := match (flag,func,arg,default)
+    case (true,func,arg,_)
       equation
         res = func(arg);
-      then
-        res;
-    case (false,_,_,def) then def;
-  end matchcontinue;
+      then res;
+    else default;
+  end match;
 end bcallret1;
+
+public function bcallret2
+"Boolean controlled calling of given function (2nd arg).
+  The passed function gets 2 arguments.
+  The last parameter is returned if the given flag is not set."
+  input Boolean flag;
+  input FuncAB_C func;
+  input Type_a arg1;
+  input Type_b arg2;
+  input Type_c default;
+  output Type_c res;
+  partial function FuncAB_C
+    input Type_a inTypeA;
+    input Type_b inTypeB;
+    output Type_c outTypeC;
+  end FuncAB_C;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+algorithm
+  res := match (flag,func,arg1,arg2,default)
+    case (true,func,arg1,arg2,_)
+      equation
+        res = func(arg1,arg2);
+      then res;
+    else default;
+  end match;
+end bcallret2;
 
 public function bcall
 "function: bcall

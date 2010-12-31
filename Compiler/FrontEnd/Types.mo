@@ -3590,39 +3590,6 @@ algorithm
   end matchcontinue;
 end getPropType;
 
-protected function searchInMememoryLst
-"@author: adrpo
-  This function searches in memory for the DAE.ExpType coressponding to the DAE.Type"
-  input Type inType;
-  input TypeMemoryEntryList inMem;
-  output DAE.ExpType outExpType;
-algorithm
-  outExpType := matchcontinue (inType, inMem)
-    local
-      TypeMemoryEntryList rest;
-      DAE.ExpType expTy;
-      Type ty;
-    
-    // fail if we couldn't find it
-    case (inType, {}) then fail();
-    
-    // see if we have it in memory
-    case (inType, ((ty, expTy))::rest)
-      equation
-        equality(inType = ty);
-      then
-        expTy;
-    
-    // try the next    
-    case (inType, ((ty, expTy))::rest)
-      equation
-        failure(equality(inType = ty));
-        expTy = searchInMememoryLst(inType, rest);
-      then
-        expTy;
-  end matchcontinue;
-end searchInMememoryLst;
-
 public function createEmptyTypeMemory
 "@author: adrpo
   creates an array, with one element for each record in TType!"
@@ -3683,7 +3650,7 @@ algorithm
         indexBasedOnValueConstructor = valueConstructor(tt); 
         tyLst = arrayGet(tyMem, indexBasedOnValueConstructor + 1);
         // search in the list for a translation
-        expTy = searchInMememoryLst(inType, tyLst);
+        expTy = Util.assoc(inType, tyLst);
       then
         expTy;
     
