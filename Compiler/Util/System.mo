@@ -515,7 +515,7 @@ public function getHasExpandableConnectors
  retrieves the external flag that signals the
  presence of expandable connectors in a model"
   output Boolean hasExpandable;
-  external "C" System_getHasExpandableConnectors() annotation(Library = "omcruntime");
+  external "C" hasExpandable=System_getHasExpandableConnectors() annotation(Library = "omcruntime");
 end getHasExpandableConnectors;
 
 public function setHasStreamConnectors
@@ -531,7 +531,7 @@ public function getHasStreamConnectors
  retrieves the external flag that signals the
  presence of stream connectors in a model"
   output Boolean hasStream;
-  external "C" System_getHasStreamConnectors() annotation(Library = "omcruntime");
+  external "C" hasStream=System_getHasStreamConnectors() annotation(Library = "omcruntime");
 end getHasStreamConnectors;
 
 public function setHasInnerOuterDefinitions
