@@ -115,8 +115,11 @@ valueEq_rettype valueEq(modelica_metatype lhs, modelica_metatype rhs)
     d2 = mmc_prim_get_real(rhs);
     return d1 == d2;
   }
-  if (MMC_HDRISSTRING(h_lhs))
-    return 0 == strcmp(MMC_STRINGDATA(lhs),MMC_STRINGDATA(rhs));
+  if (MMC_HDRISSTRING(h_lhs)) {
+    if (MMC_HDRSTRLEN(h_lhs) == MMC_HDRSTRLEN(h_rhs))
+      return 0 == strcmp(MMC_STRINGDATA(lhs),MMC_STRINGDATA(rhs));
+    return 0;
+  }
 
   numslots = MMC_HDRSLOTS(h_lhs);
   ctor = 255 & (h_lhs >> 2);
