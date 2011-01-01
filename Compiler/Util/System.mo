@@ -277,7 +277,8 @@ end setDataPort;
 public function setVariableFilter
   input String variables;
   output Boolean b;
-  external "C" b=setenv("sendDataFilter",variables,true) annotation(Library = "omcruntime");
+algorithm
+  b := 0==setEnv("sendDataFilter",variables,true);
 end setVariableFilter;
 
 public function sendData2
