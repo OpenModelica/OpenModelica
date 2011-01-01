@@ -842,7 +842,7 @@ public function listFlatten_tail
   output list<Type_a> outTypeALst;
   replaceable type Type_a subtypeof Any;
 algorithm
-  outTypeALst := matchcontinue (inTypeALstLst, accTypeALst)
+  outTypeALst := match (inTypeALstLst, accTypeALst)
     local
       list<Type_a> r_1,l,f;
       list<list<Type_a>> r;
@@ -853,7 +853,7 @@ algorithm
         l = listFlatten_tail(r, r_1);
       then
         l;
-  end matchcontinue;
+  end match;
 end listFlatten_tail;
 
 
@@ -957,8 +957,7 @@ public function listApplyAndFold
     output Type_b outElement;
   end FuncType_a2Type_b;
 algorithm
-  result :=
-  matchcontinue (lst,foldFunc,typeA2typeB,accumulator)
+  result := match (lst,foldFunc,typeA2typeB,accumulator)
     local
       list<Type_b> foldArg1, foldArg2;
       list<Type_a> rest;
@@ -970,7 +969,7 @@ algorithm
         foldArg2 = listApplyAndFold(rest, foldFunc, typeA2typeB, foldArg1);
       then
         foldArg2;
-  end matchcontinue;
+  end match;
 end listApplyAndFold;
 
 public function arrayMapNoCopy "Takes an array and a function over the elements of the array, which is applied for each element.

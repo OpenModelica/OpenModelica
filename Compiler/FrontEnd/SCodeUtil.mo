@@ -171,14 +171,13 @@ public function translateRestriction
   input Absyn.Restriction inRestriction;
   output SCode.Restriction outRestriction;
 algorithm
-  outRestriction := matchcontinue (inClass,inRestriction)
+  outRestriction := match (inClass,inRestriction)
     local
       Absyn.Class d;
       Absyn.Path name;
       Integer index;
 
-    case (d,Absyn.R_FUNCTION()) equation true  = containsExternalFuncDecl(d); then SCode.R_EXT_FUNCTION();
-    case (d,Absyn.R_FUNCTION()) equation false = containsExternalFuncDecl(d); then SCode.R_FUNCTION();
+    case (d,Absyn.R_FUNCTION()) then Util.if_(containsExternalFuncDecl(d),SCode.R_EXT_FUNCTION(),SCode.R_FUNCTION());
     case (_,Absyn.R_CLASS()) then SCode.R_CLASS();
     case (_,Absyn.R_OPTIMIZATION()) then SCode.R_OPTIMIZATION();     
     case (_,Absyn.R_MODEL()) then SCode.R_MODEL();
@@ -204,7 +203,7 @@ algorithm
       then SCode.R_METARECORD(name,index);
     case (_,Absyn.R_UNIONTYPE()) then SCode.R_UNIONTYPE(); /*MetaModelica extension added by x07simbj */
 
-  end matchcontinue;
+  end match;
 end translateRestriction;
 
 protected function containsExternalFuncDecl
@@ -213,7 +212,7 @@ protected function containsExternalFuncDecl
   input Absyn.Class inClass;
   output Boolean outBoolean;
 algorithm
-  outBoolean := matchcontinue (inClass)
+  outBoolean := match (inClass)
     local
       Boolean res,b,c,d;
       String a;
@@ -238,8 +237,8 @@ algorithm
         res = containsExternalFuncDecl(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(rest,cmt),file_info));
       then
         res;
-    case (_) then false;
-  end matchcontinue;
+    else false;
+  end match;
 end containsExternalFuncDecl;
 
 protected function translateClassdef
@@ -253,7 +252,7 @@ protected function translateClassdef
   input Absyn.ClassDef inClassDef;
   output SCode.ClassDef outClassDef;
 algorithm
-  outClassDef := matchcontinue (inClassDef)
+  outClassDef := match (inClassDef)
     local
       SCode.Mod mod;
       Absyn.TypeSpec t;
@@ -340,7 +339,7 @@ algorithm
         scodeCmt = translateComment(cmt);
       then
         SCode.PDER(path,vars,scodeCmt);
-  end matchcontinue;
+  end match;
 end translateClassdef;
 
 protected function translateAlternativeExternalAnnotation
@@ -427,7 +426,7 @@ protected function translateClassdefElements
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   output list<SCode.Element> outElementLst;
 algorithm
-  outElementLst := matchcontinue (inAbsynClassPartLst)
+  outElementLst := match (inAbsynClassPartLst)
     local
       list<SCode.Element> els,es_1,els_1;
       list<Absyn.ElementItem> es;
@@ -451,7 +450,7 @@ algorithm
         els_1;
     case (_ :: rest) /* ignore all other than PUBLIC and PROTECTED, i.e. elements */
       then translateClassdefElements(rest);
-  end matchcontinue;
+  end match;
 end translateClassdefElements;
 
 // stefan
@@ -461,7 +460,7 @@ protected function translateClassdefAnnotations
   input list<Absyn.ClassPart> inClassPartList;
   output list<SCode.Annotation> outAnnotationList;
 algorithm
-  outAnnotationList := matchcontinue(inClassPartList)
+  outAnnotationList := match (inClassPartList)
     local
       list<SCode.Annotation> anns,anns1,anns2;
       list<Absyn.ElementItem> eilst;
@@ -517,7 +516,7 @@ algorithm
         anns = translateClassdefAnnotations(cdr);
       then
         anns;
-  end matchcontinue;
+  end match;
 end translateClassdefAnnotations;
 
 protected function translateClassdefEquations
@@ -580,7 +579,7 @@ protected function translateClassdefAlgorithms
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   output list<SCode.AlgorithmSection> outAlgorithmLst;
 algorithm
-  outAlgorithmLst := matchcontinue (inAbsynClassPartLst)
+  outAlgorithmLst := match (inAbsynClassPartLst)
     local
       list<SCode.AlgorithmSection> als,als_1;
       list<SCode.Statement> al_1;
@@ -605,7 +604,7 @@ algorithm
       equation
         Debug.fprintln("failtrace", "- SCodeUtil.translateClassdefAlgorithms failed");
       then fail();
-  end matchcontinue;
+  end match;
 end translateClassdefAlgorithms;
 
 protected function translateClassdefInitialalgorithms
@@ -614,7 +613,7 @@ protected function translateClassdefInitialalgorithms
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   output list<SCode.AlgorithmSection> outAlgorithmLst;
 algorithm
-  outAlgorithmLst := matchcontinue (inAbsynClassPartLst)
+  outAlgorithmLst := match (inAbsynClassPartLst)
     local
       list<SCode.AlgorithmSection> als,als_1;
       list<SCode.Statement> stmts;
@@ -633,7 +632,7 @@ algorithm
         als = translateClassdefInitialalgorithms(rest);
       then
         als;
-  end matchcontinue;
+  end match;
 end translateClassdefInitialalgorithms;
 
 public function translateClassdefAlgorithmitems
@@ -779,7 +778,7 @@ protected function translateClassdefExternaldecls
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   output Option<Absyn.ExternalDecl> outAbsynExternalDeclOption;
 algorithm
-  outAbsynExternalDeclOption := matchcontinue (inAbsynClassPartLst)
+  outAbsynExternalDeclOption := match (inAbsynClassPartLst)
     local
       Absyn.ExternalDecl decl;
       Option<Absyn.ExternalDecl> res;
@@ -791,7 +790,7 @@ algorithm
       then
         res;
     case ({}) then NONE();
-  end matchcontinue;
+  end match;
 end translateClassdefExternaldecls;
 
 public function translateEitemlist
@@ -803,7 +802,7 @@ public function translateEitemlist
   input Boolean inBoolean;
   output list<SCode.Element> outElementLst;
 algorithm
-  outElementLst := matchcontinue (inAbsynElementItemLst,inBoolean)
+  outElementLst := match (inAbsynElementItemLst,inBoolean)
     local
       list<SCode.Element> l,e_1,es_1;
       list<Absyn.ElementItem> es;
@@ -823,7 +822,7 @@ algorithm
         l = listAppend(e_1, es_1);
       then
         l;
-  end matchcontinue;
+  end match;
 end translateEitemlist;
 
 // stefan
@@ -1163,11 +1162,11 @@ protected function translateRedeclarekeywords
   input Option<Absyn.RedeclareKeywords> inAbsynRedeclareKeywordsOption;
   output Boolean outBoolean;
 algorithm
-  outBoolean := matchcontinue (inAbsynRedeclareKeywordsOption)
+  outBoolean := match (inAbsynRedeclareKeywordsOption)
     case (SOME(Absyn.REPLACEABLE())) then true;
     case (SOME(Absyn.REDECLARE_REPLACEABLE())) then true;
-    case (_) then false;
-  end matchcontinue;
+    else false;
+  end match;
 end translateRedeclarekeywords;
 
 protected function translateVariability
