@@ -2550,7 +2550,7 @@ algorithm
       equation
         sname = Absyn.pathString(name);
         sname = ModUtil.pathStringReplaceDot(name, "_");
-        failure(_ = Util.listGetMember(sname,rt));
+        false = listMember(sname,rt);
         vars = Util.listMap(varlst, typesVar);
         rt_1 = sname :: rt;
         (accRecDecls,rt_2) = elaborateNestedRecordDeclarations(varlst, accRecDecls, rt_1);
@@ -2564,7 +2564,7 @@ algorithm
     case ((DAE.T_METARECORD(index = index, fields = varlst), SOME(path)), accRecDecls, rt)
       equation
         sname = ModUtil.pathStringReplaceDot(path, "_");
-        failure(_ = Util.listGetMember(sname,rt));
+        false = listMember(sname,rt);
         fieldNames = Util.listMap(varlst, generateVarName);
         accRecDecls = RECORD_DECL_DEF(path, fieldNames) :: accRecDecls;
         rt_1 = sname::rt;
@@ -2643,7 +2643,7 @@ algorithm
     case (DAE.METARECORDCALL(path=path,fieldNames=fieldNames)::rest, accRecDecls, rt)
       equation
         name = ModUtil.pathStringReplaceDot(path, "_");
-        failure(_ = Util.listGetMember(name,rt));
+        false = listMember(name,rt);
         accRecDecls = RECORD_DECL_DEF(path, fieldNames) :: accRecDecls;
         rt_1 = name::rt;
         (accRecDecls,rt_2) = elaborateRecordDeclarationsForMetarecords(rest, accRecDecls, rt_1);

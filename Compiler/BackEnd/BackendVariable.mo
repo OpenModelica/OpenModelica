@@ -556,8 +556,7 @@ public function isVarAlg
   input BackendDAE.Var var;
   output Boolean result;
 algorithm
-  result :=
-  matchcontinue (var)
+  result := match (var)
     local
       BackendDAE.VarKind kind;
       BackendDAE.Type typeVar;
@@ -579,11 +578,8 @@ algorithm
       equation
         kind_lst = {BackendDAE.VARIABLE(), BackendDAE.DISCRETE(), BackendDAE.DUMMY_DER(),
                     BackendDAE.DUMMY_STATE()};
-        _ = Util.listGetMember(kind, kind_lst);
-      then true;
-    case (_)
-      then false;
-  end matchcontinue;
+      then listMember(kind, kind_lst);
+  end match;
 end isVarAlg;
 
 /* TODO: Is this correct? */
@@ -591,8 +587,7 @@ public function isVarStringAlg
   input BackendDAE.Var var;
   output Boolean result;
 algorithm
-  result :=
-  matchcontinue (var)
+  result := match (var)
     local
       BackendDAE.VarKind kind;
       BackendDAE.Type typeVar;
@@ -603,19 +598,16 @@ algorithm
       equation
         kind_lst = {BackendDAE.VARIABLE(), BackendDAE.DISCRETE(), BackendDAE.DUMMY_DER(),
                     BackendDAE.DUMMY_STATE()};
-        _ = Util.listGetMember(kind, kind_lst);
-      then true;
-    case (_)
-      then false;
-  end matchcontinue;
+      then listMember(kind, kind_lst);
+    else false;
+  end match;
 end isVarStringAlg;
 
 public function isVarIntAlg
   input BackendDAE.Var var;
   output Boolean result;
 algorithm
-  result :=
-  matchcontinue (var)
+  result := match (var)
     local
       BackendDAE.VarKind kind;
       BackendDAE.Type typeVar;
@@ -627,11 +619,9 @@ algorithm
 
         kind_lst = {BackendDAE.VARIABLE(), BackendDAE.DISCRETE(), BackendDAE.DUMMY_DER(),
                     BackendDAE.DUMMY_STATE()};
-        _ = Util.listGetMember(kind, kind_lst);
-      then true;
-    case (_)
-      then false;
-  end matchcontinue;
+      then listMember(kind, kind_lst);
+    else false;
+  end match;
 end isVarIntAlg;
 
 public function isVarBoolAlg
@@ -648,13 +638,10 @@ algorithm
     case (BackendDAE.VAR(varKind = kind,
                      varType = typeVar as BackendDAE.BOOL()))
       equation
-
         kind_lst = {BackendDAE.VARIABLE(), BackendDAE.DISCRETE(), BackendDAE.DUMMY_DER(),
                     BackendDAE.DUMMY_STATE()};
-        _ = Util.listGetMember(kind, kind_lst);
-      then true;
-    case (_)
-      then false;
+      then listMember(kind, kind_lst);
+    else false;
   end matchcontinue;
 end isVarBoolAlg;
 

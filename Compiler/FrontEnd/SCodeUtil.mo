@@ -974,13 +974,6 @@ algorithm
       list<Absyn.NamedArg> args;
       String name;
 
-      /* Does the same thing as the case below...
-    case (Absyn.ELEMENT(constrainClass = (cc as SOME(Absyn.CONSTRAINCLASS(elementSpec = Absyn.EXTENDS(path=p)))), finalPrefix = f,innerOuter = io, redeclareKeywords = repl,specification = s,info = info),prot)
-      equation
-        es = translateElementspec(cc, f, io, repl,  prot, s,SOME(info));
-      then
-        es;*/
-
     case (Absyn.ELEMENT(name = name, constrainClass = cc,finalPrefix = f,innerOuter = io, redeclareKeywords = repl,specification = s,info = info),prot)
       equation
         es = translateElementspec(cc, f, io, repl,  prot, s,SOME(info));

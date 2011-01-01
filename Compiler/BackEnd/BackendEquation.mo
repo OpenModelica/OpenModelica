@@ -125,19 +125,11 @@ algorithm
     case ({},_,_) then {};
     case ((BackendDAE.ZERO_CROSSING(occurWhenLst = whenClauseList) :: rest),count,when_index)
       equation
-        _ = Util.listGetMember(when_index, whenClauseList);
         count_1 = count + 1;
         resx = getZeroCrossingIndicesFromWhenClause2(rest, count_1, when_index);
       then
-        (count :: resx);
-    case ((BackendDAE.ZERO_CROSSING(occurWhenLst = whenClauseList) :: rest),count,when_index)
-      equation
-        failure(_ = Util.listGetMember(when_index, whenClauseList));
-        count_1 = count + 1;
-        resx = getZeroCrossingIndicesFromWhenClause2(rest, count_1, when_index);
-      then
-        resx;
-    case (_,_,_)
+        Util.if_(listMember(when_index, whenClauseList), count::resx, resx);
+    else
       equation
         print("- BackendEquation.getZeroCrossingIndicesFromWhenClause2 failed\n");
       then
