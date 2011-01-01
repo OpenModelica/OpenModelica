@@ -55,6 +55,7 @@ public import UnitAbsyn;
 
 protected import ComponentReference;
 protected import DAEUtil;
+protected import Debug;
 protected import Expression;
 protected import ExpressionDump;
 protected import Error;
@@ -546,13 +547,118 @@ protected function optimizeMatchContinue
 algorithm
   outMatchType := match (matchType,cases,info)
     case (Absyn.MATCH(),_,_) then Absyn.MATCH();
-    case (_,{_},info)
+    else optimizeMatchContinue2(cases,{},info);
+  end match;
+end optimizeMatchContinue;
+
+protected function optimizeMatchContinue2
+  "If a matchcontinue expression has only one case, it is optimized to match instead.
+  The same should be done for any function without overlapping patterns, but it goes on the TODO for now.
+  "
+  input list<DAE.MatchCase> cases;
+  input list<list<DAE.Pattern>> prevPatterns "All cases check its patterns against all previous patterns. If they overlap, we can't optimize away the continue";
+  input Absyn.Info info;
+  output Absyn.MatchType outMatchType;
+algorithm
+  outMatchType := matchcontinue (cases,prevPatterns,info)
+    local
+      list<DAE.Pattern> patterns;
+    case ({},_,info)
       equation
         Error.assertionOrAddSourceMessage(not RTOpts.debugFlag("patternmAllInfo"), Error.MATCHCONTINUE_TO_MATCH_OPTIMIZATION, {}, info);
       then Absyn.MATCH();
+    case (DAE.CASE(patterns=patterns)::cases,prevPatterns,info)
+      equation
+        assertAllPatternListsDoNotOverlap(prevPatterns,patterns);
+      then optimizeMatchContinue2(cases,patterns::prevPatterns,info);
     else Absyn.MATCHCONTINUE();
+  end matchcontinue;
+end optimizeMatchContinue2;
+
+protected function assertAllPatternListsDoNotOverlap
+  input list<list<DAE.Pattern>> pss1;
+  input list<DAE.Pattern> ps2;
+algorithm
+  _ := match (pss1,ps2)
+    local
+      list<DAE.Pattern> ps1;
+    case ({},_) then ();
+    case (ps1::pss1,ps2)
+      equation
+        true = patternListsDoNotOverlap(ps1,ps2);
+        assertAllPatternListsDoNotOverlap(pss1,ps2);
+      then ();
   end match;
-end optimizeMatchContinue;
+end assertAllPatternListsDoNotOverlap;
+
+protected function patternListsDoNotOverlap
+  "Verifies that pats1 does not shadow pats2"
+  input list<DAE.Pattern> ps1;
+  input list<DAE.Pattern> ps2;
+  output Boolean b;
+algorithm
+  b := match (ps1,ps2)
+    local
+      Boolean res;
+      DAE.Pattern p1,p2;
+    case ({},{}) then false;
+    case (p1::ps1,p2::ps2)
+      equation
+        res = patternsDoNotOverlap(p1,p2);
+        res = Debug.bcallret2(not res,patternListsDoNotOverlap,ps1,ps2,res);
+      then res;
+  end match;
+end patternListsDoNotOverlap;
+
+protected function patternsDoNotOverlap
+  "Verifies that p1 does not shadow p2"
+  input DAE.Pattern p1;
+  input DAE.Pattern p2;
+  output Boolean b;
+algorithm
+  b := match (p1,p2)
+    local
+      DAE.Pattern head1,tail1,head2,tail2;
+      list<DAE.Pattern> ps1,ps2;
+      Boolean res;
+      Absyn.Path name1,name2;
+      Integer ix1,ix2;
+      DAE.Exp e1,e2;
+    case (DAE.PAT_WILD(),_) then false;
+    case (_,DAE.PAT_WILD()) then false;
+    case (DAE.PAT_AS_FUNC_PTR(id=_),_) then false;
+    case (DAE.PAT_AS(pat=p1),p2)
+      then patternsDoNotOverlap(p1,p2);
+    case (p1,DAE.PAT_AS(pat=p2))
+      then patternsDoNotOverlap(p1,p2);
+    
+    case (DAE.PAT_CONS(head1, tail1),DAE.PAT_CONS(head2, tail2))
+      then patternsDoNotOverlap(head1,head2) or patternsDoNotOverlap(tail1,tail2);
+    case (DAE.PAT_SOME(p1),DAE.PAT_SOME(p2))
+      then patternsDoNotOverlap(p1,p2);
+    case (DAE.PAT_META_TUPLE(ps1),DAE.PAT_META_TUPLE(ps2))
+      then patternListsDoNotOverlap(ps1,ps2);
+    case (DAE.PAT_CALL_TUPLE(ps1),DAE.PAT_CALL_TUPLE(ps2))
+      then patternListsDoNotOverlap(ps1,ps2);
+    
+    case (DAE.PAT_CALL(name1,ix1,ps1),DAE.PAT_CALL(name2,ix2,ps2))
+      equation
+        res = ix1 == ix2;
+        res = Debug.bcallret2(res, Absyn.pathEqual, name1, name2, res);
+        res = Debug.bcallret2(res, patternListsDoNotOverlap, ps1, ps2, res);
+      then res;
+
+    // TODO: PAT_CALLED_NAMED?
+
+    // Constant patterns...
+    case (DAE.PAT_CONSTANT(exp=e1),DAE.PAT_CONSTANT(exp=e2))
+      then not Expression.expEqual(e1, e2);
+    case (DAE.PAT_CONSTANT(exp=_),_) then true;
+    case (_,DAE.PAT_CONSTANT(exp=_)) then true;
+    
+    else false;
+  end match;
+end patternsDoNotOverlap;
 
 protected function elabMatchCases
   input Env.Cache cache;
