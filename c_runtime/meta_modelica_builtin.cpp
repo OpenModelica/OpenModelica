@@ -277,9 +277,9 @@ listReverse_rettype listReverse(modelica_metatype lst)
   return res;
 }
 
-listAppend_rettype listAppend(modelica_metatype lst1,modelica_metatype lst2)
+/*listAppend_rettype listAppendOld(modelica_metatype lst1,modelica_metatype lst2)
 {
-  if (MMC_NILTEST(lst2)) /* Don't reverse lst1 if lst2 is empty... */
+  if (MMC_NILTEST(lst2))
     return lst1;
   lst1 = listReverse(lst1);
   while (!MMC_NILTEST(lst1))
@@ -288,7 +288,45 @@ listAppend_rettype listAppend(modelica_metatype lst1,modelica_metatype lst2)
     lst1 = MMC_CDR(lst1);
   }
   return lst2;
+}*/
+
+listAppend_rettype listAppend(modelica_metatype lst1,modelica_metatype lst2)
+{
+  int length,i;
+  mmc_cons_struct *res;
+  struct mmc_cons_struct *p;
+  if (MMC_NILTEST(lst2)) /* If lst2 is empty, simply return lst1; huge performance gain for some uses of listAppend */
+    return lst1;
+  length = listLength(lst1);
+  if (length == 0) /* We need to check for empty lst1 */
+    return lst2;
+  res = (mmc_cons_struct*) mmc_alloc_bytes(length*sizeof(mmc_cons_struct)); /* Do one single big alloc. It's cheaper */
+  for (i=0; i<length-1; i++) { /* Write all except the last element... */
+    struct mmc_cons_struct *p = res+i;
+    p->header = MMC_STRUCTHDR(2, MMC_CONS_CTOR);
+    p->data[0] = MMC_CAR(lst1);
+    p->data[1] = MMC_TAGPTR(res+i+1);
+    lst1 = MMC_CDR(lst1);
+  }
+  /* The last element is a bit special. It points to lst2. */
+  p = res+length-1;
+  p->header = MMC_STRUCTHDR(2, MMC_CONS_CTOR);
+  p->data[0] = MMC_CAR(lst1);
+  p->data[1] = lst2;
+  return MMC_TAGPTR(res);
 }
+
+/*listAppend_rettype listAppend(modelica_metatype lst1,modelica_metatype lst2)
+{
+  void *p1,*p2;
+  p1 = listAppendOld(lst1,lst2);
+  p2 = listAppendNew(lst1,lst2);
+  if (valueEq(p1,p2)) return p1;
+  fprintf(stderr, "listAppend:\n  %s\n  %s\n", anyString(lst1), anyString(lst2));
+  fprintf(stderr, "res:\n  %s\n", anyString(p1));
+  fprintf(stderr, "  %s\n", anyString(p2));
+  EXIT(1);
+}*/
 
 listLength_rettype listLength(modelica_metatype lst)
 {

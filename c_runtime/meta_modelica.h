@@ -117,6 +117,11 @@ struct mmc_struct {
     void *data[1];	/* `slots' elements */
 };
 
+struct mmc_cons_struct {
+    mmc_uint_t header;	/* MMC_STRUCTHDR(slots,ctor) */
+    void *data[2];	/* `slots' elements */
+};
+
 struct mmc_real {
     mmc_uint_t header;	/* MMC_REALHDR */
     mmc_uint_t data[MMC_SIZE_DBL/MMC_SIZE_INT];
@@ -303,9 +308,11 @@ static const MMC_DEFSTRUCT0LIT(mmc_none,1);
 #define mmc_mk_nil() MMC_REFSTRUCTLIT(mmc_nil)
 #define mmc_mk_none() MMC_REFSTRUCTLIT(mmc_none)
 
+#define MMC_CONS_CTOR 1
+
 static inline void *mmc_mk_cons(void *car, void *cdr)
 {
-    return mmc_mk_box2(1, car, cdr);
+    return mmc_mk_box2(MMC_CONS_CTOR, car, cdr);
 }
 
 static inline void *mmc_mk_some(void *x)
