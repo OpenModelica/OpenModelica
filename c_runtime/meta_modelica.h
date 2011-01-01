@@ -132,15 +132,7 @@ struct mmc_string {
     char data[1];	/* `bytes' elements + terminating '\0' */
 };
 
-static void *mmc_alloc_bytes(unsigned nbytes)
-{
-  void *p;
-  if( (p = malloc(nbytes)) == 0 ) {
-    fprintf(stderr, "malloc(%u) failed: %s\n", nbytes, strerror(errno));
-    assert(p != 0);
-  }
-  return p;
-}
+void *mmc_alloc_bytes(unsigned nbytes);
 
 static void *mmc_alloc_words(unsigned nwords)
 {
