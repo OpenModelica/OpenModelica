@@ -733,6 +733,7 @@ package DAE
       list<Element> localDecls;
       list<Statement> body;
       Option<Exp> result;
+      Integer jump;
     end CASE;
   end MatchCase;
 

@@ -525,7 +525,8 @@ algorithm
         (cache,elabCases,resType,st) = elabMatchCases(cache,env,cases,tys,impl,st,performVectorization,pre,info);
         prop = DAE.PROP(resType,DAE.C_VAR());
         et = Types.elabType(resType);
-        matchTy = optimizeMatchContinue(matchTy,elabCases,info);
+        matchTy = optimizeContinueToMatch(matchTy,elabCases,info);
+        elabCases = optimizeContinueJumps(matchTy, elabCases);
       then (cache,DAE.MATCHEXPRESSION(matchTy,elabExps,matchDecls,elabCases,et),prop,st);
     else
       equation
@@ -536,9 +537,97 @@ algorithm
   end matchcontinue;
 end elabMatchExpression;
 
-protected function optimizeMatchContinue
+protected function optimizeContinueJumps
+  "If a case in a matchcontinue expression is followed by a (list of) cases that
+  do not have overlapping patterns with the first one, an optimization can be made.
+  If we match against the first pattern, we can jump a few positions in the loop!
+
+  For example:
+    matchcontinue i,j
+      case (1,_) then (); // (1) => skip (2),(3) if this pattern matches
+      case (2,_) then (); // (2) => skip (3),(4) if this pattern matches
+      case (3,_) then (); // (3) => skip (4),(5) if this pattern matches
+      case (1,_) then (); // (4) => skip (5),(6) if this pattern matches
+      case (2,_) then (); // (5) => skip (6) if this pattern matches
+      case (3,_) then (); // (6)
+      case (_,2) then (); // (7) => skip (8),(9) if this pattern matches
+      case (1,1) then (); // (8) => skip (9) if this pattern matches
+      case (2,1) then (); // (9) => skip (10) if this pattern matches 
+      case (1,_) then (); // (10)
+    end matchcontinue;
+  "
+  input Absyn.MatchType matchType;
+  input list<DAE.MatchCase> cases;
+  output list<DAE.MatchCase> outCases;
+algorithm
+  outCases := match (matchType,cases)
+    case (Absyn.MATCH(),cases) then cases;
+    else optimizeContinueJumps2(cases);
+  end match;
+end optimizeContinueJumps;
+
+protected function optimizeContinueJumps2
+  input list<DAE.MatchCase> cases;
+  output list<DAE.MatchCase> outCases;
+algorithm
+  outCases := match cases
+    local
+      DAE.MatchCase case_;
+    case {} then {};
+    case case_::cases
+      equation
+        case_ = optimizeContinueJump(case_,cases,0);
+        cases = optimizeContinueJumps2(cases);
+      then case_::cases;
+  end match;
+end optimizeContinueJumps2;
+
+protected function optimizeContinueJump
+  input DAE.MatchCase case_;
+  input list<DAE.MatchCase> cases;
+  input Integer jump;
+  output DAE.MatchCase outCase;
+algorithm
+  outCase := matchcontinue (case_,cases,jump)
+    local
+      DAE.MatchCase case1;
+      list<DAE.Pattern> ps1,ps2;
+    case (case1,{},jump) then updateMatchCaseJump(case1,jump);
+    case (case1 as DAE.CASE(patterns=ps1),DAE.CASE(patterns=ps2)::cases,jump)
+      equation
+        true = patternListsDoNotOverlap(ps1,ps2);
+      then optimizeContinueJump(case1,cases,jump+1);
+    case (case1,_,jump) then updateMatchCaseJump(case1,jump);
+  end matchcontinue;
+end optimizeContinueJump;
+
+protected function updateMatchCaseJump
+  "Updates the jump field of a DAE.MatchCase"
+  input DAE.MatchCase case_;
+  input Integer jump;
+  output DAE.MatchCase outCase;
+algorithm
+  outCase := match (case_,jump)
+    local
+      list<DAE.Pattern> patterns;
+      list<DAE.Element> localDecls;
+      list<DAE.Statement> body;
+      Option<DAE.Exp> result;
+    case (case_,0) then case_;
+    case (DAE.CASE(patterns, localDecls, body, result, _),jump)
+      then DAE.CASE(patterns, localDecls, body, result, jump);
+  end match;
+end updateMatchCaseJump;
+
+protected function optimizeContinueToMatch
   "If a matchcontinue expression has only one case, it is optimized to match instead.
-  The same should be done for any function without overlapping patterns, but it goes on the TODO for now.
+  The same goes if for every case there is no overlapping pattern with a previous case.
+  For example, the following example can be safely translated into a match-expression:
+    matchcontinue i
+      case 1 then ();
+      case 2 then ();
+      case 3 then ();
+    end matchcontinue;
   "
   input Absyn.MatchType matchType;
   input list<DAE.MatchCase> cases;
@@ -547,13 +636,19 @@ protected function optimizeMatchContinue
 algorithm
   outMatchType := match (matchType,cases,info)
     case (Absyn.MATCH(),_,_) then Absyn.MATCH();
-    else optimizeMatchContinue2(cases,{},info);
+    else optimizeContinueToMatch2(cases,{},info);
   end match;
-end optimizeMatchContinue;
+end optimizeContinueToMatch;
 
-protected function optimizeMatchContinue2
+protected function optimizeContinueToMatch2
   "If a matchcontinue expression has only one case, it is optimized to match instead.
-  The same should be done for any function without overlapping patterns, but it goes on the TODO for now.
+  The same goes if for every case there is no overlapping pattern with a previous case.
+  For example, the following example can be safely translated into a match-expression:
+    matchcontinue i
+      case 1 then ();
+      case 2 then ();
+      case 3 then ();
+    end matchcontinue;
   "
   input list<DAE.MatchCase> cases;
   input list<list<DAE.Pattern>> prevPatterns "All cases check its patterns against all previous patterns. If they overlap, we can't optimize away the continue";
@@ -570,12 +665,21 @@ algorithm
     case (DAE.CASE(patterns=patterns)::cases,prevPatterns,info)
       equation
         assertAllPatternListsDoNotOverlap(prevPatterns,patterns);
-      then optimizeMatchContinue2(cases,patterns::prevPatterns,info);
+      then optimizeContinueToMatch2(cases,patterns::prevPatterns,info);
     else Absyn.MATCHCONTINUE();
   end matchcontinue;
-end optimizeMatchContinue2;
+end optimizeContinueToMatch2;
 
 protected function assertAllPatternListsDoNotOverlap
+  "If a matchcontinue expression has only one case, it is optimized to match instead.
+  The same goes if for every case there is no overlapping pattern with a previous case.
+  For example, the following example can be safely translated into a match-expression:
+    matchcontinue i
+      case 1 then ();
+      case 2 then ();
+      case 3 then ();
+    end matchcontinue;
+  "
   input list<list<DAE.Pattern>> pss1;
   input list<DAE.Pattern> ps2;
 algorithm
@@ -764,7 +868,7 @@ algorithm
         algs = SCodeUtil.translateClassdefAlgorithmitems(eqAlgs);
         (cache,body) = InstSection.instStatements(cache, env, InnerOuter.emptyInstHierarchy, pre, algs, DAEUtil.addElementSourceFileInfo(DAE.emptyElementSource,patternInfo), SCode.NON_INITIAL(), true, Inst.neverUnroll);
         (cache,elabResult,resType,st) = elabResultExp(cache,env,result,impl,st,performVectorization,pre,patternInfo);
-      then (cache,DAE.CASE(elabPatterns, caseDecls, body, elabResult),elabResult,resType,st);
+      then (cache,DAE.CASE(elabPatterns, caseDecls, body, elabResult, 0),elabResult,resType,st);
 
       // ELSE is the same as CASE, but without pattern
     case (cache,env,Absyn.ELSE(localDecls=decls,equations=eq1,result=result),_,impl,st,performVectorization,pre,info)
@@ -854,12 +958,13 @@ algorithm
       list<DAE.Statement> body;
       DAE.Exp exp;
       DAE.MatchCase case_;
+      Integer jump;
     case ({},{},_) then {};
     
-    case (DAE.CASE(patterns,decls,body,SOME(_))::cases,exp::exps,info)
+    case (DAE.CASE(patterns,decls,body,SOME(_),jump)::cases,exp::exps,info)
       equation
         cases = fixCaseReturnTypes2(cases,exps,info);
-      then DAE.CASE(patterns,decls,body,SOME(exp))::cases;
+      then DAE.CASE(patterns,decls,body,SOME(exp),jump)::cases;
     
     case ((case_ as DAE.CASE(result=NONE()))::cases,exps,info)
       equation
@@ -891,13 +996,14 @@ algorithm
       list<DAE.Element> decls;
       list<DAE.Statement> body;
       Option<DAE.Exp> result;
+      Integer jump;
     case ({},_,a) then ({},a);
-    case (DAE.CASE(patterns,decls,body,result)::cases,_,a)
+    case (DAE.CASE(patterns,decls,body,result,jump)::cases,_,a)
       equation
         (body,(_,a)) = DAEUtil.traverseDAEEquationsStmts(body,Expression.traverseSubexpressionsHelper,(func,a));
         ((result,a)) = Expression.traverseExpOpt(result,func,a);
         (cases,a) = traverseCases(cases,func,a); 
-      then (DAE.CASE(patterns,decls,body,result)::cases,a);
+      then (DAE.CASE(patterns,decls,body,result,jump)::cases,a);
   end match;
 end traverseCases;
 

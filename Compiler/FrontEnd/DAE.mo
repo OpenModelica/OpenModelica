@@ -1182,6 +1182,7 @@ public uniontype MatchCase
     list<Element> localDecls;
     list<Statement> body;
     Option<Exp> result;
+    Integer jump "the number of iterations we should skip if we succeed with pattern-matching, but don't succeed";
   end CASE;
 end MatchCase;
 

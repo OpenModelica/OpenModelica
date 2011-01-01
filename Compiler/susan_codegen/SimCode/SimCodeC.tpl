@@ -3257,6 +3257,7 @@ case RECORD_CONSTRUCTOR(__) then
   <%boxedFn%>
 
 
+
   >>
 end functionBodyRecordConstructor;
 
@@ -5496,7 +5497,7 @@ case exp as MATCHEXPRESSION(__) then
           for (<%ix%> = 0, <%done%> = 0; <%ix%> < <%listLength(cases)%> && !<%done%>; <%ix%>++) {
             <% match exp.matchType case MATCHCONTINUE(__) then "MMC_TRY()" %>
             switch (<%ix%>) {
-            <%daeExpMatchCases(cases,res,prefix,onPatternFail,done,context,&varDecls)%>
+            <%daeExpMatchCases(cases,ix,res,prefix,onPatternFail,done,context,&varDecls)%>
             }
             <% match exp.matchType case MATCHCONTINUE(__) then "MMC_CATCH()" %>
           }
@@ -5507,7 +5508,7 @@ case exp as MATCHEXPRESSION(__) then
   res
 end daeExpMatch2;
 
-template daeExpMatchCases(list<MatchCase> cases, Text res, Text prefix, Text onPatternFail, Text done, Context context, Text &varDecls)
+template daeExpMatchCases(list<MatchCase> cases, Text ix, Text res, Text prefix, Text onPatternFail, Text done, Context context, Text &varDecls)
 ::=
   cases |> c as CASE(__) hasindex i0 =>
   let &varDeclsCaseInner = buffer ""
@@ -5525,7 +5526,10 @@ template daeExpMatchCases(list<MatchCase> cases, Text res, Text prefix, Text onP
     <%varDeclsCaseInner%>
     <%preExpCaseInner%>
     <%patternMatching%> 
-    /* Pattern matching succeeded */
+    <% match c.jump
+       case 0 then "/* Pattern matching succeeded */"
+       else '<%ix%> += <%c.jump%>; /* Pattern matching succeeded; we may skip some cases if we fail */'
+    %>
     <%assignments%>
     <%stmts%>
     <% if c.result then '<%preRes%><%caseRes%>' else 'MMC_THROW();<%\n%>'%>
