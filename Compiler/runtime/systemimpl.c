@@ -451,7 +451,29 @@ int SystemImpl__systemCall(const char* str)
   }
 
   fflush(NULL); /* flush output so the testsuite is deterministic */
+#if defined(__MINGW32__) || defined(_MSC_VER)
   status = system(str);
+#else
+  pid_t pID = vfork();
+  if (pID == 0) { // child
+    execl("/bin/sh", "/bin/sh", "-c", str, NULL);
+    if (debug) {
+      fprintf(stderr, "System.systemCall: execl failed %s\n", strerror(errno));
+      fflush(NULL);
+    }
+    _exit(1);
+  } else if (pID < 0) {
+    const char *tokens[2] = {str,strerror(errno)};
+    c_add_message(-1,"SCRIPTING","ERROR","system(%s) failed: %s",tokens,2);
+    return -1;
+  } else {
+    
+    if (waitpid(pID, &status, 0) == -1) {
+      const char *tokens[2] = {str,strerror(errno)};
+      c_add_message(-1,"SCRIPTING","ERROR","system(%s) failed: %s",tokens,2);
+    }
+  }
+#endif
   fflush(NULL); /* flush output so the testsuite is deterministic */
 
   if (debug) {
