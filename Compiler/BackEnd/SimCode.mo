@@ -62,6 +62,7 @@ public import Env;
 public import Dependency;
 public import Interactive;
 public import HashTableExpToIndex;
+public import HashTableStringToPath;
 public import Absyn;
 public import Ceval;
 public import Tpl;
@@ -7634,92 +7635,85 @@ protected function getCalledFunctionsInFunctions
   Goes through the given DAE, finds the given functions and collects
   the names of the functions called from within those functions"
   input list<Absyn.Path> paths;
-  input list<Absyn.Path> accumulated;
+  input HashTableStringToPath.HashTable ht;
   input DAE.FunctionTree funcs;
-  output list<Absyn.Path> res;
-protected
-  list<list<Absyn.Path>> pathslist;
+  output HashTableStringToPath.HashTable outHt;
 algorithm
-  res := matchcontinue(paths,accumulated,funcs)
+  outHt := match (paths,ht,funcs)
     local
-      list<Absyn.Path> acc,rest;
+      list<Absyn.Path> rest;
       Absyn.Path path;
-    case ({},accumulated,funcs) then accumulated;
-    case (path::rest,accumulated,funcs)
+    case ({},ht,funcs) then ht;
+    case (path::rest,ht,funcs)
       equation
-        acc = getCalledFunctionsInFunction(path, accumulated, funcs);
-        res = getCalledFunctionsInFunctions(rest, acc, funcs);
-      then res;
-  end matchcontinue;
+        ht = getCalledFunctionsInFunction2(path, Absyn.pathString(path), ht, funcs);
+        ht = getCalledFunctionsInFunctions(rest, ht, funcs);
+      then ht;
+  end match;
 end getCalledFunctionsInFunctions;
 
 public function getCalledFunctionsInFunction
 "function: getCalledFunctionsInFunction
   Goes through the given DAE, finds the given function and collects
   the names of the functions called from within those functions"
-  input Absyn.Path inPath;
-  input list<Absyn.Path> accumulated;
+  input Absyn.Path path;
   input DAE.FunctionTree funcs;
-  output list<Absyn.Path> outAbsynPathLst;
+  output list<Absyn.Path> outPaths;
+protected
+  HashTableStringToPath.HashTable ht;
 algorithm
-  outAbsynPathLst := matchcontinue (inPath,accumulated,funcs)
+  ht := HashTableStringToPath.emptyHashTable();
+  ht := getCalledFunctionsInFunction2(path,Absyn.pathString(path),ht,funcs);
+  outPaths := BaseHashTable.hashTableValueList(ht);
+end getCalledFunctionsInFunction;
+
+protected function getCalledFunctionsInFunction2
+"function: getCalledFunctionsInFunction
+  Goes through the given DAE, finds the given function and collects
+  the names of the functions called from within those functions"
+  input Absyn.Path inPath;
+  input String pathstr;
+  input HashTableStringToPath.HashTable ht "paths to not add";
+  input DAE.FunctionTree funcs;
+  output HashTableStringToPath.HashTable outHt "paths to not add";
+algorithm
+  outHt := matchcontinue (inPath,pathstr,ht,funcs)
     local
-      String pathstr,debugpathstr;
+      String debugpathstr,str;
       Absyn.Path path;
       DAE.Function funcelem;
-      list<DAE.Function> funcelems;
-      list<DAE.Function> elements;
-      list<DAE.Exp> explist,fcallexps,fcallexps_1, fnrefs;
-      list<Absyn.ComponentRef> crefs;
-      list<Absyn.Path> calledfuncs, res1, res2, res, acc, varfuncs, fnpaths, fns, referencedFuncs, reffuncs;
+      list<DAE.Function> funcelems,elements;
+      list<Absyn.Path> calledfuncs, varfuncs, fnpaths, fns;
       list<String> debugpathstrs;
       DAE.DAElist dae;
       list<DAE.Element> els;
-      String str;
-      list<DAE.Element> varlist;
-      list<list<DAE.Element>> varlistlist;
       
-    case (path,acc,_)
+    case (path,pathstr,ht,_)
       equation
-        true = listMember(path,acc);
-      then acc;
+        _ = BaseHashTable.get(Absyn.pathString(path), ht);
+      then ht;
         
-    case (path,acc,funcs)
+    case (path,pathstr,ht,funcs)
       equation
-        false = listMember(path,acc);
         funcelem = DAEUtil.getNamedFunction(path, funcs);
         els = DAEUtil.getFunctionElements(funcelem);
         // Function reference variables are filtered out
         varfuncs = Util.listFold(els, DAEUtil.collectFunctionRefVarPaths, {});
         (_,(_,varfuncs)) = DAEUtil.traverseDAE2(Util.if_(RTOpts.acceptMetaModelicaGrammar(), els, {}),Expression.traverseSubexpressionsHelper,(DAEUtil.collectValueblockFunctionRefVars,varfuncs));
-        //print("varfuncs: " +& Util.stringDelimitList(Util.listMap(varfuncs,Absyn.pathString),",") +& "\n");
-        // print("Got expressions in " +& Absyn.pathString(path) +& ": " +& ExpressionDump.printExpStr(DAE.TUPLE(explist)) +& "\n");
         (_,(_,(calledfuncs,_))) = DAEUtil.traverseDAE2(els,Expression.traverseSubexpressionsHelper,(matchNonBuiltinCallsAndFnRefPaths,({},varfuncs)));
-        //print("calledfuncs: " +& Util.stringDelimitList(Util.listMap(calledfuncs,Absyn.pathString),",") +& "\n");
-        res = getCalledFunctionsInFunctions(calledfuncs, path::acc, funcs);
-        /*Debug.fprintln("info", "getCalledFunctionsInFunction: " +& Absyn.pathString(path)) "debug" ;
-         Debug.fprint("info", "Found variable function refs to ignore: ") "debug" ;
-         debugpathstrs = Util.listMap(varfuncs, Absyn.pathString) "debug" ;
-         debugpathstr = Util.stringDelimitList(debugpathstrs, ", ") "debug" ;
-         Debug.fprintln("info", debugpathstr) "debug" ;
-         Debug.fprint("info", "Found called functions: ") "debug" ;
-         debugpathstrs = Util.listMap(res, Absyn.pathString) "debug" ;
-         debugpathstr = Util.stringDelimitList(debugpathstrs, ", ") "debug" ;
-         Debug.fprintln("info", debugpathstr) "debug" ;*/
-      then
-        res;
+        ht = BaseHashTable.add((pathstr,path),ht);
+        ht = getCalledFunctionsInFunctions(calledfuncs, ht, funcs);
+      then ht;
         
-    case (path,acc,funcs)
+    case (path,pathstr,ht,funcs)
       equation
-        false = listMember(path,acc);
         failure(_ = DAEUtil.getNamedFunction(path, funcs));
-        pathstr = Absyn.pathString(path);
-        str = "SimCode.getCalledFunctionsInFunction: Class " +& pathstr +& " not found in global scope.";
+        str = "SimCode.getCalledFunctionsInFunction2: Class " +& pathstr +& " not found in global scope.";
         Error.addMessage(Error.INTERNAL_ERROR,{str});
       then
         fail();
   end matchcontinue;
-end getCalledFunctionsInFunction;
+end getCalledFunctionsInFunction2;
 
 protected function getCallPath
 "function: getCallPath
