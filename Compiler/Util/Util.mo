@@ -3541,8 +3541,8 @@ algorithm
   end matchcontinue;
 end listPos2;
 
-public function listGetMember "function: listGetMember
-  Takes a value and a list of values and returns the value
+public function listGetMember
+ "Takes a value and a list of values and returns the value
   if present in the list. If not present, the function will fail.
   Example:
     listGetMember(0,{1,2,3}) => fail
@@ -3552,23 +3552,13 @@ public function listGetMember "function: listGetMember
   output Type_a outTypeA;
   replaceable type Type_a subtypeof Any;
 algorithm
-  outTypeA := matchcontinue (inTypeA,inTypeALst)
+  outTypeA := match (inTypeA,inTypeALst)
     local
       Type_a x,y,res;
       list<Type_a> ys;
     case (_,{}) then fail();
-    case (x,(y :: ys))
-      equation
-        equality(x = y);
-      then
-        y;
-    case (x,(y :: ys))
-      equation
-        failure(equality(x = y));
-        res = listGetMember(x, ys);
-      then
-        res;
-  end matchcontinue;
+    case (x,(y :: ys)) then Debug.bcallret2(not valueEq(x,y), listGetMember, x, ys, x);
+  end match;
 end listGetMember;
 
 public function listDeletePositionsSorted "more efficient implemtation of deleting positions if the position list is sorted

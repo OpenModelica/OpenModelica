@@ -525,7 +525,7 @@ protected function translateClassdefEquations
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   output list<SCode.Equation> outEquationLst;
 algorithm
-  outEquationLst := matchcontinue (inAbsynClassPartLst)
+  outEquationLst := match (inAbsynClassPartLst)
     local
       list<SCode.Equation> eqs,eql_1,eqs_1;
       list<Absyn.EquationItem> eql;
@@ -543,7 +543,7 @@ algorithm
         eqs = translateClassdefEquations(rest);
       then
         eqs;
-  end matchcontinue;
+  end match;
 end translateClassdefEquations;
 
 protected function translateClassdefInitialequations
@@ -552,7 +552,7 @@ protected function translateClassdefInitialequations
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   output list<SCode.Equation> outEquationLst;
 algorithm
-  outEquationLst := matchcontinue (inAbsynClassPartLst)
+  outEquationLst := match (inAbsynClassPartLst)
     local
       list<SCode.Equation> eqs,eql_1,eqs_1;
       list<Absyn.EquationItem> eql;
@@ -570,7 +570,7 @@ algorithm
         eqs = translateClassdefInitialequations(rest);
       then
         eqs;
-  end matchcontinue;
+  end match;
 end translateClassdefInitialequations;
 
 protected function translateClassdefAlgorithms
