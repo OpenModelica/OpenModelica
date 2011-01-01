@@ -4644,7 +4644,7 @@ algorithm
         d = Util.listMap1(paths, DAEUtil.getNamedFunction, funcs);
         d = Util.listSetDifference(d, {mainFunction});
         uniontypePaths = DAEUtil.getUniontypePaths(d,{});
-        (cache,metarecordTypes) = Lookup.lookupMetarecordsRecursive(cache, env, uniontypePaths, {});
+        (cache,metarecordTypes) = Lookup.lookupMetarecordsRecursive(cache, env, uniontypePaths);
         
         SimCode.translateFunctions(pathstr, mainFunction, d, metarecordTypes);
         compileModel(pathstr, {}, "", "", "");

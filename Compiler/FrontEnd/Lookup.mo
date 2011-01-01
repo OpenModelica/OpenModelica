@@ -49,11 +49,13 @@ public import Absyn;
 public import ClassInf;
 public import DAE;
 public import Env;
+public import HashTableStringToPath;
 public import RTOpts;
 public import SCode;
 public import Util;
 public import Types;
 
+protected import BaseHashTable;
 protected import Builtin;
 protected import ComponentReference;
 protected import Connect;
@@ -255,42 +257,80 @@ starts to traverse."
   input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Path> inUniontypePaths;
-  input list<Absyn.Path> inAcc;
   output Env.Cache outCache;
   output list<DAE.Type> outMetarecordTypes;
 algorithm
-  (outCache,outMetarecordTypes) := matchcontinue (inCache, inEnv, inUniontypePaths, inAcc)
+  (outCache,_,outMetarecordTypes) := lookupMetarecordsRecursive2(inCache, inEnv, inUniontypePaths, HashTableStringToPath.emptyHashTable(), {});
+end lookupMetarecordsRecursive;
+
+protected function lookupMetarecordsRecursive2
+"Takes a list of paths to Uniontypes. Use this list to create a list of T_METARECORD.
+The function is guarded against recursive definitions by accumulating all paths it
+starts to traverse."
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<Absyn.Path> inUniontypePaths;
+  input HashTableStringToPath.HashTable ht;
+  input list<DAE.Type> acc;
+  output Env.Cache outCache;
+  output HashTableStringToPath.HashTable outHt;
+  output list<DAE.Type> outMetarecordTypes;
+algorithm
+  (outCache,outHt,outMetarecordTypes) := match (inCache, inEnv, inUniontypePaths, ht, acc)
     local
       Env.Cache cache;
       Env.Env env;
       Absyn.Path first;
-      list<Absyn.Path> metarecordPaths, rest, acc;
+      list<Absyn.Path> metarecordPaths, rest;
       list<DAE.Type> metarecordTypes, metarecordTypes1, metarecordTypes2, uniontypeTypes, innerTypes;
       list<list<Absyn.Path>> uniontypePaths;
       DAE.Type ty;
-    case (cache, _, {}, _) then (cache, {});
-    case (cache, env, first::rest, acc)
+    case (cache, _, {}, ht, acc) then (cache, ht, acc);
+    case (cache, env, first::rest, ht, acc)
       equation
-        false = listMember(first, acc);
-        acc = first::acc;
-        (cache, ty, _) = lookupType(cache, env, first, SOME(Absyn.dummyInfo));
+        (cache,ht,acc) = lookupMetarecordsRecursive3(cache, env, first, Absyn.pathString(first), ht, acc);
+        (cache,ht,acc) = lookupMetarecordsRecursive2(cache, env, rest, ht, acc);
+      then (cache, ht, acc);
+  end match;
+end lookupMetarecordsRecursive2;
+
+protected function lookupMetarecordsRecursive3
+"Takes a list of paths to Uniontypes. Use this list to create a list of T_METARECORD.
+The function is guarded against recursive definitions by accumulating all paths it
+starts to traverse."
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input Absyn.Path path;
+  input String str;
+  input HashTableStringToPath.HashTable ht;
+  input list<DAE.Type> acc;
+  output Env.Cache outCache;
+  output HashTableStringToPath.HashTable outHt;
+  output list<DAE.Type> outMetarecordTypes;
+algorithm
+  (outCache,outHt,outMetarecordTypes) := matchcontinue (inCache, inEnv, path, str, ht, acc)
+    local
+      Env.Cache cache;
+      Env.Env env;
+      Absyn.Path first;
+      list<Absyn.Path> uniontypePaths, metarecordPaths, rest;
+      list<DAE.Type> metarecordTypes, metarecordTypes1, metarecordTypes2, uniontypeTypes, innerTypes;
+      DAE.Type ty;
+    case (cache, env, path, str, ht, acc)
+      equation
+        _ = BaseHashTable.get(str, ht);
+      then (cache, ht, acc);
+    case (cache, env, path, str, ht, acc)
+      equation
+        ht = BaseHashTable.add((str,path),ht);
+        (cache, ty, _) = lookupType(cache, env, path, SOME(Absyn.dummyInfo));
+        acc = ty::acc;
         uniontypeTypes = Types.getAllInnerTypesOfType(ty, Types.uniontypeFilter);
-        uniontypePaths =  Util.listMap(uniontypeTypes, Types.getUniontypePaths);
-        rest = Util.listFlatten(rest :: uniontypePaths);
-        (cache, metarecordTypes2) = lookupMetarecordsRecursive(cache, env, rest, acc);
-        metarecordTypes = ty :: metarecordTypes2;
-      then (cache, metarecordTypes);
-    case (cache, env, first::rest, acc)
-      equation
-        true = listMember(first, acc);
-        (cache, metarecordTypes) = lookupMetarecordsRecursive(cache, env, rest, acc);
-      then (cache, metarecordTypes);
-    case (_, _, _, _)
-      equation
-        Debug.fprintln("failtrace", "- Lookup.lookupMetarecordsRecursive failed");
-      then fail();
+        uniontypePaths = Util.listFlatten(Util.listMap(uniontypeTypes, Types.getUniontypePaths));
+        (cache, ht, acc) = lookupMetarecordsRecursive2(cache, env, uniontypePaths, ht, acc);
+      then (cache,ht,acc);
   end matchcontinue;
-end lookupMetarecordsRecursive;
+end lookupMetarecordsRecursive3;
 
 public function isPrimitive
 "function: isPrimitive
