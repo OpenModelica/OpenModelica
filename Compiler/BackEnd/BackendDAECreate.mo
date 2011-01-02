@@ -742,6 +742,7 @@ algorithm
                   absynCommentOption = comment))
       equation
         kind_1 = lowerKnownVarkind(kind, name, dir, flowPrefix);
+        bind = fixParameterStartBinding(bind,dae_var_attr,kind_1);
         tp = lowerType(t);
       then
         BackendDAE.VAR(name,kind_1,dir,tp,bind,NONE(),dims,-1,source,dae_var_attr,comment,flowPrefix,streamPrefix);
@@ -754,6 +755,22 @@ algorithm
   end matchcontinue;
 end lowerKnownVar;
 
+protected function fixParameterStartBinding
+  input Option<DAE.Exp> bind;
+  input Option<DAE.VariableAttributes> attr;
+  input BackendDAE.VarKind kind;
+  output Option<DAE.Exp> outBind;
+algorithm
+  outBind := matchcontinue (bind,attr,kind)
+    local
+      DAE.Exp exp;
+    case (NONE(),attr,BackendDAE.PARAM())
+      equation
+        exp = DAEUtil.getStartAttr(attr); 
+      then SOME(exp);
+    else bind;
+  end matchcontinue;
+end fixParameterStartBinding;
 
 protected function lowerVarkind
 "function: lowerVarkind

@@ -5119,11 +5119,11 @@ algorithm
         fail();
     
     // failure in lookup but NO_MSG, silently fail and move along
-    case (cache,env,c,(impl as false),NO_MSG())
+    /*case (cache,env,c,(impl as false),NO_MSG())
       equation
         failure((_,_,_,_,_,_,_,_,_) = Lookup.lookupVar(cache,env, c));
       then
-        fail();
+        fail();*/
   end matchcontinue;
 end cevalCref;
 
@@ -5139,7 +5139,7 @@ public function cevalCref2
 	output Env.Cache outCache;
 	output Values.Value outValue;
 algorithm
-	(outCache, outValue) := matchcontinue(inCache, inEnv, inCref, inBinding, constForRange, inImpl, inMsg)
+	(outCache, outValue) := match (inCache, inEnv, inCref, inBinding, constForRange, inImpl, inMsg)
 		local
 			Env.Cache cache;
 			Values.Value v;
@@ -5162,12 +5162,11 @@ algorithm
 		// A variable with a binding -> constant evaluate the binding
 		case (_, _, _, _, _, _, _)
 			equation
-				failure(equality(inBinding = DAE.UNBOUND()));
 				false = crefEqualValue(inCref, inBinding);
 				(cache, v) = cevalCrefBinding(inCache, inEnv, inCref, inBinding, inImpl, inMsg);
 			then
 				(cache, v);
-	end matchcontinue;	
+	end match;
 end cevalCref2;
 
 public function cevalCrefBinding "function: cevalCrefBinding
@@ -5597,19 +5596,16 @@ protected function crefEqualValue ""
   input DAE.Binding v;
   output Boolean outBoolean;
 algorithm 
-  outBoolean := matchcontinue(c,v)
+  outBoolean := match (c,v)
     local 
       DAE.ComponentRef cr;  
     
     case(c,(v as DAE.EQBOUND(DAE.CREF(cr,_),NONE(),_,_)))
-      equation
-        true = ComponentReference.crefEqual(c,cr);
-      then
-        true;
+      then ComponentReference.crefEqual(c,cr);
     
-    case(_,_) then false;
+    else false;
     
-  end matchcontinue;
+  end match;
 end crefEqualValue;
 
 protected function dimensionSliceInRange "
