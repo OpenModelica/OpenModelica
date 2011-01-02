@@ -43,7 +43,7 @@ extern void Print_printErrorBuf(const char* str)
 
 extern void Print_printBuf(const char* str)
 {
-  //fprintf(stderr, "Print_writeBuf %s\n", str);
+  // fprintf(stderr, "Print_printBuf: %s\n", str);
   if (PrintImpl__printBuf(str))
     MMC_THROW();
 }
@@ -63,6 +63,7 @@ extern const char* Print_getString(void)
   const char* res = PrintImpl__getString();
   if (res == NULL)
     MMC_THROW();
+  // fprintf(stderr, "Print_getString: %s##\n", res);fflush(NULL);
   return strdup(res);
 }
 
@@ -81,6 +82,7 @@ extern void Print_clearErrorBuf(void)
 
 extern void Print_clearBuf(void)
 {
+  // fprintf(stderr, "Print_clearBuf\n");
   PrintImpl__clearBuf();
 }
 

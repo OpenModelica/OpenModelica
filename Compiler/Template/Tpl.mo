@@ -753,7 +753,7 @@ algorithm
         Print.clearBuf();
         textStringBuf(txt);
         str = Print.getString();
-        Print.clearBuf(); 
+        Print.clearBuf();
       then
         str;       
     

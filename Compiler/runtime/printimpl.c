@@ -40,19 +40,27 @@ extern int showErrorMessages;
 
 #define GROWTH_FACTOR 1.4  /* According to some roumours of buffer growth */
 #define INITIAL_BUFSIZE 4000 /* Seems reasonable */
-static char *buf = NULL;
-static char *errorBuf = NULL;
 
-static int nfilled=0;
-static int cursize=0;
+#define buf Print_var_buf
+#define errorBuf Print_var_errorBuf
+#define nfilled Print_var_nfilled
+#define cursize Print_var_cursize
+#define errorNfilled Print_var_errorNfilled
+#define errorCursize Print_var_errorCursize
 
-static int errorNfilled=0;
-static int errorCursize=0;
+char *buf = NULL;
+char *errorBuf = NULL;
+
+int nfilled=0;
+int cursize=0;
+
+int errorNfilled=0;
+int errorCursize=0;
 
 static int increase_buffer(void)
 {
 
-  char * new_buf;
+  char *new_buf;
   int new_size;
   if (cursize == 0) {
     new_buf = (char*)malloc(INITIAL_BUFSIZE*sizeof(char));
@@ -213,7 +221,6 @@ static int PrintImpl__printBuf(const char* str)
   nfilled += len;
   buf[nfilled] = '\0';
 
-  /* printf("%s",str); */
   return 0;
 }
 
@@ -300,9 +307,9 @@ static int PrintImpl__printBufSpace(long nSpaces)
 {
   if (nSpaces > 0) {
    while (nfilled + nSpaces + 1 > cursize) {
-    if(increase_buffer()!= 0) {
+     if(increase_buffer()!= 0) {
        return 1;
-    }
+     }
    }
    memset(buf+nfilled,' ',(size_t)nSpaces);
    nfilled += nSpaces;

@@ -33,6 +33,7 @@ algorithm
     case ( file )
       equation
         failure("SusanTest.tpl" = file);
+        Print.clearBuf();
         translateFile(file);
         strErrBuf = Print.getErrorString();
         strErrBuf = Util.if_(strErrBuf ==& "","",
