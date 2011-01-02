@@ -812,7 +812,7 @@ public function tokensString
   output Boolean outAtStartOfLine;
 algorithm
   (outActualPositionOnLine, outAtStartOfLine)
-   := matchcontinue (inTokens, inActualPositionOnLine, inAtStartOfLine, inAfterNewLineIndent)
+   := match (inTokens, inActualPositionOnLine, inAtStartOfLine, inAfterNewLineIndent)
     local
       Tokens toks, txttoks;
       StringToken tok;
@@ -840,7 +840,7 @@ algorithm
         Debug.fprint("failtrace", "-!!!Tpl.tokensString failed.\n");
       then 
         fail();
-  end matchcontinue;
+  end match;
 end tokensString;
 
 
@@ -855,7 +855,7 @@ public function tokString
   output Integer outAfterNewLineIndent;
 algorithm
   (outActualPositionOnLine, outAtStartOfLine, outAfterNewLineIndent)
-   := matchcontinue (inStringToken, inActualPositionOnLine, inAtStartOfLine, inAfterNewLineIndent)
+   := match (inStringToken, inActualPositionOnLine, inAtStartOfLine, inAfterNewLineIndent)
     local
       Tokens toks, txttoks;
       list<tuple<Tokens,BlockType>> blstack;
@@ -921,12 +921,12 @@ algorithm
         (nchars, isstart, aind);
         
     //should not ever happen 
-    case (_,_,_,_)
+    else
       equation
         Debug.fprint("failtrace", "-!!!Tpl.tokString failed.\n");
       then 
         fail();
-  end matchcontinue;
+  end match;
 end tokString;
 
 

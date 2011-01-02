@@ -1120,15 +1120,15 @@ protected function setHasInnerOuterDefinitionsHandler
  that a model has inner/outer component definitions"
   input Absyn.InnerOuter io;
 algorithm
-  _ := matchcontinue (io)
+  _ := match (io)
     // no inner outer!
     case (Absyn.UNSPECIFIED()) then ();
     // has inner, outer or innerouter components
-    case (_)
+    else
       equation
          System.setHasInnerOuterDefinitions(true);
       then ();
-  end matchcontinue;
+  end match;
 end setHasInnerOuterDefinitionsHandler;
 
 protected function setHasStreamConnectorsHandler

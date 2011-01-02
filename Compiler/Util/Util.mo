@@ -662,6 +662,20 @@ algorithm
   outTypeALst:= (inTypeA::inTypeALst);
 end listCons;
 
+public function listConsOnTrue "function: listCons
+  Performs the cons operation, i.e. elt::list."
+  input Boolean b;
+  input Type_a a;
+  input list<Type_a> lst;
+  output list<Type_a> outLst;
+  replaceable type Type_a subtypeof Any;
+algorithm
+  outLst := match (b,a,lst)
+    case (true,a,lst) then a::lst;
+    else lst;
+  end match;
+end listConsOnTrue;
+
 public function listConsOnSuccess
 "Performs the cons operation if the predicate succeeds."
   input Type_a x;
@@ -3771,27 +3785,12 @@ public function listUnionElt "function: listUnionElt
   Example:
     listUnionElt(1,{2,3}) => {1,2,3}
     listUnionElt(0,{0,1,2}) => {0,1,2}"
-  input Type_a inTypeA;
-  input list<Type_a> inTypeALst;
-  output list<Type_a> outTypeALst;
+  input Type_a a;
+  input list<Type_a> lst;
+  output list<Type_a> outLst;
   replaceable type Type_a subtypeof Any;
 algorithm
-  outTypeALst:=
-  matchcontinue (inTypeA,inTypeALst)
-    local
-      Type_a x;
-      list<Type_a> lst;
-    case (x,lst)
-      equation
-        _ = listGetMember(x, lst);
-      then
-        lst;
-    case (x,lst)
-      equation
-        failure(_ = listGetMember(x, lst));
-      then
-        (x :: lst);
-  end matchcontinue;
+  outLst := listConsOnTrue(not listMember(a,lst),a,lst);
 end listUnionElt;
 
 public function listUnionEltComp
@@ -3807,14 +3806,7 @@ public function listUnionEltComp
   end CompareFunc;
   replaceable type Type_a subtypeof Any;
 algorithm
-  outList := matchcontinue(inElem, inList, inCompFunc)
-    case (_, _, _)
-      equation
-        true = listContainsWithCompareFunc(inElem, inList, inCompFunc);
-      then
-        inList;
-    case (_, _, _) then inElem :: inList;
-  end matchcontinue;
+  outList := listConsOnTrue(not listContainsWithCompareFunc(inElem,inList,inCompFunc),inElem,inList);
 end listUnionEltComp;
 
 public function listUnion "function listUnion

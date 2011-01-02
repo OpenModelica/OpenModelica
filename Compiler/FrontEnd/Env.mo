@@ -1389,10 +1389,10 @@ algorithm
         env;
     
     //	Simple name. try next.
-    case (Absyn.IDENT(id1),path,CACHETREE(id2,env2,_::children))
+    case (scope as Absyn.IDENT(id1),path,CACHETREE(id2,env2,_::children))
       equation
         //print("try next ");print(id);print("\n");
-        env = cacheGetEnv2(Absyn.IDENT(id1),path,CACHETREE(id2,env2,children));
+        env = cacheGetEnv2(scope,path,CACHETREE(id2,env2,children));
       then 
         env;
 
@@ -1418,29 +1418,25 @@ protected function cacheGetEnv3 "Help function to cacheGetEnv2, searches down in
   input list<CacheTree> children;
   output Env env;
 algorithm
-  env := matchcontinue(path,children)
+  env := match (path,children)
     local
       Ident id1, id2;
+      Absyn.Path path1,path2;
+      list<CacheTree> children1,children2;
+      Boolean b;
     
 		// found matching simple name
-    case (Absyn.IDENT(id1),CACHETREE(id2,env,_)::_)
-      equation
-        true = stringEq(id1, id2); 
-      then env;
+    case (Absyn.IDENT(id1),CACHETREE(id2,env,_)::children)
+      then Debug.bcallret2(not stringEq(id1, id2), cacheGetEnv3, path, children, env);
     
     // found matching qualified name
-    case (Absyn.QUALIFIED(id1,path),CACHETREE(id2,_,children)::_)
+    case (path2 as Absyn.QUALIFIED(id1,path1),CACHETREE(id2,_,children1)::children2)
       equation
-        true = stringEq(id1, id2);
-        env = cacheGetEnv3(path,children);
-      then env;
-
-     // try next
-    case (path,_::children)
-      equation
-        env = cacheGetEnv3(path,children);
-      then env;
-  end matchcontinue;
+        b = stringEq(id1, id2);
+        path = Util.if_(b,path1,path2);
+        children = Util.if_(b,children1,children2);
+      then cacheGetEnv3(path,children);
+  end match;
 end cacheGetEnv3;
 
 public function cacheAddEnv "Add an environment to the cache"

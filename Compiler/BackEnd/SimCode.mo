@@ -6415,9 +6415,9 @@ algorithm
         v = ass2[eqnIndx];
         var = BackendVariable.getVarAt(vars,v);
         b = hasDiscreteVar({var});
-        eqnLst1 = Util.if_(b,eqnLst,e::eqnLst);
+        eqnLst1 = Util.listConsOnTrue(not b,e,eqnLst);
       then ((e,(eqnIndx+1,ass2,vars,eqnLst1)));
-    case (inTpl) then inTpl;       
+    case (inTpl) then inTpl;
   end matchcontinue;
 end selectContinuousEquations;
 
