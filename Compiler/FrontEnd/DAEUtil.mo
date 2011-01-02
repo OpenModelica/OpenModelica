@@ -2077,64 +2077,6 @@ algorithm
   end matchcontinue;
 end getNamedFunctionFromList;
 
-public function getAllExps "function: getAllExps
-
-  This function goes through the DAE structure and finds all the
-  expressions and returns them in a list
-"
-  input list<DAE.Element> elements;
-  output list<DAE.Exp> exps;
-protected
-  list<list<DAE.Exp>> expslist;
-algorithm
-  expslist := Util.listMap(elements, getAllExpsElement);
-  exps := Util.listFlatten(expslist);
-end getAllExps;
-
-public function getAllExpsFunctions
-  input list<DAE.Function> elements;
-  output list<DAE.Exp> exps;
-protected
-  list<list<DAE.Exp>> expslist;
-algorithm
-  expslist := Util.listMap(elements, getAllExpsFunction);
-  exps := Util.listFlatten(expslist);
-end getAllExpsFunctions;
-
-protected function getAllExpsFunction
-  input DAE.Function fn;
-  output list<DAE.Exp> exps;
-algorithm
-  exps := matchcontinue fn
-    local
-      list<DAE.Element> elements;
-      list<DAE.Exp> exps1,exps2,exps3;
-      list<list<DAE.Exp>> expslist,argexps;
-      DAE.ExtArg retarg;
-      list<DAE.ExtArg> args;
-      DAE.Type ty;
-      Absyn.Path name;
-    case DAE.FUNCTION(path = name, functions = (DAE.FUNCTION_DEF(body = elements)::_),type_ = ty)
-      equation
-        exps1 = getAllExps(elements);
-        exps2 = Types.getAllExps(ty);
-        exps = listAppend(exps1, exps2);
-      then
-        exps;
-    case DAE.FUNCTION(functions = (DAE.FUNCTION_EXT(body = elements,externalDecl = DAE.EXTERNALDECL(external_ = args,parameters = retarg))::_),type_ = ty)
-      equation
-        exps1 = getAllExps(elements);
-        exps2 = Types.getAllExps(ty);
-        exps3 = getAllExpsExtarg(retarg);
-        argexps = Util.listMap(args, getAllExpsExtarg);
-        expslist = exps1::exps2::exps3::argexps;
-        exps = Util.listFlatten(expslist);
-      then
-        exps;
-    case DAE.RECORD_CONSTRUCTOR(path = _) then {};
-  end matchcontinue;
-end getAllExpsFunction;
-
 protected function getFunctionsElements
   input list<DAE.Function> elements;
   output list<DAE.Element> els;
@@ -2338,197 +2280,6 @@ algorithm (outrefs,matching) := matchcontinue(inrefs)
       (crefs,b1);
   end matchcontinue;
 end compareCrefList;
-
-protected function getAllExpsElement "function: getAllExpsElement
-  Helper to getAllExps. Implements getAllExps for different kinds of elements "
-  input DAE.Element inElement;
-  output list<DAE.Exp> outExpExpLst;
-algorithm
-  outExpExpLst := matchcontinue (inElement)
-    local
-      list<DAE.Exp> e1,e2,e3,exps,explist1,explist2,exps1,exps2,exps3,ifcond,fargs;
-      DAE.Exp crefexp,exp,cond,exp1,exp2;
-      DAE.ComponentRef cref,cr1,cr2;
-      DAE.VarKind vk;
-      DAE.VarDirection vd;
-      DAE.Type ty;
-      Option<DAE.Exp> bndexp,startvalexp;
-      DAE.InstDims instdims;
-      DAE.Flow flowPrefix;
-      DAE.Stream streamPrefix;
-      list<Absyn.Path> pathlist;
-      Option<DAE.VariableAttributes> dae_var_attr;
-      Option<SCode.Comment> comment;
-      list<DAE.Element> ellist,elements,eqs,eqsfalseb;
-      list<list<DAE.Element>> eqstrueb;
-      Option<DAE.Element> elsewhenopt;
-      Algorithm.Algorithm alg;
-      String id,fname,lang;
-      Absyn.Path path;
-      list<list<DAE.Exp>> argexps,expslist;
-      list<DAE.ExtArg> args;
-      DAE.ExtArg retarg;
-      Option<Absyn.Annotation> ann;
-      DAE.ElementSource source "the element origin";
-      Absyn.Path fPath;
-    
-    case DAE.VAR(componentRef = cref,
-             kind = vk,
-             direction= vd,
-             ty = ty,
-             binding = bndexp,
-             dims = instdims,
-             flowPrefix = flowPrefix,
-             streamPrefix = streamPrefix,
-             source = source,
-             variableAttributesOption = dae_var_attr,
-             absynCommentOption = comment) /* VAR */
-      equation
-        e1 = Util.optionToList(bndexp);
-        e3 = Util.listFlatten(Util.listMap(instdims, getAllExpsSubscript));
-        crefexp = crefToExp(cref);
-        exps = Util.listFlatten({e1,e3,{crefexp}});
-      then
-        exps;
-    
-    case DAE.DEFINE(componentRef = cref,exp = exp)
-      equation
-        crefexp = crefToExp(cref);
-      then
-        {crefexp,exp};
-    
-    case DAE.INITIALDEFINE(componentRef = cref,exp = exp)
-      equation
-        crefexp = crefToExp(cref);
-      then
-        {crefexp,exp};
-    
-    case DAE.EQUATION(exp = exp1,scalar = exp2) then {exp1,exp2};
-    
-    case DAE.EQUEQUATION(cr1=cr1,cr2=cr2)
-      equation
-        exp1 = crefToExp(cr1);
-        exp2 = crefToExp(cr2);
-      then
-        {exp1,exp2};
-    
-    case DAE.WHEN_EQUATION(condition = cond,equations = eqs,elsewhen_ = elsewhenopt)
-      equation
-        ellist = Util.optionToList(elsewhenopt);
-        elements = listAppend(eqs, ellist);
-        exps = getAllExps(elements);
-      then
-        (cond :: exps);
-    
-    case DAE.IF_EQUATION(condition1 = ifcond,equations2 = eqstrueb,equations3 = eqsfalseb)
-      equation
-        explist1 = Util.listFlatten(Util.listMap(eqstrueb,getAllExps));
-        explist2 = getAllExps(eqsfalseb);
-        exps = Util.listFlatten({ifcond,explist1,explist2});
-      then
-        exps;
-    
-    case DAE.INITIAL_IF_EQUATION(condition1 = ifcond,equations2 = eqstrueb,equations3 = eqsfalseb)
-      equation
-        explist1 = Util.listFlatten(Util.listMap(eqstrueb,getAllExps));
-        explist2 = getAllExps(eqsfalseb);
-        exps = Util.listFlatten({ifcond,explist1,explist2});
-      then
-        exps;
-    
-    case DAE.INITIALEQUATION(exp1 = exp1,exp2 = exp2) then {exp1,exp2};
-    
-    case DAE.ALGORITHM(algorithm_ = alg)
-      equation
-        exps = Algorithm.getAllExps(alg);
-      then
-        exps;
-    
-    case DAE.INITIALALGORITHM(algorithm_ = alg)
-      equation
-        exps = Algorithm.getAllExps(alg);
-      then
-        exps;
-    
-    case DAE.COMP(ident = id,dAElist = elements)
-      equation
-        exps = getAllExps(elements);
-      then
-        exps;
-    
-    case DAE.ASSERT(condition=exp1,message=exp2) then {exp1,exp2};
-    
-    case DAE.NORETCALL(functionName=fPath,functionArgs=fargs)
-      then {DAE.CALL(fPath,fargs,false,false,DAE.ET_OTHER(),DAE.NO_INLINE())};
-
-    case _
-      equation
-        Debug.fprintln("failtrace", "- DAEUtil.getAllExpsElement failed");
-      then
-        fail();
-  end matchcontinue;
-end getAllExpsElement;
-
-protected function getAllExpsSubscript "function: getAllExpsSubscript
-  Get all exps from a Subscript"
-  input DAE.Subscript inSubscript;
-  output list<DAE.Exp> outExpExpLst;
-algorithm
-  outExpExpLst := matchcontinue (inSubscript)
-    local DAE.Exp e;
-    case DAE.WHOLEDIM() then {};
-    case DAE.SLICE(exp = e) then {e};
-    case DAE.INDEX(exp = e) then {e};
-    case _
-      equation
-        Debug.fprintln("failtrace", "- DAEUtil.getAllExpsSubscript failed");
-      then
-        fail();
-  end matchcontinue;
-end getAllExpsSubscript;
-
-protected function getAllExpsExtarg
-"function: getAllExpsExtarg
-  Get all exps from an ExtArg"
-  input DAE.ExtArg inExtArg;
-  output list<DAE.Exp> outExpExpLst;
-algorithm
-  outExpExpLst:=
-  matchcontinue (inExtArg)
-    local
-      DAE.Exp exp1,crefexp,exp;
-      list<DAE.Exp> explist,exps,tyexps;
-      DAE.ComponentRef cref;
-      DAE.Attributes attr;
-      tuple<DAE.TType, Option<Absyn.Path>> ty;
-    case DAE.EXTARG(componentRef = cref,attributes = attr,type_ = ty)
-      equation
-        exp1 = crefToExp(cref);
-        explist = Types.getAllExps(ty);
-        exps = exp1::explist;
-      then
-        exps;
-    case DAE.EXTARGEXP(exp = exp1,type_ = ty)
-      equation
-        explist = Types.getAllExps(ty);
-        exps = exp1::explist;
-      then
-        exps;
-    case DAE.EXTARGSIZE(componentRef = cref,attributes = attr,type_ = ty,exp = exp)
-      equation
-        crefexp = crefToExp(cref);
-        tyexps = Types.getAllExps(ty);
-        exps = Util.listFlatten({{crefexp},tyexps,{exp}});
-      then
-        exps;
-    case DAE.NOEXTARG() then {};
-    case _
-      equation
-        Debug.fprintln("failtrace", "- DAEUtil.getAllExpsExtarg failed");
-      then
-        fail();
-  end matchcontinue;
-end getAllExpsExtarg;
 
 public function transformIfEqToExpr
 "function: transformIfEqToExpr
@@ -5364,7 +5115,8 @@ end collectLocalDecls;
 
 public function getUniontypePaths
 "Traverses DAE elements to find all Uniontypes, and return the paths
-of all of their records."
+of all of their records. This list contains duplicates; handle that in
+the other function."
   input list<DAE.Function> funcs;
   input list<DAE.Element> els;
   output list<Absyn.Path> outPaths;
@@ -5380,8 +5132,8 @@ algorithm
       equation
         paths1 = getUniontypePathsFunctions(funcs);
         paths2 = getUniontypePathsElements(els);
+        // Use accumulators? Small gain as T_UNIONTYPE has lists of paths anyway?
         outPaths = listAppend(paths1, paths2);
-        outPaths = Util.listUnion(outPaths, outPaths); // Remove duplicates
       then outPaths;
   end matchcontinue;
 end getUniontypePaths;
@@ -5399,17 +5151,11 @@ algorithm
       list<DAE.Element> els,els1,els2;
     case elements
       equation
-        exps = getAllExpsFunctions(elements);
-        ((_,els1)) = Expression.traverseExpList(exps, collectLocalDecls, {});
-        els1 = getDAEDeclsFromValueblocks(exps);
+        (_,(_,els1)) = traverseDAEFunctions(elements, Expression.traverseSubexpressionsHelper, (collectLocalDecls,{}));
         els2 = getFunctionsElements(elements);
         els = listAppend(els1, els2);
         outPaths = getUniontypePathsElements(els);
       then outPaths;
-    case _
-      equation
-        false = RTOpts.acceptMetaModelicaGrammar();
-      then {};
   end matchcontinue;
 end getUniontypePathsFunctions;
 
