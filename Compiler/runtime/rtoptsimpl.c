@@ -68,7 +68,7 @@ static long vectorization_limit = 20;
  */
 #define GRAMMAR_MODELICA 0
 #define GRAMMAR_METAMODELICA 1
-static int acceptedGrammar = GRAMMAR_MODELICA;
+int RTOpts_acceptedGrammar = GRAMMAR_MODELICA;
 
 /*
  * adrpo 2008-12-13
@@ -255,7 +255,7 @@ int setCorbaSessionName(const char *name)
   int len=strlen(name);
   if (len==0) return -1;
   if (0 == strcmp("mdt",name)) /* There is no MDT release that enables MetaModelica grammar */
-    acceptedGrammar = GRAMMAR_METAMODELICA;
+    RTOpts_acceptedGrammar = GRAMMAR_METAMODELICA;
   corbaSessionName = strdup(name);
   return 0;
 }
@@ -310,9 +310,9 @@ static enum RTOpts__arg__result RTOptsImpl__arg(const char* arg)
     }
   } else if(strncmp(arg,METAMODELICA,strLen_METAMODELICA) == 0) {
     if (strlen(arg) >= strLen_METAMODELICA && strcmp(&arg[strLen_METAMODELICA], "=MetaModelica") == 0)
-      acceptedGrammar = GRAMMAR_METAMODELICA;
+      RTOpts_acceptedGrammar = GRAMMAR_METAMODELICA;
     else if (strlen(arg) >= strLen_METAMODELICA && strcmp(&arg[strLen_METAMODELICA], "=Modelica") == 0)
-      acceptedGrammar = GRAMMAR_MODELICA;
+      RTOpts_acceptedGrammar = GRAMMAR_MODELICA;
     else {
       fprintf(stderr, "# Wrong option: usage: omc [+g=Modelica|MetaModelica], default to 'Modelica'.\n");
       return ARG_FAILURE;
@@ -482,5 +482,5 @@ static enum RTOpts__arg__result RTOptsImpl__arg(const char* arg)
 
 extern int RTOptsImpl__acceptMetaModelicaGrammar()
 {
-  return acceptedGrammar == GRAMMAR_METAMODELICA;
+  return RTOpts_acceptedGrammar == GRAMMAR_METAMODELICA;
 }

@@ -1994,7 +1994,7 @@ protected function prefixEqualUnlessBasicType
   input Prefix.Prefix pre2;
   input SCode.Class cls;
 algorithm
-  _ := matchcontinue(pre1, pre2, cls)
+  _ := match (pre1, pre2, cls)
     local
       SCode.Restriction r;
       String name;
@@ -2024,7 +2024,7 @@ algorithm
       equation
         equality(pre1 = pre2);
       then ();
-  end matchcontinue;
+  end match;
 end prefixEqualUnlessBasicType;
 
 public function instClassIn_dispatch

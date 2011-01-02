@@ -178,6 +178,7 @@ protected import Debug;
 protected import Print;
 protected import Error;
 protected import RTOpts;
+protected import Util;
 
 public function printStateStr "- Printing
 
@@ -427,14 +428,14 @@ public function trans "function: trans
   input Event inEvent;
   output State outState;
 algorithm
-  outState:=
-  matchcontinue (inState,inEvent)
+  outState := match (inState,inEvent)
     local
       Absyn.Path p;
       State st;
       Event ev;
-      Boolean isExpandable;
+      Boolean isExpandable,b;
       String s;
+      list<String> msg;
     case (UNKNOWN(path = p),NEWDEF()) then IS_NEW(p);  /* Event `NEWDEF\' */
     case (OPTIMIZATION(path = p),NEWDEF()) then OPTIMIZATION(p);      
     case (MODEL(path = p),NEWDEF()) then MODEL(p);
@@ -461,16 +462,13 @@ algorithm
     case (RECORD(path = p),FOUND_COMPONENT(name = _)) then RECORD(p);
     case (BLOCK(path = p),FOUND_COMPONENT(name = _)) then BLOCK(p);
     case (CONNECTOR(path = p,isExpandable = isExpandable),FOUND_COMPONENT(name = _)) then CONNECTOR(p,isExpandable);
-    case (TYPE(path = p),FOUND_COMPONENT(name = s))
+    case (TYPE(path = p),FOUND_COMPONENT(name = s)) // A type can not contain new components
       equation
-        true = isBasicTypeComponentName(s);
+        b = isBasicTypeComponentName(s);
+        s = Debug.bcallret1(not b, Absyn.pathString, p, "");
+        msg = Util.listConsOnTrue(not b, s, {});
+        Error.assertionOrAddSourceMessage(b, Error.TYPE_NOT_FROM_PREDEFINED, msg, Absyn.dummyInfo);
       then TYPE(p);
-    case (TYPE(path = p),FOUND_COMPONENT(name = _))  // A type can not contain new components
-      equation
-        s = Absyn.pathString(p);
-        Error.addMessage(Error.TYPE_NOT_FROM_PREDEFINED, {s});
-      then
-        fail();
     /* adrpo 2009-05-15: type Orientation can contain equalityConstraint function! */
     //case (TYPE(path = p),FOUND_COMPONENT()) then TYPE(p);
     case (PACKAGE(path = p),FOUND_COMPONENT(name = _)) then PACKAGE(p);
@@ -520,7 +518,7 @@ algorithm
         Debug.traceln("- ClassInf.trans failed: " +& printStateStr(st) +& ", " +& printEventStr(ev));
       then
         fail();
-  end matchcontinue;
+  end match;
 end trans;
 
 public function valid "function: valid

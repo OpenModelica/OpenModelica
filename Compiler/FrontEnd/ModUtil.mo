@@ -49,6 +49,7 @@ public import DAE;
 public import SCode;
 protected import ComponentReference;
 protected import RTOpts;
+protected import Debug;
 protected import Util;
 protected import Algorithm;
 protected import System;
@@ -593,7 +594,7 @@ public function pathEqual "function: pathEqual
   input Absyn.Path inPath2;
   output Boolean outBoolean;
 algorithm
-  outBoolean := matchcontinue (inPath1, inPath2)
+  outBoolean := match (inPath1, inPath2)
     local
       String id1,id2;
       Boolean res;
@@ -608,11 +609,11 @@ algorithm
     // qual ident vs. qual ident 
     case (Absyn.QUALIFIED(id1, path1),Absyn.QUALIFIED(id2, path2))
       equation
-        true = stringEq(id1, id2);
-      then pathEqual(path1, path2);
+        res = Debug.bcallret2(stringEq(id1, id2), pathEqual, path1, path2, false);
+      then res;
     // other return false
     else false;
-  end matchcontinue;
+  end match;
 end pathEqual;
 
 public function typeSpecEqual "function: typeSpecEqual

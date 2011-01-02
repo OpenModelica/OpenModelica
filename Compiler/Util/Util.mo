@@ -947,42 +947,38 @@ end applyAndCons;
 
 
 public function listApplyAndFold
-"@author adrpo
- listApplyAndFold(list<'a>, apply:(x,f,a) => (f x)::a, f:a=>b, accumulator) => list<'b>"
+  "listFold(listMap(lst,applyFunc),foldFunc,foldArg), but is more memory-efficient"
   input list<Type_a> lst;
   input FoldFunc foldFunc;
-  input FuncType_a2Type_b typeA2typeB;
-  input list<Type_b> accumulator;
-  output list<Type_b> result;
+  input ApplyFunc applyFunc;
+  input Type_b foldArg;
+  output Type_b result;
   replaceable type Type_a subtypeof Any;
   replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
   partial function FoldFunc
-    input Type_a inElement;
-    input FuncType_a2Type_b typeA2typeB;
-    input list<Type_b> accumulator;
-    output list<Type_b> outLst;
-    partial function FuncType_a2Type_b
-      input Type_a inElement;
-      output Type_b outElement;
-    end FuncType_a2Type_b;
+    input Type_c inElement;
+    input Type_b accumulator;
+    output Type_b outLst;
   end FoldFunc;
-  partial function FuncType_a2Type_b
+  partial function ApplyFunc
     input Type_a inElement;
-    output Type_b outElement;
-  end FuncType_a2Type_b;
+    output Type_c outElement;
+  end ApplyFunc;
 algorithm
-  result := match (lst,foldFunc,typeA2typeB,accumulator)
+  result := match (lst,foldFunc,applyFunc,foldArg)
     local
-      list<Type_b> foldArg1, foldArg2;
       list<Type_a> rest;
       Type_a hd;
-    case ({},_,_,accumulator) then accumulator;
-    case (hd :: rest,foldFunc,typeA2typeB,accumulator)
+      Type_c c;
+    case ({},_,_,foldArg) then foldArg;
+    case (hd :: rest,foldFunc,applyFunc,foldArg)
       equation
-        foldArg1 = foldFunc(hd,typeA2typeB,accumulator);
-        foldArg2 = listApplyAndFold(rest, foldFunc, typeA2typeB, foldArg1);
+        c = applyFunc(hd);
+        foldArg = foldFunc(c,foldArg);
+        foldArg = listApplyAndFold(rest, foldFunc, applyFunc, foldArg);
       then
-        foldArg2;
+        foldArg;
   end match;
 end listApplyAndFold;
 

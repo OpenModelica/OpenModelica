@@ -5164,7 +5164,7 @@ protected function getUniontypePathsElements
   input list<DAE.Element> elements;
   output list<Absyn.Path> outPaths;
 algorithm
-  outPaths := matchcontinue elements
+  outPaths := match elements
     local
       list<Absyn.Path> paths,paths1,paths2;
       list<list<Absyn.Path>> listPaths;
@@ -5174,14 +5174,11 @@ algorithm
     case {} then {};
     case DAE.VAR(ty = ft)::rest
       equation
-        tys = Types.getAllInnerTypesOfType(ft, Types.uniontypeFilter);
-        listPaths = Util.listMap(tys, Types.getUniontypePaths);
         paths1 = getUniontypePathsElements(rest);
-        listPaths = paths1::listPaths;
-        paths = Util.listFlatten(listPaths);
-      then paths;
+        tys = Types.getAllInnerTypesOfType(ft, Types.uniontypeFilter);
+      then Util.listApplyAndFold(tys, listAppend, Types.getUniontypePaths, paths1);
     case _::rest then getUniontypePathsElements(rest);
-  end matchcontinue;
+  end match;
 end getUniontypePathsElements;
 
 protected function getDAEDeclsFromValueblocks
