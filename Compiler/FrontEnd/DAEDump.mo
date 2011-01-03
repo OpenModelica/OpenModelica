@@ -1718,8 +1718,8 @@ algorithm
    end matchcontinue;
 end ppWhenStmtStr;
 
-protected function ppStmtStr "function: ppStmtStr
-  Helper function to ppStatementStr"
+public function ppStmtStr
+  "Helper function to ppStatementStr"
   input DAE.Statement inStatement;
   input Integer inInteger;
   output String outString;
@@ -1735,16 +1735,14 @@ algorithm
       list<DAE.Statement> then_,stmts;
       DAE.Statement stmt;
       Algorithm.Else else_;
+      DAE.Pattern pat;
     
     case (DAE.STMT_ASSIGN(exp1 = e2 as DAE.CREF(c,_),exp = e),i)
       equation
         s1 = indentStr(i);
         s2 = ComponentReference.printComponentRefStr(c);
-        s3 = stringAppend(s1, s2);
-        s4 = stringAppend(s3, " := ");
-        s5 = ExpressionDump.printExpStr(e);
-        s6 = stringAppend(s4, s5);
-        str = stringAppend(s6, ";\n");
+        s3 = ExpressionDump.printExpStr(e);
+        str = stringAppendList({s1,s2," := ",s3,";\n"});
       then
         str;
     
@@ -1752,11 +1750,8 @@ algorithm
       equation
         s1 = indentStr(i);
         s2 = ExpressionDump.printExpStr(e2);
-        s3 = stringAppend(s1, s2);
-        s4 = stringAppend(s3, " := ");
-        s5 = ExpressionDump.printExpStr(e);
-        s6 = stringAppend(s4, s5);
-        str = stringAppend(s6, ";\n");
+        s3 = ExpressionDump.printExpStr(e);
+        str = stringAppendList({s1,s2," := ",s3,";\n"});
       then
         str;
     
@@ -1764,11 +1759,8 @@ algorithm
       equation
         s1 = indentStr(i);
         s2 = ExpressionDump.printExpStr(e2);
-        s3 = stringAppend(s1, s2);
-        s4 = stringAppend(s3, " := ");
-        s5 = ExpressionDump.printExpStr(e);
-        s6 = stringAppend(s4, s5);
-        str = stringAppend(s6, ";\n");
+        s3 = ExpressionDump.printExpStr(e);
+        str = stringAppendList({s1,s2," := ",s3,";\n"});
       then
         str;
 
@@ -1776,11 +1768,8 @@ algorithm
       equation
         s1 = indentStr(i);
         s2 = ComponentReference.printComponentRefStr(c);
-        s3 = stringAppend(s1, s2);
-        s4 = stringAppend(s3, " := ");
-        s5 = ExpressionDump.printExpStr(e);
-        s6 = stringAppend(s4, s5);
-        str = stringAppend(s6, ";\n");
+        s3 = ExpressionDump.printExpStr(e);
+        str = stringAppendList({s1,s2," := ",s3,";\n"});
       then
         str;
     
@@ -1893,7 +1882,22 @@ algorithm
         e2_str = ExpressionDump.printExpStr(e2);
         str = stringAppendList({s1,"reinit(",e1_str,", ",e2_str,");\n"});
       then str;
-    
+        
+    case (DAE.STMT_FAILURE(body=stmts),i)
+      equation
+        s1 = indentStr(i);
+        s2 = ppStmtListStr(stmts, i+2);
+        str = stringAppendList({s1,"failure(\n",s2,s1,");\n"});
+      then str;
+        
+    case (DAE.STMT_ASSIGN_PATTERN(lhs=pat, rhs=e),i)
+      equation
+        s1 = indentStr(i);
+        s2 = Patternm.patternStr(pat);
+        s3 = ExpressionDump.printExpStr(e);
+        str = stringAppendList({s1,s2," := ",s3,";\n"});
+      then str;
+
     case (_,i)
       equation
         s1 = indentStr(i);

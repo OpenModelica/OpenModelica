@@ -460,8 +460,10 @@ algorithm
       DAE.Pattern pat,head,tail;
       String id;
       DAE.ExpType et;
+      Absyn.Path name;
     case DAE.PAT_WILD() then "_";
-    case DAE.PAT_AS(id,_,DAE.PAT_WILD()) then id;
+    case DAE.PAT_AS(id=id,pat=DAE.PAT_WILD()) then id;
+    case DAE.PAT_AS_FUNC_PTR(id,DAE.PAT_WILD()) then id;
     case DAE.PAT_SOME(pat)
       equation
         str = patternStr(pat);
@@ -469,13 +471,25 @@ algorithm
     case DAE.PAT_META_TUPLE(pats)
       equation
         str = Util.stringDelimitList(Util.listMap(pats,patternStr),",");
-      then "Tuple(" +& str +& ")";
+      then "(" +& str +& ")";
+        
+    case DAE.PAT_CALL_TUPLE(pats)
+      equation
+        str = Util.stringDelimitList(Util.listMap(pats,patternStr),",");
+      then "(" +& str +& ")";
+    
+    case DAE.PAT_CALL(name=name, patterns=pats)
+      equation
+        id = Absyn.pathString(name);
+        str = Util.stringDelimitList(Util.listMap(pats,patternStr),",");
+      then stringAppendList({id,"(",str,")"});
 
     case DAE.PAT_CONS(head,tail) then patternStr(head) +& "::" +& patternStr(tail);
 
-    case DAE.PAT_CONSTANT(_,exp) then ExpressionDump.printExpStr(exp);
+    case DAE.PAT_CONSTANT(exp=exp) then ExpressionDump.printExpStr(exp);
     // case DAE.PAT_CONSTANT(SOME(et),exp) then "(" +& ExpressionDump.typeString(et) +& ")" +& ExpressionDump.printExpStr(exp);
-    case DAE.PAT_AS(id,_,pat) then id +& " as " +& patternStr(pat);
+    case DAE.PAT_AS(id=id,pat=pat) then id +& " as " +& patternStr(pat);
+    case DAE.PAT_AS_FUNC_PTR(id, pat) then id +& " as " +& patternStr(pat);
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"Patternm.patternStr not implemented correctly"});

@@ -2598,17 +2598,16 @@ protected
   String keystr;
 algorithm
   keystr := ComponentReference.printComponentRefStr(key);
-  v := treeGet2(bt, keystr);
+  v := treeGet3(bt, keystr, treeGet2(bt, keystr));
 end treeGet;
 
-protected function treeGet2 "function: treeGet2
-  author: PA
-  Helper function to treeGet"
+protected function treeGet2
+  "Helper function to treeGet"
   input BackendDAE.BinTree inBinTree;
   input String inString;
-  output BackendDAE.Value outValue;
+  output Integer compResult;
 algorithm
-  outValue := match (inBinTree,inString)
+  compResult := match (inBinTree,inString)
     local
       String rkeystr,keystr;
       DAE.ComponentRef rkey;
@@ -2620,7 +2619,7 @@ algorithm
     case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(key=rkey))),keystr)
       equation
         rkeystr = ComponentReference.printComponentRefStr(rkey);
-      then treeGet3(inBinTree, keystr, stringCompare(rkeystr, keystr));
+      then stringCompare(rkeystr, keystr);
   end match;
 end treeGet2;
 
@@ -2643,10 +2642,14 @@ algorithm
     case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(value=rval))),keystr,0) then rval;
     // search right
     case (BackendDAE.TREENODE(rightSubTree = SOME(right)),keystr,1)
-      then treeGet2(right, keystr);
+      equation
+        compResult = treeGet2(right, keystr);
+      then treeGet3(right, keystr, compResult);
     // search left
     case (BackendDAE.TREENODE(leftSubTree = SOME(left)),keystr,-1)
-      then treeGet2(left, keystr);
+      equation
+        compResult = treeGet2(left, keystr); 
+      then treeGet3(left, keystr, compResult);
   end match;
 end treeGet3;
 

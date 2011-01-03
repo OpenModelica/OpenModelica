@@ -55,8 +55,10 @@ public type Var = DAE.ExpVar;
 
 // protected imports
 protected import ComponentReference;
+protected import DAEDump;
 protected import Dump;
 protected import Expression;
+protected import Patternm;
 protected import RTOpts;
 protected import Util;
 protected import Print;
@@ -566,6 +568,7 @@ algorithm
       list<list<tuple<DAE.Exp, Boolean>>> lstes;
       Absyn.MatchType matchTy;
       DAE.ExpType et;
+      list<DAE.MatchCase> cases;
     
     case (DAE.END(), _, _, _) then "end";
     
@@ -890,11 +893,12 @@ algorithm
       then
         s;
     
-    case (DAE.MATCHEXPRESSION(matchType=matchTy,inputs=es), _, _, _)
+    case (DAE.MATCHEXPRESSION(matchType=matchTy,inputs=es,cases=cases), _, _, _)
       equation
         s1 = Dump.printMatchType(matchTy);
         s2 = printExp2Str(DAE.TUPLE(es), stringDelimiter, opcreffunc, opcallfunc);
-        s = stringAppendList({s1,s2,"\n","#cases#\n","end ",s1});
+        s3 = stringAppendList(Util.listMap(cases,printCase2Str));
+        s = stringAppendList({s1,s2,s3,"end ",s1});
       then s;
     
     case (DAE.SHARED_LITERAL(index=i,ty=et), _, _, _)
@@ -911,6 +915,31 @@ algorithm
         "#UNKNOWN EXPRESSION# ----eee ";
   end matchcontinue;
 end printExp2Str;
+
+protected function printCase2Str
+  "Prints a matchcase as string"
+  input DAE.MatchCase matchCase;
+  output String str;
+algorithm
+  str := match matchCase
+    local
+      list<DAE.Pattern> patterns;
+      list<DAE.Statement> body;
+      Option<DAE.Exp> result;
+      String resultStr,patternsStr,bodyStr;
+    case DAE.CASE(patterns=patterns, body={}, result=result)
+      equation
+        patternsStr = Patternm.patternStr(DAE.PAT_META_TUPLE(patterns));
+        resultStr = Util.getOptionOrDefault(Util.applyOption(result, printExpStr), "fail()");
+      then stringAppendList({"    case ",patternsStr," then ",resultStr,";\n"});
+    case DAE.CASE(patterns=patterns, body=body, result=result)
+      equation
+        patternsStr = Patternm.patternStr(DAE.PAT_META_TUPLE(patterns));
+        resultStr = Util.getOptionOrDefault(Util.applyOption(result, printExpStr), "fail()");
+        bodyStr = stringAppendList(Util.listMap1(body, DAEDump.ppStmtStr, 8));
+      then stringAppendList({"    case ",patternsStr,"\n      algorithm\n",bodyStr,"      then ",resultStr,";\n"});
+  end match;
+end printCase2Str;
 
 public function expPriority
 "function: expPriority
@@ -1750,6 +1779,7 @@ algorithm
       DAE.Exp ae1;
       Boolean b;
       Absyn.MatchType matchTy;
+      list<DAE.MatchCase> cases;
     
     case (DAE.ICONST(integer = i),_)
       equation
@@ -2069,13 +2099,13 @@ algorithm
       then
         ();
 
-    case (DAE.MATCHEXPRESSION(matchType=matchTy,inputs=es), _)
+    case (DAE.MATCHEXPRESSION(matchType=matchTy,inputs=es,cases=cases), _)
       equation
         Print.printBuf(Dump.printMatchType(matchTy));
         Print.printBuf(" (");
         printList(es, printExp, ",");
         Print.printBuf(") \n");
-        Print.printBuf("    #cases#\n");
+        Print.printBuf(stringAppendList(Util.listMap(cases,printCase2Str)));
         Print.printBuf("  end ");
         Print.printBuf(Dump.printMatchType(matchTy));
       then ();
