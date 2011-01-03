@@ -652,6 +652,43 @@ algorithm
   end matchcontinue;
 end listLast;
 
+public function listSplitLast
+  "Returns the last element of a list and a list of all previous elements. If the list is the empty list, the function fails.
+  Example:
+    listLast({3,5,7,11,13}) => (13,{3,5,7,11})
+    listLast({}) => fail"
+  input list<Type_a> lst;
+  output Type_a last;
+  output list<Type_a> outLst;
+  replaceable type Type_a subtypeof Any;
+algorithm
+  (last,outLst) := listSplitLastTail(lst,{});
+end listSplitLast;
+
+protected function listSplitLastTail
+  "Returns the last element of a list and a list of all previous elements. If the list is the empty list, the function fails.
+  Example:
+    listLast({3,5,7,11,13}) => (13,{3,5,7,11})
+    listLast({}) => fail"
+  input list<Type_a> lst;
+  input list<Type_a> acc;
+  output Type_a last;
+  output list<Type_a> outLst;
+  replaceable type Type_a subtypeof Any;
+algorithm
+  (last,outLst) := match (lst,acc)
+    local
+      Type_a a;
+      list<Type_a> rest;
+    case ({a},acc) then (a,listReverse(acc));
+    case (a::rest,acc)
+      equation
+        (a,acc) = listSplitLastTail(rest,a::acc);
+      then
+        (a,acc);
+  end match;
+end listSplitLastTail;
+
 public function listCons "function: listCons
   Performs the cons operation, i.e. elt::list."
   input list<Type_a> inTypeALst;

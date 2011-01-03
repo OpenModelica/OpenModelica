@@ -898,7 +898,7 @@ algorithm
         s1 = Dump.printMatchType(matchTy);
         s2 = printExp2Str(DAE.TUPLE(es), stringDelimiter, opcreffunc, opcallfunc);
         s3 = stringAppendList(Util.listMap(cases,printCase2Str));
-        s = stringAppendList({s1,s2,s3,"end ",s1});
+        s = stringAppendList({s1,s2,"\n",s3,"  end ",s1});
       then s;
     
     case (DAE.SHARED_LITERAL(index=i,ty=et), _, _, _)

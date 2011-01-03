@@ -3258,6 +3258,7 @@ case RECORD_CONSTRUCTOR(__) then
 
 
 
+
   >>
 end functionBodyRecordConstructor;
 
@@ -3675,6 +3676,7 @@ case EXTERNAL_FUNCTION(__) then
   <%extArgs |> arg => extFunCallVarcopyF77(arg) ;separator="\n"%>
   <%match extReturn case SIMEXTARG(__) then extFunCallVarcopyF77(extReturn)%>
   >>
+
 end extFunCallF77;
 
 template extFunCallVardecl(SimExtArg arg, Text &varDecls /*BUFP*/)
@@ -4001,7 +4003,7 @@ case STMT_TUPLE_ASSIGN(exp=CALL(__)) then
 case STMT_TUPLE_ASSIGN(exp=MATCHEXPRESSION(__)) then
   let &preExp = buffer "" /*BUFD*/
   let prefix = 'tmp<%System.tmpTick()%>'
-  let _ = daeExpMatch2(exp, prefix, context, &preExp, &varDecls)
+  let _ = daeExpMatch2(exp, expExpLst, prefix, context, &preExp, &varDecls)
   <<
   <%expExpLst |> cr hasindex i1 from 1 =>
     let rhsStr = '<%prefix%>_targ<%i1%>'
@@ -5458,10 +5460,10 @@ template daeExpMatch(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varD
 match exp
 case exp as MATCHEXPRESSION(__) then
   let res = match et case ET_NORETCALL(__) then "ERROR_MATCH_EXPRESSION_NORETCALL" else tempDecl(expTypeModelica(et), &varDecls)
-  daeExpMatch2(exp,res,context,&preExp,&varDecls)
+  daeExpMatch2(exp,listExpLength1,res,context,&preExp,&varDecls)
 end daeExpMatch;
 
-template daeExpMatch2(Exp exp, Text res, Context context, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/)
+template daeExpMatch2(Exp exp, list<Exp> tupleAssignExps, Text res, Context context, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/)
  "Generates code for a match expression."
 ::=
 match exp
@@ -5497,7 +5499,7 @@ case exp as MATCHEXPRESSION(__) then
           for (<%ix%> = 0, <%done%> = 0; <%ix%> < <%listLength(cases)%> && !<%done%>; <%ix%>++) {
             <% match exp.matchType case MATCHCONTINUE(__) then "MMC_TRY()" %>
             switch (<%ix%>) {
-            <%daeExpMatchCases(cases,ix,res,prefix,onPatternFail,done,context,&varDecls)%>
+            <%daeExpMatchCases(cases,tupleAssignExps,ix,res,prefix,onPatternFail,done,context,&varDecls)%>
             }
             <% match exp.matchType case MATCHCONTINUE(__) then "MMC_CATCH()" %>
           }
@@ -5508,7 +5510,7 @@ case exp as MATCHEXPRESSION(__) then
   res
 end daeExpMatch2;
 
-template daeExpMatchCases(list<MatchCase> cases, Text ix, Text res, Text prefix, Text onPatternFail, Text done, Context context, Text &varDecls)
+template daeExpMatchCases(list<MatchCase> cases, list<Exp> tupleAssignExps, Text ix, Text res, Text prefix, Text onPatternFail, Text done, Context context, Text &varDecls)
 ::=
   cases |> c as CASE(__) hasindex i0 =>
   let &varDeclsCaseInner = buffer ""
@@ -5520,6 +5522,10 @@ template daeExpMatchCases(list<MatchCase> cases, Text ix, Text res, Text prefix,
   let caseRes = (match c.result
     case SOME(TUPLE(PR=exps)) then
       (exps |> e hasindex i1 from 1 => '<%res%>_targ<%i1%> = <%daeExp(e,context,&preRes,&varDeclsCaseInner)%>;<%\n%>')
+    case SOME(exp as CALL(tuple_=true)) then
+      let retStruct = daeExp(exp, context, &preRes, &varDeclsCaseInner)
+      (tupleAssignExps |> cr hasindex i1 from 1 =>
+        '<%res%>_targ<%i1%> = <%retStruct%>.targ<%i1%>;<%\n%>')
     case SOME(e) then '<%res%> = <%daeExp(e,context,&preRes,&varDeclsCaseInner)%>;<%\n%>')
   let _ = (elementVars(c.localDecls) |> var => varInit(var, "", 0, &varDeclsCaseInner, &preExpCaseInner))
   <<case <%i0%>: {
@@ -5990,6 +5996,7 @@ template patternMatch(Pattern pat, Text rhs, Text onPatternFail, Text &varDecls,
         case c as BCONST(__) then 'if (<%c.bool%> != <%urhs%>) <%onPatternFail%>;<%\n%>'
         case c as LIST(valList = {}) then 'if (!listEmpty(<%urhs%>)) <%onPatternFail%>;<%\n%>'
         case c as META_OPTION(exp = NONE()) then 'if (!optionNone(<%urhs%>)) <%onPatternFail%>;<%\n%>'
+
         else 'UNKNOWN_CONSTANT_PATTERN'
       %>>>
   case p as PAT_SOME(__) then

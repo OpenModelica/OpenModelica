@@ -947,8 +947,8 @@ algorithm
     case (DAE.TYPES_VAR(name = name, type_ = ty), _, (cache, env))
       equation
         (cache, env) = extendEnvWithVar(name, ty, inOptValue, {}, cache, env);
-      then
-        ((cache, env));
+        outEnv = (cache,env);
+      then outEnv;
   end matchcontinue;
 end extendEnvWithRecordVar;
 

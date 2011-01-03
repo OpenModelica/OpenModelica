@@ -348,6 +348,7 @@ package SimCode
   constant Context contextInlineSolver;
   constant Context contextFunction;
   constant Context contextOther;  
+  constant list<DAE.Exp> listExpLength1;
 
   function elementVars
     input list<DAE.Element> ld;

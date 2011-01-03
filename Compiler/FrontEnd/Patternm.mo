@@ -881,7 +881,7 @@ algorithm
         (cache,eqAlgs) = Static.fromEquationsToAlgAssignments(eq1,{},cache,env,pre);
         algs = SCodeUtil.translateClassdefAlgorithmitems(eqAlgs);
         (cache,body) = InstSection.instStatements(cache, env, InnerOuter.emptyInstHierarchy, pre, algs, DAEUtil.addElementSourceFileInfo(DAE.emptyElementSource,patternInfo), SCode.NON_INITIAL(), true, Inst.neverUnroll);
-        (cache,elabResult,resType,st) = elabResultExp(cache,env,result,impl,st,performVectorization,pre,patternInfo);
+        (cache,body,elabResult,resType,st) = elabResultExp(cache,env,body,result,impl,st,performVectorization,pre,patternInfo);
       then (cache,DAE.CASE(elabPatterns, caseDecls, body, elabResult, 0),elabResult,resType,st);
 
       // ELSE is the same as CASE, but without pattern
@@ -896,6 +896,7 @@ end elabMatchCase;
 protected function elabResultExp
   input Env.Cache cache;
   input Env.Env env;
+  input list<DAE.Statement> body "Is input in case we want to optimize for tail-recursion";
   input Absyn.Exp exp;
   input Boolean impl;
   input Option<Interactive.InteractiveSymbolTable> st;
@@ -903,30 +904,67 @@ protected function elabResultExp
   input Prefix.Prefix pre;
   input Absyn.Info info;
   output Env.Cache outCache;
+  output list<DAE.Statement> outBody;
   output Option<DAE.Exp> resExp;
   output Option<DAE.Type> resType;
   output Option<Interactive.InteractiveSymbolTable> outSt;
 algorithm
-  (outCache,resExp,resType,outSt) := match (cache,env,exp,impl,st,performVectorization,pre,info)
+  (outCache,outBody,resExp,resType,outSt) := matchcontinue (cache,env,body,exp,impl,st,performVectorization,pre,info)
     local
-      DAE.Exp elabExp;
+      DAE.Exp elabExp,elabCr1,elabCr2;
       DAE.Properties prop;
       DAE.Type ty;
       list<Absyn.Exp> es;
-    case (cache,env,Absyn.CALL(function_ = Absyn.CREF_IDENT("fail",{}), functionArgs = Absyn.FUNCTIONARGS({},{})),impl,st,performVectorization,pre,info)
-      then (cache,NONE(),NONE(),st);
-    case (cache,env,exp as Absyn.TUPLE(_),impl,st,performVectorization,pre,info)
+      Boolean b;
+      list<DAE.Exp> elabCrs1,elabCrs2;
+    case (cache,env,body,Absyn.CALL(function_ = Absyn.CREF_IDENT("fail",{}), functionArgs = Absyn.FUNCTIONARGS({},{})),impl,st,performVectorization,pre,info)
+      then (cache,body,NONE(),NONE(),st);
+
+    case (cache,env,body,exp,impl,st,performVectorization,pre,info)
       equation
         (cache,elabExp,prop,st) = Static.elabExp(cache,env,exp,impl,st,performVectorization,pre,info);
+        (body,elabExp) = elabResultExp2(body,elabExp); 
         ty = Types.getPropType(prop);
-      then (cache,SOME(elabExp),SOME(ty),st);
-    case (cache,env,exp,impl,st,performVectorization,pre,info)
-      equation
-        (cache,elabExp,prop,st) = Static.elabExp(cache,env,exp,impl,st,performVectorization,pre,info);
-        ty = Types.getPropType(prop);
-      then (cache,SOME(elabExp),SOME(ty),st);
-  end match;
+      then (cache,body,SOME(elabExp),SOME(ty),st);
+  end matchcontinue;
 end elabResultExp;
+
+protected function elabResultExp2
+  "(cr1,...,crn) = exp; then (cr1,...,crn); => then exp;
+    cr = exp; then cr; => then exp;
+    
+    Is recursive, and will remove all such assignments, i.e.:
+     doStuff(); a = 1; b = a; c = b; then c;
+   Becomes:
+     doStuff(); then c;
+  
+  This phase needs to be performed if we want to be able to discover places to
+  optimize for tail recursion.
+  "
+  input list<DAE.Statement> body;
+  input DAE.Exp elabExp;
+  output list<DAE.Statement> outBody;
+  output DAE.Exp outExp;
+algorithm
+  (outBody,outExp) := matchcontinue (body,elabExp)
+    local
+      DAE.Exp elabCr1,elabCr2;
+      list<DAE.Exp> elabCrs1,elabCrs2;
+    case (body,elabCr2 as DAE.CREF(ty=_))
+      equation
+        (DAE.STMT_ASSIGN(exp1=elabCr1,exp=elabExp),body) = Util.listSplitLast(body);
+        true = Expression.expEqual(elabCr1,elabCr2);
+        (body,elabExp) = elabResultExp2(body,elabExp);
+      then (body,elabExp);
+    case (body,DAE.TUPLE(elabCrs2))
+      equation
+        (DAE.STMT_TUPLE_ASSIGN(expExpLst=elabCrs1,exp=elabExp),body) = Util.listSplitLast(body);
+        Util.listThreadMapAllValue(elabCrs1, elabCrs2, Expression.expEqual, true);
+        (body,elabExp) = elabResultExp2(body,elabExp);
+      then (body,elabExp);
+    else (body,elabExp);
+  end matchcontinue;
+end elabResultExp2;
 
 protected function fixCaseReturnTypes
   input list<DAE.MatchCase> cases;

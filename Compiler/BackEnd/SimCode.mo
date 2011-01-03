@@ -113,7 +113,8 @@ type ExtAlias = tuple<DAE.ComponentRef, DAE.ComponentRef>;
 type HelpVarInfo = tuple<Integer, DAE.Exp, Integer>; // helpvarindex, expression, whenclause index
 type SampleCondition = tuple<DAE.Exp,Integer>; // helpvarindex, expression,
 type JacobianMatrix = tuple<list<SimEqSystem>, list<SimVar>, String>;
-
+  
+public constant list<DAE.Exp> listExpLength1 = {DAE.ICONST(0)} "For SimCodeC.tpl";
 
 // Root data structure containing information required for templates to
 // generate simulation code for a Modelica model.
