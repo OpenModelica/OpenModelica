@@ -111,7 +111,7 @@ algorithm
         vars = BackendDAEUtil.emptyVars();
         knvars = BackendDAEUtil.emptyVars();
         extVars = BackendDAEUtil.emptyVars();
-        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,whenclauses,extObjCls,s) = lower2(elems, functionTree, s, vars, knvars, extVars, {});
+        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,whenclauses,extObjCls,s) = lower2(listReverse(elems), functionTree, vars, knvars, extVars, {}, {}, {}, {}, {}, {}, {}, {}, {}, s);
 
         daeContainsNoStates = hasNoStates(s); // check if the DAE has states
         // adrpo: add the dummy derivative state ONLY IF the DAE contains
@@ -151,7 +151,7 @@ algorithm
         vars = BackendDAEUtil.emptyVars();
         knvars = BackendDAEUtil.emptyVars();
         extVars = BackendDAEUtil.emptyVars();
-        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,whenclauses,extObjCls,s) = lower2(elems, functionTree, s, vars, knvars, extVars, {});
+        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,whenclauses,extObjCls,s) = lower2(listReverse(elems), functionTree, vars, knvars, extVars, {}, {}, {}, {}, {}, {}, {}, {}, {}, s);
 
         daeContainsNoStates = hasNoStates(s); // check if the DAE has states
         // adrpo: add the dummy derivative state ONLY IF the DAE contains
@@ -189,13 +189,21 @@ end lower;
 
 protected function lower2
   "Helper function to lower."
-  input list<DAE.Element> inElements;
+  input list<DAE.Element> inElements "input is in reverse order. this is faster than reversing all accumulators at the end";
   input DAE.FunctionTree functionTree;
-  input BackendDAE.BinTree inStatesBinTree;
   input BackendDAE.Variables inVariables;
   input BackendDAE.Variables inKnownVariables;
   input BackendDAE.Variables inExternalVariables;
-  input list<BackendDAE.WhenClause> inWhenClauseLst;
+  input list<BackendDAE.Equation> inEquationLst3;
+  input list<BackendDAE.Equation> inEquationLst4;
+  input list<BackendDAE.Equation> inEquationLst5;
+  input list<BackendDAE.MultiDimEquation> inMultiDimEquationLst6;
+  input list<BackendDAE.MultiDimEquation> inMultiDimEquationLst7;
+  input list<DAE.Algorithm> inAlgorithmAlgorithmLst8;
+  input list<DAE.Algorithm> inAlgorithmAlgorithmLst9;
+  input list<BackendDAE.WhenClause> inWhenClauseLst10;
+  input BackendDAE.ExternalObjectClasses inExtObjClasses;
+  input BackendDAE.BinTree inStatesBinTree;
   output BackendDAE.Variables outVariables;
   output BackendDAE.Variables outKnownVariables;
   output BackendDAE.Variables outExternalVariables;
@@ -212,7 +220,8 @@ protected function lower2
 algorithm
   (outVariables,outKnownVariables,outExternalVariables,outEquationLst3,outEquationLst4,outEquationLst5,
    outMultiDimEquationLst6,outMultiDimEquationLst7,outAlgorithmAlgorithmLst8,outAlgorithmAlgorithmLst9,outWhenClauseLst10,outExtObjClasses,outStatesBinTree):=
-  match (inElements,functionTree,inStatesBinTree,inVariables,inKnownVariables,inExternalVariables,inWhenClauseLst)
+   match (inElements,functionTree,inVariables,inKnownVariables,inExternalVariables,inEquationLst3,inEquationLst4,inEquationLst5,
+      inMultiDimEquationLst6,inMultiDimEquationLst7,inAlgorithmAlgorithmLst8,inAlgorithmAlgorithmLst9,inWhenClauseLst10,inExtObjClasses,inStatesBinTree)
     local
       BackendDAE.Variables v1,v2,v3,vars,knvars,extVars,extVars1,extVars2,vars_1,knvars_1,vars1,vars2,knvars1,knvars2,kv;
       list<BackendDAE.WhenClause> whenclauses,whenclauses_1,whenclauses_2;
@@ -256,19 +265,19 @@ algorithm
       DAE.ExpType expTy;
       
     // the empty case 
-    case ({},functionTree,states,v1,v2,v3,whenclauses)
+    case ({},functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,whenclauses,extObjCls,states)
       then
-        (v1,v2,v3,{},{},{},{},{},{},{},whenclauses,{},states);
+        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,whenclauses,extObjCls,states);
 
-    case (daeEl::daeLstRest,functionTree,states,vars,knvars,extVars,whenclauses)
+    case (daeEl::daeLstRest,functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,whenclauses,extObjCls,states)
       equation
-        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,whenclauses_1,extObjCls,states) =
-        lower2(daeLstRest, functionTree, states, vars, knvars, extVars, whenclauses);
-        
-        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,whenclauses_1,extObjCls,states) =
-        lower3(daeEl,functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,whenclauses_1,extObjCls,states);
+        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,whenclauses,extObjCls,states) =
+        lower3(daeEl,functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,whenclauses,extObjCls,states);
+
+        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,whenclauses,extObjCls,states) =
+        lower2(daeLstRest,functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,whenclauses,extObjCls,states);
       then
-        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,whenclauses_1,extObjCls,states);
+        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,whenclauses,extObjCls,states);
   end match;
 end lower2;
 
@@ -543,20 +552,9 @@ algorithm
     // flat class / COMP
     case (DAE.COMP(dAElist = daeElts),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,whenclauses,extObjCls,states)
       equation
-        (vars1,knvars1,extVars1,eqns1,reqns1,ieqns1,aeqns1,iaeqns1,algs1,ialgs1,whenclauses_1,extObjCls1,states) = lower2(daeElts, functionTree, states, vars, knvars, extVars, whenclauses);
-        vars = vars1; // vars = BackendVariable.mergeVariables(vars1, vars2);
-        knvars = knvars1; // knvars = BackendVariable.mergeVariables(knvars1, knvars2);
-        extVars = extVars1; // extVars = BackendVariable.mergeVariables(extVars1,extVars2);
-        eqns = listAppend(eqns1, eqns);
-        ieqns = listAppend(ieqns1, ieqns);
-        reqns = listAppend(reqns1, reqns);
-        aeqns = listAppend(aeqns1, aeqns);
-        iaeqns = listAppend(iaeqns1, iaeqns);
-        algs = listAppend(algs1, algs);
-        ialgs = listAppend(ialgs1, ialgs);
-        extObjCls = listAppend(extObjCls1,extObjCls);
+        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,whenclauses,extObjCls,states) = lower2(listReverse(daeElts),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,whenclauses,extObjCls,states);
       then
-        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,whenclauses_1,extObjCls,states);
+        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,whenclauses,extObjCls,states);
     
     // assert in equation section is converted to ALGORITHM
     case (DAE.ASSERT(cond,msg,source),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,whenclauses_1,extObjCls,states)

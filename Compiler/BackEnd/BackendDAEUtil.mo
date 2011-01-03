@@ -2608,7 +2608,7 @@ protected function treeGet2 "function: treeGet2
   input String inString;
   output BackendDAE.Value outValue;
 algorithm
-  outValue := matchcontinue (inBinTree,inString)
+  outValue := match (inBinTree,inString)
     local
       String rkeystr,keystr;
       DAE.ComponentRef rkey;
@@ -2617,34 +2617,38 @@ algorithm
       BackendDAE.BinTree right, left;
       
     // found it
-    case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(rkey,rval))),keystr)
+    case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(key=rkey))),keystr)
       equation
         rkeystr = ComponentReference.printComponentRefStr(rkey);
-        0 = stringCompare(rkeystr, keystr);
-      then
-        rval;
-    
-    // search right
-    case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(rkey,rval)),rightSubTree = SOME(right)),keystr)
-      equation
-        rkeystr = ComponentReference.printComponentRefStr(rkey) "Search to the right" ;
-        cmpval = stringCompare(rkeystr, keystr);
-        (cmpval > 0) = true;
-        res = treeGet2(right, keystr);
-      then
-        res;
-    
-    // search left
-    case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(rkey,rval)),leftSubTree = SOME(left)),keystr)
-      equation
-        rkeystr = ComponentReference.printComponentRefStr(rkey) "Search to the left" ;
-        cmpval = stringCompare(rkeystr, keystr);
-        (cmpval > 0) = false;
-        res = treeGet2(left, keystr);
-      then
-        res;
-  end matchcontinue;
+      then treeGet3(inBinTree, keystr, stringCompare(rkeystr, keystr));
+  end match;
 end treeGet2;
+
+protected function treeGet3
+  "Helper function to treeGet"
+  input BackendDAE.BinTree inBinTree;
+  input String inString;
+  input Integer compResult;
+  output BackendDAE.Value outValue;
+algorithm
+  outValue := match (inBinTree,inString,compResult)
+    local
+      String rkeystr,keystr;
+      DAE.ComponentRef rkey;
+      BackendDAE.Value rval,cmpval,res;
+      Option<BackendDAE.BinTree> optLeft,optRight;
+      BackendDAE.BinTree right, left;
+      
+    // found it
+    case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(value=rval))),keystr,0) then rval;
+    // search right
+    case (BackendDAE.TREENODE(rightSubTree = SOME(right)),keystr,1)
+      then treeGet2(right, keystr);
+    // search left
+    case (BackendDAE.TREENODE(leftSubTree = SOME(left)),keystr,-1)
+      then treeGet2(left, keystr);
+  end match;
+end treeGet3;
 
 public function treeAddList "function: treeAddList
   author: Frenkel TUD"
