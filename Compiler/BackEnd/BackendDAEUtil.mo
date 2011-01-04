@@ -5115,7 +5115,7 @@ protected function traverseBackendDAEExpsOptEqn "function: traverseBackendDAEExp
     output tuple<DAE.Exp, Type_a> outTpl;
   end FuncExpType;
 algorithm
-  outTypeA:=  matchcontinue (inEquation,func,inTypeA)
+  outTypeA:= match (inEquation,func,inTypeA)
     local
       BackendDAE.Equation eqn;
      Type_a ext_arg_1;
@@ -5125,7 +5125,7 @@ algorithm
         (_,ext_arg_1) = BackendEquation.traverseBackendDAEExpsEqn(eqn,func,inTypeA);
       then
         ext_arg_1;
-  end matchcontinue;
+  end match;
 end traverseBackendDAEExpsOptEqn;
 
 protected function traverseBackendDAEExpsArrayEqn "function: traverseBackendDAEExpsArrayEqn

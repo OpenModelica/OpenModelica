@@ -2377,22 +2377,23 @@ Author BZ,
 checks if one Absyn.IDENT(..) is contained in path."
   input Path p1,p2;
   output Boolean b;
-algorithm b := matchcontinue(p1,p2)
-  local
-    String str1,str2;
-    Path qp;
-    Boolean b1,b2;
-  case(IDENT(str1),IDENT(str2))
-      then stringEq(str1,str2);
-  case(QUALIFIED(str1,qp),(p2 as IDENT(str2)))
-    equation
-      b1 = stringEq(str1,str2);
-      b2 = pathContains(qp,p2);
-      b1 = boolOr(b1,b2);
+algorithm
+  b := match (p1,p2)
+    local
+      String str1,str2;
+      Path qp;
+      Boolean b1,b2;
+    case(IDENT(str1),IDENT(str2))
+    then stringEq(str1,str2);
+    case(QUALIFIED(str1,qp),(p2 as IDENT(str2)))
+      equation
+        b1 = stringEq(str1,str2);
+        b2 = pathContains(qp,p2);
+        b1 = boolOr(b1,b2);
       then
         b1;
-  case(FULLYQUALIFIED(qp),p2) then pathContains(qp,p2);
-  end matchcontinue;
+    case(FULLYQUALIFIED(qp),p2) then pathContains(qp,p2);
+  end match;
 end pathContains;
 
 public function pathContainsString "
@@ -3903,7 +3904,7 @@ protected function findIteratorInElseIfExpBranch //This function is not tail-rec
   input list<tuple<Exp, Exp>> inElseIfBranch;
   output list<tuple<ComponentRef, Integer>> outLst;
 algorithm
-    outLst:=matchcontinue(inString,inElseIfBranch)
+    outLst := match(inString,inElseIfBranch)
     local
       list<tuple<ComponentRef, Integer>> lst,lst_1,lst_2,lst_3;
       String id;
@@ -3917,7 +3918,7 @@ algorithm
           lst_3=findIteratorInElseIfExpBranch(id,rest);
           lst=Util.listFlatten({lst_1,lst_2,lst_3});
         then lst;
-  end matchcontinue;
+  end match;
 end findIteratorInElseIfExpBranch;
 
 public function findIteratorInFunctionArgs
@@ -3925,7 +3926,7 @@ public function findIteratorInFunctionArgs
   input FunctionArgs inFunctionArgs;
   output list<tuple<ComponentRef, Integer>> outLst;
 algorithm
-    outLst:=matchcontinue(inString,inFunctionArgs)
+    outLst := match(inString,inFunctionArgs)
     local
       list<tuple<ComponentRef, Integer>> lst,lst_1,lst_2;
       String id;
@@ -3959,7 +3960,7 @@ algorithm
           lst_1=Util.if_(bool, {}, lst_1);
           lst=listAppend(lst_1,lst_2);
         then lst;
-  end matchcontinue;
+  end match;
 end findIteratorInFunctionArgs;
 
 /*protected function iteratorPresentAmongIterators
@@ -4011,7 +4012,7 @@ protected function findIteratorInExpLstLst//This function is not tail-recursive,
   input list<list<Exp>> inExpLstLst;
   output list<tuple<ComponentRef, Integer>> outLst;
 algorithm
-  outLst:=matchcontinue(inString,inExpLstLst)
+  outLst := match(inString,inExpLstLst)
     local
       list<tuple<ComponentRef, Integer>> lst,lst_1,lst_2;
       String id;
@@ -4024,7 +4025,7 @@ algorithm
         lst_2=findIteratorInExpLstLst(id,rest);
         lst=listAppend(lst_1,lst_2);
       then lst;
-  end matchcontinue;
+  end match;
 end findIteratorInExpLstLst;
 
 protected function findIteratorInNamedArgs
@@ -4204,7 +4205,7 @@ protected function findIteratorInExpOpt
   input Option<Exp> inExpOpt;
   output list<tuple<ComponentRef, Integer>> outLst;
 algorithm
-    outLst:=matchcontinue(inString,inExpOpt)
+    outLst := match(inString,inExpOpt)
     local
       list<tuple<ComponentRef, Integer>> lst;
       String id;
@@ -4214,7 +4215,7 @@ algorithm
         equation
           lst=findIteratorInExp(id,exp);
         then lst;
-  end matchcontinue;
+  end match;
 end findIteratorInExpOpt;
 
 public function findIteratorInCRef "
@@ -4224,7 +4225,7 @@ The most important among \"findIteratorIn...\" functions -- they all use this on
   input ComponentRef inCref;
   output list<tuple<ComponentRef, Integer>> outLst;
 algorithm
-    outLst:=matchcontinue(inString,inCref)
+    outLst := match(inString,inCref)
     local
       list<tuple<ComponentRef, Integer>> lst,lst_1,lst_2,lst_3;
       String id,name;
@@ -4246,7 +4247,7 @@ algorithm
         then lst;
       case(id, CREF_FULLYQUALIFIED(cref)) then findIteratorInCRef(id,cref);
       case (_,WILD()) then {};
-  end matchcontinue;
+  end match;
 end findIteratorInCRef;
 
 protected function findIteratorInSubscripts
@@ -4302,7 +4303,7 @@ protected function qualifyCRefIntLst
   input list<tuple<ComponentRef, Integer>> inLst;
   output list<tuple<ComponentRef, Integer>> outLst;
 algorithm
-  outLst:=matchcontinue(inString,inSubLst,inLst)
+  outLst:=match(inString,inSubLst,inLst)
     local
       ComponentRef cref;
       String name;
@@ -4314,7 +4315,7 @@ algorithm
       equation
         lst=qualifyCRefIntLst(name,subLst,rest);
       then (CREF_QUAL(name,subLst,cref),i)::lst;
-  end matchcontinue;
+  end match;
 end qualifyCRefIntLst;
 
 public function pathReplaceIdent

@@ -6103,6 +6103,10 @@ template literalExpConst(Exp lit, Integer index) "These should all be declared s
   case SCONST(__) then
     let escstr = Util.escapeModelicaStringToCString(string)
     if acceptMetaModelicaGrammar() then
+      match unescapedStringLength(escstr)
+      case 0 then '#define <%name%> mmc_emptystring'
+      case 1 then '#define <%name%> mmc_strings_len1["<%escstr%>"[0]]'
+      else
       <<
       #define <%name%>_data "<%escstr%>"
       static const size_t <%name%>_strlen = <%unescapedStringLength(escstr)%>;
@@ -6115,15 +6119,6 @@ template literalExpConst(Exp lit, Integer index) "These should all be declared s
       static const size_t <%name%>_strlen = <%unescapedStringLength(string)%>;
       static const char <%name%>[<%intAdd(1,unescapedStringLength(string))%>] = <%name%>_data;
       >>
-
-    /*
-  case BOX(exp=exp as SCONST(__)) then
-    let escstr = Util.escapeModelicaStringToCString(exp.string)
-    <<
-    static const MMC_DEFSTRINGLIT(<%tmp%>,<%stringLength(escstr)%>,"<%escstr%>");
-    <%meta%> = MMC_REFSTRINGLIT(<%tmp%>);
-    >>
-    */
   case BOX(exp=exp as ICONST(__)) then
     <<
     <%meta%> = MMC_IMMEDIATE(MMC_TAGFIXNUM(<%exp.integer%>));

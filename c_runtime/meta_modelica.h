@@ -39,6 +39,7 @@
 #define META_MODELICA_H_
 
 #include "modelica.h"
+#include "meta_modelica_string_lit.h"
 
 #if defined(__cplusplus)
 extern "C" {
@@ -163,6 +164,8 @@ static inline void* mmc_mk_scon(const char *s)
     unsigned nbytes = strlen(s);
     unsigned header = MMC_STRINGHDR(nbytes);
     unsigned nwords = MMC_HDRSLOTS(header) + 1;
+    if (nbytes == 0) return mmc_emptystring;
+    if (nbytes == 1) return mmc_strings_len1[*s];
     struct mmc_string *p = (struct mmc_string *) mmc_alloc_words(nwords);
     void *res;
     p->header = header;
@@ -306,11 +309,9 @@ static inline void *mmc_mk_box(int slots, unsigned ctor, ...)
 
 static const MMC_DEFSTRUCT0LIT(mmc_nil,0);
 static const MMC_DEFSTRUCT0LIT(mmc_none,1);
-static const MMC_DEFSTRINGLIT(mmc_emptystring,0,"");
 
 #define mmc_mk_nil() MMC_REFSTRUCTLIT(mmc_nil)
 #define mmc_mk_none() MMC_REFSTRUCTLIT(mmc_none)
-#define mmc_mk_scon_empty() MMC_REFSTRINGLIT(mmc_emptystring)
 
 #define MMC_CONS_CTOR 1
 

@@ -1421,7 +1421,7 @@ public function isKnownExternalFunc "function isKnownExternalFunc
   input String inString;
   input Option<String> inStringOption;
 algorithm
-  _:=  matchcontinue (inString,inStringOption)
+  _:=  match (inString,inStringOption)
     case ("acos",SOME("acos")) then ();
     case ("asin",SOME("asin")) then ();
     case ("atan",SOME("atan")) then ();
@@ -1436,7 +1436,7 @@ algorithm
     case ("tan",SOME("tan")) then ();
     case ("tanh",SOME("tanh")) then ();
     case ("substring",SOME("substring")) then ();
-  end matchcontinue;
+  end match;
 end isKnownExternalFunc;
 
 protected function cevalKnownExternalFuncs2 "function: cevalKnownExternalFuncs2

@@ -10295,7 +10295,7 @@ protected function addClassAnnotation
   input Absyn.Program inProgram;
   output Absyn.Program outProgram;
 algorithm
-  (outProgram) :=  matchcontinue (inComponentRef,inAbsynNamedArgLst,inProgram)
+  (outProgram) := match (inComponentRef,inAbsynNamedArgLst,inProgram)
     local
       Absyn.Path modelpath,modelwithin;
       Absyn.Class cdef,cdef_1;
@@ -10320,7 +10320,7 @@ algorithm
         newp = updateProgram(Absyn.PROGRAM({cdef_1},Absyn.TOP(),ts), p);
       then
         newp;
-  end matchcontinue;
+  end match;
 end addClassAnnotation;
 
 protected function addClassAnnotationToClass

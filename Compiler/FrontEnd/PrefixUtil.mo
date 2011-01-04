@@ -472,7 +472,7 @@ protected function prefixSubscriptsInCref "help function to prefixToCrefOpt2, de
   output Env.Cache outCache;
   output DAE.ComponentRef outCr;
 algorithm
-  (outCache,outCr) := matchcontinue(cache,env,inIH,pre,cr)
+  (outCache,outCr) := match (cache,env,inIH,pre,cr)
   local 
     DAE.Ident id; 
     DAE.ExpType tp;
@@ -486,7 +486,7 @@ algorithm
       (cache,subs) = prefixSubscripts(cache,env,inIH,pre,subs);
     then (cache,ComponentReference.makeCrefQual(id,tp,subs,cr));   
     case(cache,_,_,_,DAE.WILD()) then (cache,DAE.WILD());
-  end  matchcontinue;
+  end match;
 end prefixSubscriptsInCref;
 
 protected function prefixSubscripts "help function to prefixSubscriptsInCref, adds prefix to subscripts"

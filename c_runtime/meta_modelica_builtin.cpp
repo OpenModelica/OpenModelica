@@ -204,7 +204,7 @@ stringAppendList_rettype stringAppendList(modelica_metatype lst)
     lst = MMC_CDR(lst);
     lstLen++;
   }
-  if (nbytes == 0) return mmc_mk_scon_empty();
+  if (nbytes == 0) return mmc_emptystring;
   if (lstLen == 1) return MMC_CAR(lstHead);
 
   header = MMC_STRINGHDR(nbytes);

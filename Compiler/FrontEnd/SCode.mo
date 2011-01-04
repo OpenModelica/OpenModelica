@@ -2370,7 +2370,7 @@ public function findIteratorInEEquationLst "Used by Inst.instEquationCommon for 
   input list<EEquation> inEEqLst;
   output list<tuple<Absyn.ComponentRef, Integer>> outLst;
 algorithm
-    outLst:=matchcontinue(inString,inEEqLst)
+    outLst := match(inString,inEEqLst)
     local
       list<tuple<Absyn.ComponentRef, Integer>> lst,lst_1,lst_2;
       String id;
@@ -2383,7 +2383,7 @@ algorithm
           lst_2=findIteratorInEEquationLst(id,rest);
           lst=listAppend(lst_1,lst_2);
         then lst;
-  end matchcontinue;
+  end match;
 end findIteratorInEEquationLst;
 
 protected function findIteratorInEEquationLstLst
@@ -2392,7 +2392,7 @@ protected function findIteratorInEEquationLstLst
   input list<list<EEquation>> inEEqLstLst;
   output list<tuple<Absyn.ComponentRef, Integer>> outLst;
 algorithm
-    outLst:=matchcontinue(inString,inEEqLstLst)
+    outLst := match(inString,inEEqLstLst)
     local
       list<tuple<Absyn.ComponentRef, Integer>> lst,lst_1,lst_2;
       String id;
@@ -2405,7 +2405,7 @@ algorithm
           lst_2=findIteratorInEEquationLstLst(id,rest);
           lst=listAppend(lst_1,lst_2);
         then lst;
-  end matchcontinue;
+  end match;
 end findIteratorInEEquationLstLst;
 
 protected function findIteratorInElsewhen
@@ -2414,7 +2414,7 @@ protected function findIteratorInElsewhen
   input list<tuple<Absyn.Exp, list<EEquation>>> inElsewhen;
   output list<tuple<Absyn.ComponentRef, Integer>> outLst;
 algorithm
-    outLst:=matchcontinue(inString,inElsewhen)
+    outLst := match(inString,inElsewhen)
     local
       list<tuple<Absyn.ComponentRef, Integer>> lst,lst_1,lst_2,lst_3;
       String id;
@@ -2429,7 +2429,7 @@ algorithm
           lst_3 = findIteratorInElsewhen(id,rest);
           lst = Util.listFlatten({lst_1,lst_2,lst_3});
         then lst;
-  end matchcontinue;
+  end match;
 end findIteratorInElsewhen;
 
 
@@ -2743,7 +2743,7 @@ protected function findIteratorInElseIfBranch //This function is not tail-recurs
   input list<tuple<Absyn.Exp, list<Statement>>> inElseIfBranch;
   output list<tuple<Absyn.ComponentRef, Integer>> outLst;
 algorithm
-    outLst:=matchcontinue(inString,inElseIfBranch)
+    outLst := match (inString,inElseIfBranch)
     local
       list<tuple<Absyn.ComponentRef, Integer>> lst,lst_1,lst_2,lst_3;
       String id;
@@ -2758,7 +2758,7 @@ algorithm
           lst_3=findIteratorInElseIfBranch(id,rest);
           lst=Util.listFlatten({lst_1,lst_2,lst_3});
         then lst;
-  end matchcontinue;
+  end match;
 end findIteratorInElseIfBranch;
 
 public function equationFileInfo

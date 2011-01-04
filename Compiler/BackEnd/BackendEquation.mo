@@ -234,7 +234,7 @@ public function traverseBackendDAEExpsEqn "function: traverseBackendDAEExpsEqn
     output tuple<DAE.Exp, Type_a> outTpl;
   end FuncExpType;
 algorithm
-  (outEquation,outTypeA):=  matchcontinue (inEquation,func,inTypeA)
+  (outEquation,outTypeA):= match (inEquation,func,inTypeA)
     local
       DAE.Exp e1,e2,e,e_1,e_2;
       list<DAE.Exp> expl,expl1,exps,exps1;
@@ -297,7 +297,7 @@ algorithm
         ((e_2,ext_arg_2)) = func((e2,ext_arg_1)); 
       then
         (BackendDAE.COMPLEX_EQUATION(index,e_1,e_2,source),ext_arg_2);
-  end matchcontinue;
+  end match;
 end traverseBackendDAEExpsEqn;
 
 public function traverseBackendDAEExpsEqnListOutEqn
@@ -358,7 +358,7 @@ public function traverseBackendDAEExpsEqnOutEqn
     output tuple<DAE.Exp, Boolean, Type_a> outTpl;
   end FuncExpType;
 algorithm
-  (outEquation,outflag,outTypeA):=  matchcontinue (inEquation,func,inTypeA)
+  (outEquation,outflag,outTypeA):= match (inEquation,func,inTypeA)
     local
       DAE.Exp e1,e2,e,e_1,e_2;
       list<DAE.Exp> expl,expl1,exps,exps1;
@@ -428,7 +428,7 @@ algorithm
         bres = Util.boolOrList({b1,b2});
       then
         (BackendDAE.COMPLEX_EQUATION(index,e_1,e_2,source),bres,ext_arg_2);
-  end matchcontinue;
+  end match;
 end traverseBackendDAEExpsEqnOutEqn;
 
 public function traverseBackendDAEExpList
