@@ -2040,14 +2040,14 @@ algorithm
     //        otherwise we get an error as: Error: Variable eAxis_ia: trying to override final variable ...
     case(DAE.MOD(f1,each1,submods1,NONE()),DAE.MOD(f2,Absyn.NON_EACH(),{},eqmod2 as SOME(_)))
       equation
-        b1 = Util.boolEqual(f1,f2);
+        b1 = boolEq(f1,f2);
         equal = b1;
       then equal;
 
     // handle subset equal
     case(DAE.MOD(f1,each1,submods1,eqmod1),DAE.MOD(f2,each2,submods2,eqmod2))
       equation
-        true = Util.boolEqual(f1,f2);
+        true = boolEq(f1,f2);
         true = Absyn.eachEqual(each1,each2);
         true = subModsEqual(submods1,submods2);
         true = eqModSubsetOrEqual(eqmod1,eqmod2);
@@ -2184,7 +2184,7 @@ algorithm
 
     case(DAE.MOD(f1,each1,submods1,eqmod1),DAE.MOD(f2,each2,submods2,eqmod2)) 
       equation
-        true = Util.boolEqual(f1,f2);
+        true = boolEq(f1,f2);
         true = Absyn.eachEqual(each1,each2);
         true = subModsEqual(submods1,submods2);
         true = eqModEqual(eqmod1,eqmod2);

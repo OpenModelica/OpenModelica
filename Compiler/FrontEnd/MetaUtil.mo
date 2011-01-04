@@ -893,7 +893,7 @@ algorithm
     case (exp,ty)
       equation
         (flatType,_) = Types.flattenArrayType(ty);
-        false = Types.isBoxedType(flatType) or RTOpts.debugFlag("rml") "debug flag to produce better error messages by converting all arrays into lists; the compiler does not use Modelica-style arrays anyway";
+        false = (not Types.isString(flatType) and Types.isBoxedType(flatType)) or RTOpts.debugFlag("rml") "debug flag to produce better error messages by converting all arrays into lists; the compiler does not use Modelica-style arrays anyway";
       then (exp,ty);
   end matchcontinue;
 end tryToConvertArrayToList;

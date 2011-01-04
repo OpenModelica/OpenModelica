@@ -1295,6 +1295,7 @@ algorithm
     case FUNCTION_PTR(tys = _) then ();
     case VARIABLE(ty = DAE.ET_BOXED(_)) then ();
     case VARIABLE(ty = DAE.ET_METATYPE()) then ();
+    case VARIABLE(ty = DAE.ET_STRING()) then ();
   end match;
 end isBoxedArg;
 

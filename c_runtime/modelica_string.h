@@ -36,8 +36,20 @@
 #include "integer_array.h"
 #include "boolean_array.h"
 
+#ifdef __OPENMODELICA__METAMODELICA
+/* When MetaModelica grammar is enabled, all strings are boxed */
+typedef modelica_metatype modelica_string_t;
+typedef const modelica_metatype modelica_string_const;
+typedef modelica_string_t modelica_string;
+#define stringCompare(x,y) mmc_stringCompare(x,y)
+#define stringEqual(x,y) (MMC_STRLEN(x) == MMC_STRLEN(y) && !stringCompare(x,y))
+
+#else
 typedef char* modelica_string_t;
 typedef const char* modelica_string_const;
+typedef modelica_string_const modelica_string;
+#define stringCompare(x,y) strcmp(x,y)
+#define stringEqual(x,y) (stringCompare(x,y)==0)
 
 int modelica_string_ok(modelica_string_t* a);
 
@@ -73,4 +85,6 @@ modelica_string_const copy_modelica_string(modelica_string_const source);
 
 /* Concatenate strings */
 modelica_string_const cat_modelica_string(modelica_string_const s1, modelica_string_const s2);
+#endif
+
 #endif

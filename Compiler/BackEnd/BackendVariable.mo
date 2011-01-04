@@ -2470,7 +2470,7 @@ algorithm
         hval = HashTable2.hashFunc(cr);
         hashindx = intMod(hval, bsize);
         indexes = hashvec[hashindx + 1];
-        indx = getVar3(cr, indexes);
+        indx = getVar3(cr, indexes, getVar4(cr, indexes));
         ((v as BackendDAE.VAR(varName = cr2))) = vararrayNth(varr, indx);
         true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
       then
@@ -2480,7 +2480,7 @@ algorithm
         hval = HashTable2.hashFunc(cr);
         hashindx = intMod(hval, bsize);
         indexes = hashvec[hashindx + 1];
-        indx = getVar3(cr, indexes);
+        indx = getVar3(cr, indexes, getVar4(cr, indexes));
         failure((_) = vararrayNth(varr, indx));
         print("- BackendVariable.existsVar could not found variable, cr:");
         str = ComponentReference.printComponentRefStr(cr);
@@ -2669,7 +2669,7 @@ algorithm
         hval = HashTable2.hashFunc(cr);
         hashindx = intMod(hval, bsize);
         indexes = hashvec[hashindx + 1];
-        indx = getVar3(cr, indexes);
+        indx = getVar3(cr, indexes, getVar4(cr,indexes));
         ((v as BackendDAE.VAR(varName = cr2, flowPrefix = flowPrefix))) = vararrayNth(varr, indx);
         true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
         indx_1 = indx + 1;
@@ -2684,34 +2684,33 @@ protected function getVar3
   Helper function to getVar"
   input DAE.ComponentRef inComponentRef;
   input list<BackendDAE.CrefIndex> inCrefIndexLst;
+  input Boolean firstMatches;
   output Integer outInteger;
 algorithm
-  outInteger := matchcontinue (inComponentRef,inCrefIndexLst)
+  outInteger := match (inComponentRef,inCrefIndexLst,firstMatches)
     local
-      DAE.ComponentRef cr,cr2;
+      DAE.ComponentRef cr;
       BackendDAE.Value v,res;
       list<BackendDAE.CrefIndex> vs;
       BackendDAE.CrefIndex idx;
-      
-    case (cr,{})
-      equation
-        //Debug.fprint("failtrace", "- BackendVariable.getVar3 failed on:" +& ComponentReference.printComponentRefStr(cr) +& "\n");
-      then
-        fail();
-    
-    case (cr,(BackendDAE.CREFINDEX(cref = cr2,index = v) :: _))
-      equation
-        true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
-      then
-        v;
-    
-    case (cr,(idx :: vs))
-      equation
-        res = getVar3(cr, vs);
-      then
-        res;
-  end matchcontinue;
+    case (cr,BackendDAE.CREFINDEX(index = v)::_,true) then v;
+    case (cr,_::vs,false) then getVar3(cr,vs,getVar4(cr,vs));
+  end match;
 end getVar3;
+
+protected function getVar4
+"Helper function to getVar"
+  input DAE.ComponentRef inComponentRef;
+  input list<BackendDAE.CrefIndex> inCrefIndexLst;
+  output Boolean firstMatches;
+algorithm
+  firstMatches := match (inComponentRef,inCrefIndexLst)
+    local
+      DAE.ComponentRef cr,cr2;
+    case (cr,BackendDAE.CREFINDEX(cref = cr2)::_)
+      then ComponentReference.crefEqualNoStringCompare(cr, cr2);
+  end match;
+end getVar4;
 
 protected function getArrayVar
 "function: getArrayVar
@@ -2744,7 +2743,7 @@ algorithm
         hval = HashTable2.hashFunc(cr_1);
         hashindx = intMod(hval, bsize);
         indexes = hashvec[hashindx + 1];
-        indx = getVar3(cr_1, indexes);
+        indx = getVar3(cr_1, indexes, getVar4(cr_1, indexes));
         ((v as BackendDAE.VAR(varName = cr2, arryDim = instdims, flowPrefix = flowPrefix))) = vararrayNth(varr, indx);
         true = ComponentReference.crefEqualNoStringCompare(cr_1, cr2);
         (vs,indxs) = getArrayVar2(instdims, cr, vars);
@@ -2756,7 +2755,7 @@ algorithm
         hval = HashTable2.hashFunc(cr_1);
         hashindx = intMod(hval, bsize);
         indexes = hashvec[hashindx + 1];
-        indx = getVar3(cr_1, indexes);
+        indx = getVar3(cr_1, indexes, getVar4(cr_1, indexes));
         ((v as BackendDAE.VAR(varName = cr2, arryDim = instdims, flowPrefix = flowPrefix))) = vararrayNth(varr, indx);
         true = ComponentReference.crefEqualNoStringCompare(cr_1, cr2);
         (vs,indxs) = getArrayVar2(instdims, cr, vars);

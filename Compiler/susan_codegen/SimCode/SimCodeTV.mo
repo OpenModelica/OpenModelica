@@ -8,11 +8,6 @@ package builtin
     output Integer result;
   end listLength;
   
-  function stringLength "Return the length of a string"
-    input String s;
-    output Integer result;
-  end stringLength;
-  
   function intAdd
     input Integer a;
     input Integer b;
@@ -502,6 +497,11 @@ package System
     output String uuidStr;
   end getUUIDStr;
 
+  function unescapedStringLength "Return the length of a C string literal"
+    input String s;
+    output Integer result;
+  end unescapedStringLength;
+  
 end System;
 
 

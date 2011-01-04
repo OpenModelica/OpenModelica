@@ -706,5 +706,12 @@ See man 3 basename."
   external "C" base = System_basename(filename) annotation(Library = "omcruntime");
 end basename;
 
-end System;
+public function unescapedStringLength
+"Calculates the C string length of the input, if the input was used as a string
+literal in C. For example unescapedStringLength('\"')=1, unescapedStringLength('ab')=2."
+  input String unescapedString;
+  output Integer length;
+  external "C" length=SystemImpl__unescapedStringLength(unescapedString) annotation(Library = "omcruntime");
+end unescapedStringLength;
 
+end System;

@@ -2504,6 +2504,7 @@ end initVal;
 template commonHeader()
 ::=
   <<
+  <% if acceptMetaModelicaGrammar() then '#define __OPENMODELICA__METAMODELICA'%>
   #include "modelica.h"
   #include <stdio.h>
   #include <stdlib.h>
@@ -3352,7 +3353,7 @@ end funArgUnbox;
 template unboxVariable(String varName, ExpType varType, Text &preExp, Text &varDecls)
 ::=
 match varType
-case ET_METATYPE(__) case ET_BOXED(__) then varName
+case ET_STRING(__) case ET_METATYPE(__) case ET_BOXED(__) then varName
 case ET_COMPLEX(complexClassType = RECORD(__)) then
   unboxRecord(varName, varType, &preExp, &varDecls)
 else
@@ -3402,7 +3403,6 @@ template mmcConstructorType(ExpType type)
   case ET_INT(__)
   case ET_BOOL(__)
   case ET_REAL(__)
-  case ET_STRING(__)
   case ET_ENUMERATION(__)
   case ET_ARRAY(__)
   case ET_COMPLEX(__) then 'modelica_metatype'
@@ -3437,7 +3437,7 @@ template readInVar(Variable var)
     >>
   case VARIABLE(name=cr, ty=ET_STRING(__)) then
     <<
-    if (read_<%expTypeArrayIf(ty)%>(&inArgs, (char**) &<%contextCref(name,contextFunction)%>)) return 1;
+    if (read_<%expTypeArrayIf(ty)%>(&inArgs, <%if not acceptMetaModelicaGrammar() then "(char**)"%> &<%contextCref(name,contextFunction)%>)) return 1;
     >>
   case VARIABLE(__) then
     <<
@@ -3471,6 +3471,7 @@ template writeOutVar(Variable var, Integer index)
     write_modelica_record(outVar, <%writeOutVarRecordMembers(ty, index, "")%>);
     >>
   case VARIABLE(__) then
+
     <<
     write_<%varType(var)%>(outVar, &out.targ<%index%>);
     >>
@@ -3750,8 +3751,14 @@ case SIMEXTARG(outputIndex=oi, isArray=false, type_=ty, cref=c) then
   match oi case 0 then
     ""
   else
+    let cr = '<%contextCref(c,contextFunction)%>_ext'
     <<
-    out.targ<%oi%> = (<%expTypeModelica(ty)%>)<%contextCref(c,contextFunction)%>_ext;
+    out.targ<%oi%> = (<%expTypeModelica(ty)%>)<%
+      if acceptMetaModelicaGrammar() then
+        (match ty
+          case ET_STRING(__) then 'mmc_mk_scon(<%cr%>)'
+          else cr)
+      else cr %>;
     >>
 end extFunCallVarcopy;
 
@@ -3781,12 +3788,14 @@ template extArg(SimExtArg extArg, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/
     let name = if oi then 'out.targ<%oi%>' else contextCref(c,contextFunction)
     let shortTypeStr = expTypeShort(t)
     'data_of_<%shortTypeStr%>_array(&(<%name%>))'
+  case SIMEXTARG(cref=c, isInput=ii, outputIndex=0, type_=t) then
+    let cr = '<%contextCref(c,contextFunction)%>'
+    if acceptMetaModelicaGrammar() then
+      (match t case ET_STRING(__) then 'MMC_STRINGDATA(<%cr%>)' else '<%cr%>_ext')
+    else
+      '<%cr%><%match t case ET_STRING(__) then "" else "_ext"%>'
   case SIMEXTARG(cref=c, isInput=ii, outputIndex=oi, type_=t) then
-    let prefix = if oi then "&" else ""
-    let suffix = if oi then "_ext"
-               else match t case ET_STRING(__) then ""
-               else "_ext"
-    '<%prefix%><%contextCref(c,contextFunction)%><%suffix%>'
+    '&<%contextCref(c,contextFunction)%>_ext'
   case SIMEXTARGEXP(__) then
     daeExp(exp, contextFunction, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   case SIMEXTARGSIZE(cref=c) then
@@ -4797,37 +4806,37 @@ case rel as RELATION(__) then
     match rel.operator
     
     case LESS(ty = ET_BOOL(__))             then '(!<%e1%> && <%e2%>)'
-    case LESS(ty = ET_STRING(__))           then '(strcmp(<%e1%>, <%e2%>) < 0)'
+    case LESS(ty = ET_STRING(__))           then '(stringCompare(<%e1%>, <%e2%>) < 0)'
     case LESS(ty = ET_INT(__))              then '(<%e1%> < <%e2%>)'
     case LESS(ty = ET_REAL(__))             then '(<%e1%> < <%e2%>)'
     case LESS(ty = ET_ENUMERATION(__))      then '(<%e1%> < <%e2%>)'
     
     case GREATER(ty = ET_BOOL(__))          then '(<%e1%> && !<%e2%>)'
-    case GREATER(ty = ET_STRING(__))        then '(strcmp(<%e1%>, <%e2%>) > 0)'
+    case GREATER(ty = ET_STRING(__))        then '(stringCompare(<%e1%>, <%e2%>) > 0)'
     case GREATER(ty = ET_INT(__))           then '(<%e1%> > <%e2%>)'
     case GREATER(ty = ET_REAL(__))          then '(<%e1%> > <%e2%>)'
     case GREATER(ty = ET_ENUMERATION(__))   then '(<%e1%> > <%e2%>)'
     
     case LESSEQ(ty = ET_BOOL(__))           then '(!<%e1%> || <%e2%>)'
-    case LESSEQ(ty = ET_STRING(__))         then '(strcmp(<%e1%>, <%e2%>) <= 0)'
+    case LESSEQ(ty = ET_STRING(__))         then '(stringCompare(<%e1%>, <%e2%>) <= 0)'
     case LESSEQ(ty = ET_INT(__))            then '(<%e1%> <= <%e2%>)'
     case LESSEQ(ty = ET_REAL(__))           then '(<%e1%> <= <%e2%>)'
     case LESSEQ(ty = ET_ENUMERATION(__))    then '(<%e1%> <= <%e2%>)'
     
     case GREATEREQ(ty = ET_BOOL(__))        then '(<%e1%> || !<%e2%>)'
-    case GREATEREQ(ty = ET_STRING(__))      then '(strcmp(<%e1%>, <%e2%>) >= 0)'
+    case GREATEREQ(ty = ET_STRING(__))      then '(stringCompare(<%e1%>, <%e2%>) >= 0)'
     case GREATEREQ(ty = ET_INT(__))         then '(<%e1%> >= <%e2%>)'
     case GREATEREQ(ty = ET_REAL(__))        then '(<%e1%> >= <%e2%>)'
     case GREATEREQ(ty = ET_ENUMERATION(__)) then '(<%e1%> >= <%e2%>)'
     
     case EQUAL(ty = ET_BOOL(__))            then '((!<%e1%> && !<%e2%>) || (<%e1%> && <%e2%>))'
-    case EQUAL(ty = ET_STRING(__))          then '(!strcmp(<%e1%>, <%e2%>))'
+    case EQUAL(ty = ET_STRING(__))          then '(stringEqual(<%e1%>, <%e2%>))'
     case EQUAL(ty = ET_INT(__))             then '(<%e1%> == <%e2%>)'
     case EQUAL(ty = ET_REAL(__))            then '(<%e1%> == <%e2%>)'
     case EQUAL(ty = ET_ENUMERATION(__))     then '(<%e1%> == <%e2%>)'    
     
     case NEQUAL(ty = ET_BOOL(__))           then '((!<%e1%> && <%e2%>) || (<%e1%> && !<%e2%>))'
-    case NEQUAL(ty = ET_STRING(__))         then '(strcmp(<%e1%>, <%e2%>))'
+    case NEQUAL(ty = ET_STRING(__))         then '(!stringEqual(<%e1%>, <%e2%>))'
     case NEQUAL(ty = ET_INT(__))            then '(<%e1%> != <%e2%>)'
     case NEQUAL(ty = ET_REAL(__))           then '(<%e1%> != <%e2%>)'
     case NEQUAL(ty = ET_ENUMERATION(__))    then '(<%e1%> != <%e2%>)'
@@ -5107,6 +5116,11 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
             path=IDENT(name="noEvent"),
             expLst={e1}) then
     daeExp(e1, context, &preExp, &varDecls)
+  
+  case CALL(tuple_=false, builtin=true,
+            path=IDENT(name="anyString"),
+            expLst={e1}) then
+    'mmc_anyString(<%daeExp(e1, context, &preExp, &varDecls)%>)'
   
   case CALL(tuple_=false, builtin=true,
             path=IDENT(name="mmc_get_field"),
@@ -5562,7 +5576,7 @@ match exp
 case exp as UNBOX(__) then
   let ty = expTypeShort(exp.ty)
   let res = daeExp(exp.exp,context,&preExp,&varDecls)
-  'mmc_unbox_<%ty%>(<%res%>)'
+  'mmc_unbox_<%ty%>(<%res%>) /* DAE.UNBOX */'
 end daeExpUnbox;
 
 template daeExpSharedLiteral(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/)
@@ -5762,7 +5776,7 @@ template expTypeShort(DAE.ExpType type)
   match type
   case ET_INT(__)         then "integer"  
   case ET_REAL(__)        then "real"
-  case ET_STRING(__)      then "string"
+  case ET_STRING(__)      then if acceptMetaModelicaGrammar() then "metatype" else "string"
   case ET_BOOL(__)        then "boolean"
   case ET_ENUMERATION(__) then "integer"  
   case ET_OTHER(__)       then "complex"
@@ -5887,7 +5901,10 @@ template expTypeFromExpFlag(Exp exp, Integer flag)
   match exp
   case ICONST(__)        then match flag case 8 then "int" case 1 then "integer" else "modelica_integer"
   case RCONST(__)        then match flag case 1 then "real" else "modelica_real"
-  case SCONST(__)        then match flag case 1 then "string" else "modelica_string"
+  case SCONST(__)        then if acceptMetaModelicaGrammar() then
+                                (match flag case 1 then "metatype" else "modelica_metatype")
+                              else
+                                (match flag case 1 then "string" else "modelica_string")
   case BCONST(__)        then match flag case 1 then "boolean" else "modelica_boolean"
   case ENUM_LITERAL(__)  then match flag case 8 then "int" case 1 then "integer" else "modelica_integer"
   case e as BINARY(__)
@@ -5992,7 +6009,9 @@ template patternMatch(Pattern pat, Text rhs, Text onPatternFail, Text &varDecls,
       <<<%unboxBuf%><%match p.exp
         case c as ICONST(__) then 'if (<%c.integer%> != <%urhs%>) <%onPatternFail%>;<%\n%>'
         case c as RCONST(__) then 'if (<%c.real%> != <%urhs%>) <%onPatternFail%>;<%\n%>'
-        case c as SCONST(__) then 'if (strcmp("<%c.string%>", <%urhs%>) != 0) <%onPatternFail%>;<%\n%>'
+        case c as SCONST(__) then
+          let escstr = Util.escapeModelicaStringToCString(c.string)
+          'if (<%unescapedStringLength(escstr)%> != MMC_STRLEN(<%urhs%>) || strcmp("<%escstr%>", MMC_STRINGDATA(<%urhs%>)) != 0) <%onPatternFail%>;<%\n%>'
         case c as BCONST(__) then 'if (<%c.bool%> != <%urhs%>) <%onPatternFail%>;<%\n%>'
         case c as LIST(valList = {}) then 'if (!listEmpty(<%urhs%>)) <%onPatternFail%>;<%\n%>'
         case c as META_OPTION(exp = NONE()) then 'if (!optionNone(<%urhs%>)) <%onPatternFail%>;<%\n%>'
@@ -6083,17 +6102,19 @@ template literalExpConst(Exp lit, Integer index) "These should all be declared s
   match lit
   case SCONST(__) then
     let escstr = Util.escapeModelicaStringToCString(string)
-    <<
-    #define <%name%>_data "<%escstr%>"
-    static const size_t <%name%>_strlen = <%stringLength(escstr)%>;
-    static const char <%name%>[<%intAdd(1,stringLength(string))%>] = <%name%>_data;
-    static const MMC_DEFSTRINGLIT(<%tmp%>,<%name%>_strlen,<%name%>_data);
-    <%meta%>_mmc = MMC_REFSTRINGLIT(<%tmp%>);
-    >>
-  case BOX(exp=SHARED_LITERAL(ty=ET_STRING(__),index=ix)) then
-    <<
-    #define <%name%> _OMC_LIT<%ix%>_mmc
-    >>
+    if acceptMetaModelicaGrammar() then
+      <<
+      #define <%name%>_data "<%escstr%>"
+      static const size_t <%name%>_strlen = <%unescapedStringLength(escstr)%>;
+      static const MMC_DEFSTRINGLIT(<%tmp%>,<%name%>_strlen,<%name%>_data);
+      <%meta%> = MMC_REFSTRINGLIT(<%tmp%>);
+      >>
+    else
+      <<
+      #define <%name%>_data "<%escstr%>"
+      static const size_t <%name%>_strlen = <%unescapedStringLength(string)%>;
+      static const char <%name%>[<%intAdd(1,unescapedStringLength(string))%>] = <%name%>_data;
+      >>
 
     /*
   case BOX(exp=exp as SCONST(__)) then
@@ -6154,7 +6175,6 @@ template literalExpConstBoxedVal(Exp lit)
     MMC_REFSTRUCTLIT(mmc_none)
     >>
   case BOX(__) then literalExpConstBoxedVal(exp)
-  case lit as SHARED_LITERAL(ty=ET_STRING(__)) then '_OMC_LIT<%lit.index%>_mmc'
   case lit as SHARED_LITERAL(__) then '_OMC_LIT<%lit.index%>'
   else '<%\n%>#error "literalExpConstBoxedVal failed: <%printExpStr(lit)%>"<%\n%>'
 end literalExpConstBoxedVal;

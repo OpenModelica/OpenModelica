@@ -1931,3 +1931,11 @@ RML_BEGIN_LABEL(System__lookupFunction)
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
+
+RML_BEGIN_LABEL(System__unescapedStringLength)
+{
+  const char *str = RML_STRINGDATA(rmlA0);
+  rmlA0 = mk_icon(SystemImpl__unescapedStringLength(str));
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL

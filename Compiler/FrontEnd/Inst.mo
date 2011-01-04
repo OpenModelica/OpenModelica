@@ -6513,9 +6513,9 @@ algorithm
         // see if the most stuff is the same!
         true = stringEq(n1, n2);
         true = ModUtil.innerOuterEqual(io1, io2);        
-        true = Util.boolEqual(fp1, fp2);
-        true = Util.boolEqual(rp1, rp2);
-        true = Util.boolEqual(pp1, pp2);
+        true = boolEq(fp1, fp2);
+        true = boolEq(rp1, rp2);
+        true = boolEq(pp1, pp2);
         true = SCode.attributesEqual(attr1, attr2);
         true = SCode.modEqual(smod1, smod2);
         equality(ad1 = ad2);

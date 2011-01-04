@@ -28,6 +28,7 @@
  *
  */
 
+#include "meta_modelica_builtin.h"
 #include "modelica.h"
 #include "rml_compatibility.h"
 #include "OpenModelicaBootstrappingHeader.h"
@@ -52,11 +53,11 @@ extern void* DynLoad_executeFunction(int _inFuncHandle, void* _inValLst)
   return retarg;
 }
 
-extern const char* _Absyn_pathString2(void*,const char*);
+extern void* _Absyn_pathString2(void*,void*);
 static const char* path_to_name(void* path, char del)
 {
   char delStr[2] = {del,'\0'};
-  return _Absyn_pathString2(path, delStr);
+  return strdup(MMC_STRINGDATA(_Absyn_pathString2(path, mmc_mk_scon(delStr))));
 }
 
 }

@@ -938,6 +938,34 @@ static char* SystemImpl__getVariableNames(const char* model)
 #endif
 }
 
+/* If the Modelica string is used as a C string literal, this
+ * calculates the string length of that string. */
+extern int SystemImpl__unescapedStringLength(const char* str)
+{
+  int i=0;
+  while (*str) {
+    if (str[0] == '\\') {
+      switch (str[1]) {
+      case '\'':
+      case '"':
+      case '?':
+      case '\\':
+      case 'a':
+      case 'b':
+      case 'f':
+      case 'n':
+      case 'r':
+      case 't':
+      case 'v':
+        str++; break;
+      }
+    }
+    i++;
+    str++;
+  }
+  return i;
+}
+
 #ifdef __cplusplus
 }
 #endif

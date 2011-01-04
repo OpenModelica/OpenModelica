@@ -4805,7 +4805,7 @@ algorithm
     case (Values.REAL(real = r1), Values.REAL(real = r2)) 
       then (r1 ==. r2);
     case (Values.BOOL(boolean = b1), Values.BOOL(boolean = b2)) 
-      then Util.boolEqual(b1, b2);
+      then boolEq(b1, b2);
     case (Values.ENUM_LITERAL(index = i1), Values.ENUM_LITERAL(index = i2))
       then (i1 == i2);
     case (Values.ENUM_LITERAL(index = i1), Values.INTEGER(integer = i2))
@@ -4834,7 +4834,7 @@ algorithm
     case (Values.REAL(real = r1), Values.REAL(real = r2)) 
       then (r1 <>. r2);
     case (Values.BOOL(boolean = b1), Values.BOOL(boolean = b2)) 
-      then not Util.boolEqual(b1, b2);
+      then not boolEq(b1, b2);
     case (Values.ENUM_LITERAL(index = i1), Values.ENUM_LITERAL(index = i2))
       then (i1 <> i2);
     case (Values.ENUM_LITERAL(index = i1), Values.INTEGER(integer = i2))

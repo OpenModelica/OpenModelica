@@ -28,8 +28,11 @@
  *
  */
 
+#define __OPENMODELICA__METAMODELICA
+
 #include "meta_modelica_builtin.h"
 #include <limits.h>
+#include <assert.h>
 #include <time.h>
 #include <math.h>
 #include <string.h>
@@ -48,25 +51,26 @@ intString_rettype intString(modelica_integer i)
 {
   /* 64-bit integer: 1+log_10(2**63)+1 = 20 digits max */
   static char buffer[32];
+  void *res;
   sprintf(buffer, "%ld", (long) i);
-  return strdup(buffer);
+  res = mmc_mk_scon(buffer);
+  MMC_CHECK_STRING(res);
+  return res;
 }
 
 modelica_metatype boxptr_intString(modelica_metatype i)
 {
-  char *buf = (char*) intString(mmc_unbox_integer(i));
-  void *res = mmc_mk_scon(buf);
-  free(buf);
-  return res;
+  return intString(mmc_unbox_integer(i));
 }
 
 /* String Character Conversion */
 
-stringCharInt_rettype stringCharInt(modelica_string chr)
+stringCharInt_rettype stringCharInt(metamodelica_string chr)
 {
-  if (chr[0] == '\0' || chr[1] != '\0')
+  if (MMC_STRLEN(chr) != 1)
     MMC_THROW();
-  return (int) chr[0];
+  MMC_CHECK_STRING(chr);
+  return (int) MMC_STRINGDATA(chr)[0];
 }
 
 intStringChar_rettype intStringChar(modelica_integer ix)
@@ -76,15 +80,16 @@ intStringChar_rettype intStringChar(modelica_integer ix)
     MMC_THROW();
   chr[0] = (char) ix;
   chr[1] = '\0';
-  return strdup(chr);
+  return mmc_mk_scon(chr);
 }
 
 /* String Operations */
 
-stringInt_rettype stringInt(modelica_string str)
+stringInt_rettype stringInt(metamodelica_string s)
 {
   long res;
-  char* endptr;
+  char *endptr,*str=MMC_STRINGDATA(s);
+  MMC_CHECK_STRING(s);
   errno = 0;
   res = strtol(str,&endptr,10);
   if (errno != 0 || str == endptr)
@@ -121,16 +126,18 @@ static inline unsigned long sdbm_hash(const unsigned char* str)
 }
 
 /* adrpo: really bad hash :) */
-stringInt_rettype stringHash(modelica_string_const str)
+stringInt_rettype stringHash(metamodelica_string_const s)
 {
+  const char* str = MMC_STRINGDATA(s);
   long res = 0, i=0;
   while (0 != (str[i])) { res += str[i]; i++; }
   return res;
 }
 
 /* adrpo: see the comment above about djb2 hash */
-stringInt_rettype stringHashDjb2(modelica_string_const str)
+stringInt_rettype stringHashDjb2(metamodelica_string_const s)
 {
+  const char* str = MMC_STRINGDATA(s);
   long res = djb2_hash((const unsigned char*)str);
   res = abs(res);
   // fprintf(stderr, "stringHashDjb2 %s-> %ld %ld %ld\n", str, res, mmc_mk_icon(res), mmc_unbox_integer(mmc_mk_icon(res)));
@@ -138,8 +145,9 @@ stringInt_rettype stringHashDjb2(modelica_string_const str)
 }
 
 /* adrpo: see the comment above about sdbm hash */
-stringInt_rettype stringHashSdbm(modelica_string_const str)
+stringInt_rettype stringHashSdbm(metamodelica_string_const s)
 {
+  const char* str = MMC_STRINGDATA(s);
   long res = sdbm_hash((const unsigned char*)str);
   return res;
 }
@@ -148,74 +156,86 @@ stringInt_rettype stringHashSdbm(modelica_string_const str)
 /* adrpo: really bad hash :) */
 modelica_metatype boxptr_stringHash(modelica_metatype str)
 {
-  const char* s = MMC_STRINGDATA(str);
-  modelica_metatype res = mmc_mk_icon(stringHash(s));
-  return res;
+  return mmc_mk_icon(stringHash(str));
 }
 
 /* adrpo: see the comment above about djb2 hash */
 modelica_metatype boxptr_stringHashDjb2(modelica_metatype str)
 {
-  const char* s = MMC_STRINGDATA(str);
-  modelica_metatype res = mmc_mk_icon(stringHashDjb2(s));
-  return res;
+  return mmc_mk_icon(stringHashDjb2(str));
 }
 
 /* adrpo: see the comment above about sdbm hash */
-modelica_metatype boxptr_stringHashSdmb(modelica_metatype str)
+modelica_metatype boxptr_stringHashSdbm(modelica_metatype str)
 {
-  const char* s = MMC_STRINGDATA(str);
-  modelica_metatype res = mmc_mk_icon(stringHashSdbm(s));
-  return res;
+  return mmc_mk_icon(stringHashSdbm(str));
 }
 
-stringListStringChar_rettype stringListStringChar(modelica_string str)
+stringListStringChar_rettype stringListStringChar(metamodelica_string s)
 {
+  const char *str = MMC_STRINGDATA(s);
   char chr[2] = {'\0', '\0'};
-  modelica_metatype revRes;
-  revRes = mmc_mk_nil();
-  while (*str != '\0') {
-    chr[0] = *str++;
-    revRes = mmc_mk_cons(mmc_mk_scon(chr), revRes);
+  MMC_CHECK_STRING(s);
+  modelica_metatype res;
+  res = mmc_mk_nil();
+  for (int i=MMC_STRLEN(s)-1; i>=0; i--) {
+    chr[0] = str[i];
+    res = mmc_mk_cons(mmc_mk_scon(chr), res);
   }
-  return listReverse(revRes);
+  return res;
 }
 
 stringAppendList_rettype stringAppendList(modelica_metatype lst)
 {
-  int lstLen, i, acc, len;
-  modelica_string_t res, res_head;
-  modelica_string tmp;
+  // fprintf(stderr, "stringAppendList(%s)\n", anyString(lst));
+  modelica_integer lstLen, len;
+  unsigned nbytes,header,nwords;
   modelica_metatype car, lstHead;
-  lstLen = listLength(lst);
-  acc = 0;
+  char *tmp;
+  struct mmc_string *res;
+  void *p;
+  lstLen = 0;
+  nbytes = 0;
   lstHead = lst;
-  for (i=0; i<lstLen /* MMC_NILTEST not required */ ; i++, lst = MMC_CDR(lst)) {
-    tmp = MMC_STRINGDATA(MMC_CAR(lst));
-    acc += strlen(tmp);
+  while (!listEmpty(lst)) {
+    MMC_CHECK_STRING(MMC_CAR(lst));
+    nbytes += MMC_STRLEN(MMC_CAR(lst));
+    // fprintf(stderr, "stringAppendList: Has success reading input %d: %s\n", lstLen, MMC_STRINGDATA(MMC_CAR(lst)));
+    lst = MMC_CDR(lst);
+    lstLen++;
   }
-  res = (char*) malloc(acc+1);
-  res_head = res;
+  if (nbytes == 0) return mmc_mk_scon_empty();
+  if (lstLen == 1) return MMC_CAR(lstHead);
+
+  header = MMC_STRINGHDR(nbytes);
+  nwords = MMC_HDRSLOTS(header) + 1;
+  res = (struct mmc_string *) mmc_alloc_words(nwords);
+  res->header = header;
+  tmp = (char*) res->data;
+  nbytes = 0;
   lst = lstHead;
-  for (i=0; i<lstLen /* MMC_NILTEST not required */ ; i++, lst = MMC_CDR(lst)) {
+  while (!listEmpty(lst)) {
     car = MMC_CAR(lst);
-    tmp = MMC_STRINGDATA(car);
-    len = strlen(tmp);
-    memcpy(res,tmp,len);
-    res += len;
+    len = MMC_STRLEN(car);
+    // fprintf(stderr, "stringAppendList: %s %d %d\n", MMC_STRINGDATA(car), len, strlen(MMC_STRINGDATA(car)));
+    // Might be useful to check this when debugging. String literals are often done wrong :)
+    MMC_DEBUG_ASSERT(len == strlen(MMC_STRINGDATA(car)));
+    memcpy(tmp+nbytes,MMC_STRINGDATA(car),len);
+    nbytes += len;
+    lst = MMC_CDR(lst);
   }
-  *res = '\0';
-  return res_head;
+  tmp[nbytes] = '\0';
+  // fprintf(stderr, "stringAppendList(%s)=>%s\n", anyString(lstHead), anyString(MMC_TAGPTR(res)));
+  p = MMC_TAGPTR(res);
+  MMC_CHECK_STRING(p);
+  return p;
 }
 
-stringLength_rettype stringLength(modelica_string_const str)
+stringCompare_rettype mmc_stringCompare(const void *str1, const void *str2)
 {
-  return strlen(str);
-}
-
-stringCompare_rettype stringCompare(modelica_string str1, modelica_string str2)
-{
-  stringCompare_rettype res = strcmp(str1,str2);
+  MMC_CHECK_STRING(str1);
+  MMC_CHECK_STRING(str2);
+  stringCompare_rettype res = strcmp(MMC_STRINGDATA(str1),MMC_STRINGDATA(str2));
   if (res < 0)
     return -1;
   if (res > 0)
@@ -223,44 +243,63 @@ stringCompare_rettype stringCompare(modelica_string str1, modelica_string str2)
   return 0;
 }
 
-stringGetStringChar_rettype stringGetStringChar(modelica_string str, modelica_integer ix)
+stringGetStringChar_rettype stringGetStringChar(metamodelica_string str, modelica_integer ix)
 {
   char chr[2] = {'\0','\0'};
-  if (*str == 0)
+  void *res;
+  MMC_CHECK_STRING(str);
+  if (ix < 1 || ix > (long) MMC_STRLEN(str))
     MMC_THROW();
-  while (ix > 1) {
-    if (*(++str) == 0)
-      MMC_THROW();
-    ix--;
-  }
-  chr[0] = *str;
-  return strdup(chr);
-}
-
-stringUpdateStringChar_rettype stringUpdateStringChar(modelica_string str, modelica_string c, modelica_integer ix)
-{
-  modelica_string_t res;
-  int length;
-  if (ix < 1 || c[0] == '\0' || c[1] != '\0')
-    MMC_THROW();
-  length = strlen(str);
-  if (ix > length)
-    MMC_THROW();
-  res = strdup(str);
-  res[ix-1] = c[0];
+  chr[0] = MMC_STRINGDATA(str)[ix-1];
+  res = mmc_mk_scon(chr);
+  MMC_CHECK_STRING(res);
   return res;
 }
 
-modelica_string_const stringAppend(modelica_string_const s1, modelica_string_const s2)
+stringUpdateStringChar_rettype stringUpdateStringChar(metamodelica_string str, metamodelica_string c, modelica_integer ix)
 {
-  int len1 = strlen(s1);
-  int len2 = strlen(s2);
-  char* str = (char*) malloc(len1+len2+1);
+  int length;
+  unsigned header = MMC_GETHDR(str);
+  unsigned nwords = MMC_HDRSLOTS(header) + 1;
+  struct mmc_string *p;
+  void *res;
+  MMC_CHECK_STRING(str);
+  MMC_CHECK_STRING(c);
+  // fprintf(stderr, "stringUpdateStringChar(%s,%s,%ld)\n", anyString(str),anyString(c),ix);
 
-  memcpy(str, s1, len1);
-  memcpy(str + len1, s2, len2 + 1);
-  str[len1+len2] = '\0';
-  return str;
+  if (ix < 1 || MMC_STRLEN(c) != 1)
+    MMC_THROW();
+  length = MMC_STRLEN(str);
+  if (ix > length)
+    MMC_THROW();
+  p = (struct mmc_string *) mmc_alloc_words(nwords);
+  p->header = header;
+  memcpy(p->data, MMC_STRINGDATA(str), length);
+  p->data[ix-1] = MMC_STRINGDATA(c)[0];
+  res = MMC_TAGPTR(p);
+  MMC_CHECK_STRING(res);
+  return res;
+}
+
+metamodelica_string_const stringAppend(metamodelica_string_const s1, metamodelica_string_const s2)
+{
+  MMC_CHECK_STRING(s1);
+  MMC_CHECK_STRING(s2);
+  // fprintf(stderr, "stringAppend(%s,%s)\n", anyString(s1), anyString(s2));
+  unsigned len1 = MMC_STRLEN(s1);
+  unsigned len2 = MMC_STRLEN(s2);
+  unsigned nbytes = len1+len2;
+  unsigned header = MMC_STRINGHDR(nbytes);
+  unsigned nwords = MMC_HDRSLOTS(header) + 1;
+  void *res;
+  struct mmc_string *p = (struct mmc_string *) mmc_alloc_words(nwords);
+  p->header = header;
+
+  memcpy(p->data, MMC_STRINGDATA(s1), len1);
+  memcpy(p->data + len1, MMC_STRINGDATA(s2), len2 + 1);
+  res = MMC_TAGPTR(p);
+  MMC_CHECK_STRING(res);
+  return res;
 }
 
 /* List Operations */
@@ -504,14 +543,9 @@ tick_rettype tick()
   return curTick++;
 }
 
-void boxptr_print(modelica_metatype str)
+void print(modelica_metatype str)
 {
   fprintf(stdout, "%s", MMC_STRINGDATA(str));
-}
-
-void print(modelica_string str)
-{
-  fprintf(stdout, "%s", str);
 }
 
 mmc_clock_rettype mmc_clock()

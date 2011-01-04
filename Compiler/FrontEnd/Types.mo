@@ -4279,14 +4279,6 @@ algorithm
         e = Expression.boxExp(e);
       then (e,t2);
 
-    case (e, t1 as (DAE.T_STRING(_),_), (DAE.T_BOXED(t2),_),printFailtrace)
-      equation
-        (e,t1) = matchType(e,t1,unboxedType(t2),printFailtrace);
-        t2 = (DAE.T_BOXED(t1),NONE());
-        t = elabType(t2);
-        e = Expression.boxExp(e);
-      then (e,t2);
-
     case (e as DAE.CALL(path = path1, expLst = elist), t1 as (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_), complexVarLst = v),SOME(path2)), (DAE.T_BOXED(t2),_),printFailtrace)
       equation
         true = subtype(t1,t2);
@@ -4341,13 +4333,6 @@ algorithm
       then (DAE.UNBOX(e,t),t2);
 
     case (e,(DAE.T_BOXED(t1),_),t2 as (DAE.T_BOOL(_),_),printFailtrace)
-      equation
-        true = subtype(t1,t2);
-        (e_1,t2) = matchType(e,t1,t2,printFailtrace);
-        t = elabType(t2);
-      then (DAE.UNBOX(e,t),t2);
-
-    case (e,(DAE.T_BOXED(t1),_),t2 as (DAE.T_STRING(_),_),printFailtrace)
       equation
         true = subtype(t1,t2);
         (e_1,t2) = matchType(e,t1,t2,printFailtrace);
@@ -5136,6 +5121,7 @@ public function isBoxedType
   output Boolean b;
 algorithm
   b := matchcontinue (ty)
+    case ((DAE.T_STRING(_),_)) then true;
     case ((DAE.T_METAOPTION(_),_)) then true;
     case ((DAE.T_LIST(_),_)) then true;
     case ((DAE.T_METATUPLE(_),_)) then true;

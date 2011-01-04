@@ -358,11 +358,13 @@ static int mmc_to_value(void* mmc, void** res)
   }
   hdr = RML_GETHDR(mmc);
   if (hdr == RML_REALHDR) {
-    *res = Values__REAL(mmc);
+    *res = Values__REAL(mk_rcon(mmc_unbox_real(mmc)));
     return 0;
   }
   if (RML_HDRISSTRING(hdr)) {
-    *res = Values__STRING(mmc);
+    MMC_CHECK_STRING(mmc);
+    // We need to duplicate the string because literals may not be accessible anymore... Bleh
+    *res = Values__STRING(mk_scon(MMC_STRINGDATA(mmc)));
     return 0;
   }
   if (hdr == RML_NILHDR) {
@@ -377,7 +379,7 @@ static int mmc_to_value(void* mmc, void** res)
   if (numslots>0 && ctor == MMC_ARRAY_TAG) {
     void *varlst = (void *) mk_nil();
     for (i=numslots; i>0; i--) {
-      assert(0 == mmc_to_value(RML_FETCH(RML_OFFSET(RML_UNTAGPTR(mmc),i)),&t));
+      assert(0 == mmc_to_value(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(mmc),i)),&t));
       varlst = mk_cons(t, varlst);
     }
     *res = (void *) Values__META_5fARRAY(varlst);
@@ -483,7 +485,7 @@ static void *value_to_mmc(void* value)
       i++;
       data = MMC_CDR(data);
     }
-    return mmc_mk_box_arr(i+1, index_int+3, data_mmc);
+    return mmc_mk_box_arr(i+1, index_int+3, (const void**) data_mmc);
   }; break;
   case Values__OPTION_3dBOX1: {
     void *data = RML_STRUCTDATA(value)[UNBOX_OFFSET+0];
@@ -527,7 +529,7 @@ static void *value_to_mmc(void* value)
       data_mmc[len++] = value_to_mmc(RML_CAR(tmp));
       tmp = RML_CDR(tmp);
     }
-    res = mmc_mk_box_arr(len, 0, data_mmc);
+    res = mmc_mk_box_arr(len, 0, (const void**) data_mmc);
     free(data_mmc);
     return res;
   };

@@ -69,7 +69,6 @@ typedef void* modelica_fnptr;
 
 typedef real_array_t real_array;
 typedef integer_array_t integer_array;
-typedef modelica_string_const modelica_string;
 typedef boolean_array_t boolean_array;
 typedef string_array_t string_array;
 

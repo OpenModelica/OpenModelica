@@ -28,6 +28,8 @@
  *
  */
 
+#define __OPENMODELICA__METAMODELICA
+
 #include "meta_modelica_real.h"
 #include "meta_modelica_builtin.h"
 #include <limits.h>
@@ -45,18 +47,23 @@
 
 extern "C" {
 
+static const MMC_DEFSTRINGLIT(_OMC_LIT_NEG_INF,4,"-inf");
+static const MMC_DEFSTRINGLIT(_OMC_LIT_POS_INF,3,"inf");
+static const MMC_DEFSTRINGLIT(_OMC_LIT_NAN,    3,"NaN");
+
 realString_rettype realString(modelica_real r)
 {
   /* 64-bit (1+11+52) double: -d.[15 digits]E-[4 digits] = ~24 digits max.
    * Add safety margin. */
   static char buffer[32];
   modelica_string res;
+  // fprintf(stderr, "\nrealString(%g)\n", r);
   if (isinf(r) && r < 0)
-    res = "-inf";
+    res = MMC_REFSTRINGLIT(_OMC_LIT_NEG_INF);
   else if (isinf(r))
-    res = "inf";
+    res = MMC_REFSTRINGLIT(_OMC_LIT_POS_INF);
   else if (isnan(r))
-    res = "NaN";
+    res = MMC_REFSTRINGLIT(_OMC_LIT_NAN);
   else {
     char* endptr;
     int ix = snprintf(buffer, 32, "%.15g", r);
@@ -73,14 +80,14 @@ realString_rettype realString(modelica_real r)
       buffer[ix++] = '0';
       buffer[ix] = '\0';
     }
-    res = strdup(buffer);
+    res = mmc_mk_scon(buffer);
   }
   return res;
 }
 
 modelica_metatype boxptr_realString(modelica_metatype r)
 {
-  return mmc_mk_scon(realString(mmc_prim_get_real(r)));
+  return realString(mmc_prim_get_real(r));
 }
 
 }

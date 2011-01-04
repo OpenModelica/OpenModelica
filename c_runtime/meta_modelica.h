@@ -44,6 +44,13 @@
 extern "C" {
 #endif
 
+#if 0 /* Enable if you need to debug some MMC runtime assertions */
+#define MMC_DEBUG_ASSERT(x) assert(x)
+#else
+#define MMC_DEBUG_ASSERT(x) 
+#endif
+#define MMC_CHECK_STRING(x) MMC_DEBUG_ASSERT(MMC_STRLEN(x) == strlen(MMC_STRINGDATA(x)))
+
 #ifdef _LP64
 #define MMC_SIZE_DBL 8
 #define MMC_SIZE_INT 8
@@ -82,6 +89,7 @@ typedef int mmc_sint_t;
 #define MMC_STRINGDATA(x) (((struct mmc_string*)MMC_UNTAGPTR(x))->data)
 #define MMC_STRUCTDATA(x) (((struct mmc_struct*)MMC_UNTAGPTR(x))->data)
 #define MMC_ARRAY_TAG 255
+#define MMC_STRLEN(x) (MMC_HDRSTRLEN(MMC_GETHDR(x)))
 
 #define MMC_INT_MAX ((1<<30)-1)
 #define MMC_INT_MIN (-(1<<30))
@@ -156,9 +164,12 @@ static inline void* mmc_mk_scon(const char *s)
     unsigned header = MMC_STRINGHDR(nbytes);
     unsigned nwords = MMC_HDRSLOTS(header) + 1;
     struct mmc_string *p = (struct mmc_string *) mmc_alloc_words(nwords);
+    void *res;
     p->header = header;
     memcpy(p->data, s, nbytes+1);	/* including terminating '\0' */
-    return MMC_TAGPTR(p);
+    res = MMC_TAGPTR(p);
+    MMC_CHECK_STRING(res);
+    return res;
 }
 
 static inline void *mmc_mk_box0(unsigned ctor)
@@ -168,115 +179,114 @@ static inline void *mmc_mk_box0(unsigned ctor)
     return MMC_TAGPTR(p);
 }
 
-static inline void *mmc_mk_box1(unsigned ctor, void *x0)
+static inline void *mmc_mk_box1(unsigned ctor, const void *x0)
 {
     struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(2);
     p->header = MMC_STRUCTHDR(1, ctor);
-    p->data[0] = x0;
+    p->data[0] = (void*) x0;
     return MMC_TAGPTR(p);
 }
 
-static inline void *mmc_mk_box2(unsigned ctor, void *x0, void *x1)
+static inline void *mmc_mk_box2(unsigned ctor, const void *x0, const void *x1)
 {
     struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(3);
     p->header = MMC_STRUCTHDR(2, ctor);
-    p->data[0] = x0;
-    p->data[1] = x1;
+    p->data[0] = (void*) x0;
+    p->data[1] = (void*) x1;
     return MMC_TAGPTR(p);
 }
 
-static inline void *mmc_mk_box3(unsigned ctor, void *x0, void *x1, void *x2)
+static inline void *mmc_mk_box3(unsigned ctor, const void *x0, const void *x1, const void *x2)
 {
     struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(4);
     p->header = MMC_STRUCTHDR(3, ctor);
-    p->data[0] = x0;
-    p->data[1] = x1;
-    p->data[2] = x2;
+    p->data[0] = (void*) x0;
+    p->data[1] = (void*) x1;
+    p->data[2] = (void*) x2;
     return MMC_TAGPTR(p);
 }
 
-static inline void *mmc_mk_box4(unsigned ctor, void *x0, void *x1, void *x2, void *x3)
+static inline void *mmc_mk_box4(unsigned ctor, const void *x0, const void *x1, const void *x2, const void *x3)
 {
     struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(5);
     p->header = MMC_STRUCTHDR(4, ctor);
-    p->data[0] = x0;
-    p->data[1] = x1;
-    p->data[2] = x2;
-    p->data[3] = x3;
+    p->data[0] = (void*) x0;
+    p->data[1] = (void*) x1;
+    p->data[2] = (void*) x2;
+    p->data[3] = (void*) x3;
     return MMC_TAGPTR(p);
 }
 
-static inline void *mmc_mk_box5(unsigned ctor, void *x0, void *x1, void *x2, void *x3, void *x4)
+static inline void *mmc_mk_box5(unsigned ctor, const void *x0, const void *x1, const void *x2, const void *x3, const void *x4)
 {
     struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(6);
     p->header = MMC_STRUCTHDR(5, ctor);
-    p->data[0] = x0;
-    p->data[1] = x1;
-    p->data[2] = x2;
-    p->data[3] = x3;
-    p->data[4] = x4;
+    p->data[0] = (void*) x0;
+    p->data[1] = (void*) x1;
+    p->data[2] = (void*) x2;
+    p->data[3] = (void*) x3;
+    p->data[4] = (void*) x4;
     return MMC_TAGPTR(p);
 }
 
-static inline void *mmc_mk_box6(unsigned ctor, void *x0, void *x1, void *x2, void *x3, void *x4,
-	      void *x5)
+static inline void *mmc_mk_box6(unsigned ctor, const void *x0, const void *x1, const void *x2, const void *x3, const void *x4, const void *x5)
 {
     struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(7);
     p->header = MMC_STRUCTHDR(6, ctor);
-    p->data[0] = x0;
-    p->data[1] = x1;
-    p->data[2] = x2;
-    p->data[3] = x3;
-    p->data[4] = x4;
-    p->data[5] = x5;
+    p->data[0] = (void*) x0;
+    p->data[1] = (void*) x1;
+    p->data[2] = (void*) x2;
+    p->data[3] = (void*) x3;
+    p->data[4] = (void*) x4;
+    p->data[5] = (void*) x5;
     return MMC_TAGPTR(p);
 }
 
-static inline void *mmc_mk_box7(unsigned ctor, void *x0, void *x1, void *x2, void *x3, void *x4,
-	      void *x5, void *x6)
+static inline void *mmc_mk_box7(unsigned ctor, const void *x0, const void *x1, const void *x2,
+        const void *x3, const void *x4, const void *x5, const void *x6)
 {
     struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(8);
     p->header = MMC_STRUCTHDR(7, ctor);
-    p->data[0] = x0;
-    p->data[1] = x1;
-    p->data[2] = x2;
-    p->data[3] = x3;
-    p->data[4] = x4;
-    p->data[5] = x5;
-    p->data[6] = x6;
+    p->data[0] = (void*) x0;
+    p->data[1] = (void*) x1;
+    p->data[2] = (void*) x2;
+    p->data[3] = (void*) x3;
+    p->data[4] = (void*) x4;
+    p->data[5] = (void*) x5;
+    p->data[6] = (void*) x6;
     return MMC_TAGPTR(p);
 }
 
-static inline void *mmc_mk_box8(unsigned ctor, void *x0, void *x1, void *x2, void *x3, void *x4,
-	      void *x5, void *x6, void *x7)
+static inline void *mmc_mk_box8(unsigned ctor, const void *x0, const void *x1, const void *x2,
+        const void *x3, const void *x4, const void *x5, const void *x6, const void *x7)
 {
     struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(9);
     p->header = MMC_STRUCTHDR(8, ctor);
-    p->data[0] = x0;
-    p->data[1] = x1;
-    p->data[2] = x2;
-    p->data[3] = x3;
-    p->data[4] = x4;
-    p->data[5] = x5;
-    p->data[6] = x6;
-    p->data[7] = x7;
+    p->data[0] = (void*) x0;
+    p->data[1] = (void*) x1;
+    p->data[2] = (void*) x2;
+    p->data[3] = (void*) x3;
+    p->data[4] = (void*) x4;
+    p->data[5] = (void*) x5;
+    p->data[6] = (void*) x6;
+    p->data[7] = (void*) x7;
     return MMC_TAGPTR(p);
 }
 
-static inline void *mmc_mk_box9(unsigned ctor, void *x0, void *x1, void *x2, void *x3, void *x4,
-	      void *x5, void *x6, void *x7, void *x8)
+static inline void *mmc_mk_box9(unsigned ctor, const void *x0, const void *x1, const void *x2,
+        const void *x3, const void *x4, const void *x5, const void *x6, const void *x7, const void *x8)
 {
     struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(10);
     p->header = MMC_STRUCTHDR(9, ctor);
-    p->data[0] = x0;
-    p->data[1] = x1;
-    p->data[2] = x2;
-    p->data[3] = x3;
-    p->data[4] = x4;
-    p->data[5] = x5;
-    p->data[6] = x6;
-    p->data[7] = x7;
-    p->data[8] = x8;
+    p->data[0] = (void*) x0;
+    p->data[1] = (void*) x1;
+    p->data[2] = (void*) x2;
+    p->data[3] = (void*) x3;
+    p->data[4] = (void*) x4;
+    p->data[5] = (void*) x5;
+    p->data[6] = (void*) x6;
+    p->data[7] = (void*) x7;
+    p->data[8] = (void*) x8;
     return MMC_TAGPTR(p);
 }
 
@@ -296,23 +306,25 @@ static inline void *mmc_mk_box(int slots, unsigned ctor, ...)
 
 static const MMC_DEFSTRUCT0LIT(mmc_nil,0);
 static const MMC_DEFSTRUCT0LIT(mmc_none,1);
+static const MMC_DEFSTRINGLIT(mmc_emptystring,0,"");
 
 #define mmc_mk_nil() MMC_REFSTRUCTLIT(mmc_nil)
 #define mmc_mk_none() MMC_REFSTRUCTLIT(mmc_none)
+#define mmc_mk_scon_empty() MMC_REFSTRINGLIT(mmc_emptystring)
 
 #define MMC_CONS_CTOR 1
 
-static inline void *mmc_mk_cons(void *car, void *cdr)
+static inline void *mmc_mk_cons(const void *car, const void *cdr)
 {
     return mmc_mk_box2(MMC_CONS_CTOR, car, cdr);
 }
 
-static inline void *mmc_mk_some(void *x)
+static inline void *mmc_mk_some(const void *x)
 {
     return mmc_mk_box1(1, x);
 }
 
-void *mmc_mk_box_arr(int slots, unsigned ctor, void** args);
+void *mmc_mk_box_arr(int slots, unsigned ctor, const void** args);
 void *mmc_mk_box_no_assign(int slots, unsigned ctor);
 
 typedef modelica_integer valueEq_rettype;
@@ -326,7 +338,8 @@ typedef modelica_boolean mmc__uniontype__metarecord__typedef__equal_rettype;
 typedef modelica_string anyString_rettype;
 
 void debug__print(const char*,void*); /* For debugging */
-anyString_rettype anyString(void*); /* For debugging */
+char* anyString(void*); /* For debugging in external functions */
+void* mmc_anyString(void*); /* For debugging */
 void printAny(void*); /* For debugging */
 void printTypeOfAny(void*); /* For debugging */
 
@@ -354,7 +367,6 @@ modelica_real mmc_prim_get_real(void *p);
 
 #define mmc_mk_integer mmc_mk_icon
 #define mmc_mk_boolean mmc_mk_bcon
-#define mmc_mk_string mmc_mk_scon
 #define mmc_mk_real mmc_mk_rcon
 
 #define mmc_unbox_boolean(X) MMC_UNTAGFIXNUM(X)

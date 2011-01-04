@@ -43,15 +43,18 @@
 extern "C" {
 #endif
 
-typedef modelica_string intString_rettype;
+typedef modelica_metatype metamodelica_string;
+typedef const modelica_metatype metamodelica_string_const;
+
+typedef metamodelica_string intString_rettype;
 intString_rettype intString(modelica_integer);
 modelica_metatype boxptr_intString(modelica_metatype);
 
 /* String Character Conversion */
 typedef modelica_integer stringCharInt_rettype;
-typedef modelica_string intStringChar_rettype;
+typedef metamodelica_string intStringChar_rettype;
 
-stringCharInt_rettype stringCharInt(modelica_string);
+stringCharInt_rettype stringCharInt(metamodelica_string);
 intStringChar_rettype intStringChar(modelica_integer);
 
 /* String Operations */
@@ -60,23 +63,23 @@ typedef modelica_integer stringHash_rettype;
 typedef modelica_integer stringHashDjb2_rettype;
 typedef modelica_integer stringHashSdbm_rettype;
 typedef modelica_metatype stringListStringChar_rettype;
-typedef modelica_string stringAppendList_rettype;
+typedef metamodelica_string stringAppendList_rettype;
 typedef modelica_integer stringLength_rettype;
 typedef modelica_integer stringCompare_rettype;
-typedef modelica_string stringGetStringChar_rettype;
-typedef modelica_string stringUpdateStringChar_rettype;
+typedef metamodelica_string stringGetStringChar_rettype;
+typedef metamodelica_string stringUpdateStringChar_rettype;
 
-stringInt_rettype stringInt(modelica_string);
-stringListStringChar_rettype stringListStringChar(modelica_string);
+stringInt_rettype stringInt(metamodelica_string);
+stringListStringChar_rettype stringListStringChar(metamodelica_string);
 stringAppendList_rettype stringAppendList(modelica_metatype);
-modelica_string_const stringAppend(modelica_string_const,modelica_string_const);
-stringLength_rettype stringLength(modelica_string_const);
-stringCompare_rettype stringCompare(modelica_string,modelica_string);
-stringGetStringChar_rettype stringGetStringChar(modelica_string,modelica_integer);
-stringUpdateStringChar_rettype stringUpdateStringChar(modelica_string, modelica_string, modelica_integer);
-stringHash_rettype stringHash(modelica_string_const);
-stringHashDjb2_rettype stringHashDjb2(modelica_string_const);
-stringHashSdbm_rettype stringHashSdbm(modelica_string_const);
+metamodelica_string_const stringAppend(metamodelica_string_const,metamodelica_string_const);
+#define stringLength(x) MMC_STRLEN(x)
+stringCompare_rettype mmc_stringCompare(const void *,const void *);
+stringGetStringChar_rettype stringGetStringChar(metamodelica_string,modelica_integer);
+stringUpdateStringChar_rettype stringUpdateStringChar(metamodelica_string, metamodelica_string, modelica_integer);
+stringHash_rettype stringHash(metamodelica_string_const);
+stringHashDjb2_rettype stringHashDjb2(metamodelica_string_const);
+stringHashSdbm_rettype stringHashSdbm(metamodelica_string_const);
 
 modelica_metatype boxptr_stringHash(modelica_metatype);
 modelica_metatype boxptr_stringHashDjb2(modelica_metatype);
@@ -129,11 +132,12 @@ arrayAdd_rettype arrayAdd(modelica_metatype, modelica_metatype);
 typedef modelica_integer tick_rettype;
 typedef modelica_real mmc_clock_rettype;
 
-void boxptr_print(modelica_metatype);
-void print(modelica_string);
+void print(modelica_metatype);
 tick_rettype tick();
 mmc_clock_rettype mmc_clock();
 void equality(modelica_metatype, modelica_metatype);
+
+#define boxptr_print print
 
 /* Weird RML stuff */
 typedef modelica_metatype getGlobalRoot_rettype;
@@ -153,4 +157,4 @@ modelica_metatype boxptr_valueConstructor(modelica_metatype);
 }
 #endif
 
-#endif
+#endif /* META_MODELICA_BUILTIN_H_ */

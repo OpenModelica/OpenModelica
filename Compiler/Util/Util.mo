@@ -4772,7 +4772,7 @@ protected function arrayCopy2
   replaceable type Type_a subtypeof Any;
 algorithm
   outTypeAArray:=
-  matchcontinue (inTypeAArray1,inTypeAArray2,inInteger3)
+  match (inTypeAArray1,inTypeAArray2,inInteger3)
     local
       array<Type_a> src,dst,dst_1,dst_2;
       Type_a elt;
@@ -4786,7 +4786,7 @@ algorithm
         dst_2 = arrayCopy2(src, dst_1, pos);
       then
         dst_2;
-  end matchcontinue;
+  end match;
 end arrayCopy2;
 
 public function makeTuple "
@@ -4988,11 +4988,11 @@ public function if_ "function: if_
   output Type_a outTypeA;
   replaceable type Type_a subtypeof Any;
 algorithm
-  outTypeA := matchcontinue (inBoolean1,inTypeA2,inTypeA3)
+  outTypeA := match (inBoolean1,inTypeA2,inTypeA3)
     local Type_a r;
     case (true,r,_) then r;
     case (false,_,r) then r;
-  end matchcontinue;
+  end match;
 end if_;
 
 // stefan
@@ -5006,13 +5006,13 @@ public function if_t
 	replaceable type TypeA subtypeof Any;
 	replaceable type TypeB subtypeof Any;
 algorithm
-  outTuple := matchcontinue(inBoolean,inTypeA,inTypeB)
+  outTuple := match(inBoolean,inTypeA,inTypeB)
     local
       TypeA resA;
       TypeB resB;
     case(true,resA,_) then ((SOME(resA),NONE()));
     case(false,_,resB) then ((NONE(),SOME(resB)));
-  end matchcontinue;
+  end match;
 end if_t;
 
 public function stringContainsChar "Returns true if a string contains a specified character"
@@ -5027,56 +5027,6 @@ algorithm
     case(str,char) then false;
   end matchcontinue;
 end stringContainsChar;
-
-/* adrpo 2010-10-27 this function is now in MetaModelica/RML!
-public function stringAppendList "function stringAppendList
-  Takes a list of strings and appends them.
-  Example: stringAppendList({\"foo\", \" \", \"bar\"}) => \"foo bar\""
-  input list<String> inStringLst;
-  output String outString;
-algorithm
-  // adrpo: MetaModelica now contains this function.
-  outString := RML.stringAppendList(inStringLst);
-  // yet another alternative implementation
-  // outString := stringAppendList_tail(inStringLst, "");
-  // alternative implementation
-  // outString:= matchcontinue (inStringLst)
-  //   local
-  //     String f,r_1,str;
-  //     list<String> r;
-  //   case {} then "";
-  //   case {f} then f;
-  //   case (f :: r)
-  //     equation
-  //       r_1 = stringAppendList(r);
-  //       str = stringAppend(f, r_1);
-  //     then
-  //       str;
-  // end matchcontinue;
-end stringAppendList;
-*/
-
-public function stringAppendList_tail "
-@author adrpo
- tail recursive implmentation for stringAppendList"
-  input list<String> inStringLst;
-  input String accumulator;
-  output String outString;
-algorithm
-  outString:=
-  matchcontinue (inStringLst, accumulator)
-    local
-      String f,str,a;
-      list<String> r;
-    case ({}, a) then a;
-    case (f :: r, a)
-      equation
-        a = stringAppend(a, f);
-        str = stringAppendList_tail(r, a);
-      then
-        str;
-  end matchcontinue;
-end stringAppendList_tail;
 
 public function stringDelimitList "function stringDelimitList
   Takes a list of strings and a string delimiter and appends all
@@ -5451,8 +5401,7 @@ protected function cStrToModelicaString1
   input list<ReplacePattern> inReplacePatternLst;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inString,inReplacePatternLst)
+  outString := match (inString,inReplacePatternLst)
     local
       String str,str_1,res_str,from,to;
       list<ReplacePattern> res;
@@ -5463,7 +5412,7 @@ algorithm
         res_str = System.stringReplace(str_1, to, from);
       then
         res_str;
-  end matchcontinue;
+  end match;
 end cStrToModelicaString1;
 
 public function boolOrList "function boolOrList
@@ -5474,8 +5423,7 @@ public function boolOrList "function boolOrList
   input list<Boolean> inBooleanLst;
   output Boolean outBoolean;
 algorithm
-  outBoolean:=
-  matchcontinue (inBooleanLst)
+  outBoolean := match (inBooleanLst)
     local
       Boolean b,res;
       list<Boolean> rest;
@@ -5483,7 +5431,7 @@ algorithm
     case ({b}) then b;
     case ((true :: rest))  then true;
     case ((false :: rest)) then boolOrList(rest);
-  end matchcontinue;
+  end match;
 end boolOrList;
 
 public function boolAndList "function: boolAndList
@@ -5495,8 +5443,7 @@ public function boolAndList "function: boolAndList
   input list<Boolean> inBooleanLst;
   output Boolean outBoolean;
 algorithm
-  outBoolean:=
-  matchcontinue (inBooleanLst)
+  outBoolean := match (inBooleanLst)
     local
       Boolean b,res;
       list<Boolean> rest;
@@ -5504,46 +5451,8 @@ algorithm
     case ({b}) then b;
     case ((false :: rest)) then false;
     case ((true :: rest))  then boolAndList(rest);
-  end matchcontinue;
+  end match;
 end boolAndList;
-
-public function boolString "function: boolString
-  Takes a boolean value and returns a string representation of the boolean value.
-  Example: boolString(true) => \"true\""
-  input Boolean inBoolean;
-  output String outString;
-algorithm
-  outString:=
-  matchcontinue (inBoolean)
-    case true  then "true";
-    case false then "false";
-  end matchcontinue;
-end boolString;
-
-public function boolEqual "Returns true if two booleans are equal, false otherwise"
-	input Boolean b1;
-	input Boolean b2;
-	output Boolean res;
-algorithm
-  res := matchcontinue(b1,b2)
-    case (true,  true)  then true;
-    case (false, false) then true;
-    case (_,_) then false;
-  end matchcontinue;
-end boolEqual;
-
-/*
-adrpo - 2007-02-19 this function already exists in MMC/RML
-public function stringEq "function: stringEq
-  Takes two strings and returns true if the strings are equal
-  Example: stringEq(\"a\",\"a\") => true"
-  input String inString1;
-  input String inString2;
-  output Boolean outBoolean;
-algorithm
-  outBoolean:= inString1 ==& intString2;
-end stringEq;
-*/
 
 public function listFilter
 "function: listFilter

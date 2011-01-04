@@ -156,6 +156,9 @@ void puttype(const type_description *desc)
       }
     }
     break;
+  case TYPE_DESC_MMC:
+    fprintf(stderr, "%s\n", anyString(desc->data.mmc));
+    break;
   default:
     fprintf(stderr, "UNKNOWN: Values.Value!\n");
     break;

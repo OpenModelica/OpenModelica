@@ -38,10 +38,10 @@ void *mmc_alloc_bytes(unsigned nbytes)
 {
   static char *mmc_cur_malloc_buf = NULL;
   static long mmc_cur_malloc_buf_ix=0;
-  // Until we have GC, we simply allocate in 256MB chunks...
-  const long mmc_cur_malloc_buf_sz=256*1024*1024; // 256MB chunks
+  /* Until we have GC, we simply allocate in 256MB chunks... */
+  const long mmc_cur_malloc_buf_sz=256*1024*1024; /* 256MB chunks */
   void *p;
-  // fprintf(stderr, "1 mmc_alloc_bytes(%ld): %ld,%ld\n", nbytes, mmc_cur_malloc_buf, mmc_cur_malloc_buf_ix);
+  /* fprintf(stderr, "1 mmc_alloc_bytes(%ld): %ld,%ld\n", nbytes, mmc_cur_malloc_buf, mmc_cur_malloc_buf_ix); */
   if (mmc_cur_malloc_buf == NULL || nbytes>(mmc_cur_malloc_buf_sz-mmc_cur_malloc_buf_ix)) {
     if ( (mmc_cur_malloc_buf = malloc(mmc_cur_malloc_buf_sz)) == 0 ) {
       fprintf(stderr, "malloc(%u) failed: %s\n", nbytes, strerror(errno));
@@ -52,7 +52,7 @@ void *mmc_alloc_bytes(unsigned nbytes)
   }
   p = mmc_cur_malloc_buf + mmc_cur_malloc_buf_ix;
 
-  // Force 16-byte alignment, like malloc... TODO: Check if this is needed :)
+  /* Force 16-byte alignment, like malloc... TODO: Check if this is needed :) */
   mmc_cur_malloc_buf_ix += nbytes; // + ((nbytes%16) ? 16-(nbytes%16): 0);
 
   // fprintf(stderr, "2 mmc_alloc_bytes(%ld): %ld,%ld => %ld\n", nbytes, mmc_cur_malloc_buf, mmc_cur_malloc_buf_ix, p);
@@ -91,13 +91,13 @@ double mmc_prim_get_real(void *p)
     return u.d;
 }
 
-void *mmc_mk_box_arr(int slots, unsigned ctor, void** args)
+void *mmc_mk_box_arr(int slots, unsigned ctor, const void** args)
 {
     int i;
     struct mmc_struct *p = mmc_alloc_words(slots+1);
     p->header = MMC_STRUCTHDR(slots, ctor);
     for (i=0; i<slots; i++) {
-      p->data[i] = args[i];
+      p->data[i] = (void*) args[i];
     }
     return MMC_TAGPTR(p);
 }
@@ -269,6 +269,7 @@ inline static int anyStringWork(void* any, int ix)
     return ix;
   }
   if (MMC_HDRISSTRING(hdr)) {
+    MMC_CHECK_STRING(any);
     checkAnyStringBufSize(ix,strlen(MMC_STRINGDATA(any)));
     ix += sprintf(anyStringBuf+ix, "\"%s\"", MMC_STRINGDATA(any));
     return ix;
@@ -361,7 +362,7 @@ inline static int anyStringWork(void* any, int ix)
   EXIT(1);  
 }
 
-modelica_string anyString(void* any)
+char* anyString(void* any)
 {
   if (anyStringBufSize == 0) {
     anyStringBuf = malloc(8192);
@@ -370,6 +371,17 @@ modelica_string anyString(void* any)
   *anyStringBuf = '\0';
   anyStringWork(any,0);
   return strdup(anyStringBuf);
+}
+
+void* mmc_anyString(void* any)
+{
+  if (anyStringBufSize == 0) {
+    anyStringBuf = malloc(8192);
+    anyStringBufSize = 8192;
+  }
+  *anyStringBuf = '\0';
+  anyStringWork(any,0);
+  return mmc_mk_scon(anyStringBuf);
 }
 
 void printAny(void* any)
