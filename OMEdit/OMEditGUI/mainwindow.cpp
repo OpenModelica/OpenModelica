@@ -230,6 +230,7 @@ void MainWindow::createActions()
     saveAction->setStatusTip(tr("Save a file"));
 
     saveAsAction = new QAction(QIcon(":/Resources/icons/saveas.png"), tr("Save As"), this);
+    saveAsAction->setShortcut(QKeySequence("Ctrl+Shift+s"));
     saveAsAction->setStatusTip(tr("Save As a File"));
 
     saveAllAction = new QAction(QIcon(":/Resources/icons/saveall.png"), tr("Save All"), this);
@@ -257,10 +258,13 @@ void MainWindow::createActions()
     gridLinesAction->setCheckable(true);
 
     resetZoomAction = new QAction(QIcon(":/Resources/icons/zoom100.png"), tr("Reset Zoom"), this);
+    resetZoomAction->setShortcut(QKeySequence("Ctrl+0"));
 
     zoomInAction = new QAction(QIcon(":/Resources/icons/zoomIn.png"), tr("Zoom In"), this);
+    zoomInAction->setShortcut(QKeySequence("Ctrl++"));
 
     zoomOutAction = new QAction(QIcon(":/Resources/icons/zoomOut.png"), tr("Zoom Out"), this);
+    zoomOutAction->setShortcut(QKeySequence("Ctrl+-"));
 
     checkModelAction = new QAction(QIcon(":/Resources/icons/check.png"), tr("Check"), this);
     connect(checkModelAction, SIGNAL(triggered()), SLOT(checkModel()));
@@ -294,6 +298,7 @@ void MainWindow::createActions()
 
     userManualAction = new QAction(tr("User Manual"), this);
     userManualAction->setStatusTip(tr("Open the User Manual"));
+    userManualAction->setShortcut(QKeySequence(Qt::Key_F1));
     connect(userManualAction, SIGNAL(triggered()), SLOT(openUserManual()));
 
     aboutAction = new QAction(tr("About OMEdit"), this);
@@ -605,15 +610,8 @@ void MainWindow::checkModel()
 
 void MainWindow::openUserManual()
 {
-    QUrl userManualPath;
-    // since in MAC OS X the url adds extra quotes to it, so we need to handle it differently.
-//#ifdef Q_OS_MAC
-//    userManualPath = QUrl(QString("file:///").append(QString(getenv("OPENMODELICAHOME")))
-//                         .append("/share/doc/omedit/OMEdit-UserManual.pdf"));
-//#else
-    userManualPath = QUrl(QString("file:///").append(Helper::OpenModelicaHome.replace("\\", "/"))
-                         .append("/share/doc/omedit/OMEdit-UserManual.pdf"));
-//#endif
+    QUrl userManualPath (QString("file:///").append(Helper::OpenModelicaHome.replace("\\", "/"))
+                        .append("/share/doc/omedit/OMEdit-UserManual.pdf"));
     QDesktopServices::openUrl(userManualPath);
 }
 

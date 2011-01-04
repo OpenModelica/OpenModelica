@@ -1976,7 +1976,15 @@ void ProjectTabWidget::saveProjectTab(int index, bool saveAs)
 
     if (saveAs)
     {
-        saveModel(saveAs);
+        if (saveModel(saveAs))
+        {
+            // make sure we only trim * and not any letter of model name.
+            if (tabName.endsWith('*'))
+                tabName.chop(1);
+
+            setTabText(index, tabName);
+            pCurrentTab->mIsSaved = true;
+        }
     }
     // if not saveAs then
     else
@@ -2016,9 +2024,20 @@ bool ProjectTabWidget::saveModel(bool saveAs)
     if(pCurrentTab->mModelFileName.isEmpty() | saveAs)
     {
         QDir fileDialogSaveDir;
-        modelFileName = QFileDialog::getSaveFileName(this, tr("Save File"),
-                                                             fileDialogSaveDir.currentPath(),
-                                                             Helper::omFileOpenText);
+
+        if (saveAs)
+        {
+            modelFileName = QFileDialog::getSaveFileName(this, tr("Save File As"),
+                                                         fileDialogSaveDir.currentPath(),
+                                                         Helper::omFileOpenText);
+        }
+        else
+        {
+            modelFileName = QFileDialog::getSaveFileName(this, tr("Save File"),
+                                                         fileDialogSaveDir.currentPath(),
+                                                         Helper::omFileOpenText);
+        }
+
         if (modelFileName.isEmpty())
         {
             return false;
