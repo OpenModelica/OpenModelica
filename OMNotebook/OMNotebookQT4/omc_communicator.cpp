@@ -164,7 +164,7 @@ bool OmcCommunicator::establishConnection()
     char *user = getenv("USER");
     if (!user) { user = "nobody"; }
 
-    objectRefFile.setFileName("/tmp/openmodelica." + *(new QString(user)) + ".objid");
+    objectRefFile.setFileName(QDir::tempPath() + QDir::separator() + "openmodelica." + *(new QString(user)) + ".objid");
 
 #endif
 
