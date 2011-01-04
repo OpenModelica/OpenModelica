@@ -402,7 +402,7 @@ public function bcall
   end FuncTypeType_aTo;
   replaceable type Type_a subtypeof Any;
 algorithm
-  _ := matchcontinue (inBoolean,inFuncTypeTypeATo,inTypeA)
+  _ := match (inBoolean,inFuncTypeTypeATo,inTypeA)
     local
       FuncTypeType_aTo func;
       Type_a str;
@@ -412,7 +412,7 @@ algorithm
       then
         ();
     case (false,_,_) then ();
-  end matchcontinue;
+  end match;
 end bcall;
 
 public function bcall2
@@ -429,7 +429,7 @@ public function bcall2
   replaceable type Type_a subtypeof Any;
   replaceable type Type_b subtypeof Any;
 algorithm
-  _ := matchcontinue (inBoolean,inFuncTypeTypeATypeBTo,inTypeA,inTypeB)
+  _ := match (inBoolean,inFuncTypeTypeATypeBTo,inTypeA,inTypeB)
     local
       FuncTypeType_aType_bTo func;
       Type_a a;
@@ -440,7 +440,7 @@ algorithm
       then
         ();
     case (false,_,_,_) then ();
-  end matchcontinue;
+  end match;
 end bcall2;
 
 public function bcall3

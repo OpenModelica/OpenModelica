@@ -17,7 +17,7 @@ public function addRational "adds two rationals"
   input Rational r2;
   output Rational r;
 algorithm
-  r := matchcontinue(r1,r2)
+  r := match(r1,r2)
   local Integer i1,i2,i3,i4,ri1,ri2,d;
     case(RATIONAL(i1,i2),RATIONAL(i3,i4)) equation
       ri1 = i1*i4 + i3*i2;
@@ -26,7 +26,7 @@ algorithm
       ri1 = intDiv(ri1, d);
       ri2 = intDiv(ri2, d);
     then normalizeZero(RATIONAL(ri1,ri2));
-  end matchcontinue;
+  end match;
 end addRational;
 
 protected function normalizeZero "if numerator is zero, set denominator to 1"
@@ -56,7 +56,7 @@ public function subRational "subtracts two rationals"
   input Rational r2;
   output Rational r;
 algorithm
-  r := matchcontinue(r1,r2)
+  r := match(r1,r2)
   local Integer i1,i2,i3,i4,ri1,ri2,d;
     case(RATIONAL(i1,i2),RATIONAL(i3,i4)) equation
       ri1 =  i1*i4 - i3*i2;
@@ -65,7 +65,7 @@ algorithm
       ri1 = intDiv(ri1, d);
       ri2 = intDiv(ri2, d);
     then normalizeZero(RATIONAL(ri1,ri2));
-  end matchcontinue;
+  end match;
 end subRational;
 
 public function multRational "multiply two rationals"
@@ -73,7 +73,7 @@ public function multRational "multiply two rationals"
   input Rational r2;
   output Rational r;
 algorithm
-  r := matchcontinue(r1,r2)
+  r := match(r1,r2)
     local Integer i1,i2,i3,i4,ri1,ri2,d;
     case(RATIONAL(i1,i2),RATIONAL(i3,i4)) equation
       ri1 = i1*i3;
@@ -82,7 +82,7 @@ algorithm
       ri1 = intDiv(ri1,d);
       ri2 = intDiv(ri2,d);
    then normalizeZero(RATIONAL(ri1,ri2));
-  end matchcontinue;
+  end match;
 end multRational;
 
 public function divRational "division of two rationals i1/i2 / i3/i4 = (i1*i4) / (i3*i2) "
@@ -90,7 +90,7 @@ public function divRational "division of two rationals i1/i2 / i3/i4 = (i1*i4) /
   input Rational r2;
   output Rational r;
 algorithm
-  r := matchcontinue(r1,r2)
+  r := match(r1,r2)
   local Integer i1,i2,i3,i4,ri1,ri2,d;
     case(RATIONAL(i1,i2),RATIONAL(i3,i4)) equation
       ri1 = i1*i4;
@@ -99,7 +99,7 @@ algorithm
       ri1 = intDiv(ri1, d);
       ri2 = intDiv(ri2, d);
    then normalizeZero(RATIONAL(ri1,ri2));
-  end matchcontinue;
+  end match;
 end divRational;
 
 public function intGcd "returns the greatest common divisor for two Integers"

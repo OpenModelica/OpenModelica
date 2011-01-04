@@ -820,10 +820,10 @@ protected function removeConstantEqns1
  input DAE.Exp inExp;
 algorithm
   _ :=
-  matchcontinue (inExp)
+  match (inExp)
     case (DAE.CREF(componentRef=_)) then ();
     case (DAE.UNARY(exp = DAE.CREF(componentRef=_))) then ();
-  end matchcontinue;
+  end match;
 end removeConstantEqns1;
 
 /*
@@ -1049,7 +1049,7 @@ protected function traverseIncidenceMatrix2
     output tuple<BackendDAE.IncidenceMatrixElement,BackendDAE.IncidenceMatrix,Type_a> outTpl;
   end FuncType;  
 algorithm
-  (outM,outTypeA) := matchcontinue(inEqns,inM,func,inTypeA)
+  (outM,outTypeA) := match(inEqns,inM,func,inTypeA)
     local 
       Integer pos;
       list<Integer> rest;
@@ -1065,7 +1065,7 @@ algorithm
       m1 = arrayUpdate(m,pos,newElt);
       (m2,extArg1) = traverseIncidenceMatrix2(rest,m1,func,extArg);
     then (m2,extArg1);
-  end matchcontinue;
+  end match;
 end traverseIncidenceMatrix2;
 
 protected function removeVarfromIncidenceMatrix
@@ -1076,7 +1076,7 @@ protected function removeVarfromIncidenceMatrix
   input BackendDAE.IncidenceMatrix inM;
   output BackendDAE.IncidenceMatrix outM;
 algorithm
-  outM := matchcontinue(inEqns,inVar,inM)
+  outM := match(inEqns,inVar,inM)
     local 
       Integer pos;
       list<Integer> rest;
@@ -1091,7 +1091,7 @@ algorithm
       m = arrayUpdate(inM,pos,newElt);
       m1 = removeVarfromIncidenceMatrix(rest,inVar,inM);
     then m1;
-  end matchcontinue;
+  end match;
 end removeVarfromIncidenceMatrix;
 
 protected function removeEqnsfromEventInfo
@@ -1131,7 +1131,7 @@ protected function removeEqnfromEventInfo
   input BackendDAE.EventInfo inEI;
   output BackendDAE.EventInfo outEI;
 algorithm
-  outEI := matchcontinue(inEqn,inEI)
+  outEI := match(inEqn,inEI)
     local 
       Integer eqn;
       list<BackendDAE.WhenClause> whenClauseLst;
@@ -1141,7 +1141,7 @@ algorithm
       equation
       zeroCrossingLst1 = removeEqnfromZeroCrossingLst(eqn,zeroCrossingLst);
     then BackendDAE.EVENT_INFO(whenClauseLst,zeroCrossingLst1);
-  end matchcontinue;
+  end match;
 end removeEqnfromEventInfo;
 
 protected function removeEqnsfromZeroCrossingLst
@@ -1272,7 +1272,7 @@ protected function copyDaeLowforTearing
   output BackendDAE.BackendDAE outDlow;
 algorithm
   outDlow:=
-  matchcontinue (inDlow)
+  match (inDlow)
     local
       BackendDAE.Variables ordvars,knvars,exobj,ordvars1;
       BackendDAE.AliasVariables av;
@@ -1306,7 +1306,7 @@ algorithm
         eqns1 = BackendDAE.EQUATION_ARRAY(n,size,arr_1);
       then
         BackendDAE.DAE(ordvars1,knvars,exobj,av,eqns1,remeqns,inieqns,arreqns,algorithms,einfo,eoc);
-  end matchcontinue;
+  end match;
 end copyDaeLowforTearing;
 
 protected function tearingSystem1
@@ -1390,7 +1390,7 @@ protected function correctAssignments
   output array<BackendDAE.Value> outV2;
 algorithm
   (outV1,outV2):=
-  matchcontinue (inV1,inV2,inRLst,inTLst)
+  match (inV1,inV2,inRLst,inTLst)
     local
       array<BackendDAE.Value> v1,v2,v1_1,v2_1,v1_2,v2_2;
       list<BackendDAE.Value> comp;
@@ -1404,7 +1404,7 @@ algorithm
          (v1_2,v2_2) = correctAssignments(v1_1,v2_1,rlst,tlst);
       then
         (v1_2,v2_2);
-  end matchcontinue;
+  end match;
 end correctAssignments;
 
 protected function getTearingVars
@@ -1419,7 +1419,7 @@ protected function getTearingVars
   output list<DAE.ComponentRef> outCrLst;
 algorithm
   (outVarLst,outCrLst):=
-  matchcontinue (inM,inV1,inV2,inComp,inDlow)
+  match (inM,inV1,inV2,inComp,inDlow)
     local
       BackendDAE.IncidenceMatrix m;
       array<BackendDAE.Value> v1,v2;
@@ -1438,7 +1438,7 @@ algorithm
         (varlst,crlst) = getTearingVars(m,v1,v2,comp,dlow);
       then
         (v::varlst,cr::crlst);
-  end matchcontinue;
+  end match;
 end getTearingVars;
 
 protected function tearingSystem2
@@ -1891,7 +1891,7 @@ protected function solveEquations
   output BackendDAE.EquationArray outEqnArray;
 algorithm
   outEqnArray:=
-  matchcontinue (inEqnArray,inEqns,inAssigments,inVars,inCrlst)
+  match (inEqnArray,inEqns,inAssigments,inVars,inCrlst)
     local
       BackendDAE.EquationArray eqns,eqns_1,eqns_2;
       list<Integer> rest;
@@ -1944,7 +1944,7 @@ algorithm
         eqns_2 = solveEquations(eqns_1,rest,ass,vars,crlst);
       then
         eqns_2;
-  end matchcontinue;
+  end match;
 end solveEquations;
 
 /* 
@@ -2170,10 +2170,10 @@ protected function checkIndex "function: checkIndex
   output Boolean outBoolean;
 algorithm
   outBoolean:=
-  matchcontinue (inVar)
+  match (inVar)
     local BackendDAE.Value i;
     case (BackendDAE.VAR(index = i)) then i >= 0;
-  end matchcontinue;
+  end match;
 end checkIndex;
 
 /* 
@@ -2343,7 +2343,7 @@ protected function deriveAllAlg
   output list<DAE.Algorithm> outDerivedAlgorithms;
   output list<tuple<Integer, DAE.ComponentRef>> outDerivedAlgorithmsLookUp;
 algorithm
-  (outDerivedAlgorithms, outDerivedAlgorithmsLookUp) := matchcontinue(inAlgorithms, inVars, inFunctions, inInputVars, inParamVars, inStateVars, inAlgIndex)
+  (outDerivedAlgorithms, outDerivedAlgorithmsLookUp) := match(inAlgorithms, inVars, inFunctions, inInputVars, inParamVars, inStateVars, inAlgIndex)
     local
       DAE.Algorithm currAlg;
       list<DAE.Algorithm> restAlgs;
@@ -2364,7 +2364,7 @@ algorithm
       rAlgs1 = listAppend(rAlgs1, rAlgs2);
       rLookUp1 = listAppend(rLookUp1, rLookUp2);
     then (rAlgs1, rLookUp1);
-  end matchcontinue;
+  end match;
 end deriveAllAlg;
 
 protected function deriveOneAlg
@@ -2380,7 +2380,7 @@ protected function deriveOneAlg
   output list<DAE.Algorithm> outDerivedAlgorithms;
   output list<tuple<Integer, DAE.ComponentRef>> outDerivedAlgorithmsLookUp;
 algorithm
-  (outDerivedAlgorithms, outDerivedAlgorithmsLookUp) := matchcontinue(inAlgorithm, inVars, inFunctions, inInputVars, inParamVars, inStateVars, inAlgIndex)
+  (outDerivedAlgorithms, outDerivedAlgorithmsLookUp) := match(inAlgorithm, inVars, inFunctions, inInputVars, inParamVars, inStateVars, inAlgIndex)
     local
       DAE.Algorithm currAlg;
       list<DAE.Statement> statementLst, derivedStatementLst;
@@ -2403,7 +2403,7 @@ algorithm
       rAlgs1 = listAppend(rAlgs1, rAlgs2);
       rLookUp1 = listAppend(rLookUp1, rLookUp2);
     then (rAlgs1, rLookUp1);
-  end matchcontinue;
+  end match;
 end deriveOneAlg;
 
 protected function deriveAll
@@ -2884,7 +2884,7 @@ protected function deriveExpListwrtstate2
   input list<BackendDAE.Var> inStateVars;
   output list<DAE.Exp> outExpList;
 algorithm
-  outExpList := matchcontinue(inExpList, inLengthExpList, inState, inFunctions, inInputVars, inParamVars, inStateVars)
+  outExpList := match(inExpList, inLengthExpList, inState, inFunctions, inInputVars, inParamVars, inStateVars)
     local
       DAE.ComponentRef x;
       DAE.Exp curr,r1;
@@ -2899,7 +2899,7 @@ algorithm
       r1 = differentiateWithRespectToX(curr, x, functions, inputVars, paramVars, stateVars); 
       r2 = deriveExpListwrtstate2(rest,LengthExpList, x, functions, inputVars, paramVars, stateVars);
     then (r1::r2);
-  end matchcontinue;
+  end match;
 end deriveExpListwrtstate2;
 
 protected function checkcondition
@@ -2940,7 +2940,7 @@ protected function partialAnalyticalDifferentiation
   input Integer nDerArgs;
   output DAE.Exp outExp;
 algorithm
-  outExp := matchcontinue(varExpList, derVarExpList, functionCall, derFname, nDerArgs)
+  outExp := match(varExpList, derVarExpList, functionCall, derFname, nDerArgs)
     local
       DAE.Exp e, currVar, currDerVar, derFun, delta, absCurr;
       list<DAE.Exp> restVar, restDerVar, varExpList1Added, varExpListTotal;
@@ -2959,7 +2959,7 @@ algorithm
         varExpList1Added = Util.listReplaceAtWithFill(DAE.RCONST(1.0),nArgs1 + nDerArgs - (nArgs2 + 1), varExpList1Added,DAE.RCONST(0.0));
         derFun = DAE.CALL(derFname, varExpList1Added, tuple_, builtin, et, inlineType);
       then DAE.BINARY(e, DAE.ADD(DAE.ET_REAL()), DAE.BINARY(derFun, DAE.MUL(DAE.ET_REAL()), currDerVar)); 
-  end matchcontinue;
+  end match;
 end partialAnalyticalDifferentiation;
 
 protected function partialNumericalDifferentiation
@@ -2969,7 +2969,7 @@ protected function partialNumericalDifferentiation
   input DAE.Exp functionCall;
   output DAE.Exp outExp;
 algorithm
-  outExp := matchcontinue(varExpList, derVarExpList, inState, functionCall)
+  outExp := match(varExpList, derVarExpList, inState, functionCall)
     local
       DAE.Exp e, currVar, currDerVar, derFun, delta, absCurr;
       list<DAE.Exp> restVar, restDerVar, varExpListHAdded, varExpListTotal;
@@ -2990,7 +2990,7 @@ algorithm
         varExpListHAdded = Util.listReplaceAtWithFill(DAE.BINARY(currVar, DAE.ADD(DAE.ET_REAL()),delta),nArgs1-(nArgs2+1), varExpListTotal,DAE.RCONST(0.0));
         derFun = DAE.BINARY(DAE.BINARY(DAE.CALL(fname, varExpListHAdded, tuple_, builtin, et, inlineType), DAE.SUB(DAE.ET_REAL()), DAE.CALL(fname, varExpListTotal, tuple_, builtin, et, inlineType)), DAE.DIV(DAE.ET_REAL()), delta);
       then DAE.BINARY(e, DAE.ADD(DAE.ET_REAL()), DAE.BINARY(derFun, DAE.MUL(DAE.ET_REAL()), currDerVar)); 
-  end matchcontinue;
+  end match;
 end partialNumericalDifferentiation;
 
 protected function differentiateAlgorithmStatements
@@ -3152,7 +3152,7 @@ public function determineIndices
   input list<BackendDAE.Var> inAllVars;
   output list<tuple<String,Integer>> outTuple;
 algorithm
-  outTuple := matchcontinue(inStates, inStates2, inActInd,inAllVars)
+  outTuple := match(inStates, inStates2, inActInd,inAllVars)
     local
       list<tuple<String,Integer>> str;
       list<tuple<String,Integer>> erg;
@@ -3168,7 +3168,7 @@ algorithm
       erg = determineIndices(rest, states, actInd, allVars);
       str = listAppend(str, erg);
     then str;
-  end matchcontinue;
+  end match;
 end determineIndices;
 
 protected function determineIndices2

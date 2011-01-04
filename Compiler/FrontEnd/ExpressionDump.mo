@@ -75,7 +75,7 @@ public function subscriptString
   input Subscript subscript;
   output String str;
 algorithm
-  str := matchcontinue(subscript)
+  str := match(subscript)
     local
       Integer i;
       String res;
@@ -90,7 +90,7 @@ algorithm
         res = Absyn.pathString(enum_lit);
       then
         res;
-  end matchcontinue;
+  end match;
 end subscriptString;
 
 public function typeString "function typeString
@@ -171,7 +171,7 @@ public function binopSymbol1
   input Operator inOperator;
   output String outString;
 algorithm
-  outString := matchcontinue (inOperator)
+  outString := match (inOperator)
     case (DAE.ADD(ty = _)) then " + ";
     case (DAE.SUB(ty = _)) then " - ";
     case (DAE.MUL(ty = _)) then " * ";
@@ -196,7 +196,7 @@ algorithm
     case (DAE.MUL_MATRIX_PRODUCT(ty = _)) then " * ";
     case (DAE.DIV_SCALAR_ARRAY(ty = _)) then " / ";
     case (DAE.DIV_ARRAY_SCALAR(ty = _)) then " / ";
-  end matchcontinue;
+  end match;
 end binopSymbol1;
 
 public function debugBinopSymbol 
@@ -205,7 +205,7 @@ public function debugBinopSymbol
   input Operator inOperator;
   output String outString;
 algorithm 
-  outString := matchcontinue (inOperator)
+  outString := match (inOperator)
     case (DAE.ADD(ty = _)) then " + "; 
     case (DAE.SUB(ty = _)) then " - ";       
     case (DAE.MUL(ty = _)) then " * "; 
@@ -230,7 +230,7 @@ algorithm
     case (DAE.MUL_MATRIX_PRODUCT(ty = _)) then " MatrixProd "; 
     case (DAE.DIV_SCALAR_ARRAY(ty = _)) then " S/ARR "; 
     case (DAE.DIV_ARRAY_SCALAR(ty = _)) then " ARR/S "; 
-  end matchcontinue;
+  end match;
 end debugBinopSymbol;
 
 protected function binopSymbol2
@@ -239,7 +239,7 @@ protected function binopSymbol2
   input Operator inOperator;
   output String outString;
 algorithm
-  outString := matchcontinue (inOperator)
+  outString := match (inOperator)
     local
       Ident ts,s,s_1;
       Type t;
@@ -291,7 +291,7 @@ algorithm
     case (DAE.MUL_MATRIX_PRODUCT(ty = _)) then " * ";
     case (DAE.DIV_SCALAR_ARRAY(ty = _)) then " / ";
     case (DAE.DIV_ARRAY_SCALAR(ty = _)) then " / ";
-  end matchcontinue;
+  end match;
 end binopSymbol2;
 
 public function unaryopSymbol
@@ -301,12 +301,12 @@ public function unaryopSymbol
   output String outString;
 algorithm
   outString:=
-  matchcontinue (inOperator)
+  match (inOperator)
     case (DAE.UMINUS(ty = _)) then "-";
     case (DAE.UPLUS(ty = _)) then "+";
     case (DAE.UMINUS_ARR(ty = _)) then "-";
     case (DAE.UPLUS_ARR(ty = _)) then "+";
-  end matchcontinue;
+  end match;
 end unaryopSymbol;
 
 public function lbinopSymbol
@@ -316,10 +316,10 @@ public function lbinopSymbol
   output String outString;
 algorithm
   outString:=
-  matchcontinue (inOperator)
+  match (inOperator)
     case (DAE.AND()) then " AND ";
     case (DAE.OR()) then " OR ";
-  end matchcontinue;
+  end match;
 end lbinopSymbol;
 
 public function lunaryopSymbol
@@ -340,14 +340,14 @@ public function relopSymbol
   output String outString;
 algorithm
   outString:=
-  matchcontinue (inOperator)
+  match (inOperator)
     case (DAE.LESS(ty = _)) then " < ";
     case (DAE.LESSEQ(ty = _)) then " <= ";
     case (DAE.GREATER(ty = _)) then " > ";
     case (DAE.GREATEREQ(ty = _)) then " >= ";
     case (DAE.EQUAL(ty = _)) then " == ";
     case (DAE.NEQUAL(ty = _)) then " <> ";
-  end matchcontinue;
+  end match;
 end relopSymbol;
 
 public function printList
@@ -440,7 +440,7 @@ public function debugPrintSubscriptStr "
   input Subscript inSubscript;
   output String outString;
 algorithm
-  outString := matchcontinue (inSubscript)
+  outString := match (inSubscript)
     local
       Ident s;
       DAE.Exp e1;
@@ -455,7 +455,7 @@ algorithm
         s = dumpExpStr(e1,0);
       then
         s;
-  end matchcontinue;
+  end match;
 end debugPrintSubscriptStr;
 
 public function printSubscriptStr "
@@ -464,7 +464,7 @@ public function printSubscriptStr "
   output String outString;
 algorithm
   outString:=
-  matchcontinue (inSubscript)
+  match (inSubscript)
     local
       Ident s;
       DAE.Exp e1;
@@ -479,7 +479,7 @@ algorithm
         s = printExpStr(e1);
       then
         s;
-  end matchcontinue;
+  end match;
 end printSubscriptStr;
 
 public function printExpListStr
@@ -1676,7 +1676,7 @@ public function dimensionString
   input DAE.Dimension dim;
   output String str;
 algorithm
-  str := matchcontinue(dim)
+  str := match(dim)
     local
       String s;
       Integer x;
@@ -1702,7 +1702,7 @@ algorithm
         s = printExpStr(e);
       then
         s;
-  end matchcontinue;
+  end match;
 end dimensionString;
 
 public function dumpExpWithTitle
@@ -1730,7 +1730,7 @@ public function printSubscript
   Print a Subscript."
   input Subscript inSubscript;
 algorithm
-  _ := matchcontinue (inSubscript)
+  _ := match (inSubscript)
     local DAE.Exp e1;
     case (DAE.WHOLEDIM())
       equation
@@ -1747,7 +1747,7 @@ algorithm
         printExp(e1);
       then
         ();
-  end matchcontinue;
+  end match;
 end printSubscript;
 
 public function printExp
@@ -2180,7 +2180,7 @@ public function binopPriority
   input Operator inOperator;
   output Integer outInteger;
 algorithm
-  outInteger := matchcontinue (inOperator)
+  outInteger := match (inOperator)
     case (DAE.ADD(ty = _)) then 32;
     case (DAE.SUB(ty = _)) then 33;
     case (DAE.ADD_ARR(ty = _)) then 32;
@@ -2204,7 +2204,7 @@ algorithm
     case (DAE.POW(ty = _)) then 38;
     case (DAE.POW_SCALAR_ARRAY(ty = _)) then 38;
     case (DAE.POW_ARRAY_SCALAR(ty = _)) then 38;
-  end matchcontinue;
+  end match;
 end binopPriority;
 
 public function unaryopPriority
@@ -2213,12 +2213,12 @@ public function unaryopPriority
   input Operator inOperator;
   output Integer outInteger;
 algorithm
-  outInteger := matchcontinue (inOperator)
+  outInteger := match (inOperator)
     case (DAE.UMINUS(ty = _)) then 37;
     case (DAE.UPLUS(ty = _)) then 37;
     case (DAE.UMINUS_ARR(ty = _)) then 37;
     case (DAE.UPLUS_ARR(ty = _)) then 37;
-  end matchcontinue;
+  end match;
 end unaryopPriority;
 
 public function lbinopPriority
@@ -2228,10 +2228,10 @@ public function lbinopPriority
   input Operator inOperator;
   output Integer outInteger;
 algorithm
-  outInteger := matchcontinue (inOperator)
+  outInteger := match (inOperator)
     case (DAE.AND()) then 10;
     case (DAE.OR()) then 10;
-  end matchcontinue;
+  end match;
 end lbinopPriority;
 
 public function lunaryopPriority
@@ -2253,14 +2253,14 @@ public function relopPriority
   input Operator inOperator;
   output Integer outInteger;
 algorithm
-  outInteger := matchcontinue (inOperator)
+  outInteger := match (inOperator)
     case (DAE.LESS(ty = _)) then 21;
     case (DAE.LESSEQ(ty = _)) then 21;
     case (DAE.GREATER(ty = _)) then 21;
     case (DAE.GREATEREQ(ty = _)) then 21;
     case (DAE.EQUAL(ty = _)) then 21;
     case (DAE.NEQUAL(ty = _)) then 21;
-  end matchcontinue;
+  end match;
 end relopPriority;
 
 public function parenthesize

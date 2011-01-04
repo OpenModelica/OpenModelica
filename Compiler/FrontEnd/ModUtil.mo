@@ -572,7 +572,7 @@ public function pathString2
   output String outString;
 algorithm
   outString:=
-  matchcontinue (inPath,inString)
+  match (inPath,inString)
     local
       String s,ns,s1,ss,str;
       Absyn.Path n;
@@ -585,7 +585,7 @@ algorithm
         ss = stringAppend(s1, ns);
       then
         ss;
-  end matchcontinue;
+  end match;
 end pathString2;
 
 public function pathEqual "function: pathEqual
@@ -648,7 +648,7 @@ public function pathStringReplaceDot "function: pathStringReplaceDot
   output String outString;
 algorithm
   outString:=
-  matchcontinue (inPath,inString)
+  match (inPath,inString)
     local
       String s,ns,s1,ss,str,dstr,safe_s;
       Absyn.Path n;
@@ -668,7 +668,7 @@ algorithm
         ss = stringAppend(s1, ns);
       then
         ss;
-  end matchcontinue;
+  end match;
 end pathStringReplaceDot;
 
 end ModUtil;

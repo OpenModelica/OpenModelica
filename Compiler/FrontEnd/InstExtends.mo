@@ -634,7 +634,7 @@ protected function getLocalIdentList
     output HashTableStringToPath.HashTable outHt;
   end getIdentFn;
 algorithm
-  (outHt) := matchcontinue (elts,ht,getIdent)
+  (outHt) := match (elts,ht,getIdent)
     local
       Type_A elt;
     case ({},ht,getIdent) then ht;
@@ -643,7 +643,7 @@ algorithm
         ht = getIdent(elt,ht);
         ht = getLocalIdentList(elts,ht,getIdent);
       then ht;
-  end matchcontinue;
+  end match;
 end getLocalIdentList;
 
 protected function getLocalIdentElementTpl
@@ -654,11 +654,11 @@ protected function getLocalIdentElementTpl
   input HashTableStringToPath.HashTable ht;
   output HashTableStringToPath.HashTable outHt;
 algorithm
-  (outHt) := matchcontinue (eltTpl,ht)
+  (outHt) := match (eltTpl,ht)
     local
       SCode.Element elt;
     case ((elt,_,_),ht) then getLocalIdentElement(elt,ht);
-  end matchcontinue;
+  end match;
 end getLocalIdentElementTpl;
 
 protected function getLocalIdentElement
@@ -669,7 +669,7 @@ protected function getLocalIdentElement
   input HashTableStringToPath.HashTable ht;
   output HashTableStringToPath.HashTable outHt;
 algorithm
-  (outHt) := matchcontinue (elt,ht)
+  (outHt) := match (elt,ht)
     local
       String id;
       Absyn.Path p;
@@ -700,7 +700,7 @@ algorithm
         failure(_ = BaseHashTable.get(id, ht));
         ht = BaseHashTable.add((id,p), ht);
       then ht;        
-  end matchcontinue;
+  end match;
 end getLocalIdentElement;
 
 protected function fixLocalIdents
@@ -810,7 +810,7 @@ protected function fixClassdef
   output Env.Cache outCache;
   output SCode.ClassDef outCd;
 algorithm
-  (outCache,outCd) := matchcontinue (cache,env,cd,ht)
+  (outCache,outCd) := match (cache,env,cd,ht)
     local
       list<SCode.Element> elts;
       list<SCode.Equation> ne,ie;
@@ -851,7 +851,7 @@ algorithm
     case (cache,env,SCode.OVERLOAD(comment = _),ht) then (cache,cd);
     case (cache,env,SCode.PDER(comment = _),ht) then (cache,cd);
 
-  end matchcontinue;
+  end match;
 end fixClassdef;
 
 protected function fixEquation
@@ -866,14 +866,14 @@ protected function fixEquation
   output Env.Cache outCache;
   output SCode.Equation outEq;
 algorithm
-  (outCache,outEq) := matchcontinue (cache,env,eq,ht)
+  (outCache,outEq) := match (cache,env,eq,ht)
     local
       SCode.EEquation eeq;
     case (cache,env,SCode.EQUATION(eeq),ht)
       equation
         (cache,eeq) = fixEEquation(cache,env,eeq,ht);
       then (cache,SCode.EQUATION(eeq));
-  end matchcontinue;
+  end match;
 end fixEquation;
 
 protected function fixEEquation
@@ -888,7 +888,7 @@ protected function fixEEquation
   output Env.Cache outCache;
   output SCode.EEquation outEeq;
 algorithm
-  (outCache,outEeq) := matchcontinue (cache,env,eeq,ht)
+  (outCache,outEeq) := match (cache,env,eeq,ht)
     local
       String id;
       Absyn.ComponentRef cref,cref1,cref2;
@@ -946,7 +946,7 @@ algorithm
         (cache,fargs) = fixFarg(cache,env,fargs,ht);
         (cache,cref) = fixCref(cache,env,cref,ht);
       then (cache,SCode.EQ_NORETCALL(cref,fargs,comment,info));
-  end matchcontinue;
+  end match;
 end fixEEquation;
 
 protected function fixListEEquation
@@ -976,14 +976,14 @@ protected function fixAlgorithm
   output Env.Cache outCache;
   output SCode.AlgorithmSection outAlg;
 algorithm
-  (outCache,outAlg) := matchcontinue (cache,env,alg,ht)
+  (outCache,outAlg) := match (cache,env,alg,ht)
     local
       list<SCode.Statement> stmts;
     case (cache,env,SCode.ALGORITHM(stmts),ht)
       equation
         (cache,stmts) = fixList(cache,env,stmts,ht,fixStatement);
       then (cache,SCode.ALGORITHM(stmts));
-  end matchcontinue;
+  end match;
 end fixAlgorithm;
 
 protected function fixListAlgorithmItem
@@ -1070,7 +1070,7 @@ protected function fixArrayDim
   output Env.Cache outCache;
   output Option<Absyn.ArrayDim> outAd;
 algorithm
-  (outCache,outAd) := matchcontinue (cache,env,ad,ht)
+  (outCache,outAd) := match (cache,env,ad,ht)
     local
       list<Absyn.Subscript> ads;
     case (cache,env,NONE(),ht) then (cache,NONE());
@@ -1078,7 +1078,7 @@ algorithm
       equation
         (cache,ads) = fixList(cache,env,ads,ht,fixSubscript);
       then (cache,SOME(ads));
-  end matchcontinue;
+  end match;
 end fixArrayDim;
 
 protected function fixSubscript
@@ -1093,7 +1093,7 @@ protected function fixSubscript
   output Env.Cache outCache;
   output Absyn.Subscript outSub;
 algorithm
-  (outCache,outSub) := matchcontinue (cache,env,sub,ht)
+  (outCache,outSub) := match (cache,env,sub,ht)
     local
       Absyn.Exp exp;
     case (cache,env,Absyn.NOSUB(),ht) then (cache,Absyn.NOSUB());
@@ -1101,7 +1101,7 @@ algorithm
       equation
         (cache,exp) = fixExp(cache, env, exp, ht);
       then (cache,Absyn.SUBSCRIPT(exp));
-  end matchcontinue;
+  end match;
 end fixSubscript;
 
 protected function fixTypeSpec
@@ -1116,7 +1116,7 @@ protected function fixTypeSpec
   output Env.Cache outCache;
   output Absyn.TypeSpec outTs;
 algorithm
-  (outCache,outTs) := matchcontinue (cache,env,ts,ht)
+  (outCache,outTs) := match (cache,env,ts,ht)
     local
       Absyn.Path path;
       Option<Absyn.ArrayDim> arrayDim;
@@ -1132,7 +1132,7 @@ algorithm
         (cache,path) = fixPath(cache,env,path,ht);
         (cache,typeSpecs) = fixList(cache,env,typeSpecs,ht,fixTypeSpec);
       then (cache,Absyn.TCOMPLEX(path,typeSpecs,arrayDim));
-  end matchcontinue;
+  end match;
 end fixTypeSpec;
 
 protected function fixPath
@@ -1257,7 +1257,7 @@ protected function fixSubModList
   output Env.Cache outCache;
   output list<SCode.SubMod> outSubMods;
 algorithm
-  (outCache, outSubMods) := matchcontinue (cache, env, inSubMods, ht)
+  (outCache, outSubMods) := match (cache, env, inSubMods, ht)
     local
       SCode.Mod mod;
       list<SCode.SubMod> rest_mods;
@@ -1276,7 +1276,7 @@ algorithm
         (cache, rest_mods) = fixSubModList(cache, env, rest_mods, ht);
       then
         (cache, SCode.IDXMOD(subs, mod) :: rest_mods);
-  end matchcontinue;
+  end match;
 end fixSubModList;
            
 protected function fixExp
@@ -1381,7 +1381,7 @@ protected function fixFarg
   output Env.Cache outCache;
   output Absyn.FunctionArgs outFarg;
 algorithm
-  (outCache,outFarg) := matchcontinue (cache,env,fargs,ht)
+  (outCache,outFarg) := match (cache,env,fargs,ht)
     local
       list<Absyn.Exp> args;
       list<Absyn.NamedArg> argNames;
@@ -1397,7 +1397,7 @@ algorithm
         (cache,exp) = fixExp(cache,env,exp,ht);
         (cache,iterators) = fixList(cache,env,iterators,ht,fixForIterator);
       then (cache,Absyn.FOR_ITER_FARG(exp,iterators));
-  end matchcontinue;
+  end match;
 end fixFarg;
 
 protected function fixForIterator
@@ -1412,7 +1412,7 @@ protected function fixForIterator
   output Env.Cache outCache;
   output Absyn.ForIterator outIter;
 algorithm
-  (outCache,outIter) := matchcontinue (cache,env,iter,ht)
+  (outCache,outIter) := match (cache,env,iter,ht)
     local
       String id;
       Absyn.Exp exp;
@@ -1421,7 +1421,7 @@ algorithm
         (cache,exp) = fixExp(cache,env,exp,ht);
       then (cache,(id,SOME(exp)));
     case (cache,env,(id,NONE()),ht) then (cache,(id,NONE()));
-  end matchcontinue;
+  end match;
 end fixForIterator;
 
 protected function fixNamedArg
@@ -1436,7 +1436,7 @@ protected function fixNamedArg
   output Env.Cache outCache;
   output Absyn.NamedArg outNarg;
 algorithm
-  (outCache,outNarg) := matchcontinue (cache,env,narg,ht)
+  (outCache,outNarg) := match (cache,env,narg,ht)
     local
       String id;
       Absyn.Exp exp;
@@ -1444,7 +1444,7 @@ algorithm
       equation
         (cache,exp) = fixExp(cache,env,exp,ht);
       then (cache,Absyn.NAMEDARG(id,exp));
-  end matchcontinue;
+  end match;
 end fixNamedArg;
 
 protected function fixOption
@@ -1467,7 +1467,7 @@ protected function fixOption
     output Type_A outTypeA;
   end FixAFn;
 algorithm
-  (outCache,outA) := matchcontinue (cache,env,inA,ht,fixA)
+  (outCache,outA) := match (cache,env,inA,ht,fixA)
     local
       Type_A A;
     case (cache,env,NONE(),ht,fixA) then (cache,NONE());
@@ -1475,7 +1475,7 @@ algorithm
       equation
         (cache,A) = fixA(cache,env,A,ht);
       then (cache,SOME(A));
-  end matchcontinue;
+  end match;
 end fixOption;
 
 protected function fixList
@@ -1498,7 +1498,7 @@ protected function fixList
     output Type_A outTypeA;
   end FixAFn;
 algorithm
-  (outCache,outA) := matchcontinue (cache,env,inA,ht,fixA)
+  (outCache,outA) := match (cache,env,inA,ht,fixA)
     local
       Type_A A;
     case (cache,env,{},ht,fixA) then (cache,{});
@@ -1507,7 +1507,7 @@ algorithm
         (cache,A) = fixA(cache,env,A,ht);
         (cache,inA) = fixList(cache,env,inA,ht,fixA);
       then (cache,A::inA);
-  end matchcontinue;
+  end match;
 end fixList;
 
 protected function fixListList
@@ -1530,7 +1530,7 @@ protected function fixListList
     output Type_A outTypeA;
   end FixAFn;
 algorithm
-  (outCache,outA) := matchcontinue (cache,env,inA,ht,fixA)
+  (outCache,outA) := match (cache,env,inA,ht,fixA)
     local
       list<Type_A> A;
     case (cache,env,{},ht,fixA) then (cache,{});
@@ -1539,7 +1539,7 @@ algorithm
         (cache,A) = fixList(cache,env,A,ht,fixA);
         (cache,inA) = fixListList(cache,env,inA,ht,fixA);
       then (cache,A::inA);
-  end matchcontinue;
+  end match;
 end fixListList;
 
 protected function fixListTuple2
@@ -1572,7 +1572,7 @@ protected function fixListTuple2
     output Type_B outTypeA;
   end FixBFn;
 algorithm
-  (outCache,outA) := matchcontinue (cache,env,rest,ht,fixA,fixB)
+  (outCache,outA) := match (cache,env,rest,ht,fixA,fixB)
     local
       Type_A a;
       Type_B b;
@@ -1583,7 +1583,7 @@ algorithm
         (cache,b) = fixB(cache,env,b,ht);
         (cache,rest) = fixListTuple2(cache,env,rest,ht,fixA,fixB); 
       then (cache,(a,b)::rest);
-  end matchcontinue;
+  end match;
 end fixListTuple2;
 
 end InstExtends;

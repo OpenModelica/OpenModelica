@@ -424,7 +424,7 @@ protected function setElementItemClass
   input Absyn.Class class_;
   output Absyn.ElementItem out;
 algorithm
-  out := matchcontinue (elementItem,class_)
+  out := match (elementItem,class_)
       local
       Boolean finalPrefix;
       Option<Absyn.RedeclareKeywords> redeclareKeywords;
@@ -438,7 +438,7 @@ algorithm
       list<Absyn.ElementItem> elementItems;
     case (Absyn.ELEMENTITEM(Absyn.ELEMENT(specification=Absyn.CLASSDEF(replaceable_=replaceable_),finalPrefix=finalPrefix,redeclareKeywords=redeclareKeywords,innerOuter=innerOuter,name=name,info=info,constrainClass=constrainClass)),class_)
       then Absyn.ELEMENTITEM(Absyn.ELEMENT(finalPrefix,redeclareKeywords,innerOuter,name,Absyn.CLASSDEF(replaceable_,class_),info,constrainClass));
-  end matchcontinue;
+  end match;
 end setElementItemClass;
 
 //Added by simbj
@@ -479,7 +479,7 @@ function convertElementsToClasses
   input list<Absyn.ElementItem> els;
   output list<Absyn.Class> outcls;
 algorithm
-  outcls := matchcontinue(els)
+  outcls := match(els)
     local
       list<Absyn.ElementItem> rest;
       Absyn.Class c;      
@@ -499,7 +499,7 @@ algorithm
         clst = convertElementsToClasses(rest);
       then 
         c::clst;
-  end matchcontinue;
+  end match;
 end convertElementsToClasses;
 
 //Added by simbj
@@ -608,7 +608,7 @@ function fixElement
   output Absyn.Element elementout;
 
 algorithm
-  elementout := matchcontinue(elementin,name,index)
+  elementout := match(elementin,name,index)
     local
       Boolean f;
       Option<Absyn.RedeclareKeywords> r;
@@ -621,7 +621,7 @@ algorithm
       equation
         spec = fixElementSpecification(spec,name,index);
       then Absyn.ELEMENT(f,r,i,n,spec,inf,con);
-  end matchcontinue;
+  end match;
 end fixElement;
 
 
@@ -632,14 +632,14 @@ function fixElementItem
   output Absyn.ElementItem elementItemout;
 
 algorithm
-  elementItemout := matchcontinue(elementItemin,name,index)
+  elementItemout := match(elementItemin,name,index)
     local
       Absyn.Element element;
     case(Absyn.ELEMENTITEM(element),name,index)
       equation
         element = fixElement(element,name,index);
       then Absyn.ELEMENTITEM(element);
-  end matchcontinue;
+  end match;
 end fixElementItem;
 
 
@@ -887,7 +887,7 @@ This is mainly to produce better error messages."
   output DAE.Exp outExp;
   output DAE.Type outTy;
 algorithm
-  (outExp,outTy) := matchcontinue (exp,ty)
+  (outExp,outTy) := match (exp,ty)
     local
       DAE.Type flatType;
     case (exp,ty)
@@ -895,7 +895,7 @@ algorithm
         (flatType,_) = Types.flattenArrayType(ty);
         false = (not Types.isString(flatType) and Types.isBoxedType(flatType)) or RTOpts.debugFlag("rml") "debug flag to produce better error messages by converting all arrays into lists; the compiler does not use Modelica-style arrays anyway";
       then (exp,ty);
-  end matchcontinue;
+  end match;
 end tryToConvertArrayToList;
 
 public function strictRMLCheck

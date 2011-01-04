@@ -287,7 +287,7 @@ protected function makeClassDefResult "creates a list of classes of the program 
   input Absyn.Program p;
   output String res;
 algorithm
-  res := matchcontinue(p)
+  res := match(p)
     local 
       list<Absyn.Path> names;
       Absyn.Within w;
@@ -306,7 +306,7 @@ algorithm
         names = Util.listMap(cls,Absyn.className);
         res = "{" +& Util.stringDelimitList(Util.listMap(names,Absyn.pathString),",") +& "}";
       then res;
-  end matchcontinue;
+  end match;
 end makeClassDefResult;
 
 protected function isModelicaFile
@@ -375,11 +375,11 @@ end isCodegenTemplateFile;
 
 protected function versionRequest
 algorithm
-  _:= matchcontinue()
+  _:= match()
     case () equation
       true = RTOpts.versionRequest();
     then ();
-  end matchcontinue;
+  end match;
 end versionRequest;
 
 protected function showErrors
@@ -999,7 +999,7 @@ protected function interactivemode
   input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
 algorithm
   _:=
-  matchcontinue (inStringLst,inInteractiveSymbolTable)
+  match (inStringLst,inInteractiveSymbolTable)
     local Integer shandle;
      Interactive.InteractiveSymbolTable symbolTable;
     case (_,symbolTable)
@@ -1009,7 +1009,7 @@ algorithm
         _ = serverLoop(shandle, symbolTable);
       then
         ();
-  end matchcontinue;
+  end match;
 end interactivemode;
 
 protected function interactivemodeCorba

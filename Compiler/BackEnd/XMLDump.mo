@@ -386,7 +386,7 @@ function: binopSymbol
   output String outString;
 algorithm
   outString:=
-  matchcontinue (inOperator)
+  match (inOperator)
     local
       DAE.Ident s;
       DAE.Operator op;
@@ -395,7 +395,7 @@ algorithm
         s = binopSymbol2(op);
       then
         s;
-  end matchcontinue;
+  end match;
 end binopSymbol;
 
 
@@ -406,7 +406,7 @@ Helper function to binopSymbol
   output String outString;
 algorithm
   outString:=
-  matchcontinue (inOperator)
+  match (inOperator)
     case (DAE.ADD(ty = _)) then MathMLPlus;
     case (DAE.SUB(ty = _)) then MathMLMinus;
     case (DAE.MUL(ty = _)) then MathMLTimes;
@@ -419,7 +419,7 @@ algorithm
     case (DAE.MUL_SCALAR_PRODUCT(ty = _)) then MathMLScalarproduct;
     case (DAE.MUL_MATRIX_PRODUCT(ty = _)) then MathMLVectorproduct;
     case (DAE.DIV_ARRAY_SCALAR(ty = _)) then MathMLDivide;
-  end matchcontinue;
+  end match;
 end binopSymbol2;
 
 
@@ -463,7 +463,7 @@ method.
 "
   input list<Absyn.Path> absynPathLst;
 algorithm
-  _:= matchcontinue (absynPathLst)
+  _:= match (absynPathLst)
         local
           list<Absyn.Path> apLst;
           Absyn.Path ap;
@@ -475,7 +475,7 @@ algorithm
         dumpStrTagContent(ELEMENT,str);
         dumpAbsynPathLst2(apLst);
       then();
-    end matchcontinue;
+    end match;
 end dumpAbsynPathLst2;
 
 
@@ -524,7 +524,7 @@ XML format. The output is something like:
   input list<DAE.Algorithm> algs;
   input Integer inAlgNo;
 algorithm
-  _ := matchcontinue(algs,inAlgNo)
+  _ := match(algs,inAlgNo)
     local
       list<Algorithm.Statement> stmts;
       Integer algNo,algNo_1;
@@ -537,7 +537,7 @@ algorithm
         algNo_1=algNo+1;
         dumpAlgorithms2(algs,algNo_1);
       then ();
-  end matchcontinue;
+  end match;
 end dumpAlgorithms2;
 
 
@@ -604,7 +604,7 @@ The output, if the list is not empty is something like this:
   input DAE.Exp dumpResiduals;
 algorithm
   _:=
-  matchcontinue (inMultiDimEquationLst,addMathMLCode,dumpResiduals)
+  match (inMultiDimEquationLst,addMathMLCode,dumpResiduals)
     local
       String s1,s2,s;
       DAE.Exp e1,e2;
@@ -676,7 +676,7 @@ algorithm
         dumpStrCloseTag(ARRAY_EQUATION);
         dumpArrayEqns2(es,DAE.BCONST(false),DAE.BCONST(true));
       then ();
-  end matchcontinue;
+  end match;
 end dumpArrayEqns2;
 
 
@@ -689,7 +689,7 @@ using an xml representation:
   input list<BackendDAE.Value> inList;
 algorithm
   _:=
-  matchcontinue(inList)
+  match(inList)
       local
         BackendDAE.Value el;
         list<BackendDAE.Value> remList;
@@ -699,7 +699,7 @@ algorithm
         dumpStrTagAttrNoChild(stringAppend(INVOLVED,EQUATION_), stringAppend(EQUATION,ID_), intString(el));
         dumpBltInvolvedEquations(remList);
       then();
-  end matchcontinue;
+  end match;
 end dumpBltInvolvedEquations;
 
 public function dumpBindValueExpression "
@@ -795,7 +795,7 @@ function: dumpComponents2
   input Integer inInteger;
 algorithm
   _:=
-  matchcontinue (inIntegerLstLst,inInteger)
+  match (inIntegerLstLst,inInteger)
     local
       BackendDAE.Value ni,i_1,i;
       list<String> ls;
@@ -813,7 +813,7 @@ algorithm
         dumpComponents2(lst, i_1);
       then
         ();
-  end matchcontinue;
+  end match;
 end dumpComponents2;
 
 
@@ -885,7 +885,7 @@ and using an XML format like:
   input list<BackendDAE.CrefIndex> crefIdxLst;
 algorithm
   _:=
-  matchcontinue (crefIdxLst)
+  match (crefIdxLst)
       local
         list<BackendDAE.CrefIndex> crefIndexList;
         BackendDAE.CrefIndex crefIndex;
@@ -901,7 +901,7 @@ algorithm
         dumpStrCloseTag(ELEMENT);
         dumpCrefIdxLst2(crefIndexList);
       then ();
-  end matchcontinue;
+  end match;
 end dumpCrefIdxLst2;
 
 
@@ -1012,7 +1012,7 @@ the relative tag is not printed.
   input DAE.Exp addMathMLCode;
   input DAE.Exp dumpResiduals;
 algorithm
-  _ := matchcontinue (inBackendDAE,functions,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals)
+  _ := match (inBackendDAE,functions,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals)
     local
       list<BackendDAE.Var> vars,knvars,extvars;
 
@@ -1098,7 +1098,7 @@ algorithm
         dumpSolvingInfo(addOrInMatrix,addSolInfo,inBackendDAE);
         dumpStrCloseTag(DAE_CLOSE);
       then ();
-  end matchcontinue;
+  end match;
 end dumpBackendDAE;
 
 
@@ -1216,11 +1216,11 @@ This function dumps the varDirection of a variable:
   output String outString;
 algorithm
   outString:=
-  matchcontinue (inVarDirection)
+  match (inVarDirection)
     case DAE.INPUT()  then VARDIR_INPUT;
     case DAE.OUTPUT() then VARDIR_OUTPUT;
     case DAE.BIDIR()  then VARDIR_NONE;
-  end matchcontinue;
+  end match;
 end dumpDirectionStr;
 
 
@@ -1269,7 +1269,7 @@ protected function dumpEqns2 "
   input DAE.Exp dumpResiduals;
 algorithm
   _:=
-  matchcontinue (inEquationLst,inInteger,addMathMLCode,dumpResiduals)
+  match (inEquationLst,inInteger,addMathMLCode,dumpResiduals)
     local
       String es,is;
       BackendDAE.Value index;
@@ -1300,7 +1300,7 @@ algorithm
         //dumpEquation(BackendEquation.equationToResidualForm(eqn), intString(index),addMMLCode);
         dumpEqns2(eqns, index+1,addMMLCode,DAE.BCONST(true));
       then ();
-  end matchcontinue;
+  end match;
 end dumpEqns2;
 
 
@@ -1339,7 +1339,7 @@ For example, if the element is an Array of Equations:
   input DAE.Exp addMathMLCode;
 algorithm
   _:=
-  matchcontinue (inEquation,inIndexNumber,addMathMLCode)
+  match (inEquation,inIndexNumber,addMathMLCode)
     local
       String s1,s2,res,indx_str,is,var_str,indexS;
       DAE.Exp e1,e2,e;
@@ -1491,7 +1491,7 @@ algorithm
         //dumpStrCloseTag(ANCHOR);
         dumpStrCloseTag(ALGORITHM);
       then ();
-  end matchcontinue;
+  end match;
 end dumpEquation;
 
 
@@ -1927,7 +1927,7 @@ end ...
 input BackendDAE.ExternalObjectClasses cls;
 input String Content;
 algorithm
-  _ := matchcontinue(cls,Content)
+  _ := match(cls,Content)
    local
      BackendDAE.ExternalObjectClasses xs;
      DAE.Function constr,destr;
@@ -1946,7 +1946,7 @@ algorithm
         dumpStrCloseTag(c);
         dumpExtObjCls2(xs,c);
       then ();
-  end matchcontinue;
+  end match;
 end dumpExtObjCls2;
 
 
@@ -1962,11 +1962,11 @@ It could be:
   output String outString;
 algorithm
   outString:=
-  matchcontinue (inVarFlow)
+  match (inVarFlow)
     case DAE.FLOW()          then VAR_FLOW_FLOW;
     case DAE.NON_FLOW()      then VAR_FLOW_NONFLOW;
     case DAE.NON_CONNECTOR() then VAR_FLOW_NONCONNECTOR;
-  end matchcontinue;
+  end match;
 end dumpFlowStr;
 
 
@@ -1994,7 +1994,7 @@ Help function for dumpFunctions
 "
   input list<DAE.Function> funcelems;
 algorithm
-  _ := matchcontinue (funcelems)
+  _ := match (funcelems)
     local
       DAE.Function fun;
       list<DAE.Function> rem_fun;
@@ -2004,7 +2004,7 @@ algorithm
         dumpFunctions3(fun);
         dumpFunctions2(rem_fun);
       then();
-  end matchcontinue;
+  end match;
 end dumpFunctions2;
 
 
@@ -2150,7 +2150,7 @@ Help function to dumpMatrix
   input Integer rowIndex;
 algorithm
   _:=
-  matchcontinue(m,rowIndex)
+  match(m,rowIndex)
     local
       list<BackendDAE.Value> row;
       list<list<BackendDAE.Value>> rows;
@@ -2162,7 +2162,7 @@ algorithm
         dumpStrCloseTag(MathMLMatrixrow);
         dumpIncidenceMatrix2(rows,rowIndex+1);
       then ();
-  end matchcontinue;
+  end match;
 end dumpIncidenceMatrix2;
 
 
@@ -2192,7 +2192,7 @@ using an xml representation, as:
   input list<Integer> inIntegerLst;
 algorithm
   _:=
-  matchcontinue (inIntegerLst)
+  match (inIntegerLst)
     local
       String s;
       BackendDAE.Value x;
@@ -2206,7 +2206,7 @@ algorithm
         dumpStrCloseTag(MathMLVariable);
         dumpMatrixIntegerRow(xs);
       then ();
-  end matchcontinue;
+  end match;
 end dumpMatrixIntegerRow;
 
 
@@ -2226,7 +2226,7 @@ the kind of a variable, that could be:
   output String outString;
 algorithm
   outString :=
-  matchcontinue (inVarKind)
+  match (inVarKind)
     local Absyn.Path path;
     case BackendDAE.VARIABLE()     then (VARIABILITY_CONTINUOUS);
     case BackendDAE.STATE()        then (VARIABILITY_CONTINUOUS_STATE);
@@ -2237,7 +2237,7 @@ algorithm
     case BackendDAE.CONST()        then (VARIABILITY_CONSTANT);
     case BackendDAE.EXTOBJ(path)
       then (stringAppend(VARIABILITY_EXTERNALOBJECT,stringAppend(":",Absyn.pathString(path))));
-  end matchcontinue;
+  end match;
 end dumpKind;
 
 
@@ -2368,7 +2368,7 @@ The output, if the list is not empty is something like this:
   input DAE.Exp addMathMLCode;
 algorithm
   _:=
-  matchcontinue (inLstExp,Content,addMathMLCode)
+  match (inLstExp,Content,addMathMLCode)
     local
       String s1,s2,s,inContent;
       DAE.Exp e;
@@ -2383,7 +2383,7 @@ algorithm
         dumpStrCloseTag(inContent);
         dumpLstExp2(es,inContent,addMathMLCode);
       then ();
-  end matchcontinue;
+  end match;
 end dumpLstExp2;
 
 
@@ -2560,7 +2560,7 @@ See dumpExp function for more details.
   input DAE.Exp addMathMLCode;
 algorithm
   _:=
-  matchcontinue (inExpExpOption,Content,addMathMLCode)
+  match (inExpExpOption,Content,addMathMLCode)
     local
       DAE.Exp e;
     case (NONE(),_,_) then ();
@@ -2570,7 +2570,7 @@ algorithm
         dumpExp(e,addMathMLCode);
         dumpStrCloseTag(Content);
       then ();
-  end matchcontinue;
+  end match;
 end dumpOptExp;
 
 
@@ -2586,7 +2586,7 @@ element is something like:
   input String Content;
 algorithm
   _ :=
-  matchcontinue (ss,Content)
+  match (ss,Content)
     case (NONE(),_)
       equation
         Print.printBuf("");
@@ -2601,7 +2601,7 @@ algorithm
       equation dumpStrTagContent(Content, STATE_SELECT_PREFER);  then ();
     case (SOME(DAE.ALWAYS()),_)
       equation dumpStrTagContent(Content, STATE_SELECT_ALWAYS);  then ();
-  end matchcontinue;
+  end match;
 end dumpOptionDAEStateSelect;
 
 
@@ -2618,7 +2618,7 @@ standard output like:
   input DAE.Exp addMathMLCode;
 algorithm
   _ :=
-  matchcontinue (inValueValueOption,Content,addMathMLCode)
+  match (inValueValueOption,Content,addMathMLCode)
     local
       Values.Value v;
       DAE.Exp addMMLCode;
@@ -2629,7 +2629,7 @@ algorithm
         dumpExp(ValuesUtil.valueExp(v),addMMLCode);
         dumpStrCloseTag(Content);
       then ();
-  end matchcontinue;
+  end match;
 end dumpOptValue;
 
 
@@ -2672,7 +2672,7 @@ public function dumpSolvingInfo "
   input BackendDAE.BackendDAE inBackendDAE;
 algorithm
   _:=
-  matchcontinue (addOriginalIncidenceMatrix,addSolvingInfo,inBackendDAE)
+  match (addOriginalIncidenceMatrix,addSolvingInfo,inBackendDAE)
     local
       BackendDAE.BackendDAE dlow;
       array<list<Integer>> m,mT;
@@ -2722,7 +2722,7 @@ algorithm
       dumpStrCloseTag(SOLVING_INFO);
       dumpStrCloseTag(ADDITIONAL_INFO);
     then ();
-  end matchcontinue;
+  end match;
 end dumpSolvingInfo;
 
 
@@ -2788,11 +2788,11 @@ It could be:
   output String outString;
 algorithm
   outString:=
-  matchcontinue (inVarStream)
+  match (inVarStream)
     case DAE.STREAM()               then VAR_STREAM_STREAM;
     case DAE.NON_STREAM()           then VAR_STREAM_NONSTREAM;
     case DAE.NON_STREAM_CONNECTOR() then VAR_STREAM_NONSTREAM_CONNECTOR;
-  end matchcontinue;
+  end match;
 end dumpStreamStr;
 
 
@@ -2861,7 +2861,7 @@ and using an XML format like:
   input list<BackendDAE.StringIndex> strIdxLst;
 algorithm
   _:=
-  matchcontinue (strIdxLst)
+  match (strIdxLst)
       local
         list<BackendDAE.StringIndex> stringIndexList;
         BackendDAE.StringIndex stringIndex;
@@ -2876,7 +2876,7 @@ algorithm
         dumpStrCloseTag(ELEMENT);
         dumpStringIdxLst2(stringIndexList);
       then ();
-  end matchcontinue;
+  end match;
 end dumpStringIdxLst2;
 
 
@@ -3091,7 +3091,7 @@ This function output the Type of a variable, it could be:
   output String outString;
 algorithm
   outString:=
-  matchcontinue (inType)
+  match (inType)
     local
       DAE.Ident s1,s2,str;
       list<DAE.Ident> l;
@@ -3107,7 +3107,7 @@ algorithm
       then
         str;
     case BackendDAE.EXT_OBJECT(_) then VARTYPE_EXTERNALOBJECT;
-  end matchcontinue;
+  end match;
 end dumpTypeStr;
 
 
@@ -3277,7 +3277,7 @@ See dumpVariable for more details on the XML output.
   input Integer inInteger;
   input DAE.Exp addMathMLCode;
 algorithm
-  _ := matchcontinue (inVarLst,inInteger,addMathMLCode)
+  _ := match (inVarLst,inInteger,addMathMLCode)
     local
       String varnostr,dirstr,str,path_str,comment_str,s,indx_str;
       list<String> paths_lst,path_strs;
@@ -3329,7 +3329,7 @@ algorithm
         var_1=varno+1;
         dumpVars2(xs,var_1,addMMLCode);
       then ();
-  end matchcontinue;
+  end match;
 end dumpVars2;
 
 
@@ -3346,7 +3346,7 @@ See dumpVariable for more details on the XML output.
   input Integer inInteger;
   input DAE.Exp addMathMLCode;
 algorithm
-  _ := matchcontinue (inVarLst,crefIdxLstArr,strIdxLstArr,inInteger,addMathMLCode)
+  _ := match (inVarLst,crefIdxLstArr,strIdxLstArr,inInteger,addMathMLCode)
     local
       String varnostr,dirstr,str,path_str,comment_str,s,indx_str;
       list<String> paths_lst,path_strs;
@@ -3399,7 +3399,7 @@ algorithm
         var_1 = varno+1;
         dumpVarsAdds2(xs,crefIdxLstArr,strIdxLstArr,var_1,addMMLCode);
       then ();
-  end matchcontinue;
+  end match;
 end dumpVarsAdds2;
 
 
@@ -3464,7 +3464,7 @@ of the zero crossing elements in XML format. The output is:
   input DAE.Exp addMathMLCode;
 algorithm
   _:=
-  matchcontinue (inZeroCrossingLst,addMathMLCode)
+  match (inZeroCrossingLst,addMathMLCode)
     local
       DAE.Exp e,addMMLCode;
       list<BackendDAE.Value> eq,wc;
@@ -3479,7 +3479,7 @@ algorithm
         dumpStrCloseTag(stringAppend(ZERO_CROSSING,ELEMENT_));
         dumpZcLst(zcLst,addMMLCode);
       then ();
-  end matchcontinue;
+  end match;
 end dumpZcLst;
 
 
@@ -3491,10 +3491,10 @@ function: lbinopSymbol
   output String outString;
 algorithm
   outString:=
-  matchcontinue (inOperator)
+  match (inOperator)
     case (DAE.AND()) then MathMLAnd;
     case (DAE.OR()) then MathMLOr;
-  end matchcontinue;
+  end match;
 end lbinopSymbol;
 
 public function lunaryopSymbol "
@@ -3506,9 +3506,9 @@ function: lunaryopSymbol
   output String outString;
 algorithm
   outString:=
-  matchcontinue (inOperator)
+  match (inOperator)
     case (DAE.NOT()) then MathMLNot;
-  end matchcontinue;
+  end match;
 end lunaryopSymbol;
 
 
@@ -3533,14 +3533,14 @@ function: relopSymbol
   output String outString;
 algorithm
   outString:=
-  matchcontinue (inOperator)
+  match (inOperator)
     case (DAE.LESS(ty = _)) then MathMLLessThan;
     case (DAE.LESSEQ(ty = _)) then MathMLLessEqualThan;
     case (DAE.GREATER(ty = _)) then MathMLGreaterThan;
     case (DAE.GREATEREQ(ty = _)) then MathMLGreaterEqualThan;
     case (DAE.EQUAL(ty = _)) then MathMLEquivalent;
     case (DAE.NEQUAL(ty = _)) then MathMLNotEqual;
-  end matchcontinue;
+  end match;
 end relopSymbol;
 
 
@@ -3579,7 +3579,7 @@ For example, if the element is an Array of Equations:
   input DAE.Exp addMathMLCode;
 algorithm
   _:=
-  matchcontinue (inEquation,inIndexNumber,addMathMLCode)
+  match (inEquation,inIndexNumber,addMathMLCode)
     local
       String s1,s2,res,indx_str,is,var_str,indexS;
       DAE.Exp e1,e2,e;
@@ -3743,7 +3743,7 @@ algorithm
         //dumpStrCloseTag(ANCHOR);
         dumpStrCloseTag(ALGORITHM);
       then ();
-  end matchcontinue;
+  end match;
 end dumpResidual;
 
 
@@ -3756,12 +3756,12 @@ function: unaryopSymbol
   output String outString;
 algorithm
   outString:=
-  matchcontinue (inOperator)
+  match (inOperator)
     case (DAE.UMINUS(ty = _)) then MathMLMinus;
     case (DAE.UPLUS(ty = _)) then "";//Not necessay
     case (DAE.UMINUS_ARR(ty = _)) then MathMLMinus;
     case (DAE.UPLUS_ARR(ty = _)) then "";//Not necessary
-  end matchcontinue;
+  end match;
 end unaryopSymbol;
 
 

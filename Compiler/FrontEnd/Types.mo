@@ -96,12 +96,12 @@ public function discreteType
   Succeeds for all the discrete types, Integer, String, Boolean and enumeration."
   input Type inType;
 algorithm
-  _ := matchcontinue (inType)
+  _ := match (inType)
     case ((DAE.T_INTEGER(varLstInt = _),_)) then ();
     case ((DAE.T_STRING(varLstString = _),_)) then ();
     case ((DAE.T_BOOL(varLstBool = _),_)) then ();
     case ((DAE.T_ENUMERATION(names = _),_)) then ();
-  end matchcontinue;
+  end match;
 end discreteType;
 
 public function propsAnd "
@@ -164,7 +164,7 @@ public function getConstList
   input list<Properties> inPropertiesList;
   output list<Const> outConstList;
 algorithm
-  outConstList := matchcontinue(inPropertiesList)
+  outConstList := match(inPropertiesList)
     local
       Const c;
       list<Const> ccdr;
@@ -182,7 +182,7 @@ algorithm
         ccdr = getConstList(pcdr);
       then
         c :: ccdr;
-  end matchcontinue;
+  end match;
 end getConstList;
 
 
@@ -193,7 +193,7 @@ input list<Properties> p;
 output Const c;
 algorithm
   c :=
-  matchcontinue (p)
+  match (p)
       local
         Properties p1;
         list<Properties> pps;
@@ -213,7 +213,7 @@ algorithm
         c1 = constAnd(c1, c2);
       then
         c1;
-  end matchcontinue;
+  end match;
 end elabTypePropToConst;
 
 protected function elabTypePropToConst2 ""
@@ -221,7 +221,7 @@ input TupleConst t;
 output Const c;
 algorithm
   c :=
-  matchcontinue (t)
+  match (t)
       local
         TupleConst p1;
         Const c1,c2;
@@ -238,7 +238,7 @@ algorithm
           c1 = constAnd(c1, c2);
           then
             c1;
-  end matchcontinue;
+  end match;
 end elabTypePropToConst2;
 
 protected function elabTypePropToConst3 ""
@@ -246,7 +246,7 @@ input list<TupleConst> t;
 output Const c;
 algorithm
   c :=
-  matchcontinue (t)
+  match (t)
       local
         TupleConst p1;
         Const c1,c2;
@@ -266,7 +266,7 @@ algorithm
           c1 = constAnd(c1, c2);
           then
             c1;
-  end matchcontinue;
+  end match;
 end elabTypePropToConst3;
 
 public function externalObjectType "author: PA
@@ -276,9 +276,9 @@ public function externalObjectType "author: PA
   input Type inType;
 algorithm
   _:=
-  matchcontinue (inType)
+  match (inType)
     case ((DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(_)),_)) then ();
-  end matchcontinue;
+  end match;
 end externalObjectType;
 
 public function varName "
@@ -287,22 +287,22 @@ Function for getting the name of a DAE.Var"
   input Var v;
   output String s;
 algorithm 
-  s := matchcontinue(v)
+  s := match(v)
     case(DAE.TYPES_VAR(name = s)) then s;
-  end matchcontinue;
+  end match;
 end varName;
 
 public function externalObjectConstructorType "author: PA
   Succeeds if type is ExternalObject constructor function"
   input Type inType;
 algorithm
-  _ := matchcontinue (inType)
+  _ := match (inType)
     local Type tp;  
     case ((DAE.T_FUNCTION(funcResultType = tp),_))
       equation
         externalObjectType(tp);
       then ();
-  end matchcontinue;
+  end match;
 end externalObjectConstructorType;
 
 public function simpleType "function: simpleType
@@ -310,13 +310,13 @@ public function simpleType "function: simpleType
   Succeeds for all the builtin types, Integer, String, Real, Boolean"
   input Type inType;
 algorithm
-  _ := matchcontinue (inType)
+  _ := match (inType)
     case ((DAE.T_REAL(varLstReal = _),_)) then ();
     case ((DAE.T_INTEGER(varLstInt = _),_)) then ();
     case ((DAE.T_STRING(varLstString = _),_)) then ();
     case ((DAE.T_BOOL(varLstBool = _),_)) then ();
     case ((DAE.T_ENUMERATION(path = _), _)) then ();
-  end matchcontinue;
+  end match;
 end simpleType;
 
 public function isComplexConnector ""
@@ -655,14 +655,14 @@ public function integerOrReal "function: integerOrReal
   input Type inType;
 algorithm
   _:=
-  matchcontinue (inType)
+  match (inType)
       local Type tp;
     case ((DAE.T_REAL(varLstReal = _),_)) then ();
     case ((DAE.T_INTEGER(varLstInt = _),_)) then ();
     case ((DAE.T_COMPLEX( complexTypeOption=SOME(tp)),_))
       equation integerOrReal(tp);
     then ();
-  end matchcontinue;
+  end match;
 end integerOrReal;
 
 public function isArray "function: isArray
@@ -868,13 +868,13 @@ Delete a list of named modifiers
   output DAE.Mod outMod;
 protected
   String s;
-algorithm outMod := matchcontinue(inMod,remStrings)
+algorithm outMod := match(inMod,remStrings)
   case(inMod,{}) then inMod;
   case(inMod, s::remStrings)
     equation
       inMod = removeMod(inMod,s);
       then removeModList(inMod,remStrings);
-  end matchcontinue;
+  end match;
 end removeModList;
 
 public function removeMod "
@@ -885,7 +885,7 @@ TODO: implement IDXMOD and a better support for redeclare.
   input DAE.Mod inmod;
   input String componentModified;
   output DAE.Mod outmod;
-algorithm outmod := matchcontinue(inmod,componentModified)
+algorithm outmod := match(inmod,componentModified)
   local
     Boolean b;
     Absyn.Each e;
@@ -905,7 +905,7 @@ algorithm outmod := matchcontinue(inmod,componentModified)
       subs = removeModInSubs(subs,componentModified);
     then
       DAE.MOD(b,e,subs,oem);
-end matchcontinue;
+end match;
 end removeMod;
 
 protected function removeRedeclareMods "
@@ -942,7 +942,7 @@ Helper function for removeMod, removes modifiers in submods;
   input list<SubMod> insubs;
   input String componentName;
   output list<SubMod> outsubs;
-algorithm outsubs := matchcontinue(insubs,componentName)
+algorithm outsubs := match(insubs,componentName)
   local
     DAE.Mod m1,m2;
     list<SubMod> subs1,subs2;
@@ -962,7 +962,7 @@ algorithm outsubs := matchcontinue(insubs,componentName)
       subs2 = removeModInSubs(insubs,componentName);
     then
       sub::subs2;
-end matchcontinue;
+end match;
 end removeModInSubs;
 
 public function getDimensionSizes "function: getDimensionSizes
@@ -1318,7 +1318,7 @@ public function basicType "function: basicType
   input Type inType;
   output Boolean outBoolean;
 algorithm
-  outBoolean := matchcontinue (inType)
+  outBoolean := match (inType)
     case ((DAE.T_INTEGER(varLstInt = _),_)) then true;
     case ((DAE.T_REAL(varLstReal = _),_)) then true;
     case ((DAE.T_STRING(varLstString = _),_)) then true;
@@ -1329,7 +1329,7 @@ algorithm
     case ((DAE.T_LIST(_),_)) then false;  // MetaModelica list type
     case ((DAE.T_METAOPTION(_),_)) then false;  // MetaModelica option type
     case ((DAE.T_METATUPLE(_),_)) then false;  // MetaModelica tuple type
-  end matchcontinue;
+  end match;
 end basicType;
 
 public function extendsBasicType "function: basicType
@@ -1379,7 +1379,7 @@ protected function setVarType "Sets a DAE.Var's type"
   input Type ty;
   output Var outV;
 algorithm
-  outV := matchcontinue(var,ty)
+  outV := match(var,ty)
     local
       Ident name;
       Boolean f,p,streamPrefix;
@@ -1394,7 +1394,7 @@ algorithm
     case (DAE.TYPES_VAR(name,DAE.ATTR(f,streamPrefix,a,v,d,io),p,tp,bind,cnstForRange),ty)
     then DAE.TYPES_VAR(name,DAE.ATTR(f,streamPrefix,a,v,d,io),p,ty,bind,cnstForRange);
 
-  end matchcontinue;
+  end match;
 end setVarType;
 
 public function semiEquivTypes " function semiEquivTypes
@@ -1958,14 +1958,14 @@ public function liftArrayListDims "
   output Type outType;
 algorithm
   outType:=
-  matchcontinue (inType,inDimensionLst)
+  match (inType,inDimensionLst)
     local
       Type ty;
       DAE.Dimension d;
       list<DAE.Dimension> rest;
     case (ty,{}) then ty;
     case (ty,d::rest) then liftArray(liftArrayListDims(ty,rest),d);
-  end matchcontinue;
+  end match;
 end liftArrayListDims;
 
 public function liftArrayRight "function: liftArrayRight
@@ -2010,13 +2010,13 @@ public function unliftArray "function: unliftArray
   output Type outType;
 algorithm
   outType:=
-  matchcontinue (inType)
+  match (inType)
     local Type ty;
     case ((DAE.T_ARRAY(arrayType = ty),_)) then ty;
     case ((DAE.T_COMPLEX(_,_,SOME(ty),_),_)) then unliftArray(ty);
     /* adrpo: handle also functions returning arrays! */
     case ((DAE.T_FUNCTION(_,ty,_),_)) then unliftArray(ty);
-  end matchcontinue;
+  end match;
 end unliftArray;
 
 protected function typeArraydim "function: typeArraydim
@@ -2058,7 +2058,7 @@ public function unparseEqMod
   input EqMod eq;
   output String str;
 algorithm
-  str := matchcontinue(eq)
+  str := match(eq)
   local DAE.Exp e; Absyn.Exp e2;
     case(DAE.TYPED(e,_,_,_)) equation
       str =ExpressionDump.printExpStr(e);
@@ -2066,7 +2066,7 @@ algorithm
     case(DAE.UNTYPED(e2)) equation
       str = Dump.printExpStr(e2);
     then str;
-  end matchcontinue;
+  end match;
 end unparseEqMod;
 
 public function unparseOptionEqMod
@@ -2074,11 +2074,11 @@ public function unparseOptionEqMod
   input Option<EqMod> eq;
   output String str;
 algorithm
-  str := matchcontinue(eq)
+  str := match(eq)
     local EqMod e;
     case NONE() then "NONE()";
     case SOME(e) then unparseEqMod(e);
-  end matchcontinue;
+  end match;
 end unparseOptionEqMod;
 
 public function unparseType
@@ -2261,11 +2261,11 @@ public function unparseConst "function: unparseConst
   output String outString;
 algorithm
   outString:=
-  matchcontinue (inConst)
+  match (inConst)
     case DAE.C_CONST() then "C_CONST";
     case DAE.C_PARAM() then "C_PARAM";
     case DAE.C_VAR() then "C_VAR";
-  end matchcontinue;
+  end match;
 end unparseConst;
 
 public function unparseTupleconst "function: unparseTupleconst
@@ -2276,7 +2276,7 @@ public function unparseTupleconst "function: unparseTupleconst
   output String outString;
 algorithm
   outString:=
-  matchcontinue (inTupleConst)
+  match (inTupleConst)
     local
       Ident cstr,res,res_1;
       Const c;
@@ -2294,7 +2294,7 @@ algorithm
         res_1 = stringAppendList({"(",res,")"});
       then
         res_1;
-  end matchcontinue;
+  end match;
 end unparseTupleconst;
 
 public function printTypeStr "function: printType
@@ -2743,7 +2743,7 @@ public function makeEnumerationType1
   output list<Var> outVarLst;
 algorithm
   outVarLst:=
-  matchcontinue (inPath,inVarLst,inNames,inIdx)
+  match (inPath,inVarLst,inNames,inIdx)
     local
       list<Ident> names;
       Absyn.Path p;
@@ -2765,7 +2765,7 @@ algorithm
       then
         (var :: vars);
     case (p,{},names,_) then {};
-  end matchcontinue;
+  end match;
 end makeEnumerationType1;
 
 public function printFarg "function: printFarg
@@ -2795,7 +2795,7 @@ public function printFargStr "function: printFargStr
   output String outString;
 algorithm
   outString:=
-  matchcontinue (inFuncArg)
+  match (inFuncArg)
     local
       Ident s,res,n;
       Type ty;
@@ -2805,7 +2805,7 @@ algorithm
         res = stringAppendList({s," ",n});
       then
         res;
-  end matchcontinue;
+  end match;
 end printFargStr;
 
 protected function getInputVars "function: getInputVars
@@ -2888,10 +2888,10 @@ public function getClassnameOpt "function: getClassname
   output Option<Absyn.Path> outPath;
 algorithm
   outPath:=
-  matchcontinue (inType)
+  match (inType)
     local Option<Absyn.Path> p;
     case ((_,p)) then p;
-  end matchcontinue;
+  end match;
 end getClassnameOpt;
 
 public function getVars "function getVars
@@ -2933,13 +2933,13 @@ public function getConnectorVars
   input Type inType;
   output list<Var> outVars;
 algorithm
-  outVars := matchcontinue(inType)
+  outVars := match(inType)
     local list<Var> vars;
     case ((DAE.T_COMPLEX(
            complexClassType = ClassInf.CONNECTOR(path = _),
            complexVarLst = vars), _))
       then vars;
-  end matchcontinue;
+  end match;
 end getConnectorVars;
 
 protected function isInputVar "function: isInputVar
@@ -2950,7 +2950,7 @@ protected function isInputVar "function: isInputVar
   input Var inVar;
 algorithm
   _:=
-  matchcontinue (inVar)
+  match (inVar)
     local
       Ident n;
       Attributes attr;
@@ -2961,7 +2961,7 @@ algorithm
         true = isInputAttr(attr);
       then
         ();
-  end matchcontinue;
+  end match;
 end isInputVar;
 
 protected function isOutputVar "function: isOutputVar
@@ -2972,7 +2972,7 @@ protected function isOutputVar "function: isOutputVar
   input Var inVar;
 algorithm
   _:=
-  matchcontinue (inVar)
+  match (inVar)
     local
       Ident n;
       Attributes attr;
@@ -2983,7 +2983,7 @@ algorithm
         true = isOutputAttr(attr);
       then
         ();
-  end matchcontinue;
+  end match;
 end isOutputVar;
 
 public function isInputAttr "function: isInputAttr
@@ -3040,7 +3040,7 @@ public function makeFargsList "function: makeFargsList
   output list<FuncArg> outFuncArgLst;
 algorithm
   outFuncArgLst:=
-  matchcontinue (inVarLst)
+  match (inVarLst)
     local
       list<FuncArg> fargl;
       Ident n;
@@ -3055,7 +3055,7 @@ algorithm
         fargl = makeFargsList(vl);
       then
         ((n,ty) :: fargl);
-  end matchcontinue;
+  end match;
 end makeFargsList;
 
 protected function makeReturnType "function: makeReturnType
@@ -3098,7 +3098,7 @@ protected function makeReturnTypeSingle "function: makeReturnTypeSingle
   output Type outType;
 algorithm
   outType:=
-  matchcontinue (inVar)
+  match (inVar)
     local
       Ident n;
       Attributes attr;
@@ -3106,7 +3106,7 @@ algorithm
       Type ty;
       Binding bnd;
     case DAE.TYPES_VAR(name = n,attributes = attr,protected_ = pr,type_ = ty,binding = bnd) then ty;
-  end matchcontinue;
+  end match;
 end makeReturnTypeSingle;
 
 protected function makeReturnTypeTuple "function: makeReturnTypeTuple
@@ -3119,7 +3119,7 @@ protected function makeReturnTypeTuple "function: makeReturnTypeTuple
   output list<Type> outTypeLst;
 algorithm
   outTypeLst:=
-  matchcontinue (inVarLst)
+  match (inVarLst)
     local
       list<Type> tys;
       Ident n;
@@ -3134,7 +3134,7 @@ algorithm
         tys = makeReturnTypeTuple(vl);
       then
         (ty :: tys);
-  end matchcontinue;
+  end match;
 end makeReturnTypeTuple;
 
 public function isParameter "function: isParameter
@@ -3538,7 +3538,7 @@ public function propTuplePropList
   input Properties prop_tuple;
   output list<Properties> prop_list;
 algorithm
-  prop_list := matchcontinue(prop_tuple)
+  prop_list := match(prop_tuple)
     local
       list<Properties> pl;
       list<Type> tl;
@@ -3549,7 +3549,7 @@ algorithm
         pl = propTuplePropList2(tl, cl);
       then
         pl;
-  end matchcontinue;
+  end match;
 end propTuplePropList;
 
 protected function propTuplePropList2
@@ -3558,7 +3558,7 @@ protected function propTuplePropList2
   input list<TupleConst> cl;
   output list<Properties> pl;
 algorithm
-  pl := matchcontinue(tl, cl)
+  pl := match(tl, cl)
     local
      Type t;
       list<Type> t_rest;
@@ -3571,7 +3571,7 @@ algorithm
         p_rest = propTuplePropList2(t_rest, c_rest);
       then
         (DAE.PROP(t, c) :: p_rest);
-  end matchcontinue;
+  end match;
 end propTuplePropList2;
 
 public function getPropType "function: getPropType
@@ -3583,11 +3583,11 @@ public function getPropType "function: getPropType
   output Type outType;
 algorithm
   outType:=
-  matchcontinue (inProperties)
+  match (inProperties)
     local Type ty;
     case DAE.PROP(type_ = ty) then ty;
     case DAE.PROP_TUPLE(type_ = ty) then ty;
-  end matchcontinue;
+  end match;
 end getPropType;
 
 public function createEmptyTypeMemory
@@ -4397,7 +4397,7 @@ public function typeConvertArray "function: typeConvertArray
   output list<DAE.Exp> outExpExpLst;
 algorithm
   (outExpExpLst) :=
-  matchcontinue (inExpExpLst1,inType2,inType3,dim,printFailtrace)
+  match (inExpExpLst1,inType2,inType3,dim,printFailtrace)
     local
       list<DAE.Exp> rest_1,rest;
       DAE.Exp first_1,first;
@@ -4409,7 +4409,7 @@ algorithm
         (first_1,_) = typeConvert(first,ty1,ty2,printFailtrace);
       then
         ((first_1 :: rest_1));
-  end matchcontinue;
+  end match;
 end typeConvertArray;
 
 protected function typeConvertMatrix "function: typeConvertMatrix
@@ -4425,7 +4425,7 @@ protected function typeConvertMatrix "function: typeConvertMatrix
   output list<list<tuple<DAE.Exp, Boolean>>> outTplExpExpBooleanLstLst;
 algorithm
   outTplExpExpBooleanLstLst :=
-  matchcontinue (inTplExpExpBooleanLstLst1,inType2,inType3,dim1,dim2,printFailtrace)
+  match (inTplExpExpBooleanLstLst1,inType2,inType3,dim1,dim2,printFailtrace)
     local
       list<list<tuple<DAE.Exp, Boolean>>> rest_1,rest;
       list<tuple<DAE.Exp, Boolean>> first_1,first;
@@ -4437,7 +4437,7 @@ algorithm
         first_1 = typeConvertMatrixRow(first, ty1, ty2,dim1,dim2,printFailtrace);
       then
         (first_1 :: rest_1);
-  end matchcontinue;
+  end match;
 end typeConvertMatrix;
 
 protected function typeConvertMatrixRow "function: typeConvertMatrixRow
@@ -4453,7 +4453,7 @@ protected function typeConvertMatrixRow "function: typeConvertMatrixRow
   output list<tuple<DAE.Exp, Boolean>> outTplExpExpBooleanLst;
 algorithm
   outTplExpExpBooleanLst :=
-  matchcontinue (inTplExpExpBooleanLst1,inType2,inType3,dim1,dim2,printFailtrace)
+  match (inTplExpExpBooleanLst1,inType2,inType3,dim1,dim2,printFailtrace)
     local
       list<tuple<DAE.Exp, Boolean>> rest;
       DAE.Exp exp_1,exp;
@@ -4468,7 +4468,7 @@ algorithm
         sc = boolNot(a);
       then
         (((exp_1,sc) :: rest));
-  end matchcontinue;
+  end match;
 end typeConvertMatrixRow;
 
 protected function typeConvertList "function: typeConvertList
@@ -4483,7 +4483,7 @@ protected function typeConvertList "function: typeConvertList
   output list<Type> outTypeLst;
 algorithm
   (outExpExpLst,outTypeLst):=
-  matchcontinue (inExpExpLst1,inTypeLst2,inTypeLst3,printFailtrace)
+  match (inExpExpLst1,inTypeLst2,inTypeLst3,printFailtrace)
     local
       list<DAE.Exp> rest_1,rest;
       list<Type> tyrest_1,ty1rest,ty2rest;
@@ -4496,7 +4496,7 @@ algorithm
         (first_1,ty_1) = typeConvert(first, ty1, ty2, printFailtrace);
       then
         ((first_1 :: rest_1),(ty_1 :: tyrest_1));
-  end matchcontinue;
+  end match;
 end typeConvertList;
 
 protected function typeConvertMatrixToList
@@ -4710,10 +4710,10 @@ protected function constTupleAnd "function: constTupleAnd
   output TupleConst outTupleConst;
 algorithm
   outTupleConst:=
-  matchcontinue (inTupleConst1,inTupleConst2)
+  match (inTupleConst1,inTupleConst2)
     local TupleConst c1,c2;
     case (c1,c2) then c1;
-  end matchcontinue;
+  end match;
 end constTupleAnd;
 
 public function constOr "function: constOr
@@ -4748,10 +4748,10 @@ public function boolConst "function: boolConst
   output Const outConst;
 algorithm
   outConst:=
-  matchcontinue (inBoolean)
+  match (inBoolean)
     case (false) then DAE.C_VAR();
     case (true) then DAE.C_CONST();
-  end matchcontinue;
+  end match;
 end boolConst;
 
 public function boolConstSize "function: boolConstSize
@@ -4764,10 +4764,10 @@ public function boolConstSize "function: boolConstSize
   output Const outConst;
 algorithm
   outConst:=
-  matchcontinue (inBoolean)
+  match (inBoolean)
     case (false) then DAE.C_PARAM();
     case (true) then DAE.C_CONST();
-  end matchcontinue;
+  end match;
 end boolConstSize;
 
 public function constEqual
@@ -4814,7 +4814,7 @@ public function printPropStr "function: printPropStr
   input Properties inProperties;
   output String outString;
 algorithm
-  outString := matchcontinue (inProperties)
+  outString := match (inProperties)
     local
       Ident ty_str,const_str,res;
       Type ty;
@@ -4834,7 +4834,7 @@ algorithm
         res = stringAppendList({"DAE.PROP_TUPLE(",ty_str,", ",const_str,")"});
       then
         res;
-  end matchcontinue;
+  end match;
 end printPropStr;
 
 public function printProp "function: printProp
@@ -5660,9 +5660,9 @@ end getAllInnerTypes;
 public function uniontypeFilter
   input Type ty;
 algorithm
-  _ := matchcontinue ty
+  _ := match ty
     case ((DAE.T_UNIONTYPE(_),_)) then ();
-  end matchcontinue;
+  end match;
 end uniontypeFilter;
 
 public function metarecordFilter
@@ -5677,11 +5677,11 @@ public function getUniontypePaths
   input Type ty;
   output list<Absyn.Path> outPaths;
 algorithm
-  outPaths := matchcontinue ty
+  outPaths := match ty
     local
       list<Absyn.Path> paths;
     case ((DAE.T_UNIONTYPE(paths),_)) then paths;
-  end matchcontinue;
+  end match;
 end getUniontypePaths;
 
 public function makeFunctionPolymorphicReference
@@ -5758,7 +5758,7 @@ protected function makeDummyExpAndTypeLists
   output list<DAE.Exp> outExps;
   output list<Type> outTypes;
 algorithm
-  (outExps,outTypes) := matchcontinue (lst)
+  (outExps,outTypes) := match (lst)
     local
       list<DAE.Exp> restExp;
       list<Type> restType, rest;
@@ -5774,7 +5774,7 @@ algorithm
         crefExp = Expression.crefExp(cref_);
       then 
         (crefExp::restExp,(DAE.T_BOXED((DAE.T_NOTYPE(),NONE())),NONE())::restType);
-  end matchcontinue;
+  end match;
 end makeDummyExpAndTypeLists;
 
 public function resTypeToListTypes
@@ -5798,7 +5798,7 @@ list of dimensions; otherwise, it fails."
  input Type inType;
  output list<DAE.Dimension> outDims;
 algorithm
-  outDims := matchcontinue (inType)
+  outDims := match (inType)
     local
       Type ty;
       DAE.Dimension d;
@@ -5817,7 +5817,7 @@ algorithm
         dims = getRealOrIntegerDimensions(ty);
       then
         d::dims;           
-  end matchcontinue;
+  end match;
 end getRealOrIntegerDimensions;
 
 protected function isPolymorphic
@@ -6107,7 +6107,7 @@ protected function replaceSolvedBinding
   input PolymorphicBindings solvedBindings;
   output Type outTy;
 algorithm
-  outTy := matchcontinue (ty,solvedBindings)
+  outTy := match (ty,solvedBindings)
     local
       list<DAE.FuncArg> args;
       list<Type> tys;
@@ -6144,7 +6144,7 @@ algorithm
       equation
         {ty} = polymorphicBindingsLookup(id, solvedBindings);
       then ty;
-  end matchcontinue;
+  end match;
 end replaceSolvedBinding;
 
 protected function subtypePolymorphic
@@ -6247,7 +6247,7 @@ Only works on the MetaModelica datatypes; the input is assumed to be boxed.
   input PolymorphicBindings bindings;
   output PolymorphicBindings outBindings;
 algorithm
-  outBindings := matchcontinue (actual,expected,envPath,bindings)
+  outBindings := match (actual,expected,envPath,bindings)
     local
       Type ty1,ty2;
       list<Type> tList1,tList2;
@@ -6257,14 +6257,14 @@ algorithm
         bindings = subtypePolymorphic(ty1,ty2,envPath,bindings);
         bindings = subtypePolymorphicList(tList1,tList2,envPath,bindings);
       then bindings;
-  end matchcontinue;
+  end match;
 end subtypePolymorphicList;
 
 public function boxVarLst
   input list<Var> vars;
   output list<Var> ovars;
 algorithm
-  ovars := matchcontinue vars
+  ovars := match vars
     local
       Ident name;
       Attributes attributes;
@@ -6279,7 +6279,7 @@ algorithm
         type_ = boxIfUnboxedType(type_);
         rest = boxVarLst(rest);
       then DAE.TYPES_VAR(name,attributes,protected_,type_,binding,constOfForIteratorRange)::rest;
-  end matchcontinue;
+  end match;
 end boxVarLst;
 
 public function liftArraySubscript "function: liftArraySubscript
@@ -6319,14 +6319,14 @@ public function liftArraySubscriptList "
   output Type outType;
 algorithm
   outType:=
-  matchcontinue (inType,inSubscriptLst)
+  match (inType,inSubscriptLst)
     local
       Type ty;
       DAE.Subscript sub;
       list<DAE.Subscript> rest;
     case (ty,{}) then ty;
     case (ty,sub::rest) then liftArraySubscript(liftArraySubscriptList(ty,rest),sub);
-  end matchcontinue;
+  end match;
 end liftArraySubscriptList;
 
 public function convertTupleToMetaTuple "Needed when pattern-matching"

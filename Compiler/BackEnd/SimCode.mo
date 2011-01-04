@@ -1383,7 +1383,7 @@ protected function generateExternalObjectIncludes
   output list<String> libs;
 algorithm
   (includes,libs) :=
-  matchcontinue (daelow)
+  match (daelow)
     local
       list<list<String>> libsL,includesL;
       BackendDAE.ExternalObjectClasses extObjs;
@@ -1393,7 +1393,7 @@ algorithm
         includes = Util.listListUnion(includesL);
         libs = Util.listListUnion(libsL);
       then (includes,libs);
-  end matchcontinue;
+  end match;
 end generateExternalObjectIncludes;
 
 protected function generateExternalObjectInclude
@@ -1403,7 +1403,7 @@ protected function generateExternalObjectInclude
   output list<String> libs;
 algorithm
   (includes,libs) :=
-  matchcontinue(extObjCls)
+  match(extObjCls)
     local
       Option<Absyn.Annotation> ann1,ann2;
       list<String> includes1,libs1,includes2,libs2;
@@ -1415,7 +1415,7 @@ algorithm
         includes = Util.listListUnion({includes1, includes2});
         libs = Util.listListUnion({libs1, libs2});
       then (includes,libs);
-  end matchcontinue;
+  end match;
 end generateExternalObjectInclude;
 
 protected function elaborateFunctions
@@ -1673,7 +1673,7 @@ protected function extArgsToSimExtArgs
   output SimExtArg simExtArg;
 algorithm
   simExtArg :=
-  matchcontinue (extArg)
+  match (extArg)
     local
       DAE.ComponentRef componentRef;
       DAE.Attributes attributes;
@@ -1705,7 +1705,7 @@ algorithm
       then SIMEXTARGSIZE(componentRef, isInput, outputIndex, expType, exp_);
     case DAE.NOEXTARG()
     then SIMNOEXTARG();
-  end matchcontinue;
+  end match;
 end extArgsToSimExtArgs;
 
 protected function fixOutputIndex
@@ -2165,13 +2165,13 @@ function extractIdAndExpFromDelayExp
   output tuple<Integer, DAE.Exp> delayedExp;
 algorithm
   delayedExp :=
-  matchcontinue (delayCallExp)
+  match (delayCallExp)
     local
       DAE.Exp id, e, delay, delayMax;
       Integer i;
     case (DAE.CALL(path=Absyn.IDENT("delay"), expLst={DAE.ICONST(i),e,delay,delayMax}))
     then ((i, e));
-  end matchcontinue;
+  end match;
 end extractIdAndExpFromDelayExp;
 
 protected function createMakefileParams
@@ -2205,7 +2205,7 @@ protected function generateHelpVarInfo
   output BackendDAE.BackendDAE outBackendDAE;
   output list<BackendDAE.Equation> outSampleEqns;
 algorithm
-  (outHelpVarInfo, outBackendDAE,outSampleEqns) := matchcontinue (dlow, comps)
+  (outHelpVarInfo, outBackendDAE,outSampleEqns) := match (dlow, comps)
     local
       list<HelpVarInfo> helpVarInfo;
       list<BackendDAE.Equation> sampleEqns;
@@ -2217,7 +2217,7 @@ algorithm
         // additional collect all these equations
         (outHelpVarInfo, dlow,sampleEqns) = searchForSampleOutsideWhen(outHelpVarInfo, dlow);
       then (outHelpVarInfo, dlow,sampleEqns);
-  end matchcontinue;
+  end match;
 end generateHelpVarInfo;
 
 protected function searchForSampleOutsideWhen
@@ -2269,7 +2269,7 @@ protected function sampleFinder
   output tuple<DAE.Exp, Boolean, tuple<Integer,list<HelpVarInfo>>> outTplExpExpTplExpExpLstVariables;
 algorithm
   outTplExpExpTplExpExpLstVariables:=
-  matchcontinue (inTplExpExpTplExpExpLstVariables)
+  match (inTplExpExpTplExpExpLstVariables)
     local
       Integer nhelpvars,nhelpvars1;
       DAE.Exp e;
@@ -2282,7 +2282,7 @@ algorithm
         ((e,(nhelpvars1,helpvars))) = Expression.traverseExp(e, findSampleInExps, (nhelpvars,helpvars));
         b = nhelpvars1 > nhelpvars;
       then ((e,b,(nhelpvars,helpvars)));
-  end matchcontinue;
+  end match;
 end sampleFinder;
 
 protected function findSampleInExps "function: findSampleInExps
@@ -2464,7 +2464,7 @@ protected function elaborateRecordDeclarationsFromTypes
   output list<String> outReturnTypes;
 algorithm
   (outRecordDecls, outReturnTypes) :=
-  matchcontinue (inTypes, inAccRecordDecls, inReturnTypes)
+  match (inTypes, inAccRecordDecls, inReturnTypes)
     local
       list<RecordDeclaration> accRecDecls;
       DAE.Type firstType;
@@ -2478,7 +2478,7 @@ algorithm
         (accRecDecls, inReturnTypes) =
         elaborateRecordDeclarationsFromTypes(restTypes, accRecDecls, inReturnTypes);
       then (accRecDecls, inReturnTypes);
-  end matchcontinue;
+  end match;
 end elaborateRecordDeclarationsFromTypes;
 
 protected function elaborateRecordDeclarations
@@ -2663,7 +2663,7 @@ protected function createExtObjInfo
   output ExtObjInfo extObjInfo;
 algorithm
   extObjInfo :=
-  matchcontinue (dlow)
+  match (dlow)
     local
       BackendDAE.Variables evars;
       BackendDAE.ExternalObjectClasses eclasses;
@@ -2678,7 +2678,7 @@ algorithm
         (includes, _) = generateExternalObjectIncludes(dlow);
         (constructors, destructors, aliases) = extractExtObjInfo2(evarLst, eclasses);
       then EXTOBJINFO(includes, constructors, destructors, aliases);
-  end matchcontinue;
+  end match;
 end createExtObjInfo;
 
 protected function extractExtObjInfo2
@@ -2689,7 +2689,7 @@ protected function extractExtObjInfo2
   output list<ExtAlias> aliases;
 algorithm
   (constructors, destructors, aliases) :=
-  matchcontinue (varLst, eclasses)
+  match (varLst, eclasses)
     local
       BackendDAE.Var v;
       list<BackendDAE.Var> vs;
@@ -2706,7 +2706,7 @@ algorithm
         destructors = listAppend(destructors1, destructors);
         aliases = listAppend(aliases1, aliases);
       then (constructors, destructors, aliases);
-  end matchcontinue;
+  end match;
 end extractExtObjInfo2;
 
 protected function createExtObjInfoSingle
@@ -2762,7 +2762,7 @@ protected function createAlgorithmAndEquationAsserts
   input BackendDAE.BackendDAE dlow;
   output list<Algorithm.Statement> algorithmAndEquationAsserts;
 algorithm
-  algorithmAndEquationAsserts := matchcontinue (dlow)
+  algorithmAndEquationAsserts := match (dlow)
     local
       array<Algorithm.Algorithm> algs;
       list<Algorithm.Statement> res;
@@ -2771,7 +2771,7 @@ algorithm
       equation
         res = createAlgorithmAndEquationAssertsFromAlgs(arrayList(algs));
       then res;
-  end matchcontinue;
+  end match;
 end createAlgorithmAndEquationAsserts;
 
 protected function createAlgorithmAndEquationAssertsFromAlgs
@@ -2802,7 +2802,7 @@ protected function createRemovedEquations
   input BackendDAE.BackendDAE dlow;
   output list<SimEqSystem> removedEquations;
 algorithm
-  removedEquations := matchcontinue (dlow)
+  removedEquations := match (dlow)
     local
       BackendDAE.EquationArray r;
       array<Algorithm.Algorithm> algs;
@@ -2811,7 +2811,7 @@ algorithm
       equation
         ((removedEquations,_)) = BackendEquation.traverseBackendDAEEqns(r,traversedlowEqToSimEqSystem,({},algs));
       then removedEquations;
-  end matchcontinue;
+  end match;
 end createRemovedEquations;
 
 protected function traversedlowEqToSimEqSystem
@@ -2837,7 +2837,7 @@ protected function extractDiscreteModelVars
   input BackendDAE.IncidenceMatrixT mT;
   output list<DAE.ComponentRef> discreteModelVars;
 algorithm
-  discreteModelVars := matchcontinue (dlow, mT)
+  discreteModelVars := match (dlow, mT)
     local
       BackendDAE.Variables v;
       list<DAE.ComponentRef> vLst2;
@@ -2850,7 +2850,7 @@ algorithm
         // replace var with cref
         vLst2 = BackendVariable.traverseBackendDAEVars(v,traversingisVarDiscreteCrefFinder,{});
       then vLst2;
-  end matchcontinue;
+  end match;
 end extractDiscreteModelVars;
 
 protected function traversingisVarDiscreteCrefFinder
@@ -2878,7 +2878,7 @@ protected function extractDiscreteModelVars2
   input BackendDAE.IncidenceMatrixT mT;
   output list<DAE.ComponentRef> discreteModelVars;
 algorithm
-  discreteModelVars := matchcontinue (dlow, mT)
+  discreteModelVars := match (dlow, mT)
     local
       BackendDAE.Variables v;
       BackendDAE.EquationArray e;
@@ -2894,7 +2894,7 @@ algorithm
         vLst2 = BackendVariable.traverseBackendDAEVars(v,traversingisVarDiscreteCrefFinder,{});
         vLst2 = Util.listUnionOnTrue(vLst1, vLst2, ComponentReference.crefEqual);
       then vLst2;
-  end matchcontinue;
+  end match;
 end extractDiscreteModelVars2;
 
 protected function traversingisVarDiscreteCrefFinder2
@@ -2947,7 +2947,7 @@ protected function createSimWhenClauses
   input list<HelpVarInfo> helpVarInfo;
   output list<SimWhenClause> simWhenClauses;
 algorithm
-  simWhenClauses := matchcontinue (dlow,helpVarInfo)
+  simWhenClauses := match (dlow,helpVarInfo)
     local
       list<BackendDAE.WhenClause> wc;
       
@@ -2956,7 +2956,7 @@ algorithm
         simWhenClauses = createSimWhenClausesWithEqs(wc, wc, helpVarInfo, dlow, 0);
       then
         simWhenClauses;
-  end matchcontinue;
+  end match;
 end createSimWhenClauses;
 
 protected function createSimWhenClausesWithEqs
@@ -2968,7 +2968,7 @@ protected function createSimWhenClausesWithEqs
   output list<SimWhenClause> simWhenClauses;
 algorithm
   simWhenClauses :=
-  matchcontinue (whenClauses, allwhenClauses, helpVarInfo, dlow, currentWhenClauseIndex)
+  match (whenClauses, allwhenClauses, helpVarInfo, dlow, currentWhenClauseIndex)
     local
       BackendDAE.WhenClause whenClause;
       list<BackendDAE.WhenClause> wc,wc1;
@@ -2987,7 +2987,7 @@ algorithm
         nextIndex = currentWhenClauseIndex + 1;
         simWhenClauses = createSimWhenClausesWithEqs(wc, wc1, helpVarInfo, dlow, nextIndex);
       then simWhenClause :: simWhenClauses;
-  end matchcontinue;
+  end match;
 end createSimWhenClausesWithEqs;
 
 protected function findWhenEquation
@@ -3043,7 +3043,7 @@ protected function whenClauseToSimWhenClause
   input Integer CurrentIndex;
   output SimWhenClause simWhenClause;
 algorithm
-  simWhenClause := matchcontinue (whenClause, whenEq, whenClauses,helpVarInfo,CurrentIndex)
+  simWhenClause := match (whenClause, whenEq, whenClauses,helpVarInfo,CurrentIndex)
     local
       DAE.Exp cond;
       list<BackendDAE.WhenClause> wc;
@@ -3060,7 +3060,7 @@ algorithm
         conditionVars = Expression.extractCrefsFromExp(cond);
       then
         SIM_WHEN_CLAUSE(conditionVars, reinits, whenEq, conditionsWithHindex);    
-  end matchcontinue;
+  end match;
 end whenClauseToSimWhenClause;
 
 protected function createEquations
@@ -3377,7 +3377,7 @@ protected function createElseWhenEquation
   output SimEqSystem equation_;
 algorithm
   equation_ :=
-  matchcontinue (elseWhen, wcl, helpVarInfo)
+  match (elseWhen, wcl, helpVarInfo)
     local
       Integer wcIndex;
       DAE.ComponentRef left;
@@ -3403,7 +3403,7 @@ algorithm
         conditionsWithHindex = Util.listMap2(conditions, addHelpForCondition, helpVarInfo, helpVarInfo);
       then
         SES_WHEN(left, right, conditionsWithHindex,SOME(simElseWhenEq));
-  end matchcontinue;
+  end match;
 end createElseWhenEquation;
 
 protected function createSampleEquations
@@ -3742,7 +3742,7 @@ protected function changeJactype
   input BackendDAE.JacobianType inJactype;
   output BackendDAE.JacobianType outJactype;
 algorithm 
-  outJactype := matchcontinue(inJactype)
+  outJactype := match(inJactype)
     local
       BackendDAE.JacobianType jacType;
     case (jacType as BackendDAE.JAC_TIME_VARYING()) then jacType;
@@ -3752,7 +3752,7 @@ algorithm
       equation
         Debug.fprint("failtrace", "- failed to calculate a Jacobian a system of equation \n");
       then fail();
-  end matchcontinue;
+  end match;
 end changeJactype;
 
 protected function createOdeSystem
@@ -4041,7 +4041,7 @@ protected function generateTearingSystem1
   input VarTransform.VariableReplacements inVariableReplacements;
   output list<BackendDAE.Equation> outBackendDAEEquationLst;
 algorithm
-  outBackendDAEEquationLst := matchcontinue (inBackendDAEEquationLst,inVariableReplacements)
+  outBackendDAEEquationLst := match (inBackendDAEEquationLst,inVariableReplacements)
     local
       DAE.Exp e1,e2,e1_1,e2_1;
       list<BackendDAE.Equation> rest,rest2;
@@ -4062,7 +4062,7 @@ algorithm
         e1_1 = VarTransform.replaceExp(e1, repl, SOME(skipPreOperator));
       then
         BackendDAE.RESIDUAL_EQUATION(e1_1,source) :: rest2;
-  end matchcontinue;
+  end match;
 end generateTearingSystem1;
 
 protected function extractDiscEqs
@@ -4071,7 +4071,7 @@ protected function extractDiscEqs
   output list<SimEqSystem> discEqsOut;
 algorithm
   discEqsOut :=
-  matchcontinue (disc_eqn, disc_var)
+  match (disc_eqn, disc_var)
     local
       list<SimEqSystem> restEqs;
       Integer cg_id,indx_1,cg_id_1,cg_id_2,indx;
@@ -4090,7 +4090,7 @@ algorithm
         restEqs = extractDiscEqs(eqns, vs);
       then
         SES_SIMPLE_ASSIGN(cr, expr) :: restEqs;
-  end matchcontinue;
+  end match;
 end extractDiscEqs;
 
 protected function extractValuesAndDims
@@ -4102,7 +4102,7 @@ protected function extractValuesAndDims
   output list<Integer> value_dims;
 algorithm
   (valuesRet, value_dims) :=
-  matchcontinue (inBackendDAEEquationLst1,inBackendDAEVarLst2,inBackendDAEEquationLst3,inBackendDAEVarLst4)
+  match (inBackendDAEEquationLst1,inBackendDAEVarLst2,inBackendDAEEquationLst3,inBackendDAEVarLst4)
     local
       list<DAE.Exp> rels;
       list<list<Integer>> values,values_1;
@@ -4121,7 +4121,7 @@ algorithm
         valuesRet = values_2;
       then
         (valuesRet, value_dims);
-  end matchcontinue;
+  end match;
 end extractValuesAndDims;
 
 protected function createOdeSystem2
@@ -4468,7 +4468,7 @@ Author: Frenkel TUD 2010-09 function getRelaxationReplacements
   output VarTransform.VariableReplacements outRepl;
   output list<SimEqSystem> outEqns;
 algorithm
-  (outRepl,outEqns) := matchcontinue (inBlock,inAss2,inCrefs,inEqnLst,inRepl)
+  (outRepl,outEqns) := match (inBlock,inAss2,inCrefs,inEqnLst,inRepl)
     local
       Integer e,s;
       list<Integer> block_;
@@ -4495,7 +4495,7 @@ algorithm
         (repl2,seqns) = getRelaxationReplacements(block_,ass2,crefs,eqnLst,repl1);  
       then 
         (repl2,SES_SIMPLE_ASSIGN(c, exp)::seqns);
-  end matchcontinue;
+  end match;
 end getRelaxationReplacements;
 
 protected function solveEquation"
@@ -4506,7 +4506,7 @@ Author: Frenkel TUD 2010-09 function solveEquation
   output DAE.Exp outExp;
   output list<DAE.Statement> outAsserts;
 algorithm
-  (outExp,outAsserts) := matchcontinue (inEqn,inExp)
+  (outExp,outAsserts) := match (inEqn,inExp)
     local
       DAE.Exp exp,e1,e2,sol,zero;
       DAE.ExpType tp;
@@ -4525,7 +4525,7 @@ algorithm
         (sol,asserts) = solve(e1, zero, exp);
       then 
         (sol,asserts);        
-  end matchcontinue;
+  end match;
 end solveEquation;
 
 protected function getRelaxedResidualEqns"
@@ -4541,7 +4541,7 @@ Author: Frenkel TUD 2010-09 function getRelaxedResidualEqns
   output list<BackendDAE.Equation> outEqnLst;
   output list<BackendDAE.Var> outVarLst;
 algorithm
-  (outEqnLst,outVarLst) := matchcontinue (inBlock,inAss2,inCrefs,inVarLst,inEqnLst,inRepl)
+  (outEqnLst,outVarLst) := match (inBlock,inAss2,inCrefs,inVarLst,inEqnLst,inRepl)
     local
       Integer e,s;
       list<Integer> block_;
@@ -4567,7 +4567,7 @@ algorithm
         (eqnLst1,varlst1) = getRelaxedResidualEqns(block_,ass2,crefs,varlst,eqnLst,repl);  
       then 
         ((eqn1::eqnLst1),(var::varlst1));
-  end matchcontinue;
+  end match;
 end getRelaxedResidualEqns;
 
 protected function generateRelaxedResidualEqns"
@@ -4581,7 +4581,7 @@ Author: Frenkel TUD 2010-09 function generateRelaxedResidualEqns
   input list<HelpVarInfo> helpVarInfo;  
   output list<SimEqSystem> outEqnLst;
 algorithm
-  outEqnLst := matchcontinue (inBlock,mixedEvent,daelow, Ass1, Ass2, helpVarInfo)
+  outEqnLst := match (inBlock,mixedEvent,daelow, Ass1, Ass2, helpVarInfo)
     local
       Integer r;
       list<Integer> block_;
@@ -4615,7 +4615,7 @@ algorithm
         simJac = Util.listMap1(jac, jacToSimjac, v);
       then
         {SES_LINEAR(mixedEvent, simVars, beqs, simJac)};
-  end matchcontinue;
+  end match;
 end generateRelaxedResidualEqns;
 
 protected function jacToSimjac
@@ -4623,7 +4623,7 @@ protected function jacToSimjac
   input BackendDAE.Variables v;
   output tuple<Integer, Integer, SimEqSystem> simJac;
 algorithm
-  simJac := matchcontinue (jac, v)
+  simJac := match (jac, v)
     local
       Integer row;
       Integer col;
@@ -4638,7 +4638,7 @@ algorithm
         // then ((row - 1, col - 1, SES_RESIDUAL(rhs_exp_1)));
       then 
         ((row - 1, col - 1, SES_RESIDUAL(e)));
-  end matchcontinue;
+  end match;
 end jacToSimjac;
 
 protected function dlowEqToExp
@@ -4720,7 +4720,7 @@ protected function listMap3passthrough "function listMap3passthrough
   replaceable type Type_d subtypeof Any;
   replaceable type Type_e subtypeof Any;
 algorithm
-  (outTypeELst,outTypeD) := matchcontinue (inTypeALst,inFuncTypeTypeATypeBTypeCTypeDToTypeE,inTypeB,inTypeC,inTypeD)
+  (outTypeELst,outTypeD) := match (inTypeALst,inFuncTypeTypeATypeBTypeCTypeDToTypeE,inTypeB,inTypeC,inTypeD)
     local
       Type_e f_1;
       list<Type_e> r_1;
@@ -4739,7 +4739,7 @@ algorithm
         (f_1,extraarg32) = fn(f, extraarg1, extraarg2, extraarg31);
       then
         ((f_1 :: r_1),extraarg32);
-  end matchcontinue;
+  end match;
 end listMap3passthrough;
 
 protected function createSingleArrayEqnCode
@@ -5080,7 +5080,7 @@ protected function dlowEqToSimEqSystem
   input array<Algorithm.Algorithm> algs;
   output SimEqSystem outEquation;
 algorithm
-  outEquation := matchcontinue (inEquation,algs)
+  outEquation := match (inEquation,algs)
     local
       DAE.ComponentRef cr;
       DAE.Exp exp_;
@@ -5098,14 +5098,14 @@ algorithm
         DAE.ALGORITHM_STMTS(algStatements) = BackendDAEUtil.collateAlgorithm(alg, NONE());
       then
         SES_ALGORITHM(algStatements);       
-  end matchcontinue;
+  end match;
 end dlowEqToSimEqSystem;
 
 protected function dlowAlgToSimEqSystem
   input DAE.Algorithm inAlg;
   output SimEqSystem outEquation;
 algorithm
-  outEquation := matchcontinue (inAlg)
+  outEquation := match (inAlg)
     local
       DAE.Algorithm alg;
       list<DAE.Statement> algStatements;
@@ -5114,15 +5114,15 @@ algorithm
         DAE.ALGORITHM_STMTS(algStatements) = BackendDAEUtil.collateAlgorithm(alg, NONE());
       then
         SES_ALGORITHM(algStatements);       
-  end matchcontinue;
+  end match;
 end dlowAlgToSimEqSystem;
 
 protected function failUnlessResidual
   input BackendDAE.Equation eq;
 algorithm
-  _ := matchcontinue (eq)
+  _ := match (eq)
     case (BackendDAE.RESIDUAL_EQUATION(exp=_)) then ();
-  end matchcontinue;
+  end match;
 end failUnlessResidual;
 
 protected function createInitialEquations
@@ -5394,7 +5394,7 @@ protected function createZeroCrossingsNeedSave
   input list<list<Integer>> blocks;
   output list<list<SimVar>> needSave;
 algorithm
-  needSave := matchcontinue (zeroCrossings, dlow, ass1, ass2, blocks)
+  needSave := match (zeroCrossings, dlow, ass1, ass2, blocks)
     local
       BackendDAE.ZeroCrossing zc;
       list<BackendDAE.ZeroCrossing> rest_zc;
@@ -5411,7 +5411,7 @@ algorithm
       then 
         needSaveTmp :: needSave_rest;
         
-  end matchcontinue;
+  end match;
 end createZeroCrossingsNeedSave;
 
 protected function createZeroCrossingNeedSave
@@ -5560,7 +5560,7 @@ protected function createVars
   output SimVars varsOut;
 algorithm
   varsOut :=
-  matchcontinue (dlow)
+  match (dlow)
     local
       BackendDAE.Variables vars;
       BackendDAE.Variables knvars;
@@ -5590,7 +5590,7 @@ algorithm
         varsOut = fixInitialThing(varsOut, initCrefs);
       then
         varsOut;
-  end matchcontinue;
+  end match;
 end createVars;
 
 protected function extractVarsFromList
@@ -5629,7 +5629,7 @@ protected function extractVarFromVar
   output SimVars varsOut;
 algorithm
   varsOut :=
-  matchcontinue (dlowVar,aliasVars)
+  match (dlowVar,aliasVars)
     local
       list<SimVar> stateVars;
       list<SimVar> derivativeVars;
@@ -5695,7 +5695,7 @@ algorithm
       then
         SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars, outputVars,
           paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars, extObjVars);
-  end matchcontinue;
+  end match;
 end extractVarFromVar;
 
 protected function derVarFromStateVar
@@ -5703,7 +5703,7 @@ protected function derVarFromStateVar
   output SimVar deriv;
 algorithm
   deriv :=
-  matchcontinue (state)
+  match (state)
     local
       DAE.ComponentRef name;
       BackendDAE.VarKind kind;
@@ -5726,7 +5726,7 @@ algorithm
         arrayCref = ComponentReference.crefPrefixDer(arrayCref);
       then
         SIMVAR(name, BackendDAE.STATE_DER(), comment, unit, displayUnit, index, NONE(), isFixed, type_, isDiscrete, SOME(arrayCref), NOALIAS(), info);
-  end matchcontinue;
+  end match;
 end derVarFromStateVar;
 
 protected function addSimvarIfTrue
@@ -5736,12 +5736,12 @@ protected function addSimvarIfTrue
   output list<SimVar> res;
 algorithm
   res :=
-  matchcontinue (condition, var, lst)
+  match (condition, var, lst)
     case (true, var, lst)
     then (var :: lst);
     case (false, var, lst)
     then lst;
-  end matchcontinue;
+  end match;
 end addSimvarIfTrue;
 
 protected function mergeVars
@@ -5801,7 +5801,7 @@ protected function sortSimvarsOnIndex
   output SimVars sortedSimvars;
 algorithm
   sortedSimvars :=
-  matchcontinue (unsortedSimvars)
+  match (unsortedSimvars)
     local
       list<SimVar> stateVars;
       list<SimVar> derivativeVars;
@@ -5836,14 +5836,14 @@ algorithm
       then SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars,
         outputVars, paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars,
         extObjVars);
-  end matchcontinue;
+  end match;
 end sortSimvarsOnIndex;
 
 protected function fixIndex
   input SimVars unfixedSimvars;
   output SimVars fixedSimvars;
 algorithm
-  fixedSimvars := matchcontinue (unfixedSimvars)
+  fixedSimvars := match (unfixedSimvars)
     local
       list<SimVar> stateVars;
       list<SimVar> derivativeVars;
@@ -5873,7 +5873,7 @@ algorithm
       then SIMVARS(stateVars, derivativeVars, algVars,intAlgVars, boolAlgVars, inputVars,
         outputVars, paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars,
         extObjVars);
-  end matchcontinue;
+  end match;
 end fixIndex;
 
 protected function rewriteIndex
@@ -5882,7 +5882,7 @@ protected function rewriteIndex
   output list<SimVar> outVars;
 algorithm 
   outVars :=
-  matchcontinue(inVars,index)
+  match(inVars,index)
     local
       DAE.ComponentRef name;
       BackendDAE.VarKind kind;
@@ -5901,7 +5901,7 @@ algorithm
       equation
         rest2 = rewriteIndex(rest, index_ + 1);
       then (SIMVAR(name, kind, comment, unit, displayUnit, index_, initVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, info)::rest2);
-  end matchcontinue; 
+  end match; 
 end rewriteIndex;
 
 protected function varIndexComparer
@@ -5910,13 +5910,13 @@ protected function varIndexComparer
   output Boolean res;
 algorithm
   res :=
-  matchcontinue (lhs, rhs)
+  match (lhs, rhs)
     local
       Integer lhsIndex;
       Integer rhsIndex;
     case (SIMVAR(index=lhsIndex), SIMVAR(index=rhsIndex))
     then rhsIndex < lhsIndex;
-  end matchcontinue;
+  end match;
 end varIndexComparer;
 
 protected function fixInitialThing
@@ -6721,7 +6721,7 @@ protected function buildWhenConditionCheckForEquation "
   output list<HelpVarInfo> helpVarLst									"List of help variables introduced in this function.";
 algorithm
   (outString, helpVarLst) :=
-  matchcontinue (whenEq,inBackendDAEWhenClauseLst,isElseWhen, nextHelpIndex)
+  match (whenEq,inBackendDAEWhenClauseLst,isElseWhen, nextHelpIndex)
     local
       Integer nextHelpInd, ind;
       Expression.ComponentRef cr;
@@ -6743,7 +6743,7 @@ algorithm
         (res,helpVars);
     case (NONE(),_,_,_)
     then ("",{});
-  end matchcontinue;
+  end match;
 end buildWhenConditionCheckForEquation;
 
 protected function getConditionList
@@ -6956,7 +6956,7 @@ function generateMixedDiscreteCombinationValues2
   input list<list<Integer>> inStringLstLst;
   output list<list<Integer>> outStringLstLst;
 algorithm
-  outStringLstLst := matchcontinue (inStringLst,inStringLstLst)
+  outStringLstLst := match (inStringLst,inStringLstLst)
     local
       list<list<Integer>> lst,lst_1,lst2,res;
       Integer s;
@@ -6971,7 +6971,7 @@ algorithm
         res = listAppend(lst_1, lst2);
       then
         res;
-  end matchcontinue;
+  end match;
 end generateMixedDiscreteCombinationValues2;
 
 protected function generateMixedDiscretePossibleValues2 "function: generateMixedDiscretePossibleValues2
@@ -7036,14 +7036,14 @@ protected function splitMixedEquations "function: splitMixedEquations
   output list<BackendDAE.Var> discVarLst;
 algorithm
   (contEqnLst,contVarLst,discEqnLst,discVarLst):=
-  matchcontinue (eqnLst,varLst)
+  match (eqnLst,varLst)
     case (eqnLst,varLst) equation
       discVarLst = Util.listSelect(varLst,BackendDAEUtil.isVarDiscrete);
       contVarLst = Util.listSetDifferenceOnTrue(varLst,discVarLst,BackendVariable.varEqual);
       discEqnLst = Util.listMap1(discVarLst,findDiscreteEquation,eqnLst);
       contEqnLst = Util.listSetDifferenceOnTrue(eqnLst,discEqnLst,BackendEquation.equationEqual);
     then (contEqnLst,contVarLst,discEqnLst,discVarLst);
-  end matchcontinue;
+  end match;
 end splitMixedEquations;
 
 protected function findDiscreteEquation "help function to splitMixedEquations, finds the discrete equation
@@ -7164,7 +7164,7 @@ protected function getVectorizedCrefFromExp
   input DAE.Exp inExp;
   output Expression.ComponentRef outComponentRef;
 algorithm
-  outComponentRef := matchcontinue (inExp)
+  outComponentRef := match (inExp)
     local
       list<Expression.ComponentRef> crefs,crefs_1;
       Expression.ComponentRef cr;
@@ -7188,7 +7188,7 @@ algorithm
         _ = Util.listReduce(crefs_1, ComponentReference.crefEqualReturn);
       then
         cr;
-  end matchcontinue;
+  end match;
 end getVectorizedCrefFromExp;
 
 protected function getVectorizedCrefFromExpMatrix
@@ -7231,7 +7231,7 @@ protected function singleAlgorithmSection
   input BackendDAE.BackendDAE inBackendDAE;
 algorithm
   _:=
-  matchcontinue (inBackendDAE)
+  match (inBackendDAE)
     local
       BackendDAE.EquationArray eqnarr;
     case (BackendDAE.DAE(orderedEqs = eqnarr))
@@ -7239,7 +7239,7 @@ algorithm
         SOME(_) = BackendEquation.traverseBackendDAEEqnsWithStop(eqnarr,singleAlgorithmSection2,NONE());
       then
         ();
-  end matchcontinue;
+  end match;
 end singleAlgorithmSection;
 
 protected function singleAlgorithmSectionList
@@ -7250,7 +7250,7 @@ protected function singleAlgorithmSectionList
   input Option<Integer> Index;  
 algorithm
   _:=
-  matchcontinue (inBackendDAEEquationLst,Index)
+  match (inBackendDAEEquationLst,Index)
     local 
       list<BackendDAE.Equation> res;
       Integer i,i1;
@@ -7266,7 +7266,7 @@ algorithm
         singleAlgorithmSectionList(res,SOME(i1));
       then
         ();
-  end matchcontinue;
+  end match;
 end singleAlgorithmSectionList;
 
 protected function singleAlgorithmSection2
@@ -7296,7 +7296,7 @@ protected function singleArrayEquation
   input BackendDAE.BackendDAE inBackendDAE;
 algorithm
   _:=
-  matchcontinue (inBackendDAE)
+  match (inBackendDAE)
     local
       list<BackendDAE.Equation> eqn_lst;
       BackendDAE.Variables vars;
@@ -7306,7 +7306,7 @@ algorithm
         SOME(_) = BackendEquation.traverseBackendDAEEqnsWithStop(eqnarr,singleArrayEquation2,NONE());
       then
         ();
-  end matchcontinue;
+  end match;
 end singleArrayEquation;
 
 protected function singleArrayEquation2
@@ -7353,7 +7353,7 @@ protected function makeResidualReplacements2 "function makeResidualReplacements2
   input Integer inInteger;
   output VarTransform.VariableReplacements outVariableReplacements;
 algorithm
-  outVariableReplacements := matchcontinue (inVariableReplacements,inExpComponentRefLst,inInteger)
+  outVariableReplacements := match (inVariableReplacements,inExpComponentRefLst,inInteger)
     local
       VarTransform.VariableReplacements repl,repl_1,repl_2;
       String pstr,str;
@@ -7371,7 +7371,7 @@ algorithm
         repl_2 = makeResidualReplacements2(repl_1, crs, pos_1);
       then
         repl_2;
-  end matchcontinue;
+  end match;
 end makeResidualReplacements2;
 
 protected function skipPreOperator "function: skipPreOperator
@@ -7518,7 +7518,7 @@ protected function getZcMixedSystem
   output list<Integer> outIntegerLst;
 algorithm
   outIntegerLst:=
-  matchcontinue (inBackendDAE,inInteger,inIntegerLstLst,inIntegerArray)
+  match (inBackendDAE,inInteger,inIntegerLstLst,inIntegerArray)
     local
       list<Integer> block_;
       list<BackendDAE.Equation> eqn_lst;
@@ -7536,7 +7536,7 @@ algorithm
         true = isMixedSystem(var_lst,eqn_lst);
       then
         block_;
-  end matchcontinue;
+  end match;
 end getZcMixedSystem;
 
 protected function splitOutputBlocks
@@ -7553,7 +7553,7 @@ protected function splitOutputBlocks
   output list<list<Integer>> contBlocks;
   output list<list<Integer>> discBlocks;
 algorithm
-  (contBlocks,discBlocks) := matchcontinue(dlow,ass1,ass2,m,mT,blocks)
+  (contBlocks,discBlocks) := match(dlow,ass1,ass2,m,mT,blocks)
     local BackendDAE.Variables vars,vars2,knvars;
       list<BackendDAE.Var> varLst, varLstDiscrete;
       BackendDAE.EquationArray eqns;
@@ -7562,7 +7562,7 @@ algorithm
       vars2 = BackendDAEUtil.listVar(varLstDiscrete);
       (contBlocks,discBlocks,_) = splitOutputBlocks2(vars2,vars,knvars,eqns,ass1,ass2,m,mT,blocks);
     then (contBlocks,discBlocks);
-  end matchcontinue;
+  end match;
 end splitOutputBlocks;
 
 protected function splitOutputBlocks2
@@ -8182,7 +8182,7 @@ protected function generateExtFunctionIncludes
   output list<String> libs;
 algorithm
   (includes,libs):=
-  matchcontinue (inAbsynAnnotationOption)
+  match (inAbsynAnnotationOption)
     local
       list<Absyn.ElementArg> eltarg;
     case (SOME(Absyn.ANNOTATION(eltarg)))
@@ -8192,7 +8192,7 @@ algorithm
       then
         (includes,libs);
     case (NONE()) then ({},{});
-  end matchcontinue;
+  end match;
 end generateExtFunctionIncludes;
 
 protected function getLibraryStringInGccFormat
@@ -8375,7 +8375,7 @@ public function addDivExpErrorMsgtoExp "
   output DAE.Exp outExp;
   output list<DAE.Exp> outDivLst;
 algorithm 
-  (outExp,outDivLst) := matchcontinue(inExp,inDlowMode)
+  (outExp,outDivLst) := match(inExp,inDlowMode)
     local 
       DAE.Exp exp; 
       BackendDAE.BackendDAE dlow;
@@ -8389,7 +8389,7 @@ algorithm
         ((exp,(_,_,_,divlst))) = Expression.traverseExp(inExp, traversingDivExpFinder, (vars,varlst,dzer,{}));
       then
         (exp,divlst);
-  end matchcontinue;
+  end match;
 end addDivExpErrorMsgtoExp;
 
 protected function traversingDivExpFinder "
@@ -8466,7 +8466,7 @@ Author: Frenkel TUD 2010-02
   output String outString;
   output Boolean outBool;
 algorithm
-  (outString,outBool) := matchcontinue(inExp1,inExp2,inMode)
+  (outString,outBool) := match(inExp1,inExp2,inMode)
     local
       DAE.Exp e,e2;
       String se;
@@ -8493,7 +8493,7 @@ algorithm
         bres = Util.boolOrList(boollst);
       then 
         (se,bres);
-  end matchcontinue;
+  end match;
 end traversingDivExpFinder1;
 
 protected  function generadeDivExpErrorMsg "
@@ -8520,7 +8520,7 @@ protected function addDivExpErrorMsgtosimJac
   output tuple<Integer, Integer, SimEqSystem> outJac;
   output list<DAE.Exp> outDivLst;
 algorithm
-  (outJac,outDivLst) := matchcontinue (inJac,inDlowMode)
+  (outJac,outDivLst) := match (inJac,inDlowMode)
     local
       Integer a,b;
       SimEqSystem ses;
@@ -8530,7 +8530,7 @@ algorithm
         (ses,divLst) = addDivExpErrorMsgtoSimEqSystem(ses,inDlowMode);
       then
         ((a,b,ses),divLst);   
-  end matchcontinue;
+  end match;
 end addDivExpErrorMsgtosimJac;
 
 protected function addDivExpErrorMsgtoSimEqSystem
@@ -8626,11 +8626,11 @@ protected function generateParameterDivisionbyZeroTestEqn "
 Author: Frenkel TUD 2010-04"
   input DAE.Exp inExp;
   output DAE.Statement outStm;
-algorithm outStm := matchcontinue(inExp)
+algorithm outStm := match(inExp)
   local
     DAE.Exp e;
   case(inExp) then DAE.STMT_NORETCALL(inExp,DAE.emptyElementSource);
-end matchcontinue;
+end match;
 end generateParameterDivisionbyZeroTestEqn;
 
 public function listMap1_2 "
@@ -8656,7 +8656,7 @@ public function listMap1_2 "
   replaceable type Type_c subtypeof Any;
 algorithm
   (outTypeBLst,outTypeCLst):=
-  matchcontinue (inTypeALst,inFuncTypeTypeAToTypeBTypeC,extraArg)
+  match (inTypeALst,inFuncTypeTypeAToTypeBTypeC,extraArg)
     local
       Type_b f1_1;
       list<Type_c> f2_1;
@@ -8673,7 +8673,7 @@ algorithm
         r2_2 = listAppend(f2_1,r2_1);
       then
         ((f1_1 :: r1_1),r2_2);
-  end matchcontinue;
+  end match;
 end listMap1_2;
 
 protected function solve
@@ -9160,7 +9160,7 @@ protected function get1 "help function to get"
   output Integer indx;
 algorithm
   (value,indx):=
-  matchcontinue (key,hashTable)
+  match (key,hashTable)
     local
       Integer hval,hashindx,indx_1,bsize,n;
       list<tuple<Key,Integer>> indexes;
@@ -9178,7 +9178,7 @@ algorithm
         true = keyEqual(k, key);
       then
         (v,indx);
-  end matchcontinue;
+  end match;
 end get1;
 
 protected function get2 "
@@ -9308,9 +9308,9 @@ public function valueArrayLength "
   input ValueArray valueArray;
   output Integer size;
 algorithm
-  size := matchcontinue (valueArray)
+  size := match (valueArray)
     case (VALUE_ARRAY(numberOfElements = size)) then size;
-  end matchcontinue;
+  end match;
 end valueArrayLength;
 
 public function valueArrayAdd "function: valueArrayAdd

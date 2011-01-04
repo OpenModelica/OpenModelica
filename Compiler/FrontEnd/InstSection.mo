@@ -270,7 +270,7 @@ protected function instEInitialEquation
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm 
   (outCache,outEnv,outIH,outDae,outSets,outState,outGraph):=
-  matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inEEquation,inBoolean,unrollForLoops,inGraph)
+  match (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inEEquation,inBoolean,unrollForLoops,inGraph)
     local
       DAE.DAElist dae;
       Connect.Sets csets_1,csets;
@@ -289,7 +289,7 @@ algorithm
         (cache,env,ih,dae,csets_1,ci_state_1,graph) = instEquationCommon(cache,env,ih, mods, pre, csets, ci_state, eq, SCode.INITIAL(), impl, graph);
       then
         (cache,env,ih,dae,csets_1,ci_state_1,graph);
-  end matchcontinue;
+  end match;
 end instEInitialEquation;
 
 protected function instEquationCommon
@@ -941,7 +941,7 @@ protected function instEquationNoRetCallVectorization "creates DAE for NORETCALL
   input DAE.ElementSource source "the origin of the element";
   output DAE.DAElist dae;
 algorithm
-  dae := matchcontinue(expCall,source)
+  dae := match(expCall,source)
   local Absyn.Path fn; list<DAE.Exp> expl; DAE.ExpType ty; Boolean s; DAE.Exp e;
     DAE.DAElist dae1,dae2; 
     DAE.FunctionTree funcs;
@@ -955,7 +955,7 @@ algorithm
       then dae;
     case(DAE.ARRAY(ty,s,{}),source) equation
       then DAEUtil.emptyDae;
-  end matchcontinue;
+  end match;
 end instEquationNoRetCallVectorization;
 
 protected function makeDAEArrayEqToReinitForm "
@@ -1094,7 +1094,7 @@ protected function instEquationCommonCiTrans
   input SCode.Initial inInitial;
   output ClassInf.State outState;
 algorithm 
-  outState := matchcontinue (inState,inInitial)
+  outState := match (inState,inInitial)
     local ClassInf.State ci_state_1,ci_state;
     case (ci_state,SCode.NON_INITIAL())
       equation 
@@ -1102,7 +1102,7 @@ algorithm
       then
         ci_state_1;
     case (ci_state,SCode.INITIAL()) then ci_state; 
-  end matchcontinue;
+  end match;
 end instEquationCommonCiTrans;
 
 protected function unroll "function: unroll
@@ -1586,14 +1586,14 @@ public function makeDaeEquation
   input SCode.Initial inInitial3;
   output DAE.DAElist outDae;
 algorithm 
-  outDae := matchcontinue (inExp1,inExp2,source,inInitial3)
+  outDae := match (inExp1,inExp2,source,inInitial3)
     local DAE.Exp e1,e2;
       DAE.FunctionTree funcs;
     case (e1,e2,source,SCode.NON_INITIAL())
       then DAE.DAE({DAE.EQUATION(e1,e2,source)});
     case (e1,e2,source,SCode.INITIAL())
       then DAE.DAE({DAE.INITIALEQUATION(e1,e2,source)});
-  end matchcontinue;
+  end match;
 end makeDaeEquation;
 
 protected function makeDaeDefine 
@@ -1605,14 +1605,14 @@ protected function makeDaeDefine
   input SCode.Initial inInitial;
   output DAE.DAElist outDae;
 algorithm 
-  outDae := matchcontinue (inComponentRef,inExp,source,inInitial)
+  outDae := match (inComponentRef,inExp,source,inInitial)
     local DAE.ComponentRef cr; DAE.Exp e2;
       DAE.FunctionTree funcs;
     case (cr,e2,source,SCode.NON_INITIAL())
       then DAE.DAE({DAE.DEFINE(cr,e2,source)});
     case (cr,e2,source,SCode.INITIAL())
       then DAE.DAE({DAE.INITIALDEFINE(cr,e2,source)});
-  end matchcontinue;
+  end match;
 end makeDaeDefine;
 
 protected function instArrayEquation
@@ -1770,7 +1770,7 @@ protected function instArrayElEq
   input SCode.Initial inInitial;
   output DAE.DAElist outDAE;
 algorithm
-  outDAE := matchcontinue(inLhsExp, inRhsExp, inType, inLhsIndices,
+  outDAE := match(inLhsExp, inRhsExp, inType, inLhsIndices,
       inRhsIndices, inSource, inInitial)
     local
       DAE.Exp lhs, rhs, lhs_idx, rhs_idx;
@@ -1787,7 +1787,7 @@ algorithm
         dae1 = DAEUtil.joinDaes(dae1, dae2);
       then
         dae1;
-  end matchcontinue;
+  end match;
 end instArrayElEq;
 
 protected function unrollForLoop
@@ -2217,14 +2217,14 @@ protected function makeComplexDaeEquation "Creates a DAE.COMPLEX_EQUATION for eq
   input SCode.Initial initial_;
   output DAE.DAElist dae;
 algorithm
-  dae := matchcontinue(lhs,rhs,source,initial_)
+  dae := match(lhs,rhs,source,initial_)
   local DAE.FunctionTree funcs;
     case(lhs,rhs,source,SCode.NON_INITIAL())
       then DAE.DAE({DAE.COMPLEX_EQUATION(lhs,rhs,source)});
 
     case(lhs,rhs,source,SCode.INITIAL())
       then DAE.DAE({DAE.INITIAL_COMPLEX_EQUATION(lhs,rhs,source)});
-  end matchcontinue;
+  end match;
 end makeComplexDaeEquation;
 
 public function instAlgorithm 
@@ -2362,7 +2362,7 @@ public function instStatements
   output Env.Cache outCache;
   output list<DAE.Statement> outAlgorithmStatementLst;
 algorithm 
-  (outCache,outAlgorithmStatementLst) := matchcontinue (inCache,inEnv,inIH,inPre,inAbsynAlgorithmLst,source,initial_,inBoolean,unrollForLoops)
+  (outCache,outAlgorithmStatementLst) := match (inCache,inEnv,inIH,inPre,inAbsynAlgorithmLst,source,initial_,inBoolean,unrollForLoops)
     local
       list<Env.Frame> env;
       Boolean impl;
@@ -2385,7 +2385,7 @@ algorithm
         stmts = listAppend(stmts1, stmts2);
       then
         (cache,stmts);
-  end matchcontinue;
+  end match;
 end instStatements;
 
 protected function instStatement "
@@ -2831,7 +2831,7 @@ and constructs the range expression (Absyn.Exp) for the ith dimension of the var
   input tuple<Absyn.ComponentRef, Integer> inTuple;
   output Absyn.Exp outExp;
 algorithm
-  outExp := matchcontinue(inTuple)
+  outExp := match(inTuple)
     local
       Absyn.Exp e;
       Absyn.ComponentRef acref;
@@ -2842,7 +2842,7 @@ algorithm
       equation
         e=Absyn.RANGE(Absyn.INTEGER(1),NONE(),Absyn.CALL(Absyn.CREF_IDENT("size",{}),Absyn.FUNCTIONARGS({Absyn.CREF(acref),Absyn.INTEGER(dimNum)},{})));
       then e;
-  end matchcontinue;
+  end match;
 end rangeExpression;
 
 protected function instIfTrueBranches
@@ -3530,7 +3530,7 @@ protected function updateEnvComponentsOnQualPath
   output Env.Env outEnv "the returned updated environment";  
 algorithm
   outEnv := 
-  matchcontinue(inCache, inEnv, virtualExpandableCref, virtualExpandableAttr, virtualExpandableTy, 
+  match(inCache, inEnv, virtualExpandableCref, virtualExpandableAttr, virtualExpandableTy, 
                 virtualExpandableBinding, virtualExpandableCnstForRange, virtualExpandableEnv)
     local
       Env.Cache cache;
@@ -3587,7 +3587,7 @@ algorithm
                       currentCnstForRange, 
                       currentEnv);
       then updatedEnv;
-  end matchcontinue;
+  end match;
 end updateEnvComponentsOnQualPath; 
 
 protected function connectExpandableVariables
@@ -3613,7 +3613,7 @@ protected function connectExpandableVariables
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm
   (outCache,outEnv,outIH,outSets,outDae,outGraph) :=
-  matchcontinue (inCache,inEnv,inIH,inSets,inPrefix,inComponentRefLeft,inComponentRefRight,inVariablesUnion,inBoolean,inGraph,info)
+  match (inCache,inEnv,inIH,inSets,inPrefix,inComponentRefLeft,inComponentRefRight,inVariablesUnion,inBoolean,inGraph,info)
     local
       DAE.ComponentRef c1_1,c2_1,c1_2,c2_2;
       DAE.ExpType t1,t2;
@@ -3662,7 +3662,7 @@ algorithm
         dae = DAEUtil.joinDaes(dae1, dae2);
       then
         (cache,env,ih,sets,dae,graph);
-  end matchcontinue;
+  end match;
 end connectExpandableVariables;
 
 protected function isExpandableConnectorType
@@ -3714,11 +3714,11 @@ protected function flipDirection
   input  Absyn.Direction inDir;
   output Absyn.Direction outDir;
 algorithm
-  outDir := matchcontinue(inDir)
+  outDir := match(inDir)
     case (Absyn.INPUT()) then Absyn.OUTPUT();
     case (Absyn.OUTPUT()) then Absyn.INPUT();
     case (Absyn.BIDIR()) then Absyn.BIDIR();
-  end matchcontinue;
+  end match;
 end flipDirection;
 
 protected function validConnector
@@ -4325,7 +4325,7 @@ protected function connectVars
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm
   (outCache,outEnv,outIH,outSets,outDae,outGraph):=
-  matchcontinue (inCache,inEnv,inIH,inSets,inComponentRef3,inFace4,inTypesVarLst5,vt1,inComponentRef6,inFace7,inTypesVarLst8,vt2,io1,io2,inGraph,info)
+  match (inCache,inEnv,inIH,inSets,inComponentRef3,inFace4,inTypesVarLst5,vt1,inComponentRef6,inFace7,inTypesVarLst8,vt2,io1,io2,inGraph,info)
     local
       Connect.Sets sets,sets_1,sets_2;
       list<Env.Frame> env;
@@ -4357,7 +4357,7 @@ algorithm
         dae_1 = DAEUtil.joinDaes(dae, dae2);
       then
         (cache,env,ih,sets_2,dae_1,graph);
-  end matchcontinue;
+  end match;
 end connectVars;
 
 protected function createTempLoopVars
@@ -4780,7 +4780,7 @@ protected function makeEnumLiteralIndices
   input DAE.Exp expr;
   output list<DAE.Exp> enumIndices;
 algorithm
-  enumIndices := matchcontinue(enumTypeName, enumLiterals, enumIndex, expr)
+  enumIndices := match(enumTypeName, enumLiterals, enumIndex, expr)
     local
       String l;
       list<String> ls;
@@ -4799,7 +4799,7 @@ algorithm
         expl = makeEnumLiteralIndices(enumTypeName, ls, index, expr);
       then
         e :: expl;
-  end matchcontinue;
+  end match;
 end makeEnumLiteralIndices;
 
 protected function getVectorizedCref

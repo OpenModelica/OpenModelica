@@ -131,7 +131,7 @@ public function elabExpList "Expression elaboration of Absyn.Exp list, i.e. list
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outExpExpLst,outTypesPropertiesLst,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,performVectorization,inPrefix,info)
+  match (inCache,inEnv,inAbsynExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,performVectorization,inPrefix,info)
     local
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st,st_1,st_2;
@@ -153,7 +153,7 @@ algorithm
         (cache,exps,props,st_2) = elabExpList(cache,env, rest, impl, st_1,doVect,pre,info);
       then
         (cache,(exp :: exps),(p :: props),st_2);
-  end matchcontinue;
+  end match;
 end elabExpList;
 
 public function elabExpListList
@@ -174,7 +174,7 @@ public function elabExpListList
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outExpExpLstLst,outTypesPropertiesLstLst,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inAbsynExpLstLst,inBoolean,inInteractiveInteractiveSymbolTableOption,performVectorization,inPrefix,info)
+  match (inCache,inEnv,inAbsynExpLstLst,inBoolean,inInteractiveInteractiveSymbolTableOption,performVectorization,inPrefix,info)
     local
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st,st_1,st_2;
@@ -197,7 +197,7 @@ algorithm
         (cache,exps,props,st_2) = elabExpListList(cache,env, rest, impl, st_1,doVect,pre,info);
       then
         (cache,(exp :: exps),(p :: props),st_2);
-  end matchcontinue;
+  end match;
 end elabExpListList;
 
 public function elabExp "
@@ -701,7 +701,7 @@ public function fromEquationsToAlgAssignments "function: fromEquationsToAlgAssig
   output list<Absyn.AlgorithmItem> algsOut;
 algorithm
   (outCache,algsOut) :=
-  matchcontinue (eqsIn,accList,cache,env,inPrefix)
+  match (eqsIn,accList,cache,env,inPrefix)
     local
       list<Absyn.AlgorithmItem> localAccList;
       Env.Cache localCache;
@@ -718,7 +718,7 @@ algorithm
         (localCache,alg) = fromEquationToAlgAssignment(first,comment,info,localCache,localEnv,pre);
         (localCache,localAccList) = fromEquationsToAlgAssignments(rest,listAppend(alg,localAccList),localCache,localEnv,pre);
       then (localCache,localAccList);
-  end matchcontinue;
+  end match;
 end fromEquationsToAlgAssignments;
 
 protected function fromEquationBranchesToAlgBranches
@@ -732,7 +732,7 @@ protected function fromEquationBranchesToAlgBranches
   output list<tuple<Absyn.Exp,list<Absyn.AlgorithmItem>>> algsOut;
 algorithm
   (outCache,algsOut) :=
-  matchcontinue (eqsIn,accList,cache,env,inPrefix)
+  match (eqsIn,accList,cache,env,inPrefix)
     local
       list<tuple<Absyn.Exp,list<Absyn.AlgorithmItem>>> localAccList;
       list<tuple<Absyn.Exp,list<Absyn.EquationItem>>> rest;
@@ -748,7 +748,7 @@ algorithm
         (localCache,algs) = fromEquationsToAlgAssignments(eqs,{},localCache,localEnv,pre);
         (localCache,localAccList) = fromEquationBranchesToAlgBranches(rest,(e,algs)::localAccList,localCache,localEnv,pre);
       then (localCache,localAccList);
-  end matchcontinue;
+  end match;
 end fromEquationBranchesToAlgBranches;
 
 protected function fromEquationToAlgAssignment "function: fromEquationToAlgAssignment"
@@ -904,7 +904,7 @@ protected function elabMatrixToMatrixExp2 "function: elabMatrixToMatrixExp2
   output list<list<tuple<DAE.Exp, Boolean>>> outTplExpExpBooleanLstLst;
 algorithm
   (outTplExpExpBooleanLstLst):=
-  matchcontinue (inExpExpLst)
+  match (inExpExpLst)
     local
       list<tuple<DAE.Exp, Boolean>> expl_1;
       list<list<tuple<DAE.Exp, Boolean>>> es_1;
@@ -918,7 +918,7 @@ algorithm
         es_1 = elabMatrixToMatrixExp2(es);
       then
         expl_1 :: es_1;
-  end matchcontinue;
+  end match;
 end elabMatrixToMatrixExp2;
 
 protected function elabMatrixToMatrixExp3
@@ -926,7 +926,7 @@ protected function elabMatrixToMatrixExp3
   output list<tuple<DAE.Exp, Boolean>> outTplExpExpBooleanLst;
 algorithm
   outTplExpExpBooleanLst:=
-  matchcontinue (inExpExpLst)
+  match (inExpExpLst)
     local
       DAE.ExpType tp;
       Boolean scalar;
@@ -943,7 +943,7 @@ algorithm
         es_1 = elabMatrixToMatrixExp3(es);
       then
         ((e,scalar) :: es_1);
-  end matchcontinue;
+  end match;
 end elabMatrixToMatrixExp3;
 
 protected function matrixConstrMaxDim "function: matrixConstrMaxDim
@@ -1095,12 +1095,12 @@ protected function chooseReductionFn
     output DAE.Exp result;
   end ReductionFn;
 algorithm
-  reductionFn := matchcontinue(fn)
+  reductionFn := match(fn)
     //case Absyn.CREF_IDENT("max", {}) then reductionFnMax;
     //case Absyn.CREF_IDENT("min", {}) then reductionFnMin;
     case Absyn.CREF_IDENT("sum", {}) then reductionFnSum;
     case Absyn.CREF_IDENT("product", {}) then reductionFnProduct;
-  end matchcontinue;
+  end match;
 end chooseReductionFn;
 
 protected function reductionFnSum
@@ -1134,7 +1134,7 @@ TODO: When cevalIfConstant is removed in future this can also be fixed.
   input list<DAE.Const> iter_const;
   output Env.Env outEnv;
 algorithm
-  outEnv := matchcontinue(env,iter_names,iter_const)
+  outEnv := match(env,iter_names,iter_const)
   local Ident name; DAE.Const c;
     DAE.Type ty; DAE.Binding bind;
     Option<DAE.Const> forIterConst;
@@ -1146,19 +1146,19 @@ algorithm
       //print("updating "+&name+&" to const:"+&DAEUtil.constStr(c)+&"\n");
       env = updateIteratorConst(env,iter_names,iter_const);
     then env;
-  end matchcontinue;
+  end match;
 end updateIteratorConst;
 
 protected function reductionDefaultValue
   input String reductionOp;
   output DAE.Exp defaultValue;
 algorithm
-  defaultValue := matchcontinue(reductionOp)
+  defaultValue := match(reductionOp)
     case "min" then DAE.RCONST(1e60);
     case "max" then DAE.RCONST(-1e60);
     case "sum" then DAE.RCONST(0.0);
     case "product" then DAE.RCONST(1.0);
-  end matchcontinue;
+  end match;
 end reductionDefaultValue;
 
 protected function elabArrayIterators
@@ -1179,7 +1179,7 @@ protected function elabArrayIterators
   output DAE.Type arrayType;
 algorithm
   (newCache, newEnv, consts, iteratorValues, iteratorNames, arrayType) :=
-  matchcontinue(cache, env, iterators, implicitInstantiation, st, performVectorization,inPrefix,info)
+  match(cache, env, iterators, implicitInstantiation, st, performVectorization,inPrefix,info)
     local
       Ident iter_name;
       list<Ident> iter_names;
@@ -1219,14 +1219,14 @@ algorithm
         // expression can be elaborated later.
         new_env = Env.extendFrameForIterator(new_env, iter_name, iter_type, DAE.UNBOUND(), SCode.VAR(), SOME(iter_const));
       then (new_cache, new_env, iter_const::iters_const, iter_values :: iter_values_list, iter_name :: iter_names, (DAE.T_ARRAY(array_dim, array_type),NONE()));
-  end matchcontinue;
+  end match;
 end elabArrayIterators;
 
 protected function constToVariability "translates an DAE.Const to a SCode.Variability"
   input DAE.Const const;
   output SCode.Variability variability;
 algorithm
-  variability := matchcontinue(const)
+  variability := match(const)
     case(DAE.C_VAR())  then SCode.VAR();
     case(DAE.C_PARAM()) then SCode.PARAM();
     case(DAE.C_CONST()) then SCode.CONST();
@@ -1235,19 +1235,19 @@ algorithm
         Debug.fprintln("failtrace", "- Static.constToVariability failed on DAE.C_UNKNOWN()");
       then
         fail();
-  end matchcontinue;
+  end match;
 end constToVariability;
   
 protected function variabilityToConst "translates an SCode.Variability to a DAE.Const"
   input SCode.Variability variability;
   output DAE.Const const;
 algorithm
-  const := matchcontinue(variability)
+  const := match(variability)
     case(SCode.VAR())      then DAE.C_VAR();
     case(SCode.DISCRETE()) then DAE.C_VAR();      
     case(SCode.PARAM())    then DAE.C_PARAM();
     case(SCode.CONST())    then DAE.C_CONST();
-  end matchcontinue;
+  end match;
 end variabilityToConst;
   
 protected function expandArray
@@ -1258,7 +1258,7 @@ protected function expandArray
   input DAE.ExpType arrayType;
   output DAE.Exp expandedExp;
 algorithm
-  expandedExp := matchcontinue(expr, valLists, iteratorNames, arrayType)
+  expandedExp := match(expr, valLists, iteratorNames, arrayType)
     local
       list<Values.Value> values;
       list<list<Values.Value>> rest_values;
@@ -1275,7 +1275,7 @@ algorithm
         new_expl = Util.listMap3(expanded_expl, expandArray, rest_values, rest_iterators, element_type);
         is_scalar = not Expression.isArrayType(element_type);
       then DAE.ARRAY(arrayType, is_scalar, new_expl);
-    end matchcontinue;
+    end match;
 end expandArray;
 
 protected function elabCallReduction2 "help function to elabCallReduction. symbolically expands arrays"
@@ -1284,7 +1284,7 @@ protected function elabCallReduction2 "help function to elabCallReduction. symbo
   input Ident id;
   output list<DAE.Exp> expl;
 algorithm
-  expl := matchcontinue(e, valLst, id)
+  expl := match(e, valLst, id)
     local
       Integer i;
       Real r;
@@ -1315,7 +1315,7 @@ algorithm
         (e1,_) = Expression.replaceExp(e, Expression.crefExp(cref_),e1);
         expl = elabCallReduction2(e, valLst, id);
       then e1 :: expl; 
-  end matchcontinue;
+  end match;
 end elabCallReduction2;
 
 protected function elabCallReduction3
@@ -1373,7 +1373,7 @@ protected function constructArrayType
   input DAE.Type expType;
   output DAE.Type resType;
 algorithm
-  resType := matchcontinue(arrayType, expType)
+  resType := match(arrayType, expType)
     local
       DAE.Type ty;
       DAE.Dimension dim;
@@ -1384,7 +1384,7 @@ algorithm
         ty = constructArrayType(ty, expType);
       then
         ((DAE.T_ARRAY(dim, ty), path));
-  end matchcontinue;
+  end match;
 end constructArrayType;
 
 protected function replaceOperatorWithFcall "function: replaceOperatorWithFcall
@@ -1423,7 +1423,7 @@ protected function elabCodeType "function: elabCodeType
   output DAE.Type outType;
 algorithm
   outType:=
-  matchcontinue (inEnv,inCode)
+  match (inEnv,inCode)
     local list<Env.Frame> env;
     case (env,Absyn.C_TYPENAME(path = _)) then ((DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("TypeName")),{},NONE(),NONE()),NONE()));
     case (env,Absyn.C_VARIABLENAME(componentRef = _)) then ((DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("VariableName")),{},NONE(),NONE()),
@@ -1437,7 +1437,7 @@ algorithm
           NONE()));
     case (env,Absyn.C_MODIFICATION(modification = _)) then ((DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("Modification")),{},NONE(),NONE()),
           NONE()));
-  end matchcontinue;
+  end match;
 end elabCodeType;
 
 public function elabGraphicsExp
@@ -2001,7 +2001,7 @@ protected function stripExtraArgsFromType2
   input list<DAE.FuncArg> inType;
   output list<DAE.FuncArg> outType;
 algorithm
-  outType := matchcontinue(slots,inType)
+  outType := match(slots,inType)
     local
       list<Slot> slotsRest;
       list<DAE.FuncArg> rest;
@@ -2012,7 +2012,7 @@ algorithm
       equation
         rest = stripExtraArgsFromType2(slotsRest,rest);
       then arg::rest;
-  end matchcontinue;
+  end match;
 end stripExtraArgsFromType2;
 
 protected function elabArray
@@ -2608,7 +2608,7 @@ protected function elabMatrixCatTwo2 "function: elabMatrixCatTwo2
   output DAE.Exp outExp;
 algorithm
   outExp:=
-  matchcontinue (inExp1,inExp2)
+  match (inExp1,inExp2)
     local
       list<DAE.Exp> expl,expl1,expl2;
       DAE.Exp e;
@@ -2621,7 +2621,7 @@ algorithm
         ty = Expression.liftArrayLeft(ty, DAE.DIM_INTEGER(1));
       then
         DAE.ARRAY(ty,at1,e :: expl);
-  end matchcontinue;
+  end match;
 end elabMatrixCatTwo2;
 
 protected function elabMatrixCatTwo3 "function: elabMatrixCatTwo3
@@ -2633,7 +2633,7 @@ protected function elabMatrixCatTwo3 "function: elabMatrixCatTwo3
   output list<DAE.Exp> outExpExpLst;
 algorithm
   outExpExpLst:=
-  matchcontinue (inExpExpLst1,inExpExpLst2)
+  match (inExpExpLst1,inExpExpLst2)
     local
       list<DAE.Exp> expl,es_1,expl1,es1,expl2,es2;
       DAE.ExpType a1,a2, ty;
@@ -2649,7 +2649,7 @@ algorithm
         ty = Expression.concatArrayType(a1, a2);
       then
         (DAE.ARRAY(ty,at1,expl) :: es_1);
-  end matchcontinue;
+  end match;
 end elabMatrixCatTwo3;
 
 protected function elabMatrixCatOne "function: elabMatrixCatOne
@@ -2925,7 +2925,7 @@ protected function verifyBuiltInHandlerType "
     output Boolean outp1;
   end extraFunc;
 algorithm
-  (outCache,outExp,outProperties) := matchcontinue (cache,env,inAbsynExpLst,impl,typeChecker,fnName,inPrefix,info)
+  (outCache,outExp,outProperties) := match (cache,env,inAbsynExpLst,impl,typeChecker,fnName,inPrefix,info)
     local
       DAE.Type ty,ty2;
       Absyn.Exp s1;
@@ -2944,7 +2944,7 @@ algorithm
         (cache,s1_1,(prop as DAE.PROP(ty,c))) = elabCallArgs(cache,env, Absyn.FULLYQUALIFIED(Absyn.IDENT(fnName)), {s1}, {}, impl,NONE(),pre,info);
       then
         (cache,s1_1,prop);
-  end matchcontinue;
+  end match;
 end verifyBuiltInHandlerType;
 
 protected function elabBuiltinCardinality
@@ -2962,7 +2962,7 @@ protected function elabBuiltinCardinality
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
-  (outCache,outExp,outProperties) := matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
+  (outCache,outExp,outProperties) := match (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
     local
       DAE.Exp exp_1;
       DAE.ComponentRef cr_1;
@@ -2981,7 +2981,7 @@ algorithm
         exp_1 = makeBuiltinCall("cardinality", {exp_1}, DAE.ET_INT());
       then
         (cache, exp_1, DAE.PROP(DAE.T_INTEGER_DEFAULT,DAE.C_CONST()));
-  end matchcontinue;
+  end match;
 end elabBuiltinCardinality;
 
 protected function elabBuiltinSmooth
@@ -3382,7 +3382,7 @@ protected function makeFillArgListType
   input list<DAE.Properties> dimProps;
   output DAE.Type resType;
 algorithm
-  resType := matchcontinue(fillType, dimProps)
+  resType := match(fillType, dimProps)
     local
       DAE.Properties prop;
       list<DAE.Properties> rest_props;
@@ -3394,7 +3394,7 @@ algorithm
         t = (DAE.T_ARRAY(DAE.DIM_UNKNOWN(), t),NONE());
       then
         t;
-  end matchcontinue;
+  end match;
 end makeFillArgListType;
 
 protected function elabBuiltinTranspose "function: elabBuiltinTranspose
@@ -3476,7 +3476,7 @@ protected function transposeExpType
   input DAE.ExpType inType;
   output DAE.ExpType outType;
 algorithm
-  outType := matchcontinue(inType)
+  outType := match(inType)
     local
       DAE.ExpType ty;
       DAE.Dimension dim1, dim2;
@@ -3484,7 +3484,7 @@ algorithm
     case (DAE.ET_ARRAY(ty = ty, arrayDimensions = dim1 :: dim2 :: dim_rest))
       then
         DAE.ET_ARRAY(ty, dim2 :: dim1 :: dim_rest);
-  end matchcontinue;
+  end match;
 end transposeExpType;
    
 protected function elabBuiltinTranspose2 "function: elabBuiltinTranspose2
@@ -3904,7 +3904,7 @@ protected function elabBuiltinInStream "function: elabBuiltinInStream
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
-  (outCache,outExp,outProperties) := matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inImpl,inPrefix,info)
+  (outCache,outExp,outProperties) := match (inCache,inEnv,inAbsynExpLst,inNamedArg,inImpl,inPrefix,info)
     local
       DAE.Exp exp_1,exp_2;
       DAE.Type tp;
@@ -3928,7 +3928,7 @@ algorithm
         exp_2 = makeBuiltinCall("inStream", {exp_1}, t);
       then
         (cache, exp_2, DAE.PROP(tp, c));
-  end matchcontinue;
+  end match;
 end elabBuiltinInStream;
 
 protected function elabBuiltinActualStream "function: elabBuiltinActualStream
@@ -3945,7 +3945,7 @@ protected function elabBuiltinActualStream "function: elabBuiltinActualStream
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
-  (outCache,outExp,outProperties) := matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inImpl,inPrefix,info)
+  (outCache,outExp,outProperties) := match (inCache,inEnv,inAbsynExpLst,inNamedArg,inImpl,inPrefix,info)
     local
       DAE.Exp exp_1,exp_2;
       DAE.Type tp;
@@ -3968,7 +3968,7 @@ algorithm
         exp_2 = makeBuiltinCall("actualStream", {exp_1}, t);
       then
         (cache, exp_2, DAE.PROP(tp, c));
-  end matchcontinue;
+  end match;
 end elabBuiltinActualStream;
 
 protected function validateBuiltinStreamOperator
@@ -4020,7 +4020,7 @@ protected function makePreLst
   output list<DAE.Exp> outExp;
 algorithm
   (outExp):=
-  matchcontinue (inExpLst,t)
+  match (inExpLst,t)
     local
       DAE.Exp exp_1,exp_2;
       list<DAE.Exp> expl_1,expl_2;
@@ -4036,7 +4036,7 @@ algorithm
         ((exp_2 :: expl_2));
 
       case ({},t) then {};
-  end matchcontinue;
+  end match;
 end makePreLst;
 
 protected function elabBuiltinPreMatrix
@@ -4072,7 +4072,7 @@ protected function makePreMatrix
   input DAE.Type t;
   output list<list<tuple<DAE.Exp, Boolean>>> outMatrixExp;
 algorithm
-  (outMatrixExp) := matchcontinue (inMatrixExp,t)
+  (outMatrixExp) := match (inMatrixExp,t)
     local
       list<list<tuple<DAE.Exp, Boolean>>> lstLstExp, lstLstExpRest;
       list<tuple<DAE.Exp, Boolean>> lstExpBool, lstExpBoolPre;
@@ -4084,7 +4084,7 @@ algorithm
         lstLstExp = makePreMatrix(lstLstExpRest, t);
       then
         lstExpBoolPre ::lstLstExp;
-  end matchcontinue;
+  end match;
 end makePreMatrix;
 
 function mkLstPre
@@ -4092,7 +4092,7 @@ function mkLstPre
   input  DAE.Type t;
   output list<tuple<DAE.Exp, Boolean>> outLst;
 algorithm
-  outLst := matchcontinue(inLst, t)
+  outLst := match(inLst, t)
     local
       DAE.Exp exp; Boolean b;
       DAE.Exp expPre;
@@ -4106,7 +4106,7 @@ algorithm
         rest = mkLstPre(rest,t);
       then
         (exp, b)::rest;
-  end matchcontinue;
+  end match;
 end mkLstPre;
 
 protected function elabBuiltinArray "function: elabBuiltinArray
@@ -4127,7 +4127,7 @@ protected function elabBuiltinArray "function: elabBuiltinArray
   output DAE.Properties outProperties;
 algorithm
   (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
+  match (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
     local
       list<DAE.Exp> exp_1,exp_2;
       list<DAE.Properties> typel;
@@ -4154,7 +4154,7 @@ algorithm
         exp = DAE.ARRAY(newtp_1,scalar,exp_1);
       then
         (cache,exp,DAE.PROP(newtp,c));
-  end matchcontinue;
+  end match;
 end elabBuiltinArray;
 
 protected function elabBuiltinArray2 "function elabBuiltinArray2.
@@ -4213,7 +4213,7 @@ protected function elabBuiltinArray3 "function: elab_bultin_array3
   output DAE.Properties outProperties;
 algorithm
   (outExpExpLst,outProperties):=
-  matchcontinue (inExpExpLst,inTypesPropertiesLst,inProperties)
+  match (inExpExpLst,inTypesPropertiesLst,inProperties)
     local
       DAE.Properties tp,t1;
       DAE.Exp e1_1,e1;
@@ -4226,7 +4226,7 @@ algorithm
         (expl_1,_) = elabBuiltinArray3(expl, tpl, tp);
       then
         ((e1_1 :: expl_1),t1);
-  end matchcontinue;
+  end match;
 end elabBuiltinArray3;
 
 protected function elabBuiltinZeros "function: elabBuiltinZeros
@@ -4245,7 +4245,7 @@ protected function elabBuiltinZeros "function: elabBuiltinZeros
   output DAE.Properties outProperties;
 algorithm
   (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
+  match (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
     local
       DAE.Exp e;
       DAE.Properties p;
@@ -4260,7 +4260,7 @@ algorithm
         (cache,e,p) = elabBuiltinFill(cache,env, (Absyn.INTEGER(0) :: args),{}, impl,pre,info);
       then
         (cache,e,p);
-  end matchcontinue;
+  end match;
 end elabBuiltinZeros;
 
 protected function sameDimensions
@@ -4359,7 +4359,7 @@ protected function elabBuiltinOnes "function: elabBuiltinOnes
   output DAE.Properties outProperties;
 algorithm
   (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
+  match (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
     local
       DAE.Exp e;
       DAE.Properties p;
@@ -4374,7 +4374,7 @@ algorithm
         (cache,e,p) = elabBuiltinFill(cache,env, (Absyn.INTEGER(1) :: args), {}, impl,pre,info);
       then
         (cache,e,p);
-  end matchcontinue;
+  end match;
 end elabBuiltinOnes;
 
 protected function elabBuiltinMax
@@ -4562,7 +4562,7 @@ protected function elabBuiltinDiv "function: elabBuiltinDiv
   output DAE.Properties outProperties;
 algorithm
   (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
+  match (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
     local
       DAE.Exp s1_1,s2_1;
       DAE.Const c1,c2,c;
@@ -4586,7 +4586,7 @@ algorithm
         (cache,s1_1,prop) = elabCallArgs(cache,env, Absyn.IDENT("div"), {s1,s2}, {}, impl,NONE(),pre,info);
       then
         (cache,s1_1,prop);
-  end matchcontinue;
+  end match;
 end elabBuiltinDiv;
 
 protected function elabBuiltinDelay "
@@ -4705,7 +4705,7 @@ protected function elabBuiltinMod
   output DAE.Properties outProperties;
 algorithm
   (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
+  match (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
     local
       DAE.Exp s1_1,s2_1;
       DAE.Const c1,c2,c;
@@ -4728,7 +4728,7 @@ algorithm
         (cache,s1_1,prop) = elabCallArgs(cache,env, Absyn.IDENT("mod"), {s1,s2}, {}, impl,NONE(),pre,info);
       then
         (cache,s1_1,prop);
-  end matchcontinue;
+  end match;
 end elabBuiltinMod;
 
 protected function elabBuiltinRem "function: elabBuiltinRem
@@ -4745,7 +4745,7 @@ protected function elabBuiltinRem "function: elabBuiltinRem
   output DAE.Properties outProperties;
 algorithm
   (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
+  match (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
     local
       DAE.Exp s1_1,s2_1;
       DAE.Const c1,c2,c;
@@ -4769,7 +4769,7 @@ algorithm
         (cache,s1_1,prop) = elabCallArgs(cache,env, Absyn.IDENT("rem"), {s1,s2}, {}, impl,NONE(),pre,info);
       then
         (cache,s1_1,prop);
-  end matchcontinue;
+  end match;
 end elabBuiltinRem;
 
 protected function elabBuiltinBoolean
@@ -4788,7 +4788,7 @@ protected function elabBuiltinBoolean
   output DAE.Properties outProperties;
 algorithm
   (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
+  match (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
     local
       DAE.Exp s1_1;
       DAE.Const c;
@@ -4812,7 +4812,7 @@ algorithm
 					   "boolean",pre,info);
       then
         (cache,s1_1,prop);
-  end matchcontinue;
+  end match;
 end elabBuiltinBoolean;
 
 protected function elabBuiltinIntegerEnum
@@ -4831,7 +4831,7 @@ protected function elabBuiltinIntegerEnum
   output DAE.Properties outProperties;
 algorithm
   (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
+  match (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
     local
       DAE.Exp s1_1;
       DAE.Const c;
@@ -4847,7 +4847,7 @@ algorithm
         (cache,s1_1,prop) = verifyBuiltInHandlerType(cache,env,{s1},impl,Types.isEnumeration,"Integer",pre,info);
       then
         (cache,s1_1,prop);
-  end matchcontinue;
+  end match;
 end elabBuiltinIntegerEnum;
 
 protected function elabBuiltinDiagonal "function: elabBuiltinDiagonal
@@ -5137,7 +5137,7 @@ protected function elabBuiltinNoevent "function: elabBuiltinNoevent
   output DAE.Properties outProperties;
 algorithm
   (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
+  match (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
     local
       DAE.Exp exp_1;
       DAE.Properties prop;
@@ -5153,7 +5153,7 @@ algorithm
         exp_1 = makeBuiltinCall("noEvent", {exp_1}, DAE.ET_BOOL());
       then
         (cache, exp_1, prop);
-  end matchcontinue;
+  end match;
 end elabBuiltinNoevent;
 
 protected function elabBuiltinEdge "function: elabBuiltinEdge
@@ -5571,7 +5571,7 @@ protected function elabBuiltinIsRoot
   output DAE.Properties outProperties;
 algorithm
   (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
+  match (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
     local
       list<Env.Frame> env;
       Env.Cache cache;
@@ -5587,7 +5587,7 @@ algorithm
         DAE.CALL(Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")), {exp},
              false, true, DAE.ET_BOOL(),DAE.NO_INLINE()),
         DAE.PROP(DAE.T_BOOL_DEFAULT, DAE.C_VAR()));
-  end matchcontinue;
+  end match;
 end elabBuiltinIsRoot;
 
 protected function elabBuiltinRooted
@@ -5605,7 +5605,7 @@ protected function elabBuiltinRooted
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
-  (outCache,outExp,outProperties) := matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
+  (outCache,outExp,outProperties) := match (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
     local
       list<Env.Frame> env;
       Env.Cache cache;
@@ -5624,7 +5624,7 @@ algorithm
         (cache, exp, _, _) = elabExp(cache, env, exp0, false,NONE(), false,pre,info);
       then
         (cache, DAE.BCONST(true),DAE.PROP(DAE.T_BOOL_DEFAULT, DAE.C_CONST()));
-  end matchcontinue;
+  end match;
 end elabBuiltinRooted;
 
 protected function elabBuiltinScalar "function: elab_builtin_
@@ -5738,7 +5738,7 @@ protected function elabBuiltinSkew2 "help function to elabBuiltinSkew"
   input  Boolean scalar;
   output list<list<tuple<DAE.Exp,Boolean>>> res;
 algorithm
-  res := matchcontinue(v1,scalar)
+  res := match(v1,scalar)
   local DAE.Exp x1,x2,x3,zero,a11,a12,a13,a21,a22,a23,a31,a32,a33;
     Boolean s;
 
@@ -5756,7 +5756,7 @@ algorithm
         a33 = zero;
 
     then {{(a11,s),(a12,s),(a13,s)},{(a21,s),(a22,s),(a23,s)},{(a31,s),(a32,s),(a33,s)}};
-  end matchcontinue;
+  end match;
 end elabBuiltinSkew2;
 
 
@@ -5932,7 +5932,7 @@ protected function elabBuiltinSubString "
   output DAE.Properties outProperties;
 algorithm
   (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
+  match (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
     local
       DAE.Exp exp, expStart, expStop;
       tuple<DAE.TType, Option<Absyn.Path>> tp1,tp2,tp3;
@@ -5965,7 +5965,7 @@ algorithm
         exp = makeBuiltinCall("substring", {exp, expStart, expStop}, DAE.ET_STRING());
       then
         (cache, exp, DAE.PROP(DAE.T_STRING_DEFAULT,c));
-  end matchcontinue;
+  end match;
 end elabBuiltinSubString;
 
 protected function elabBuiltinLinspace "
@@ -6276,9 +6276,9 @@ public function elabBuiltinHandlerGeneric "function: elabBuiltinHandlerGeneric
   end FuncTypeEnv_EnvAbsyn_ExpLstBooleanToExp_ExpTypes_Properties;
 algorithm
   outFuncTypeEnvEnvAbsynExpLstBooleanToExpExpTypesProperties:=
-  matchcontinue (inIdent)
+  match (inIdent)
     case "cardinality" then elabBuiltinCardinality;
-  end matchcontinue;
+  end match;
 end elabBuiltinHandlerGeneric;
 
 public function elabBuiltinHandler "function: elabBuiltinHandler
@@ -6368,9 +6368,9 @@ public function elabBuiltinHandlerInternal "function: elabBuiltinHandlerInternal
   end FuncTypeEnv_EnvAbsyn_ExpLstBooleanToExp_ExpTypes_Properties;
 algorithm
   outFuncTypeEnvEnvAbsynExpLstBooleanToExpExpTypesProperties:=
-  matchcontinue (inIdent)
+  match (inIdent)
     case "simplify" then elabBuiltinSimplify;
-  end matchcontinue;
+  end match;
 end elabBuiltinHandlerInternal;
 
 protected function isBuiltinFunc "function: isBuiltinFunc
@@ -6736,7 +6736,7 @@ public function getSimulationArguments
   output list<DAE.Exp> outSimulationArguments;
 algorithm
   (outCache, outSimulationArguments) := 
-  matchcontinue (inCache, inEnv, inAbsynExpLst, inAbsynNamedArgLst, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, inInfo)  
+  match (inCache, inEnv, inAbsynExpLst, inAbsynNamedArgLst, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, inInfo)  
     local
       Absyn.ComponentRef cr;
       DAE.ComponentRef  cr_1;
@@ -6824,7 +6824,7 @@ algorithm
           options,
           outputFormat});    
   
-  end matchcontinue;
+  end match;
 end getSimulationArguments;
 
 protected function elabCallInteractive "function: elabCallInteractive
@@ -7676,7 +7676,7 @@ protected function elabVariablenames "function: elabVariablenames
   output list<DAE.Exp> outExpExpLst;
 algorithm
   outExpExpLst:=
-  matchcontinue (inAbsynExpLst)
+  match (inAbsynExpLst)
     local
       DAE.ComponentRef cr_1;
       list<DAE.Exp> xs_1;
@@ -7704,7 +7704,7 @@ algorithm
       then
         (DAE.SCONST(str) :: xs_1);
 */
-  end matchcontinue;
+  end match;
 end elabVariablenames;
 
 protected function getOptionalNamedArgExpList
@@ -7823,7 +7823,7 @@ public function elabUntypedCref "function: elabUntypedCref
   output DAE.ComponentRef outComponentRef;
 algorithm
   (outCache,outComponentRef) :=
-  matchcontinue (inCache,inEnv,inComponentRef,inBoolean,inPrefix,info)
+  match (inCache,inEnv,inComponentRef,inBoolean,inPrefix,info)
     local
       list<DAE.Subscript> subs_1;
       list<Env.Frame> env;
@@ -7846,7 +7846,7 @@ algorithm
         (cache,cr_1) = elabUntypedCref(cache,env, cr, impl,pre,info);
       then
         (cache,ComponentReference.makeCrefQual(id,DAE.ET_OTHER(),subs_1,cr_1));
-  end matchcontinue;
+  end match;
 end elabUntypedCref;
 
 protected function pathToComponentRef "function: pathToComponentRef
@@ -7856,7 +7856,7 @@ protected function pathToComponentRef "function: pathToComponentRef
   output DAE.ComponentRef outComponentRef;
 algorithm
   outComponentRef:=
-  matchcontinue (inPath)
+  match (inPath)
     local
       Ident id;
       DAE.ComponentRef cref;
@@ -7868,7 +7868,7 @@ algorithm
         cref = pathToComponentRef(path);
       then
         ComponentReference.makeCrefQual(id,DAE.ET_COMPLEX(Absyn.IDENT(""),{},ClassInf.UNKNOWN(Absyn.IDENT(""))),{},cref);
-  end matchcontinue;
+  end match;
 end pathToComponentRef;
 
 public function componentRefToPath "function: componentRefToPath
@@ -7878,7 +7878,7 @@ public function componentRefToPath "function: componentRefToPath
   output Absyn.Path outPath;
 algorithm
   outPath:=
-  matchcontinue (inComponentRef)
+  match (inComponentRef)
     local
       Ident s,id;
       Absyn.Path path;
@@ -7889,7 +7889,7 @@ algorithm
         path = componentRefToPath(cref);
       then
         Absyn.QUALIFIED(id,path);
-  end matchcontinue;
+  end match;
 end componentRefToPath;
 
 public function needToRebuild
@@ -8949,7 +8949,7 @@ protected function vectorizeCallArray
   output DAE.Exp outExp;
 algorithm
   outExp:=
-  matchcontinue (inExp,inInteger,inSlotLst)
+  match (inExp,inInteger,inSlotLst)
     local
       list<DAE.Exp> arr_expl,expl;
       Boolean scalar_1,scalar;
@@ -8965,7 +8965,7 @@ algorithm
         res_exp = DAE.ARRAY(tp,scalar_1,arr_expl);
       then
         res_exp;
-  end matchcontinue;
+  end match;
 end vectorizeCallArray;
 
 protected function vectorizeCallArray2
@@ -8979,7 +8979,7 @@ protected function vectorizeCallArray2
   output list<DAE.Exp> outExpExpLst;
 algorithm
   outExpExpLst:=
-  matchcontinue (inExpExpLst,inType,inInteger,inSlotLst)
+  match (inExpExpLst,inType,inInteger,inSlotLst)
     local
       DAE.ExpType tp,e_tp;
       Integer cur_dim;
@@ -8993,7 +8993,7 @@ algorithm
         es_1 = vectorizeCallArray2(es, e_tp, cur_dim, slots);
       then
         (e_1 :: es_1);
-  end matchcontinue;
+  end match;
 end vectorizeCallArray2;
 
 protected function vectorizeCallArray3 "function: vectorizeCallArray3
@@ -9008,7 +9008,7 @@ protected function vectorizeCallArray3 "function: vectorizeCallArray3
   output DAE.Exp outExp;
 algorithm
   outExp:=
-  matchcontinue (inExp,inType,inInteger,inSlotLst)
+  match (inExp,inType,inInteger,inSlotLst)
     local
       DAE.Exp e_1,e;
       DAE.ExpType e_tp;
@@ -9024,7 +9024,7 @@ algorithm
         e_1 = vectorizeCallArray(e, cur_dim, slots);
       then
         e_1;
-  end matchcontinue;
+  end match;
 end vectorizeCallArray3;
 
 protected function vectorizeCallScalar
@@ -9113,7 +9113,7 @@ protected function vectorizeCallScalar3
   output list<DAE.Exp> outExpExpLst;
 algorithm
   outExpExpLst:=
-  matchcontinue (inExpExpLst,inSlotLst,inInteger)
+  match (inExpExpLst,inSlotLst,inInteger)
     local
       list<DAE.Exp> res,es;
       DAE.Exp e,asub_exp;
@@ -9132,7 +9132,7 @@ algorithm
         asub_exp = ExpressionSimplify.simplify(Expression.makeASUB(e,{asub_exp}));
       then
         (asub_exp :: res);
-  end matchcontinue;
+  end match;
 end vectorizeCallScalar3;
 
 protected function deoverloadFuncname
@@ -9246,7 +9246,7 @@ protected function createActualFunctype
   input Boolean checkTypes;
   output DAE.Type outTp;
 algorithm
-  outTp := matchcontinue(tp,slots,checkTypes)
+  outTp := match(tp,slots,checkTypes)
     local
       Option<Absyn.Path> optPath;
       list<DAE.FuncArg> slotParams,params; DAE.Type restype;
@@ -9256,7 +9256,7 @@ algorithm
     case(tp as (DAE.T_FUNCTION(params,restype,functionAttributes),optPath),slots,false) equation
       slotParams = funcargLstFromSlots(slots);
     then ((DAE.T_FUNCTION(slotParams,restype,functionAttributes),optPath));
-  end matchcontinue;
+  end match;
 end createActualFunctype;
 
 protected function slotsVectorizable
@@ -9305,7 +9305,7 @@ protected function sameSlotsVectorizable
   input list<DAE.Dimension> inTypesArrayDimLst;
 algorithm
   _:=
-  matchcontinue (inSlotLst,inTypesArrayDimLst)
+  match (inSlotLst,inTypesArrayDimLst)
     local
       list<DAE.Dimension> slot_ad,ad;
       list<Slot> rest;
@@ -9321,7 +9321,7 @@ algorithm
         sameSlotsVectorizable(rest, ad);
       then
         ();
-  end matchcontinue;
+  end match;
 end sameSlotsVectorizable;
 
 protected function sameArraydimLst
@@ -9333,7 +9333,7 @@ protected function sameArraydimLst
   input list<DAE.Dimension> inTypesArrayDimLst2;
 algorithm
   _:=
-  matchcontinue (inTypesArrayDimLst1,inTypesArrayDimLst2)
+  match (inTypesArrayDimLst1,inTypesArrayDimLst2)
     local
       Integer i1,i2;
       list<DAE.Dimension> ads1,ads2;
@@ -9349,7 +9349,7 @@ algorithm
         sameArraydimLst(ads1, ads2);
       then
         ();
-  end matchcontinue;
+  end match;
 end sameArraydimLst;
 
 protected function getProperties
@@ -9467,7 +9467,7 @@ protected function checkConsts
   output list<DAE.TupleConst> outTypesTupleConstLst;
 algorithm
   outTypesTupleConstLst:=
-  matchcontinue (inTypesTypeLst,inConst)
+  match (inTypesTypeLst,inConst)
     local
       DAE.TupleConst c;
       list<DAE.TupleConst> rest_1;
@@ -9481,7 +9481,7 @@ algorithm
         rest_1 = checkConsts(rest, const);
       then
         (c :: rest_1);
-  end matchcontinue;
+  end match;
 end checkConsts;
 
 protected function checkConst "function: checkConst
@@ -9519,7 +9519,7 @@ protected function splitProps "function: splitProps
   output list<DAE.TupleConst> outTypesTupleConstLst;
 algorithm
   (outTypesTypeLst,outTypesTupleConstLst):=
-  matchcontinue (inTypesPropertiesLst)
+  match (inTypesPropertiesLst)
     local
       list<tuple<DAE.TType, Option<Absyn.Path>>> types;
       list<DAE.TupleConst> consts;
@@ -9539,7 +9539,7 @@ algorithm
       then
         ((t :: types),(t_c :: consts));
     case ({}) then ({},{});
-  end matchcontinue;
+  end match;
 end splitProps;
 
 protected function getTypes
@@ -9701,7 +9701,7 @@ protected function makeEmptySlots
   output list<Slot> outSlotLst;
 algorithm
   outSlotLst:=
-  matchcontinue (inTypesFuncArgLst)
+  match (inTypesFuncArgLst)
     local
       list<Slot> ss;
       tuple<Ident, tuple<DAE.TType, Option<Absyn.Path>>> fa;
@@ -9712,7 +9712,7 @@ algorithm
         ss = makeEmptySlots(fs);
       then
         (SLOT(fa,false,NONE(),{}) :: ss);
-  end matchcontinue;
+  end match;
 end makeEmptySlots;
 
 protected function funcargLstFromSlots
@@ -9722,7 +9722,7 @@ protected function funcargLstFromSlots
   output list<DAE.FuncArg> outTypesFuncArgLst;
 algorithm
   outTypesFuncArgLst:=
-  matchcontinue (inSlotLst)
+  match (inSlotLst)
     local
       list<tuple<Ident, tuple<DAE.TType, Option<Absyn.Path>>>> fs;
       tuple<Ident, tuple<DAE.TType, Option<Absyn.Path>>> fa;
@@ -9733,7 +9733,7 @@ algorithm
         fs = funcargLstFromSlots(xs);
       then
         (fa :: fs);
-  end matchcontinue;
+  end match;
 end funcargLstFromSlots;
 
 protected function complexTypeFromSlots
@@ -9743,7 +9743,7 @@ protected function complexTypeFromSlots
   input ClassInf.State complexClassType;
   output DAE.ExpType tp;
 algorithm
-  tp := matchcontinue(slots,complexClassType)
+  tp := match(slots,complexClassType)
     local
       DAE.ExpType etp;
       DAE.Type ty;
@@ -9758,7 +9758,7 @@ algorithm
       etp = Types.elabType(ty);
       DAE.ET_COMPLEX(path,vLst,ci) = complexTypeFromSlots(slots,complexClassType);
     then DAE.ET_COMPLEX(path,DAE.COMPLEX_VAR(id,etp)::vLst,ci);
-  end matchcontinue;
+  end match;
 end complexTypeFromSlots;
 
 protected function expListFromSlots
@@ -9768,7 +9768,7 @@ protected function expListFromSlots
   output list<DAE.Exp> outExpExpLst;
 algorithm
   outExpExpLst:=
-  matchcontinue (inSlotLst)
+  match (inSlotLst)
     local
       list<DAE.Exp> lst;
       DAE.Exp e;
@@ -9784,7 +9784,7 @@ algorithm
         lst = expListFromSlots(xs);
       then
         lst;
-  end matchcontinue;
+  end match;
 end expListFromSlots;
 
 protected function getExpInModifierFomEnvOrClass
@@ -9909,7 +9909,7 @@ protected function printSlotsStr
   output String outString;
 algorithm
   outString:=
-  matchcontinue (inSlotLst)
+  match (inSlotLst)
     local
       Boolean filled;
       Ident farg_str,filledStr,str,s,s1,s2,res;
@@ -9931,7 +9931,7 @@ algorithm
       then
         res;
     case ({}) then "";
-  end matchcontinue;
+  end match;
 end printSlotsStr;
 
 protected function elabPositionalInputArgs
@@ -11155,7 +11155,7 @@ CREF_IDENT('a',{DAE.SLICE(DAE.ARRAY(_,_,{DAE.INDEX(1),DAE.INDEX(2)})),
   input DAE.ExpType inType;
   output DAE.Exp outCref;
 algorithm
-  outCref := matchcontinue(inCref, inType)
+  outCref := match(inCref, inType)
     local
       list<DAE.Subscript> ssl;
       String id;
@@ -11175,7 +11175,7 @@ algorithm
         exp1 = mergeQualWithRest(exp1,childExp,ety) ;
       then
         exp1;
-  end matchcontinue;
+  end match;
 end elabCrefSlice;
 
 protected function mergeQualWithRest
@@ -11188,7 +11188,7 @@ protected function mergeQualWithRest
   input DAE.ExpType inType;
   output DAE.Exp outExp;
 algorithm
-  outExp := matchcontinue(qual,rest,inType)
+  outExp := match(qual,rest,inType)
     local
       DAE.Exp exp1,exp2;
       list<DAE.Exp> expl1, expl2;
@@ -11212,7 +11212,7 @@ algorithm
         ety = Expression.arrayEltType(ety);
         exp2 = DAE.ARRAY(DAE.ET_ARRAY( ety, iLst), scalar, expl1);
     then exp2;      
-  end matchcontinue;
+  end match;
 end mergeQualWithRest;
 
 protected function mergeQualWithRest2
@@ -11223,7 +11223,7 @@ protected function mergeQualWithRest2
   input DAE.Exp qual;
   output DAE.Exp outExp;
 algorithm
-  outExp := matchcontinue(rest,qual)
+  outExp := match(rest,qual)
     local
       DAE.Exp exp1,exp2;
       list<DAE.Exp> expl1, expl2;
@@ -11248,7 +11248,7 @@ algorithm
         ety = Expression.arrayEltType(ety);
         exp1 = DAE.ARRAY(DAE.ET_ARRAY( ety, iLst), scalar, expl1);
       then exp1;
-  end matchcontinue;
+  end match;
 end mergeQualWithRest2;
 
 protected function flattenSubscript
@@ -11440,7 +11440,7 @@ protected function applySubscript2
   input DAE.ExpType inType;
   output DAE.Exp outExp;
 algorithm
-  outExp := matchcontinue(inSub, inSubs, inType )
+  outExp := match(inSub, inSubs, inType )
     local
       String id;
       DAE.Exp exp1,exp2;
@@ -11466,7 +11466,7 @@ algorithm
         ety = Expression.arrayEltType(ety);
         exp2 = DAE.ARRAY(DAE.ET_ARRAY( ety, iLst), scalar, expl1);
       then exp2;
-  end matchcontinue;
+  end match;
 end applySubscript2;
 
 protected function applySubscript3
@@ -11478,7 +11478,7 @@ protected function applySubscript3
   input DAE.ExpType inType;
   output DAE.Exp outExp;
 algorithm
-  outExp := matchcontinue(inSubs,inSub, inType )
+  outExp := match(inSubs,inSub, inType )
     local
       String id;
       DAE.Exp exp1,exp2;
@@ -11504,7 +11504,7 @@ algorithm
         ety = Expression.unliftArray(ety);
         exp2 = DAE.ARRAY(DAE.ET_ARRAY( ety, iLst), scalar, expl1);
       then exp2;
-  end matchcontinue;
+  end match;
 end applySubscript3;
 
 
@@ -11789,7 +11789,7 @@ public function elabSubscripts
   output list<DAE.Subscript> outExpSubscriptLst;
   output DAE.Const outConst;
 algorithm
-  (outCache,outExpSubscriptLst,outConst) := matchcontinue (inCache,inEnv,inAbsynSubscriptLst,inBoolean,inPrefix,info)
+  (outCache,outExpSubscriptLst,outConst) := match (inCache,inEnv,inAbsynSubscriptLst,inBoolean,inPrefix,info)
     local
       DAE.Subscript sub_1;
       DAE.Const const1,const2,const;
@@ -11812,7 +11812,7 @@ algorithm
         const = Types.constAnd(const1, const2);
       then
         (cache,(sub_1 :: subs_1),const);
-  end matchcontinue;
+  end match;
 end elabSubscripts;
 
 protected function elabSubscriptsDims
@@ -12157,7 +12157,7 @@ The non-selected branch will be replaced by a dummy variable called $undefined s
   output DAE.Properties prop;
   output Option<Interactive.InteractiveSymbolTable> outSt;
 algorithm
-  (outCache, exp, prop,outSt) := matchcontinue(cache,env,b,cond,tbranch,fbranch,impl,st,doVect,inPrefix,info)
+  (outCache, exp, prop,outSt) := match(cache,env,b,cond,tbranch,fbranch,impl,st,doVect,inPrefix,info)
     local 
       DAE.Exp e2,crefExp; 
       DAE.Properties prop1;
@@ -12179,7 +12179,7 @@ algorithm
       (cache,e2,prop1,st_1) = elabExp(cache,env, fbranch, impl, st,doVect,pre,info);
       crefExp = Expression.crefExp(cref_);
     then (cache,DAE.IFEXP(cond,crefExp,e2),prop1,st_1);
-  end matchcontinue;
+  end match;
 end elabIfexpBranch;
 
 protected function elabIfexp "function: elabIfexp  
@@ -12283,7 +12283,7 @@ protected function cevalIfexpIfConstant "function: cevalIfexpIfConstant
   output DAE.Exp outExp;
 algorithm
   (outCache,outExp) :=
-  matchcontinue (inCache,inEnv1,inExp2,inExp3,inExp4,inConst5,inBoolean6,inInteractiveInteractiveSymbolTableOption7)
+  match (inCache,inEnv1,inExp2,inExp3,inExp4,inConst5,inBoolean6,inInteractiveInteractiveSymbolTableOption7)
     local
       list<Env.Frame> env;
       DAE.Exp e1,e2,e3,res;
@@ -12298,7 +12298,7 @@ algorithm
         res = Util.if_(cond, e2, e3);
       then
         (cache,res);
-  end matchcontinue;
+  end match;
 end cevalIfexpIfConstant;
 
 protected function constIfexp "function: constIfexp
@@ -12313,14 +12313,14 @@ protected function constIfexp "function: constIfexp
   input DAE.Const inConst4;
   output DAE.Const outConst;
 algorithm
-  outConst := matchcontinue (inExp1,inConst2,inConst3,inConst4)
+  outConst := match (inExp1,inConst2,inConst3,inConst4)
     local DAE.Const const,c1,c2,c3;
     case (_,c1,c2,c3)
       equation
         const = Util.listFold({c1,c2,c3}, Types.constAnd, DAE.C_CONST());
       then
         const;
-  end matchcontinue;
+  end match;
 end constIfexp;
 
 protected function canonCref2 "function: canonCref2
@@ -12435,7 +12435,7 @@ public function eqCref "- Equality functions
   input DAE.ComponentRef inComponentRef2;
 algorithm
   _:=
-  matchcontinue (inComponentRef1,inComponentRef2)
+  match (inComponentRef1,inComponentRef2)
     local
       Ident n1,n2;
       list<DAE.Subscript> s1,s2;
@@ -12453,7 +12453,7 @@ algorithm
         eqCref(c1, c2);
       then
         ();
-  end matchcontinue;
+  end match;
 end eqCref;
 
 protected function eqSubscripts "function: eqSubscripts
@@ -12466,7 +12466,7 @@ protected function eqSubscripts "function: eqSubscripts
   input list<DAE.Subscript> inExpSubscriptLst2;
 algorithm
   _:=
-  matchcontinue (inExpSubscriptLst1,inExpSubscriptLst2)
+  match (inExpSubscriptLst1,inExpSubscriptLst2)
     local
       DAE.Subscript s1,s2;
       list<DAE.Subscript> ss1,ss2;
@@ -12477,7 +12477,7 @@ algorithm
         eqSubscripts(ss1, ss2);
       then
         ();
-  end matchcontinue;
+  end match;
 end eqSubscripts;
 
 protected function eqSubscript "function: eqSubscript
@@ -12488,7 +12488,7 @@ protected function eqSubscript "function: eqSubscript
   input DAE.Subscript inSubscript1;
   input DAE.Subscript inSubscript2;
 algorithm
-  _ := matchcontinue (inSubscript1,inSubscript2)
+  _ := match (inSubscript1,inSubscript2)
     local DAE.Exp s1,s2;
     case (DAE.WHOLEDIM(),DAE.WHOLEDIM()) then ();
     case (DAE.INDEX(exp = s1),DAE.INDEX(exp = s2))
@@ -12496,7 +12496,7 @@ algorithm
         true = Expression.expEqual(s1, s2);
       then
         ();
-  end matchcontinue;
+  end match;
 end eqSubscript;
 
 /*
@@ -12524,7 +12524,7 @@ protected function elabArglist
   output list<DAE.Exp> outExpExpLst;
   output list<DAE.Type> outTypesTypeLst;
 algorithm
-  (outExpExpLst,outTypesTypeLst) := matchcontinue (inTypesTypeLst,inTplExpExpTypesTypeLst)
+  (outExpExpLst,outTypesTypeLst) := match (inTypesTypeLst,inTplExpExpTypesTypeLst)
     local
       DAE.Exp arg_1,arg;
       tuple<DAE.TType, Option<Absyn.Path>> atype_1,pt,atype;
@@ -12542,7 +12542,7 @@ algorithm
         (args_1,atypes_1) = elabArglist(pts, args);
       then
         ((arg_1 :: args_1),(atype_1 :: atypes_1));
-  end matchcontinue;
+  end match;
 end elabArglist;
 
 public function deoverload "function: deoverload
@@ -12923,7 +12923,7 @@ public function nDims "function nDims
   input DAE.Type inType;
   output Integer outInteger;
 algorithm
-  outInteger := matchcontinue (inType)
+  outInteger := match (inType)
     local
       Integer ns;
       tuple<DAE.TType, Option<Absyn.Path>> t;
@@ -12940,7 +12940,7 @@ algorithm
       equation
         ns = nDims(t);
       then ns;
-  end matchcontinue;
+  end match;
 end nDims;
 
 protected function elementType "function: elementType
@@ -12949,7 +12949,7 @@ protected function elementType "function: elementType
   input DAE.Type inType;
   output DAE.Type outType;
 algorithm
-  outType := matchcontinue (inType)
+  outType := match (inType)
     local tuple<DAE.TType, Option<Absyn.Path>> t,t_1;
     case ((t as (DAE.T_INTEGER(varLstInt = _),_))) then t;
     case ((t as (DAE.T_REAL(varLstReal = _),_))) then t;
@@ -12964,7 +12964,7 @@ algorithm
       equation
         t_1 = elementType(t);
       then t_1;
-  end matchcontinue;
+  end match;
 end elementType;
 
 /* We have these as constants instead of function calls as done previously
@@ -13543,7 +13543,7 @@ protected function operatorReturn "function: operatorReturn
   output list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> outTplExpOperatorTypesTypeLstTypesTypeLst;
 algorithm
   outTplExpOperatorTypesTypeLstTypesTypeLst:=
-  matchcontinue (inOperator1,inTypesTypeLst2,inTypesTypeLst3,inTypesTypeLst4)
+  match (inOperator1,inTypesTypeLst2,inTypesTypeLst3,inTypesTypeLst4)
     local
       list<tuple<DAE.Operator, list<tuple<DAE.TType, Option<Absyn.Path>>>, tuple<DAE.TType, Option<Absyn.Path>>>> rest;
       tuple<DAE.Operator, list<tuple<DAE.TType, Option<Absyn.Path>>>, tuple<DAE.TType, Option<Absyn.Path>>> t;
@@ -13557,7 +13557,7 @@ algorithm
         t = (op,{l,r},re) "list contains two types, i.e. BINARY operations" ;
       then
         (t :: rest);
-  end matchcontinue;
+  end match;
 end operatorReturn;
 
 protected function operatorReturnUnary "function: operatorReturnUnary
@@ -13571,7 +13571,7 @@ protected function operatorReturnUnary "function: operatorReturnUnary
   output list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> outTplExpOperatorTypesTypeLstTypesTypeLst;
 algorithm
   outTplExpOperatorTypesTypeLstTypesTypeLst:=
-  matchcontinue (inOperator1,inTypesTypeLst2,inTypesTypeLst3)
+  match (inOperator1,inTypesTypeLst2,inTypesTypeLst3)
     local
       list<tuple<DAE.Operator, list<tuple<DAE.TType, Option<Absyn.Path>>>, tuple<DAE.TType, Option<Absyn.Path>>>> rest;
       tuple<DAE.Operator, list<tuple<DAE.TType, Option<Absyn.Path>>>, tuple<DAE.TType, Option<Absyn.Path>>> t;
@@ -13585,7 +13585,7 @@ algorithm
         t = (op,{l},re) "list only contains one type, i.e. for UNARY operations" ;
       then
         (t :: rest);
-  end matchcontinue;
+  end match;
 end operatorReturnUnary;
 
 protected function arrayTypeList "function: arrayTypeList
@@ -13656,10 +13656,10 @@ Helper function for warnUnsafeRelations
 We only want to check DAE.EQUAL and Expression.NEQUAL since they are the only illegal real operations.
 "
 input DAE.Operator op;
-algorithm _ := matchcontinue(op)
+algorithm _ := match(op)
   case(DAE.EQUAL(_)) then ();
   case(DAE.NEQUAL(_)) then ();
-  end matchcontinue;
+  end match;
 end verifyOp;
 
 public function makeBuiltinCall

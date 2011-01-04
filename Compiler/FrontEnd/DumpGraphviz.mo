@@ -84,7 +84,7 @@ protected function printClasses "function: printClasses
   input list<Absyn.Class> inAbsynClassLst;
   output list<Node> outNodeLst;
 algorithm
-  outNodeLst := matchcontinue (inAbsynClassLst)
+  outNodeLst := match (inAbsynClassLst)
     local
       Graphviz.Node node;
       list<Node> nl;
@@ -99,7 +99,7 @@ algorithm
         nl = printClasses(cs);
       then
         (node :: nl);
-  end matchcontinue;
+  end match;
 end printClasses;
 
 protected function printClass "function: printClass
@@ -129,7 +129,7 @@ protected function printParts "function: printParts
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   output list<Node> outNodeLst;
 algorithm
-  outNodeLst := matchcontinue (inAbsynClassPartLst)
+  outNodeLst := match (inAbsynClassPartLst)
     local
       Graphviz.Node node;
       list<Node> nl;
@@ -144,7 +144,7 @@ algorithm
         nl = printParts(cs);
       then
         (node :: nl);
-  end matchcontinue;
+  end match;
 end printParts;
 
 protected function printClassPart "function: printClassPart
@@ -192,7 +192,7 @@ protected function printElementitems "function: printElementitems
   input list<Absyn.ElementItem> inAbsynElementItemLst;
   output list<Node> outNodeLst;
 algorithm
-  outNodeLst := matchcontinue (inAbsynElementItemLst)
+  outNodeLst := match (inAbsynElementItemLst)
     local
       list<Node> nl;
       list<Absyn.ElementItem> el;
@@ -213,7 +213,7 @@ algorithm
         nl = printElementitems(el);
       then
         (node :: nl);
-  end matchcontinue;
+  end match;
 end printElementitems;
 
 protected function makeBoolAttr "function: makeBoolAttr
@@ -320,7 +320,7 @@ protected function printComponents "function: printComponents
   input list<Absyn.ComponentItem> inAbsynComponentItemLst;
   output list<Node> outNodeLst;
 algorithm
-  outNodeLst := matchcontinue (inAbsynComponentItemLst)
+  outNodeLst := match (inAbsynComponentItemLst)
     local
       Graphviz.Node n;
       list<Node> nl;
@@ -335,7 +335,7 @@ algorithm
         nl = printComponents(cs);
       then
         (n :: nl);
-  end matchcontinue;
+  end match;
 end printComponents;
 
 protected function printComponentitem "function: printComponentitem
@@ -363,7 +363,7 @@ protected function printEquations "function: printEquations
   input list<Absyn.EquationItem> inAbsynEquationItemLst;
   output list<Node> outNodeLst;
 algorithm
-  outNodeLst := matchcontinue (inAbsynEquationItemLst)
+  outNodeLst := match (inAbsynEquationItemLst)
     local
       Graphviz.Node node;
       list<Node> nl;
@@ -379,7 +379,7 @@ algorithm
         nl = printEquations(el);
       then
         (node :: nl);
-  end matchcontinue;
+  end match;
 end printEquations;
 
 protected function printEquation
@@ -433,7 +433,7 @@ protected function printAlgorithms "function: printAlgorithms
   input list<Absyn.AlgorithmItem> inAbsynAlgorithmItemLst;
   output list<Node> outNodeLst;
 algorithm
-  outNodeLst := matchcontinue (inAbsynAlgorithmItemLst)
+  outNodeLst := match (inAbsynAlgorithmItemLst)
     local
       Graphviz.Node node;
       list<Node> nl;
@@ -448,7 +448,7 @@ algorithm
         nl = printAlgorithms(el);
       then
         (node :: nl);
-  end matchcontinue;
+  end match;
 end printAlgorithms;
 
 protected function printAlgorithmitem "function: printAlgorithmitem

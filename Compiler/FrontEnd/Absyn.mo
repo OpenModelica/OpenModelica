@@ -1081,7 +1081,7 @@ public function setTimeStampBool ""
   input TimeStamp its;
   input Boolean which "true for edit time, false for build time";
   output TimeStamp ots;
-algorithm ots := matchcontinue(its,which)
+algorithm ots := match(its,which)
   local Real timer;
   case(its,true)
     equation
@@ -1095,7 +1095,7 @@ algorithm ots := matchcontinue(its,which)
       its = setTimeStampBuild(its,timer);
     then
       its;
-end matchcontinue;
+end match;
 end setTimeStampBool;
 
 // stefan
@@ -1578,7 +1578,7 @@ public function traverseExpListList
   end FuncTplToTpl;
   replaceable type Type_a subtypeof Any;
 algorithm
-  outTpl := matchcontinue (inExpListList,inFunc,inTypeA)
+  outTpl := match (inExpListList,inFunc,inTypeA)
     local
       FuncTplToTpl rel;
       Type_a arg,arg_1,arg_2;
@@ -1591,7 +1591,7 @@ algorithm
         ((cdr_1,arg_2)) = traverseExpListList(cdr,rel,arg_1);
       then
         ((e_1 :: cdr_1,arg_2));
-  end matchcontinue;
+  end match;
 end traverseExpListList;
 
 // stefan
@@ -1609,7 +1609,7 @@ public function traverseExpList
   end FuncTplToTpl;
   replaceable type Type_a subtypeof Any;
 algorithm
-  outTpl := matchcontinue (inExpList,inFunc,inTypeA)
+  outTpl := match (inExpList,inFunc,inTypeA)
     local
       FuncTplToTpl rel;
       Type_a arg,arg_1,arg_2;
@@ -1622,7 +1622,7 @@ algorithm
         ((cdr_1,arg_2)) = traverseExpList(cdr,rel,arg_1);
       then
         ((e_1 :: cdr_1,arg_2));
-  end matchcontinue;
+  end match;
 end traverseExpList;
 
 public function traverseExpElseIfBranch
@@ -1639,7 +1639,7 @@ public function traverseExpElseIfBranch
   end FuncTypeTplExpType_aToTplExpType_a;
   replaceable type Type_a subtypeof Any;
 algorithm
-  outTplExpTypeA:= matchcontinue(inLst,rel,ext_arg)
+  outTplExpTypeA:= match(inLst,rel,ext_arg)
    local Exp e1,e2,e11,e21;
      list<tuple<Exp,Exp>> lst;
     case({},rel,ext_arg) then (({},ext_arg));
@@ -1648,7 +1648,7 @@ algorithm
       ((e11,ext_arg)) = traverseExp(e1, rel, ext_arg);
       ((e21,ext_arg)) = traverseExp(e2, rel, ext_arg);
     then (((e11,e21)::lst,ext_arg));
-  end matchcontinue;
+  end match;
 end traverseExpElseIfBranch;
 
 public function traverseExpFunctionArgs
@@ -1665,7 +1665,7 @@ public function traverseExpFunctionArgs
   end FuncTypeTplExpType_aToTplExpType_a;
   replaceable type Type_a subtypeof Any;
 algorithm
-  outTplExpTypeA:= matchcontinue(inArgs,rel,ext_arg)
+  outTplExpTypeA:= match(inArgs,rel,ext_arg)
     local Exp e1,e2,e11,e21,forExp;
       list<NamedArg> nargs;
       list<Exp> expl,expl_1;
@@ -1681,7 +1681,7 @@ algorithm
         ((e1,ext_arg)) = traverseExp(forExp, rel, ext_arg);
         /* adrpo: TODO! travese iterators! */
       then((FOR_ITER_FARG(e1,iterators),ext_arg));
-  end matchcontinue;
+  end match;
 end traverseExpFunctionArgs;
 
 protected function traverseExpNamedArgs "Help function to traverseExpFunctionArgs"
@@ -1696,7 +1696,7 @@ protected function traverseExpNamedArgs "Help function to traverseExpFunctionArg
   end FuncTypeTplExpType_aToTplExpType_a;
   replaceable type Type_a subtypeof Any;
 algorithm
-  outTplExpTypeA:= matchcontinue(nargs,rel,ext_arg)
+  outTplExpTypeA:= match(nargs,rel,ext_arg)
     local
       Exp e1,e2,e11,e21;
       Ident id;
@@ -1706,7 +1706,7 @@ algorithm
         ((e11,ext_arg)) = traverseExp(e1, rel, ext_arg);
         ((nargs,ext_arg)) = traverseExpNamedArgs(nargs,rel,ext_arg);
       then((NAMEDARG(id,e11)::nargs,ext_arg));
-  end matchcontinue;
+  end match;
 end traverseExpNamedArgs;
 
 protected function traverseExpPosArgs "Help function to traverseExpFunctionArgs"
@@ -1721,7 +1721,7 @@ protected function traverseExpPosArgs "Help function to traverseExpFunctionArgs"
   end FuncTypeTplExpType_aToTplExpType_a;
   replaceable type Type_a subtypeof Any;
 algorithm
-  outTplExpTypeA:= matchcontinue(pargs,rel,ext_arg)
+  outTplExpTypeA:= match(pargs,rel,ext_arg)
     local
       Exp e1,e2,e11,e21;
       Ident id;
@@ -1731,7 +1731,7 @@ algorithm
         ((e11,ext_arg)) = traverseExp(e1, rel, ext_arg);
         ((pargs,ext_arg)) = traverseExpPosArgs(pargs,rel,ext_arg);
       then((e11::pargs,ext_arg));
-  end matchcontinue;
+  end match;
 end traverseExpPosArgs;
 
 public function makeIdentPathFromString ""
@@ -1746,7 +1746,7 @@ Update current TimeStamp with a new Edit-time.
 input TimeStamp its;
 input Real editTime;
 output TimeStamp ots;
-algorithm ots := matchcontinue(its,editTime)
+algorithm ots := match(its,editTime)
   local
     Real buildTime;
     TimeStamp ts;
@@ -1755,7 +1755,7 @@ algorithm ots := matchcontinue(its,editTime)
       ts = TIMESTAMP(buildTime,editTime);
     then
       ts;
-end matchcontinue;
+end match;
 end setTimeStampEdit;
 
 public function setTimeStampBuild "Function: getNewTimeStamp
@@ -1764,7 +1764,7 @@ Update current TimeStamp with a new Build-time.
 input TimeStamp its;
 input Real buildTime;
 output TimeStamp ots;
-algorithm ots := matchcontinue(its,buildTime)
+algorithm ots := match(its,buildTime)
   local
     Real editTime;
     TimeStamp ts;
@@ -1773,17 +1773,17 @@ algorithm ots := matchcontinue(its,buildTime)
       ts = TIMESTAMP(buildTime,editTime);
     then
       ts;
-end matchcontinue;
+end match;
 end setTimeStampBuild;
 
 public function className "returns the class name of a Class as a Path"
   input Class cl;
   output Path name;
 algorithm
-  name := matchcontinue(cl)
+  name := match(cl)
   local String id;
     case(CLASS(name=id)) then IDENT(id);
-  end matchcontinue;
+  end match;
 end className;
 
 public function elementSpecName "function: elementSpecName
@@ -1793,7 +1793,7 @@ public function elementSpecName "function: elementSpecName
   output Ident outIdent;
 algorithm
   outIdent:=
-  matchcontinue (inElementSpec)
+  match (inElementSpec)
     local Ident n;
     case CLASSDEF(class_ = CLASS(name = n)) then n;
     case COMPONENTS(components = {COMPONENTITEM(component = COMPONENT(name = n))}) then n;
@@ -1802,7 +1802,7 @@ algorithm
         print("#- Absyn.elementSpecName EXTENDS\n");
       then
         fail();
-  end matchcontinue;
+  end match;
 end elementSpecName;
 
 public function printImportString "Function: printImportString
@@ -1810,7 +1810,7 @@ This function takes a Absyn.Import and prints it as a flat-string.
 "
   input Import imp;
   output String ostring;
-algorithm ostring := matchcontinue(imp)
+algorithm ostring := match(imp)
   local Path path; String name;
   case(NAMED_IMPORT(name,_)) then name;
   case(QUAL_IMPORT(path))
@@ -1821,7 +1821,7 @@ algorithm ostring := matchcontinue(imp)
     equation
       name = pathString(path);
     then name;
-end matchcontinue;
+end match;
 end printImportString;
 
 public function expString "returns the string of an expression if it is a string constant."
@@ -1837,9 +1837,9 @@ public function expCref "returns the componentRef of an expression if matches."
   input Exp exp;
   output ComponentRef cr;
 algorithm
-  cr := matchcontinue(exp)
+  cr := match(exp)
     case(CREF(cr)) then cr;
-  end matchcontinue;
+  end match;
 end expCref;
 
 public function crefExp "returns the componentRef of an expression if matches."
@@ -1863,7 +1863,7 @@ public function printComponentRefStr ""
   input ComponentRef cr;
   output String ostring;
 algorithm 
-  ostring := matchcontinue(cr)
+  ostring := match(cr)
     local
       String s1,s2;
       ComponentRef child;
@@ -1879,7 +1879,7 @@ algorithm
         s1 = "." +& s2;
       then s1;
     case (WILD()) then "_";
-  end matchcontinue;
+  end match;
 end printComponentRefStr;
 
 public function pathEqual "function: pathEqual
@@ -1940,11 +1940,11 @@ public function typeSpecPathString "function: pathString
   This function simply converts a Path to a string."
   input TypeSpec tp;
   output String s;
-algorithm s := matchcontinue(tp)
+algorithm s := match(tp)
   local Path p;
   case(TCOMPLEX(path = p)) then pathString(p);
   case(TPATH(path = p)) then pathString(p);
-end matchcontinue;
+end match;
 end typeSpecPathString;
 
 public function typeSpecPath
@@ -1980,7 +1980,7 @@ public function optPathString "function: optPathString
   output String outString;
 algorithm
   outString:=
-  matchcontinue (inPathOption)
+  match (inPathOption)
     local
       Ident str;
       Path p;
@@ -1990,7 +1990,7 @@ algorithm
         str = pathString(p);
       then
         str;
-  end matchcontinue;
+  end match;
 end optPathString;
 
 public function pathString2 "function:
@@ -2000,7 +2000,7 @@ public function pathString2 "function:
   output String outString;
 algorithm
   outString:=
-  matchcontinue (inPath,inString)
+  match (inPath,inString)
     local
       Ident s,ns,s1,ss,str;
       Path n;
@@ -2016,7 +2016,7 @@ algorithm
       equation
         ss = pathString2(n,str);
       then ss;
-  end matchcontinue;
+  end match;
 end pathString2;
 
 public function stringPath
@@ -2067,7 +2067,7 @@ public function pathLastIdent "function: pathLastIdent
   output Ident outIdent;
 algorithm
   outIdent:=
-  matchcontinue (inPath)
+  match (inPath)
     local
       Ident res,n;
       Path p;
@@ -2082,7 +2082,7 @@ algorithm
       then
         res;
     case (IDENT(name = n)) then n;
-  end matchcontinue;
+  end match;
 end pathLastIdent;
 
 public function pathFirstIdent "function: pathFirstIdent
@@ -2091,14 +2091,14 @@ public function pathFirstIdent "function: pathFirstIdent
   output Ident outIdent;
 algorithm
   outIdent:=
-  matchcontinue (inPath)
+  match (inPath)
     local
       Ident n;
       Path p;
     case (FULLYQUALIFIED(path = p)) then pathFirstIdent(p);
     case (QUALIFIED(name = n,path = p)) then n;
     case (IDENT(name = n)) then n;
-  end matchcontinue;
+  end match;
 end pathFirstIdent;
 
 public function pathPrefix
@@ -2166,7 +2166,7 @@ end pathSuffixOf;
 public function pathToStringList
   input Path path;
   output list<String> outPaths;
-algorithm outPaths := matchcontinue(path)
+algorithm outPaths := match(path)
     local
       String n;
       Path p;
@@ -2180,7 +2180,7 @@ algorithm outPaths := matchcontinue(path)
         strings = listAppend(strings,{n});
         then
           strings;
-end matchcontinue;
+end match;
 end pathToStringList;
 
 public function pathReplaceFirstIdent "
@@ -2192,13 +2192,13 @@ public function pathReplaceFirstIdent "
   input Path replPath;
   output Path outPath;
 algorithm
-  outPath := matchcontinue(path,replPath)
+  outPath := match(path,replPath)
     local
       Path p;
     // Should not be possible to replace FQ paths
     case (QUALIFIED(path = p), _) then joinPaths(replPath,p);
     case (IDENT(name = _), _) then replPath;
-  end matchcontinue;
+  end match;
 end pathReplaceFirstIdent;
 
 public function addSubscriptsLast "
@@ -2208,7 +2208,7 @@ Function for appending subscripts at end on last ident
   input list<Subscript> i;
   output ComponentRef ocr;
 algorithm
-  ocr := matchcontinue(cr,i)
+  ocr := match(cr,i)
     local
       list<Subscript> subs;
       String id;
@@ -2227,7 +2227,7 @@ algorithm
         cr = addSubscriptsLast(cr,i);
       then
         CREF_FULLYQUALIFIED(cr);
-  end matchcontinue;
+  end match;
 end addSubscriptsLast;
 
 public function crefReplaceFirstIdent "
@@ -2239,7 +2239,7 @@ public function crefReplaceFirstIdent "
   input Path replPath;
   output ComponentRef outCref;
 algorithm
-  outCref := matchcontinue(cref,replPath)
+  outCref := match(cref,replPath)
     local
       String n;
       Path p;
@@ -2260,7 +2260,7 @@ algorithm
         cref = pathToCref(replPath);
         cref = addSubscriptsLast(cref,subs);
       then cref;
-  end matchcontinue;
+  end match;
 end crefReplaceFirstIdent;
 
 public function pathPrefixOf
@@ -2314,7 +2314,7 @@ public function removePrefix "removes the prefix_path from path, and returns the
   input Path path;
   output Path newPath;
 algorithm
-  newPath := matchcontinue(prefix_path,path)
+  newPath := match(prefix_path,path)
     local Path p,p2; Ident id1,id2;
     // fullyqual path
     case (p,FULLYQUALIFIED(p2)) then removePrefix(p,p2);
@@ -2329,7 +2329,7 @@ algorithm
       equation
         true = stringEq(id1, id2);
       then p2;
-  end matchcontinue;
+  end match;
 end removePrefix;
 
 public function crefRemovePrefix
@@ -2470,7 +2470,7 @@ Function for getting ComponentRefs out from Subscripts
 "
   input list<Subscript> subs;
   output list<ComponentRef> crefs;
-algorithm crefs := matchcontinue(subs)
+algorithm crefs := match(subs)
   local
     list<ComponentRef> crefs1;
     Exp exp;
@@ -2484,7 +2484,7 @@ algorithm crefs := matchcontinue(subs)
         //crefs = Util.listUnionOnTrue(crefs,crefs1,crefEqual);
         then
           crefs;
-end matchcontinue;
+end match;
 end getCrefsFromSubs;
 
 public function getCrefFromExp "
@@ -2642,7 +2642,7 @@ public function getCrefFromFarg "function: getCrefFromFarg
   input FunctionArgs inFunctionArgs;
   input Boolean checkSubs;
   output list<ComponentRef> outComponentRefLst;
-algorithm outComponentRefLst := matchcontinue (inFunctionArgs,checkSubs)
+algorithm outComponentRefLst := match (inFunctionArgs,checkSubs)
     local
       list<list<ComponentRef>> l1,l2;
       list<ComponentRef> fl1,fl2,res;
@@ -2668,7 +2668,7 @@ algorithm outComponentRefLst := matchcontinue (inFunctionArgs,checkSubs)
       then
         res;
 
-  end matchcontinue;
+  end match;
 end getCrefFromFarg;
 
 // stefan
@@ -2951,7 +2951,7 @@ public function getNamedFuncArgNamesAndValues
   output list<String> outStringList;
   output list<Exp> outExpList;
 algorithm
-  (outStringList,outExpList) := matchcontinue ( inNamedArgList )
+  (outStringList,outExpList) := match ( inNamedArgList )
     local
       list<NamedArg> cdr;
       String s;
@@ -2965,7 +2965,7 @@ algorithm
         (slst,elst) = getNamedFuncArgNamesAndValues(cdr);
       then
         (s :: slst, e :: elst);
-  end matchcontinue;
+  end match;
 end getNamedFuncArgNamesAndValues;
 
 protected function getCrefFromNarg "function: getCrefFromNarg
@@ -2974,7 +2974,7 @@ protected function getCrefFromNarg "function: getCrefFromNarg
   input NamedArg inNamedArg;
   input Boolean checkSubs;
   output list<ComponentRef> outComponentRefLst;
-algorithm outComponentRefLst := matchcontinue (inNamedArg,checkSubs)
+algorithm outComponentRefLst := match (inNamedArg,checkSubs)
     local
       list<ComponentRef> res;
       ComponentCondition exp;
@@ -2983,7 +2983,7 @@ algorithm outComponentRefLst := matchcontinue (inNamedArg,checkSubs)
         res = getCrefFromExp(exp,checkSubs);
       then
         res;
-  end matchcontinue;
+  end match;
 end getCrefFromNarg;
 
 public function joinPaths "function: joinPaths
@@ -3180,7 +3180,7 @@ public function crefToPath "function: crefToPath
   output Path outPath;
 algorithm
   outPath:=
-  matchcontinue (inComponentRef)
+  match (inComponentRef)
     local
       Ident i;
       Path p;
@@ -3196,7 +3196,7 @@ algorithm
         p = crefToPath(c);
       then
         FULLYQUALIFIED(p);
-  end matchcontinue;
+  end match;
 end crefToPath;
 
 public function pathToCref "function: pathToCref
@@ -3205,7 +3205,7 @@ public function pathToCref "function: pathToCref
   output ComponentRef outComponentRef;
 algorithm
   outComponentRef:=
-  matchcontinue (inPath)
+  match (inPath)
     local
       Ident i;
       ComponentRef c;
@@ -3220,7 +3220,7 @@ algorithm
       equation
         c = pathToCref(p);
       then CREF_FULLYQUALIFIED(c);
-  end matchcontinue;
+  end match;
 end pathToCref;
 
 public function pathToCrefWithSubs
@@ -3256,14 +3256,14 @@ public function crefFirstIdent "
 Returns the base-name of the Absyn.componentReference"
   input ComponentRef inComponentRef;
   output String str;
-algorithm str := matchcontinue(inComponentRef)
+algorithm str := match(inComponentRef)
   local
     String ret;
     ComponentRef cr;
   case(CREF_IDENT(ret,_)) then ret;
   case(CREF_QUAL(ret,_,_)) then ret;
   case(CREF_FULLYQUALIFIED(cr)) then crefFirstIdent(cr);
-end matchcontinue;
+end match;
 end crefFirstIdent;
 
 public function crefFirstIdentNoSubs
@@ -3299,7 +3299,7 @@ public function crefLastSubs "function: crefLastSubs
   output list<Subscript> outSubscriptLst;
 algorithm
   outSubscriptLst:=
-  matchcontinue (inComponentRef)
+  match (inComponentRef)
     local
       Ident id;
       list<Subscript> subs,res;
@@ -3315,7 +3315,7 @@ algorithm
         res = crefLastSubs(cr);
       then
         res;
-  end matchcontinue;
+  end match;
 end crefLastSubs;
 
 public function getSubsFromCref "
@@ -3325,7 +3325,7 @@ Author: BZ, 2009-09
   input ComponentRef cr;
   output list<Subscript> subscripts;
 
-algorithm subscripts := matchcontinue(cr)
+algorithm subscripts := match(cr)
   local
     list<Subscript> subs2;
     ComponentRef child;
@@ -3341,7 +3341,7 @@ algorithm subscripts := matchcontinue(cr)
       subscripts = getSubsFromCref(child);
     then
       subscripts;
-end matchcontinue;
+end match;
 end getSubsFromCref;
 
 // stefan
@@ -3409,7 +3409,7 @@ public function crefGetLastIdent
   input ComponentRef inComponentRef;
   output ComponentRef outComponentRef;
 algorithm
-  outComponentRef := matchcontinue (inComponentRef)
+  outComponentRef := match (inComponentRef)
     local
       ComponentRef cref,cref_1;
       Ident id;
@@ -3425,7 +3425,7 @@ algorithm
         cref_1 = crefGetLastIdent(cref);
       then
         cref_1;
-  end matchcontinue;
+  end match;
 end crefGetLastIdent;
 
 // stefan
@@ -3463,7 +3463,7 @@ public function crefStripLastSubs "function: crefStripLastSubs
   output ComponentRef outComponentRef;
 algorithm
   outComponentRef:=
-  matchcontinue (inComponentRef)
+  match (inComponentRef)
     local
       Ident id;
       list<Subscript> subs,s;
@@ -3479,7 +3479,7 @@ algorithm
         cr_1 = crefStripLastSubs(cr);
       then
         CREF_FULLYQUALIFIED(cr_1);
-  end matchcontinue;
+  end match;
 end crefStripLastSubs;
 
 public function joinCrefs "function: joinCrefs
@@ -3489,7 +3489,7 @@ public function joinCrefs "function: joinCrefs
   output ComponentRef outComponentRef;
 algorithm
   outComponentRef:=
-  matchcontinue (inComponentRef1,inComponentRef2)
+  match (inComponentRef1,inComponentRef2)
     local
       Ident id;
       list<Subscript> sub;
@@ -3508,7 +3508,7 @@ algorithm
         cr_1 = joinCrefs(cr, cr2);
       then
         CREF_FULLYQUALIFIED(cr_1);
-  end matchcontinue;
+  end match;
 end joinCrefs;
 
 public function crefGetFirst "function: crefGetFirst
@@ -3546,7 +3546,7 @@ public function restrString "function: restrString
   output String outString;
 algorithm
   outString:=
-  matchcontinue (inRestriction)
+  match (inRestriction)
     case R_CLASS() then "CLASS";
     case R_OPTIMIZATION() then "OPTIMIZATION";
     case R_MODEL() then "MODEL";
@@ -3564,7 +3564,7 @@ algorithm
 
     /* MetaModelica restriction */
     case R_UNIONTYPE() then "UNIONTYPE";
-  end matchcontinue;
+  end match;
 end restrString;
 
 public function printRestr "function: printRestr
@@ -3582,7 +3582,7 @@ public function lastClassname "function: lastClassname
   output Path outPath;
 algorithm
   outPath:=
-  matchcontinue (inProgram)
+  match (inProgram)
     local
       Ident id;
       list<Class> lst;
@@ -3591,7 +3591,7 @@ algorithm
         CLASS(id,_,_,_,_,_,_) = Util.listLast(lst);
       then
         IDENT(id);
-  end matchcontinue;
+  end match;
 end lastClassname;
 
 public function classFilename "function classFilename
@@ -3601,10 +3601,10 @@ public function classFilename "function classFilename
   output String outString;
 algorithm
   outString:=
-  matchcontinue (inClass)
+  match (inClass)
     local Ident filename;
     case (CLASS(info = INFO(fileName = filename))) then filename;
-  end matchcontinue;
+  end match;
 end classFilename;
 
 public function setClassFilename "function setClassFilename
@@ -3616,7 +3616,7 @@ public function setClassFilename "function setClassFilename
   output Class outClass;
 algorithm
   outClass:=
-  matchcontinue (inClass,inString,build1)
+  match (inClass,inString,build1)
     local
       Ident n,filename;
       Boolean p,f,e;
@@ -3625,7 +3625,7 @@ algorithm
       TimeStamp build;
     case (CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,body = body),filename,build)
       then CLASS(n,p,f,e,r,body,INFO(filename,false,0,0,0,0, build)  );
-  end matchcontinue;
+  end match;
 end setClassFilename;
 
 public function emptyClassInfo "
@@ -3847,7 +3847,7 @@ merge the derived ElementAttributes with the optional ElementAttributes returned
   input ElementAttributes ele;
   input Option<ElementAttributes> oEle;
   output Option<ElementAttributes> outoEle;
-algorithm outoEle := matchcontinue(ele, oEle)
+algorithm outoEle := match(ele, oEle)
   local
     Boolean b1,b2,bStream1,bStream2,bStream;
     Variability v1,v2;
@@ -3862,7 +3862,7 @@ algorithm outoEle := matchcontinue(ele, oEle)
       d1 = propagateAbsynDirection(d1,d2);
     then
       SOME(ATTR(b1,bStream,v1,d1,ad1));
-end matchcontinue;
+end match;
 end mergeElementAttributes;
 
 protected function propagateAbsynVariability "
@@ -3990,7 +3990,7 @@ public function findIteratorInExpLst//This function is not tail-recursive, and I
   input list<Exp> inExpLst;
   output list<tuple<ComponentRef, Integer>> outLst;
 algorithm
-  outLst := matchcontinue(inString,inExpLst)
+  outLst := match(inString,inExpLst)
     local
       list<tuple<ComponentRef, Integer>> lst,lst_1,lst_2;
       String id;
@@ -4003,7 +4003,7 @@ algorithm
         lst_2=findIteratorInExpLst(id,rest);
         lst=listAppend(lst_1,lst_2);
       then lst;
-  end matchcontinue;
+  end match;
 end findIteratorInExpLst;
 
 protected function findIteratorInExpLstLst//This function is not tail-recursive, and I don't know how to fix it -- alleb
@@ -4032,7 +4032,7 @@ protected function findIteratorInNamedArgs
   input list<NamedArg> inNamedArgs;
   output list<tuple<ComponentRef, Integer>> outLst;
 algorithm
-  outLst := matchcontinue(inString,inNamedArgs)
+  outLst := match(inString,inNamedArgs)
     local
       list<tuple<ComponentRef, Integer>> lst,lst_1,lst_2;
       String id;
@@ -4045,7 +4045,7 @@ algorithm
         lst_2=findIteratorInNamedArgs(id,rest);
         lst=listAppend(lst_1,lst_2);
       then lst;
-  end matchcontinue;
+  end match;
 end findIteratorInNamedArgs;
 
 /*
@@ -4282,7 +4282,7 @@ protected function combineCRefAndIntLst
   input list<Integer> inIntLst;
   output list<tuple<ComponentRef, Integer>> outLst;
 algorithm
-  outLst := matchcontinue(inCRef,inIntLst)
+  outLst := match(inCRef,inIntLst)
     local
       ComponentRef cref;
       list<Integer> rest;
@@ -4293,7 +4293,7 @@ algorithm
       equation
         lst=combineCRefAndIntLst(cref,rest);
       then (cref,i)::lst;
-  end matchcontinue;
+  end match;
 end combineCRefAndIntLst;
 
 protected function qualifyCRefIntLst
@@ -4322,12 +4322,12 @@ public function pathReplaceIdent
   input String last;
   output Path out;
 algorithm
-  out := matchcontinue (path,last)
+  out := match (path,last)
     local Path p; String n,s;
     case (FULLYQUALIFIED(p),s) equation p = pathReplaceIdent(p,s); then FULLYQUALIFIED(p);
     case (QUALIFIED(n,p),s) equation p = pathReplaceIdent(p,s); then QUALIFIED(n,p);
     case (IDENT(_),s) then IDENT(s);
-  end matchcontinue;
+  end match;
 end pathReplaceIdent;
 
 public function setBuildTimeInInfo
@@ -4335,7 +4335,7 @@ public function setBuildTimeInInfo
   input Info inInfo;
   output Info outInfo;
 algorithm
-  outInfo := matchcontinue(buildTime, inInfo)
+  outInfo := match(buildTime, inInfo)
     local
       String fileName "fileName where the class is defined in";
       Boolean isReadOnly "isReadOnly : (true|false). Should be true for libraries";
@@ -4349,17 +4349,17 @@ algorithm
                           lineNumberEnd, columnNumberEnd, TIMESTAMP(lastBuildTime,lastEditTime)))
     then
       (INFO(fileName, isReadOnly, lineNumberStart, columnNumberStart, lineNumberEnd, columnNumberEnd, TIMESTAMP(buildTime,lastEditTime)));
-  end matchcontinue;
+  end match;
 end setBuildTimeInInfo;
 
 public function getFileNameFromInfo
   input Info inInfo;
   output String inFileName;
 algorithm
-  inFileName := matchcontinue(inInfo)
+  inFileName := match(inInfo)
     local String fileName;
     case (INFO(fileName = fileName)) then fileName;
-  end matchcontinue;
+  end match;
 end getFileNameFromInfo;
 
 public function isOuter
@@ -4435,7 +4435,7 @@ public function canonIfExp "Transforms an if-expression to canonical form (witho
   input Exp e;
   output Exp outExp;
 algorithm
-  outExp := matchcontinue e
+  outExp := match e
     local
       Exp cond,tb,eb,ei_cond,ei_tb;
       list<tuple<Exp,Exp>> eib;
@@ -4444,7 +4444,7 @@ algorithm
       equation
         e = canonIfExp(IFEXP(ei_cond,ei_tb,eb,eib));
       then IFEXP(cond,tb,e,{});
-  end matchcontinue;
+  end match;
 end canonIfExp;
 
 public function onlyLiteralsInAnnotationMod

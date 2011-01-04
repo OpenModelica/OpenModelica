@@ -54,7 +54,7 @@ public function refactorGraphicalAnnotation "function: refactorGraphicalAnnnotat
   input Absyn.Class classToRefactor;
   output Absyn.Class changedClass; //Manipulerad AST
 algorithm
-  changedClass := matchcontinue (wholeAST, classToRefactor)
+  changedClass := match (wholeAST, classToRefactor)
     local
       list<Absyn.Class> classList, other;
       Absyn.Class c;
@@ -66,7 +66,7 @@ algorithm
       then
         c;
 
-  end matchcontinue;
+  end match;
 end refactorGraphicalAnnotation;
 
 protected function refactorGraphAnnInClass "function: refactorGraphAnnInClass
@@ -183,7 +183,7 @@ protected function refactorGraphAnnInClassParts "function: refactorGraphAnnInCla
   input Env.Env env;
   output list<Absyn.ClassPart> outParts;
 algorithm
-  outParts := matchcontinue (inParts,inProgram,classPath,env)
+  outParts := match (inParts,inProgram,classPath,env)
     local
       Absyn.Program p;
       list<Absyn.ClassPart> restParts,resParts,resultParts;
@@ -196,7 +196,7 @@ algorithm
         resParts = refactorGraphAnnInClassParts(restParts,p,cPath,env);
       then
         resultPart :: resParts;
-  end matchcontinue;
+  end match;
 end refactorGraphAnnInClassParts;
 
 protected function refactorGraphAnnInClassPart"function: refactorGraphAnnInClassPart
@@ -282,7 +282,7 @@ protected function refactorGraphAnnInContentList"function: refactorGraphAnnInCon
     output contentType outItem;
   end refactorGraphAnnInContent;
 algorithm
-  outList := matchcontinue (inList,refactorGraphAnnInItem,inProgram,classPath,inClassEnv)
+  outList := match (inList,refactorGraphAnnInItem,inProgram,classPath,inClassEnv)
     local
       Absyn.Program p;
       list<contentType> restList,resultList,resList;
@@ -296,7 +296,7 @@ algorithm
         resList = refactorGraphAnnInContentList(restList,refactorGraphAnnInItem,p,cPath,env);
       then
         resultItem :: resList;
-  end matchcontinue;
+  end match;
 end refactorGraphAnnInContentList;
 
 protected function refactorGraphAnnInElItem"function: refactorGraphAnnInElItem
@@ -308,7 +308,7 @@ protected function refactorGraphAnnInElItem"function: refactorGraphAnnInElItem
   input Env.Env inClassEnv;
   output Absyn.ElementItem outItem;
 algorithm
-  outItem := matchcontinue (inItem,inProgram,classPath,inClassEnv)
+  outItem := match (inItem,inProgram,classPath,inClassEnv)
     local
       Absyn.Program p;
       Context context;
@@ -328,7 +328,7 @@ algorithm
         resultElement = refactorGraphAnnInElement(el,p,cPath,env);
       then
         Absyn.ELEMENTITEM(resultElement);
-  end matchcontinue;
+  end match;
 end refactorGraphAnnInElItem;
 
 protected function refactorGraphAnnInEqItem"function: refactorGraphAnnInEqItem
@@ -420,7 +420,7 @@ protected function refactorGraphAnnInElement"function: refactorGraphAnnInElement
 
 algorithm
 
-  outElement := matchcontinue (inElement,inProgram,classPath,inClassEnv)
+  outElement := match (inElement,inProgram,classPath,inClassEnv)
 
     local
 
@@ -446,7 +446,7 @@ algorithm
       then
         Absyn.ELEMENT(f,rdk,io,n,resultSpec,i,cc);
 
-  end matchcontinue;
+  end match;
 
 end refactorGraphAnnInElement;
 
@@ -463,7 +463,7 @@ protected function refactorConstrainClass "function: refactorGraphAnnInElement
 
 algorithm
 
-  outCC := matchcontinue (inCC,inProgram,classPath,inClassEnv)
+  outCC := match (inCC,inProgram,classPath,inClassEnv)
 
 	local
       Absyn.Program p;
@@ -480,7 +480,7 @@ algorithm
         SOME(Absyn.CONSTRAINCLASS(resultSpec,com));
     case(NONE(),_,_,_)
     then NONE();
-	end matchcontinue;
+	end match;
 end refactorConstrainClass;
 
 protected function refactorGraphAnnInElSpec"function: refactorGraphAnnInElSpec
@@ -721,11 +721,11 @@ protected function getRestrictionInClass"function: getRestrictionFromClass
   input Absyn.Class inClass;
   output Absyn.Restriction outRestriction;
 algorithm
-  outRestriction := matchcontinue(inClass)
+  outRestriction := match(inClass)
     local
       Absyn.Restriction restriction;
     case(Absyn.CLASS(restriction = restriction)) then restriction;
-  end matchcontinue;
+  end match;
 end getRestrictionInClass;
 
 protected function getRotationDegree"function: getRotationDegree
@@ -786,7 +786,7 @@ protected function getIconTransformation"function: getIconTransformation
 
 algorithm
 
-  iconTrans := matchcontinue(ax1,ay1,ax2,ay2,inRotation,classPath,inPath,inProg,inClassEnv)
+  iconTrans := match(ax1,ay1,ax2,ay2,inRotation,classPath,inPath,inProg,inClassEnv)
 
     local
 
@@ -845,7 +845,7 @@ algorithm
 
       then Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.CREF_IDENT("iconTransformation",{}),SOME(Absyn.CLASSMOD({x,y,scale,aspectRatio,flipHorizontal,flipVertical,rotation},NONE())),NONE());
 
-  end matchcontinue;
+  end match;
 
 end getIconTransformation;
 
@@ -868,7 +868,7 @@ protected function getDiagramTransformation"function: getDiagramTransformation
 
 algorithm
 
-  trans := matchcontinue(ax1,ay1,ax2,ay2,inRotation,classPath,inPath,inProg, inClassEnv)
+  trans := match(ax1,ay1,ax2,ay2,inRotation,classPath,inPath,inProg, inClassEnv)
 
     local
 
@@ -929,7 +929,7 @@ algorithm
       then
         Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.CREF_IDENT("transformation",{}),SOME(Absyn.CLASSMOD({x,y,scale,aspectRatio,flipHorizontal,flipVertical,rotation},NONE())),NONE());
 
-  end matchcontinue;
+  end match;
 
 end getDiagramTransformation;
 
@@ -951,7 +951,7 @@ protected function getAspectRatioAnn"function: getAspectRatioAnn
 
 algorithm
 
-  aspectRatio := matchcontinue (x1,x2,y1,y2,cx1,cy1,cx2,cy2)
+  aspectRatio := match (x1,x2,y1,y2,cx1,cy1,cx2,cy2)
 
     local
 
@@ -969,7 +969,7 @@ algorithm
       then
         Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.CREF_IDENT("aspectRatio",{}),SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(aspect)))),NONE());
 
-  end matchcontinue;
+  end match;
 
 end getAspectRatioAnn;
 
@@ -985,7 +985,7 @@ protected function getXYAnn"function: getXYAnn
 
 algorithm
 
-  res := matchcontinue(val1,val2,name)
+  res := match(val1,val2,name)
 
     local
 
@@ -999,7 +999,7 @@ algorithm
       then
         Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.CREF_IDENT(n,{}),SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(value)))),NONE());
 
-  end matchcontinue;
+  end match;
 
 end getXYAnn;
 
@@ -1016,7 +1016,7 @@ protected function getScaleAnn"function: getScaleAnn
 
 algorithm
 
-  scale := matchcontinue(ax1,ax2,cx1,cx2)
+  scale := match(ax1,ax2,cx1,cx2)
 
     local
 
@@ -1029,7 +1029,7 @@ algorithm
       then
         Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.CREF_IDENT("scale",{}),SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(scaleFac)))),NONE());
 
-  end matchcontinue;
+  end match;
 
 end getScaleAnn;
 
@@ -1148,7 +1148,7 @@ protected function getCoordsInClass"function: getCoordsInClass
 
 algorithm
 
-  (x1,y1,x2,y2) := matchcontinue (inClass,contextToGetCoordsFrom)
+  (x1,y1,x2,y2) := match (inClass,contextToGetCoordsFrom)
 
     local
       Absyn.Class cdef;
@@ -1180,7 +1180,7 @@ algorithm
       	  (x1,y1,x2,y2) = getCoordsFromParts(parts1,context);
 			then
 			  (x1,y1,x2,y2);   */
-  end matchcontinue;
+  end match;
 
 end getCoordsInClass;
 
@@ -1899,12 +1899,12 @@ protected function nameArgWithName
   input String argName;
   output Boolean res;
 algorithm
-  res := matchcontinue(narg,argName)
+  res := match(narg,argName)
   local String name;
     case(Absyn.NAMEDARG(name,_),argName) equation
       res = (name ==& argName);
     then res;
-  end matchcontinue;
+  end match;
 end nameArgWithName;
 
 protected function transAnnLstToNamedArgs " function: transAnnLstToNamedArgs
@@ -2418,7 +2418,7 @@ protected function insertFillPatternInList "function insertFillPatternInList
   input list<Absyn.ElementArg> inArgs;
   output list<Absyn.ElementArg> outArgs;
 algorithm
-  outArgs := matchcontinue inArgs
+  outArgs := match inArgs
     local
       list<Absyn.ElementArg> lst;
 
@@ -2426,7 +2426,7 @@ algorithm
       equation
         lst = Absyn.MODIFICATION(false, Absyn.NON_EACH(), Absyn.CREF_IDENT("fillPattern", {}), SOME(Absyn.CLASSMOD({},SOME(Absyn.INTEGER(1)))),NONE()) :: lst;
       then lst;
-  end matchcontinue;
+  end match;
 end insertFillPatternInList;
 
 protected function isGradientInList " function: isGradientInList
@@ -2622,7 +2622,7 @@ protected function getMappedColor "function: getMappedColor
   output Integer color2;
   output Integer color3;
 algorithm
-  (color1,color2,color3) := matchcontinue (inColor)
+  (color1,color2,color3) := match (inColor)
     local
       rgbColor rcol;
       Integer	color;
@@ -2634,7 +2634,7 @@ algorithm
         color3 = arrayGet(listArray(rcol),3);
       then
         (color1,color2,color3);
-  end matchcontinue;
+  end match;
 end getMappedColor;
 
 protected function matrixToArray "function: matrixToArray
@@ -2679,7 +2679,7 @@ protected function getValueFromExp
   input Absyn.Exp expr;
   output Real value;
 algorithm
-  value := matchcontinue(expr)
+  value := match(expr)
     local
       Real realVal;
       Integer intVal;
@@ -2694,7 +2694,7 @@ algorithm
 
     case(Absyn.UNARY(exp = Absyn.INTEGER(value = intVal)))
     then -. intReal(intVal);
-  end matchcontinue;
+  end match;
 end getValueFromExp;
 
 protected function addContext "function: addContext
@@ -2703,13 +2703,13 @@ protected function addContext "function: addContext
   input String newCon;
   output list<String> outList;
 algorithm
-  outList := matchcontinue(inList,newCon)
+  outList := match(inList,newCon)
     local
       String str;
       list<String> strLst;
     case(strLst,str)
     then str :: strLst;
-  end matchcontinue;
+  end match;
 end addContext;
 
 type Context = list<String>;

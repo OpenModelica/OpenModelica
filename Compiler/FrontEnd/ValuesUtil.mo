@@ -65,7 +65,7 @@ public function typeConvert "function: typeConvert
   input list<Value> inValueLst3;
   output list<Value> outValueLst;
 algorithm
-  outValueLst := matchcontinue (inType1,inType2,inValueLst3)
+  outValueLst := match (inType1,inType2,inValueLst3)
     local
       list<Value> vallst,vrest,vallst2,vals;
       Real rval,r;
@@ -91,7 +91,7 @@ algorithm
         vallst2 = typeConvert(from, to, vrest);
       then
         (Values.ARRAY(vallst,dims) :: vallst2);
-  end matchcontinue;
+  end match;
 end typeConvert;
 
 public function valueExpType "creates a DAE.ExpType from a Value"
@@ -165,7 +165,7 @@ public function isArray "function: isArray
   input Value inValue;
   output Boolean outBoolean;
 algorithm
-  outBoolean := matchcontinue (inValue)
+  outBoolean := match (inValue)
     case (Values.INTEGER(integer = _)) then false;
     case (Values.REAL(real = _)) then false;
     case (Values.STRING(string = _)) then false;
@@ -176,7 +176,7 @@ algorithm
     case (Values.RECORD(orderd = _)) then false;
     case (Values.ARRAY(valueLst = _)) then true;
     case (Values.LIST(_)) then false; //MetaModelica list
-  end matchcontinue;
+  end match;
 end isArray;
 
 public function isRecord "function: isArray
@@ -208,7 +208,7 @@ public function nthArrayelt "function: nthArrayelt
   output Value outValue;
 algorithm
   outValue:=
-  matchcontinue (inValue,inInteger)
+  match (inValue,inInteger)
     local
       Integer n_1,n;
       Value res;
@@ -219,7 +219,7 @@ algorithm
         res = listNth(vlst, n_1);
       then
         res;
-  end matchcontinue;
+  end match;
 end nthArrayelt;
 
 public function unparseValues "function: unparseValues
@@ -230,7 +230,7 @@ public function unparseValues "function: unparseValues
   output String outString;
 algorithm
   outString:=
-  matchcontinue (inValueLst)
+  match (inValueLst)
     local
       String s1,s2,s3,str;
       Value v;
@@ -244,7 +244,7 @@ algorithm
       then
         str;
     case ({}) then "";
-  end matchcontinue;
+  end match;
 end unparseValues;
 
 protected function unparseValueNumbers "function: unparseValueNumbers
@@ -256,7 +256,7 @@ protected function unparseValueNumbers "function: unparseValueNumbers
   output String outString;
 algorithm
   outString:=
-  matchcontinue (inValueLst)
+  match (inValueLst)
     local
       String s1,s2,res,istr,sval;
       list<Value> lst,xs;
@@ -307,7 +307,7 @@ algorithm
       then
         res;
     case ({}) then "";
-  end matchcontinue;
+  end match;
 end unparseValueNumbers;
 
 public function safeIntRealOp
@@ -512,7 +512,7 @@ protected function unparseDescription "function: unparseDescription
   output String outString;
 algorithm
   outString:=
-  matchcontinue (inValueLst)
+  match (inValueLst)
     local
       String s1,str,slenstr,sval,s2,s4;
       list<Value> xs,vallst;
@@ -546,7 +546,7 @@ algorithm
       then
         str;
     case ({}) then "";
-  end matchcontinue;
+  end match;
 end unparseDescription;
 
 protected function unparseArrayDescription "function: unparseArrayDescription
@@ -671,7 +671,7 @@ public function addElementwiseArrayelt "function: addElementwiseArrayelt
   output list<Value> outValueLst;
 algorithm
   outValueLst:=
-  matchcontinue (inValueLst1,inValueLst2)
+  match (inValueLst1,inValueLst2)
     local
       list<Value> reslst,res2,v1lst,rest1,v2lst,rest2;
       Integer res,v1,v2;
@@ -703,7 +703,7 @@ algorithm
       then
         (Values.STRING(sres) :: res2);
     case ({},{}) then {};
-  end matchcontinue;
+  end match;
 end addElementwiseArrayelt;
 
 public function subElementwiseArrayelt "function: subElementwiseArrayelt
@@ -715,7 +715,7 @@ public function subElementwiseArrayelt "function: subElementwiseArrayelt
   output list<Value> outValueLst;
 algorithm
   outValueLst:=
-  matchcontinue (inValueLst1,inValueLst2)
+  match (inValueLst1,inValueLst2)
     local
       list<Value> reslst,res2,v1lst,rest1,v2lst,rest2;
       Integer res,v1,v2;
@@ -740,7 +740,7 @@ algorithm
       then
         (Values.REAL(rres) :: res2);
     case ({},{}) then {};
-  end matchcontinue;
+  end match;
 end subElementwiseArrayelt;
 
 public function mulElementwiseArrayelt "function: mulElementwiseArrayelt
@@ -752,7 +752,7 @@ public function mulElementwiseArrayelt "function: mulElementwiseArrayelt
   output list<Value> outValueLst;
 algorithm
   outValueLst:=
-  matchcontinue (inValueLst1,inValueLst2)
+  match (inValueLst1,inValueLst2)
     local
       list<Value> reslst,res2,v1lst,rest1,v2lst,rest2;
       Integer res,v1,v2;
@@ -777,7 +777,7 @@ algorithm
       then
         (Values.REAL(rres) :: res2);
     case ({},{}) then {};
-  end matchcontinue;
+  end match;
 end mulElementwiseArrayelt;
 
 public function divElementwiseArrayelt "function: divElementwiseArrayelt
@@ -789,7 +789,7 @@ public function divElementwiseArrayelt "function: divElementwiseArrayelt
   output list<Value> outValueLst;
 algorithm
   outValueLst:=
-  matchcontinue (inValueLst1,inValueLst2)
+  match (inValueLst1,inValueLst2)
     local
       list<Value> reslst,res2,v1lst,rest1,v2lst,rest2;
       Real res,r1,r2;
@@ -816,7 +816,7 @@ algorithm
       then
         (Values.REAL(res) :: res2);
     case ({},{}) then {};
-  end matchcontinue;
+  end match;
 end divElementwiseArrayelt;
 
 public function powElementwiseArrayelt "function: powElementwiseArrayelt
@@ -828,7 +828,7 @@ public function powElementwiseArrayelt "function: powElementwiseArrayelt
   output list<Value> outValueLst;
 algorithm
   outValueLst:=
-  matchcontinue (inValueLst1,inValueLst2)
+  match (inValueLst1,inValueLst2)
     local
       list<Value> reslst,res2,v1lst,rest1,v2lst,rest2;
       Integer i1,i2;
@@ -855,7 +855,7 @@ algorithm
       then
         (Values.REAL(res) :: res2);
     case ({},{}) then {};
-  end matchcontinue;
+  end match;
 end powElementwiseArrayelt;
 
 public function expValue "function: expValue
@@ -866,7 +866,7 @@ public function expValue "function: expValue
   output Value outValue;
 algorithm
   outValue:=
-  matchcontinue (inExp)
+  match (inExp)
     local
       Integer i;
       Real r;
@@ -876,7 +876,7 @@ algorithm
     case DAE.RCONST(real = r) then Values.REAL(r);
     case DAE.SCONST(string = s) then Values.STRING(s);
     case DAE.BCONST(bool = b) then Values.BOOL(b);
-  end matchcontinue;
+  end match;
 end expValue;
 
 public function valueExp "Transforms a Value into an Exp"
@@ -1039,7 +1039,7 @@ public function valueReal "function: valueReal
   output Real outReal;
 algorithm
   outReal:=
-  matchcontinue (inValue)
+  match (inValue)
     local
       Real r;
       Integer i;
@@ -1049,19 +1049,19 @@ algorithm
         r = intReal(i);
       then
         r;
-  end matchcontinue;
+  end match;
 end valueReal;
 
 public function valueIntegerMinusOne "To be able to use listNth"
   input Value inValue;
   output Integer outInt;
 algorithm
-  outInt := matchcontinue (inValue)
+  outInt := match (inValue)
     local
       Integer i;
     case (Values.INTEGER(integer = i)) then i-1;
     case (Values.ENUM_LITERAL(index = i)) then i-1;
-  end matchcontinue;
+  end match;
 end valueIntegerMinusOne;
 
 public function valueBool "function: valueReal
@@ -1071,9 +1071,9 @@ Author: BZ, 2008-09
   input Value inValue;
   output Boolean outBool;
 algorithm
-  outBool:= matchcontinue (inValue)
+  outBool:= match (inValue)
     case (Values.BOOL(outBool)) then outBool;
-  end matchcontinue;
+  end match;
 end valueBool;
 
 public function valueReals "function: valueReals
@@ -1120,7 +1120,7 @@ public function valueNeg "function: valueNeg
   output Value outValue;
 algorithm
   outValue:=
-  matchcontinue (inValue)
+  match (inValue)
     local
       Real r_1,r;
       Integer i_1,i;
@@ -1141,7 +1141,7 @@ algorithm
         vlst_1 = Util.listMap(vlst, valueNeg);
       then
         Values.ARRAY(vlst_1,dims);
-  end matchcontinue;
+  end match;
 end valueNeg;
 
 public function sumArrayelt "function: sumArrayelt
@@ -1192,7 +1192,7 @@ public function multScalarArrayelt "function: multScalarArrayelt
   output list<Value> outValueLst;
 algorithm
   outValueLst:=
-  matchcontinue (inValue,inValueLst)
+  match (inValue,inValueLst)
     local
       list<Value> v1,v2,vals,rest;
       Value sval;
@@ -1232,7 +1232,7 @@ algorithm
       then
         (Values.REAL(r1) :: v2);
     case (_,{}) then {};
-  end matchcontinue;
+  end match;
 end multScalarArrayelt;
 
 public function addScalarArrayelt "function: addScalarArrayelt
@@ -1244,7 +1244,7 @@ public function addScalarArrayelt "function: addScalarArrayelt
   output list<Value> outValueLst;
 algorithm
   outValueLst:=
-  matchcontinue (inValue,inValueLst)
+  match (inValue,inValueLst)
     local
       list<Value> v1,v2,vals,rest;
       Value sval;
@@ -1291,7 +1291,7 @@ algorithm
       then
         (Values.STRING(s1) :: v2);
     case (_,{}) then {};
-  end matchcontinue;
+  end match;
 end addScalarArrayelt;
 
 public function divScalarArrayelt "function: divScalarArrayelt
@@ -1372,7 +1372,7 @@ public function subScalarArrayelt "function: subScalarArrayelt
   output list<Value> outValueLst;
 algorithm
   outValueLst:=
-  matchcontinue (inValue,inValueLst)
+  match (inValue,inValueLst)
     local
       list<Value> v1,v2,vals,rest;
       Value sval;
@@ -1412,7 +1412,7 @@ algorithm
       then
         (Values.REAL(r1) :: v2);
     case (_,{}) then {};
-  end matchcontinue;
+  end match;
 end subScalarArrayelt;
 
 public function powScalarArrayelt "function: powScalarArrayelt
@@ -1424,7 +1424,7 @@ public function powScalarArrayelt "function: powScalarArrayelt
   output list<Value> outValueLst;
 algorithm
   outValueLst:=
-  matchcontinue (inValue,inValueLst)
+  match (inValue,inValueLst)
     local
       list<Value> v1,v2,vals,rest;
       Value sval;
@@ -1466,7 +1466,7 @@ algorithm
       then
         (Values.REAL(r1) :: v2);
     case (_,{}) then {};
-  end matchcontinue;
+  end match;
 end powScalarArrayelt;
 
 public function subArrayeltScalar "function: subArrayeltScalar
@@ -1478,7 +1478,7 @@ public function subArrayeltScalar "function: subArrayeltScalar
   output list<Value> outValueLst;
 algorithm
   outValueLst:=
-  matchcontinue (inValue,inValueLst)
+  match (inValue,inValueLst)
     local
       list<Value> v1,v2,vals,rest;
       Value sval;
@@ -1518,7 +1518,7 @@ algorithm
       then
         (Values.REAL(r1) :: v2);
     case (_,{}) then {};
-  end matchcontinue;
+  end match;
 end subArrayeltScalar;
 
 public function powArrayeltScalar "function: powArrayeltScalar
@@ -1530,7 +1530,7 @@ public function powArrayeltScalar "function: powArrayeltScalar
   output list<Value> outValueLst;
 algorithm
   outValueLst:=
-  matchcontinue (inValue,inValueLst)
+  match (inValue,inValueLst)
     local
       list<Value> v1,v2,vals,rest;
       Value sval;
@@ -1572,7 +1572,7 @@ algorithm
       then
         (Values.REAL(r1) :: v2);
     case (_,{}) then {};
-  end matchcontinue;
+  end match;
 end powArrayeltScalar;
 
 public function multScalarProduct "function: multScalarProduct
@@ -1714,7 +1714,7 @@ public function multMatrix "function: multMatrix
   output list<Value> outValueLst;
 algorithm
   outValueLst:=
-  matchcontinue (inValueLst1,inValueLst2)
+  match (inValueLst1,inValueLst2)
     local
       Value res1;
       list<Value> res2,m1,v1lst,rest1,m2;
@@ -1725,7 +1725,7 @@ algorithm
       then
         (res1 :: res2);
     case ({},_) then {};
-  end matchcontinue;
+  end match;
 end multMatrix;
 
 public function divArrayeltScalar
@@ -1802,7 +1802,7 @@ protected function matrixStripFirstColumn "function: matrixStripFirstColumn
   output Value outValue;
   output list<Value> outValueLst;
 algorithm
-  (outValue,outValueLst) := matchcontinue (inValueLst)
+  (outValue,outValueLst) := match (inValueLst)
     local
       list<Value> resl,resl2,vrest,rest;
       Value v1;
@@ -1818,7 +1818,7 @@ algorithm
         (Values.ARRAY((v1 :: resl),{i}),(Values.ARRAY(vrest,{dim}) :: resl2));
     
     case ({}) then (Values.ARRAY({},{0}),{});
-  end matchcontinue;
+  end match;
 end matrixStripFirstColumn;
 
 public function intlistToValue "function: intlistToValue
@@ -1830,7 +1830,7 @@ public function intlistToValue "function: intlistToValue
   output Value outValue;
 algorithm
   outValue:=
-  matchcontinue (inIntegerLst)
+  match (inIntegerLst)
     local
       list<Value> res;
       Integer i,len;
@@ -1842,7 +1842,7 @@ algorithm
         len = len+1;
       then
         Values.ARRAY((Values.INTEGER(i) :: res),{len});
-  end matchcontinue;
+  end match;
 end intlistToValue;
 
 public function arrayValues "function: arrayValues
@@ -1853,10 +1853,10 @@ public function arrayValues "function: arrayValues
   output list<Value> outValueLst;
 algorithm
   outValueLst:=
-  matchcontinue (inValue)
+  match (inValue)
     local list<Value> v_lst;
     case (Values.ARRAY(valueLst = v_lst)) then v_lst;
-  end matchcontinue;
+  end match;
 end arrayValues;
 
 public function makeReal "Creates a real value "
@@ -2056,7 +2056,7 @@ protected function valRecordString
   input list<Value> xs;
   input list<String> ids;
 algorithm
-  _ := matchcontinue (xs,ids)
+  _ := match (xs,ids)
     local
       Absyn.Path cname;
       String s1,s2,res,id;
@@ -2083,7 +2083,7 @@ algorithm
         Print.printBuf("\n");
       then
         ();
-  end matchcontinue;
+  end match;
 end valRecordString;
 
 protected function valListString "function: valListString
@@ -2132,7 +2132,7 @@ public function writePtolemyplotDataset "function: writePtolemyplotDataset
   output Integer outInteger;
 algorithm
   outInteger:=
-  matchcontinue (inString1,inValue2,inStringLst3,inString4)
+  match (inString1,inValue2,inStringLst3,inString4)
     local
       String datasets,str,filename,timevar,message,oldBuf;
       Value time;
@@ -2155,7 +2155,7 @@ algorithm
         System.writeFile(filename, str);
       then
         0;
-  end matchcontinue;
+  end match;
 end writePtolemyplotDataset;
 
 public function sendPtolemyplotDataset "function: sendPtolemyplotDataset
@@ -2178,7 +2178,7 @@ public function sendPtolemyplotDataset "function: sendPtolemyplotDataset
   input String yRange;
   output Integer outInteger;
 algorithm
-  outInteger := matchcontinue (inValue2,inStringLst3,inString4, interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange)
+  outInteger := match (inValue2,inStringLst3,inString4, interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange)
     local
       String datasets,str,filename,timevar,message, interpolation2, title2, xLabel2, yLabel2, xRange2, yRange2, oldBuf;
       Boolean legend2, logX2, logY2, grid2, points2;
@@ -2202,7 +2202,7 @@ algorithm
         System.sendData(str, interpolation2, title2, legend2, grid2, logX2, logY2, xLabel2, yLabel2, points2, xRange2 +& " " +& yRange2);
       then
         0;
-  end matchcontinue;
+  end match;
 end sendPtolemyplotDataset;
 
 public function sendPtolemyplotDataset2 "function: sendPtolemyplotDataset2
@@ -2215,7 +2215,7 @@ public function sendPtolemyplotDataset2 "function: sendPtolemyplotDataset2
   input String inString4;
   output Integer outInteger;
 algorithm
-  outInteger := matchcontinue (inValue2,inStringLst3,visInfo,inString4)
+  outInteger := match (inValue2,inStringLst3,visInfo,inString4)
     local
       String datasets,str,filename,timevar,info,message,oldBuf;
       Value time;
@@ -2238,7 +2238,7 @@ algorithm
         System.sendData2(info, str);
       then
         0;
-  end matchcontinue;
+  end match;
 end sendPtolemyplotDataset2;
 
 protected function unparsePtolemyValues "function: unparsePtolemyValues
@@ -2247,7 +2247,7 @@ protected function unparsePtolemyValues "function: unparsePtolemyValues
   input list<Value> inValueLst;
   input list<String> inStringLst;
 algorithm
-  _ := matchcontinue (inValue,inValueLst,inStringLst)
+  _ := match (inValue,inValueLst,inStringLst)
     local
       String str,str2,res,v1;
       Value time,s1;
@@ -2261,7 +2261,7 @@ algorithm
         unparsePtolemyValues(time, xs, vs);
       then
         ();
-  end matchcontinue;
+  end match;
 end unparsePtolemyValues;
 
 protected function unparsePtolemySet "function: unparsePtolemySet
@@ -2380,14 +2380,14 @@ public function valueInteger
   input Values.Value inValue;
   output Integer outInteger;
 algorithm
-  outInteger := matchcontinue(inValue)
+  outInteger := match(inValue)
     local
       Integer i;
     case Values.INTEGER(integer = i) then i;
     case Values.ENUM_LITERAL(index = i) then i;
     case Values.BOOL(boolean = true) then 1;
     case Values.BOOL(boolean = false) then 0;
-  end matchcontinue;
+  end match;
 end valueInteger;
 
 public function valueDimensions

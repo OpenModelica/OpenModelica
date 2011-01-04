@@ -696,7 +696,7 @@ which the current variable the compiler is working with."
   input String component;
   input Option<Absyn.Info> info;
 algorithm _ :=
-  matchcontinue (component, info)
+  match (component, info)
       local String filename; Integer i1,i2,i3,i4; Boolean b1;
   case(component,SOME(Absyn.INFO(filename,b1,i1,i2,i3,i4,_)))
     equation
@@ -707,7 +707,7 @@ algorithm _ :=
         equation
       ErrorExt.updateCurrentComponent(component,false,"",-1,-1,-1,-1);
       then ();
-end matchcontinue;
+end match;
 
 end updateCurrentComponent;
 
@@ -795,7 +795,7 @@ public function addMessageOrSourceMessage
   input MessageTokens inMessageTokens;
   input Option<Absyn.Info> inInfoOpt;
 algorithm
-  _ := matchcontinue (inErrorID,inMessageTokens,inInfoOpt)
+  _ := match (inErrorID,inMessageTokens,inInfoOpt)
     local
       Absyn.Info info;
     
@@ -810,7 +810,7 @@ algorithm
       equation
         addSourceMessage(inErrorID, inMessageTokens, info);
       then ();
-  end matchcontinue;
+  end match;
 end addMessageOrSourceMessage;
 
 public function printMessagesStr "Relations for pretty printing.
@@ -970,14 +970,14 @@ protected function messageTypeStr "function: messageTypeStr
   output String outString;
 algorithm
   outString:=
-  matchcontinue (inMessageType)
+  match (inMessageType)
     case (SYNTAX()) then "SYNTAX";
     case (GRAMMAR()) then "GRAMMAR";
     case (TRANSLATION()) then "TRANSLATION";
     case (SYMBOLIC()) then "SYMBOLIC";
     case (SIMULATION()) then "SIMULATION";
     case (SCRIPTING()) then "SCRIPTING";
-  end matchcontinue;
+  end match;
 end messageTypeStr;
 
 protected function severityStr "function: severityStr
@@ -988,11 +988,11 @@ protected function severityStr "function: severityStr
   output String outString;
 algorithm
   outString:=
-  matchcontinue (inSeverity)
+  match (inSeverity)
     case (ERROR()) then "Error";
     case (WARNING()) then "Warning";
     case (NOTIFICATION()) then "Notification";
-  end matchcontinue;
+  end match;
 end severityStr;
 
 protected function selectString "function selectString
@@ -1018,7 +1018,7 @@ public function infoStr
   input Absyn.Info info;
   output String str;
 algorithm
-  str := matchcontinue(info)
+  str := match(info)
     local 
       String filename, info_str;
       Integer line_start, line_end, col_start, col_end;
@@ -1029,7 +1029,7 @@ algorithm
                      intString(line_start) +& ":" +& intString(col_start) +& "-" +& 
                      intString(line_end) +& ":" +& intString(col_end) +& "]";
       then info_str;
-  end matchcontinue;
+  end match;
 end infoStr;
 
 protected function fixFilenameForTestsuite

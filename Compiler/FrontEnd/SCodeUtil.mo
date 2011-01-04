@@ -73,7 +73,7 @@ public function translateAbsyn2SCode
   input Absyn.Program inProgram;
   output SCode.Program outProgram;
 algorithm
-  outProgram := matchcontinue(inProgram)
+  outProgram := match(inProgram)
     local
       SCode.Program sp;
       InstanceHierarchy.InstanceHierarchy ih;
@@ -112,7 +112,7 @@ algorithm
         (ih, sp) = ExpandableConnectors.elaborateExpandableConnectors(sp, hasExpandableConnectors);
       then
         sp;
-  end matchcontinue;
+  end match;
 end translateAbsyn2SCode;
 
 public function translate2
@@ -402,7 +402,7 @@ protected function translateEnumlist
   input list<Absyn.EnumLiteral> inAbsynEnumLiteralLst;
   output list<SCode.Enum> outEnumLst;
 algorithm
-  outEnumLst := matchcontinue (inAbsynEnumLiteralLst)
+  outEnumLst := match (inAbsynEnumLiteralLst)
     local
       list<SCode.Enum> res;
       String id;
@@ -417,7 +417,7 @@ algorithm
         res = translateEnumlist(rest);
       then
         (SCode.ENUM(id, scodeCmtOpt) :: res);
-  end matchcontinue;
+  end match;
 end translateEnumlist;
 
 protected function translateClassdefElements
@@ -641,7 +641,7 @@ public function translateClassdefAlgorithmitems
   input list<Absyn.AlgorithmItem> inAbsynAlgorithmItemLst;
   output list<SCode.Statement> outAbsynAlgorithmLst;
 algorithm
-  outAbsynAlgorithmLst := matchcontinue (inAbsynAlgorithmItemLst)
+  outAbsynAlgorithmLst := match (inAbsynAlgorithmItemLst)
     local
       list<Absyn.AlgorithmItem> rest;
       list<SCode.Statement> res;
@@ -663,7 +663,7 @@ algorithm
         res = translateClassdefAlgorithmitems(rest);
       then
         res;
-  end matchcontinue;
+  end match;
 end translateClassdefAlgorithmitems;
 
 protected function translateClassdefAlgorithmItem
@@ -673,7 +673,7 @@ protected function translateClassdefAlgorithmItem
   input Absyn.Info info;
   output SCode.Statement stmt;
 algorithm
-  stmt := matchcontinue (alg,comment,info)
+  stmt := match (alg,comment,info)
     local
       Absyn.ForIterators iterators;
       Absyn.ComponentRef functionCall;
@@ -749,7 +749,7 @@ algorithm
         debug_print("- translateClassdefAlgorithmItem: ", alg);
       then fail();
     */
-  end matchcontinue;
+  end match;
 end translateClassdefAlgorithmItem;
 
 protected function translateBranches
@@ -757,7 +757,7 @@ protected function translateBranches
   input list<tuple<Absyn.Exp,list<Absyn.AlgorithmItem>>> branches;
   output list<tuple<Absyn.Exp,list<SCode.Statement>>> sbranches;
 algorithm
-  sbranches := matchcontinue branches
+  sbranches := match branches
     local
       Absyn.Exp e;
       list<SCode.Statement> stmts;
@@ -768,7 +768,7 @@ algorithm
         stmts = translateClassdefAlgorithmitems(al);
         sbranches = translateBranches(branches); 
       then (e,stmts)::sbranches;
-  end matchcontinue;
+  end match;
 end translateBranches;
 
 protected function translateClassdefExternaldecls
@@ -1137,7 +1137,7 @@ protected function setHasStreamConnectorsHandler
  that a model has stream connectors"
   input Boolean streamPrefix;
 algorithm
-  _ := matchcontinue (streamPrefix)
+  _ := match (streamPrefix)
     // no stream prefix
     case (false) then ();
     // has stream prefix
@@ -1145,7 +1145,7 @@ algorithm
       equation
          System.setHasStreamConnectors(true);
       then ();
-  end matchcontinue;
+  end match;
 end setHasStreamConnectorsHandler;
 
 protected function translateRedeclarekeywords
@@ -1168,12 +1168,12 @@ protected function translateVariability
   input Absyn.Variability inVariability;
   output SCode.Variability outVariability;
 algorithm
-  outVariability := matchcontinue (inVariability)
+  outVariability := match (inVariability)
     case (Absyn.VAR())      then SCode.VAR();
     case (Absyn.DISCRETE()) then SCode.DISCRETE();
     case (Absyn.PARAM())    then SCode.PARAM();
     case (Absyn.CONST())    then SCode.CONST();
-  end matchcontinue;
+  end match;
 end translateVariability;
 
 protected function translateEquations
@@ -1184,7 +1184,7 @@ protected function translateEquations
   input list<Absyn.EquationItem> inAbsynEquationItemLst;
   output list<SCode.Equation> outEquationLst;
 algorithm
-  outEquationLst := matchcontinue (inAbsynEquationItemLst)
+  outEquationLst := match (inAbsynEquationItemLst)
     local
       SCode.EEquation e_1;
       list<SCode.Equation> es_1;
@@ -1210,7 +1210,7 @@ algorithm
         es_1 = translateEquations(es);
       then
         es_1;
-  end matchcontinue;
+  end match;
 end translateEquations;
 
 
@@ -1220,7 +1220,7 @@ protected function translateEEquations
   input list<Absyn.EquationItem> inAbsynEquationItemLst;
   output list<SCode.EEquation> outEEquationLst;
 algorithm
-  outEEquationLst := matchcontinue (inAbsynEquationItemLst)
+  outEEquationLst := match (inAbsynEquationItemLst)
     local
       SCode.EEquation e_1;
       list<SCode.EEquation> es_1;
@@ -1246,7 +1246,7 @@ algorithm
         es_1 = translateEEquations(es);
       then
         es_1;
-  end matchcontinue;
+  end match;
 end translateEEquations;
 
 // stefan
@@ -1577,7 +1577,7 @@ public function translateSCodeModToNArgs
   input SCode.Mod mod "given modifications";
   output list<Absyn.NamedArg> namedArgs "the resulting named arguments";
 algorithm
-  namedArgs := matchcontinue(prefix, mod)
+  namedArgs := match(prefix, mod)
     local
       list<Absyn.NamedArg> nArgs;
       list<SCode.SubMod> subModLst;
@@ -1587,7 +1587,7 @@ algorithm
         nArgs = translateSubModToNArgs(prefix, subModLst);
       then
         nArgs;
-  end matchcontinue;
+  end match;
 end translateSCodeModToNArgs;
 
 public function translateSubModToNArgs
@@ -1598,7 +1598,7 @@ public function translateSubModToNArgs
   input list<SCode.SubMod> subMods "given sub modifications";
   output list<Absyn.NamedArg> namedArgs "the resulting named arguments";
 algorithm
-  namedArgs := matchcontinue(prefix, subMods)
+  namedArgs := match(prefix, subMods)
     local
       list<Absyn.NamedArg> nArgs;
       list<SCode.SubMod> subModLst;
@@ -1614,7 +1614,7 @@ algorithm
         exp = prefixUnqualifiedCrefsFromExp(exp, prefix);
       then
         Absyn.NAMEDARG(ident,exp)::nArgs;
-  end matchcontinue;
+  end match;
 end translateSubModToNArgs;
 
 public function prefixTuple
@@ -1622,7 +1622,7 @@ public function prefixTuple
   input String prefix;
   output tuple<Absyn.Exp, Absyn.Exp> prefixedExpTuple;
 algorithm
-  prefixedExpTuple := matchcontinue(expTuple, prefix)
+  prefixedExpTuple := match(expTuple, prefix)
     local
       Absyn.Exp e1,e2;
 
@@ -1632,7 +1632,7 @@ algorithm
         e2 = prefixUnqualifiedCrefsFromExp(e2, prefix);
       then
         ((e1, e2));
-  end matchcontinue;
+  end match;
 end prefixTuple;
 
 public function prefixUnqualifiedCrefsFromExpOpt
@@ -1640,7 +1640,7 @@ public function prefixUnqualifiedCrefsFromExpOpt
   input String prefix;
   output Option<Absyn.Exp> outExpOpt;
 algorithm
-  outExpOpt := matchcontinue(inExpOpt, prefix)
+  outExpOpt := match(inExpOpt, prefix)
     local
       Absyn.Exp exp;
 
@@ -1650,7 +1650,7 @@ algorithm
         exp = prefixUnqualifiedCrefsFromExp(exp, prefix);
       then
         SOME(exp);
-  end matchcontinue;
+  end match;
 end prefixUnqualifiedCrefsFromExpOpt;
 
 public function prefixUnqualifiedCrefsFromExpLst
@@ -1658,7 +1658,7 @@ public function prefixUnqualifiedCrefsFromExpLst
   input String prefix;
   output list<Absyn.Exp> outExpLst;
 algorithm
-  outExpLst := matchcontinue(inExpLst, prefix)
+  outExpLst := match(inExpLst, prefix)
     local
       Absyn.Exp exp;
       list<Absyn.Exp> rest;
@@ -1670,7 +1670,7 @@ algorithm
         rest = prefixUnqualifiedCrefsFromExpLst(rest, prefix);
       then
         exp::rest;
-  end matchcontinue;
+  end match;
 end prefixUnqualifiedCrefsFromExpLst;
 
 public function prefixFunctionArgs
@@ -1678,7 +1678,7 @@ public function prefixFunctionArgs
   input String prefix;
   output Absyn.FunctionArgs outFunctionArgs;
 algorithm
-  outFunctionArgs := matchcontinue(inFunctionArgs, prefix)
+  outFunctionArgs := match(inFunctionArgs, prefix)
     local
       Absyn.Exp exp;
       list<Absyn.Exp> args "args" ;
@@ -1689,7 +1689,7 @@ algorithm
         args = prefixUnqualifiedCrefsFromExpLst(args, prefix);
       then
         Absyn.FUNCTIONARGS(args, argNames);
-  end matchcontinue;
+  end match;
 end prefixFunctionArgs;
 
 public function prefixUnqualifiedCrefsFromExp

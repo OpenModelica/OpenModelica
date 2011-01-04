@@ -57,10 +57,10 @@ public function getWhenEquationExpr
   output DAE.ComponentRef outComponentRef;
   output DAE.Exp outExp;
 algorithm
-  (outComponentRef,outExp) := matchcontinue (inWhenEquation)
+  (outComponentRef,outExp) := match (inWhenEquation)
     local DAE.ComponentRef cr; DAE.Exp e;
     case (BackendDAE.WHEN_EQ(left = cr,right = e)) then (cr,e);
-  end matchcontinue;
+  end match;
 end getWhenEquationExpr;
 
 public function getWhenCondition
@@ -179,7 +179,7 @@ protected function extractCrefsFromExp "function: extractCrefsFromExp
  input tuple<DAE.Exp, list<DAE.ComponentRef>> inTpl;
  output tuple<DAE.Exp, list<DAE.ComponentRef>> outTpl;  
 algorithm 
-  outTpl := matchcontinue(inTpl)
+  outTpl := match(inTpl)
     local 
       list<DAE.ComponentRef> crefs,crefs1; 
       DAE.Exp e,e1; 
@@ -188,7 +188,7 @@ algorithm
         ((e1,crefs1)) = Expression.traverseExp(e, Expression.traversingComponentRefFinder, crefs);
       then
         ((e1,crefs1));
-  end matchcontinue;
+  end match;
 end extractCrefsFromExp;
 
 public function traverseBackendDAEExpsEqnList"function: traverseBackendDAEExpsEqnList
@@ -205,7 +205,7 @@ public function traverseBackendDAEExpsEqnList"function: traverseBackendDAEExpsEq
     output tuple<DAE.Exp, Type_a> outTpl;
   end FuncExpType;
 algorithm
-  (outEquations,outTypeA) := matchcontinue(inEquations,func,inTypeA)
+  (outEquations,outTypeA) := match(inEquations,func,inTypeA)
   local 
        BackendDAE.Equation e,e1;
        list<BackendDAE.Equation> res,eqns;
@@ -217,7 +217,7 @@ algorithm
       (eqns,ext_arg_2)  = traverseBackendDAEExpsEqnList(res,func,ext_arg_1);
     then 
       (e1::eqns,ext_arg_2);
-    end matchcontinue;
+    end match;
 end traverseBackendDAEExpsEqnList;
 
 public function traverseBackendDAEExpsEqn "function: traverseBackendDAEExpsEqn
@@ -446,7 +446,7 @@ public function traverseBackendDAEExpList
     output tuple<DAE.Exp, Type_a> outTpl;
   end FuncExpType;  
 algorithm
-  (outExpl,outTypeA) := matchcontinue(inExpl,rel,ext_arg)
+  (outExpl,outTypeA) := match(inExpl,rel,ext_arg)
   local 
       DAE.Exp e,e1; 
       list<DAE.Exp> expl1,res;
@@ -456,7 +456,7 @@ algorithm
       ((e1,ext_arg_2)) = rel((e, ext_arg_1));
       (expl1,ext_arg_3) = traverseBackendDAEExpList(res,rel,ext_arg_2);
     then (e1::expl1,ext_arg_3); 
-  end matchcontinue;
+  end match;
 end traverseBackendDAEExpList;
 
 public function traverseBackendDAEEqns "function: traverseBackendDAEEqns
@@ -750,7 +750,7 @@ public function equationSetnth "function: equationSetnth
   input BackendDAE.Equation inEquation;
   output BackendDAE.EquationArray outEquationArray;
 algorithm
-  outEquationArray := matchcontinue (inEquationArray,inInteger,inEquation)
+  outEquationArray := match (inEquationArray,inInteger,inEquation)
     local
       array<Option<BackendDAE.Equation>> arr_1,arr;
       BackendDAE.Value n,size,pos;
@@ -760,7 +760,7 @@ algorithm
         arr_1 = arrayUpdate(arr, pos + 1, SOME(eqn));
       then
         BackendDAE.EQUATION_ARRAY(n,size,arr_1);
-  end matchcontinue;
+  end match;
 end equationSetnth;
 
 public function equationDelete "function: equationDelete
@@ -886,7 +886,7 @@ protected function equationSource "Retrieve the source from a BackendDAE.Backend
   input BackendDAE.Equation eq;
   output DAE.ElementSource source;
 algorithm
-  source := matchcontinue eq
+  source := match eq
     case BackendDAE.EQUATION(source=source) then source;
     case BackendDAE.ARRAY_EQUATION(source=source) then source;
     case BackendDAE.SOLVED_EQUATION(source=source) then source;
@@ -894,7 +894,7 @@ algorithm
     case BackendDAE.WHEN_EQUATION(source=source) then source;
     case BackendDAE.ALGORITHM(source=source) then source;
     case BackendDAE.COMPLEX_EQUATION(source=source) then source;
-  end matchcontinue;
+  end match;
 end equationSource;
 
 public function generateEQUATION "
@@ -902,12 +902,12 @@ Author: Frenkel TUD 2010-05"
   input tuple<DAE.Exp,DAE.Exp> inTpl;
   input DAE.ElementSource Source;
   output BackendDAE.Equation outEqn;
-algorithm outEqn := matchcontinue(inTpl,Source)
+algorithm outEqn := match(inTpl,Source)
   local
     DAE.Exp e1,e2;
     DAE.ElementSource source;
   case ((e1,e2),source) then BackendDAE.EQUATION(e1,e2,source);
- end matchcontinue;
+ end match;
 end generateEQUATION;
 
 end BackendEquation;

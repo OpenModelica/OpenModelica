@@ -626,7 +626,7 @@ public function retrieveOuterConnections
   output Connect.Sets outCsets;
   output list<Connect.OuterConnect> innerOuterConnects;
 algorithm
-  (outCsets,innerOuterConnects) := matchcontinue(cache,env,inIH,pre,csets,topCall)
+  (outCsets,innerOuterConnects) := match(cache,env,inIH,pre,csets,topCall)
     local
       list<Connect.Set> setLst;
       list<DAE.ComponentRef> crs;
@@ -642,7 +642,7 @@ algorithm
       then
         (Connect.SETS(setLst,crs,delcomps,outerConnects,sf),innerOuterConnects);
     
-  end matchcontinue;
+  end match;
 end retrieveOuterConnections;
 
 protected function removeInnerPrefixFromCref
@@ -940,12 +940,12 @@ protected function removeOuter
   input Absyn.InnerOuter io;
   output Absyn.InnerOuter outIo;
 algorithm
-  outIo := matchcontinue(io)
+  outIo := match(io)
     case(Absyn.OUTER()) then Absyn.UNSPECIFIED();
     case(Absyn.INNER()) then Absyn.INNER();
     case(Absyn.INNEROUTER()) then Absyn.INNER();
     case(Absyn.UNSPECIFIED()) then Absyn.UNSPECIFIED();
-  end matchcontinue;
+  end match;
 end removeOuter;
 
 protected function lookupVarInnerOuterAttr
@@ -1093,12 +1093,12 @@ public function innerOuterBooleans
   output Boolean inner1;
   output Boolean outer1;
 algorithm
-  (inner1,outer1) := matchcontinue(io)
+  (inner1,outer1) := match(io)
     case(Absyn.INNER()) then (true,false);
     case(Absyn.OUTER()) then (false,true);
     case(Absyn.INNEROUTER()) then (true,true);
     case(Absyn.UNSPECIFIED()) then (false,false);
-  end matchcontinue;
+  end match;
 end innerOuterBooleans;
 
 public function referOuter "
@@ -1446,7 +1446,7 @@ function switchInnerToOuterInEnv
   input DAE.ComponentRef inCr;
   output Env.Env outEnv;
 algorithm
-  outEnv := matchcontinue(inEnv,inCr)
+  outEnv := match(inEnv,inCr)
     local
       Env.Env envIn, envOut, envRest;
       DAE.ComponentRef cr;
@@ -1459,7 +1459,7 @@ algorithm
         f = switchInnerToOuterInFrame(f, cr);
       then
         f::envRest;
-  end matchcontinue;
+  end match;
 end switchInnerToOuterInEnv;
 
 protected function switchInnerToOuterInFrame "
@@ -1504,7 +1504,7 @@ function switchInnerToOuterInAvlTree
   input DAE.ComponentRef inCr;
   output Option<AvlTree> outTreeOpt;
 algorithm
-  outTreeOpt := matchcontinue(inTreeOpt,inCr)
+  outTreeOpt := match(inTreeOpt,inCr)
     local
       DAE.ComponentRef cr;
       Env.AvlKey rkey;
@@ -1529,7 +1529,7 @@ algorithm
         r = switchInnerToOuterInAvlTree(r, cr);
       then
         SOME(Env.AVLTREENODE(NONE(),h,l,r));
-  end matchcontinue;
+  end match;
 end switchInnerToOuterInAvlTree;
 
 protected function switchInnerToOuterInAvlTreeValue "
@@ -1889,7 +1889,7 @@ public function printInnerDefStr
   input InstInner inInstInner;
   output String outStr;
 algorithm
-  outStr := matchcontinue(inInstInner)
+  outStr := match(inInstInner)
     local 
       Prefix.Prefix innerPrefix;
       SCode.Ident name;
@@ -1911,7 +1911,7 @@ algorithm
         str = Absyn.pathString(typePath) +& " " +& fullName +& "; defined in scope: " +& scope +& "." +& strOuters;   
       then 
         str;
-  end matchcontinue;
+  end match;
 end printInnerDefStr;
 
 public function getExistingInnerDeclarations
@@ -1921,7 +1921,7 @@ public function getExistingInnerDeclarations
   input Env.Env inEnv;
   output String innerDeclarations;
 algorithm
-  innerDeclarations := matchcontinue(inIH, inEnv)
+  innerDeclarations := match(inIH, inEnv)
     local
       TopInstance tih;
       InstHierarchy restIH, ih;
@@ -1943,7 +1943,7 @@ algorithm
         str = Util.stringDelimitList(Util.listMap(inners, printInnerDefStr), "\n    ");
       then
         str;
-  end matchcontinue;
+  end match;
 end getExistingInnerDeclarations;
 
 public function getInnersFromInstHierarchyHashTable 
@@ -1959,9 +1959,9 @@ public function getValue
   input tuple<Key,Value> tpl;
   output InstInner v;
 algorithm
-  v := matchcontinue(tpl)
+  v := match(tpl)
     case((_,v)) then v;
-  end matchcontinue;
+  end match;
 end getValue;
 
 /////////////////////////////////////////////////////////////////
@@ -2219,7 +2219,7 @@ public function get1 "help function to get"
   output Value value;
   output Integer indx;
 algorithm
-  (value, indx) := matchcontinue (key,hashTable)
+  (value, indx) := match (key,hashTable)
     local
       Integer hval,hashindx,indx_1,bsize,n;
       list<tuple<Key,Integer>> indexes;
@@ -2238,7 +2238,7 @@ algorithm
         true = keyEqual(k, key);
       then
         (v,indx);
-  end matchcontinue;
+  end match;
 end get1;
 
 public function get2
@@ -2284,12 +2284,12 @@ public function hashTableList "returns the entries in the hashTable as a list of
   input InstHierarchyHashTable hashTable;
   output list<tuple<Key,Value>> tplLst;
 algorithm
-  tplLst := matchcontinue(hashTable)
+  tplLst := match(hashTable)
   local ValueArray varr;
     case(HASHTABLE(valueArr = varr)) equation
       tplLst = valueArrayList(varr);
     then tplLst;
-  end matchcontinue;
+  end match;
 end hashTableList;
 
 public function valueArrayList
@@ -2360,9 +2360,9 @@ public function valueArrayLength
   input ValueArray valueArray;
   output Integer size;
 algorithm
-  size := matchcontinue (valueArray)
+  size := match (valueArray)
     case (VALUE_ARRAY(numberOfElements = size)) then size;
-  end matchcontinue;
+  end match;
 end valueArrayLength;
 
 public function valueArrayAdd

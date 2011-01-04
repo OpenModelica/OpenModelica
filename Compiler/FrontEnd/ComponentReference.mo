@@ -206,7 +206,7 @@ public function crefToPath
   input DAE.ComponentRef inComponentRef;
   output Absyn.Path outPath;
 algorithm
-  outPath := matchcontinue (inComponentRef)
+  outPath := match (inComponentRef)
     local
       DAE.Ident i;
       Absyn.Path p;
@@ -219,7 +219,7 @@ algorithm
         p = crefToPath(c);
       then
         Absyn.QUALIFIED(i,p);
-  end matchcontinue;
+  end match;
 end crefToPath;
 
 public function pathToCref
@@ -228,7 +228,7 @@ public function pathToCref
   input Absyn.Path inPath;
   output DAE.ComponentRef outComponentRef;
 algorithm
-  outComponentRef := matchcontinue (inPath)
+  outComponentRef := match (inPath)
     local
       DAE.Ident i;
       DAE.ComponentRef c;
@@ -243,7 +243,7 @@ algorithm
         c = pathToCref(p);        
       then
         makeCrefQual(i,DAE.ET_OTHER(),{},c);
-  end matchcontinue;
+  end match;
 end pathToCref;
 
 public function creffromVar
@@ -253,14 +253,14 @@ public function creffromVar
   input DAE.ExpVar inVar;
   output DAE.ComponentRef outComponentRef;
 algorithm
-  outComponentRef := matchcontinue (inVar)
+  outComponentRef := match (inVar)
     local
       String name;
       DAE.ExpType tp;
     case DAE.COMPLEX_VAR(name=name,tp=tp)
       then
         makeCrefIdent(name,tp,{});
-  end matchcontinue;
+  end match;
 end creffromVar;
 
 public function unelabCref
@@ -269,7 +269,7 @@ public function unelabCref
   input DAE.ComponentRef inComponentRef;
   output Absyn.ComponentRef outComponentRef;
 algorithm
-  outComponentRef := matchcontinue (inComponentRef)
+  outComponentRef := match (inComponentRef)
     local
       list<Absyn.Subscript> subs_1;
       DAE.Ident id;
@@ -291,7 +291,7 @@ algorithm
         subs_1 = unelabSubscripts(subs);
       then
         Absyn.CREF_QUAL(id,subs_1,cr_1);
-  end matchcontinue;
+  end match;
 end unelabCref;
 
 protected function unelabSubscripts
@@ -300,7 +300,7 @@ protected function unelabSubscripts
   input list<DAE.Subscript> inSubscriptLst;
   output list<Absyn.Subscript> outAbsynSubscriptLst;
 algorithm
-  outAbsynSubscriptLst := matchcontinue (inSubscriptLst)
+  outAbsynSubscriptLst := match (inSubscriptLst)
     local
       list<Absyn.Subscript> xs_1;
       list<DAE.Subscript> xs;
@@ -329,7 +329,7 @@ algorithm
         e_1 = Expression.unelabExp(e);
       then
         (Absyn.SUBSCRIPT(e_1) :: xs_1);
-  end matchcontinue;
+  end match;
 end unelabSubscripts;
 
 public function toExpCref
@@ -339,7 +339,7 @@ public function toExpCref
   input Absyn.ComponentRef inComponentRef;
   output DAE.ComponentRef outComponentRef;
 algorithm
-  outComponentRef := matchcontinue (inComponentRef)
+  outComponentRef := match (inComponentRef)
     local
       list<DAE.Subscript> subs_1;
       DAE.Ident id;
@@ -368,7 +368,7 @@ algorithm
         cr_1 = toExpCref(cr);
       then
         cr_1; // There is no fullyqualified cref, translate to qualified cref
-  end matchcontinue;
+  end match;
 end toExpCref;
 
 protected function toExpCrefSubs
@@ -434,7 +434,7 @@ public function crefToStr
   output String outString;
 algorithm
   outString:=
-  matchcontinue (inPreString,inComponentRef,inNameSeparator)
+  match (inPreString,inComponentRef,inNameSeparator)
     local
       DAE.Ident s,ns,s1,ss;
       DAE.ComponentRef n;
@@ -448,7 +448,7 @@ algorithm
         ss = crefToStr(ns,n,inNameSeparator);
       then
         ss;
-  end matchcontinue;
+  end match;
 end crefToStr;
 
 public function crefStr
@@ -1208,13 +1208,13 @@ public function crefLastPath
   input DAE.ComponentRef inComponentRef;
   output Absyn.Path outPath;
 algorithm
-  outPath := matchcontinue(inComponentRef)
+  outPath := match(inComponentRef)
     local
       DAE.Ident i;
       DAE.ComponentRef c;
     case DAE.CREF_IDENT(ident = i, subscriptLst = {}) then Absyn.IDENT(i);
     case DAE.CREF_QUAL(componentRef = c, subscriptLst = {}) then crefLastPath(c);
-  end matchcontinue;
+  end match;
 end crefLastPath;
 
 public function crefLastIdent
@@ -1224,7 +1224,7 @@ public function crefLastIdent
   input DAE.ComponentRef inComponentRef;
   output DAE.Ident outIdent;
 algorithm
-  outIdent := matchcontinue (inComponentRef)
+  outIdent := match (inComponentRef)
     local
       DAE.Ident id,res;
       DAE.ComponentRef cr;
@@ -1236,7 +1236,7 @@ algorithm
         res = crefLastIdent(cr);
       then
         res;
-  end matchcontinue;
+  end match;
 end crefLastIdent;
 
 public function crefLastCref "
@@ -1244,7 +1244,7 @@ public function crefLastCref "
   input DAE.ComponentRef inComponentRef;
   output DAE.ComponentRef outComponentRef;
 algorithm 
-  outComponentRef := matchcontinue (inComponentRef)
+  outComponentRef := match (inComponentRef)
     local
       DAE.Ident id;
       DAE.ComponentRef res,cr;
@@ -1256,7 +1256,7 @@ algorithm
         res = crefLastCref(cr);
       then
         res;
-  end matchcontinue;
+  end match;
 end crefLastCref;
 
 public function crefType "function: crefType 
@@ -1290,14 +1290,14 @@ For instance, for the cref 'a.b' it returns the type in identifier 'b'"
   input DAE.ComponentRef inRef;
   output DAE.ExpType res;
 algorithm
-  res := matchcontinue (inRef)
+  res := match (inRef)
     local
       DAE.ExpType t2; 
       DAE.ComponentRef cr;
     
     case(inRef as DAE.CREF_IDENT(_,t2,_)) then t2;
     case(inRef as DAE.CREF_QUAL(_,_,_,cr)) then crefLastType(cr);
-  end matchcontinue;
+  end match;
 end crefLastType;
 
 public function crefSubs "
@@ -1306,7 +1306,7 @@ function: crefSubs
   input DAE.ComponentRef inComponentRef;
   output list<DAE.Subscript> outSubscriptLst;
 algorithm
-  outSubscriptLst := matchcontinue (inComponentRef)
+  outSubscriptLst := match (inComponentRef)
     local
       DAE.Ident id;
       list<DAE.Subscript> subs,res;
@@ -1320,7 +1320,7 @@ algorithm
         res = listAppend(subs,res);
       then
         res;
-  end matchcontinue;
+  end match;
 end crefSubs;
 
 public function crefLastSubs "
@@ -1330,7 +1330,7 @@ function: crefLastSubs
   output list<DAE.Subscript> outSubscriptLst;
 algorithm
   outSubscriptLst:=
-  matchcontinue (inComponentRef)
+  match (inComponentRef)
     local
       DAE.Ident id;
       list<DAE.Subscript> subs,res;
@@ -1341,7 +1341,7 @@ algorithm
         res = crefLastSubs(cr);
       then
         res;
-  end matchcontinue;
+  end match;
 end crefLastSubs;
 
 public function crefFirstCref
@@ -1349,7 +1349,7 @@ public function crefFirstCref
   input DAE.ComponentRef inCr;
   output DAE.ComponentRef outCr;
 algorithm
-  outCr := matchcontinue(inCr)
+  outCr := match(inCr)
     local 
       DAE.Ident id;
       list<DAE.Subscript> subs;
@@ -1358,7 +1358,7 @@ algorithm
     
     case( DAE.CREF_QUAL(id,t2,subs,cr)) then makeCrefIdent(id,t2,{});
     case( DAE.CREF_IDENT(id,t2,subs)) then makeCrefIdent(id,t2,{});
-  end matchcontinue;
+  end match;
 end crefFirstCref;
 
 public function crefTypeConsiderSubs "Function: crefTypeConsiderSubs 
@@ -1428,7 +1428,7 @@ alternative names: crefAddSuffix, crefAddIdent
   input DAE.ExpType tp;
   output DAE.ComponentRef newCr;
 algorithm
-  newCr := matchcontinue(cr,ident,subs,tp)
+  newCr := match(cr,ident,subs,tp)
     local 
       DAE.ExpType tp1; String id1; list<DAE.Subscript> subs1;
     
@@ -1441,7 +1441,7 @@ algorithm
         cr = crefPrependIdent(cr,ident,subs,tp);
       then 
         makeCrefQual(id1,tp1,subs1,cr);
-  end matchcontinue;
+  end match;
 end crefPrependIdent;
 
 public function crefPrefixDer
@@ -1461,7 +1461,7 @@ public function prependStringCref
   input DAE.ComponentRef inComponentRef;
   output DAE.ComponentRef outComponentRef;
 algorithm
-  outComponentRef := matchcontinue (inString,inComponentRef)
+  outComponentRef := match (inString,inComponentRef)
     local
       DAE.Ident i_1,p,i;
       list<DAE.Subscript> s;
@@ -1479,7 +1479,7 @@ algorithm
         i_1 = stringAppend(p, i);
       then
         makeCrefIdent(i_1,t2,s);
-  end matchcontinue;
+  end match;
 end prependStringCref;
 
 public function joinCrefs
@@ -1493,7 +1493,7 @@ public function joinCrefs
   input DAE.ComponentRef inComponentRef2 " last part of the new componentref";
   output DAE.ComponentRef outComponentRef;
 algorithm
-  outComponentRef := matchcontinue (inComponentRef1,inComponentRef2)
+  outComponentRef := match (inComponentRef1,inComponentRef2)
     local
       DAE.Ident id;
       list<DAE.Subscript> sub;
@@ -1509,7 +1509,7 @@ algorithm
         cr_1 = joinCrefs(cr, cr2);
       then
         makeCrefQual(id,t2,sub,cr_1);
-  end matchcontinue;
+  end match;
 end joinCrefs;
 
 public function subscriptCref
@@ -1521,7 +1521,7 @@ public function subscriptCref
   input list<DAE.Subscript> inSubscriptLst;
   output DAE.ComponentRef outComponentRef;
 algorithm
-  outComponentRef := matchcontinue (inComponentRef,inSubscriptLst)
+  outComponentRef := match (inComponentRef,inSubscriptLst)
     local
       list<DAE.Subscript> newsub_1,sub,newsub;
       DAE.Ident id;
@@ -1539,7 +1539,7 @@ algorithm
         cref_1 = subscriptCref(cref, newsub);
       then
         makeCrefQual(id, t2, sub,cref_1);
-  end matchcontinue;
+  end match;
 end subscriptCref;
 
 public function crefSetLastSubs "
@@ -1549,7 +1549,7 @@ function: crefSetLastSubs
   input list<DAE.Subscript> insubs;
   output DAE.ComponentRef outComponentRef;
 algorithm 
-  outComponentRef := matchcontinue (inComponentRef,insubs)
+  outComponentRef := match (inComponentRef,insubs)
     local
       DAE.Ident id;
       list<DAE.Subscript> subs,s;
@@ -1564,7 +1564,7 @@ algorithm
         cr_1 = crefSetLastSubs(cr,insubs);
       then
         makeCrefQual(id,t2,s,cr_1);
-  end matchcontinue;
+  end match;
 end crefSetLastSubs;
 
 public function crefSetLastType "
@@ -1759,7 +1759,7 @@ Removes all subscript of a componentref"
   input DAE.ComponentRef inCref;
   output DAE.ComponentRef outCref;
 algorithm
-  outCref := matchcontinue(inCref)
+  outCref := match(inCref)
     local
       DAE.Ident id;
       DAE.ComponentRef cr;
@@ -1773,7 +1773,7 @@ algorithm
         outCref = crefStripSubs(cr);
       then
         makeCrefQual(id,ty,{},outCref);
-  end matchcontinue;
+  end match;
 end crefStripSubs;
 
 public function crefStripPrefix
@@ -1782,7 +1782,7 @@ public function crefStripPrefix
   input DAE.ComponentRef prefix;
   output DAE.ComponentRef outCref;
 algorithm
-	outCref := matchcontinue(cref,prefix)
+	outCref := match(cref,prefix)
 	  local
 	    list<DAE.Subscript> subs1,subs2;
 	    DAE.ComponentRef cr1,cr2;
@@ -1800,7 +1800,7 @@ algorithm
 	      true = stringEq(id1, id2);
 	      true = Expression.subscriptEqual(subs1,subs2);
 	    then crefStripPrefix(cr1,cr2);
-  end matchcontinue;
+  end match;
 end crefStripPrefix;
 
 public function crefStripLastIdent
@@ -1833,7 +1833,7 @@ public function crefStripLastSubs
   input DAE.ComponentRef inComponentRef;
   output DAE.ComponentRef outComponentRef;
 algorithm
-  outComponentRef := matchcontinue (inComponentRef)
+  outComponentRef := match (inComponentRef)
     local
       DAE.Ident id;
       list<DAE.Subscript> subs,s;
@@ -1849,7 +1849,7 @@ algorithm
         cr_1 = crefStripLastSubs(cr);
       then
         makeCrefQual(id,t2,s,cr_1);
-  end matchcontinue;
+  end match;
 end crefStripLastSubs;
 
 public function crefStripFirstIdent

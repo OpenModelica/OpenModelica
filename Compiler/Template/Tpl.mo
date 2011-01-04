@@ -405,7 +405,7 @@ end softNewLine;
 public function isAtStartOfLine
   input StringToken inTok;
 algorithm
-  _ := matchcontinue (inTok)
+  _ := match (inTok)
     local
       Text txt;
       Tokens toks;
@@ -443,7 +443,7 @@ algorithm
    
   // otherwise fail - not at the start           
             
-  end matchcontinue;
+  end match;
 end isAtStartOfLine;
 
 
@@ -1479,10 +1479,10 @@ public function booleanString
   input Boolean inBoolean;  
   output String outString;
 algorithm
-  outString := matchcontinue inBoolean
+  outString := match inBoolean
     case (false) then "false";
     case (true)  then "true";
-  end matchcontinue;
+  end match;
 end booleanString;
 
 

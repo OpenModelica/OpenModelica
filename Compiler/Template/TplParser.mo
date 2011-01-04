@@ -40,7 +40,7 @@ public function getPosition
   output Integer outColumnNumber;
 algorithm
   (outLineNumber,outColumnNumber)  := 
-  matchcontinue (inChars, inLineInfo)
+  match (inChars, inLineInfo)
     local
       list<String> chars;
       Integer lnum, llen, tillEnd;
@@ -49,7 +49,7 @@ algorithm
       equation
         tillEnd = charsTillEndOfLine(chars, 0);
       then (lnum, llen - tillEnd);    
-  end matchcontinue;
+  end match;
 end getPosition;
 
 
@@ -98,7 +98,7 @@ end makeStartLineInfo;
 public function printAndFailIfError
   input  LineInfo inLineInfo;
 algorithm
-  _ := matchcontinue (inLineInfo)
+  _ := match (inLineInfo)
     local
       list<String> errLst;
       
@@ -114,7 +114,7 @@ algorithm
           print("\n");          
         then fail();
                   
-  end matchcontinue;
+  end match;
 end printAndFailIfError;
 
 
@@ -388,7 +388,7 @@ public function takeKeywordChars
   
   output list<String> outChars;  
 algorithm
-  (outChars) := matchcontinue (inChars, inKeywordChars)
+  (outChars) := match (inChars, inKeywordChars)
     local
       list<String> chars, kwchars;
       LineInfo linfo;
@@ -402,7 +402,7 @@ algorithm
     case (chars, {}) 
       then (chars);
                     
-  end matchcontinue;
+  end match;
 end takeKeywordChars;
 
 public function isKeyword
@@ -868,7 +868,7 @@ afterKeyword:
 public function afterKeyword
   input list<String> inChars;
 algorithm
-  _ := matchcontinue inChars
+  _ := match inChars
     local
       list<String> chars;
       String c;
@@ -886,7 +886,7 @@ algorithm
     
     case ({}) then ();
             
-  end matchcontinue;
+  end match;
 end afterKeyword;
 
 
@@ -904,7 +904,7 @@ public function identifier
   output list<String> outChars;
   output TplAbsyn.Ident outIdent;
 algorithm
-  (outChars, outIdent) := matchcontinue inChars
+  (outChars, outIdent) := match inChars
     local
       list<String> chars, restIdChars;
       String c, ident;
@@ -922,7 +922,7 @@ algorithm
         //false = listMember(ident, keywords);
       then (chars, ident);
           
-  end matchcontinue;
+  end match;
 end identifier;
 
 /*
@@ -974,7 +974,7 @@ public function pathIdent
   output LineInfo outLineInfo;
   output TplAbsyn.PathIdent outPathIdent;
 algorithm
-  (outChars, outLineInfo, outPathIdent) := matchcontinue (inChars, inLineInfo)
+  (outChars, outLineInfo, outPathIdent) := match (inChars, inLineInfo)
     local
       list<String> chars, restIdChars;
       LineInfo linfo;
@@ -988,7 +988,7 @@ algorithm
         (chars, linfo, pid) = pathIdentPath(chars, linfo, head);        
       then (chars, linfo, pid);
           
-  end matchcontinue;
+  end match;
 end pathIdent;
 
 
@@ -1077,7 +1077,7 @@ public function pathIdentNoOpt
   output LineInfo outLineInfo;
   output TplAbsyn.PathIdent outPathIdent;
 algorithm
-  (outChars, outLineInfo, outPathIdent) := matchcontinue (inChars, inLineInfo)
+  (outChars, outLineInfo, outPathIdent) := match (inChars, inLineInfo)
     local
       list<String> chars, restIdChars;
       LineInfo linfo;
@@ -1091,7 +1091,7 @@ algorithm
         (chars, linfo, pid) = pathIdentPath(chars, linfo, head);        
       then (chars, linfo, pid);
         
-  end matchcontinue;
+  end match;
 end pathIdentNoOpt;
 
 /*
@@ -1299,7 +1299,7 @@ public function typeSig
   output LineInfo outLineInfo;
   output TplAbsyn.TypeSignature outTypeSignature;
 algorithm
-  (outChars, outLineInfo, outTypeSignature) := matchcontinue (inChars, inLineInfo)
+  (outChars, outLineInfo, outTypeSignature) := match (inChars, inLineInfo)
     local
       list<String> chars;
       LineInfo linfo;
@@ -1312,7 +1312,7 @@ algorithm
         (chars, linfo, ts) = typeSig_array(chars, linfo, baseTS);        
       then (chars, linfo, ts);
     
-  end matchcontinue;
+  end match;
 end typeSig;
 
 //must not fail
@@ -1754,7 +1754,7 @@ public function absynDef
   output LineInfo outLineInfo;
   output TplAbsyn.ASTDef outASTDef;
 algorithm
-  (outChars, outLineInfo, outASTDef) := matchcontinue (inChars, inLineInfo)
+  (outChars, outLineInfo, outASTDef) := match (inChars, inLineInfo)
     local
       list<String> chars;
       LineInfo linfo;
@@ -1779,7 +1779,7 @@ algorithm
         (chars, linfo) = endDefPathIdent(chars, linfo,pid);        
       then (chars, linfo, TplAbsyn.AST_DEF(pid,isD,types));
     
-  end matchcontinue;
+  end match;
 end absynDef;
 
 /*
@@ -2063,7 +2063,7 @@ public function recordType
   output LineInfo outLineInfo;
   output tuple<TplAbsyn.Ident, TplAbsyn.TypedIdents> outRecordType;
 algorithm
-  (outChars, outLineInfo, outRecordType) := matchcontinue (inChars, inLineInfo)
+  (outChars, outLineInfo, outRecordType) := match (inChars, inLineInfo)
     local
       list<String> chars;
       LineInfo linfo;
@@ -2088,7 +2088,7 @@ algorithm
         (chars, linfo) = endDefIdent(chars, linfo,id);        
       then (chars, linfo, (id, fields));
                 
-  end matchcontinue;
+  end match;
 end recordType;
 /*
 typeDecls:
@@ -2354,7 +2354,7 @@ public function templDef
   output TplAbsyn.Ident outTemplName;
   output TplAbsyn.TemplateDef outTemplDef;
 algorithm
-  (outChars, outLineInfo, outTemplName, outTemplDef) := matchcontinue (inChars, inLineInfo)
+  (outChars, outLineInfo, outTemplName, outTemplDef) := match (inChars, inLineInfo)
     local
       String lesc, resc;
       list<String> chars;
@@ -2400,7 +2400,7 @@ algorithm
         (chars,linfo) = interleave(chars, linfo);
         (chars,linfo) = semicolon(chars, linfo);
       then (chars, linfo, name, td);
-  end matchcontinue;
+  end match;
 end templDef;
 
 /*
@@ -2919,13 +2919,13 @@ public function makeEscapedExp
   input list<TplAbsyn.EscOption> inOptions;
   output TplAbsyn.Expression outExpression;
 algorithm
-  (outExpression) := matchcontinue (inExpression, inOptions)
+  (outExpression) := match (inExpression, inOptions)
     local
       TplAbsyn.Expression exp;
       list<TplAbsyn.EscOption> opts;    
    case (exp, {})  then exp;   
    case (exp, opts as (_::_)) then TplAbsyn.ESCAPED(exp, opts);        
-  end matchcontinue;
+  end match;
 end makeEscapedExp;
 
 /*
@@ -3043,7 +3043,7 @@ public function expressionNoOptions
   output list<TplAbsyn.EscOption> outIndexOffsetOption;
 algorithm
   (outChars, outLineInfo, outExpression, outIndexOffsetOption) 
-   := matchcontinue (inChars, inLineInfo, inLeftEsc, inRightEsc)
+   := match (inChars, inLineInfo, inLeftEsc, inRightEsc)
     local
       list<String> chars;
       LineInfo linfo;
@@ -3067,7 +3067,7 @@ algorithm
          = mapTailOpt(chars, linfo, exp, lesc, resc);        
       then (chars, linfo, exp, outIndexOffsetOption);
         
-  end matchcontinue;
+  end match;
 end expressionNoOptions;
 
 /*
@@ -3542,7 +3542,7 @@ public function expressionPlus
   output LineInfo outLineInfo;
   output TplAbsyn.Expression outExpression;
 algorithm
-  (outChars, outLineInfo, outExpression) := matchcontinue (inChars, inLineInfo, inLeftEsc, inRightEsc)
+  (outChars, outLineInfo, outExpression) := match (inChars, inLineInfo, inLeftEsc, inRightEsc)
     local
       list<String> chars;
       LineInfo linfo;
@@ -3564,7 +3564,7 @@ algorithm
         (chars, linfo, exp) = plusTailOpt(chars, linfo, exp, lesc, resc);        
       then (chars, linfo, exp);
         
-  end matchcontinue;
+  end match;
 end expressionPlus;
 
 /*
@@ -4148,7 +4148,7 @@ public function escChar
   input  String inEscChar;
   output String outTheChar;
 algorithm
-  (outTheChar) := matchcontinue (inEscChar)
+  (outTheChar) := match (inEscChar)
     case ("'" ) then "'";
     case ("\"" ) then "\"";
     case ("?" ) then "?";
@@ -4164,7 +4164,7 @@ algorithm
     case ("n" ) then "\n";
     case ("t" ) then "\t";
     case (" " ) then " ";
-  end matchcontinue;
+  end match;
 end escChar;
 
 /*
@@ -4595,7 +4595,7 @@ public function templateBody
   output TplAbsyn.Expression outExpression;
 algorithm
   (outChars, outLineInfo, outExpression) 
-  := matchcontinue (inChars, inLineInfo, inLeftEsc, inRightEsc, inIsSingleQuote, inExpressionList, inIndentStack, inActualIndent)
+  := match (inChars, inLineInfo, inLeftEsc, inRightEsc, inIsSingleQuote, inExpressionList, inIndentStack, inActualIndent)
     local
       list<String> chars;
       LineInfo linfo;
@@ -4617,7 +4617,7 @@ algorithm
         (chars, linfo, exp) = restOfTemplLine(chars, linfo, lesc, resc, isSQ, expLst, indStack, actInd, lineInd, {});
       then (chars, linfo, exp);
     
-  end matchcontinue;
+  end match;
 end templateBody;
 
 /*
@@ -5509,7 +5509,7 @@ public function conditionExp
   output LineInfo outLineInfo;
   output TplAbsyn.Expression outExpression;
 algorithm
-  (outChars, outLineInfo, outExpression) := matchcontinue (inChars, inLineInfo, inLeftEsc, inRightEsc)
+  (outChars, outLineInfo, outExpression) := match (inChars, inLineInfo, inLeftEsc, inRightEsc)
     local
       list<String> chars;
       LineInfo linfo;
@@ -5538,7 +5538,7 @@ algorithm
         (chars, linfo, elseBrOpt) = elseBranch(chars, linfo, lesc, resc);
       then (chars, linfo, TplAbsyn.CONDITION(isNot, lhsExp, rhsMExpOpt, trueBr, elseBrOpt));
    
-  end matchcontinue;
+  end match;
 end conditionExp;
 
 
@@ -5788,7 +5788,7 @@ public function matchExp
   output LineInfo outLineInfo;
   output TplAbsyn.Expression outExpression;
 algorithm
-  (outChars, outLineInfo, outExpression) := matchcontinue (inChars, inLineInfo, inLeftEsc, inRightEsc)
+  (outChars, outLineInfo, outExpression) := match (inChars, inLineInfo, inLeftEsc, inRightEsc)
     local
       list<String> chars;
       LineInfo linfo;
@@ -5827,7 +5827,7 @@ algorithm
    //     (_::_) = mcaseLst;
    //   then (chars, linfo, TplAbsyn.MATCH(TplAbsyn.BOUND_VALUE(TplAbsyn.IDENT("it")), mcaseLst));
    
-  end matchcontinue;
+  end match;
 end matchExp;
 
 
@@ -5848,7 +5848,7 @@ public function matchCase
   output list<tuple<TplAbsyn.MatchingExp, TplAbsyn.Expression>> outMatchCaseLst;
 algorithm
   (outChars, outLineInfo, outMatchCaseLst) := 
-  matchcontinue (inChars, inLineInfo, inLeftEsc, inRightEsc)
+  match (inChars, inLineInfo, inLeftEsc, inRightEsc)
     local
       list<String> chars;
       LineInfo linfo;
@@ -5881,7 +5881,7 @@ algorithm
         matchCaseLst = makeMatchCaseLst(mexp::mexpHeadList,exp);
       then (chars, linfo, matchCaseLst);
         
-  end matchcontinue;
+  end match;
 end matchCase;
 
 /*
@@ -6017,7 +6017,7 @@ public function makeMatchCaseLst
   output list<tuple<TplAbsyn.MatchingExp, TplAbsyn.Expression>> outMatchCaseLst;
 algorithm
   (outMatchCaseLst) := 
-  matchcontinue (inMExpHeadLst, inExpression)
+  match (inMExpHeadLst, inExpression)
     local
       TplAbsyn.Expression exp;
       TplAbsyn.MatchingExp mexp;
@@ -6031,7 +6031,7 @@ algorithm
         matchCaseLst = makeMatchCaseLst(mexpHeadList,exp);
       then ((mexp, exp) :: matchCaseLst);
         
-  end matchcontinue;
+  end match;
 end makeMatchCaseLst;
 
 /*
@@ -6153,7 +6153,7 @@ public function matchBinding
   output TplAbsyn.MatchingExp outMatchingExp;
 algorithm
   (outChars, outLineInfo, outMatchingExp) := 
-  matchcontinue (inChars, inLineInfo)
+  match (inChars, inLineInfo)
     local
       list<String> chars;
       LineInfo linfo;
@@ -6170,7 +6170,7 @@ algorithm
         (chars, linfo, mexp) = matchBinding_tail(chars, linfo, headMExp);
       then (chars, linfo, mexp);
    
-  end matchcontinue;
+  end match;
 end matchBinding;
 /*
 matchBinding_tail(headMExp):

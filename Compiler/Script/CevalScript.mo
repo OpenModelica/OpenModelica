@@ -2487,7 +2487,7 @@ end sconstToString;
 protected function setEcho
   input Boolean echo;
 algorithm
-  _ := matchcontinue (echo)
+  _ := match (echo)
     local
     case (true)
       equation
@@ -2499,7 +2499,7 @@ algorithm
         Settings.setEcho(0);
       then
         ();
-  end matchcontinue;
+  end match;
 end setEcho;
 
 protected function cevalValArray "Help function to cevalInteractiveFunctions. Handles val(var,{timestamps})"
@@ -2511,7 +2511,7 @@ protected function cevalValArray "Help function to cevalInteractiveFunctions. Ha
   output Env.Cache outCache;
   output Values.Value value;
 algorithm
-  (outCache,value) := matchcontinue(cache,env,st,timeStamps,varName)
+  (outCache,value) := match(cache,env,st,timeStamps,varName)
     local
       list<Values.Value> vals;
       Real v,timeStamp;
@@ -2524,7 +2524,7 @@ algorithm
         (cache,Values.ARRAY(vals,i::dims)) = cevalValArray(cache,env,st,timeStamps,varName);
         i = i+1;
       then (cache,Values.ARRAY(Values.REAL(v)::vals,i::dims));
-  end matchcontinue;
+  end match;
 end cevalValArray;
 
 protected function cevalVal "Help function to cevalInteractiveFunctions. Handles val(var,timestamp)"
@@ -2536,7 +2536,7 @@ protected function cevalVal "Help function to cevalInteractiveFunctions. Handles
   output Env.Cache outCache;
   output Real value;
 algorithm
-  (outCache,value) := matchcontinue(cache,env,stopt,timeStamp,varName)
+  (outCache,value) := match(cache,env,stopt,timeStamp,varName)
     local 
       Real val; list<Real> tV, vV; list<Values.Value> varValues, timeValues;
       Interactive.InteractiveSymbolTable st;
@@ -2554,7 +2554,7 @@ algorithm
         val = System.getVariableValue(timeStamp, tV, vV);
       then 
         (cache,val);
-  end matchcontinue;
+  end match;
 end cevalVal;
 
 public function getIncidenceMatrix "function getIncidenceMatrix
@@ -2572,7 +2572,7 @@ public function getIncidenceMatrix "function getIncidenceMatrix
   output String outString;
 algorithm
   (outCache,outValue,outInteractiveSymbolTable,outString):=
-  matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable,inMsg,inExp)
+  match (inCache,inEnv,className,inInteractiveSymbolTable,inMsg,inExp)
     local
       String filenameprefix,cname_str,filename,funcfilename,makefilename,file_dir, str;
       Absyn.Path classname;
@@ -2621,7 +2621,7 @@ algorithm
         str = stringAppend("The equation system was dumped to Matlab file:", filename);
       then
         (cache,Values.STRING(str),st,file_dir);
-  end matchcontinue;
+  end match;
 end getIncidenceMatrix;
 
 
@@ -2644,7 +2644,7 @@ protected function translateModel "function translateModel
   output list<tuple<String,Values.Value>> resultValues;
 algorithm
   (outCache,outValue,outInteractiveSymbolTable,outBackendDAE,outStringLst,outFileDir,resultValues):=
-  matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable,inFileNamePrefix,addDummy,inSimSettingsOpt)
+  match (inCache,inEnv,className,inInteractiveSymbolTable,inFileNamePrefix,addDummy,inSimSettingsOpt)
     local
       Env.Cache cache;
       list<Env.Frame> env;
@@ -2662,7 +2662,7 @@ algorithm
           SimCode.translateModel(cache,env,className,st,fileNamePrefix,addDummy,inSimSettingsOpt);
       then
         (cache,outValMsg,st,indexed_dlow,libs,file_dir,resultValues);
-  end matchcontinue;
+  end match;
 end translateModel;
 
 protected function translateModelFMU "function translateModelFMU
@@ -2684,7 +2684,7 @@ protected function translateModelFMU "function translateModelFMU
   output list<tuple<String,Values.Value>> resultValues;
 algorithm
   (outCache,outValue,outInteractiveSymbolTable,outBackendDAE,outStringLst,outFileDir,resultValues):=
-  matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable,inFileNamePrefix,addDummy,inSimSettingsOpt)
+  match (inCache,inEnv,className,inInteractiveSymbolTable,inFileNamePrefix,addDummy,inSimSettingsOpt)
     local
       Env.Cache cache;
       list<Env.Frame> env;
@@ -2701,7 +2701,7 @@ algorithm
           SimCode.translateModelFMU(cache,env,className,st,fileNamePrefix,addDummy,inSimSettingsOpt);
       then
         (cache,outValMsg,st,indexed_dlow,libs,file_dir,resultValues);
-  end matchcontinue;
+  end match;
 end translateModelFMU;
 
 public function translateGraphics "function: translates the graphical annotations from old to new version"
@@ -3348,7 +3348,7 @@ public function cevalAstExpList
   output list<Absyn.Exp> outAbsynExpLst;
 algorithm
   (outCache,outAbsynExpLst) :=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,info)
+  match (inCache,inEnv,inAbsynExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,info)
     local
       list<Env.Frame> env;
       Ceval.Msg msg;
@@ -3366,7 +3366,7 @@ algorithm
         (cache,res) = cevalAstExpList(cache,env, es, impl, st, msg, info);
       then
         (cache,e :: res);
-  end matchcontinue;
+  end match;
 end cevalAstExpList;
 
 protected function cevalAstExpListList "function: cevalAstExpListList"
@@ -3381,7 +3381,7 @@ protected function cevalAstExpListList "function: cevalAstExpListList"
   output list<list<Absyn.Exp>> outAbsynExpLstLst;
 algorithm
   (outCache,outAbsynExpLstLst) :=
-  matchcontinue (inCache,inEnv,inAbsynExpLstLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,info)
+  match (inCache,inEnv,inAbsynExpLstLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,info)
     local
       list<Env.Frame> env;
       Ceval.Msg msg;
@@ -3399,7 +3399,7 @@ algorithm
         (cache,res) = cevalAstExpListList(cache,env, es, impl, st, msg, info);
       then
         (cache,e :: res);
-  end matchcontinue;
+  end match;
 end cevalAstExpListList;
 
 protected function cevalAstExpexpList
@@ -3416,7 +3416,7 @@ protected function cevalAstExpexpList
   output list<tuple<Absyn.Exp, Absyn.Exp>> outTplAbsynExpAbsynExpLst;
 algorithm
   (outCache,outTplAbsynExpAbsynExpLst) :=
-  matchcontinue (inCache,inEnv,inTplAbsynExpAbsynExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,info)
+  match (inCache,inEnv,inTplAbsynExpAbsynExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,info)
     local
       Ceval.Msg msg;
       Absyn.Exp e1_1,e2_1,e1,e2;
@@ -3433,7 +3433,7 @@ algorithm
         (cache,res) = cevalAstExpexpList(cache,env, xs, impl, st, msg, info);
       then
         (cache,(e1_1,e2_1) :: res);
-  end matchcontinue;
+  end match;
 end cevalAstExpexpList;
 
 public function cevalAstElt
@@ -3450,7 +3450,7 @@ public function cevalAstElt
   output Absyn.Element outElement;
 algorithm
   (outCache,outElement) :=
-  matchcontinue (inCache,inEnv,inElement,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inElement,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
       list<Absyn.ComponentItem> citems_1,citems;
       list<Env.Frame> env;
@@ -3471,7 +3471,7 @@ algorithm
         (cache,citems_1) = cevalAstCitems(cache,env, citems, impl, st, msg, info);
       then
         (cache,Absyn.ELEMENT(f,r,io,id,Absyn.COMPONENTS(attr,tp,citems_1),info,c));
-  end matchcontinue;
+  end match;
 end cevalAstElt;
 
 protected function cevalAstCitems
@@ -3531,7 +3531,7 @@ protected function cevalAstModopt
   output Option<Absyn.Modification> outAbsynModificationOption;
 algorithm
   (outCache,outAbsynModificationOption) :=
-  matchcontinue (inCache,inEnv,inAbsynModificationOption,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,info)
+  match (inCache,inEnv,inAbsynModificationOption,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,info)
     local
       Absyn.Modification res,mod;
       list<Env.Frame> env;
@@ -3545,7 +3545,7 @@ algorithm
       then
         (cache,SOME(res));
     case (cache,env,NONE(),_,_,msg,info) then (cache,NONE());
-  end matchcontinue;
+  end match;
 end cevalAstModopt;
 
 protected function cevalAstModification "function: cevalAstModification
@@ -3562,7 +3562,7 @@ protected function cevalAstModification "function: cevalAstModification
   output Absyn.Modification outModification;
 algorithm
   (outCache,outModification) :=
-  matchcontinue (inCache,inEnv,inModification,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,info)
+  match (inCache,inEnv,inModification,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,info)
     local
       Absyn.Exp e_1,e;
       list<Absyn.ElementArg> eltargs_1,eltargs;
@@ -3582,7 +3582,7 @@ algorithm
         (cache,eltargs_1) = cevalAstEltargs(cache,env, eltargs, impl, st, msg, info);
       then
         (cache,Absyn.CLASSMOD(eltargs_1,NONE()));
-  end matchcontinue;
+  end match;
 end cevalAstModification;
 
 protected function cevalAstEltargs "function: cevalAstEltargs
@@ -3640,7 +3640,7 @@ protected function cevalAstArraydim "function: cevalAstArraydim
   output Absyn.ArrayDim outArrayDim;
 algorithm
   (outCache,outArrayDim) :=
-  matchcontinue (inCache,inEnv,inArrayDim,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,info)
+  match (inCache,inEnv,inArrayDim,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,info)
     local
       list<Env.Frame> env;
       Ceval.Msg msg;
@@ -3661,7 +3661,7 @@ algorithm
         (cache,e_1) = cevalAstExp(cache,env, e, impl, st, msg, info);
       then
         (cache,Absyn.SUBSCRIPT(e) :: res);
-  end matchcontinue;
+  end match;
 end cevalAstArraydim;
 
 public function checkModel "function: checkModel
@@ -4239,7 +4239,7 @@ protected function getClassnamesInClassList
   output list<String> outStrings;
 algorithm
   outStrings :=
-  matchcontinue (inPath,inProgram,inClass)
+  match (inPath,inProgram,inClass)
     local
       list<String> strlist;
       list<String> res;
@@ -4276,7 +4276,7 @@ algorithm
       equation
       then {};
 
-  end matchcontinue;
+  end match;
 end getClassnamesInClassList;
 
 protected function joinPaths
@@ -4284,7 +4284,7 @@ protected function joinPaths
   input Absyn.Path parent;
   output Absyn.Path outPath;
 algorithm
-  outPath := matchcontinue (child, parent)
+  outPath := match (child, parent)
     local
       Absyn.Path r, res;
       String c;
@@ -4292,7 +4292,7 @@ algorithm
       equation
         res = Absyn.joinPaths(r, Absyn.IDENT(c));
       then res;
-  end matchcontinue;
+  end match;
 end joinPaths;
 
 protected function getAllClassPathsRecursive

@@ -558,7 +558,7 @@ public function emptyReplacements "function: emptyReplacements
   output VariableReplacements outVariableReplacements;
 algorithm
   outVariableReplacements:=
-  matchcontinue ()
+  match ()
       local HashTable2.HashTable ht;
         HashTable3.HashTable invHt;
     case ()
@@ -567,7 +567,7 @@ algorithm
         invHt = HashTable3.emptyHashTable();
       then
         REPLACEMENTS(ht,invHt);
-  end matchcontinue;
+  end match;
 end emptyReplacements;
 
 public function emptyReplacementsSized "function: emptyReplacements
@@ -578,7 +578,7 @@ public function emptyReplacementsSized "function: emptyReplacements
   output VariableReplacements outVariableReplacements;
 algorithm
   outVariableReplacements:=
-  matchcontinue (size)
+  match (size)
       local HashTable2.HashTable ht;
         HashTable3.HashTable invHt;
     case (size)
@@ -587,7 +587,7 @@ algorithm
         invHt = HashTable3.emptyHashTableSized(size);
       then
         REPLACEMENTS(ht,invHt);
-  end matchcontinue;
+  end match;
 end emptyReplacementsSized;
 
 public function replaceEquationsStmts "function: replaceEquationsStmts
@@ -775,7 +775,7 @@ public function dumpReplacements
   input VariableReplacements inVariableReplacements;
 algorithm
   _:=
-  matchcontinue (inVariableReplacements)
+  match (inVariableReplacements)
     local
       list<DAE.Exp> srcs,dsts;
       list<String> srcstrs,dststrs,dststrs_1,strs;
@@ -797,7 +797,7 @@ algorithm
         print("\n");
       then
         ();
-  end matchcontinue;
+  end match;
 end dumpReplacements;
 
 public function dumpReplacementsStr "
@@ -1173,7 +1173,7 @@ protected function addReplacementInv "function: addReplacementInv
   output HashTable3.HashTable outInvHt;
 algorithm
   outInvHt:=
-  matchcontinue (invHt,src,dst)
+  match (invHt,src,dst)
     local
       HashTable3.HashTable invHt_1;
       list<DAE.ComponentRef> dests;
@@ -1182,7 +1182,7 @@ algorithm
       invHt_1 = Util.listFold_2(dests,addReplacementInv2,invHt,src);
       then
         invHt_1;
-  end matchcontinue;
+  end match;
 end addReplacementInv;
 
 protected function addReplacementInv2 "function: addReplacementInv2
@@ -1267,7 +1267,7 @@ protected function makeTransitive "function: makeTransitive
   output DAE.Exp outDst;
 algorithm
   (outRepl,outSrc,outDst):=
-  matchcontinue (repl,src,dst)
+  match (repl,src,dst)
     local
       VariableReplacements repl_1,repl_2;
       DAE.ComponentRef src_1,src_2;
@@ -1280,7 +1280,7 @@ algorithm
         dst_3 = ExpressionSimplify.simplify1(dst_2) "to remove e.g. --a";
       then
         (repl_2,src_2,dst_3);
-  end matchcontinue;
+  end match;
 end makeTransitive;
 
 protected function makeTransitive1 "function: makeTransitive1
@@ -1326,7 +1326,7 @@ in singleRepl."
   input VariableReplacements singleRepl "contain one replacement rule: the rule to be added";
   output VariableReplacements outRepl;
 algorithm
-  outRepl := matchcontinue(lst,repl,singleRepl)
+  outRepl := match(lst,repl,singleRepl)
     local
       DAE.Exp crDst;
       DAE.ComponentRef cr;
@@ -1340,7 +1340,7 @@ algorithm
       repl1=addReplacementNoTransitive(repl,cr,crDst) "add updated old rule";
       repl2 = makeTransitive12(crs,repl1,singleRepl);
     then repl2;
-  end matchcontinue;
+  end match;
 end makeTransitive12;
 
 protected function makeTransitive2 "function: makeTransitive2
@@ -1414,7 +1414,7 @@ public function getReplacement "function: getReplacement
   output DAE.Exp outComponentRef;
 algorithm
   outComponentRef:=
-  matchcontinue (inVariableReplacements,inComponentRef)
+  match (inVariableReplacements,inComponentRef)
     local
       DAE.ComponentRef src;
       DAE.Exp dst;
@@ -1424,7 +1424,7 @@ algorithm
         dst = BaseHashTable.get(src,ht);
       then
         dst;
-  end matchcontinue;
+  end match;
 end getReplacement;
 
 public function replaceExpOpt "Similar to replaceExp but takes Option<Exp> instead of Exp"
@@ -1693,7 +1693,7 @@ protected function replaceExpCond "function replaceExpCond(cond,e) => true &
   end FuncTypeExp_ExpToBoolean;
 algorithm
   outBoolean:=
-  matchcontinue (inFuncTypeExpExpToBooleanOption,inExp)
+  match (inFuncTypeExpExpToBooleanOption,inExp)
     local
       Boolean res;
       FuncTypeExp_ExpToBoolean cond;
@@ -1704,7 +1704,7 @@ algorithm
       then
         res;
     case (NONE(),_) then true;
-  end matchcontinue;
+  end match;
 end replaceExpCond;
 
 protected function replaceExpMatrix "function: replaceExpMatrix
@@ -1722,7 +1722,7 @@ protected function replaceExpMatrix "function: replaceExpMatrix
   end FuncTypeExp_ExpToBoolean;
 algorithm
   outTplExpExpBooleanLstLst:=
-  matchcontinue (inTplExpExpBooleanLstLst,inVariableReplacements,inFuncTypeExpExpToBooleanOption)
+  match (inTplExpExpBooleanLstLst,inVariableReplacements,inFuncTypeExpExpToBooleanOption)
     local
       VariableReplacements repl;
       Option<FuncTypeExp_ExpToBoolean> cond;
@@ -1735,7 +1735,7 @@ algorithm
         (es_1) = replaceExpMatrix(es, repl, cond);
       then
         (e_1 :: es_1);
-  end matchcontinue;
+  end match;
 end replaceExpMatrix;
 
 protected function replaceExpMatrix2 "function: replaceExpMatrix2
@@ -1753,7 +1753,7 @@ protected function replaceExpMatrix2 "function: replaceExpMatrix2
   end FuncTypeExp_ExpToBoolean;
 algorithm
   outTplExpExpBooleanLst:=
-  matchcontinue (inTplExpExpBooleanLst,inVariableReplacements,inFuncTypeExpExpToBooleanOption)
+  match (inTplExpExpBooleanLst,inVariableReplacements,inFuncTypeExpExpToBooleanOption)
     local
       list<tuple<DAE.Exp, Boolean>> es_1,es;
       DAE.Exp e_1,e;
@@ -1767,7 +1767,7 @@ algorithm
         (e_1) = replaceExp(e, repl, cond);
       then
         ((e_1,b) :: es_1);
-  end matchcontinue;
+  end match;
 end replaceExpMatrix2;
 
 protected function bintreeToExplist "function: bintree_to_list

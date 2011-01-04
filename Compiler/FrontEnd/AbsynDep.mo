@@ -119,13 +119,13 @@ This is needed so that empty classes are still taken into consideration in e.g. 
   input Absyn.Path cl;
   output Depends outDepends;
 algorithm
-   outDepends := matchcontinue(depends,cl)
+   outDepends := match(depends,cl)
    local
      AvlTree uses, usedBy;
      case(DEPENDS(uses,usedBy),cl) equation
          uses = avlTreeAdd(uses,cl,{});
      then DEPENDS(uses,usedBy);
-   end matchcontinue;
+   end match;
 end addEmptyDependency;
 
 public function addDependency "add a dependency tha a class 'cl' uses another class 'usesClass' e.g. as a component"
@@ -134,14 +134,14 @@ public function addDependency "add a dependency tha a class 'cl' uses another cl
    input Absyn.Path usesClass;
    output Depends outDepends;
  algorithm
-   outDepends := matchcontinue(depends,cl,usesClass)
+   outDepends := match(depends,cl,usesClass)
    local
      AvlTree uses, usedBy;
      case(DEPENDS(uses,usedBy),cl,usesClass) equation
          uses = avlTreeAdd(uses,cl,{usesClass});
          usedBy = avlTreeAdd(usedBy,usesClass,{cl});
      then DEPENDS(uses,usedBy);
-   end matchcontinue;
+   end match;
  end addDependency;
 
 public function emptyDepends "Return an empty Depends"
@@ -160,13 +160,13 @@ public function getUses "Retrive an avltree of classes (with empty class lists)
   input Absyn.Path cl;
   output AvlTree uses;
 algorithm
-  uses := matchcontinue(depends,cl)
+  uses := match(depends,cl)
     local AvlValue v;
     case(DEPENDS(uses,_),cl) equation
       v = avlTreeGet(uses,cl);
       uses = avlAddUses(avlTreeNew(),v);
     then uses;
-  end matchcontinue;
+  end match;
 end getUses;
 
 protected function avlAddUses "Help function to getUses, adds all uses to an avltree with empty list as values"
@@ -174,14 +174,14 @@ protected function avlAddUses "Help function to getUses, adds all uses to an avl
    input AvlValue vals;
    output AvlTree outTree;
  algorithm
-   outTree := matchcontinue(tree,vals)
+   outTree := match(tree,vals)
    local Absyn.Path p;
      case(tree,{}) then tree;
      case(tree,p::vals) equation
       tree = avlTreeAdd(tree,p,{});
       tree = avlAddUses(tree,vals);
      then tree;
-   end matchcontinue;
+   end match;
 end avlAddUses;
 
 public function getUsesTransitive "returns the transitive closure of getUses"
@@ -249,14 +249,14 @@ protected function getUsesTransitive2Lst "Help function to getUsesTransitive2"
   input AvlTree uses;
   output AvlTree outUses;
 algorithm
-  outUses := matchcontinue(depends,pathList,uses)
+  outUses := match(depends,pathList,uses)
   local Absyn.Path path;
     case(depends,{},uses) then uses;
     case(depends,path::pathList,uses) equation
       uses = getUsesTransitive2(depends,path,uses);
       uses = getUsesTransitive2Lst(depends,pathList,uses);
     then uses;
-  end matchcontinue;
+  end match;
 end getUsesTransitive2Lst;
 
 public function getUsedBy "returns the classes that uses the class 'cl' e.g. as a component"
@@ -428,10 +428,10 @@ protected function createEmptyAvlIfNone "Help function to AvlTreeAdd2"
 input Option<AvlTree> t;
 output AvlTree outT;
 algorithm
-  outT := matchcontinue(t)
+  outT := match(t)
     case(NONE()) then AVLTREENODE(NONE(),0,NONE(),NONE());
     case(SOME(outT)) then outT;
-  end matchcontinue;
+  end match;
 end createEmptyAvlIfNone;
 
 protected function nodeValue "return the node value"
@@ -516,14 +516,14 @@ protected function doBalance4 "help function to doBalance2"
   input AvlTree bt;
   output AvlTree outBt;
 algorithm
-  outBt := matchcontinue(bt)
+  outBt := match(bt)
   local AvlTree rl;
  case(bt) equation
       true = differenceInHeight(getOption(leftNode(bt))) < 0;
       rl = rotateLeft(getOption(leftNode(bt)));
       bt = setLeft(bt,SOME(rl));
     then bt;
-  end matchcontinue;
+  end match;
 end doBalance4;
 
 protected function setRight "set right treenode"
@@ -531,12 +531,12 @@ protected function setRight "set right treenode"
   input Option<AvlTree> right;
   output AvlTree outNode;
 algorithm
-  outNode := matchcontinue(node,right)
+  outNode := match(node,right)
    local Option<AvlTreeValue> value;
     Option<AvlTree> l,r;
     Integer height;
     case(AVLTREENODE(value,height,l,r),right) then AVLTREENODE(value,height,l,right);
-  end matchcontinue;
+  end match;
 end setRight;
 
 protected function setLeft "set left treenode"
@@ -544,12 +544,12 @@ protected function setLeft "set left treenode"
   input Option<AvlTree> left;
   output AvlTree outNode;
 algorithm
-  outNode := matchcontinue(node,left)
+  outNode := match(node,left)
   local Option<AvlTreeValue> value;
     Option<AvlTree> l,r;
     Integer height;
     case(AVLTREENODE(value,height,l,r),left) then AVLTREENODE(value,height,left,r);
-  end matchcontinue;
+  end match;
 end setLeft;
 
 
@@ -557,18 +557,18 @@ protected function leftNode "Retrieve the left subnode"
   input AvlTree node;
   output Option<AvlTree> subNode;
 algorithm
-  subNode := matchcontinue(node)
+  subNode := match(node)
     case(AVLTREENODE(left = subNode)) then subNode;
-  end matchcontinue;
+  end match;
 end leftNode;
 
 protected function rightNode "Retrieve the right subnode"
   input AvlTree node;
   output Option<AvlTree> subNode;
 algorithm
-  subNode := matchcontinue(node)
+  subNode := match(node)
     case(AVLTREENODE(right = subNode)) then subNode;
-  end matchcontinue;
+  end match;
 end rightNode;
 
 protected function exchangeLeft "help function to balance"
@@ -576,7 +576,7 @@ protected function exchangeLeft "help function to balance"
   input AvlTree parent;
   output AvlTree outParent "updated parent";
 algorithm
-  outParent := matchcontinue(node,parent)
+  outParent := match(node,parent)
     local
       Option<AvlTreeValue> value;
       Integer height;
@@ -589,7 +589,7 @@ algorithm
         node = setLeft(node,SOME(parent));
         bt = balance(node);
       then bt;
-  end matchcontinue;
+  end match;
 end exchangeLeft;
 
 protected function exchangeRight "help function to balance"
@@ -597,7 +597,7 @@ input AvlTree node;
 input AvlTree parent;
 output AvlTree outParent "updated parent";
 algorithm
-  outParent := matchcontinue(node,parent)
+  outParent := match(node,parent)
   local AvlTree bt;
     case(node,parent) equation
       parent = setLeft(parent,rightNode(node));
@@ -605,7 +605,7 @@ algorithm
       node = setRight(node,SOME(parent));
       bt = balance(node);
     then bt;
-  end matchcontinue;
+  end match;
 end exchangeRight;
 
 protected function rotateLeft "help function to balance"
@@ -620,9 +620,9 @@ protected function getOption "Retrieve the value of an option"
   input Option<T> opt;
   output T val;
 algorithm
-  val := matchcontinue(opt)
+  val := match(opt)
     case(SOME(val)) then val;
-  end matchcontinue;
+  end match;
 end getOption;
 
 protected function rotateRight "help function to balance"
@@ -637,14 +637,14 @@ between left and right child"
 input AvlTree node;
 output Integer diff;
 algorithm
-  diff := matchcontinue(node)
+  diff := match(node)
   local Integer lh,rh;
     Option<AvlTree> l,r;
     case(AVLTREENODE(left=l,right=r)) equation
       lh = getHeight(l);
       rh = getHeight(r);
     then lh - rh;
-  end matchcontinue;
+  end match;
 end differenceInHeight;
 
 public function avlTreeGetOrEmpty "  Get a value from the binary tree given a key, if value not found remturn empty list"
@@ -808,7 +808,7 @@ protected function computeHeight "compute the heigth of the AvlTree and store in
   input AvlTree bt;
   output AvlTree outBt;
 algorithm
- outBt := matchcontinue(bt)
+ outBt := match(bt)
  local Option<AvlTree> l,r;
    Option<AvlTreeValue> v;
    AvlValue val;
@@ -818,17 +818,17 @@ algorithm
     hr = getHeight(r);
     height = intMax(hl,hr) + 1;
  then AVLTREENODE(v,height,l,r);
- end matchcontinue;
+ end match;
 end computeHeight;
 
 protected function getHeight "Retrieve the height of a node"
   input Option<AvlTree> bt;
   output Integer height;
 algorithm
-  height := matchcontinue(bt)
+  height := match(bt)
     case(NONE()) then 0;
     case(SOME(AVLTREENODE(height = height))) then height;
-  end matchcontinue;
+  end match;
 end getHeight;
 
 end AbsynDep;

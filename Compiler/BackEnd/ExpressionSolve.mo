@@ -396,12 +396,12 @@ protected function solve4
   input DAE.Operator inOp;
   output Boolean outBool;
 algorithm
-  outBool := matchcontinue (inOp)
+  outBool := match (inOp)
     case DAE.MUL(_) then true;
     case DAE.MUL_ARR(_) then true;
     case DAE.DIV(_) then true;
     case DAE.DIV_ARR(_) then true;
-  end matchcontinue;
+  end match;
 end solve4;
 
 protected function hasOnlyFactors "help function to solve2, returns true if equation e1 == e2, has either e1 == 0 or e2 == 0 and the expression only contains
@@ -441,10 +441,10 @@ protected function crOrDerCr "returns the component reference of CREF or der(CRE
   input DAE.Exp exp;
   output DAE.ComponentRef cr;
 algorithm
-  cr := matchcontinue(exp)
+  cr := match(exp)
     case(DAE.CREF(cr,_)) then cr;
     case(DAE.CALL(path=Absyn.IDENT("der"),expLst = {DAE.CREF(cr,_)})) then cr;
-  end matchcontinue;
+  end match;
 end crOrDerCr;
 
 protected function isInverseCref " Returns true if expression is 1/cr for a ComponentRef cr"

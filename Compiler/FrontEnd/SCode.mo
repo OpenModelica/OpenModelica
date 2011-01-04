@@ -517,7 +517,7 @@ protected function elseWhenEquationStr
   input  list<tuple<Absyn.Exp, list<EEquation>>> tplAbsynExpEEquationLstLst;
   output String str;
 algorithm
-  str := matchcontinue(tplAbsynExpEEquationLstLst)
+  str := match(tplAbsynExpEEquationLstLst)
     local
       Absyn.Exp exp;
       list<EEquation> eqn_lst;
@@ -536,7 +536,7 @@ algorithm
         res = stringAppendList({"\nelsewhen ",s1," then\n",s2,"\n", s3});        
       then 
         res;
-  end matchcontinue;
+  end match;
 end elseWhenEquationStr;
 
 public function equationStr
@@ -546,7 +546,7 @@ public function equationStr
   input EEquation inEEquation;
   output String outString;
 algorithm
-  outString := matchcontinue (inEEquation)
+  outString := match (inEEquation)
     local
       String s1,s2,s3,s4,res,id;
       list<String> tb_strs,fb_strs,str_lst;
@@ -620,7 +620,7 @@ algorithm
         s2 = Dump.printFunctionArgsStr(fargs);
         res = s1 +& "(" +& s2 +& ");";
       then res;
-  end matchcontinue;
+  end match;
 end equationStr;
 
 protected function prettyPrintOptModifier "
@@ -725,7 +725,7 @@ public function getElementNamed
   input Class inClass;
   output Element outElement;
 algorithm
-  outElement := matchcontinue (inIdent,inClass)
+  outElement := match (inIdent,inClass)
     local
       Element elt;
       String id;
@@ -741,7 +741,7 @@ algorithm
         elt = getElementNamedFromElts(id, elts);
       then
         elt;
-  end matchcontinue;
+  end match;
 end getElementNamed;
 
 protected function getElementNamedFromElts
@@ -859,7 +859,7 @@ public function restrString
   output String outString;
 algorithm
   outString:=
-  matchcontinue (inRestriction)
+  match (inRestriction)
     case R_CLASS() then "CLASS";
     case R_OPTIMIZATION() then "OPTIMIZATION";
     case R_MODEL() then "MODEL";
@@ -882,7 +882,7 @@ algorithm
     case R_PREDEFINED_STRING() then "PREDEFINED_STRING";
     case R_PREDEFINED_BOOLEAN() then "PREDEFINED_BOOL";
     case R_PREDEFINED_ENUMERATION() then "PREDEFINED_ENUM";
-  end matchcontinue;
+  end match;
 end restrString;
 
 public function printRestr
@@ -982,7 +982,7 @@ protected function printEqmodStr
   output String outString;
 algorithm
   outString:=
-  matchcontinue (inAbsynExpOption)
+  match (inAbsynExpOption)
     local
       String str,res;
       Absyn.Exp e;
@@ -994,7 +994,7 @@ algorithm
         res = stringAppend(" = ", str);
       then
         res;
-  end matchcontinue;
+  end match;
 end printEqmodStr;
 
 public function printElementList
@@ -1090,7 +1090,7 @@ public function unparseElementStr
   input Element inElement;
   output String outString;
 algorithm
-  outString := matchcontinue (inElement)
+  outString := match (inElement)
     local
       String str,res,n,mod_str,s,vs,ioStr;
       Absyn.TypeSpec typath;
@@ -1133,7 +1133,7 @@ algorithm
       equation
          str = "import "+& Absyn.printImportString(imp) +& ";";
       then str;
-  end matchcontinue;
+  end match;
 end unparseElementStr;
 
 public function printClassStr "
@@ -1256,10 +1256,10 @@ public function attrVariability
   input Attributes attr;
   output Variability var;
 algorithm
-  var := matchcontinue (attr)
+  var := match (attr)
     local Variability v;
     case  ATTR(variability = v) then v;
-  end matchcontinue;
+  end match;
 end attrVariability;
 
 public function variabilityString
@@ -1268,12 +1268,12 @@ public function variabilityString
   input Variability inVariability;
   output String outString;
 algorithm
-  outString := matchcontinue (inVariability)
+  outString := match (inVariability)
     case (VAR()) then "VAR";
     case (DISCRETE()) then "DISCRETE";
     case (PARAM()) then "PARAM";
     case (CONST()) then "CONST";
-  end matchcontinue;
+  end match;
 end variabilityString;
 
 public function accessibilityString
@@ -1282,11 +1282,11 @@ public function accessibilityString
   input Accessibility inAccessibility;
   output String outString;
 algorithm
-  outString := matchcontinue (inAccessibility)
+  outString := match (inAccessibility)
     case (RW()) then "RW";
     case (RO()) then "RO";
     case (WO()) then "WO";
-  end matchcontinue;
+  end match;
 end accessibilityString;
 
 public function innerouterString
@@ -1295,12 +1295,12 @@ public function innerouterString
   input Absyn.InnerOuter innerOuter;
   output String outString;
 algorithm
-  outString := matchcontinue (innerOuter)
+  outString := match (innerOuter)
     case (Absyn.INNEROUTER()) then "INNER/OUTER";
     case (Absyn.INNER()) then "INNER";
     case (Absyn.OUTER()) then "OUTER";
     case (Absyn.UNSPECIFIED()) then "";
-  end matchcontinue;
+  end match;
 end innerouterString;
 
 public function unparseVariability
@@ -1309,12 +1309,12 @@ public function unparseVariability
   input Variability inVariability;
   output String outString;
 algorithm
-  outString := matchcontinue (inVariability)
+  outString := match (inVariability)
     case (VAR()) then "";
     case (DISCRETE()) then "discrete";
     case (PARAM()) then "parameter";
     case (CONST()) then "constant";
-  end matchcontinue;
+  end match;
 end unparseVariability;
 
 public function isElementExtends "
@@ -1345,12 +1345,12 @@ public function isParameterOrConst
   input Variability inVariability;
   output Boolean outBoolean;
 algorithm
-  outBoolean := matchcontinue (inVariability)
+  outBoolean := match (inVariability)
     case (VAR()) then false;
     case (DISCRETE()) then false;
     case (PARAM()) then true;
     case (CONST()) then true;
-  end matchcontinue;
+  end match;
 end isParameterOrConst;
 
 public function isConstant
@@ -1359,12 +1359,12 @@ public function isConstant
   input Variability inVariability;
   output Boolean outBoolean;
 algorithm
-  outBoolean := matchcontinue (inVariability)
+  outBoolean := match (inVariability)
     case (VAR()) then false;
     case (DISCRETE()) then false;
     case (PARAM()) then false;
    case (CONST()) then true;
-  end matchcontinue;
+  end match;
 end isConstant;
 
 public function countParts
@@ -1419,19 +1419,19 @@ public function elementName ""
 input Element e;
 output String s;
 algorithm
-  s := matchcontinue(e)
+  s := match(e)
     case(COMPONENT(component = s)) then s;
     case(CLASSDEF(name = s)) then s;
-  end matchcontinue;
+  end match;
 end elementName;
 
 public function enumName ""
 input Enum e;
 output String s;
 algorithm
-  s := matchcontinue(e)
+  s := match(e)
     case(ENUM(literal = s)) then s;
-  end matchcontinue;
+  end match;
 end enumName;
 
 public function componentNamesFromElts
@@ -1488,7 +1488,7 @@ public function classSetPartial
   input Boolean inBoolean;
   output Class outClass;
 algorithm
-  outClass := matchcontinue (inClass,inBoolean)
+  outClass := match (inClass,inBoolean)
     local
       String id;
       Boolean enc,partialPrefix;
@@ -1498,7 +1498,7 @@ algorithm
 
     case (CLASS(name = id,encapsulatedPrefix = enc,restriction = restr,classDef = def, info = info),partialPrefix)
       then CLASS(id,partialPrefix,enc,restr,def,info);
-  end matchcontinue;
+  end match;
 end classSetPartial;
 
 public function isFunctionOrExtFunction
@@ -1675,7 +1675,7 @@ function enumEqual
   input Enum e2;
   output Boolean isEqual;
 algorithm
-  isEqual := matchcontinue(e1, e2)
+  isEqual := match(e1, e2)
     local
       String s1, s2;
       Boolean b1, b2;
@@ -1685,7 +1685,7 @@ algorithm
         b1 = stringEq(s1, s2);
         // ignore comments here.
       then b1;
-  end matchcontinue;
+  end match;
 end enumEqual;
 
 protected function classDefEqual
@@ -1895,13 +1895,13 @@ public function equationEqual
   input Equation eqn2;
   output Boolean equal;
 algorithm
-  equal := matchcontinue(eqn1,eqn2)
+  equal := match(eqn1,eqn2)
     local EEquation eq1,eq2;
     case (EQUATION(eq1),EQUATION(eq2))
       equation
         equal = equationEqual2(eq1,eq2);
         then equal;
-  end matchcontinue;
+  end match;
 end equationEqual;
 
 protected function equationEqual2
@@ -2238,7 +2238,7 @@ protected function elseIfEquationStr
   input list<list<EEquation>> elseIfBodies;
   output String elseIfString;
 algorithm
-  elseIfString := matchcontinue(conditions,elseIfBodies)
+  elseIfString := match(conditions,elseIfBodies)
     local
       Absyn.Exp cond;
       list<EEquation> eib;
@@ -2255,7 +2255,7 @@ algorithm
         resString = " elseif " +& conString +& " then\n" +& bodyString +& recString;
       then
         resString;
-  end matchcontinue;
+  end match;
 end elseIfEquationStr;
 
 public function setClassRestriction "Sets the restriction of a SCode Class"
@@ -2274,7 +2274,7 @@ public function setClassPartialPrefix "Sets the partial prefix of a SCode Class"
   input Class cl;
   output Class outCl;
 algorithm
-  outCl := matchcontinue(partialPrefix,cl)
+  outCl := match(partialPrefix,cl)
     local 
       ClassDef parts; 
       Boolean e; 
@@ -2282,7 +2282,7 @@ algorithm
       Absyn.Info info; 
       Restriction restriction;    
     case(partialPrefix,CLASS(id,_,e,restriction,parts,info)) then CLASS(id,partialPrefix,e,restriction,parts,info);
-  end matchcontinue;
+  end match;
 end setClassPartialPrefix;
 
 protected function findIteratorInEEquation
@@ -2465,7 +2465,7 @@ public function getClassComponents
   output list<Element> compElts;
   output list<String> compNames;
 algorithm
-  (compElts,compNames) := matchcontinue (cl)
+  (compElts,compNames) := match (cl)
     local
       list<Element> elts, comps;
       list<String> names;
@@ -2478,7 +2478,7 @@ algorithm
       equation
         (comps, names) = filterComponents(elts);
       then (comps,names);
-  end matchcontinue;
+  end match;
 end getClassComponents;
 
 public function printInitialStr
@@ -2486,10 +2486,10 @@ public function printInitialStr
   input Initial initial_;
   output String str;
 algorithm
-  str := matchcontinue(initial_)
+  str := match(initial_)
     case (INITIAL()) then "initial";
     case (NON_INITIAL()) then "non initial";
-  end matchcontinue;
+  end match;
 end printInitialStr;
 
 public function makeEnumType
@@ -2550,7 +2550,7 @@ Only to be used to unparse statements again."
   input Statement stmt;
   output Absyn.AlgorithmItem algi; 
 algorithm
-  algi := matchcontinue stmt
+  algi := match stmt
     local
       Absyn.ComponentRef functionCall;
       Absyn.Exp assignComponent;
@@ -2631,7 +2631,7 @@ algorithm
       equation
         algs1 = Util.listMap(body,statementToAlgorithmItem);
       then Absyn.ALGORITHMITEM(Absyn.ALG_FAILURE(algs1),NONE(),info);
-  end matchcontinue;
+  end match;
 end statementToAlgorithmItem;
 
 protected function findIteratorInStatement
@@ -2722,7 +2722,7 @@ Used by Inst.instForStatement
   input list<Statement> inAlgItemLst;
   output list<tuple<Absyn.ComponentRef, Integer>> outLst;
 algorithm
-    outLst := matchcontinue(inString,inAlgItemLst)
+    outLst := match(inString,inAlgItemLst)
     local
       list<tuple<Absyn.ComponentRef, Integer>> lst,lst_1,lst_2;
       String id;
@@ -2735,7 +2735,7 @@ algorithm
           lst_2=findIteratorInStatements(id,rest);
           lst=listAppend(lst_1,lst_2);
         then lst;
-  end matchcontinue;
+  end match;
 end findIteratorInStatements;
 
 protected function findIteratorInElseIfBranch //This function is not tail-recursive, and I don't know how to fix it -- alleb
@@ -2765,7 +2765,7 @@ public function equationFileInfo
   input EEquation eq;
   output Absyn.Info info;
 algorithm
-  info := matchcontinue eq
+  info := match eq
     case EQ_IF(info=info) then info;
     case EQ_EQUALS(info=info) then info;
     case EQ_CONNECT(info=info) then info;
@@ -2775,7 +2775,7 @@ algorithm
     case EQ_TERMINATE(info=info) then info;
     case EQ_REINIT(info=info) then info;
     case EQ_NORETCALL(info=info) then info;
-  end matchcontinue;
+  end match;
 end equationFileInfo;
 
 public function emptyModOrEquality

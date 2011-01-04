@@ -176,7 +176,7 @@ public function printEquations
   input BackendDAE.BackendDAE inBackendDAE;
 algorithm
   _:=
-  matchcontinue (inIntegerLst,inBackendDAE)
+  match (inIntegerLst,inBackendDAE)
     local
       BackendDAE.Value n;
       list<BackendDAE.Value> rest;
@@ -188,7 +188,7 @@ algorithm
         printEquationNo(n, dae);
       then
         ();
-  end matchcontinue;
+  end match;
 end printEquations;
 
 protected function printEquationNo "function: printEquationNo
@@ -200,7 +200,7 @@ protected function printEquationNo "function: printEquationNo
   input BackendDAE.BackendDAE inBackendDAE;
 algorithm
   _:=
-  matchcontinue (inInteger,inBackendDAE)
+  match (inInteger,inBackendDAE)
     local
       BackendDAE.Value eqno_1,eqno;
       BackendDAE.Equation eq;
@@ -212,7 +212,7 @@ algorithm
         printEquation(eq);
       then
         ();
-  end matchcontinue;
+  end match;
 end printEquationNo;
 
 public function printEquation "function: printEquation
@@ -223,7 +223,7 @@ public function printEquation "function: printEquation
   input BackendDAE.Equation inEquation;
 algorithm
   _:=
-  matchcontinue (inEquation)
+  match (inEquation)
     local
       String s1,s2,res;
       DAE.Exp e1,e2;
@@ -246,7 +246,7 @@ algorithm
         print(res);
       then
         ();
-  end matchcontinue;
+  end match;
 end printEquation;
 
 protected function printVarsStatistics "function: printVarsStatistics
@@ -295,7 +295,7 @@ public function dumpTypeStr
   output String outString;
 algorithm
   outString:=
-  matchcontinue (inType)
+  match (inType)
     local
       String s1,s2,str;
       list<String> l;
@@ -313,7 +313,7 @@ algorithm
       then
         str;
     case BackendDAE.EXT_OBJECT(_) then "ExternalObject ";
-  end matchcontinue;
+  end match;
 end dumpTypeStr;
 
 public function dumpTearing
@@ -324,7 +324,7 @@ public function dumpTearing
   input list<list<Integer>> inTearVar;
 algorithm
   _:=
-  matchcontinue (inResEqn,inTearVar)
+  match (inResEqn,inTearVar)
     local
       list<Integer> tearingvars,residualeqns;
       list<list<Integer>> r,t;
@@ -346,7 +346,7 @@ algorithm
         dumpTearing(r,t);
       then
         ();
-  end matchcontinue;
+  end match;
 end dumpTearing;
 
 public function dumpBackendDAEEqnList
@@ -476,7 +476,7 @@ protected function dumpZcStr
   output String outString;
 algorithm
   outString:=
-  matchcontinue (inZeroCrossing)
+  match (inZeroCrossing)
     local
       list<String> eq_s_list,wc_s_list;
       String eq_s,wc_s,str,str2;
@@ -492,7 +492,7 @@ algorithm
         str2 = stringAppendList({str," in equations [",eq_s,"] and when conditions [",wc_s,"]"});
       then
         str2;
-  end matchcontinue;
+  end match;
 end dumpZcStr;
 
 public function dump
@@ -501,7 +501,7 @@ public function dump
   input BackendDAE.BackendDAE inBackendDAE;
 algorithm
   _:=
-  matchcontinue (inBackendDAE)
+  match (inBackendDAE)
     local
       list<BackendDAE.Var> vars,knvars,extvars;
       BackendDAE.Value varlen,eqnlen;
@@ -591,14 +591,14 @@ algorithm
         dumpAlgorithms(arrayList(algs),0);
       then
         ();
-  end matchcontinue;
+  end match;
 end dump;
 
 protected function dumpAlgorithms "Help function to dump, prints algorithms to stdout"
   input list<DAE.Algorithm> algs;
   input Integer indx;
 algorithm
-  _ := matchcontinue(algs,indx)
+  _ := match(algs,indx)
     local 
       list<Algorithm.Statement> stmts;
       IOStream.IOStream myStream;
@@ -614,7 +614,7 @@ algorithm
         IOStream.print(myStream, IOStream.stdOutput);
         dumpAlgorithms(algs,indx+1);
     then ();
-  end matchcontinue;
+  end match;
 end dumpAlgorithms;
 
 public function dumpJacobianStr
@@ -625,7 +625,7 @@ public function dumpJacobianStr
   output String outString;
 algorithm
   outString:=
-  matchcontinue (inTplIntegerIntegerEquationLstOption)
+  match (inTplIntegerIntegerEquationLstOption)
     local
       list<String> res;
       String res_1;
@@ -637,7 +637,7 @@ algorithm
       then
         res_1;
     case (NONE()) then "No analytic jacobian available\n";
-  end matchcontinue;
+  end match;
 end dumpJacobianStr;
 
 protected function dumpJacobianStr2
@@ -647,7 +647,7 @@ protected function dumpJacobianStr2
   output list<String> outStringLst;
 algorithm
   outStringLst:=
-  matchcontinue (inTplIntegerIntegerEquationLst)
+  match (inTplIntegerIntegerEquationLst)
     local
       String estr,rowstr,colstr,str;
       list<String> strs;
@@ -664,7 +664,7 @@ algorithm
         strs = dumpJacobianStr2(eqns);
       then
         (str :: strs);
-  end matchcontinue;
+  end match;
 end dumpJacobianStr2;
 
 protected function dumpArrayEqns
@@ -673,7 +673,7 @@ protected function dumpArrayEqns
   input list<BackendDAE.MultiDimEquation> inMultiDimEquationLst;
   input Integer inInteger;
 algorithm
-  _ := matchcontinue (inMultiDimEquationLst,inInteger)
+  _ := match (inMultiDimEquationLst,inInteger)
     local
       String s1,s2,s,is;
       DAE.Exp e1,e2;
@@ -689,7 +689,7 @@ algorithm
         dumpArrayEqns(es,inInteger + 1);
       then
         ();
-  end matchcontinue;
+  end match;
 end dumpArrayEqns;
 
 public function dumpEqns
@@ -706,7 +706,7 @@ protected function dumpEqns2
   input list<BackendDAE.Equation> inEquationLst;
   input Integer inInteger;
 algorithm
-  _ := matchcontinue (inEquationLst,inInteger)
+  _ := match (inEquationLst,inInteger)
     local
       String es,is;
       BackendDAE.Value index_1,index;
@@ -725,7 +725,7 @@ algorithm
         dumpEqns2(eqns, index_1);
       then
         ();
-  end matchcontinue;
+  end match;
 end dumpEqns2;
 
 protected function whenEquationStr
@@ -734,7 +734,7 @@ protected function whenEquationStr
   input BackendDAE.WhenEquation inWhenEqn;
   output String outString;
 algorithm
-  outString := matchcontinue (inWhenEqn)
+  outString := match (inWhenEqn)
     local
       String s1,s2,res,indx_str,is,var_str,intsStr,outsStr;
       DAE.Exp e1,e2,e;
@@ -757,7 +757,7 @@ algorithm
         res = stringAppendList({" ; ",s2," elsewhen clause no: ",is /*, "\n" */});
       then
         res;
-  end matchcontinue;
+  end match;
 end whenEquationStr;
 
 public function equationStr
@@ -842,7 +842,7 @@ end equationStr;
 protected function dumpExtObjCls "dump classes of external objects"
   input BackendDAE.ExternalObjectClasses cls;
 algorithm
-  _ := matchcontinue(cls)
+  _ := match(cls)
     local
       BackendDAE.ExternalObjectClasses xs;
       DAE.Function constr,destr;
@@ -869,7 +869,7 @@ algorithm
         print(path_str +& "\n");
         print("end ");print(Absyn.pathString(path));
       then ();
-  end matchcontinue;
+  end match;
 end dumpExtObjCls;
 
 public function dumpVars
@@ -1017,7 +1017,7 @@ public function dumpKind
   input BackendDAE.VarKind inVarKind;
 algorithm
   _:=
-  matchcontinue (inVarKind)
+  match (inVarKind)
     local Absyn.Path path;
     case BackendDAE.VARIABLE()    equation print("VARIABLE");    then ();
     case BackendDAE.STATE()       equation print("STATE");       then ();
@@ -1028,7 +1028,7 @@ algorithm
     case BackendDAE.PARAM()       equation print("PARAM");       then ();
     case BackendDAE.CONST()       equation print("CONST");       then ();
     case BackendDAE.EXTOBJ(path)  equation print("EXTOBJ: ");print(Absyn.pathString(path)); then ();
-  end matchcontinue;
+  end match;
 end dumpKind;
 
 public function dumpIncidenceMatrix
@@ -1078,7 +1078,7 @@ protected function dumpIncidenceMatrix2
   input list<list<Integer>> inIntegerLstLst;
   input Integer rowIndex;
 algorithm
-  _ := matchcontinue (inIntegerLstLst,rowIndex)
+  _ := match (inIntegerLstLst,rowIndex)
     local
       list<BackendDAE.Value> row;
       list<list<BackendDAE.Value>> rows;
@@ -1090,7 +1090,7 @@ algorithm
         dumpIncidenceMatrix2(rows,rowIndex+1);
       then
         ();
-  end matchcontinue;
+  end match;
 end dumpIncidenceMatrix2;
 
 protected function dumpIncidenceRow
@@ -1099,7 +1099,7 @@ protected function dumpIncidenceRow
   Helper function to dumpIncidenceMatrix2."
   input list<Integer> inIntegerLst;
 algorithm
-  _ := matchcontinue (inIntegerLst)
+  _ := match (inIntegerLst)
     local
       String s;
       BackendDAE.Value x;
@@ -1117,7 +1117,7 @@ algorithm
         dumpIncidenceRow(xs);
       then
         ();
-  end matchcontinue;
+  end match;
 end dumpIncidenceRow;
 
 public function dumpMatching
@@ -1189,7 +1189,7 @@ public function dumpMarkedEqns
   input list<Integer> inIntegerLst;
   output String outString;
 algorithm
-  outString := matchcontinue (inBackendDAE,inIntegerLst)
+  outString := match (inBackendDAE,inIntegerLst)
     local
       String s1,s2,res;
       BackendDAE.Value e_1,e;
@@ -1207,7 +1207,7 @@ algorithm
         res = stringAppendList({s2,";\n",s1});
       then
         res;
-  end matchcontinue;
+  end match;
 end dumpMarkedEqns;
 
 public function dumpMarkedVars
@@ -1217,7 +1217,7 @@ public function dumpMarkedVars
   output String outString;
 algorithm
   outString:=
-  matchcontinue (inBackendDAE,inIntegerLst)
+  match (inBackendDAE,inIntegerLst)
     local
       String s1,s2,res,s3;
       BackendDAE.Value v_1,v;
@@ -1235,7 +1235,7 @@ algorithm
         res = stringAppendList({s2,"(",s3,"), ",s1});
       then
         res;
-  end matchcontinue;
+  end match;
 end dumpMarkedVars;
 
 public function dumpComponentsGraphStr
@@ -1248,7 +1248,7 @@ public function dumpComponentsGraphStr
   input array<Integer> ass2;
   output String res;
 algorithm
-  res := matchcontinue(n,m,mT,ass1,ass2)
+  res := match(n,m,mT,ass1,ass2)
     local list<String> lst;  
     case(n,m,mT,ass1,ass2)
       equation
@@ -1256,7 +1256,7 @@ algorithm
         res = Util.stringDelimitList(lst,",");
         res = stringAppendList({"{",res,"}"});
       then res;
-  end matchcontinue;
+  end match;
 end dumpComponentsGraphStr;
 
 protected function dumpComponentsGraphStr2 "help function"
@@ -1328,7 +1328,7 @@ protected function dumpComponents2 "function: dumpComponents2
   input Integer inInteger;
 algorithm
   _:=
-  matchcontinue (inIntegerLstLst,inInteger)
+  match (inIntegerLstLst,inInteger)
     local
       BackendDAE.Value ni,i_1,i;
       list<String> ls;
@@ -1348,7 +1348,7 @@ algorithm
         dumpComponents2(lst, i_1);
       then
         ();
-  end matchcontinue;
+  end match;
 end dumpComponents2;
 
 protected function intListStr "Takes a list of Integers and produces a string  on form: \"{1,2,3}\" "

@@ -1053,7 +1053,7 @@ protected function elabExpOption
 	output Option<DAE.Exp> outExp;
 	output list<DAE.Function> outElementList;
 algorithm
-  (outExp,outElementList) := matchcontinue(inExp,inElementList)
+  (outExp,outElementList) := match(inExp,inElementList)
     local
       DAE.Exp e,e_1;
       list<DAE.Function> dae;
@@ -1063,7 +1063,7 @@ algorithm
         ((e_1,dae)) = Expression.traverseExp(e,elabExp,dae);
       then
         (SOME(e_1),dae);
-  end matchcontinue;
+  end match;
 end elabExpOption;
 
 protected function elabExp

@@ -355,7 +355,7 @@ public function replaceMultiDimEquations "function: replaceMultiDimEquations
   output list<BackendDAE.MultiDimEquation> outBackendDAEEquationLst;
 algorithm
   outBackendDAEEquationLst:=
-  matchcontinue (inBackendDAEEquationLst,inVariableReplacements)
+  match (inBackendDAEEquationLst,inVariableReplacements)
     local
       DAE.Exp e1_1,e2_1,e1,e2,e_1,e,e1_2,e2_2;
       list<BackendDAE.MultiDimEquation> es_1,es;
@@ -375,7 +375,7 @@ algorithm
         es_1 = replaceMultiDimEquations(es, repl);
       then
         (BackendDAE.MULTIDIM_EQUATION(dims,e1_2,e2_2,source) :: es_1);
-  end matchcontinue;
+  end match;
 end replaceMultiDimEquations;
 
 public function replaceAlgorithms "function: replaceAlgorithms
@@ -389,7 +389,7 @@ public function replaceAlgorithms "function: replaceAlgorithms
   output list<DAE.Algorithm> outAlgorithmLst;
 algorithm
   outAlgorithmLst:=
-  matchcontinue (inAlgorithmLst,inVariableReplacements)
+  match (inAlgorithmLst,inVariableReplacements)
     local
       VarTransform.VariableReplacements repl;
       list<DAE.Statement> statementLst,statementLst_1;
@@ -401,7 +401,7 @@ algorithm
         es_1 = replaceAlgorithms(es,repl);
       then
         (DAE.ALGORITHM_STMTS(statementLst_1)  :: es_1);
-  end matchcontinue;
+  end match;
 end replaceAlgorithms;
 
 protected function replaceStatementLst "function: replaceStatementLst
@@ -599,7 +599,7 @@ protected function replaceElse "function: replaceElse
   output DAE.Else outElse;
 algorithm
   outElse:=
-  matchcontinue (inElse,inVariableReplacements)
+  match (inElse,inVariableReplacements)
     local
       VarTransform.VariableReplacements repl;
       list<DAE.Statement> statementLst,statementLst_1;
@@ -620,7 +620,7 @@ algorithm
         statementLst_1 = replaceStatementLst(statementLst, repl);
       then
         DAE.ELSE(statementLst_1);      
-  end matchcontinue;
+  end match;
 end replaceElse;
 
 end BackendVarTransform;

@@ -57,12 +57,12 @@ Used for debugging."
   input DAE.Const const;
   output String str;
 algorithm
-  str := matchcontinue(const)
+  str := match(const)
     case(DAE.C_VAR()) then "VAR";
     case(DAE.C_PARAM()) then "PARAM";
     case(DAE.C_CONST()) then "CONST";
       
-  end matchcontinue;
+  end match;
 end constStr;
 
 public function expTypeSimple "returns true if type is simple type"
@@ -132,10 +132,10 @@ Used for Util.sort"
 protected
   Integer i1,i2;
 algorithm
-  b := matchcontinue(e1,e2)
+  b := match(e1,e2)
     case((i1,_),(i2,_))
       then Util.isIntGreater(i1,i2);
-  end matchcontinue;
+  end match;
 end derivativeOrder;
 
 public function getDerivativePaths " collects all paths representing derivative functions for a list of FunctionDefinition's"
@@ -566,7 +566,7 @@ Author: BZ, 2008-11
 Renames a var to unique name"
   input DAE.ComponentRef inCr;
   output DAE.ComponentRef outCr;
-algorithm outCr := matchcontinue(inCr)
+algorithm outCr := match(inCr)
   local
     DAE.ComponentRef newChild,child;
     String id;
@@ -583,7 +583,7 @@ algorithm outCr := matchcontinue(inCr)
     then
       ComponentReference.makeCrefQual(id,idt,subs,newChild);
 
-end matchcontinue;
+end match;
 end nameInnerouterUniqueCref;
 
 public function unNameInnerouterUniqueCref "
@@ -652,9 +652,9 @@ public function varCref " returns the component reference of a variable"
 input DAE.Element elt;
 output DAE.ComponentRef cr;
 algorithm
-  cr := matchcontinue(elt)
+  cr := match(elt)
     case(DAE.VAR(componentRef = cr)) then cr;
-  end matchcontinue;
+  end match;
 end varCref;
 
 
@@ -733,7 +733,7 @@ public function getStartAttrFail "
   Return the start attribute. or fails"
   input Option<DAE.VariableAttributes> inVariableAttributesOption;
   output DAE.Exp start;
-algorithm start:= matchcontinue (inVariableAttributesOption)
+algorithm start:= match (inVariableAttributesOption)
     local
       DAE.Exp r;
     case (SOME(DAE.VAR_ATTR_REAL(initial_ = SOME(r)))) then r;
@@ -741,7 +741,7 @@ algorithm start:= matchcontinue (inVariableAttributesOption)
     case (SOME(DAE.VAR_ATTR_BOOL(initial_ = SOME(r)))) then r;
     case (SOME(DAE.VAR_ATTR_STRING(initial_ = SOME(r)))) then r;
     case (SOME(DAE.VAR_ATTR_ENUMERATION(start = SOME(r)))) then r;
-  end matchcontinue;
+  end match;
 end getStartAttrFail;
 
 public function setVariableAttributes "sets the attributes of a DAE.Element that is VAR"
@@ -749,7 +749,7 @@ public function setVariableAttributes "sets the attributes of a DAE.Element that
   input Option<DAE.VariableAttributes> varOpt;
   output DAE.Element outVar;
 algorithm
-  outVar := matchcontinue(var,varOpt)
+  outVar := match(var,varOpt)
     local
       DAE.ComponentRef cr; DAE.VarKind k;
       DAE.VarDirection d ; DAE.VarProtection p;
@@ -760,7 +760,7 @@ algorithm
 
     case(DAE.VAR(cr,k,d,p,ty,b,dims,fl,st,source,_,cmt,io),varOpt)
       then DAE.VAR(cr,k,d,p,ty,b,dims,fl,st,source,varOpt,cmt,io);
-  end matchcontinue;
+  end match;
 end setVariableAttributes;
 
 public function setStartAttr "
@@ -770,7 +770,7 @@ public function setStartAttr "
   output Option<DAE.VariableAttributes> outAttr;
 algorithm
   outAttr:=
-  matchcontinue (attr,start)
+  match (attr,start)
     local
       Option<DAE.Exp> q,u,du,i,f,n;
       tuple<Option<DAE.Exp>, Option<DAE.Exp>> minMax;
@@ -790,7 +790,7 @@ algorithm
     then SOME(DAE.VAR_ATTR_ENUMERATION(q,minMax,SOME(start),du,eb,ip,fn));
     case (NONE(),start)
       then SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),SOME(start),NONE(),NONE(),NONE(),NONE(),NONE(),NONE()));
-  end matchcontinue;
+  end match;
 end setStartAttr;
 
 public function setUnitAttr "
@@ -801,7 +801,7 @@ public function setUnitAttr "
   output Option<DAE.VariableAttributes> outAttr;
 algorithm
   outAttr:=
-  matchcontinue (attr,unit)
+  match (attr,unit)
     local
       Option<DAE.Exp> q,u,du,i,f,n,s;
       tuple<Option<DAE.Exp>, Option<DAE.Exp>> minMax;
@@ -813,7 +813,7 @@ algorithm
     then SOME(DAE.VAR_ATTR_REAL(q,SOME(unit),du,minMax,s,f,n,ss,eb,ip,fn));
     case (NONE(),unit)
       then SOME(DAE.VAR_ATTR_REAL(NONE(),SOME(unit),NONE(),(NONE(),NONE()),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE()));
-  end matchcontinue;
+  end match;
 end setUnitAttr;
 
 public function setProtectedAttr "
@@ -901,7 +901,7 @@ public function setFinalAttr "
   output Option<DAE.VariableAttributes> outAttr;
 algorithm
   outAttr:=
-  matchcontinue (attr,finalPrefix)
+  match (attr,finalPrefix)
     local
       Option<DAE.Exp> q,u,du,i,f,n;
       tuple<Option<DAE.Exp>, Option<DAE.Exp>> minMax;
@@ -922,7 +922,7 @@ algorithm
 
     case (NONE(),finalPrefix)
       then SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),SOME(finalPrefix)));
-  end matchcontinue;
+  end match;
 end setFinalAttr;
 
 public function boolVarProtection "Function: boolVarProtection
@@ -1431,7 +1431,7 @@ protected function getBindingsStr "function: getBindingsStr
   output String outString;
 algorithm
   outString:=
-  matchcontinue (inElementLst)
+  match (inElementLst)
     local
       String expstr,s3,s4,str,s1,s2;
       DAE.Element v;
@@ -1459,7 +1459,7 @@ algorithm
       then
         str;
     case ({(v as DAE.VAR(componentRef = cr,binding = NONE()))}) then "";
-  end matchcontinue;
+  end match;
 end getBindingsStr;
 
 public function getBindings "function: getBindingsStr
@@ -1904,7 +1904,7 @@ Author BZ
   input DAE.Element inelem;
   output DAE.Element outelem;
 algorithm
-  outelem := matchcontinue(newCr, inelem)
+  outelem := match(newCr, inelem)
     local
       DAE.ComponentRef a1; DAE.VarKind a2;
       DAE.VarDirection a3; DAE.VarProtection a4;
@@ -1915,7 +1915,7 @@ algorithm
       Option<SCode.Comment> a12; Absyn.InnerOuter a13;
     case(newCr, DAE.VAR(a1,a2,a3,a4,a5,a6,a7,a8,a9,source,a11,a12,a13))
       then DAE.VAR(newCr,a2,a3,a4,a5,a6,a7,a8,a9,source,a11,a12,a13);
-  end matchcontinue;
+  end match;
 end replaceCrefInVar;
 
 protected function toModelicaFormExpOpt "function: toModelicaFormExpOpt
@@ -2091,13 +2091,13 @@ public function getFunctionElements
   input DAE.Function fn;
   output list<DAE.Element> els;
 algorithm
-  els := matchcontinue fn
+  els := match fn
     local
       list<DAE.Element> elements;
     case DAE.FUNCTION(functions = (DAE.FUNCTION_DEF(body = elements)::_)) then elements;
     case DAE.FUNCTION(functions = (DAE.FUNCTION_EXT(body = elements)::_)) then elements;
     case DAE.RECORD_CONSTRUCTOR(path = _) then {};
-  end matchcontinue;
+  end match;
 end getFunctionElements;
 
 protected function crefToExp "function: crefToExp
@@ -2360,12 +2360,12 @@ Author: Frenkel TUD, 2010-12"
   input tuple<DAE.Exp,tuple<HashTable2.HashTable,Integer>> itpl;
   output tuple<DAE.Exp,tuple<HashTable2.HashTable,Integer>> otpl;
 algorithm
-  otpl := matchcontinue itpl
+  otpl := match itpl
     local
       DAE.Exp exp;
       tuple<HashTable2.HashTable,Integer> extra_arg;
     case ((exp,extra_arg)) then Expression.traverseExp(exp,evaluateAnnotationTraverse,extra_arg);
-  end matchcontinue;
+  end match;
 end evaluateAnnotationVisitor;
 
 protected function evaluateAnnotationTraverse "
@@ -2567,7 +2567,7 @@ protected function hasBooleanNamedAnnotation2
   input String annotationName;
   output Boolean outB;
 algorithm
-  (outB) := matchcontinue (inMod,annotationName)
+  (outB) := match (inMod,annotationName)
     local
       Boolean b;
       list<SCode.SubMod> subModLst;    
@@ -2576,7 +2576,7 @@ algorithm
         b = hasBooleanNamedAnnotation3(subModLst,annotationName);
       then
         b;
-  end matchcontinue;
+  end match;
 end hasBooleanNamedAnnotation2;
 
 protected function hasBooleanNamedAnnotation3
@@ -3029,7 +3029,7 @@ protected function makeResidualIfExpLst
   input list<DAE.Exp> inExpLst3;
   output list<DAE.Exp> outExpLst;
 algorithm
-  outExpLst := matchcontinue (inExp1,inExpLst2,inExpLst3)
+  outExpLst := match (inExp1,inExpLst2,inExpLst3)
     local
       list<list<DAE.Exp>> tbs,tbsRest;
       list<DAE.Exp> tbsFirst,fbs,rest_res;
@@ -3051,7 +3051,7 @@ algorithm
         ifexp = Expression.makeNestedIf(conds,tbsFirst,fb);
       then
         (ifexp :: rest_res);
-  end matchcontinue;
+  end match;
 end makeResidualIfExpLst;
 
 protected function makeEquationsFromResiduals
@@ -3061,7 +3061,7 @@ protected function makeEquationsFromResiduals
   input DAE.ElementSource source "the origin of the element";
   output list<DAE.Element> outExpLst;
 algorithm
-  outExpLst := matchcontinue (inExp1,inExpLst2,inExpLst3,source)
+  outExpLst := match (inExp1,inExpLst2,inExpLst3,source)
     local
       list<list<DAE.Exp>> tbs,tbsRest;
       list<DAE.Exp> tbsFirst,fbs;
@@ -3087,7 +3087,7 @@ algorithm
         eq = DAE.EQUATION(DAE.RCONST(0.0),ifexp,src);
       then
         (eq :: rest_res);
-  end matchcontinue;
+  end match;
 end makeEquationsFromResiduals;
 
 public function renameTimeToDollarTime "
@@ -3205,14 +3205,14 @@ calls Expression.traverseExp on the expression."
   input tuple<DAE.Exp,Integer> itpl;
   output tuple<DAE.Exp,Integer> otpl;
 algorithm
-  otpl := matchcontinue itpl
+  otpl := match itpl
     local
       DAE.Exp exp,oexp;
       Integer arg,oarg;
     
     case ((exp,oarg)) then Expression.traverseExp(exp,addUniqueIdentifierToCref,oarg);
     
-  end matchcontinue;
+  end match;
 end nameUniqueVisitor;
 
 protected function addUniqueIdentifierToCref "
@@ -3252,7 +3252,7 @@ Traverse an optional expression, helper function for traverseDAE"
   end FuncExpType;
   replaceable type Type_a subtypeof Any;
 algorithm
-  (ooexp,oextraArg) := matchcontinue(oexp,func,extraArg)
+  (ooexp,oextraArg) := match(oexp,func,extraArg)
     local 
       DAE.Exp e;
     
@@ -3263,7 +3263,7 @@ algorithm
         ((e,extraArg)) = func((e,extraArg));
       then
         (SOME(e),extraArg);
-  end matchcontinue;
+  end match;
 end traverseDAEOptExp;
 
 protected function traverseDAEExpList "
@@ -3280,7 +3280,7 @@ Traverse an list of expressions, helper function for traverseDAE"
   end FuncExpType;
   replaceable type Type_a subtypeof Any;
 algorithm
-  (oexps,oextraArg) := matchcontinue(exps,func,extraArg)
+  (oexps,oextraArg) := match(exps,func,extraArg)
     local 
       DAE.Exp e;
     
@@ -3292,7 +3292,7 @@ algorithm
         (oexps,extraArg) = traverseDAEExpList(exps,func,extraArg);
       then
         (e::oexps,extraArg);
-  end matchcontinue;
+  end match;
 end traverseDAEExpList;
 
 protected function traverseDAEList "
@@ -3309,7 +3309,7 @@ Helper function for traverseDAE, traverses a list of dae element list."
   end FuncExpType;
   replaceable type Type_a subtypeof Any;
 algorithm 
-  (traversedDaeList,oextraArg) := matchcontinue(daeList,func,extraArg)
+  (traversedDaeList,oextraArg) := match(daeList,func,extraArg)
     local
       list<DAE.Element> branch,branch2;
       list<list<DAE.Element>> recRes;
@@ -3322,7 +3322,7 @@ algorithm
         (recRes,extraArg) = traverseDAEList(daeList,func,extraArg);
       then
         (branch2::recRes,extraArg);
-  end matchcontinue;
+  end match;
 end traverseDAEList;
 
 public function getFunctionList
@@ -3370,7 +3370,7 @@ NOTE, it also traverses DAE.VAR(componenname) as an expression."
   partial function FuncExpType input tuple<DAE.Exp,Type_a> arg; output tuple<DAE.Exp,Type_a> oarg; end FuncExpType;
   replaceable type Type_a subtypeof Any;
 algorithm
-  (traversedDae,outTree,oextraArg) := matchcontinue(dae,functionTree,func,extraArg)
+  (traversedDae,outTree,oextraArg) := match(dae,functionTree,func,extraArg)
   local
     list<DAE.Element> elts;
      list<tuple<DAE.AvlKey,DAE.AvlValue>> funcLst;
@@ -3381,7 +3381,7 @@ algorithm
      (funcLst,extraArg) = traverseDAEFuncLst(avlTreeToList(funcs),func,extraArg);
      funcs = avlTreeAddLst(funcLst,avlTreeNew());
   then (DAE.DAE(elts),funcs,extraArg);
-  end matchcontinue;
+  end match;
 end traverseDAE;
 
 protected function traverseDAEFuncLst "help function to traverseDae. Traverses the functions "
@@ -3394,7 +3394,7 @@ protected function traverseDAEFuncLst "help function to traverseDae. Traverses t
   replaceable type Type_a subtypeof Any;
 
 algorithm
-  (outFuncLst,oextraArg) := matchcontinue(funcLst,func,extraArg)
+  (outFuncLst,oextraArg) := match(funcLst,func,extraArg)
     local
       Absyn.Path p;
       DAE.Function daeFunc;
@@ -3409,7 +3409,7 @@ algorithm
       equation
         Debug.fprintln("failtrace", "- DAEUtil.traverseDAEFuncLst failed: " +& Absyn.pathString(p));
       then fail();
-  end matchcontinue;
+  end match;
 end traverseDAEFuncLst;
 
 public function traverseDAEFunctions "Traverses the functions.
@@ -3423,7 +3423,7 @@ expression, use an extra helper function."
   partial function FuncExpType input tuple<DAE.Exp,Type_a> arg; output tuple<DAE.Exp,Type_a> oarg; end FuncExpType;
   replaceable type Type_a subtypeof Any;
 algorithm
-  (outFuncLst,oextraArg) := matchcontinue(funcLst,func,extraArg)
+  (outFuncLst,oextraArg) := match(funcLst,func,extraArg)
     local
       DAE.Function daeFunc;
     case({},func,extraArg) then ({},extraArg);
@@ -3432,7 +3432,7 @@ algorithm
         (daeFunc,extraArg) = traverseDAEFunc(daeFunc,func,extraArg);
         (funcLst,extraArg) = traverseDAEFunctions(funcLst,func,extraArg);
       then (daeFunc::funcLst,extraArg);
-  end matchcontinue;
+  end match;
 end traverseDAEFunctions;
 
 protected function traverseDAEFunc
@@ -3444,7 +3444,7 @@ protected function traverseDAEFunc
   partial function FuncExpType input tuple<DAE.Exp,Type_a> arg; output tuple<DAE.Exp,Type_a> oarg; end FuncExpType;
   replaceable type Type_a subtypeof Any;
 algorithm
-  (traversedFn,oextraArg) := matchcontinue (daeFn,func,extraArg)
+  (traversedFn,oextraArg) := match (daeFn,func,extraArg)
     local
       DAE.ComponentRef cr,cr2,cr1,cr1_2;
       list<DAE.Element> dae,dae2,elist,elist2,elist22,elist1,elist11;
@@ -3480,7 +3480,7 @@ algorithm
     
     case(DAE.RECORD_CONSTRUCTOR(path,tp,source),func,extraArg)
       then (DAE.RECORD_CONSTRUCTOR(path,tp,source),extraArg);
-  end matchcontinue;
+  end match;
 end traverseDAEFunc;
 
 
@@ -3986,7 +3986,7 @@ Helper function for traverseDAEEquationsStmts
   partial function FuncExpType input tuple<DAE.Exp,Type_a> arg; output tuple<DAE.Exp,Type_a> oarg; end FuncExpType;
   replaceable type Type_a subtypeof Any;
 algorithm
-  (outElse,oextraArg) := matchcontinue(inElse,func,extraArg)
+  (outElse,oextraArg) := match(inElse,func,extraArg)
   local
     DAE.Exp e,e_1;
     list<DAE.Statement> st,st_1;
@@ -4002,7 +4002,7 @@ algorithm
     equation
       (st_1,extraArg) = traverseDAEEquationsStmts(st,func,extraArg);
     then (DAE.ELSE(st_1),extraArg);
-end matchcontinue;
+end match;
 end traverseDAEEquationsStmtsElse;
 
 protected function traverseDAEVarAttr "
@@ -4017,7 +4017,7 @@ Help function to traverseDAE
   partial function FuncExpType input tuple<DAE.Exp,Type_a> arg; output tuple<DAE.Exp,Type_a> oarg; end FuncExpType;
   replaceable type Type_a subtypeof Any;
 algorithm
-  (traversedDaeList,oextraArg) := matchcontinue(attr,func,extraArg)
+  (traversedDaeList,oextraArg) := match(attr,func,extraArg)
     local
       Option<DAE.Exp> quantity,unit,displayUnit,min,max,initial_,fixed,nominal,eb;
       Option<DAE.StateSelect> stateSelect;
@@ -4063,7 +4063,7 @@ algorithm
         then (SOME(DAE.VAR_ATTR_ENUMERATION(quantity,(min,max),initial_,fixed,eb,ip,fn)),extraArg);
 
       case (NONE(),_,extraArg) then (NONE(),extraArg);
-  end matchcontinue;
+  end match;
 end traverseDAEVarAttr;
 
 public function getElementSourceFileInfo
@@ -4072,9 +4072,9 @@ If there are several candidates, select the first one."
   input DAE.ElementSource source;
   output Absyn.Info info;
 algorithm
-  info := matchcontinue source
+  info := match source
     case DAE.SOURCE(info = info) then info;
-  end matchcontinue;
+  end match;
 end getElementSourceFileInfo;
 
 public function getElementSourceTypes
@@ -4083,10 +4083,10 @@ public function getElementSourceTypes
  input DAE.ElementSource source "the source of the element";
  output list<Absyn.Path> pathLst;
 algorithm
-  pathLst := matchcontinue(source)
+  pathLst := match(source)
     local list<Absyn.Path> pLst;
     case DAE.SOURCE(typeLst = pLst) then pLst;
-  end matchcontinue;
+  end match;
 end getElementSourceTypes;
 
 public function getElementSourceInstances
@@ -4131,13 +4131,13 @@ public function addComponentTypeOpt "
   input Option<Absyn.Path> inPath;
   output DAE.DAElist outDae;
 algorithm
-  outDae := matchcontinue (inDae,inPath)
+  outDae := match (inDae,inPath)
       local Absyn.Path p; DAE.DAElist dae;
     case (dae,SOME(p)) equation
       dae = addComponentType(dae,p);
     then dae;
     case(dae,NONE()) then dae;
-  end matchcontinue;
+  end match;
 end addComponentTypeOpt;
 
 public function addComponentType "
@@ -4211,7 +4211,7 @@ protected function addElementSourceType
   input Absyn.Path classPath;
   output DAE.ElementSource outSource;
 algorithm
-  outSource := matchcontinue(inSource, classPath)
+  outSource := match(inSource, classPath)
     local
       Absyn.Info info "the line and column numbers of the equations and algorithms this element came from";
       list<Absyn.Path> typeLst "the absyn type of the element" ;
@@ -4221,7 +4221,7 @@ algorithm
 
     case (DAE.SOURCE(info, partOfLst, instanceOptLst, connectEquationOptLst, typeLst), classPath)
       then DAE.SOURCE(info, partOfLst, instanceOptLst, connectEquationOptLst, classPath::typeLst);
-  end matchcontinue;
+  end match;
 end addElementSourceType;
 
 protected function addElementSourceTypeOpt
@@ -4229,7 +4229,7 @@ protected function addElementSourceTypeOpt
   input Option<Absyn.Path> classPathOpt;
   output DAE.ElementSource outSource;
 algorithm
-  outSource := matchcontinue(inSource, classPathOpt)
+  outSource := match(inSource, classPathOpt)
     local
       Absyn.Path classPath;
       DAE.ElementSource src;
@@ -4238,7 +4238,7 @@ algorithm
       equation
         src = addElementSourceType(inSource, classPath);
       then src;
-  end matchcontinue;
+  end match;
 end addElementSourceTypeOpt;
 
 public function addElementSourcePartOf
@@ -4246,7 +4246,7 @@ public function addElementSourcePartOf
   input Absyn.Within withinPath;
   output DAE.ElementSource outSource;
 algorithm
-  outSource := matchcontinue(inSource, withinPath)
+  outSource := match(inSource, withinPath)
     local
       Absyn.Info info "the line and column numbers of the equations and algorithms this element came from";
       list<Absyn.Path> typeLst "the absyn type of the element" ;
@@ -4256,7 +4256,7 @@ algorithm
 
     case (DAE.SOURCE(info,partOfLst, instanceOptLst, connectEquationOptLst, typeLst), withinPath)
       then DAE.SOURCE(info,withinPath::partOfLst, instanceOptLst, connectEquationOptLst, typeLst);
-  end matchcontinue;
+  end match;
 end addElementSourcePartOf;
 
 public function addElementSourcePartOfOpt
@@ -4264,7 +4264,7 @@ public function addElementSourcePartOfOpt
   input Option<Absyn.Path> classPathOpt;
   output DAE.ElementSource outSource;
 algorithm
-  outSource := matchcontinue(inSource, classPathOpt)
+  outSource := match(inSource, classPathOpt)
     local
       Absyn.Path classPath;
       DAE.ElementSource src;
@@ -4277,7 +4277,7 @@ algorithm
       equation
         src = addElementSourcePartOf(inSource, Absyn.WITHIN(classPath));
       then src;
-  end matchcontinue;
+  end match;
 end addElementSourcePartOfOpt;
 
 public function addElementSourceFileInfo
@@ -4285,7 +4285,7 @@ public function addElementSourceFileInfo
   input Absyn.Info fileInfo;
   output DAE.ElementSource outSource;
 algorithm
-  outSource := matchcontinue (source,fileInfo)
+  outSource := match (source,fileInfo)
     local
       list<Absyn.Path> typeLst "the absyn type of the element" ;
       list<Absyn.Within> partOfLst "the models this element came from" ;
@@ -4294,7 +4294,7 @@ algorithm
       Absyn.Info info;
     case (DAE.SOURCE(_,partOfLst,instanceOptLst,connectEquationOptLst,typeLst), info)
       then DAE.SOURCE(info,partOfLst,instanceOptLst,connectEquationOptLst,typeLst);
-  end matchcontinue;
+  end match;
 end addElementSourceFileInfo;
 
 public function addElementSourceInstanceOpt
@@ -4302,7 +4302,7 @@ public function addElementSourceInstanceOpt
   input Option<DAE.ComponentRef> instanceOpt;
   output DAE.ElementSource outSource;
 algorithm
-  outSource := matchcontinue(inSource, instanceOpt)
+  outSource := match(inSource, instanceOpt)
     local
       Absyn.Path classPath;
       DAE.ElementSource src;
@@ -4315,7 +4315,7 @@ algorithm
     // a NONE() means top level (equivalent to NO_PRE, SOME(cref) means subcomponent
     case (DAE.SOURCE(info,partOfLst,instanceOptLst,connectEquationOptLst,typeLst), instanceOpt)
       then DAE.SOURCE(info,partOfLst,instanceOpt::instanceOptLst,connectEquationOptLst,typeLst);
-  end matchcontinue;
+  end match;
 end addElementSourceInstanceOpt;
 
 public function addElementSourceConnectOpt
@@ -4355,10 +4355,10 @@ public function functionName "returns the name of a FUNCTION or RECORD_CONSTRUCT
   input DAE.Function elt;
   output Absyn.Path name;
 algorithm
-  name:= matchcontinue(elt)
+  name:= match(elt)
     case(DAE.FUNCTION(path=name)) then name;
     case(DAE.RECORD_CONSTRUCTOR(path=name)) then name;
-  end matchcontinue;
+  end match;
 end functionName;
 
 public function mergeSources
@@ -4366,7 +4366,7 @@ public function mergeSources
   input DAE.ElementSource src2;
   output DAE.ElementSource mergedSrc;
 algorithm
-  mergedSrc := matchcontinue(src1,src2)
+  mergedSrc := match(src1,src2)
     local
       Absyn.Info info;
       list<Absyn.Within> partOfLst1,partOfLst2,p;
@@ -4381,7 +4381,7 @@ algorithm
         c = listAppend(connectEquationOptLst1, connectEquationOptLst1);
         t = listAppend(typeLst1, typeLst2);
       then DAE.SOURCE(info,p,i,c,t);
- end matchcontinue;
+ end match;
 end mergeSources;
 
 function createElementSource
@@ -4419,9 +4419,9 @@ public function daeElements "Retrieve the elements from a DAEList"
   input DAE.DAElist dae;
   output list<DAE.Element> elts;
 algorithm
-  elts := matchcontinue(dae)
+  elts := match(dae)
     case(DAE.DAE(elts)) then elts;
-  end matchcontinue;
+  end match;
 end daeElements;
 
 public function joinDaes "joins two daes by appending the element lists and joining the function trees"
@@ -4429,7 +4429,7 @@ public function joinDaes "joins two daes by appending the element lists and join
   input DAE.DAElist dae2;
   output DAE.DAElist outDae;
 algorithm
-  outDae := matchcontinue(dae1,dae2)
+  outDae := match(dae1,dae2)
     local
       list<DAE.Element> elts1,elts2,elts;
       Real t1, t2, ti;
@@ -4445,7 +4445,7 @@ algorithm
         // Debug.fprintln("innerouter", " joinDAEs: (" +& realString(ti) +& ") -> " +& intString(listLength(elts1)) +& " + " +&  intString(listLength(elts2)));
       then DAE.DAE(elts);
     
-  end matchcontinue;
+  end match;
 end joinDaes;
 
 public function joinDaeLst "joins a list of daes by using joinDaes"
@@ -4505,7 +4505,7 @@ protected function avlTreeToList2 "help function to avlTreeToList"
   input Option<DAE.AvlTree> tree;
   output list<tuple<DAE.AvlKey,DAE.AvlValue>> lst;
 algorithm
-  lst := matchcontinue(tree)
+  lst := match(tree)
   local Option<DAE.AvlTree> r,l; DAE.AvlKey k; DAE.AvlValue v;
     case NONE() then {};
     case(SOME(DAE.AVLTREENODE(value = NONE(),left = l,right = r) )) equation
@@ -4514,7 +4514,7 @@ algorithm
     case(SOME(DAE.AVLTREENODE(value=SOME(DAE.AVLTREEVALUE(k,v)),left = l, right = r))) equation
       lst = listAppend(avlTreeToList2(l),avlTreeToList2(r));
     then (k,v)::lst;
-  end matchcontinue;
+  end match;
 end avlTreeToList2;
 
 public function avlTreeAddLst "Adds a list of (key,value) pairs"
@@ -4522,7 +4522,7 @@ public function avlTreeAddLst "Adds a list of (key,value) pairs"
   input DAE.AvlTree inTree;
   output DAE.AvlTree outTree;
 algorithm
-  outTree := matchcontinue(values,inTree)
+  outTree := match(values,inTree)
   local DAE.AvlKey key;
     DAE.AvlValue val;
     DAE.AvlTree tree;
@@ -4531,7 +4531,7 @@ algorithm
       tree = avlTreeAdd(tree,key,val);
       tree = avlTreeAddLst(values,tree);
     then tree;
-  end matchcontinue;
+  end match;
 end avlTreeAddLst;
 
 public function avlTreeAdd "
@@ -4592,10 +4592,10 @@ protected function createEmptyAvlIfNone "Help function to DAE.AvlTreeAdd2"
 input Option<DAE.AvlTree> t;
 output DAE.AvlTree outT;
 algorithm
-  outT := matchcontinue(t)
+  outT := match(t)
     case(NONE()) then DAE.AVLTREENODE(NONE(),0,NONE(),NONE());
     case(SOME(outT)) then outT;
-  end matchcontinue;
+  end match;
 end createEmptyAvlIfNone;
 
 protected function nodeValue "return the node value"
@@ -4678,14 +4678,14 @@ protected function doBalance4 "help function to doBalance2"
   input DAE.AvlTree bt;
   output DAE.AvlTree outBt;
 algorithm
-  outBt := matchcontinue(bt)
+  outBt := match(bt)
   local DAE.AvlTree rl;
  case(bt) equation
       true = differenceInHeight(getOption(leftNode(bt))) < 0;
       rl = rotateLeft(getOption(leftNode(bt)));
       bt = setLeft(bt,SOME(rl));
     then bt;
-  end matchcontinue;
+  end match;
 end doBalance4;
 
 protected function setRight "set right treenode"
@@ -4693,12 +4693,12 @@ protected function setRight "set right treenode"
   input Option<DAE.AvlTree> right;
   output DAE.AvlTree outNode;
 algorithm
-  outNode := matchcontinue(node,right)
+  outNode := match(node,right)
    local Option<DAE.AvlTreeValue> value;
     Option<DAE.AvlTree> l,r;
     Integer height;
     case(DAE.AVLTREENODE(value,height,l,r),right) then DAE.AVLTREENODE(value,height,l,right);
-  end matchcontinue;
+  end match;
 end setRight;
 
 protected function setLeft "set left treenode"
@@ -4706,12 +4706,12 @@ protected function setLeft "set left treenode"
   input Option<DAE.AvlTree> left;
   output DAE.AvlTree outNode;
 algorithm
-  outNode := matchcontinue(node,left)
+  outNode := match(node,left)
   local Option<DAE.AvlTreeValue> value;
     Option<DAE.AvlTree> l,r;
     Integer height;
     case(DAE.AVLTREENODE(value,height,l,r),left) then DAE.AVLTREENODE(value,height,left,r);
-  end matchcontinue;
+  end match;
 end setLeft;
 
 
@@ -4719,18 +4719,18 @@ protected function leftNode "Retrieve the left subnode"
   input DAE.AvlTree node;
   output Option<DAE.AvlTree> subNode;
 algorithm
-  subNode := matchcontinue(node)
+  subNode := match(node)
     case(DAE.AVLTREENODE(left = subNode)) then subNode;
-  end matchcontinue;
+  end match;
 end leftNode;
 
 protected function rightNode "Retrieve the right subnode"
   input DAE.AvlTree node;
   output Option<DAE.AvlTree> subNode;
 algorithm
-  subNode := matchcontinue(node)
+  subNode := match(node)
     case(DAE.AVLTREENODE(right = subNode)) then subNode;
-  end matchcontinue;
+  end match;
 end rightNode;
 
 protected function exchangeLeft "help function to balance"
@@ -4738,7 +4738,7 @@ protected function exchangeLeft "help function to balance"
   input DAE.AvlTree parent;
   output DAE.AvlTree outParent "updated parent";
 algorithm
-  outParent := matchcontinue(node,parent)
+  outParent := match(node,parent)
     local
       Option<DAE.AvlTreeValue> value;
       Integer height;
@@ -4750,7 +4750,7 @@ algorithm
       node = setLeft(node,SOME(parent));
       bt = balance(node);
     then bt;
-  end matchcontinue;
+  end match;
 end exchangeLeft;
 
 protected function exchangeRight "help function to balance"
@@ -4758,7 +4758,7 @@ input DAE.AvlTree node;
 input DAE.AvlTree parent;
 output DAE.AvlTree outParent "updated parent";
 algorithm
-  outParent := matchcontinue(node,parent)
+  outParent := match(node,parent)
   local DAE.AvlTree bt;
     case(node,parent) equation
       parent = setLeft(parent,rightNode(node));
@@ -4766,7 +4766,7 @@ algorithm
       node = setRight(node,SOME(parent));
       bt = balance(node);
     then bt;
-  end matchcontinue;
+  end match;
 end exchangeRight;
 
 protected function rotateLeft "help function to balance"
@@ -4781,9 +4781,9 @@ protected function getOption "Retrieve the value of an option"
   input Option<T> opt;
   output T val;
 algorithm
-  val := matchcontinue(opt)
+  val := match(opt)
     case(SOME(val)) then val;
-  end matchcontinue;
+  end match;
 end getOption;
 
 protected function rotateRight "help function to balance"
@@ -4798,14 +4798,14 @@ between left and right child"
 input DAE.AvlTree node;
 output Integer diff;
 algorithm
-  diff := matchcontinue(node)
+  diff := match(node)
   local Integer lh,rh;
     Option<DAE.AvlTree> l,r;
     case(DAE.AVLTREENODE(left=l,right=r)) equation
       lh = getHeight(l);
       rh = getHeight(r);
     then lh - rh;
-  end matchcontinue;
+  end match;
 end differenceInHeight;
 
 public function avlTreeGet "  Get a value from the binary tree given a key.
@@ -4908,7 +4908,7 @@ protected function computeHeight "compute the heigth of the DAE.AvlTree and stor
   input DAE.AvlTree bt;
   output DAE.AvlTree outBt;
 algorithm
- outBt := matchcontinue(bt)
+ outBt := match(bt)
  local Option<DAE.AvlTree> l,r;
    Option<DAE.AvlTreeValue> v;
    DAE.AvlValue val;
@@ -4918,17 +4918,17 @@ algorithm
     hr = getHeight(r);
     height = intMax(hl,hr) + 1;
  then DAE.AVLTREENODE(v,height,l,r);
- end matchcontinue;
+ end match;
 end computeHeight;
 
 protected function getHeight "Retrieve the height of a node"
   input Option<DAE.AvlTree> bt;
   output Integer height;
 algorithm
-  height := matchcontinue(bt)
+  height := match(bt)
     case(NONE()) then 0;
     case(SOME(DAE.AVLTREENODE(height = height))) then height;
-  end matchcontinue;
+  end match;
 end getHeight;
 
 public function splitElements
@@ -4952,10 +4952,10 @@ protected function isIfEquation "function: isIfEquation
   input DAE.Element inElement;
 algorithm
   _:=
-  matchcontinue (inElement)
+  match (inElement)
     case DAE.IF_EQUATION(condition1 = _) then ();
     case DAE.INITIAL_IF_EQUATION(condition1 = _) then ();
-  end matchcontinue;
+  end match;
 end isIfEquation;
 
 public function splitElements_dispatch
@@ -4977,7 +4977,7 @@ public function splitElements_dispatch
   output list<DAE.Element> a;
   output list<DAE.Element> o;
 algorithm
-  (v,ie,ia,e,a,o) := matchcontinue(inElements,v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc)
+  (v,ie,ia,e,a,o) := match(inElements,v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc)
     local
       DAE.Element el;
       list<DAE.Element> rest;
@@ -5092,7 +5092,7 @@ algorithm
         (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc); 
       then
         (v_acc,ie_acc,ia_acc,e_acc,a_acc,el::o_acc);
-  end matchcontinue;
+  end match;
 end splitElements_dispatch;
 
 public function collectLocalDecls
@@ -5142,7 +5142,7 @@ protected function getUniontypePathsFunctions
   input list<DAE.Function> elements;
   output list<Absyn.Path> outPaths;
 algorithm
-  outPaths := matchcontinue elements
+  outPaths := match elements
     local
       list<Absyn.Path> paths1;
       list<Absyn.Path> paths2;
@@ -5155,7 +5155,7 @@ algorithm
         els = listAppend(els1, els2);
         outPaths = getUniontypePathsElements(els);
       then outPaths;
-  end matchcontinue;
+  end match;
 end getUniontypePathsFunctions;
 
 protected function getUniontypePathsElements
@@ -5266,7 +5266,7 @@ public function setBindingSource
  input DAE.BindingSource bindingSource;
  output DAE.Binding outBinding;
 algorithm
-  outBinding := matchcontinue(inBinding, bindingSource)
+  outBinding := match(inBinding, bindingSource)
     local
       DAE.Exp exp "exp";
       Option<Values.Value> evaluatedExp "evaluatedExp; evaluated exp";
@@ -5276,14 +5276,14 @@ algorithm
     case (inBinding as DAE.UNBOUND(), _) then inBinding;
     case (DAE.EQBOUND(exp, evaluatedExp, cnst, _), bindingSource) then DAE.EQBOUND(exp, evaluatedExp, cnst, bindingSource);
     case (DAE.VALBOUND(valBound, _), bindingSource) then DAE.VALBOUND(valBound, bindingSource);
- end matchcontinue;
+ end match;
 end setBindingSource;
 
 public function printBindingExpStr "prints a binding"
   input DAE.Binding binding;
   output String str;
 algorithm
-  str := matchcontinue(binding)
+  str := match(binding)
     local 
       DAE.Exp e; Values.Value v;
     case(DAE.UNBOUND()) then "";
@@ -5297,18 +5297,18 @@ algorithm
         str = " = " +& ValuesUtil.valString(v);
       then 
         str;
-  end matchcontinue;
+  end match;
 end printBindingExpStr;
 
 public function printBindingSourceStr "prints a binding source as a string"
   input DAE.BindingSource bindingSource;
   output String str;
 algorithm
-  str := matchcontinue(bindingSource)
+  str := match(bindingSource)
     local 
     case(DAE.BINDING_FROM_DEFAULT_VALUE()) then "[DEFAULT VALUE]";
     case(DAE.BINDING_FROM_START_VALUE()) then  "[START VALUE]";
-  end matchcontinue;
+  end match;
 end printBindingSourceStr;
 
 public function collectValueblockFunctionRefVars
@@ -5349,7 +5349,7 @@ public function addDaeFunction "add functions present in the element list to the
   input DAE.FunctionTree tree;
   output DAE.FunctionTree outTree;
 algorithm
-  outTree := matchcontinue(funcs,tree)
+  outTree := match(funcs,tree)
     local
       DAE.Function func;
 
@@ -5360,7 +5360,7 @@ algorithm
         tree = avlTreeAdd(tree,functionName(func),SOME(func));
       then addDaeFunction(funcs,tree);
 
-  end matchcontinue;
+  end match;
 end addDaeFunction;
 
 public function addDaeExtFunction "add extermal functions present in the element list to the function tree

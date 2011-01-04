@@ -530,7 +530,7 @@ public function transformAST
   input TemplPackage inTplPackage;
   output MMPackage outMMPackage;
 algorithm
-  outMMPackage := matchcontinue (inTplPackage)
+  outMMPackage := match (inTplPackage)
     local
       PathIdent name;
       list<tuple<Ident,TemplateDef>>  templateDefs;
@@ -548,14 +548,14 @@ algorithm
         mmDeclarations = listReverse(mmDeclarations); 
       then 
         MM_PACKAGE(name, mmDeclarations);
-  end matchcontinue;           
+  end match;           
 end transformAST;
 
 public function fullyQualifyTemplatePackage
   input TemplPackage inTplPackage;
   output TemplPackage outTplPackage;
 algorithm
-  outTplPackage := matchcontinue (inTplPackage)
+  outTplPackage := match (inTplPackage)
     local
       PathIdent name;
       list<tuple<Ident,TemplateDef>>  templateDefs;
@@ -570,7 +570,7 @@ algorithm
         templateDefs = listMap1Tuple22(templateDefs, fullyQualifyTemplateDef, astDefs);        
       then 
         TEMPL_PACKAGE(name, astDefs, templateDefs);
-  end matchcontinue;           
+  end match;           
 end fullyQualifyTemplatePackage;
 
 
@@ -580,7 +580,7 @@ public function importDeclarations
   
   output list<MMDeclaration> outMMDecls;
 algorithm
-  outMMDecls := matchcontinue (inASTDefs, inAccMMDecls)
+  outMMDecls := match (inASTDefs, inAccMMDecls)
     local
       list<ASTDef> restASTDefs;
       PathIdent importPackage;
@@ -595,7 +595,7 @@ algorithm
         importDeclarations(restASTDefs, 
                           (MM_IMPORT(isDefault, importPackage) :: accMMDecls));
     
-  end matchcontinue;           
+  end match;           
 end importDeclarations;
 
 public function transformTemplateDefs
@@ -605,7 +605,7 @@ public function transformTemplateDefs
   
   output list<MMDeclaration> outMMDecls;
 algorithm
-  outMMDecls := matchcontinue (inTemplateDefsRest, inTplPackage, inAccMMDecls)
+  outMMDecls := match (inTemplateDefsRest, inTplPackage, inAccMMDecls)
     local
       Ident tplname;
       list<tuple<Ident,TemplateDef>> restTDefs;
@@ -661,7 +661,7 @@ algorithm
       then 
         transformTemplateDefs(restTDefs, tplPackage, mmFun :: accMMDecls);
     
-  end matchcontinue;           
+  end match;           
 end transformTemplateDefs;
 
 
@@ -3136,31 +3136,31 @@ public function makeMMArgValue
   input tuple<Ident,TypeSignature> inTypedIdent;
   output tuple<MMExp, TypeSignature> outArgValue;   
 algorithm
-  outArgValue := matchcontinue  inTypedIdent
+  outArgValue := match  inTypedIdent
     local
       Ident argname;
       TypeSignature ts;
     
     case ( (argname, ts) )  then ( (MM_IDENT(IDENT(argname)) , ts) );
 
-  end matchcontinue;           
+  end match;           
 end makeMMArgValue;
 
 
 public function isText
   input tuple<Ident, TypeSignature> inArg;
 algorithm
-  _:= matchcontinue(inArg)
+  _:= match(inArg)
     case ( (_ , TEXT_TYPE()) )
       then ();
-  end matchcontinue;           
+  end match;           
 end isText;
 
 function isAssignedText
   input tuple<Ident, TypeSignature> inArg;
   input list<Ident> inAssignedTexts;
 algorithm
-  _:= matchcontinue(inArg, inAssignedTexts)
+  _:= match(inArg, inAssignedTexts)
     local 
       Ident ident;
       list<Ident> assignedTexts;
@@ -3168,7 +3168,7 @@ algorithm
       equation
         true = listMember(ident,assignedTexts); 
       then ();
-  end matchcontinue;           
+  end match;           
 end isAssignedText;
 
 
@@ -3537,7 +3537,7 @@ public function typeCheckMatchingExpList
   output list<MatchingExp> outTransformedMatchingExp;
 algorithm 
   (outTransformedMatchingExp) 
-    := matchcontinue (inMatchingExpLst, inTypeLst, inASTDefs)
+    := match (inMatchingExpLst, inTypeLst, inASTDefs)
     local
       Ident ident;
       MatchingExp mexp;
@@ -3580,7 +3580,7 @@ algorithm
       then
         fail();
     */    
-  end matchcontinue;
+  end match;
 end typeCheckMatchingExpList;
 
 public function eliminateWildAs 
@@ -4003,7 +4003,7 @@ public function isAlwaysMatched "function isAlwaysMatched
   input MatchingExp inMatchingExp;
 
 algorithm
-  _ := matchcontinue (inMatchingExp)
+  _ := match (inMatchingExp)
     local
       MatchingExp mexp;
       list<MatchingExp> mexplst;
@@ -4023,7 +4023,7 @@ algorithm
         
     case ( REST_MATCH() )
       then ();
-  end matchcontinue;           
+  end match;           
 end isAlwaysMatched;
 
 
@@ -5758,7 +5758,7 @@ protected function typesEqualList
   
   output TypedIdents outSetTypeVars;
 algorithm
-  outSetTypeVars := matchcontinue(inTypeAList, inTypeBList, inTypeVars, inSetTypeVars, inASTDefs)
+  outSetTypeVars := match(inTypeAList, inTypeBList, inTypeVars, inSetTypeVars, inASTDefs)
     local
       TypeSignature ota, otb;
       list<TypeSignature> otaLst, otbLst;
@@ -5775,7 +5775,7 @@ algorithm
       then 
         typesEqualList(otaLst, otbLst, tyVars, setTyVars, astDefs);
         
-  end matchcontinue;
+  end match;
 end typesEqualList;
 
 
@@ -6505,7 +6505,7 @@ protected function listMap1Tuple22
   replaceable type Type_c subtypeof Any;
   replaceable type Type_d subtypeof Any;  
 algorithm
-  outList := matchcontinue(inList, inFun_Tbd_to_Tc, inExtraArg)
+  outList := match(inList, inFun_Tbd_to_Tc, inExtraArg)
     local
        Type_a a;
        Type_b itemB;
@@ -6525,7 +6525,7 @@ algorithm
         ((a, itemC) :: restC);
         
        
-  end matchcontinue;
+  end match;
 end listMap1Tuple22;
 
 
@@ -6551,7 +6551,7 @@ protected function listMap2Tuple22
   replaceable type Type_d subtypeof Any; 
   replaceable type Type_e subtypeof Any; 
 algorithm
-  outList := matchcontinue(inList, inFun_Tbde_to_Tc, inExtraArg, inExtraArg2)
+  outList := match(inList, inFun_Tbde_to_Tc, inExtraArg, inExtraArg2)
     local
        Type_a a;
        Type_b itemB;
@@ -6572,7 +6572,7 @@ algorithm
         ((a, itemC) :: restC);
         
        
-  end matchcontinue;
+  end match;
 end listMap2Tuple22;
 
 //**************************************

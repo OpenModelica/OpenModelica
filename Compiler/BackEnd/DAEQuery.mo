@@ -64,7 +64,7 @@ public function writeIncidenceMatrix
   input String flatModelicaStr;
   output String fileName;
 algorithm
-  fileName := matchcontinue(dlow, fileNamePrefix, flatModelicaStr)
+  fileName := match(dlow, fileNamePrefix, flatModelicaStr)
     local
       String file, strIMatrix, strVariables, flatStr, strEquations;
       array<list<String>> m;
@@ -80,7 +80,7 @@ algorithm
         System.writeFile(file, strIMatrix);
       then
         file;
-  end matchcontinue;
+  end match;
 end writeIncidenceMatrix;
 
 public function getEquations
@@ -90,7 +90,7 @@ public function getEquations
   input BackendDAE.BackendDAE inBackendDAE;
   output String strEqs;
 algorithm
-  strEqs := matchcontinue (inBackendDAE)
+  strEqs := match (inBackendDAE)
     local
       String s,s1;
       list<String> ls1;
@@ -107,7 +107,7 @@ algorithm
         s = "EqStr = {" +& s1 +& "};";
       then
         s;
-  end matchcontinue;
+  end match;
 end getEquations;
 
 public function equationStr
@@ -117,7 +117,7 @@ public function equationStr
   input list<BackendDAE.WhenClause> wcLst;
   output String outString;
 algorithm
-  outString := matchcontinue (inEquation, wcLst)
+  outString := match (inEquation, wcLst)
     local
       String s1,s2,s3,res,indx_str,is,var_str;
       DAE.Exp e1,e2,e,condition;
@@ -172,7 +172,7 @@ algorithm
         res = stringAppendList({"Algorithm no: ",is,"\n"});
       then
         res;
-  end matchcontinue;
+  end match;
 end equationStr;
 
 protected function getIncidenceMatrix "function: getIncidenceMatrix
@@ -254,7 +254,7 @@ public function getVariables "function: getVariables
   output String strVars;
 algorithm
   strVars:=
-  matchcontinue (inBackendDAE)
+  match (inBackendDAE)
     local
       list<BackendDAE.Var> vars;
       String s;
@@ -266,7 +266,7 @@ algorithm
         s = "VL = {" +& s +& "};";
       then
         s;
-  end matchcontinue;
+  end match;
 end getVariables;
 
 public function varList "function: varList
@@ -276,7 +276,7 @@ public function varList "function: varList
   output list<BackendDAE.Var> outVarLst;
 algorithm
   outVarLst:=
-  matchcontinue (inVariables)
+  match (inVariables)
     local
       list<BackendDAE.Var> varlst;
       BackendDAE.VariableArray vararr;
@@ -285,7 +285,7 @@ algorithm
         varlst = BackendDAEUtil.vararrayList(vararr);
       then
         varlst;
-  end matchcontinue;
+  end match;
 end varList;
 
 
@@ -968,7 +968,7 @@ protected function incidenceRowMatrixExp "function: incidenceRowMatrixExp
   input BackendDAE.Variables inVariables;
   output list<String> outStringLst;
 algorithm
-  outStringLst := matchcontinue (inTplExpExpBooleanLstLst,inVariables)
+  outStringLst := match (inTplExpExpBooleanLstLst,inVariables)
     local
       list<DAE.Exp> expl_1;
       list<list<String>> res1;
@@ -986,7 +986,7 @@ algorithm
         pStr = listAppend(res1_1, res2);
       then
         pStr;
-  end matchcontinue;
+  end match;
 end incidenceRowMatrixExp;
 
 protected function printExpStr

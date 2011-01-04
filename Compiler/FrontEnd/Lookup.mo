@@ -502,7 +502,7 @@ protected function lookupClassQualified2
   output Env.Env outEnv "The environment in which the class was found (not the environment inside the class)";
   output list<Env.Frame> outPrevFrames;
 algorithm
-  (outCache,outClass,outEnv,outPrevFrames) := matchcontinue (inCache,inEnv,path,c,optFrame,inPrevFrames,inState,msg)
+  (outCache,outClass,outEnv,outPrevFrames) := match (inCache,inEnv,path,c,optFrame,inPrevFrames,inState,msg)
     local
       Env.Cache cache;
       Env.Env env,prevFrames;
@@ -530,7 +530,7 @@ algorithm
         // ClassInf.valid(cistate1, SCode.R_PACKAGE());
         (cache,c,env,prevFrames) = lookupClass2(cache,env,path,{},inState,msg);
       then (cache,c,env,prevFrames);
-  end matchcontinue;
+  end match;
 end lookupClassQualified2;
 
 protected function lookupPrevFrames
@@ -923,7 +923,7 @@ public function lookupRecordConstructorClass "function: lookupRecordConstructorC
   output SCode.Class outClass;
   output Env.Env outEnv;
 algorithm
-  (outCache,outClass,outEnv) := matchcontinue (cache,inEnv,inPath)
+  (outCache,outClass,outEnv) := match (cache,inEnv,inPath)
     local
       SCode.Class c;
       list<Env.Frame> env,env_1,env_2,env_3;
@@ -937,7 +937,7 @@ algorithm
         (cache,_,c) = buildRecordConstructorClass(cache,env_1,c);
       then
         (cache,c,env_1);
-  end matchcontinue;
+  end match;
 end lookupRecordConstructorClass;
 
 public function lookupConnectorVar "looks up a connector variable, but takes InnerOuter attribute from component if
@@ -949,7 +949,7 @@ inside connector, i.e. for connector reference a.b the innerOuter attribute is f
   output DAE.Attributes attr;
   output DAE.Type tp;
 algorithm
-  (outCache,attr,tp) := matchcontinue(cache,env,cr)
+  (outCache,attr,tp) := match(cache,env,cr)
     local 
       DAE.ComponentRef cr1;
       Boolean f,streamPrefix;
@@ -970,7 +970,7 @@ algorithm
       /* Find innerOuter attribute from "parent" */
       (cache,DAE.ATTR(innerOuter=io),_,_,_,_,_,_,_) = lookupVarLocal(cache,env,cr1);
     then (cache,DAE.ATTR(f,streamPrefix,acc,var,dir,io),ty1);
-  end matchcontinue;
+  end match;
 end lookupConnectorVar;
 
 public function lookupVar "LS: when looking up qualified component reference, lookupVar only
@@ -1422,7 +1422,7 @@ public function lookupClassLocal "function: lookupClassLocal
   output SCode.Class outClass;
   output Env.Env outEnv;
 algorithm
-  (outClass,outEnv) := matchcontinue (inEnv,inIdent)
+  (outClass,outEnv) := match (inEnv,inIdent)
     local
       SCode.Class cl;
       list<Env.Frame> env;
@@ -1435,7 +1435,7 @@ algorithm
         Env.CLASS(cl,env) = Env.avlTreeGet(ht, id);
       then
         (cl,env);
-  end matchcontinue;
+  end match;
 end lookupClassLocal;
 
 public function lookupAndInstantiate "performs a lookup of a class and then instantiate that class to
@@ -1689,7 +1689,7 @@ protected function createGenericBuiltinFunctions "function: createGenericBuiltin
   output list<DAE.Type> outTypesTypeLst;
 algorithm
   outTypesTypeLst:=
-  matchcontinue (inEnv,inString)
+  match (inEnv,inString)
     local list<Env.Frame> env;
     /* function_name cardinality */
     case (env,"cardinality")
@@ -1698,7 +1698,7 @@ algorithm
             (DAE.T_FUNCTION({("x",(DAE.T_COMPLEX(ClassInf.CONNECTOR(Absyn.IDENT("$$"),true),{},NONE(),NONE()),NONE()))},
                               DAE.T_INTEGER_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE())};
 
-  end matchcontinue;
+  end match;
 end createGenericBuiltinFunctions;
 
 protected function lookupTypeInEnv "- Internal functions
@@ -1752,7 +1752,7 @@ protected function lookupTypeInFrame "function: lookupTypeInFrame
   output Env.Env outEnv;
 algorithm
   (outCache,outType,outEnv):=
-  matchcontinue (inCache,inBinTree1,inBinTree2,inEnv3,inIdent4)
+  match (inCache,inBinTree1,inBinTree2,inEnv3,inIdent4)
     local
       tuple<DAE.TType, Option<Absyn.Path>> t,ftype,ty;
       Env.AvlTree httypes;
@@ -1767,7 +1767,7 @@ algorithm
         (cache,t,env) = lookupTypeInFrame2(cache,item,env,id);
       then
         (cache,t,env);
-  end matchcontinue;
+  end match;
 end lookupTypeInFrame;
 
 protected function lookupTypeInFrame2 "function: lookupTypeInFrame
@@ -2347,13 +2347,13 @@ if boolean flag is false and fail. If flag is true succeed and do nothing."
   input Boolean unique;
   input String name;
 algorithm
-  _ := matchcontinue(unique,name)
+  _ := match(unique,name)
     case(true,_) then ();
     case(false,name)
       equation
       Error.addMessage(Error.IMPORT_SEVERAL_NAMES, {name});
       then ();
-  end matchcontinue;
+  end match;
 end reportSeveralNamesError;
 
 protected function lookupVar2 "function: lookupVar2
@@ -2764,7 +2764,7 @@ protected function makeEnumLiteralIndices
   input Integer enumIndex;
   output list<DAE.Exp> enumIndices;
 algorithm
-  enumIndices := matchcontinue(enumTypeName, enumLiterals, enumIndex)
+  enumIndices := match(enumTypeName, enumLiterals, enumIndex)
     local
       String l;
       list<String> ls;
@@ -2779,7 +2779,7 @@ algorithm
         expl = makeEnumLiteralIndices(enumTypeName, ls, enumIndex + 1);
       then
         e :: expl;
-  end matchcontinue;
+  end match;
 end makeEnumLiteralIndices;
 
 protected function expandWholeDimSubScript " Function expandWholeDimSubScript
@@ -2893,7 +2893,7 @@ Lifts an type to spcified dimension by type2
   output DAE.Type outType;
 
 algorithm
-  outType := matchcontinue (inTypeD,inTypeL)
+  outType := match (inTypeD,inTypeL)
     local
       DAE.Type t,tOrg;
       list<Integer> dimensions;
@@ -2908,7 +2908,7 @@ algorithm
         t = ((Util.listFoldR(dim2,Types.liftArray, tOrg)));
       then
         t;
-  end matchcontinue;
+  end match;
 end sliceDimensionType;
 
 

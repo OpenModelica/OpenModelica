@@ -295,7 +295,7 @@ public function makeAssignmentsList
   input DAE.ElementSource source;
   output list<Statement> assignments;
 algorithm
-  assignments := matchcontinue(lhsExps, lhsProps, rhsExps, rhsProps, accessibility, initial_, source)
+  assignments := match(lhsExps, lhsProps, rhsExps, rhsProps, accessibility, initial_, source)
     local
       DAE.Exp lhs, rhs;
       list<DAE.Exp> rest_lhs, rest_rhs;
@@ -311,7 +311,7 @@ algorithm
         rest_ass = makeAssignmentsList(rest_lhs, rest_lhs_prop, rest_rhs, rest_rhs_prop, accessibility, initial_, source);
       then
         ass :: rest_ass;
-  end matchcontinue;
+  end match;
 end makeAssignmentsList;
 
 public function makeTupleAssignment "function: makeTupleAssignment
@@ -639,9 +639,9 @@ public function makeAssert "function: makeAssert
   input DAE.ElementSource source;
   output Statement outStatement;
 algorithm
-  outStatement := matchcontinue (cond,msg,inProperties3,inProperties4,source)
+  outStatement := match (cond,msg,inProperties3,inProperties4,source)
     case (cond,msg,DAE.PROP(type_ = (DAE.T_BOOL(varLstBool = _),_)),DAE.PROP(type_ = (DAE.T_STRING(varLstString = _),_)),source) then DAE.STMT_ASSERT(cond,msg,source);
-  end matchcontinue;
+  end match;
 end makeAssert;
 
 public function makeTerminate "
@@ -652,9 +652,9 @@ public function makeTerminate "
   input DAE.ElementSource source;
   output Statement outStatement;
 algorithm
-  outStatement := matchcontinue (msg,props,source)
+  outStatement := match (msg,props,source)
     case (msg,DAE.PROP(type_ = (DAE.T_STRING(varLstString = _),_)),source) then DAE.STMT_TERMINATE(msg,source);
-  end matchcontinue;
+  end match;
 end makeTerminate;
 
 public function getCrefFromAlg "Returns all crefs from an algorithm"

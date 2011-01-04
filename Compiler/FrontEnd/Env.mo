@@ -320,9 +320,9 @@ public function getScopeName "function: getScopeName
   input Env inEnv;
   output Ident name;
 algorithm
-  name:= matchcontinue (inEnv)
+  name:= match (inEnv)
     case ((FRAME(optName = SOME(name))::_)) then (name);
-  end matchcontinue;
+  end match;
 end getScopeName;
 
 public function getScopeNames "function: getScopeName
@@ -356,7 +356,7 @@ passed as second argument"
   input Env classEnv;
   output Env outEnv;
 algorithm
-  outEnv := matchcontinue(env,classEnv)
+  outEnv := match(env,classEnv)
     local 
       Option<Ident> optName;
       Option<ScopeType> st;
@@ -372,7 +372,7 @@ algorithm
         clsAndVars = updateEnvClassesInTree(clsAndVars,classEnv);
       then 
         FRAME(optName,st,clsAndVars,types,imports,crefs,enc,defineUnits)::fs;
-  end matchcontinue;
+  end match;
 end updateEnvClasses;
 
 protected function updateEnvClassesInTree "Help function to updateEnvClasses"
@@ -413,13 +413,13 @@ protected function updateEnvClassesInTreeOpt "Help function to updateEnvClassesI
   input Env classEnv;
   output Option<AvlTree> outTree;
 algorithm
-  outTree := matchcontinue(tree,classEnv)
+  outTree := match(tree,classEnv)
   local AvlTree t;
     case(NONE(),classEnv) then NONE();
     case(SOME(t),classEnv) equation
       t = updateEnvClassesInTree(t,classEnv);
     then SOME(t);
-  end matchcontinue;
+  end match;
 end updateEnvClassesInTreeOpt;
 
 public function extendFrameC "function: extendFrameC
@@ -462,7 +462,7 @@ public function extendFrameClasses "function: extendFrameClasses
   input SCode.Program inProgram;
   output Env outEnv;
 algorithm
-  outEnv := matchcontinue (inEnv,inProgram)
+  outEnv := match (inEnv,inProgram)
     local
       Env env,env_1,env_2;
       SCode.Class c;
@@ -474,7 +474,7 @@ algorithm
         env_2 = extendFrameClasses(env_1, cs);
       then
         env_2;
-  end matchcontinue;
+  end match;
 end extendFrameClasses;
 
 public function removeComponentsFromFrameV "function: removeComponentsFromFrameV
@@ -482,7 +482,7 @@ public function removeComponentsFromFrameV "function: removeComponentsFromFrameV
   input Env inEnv;
   output Env outEnv;
 algorithm
-  outEnv := matchcontinue (inEnv)
+  outEnv := match (inEnv)
     local
       AvlTree httypes;
       AvlTree ht,ht_1;
@@ -504,7 +504,7 @@ algorithm
         ht = avlTreeNew();
       then
         (FRAME(id,st,ht,httypes,imps,crs,encflag,defineUnits) :: fs);
-  end matchcontinue;
+  end match;
 end removeComponentsFromFrameV;
 
 public function extendFrameV "function: extendFrameV
@@ -682,7 +682,7 @@ public function extendFrameDefunit "
   input SCode.Element defunit;
   output Env outEnv;
 algorithm
-  outEnv := matchcontinue (inEnv,defunit)
+  outEnv := match (inEnv,defunit)
     local
       Option<Ident> sid;
       Option<ScopeType> st;
@@ -696,7 +696,7 @@ algorithm
 
     case ((FRAME(sid,st,ht,httypes,imps,crs,encflag,defineUnits) :: fs),defunit)
     then (FRAME(sid,st,ht,httypes,imps,crs,encflag,defunit::defineUnits) :: fs);
-  end matchcontinue;
+  end match;
 end extendFrameDefunit;
 
 public function extendFrameForIterator
@@ -709,7 +709,7 @@ public function extendFrameForIterator
 	input Option<DAE.Const> constOfForIteratorRange;
 	output Env new_env;
 algorithm
-	new_env := matchcontinue(env, name, type_, binding, variability, constOfForIteratorRange)
+	new_env := match(env, name, type_, binding, variability, constOfForIteratorRange)
 		local
 			Env new_env_1;
 		case (_, _, _, _,variability,constOfForIteratorRange)
@@ -724,7 +724,7 @@ algorithm
 						constOfForIteratorRange),
 					NONE(), VAR_UNTYPED(), {});
 			then new_env_1;
-	end matchcontinue;
+	end match;
 end extendFrameForIterator;
 
 protected function memberImportList "Returns true if import exist in imps"
@@ -786,7 +786,7 @@ public function topFrame "function: topFrame
   input Env inEnv;
   output Frame outFrame;
 algorithm
-  outFrame := matchcontinue (inEnv)
+  outFrame := match (inEnv)
     local
       Frame fr,elt;
       Env lst;
@@ -796,7 +796,7 @@ algorithm
         fr = topFrame(lst);
       then
         fr;
-  end matchcontinue;
+  end match;
 end topFrame;
 
 /*
@@ -821,10 +821,10 @@ public function getClassName
   input Env inEnv;
   output Ident name;
 algorithm
-   name := matchcontinue (inEnv)
+   name := match (inEnv)
    	local Ident n;
    	case FRAME(optName = SOME(n))::_ then n;
-  end matchcontinue;
+  end match;
 end getClassName;
 
 public function getEnvName "returns the FQ name of the environment, see also getEnvPath"
@@ -972,7 +972,7 @@ public function printEnvStr "function: printEnvStr
   input Env inEnv;
   output String outString;
 algorithm
-  outString := matchcontinue (inEnv)
+  outString := match (inEnv)
     local
       Ident s1,s2,res;
       Frame fr;
@@ -985,7 +985,7 @@ algorithm
         res = stringAppend(s1, s2);
       then
         res;
-  end matchcontinue;
+  end match;
 end printEnvStr;
 
 public function printEnv "function: printEnv
@@ -1017,7 +1017,7 @@ protected function printFrameStr "function: printFrameStr
   input Frame inFrame;
   output String outString;
 algorithm
-  outString := matchcontinue (inFrame)
+  outString := match (inFrame)
     local
       Ident s1,s2,s3,encflag_str,s4,res,sid;
       Option<Ident> optName;
@@ -1039,7 +1039,7 @@ algorithm
           ") \nclasses and vars:\n=============\n" :: s1 :: "   Types:\n======\n" :: s2 :: "   Imports:\n=======\n" :: s3 :: {});
       then
         res;
-  end matchcontinue;
+  end match;
 end printFrameStr;
 
 protected function printFrameVarsStr "function: printFrameVarsStr
@@ -1117,7 +1117,7 @@ protected function printFrameElementStr "function: printFrameElementStr
   output String outString;
 algorithm
   outString:=
-  matchcontinue (inTplIdentItem)
+  match (inTplIdentItem)
     local
       Ident s,elt_str,tp_str,var_str,frame_str,bind_str,res,n,lenstr;
       DAE.Var tv;
@@ -1178,7 +1178,7 @@ algorithm
         res = stringAppendList({"imp:",s,"\n"});
       then
         res;
-  end matchcontinue;
+  end match;
 end printFrameElementStr;
 
 protected function isVarItem "function: isVarItem
@@ -1224,12 +1224,12 @@ public function getCachedInitialEnv "get the initial environment from the cache"
   input Cache cache;
   output Env env;
 algorithm
-  env := matchcontinue(cache)
+  env := match(cache)
     //case (_) then fail();
     case (CACHE(_,SOME(env),_)) equation
     //	print("getCachedInitialEnv\n");
       then env;
-  end matchcontinue;
+  end match;
 end getCachedInitialEnv;
 
 public function setCachedInitialEnv "set the initial environment in the cache"
@@ -1237,7 +1237,7 @@ public function setCachedInitialEnv "set the initial environment in the cache"
   input Env env;
   output Cache outCache;
 algorithm
-  outCache := matchcontinue(inCache,env)
+  outCache := match(inCache,env)
   local
     	array<Option<EnvCache>> envCache;
     	array<DAE.FunctionTree> ef;
@@ -1245,7 +1245,7 @@ algorithm
     case (CACHE(envCache,_,ef),env) equation
  //    	print("setCachedInitialEnv\n");
       then CACHE(envCache,SOME(env),ef);
-  end matchcontinue;
+  end match;
 end setCachedInitialEnv;
 
 public function cacheGet "Get an environment from the cache."
@@ -1348,7 +1348,7 @@ protected function cacheGetEnv "get an environment from the tree cache."
 	input CacheTree tree;
 	output Env env;
 algorithm
-  env := matchcontinue(scope,path,tree)
+  env := match(scope,path,tree)
   local
     	Absyn.Path path2;
     	Ident id;
@@ -1362,7 +1362,7 @@ algorithm
         //print("found ");print(Absyn.pathString(path));print(" in cache at scope");
 				//print(Absyn.pathString(path2));print("  pathEnv:"+&printEnvPathStr(env)+&"\n");
       then env;
-  end matchcontinue;
+  end match;
 end cacheGetEnv;
 
 protected function cacheGetEnv2 "Help function to cacheGetEnv. Searches in one scope by
@@ -1985,18 +1985,18 @@ protected function leftNode "Retrieve the left subnode"
   input AvlTree node;
   output Option<AvlTree> subNode;
 algorithm
-  subNode := matchcontinue(node)
+  subNode := match(node)
     case(AVLTREENODE(left = subNode)) then subNode;
-  end matchcontinue;
+  end match;
 end leftNode;
 
 protected function rightNode "Retrieve the right subnode"
   input AvlTree node;
   output Option<AvlTree> subNode;
 algorithm
-  subNode := matchcontinue(node)
+  subNode := match(node)
     case(AVLTREENODE(right = subNode)) then subNode;
-  end matchcontinue;
+  end match;
 end rightNode;
 
 protected function exchangeLeft "help function to balance"
@@ -2004,7 +2004,7 @@ protected function exchangeLeft "help function to balance"
   input AvlTree parent;
   output AvlTree outParent "updated parent";
 algorithm
-  outParent := matchcontinue(node,parent)
+  outParent := match(node,parent)
     local
       Option<AvlTreeValue> value;
       Integer height ;
@@ -2016,7 +2016,7 @@ algorithm
       node = setLeft(node,SOME(parent));
       bt = balance(node);
     then bt;
-  end matchcontinue;
+  end match;
 end exchangeLeft;
 
 protected function exchangeRight "help function to balance"
@@ -2024,7 +2024,7 @@ input AvlTree node;
 input AvlTree parent;
 output AvlTree outParent "updated parent";
 algorithm
-  outParent := matchcontinue(node,parent)
+  outParent := match(node,parent)
   local AvlTree bt;
     case(node,parent) equation
       parent = setLeft(parent,rightNode(node));
@@ -2032,7 +2032,7 @@ algorithm
       node = setRight(node,SOME(parent));
       bt = balance(node);
     then bt;
-  end matchcontinue;
+  end match;
 end exchangeRight;
 
 protected function rotateLeft "help function to balance"
@@ -2047,9 +2047,9 @@ protected function getOption "Retrieve the value of an option"
   input Option<T> opt;
   output T val;
 algorithm
-  val := matchcontinue(opt)
+  val := match(opt)
     case(SOME(val)) then val;
-  end matchcontinue;
+  end match;
 end getOption;
 
 protected function rotateRight "help function to balance"
@@ -2130,7 +2130,7 @@ protected function getOptionStr "function getOptionStr
   end FuncTypeType_aToString;
 algorithm
   outString:=
-  matchcontinue (inTypeAOption,inFuncTypeTypeAToString)
+  match (inTypeAOption,inFuncTypeTypeAToString)
     local
       String str;
       Type_a a;
@@ -2141,7 +2141,7 @@ algorithm
       then
         str;
     case (NONE(),_) then "";
-  end matchcontinue;
+  end match;
 end getOptionStr;
 
 protected function printAvlTreeStr "
@@ -2150,7 +2150,7 @@ protected function printAvlTreeStr "
   output String outString;
 algorithm
   outString:=
-  matchcontinue (inAvlTree)
+  match (inAvlTree)
     local
       AvlKey rkey;
       String s1,s2,s3,res;
@@ -2172,7 +2172,7 @@ algorithm
         res = s2 +& ", "+& s3;
       then
         res;
-  end matchcontinue;
+  end match;
 end printAvlTreeStr;
 
 protected function computeHeight "compute the heigth of the AvlTree and store in the node info"
@@ -2220,7 +2220,7 @@ public function getVariablesFromEnv
   input Env inEnv;
   output list<String> variables;
 algorithm
-  variables := matchcontinue (inEnv)
+  variables := match (inEnv)
     local
       list<Ident> lst1,lst2,lst;
       Frame fr;
@@ -2236,7 +2236,7 @@ algorithm
         // lst = listAppend(lst1, lst2);
       then
         lst1;
-  end matchcontinue;
+  end match;
 end getVariablesFromEnv;
 
 protected function getVariablesFromFrame 
@@ -2245,7 +2245,7 @@ protected function getVariablesFromFrame
   input Frame inFrame;
   output list<String> variables;
 algorithm
-  variables := matchcontinue (inFrame)
+  variables := match (inFrame)
     local
       list<Ident> lst;
       AvlTree ht;
@@ -2255,7 +2255,7 @@ algorithm
         lst = getVariablesFromAvlTree(ht);
       then
         lst;
-  end matchcontinue;
+  end match;
 end getVariablesFromFrame;
 
 protected function getVariablesFromAvlTree 
@@ -2264,7 +2264,7 @@ protected function getVariablesFromAvlTree
   input AvlTree inAvlTree;
   output list<String> variables;
 algorithm
-  variables := matchcontinue (inAvlTree)
+  variables := match (inAvlTree)
     local
       AvlKey rkey;
       list<String> lst0, lst1, lst2, lst;
@@ -2289,7 +2289,7 @@ algorithm
         lst = listAppend(lst1, lst2);
       then
         lst;
-  end matchcontinue;
+  end match;
 end getVariablesFromAvlTree;
 
 protected function getVariablesFromOptionAvlTree
@@ -2299,7 +2299,7 @@ protected function getVariablesFromOptionAvlTree
   input Option<AvlTree> inAvlTreeOpt;
   output list<String> variables;
 algorithm
-  variables := matchcontinue (inAvlTreeOpt)
+  variables := match (inAvlTreeOpt)
     local
       list<String> lst1, lst2, lst;
       AvlTree avl;
@@ -2307,7 +2307,7 @@ algorithm
     case (NONE()) then {};
     // we have some value
     case (SOME(avl)) then getVariablesFromAvlTree(avl);
-  end matchcontinue;
+  end match;
 end getVariablesFromOptionAvlTree;
 
 public function getVariablesFromAvlValue 
@@ -2405,7 +2405,7 @@ public function addDaeFunction
   input list<DAE.Function> funcs "fully qualified function name";
   output Cache outCache;
 algorithm
-  outCache := matchcontinue(inCache,funcs)
+  outCache := match(inCache,funcs)
     local
     	array<Option<EnvCache>> envCache;
     	array<DAE.FunctionTree> ef;
@@ -2414,7 +2414,7 @@ algorithm
       equation
         ef = arrayUpdate(ef,1,DAEUtil.addDaeFunction(funcs, arrayGet(ef, 1)));
       then CACHE(envCache,ienv,ef);
-  end matchcontinue;
+  end match;
 end addDaeFunction;
 
 public function addDaeExtFunction
@@ -2423,7 +2423,7 @@ public function addDaeExtFunction
   input list<DAE.Function> funcs "fully qualified function name";
   output Cache outCache;
 algorithm
-  outCache := matchcontinue(inCache,funcs)
+  outCache := match(inCache,funcs)
     local
     	array<Option<EnvCache>> envCache;
     	array<DAE.FunctionTree> ef;
@@ -2432,7 +2432,7 @@ algorithm
       equation
         ef = arrayUpdate(ef,1,DAEUtil.addDaeExtFunction(funcs, arrayGet(ef,1)));
       then CACHE(envCache,ienv,ef);
-  end matchcontinue;
+  end match;
 end addDaeExtFunction;
 
 public function getCachedInstFunc
@@ -2441,14 +2441,14 @@ public function getCachedInstFunc
   input Absyn.Path path;
   output DAE.Function func;
 algorithm
-  func := matchcontinue(inCache,path)
+  func := match(inCache,path)
     local
       array<DAE.FunctionTree> ef;
     case(CACHE(functions=ef),path)
       equation
         SOME(func) = DAEUtil.avlTreeGet(arrayGet(ef,1),path);
       then func;
-  end matchcontinue;
+  end match;
 end getCachedInstFunc;
 
 public function checkCachedInstFuncGuard
@@ -2456,13 +2456,13 @@ public function checkCachedInstFuncGuard
   input Cache inCache;
   input Absyn.Path path;
 algorithm
-  _ := matchcontinue(inCache,path)
+  _ := match(inCache,path)
     local
       array<DAE.FunctionTree> ef;
     case(CACHE(functions=ef),path) equation
       _ = DAEUtil.avlTreeGet(arrayGet(ef,1),path);
     then ();
-  end matchcontinue;
+  end match;
 end checkCachedInstFuncGuard;
 
 end Env;

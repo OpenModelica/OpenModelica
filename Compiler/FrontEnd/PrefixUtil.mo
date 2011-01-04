@@ -168,7 +168,7 @@ public function prefixAdd "function: prefixAdd
   input ClassInf.State ci_state;
   output Prefix.Prefix outPrefix;
 algorithm
-  outPrefix := matchcontinue (inIdent,inIntegerLst,inPrefix,vt,ci_state)
+  outPrefix := match (inIdent,inIntegerLst,inPrefix,vt,ci_state)
     local
       String i;
       list<DAE.Subscript> s;
@@ -179,14 +179,14 @@ algorithm
     
     case(i,s,Prefix.NOPRE(),vt,ci_state) 
       then Prefix.PREFIX(Prefix.PRE(i,s,Prefix.NOCOMPPRE(),ci_state),Prefix.CLASSPRE(vt));
-  end matchcontinue;
+  end match;
 end prefixAdd;
 
 public function prefixFirst
   input Prefix.Prefix inPrefix;
   output Prefix.Prefix outPrefix;
 algorithm
-  outPrefix := matchcontinue (inPrefix)
+  outPrefix := match (inPrefix)
     local
       String a;
       list<DAE.Subscript> b;
@@ -195,7 +195,7 @@ algorithm
       ClassInf.State ci_state;
     case (Prefix.PREFIX(Prefix.PRE(prefix = a,subscripts = b,next = c,ci_state=ci_state),cp)) 
       then Prefix.PREFIX(Prefix.PRE(a,b,Prefix.NOCOMPPRE(),ci_state),cp);
-  end matchcontinue;
+  end match;
 end prefixFirst;
 
 public function prefixLast "function: prefixLast
@@ -225,7 +225,7 @@ public function prefixStripLast
   input Prefix.Prefix inPrefix;
   output Prefix.Prefix outPrefix;
 algorithm
-  outPrefix := matchcontinue (inPrefix)
+  outPrefix := match (inPrefix)
     local
       Prefix.ClassPrefix cp;
       Prefix.ComponentPrefix compPre;
@@ -237,7 +237,7 @@ algorithm
       equation
          compPre = compPreStripLast(compPre);
       then Prefix.PREFIX(compPre,cp);
-  end matchcontinue;
+  end match;
 end prefixStripLast;
 
 protected function compPreStripLast
@@ -246,7 +246,7 @@ protected function compPreStripLast
   input Prefix.ComponentPrefix inCompPrefix;
   output Prefix.ComponentPrefix outCompPrefix;
 algorithm
-  outCompPrefix := matchcontinue(inCompPrefix)
+  outCompPrefix := match(inCompPrefix)
     local
       String p;
       list<DAE.Subscript> subs;
@@ -256,7 +256,7 @@ algorithm
     case Prefix.NOCOMPPRE() then Prefix.NOCOMPPRE();
     // we have something
     case Prefix.PRE(next = next) then next;
-   end matchcontinue;
+   end match;
 end compPreStripLast;
 
 public function prefixPath "function: prefixPath
@@ -359,7 +359,7 @@ protected function prefixToCref2 "function: prefixToCref2
   output Env.Cache outCache;
   output DAE.ComponentRef outComponentRef;
 algorithm
-  (outCache,outComponentRef) := matchcontinue (cache,env,inIH,inPrefix,inExpComponentRefOption)
+  (outCache,outComponentRef) := match (cache,env,inIH,inPrefix,inExpComponentRefOption)
     local
       DAE.ComponentRef cref,cref_1,cref_2,cref_;
       String i;
@@ -387,7 +387,7 @@ algorithm
         (cache,cref_1) = prefixToCref2(cache,env,inIH,Prefix.PREFIX(xs,cp), SOME(cref_2));
       then
         (cache,cref_1);
-  end matchcontinue;
+  end match;
 end prefixToCref2;
 
 public function prefixToCrefOpt "function: prefixToCref
@@ -405,7 +405,7 @@ public function prefixToCrefOpt2 "function: prefixToCrefOpt2
   input Option<DAE.ComponentRef> inExpComponentRefOption;
   output Option<DAE.ComponentRef> outComponentRefOpt;  
 algorithm
-  outComponentRefOpt := matchcontinue (inPrefix,inExpComponentRefOption)
+  outComponentRefOpt := match (inPrefix,inExpComponentRefOption)
     local
       Option<DAE.ComponentRef> cref_1;
       DAE.ComponentRef cref,cref_;
@@ -429,7 +429,7 @@ algorithm
         cref_1 = prefixToCrefOpt2(Prefix.PREFIX(xs,cp), SOME(cref_));
       then
         cref_1;
-  end matchcontinue;
+  end match;
 end prefixToCrefOpt2;
 
 public function makeCrefFromPrefixNoFail
@@ -498,7 +498,7 @@ protected function prefixSubscripts "help function to prefixSubscriptsInCref, ad
   output Env.Cache outCache;
   output list<DAE.Subscript> outSubs;
 algorithm
-  (outCache,outSubs) := matchcontinue(cache,env,inIH,pre,subs)
+  (outCache,outSubs) := match(cache,env,inIH,pre,subs)
   local DAE.Subscript sub; 
   
     case(cache,env,inIH,pre,{}) then (cache,{});
@@ -507,7 +507,7 @@ algorithm
     (cache,sub) = prefixSubscript(cache,env,inIH,pre,sub);
     (cache,subs) = prefixSubscripts(cache,env,inIH,pre,subs);
     then (cache,sub::subs);   
-  end matchcontinue;
+  end match;
 end prefixSubscripts;
 
 protected function prefixSubscript "help function to prefixSubscripts, adds prefix to one subscript, if it is an expression"
@@ -519,7 +519,7 @@ protected function prefixSubscript "help function to prefixSubscripts, adds pref
   output Env.Cache outCache;
   output DAE.Subscript outSub;
 algorithm
-  (outCache,outSub) := matchcontinue(cache,env,inIH,pre,sub)
+  (outCache,outSub) := match(cache,env,inIH,pre,sub)
   local DAE.Exp exp;
     
     case(cache,env,inIH,pre,DAE.WHOLEDIM()) then (cache,DAE.WHOLEDIM());
@@ -532,7 +532,7 @@ algorithm
       (cache,exp) = prefixExp(cache,env,inIH,exp,pre);
     then (cache,DAE.INDEX(exp));
     
-  end matchcontinue;  
+  end match;  
 end prefixSubscript;
 
 public function prefixCrefInnerOuter "function: prefixCrefInnerOuter
@@ -871,7 +871,7 @@ public function prefixExpList "function: prefixExpList
   output Env.Cache outCache;
   output list<DAE.Exp> outExpExpLst;
 algorithm
-  (outCache,outExpExpLst) := matchcontinue (inCache,inEnv,inIH,inExpExpLst,inPrefix)
+  (outCache,outExpExpLst) := match (inCache,inEnv,inIH,inExpExpLst,inPrefix)
     local
       DAE.Exp e_1,e;
       list<DAE.Exp> es_1,es;
@@ -890,7 +890,7 @@ algorithm
         (cache,es_1) = prefixExpList(cache, env, ih, es, p);
       then
         (cache,e_1 :: es_1);
-  end matchcontinue;
+  end match;
 end prefixExpList;
 
 //--------------------------------------------

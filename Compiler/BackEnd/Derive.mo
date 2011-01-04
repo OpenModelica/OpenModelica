@@ -201,7 +201,7 @@ Author: Frenkel TUD"
   input list<DAE.Exp> inDerCref;
   output list<DAE.Exp> outCrefOrDerCref;
 algorithm 
-  outCrefOrDerCref := matchcontinue(inCrefOrDerCref,inDerCref)
+  outCrefOrDerCref := match(inCrefOrDerCref,inDerCref)
     local
       list<DAE.Exp> rest,crefOrDerCref,crefOrDerCref1;
       DAE.Exp e;
@@ -214,7 +214,7 @@ algorithm
         crefOrDerCref1 = Util.listDeleteMemberOnTrue(crefOrDerCref,e,Expression.expEqual);
       then
         crefOrDerCref1;
-  end matchcontinue;
+  end match;
 end removeCrefFromDerCref;
 
 protected function traversingcrefOrDerCrefFinder "
@@ -754,7 +754,7 @@ protected function differentiateMatrixTime
   input tuple<BackendDAE.Variables,DAE.FunctionTree> inVariables;
   output list<list<tuple<DAE.Exp, Boolean>>> outTplExpBooleanLstLst;
 algorithm
-  outTplExpBooleanLstLst := matchcontinue (inTplExpBooleanLstLst,inVariables)
+  outTplExpBooleanLstLst := match (inTplExpBooleanLstLst,inVariables)
     local
       list<tuple<DAE.Exp, Boolean>> row_1,row;
       list<list<tuple<DAE.Exp, Boolean>>> rows_1,rows;
@@ -767,7 +767,7 @@ algorithm
         rows_1 = differentiateMatrixTime(rows, inVariables);
       then
         (row_1 :: rows_1);
-  end matchcontinue;
+  end match;
 end differentiateMatrixTime;
 
 protected function differentiateMatrixTime1
@@ -778,7 +778,7 @@ protected function differentiateMatrixTime1
   input tuple<BackendDAE.Variables,DAE.FunctionTree> inVariables;
   output list<tuple<DAE.Exp, Boolean>> outTplExpBooleanLst;
 algorithm
-  outTplExpBooleanLst := matchcontinue (inTplExpBooleanLst,inVariables)
+  outTplExpBooleanLst := match (inTplExpBooleanLst,inVariables)
     local
       DAE.Exp e_1,e;
       list<tuple<DAE.Exp, Boolean>> rest_1,rest;
@@ -792,7 +792,7 @@ algorithm
         rest_1 = differentiateMatrixTime1(rest, inVariables);
       then
         ((e_1,b) :: rest_1);
-  end matchcontinue;
+  end match;
 end differentiateMatrixTime1;
 
 protected function differentiateFunctionTimeOutputs"
@@ -1139,7 +1139,7 @@ Author: Frenkel TUD"
   input DAE.FunctionTree functions;
   output Absyn.Path outFName;
 algorithm
-  outFName := matchcontinue(fname,functions)
+  outFName := match(fname,functions)
     local 
       list<DAE.FunctionDefinition> flst;
       list<Absyn.Path> lowerOrderDerivatives;
@@ -1150,7 +1150,7 @@ algorithm
           DAE.FUNCTION_DER_MAPPER(lowerOrderDerivatives=lowerOrderDerivatives) = getFunctionMapper1(flst);
           name = Util.listLast(lowerOrderDerivatives);
       then name;
-  end matchcontinue;
+  end match;
 end getlowerOrderDerivative;
 
 public function getFunctionMapper"

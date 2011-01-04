@@ -85,7 +85,7 @@ public function lower
 //  input Boolean removeTrivEqs "temporal input, for legacy purposes; doesn't add trivial equations to removed equations";
   output BackendDAE.BackendDAE outBackendDAE;
 algorithm
-  outBackendDAE := matchcontinue(lst, functionTree, addDummyDerivativeIfNeeded, simplify)
+  outBackendDAE := match(lst, functionTree, addDummyDerivativeIfNeeded, simplify)
     local
       BackendDAE.BinTree s;
       BackendDAE.Variables vars,knvars,vars_1,extVars;
@@ -184,7 +184,7 @@ algorithm
         einfo = Inline.inlineEventInfo(BackendDAE.EVENT_INFO(whenclauses_1,zero_crossings),(SOME(functionTree),{DAE.NORM_INLINE()}));        
         BackendDAEUtil.checkBackendDAEWithErrorMsg(BackendDAE.DAE(vars_1,knvars,extVars,aliasVars,eqnarr,reqnarr,ieqnarr,arr_md_eqns,algarr,einfo,extObjCls));        
       then BackendDAE.DAE(vars_1,knvars,extVars,aliasVars,eqnarr,reqnarr,ieqnarr,arr_md_eqns,algarr,einfo,extObjCls);
-  end matchcontinue;
+  end match;
 end lower;
 
 protected function lower2
@@ -669,7 +669,7 @@ protected function lowerVar
   output Option<DAE.Exp> outBinding;
   output BackendDAE.BinTree outBinTree;
 algorithm
-  (outVar,outBinding,outBinTree) := matchcontinue (inElement,inBinTree)
+  (outVar,outBinding,outBinTree) := match (inElement,inBinTree)
     local
       list<DAE.Subscript> dims;
       DAE.ComponentRef name;
@@ -702,7 +702,7 @@ algorithm
         tp = lowerType(t);
       then
         (BackendDAE.VAR(name,kind_1,dir,tp,NONE(),NONE(),dims,-1,source,dae_var_attr,comment,flowPrefix,streamPrefix), bind, states);
-  end matchcontinue;
+  end match;
 end lowerVar;
 
 protected function lowerKnownVar
@@ -918,7 +918,7 @@ protected function lowerExtObjVar
   output BackendDAE.Var outVar;
 algorithm
   outVar:=
-  matchcontinue (inElement)
+  match (inElement)
     local
       list<DAE.Subscript> dims;
       DAE.ComponentRef name;
@@ -950,7 +950,7 @@ algorithm
         tp = lowerType(t);
       then
         BackendDAE.VAR(name,kind_1,dir,tp,bind,NONE(),dims,-1,source,dae_var_attr,comment,flowPrefix,streamPrefix);
-  end matchcontinue;
+  end match;
 end lowerExtObjVar;
 
 protected function lowerExtObjVarkind
@@ -960,10 +960,10 @@ protected function lowerExtObjVarkind
   output BackendDAE.VarKind outVarKind;
 algorithm
   outVarKind:=
-  matchcontinue (inType)
+  match (inType)
     local Absyn.Path path;
     case ((DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(path)),_)) then BackendDAE.EXTOBJ(path);
-  end matchcontinue;
+  end match;
 end lowerExtObjVarkind;
 
 
@@ -1030,7 +1030,7 @@ protected function lowerArrEqn
   input DAE.FunctionTree funcs;
   output BackendDAE.MultiDimEquation outMultiDimEquation;
 algorithm
-  outMultiDimEquation := matchcontinue (inElement,funcs)
+  outMultiDimEquation := match (inElement,funcs)
     local
       DAE.Exp e1,e2,e1_1,e2_1,e1_2,e2_2,e1_3,e2_3;
       list<BackendDAE.Value> ds;
@@ -1060,7 +1060,7 @@ algorithm
         ds = Expression.dimensionsSizes(dims);
       then
         BackendDAE.MULTIDIM_EQUATION(ds,e1_3,e2_3,source);
-  end matchcontinue;
+  end match;
 end lowerArrEqn;
 
 protected function lowerComplexEqn
@@ -1298,7 +1298,7 @@ protected function lowerTupleAssignment
   input DAE.FunctionTree funcs;
   output list<BackendDAE.Equation> eqns;
 algorithm
-  eqns := matchcontinue(target_expl, source_expl, eq_source,funcs)
+  eqns := match(target_expl, source_expl, eq_source,funcs)
     local
       DAE.Exp target, source;
       list<DAE.Exp> rest_targets, rest_sources;
@@ -1313,7 +1313,7 @@ algorithm
         eq = lowerEqn(e);
         SOME(eq1) = Inline.inlineEqOpt(SOME(eq),(SOME(funcs),{DAE.NORM_INLINE()}));
       then eq :: new_eqns;
-  end matchcontinue;
+  end match;
 end lowerTupleAssignment;
 
 protected function lowerTupleEquation
@@ -1323,7 +1323,7 @@ protected function lowerTupleEquation
   input DAE.Element eqn;
   output DAE.Algorithm alg;
 algorithm
-  alg := matchcontinue(eqn)
+  alg := match(eqn)
     local
       DAE.ElementSource source;
       DAE.Exp e1,e2;
@@ -1334,7 +1334,7 @@ algorithm
 
     case(DAE.EQUATION(e2 as DAE.CALL(path =_),DAE.TUPLE(expl),source))
     then DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(DAE.ET_OTHER(),expl,e2,source)});
-  end matchcontinue;
+  end match;
 end lowerTupleEquation;
 
 protected function lowerMultidimeqns
@@ -1575,7 +1575,7 @@ protected function lowerAlgorithms2
   output list<BackendDAE.Equation> outEquationLst1 "algorithms with no outputs will be moved to known equations";
   output Integer outInteger;
 algorithm
-  (outEquationLst,outEquationLst1,outInteger) := matchcontinue (inVariables,inAlgorithmAlgorithmLst,inInteger)
+  (outEquationLst,outEquationLst1,outInteger) := match (inVariables,inAlgorithmAlgorithmLst,inInteger)
     local
       BackendDAE.Variables vars;
       BackendDAE.Value aindx;
@@ -1592,7 +1592,7 @@ algorithm
         res1 = listAppend(eqns1_1, eqns1);
       then
         (res,res1,aindx);
-  end matchcontinue;
+  end match;
 end lowerAlgorithms2;
 
 protected function lowerAlgorithm
@@ -1660,7 +1660,7 @@ public function lowerAlgorithmInputsOutputs
   input DAE.Algorithm inAlgorithm;
   output tuple<list<DAE.Exp>,list<DAE.Exp>> outTplExpExpLst;
 algorithm
-  outTplExpExpLst := matchcontinue (inVariables,inAlgorithm)
+  outTplExpExpLst := match (inVariables,inAlgorithm)
     local
       list<DAE.Exp> inputs1,outputs1,inputs2,outputs2,inputs,outputs;
       BackendDAE.Variables vars;
@@ -1676,7 +1676,7 @@ algorithm
         inputs = Util.listFold1(outputs,Util.listRemoveOnTrue,Expression.expEqual,inputs);
       then
         ((inputs,outputs));
-  end matchcontinue;
+  end match;
 end lowerAlgorithmInputsOutputs;
 
 protected function lowerStatementInputsOutputs
@@ -1830,7 +1830,7 @@ protected function lowerElseAlgorithmInputsOutputs
   output list<DAE.Exp> inputs;
   output list<DAE.Exp> outputs;
 algorithm
-  (inputs,outputs) := matchcontinue (vars,elseBranch)
+  (inputs,outputs) := match (vars,elseBranch)
     local
       list<Algorithm.Statement> stmts;
       list<DAE.Exp> inputs1,inputs2,inputs3,outputs1,outputs2;
@@ -1851,7 +1851,7 @@ algorithm
       equation
         ((inputs, outputs)) = lowerAlgorithmInputsOutputs(vars,DAE.ALGORITHM_STMTS(stmts));
       then (inputs,outputs);
-  end matchcontinue;
+  end match;
 end lowerElseAlgorithmInputsOutputs;
 
 /*
@@ -1999,7 +1999,7 @@ protected function addDummyState
   output list<BackendDAE.Equation> outEquationLst;
 algorithm
   (outVariables,outEquationLst):=
-  matchcontinue (inVariables,inEquationLst,inBoolean)
+  match (inVariables,inEquationLst,inBoolean)
     local
       BackendDAE.Variables v,vars_1,vars;
       list<BackendDAE.Equation> e,eqns;
@@ -2023,7 +2023,7 @@ algorithm
                           {exp},false,true,DAE.ET_REAL(),DAE.NO_INLINE()),
                           DAE.RCONST(0.0), DAE.emptyElementSource)  :: eqns));
 
-  end matchcontinue;
+  end match;
 end addDummyState;
 
 protected function detectImplicitDiscrete
@@ -2253,7 +2253,7 @@ protected function expInt "returns the int value of an expression"
   input BackendDAE.Variables inKnVariables;	
 	output Integer i;
 algorithm
-	i := matchcontinue(exp,inKnVariables)
+	i := match(exp,inKnVariables)
  local 
    Integer i2;
    DAE.ComponentRef cr;
@@ -2267,7 +2267,7 @@ algorithm
         i2 = expInt(e,knv);  
       then
         i2;
-	end matchcontinue;
+	end match;
 end expInt;
 
 protected function sortEqn
@@ -2454,14 +2454,14 @@ protected function expandDerOperatorAlg
   output DAE.Algorithm outAlg;
   output tuple<BackendDAE.Variables,DAE.FunctionTree> outVars;
 algorithm
-  (outAlg,outVars) := matchcontinue(alg,vars)
+  (outAlg,outVars) := match(alg,vars)
     local
       list<Algorithm.Statement> stmts;
     case(DAE.ALGORITHM_STMTS(stmts),vars)
       equation
         (stmts,vars) = DAEUtil.traverseDAEEquationsStmts(stmts,traverserexpandDerExp,vars);
       then (DAE.ALGORITHM_STMTS(stmts),vars);
-  end matchcontinue;
+  end match;
 end expandDerOperatorAlg;
 
 protected function expandDerOperatorArrEqns
@@ -2620,7 +2620,7 @@ protected function mergeZeroCrossing "function: mergeZeroCrossing
   output BackendDAE.ZeroCrossing outZeroCrossing;
 algorithm
   outZeroCrossing:=
-  matchcontinue (inZeroCrossing1,inZeroCrossing2)
+  match (inZeroCrossing1,inZeroCrossing2)
     local
       list<BackendDAE.Value> eq,zc,eq1,wc1,eq2,wc2;
       DAE.Exp e1,e2;
@@ -2630,7 +2630,7 @@ algorithm
         zc = Util.listUnion(wc1, wc2);
       then
         BackendDAE.ZERO_CROSSING(e1,eq,zc);
-  end matchcontinue;
+  end match;
 end mergeZeroCrossing;
 
 protected function sameZeroCrossing "function: sameZeroCrossing
@@ -3046,7 +3046,7 @@ Helper function for traverseAlgStmts
   input BackendDAE.Variables knvars;
   output list<DAE.Exp> zeroCrossings;
 algorithm
-  zeroCrossings := matchcontinue(inElse,vars,knvars)
+  zeroCrossings := match(inElse,vars,knvars)
   local
     DAE.Exp e,e_1;
     list<DAE.Statement> st;
@@ -3065,7 +3065,7 @@ algorithm
     equation
       zcl = traverseAlgStmts(st,vars,knvars);
     then zcl;
-end matchcontinue;
+end match;
 end traverseAlgStmtElse;
 
 protected function traverseAlgStmtsFor
@@ -3278,7 +3278,7 @@ Author: Frenkel TUD 2010-05"
   input DAE.FunctionTree inFuncs;
   output tuple<list<BackendDAE.Equation>,list<BackendDAE.MultiDimEquation>> outTuplEqnLst;
 algorithm 
-  outTuplEqnLst := matchcontinue(inEqn,inFuncs)
+  outTuplEqnLst := match(inEqn,inFuncs)
   local
     DAE.FunctionTree funcs;
     BackendDAE.Equation eqn;
@@ -3337,7 +3337,7 @@ algorithm
       multiEqs2 = listAppend(multiEqs,multiEqs1);
     then
       ((complexEqs1,multiEqs2)); 
-end matchcontinue;
+end match;
 end extendRecordEqns;
 
 protected function generateextendedRecordEqn "

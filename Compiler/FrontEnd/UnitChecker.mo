@@ -103,7 +103,7 @@ public function isComplete "returns true if the store is complete, else false"
   output Boolean complete;
   output UnitAbsyn.Store stout;
 algorithm
-  (complete,stout) := matchcontinue(st)
+  (complete,stout) := match(st)
     local 
       array<Option<UnitAbsyn.Unit>> vector; Integer indx;
       list<Option<UnitAbsyn.Unit>> lst;
@@ -116,7 +116,7 @@ algorithm
         (comp,st2) = completeCheck(lst,1,UnitAbsyn.STORE(vector,indx));
       then 
         (comp,st2);
-  end matchcontinue;
+  end match;
 end isComplete;
 
 protected function completeCheck "help function to isComplete"

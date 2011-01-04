@@ -288,13 +288,13 @@ Expansion factor: 1.4
   input UnitAbsyn.Store st;
   output UnitAbsyn.Store outSt;
 algorithm
-  outSt := matchcontinue(st)
+  outSt := match(st)
   local array<Option<UnitAbsyn.Unit>> vector; Integer indx,incr;
     case(UnitAbsyn.STORE(vector,indx)) equation
         incr = intMin(1,realInt(intReal(indx) *. 0.4));
         vector = arrayExpand(incr,vector,NONE());
      then UnitAbsyn.STORE(vector,indx);
-  end matchcontinue;
+  end match;
 end expandStore;
 
 
@@ -459,7 +459,7 @@ public function printTermStr "print one term to a string"
   input UnitAbsyn.UnitTerm term;
   output String str;
 algorithm
-  str := matchcontinue(term)
+  str := match(term)
   local UnitAbsyn.UnitTerm ut1,ut2; String s1,s2,s3;
     Integer i,i1,i2;
     DAE.Exp e;
@@ -491,7 +491,7 @@ algorithm
       s1 = ExpressionDump.printExpStr(e);
     then s1;
 
-  end matchcontinue;
+  end match;
 end printTermStr;
 
 public function printInstStore "prints the inst store to stdout"
@@ -602,13 +602,13 @@ public function splitRationals "splits a list of Rationals into a list of numera
   output list<Integer> nums;
   output list<Integer> denoms;
 algorithm
-  (nums,denoms) := matchcontinue(rationals)
+  (nums,denoms) := match(rationals)
   local Integer i1,i2;
     case({}) then ({},{});
     case(MMath.RATIONAL(i1,i2)::rationals) equation
       (nums,denoms) = splitRationals(rationals);
     then (i1::nums,i2::denoms);
-  end matchcontinue;
+  end match;
 end splitRationals;
 
 public function joinRationals "joins a lists of numerators and denominators into list of Rationals"
@@ -616,13 +616,13 @@ public function joinRationals "joins a lists of numerators and denominators into
   input list<Integer> denoms;
   output list<MMath.Rational> rationals;
 algorithm
-  (rationals) := matchcontinue(nums,denoms)
+  (rationals) := match(nums,denoms)
   local Integer i1,i2;
     case({},{}) then ({});
     case(i1::nums,i2::denoms) equation
       rationals = joinRationals(nums,denoms);
     then (MMath.RATIONAL(i1,i2)::rationals);
-  end matchcontinue;
+  end match;
 end joinRationals;
 
 public function joinTypeParams "creates type parameter lists from list of numerators , denominators and typeparameter names"
@@ -632,7 +632,7 @@ public function joinTypeParams "creates type parameter lists from list of numera
   input Option<Integer> funcInstIdOpt;
   output list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> typeParams;
 algorithm
-  typeParams := matchcontinue(nums,denoms,tpstrs,funcInstIdOpt)
+  typeParams := match(nums,denoms,tpstrs,funcInstIdOpt)
     local Integer i1,i2;
       String tpParam,s;
     case({},{},{},_) then {};
@@ -641,7 +641,7 @@ algorithm
         s=Util.stringOption(Util.applyOption(funcInstIdOpt,intString));
         tpParam = tpParam +& s;
     then (MMath.RATIONAL(i1,i2),UnitAbsyn.TYPEPARAMETER(tpParam,0))::typeParams;
-  end matchcontinue;
+  end match;
 end joinTypeParams;
 
 public function splitTypeParams "splits type parameter lists into numerators, denominators and typeparameter names"
@@ -650,13 +650,13 @@ public function splitTypeParams "splits type parameter lists into numerators, de
   output list<Integer> denoms;
   output list<String> tpstrs;
 algorithm
-  (nums,denoms,tpstrs) := matchcontinue(typeParams)
+  (nums,denoms,tpstrs) := match(typeParams)
   local String tpParam; Integer i1,i2;
     case({}) then ({},{},{});
     case((MMath.RATIONAL(i1,i2),UnitAbsyn.TYPEPARAMETER(tpParam,_))::typeParams) equation
       (nums,denoms,tpstrs) = splitTypeParams(typeParams);
     then (i1::nums,i2::denoms,tpParam::tpstrs);
-  end matchcontinue;
+  end match;
 end splitTypeParams;
 
 public function instBuildUnitTerms "builds unit terms and stores for a DAE. It also returns a hashtable that maps
@@ -755,9 +755,9 @@ public function storeSize "return the number of elements of the store"
 input UnitAbsyn.Store store;
 output Integer size;
 algorithm
-  size := matchcontinue(store)
+  size := match(store)
     case(UnitAbsyn.STORE(_,size)) then size;
-  end matchcontinue;
+  end match;
 end storeSize;
 
 protected function createTypeParameterLocations "for each unique type parameter, create an UNSPECIFIED unit
@@ -829,14 +829,14 @@ protected function createTypeParameterLocations3 "help function to createTypePar
   output HashTable.HashTable outHt;
   output Integer outNextElt;
 algorithm
-  (outUnit,outHt,outNextElt) := matchcontinue(unit,ht,nextElt)
+  (outUnit,outHt,outNextElt) := match(unit,ht,nextElt)
   local list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> params;
     list<MMath.Rational> units;
      /* Only succeeds for units with type parameters */
     case(UnitAbsyn.SPECIFIED(UnitAbsyn.SPECUNIT(params as _::_,units)),ht,nextElt) equation
       (params,ht,nextElt) = createTypeParameterLocations4(params,ht,nextElt);
      then (UnitAbsyn.SPECIFIED(UnitAbsyn.SPECUNIT(params,units)),ht,nextElt);
-  end matchcontinue;
+  end match;
 end createTypeParameterLocations3;
 
 protected function createTypeParameterLocations4 "help function to createTypeParameterLocations3"
@@ -1088,7 +1088,7 @@ and EQN to make the constraint that they must have the same unit"
   input list<DAE.Exp> expl;
   output list<UnitAbsyn.UnitTerm> outUts;
 algorithm
-  outUts := matchcontinue(uts,expl)
+  outUts := match(uts,expl)
   local UnitAbsyn.UnitTerm ut1,ut2;  DAE.ExpType ty; DAE.Exp e1,e2;
     case({},_) then  {};
     case(uts as {_},_) then uts;
@@ -1097,7 +1097,7 @@ algorithm
       ty = Expression.typeof(e1);
       uts = listAppend(uts,{UnitAbsyn.EQN(ut1,ut2,DAE.ARRAY(ty,true,{e1,e2}))});
     then uts;
-  end matchcontinue;
+  end match;
 end  buildArrayElementTerms;
 
 protected function buildTermCall "builds a term and additional terms from a function call"
@@ -1112,7 +1112,7 @@ protected function buildTermCall "builds a term and additional terms from a func
   output list<UnitAbsyn.UnitTerm> extraTerms "additional terms from e.g. function calls";
   output UnitAbsyn.Store outStore;
 algorithm
-  (ut,extraTerms,outStore) := matchcontinue(env,path,funcCallExp,expl,divOrMul,ht,store)
+  (ut,extraTerms,outStore) := match(env,path,funcCallExp,expl,divOrMul,ht,store)
     local list<Integer> formalParamIndxs; Integer resIndx;
       list<UnitAbsyn.UnitTerm> actTermLst,terms,terms2,extraTerms2; DAE.Type functp;
        Integer funcInstId;
@@ -1125,7 +1125,7 @@ algorithm
         (terms2 as {ut},extraTerms2,store) = buildResultTerms(functp,funcInstId,funcCallExp,store);
         extraTerms = listAppend(extraTerms,listAppend(extraTerms2,terms));
     then (ut,extraTerms,store);
-  end matchcontinue;
+  end match;
 end buildTermCall;
 
 protected function buildResultTerms "build stores and terms for assigning formal output arguments to
@@ -1172,7 +1172,7 @@ protected function buildTupleResultTerms "help function to buildResultTerms"
   output list<UnitAbsyn.UnitTerm> extraTerms;
   output UnitAbsyn.Store outStore;
 algorithm
-  (terms,extraTerms,outStore) := matchcontinue(functps,funcInstId,funcCallExp,store)
+  (terms,extraTerms,outStore) := match(functps,funcInstId,funcCallExp,store)
   local list<UnitAbsyn.UnitTerm> terms1,terms2,extraTerms1,extraTerms2; DAE.Type tp;
     case({},funcInstId,funcCallExp,store) then ({},{},store);
     case(tp::functps,funcInstId,funcCallExp,store) equation
@@ -1181,7 +1181,7 @@ algorithm
       terms = listAppend(terms1,terms2);
       extraTerms = listAppend(extraTerms1,extraTerms2);
     then (terms,extraTerms,store);
-  end matchcontinue;
+  end match;
 end buildTupleResultTerms;
 
 protected function buildTermExpList "build terms from list of expressions"
@@ -1234,7 +1234,7 @@ protected function buildFuncTypeStores2 "help function to buildFuncTypeStores"
   output UnitAbsyn.Store outStore;
   output list<Integer> indxs;
 algorithm
-  (outStore,indxs) := matchcontinue(fargs,funcInstId,store)
+  (outStore,indxs) := match(fargs,funcInstId,store)
   local String unitStr; Integer indx; DAE.Type tp; UnitAbsyn.Unit unit;
     case({},funcInstId,store) then (store,{});
     case((_,tp)::fargs,funcInstId,store) equation
@@ -1245,7 +1245,7 @@ algorithm
       (store,indx) = add(unit,store);
       (store,indxs) = buildFuncTypeStores2(fargs,funcInstId,store);
     then (store,indx::indxs);
-  end matchcontinue;
+  end match;
 end buildFuncTypeStores2;
 
 protected function getUnitStr "help function to e.g. buildFuncTypeStores2, retrieve a unit string
@@ -1288,7 +1288,7 @@ protected function origExpInTerm "Returns the origExp of a term"
 input UnitAbsyn.UnitTerm ut;
 output DAE.Exp origExp;
 algorithm
-  origExp := matchcontinue(ut) local DAE.Exp e;
+  origExp := match(ut) local DAE.Exp e;
     case(UnitAbsyn.ADD(_,_,e)) then e;
     case(UnitAbsyn.SUB(_,_,e)) then e;
     case(UnitAbsyn.MUL(_,_,e)) then e;
@@ -1296,7 +1296,7 @@ algorithm
     case(UnitAbsyn.EQN(_,_,e)) then e;
     case(UnitAbsyn.LOC(_,e)) then e;
     case(UnitAbsyn.POW(_,_,e)) then e;
-  end matchcontinue;
+  end match;
 end origExpInTerm;
 
 protected function buildTermOp "Takes two UnitTerms and and DAE.Operator and creates a new UnitTerm "
@@ -1306,12 +1306,12 @@ protected function buildTermOp "Takes two UnitTerms and and DAE.Operator and cre
   input DAE.Exp origExp;
   output UnitAbsyn.UnitTerm ut;
 algorithm
-  ut := matchcontinue(ut1,ut2,op,origExp)
+  ut := match(ut1,ut2,op,origExp)
     case(ut1,ut2,DAE.ADD(ty=_),origExp) then UnitAbsyn.ADD(ut1,ut2,origExp);
     case(ut1,ut2,DAE.SUB(ty=_),origExp) then UnitAbsyn.SUB(ut1,ut2,origExp);
     case(ut1,ut2,DAE.MUL(ty=_),origExp) then UnitAbsyn.MUL(ut1,ut2,origExp);
     case(ut1,ut2,DAE.DIV(ty=_),origExp) then UnitAbsyn.DIV(ut1,ut2,origExp);
-  end matchcontinue;
+  end match;
 end buildTermOp;
 
 protected function buildStores2 "help function"
@@ -1461,7 +1461,7 @@ public function unit2str "Translate a unit to a string"
   input UnitAbsyn.Unit unit;
   output String res;
 algorithm
-  res := matchcontinue(unit)
+  res := match(unit)
     local
       list<Integer> nums,denoms,tpnoms,tpdenoms;
       list<String> tpstrs;
@@ -1474,7 +1474,7 @@ algorithm
       res = UnitParserExt.unit2str(nums,denoms,tpnoms,tpdenoms,tpstrs,1.0/*scaleFactor*/,0.0/*offset*/);
     then res;
     case(UnitAbsyn.UNSPECIFIED()) then "unspecified";
-   end matchcontinue;
+   end match;
 end unit2str;
 
 public function str2unit "Translate a unit string to a unit"

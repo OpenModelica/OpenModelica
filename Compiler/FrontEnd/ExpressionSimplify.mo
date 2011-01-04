@@ -397,7 +397,7 @@ protected function simplifyBuiltinCalls "simplifies some builtin calls (with no 
   input DAE.Exp exp "NOTE: assumes call arguments NOT YET SIMPLIFIED (for efficiency reasons)";
   output DAE.Exp outExp;
 algorithm
-  outExp := matchcontinue(exp)
+  outExp := match(exp)
     local
       list<DAE.Exp> expl;
       DAE.Exp e;
@@ -432,7 +432,7 @@ algorithm
       equation
         DAE.LIST(valList = expl) = simplify1(e);
       then simplifyStringAppendList(expl,{});
-  end matchcontinue;
+  end match;
 end simplifyBuiltinCalls;
 
 protected function simplifyStringAppendList
@@ -599,7 +599,7 @@ protected function simplifyMatrixRows ""
   input list<tuple<DAE.Exp, Boolean>> inRow;
   output list<tuple<DAE.Exp, Boolean>> outRow;
 algorithm 
-  outRow := matchcontinue(inRow)
+  outRow := match(inRow)
     local
       DAE.Exp e,e_1;
       Boolean b;
@@ -611,7 +611,7 @@ algorithm
         outRow = simplifyMatrixRows(inRow);
       then
         (e_1,b)::outRow;
-  end matchcontinue;
+  end match;
 end simplifyMatrixRows;
 
 protected function simplifyIdentity ""
@@ -1209,7 +1209,7 @@ protected function simplifyScalarProductMatrixVector1
   input list<DAE.Exp> inExpLst1;
   output list<DAE.Exp> outExpLst;
 algorithm
-  outExpLst := matchcontinue (inExpLst,inExpLst1)
+  outExpLst := match (inExpLst,inExpLst1)
     local
       list<DAE.Exp> row,rows,res,v1,expl;
       DAE.Exp exp;
@@ -1223,7 +1223,7 @@ algorithm
         res = simplifyScalarProductMatrixVector1(rows, v1);
       then
         (exp :: res);
-  end matchcontinue;
+  end match;
 end simplifyScalarProductMatrixVector1;
 
 protected function simplifyScalarProductVectorMatrix
@@ -1621,7 +1621,7 @@ protected function simplifyMatrixProduct2
   output list<list<tuple<DAE.Exp, Boolean>>> outTplExpBooleanLstLst;
 algorithm
   outTplExpBooleanLstLst:=
-  matchcontinue (inTplExpBooleanLstLst1,inTplExpBooleanLstLst2)
+  match (inTplExpBooleanLstLst1,inTplExpBooleanLstLst2)
     local
       list<tuple<DAE.Exp, Boolean>> res1,e1lst;
       list<list<tuple<DAE.Exp, Boolean>>> res2,rest1,m2;
@@ -1632,7 +1632,7 @@ algorithm
       then
         (res1 :: res2);
     case ({},_) then {};
-  end matchcontinue;
+  end match;
 end simplifyMatrixProduct2;
 
 protected function simplifyMatrixProduct3
@@ -1877,7 +1877,7 @@ protected function simplifyMul2
   input list<DAE.Exp> inExpLst;
   output list<tuple<DAE.Exp, Real>> outTplExpRealLst;
 algorithm
-  outTplExpRealLst := matchcontinue (inExpLst)
+  outTplExpRealLst := match (inExpLst)
     local
       DAE.Exp e_1,e;
       Real coeff;
@@ -1892,7 +1892,7 @@ algorithm
         rest = simplifyMul2(es);
       then
         ((e_1,coeff) :: rest);
-  end matchcontinue;
+  end match;
 end simplifyMul2;
 
 protected function simplifyMulJoinFactors
@@ -1904,7 +1904,7 @@ protected function simplifyMulJoinFactors
   input list<tuple<DAE.Exp, Real>> inTplExpRealLst;
   output list<tuple<DAE.Exp, Real>> outTplExpRealLst;
 algorithm
-  outTplExpRealLst := matchcontinue (inTplExpRealLst)
+  outTplExpRealLst := match (inTplExpRealLst)
     local
       Real coeff2,coeff_1,coeff;
       list<tuple<DAE.Exp, Real>> rest_1,res,rest;
@@ -1919,7 +1919,7 @@ algorithm
         coeff_1 = coeff +. coeff2;
       then
         ((e,coeff_1) :: res);
-  end matchcontinue;
+  end match;
 end simplifyMulJoinFactors;
 
 protected function simplifyMulJoinFactorsFind
@@ -2067,7 +2067,7 @@ protected function simplifyAddJoinTerms
   input list<tuple<DAE.Exp, Real>> inTplExpRealLst;
   output list<tuple<DAE.Exp, Real>> outTplExpRealLst;
 algorithm
-  outTplExpRealLst := matchcontinue (inTplExpRealLst)
+  outTplExpRealLst := match (inTplExpRealLst)
     local
       Real coeff2,coeff3,coeff;
       list<tuple<DAE.Exp, Real>> rest_1,res,rest;
@@ -2082,7 +2082,7 @@ algorithm
         coeff3 = coeff +. coeff2;
       then
         ((e,coeff3) :: res);
-  end matchcontinue;
+  end match;
 end simplifyAddJoinTerms;
 
 protected function simplifyAddJoinTermsFind
@@ -2270,7 +2270,7 @@ the subexpression"
   input Integer sub;
   output DAE.Exp res;
 algorithm
-  res := matchcontinue(e,sub)
+  res := match(e,sub)
     local 
       Type t,t1,t2;
       Boolean b;
@@ -2328,7 +2328,7 @@ algorithm
       then 
         exp;
 
-  end matchcontinue;
+  end match;
 end simplifyAsub0;
 
 protected function simplifyAsub
@@ -2849,7 +2849,7 @@ public function safeIntOp
 	input IntOp op;
 	output DAE.Exp outv;
 algorithm
-  outv := matchcontinue(val1, val2, op)
+  outv := match(val1, val2, op)
     local
       Real rv1,rv2,rv3;
       Integer ires;
@@ -2895,7 +2895,7 @@ algorithm
         outv = Expression.realToIntIfPossible(rv3);
       then
         outv;
-  end matchcontinue;
+  end match;
 end safeIntOp;
 
 protected function simplifyBinary
@@ -3429,14 +3429,14 @@ handles MATRIX expressions"
   input Boolean arrayScalar "if true, array op scalar, otherwise scalar op array";
   output list<list<tuple<DAE.Exp, Boolean>>> outExp;
 algorithm
-  outExp := matchcontinue(mexpl,op,s1,arrayScalar)
+  outExp := match(mexpl,op,s1,arrayScalar)
   local list<tuple<DAE.Exp, Boolean>> row;
     case({},op,s1,arrayScalar) then {};
     case(row::mexpl,op,s1,arrayScalar) equation
       row = simplifyVectorScalarMatrixRow(row,op,s1,arrayScalar);
       mexpl = simplifyVectorScalarMatrix(mexpl,op,s1,arrayScalar);
     then row::mexpl;
-  end matchcontinue;
+  end match;
 end simplifyVectorScalarMatrix;
 
 protected function simplifyVectorScalarMatrixRow "Help function to simplifyVectorScalarMatrix,
@@ -3447,7 +3447,7 @@ handles MATRIX row"
   input Boolean arrayScalar "if true, array op scalar, otherwise scalar op array";
   output list<tuple<DAE.Exp, Boolean>> outExp;
 algorithm
-  outExp := matchcontinue(row,op,s1,arrayScalar)
+  outExp := match(row,op,s1,arrayScalar)
   local DAE.Exp e; Boolean scalar;
     case({},op,s1,arrayScalar) then {};
       /* array op scalar */
@@ -3459,7 +3459,7 @@ algorithm
     case((e,scalar)::row,op,s1,false) equation
       row = simplifyVectorScalarMatrixRow(row,op,s1,false);
     then ((DAE.BINARY(s1,op,e),scalar)::row);
-  end matchcontinue;
+  end match;
 end simplifyVectorScalarMatrixRow;
 
 protected function simplifyBinarySortConstantsMul
@@ -3484,7 +3484,7 @@ protected function simplifyBuiltinConstantDer
   input DAE.Exp inExp "assumes already simplified constant expression";
   output DAE.Exp outExp;
 algorithm
-  outExp := matchcontinue (inExp)
+  outExp := match (inExp)
     local
       DAE.Exp e;
       list<DAE.Dimension> dims;
@@ -3500,7 +3500,7 @@ algorithm
         (e,_) = Expression.makeZeroExpression(dims);
       then
         e;  
-  end matchcontinue;
+  end match;
 end simplifyBuiltinConstantDer;
 
 protected function matrixExpMap1
@@ -3521,7 +3521,7 @@ protected function matrixExpMap1
   replaceable type Type_b subtypeof Any;
 algorithm
   outTplExpBooleanLstLst:=
-  matchcontinue (inTplExpBooleanLstLst,inFuncTypeExpTypeBToExp,inTypeB)
+  match (inTplExpBooleanLstLst,inFuncTypeExpTypeBToExp,inTypeB)
     local
       list<tuple<DAE.Exp, Boolean>> e_1,e;
       list<list<tuple<DAE.Exp, Boolean>>> es_1,es;
@@ -3534,7 +3534,7 @@ algorithm
         es_1 = matrixExpMap1(es, rel, arg);
       then
         (e_1 :: es_1);
-  end matchcontinue;
+  end match;
 end matrixExpMap1;
 
 protected function matrixExpMap1Help
@@ -3553,7 +3553,7 @@ protected function matrixExpMap1Help
   replaceable type Type_b subtypeof Any;
 algorithm
   outTplExpBooleanLst:=
-  matchcontinue (inTplExpBooleanLst,inFuncTypeExpTypeBToExp,inTypeB)
+  match (inTplExpBooleanLst,inFuncTypeExpTypeBToExp,inTypeB)
     local
       DAE.Exp e_1,e;
       list<tuple<DAE.Exp, Boolean>> es_1,es;
@@ -3567,7 +3567,7 @@ algorithm
         es_1 = matrixExpMap1Help(es, rel, arg);
       then
         ((e_1,b) :: es_1);
-  end matchcontinue;
+  end match;
 end matrixExpMap1Help;
 
 protected function removeOperatorDimension "Function: removeOperatorDimension
@@ -3575,12 +3575,12 @@ Helper function for simplifyVectorBinary, removes an dimension from the operator
 "
   input Operator inop;
   output Operator outop;
-algorithm outop := matchcontinue(inop)
+algorithm outop := match(inop)
   local Type ty1,ty2;
     String str;
   case( DAE.ADD(ty=ty1)) equation ty2 = Expression.unliftArray(ty1); then DAE.ADD(ty2);
   case( DAE.SUB(ty=ty1)) equation ty2 = Expression.unliftArray(ty1); then DAE.SUB(ty2);
-end matchcontinue;
+end match;
 end removeOperatorDimension;
 
 end ExpressionSimplify;

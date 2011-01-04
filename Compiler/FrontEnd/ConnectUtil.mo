@@ -273,7 +273,7 @@ protected function outerConnectionMatches "Returns true if Connect.OuterConnect 
   input DAE.ComponentRef cr2;
   output Boolean matches;
 algorithm
-  matches := matchcontinue(oc,cr1,cr2)
+  matches := match(oc,cr1,cr2)
     local DAE.ComponentRef cr11,cr22;
     case(Connect.OUTERCONNECT(cr1=cr11,cr2=cr22),cr1,cr2) 
       equation
@@ -281,7 +281,7 @@ algorithm
         ComponentReference.crefEqual(cr11,cr1) and ComponentReference.crefEqual(cr22,cr2) or
         ComponentReference.crefEqual(cr11,cr2) and ComponentReference.crefEqual(cr22,cr1);
       then matches;
-  end matchcontinue;
+  end match;
 end outerConnectionMatches;
 
 public function addOuterConnectToSets "adds an outerconnection to all sets where a corresponding inner definition is present
@@ -761,7 +761,7 @@ protected function checkSet
   input Connect.Face inFace;
   output Connect.Set outSet;
 algorithm
-  outSet := matchcontinue(inSet, inComponentRef, inFace)
+  outSet := match(inSet, inComponentRef, inFace)
     local 
       list<Connect.FlowSetElement> cs;  
     
@@ -774,7 +774,7 @@ algorithm
     case (Connect.EQU(expComponentRefLst = _), _, _) then inSet;
     
     case (Connect.STREAM(tplExpComponentRefFaceLst = _), _, _) then inSet;
-  end matchcontinue;
+  end match;
 end checkSet;
 
 protected function checkFlowSet
@@ -928,10 +928,10 @@ protected function crefTuplePrefixOf
   input DAE.ComponentRef compName;
   output Boolean selected;
 algorithm
-  selected := matchcontinue(tupleCrSource,compName)
+  selected := match(tupleCrSource,compName)
     local DAE.ComponentRef cr;
     case((cr,_,_),compName) then ComponentReference.crefPrefixOf(compName,cr);
-  end matchcontinue;
+  end match;
 end crefTuplePrefixOf;
 
 protected function flowTupleNotPrefixOf 
@@ -952,10 +952,10 @@ protected function flowTuplePrefixOf
   input DAE.ComponentRef compName;
   output Boolean b;
 algorithm
-  b:= matchcontinue(tpl,compName)
+  b:= match(tpl,compName)
     local DAE.ComponentRef cr;
     case((cr,_,_),compName) then ComponentReference.crefPrefixOf(compName,cr);
-  end matchcontinue;
+  end match;
 end flowTuplePrefixOf;
 
 protected function streamTupleNotPrefixOf 
@@ -976,10 +976,10 @@ protected function streamTuplePrefixOf
   input DAE.ComponentRef compName;
   output Boolean b;
 algorithm
-  b:= matchcontinue(tpl,compName)
+  b:= match(tpl,compName)
     local DAE.ComponentRef cr;
     case((cr,_,_,_),compName) then ComponentReference.crefPrefixOf(compName,cr);
-  end matchcontinue;
+  end match;
 end streamTuplePrefixOf;
 
 public function equations
@@ -1143,7 +1143,7 @@ protected function signFlow "function: signFlow
   input Connect.Face inFace;
   output DAE.Exp outExp;
 algorithm
-  outExp := matchcontinue (inComponentRef,inFace)
+  outExp := match (inComponentRef,inFace)
     local DAE.ComponentRef c; DAE.Exp exp;
     
     case (c,Connect.INSIDE())
@@ -1157,7 +1157,7 @@ algorithm
         exp = Expression.crefExp(c);
       then 
         DAE.UNARY(DAE.UMINUS(DAE.ET_REAL()),exp);
-  end matchcontinue;
+  end match;
 end signFlow;
 
 protected function streamEquations "function: streamEquations
@@ -1973,13 +1973,13 @@ protected function equSetElementLess
   input Connect.EquSetElement inElem2;
   output Boolean res;
 algorithm
-  res := matchcontinue(inElem1, inElem2)
+  res := match(inElem1, inElem2)
     local
       DAE.ComponentRef cr1, cr2;
     
     case ((cr1, _, _), (cr2, _, _)) 
       then ComponentReference.crefSortFunc(cr2, cr1);
-  end matchcontinue;
+  end match;
 end equSetElementLess;
 
 protected function removeSet2 "function: removeSet2
@@ -2626,10 +2626,10 @@ protected function sizeOfVariable
   input DAE.Var inVar;
   output Integer outSize;
 algorithm
-  outSize := matchcontinue(inVar)
+  outSize := match(inVar)
     local DAE.Type t;
     case DAE.TYPES_VAR(type_ = t) then sizeOfVariable2(t);
-  end matchcontinue;
+  end match;
 end sizeOfVariable; 
 
 protected function sizeOfVariable2

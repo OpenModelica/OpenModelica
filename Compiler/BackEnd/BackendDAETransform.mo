@@ -583,7 +583,7 @@ protected function assignOneInEqn "function: assignOneInEqn
   output BackendDAE.Assignments outAssignments2;
 algorithm
   (outAssignments1,outAssignments2):=
-  matchcontinue (inIncidenceMatrix1,inIncidenceMatrixT2,inInteger3,inAssignments4,inAssignments5)
+  match (inIncidenceMatrix1,inIncidenceMatrixT2,inInteger3,inAssignments4,inAssignments5)
     local
       list<BackendDAE.Value> vars;
       BackendDAE.Assignments ass1_1,ass2_1,ass1,ass2;
@@ -595,7 +595,7 @@ algorithm
         (ass1_1,ass2_1) = assignFirstUnassigned(i, vars, ass1, ass2);
       then
         (ass1_1,ass2_1);
-  end matchcontinue;
+  end match;
 end assignOneInEqn;
 
 protected function assignFirstUnassigned
@@ -650,12 +650,12 @@ protected function getAssigned
   output Integer outInteger;
 algorithm
   outInteger:=
-  matchcontinue (inInteger1,inAssignments2,inAssignments3)
+  match (inInteger1,inAssignments2,inAssignments3)
     local
       BackendDAE.Value v;
       array<BackendDAE.Value> m;
     case (v,BackendDAE.ASSIGNMENTS(arrOfIndices = m),_) then m[v];
-  end matchcontinue;
+  end match;
 end getAssigned;
 
 protected function assign
@@ -676,7 +676,7 @@ protected function assign
   output BackendDAE.Assignments outAssignments2;
 algorithm
   (outAssignments1,outAssignments2):=
-  matchcontinue (inInteger1,inInteger2,inAssignments3,inAssignments4)
+  match (inInteger1,inInteger2,inAssignments3,inAssignments4)
     local
       BackendDAE.Value v_1,e_1,v,e;
       BackendDAE.Assignments ass1_1,ass2_1,ass1,ass2;
@@ -688,7 +688,7 @@ algorithm
         ass2_1 = assignmentsSetnth(ass2, e_1, v);
       then
         (ass1_1,ass2_1);
-  end matchcontinue;
+  end match;
 end assign;
 
 protected function forallUnmarkedVarsInEqn
@@ -711,7 +711,7 @@ protected function forallUnmarkedVarsInEqn
   output BackendDAE.Assignments outAssignments2;
 algorithm
   (outAssignments1,outAssignments2):=
-  matchcontinue (inIncidenceMatrix1,inIncidenceMatrixT2,inInteger3,inAssignments4,inAssignments5)
+  match (inIncidenceMatrix1,inIncidenceMatrixT2,inInteger3,inAssignments4,inAssignments5)
     local
       list<BackendDAE.Value> vars,vars_1;
       BackendDAE.Assignments ass1_1,ass2_1,ass1,ass2;
@@ -724,7 +724,7 @@ algorithm
         (ass1_1,ass2_1) = forallUnmarkedVarsInEqnBody(m, mt, i, vars_1, ass1, ass2);
       then
         (ass1_1,ass2_1);
-  end matchcontinue;
+  end match;
 end forallUnmarkedVarsInEqn;
 
 protected function isNotVMarked
@@ -1743,7 +1743,7 @@ protected function traverseBackendDAEExpsEqnAlgs
   end FuncExpType;   
 algorithm
   (outAlgs,outTypeA):=
-  matchcontinue (inIndex,inAlgs,func,inTypeA)
+  match (inIndex,inAlgs,func,inTypeA)
     local  
       array<DAE.Algorithm> algs;
       list<DAE.Statement> statementLst,statementLst1;
@@ -1758,7 +1758,7 @@ algorithm
         algs = arrayUpdate(inAlgs,i_1,DAE.ALGORITHM_STMTS(statementLst1));   
     then
       (algs,ext_arg_1);
-  end matchcontinue;      
+  end match;      
 end traverseBackendDAEExpsEqnAlgs;
 
 protected function traverseBackendDAEExpsEqnList
@@ -2003,12 +2003,12 @@ protected function selectMinPrio
   output DAE.ComponentRef s;
   output Integer sn;
 algorithm
-  (s,sn) := matchcontinue(tuples)
+  (s,sn) := match(tuples)
     case(tuples)
       equation
         ((s,sn,_)) = Util.listReduce(tuples,ssPrioTupleMin);
       then (s,sn);
-  end matchcontinue;
+  end match;
 end selectMinPrio;
 
 protected function ssPrioTupleMin
@@ -2047,7 +2047,7 @@ protected function calculateVarPriorities
   input BackendDAE.IncidenceMatrixT mt;
   output list<tuple<DAE.ComponentRef,Integer,Real>> tuples;
 algorithm
-  tuples := matchcontinue(varCrefs,varIndices,vars,eqns,m,mt)
+  tuples := match(varCrefs,varIndices,vars,eqns,m,mt)
   local DAE.ComponentRef varCref;
     Integer varIndx;
     BackendDAE.Var v;
@@ -2061,7 +2061,7 @@ algorithm
       prio2 = varStateSelectHeuristicPrio(v,vars,eqns,m,mt);
       prio = prio1 +. prio2;
     then ((varCref,varIndx,prio)::prios);
-  end matchcontinue;
+  end match;
 end calculateVarPriorities;
 
 protected function varStateSelectHeuristicPrio
@@ -2109,7 +2109,7 @@ protected function varStateSelectHeuristicPrio3
   input BackendDAE.Variables vars;
   output Real prio;
 algorithm
-  prio := matchcontinue(cr,vars)
+  prio := match(cr,vars)
     local Integer i; Real c;
     case(cr,vars)
       equation
@@ -2117,7 +2117,7 @@ algorithm
         c = intReal(i);
         prio = c *. 0.01;
       then prio;
-  end matchcontinue;
+  end match;
 end varStateSelectHeuristicPrio3;
 
 protected function varHasSameLastIdent
@@ -2266,13 +2266,13 @@ protected function varStateSelectPrio2
   input DAE.StateSelect ss;
   output Real prio;
 algorithm
-  prio := matchcontinue(ss)
+  prio := match(ss)
     case (DAE.NEVER()) then -10.0;
     case (DAE.AVOID()) then 0.0;
     case (DAE.DEFAULT()) then 10.0;
     case (DAE.PREFER()) then 50.0;
     case (DAE.ALWAYS()) then 100.0;
-  end matchcontinue;
+  end match;
 end varStateSelectPrio2;
 
 protected function calculateDummyStatePriorities

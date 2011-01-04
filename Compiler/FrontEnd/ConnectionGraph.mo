@@ -203,7 +203,7 @@ algorithm
                     getBranches(branches),
                     getConnections(inGraph));
 */
-  outGraph := matchcontinue(inGraph, inRoot)
+  outGraph := match(inGraph, inRoot)
     local
       Boolean updateGraph;
       ConnectionGraph graph;
@@ -219,7 +219,7 @@ algorithm
             ComponentReference.printComponentRefStr(root) +& ")");
       then
         GRAPH(updateGraph,root::definiteRoots,potentialRoots,branches,connections);
-  end matchcontinue;
+  end match;
 end addDefiniteRoot;
 
 public function addPotentialRoot
@@ -234,7 +234,7 @@ algorithm
                     inGraph.branches,
                     inGraph.connections);
 */
-  outGraph := matchcontinue(inGraph, inRoot, inPriority)
+  outGraph := match(inGraph, inRoot, inPriority)
     local
       Boolean updateGraph;
       ConnectionGraph graph;
@@ -251,7 +251,7 @@ algorithm
             ComponentReference.printComponentRefStr(root) +& ", " +& realString(priority) +& ")");
       then
         GRAPH(updateGraph,definiteRoots,(root,priority)::potentialRoots,branches,connections);
-  end matchcontinue;
+  end match;
 end addPotentialRoot;
 
 public function addBranch
@@ -266,7 +266,7 @@ algorithm
                     (inRef1,inRef2)::inGraph.branches,
                     inGraph.connections);
 */
-  outGraph := matchcontinue(inGraph, inRef1, inRef2)
+  outGraph := match(inGraph, inRef1, inRef2)
     local
       Boolean updateGraph;
       ConnectionGraph graph;
@@ -284,7 +284,7 @@ algorithm
             ComponentReference.printComponentRefStr(ref2) +& ")");
       then
         GRAPH(updateGraph, definiteRoots,potentialRoots,(ref1,ref2)::branches,connections);
-  end matchcontinue;
+  end match;
 end addBranch;
 
 public function addConnection
@@ -300,7 +300,7 @@ algorithm
                     inGraph.branches,
                     (inRef1,inRef2)::inGraph.connections);
 */
-  outGraph := matchcontinue(inGraph, inRef1, inRef2,inDae)
+  outGraph := match(inGraph, inRef1, inRef2,inDae)
     local
       Boolean updateGraph;
       ConnectionGraph graph;
@@ -318,7 +318,7 @@ algorithm
             ComponentReference.printComponentRefStr(ref1) +& ", " +&
             ComponentReference.printComponentRefStr(ref2) +& ")");
     then GRAPH(updateGraph, definiteRoots,potentialRoots,branches,(ref1,ref2,dae)::connections);
-  end matchcontinue;
+  end match;
 end addConnection;
 
 // ************************************* //
@@ -771,7 +771,7 @@ protected function addRootsToTable
   input DAE.ComponentRef inFirstRoot;
   output HashTableCG.HashTable outTable;
 algorithm
-  outTable := matchcontinue(inTable, inRoots, inFirstRoot)
+  outTable := match(inTable, inRoots, inFirstRoot)
     local
       HashTableCG.HashTable table;
       DAE.ComponentRef root, firstRoot;
@@ -783,7 +783,7 @@ algorithm
         table = addRootsToTable(table, tail, firstRoot);
       then table;
     case(table, {}, _) then table;
-  end matchcontinue;
+  end match;
 end addRootsToTable;
 
 protected function resultGraphWithRoots
@@ -805,7 +805,7 @@ protected function addBranchesToTable
   input Edges inBranches;
   output HashTableCG.HashTable outTable;
 algorithm
-  outTable := matchcontinue(inTable, inBranches)
+  outTable := match(inTable, inBranches)
     local
       HashTableCG.HashTable table, table1, table2;
       DAE.ComponentRef ref1, ref2;
@@ -817,7 +817,7 @@ algorithm
         table2 = addBranchesToTable(table1, tail);
       then table2;
     case(table, {}) then table;
-  end matchcontinue;
+  end match;
 end addBranchesToTable;
 
 protected function ord
@@ -887,7 +887,7 @@ protected function addConnections
   output list<DAE.Element> outDae;
   output Edges outBrokenConnections;
 algorithm
-  (outTable,outDae,outBrokenConnections) := matchcontinue(inTable, inConnections, inDae)
+  (outTable,outDae,outBrokenConnections) := match(inTable, inConnections, inDae)
     local
       HashTableCG.HashTable table;
       DAE.ComponentRef ref1, ref2;
@@ -904,7 +904,7 @@ algorithm
         (table,dae,broken2) = addConnections(table, tail, dae);
         broken = listAppend(broken1, broken2);
       then (table,dae,broken);
-  end matchcontinue;
+  end match;
 end addConnections;
 
 protected function findResultGraph
@@ -1080,11 +1080,11 @@ protected function printTupleStr
   input tuple<String,String> inTpl;
   output String out;
 algorithm
-  out := matchcontinue(inTpl)
+  out := match(inTpl)
     local 
       String c1,c2;
     case ((c1,c2)) then c1 +& " -- " +& c2;
-  end matchcontinue;
+  end match;
 end printTupleStr;
 
 protected function makeTuple
@@ -1134,7 +1134,7 @@ protected function printPotentialRootTuple
   input PotentialRoot potentialRoot;
   output String outStr;
 algorithm
-  outStr := matchcontinue(potentialRoot) 
+  outStr := match(potentialRoot) 
     local
       DAE.ComponentRef cr;
       Real priority;
@@ -1143,7 +1143,7 @@ algorithm
       equation
         str = ComponentReference.printComponentRefStr(cr) +& "(" +& realString(priority) +& ")";
       then str;
-  end matchcontinue;
+  end match;
 end printPotentialRootTuple;
 
 protected function evalIsRoot
@@ -1206,7 +1206,7 @@ protected function printConnectionStr
   input Edge connectTuple;
   output String outStr;
 algorithm
-  outStr := matchcontinue(connectTuple)
+  outStr := match(connectTuple)
     local
       DAE.ComponentRef c1, c2;
       String str;
@@ -1219,7 +1219,7 @@ algorithm
           ComponentReference.printComponentRefStr(c2) +&
           ")";
       then str;
-  end matchcontinue;
+  end match;
 end printConnectionStr;
 
 protected function printEdges
@@ -1248,7 +1248,7 @@ protected function printDaeEdges
 "Prints a list of dae edges to stdout."
   input DaeEdges inEdges;
 algorithm
-  _ := matchcontinue(inEdges)
+  _ := match(inEdges)
     local
       DAE.ComponentRef c1, c2;
       DaeEdges tail;
@@ -1264,7 +1264,7 @@ algorithm
         print("\n");
         printDaeEdges(tail);
       then ();
-  end matchcontinue;
+  end match;
 end printDaeEdges;
 
 protected function printConnectionGraph
@@ -1291,11 +1291,11 @@ protected function getDefiniteRoots
   input ConnectionGraph inGraph;
   output list<DAE.ComponentRef> outResult;
 algorithm
-  outResult := matchcontinue(inGraph)
+  outResult := match(inGraph)
     local
       list<DAE.ComponentRef> result;
     case (GRAPH(_,result,_,_,_)) then result;
-  end matchcontinue;
+  end match;
 end getDefiniteRoots;
 
 protected function getPotentialRoots
@@ -1303,10 +1303,10 @@ protected function getPotentialRoots
   input ConnectionGraph inGraph;
   output PotentialRoots outResult;
 algorithm
-  outResult := matchcontinue(inGraph)
+  outResult := match(inGraph)
     local PotentialRoots result;
     case (GRAPH(potentialRoots = result)) then result;
-  end matchcontinue;
+  end match;
 end getPotentialRoots;
 
 protected function getBranches
@@ -1314,11 +1314,11 @@ protected function getBranches
   input ConnectionGraph inGraph;
   output Edges outResult;
 algorithm
-  outResult := matchcontinue(inGraph)
+  outResult := match(inGraph)
     local Edges result;
     case (GRAPH(_,_,_,result,_))
     then result;
-  end matchcontinue;
+  end match;
 end getBranches;
 
 protected function getConnections
@@ -1326,10 +1326,10 @@ protected function getConnections
   input ConnectionGraph inGraph;
   output DaeEdges outResult;
 algorithm
-  outResult := matchcontinue(inGraph)
+  outResult := match(inGraph)
     local DaeEdges result;
     case (GRAPH(_,_,_,_,result)) then result;
-  end matchcontinue;
+  end match;
 end getConnections;
 
 protected function removeBrokenConnectionsFromSets
@@ -1560,14 +1560,14 @@ protected function graphVizEdge
   input  Edge inEdge;
   output String out; 
 algorithm
-  out := matchcontinue(inEdge)
+  out := match(inEdge)
     local DAE.ComponentRef c1, c2; String strEdge;
     case ((c1, c2))
       equation
         strEdge = "\"" +& ComponentReference.printComponentRefStr(c1) +& "\" -- \"" +& ComponentReference.printComponentRefStr(c2) +& "\"" +&
         " [color = blue, dir = \"none\", fontcolor=blue, label = \"branch\"];\n\t";
       then strEdge;
-  end matchcontinue;
+  end match;
 end graphVizEdge;
 
 protected function graphVizDaeEdge
@@ -1575,7 +1575,7 @@ protected function graphVizDaeEdge
   input  Edges inBrokenDaeEdges;
   output String out; 
 algorithm
-  out := matchcontinue(inDaeEdge, inBrokenDaeEdges)
+  out := match(inDaeEdge, inBrokenDaeEdges)
     local DAE.ComponentRef c1, c2; String sc1, sc2, strDaeEdge, label, labelFontSize, decorate, color, style, fontColor; Boolean isBroken;
     case ((c1, c2, _), inBrokenDaeEdges)
       equation
@@ -1599,7 +1599,7 @@ algorithm
           "label = \"", label ,"\"",
           "];\n\t"});
       then strDaeEdge;
-  end matchcontinue;
+  end match;
 end graphVizDaeEdge;
 
 protected function graphVizDefiniteRoot
@@ -1607,7 +1607,7 @@ protected function graphVizDefiniteRoot
   input  DefiniteRoots inFinalRoots;
   output String out; 
 algorithm
-  out := matchcontinue(inDefiniteRoot, inFinalRoots)
+  out := match(inDefiniteRoot, inFinalRoots)
     local DAE.ComponentRef c; String strDefiniteRoot; Boolean isSelectedRoot;
     case (c, inFinalRoots)
       equation
@@ -1617,7 +1617,7 @@ algorithm
            Util.if_(isSelectedRoot, "shape=polygon, sides=8, distortion=\"0.265084\", orientation=26, skew=\"0.403659\"", "shape=box") +&           
            "];\n\t";
       then strDefiniteRoot;
-  end matchcontinue;
+  end match;
 end graphVizDefiniteRoot;
 
 protected function graphVizPotentialRoot
@@ -1625,7 +1625,7 @@ protected function graphVizPotentialRoot
   input  DefiniteRoots inFinalRoots;
   output String out; 
 algorithm
-  out := matchcontinue(inPotentialRoot, inFinalRoots)
+  out := match(inPotentialRoot, inFinalRoots)
     local DAE.ComponentRef c; Real priority; String strPotentialRoot; Boolean isSelectedRoot;
     case ((c, priority), inFinalRoots)
       equation
@@ -1635,7 +1635,7 @@ algorithm
            Util.if_(isSelectedRoot, "shape=ploygon, sides=7, distortion=\"0.265084\", orientation=26, skew=\"0.403659\"", "shape=box") +&  
            "];\n\t";
       then strPotentialRoot;
-  end matchcontinue;
+  end match;
 end graphVizPotentialRoot;
 
 protected function generateGraphViz

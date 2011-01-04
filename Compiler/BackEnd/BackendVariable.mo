@@ -107,7 +107,7 @@ public function varEqual
   output Boolean outBoolean;
 algorithm
   outBoolean:=
-  matchcontinue (inVar1,inVar2)
+  match (inVar1,inVar2)
     local
       Boolean res;
       DAE.ComponentRef cr1,cr2;
@@ -116,7 +116,7 @@ algorithm
         res = ComponentReference.crefEqualNoStringCompare(cr1, cr2) "A BackendDAE.Var is identified by its component reference" ;
       then
         res;
-  end matchcontinue;
+  end match;
 end varEqual;
 
 
@@ -129,7 +129,7 @@ public function setVarFixed
   input Boolean inBoolean;
   output BackendDAE.Var outVar;
 algorithm
-  outVar := matchcontinue (inVar,inBoolean)
+  outVar := match (inVar,inBoolean)
     local
       DAE.ComponentRef a;
       BackendDAE.VarKind b;
@@ -296,7 +296,7 @@ algorithm
         BackendDAE.VAR(a,b,c,BackendDAE.REAL(),e,f,g,i,source,
             SOME(DAE.VAR_ATTR_ENUMERATION(NONE(),(NONE(),NONE()),NONE(),SOME(DAE.BCONST(fixed)),NONE(),NONE(),NONE())),
             s,t,streamPrefix);
-  end matchcontinue;
+  end match;
 end setVarFixed;
 
 public function varFixed
@@ -361,14 +361,14 @@ public function varStartValueFail
   input BackendDAE.Var v;
   output DAE.Exp sv;
 algorithm
-  sv := matchcontinue(v)
+  sv := match(v)
     local
       Option<DAE.VariableAttributes> attr;
     case (BackendDAE.VAR(values = attr))
       equation
         sv=DAEUtil.getStartAttrFail(attr);
       then sv;
-   end matchcontinue;
+   end match;
 end varStartValueFail;
 
 public function varBindExp
@@ -378,10 +378,10 @@ public function varBindExp
   input BackendDAE.Var v;
   output DAE.Exp sv;
 algorithm
-  sv := matchcontinue(v)
+  sv := match(v)
     local DAE.Exp e;
     case (BackendDAE.VAR(bindExp = SOME(e))) then e;
-   end matchcontinue;
+   end match;
 end varBindExp;
 
 public function varStateSelect
@@ -411,10 +411,10 @@ public function varType "function: varType
   output BackendDAE.Type outType;
 algorithm
   outType:=
-  matchcontinue (inVar)
+  match (inVar)
     local BackendDAE.Type tp;
     case (BackendDAE.VAR(varType = tp)) then tp;
-  end matchcontinue;
+  end match;
 end varType;
 
 public function varKind "function: varKind
@@ -426,10 +426,10 @@ public function varKind "function: varKind
   output BackendDAE.VarKind outVarKind;
 algorithm
   outVarKind:=
-  matchcontinue (inVar)
+  match (inVar)
     local BackendDAE.VarKind kind;
     case (BackendDAE.VAR(varKind = kind)) then kind;
-  end matchcontinue;
+  end match;
 end varKind;
 
 public function varIndex "function: varIndex
@@ -471,12 +471,12 @@ public function varCref
   output DAE.ComponentRef outComponentRef;
 algorithm
   outComponentRef:=
-  matchcontinue (inVar)
+  match (inVar)
     local
       DAE.ComponentRef cr;
       DAE.Flow flowPrefix;
     case (BackendDAE.VAR(varName = cr,flowPrefix = flowPrefix)) then cr;
-  end matchcontinue;
+  end match;
 end varCref;
 
 public function isStateVar
@@ -514,13 +514,13 @@ protected function failIfNonState
   input BackendDAE.Var inVar;
 algorithm
   _ :=
-  matchcontinue (inVar)
+  match (inVar)
     case (BackendDAE.VAR(varKind = BackendDAE.VARIABLE())) then ();
     case (BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER())) then ();
     case (BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE())) then ();
     case (BackendDAE.VAR(varKind = BackendDAE.DISCRETE())) then ();
     case (BackendDAE.VAR(varKind = BackendDAE.STATE_DER())) then ();
-  end matchcontinue;
+  end match;
 end failIfNonState;
 
 public function isDummyStateVar
@@ -737,13 +737,13 @@ public function varIndexComparer
   output Boolean res;
 algorithm
   res :=
-  matchcontinue (lhs, rhs)
+  match (lhs, rhs)
       local
       Integer lhsIndex;
       Integer rhsIndex;
     case (BackendDAE.VAR(index=lhsIndex), BackendDAE.VAR(index=rhsIndex))
       then rhsIndex < lhsIndex;
-  end matchcontinue;
+  end match;
 end varIndexComparer;
 
 public function isConst
@@ -869,7 +869,7 @@ public function setVarKind
   input BackendDAE.VarKind inVarKind;
   output BackendDAE.Var outVar;
 algorithm
-  outVar := matchcontinue (inVar,inVarKind)
+  outVar := match (inVar,inVarKind)
     local
       DAE.ComponentRef cr;
       BackendDAE.VarKind kind,new_kind;
@@ -899,7 +899,7 @@ algorithm
               flowPrefix = flowPrefix,
               streamPrefix = streamPrefix),new_kind)
     then BackendDAE.VAR(cr,new_kind,dir,tp,bind,v,dim,i,source,attr,comment,flowPrefix,streamPrefix);
-  end matchcontinue;
+  end match;
 end setVarKind;
 
 public function setVarIndex
@@ -910,7 +910,7 @@ public function setVarIndex
   input BackendDAE.Value inVarIndex;
   output BackendDAE.Var outVar;
 algorithm
-  outVar := matchcontinue (inVar,inVarIndex)
+  outVar := match (inVar,inVarIndex)
     local
       DAE.ComponentRef cr;
       BackendDAE.VarKind kind,new_kind;
@@ -940,7 +940,7 @@ algorithm
               flowPrefix = flowPrefix,
               streamPrefix = streamPrefix),new_i)
     then BackendDAE.VAR(cr,kind,dir,tp,bind,v,dim,new_i,source,attr,comment,flowPrefix,streamPrefix);
-  end matchcontinue;
+  end match;
 end setVarIndex;
 
 public function setBindExp
@@ -951,7 +951,7 @@ public function setBindExp
   input DAE.Exp inBindExp;
   output BackendDAE.Var outVar;
 algorithm
-  outVar := matchcontinue (inVar,inBindExp)
+  outVar := match (inVar,inBindExp)
     local
       DAE.ComponentRef cr;
       BackendDAE.VarKind kind;
@@ -981,7 +981,7 @@ algorithm
               flowPrefix = flowPrefix,
               streamPrefix = streamPrefix),inBindExp)
     then BackendDAE.VAR(cr,kind,dir,tp,SOME(inBindExp),v,dim,i,source,attr,comment,flowPrefix,streamPrefix);
-  end matchcontinue;
+  end match;
 end setBindExp;
 
 public function setBindValue
@@ -992,7 +992,7 @@ public function setBindValue
   input Values.Value inBindValue;
   output BackendDAE.Var outVar;
 algorithm
-  outVar := matchcontinue (inVar,inBindValue)
+  outVar := match (inVar,inBindValue)
     local
       DAE.ComponentRef cr;
       BackendDAE.VarKind kind;
@@ -1022,7 +1022,7 @@ algorithm
               flowPrefix = flowPrefix,
               streamPrefix = streamPrefix),inBindValue)
     then BackendDAE.VAR(cr,kind,dir,tp,bind,SOME(inBindValue),dim,i,source,attr,comment,flowPrefix,streamPrefix);
-  end matchcontinue;
+  end match;
 end setBindValue;
 
 public function isVarOnTopLevelAndOutput
@@ -1153,10 +1153,10 @@ protected function vararrayLength
   input BackendDAE.VariableArray inVariableArray;
   output Integer outInteger;
 algorithm
-  outInteger := matchcontinue (inVariableArray)
+  outInteger := match (inVariableArray)
     local BackendDAE.Value n;
     case (BackendDAE.VARIABLE_ARRAY(numberOfElements = n)) then n;
-  end matchcontinue;
+  end match;
 end vararrayLength;
 
 protected function vararrayAdd
@@ -1349,7 +1349,7 @@ author: Frenkel TUD
   output list< tuple<Type_a,Integer,Integer> > outlist;
   replaceable type Type_a subtypeof Any;
 algorithm
-  outlist := matchcontinue (inTypeALst,inType,inPlace)
+  outlist := match (inTypeALst,inType,inPlace)
     local
       list<Type_a> rest;
       Type_a item;
@@ -1364,7 +1364,7 @@ algorithm
         out_lst = listAppend({(item,value,place)},val_lst);
       then
         out_lst;
-  end matchcontinue;
+  end match;
 end fillListConst;
 
 protected function getListConst
@@ -1380,7 +1380,7 @@ protected function getListConst
   replaceable type Type_a subtypeof Any;
 algorithm
   outTypeALst :=
-  matchcontinue (inTypeALst,inValue)
+  match (inTypeALst,inValue)
     local
       list<tuple<Type_a,Integer,Integer>> rest;
       Type_a item;
@@ -1396,7 +1396,7 @@ algorithm
         out_lst = listAppend(val_lst1,val_lst);
       then
         out_lst;
-  end matchcontinue;
+  end match;
 end getListConst;
 
 protected function sortList
@@ -1534,7 +1534,7 @@ protected function getAllElements
   output list<tuple<BackendDAE.Var,Integer,Integer> > outlist;
 algorithm
   outlist:=
-  matchcontinue (inlist)
+  match (inlist)
     local
       list<tuple<BackendDAE.Var,Integer,Integer>> rest,var_lst,var_lst1,var_lst2,out_lst;
       BackendDAE.Var var,var1;
@@ -1548,7 +1548,7 @@ algorithm
         out_lst = listAppend(var_lst,var_lst2);
       then
         out_lst;
-  end matchcontinue;
+  end match;
 end getAllElements;
 
 protected function getAllElements1
@@ -1560,7 +1560,7 @@ protected function getAllElements1
   output list<tuple<BackendDAE.Var,Integer,Integer> > outlist;
   output list<tuple<BackendDAE.Var,Integer,Integer> > outlist1;
 algorithm
-  (outlist,outlist1) := matchcontinue (inVar,inlist)
+  (outlist,outlist1) := match (inVar,inlist)
     local
       list<tuple<BackendDAE.Var,Integer,Integer>> rest,var_lst,var_lst1,var_lst2,var_lst3,out_lst;
       DAE.ComponentRef varName1, varName2,c2,c1;
@@ -1578,7 +1578,7 @@ algorithm
         var_lst3 = listAppendTyp(boolNot(ins), (var2, typ2, place2), var_lst1);
       then
         (var_lst2, var_lst3);
-  end matchcontinue;
+  end match;
 end getAllElements1;
 
 protected function sortNoScalarList
@@ -1590,7 +1590,7 @@ protected function sortNoScalarList
   output list<tuple<BackendDAE.Var,Integer,Integer> > outlist;
 algorithm
   outlist:=
-  matchcontinue (inlist)
+  match (inlist)
     local
       list<tuple<BackendDAE.Var,Integer,Integer>> rest,var_lst,var_lst1,out_lst;
       BackendDAE.Var var,var1;
@@ -1604,7 +1604,7 @@ algorithm
         out_lst = listAppendTyp(boolNot(ins),(var,typ,place),var_lst1);
       then
         out_lst;
-  end matchcontinue;
+  end match;
 end sortNoScalarList;
 
 protected function listAppendTyp
@@ -1618,7 +1618,7 @@ protected function listAppendTyp
   output list<Type_a > outlist;
   replaceable type Type_a subtypeof Any;
 algorithm
-  (outlist) := matchcontinue (append,invar,inlist)
+  (outlist) := match (append,invar,inlist)
     local
       list<Type_a> var_lst, out_lst;
       Type_a var;
@@ -1630,7 +1630,7 @@ algorithm
         out_lst = var::var_lst;
       then
         out_lst;
-  end matchcontinue;
+  end match;
 end listAppendTyp;
 
 protected function sortNoScalarList1
@@ -1642,7 +1642,7 @@ protected function sortNoScalarList1
   output list<tuple<BackendDAE.Var,Integer,Integer> > outlist;
   output Boolean insert;
 algorithm
-  (outlist,insert) := matchcontinue (invar,inlist)
+  (outlist,insert) := match (invar,inlist)
     local
       list<tuple<BackendDAE.Var,Integer,Integer>> rest,var_lst,var_lst1,var_lst2;
       BackendDAE.Var var,var1;
@@ -1657,7 +1657,7 @@ algorithm
         (var_lst1,ins1) = sortNoScalarList2(ins,(var,typ,place),(var1,typ1,place1),var_lst);
       then
         (var_lst1,ins1);
-  end matchcontinue;
+  end match;
 end sortNoScalarList1;
 
 protected function sortNoScalarList2
@@ -1674,7 +1674,7 @@ protected function sortNoScalarList2
   output Boolean outinsert;
 algorithm
   (outlist,outinsert):=
-  matchcontinue (ininsert,invar,invar1,inlist)
+  match (ininsert,invar,invar1,inlist)
     local
       list< tuple<BackendDAE.Var,Integer,Integer> > var_lst,var_lst1,var_lst2,out_lst;
       BackendDAE.Var var,var1;
@@ -1692,7 +1692,7 @@ algorithm
         var_lst1 = listAppend({(var1,typ1,place1)},var_lst);
       then
         (var_lst1,true);
-  end matchcontinue;
+  end match;
 end sortNoScalarList2;
 
 protected function comparingNonScalars
@@ -1808,7 +1808,7 @@ protected function getArrayDim
   output list<Integer> dimlist;
 algorithm
   dimlist:=
-  matchcontinue (inarryDim)
+  match (inarryDim)
     local
       list<DAE.Subscript> arryDim_lst,rest;
       DAE.Subscript arryDim;
@@ -1821,7 +1821,7 @@ algorithm
         dim_lst1 = dim::dim_lst;
       then
         dim_lst1;       
-  end matchcontinue;
+  end match;
 end getArrayDim;
 
 protected function calculateIndexes2
@@ -2169,22 +2169,22 @@ public function daeVars
   input BackendDAE.BackendDAE inBackendDAE;
   output BackendDAE.Variables vars;
 algorithm
-  vars := matchcontinue (inBackendDAE)
+  vars := match (inBackendDAE)
     local BackendDAE.Variables vars1,vars2;
     case (BackendDAE.DAE(orderedVars = vars1, knownVars = vars2))
       then vars1;
-  end matchcontinue;
+  end match;
 end daeVars;
 
 public function daeKnVars
   input BackendDAE.BackendDAE inBackendDAE;
   output BackendDAE.Variables vars;
 algorithm
-  vars := matchcontinue (inBackendDAE)
+  vars := match (inBackendDAE)
     local BackendDAE.Variables vars1,vars2;
     case (BackendDAE.DAE(orderedVars = vars1, knownVars = vars2))
       then vars2;
-  end matchcontinue;
+  end match;
 end daeKnVars;
 
 
@@ -2198,10 +2198,10 @@ public function varsSize "function: varsSize
   output Integer outInteger;
 algorithm
   outInteger:=
-  matchcontinue (inVariables)
+  match (inVariables)
     local BackendDAE.Value n;
     case (BackendDAE.VARIABLES(numberOfVars = n)) then n;
-  end matchcontinue;
+  end match;
 end varsSize;
 
 
@@ -2258,13 +2258,13 @@ public function isVarKindVariable
   input BackendDAE.VarKind inVarKind;
 algorithm
   _:=
-  matchcontinue (inVarKind)
+  match (inVarKind)
     case (BackendDAE.VARIABLE()) then ();
     case (BackendDAE.STATE()) then ();
     case (BackendDAE.DUMMY_STATE()) then ();
     case (BackendDAE.DUMMY_DER()) then ();
     case (BackendDAE.DISCRETE()) then ();
-  end matchcontinue;
+  end match;
 end isVarKindVariable;
 
 public function moveVariables
@@ -2286,7 +2286,7 @@ public function moveVariables
   output BackendDAE.Variables outVariables2;
 algorithm
   (outVariables1,outVariables2):=
-  matchcontinue (inVariables1,inVariables2,inBinTree3)
+  match (inVariables1,inVariables2,inBinTree3)
     local
       list<BackendDAE.Var> lst1,lst2,lst1_1,lst2_1;
       BackendDAE.Variables v1,v2,vars,knvars,vars1,vars2;
@@ -2302,7 +2302,7 @@ algorithm
         knvars = addVars(lst2_1, v2);
       then
         (vars,knvars);
-  end matchcontinue;
+  end match;
 end moveVariables;
 
 protected function moveVariables2
@@ -2653,7 +2653,7 @@ protected function getVar2
   output BackendDAE.Var outVar;
   output Integer outInteger;
 algorithm
-  (outVar,outInteger) := matchcontinue (inComponentRef,inVariables)
+  (outVar,outInteger) := match (inComponentRef,inVariables)
     local
       BackendDAE.Value hval,hashindx,indx,indx_1,bsize,n;
       list<BackendDAE.CrefIndex> indexes;
@@ -2675,7 +2675,7 @@ algorithm
         indx_1 = indx + 1;
       then
         (v,indx_1);
-  end matchcontinue;
+  end match;
 end getVar2;
 
 protected function getVar3
@@ -2845,7 +2845,7 @@ protected function getRecordVar
   output list<BackendDAE.Var> outVarLst;
   output list<Integer> outIntegerLst;
 algorithm
-  (outVarLst,outIntegerLst) := matchcontinue (inComponentRef,inVariables)
+  (outVarLst,outIntegerLst) := match (inComponentRef,inVariables)
     local
       DAE.ComponentRef cr;
       list<DAE.ExpVar> varLst;
@@ -2864,7 +2864,7 @@ algorithm
         ilst = Util.listFlatten(ilstlst);
       then
         (vars,ilst);
-  end matchcontinue;
+  end match;
 end getRecordVar;
 
 public function mergeVariables

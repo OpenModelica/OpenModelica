@@ -903,7 +903,7 @@ protected function cevalWholedimRetCall
   output DAE.Exp outExp;
   output DAE.Properties outProp;
 algorithm
-  (outExp, outProp) := matchcontinue(inExp, inCache, inEnv)
+  (outExp, outProp) := match(inExp, inCache, inEnv)
     local
       DAE.Exp e;
       Absyn.Path p;
@@ -924,7 +924,7 @@ algorithm
          cevalExpType = Types.elabType(cevalType);
        then
          (DAE.CALL(p, el, t, b, cevalExpType, i), DAE.PROP(cevalType, DAE.C_PARAM()));
-  end matchcontinue;
+  end match;
 end cevalWholedimRetCall;
 
 public function cevalRangeIfConstant
@@ -1448,7 +1448,7 @@ protected function cevalKnownExternalFuncs2 "function: cevalKnownExternalFuncs2
   input Msg inMsg;
   output Values.Value outValue;
 algorithm
-  outValue := matchcontinue (inIdent,inAbsynIdentOption,inValuesValueLst,inMsg)
+  outValue := match (inIdent,inAbsynIdentOption,inValuesValueLst,inMsg)
     local 
       Real rv_1,rv,rv1,rv2,sv,cv;
       String str;
@@ -1532,7 +1532,7 @@ algorithm
         str = System.substring(str, start, stop);
       then
         Values.STRING(str);
-  end matchcontinue;
+  end match;
 end cevalKnownExternalFuncs2;
 
 protected function cevalFunction "function: cevalFunction
@@ -1599,7 +1599,7 @@ protected function cevalMatrixElt "function: cevalMatrixElt
   output list<Values.Value> outValuesValueLst;
 algorithm
   (outCache,outValuesValueLst) :=
-  matchcontinue (inCache,inEnv,inTplExpExpBooleanLstLst,inBoolean,inMsg)
+  match (inCache,inEnv,inTplExpExpBooleanLstLst,inBoolean,inMsg)
     local
       Values.Value v;
       list<Values.Value> vl;
@@ -1616,7 +1616,7 @@ algorithm
       then
         (cache,v :: vl);
     case (cache,_,{},_,msg) then (cache,{});
-  end matchcontinue;
+  end match;
 end cevalMatrixElt;
 
 protected function cevalMatrixEltRow "function: cevalMatrixEltRow
@@ -1630,7 +1630,7 @@ protected function cevalMatrixEltRow "function: cevalMatrixEltRow
   output Values.Value outValue;
 algorithm
   (outCache,outValue) :=
-  matchcontinue (inCache,inEnv,inTplExpExpBooleanLst,inBoolean,inMsg)
+  match (inCache,inEnv,inTplExpExpBooleanLst,inBoolean,inMsg)
     local
       Values.Value res;
       list<Values.Value> resl;
@@ -1650,7 +1650,7 @@ algorithm
       then
         (cache,Values.ARRAY(res :: resl,i::dims));
     case (cache,env,{},_,msg) then (cache,Values.ARRAY({},{0}));
-  end matchcontinue;
+  end match;
 end cevalMatrixEltRow;
 
 protected function cevalBuiltinSize "function: cevalBuiltinSize
@@ -1887,7 +1887,7 @@ protected function cevalBuiltinSize3 "function: cevalBuiltinSize3
   output Values.Value outValue;
 algorithm
   outValue:=
-  matchcontinue (inInstDimExpLst,inInteger)
+  match (inInstDimExpLst,inInteger)
     local
       Integer n_1,v,n;
       list<DAE.Dimension> dims;
@@ -1897,7 +1897,7 @@ algorithm
         DAE.DIM_INTEGER(v) = listNth(dims, n_1);
       then
         Values.INTEGER(v);
-  end matchcontinue;
+  end match;
 end cevalBuiltinSize3;
 
 protected function cevalBuiltinAbs "function: cevalBuiltinAbs
@@ -1998,7 +1998,7 @@ protected function cevalBuiltinExp "function: cevalBuiltinExp
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
       Real rv,rv_1;
       list<Env.Frame> env;
@@ -2013,7 +2013,7 @@ algorithm
         rv_1 = realExp(rv);
       then
         (cache,Values.REAL(rv_1),st);
-  end matchcontinue;
+  end match;
 end cevalBuiltinExp;
 
 protected function cevalBuiltinNoevent "function: cevalBuiltinNoevent
@@ -2032,7 +2032,7 @@ protected function cevalBuiltinNoevent "function: cevalBuiltinNoevent
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
       Values.Value v;
       list<Env.Frame> env;
@@ -2046,7 +2046,7 @@ algorithm
         (cache,v,_) = ceval(cache,env, exp, impl, st,NONE(), msg);
       then
         (cache,v,st);
-  end matchcontinue;
+  end match;
 end cevalBuiltinNoevent;
 
 protected function cevalBuiltinCardinality "function: cevalBuiltinCardinality
@@ -2065,7 +2065,7 @@ protected function cevalBuiltinCardinality "function: cevalBuiltinCardinality
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
       Integer cnt;
       list<Env.Frame> env;
@@ -2079,7 +2079,7 @@ algorithm
         (cache,cnt) = cevalCardinality(cache,env, cr);
       then
         (cache,Values.INTEGER(cnt),st);
-  end matchcontinue;
+  end match;
 end cevalBuiltinCardinality;
 
 protected function cevalCardinality "function: cevalCardinality
@@ -2093,7 +2093,7 @@ protected function cevalCardinality "function: cevalCardinality
   output Integer outInteger;
 algorithm
   (outCache,outInteger) :=
-  matchcontinue (inCache,inEnv,inComponentRef)
+  match (inCache,inEnv,inComponentRef)
     local
       Env.Env env;
       list<DAE.ComponentRef> cr_lst,cr_lst2,cr_totlst,crs;
@@ -2128,7 +2128,7 @@ algorithm
        //	print("env:");print(Env.printEnvStr(env));
       then
         (cache,res);
-  end matchcontinue;
+  end match;
 end cevalCardinality;
 
 protected function cevalBuiltinCat "function: cevalBuiltinCat
@@ -2145,7 +2145,7 @@ protected function cevalBuiltinCat "function: cevalBuiltinCat
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
       Integer dim_int;
       list<Values.Value> mat_lst;
@@ -2165,7 +2165,7 @@ algorithm
         v = cevalCat(mat_lst, dim_int);
       then
         (cache,v,st);
-  end matchcontinue;
+  end match;
 end cevalBuiltinCat;
 
 protected function cevalBuiltinIdentity "function: cevalBuiltinIdentity
@@ -2182,7 +2182,7 @@ protected function cevalBuiltinIdentity "function: cevalBuiltinIdentity
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
       Integer dim_int,dim_int_1;
       list<DAE.Exp> expl;
@@ -2203,7 +2203,7 @@ algorithm
           1, {}, msg);
       then
         (cache,ValuesUtil.makeArray(retExp),st);
-  end matchcontinue;
+  end match;
 end cevalBuiltinIdentity;
 
 protected function cevalBuiltinPromote "function: cevalBuiltinPromote
@@ -2220,7 +2220,7 @@ protected function cevalBuiltinPromote "function: cevalBuiltinPromote
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
       Values.Value arr_val,res;
       Integer dim_val;
@@ -2238,7 +2238,7 @@ algorithm
         res = cevalBuiltinPromote2(arr_val, dim_val);
       then
         (cache,res,st);
-  end matchcontinue;
+  end match;
 end cevalBuiltinPromote;
 
 protected function cevalBuiltinPromote2 "function: cevalBuiltinPromote2
@@ -2283,7 +2283,7 @@ protected function cevalBuiltinSubstring "
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
       Values.Value arr_val,res;
       Integer dim_val;
@@ -2305,7 +2305,7 @@ algorithm
         str = System.substring(str, start, stop);
       then
         (cache,Values.STRING(str),st);
-  end matchcontinue;
+  end match;
 end cevalBuiltinSubstring;
 
 protected function cevalBuiltinString "
@@ -2386,7 +2386,7 @@ protected function cevalBuiltinStringFormat
   output Env.Cache outCache;
   output String outString;
 algorithm
-  (outCache, outString) := matchcontinue(inCache, inEnv, inString, lengthExp,
+  (outCache, outString) := match(inCache, inEnv, inString, lengthExp,
       justifiedExp, inBoolean, inST, inMsg)
     local
       Env.Cache cache;
@@ -2402,7 +2402,7 @@ algorithm
         str = cevalBuiltinStringFormat2(inString, stringLength(inString), min_length, left_justified);
       then
         (cache, str);
-  end matchcontinue;
+  end match;
 end cevalBuiltinStringFormat;
 
 protected function cevalBuiltinStringFormat2
@@ -2454,7 +2454,7 @@ protected function cevalBuiltinLinspace "
   output Option<Interactive.InteractiveSymbolTable> outST;
 algorithm
   (outCache,outValue,outST):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,st,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,st,inMsg)
       local
         DAE.Exp x,y,n; Integer size;
         Real rx,ry; list<Values.Value> valLst; Env.Cache cache; Boolean impl; Env.Env env; Msg msg;
@@ -2466,7 +2466,7 @@ algorithm
       valLst = cevalBuiltinLinspace2(rx,ry,size,1);
     then (cache,ValuesUtil.makeArray(valLst),st);
 
-  end matchcontinue;
+  end match;
 end cevalBuiltinLinspace;
 
 protected function verifyLinspaceN "checks that n>=2 for linspace(x,y,n) "
@@ -2518,7 +2518,7 @@ protected function cevalBuiltinPrint "
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
       list<Env.Frame> env;
       DAE.Exp exp;
@@ -2533,7 +2533,7 @@ algorithm
 				print(str);
       then
         (cache,Values.NORETCALL(),st);
-  end matchcontinue;
+  end match;
 end cevalBuiltinPrint;
 
 protected function cevalIntReal
@@ -2548,7 +2548,7 @@ protected function cevalIntReal
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
       list<Env.Frame> env;
       DAE.Exp exp;
@@ -2565,7 +2565,7 @@ algorithm
         r = intReal(i);
       then
         (cache,Values.REAL(r),st);
-  end matchcontinue;
+  end match;
 end cevalIntReal;
 
 protected function cevalIntString
@@ -2580,7 +2580,7 @@ protected function cevalIntString
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
       list<Env.Frame> env;
       DAE.Exp exp;
@@ -2597,7 +2597,7 @@ algorithm
         str = intString(i);
       then
         (cache,Values.STRING(str),st);
-  end matchcontinue;
+  end match;
 end cevalIntString;
 
 protected function cevalRealInt
@@ -2612,7 +2612,7 @@ protected function cevalRealInt
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
       list<Env.Frame> env;
       DAE.Exp exp;
@@ -2629,7 +2629,7 @@ algorithm
         i = realInt(r);
       then
         (cache,Values.INTEGER(i),st);
-  end matchcontinue;
+  end match;
 end cevalRealInt;
 
 protected function cevalRealString
@@ -2644,7 +2644,7 @@ protected function cevalRealString
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
       list<Env.Frame> env;
       DAE.Exp exp;
@@ -2661,7 +2661,7 @@ algorithm
         str = realString(r);
       then
         (cache,Values.STRING(str),st);
-  end matchcontinue;
+  end match;
 end cevalRealString;
 
 protected function cevalStringCharInt
@@ -2676,7 +2676,7 @@ protected function cevalStringCharInt
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
       list<Env.Frame> env;
       DAE.Exp exp;
@@ -2693,7 +2693,7 @@ algorithm
         i = stringCharInt(str);
       then
         (cache,Values.INTEGER(i),st);
-  end matchcontinue;
+  end match;
 end cevalStringCharInt;
 
 protected function cevalIntStringChar
@@ -2708,7 +2708,7 @@ protected function cevalIntStringChar
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
       list<Env.Frame> env;
       DAE.Exp exp;
@@ -2725,7 +2725,7 @@ algorithm
         str = intStringChar(i);
       then
         (cache,Values.STRING(str),st);
-  end matchcontinue;
+  end match;
 end cevalIntStringChar;
 
 protected function cevalStringInt
@@ -2740,7 +2740,7 @@ protected function cevalStringInt
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
       list<Env.Frame> env;
       DAE.Exp exp;
@@ -2757,7 +2757,7 @@ algorithm
         i = stringInt(str);
       then
         (cache,Values.INTEGER(i),st);
-  end matchcontinue;
+  end match;
 end cevalStringInt;
 
 protected function cevalStringListStringChar
@@ -2772,7 +2772,7 @@ protected function cevalStringListStringChar
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
       list<Env.Frame> env;
       DAE.Exp exp;
@@ -2792,7 +2792,7 @@ algorithm
         valList = Util.listMap(chList, generateValueString);
       then
         (cache,Values.LIST(valList),st);
-  end matchcontinue;
+  end match;
 end cevalStringListStringChar;
 
 protected function generateValueString
@@ -2814,7 +2814,7 @@ protected function cevalListStringCharString
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
       list<Env.Frame> env;
       DAE.Exp exp;
@@ -2838,7 +2838,7 @@ algorithm
         str = stringAppendList(chList);
       then
         (cache,Values.STRING(str),st);
-  end matchcontinue;
+  end match;
 end cevalListStringCharString;
 
 protected function cevalStringAppendList
@@ -2853,7 +2853,7 @@ protected function cevalStringAppendList
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
       list<Env.Frame> env;
       DAE.Exp exp;
@@ -2873,7 +2873,7 @@ algorithm
         str = stringAppendList(chList);
       then
         (cache,Values.STRING(str),st);
-  end matchcontinue;
+  end match;
 end cevalStringAppendList;
 
 protected function cevalListLength
@@ -2888,7 +2888,7 @@ protected function cevalListLength
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
       list<Env.Frame> env;
       DAE.Exp exp;
@@ -2907,7 +2907,7 @@ algorithm
         i = listLength(valList);
       then
         (cache,Values.INTEGER(i),st);
-  end matchcontinue;
+  end match;
 end cevalListLength;
 
 protected function cevalListAppend
@@ -2922,7 +2922,7 @@ protected function cevalListAppend
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
       list<Env.Frame> env;
       DAE.Exp exp,exp1,exp2;
@@ -2942,7 +2942,7 @@ algorithm
         valList = listAppend(valList1, valList2);
       then
         (cache,Values.LIST(valList),st);
-  end matchcontinue;
+  end match;
 end cevalListAppend;
 
 protected function cevalListReverse
@@ -2957,7 +2957,7 @@ protected function cevalListReverse
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
       list<Env.Frame> env;
       DAE.Exp exp,exp1,exp2;
@@ -2976,16 +2976,16 @@ algorithm
         valList = listReverse(valList1);
       then
         (cache,Values.LIST(valList),st);
-  end matchcontinue;
+  end match;
 end cevalListReverse;
 
 protected function extractValueStringChar
   input Values.Value val;
   output String str;
 algorithm
-  str := matchcontinue (val)
+  str := match (val)
     case Values.STRING(str) equation 1 = stringLength(str); then str;
-  end matchcontinue;
+  end match;
 end extractValueStringChar;
 
 protected function cevalCat "function: cevalCat
@@ -3083,7 +3083,7 @@ protected function cevalBuiltinFloor "function: cevalBuiltinFloor
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
       Real rv,rv_1;
       Integer iv;
@@ -3099,7 +3099,7 @@ algorithm
         rv_1 = realFloor(rv);
       then
         (cache,Values.REAL(rv_1),st);
-  end matchcontinue;
+  end match;
 end cevalBuiltinFloor;
 
 protected function cevalBuiltinCeil "function cevalBuiltinCeil
@@ -3200,7 +3200,7 @@ protected function cevalBuiltinSin "function cevalBuiltinSin
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
       Real rv,rv_1;
       list<Env.Frame> env;
@@ -3215,7 +3215,7 @@ algorithm
         rv_1 = realSin(rv);
       then
         (cache,Values.REAL(rv_1),st);
-  end matchcontinue;
+  end match;
 end cevalBuiltinSin;
 
 protected function cevalBuiltinSinh "function cevalBuiltinSinh
@@ -3232,7 +3232,7 @@ protected function cevalBuiltinSinh "function cevalBuiltinSinh
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
       Real rv,rv_1;
       list<Env.Frame> env;
@@ -3247,7 +3247,7 @@ algorithm
         rv_1 = realSinh(rv);
       then
         (cache,Values.REAL(rv_1),st);
-  end matchcontinue;
+  end match;
 end cevalBuiltinSinh;
 
 protected function cevalBuiltinCos "function cevalBuiltinCos
@@ -3264,7 +3264,7 @@ protected function cevalBuiltinCos "function cevalBuiltinCos
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
       Real rv,rv_1;
       list<Env.Frame> env;
@@ -3279,7 +3279,7 @@ algorithm
         rv_1 = realCos(rv);
       then
         (cache,Values.REAL(rv_1),st);
-  end matchcontinue;
+  end match;
 end cevalBuiltinCos;
 
 protected function cevalBuiltinCosh "function cevalBuiltinCosh
@@ -3296,7 +3296,7 @@ protected function cevalBuiltinCosh "function cevalBuiltinCosh
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
       Real rv,rv_1;
       list<Env.Frame> env;
@@ -3311,7 +3311,7 @@ algorithm
         rv_1 = realCosh(rv);
       then
         (cache,Values.REAL(rv_1),st);
-  end matchcontinue;
+  end match;
 end cevalBuiltinCosh;
 
 protected function cevalBuiltinLog "function cevalBuiltinLog
@@ -3328,7 +3328,7 @@ protected function cevalBuiltinLog "function cevalBuiltinLog
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
       Real rv,rv_1;
       list<Env.Frame> env;
@@ -3343,7 +3343,7 @@ algorithm
         rv_1 = realLn(rv);
       then
         (cache,Values.REAL(rv_1),st);
-  end matchcontinue;
+  end match;
 end cevalBuiltinLog;
 
 protected function cevalBuiltinLog10
@@ -3358,7 +3358,7 @@ protected function cevalBuiltinLog10
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
       Real rv,rv_1;
       list<Env.Frame> env;
@@ -3373,7 +3373,7 @@ algorithm
         rv_1 = realLog10(rv);
       then
         (cache,Values.REAL(rv_1),st);
-  end matchcontinue;
+  end match;
 end cevalBuiltinLog10;
 
 protected function cevalBuiltinTan "function cevalBuiltinTan
@@ -3390,7 +3390,7 @@ protected function cevalBuiltinTan "function cevalBuiltinTan
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
       Real rv,sv,cv,rv_1;
       list<Env.Frame> env;
@@ -3407,7 +3407,7 @@ algorithm
         rv_1 = sv /. cv;
       then
         (cache,Values.REAL(rv_1),st);
-  end matchcontinue;
+  end match;
 end cevalBuiltinTan;
 
 protected function cevalBuiltinTanh "function cevalBuiltinTanh
@@ -3424,7 +3424,7 @@ protected function cevalBuiltinTanh "function cevalBuiltinTanh
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
       Real rv,sv,cv,rv_1;
       list<Env.Frame> env;
@@ -3439,7 +3439,7 @@ algorithm
          rv_1 = realTanh(rv);
       then
         (cache,Values.REAL(rv_1),st);
-  end matchcontinue;
+  end match;
 end cevalBuiltinTanh;
 
 protected function cevalBuiltinAsin "function cevalBuiltinAsin
@@ -3456,7 +3456,7 @@ protected function cevalBuiltinAsin "function cevalBuiltinAsin
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
       Real rv,rv_1;
       list<Env.Frame> env;
@@ -3471,7 +3471,7 @@ algorithm
         rv_1 = realAsin(rv);
       then
         (cache,Values.REAL(rv_1),st);
-  end matchcontinue;
+  end match;
 end cevalBuiltinAsin;
 
 protected function cevalBuiltinAcos "function cevalBuiltinAcos
@@ -3488,7 +3488,7 @@ protected function cevalBuiltinAcos "function cevalBuiltinAcos
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
       Real rv,rv_1;
       list<Env.Frame> env;
@@ -3503,7 +3503,7 @@ algorithm
         rv_1 = realAcos(rv);
       then
         (cache,Values.REAL(rv_1),st);
-  end matchcontinue;
+  end match;
 end cevalBuiltinAcos;
 
 protected function cevalBuiltinAtan "function cevalBuiltinAtan
@@ -3520,7 +3520,7 @@ protected function cevalBuiltinAtan "function cevalBuiltinAtan
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
       Real rv,rv_1;
       list<Env.Frame> env;
@@ -3535,7 +3535,7 @@ algorithm
         rv_1 = realAtan(rv);
       then
         (cache,Values.REAL(rv_1),st);
-  end matchcontinue;
+  end match;
 end cevalBuiltinAtan;
 
 protected function cevalBuiltinAtan2
@@ -3550,7 +3550,7 @@ protected function cevalBuiltinAtan2
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
       Real rv,rv_1,rv_2;
       list<Env.Frame> env;
@@ -3566,7 +3566,7 @@ algorithm
         rv = realAtan2(rv_1,rv_2);
       then
         (cache,Values.REAL(rv),st);
-  end matchcontinue;
+  end match;
 end cevalBuiltinAtan2;
 
 protected function cevalBuiltinDiv "function cevalBuiltinDiv
@@ -4134,7 +4134,7 @@ protected function cevalBuiltinInteger "function cevalBuiltinInteger
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
       Real rv;
       Integer ri;
@@ -4150,7 +4150,7 @@ algorithm
         ri = realInt(rv);
       then
         (cache,Values.INTEGER(ri),st);
-  end matchcontinue;
+  end match;
 end cevalBuiltinInteger;
 
 protected function cevalBuiltinBoolean "function cevalBuiltinBoolean
@@ -4219,7 +4219,7 @@ protected function cevalBuiltinRooted
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
       Real rv;
       Integer ri;
@@ -4234,7 +4234,7 @@ algorithm
         (cache,_,_) = ceval(cache, env, exp, impl, st,NONE(), msg);
       then
         (cache,Values.BOOL(true),st);
-  end matchcontinue;
+  end match;
 end cevalBuiltinRooted;
 
 protected function cevalBuiltinIntegerEnumeration "function cevalBuiltinIntegerEnumeration
@@ -4251,7 +4251,7 @@ protected function cevalBuiltinIntegerEnumeration "function cevalBuiltinIntegerE
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
       Real rv;
       Integer ri;
@@ -4266,7 +4266,7 @@ algorithm
         (cache,Values.ENUM_LITERAL(index = ri),_) = ceval(cache,env, exp, impl, st,NONE(), msg);
       then
         (cache,Values.INTEGER(ri),st);
-  end matchcontinue;
+  end match;
 end cevalBuiltinIntegerEnumeration;
 
 protected function cevalBuiltinDiagonal "function cevalBuiltinDiagonal
@@ -4792,7 +4792,7 @@ protected function cevalRelationEqual
   input Values.Value inValue2;
   output Boolean result;
 algorithm
-  result := matchcontinue(inValue1, inValue2)
+  result := match(inValue1, inValue2)
     local
       String s1, s2;
       Integer i1, i2;
@@ -4812,7 +4812,7 @@ algorithm
       then (i1 == i2);
     case (Values.INTEGER(integer = i1), Values.ENUM_LITERAL(index = i2))
       then (i1 == i2);
-  end matchcontinue;
+  end match;
 end cevalRelationEqual;
 
 protected function cevalRelationNotEqual
@@ -4821,7 +4821,7 @@ protected function cevalRelationNotEqual
   input Values.Value inValue2;
   output Boolean result;
 algorithm
-  result := matchcontinue(inValue1, inValue2)
+  result := match(inValue1, inValue2)
     local
       String s1, s2;
       Integer i1, i2;
@@ -4841,7 +4841,7 @@ algorithm
       then (i1 <> i2);
     case (Values.INTEGER(integer = i1), Values.ENUM_LITERAL(index = i2))
       then (i1 <> i2);
-  end matchcontinue;
+  end match;
 end cevalRelationNotEqual;
 
 public function cevalRange
@@ -5011,7 +5011,7 @@ public function cevalRangeEnum
   input DAE.ExpType enumType;
   output list<Values.Value> enumValList;
 algorithm
-  enumValList := matchcontinue(startIndex, stopIndex, enumType)
+  enumValList := match(startIndex, stopIndex, enumType)
     local
       Absyn.Path enum_type;
       list<String> enum_names;
@@ -5026,7 +5026,7 @@ algorithm
         (enum_values, _) = Util.listMapAndFold(enum_paths, makeEnumValue, startIndex);
       then
         enum_values;
-  end matchcontinue;
+  end match;
 end cevalRangeEnum;
   
 protected function makeEnumValue
@@ -5052,7 +5052,7 @@ public function cevalList "function: cevalList
   output list<Values.Value> outValuesValueLst;
 algorithm
   (outCache,outValuesValueLst):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
       list<Env.Frame> env;
       Msg msg;
@@ -5070,7 +5070,7 @@ algorithm
         (cache,vs) = cevalList(cache,env, exps, impl, st, msg);
       then
         (cache,v :: vs);
-  end matchcontinue;
+  end match;
 end cevalList;
 
 protected function cevalCref "function: cevalCref
@@ -5422,7 +5422,7 @@ protected function cevalSubscriptValueList "Applies subscripts to array values t
   output list<Values.Value> outValue;
 algorithm
   (outCache,outValue) :=
-  matchcontinue (inCache,inEnv,inExpSubscriptLst,inValue,inIntegerLst,inBoolean,inMsg)
+  match (inCache,inEnv,inExpSubscriptLst,inValue,inIntegerLst,inBoolean,inMsg)
     local
       Values.Value subval,res;
       list<Env.Frame> env;
@@ -5439,7 +5439,7 @@ algorithm
         (cache,lst) = cevalSubscriptValueList(cache,env, subs, subvals, dims, impl, msg);
       then
         (cache,res::lst);
-  end matchcontinue;
+  end match;
 end cevalSubscriptValueList;
 
 public function cevalSubscripts "function: cevalSubscripts
@@ -5458,7 +5458,7 @@ public function cevalSubscripts "function: cevalSubscripts
   output list<DAE.Subscript> outExpSubscriptLst;
 algorithm
   (outCache,outExpSubscriptLst) :=
-  matchcontinue (inCache,inEnv,inExpSubscriptLst,inIntegerLst,inBoolean,inMsg)
+  match (inCache,inEnv,inExpSubscriptLst,inIntegerLst,inBoolean,inMsg)
     local
       DAE.Subscript sub_1,sub;
       list<DAE.Subscript> subs_1,subs;
@@ -5479,7 +5479,7 @@ algorithm
         (cache,subs_1) = cevalSubscripts(cache, env, subs, dims, impl, msg);
       then
         (cache,sub_1 :: subs_1);
-  end matchcontinue;
+  end match;
 end cevalSubscripts;
 
 public function cevalSubscript "function: cevalSubscript
@@ -5714,7 +5714,7 @@ protected function valueMul
 	input Values.Value v2;
 	output Values.Value res;
 algorithm
-	res := matchcontinue(v1, v2)
+	res := match(v1, v2)
 	  local 
 	    Integer i1, i2, resI;
 	    Real r1, r2, resR;
@@ -5730,7 +5730,7 @@ algorithm
 			  resR = r1 *. r2; 
 			then 
 			  Values.REAL(resR);
-	end matchcontinue;
+	end match;
 end valueMul;
 
 protected function valueMax
@@ -5739,7 +5739,7 @@ protected function valueMax
 	input Values.Value v2;
 	output Values.Value res;
 algorithm
-	res := matchcontinue(v1, v2)
+	res := match(v1, v2)
 	  local 
 	    Integer i1, i2, resI;
 			Real r1, r2, resR;
@@ -5755,7 +5755,7 @@ algorithm
 			  resR = realMax(r1, r2); 
 			then 
 			  Values.REAL(resR);
-	end matchcontinue;
+	end match;
 end valueMax;
 
 protected function valueMin
@@ -5764,7 +5764,7 @@ protected function valueMin
 	input Values.Value v2;
 	output Values.Value res;
 algorithm
-	res := matchcontinue(v1, v2)
+	res := match(v1, v2)
 	  local 
 	    Real r1, r2, resR;
 	    Integer i1, i2, resI;
@@ -5780,7 +5780,7 @@ algorithm
 			  resR = realMin(r1, r2); 
 			then 
 			  Values.REAL(resR);
-	end matchcontinue;
+	end match;
 end valueMin;
 
 protected function lookupReductionOp
@@ -5794,12 +5794,12 @@ protected function lookupReductionOp
 		output Values.Value res;
 	end ReductionOperator;
 algorithm
-	op := matchcontinue(reductionName)
+	op := match(reductionName)
 		case "max" then valueMax;
 		case "min" then valueMin;
 		case "product" then valueMul;
 		case "sum" then valueAdd;
-	end matchcontinue;
+	end match;
 end lookupReductionOp;
 
 protected function reductionEmptyRangeValue
@@ -5808,12 +5808,12 @@ protected function reductionEmptyRangeValue
   input DAE.Ident opName;
   output Values.Value value;
 algorithm
-  value := matchcontinue(opName)
+  value := match(opName)
     case "max" then Values.REAL(-1e60);
     case "min" then Values.REAL(1e60);
     case "product" then Values.INTEGER(1);
     case "sum" then Values.INTEGER(0);
-  end matchcontinue;
+  end match;
 end reductionEmptyRangeValue;
       
 // ************************************************************************

@@ -94,7 +94,7 @@ protected function elaborate
   output InstanceHierarchy.InstanceHierarchy outIH;
   output SCode.Program outProgram;
 algorithm
-  (outIH, outProgram) := matchcontinue(inIH, inProgram)
+  (outIH, outProgram) := match(inIH, inProgram)
     local
       InstanceHierarchy.InstanceHierarchy ih;
       SCode.Program program;
@@ -119,7 +119,7 @@ algorithm
         // replace expandable connectors in program with the new ones from IH
         (ih, program) = replaceExpandableConnectorsInProgram(ih, inProgram);
       then (ih, program);
-  end matchcontinue;
+  end match;
 end elaborate;
 
 function addComponentsFromNonExpandableConnectors
@@ -128,14 +128,14 @@ function addComponentsFromNonExpandableConnectors
   input InstanceHierarchy.InstanceHierarchy inIH;
   output InstanceHierarchy.InstanceHierarchy outIH;
 algorithm
-  outIH := matchcontinue(inIH)
+  outIH := match(inIH)
     local
       InstanceHierarchy.InstanceHierarchy ih;
     case inIH
       equation
         ih = inIH;
       then ih;
-  end matchcontinue;
+  end match;
 end addComponentsFromNonExpandableConnectors;
 
 function makeUnionOfConnectedExpandableConnectors
@@ -144,14 +144,14 @@ function makeUnionOfConnectedExpandableConnectors
   input InstanceHierarchy.InstanceHierarchy inIH;
   output InstanceHierarchy.InstanceHierarchy outIH;
 algorithm
-  outIH := matchcontinue(inIH)
+  outIH := match(inIH)
     local
       InstanceHierarchy.InstanceHierarchy ih;
     case inIH
       equation
         ih = inIH;
       then ih;
-  end matchcontinue;
+  end match;
 end makeUnionOfConnectedExpandableConnectors;
 
 function makeUnionOfInnerOuterExpandableConnectors
@@ -160,14 +160,14 @@ function makeUnionOfInnerOuterExpandableConnectors
   input InstanceHierarchy.InstanceHierarchy inIH;
   output InstanceHierarchy.InstanceHierarchy outIH;
 algorithm
-  outIH := matchcontinue(inIH)
+  outIH := match(inIH)
     local
       InstanceHierarchy.InstanceHierarchy ih;
     case inIH
       equation
         ih = inIH;
       then ih;
-  end matchcontinue;
+  end match;
 end makeUnionOfInnerOuterExpandableConnectors;
 
 
@@ -179,7 +179,7 @@ function replaceExpandableConnectorsInProgram
   output InstanceHierarchy.InstanceHierarchy outIH;
   output SCode.Program outProgram;
 algorithm
-  (outIH, outProgram) := matchcontinue(inIH, inProgram)
+  (outIH, outProgram) := match(inIH, inProgram)
     local
       InstanceHierarchy.InstanceHierarchy ih;
       SCode.Program prg;
@@ -188,7 +188,7 @@ algorithm
       equation
 
       then (ih, prg);
-  end matchcontinue;
+  end match;
 end replaceExpandableConnectorsInProgram;
 
 end ExpandableConnectors;

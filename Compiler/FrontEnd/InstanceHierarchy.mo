@@ -155,10 +155,10 @@ function createInstance
   input Option<Absyn.ComponentRef> outerReference "outer reference if existing";
   output Instance i;
 algorithm
-  i := matchcontinue(fullCr, attributes, children, connects, innerReference, outerReference)
+  i := match(fullCr, attributes, children, connects, innerReference, outerReference)
     case (fullCr, attributes, children, connects, innerReference, outerReference)
     then INSTANCE(fullCr, attributes, children, connects, innerReference, outerReference);
-  end matchcontinue;
+  end match;
 end createInstance;
 
 function getClassDefinition
@@ -182,7 +182,7 @@ function createInstanceFromClass
   input InstanceAttributes attributes "the attributes of this instance";
   output Instance i;
 algorithm
-  i := matchcontinue(fullCr, attributes)
+  i := match(fullCr, attributes)
     local
       Absyn.Path path;
       SCode.ClassDef classDef;
@@ -197,7 +197,7 @@ algorithm
         (children, connects) = createInstanceHierarchyFromClassDef(SOME(path), classDef);
       then
         INSTANCE(fullCr, attributes, children, connects, NONE(), NONE());
-  end matchcontinue;
+  end match;
 end createInstanceFromClass;
 
 function createInstanceHierarchyFromClassDef
@@ -338,7 +338,7 @@ function addScopeToConnects
   input SCode.EEquation inEqu;
   output SCode.EEquation outEqu;
 algorithm
-  outEqu := matchcontinue(scope, inEqu)
+  outEqu := match(scope, inEqu)
   local
     SCode.EEquation e;
     Absyn.Path p;
@@ -354,7 +354,7 @@ algorithm
         cr2 = Absyn.joinCrefs(Absyn.pathToCref(p), cr2);
       then
          SCode.EQ_CONNECT(cr1, cr2, cmt, info);
-  end matchcontinue;
+  end match;
 end addScopeToConnects;
 
 function addConnects
@@ -402,7 +402,7 @@ function filterConnects
   input list<SCode.EEquation> inEEquationLst;
   output list<SCode.EEquation> outEEquationLst;
 algorithm
-  outEEquationLst := matchcontinue(inEEquationLst)
+  outEEquationLst := match(inEEquationLst)
     local
       SCode.EEquation equ;
       list<SCode.EEquation> other, rest;
@@ -414,7 +414,7 @@ algorithm
         other = filterConnects(rest);
       then
         equ::other;
-  end matchcontinue;
+  end match;
 end filterConnects;
 
 function makePath
@@ -422,14 +422,14 @@ function makePath
   input String name;
   output Absyn.Path path;
 algorithm
-  path := matchcontinue(optPath, name)
+  path := match(optPath, name)
     local
       Absyn.Path p;
     case (SOME(p), name)
       then Absyn.joinPaths(p, Absyn.IDENT(name));
     case (NONE(), name)
       then Absyn.IDENT(name);
-  end matchcontinue;
+  end match;
 end makePath;
 
 function lookupInstance
@@ -555,7 +555,7 @@ end printPathOpt;
 function printTypeOpt
   input Option<Types.Type> optTy;
 algorithm
-  _ := matchcontinue(optTy)
+  _ := match(optTy)
     local
       Types.Type ty;
     case (SOME(ty))
@@ -566,13 +566,13 @@ algorithm
       equation
         print ("NONE()");
       then ();
-  end matchcontinue;
+  end match;
 end printTypeOpt;
 
 function printFaceOpt
   input Option<Face> optFace;
 algorithm
-  _ := matchcontinue(optFace)
+  _ := match(optFace)
     local
     case (SOME(INSIDE()))
       equation
@@ -586,7 +586,7 @@ algorithm
       equation
         print ("NONE()");
       then ();
-  end matchcontinue;
+  end match;
 end printFaceOpt;
 
 function printInnerOuterOpt
@@ -634,7 +634,7 @@ public function printElementStr
   input SCode.Element inElement;
   output String outString;
 algorithm
-  outString := matchcontinue (inElement)
+  outString := match (inElement)
     local
       String str,res,n,mod_str,s,vs;
       Absyn.TypeSpec typath;
@@ -681,7 +681,7 @@ algorithm
          str = "defineunit "+& n +& ";";
       then str;
 
-  end matchcontinue;
+  end match;
 end printElementStr;
 
 end InstanceHierarchy;

@@ -222,7 +222,7 @@ protected function evaluateElement
   output Env.Env outEnv;
   output LoopControl outLoopControl;
 algorithm
-  (outCache, outEnv, outLoopControl) := matchcontinue(inElement, inCache, inEnv)
+  (outCache, outEnv, outLoopControl) := match(inElement, inCache, inEnv)
     local
       Env.Cache cache;
       Env.Env env;
@@ -235,7 +235,7 @@ algorithm
         (cache, env, loop_ctrl) = evaluateStatements(sl, inCache, env);
       then
         (cache, env, loop_ctrl);
-   end matchcontinue;
+   end match;
 end evaluateElement;
 
 protected function evaluateStatement
@@ -419,7 +419,7 @@ protected function evaluateIfStatement
   output Env.Env outEnv;
   output LoopControl outLoopControl;
 algorithm
-  (outCache, outEnv, outLoopControl) := matchcontinue(inStatement, inCache, inEnv)
+  (outCache, outEnv, outLoopControl) := match(inStatement, inCache, inEnv)
     local
       DAE.Exp cond;
       list<DAE.Statement> stmts;
@@ -435,7 +435,7 @@ algorithm
           else_branch, cache, inEnv);
       then
         (cache, env, loop_ctrl);
-  end matchcontinue;
+  end match;
 end evaluateIfStatement;
 
 protected function evaluateIfStatement2
@@ -450,7 +450,7 @@ protected function evaluateIfStatement2
   output LoopControl outLoopControl;
 algorithm
   (outCache, outEnv, outLoopControl) := 
-  matchcontinue(inCondition, inStatements, inElse, inCache, inEnv)
+  match(inCondition, inStatements, inElse, inCache, inEnv)
     local
       Env.Cache cache;
       Env.Env env;
@@ -485,7 +485,7 @@ algorithm
         (cache, env, loop_ctrl);
      // If the condition is false and we have no else branch, just continue.
     case (false, _, DAE.NOELSE(), _, _) then (inCache, inEnv, NEXT());
-  end matchcontinue;
+  end match;
 end evaluateIfStatement2;
   
 protected function evaluateForStatement
@@ -783,7 +783,7 @@ protected function extendEnvWithElement
   output Env.Cache outCache;
   output Env.Env outEnv;
 algorithm
-  (outCache, outEnv) := matchcontinue(inElement, inBindingValue, inCache, inEnv)
+  (outCache, outEnv) := match(inElement, inBindingValue, inCache, inEnv)
     local
       DAE.ComponentRef cr;
       String name;
@@ -797,7 +797,7 @@ algorithm
         (cache, env) = extendEnvWithVar(name, ty, inBindingValue, dims, inCache, inEnv);
       then
         (cache, env);
-  end matchcontinue;
+  end match;
 end extendEnvWithElement;
         
 protected function extendEnvWithVar
@@ -866,11 +866,11 @@ protected function getBinding
   input Option<Values.Value> inBindingValue;
   output DAE.Binding outBinding;
 algorithm
-  outBinding := matchcontinue(inBindingValue)
+  outBinding := match(inBindingValue)
     local Values.Value val;
     case SOME(val) then DAE.VALBOUND(val, DAE.BINDING_FROM_DEFAULT_VALUE());
     case NONE() then DAE.UNBOUND();
-  end matchcontinue;
+  end match;
 end getBinding;
   
 protected function makeRecordEnvironment
@@ -938,7 +938,7 @@ protected function extendEnvWithRecordVar
   input tuple<Env.Cache, Env.Env> inEnv;
   output tuple<Env.Cache, Env.Env> outEnv;
 algorithm
-  outEnv := matchcontinue(inVar, inOptValue, inEnv)
+  outEnv := match(inVar, inOptValue, inEnv)
     local
       String name;
       DAE.Type ty;
@@ -949,7 +949,7 @@ algorithm
         (cache, env) = extendEnvWithVar(name, ty, inOptValue, {}, cache, env);
         outEnv = (cache,env);
       then outEnv;
-  end matchcontinue;
+  end match;
 end extendEnvWithRecordVar;
 
 protected function extendEnvWithForScope
@@ -1154,7 +1154,7 @@ protected function assignRecord
   output Env.Cache outCache;
   output Env.Env outEnv;
 algorithm
-  (outCache, outEnv) := matchcontinue(inType, inValue, inCache, inEnv)
+  (outCache, outEnv) := match(inType, inValue, inCache, inEnv)
     local
       list<Values.Value> values;
       list<DAE.ExpVar> vars;
@@ -1165,7 +1165,7 @@ algorithm
         (cache, env) = assignRecordComponents(vars, values, inCache, inEnv);
       then
         (cache, env);
-  end matchcontinue;
+  end match;
 end assignRecord;
 
 protected function assignRecordComponents
@@ -1328,7 +1328,7 @@ protected function assignWholeDim
   output list<Values.Value> outResult;
 algorithm
   (outCache, outResult) := 
-  matchcontinue(inNewValues, inOldValues, inSubscripts, inCache, inEnv)
+  match(inNewValues, inOldValues, inSubscripts, inCache, inEnv)
     local
       Values.Value v1, v2;
       list<Values.Value> vl1, vl2;
@@ -1340,7 +1340,7 @@ algorithm
         (cache, vl1) = assignWholeDim(vl1, vl2, inSubscripts, inCache, inEnv);
       then
         (cache, v1 :: vl1);
-  end matchcontinue;
+  end match;
 end assignWholeDim;
 
 protected function updateVariableBinding
@@ -1448,7 +1448,7 @@ protected function getFunctionReturnValue
   input Env.Env inEnv;
   output Values.Value outValue;
 algorithm
-  outValue := matchcontinue(inOutputVar, inEnv)
+  outValue := match(inOutputVar, inEnv)
     local
       DAE.ComponentRef cr;
       DAE.Type ty;
@@ -1458,7 +1458,7 @@ algorithm
         val = getVariableValue(cr, ty, inEnv);
       then
         val;
-  end matchcontinue;
+  end match;
 end getFunctionReturnValue;
 
 protected function getVariableValue
@@ -1500,7 +1500,7 @@ protected function getRecordValue
   input Env.Env inEnv;
   output Values.Value outValue;
 algorithm
-  outValue := matchcontinue(inRecordName, inType, inEnv)
+  outValue := match(inRecordName, inType, inEnv)
     local
       list<DAE.Var> vars;
       list<Values.Value> vals;
@@ -1518,7 +1518,7 @@ algorithm
         var_names = Util.listMap(vars, Types.getVarName);
       then
         Values.RECORD(p, vals, var_names, -1);
-  end matchcontinue;
+  end match;
 end getRecordValue;
   
 protected function getRecordComponentValue
@@ -1597,7 +1597,7 @@ protected function sortFunctionVarsByDependency2
   input list<Dependency> inDependencies;
   output list<DAE.Element> outFuncVars;
 algorithm
-  outFuncVars := matchcontinue(inFuncVars, inDependencies)
+  outFuncVars := match(inFuncVars, inDependencies)
     local
       DAE.Element elem;
       DAE.ComponentRef cref;
@@ -1623,7 +1623,7 @@ algorithm
         rest_elems = listAppend(dep_elems, rest_elems);
       then
         rest_elems;
-  end matchcontinue;
+  end match;
 end sortFunctionVarsByDependency2;
 
 protected function extractDependencies
@@ -1634,7 +1634,7 @@ protected function extractDependencies
   output list<DAE.Element> outDepVars;
   output list<DAE.Element> outRestVars;
 algorithm
-  (outDepVars, outRestVars) := matchcontinue(inDependencies, inFuncVars)
+  (outDepVars, outRestVars) := match(inDependencies, inFuncVars)
     local
       DAE.ComponentRef dep_cref;
       list<DAE.ComponentRef> rest_deps;
@@ -1647,7 +1647,7 @@ algorithm
         dep_elems = listAppend(dep_elem, dep_elems);
       then
         (dep_elems, rest_elems);
-  end matchcontinue;
+  end match;
 end extractDependencies;
         
 protected function extractDependency
@@ -1733,11 +1733,11 @@ protected function createDependency
   input list<DAE.ComponentRef> inDependencies;
   output Dependency outDependency;
 algorithm
-  outDependency := matchcontinue(inVar, inDependencies)
+  outDependency := match(inVar, inDependencies)
     local
       DAE.ComponentRef cr;
     case (DAE.VAR(componentRef = cr), _) then ((cr, inDependencies));
-  end matchcontinue;
+  end match;
 end createDependency;
 
 protected function buildDependencyList
@@ -1746,7 +1746,7 @@ protected function buildDependencyList
   input DAE.Element inVar;
   output Dependency outDependencies;
 algorithm
-  outDependencies := matchcontinue(inVar)
+  outDependencies := match(inVar)
     local
       DAE.Exp bind_exp;
       DAE.InstDims dims;
@@ -1772,7 +1772,7 @@ algorithm
         cl = Util.listFlatten(subs_crefs);
       then
         createDependency(inVar, cl);
-  end matchcontinue;
+  end match;
 end buildDependencyList;
 
 protected function extractCrefsFromSubscript

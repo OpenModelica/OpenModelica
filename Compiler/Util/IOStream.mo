@@ -90,7 +90,7 @@ function create
   input IOStreamType streamType;  
   output IOStream outStream;
 algorithm
-  outStream := matchcontinue (streamName, streamType)
+  outStream := match (streamName, streamType)
     local 
       String fileName;
       Integer fileID, bufferID;
@@ -110,7 +110,7 @@ algorithm
         bufferID = IOStreamExt.createBuffer();
       then
         IOSTREAM(streamName, streamType, BUFFER_DATA(bufferID));
-  end matchcontinue;
+  end match;
 end create;        
 
 function append
@@ -118,7 +118,7 @@ function append
   input String inString;
   output IOStream outStream;
 algorithm
-  outStream := matchcontinue (inStream, inString)
+  outStream := match (inStream, inString)
     local 
       list<String> listData;
       Integer fileID, bufferID;
@@ -141,7 +141,7 @@ algorithm
         IOStreamExt.appendBuffer(bufferID, inString);
       then
         bStream;
-  end matchcontinue;
+  end match;
 end append;
 
 function appendList
@@ -235,7 +235,7 @@ function string
   input IOStream inStream;
   output String string;
 algorithm
-  string := matchcontinue (inStream)
+  string := match (inStream)
     local 
       list<String> listData;
       Integer fileID, bufferID;
@@ -259,7 +259,7 @@ algorithm
         str = IOStreamExt.readBuffer(bufferID);
       then
         str;
-  end matchcontinue;
+  end match;
 end string;
 
 function print
@@ -270,7 +270,7 @@ function print
   input IOStream inStream;
   input Integer whereToPrint;
 algorithm
-  _ := matchcontinue (inStream, whereToPrint)
+  _ := match (inStream, whereToPrint)
     local 
       list<String> listData;
       Integer fileID, bufferID;
@@ -295,7 +295,7 @@ algorithm
       then
         ();
         
-  end matchcontinue;
+  end match;
 end print;
 
 /*

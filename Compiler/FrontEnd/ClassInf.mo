@@ -375,14 +375,14 @@ protected function printEventStr
   input Event inEvent;
   output String str;
 algorithm
-  str := matchcontinue (inEvent)
+  str := match (inEvent)
     local
       String name;
     case FOUND_EQUATION() then "FOUND_EQUATION";
     case FOUND_CONSTRAINT() then "FOUND_CONSTRAINT";      
     case NEWDEF() then "NEWDEF";
     case FOUND_COMPONENT(name) then "FOUND_COMPONENT(" +& name +& ")";
-  end matchcontinue;
+  end match;
 end printEventStr;
 
 public function start "!includecode
@@ -395,7 +395,7 @@ public function start "!includecode
   output State outState;
 algorithm
   outState:=
-  matchcontinue (inRestriction,inPath)
+  match (inRestriction,inPath)
     local Absyn.Path p; Boolean isExpandable;
     case (SCode.R_CLASS(),p) then UNKNOWN(p);
     case (SCode.R_OPTIMIZATION(),p) then OPTIMIZATION(p);
@@ -416,7 +416,7 @@ algorithm
      /* Meta Modelica extensions */
     case (SCode.R_UNIONTYPE(),p) then UNIONTYPE(p);
     case (SCode.R_METARECORD(_, _),p) then META_RECORD(p);
-  end matchcontinue;
+  end match;
 end start;
 
 public function trans "function: trans
@@ -533,7 +533,7 @@ public function valid "function: valid
   input State inState;
   input SCode.Restriction inRestriction;
 algorithm
-  _ := matchcontinue (inState,inRestriction)
+  _ := match (inState,inRestriction)
     local Absyn.Path p;
     
     case (UNKNOWN(path = p),_) then ();
@@ -582,7 +582,7 @@ algorithm
     case (META_ARRAY(p),SCode.R_TYPE()) then ();
     case (UNIONTYPE(p),SCode.R_TYPE()) then ();    
 
-  end matchcontinue;
+  end match;
 end valid;
 
 public function assertValid "function: assertValid
@@ -660,9 +660,9 @@ public function isFunction "function: isFunction
   input State inState;
 algorithm
   _:=
-  matchcontinue (inState)
+  match (inState)
     case FUNCTION(path = _) then ();
-  end matchcontinue;
+  end match;
 end isFunction;
 
 public function isConnector "function: isConnector
@@ -672,9 +672,9 @@ public function isConnector "function: isConnector
   input State inState;
 algorithm
   _:=
-  matchcontinue (inState)
+  match (inState)
     case CONNECTOR(path = _) then ();
-  end matchcontinue;
+  end match;
 end isConnector;
 
 protected constant list<String> basicTypeMods = {

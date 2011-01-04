@@ -689,7 +689,7 @@ public function translateDae "function: translateDae
   output BackendDAE.BackendDAE outBackendDAE;
 algorithm
   outBackendDAE:=
-  matchcontinue (inBackendDAE,dummy)
+  match (inBackendDAE,dummy)
     local
       list<BackendDAE.Var> varlst,knvarlst,extvarlst;
       array<BackendDAE.MultiDimEquation> ae;
@@ -718,7 +718,7 @@ algorithm
         Debug.fcall("dumpindxdae", BackendDump.dump, trans_dae);
       then
         trans_dae;
-  end matchcontinue;
+  end match;
 end translateDae;
 
 public function calculateSizes "function: calculateSizes
@@ -750,7 +750,7 @@ public function calculateSizes "function: calculateSizes
   output Integer outnp_bool   "number of parameters which are bools";    
 algorithm
   (outnx,outny,outnp,outng,outng_sample,outnext, outny_string, outnp_string, outny_int, outnp_int, outny_bool, outnp_bool):=
-  matchcontinue (inBackendDAE)
+  match (inBackendDAE)
     local
       BackendDAE.Value np,ng,nsam,nx,ny,nx_1,ny_1,next,ny_string,np_string,ny_1_string,np_int,np_bool,ny_int,ny_1_int,ny_bool,ny_1_bool;
       BackendDAE.Variables vars,knvars,extvars;
@@ -769,7 +769,7 @@ algorithm
         ((nx_1,ny_1,ny_1_string,ny_1_int, ny_1_bool)) = BackendVariable.traverseBackendDAEVars(knvars,calculateVarSizes,(nx, ny, ny_string, ny_int, ny_bool));
       then
         (nx_1,ny_1,np,ng,nsam,next,ny_1_string, np_string, ny_1_int, np_int, ny_1_bool, np_bool);
-  end matchcontinue;
+  end match;
 end calculateSizes;
 
 protected function calculateNumberZeroCrossings
@@ -933,7 +933,7 @@ public function calculateValues "function: calculateValues
   input BackendDAE.BackendDAE inBackendDAE;
   output BackendDAE.BackendDAE outBackendDAE;
 algorithm
-  outBackendDAE := matchcontinue (inBackendDAE)
+  outBackendDAE := match (inBackendDAE)
     local
       list<BackendDAE.Var> knvarlst;
       BackendDAE.Variables knvars,vars,extVars;
@@ -951,7 +951,7 @@ algorithm
         knvars = listVar(knvarlst);
       then
         BackendDAE.DAE(vars,knvars,extVars,av,eqns,seqns,ie,ae,al,wc,extObjCls);
-  end matchcontinue;
+  end match;
 end calculateValues;
 
 protected function calculateValue
@@ -1011,7 +1011,7 @@ public function makeExpType
   input BackendDAE.Type inType;
   output DAE.ExpType outType;
 algorithm
-  outType := matchcontinue(inType)
+  outType := match(inType)
     local
       list<String> strLst;
     case BackendDAE.REAL() then DAE.ET_REAL();
@@ -1020,7 +1020,7 @@ algorithm
     case BackendDAE.STRING() then DAE.ET_STRING();
     case BackendDAE.ENUMERATION(strLst) then DAE.ET_ENUMERATION(Absyn.IDENT(""),strLst,{});
     case BackendDAE.EXT_OBJECT(_) then DAE.ET_OTHER();
-  end matchcontinue;
+  end match;
 end makeExpType;
 
 public function statesDaelow
@@ -1031,7 +1031,7 @@ public function statesDaelow
   input BackendDAE.BackendDAE inBackendDAE;
   output BackendDAE.BinTree outBinTree;
 algorithm
-  outBinTree := matchcontinue (inBackendDAE)
+  outBinTree := match (inBackendDAE)
     local
       list<BackendDAE.Var> v_lst;
       list<DAE.ComponentRef> cr_lst;
@@ -1047,7 +1047,7 @@ algorithm
         bt = treeAddList(BackendDAE.emptyBintree,cr_lst);
       then
         bt;
-  end matchcontinue;
+  end match;
 end statesDaelow;
 
 protected function traversingisStateVarCrefFinder
@@ -1228,7 +1228,7 @@ public function varList
   input BackendDAE.Variables inVariables;
   output list<BackendDAE.Var> outVarLst;
 algorithm
-  outVarLst := matchcontinue (inVariables)
+  outVarLst := match (inVariables)
     local
       list<BackendDAE.Var> varlst;
       BackendDAE.VariableArray vararr;
@@ -1238,7 +1238,7 @@ algorithm
         varlst = vararrayList(vararr);
       then
         varlst;
-  end matchcontinue;
+  end match;
 end varList;
 
 public function listVar
@@ -1248,7 +1248,7 @@ public function listVar
   input list<BackendDAE.Var> inVarLst;
   output BackendDAE.Variables outVariables;
 algorithm
-  outVariables := matchcontinue (inVarLst)
+  outVariables := match (inVarLst)
     local
       BackendDAE.Variables res,vars,vars_1;
       BackendDAE.Var v;
@@ -1266,7 +1266,7 @@ algorithm
         vars_1 = BackendVariable.addVar(v, vars);
       then
         vars_1;
-  end matchcontinue;
+  end match;
 end listVar;
 
 public function vararrayList
@@ -1378,7 +1378,7 @@ public function isDiscreteExp "function: isDiscreteExp
   output Boolean outBoolean;
 algorithm
   outBoolean := 
-  matchcontinue(inExp,inVariables,knvars)
+  match(inExp,inVariables,knvars)
     local 
       Boolean b;
       Option<Boolean> obool;
@@ -1388,7 +1388,7 @@ algorithm
       b = Util.getOptionOrDefault(obool,false);
       then
         b;
-  end matchcontinue;
+  end match;
 end isDiscreteExp;
 
 
@@ -1535,10 +1535,10 @@ public function isVarDiscrete "returns true if variable is discrete"
   input BackendDAE.Var var;
   output Boolean res;
 algorithm
-  res := matchcontinue(var)
+  res := match(var)
     local BackendDAE.VarKind kind;
     case(BackendDAE.VAR(varKind=kind)) then isKindDiscrete(kind);
-  end matchcontinue;
+  end match;
 end isVarDiscrete;
 
 protected function isKindDiscrete "function: isKindDiscrete
@@ -1628,7 +1628,7 @@ protected function bintreeToListOpt "function: bintreeToListOpt
   output list<BackendDAE.Key> outKeyLst;
   output list<BackendDAE.Value> outValueLst;
 algorithm
-  (outKeyLst,outValueLst) := matchcontinue (inBinTreeOption,inKeyLst,inValueLst)
+  (outKeyLst,outValueLst) := match (inBinTreeOption,inKeyLst,inValueLst)
     local
       list<BackendDAE.Key> klst;
       list<BackendDAE.Value> vlst;
@@ -1641,7 +1641,7 @@ algorithm
         (klst,vlst) = bintreeToList2(bt, klst, vlst);
       then
         (klst,vlst);
-  end matchcontinue;
+  end match;
 end bintreeToListOpt;
 
 public function statesAndVarsExp
@@ -1655,14 +1655,14 @@ public function statesAndVarsExp
   output list<DAE.Exp> outExpExpLst;
 algorithm
   outExpExpLst := 
-  matchcontinue(inExp,inVariables)
+  match(inExp,inVariables)
     local list<DAE.Exp> exps;
   case(inExp,inVariables)
     equation
       ((_,(_,exps))) = Expression.traverseExpTopDown(inExp, traversingstatesAndVarsExpFinder, (inVariables,{}));
       then
         exps;
-  end matchcontinue;
+  end match;
 end statesAndVarsExp;
 
 public function traversingstatesAndVarsExpFinder "
@@ -1932,13 +1932,13 @@ public function systemSize
   input BackendDAE.BackendDAE dae;
   output Integer n;
 algorithm
-  n := matchcontinue(dae)
+  n := match(dae)
     local BackendDAE.EquationArray eqns;
     case(BackendDAE.DAE(orderedEqs = eqns))
       equation
         n = equationSize(eqns);
       then n;
-  end matchcontinue;
+  end match;
 end systemSize;
 
 public function equationSize "function: equationSize
@@ -1953,10 +1953,10 @@ public function equationSize "function: equationSize
   output Integer outInteger;
 algorithm
   outInteger:=
-  matchcontinue (inEquationArray)
+  match (inEquationArray)
     local BackendDAE.Value n;
     case (BackendDAE.EQUATION_ARRAY(numberOfElement = n)) then n;
-  end matchcontinue;
+  end match;
 end equationSize;
 
 protected function generateArrayElements
@@ -1970,7 +1970,7 @@ protected function generateArrayElements
   input DAE.Exp iteratorExp;
   output list<DAE.Exp> newElements;
 algorithm
-  newElements := matchcontinue(clones, indices, iteratorExp)
+  newElements := match(clones, indices, iteratorExp)
     local
       DAE.Exp clone, newElement, newElement2, index;
       list<DAE.Exp> restClones, restIndices, elements;
@@ -1981,7 +1981,7 @@ algorithm
         newElement2 = simplifySubscripts(newElement);
         elements = generateArrayElements(restClones, restIndices, iteratorExp);
       then (newElement2 :: elements);
-  end matchcontinue;
+  end match;
 end generateArrayElements;
 
 protected function simplifySubscripts
@@ -2542,7 +2542,7 @@ public function subscript2dCombinations
   input list<list<DAE.Subscript>> inExpSubscriptLstLst2;
   output list<list<DAE.Subscript>> outExpSubscriptLstLst;
 algorithm
-  outExpSubscriptLstLst := matchcontinue (inExpSubscriptLstLst1,inExpSubscriptLstLst2)
+  outExpSubscriptLstLst := match (inExpSubscriptLstLst1,inExpSubscriptLstLst2)
     local
       list<list<DAE.Subscript>> lst1,lst2,res,ss,ss2;
       list<DAE.Subscript> s1;
@@ -2556,7 +2556,7 @@ algorithm
         res = listAppend(lst1, lst2);
       then
         res;
-  end matchcontinue;
+  end match;
 end subscript2dCombinations;
 
 protected function subscript2dCombinations2
@@ -2564,7 +2564,7 @@ protected function subscript2dCombinations2
   input list<list<DAE.Subscript>> inExpSubscriptLstLst;
   output list<list<DAE.Subscript>> outExpSubscriptLstLst;
 algorithm
-  outExpSubscriptLstLst := matchcontinue (inExpSubscriptLst,inExpSubscriptLstLst)
+  outExpSubscriptLstLst := match (inExpSubscriptLst,inExpSubscriptLstLst)
     local
       list<list<DAE.Subscript>> lst1,ss2;
       list<DAE.Subscript> elt1,ss,s2;
@@ -2577,7 +2577,7 @@ algorithm
         elt1 = listAppend(ss, s2);
       then
         (elt1 :: lst1);
-  end matchcontinue;
+  end match;
 end subscript2dCombinations2;
 
 /**************************
@@ -2659,7 +2659,7 @@ public function treeAddList "function: treeAddList
   input list<BackendDAE.Key> inKeyLst;
   output BackendDAE.BinTree outBinTree;
 algorithm
-  outBinTree := matchcontinue (inBinTree,inKeyLst)
+  outBinTree := match (inBinTree,inKeyLst)
     local
       BackendDAE.Key key;
       list<BackendDAE.Key> res;
@@ -2673,7 +2673,7 @@ algorithm
         bt_2 = treeAddList(bt_1,res);
       then 
         bt_2;  
-  end matchcontinue;
+  end match;
 end treeAddList;
 
 public function treeAdd "function: treeAdd
@@ -3177,7 +3177,7 @@ Helper function for traverseDAEEquationsELse
   input BackendDAE.Variables inVars; 
   output DAE.Else outElse;
 algorithm 
-  outElse := matchcontinue(inElse,inVars)
+  outElse := match(inElse,inVars)
   local
     DAE.Exp e;
     list<DAE.Statement> st;
@@ -3193,7 +3193,7 @@ algorithm
     equation
       st = removediscreteAssingments(st,vars);
     then DAE.ELSE(st);
-end matchcontinue;
+end match;
 end removediscreteAssingmentsElse;
 
 public function collateAlgorithm "
@@ -3221,7 +3221,7 @@ public function collateArrExpList
   input Option<DAE.FunctionTree> optfunc;
   output list<DAE.Exp> outexpl;
 algorithm
-  outexpl := matchcontinue(expl,optfunc)
+  outexpl := match(expl,optfunc)
     local 
       DAE.Exp e,e1; 
       list<DAE.Exp> expl1;
@@ -3233,7 +3233,7 @@ algorithm
       expl1 = collateArrExpList(expl,optfunc);
     then 
       e1::expl1; 
-  end matchcontinue;
+  end match;
 end collateArrExpList;
 
 public function collateArrExp "
@@ -3325,7 +3325,7 @@ Author: Frenkel TUD 2010-05"
   input list<Integer> inRange;
   output list<DAE.Subscript> outSubs;
 algorithm
-  outSubs := matchcontinue(inRange)
+  outSubs := match(inRange)
   local 
     Integer i;
     list<Integer> res;
@@ -3335,7 +3335,7 @@ algorithm
       equation
         range = rangesToSubscript(res);
       then DAE.INDEX(DAE.ICONST(i))::range;
-  end matchcontinue;
+  end match;
 end rangesToSubscript;
 
 public function rangesToSubscripts "
@@ -3368,7 +3368,7 @@ Author: Frenkel TUD 2010-05"
   input list<list<DAE.Subscript>> inRangelist;
   output list<list<DAE.Subscript>> outSubslst;
 algorithm
-  outSubslst := matchcontinue(inSub,inRangelist)
+  outSubslst := match(inSub,inRangelist)
   local 
     list<list<DAE.Subscript>> rangelist,rangelist1;
     DAE.Subscript sub;
@@ -3376,7 +3376,7 @@ algorithm
       equation
       rangelist1 = Util.listMap1r(rangelist,Util.listAddElementFirst,sub);
     then rangelist1;
-  end matchcontinue;
+  end match;
 end rangesToSubscripts1;
 
 public function getEquationBlock "function: getEquationBlock
@@ -3467,7 +3467,7 @@ public function applyIndexType
   input BackendDAE.IndexType inIndexType;
   output list<Integer> outLst;
 algorithm
-  outLst := matchcontinue(inLst, inIndexType)
+  outLst := match(inLst, inIndexType)
     
     // leave as it is 
     case (inLst, BackendDAE.NORMAL()) then inLst;
@@ -3475,7 +3475,7 @@ algorithm
     // transform to absolute indexes
     case (inLst, BackendDAE.ABSOLUTE()) then Util.absIntegerList(inLst);
     
-  end matchcontinue;
+  end match;
 end applyIndexType;  
 
 protected function incidenceMatrixDispatch
@@ -3647,7 +3647,7 @@ protected function incidenceRowExp
   input BackendDAE.Variables inVariables;
   output list<BackendDAE.Value> outIntegerLst;
 algorithm
-  outIntegerLst := matchcontinue (inExp,inVariables)
+  outIntegerLst := match (inExp,inVariables)
     local
       list<BackendDAE.Value> vallst;
   case(inExp,inVariables)      
@@ -3655,7 +3655,7 @@ algorithm
       ((_,(_,vallst))) = Expression.traverseExpTopDown(inExp, traversingincidenceRowExpFinder, (inVariables,{}));
       then
         vallst;
-  end matchcontinue;
+  end match;
 end incidenceRowExp;
 
 public function traversingincidenceRowExpFinder "
@@ -4118,7 +4118,7 @@ protected function calculateJacobianRows2 "function: calculateJacobianRows2
   output list<tuple<Integer,list<list<DAE.Subscript>>>> outEntrylst;
 algorithm
   (outTplIntegerIntegerEquationLstOption,outEntrylst):=
-  matchcontinue (inEquationLst,inVariables,inMultiDimEquationArray,inIncidenceMatrix,inIncidenceMatrixT,inInteger,differentiateIfExp,inEntrylst)
+  match (inEquationLst,inVariables,inMultiDimEquationArray,inIncidenceMatrix,inIncidenceMatrixT,inInteger,differentiateIfExp,inEntrylst)
     local
       BackendDAE.Value eqn_indx_1,eqn_indx;
       list<tuple<BackendDAE.Value, BackendDAE.Value, BackendDAE.Equation>> l1,l2,res;
@@ -4137,7 +4137,7 @@ algorithm
         res = listAppend(l1, l2);
       then
         (SOME(res),entrylst2);
-  end matchcontinue;
+  end match;
 end calculateJacobianRows2;
 
 protected function calculateJacobianRow "function: calculateJacobianRow
@@ -4265,7 +4265,7 @@ Author: Frenkel TUD 2010-05"
   input list<Option<Integer>> dims;
   output list<list<DAE.Subscript>> outRangelist;
 algorithm
-  outRangelist := matchcontinue(dims)
+  outRangelist := match(dims)
   local 
     Integer i;
     list<list<DAE.Subscript>> rangelist;
@@ -4280,7 +4280,7 @@ algorithm
       subs = rangesToSubscript(range);
       rangelist = arrayDimensionsToRange(dims);
     then subs::rangelist;
-  end matchcontinue;
+  end match;
 end arrayDimensionsToRange;
 
 
@@ -4312,7 +4312,7 @@ protected function calculateJacobianRow2 "function: calculateJacobianRow2
   input Boolean differentiateIfExp "If true, allow differentiation of if-expressions";
   output Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> outTplIntegerIntegerEquationLstOption;
 algorithm
-  outTplIntegerIntegerEquationLstOption := matchcontinue (inExp,inVariables,inInteger,inIntegerLst,differentiateIfExp)
+  outTplIntegerIntegerEquationLstOption := match (inExp,inVariables,inInteger,inIntegerLst,differentiateIfExp)
     local
       DAE.Exp e,e_1,e_2;
       BackendDAE.Var v;
@@ -4332,7 +4332,7 @@ algorithm
         SOME(es) = calculateJacobianRow2(e, vars, eqn_indx, vindxs, differentiateIfExp);
       then
         SOME(((eqn_indx,vindx,BackendDAE.RESIDUAL_EQUATION(e_2,DAE.emptyElementSource)) :: es));
-  end matchcontinue;
+  end match;
 end calculateJacobianRow2;
 
 public function analyzeJacobian "function: analyzeJacobian
@@ -4569,7 +4569,7 @@ protected function jacobianNonlinearExp "function: jacobianNonlinearExp
   input DAE.Exp inExp;
   output Boolean outBoolean;
 algorithm
-  outBoolean := matchcontinue (inBackendDAE,inExp)
+  outBoolean := match (inBackendDAE,inExp)
     local
       list<BackendDAE.Key> crefs;
       Boolean res;
@@ -4581,7 +4581,7 @@ algorithm
         res = containAnyVar(crefs, vars);
       then
         res;
-  end matchcontinue;
+  end match;
 end jacobianNonlinearExp;
 
 protected function containAnyVar "function: containAnyVar
@@ -5057,7 +5057,7 @@ protected function traverseBackendDAEExpsSubscript "function: traverseBackendDAE
   end FuncExpType;
 algorithm
   outTypeA:=
-  matchcontinue (inSubscript,func,inTypeA)
+  match (inSubscript,func,inTypeA)
     local
       DAE.Exp e;
       Type_a ext_arg_1;     
@@ -5070,7 +5070,7 @@ algorithm
       equation
         ((_,ext_arg_1)) = func((e,inTypeA));  
       then ext_arg_1;
-  end matchcontinue;
+  end match;
 end traverseBackendDAEExpsSubscript;
 
 protected function traverseBackendDAEExpsEqns "function: traverseBackendDAEExpsEqns
@@ -5144,7 +5144,7 @@ protected function traverseBackendDAEExpsArrayEqn "function: traverseBackendDAEE
   end FuncExpType; 
 algorithm
   outTypeA:=
-  matchcontinue (inMultiDimEquation,func,inTypeA)
+  match (inMultiDimEquation,func,inTypeA)
     local 
       DAE.Exp e1,e2;
       Type_a ext_arg_1,ext_arg_2;
@@ -5154,7 +5154,7 @@ algorithm
         ((_,ext_arg_2)) = func((e2,ext_arg_1)); 
       then
         ext_arg_2;
-  end matchcontinue;
+  end match;
 end traverseBackendDAEExpsArrayEqn;
 
 public function traverseAlgorithmExps "function: traverseAlgorithmExps

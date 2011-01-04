@@ -108,7 +108,7 @@ protected function dumpNode "function dumpNode
   input Node inNode;
   output Ident outIdent;
 algorithm
-  outIdent := matchcontinue (inNode)
+  outIdent := match (inNode)
     local
       Label nm,typlbl,out,typ,lblstr;
       Attributes newattr,attr;
@@ -137,7 +137,7 @@ algorithm
         dumpChildren(nm, children);
       then
         nm;
-  end matchcontinue;
+  end match;
 end dumpNode;
 
 protected function makeLabel "function: makeLabel
@@ -186,7 +186,7 @@ protected function dumpChildren "function: dumpChildren
   input Ident inIdent;
   input Children inChildren;
 algorithm
-  _ := matchcontinue (inIdent,inChildren)
+  _ := match (inIdent,inChildren)
     local
       Label nm,parent;
       Node node;
@@ -201,7 +201,7 @@ algorithm
         dumpChildren(parent, rest);
       then
         ();
-  end matchcontinue;
+  end match;
 end dumpChildren;
 
 protected function nodename "function: nodename

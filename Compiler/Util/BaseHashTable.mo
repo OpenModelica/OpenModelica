@@ -442,14 +442,14 @@ public function hashTableList "returns the entries in the hashTable as a list of
   partial function FuncKeyString input Key key; output String str; end FuncKeyString;
   partial function FuncValString input Value val; output String str; end FuncValString;
 algorithm
-  tplLst := matchcontinue(hashTable)
+  tplLst := match(hashTable)
     local
       ValueArray varr;
     case((_,varr,_,_,_))
       equation
         tplLst = valueArrayList(varr);
       then tplLst;
-  end matchcontinue;
+  end match;
 end hashTableList;
 
 public function valueArrayList

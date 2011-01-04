@@ -88,7 +88,7 @@ public function dump "function: dump
   input DAE.DAElist dae;
   input DAE.FunctionTree functionTree;
 algorithm
-  _ := matchcontinue (dae,functionTree)
+  _ := match (dae,functionTree)
     local
       list<DAE.Element> daelist;
     
@@ -99,7 +99,7 @@ algorithm
         Util.listMap0(daelist, dumpCompElement);
       then
         ();
-  end matchcontinue;
+  end match;
 end dump;
 
 public function dumpFunctionNamesStr "return all function names in a string  (comma separated)"
@@ -594,7 +594,7 @@ protected function dumpKind "function: dumpKind
   Dump VarKind."
   input DAE.VarKind inVarKind;
 algorithm
-  _ := matchcontinue (inVarKind)
+  _ := match (inVarKind)
     case DAE.CONST()
       equation
         Print.printBuf(" constant  ");
@@ -615,7 +615,7 @@ algorithm
         Print.printBuf("           ");
       then
         ();
-  end matchcontinue;
+  end match;
 end dumpKind;
 
 protected function dumpKindStr "function: dumpKindStr
@@ -623,12 +623,12 @@ protected function dumpKindStr "function: dumpKindStr
   input DAE.VarKind inVarKind;
   output String outString;
 algorithm
-  outString := matchcontinue (inVarKind)
+  outString := match (inVarKind)
     case DAE.CONST() then "constant ";
     case DAE.PARAM() then "parameter ";
     case DAE.DISCRETE() then "discrete ";
     case DAE.VARIABLE() then "";
-  end matchcontinue;
+  end match;
 end dumpKindStr;
 
 protected function dumpDirection "function: dumpDirection
@@ -659,11 +659,11 @@ public function dumpDirectionStr "function: dumpDirectionStr
   input DAE.VarDirection inVarDirection;
   output String outString;
 algorithm
-  outString := matchcontinue (inVarDirection)
+  outString := match (inVarDirection)
     case DAE.INPUT() then "input ";
     case DAE.OUTPUT() then "output ";
     case DAE.BIDIR() then "";
-  end matchcontinue;
+  end match;
 end dumpDirectionStr;
 
 protected function dumpStateSelectStr "function dumpStateSelectStr
@@ -671,13 +671,13 @@ protected function dumpStateSelectStr "function dumpStateSelectStr
   input DAE.StateSelect inStateSelect;
   output String outString;
 algorithm
-  outString := matchcontinue (inStateSelect)
+  outString := match (inStateSelect)
     case DAE.NEVER() then "StateSelect.never";
     case DAE.AVOID() then "StateSelect.avoid";
     case DAE.PREFER() then "StateSelect.prefer";
     case DAE.ALWAYS() then "StateSelect.always";
     case DAE.DEFAULT() then "StateSelect.default";
-  end matchcontinue;
+  end match;
 end dumpStateSelectStr;
 
 public function dumpVariableAttributes "function: dumpVariableAttributes
@@ -852,10 +852,10 @@ protected function dumpVarProtectionStr "Prints 'protected' to a string for prot
   input DAE.VarProtection prot;
   output String str;
 algorithm
-  str := matchcontinue(prot)
+  str := match(prot)
     case DAE.PUBLIC() then "";
     case DAE.PROTECTED() then "protected ";
-  end matchcontinue;
+  end match;
 end dumpVarProtectionStr;
 
 public function dumpCommentOptionStr "function: dumpCommentOptionStr
@@ -1391,11 +1391,11 @@ protected function dumpInlineTypeStr
   input DAE.InlineType inlineType;
   output String str;
 algorithm
-  str := matchcontinue(inlineType)
+  str := match(inlineType)
     case(DAE.NO_INLINE()) then "";
     case(DAE.AFTER_INDEX_RED_INLINE()) then " \"Inline after index reduction\"";
     case(DAE.NORM_INLINE()) then " \"Inline before index reduction\"";
-  end matchcontinue;
+  end match;
 end dumpInlineTypeStr;
 
 protected function printRecordConstructorInputsStr "help function to dumpFunction. Prints the inputs of a record constructor"
@@ -1443,7 +1443,7 @@ protected function printRecordConstructorBinding "prints the binding of a record
   input DAE.Binding binding;
   output String str;
 algorithm
-  str := matchcontinue(binding)
+  str := match(binding)
     local DAE.Exp e; Values.Value v;
     case(DAE.UNBOUND()) then "";
     case(DAE.EQBOUND(exp=e, source=DAE.BINDING_FROM_DEFAULT_VALUE())) equation
@@ -1452,7 +1452,7 @@ algorithm
     case(DAE.VALBOUND(valBound=v, source=DAE.BINDING_FROM_DEFAULT_VALUE())) equation
       str = " = " +& ValuesUtil.valString(v);
     then str;
-  end matchcontinue;
+  end match;
 end printRecordConstructorBinding;
 
 protected function ppStatement
@@ -1678,7 +1678,7 @@ protected function ppWhenStmtStr
   output String outString;
 algorithm
   outString:=
-  matchcontinue (inStatement,inInteger)
+  match (inStatement,inInteger)
     local
       String s1,s2,s3,s4,s5,s6,str,s7,s8,s9,s10,s11,id,cond_str,msg_str;
       DAE.ComponentRef c;
@@ -1715,7 +1715,7 @@ algorithm
         str = stringAppend(s10, s8);
       then
         str;
-   end matchcontinue;
+   end match;
 end ppWhenStmtStr;
 
 public function ppStmtStr
@@ -1915,7 +1915,7 @@ protected function ppStmtList "function: ppStmtList
   input Integer inInteger;
 algorithm
   _:=
-  matchcontinue (inAlgorithmStatementLst,inInteger)
+  match (inAlgorithmStatementLst,inInteger)
     local
       DAE.Statement stmt;
       list<DAE.Statement> stmts;
@@ -1927,7 +1927,7 @@ algorithm
         ppStmtList(stmts, i);
       then
         ();
-  end matchcontinue;
+  end match;
 end ppStmtList;
 
 protected function ppStmtListStr "function: ppStmtListStr
@@ -1939,7 +1939,7 @@ protected function ppStmtListStr "function: ppStmtListStr
   output String outString;
 algorithm
   outString:=
-  matchcontinue (inAlgorithmStatementLst,inInteger)
+  match (inAlgorithmStatementLst,inInteger)
     local
       String s1,s2,str;
       DAE.Statement stmt;
@@ -1953,7 +1953,7 @@ algorithm
         str = stringAppend(s1, s2);
       then
         str;
-  end matchcontinue;
+  end match;
 end ppStmtListStr;
 
 protected function ppElse "function: ppElse
@@ -1964,7 +1964,7 @@ protected function ppElse "function: ppElse
   input Integer inInteger;
 algorithm
   _:=
-  matchcontinue (inElse,inInteger)
+  match (inElse,inInteger)
     local
       Integer i_1,i;
       DAE.Exp e;
@@ -1990,7 +1990,7 @@ algorithm
         ppStmtList(stmts, i_1);
       then
         ();
-  end matchcontinue;
+  end match;
 end ppElse;
 
 protected function ppElseStr "function: pp_else
@@ -2002,7 +2002,7 @@ protected function ppElseStr "function: pp_else
   output String outString;
 algorithm
   outString:=
-  matchcontinue (inElse,inInteger)
+  match (inElse,inInteger)
     local
       String s1,s2,s3,s4,s5,s6,s7,s8,str;
       Integer i_1,i;
@@ -2033,7 +2033,7 @@ algorithm
         str = stringAppend(s2, s3);
       then
         str;
-  end matchcontinue;
+  end match;
 end ppElseStr;
 
 protected function indent "function: indent
@@ -2088,7 +2088,7 @@ public function dumpDebug "
   input DAE.DAElist inDAElist;
 algorithm
   _:=
-  matchcontinue (inDAElist)
+  match (inDAElist)
     local list<DAE.Element> elist;
     case DAE.DAE(elementLst = elist)
       equation
@@ -2097,7 +2097,7 @@ algorithm
         Print.printBuf(")");
       then
         ();
-  end matchcontinue;
+  end match;
 end dumpDebug;
 
 protected function dumpDebugElist "function: dumpDebugElist
@@ -2107,7 +2107,7 @@ protected function dumpDebugElist "function: dumpDebugElist
   input list<DAE.Element> inElementLst;
 algorithm
   _:=
-  matchcontinue (inElementLst)
+  match (inElementLst)
     local
       DAE.Element first;
       list<DAE.Element> rest;
@@ -2119,7 +2119,7 @@ algorithm
         dumpDebugElist(rest);
       then
         ();
-  end matchcontinue;
+  end match;
 end dumpDebugElist;
 
 public function dumpDebugDAE ""
@@ -2384,7 +2384,7 @@ protected function buildGraphviz "function: buildGraphviz
   output Graphviz.Node outNode;
 algorithm
   outNode:=
-  matchcontinue (inDAElist)
+  match (inDAElist)
     local
       list<DAE.Element> vars,nonvars,els;
       list<Graphviz.Node> nonvarnodes,varnodes,nodelist;
@@ -2397,7 +2397,7 @@ algorithm
         nodelist = listAppend(nonvarnodes, varnodes);
       then
         Graphviz.NODE("DAE",{},nodelist);
-  end matchcontinue;
+  end match;
 end buildGraphviz;
 
 protected function buildGrList "function buildGrList
@@ -2408,7 +2408,7 @@ protected function buildGrList "function buildGrList
   output list<Graphviz.Node> outGraphvizNodeLst;
 algorithm
   outGraphvizNodeLst:=
-  matchcontinue (inElementLst)
+  match (inElementLst)
     local
       Graphviz.Node node;
       list<Graphviz.Node> nodelist;
@@ -2421,7 +2421,7 @@ algorithm
         nodelist = buildGrList(rest);
       then
         (node :: nodelist);
-  end matchcontinue;
+  end match;
 end buildGrList;
 
 protected function buildGrVars "function buildGrVars
@@ -2493,7 +2493,7 @@ protected function buildGrVarStr "function buildGrVarStr
   output String outString;
 algorithm
   outString:=
-  matchcontinue (inElement)
+  match (inElement)
     local
       String str,expstr,str_1,str_2;
       DAE.ComponentRef cr;
@@ -2511,7 +2511,7 @@ algorithm
         str_2 = stringAppend(str_1, expstr);
       then
         str_2;
-  end matchcontinue;
+  end match;
 end buildGrVarStr;
 
 protected function printExpStrSpecial "function: printExpStrSpecial
@@ -2547,7 +2547,7 @@ protected function buildGrElement "function: buildGrElement
   input DAE.Element inElement;
   output Graphviz.Node outNode;
 algorithm
-  outNode := matchcontinue (inElement)
+  outNode := match (inElement)
     local
       String crstr,vkstr,expstr,expstr_1,e1str,e2str,n,fstr;
       DAE.ComponentRef cr,cr1,cr2;
@@ -2613,7 +2613,7 @@ algorithm
         nodes = buildGrList(elts);
       then
         Graphviz.LNODE("COMP",{n},{},nodes);
-  end matchcontinue;
+  end match;
 end buildGrElement;
 
 protected function unparseType "wrapper function for Types.unparseType, so records and enumerations can be output properly"
@@ -2667,7 +2667,7 @@ public function dumpStr "function: dumpStr
   input DAE.FunctionTree functionTree;
   output String outString;
 algorithm
-  outString := matchcontinue (inDAElist,functionTree)
+  outString := match (inDAElist,functionTree)
     local      
       IOStream.IOStream myStream;
       String str;
@@ -2679,7 +2679,7 @@ algorithm
         str = IOStream.string(myStream);
       then
         str;
-  end matchcontinue;
+  end match;
 end dumpStr;
 
 public function dumpElementsStr "function: dumpElementsStr
@@ -2707,7 +2707,7 @@ public function dumpAlgorithmsStr "function: dumpAlgorithmsStr
   input list<DAE.Element> algs;
   output String outString;
 algorithm
-  outString := matchcontinue (algs)
+  outString := match (algs)
     local      
       IOStream.IOStream myStream;
       String str;
@@ -2719,7 +2719,7 @@ algorithm
         str = IOStream.string(myStream);
       then
         str;
-  end matchcontinue;
+  end match;
 end dumpAlgorithmsStr;
 
 
@@ -2735,7 +2735,7 @@ public function dumpStream "function: dumpStream
   input IOStream.IOStream inStream;
   output IOStream.IOStream outStream;
 algorithm
-  outStream := matchcontinue (dae,functionTree,inStream)
+  outStream := match (dae,functionTree,inStream)
     local      
       list<DAE.Element> daelist;
       list<DAE.Function> funcs;
@@ -2750,7 +2750,7 @@ algorithm
         str = Util.listFold(daelist, dumpCompElementStream, str);
       then
         str;
-  end matchcontinue;
+  end match;
 end dumpStream;
 
 protected function dumpCompElementStream "function: dumpCompElementStream
@@ -3045,7 +3045,7 @@ protected function dumpIfEquationsStream ""
   input IOStream.IOStream inStream;
   output IOStream.IOStream outStream;
 algorithm 
-  outStream := matchcontinue(conds,tbs,inStream)
+  outStream := match(conds,tbs,inStream)
     local
       DAE.Exp c;
       list<DAE.Element> tb;
@@ -3063,7 +3063,7 @@ algorithm
       str = dumpIfEquationsStream(conds,tbs, str); 
     then
       str;
-  end matchcontinue;
+  end match;
 end dumpIfEquationsStream;
 
 protected function dumpInitialEquationsStream "function: dumpInitialequationsStr
@@ -3149,7 +3149,7 @@ print a DAE.DAEList to a string"
   input DAE.DAElist d;
   output String str;
 algorithm 
-  str := matchcontinue(d)
+  str := match(d)
     local 
       list<DAE.Element> l;
       IOStream.IOStream myStream;
@@ -3160,7 +3160,7 @@ algorithm
         myStream = dumpElementsStream(l, myStream);
         str = IOStream.string(myStream); 
       then str;
-  end matchcontinue;
+  end match;
 end dumpDAEElementsStr;
 
 public function dumpVarsStream "function: dumpVarsStream
@@ -3170,7 +3170,7 @@ public function dumpVarsStream "function: dumpVarsStream
   input IOStream.IOStream inStream;  
   output IOStream.IOStream outStream;
 algorithm
-  outStream := matchcontinue (inElementLst, printTypeDimension, inStream)
+  outStream := match (inElementLst, printTypeDimension, inStream)
     local
       IOStream.IOStream str;
       DAE.Element first;
@@ -3184,7 +3184,7 @@ algorithm
         str = dumpVarsStream(rest, printTypeDimension, str);
       then
         str;
-  end matchcontinue;
+  end match;
 end dumpVarsStream;
 
 protected function dumpVarStream "function: dumpVarStream

@@ -83,7 +83,7 @@ protected function generatePositionalArgs "function: generatePositionalArgs
   output list<Absyn.Exp> outList;
   output list<Absyn.NamedArg> outInvalidNames;
 algorithm
-  (outList,outInvalidNames) := matchcontinue (fieldNameList,namedArgList,accList)
+  (outList,outInvalidNames) := match (fieldNameList,namedArgList,accList)
     local
       list<Absyn.Exp> localAccList;
       list<Absyn.Ident> restFieldNames;
@@ -96,7 +96,7 @@ algorithm
         (exp,localNamedArgList) = findFieldExpInList(firstFieldName,localNamedArgList);
         (localAccList,localNamedArgList) = generatePositionalArgs(restFieldNames,localNamedArgList,exp::localAccList);
       then (localAccList,localNamedArgList);
-  end matchcontinue;
+  end match;
 end generatePositionalArgs;
 
 protected function findFieldExpInList "function: findFieldExpInList
@@ -824,7 +824,7 @@ protected function elabMatchCases2
   output list<DAE.Type> resTypes;
   output Option<Interactive.InteractiveSymbolTable> outSt;
 algorithm
-  (outCache,elabCases,resExps,resTypes,outSt) := matchcontinue (cache,env,cases,tys,impl,st,performVectorization,pre,info,accExps,accTypes)
+  (outCache,elabCases,resExps,resTypes,outSt) := match (cache,env,cases,tys,impl,st,performVectorization,pre,info,accExps,accTypes)
     local
       Absyn.Case case_;
       list<Absyn.Case> rest;
@@ -838,7 +838,7 @@ algorithm
         (cache,elabCase,optExp,optType,st) = elabMatchCase(cache,env,case_,tys,impl,st,performVectorization,pre,info);
         (cache,elabCases,accExps,accTypes,st) = elabMatchCases2(cache,env,rest,tys,impl,st,performVectorization,pre,info,Util.listConsOption(optExp,accExps),Util.listConsOption(optType,accTypes));
       then (cache,elabCase::elabCases,accExps,accTypes,st);
-  end matchcontinue;
+  end match;
 end elabMatchCases2;
 
 protected function elabMatchCase
@@ -857,7 +857,7 @@ protected function elabMatchCase
   output Option<DAE.Type> resType;
   output Option<Interactive.InteractiveSymbolTable> outSt;
 algorithm
-  (outCache,elabCase,resExp,resType,outSt) := matchcontinue (cache,env,acase,tys,impl,st,performVectorization,pre,info)
+  (outCache,elabCase,resExp,resType,outSt) := match (cache,env,acase,tys,impl,st,performVectorization,pre,info)
     local
       list<Absyn.Case> rest;
       Absyn.Exp result,pattern;
@@ -890,7 +890,7 @@ algorithm
         (cache,elabCase,elabResult,resType,st) = elabMatchCase(cache,env,Absyn.CASE(Absyn.TUPLE({}),info,decls,eq1,result,NONE()),{},impl,st,performVectorization,pre,info); 
       then (cache,elabCase,elabResult,resType,st);
         
-  end matchcontinue;
+  end match;
 end elabMatchCase;
 
 protected function elabResultExp

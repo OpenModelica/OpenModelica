@@ -116,7 +116,7 @@ protected function buildInits "function: buildInits
   This is implemented in C++ as a set of vectors"
   input BackendDAE.BackendDAE inBackendDAE;
 algorithm
-  _ := matchcontinue (inBackendDAE)
+  _ := match (inBackendDAE)
     local
       list<BackendDAE.Var> vars,kvars;
       BackendDAE.VariableArray vararr,kvararr;
@@ -128,7 +128,7 @@ algorithm
         buildInits2(kvars);
       then
         ();
-  end matchcontinue;
+  end match;
 end buildInits;
 
 protected function buildInits2
@@ -248,7 +248,7 @@ protected function addVariables
   input Integer inInteger;
 algorithm
   _:=
-  matchcontinue (inBackendDAEVarLst,inInteger)
+  match (inBackendDAEVarLst,inInteger)
     local
       Integer start;
       BackendDAE.Var v;
@@ -260,7 +260,7 @@ algorithm
         addVariables(vs, start);
       then
         ();
-  end matchcontinue;
+  end match;
 end addVariables;
 
 protected function buildBlocks
@@ -499,7 +499,7 @@ protected function makeResidualReplacements2
   output VarTransform.VariableReplacements outVariableReplacements;
 algorithm
   outVariableReplacements:=
-  matchcontinue (inVariableReplacements,inExpExpLst,inInteger)
+  match (inVariableReplacements,inExpExpLst,inInteger)
     local
       VarTransform.VariableReplacements repl,repl_1,repl_2;
       String pstr,str;
@@ -517,7 +517,7 @@ algorithm
         repl_2 = makeResidualReplacements2(repl_1, es, pos_1);
       then
         repl_2;
-  end matchcontinue;
+  end match;
 end makeResidualReplacements2;
 
 protected function buildResidualCode2
@@ -752,7 +752,7 @@ protected function addVariable
   input BackendDAE.Var inVar;
   input Integer inInteger;
 algorithm
-  _:= matchcontinue (inVar,inInteger)
+  _:= match (inVar,inInteger)
     local
       String cfs,name_str;
       DAE.ComponentRef cf,name;
@@ -768,7 +768,7 @@ algorithm
         TaskGraphExt.storeResult(cfs, start, false, name_str);
       then
         ();
-  end matchcontinue;
+  end match;
 end addVariable;
 
 protected function buildAssignment
@@ -1036,7 +1036,7 @@ protected function addPredecessors
   input Integer inInteger4;
 algorithm
   _:=
-  matchcontinue (inInteger1,inIntegerLst2,inStringLst3,inInteger4)
+  match (inInteger1,inIntegerLst2,inStringLst3,inInteger4)
     local
       Integer prio_1,t,t1,prio;
       list<Integer> ts;
@@ -1050,7 +1050,7 @@ algorithm
         addPredecessors(t, ts, strs, prio_1);
       then
         ();
-  end matchcontinue;
+  end match;
 end addPredecessors;
 
 end TaskGraph;

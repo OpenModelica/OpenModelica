@@ -192,13 +192,13 @@ public function elabModForBasicType "
   output Env.Cache outCache;
   output DAE.Mod outMod;
 algorithm
-  (outCache,outMod) := matchcontinue (inCache,inEnv,inIH,inPrefix,inMod,inBoolean,info)
+  (outCache,outMod) := match (inCache,inEnv,inIH,inPrefix,inMod,inBoolean,info)
     case (inCache,inEnv,inIH,inPrefix,inMod,inBoolean,info)
       equation
         checkIfModsAreBasicTypeMods(inMod);
         (outCache,outMod) = elabMod(inCache,inEnv,inIH,inPrefix,inMod,inBoolean,info);
       then (outCache,outMod);
-  end matchcontinue;
+  end match;
 end elabModForBasicType;
 
 protected function checkIfModsAreBasicTypeMods "
@@ -206,7 +206,7 @@ protected function checkIfModsAreBasicTypeMods "
   used for basic types."
   input SCode.Mod mod;
 algorithm
-  _ := matchcontinue mod
+  _ := match mod
     local
       list<SCode.SubMod> subs;
     case SCode.NOMOD() then ();
@@ -214,7 +214,7 @@ algorithm
       equation
         checkIfSubmodsAreBasicTypeMods(subs);
       then ();
-  end matchcontinue;
+  end match;
 end checkIfModsAreBasicTypeMods;
 
 protected function checkIfSubmodsAreBasicTypeMods "
@@ -222,7 +222,7 @@ protected function checkIfSubmodsAreBasicTypeMods "
   used for basic types."
   input list<SCode.SubMod> subs;
 algorithm
-  _ := matchcontinue subs
+  _ := match subs
     local
       SCode.Mod mod;
       String ident;
@@ -237,7 +237,7 @@ algorithm
         checkIfModsAreBasicTypeMods(mod);
         checkIfSubmodsAreBasicTypeMods(subs);
       then ();
-  end matchcontinue;
+  end match;
 end checkIfSubmodsAreBasicTypeMods;
 
 protected function elabModRedeclareElements
@@ -251,7 +251,7 @@ protected function elabModRedeclareElements
   input Absyn.Info info;
   output list<tuple<SCode.Element, DAE.Mod>> modElts "the elaborated modifiers";
 algorithm
-  modElts := matchcontinue(inCache,inEnv,inIH,inPrefix,finalPrefix,elts,impl,info)
+  modElts := match(inCache,inEnv,inIH,inPrefix,finalPrefix,elts,impl,info)
     local
       Env.Cache cache; Env.Env env; Prefix.Prefix pre; Boolean f,fi,repl,p,enc,prot;
       Absyn.InnerOuter io;
@@ -296,7 +296,7 @@ algorithm
         (modElts) = elabModRedeclareElements(cache,env,ih,pre,f,elts,impl,info);
         (cache,tp1) = elabModQualifyTypespec(cache,env,tp);
       then ((SCode.COMPONENT(compname,io,fi,repl,prot,attr,tp1,mod,cmt,cond,SOME(info),cc),emod)::modElts);
-    end matchcontinue;
+    end match;
 end elabModRedeclareElements;
 
 protected function elabModQualifyTypespec
@@ -309,7 +309,7 @@ protected function elabModQualifyTypespec
   output Env.Cache outCache;
   output Absyn.TypeSpec outTp;
 algorithm
-  (outCache,outTp) := matchcontinue(inCache,inEnv,tp)
+  (outCache,outTp) := match(inCache,inEnv,tp)
       local
         Env.Cache cache; Env.Env env;
         Option<Absyn.ArrayDim> ad;
@@ -318,7 +318,7 @@ algorithm
       (cache,p1) = Inst.makeFullyQualified(cache,env,p);
     then (cache,Absyn.TPATH(p1,ad));
 
-  end matchcontinue;
+  end match;
 end elabModQualifyTypespec;
 
 protected function elabModValue
@@ -426,7 +426,7 @@ protected function unelabSubmods
   output list<SCode.SubMod> outSCodeSubModLst;
 algorithm
   outSCodeSubModLst:=
-  matchcontinue (inTypesSubModLst)
+  match (inTypesSubModLst)
     local
       list<SCode.SubMod> x_1,xs_1,res;
       DAE.SubMod x;
@@ -439,7 +439,7 @@ algorithm
         res = listAppend(x_1, xs_1);
       then
         res;
-  end matchcontinue;
+  end match;
 end unelabSubmods;
 
 protected function unelabSubmod
@@ -449,7 +449,7 @@ protected function unelabSubmod
   output list<SCode.SubMod> outSCodeSubModLst;
 algorithm
   outSCodeSubModLst:=
-  matchcontinue (inSubMod)
+  match (inSubMod)
     local
       SCode.Mod m_1;
       Ident i;
@@ -467,7 +467,7 @@ algorithm
         m_1 = unelabMod(m);
       then
         {SCode.IDXMOD(ss_1,m_1)};
-  end matchcontinue;
+  end match;
 end unelabSubmod;
 
 protected function unelabSubscript
@@ -475,7 +475,7 @@ protected function unelabSubscript
   output list<SCode.Subscript> outSCodeSubscriptLst;
 algorithm
   outSCodeSubscriptLst:=
-  matchcontinue (inIntegerLst)
+  match (inIntegerLst)
     local
       list<Absyn.Subscript> xs;
       Integer i;
@@ -486,7 +486,7 @@ algorithm
         xs = unelabSubscript(is);
       then
         (Absyn.SUBSCRIPT(Absyn.INTEGER(i)) :: xs);
-  end matchcontinue;
+  end match;
 end unelabSubscript;
 
 public function updateMod
@@ -570,7 +570,7 @@ protected function updateSubmods ""
   output list<DAE.SubMod> outTypesSubModLst;
 algorithm
   (outCache,outTypesSubModLst):=
-  matchcontinue (inCache,inEnv,inIH,inPrefix,inTypesSubModLst,inBoolean,info)
+  match (inCache,inEnv,inIH,inPrefix,inTypesSubModLst,inBoolean,info)
     local
       Boolean impl;
       list<DAE.SubMod> x_1,xs_1,res,xs;
@@ -589,7 +589,7 @@ algorithm
         res = insertSubmods(x_1, xs_1, env, pre);
       then
         (cache,res);
-  end matchcontinue;
+  end match;
 end updateSubmods;
 
 protected function updateSubmod " "
@@ -604,7 +604,7 @@ protected function updateSubmod " "
   output list<DAE.SubMod> outTypesSubModLst;
 algorithm
   (outCache,outTypesSubModLst):=
-  matchcontinue (inCache,inEnv,inIH,inPrefix,inSubMod,inBoolean,info)
+  match (inCache,inEnv,inIH,inPrefix,inSubMod,inBoolean,info)
     local
       DAE.Mod m_1,m;
       list<Env.Frame> env;
@@ -628,7 +628,7 @@ algorithm
         (cache,m_1) = updateMod(cache, env, ih, pre, m, impl, info) "Static.elab_subscripts (env,ss) => (ss\',true) &" ;
       then
         (cache,{DAE.IDXMOD(idxmod,m_1)});
-  end matchcontinue;
+  end match;
 end updateSubmod;
 
 public function elabUntypedMod "function elabUntypedMod
@@ -699,7 +699,7 @@ protected function elabSubmods
   output list<DAE.SubMod> outTypesSubModLst;
 algorithm
   (outCache,outTypesSubModLst) :=
-  matchcontinue (inCache,inEnv,inIH,inPrefix,inSCodeSubModLst,inBoolean,info)
+  match (inCache,inEnv,inIH,inPrefix,inSCodeSubModLst,inBoolean,info)
     local
       Boolean impl;
       list<DAE.SubMod> x_1,xs_1,res;
@@ -719,7 +719,7 @@ algorithm
         res = insertSubmods(x_1, xs_1, env, pre);
       then
         (cache,res);
-  end matchcontinue;
+  end match;
 end elabSubmods;
 
 protected function elabSubmod
@@ -737,7 +737,7 @@ protected function elabSubmod
   output list<DAE.SubMod> outTypesSubModLst;
 algorithm
   (outCache,outTypesSubModLst) :=
-  matchcontinue (inCache,inEnv,inIH,inPrefix,inSubMod,inBoolean,info)
+  match (inCache,inEnv,inIH,inPrefix,inSubMod,inBoolean,info)
     local
       DAE.Mod m_1;
       list<Env.Frame> env;
@@ -764,7 +764,7 @@ algorithm
         smods = makeIdxmods(ss_1, m_1);
       then
         (cache,smods);
-  end matchcontinue;
+  end match;
 end elabSubmod;
 
 protected function elabUntypedSubmods "function: elabUntypedSubmods
@@ -778,7 +778,7 @@ protected function elabUntypedSubmods "function: elabUntypedSubmods
   output list<DAE.SubMod> outTypesSubModLst;
 algorithm
   outTypesSubModLst:=
-  matchcontinue (inSCodeSubModLst,inEnv,inPrefix)
+  match (inSCodeSubModLst,inEnv,inPrefix)
     local
       list<DAE.SubMod> x_1,xs_1,res;
       SCode.SubMod x;
@@ -793,7 +793,7 @@ algorithm
         res = insertSubmods(x_1, xs_1, env, pre);
       then
         res;
-  end matchcontinue;
+  end match;
 end elabUntypedSubmods;
 
 protected function elabUntypedSubmod "function: elabUntypedSubmod
@@ -807,7 +807,7 @@ protected function elabUntypedSubmod "function: elabUntypedSubmod
   output list<DAE.SubMod> outTypesSubModLst;
 algorithm
   outTypesSubModLst:=
-  matchcontinue (inSubMod,inEnv,inPrefix)
+  match (inSubMod,inEnv,inPrefix)
     local
       DAE.Mod m_1;
       Ident i;
@@ -825,7 +825,7 @@ algorithm
         m_1 = elabUntypedMod(m, env, pre);
       then
         {DAE.IDXMOD({-1},m_1)};
-  end matchcontinue;
+  end match;
 end elabUntypedSubmod;
 
 protected function makeIdxmods "function: makeIdxmods
@@ -877,7 +877,7 @@ protected function prefixIdxmods "function: prefixIdxmods
   input Integer inInteger;
   output list<DAE.SubMod> outTypesSubModLst;
 algorithm
-  outTypesSubModLst := matchcontinue (inTypesSubModLst,inInteger)
+  outTypesSubModLst := match (inTypesSubModLst,inInteger)
     local
       list<DAE.SubMod> mods_1,mods;
       list<Integer> l;
@@ -889,7 +889,7 @@ algorithm
         mods_1 = prefixIdxmods(mods, i);
       then
         (DAE.IDXMOD((i :: l),m) :: mods_1);
-  end matchcontinue;
+  end match;
 end prefixIdxmods;
 
 protected function expandSlice "function: expandSlice
@@ -1012,7 +1012,7 @@ protected function insertSubmods "function: insertSubmods
   input Prefix.Prefix inPrefix4;
   output list<DAE.SubMod> outTypesSubModLst;
 algorithm
-  outTypesSubModLst := matchcontinue (inTypesSubModLst1,inTypesSubModLst2,inEnv3,inPrefix4)
+  outTypesSubModLst := match (inTypesSubModLst1,inTypesSubModLst2,inEnv3,inPrefix4)
     local
       list<DAE.SubMod> x_1,xs_1,l,xs,y;
       DAE.SubMod x;
@@ -1026,7 +1026,7 @@ algorithm
         l = listAppend(x_1, xs_1);
       then
         l;
-  end matchcontinue;
+  end match;
 end insertSubmods;
 
 protected function insertSubmod "function: insertSubmod
@@ -1107,7 +1107,7 @@ public function lookupCompModification "function: lookupCompModification
   input Absyn.Ident inIdent;
   output DAE.Mod outMod;
 algorithm
-  outMod := matchcontinue (inMod,inIdent)
+  outMod := match (inMod,inIdent)
     local
       DAE.Mod mod,mod1,mod2;
       list<DAE.SubMod> subs;
@@ -1124,7 +1124,7 @@ algorithm
         mod = checkDuplicateModifications(mod1,mod2);
       then
         mod;
-  end matchcontinue;
+  end match;
 end lookupCompModification;
 
 public function lookupCompModificationFromEqu "function: lookupCompModification
@@ -1133,7 +1133,7 @@ public function lookupCompModificationFromEqu "function: lookupCompModification
   input Absyn.Ident inIdent;
   output DAE.Mod outMod;
 algorithm
-  outMod := matchcontinue (inMod,inIdent)
+  outMod := match (inMod,inIdent)
     local
       DAE.Mod mod,mod1,mod2;
       list<DAE.SubMod> subs;
@@ -1150,7 +1150,7 @@ algorithm
         mod = selectEqMod(mod1, mod2);
       then
         mod;
-  end matchcontinue;
+  end match;
 end lookupCompModificationFromEqu;
 
 protected function selectEqMod
@@ -1996,13 +1996,13 @@ protected function mergeEq "function: mergeEq
   input Option<DAE.EqMod> inTypesEqModOption2;
   output Option<DAE.EqMod> outTypesEqModOption;
 algorithm
-  outTypesEqModOption := matchcontinue (inTypesEqModOption1,inTypesEqModOption2)
+  outTypesEqModOption := match (inTypesEqModOption1,inTypesEqModOption2)
     local Option<DAE.EqMod> e;
     // Outer assignments take precedence
     case ((e as SOME(DAE.TYPED(modifierAsExp = _))),_) then e;
     case ((e as SOME(DAE.UNTYPED(_))),_) then e;
     case (NONE(),e) then e;
-  end matchcontinue;
+  end match;
 end mergeEq;
 
 public function modEquation "function: modEquation
@@ -2010,12 +2010,12 @@ public function modEquation "function: modEquation
   input DAE.Mod inMod;
   output Option<DAE.EqMod> outTypesEqModOption;
 algorithm
-  outTypesEqModOption := matchcontinue (inMod)
+  outTypesEqModOption := match (inMod)
     local Option<DAE.EqMod> e;
     case DAE.NOMOD() then NONE();
     case DAE.REDECL(finalPrefix = _) then NONE();
     case DAE.MOD(eqModOption = e) then e;
-  end matchcontinue;
+  end match;
 end modEquation;
 
 protected function modSubsetOrEqualOrNonOverlap "
@@ -2493,7 +2493,7 @@ public function printSubs1Str "function: printSubs1Str
   output list<String> outStringLst;
 algorithm
   outStringLst:=
-  matchcontinue (inTypesSubModLst)
+  match (inTypesSubModLst)
     local
       Ident s1;
       list<Ident> res;
@@ -2506,7 +2506,7 @@ algorithm
         res = printSubs1Str(xs);
       then
         (s1 :: res);
-  end matchcontinue;
+  end match;
 end printSubs1Str;
 
 protected function printSubStr "function: printSubStr
@@ -2514,7 +2514,7 @@ protected function printSubStr "function: printSubStr
   input DAE.SubMod inSubMod;
   output String outString;
 algorithm
-  outString := matchcontinue (inSubMod)
+  outString := match (inSubMod)
     local
       Ident mod_str,res,n,str;
       DAE.Mod mod;
@@ -2532,7 +2532,7 @@ algorithm
         res = stringAppend(str, mod_str);
       then
         res;
-  end matchcontinue;
+  end match;
 end printSubStr;
 
 protected function printSubscriptsStr "function: printSubscriptsStr
@@ -2540,7 +2540,7 @@ protected function printSubscriptsStr "function: printSubscriptsStr
   input list<Integer> inIntegerLst;
   output String outString;
 algorithm
-  outString := matchcontinue (inIntegerLst)
+  outString := match (inIntegerLst)
     local
       Ident s,str,res;
       Integer x;
@@ -2554,7 +2554,7 @@ algorithm
         res = stringAppendList({"[",s,str,"]"});
       then
         res;
-  end matchcontinue;
+  end match;
 end printSubscriptsStr;
 
 protected function printSubscripts2Str "function: printSubscripts2Str
@@ -2562,7 +2562,7 @@ protected function printSubscripts2Str "function: printSubscripts2Str
   input list<Integer> inIntegerLst;
   output String outString;
 algorithm
-  outString := matchcontinue (inIntegerLst)
+  outString := match (inIntegerLst)
     local
       Ident s,str,res;
       Integer x;
@@ -2576,7 +2576,7 @@ algorithm
         res = stringAppendList({",",s,str});
       then
         res;
-  end matchcontinue;
+  end match;
 end printSubscripts2Str;
 
 protected function printEqmodStr
@@ -2734,7 +2734,7 @@ protected function getOverlap
   input list<tuple<String, DAE.SubMod>> indexes;
   output list<tuple<String, DAE.SubMod>> overlap;
 algorithm
-  overlap := matchcontinue(indexes)
+  overlap := match(indexes)
     local
       list<tuple<String, DAE.SubMod>> rest, lst, lst1, lst2;
       tuple<String, DAE.SubMod> t;
@@ -2751,7 +2751,7 @@ algorithm
         lst = listAppend(lst1, lst2);
       then
         lst;
-  end matchcontinue; 
+  end match; 
 end getOverlap;
 
 public function checkIdxModsForNoOverlap
@@ -2860,7 +2860,7 @@ protected function getFullModsFromMod
   input DAE.Mod inMod;
   output list<FullMod> outFullMods;
 algorithm
-  outFullMods := matchcontinue(inTopCref, inMod)
+  outFullMods := match(inTopCref, inMod)
     local
       list<FullMod> fullMods;
       list<DAE.SubMod> subModLst;
@@ -2886,7 +2886,7 @@ algorithm
         fullMods = getFullModsFromModRedeclare(inTopCref, tplSCodeElementModLst, finalPrefix);
       then
         fullMods;
-  end matchcontinue;
+  end match;
 end getFullModsFromMod;
 
 protected function getFullModsFromModRedeclare
@@ -2957,7 +2957,7 @@ protected function getFullModsFromSubMods
   input list<DAE.SubMod> inSubMods;
   output list<FullMod> outFullMods;
 algorithm
-  outFullMods := matchcontinue(inTopCref, inSubMods)
+  outFullMods := match(inTopCref, inSubMods)
     local
       list<FullMod> fullMods1, fullMods2, fullMods;
       list<DAE.SubMod> rest;
@@ -3005,7 +3005,7 @@ algorithm
                      fullMods2);
       then
         fullMods;
-  end matchcontinue;
+  end match;
 end getFullModsFromSubMods;
 
 public function verifySingleMod "
@@ -3017,7 +3017,7 @@ Fails on; a(x=3, redeclare Integer x)"
   input String elementName;
   input Option<Absyn.Info> infoOpt;
 algorithm 
-  _ := matchcontinue(m,pre,elementName,infoOpt)
+  _ := match(m,pre,elementName,infoOpt)
     local
       DAE.Mod mod;
       DAE.ComponentRef cref;
@@ -3037,7 +3037,7 @@ algorithm
         checkDuplicatesInFullMods(fullMods, pre, elementName, infoOpt, true);
       then
         ();
-  end matchcontinue;
+  end match;
 end verifySingleMod;
 
 protected function fullModCrefsEqual
@@ -3047,13 +3047,13 @@ protected function fullModCrefsEqual
   input FullMod inFullMod2;
   output Boolean isEqual;
 algorithm
-  isEqual := matchcontinue(inFullMod1, inFullMod2)
+  isEqual := match(inFullMod1, inFullMod2)
     local DAE.ComponentRef cr1, cr2;
     case (MOD(cr1, _), MOD(cr2, _)) then ComponentReference.crefEqualNoStringCompare(cr1, cr2);
     case (SUB_MOD(cr1, _), SUB_MOD(cr2, _)) then ComponentReference.crefEqualNoStringCompare(cr1, cr2);
     case (MOD(cr1, _), SUB_MOD(cr2, _)) then ComponentReference.crefEqualNoStringCompare(cr1, cr2);
     case (SUB_MOD(cr1, _), MOD(cr2, _)) then ComponentReference.crefEqualNoStringCompare(cr1, cr2);    
-  end matchcontinue;
+  end match;
 end fullModCrefsEqual;
 
 protected function prettyPrintFullMod
@@ -3063,7 +3063,7 @@ protected function prettyPrintFullMod
   input Integer inDepth;
   output String outStr;
 algorithm
-  outStr := matchcontinue(inFullMod, inDepth)
+  outStr := match(inFullMod, inDepth)
     local 
       DAE.Mod mod;
       DAE.SubMod subMod;
@@ -3082,7 +3082,7 @@ algorithm
       then
         str;
     
-  end matchcontinue;
+  end match;
 end prettyPrintFullMod;
 
 protected function checkDuplicatesInFullMods "helper function for verifySingleMod"

@@ -88,7 +88,7 @@ public function intSubscripts
   input list<Integer> inIntegerLst;
   output list<Subscript> outSubscriptLst;
 algorithm
-  outSubscriptLst := matchcontinue (inIntegerLst)
+  outSubscriptLst := match (inIntegerLst)
     local
       list<Subscript> xs_1;
       Integer x;
@@ -101,7 +101,7 @@ algorithm
         xs_1 = intSubscripts(xs);
       then
         (DAE.INDEX(DAE.ICONST(x)) :: xs_1);
-  end matchcontinue;
+  end match;
 end intSubscripts;
 
 public function subscriptsInt "
@@ -284,7 +284,7 @@ protected function unelabOperator "help function to unelabExpression."
 input Operator op;
 output Absyn.Operator aop;
 algorithm
-  aop := matchcontinue(op)
+  aop := match(op)
     case(DAE.ADD(_)) then Absyn.ADD();
     case(DAE.SUB(_)) then Absyn.SUB();
     case(DAE.MUL(_)) then Absyn.MUL();
@@ -321,7 +321,7 @@ algorithm
     case(DAE.GREATEREQ(_)) then Absyn.GREATEREQ();
     case(DAE.EQUAL(_)) then Absyn.EQUAL();
     case(DAE.NEQUAL(_)) then Absyn.NEQUAL();
-  end matchcontinue;
+  end match;
 end unelabOperator;
 
 public function stringifyCrefs
@@ -381,7 +381,7 @@ public function CodeVarToCref
   input DAE.Exp inExp;
   output DAE.Exp outExp;
 algorithm
-  outExp := matchcontinue(inExp)
+  outExp := match(inExp)
     local
       ComponentRef e_cref;
       Absyn.ComponentRef cref;
@@ -400,7 +400,7 @@ algorithm
         e = crefExp(e_cref);
       then 
         DAE.CALL(Absyn.IDENT("der"),{e},false,false,DAE.ET_OTHER(),DAE.NO_INLINE());
-  end matchcontinue;
+  end match;
 end CodeVarToCref;
 
 public function realToIntIfPossible
@@ -451,13 +451,13 @@ public function dimensionSizeExp
   input DAE.Dimension dim;
   output DAE.Exp exp;
 algorithm
-  exp := matchcontinue(dim)
+  exp := match(dim)
     local
       Integer i;
     
     case DAE.DIM_INTEGER(integer = i) then DAE.ICONST(i);
     case DAE.DIM_ENUM(size = i) then DAE.ICONST(i);
-  end matchcontinue;
+  end match;
 end dimensionSizeExp;
 
 public function intDimension
@@ -473,14 +473,14 @@ public function dimensionSubscript
   input DAE.Dimension dim;
   output DAE.Subscript sub;
 algorithm
-  sub := matchcontinue(dim)
+  sub := match(dim)
     local
       Integer i;
     
     case DAE.DIM_INTEGER(integer = i) then DAE.INDEX(DAE.ICONST(i));
     case DAE.DIM_ENUM(size = i) then DAE.INDEX(DAE.ICONST(i));
     case DAE.DIM_UNKNOWN() then DAE.WHOLEDIM();
-  end matchcontinue;
+  end match;
 end dimensionSubscript;
 
 /***************************************************/
@@ -659,7 +659,7 @@ public function expStripLastSubs
   input DAE.Exp inExp;
   output DAE.Exp outExp;
 algorithm
-  outExp := matchcontinue (inExp)
+  outExp := match (inExp)
     local
       ComponentRef cr,cr_1;
       Type ty;
@@ -683,7 +683,7 @@ algorithm
         op1 = Util.if_(b,DAE.UMINUS_ARR(ty),DAE.UMINUS(ty));
       then 
         DAE.UNARY(op1,e_1);
-  end matchcontinue;
+  end match;
 end expStripLastSubs;
 
 public function expStripLastIdent
@@ -693,7 +693,7 @@ public function expStripLastIdent
   output DAE.Exp outExp;
 algorithm
   outExp:=
-  matchcontinue (inExp)
+  match (inExp)
     local
       ComponentRef cr,cr_1;
       Type ty;
@@ -717,7 +717,7 @@ algorithm
         op1 = Util.if_(b,DAE.UMINUS_ARR(ty),DAE.UMINUS(ty));
       then 
         DAE.UNARY(op1,e_1);
-  end matchcontinue;
+  end match;
 end expStripLastIdent;
 
 public function prependSubscriptExp
@@ -727,7 +727,7 @@ public function prependSubscriptExp
   input Subscript subscr;
   output DAE.Exp outExp;
 algorithm
-  outExp := matchcontinue(exp,subscr)
+  outExp := match(exp,subscr)
     local 
       Type t; ComponentRef cr,cr1,cr2;
       list<Subscript> subs;
@@ -741,7 +741,7 @@ algorithm
         e = makeCrefExp(cr2, t);
     then 
       e;
-  end matchcontinue;
+  end match;
 end prependSubscriptExp;
 
 public function applyExpSubscripts "
@@ -755,7 +755,7 @@ alternative names: subsriptExp (but already taken), subscriptToAsub"
   input list<DAE.Subscript> subs; 
   output DAE.Exp res;
 algorithm
-  res := matchcontinue(e,subs)
+  res := match(e,subs)
     local 
       list<DAE.Exp> expl;
       DAE.Exp s;
@@ -770,7 +770,7 @@ algorithm
         res = applyExpSubscripts(ExpressionSimplify.simplify(makeASUB(e,{s})),subs);
       then 
         res;
-  end matchcontinue;
+  end match;
 end applyExpSubscripts ;
 
 public function unliftArray
@@ -973,7 +973,7 @@ helper function for renameVarsToUnderlineVar2 unlifts array type as much as we h
   input Type ty;
   output Type oty;
 algorithm  
-  oty := matchcontinue(subs,ty)
+  oty := match(subs,ty)
     local
       list<Subscript> rest;
     
@@ -985,7 +985,7 @@ algorithm
         ty = unliftArrayTypeWithSubs(rest,ty);
       then
         ty;
-  end matchcontinue;
+  end match;
 end unliftArrayTypeWithSubs;
 
 public function unliftArrayX "Function: unliftArrayX
@@ -1045,14 +1045,14 @@ public function arrayDimensionSetFirst
   input DAE.Dimension dimension;
   output DAE.ExpType outArrayType;
 algorithm
-  outArrayType := matchcontinue(inArrayType, dimension)
+  outArrayType := match(inArrayType, dimension)
     local
       DAE.ExpType ty;
       list<DAE.Dimension> rest_dims;
     
     case (DAE.ET_ARRAY(ty = ty, arrayDimensions = _ :: rest_dims), _)
       then DAE.ET_ARRAY(ty, dimension :: rest_dims);
-  end matchcontinue;
+  end match;
 end arrayDimensionSetFirst;
 
 /***************************************************/
@@ -1074,28 +1074,28 @@ public function expInt "returns the int value if expression is constant Integer"
 	input DAE.Exp exp;
 	output Integer i;
 algorithm
-	i := matchcontinue(exp) local Integer i2;
+	i := match(exp) local Integer i2;
     case (DAE.ICONST(integer = i2)) then i2;
     case (DAE.ENUM_LITERAL(index = i2)) then i2;
-	end matchcontinue;
+	end match;
 end expInt;
 
 public function varName "Returns the name of a Var"
   input Var v;
   output String name;
 algorithm
-  name := matchcontinue(v)
+  name := match(v)
     case(DAE.COMPLEX_VAR(name,_)) then name;
-  end matchcontinue;
+  end match;
 end varName;
 
 public function varType "Returns the type of a Var"
   input Var v;
   output Type tp;
 algorithm
-  tp := matchcontinue(v)
+  tp := match(v)
     case(DAE.COMPLEX_VAR(_,tp)) then tp;
-  end matchcontinue;
+  end match;
 end varType;
 
 public function expCref
@@ -1105,10 +1105,10 @@ public function expCref
   output ComponentRef outComponentRef;
 algorithm
   outComponentRef:=
-  matchcontinue (inExp)
+  match (inExp)
     local ComponentRef cr;
     case (DAE.CREF(componentRef = cr)) then cr;
-  end matchcontinue;
+  end match;
 end expCref;
 
 public function expCrefTuple
@@ -1118,10 +1118,10 @@ public function expCrefTuple
   output ComponentRef outComponentRef;
 algorithm
   outComponentRef:=
-  matchcontinue (inTuple)
+  match (inTuple)
     local ComponentRef cr;
     case ((DAE.CREF(componentRef = cr),_)) then cr;
-  end matchcontinue;
+  end match;
 end expCrefTuple;
 
 public function expCrefInclIfExpFactors
@@ -1217,10 +1217,10 @@ public function subscriptExp
   output DAE.Exp outExp;
 algorithm
   outExp:=
-  matchcontinue (inSubscript)
+  match (inSubscript)
     local DAE.Exp e;
     case (DAE.INDEX(exp = e)) then e;
-  end matchcontinue;
+  end match;
 end subscriptExp;
 
 public function nthArrayExp
@@ -1231,7 +1231,7 @@ public function nthArrayExp
   input Integer inInteger;
   output DAE.Exp outExp;
 algorithm
-  outExp := matchcontinue (inExp,inInteger)
+  outExp := match (inExp,inInteger)
     local
       DAE.Exp e;
       list<DAE.Exp> expl;
@@ -1241,7 +1241,7 @@ algorithm
         e = listNth(expl, indx);
       then
         e;
-  end matchcontinue;
+  end match;
 end nthArrayExp;
 
 public function expLastSubs
@@ -1251,7 +1251,7 @@ public function expLastSubs
   output list<Subscript> outSubscriptLst;
 algorithm
   outSubscriptLst:=
-  matchcontinue (inExp)
+  match (inExp)
     local
       ComponentRef cr;
       list<Subscript> subs;
@@ -1266,7 +1266,7 @@ algorithm
       equation
         subs = expLastSubs(e);
       then subs;
-  end matchcontinue;
+  end match;
 end expLastSubs;
 
 public function arrayDimension "
@@ -1287,9 +1287,9 @@ public function arrayTypeDimensions
 	input Type tp;
   output list<DAE.Dimension> dims;
 algorithm
-  dims := matchcontinue(tp)
+  dims := match(tp)
     case(DAE.ET_ARRAY(_,dims)) then dims;
-  end matchcontinue;
+  end match;
 end arrayTypeDimensions;
 
 public function subscriptDimensions "Function: subscriptDimensions
@@ -1428,12 +1428,12 @@ public function dimensionSize
   input DAE.Dimension dim;
   output Integer value;
 algorithm
-  value := matchcontinue(dim)
+  value := match(dim)
     local
       Integer i;
     case DAE.DIM_INTEGER(integer = i) then i;
     case DAE.DIM_ENUM(size = i) then i; 
-  end matchcontinue;
+  end match;
 end dimensionSize;
 
 public function dimensionSizeAll
@@ -1539,7 +1539,7 @@ public function typeofOp
   input Operator inOperator;
   output Type outType;
 algorithm
-  outType := matchcontinue (inOperator)
+  outType := match (inOperator)
     local Type t;
     
     case (DAE.ADD(ty = t)) then t;
@@ -1579,7 +1579,7 @@ algorithm
     case (DAE.EQUAL(ty = t)) then t;
     case (DAE.NEQUAL(ty = t)) then t;
     case (DAE.USERDEFINED(fqName = _)) then DAE.ET_OTHER();
-  end matchcontinue;
+  end match;
 end typeofOp;
 
 public function getRelations
@@ -2444,7 +2444,7 @@ Author: Frenkel TUD 2010-05"
   input DAE.ExpVar inVar;
   input DAE.ComponentRef inCrefPrefix;
   output DAE.Exp outCrefExp;
-algorithm outCrefExp := matchcontinue(inVar,inCrefPrefix)
+algorithm outCrefExp := match(inVar,inCrefPrefix)
   local
     String name;
     DAE.ExpType tp;
@@ -2456,7 +2456,7 @@ algorithm outCrefExp := matchcontinue(inVar,inCrefPrefix)
     e = makeCrefExp(cr, tp);
   then
     e;
- end matchcontinue;
+ end match;
 end generateCrefsExpFromExpVar;
 
 public function makeRealArray
@@ -2466,10 +2466,10 @@ public function makeRealArray
   output DAE.Exp outExp;
 algorithm
   outExp:=
-  matchcontinue (inExpLst)
+  match (inExpLst)
     local list<DAE.Exp> expl;
     case (expl) then DAE.ARRAY(DAE.ET_REAL(),false,expl);
-  end matchcontinue;
+  end match;
 end makeRealArray;
 
 public function makeRealAdd
@@ -2901,7 +2901,7 @@ public function makeZeroExpression
   output DAE.Exp outExp;
   output DAE.Type outType;
 algorithm
-  (outExp,outType) := matchcontinue(inDims)
+  (outExp,outType) := match(inDims)
     local
       Integer i;
       DAE.Dimension d;
@@ -2920,7 +2920,7 @@ algorithm
       then
         (DAE.ARRAY(DAE.ET_ARRAY(DAE.ET_REAL(),d::dims),scalar,eLst), 
          (DAE.T_ARRAY(d,ty),NONE()));      
-  end matchcontinue;
+  end match;
 end makeZeroExpression;  
 
 public function arrayFill
@@ -3037,7 +3037,7 @@ public function concatArrayType
   input DAE.ExpType arrayType2;
   output DAE.ExpType concatType;
 algorithm
-  concatType := matchcontinue(arrayType1, arrayType2)
+  concatType := match(arrayType1, arrayType2)
     local
       DAE.ExpType et;
       DAE.Dimension dim1, dim2;
@@ -3048,7 +3048,7 @@ algorithm
         dim1 = dimensionsAdd(dim1, dim2);
       then
         DAE.ET_ARRAY(et, dim1 :: dims1);
-  end matchcontinue;
+  end match;
 end concatArrayType;
 
 /***************************************************/
@@ -3333,7 +3333,7 @@ protected function replaceCrefExpSubs
   output ComponentRef outCref;
   output Integer outInteger;
 algorithm
-  (outCref,outInteger) := matchcontinue (inCref,inExpSource,inExpTarget)
+  (outCref,outInteger) := match (inCref,inExpSource,inExpTarget)
     local
       DAE.Exp source,target;
       Integer c1,c2,c;
@@ -3359,7 +3359,7 @@ algorithm
         cr1 = ComponentReference.makeCrefIdent(id, tp, subs);
       then 
         (cr1,c1);
-  end matchcontinue;
+  end match;
 end replaceCrefExpSubs;
 
 protected function replaceExpSubs
@@ -3372,7 +3372,7 @@ help function to replaceExpression. replaces expressions in subscript list
   output list<Subscript> outSubs;
   output Integer cnt;
 algorithm
-  (outSubs,cnt) := matchcontinue(subs,source,target)
+  (outSubs,cnt) := match(subs,source,target)
     local DAE.Exp e; Integer cnt1,cnt2;
     
     // empty list
@@ -3402,7 +3402,7 @@ algorithm
         cnt = cnt1 + cnt2;
       then 
         (DAE.INDEX(e)::subs,cnt);
-  end matchcontinue;
+  end match;
 end replaceExpSubs;
 
 protected function replaceExpMatrix
@@ -3451,7 +3451,7 @@ protected function replaceExpMatrix2
   output list<tuple<DAE.Exp, Boolean>> outTplExpBooleanLst;
   output Integer outInteger;
 algorithm
-  (outTplExpBooleanLst,outInteger) := matchcontinue (inTplExpBooleanLst1,inExp2,inExp3)
+  (outTplExpBooleanLst,outInteger) := match (inTplExpBooleanLst1,inExp2,inExp3)
     local
       list<tuple<DAE.Exp, Boolean>> es_1,es;
       Integer c1,c2,c;
@@ -3465,7 +3465,7 @@ algorithm
         c = c1 + c2;
       then
         (((e_1,b) :: es_1),c);
-  end matchcontinue;
+  end match;
 end replaceExpMatrix2;
 
 public function expressionCollector
@@ -3817,7 +3817,7 @@ protected function traverseExpMatrix
     replaceable type Type_a subtypeof Any;
   end FuncExpType;  
 algorithm
-  (outTplExpBooleanLstLst,outTypeA) := matchcontinue (inTplExpBooleanLstLst,func,inTypeA)
+  (outTplExpBooleanLstLst,outTypeA) := match (inTplExpBooleanLstLst,func,inTypeA)
     local
       FuncExpType rel;
       Type_a e_arg,e_arg_1,e_arg_2;
@@ -3832,7 +3832,7 @@ algorithm
         (rows_1,e_arg_2) = traverseExpMatrix(rows, rel, e_arg_1);
       then
         ((row_1 :: rows_1),e_arg_2);
-  end matchcontinue;
+  end match;
 end traverseExpMatrix;
 
 protected function traverseExpMatrix2
@@ -3851,7 +3851,7 @@ protected function traverseExpMatrix2
     replaceable type Type_a subtypeof Any;
   end FuncExpType;  
 algorithm
-  (outTplExpBooleanLst,outTypeA) := matchcontinue (inTplExpBooleanLst,func,inTypeA)
+  (outTplExpBooleanLst,outTypeA) := match (inTplExpBooleanLst,func,inTypeA)
     local
       Type_a e_arg,e_arg_1,e_arg_2;
       DAE.Exp e_1,e;
@@ -3867,7 +3867,7 @@ algorithm
         (rest_1,e_arg_2) = traverseExpMatrix2(rest, rel, e_arg_1);
       then
         (((e_1,b) :: rest_1),e_arg_2);
-  end matchcontinue;
+  end match;
 end traverseExpMatrix2;
 
 public function traverseExpList
@@ -3884,7 +3884,7 @@ public function traverseExpList
     output tuple<DAE.Exp, Type_a> tpl2;
   end funcType;   
 algorithm
-  outTpl := matchcontinue(expl,rel,ext_arg)
+  outTpl := match(expl,rel,ext_arg)
     local 
       DAE.Exp e,e1; 
       list<DAE.Exp> expl1;
@@ -3896,7 +3896,7 @@ algorithm
       ((expl1,ext_arg)) = traverseExpList(expl,rel,ext_arg);
     then 
       ((e1::expl1,ext_arg)); 
-  end matchcontinue;
+  end match;
 end traverseExpList;
 
 public function traverseExpTopDown
@@ -4167,7 +4167,7 @@ protected function traverseExpMatrixTopDown
     output tuple<DAE.Exp, Boolean, Type_a> outTpl;
   end FuncExpType;   
 algorithm
-  (outTplExpBooleanLstLst,outTypeA) := matchcontinue (inTplExpBooleanLstLst,func,inTypeA)
+  (outTplExpBooleanLstLst,outTypeA) := match (inTplExpBooleanLstLst,func,inTypeA)
     local
       FuncExpType rel;
       Type_a e_arg,e_arg_1,e_arg_2;
@@ -4182,7 +4182,7 @@ algorithm
         (rows_1,e_arg_2) = traverseExpMatrixTopDown(rows, rel, e_arg_1);
       then
         ((row_1 :: rows_1),e_arg_2);
-  end matchcontinue;
+  end match;
 end traverseExpMatrixTopDown;
 
 protected function traverseExpMatrix2TopDown
@@ -4200,7 +4200,7 @@ protected function traverseExpMatrix2TopDown
     output tuple<DAE.Exp, Boolean, Type_a> outTpl;
   end FuncExpType;  
 algorithm
-  (outTplExpBooleanLst,outTypeA) := matchcontinue (inTplExpBooleanLst,func,inTypeA)
+  (outTplExpBooleanLst,outTypeA) := match (inTplExpBooleanLst,func,inTypeA)
     local
       Type_a e_arg,e_arg_1,e_arg_2;
       DAE.Exp e_1,e;
@@ -4216,7 +4216,7 @@ algorithm
         (rest_1,e_arg_2) = traverseExpMatrix2TopDown(rest, rel, e_arg_1);
       then
         (((e_1,b) :: rest_1),e_arg_2);
-  end matchcontinue;
+  end match;
 end traverseExpMatrix2TopDown;
 
 public function traverseExpListTopDown
@@ -4233,14 +4233,14 @@ public function traverseExpListTopDown
     output tuple<DAE.Exp, Boolean, Type_a> outTpl;
   end funcType;   
 algorithm
-  outTpl := matchcontinue(expl,rel,ext_arg)
+  outTpl := match(expl,rel,ext_arg)
   local DAE.Exp e,e1; list<DAE.Exp> expl1;
     case({},_,ext_arg) then (({},ext_arg));
     case(e::expl,rel,ext_arg) equation
       ((e1,ext_arg)) = traverseExpTopDown(e, rel, ext_arg);
       ((expl1,ext_arg)) = traverseExpListTopDown(expl,rel,ext_arg);
     then ((e1::expl1,ext_arg)); 
-  end matchcontinue;
+  end match;
 end traverseExpListTopDown;
 
 public function traverseExpOpt "Calls traverseExp for SOME(exp) and does nothing for NONE"
@@ -4255,13 +4255,13 @@ public function traverseExpOpt "Calls traverseExp for SOME(exp) and does nothing
   end FuncExpType;
   replaceable type Type_a subtypeof Any;
 algorithm
-  outTpl:= matchcontinue (inExp,func,inTypeA)
+  outTpl:= match (inExp,func,inTypeA)
   local DAE.Exp e;
     case(NONE(),_,inTypeA) then ((NONE(),inTypeA));
     case(SOME(e),func,inTypeA) equation
       ((e,inTypeA)) = traverseExp(e,func,inTypeA);
      then ((SOME(e),inTypeA));
-  end matchcontinue;
+  end match;
 end traverseExpOpt;
 
 public function extractCrefsFromExp "
@@ -4269,7 +4269,7 @@ Author: BZ 2008-06, Extracts all ComponentRef from an Expression."
   input DAE.Exp inExp;
   output list<ComponentRef> ocrefs;
 algorithm 
-  ocrefs := matchcontinue(inExp)
+  ocrefs := match(inExp)
     local 
       list<ComponentRef> crefs;  
     
@@ -4278,7 +4278,7 @@ algorithm
         ((_,crefs)) = traverseExp(inExp, traversingComponentRefFinder, {});
       then
         crefs;
-  end matchcontinue;
+  end match;
 end extractCrefsFromExp;
 
 public function traversingComponentRefFinder "
@@ -4313,14 +4313,14 @@ Author: Frenkel TUD 2010-02, Extracts all Division DAE.Exp from an Expression."
   input DAE.Exp inExp;
   output list<DAE.Exp> outExps;
 algorithm 
-  outExps := matchcontinue(inExp)
+  outExps := match(inExp)
     local list<DAE.Exp> exps;  
     case(inExp)
       equation
         ((_,exps)) = traverseExp(inExp, traversingDivExpFinder, {});
       then
         exps;
-  end matchcontinue;
+  end match;
 end extractDivExpFromExp;
 
 protected function traversingDivExpFinder "
