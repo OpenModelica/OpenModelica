@@ -165,7 +165,6 @@ bool OmcCommunicator::establishConnection()
     if (!user) { user = "nobody"; }
 
     objectRefFile.setFileName(QDir::tempPath() + QDir::separator() + "openmodelica." + *(new QString(user)) + ".objid");
-    QMessageBox::warning( 0, "Warning", objectRefFile.fileName(), "OK" );
 
 #endif
 
