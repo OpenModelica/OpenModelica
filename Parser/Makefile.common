@@ -27,7 +27,7 @@ HFILES = \
   MetaModelica_Lexer.h \
   MetaModelica_Lexer_BaseModelica_Lexer.h \
   Modelica_3_Lexer.h \
-  Modelica_3_Lexer_BaseModelica_Lexer.h 
+  Modelica_3_Lexer_BaseModelica_Lexer.h
 
 OBJS = \
 MetaModelica_Lexer_BaseModelica_Lexer.o MetaModelica_Lexer.o \
@@ -41,7 +41,7 @@ ModelicaParser_rml.o: ModelicaParser.c ModelicaParser.h ModelicaParserCommon.h .
 ModelicaParser_omc.o: ModelicaParser.c ModelicaParser.h ModelicaParserCommon.h ../Compiler/OpenModelicaBootstrappingHeader.h
 
 Parser_rml.o: $(HFILES) parse.c
-Parser_omc.o: $(HFILES) parse.c
+Parser_omc.o: $(HFILES) parse.c ../c_runtime/rml_compatibility.h
 
 libomparse_rml.a: Parser_rml.o $(OBJS) ModelicaParser_rml.o
 	rm -f $@
