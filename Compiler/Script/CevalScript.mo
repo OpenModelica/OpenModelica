@@ -1422,7 +1422,7 @@ algorithm
         (cache,Values.BOOL(true),st);
      
       // plot without sendData support is plot2()
-    case (cache,env,DAE.CALL(Absyn.IDENT("plot"), expVars, tuple_, builtin, ty, inlineType),st,msg)
+    case (cache,env,DAE.CALL(path=Absyn.IDENT("plot")),st,msg)
       equation
         false = System.getHasSendDataSupport();
       then (cache,Values.STRING("OpenModelica is compiled without Qt. Configure it with-sendData-Qt and recompile. Or use a command like plot2() that does not require Qt."),st);
