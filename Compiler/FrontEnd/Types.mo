@@ -3592,10 +3592,12 @@ end getPropType;
 
 public function createEmptyTypeMemory
 "@author: adrpo
-  creates an array, with one element for each record in TType!"
+  creates an array, with one element for each record in TType!
+  Note: This has to be at least 4 larger than the number of records in DAE.Type,
+  due to the way bootstrapping indexes records."
   output TypeMemoryEntryListArray tyMemory;
 algorithm
-  tyMemory := arrayCreate(21, {});
+  tyMemory := arrayCreate(30, {});
 end createEmptyTypeMemory;
 
 // define constants so they don't consume memory!
