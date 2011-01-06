@@ -615,7 +615,7 @@ algorithm
       equation
         _ = BaseHashTable.get(id, ht);
       then ((pat,tpl));
-    else inTpl;
+    else simplifyPattern(inTpl);
   end matchcontinue;
 end removePatternAsBinding;
 
@@ -695,7 +695,38 @@ algorithm
   end match;
 end addCasesLocalCref;
 
+protected function simplifyPattern
+  "Simplifies a pattern, for example (_,_,_)=>_. For use with traversePattern"
+  input tuple<DAE.Pattern,A> itpl;
+  output tuple<DAE.Pattern,A> otpl;
+  replaceable type A subtypeof Any;
+algorithm
+  otpl := match itpl
+    local
+      Absyn.Path name;
+      A a;
+      DAE.Pattern pat;
+      list<tuple<DAE.Pattern, String, DAE.ExpType>> namedPatterns;
+      list<DAE.Pattern> patterns;
+    case ((DAE.PAT_CALL_NAMED(name, namedPatterns),a))
+      equation
+        namedPatterns = Util.listFilter(namedPatterns, filterEmptyPattern);
+        pat = Util.if_(Util.isListEmpty(namedPatterns), DAE.PAT_WILD(), DAE.PAT_CALL_NAMED(name, namedPatterns));
+      then ((pat,a));
+    case ((pat as DAE.PAT_CALL_TUPLE(patterns),a))
+      equation
+        pat = Util.if_(allPatternsWild(patterns), DAE.PAT_WILD(), pat);
+      then ((pat,a));
+    case ((pat as DAE.PAT_META_TUPLE(patterns),a))
+      equation
+        pat = Util.if_(allPatternsWild(patterns), DAE.PAT_WILD(), pat);
+      then ((pat,a));
+    else itpl;
+  end match;
+end simplifyPattern;
+
 protected function addPatternAsBindings
+  "Traverse patterns and as-bindings as variable references in the hashtable"
   input tuple<DAE.Pattern,HashTableStringToPath.HashTable> inTpl;
   output tuple<DAE.Pattern,HashTableStringToPath.HashTable> outTpl;
 algorithm
@@ -1530,4 +1561,16 @@ algorithm
   end match;
 end resultExps;
 
+protected function allPatternsWild
+  "Returns true if all patterns in the list are wildcards"
+  input list<DAE.Pattern> pats;
+  output Boolean b;
+algorithm
+  b := match pats
+    case {} then true;
+    case DAE.PAT_WILD()::pats then allPatternsWild(pats);
+    else false;
+  end match;
+end allPatternsWild;
+  
 end Patternm;
