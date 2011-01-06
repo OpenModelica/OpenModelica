@@ -978,10 +978,11 @@ protected function lowerEqn
   input DAE.Element inElement;
   output BackendDAE.Equation outEquation;
 algorithm
-  outEquation :=  matchcontinue (inElement)
-    local DAE.Exp e1,e2;
-          DAE.ComponentRef cr1,cr2;
-          DAE.ElementSource source "the element source";
+  outEquation :=  match (inElement)
+    local
+      DAE.Exp e1,e2;
+      DAE.ComponentRef cr1,cr2;
+      DAE.ElementSource source "the element source";
 
     case (DAE.EQUATION(exp = e1,scalar = e2,source = source))
       equation
@@ -1019,7 +1020,7 @@ algorithm
         e2 = ExpressionSimplify.simplify(e2);
       then
         BackendDAE.EQUATION(e1,e2,source);
-  end matchcontinue;
+  end match;
 end lowerEqn;
 
 protected function lowerArrEqn

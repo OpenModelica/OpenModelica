@@ -259,7 +259,7 @@ input list<SCode.Element> els;
 output list<String> outStrings;
 
 algorithm
-  outStrings := matchcontinue(els)
+  outStrings := match(els)
   local
     list<SCode.Element> rest;
     list<String> slst;
@@ -271,7 +271,7 @@ algorithm
         slst = getListOfStrings(rest);
         then n::slst;
     case(_) then fail();
-  end matchcontinue;
+  end match;
 end getListOfStrings;
 
 //Check if a class has a certain restriction, added by simbj

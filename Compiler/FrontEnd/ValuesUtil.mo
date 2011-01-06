@@ -2357,7 +2357,7 @@ public function nthnthArrayelt "function: nthArrayelt
   output Value outValue;
 algorithm
   outValue:=
-  matchcontinue (inLst, inValue,lastValue)
+  match (inLst, inValue,lastValue)
     local
       Integer n_1,n;
       Value res,preRes;
@@ -2372,7 +2372,7 @@ algorithm
       then
         res;
     case(_,_,_) then fail();
-  end matchcontinue;
+  end match;
 end nthnthArrayelt;
 
 public function valueInteger

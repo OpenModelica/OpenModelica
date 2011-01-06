@@ -925,6 +925,7 @@ algorithm
       */
     case (Absyn.MATCHCONTINUE(),DAE.CASE(patterns=pats,body={},result=NONE(),info=info)::rest,prevPatterns,acc,_)
       equation
+        false = RTOpts.debugFlag("patternmSkipMCDCE");
         Error.assertionOrAddSourceMessage(not RTOpts.debugFlag("patternmAllInfo"), Error.META_DEAD_CODE, {"Empty matchcontinue case"}, info);
         acc = caseDeadCodeEliminiation(matchType,rest,pats::prevPatterns,acc,true);
       then acc;

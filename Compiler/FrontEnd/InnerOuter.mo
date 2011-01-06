@@ -821,7 +821,7 @@ protected function addOuterConnectIfEmpty
   input Absyn.Info info;
   output list<Connect.Set> outSetLst;
 algorithm
-  outSetLst := matchcontinue(cache,env,inIH,pre,setLst,added,cr1,io1,f1,cr2,io2,f2,info)
+  outSetLst := match(cache,env,inIH,pre,setLst,added,cr1,io1,f1,cr2,io2,f2,info)
      local SCode.Variability vt1,vt2;
        DAE.Type t1,t2;
        Boolean flowPrefix,streamPrefix;
@@ -856,7 +856,7 @@ algorithm
         // print("#FAILURE# in: addOuterConnectIfEmpty:__ " +& ComponentReference.printComponentRefStr(cr1) +& " " +& ComponentReference.printComponentRefStr(cr2) +& "\n");
       then fail();
 
-  end matchcontinue;
+  end match;
 end addOuterConnectIfEmpty;
 
 protected function addOuterConnectIfEmptyNoEnv
@@ -1655,7 +1655,7 @@ public function updateInstHierarchy
   input InstInner inInstInner;
   output InstHierarchy outIH;
 algorithm
-  outIH := matchcontinue(inIH,inPrefix,inInnerOuter,inInstInner)
+  outIH := match(inIH,inPrefix,inInnerOuter,inInstInner)
     local
       TopInstance tih;
       InstHierarchy restIH, ih;
@@ -1714,7 +1714,7 @@ algorithm
         //   PrefixUtil.printPrefixStr(inPrefix) +& "/" +& name);
       then
         fail();
-  end matchcontinue;
+  end match;
 end updateInstHierarchy;
 
 public function addOuterPrefixToIH
@@ -1780,7 +1780,7 @@ public function prefixOuterCrefWithTheInnerPrefix
   input Prefix.Prefix inPrefix;
   output DAE.ComponentRef outInnerComponentRef;
 algorithm
-  outInnerComponentRef := matchcontinue(inIH, inOuterComponentRef, inPrefix)
+  outInnerComponentRef := match(inIH, inOuterComponentRef, inPrefix)
     local
       DAE.ComponentRef outerCrefPrefix, fullCref, innerCref, innerCrefPrefix;
       OuterPrefixes outerPrefixes;
@@ -1814,7 +1814,7 @@ algorithm
         //   PrefixUtil.printPrefixStr(inPrefix) +& "/" +& ComponentReference.printComponentRefStr(inOuterComponentRef));
       then
         fail();        
-  end matchcontinue;
+  end match;
 end prefixOuterCrefWithTheInnerPrefix;
 
 protected function changeOuterReferenceToInnerReference

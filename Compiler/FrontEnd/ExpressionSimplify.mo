@@ -2622,7 +2622,7 @@ protected function simplifyBinaryConst
   input DAE.Exp inExp3;
   output DAE.Exp outExp;
 algorithm
-  outExp := matchcontinue (inOperator1,inExp2,inExp3)
+  outExp := match (inOperator1,inExp2,inExp3)
     local
       Integer ie1,ie2,ie3;
       Real e2_1,e1_1,v1,v2;
@@ -2837,7 +2837,7 @@ algorithm
     case (op,exp1,exp2)
       then
         fail();
-  end matchcontinue;
+  end match;
 end simplifyBinaryConst;
 
 public function safeIntOp

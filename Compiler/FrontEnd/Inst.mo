@@ -194,7 +194,7 @@ public function instantiate
   output DAE.DAElist outDAElist;
   output SCode.Program outProgram;
 algorithm
-  (outCache,outIH,outDAElist,outProgram) := matchcontinue (inCache,inIH,inProgram)
+  (outCache,outIH,outDAElist,outProgram) := match (inCache,inIH,inProgram)
     local
       list<SCode.Class> pnofunc,pfunc,p,p_1;
       list<Env.Frame> env,envimpl,envimpl_1;
@@ -230,7 +230,7 @@ algorithm
         //Debug.fprintln("failtrace", "Inst.instantiate failed");
       then
         fail();
-  end matchcontinue;
+  end match;
 end instantiate;
 
 public function instantiateImplicit
@@ -1011,7 +1011,7 @@ protected function instProgram
   output InstanceHierarchy outIH;
   output DAE.DAElist outDae;
 algorithm
-  (outCache,outIH,outDae) := matchcontinue (inCache,inEnv,inIH,inProgram)
+  (outCache,outIH,outDae) := match (inCache,inEnv,inIH,inProgram)
     local
       list<Env.Frame> env,env_1;
       DAE.DAElist dae,dae1,dae2;
@@ -1085,7 +1085,7 @@ algorithm
       then
         fail();
 
-  end matchcontinue;
+  end match;
 end instProgram;
 
 protected function instProgramImplicit
@@ -1605,7 +1605,7 @@ protected function instClassBasictype
   output ClassInf.State outState;
 algorithm
   (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outTypeVars,outState):=
-  matchcontinue (inCache,inEnv,inIH,store,inMod,inPrefix,inSets,inClass,inInstDims,inBoolean,inCallingScope)
+  match (inCache,inEnv,inIH,store,inMod,inPrefix,inSets,inClass,inInstDims,inBoolean,inCallingScope)
     local
       list<Env.Frame> env_1,env_3,env;
       ClassInf.State ci_state,ci_state_1;
@@ -1644,7 +1644,7 @@ algorithm
         //Debug.fprintln("failtrace", "- Inst.instClassBasictype: " +& n +& " failed");
       then
         fail();
-  end matchcontinue;
+  end match;
 end instClassBasictype;
 
 /*
@@ -11504,7 +11504,7 @@ protected function daeDeclare3
   input Boolean declareComplexVars;
   output DAE.DAElist outDae;
 algorithm 
-  outDae := matchcontinue (inComponentRef,inType,inFlow,inStream,inVarKind,inDirection,protection,inExpExpOption,inInstDims,
+  outDae := match (inComponentRef,inType,inFlow,inStream,inVarKind,inDirection,protection,inExpExpOption,inInstDims,
                                      inStartValue,inDAEVariableAttributesOption,inAbsynCommentOption,io,finalPrefix,source,declareComplexVars)
     local
       DAE.DAElist dae;
@@ -11542,7 +11542,7 @@ algorithm
         //Debug.fprintln("failtrace", "- Inst.daeDeclare3 failed");
       then
         fail();
-  end matchcontinue;
+  end match;
 end daeDeclare3;
 
 protected function makeDaeProt 
@@ -14063,7 +14063,7 @@ So we print errors for those instead."
   input SCode.Variability variability;
   input Absyn.ComponentRef cref;
 algorithm
-  _ := matchcontinue (variability,cref)
+  _ := match (variability,cref)
     local
       String crefStr,varStr;
     case (SCode.VAR(),_) then ();
@@ -14075,7 +14075,7 @@ algorithm
         varStr = SCode.variabilityString(variability);
         Error.addMessage(Error.CIRCULAR_PARAM,{crefStr,varStr});*/
       then fail();
-  end matchcontinue;
+  end match;
 end checkVariabilityOfUpdatedComponent;
 
 protected function makeFullyQualified2

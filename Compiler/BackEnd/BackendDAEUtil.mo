@@ -1870,7 +1870,7 @@ protected function rangeIntExprs
   input DAE.Exp range;
   output list<DAE.Exp> integers;
 algorithm
-  integers := matchcontinue(range)
+  integers := match(range)
     local
       list<DAE.Exp> arrayElements;
       Integer start, stop;
@@ -1887,7 +1887,7 @@ algorithm
     
     case (_) then fail();
     
-  end matchcontinue;
+  end match;
 end rangeIntExprs;
 
 public function equationNth "function: equationNth

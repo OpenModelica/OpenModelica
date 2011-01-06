@@ -105,7 +105,7 @@ public function elabMod "
   output Env.Cache outCache;
   output DAE.Mod outMod;
 algorithm
-  (outCache,outMod) := matchcontinue (inCache,inEnv,inIH,inPrefix,inMod,inBoolean,info)
+  (outCache,outMod) := match (inCache,inEnv,inIH,inPrefix,inMod,inBoolean,info)
     local
       Boolean impl,finalPrefix;
       list<DAE.SubMod> subs_1;
@@ -177,7 +177,7 @@ algorithm
         /* elab mod can fail? */
       then
         fail();
-  end matchcontinue;
+  end match;
 end elabMod;
 
 public function elabModForBasicType "

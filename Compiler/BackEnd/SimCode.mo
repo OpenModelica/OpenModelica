@@ -5961,10 +5961,10 @@ protected function simvarFixed
   output Boolean fixed_;
 algorithm
   fixed_ :=
-  matchcontinue (simvar)
+  match (simvar)
     case (SIMVAR(isFixed=fixed_)) then fixed_;
     case (_) then fail();
-  end matchcontinue;
+  end match;
 end simvarFixed;
 
 protected function nonFixifyIfHasInit
@@ -7200,7 +7200,7 @@ protected function getVectorizedCrefFromExpMatrix
   input list<tuple<DAE.Exp, Boolean>> column; //One column in a matrix.
   output Expression.ComponentRef outComponentRef; //The expanded column
 algorithm
-  outComponentRef := matchcontinue (column)
+  outComponentRef := match (column)
     local
       list<tuple<DAE.Exp, Boolean>> col;
       list<Expression.ComponentRef> crefs,crefs_1;
@@ -7221,7 +7221,7 @@ algorithm
       equation
       then
         fail();
-  end matchcontinue;
+  end match;
 end getVectorizedCrefFromExpMatrix;
 
 protected function singleAlgorithmSection

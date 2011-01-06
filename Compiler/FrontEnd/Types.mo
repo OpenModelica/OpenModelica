@@ -5693,7 +5693,7 @@ return a reference to the regular function."
   input Type inType;
   output Type outType;
 algorithm
-  outType := matchcontinue (inType)
+  outType := match (inType)
     local
       list<FuncArg> funcArgs1,funcArgs2;
       list<String> funcArgNames;
@@ -5727,7 +5727,7 @@ algorithm
       equation
         // Debug.fprintln("failtrace", "- Types.makeFunctionPolymorphicReference failed");
       then fail();
-  end matchcontinue;
+  end match;
 end makeFunctionPolymorphicReference;
 
 protected function makeFunctionPolymorphicReferenceResType

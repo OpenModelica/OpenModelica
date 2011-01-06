@@ -3180,7 +3180,7 @@ protected function extractFilePrefix "function extractFilePrefix
   output String outString;
 algorithm
   (outCache,outString):=
-  matchcontinue (inCache,inEnv,inExp,inInteractiveSymbolTable,inMsg)
+  match (inCache,inEnv,inExp,inInteractiveSymbolTable,inMsg)
     local
       String prefix_str;
       Interactive.InteractiveSymbolTable st;
@@ -3199,7 +3199,7 @@ algorithm
       then
         (cache,prefix_str);
     case (_,_,_,_,_) then fail();
-  end matchcontinue;
+  end match;
 end extractFilePrefix;
 
 public function cevalAstExp
@@ -4487,7 +4487,7 @@ public function buildModelBeast "function buildModelBeast
   output String outString4 "initFileName";
 algorithm
   (outCache,outString1,outString2,outInteractiveSymbolTable3,outString4):=
-  matchcontinue (inCache,inEnv,inExp,inInteractiveSymbolTable,inMsg)
+  match (inCache,inEnv,inExp,inInteractiveSymbolTable,inMsg)
     local
       Values.Value ret_val;
       Interactive.InteractiveSymbolTable st,st_1,st2;
@@ -4552,7 +4552,7 @@ algorithm
     case (_,_,_,_,_)
       then
         fail();
-  end matchcontinue;
+  end match;
 end buildModelBeast;
 
 public function generateMakefileHeader

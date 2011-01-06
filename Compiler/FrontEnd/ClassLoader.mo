@@ -228,7 +228,7 @@ protected function loadCompletePackageFromMp
   input Absyn.Program inProgram;
   output Absyn.Program outProgram;
 algorithm
-  outProgram := matchcontinue (inIdent,inString,inWithin,inProgram)
+  outProgram := match (inIdent,inString,inWithin,inProgram)
     local
       String pd,mp_1,packagefile,subdirstr,pack,mp;
       list<Absyn.Class> p1,oldc;
@@ -283,7 +283,7 @@ algorithm
         // print("ClassLoader.loadCompletePackageFromMp failed\n");
       then fail();
 
-  end matchcontinue;
+  end match;
 end loadCompletePackageFromMp;
 
 protected function loadCompleteSubdirs

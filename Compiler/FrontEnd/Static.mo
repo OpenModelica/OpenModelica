@@ -5040,7 +5040,7 @@ protected function elabBuiltinSimplify "function: elabBuiltinSimplify
   output DAE.Properties outProperties;
 algorithm
   (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
+  match (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
     local
       list<Absyn.ComponentRef> cref_list;
       Interactive.InteractiveSymbolTable symbol_table;
@@ -5076,7 +5076,7 @@ algorithm
         // print("#-- elab_builtin_simplify: Couldn't elaborate simplify()\n");
       then
         fail();
-  end matchcontinue;
+  end match;
 end elabBuiltinSimplify;
 
 protected function absynCrefListToInteractiveVarList "function: absynCrefListToInteractiveVarList
@@ -9645,7 +9645,7 @@ protected function elabInputArgs
   output Types.PolymorphicBindings outPolymorphicBindings;
 algorithm
   (outCache,outExpExpLst,outSlotLst,outTypesConstLst,outPolymorphicBindings):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inAbsynNamedArgLst,inSlotLst,checkTypes,inBoolean,polymorphicBindings,inPrefix,info)
+  match (inCache,inEnv,inAbsynExpLst,inAbsynNamedArgLst,inSlotLst,checkTypes,inBoolean,polymorphicBindings,inPrefix,info)
     local
       list<tuple<Ident, tuple<DAE.TType, Option<Absyn.Path>>>> farg;
       list<Slot> slots_1,newslots,slots;
@@ -9692,7 +9692,7 @@ algorithm
     // fail trace
     else
       /* FAILTRACE REMOVE equation Debug.fprint("failtrace","elabInputArgs failed\n"); */ then fail();
-  end matchcontinue;
+  end match;
 end elabInputArgs;
 
 protected function makeEmptySlots
