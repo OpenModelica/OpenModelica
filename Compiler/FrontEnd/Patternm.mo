@@ -558,8 +558,7 @@ algorithm
         // Do DCE before converting mc to m
         matchTy = optimizeContinueToMatch(matchTy,elabCases,info);
         elabCases = optimizeContinueJumps(matchTy, elabCases);
-        exp = DAE.MATCHEXPRESSION(matchTy,elabExps,matchDecls,elabCases,et);
-        (elabCases,ht) = traverseCases(elabCases, addLocalCref, HashTableStringToPath.emptyHashTable());
+        ht = getUsedLocalCrefs(RTOpts.debugFlag("patternmSkipFilterUnusedAsBindings"),DAE.MATCHEXPRESSION(matchTy,elabExps,matchDecls,elabCases,et));
         (matchDecls,ht) = filterUnusedDecls(matchDecls,ht,{},HashTableStringToPath.emptyHashTable());
         elabCases = filterUnusedAsBindings(elabCases,ht);
         exp = DAE.MATCHEXPRESSION(matchTy,elabExps,matchDecls,elabCases,et);
@@ -572,6 +571,25 @@ algorithm
       then fail();
   end matchcontinue;
 end elabMatchExpression;
+
+protected function getUsedLocalCrefs
+  input Boolean skipFilterUnusedAsBindings "if true, traverse the whole expression; else only the bodies and results";
+  input DAE.Exp exp;
+  output HashTableStringToPath.HashTable ht;
+algorithm
+  ht := match (skipFilterUnusedAsBindings,exp)
+    local
+      list<DAE.MatchCase> cases;
+    case (true,exp)
+      equation
+        ((_,ht)) = Expression.traverseExp(exp, addLocalCref, HashTableStringToPath.emptyHashTable());
+      then ht;
+    case (false,DAE.MATCHEXPRESSION(cases=cases))
+      equation
+        (_,ht) = traverseCases(cases, addLocalCref, HashTableStringToPath.emptyHashTable());
+      then ht;
+  end match;
+end getUsedLocalCrefs;
 
 protected function filterUnusedAsBindings
   input list<DAE.MatchCase> cases;
