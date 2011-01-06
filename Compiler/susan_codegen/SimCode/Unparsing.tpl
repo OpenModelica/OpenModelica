@@ -40,7 +40,8 @@ match elt
       let fieldsStr=(p.elementLst |> SCode.COMPONENT(__) => '"<%component%>"'; separator=",")
       let omcname='<%pack%>_<%pathString(r.name)%>_<%stringReplace(c.name,"_","__")%>'
       let nElts=listLength(p.elementLst)
-      /* <%omcname%> (index=<%r.index%>) */
+      let fullname='<%pack%>__<%stringReplace(c.name,"_","_5f")%>'
+      let ctor=intAdd(3,r.index)
       <<
       #ifdef ADD_METARECORD_DEFINTIONS
       #ifndef <%omcname%>__desc_added
@@ -55,9 +56,18 @@ match elt
       #else /* Only use the file as a header */
       extern struct record_description <%omcname%>__desc;
       #endif
-      #define <%pack%>__<%stringReplace(c.name,"_","_5f")%>_3dBOX<%nElts%> <%intAdd(3,r.index)%>
-      #define <%pack%>__<%stringReplace(c.name,"_","_5f")%><%if p.elementLst then '(<%fields%>)'%> (mmc_mk_box<%intAdd(1,listLength(p.elementLst))%>(<%intAdd(3,r.index)%>,&<%omcname%>__desc<%if p.elementLst then ',<%fields%>'%>))<%\n%>>>
-
+      #define <%fullname%>_3dBOX<%nElts%> <%ctor%>
+      <% if p.elementLst then
+        <<
+        #define <%fullname%>(<%fields%>) (mmc_mk_box<%intAdd(1,listLength(p.elementLst))%>(<%ctor%>,&<%omcname%>__desc,<%fields%>))<%\n%>
+        >>
+        else
+        <<
+        static const MMC_DEFSTRUCTLIT(<%fullname%>__struct,1,<%ctor%>) {&<%omcname%>__desc}};
+        static void *<%fullname%> = MMC_REFSTRUCTLIT(<%fullname%>__struct);<%\n%>
+        >>
+      %>
+      >>
   case SCode.CLASSDEF(__) then classExternalHeader(classDef,pack)
 end elementExternalHeader;
 

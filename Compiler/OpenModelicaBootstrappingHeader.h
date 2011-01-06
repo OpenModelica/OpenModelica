@@ -211,7 +211,8 @@ struct record_description Values_Value_NORETCALL__desc = {
 extern struct record_description Values_Value_NORETCALL__desc;
 #endif
 #define Values__NORETCALL_3dBOX0 16
-#define Values__NORETCALL (mmc_mk_box1(16,&Values_Value_NORETCALL__desc))
+static const MMC_DEFSTRUCTLIT(Values__NORETCALL__struct,1,16) {&Values_Value_NORETCALL__desc}};
+static void *Values__NORETCALL = MMC_REFSTRUCTLIT(Values__NORETCALL__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Values_Value_META__FAIL__desc_added
 #define Values_Value_META__FAIL__desc_added
@@ -226,7 +227,8 @@ struct record_description Values_Value_META__FAIL__desc = {
 extern struct record_description Values_Value_META__FAIL__desc;
 #endif
 #define Values__META_5fFAIL_3dBOX0 17
-#define Values__META_5fFAIL (mmc_mk_box1(17,&Values_Value_META__FAIL__desc))
+static const MMC_DEFSTRUCTLIT(Values__META_5fFAIL__struct,1,17) {&Values_Value_META__FAIL__desc}};
+static void *Values__META_5fFAIL = MMC_REFSTRUCTLIT(Values__META_5fFAIL__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Values_IntRealOp_MULOP__desc_added
 #define Values_IntRealOp_MULOP__desc_added
@@ -241,7 +243,8 @@ struct record_description Values_IntRealOp_MULOP__desc = {
 extern struct record_description Values_IntRealOp_MULOP__desc;
 #endif
 #define Values__MULOP_3dBOX0 3
-#define Values__MULOP (mmc_mk_box1(3,&Values_IntRealOp_MULOP__desc))
+static const MMC_DEFSTRUCTLIT(Values__MULOP__struct,1,3) {&Values_IntRealOp_MULOP__desc}};
+static void *Values__MULOP = MMC_REFSTRUCTLIT(Values__MULOP__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Values_IntRealOp_DIVOP__desc_added
 #define Values_IntRealOp_DIVOP__desc_added
@@ -256,7 +259,8 @@ struct record_description Values_IntRealOp_DIVOP__desc = {
 extern struct record_description Values_IntRealOp_DIVOP__desc;
 #endif
 #define Values__DIVOP_3dBOX0 4
-#define Values__DIVOP (mmc_mk_box1(4,&Values_IntRealOp_DIVOP__desc))
+static const MMC_DEFSTRUCTLIT(Values__DIVOP__struct,1,4) {&Values_IntRealOp_DIVOP__desc}};
+static void *Values__DIVOP = MMC_REFSTRUCTLIT(Values__DIVOP__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Values_IntRealOp_ADDOP__desc_added
 #define Values_IntRealOp_ADDOP__desc_added
@@ -271,7 +275,8 @@ struct record_description Values_IntRealOp_ADDOP__desc = {
 extern struct record_description Values_IntRealOp_ADDOP__desc;
 #endif
 #define Values__ADDOP_3dBOX0 5
-#define Values__ADDOP (mmc_mk_box1(5,&Values_IntRealOp_ADDOP__desc))
+static const MMC_DEFSTRUCTLIT(Values__ADDOP__struct,1,5) {&Values_IntRealOp_ADDOP__desc}};
+static void *Values__ADDOP = MMC_REFSTRUCTLIT(Values__ADDOP__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Values_IntRealOp_SUBOP__desc_added
 #define Values_IntRealOp_SUBOP__desc_added
@@ -286,7 +291,8 @@ struct record_description Values_IntRealOp_SUBOP__desc = {
 extern struct record_description Values_IntRealOp_SUBOP__desc;
 #endif
 #define Values__SUBOP_3dBOX0 6
-#define Values__SUBOP (mmc_mk_box1(6,&Values_IntRealOp_SUBOP__desc))
+static const MMC_DEFSTRUCTLIT(Values__SUBOP__struct,1,6) {&Values_IntRealOp_SUBOP__desc}};
+static void *Values__SUBOP = MMC_REFSTRUCTLIT(Values__SUBOP__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Values_IntRealOp_POWOP__desc_added
 #define Values_IntRealOp_POWOP__desc_added
@@ -301,7 +307,8 @@ struct record_description Values_IntRealOp_POWOP__desc = {
 extern struct record_description Values_IntRealOp_POWOP__desc;
 #endif
 #define Values__POWOP_3dBOX0 7
-#define Values__POWOP (mmc_mk_box1(7,&Values_IntRealOp_POWOP__desc))
+static const MMC_DEFSTRUCTLIT(Values__POWOP__struct,1,7) {&Values_IntRealOp_POWOP__desc}};
+static void *Values__POWOP = MMC_REFSTRUCTLIT(Values__POWOP__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Values_IntRealOp_LESSEQOP__desc_added
 #define Values_IntRealOp_LESSEQOP__desc_added
@@ -316,7 +323,8 @@ struct record_description Values_IntRealOp_LESSEQOP__desc = {
 extern struct record_description Values_IntRealOp_LESSEQOP__desc;
 #endif
 #define Values__LESSEQOP_3dBOX0 8
-#define Values__LESSEQOP (mmc_mk_box1(8,&Values_IntRealOp_LESSEQOP__desc))
+static const MMC_DEFSTRUCTLIT(Values__LESSEQOP__struct,1,8) {&Values_IntRealOp_LESSEQOP__desc}};
+static void *Values__LESSEQOP = MMC_REFSTRUCTLIT(Values__LESSEQOP__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Interactive_CompiledCFunction_CFunction__desc_added
 #define Interactive_CompiledCFunction_CFunction__desc_added
@@ -526,7 +534,8 @@ struct record_description Interactive_AnnotationType_ICON__ANNOTATION__desc = {
 extern struct record_description Interactive_AnnotationType_ICON__ANNOTATION__desc;
 #endif
 #define Interactive__ICON_5fANNOTATION_3dBOX0 3
-#define Interactive__ICON_5fANNOTATION (mmc_mk_box1(3,&Interactive_AnnotationType_ICON__ANNOTATION__desc))
+static const MMC_DEFSTRUCTLIT(Interactive__ICON_5fANNOTATION__struct,1,3) {&Interactive_AnnotationType_ICON__ANNOTATION__desc}};
+static void *Interactive__ICON_5fANNOTATION = MMC_REFSTRUCTLIT(Interactive__ICON_5fANNOTATION__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Interactive_AnnotationType_DIAGRAM__ANNOTATION__desc_added
 #define Interactive_AnnotationType_DIAGRAM__ANNOTATION__desc_added
@@ -541,7 +550,8 @@ struct record_description Interactive_AnnotationType_DIAGRAM__ANNOTATION__desc =
 extern struct record_description Interactive_AnnotationType_DIAGRAM__ANNOTATION__desc;
 #endif
 #define Interactive__DIAGRAM_5fANNOTATION_3dBOX0 4
-#define Interactive__DIAGRAM_5fANNOTATION (mmc_mk_box1(4,&Interactive_AnnotationType_DIAGRAM__ANNOTATION__desc))
+static const MMC_DEFSTRUCTLIT(Interactive__DIAGRAM_5fANNOTATION__struct,1,4) {&Interactive_AnnotationType_DIAGRAM__ANNOTATION__desc}};
+static void *Interactive__DIAGRAM_5fANNOTATION = MMC_REFSTRUCTLIT(Interactive__DIAGRAM_5fANNOTATION__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Program_PROGRAM__desc_added
 #define Absyn_Program_PROGRAM__desc_added
@@ -586,7 +596,8 @@ struct record_description Absyn_Within_TOP__desc = {
 extern struct record_description Absyn_Within_TOP__desc;
 #endif
 #define Absyn__TOP_3dBOX0 4
-#define Absyn__TOP (mmc_mk_box1(4,&Absyn_Within_TOP__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__TOP__struct,1,4) {&Absyn_Within_TOP__desc}};
+static void *Absyn__TOP = MMC_REFSTRUCTLIT(Absyn__TOP__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Info_INFO__desc_added
 #define Absyn_Info_INFO__desc_added
@@ -781,7 +792,8 @@ struct record_description Absyn_EnumDef_ENUM__COLON__desc = {
 extern struct record_description Absyn_EnumDef_ENUM__COLON__desc;
 #endif
 #define Absyn__ENUM_5fCOLON_3dBOX0 4
-#define Absyn__ENUM_5fCOLON (mmc_mk_box1(4,&Absyn_EnumDef_ENUM__COLON__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__ENUM_5fCOLON__struct,1,4) {&Absyn_EnumDef_ENUM__COLON__desc}};
+static void *Absyn__ENUM_5fCOLON = MMC_REFSTRUCTLIT(Absyn__ENUM_5fCOLON__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_EnumLiteral_ENUMLITERAL__desc_added
 #define Absyn_EnumLiteral_ENUMLITERAL__desc_added
@@ -1081,7 +1093,8 @@ struct record_description Absyn_InnerOuter_INNER__desc = {
 extern struct record_description Absyn_InnerOuter_INNER__desc;
 #endif
 #define Absyn__INNER_3dBOX0 3
-#define Absyn__INNER (mmc_mk_box1(3,&Absyn_InnerOuter_INNER__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__INNER__struct,1,3) {&Absyn_InnerOuter_INNER__desc}};
+static void *Absyn__INNER = MMC_REFSTRUCTLIT(Absyn__INNER__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_InnerOuter_OUTER__desc_added
 #define Absyn_InnerOuter_OUTER__desc_added
@@ -1096,7 +1109,8 @@ struct record_description Absyn_InnerOuter_OUTER__desc = {
 extern struct record_description Absyn_InnerOuter_OUTER__desc;
 #endif
 #define Absyn__OUTER_3dBOX0 4
-#define Absyn__OUTER (mmc_mk_box1(4,&Absyn_InnerOuter_OUTER__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__OUTER__struct,1,4) {&Absyn_InnerOuter_OUTER__desc}};
+static void *Absyn__OUTER = MMC_REFSTRUCTLIT(Absyn__OUTER__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_InnerOuter_INNEROUTER__desc_added
 #define Absyn_InnerOuter_INNEROUTER__desc_added
@@ -1111,7 +1125,8 @@ struct record_description Absyn_InnerOuter_INNEROUTER__desc = {
 extern struct record_description Absyn_InnerOuter_INNEROUTER__desc;
 #endif
 #define Absyn__INNEROUTER_3dBOX0 5
-#define Absyn__INNEROUTER (mmc_mk_box1(5,&Absyn_InnerOuter_INNEROUTER__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__INNEROUTER__struct,1,5) {&Absyn_InnerOuter_INNEROUTER__desc}};
+static void *Absyn__INNEROUTER = MMC_REFSTRUCTLIT(Absyn__INNEROUTER__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_InnerOuter_UNSPECIFIED__desc_added
 #define Absyn_InnerOuter_UNSPECIFIED__desc_added
@@ -1126,7 +1141,8 @@ struct record_description Absyn_InnerOuter_UNSPECIFIED__desc = {
 extern struct record_description Absyn_InnerOuter_UNSPECIFIED__desc;
 #endif
 #define Absyn__UNSPECIFIED_3dBOX0 6
-#define Absyn__UNSPECIFIED (mmc_mk_box1(6,&Absyn_InnerOuter_UNSPECIFIED__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__UNSPECIFIED__struct,1,6) {&Absyn_InnerOuter_UNSPECIFIED__desc}};
+static void *Absyn__UNSPECIFIED = MMC_REFSTRUCTLIT(Absyn__UNSPECIFIED__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Import_NAMED__IMPORT__desc_added
 #define Absyn_Import_NAMED__IMPORT__desc_added
@@ -1471,7 +1487,8 @@ struct record_description Absyn_Algorithm_ALG__RETURN__desc = {
 extern struct record_description Absyn_Algorithm_ALG__RETURN__desc;
 #endif
 #define Absyn__ALG_5fRETURN_3dBOX0 9
-#define Absyn__ALG_5fRETURN (mmc_mk_box1(9,&Absyn_Algorithm_ALG__RETURN__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__ALG_5fRETURN__struct,1,9) {&Absyn_Algorithm_ALG__RETURN__desc}};
+static void *Absyn__ALG_5fRETURN = MMC_REFSTRUCTLIT(Absyn__ALG_5fRETURN__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Algorithm_ALG__BREAK__desc_added
 #define Absyn_Algorithm_ALG__BREAK__desc_added
@@ -1486,7 +1503,8 @@ struct record_description Absyn_Algorithm_ALG__BREAK__desc = {
 extern struct record_description Absyn_Algorithm_ALG__BREAK__desc;
 #endif
 #define Absyn__ALG_5fBREAK_3dBOX0 10
-#define Absyn__ALG_5fBREAK (mmc_mk_box1(10,&Absyn_Algorithm_ALG__BREAK__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__ALG_5fBREAK__struct,1,10) {&Absyn_Algorithm_ALG__BREAK__desc}};
+static void *Absyn__ALG_5fBREAK = MMC_REFSTRUCTLIT(Absyn__ALG_5fBREAK__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Algorithm_ALG__TRY__desc_added
 #define Absyn_Algorithm_ALG__TRY__desc_added
@@ -1531,7 +1549,8 @@ struct record_description Absyn_Algorithm_ALG__THROW__desc = {
 extern struct record_description Absyn_Algorithm_ALG__THROW__desc;
 #endif
 #define Absyn__ALG_5fTHROW_3dBOX0 13
-#define Absyn__ALG_5fTHROW (mmc_mk_box1(13,&Absyn_Algorithm_ALG__THROW__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__ALG_5fTHROW__struct,1,13) {&Absyn_Algorithm_ALG__THROW__desc}};
+static void *Absyn__ALG_5fTHROW = MMC_REFSTRUCTLIT(Absyn__ALG_5fTHROW__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Algorithm_ALG__FAILURE__desc_added
 #define Absyn_Algorithm_ALG__FAILURE__desc_added
@@ -1606,7 +1625,8 @@ struct record_description Absyn_RedeclareKeywords_REDECLARE__desc = {
 extern struct record_description Absyn_RedeclareKeywords_REDECLARE__desc;
 #endif
 #define Absyn__REDECLARE_3dBOX0 3
-#define Absyn__REDECLARE (mmc_mk_box1(3,&Absyn_RedeclareKeywords_REDECLARE__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__REDECLARE__struct,1,3) {&Absyn_RedeclareKeywords_REDECLARE__desc}};
+static void *Absyn__REDECLARE = MMC_REFSTRUCTLIT(Absyn__REDECLARE__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_RedeclareKeywords_REPLACEABLE__desc_added
 #define Absyn_RedeclareKeywords_REPLACEABLE__desc_added
@@ -1621,7 +1641,8 @@ struct record_description Absyn_RedeclareKeywords_REPLACEABLE__desc = {
 extern struct record_description Absyn_RedeclareKeywords_REPLACEABLE__desc;
 #endif
 #define Absyn__REPLACEABLE_3dBOX0 4
-#define Absyn__REPLACEABLE (mmc_mk_box1(4,&Absyn_RedeclareKeywords_REPLACEABLE__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__REPLACEABLE__struct,1,4) {&Absyn_RedeclareKeywords_REPLACEABLE__desc}};
+static void *Absyn__REPLACEABLE = MMC_REFSTRUCTLIT(Absyn__REPLACEABLE__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_RedeclareKeywords_REDECLARE__REPLACEABLE__desc_added
 #define Absyn_RedeclareKeywords_REDECLARE__REPLACEABLE__desc_added
@@ -1636,7 +1657,8 @@ struct record_description Absyn_RedeclareKeywords_REDECLARE__REPLACEABLE__desc =
 extern struct record_description Absyn_RedeclareKeywords_REDECLARE__REPLACEABLE__desc;
 #endif
 #define Absyn__REDECLARE_5fREPLACEABLE_3dBOX0 5
-#define Absyn__REDECLARE_5fREPLACEABLE (mmc_mk_box1(5,&Absyn_RedeclareKeywords_REDECLARE__REPLACEABLE__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__REDECLARE_5fREPLACEABLE__struct,1,5) {&Absyn_RedeclareKeywords_REDECLARE__REPLACEABLE__desc}};
+static void *Absyn__REDECLARE_5fREPLACEABLE = MMC_REFSTRUCTLIT(Absyn__REDECLARE_5fREPLACEABLE__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Each_EACH__desc_added
 #define Absyn_Each_EACH__desc_added
@@ -1651,7 +1673,8 @@ struct record_description Absyn_Each_EACH__desc = {
 extern struct record_description Absyn_Each_EACH__desc;
 #endif
 #define Absyn__EACH_3dBOX0 3
-#define Absyn__EACH (mmc_mk_box1(3,&Absyn_Each_EACH__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__EACH__struct,1,3) {&Absyn_Each_EACH__desc}};
+static void *Absyn__EACH = MMC_REFSTRUCTLIT(Absyn__EACH__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Each_NON__EACH__desc_added
 #define Absyn_Each_NON__EACH__desc_added
@@ -1666,7 +1689,8 @@ struct record_description Absyn_Each_NON__EACH__desc = {
 extern struct record_description Absyn_Each_NON__EACH__desc;
 #endif
 #define Absyn__NON_5fEACH_3dBOX0 4
-#define Absyn__NON_5fEACH (mmc_mk_box1(4,&Absyn_Each_NON__EACH__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__NON_5fEACH__struct,1,4) {&Absyn_Each_NON__EACH__desc}};
+static void *Absyn__NON_5fEACH = MMC_REFSTRUCTLIT(Absyn__NON_5fEACH__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_ElementAttributes_ATTR__desc_added
 #define Absyn_ElementAttributes_ATTR__desc_added
@@ -1696,7 +1720,8 @@ struct record_description Absyn_Variability_VAR__desc = {
 extern struct record_description Absyn_Variability_VAR__desc;
 #endif
 #define Absyn__VAR_3dBOX0 3
-#define Absyn__VAR (mmc_mk_box1(3,&Absyn_Variability_VAR__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__VAR__struct,1,3) {&Absyn_Variability_VAR__desc}};
+static void *Absyn__VAR = MMC_REFSTRUCTLIT(Absyn__VAR__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Variability_DISCRETE__desc_added
 #define Absyn_Variability_DISCRETE__desc_added
@@ -1711,7 +1736,8 @@ struct record_description Absyn_Variability_DISCRETE__desc = {
 extern struct record_description Absyn_Variability_DISCRETE__desc;
 #endif
 #define Absyn__DISCRETE_3dBOX0 4
-#define Absyn__DISCRETE (mmc_mk_box1(4,&Absyn_Variability_DISCRETE__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__DISCRETE__struct,1,4) {&Absyn_Variability_DISCRETE__desc}};
+static void *Absyn__DISCRETE = MMC_REFSTRUCTLIT(Absyn__DISCRETE__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Variability_PARAM__desc_added
 #define Absyn_Variability_PARAM__desc_added
@@ -1726,7 +1752,8 @@ struct record_description Absyn_Variability_PARAM__desc = {
 extern struct record_description Absyn_Variability_PARAM__desc;
 #endif
 #define Absyn__PARAM_3dBOX0 5
-#define Absyn__PARAM (mmc_mk_box1(5,&Absyn_Variability_PARAM__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__PARAM__struct,1,5) {&Absyn_Variability_PARAM__desc}};
+static void *Absyn__PARAM = MMC_REFSTRUCTLIT(Absyn__PARAM__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Variability_CONST__desc_added
 #define Absyn_Variability_CONST__desc_added
@@ -1741,7 +1768,8 @@ struct record_description Absyn_Variability_CONST__desc = {
 extern struct record_description Absyn_Variability_CONST__desc;
 #endif
 #define Absyn__CONST_3dBOX0 6
-#define Absyn__CONST (mmc_mk_box1(6,&Absyn_Variability_CONST__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__CONST__struct,1,6) {&Absyn_Variability_CONST__desc}};
+static void *Absyn__CONST = MMC_REFSTRUCTLIT(Absyn__CONST__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Direction_INPUT__desc_added
 #define Absyn_Direction_INPUT__desc_added
@@ -1756,7 +1784,8 @@ struct record_description Absyn_Direction_INPUT__desc = {
 extern struct record_description Absyn_Direction_INPUT__desc;
 #endif
 #define Absyn__INPUT_3dBOX0 3
-#define Absyn__INPUT (mmc_mk_box1(3,&Absyn_Direction_INPUT__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__INPUT__struct,1,3) {&Absyn_Direction_INPUT__desc}};
+static void *Absyn__INPUT = MMC_REFSTRUCTLIT(Absyn__INPUT__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Direction_OUTPUT__desc_added
 #define Absyn_Direction_OUTPUT__desc_added
@@ -1771,7 +1800,8 @@ struct record_description Absyn_Direction_OUTPUT__desc = {
 extern struct record_description Absyn_Direction_OUTPUT__desc;
 #endif
 #define Absyn__OUTPUT_3dBOX0 4
-#define Absyn__OUTPUT (mmc_mk_box1(4,&Absyn_Direction_OUTPUT__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__OUTPUT__struct,1,4) {&Absyn_Direction_OUTPUT__desc}};
+static void *Absyn__OUTPUT = MMC_REFSTRUCTLIT(Absyn__OUTPUT__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Direction_BIDIR__desc_added
 #define Absyn_Direction_BIDIR__desc_added
@@ -1786,7 +1816,8 @@ struct record_description Absyn_Direction_BIDIR__desc = {
 extern struct record_description Absyn_Direction_BIDIR__desc;
 #endif
 #define Absyn__BIDIR_3dBOX0 5
-#define Absyn__BIDIR (mmc_mk_box1(5,&Absyn_Direction_BIDIR__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__BIDIR__struct,1,5) {&Absyn_Direction_BIDIR__desc}};
+static void *Absyn__BIDIR = MMC_REFSTRUCTLIT(Absyn__BIDIR__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Exp_INTEGER__desc_added
 #define Absyn_Exp_INTEGER__desc_added
@@ -2056,7 +2087,8 @@ struct record_description Absyn_Exp_END__desc = {
 extern struct record_description Absyn_Exp_END__desc;
 #endif
 #define Absyn__END_3dBOX0 20
-#define Absyn__END (mmc_mk_box1(20,&Absyn_Exp_END__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__END__struct,1,20) {&Absyn_Exp_END__desc}};
+static void *Absyn__END = MMC_REFSTRUCTLIT(Absyn__END__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Exp_CODE__desc_added
 #define Absyn_Exp_CODE__desc_added
@@ -2176,7 +2208,8 @@ struct record_description Absyn_MatchType_MATCH__desc = {
 extern struct record_description Absyn_MatchType_MATCH__desc;
 #endif
 #define Absyn__MATCH_3dBOX0 3
-#define Absyn__MATCH (mmc_mk_box1(3,&Absyn_MatchType_MATCH__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__MATCH__struct,1,3) {&Absyn_MatchType_MATCH__desc}};
+static void *Absyn__MATCH = MMC_REFSTRUCTLIT(Absyn__MATCH__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_MatchType_MATCHCONTINUE__desc_added
 #define Absyn_MatchType_MATCHCONTINUE__desc_added
@@ -2191,7 +2224,8 @@ struct record_description Absyn_MatchType_MATCHCONTINUE__desc = {
 extern struct record_description Absyn_MatchType_MATCHCONTINUE__desc;
 #endif
 #define Absyn__MATCHCONTINUE_3dBOX0 4
-#define Absyn__MATCHCONTINUE (mmc_mk_box1(4,&Absyn_MatchType_MATCHCONTINUE__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__MATCHCONTINUE__struct,1,4) {&Absyn_MatchType_MATCHCONTINUE__desc}};
+static void *Absyn__MATCHCONTINUE = MMC_REFSTRUCTLIT(Absyn__MATCHCONTINUE__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_CodeNode_C__TYPENAME__desc_added
 #define Absyn_CodeNode_C__TYPENAME__desc_added
@@ -2371,7 +2405,8 @@ struct record_description Absyn_Operator_ADD__desc = {
 extern struct record_description Absyn_Operator_ADD__desc;
 #endif
 #define Absyn__ADD_3dBOX0 3
-#define Absyn__ADD (mmc_mk_box1(3,&Absyn_Operator_ADD__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__ADD__struct,1,3) {&Absyn_Operator_ADD__desc}};
+static void *Absyn__ADD = MMC_REFSTRUCTLIT(Absyn__ADD__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Operator_SUB__desc_added
 #define Absyn_Operator_SUB__desc_added
@@ -2386,7 +2421,8 @@ struct record_description Absyn_Operator_SUB__desc = {
 extern struct record_description Absyn_Operator_SUB__desc;
 #endif
 #define Absyn__SUB_3dBOX0 4
-#define Absyn__SUB (mmc_mk_box1(4,&Absyn_Operator_SUB__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__SUB__struct,1,4) {&Absyn_Operator_SUB__desc}};
+static void *Absyn__SUB = MMC_REFSTRUCTLIT(Absyn__SUB__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Operator_MUL__desc_added
 #define Absyn_Operator_MUL__desc_added
@@ -2401,7 +2437,8 @@ struct record_description Absyn_Operator_MUL__desc = {
 extern struct record_description Absyn_Operator_MUL__desc;
 #endif
 #define Absyn__MUL_3dBOX0 5
-#define Absyn__MUL (mmc_mk_box1(5,&Absyn_Operator_MUL__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__MUL__struct,1,5) {&Absyn_Operator_MUL__desc}};
+static void *Absyn__MUL = MMC_REFSTRUCTLIT(Absyn__MUL__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Operator_DIV__desc_added
 #define Absyn_Operator_DIV__desc_added
@@ -2416,7 +2453,8 @@ struct record_description Absyn_Operator_DIV__desc = {
 extern struct record_description Absyn_Operator_DIV__desc;
 #endif
 #define Absyn__DIV_3dBOX0 6
-#define Absyn__DIV (mmc_mk_box1(6,&Absyn_Operator_DIV__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__DIV__struct,1,6) {&Absyn_Operator_DIV__desc}};
+static void *Absyn__DIV = MMC_REFSTRUCTLIT(Absyn__DIV__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Operator_POW__desc_added
 #define Absyn_Operator_POW__desc_added
@@ -2431,7 +2469,8 @@ struct record_description Absyn_Operator_POW__desc = {
 extern struct record_description Absyn_Operator_POW__desc;
 #endif
 #define Absyn__POW_3dBOX0 7
-#define Absyn__POW (mmc_mk_box1(7,&Absyn_Operator_POW__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__POW__struct,1,7) {&Absyn_Operator_POW__desc}};
+static void *Absyn__POW = MMC_REFSTRUCTLIT(Absyn__POW__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Operator_UPLUS__desc_added
 #define Absyn_Operator_UPLUS__desc_added
@@ -2446,7 +2485,8 @@ struct record_description Absyn_Operator_UPLUS__desc = {
 extern struct record_description Absyn_Operator_UPLUS__desc;
 #endif
 #define Absyn__UPLUS_3dBOX0 8
-#define Absyn__UPLUS (mmc_mk_box1(8,&Absyn_Operator_UPLUS__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__UPLUS__struct,1,8) {&Absyn_Operator_UPLUS__desc}};
+static void *Absyn__UPLUS = MMC_REFSTRUCTLIT(Absyn__UPLUS__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Operator_UMINUS__desc_added
 #define Absyn_Operator_UMINUS__desc_added
@@ -2461,7 +2501,8 @@ struct record_description Absyn_Operator_UMINUS__desc = {
 extern struct record_description Absyn_Operator_UMINUS__desc;
 #endif
 #define Absyn__UMINUS_3dBOX0 9
-#define Absyn__UMINUS (mmc_mk_box1(9,&Absyn_Operator_UMINUS__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__UMINUS__struct,1,9) {&Absyn_Operator_UMINUS__desc}};
+static void *Absyn__UMINUS = MMC_REFSTRUCTLIT(Absyn__UMINUS__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Operator_ADD__EW__desc_added
 #define Absyn_Operator_ADD__EW__desc_added
@@ -2476,7 +2517,8 @@ struct record_description Absyn_Operator_ADD__EW__desc = {
 extern struct record_description Absyn_Operator_ADD__EW__desc;
 #endif
 #define Absyn__ADD_5fEW_3dBOX0 10
-#define Absyn__ADD_5fEW (mmc_mk_box1(10,&Absyn_Operator_ADD__EW__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__ADD_5fEW__struct,1,10) {&Absyn_Operator_ADD__EW__desc}};
+static void *Absyn__ADD_5fEW = MMC_REFSTRUCTLIT(Absyn__ADD_5fEW__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Operator_SUB__EW__desc_added
 #define Absyn_Operator_SUB__EW__desc_added
@@ -2491,7 +2533,8 @@ struct record_description Absyn_Operator_SUB__EW__desc = {
 extern struct record_description Absyn_Operator_SUB__EW__desc;
 #endif
 #define Absyn__SUB_5fEW_3dBOX0 11
-#define Absyn__SUB_5fEW (mmc_mk_box1(11,&Absyn_Operator_SUB__EW__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__SUB_5fEW__struct,1,11) {&Absyn_Operator_SUB__EW__desc}};
+static void *Absyn__SUB_5fEW = MMC_REFSTRUCTLIT(Absyn__SUB_5fEW__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Operator_MUL__EW__desc_added
 #define Absyn_Operator_MUL__EW__desc_added
@@ -2506,7 +2549,8 @@ struct record_description Absyn_Operator_MUL__EW__desc = {
 extern struct record_description Absyn_Operator_MUL__EW__desc;
 #endif
 #define Absyn__MUL_5fEW_3dBOX0 12
-#define Absyn__MUL_5fEW (mmc_mk_box1(12,&Absyn_Operator_MUL__EW__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__MUL_5fEW__struct,1,12) {&Absyn_Operator_MUL__EW__desc}};
+static void *Absyn__MUL_5fEW = MMC_REFSTRUCTLIT(Absyn__MUL_5fEW__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Operator_DIV__EW__desc_added
 #define Absyn_Operator_DIV__EW__desc_added
@@ -2521,7 +2565,8 @@ struct record_description Absyn_Operator_DIV__EW__desc = {
 extern struct record_description Absyn_Operator_DIV__EW__desc;
 #endif
 #define Absyn__DIV_5fEW_3dBOX0 13
-#define Absyn__DIV_5fEW (mmc_mk_box1(13,&Absyn_Operator_DIV__EW__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__DIV_5fEW__struct,1,13) {&Absyn_Operator_DIV__EW__desc}};
+static void *Absyn__DIV_5fEW = MMC_REFSTRUCTLIT(Absyn__DIV_5fEW__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Operator_POW__EW__desc_added
 #define Absyn_Operator_POW__EW__desc_added
@@ -2536,7 +2581,8 @@ struct record_description Absyn_Operator_POW__EW__desc = {
 extern struct record_description Absyn_Operator_POW__EW__desc;
 #endif
 #define Absyn__POW_5fEW_3dBOX0 14
-#define Absyn__POW_5fEW (mmc_mk_box1(14,&Absyn_Operator_POW__EW__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__POW_5fEW__struct,1,14) {&Absyn_Operator_POW__EW__desc}};
+static void *Absyn__POW_5fEW = MMC_REFSTRUCTLIT(Absyn__POW_5fEW__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Operator_UPLUS__EW__desc_added
 #define Absyn_Operator_UPLUS__EW__desc_added
@@ -2551,7 +2597,8 @@ struct record_description Absyn_Operator_UPLUS__EW__desc = {
 extern struct record_description Absyn_Operator_UPLUS__EW__desc;
 #endif
 #define Absyn__UPLUS_5fEW_3dBOX0 15
-#define Absyn__UPLUS_5fEW (mmc_mk_box1(15,&Absyn_Operator_UPLUS__EW__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__UPLUS_5fEW__struct,1,15) {&Absyn_Operator_UPLUS__EW__desc}};
+static void *Absyn__UPLUS_5fEW = MMC_REFSTRUCTLIT(Absyn__UPLUS_5fEW__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Operator_UMINUS__EW__desc_added
 #define Absyn_Operator_UMINUS__EW__desc_added
@@ -2566,7 +2613,8 @@ struct record_description Absyn_Operator_UMINUS__EW__desc = {
 extern struct record_description Absyn_Operator_UMINUS__EW__desc;
 #endif
 #define Absyn__UMINUS_5fEW_3dBOX0 16
-#define Absyn__UMINUS_5fEW (mmc_mk_box1(16,&Absyn_Operator_UMINUS__EW__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__UMINUS_5fEW__struct,1,16) {&Absyn_Operator_UMINUS__EW__desc}};
+static void *Absyn__UMINUS_5fEW = MMC_REFSTRUCTLIT(Absyn__UMINUS_5fEW__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Operator_AND__desc_added
 #define Absyn_Operator_AND__desc_added
@@ -2581,7 +2629,8 @@ struct record_description Absyn_Operator_AND__desc = {
 extern struct record_description Absyn_Operator_AND__desc;
 #endif
 #define Absyn__AND_3dBOX0 17
-#define Absyn__AND (mmc_mk_box1(17,&Absyn_Operator_AND__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__AND__struct,1,17) {&Absyn_Operator_AND__desc}};
+static void *Absyn__AND = MMC_REFSTRUCTLIT(Absyn__AND__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Operator_OR__desc_added
 #define Absyn_Operator_OR__desc_added
@@ -2596,7 +2645,8 @@ struct record_description Absyn_Operator_OR__desc = {
 extern struct record_description Absyn_Operator_OR__desc;
 #endif
 #define Absyn__OR_3dBOX0 18
-#define Absyn__OR (mmc_mk_box1(18,&Absyn_Operator_OR__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__OR__struct,1,18) {&Absyn_Operator_OR__desc}};
+static void *Absyn__OR = MMC_REFSTRUCTLIT(Absyn__OR__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Operator_NOT__desc_added
 #define Absyn_Operator_NOT__desc_added
@@ -2611,7 +2661,8 @@ struct record_description Absyn_Operator_NOT__desc = {
 extern struct record_description Absyn_Operator_NOT__desc;
 #endif
 #define Absyn__NOT_3dBOX0 19
-#define Absyn__NOT (mmc_mk_box1(19,&Absyn_Operator_NOT__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__NOT__struct,1,19) {&Absyn_Operator_NOT__desc}};
+static void *Absyn__NOT = MMC_REFSTRUCTLIT(Absyn__NOT__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Operator_LESS__desc_added
 #define Absyn_Operator_LESS__desc_added
@@ -2626,7 +2677,8 @@ struct record_description Absyn_Operator_LESS__desc = {
 extern struct record_description Absyn_Operator_LESS__desc;
 #endif
 #define Absyn__LESS_3dBOX0 20
-#define Absyn__LESS (mmc_mk_box1(20,&Absyn_Operator_LESS__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__LESS__struct,1,20) {&Absyn_Operator_LESS__desc}};
+static void *Absyn__LESS = MMC_REFSTRUCTLIT(Absyn__LESS__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Operator_LESSEQ__desc_added
 #define Absyn_Operator_LESSEQ__desc_added
@@ -2641,7 +2693,8 @@ struct record_description Absyn_Operator_LESSEQ__desc = {
 extern struct record_description Absyn_Operator_LESSEQ__desc;
 #endif
 #define Absyn__LESSEQ_3dBOX0 21
-#define Absyn__LESSEQ (mmc_mk_box1(21,&Absyn_Operator_LESSEQ__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__LESSEQ__struct,1,21) {&Absyn_Operator_LESSEQ__desc}};
+static void *Absyn__LESSEQ = MMC_REFSTRUCTLIT(Absyn__LESSEQ__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Operator_GREATER__desc_added
 #define Absyn_Operator_GREATER__desc_added
@@ -2656,7 +2709,8 @@ struct record_description Absyn_Operator_GREATER__desc = {
 extern struct record_description Absyn_Operator_GREATER__desc;
 #endif
 #define Absyn__GREATER_3dBOX0 22
-#define Absyn__GREATER (mmc_mk_box1(22,&Absyn_Operator_GREATER__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__GREATER__struct,1,22) {&Absyn_Operator_GREATER__desc}};
+static void *Absyn__GREATER = MMC_REFSTRUCTLIT(Absyn__GREATER__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Operator_GREATEREQ__desc_added
 #define Absyn_Operator_GREATEREQ__desc_added
@@ -2671,7 +2725,8 @@ struct record_description Absyn_Operator_GREATEREQ__desc = {
 extern struct record_description Absyn_Operator_GREATEREQ__desc;
 #endif
 #define Absyn__GREATEREQ_3dBOX0 23
-#define Absyn__GREATEREQ (mmc_mk_box1(23,&Absyn_Operator_GREATEREQ__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__GREATEREQ__struct,1,23) {&Absyn_Operator_GREATEREQ__desc}};
+static void *Absyn__GREATEREQ = MMC_REFSTRUCTLIT(Absyn__GREATEREQ__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Operator_EQUAL__desc_added
 #define Absyn_Operator_EQUAL__desc_added
@@ -2686,7 +2741,8 @@ struct record_description Absyn_Operator_EQUAL__desc = {
 extern struct record_description Absyn_Operator_EQUAL__desc;
 #endif
 #define Absyn__EQUAL_3dBOX0 24
-#define Absyn__EQUAL (mmc_mk_box1(24,&Absyn_Operator_EQUAL__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__EQUAL__struct,1,24) {&Absyn_Operator_EQUAL__desc}};
+static void *Absyn__EQUAL = MMC_REFSTRUCTLIT(Absyn__EQUAL__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Operator_NEQUAL__desc_added
 #define Absyn_Operator_NEQUAL__desc_added
@@ -2701,7 +2757,8 @@ struct record_description Absyn_Operator_NEQUAL__desc = {
 extern struct record_description Absyn_Operator_NEQUAL__desc;
 #endif
 #define Absyn__NEQUAL_3dBOX0 25
-#define Absyn__NEQUAL (mmc_mk_box1(25,&Absyn_Operator_NEQUAL__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__NEQUAL__struct,1,25) {&Absyn_Operator_NEQUAL__desc}};
+static void *Absyn__NEQUAL = MMC_REFSTRUCTLIT(Absyn__NEQUAL__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Subscript_NOSUB__desc_added
 #define Absyn_Subscript_NOSUB__desc_added
@@ -2716,7 +2773,8 @@ struct record_description Absyn_Subscript_NOSUB__desc = {
 extern struct record_description Absyn_Subscript_NOSUB__desc;
 #endif
 #define Absyn__NOSUB_3dBOX0 3
-#define Absyn__NOSUB (mmc_mk_box1(3,&Absyn_Subscript_NOSUB__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__NOSUB__struct,1,3) {&Absyn_Subscript_NOSUB__desc}};
+static void *Absyn__NOSUB = MMC_REFSTRUCTLIT(Absyn__NOSUB__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Subscript_SUBSCRIPT__desc_added
 #define Absyn_Subscript_SUBSCRIPT__desc_added
@@ -2791,7 +2849,8 @@ struct record_description Absyn_ComponentRef_WILD__desc = {
 extern struct record_description Absyn_ComponentRef_WILD__desc;
 #endif
 #define Absyn__WILD_3dBOX0 6
-#define Absyn__WILD (mmc_mk_box1(6,&Absyn_ComponentRef_WILD__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__WILD__struct,1,6) {&Absyn_ComponentRef_WILD__desc}};
+static void *Absyn__WILD = MMC_REFSTRUCTLIT(Absyn__WILD__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Path_QUALIFIED__desc_added
 #define Absyn_Path_QUALIFIED__desc_added
@@ -2851,7 +2910,8 @@ struct record_description Absyn_Restriction_R__CLASS__desc = {
 extern struct record_description Absyn_Restriction_R__CLASS__desc;
 #endif
 #define Absyn__R_5fCLASS_3dBOX0 3
-#define Absyn__R_5fCLASS (mmc_mk_box1(3,&Absyn_Restriction_R__CLASS__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__R_5fCLASS__struct,1,3) {&Absyn_Restriction_R__CLASS__desc}};
+static void *Absyn__R_5fCLASS = MMC_REFSTRUCTLIT(Absyn__R_5fCLASS__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Restriction_R__OPTIMIZATION__desc_added
 #define Absyn_Restriction_R__OPTIMIZATION__desc_added
@@ -2866,7 +2926,8 @@ struct record_description Absyn_Restriction_R__OPTIMIZATION__desc = {
 extern struct record_description Absyn_Restriction_R__OPTIMIZATION__desc;
 #endif
 #define Absyn__R_5fOPTIMIZATION_3dBOX0 4
-#define Absyn__R_5fOPTIMIZATION (mmc_mk_box1(4,&Absyn_Restriction_R__OPTIMIZATION__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__R_5fOPTIMIZATION__struct,1,4) {&Absyn_Restriction_R__OPTIMIZATION__desc}};
+static void *Absyn__R_5fOPTIMIZATION = MMC_REFSTRUCTLIT(Absyn__R_5fOPTIMIZATION__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Restriction_R__MODEL__desc_added
 #define Absyn_Restriction_R__MODEL__desc_added
@@ -2881,7 +2942,8 @@ struct record_description Absyn_Restriction_R__MODEL__desc = {
 extern struct record_description Absyn_Restriction_R__MODEL__desc;
 #endif
 #define Absyn__R_5fMODEL_3dBOX0 5
-#define Absyn__R_5fMODEL (mmc_mk_box1(5,&Absyn_Restriction_R__MODEL__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__R_5fMODEL__struct,1,5) {&Absyn_Restriction_R__MODEL__desc}};
+static void *Absyn__R_5fMODEL = MMC_REFSTRUCTLIT(Absyn__R_5fMODEL__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Restriction_R__RECORD__desc_added
 #define Absyn_Restriction_R__RECORD__desc_added
@@ -2896,7 +2958,8 @@ struct record_description Absyn_Restriction_R__RECORD__desc = {
 extern struct record_description Absyn_Restriction_R__RECORD__desc;
 #endif
 #define Absyn__R_5fRECORD_3dBOX0 6
-#define Absyn__R_5fRECORD (mmc_mk_box1(6,&Absyn_Restriction_R__RECORD__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__R_5fRECORD__struct,1,6) {&Absyn_Restriction_R__RECORD__desc}};
+static void *Absyn__R_5fRECORD = MMC_REFSTRUCTLIT(Absyn__R_5fRECORD__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Restriction_R__BLOCK__desc_added
 #define Absyn_Restriction_R__BLOCK__desc_added
@@ -2911,7 +2974,8 @@ struct record_description Absyn_Restriction_R__BLOCK__desc = {
 extern struct record_description Absyn_Restriction_R__BLOCK__desc;
 #endif
 #define Absyn__R_5fBLOCK_3dBOX0 7
-#define Absyn__R_5fBLOCK (mmc_mk_box1(7,&Absyn_Restriction_R__BLOCK__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__R_5fBLOCK__struct,1,7) {&Absyn_Restriction_R__BLOCK__desc}};
+static void *Absyn__R_5fBLOCK = MMC_REFSTRUCTLIT(Absyn__R_5fBLOCK__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Restriction_R__CONNECTOR__desc_added
 #define Absyn_Restriction_R__CONNECTOR__desc_added
@@ -2926,7 +2990,8 @@ struct record_description Absyn_Restriction_R__CONNECTOR__desc = {
 extern struct record_description Absyn_Restriction_R__CONNECTOR__desc;
 #endif
 #define Absyn__R_5fCONNECTOR_3dBOX0 8
-#define Absyn__R_5fCONNECTOR (mmc_mk_box1(8,&Absyn_Restriction_R__CONNECTOR__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__R_5fCONNECTOR__struct,1,8) {&Absyn_Restriction_R__CONNECTOR__desc}};
+static void *Absyn__R_5fCONNECTOR = MMC_REFSTRUCTLIT(Absyn__R_5fCONNECTOR__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Restriction_R__EXP__CONNECTOR__desc_added
 #define Absyn_Restriction_R__EXP__CONNECTOR__desc_added
@@ -2941,7 +3006,8 @@ struct record_description Absyn_Restriction_R__EXP__CONNECTOR__desc = {
 extern struct record_description Absyn_Restriction_R__EXP__CONNECTOR__desc;
 #endif
 #define Absyn__R_5fEXP_5fCONNECTOR_3dBOX0 9
-#define Absyn__R_5fEXP_5fCONNECTOR (mmc_mk_box1(9,&Absyn_Restriction_R__EXP__CONNECTOR__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__R_5fEXP_5fCONNECTOR__struct,1,9) {&Absyn_Restriction_R__EXP__CONNECTOR__desc}};
+static void *Absyn__R_5fEXP_5fCONNECTOR = MMC_REFSTRUCTLIT(Absyn__R_5fEXP_5fCONNECTOR__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Restriction_R__TYPE__desc_added
 #define Absyn_Restriction_R__TYPE__desc_added
@@ -2956,7 +3022,8 @@ struct record_description Absyn_Restriction_R__TYPE__desc = {
 extern struct record_description Absyn_Restriction_R__TYPE__desc;
 #endif
 #define Absyn__R_5fTYPE_3dBOX0 10
-#define Absyn__R_5fTYPE (mmc_mk_box1(10,&Absyn_Restriction_R__TYPE__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__R_5fTYPE__struct,1,10) {&Absyn_Restriction_R__TYPE__desc}};
+static void *Absyn__R_5fTYPE = MMC_REFSTRUCTLIT(Absyn__R_5fTYPE__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Restriction_R__PACKAGE__desc_added
 #define Absyn_Restriction_R__PACKAGE__desc_added
@@ -2971,7 +3038,8 @@ struct record_description Absyn_Restriction_R__PACKAGE__desc = {
 extern struct record_description Absyn_Restriction_R__PACKAGE__desc;
 #endif
 #define Absyn__R_5fPACKAGE_3dBOX0 11
-#define Absyn__R_5fPACKAGE (mmc_mk_box1(11,&Absyn_Restriction_R__PACKAGE__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__R_5fPACKAGE__struct,1,11) {&Absyn_Restriction_R__PACKAGE__desc}};
+static void *Absyn__R_5fPACKAGE = MMC_REFSTRUCTLIT(Absyn__R_5fPACKAGE__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Restriction_R__FUNCTION__desc_added
 #define Absyn_Restriction_R__FUNCTION__desc_added
@@ -2986,7 +3054,8 @@ struct record_description Absyn_Restriction_R__FUNCTION__desc = {
 extern struct record_description Absyn_Restriction_R__FUNCTION__desc;
 #endif
 #define Absyn__R_5fFUNCTION_3dBOX0 12
-#define Absyn__R_5fFUNCTION (mmc_mk_box1(12,&Absyn_Restriction_R__FUNCTION__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__R_5fFUNCTION__struct,1,12) {&Absyn_Restriction_R__FUNCTION__desc}};
+static void *Absyn__R_5fFUNCTION = MMC_REFSTRUCTLIT(Absyn__R_5fFUNCTION__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Restriction_R__OPERATOR__desc_added
 #define Absyn_Restriction_R__OPERATOR__desc_added
@@ -3001,7 +3070,8 @@ struct record_description Absyn_Restriction_R__OPERATOR__desc = {
 extern struct record_description Absyn_Restriction_R__OPERATOR__desc;
 #endif
 #define Absyn__R_5fOPERATOR_3dBOX0 13
-#define Absyn__R_5fOPERATOR (mmc_mk_box1(13,&Absyn_Restriction_R__OPERATOR__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__R_5fOPERATOR__struct,1,13) {&Absyn_Restriction_R__OPERATOR__desc}};
+static void *Absyn__R_5fOPERATOR = MMC_REFSTRUCTLIT(Absyn__R_5fOPERATOR__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Restriction_R__OPERATOR__FUNCTION__desc_added
 #define Absyn_Restriction_R__OPERATOR__FUNCTION__desc_added
@@ -3016,7 +3086,8 @@ struct record_description Absyn_Restriction_R__OPERATOR__FUNCTION__desc = {
 extern struct record_description Absyn_Restriction_R__OPERATOR__FUNCTION__desc;
 #endif
 #define Absyn__R_5fOPERATOR_5fFUNCTION_3dBOX0 14
-#define Absyn__R_5fOPERATOR_5fFUNCTION (mmc_mk_box1(14,&Absyn_Restriction_R__OPERATOR__FUNCTION__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__R_5fOPERATOR_5fFUNCTION__struct,1,14) {&Absyn_Restriction_R__OPERATOR__FUNCTION__desc}};
+static void *Absyn__R_5fOPERATOR_5fFUNCTION = MMC_REFSTRUCTLIT(Absyn__R_5fOPERATOR_5fFUNCTION__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Restriction_R__OPERATOR__RECORD__desc_added
 #define Absyn_Restriction_R__OPERATOR__RECORD__desc_added
@@ -3031,7 +3102,8 @@ struct record_description Absyn_Restriction_R__OPERATOR__RECORD__desc = {
 extern struct record_description Absyn_Restriction_R__OPERATOR__RECORD__desc;
 #endif
 #define Absyn__R_5fOPERATOR_5fRECORD_3dBOX0 15
-#define Absyn__R_5fOPERATOR_5fRECORD (mmc_mk_box1(15,&Absyn_Restriction_R__OPERATOR__RECORD__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__R_5fOPERATOR_5fRECORD__struct,1,15) {&Absyn_Restriction_R__OPERATOR__RECORD__desc}};
+static void *Absyn__R_5fOPERATOR_5fRECORD = MMC_REFSTRUCTLIT(Absyn__R_5fOPERATOR_5fRECORD__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Restriction_R__ENUMERATION__desc_added
 #define Absyn_Restriction_R__ENUMERATION__desc_added
@@ -3046,7 +3118,8 @@ struct record_description Absyn_Restriction_R__ENUMERATION__desc = {
 extern struct record_description Absyn_Restriction_R__ENUMERATION__desc;
 #endif
 #define Absyn__R_5fENUMERATION_3dBOX0 16
-#define Absyn__R_5fENUMERATION (mmc_mk_box1(16,&Absyn_Restriction_R__ENUMERATION__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__R_5fENUMERATION__struct,1,16) {&Absyn_Restriction_R__ENUMERATION__desc}};
+static void *Absyn__R_5fENUMERATION = MMC_REFSTRUCTLIT(Absyn__R_5fENUMERATION__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Restriction_R__PREDEFINED__INTEGER__desc_added
 #define Absyn_Restriction_R__PREDEFINED__INTEGER__desc_added
@@ -3061,7 +3134,8 @@ struct record_description Absyn_Restriction_R__PREDEFINED__INTEGER__desc = {
 extern struct record_description Absyn_Restriction_R__PREDEFINED__INTEGER__desc;
 #endif
 #define Absyn__R_5fPREDEFINED_5fINTEGER_3dBOX0 17
-#define Absyn__R_5fPREDEFINED_5fINTEGER (mmc_mk_box1(17,&Absyn_Restriction_R__PREDEFINED__INTEGER__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__R_5fPREDEFINED_5fINTEGER__struct,1,17) {&Absyn_Restriction_R__PREDEFINED__INTEGER__desc}};
+static void *Absyn__R_5fPREDEFINED_5fINTEGER = MMC_REFSTRUCTLIT(Absyn__R_5fPREDEFINED_5fINTEGER__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Restriction_R__PREDEFINED__REAL__desc_added
 #define Absyn_Restriction_R__PREDEFINED__REAL__desc_added
@@ -3076,7 +3150,8 @@ struct record_description Absyn_Restriction_R__PREDEFINED__REAL__desc = {
 extern struct record_description Absyn_Restriction_R__PREDEFINED__REAL__desc;
 #endif
 #define Absyn__R_5fPREDEFINED_5fREAL_3dBOX0 18
-#define Absyn__R_5fPREDEFINED_5fREAL (mmc_mk_box1(18,&Absyn_Restriction_R__PREDEFINED__REAL__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__R_5fPREDEFINED_5fREAL__struct,1,18) {&Absyn_Restriction_R__PREDEFINED__REAL__desc}};
+static void *Absyn__R_5fPREDEFINED_5fREAL = MMC_REFSTRUCTLIT(Absyn__R_5fPREDEFINED_5fREAL__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Restriction_R__PREDEFINED__STRING__desc_added
 #define Absyn_Restriction_R__PREDEFINED__STRING__desc_added
@@ -3091,7 +3166,8 @@ struct record_description Absyn_Restriction_R__PREDEFINED__STRING__desc = {
 extern struct record_description Absyn_Restriction_R__PREDEFINED__STRING__desc;
 #endif
 #define Absyn__R_5fPREDEFINED_5fSTRING_3dBOX0 19
-#define Absyn__R_5fPREDEFINED_5fSTRING (mmc_mk_box1(19,&Absyn_Restriction_R__PREDEFINED__STRING__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__R_5fPREDEFINED_5fSTRING__struct,1,19) {&Absyn_Restriction_R__PREDEFINED__STRING__desc}};
+static void *Absyn__R_5fPREDEFINED_5fSTRING = MMC_REFSTRUCTLIT(Absyn__R_5fPREDEFINED_5fSTRING__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Restriction_R__PREDEFINED__BOOLEAN__desc_added
 #define Absyn_Restriction_R__PREDEFINED__BOOLEAN__desc_added
@@ -3106,7 +3182,8 @@ struct record_description Absyn_Restriction_R__PREDEFINED__BOOLEAN__desc = {
 extern struct record_description Absyn_Restriction_R__PREDEFINED__BOOLEAN__desc;
 #endif
 #define Absyn__R_5fPREDEFINED_5fBOOLEAN_3dBOX0 20
-#define Absyn__R_5fPREDEFINED_5fBOOLEAN (mmc_mk_box1(20,&Absyn_Restriction_R__PREDEFINED__BOOLEAN__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__R_5fPREDEFINED_5fBOOLEAN__struct,1,20) {&Absyn_Restriction_R__PREDEFINED__BOOLEAN__desc}};
+static void *Absyn__R_5fPREDEFINED_5fBOOLEAN = MMC_REFSTRUCTLIT(Absyn__R_5fPREDEFINED_5fBOOLEAN__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Restriction_R__PREDEFINED__ENUMERATION__desc_added
 #define Absyn_Restriction_R__PREDEFINED__ENUMERATION__desc_added
@@ -3121,7 +3198,8 @@ struct record_description Absyn_Restriction_R__PREDEFINED__ENUMERATION__desc = {
 extern struct record_description Absyn_Restriction_R__PREDEFINED__ENUMERATION__desc;
 #endif
 #define Absyn__R_5fPREDEFINED_5fENUMERATION_3dBOX0 21
-#define Absyn__R_5fPREDEFINED_5fENUMERATION (mmc_mk_box1(21,&Absyn_Restriction_R__PREDEFINED__ENUMERATION__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__R_5fPREDEFINED_5fENUMERATION__struct,1,21) {&Absyn_Restriction_R__PREDEFINED__ENUMERATION__desc}};
+static void *Absyn__R_5fPREDEFINED_5fENUMERATION = MMC_REFSTRUCTLIT(Absyn__R_5fPREDEFINED_5fENUMERATION__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Restriction_R__UNIONTYPE__desc_added
 #define Absyn_Restriction_R__UNIONTYPE__desc_added
@@ -3136,7 +3214,8 @@ struct record_description Absyn_Restriction_R__UNIONTYPE__desc = {
 extern struct record_description Absyn_Restriction_R__UNIONTYPE__desc;
 #endif
 #define Absyn__R_5fUNIONTYPE_3dBOX0 22
-#define Absyn__R_5fUNIONTYPE (mmc_mk_box1(22,&Absyn_Restriction_R__UNIONTYPE__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__R_5fUNIONTYPE__struct,1,22) {&Absyn_Restriction_R__UNIONTYPE__desc}};
+static void *Absyn__R_5fUNIONTYPE = MMC_REFSTRUCTLIT(Absyn__R_5fUNIONTYPE__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Restriction_R__METARECORD__desc_added
 #define Absyn_Restriction_R__METARECORD__desc_added
@@ -3166,7 +3245,8 @@ struct record_description Absyn_Restriction_R__UNKNOWN__desc = {
 extern struct record_description Absyn_Restriction_R__UNKNOWN__desc;
 #endif
 #define Absyn__R_5fUNKNOWN_3dBOX0 24
-#define Absyn__R_5fUNKNOWN (mmc_mk_box1(24,&Absyn_Restriction_R__UNKNOWN__desc))
+static const MMC_DEFSTRUCTLIT(Absyn__R_5fUNKNOWN__struct,1,24) {&Absyn_Restriction_R__UNKNOWN__desc}};
+static void *Absyn__R_5fUNKNOWN = MMC_REFSTRUCTLIT(Absyn__R_5fUNKNOWN__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Annotation_ANNOTATION__desc_added
 #define Absyn_Annotation_ANNOTATION__desc_added

@@ -253,58 +253,74 @@ protected function fun_23
   input Tpl.Text in_txt;
   input list<SCode.Element> in_a_p_elementLst;
   input Tpl.Text in_a_fields;
+  input Tpl.Text in_a_omcname;
+  input Tpl.Text in_a_ctor;
+  input Tpl.Text in_a_fullname;
 
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_a_p_elementLst, in_a_fields)
+  matchcontinue(in_txt, in_a_p_elementLst, in_a_fields, in_a_omcname, in_a_ctor, in_a_fullname)
     local
       Tpl.Text txt;
       Tpl.Text a_fields;
+      Tpl.Text a_omcname;
+      Tpl.Text a_ctor;
+      Tpl.Text a_fullname;
+      list<SCode.Element> i_p_elementLst;
+      Integer ret_1;
+      Integer ret_0;
 
     case ( txt,
            {},
-           _ )
+           _,
+           a_omcname,
+           a_ctor,
+           a_fullname )
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("static const MMC_DEFSTRUCTLIT("));
+        txt = Tpl.writeText(txt, a_fullname);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("__struct,1,"));
+        txt = Tpl.writeText(txt, a_ctor);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(") {&"));
+        txt = Tpl.writeText(txt, a_omcname);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING_LIST({
+                                    "__desc}};\n",
+                                    "static void *"
+                                }, false));
+        txt = Tpl.writeText(txt, a_fullname);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" = MMC_REFSTRUCTLIT("));
+        txt = Tpl.writeText(txt, a_fullname);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("__struct);"));
+        txt = Tpl.writeTok(txt, Tpl.ST_NEW_LINE());
       then txt;
 
     case ( txt,
-           _,
-           a_fields )
+           i_p_elementLst,
+           a_fields,
+           a_omcname,
+           a_ctor,
+           a_fullname )
       equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("#define "));
+        txt = Tpl.writeText(txt, a_fullname);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("("));
         txt = Tpl.writeText(txt, a_fields);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(")"));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(") (mmc_mk_box"));
+        ret_0 = listLength(i_p_elementLst);
+        ret_1 = intAdd(1, ret_0);
+        txt = Tpl.writeStr(txt, intString(ret_1));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("("));
+        txt = Tpl.writeText(txt, a_ctor);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(",&"));
+        txt = Tpl.writeText(txt, a_omcname);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("__desc,"));
+        txt = Tpl.writeText(txt, a_fields);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("))"));
+        txt = Tpl.writeTok(txt, Tpl.ST_NEW_LINE());
       then txt;
   end matchcontinue;
 end fun_23;
-
-protected function fun_24
-  input Tpl.Text in_txt;
-  input list<SCode.Element> in_a_p_elementLst;
-  input Tpl.Text in_a_fields;
-
-  output Tpl.Text out_txt;
-algorithm
-  out_txt :=
-  matchcontinue(in_txt, in_a_p_elementLst, in_a_fields)
-    local
-      Tpl.Text txt;
-      Tpl.Text a_fields;
-
-    case ( txt,
-           {},
-           _ )
-      then txt;
-
-    case ( txt,
-           _,
-           a_fields )
-      equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(","));
-        txt = Tpl.writeText(txt, a_fields);
-      then txt;
-  end matchcontinue;
-end fun_24;
 
 public function elementExternalHeader
   input Tpl.Text in_txt;
@@ -323,12 +339,10 @@ algorithm
       SCode.Ident i_c_name;
       Absyn.Path i_r_name;
       list<SCode.Element> i_p_elementLst;
-      Integer ret_11;
-      Integer ret_10;
       Integer ret_9;
-      String ret_8;
-      Integer ret_7;
-      String ret_6;
+      Tpl.Text l_ctor;
+      String ret_7;
+      Tpl.Text l_fullname;
       Integer ret_5;
       Tpl.Text l_nElts;
       String ret_3;
@@ -354,6 +368,12 @@ algorithm
         l_omcname = Tpl.writeStr(l_omcname, ret_3);
         ret_5 = listLength(i_p_elementLst);
         l_nElts = Tpl.writeStr(Tpl.emptyTxt, intString(ret_5));
+        l_fullname = Tpl.writeStr(Tpl.emptyTxt, a_pack);
+        l_fullname = Tpl.writeTok(l_fullname, Tpl.ST_STRING("__"));
+        ret_7 = System.stringReplace(i_c_name, "_", "_5f");
+        l_fullname = Tpl.writeStr(l_fullname, ret_7);
+        ret_9 = intAdd(3, i_r_index);
+        l_ctor = Tpl.writeStr(Tpl.emptyTxt, intString(ret_9));
         txt = Tpl.writeTok(txt, Tpl.ST_STRING_LIST({
                                     "#ifdef ADD_METARECORD_DEFINTIONS\n",
                                     "#ifndef "
@@ -407,35 +427,13 @@ algorithm
                                     "#endif\n",
                                     "#define "
                                 }, false));
-        txt = Tpl.writeStr(txt, a_pack);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("__"));
-        ret_6 = System.stringReplace(i_c_name, "_", "_5f");
-        txt = Tpl.writeStr(txt, ret_6);
+        txt = Tpl.writeText(txt, l_fullname);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("_3dBOX"));
         txt = Tpl.writeText(txt, l_nElts);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(" "));
-        ret_7 = intAdd(3, i_r_index);
-        txt = Tpl.writeStr(txt, intString(ret_7));
+        txt = Tpl.writeText(txt, l_ctor);
         txt = Tpl.softNewLine(txt);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("#define "));
-        txt = Tpl.writeStr(txt, a_pack);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("__"));
-        ret_8 = System.stringReplace(i_c_name, "_", "_5f");
-        txt = Tpl.writeStr(txt, ret_8);
-        txt = fun_23(txt, i_p_elementLst, l_fields);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" (mmc_mk_box"));
-        ret_9 = listLength(i_p_elementLst);
-        ret_10 = intAdd(1, ret_9);
-        txt = Tpl.writeStr(txt, intString(ret_10));
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("("));
-        ret_11 = intAdd(3, i_r_index);
-        txt = Tpl.writeStr(txt, intString(ret_11));
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(",&"));
-        txt = Tpl.writeText(txt, l_omcname);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("__desc"));
-        txt = fun_24(txt, i_p_elementLst, l_fields);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("))"));
-        txt = Tpl.writeTok(txt, Tpl.ST_NEW_LINE());
+        txt = fun_23(txt, i_p_elementLst, l_fields, l_omcname, l_ctor, l_fullname);
       then txt;
 
     case ( txt,
