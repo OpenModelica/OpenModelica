@@ -1340,7 +1340,7 @@ algorithm
     case (cache,env,body,exp,impl,st,performVectorization,pre,info)
       equation
         (cache,elabExp,prop,st) = Static.elabExp(cache,env,exp,impl,st,performVectorization,pre,info);
-        (body,elabExp) = elabResultExp2(body,elabExp); 
+        (body,elabExp) = elabResultExp2(RTOpts.debugFlag("patternmSkipMoveLastExp"),body,elabExp); 
         ty = Types.getPropType(prop);
       then (cache,body,SOME(elabExp),SOME(ty),st);
   end matchcontinue;
@@ -1358,26 +1358,28 @@ protected function elabResultExp2
   This phase needs to be performed if we want to be able to discover places to
   optimize for tail recursion.
   "
+  input Boolean skipPhase;
   input list<DAE.Statement> body;
   input DAE.Exp elabExp;
   output list<DAE.Statement> outBody;
   output DAE.Exp outExp;
 algorithm
-  (outBody,outExp) := matchcontinue (body,elabExp)
+  (outBody,outExp) := matchcontinue (skipPhase,body,elabExp)
     local
       DAE.Exp elabCr1,elabCr2;
       list<DAE.Exp> elabCrs1,elabCrs2;
-    case (body,elabCr2 as DAE.CREF(ty=_))
+    case (true,body,elabExp) then (body,elabExp);
+    case (_,body,elabCr2 as DAE.CREF(ty=_))
       equation
         (DAE.STMT_ASSIGN(exp1=elabCr1,exp=elabExp),body) = Util.listSplitLast(body);
         true = Expression.expEqual(elabCr1,elabCr2);
-        (body,elabExp) = elabResultExp2(body,elabExp);
+        (body,elabExp) = elabResultExp2(false,body,elabExp);
       then (body,elabExp);
-    case (body,DAE.TUPLE(elabCrs2))
+    case (_,body,DAE.TUPLE(elabCrs2))
       equation
         (DAE.STMT_TUPLE_ASSIGN(expExpLst=elabCrs1,exp=elabExp),body) = Util.listSplitLast(body);
         Util.listThreadMapAllValue(elabCrs1, elabCrs2, Expression.expEqual, true);
-        (body,elabExp) = elabResultExp2(body,elabExp);
+        (body,elabExp) = elabResultExp2(false,body,elabExp);
       then (body,elabExp);
     else (body,elabExp);
   end matchcontinue;
