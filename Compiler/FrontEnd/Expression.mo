@@ -3671,7 +3671,7 @@ algorithm
       equation
         ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
         ((expl_1,ext_arg_2)) = traverseExpList(expl_1, rel, ext_arg_1);
-        ((e,ext_arg_2)) = rel((makeASUB(e1_1,expl_1),ext_arg_1));
+        ((e,ext_arg_2)) = rel((makeASUB(e1_1,expl_1),ext_arg_2));
       then
         ((e,ext_arg_2));
     

@@ -4579,7 +4579,7 @@ template daeExpCrefRhs2(Exp ecr, Context context, Text &preExp /*BUFP*/,
         ;separator=", ")
       match arrayType
         case "metatype_array" then
-          'arrayGet(<%arrName%>,<%dimsValuesStr%>)'
+          'arrayGet(<%arrName%>,<%dimsValuesStr%>) /* DAE.CREF */'
         else
           <<
           (*<%arrayType%>_element_addr(&<%arrName%>, <%dimsLenStr%>, <%dimsValuesStr%>))
@@ -5276,7 +5276,7 @@ template daeExpAsub(Exp exp, Context context, Text &preExp /*BUFP*/,
     (match exp case ASUB(exp=e, sub={idx}) then
       let e1 = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
       let idx1 = daeExp(idx, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-      'arrayGet(<%e1%>,<%idx1%>)')
+      'arrayGet(<%e1%>,<%idx1%>) /* DAE.ASUB */')
   // Modelica Array
   else
   match exp
@@ -5600,7 +5600,7 @@ template arrayScalarRhs(ExpType ty, list<Exp> subs, String arrName, Context cont
     ;separator=", ")
   match arrayType
     case "metatype_array" then
-      'arrayGet(<%arrName%>,<%dimsValuesStr%>)'
+      'arrayGet(<%arrName%>,<%dimsValuesStr%>) /*arrayScalarRhs*/'
     else
       <<
       (*<%arrayType%>_element_addr(&<%arrName%>, <%dimsLenStr%>, <%dimsValuesStr%>))

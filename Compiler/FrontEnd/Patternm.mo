@@ -559,9 +559,9 @@ algorithm
         matchTy = optimizeContinueToMatch(matchTy,elabCases,info);
         elabCases = optimizeContinueJumps(matchTy, elabCases);
         exp = DAE.MATCHEXPRESSION(matchTy,elabExps,matchDecls,elabCases,et);
-        ((_,ht)) = Expression.traverseExp(exp, addLocalCref, HashTableStringToPath.emptyHashTable());
+        (elabCases,ht) = traverseCases(elabCases, addLocalCref, HashTableStringToPath.emptyHashTable());
         (matchDecls,ht) = filterUnusedDecls(matchDecls,ht,{},HashTableStringToPath.emptyHashTable());
-        // elabCases = filterUnusedAsBindings(elabCases,ht);
+        elabCases = filterUnusedAsBindings(elabCases,ht);
         exp = DAE.MATCHEXPRESSION(matchTy,elabExps,matchDecls,elabCases,et);
       then (cache,exp,prop,st);
     else
@@ -589,29 +589,32 @@ algorithm
     case ({},_) then {};
     case (DAE.CASE(patterns, localDecls, body, result, jump, info)::cases,ht)
       equation
-        (patterns,_) = traversePatternList(patterns, removePatternAsBinding, ht);
+        (patterns,_) = traversePatternList(patterns, removePatternAsBinding, (ht,info));
         cases = filterUnusedAsBindings(cases,ht);
       then DAE.CASE(patterns, localDecls, body, result, jump, info)::cases;
   end match;
 end filterUnusedAsBindings;
 
 protected function removePatternAsBinding
-  input tuple<DAE.Pattern,HashTableStringToPath.HashTable> inTpl;
-  output tuple<DAE.Pattern,HashTableStringToPath.HashTable> outTpl;
+  input tuple<DAE.Pattern,tuple<HashTableStringToPath.HashTable,Absyn.Info>> inTpl;
+  output tuple<DAE.Pattern,tuple<HashTableStringToPath.HashTable,Absyn.Info>> outTpl;
 algorithm
   outTpl := matchcontinue inTpl
     local
       HashTableStringToPath.HashTable ht;
       DAE.Pattern pat;
       String id;
-    case ((DAE.PAT_AS(id=id,pat=pat),ht))
+      Absyn.Info info;
+      tuple<HashTableStringToPath.HashTable,Absyn.Info> tpl;
+    case ((DAE.PAT_AS(id=id,pat=pat),tpl as (ht,info)))
       equation
         _ = BaseHashTable.get(id, ht);
-      then ((pat,ht));
-    case ((DAE.PAT_AS_FUNC_PTR(id=id,pat=pat),ht))
+        Error.assertionOrAddSourceMessage(not RTOpts.debugFlag("patternmAllInfo"),Error.META_UNUSED_AS_BINDING, {id}, info);
+      then ((pat,tpl));
+    case ((DAE.PAT_AS_FUNC_PTR(id=id,pat=pat),tpl as (ht,info)))
       equation
         _ = BaseHashTable.get(id, ht);
-      then ((pat,ht));
+      then ((pat,tpl));
     else inTpl;
   end matchcontinue;
 end removePatternAsBinding;
@@ -629,8 +632,10 @@ algorithm
       String name;
       list<DAE.MatchCase> cases;
       DAE.Pattern pat;
-    case ((exp as DAE.CREF(componentRef=DAE.CREF_IDENT(ident=name)),ht))
+      list<DAE.Subscript> subs;
+    case ((exp as DAE.CREF(componentRef=DAE.CREF_IDENT(ident=name,subscriptLst=subs)),ht))
       equation
+        ht = addLocalCrefSubs(subs,ht);
         ht = BaseHashTable.add((name,Absyn.IDENT("")), ht);
       then ((exp,ht));
     case ((exp as DAE.CALL(path=Absyn.IDENT(name), builtin=false),ht))
@@ -648,6 +653,30 @@ algorithm
     else inTpl;
   end match;
 end addLocalCref;
+
+protected function addLocalCrefSubs
+  "Cref subscripts may also contain crefs"
+  input list<DAE.Subscript> subs;
+  input HashTableStringToPath.HashTable ht;
+  output HashTableStringToPath.HashTable outHt;
+algorithm
+  outHt := match (subs,ht)
+    local
+      DAE.Exp exp;
+    case ({},ht) then ht;
+    case (DAE.SLICE(exp)::subs,ht)
+      equation
+        ((_,ht)) = Expression.traverseExp(exp, addLocalCref, ht);
+        ht = addLocalCrefSubs(subs,ht);
+      then ht;
+    case (DAE.INDEX(exp)::subs,ht)
+      equation
+        ((_,ht)) = Expression.traverseExp(exp, addLocalCref, ht);
+        ht = addLocalCrefSubs(subs,ht);
+      then ht;
+    else ht;
+  end match;
+end addLocalCrefSubs;
 
 protected function addCasesLocalCref
   input list<DAE.MatchCase> cases;
