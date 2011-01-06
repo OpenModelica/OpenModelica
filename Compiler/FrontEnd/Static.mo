@@ -3103,7 +3103,7 @@ algorithm
   (outCache,outExp,outProperties) := matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
     local
       DAE.Exp dimp,arraycrefe,exp;
-      DAE.Const c,c_1;
+      DAE.Const c_1;
       DAE.Type arrtp;
       DAE.Properties prop;
       Boolean b,c2,impl;
@@ -8564,12 +8564,12 @@ algorithm
       Boolean impl,tuple_,builtin;
       DAE.InlineType inline;
       Option<Interactive.InteractiveSymbolTable> st;
-      list<DAE.Type> ktypelist,tys;
+      list<DAE.Type> tys;
       list<DAE.Dimension> vect_dims;
       DAE.Exp daeExp;
       list<Ident> t_lst;
       Ident fn_str,types_str,scope,pre_str;
-      String name,argStr,id,args_str,str;
+      String argStr,id,args_str,str;
       DAE.ExpType tp;
       SCode.Mod mod;
       DAE.Mod tmod;

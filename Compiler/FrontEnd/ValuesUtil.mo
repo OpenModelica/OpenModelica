@@ -2059,7 +2059,7 @@ algorithm
   _ := match (xs,ids)
     local
       Absyn.Path cname;
-      String res,id;
+      String id;
       Value x;
       
       Integer ix;
@@ -2249,7 +2249,7 @@ protected function unparsePtolemyValues "function: unparsePtolemyValues
 algorithm
   _ := match (inValue,inValueLst,inStringLst)
     local
-      String res,v1;
+      String v1;
       Value time,s1;
       list<Value> xs;
       list<String> vs;
@@ -2281,7 +2281,7 @@ protected function unparsePtolemySet2 "function: unparsePtolemySet2
 algorithm
   _ := matchcontinue (inValue1,inValue2)
     local
-      String res,res_1;
+      String res_1;
       Value v1,v2;
       list<Value> v1s,v2s;
       list<Integer> dims2;

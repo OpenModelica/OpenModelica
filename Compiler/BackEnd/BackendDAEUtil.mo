@@ -2611,7 +2611,7 @@ algorithm
     local
       String rkeystr,keystr;
       DAE.ComponentRef rkey;
-      BackendDAE.Value cmpval,res;
+      BackendDAE.Value res;
       Option<BackendDAE.BinTree> optRight;
       BackendDAE.BinTree  left;
       

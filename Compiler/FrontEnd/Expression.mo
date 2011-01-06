@@ -1939,7 +1939,7 @@ protected function factorsWork
 algorithm
   outExpLst := match (inExp,acc,noFactors,doInverseFactors)
     local
-      list<DAE.Exp> f1_1,f2_1,res,f2_2;
+      list<DAE.Exp> f2_2;
       DAE.Exp e1,e2,e;
       ComponentRef cr;
     case (DAE.BINARY(exp1 = e1,operator = DAE.MUL(ty = _),exp2 = e2),acc,noFactors,doInverseFactors)
@@ -3512,7 +3512,7 @@ algorithm
       FuncExpType rel;
       list<DAE.Exp> expl_1,expl;
       Absyn.Path fn,path_1,path;
-      Boolean b_1,t,b,scalar_1,scalar,built;
+      Boolean t,b,scalar_1,scalar,built;
       Type tp;
       Integer i;
       list<list<tuple<DAE.Exp, Boolean>>> lstexpl_1,lstexpl;
@@ -3963,7 +3963,7 @@ algorithm
       FuncExpType rel;
       list<DAE.Exp> expl_1,expl;
       Absyn.Path fn,path_1,path;
-      Boolean b_1,t,b,scalar_1,scalar,built;
+      Boolean t,b,scalar_1,scalar,built;
       Type tp;
       Integer i;
       String id,str;

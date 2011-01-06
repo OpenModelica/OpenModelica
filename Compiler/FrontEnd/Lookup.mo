@@ -569,7 +569,7 @@ algorithm
       DAE.Binding bind;
       String id,id2,str;
       list<Env.Item> fs;
-      list<Env.Frame> cenv,prevFrames;
+      list<Env.Frame> prevFrames;
       DAE.ComponentRef cref;
       Absyn.Path strippath,path;
       SCode.Class c2;
@@ -1607,7 +1607,7 @@ algorithm
       Option<String> sid;
       Env.AvlTree httypes;
       Env.AvlTree ht;
-      list<tuple<DAE.TType, Option<Absyn.Path>>> c1,c2,res;
+      list<tuple<DAE.TType, Option<Absyn.Path>>> res;
       list<Env.Frame> env,fs,env_1,env2,env_2;
       String pack,str;
       SCode.Class c;

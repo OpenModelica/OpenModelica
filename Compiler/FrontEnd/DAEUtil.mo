@@ -2177,12 +2177,12 @@ algorithm
       list<Absyn.Path> pathlist;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
-      list<DAE.Element> elements,eqs,eqsfalseb,rest;
+      list<DAE.Element> eqsfalseb,rest;
       list<list<DAE.Element>> eqstrueb;
       list<DAE.ComponentRef> crefs1,crefs2,crefs3;
       Option<DAE.Element> elsewhenopt;
       Algorithm.Algorithm alg;
-      String fname,lang;
+      String lang;
       Absyn.Path path;
       list<list<DAE.Exp>> expslist;
       list<DAE.ExtArg> args;
@@ -3446,9 +3446,9 @@ protected function traverseDAEFunc
 algorithm
   (traversedFn,oextraArg) := match (daeFn,func,extraArg)
     local
-      DAE.ComponentRef cr1,cr1_2;
+      DAE.ComponentRef cr1_2;
       list<DAE.Element> elist,elist2,elist22,elist1,elist11;
-      DAE.Element elt1,elt11;
+      DAE.Element elt11;
       list<Absyn.Path> clsLst;
       Option<DAE.VariableAttributes> attr;
       DAE.Type ftp,tp;
@@ -3514,7 +3514,7 @@ protected function traverseDAE2_tail
 algorithm
   (traversedDaeList,oextraArg) := match (daeList,func,extraArg,accumulator)
     local
-      DAE.ComponentRef cr1,cr1_2;
+      DAE.ComponentRef cr1_2;
       list<DAE.Element> dae,dae2,elist,elist2,elist22,elist1,elist11;
       DAE.Element elt,elt2,elt22,elt1,elt11;
       DAE.Function f2;
@@ -3527,7 +3527,7 @@ algorithm
       DAE.Stream st;
       DAE.ExternalDecl extDecl;
       DAE.VarProtection prot;
-      DAE.Exp e1,e11,maybeCrExp;
+      DAE.Exp maybeCrExp;
       list<Absyn.Path> clsLst;
       Option<DAE.VariableAttributes> attr;
       Option<SCode.Comment> cmt;

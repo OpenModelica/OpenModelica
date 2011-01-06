@@ -1450,8 +1450,8 @@ algorithm
       Operator op_1,op;
       FuncTypeTplExpType_aToTplExpType_a rel;
       list<Exp> expl_1,expl;
-      Path fn,path_1,path;
-      Boolean b_1,t,b,scalar_1,scalar;
+      Path path;
+      Boolean b,scalar_1,scalar;
       Integer i;
       Ident id;
       list<tuple<Exp,Exp>> elseIfBranch,elseIfBranch1;

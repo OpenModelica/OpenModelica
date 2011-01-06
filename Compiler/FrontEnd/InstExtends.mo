@@ -358,8 +358,8 @@ algorithm
       list<SCode.Annotation> annotationLst;
       Option<SCode.Comment> comment;
       list<SCode.Element> els,els1,els2;
-      list<SCode.Equation> inEqn,inEqn1,inEqn2;
-      list<SCode.AlgorithmSection> inAlg,inAlg1,inAlg2;
+      list<SCode.Equation> inEqn2;
+      list<SCode.AlgorithmSection> inAlg2;
       list<tuple<SCode.Element, DAE.Mod, Boolean>> compelts;
       SCode.Mod mods;
       DAE.Mod emod;

@@ -2475,7 +2475,7 @@ algorithm
       Value v;
       Integer n,len;
       array<Option<tuple<Key,Value>>> arr;
-      String lens,ns;
+      String ns;
     
     case (VALUE_ARRAY(numberOfElements = n,valueArray = arr),pos)
       equation

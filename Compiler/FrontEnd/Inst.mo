@@ -3255,13 +3255,13 @@ algorithm
       Option<tuple<DAE.TType, Option<Absyn.Path>>> bc;
       DAE.Mod mods,emods,m,mod_1,mods_1,mods_2,checkMods;
       Prefix.Prefix pre;
-      list<SCode.Equation> eqs2,initeqs2,eqs_1,initeqs_1;
-      list<SCode.AlgorithmSection> alg2,initalg2,alg_1,initalg_1;
+      list<SCode.Equation> eqs_1,initeqs_1;
+      list<SCode.AlgorithmSection> alg_1,initalg_1;
       SCode.Restriction re,r;
       Boolean prot,impl,enc2;
       InstDims inst_dims,inst_dims_1;
       list<DAE.Subscript> inst_dims2;
-      String cn2,cns,scope_str,s;
+      String s;
       SCode.Class c;
       Option<DAE.EqMod> eq;
       list<DAE.Dimension> dims;
@@ -5064,7 +5064,7 @@ algorithm
       CallingScope callscope;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
-      String prepath,s1,elementName;
+      String elementName;
       SCode.Element ele;
       Boolean nopre;
       Absyn.Info rinfo;
@@ -6361,7 +6361,7 @@ protected function checkMultiplyDeclared
 algorithm
   alreadyDeclared := matchcontinue(cache,env,mod,prefix,csets,ciState,compTuple,instDims,impl)
     local
-      list<Env.Frame> cenv,compenv;
+      list<Env.Frame> compenv;
       String n,n2;
       Boolean finalPrefix,repl,prot;
       SCode.Element oldElt;
@@ -8353,8 +8353,8 @@ algorithm
   (outCache,outEnv,outIH,outSets,outUpdatedComps) := matchcontinue (cache,env,cenv,inIH,pre,path,name,ad,cl,attr,dattr,prot,finalPrefix,io,info,m,cmod,mod,cref,ci_state,csets,impl,updatedComps)
     local
       tuple<DAE.TType, Option<Absyn.Path>> ty;
-      String id,str,str2,str3;
-      Boolean flowPrefix,streamPrefix;
+      String str3;
+      Boolean streamPrefix;
       list<Absyn.Subscript> subscr;
       SCode.Accessibility acc;
       SCode.Variability param;
@@ -8363,7 +8363,7 @@ algorithm
       Option<SCode.Comment> comment;
       DAE.Mod m_1,classmod,mm,mod_1,mod_2,mod_3,mods;
       list<Env.Frame> compenv,env2_1,env_1;
-      list<Absyn.ComponentRef> crefs_1,crefs_2;
+      list<Absyn.ComponentRef> crefs_2;
       Connect.Sets csets_1;
       Option<DAE.EqMod> eq;
       list<DAE.Dimension> dims;
@@ -9938,7 +9938,7 @@ algorithm
       SCode.Class c;
       String n, s;
       InstDims inst_dims;
-      Boolean partialPrefix,ep;
+      Boolean ep;
       DAE.ExternalDecl extdecl;
       SCode.Restriction restr;
       SCode.ClassDef parts;

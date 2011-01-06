@@ -3983,7 +3983,7 @@ algorithm
       list<Type> tys_1,tys1,tys2;
       list<Ident> l;
       list<Var> v, al;
-      String id,id1,id2;
+      String id2;
       Absyn.Path path,tp,path1,path2;
       String name;
       list<Absyn.Path> pathList;

@@ -3912,7 +3912,7 @@ algorithm
     local
       list<String> chars, startChars,  stRevLst;
       LineInfo linfo, startLinfo;
-      String pm,   c;
+      String    c;
       Option<String> optError;
       Boolean isD;
       TplAbsyn.Ident id;

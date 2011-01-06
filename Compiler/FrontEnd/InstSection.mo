@@ -2422,7 +2422,7 @@ algorithm
       Absyn.MatchType matchType;
       list<DAE.Properties>  eprops;
       DAE.Type rt;
-      String i,lhs_str,rhs_str,lt_str,rt_str;
+      String lt_str,rt_str;
       list<DAE.Statement> tb_1,fb_1,sl_1,stmts;
       list<tuple<DAE.Exp, DAE.Properties, list<DAE.Statement>>> eib_1;
       list<SCode.Statement> tb,fb,sl,elseWhenSt;
@@ -2438,7 +2438,7 @@ algorithm
       Absyn.Case case_;
       list<Absyn.Exp> expList;
       DAE.Type t2;
-      DAE.Exp e2_2,e2_2_2; 
+      DAE.Exp e2_2_2; 
       Absyn.ForIterators rangeList;
       SCode.Statement absynStmt;
       list<Absyn.Ident> tempLoopVarNames;
@@ -3615,12 +3615,12 @@ algorithm
   (outCache,outEnv,outIH,outSets,outDae,outGraph) :=
   match (inCache,inEnv,inIH,inSets,inPrefix,inComponentRefLeft,inComponentRefRight,inVariablesUnion,inBoolean,inGraph,info)
     local
-      DAE.ComponentRef c1_2,c2_2;
+      DAE.ComponentRef c2_2;
       DAE.ExpType t2;
       DAE.Properties prop2;
       SCode.Accessibility acc;
       DAE.Attributes attr;
-      Boolean flowPrefix,streamPrefix1,streamPrefix2,streamPrefix,impl;
+      Boolean streamPrefix,impl;
       tuple<DAE.TType, Option<Absyn.Path>> ty;
       Connect.Face f2;
       Connect.Sets sets,sets_2,sets_3;
@@ -3634,7 +3634,7 @@ algorithm
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
       String  expandableConnectorName;
-      Absyn.Direction dir,dirFlipped;
+      Absyn.Direction dirFlipped;
       DAE.Binding binding;
       Option<DAE.Const> cnstForRange;
       Lookup.SplicedExpData splicedExpData;
@@ -4967,9 +4967,9 @@ algorithm
       list<DAE.Properties> cprops, eprops;
       DAE.Type lt,rt;
       String s,i,lhs_str,rhs_str,lt_str,rt_str;
-      list<DAE.Statement> fb_1,sl_1,stmts;
+      list<DAE.Statement> stmts;
       list<tuple<DAE.Exp, DAE.Properties, list<DAE.Statement>>> eib_1;
-      list<SCode.Statement> fb,sl,elseWhenSt;
+      list<SCode.Statement> elseWhenSt;
       list<tuple<Absyn.Exp, list<SCode.Statement>>> elseWhenRest;
       SCode.Statement alg;
       Env.Cache cache;

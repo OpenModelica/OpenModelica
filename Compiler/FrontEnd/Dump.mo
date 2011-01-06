@@ -337,7 +337,7 @@ algorithm
   outString := match (inClass)
     local
       Ident is,s1,s2,s2_1,s3,s4,s5,str,n,fi,re,io,s6,s7,s8,s9,name;
-      Integer i,indent;
+      Integer indent;
       Boolean p,f,e;
       Absyn.Restriction r;
       list<Absyn.ClassPart> parts;

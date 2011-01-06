@@ -1249,7 +1249,7 @@ algorithm
       BackendDAE.Var v;
       BackendDAE.Value n,pos,len;
       array<Option<BackendDAE.Var>> arr;
-      String lens,ns;
+      String ns;
     case (BackendDAE.VARIABLE_ARRAY(numberOfElements = n,varOptArr = arr),pos)
       equation
         (pos < n) = true;

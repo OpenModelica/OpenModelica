@@ -1132,7 +1132,7 @@ sudh as:
      local
        tuple<Option<DAE.Exp>, Option<DAE.Exp>> min_max;
        Option<DAE.Exp> quant,unit,displayUnit;
-       Option<DAE.Exp> max,Initial,nominal;
+       Option<DAE.Exp> Initial,nominal;
        Option<DAE.Exp> fixed;
        Option<DAE.StateSelect> stateSel;
        DAE.Exp addMMLCode;
@@ -1539,7 +1539,7 @@ algorithm
   matchcontinue (inExp)
     local
       DAE.Ident s,s_1,s_2,sym,s1,s2,s3,s4,s_3,ifstr,thenstr,elsestr,res,argstr,s5,s_4,s_5,res2,str,crstr,dimstr,expstr,iterstr,id;
-      DAE.Ident s1_2,s2_2,cs,ts,fs,cs_1,ts_1,fs_1,s3_1;
+      DAE.Ident cs,ts,fs,cs_1,ts_1,fs_1,s3_1;
       Integer x,pri2_1,pri2,pri3,pri1,ival,i,pe1,p1,p2,pc,pt,pf,p,pstop,pstart,pstep;
       Real rval;
       DAE.ComponentRef c;
@@ -3279,7 +3279,7 @@ See dumpVariable for more details on the XML output.
 algorithm
   _ := match (inVarLst,inInteger,addMathMLCode)
     local
-      String dirstr,str,path_str,comment_str,s,indx_str;
+      String path_str,comment_str,s,indx_str;
       list<String> path_strs;
       BackendDAE.Value indx,varno;
       BackendDAE.Var v;
@@ -3348,7 +3348,7 @@ See dumpVariable for more details on the XML output.
 algorithm
   _ := match (inVarLst,crefIdxLstArr,strIdxLstArr,inInteger,addMathMLCode)
     local
-      String dirstr,str,path_str,comment_str,s,indx_str;
+      String path_str,comment_str,s,indx_str;
       list<String> path_strs;
       BackendDAE.Value indx,varno;
       BackendDAE.Var v;

@@ -9597,7 +9597,7 @@ algorithm
   outInteractiveVariableLst:=
   match (inProgram,inInteractiveVariableLst)
     local
-      Absyn.Path newscope,path_1;
+      Absyn.Path path_1;
       Values.Value newscope_1;
       list<InteractiveVariable> vars;
       String id1;
@@ -13062,7 +13062,7 @@ protected function getNamedAnnotationInClass
 algorithm
   outString := matchcontinue (inClass,id,f)
     local
-      list<Absyn.ElementItem> protlst,lst;
+      list<Absyn.ElementItem> lst;
       String str,res;
       list<Absyn.ClassPart> parts;
       list<Absyn.ElementArg> annlst;
@@ -17959,8 +17959,8 @@ algorithm
       Absyn.Operator op_1,op;
       FuncTypeTplExpType_aToTplExpType_a rel;
       list<Absyn.Exp> expl_1,expl;
-      Absyn.Path fn,path_1,path;
-      Boolean b_1,t,b,scalar_1,scalar;
+      Absyn.Path path;
+      Boolean b,scalar_1,scalar;
       Integer i;
       Absyn.Ident id;
       list<tuple<Absyn.Exp,Absyn.Exp>> elseIfBranch,elseIfBranch1;
@@ -18110,7 +18110,7 @@ public function traverseExpFunctionArgs
 algorithm
   outTplExpTypeA:= match(inArgs,rel,ext_arg)
     local
-      Absyn.Exp e11,e21;
+      Absyn.Exp e21;
       list<Absyn.NamedArg> nargs;
       list<Absyn.Exp> expl,expl_1;
      case(inArgs as Absyn.FOR_ITER_FARG(exp = _),rel,ext_arg) then((inArgs,ext_arg));
@@ -19021,7 +19021,7 @@ protected function getNameFromElementIfVisType
 algorithm
   outString:= matchcontinue (inElementItem, inProgram)
     local
-      String inout_str,str_restriction,element_str,sline_str,scol_str,eline_str,ecol_str,readonly_str,str,id,file,typename_str,varname_str;
+      String element_str,sline_str,scol_str,eline_str,ecol_str,readonly_str,str,id,file,typename_str,varname_str;
       Boolean f,p,fi,e,isReadOnly;
       Option<Absyn.RedeclareKeywords> r;
       Absyn.InnerOuter inout;

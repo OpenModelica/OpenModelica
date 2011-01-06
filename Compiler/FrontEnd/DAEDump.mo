@@ -2744,8 +2744,8 @@ public function dumpElementsStream "function: dumpElementsStream
 algorithm
   outStream := match(l, inStream)
     local  
-      String initeqstr,initalgstr,eqstr,algstr;
-      Boolean noinitalg,noeq,noalg;
+      String initalgstr,eqstr,algstr;
+      Boolean noeq,noalg;
       IOStream.IOStream str;
       list<DAE.Element> v,o,ie,ia,e,a;
       
@@ -3287,7 +3287,7 @@ public function dumpFunctionStr "function: dumpFunctionStr
 algorithm
   outString := matchcontinue (inElement)
     local
-      String daestr,str;
+      String str;
       Absyn.Path fpath;
       list<DAE.Element> dae;
       DAE.Type t;
@@ -3343,7 +3343,7 @@ protected function dumpFunctionStream
 algorithm
   outStream := matchcontinue (inElement, inStream)
     local
-      String fstr, daestr,lang;
+      String fstr, lang;
       Absyn.Path fpath;
       list<DAE.Element> daeElts;
       DAE.Type t;

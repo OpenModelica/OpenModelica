@@ -485,12 +485,12 @@ algorithm
       Absyn.Class c;      
       list<Absyn.Class> clst;
       String  n;
-      Boolean f,e;
+      Boolean e;
       Absyn.Restriction r;
       Absyn.ClassDef b;
       String fn;
       Boolean ro;
-      Integer cns,lne,cne;   
+      Integer cne;   
     
     case({}) then {};
     

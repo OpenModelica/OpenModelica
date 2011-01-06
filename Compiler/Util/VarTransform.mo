@@ -778,7 +778,7 @@ algorithm
   match (inVariableReplacements)
     local
       list<DAE.Exp> srcs,dsts;
-      list<String> dststrs,dststrs_1,strs;
+      list<String> strs;
       String str,len_str;
       Integer len;
       HashTable2.HashTable ht;

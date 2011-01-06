@@ -7200,7 +7200,7 @@ public function buildMapStr "function: buildMapStr
 algorithm
   outStr := matchcontinue (inLst1,inLst2, inMiddleDelimiter, inEndDelimiter)
     local
-      list<String> c,d,ra,rb;
+      list<String> ra,rb;
       String fa,fb, md, ed, str;
     
     case ({},{}, md, ed) then "";

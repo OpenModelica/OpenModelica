@@ -2717,7 +2717,7 @@ algorithm
   (outCache,outValue,outInteractiveSymbolTable) :=
   matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable,inMsg)
     local
-      String cname_str,filename,funcfilename,makefilename,file_dir;
+      String file_dir;
       Absyn.Path classname;
       list<SCode.Class> sp;
       DAE.DAElist dae;
@@ -2741,7 +2741,7 @@ algorithm
       list<Interactive.LoadedFile> lf;
       Absyn.TimeStamp ts;
       AbsynDep.Depends aDep;
-      Integer simpleEqnSize,elimLevel;
+      Integer elimLevel;
       String errorMsg,eqnSizeStr,varSizeStr,retStr,classNameStr,simpleEqnSizeStr,s1;
       BackendDAE.EquationArray eqns;
       Absyn.Class cls, refactoredClass;
@@ -2857,7 +2857,7 @@ algorithm
       Absyn.Program p,p2;
       Absyn.Class cdef;
       list<Interactive.CompiledCFunction> cf;
-      Real interval_r,tolerance_r,edit,build,r1,r2,globalEdit,globalBuild,timeCompile;
+      Real edit,build,r1,r2,globalEdit,globalBuild,timeCompile;
       list<Env.Frame> env;
       SimCode.SimulationSettings simSettings;
       DAE.Exp exp,starttime,stoptime,interval,tolerance,method,fileprefix,storeInTemp,noClean,options,outputFormat;
@@ -3678,7 +3678,7 @@ algorithm
   (outCache,outValue,outInteractiveSymbolTable) :=
   matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable,inMsg)
     local
-      String cname_str,filename,funcfilename,makefilename,file_dir;
+      String file_dir;
       Absyn.Path classname;
       list<SCode.Class> p_1,sp;
       DAE.DAElist dae;
@@ -4107,7 +4107,7 @@ algorithm
   matchcontinue (inCache,inEnv,inExp,inInteractiveSymbolTable,inMsg)
     local
       Boolean cdToTemp;
-      Real interval_r,tolerance_r;
+      Real tolerance_r;
       String cname_str,init_filename,method_str,filenameprefix,makefilename,oldDir,tempDir,translationLevel;
       list<Interactive.InstantiatedClass> ic_1,ic;
       list<Interactive.InteractiveVariable> iv;
@@ -4500,7 +4500,7 @@ algorithm
       Absyn.Program p,p2;
       Absyn.Class cdef;
       list<Interactive.CompiledCFunction> cf;
-      Real interval_r,tolerance_r;
+      Real tolerance_r;
       list<Env.Frame> env;
       DAE.Exp exp,starttime,stoptime,interval,method,tolerance,fileprefix,storeInTemp,noClean,options;
       DAE.ComponentRef cr;
