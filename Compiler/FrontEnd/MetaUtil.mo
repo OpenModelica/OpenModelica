@@ -318,7 +318,6 @@ algorithm
       list<Absyn.Class> classes, metaClassesFlat;
       list<list<Absyn.Class>> metaClasses;
       Absyn.Within w;
-      Absyn.Program p;
       Absyn.TimeStamp ts;
     
     case (program)
@@ -344,8 +343,6 @@ protected function createMetaClassesFromPackage "function: createMetaClassesFrom
 algorithm
   out := matchcontinue(cl)
     local
-      list<Absyn.Class>  metaClassesFlat;
-      list<list<Absyn.Class>> metaClasses;
       String name;
       Boolean     partialPrefix;
       Boolean     finalPrefix;
@@ -401,7 +398,6 @@ algorithm
       Option<Absyn.RedeclareKeywords> redeclareKeywords;
       Absyn.InnerOuter innerOuter;
       String name;
-      Absyn.ElementSpec specification;
       Absyn.Info info;
       Option<Absyn.ConstrainClass> constrainClass;
       Boolean replaceable_;
@@ -430,12 +426,9 @@ algorithm
       Option<Absyn.RedeclareKeywords> redeclareKeywords;
       Absyn.InnerOuter innerOuter;
       String name;
-      Absyn.ElementSpec specification;
       Absyn.Info info;
       Option<Absyn.ConstrainClass> constrainClass;
       Boolean replaceable_;
-      list<Absyn.Class>  classes;
-      list<Absyn.ElementItem> elementItems;
     case (Absyn.ELEMENTITEM(Absyn.ELEMENT(specification=Absyn.CLASSDEF(replaceable_=replaceable_),finalPrefix=finalPrefix,redeclareKeywords=redeclareKeywords,innerOuter=innerOuter,name=name,info=info,constrainClass=constrainClass)),class_)
       then Absyn.ELEMENTITEM(Absyn.ELEMENT(finalPrefix,redeclareKeywords,innerOuter,name,Absyn.CLASSDEF(replaceable_,class_),info,constrainClass));
   end match;
@@ -452,7 +445,6 @@ algorithm
       list<Absyn.ClassPart> cls;
       list<Absyn.ElementItem> els;
       list<Absyn.Class> cllst;
-      SCode.ClassDef d_1;
       SCode.Restriction r_1;
       Absyn.Class c;
       String n;
@@ -484,13 +476,6 @@ algorithm
       list<Absyn.ElementItem> rest;
       Absyn.Class c;      
       list<Absyn.Class> clst;
-      String  n;
-      Boolean e;
-      Absyn.Restriction r;
-      Absyn.ClassDef b;
-      String fn;
-      Boolean ro;
-      Integer cne;   
     
     case({}) then {};
     

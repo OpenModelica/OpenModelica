@@ -255,7 +255,6 @@ algorithm
       DAE.ComponentRef lhs_cref;
       Values.Value rhs_val;
       list<DAE.Statement> statements;
-      list<DAE.Exp> expl;
       Absyn.Path fn_name;
       LoopControl loop_ctrl;
 
@@ -1069,7 +1068,6 @@ algorithm
       list<DAE.Subscript> subs;
       DAE.Type ty;
       DAE.ExpType ety;
-      DAE.Binding binding;
       Values.Value val;
       DAE.Var var;
       Env.InstStatus inst_status;
@@ -1417,9 +1415,6 @@ algorithm
       DAE.Type ty;
       list<Values.Value> values;
       Values.Value value;
-      Absyn.Path p;
-      list<DAE.Var> vars;
-      list<String> names;
     case ((DAE.T_INTEGER(varLstInt = _), _)) then Values.INTEGER(0);
     case ((DAE.T_REAL(varLstReal = _), _)) then Values.REAL(0.0);
     case ((DAE.T_STRING(varLstString = _), _)) then Values.STRING("");

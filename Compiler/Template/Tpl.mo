@@ -772,9 +772,7 @@ This function renders a (memory-)text to (Print.)string buffer."
 algorithm
   _ := matchcontinue (inText)
     local
-      Integer i0;
       Tokens toks;
-      String str;
           
     case (MEM_TEXT(
             tokens = toks,
@@ -817,9 +815,6 @@ algorithm
       Tokens toks;
       StringToken tok;
       list<tuple<Tokens,BlockType>> blstack;
-      Text txt;
-      String  tokstr;
-      list<String> chars;
       Integer pos, aind;
       Boolean isstart;
     
@@ -860,7 +855,6 @@ algorithm
       Tokens toks;
       list<tuple<Tokens,BlockType>> blstack;
       BlockType bt;
-      Text txt;
       String str;
       list<String>  strLst;
       Integer nchars,   aind, blen;
@@ -1096,10 +1090,6 @@ algorithm
       Tokens toks;
       StringToken septok, tok, asep, wsep;
       list<tuple<Tokens,BlockType>> blstack;
-      BlockType bt;
-      Text txt;
-      String   tokstr;
-      list<String> chars;
       Integer nchars, tsnchars,   aind, w, aoffset, anum, wwidth, blen;
       Boolean isstart;
     
@@ -1268,7 +1258,6 @@ algorithm
     local
       Tokens toks;
       StringToken tok, septok;
-      String   sepstr;
       Integer pos, aind;
       Boolean isstart;
       
@@ -1314,7 +1303,6 @@ algorithm
     local
       Tokens toks;
       StringToken tok, septok, asep, wsep;
-      String    awsepstr;
       Integer pos, aind, idx, anum, wwidth;
       Boolean isstart;
       
@@ -1379,7 +1367,6 @@ algorithm
     local
       Tokens toks;
       StringToken tok,  asep, wsep;
-      String    awsepstr;
       Integer pos, aind, idx, anum, wwidth;
       Boolean isstart;
       
@@ -1448,7 +1435,6 @@ algorithm
   (outActualPositionOnLine, outAtStartOfLine, outAfterNewLineIndent)
    := matchcontinue (inWrapWidth, inWrapSeparator, inActualPositionOnLine, inAtStartOfLine, inAfterNewLineIndent)
     local
-      String   sepstr;
       Integer pos, aind, wwidth;
       Boolean isstart;
       StringToken wsep;

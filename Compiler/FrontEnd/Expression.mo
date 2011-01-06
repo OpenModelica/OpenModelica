@@ -1301,7 +1301,6 @@ algorithm
     local
       Subscript ss;
       list<Subscript> subs;
-      list<DAE.Exp> expl;
       Integer x;
       list<DAE.Dimension> recursive;
       DAE.Exp e;
@@ -1482,7 +1481,6 @@ algorithm
       Operator op;
       DAE.Exp e1,e2,e3,e;
       list<DAE.Exp> explist;
-      list<Type> tylist;
       Absyn.Path p;
       String msg;
     
@@ -1844,7 +1842,6 @@ algorithm
     local
       list<DAE.Exp> f1,f2,res,f2_1;
       DAE.Exp e1,e2,e;
-      Type tp;
       ComponentRef cr;
     
     case (DAE.BINARY(exp1 = e1,operator = DAE.ADD(ty = _),exp2 = e2))
@@ -1939,7 +1936,6 @@ protected function factorsWork
 algorithm
   outExpLst := match (inExp,acc,noFactors,doInverseFactors)
     local
-      list<DAE.Exp> f2_2;
       DAE.Exp e1,e2,e;
       ComponentRef cr;
     case (DAE.BINARY(exp1 = e1,operator = DAE.MUL(ty = _),exp2 = e2),acc,noFactors,doInverseFactors)
@@ -2035,7 +2031,6 @@ public function inverseFactors
 algorithm
   outExp := matchcontinue (inExp)
     local
-      list<DAE.Exp> es;
       Type tp2,tp;
       DAE.Exp e1,e2,e;
       DAE.Operator op;
@@ -2531,9 +2526,6 @@ public function makeDiff
 algorithm
   res := matchcontinue(e1,e2)
     local
-      Type etp;
-      Boolean scalar;
-      Operator op;
 
     case(e1,e2) equation
       true = isZero(e2);
@@ -3337,7 +3329,6 @@ algorithm
     local
       DAE.Exp source,target;
       Integer c1,c2,c;
-      Operator op;
       Type tp;
       Ident id;
       ComponentRef cr,cr1;
@@ -3968,7 +3959,6 @@ algorithm
       Integer i;
       String id,str;
       list<DAE.Element> localDecls;
-      list<DAE.Statement> body;
       list<String> fieldNames;
       DAE.InlineType  inl;
       list<list<tuple<DAE.Exp, Boolean>>> lstexpl_1,lstexpl;
@@ -4298,7 +4288,6 @@ algorithm
       list<ComponentRef> crefs;
       ComponentRef cr;
       Type ty;
-      list<Boolean> blist;
       DAE.Exp e;      
     
     case((DAE.CREF(cr,ty), crefs))
@@ -4431,11 +4420,9 @@ algorithm
     local
       Integer ival;
       Real rval;
-      Boolean res;
       Type t;
       DAE.Exp e;
       list<DAE.Exp> ae;
-      list<Boolean> ab;
       list<list<tuple<DAE.Exp, Boolean>>> scalar;      
       list<tuple<DAE.Exp, Boolean>> aelstlst;       
     
@@ -4492,15 +4479,11 @@ protected function isConstWork
 algorithm
   outBoolean := match (inExp,res)
     local
-      Integer ival;
-      Real rval;
       Boolean res;
-      Ident sval;
       Operator op;
       DAE.Exp e,e1,e2;
       Type t;
       list<DAE.Exp> ae;
-      list<Boolean> ab;
       list<list<tuple<DAE.Exp, Boolean>>> scalar;      
       list<tuple<DAE.Exp, Boolean>> aelstlst;      
     
@@ -5491,7 +5474,6 @@ algorithm
       Boolean b1,b2,res;
       DAE.Exp e11,e12,e21,e22,e1,e2,e13,e23,er1,er2;
       Operator op1,op2;
-      list<Boolean> bs;
       Absyn.Path path1,path2;
       list<DAE.Exp> expl1,expl2;
       Type tp1,tp2;
@@ -5965,7 +5947,6 @@ algorithm
     local
       DAE.Dimension d;
       list<DAE.Dimension> iLst;
-      Integer x;
       Boolean retVal;
     
     case({}) then true;
@@ -6075,7 +6056,6 @@ public function subscriptEqual
 algorithm
   outBoolean := match (inSubscriptLst1,inSubscriptLst2)
     local
-      Boolean res;
       list<Subscript> xs1,xs2;
       DAE.Exp e1,e2;
       

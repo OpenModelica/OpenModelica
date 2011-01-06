@@ -1714,8 +1714,6 @@ algorithm
       list<DAE.Exp> e_lst,e_lst_1,const_es1,notconst_es1,const_es1_1;
       DAE.Exp res,e,e1,e2,res1,res2;
       Type tp;
-      String str;
-      Boolean b;      
 
     // e1 * e2
     case ((e as DAE.BINARY(exp1 = e1,operator = DAE.MUL(ty = tp),exp2 = e2)))
@@ -1808,7 +1806,6 @@ algorithm
     local
       DAE.Exp e,e_1,e1;
       list<DAE.Exp> es;
-      Type tp;
     
     case ({}) then {};
     
@@ -1980,7 +1977,6 @@ algorithm
       DAE.Exp e;
       Real r;
       list<tuple<DAE.Exp, Real>> xs;
-      Type tp;
     
     case ({}) then {};
     
@@ -2132,7 +2128,6 @@ algorithm
       DAE.Exp e;
       Real r;
       list<tuple<DAE.Exp, Real>> xs;
-      Type tp;
       Integer tmpInt;
           
     case ({}) then {};
@@ -2349,7 +2344,6 @@ algorithm
       list<tuple<DAE.Exp, Boolean>> expl;
       list<Boolean> bls;
       ComponentRef cr;
-      Real r;
       list<list<tuple<DAE.Exp, Boolean>>> lstexps;
     
     case (DAE.UNARY(operator = DAE.UMINUS_ARR(ty = t),exp = e),sub)
@@ -2626,7 +2620,6 @@ algorithm
     local
       Integer ie1,ie2;
       Real e2_1,e1_1,v1,v2;
-      Operator op;
       Boolean b,b1,b2;
       DAE.Exp exp1,exp2,val;
       Real re1,re2,re3;
@@ -2834,9 +2827,9 @@ algorithm
         DAE.BCONST(b);
     
     // end adrpo added
-    case (op,exp1,exp2)
+    /*case (op,exp1,exp2)
       then
-        fail();
+        fail();*/
   end match;
 end simplifyBinaryConst;
 
@@ -2912,7 +2905,6 @@ algorithm
       DAE.Exp e1_1,e3,e,e1,e2,res,e_1,one;
       Operator oper;
       Type ty,ty2,tp,tp2,ty1;
-      Ident s2;
       list<DAE.Exp> exp_lst,exp_lst_1;
       DAE.ComponentRef cr1,cr2;
       Boolean b;
@@ -3577,7 +3569,6 @@ Helper function for simplifyVectorBinary, removes an dimension from the operator
   output Operator outop;
 algorithm outop := match(inop)
   local Type ty1,ty2;
-    String str;
   case( DAE.ADD(ty=ty1)) equation ty2 = Expression.unliftArray(ty1); then DAE.ADD(ty2);
   case( DAE.SUB(ty=ty1)) equation ty2 = Expression.unliftArray(ty1); then DAE.SUB(ty2);
 end match;

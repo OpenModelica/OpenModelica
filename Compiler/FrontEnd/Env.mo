@@ -1021,7 +1021,6 @@ algorithm
     local
       Ident s1,s2,s3,encflag_str,res,sid;
       Option<Ident> optName;
-      list<Ident> bcstrings;
       AvlTree httypes;
       AvlTree ht;
       list<AvlValue> imps;
@@ -1351,8 +1350,6 @@ algorithm
   env := match(scope,path,tree)
   local
     	Absyn.Path path2;
-    	Ident id;
-    	list<CacheTree> children;
 
 			// Search only current scope. Since scopes higher up might not be cached, we cannot search upwards.
     case (path2,path,tree)
@@ -1718,9 +1715,6 @@ algorithm
     local
       AvlKey key,rkey;
       AvlValue value;
-      Option<AvlTree> right;
-      Integer h;
-      AvlTree bt;
     
     // empty tree
     case (AVLTREENODE(value = NONE(),left = NONE(),right = NONE()),key,value)
@@ -2006,7 +2000,6 @@ protected function exchangeLeft "help function to balance"
 algorithm
   outParent := match(node,parent)
     local
-      Option<AvlTreeValue> value;
       Integer height ;
       AvlTree bt;
 
@@ -2183,7 +2176,6 @@ algorithm
     local
       Option<AvlTree> l,r;
       Option<AvlTreeValue> v;
-      AvlValue val;
       Integer hl,hr,height;
     case(AVLTREENODE(value=v as SOME(_),left=l,right=r))
       equation
@@ -2301,7 +2293,6 @@ protected function getVariablesFromOptionAvlTree
 algorithm
   variables := match (inAvlTreeOpt)
     local
-      list<String>   lst;
       AvlTree avl;
     // handle nothingness
     case (NONE()) then {};
@@ -2330,7 +2321,6 @@ public function inFunctionScope
 algorithm
   inFunction := matchcontinue(inEnv)
     local
-      DAE.ComponentRef cr;
       list<Frame> fl;
     case ({}) then false;
     case (FRAME(optType = SOME(FUNCTION_SCOPE())) :: _) then true;
@@ -2381,7 +2371,6 @@ algorithm
     local
     	array<Option<EnvCache>> envCache;
     	array<DAE.FunctionTree> ef;
-    	Absyn.ComponentRef cr;
     	Option<Env> ienv;
 
       /* Don't overwrite SOME() with NONE() */

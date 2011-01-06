@@ -578,8 +578,6 @@ protected function exchangeLeft "help function to balance"
 algorithm
   outParent := match(node,parent)
     local
-      Option<AvlTreeValue> value;
-      Integer height;
       AvlTree bt;
 
     case  (node,parent)
@@ -672,7 +670,6 @@ algorithm
       AvlKey rkey,key;
       AvlValue rval,res;
       AvlTree left,right;
-      Integer rhval;
       /* hash func Search to the right */
     case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval))),key)
       equation

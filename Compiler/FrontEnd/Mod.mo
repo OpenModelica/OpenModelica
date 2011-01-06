@@ -117,12 +117,12 @@ algorithm
       DAE.Exp e_1,e_2;
       DAE.Properties prop;
       Option<Values.Value> e_val;
-      Absyn.Exp e,e1;
+      Absyn.Exp e;
       list<tuple<SCode.Element, DAE.Mod>> elist_1;
       list<SCode.Element> elist;
       Ident str;
       Env.Cache cache;
-      DAE.DAElist dae,dae1,dae2;
+      DAE.DAElist dae2;
       InstanceHierarchy ih;
 
     // no modifications
@@ -371,7 +371,7 @@ algorithm
       Absyn.Each each_;
       list<DAE.SubMod> subs;
       Absyn.Exp e,e_1,absynExp;
-      Ident es,s;
+      Ident es;
       DAE.Properties p;
       list<SCode.Element> elist_1;
       list<tuple<SCode.Element, DAE.Mod>> elist;
@@ -519,7 +519,7 @@ algorithm
       Absyn.Exp e;
       Option<Absyn.Exp> eOpt;
       Env.Cache cache;
-      DAE.DAElist dae,dae1,dae2;
+      DAE.DAElist dae;
       InstanceHierarchy ih;
       String str;
     case (cache,_,_,_,DAE.NOMOD(),impl,info) then (cache,DAE.NOMOD());
@@ -1043,12 +1043,7 @@ algorithm
   outTypesSubModLst := matchcontinue (inSubMod,inTypesSubModLst,inEnv,inPrefix)
     local
       DAE.SubMod sub,sub1;
-      DAE.Mod m2;
-      Ident n2;
       list<DAE.SubMod> sub2;
-      list<Env.Frame> env;
-      Prefix.Prefix pre;
-      list<Integer> i2;
     
     case (sub,{},_,_) then {sub};
     /* adrpo 2010-12-08 DO NOT MERGE SUBS as we then cannot catch duplicate modifications like: (w.start = 1, w(start = 2))  
@@ -1278,7 +1273,6 @@ algorithm
   outMod := matchcontinue(mod1,mod2)
     local 
       String s1,s2,s;
-      DAE.Mod mod;
 
     case(DAE.NOMOD(),mod2) then mod2;
     case(mod1,DAE.NOMOD()) then mod1;
@@ -1309,7 +1303,6 @@ algorithm
       Ident id1,id2;
       DAE.SubMod x;
       list<DAE.SubMod> rest, lst;
-      String s;
       
     // empty case
     case ({},_) then {};
@@ -1360,7 +1353,7 @@ algorithm
     local
       list<DAE.SubMod> rest;
       DAE.SubMod x;
-      DAE.Mod mod1, mod2,  m2;
+      DAE.Mod mod1, mod2;
       list<FullMod> fullMods;
     
     case ({}) then fail();
@@ -1401,7 +1394,6 @@ algorithm
     local
       Ident id;
       DAE.Mod mod;
-      String   s2;
       list<DAE.SubMod> duplicates, tail;
       DAE.SubMod head;
       
@@ -1513,7 +1505,6 @@ algorithm
       list<DAE.SubMod> subs_1,subs,xs_1;
       Integer x,y,idx;
       DAE.Mod mod,mod_1,nmod_1,nmod;
-      Option<DAE.EqMod> eq;
       list<Integer> xs;
       Ident name;
       DAE.SubMod sm;
@@ -1622,7 +1613,6 @@ algorithm
       Integer x;
       list<Integer> xs;
       DAE.EqMod eq;
-      Absyn.Exp absynExp;
       String exp_str;
 
     case (NONE(),_) then NONE();
@@ -1732,7 +1722,6 @@ Helper function for merge"
   output Boolean outMod;
 algorithm outMod:= matchcontinue (inMod1)
   local
-    DAE.Mod m;
     case (DAE.REDECL(tplSCodeElementModLst = {(SCode.COMPONENT(finalPrefix=true),_)}))
       then false;
     case(DAE.MOD(finalPrefix = true))
@@ -2209,9 +2198,7 @@ algorithm
   equal := matchcontinue(subModLst1,subModLst2)
     local    DAE.Ident id1,id2;
       DAE.Mod mod1,mod2;
-      Boolean b3;
       list<Integer> indx1,indx2;
-      list<Boolean> blst1;
     
     case ({},_) then true;
     
@@ -2866,9 +2853,6 @@ algorithm
     local
       list<FullMod> fullMods;
       list<DAE.SubMod> subModLst;
-      DAE.Ident id;
-      DAE.Mod mod;
-      list<Integer> indexes;
       list<tuple<SCode.Element, DAE.Mod>> tplSCodeElementModLst;
       Boolean finalPrefix;
     
@@ -3097,9 +3081,6 @@ algorithm
   _ := matchcontinue(subs,pre,elementName,infoOpt,addErrorMessage)
     local 
       String s1,s2,s3;
-      DAE.Mod mod;
-      DAE.SubMod subMod;
-      DAE.ComponentRef cref;
       list<FullMod> rest, duplicates;
       FullMod fullMod;
     

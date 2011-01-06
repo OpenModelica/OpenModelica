@@ -1038,7 +1038,6 @@ algorithm
     local
       list<DAE.Subscript> subs;
       list<DAE.Exp> exps;
-      list<Boolean> bools;
       DAE.ComponentRef cr;
     case (cr)
       equation
@@ -1604,7 +1603,7 @@ algorithm
       DAE.ExpType t2,identType;
       DAE.ComponentRef child;
       list<DAE.Subscript> subs;
-      String name,   str;
+      String name;
       
     // debugging case, uncomment for enabling
     // case(child,newSub)
@@ -1787,7 +1786,6 @@ algorithm
 	    list<DAE.Subscript> subs1,subs2;
 	    DAE.ComponentRef cr1,cr2;
 	    DAE.Ident id1,id2;
-	    DAE.ExpType t2;
 	  
 	  case(DAE.CREF_QUAL(id1,_,subs1,cr1),DAE.CREF_IDENT(id2,_,subs2))
 	    equation

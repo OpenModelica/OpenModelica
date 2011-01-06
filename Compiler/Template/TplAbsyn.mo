@@ -836,7 +836,7 @@ algorithm
   (outStmt) := matchcontinue (inStmt, inTranslatedTextArgs)
     local
       list<MMExp> stmts, fargs;
-      MMExp stmt, rhs;
+      MMExp stmt;
       Ident ident, outident;
       PathIdent fpath;
       list<Ident> largs;
@@ -999,7 +999,6 @@ algorithm
       PathIdent path, fname;
       TypedIdents locals, iargs, oargs;
       TypeSignature idtype, exptype,  rettype;
-      list<TypeSignature>  exptypes;
       tuple<MMExp, TypeSignature> argval;
       list<tuple<MMExp, TypeSignature>> argvals;
       Expression exp, tbranch, argexp, mapexp, txtexp;
@@ -1346,7 +1345,6 @@ algorithm
   := matchcontinue (inExpLst, inStmts, inInText, inOutText, inLocals, inScopeEnv, inTplPackage, inAccMMDecls)
     local
       list<MMExp> stmts;
-      MMExp stmt;    
       ScopeEnv scEnv;
       Ident intxt, outtxt;
       TypedIdents locals;
@@ -1383,7 +1381,6 @@ algorithm
   _ := 
   matchcontinue (inMMEscOptions)
     local
-      list<MMEscOption> opts;
       Ident optid;
     
     //ok, no options  
@@ -1424,18 +1421,12 @@ algorithm
   := matchcontinue (inOptions, inAccMMEscOptions, inStmts, inLocals, inScopeEnv, inTplPackage, inAccMMDecls)
     local
       list<MMExp> stmts;
-      MMExp stmt;    
       ScopeEnv scEnv;
       TypedIdents locals;
       tuple<MMExp, TypeSignature>  defoptval;
       list<tuple<MMExp, TypeSignature>> argvals;
       MMExp  mmarg;
-      PathIdent path;
       TypeSignature  exptype, opttype;
-      list<TypeSignature>  exptypes;
-      list<MMExp> mmargs;
-      Boolean  isnot;
-      TypedIdents  oargs;
       Expression    optexp;
       list<EscOption> opts;
       Ident optid;
@@ -1659,18 +1650,10 @@ algorithm
       MMExp mmexp;
       PathIdent path, fname;
       TypeSignature idtype,  rettype, littype;
-      list<TypeSignature>  exptypes;
       list<Expression> explst;
-      list<MMExp> mmargs;
-      Boolean  isnot;
       TypedIdents iargs, oargs;
-      Expression exp,  argexp;
-      Option<Expression> ebranch;
+      Expression exp;
       list<tuple<MatchingExp,Expression>> mcases;
-      MatchingExp ofbind;
-      Option<Expression> rhsval;
-      list<EscOption> opts;
-      Integer n;
       String litvalue;
       StringToken st;
       
@@ -2020,7 +2003,7 @@ algorithm
     := matchcontinue (inArgValues, inFunName, inInArgs, inOutArgs, inTypeVars, inInText, inOutText, inLocals, inTplPackage)
     local
       
-      PathIdent fname,  typepckg;
+      PathIdent fname;
       TypedIdents iargs, oargs, locals, setTyVars;
       tuple<Ident,TypeSignature> iarg, oarg; 
       list<tuple<MMExp, TypeSignature>> argvals;
@@ -2029,19 +2012,10 @@ algorithm
       Ident     intxt, outtxt, retval;
       list<Ident> lhsArgs, tyVars;
       TypeSignature  outtype;
-      Scope scope;
-      ScopeEnv scEnv;
       TemplPackage tplPackage;
       list<ASTDef> astDefs;
       list<tuple<Ident,TemplateDef>> tpldefs;
-      Option<PathIdent> typepckgOpt;
-      TypeInfo typeinfo;
       MMExp mmexp,  mmtxt;
-      list<MMExp> stmts;
-      StringToken st;
-      Integer ival;
-      Real rval;
-      Boolean bval;
       String  str;
       
     
@@ -2234,11 +2208,8 @@ algorithm
       TypedIdents  setTyVars;
       MMExp mmarg, mmexp;
       list<tuple<MMExp, TypeSignature>> argvals;
-      list<MMExp> mmargs;
       TypeSignature argtype, targettype;
       list<ASTDef> astdefs; 
-      String str;
-      StringToken strtok;
       list<Ident> tyVars;     
 
     
@@ -2336,14 +2307,10 @@ algorithm
   (outMMArg, outStmts, outLocals) := 
   matchcontinue (inMMArg, inArgType, inTargetType, inStmts, inLocals, inASTDefs)
     local
-      TypedIdents iargs;
       MMExp mmarg;
       list<tuple<MMExp, TypeSignature>> argvals;
-      list<MMExp> mmargs;
       TypeSignature argtype, targettype;
       list<ASTDef> astdefs; 
-      String str;
-      StringToken strtok;
       list<MMExp> stmts;
       TypedIdents locals;     
 
@@ -2409,14 +2376,10 @@ algorithm
   (outMMArg, outStmts, outLocals) := 
   matchcontinue (inMMArg, inTargetType, inStmts, inLocals)
     local
-      TypedIdents iargs;
       MMExp mmarg;
       list<tuple<MMExp, TypeSignature>> argvals;
-      list<MMExp> mmargs;
       TypeSignature  targettype;
-      list<ASTDef> astdefs; 
       String  retval;
-      StringToken strtok;
       list<MMExp> stmts;
       TypedIdents locals;     
 
@@ -2459,10 +2422,7 @@ algorithm
       TypedIdents iargs, oargs;
       tuple<Ident, TypeSignature> iarg, oarg;
       list<tuple<MMExp, TypeSignature>> argvals;
-      MMExp mmarg;
       list<MMExp> mmargs;
-      TypeSignature  sigArgtype;
-      list<ASTDef> astdefs;
       list<Ident> lhsArgs;
       TemplPackage tplPackage;              
 
@@ -2544,7 +2504,6 @@ algorithm
       ScopeEnv scEnv;
       Ident intxt, outtxt, fname,   idxName, freshIdxName;
       TypedIdents locals, extargs, localArgs, encodedExtargs, maplocals, caseLocals, idxargs, foundIdxArgs, iargs, oargs;
-      list<Expression> explst;
       MapContext mapctx;
       TemplPackage tplPackage;            
       list<MMDeclaration> accMMDecls;
@@ -2877,7 +2836,6 @@ algorithm
       Ident ixid, localidxid, intxt, outtxt;
       tuple<Ident, TypeSignature> ixti;
       TypedIdents foundIdxArgs, locals;
-      TypeSignature ts;
       
     // add the getIter_ix() when the ixti is used by mapexp
     case ( true, localidxid, stmts, intxt, locals)
@@ -3091,7 +3049,6 @@ algorithm
   (outExtraArgs,outEncExtraArgs) := 
   matchcontinue (inExtraArgs, inEncExtraArgs, inScopeEnv)
     local
-      ScopeEnv scEnv;
       TypedIdents extargs, encExtargs, extargsAligned, encExtargsAligned, fargs, localArgs;
       
     case ( extargs, encExtargs,  
@@ -3121,7 +3078,6 @@ algorithm
    := matchcontinue inArgExp
     local
       PathIdent path;
-      Ident ident;
     case ( BOUND_VALUE(path) )  
       equation
         outInputValueName = pathIdentString(path);
@@ -3328,10 +3284,8 @@ algorithm
   (outTransformedMatchingExp) 
     := matchcontinue (inMatchingExp, inMType, inASTDefs)
     local
-      Ident bid,  typeident;
-      PathIdent tagpath,  typepckg;
-      Option<PathIdent> typepckgOpt;
-      TypeInfo typeinfo;
+      Ident bid;
+      PathIdent tagpath;
       TypeSignature mtype, ot;
       list<TypeSignature> otLst;
       MatchingExp mexp, restmexp;
@@ -3339,7 +3293,6 @@ algorithm
       list<tuple<String, MatchingExp>> fms;
       TypedIdents fields, locals;
       list<ASTDef> astDefs;
-      String litval;      
     
     case ( BIND_AS_MATCH(
              bindIdent = bid,
@@ -3492,7 +3445,6 @@ algorithm
       list<tuple<Ident, MatchingExp>> fms;
       TypedIdents locals;
       list<ASTDef> astDefs;
-      String reason;      
     
     case ( {}, _, _)
       then 
@@ -3539,7 +3491,6 @@ algorithm
   (outTransformedMatchingExp) 
     := match (inMatchingExpLst, inTypeLst, inASTDefs)
     local
-      Ident ident;
       MatchingExp mexp;
       list<MatchingExp> mexpLst;
       TypeSignature mtype;
@@ -3621,7 +3572,6 @@ algorithm
       list<tuple<String, MatchingExp>> fms;
       TypedIdents fields, usedLocals;
       list<ASTDef> astDefs;
-      String litval;      
     
     case ( BIND_AS_MATCH(
              bindIdent = bid,
@@ -3805,7 +3755,6 @@ algorithm
   (outRewrittenMatchingExp, outUsedLocals) 
     := matchcontinue (inMatchingExpLst, inTypeLst, inLocalNames, inUsedLocals, inASTDefs)
     local
-      Ident ident;
       MatchingExp mexp;
       list<MatchingExp> mexpLst;
       TypeSignature mtype;
@@ -4048,7 +3997,6 @@ algorithm
       TypedIdents locals;
       tuple<MMExp, TypeSignature> argval;
       TypeSignature exptype;
-      TemplPackage tplPackage;
       list<ASTDef> astdefs;           
     
     //every Text value is converted/rendered to string when it is a matching argument (match and map exps)  
@@ -4093,7 +4041,6 @@ algorithm
   outMCases := matchcontinue (inArgType, inIsNot, inRhsValue, inTrueBranch, inElseBranchOpt, inTplPackage)
     local
       Boolean isnot;
-      MatchingExp rhsMExp;
       Expression tbranch;
       Option<Expression> ebranchOpt;
       TemplPackage tplPackage;
@@ -4167,7 +4114,6 @@ algorithm
   outMCases := matchcontinue (inIsNot, inNotMatchingExp, inTrueBranch, inElseBranchOpt)
     local
       MatchingExp notmexp;
-      Boolean isnot;
       Expression tbranch, ebranch;
       Option<Expression> ebranchOpt;
     
@@ -4228,22 +4174,17 @@ public function resolveBoundPath
 algorithm
   (outMMExp, outType, outScopeEnv) := matchcontinue (inPath, inScopeEnv, inTplPackage)
     local
-      MatchingExp mexp;
       
       PathIdent path,  typepckg;
       Ident ident,  typeident;
       TypeSignature idtype;
       TypedIdents extargs, locals;
-      Scope scope;
       ScopeEnv scEnv;
-      TemplPackage tplPackage;
       list<ASTDef> astDefs;
       TemplateDef tpldef;
       list<tuple<Ident,TemplateDef>> tpldefs;
       Option<PathIdent> typepckgOpt;
-      TypeInfo typeinfo;
       MMExp mmexp;
-      StringToken st;
       String reason; 
       //Boolean hasImplicitScope;        
     
@@ -4389,15 +4330,8 @@ public function makeMMExpFromTemplateConstant
 algorithm
   (outMMExp, outConstType) := matchcontinue (inTplDef, inTemplIdent)
     local
-      MatchingExp mexp;
-      PathIdent path;
       Ident ident;
       TypeSignature idtype, lt;
-      Scope scope;
-      ScopeEnv scEnv;
-      TemplPackage tplPackage;
-      list<ASTDef> astdefs;
-      TemplateDef tpldef;
       list<tuple<Ident,TemplateDef>> tpldefs;
       StringToken st;
       String litstr, reason;           
@@ -4489,7 +4423,6 @@ algorithm
       TypeSignature idtype, mtype;
       Scope scope;
       ScopeEnv scEnv, restEnv;
-      TemplPackage tplPackage;
       list<ASTDef> astdefs;
       Boolean hasImplicitScope;
       list<tuple<Ident,Ident>> localNames;            
@@ -4708,7 +4641,6 @@ algorithm
   matchcontinue (inIdent, inEncIdent, inPostfix, inType, inLocalNames, inLocals)
     local
       Ident ident, encIdent;
-      Integer i;
       TypeSignature loctype;
       TypedIdents locals;
       list<tuple<Ident,Ident>> localNames;
@@ -4830,7 +4762,6 @@ algorithm
   matchcontinue (inIdent, inEncIdent, inPostfix, inType, inLocals, inScopeEnv)
     local
       Ident  encIdent;
-      Integer i;
       TypeSignature loctype;
       TypedIdents locals;
       list<tuple<Ident,Ident>> localNames;
@@ -4907,9 +4838,7 @@ algorithm
       list<TypeSignature> mtypeLst;
       list<ASTDef> astDefs;
       
-      list<TypeSignature> otLst;
       String reason;
-      PathIdent tagn;
       list<tuple<String, MatchingExp>> fms;
       MatchingExp inmexp, mexp, restmexp;
       list<MatchingExp> mexpLst;
@@ -5137,13 +5066,9 @@ algorithm
   (outFieldMatchings) := matchcontinue (inIdent, inField, inFieldMatchings)
     local
       Ident inid, fieldid, ident;
-      PathIdent path;
-      TypeSignature  valtype;
-      list<ASTDef> astDefs;
       list<tuple<Ident, MatchingExp>> fms;
       tuple<Ident, MatchingExp> fm;
       MatchingExp mexp;
-      TypedIdents fields;
     
     case ( inid, fieldid, {} )
       then 
@@ -5433,13 +5358,8 @@ public function splitPackageAndIdent
 algorithm 
   (outPackagePath, outTypeIdent) := matchcontinue (inTypePathIdent)
     local
-      TypeSignature mtype;
       Ident typeident, pckgident;
       PathIdent  typepath, typepckg;
-      Option<PathIdent>  tagpckgOpt;
-      TypeInfo typeinfo;
-      list<ASTDef> astDefs;
-      TypedIdents fields;
     
     case ( IDENT(ident = typeident) )
       then 
@@ -5620,8 +5540,6 @@ algorithm
       Ident tid;
       list<Ident> tyVars;
       TypedIdents setTyVars;
-      PathIdent  nb;
-      Option<PathIdent> typepckgOpt;
       list<ASTDef> astDefs;
       
     
@@ -5795,9 +5713,6 @@ algorithm
       Ident tid;
       list<Ident> tyVars;
       TypedIdents setTyVars;
-      PathIdent  nb;
-      Option<PathIdent> typepckgOpt;
-      list<ASTDef> astDefs;
       
     
     case ( LIST_TYPE(ofType = ota), tyVars, setTyVars)
@@ -5878,8 +5793,6 @@ algorithm
       Ident templname, fident;
       list<Ident> tyVars;
       list<tuple<Ident,TemplateDef>> templateDefs;
-      list<MMDeclaration> mmDeclarations;
-      TemplPackage tp;
       list<ASTDef> astDefs;
       TypedIdents iargs, oargs;
       
@@ -5960,12 +5873,8 @@ public function getFields
 algorithm 
   (outFields) := matchcontinue (inTagIdent, inTypeInfo, inTypeIdent)
     local
-      TypeSignature mtype;
       Ident typeident, tagident;
-      PathIdent   typepckg;
-      Option<PathIdent>  tagpckgOpt;
       TypeInfo typeinfo;
-      list<ASTDef> astDefs;
       TypedIdents fields;
       list<tuple<Ident, TypedIdents>> rectags;
     

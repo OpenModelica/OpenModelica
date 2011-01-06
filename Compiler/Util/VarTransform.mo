@@ -907,7 +907,7 @@ algorithm
       DAE.Exp dst,dst_1;
       HashTable2.HashTable ht,ht_1;
       HashTable3.HashTable invHt,invHt_1;
-      String s1,s2,s3,s4,s;
+      String s;
       Real t2;
     // PA: Commented out this, since it will only slow things down without adding any functionality.
     // Once match is available as a complement to matchcontinue, this case could be useful again.
@@ -1049,8 +1049,6 @@ algorithm
       Integer ind;      
       Expression.Type ty;
       list<DAE.ExpVar> varLst;
-      list<DAE.Exp> expl1;
-      list<DAE.Subscript> subs;
     // c[?] = e[?]  
     case ((c,e))
       equation
@@ -1141,7 +1139,6 @@ algorithm
       DAE.Exp dst,olddst;
       HashTable2.HashTable ht,ht_1;
       HashTable3.HashTable invHt,invHt_1;
-      String s;
     case ((repl as REPLACEMENTS(ht,invHt)),src,dst) /* source dest */
       equation
         olddst = BaseHashTable.get(src,ht) "if rule a->b exists, fail" ;
@@ -1301,10 +1298,6 @@ algorithm
       VariableReplacements repl_1,singleRepl;
       HashTable2.HashTable ht;
       HashTable3.HashTable invHt;
-      DAE.Exp dst_1;
-      Integer size;
-      Real t4;
-      String s;
       // old rule a->expr(b1,..,bn) must be updated to a->expr(c_exp,...,bn) when new rule b1->c_exp
       // is introduced
     case ((repl as REPLACEMENTS(ht,invHt)),src,dst)
@@ -1357,9 +1350,7 @@ algorithm
   (outRepl,outSrc,outDst):=
   matchcontinue (repl,src,dst)
     local
-      DAE.ComponentRef src_1;
       DAE.Exp dst_1;
-      VariableReplacements repl_1;
       HashTable2.HashTable ht;
       HashTable3.HashTable invHt;
       // for rule a->b1+..+bn, replace all b1 to bn's in the expression;

@@ -685,8 +685,6 @@ algorithm
       list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> branches;
       list<tuple<Absyn.Exp, list<SCode.Statement>>> sbranches;
       list<Absyn.AlgorithmItem> body,elseBody;
-      list<list<Absyn.AlgorithmItem>> algItemsList;
-      Absyn.AlgorithmItem algi;
       String labelName;
       Absyn.MatchType matchType;
       
@@ -962,13 +960,11 @@ algorithm
     local
       list<SCode.Element> es;
       Boolean f,prot;
-      Boolean outer_;
       Option<Absyn.RedeclareKeywords> repl;
       Absyn.ElementSpec s;
       Absyn.InnerOuter io;
       Absyn.Info info;
       Option<Absyn.ConstrainClass> cc;
-      Absyn.Path p;
       Option<String> expOpt;
       Option<Real> weightOpt;
       list<Absyn.NamedArg> args;
@@ -1294,7 +1290,6 @@ algorithm
       Absyn.Exp e,ee,econd_1,cond,econd,e1,e2;
       list<Absyn.EquationItem> tb,fb,ei,eb,l;
       SCode.EEquation eq;
-      list<SCode.EEquation> eqns;
       list<tuple<Absyn.Exp, list<Absyn.EquationItem>>> eis,elsewhen_;
       list<tuple<Absyn.Exp, list<SCode.EEquation>>> elsewhen_1;
       tuple<Absyn.Exp, list<SCode.EEquation>> firstIf;
@@ -1602,7 +1597,6 @@ algorithm
     local
       list<Absyn.NamedArg> nArgs;
       list<SCode.SubMod> subModLst;
-      SCode.Mod mod;
       Absyn.Exp exp;
       SCode.Ident ident;
     // deal with the empty list
@@ -1680,7 +1674,6 @@ public function prefixFunctionArgs
 algorithm
   outFunctionArgs := match(inFunctionArgs, prefix)
     local
-      Absyn.Exp exp;
       list<Absyn.Exp> args "args" ;
       list<Absyn.NamedArg> argNames "argNames" ;
 
@@ -1700,7 +1693,6 @@ algorithm
   prefixedExp := matchcontinue(exp, prefix)
     local
       SCode.Ident s;
-      Integer x;
       Absyn.ComponentRef c,fcn;
       Absyn.Exp e1,e2,e1a,e2a,e,t,f,start,stop,cond;
       Absyn.Operator op;

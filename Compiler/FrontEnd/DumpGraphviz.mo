@@ -477,7 +477,6 @@ protected function printAlgorithm "function: printAlgorithm
 algorithm
   outNode := matchcontinue (inAlgorithm)
     local
-      Absyn.ComponentRef cr;
       Absyn.Exp e;
     
     case (Absyn.ALG_ASSIGN(assignComponent = _,value = e)) then Graphviz.NODE("ALG_ASSIGN",{},{});

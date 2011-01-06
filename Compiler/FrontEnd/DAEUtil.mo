@@ -2045,7 +2045,6 @@ public function getNamedFunction "Return the FUNCTION with the given name. Fails
 algorithm
   outElement := matchcontinue (path,functions)
     local
-      list<DAE.Element> elements;
     case (path,functions) then Util.getOption(avlTreeGet(functions, path));
     case (path,_)
       equation
@@ -2062,8 +2061,6 @@ public function getNamedFunctionFromList "Is slow; PartFn.mo should be rewritten
 algorithm
   fn := matchcontinue (path,fns)
     local
-      list<DAE.Element> elements;
-      DAE.FunctionTree functions;
     case (path,fn::fns)
       equation
         true = Absyn.pathEqual(functionName(fn),path);
@@ -2143,7 +2140,6 @@ algorithm
   leftSideCrefs := match(inExps,acc,source)
     local
       DAE.Exp e;
-      list<DAE.ComponentRef> crefs2;
     case ({},acc,_) then acc;
     case (e::inExps,acc,source)
       equation
@@ -2163,30 +2159,13 @@ algorithm
   leftSideCrefs:= match (inElems,acc)
     local
       String msg;
-      Integer i;
       list<DAE.Exp> exps,exps1;
       DAE.Exp exp,ee1,ee2;
       DAE.ComponentRef cref;
-      DAE.VarKind vk;
-      DAE.VarDirection vd;
-      DAE.InstDims instdims;
-      DAE.Flow flowPrefix;
       DAE.Element el;
-      DAE.ExtArg retarg;
-      Option<DAE.Exp> startvalexp;
-      list<Absyn.Path> pathlist;
-      Option<DAE.VariableAttributes> dae_var_attr;
-      Option<SCode.Comment> comment;
       list<DAE.Element> eqsfalseb,rest;
       list<list<DAE.Element>> eqstrueb;
       list<DAE.ComponentRef> crefs1,crefs2;
-      Option<DAE.Element> elsewhenopt;
-      Algorithm.Algorithm alg;
-      String lang;
-      Absyn.Path path;
-      list<list<DAE.Exp>> expslist;
-      list<DAE.ExtArg> args;
-      Option<Absyn.Annotation> ann;
       DAE.ElementSource source "the element origin";
       list<list<DAE.ComponentRef>> crefslist;
       Boolean b;
@@ -2670,7 +2649,6 @@ protected function ifEqToExpr
 algorithm
   outElementLst := matchcontinue (inElement,onlyConstantEval)
     local
-      Integer false_eq;
       String elt_str;
       DAE.Element elt;
       list<DAE.Exp> cond,fbsExp;
@@ -2995,7 +2973,6 @@ algorithm
       list<DAE.Element> rest;
       list<DAE.Exp> exps1,exps2,exps;
       DAE.Element eq;
-      DAE.Exp exp;
       DAE.ElementSource source;
       String str;
     case ({}) then {};
@@ -3446,23 +3423,10 @@ protected function traverseDAEFunc
 algorithm
   (traversedFn,oextraArg) := match (daeFn,func,extraArg)
     local
-      DAE.ComponentRef cr1_2;
       list<DAE.Element> elist,elist2;
-      DAE.Element elt11;
-      list<Absyn.Path> clsLst;
-      Option<DAE.VariableAttributes> attr;
       DAE.Type ftp,tp;
-      Option<SCode.Comment> cmt;
-      Option<DAE.Exp> optExp;
-      Absyn.InnerOuter io;
-      list<Integer> idims;
-      String str;
-      list<DAE.Statement> stmts2;
-      list<list<DAE.Element>> tbs_1;
-      list<DAE.Exp>  args;
       Boolean partialPrefix;
       Absyn.Path path;
-      list<DAE.Exp> expl;
       DAE.ExternalDecl extDecl;
       list<DAE.FunctionDefinition> derFuncs;
       DAE.InlineType inlineType;
@@ -3514,35 +3478,8 @@ protected function traverseDAE2_tail
 algorithm
   (traversedDaeList,oextraArg) := match (daeList,func,extraArg,accumulator)
     local
-      DAE.ComponentRef cr1_2;
       list<DAE.Element> dae,dae2;
       DAE.Element elt;
-      DAE.Function f2;
-      DAE.VarKind kind;
-      DAE.VarDirection dir;
-      DAE.Type ftp;
-      DAE.InstDims dims;
-      DAE.StartValue start;
-      DAE.Flow fl;
-      DAE.Stream st;
-      DAE.ExternalDecl extDecl;
-      DAE.VarProtection prot;
-      DAE.Exp maybeCrExp;
-      list<Absyn.Path> clsLst;
-      Option<DAE.VariableAttributes> attr;
-      Option<SCode.Comment> cmt;
-      Option<DAE.Exp> optExp;
-      Absyn.InnerOuter io;
-      list<DAE.Dimension> idims;
-      String str;
-      list<DAE.Statement> stmts2;
-      list<list<DAE.Element>> tbs_1;
-      list<DAE.Exp>  args;
-      Boolean partialPrefix;
-      Absyn.Path path;
-      list<DAE.Exp> expl;
-      list<DAE.FunctionDefinition> derFuncs;
-      DAE.InlineType inlineType;
       DAE.ElementSource source "the origin of the element";
   
     case({},_,extraArg,accumulator)
@@ -3582,13 +3519,10 @@ algorithm
       DAE.VarDirection dir;
       DAE.Type tp;
       DAE.InstDims dims;
-      DAE.StartValue start;
       DAE.Flow fl;
       DAE.Stream st;
-      DAE.ExternalDecl extDecl;
       DAE.VarProtection prot;
       DAE.Exp e,e2,e22,e1,e11,maybeCrExp;
-      list<Absyn.Path> clsLst;
       Option<DAE.VariableAttributes> attr;
       Option<SCode.Comment> cmt;
       Option<DAE.Exp> optExp;
@@ -3598,11 +3532,8 @@ algorithm
       list<DAE.Statement> stmts,stmts2;
       list<list<DAE.Element>> tbs,tbs_1;
       list<DAE.Exp> conds,conds_1;
-      Boolean partialPrefix;
       Absyn.Path path;
       list<DAE.Exp> expl;
-      list<DAE.FunctionDefinition> derFuncs;
-      DAE.InlineType inlineType;
       DAE.ElementSource source "the origin of the element";
   
     case(DAE.VAR(cr,kind,dir,prot,tp,optExp,dims,fl,st,source,attr,cmt,io),func,extraArg)
@@ -3826,9 +3757,6 @@ algorithm
       list<Integer> li;
       DAE.ElementSource source;
       Algorithm.Else algElse;
-      Absyn.Path fnName;
-      Absyn.MatchType matchType;
-      DAE.Pattern pattern;
       
     case ({},_,extraArg) then ({},extraArg);
       
@@ -4163,7 +4091,6 @@ protected function addComponentType2 "
 algorithm
   outElt := match (elt,inPath)
     local
-      list<DAE.Element> xs;
       DAE.ComponentRef cr;
       DAE.VarKind kind;
       DAE.VarDirection dir;
@@ -4171,7 +4098,6 @@ algorithm
       DAE.InstDims dim;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
-      DAE.Element x;
 			DAE.VarProtection prot;
 			Option<DAE.Exp> bind;
       Option<DAE.VariableAttributes> dae_var_attr;
@@ -4299,8 +4225,6 @@ public function addElementSourceInstanceOpt
 algorithm
   outSource := match(inSource, instanceOpt)
     local
-      Absyn.Path classPath;
-      DAE.ElementSource src;
       Absyn.Info info "the line and column numbers of the equations and algorithms this element came from";
       list<Absyn.Within> partOfLst "the models this element came from" ;
       list<Option<DAE.ComponentRef>> instanceOptLst "the instance this element is part of" ;
@@ -4320,8 +4244,6 @@ public function addElementSourceConnectOpt
 algorithm
   outSource := matchcontinue(inSource, connectEquationOpt)
     local
-      Absyn.Path classPath;
-      DAE.ElementSource src;
       Absyn.Info info "the line and column numbers of the equations and algorithms this element came from";
       list<Absyn.Within> partOfLst "the models this element came from" ;
       list<Option<DAE.ComponentRef>> instanceOptLst "the instance this element is part of" ;
@@ -4427,7 +4349,6 @@ algorithm
   outDae := match(dae1,dae2)
     local
       list<DAE.Element> elts1,elts2,elts;
-      Real   ti;
 
     // just append lists 
     case(DAE.DAE(elts1), 
@@ -4735,8 +4656,6 @@ protected function exchangeLeft "help function to balance"
 algorithm
   outParent := match(node,parent)
     local
-      Option<DAE.AvlTreeValue> value;
-      Integer height;
       DAE.AvlTree bt;
 
     case(node,parent) equation
@@ -4813,9 +4732,7 @@ algorithm
     local
       DAE.AvlKey rkey,key;
       DAE.AvlValue rval,res;
-      Option<DAE.AvlTree> optRight;
       DAE.AvlTree left,right;
-      Integer rhval;
     
     // hash func Search to the right
     case (DAE.AVLTREENODE(value = SOME(DAE.AVLTREEVALUE(rkey,rval))),key)
@@ -5139,9 +5056,6 @@ protected function getUniontypePathsFunctions
 algorithm
   outPaths := match elements
     local
-      list<Absyn.Path> paths1;
-      list<Absyn.Path> paths2;
-      list<DAE.Exp> exps;
       list<DAE.Element> els,els1,els2;
     case elements
       equation
@@ -5161,7 +5075,6 @@ algorithm
   outPaths := match elements
     local
       list<Absyn.Path> paths1;
-      list<list<Absyn.Path>> listPaths;
       list<DAE.Element> rest;
       list<DAE.Type> tys;
       DAE.Type ft;

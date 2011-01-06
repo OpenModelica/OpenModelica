@@ -1046,10 +1046,7 @@ algorithm
       //External Classes
       BackendDAE.ExternalObjectClasses extObjCls;
 
-      BackendDAE.Value eqnlen;
-      String s;
       list<BackendDAE.Equation> eqnsl,reqnsl,ieqnsl;
-      list<String> ss;
       list<BackendDAE.MultiDimEquation> ae_lst;
       BackendDAE.EquationArray eqns,reqns,ieqns;
       array<BackendDAE.MultiDimEquation> ae;
@@ -1271,7 +1268,6 @@ algorithm
   _:=
   match (inEquationLst,inInteger,addMathMLCode,dumpResiduals)
     local
-      String is;
       BackendDAE.Value index;
       BackendDAE.Equation eqn;
       list<BackendDAE.Equation> eqns;
@@ -1512,7 +1508,6 @@ algorithm
   matchcontinue (e,addMathMLCode)
     local
       DAE.Exp inExp;
-      DAE.Exp addMMLCode;
     case(inExp,DAE.BCONST(bool=true))
       equation
         dumpStrOpenTag(MathML);
@@ -1977,7 +1972,6 @@ This function dumps a list of functions
 algorithm
   _ := matchcontinue (funcelems)
     local
-      String s;
     case ({}) then();
     case (funcelems)
       equation
@@ -2258,7 +2252,6 @@ algorithm
       Type_a h;
       FuncTypeType_aTo r;
       list<Type_a> t;
-      DAE.Ident sep;
     case ({},_)  then ();
     case ({h},r) equation  r(h);  then  ();
     case ((h :: t),r)
@@ -2867,7 +2860,6 @@ algorithm
         BackendDAE.StringIndex stringIndex;
         String str_s;
         Integer index_s;
-        Boolean ver;
       case {} then ();
       case ((stringIndex as BackendDAE.STRINGINDEX(str=str_s,index=index_s)) :: stringIndexList)
       equation
@@ -3279,8 +3271,6 @@ See dumpVariable for more details on the XML output.
 algorithm
   _ := match (inVarLst,inInteger,addMathMLCode)
     local
-      String indx_str;
-      list<String> path_strs;
       BackendDAE.Value indx,varno;
       BackendDAE.Var v;
       DAE.ComponentRef cr;
@@ -3348,8 +3338,6 @@ See dumpVariable for more details on the XML output.
 algorithm
   _ := match (inVarLst,crefIdxLstArr,strIdxLstArr,inInteger,addMathMLCode)
     local
-      String indx_str;
-      list<String> path_strs;
       BackendDAE.Value indx,varno;
       BackendDAE.Var v;
       DAE.ComponentRef cr;

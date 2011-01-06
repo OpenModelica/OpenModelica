@@ -622,7 +622,7 @@ algorithm
       list<String> vars_1,vars_2,args,strings,strVars;
       Real t1,t2,time,timeTotal,timeSimulation,timeStamp,val;
       Interactive.InteractiveStmts istmts;
-      Boolean bval, b, legend, grid, logX, logY, points,  tuple_;
+      Boolean bval, b, legend, grid, logX, logY, points;
       Env.Cache cache;
       list<Interactive.LoadedFile> lf;
       AbsynDep.Depends aDep;
@@ -2575,19 +2575,12 @@ algorithm
   match (inCache,inEnv,className,inInteractiveSymbolTable,inMsg,inExp)
     local
       String filenameprefix,filename,file_dir, str;
-      Absyn.Path classname;
       list<SCode.Class> p_1,sp;
       DAE.DAElist dae_1,dae;
       list<Env.Frame> env;
-      list<DAE.Element> dael;
       list<Interactive.InstantiatedClass> ic_1,ic;
       BackendDAE.BackendDAE dlow;
-      array<list<Integer>> mT;
-      array<Integer> ass2;
-      list<list<Integer>> comps;
       Absyn.ComponentRef a_cref;
-      list<String> libs;
-      DAE.ComponentRef cr;
       Interactive.InteractiveSymbolTable st;
       Absyn.Program p;
       list<Interactive.InteractiveVariable> iv;
@@ -2651,9 +2644,7 @@ algorithm
       BackendDAE.BackendDAE indexed_dlow;
       Interactive.InteractiveSymbolTable st;
       list<String> libs;
-      Ceval.Msg msg;
       Values.Value outValMsg;
-      DAE.Exp fileprefix;
       String file_dir, fileNamePrefix;
     
     case (cache,env,className,st,fileNamePrefix,addDummy,inSimSettingsOpt)
@@ -2691,9 +2682,7 @@ algorithm
       BackendDAE.BackendDAE indexed_dlow;
       Interactive.InteractiveSymbolTable st;
       list<String> libs;
-      Ceval.Msg msg;
       Values.Value outValMsg;
-      DAE.Exp fileprefix;
       String file_dir, fileNamePrefix;
     case (cache,env,className,st,fileNamePrefix,addDummy,inSimSettingsOpt) /* mo file directory */
       equation
@@ -2717,37 +2706,22 @@ algorithm
   (outCache,outValue,outInteractiveSymbolTable) :=
   matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable,inMsg)
     local
-      String file_dir;
-      Absyn.Path classname;
       list<SCode.Class> sp;
-      DAE.DAElist dae;
       list<Env.Frame> env;
-      list<DAE.Element> dael;
       list<Interactive.InstantiatedClass> ic;
-      BackendDAE.BackendDAE indexed_dlow_1;
-      array<list<Integer>> mT;
-      array<Integer> ass2;
-      list<list<Integer>> comps;
-      Absyn.ComponentRef a_cref;
-      list<String> libs;
-      DAE.ComponentRef cr;
       Interactive.InteractiveSymbolTable st;
       Absyn.Program p;
       list<Interactive.InteractiveVariable> iv;
       list<Interactive.CompiledCFunction> cf;
       Ceval.Msg msg;
-      DAE.Exp fileprefix;
       Env.Cache cache;
       list<Interactive.LoadedFile> lf;
       Absyn.TimeStamp ts;
       AbsynDep.Depends aDep;
-      Integer elimLevel;
       String errorMsg,retStr,s1;
-      BackendDAE.EquationArray eqns;
       Absyn.Class cls, refactoredClass;
       Absyn.Within within_;
       Absyn.Program p1;
-      list<Interactive.CompiledCFunction> newCF;
       Boolean strEmpty;      
 
     case (cache,env,className,(st as Interactive.SYMBOLTABLE(p as Absyn.PROGRAM(globalBuildTimes=ts),aDep,sp,ic,iv,cf,lf)),msg)
@@ -2792,16 +2766,9 @@ algorithm
       Integer interval_i;
       Real starttime_r,stoptime_r,tolerance_r;
       list<Env.Frame> env;
-      DAE.ComponentRef cr;
       DAE.Exp starttime,stoptime,interval,toleranceExp,method,options,filenameprefix,outputFormat;
-      Absyn.Program p;
-      list<SCode.Class> sp;
-      list<Interactive.InstantiatedClass> ic;
-      list<Interactive.InteractiveVariable> iv;
-      list<Interactive.CompiledCFunction> cf;
       Ceval.Msg msg;
       Env.Cache cache;
-      Absyn.Path className;
     case (cache,env,DAE.CALL(expLst = {DAE.CODE(Absyn.C_TYPENAME(_),_),starttime,stoptime,interval,toleranceExp,method,_,_,_,options,outputFormat}),
          (st as Interactive.SYMBOLTABLE(ast = _)),msg)
       equation
@@ -2861,13 +2828,10 @@ algorithm
       list<Env.Frame> env;
       SimCode.SimulationSettings simSettings;
       DAE.Exp exp,starttime,stoptime,interval,tolerance,method,fileprefix,storeInTemp,noClean,options,outputFormat;
-      DAE.ComponentRef cr;
       list<SCode.Class> sp;
-      AbsynDep.Depends aDep;
       list<Interactive.InstantiatedClass> ic;
       list<Interactive.InteractiveVariable> iv;
       Ceval.Msg msg;
-      Absyn.Within win1;
       Env.Cache cache;
       Boolean cdToTemp,existFile;      
       Absyn.TimeStamp ts;
@@ -3678,26 +3642,16 @@ algorithm
   (outCache,outValue,outInteractiveSymbolTable) :=
   matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable,inMsg)
     local
-      String file_dir;
-      Absyn.Path classname;
       list<SCode.Class> p_1,sp;
       DAE.DAElist dae;
       list<Env.Frame> env;
-      list<DAE.Element> dael;
       list<Interactive.InstantiatedClass> ic;
       BackendDAE.BackendDAE dlow;
-      array<list<Integer>> mT;
-      array<Integer> ass2;
-      list<list<Integer>> comps;
-      Absyn.ComponentRef a_cref;
-      list<String> libs;
-      DAE.ComponentRef cr;
       Interactive.InteractiveSymbolTable st;
       Absyn.Program p,ptot;
       list<Interactive.InteractiveVariable> iv;
       list<Interactive.CompiledCFunction> cf;
       Ceval.Msg msg;
-      DAE.Exp fileprefix;
       Env.Cache cache;
       Integer eqnSize,varSize,simpleEqnSize,elimLevel;
       String errorMsg,errorBuffer,warnings,eqnSizeStr,varSizeStr,retStr,classNameStr,simpleEqnSizeStr,
@@ -3709,8 +3663,6 @@ algorithm
       Absyn.Within within_ "Within clause";
       Absyn.TimeStamp globalBuildTimes "";
       Absyn.Info info;
-      Absyn.Class dummyClass;
-      Absyn.ClassPart dummyClassPart;
     
     // handle partial models
     case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
@@ -4107,7 +4059,6 @@ algorithm
   matchcontinue (inCache,inEnv,inExp,inInteractiveSymbolTable,inMsg)
     local
       Boolean cdToTemp;
-      Real tolerance_r;
       String cname_str,filenameprefix,oldDir,translationLevel;
       list<Interactive.InstantiatedClass> ic_1,ic;
       list<Interactive.InteractiveVariable> iv;
@@ -4118,19 +4069,14 @@ algorithm
       BackendDAE.BackendDAE dlow,dlow_1,indexed_dlow,indexed_dlow_1;
       Env.Cache cache;
       DAE.Exp exp,fileprefix,storeInTemp,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals;
-      DAE.ComponentRef cr;
       Interactive.InteractiveSymbolTable st,st_1;
       Ceval.Msg msg;
-      Values.Value ret_val;
       list<DAE.Function> funcelems;
-      Boolean x;
       array<Integer> ass1,ass2;
       DAE.DAElist dae_1,dae;
       array<list<Integer>> m,mT;
-      list<DAE.Element> dael;
       list<SCode.Class> p_1,sp;
       list<list<Integer>> comps;
-      list<Absyn.Path> funcpaths;
     
     case (cache,env,(exp as DAE.CALL(path = Absyn.IDENT(name = _),
       expLst = {DAE.CODE(Absyn.C_TYPENAME(classname),_),DAE.SCONST(string=translationLevel),addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,fileprefix,storeInTemp})),
@@ -4242,9 +4188,7 @@ algorithm
   match (inPath,inProgram,inClass)
     local
       list<String> strlist;
-      list<String> res;
       list<Absyn.ClassPart> parts;
-      Absyn.Class cdef;
       Absyn.Path inmodel,path;
       Absyn.Program p;
       String  baseClassName;
@@ -4500,12 +4444,9 @@ algorithm
       Absyn.Program p,p2;
       Absyn.Class cdef;
       list<Interactive.CompiledCFunction> cf;
-      Real tolerance_r;
       list<Env.Frame> env;
       DAE.Exp exp,starttime,stoptime,interval,method,tolerance,fileprefix,storeInTemp,noClean,options;
-      DAE.ComponentRef cr;
       list<SCode.Class> sp;
-      AbsynDep.Depends aDep;
       list<Interactive.InstantiatedClass> ic;
       list<Interactive.InteractiveVariable> iv;
       Ceval.Msg msg;
@@ -4514,7 +4455,6 @@ algorithm
       Boolean cdToTemp;
       SimCode.SimulationSettings simSettings;
       Absyn.TimeStamp ts;
-      Real r2;
     
     // normal call
     case (cache,env,(exp as DAE.CALL(path = Absyn.IDENT(name = _),expLst = ({DAE.CODE(Absyn.C_TYPENAME(classname),_),starttime,stoptime,interval,tolerance, method,fileprefix,storeInTemp,noClean,options}))),(st_1 as Interactive.SYMBOLTABLE(ast = p  as Absyn.PROGRAM(globalBuildTimes=ts),explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
@@ -4619,12 +4559,8 @@ algorithm
       list<Env.Frame> env;
       Absyn.Path path;
       Env.Cache cache;
-      String MakefileHeader;
-      list<String> libs;
-      DAE.DAElist dae;
       DAE.Function mainFunction;
       list<DAE.Function> d;
-      list<DAE.Element> els;
       list<Absyn.Path> uniontypePaths,paths;
       list<DAE.Type> metarecordTypes;
       DAE.FunctionTree funcs;

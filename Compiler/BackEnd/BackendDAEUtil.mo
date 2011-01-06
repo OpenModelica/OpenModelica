@@ -277,7 +277,7 @@ algorithm
       Integer nie,nie1,nie2,unfixed,unfixed1;
       BackendDAE.BackendDAE dae,dae1;
       list<BackendDAE.WhenClause> whenClauseLst;
-      list<DAE.ComponentRef> vars,varsws,states,statesws,vars1,varsws1,states1,statesws1;
+      list<DAE.ComponentRef> vars,varsws,states,statesws;
    
     case (dae as BackendDAE.DAE(orderedVars=variables,knownVars=knvars,externalObjects=exObj,orderedEqs=orderedEqs,removedEqs=removedEqs,
            initialEqs=initialEqs,arrayEqs=arrayEqs,algorithms=algs,eventInfo=eventInfo,extObjClasses=extObjClasses),funcs)
@@ -1033,7 +1033,6 @@ public function statesDaelow
 algorithm
   outBinTree := match (inBackendDAE)
     local
-      list<BackendDAE.Var> v_lst;
       list<DAE.ComponentRef> cr_lst;
       BackendDAE.BinTree bt;
       BackendDAE.Variables v,kn;
@@ -1673,9 +1672,7 @@ Helper for statesAndVarsExp"
 algorithm
   outTpl := matchcontinue(inTpl)
   local
-    list<DAE.ComponentRef> crefs;
     DAE.ComponentRef cr;
-    DAE.ExpType ty;
     list<DAE.Exp> expl,res;
     DAE.Exp e,e1;
     list<list<DAE.Exp>> lst;
@@ -1815,7 +1812,6 @@ public function explodeArrayVars
 algorithm
   arrayElements := matchcontinue(arrayVar, iteratorExp, rangeExpr, vars)
     local
-      list<DAE.Exp> subs;
       list<DAE.Exp> clonedElements, newElements;
       list<DAE.Exp> indices;
       DAE.ComponentRef cref;
@@ -2611,9 +2607,6 @@ algorithm
     local
       String rkeystr,keystr;
       DAE.ComponentRef rkey;
-      BackendDAE.Value res;
-      Option<BackendDAE.BinTree> optRight;
-      BackendDAE.BinTree  left;
       
     // found it
     case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(key=rkey))),keystr)
@@ -2633,9 +2626,7 @@ algorithm
   outValue := match (inBinTree,inString,compResult)
     local
       String keystr;
-      DAE.ComponentRef rkey;
       BackendDAE.Value rval;
-      Option<BackendDAE.BinTree> optRight;
       BackendDAE.BinTree right, left;
       
     // found it
@@ -3091,13 +3082,9 @@ algorithm
       DAE.Else algElse;
       DAE.Statement stmt,ew;
       DAE.ComponentRef cref;
-      list<DAE.ComponentRef> crefLst;
       BackendDAE.Var v;
       BackendDAE.Variables vars;
-      list<BackendDAE.Var> vlst;
       DAE.Exp e;
-      list<DAE.Exp> expl1;
-      list<Boolean> blst;
       DAE.ElementSource source;
       
       DAE.ExpType tp;
@@ -3434,8 +3421,6 @@ public function incidenceMatrix
 algorithm
   outIncidenceMatrix := matchcontinue (inBackendDAE, inIndexType)
     local
-      list<BackendDAE.Equation> eqnsl;
-      list<list<BackendDAE.Value>> lstlst;
       array<list<BackendDAE.Value>> arr;
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns;
@@ -3492,7 +3477,6 @@ protected function incidenceMatrixDispatch
 algorithm
   outIncidenceArray := matchcontinue (inVariables, inEqsArr, inWhenClause, inIncidenceArray, index, numberOfEqs, inIndexType)
     local
-      list<list<BackendDAE.Value>> lst;
       list<BackendDAE.Value> row;
       BackendDAE.Variables vars;
       BackendDAE.Equation e;
@@ -3712,7 +3696,6 @@ algorithm
   outIntegerLst := matchcontinue (inVarLst,inIntegerLst,notinder)
     local
        list<BackendDAE.Var> rest;
-       BackendDAE.Var v;
        list<Integer> irest,res;
        Integer i,i1;  
        Boolean b;
@@ -4406,7 +4389,6 @@ algorithm
       DAE.ExpType tp;
       DAE.Exp new_exp,rhs_exp,e1,e2,e;
       Boolean b,res;
-      list<BackendDAE.Equation> rest;
       BackendDAE.Equation eqn;
       BackendDAE.BackendDAE dae;
       BackendDAE.Variables vars;
@@ -5005,10 +4987,8 @@ algorithm
     local
       DAE.Exp e1, expCref;
       DAE.ComponentRef cref;
-      Option<DAE.Exp> bndexp;
       list<DAE.Subscript> instdims;
       Type_a ext_arg_1,ext_arg_2,ext_arg_3;
-      DAE.ExpType tp;
     
     case (NONE(),func,inTypeA) then inTypeA;
     

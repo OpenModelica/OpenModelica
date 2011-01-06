@@ -999,7 +999,6 @@ algorithm
       DAE.VarDirection dir;
       BackendDAE.Type tp;
       Option<DAE.Exp> bind;
-      Option<Values.Value> v;
       list<DAE.Subscript> dim;
       BackendDAE.Value i;
       DAE.ElementSource source "origin of equation";
@@ -1249,7 +1248,6 @@ algorithm
       BackendDAE.Var v;
       BackendDAE.Value n,pos;
       array<Option<BackendDAE.Var>> arr;
-      String ns;
     case (BackendDAE.VARIABLE_ARRAY(numberOfElements = n,varOptArr = arr),pos)
       equation
         (pos < n) = true;
@@ -1538,7 +1536,6 @@ algorithm
     local
       list<tuple<BackendDAE.Var,Integer,Integer>> rest,var_lst,var_lst1,var_lst2,out_lst;
       BackendDAE.Var var;
-      Boolean ins;
       Integer typ,place;
     case {} then {};
     case ((var,typ,place) :: rest)
@@ -1710,7 +1707,6 @@ algorithm
   outval:=
   matchcontinue (invar1,invar2)
     local
-      DAE.Ident origName2;
       DAE.ComponentRef varName1, varName2,c1,c2;
       list<DAE.Subscript> arryDim, arryDim1;
       list<DAE.Subscript> subscriptLst, subscriptLst1;
@@ -2663,7 +2659,6 @@ algorithm
       array<list<BackendDAE.CrefIndex>> hashvec;
       array<list<BackendDAE.StringIndex>> oldhashvec;
       BackendDAE.VariableArray varr;
-      String str;
     case (cr,BackendDAE.VARIABLES(crefIdxLstArr = hashvec,strIdxLstArr = oldhashvec,varArr = varr,bucketSize = bsize,numberOfVars = n))
       equation
         hval = HashTable2.hashFunc(cr);

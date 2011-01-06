@@ -1252,7 +1252,6 @@ algorithm
       String fstr;
       Absyn.Path fpath;
       DAE.Function constr,destr;
-      list<DAE.Element> dae;
       tuple<DAE.TType, Option<Absyn.Path>> t;
     case DAE.EXTOBJECTCLASS(path = fpath,constructor=constr,destructor=destr)
       equation
@@ -1488,7 +1487,6 @@ algorithm
       list<DAE.Statement> then_,stmts;
       DAE.Statement stmt;
       Algorithm.Else else_;
-      DAE.Pattern pattern;    
     
     case (DAE.STMT_ASSIGN(exp1 = e2,exp = e),i)
       equation
@@ -1660,14 +1658,10 @@ algorithm
   match (inStatement,inInteger)
     local
       String s3,s4,s5,s6,str,s7,s8,s9,s10;
-      DAE.ComponentRef c;
       DAE.Exp e;
       Integer i,i_1;
-      list<String> es;
-      list<DAE.Exp> expl;
       list<DAE.Statement> stmts;
       DAE.Statement stmt;
-      Algorithm.Else else_;
     case (DAE.STMT_WHEN(exp = e,statementLst = stmts, elseWhen=NONE()),i)
       equation
         s3 = stringAppend("when ",ExpressionDump.printExpStr(e));
@@ -1714,7 +1708,6 @@ algorithm
       list<DAE.Statement> then_,stmts;
       DAE.Statement stmt;
       Algorithm.Else else_;
-      DAE.Pattern pat;
     
     case (DAE.STMT_ASSIGN(exp1 = e2,exp = e),i)
       equation
@@ -2105,12 +2098,10 @@ algorithm
       DAE.ComponentRef cr,cr1,cr2;
       DAE.VarKind vk;
       DAE.VarDirection vd;
-      DAE.Type t;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
       DAE.Exp e,exp,e1,e2;
       list<DAE.Element> l;
-      Absyn.Path fpath;
     case DAE.VAR(componentRef = cr,
              kind = vk,
              direction = vd,
@@ -2507,11 +2498,7 @@ algorithm
       DAE.VarKind vk;
       DAE.VarDirection vd;
       DAE.Exp exp,e1,e2;
-      Graphviz.Node node;
       list<Graphviz.Node> nodes;
-      DAE.Type ty;
-      DAE.DAElist dae;
-      Absyn.Path fpath;
       list<DAE.Element> elts;
     case DAE.VAR(componentRef = cr,kind = vk,direction = vd,binding = NONE())
       equation
@@ -2596,8 +2583,6 @@ public function unparseDimensions
 algorithm
   dimsStr := matchcontinue(dims, printTypeDimension)
     local
-      DAE.InstDims rest;
-      DAE.Subscript dim;
       String str;
 
     // false gives nothing
@@ -2744,8 +2729,6 @@ public function dumpElementsStream "function: dumpElementsStream
 algorithm
   outStream := match(l, inStream)
     local  
-      String algstr;
-      Boolean noalg;
       IOStream.IOStream str;
       list<DAE.Element> v,o,ie,ia,e,a;
       
@@ -3002,7 +2985,6 @@ algorithm
     local
       DAE.Exp c;
       list<DAE.Element> tb;
-      String sRes;
       IOStream.IOStream str;
 
   case({},{},str) then str;
@@ -3034,7 +3016,6 @@ algorithm
       DAE.ComponentRef c;
       IOStream.IOStream str;
       list<DAE.Exp> conds;
-      String ss11;
     
     case ({}, str) then str;
 
@@ -3156,7 +3137,6 @@ algorithm
       DAE.Type typ;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
-      list<Absyn.Path> classlst;
       DAE.ElementSource source "the origin of the element";
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
@@ -3287,10 +3267,6 @@ public function dumpFunctionStr "function: dumpFunctionStr
 algorithm
   outString := matchcontinue (inElement)
     local
-      String str;
-      Absyn.Path fpath;
-      list<DAE.Element> dae;
-      DAE.Type t;
       String s1,s2;
 
     case(inElement)
@@ -3318,9 +3294,7 @@ algorithm
     local
       String fstr,str,c_str,d_str;
       Absyn.Path fpath;
-      list<DAE.Element> dae;
       DAE.Function constr,destr;
-      DAE.Type t;
     case DAE.EXTOBJECTCLASS(path = fpath,constructor = constr, destructor = destr)
       equation
         fstr = Absyn.pathString(fpath);

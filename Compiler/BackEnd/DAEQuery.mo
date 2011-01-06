@@ -370,14 +370,12 @@ algorithm
   matchcontinue (inVarLst,inInteger)
     local
       String varnostr,dirstr,str,str1,str2;
-      list<String> path_strs;
       Integer varno_1,indx,varno;
       BackendDAE.Var v;
       DAE.ComponentRef cr;
       BackendDAE.VarKind kind;
       DAE.VarDirection dir;
       Option<DAE.Exp> e;
-      list<Absyn.Path> paths;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
       DAE.Flow flowPrefix;
@@ -716,8 +714,6 @@ protected function incidenceRowExp "function: incidenceRowExp
 algorithm
   outStringLst := matchcontinue (inExp,inVariables)
     local
-      DAE.Flow flowPrefix;
-      DAE.Stream streamPrefix;
       list<BackendDAE.Value> p,p_1;
       list<String> pStr,s1,s2,s3;
       String s, ss, ss1, ss2, ss3, opStr, sb;

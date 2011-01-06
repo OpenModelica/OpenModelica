@@ -739,7 +739,6 @@ algorithm
       String s1,s2,res,is;
       DAE.Exp e2;
       BackendDAE.Value i;
-      list<DAE.Exp> outs;
       DAE.ComponentRef cr;
       BackendDAE.WhenEquation weqn;
     case (BackendDAE.WHEN_EQ(index = i,left = cr,right = e2, elsewhenPart = SOME(weqn)))

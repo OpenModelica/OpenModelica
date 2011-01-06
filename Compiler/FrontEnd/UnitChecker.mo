@@ -627,7 +627,6 @@ algorithm
       MMath.Rational qr;
       Integer i1,i2,indx;
       String name;
-      UnitAbsyn.TypeParameter p;
       list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> rest,pres,ac2;
     
     case ({},ac2) then ac2;
@@ -668,11 +667,9 @@ public function normalizeOnUnit "switch on each kind of unit"
 algorithm
   (unit,outSt) := matchcontinue(u,st)
     local
-      UnitAbsyn.Unit u1;
       list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> params1,params2,params3;
       list<MMath.Rational> unitvec1,unitvec2;
       UnitAbsyn.Store st2;
-      UnitAbsyn.SpecUnit su3;
     
     case (UnitAbsyn.UNSPECIFIED(),st)
       then (UnitAbsyn.UNSPECIFIED(),st);

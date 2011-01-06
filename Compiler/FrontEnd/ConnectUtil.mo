@@ -1057,7 +1057,6 @@ algorithm
       Connect.EquSetElement ee1, ee2;
       list<Connect.EquSetElement> cs;
       DAE.ElementSource src,src1,src2;
-      DAE.FunctionTree funcs;
       Absyn.Info info;
       list<Absyn.Within> partOfLst;
       list<Option<DAE.ComponentRef>> instanceOptLst;
@@ -1170,10 +1169,7 @@ algorithm
     local
       DAE.ComponentRef cr1, cr2;
       DAE.ElementSource src1, src2, src;
-      DAE.FunctionTree funcs;
       DAE.DAElist dae;
-      String str;
-      list<String> strs;
       Connect.Face f1, f2;
       DAE.Exp cref1, cref2, e1, e2;
       list<Connect.StreamSetElement> inside, outside;
@@ -1501,8 +1497,6 @@ algorithm
       DAE.ComponentRef c;
       Connect.Face f1, f2;
       DAE.Exp e;
-      DAE.ElementSource src;
-      Absyn.Info info;
       list<Connect.StreamSetElement>  inside, outside;
 
     // Unconnected stream connector:

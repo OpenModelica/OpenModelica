@@ -831,7 +831,6 @@ algorithm
       Real r1, r2;
       DAE.ComponentRef c1, c2;
       String s1, s2;
-      Boolean b;
     
     case((c1,r1), (c2,r2)) // if equal order by cref
       equation
@@ -925,7 +924,6 @@ algorithm
       DaeEdges connections;
       HashTableCG.HashTable table;
       DAE.ComponentRef dummyRoot;
-      Edges  normalConnections;
       list<DAE.Element> dae;
       Edges broken;
       String brokenConnectsViaGraphViz;
@@ -1655,7 +1653,6 @@ algorithm
       String fileName, i, nrDR, nrPR, nrBR, nrCO, nrFR, nrBC, timeStr,  infoNodeStr, brokenConnects;
       Real tStart, tEnd, t;
       IOStream.IOStream graphVizStream;
-      Integer leftyExitStatus;
       list<String> infoNode; 
     
     // don't do anything if we don't have +d=cgraphGraphVizFile or +d=cgraphGraphVizShow

@@ -275,7 +275,6 @@ algorithm
       list<String> listData;
       Integer fileID, bufferID;
       IOStream fStream, lStream, bStream;
-      String str;
       
     case (fStream as IOSTREAM(data = FILE_DATA(fileID)), whereToPrint)
       equation

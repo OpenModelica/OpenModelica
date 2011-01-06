@@ -101,7 +101,7 @@ algorithm
       Boolean encf,impl,notConst;
       SCode.Restriction r;
       list<Env.Frame> cenv,cenv1,cenv3,env2,env,env_1;
-      DAE.Mod outermod,mods,mods_1,emod_1,mod,   mergedMod;
+      DAE.Mod outermod,mods,mods_1,emod_1,mod;
       list<SCode.Element> importelts,els,els_1,rest,cdefelts,classextendselts;
       list<SCode.Equation> eq1,ieq1,eq1_1,ieq1_1,eq2,ieq2,eq3,ieq3,eq,ieq,initeq2;
       list<SCode.AlgorithmSection> alg1,ialg1,alg1_1,ialg1_1,alg2,ialg2,alg3,ialg3,alg,ialg;
@@ -719,7 +719,6 @@ algorithm
     local
       SCode.Element elt;
       DAE.Mod mod;
-      String id;
     case (cache,env,{},ht) then (cache,{});
     case (cache,env,(elt,mod,false)::elts,ht)
       equation
@@ -1150,7 +1149,6 @@ algorithm
   (outCache,outPath) := matchcontinue (cache,env,path,ht)
     local
       String id;
-      list<String> ids2;
       Absyn.Path path1,path2;
     case (cache,env,path1 as Absyn.FULLYQUALIFIED(_),ht) then (cache,path1); 
     case (cache,env,path1,ht)

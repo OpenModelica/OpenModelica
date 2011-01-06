@@ -285,7 +285,7 @@ algorithm
   outList := match (inList,refactorGraphAnnInItem,inProgram,classPath,inClassEnv)
     local
       Absyn.Program p;
-      list<contentType> restList,resultList,resList;
+      list<contentType> restList,resList;
       contentType firstItem,resultItem;
       Absyn.Path cPath;
       Env.Env env;
@@ -872,7 +872,6 @@ algorithm
 
     local
 
-      Integer s;
       Real rcx1,rcy1,rcx2,rcy2,rax1,ray1,rax2,ray2,rot;
       Absyn.ElementArg scale,aspectRatio,x,y,flipHorizontal,flipVertical,rotation;
       Absyn.Path path,cPath;
@@ -1091,14 +1090,10 @@ algorithm
       Absyn.Exp x1,y1,x2,y2;
       Absyn.Path path,fullPath,cPath;
       Absyn.Program p;
-      Absyn.ComponentRef cref;
       Context context;
 
 
       Env.Env env;
-      String str;
-      Env.Cache cache;
-      String id;
 
     case(cPath,path,p,context, env) // try directly first
       equation
@@ -1151,7 +1146,6 @@ algorithm
   (x1,y1,x2,y2) := match (inClass,contextToGetCoordsFrom)
 
     local
-      Absyn.Class cdef;
       list<Absyn.ClassPart> parts1;
       list<Absyn.ElementArg> annlist;
       Context context;
@@ -1482,7 +1476,6 @@ algorithm
       Absyn.Program p;
       list<list<Absyn.Exp>> expMatrix;
       list<Absyn.Exp> expLst;
-      Absyn.Exp y2;
       Integer x,color1,color2,color3;
       String val,val1,val2;
       list<String> arrows;
@@ -2504,7 +2497,6 @@ algorithm
       Absyn.ElementArg arg;
       Boolean fi;
       Absyn.Each e;
-      Absyn.ComponentRef cref;
       Option<Absyn.Modification> m;
       Option<String> com;
       list<Absyn.Subscript> s;
@@ -2584,8 +2576,6 @@ algorithm
       Option<Absyn.Exp> ex;
       Boolean fi;
       Absyn.Each e;
-      Absyn.ComponentRef cref;
-      Option<Absyn.Modification> m;
       Option<String> com;
       list<Absyn.Subscript> s;
     case({}) then {};

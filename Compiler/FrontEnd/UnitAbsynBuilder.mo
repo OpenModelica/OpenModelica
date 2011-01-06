@@ -898,7 +898,6 @@ algorithm
       list<UnitAbsyn.UnitTerm> terms1,terms2;
       DAE.ComponentRef cr1,cr2;
       list<DAE.Element> elts;
-      DAE.FunctionTree funcs;
     
     case(env,DAE.DAE(elementLst={}),ht,store) then ({},store);
     

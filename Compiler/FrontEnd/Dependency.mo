@@ -689,7 +689,6 @@ algorithm
      Absyn.ComponentRef cr;
      Absyn.Path path,usesName,cname2;
      HashTable2.HashTable ht;
-     Absyn.ForIterators forIter;
    
    case({},optPath,cname,(d,p,env,ht)) then d;
 
@@ -845,7 +844,6 @@ algorithm
       Absyn.ComponentRef cr;
       HashTable2.HashTable ht;
       String compString;
-      list<DAE.Exp> dbgList;
     
     // calls
     case((e as Absyn.CALL(cr,_),(optPath as SOME(cname2),cname,(d,p,env,ht)))) 
@@ -1047,7 +1045,6 @@ protected function buildClassDependsInElementAttr "help function to buildClassDe
 algorithm
   outDep := match(eltAttr,optPath,cname,dep)
     local 
-      Absyn.Path cname2;
       AbsynDep.Depends d; Absyn.Program p; Env.Env env; Absyn.ArrayDim ad;
       HashTable2.HashTable ht;
     
@@ -1212,9 +1209,6 @@ be fully qualified."
 algorithm
   fqPath := match(path,scope,className,env,p)
   local
-    Env.Env cenv;
-    SCode.Program p_1;
-    Absyn.Path path2;
     case(path,_,_,env,p) equation
       (_,fqPath) = Inst.makeFullyQualified(Env.emptyCache(),env, path);
     then fqPath;
@@ -1243,9 +1237,6 @@ makes the path fully qualified by looking up the name in the given scope in the 
 algorithm
   fqPath := match(path,scope,className,env,p)
   local
-    Env.Env cenv;
-    SCode.Program p_1;
-    Absyn.Path path2;
 
     case(path,scope,className,env,p) equation
       (_,fqPath) = Inst.makeFullyQualified(Env.emptyCache(),env, path);

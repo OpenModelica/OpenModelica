@@ -3570,7 +3570,6 @@ algorithm
     local
       Type_a x,y;
       list<Type_a> ys;
-      Integer n;
       Boolean a;
     case (_,{}) then false;
     case (x,(y :: ys))
@@ -5269,7 +5268,6 @@ algorithm
   outStringLst := matchcontinue (inStringLst1,inString2,inStringLst3)
     local
       list<String> chr_rest_1,chr_rest,chrList,rest,res;
-      list<String> res_str;
       String firstChar,chr,str;
     
     case ({},_,chr_rest)
@@ -6312,7 +6310,6 @@ algorithm
   matchcontinue (inString)
     local
       String file,pd,path,res,file_1,file_path,dir_path,current_dir,name;
-      String pd_chr;
       list<String> list_path_1,list_path;
     case (file_1)
       equation
@@ -7056,7 +7053,6 @@ algorithm
       TypeA hd;
       TypeB hdChanged;
       list<TypeA> rest;
-      list<TypeB>  result;
     
     case ({}, _, _) then ();
     

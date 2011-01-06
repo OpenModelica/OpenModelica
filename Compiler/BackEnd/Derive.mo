@@ -922,7 +922,6 @@ algorithm
   (outExp) := matchcontinue (inExp,inVarsandFuncs)
     local 
       list<DAE.Exp> expl,expl1,dexpl;
-      DAE.Exp e1;
       BackendDAE.Variables timevars;
       Absyn.Path a,da;
       Boolean b,c;
@@ -1016,11 +1015,8 @@ algorithm
       DAE.FunctionTree functions;
       tuple<Integer,DAE.derivativeCond> cond;
       Absyn.Path default,fname,da,inDFuncName;
-      DAE.TType typ;
       list<tuple<Integer,DAE.derivativeCond>> cr;
       Integer derivativeOrder;
-      Option<Absyn.Path> dd; 
-      Integer do;
       list<DAE.FuncArg> funcArg;
       list<DAE.Type> tplst; 
       list<Boolean> bl,bl1,bl2,bl3;
@@ -1233,7 +1229,6 @@ algorithm
       DAE.Operator op;
       String e_str,s,s2,str;
       list<DAE.Exp> expl_1,expl,sub;
-      Integer i;
 		  list<Boolean> bLst;      
     
     case (DAE.ICONST(integer = _),_,_) then DAE.RCONST(0.0);

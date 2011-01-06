@@ -532,7 +532,6 @@ algorithm
       DAE.InstDims dims;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
-      list<Absyn.Path> pathLst;
       Option<DAE.VariableAttributes> variableAttributesOption;
       Option<SCode.Comment> absynCommentOption;
       Absyn.InnerOuter innerOuter;
@@ -759,7 +758,7 @@ algorithm
       Absyn.Path p;
       Boolean pp;
       DAE.ExternalDecl ed;
-      list<DAE.Exp> elst,elst_1;
+      list<DAE.Exp> elst;
       DAE.Exp e2_1;
       DAE.Algorithm alg_1;
       DAE.InlineType inlineType;
@@ -1559,7 +1558,6 @@ algorithm
       DAE.Exp e,e_1,e1,e1_1,e2,e2_1;
       list<DAE.Exp> elst,elst_1,inputExps;
       DAE.ElementSource source;
-      Absyn.MatchType matchType;
     case({},_,_,_,_) then {};
     case(DAE.STMT_ASSIGN(ty,e1,e2,source) :: cdr,dae,p,inputs,current)
       equation
@@ -1750,8 +1748,6 @@ algorithm
       DAE.InlineType inl;
       list<DAE.Exp> args,args2,args_1;
       list<DAE.ComponentRef> crefs;
-      DAE.ComponentRef cref2;
-      String str;
     // remove unbox calls from simple types
     case((DAE.UNBOX(exp = e as DAE.CALL(path=orig_p)),(p,inputs,dae,current)))
       equation

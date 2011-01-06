@@ -289,8 +289,6 @@ algorithm
       Option<Values.Value> bindValue;
       DAE.InstDims arrayDim;
       Integer index;
-      DAE.ComponentRef origVarName;
-      list<Absyn.Path> className;
       Option<DAE.VariableAttributes> values,values1;
       Option<SCode.Comment> comment;
       DAE.Flow flowPrefix;
@@ -498,16 +496,11 @@ algorithm
       Functiontuple fns;
       list<DAE.Function> cdr,cdr_1;
       list<DAE.Element> elist,elist_1;
-      list<list<DAE.Element>> dlist_1;
       DAE.Function el,res;
       DAE.Type t;
       Boolean partialPrefix;
-      list<Absyn.Path> pathLst;
-      Absyn.InnerOuter innerOuter;
-      Ident i;
       Absyn.Path p;
       DAE.ExternalDecl ext;
-      list<DAE.Exp> explst_1;
       DAE.InlineType inlineType;
       list<DAE.FunctionDefinition> funcDefs;
       DAE.ElementSource source "the origin of the element";
@@ -560,7 +553,6 @@ algorithm
       DAE.InstDims dims;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
-      list<Absyn.Path> pathLst;
       Option<DAE.VariableAttributes> variableAttributesOption;
       Option<SCode.Comment> absynCommentOption;
       Absyn.InnerOuter innerOuter;
@@ -568,11 +560,7 @@ algorithm
       Algorithm.Algorithm alg,alg_1;
       Ident i;
       Absyn.Path p;
-      Boolean partialPrefix;
-      DAE.ExternalDecl ext;
       list<DAE.Exp> explst,explst_1;
-      DAE.InlineType inlineType;
-      list<DAE.FunctionDefinition> funcDefs;
       DAE.ElementSource source "the origin of the element";
       DAE.Function f1,f2;
 
@@ -814,7 +802,6 @@ algorithm
       Ident i;
       list<Integer> ilst;
       DAE.ElementSource source;
-      Absyn.MatchType matchType;
     case(DAE.STMT_ASSIGN(t,e1,e2,source),fns)
       equation
         e1_1 = inlineExp(e1,fns);
@@ -1024,11 +1011,9 @@ algorithm
       DAE.Exp e;
       list<DAE.ExpVar> varLst;
       list<DAE.Exp> expl;
-      list<Option<Integer>> ad;
       list<DAE.ComponentRef> crlst;
       list<list<tuple<DAE.Exp, Boolean>>> scalar;
       list<tuple<DAE.Exp, Boolean>> flatscalar;
-      list<list<DAE.Subscript>> subslst1;      
     case ({}) then {}; 
     case((c,e as (DAE.CREF(componentRef = cref,ty=DAE.ET_COMPLEX(varLst=varLst))))::res)
       equation
@@ -1072,7 +1057,6 @@ protected function extendCrefRecords1
 algorithm
   outArg := matchcontinue(ev,c,e)
     local
-      list<DAE.ExpVar> varLst;
       DAE.ExpType tp;
       String name;
       DAE.ComponentRef c1,e1;
@@ -1101,7 +1085,6 @@ protected function extendCrefRecords2
 algorithm
   outArg := matchcontinue(ev,c)
     local
-      list<DAE.ExpVar> varLst;
       DAE.ExpType tp;
       String name;
       DAE.ComponentRef c1;
@@ -1126,7 +1109,6 @@ protected function getFunctionBody
 algorithm
   outfn := matchcontinue(p,fns)
     local
-      list<DAE.Function> flst;
       list<DAE.Element> body;
       DAE.FunctionTree ftree;
     case(p,(SOME(ftree),_))
@@ -1175,7 +1157,6 @@ protected function replaceArgs
 algorithm
   outTuple := matchcontinue(inTuple)
     local
-      list<DAE.Element> fns;
       DAE.ComponentRef cref;
       list<tuple<DAE.ComponentRef, DAE.Exp>> argmap;
       DAE.Exp e;

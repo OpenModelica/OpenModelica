@@ -229,7 +229,6 @@ algorithm
     local
       Prefix.ClassPrefix cp;
       Prefix.ComponentPrefix compPre;
-      Prefix.ComponentPrefixOpt iop;
     // we can't remove what it isn't there!
     case (Prefix.NOPRE()) then Prefix.NOPRE();
     // if there isn't any next prefix, return Prefix.NOPRE!
@@ -248,8 +247,6 @@ protected function compPreStripLast
 algorithm
   outCompPrefix := match(inCompPrefix)
     local
-      String p;
-      list<DAE.Subscript> subs;
       Prefix.ComponentPrefix next;
 
     // nothing to remove!
@@ -643,13 +640,9 @@ algorithm
       String id,s;
       Env.Cache cache;
       list<DAE.Exp> expl;
-      Absyn.InnerOuter io;
       InstanceHierarchy ih;
       Prefix.Prefix p;
-      DAE.ComponentRef lastCref;
       Integer b,a;
-      list<DAE.Statement> statements;
-      list<DAE.Element> lDecls;
       DAE.ExpType t,tp;
       
     // no prefix, return the input expression

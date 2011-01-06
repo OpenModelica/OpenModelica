@@ -112,7 +112,6 @@ algorithm
       tuple<Integer,Integer,array<Option<tuple<Key,Value>>>> varr_1,varr;
       list<tuple<Key,Integer>> indexes;
       array<list<tuple<Key,Integer>>> hashvec_1,hashvec;
-      String name_str;
       tuple<Key,Value> v,newv;
       Key key;
       Value value;
@@ -657,7 +656,6 @@ algorithm
       Value v;
       Integer n;
       array<Option<tuple<Key,Value>>> arr;
-      String ns;
     case ((n,_,arr),pos)
       equation
         (pos <= n) = true;

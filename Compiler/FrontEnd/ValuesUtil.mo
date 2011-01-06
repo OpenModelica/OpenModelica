@@ -328,7 +328,7 @@ algorithm
   outv := matchcontinue(val1, val2, op)
     local
       Real rv1,rv2,rv3;
-      Integer iv1, iv2,iv3;
+      Integer iv1, iv2;
       DAE.Exp e;
       //MUL
     case (Values.INTEGER(iv1),Values.INTEGER(iv2), Values.MULOP())
@@ -906,7 +906,6 @@ algorithm
       list<DAE.ExpType> tpl;
       list<String> namelst;
       list<DAE.ExpVar> varlst;
-      String  str;
       Integer ix;
       Absyn.Path path;
       list<String> names;
@@ -1589,7 +1588,6 @@ algorithm
       Integer i1,i2,res,v1,v2,dim;
       list<Value> v1lst,v2lst,vres,rest,vlst,col,mat_1,vals,mat,lst1,lst2;
       Value sres,v;
-      String len2str;
       list<Integer> dims;
       Real r1,r2,rres;
     case ((Values.INTEGER(integer = i1) :: (v1lst as (_ :: _))),(Values.INTEGER(integer = i2) :: (v2lst as (_ :: _))))
@@ -1807,7 +1805,6 @@ algorithm
       list<Value> resl,resl2,vrest,rest;
       Value v1;
       Integer i;
-      list<Integer> dims;
       Integer dim;
     case ((Values.ARRAY(valueLst = (v1 :: vrest), dimLst = {dim}) :: rest))
       equation
@@ -1923,7 +1920,6 @@ algorithm
       list<Value> xs,vs;
       Value r;
       Absyn.CodeNode c;
-      DAE.ComponentRef cr;
       Absyn.Path p, recordPath;
       list<String> ids;
 
@@ -2058,11 +2054,9 @@ protected function valRecordString
 algorithm
   _ := match (xs,ids)
     local
-      Absyn.Path cname;
       String id;
       Value x;
       
-      Integer ix;
     case ({},{}) then ();
     case (x :: (xs as (_ :: _)),id :: (ids as (_ :: _)))
       equation
@@ -2281,10 +2275,8 @@ protected function unparsePtolemySet2 "function: unparsePtolemySet2
 algorithm
   _ := matchcontinue (inValue1,inValue2)
     local
-      String res_1;
       Value v1,v2;
       list<Value> v1s,v2s;
-      list<Integer> dims2;
 
     case (Values.ARRAY(valueLst = {}),Values.ARRAY(valueLst = {})) then ();
     // adrpo: ignore dimenstions here as we're just printing! otherwise it fails.

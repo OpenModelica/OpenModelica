@@ -1664,7 +1664,6 @@ algorithm str := matchcontinue(inExp)
     ComponentRef cr;
     String s1;
     list<DAE.Exp> expl;
-    list<String> s1s;
   case(DAE.CREF(cr,_)) then ComponentReference.debugPrintComponentRefTypeStr(cr);
   case(DAE.ARRAY(_,_,expl))
     equation

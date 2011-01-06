@@ -530,9 +530,7 @@ algorithm
       Env.Cache cache;
       Env.Env env;
       DAE.FunctionTree funcs;
-      AbsynDep.Depends dep;
       list<Absyn.Class> cls;
-      Integer r;
 
       /* Version requested using --version*/
     case (_) // try first to see if we had a version request among flags.
@@ -774,7 +772,6 @@ algorithm
       Absyn.Path classname;
       Env.Cache cache;
       Env.Env env;
-      list<Integer> tearvar;
       DAE.FunctionTree funcs;
       String str;
     case (cache,env,p,ap,dae,daeimpl,classname)
@@ -909,7 +906,6 @@ algorithm
       BackendDAE.BackendDAE indexed_dlow,indexed_dlow_1,dlow;
       String cname_str,file_dir;
       Absyn.ComponentRef a_cref;
-      list<String> libs;
       Absyn.Path classname;
       list<SCode.Class> p;
       Absyn.Program ap;
@@ -1119,7 +1115,6 @@ algorithm
       String file;
       Interactive.InteractiveSymbolTable inSymbolTable, outSymbolTable;
       String str;
-      Integer rest;
     case (file,inSymbolTable)
       equation
         true = System.regularFileExists(file);

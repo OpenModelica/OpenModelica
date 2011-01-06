@@ -211,14 +211,10 @@ algorithm
   (ih, ic) := matchcontinue(scope, cdef)
     local
       Instance i;
-      SCode.Restriction restriction;
-      SCode.ClassDef classDef;
-      String name;
       Absyn.Path path, fpath;
       InstanceHierarchy ihrest;
       list<SCode.Element> elements;
       Absyn.TypeSpec t;
-      SCode.Class cl;
       list<SCode.Equation> equations;
       InstanceConnects icrest;
       Absyn.ComponentRef fullCref;
@@ -265,8 +261,6 @@ algorithm
   ih := matchcontinue(scope, elements)
     local
       Instance i;
-      SCode.Restriction restriction;
-      SCode.ClassDef classDef;
       String name;
       Absyn.Path path, fpath;
       InstanceHierarchy ihrest;
@@ -643,7 +637,6 @@ algorithm
       SCode.Class cl;
       SCode.Variability var;
       Option<SCode.Comment> comment;
-      SCode.Attributes attr;
       Absyn.Path path;
       Absyn.Import imp;
 

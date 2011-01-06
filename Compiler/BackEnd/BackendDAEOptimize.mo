@@ -766,7 +766,7 @@ algorithm
   matchcontinue (inVars,inEqns,inAlias)
     local
       BackendDAE.Variables vars,vars1;
-      BackendDAE.Var var,var1,var2,var3;
+      BackendDAE.Var var,var2,var3;
       DAE.ComponentRef cr;
       DAE.Exp e;
       BackendDAE.Equation eqn;
@@ -1393,7 +1393,6 @@ algorithm
   match (inV1,inV2,inRLst,inTLst)
     local
       array<BackendDAE.Value> v1,v2,v1_1,v2_1,v1_2,v2_2;
-      list<BackendDAE.Value> comp;
       list<Integer> rlst,tlst;
       Integer r,t;
     case (v1,v2,{},{}) then (v1,v2);
@@ -1580,7 +1579,6 @@ algorithm
       DAE.ElementSource source;
       DAE.ExpType identType;
       list<DAE.Subscript> subscriptLst;
-      Integer replace1;
     
     case (dlow,dlow1,m,mT,v1,v2,comp,vars,exclude,residualeqn,residualeqns,tearingvars,tearingeqns,crlst)
       equation
@@ -1907,7 +1905,6 @@ algorithm
       BackendDAE.VariableArray varr;
       list<Boolean> blst,blst_1;
       list<list<Boolean>> blstlst;
-      list<String> s;
     case (eqns,{},ass,vars,crlst) then eqns;
     case (eqns,e::rest,ass,vars as BackendDAE.VARIABLES(varArr=varr),crlst)
       equation
@@ -1967,7 +1964,6 @@ algorithm
   (outJacobian,outV1,outV2,outComps1) :=
     matchcontinue (inBackendDAE,functionTree,inComRef1,inComRef2,inAllVar)
     local
-      DAE.DAElist dae;
       BackendDAE.BackendDAE dlow;
       
       list<DAE.ComponentRef> eqvars,diffvars;
@@ -2110,7 +2106,6 @@ algorithm
       list<Integer> rest;
       list<list<Integer>> vars;
       Integer var;
-      list<Integer> ilst2;
       Integer i;
       array<Integer> arr,arr1;
       list<String> s;
@@ -2457,19 +2452,14 @@ algorithm
   outDerivedEquations := matchcontinue(inEquation, inVars, inFunctions, inInputVars, inParamVars, inStateVars, inAlgorithmsLookUp)
     local
       BackendDAE.Equation currEquation;
-      list<DAE.Algorithm> algorithms;
       DAE.FunctionTree functions;
       DAE.ComponentRef currVar;
       list<DAE.ComponentRef> restVars;
-      Integer algNum;
       
-      list<BackendDAE.Var>   derivedVariables;
       list<BackendDAE.Equation> currDerivedEquations, restDerivedEquations, derivedEquations;
-      list<DAE.Algorithm>   derivedAlgorithms;
       
       list<BackendDAE.Var> inputVars, paramVars, stateVars;
       list<tuple<Integer, DAE.ComponentRef>> algorithmsLookUp;
-      Integer i; 
     case(_, {}, _, _, _, _, _) then {};
       
     case(currEquation, currVar::restVars, functions, inputVars, paramVars, stateVars, algorithmsLookUp) equation
@@ -2500,13 +2490,9 @@ algorithm
   outDerivedEquations := matchcontinue(inEquation, inVar, inFunctions, inInputVars, inParamVars, inStateVars, inAlgorithmsLookUp)
     local
       BackendDAE.Equation currEquation;
-      list<DAE.Algorithm> algorithms;
       DAE.FunctionTree functions;
       DAE.ComponentRef var, cref, cref_;
       
-      BackendDAE.Var currDerivedVariable;
-      BackendDAE.Equation currDerivedEquation;
-      DAE.Algorithm currDerivedAlgorithm;
       
       DAE.Exp lhs, rhs, lhs_, rhs_, exp, exp_;
       DAE.ElementSource source;
@@ -2514,7 +2500,6 @@ algorithm
       list<BackendDAE.Var> inputVars, paramVars, stateVars;
       Integer index;
       list<DAE.Exp> in_, derivedIn_,out, derivedOut;
-      DAE.Algorithm  derivedAlgorithm;
       list<tuple<Integer, DAE.ComponentRef>> algorithmsLookUp;
       Integer newAlgIndex;
     case(currEquation as BackendDAE.EQUATION(exp=lhs, scalar=rhs, source=source), var, functions, inputVars, paramVars, stateVars, _) equation
@@ -2570,8 +2555,6 @@ algorithm
     local
       DAE.ComponentRef cref, x;
       String id,str;
-      DAE.ExpType idType;
-      list<DAE.Subscript> sLst;
       list<BackendDAE.Var> stateVars;
       BackendDAE.Var v1;
     
@@ -2623,7 +2606,6 @@ algorithm
       DAE.Operator op;
       
       
-      list<DAE.ComponentRef> diff_crefs;
       Absyn.Path fname,derFname;
       
       list<DAE.Exp> expList1, expList2;
@@ -2913,7 +2895,6 @@ algorithm
       Integer i,nArgs;
       DAE.derivativeCond cond;
       Boolean res;
-      DAE.Exp e1;
     case ({},_) then true;
     case((i,cond)::rest,nArgs) 
       equation
@@ -2942,12 +2923,11 @@ protected function partialAnalyticalDifferentiation
 algorithm
   outExp := match(varExpList, derVarExpList, functionCall, derFname, nDerArgs)
     local
-      DAE.Exp e, currVar, currDerVar, derFun,  absCurr;
+      DAE.Exp e, currVar, currDerVar, derFun;
       list<DAE.Exp> restVar, restDerVar, varExpList1Added, varExpListTotal;
       DAE.ExpType et;
       Boolean tuple_, builtin;
       DAE.InlineType inlineType;
-      DAE.FunctionTree functions;
       Integer nArgs1, nArgs2;
     case ( _, {}, _, _, _) then (DAE.RCONST(0.0));
     case (currVar::restVar, currDerVar::restDerVar, functionCall as DAE.CALL(expLst=varExpListTotal, tuple_=tuple_, builtin=builtin, ty=et, inlineType=inlineType), derFname, nDerArgs)
@@ -2977,7 +2957,6 @@ algorithm
       Absyn.Path fname;
       Boolean tuple_, builtin;
       DAE.InlineType inlineType;
-      DAE.FunctionTree functions;
       Integer nArgs1, nArgs2;
     case ({}, _, _, _) then (DAE.RCONST(0.0));
     case (currVar::restVar, currDerVar::restDerVar, inState, functionCall as DAE.CALL(path=fname, expLst=varExpListTotal, tuple_=tuple_, builtin=builtin, ty=et, inlineType=inlineType))
@@ -3158,7 +3137,6 @@ algorithm
       list<tuple<String,Integer>> erg;
       list<DAE.ComponentRef> rest, states;
       DAE.ComponentRef curr;
-      Boolean searchForStates;
       Integer actInd;
       list<BackendDAE.Var> allVars;
       
@@ -3240,7 +3218,6 @@ algorithm
       String currVar;
       Integer currInd;
       BackendDAE.BinTree bt;
-      list<Integer> varInt;
     case (curr  as BackendDAE.VAR(varName=currCREF),(currVar,currInd)::restTuple,bt) equation
       true = stringEqual(currVar,ComponentReference.printComponentRefStr(currCREF));
       changedVar = BackendVariable.setVarIndex(curr,currInd);

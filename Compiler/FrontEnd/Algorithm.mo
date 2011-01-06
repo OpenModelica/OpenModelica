@@ -151,7 +151,6 @@ algorithm
       Ident lhs_str,rhs_str,lt_str,rt_str;
       DAE.Exp lhs,rhs;
       DAE.Properties lprop,rprop,lhprop,rhprop;
-      DAE.ExpType crt;
       DAE.ComponentRef cr;
       tuple<DAE.TType, Option<Absyn.Path>> lt,rt;
 
@@ -337,7 +336,6 @@ algorithm
       DAE.Properties rprop;
       list<tuple<DAE.TType, Option<Absyn.Path>>> lhrtypes,tpl;
       list<DAE.TupleConst> clist;
-      DAE.Const const;
       
     case (lhs,lprop,rhs,rprop,initial_,source)
       equation

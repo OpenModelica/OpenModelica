@@ -2560,7 +2560,6 @@ algorithm
       list<Absyn.EquationItem> tb,fb,el;
       list<tuple<Absyn.Exp, list<Absyn.EquationItem>>> eb;
       Absyn.ForIterators iterators;
-      Ident i;
       Absyn.EquationItem equItem;
       Absyn.ComponentRef cr;
       Absyn.FunctionArgs fargs;
@@ -2943,9 +2942,7 @@ algorithm
       list<Absyn.AlgorithmItem> tb,fb,el,al;
       list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> eb;
       Absyn.ForIterators iterators;
-      Ident i;
       Absyn.AlgorithmItem algItem;
-      Absyn.ComponentRef cref;
       Absyn.FunctionArgs fargs;
 
     case (Absyn.ALG_ASSIGN(assignComponent = assignComp,value = exp))
@@ -3118,9 +3115,6 @@ algorithm
       Absyn.Annotation ann;
       Absyn.ForIterators iterators;
       Absyn.AlgorithmItem algItem;
-      Absyn.MatchType matchType;
-      list<Absyn.Exp> explist;
-      list<String> strlist;
     
     case (i,Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_ASSIGN(assignComponent = assignComp,value = exp),comment = optcmt)) /* ALG_ASSIGN */
       equation
@@ -3968,7 +3962,6 @@ algorithm
       list<Absyn.Exp> expargs;
       list<Absyn.NamedArg> nargs;
       Absyn.Exp exp;
-      Ident id;
       Absyn.ForIterators iterators;
     case Absyn.FUNCTIONARGS(args = expargs,argNames = nargs)
       equation
@@ -3998,7 +3991,6 @@ function printIterator
 algorithm
   _ := match(iterator)
     local
-      String    s3;
       Absyn.Exp exp;
       Absyn.Ident id;
       list<tuple<Absyn.Ident, Absyn.Exp>> rest;
@@ -4261,11 +4253,6 @@ algorithm
       Option<String> comment;
       list<list<Absyn.Exp>> lstEs;
       Absyn.CodeNode cod;
-      list<Absyn.ElementItem> els; 
-      list<Absyn.AlgorithmItem> algs;
-      list<Absyn.AlgorithmItem> patternMatching;
-      list<Absyn.EquationItem>  equationBody;
-      list<Absyn.AlgorithmItem> resultAssignments;
     
     case (Absyn.INTEGER(value = i))
       equation
@@ -5233,7 +5220,6 @@ algorithm
       list<Absyn.Class> classes;
       Absyn.Within within_;
       Absyn.TimeStamp globalBuildTimes;
-      String old;
     case Absyn.PROGRAM(classes = classes, within_ = within_, globalBuildTimes = globalBuildTimes)
       equation
         Print.printBuf("record Absyn.PROGRAM\nclasses = ");
@@ -6115,9 +6101,6 @@ algorithm
       Absyn.ComponentRef functionCall;
       Absyn.FunctionArgs functionArgs;
       list<Absyn.Exp> inputExps, switchCases;
-      String label;
-      Absyn.AlgorithmItem equ;
-      Absyn.MatchType matchType;
     case Absyn.ALG_ASSIGN(assignComponent,value)
       equation
         Print.printBuf("record Absyn.ALG_ASSIGN assignComponent = ");

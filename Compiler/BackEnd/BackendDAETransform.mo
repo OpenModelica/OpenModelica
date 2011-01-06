@@ -1298,7 +1298,6 @@ algorithm
       array<DAE.Algorithm> al;
       BackendDAE.EventInfo wc;
       BackendDAE.ExternalObjectClasses eoc;
-      BackendDAE.BackendDAE  daelow_1;
 
     case (BackendDAE.DAE(vars,kv,ev,av,e,se,ie,ae,al,wc,eoc),cr)
       equation
@@ -1653,7 +1652,6 @@ algorithm
       list<BackendDAE.WhenOperator> reinitStmtLst,reinitStmtLst1;
       DAE.Exp cond,cond1;
       list<BackendDAE.WhenClause> wclst,wclst1,wclst2;
-      list<Integer> dimSize;
       Type_a ext_arg_1,ext_arg_2,ext_arg_3;
 
     case (NONE(),wclst,func,inTypeA) then (wclst,inTypeA);
@@ -2131,7 +2129,6 @@ algorithm
   outTpl := matchcontinue(inTpl)
     local 
       DAE.ComponentRef cr,cr2;
-      DAE.Ident id2;
       BackendDAE.Var v;
       Integer i;
     case((v,(cr,i)))
@@ -2153,7 +2150,6 @@ protected function varStateSelectHeuristicPrio2
 algorithm
   prio := matchcontinue(cr,vars)
     local
-      list<BackendDAE.Var> sameCompVarLst;
     case(cr,vars)
       equation
         ((_,true)) = BackendVariable.traverseBackendDAEVars(vars,varInSameComponent,(cr,false));
@@ -2222,7 +2218,6 @@ algorithm
       DAE.ComponentRef cr2;
       list<DAE.ComponentRef> crs;
       list<list<BackendDAE.Var>> crVars;
-      list<Boolean> blst;
       DAE.Exp e2;
 
     // s = expr(s1,..,sn)  where s1 .. sn are states
@@ -2355,7 +2350,6 @@ algorithm
       list<BackendDAE.Key> res1,res11,res1_1;
       list<BackendDAE.Value> res2,vars2,res22,res2_1,rest;
       BackendDAE.Value e;
-      BackendDAE.Equation eqn;
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns;
       array<list<BackendDAE.Value>> m,mt;
@@ -2468,7 +2462,6 @@ algorithm
       array<list<BackendDAE.Value>> m,mt;
       BackendDAE.Value nv,nf,e_1,leneqns,e;
       BackendDAE.Equation eqn,eqn_1;
-      String str;
       BackendDAE.EquationArray eqns_1,eqns,seqns,ie;
       list<BackendDAE.Value> reqns,es;
       BackendDAE.Variables v,kv,ev;

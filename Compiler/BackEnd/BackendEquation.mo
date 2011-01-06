@@ -864,7 +864,6 @@ public function traverseAlgorithmFinder "function: traverseAlgorithmFinder
 algorithm
   outTpl := matchcontinue (inTpl)
     local
-      list<BackendDAE.Equation> eqns;
       BackendDAE.Equation eqn;
       array<DAE.Algorithm> algarr;
       DAE.Algorithm alg;

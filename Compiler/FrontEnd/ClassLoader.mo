@@ -157,7 +157,6 @@ algorithm
       String mp,pd,classfile,classfile_1,class_,mp_1,dirfile,packfile;
       Absyn.Program p;
       Absyn.TimeStamp ts;
-      Real  t2;
 
     case (class_,mp_1)
       equation

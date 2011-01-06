@@ -281,8 +281,8 @@ algorithm
       Env.Cache cache;
       Env.Env env;
       Absyn.Path first;
-      list<Absyn.Path> metarecordPaths, rest;
-      list<DAE.Type> metarecordTypes, metarecordTypes1, metarecordTypes2, uniontypeTypes, innerTypes;
+      list<Absyn.Path>  rest;
+      list<DAE.Type>     innerTypes;
       list<list<Absyn.Path>> uniontypePaths;
       DAE.Type ty;
     case (cache, _, {}, ht, acc) then (cache, ht, acc);
@@ -313,7 +313,7 @@ algorithm
       Env.Cache cache;
       Env.Env env;
       Absyn.Path first;
-      list<Absyn.Path> uniontypePaths,  rest;
+      list<Absyn.Path> uniontypePaths;
       list<DAE.Type>    uniontypeTypes;
       DAE.Type ty;
     case (cache, env, path, str, ht, acc)
@@ -379,11 +379,11 @@ protected function lookupClass2 "help function to lookupClass, does all the work
 algorithm
   (outCache,outClass,outEnv,outPrevFrames) := matchcontinue (inCache,inEnv,inPath,inPrevFrames,inState,msg)
     local
-      Env.Frame f,frame;
+      Env.Frame f;
       Env.Cache cache;
-      SCode.Class c,c_1;
+      SCode.Class c;
       list<Env.Frame> env,env_1,env2,env_2,env_3,env1,env4,env5,fs,prevFrames;
-      Absyn.Path path,ep,packp,p,scope,restPath;
+      Absyn.Path path,p,scope;
       String id,pack;
       Option<Env.Frame> optFrame;
 
@@ -567,11 +567,11 @@ algorithm
       DAE.Attributes attr;
       tuple<DAE.TType, Option<Absyn.Path>> ty;
       DAE.Binding bind;
-      String id,id2,str;
+      String id;
       list<Env.Item> fs;
       list<Env.Frame> prevFrames;
       DAE.ComponentRef cref;
-      Absyn.Path strippath,path;
+      Absyn.Path path;
       SCode.Class c2;
       Env.Cache cache;
       Option<DAE.Const> cnstForRange;
@@ -606,9 +606,9 @@ protected function moreLookupUnqualifiedImportedVarInFrame "function: moreLookup
 algorithm
   (outCache,outBoolean) := matchcontinue (inCache,inEnvItemLst,inEnv,inIdent)
     local
-      Env.Frame fr,f;
+      Env.Frame f;
       SCode.Class c;
-      String id,ident;
+      String ident;
       Boolean res;
       SCode.Restriction restr;
       list<Env.Frame> env,prevFrames;
@@ -1020,7 +1020,6 @@ algorithm
       Env.Cache cache;
       SplicedExpData splicedExpData;
       Option<DAE.Const> cnstForRange;
-      Boolean mustBeConstant;
     
     /*
     case (cache,env,cref)
@@ -1067,7 +1066,6 @@ if variable is not constant."
 algorithm
   _ := matchcontinue(env,attr,tp,cref)
     local 
-      Absyn.Path path;
       String s1,s2;
     
     // do not fail if is a constant
@@ -1113,7 +1111,6 @@ algorithm
       Env.Frame frame,f;
       DAE.ComponentRef ref;
       Env.Cache cache;
-      Option<DAE.Exp> splicedExp;
       Option<DAE.Const> cnstForRange;
       Env.Env env,componentEnv;
     
@@ -1193,7 +1190,6 @@ algorithm
       SCode.Restriction r;
       list<Env.Frame> env2,env3,env5,env,fs,p_env,prevFrames, classEnv, componentEnv;
       ClassInf.State ci_state;
-      list<DAE.Var> types;
       DAE.Attributes attr;
       DAE.Type ty;
       DAE.Binding bind;
@@ -1206,7 +1202,6 @@ algorithm
       Option<DAE.Const> cnstForRange;
       Absyn.Path path,scope;
       Option<DAE.ComponentRef> filterCref;
-      Env.Env dbgEnv;
       Boolean unique;
 
       // If we search for A1.A2....An.x while in scope A1.A2...An, just search for x. 
@@ -1429,7 +1424,6 @@ algorithm
       Option<String> sid;
       Env.AvlTree ht;
       String id;
-      Env.Cache cache;
     case (env as (Env.FRAME(optName = sid, clsAndVars = ht) :: _),id) /* component environment */
       equation
         Env.CLASS(cl,env) = Env.avlTreeGet(ht, id);
@@ -1545,7 +1539,6 @@ algorithm
     local
       Env.Frame f;
       list<DAE.Type> res;
-      DAE.DAElist dae;
       Env.AvlTree httypes;
       Env.AvlTree ht;
       String str;
@@ -1616,7 +1609,6 @@ algorithm
       ClassInf.State ci_state,cistate1;
       Env.Frame f;
       Env.Cache cache;
-      DAE.DAElist dae;
       
     /* Simple name, search frame */
     case (cache,(env as (Env.FRAME(optName = sid,clsAndVars = ht,types = httypes) :: fs)),id as Absyn.IDENT(name = str),followedQual,info)
@@ -1786,16 +1778,11 @@ algorithm
   matchcontinue (inCache,item,inEnv3,inIdent4)
     local
       tuple<DAE.TType, Option<Absyn.Path>> t,ty;
-      Env.AvlTree httypes;
-      Env.AvlTree ht;
       list<Env.Frame> env,cenv,env_1,env_3;
       String id,n;
       SCode.Class cdef;
-      Absyn.Path fpath;
-      list<DAE.Var> varlst;
       Env.Cache cache;
       SCode.Restriction restr;
-      Env.Cache garbageCache;
 
     case (cache,Env.TYPE((t :: _)),env,id) then (cache,t,env);
     case (cache,Env.VAR(_,_,_,_),env,id)
@@ -1851,12 +1838,9 @@ algorithm
       list<Env.Frame> env,cenv,env_1;
       String id,n;
       SCode.Class cdef;
-      list<DAE.Var> varlst;
-      Absyn.Path fpath;
       tuple<DAE.TType, Option<Absyn.Path>> ftype,t;
       DAE.TType tty;
       Env.Cache cache;
-      DAE.DAElist dae;
       SCode.Restriction restr;
 
     case (cache,ht,httypes,env,id,_) /* Classes and vars Types */
@@ -1954,10 +1938,7 @@ algorithm
       SCode.Element reselt;
       SCode.Class cl;
       String id;
-      SCode.Restriction restr;
       list<Env.Frame> env;
-      list<SCode.AlgorithmSection> initStmts;
-      list<Absyn.Algorithm> initAbsynStmts;
       Absyn.Info info;
 
     case (cache,env,cl as SCode.CLASS(name=id,info=info))
@@ -2062,10 +2043,7 @@ algorithm
       Absyn.Direction dir;
       Absyn.TypeSpec tp;
       Option<SCode.Comment> comment;
-      list<Env.Frame> env_1;
       Option<Absyn.Exp> cond;
-      SCode.Class cl;
-      Absyn.Path path;
       SCode.Mod mod,umod;
       DAE.Mod mod_1, compMod, fullMod, selectedMod, cmod;
       Option<Absyn.Info> nfo;
@@ -2226,7 +2204,6 @@ algorithm
       Env.Frame frame;
       String sid,scope;
       Boolean msg,msgflag;
-      Absyn.Path path;
       Env.Cache cache;
             
     case (cache,env as (frame::_),id,prevFrames,inState,msg) /* msg */ 
@@ -2299,7 +2276,6 @@ algorithm
       String name;
       list<Env.Item> items;
       Env.Cache cache;
-      Env.Item item;
       Boolean unique;
 
       /* Check this scope for class */
@@ -2623,14 +2599,12 @@ algorithm
       Env.AvlTree ht;
       list<DAE.Subscript> ss;
       list<Env.Frame> componentEnv;
-      DAE.Attributes attr;
       DAE.ComponentRef ids;
       Env.Cache cache;
       DAE.ExpType ty2_2;
       Absyn.InnerOuter io;
       Option<DAE.Exp> texp;
       DAE.Type ty1,ty2;
-      Option<Absyn.Path> p;
       DAE.ComponentRef xCref,tCref,cref_;
       list<DAE.ComponentRef> ltCref;
       DAE.Exp splicedExp;
@@ -2898,8 +2872,6 @@ algorithm
       DAE.Type t,tOrg;
       list<Integer> dimensions;
       list<DAE.Dimension> dim2;
-      DAE.TType tty;
-      String str;
     case(t, tOrg)
       equation
         dimensions = Types.getDimensionSizes(t);

@@ -1276,11 +1276,9 @@ protected function elabMatchCase
 algorithm
   (outCache,elabCase,resExp,resType,outSt) := match (cache,env,acase,tys,impl,st,performVectorization,pre)
     local
-      list<Absyn.Case> rest;
       Absyn.Exp result,pattern;
       list<Absyn.Exp> patterns;
       list<DAE.Pattern> elabPatterns;
-      DAE.MatchCase case_;
       Option<DAE.Exp> elabResult;
       list<DAE.Element> caseDecls;
       list<Absyn.EquationItem> eq1;
@@ -1331,9 +1329,6 @@ algorithm
       DAE.Exp elabExp;
       DAE.Properties prop;
       DAE.Type ty;
-      list<Absyn.Exp> es;
-      Boolean b;
-      list<DAE.Exp> elabCrs2;
     case (cache,env,body,Absyn.CALL(function_ = Absyn.CREF_IDENT("fail",{}), functionArgs = Absyn.FUNCTIONARGS({},{})),impl,st,performVectorization,pre,info)
       then (cache,body,NONE(),NONE(),st);
 
@@ -1395,7 +1390,6 @@ protected function fixCaseReturnTypes
 algorithm
   (outCases,ty) := matchcontinue (cases,exps,tys,info)
     local
-      DAE.Type resType;
       String str;
     case (cases,{},{},info) then (cases,(DAE.T_NORETCALL(),NONE()));
     case (cases,exps,tys,info)
@@ -1506,10 +1500,8 @@ algorithm
       list<SCode.Element> ld2,ld3,ld4;
       list<tuple<SCode.Element, DAE.Mod>> ld_mod;      
       DAE.DAElist dae1;
-      list<DAE.Element> dae1_2Elts;
       Env.Env env2;
       ClassInf.State dummyFunc;
-      list<Absyn.AlgorithmItem> algs;
       String str;
 
     case (cache,env,{},scopeName,impl,info) then (cache,SOME((env,DAEUtil.emptyDae)));

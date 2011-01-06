@@ -768,7 +768,6 @@ algorithm
       ErrorID error_id,sline,scol,eline,ecol;
       MessageTokens tokens;
       Boolean isReadOnly;
-      Absyn.Info sinfo;
     case (error_id,tokens,Absyn.INFO(fileName = file,isReadOnly = isReadOnly,lineNumberStart = sline,columnNumberStart = scol,lineNumberEnd = eline,columnNumberEnd = ecol))
       equation
         file = fixFilenameForTestsuite(file);

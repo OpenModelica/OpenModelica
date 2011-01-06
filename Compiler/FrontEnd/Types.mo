@@ -944,7 +944,7 @@ Helper function for removeMod, removes modifiers in submods;
   output list<SubMod> outsubs;
 algorithm outsubs := match(insubs,componentName)
   local
-    DAE.Mod m1,m2;
+    DAE.Mod m1;
     list<SubMod> subs1,subs2;
     String s1;
     SubMod sub;
@@ -1472,11 +1472,8 @@ algorithm
       Boolean res;
       Ident l1,l2;
       list<Var> els1,els2;
-      Option<Absyn.Path> op2;
       Absyn.Path p1,p2;
-      list<Absyn.Path> pathLst;
       Type t1,t2,tp,tp2,tp1;
-      Integer i2;
       ClassInf.State st1,st2;
       Option<Type> bc1,bc2;
       list<Type> type_list1,type_list2,tList1,tList2;
@@ -2533,7 +2530,6 @@ algorithm
       Attributes attr;
       Boolean prot;
       Type typ;
-      Binding bind;
       Values.Value value;
       DAE.Exp e;
     case DAE.TYPES_VAR(name = n,attributes = attr,protected_ = prot,type_ = typ,binding = DAE.EQBOUND(exp=e))
@@ -3696,8 +3692,6 @@ algorithm
       list<Var> varLst,tcvl;
       ClassInf.State CIS;
       list<DAE.ExpVar> ecvl;
-      list<DAE.ExpType> t_l2;
-      list<Type> t_l;
     
     case ((DAE.T_ENUMERATION(path = path, names = names, literalVarLst = varLst),_))
       equation
@@ -3932,12 +3926,9 @@ algorithm
     local
       DAE.Exp e_1,e;
       Type e_type_1,e_type,expected_type,expected_type_vectorized,current_type;
-      list<DAE.Dimension> ds;
       PolymorphicBindings polymorphicBindings;
       DAE.Dimension dim;
       list<DAE.Dimension> dims;
-      Option<Integer> iOpt;
-      list<Option<Integer>> iOptLst;
     case (e,e_type,current_type,dims,expected_type,fnPath)
       equation
         expected_type_vectorized = liftArrayListDims(expected_type, dims);
@@ -3983,7 +3974,6 @@ algorithm
       list<Type> tys_1,tys1,tys2;
       list<Ident> l;
       list<Var> v;
-      String id2;
       Absyn.Path path,tp,path1,path2;
       String name;
       list<Absyn.Path> pathList;
@@ -4512,11 +4502,9 @@ algorithm
   (outExp,actualOutType) := matchcontinue (melist,inType,outType,printFailtrace)
     local
       list<DAE.Exp> expl;
-      list<list<DAE.Exp>> rest,  elist_1;
+      list<list<DAE.Exp>> rest;
       DAE.ExpType t;
-      list<DAE.ExpType> tlist;
       Type t1,t2;
-      list<Type> tys1;
       Option<Absyn.Path> p2;
       DAE.Exp e;
     case ({},_,_,_) then ({},(DAE.T_NOTYPE(),NONE()));
@@ -5344,9 +5332,7 @@ algorithm
   matchcontinue (exp,actual,expected,envPath,polymorphicBindings,printFailtrace)
     local
       DAE.Exp e,e_1;
-      DAE.ExpType et;
       Type e_type,expected_type,e_type_1;
-      String id2;
 
     case (exp,actual,expected,_,polymorphicBindings,printFailtrace)
       equation
@@ -5393,7 +5379,6 @@ algorithm
   (outExp,outType) := matchcontinue (inExp1,inType2,inType3,printFailtrace)
     local
       DAE.Exp e,e_1;
-      DAE.ExpType et;
       Type e_type,expected_type,e_type_1;
     case (e,e_type,expected_type,printFailtrace)
       equation
@@ -5613,7 +5598,6 @@ algorithm
     local
       Type ty,first;
       list<Type> tys,rest;
-      list<list<Type>> resMap;
       list<Var> fields;
       list<FuncArg> funcArgs;
     case ({},_,_) then acc;
@@ -6067,8 +6051,6 @@ algorithm
   (outTys,outSolvedBindings) := matchcontinue (tys1,tys2,changed,solvedBindings)
     local
       Type ty1,ty2;
-      list<Type> rest;
-      String id2;
     case (ty1::tys1,ty2::tys2,_,solvedBindings)
       equation
         ({ty1},solvedBindings) = solveBindings({ty1},{ty2},solvedBindings);

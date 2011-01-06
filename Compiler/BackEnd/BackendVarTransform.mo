@@ -360,8 +360,6 @@ algorithm
       DAE.Exp e1_1,e2_1,e1,e2,e1_2,e2_2;
       list<BackendDAE.MultiDimEquation> es_1,es;
       VarTransform.VariableReplacements repl;
-      BackendDAE.Equation a;
-      DAE.ComponentRef cr;
       list<Integer> dims;
       DAE.ElementSource source "the origin of the element";
 
@@ -423,8 +421,6 @@ algorithm
       list<DAE.Exp> expExpLst,expExpLst_1,inputExps;
       DAE.Else else_,else_1;
       DAE.ElementSource source;
-      String str;
-      Absyn.MatchType matchType;
       DAE.ComponentRef cr; 
       Boolean iterIsArray;
       DAE.Ident ident;
@@ -604,7 +600,6 @@ algorithm
       VarTransform.VariableReplacements repl;
       list<DAE.Statement> statementLst,statementLst_1;
       DAE.Exp e1,e1_1,e1_2;
-      list<DAE.Exp> expExpLst_1;
       DAE.Else else_,else_1;
     case (DAE.NOELSE(),_) then DAE.NOELSE();
     case (DAE.ELSEIF(exp=e1,statementLst=statementLst,else_=else_),repl)

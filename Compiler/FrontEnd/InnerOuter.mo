@@ -698,7 +698,7 @@ algorithm
   (outOuterConnects,outSetLst,outCrs,innerOuterConnects) :=
   matchcontinue(cache,env,inIH,pre,outerConnects,setLst,crs,topCall)
     local
-      DAE.ComponentRef cr1,cr2,cr1Outer,cr2Outer,crefPrefix;
+      DAE.ComponentRef cr1,cr2,cr1Outer,cr2Outer;
       Absyn.InnerOuter io1,io2;
       Connect.OuterConnect oc;
       Boolean inner1,outer1,added,b1,b2,b3,b4;
@@ -1178,11 +1178,7 @@ algorithm
   (outInstInner) := matchcontinue(inTIH, inPrefix, inComponentIdent)
     local
       SCode.Ident name;
-      Cache outCache;
-      DAE.Var outVar;
       Prefix.Prefix prefix;
-      Absyn.InnerOuter io;
-      Boolean isInner;
       InstHierarchyHashTable ht;
       DAE.ComponentRef cref;
       InstInner instInner;
@@ -1279,8 +1275,6 @@ algorithm
   modd := matchcontinue(cache,env,ih,prefix,componentName,cr,inMod,io,impl)
   local
     String s1,s2,s;
-    SCode.Mod scmod2;
-    DAE.Mod mod2;
   // if we don't have the same modification on inner report error!
   case(_,_,_,_,_,cr,DAE.MOD(finalPrefix = _),Absyn.OUTER(),impl)
     equation
@@ -1508,7 +1502,6 @@ algorithm
     local
       DAE.ComponentRef cr;
       Env.AvlKey rkey;
-      String res;
       Env.AvlValue rval;
       Option<AvlTree> l,r;
       Integer h;
@@ -1542,12 +1535,6 @@ algorithm
   outItem := matchcontinue(inItem,inCr)
     local
       DAE.ComponentRef cr;
-      Env.AvlKey rkey;
-      String res;
-      Env.AvlValue rval;
-      Option<AvlTree> r;
-      Integer h;
-      DAE.Var instantiated;
       DAE.Ident name "name";
       DAE.Attributes attributes "attributes";
       Boolean protected_ "protected";
@@ -1619,7 +1606,6 @@ algorithm
       String n;
       Env.Env env;
       Prefix.Prefix pre;
-      InstHierarchy ih;
       TopInstance tih;
       InstInner instInner;
 
@@ -1662,12 +1648,8 @@ algorithm
       DAE.ComponentRef cref;
       SCode.Ident name;
       Absyn.InnerOuter io;
-      DAE.Mod mod;
       InstHierarchyHashTable ht;
       Option<Absyn.Path> pathOpt;
-      SCode.Element c;
-      DAE.DAElist dae;
-      Env.Env innerComponentEnv;
       OuterPrefixes outerPrefixes;
       DAE.ComponentRef cref_;
     
@@ -1729,15 +1711,8 @@ algorithm
     local
       TopInstance tih;
       InstHierarchy restIH, ih;
-      DAE.ComponentRef cref;
-      SCode.Ident name;
-      Absyn.InnerOuter io;
-      DAE.Mod mod;
       InstHierarchyHashTable ht;
       Option<Absyn.Path> pathOpt;
-      SCode.Element c;
-      DAE.DAElist dae;
-      Env.Env innerComponentEnv;
       OuterPrefixes outerPrefixes;
 
     // no hashtable, create one!
@@ -1899,7 +1874,6 @@ algorithm
       Absyn.Path typePath "the type of the inner";
       String scope "the scope of the inner";      
       list<DAE.ComponentRef> outers "which outers are referencing this inner";
-      DAE.ComponentRef cref;
       String str, strOuters;
 
     case(INST_INNER(innerPrefix, name, io, fullName, typePath, scope, instResult, outers))
@@ -2095,7 +2069,6 @@ algorithm
       ValueArray varr_1,varr;
       list<tuple<Key,Integer>> indexes;
       array<list<tuple<Key,Integer>>> hashvec_1,hashvec;
-      String name_str;
       tuple<Key,Value> v,newv;
       Key key;
       Value value;
@@ -2251,7 +2224,6 @@ algorithm
   index := matchcontinue (key,keyIndices)
     local
       Key key2;
-      Value res;
       list<tuple<Key,Integer>> xs;
     case (key,((key2,index) :: _))
       equation
@@ -2475,7 +2447,6 @@ algorithm
       Value v;
       Integer n;
       array<Option<tuple<Key,Value>>> arr;
-      String ns;
     
     case (VALUE_ARRAY(numberOfElements = n,valueArray = arr),pos)
       equation

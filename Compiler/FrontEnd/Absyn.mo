@@ -1450,10 +1450,6 @@ algorithm
       Operator op_1,op;
       FuncTypeTplExpType_aToTplExpType_a rel;
       list<Exp> expl_1,expl;
-      Path path;
-      Boolean scalar;
-      Integer i;
-      Ident id;
       list<tuple<Exp,Exp>> elseIfBranch,elseIfBranch1;
       FunctionArgs fargs,fargs1,fargs2;
       ComponentRef cfn,cfn_1; Exp e_temp;
@@ -1726,7 +1722,6 @@ algorithm
   outTplExpTypeA:= match(pargs,rel,ext_arg)
     local
       Exp e1,e11;
-      Ident id;
     case({},rel,ext_arg) then (({},ext_arg));
     case(e1::pargs,rel,ext_arg)
       equation
@@ -2243,9 +2238,6 @@ public function crefReplaceFirstIdent "
 algorithm
   outCref := match(cref,replPath)
     local
-      String n;
-      Path p;
-      list<String> strings;
       list<Subscript> subs;
       ComponentRef cr;
     case (CREF_FULLYQUALIFIED(componentRef = cr),replPath)
@@ -2505,12 +2497,10 @@ algorithm
       Operator op;
       list<tuple<ComponentCondition, ComponentCondition>> e4;
       FunctionArgs farg;
-      list<list<ComponentRef>> res2;
       list<ComponentCondition> expl;
       list<list<ComponentCondition>> expll;
       list<Subscript> subs;
       list<list<ComponentRef>> lstres1;
-      list<list<list<ComponentRef>>> reslll;
       list<list<ComponentRef>> crefll;
     
     case (INTEGER(value = _),checkSubs) then {};
@@ -4264,7 +4254,6 @@ algorithm
       Integer n, n_1;
       String id,name;
       list<Subscript> rest;
-      Subscript sub;
     case (_,{},_) then {};
     case (id,SUBSCRIPT(CREF(CREF_IDENT(name,{})))::rest,n)
       equation
@@ -4458,11 +4447,9 @@ public function onlyLiteralsInAnnotationMod
 algorithm
   onlyLiterals := matchcontinue(inMod)
     local
-      Modification mod;
       list<ElementArg> dive, rest;
       Option<Exp> expOpt;
       Boolean b1, b2, b3, b;
-      String name;
 
     case ({}) then true;
     
@@ -4535,8 +4522,6 @@ protected function onlyLiteralsInExp
 algorithm
   outTpl := matchcontinue(tpl)
     local 
-      Option<Path> optPath;
-      Path cname2;
       Exp e;
       ComponentRef cr;
       list<Exp> lst, lstArgs;

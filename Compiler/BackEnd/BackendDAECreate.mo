@@ -223,12 +223,12 @@ algorithm
    match (inElements,functionTree,inVariables,inKnownVariables,inExternalVariables,inEquationLst3,inEquationLst4,inEquationLst5,
       inMultiDimEquationLst6,inMultiDimEquationLst7,inAlgorithmAlgorithmLst8,inAlgorithmAlgorithmLst9,inWhenClauseLst10,inExtObjClasses,inStatesBinTree)
     local
-      BackendDAE.Variables v1,v2,v3,vars,knvars,extVars,extVars1,extVars2,vars_1,knvars_1,vars1,vars2,knvars1,knvars2,kv;
-      list<BackendDAE.WhenClause> whenclauses,whenclauses_1,whenclauses_2;
+      BackendDAE.Variables vars,knvars,extVars;
+      list<BackendDAE.WhenClause> whenclauses;
       list<BackendDAE.Equation> eqns,reqns,ieqns;
       list<BackendDAE.MultiDimEquation> aeqns,iaeqns;
       list<DAE.Algorithm> algs,ialgs;
-      BackendDAE.ExternalObjectClasses extObjCls,extObjCls1,extObjCls2;
+      BackendDAE.ExternalObjectClasses extObjCls;
       BackendDAE.ExternalObjectClass extObjCl;
       DAE.Element daeEl;
       list<DAE.Element> daeLstRest;
@@ -236,8 +236,8 @@ algorithm
       BackendDAE.Equation   backendEq2;
       DAE.Exp c;
       list<BackendDAE.Value> ds;
-      BackendDAE.Value count,count_1;
-      DAE.Algorithm a,a1,a2;
+      BackendDAE.Value count;
+      DAE.Algorithm a;
       DAE.DAElist dae;
       DAE.ExpType ty;
       DAE.ComponentRef cr;
@@ -251,7 +251,7 @@ algorithm
       list<tuple<DAE.Exp,DAE.Exp>> ealst; 
       BackendDAE.MultiDimEquation backendMultiDimEq;
       list<Option<BackendDAE.Equation>> opteqlst;
-      BackendDAE.Var backendVar,backendVar1,backendVar2;
+      BackendDAE.Var backendVar;
       DAE.Exp cond,msg;
       DAE.Algorithm alg;
       list<BackendDAE.Equation> backendEqLst;
@@ -323,7 +323,7 @@ algorithm
       list<BackendDAE.Equation> eqns,reqns,ieqns,eqns2,re,eqsComplex;
       list<BackendDAE.MultiDimEquation> aeqns,aeqns1,aeqns2,ae,iaeqns,iaeqns1,iaeqns2,iae;
       list<DAE.Algorithm> algs,algs1,algs2,al,ialgs,ialgs1,ialgs2;
-      BackendDAE.ExternalObjectClasses extObjCls,extObjCls1,extObjCls2;
+      BackendDAE.ExternalObjectClasses extObjCls;
       BackendDAE.ExternalObjectClass extObjCl;
       DAE.Element daeEl;
       list<DAE.Element> daeLstRest;
@@ -351,7 +351,7 @@ algorithm
       list<tuple<DAE.Exp,DAE.Exp>> ealst; 
       BackendDAE.MultiDimEquation backendMultiDimEq;
       list<Option<BackendDAE.Equation>> opteqlst;
-      BackendDAE.Var backendVar,backendVar1,backendVar2;
+      BackendDAE.Var backendVar1,backendVar2;
       DAE.Exp cond,msg;
       DAE.Algorithm alg;
       list<BackendDAE.Equation> backendEqLst;
@@ -1077,7 +1077,6 @@ algorithm
     local
       DAE.Exp e1,e2,e1_1,e2_1;
       DAE.ExpType ty;
-      list<DAE.ExpVar> varLst;
       Integer i;
       list<BackendDAE.Equation> complexEqs;
       list<BackendDAE.MultiDimEquation> arreqns;
@@ -1156,8 +1155,6 @@ algorithm
   (outEquationLst,outWhenClauseIndex,outWhenClauseLst):=
   matchcontinue (inElement,inWhenClauseIndex,inWhenClauseLst)
     local
-      BackendDAE.Variables vars;
-      BackendDAE.Variables elseVars;
       list<BackendDAE.Equation> res, res1;
       list<BackendDAE.Equation> trueEqnLst, elseEqnLst;
       list<BackendDAE.WhenOperator> reinit;
@@ -1872,11 +1869,6 @@ algorithm
   matchcontinue (inElems,inBinTree)
     local
       BackendDAE.BinTree bt;
-      DAE.Exp e2;
-      list<DAE.Element> xs;
-      DAE.DAElist dae;
-      DAE.FunctionTree funcs;
-      list<DAE.Element> daeElts;
 
     case (inElems,bt)
       equation
@@ -1961,7 +1953,6 @@ algorithm
     local
       DAE.Exp e, e1, e2, e3;
       Integer i;
-      list<DAE.Exp> l;
       Boolean t, b;
       DAE.ExpType ty;
       DAE.InlineType it;
@@ -2179,7 +2170,6 @@ algorithm
     local
       BackendDAE.Variables v,v_1,v_2,knv;
       list<DAE.Statement> statementLst,statementLst1;
-      BackendDAE.Var var;
       Boolean b;
       DAE.Exp e,ie;
       list<DAE.Exp> rest;
@@ -2310,7 +2300,6 @@ algorithm
       list<BackendDAE.Equation> resAlgEqn,resDiffEqn,rest,resArrayEqns;
       BackendDAE.Equation eqn,alg;
       DAE.Exp exp1,exp2;
-      list<Boolean> bool_lst;
       BackendDAE.Value indx;
       list<DAE.Exp> expl;
     case ({}) then ({},{},{});  /* algebraic equations differential equations */
@@ -2369,7 +2358,6 @@ algorithm
   outBoolean := match(inExp)
     local 
       Boolean b;
-      list<Boolean> blst;
   case(inExp)
     equation
       ((_,b)) = Expression.traverseExpTopDown(inExp, traversingisAlgebraicFinder, true);
@@ -2827,8 +2815,6 @@ algorithm
       BackendDAE.Variables vars,knvars;
       list<DAE.Exp> zeroCrossings;
       DAE.Operator op;
-      DAE.ExpType tp;
-      Boolean scalar;
     case (((e as DAE.CALL(path = Absyn.IDENT(name = "noEvent"))),(zeroCrossings,(vars,knvars))))
        then ((e,false,(zeroCrossings,(vars,knvars))));
     case (((e as DAE.CALL(path = Absyn.IDENT(name = "sample"))),(zeroCrossings,(vars,knvars))))
@@ -2870,9 +2856,6 @@ algorithm
       list<Integer> li;
       DAE.ElementSource source;
       Algorithm.Else algElse;
-      Absyn.Path fnName;
-      Absyn.MatchType matchType;
-      DAE.Pattern pattern;
       
     case ({},vars,knvars) then {};
       
@@ -3276,7 +3259,6 @@ algorithm
   outTuplEqnLst := match(inEqn,inFuncs)
   local
     DAE.FunctionTree funcs;
-    BackendDAE.Equation eqn;
     DAE.ComponentRef cr1,cr2;
     list<DAE.Exp> e1lst,e2lst;
     list<DAE.ExpVar> varLst;
@@ -3345,10 +3327,8 @@ algorithm
   outTuplEqnLst := matchcontinue(inExp,Source,inFuncs)
   local
     DAE.Exp e1,e2,e1_1,e2_1,e2_2;
-    list<DAE.Exp>  e2lst;
     DAE.ElementSource source;
     DAE.ComponentRef cr1;
-    list<DAE.ComponentRef> crlst2;
     BackendDAE.Equation eqn;
     Expression.Type tp;
     list<DAE.Dimension> ad;
@@ -3425,8 +3405,6 @@ Author: Frenkel TUD 2010-12"
 algorithm 
   otpl := matchcontinue itpl
     local
-      DAE.Exp e;
-      Option<DAE.FunctionTree> funcs;
     case (itpl)
       equation
         // Don't extend array?

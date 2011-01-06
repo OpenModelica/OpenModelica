@@ -1043,7 +1043,6 @@ algorithm
       Variability var;
       Absyn.TypeSpec tySpec;
       Option<Comment> comment;
-      Attributes attr;
       String modStr;
       Absyn.Import imp;
 
@@ -1098,7 +1097,6 @@ algorithm
       Class cl;
       Variability var;
       Option<Comment> comment;
-      Attributes attr;
       Absyn.Path path;
       Absyn.Import imp;
       Absyn.InnerOuter io;
@@ -1703,12 +1701,10 @@ protected function classDefEqual
        list<Equation> ieqns1,ieqns2;
        list<AlgorithmSection> algs1,algs2;
        list<AlgorithmSection> ialgs1,ialgs2;
-       list<Boolean> blst;
        Absyn.ElementAttributes attr1,attr2;
        Absyn.TypeSpec tySpec1, tySpec2;
        Absyn.Path p1, p2;
        Mod mod1,mod2;
-       Boolean b3;
        list<Enum> elst1,elst2;
        list<Ident> ilst1,ilst2;
        String bcName1, bcName2;
@@ -1828,7 +1824,6 @@ algorithm
   equal := matchcontinue(alg1,alg2)
     local
       list<Statement> a1,a2;
-      list<Boolean> blst;
     
     case(ALGORITHM(a1),ALGORITHM(a2))
       equation
@@ -1916,9 +1911,7 @@ algorithm
       list<list<EEquation>> tb1,tb2;
       Absyn.Exp cond1,cond2;
       list<Absyn.Exp> ifcond1,ifcond2;
-      list<Boolean> blst;
       Absyn.Exp e11,e12,e21,e22,exp1,exp2,c1,c2,m1,m2,e1,e2;
-      Boolean b2;
       Absyn.ComponentRef cr11,cr12,cr21,cr22,cr1,cr2;
       Absyn.Ident id1,id2;
       list<EEquation> fb1,fb2,eql1,eql2,elst1,elst2;
@@ -1988,7 +1981,6 @@ protected function equationEqual22
 algorithm
   bOut := matchcontinue(tb1,tb2)
     local
-      list<Boolean> blist2;
       list<EEquation> tb_1,tb_2;
     
     case({},{}) then true;
@@ -2018,7 +2010,6 @@ algorithm
       list<SubMod> submodlst1,submodlst2;
       Absyn.Exp e1,e2;
       list<Element> elts1,elts2;
-      list<Boolean> blst;
 
     case (MOD(f1,each1,submodlst1,SOME((e1,_))),MOD(f2,each2,submodlst2,SOME((e2,_))))
       equation
@@ -2061,7 +2052,6 @@ algorithm
     local
       Ident id1,id2;
       Mod mod1,mod2;
-      Boolean b3;
       list<Subscript> ss1,ss2;
 
     case ({},{}) then true;
@@ -2095,7 +2085,6 @@ protected function subscriptsEqual
 algorithm
   equal := matchcontinue(ss1,ss2)
     local
-      Boolean b2;
       Absyn.Exp e1,e2;
 
     case({},{}) then true;
@@ -2199,7 +2188,6 @@ protected function arrayDimEqual
    equal := matchcontinue(ad1,ad2)
      local
        Absyn.Exp e1,e2;
-       Boolean b2;
      
      case({},{}) then true;
      
@@ -2564,13 +2552,9 @@ algorithm
       list<Statement> body,trueBranch,elseBranch;
       list<tuple<Absyn.Exp, list<Statement>>> branches;
       Option<Comment> comment;
-      Statement equ;
-      String labelName;
-      Absyn.AlgorithmItem alg;
       list<Absyn.AlgorithmItem> algs1,algs2;
       list<list<Absyn.AlgorithmItem>> algsLst;
       list<tuple<Absyn.Exp,list<Absyn.AlgorithmItem>>> abranches;
-      Absyn.MatchType matchType;
       
     case ALG_ASSIGN(assignComponent,value,comment,info)
     then Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(assignComponent,value),NONE(),info);
@@ -2649,7 +2633,6 @@ algorithm
       list<tuple<Absyn.Exp, list<Statement>>> branches, elseIfBranch;
       list<Absyn.ForIterator> forIterators;
       Absyn.FunctionArgs funcArgs;
-      Statement algItem;
       Boolean bool;
 
       case (id,ALG_ASSIGN(assignComponent = e_1, value = e_2))
