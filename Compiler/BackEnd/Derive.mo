@@ -86,11 +86,8 @@ algorithm
       BackendDAE.Variables timevars;
       BackendDAE.Equation dae_equation;
       DAE.ElementSource source,source1,sourceStmt;
-      Absyn.Path p;
-      DAE.FunctionDefinition mapper;
-      DAE.Type tp;
       Integer index,i_1,index1;
-      list<DAE.Exp> in_,din_,in_1,out,out1,dout,dout1,expExpLst,expExpLst1; 
+      list<DAE.Exp> in_,in_1,out,out1,expExpLst,expExpLst1; 
       list<Boolean> blst; 
       DAE.ExpType exptyp;
       list<DAE.ExpType> exptyplst; 
@@ -98,7 +95,6 @@ algorithm
       list<tuple<Integer,Integer,Integer>> derivedAlgs,derivedMultiEqn;
       Boolean add;
       array<BackendDAE.MultiDimEquation> ae,ae1;
-      list<BackendDAE.MultiDimEquation> listae1;
       list<DAE.Exp> crefOrDerCref,crefOrDerCref1,crefOrDerCref11,crefOrDerCref2,crefOrDerCref21,crefOrDerCref3,derCref1,derCref2;
       list<Integer> dimSize;
       String msg;
@@ -352,9 +348,7 @@ algorithm
       DAE.InlineType inl;
       Integer i;
       Absyn.Path fname;
-      DAE.ExpType ty;
       DAE.FunctionTree functions;
-      DAE.Element func;
       list<list<tuple<DAE.Exp, Boolean>>> explstlst,explstlst1;
 
     case (DAE.ICONST(integer = _),_) then DAE.RCONST(0.0);

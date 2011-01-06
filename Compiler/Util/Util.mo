@@ -332,7 +332,7 @@ algorithm
   isequal := matchcontinue(input1,input2,cmpFunc,printError)
     local
       Type_a a,b;
-      list<Type_a> al,bl;
+      list<Type_a> al;
     case(a::al,b,cmpFunc,_)
       equation
         true = cmpFunc(a,b);
@@ -865,7 +865,7 @@ algorithm
   outTypeALst := matchcontinue (inTypeALst)
     local
       Type_a a;
-      list<Type_a> lstTmp,lst;
+      list<Type_a> lst;
     case {} then {};
     case {a} then {};
     case a::lst

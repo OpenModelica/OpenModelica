@@ -70,7 +70,6 @@ public function inlineCalls
 algorithm
   outBackendDAE := matchcontinue(inFTree,inITLst,inBackendDAE)
     local
-      Option<list<DAE.Element>> fns;
       Option<DAE.FunctionTree> ftree;
       list<DAE.InlineType> itlst;
       BackendDAE.Variables orderedVars;

@@ -479,7 +479,6 @@ algorithm
     local
       Real r1, r2;
       Integer i1, i2;
-      Boolean res;
 
     case (Values.REAL(r1), Values.REAL(r2))
       then (r1 <=. r2);
@@ -893,7 +892,6 @@ algorithm
       Values.Value v;
       list<Values.Value> xs,xs2,vallist;
       list<DAE.Type> typelist;
-      DAE.ComponentRef cr;
       list<list<tuple<DAE.Exp, Boolean>>> mexpl;
       list<tuple<DAE.Exp, Boolean>> mexpl2;
       list<Integer> int_dims;
@@ -908,7 +906,6 @@ algorithm
       list<DAE.ExpVar> varlst;
       Integer ix;
       Absyn.Path path;
-      list<String> names;
 
     case (Values.INTEGER(integer = i)) then DAE.ICONST(i); 
     case (Values.REAL(real = r))       then DAE.RCONST(r);

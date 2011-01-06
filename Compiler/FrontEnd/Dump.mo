@@ -107,7 +107,7 @@ public function unparseStr
 algorithm
   outString := matchcontinue (inProgram,inBoolean)
     local
-      Ident s1,s2,s3,str;
+      Ident s1,s2,str;
       list<Absyn.Class> cs;
       Absyn.Within w;
     case (Absyn.PROGRAM(classes = {}),_) then "";
@@ -206,7 +206,7 @@ public function unparseClassStr
 algorithm
   outString := matchcontinue (indent,ourClass,finalStr,redeclareKeywords,innerouterStr)
     local
-      Ident is,s1,s2,s2_1,s3,s4,s5,str,n,fi,io,s6,s7,s8,s9,name,baseClassName;
+      Ident is,s4,s5,str,n,fi,io,s6,s8,s9,baseClassName;
       Integer i_1,i;
       Boolean p,f,e;
       Absyn.Restriction r;
@@ -336,20 +336,9 @@ public function unparseClassAttributesStr
 algorithm
   outString := match (inClass)
     local
-      Ident is,s1,s2,s2_1,s3,s4,s5,str,n,fi,re,io,s6,s7,s8,s9,name;
-      Integer indent;
+      Ident s1,s2,s2_1,s3,str,n;
       Boolean p,f,e;
       Absyn.Restriction r;
-      list<Absyn.ClassPart> parts;
-      Option<Ident> optcmt;
-      Absyn.TypeSpec tspec;
-      Absyn.ElementAttributes attr;
-      list<Absyn.ElementArg> cmod;
-      Option<Absyn.Comment> cmt;
-      list<Absyn.EnumLiteral> l;
-      Absyn.EnumDef ENUM_COLON;
-      Absyn.Path fname;
-      list<Ident> vars;
     
     case (Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,body = _))
       equation

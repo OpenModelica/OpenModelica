@@ -329,7 +329,6 @@ public function takeLineOrString
 algorithm
   (outTillNewLineChars, outRestChars, outIsLine) := matchcontinue (inChars)
     local
-      Text txt;
       String  char;
       list<String> tnlchars, restchars, chars;
       Boolean isline;
@@ -407,8 +406,6 @@ public function isAtStartOfLine
 algorithm
   _ := match (inTok)
     local
-      Text txt;
-      Tokens toks;
       list<tuple<Tokens,BlockType>> blstack;
       StringToken tok;
     
@@ -455,7 +452,6 @@ algorithm
     local
       Tokens toks;
       list<tuple<Tokens,BlockType>> blstack;
-      StringToken tok;
     
     case (MEM_TEXT(tokens = toks,blocksStack = blstack))
       then MEM_TEXT(ST_NEW_LINE() :: toks, blstack);
@@ -505,9 +501,7 @@ algorithm
     local
       Tokens toks, stacktoks;
       list<tuple<Tokens,BlockType>> blstack;
-      StringToken tok;
       BlockType blType;
-      Text txt;
     
     //when nothig was put, just pop tokens from the stack and no block output
     case (MEM_TEXT(
@@ -579,9 +573,7 @@ algorithm
     local
       Tokens  stacktoks, itertoks;
       list<tuple<Tokens,BlockType>> blstack;
-      StringToken tok;
       BlockType blType;
-      Text txt;
     
     //nothing was iterated, pop only the stacked tokens
     case (MEM_TEXT(
@@ -622,7 +614,6 @@ algorithm
       list<tuple<Tokens,BlockType>> blstack;
       IterOptions iopts;
       Integer i0;
-      BlockType bt;
       Text txt;
           
     //empty iteration segment and 'empty' option is NONE(), so do nothing

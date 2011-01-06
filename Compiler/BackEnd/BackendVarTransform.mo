@@ -69,7 +69,6 @@ algorithm
       list<DAE.Exp> expl,expl1,expl2;
       BackendDAE.WhenEquation whenEqn,whenEqn1;
       DAE.ElementSource source "the origin of the element";
-      list<list<DAE.Exp>> explstlst;
 
     case ({},_) then {};
     case ((BackendDAE.ARRAY_EQUATION(indx,expl,source)::es),repl)

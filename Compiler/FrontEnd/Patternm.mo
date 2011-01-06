@@ -337,7 +337,6 @@ protected function elabPatternCall
 algorithm
   (outCache,pattern) := matchcontinue (cache,env,callPath,fargs,utPath,info,lhs)
     local
-      Absyn.Exp exp;
       String s;
       DAE.Type t;
       Absyn.Path utPath1,utPath2,fqPath;
@@ -462,7 +461,6 @@ algorithm
       DAE.Exp exp;
       DAE.Pattern pat,head,tail;
       String id;
-      DAE.ExpType et;
       list<tuple<DAE.Pattern,String,DAE.ExpType>> namedpats;
       Absyn.Path name;
     case DAE.PAT_WILD() then "_";
@@ -544,7 +542,6 @@ algorithm
       String str;
       DAE.Exp exp;
       HashTableStringToPath.HashTable ht;
-      list<String> unusedDecls;
     case (cache,env,Absyn.MATCHEXP(matchTy=matchTy,inputExp=inExp,localDecls=decls,cases=cases),impl,st,performVectorization,pre,info,numError)
       equation
         (cache,SOME((env,DAE.DAE(matchDecls)))) = addLocalDecls(cache,env,decls,Env.matchScopeName,impl,info);

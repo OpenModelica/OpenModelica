@@ -527,7 +527,6 @@ algorithm
     local
       DAE.Exp crefExp;
       DAE.ExpType ty;
-      list<DAE.Exp> rest;
       DAE.ComponentRef crNew;
       list<DAE.Subscript> indexes;
       
@@ -589,8 +588,6 @@ public function cref2simvar
 algorithm
   outSimVar := matchcontinue(inCref, simCode)
     local
-      BackendDAE.Variables vars;
-      BackendDAE.Var daelowvar;
       DAE.ComponentRef cref, badcref;
       SimVar sv;
       HashTableCrefToSimVar crefToSimVarHT;
@@ -842,7 +839,6 @@ algorithm
       list<String> libs;
       Interactive.InteractiveSymbolTable st;
       Absyn.Program p,ptot;
-      Ceval.Msg msg;
       //DAE.Exp fileprefix;
       Env.Cache cache;
       DAE.FunctionTree funcs;
@@ -979,7 +975,6 @@ algorithm
       list<String> libs;
       Interactive.InteractiveSymbolTable st;
       Absyn.Program p,ptot;
-      Ceval.Msg msg;
       //DAE.Exp fileprefix;
       Env.Cache cache;
       DAE.FunctionTree funcs;
@@ -1490,9 +1485,7 @@ algorithm
       DAE.Function fn;
       String extfnname,lang,str;
       list<DAE.Element> bivars, algs, vars, invars, outvars;
-      list<String> struct_strs,arg_strs,includes,libs,struct_strs_1,funrefStrs,fn_libs,fn_includes,
-      rt,rt_1,struct_funrefs,struct_funrefs_int,defhead,head,foot,body,decl1,decl2, 
-      assign_res,ret_var,record_var,record_var_dot,return_stmt;
+      list<String> struct_strs,arg_strs,includes,libs,struct_strs_1,funrefStrs,fn_libs,fn_includes,rt,rt_1,struct_funrefs,struct_funrefs_int,defhead,head,foot,body,decl1,decl2,assign_res,ret_var,record_var,record_var_dot,return_stmt;
       Absyn.Path fpath;
       list<tuple<String, Types.Type>> args;
       Types.Type restype,tp;

@@ -298,7 +298,7 @@ public function evaluateToStdOut
 algorithm
   outInteractiveSymbolTable := matchcontinue (inInteractiveStmts,inInteractiveSymbolTable,inBoolean)
     local
-      String res,res_1,res2,res_2,str;
+      String res,res_1;
       InteractiveSymbolTable newst,st,newst_1;
       Boolean echo,semicolon,verbose;
       InteractiveStmt x;
@@ -388,7 +388,6 @@ algorithm
       InteractiveSymbolTable st;
       list<Env.Frame> env,env_1;
       SCode.Class scode_class;
-      DAE.DAElist d;
       Absyn.Class absyn_class,cls;
       Integer len;
       list<Absyn.Class> class_list,morecls;
@@ -710,10 +709,8 @@ algorithm
   outInteractiveSymbolTable := matchcontinue (iter, startVal, stepVal, stopVal, algItemList, inInteractiveSymbolTable)
     local
       Values.Value startv, stepv, stopv, nextv;
-      list<Values.Value> vallst;
       list<Absyn.AlgorithmItem> algItems;
       InteractiveSymbolTable st1,st2,st3,st4,st5;
-      Boolean startIsLess;
     
     case (iter, startv, stepv, stopv, algItems, st1)
       equation
@@ -793,7 +790,6 @@ algorithm
   matchcontinue (inValue,inExp,inAbsynAlgorithmItemLst,inTplAbsynExpAbsynAlgorithmItemLstLst,inInteractiveSymbolTable,info)
     local
       InteractiveSymbolTable st_1,st;
-      Boolean exp_val;
       list<Absyn.AlgorithmItem> algitemlst;
       list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> algrest;
       String estr,tstr;
@@ -1210,7 +1206,6 @@ algorithm
   outInteractiveVariableLst := matchcontinue (inIdent,inInteractiveVariableLst)
     local
       String ident,id2;
-      Values.Value val2;
       list<InteractiveVariable> rest, rest2;
       InteractiveVariable var;
 
@@ -2759,7 +2754,6 @@ algorithm
     Components comps;
     Absyn.Path class_path;
     ComponentReplacementRules comp_repsrules;
-    Real t3;
     case(p,class_,cref1,cref2)
       equation
         comps = extractAllComponents(p, Absyn.crefToPath(class_)) "class in package" ;
@@ -2804,8 +2798,6 @@ algorithm
       list<String> paths;
       String paths_1,paths_2;
       Absyn.ComponentRef class_,old_comp,new_comp;
-      Real t3;
-      Absyn.Class cl;
       Absyn.Path model_path;
       String str;
       
@@ -2849,12 +2841,9 @@ protected function renameComponentOnlyInClass
 algorithm
   (outString,outProgram) := matchcontinue (inProgram1,inComponentRef2,inComponentRef3,inComponentRef4)
     local
-      ComponentReplacementRules comp_reps;
       Absyn.Program p;
-      list<String> paths;
       String paths_2;
       Absyn.ComponentRef class_,old_comp,new_comp;
-      Real t3;
       Absyn.Class cl;
       Absyn.Path model_path;
       String str;
@@ -4004,7 +3993,6 @@ protected function getComponentreplacementsrules
 algorithm
   outComponentReplacementRules := matchcontinue (inComponents,inComponentReplacementRules,inInteger)
     local
-      Real t4;
       Integer len,old_len;
       Components comps;
       ComponentReplacementRules comp_reps,comp_reps_1,comp_reps_2,comp_reps_res;
@@ -4569,7 +4557,6 @@ algorithm
       Absyn.ClassDef e;
       Absyn.Info file_info;
       Absyn.Program p;
-      Real t3;
     case (((class_ as Absyn.CLASS(name = id,partialPrefix = a,finalPrefix = b,encapsulatedPrefix = c,restriction = d,body = e,info = file_info)),SOME(pa),(comps,p,env)))
       equation
         false = isReadOnly(file_info);
@@ -4721,7 +4708,6 @@ algorithm
       Absyn.ElementSpec elementspec;
       list<Absyn.ElementItem> res;
       Absyn.ElementItem element;
-      Real t2;
     case (_,{},comps,env) then comps;  /* the QUALIFIED path for the class */
     case (pa,(Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = elementspec)) :: res),comps,env)
       equation
@@ -4756,7 +4742,6 @@ algorithm
       list<Absyn.ComponentItem> comp_items;
       Component comp;
       list<Absyn.ElementArg> elementargs;
-      Real t4;
       Env.Cache cache;
 
     case (pa,Absyn.COMPONENTS(typeSpec = Absyn.TPATH(path_1,_),components = comp_items),comps,env) /* the QUALIFIED path for the class */
@@ -9050,9 +9035,6 @@ algorithm
   matchcontinue (inComponentRef1,inComponentRef2,p)
     local
       Absyn.Path path;
-      String i;
-      Boolean e;
-      Absyn.Restriction r;
       list<Absyn.ClassPart> parts;
       list<Absyn.ElementItem> publst,protlst;
       Absyn.ComponentRef cr,classname;
@@ -9108,9 +9090,6 @@ algorithm
   matchcontinue (inComponentRef1,inComponentRef2,p)
     local
       Absyn.Path path;
-      String i;
-      Boolean e;
-      Absyn.Restriction r;
       list<Absyn.ClassPart> parts;
       list<Absyn.ElementItem> publst;
       Absyn.ComponentRef cr,classname;

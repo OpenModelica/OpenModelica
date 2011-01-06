@@ -143,7 +143,7 @@ algorithm
       array<BackendDAE.MultiDimEquation> ae;
       array<DAE.Algorithm> algs;
       list<BackendDAE.Var> varlst1,varlst2,allvarslst;
-      list<tuple<DAE.Exp,list<DAE.ComponentRef>>> expcrefs,expcrefs1,expcrefs2,expcrefs3,expcrefs4,expcrefs5,expcrefs6;
+      list<tuple<DAE.Exp,list<DAE.ComponentRef>>> expcrefs,expcrefs1,expcrefs2,expcrefs3,expcrefs4,expcrefs5;
     
     case (BackendDAE.DAE(orderedVars = vars1,knownVars = vars2,orderedEqs = eqns,removedEqs = reqns,
           initialEqs = ieqns,arrayEqs = ae,algorithms = algs))
@@ -500,7 +500,6 @@ algorithm
   matchcontinue (inTpl)
     local
       BackendDAE.Equation e;
-      DAE.ComponentRef cr;
       BackendDAE.WhenEquation weqn;
       list<BackendDAE.WhenClause> whenClauseLst;
       Integer nie;
@@ -536,7 +535,6 @@ algorithm
       DAE.ComponentRef cr;
       BackendDAE.Var var,var1;
       Integer unfixed,ine;
-      String scr,s;
    
     case (unfixed,ine,inVariables,inKnVariables,{},{},{},{})
       then 

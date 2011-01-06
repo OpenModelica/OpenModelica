@@ -777,8 +777,6 @@ algorithm
   _:=
   match (inVariableReplacements)
     local
-      list<DAE.Exp> srcs,dsts;
-      list<String> strs;
       String str,len_str;
       Integer len;
       HashTable2.HashTable ht;
@@ -907,8 +905,6 @@ algorithm
       DAE.Exp dst,dst_1;
       HashTable2.HashTable ht,ht_1;
       HashTable3.HashTable invHt,invHt_1;
-      String s;
-      Real t2;
     // PA: Commented out this, since it will only slow things down without adding any functionality.
     // Once match is available as a complement to matchcontinue, this case could be useful again.
     //case ((repl as REPLACEMENTS(ht,invHt)),src,dst) /* source dest */

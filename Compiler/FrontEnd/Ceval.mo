@@ -125,11 +125,11 @@ algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv,inExp,inBoolean,inInteractiveInteractiveSymbolTableOption,inIntegerOption,inMsg)
     local
-      Integer x,dim,l,lhv,rhv,res,start_1,stop_1,step_1,i,indx_1,indx,index;
+      Integer dim,start_1,stop_1,step_1,i,indx_1,indx,index;
       Option<Integer> dimOpt;
       Option<Interactive.InteractiveSymbolTable> stOpt;
-      Real lhvReal,rhvReal,resr,sum,div,diff,r,realStart1,realStop1,realStep1;
-      String funcstr,str,lhvStr,rhvStr,iter,s;
+      Real lhvReal,rhvReal,sum,r,realStart1,realStop1,realStep1;
+      String str,lhvStr,rhvStr,iter,s;
       Boolean impl,builtin,b,b_1,lhvBool,rhvBool,resBool;
       Absyn.Exp exp_1,exp;
       list<Env.Frame> env;
@@ -141,7 +141,7 @@ algorithm
       list<list<tuple<DAE.Exp, Boolean>>> expll;
       Values.Value v,newval,value,sval,elt1,elt2,v_1,lhs_1,rhs_1,resVal,lhvVal,rhvVal;
       DAE.Exp lh,rh,e,lhs,rhs,start,stop,step,e1,e2,iterexp,cond;
-      Absyn.Path funcpath,func,name;
+      Absyn.Path funcpath,name;
       DAE.Operator relop;
       Env.Cache cache;
       DAE.Exp expExp;

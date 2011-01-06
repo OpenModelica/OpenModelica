@@ -251,7 +251,6 @@ algorithm
         TupleConst p1;
         Const c1,c2;
         list<TupleConst> tcxl;
-        TupleConst tc1;
     case({}) then DAE.C_CONST();
     case((p1 as DAE.SINGLE_CONST(c1))::tcxl)
       equation
@@ -502,7 +501,6 @@ public function isRecordWithOnlyReals "Returns true if type is a record only con
 algorithm
   b := match (tp)
     local 
-      list<Boolean> bLst;
       list<Var> varLst;
     
     case((DAE.T_COMPLEX(ClassInf.RECORD(_),varLst,_,_),_)) 

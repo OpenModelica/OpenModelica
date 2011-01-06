@@ -431,7 +431,6 @@ algorithm
       list<SCode.Element> els,es_1,els_1;
       list<Absyn.ElementItem> es;
       list<Absyn.ClassPart> rest;
-      Absyn.ClassPart cp;
 
     case {} then {};
     case(Absyn.PUBLIC(contents = es) :: rest)
@@ -681,12 +680,9 @@ algorithm
       Absyn.Exp assignComponent,value,boolExpr;
       list<Absyn.Exp> conditions,switchCases,inputExps;
       list<SCode.Statement> stmts,stmts1,stmts2;
-      list<list<SCode.Statement>> stmtsList;
       list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> branches;
       list<tuple<Absyn.Exp, list<SCode.Statement>>> sbranches;
       list<Absyn.AlgorithmItem> body,elseBody;
-      String labelName;
-      Absyn.MatchType matchType;
       
     case (Absyn.ALG_ASSIGN(assignComponent,value),comment,info)
     then SCode.ALG_ASSIGN(assignComponent,value,comment,info);

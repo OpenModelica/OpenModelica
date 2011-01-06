@@ -489,12 +489,9 @@ algorithm
       Option<Ident> id;
       Option<ScopeType> st;
       list<AvlValue> imps;
-      Env fs,env,remember;
+      Env fs;
       tuple<list<DAE.ComponentRef>,DAE.ComponentRef> crs;
       Boolean encflag;
-      InstStatus i;
-      DAE.Var v;
-      Ident n;
       Option<tuple<SCode.Element, DAE.Mod>> c;
       list<SCode.Element> defineUnits;
 

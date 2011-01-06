@@ -51,8 +51,7 @@ public function translateFile
 algorithm  
   _ := matchcontinue inFile
     local
-      String file, destFile, src, res;
-      list<String> chars, lst;
+      String file, destFile,  res;
       Tpl.Text txt;
       TplAbsyn.TemplPackage tplPackage;
       TplAbsyn.MMPackage mmPckg;
@@ -112,7 +111,6 @@ algorithm
       String strRet, strShouldBe, strLabel, strRes, strErrBuf;
       Boolean printResult, printErrBuf;
       Integer notPassedCnt;
-      Tpl.Text txt;
     
     case ( strRet, strShouldBe, printResult, printErrBuf, strLabel, notPassedCnt)
       equation

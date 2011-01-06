@@ -798,8 +798,6 @@ algorithm
   match (inIntegerLstLst,inInteger)
     local
       BackendDAE.Value ni,i_1,i;
-      list<String> ls;
-      String s;
       list<BackendDAE.Value> l;
       list<list<BackendDAE.Value>> lst;
     case ({},_) then ();

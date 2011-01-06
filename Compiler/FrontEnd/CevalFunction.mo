@@ -255,7 +255,6 @@ algorithm
       DAE.ComponentRef lhs_cref;
       Values.Value rhs_val;
       list<DAE.Statement> statements;
-      Absyn.Path fn_name;
       LoopControl loop_ctrl;
 
     case (DAE.STMT_ASSIGN(exp1 = lhs, exp = rhs), cache, env)
@@ -672,7 +671,6 @@ algorithm
   outCref := match (inExp)
     local
       DAE.ComponentRef cref;
-      DAE.Exp asub_exp;
     case DAE.CREF(componentRef = cref) then cref;
     case DAE.PATTERN(_) then fail();
     else
@@ -731,7 +729,6 @@ algorithm
       list<Values.Value> rest_vals;
       Env.Cache cache;
       Env.Env env;
-      DAE.Var var;
       DAE.Exp binding_exp;
     
     case (_, _, {}, {}) then (inCache, inEnv);

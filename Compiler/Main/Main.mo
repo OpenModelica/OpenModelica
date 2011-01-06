@@ -290,7 +290,6 @@ algorithm
   res := match(p)
     local 
       list<Absyn.Path> names;
-      Absyn.Within w;
       Absyn.Path scope;
       list<Absyn.Class> cls;
     

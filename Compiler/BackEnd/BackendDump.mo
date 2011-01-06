@@ -299,7 +299,6 @@ algorithm
     local
       String s1,s2,str;
       list<String> l;
-      Absyn.Path path;
     case BackendDAE.INT() then "Integer ";
     case BackendDAE.REAL() then "Real ";
     case BackendDAE.BOOL() then "Boolean ";

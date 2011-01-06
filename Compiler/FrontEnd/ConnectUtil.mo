@@ -250,8 +250,6 @@ where both instances are defined."
 algorithm
   outSets := matchcontinue(scope,sets,cr1,cr2,io1,io2,f1,f2,source)
     local
-      list<Connect.Set> ss;
-      list<DAE.ComponentRef> dc;
       list<Connect.OuterConnect> oc;
       Connect.OuterConnect new_oc;
     // First check if already added

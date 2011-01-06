@@ -56,10 +56,7 @@ public function refactorGraphicalAnnotation "function: refactorGraphicalAnnnotat
 algorithm
   changedClass := match (wholeAST, classToRefactor)
     local
-      list<Absyn.Class> classList, other;
       Absyn.Class c;
-      Absyn.Within w;
-      Absyn.Program p;
     case(wholeAST, classToRefactor)
       equation
         c = refactorGraphAnnInClass(classToRefactor,wholeAST,Absyn.IDENT(""));
@@ -82,11 +79,10 @@ algorithm
     local
       Absyn.Program p;
       Absyn.ClassDef resultClassDef;
-      Absyn.Class c;
       String n;
       Boolean part,f,e;
       Absyn.Restriction r;
-      Absyn.ClassDef d,inClassDef;
+      Absyn.ClassDef d;
       Absyn.Info file_info;
       Absyn.Path cPath;
       Env.Env env;
@@ -142,9 +138,7 @@ algorithm
       Absyn.ClassDef cd;
       list<Absyn.ClassPart> cp,resultPart;
       Option<String> cmt;
-      Option<Absyn.Comment> com;
       Absyn.ElementAttributes attrs;
-     Absyn.Ident n;
       list<Absyn.ElementArg> args,annList,resAnnList;
       Absyn.TypeSpec ts;
       Absyn.Path cPath;
@@ -311,7 +305,6 @@ algorithm
   outItem := match (inItem,inProgram,classPath,inClassEnv)
     local
       Absyn.Program p;
-      Context context;
       Absyn.Element el,resultElement;
       list<Absyn.ElementArg> annList;
       Absyn.Path cPath;
@@ -349,9 +342,7 @@ algorithm
       Absyn.Equation e;
       Absyn.EquationItem ei;
       Option<String> com;
-      Absyn.Annotation a;
       list<Absyn.ElementArg> annList;
-      Absyn.Path cPath;
       Absyn.Info info;
 
     case(Absyn.EQUATIONITEMANN(annotation_ = Absyn.ANNOTATION(elementArgs = annList)),p,_,_)
@@ -385,7 +376,6 @@ algorithm
       Absyn.Algorithm alg;
       Option<String> com;
       list<Absyn.ElementArg> annList;
-      Absyn.Path cPath;
       Absyn.Info info;
     case(Absyn.ALGORITHMITEMANN(annotation_ =  Absyn.ANNOTATION(elementArgs = annList) ),p,_,_)
       equation
@@ -607,8 +597,7 @@ algorithm
     local
       Absyn.Program p;
       Absyn.Path path,cPath;
-      Absyn.Exp x1,x2,y1,y2,rx1,rx2,ry1,ry2;
-      Integer iy2;
+      Absyn.Exp x1,x2,y1,y2;
       list<Absyn.ElementArg> args,rest,res,trans;
       Absyn.ElementArg arg,iconTrans,diagramTrans;
       Context context, c;
@@ -790,7 +779,6 @@ algorithm
 
     local
 
-      Integer s;
       Real rcx1,rcy1,rcx2,rcy2,rax1,ray1,rax2,ray2,rot;
       Absyn.ElementArg scale,aspectRatio,x,y,flipHorizontal,flipVertical,rotation;
       Absyn.Path path,cPath;

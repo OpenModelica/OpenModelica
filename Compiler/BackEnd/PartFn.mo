@@ -67,7 +67,6 @@ algorithm
   (outFunctions,outBackendDAE) := matchcontinue(inFunctions,inBackendDAE)
     local
       list<DAE.Function> dae;
-      BackendDAE.BackendDAE dlow;
       BackendDAE.Variables orderedVars;
       BackendDAE.Variables knownVars;
       BackendDAE.Variables externalObjects;
@@ -246,7 +245,6 @@ algorithm
       Option<Values.Value> bindValue;
       DAE.InstDims arryDim;
       Integer index;
-      list<Absyn.Path> className;
       Option<DAE.VariableAttributes> values;
       Option<SCode.Comment> comment;
       DAE.Flow flowPrefix;
@@ -317,7 +315,6 @@ algorithm
       list<Option<BackendDAE.Equation>> cdr,cdr_1;
       list<DAE.Function> dae;
       DAE.Exp e,e_1,e1,e1_1,e2,e2_1;
-      BackendDAE.Equation deleteme;
       Integer i;
       list<DAE.Exp> elst,elst_1,elst1,elst1_1,elst2,elst2_1;
       DAE.ComponentRef cref;
@@ -430,7 +427,6 @@ algorithm
       list<DAE.Element> elts,elts_1;
       list<DAE.Function> dae;
       DAE.DAElist dlst;
-      DAE.FunctionTree funcs;
     /*case(dlst,dae)
       equation
         false = RTOpts.debugFlag("fnptr") or RTOpts.acceptMetaModelicaGrammar();
@@ -488,7 +484,6 @@ algorithm
     local
       list<DAE.Function> cdr,cdr_1;
       Absyn.Path newFn,p;
-      Expression.ComponentRef cr2;
       DAE.Function fn, el;
     case(_,{})
       equation
@@ -535,18 +530,13 @@ algorithm
       Option<DAE.VariableAttributes> variableAttributesOption;
       Option<SCode.Comment> absynCommentOption;
       Absyn.InnerOuter innerOuter;
-      DAE.Type fullType;
       list<DAE.Dimension> ilst;
       Ident i;
       Absyn.Path p;
-      Boolean pp;
-      DAE.ExternalDecl ed;
       list<DAE.Exp> elst,elst_1;
       DAE.Exp e,e_1,e1,e1_1,e2,e2_1;
       DAE.Algorithm alg,alg_1;
-      DAE.InlineType inlineType;
       DAE.ElementSource source "the origin of the element";
-      DAE.FunctionTree funcs;
 
     case({},dae) then ({},dae);
     case(DAE.VAR(cref,kind,direction,protection,ty,binding,dims,flowPrefix,streamPrefix,source,
@@ -734,36 +724,15 @@ protected function elabFunctions
 algorithm
   (ofn,odae) := matchcontinue (fns,dae)
     local
-      DAE.Element el2_1;
       list<DAE.Element> elts,elts_1;
       DAE.Function fn;
       list<DAE.Function> cdr,cdr_1;
-      list<list<DAE.Element>> elm_1;
-      DAE.ComponentRef cref;
-      DAE.VarKind kind;
-      DAE.VarDirection direction;
-      DAE.VarProtection protection;
-      DAE.Type ty;
-      Option<DAE.Exp> binding;
-      DAE.InstDims dims;
-      DAE.Flow flowPrefix;
-      DAE.Stream streamPrefix;
-      list<Absyn.Path> pathLst;
-      Option<DAE.VariableAttributes> variableAttributesOption;
-      Option<SCode.Comment> absynCommentOption;
-      Absyn.InnerOuter innerOuter;
       DAE.Type fullType;
-      list<DAE.Dimension> ilst;
-      Ident i;
       Absyn.Path p;
       Boolean pp;
       DAE.ExternalDecl ed;
-      list<DAE.Exp> elst;
-      DAE.Exp e2_1;
-      DAE.Algorithm alg_1;
       DAE.InlineType inlineType;
       DAE.ElementSource source "the origin of the element";
-      DAE.FunctionTree funcs;
     case ({},dae) then ({},dae);
     case(DAE.FUNCTION(p,{DAE.FUNCTION_DEF(elts)},fullType,pp,inlineType,source) :: cdr,dae)
       equation
@@ -843,7 +812,6 @@ algorithm
       list<Integer> ilst;
       DAE.Statement stmt,stmt_1;
       DAE.ElementSource source;
-      Absyn.MatchType matchType;
     case({},dae) then ({},dae);
     case(DAE.STMT_ASSIGN(ty,e1,e2,source) :: cdr,dae)
       equation

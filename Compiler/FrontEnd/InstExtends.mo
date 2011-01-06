@@ -113,7 +113,6 @@ algorithm
       Env.Cache cache;
       InstanceHierarchy ih;
       HashTableStringToPath.HashTable ht;
-      Integer tmp;
       SCode.Variability var;
       Prefix.Prefix pre;
       SCode.Mod scodeMod;
@@ -348,20 +347,10 @@ algorithm
   (outMod,outTplSCodeElementModLst) := matchcontinue (inMod,inClassExtendsList,inTplSCodeElementModLst)
     local
       SCode.Element first;
-      SCode.Class cl;
       list<SCode.Element> rest;
-      SCode.ClassDef classDef;
-      Boolean encapsulatedPrefix;
-      SCode.Restriction restriction;
       String name;
-      Option<Absyn.ExternalDecl> externalDecl;
-      list<SCode.Annotation> annotationLst;
-      Option<SCode.Comment> comment;
       list<SCode.Element> els;
-      list<SCode.Equation> inEqn2;
-      list<SCode.AlgorithmSection> inAlg2;
       list<tuple<SCode.Element, DAE.Mod, Boolean>> compelts;
-      SCode.Mod mods;
       DAE.Mod emod;
       list<String> names;
     case (emod,{},compelts) then (emod,compelts);
@@ -403,11 +392,11 @@ algorithm
       Option<SCode.Comment> comment1,comment2;
       list<SCode.Element> els1,els2;
       list<SCode.Equation> nEqn1,nEqn2,inEqn1,inEqn2;
-      list<SCode.AlgorithmSection> nAlg,nAlg1,nAlg2,inAlg,inAlg1,inAlg2;
+      list<SCode.AlgorithmSection> nAlg1,nAlg2,inAlg1,inAlg2;
       list<tuple<SCode.Element, DAE.Mod, Boolean>> rest;
       tuple<SCode.Element, DAE.Mod, Boolean> first;
       SCode.Mod mods;
-      DAE.Mod mod,mod1,mod2,emod;
+      DAE.Mod mod1,emod;
       Option<Absyn.ConstrainClass> cc1,cc2;
       Absyn.Info info1, info2;
       Boolean b;

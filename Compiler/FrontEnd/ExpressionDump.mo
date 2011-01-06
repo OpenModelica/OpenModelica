@@ -104,7 +104,6 @@ algorithm
       Type t;
       list<DAE.Dimension> dims;
       list<tuple<Type,Ident>> varlst;
-      list<String> strLst;
       String s1,ts,res,s;
       list<Var> vars;
       ClassInf.State ci;
@@ -552,11 +551,11 @@ algorithm
     local
       String s,s_1,s_2,sym,s1,s2,s3,s4,s_3,ifstr,thenstr,elsestr,res,fs,argstr,s5,s_4,s_5,res2,str,
              crstr,dimstr,expstr,iterstr,id,s1_1,s2_1,s1_2,s2_2,cs,ts,cs_1,ts_1,fs_1,s3_1;
-      Integer pri2_1,pri2,pri3,pri1,ival,i,pe1,p1,p2,pc,pt,pf,p,pstop,pstart,pstep;
+      Integer ival,i,pe1,p1,p2,pc,pt,pf,p,pstop,pstart,pstep;
       Real rval,r;
       ComponentRef c;
       Type t,tp;
-      DAE.Exp e1,e2,e21,e22,e,f,start,stop,step,cr,dim,exp,iterexp,cond,tb,fb;
+      DAE.Exp e1,e2,e,start,stop,step,cr,dim,exp,iterexp,cond,tb,fb;
       Operator op;
       Absyn.Path fcn,lit;
       list<DAE.Exp> args,es;

@@ -95,7 +95,6 @@ algorithm
       String s,s1;
       list<String> ls1;
       list<BackendDAE.Equation> eqnsl;
-      list<String> ss;
       BackendDAE.EquationArray eqns;
       list<BackendDAE.WhenClause> wcLst;
     

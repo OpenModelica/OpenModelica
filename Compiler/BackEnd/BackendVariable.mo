@@ -139,7 +139,6 @@ algorithm
       Option<Values.Value> f;
       list<DAE.Subscript> g;
       BackendDAE.Value i;
-      list<Absyn.Path> k;
       DAE.ElementSource source "the element source";
       Option<DAE.Exp> l,m,n;
       tuple<Option<DAE.Exp>, Option<DAE.Exp>> o;
@@ -149,7 +148,6 @@ algorithm
       DAE.Flow t;
       DAE.Stream streamPrefix;
       Boolean fixed;
-      Option<DAE.StateSelect> stateSelectOption;
       Option<DAE.Exp> equationBound;
       Option<Boolean> isProtected;
       Option<Boolean> finalPrefix;
@@ -396,7 +394,6 @@ algorithm
   matchcontinue (inVar)
     local
       DAE.StateSelect stateselect;
-      BackendDAE.Var v;
     case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_REAL(stateSelectOption=SOME(stateselect))))) then stateselect;
     case (_) then DAE.DEFAULT();
   end matchcontinue;
@@ -654,7 +651,6 @@ algorithm
   matchcontinue (var)
     local
       BackendDAE.Type typeVar;
-      list<BackendDAE.VarKind> kind_lst;
     /* bool variable */
     case (BackendDAE.VAR(varType = typeVar as BackendDAE.BOOL()))
       then false;
@@ -682,7 +678,6 @@ algorithm
   matchcontinue (var)
     local
       BackendDAE.Type typeVar;
-      list<BackendDAE.VarKind> kind_lst;
     /* string variable */
     case (BackendDAE.VAR(varType = typeVar as BackendDAE.STRING()))
       equation
@@ -701,7 +696,6 @@ algorithm
   matchcontinue (var)
     local
       BackendDAE.Type typeVar;
-      list<BackendDAE.VarKind> kind_lst;
     /* int variable */
     case (BackendDAE.VAR(varType = typeVar as BackendDAE.INT()))
       equation
@@ -720,7 +714,6 @@ algorithm
   matchcontinue (var)
     local
       BackendDAE.Type typeVar;
-      list<BackendDAE.VarKind> kind_lst;
     /* string variable */
     case (BackendDAE.VAR(varType = typeVar as BackendDAE.BOOL()))
       equation
@@ -957,7 +950,6 @@ algorithm
       BackendDAE.VarKind kind;
       DAE.VarDirection dir;
       BackendDAE.Type tp;
-      Option<DAE.Exp> st;
       Option<Values.Value> v;
       list<DAE.Subscript> dim;
       BackendDAE.Value i;

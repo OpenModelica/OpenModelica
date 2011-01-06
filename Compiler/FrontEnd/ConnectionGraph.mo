@@ -105,9 +105,7 @@ algorithm
   outDAE := matchcontinue(inGraph, inDAE, modelNameQualified)
     local
       ConnectionGraph graph;
-      list<DAE.Element> daeConnections;
       list<DAE.Element> elts;
-      DAE.AvlTree funcs;
       list<DAE.ComponentRef> roots;
       DAE.DAElist dae;
       Edges broken;
@@ -206,7 +204,6 @@ algorithm
   outGraph := match(inGraph, inRoot)
     local
       Boolean updateGraph;
-      ConnectionGraph graph;
       DAE.ComponentRef root;
       DefiniteRoots definiteRoots;
       PotentialRoots potentialRoots;
@@ -237,7 +234,6 @@ algorithm
   outGraph := match(inGraph, inRoot, inPriority)
     local
       Boolean updateGraph;
-      ConnectionGraph graph;
       DAE.ComponentRef root;
       Real priority;
       DefiniteRoots definiteRoots;
@@ -269,7 +265,6 @@ algorithm
   outGraph := match(inGraph, inRef1, inRef2)
     local
       Boolean updateGraph;
-      ConnectionGraph graph;
       DAE.ComponentRef ref1;
       DAE.ComponentRef ref2;
       DefiniteRoots definiteRoots;
@@ -303,7 +298,6 @@ algorithm
   outGraph := match(inGraph, inRef1, inRef2,inDae)
     local
       Boolean updateGraph;
-      ConnectionGraph graph;
       DAE.ComponentRef ref1;
       DAE.ComponentRef ref2;
       list<DAE.Element> dae;
@@ -506,7 +500,6 @@ algorithm
       list<DAE.Element> rest, elements;
       DAE.Element el;
       DAE.ComponentRef cr1, cr2; 
-      String   str3;
     
     // handle the empty case
     case ({}, cr1, cr2) then {};

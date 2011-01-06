@@ -757,7 +757,6 @@ alternative names: subsriptExp (but already taken), subscriptToAsub"
 algorithm
   res := match(e,subs)
     local 
-      list<DAE.Exp> expl;
       DAE.Exp s;
       DAE.Subscript sub;
     
@@ -846,7 +845,6 @@ algorithm
       Type ty_1,ty;
       list<DAE.Dimension> dims;
       DAE.Dimension dim;
-      Integer i;
     
     case (DAE.ET_ARRAY(ty,dims),dim)
       equation
@@ -869,7 +867,7 @@ liftArrayRigth(Real[2,3],SOME(4)) => Real[4,2,3]"
 algorithm
   outType := matchcontinue (inType,inDimension)
     local
-      Type ty_1,ty;
+      Type ty;
       list<DAE.Dimension> dims;
       DAE.Dimension dim;
       

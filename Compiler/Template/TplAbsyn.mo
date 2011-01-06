@@ -796,10 +796,8 @@ algorithm
     local
       list<MMExp> stmts;
       MMExp stmt, rhs;
-      Ident ident;
       TypedIdents txtargs;
       list<Ident> largs;
-      String outident, inident;
       list<tuple<Ident,Ident>> trIdents;
       
     case (  {}, txtargs, trIdents)
@@ -835,11 +833,10 @@ public function addOutPrefixesRhs
 algorithm
   (outStmt) := matchcontinue (inStmt, inTranslatedTextArgs)
     local
-      list<MMExp> stmts, fargs;
+      list<MMExp>  fargs;
       MMExp stmt;
       Ident ident, outident;
       PathIdent fpath;
-      list<Ident> largs;
       list<tuple<Ident,Ident>> trIdents; 
       
     case ( MM_IDENT(IDENT(ident = ident)), trIdents)
@@ -869,12 +866,10 @@ public function addOutPrefixesLhs
 algorithm
   (outLhsArgs, outTranslatedTextArgs) := matchcontinue (inLhsArgs, inTextArgs, inTranslatedTextArgs)
     local
-      list<MMExp> stmts;
-      MMExp stmt, rhs;
       Ident ident;
       TypedIdents txtargs;
       list<Ident> largs;
-      String outident, inident;
+      String outident;
       list<tuple<Ident,Ident>> trIdents; 
       
     case (  {},_, trIdents)
@@ -992,7 +987,7 @@ algorithm
                     inLocals, inScopeEnv, inTplPackage, inAccMMDecls)
     local
       list<MMExp> stmts,  popstmts;
-      MMExp stmt, mmexp, mmarg;
+      MMExp stmt, mmexp;
       ScopeEnv scEnv;
       Ident intxt, outtxt, ident, encIdent, letOuttxt, freshIdent;
       list<Ident> tyVars;

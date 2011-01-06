@@ -117,20 +117,16 @@ public function simplify1
 algorithm
   outExp := matchcontinue (inExp)
     local
-      Real rv;
       Integer n,i;
-      DAE.Exp e,res,exp,c,f,t_1,f_1,e1_1,exp_1,e1,e_1,e2,e2_1,e3_1,e3,cond,sub,ae1,exp1;
-      Type t,tp_1,tp,tp1,tp2,t1;
+      DAE.Exp e,res,exp,e1_1,exp_1,e1,e_1,e2,e2_1,e3_1,e3,sub,exp1;
+      Type t,tp;
       Boolean b,remove_if,tpl,builtin,b2;
       Ident idn;
-      list<DAE.Exp> exps,exps_1,expl_1,expl,matrix;
+      list<DAE.Exp> exps,exps_1,expl,matrix;
       list<tuple<DAE.Exp, Boolean>> explTpl;
-      list<Boolean> bls;
-      list<Subscript> s,s_1;
+      list<Subscript> s;
       ComponentRef c_1;
       Operator op;
-      String    s2;
-      Real time2;
       DAE.InlineType inline,b3;
       Absyn.Path fn, path;
       list<list<tuple<DAE.Exp, Boolean>>> matr,matr2;
@@ -476,7 +472,6 @@ algorithm
     Real r,v1,v2; 
     Integer i, j; 
     Absyn.Path path; DAE.Exp e,e1;
-    Boolean b;
     
     // der(constant) ==> 0
     case(DAE.CALL(path=Absyn.IDENT("der"),expLst ={e})) 

@@ -114,7 +114,6 @@ algorithm
       list<BackendDAE.MultiDimEquation> arreqns,arreqns1,arreqns2;
       BackendDAE.BinTree movedvars_1,states,outputs;
       BackendDAE.Variables vars_1,knvars_1,vars,knvars,knvars_2;
-      list<DAE.Exp> elst;
       list<DAE.Algorithm> algs,algs_1;
       list<tuple<list<DAE.Exp>,list<DAE.Exp>>> inputsoutputs;
       BackendDAE.AliasVariables varsAliases;      
@@ -189,7 +188,7 @@ algorithm
     local
       BackendDAE.BinTree mvars_1,mvars_2;
       VarTransform.VariableReplacements repl_1,repl_2,replc_1,replc_2;
-      DAE.ComponentRef cr1,cr2;
+      DAE.ComponentRef cr1;
       list<BackendDAE.Equation> eqns_1,seqns_1;
       BackendDAE.Equation e;
       DAE.ExpType t;

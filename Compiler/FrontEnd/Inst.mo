@@ -196,10 +196,8 @@ public function instantiate
 algorithm
   (outCache,outIH,outDAElist,outProgram) := match (inCache,inIH,inProgram)
     local
-      list<SCode.Class> pnofunc,pfunc,p,p_1;
+      list<SCode.Class> pnofunc,pfunc,p;
       list<Env.Frame> env,envimpl,envimpl_1;
-      list<String> pfuncnames,pnofuncnames;
-      String str1,str2;
       DAE.DAElist lfunc,lnofunc,l;
       Env.Cache cache;
       InstanceHierarchy oIH1, oIH2, iIH;
@@ -297,7 +295,6 @@ algorithm
       InstanceHierarchy ih;
       ConnectionGraph.ConnectionGraph graph;
       DAE.ElementSource source "the origin of the element";
-      DAE.FunctionTree funcs;
       list<DAE.Element> daeElts;
 
     case (cache,ih,{},cr)
@@ -407,7 +404,6 @@ If all conditions are constand, we return only the 'correct' branch equations."
   output DAE.DAElist odae;
 algorithm odae := match(cache,env,dae,isTopCall)
   local
-    DAE.FunctionTree funcs;
     list<DAE.Element> elems;
   case(cache,env,DAE.DAE(elementLst = elems),true)
     equation
@@ -467,7 +463,7 @@ algorithm
   local
     DAE.Element elem;
     DAE.ComponentRef cr;
-    DAE.Exp e1,e2,e3;
+    DAE.Exp e1,e2;
     DAE.ElementSource s;
     list<DAE.Exp> expl;
     list<list<DAE.Element>> tbs ;
@@ -662,12 +658,10 @@ algorithm
     local
       Absyn.Path cr,path;
       list<Env.Frame> env,env_1,env_2;
-      DAE.DAElist dae1,dae;
       list<SCode.Class> cdecls;
-      String name2,n,name,s;
+      String name2,n,name;
       SCode.Class cdef;
       Env.Cache cache;
-      DAE.DAElist daelst;
       InstanceHierarchy ih;
 
       // Fully qualified paths
@@ -727,7 +721,7 @@ protected function instClassInProgram
 algorithm
   (outCache,outEnv,outIH,outDae) := matchcontinue (inCache,inEnv,inIH,inProgram,inPath)
     local
-      DAE.DAElist dae, dae2;
+      DAE.DAElist dae;
       list<Env.Frame> env_1,env;
       SCode.Class c;
       String name,name2;
@@ -849,7 +843,6 @@ algorithm
   (outCache,outEnv,outIH) := matchcontinue (inCache,inEnv,inIH,inProgram,inPath)
     local
       list<Env.Frame> env_1,env;
-      DAE.DAElist dae;
       SCode.Class c;
       String name1,name2;
       list<SCode.Class> cs;
@@ -897,7 +890,7 @@ algorithm
       list<Env.Frame> env_1,env_2,env;
       DAE.DAElist dae1,dae2,dae;
       SCode.Class c;
-      String name1,name2,str;
+      String name1,name2;
       list<SCode.Class> cs;
       Absyn.Path ref;
       Env.Cache cache;
@@ -1024,10 +1017,8 @@ algorithm
       InstanceHierarchy ih;
       UnitAbsyn.InstStore store;
       Option<Absyn.Path> containedInOpt;
-      Absyn.Path fullPath;
       DAE.ElementSource source "the origin of the element";
       list<DAE.Element> daeElts;
-      DAE.FunctionTree funcs;
       SCode.ClassDef cdef;
       Option<SCode.Comment> comment;
 
@@ -1168,7 +1159,7 @@ algorithm
   (cache,outEnv,outIH,outStore,outDae,outSets,outType,outState,optDerAttr,outGraph):=
   matchcontinue (inCache,inEnv,inIH,store,inMod,inPrefix,inSets,inClass,inInstDims,inBoolean,inCallingScope,inGraph)
     local
-      list<Env.Frame> env,env_1,env_3,env_4;
+      list<Env.Frame> env,env_1,env_3;
       DAE.Mod mod;
       Prefix.Prefix pre;
       Connect.Sets csets,csets_1;
@@ -1179,19 +1170,15 @@ algorithm
       list<DAE.Var> tys;
       Option<tuple<DAE.TType, Option<Absyn.Path>>> bc_ty;
       Absyn.Path fq_class;
-      list<DAE.Type> functionTypes;
       tuple<DAE.TType, Option<Absyn.Path>> ty;
       SCode.Class c;
       SCode.Restriction r;
       InstDims inst_dims;
       CallingScope callscope;
       Option<Absyn.ElementAttributes> oDA;
-      String str;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
       DAE.EqualityConstraint equalityConstraint;
-      Real   t;
-      String s;
       Absyn.Info info;
 
     // adrpo: ONLY when running checkModel we should be able to instantiate partial classes
@@ -1308,8 +1295,6 @@ algorithm
     Env.Env env,env_1;
     tuple<DAE.TType, Option<Absyn.Path>> ty;
     SCode.Class c;
-    ClassInf.State ci_state;
-    String name;
     list<String> names;
     list<DAE.Var> vars;
     Absyn.Path p,pname;
@@ -1380,7 +1365,6 @@ algorithm
     UnitAbsyn.Unit unit;
     Option<DAE.VariableAttributes> varOpt;
     DAE.Element elt,v;
-    DAE.FunctionTree funcs;
     list<DAE.Element> elts;
     case(false,_,dae) then dae;
 
@@ -1805,7 +1789,6 @@ algorithm
       list<Env.Frame> env;
       DAE.Mod mods;
       Prefix.Prefix pre;
-      list<DAE.ComponentRef> crs;
       ClassInf.State ci_state;
       SCode.Class c;
       InstDims inst_dims;
@@ -1817,9 +1800,7 @@ algorithm
       SCode.Restriction r,rCached;
       SCode.ClassDef d;
       Env.Cache cache;
-      list<DAE.ComponentRef> dc;
       Real time; Boolean b;
-      list<Connect.OuterConnect> oc;
       Option<Absyn.ElementAttributes> oDA;
       DAE.EqualityConstraint equalityConstraint;
       CallingScope callscope;
@@ -1842,12 +1823,10 @@ algorithm
       Connect.Sets aa_3;
       ClassInf.State aa_4;
       SCode.Class aa_5;
-      Boolean aa_6;
       InstDims aa_7;
       Boolean aa_8;
       Option<DAE.ComponentRef> aa_9;
       tuple<InstDims,Boolean,DAE.Mod,Connect.Sets,ClassInf.State,SCode.Class,Option<DAE.ComponentRef>> bbx, bby;
-      CachedInstItem partialFunc;
       ConnectionGraph.ConnectionGraph graphCached;
 
     /* Partial packages can sometimes be instantiated here, but should really be done in partialInstClass, since
@@ -1996,8 +1975,6 @@ protected function prefixEqualUnlessBasicType
 algorithm
   _ := match (pre1, pre2, cls)
     local
-      SCode.Restriction r;
-      String name;
 
     // adrpo: TODO! FIXME!, I think here we should have pre1 = Prefix.CLASSPRE(variability1) == pre2 = Prefix.CLASSPRE(variability2) 
 
@@ -2099,7 +2076,6 @@ algorithm
       DAE.Type ty, ty2;
       Absyn.Path fq_class;
       list<DAE.Var> tys1,tys2;
-      DAE.DAElist fdae;
 
     /*  Real class */
     case (cache,env,ih,store,mods,pre,csets, ci_state, 
@@ -2761,7 +2737,6 @@ algorithm
       Boolean prot;
       InstDims inst_dims;
       Env.Cache cache;
-      Absyn.Path fullPath;
       Real time; String s2; Boolean b;
       InstanceHierarchy ih;
       InstHashTable instHash;
@@ -2771,17 +2746,15 @@ algorithm
       tuple<Env.Env, ClassInf.State> outputs;
       Absyn.Path fullEnvPathPlusClass;
       Option<Absyn.Path> envPathOpt;
-      String className, str1, str2;
+      String className;
 
       DAE.Mod aa_1;
       Prefix.Prefix aa_2;
       Connect.Sets aa_3;
       ClassInf.State aa_4;
       SCode.Class aa_5;
-      Boolean aa_6;
       InstDims aa_7;
       tuple<InstDims,DAE.Mod,Connect.Sets,ClassInf.State,SCode.Class> bbx,bby;
-      Absyn.Info info;
 
     // see if we find a partial class inst
     case (cache,env,ih,mods,pre,csets,ci_state,c as SCode.CLASS(name = className, restriction=r),prot,inst_dims)
@@ -2898,7 +2871,6 @@ algorithm
       Boolean prot,partialPrefix;
       InstDims inst_dims;
       Env.Cache cache;
-      Absyn.Path fullPath;
       Real time; String s2; Boolean b;
       InstanceHierarchy ih;
       Absyn.Info info;
@@ -2968,12 +2940,9 @@ algorithm
   outResult := matchcontinue(inEnv,inCdefelts,info)
   local
       list<SCode.Element> tail, els;
-      String name;
-      Env.Cache cache;
       Env.Env env;
       Absyn.Path path;
       Integer dimension;
-      DAE.EqualityConstraint result;
       DAE.InlineType inlineType;
       SCode.Class classDef;
       
@@ -3246,7 +3215,6 @@ algorithm
       list<SCode.Element> cdefelts,compelts,extendselts,els;
       list<Env.Frame> env1,env2,env3,env;
       list<tuple<SCode.Element, DAE.Mod>> cdefelts_1,cdefelts_2;
-      list<SCode.Element> compelts_2_elem;
       Connect.Sets csets,csets1;
       DAE.DAElist dae1,dae2,dae;
       ClassInf.State ci_state1,ci_state;
@@ -3254,26 +3222,13 @@ algorithm
       Option<tuple<DAE.TType, Option<Absyn.Path>>> bc;
       DAE.Mod mods;
       Prefix.Prefix pre;
-      list<SCode.Equation> initeqs_1;
-      list<SCode.AlgorithmSection> initalg_1;
       SCode.Restriction re;
       Boolean prot,impl;
       InstDims inst_dims;
-      Option<list<Absyn.Subscript>> ad;
-      SCode.Mod mod;
       Env.Cache cache;
-      Option<Absyn.ElementAttributes> oDA;
       DAE.EqualityConstraint eqConstraint;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
-      UnitAbsyn.Store utstore;
-      UnitAbsyn.UnitCheckResult res;
-      UnitAbsyn.Store st2;
-      UnitAbsyn.Store st3;
-      UnitAbsyn.Unit u1;
-      Boolean unrollForLoops;
-      Real   ti;
-      SCode.Element one;
       String str;      
 
     // This rule describes how to instantiate a class definition
@@ -3412,23 +3367,12 @@ algorithm
       CallingScope callscope;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
-      UnitAbsyn.Store utstore;
-      UnitAbsyn.UnitCheckResult res;
-      UnitAbsyn.Store st2;
-      UnitAbsyn.Store st3;
-      UnitAbsyn.Unit u1;
       DAE.DAElist fdae;
       Boolean unrollForLoops;
-      Real   ti;
       Absyn.Info info2;
-      list<DAE.Mod> tmpModList;
-      list<Connect.Set> sets;
-      list<DAE.ComponentRef>  dc;
-      list<Connect.OuterConnect> oc;
       list<Absyn.TypeSpec> tSpecs;
       list<DAE.Type> tys;
       Absyn.ElementAttributes DA;
-      Absyn.Path fq_class;
       DAE.Type ty;
       Absyn.TypeSpec tSpec;
       
@@ -3835,7 +3779,6 @@ algorithm _ := matchcontinue(elems, inmod,callingScope)
   local
     SCode.Element elem;
     String cn,s1,s2;
-    DAE.Mod mod;
   case({},DAE.NOMOD(),_) then ();
   case({},DAE.MOD(subModLst={}),_) then ();
   case({},inmod,callingScope)
@@ -3892,8 +3835,6 @@ algorithm
   outComps := matchcontinue(inComps, ocr, allComps, className)
     local 
       DAE.ComponentRef cr;    
-      list<String> elemStrings;
-      list<SCode.Element> elems;
     
     // handle empty!
     // case({}, _, allComps, className) then {};    
@@ -3939,7 +3880,6 @@ algorithm
       SCode.Element compMod;
       list<SCode.Element> recDeps;
       SCode.Element selem;
-      DAE.Mod mod;
       String name,name2;
       SCode.Mod scmod;
       DAE.ComponentRef cr;
@@ -4122,7 +4062,6 @@ algorithm
       SCode.Class c;
       Absyn.Ident id;
       Absyn.TypeSpec tSpec;
-      Absyn.ElementAttributes attr;
       Option<Absyn.ElementAttributes> oDA;
       InstanceHierarchy ih;
 
@@ -4189,7 +4128,6 @@ algorithm
  	   list<Env.Frame> fs,fs1;
  	   InstanceHierarchy ih;
  	   DAE.ElementSource source "the origin of the element";
-     DAE.FunctionTree funcs;
  	   // Explicit instantiation, generate constructor and destructor and the function type.
     case	(cache,env,ih,els,false)
       equation
@@ -4271,7 +4209,6 @@ algorithm
       Env.Cache cache;
       Env.Env env1;
       DAE.Type funcTp;
-      String s;
       InstanceHierarchy ih;
 
   	case (cache,env,ih,cl)
@@ -4443,10 +4380,8 @@ algorithm
       Absyn.Path path;
       SCode.Mod mod;
       InstDims inst_dims;
-      String classname;
       Env.Cache cache;
       InstanceHierarchy ih;
-      DAE.DAElist fdae1;
 
     case (cache,env,ih,store,{SCode.EXTENDS(baseClassPath = path,modifications = mod)},{},mods,inst_dims,info,stopInst)
       equation        
@@ -4606,7 +4541,6 @@ algorithm
     local
       Connect.Sets sets;
       DAE.ComponentRef cr1_1,cr2_1;
-      list<DAE.ComponentRef> crs;
       Absyn.ComponentRef cr1,cr2;
       list<SCode.Equation> es;
 

@@ -120,9 +120,7 @@ algorithm
       Absyn.Exp e;
       list<tuple<SCode.Element, DAE.Mod>> elist_1;
       list<SCode.Element> elist;
-      Ident str;
       Env.Cache cache;
-      DAE.DAElist dae2;
       InstanceHierarchy ih;
 
     // no modifications
@@ -268,7 +266,6 @@ algorithm
       Option<Absyn.Info> oinfo;
       Option<Absyn.ConstrainClass> cc;
       Absyn.Info i;
-      DAE.DAElist dae2;
       InstanceHierarchy ih;
       Absyn.ElementAttributes attr1;
       list<SCode.Enum> enumLst;
@@ -371,7 +368,6 @@ algorithm
       Absyn.Each each_;
       list<DAE.SubMod> subs;
       Absyn.Exp e,e_1,absynExp;
-      Ident es;
       DAE.Properties p;
       list<SCode.Element> elist_1;
       list<tuple<SCode.Element, DAE.Mod>> elist;
@@ -519,7 +515,6 @@ algorithm
       Absyn.Exp e;
       Option<Absyn.Exp> eOpt;
       Env.Cache cache;
-      DAE.DAElist dae;
       InstanceHierarchy ih;
       String str;
     case (cache,_,_,_,DAE.NOMOD(),impl,info) then (cache,DAE.NOMOD());
@@ -580,7 +575,6 @@ algorithm
       Prefix.Prefix pre;
       DAE.SubMod x;
       Env.Cache cache;
-      DAE.DAElist dae2;
       InstanceHierarchy ih;
       
     case (cache,_,ih,_,{},impl,info) then (cache,{});  /* impl */
@@ -613,10 +607,8 @@ algorithm
       Prefix.Prefix pre;
       Ident i;
       Boolean impl;
-      list<DAE.SubMod> smods;
       Env.Cache cache;
       list<Integer> idxmod;
-      DAE.DAElist dae;
       InstanceHierarchy ih;
       
     case (cache,env,ih,pre,DAE.NAMEMOD(ident = i,mod = m),impl,info)
@@ -710,7 +702,6 @@ algorithm
       SCode.SubMod x;
       list<SCode.SubMod> xs;
       Env.Cache cache;
-      DAE.DAElist dae2;
       InstanceHierarchy ih;
 
     case (cache,_,_,_,{},impl,info) then (cache,{});  /* impl */
@@ -751,7 +742,6 @@ algorithm
       list<DAE.SubMod> smods;
       list<Absyn.Subscript> ss;
       Env.Cache cache;
-      DAE.DAElist dae,dae1,dae2;
       InstanceHierarchy ih;
       
     case (cache,env,ih,pre,SCode.NAMEMOD(ident = i,A = m),impl,info)

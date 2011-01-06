@@ -415,13 +415,10 @@ public function changeInnerOuterInOuterConnect2
 algorithm
   outOC := matchcontinue(inOC)
     local
-      Connect.OuterConnect oc;
       DAE.ComponentRef cr1,cr2,ncr1,ncr2;
       Absyn.InnerOuter io1,io2;
       Connect.Face f1,f2;
       Prefix.Prefix scope;
-      list<DAE.ComponentRef> dst;
-      String s2;
       DAE.ElementSource source "the origin of the element";
 
     // the left hand side is an outer!
@@ -634,7 +631,6 @@ algorithm
       list<Connect.OuterConnect> outerConnects;
       list<Connect.StreamFlowConnect> sf;
       InstHierarchy ih;
-      Connect.Sets newCsets;
 
     case(cache,env,ih,pre,Connect.SETS(setLst,crs,delcomps,outerConnects,sf),topCall)
       equation

@@ -222,18 +222,14 @@ public function dump2 "function: dump2
 algorithm
   _ := matchcontinue (inDAElist)
     local
-      String comment_str,ident,str,extdeclstr,s1;
+      String comment_str,ident;
       DAE.ComponentRef cr,cr2;
       DAE.Exp e,e1,e2;
       DAE.InstDims dims;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
       list<DAE.Element> xs,elts;
-      DAE.DAElist dae;
-      Absyn.Path path;
       tuple<DAE.TType, Option<Absyn.Path>> tp;
-      DAE.ExternalDecl extdecl;
-      DAE.FunctionTree funcs;
       list<DAE.Dimension> dl;
       
     case DAE.DAE((DAE.VAR(componentRef = cr,

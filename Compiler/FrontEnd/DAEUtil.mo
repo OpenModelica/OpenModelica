@@ -775,7 +775,6 @@ algorithm
       Option<DAE.Exp> q,u,du,f,n;
       tuple<Option<DAE.Exp>, Option<DAE.Exp>> minMax;
       Option<DAE.StateSelect> ss;
-      DAE.Exp r;
       Option<DAE.Exp> eb;
       Option<Boolean> ip,fn;
     case (SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,_,f,n,ss,eb,ip,fn)),start)
@@ -806,7 +805,6 @@ algorithm
       Option<DAE.Exp> q,u,du,f,n,s;
       tuple<Option<DAE.Exp>, Option<DAE.Exp>> minMax;
       Option<DAE.StateSelect> ss;
-      DAE.Exp r;
       Option<DAE.Exp> eb;
       Option<Boolean> ip,fn;
     case (SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,s,f,n,ss,eb,ip,fn)),unit)

@@ -54,7 +54,7 @@ public function check "Check if a list of unit terms are consistent"
 algorithm
   (outSt) := matchcontinue(tms,st)
     local
-      UnitAbsyn.Store st1,st2,st3;
+      UnitAbsyn.Store st1,st2;
       UnitAbsyn.UnitTerms rest1;
       UnitAbsyn.UnitTerm tm1;
       Option<UnitAbsyn.UnitCheckResult> res;

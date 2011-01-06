@@ -340,7 +340,6 @@ algorithm
     local
       SimulationOptions defaults, simOpt,methodbyflag;
       String experimentAnnotationStr;
-      list<Interactive.InteractiveStmt> stmts;
       list<Absyn.NamedArg> named;
       String msg;
       Boolean methodflag;
@@ -537,7 +536,7 @@ protected function simOptionsAsString
 algorithm
   str := matchcontinue(inExpLst)
     local 
-      list<String> simOptsValues, simOptsNames, simOpts;
+      list<String> simOptsValues;
       list<DAE.Exp> lst;      
     
     case (inExpLst) 
@@ -595,17 +594,16 @@ algorithm
              name,cname,fileNamePrefix_s,str1,res,errMsg,errorStr,uniqueStr,interpolation, 
              title,xLabel,yLabel,filename2,liststr,varNameStr,xml_filename,xml_contents,
              visvar_str;
-      DAE.ComponentRef cr,fcr,cref,classname;
+      DAE.ComponentRef cr,cref,classname;
       Interactive.InteractiveSymbolTable st,newst,st_1;
       Absyn.Program p,pnew,newp,ptot;
       list<Interactive.InstantiatedClass> ic,ic_1;
       list<Interactive.InteractiveVariable> iv;
       list<Interactive.CompiledCFunction> cf;
       Ceval.Msg msg;
-      DAE.Type tp,simType;
+      DAE.Type tp;
       Absyn.Class absynClass;
-      DAE.DAElist dae_1,dae;
-      list<DAE.Element> dael;
+      DAE.DAElist dae;
       BackendDAE.BackendDAE daelow;
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqnarr;
@@ -626,14 +624,11 @@ algorithm
       Env.Cache cache;
       list<Interactive.LoadedFile> lf;
       AbsynDep.Depends aDep;
-      Absyn.ComponentRef crefCName,cr_name;
+      Absyn.ComponentRef crefCName;
       list<tuple<String,Values.Value>> resultValues;
-      Values.Value vVal;
       list<Values.Value> vals;
       list<Real> timeStamps;
       AbsynDep.Depends dep; AbsynDep.AvlTree uses;
-      DAE.InlineType inlineType;
-      DAE.ExpType ty;
       list<DAE.Exp> expLst;
     
     case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "lookupClass"),expLst = {DAE.CREF(componentRef = cr)}),

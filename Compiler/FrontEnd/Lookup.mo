@@ -179,12 +179,11 @@ algorithm
     local
       DAE.Type t;
       list<Env.Frame> env_1,env_2,env_3;
-      Absyn.Path path,utPath;
+      Absyn.Path path;
       SCode.Class c;
       String id;
       SCode.Restriction restr;
       Env.Cache cache;
-      list<DAE.Var> varlst;
       SCode.Restriction r;
       list<Types.Var> types;
       list<String> names;
@@ -282,9 +281,6 @@ algorithm
       Env.Env env;
       Absyn.Path first;
       list<Absyn.Path>  rest;
-      list<DAE.Type>     innerTypes;
-      list<list<Absyn.Path>> uniontypePaths;
-      DAE.Type ty;
     case (cache, _, {}, ht, acc) then (cache, ht, acc);
     case (cache, env, first::rest, ht, acc)
       equation
@@ -312,7 +308,6 @@ algorithm
     local
       Env.Cache cache;
       Env.Env env;
-      Absyn.Path first;
       list<Absyn.Path> uniontypePaths;
       list<DAE.Type>    uniontypeTypes;
       DAE.Type ty;
@@ -382,7 +377,7 @@ algorithm
       Env.Frame f;
       Env.Cache cache;
       SCode.Class c;
-      list<Env.Frame> env,env_1,env2,env_2,env_3,env1,env4,env5,fs,prevFrames;
+      list<Env.Frame> env,env_1,env_2,fs,prevFrames;
       Absyn.Path path,p,scope;
       String id,pack;
       Option<Env.Frame> optFrame;
@@ -563,18 +558,10 @@ protected function lookupQualifiedImportedVarInFrame "function: lookupQualifiedI
 algorithm 
   (outCref) := matchcontinue (items,ident)
     local
-      Env.Frame fr;
-      DAE.Attributes attr;
       tuple<DAE.TType, Option<Absyn.Path>> ty;
-      DAE.Binding bind;
       String id;
       list<Env.Item> fs;
-      list<Env.Frame> prevFrames;
-      DAE.ComponentRef cref;
       Absyn.Path path;
-      SCode.Class c2;
-      Env.Cache cache;
-      Option<DAE.Const> cnstForRange;
       
       // For imported simple name, e.g. A, not possible to assert sub-path package 
     case (Env.IMPORT(import_ = Absyn.QUAL_IMPORT(path = path)) :: fs,ident) 
@@ -607,17 +594,13 @@ algorithm
   (outCache,outBoolean) := matchcontinue (inCache,inEnvItemLst,inEnv,inIdent)
     local
       Env.Frame f;
-      SCode.Class c;
       String ident;
       Boolean res;
-      SCode.Restriction restr;
       list<Env.Frame> env,prevFrames;
-      ClassInf.State ci_state;
       list<Env.Item> fs;
       Env.Cache cache; 
       DAE.ComponentRef cref;
       Absyn.Path path;
-      Absyn.Ident firstIdent;
 
     case (cache,(Env.IMPORT(import_ = Absyn.UNQUAL_IMPORT(path = path)) :: fs),env,ident)
       equation
@@ -660,21 +643,17 @@ algorithm
   (outCache,outClassEnv,outAttributes,outType,outBinding,constOfForIteratorRange,outBoolean,splicedExpData,outComponentEnv,name):=
   matchcontinue (inCache,inEnvItemLst,inEnv,inIdent)
     local
-      Env.Frame fr,f;
+      Env.Frame f;
       DAE.ComponentRef cref;
-      SCode.Class c;
       String ident;
       Boolean more,unique;
-      SCode.Restriction restr;
       list<Env.Frame> env,classEnv,componentEnv,prevFrames;
-      ClassInf.State ci_state;
       DAE.Attributes attr;
       tuple<DAE.TType, Option<Absyn.Path>> ty;
       DAE.Binding bind;
       list<Env.Item> fs;
       Env.Cache cache; 
       Absyn.Path path;
-      Absyn.Ident firstIdent;
       Option<DAE.Const> cnstForRange;
 
     case (cache,(Env.IMPORT(import_ = Absyn.UNQUAL_IMPORT(path = path)) :: fs),env,ident) /* unique */ 
@@ -715,7 +694,7 @@ algorithm
       Env.Frame fr;
       SCode.Class c;
       list<Env.Frame> env_1,env,prevFrames;
-      String id,ident,str;
+      String id,ident;
       list<Env.Item> fs;
       Absyn.Path path;
       Env.Cache cache;
@@ -929,7 +908,6 @@ algorithm
       list<Env.Frame> env,env_1;
       Absyn.Path path;
       String name;
-      SCode.Restriction re;
     case (cache,env,path)
       equation
         (cache,c,env_1) = lookupClass(cache,env, path, false);

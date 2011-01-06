@@ -169,10 +169,10 @@ algorithm
   (outLineInfo) := matchcontinue (inCharsPrevPos, inLineInfoPrevPos, inLineInfo, inErrMessage, isFatal)
     local
       list<String> charspp, solchars, solcharspp;
-      LineInfo linfo, linfopp;
-      String fname, errMsg, locStr;
+      LineInfo  linfopp;
+      String  errMsg;
       Integer lnum, llen, lnumpp, llenpp;
-      Boolean isfatal, wasferr;
+      Boolean isfatal;
       ParseInfo pinfo;
       
     case (charspp, 
@@ -247,9 +247,8 @@ public function mergeErrors
 algorithm
   (outLineInfo) := matchcontinue (inLineInfo, inLineInfoToAddErrorsFrom)
     local
-      list<String> chars, solchars, errLst, errLstToAdd;
-      LineInfo linfo;
-      String fname, errMsg, locStr;
+      list<String>  solchars, errLst, errLstToAdd;
+      String fname;
       Integer lnum, llen;
       Boolean wasFatalError, wasFatalErrorToAdd;
       
@@ -285,8 +284,7 @@ algorithm
     local
       list<String> charspp;
       LineInfo linfo, linfopp;
-      String fname, errMsg, locStr;
-      Integer lnum, llen, colnum;
+      String  errMsg;
       Boolean isfatal;
       
       
@@ -317,10 +315,9 @@ public function expectChar
 algorithm
   (outChars, outLineInfo) := matchcontinue (inChars, inLineInfo, inExpectedChar)
     local
-      list<String> chars, solchars, errLst;
+      list<String> chars;
       LineInfo linfo;
       String ec, c;
-      Integer lnum, llen, colnum;
       
     case (c :: chars, linfo, ec) 
       equation
@@ -391,7 +388,6 @@ algorithm
   (outChars) := match (inChars, inKeywordChars)
     local
       list<String> chars, kwchars;
-      LineInfo linfo;
       String c, kwc;      
       
     case (c :: chars, kwc :: kwchars) 
@@ -415,8 +411,7 @@ algorithm
   (outChars, isKeyword) := matchcontinue (inChars, inKeywordChars)
     local
       list<String> chars, kwchars;
-      LineInfo linfo;
-      String ec, c;      
+      String  c;      
       
     case (chars, kwchars) 
       equation
@@ -547,7 +542,7 @@ public function templPackageFromFile
 algorithm
   (outTemplPackage) := matchcontinue (inFile)
     local
-      String src, file;
+      String  file;
       Option<String> errOpt;
       list<String> chars;
       LineInfo linfo;
@@ -581,7 +576,7 @@ public function typeviewDefsFromInterfaceFile
 algorithm
   (outASTDefs, outLineInfo, outErrorOpt) := matchcontinue (interfaceName, inAccASTDefs)
     local
-      String file, src;
+      String file;
       Option<String> errOpt;
       list<String> chars;
       LineInfo linfo;
@@ -618,12 +613,11 @@ public function typeviewDefsFromTemplateFile
 algorithm
   (outASTDefs, outLineInfo, outErrorOpt) := matchcontinue (packageName, isUnqualifiedImport, inAccASTDefs)
     local
-      String file, src;
+      String file;
       Option<String> errOpt;
       list<String> chars;
       LineInfo linfo;
       list<TplAbsyn.ASTDef> astDefs;
-      TplAbsyn.PathIdent pid;
       TplAbsyn.TemplPackage tplPackage;
       list<tuple<TplAbsyn.Ident,TplAbsyn.TemplateDef>> templateDefs;
       list<tuple<TplAbsyn.Ident, TplAbsyn.TypeInfo>> astTypes;  
@@ -697,7 +691,6 @@ algorithm
   (outChars, outLineInfo) := matchcontinue (inChars, inLineInfo)
     local
       list<String> chars;
-      LineInfo linfo;
       ParseInfo pinfo;
       String c;
       Integer lnum, llen, i;
@@ -745,7 +738,6 @@ algorithm
     local
       list<String> chars, charsRest;
       LineInfo linfo;
-      String c;
     case (" "  :: chars, linfo) 
       equation
         (chars, linfo) =  interleave(chars, linfo);
@@ -870,7 +862,6 @@ public function afterKeyword
 algorithm
   _ := match inChars
     local
-      list<String> chars;
       String c;
       Integer i;
 
@@ -976,7 +967,7 @@ public function pathIdent
 algorithm
   (outChars, outLineInfo, outPathIdent) := match (inChars, inLineInfo)
     local
-      list<String> chars, restIdChars;
+      list<String> chars;
       LineInfo linfo;
       String head;
       TplAbsyn.PathIdent pid;

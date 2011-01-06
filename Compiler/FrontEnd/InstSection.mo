@@ -113,7 +113,7 @@ algorithm
   (outCache,outEnv,outIH,outDae,outSets,outState,outGraph) := 
   matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inEquation,inBoolean,unrollForLoops,inGraph)
     local
-      list<Env.Frame> env_1,env;
+      list<Env.Frame> env;
       DAE.DAElist dae;
       Connect.Sets csets_1,csets;
       ClassInf.State ci_state_1,ci_state;
@@ -221,7 +221,7 @@ algorithm
   (outCache,outEnv,outIH,outDae,outSets,outState,outGraph):=
   matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inEquation,inBoolean,unrollForLoops,inGraph)
     local
-      list<Env.Frame> env_1,env;
+      list<Env.Frame> env;
       DAE.DAElist dae;
       Connect.Sets csets_1,csets;
       ClassInf.State ci_state_1,ci_state;
@@ -403,35 +403,30 @@ algorithm
     local
       list<DAE.Properties> props;
       Connect.Sets csets_1,csets;
-      DAE.DAElist dae,dae1,dae2,dae3,fdae,fdae1,fdae11,fdae2,fdae3;
-      list<DAE.DAElist> dael;
+      DAE.DAElist dae;
       ClassInf.State ci_state_1,ci_state,ci_state_2;
       list<Env.Frame> env,env_1,env_2;
       DAE.Mod mods,mod;
       Prefix.Prefix pre;
       Absyn.ComponentRef c1,c2,cr,cr1,cr2;
       SCode.Initial initial_;
-      Boolean impl,cond;
-      String n,i,s;
+      Boolean impl;
+      String i,s;
       Absyn.Exp e2,e1,e,ee;
       list<Absyn.Exp> conditions;
       DAE.Exp e1_1,e2_1,e1_2,e2_2,e_1,e_2;
       DAE.Properties prop1,prop2;
-      list<SCode.EEquation> b,tb1,fb,el,eel;
+      list<SCode.EEquation> b,fb,el,eel;
       list<list<SCode.EEquation>> tb; 
       list<tuple<Absyn.Exp, list<SCode.EEquation>>> eex;
       DAE.Type id_t;
       Values.Value v;
-      DAE.ComponentRef cr_1,cr_2;
+      DAE.ComponentRef cr_1;
       SCode.EEquation eqn,eq;
       Env.Cache cache;
       list<Values.Value> valList;
       list<DAE.Exp> expl1;
       list<Boolean> blist;
-      Absyn.ComponentRef arrName;
-      list<Absyn.Ident> idList;
-      Absyn.Exp itExp;
-      Absyn.ForIterators rangeIdList;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
       list<tuple<Absyn.ComponentRef, Integer>> lst;
@@ -439,21 +434,16 @@ algorithm
       DAE.ElementSource source "the origin of the element";
       list<DAE.Element> daeElts1,daeElts2;
       list<list<DAE.Element>> daeLLst;
-      DAE.FunctionTree funcs1;
       DAE.Const cnst;
-      Boolean unrollForLoops;
       Absyn.Info info;
       DAE.Element daeElt2;
       list<DAE.ComponentRef> lhsCrefs,lhsCrefsRec;
       Integer i1,ipriority;
       list<DAE.Element> daeElts,daeElts3;
-      String scope_str, eq_str;
-      DAE.DAElist trDae;
       DAE.ComponentRef cr_,cr1_,cr2_;
       DAE.ExpType t;
       DAE.Properties tprop1,tprop2;
       Real priority;
-      list<DAE.Exp> expl;
       Absyn.FunctionArgs fargs;
       DAE.Exp exp;
 
@@ -944,7 +934,6 @@ algorithm
   dae := match(expCall,source)
   local Absyn.Path fn; list<DAE.Exp> expl; DAE.ExpType ty; Boolean s; DAE.Exp e;
     DAE.DAElist dae1,dae2; 
-    DAE.FunctionTree funcs;
     case(expCall as DAE.CALL(path=fn,expLst=expl),source) equation
       then DAE.DAE({DAE.NORETCALL(fn,expl,source)});
     case(DAE.ARRAY(ty,s,e::expl),source)
@@ -1896,7 +1885,7 @@ algorithm
 	    tuple<DAE.TType, Option<Absyn.Path>> t;
 	    list<DAE.Statement> stmts;
 	    list<tuple<Absyn.ComponentRef,Integer>> lst;
-	    tuple<Absyn.ComponentRef, Integer> tpl;
+	    tuple<Absyn.ComponentRef,Integer> tpl;
 	    InstanceHierarchy ih;
 
     // adrpo: unroll ALL for loops containing ALG_WHEN... done

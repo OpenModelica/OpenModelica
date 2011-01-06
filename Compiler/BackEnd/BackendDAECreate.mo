@@ -90,18 +90,17 @@ algorithm
       BackendDAE.BinTree s;
       BackendDAE.Variables vars,knvars,vars_1,extVars;
       BackendDAE.AliasVariables aliasVars "hash table with alias vars' replacements (a=b or a=-b)";
-      list<BackendDAE.Equation> eqns,reqns,ieqns,algeqns,algeqns1,ialgeqns,ialgeqns1,multidimeqns,imultidimeqns,eqns_1;
+      list<BackendDAE.Equation> eqns,reqns,ieqns,algeqns,algeqns1,ialgeqns,multidimeqns,imultidimeqns,eqns_1;
       list<BackendDAE.MultiDimEquation> aeqns,aeqns1,iaeqns;
       list<DAE.Algorithm> algs,algs_1,ialgs;
       list<BackendDAE.WhenClause> whenclauses,whenclauses_1;
-      list<BackendDAE.ZeroCrossing> zero_crossings,zero_crossings1;
+      list<BackendDAE.ZeroCrossing> zero_crossings;
       BackendDAE.EquationArray eqnarr,reqnarr,ieqnarr;
       array<BackendDAE.MultiDimEquation> arr_md_eqns;
       array<DAE.Algorithm> algarr;
       BackendDAE.ExternalObjectClasses extObjCls;
       Boolean daeContainsNoStates, shouldAddDummyDerivative;
       BackendDAE.EventInfo einfo;
-      DAE.FunctionTree funcs;
       list<DAE.Element> elems;
 
     case(lst, functionTree, addDummyDerivativeIfNeeded, true) // simplify by default
@@ -229,40 +228,14 @@ algorithm
       list<BackendDAE.MultiDimEquation> aeqns,iaeqns;
       list<DAE.Algorithm> algs,ialgs;
       BackendDAE.ExternalObjectClasses extObjCls;
-      BackendDAE.ExternalObjectClass extObjCl;
       DAE.Element daeEl;
       list<DAE.Element> daeLstRest;
       BackendDAE.BinTree states;
-      BackendDAE.Equation   backendEq2;
-      DAE.Exp c;
-      list<BackendDAE.Value> ds;
-      BackendDAE.Value count;
-      DAE.Algorithm a;
-      DAE.DAElist dae;
-      DAE.ExpType ty;
-      DAE.ComponentRef cr;
-      Absyn.InnerOuter io;
       DAE.ElementSource source "the element source";
-      DAE.FunctionTree funcs;
-      list<DAE.Element> daeElts;
       DAE.ElementSource eq_source; 
-      DAE.Exp e_21;
-      list<DAE.Exp> ea2;
       list<tuple<DAE.Exp,DAE.Exp>> ealst; 
-      BackendDAE.MultiDimEquation backendMultiDimEq;
-      list<Option<BackendDAE.Equation>> opteqlst;
-      BackendDAE.Var backendVar;
-      DAE.Exp cond,msg;
-      DAE.Algorithm alg;
-      list<BackendDAE.Equation> backendEqLst;
-      Absyn.Path func_name;
-      list<DAE.Exp> args;
-      DAE.Statement s;
-      Boolean   b;
       String str;      
       DAE.Element ddl; 
-      String s3;
-      DAE.ExpType expTy;
       
     // the empty case 
     case ({},functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,whenclauses,extObjCls,states)
@@ -321,24 +294,18 @@ algorithm
       BackendDAE.Variables vars,knvars,extVars;
       list<BackendDAE.WhenClause> whenclauses,whenclauses_1,whenclauses_2;
       list<BackendDAE.Equation> eqns,reqns,ieqns,eqns2,re,eqsComplex;
-      list<BackendDAE.MultiDimEquation> aeqns,aeqns1,aeqns2,ae,iaeqns,iaeqns1,iaeqns2,iae;
-      list<DAE.Algorithm> algs,algs1,algs2,al,ialgs,ialgs1,ialgs2;
+      list<BackendDAE.MultiDimEquation> aeqns,aeqns1,aeqns2,iaeqns,iaeqns1,iaeqns2;
+      list<DAE.Algorithm> algs,ialgs;
       BackendDAE.ExternalObjectClasses extObjCls;
       BackendDAE.ExternalObjectClass extObjCl;
       DAE.Element daeEl;
-      list<DAE.Element> daeLstRest;
       BackendDAE.BinTree states;
       BackendDAE.Equation  backendEq1, backendEq2;
       DAE.Exp e1,e2,c;
-      list<BackendDAE.Value> ds;
       BackendDAE.Value count,count_1;
       DAE.Algorithm a,a1,a2;
-      DAE.DAElist dae;
-      DAE.ExpType ty;
       DAE.ComponentRef cr;
-      Absyn.InnerOuter io;
       DAE.ElementSource source "the element source";
-      DAE.FunctionTree funcs;
       list<DAE.Element> daeElts;
       Absyn.Info info;
       Absyn.Path path;
@@ -353,16 +320,12 @@ algorithm
       list<Option<BackendDAE.Equation>> opteqlst;
       BackendDAE.Var backendVar1,backendVar2;
       DAE.Exp cond,msg;
-      DAE.Algorithm alg;
-      list<BackendDAE.Equation> backendEqLst;
       Absyn.Path func_name;
       list<DAE.Exp> args;
       DAE.Statement s;
       Boolean b1, b2;
       String str;      
       DAE.Element ddl; 
-      String s3;
-      DAE.ExpType expTy;
       
     // adrpo: should we ignore OUTER vars?!
     //case (((v as DAE.VAR(innerOuter=io)) :: xs),states,vars,knvars,extVars,whenclauses)
