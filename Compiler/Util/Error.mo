@@ -302,6 +302,7 @@ public constant ErrorID META_DECONSTRUCTOR_NOT_RECORD=5023;
 public constant ErrorID META_MATCHEXP_RESULT_TYPES=5024;
 public constant ErrorID MATCHCONTINUE_TO_MATCH_OPTIMIZATION=5025;
 public constant ErrorID META_DEAD_CODE=5026;
+public constant ErrorID META_UNUSED_DECL=5027;
 
 public constant ErrorID COMPILER_WARNING = 6000;
 
@@ -683,6 +684,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (EXTENDS_EXTERNAL,TRANSLATION(),WARNING(),"Ignoring external declaration of the extended class: %s."),
           (MATCHCONTINUE_TO_MATCH_OPTIMIZATION,TRANSLATION(),NOTIFICATION(),"This matchcontinue expression has no overlapping patterns and should be using match instead of matchcontinue."),
           (META_DEAD_CODE,TRANSLATION(),NOTIFICATION(),"Dead code elimination: %s."),
+          (META_UNUSED_DECL,TRANSLATION(),NOTIFICATION(),"Unused local variable: %s."),
 
           (COMPILER_WARNING,TRANSLATION(),WARNING(),"%s")
           };

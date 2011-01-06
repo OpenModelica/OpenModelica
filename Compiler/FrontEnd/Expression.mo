@@ -3770,6 +3770,11 @@ algorithm
         res = rel((e,ext_arg));
       then res;
 
+    case (e as DAE.PATTERN(pattern = _),rel,ext_arg)
+      equation
+        res = rel((e,ext_arg));
+      then res;
+
     case (e,rel,ext_arg)
       equation
         str = ExpressionDump.printExpStr(e);

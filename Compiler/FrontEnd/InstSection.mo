@@ -5078,7 +5078,7 @@ algorithm
         (e_1,ty) = Types.convertTupleToMetaTuple(e_1,ty);
         (cache,pattern) = Patternm.elabPattern(cache,env,left,ty,info);
         source = DAEUtil.addElementSourceFileInfo(source, info);
-        stmt = DAE.STMT_ASSIGN_PATTERN(pattern,e_1,source);
+        stmt = DAE.STMT_ASSIGN(DAE.ET_OTHER(),DAE.PATTERN(pattern),e_1,source);
       then (cache,{stmt});
         
     /* Tuple with rhs constant */

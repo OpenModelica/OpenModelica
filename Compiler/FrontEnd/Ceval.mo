@@ -1105,6 +1105,8 @@ algorithm
     case "listLength" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalListLength;
     case "listAppend" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalListAppend;
     case "listReverse" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalListReverse;
+    case "listRest" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalListRest;
+    case "listFirst" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalListFirst;
 
     //case "semiLinear" then cevalBuiltinSemiLinear;
     //case "delay" then cevalBuiltinDelay;
@@ -2978,6 +2980,73 @@ algorithm
         (cache,Values.LIST(valList),st);
   end match;
 end cevalListReverse;
+
+protected function cevalListRest
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<DAE.Exp> inExpExpLst;
+  input Boolean inBoolean;
+  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Msg inMsg;
+  output Env.Cache outCache;
+  output Values.Value outValue;
+  output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
+algorithm
+  (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+    local
+      list<Env.Frame> env;
+      DAE.Exp exp,exp1,exp2;
+      Boolean impl;
+      Option<Interactive.InteractiveSymbolTable> st;
+      Msg msg;
+      Env.Cache cache;
+      String str;
+      Integer i;
+      Real r;
+      list<String> chList;
+      list<Values.Value> valList,valList1,valList2;
+    case (cache,env,{exp1},impl,st,msg)
+      equation
+        (cache,Values.LIST(_::valList1),st) = ceval(cache,env, exp1, impl, st,NONE(), msg);
+      then
+        (cache,Values.LIST(valList1),st);
+  end match;
+end cevalListRest;
+
+protected function cevalListFirst
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<DAE.Exp> inExpExpLst;
+  input Boolean inBoolean;
+  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Msg inMsg;
+  output Env.Cache outCache;
+  output Values.Value outValue;
+  output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
+algorithm
+  (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+    local
+      list<Env.Frame> env;
+      DAE.Exp exp,exp1,exp2;
+      Boolean impl;
+      Option<Interactive.InteractiveSymbolTable> st;
+      Msg msg;
+      Env.Cache cache;
+      String str;
+      Integer i;
+      Real r;
+      list<String> chList;
+      list<Values.Value> valList,valList1,valList2;
+      Values.Value v;
+    case (cache,env,{exp1},impl,st,msg)
+      equation
+        (cache,Values.LIST(v::_),st) = ceval(cache,env, exp1, impl, st,NONE(), msg);
+      then
+        (cache,v,st);
+  end match;
+end cevalListFirst;
 
 protected function extractValueStringChar
   input Values.Value val;

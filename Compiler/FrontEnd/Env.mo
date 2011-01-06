@@ -852,7 +852,7 @@ public function getEnvPath "function: getEnvPath
   input Env inEnv;
   output Option<Absyn.Path> outAbsynPathOption;
 algorithm
-  outAbsynPathOption := matchcontinue (inEnv)
+  outAbsynPathOption := match (inEnv)
     local
       Ident id;
       Absyn.Path path,path_1;
@@ -864,8 +864,8 @@ algorithm
         path_1 = Absyn.joinPaths(path, Absyn.IDENT(id));
       then
         SOME(path_1);
-    case (_) then NONE();
-  end matchcontinue;
+    else NONE();
+  end match;
 end getEnvPath;
 
 public function getEnvPathNoImplicitScope "function: getEnvPath
@@ -1254,7 +1254,7 @@ public function cacheGet "Get an environment from the cache."
   input Cache cache;
   output Env env;
 algorithm
-  env:= matchcontinue(scope,path,cache)
+  env:= match (scope,path,cache)
     local
       CacheTree tree;
       array<Option<EnvCache>> arr;
@@ -1266,8 +1266,7 @@ algorithm
         env = cacheGetEnv(scope,path,tree);
         //print("got cached env for ");print(Absyn.pathString(path)); print("\n");
       then env;
-    case (_,_,_) then fail();
-  end matchcontinue;
+  end match;
 end cacheGet;
 
 public function cacheAdd "Add an environment to the cache."
@@ -1281,9 +1280,10 @@ algorithm
     Option<Env> ie;
     array<Option<EnvCache>> arr;
     array<DAE.FunctionTree> ef;
-    case(_,inCache,env) equation
-      false = OptManager.getOption("envCache");
-    then inCache;
+    case(_,inCache,env)
+      equation
+        false = OptManager.getOption("envCache");
+      then inCache;
 
     case (fullpath,CACHE(arr,ie,ef),env)
       equation
@@ -1302,10 +1302,10 @@ algorithm
         //print(printCacheStr(CACHE(SOME(ENVCACHE(tree)),ie)));
         arr = arrayUpdate(arr,1,SOME(ENVCACHE(tree)));
       then CACHE(arr,ie,ef);
-    case (_,_,_) equation
-      true = OptManager.getOption("envCache");
-      print("cacheAdd failed\n");
-    then fail();
+    case (_,_,_)
+      equation
+        print("cacheAdd failed\n");
+      then fail();
   end matchcontinue;
 end cacheAdd;
 

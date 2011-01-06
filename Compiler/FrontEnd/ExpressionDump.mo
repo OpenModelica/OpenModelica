@@ -569,6 +569,7 @@ algorithm
       Absyn.MatchType matchTy;
       DAE.ExpType et;
       list<DAE.MatchCase> cases;
+      DAE.Pattern pat;
     
     case (DAE.END(), _, _, _) then "end";
     
@@ -907,6 +908,9 @@ algorithm
         s2 = typeString(et);
         s = stringAppendList({"#SHARED_LITERAL_",s1," (",s2,")#"});
       then s; 
+
+    case (DAE.PATTERN(pattern=pat),_,_,_)
+      then Patternm.patternStr(pat);
 
     case (e, _, _, _)
       equation
@@ -1780,6 +1784,7 @@ algorithm
       Boolean b;
       Absyn.MatchType matchTy;
       list<DAE.MatchCase> cases;
+      DAE.Pattern pat;
     
     case (DAE.ICONST(integer = i),_)
       equation
@@ -2123,6 +2128,12 @@ algorithm
         Print.printBuf("unbox(");
         printExp(e);
         Print.printBuf(")");
+      then
+        ();
+
+    case (DAE.PATTERN(pattern=pat),_)
+      equation
+        Print.printBuf(Patternm.patternStr(pat));
       then
         ();
 

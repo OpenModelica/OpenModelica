@@ -450,12 +450,6 @@ listDelete_rettype listDelete(modelica_metatype lst, modelica_integer ix)
   return lst;
 }
 
-/* Option Operations */
-optionNone_rettype optionNone(modelica_metatype opt)
-{
-  return 0==MMC_HDRSLOTS(MMC_GETHDR(opt)) ? 1 : 0;
-}
-
 /* Array Operations */
 arrayLength_rettype arrayLength(modelica_metatype arr)
 {

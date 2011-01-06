@@ -2679,20 +2679,15 @@ algorithm
 end getVar2;
 
 protected function getVar3
-"function: getVar3
-  author: PA
-  Helper function to getVar"
-  input DAE.ComponentRef inComponentRef;
-  input list<BackendDAE.CrefIndex> inCrefIndexLst;
+"Helper function to getVar"
+  input DAE.ComponentRef cr;
+  input list<BackendDAE.CrefIndex> vs;
   input Boolean firstMatches;
   output Integer outInteger;
 algorithm
-  outInteger := match (inComponentRef,inCrefIndexLst,firstMatches)
+  outInteger := match (cr,vs,firstMatches)
     local
-      DAE.ComponentRef cr;
-      BackendDAE.Value v,res;
-      list<BackendDAE.CrefIndex> vs;
-      BackendDAE.CrefIndex idx;
+      BackendDAE.Value v;
     case (cr,BackendDAE.CREFINDEX(index = v)::_,true) then v;
     case (cr,_::vs,false) then getVar3(cr,vs,getVar4(cr,vs));
   end match;

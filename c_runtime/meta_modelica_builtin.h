@@ -93,6 +93,8 @@ typedef modelica_boolean listMember_rettype;
 typedef modelica_metatype listGet_rettype;
 typedef modelica_integer listEmpty_rettype;
 typedef modelica_metatype listDelete_rettype;
+typedef modelica_metatype listRest_rettype;
+typedef modelica_metatype listFirst_rettype;
 
 listReverse_rettype listReverse(modelica_metatype);
 listAppend_rettype listAppend(modelica_metatype,modelica_metatype);
@@ -101,13 +103,17 @@ listMember_rettype listMember(modelica_metatype, modelica_metatype);
 listGet_rettype listGet(modelica_metatype, modelica_integer);
 #define listEmpty(LST) MMC_NILTEST(LST)
 listDelete_rettype listDelete(modelica_metatype, modelica_integer);
+#define listRest(X) MMC_CDR(X)
+#define listFirst(X) MMC_CAR(X)
 
 modelica_metatype boxptr_listGet(modelica_metatype,modelica_metatype);
 #define boxptr_listAppend listAppend
+#define boxptr_listFirst listFirst
+#define boxptr_listRest listRest
 
 /* Option Operations */
 typedef modelica_boolean optionNone_rettype;
-optionNone_rettype optionNone(modelica_metatype);
+#define optionNone(x) (0==MMC_HDRSLOTS(MMC_GETHDR(x)) ? 1 : 0)
 
 /* Array Operations */
 typedef modelica_integer arrayLength_rettype;

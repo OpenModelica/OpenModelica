@@ -45,6 +45,7 @@ public import Connect;
 public import ConnectionGraph;
 public import DAE;
 public import Env;
+public import HashTableStringToPath;
 public import SCode;
 public import Dump;
 public import InnerOuter;
@@ -53,6 +54,7 @@ public import Prefix;
 public import Types;
 public import UnitAbsyn;
 
+protected import BaseHashTable;
 protected import ComponentReference;
 protected import DAEUtil;
 protected import Debug;
@@ -456,10 +458,12 @@ algorithm
   str := matchcontinue pattern
     local
       list<DAE.Pattern> pats;
+      list<String> fields,patsStr;
       DAE.Exp exp;
       DAE.Pattern pat,head,tail;
       String id;
       DAE.ExpType et;
+      list<tuple<DAE.Pattern,String,DAE.ExpType>> namedpats;
       Absyn.Path name;
     case DAE.PAT_WILD() then "_";
     case DAE.PAT_AS(id=id,pat=DAE.PAT_WILD()) then id;
@@ -482,6 +486,14 @@ algorithm
       equation
         id = Absyn.pathString(name);
         str = Util.stringDelimitList(Util.listMap(pats,patternStr),",");
+      then stringAppendList({id,"(",str,")"});
+
+    case DAE.PAT_CALL_NAMED(name=name, patterns=namedpats)
+      equation
+        id = Absyn.pathString(name);
+        fields = Util.listMap(namedpats, Util.tuple32);
+        patsStr = Util.listMap1r(Util.listMapMap(namedpats, Util.tuple31, patternStr), stringAppend, "=");
+        str = Util.stringDelimitList(Util.listThreadMap(fields, patsStr, stringAppend), ",");
       then stringAppendList({id,"(",str,")"});
 
     case DAE.PAT_CONS(head,tail) then patternStr(head) +& "::" +& patternStr(tail);
@@ -530,6 +542,9 @@ algorithm
       DAE.Type resType;
       DAE.ExpType et;
       String str;
+      DAE.Exp exp;
+      HashTableStringToPath.HashTable ht;
+      list<String> unusedDecls;
     case (cache,env,Absyn.MATCHEXP(matchTy=matchTy,inputExp=inExp,localDecls=decls,cases=cases),impl,st,performVectorization,pre,info,numError)
       equation
         (cache,SOME((env,DAE.DAE(matchDecls)))) = addLocalDecls(cache,env,decls,Env.matchScopeName,impl,info);
@@ -543,7 +558,12 @@ algorithm
         // Do DCE before converting mc to m
         matchTy = optimizeContinueToMatch(matchTy,elabCases,info);
         elabCases = optimizeContinueJumps(matchTy, elabCases);
-      then (cache,DAE.MATCHEXPRESSION(matchTy,elabExps,matchDecls,elabCases,et),prop,st);
+        exp = DAE.MATCHEXPRESSION(matchTy,elabExps,matchDecls,elabCases,et);
+        ((_,ht)) = Expression.traverseExp(exp, addLocalCref, HashTableStringToPath.emptyHashTable());
+        (matchDecls,ht) = filterUnusedDecls(matchDecls,ht,{},HashTableStringToPath.emptyHashTable());
+        // elabCases = filterUnusedAsBindings(elabCases,ht);
+        exp = DAE.MATCHEXPRESSION(matchTy,elabExps,matchDecls,elabCases,et);
+      then (cache,exp,prop,st);
     else
       equation
         true = numError == Error.getNumErrorMessages();
@@ -552,6 +572,264 @@ algorithm
       then fail();
   end matchcontinue;
 end elabMatchExpression;
+
+protected function filterUnusedAsBindings
+  input list<DAE.MatchCase> cases;
+  input HashTableStringToPath.HashTable ht;
+  output list<DAE.MatchCase> outCases;
+algorithm
+  outCases := match (cases,ht)
+    local
+      list<DAE.Pattern> patterns;
+      list<DAE.Element> localDecls;
+      list<DAE.Statement> body;
+      Option<DAE.Exp> result;
+      Integer jump;
+      Absyn.Info info;
+    case ({},_) then {};
+    case (DAE.CASE(patterns, localDecls, body, result, jump, info)::cases,ht)
+      equation
+        (patterns,_) = traversePatternList(patterns, removePatternAsBinding, ht);
+        cases = filterUnusedAsBindings(cases,ht);
+      then DAE.CASE(patterns, localDecls, body, result, jump, info)::cases;
+  end match;
+end filterUnusedAsBindings;
+
+protected function removePatternAsBinding
+  input tuple<DAE.Pattern,HashTableStringToPath.HashTable> inTpl;
+  output tuple<DAE.Pattern,HashTableStringToPath.HashTable> outTpl;
+algorithm
+  outTpl := matchcontinue inTpl
+    local
+      HashTableStringToPath.HashTable ht;
+      DAE.Pattern pat;
+      String id;
+    case ((DAE.PAT_AS(id=id,pat=pat),ht))
+      equation
+        _ = BaseHashTable.get(id, ht);
+      then ((pat,ht));
+    case ((DAE.PAT_AS_FUNC_PTR(id=id,pat=pat),ht))
+      equation
+        _ = BaseHashTable.get(id, ht);
+      then ((pat,ht));
+    else inTpl;
+  end matchcontinue;
+end removePatternAsBinding;
+
+protected function addLocalCref
+"Use with traverseExp to collect all CREF's that could be references to local
+variables."
+  input tuple<DAE.Exp,HashTableStringToPath.HashTable> inTpl;
+  output tuple<DAE.Exp,HashTableStringToPath.HashTable> outTpl;
+algorithm
+  outTpl := match inTpl
+    local
+      DAE.Exp exp;
+      HashTableStringToPath.HashTable ht;
+      String name;
+      list<DAE.MatchCase> cases;
+      DAE.Pattern pat;
+    case ((exp as DAE.CREF(componentRef=DAE.CREF_IDENT(ident=name)),ht))
+      equation
+        ht = BaseHashTable.add((name,Absyn.IDENT("")), ht);
+      then ((exp,ht));
+    case ((exp as DAE.CALL(path=Absyn.IDENT(name), builtin=false),ht))
+      equation
+        ht = BaseHashTable.add((name,Absyn.IDENT("")), ht);
+      then ((exp,ht));
+    case ((exp as DAE.PATTERN(pattern=pat),ht))
+      equation
+        ((_,ht)) = traversePattern((pat,ht), addPatternAsBindings);
+      then ((exp,ht));
+    case ((exp as DAE.MATCHEXPRESSION(cases=cases),ht))
+      equation
+        ht = addCasesLocalCref(cases,ht);
+      then ((exp,ht));
+    else inTpl;
+  end match;
+end addLocalCref;
+
+protected function addCasesLocalCref
+  input list<DAE.MatchCase> cases;
+  input HashTableStringToPath.HashTable ht;
+  output HashTableStringToPath.HashTable outHt;
+algorithm
+  outHt := match (cases,ht)
+    local
+      list<DAE.Pattern> pats;
+    case ({},ht) then ht;
+    case (DAE.CASE(patterns=pats)::cases,ht)
+      equation
+        (_,ht) = traversePatternList(pats, addPatternAsBindings, ht);
+        ht = addCasesLocalCref(cases,ht);
+      then ht;
+  end match;
+end addCasesLocalCref;
+
+protected function addPatternAsBindings
+  input tuple<DAE.Pattern,HashTableStringToPath.HashTable> inTpl;
+  output tuple<DAE.Pattern,HashTableStringToPath.HashTable> outTpl;
+algorithm
+  outTpl := matchcontinue inTpl
+    local
+      HashTableStringToPath.HashTable ht;
+      DAE.Pattern pat;
+      String id;
+    case ((pat as DAE.PAT_AS(id=id),ht))
+      equation
+        ht = BaseHashTable.add((id,Absyn.IDENT("")), ht);
+      then ((pat,ht));
+    case ((pat as DAE.PAT_AS_FUNC_PTR(id=id),ht))
+      equation
+        ht = BaseHashTable.add((id,Absyn.IDENT("")), ht);
+      then ((pat,ht));
+    else inTpl;
+  end matchcontinue;
+end addPatternAsBindings;
+
+protected function traversePatternList
+  input list<DAE.Pattern> pats;
+  input Func func;
+  input TypeA a;
+  output list<DAE.Pattern> outPats;
+  output TypeA oa;
+  partial function Func
+    input tuple<DAE.Pattern,TypeA> inTpl;
+    output tuple<DAE.Pattern,TypeA> outTpl;
+  end Func;
+  replaceable type TypeA subtypeof Any;
+algorithm
+  (outPats,oa) := match (pats,func,a)
+    local
+      DAE.Pattern pat;
+    case ({},func,a) then ({},a);
+    case (pat::pats,func,a)
+      equation
+        ((pat,a)) = traversePattern((pat,a),func);
+        (pats,a) = traversePatternList(pats,func,a);
+      then (pat::pats,a);
+  end match;
+end traversePatternList;
+
+protected function traversePattern
+  input tuple<DAE.Pattern,TypeA> inTpl;
+  input Func func;
+  output tuple<DAE.Pattern,TypeA> outTpl;
+  partial function Func
+    input tuple<DAE.Pattern,TypeA> inTpl;
+    output tuple<DAE.Pattern,TypeA> outTpl;
+  end Func;
+  replaceable type TypeA subtypeof Any;
+algorithm
+  outTpl := match (inTpl,func)
+    local
+      TypeA a;
+      DAE.Pattern pat,pat1,pat2;
+      list<DAE.Pattern> pats;
+      list<String> fields;
+      list<DAE.ExpType> types;
+      String id,str;
+      Option<DAE.ExpType> ty;
+      Absyn.Path name;
+      Integer index;
+      list<tuple<DAE.Pattern,String,DAE.ExpType>> namedpats;
+    case ((DAE.PAT_AS(id,ty,pat2),a),func)
+      equation
+        ((pat2,a)) = traversePattern((pat2,a),func);
+        pat = DAE.PAT_AS(id,ty,pat2);
+        outTpl = func((pat,a));
+      then outTpl;
+    case ((DAE.PAT_AS_FUNC_PTR(id,pat2),a),func)
+      equation
+        ((pat2,a)) = traversePattern((pat2,a),func);
+        pat = DAE.PAT_AS_FUNC_PTR(id,pat2);
+        outTpl = func((pat,a));
+      then outTpl;
+    case ((DAE.PAT_CALL(name,index,pats),a),func)
+      equation
+        (pats,a) = traversePatternList(pats, func, a);
+        pat = DAE.PAT_CALL(name,index,pats);
+        outTpl = func((pat,a));
+      then outTpl;
+    case ((DAE.PAT_CALL_NAMED(name,namedpats),a),func)
+      equation
+        pats = Util.listMap(namedpats,Util.tuple31);
+        fields = Util.listMap(namedpats,Util.tuple32);
+        types = Util.listMap(namedpats,Util.tuple33);
+        namedpats = Util.listThread3Tuple(pats, fields, types);
+        pat = DAE.PAT_CALL_NAMED(name,namedpats);
+        outTpl = func((pat,a));
+      then outTpl;
+    case ((DAE.PAT_CALL_TUPLE(pats),a),func)
+      equation
+        (pats,a) = traversePatternList(pats, func, a);
+        pat = DAE.PAT_CALL_TUPLE(pats);
+        outTpl = func((pat,a));
+      then outTpl;
+    case ((DAE.PAT_META_TUPLE(pats),a),func)
+      equation
+        (pats,a) = traversePatternList(pats, func, a);
+        pat = DAE.PAT_META_TUPLE(pats);
+        outTpl = func((pat,a));
+      then outTpl;
+    case ((DAE.PAT_CONS(pat1,pat2),a),func)
+      equation
+        ((pat1,a)) = traversePattern((pat1,a),func);
+        ((pat2,a)) = traversePattern((pat2,a),func);
+        pat = DAE.PAT_CONS(pat1,pat2);
+        outTpl = func((pat,a));
+      then outTpl;
+    case ((pat as DAE.PAT_CONSTANT(ty=_),a),func)
+      equation
+        outTpl = func((pat,a));
+      then outTpl;
+    case ((DAE.PAT_SOME(pat1),a),func)
+      equation
+        ((pat1,a)) = traversePattern((pat1,a),func);
+        pat = DAE.PAT_SOME(pat1);
+        outTpl = func((pat,a));
+      then outTpl;
+    case ((pat as DAE.PAT_WILD(),a),func)
+      equation
+        outTpl = func((pat,a));
+      then outTpl;
+    case ((pat,_),_)
+      equation
+        str = "Patternm.traversePattern failed: " +& patternStr(pat);
+        Error.addMessage(Error.INTERNAL_ERROR, {str});
+      then fail();
+  end match;
+end traversePattern;
+
+protected function filterUnusedDecls
+"Filters out unused local declarations"
+  input list<DAE.Element> matchDecls;
+  input HashTableStringToPath.HashTable ht;
+  input list<DAE.Element> acc;
+  input HashTableStringToPath.HashTable unusedHt;
+  output list<DAE.Element> outDecls;
+  output HashTableStringToPath.HashTable outUnusedHt;
+algorithm
+  (outDecls,outUnusedHt) := matchcontinue (matchDecls,ht,acc,unusedHt)
+    local
+      DAE.Element el;
+      list<DAE.Element> rest;
+      Absyn.Info info;
+      String name;
+    case ({},ht,acc,unusedHt) then (listReverse(acc),unusedHt);
+    case (DAE.VAR(componentRef=DAE.CREF_IDENT(ident=name), source=DAE.SOURCE(info=info))::rest,ht,acc,unusedHt)
+      equation
+        failure(_ = BaseHashTable.get(name, ht));
+        unusedHt = BaseHashTable.add((name,Absyn.IDENT("")),unusedHt);
+        Error.assertionOrAddSourceMessage(not RTOpts.debugFlag("patternmAllInfo"),Error.META_UNUSED_DECL, {name}, info);
+        (acc,unusedHt) = filterUnusedDecls(rest,ht,acc,unusedHt);
+      then (acc,unusedHt);
+    case (el::rest,ht,acc,unusedHt)
+      equation
+        (acc,unusedHt) = filterUnusedDecls(rest,ht,el::acc,unusedHt);
+      then (acc,unusedHt);
+  end matchcontinue;
+end filterUnusedDecls;
 
 protected function caseDeadCodeEliminiation
   "matchcontinue: Removes empty, failing cases

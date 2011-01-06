@@ -475,12 +475,6 @@ uniontype Statement "There are four kinds of statements.  Assignments (`a := b;\
     ElementSource source "the origin of the component/equation/algorithm";
   end STMT_ASSIGN_ARR;
 
-  record STMT_ASSIGN_PATTERN "(x,1,ROOT(a as _,false,_)) := rhs; MetaModelica extension"
-    Pattern lhs;
-    Exp rhs;
-    ElementSource source "the origin of the component/equation/algorithm";
-  end STMT_ASSIGN_PATTERN;
-
   record STMT_IF
     Exp exp;
     list<Statement> statementLst;
@@ -1171,6 +1165,10 @@ uniontype Exp "Expressions
     Integer index;
     ExpType ty "The type is required for code generation to work properly";
   end SHARED_LITERAL;
+  
+  record PATTERN "(x,1,ROOT(a as _,false,_)) := rhs; MetaModelica extension"
+    Pattern pattern;
+  end PATTERN;
 
   /* --- */
 

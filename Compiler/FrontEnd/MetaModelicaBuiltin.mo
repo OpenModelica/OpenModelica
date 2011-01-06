@@ -522,18 +522,14 @@ function listRest
   input list<TypeA> lst;
   output list<TypeA> rest;
   replaceable type TypeA subtypeof Any;
-  annotation(__OpenModelica_EarlyInline = true);
-algorithm
-  (_::rest) := lst;
+external "builtin";
 end listRest;
 
 function listHead
   input list<TypeA> lst;
   output TypeA head;
   replaceable type TypeA subtypeof Any;
-  annotation(__OpenModelica_EarlyInline = true);
-algorithm
-  (head::_) := lst;
+external "builtin";
 end listHead;
 
 function listDelete

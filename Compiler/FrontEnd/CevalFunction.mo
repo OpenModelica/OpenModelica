@@ -670,18 +670,19 @@ protected function extractLhsComponentRef
   input DAE.Exp inExp;
   output DAE.ComponentRef outCref;
 algorithm
-  outCref := matchcontinue(inExp)
+  outCref := match (inExp)
     local
       DAE.ComponentRef cref;
       DAE.Exp asub_exp;
     case DAE.CREF(componentRef = cref) then cref;
+    case DAE.PATTERN(_) then fail();
     else
       equation
         print("- CevalFunction.extractLhsComponentRef failed on " +&
           ExpressionDump.printExpStr(inExp) +& "\n");
       then
         fail();
-  end matchcontinue;
+  end match;
 end extractLhsComponentRef;
 
 protected function cevalExp

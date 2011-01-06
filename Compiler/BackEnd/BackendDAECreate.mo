@@ -2902,12 +2902,6 @@ algorithm
         zcl = listAppend(zcl,zcl3);        
       then zcl;
               
-    case (((x as DAE.STMT_ASSIGN_PATTERN(lhs = pattern, rhs = e, source = source)) :: xs),vars,knvars)
-      equation
-        zcl1 = findZeroCrossings3(e, vars,knvars);
-        zcl2 = traverseAlgStmts(xs,vars,knvars);
-        zcl = listAppend(zcl1,zcl2);      
-      then zcl;
     case (((x as DAE.STMT_IF(exp=e,statementLst=stmts,else_ = algElse, source = source)) :: xs),vars,knvars)
       equation
         zcl1 = traverseAlgStmtElse(algElse,vars,knvars);

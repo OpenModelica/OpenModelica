@@ -53,7 +53,6 @@ protected import Expression;
 protected import ExpressionDump;
 protected import Absyn;
 protected import Dump;
-protected import Patternm;
 protected import ValuesUtil;
 protected import Values;
 protected import Types;
@@ -1491,20 +1490,10 @@ algorithm
       Algorithm.Else else_;
       DAE.Pattern pattern;    
     
-    case (DAE.STMT_ASSIGN(exp1 = e2 as DAE.ASUB(_,_),exp = e),i)
+    case (DAE.STMT_ASSIGN(exp1 = e2,exp = e),i)
       equation
         indent(i);
         ExpressionDump.printExp(e2);
-        Print.printBuf(" := ");
-        ExpressionDump.printExp(e);
-        Print.printBuf(";\n");
-      then
-        ();
-    
-    case (DAE.STMT_ASSIGN(exp1 = e2 as DAE.CREF(c,_),exp = e),i)
-      equation
-        indent(i);
-        ComponentReference.printComponentRef(c);
         Print.printBuf(" := ");
         ExpressionDump.printExp(e);
         Print.printBuf(";\n");
@@ -1515,16 +1504,6 @@ algorithm
       equation
         indent(i);
         ComponentReference.printComponentRef(c);
-        Print.printBuf(" := ");
-        ExpressionDump.printExp(e);
-        Print.printBuf(";\n");
-      then
-        ();
-    
-    case (DAE.STMT_ASSIGN_PATTERN(lhs = pattern, rhs = e),i)
-      equation
-        indent(i);
-        Print.printBuf(Patternm.patternStr(pattern));
         Print.printBuf(" := ");
         ExpressionDump.printExp(e);
         Print.printBuf(";\n");
@@ -1737,25 +1716,7 @@ algorithm
       Algorithm.Else else_;
       DAE.Pattern pat;
     
-    case (DAE.STMT_ASSIGN(exp1 = e2 as DAE.CREF(c,_),exp = e),i)
-      equation
-        s1 = indentStr(i);
-        s2 = ComponentReference.printComponentRefStr(c);
-        s3 = ExpressionDump.printExpStr(e);
-        str = stringAppendList({s1,s2," := ",s3,";\n"});
-      then
-        str;
-    
-    case (DAE.STMT_ASSIGN(exp1 = e2 as DAE.ARRAY(array=_),exp = e),i)
-      equation
-        s1 = indentStr(i);
-        s2 = ExpressionDump.printExpStr(e2);
-        s3 = ExpressionDump.printExpStr(e);
-        str = stringAppendList({s1,s2," := ",s3,";\n"});
-      then
-        str;
-    
-    case (DAE.STMT_ASSIGN(exp1 = e2 as DAE.ASUB(_,_),exp = e),i)
+    case (DAE.STMT_ASSIGN(exp1 = e2,exp = e),i)
       equation
         s1 = indentStr(i);
         s2 = ExpressionDump.printExpStr(e2);
@@ -1890,14 +1851,6 @@ algorithm
         str = stringAppendList({s1,"failure(\n",s2,s1,");\n"});
       then str;
         
-    case (DAE.STMT_ASSIGN_PATTERN(lhs=pat, rhs=e),i)
-      equation
-        s1 = indentStr(i);
-        s2 = Patternm.patternStr(pat);
-        s3 = ExpressionDump.printExpStr(e);
-        str = stringAppendList({s1,s2," := ",s3,";\n"});
-      then str;
-
     case (_,i)
       equation
         s1 = indentStr(i);

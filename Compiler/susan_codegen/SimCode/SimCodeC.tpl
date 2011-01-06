@@ -3860,10 +3860,10 @@ template algStatement(DAE.Statement stmt, Context context, Text &varDecls /*BUFP
  "Generates an algorithm statement."
 ::=
   match stmt
+  case s as STMT_ASSIGN(exp1=PATTERN(__)) then algStmtAssignPattern(s, context, &varDecls /*BUFD*/)
   case s as STMT_ASSIGN(__)         then algStmtAssign(s, context, &varDecls /*BUFD*/)
   case s as STMT_ASSIGN_ARR(__)     then algStmtAssignArr(s, context, &varDecls /*BUFD*/)
   case s as STMT_TUPLE_ASSIGN(__)   then algStmtTupleAssign(s, context, &varDecls /*BUFD*/)
-  case s as STMT_ASSIGN_PATTERN(__) then algStmtAssignPattern(s, context, &varDecls /*BUFD*/)
   case s as STMT_IF(__)             then algStmtIf(s, context, &varDecls /*BUFD*/)
   case s as STMT_FOR(__)            then algStmtFor(s, context, &varDecls /*BUFD*/)
   case s as STMT_WHILE(__)          then algStmtWhile(s, context, &varDecls /*BUFD*/)
@@ -5987,12 +5987,12 @@ template algStmtAssignPattern(DAE.Statement stmt, Context context, Text &varDecl
  "Generates an assigment algorithm statement."
 ::=
   match stmt
-  case STMT_ASSIGN_PATTERN(__) then
+  case s as STMT_ASSIGN(exp1=lhs as PATTERN(__)) then
     let &preExp = buffer ""
     let &assignments = buffer ""
-    let expPart = daeExp(rhs, context, &preExp, &varDecls)
+    let expPart = daeExp(s.exp, context, &preExp, &varDecls)
     <<<%preExp%>
-    <%patternMatch(lhs,expPart,"MMC_THROW()",&varDecls,&assignments)%><%assignments%>>>
+    <%patternMatch(lhs.pattern,expPart,"MMC_THROW()",&varDecls,&assignments)%><%assignments%>>>
 end algStmtAssignPattern;
 
 template patternMatch(Pattern pat, Text rhs, Text onPatternFail, Text &varDecls, Text &assignments)

@@ -726,6 +726,9 @@ package DAE
       Integer index;
       ExpType ty;
     end SHARED_LITERAL;
+    record PATTERN
+      Pattern pattern;
+    end PATTERN;
   end Exp;
   
   uniontype MatchCase
@@ -920,11 +923,6 @@ package DAE
       Exp exp;
       ElementSource source;
     end STMT_TUPLE_ASSIGN;
-    record STMT_ASSIGN_PATTERN "(x,1,ROOT(a as _,false,_)) := rhs; MetaModelica extension"
-      Pattern lhs;
-      Exp rhs;
-      ElementSource source "the origin of the component/equation/algorithm";
-    end STMT_ASSIGN_PATTERN;
     record STMT_IF
       Exp exp;
       list<Statement> statementLst;
