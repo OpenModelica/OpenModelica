@@ -539,6 +539,8 @@ algorithm
         (cache,elabCases,resType,st) = elabMatchCases(cache,env,cases,tys,impl,st,performVectorization,pre,info);
         prop = DAE.PROP(resType,DAE.C_VAR());
         et = Types.elabType(resType);
+        elabCases = caseDeadCodeEliminiation(matchTy, elabCases, {}, {}, false);
+        // Do DCE before converting mc to m
         matchTy = optimizeContinueToMatch(matchTy,elabCases,info);
         elabCases = optimizeContinueJumps(matchTy, elabCases);
       then (cache,DAE.MATCHEXPRESSION(matchTy,elabExps,matchDecls,elabCases,et),prop,st);
@@ -550,6 +552,65 @@ algorithm
       then fail();
   end matchcontinue;
 end elabMatchExpression;
+
+protected function caseDeadCodeEliminiation
+  "matchcontinue: Removes empty, failing cases
+  match: Removes empty cases that can't be matched by subsequent cases
+  match: Removes cases that can't be reached because a previous case has a dominating pattern
+  "
+  input Absyn.MatchType matchType;
+  input list<DAE.MatchCase> cases;
+  input list<list<DAE.Pattern>> prevPatterns;
+  input list<DAE.MatchCase> acc;
+  input Boolean iter "If we remove some code, it may cascade. We should we loop more.";
+  output list<DAE.MatchCase> outCases;
+algorithm
+  outCases := matchcontinue (matchType,cases,prevPatterns,acc,iter)
+    local
+      list<DAE.MatchCase> rest;
+      list<DAE.Pattern> pats;
+      DAE.MatchCase case_;
+      Absyn.Info info,oinfo;
+    case (_,{},_,acc,false) then listReverse(acc);
+    case (_,{},_,acc,true) then caseDeadCodeEliminiation(matchType,listReverse(acc),{},{},false);
+    case (_,DAE.CASE(body={},result=NONE(),info=info)::{},prevPatterns,acc,iter)
+      equation
+        Error.assertionOrAddSourceMessage(not RTOpts.debugFlag("patternmAllInfo"), Error.META_DEAD_CODE, {"Last pattern is empty"}, info);
+      then caseDeadCodeEliminiation(matchType,listReverse(acc),{},{},false);
+        /* Tricky to get right; I'll try again later as it probably only gives marginal results anyway
+    case (Absyn.MATCH(),DAE.CASE(patterns=pats,info=info)::rest,prevPatterns as _::_,acc,iter)
+      equation
+        oinfo = findOverlappingPattern(pats,acc);
+        Error.assertionOrAddSourceMessage(not RTOpts.debugFlag("patternmAllInfo"), Error.META_DEAD_CODE, {"Unreachable pattern"}, info);
+        Error.assertionOrAddSourceMessage(not RTOpts.debugFlag("patternmAllInfo"), Error.META_DEAD_CODE, {"Shadowing case"}, oinfo);
+      then caseDeadCodeEliminiation(matchType,rest,pats::prevPatterns,acc,true);
+      */
+    case (Absyn.MATCHCONTINUE(),DAE.CASE(patterns=pats,body={},result=NONE(),info=info)::rest,prevPatterns,acc,_)
+      equation
+        Error.assertionOrAddSourceMessage(not RTOpts.debugFlag("patternmAllInfo"), Error.META_DEAD_CODE, {"Empty matchcontinue case"}, info);
+        acc = caseDeadCodeEliminiation(matchType,rest,pats::prevPatterns,acc,true);
+      then acc;
+    case (_,(case_ as DAE.CASE(patterns=pats))::rest,prevPatterns,acc,iter) then caseDeadCodeEliminiation(matchType,rest,pats::prevPatterns,case_::acc,iter);
+  end matchcontinue;
+end caseDeadCodeEliminiation;
+
+/*
+protected function findOverlappingPattern
+  input list<DAE.Pattern> patterns;
+  input list<DAE.MatchCase> prevCases;
+  output Absyn.Info info;
+algorithm
+  info := matchcontinue (patterns,prevCases)
+    local
+      list<DAE.Pattern> ps1,ps2;
+    case (ps1,DAE.CASE(patterns=ps2,info=info)::_)
+      equation
+        true = patternListsDoOverlap(ps1,ps2); ???
+      then info;
+    case (ps1,_::prevCases) then findOverlappingPattern(ps1,prevCases); 
+  end matchcontinue;
+end findOverlappingPattern;
+*/
 
 protected function optimizeContinueJumps
   "If a case in a matchcontinue expression is followed by a (list of) cases that
@@ -627,9 +688,10 @@ algorithm
       list<DAE.Element> localDecls;
       list<DAE.Statement> body;
       Option<DAE.Exp> result;
+      Absyn.Info info;
     case (case_,0) then case_;
-    case (DAE.CASE(patterns, localDecls, body, result, _),jump)
-      then DAE.CASE(patterns, localDecls, body, result, jump);
+    case (DAE.CASE(patterns, localDecls, body, result, _, info), jump)
+      then DAE.CASE(patterns, localDecls, body, result, jump, info);
   end match;
 end updateMatchCaseJump;
 
@@ -729,7 +791,7 @@ algorithm
 end patternListsDoNotOverlap;
 
 protected function patternsDoNotOverlap
-  "Verifies that p1 does not shadow p2"
+  "Verifies that p1 do not shadow p2"
   input DAE.Pattern p1;
   input DAE.Pattern p2;
   output Boolean b;
@@ -802,7 +864,7 @@ protected
   list<DAE.Exp> resExps;
   list<DAE.Type> resTypes;
 algorithm
-  (outCache,elabCases,resExps,resTypes,outSt) := elabMatchCases2(cache,env,cases,tys,impl,st,performVectorization,pre,info,{},{});
+  (outCache,elabCases,resExps,resTypes,outSt) := elabMatchCases2(cache,env,cases,tys,impl,st,performVectorization,pre,{},{});
   (elabCases,resType) := fixCaseReturnTypes(elabCases,resExps,resTypes,info);
 end elabMatchCases;
 
@@ -815,7 +877,6 @@ protected function elabMatchCases2
   input Option<Interactive.InteractiveSymbolTable> st;
   input Boolean performVectorization;
   input Prefix.Prefix pre;
-  input Absyn.Info info;
   input list<DAE.Exp> accExps "Order does matter";
   input list<DAE.Type> accTypes "Order does not matter";
   output Env.Cache outCache;
@@ -824,7 +885,7 @@ protected function elabMatchCases2
   output list<DAE.Type> resTypes;
   output Option<Interactive.InteractiveSymbolTable> outSt;
 algorithm
-  (outCache,elabCases,resExps,resTypes,outSt) := match (cache,env,cases,tys,impl,st,performVectorization,pre,info,accExps,accTypes)
+  (outCache,elabCases,resExps,resTypes,outSt) := match (cache,env,cases,tys,impl,st,performVectorization,pre,accExps,accTypes)
     local
       Absyn.Case case_;
       list<Absyn.Case> rest;
@@ -832,11 +893,11 @@ algorithm
       list<DAE.MatchCase> elabCases;
       Option<DAE.Type> optType;
       Option<DAE.Exp> optExp;
-    case (cache,env,{},tys,impl,st,performVectorization,pre,info,accExps,accTypes) then (cache,{},listReverse(accExps),listReverse(accTypes),st);
-    case (cache,env,case_::rest,tys,impl,st,performVectorization,pre,info,accExps,accTypes)
+    case (cache,env,{},tys,impl,st,performVectorization,pre,accExps,accTypes) then (cache,{},listReverse(accExps),listReverse(accTypes),st);
+    case (cache,env,case_::rest,tys,impl,st,performVectorization,pre,accExps,accTypes)
       equation
-        (cache,elabCase,optExp,optType,st) = elabMatchCase(cache,env,case_,tys,impl,st,performVectorization,pre,info);
-        (cache,elabCases,accExps,accTypes,st) = elabMatchCases2(cache,env,rest,tys,impl,st,performVectorization,pre,info,Util.listConsOption(optExp,accExps),Util.listConsOption(optType,accTypes));
+        (cache,elabCase,optExp,optType,st) = elabMatchCase(cache,env,case_,tys,impl,st,performVectorization,pre);
+        (cache,elabCases,accExps,accTypes,st) = elabMatchCases2(cache,env,rest,tys,impl,st,performVectorization,pre,Util.listConsOption(optExp,accExps),Util.listConsOption(optType,accTypes));
       then (cache,elabCase::elabCases,accExps,accTypes,st);
   end match;
 end elabMatchCases2;
@@ -850,14 +911,13 @@ protected function elabMatchCase
   input Option<Interactive.InteractiveSymbolTable> st;
   input Boolean performVectorization;
   input Prefix.Prefix pre;
-  input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.MatchCase elabCase;
   output Option<DAE.Exp> resExp;
   output Option<DAE.Type> resType;
   output Option<Interactive.InteractiveSymbolTable> outSt;
 algorithm
-  (outCache,elabCase,resExp,resType,outSt) := match (cache,env,acase,tys,impl,st,performVectorization,pre,info)
+  (outCache,elabCase,resExp,resType,outSt) := match (cache,env,acase,tys,impl,st,performVectorization,pre)
     local
       list<Absyn.Case> rest;
       Absyn.Exp result,pattern;
@@ -871,8 +931,8 @@ algorithm
       list<SCode.Statement> algs;
       list<DAE.Statement> body;
       list<Absyn.ElementItem> decls;
-      Absyn.Info patternInfo;
-    case (cache,env,Absyn.CASE(pattern=pattern,patternInfo=patternInfo,localDecls=decls,equations=eq1,result=result),tys,impl,st,performVectorization,pre,info)
+      Absyn.Info patternInfo,info;
+    case (cache,env,Absyn.CASE(pattern=pattern,patternInfo=patternInfo,localDecls=decls,equations=eq1,result=result,info=info),tys,impl,st,performVectorization,pre)
       equation
         (cache,SOME((env,DAE.DAE(caseDecls)))) = addLocalDecls(cache,env,decls,Env.caseScopeName,impl,info);
         patterns = MetaUtil.extractListFromTuple(pattern, 0);
@@ -882,12 +942,12 @@ algorithm
         algs = SCodeUtil.translateClassdefAlgorithmitems(eqAlgs);
         (cache,body) = InstSection.instStatements(cache, env, InnerOuter.emptyInstHierarchy, pre, algs, DAEUtil.addElementSourceFileInfo(DAE.emptyElementSource,patternInfo), SCode.NON_INITIAL(), true, Inst.neverUnroll);
         (cache,body,elabResult,resType,st) = elabResultExp(cache,env,body,result,impl,st,performVectorization,pre,patternInfo);
-      then (cache,DAE.CASE(elabPatterns, caseDecls, body, elabResult, 0),elabResult,resType,st);
+      then (cache,DAE.CASE(elabPatterns, caseDecls, body, elabResult, 0, info),elabResult,resType,st);
 
       // ELSE is the same as CASE, but without pattern
-    case (cache,env,Absyn.ELSE(localDecls=decls,equations=eq1,result=result),_,impl,st,performVectorization,pre,info)
+    case (cache,env,Absyn.ELSE(localDecls=decls,equations=eq1,result=result,info=info),_,impl,st,performVectorization,pre)
       equation
-        (cache,elabCase,elabResult,resType,st) = elabMatchCase(cache,env,Absyn.CASE(Absyn.TUPLE({}),info,decls,eq1,result,NONE()),{},impl,st,performVectorization,pre,info); 
+        (cache,elabCase,elabResult,resType,st) = elabMatchCase(cache,env,Absyn.CASE(Absyn.TUPLE({}),info,decls,eq1,result,NONE(),info),{},impl,st,performVectorization,pre); 
       then (cache,elabCase,elabResult,resType,st);
         
   end match;
@@ -1011,12 +1071,13 @@ algorithm
       DAE.Exp exp;
       DAE.MatchCase case_;
       Integer jump;
+      Absyn.Info info2;
     case ({},{},_) then {};
     
-    case (DAE.CASE(patterns,decls,body,SOME(_),jump)::cases,exp::exps,info)
+    case (DAE.CASE(patterns,decls,body,SOME(_),jump,info2)::cases,exp::exps,info)
       equation
         cases = fixCaseReturnTypes2(cases,exps,info);
-      then DAE.CASE(patterns,decls,body,SOME(exp),jump)::cases;
+      then DAE.CASE(patterns,decls,body,SOME(exp),jump,info2)::cases;
     
     case ((case_ as DAE.CASE(result=NONE()))::cases,exps,info)
       equation
@@ -1049,13 +1110,14 @@ algorithm
       list<DAE.Statement> body;
       Option<DAE.Exp> result;
       Integer jump;
+      Absyn.Info info;
     case ({},_,a) then ({},a);
-    case (DAE.CASE(patterns,decls,body,result,jump)::cases,_,a)
+    case (DAE.CASE(patterns,decls,body,result,jump,info)::cases,_,a)
       equation
         (body,(_,a)) = DAEUtil.traverseDAEEquationsStmts(body,Expression.traverseSubexpressionsHelper,(func,a));
         ((result,a)) = Expression.traverseExpOpt(result,func,a);
         (cases,a) = traverseCases(cases,func,a); 
-      then (DAE.CASE(patterns,decls,body,result,jump)::cases,a);
+      then (DAE.CASE(patterns,decls,body,result,jump,info)::cases,a);
   end match;
 end traverseCases;
 

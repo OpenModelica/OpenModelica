@@ -1340,7 +1340,7 @@ cases2 returns [void* ast] :
                              NULL, 0, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition+1,
                              ModelicaParser_readonly, ModelicaParser_filename_C);
       if (exp)
-       $ast = mk_cons(Absyn__ELSE(or_nil(es),or_nil(eqs),exp,mk_some_or_none(cmt)),mk_nil());
+       $ast = mk_cons(Absyn__ELSE(or_nil(es),or_nil(eqs),exp,mk_some_or_none(cmt),INFO($start)),mk_nil());
       else
        $ast = mk_nil();
     }
@@ -1358,7 +1358,7 @@ onecase returns [void* ast] :
           c_add_source_message(2, "SYNTAX", "Warning", "case local declarations are deprecated. Move all case- and else-declarations to the match local declarations.",
                                NULL, 0, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition+1,
                                ModelicaParser_readonly, ModelicaParser_filename_C);
-        $ast = Absyn__CASE(pat.ast,pat.info,or_nil(es),or_nil(eqs),exp,mk_some_or_none(cmt));
+        $ast = Absyn__CASE(pat.ast,pat.info,or_nil(es),or_nil(eqs),exp,mk_some_or_none(cmt),INFO($start));
     }
   ;
 

@@ -808,6 +808,7 @@ uniontype Case "case in match or matchcontinue"
     list<EquationItem>  equations " equations [] for no equations ";
     Exp result " result ";
     Option<String> comment " comment after case like: case pattern string_comment ";
+    Info info "file information of the whole case";
   end CASE;
 
   record ELSE "else in match or matchcontinue"
@@ -815,6 +816,7 @@ uniontype Case "case in match or matchcontinue"
     list<EquationItem>  equations " equations [] for no equations ";
     Exp result " result ";
     Option<String> comment " comment after case like: case pattern string_comment ";
+    Info info "file information of the whole case";
   end ELSE;
 end Case;
 

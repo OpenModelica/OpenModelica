@@ -1183,6 +1183,7 @@ public uniontype MatchCase
     list<Statement> body;
     Option<Exp> result;
     Integer jump "the number of iterations we should skip if we succeed with pattern-matching, but don't succeed";
+    Absyn.Info info;
   end CASE;
 end MatchCase;
 
