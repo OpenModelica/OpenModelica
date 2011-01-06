@@ -66,7 +66,7 @@ algorithm
       BackendDAE.Equation a;
       DAE.ComponentRef cr;
       Integer indx;
-      list<DAE.Exp> expl,expl1,expl2,expl3,expl4;
+      list<DAE.Exp> expl,expl1,expl2;
       BackendDAE.WhenEquation whenEqn,whenEqn1;
       DAE.ElementSource source "the origin of the element";
       list<list<DAE.Exp>> explstlst;
@@ -357,7 +357,7 @@ algorithm
   outBackendDAEEquationLst:=
   match (inBackendDAEEquationLst,inVariableReplacements)
     local
-      DAE.Exp e1_1,e2_1,e1,e2,e_1,e,e1_2,e2_2;
+      DAE.Exp e1_1,e2_1,e1,e2,e1_2,e2_2;
       list<BackendDAE.MultiDimEquation> es_1,es;
       VarTransform.VariableReplacements repl;
       BackendDAE.Equation a;
@@ -419,7 +419,7 @@ algorithm
       list<DAE.Statement> es,es_1,statementLst,statementLst_1;
       DAE.Statement statement,statement_1;
       DAE.ExpType type_;
-      DAE.Exp e1_1,e2_1,e1,e2,e_1,e,e1_2,e2_2;
+      DAE.Exp e1_1,e2_1,e1,e2,e1_2,e2_2;
       list<DAE.Exp> expExpLst,expExpLst_1,inputExps;
       DAE.Else else_,else_1;
       DAE.ElementSource source;

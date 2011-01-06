@@ -186,7 +186,7 @@ algorithm
   outParts := match (inParts,inProgram,classPath,env)
     local
       Absyn.Program p;
-      list<Absyn.ClassPart> restParts,resParts,resultParts;
+      list<Absyn.ClassPart> restParts,resParts;
       Absyn.ClassPart firstPart,resultPart;
       Absyn.Path cPath;
     case({},_,_,_) then {};
@@ -505,7 +505,7 @@ algorithm
       Absyn.ElementAttributes at;
       Absyn.Path path,cPath;
       Absyn.ComponentItem firstComp,resultComp;
-      list<Absyn.ComponentItem> restCompList,resCompList,resultCompList;
+      list<Absyn.ComponentItem> restCompList,resCompList;
       Absyn.Class cl,cl1;
       Boolean r;
       Env.Env env;
@@ -1020,7 +1020,7 @@ algorithm
 
     local
 
-      Real arx1,arx2,crx1,crx2,scaleFac,tmp1,tmp2;
+      Real arx1,arx2,crx1,crx2,scaleFac;
 
     case(arx1,arx2,crx1,crx2)
 
@@ -1487,7 +1487,7 @@ algorithm
       String val,val1,val2;
       list<String> arrows;
       Real thick;
-      list<Absyn.ElementArg> args,rest,res,argRes,restRes;
+      list<Absyn.ElementArg> args,rest,res;
       Absyn.ElementArg arg;
       Context context, c;
       Boolean fi;
@@ -2559,7 +2559,7 @@ protected function isFillColorInList "function: isFillColorInList
 algorithm
   outBoolean := matchcontinue inList
     local
-      list<Absyn.ElementArg> rest,lst,args;
+      list<Absyn.ElementArg> rest;
       Absyn.ElementArg arg;
     case({})
     then false;
@@ -2778,7 +2778,7 @@ protected function fixPaths
 algorithm
   outPath := matchcontinue (inPath1, inPath2)
     local
-      Absyn.Path ip1, ip2, p1, p2;
+      Absyn.Path ip1, ip2, p1;
       String str1, str2;
       Absyn.Path out;
     case (ip1, ip2)

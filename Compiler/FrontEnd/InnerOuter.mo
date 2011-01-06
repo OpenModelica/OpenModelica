@@ -416,7 +416,7 @@ algorithm
   outOC := matchcontinue(inOC)
     local
       Connect.OuterConnect oc;
-      DAE.ComponentRef cr1,cr2,ncr1,ncr2,cr3,ver1,ver2;
+      DAE.ComponentRef cr1,cr2,ncr1,ncr2;
       Absyn.InnerOuter io1,io2;
       Connect.Face f1,f2;
       Prefix.Prefix scope;
@@ -701,7 +701,7 @@ algorithm
       DAE.ComponentRef cr1,cr2,cr1Outer,cr2Outer,crefPrefix;
       Absyn.InnerOuter io1,io2;
       Connect.OuterConnect oc;
-      Boolean inner1,inner2,outer1,outer2,added,b1Outer,b2Outer,b1,b2,b3,b4;
+      Boolean inner1,outer1,added,b1,b2,b3,b4;
       Connect.Face f1,f2;
       Prefix.Prefix scope;
       InstHierarchy ih;
@@ -1180,7 +1180,7 @@ algorithm
       SCode.Ident name;
       Cache outCache;
       DAE.Var outVar;
-      Prefix.Prefix prefix, innerPrefix;
+      Prefix.Prefix prefix;
       Absyn.InnerOuter io;
       Boolean isInner;
       InstHierarchyHashTable ht;
@@ -1924,7 +1924,7 @@ algorithm
   innerDeclarations := match(inIH, inEnv)
     local
       TopInstance tih;
-      InstHierarchy restIH, ih;
+      InstHierarchy restIH;
       InstHierarchyHashTable ht;
       Option<Absyn.Path> pathOpt;
       OuterPrefixes outerPrefixes;
@@ -2221,7 +2221,7 @@ public function get1 "help function to get"
 algorithm
   (value, indx) := match (key,hashTable)
     local
-      Integer hval,hashindx,indx_1,bsize,n;
+      Integer hval,hashindx,bsize,n;
       list<tuple<Key,Integer>> indexes;
       Value v;
       array<list<tuple<Key,Integer>>> hashvec;
@@ -2473,7 +2473,7 @@ algorithm
     local
       Key k;
       Value v;
-      Integer n,len;
+      Integer n;
       array<Option<tuple<Key,Value>>> arr;
       String ns;
     

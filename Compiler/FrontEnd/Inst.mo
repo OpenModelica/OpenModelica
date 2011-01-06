@@ -1017,7 +1017,7 @@ algorithm
       DAE.DAElist dae,dae1,dae2;
       Connect.Sets csets;
       SCode.Class c;
-      String n, fullPathName;
+      String n;
       list<SCode.Class> cs;
       Env.Cache cache;
       ConnectionGraph.ConnectionGraph graph;
@@ -1106,7 +1106,7 @@ algorithm
       list<Env.Frame> env_1,env_2,env;
       DAE.DAElist dae1,dae2,dae;
       SCode.Class c;
-      String n,s;
+      String n;
       SCode.Restriction restr;
       list<SCode.Class> cs;
       Env.Cache cache;
@@ -1175,10 +1175,10 @@ algorithm
       String n;
       Boolean partialPrefix,impl,callscope_1,encflag,isFn,notIsPartial,isPartialFn;
       ClassInf.State ci_state,ci_state_1;
-      DAE.DAElist dae1,dae1_1,dae2,dae3,dae;
+      DAE.DAElist dae1,dae1_1,dae2,dae;
       list<DAE.Var> tys;
       Option<tuple<DAE.TType, Option<Absyn.Path>>> bc_ty;
-      Absyn.Path fq_class,typename;
+      Absyn.Path fq_class;
       list<DAE.Type> functionTypes;
       tuple<DAE.TType, Option<Absyn.Path>> ty;
       SCode.Class c;
@@ -1336,7 +1336,7 @@ algorithm
   (outCache,outEnv) := match(inCache,inEnv,inName,inNames,inVars,inPath)
     local
       Env.Cache cache;
-      Env.Env env,env_1,env_2,env_3,compenv;
+      Env.Env env,env_1,env_2,compenv;
       String name,n,nn;
       list<String> names;
       list<DAE.Var> vars;
@@ -1610,11 +1610,11 @@ algorithm
       list<Env.Frame> env_1,env_3,env;
       ClassInf.State ci_state,ci_state_1;
       SCode.Class c_1,c;
-      DAE.DAElist dae1,dae1_1,dae2,dae3,dae;
+      DAE.DAElist dae1,dae1_1,dae;
       Connect.Sets csets_1,csets;
       list<DAE.Var> tys;
       Option<DAE.Type> bc_ty;
-      Absyn.Path fq_class,typename;
+      Absyn.Path fq_class;
       Boolean callscope_1,encflag,impl;
       tuple<DAE.TType, Option<Absyn.Path>> ty;
       DAE.Mod mod;
@@ -1806,8 +1806,8 @@ algorithm
       DAE.Mod mods;
       Prefix.Prefix pre;
       list<DAE.ComponentRef> crs;
-      ClassInf.State ci_state,ci_state_1;
-      SCode.Class c,cls;
+      ClassInf.State ci_state;
+      SCode.Class c;
       InstDims inst_dims;
       Boolean impl,prot;
       String n;
@@ -2077,7 +2077,7 @@ algorithm
       SCode.Class c,cls;
       InstDims inst_dims;
       Boolean impl,prot;
-      String clsname,implstr,n,s;
+      String clsname,implstr,n;
       Connect.Sets csets_1,csets;
       list<DAE.Var> tys;
       SCode.Restriction r;
@@ -2749,7 +2749,7 @@ public function partialInstClassIn
 algorithm
   (outCache,outEnv,outIH,outState) := matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inClass,inBoolean,inInstDims)
     local
-      list<Env.Frame> env,env_1;
+      list<Env.Frame> env;
       DAE.Mod mods;
       Prefix.Prefix pre;
       Connect.Sets csets;
@@ -3245,21 +3245,21 @@ algorithm
   matchcontinue (inCache,inEnv,inIH,store,inMod2,inPrefix3,inSets4,inState5,className,inClassDef6,inRestriction7,inBoolean8,inInstDims9,inBoolean10,inGraph,instSingleCref,info,stopInst)
     local
       list<SCode.Element> cdefelts,compelts,extendselts,els,extendsclasselts;
-      list<Env.Frame> env1,env2,env3,env,env4,env5,cenv,cenv_2,env_2;
-      list<tuple<SCode.Element, DAE.Mod>> cdefelts_1,cdefelts_2,extcomps,compelts_1,compelts_2;
+      list<Env.Frame> env1,env2,env3,env;
+      list<tuple<SCode.Element, DAE.Mod>> cdefelts_1,cdefelts_2;
       list<SCode.Element> compelts_2_elem;
-      Connect.Sets csets,csets1,csets_filtered,csets2,csets3,csets4,csets5,csets_1;
-      DAE.DAElist dae1,dae2,dae3,dae4,dae5,dae,daetemp;
-      ClassInf.State ci_state1,ci_state,ci_state2,ci_state3,ci_state4,ci_state5,ci_state6,new_ci_state,ci_state_1;
+      Connect.Sets csets,csets1;
+      DAE.DAElist dae1,dae2,dae;
+      ClassInf.State ci_state1,ci_state;
       list<DAE.Var> tys;
       Option<tuple<DAE.TType, Option<Absyn.Path>>> bc;
-      DAE.Mod mods,emods,m,mod_1,mods_1,mods_2,checkMods;
+      DAE.Mod mods;
       Prefix.Prefix pre;
-      list<SCode.Equation> eqs_1,initeqs_1;
-      list<SCode.AlgorithmSection> alg_1,initalg_1;
-      SCode.Restriction re,r;
-      Boolean prot,impl,enc2;
-      InstDims inst_dims,inst_dims_1;
+      list<SCode.Equation> initeqs_1;
+      list<SCode.AlgorithmSection> initalg_1;
+      SCode.Restriction re;
+      Boolean prot,impl;
+      InstDims inst_dims;
       list<DAE.Subscript> inst_dims2;
       String s;
       SCode.Class c;
@@ -3390,14 +3390,14 @@ algorithm
     local
       list<SCode.Element> cdefelts,compelts,extendselts,els,extendsclasselts;
       list<Env.Frame> env1,env2,env3,env,env4,env5,cenv,cenv_2,env_2;
-      list<tuple<SCode.Element, DAE.Mod>> cdefelts_1,cdefelts_2,extcomps,compelts_1,compelts_2, comp_cond;
+      list<tuple<SCode.Element, DAE.Mod>> cdefelts_1,extcomps,compelts_1,compelts_2, comp_cond;
       list<SCode.Element> compelts_2_elem;
       Connect.Sets csets,csets1,csets_filtered,csets2,csets3,csets4,csets5,csets_1;
-      DAE.DAElist dae1,dae2,dae3,dae4,dae5,dae,daetemp;
+      DAE.DAElist dae1,dae2,dae3,dae4,dae5,dae;
       ClassInf.State ci_state1,ci_state,ci_state2,ci_state3,ci_state4,ci_state5,ci_state6,new_ci_state,ci_state_1;
-      list<DAE.Var> vars, vars2;
+      list<DAE.Var> vars;
       Option<tuple<DAE.TType, Option<Absyn.Path>>> bc;
-      DAE.Mod mods,emods,m,mod_1,mods_1,mods_2,checkMods;
+      DAE.Mod mods,emods,mod_1,mods_1,checkMods;
       Prefix.Prefix pre;
       list<SCode.Equation> eqs,initeqs,eqs2,initeqs2,eqs_1,initeqs_1;
       list<SCode.AlgorithmSection> alg,initalg,alg2,initalg2,alg_1,initalg_1;
@@ -3424,7 +3424,7 @@ algorithm
       UnitAbsyn.Store st2;
       UnitAbsyn.Store st3;
       UnitAbsyn.Unit u1;
-      DAE.DAElist fdae,fdae0,fdae1,fdae2,fdae3;
+      DAE.DAElist fdae;
       Boolean unrollForLoops;
       Real   ti;
       Absyn.Info info2;
@@ -3950,7 +3950,7 @@ algorithm
       String name,name2;
       SCode.Mod scmod;
       DAE.ComponentRef cr;
-      list<Absyn.ComponentRef> crefs,crefs2;
+      list<Absyn.ComponentRef> crefs;
       Absyn.Path p;
     case({},SOME(cr),_,_,_)
       equation
@@ -4029,7 +4029,7 @@ input list<String> existing;
 output list<SCode.Element> outComps;
 algorithm outComps := matchcontinue(acrefs,remainingComps,className,existing)
   local
-    String s1,s2,s3,s4;
+    String s1,s2;
     Absyn.ComponentRef acr;
     list<SCode.Element> localComps,elems;
     list<String> names;
@@ -4525,14 +4525,14 @@ Handles the fail case rollbacks/deleteCheckpoint of errors."
   input Util.StatefulBoolean stopInst "prevent instantiation of classes adding components to primary types";
 algorithm _ := matchcontinue(inCache,inEnv1,inIH,store,inSCodeElementLst2,inSCodeElementLst3,inMod4,inInstDims5,info,stopInst)
   local
-      DAE.Mod m_1,m_2,mods;
+      DAE.Mod m_1,mods;
       SCode.Class cdef,cdef_1;
       list<Env.Frame> cenv,env_1,env;
       DAE.DAElist dae;
       tuple<DAE.TType, Option<Absyn.Path>> ty;
       list<DAE.Var> tys;
       ClassInf.State st;
-      Boolean b1,b2,b3;
+      Boolean b1,b2;
       Absyn.Path path;
       SCode.Mod mod;
       InstDims inst_dims;
@@ -4691,17 +4691,17 @@ algorithm
       ClassInf.State ci_state1,ci_state,new_ci_state,new_ci_state_1,ci_state2;
       list<SCode.Element> cdefelts,extendselts,els,allEls,cdefelts2,classextendselts,compelts;
       list<Env.Frame> env1,env2,env,cenv,cenv_2,env_2,env3;
-      DAE.Mod emods,mods,m,mod_1,mods_1,mods_2;
-      list<tuple<SCode.Element, DAE.Mod>> extcomps,allEls2,lst_constantEls;
+      DAE.Mod emods,mods,mod_1,mods_1;
+      list<tuple<SCode.Element, DAE.Mod>> extcomps,lst_constantEls;
       list<SCode.Equation> eqs,initeqs;
       list<SCode.AlgorithmSection> alg,initalg;
       Prefix.Prefix pre;
       Connect.Sets csets;
       SCode.Restriction re,r;
-      Boolean prot,enc2,isPackage,partialPrefix;
+      Boolean prot,enc2,partialPrefix;
       InstDims inst_dims;
       SCode.Class c;
-      String cn2,cns,scope_str,className,baseClassName;
+      String cn2,cns,scope_str,className;
       Absyn.Path cn;
       Option<list<Absyn.Subscript>> ad;
       SCode.Mod mod;
@@ -4895,11 +4895,11 @@ algorithm
       Prefix.Prefix pre;
       Connect.Sets csets;
       SCode.Mod umod;
-      list<Absyn.ComponentRef> crefs,crefs_1,crefs2;
+      list<Absyn.ComponentRef> crefs,crefs_1;
       Absyn.ComponentRef cref;
       DAE.Mod cmod_1,cmod,localModifiers,cmod2,redMod;
       list<DAE.Mod> ltmod;
-      list<tuple<SCode.Element, DAE.Mod>> res,xs,newXS,head;
+      list<tuple<SCode.Element, DAE.Mod>> res,xs;
       tuple<SCode.Element, DAE.Mod> elMod;
       SCode.Element comp,redComp;
       ClassInf.State ci_state;
@@ -5319,7 +5319,7 @@ protected function addClassdefsToEnv2
 algorithm
   (outEnv,outIH) := matchcontinue (inEnv,inIH,inPrefix,inSCodeElementLst,inBoolean,redeclareMod)
     local
-      list<Env.Frame> env,env_1,env_2,env_3,env1;
+      list<Env.Frame> env,env_1,env_2,env1;
       SCode.Class cl,cl2,enumclass;
       SCode.Element sel1,elt;
       list<SCode.Element> xs;
@@ -5811,7 +5811,7 @@ algorithm
   matchcontinue (inCache,inEnv,inIH,store,inMod2,inPrefix3,inSets4,inState5,inTplSCodeElementMod6,inInstDims7,inBoolean8,inCallingScope,inGraph)
     local
       list<Env.Frame> env,env_1,env2,env2_1,cenv,compenv;
-      DAE.Mod mod,mods,classmod,mm,mods_1,classmod_1,mm_1,m_1,mod1,mod1_1,mod_1,cmod,omod,variableClassMod,redeclareComponentMod;
+      DAE.Mod mod,mods,classmod,mm,classmod_1,mm_1,m_1,mod1,mod1_1,mod_1,cmod,omod,variableClassMod;
       Prefix.Prefix pre,pre_1;
       Connect.Sets csets,csets_1;
       ClassInf.State ci_state;
@@ -5820,10 +5820,10 @@ algorithm
       String n,n2,s,scope_str,ns;
       Boolean finalPrefix,repl,prot,f2,repl2,impl,flowPrefix,streamPrefix;
       SCode.Class cls2,c,cl;
-      DAE.DAElist dae,dae2,fdae,fdae0,fdae1,fdae2,fdae3,fdae4,fdae5,fdae6,fdae7;
+      DAE.DAElist dae;
       DAE.ComponentRef vn;
       Absyn.ComponentRef owncref;
-      list<Absyn.ComponentRef> crefs,crefs2,crefs3,crefs4,crefs_1,crefs_2;
+      list<Absyn.ComponentRef> crefs,crefs2,crefs3,crefs_1,crefs_2;
       SCode.Element comp,el;
       SCode.Attributes attr;
       list<Absyn.Subscript> ad;
@@ -6663,7 +6663,7 @@ algorithm
       Boolean finalPrefix,repl,prot,repl2,prot2,impl,redfin;
       Absyn.TypeSpec t,t2;
       SCode.Mod mod,old_mod;
-      Option<SCode.Comment> comment,comment2;
+      Option<SCode.Comment> comment;
       list<tuple<SCode.Element, DAE.Mod>> rest;
       Prefix.Prefix pre;
       ClassInf.State ci_state;
@@ -6925,7 +6925,7 @@ algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
       ClassInf.State ci_state;
       DAE.Mod mod;
       Prefix.Prefix pre, innerPrefix;
-      String n,id,s1,s2,s3,s;
+      String n,s1,s2,s3,s;
       SCode.Class cl;
       SCode.Attributes attr;
       list<DAE.Subscript> idxs;
@@ -7353,7 +7353,7 @@ algorithm
   matchcontinue (inCache,inEnv,inIH,store,inState,inMod,inPrefix,inSets,inIdent,inClass,inAttributes,protection,inDimensionLst,inIntegerLst,inInstDims,inBoolean,inSCodeCommentOption,io,finalPrefix,info,inGraph)
     local
       InstDims inst_dims,inst_dims_1;
-      list<DAE.Subscript> dims_1,subs;
+      list<DAE.Subscript> dims_1;
       DAE.Exp e,e_1;
       DAE.Properties p;
       list<Env.Frame> env_1,env,compenv;
@@ -7366,9 +7366,9 @@ algorithm
       DAE.DAElist dae1,dae,dae1_1,dae3,dae2,daex;
       DAE.Mod mod,mod2;
       Prefix.Prefix pre,pre_1;
-      String n,prefix_str;
+      String n;
       SCode.Class cl;
-      SCode.Attributes attr,attr2;
+      SCode.Attributes attr;
       list<DAE.Dimension> dims;
       list<DAE.Subscript> idxs,idxs_1;
       Boolean impl,flowPrefix,streamPrefix;
@@ -7915,7 +7915,7 @@ algorithm
       DAE.DAElist fdae3;
       InstanceHierarchy ih;
       Absyn.Info info;
-      list<SCode.Element> els, extendsels;
+      list<SCode.Element> els;
       SCode.Path path;
 
     case (cache,_,_,_,_,cl as SCode.CLASS(name = "Real"),_,_) then (cache,{},cl,DAE.NOMOD());  /* impl */
@@ -8233,20 +8233,20 @@ algorithm
   matchcontinue (cache,env,inIH,pre,mod,cref,ci_state,csets,impl,updatedComps)
     local
       tuple<DAE.TType, Option<Absyn.Path>> ty;
-      String n,id,str,str2,str3;
+      String n,id;
       Boolean finalPrefix,repl,prot,flowPrefix,streamPrefix;
       Absyn.InnerOuter io;
       SCode.Attributes attr;
-      list<Absyn.Subscript> ad,subscr;
+      list<Absyn.Subscript> ad;
       SCode.Accessibility acc;
       SCode.Variability param;
       Absyn.Direction dir;
       Absyn.Path t;
       SCode.Mod m;
       Option<SCode.Comment> comment;
-      DAE.Mod cmod,m_1,classmod,mm,mod_1,mod_2,mod_3,mods,mods_original;
+      DAE.Mod cmod,mods;
       SCode.Class cl;
-      list<Env.Frame> cenv,env2,compenv,env2_1,env_1;
+      list<Env.Frame> cenv,env2,env_1;
       list<Absyn.ComponentRef> crefs,crefs2,crefs3,crefs_1,crefs_2;
       Connect.Sets csets_1;
       Option<DAE.EqMod> eq;
@@ -8361,13 +8361,13 @@ algorithm
       Absyn.Direction dir;
       Absyn.Path t;
       Option<SCode.Comment> comment;
-      DAE.Mod m_1,classmod,mm,mod_1,mod_2,mod_3,mods;
-      list<Env.Frame> compenv,env2_1,env_1;
+      DAE.Mod m_1,classmod,mm,mod_1,mod_2,mod_3;
+      list<Env.Frame> compenv;
       list<Absyn.ComponentRef> crefs_2;
       Connect.Sets csets_1;
       Option<DAE.EqMod> eq;
       list<DAE.Dimension> dims;
-      DAE.Binding binding,binding_1;
+      DAE.Binding binding;
       Absyn.ComponentRef owncref;
       Option<Absyn.Exp> cond;
       DAE.Var tyVar;
@@ -8723,7 +8723,7 @@ protected function propagateVariability " help function to propagateAttributes, 
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
       DAE.VarDirection dir;
-      String s1,s2;
+      String s1;
       Absyn.InnerOuter io;
       DAE.VarProtection prot;
       DAE.ElementSource source "the origin of the element";
@@ -8902,14 +8902,14 @@ algorithm
   (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
   matchcontinue (cache,inEnv,inIH,store,inState,inMod,inPrefix,inSets,inIdent,inTplSCodeClassSCodeAttributes,protection,inInteger,inDimension,inDimensionLst,inIntegerLst,inInstDims,inBoolean,inAbsynCommentOption,io,finalPrefix,info,inGraph)
     local
-      DAE.Exp e,e_1,lhs,rhs;
-      DAE.Properties p,p2;
+      DAE.Exp e,lhs,rhs;
+      DAE.Properties p;
       list<Env.Frame> env_1,env,compenv;
       Connect.Sets csets,csets_1,csets_2;
-      tuple<DAE.TType, Option<Absyn.Path>> ty,arrty;
+      tuple<DAE.TType, Option<Absyn.Path>> ty;
       ClassInf.State st,ci_state;
       DAE.ComponentRef cr;
-      DAE.ExpType ty_1,arrty_1;      
+      DAE.ExpType ty_1;      
       DAE.Mod mod,mod_1;
       Prefix.Prefix pre;
       String n, str1, str2, str3, str4;
@@ -8919,9 +8919,9 @@ algorithm
       list<DAE.Dimension> dims;
       list<DAE.Subscript> idxs;
       InstDims inst_dims;
-      Boolean impl,b;
+      Boolean impl;
       Option<SCode.Comment> comment;
-      DAE.DAElist dae,dae1,dae2,dae3,daeLst;
+      DAE.DAElist dae,dae1,dae2,daeLst;
       SCode.Initial eqn_place;
       Boolean prot;
       ConnectionGraph.ConnectionGraph graph;
@@ -9741,7 +9741,7 @@ algorithm
       Prefix.Prefix pre;
       Connect.Sets csets;
       SCode.Class c;
-      String n,s;
+      String n;
       SCode.Restriction restr;
       InstDims inst_dims;
       Env.Cache cache;
@@ -9788,7 +9788,7 @@ algorithm
       Connect.Sets csets;
       tuple<DAE.TType, Option<Absyn.Path>> ty;
       ClassInf.State st;
-      list<Env.Frame> env,tempenv,env_2;
+      list<Env.Frame> env,env_2;
       Absyn.Path fpath;
       DAE.Mod mod;
       Prefix.Prefix pre;
@@ -9836,7 +9836,7 @@ algorithm
   (outCache,outPath) := matchcontinue (inCache,inEnv,inPath)
     local
       list<Env.Frame> env,env_1;
-      Absyn.Path path,path_1,path_2,path3;
+      Absyn.Path path,path_2,path3;
       String s;
       Env.Cache cache;
       SCode.Class cl;
@@ -9931,12 +9931,12 @@ algorithm
       Connect.Sets csets;
       tuple<DAE.TType, Option<Absyn.Path>> ty1;
       ClassInf.State st;
-      list<Env.Frame> env,tempenv,cenv,env_11;
+      list<Env.Frame> env,cenv;
       Absyn.Path fpath;
       DAE.Mod mod;
       Prefix.Prefix pre;
       SCode.Class c;
-      String n, s;
+      String n;
       InstDims inst_dims;
       Boolean ep;
       DAE.ExternalDecl extdecl;
@@ -10005,14 +10005,14 @@ algorithm
       Connect.Sets csets_1,csets;
       tuple<DAE.TType, Option<Absyn.Path>> ty,ty1;
       ClassInf.State st;
-      list<Env.Frame> env_1,env,tempenv,cenv,env_11;
+      list<Env.Frame> env_1,env,tempenv,cenv;
       Absyn.Path fpath;
       DAE.Mod mod;
       Prefix.Prefix pre;
       SCode.Class c;
-      String n, s;
+      String n;
       InstDims inst_dims;
-      Boolean prot,partialPrefix,ep;
+      Boolean prot,partialPrefix;
       DAE.ExternalDecl extdecl;
       SCode.Restriction restr;
       SCode.ClassDef parts;
@@ -10624,7 +10624,7 @@ algorithm
       Boolean modFinPre;
       Absyn.Each modEachPre;
       list<SCode.SubMod> modSubML;
-      SCode.Element e,bla;
+      SCode.Element e;
       SCode.Mod modBla;
     case (e as SCode.COMPONENT(component = id, innerOuter = inOut, finalPrefix = finPre, replaceablePrefix = repPre, 
           protectedPrefix = proPre, attributes = attr as SCode.ATTR(direction = Absyn.OUTPUT()), 
@@ -10679,7 +10679,7 @@ algorithm
       Option<list<Absyn.Subscript>> ad;
       SCode.Mod mod1;
       DAE.Mod mod2;
-      Env.Env cenv,cenv_2;
+      Env.Env cenv;
       SCode.ClassDef part;
       SCode.Class c;
       tuple<DAE.TType, Option<Absyn.Path>> ty1,ty;
@@ -11722,7 +11722,7 @@ algorithm
     local
       Option<Absyn.Path> somep;
       Absyn.Path p;
-      list<DAE.Var> v,vl,v1,l;
+      list<DAE.Var> v,vl,l;
       list<String> slst;
       DAE.Type bc2,functype,enumtype;
       ClassInf.State st;
@@ -11837,7 +11837,7 @@ algorithm
     local
       Absyn.Path p;
       ClassInf.State ci,st;
-      list<DAE.Var> vs,v,vl,v1,l;
+      list<DAE.Var> vs,v,vl,l;
       DAE.Type tp,functype,enumtype;
       Option<Absyn.Path> somep;
       String name;
@@ -13616,7 +13616,7 @@ algorithm
   matchcontinue(cache,inEnv,inIH,store,inRefs,inRef,inPath,inState,icsets,p,iattr,impl,io,inst_dims,pre,mods,finalPrefix,info)
     local
       Absyn.Path sty;
-      Absyn.ComponentRef c1,c2;
+      Absyn.ComponentRef c1;
       list<Absyn.ComponentRef> cl1,cl2;
       Env.Env env,compenv,cenv;
       Integer i1,i2;

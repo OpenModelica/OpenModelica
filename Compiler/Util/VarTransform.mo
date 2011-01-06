@@ -904,7 +904,7 @@ algorithm
   matchcontinue (repl,inSrc,inDst)
     local
       DAE.ComponentRef src,src_1;
-      DAE.Exp dst,dst_1,olddst;
+      DAE.Exp dst,dst_1;
       HashTable2.HashTable ht,ht_1;
       HashTable3.HashTable invHt,invHt_1;
       String s1,s2,s3,s4,s;
@@ -948,8 +948,8 @@ algorithm
   outRepl:=
   matchcontinue (inRepl)
     local
-      HashTable2.HashTable ht,ht_1;
-      HashTable3.HashTable invHt,invHt_1;      
+      HashTable2.HashTable ht;
+      HashTable3.HashTable invHt;      
       list<tuple<DAE.ComponentRef,DAE.Exp>> tplLst;
       VariableReplacements repl,repl1;
     case (repl as REPLACEMENTS(ht,invHt))
@@ -970,8 +970,8 @@ algorithm
   (outRepl,outTplLst):=
   matchcontinue (inRepl,inTplLst)
     local
-      list<tuple<DAE.ComponentRef,DAE.Exp>> tplLst,tplLst1,tplLst2,tplLst3,tplLst4,tplLst5;
-      VariableReplacements repl,repl1,repl2,repl3;
+      list<tuple<DAE.ComponentRef,DAE.Exp>> tplLst,tplLst1,tplLst2,tplLst3,tplLst4;
+      VariableReplacements repl,repl1,repl2;
     case (repl,{}) then (repl,{});
     case (repl,tplLst)
       equation
@@ -1046,7 +1046,7 @@ algorithm
     local
       DAE.ComponentRef c,sc;
       DAE.Exp e,ce;      
-      Integer ind,indx;      
+      Integer ind;      
       Expression.Type ty;
       list<DAE.ExpVar> varLst;
       list<DAE.Exp> expl1;
@@ -1099,8 +1099,8 @@ algorithm
   (outRepl,outAlst,outTplLst):=
   matchcontinue (inKey,inRepl,inAlst,inTplLst)
     local
-      VariableReplacements repl,repl1;
-      DAE.ComponentRef src,dst;
+      VariableReplacements repl;
+      DAE.ComponentRef src;
       DAE.Exp e;
       Integer i;
       HashTable2.HashTable ht,ht_1;
@@ -1137,8 +1137,8 @@ algorithm
   outRepl:=
   matchcontinue (repl,inSrc,inDst)
     local
-      DAE.ComponentRef src,src_1;
-      DAE.Exp dst,dst_1,olddst;
+      DAE.ComponentRef src;
+      DAE.Exp dst,olddst;
       HashTable2.HashTable ht,ht_1;
       HashTable3.HashTable invHt,invHt_1;
       String s;
@@ -1537,7 +1537,7 @@ algorithm
       list<DAE.Exp> expl_1,expl;
       Absyn.Path path,p;
       Boolean c,isTuple;
-      Integer b,i;
+      Integer b;
       Absyn.CodeNode a;
       String id;
       list<list<tuple<DAE.Exp, Boolean>>> bexpl_1,bexpl;

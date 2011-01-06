@@ -519,7 +519,7 @@ algorithm
   (outElementList,outDAE) := matchcontinue(inElementList,inDAE)
     local
       DAE.Function f1,f2;
-      DAE.Element el,el_1,el1,el1_1,el2,el2_1;
+      DAE.Element el,el_1;
       list<DAE.Element> cdr,cdr_1,elts,elts_1;
       list<DAE.Function> dae;
       list<list<DAE.Element>> elm,elm_1;
@@ -1121,7 +1121,7 @@ protected function buildNewFunction
 algorithm
   outElementList := matchcontinue(inElementList,inPath1,inPath2,inInteger)
     local
-      list<DAE.Function> dae,dae_1;
+      list<DAE.Function> dae;
       DAE.Function fn1,fn2,newFn;
       Absyn.Path p1,p2,newPath;
       Integer numArgs;

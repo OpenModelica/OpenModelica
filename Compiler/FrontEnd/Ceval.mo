@@ -1048,7 +1048,7 @@ protected function cevalBuiltinHandler
 algorithm
   handler := match (inIdent)
     local
-      String id,str;
+      String id;
     case "floor" then cevalBuiltinFloor;
     case "ceil" then cevalBuiltinCeil;
     case "abs" then cevalBuiltinAbs;
@@ -1148,7 +1148,7 @@ algorithm
       Env.Cache cache;
       list<Interactive.CompiledCFunction> cflist;
       Option<Interactive.InteractiveSymbolTable> st;
-      Absyn.Program p,ptot;
+      Absyn.Program p;
       Integer libHandle, funcHandle;
       String fNew,fOld;
       Real buildTime, edit, build;
@@ -1159,7 +1159,7 @@ algorithm
       list<Interactive.CompiledCFunction> cf;
       list<Interactive.LoadedFile> lf;
       Absyn.TimeStamp ts;
-      String funcstr,f,funcFileNameStr,str;
+      String funcstr,f;
       Boolean ifFuncInList;
       list<Interactive.CompiledCFunction> newCF;
       String name;
@@ -1675,7 +1675,7 @@ algorithm
       DAE.Type tp;
       DAE.Binding bind,binding;
       list<Integer> sizelst,adims;
-      Integer dim,dim_1,v,dimv,len,i;
+      Integer dim,dim_1,dimv,len,i;
       Option<Interactive.InteractiveSymbolTable> st_1,st;
       list<Env.Frame> env;
       DAE.ComponentRef cr;
@@ -1957,7 +1957,7 @@ algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
-      Real rv,rv_1;
+      Real rv;
       Boolean b1,b2,b3,impl;
       list<Env.Frame> env;
       DAE.Exp exp;
@@ -2962,7 +2962,7 @@ algorithm
   match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
       list<Env.Frame> env;
-      DAE.Exp exp1,exp2;
+      DAE.Exp exp1;
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st;
       Msg msg;
@@ -2971,7 +2971,7 @@ algorithm
       Integer i;
       Real r;
       list<String> chList;
-      list<Values.Value> valList,valList1,valList2;
+      list<Values.Value> valList,valList1;
     case (cache,env,{exp1},impl,st,msg)
       equation
         (cache,Values.LIST(valList1),st) = ceval(cache,env, exp1, impl, st,NONE(), msg);
@@ -2996,7 +2996,7 @@ algorithm
   match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
       list<Env.Frame> env;
-      DAE.Exp exp1,exp2;
+      DAE.Exp exp1;
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st;
       Msg msg;
@@ -3005,7 +3005,7 @@ algorithm
       Integer i;
       Real r;
       list<String> chList;
-      list<Values.Value> valList1,valList2;
+      list<Values.Value> valList1;
     case (cache,env,{exp1},impl,st,msg)
       equation
         (cache,Values.LIST(_::valList1),st) = ceval(cache,env, exp1, impl, st,NONE(), msg);
@@ -3029,7 +3029,7 @@ algorithm
   match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
       list<Env.Frame> env;
-      DAE.Exp exp1,exp2;
+      DAE.Exp exp1;
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st;
       Msg msg;
@@ -3082,7 +3082,7 @@ algorithm
     local
       list<list<Values.Value>> vlst_lst,v_lst_lst,v_lst_lst_1;
       list<Values.Value> v_lst_1,vlst,vlst2;
-      Integer dim_1,len,dim,i1,i2;
+      Integer dim_1,dim,i1,i2;
       list<Integer> il;
     case (vlst,1) /* base case for first dimension */
       equation
@@ -3187,7 +3187,7 @@ algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
-      Real rv,rv_1,rvt,rv_2,realRet;
+      Real rv,rv_1,rvt,realRet;
       Integer ri,ri_1;
       list<Env.Frame> env;
       DAE.Exp exp;
@@ -3495,7 +3495,7 @@ algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
-      Real rv,sv,cv,rv_1;
+      Real rv,rv_1;
       list<Env.Frame> env;
       DAE.Exp exp;
       Boolean impl;
@@ -4113,7 +4113,7 @@ algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
-      Real rv1,rv2,rva,rva_1,rvb,rvd,dr;
+      Real rv1,rv2,rvd,dr;
       Integer ri,ri1,ri2,ri_1,di;
       list<Env.Frame> env;
       DAE.Exp exp1,exp2;

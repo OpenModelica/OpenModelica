@@ -135,7 +135,7 @@ algorithm
       BackendDAE.VarKind b;
       DAE.VarDirection c;
       BackendDAE.Type d;
-      Option<DAE.Exp> e,h;
+      Option<DAE.Exp> e;
       Option<Values.Value> f;
       list<DAE.Subscript> g;
       BackendDAE.Value i;
@@ -875,7 +875,7 @@ algorithm
       BackendDAE.VarKind kind,new_kind;
       DAE.VarDirection dir;
       BackendDAE.Type tp;
-      Option<DAE.Exp> bind,st;
+      Option<DAE.Exp> bind;
       Option<Values.Value> v;
       list<DAE.Subscript> dim;
       BackendDAE.Value i;
@@ -913,10 +913,10 @@ algorithm
   outVar := match (inVar,inVarIndex)
     local
       DAE.ComponentRef cr;
-      BackendDAE.VarKind kind,new_kind;
+      BackendDAE.VarKind kind;
       DAE.VarDirection dir;
       BackendDAE.Type tp;
-      Option<DAE.Exp> bind,st;
+      Option<DAE.Exp> bind;
       Option<Values.Value> v;
       list<DAE.Subscript> dim;
       BackendDAE.Value i,new_i;
@@ -998,7 +998,7 @@ algorithm
       BackendDAE.VarKind kind;
       DAE.VarDirection dir;
       BackendDAE.Type tp;
-      Option<DAE.Exp> bind,st;
+      Option<DAE.Exp> bind;
       Option<Values.Value> v;
       list<DAE.Subscript> dim;
       BackendDAE.Value i;
@@ -1247,7 +1247,7 @@ algorithm
   outVar := matchcontinue (inVariableArray,inInteger)
     local
       BackendDAE.Var v;
-      BackendDAE.Value n,pos,len;
+      BackendDAE.Value n,pos;
       array<Option<BackendDAE.Var>> arr;
       String ns;
     case (BackendDAE.VARIABLE_ARRAY(numberOfElements = n,varOptArr = arr),pos)
@@ -1297,7 +1297,7 @@ algorithm
     local
       list<BackendDAE.Var> vars_2,knvars_2,extvars_2,extvars,vars,knvars;
       list< tuple<BackendDAE.Var,Integer> > vars_1,knvars_1,extvars_1;
-      list< tuple<BackendDAE.Var,Integer,Integer> > vars_map,knvars_map,extvars_map,all_map,all_map1,noScalar_map,noScalar_map1,scalar_map,all_map2,mergedvar_map,sort_map,sort_map1;
+      list< tuple<BackendDAE.Var,Integer,Integer> > vars_map,knvars_map,extvars_map,all_map,all_map1,noScalar_map,noScalar_map1,scalar_map,all_map2,mergedvar_map,sort_map;
       BackendDAE.Value x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType;
     case (vars,knvars,extvars)
       equation
@@ -1414,7 +1414,7 @@ algorithm
     local
       list<tuple<Type_a,Integer>> itemlst,rest;
       Type_a outitem;
-      Integer place,itemplace;
+      Integer place;
       list<Type_a> out_lst,val_lst;
     case ({},place) then {};
     case (itemlst,place)
@@ -1481,7 +1481,7 @@ algorithm
   (outnoScalarlist,outScalarlist) := matchcontinue (inlist)
     local
       list< tuple<BackendDAE.Var,Integer,Integer> > noScalarlst,scalarlst,rest,noScalarlst1,scalarlst1,noScalarlst2,scalarlst2;
-      BackendDAE.Var var,var1;
+      BackendDAE.Var var;
       Integer typ,place;
     case {} then ({},{});
     case ((var,typ,place) :: rest)
@@ -1537,7 +1537,7 @@ algorithm
   match (inlist)
     local
       list<tuple<BackendDAE.Var,Integer,Integer>> rest,var_lst,var_lst1,var_lst2,out_lst;
-      BackendDAE.Var var,var1;
+      BackendDAE.Var var;
       Boolean ins;
       Integer typ,place;
     case {} then {};
@@ -1562,7 +1562,7 @@ protected function getAllElements1
 algorithm
   (outlist,outlist1) := match (inVar,inlist)
     local
-      list<tuple<BackendDAE.Var,Integer,Integer>> rest,var_lst,var_lst1,var_lst2,var_lst3,out_lst;
+      list<tuple<BackendDAE.Var,Integer,Integer>> rest,var_lst,var_lst1,var_lst2,var_lst3;
       DAE.ComponentRef varName1, varName2,c2,c1;
       BackendDAE.Var var1,var2;
       Boolean ins;
@@ -1593,7 +1593,7 @@ algorithm
   match (inlist)
     local
       list<tuple<BackendDAE.Var,Integer,Integer>> rest,var_lst,var_lst1,out_lst;
-      BackendDAE.Var var,var1;
+      BackendDAE.Var var;
       Boolean ins;
       Integer typ,place;
     case {} then {};
@@ -1644,9 +1644,9 @@ protected function sortNoScalarList1
 algorithm
   (outlist,insert) := match (invar,inlist)
     local
-      list<tuple<BackendDAE.Var,Integer,Integer>> rest,var_lst,var_lst1,var_lst2;
+      list<tuple<BackendDAE.Var,Integer,Integer>> rest,var_lst,var_lst1;
       BackendDAE.Var var,var1;
-      Boolean ins,ins1,ins2;
+      Boolean ins,ins1;
       Integer typ,typ1,place,place1;
     
     case (_,{}) then ({},false);
@@ -1676,7 +1676,7 @@ algorithm
   (outlist,outinsert):=
   match (ininsert,invar,invar1,inlist)
     local
-      list< tuple<BackendDAE.Var,Integer,Integer> > var_lst,var_lst1,var_lst2,out_lst;
+      list< tuple<BackendDAE.Var,Integer,Integer> > var_lst,var_lst1,var_lst2;
       BackendDAE.Var var,var1;
       Integer typ,typ1,place,place1;
       Boolean ins;
@@ -1862,7 +1862,7 @@ algorithm
       BackendDAE.Value x,xd,y,p,dummy,y_1,x1,xd1,y1,p1,dummy1,x_1,p_1,ext,ext1,ext_1,x_strType,xd_strType,y_strType,p_strType,dummy_strType,y_1_strType,x_1_strType,p_1_strType;
       BackendDAE.Value x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1;
       list< tuple<BackendDAE.Var,Integer,Integer> > vars_1,vs;
-      DAE.ComponentRef cr,name;
+      DAE.ComponentRef cr;
       DAE.VarDirection d;
       BackendDAE.Type tp;
       Option<DAE.Exp> b;
@@ -2521,7 +2521,7 @@ algorithm
       list<BackendDAE.StringIndex> indexexold;
       array<list<BackendDAE.StringIndex>> oldhashvec_1,oldhashvec;
       BackendDAE.Var v,newv;
-      DAE.ComponentRef cr,name;
+      DAE.ComponentRef cr;
       DAE.Flow flowPrefix;
       BackendDAE.Variables vars;
     /* adrpo: ignore records!
@@ -2910,7 +2910,7 @@ algorithm
   matchcontinue (inVariables,func,inTypeA)
     local
       array<Option<BackendDAE.Var>> varOptArr;
-      Type_a ext_arg_1,ext_arg_2,ext_arg_3;
+      Type_a ext_arg_1;
     case (BackendDAE.VARIABLES(varArr = BackendDAE.VARIABLE_ARRAY(varOptArr=varOptArr)),func,inTypeA)
       equation
         ext_arg_1 = BackendDAEUtil.traverseBackendDAEArrayNoCopy(varOptArr,func,traverseBackendDAEVar,1,arrayLength(varOptArr),inTypeA);

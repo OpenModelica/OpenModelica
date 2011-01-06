@@ -736,8 +736,8 @@ protected function whenEquationStr
 algorithm
   outString := match (inWhenEqn)
     local
-      String s1,s2,res,indx_str,is,var_str,intsStr,outsStr;
-      DAE.Exp e2,e;
+      String s1,s2,res,is;
+      DAE.Exp e2;
       BackendDAE.Value i;
       list<DAE.Exp> outs;
       DAE.ComponentRef cr;

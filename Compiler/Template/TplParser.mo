@@ -1049,7 +1049,7 @@ public function identifierNoOpt
 algorithm
   (outChars, outLineInfo, outIdent) := matchcontinue (inChars, inLineInfo)
     local
-      list<String> chars, restIdChars;
+      list<String> chars;
       String  ident;
       Integer i;
       LineInfo linfo;
@@ -1079,7 +1079,7 @@ public function pathIdentNoOpt
 algorithm
   (outChars, outLineInfo, outPathIdent) := match (inChars, inLineInfo)
     local
-      list<String> chars, restIdChars;
+      list<String> chars;
       LineInfo linfo;
       String head;
       TplAbsyn.PathIdent pid;
@@ -1179,7 +1179,7 @@ public function definitions
 algorithm
   (outChars, outLineInfo, outASTDefs, outTemplDefs) := matchcontinue (inChars, inLineInfo, inAccASTDefs, inAccTemplDefs)
     local
-      list<String> chars, startChars, strRevList;
+      list<String> chars, startChars;
       String str;
       Option<String> errOptTV;
       LineInfo linfo, startLinfo, linfoTV;
@@ -2069,7 +2069,7 @@ algorithm
       LineInfo linfo;
       Boolean isD;
       TplAbsyn.Ident id;
-      TplAbsyn.TypedIdents fields,inargs,outargs;
+      TplAbsyn.TypedIdents fields;
       tuple<TplAbsyn.Ident, TplAbsyn.TypeInfo> idti;
       list<tuple<TplAbsyn.Ident, TplAbsyn.TypeInfo>> types;
       list<tuple<TplAbsyn.Ident, TplAbsyn.TypedIdents>> rtags;
@@ -2111,8 +2111,8 @@ algorithm
       list<String> chars, startChars;
       LineInfo linfo;
       Boolean isD;
-      TplAbsyn.Ident id,rid;
-      TplAbsyn.TypedIdents fields,inargs,outargs;
+      TplAbsyn.Ident id;
+      TplAbsyn.TypedIdents fields;
       tuple<TplAbsyn.Ident, TplAbsyn.TypeInfo> idti;
       list<tuple<TplAbsyn.Ident, TplAbsyn.TypeInfo>> types;
       list<tuple<TplAbsyn.Ident, TplAbsyn.TypedIdents>> rtags;
@@ -2213,7 +2213,7 @@ algorithm
       LineInfo linfo;
       Boolean isD;
       TplAbsyn.Ident id;
-      TplAbsyn.TypedIdents inargs,outargs;
+      TplAbsyn.TypedIdents inargs;
       tuple<TplAbsyn.Ident, TplAbsyn.TypedIdents> rtag;
       tuple<TplAbsyn.Ident, TplAbsyn.TypeInfo> idti;
       list<tuple<TplAbsyn.Ident, TplAbsyn.TypeInfo>> types;
@@ -2483,7 +2483,7 @@ algorithm
   (outChars, outLineInfo, outConstType) := matchcontinue (inChars, inLineInfo)
     local
       String   str;
-      list<String> chars, strRevList;
+      list<String> chars;
       LineInfo linfo;
       Boolean isD;
       TplAbsyn.PathIdent pid;
@@ -2537,7 +2537,7 @@ algorithm
   (outChars, outLineInfo) := matchcontinue (inChars, inLineInfo, inConstType, inConstTypeLiteral)
     local
       String   str;
-      list<String> chars, strRevList;
+      list<String> chars;
       LineInfo linfo;
       Boolean isD;
       TplAbsyn.PathIdent pid;
@@ -3007,7 +3007,7 @@ algorithm
       TplAbsyn.TypedIdents outargs;
       TplAbsyn.TypeSignature ts;
       Tpl.StringToken st;
-      TplAbsyn.Expression exp, bexp;
+      TplAbsyn.Expression exp;
       Option<TplAbsyn.Expression> expOpt;
       list<TplAbsyn.Expression> expLst;
       TplAbsyn.EscOption sopt;
@@ -3054,7 +3054,7 @@ algorithm
       TplAbsyn.TypedIdents outargs;
       TplAbsyn.TypeSignature ts;
       Tpl.StringToken st;
-      TplAbsyn.Expression exp, bexp;
+      TplAbsyn.Expression exp;
       list<TplAbsyn.Expression> expLst;
       list<TplAbsyn.EscOption>  opts;
       
@@ -3203,7 +3203,7 @@ algorithm
       TplAbsyn.TypedIdents outargs;
       TplAbsyn.TypeSignature ts;
       Tpl.StringToken st;
-      TplAbsyn.Expression exp, bexp;
+      TplAbsyn.Expression exp;
       list<TplAbsyn.Expression> expLst;
       TplAbsyn.MatchingExp mexp;
     
@@ -3463,7 +3463,7 @@ algorithm
       TplAbsyn.TypedIdents outargs;
       TplAbsyn.TypeSignature ts;
       Tpl.StringToken st;
-      TplAbsyn.Expression exp, bexp;
+      TplAbsyn.Expression exp;
       list<TplAbsyn.Expression> expLst;
       list<TplAbsyn.EscOption>  opts;
     
@@ -3509,7 +3509,7 @@ algorithm
       TplAbsyn.TypedIdents outargs;
       TplAbsyn.TypeSignature ts;
       Tpl.StringToken st;
-      TplAbsyn.Expression exp, bexp;
+      TplAbsyn.Expression exp;
       list<TplAbsyn.Expression> expLst;
       list<TplAbsyn.EscOption>  opts;
     
@@ -3553,7 +3553,7 @@ algorithm
       TplAbsyn.TypedIdents outargs;
       TplAbsyn.TypeSignature ts;
       Tpl.StringToken st;
-      TplAbsyn.Expression exp, bexp;
+      TplAbsyn.Expression exp;
       list<TplAbsyn.Expression> expLst;
       list<TplAbsyn.EscOption>  opts;
     
@@ -3635,7 +3635,7 @@ algorithm
       TplAbsyn.TypedIdents outargs;
       TplAbsyn.TypeSignature ts;
       Tpl.StringToken st;
-      TplAbsyn.Expression exp, bexp;
+      TplAbsyn.Expression exp;
       list<TplAbsyn.Expression> expLst;
       TplAbsyn.MatchingExp mexp;
     
@@ -3699,7 +3699,7 @@ algorithm
       TplAbsyn.TypedIdents outargs;
       TplAbsyn.TypeSignature ts;
       Tpl.StringToken st;
-      TplAbsyn.Expression exp, bexp;
+      TplAbsyn.Expression exp;
       list<TplAbsyn.Expression> expLst;
     
     case (chars, linfo, _, _)
@@ -3867,7 +3867,7 @@ algorithm
       TplAbsyn.TypedIdents outargs;
       TplAbsyn.TypeSignature ts;
       Tpl.StringToken st;
-      TplAbsyn.Expression exp, bexp;
+      TplAbsyn.Expression exp;
       list<TplAbsyn.Expression> expLst;
       TplAbsyn.MatchingExp mexp;
     
@@ -3979,7 +3979,7 @@ algorithm
     local
       list<String> chars, ds;
       LineInfo linfo;
-      String pm, dn,ex, num, c;
+      String pm, dn,ex, num;
       Boolean isD;
       TplAbsyn.Ident id;
       TplAbsyn.TypedIdents outargs;
@@ -4498,7 +4498,7 @@ algorithm
       TplAbsyn.TypedIdents outargs;
       TplAbsyn.TypeSignature ts;
       Tpl.StringToken st;
-      TplAbsyn.Expression exp, bexp;
+      TplAbsyn.Expression exp;
       list<TplAbsyn.Expression> expLst;
       Integer baseInd, lineInd;
     
@@ -4607,7 +4607,7 @@ algorithm
       TplAbsyn.TypedIdents outargs;
       TplAbsyn.TypeSignature ts;
       Tpl.StringToken st;
-      TplAbsyn.Expression exp, bexp;
+      TplAbsyn.Expression exp;
       list<TplAbsyn.Expression> expLst;
       list<tuple<Integer,list<TplAbsyn.Expression>>> indStack;
     
@@ -5678,7 +5678,7 @@ algorithm
       TplAbsyn.TypedIdents outargs;
       TplAbsyn.TypeSignature ts;
       Tpl.StringToken st;
-      TplAbsyn.Expression   lhsExp, elseBr;
+      TplAbsyn.Expression   lhsExp;
       Option<TplAbsyn.MatchingExp> rhsMExpOpt;
       Option<TplAbsyn.Expression> elseBrOpt;
       list<TplAbsyn.Expression> expLst;
@@ -5805,7 +5805,7 @@ algorithm
       list<TplAbsyn.Expression> expLst;
       TplAbsyn.EscOption sopt;
       list<TplAbsyn.EscOption> opts;
-      list<tuple<TplAbsyn.MatchingExp, TplAbsyn.Expression>> mcaseLst, elseLst, mcrest;
+      list<tuple<TplAbsyn.MatchingExp, TplAbsyn.Expression>> mcaseLst, elseLst;
     
    case ("m"::"a"::"t"::"c"::"h":: chars, linfo, lesc, resc)
       equation
@@ -6116,7 +6116,7 @@ algorithm
       list<TplAbsyn.Expression> expLst;
       TplAbsyn.EscOption sopt;
       list<TplAbsyn.EscOption> opts;
-      list<tuple<TplAbsyn.MatchingExp, TplAbsyn.Expression>> mcaseLst, mcrest;
+      list<tuple<TplAbsyn.MatchingExp, TplAbsyn.Expression>> mcaseLst;
     
    case (chars, linfo, lesc, resc)
       equation
@@ -6256,7 +6256,7 @@ algorithm
       Boolean  isNot;
       TplAbsyn.Ident id;
       TplAbsyn.PathIdent  pid;
-      TplAbsyn.MatchingExp headMExp, mexp, restMExp;
+      TplAbsyn.MatchingExp headMExp, mexp;
       list<TplAbsyn.MatchingExp> mrest;
       TplAbsyn.TypeSignature ts;
       
@@ -6348,13 +6348,13 @@ algorithm
   (outChars, outLineInfo, outMatchingExp) := 
   matchcontinue (inChars, inLineInfo)
     local
-      list<String> chars, strRevList;
+      list<String> chars;
       LineInfo linfo;
       String str;
       Boolean  isNot;
       TplAbsyn.Ident id;
       TplAbsyn.PathIdent  pid;
-      TplAbsyn.MatchingExp  mexp, restMExp;
+      TplAbsyn.MatchingExp  mexp;
       list<TplAbsyn.MatchingExp> mrest;
       TplAbsyn.TypeSignature ts;
       
@@ -6392,7 +6392,7 @@ algorithm
   (outChars, outLineInfo) := 
   matchcontinue (inChars, inLineInfo)
     local
-      list<String> chars, strRevList;
+      list<String> chars;
       LineInfo linfo;
       String str;
       Boolean  isNot;

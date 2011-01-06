@@ -1451,7 +1451,7 @@ algorithm
       FuncTypeTplExpType_aToTplExpType_a rel;
       list<Exp> expl_1,expl;
       Path path;
-      Boolean b,scalar_1,scalar;
+      Boolean scalar;
       Integer i;
       Ident id;
       list<tuple<Exp,Exp>> elseIfBranch,elseIfBranch1;
@@ -1700,7 +1700,7 @@ protected function traverseExpNamedArgs "Help function to traverseExpFunctionArg
 algorithm
   outTplExpTypeA:= match(nargs,rel,ext_arg)
     local
-      Exp e1,e2,e11,e21;
+      Exp e1,e11;
       Ident id;
     case({},rel,ext_arg) then (({},ext_arg));
     case(NAMEDARG(id,e1)::nargs,rel,ext_arg)
@@ -1725,7 +1725,7 @@ protected function traverseExpPosArgs "Help function to traverseExpFunctionArgs"
 algorithm
   outTplExpTypeA:= match(pargs,rel,ext_arg)
     local
-      Exp e1,e2,e11,e21;
+      Exp e1,e11;
       Ident id;
     case({},rel,ext_arg) then (({},ext_arg));
     case(e1::pargs,rel,ext_arg)
@@ -2500,7 +2500,7 @@ algorithm
   outComponentRefLst := matchcontinue (inExp,checkSubs)
     local
       ComponentRef cr;
-      list<ComponentRef> l1,l2,res,res1,l3;
+      list<ComponentRef> l1,l2,res;
       ComponentCondition e1,e2,e3;
       Operator op;
       list<tuple<ComponentCondition, ComponentCondition>> e4;

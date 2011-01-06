@@ -837,7 +837,7 @@ algorithm
     local
       list<MMExp> stmts, fargs;
       MMExp stmt, rhs;
-      Ident ident, outident, inident;
+      Ident ident, outident;
       PathIdent fpath;
       list<Ident> largs;
       list<tuple<Ident,Ident>> trIdents; 
@@ -914,7 +914,7 @@ algorithm
       list<MMExp> stmts;
       TypedIdents restArgs;
       Ident ident;
-      String outident, inident;
+      String outident;
       list<tuple<Ident,Ident>> trIdents;
       
     case (  {} , _)
@@ -998,7 +998,7 @@ algorithm
       list<Ident> tyVars;
       PathIdent path, fname;
       TypedIdents locals, iargs, oargs;
-      TypeSignature idtype, exptype,  rettype, littype;
+      TypeSignature idtype, exptype,  rettype;
       list<TypeSignature>  exptypes;
       tuple<MMExp, TypeSignature> argval;
       list<tuple<MMExp, TypeSignature>> argvals;
@@ -1014,7 +1014,7 @@ algorithm
       Integer n;
       StringToken st;
       list<ASTDef> astDefs;
-      String litvalue, istr, reason;
+      String litvalue, istr;
       MapContext mapctx;
       Option<Ident> idxNmOpt;
       
@@ -1429,7 +1429,7 @@ algorithm
       TypedIdents locals;
       tuple<MMExp, TypeSignature>  defoptval;
       list<tuple<MMExp, TypeSignature>> argvals;
-      MMExp  mmarg, defmmexp;
+      MMExp  mmarg;
       PathIdent path;
       TypeSignature  exptype, opttype;
       list<TypeSignature>  exptypes;
@@ -1651,12 +1651,12 @@ algorithm
       list<MMExp> stmts;
       MMExp stmt;    
       ScopeEnv scEnv;
-      Ident  outtxt, ident;
+      Ident  outtxt;
       list<Ident> tyVars;
       TypedIdents locals;
       tuple<MMExp, TypeSignature> argval;
       list<tuple<MMExp, TypeSignature>> argvals;
-      MMExp mmexp, mmarg;
+      MMExp mmexp;
       PathIdent path, fname;
       TypeSignature idtype,  rettype, littype;
       list<TypeSignature>  exptypes;
@@ -2337,7 +2337,7 @@ algorithm
   matchcontinue (inMMArg, inArgType, inTargetType, inStmts, inLocals, inASTDefs)
     local
       TypedIdents iargs;
-      MMExp mmarg, mmexp;
+      MMExp mmarg;
       list<tuple<MMExp, TypeSignature>> argvals;
       list<MMExp> mmargs;
       TypeSignature argtype, targettype;
@@ -2410,7 +2410,7 @@ algorithm
   matchcontinue (inMMArg, inTargetType, inStmts, inLocals)
     local
       TypedIdents iargs;
-      MMExp mmarg, mmexp;
+      MMExp mmarg;
       list<tuple<MMExp, TypeSignature>> argvals;
       list<MMExp> mmargs;
       TypeSignature  targettype;
@@ -3334,7 +3334,7 @@ algorithm
       TypeInfo typeinfo;
       TypeSignature mtype, ot;
       list<TypeSignature> otLst;
-      MatchingExp mexp, restmexp, omexp;
+      MatchingExp mexp, restmexp;
       list<MatchingExp> mexpLst;
       list<tuple<String, MatchingExp>> fms;
       TypedIdents fields, locals;
@@ -3616,7 +3616,7 @@ algorithm
       PathIdent tagpath;
       TypeSignature mtype, ot;
       list<TypeSignature> otLst;
-      MatchingExp mexp, restmexp, omexp;
+      MatchingExp mexp, restmexp;
       list<MatchingExp> mexpLst;
       list<tuple<String, MatchingExp>> fms;
       TypedIdents fields, usedLocals;
@@ -3812,7 +3812,7 @@ algorithm
       list<TypeSignature> tsLst;
       list<tuple<Ident, MatchingExp>> fms;
       
-      TypedIdents usedLocals, fields;
+      TypedIdents usedLocals;
       list<ASTDef> astDefs;      
     
     case ( {}, {}, _,usedLocals,_)
@@ -4094,7 +4094,7 @@ algorithm
     local
       Boolean isnot;
       MatchingExp rhsMExp;
-      Expression tbranch, ebranch;
+      Expression tbranch;
       Option<Expression> ebranchOpt;
       TemplPackage tplPackage;
     
@@ -4230,9 +4230,9 @@ algorithm
     local
       MatchingExp mexp;
       
-      PathIdent path,  typepckg, encpath;
-      Ident ident,  typeident, itname;
-      TypeSignature idtype, mtype;
+      PathIdent path,  typepckg;
+      Ident ident,  typeident;
+      TypeSignature idtype;
       TypedIdents extargs, locals;
       Scope scope;
       ScopeEnv scEnv;
@@ -4484,14 +4484,14 @@ algorithm
     local
       MatchingExp mexp;
       TypedIdents extargs, fargs, accLocals, localArgs;
-      PathIdent path, encpath;
+      PathIdent path;
       Ident ident, matchArgName, letIdent, freshIdent, textLocalName, encident, localIdent;
       TypeSignature idtype, mtype;
       Scope scope;
       ScopeEnv scEnv, restEnv;
       TemplPackage tplPackage;
       list<ASTDef> astdefs;
-      Boolean hasImplicitScope, isUsed;
+      Boolean hasImplicitScope;
       list<tuple<Ident,Ident>> localNames;            
       
     //Error - test recursive usage of TEXT_ADD ident or an actually elaborated let expression
@@ -4902,7 +4902,7 @@ algorithm
     := matchcontinue (inIdent, inPathIdent, inMatchingExp, inMType, inASTDefs)
     local
       Ident inid, id, bid;
-      PathIdent path, tagpath, oIdent;
+      PathIdent path, tagpath;
       TypeSignature mtype, otype, valtype;
       list<TypeSignature> mtypeLst;
       list<ASTDef> astDefs;
@@ -5434,7 +5434,7 @@ algorithm
   (outPackagePath, outTypeIdent) := matchcontinue (inTypePathIdent)
     local
       TypeSignature mtype;
-      Ident typeident, pckgident, pckgident2;
+      Ident typeident, pckgident;
       PathIdent  typepath, typepckg;
       Option<PathIdent>  tagpckgOpt;
       TypeInfo typeinfo;
@@ -5791,7 +5791,7 @@ algorithm
   outType := matchcontinue(inType, inTypeVars, inSetTypeVars)
     local
       TypeSignature ota,  tyConcrete;
-      list<TypeSignature> otaLst, otbLst;
+      list<TypeSignature> otaLst;
       Ident tid;
       list<Ident> tyVars;
       TypedIdents setTyVars;

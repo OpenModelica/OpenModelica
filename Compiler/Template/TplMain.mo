@@ -223,7 +223,7 @@ algorithm
       list<tuple<TplAbsyn.Ident, TplAbsyn.TypeInfo>> types;
       TplAbsyn.Expression exp;
       Tpl.StringToken tok;
-      Real tstart,t1,t2;
+      Real tstart;
       Integer lnum,colnum, llen, notPassedCnt;
     case ( "a" )
       equation

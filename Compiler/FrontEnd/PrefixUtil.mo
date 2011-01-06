@@ -640,7 +640,7 @@ algorithm
       list<Boolean> bl;
       list<tuple<DAE.Exp, Boolean>> x_1,x;
       list<list<tuple<DAE.Exp, Boolean>>> xs_1,xs;
-      String id,s,n;
+      String id,s;
       Env.Cache cache;
       list<DAE.Exp> expl;
       Absyn.InnerOuter io;

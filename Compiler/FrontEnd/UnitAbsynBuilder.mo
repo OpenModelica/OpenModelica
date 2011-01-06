@@ -893,7 +893,7 @@ protected function buildTerms "builds the unit terms from DAE elements (equation
 algorithm
   (terms,outStore) := matchcontinue(env,dae,ht,store)
     local 
-      DAE.Exp e1,e2,crefExp1,crefExp2,crefExp; 
+      DAE.Exp e1,e2,crefExp1,crefExp2; 
       UnitAbsyn.UnitTerm ut1,ut2;
       list<UnitAbsyn.UnitTerm> terms1,terms2;
       DAE.ComponentRef cr1,cr2;
@@ -962,7 +962,7 @@ algorithm
       DAE.Operator op;
       Integer indx,i;
       UnitAbsyn.UnitTerm ut1,ut2;
-      String s1,crStr;
+      String s1;
       DAE.ComponentRef cr;
       DAE.Exp e,e1,e2;
       Absyn.Path path;

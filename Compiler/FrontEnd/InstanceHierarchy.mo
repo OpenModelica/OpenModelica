@@ -115,7 +115,7 @@ public function createInstanceHierarchyFromProgram
 algorithm
   outIH := matchcontinue(inIH, inScope, inProgram)
     local
-      InstanceHierarchy ih, restIH;
+      InstanceHierarchy ih;
       SCode.Class c;
       list<SCode.Class> cs;
       String n;

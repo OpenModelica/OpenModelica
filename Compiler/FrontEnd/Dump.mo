@@ -2668,7 +2668,7 @@ algorithm
     local
       Ident s1,s2,is,str,s3,s4,id;
       Absyn.ComponentRef cref,cr1,cr2;
-      Integer i_1,i,indent;
+      Integer i_1,i;
       Absyn.Exp e,e1,e2,exp;
       Absyn.ForIterators iterators;
       list<Absyn.EquationItem> tb,fb,el,eql;
@@ -2939,7 +2939,7 @@ algorithm
   _ := matchcontinue (inAlgorithm)
     local
       Absyn.ComponentRef cr;
-      Absyn.Exp exp,e1,e2,e, assignComp;
+      Absyn.Exp exp,e, assignComp;
       list<Absyn.AlgorithmItem> tb,fb,el,al;
       list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> eb;
       Absyn.ForIterators iterators;
@@ -3108,9 +3108,9 @@ algorithm
   outString := matchcontinue (inInteger,inAlgorithmItem)
     local
       Ident s1,s2,s3,is,str,s4,s5,str_1;
-      Integer i,i_1,ident_1,ident;
+      Integer i,i_1;
       Absyn.ComponentRef cr;
-      Absyn.Exp exp,e1,e2,e, assignComp;
+      Absyn.Exp exp,e, assignComp;
       Option<Absyn.Comment> optcmt;
       list<Absyn.AlgorithmItem> tb,fb,el,al;
       list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> eb,al2;
@@ -4030,10 +4030,10 @@ algorithm
   outString:=
   matchcontinue (inFunctionArgs)
     local
-      Ident s1,s2,s3,str,estr,istr,id;
+      Ident s1,s2,s3,str,estr,istr;
       list<Absyn.Exp> expargs;
       list<Absyn.NamedArg> nargs;
-      Absyn.Exp exp,iterexp;
+      Absyn.Exp exp;
       Absyn.ForIterators iterators;
     case Absyn.FUNCTIONARGS(args = (expargs as (_ :: _)),argNames = (nargs as (_ :: _)))
       equation
@@ -4071,7 +4071,7 @@ function printIteratorsStr
 algorithm
   iteratorsStr := matchcontinue(iterators)
     local
-      String s, s1, s2, s3;
+      String s, s1, s2;
       Absyn.Exp exp;
       Absyn.Ident id;
       Absyn.ForIterators rest;
@@ -4245,7 +4245,7 @@ algorithm
   matchcontinue (inExp)
     local
       String s,s_1,s_2,s_3,sym,s1,s2,s1_1,s2_1,cs,ts,fs,cs_1,ts_1,fs_1,el,str,argsstr,s3,s3_1,res,res_1;
-      String s4, s5, s6;
+      String s4, s5;
       Integer i,p,p1,p2,pc,pt,pf,pstart,pstop,pstep;
       Absyn.ComponentRef c,fcn;
       Boolean b;
@@ -6537,7 +6537,7 @@ algorithm
       Absyn.Exp exp,exp1,exp2,ifExp,trueBranch,elseBranch,start,stop,head,rest,inputExp;
       Option<Absyn.Exp> step;
       Absyn.Operator op;
-      list<Absyn.Exp> arrayExp, expressions, exps;
+      list<Absyn.Exp> arrayExp, expressions;
       list<list<Absyn.Exp>> matrix;
       list<tuple<Absyn.Exp,Absyn.Exp>> elseIfBranch;
       Absyn.CodeNode code;

@@ -236,7 +236,7 @@ public function traverseBackendDAEExpsEqn "function: traverseBackendDAEExpsEqn
 algorithm
   (outEquation,outTypeA):= match (inEquation,func,inTypeA)
     local
-      DAE.Exp e1,e2,e,e_1,e_2;
+      DAE.Exp e1,e2,e_1,e_2;
       list<DAE.Exp> expl,expl1,exps,exps1;
       DAE.ExpType tp;
       DAE.ComponentRef cr,cr1;
@@ -360,8 +360,8 @@ public function traverseBackendDAEExpsEqnOutEqn
 algorithm
   (outEquation,outflag,outTypeA):= match (inEquation,func,inTypeA)
     local
-      DAE.Exp e1,e2,e,e_1,e_2;
-      list<DAE.Exp> expl,expl1,exps,exps1;
+      DAE.Exp e1,e2,e_1,e_2;
+      list<DAE.Exp> expl,exps;
       DAE.ExpType tp;
       DAE.ComponentRef cr,cr1;
       BackendDAE.WhenEquation elsePart,elsePart1;

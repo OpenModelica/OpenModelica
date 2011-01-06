@@ -268,7 +268,7 @@ public function checkInitialSystem"function: checkInitialSystem
 algorithm
   outDAE := matchcontinue (inDAE,funcs)
     local
-      BackendDAE.Variables variables,knvars,exObj,initvars,initknvars;
+      BackendDAE.Variables variables,knvars,exObj;
       BackendDAE.EquationArray orderedEqs,removedEqs,initialEqs;
       array<DAE.Algorithm> algs;
       array<BackendDAE.MultiDimEquation> arrayEqs;
@@ -531,7 +531,7 @@ protected function fixInitalVars"function: fixInitalVars
 algorithm
   (outVariables,outKnVariables) := matchcontinue (inUnfixed,inInitialEqns,inVariables,inKnVariables,inVars,inVarsWS,inStates,inStatesWS)
     local
-      BackendDAE.Variables variables,knvariables,variables1,knvariables1;
+      BackendDAE.Variables variables,variables1,knvariables1;
       list<DAE.ComponentRef> vars,varsws,states,statesws;
       DAE.ComponentRef cr;
       BackendDAE.Var var,var1;
@@ -2634,7 +2634,7 @@ algorithm
     local
       String keystr;
       DAE.ComponentRef rkey;
-      BackendDAE.Value rval,cmpval,res;
+      BackendDAE.Value rval;
       Option<BackendDAE.BinTree> optRight;
       BackendDAE.BinTree right, left;
       
@@ -4834,7 +4834,7 @@ algorithm
   matchcontinue (inVariables,func,inTypeA)
     local
       array<Option<BackendDAE.Var>> varOptArr;
-      Type_a ext_arg_1,ext_arg_2,ext_arg_3;
+      Type_a ext_arg_1;
     case (BackendDAE.VARIABLES(varArr = BackendDAE.VARIABLE_ARRAY(varOptArr=varOptArr)),func,inTypeA)
       equation
         ext_arg_1 = traverseBackendDAEArrayNoCopy(varOptArr,func,traverseBackendDAEExpsVar,1,arrayLength(varOptArr),inTypeA);
@@ -5006,7 +5006,7 @@ algorithm
       DAE.Exp e1, expCref;
       DAE.ComponentRef cref;
       Option<DAE.Exp> bndexp;
-      list<DAE.Subscript> instdims,instdims1;
+      list<DAE.Subscript> instdims;
       Type_a ext_arg_1,ext_arg_2,ext_arg_3;
       DAE.ExpType tp;
     

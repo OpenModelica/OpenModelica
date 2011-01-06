@@ -118,7 +118,7 @@ algorithm
       list<Env.Frame> env_1,env,env_2;
       Absyn.Path path;
       SCode.Class c;
-      String classname,scope,ident,s;
+      String classname,scope;
       Env.Cache cache;
       Absyn.Info info;
 
@@ -314,7 +314,7 @@ algorithm
       Env.Env env;
       Absyn.Path first;
       list<Absyn.Path> uniontypePaths,  rest;
-      list<DAE.Type>    uniontypeTypes, innerTypes;
+      list<DAE.Type>    uniontypeTypes;
       DAE.Type ty;
     case (cache, env, path, str, ht, acc)
       equation
@@ -384,7 +384,7 @@ algorithm
       SCode.Class c,c_1;
       list<Env.Frame> env,env_1,env2,env_2,env_3,env1,env4,env5,fs,prevFrames;
       Absyn.Path path,ep,packp,p,scope,restPath;
-      String id,s,name,pack;
+      String id,pack;
       Option<Env.Frame> optFrame;
 
     // First look in cache for environment. If found look up class in that environment.
@@ -508,7 +508,7 @@ algorithm
       Env.Env env,prevFrames;
       Env.Frame frame;
       SCode.Restriction restr;
-      ClassInf.State ci_state,cistate1;
+      ClassInf.State ci_state;
       Boolean encflag;
       String id;
     case (cache,env,path,_,SOME(frame),prevFrames,inState,msg)
@@ -616,7 +616,7 @@ algorithm
       list<Env.Item> fs;
       Env.Cache cache; 
       DAE.ComponentRef cref;
-      Absyn.Path path,scope;
+      Absyn.Path path;
       Absyn.Ident firstIdent;
 
     case (cache,(Env.IMPORT(import_ = Absyn.UNQUAL_IMPORT(path = path)) :: fs),env,ident)
@@ -673,7 +673,7 @@ algorithm
       DAE.Binding bind;
       list<Env.Item> fs;
       Env.Cache cache; 
-      Absyn.Path path,scope;
+      Absyn.Path path;
       Absyn.Ident firstIdent;
       Option<DAE.Const> cnstForRange;
 
@@ -713,7 +713,7 @@ algorithm
   (outCache,outClass,outEnv,outPrevFrames) := matchcontinue (inCache,inEnvItemLst,inEnv,inIdent,inState)
     local
       Env.Frame fr;
-      SCode.Class c,c2;
+      SCode.Class c;
       list<Env.Frame> env_1,env,prevFrames;
       String id,ident,str;
       list<Env.Item> fs;
@@ -863,12 +863,12 @@ protected function lookupUnqualifiedImportedClassInFrame "function: lookupUnqual
 algorithm
   (outCache,outClass,outEnv,outPrevFrames,outBoolean) := matchcontinue (inCache,inEnvItemLst,inEnv,inIdent)
     local
-      Env.Frame fr,f,f_1;
+      Env.Frame fr;
       SCode.Class c,c_1;
       String id,ident;
       Boolean encflag,more,unique;
       SCode.Restriction restr;
-      list<Env.Frame> env_1,env2,fs_1,env,prevFrames;
+      list<Env.Frame> env_1,env2,env,prevFrames;
       ClassInf.State ci_state,cistate1;
       Absyn.Path path;
       list<Env.Item> fs;
@@ -926,7 +926,7 @@ algorithm
   (outCache,outClass,outEnv) := match (cache,inEnv,inPath)
     local
       SCode.Class c;
-      list<Env.Frame> env,env_1,env_2,env_3;
+      list<Env.Frame> env,env_1;
       Absyn.Path path;
       String name;
       SCode.Restriction re;
@@ -1188,7 +1188,7 @@ algorithm
   matchcontinue (inCache,inEnv,inComponentRef,inPrevFrames,inState)
     local
       SCode.Class c;
-      String n,id1,id,str;
+      String n,id;
       Boolean encflag;
       SCode.Restriction r;
       list<Env.Frame> env2,env3,env5,env,fs,p_env,prevFrames, classEnv, componentEnv;
@@ -1197,14 +1197,14 @@ algorithm
       DAE.Attributes attr;
       DAE.Type ty;
       DAE.Binding bind;
-      DAE.ComponentRef cref,cr,cr1,cr2;
+      DAE.ComponentRef cref,cr;
       list<DAE.Subscript> sb;
       Option<String> sid;
       list<Env.Item> items;
       Env.Frame f;
       Env.Cache cache;
       Option<DAE.Const> cnstForRange;
-      Absyn.Path path,scope,ep,p,packp;
+      Absyn.Path path,scope;
       Option<DAE.ComponentRef> filterCref;
       Env.Env dbgEnv;
       Boolean unique;
@@ -1603,7 +1603,7 @@ protected function lookupFunctionsInEnv2
 algorithm
   (outCache,outTypesTypeLst) := matchcontinue (inCache,inEnv,inPath,followedQual,info)
     local
-      Absyn.Path id,iid,path;
+      Absyn.Path id,path;
       Option<String> sid;
       Env.AvlTree httypes;
       Env.AvlTree ht;
@@ -1754,11 +1754,11 @@ algorithm
   (outCache,outType,outEnv):=
   match (inCache,inBinTree1,inBinTree2,inEnv3,inIdent4)
     local
-      tuple<DAE.TType, Option<Absyn.Path>> t,ftype,ty;
+      tuple<DAE.TType, Option<Absyn.Path>> t;
       Env.AvlTree httypes;
       Env.AvlTree ht;
-      list<Env.Frame> env,cenv,env_1,env_2,env_3;
-      String id,n;
+      list<Env.Frame> env;
+      String id;
       Env.Cache cache;
       Env.Item item;
     case (cache,ht,httypes,env,id)
@@ -1785,10 +1785,10 @@ algorithm
   (outCache,outType,outEnv):=
   matchcontinue (inCache,item,inEnv3,inIdent4)
     local
-      tuple<DAE.TType, Option<Absyn.Path>> t,ftype,ty;
+      tuple<DAE.TType, Option<Absyn.Path>> t,ty;
       Env.AvlTree httypes;
       Env.AvlTree ht;
-      list<Env.Frame> env,cenv,env_1,env_2,env_3;
+      list<Env.Frame> env,cenv,env_1,env_3;
       String id,n;
       SCode.Class cdef;
       Absyn.Path fpath;
@@ -1848,8 +1848,8 @@ algorithm
       list<tuple<DAE.TType, Option<Absyn.Path>>> tps;
       Env.AvlTree httypes;
       Env.AvlTree ht;
-      list<Env.Frame> env,cenv,env_1,env_3;
-      String id,n,s;
+      list<Env.Frame> env,cenv,env_1;
+      String id,n;
       SCode.Class cdef;
       list<DAE.Var> varlst;
       Absyn.Path fpath;
@@ -1986,7 +1986,7 @@ protected function buildRecordConstructorClass2
 algorithm
   (outCache,outEnv,funcelts,elts) := matchcontinue(cache,env,cl,mods)
     local
-      list<SCode.Element> cdefelts,restElts,classExtendsElts,extendsElts,compElts;
+      list<SCode.Element> cdefelts,classExtendsElts,extendsElts,compElts;
       list<tuple<SCode.Element,DAE.Mod>> eltsMods;
       Env.Env env1;
       String name;
@@ -2223,7 +2223,7 @@ algorithm
     local
       SCode.Class c;
       list<Env.Frame> env_1,env,fs,i_env,prevFrames;
-      Env.Frame frame,f;
+      Env.Frame frame;
       String sid,scope;
       Boolean msg,msgflag;
       Absyn.Path path;
@@ -2619,7 +2619,7 @@ algorithm
       SCode.Variability vt,vt2;
       Absyn.Direction di;
       tuple<DAE.TType, Option<Absyn.Path>> ty,ty_1,idTp;
-      DAE.Binding bind,binding,binding2;
+      DAE.Binding bind,binding;
       Env.AvlTree ht;
       list<DAE.Subscript> ss;
       list<Env.Frame> componentEnv;

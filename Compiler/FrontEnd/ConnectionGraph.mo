@@ -347,7 +347,7 @@ protected function canonical
 algorithm
   (/*outPartition,*/outCanonical) := matchcontinue(inPartition, inRef)
     local
-      HashTableCG.HashTable partition, partition2;
+      HashTableCG.HashTable partition;
       DAE.ComponentRef ref, parent, parentCanonical;
 
     case (partition, ref)

@@ -772,7 +772,7 @@ algorithm
   outAttr:=
   match (attr,start)
     local
-      Option<DAE.Exp> q,u,du,i,f,n;
+      Option<DAE.Exp> q,u,du,f,n;
       tuple<Option<DAE.Exp>, Option<DAE.Exp>> minMax;
       Option<DAE.StateSelect> ss;
       DAE.Exp r;
@@ -803,7 +803,7 @@ algorithm
   outAttr:=
   match (attr,unit)
     local
-      Option<DAE.Exp> q,u,du,i,f,n,s;
+      Option<DAE.Exp> q,u,du,f,n,s;
       tuple<Option<DAE.Exp>, Option<DAE.Exp>> minMax;
       Option<DAE.StateSelect> ss;
       DAE.Exp r;
@@ -907,7 +907,7 @@ algorithm
       tuple<Option<DAE.Exp>, Option<DAE.Exp>> minMax;
       Option<DAE.StateSelect> ss;
       Option<DAE.Exp> eb;
-      Option<Boolean> ip,fn;
+      Option<Boolean> ip;
     case (SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,i,f,n,ss,eb,ip,_)),finalPrefix)
     then SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,i,f,n,ss,eb,ip,SOME(finalPrefix)));
     case (SOME(DAE.VAR_ATTR_INT(q,minMax,i,f,eb,ip,_)),finalPrefix)
@@ -2118,8 +2118,8 @@ Returns the crefs written to, and also checks for illegal statements in when-bod
 algorithm
   leftSideCrefs := match (inElems)
     local
-      list<DAE.Element> elems1,oelems,moreWhen;
-      list<DAE.ComponentRef> crefs1,crefs2;
+      list<DAE.Element> elems1,moreWhen;
+      list<DAE.ComponentRef> crefs1;
 
     case {} then {};
       // no need to check elseWhen, they are being handled in a reverse order, from inst.mo.
@@ -2164,8 +2164,8 @@ algorithm
     local
       String msg;
       Integer i;
-      list<DAE.Exp> exps,explist1,explist2,exps1,exps2,exps3;
-      DAE.Exp exp,cond,ee1,ee2;
+      list<DAE.Exp> exps,exps1;
+      DAE.Exp exp,ee1,ee2;
       DAE.ComponentRef cref;
       DAE.VarKind vk;
       DAE.VarDirection vd;
@@ -2179,7 +2179,7 @@ algorithm
       Option<SCode.Comment> comment;
       list<DAE.Element> eqsfalseb,rest;
       list<list<DAE.Element>> eqstrueb;
-      list<DAE.ComponentRef> crefs1,crefs2,crefs3;
+      list<DAE.ComponentRef> crefs1,crefs2;
       Option<DAE.Element> elsewhenopt;
       Algorithm.Algorithm alg;
       String lang;
@@ -3207,7 +3207,7 @@ calls Expression.traverseExp on the expression."
 algorithm
   otpl := match itpl
     local
-      DAE.Exp exp,oexp;
+      DAE.Exp exp;
       Integer oarg;
     
     case ((exp,oarg)) then Expression.traverseExp(exp,addUniqueIdentifierToCref,oarg);
@@ -3447,7 +3447,7 @@ algorithm
   (traversedFn,oextraArg) := match (daeFn,func,extraArg)
     local
       DAE.ComponentRef cr1_2;
-      list<DAE.Element> elist,elist2,elist22,elist1,elist11;
+      list<DAE.Element> elist,elist2;
       DAE.Element elt11;
       list<Absyn.Path> clsLst;
       Option<DAE.VariableAttributes> attr;
@@ -3515,8 +3515,8 @@ algorithm
   (traversedDaeList,oextraArg) := match (daeList,func,extraArg,accumulator)
     local
       DAE.ComponentRef cr1_2;
-      list<DAE.Element> dae,dae2,elist,elist2,elist22,elist1,elist11;
-      DAE.Element elt,elt2,elt22,elt1,elt11;
+      list<DAE.Element> dae,dae2;
+      DAE.Element elt;
       DAE.Function f2;
       DAE.VarKind kind;
       DAE.VarDirection dir;
@@ -3575,12 +3575,12 @@ algorithm
   (outElt,oextraArg) := match (elt,func,extraArg)
     local
       DAE.ComponentRef cr,cr2,cr1,cr1_2;
-      list<DAE.Element> elist,elist2,elist22,elist1,elist11;
-      DAE.Element elt2,elt22,elt1,elt11;
+      list<DAE.Element> elist,elist2,elist22;
+      DAE.Element elt2;
       DAE.Function f1,f2;
       DAE.VarKind kind;
       DAE.VarDirection dir;
-      DAE.Type tp,ftp;
+      DAE.Type tp;
       DAE.InstDims dims;
       DAE.StartValue start;
       DAE.Flow fl;
@@ -3597,7 +3597,7 @@ algorithm
       String id,str;
       list<DAE.Statement> stmts,stmts2;
       list<list<DAE.Element>> tbs,tbs_1;
-      list<DAE.Exp> conds,conds_1, args;
+      list<DAE.Exp> conds,conds_1;
       Boolean partialPrefix;
       Absyn.Path path;
       list<DAE.Exp> expl;
@@ -3819,7 +3819,7 @@ algorithm
       list<DAE.Exp> expl1,expl2;
       DAE.ComponentRef cr_1,cr;
       list<DAE.Statement> xs_1,xs,stmts,stmts2;
-      DAE.ExpType tp,tt;
+      DAE.ExpType tp;
       DAE.Statement x,ew,ew_1;
       Boolean b1;
       String id1,str;
@@ -4449,7 +4449,7 @@ public function joinDaeLst "joins a list of daes by using joinDaes"
 algorithm
   outDae := matchcontinue(daeLst)
     local
-      DAE.DAElist dae,dae1,dae2;
+      DAE.DAElist dae,dae1;
     case({dae}) then dae;
     case(dae::daeLst)
       equation
@@ -4542,7 +4542,7 @@ algorithm
       DAE.AvlValue value,rval;
       Option<DAE.AvlTree> left,right;
       Integer h;
-      DAE.AvlTree t_1,t,right_1,left_1,bt;
+      DAE.AvlTree t_1,t,bt;
 
       /* empty tree*/
     case (DAE.AVLTREENODE(value = NONE(),height=h,left = NONE(),right = NONE()),key,value)
@@ -5160,7 +5160,7 @@ protected function getUniontypePathsElements
 algorithm
   outPaths := match elements
     local
-      list<Absyn.Path> paths1,paths2;
+      list<Absyn.Path> paths1;
       list<list<Absyn.Path>> listPaths;
       list<DAE.Element> rest;
       list<DAE.Type> tys;

@@ -485,7 +485,7 @@ algorithm
   outEnv := match (inEnv)
     local
       AvlTree httypes;
-      AvlTree ht,ht_1;
+      AvlTree ht;
       Option<Ident> id;
       Option<ScopeType> st;
       list<AvlValue> imps;
@@ -1019,7 +1019,7 @@ protected function printFrameStr "function: printFrameStr
 algorithm
   outString := match (inFrame)
     local
-      Ident s1,s2,s3,encflag_str,s4,res,sid;
+      Ident s1,s2,s3,encflag_str,res,sid;
       Option<Ident> optName;
       list<Ident> bcstrings;
       AvlTree httypes;
@@ -1320,7 +1320,7 @@ public function addCachedEnv
 algorithm
   outCache := matchcontinue(inCache,id,env)
     local
-      Absyn.Path path,newPath;
+      Absyn.Path path;
       case(inCache,id,env) equation
         false = OptManager.getOption("envCache");
       then inCache;
@@ -1717,10 +1717,10 @@ algorithm
   outAvlTree := match (inAvlTree,inKey,inValue)
     local
       AvlKey key,rkey;
-      AvlValue value,rval;
+      AvlValue value;
       Option<AvlTree> right;
       Integer h;
-      AvlTree right_1,left_1,bt;
+      AvlTree bt;
     
     // empty tree
     case (AVLTREENODE(value = NONE(),left = NONE(),right = NONE()),key,value)
@@ -1747,10 +1747,10 @@ algorithm
   outAvlTree := match (inAvlTree,keyComp,inKey,inValue)
     local
       AvlKey key,rkey;
-      AvlValue value,rval;
+      AvlValue value;
       Option<AvlTree> left,right;
       Integer h;
-      AvlTree t_1,t,right_1,left_1,bt;
+      AvlTree t_1,t;
       Option<AvlTreeValue> oval;
     
 		// replace this node
@@ -2222,7 +2222,7 @@ public function getVariablesFromEnv
 algorithm
   variables := match (inEnv)
     local
-      list<Ident> lst1,lst2,lst;
+      list<Ident> lst1;
       Frame fr;
       Env frs;
     // empty case

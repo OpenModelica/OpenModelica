@@ -225,9 +225,9 @@ algorithm
     local
       BackendDAE.Variables v1,v2,v3,vars,knvars,extVars,extVars1,extVars2,vars_1,knvars_1,vars1,vars2,knvars1,knvars2,kv;
       list<BackendDAE.WhenClause> whenclauses,whenclauses_1,whenclauses_2;
-      list<BackendDAE.Equation> eqns,reqns,ieqns,eqns1,eqns2,reqns1,ieqns1,reqns2,ieqns2,re,ie,eqsComplex;
-      list<BackendDAE.MultiDimEquation> aeqns,aeqns1,aeqns2,ae,iaeqns,iaeqns1,iaeqns2,iae;
-      list<DAE.Algorithm> algs,algs1,algs2,al,ialgs,ialgs1,ialgs2;
+      list<BackendDAE.Equation> eqns,reqns,ieqns;
+      list<BackendDAE.MultiDimEquation> aeqns,iaeqns;
+      list<DAE.Algorithm> algs,ialgs;
       BackendDAE.ExternalObjectClasses extObjCls,extObjCls1,extObjCls2;
       BackendDAE.ExternalObjectClass extObjCl;
       DAE.Element daeEl;
@@ -318,9 +318,9 @@ algorithm
    matchcontinue (inElement,functionTree,inVariables,inKnownVariables,inExternalVariables,inEquationLst3,inEquationLst4,inEquationLst5,
    inMultiDimEquationLst6,inMultiDimEquationLst7,inAlgorithmAlgorithmLst8,inAlgorithmAlgorithmLst9,inWhenClauseLst10,inExtObjClasses,inStatesBinTree)
     local
-      BackendDAE.Variables vars,knvars,extVars,extVars1,extVars2,vars_1,knvars_1,vars1,vars2,knvars1,knvars2,kv;
+      BackendDAE.Variables vars,knvars,extVars;
       list<BackendDAE.WhenClause> whenclauses,whenclauses_1,whenclauses_2;
-      list<BackendDAE.Equation> eqns,reqns,ieqns,eqns1,eqns2,reqns1,ieqns1,reqns2,ieqns2,re,ie,eqsComplex;
+      list<BackendDAE.Equation> eqns,reqns,ieqns,eqns2,re,eqsComplex;
       list<BackendDAE.MultiDimEquation> aeqns,aeqns1,aeqns2,ae,iaeqns,iaeqns1,iaeqns2,iae;
       list<DAE.Algorithm> algs,algs1,algs2,al,ialgs,ialgs1,ialgs2;
       BackendDAE.ExternalObjectClasses extObjCls,extObjCls1,extObjCls2;
@@ -358,7 +358,7 @@ algorithm
       Absyn.Path func_name;
       list<DAE.Exp> args;
       DAE.Statement s;
-      Boolean b1, b2, b;
+      Boolean b1, b2;
       String str;      
       DAE.Element ddl; 
       String s3;
@@ -1227,7 +1227,7 @@ algorithm
       list<BackendDAE.Equation> eqnl;
       list<BackendDAE.WhenOperator> reinit;
       DAE.Exp cre,e,cond;
-      DAE.ComponentRef cr,cref_;
+      DAE.ComponentRef cr;
       list<DAE.Element> xs;
       DAE.Element el;
       DAE.ElementSource source "the element source";
@@ -1385,7 +1385,7 @@ algorithm
       BackendDAE.MultiDimEquation a;
       list<BackendDAE.MultiDimEquation> algs;
       DAE.Exp e1,e2;
-      list<DAE.Exp> a1,a2,a1_1,an;
+      list<DAE.Exp> a1,a2,an;
       list<tuple<DAE.Exp,DAE.Exp>> ealst;
       list<list<tuple<DAE.Exp, Boolean>>> al1,al2;
       list<tuple<DAE.Exp, Boolean>> ebl1,ebl2;
@@ -1930,7 +1930,7 @@ protected function processDelayExpressions
 algorithm
   (outDAE,outTree) := match(inDAE,functionTree)
     local
-      DAE.DAElist dae, dae2;
+      DAE.DAElist dae;
     case (dae,functionTree)
       equation
         (dae,functionTree,_) = DAEUtil.traverseDAE(dae, functionTree, transformDelayExpressions, 0);
@@ -2823,9 +2823,9 @@ algorithm
   outTplExpExpTplExpExpLstVariables:=
   matchcontinue (inTplExpExpTplExpExpLstVariables)
     local
-      DAE.Exp e,e1,e2,e_1;
+      DAE.Exp e,e1,e2;
       BackendDAE.Variables vars,knvars;
-      list<DAE.Exp> zeroCrossings,zeroCrossings_1,zeroCrossings_2,zeroCrossings_3,el;
+      list<DAE.Exp> zeroCrossings;
       DAE.Operator op;
       DAE.ExpType tp;
       Boolean scalar;
@@ -2860,11 +2860,11 @@ algorithm
   zeroCrossings := matchcontinue(inStmts,vars,knvars)
     local
       DAE.Exp e,e2,iteratorExp;
-      list<DAE.Exp> expl1,expl2,zcl,zcl1,zcl2,zcl3,zcl4,iteratorexps;
+      list<DAE.Exp> expl1,zcl,zcl1,zcl2,zcl3,zcl4,iteratorexps;
       DAE.ComponentRef cr;
-      list<DAE.Statement> xs,stmts,stmts2;
-      DAE.ExpType tp,tt;
-      DAE.Statement x,ew,ew_1;
+      list<DAE.Statement> xs,stmts;
+      DAE.ExpType tp;
+      DAE.Statement x,ew;
       Boolean b1;
       DAE.Ident id1,str;
       list<Integer> li;
@@ -3043,7 +3043,7 @@ Helper function for traverseAlgStmts
 algorithm
   zeroCrossings := match(inElse,vars,knvars)
   local
-    DAE.Exp e,e_1;
+    DAE.Exp e;
     list<DAE.Statement> st;
     Algorithm.Else el;
     list<DAE.Exp> zcl,zcl1,zcl2,zcl3;
@@ -3347,7 +3347,7 @@ algorithm
     DAE.Exp e1,e2,e1_1,e2_1,e2_2;
     list<DAE.Exp>  e2lst;
     DAE.ElementSource source;
-    DAE.ComponentRef cr1,cr2;
+    DAE.ComponentRef cr1;
     list<DAE.ComponentRef> crlst2;
     BackendDAE.Equation eqn;
     Expression.Type tp;

@@ -401,7 +401,7 @@ algorithm
   ty := matchcontinue (ty1,ty2,info)
     local
       DAE.ExpType et;
-      String s1,s2,str;
+      String s1,s2;
       DAE.ComponentRef cr;
       DAE.Exp crefExp;
     
@@ -926,7 +926,7 @@ algorithm
       list<DAE.MatchCase> rest;
       list<DAE.Pattern> pats;
       DAE.MatchCase case_;
-      Absyn.Info info,oinfo;
+      Absyn.Info info;
     case (_,{},_,acc,false) then listReverse(acc);
     case (_,{},_,acc,true) then caseDeadCodeEliminiation(matchType,listReverse(acc),{},{},false);
     case (_,DAE.CASE(body={},result=NONE(),info=info)::{},prevPatterns,acc,iter)
@@ -1328,7 +1328,7 @@ protected function elabResultExp
 algorithm
   (outCache,outBody,resExp,resType,outSt) := matchcontinue (cache,env,body,exp,impl,st,performVectorization,pre,info)
     local
-      DAE.Exp elabExp,elabCr1,elabCr2;
+      DAE.Exp elabExp;
       DAE.Properties prop;
       DAE.Type ty;
       list<Absyn.Exp> es;

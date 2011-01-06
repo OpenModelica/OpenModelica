@@ -149,7 +149,7 @@ algorithm
   matchcontinue (inExp1,inProperties2,inExp3,inProperties4,inAccessibility5,initial_,source)
     local
       Ident lhs_str,rhs_str,lt_str,rt_str;
-      DAE.Exp lhs,rhs,rhs_1,e1,e2,e3;
+      DAE.Exp lhs,rhs;
       DAE.Properties lprop,rprop,lhprop,rhprop;
       DAE.ExpType crt;
       DAE.ComponentRef cr;
@@ -333,7 +333,7 @@ algorithm
       Ident s,lhs_str,rhs_str,str1,str2,strInitial;
       list<DAE.Exp> lhs,expl;
       list<DAE.Properties> lprop,lhprops;
-      DAE.Exp rhs,rhs_1;
+      DAE.Exp rhs;
       DAE.Properties rprop;
       list<tuple<DAE.TType, Option<Absyn.Path>>> lhrtypes,tpl;
       list<DAE.TupleConst> clist;

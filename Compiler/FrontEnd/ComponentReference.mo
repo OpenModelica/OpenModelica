@@ -436,7 +436,7 @@ algorithm
   outString:=
   match (inPreString,inComponentRef,inNameSeparator)
     local
-      DAE.Ident s,ns,s1,ss;
+      DAE.Ident s,ns,ss;
       DAE.ComponentRef n;
     case (inPreString,DAE.CREF_IDENT(ident = s),_)
       equation
@@ -509,7 +509,7 @@ public function printComponentRefStr
 algorithm
   outString := matchcontinue (inComponentRef)
     local
-      DAE.Ident s,str,strrest,str_1,str_2;
+      DAE.Ident s,str,strrest;
       list<DAE.Subscript> subs;
       DAE.ComponentRef cr;
       DAE.ExpType ty;
@@ -559,7 +559,7 @@ public function printComponentRef2Str
 algorithm
   outString := matchcontinue (inIdent,inSubscriptLst)
     local
-      DAE.Ident s,str,str_1,str_2,str_3;
+      DAE.Ident s,str;
       list<DAE.Subscript> l;
     
     // no subscripts
@@ -594,7 +594,7 @@ NOTE Only used for debugging."
 algorithm
   outString := matchcontinue (inComponentRef)
     local
-      DAE.Ident s,str,str2,strrest,str_1,str_2;
+      DAE.Ident s,str,str2,strrest,str_1;
       list<DAE.Subscript> subs;
       DAE.ComponentRef cr;
       DAE.ExpType ty;
@@ -952,7 +952,7 @@ public function crefEqualNoStringCompare
 algorithm
   outBoolean := matchcontinue (inComponentRef1,inComponentRef2)
     local
-      DAE.Ident n1,n2,s1,s2;
+      DAE.Ident n1,n2;
       list<DAE.Subscript> idx1,idx2;
       DAE.ComponentRef cr1,cr2;
 

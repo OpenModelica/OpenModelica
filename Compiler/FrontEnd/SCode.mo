@@ -1035,7 +1035,7 @@ algorithm
   outString :=  matchcontinue (inElement)
     local
       String str,str2,res,n,mod_str,s,vs;
-      Absyn.Path path,typath;
+      Absyn.Path path;
       Mod mod;
       Boolean finalPrefix,repl,prot;
       Absyn.InnerOuter io;
@@ -1621,7 +1621,7 @@ algorithm
   equal := matchcontinue(class1,class2)
     local
       Ident name1,name2;
-      Boolean p1,e1,p2,e2,b1,b2,b3,b4,b5;
+      Boolean p1,e1,p2,e2;
       Restriction restr1,restr2;
       ClassDef parts1,parts2;
       Absyn.Info info1,info2;
@@ -1678,7 +1678,7 @@ algorithm
   isEqual := match(e1, e2)
     local
       String s1, s2;
-      Boolean b1, b2;
+      Boolean b1;
 
     case (ENUM(s1,_), ENUM(s2,_))
       equation
@@ -2013,7 +2013,7 @@ public function modEqual
 algorithm
   equal := matchcontinue(mod1,mod2)
     local
-      Boolean f1,f2,b1,b2,b3,b4;
+      Boolean f1,f2;
       Absyn.Each each1,each2;
       list<SubMod> submodlst1,submodlst2;
       Absyn.Exp e1,e2;
@@ -2125,7 +2125,7 @@ algorithm
     local
       Accessibility acc1,acc2;
       Variability var1,var2;
-      Boolean fl1,fl2,st1,st2,b1,b2,b3,b4,b5,b6;
+      Boolean fl1,fl2,st1,st2;
       Absyn.ArrayDim ad1,ad2;
       Absyn.Direction dir1,dir2;
     case(ATTR(ad1,fl1,st1,acc1,var1,dir1),ATTR(ad2,fl2,st2,acc2,var2,dir2))
@@ -2293,7 +2293,7 @@ algorithm
     outLst:=matchcontinue(inString,inEEq)
     local
       String id, id_1;
-      list<tuple<Absyn.ComponentRef, Integer>> lst,lst_1,lst_2,lst_3,lst_4;
+      list<tuple<Absyn.ComponentRef, Integer>> lst,lst_1,lst_2,lst_3;
       Absyn.Exp e_1,e_2;
       list<Absyn.Exp> eLst;
       Absyn.ComponentRef cr_1, cr_2;

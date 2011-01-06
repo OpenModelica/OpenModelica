@@ -382,7 +382,7 @@ algorithm
       AvlValue value,rval;
       Option<AvlTree> left,right;
       Integer h;
-      AvlTree t_1,t,right_1,left_1,bt;
+      AvlTree t_1,t,bt;
 
       /* empty tree*/
     case (AVLTREENODE(value = NONE(),height=h,left = NONE(),right = NONE()),key,value)

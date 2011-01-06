@@ -3568,7 +3568,7 @@ protected function listPos2 "helper function to listlistPos"
 algorithm
   outInteger := matchcontinue (inTypeA,inTypeALst)
     local
-      Type_a x,y,i;
+      Type_a x,y;
       list<Type_a> ys;
       Integer n;
       Boolean a;
@@ -4096,7 +4096,7 @@ algorithm
   outTypeALst:=
   matchcontinue (inTypeALst1,inFuncTypeTypeATypeAToBoolean3,inTypeALst2)
     local
-      list<Type_a> res,r1,xs,lst2;
+      list<Type_a> res,xs;
       FuncTypeType_aType_aToBoolean p;
       Type_a x,y;
     case (x,p,{}) then {};
@@ -4575,7 +4575,7 @@ public function listReduce "function: listReduce
 algorithm
   outTypeA := match (inTypeALst,inFuncTypeTypeATypeAToTypeA)
     local
-      Type_a e,res,a,b,res1,res2;
+      Type_a e,res,a,b,res1;
       FuncTypeType_aType_aToType_a r;
       list<Type_a> xs;
     case ({e},r) then e;
@@ -5268,7 +5268,7 @@ protected function stringSplitAtChar2
 algorithm
   outStringLst := matchcontinue (inStringLst1,inString2,inStringLst3)
     local
-      list<String> chr_rest_1,chr_rest,chrList,rest,strList,res;
+      list<String> chr_rest_1,chr_rest,chrList,rest,res;
       list<String> res_str;
       String firstChar,chr,str;
     
@@ -5425,7 +5425,7 @@ public function boolOrList "function boolOrList
 algorithm
   outBoolean := match (inBooleanLst)
     local
-      Boolean b,res;
+      Boolean b;
       list<Boolean> rest;
     case({}) then false;
     case ({b}) then b;
@@ -5445,7 +5445,7 @@ public function boolAndList "function: boolAndList
 algorithm
   outBoolean := match (inBooleanLst)
     local
-      Boolean b,res;
+      Boolean b;
       list<Boolean> rest;
     case({}) then true;
     case ({b}) then b;
@@ -6079,7 +6079,7 @@ algorithm
   (outTypeALst1,outTypeALst2):=
   matchcontinue (inTypeALst1,inTypeALst2,inInteger3)
     local
-      list<Type_a> la,lb,c,d,rest;
+      list<Type_a> la,lb,c,d;
       Type_a a;
       Integer index,new_index;
     case (la,lb,index)

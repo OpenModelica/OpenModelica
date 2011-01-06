@@ -295,7 +295,7 @@ protected function get1 "help function to get"
 algorithm
   (value,indx) := match (key,hashTable)
     local
-      Integer hval,hashindx,indx_1,bsize,n;
+      Integer hval,hashindx,bsize,n;
       list<tuple<Key,Integer>> indexes;
       Value v;
       array<list<tuple<Key,Integer>>> hashvec;
@@ -655,7 +655,7 @@ algorithm
     local
       Key k;
       Value v;
-      Integer n,len;
+      Integer n;
       array<Option<tuple<Key,Value>>> arr;
       String ns;
     case ((n,_,arr),pos)

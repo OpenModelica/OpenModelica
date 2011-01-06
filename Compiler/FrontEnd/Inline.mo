@@ -550,12 +550,12 @@ algorithm
       Functiontuple fns;
       list<DAE.Element> cdr,cdr_1,elist,elist_1;
       list<list<DAE.Element>> dlist,dlist_1;
-      DAE.Element el,el_1,res,el1,el1_1,el2,el2_1;
+      DAE.Element el,el_1,res;
       DAE.ComponentRef componentRef;
       DAE.VarKind kind;
       DAE.VarDirection direction;
       DAE.VarProtection protection;
-      DAE.Type ty,t;
+      DAE.Type ty;
       DAE.Exp binding,binding_1,exp,exp_1,exp1,exp1_1,exp2,exp2_1;
       DAE.InstDims dims;
       DAE.Flow flowPrefix;

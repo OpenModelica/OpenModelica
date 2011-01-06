@@ -105,7 +105,7 @@ algorithm
       list<DAE.Dimension> dims;
       list<tuple<Type,Ident>> varlst;
       list<String> strLst;
-      String s1,s2,ts,res,s;
+      String s1,ts,res,s;
       list<Var> vars;
       ClassInf.State ci;
       
@@ -241,7 +241,7 @@ protected function binopSymbol2
 algorithm
   outString := match (inOperator)
     local
-      Ident ts,s,s_1;
+      Ident ts,s;
       Type t;
     
     case (DAE.ADD(ty = t))
@@ -412,7 +412,7 @@ public function printListStr
 algorithm
   outString := matchcontinue (inTypeALst,inFuncTypeTypeAToString,inString)
     local
-      Ident s,srest,s_1,s_2,sep;
+      Ident s,srest,sep;
       Type_a h;
       FuncTypeType_aToString r;
       list<Type_a> t;
@@ -555,7 +555,7 @@ algorithm
       Integer pri2_1,pri2,pri3,pri1,ival,i,pe1,p1,p2,pc,pt,pf,p,pstop,pstart,pstep;
       Real rval,r;
       ComponentRef c;
-      Type t,ty,ty2,tp;
+      Type t,tp;
       DAE.Exp e1,e2,e21,e22,e,f,start,stop,step,cr,dim,exp,iterexp,cond,tb,fb;
       Operator op;
       Absyn.Path fcn,lit;
@@ -1662,7 +1662,7 @@ NOTE Only used for debugging.
 algorithm str := matchcontinue(inExp)
   local
     ComponentRef cr;
-    String s1,s2,s3;
+    String s1;
     list<DAE.Exp> expl;
     list<String> s1s;
   case(DAE.CREF(cr,_)) then ComponentReference.debugPrintComponentRefTypeStr(cr);

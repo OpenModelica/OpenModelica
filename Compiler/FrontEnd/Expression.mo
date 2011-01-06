@@ -3138,7 +3138,7 @@ algorithm
   (outExp,outInteger) := matchcontinue (inExp,inSourceExp,inTargetExp)
     local
       DAE.Exp expr,source,target,e1_1,e2_1,e1,e2,e3_1,e3,e_1,r_1,e,r,s;
-      Integer c1,c2,c,c3,cnt_1,b,i,cnt;
+      Integer c1,c2,c,c3,cnt_1,i,cnt;
       Operator op;
       list<DAE.Exp> expl_1,expl,ae1;
       list<Integer> lstcnt;
@@ -3146,7 +3146,7 @@ algorithm
       Boolean t,built,bln;
       Type tp,ety,t2;
       Absyn.CodeNode a;
-      ComponentRef cr1,cr2;
+      ComponentRef cr1;
       list<Subscript> ssl;
       DAE.InlineType inl;      
       list<list<tuple<DAE.Exp, Boolean>>> lstexpl_1,lstexpl;
@@ -3506,13 +3506,13 @@ public function traverseExp
 algorithm
   outTplExpTypeA := match (inExp,func,inTypeA)
     local
-      DAE.Exp e1_1,e,e1,e2_1,e2,e3_1,e_1,e3;
+      DAE.Exp e1_1,e,e1,e2_1,e2,e3_1,e3;
       Type_a ext_arg_1,ext_arg_2,ext_arg,ext_arg_3,ext_arg_4;
       Operator op;
       FuncExpType rel;
       list<DAE.Exp> expl_1,expl;
-      Absyn.Path fn,path_1,path;
-      Boolean t,b,scalar_1,scalar,built;
+      Absyn.Path fn,path;
+      Boolean t,scalar,built;
       Type tp;
       Integer i;
       list<list<tuple<DAE.Exp, Boolean>>> lstexpl_1,lstexpl;
@@ -3957,13 +3957,13 @@ protected function traverseExpTopDown1
 algorithm
   outTplExpTypeA := matchcontinue (inExp,func,inTypeA)
     local
-      DAE.Exp e1_1,e,e1,e2_1,e2,e3_1,e_1,e3;
+      DAE.Exp e1_1,e,e1,e2_1,e2,e3_1,e3;
       Type_a ext_arg_1,ext_arg_2,ext_arg,ext_arg_3;
       Operator op;
       FuncExpType rel;
       list<DAE.Exp> expl_1,expl;
-      Absyn.Path fn,path_1,path;
-      Boolean t,b,scalar_1,scalar,built;
+      Absyn.Path fn,path;
+      Boolean t,scalar,built;
       Type tp;
       Integer i;
       String id,str;
@@ -4494,7 +4494,7 @@ algorithm
     local
       Integer ival;
       Real rval;
-      Boolean res,b1,b2;
+      Boolean res;
       Ident sval;
       Operator op;
       DAE.Exp e,e1,e2;
@@ -5487,8 +5487,8 @@ algorithm
   outBoolean := match (inExp1,inExp2,refEq,noFailedSubExpression)
     local
       Integer i1,i2;
-      String id1,id2,s1,s2,s;
-      Boolean b1,c1_1,c2_1,b2,res,b3;
+      String id1,id2,s1,s2;
+      Boolean b1,b2,res;
       DAE.Exp e11,e12,e21,e22,e1,e2,e13,e23,er1,er2;
       Operator op1,op2;
       list<Boolean> bs;

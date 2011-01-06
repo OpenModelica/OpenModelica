@@ -1459,7 +1459,7 @@ algorithm
   (outCache,outExp,outProperties):=
   matchcontinue (inCache,inEnv,inExp,inBoolean,inPrefix,info)
     local
-      Integer i,x,l,nmax;
+      Integer i,l,nmax;
       Real r;
       DAE.Dimension dim1,dim2;
       Boolean b,impl,a,havereal;
@@ -1979,7 +1979,7 @@ algorithm
   outType := matchcontinue(slots,inType)
     local
       DAE.Type resType,tty,tty_1;
-      list<DAE.FuncArg> args,args_1;
+      list<DAE.FuncArg> args;
       Option<Absyn.Path> po;
       DAE.FunctionAttributes functionAttributes;
     case(slots,(DAE.T_FUNCTION(args,resType,functionAttributes),po))
@@ -2484,7 +2484,7 @@ algorithm
       DAE.Exp el_1,el_2;
       DAE.Properties prop,prop1,prop1_1,prop2,props;
       tuple<DAE.TType, Option<Absyn.Path>> t1,t1_1;
-      Integer t1_dim1,nmax_2,nmax,t1_ndims,dim;
+      Integer t1_dim1,nmax_2,nmax,t1_ndims;
       DAE.Dimension t1_dim1_1,t1_dim2_1,dim1,dim2,dim2_1;
       Boolean array,impl,havereal,a,scalar,doVect;
       DAE.ExpType at;
@@ -3258,7 +3258,7 @@ algorithm
       list<Env.Frame> env;
       Absyn.Exp s;
       list<Absyn.Exp> dims;
-      Boolean impl, show_msg;
+      Boolean impl;
       Ident implstr,expstr,str,sp;
       list<Ident> expstrs;
       Env.Cache cache;
@@ -3783,7 +3783,7 @@ algorithm
       Absyn.Exp exp;
       DAE.Dimension dim;
       Boolean impl,sc;
-      Ident s,el_str,pre_str,str;
+      Ident s,el_str,pre_str;
       list<Absyn.Exp> expl;
       Env.Cache cache;
       DAE.DAElist dae2;
@@ -4564,7 +4564,7 @@ algorithm
   match (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
     local
       DAE.Exp s1_1,s2_1;
-      DAE.Const c1,c2,c;
+      DAE.Const c1,c2;
       list<Env.Frame> env;
       Absyn.Exp s1,s2;
       Boolean impl;
@@ -4609,7 +4609,7 @@ algorithm
   matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
     local
       DAE.Exp s1_1,s2_1,s3_1,call;
-      DAE.Const c1,c2,c3,c;
+      DAE.Const c1,c2,c3;
       DAE.Type ty1,ty2,ty3;
       list<Env.Frame> env;
       Absyn.Exp s1,s2,s3;
@@ -4707,7 +4707,7 @@ algorithm
   match (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
     local
       DAE.Exp s1_1,s2_1;
-      DAE.Const c1,c2,c;
+      DAE.Const c1,c2;
       list<Env.Frame> env;
       Absyn.Exp s1,s2;
       Boolean impl;
@@ -4747,7 +4747,7 @@ algorithm
   match (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
     local
       DAE.Exp s1_1,s2_1;
-      DAE.Const c1,c2,c;
+      DAE.Const c1,c2;
       list<Env.Frame> env;
       Absyn.Exp s1,s2;
       Boolean impl;
@@ -5222,7 +5222,7 @@ algorithm
   (outCache,outExp,outProperties):=
   matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
     local
-      DAE.Exp e,exp_1,ee1;
+      DAE.Exp e,ee1;
       DAE.Properties prop;
       list<Env.Frame> env;
       Absyn.Exp exp;
@@ -5235,7 +5235,7 @@ algorithm
       Env.Cache cache;
       DAE.DAElist dae;
       Prefix.Prefix pre;
-      DAE.Type ety,restype,ty,elem_ty;
+      DAE.Type ety,ty,elem_ty;
       list<DAE.Dimension> dims;
       list<tuple<DAE.TType, Option<Absyn.Path>>> typelist;
       DAE.ExpType expty;
@@ -5694,17 +5694,17 @@ algorithm
   (outCache,outExp,outProperties):=
   matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
     local
-      DAE.Exp e1,e2, call;
-      tuple<DAE.TType, Option<Absyn.Path>> tp1,tp2;
-      DAE.Const c1,c2,c;
-      Boolean scalar1,scalar2;
+      DAE.Exp e1, call;
+      tuple<DAE.TType, Option<Absyn.Path>> tp1;
+      DAE.Const c1;
+      Boolean scalar1;
       list<Env.Frame> env;
       Boolean impl;
       Env.Cache cache;
-      Absyn.Exp v1,v2;
-      list<DAE.Exp> expl1,expl2;
+      Absyn.Exp v1;
+      list<DAE.Exp> expl1;
       list<list<tuple<DAE.Exp,Boolean>>> mexpl;
-      DAE.ExpType etp1,etp2,etp,etp3;
+      DAE.ExpType etp1,etp,etp3;
       DAE.Type eltTp;
       DAE.DAElist dae2;
       Prefix.Prefix pre;
@@ -5857,13 +5857,13 @@ algorithm
   matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
     local
       DAE.Exp exp;
-      tuple<DAE.TType, Option<Absyn.Path>> tp,arr_tp;
-      DAE.Const c,const;
+      tuple<DAE.TType, Option<Absyn.Path>> tp;
+      DAE.Const c;
       list<DAE.Const> constlist;
       DAE.ExpType etp;
       list<Env.Frame> env;
       Absyn.Exp e;
-      Boolean impl,scalar;
+      Boolean impl;
       list<DAE.Exp> args_1;
       list<Integer> dims;
       Env.Cache cache;
@@ -5940,7 +5940,7 @@ algorithm
       DAE.ExpType etp;
       list<Env.Frame> env;
       Absyn.Exp e, start, stop;
-      Boolean impl,scalar;
+      Boolean impl;
       list<DAE.Exp> args_1;
       list<Integer> dims;
       Env.Cache cache;
@@ -6533,7 +6533,7 @@ algorithm
     local
       DAE.Exp e;
       DAE.Properties prop;
-      Option<Interactive.InteractiveSymbolTable> st,st_1;
+      Option<Interactive.InteractiveSymbolTable> st;
       list<Env.Frame> env;
       Absyn.ComponentRef fn;
       list<Absyn.Exp> args;
@@ -6653,7 +6653,7 @@ algorithm
   (outCache, startTime, stopTime, numberOfIntervals) :=
   matchcontinue (inCache, inEnv, inAbsynExpLst, inAbsynNamedArgLst, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, inInfo, inSimOpt)  
     local
-      Absyn.ComponentRef cr, cr_1;
+      Absyn.ComponentRef cr;
       list<Absyn.NamedArg> args;
       Boolean impl;
       Interactive.InteractiveSymbolTable st;
@@ -6862,7 +6862,7 @@ protected function elabCallInteractive "function: elabCallInteractive
       list<DAE.Exp> vars_1,vars_2,vars_3,excludeList;
       DAE.Properties ptop,prop;
       Option<Interactive.InteractiveSymbolTable> st_1;
-      Integer size,var_len,port,excludeListSize,intervals;
+      Integer size,var_len,port,excludeListSize;
       list<Absyn.Exp> vars,strings;
       Absyn.Exp size_absyn,exp,bool_exp,e1,e2,e3,stringArray;
       Env.Cache cache;
@@ -8234,24 +8234,24 @@ algorithm
       list<tuple<Ident, DAE.Type>> fargs;
       Env.Env env_1,env_2,env,classEnv,recordEnv;
       list<Slot> slots,newslots,newslots2,slots2;
-      list<DAE.Exp> args_1,args_2,args1;
+      list<DAE.Exp> args_1,args_2;
       list<DAE.Const> constlist, constInputArgs, constDefaultArgs;
       DAE.Const const;
       DAE.TupleConst tyconst;
       DAE.Properties prop,prop_1;
       SCode.Class cl,scodeClass,recordCl;
-      Absyn.Path fn,fn_1,fqPath,utPath,fnPrefix,componentType,correctFunctionPath,functionClassPath,fpath;
+      Absyn.Path fn,fn_1,fqPath,utPath,fnPrefix,componentType,correctFunctionPath,functionClassPath;
       list<Absyn.Exp> args,t4;
       list<Absyn.NamedArg> nargs, translatedNArgs;
       Boolean impl,tuple_,builtin,isPure;
       DAE.InlineType inline;
       Option<Interactive.InteractiveSymbolTable> st;
-      list<DAE.Type> typelist,ktypelist,tys,ltypes;
+      list<DAE.Type> typelist;
       list<DAE.Dimension> vect_dims;
-      DAE.Exp call_exp,callExp,daeExp;
+      DAE.Exp call_exp,callExp;
       list<String> t_lst,names;
-      String fn_str,types_str,scope,pre_str,componentName,fnIdent,debugPrintString;
-      String s,name,argStr,id,args_str,str2,stringifiedInstanceFunctionName,lastId;
+      String fn_str,types_str,scope,pre_str,componentName,fnIdent;
+      String s,name,argStr,stringifiedInstanceFunctionName,lastId;
       Env.Cache cache;
       DAE.ExpType tp;
       SCode.Mod mod;
@@ -8549,27 +8549,27 @@ algorithm
   (outCache,expProps) :=
   matchcontinue (cache,inEnv,inType,inAbsynExpLst,inAbsynNamedArgLst,inBoolean,stopElab,inInteractiveInteractiveSymbolTableOption,inPrefix,info)
     local
-      DAE.Type t,outtype,restype,functype,tp1;
+      DAE.Type t;
       list<tuple<Ident, DAE.Type>> fargs;
       list<Env.Frame> env;
-      list<Slot> slots,newslots,newslots2,slots2;
-      list<DAE.Exp> args_1,args_2,args1;
+      list<Slot> slots,newslots;
+      list<DAE.Exp> args_1,args_2;
       list<DAE.Const> constlist;
       DAE.Const const;
       DAE.TupleConst tyconst;
-      DAE.Properties prop,prop_1;
+      DAE.Properties prop;
       Absyn.Path fqPath,utPath;
       list<Absyn.Exp> args;
-      list<Absyn.NamedArg> nargs, translatedNArgs;
-      Boolean impl,tuple_,builtin;
+      list<Absyn.NamedArg> nargs;
+      Boolean impl;
       DAE.InlineType inline;
       Option<Interactive.InteractiveSymbolTable> st;
       list<DAE.Type> tys;
       list<DAE.Dimension> vect_dims;
       DAE.Exp daeExp;
       list<Ident> t_lst;
-      Ident fn_str,types_str,scope,pre_str;
-      String argStr,id,args_str,str;
+      Ident fn_str;
+      String args_str,str;
       DAE.ExpType tp;
       SCode.Mod mod;
       DAE.Mod tmod;
@@ -8863,8 +8863,8 @@ protected function vectorizeCall "function: vectorizeCall
 algorithm
   (outExp,outProperties) := matchcontinue (inExp,inTypesArrayDimLst,inSlotLst,inProperties)
     local
-      DAE.Exp e,vect_exp,vect_exp_1,arg;
-      tuple<DAE.TType, Option<Absyn.Path>> tp,tp_1;
+      DAE.Exp e,vect_exp,vect_exp_1;
+      tuple<DAE.TType, Option<Absyn.Path>> tp;
       DAE.Properties prop;
       DAE.ExpType exp_type;
       DAE.Const c;
@@ -8956,7 +8956,7 @@ algorithm
       list<DAE.Exp> arr_expl,expl;
       Boolean scalar_1,scalar;
       DAE.Exp res_exp;
-      DAE.ExpType tp,exp_tp;
+      DAE.ExpType tp;
       Integer cur_dim;
       list<Slot> slots;
     case (DAE.ARRAY(ty = tp,scalar = scalar,array = expl),cur_dim,slots) /* cur_dim */
@@ -10272,7 +10272,7 @@ algorithm
       DAE.ExpType et;
       Absyn.InnerOuter io;
       DAE.DAElist dae2;
-      String s,str,fn_str,scope;
+      String s,scope;
       DAE.Properties props;
       Lookup.SplicedExpData splicedExpData;
       Absyn.Path path,fpath;
@@ -10474,7 +10474,7 @@ protected function makeASUBArrayAdressing
 algorithm
   outExp := matchcontinue (inRef,inCache,inEnv,inBoolean,inExp,splicedExpData,doVect,inPrefix,info)
     local
-      DAE.Exp exp1,exp2,aexp1,aexp2,tmpExp,crefExp;
+      DAE.Exp exp1,exp2,crefExp;
       Absyn.ComponentRef  crefChild;
       list<Absyn.Subscript> assl;
       list<DAE.Subscript> essl;
@@ -10556,7 +10556,7 @@ protected function makeASUBArrayAdressing2
 algorithm
   outExp := matchcontinue (inSSL,inPrefix)
     local
-      DAE.Exp exp1,exp2,b1,b2,crefExp;
+      DAE.Exp exp1,b1,b2,crefExp;
       list<DAE.Exp> expl1,expl2;
       DAE.Const c1;
       String id2,str,pre_str;
@@ -10756,7 +10756,7 @@ algorithm
       DAE.ComponentRef cr,cr_1,cref;
       SCode.Accessibility acc,acc_1;
       DAE.Type t,tt,et,tp,idTp;
-      DAE.Exp e,e_1,exp,exp1;
+      DAE.Exp e,e_1,exp;
       Option<DAE.Exp> sexp;
       Values.Value v;
       list<Env.Frame> env;
@@ -11193,7 +11193,7 @@ algorithm
   outExp := match(qual,rest,inType)
     local
       DAE.Exp exp1,exp2;
-      list<DAE.Exp> expl1, expl2;
+      list<DAE.Exp> expl1;
       DAE.Subscript ssl;
       String id;
       DAE.ExpType ety;
@@ -11228,7 +11228,7 @@ algorithm
   outExp := match(rest,qual)
     local
       DAE.Exp exp1,exp2;
-      list<DAE.Exp> expl1, expl2;
+      list<DAE.Exp> expl1;
       list<DAE.Subscript> ssl;
       DAE.ComponentRef cref,cref_2;
       String id;
@@ -11358,7 +11358,7 @@ algorithm
   outArr := matchcontinue(inArr)
     local
       DAE.Exp exp1,exp2;
-      list<DAE.Exp> expl1,expl2,expl3,expl4;
+      list<DAE.Exp> expl1,expl2,expl3;
       DAE.ExpType ty1,ty2;
       Boolean sc;
     case(exp1 as DAE.ARRAY(ty = _,scalar=_,array = expl1 as
@@ -11397,7 +11397,7 @@ algorithm
       String id;
       DAE.Exp exp1,exp2;
       list<DAE.Exp> expl2;
-      DAE.ExpType ety,tmpy,crty;
+      DAE.ExpType ety,crty;
       list<DAE.Dimension> arrDim;
       DAE.ComponentRef cref_;
 
@@ -11446,7 +11446,7 @@ algorithm
     local
       String id;
       DAE.Exp exp1,exp2;
-      list<DAE.Exp> expl1,expl2;
+      list<DAE.Exp> expl1;
       list<DAE.Subscript> subs;
       DAE.ExpType ety,ty2,crty;
       list<DAE.Dimension> iLst;
@@ -11484,7 +11484,7 @@ algorithm
     local
       String id;
       DAE.Exp exp1,exp2;
-      list<DAE.Exp> expl1,expl2;
+      list<DAE.Exp> expl1;
       list<DAE.Subscript> subs;
       DAE.ExpType ety,ty2,crty;
       list<DAE.Dimension> iLst;
@@ -11873,13 +11873,13 @@ algorithm
     local
       DAE.Subscript sub_1;
       DAE.Const const1,const2,const;
-      list<DAE.Subscript> subs_1,ss;
+      list<DAE.Subscript> subs_1;
       list<Env.Frame> env;
       Absyn.Subscript sub;
       list<Absyn.Subscript> subs;
       DAE.Dimension dim;
       Integer int_dim;
-      list<DAE.Dimension> restdims,dims;
+      list<DAE.Dimension> restdims;
       Boolean impl;
       Env.Cache cache;
       DAE.DAElist dae2;
@@ -13038,7 +13038,7 @@ algorithm
   (outCache,outTplExpOperatorTypesTypeLstTypesTypeLst) :=
   matchcontinue (inCache,inOperator1,inEnv2,inType3,inType4)
     local
-      list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> intarrs,realarrs,stringarrs,scalars,userops,arrays,types,scalarprod,matrixprod,intscalararrs,realscalararrs,intarrsscalar,realarrsscalar,realarrscalar,arrscalar,stringscalararrs,stringarrsscalar;
+      list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> intarrs,realarrs,stringarrs,scalars,arrays,types,scalarprod,matrixprod,intscalararrs,realscalararrs,intarrsscalar,realarrsscalar,realarrscalar,arrscalar,stringscalararrs,stringarrsscalar;
       tuple<DAE.Operator, list<DAE.Type>, DAE.Type> enum_op;
       list<Env.Frame> env;
       DAE.Type t1,t2,int_scalar,int_vector,int_matrix,real_scalar,real_vector,real_matrix;

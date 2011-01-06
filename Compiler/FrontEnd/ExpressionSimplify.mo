@@ -118,7 +118,7 @@ algorithm
   outExp := matchcontinue (inExp)
     local
       Real rv;
-      Integer n,i_1,i,lInt;
+      Integer n,i;
       DAE.Exp e,res,exp,c,f,t_1,f_1,e1_1,exp_1,e1,e_1,e2,e2_1,e3_1,e3,cond,sub,ae1,exp1;
       Type t,tp_1,tp,tp1,tp2,t1;
       Boolean b,remove_if,tpl,builtin,b2;
@@ -769,7 +769,7 @@ public function simplify2
 algorithm
   outExp := matchcontinue(inExp)
     local 
-      DAE.Exp e,exp,e1,e2,e1_1,e2_1,exp_2,exp_3;
+      DAE.Exp e,exp,e1,e2,exp_2,exp_3;
       Operator op;
       String s2; 
       Boolean b;      
@@ -1601,7 +1601,7 @@ algorithm
       list<list<tuple<DAE.Exp, Boolean>>> expl_1,expl1,expl2;
       Type tp;
       Integer size1,size2;
-      DAE.Dimension n, p, res_dim;
+      DAE.Dimension n, p;
     /* A[n, m] * B[m, p] = C[n, p] */
     case (DAE.MATRIX(ty = DAE.ET_ARRAY(ty = tp, arrayDimensions = {n, _}),integer = size1,scalar = expl1),
           DAE.MATRIX(ty = DAE.ET_ARRAY(arrayDimensions = {_, p}),integer = size2,scalar = expl2))
@@ -1711,8 +1711,8 @@ protected function simplifyBinarySortConstants
 algorithm
   outExp := matchcontinue (inExp)
     local
-      list<DAE.Exp> e_lst,e_lst_1,const_es1,notconst_es1,const_es1_1,e_lst_2;
-      DAE.Exp res,e,e1,e2,res1,res2,zero;
+      list<DAE.Exp> e_lst,e_lst_1,const_es1,notconst_es1,const_es1_1;
+      DAE.Exp res,e,e1,e2,res1,res2;
       Type tp;
       String str;
       Boolean b;      
@@ -1762,7 +1762,7 @@ algorithm
   outExp := matchcontinue (inExp)
     local
       list<DAE.Exp> e_lst,e_lst_1,e1_lst,e2_lst,e2_lst_1;
-      DAE.Exp res,res1,e,e1,e2;
+      DAE.Exp res,e,e1,e2;
       Type tp;
     
     case ((e as DAE.BINARY(exp1 = e1,operator = DAE.MUL(ty = tp),exp2 = e2)))
@@ -2624,7 +2624,7 @@ protected function simplifyBinaryConst
 algorithm
   outExp := match (inOperator1,inExp2,inExp3)
     local
-      Integer ie1,ie2,ie3;
+      Integer ie1,ie2;
       Real e2_1,e1_1,v1,v2;
       Operator op;
       Boolean b,b1,b2;
@@ -2909,7 +2909,7 @@ protected function simplifyBinary
 algorithm
   outExp := matchcontinue (inExp1,inOperator2,inExp3,inExp4)
     local
-      DAE.Exp e1_1,e2_1,e3,e,e1,e2,res,e_1,one;
+      DAE.Exp e1_1,e3,e,e1,e2,res,e_1,one;
       Operator oper;
       Type ty,ty2,tp,tp2,ty1;
       Ident s2;

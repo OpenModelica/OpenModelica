@@ -1341,7 +1341,7 @@ algorithm
   _:=
   match (inEquation,inIndexNumber,addMathMLCode)
     local
-      String s1,s2,res,indx_str,is,var_str,indexS;
+      String s1,s2,res,is,var_str,indexS;
       DAE.Exp e1,e2,e;
       BackendDAE.Value indx,i;
       list<DAE.Exp> expl;
@@ -1538,13 +1538,13 @@ algorithm
   _:=
   matchcontinue (inExp)
     local
-      DAE.Ident s,s_1,s_2,sym,s1,s2,s3,s4,s_3,ifstr,thenstr,elsestr,res,argstr,s5,s_4,s_5,res2,str,crstr,dimstr,expstr,iterstr,id;
-      DAE.Ident cs,ts,fs,cs_1,ts_1,fs_1,s3_1;
-      Integer x,pri2_1,pri2,pri3,pri1,ival,i,pe1,p1,p2,pc,pt,pf,p,pstop,pstart,pstep;
+      DAE.Ident s,sym,res,str,id;
+      DAE.Ident fs;
+      Integer x,ival;
       Real rval;
       DAE.ComponentRef c;
-      DAE.ExpType t,ty,ty2,tp;
-      DAE.Exp e1,e2,e21,e22,e,f,start,stop,step,cr,dim,exp,iterexp,cond,tb,fb;
+      DAE.ExpType t,tp;
+      DAE.Exp e1,e2,e,start,stop,step,cr,dim,exp,iterexp,cond,tb,fb;
       DAE.Operator op;
       Absyn.Path fcn;
       list<DAE.Exp> args,es;
@@ -3279,11 +3279,11 @@ See dumpVariable for more details on the XML output.
 algorithm
   _ := match (inVarLst,inInteger,addMathMLCode)
     local
-      String path_str,comment_str,s,indx_str;
+      String indx_str;
       list<String> path_strs;
       BackendDAE.Value indx,varno;
       BackendDAE.Var v;
-      DAE.ComponentRef cr,old_name;
+      DAE.ComponentRef cr;
       BackendDAE.VarKind kind;
       DAE.VarDirection dir;
       Option<DAE.Exp> e;
@@ -3348,11 +3348,11 @@ See dumpVariable for more details on the XML output.
 algorithm
   _ := match (inVarLst,crefIdxLstArr,strIdxLstArr,inInteger,addMathMLCode)
     local
-      String path_str,comment_str,s,indx_str;
+      String indx_str;
       list<String> path_strs;
       BackendDAE.Value indx,varno;
       BackendDAE.Var v;
-      DAE.ComponentRef cr,old_name;
+      DAE.ComponentRef cr;
       BackendDAE.VarKind kind;
       DAE.VarDirection dir;
       Option<DAE.Exp> e;
@@ -3581,7 +3581,7 @@ algorithm
   _:=
   match (inEquation,inIndexNumber,addMathMLCode)
     local
-      String s1,s2,res,indx_str,is,var_str,indexS;
+      String s1,s2,res,is,var_str,indexS;
       DAE.Exp e1,e2,e;
       BackendDAE.Value indx,i;
       list<DAE.Exp> expl;

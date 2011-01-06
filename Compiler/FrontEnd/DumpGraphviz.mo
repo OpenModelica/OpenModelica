@@ -390,8 +390,8 @@ protected function printEquation
 algorithm
   outNode := matchcontinue (inEquation)
     local
-      Ident s1,s2,s,s_1,s_2,es,n;
-      Absyn.Exp e1,e2,e;
+      Ident s1,s2,s,s_1,s_2,es;
+      Absyn.Exp e1,e2;
       Absyn.ComponentRef c1,c2;
       list<Node> eqn;
       list<Absyn.EquationItem> eqs;

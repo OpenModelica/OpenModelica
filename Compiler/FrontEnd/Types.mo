@@ -368,7 +368,7 @@ algorithm
       list<Var> tvars;
       list<DAE.Dimension> ad;
       DAE.Dimension dim;
-      Integer ll,currDim;
+      Integer ll;
       ClassInf.State complexClassType;
     case(DAE.ET_INT())
       equation
@@ -2610,7 +2610,7 @@ algorithm
       Boolean prot;
       Type typ;
       Binding bind;
-      String s1,s2,s3;
+      String s1,s2;
     case DAE.TYPES_VAR(name = n,attributes = DAE.ATTR(parameter_ = var),protected_ = prot,type_ = typ,binding = bind)
       equation
         s1 = printTypeStr(typ);
@@ -3879,7 +3879,7 @@ algorithm
   _ :=
   matchcontinue (inExp1,inTypeLst2,inTypeLst3)
     local
-      DAE.Exp e,e_1,e_2;
+      DAE.Exp e;
       Type t1,t2;
       list<Type> ts1,ts2;
     case (_,_,{}) then ();
@@ -3931,7 +3931,7 @@ algorithm
   (outExp,outType,outArrayDimLst,outBindings) := matchcontinue (inExp,inExpType,inCurrentType,inArrayDimLst,inExpectedType,fnPath)
     local
       DAE.Exp e_1,e;
-      Type e_type_1,e_type,expected_type,expected_type_vectorized,e_type_elt,current_type;
+      Type e_type_1,e_type,expected_type,expected_type_vectorized,current_type;
       list<DAE.Dimension> ds;
       PolymorphicBindings polymorphicBindings;
       DAE.Dimension dim;
@@ -3979,10 +3979,10 @@ algorithm
       Option<Absyn.Path> p,p1,p2;
       DAE.Exp begin_1,step_1,stop_1,begin,step,stop,e_1,e,exp;
       list<list<tuple<DAE.Exp, Boolean>>> ell_1,ell,melist;
-      list<list<DAE.Exp>> elist_big, elist_big_1;
+      list<list<DAE.Exp>> elist_big;
       list<Type> tys_1,tys1,tys2;
       list<Ident> l;
-      list<Var> v, al;
+      list<Var> v;
       String id2;
       Absyn.Path path,tp,path1,path2;
       String name;
@@ -4515,10 +4515,10 @@ algorithm
       list<list<DAE.Exp>> rest,  elist_1;
       DAE.ExpType t;
       list<DAE.ExpType> tlist;
-      Type t1,t2,t_1;
+      Type t1,t2;
       list<Type> tys1;
       Option<Absyn.Path> p2;
-      DAE.Exp e,e_1;
+      DAE.Exp e;
     case ({},_,_,_) then ({},(DAE.T_NOTYPE(),NONE()));
     case (expl::rest, (DAE.T_ARRAY(arrayType=(DAE.T_ARRAY(arrayType=t1),_)),_), (DAE.T_LIST((DAE.T_LIST(t2),_)),p2),printFailtrace)
       equation
@@ -5251,7 +5251,7 @@ algorithm
   out :=
   matchcontinue (inType1,inType2)
     local
-      Type t1,t2,tp,tp2,tp1;
+      Type t1,t2,tp;
       list<Type> type_list1,type_list2;
       Absyn.Path path1,path2;
     case ((DAE.T_ANYTYPE(_),_),t2) then t2;
@@ -5502,12 +5502,12 @@ protected function fixPolymorphicRestype2
 algorithm
   resType := matchcontinue (ty,prefix,bindings,info)
     local
-      String id,id1,id2,bstr,tstr;
-      Type t1,t2,ty1,ty2;
-      list<Type> tys,tys1,tys2,rest;
+      String id,bstr,tstr;
+      Type t1,t2,ty1;
+      list<Type> tys,tys1;
       list<String> names1;
-      list<DAE.FuncArg> args1,args2;
-      DAE.FunctionAttributes functionAttributes,functionAttributes1,functionAttributes2;
+      list<DAE.FuncArg> args1;
+      DAE.FunctionAttributes functionAttributes;
       Option<Absyn.Path> op1;
 
     case ((DAE.T_POLYMORPHIC(id),_),prefix,bindings,info)
@@ -5612,7 +5612,7 @@ algorithm
   outTypes := matchcontinue (inTypes,acc,fn)
     local
       Type ty,first;
-      list<Type> tys,rest,res,res1,res2;
+      list<Type> tys,rest;
       list<list<Type>> resMap;
       list<Var> fields;
       list<FuncArg> funcArgs;

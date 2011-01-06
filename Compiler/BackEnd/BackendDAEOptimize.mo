@@ -270,7 +270,7 @@ algorithm
       list<DAE.Subscript> subscriptLst;
       list<DAE.ExpVar> varLst;
       list<DAE.Exp> expl;
-      DAE.ExpType ty,te;
+      DAE.ExpType ty;
       DAE.Ident ident;
       Absyn.Path name;
      
@@ -942,7 +942,7 @@ algorithm
       Integer pos;
       BackendDAE.Variables v,kn,v1,v2;
       BackendDAE.EquationArray eqns,eqns1;
-      BackendDAE.Var var,var1,var2,var3;
+      BackendDAE.Var var,var2,var3;
       DAE.ComponentRef cr;
       DAE.Exp e1,e2,cre,es;
       Integer i,pos_1;
@@ -1335,11 +1335,11 @@ algorithm
   matchcontinue (inDlow,inDlow1,inM,inMT,inV1,inV2,inComps)
     local
       BackendDAE.BackendDAE dlow,dlow_1,dlow_2,dlow1,dlow1_1,dlow1_2;
-      BackendDAE.IncidenceMatrix m,m_1,m_2,m_3,m_4;
-      BackendDAE.IncidenceMatrixT mT,mT_1,mT_2,mT_3,mT_4;
+      BackendDAE.IncidenceMatrix m,m_1,m_3,m_4;
+      BackendDAE.IncidenceMatrixT mT,mT_1,mT_3,mT_4;
       array<Integer> v1,v2,v1_1,v2_1,v1_2,v2_2,v1_3,v2_3;
       list<list<Integer>> comps,comps_1;
-      list<Integer> tvars,comp,comp_1,tearingvars,residualeqns,tearingeqns,l2,l2_1;
+      list<Integer> tvars,comp,comp_1,tearingvars,residualeqns,tearingeqns;
       list<list<Integer>> r,t;
       Integer ll;
       list<DAE.ComponentRef> crlst;
@@ -1557,11 +1557,11 @@ algorithm
       BackendDAE.IncidenceMatrix m,m_1,m_2,m_3;
       BackendDAE.IncidenceMatrixT mT,mT_1,mT_2,mT_3;
       array<Integer> v1,v2,v1_1,v2_1,v1_2,v2_2;
-      list<list<Integer>> comps,comps_1,lstm,lstmp,onecomp,morecomps;
-      list<Integer> vars,comp,comp_1,comp_2,r,t,exclude,b,cmops_flat,onecomp_flat,othereqns,resteareqns;
+      list<list<Integer>> comps,comps_1,onecomp,morecomps;
+      list<Integer> vars,comp,comp_1,comp_2,exclude,cmops_flat,onecomp_flat,othereqns,resteareqns;
       String str,str1,str2;
       Integer tearingvar,residualeqn,compcount,tearingeqnid;
-      list<Integer> residualeqns,residualeqns_1,tearingvars,tearingvars_1,tearingeqns,tearingeqns_1,tearingeqns_2;
+      list<Integer> residualeqns,residualeqns_1,tearingvars,tearingvars_1,tearingeqns,tearingeqns_1;
       DAE.ComponentRef cr,crt;
       list<DAE.ComponentRef> crlst;
       DAE.Ident ident,ident_t;
@@ -1569,13 +1569,13 @@ algorithm
       BackendDAE.Value nvars,neqns,memsize;
       BackendDAE.Variables ordvars,vars_1,knvars,exobj,ordvars1;
       BackendDAE.AliasVariables av;
-      BackendDAE.Assignments assign1,assign2,assign1_1,assign2_1,ass1,ass2;
-      BackendDAE.EquationArray eqns, eqns_1, eqns_2,removedEqs,remeqns,inieqns,eqns1,eqns1_1,eqns1_2;
+      BackendDAE.Assignments assign1,assign2,ass1,ass2;
+      BackendDAE.EquationArray eqns, eqns_1, eqns_2,remeqns,inieqns,eqns1,eqns1_1,eqns1_2;
       array<BackendDAE.MultiDimEquation> arreqns;
       array<DAE.Algorithm> algorithms;
       BackendDAE.EventInfo einfo;
       BackendDAE.ExternalObjectClasses eoc;
-      DAE.Exp eqn,eqn_1,scalar,scalar_1,rhs,expCref;
+      DAE.Exp eqn,scalar,rhs,expCref;
 
       DAE.ElementSource source;
       DAE.ExpType identType;
@@ -1974,7 +1974,7 @@ algorithm
       list<BackendDAE.Var> varlst;
       array<Integer> v1,v2,v4,v31;
       list<Integer> v3;
-      list<list<Integer>> comps1,comps2;
+      list<list<Integer>> comps1;
       list<BackendDAE.Var> derivedVariables;
       list<BackendDAE.Var> derivedVars;
       BackendDAE.BinTree jacElements;
@@ -2113,7 +2113,7 @@ algorithm
       list<Integer> ilst2;
       Integer i;
       array<Integer> arr,arr1;
-      list<String> s,s1;
+      list<String> s;
       String str;
     case({},_,arr) then arr;      
     case(var::rest,vars,arr)

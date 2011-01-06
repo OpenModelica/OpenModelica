@@ -101,8 +101,8 @@ algorithm
       Boolean encf,impl,notConst;
       SCode.Restriction r;
       list<Env.Frame> cenv,cenv1,cenv3,env2,env,env_1;
-      DAE.Mod outermod,mod_1,mod_2,mods,mods_1,emod_1,emod_2,mod,   mergedMod;
-      list<SCode.Element> importelts,els,els_1,rest,cdefelts,extendselts,classextendselts;
+      DAE.Mod outermod,mods,mods_1,emod_1,mod,   mergedMod;
+      list<SCode.Element> importelts,els,els_1,rest,cdefelts,classextendselts;
       list<SCode.Equation> eq1,ieq1,eq1_1,ieq1_1,eq2,ieq2,eq3,ieq3,eq,ieq,initeq2;
       list<SCode.AlgorithmSection> alg1,ialg1,alg1_1,ialg1_1,alg2,ialg2,alg3,ialg3,alg,ialg;
       Absyn.Path tp_1,tp;
@@ -357,7 +357,7 @@ algorithm
       Option<Absyn.ExternalDecl> externalDecl;
       list<SCode.Annotation> annotationLst;
       Option<SCode.Comment> comment;
-      list<SCode.Element> els,els1,els2;
+      list<SCode.Element> els;
       list<SCode.Equation> inEqn2;
       list<SCode.AlgorithmSection> inAlg2;
       list<tuple<SCode.Element, DAE.Mod, Boolean>> compelts;
@@ -402,9 +402,9 @@ algorithm
       list<SCode.Annotation> annotationLst1,annotationLst2;
       Option<SCode.Comment> comment1,comment2;
       list<SCode.Element> els1,els2;
-      list<SCode.Equation> nEqn1,nEqn2,inEqn,inEqn1,inEqn2;
+      list<SCode.Equation> nEqn1,nEqn2,inEqn1,inEqn2;
       list<SCode.AlgorithmSection> nAlg,nAlg1,nAlg2,inAlg,inAlg1,inAlg2;
-      list<tuple<SCode.Element, DAE.Mod, Boolean>> rest,elsAndMods;
+      list<tuple<SCode.Element, DAE.Mod, Boolean>> rest;
       tuple<SCode.Element, DAE.Mod, Boolean> first;
       SCode.Mod mods;
       DAE.Mod mod,mod1,mod2,emod;
@@ -753,7 +753,7 @@ algorithm
     local
       String id,name,component;
       Absyn.InnerOuter innerOuter;
-      Boolean finalPrefix,replaceablePrefix,protectedPrefix,partialPrefix,encapsulatedPrefix;
+      Boolean finalPrefix,replaceablePrefix,protectedPrefix,partialPrefix;
       SCode.Attributes attributes;
       Absyn.TypeSpec typeSpec;
       SCode.Mod modifications;
@@ -1019,7 +1019,7 @@ algorithm
       Absyn.ComponentRef cref;
       Absyn.FunctionArgs fargs;
       list<tuple<Absyn.Exp, list<SCode.Statement>>> elseifbranch,whenlst;
-      list<SCode.Statement> truebranch,elsebranch,forbody,algil;
+      list<SCode.Statement> truebranch,elsebranch,forbody;
       Absyn.ForIterators iterators;
       Option<SCode.Comment> comment;
       Absyn.Info info;

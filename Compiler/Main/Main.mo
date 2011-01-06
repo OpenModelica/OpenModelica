@@ -202,7 +202,7 @@ algorithm
       Absyn.Program p,p_1,newprog,iprog;
       AbsynDep.Depends aDep;
       list<Interactive.InteractiveVariable> vars_1,vars;
-      list<Interactive.CompiledCFunction> cf_1,cf,cf_2;
+      list<Interactive.CompiledCFunction> cf_1,cf;
       list<SCode.Class> a;
       list<Interactive.InstantiatedClass> b;
       Interactive.InteractiveStmts exp;
@@ -464,7 +464,7 @@ algorithm
    local
      String lib, mp, f;
      list<String> rest;
-     Absyn.Program pnew, p, p_1;
+     Absyn.Program pnew, p;
      list<Interactive.InstantiatedClass> ic;
      list<Interactive.InteractiveVariable> iv;
      list<Interactive.CompiledCFunction> cf;
@@ -521,7 +521,7 @@ algorithm
       Absyn.Program p, pLibs;
       list<SCode.Class> scode;
       DAE.DAElist d_1,d;
-      String s,str,f,res;
+      String s,str,f;
       list<String>  libs;
       Absyn.Path cname;
       Boolean silent,notsilent;
@@ -776,7 +776,7 @@ algorithm
       Env.Env env;
       list<Integer> tearvar;
       DAE.FunctionTree funcs;
-      String str,strtearing;
+      String str;
     case (cache,env,p,ap,dae,daeimpl,classname)
       equation
         true = runBackendQ();
@@ -907,7 +907,7 @@ algorithm
   matchcontinue (inCache,inEnv,inPath1,inProgram2,inProgram3,inDAElist4,inBackendDAE5,inIntegerArray6,inIntegerArray7,inIncidenceMatrix8,inIncidenceMatrixT9,inIntegerLstLst10)
     local
       BackendDAE.BackendDAE indexed_dlow,indexed_dlow_1,dlow;
-      String cname_str,filename,funcfilename,init_filename,makefilename,file_dir;
+      String cname_str,file_dir;
       Absyn.ComponentRef a_cref;
       list<String> libs;
       Absyn.Path classname;

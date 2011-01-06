@@ -678,13 +678,13 @@ algorithm
       Absyn.ForIterators iterators;
       Absyn.ComponentRef functionCall;
       Absyn.FunctionArgs functionArgs;
-      Absyn.Exp assignComponent,value,boolExpr,elseIfBoolExpr;
+      Absyn.Exp assignComponent,value,boolExpr;
       list<Absyn.Exp> conditions,switchCases,inputExps;
       list<SCode.Statement> stmts,stmts1,stmts2;
       list<list<SCode.Statement>> stmtsList;
       list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> branches;
       list<tuple<Absyn.Exp, list<SCode.Statement>>> sbranches;
-      list<Absyn.AlgorithmItem> body,elseIfBody,elseBody;
+      list<Absyn.AlgorithmItem> body,elseBody;
       list<list<Absyn.AlgorithmItem>> algItemsList;
       Absyn.AlgorithmItem algi;
       String labelName;
@@ -1038,7 +1038,7 @@ algorithm
       Boolean prot,rp,pa,fi,e,repl_1,fl,st;
       Option<Absyn.RedeclareKeywords> repl;
       Absyn.Class cl;
-      String n,ns,str;
+      String n;
       Absyn.Restriction re;
       Absyn.ClassDef de;
       Absyn.Info file_info;
@@ -1699,10 +1699,10 @@ public function prefixUnqualifiedCrefsFromExp
 algorithm
   prefixedExp := matchcontinue(exp, prefix)
     local
-      SCode.Ident s,sym;
+      SCode.Ident s;
       Integer x;
       Absyn.ComponentRef c,fcn;
-      Absyn.Exp e1,e2,e1a,e2a,e,t,f,start,stop,step,cond;
+      Absyn.Exp e1,e2,e1a,e2a,e,t,f,start,stop,cond;
       Absyn.Operator op;
       list<tuple<Absyn.Exp, Absyn.Exp>> lst;
       Absyn.FunctionArgs args;

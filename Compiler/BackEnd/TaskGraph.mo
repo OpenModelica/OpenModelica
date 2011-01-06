@@ -311,7 +311,7 @@ algorithm
       DAE.Exp e1,e2,varexp,expr;
       BackendDAE.Var v;
       list<BackendDAE.Var> varlst;
-      DAE.ComponentRef cr,origname,cr_1;
+      DAE.ComponentRef cr,cr_1;
       BackendDAE.VarKind kind;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
@@ -709,7 +709,7 @@ algorithm
       Integer tid,e_1,v_1,e,i;
       DAE.Exp e1,e2;
       BackendDAE.Var v;
-      DAE.ComponentRef cr,origname;
+      DAE.ComponentRef cr;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
       DAE.Flow flowPrefix;
@@ -755,7 +755,7 @@ algorithm
   _:= match (inVar,inInteger)
     local
       String cfs,name_str;
-      DAE.ComponentRef cf,name;
+      DAE.ComponentRef cf;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
       DAE.Flow flowPrefix;

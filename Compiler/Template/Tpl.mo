@@ -545,7 +545,7 @@ public function pushIter
 algorithm
   outText := matchcontinue (inText, inIterOptions)
     local
-      Tokens toks, txttoks;
+      Tokens toks;
       list<tuple<Tokens,BlockType>> blstack;
       IterOptions iopts;
       Integer i0;
@@ -814,7 +814,7 @@ algorithm
   (outActualPositionOnLine, outAtStartOfLine)
    := match (inTokens, inActualPositionOnLine, inAtStartOfLine, inAfterNewLineIndent)
     local
-      Tokens toks, txttoks;
+      Tokens toks;
       StringToken tok;
       list<tuple<Tokens,BlockType>> blstack;
       Text txt;
@@ -857,11 +857,11 @@ algorithm
   (outActualPositionOnLine, outAtStartOfLine, outAfterNewLineIndent)
    := match (inStringToken, inActualPositionOnLine, inAtStartOfLine, inAfterNewLineIndent)
     local
-      Tokens toks, txttoks;
+      Tokens toks;
       list<tuple<Tokens,BlockType>> blstack;
       BlockType bt;
       Text txt;
-      String str, accstr;
+      String str;
       list<String>  strLst;
       Integer nchars,   aind, blen;
       Boolean isstart;
@@ -943,7 +943,7 @@ algorithm
   (outActualPositionOnLine, outAtStartOfLine, outAfterNewLineIndent)
    := matchcontinue (inStringList, inActualPositionOnLine, inAtStartOfLine, inAfterNewLineIndent)
     local
-      String str, accstr;
+      String str;
       list<String> strLst;
       Integer nchars, aind, blen;
       Boolean isstart, hasNL;
@@ -1093,7 +1093,7 @@ algorithm
   (outActualPositionOnLine, outAtStartOfLine, outAfterNewLineIndent)
    := matchcontinue (inBlockType, inTokens, inActualPositionOnLine, inAtStartOfLine, inAfterNewLineIndent)
     local
-      Tokens toks, txttoks;
+      Tokens toks;
       StringToken septok, tok, asep, wsep;
       list<tuple<Tokens,BlockType>> blstack;
       BlockType bt;
@@ -1634,7 +1634,7 @@ algorithm
   _ := matchcontinue (inText, inFileName)
     local
       Text txt;
-      String file, str;
+      String file;
       Real rtTickTxt, rtTickW;   
     case (txt, file)
       equation

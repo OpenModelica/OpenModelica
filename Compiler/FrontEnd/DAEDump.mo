@@ -1111,7 +1111,7 @@ public function dumpEquationStr "function: dumpEquationStr
 algorithm
   outString := matchcontinue (inElement)
     local
-      String s1,s2,s3,s4,s5,str,s;
+      String s1,s2,s3,s4,s5,str;
       DAE.Exp e1,e2,e;
       DAE.ComponentRef c,cr1,cr2;
 
@@ -1659,9 +1659,9 @@ algorithm
   outString:=
   match (inStatement,inInteger)
     local
-      String s3,s4,s5,s6,str,s7,s8,s9,s10,s11,id,cond_str,msg_str;
+      String s3,s4,s5,s6,str,s7,s8,s9,s10;
       DAE.ComponentRef c;
-      DAE.Exp e,cond,msg;
+      DAE.Exp e;
       Integer i,i_1;
       list<String> es;
       list<DAE.Exp> expl;
@@ -2101,7 +2101,7 @@ algorithm
   _:=
   matchcontinue (inElement)
     local
-      String comment_str,tmp_str,n,fstr;
+      String comment_str,tmp_str,n;
       DAE.ComponentRef cr,cr1,cr2;
       DAE.VarKind vk;
       DAE.VarDirection vd;
@@ -2502,7 +2502,7 @@ protected function buildGrElement "function: buildGrElement
 algorithm
   outNode := match (inElement)
     local
-      String crstr,vkstr,expstr,expstr_1,e1str,e2str,n,fstr;
+      String crstr,vkstr,expstr,expstr_1,e1str,e2str,n;
       DAE.ComponentRef cr,cr1,cr2;
       DAE.VarKind vk;
       DAE.VarDirection vd;
@@ -2744,8 +2744,8 @@ public function dumpElementsStream "function: dumpElementsStream
 algorithm
   outStream := match(l, inStream)
     local  
-      String initalgstr,eqstr,algstr;
-      Boolean noeq,noalg;
+      String algstr;
+      Boolean noalg;
       IOStream.IOStream str;
       list<DAE.Element> v,o,ie,ia,e,a;
       
@@ -2842,7 +2842,7 @@ protected function dumpEquationsStream "function: dumpEquationsStream
 algorithm
   outStream := matchcontinue (inElementLst, inStream)
     local
-      String s1,s2,s3,s4,s4_1,s5,s6,s,ss11;
+      String s1,s2,s;
       DAE.Exp e1,e2,e;
       list<DAE.Exp> conds,expl;
       list<DAE.Element> xs,xs1,xs2;
@@ -3027,7 +3027,7 @@ protected function dumpInitialEquationsStream "function: dumpInitialequationsStr
 algorithm
   outStream := matchcontinue (inElementLst, inStream)
     local
-      String s1,s2,s3,s4,s4_1,s5,s6,s;
+      String s1,s2;
       DAE.Exp e1,e2,e;
       list<DAE.Element> xs,xs1,xs2;
       list<list<DAE.Element>> trueBranches;
@@ -3316,7 +3316,7 @@ protected function dumpExtObjClassStr
 algorithm
   outString := matchcontinue (inElement)
     local
-      String fstr,daestr,str,c_str,d_str;
+      String fstr,str,c_str,d_str;
       Absyn.Path fpath;
       list<DAE.Element> dae;
       DAE.Function constr,destr;

@@ -494,7 +494,7 @@ algorithm
      Absyn.Class cl;
      Absyn.ClassDef classDef;
      Absyn.Ident id;
-     Absyn.Path fq,usesName,cname2;
+     Absyn.Path fq;
      /* Short class definitions */
      case((cl as Absyn.CLASS(name=id,body = classDef as Absyn.DERIVED(typeSpec=_)),optPath,(dep,prg,env))) equation
        env2 = getClassEnvNoElaborationScope(prg,optPath,env);

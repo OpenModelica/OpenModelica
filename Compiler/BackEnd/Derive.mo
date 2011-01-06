@@ -342,10 +342,10 @@ algorithm
       list<list<DAE.ComponentRef>> crefslstls;
       list<DAE.ComponentRef> crefs;
       list<Boolean> blst;
-      String e_str,str,s1;
+      String e_str,str;
       DAE.Exp e,e_1,e1_1,e2_1,e1,e2,e3_1,e3,d_e1,exp,e0,zero;
       BackendDAE.Variables timevars;
-      DAE.Operator op,rel;
+      DAE.Operator op;
       list<DAE.Exp> expl_1,expl,sub;
       Absyn.Path a;
       Boolean b,c;
@@ -1017,7 +1017,7 @@ algorithm
       tuple<Integer,DAE.derivativeCond> cond;
       Absyn.Path default,fname,da,inDFuncName;
       DAE.TType typ;
-      list<tuple<Integer,DAE.derivativeCond>> cr,cr1;
+      list<tuple<Integer,DAE.derivativeCond>> cr;
       Integer derivativeOrder;
       Option<Absyn.Path> dd; 
       Integer do;
@@ -1225,12 +1225,12 @@ algorithm
     local
       Real rval;
       DAE.ComponentRef cr,crx,tv;
-      DAE.Exp e,e1_1,e2_1,e1,e2,const_one,d_e1,d_e2,exp,e_1,exp_1,e3_1,e3,cond,zero;
+      DAE.Exp e,e1_1,e2_1,e1,e2,const_one,d_e1,d_e2,exp,e_1,exp_1,cond,zero;
       DAE.ExpType tp, ctp;      
       Absyn.Path a,fname;
       Boolean b,c;
       DAE.InlineType inl;
-      DAE.Operator op,rel;
+      DAE.Operator op;
       String e_str,s,s2,str;
       list<DAE.Exp> expl_1,expl,sub;
       Integer i;

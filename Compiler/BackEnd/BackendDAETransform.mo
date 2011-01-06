@@ -114,7 +114,7 @@ algorithm
       BackendDAE.Variables v,kv,v_1,kv_1,vars,exv;
       BackendDAE.AliasVariables av;
       BackendDAE.EquationArray e,re,ie,e_1,re_1,ie_1,eqns;
-      array<BackendDAE.MultiDimEquation> ae,ae1;
+      array<BackendDAE.MultiDimEquation> ae;
       array<DAE.Algorithm> al;
       BackendDAE.EventInfo ev,einfo;
       array<list<BackendDAE.Value>> m,mt,m_1,mt_1;
@@ -862,7 +862,7 @@ algorithm
       array<BackendDAE.Value> a1,a2;
       BackendDAE.Value n,i,w,w_1,num;
       list<BackendDAE.Value> stack,stack_1,stack_2;
-      list<list<BackendDAE.Value>> comp, comps, comps2;
+      list<list<BackendDAE.Value>> comp, comps;
       
     case (m,mt,a1,a2,n,i,w,stack,comp)
       equation
@@ -1459,8 +1459,8 @@ algorithm
       BackendDAE.Variables v_1,v,kv,ev;
       BackendDAE.AliasVariables av;
       BackendDAE.EquationArray eqns_1,eqns,seqns,seqns1,ie,ie1;
-      array<BackendDAE.MultiDimEquation> ae,ae1,ae2,ae3;
-      array<DAE.Algorithm> al,al1,al2,al3;
+      array<BackendDAE.MultiDimEquation> ae,ae1,ae2;
+      array<DAE.Algorithm> al,al1,al2;
       list<BackendDAE.WhenClause> wclst,wclst1,wclst2;
       list<BackendDAE.ZeroCrossing> zeroCrossingLst;
       list<BackendDAE.Value> rest;
@@ -1698,7 +1698,7 @@ algorithm
       DAE.Exp cond,cond1,msg;
       DAE.ComponentRef cr;
       DAE.ElementSource source;
-      Type_a ext_arg_1,ext_arg_2,ext_arg_3;
+      Type_a ext_arg_1,ext_arg_2;
 
     case ({},func,inTypeA) then ({},inTypeA);
 
@@ -1852,7 +1852,7 @@ algorithm
       Option<DAE.Exp> c;
       Option<Values.Value> d;
       BackendDAE.Value g;
-      DAE.ComponentRef dummyder,dummyder_1,cr;
+      DAE.ComponentRef dummyder,cr;
       DAE.ElementSource source "the source of the element";
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
@@ -1915,7 +1915,7 @@ algorithm
       BackendDAE.Value idx;
       DAE.ComponentRef name,dummyvar_cr,var;
       DAE.ElementSource source "origin of equation";
-      Option<DAE.VariableAttributes> dae_var_attr,dae_var_attr1;
+      Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;

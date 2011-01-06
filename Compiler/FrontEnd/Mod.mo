@@ -111,7 +111,7 @@ algorithm
       list<DAE.SubMod> subs_1;
       list<Env.Frame> env;
       Prefix.Prefix pre;
-      SCode.Mod m,mod;
+      SCode.Mod m;
       Absyn.Each each_;
       list<SCode.SubMod> subs;
       DAE.Exp e_1,e_2;
@@ -166,17 +166,19 @@ algorithm
         (cache,DAE.REDECL(finalPrefix,elist_1));
 
     // failure
+    /*
     case (cache,env,ih,pre,mod,impl,info)
       equation
-        /*Debug.fprint("failtrace", "#-- elab_mod ");
+        Debug.fprint("failtrace", "#-- elab_mod ");
         str = SCode.printModStr(mod);
         Debug.fprint("failtrace", str);
         Debug.fprint("failtrace", " failed\n");
         print("elab mod failed, mod:");print(str);print("\n");
-        print("env:");print(Env.printEnvStr(env));print("\n");*/
-        /* elab mod can fail? */
+        print("env:");print(Env.printEnvStr(env));print("\n");
+        elab mod can fail?
       then
         fail();
+    */
   end match;
 end elabMod;
 
@@ -1111,7 +1113,7 @@ algorithm
     local
       DAE.Mod mod,mod1,mod2;
       list<DAE.SubMod> subs;
-      Ident n,i;
+      Ident n;
       Option<DAE.EqMod> eqMod;
       Absyn.Each e;
       Boolean f;
@@ -1137,7 +1139,7 @@ algorithm
     local
       DAE.Mod mod,mod1,mod2;
       list<DAE.SubMod> subs;
-      Ident n,i;
+      Ident n;
       Option<DAE.EqMod> eqMod;
       Absyn.Each e;
       Boolean f;
@@ -1849,7 +1851,7 @@ protected function mergeSubs "function: mergeSubs
 algorithm
   outTypesSubModLst := matchcontinue (inTypesSubModLst1,inTypesSubModLst2,inEnv3,inPrefix4)
     local
-      list<DAE.SubMod> s1,s1_1,ss,s2,s2_new,s_rec;
+      list<DAE.SubMod> s1,s2,s2_new,s_rec;
       DAE.SubMod s,s_first;
       list<Env.Frame> env;
       Prefix.Prefix pre;
@@ -2030,7 +2032,7 @@ same as modEqual with the difference that we allow:
 algorithm
   equal := matchcontinue(mod1,mod2)
     local 
-      Boolean b1,b2,b3,b4,f1,f2;
+      Boolean b1,f1,f2;
       Absyn.Each each1,each2;
       list<DAE.SubMod> submods1,submods2;
       Option<DAE.EqMod> eqmod1,eqmod2;
@@ -2382,7 +2384,7 @@ algorithm str := matchcontinue(m,depth)
   local
     list<tuple<SCode.Element, DAE.Mod>> tup;
     list<DAE.SubMod> subs;
-    String s1,s2;
+    String s1;
     Boolean fp;
     DAE.EqMod eq;
 
@@ -2421,7 +2423,7 @@ Helper function for prettyPrintMod"
   output String str;
 algorithm str := matchcontinue(inSubs,depth)
   local
-    String s1,s2,s3,id;
+    String s1,s2,id;
     DAE.SubMod s;
     DAE.Mod m;
     list<Integer> li;
@@ -2457,7 +2459,7 @@ Prints a readable format of a sub-modifier, used in error reporting for built-in
   output String str;
 algorithm str := matchcontinue(inSub)
   local
-    String s1,s2,id,s3;
+    String s1,s2,id;
     DAE.Mod m;
     list<Integer> li;
     Boolean fp;

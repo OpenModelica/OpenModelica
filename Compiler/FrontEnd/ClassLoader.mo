@@ -154,7 +154,7 @@ protected function loadClassFromMp
 algorithm
   outProgram := matchcontinue (inIdent,inString)
     local
-      String mp,pd,classfile,classfile_1,class_,mp_1,dirfile,packfile,s;
+      String mp,pd,classfile,classfile_1,class_,mp_1,dirfile,packfile;
       Absyn.Program p;
       Absyn.TimeStamp ts;
       Real  t2;

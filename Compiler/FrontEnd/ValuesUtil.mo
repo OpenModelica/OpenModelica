@@ -832,7 +832,7 @@ algorithm
     local
       list<Value> reslst,res2,v1lst,rest1,v2lst,rest2;
       Integer i1,i2;
-      Real res,r1,r2,r3;
+      Real res,r1,r2;
       list<Integer> dims;
     case ((Values.ARRAY(valueLst = v1lst, dimLst = dims) :: rest1),(Values.ARRAY(valueLst = v2lst) :: rest2))
       equation
@@ -1586,7 +1586,7 @@ algorithm
   outValue:=
   matchcontinue (inValueLst1,inValueLst2)
     local
-      Integer i1,i2,res,v1,v2,len,len2,dim;
+      Integer i1,i2,res,v1,v2,dim;
       list<Value> v1lst,v2lst,vres,rest,vlst,col,mat_1,vals,mat,lst1,lst2;
       Value sres,v;
       String len2str;
@@ -1917,7 +1917,7 @@ algorithm
   _ :=
   matchcontinue (inValue)
     local
-      String s,s_1,s_2,res,res_1,recordName;
+      String s,s_1,recordName;
       Integer n;
       Real x;
       list<Value> xs,vs;
@@ -2180,7 +2180,7 @@ public function sendPtolemyplotDataset "function: sendPtolemyplotDataset
 algorithm
   outInteger := match (inValue2,inStringLst3,inString4, interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange)
     local
-      String str,filename,timevar,message, interpolation2, title2, xLabel2, yLabel2, xRange2, yRange2, oldBuf;
+      String str,timevar,message, interpolation2, title2, xLabel2, yLabel2, xRange2, yRange2, oldBuf;
       Boolean legend2, logX2, logY2, grid2, points2;
       Value time;
       list<Value> rest;
@@ -2217,7 +2217,7 @@ public function sendPtolemyplotDataset2 "function: sendPtolemyplotDataset2
 algorithm
   outInteger := match (inValue2,inStringLst3,visInfo,inString4)
     local
-      String str,filename,timevar,info,message,oldBuf;
+      String str,timevar,info,message,oldBuf;
       Value time;
       list<Value> rest;
       list<String> varnames;
