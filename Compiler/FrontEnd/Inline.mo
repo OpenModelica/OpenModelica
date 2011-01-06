@@ -498,16 +498,16 @@ algorithm
       Functiontuple fns;
       list<DAE.Function> cdr,cdr_1;
       list<DAE.Element> elist,elist_1;
-      list<list<DAE.Element>> dlist,dlist_1;
+      list<list<DAE.Element>> dlist_1;
       DAE.Function el,res;
-      DAE.Type ty,t;
+      DAE.Type t;
       Boolean partialPrefix;
       list<Absyn.Path> pathLst;
       Absyn.InnerOuter innerOuter;
       Ident i;
       Absyn.Path p;
       DAE.ExternalDecl ext;
-      list<DAE.Exp> explst,explst_1;
+      list<DAE.Exp> explst_1;
       DAE.InlineType inlineType;
       list<DAE.FunctionDefinition> funcDefs;
       DAE.ElementSource source "the origin of the element";
@@ -1028,7 +1028,7 @@ algorithm
       list<DAE.ComponentRef> crlst;
       list<list<tuple<DAE.Exp, Boolean>>> scalar;
       list<tuple<DAE.Exp, Boolean>> flatscalar;
-      list<list<DAE.Subscript>> subslst,subslst1;      
+      list<list<DAE.Subscript>> subslst1;      
     case ({}) then {}; 
     case((c,e as (DAE.CREF(componentRef = cref,ty=DAE.ET_COMPLEX(varLst=varLst))))::res)
       equation

@@ -962,7 +962,7 @@ algorithm
     local
       list<SCode.Element> es;
       Boolean f,prot;
-      Boolean inner_,outer_;
+      Boolean outer_;
       Option<Absyn.RedeclareKeywords> repl;
       Absyn.ElementSpec s;
       Absyn.InnerOuter io;

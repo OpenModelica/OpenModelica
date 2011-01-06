@@ -229,7 +229,7 @@ algorithm
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
       list<DAE.Element> xs,elts;
-      DAE.DAElist lst,dae;
+      DAE.DAElist dae;
       Absyn.Path path;
       tuple<DAE.TType, Option<Absyn.Path>> tp;
       DAE.ExternalDecl extdecl;
@@ -1039,10 +1039,10 @@ algorithm
     local
       DAE.Exp e1,e2,e;
       DAE.ComponentRef c;
-      list<DAE.Element> xs,xs1,xs2;
+      list<DAE.Element> xs1,xs2;
       list<list<DAE.Element>> trueBranches;
       list<DAE.Exp> conds;
-      String ss11, s;
+      String  s;
       IOStream.IOStream str;
 
     case (DAE.INITIALEQUATION(exp1 = e1,exp2 = e2))
@@ -1659,13 +1659,13 @@ algorithm
   outString:=
   match (inStatement,inInteger)
     local
-      String s1,s2,s3,s4,s5,s6,str,s7,s8,s9,s10,s11,id,cond_str,msg_str;
+      String s3,s4,s5,s6,str,s7,s8,s9,s10,s11,id,cond_str,msg_str;
       DAE.ComponentRef c;
       DAE.Exp e,cond,msg;
       Integer i,i_1;
       list<String> es;
       list<DAE.Exp> expl;
-      list<DAE.Statement> then_,stmts;
+      list<DAE.Statement> stmts;
       DAE.Statement stmt;
       Algorithm.Else else_;
     case (DAE.STMT_WHEN(exp = e,statementLst = stmts, elseWhen=NONE()),i)
@@ -2744,8 +2744,8 @@ public function dumpElementsStream "function: dumpElementsStream
 algorithm
   outStream := match(l, inStream)
     local  
-      String s0,s1,s2,s3,s4,s5,initeqstr,initalgstr,eqstr,algstr;
-      Boolean noiniteq,noinitalg,noeq,noalg;
+      String initeqstr,initalgstr,eqstr,algstr;
+      Boolean noinitalg,noeq,noalg;
       IOStream.IOStream str;
       list<DAE.Element> v,o,ie,ia,e,a;
       
@@ -3002,7 +3002,7 @@ algorithm
     local
       DAE.Exp c;
       list<DAE.Element> tb;
-      String s1,s2,sRec,sRes;
+      String sRes;
       IOStream.IOStream str;
 
   case({},{},str) then str;
@@ -3287,7 +3287,7 @@ public function dumpFunctionStr "function: dumpFunctionStr
 algorithm
   outString := matchcontinue (inElement)
     local
-      String fstr,daestr,str;
+      String daestr,str;
       Absyn.Path fpath;
       list<DAE.Element> dae;
       DAE.Type t;
@@ -3343,7 +3343,7 @@ protected function dumpFunctionStream
 algorithm
   outStream := matchcontinue (inElement, inStream)
     local
-      String fstr, inlineTypeStr,daestr,lang;
+      String fstr, daestr,lang;
       Absyn.Path fpath;
       list<DAE.Element> daeElts;
       DAE.Type t;

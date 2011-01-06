@@ -624,7 +624,7 @@ public function typeSpecEqual "function: typeSpecEqual
 algorithm
   outBoolean := matchcontinue (inTySpec1,inTySpec2)
     local
-      String id1,id2;
+      String id2;
       Boolean res;
       Absyn.TypeSpec tySpec1, tySpec2;
     case (tySpec1, tySpec2)

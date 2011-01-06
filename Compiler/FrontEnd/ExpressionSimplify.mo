@@ -117,7 +117,7 @@ public function simplify1
 algorithm
   outExp := matchcontinue (inExp)
     local
-      Real v,rv;
+      Real rv;
       Integer n,i_1,i,lInt;
       DAE.Exp e,res,exp,c,f,t_1,f_1,e1_1,exp_1,e1,e_1,e2,e2_1,e3_1,e3,cond,sub,ae1,exp1;
       Type t,tp_1,tp,tp1,tp2,t1;
@@ -129,8 +129,8 @@ algorithm
       list<Subscript> s,s_1;
       ComponentRef c_1;
       Operator op;
-      String before, after, s1, s2;
-      Real time1,time2;
+      String    s2;
+      Real time2;
       DAE.InlineType inline,b3;
       Absyn.Path fn, path;
       list<list<tuple<DAE.Exp, Boolean>>> matr,matr2;
@@ -771,7 +771,7 @@ algorithm
     local 
       DAE.Exp e,exp,e1,e2,e1_1,e2_1,exp_2,exp_3;
       Operator op;
-      String s1,s2; 
+      String s2; 
       Boolean b;      
     
     case ((exp as DAE.BINARY(exp1 = e1,operator = op,exp2 = e2))) /* multiple terms/factor simplifications */
@@ -1130,7 +1130,7 @@ algorithm
       DAE.Exp exp;
       Type tp1,tp2,tp;
       Boolean sc1,sc2,sc;
-      Integer size1,size; 
+      Integer size; 
       list<list<tuple<DAE.Exp, Boolean>>> lstexpl1,lstexpl2;
       DAE.Dimension d;
     
@@ -1238,7 +1238,7 @@ algorithm
       list<DAE.Exp> row_1,expl,res,v1;
       DAE.Exp exp;
       tuple<DAE.Exp, Boolean> texp;
-      list<tuple<DAE.Exp, Boolean>> row,heads;
+      list<tuple<DAE.Exp, Boolean>> heads;
       list<list<tuple<DAE.Exp, Boolean>>> rows,tails;
     
     case (v1,  ((texp :: {}) :: rows)    )
@@ -1715,7 +1715,7 @@ algorithm
       DAE.Exp res,e,e1,e2,res1,res2,zero;
       Type tp;
       String str;
-      Boolean b1,b2,b;      
+      Boolean b;      
 
     // e1 * e2
     case ((e as DAE.BINARY(exp1 = e1,operator = DAE.MUL(ty = tp),exp2 = e2)))
@@ -2912,7 +2912,7 @@ algorithm
       DAE.Exp e1_1,e2_1,e3,e,e1,e2,res,e_1,one;
       Operator oper;
       Type ty,ty2,tp,tp2,ty1;
-      Ident s1,s2;
+      Ident s2;
       list<DAE.Exp> exp_lst,exp_lst_1;
       DAE.ComponentRef cr1,cr2;
       Boolean b;

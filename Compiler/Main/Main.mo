@@ -520,9 +520,9 @@ algorithm
     local
       Absyn.Program p, pLibs;
       list<SCode.Class> scode;
-      DAE.DAElist d_2,d_1,d;
+      DAE.DAElist d_1,d;
       String s,str,f,res;
-      list<String> lst, libs;
+      list<String>  libs;
       Absyn.Path cname;
       Boolean silent,notsilent;
       Interactive.InteractiveStmts stmts;
@@ -774,7 +774,7 @@ algorithm
       Absyn.Path classname;
       Env.Cache cache;
       Env.Env env;
-      list<Integer> reseqn,tearvar;
+      list<Integer> tearvar;
       DAE.FunctionTree funcs;
       String str,strtearing;
     case (cache,env,p,ap,dae,daeimpl,classname)
@@ -976,7 +976,7 @@ algorithm
   outDAElist:=
   matchcontinue (inDAElist)
     local
-      list<DAE.Element> dae_1,dae;
+      list<DAE.Element> dae;
       DAE.DAElist d;
     case d
       equation
@@ -1207,10 +1207,10 @@ public function main
 algorithm
   _ := matchcontinue (inStringLst)
     local
-      String ver_str,errstr;
+      String errstr;
       list<String> args_1,args;
       Boolean ismode,icmode,imode,imode_1;
-      String s,str,omhome,oldpath,newpath;
+      String omhome,oldpath,newpath;
       Interactive.InteractiveSymbolTable symbolTable;
       
       // Setup mingw path only once.

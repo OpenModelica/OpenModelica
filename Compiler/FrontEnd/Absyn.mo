@@ -1450,10 +1450,10 @@ algorithm
       Operator op_1,op;
       FuncTypeTplExpType_aToTplExpType_a rel;
       list<Exp> expl_1,expl;
-      Path fn_1,fn,path_1,path;
-      Boolean t_1,b_1,t,b,scalar_1,scalar;
-      Integer i_1,i;
-      Ident id_1,id;
+      Path fn,path_1,path;
+      Boolean b_1,t,b,scalar_1,scalar;
+      Integer i;
+      Ident id;
       list<tuple<Exp,Exp>> elseIfBranch,elseIfBranch1;
       FunctionArgs fargs,fargs1,fargs2;
       ComponentRef cfn,cfn_1; Exp e_temp;
@@ -3770,7 +3770,7 @@ algorithm
   equal := matchcontinue(exp1,exp2)
     local 
       Exp x, y;
-      Integer i1, i2, i; Real r1, r2, r;
+      Integer   i; Real   r;
     
     // real vs. integer  
     case (INTEGER(i), REAL(r))
@@ -4536,7 +4536,7 @@ algorithm
   outTpl := matchcontinue(tpl)
     local 
       Option<Path> optPath;
-      Path cname,path,usesName,cname2;
+      Path cname2;
       Exp e;
       ComponentRef cr;
       list<Exp> lst, lstArgs;

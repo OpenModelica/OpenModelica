@@ -2689,7 +2689,7 @@ algorithm
     local
       Absyn.Program initialProgram;
       list<Absyn.ElementItem> eitems;
-      String msg,str;
+      String str;
     case ()
       equation
         false = RTOpts.acceptMetaModelicaGrammar();

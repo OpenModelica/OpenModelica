@@ -2611,9 +2611,9 @@ algorithm
     local
       String rkeystr,keystr;
       DAE.ComponentRef rkey;
-      BackendDAE.Value rval,cmpval,res;
-      Option<BackendDAE.BinTree> optLeft,optRight;
-      BackendDAE.BinTree right, left;
+      BackendDAE.Value cmpval,res;
+      Option<BackendDAE.BinTree> optRight;
+      BackendDAE.BinTree  left;
       
     // found it
     case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(key=rkey))),keystr)
@@ -2632,10 +2632,10 @@ protected function treeGet3
 algorithm
   outValue := match (inBinTree,inString,compResult)
     local
-      String rkeystr,keystr;
+      String keystr;
       DAE.ComponentRef rkey;
       BackendDAE.Value rval,cmpval,res;
-      Option<BackendDAE.BinTree> optLeft,optRight;
+      Option<BackendDAE.BinTree> optRight;
       BackendDAE.BinTree right, left;
       
     // found it
@@ -2967,7 +2967,7 @@ algorithm outExp := matchcontinue(inExp)
     Integer i,j;
     list<list<DAE.Subscript>> subslst,subslst1;
     list<DAE.Exp> expl;
-    DAE.Exp e,e_new;
+    DAE.Exp e_new;
     list<DAE.ExpVar> varLst;
     Absyn.Path name;
     tuple<DAE.Exp, Option<DAE.FunctionTree> > restpl;  

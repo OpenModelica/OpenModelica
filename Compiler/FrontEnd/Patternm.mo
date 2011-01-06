@@ -339,7 +339,7 @@ algorithm
     local
       Absyn.Exp exp;
       String s;
-      DAE.Type ty,t;
+      DAE.Type t;
       Absyn.Path utPath1,utPath2,fqPath;
       Integer index,numPosArgs;
       list<Absyn.NamedArg> namedArgList,invalidArgs;
@@ -1333,7 +1333,7 @@ algorithm
       DAE.Type ty;
       list<Absyn.Exp> es;
       Boolean b;
-      list<DAE.Exp> elabCrs1,elabCrs2;
+      list<DAE.Exp> elabCrs2;
     case (cache,env,body,Absyn.CALL(function_ = Absyn.CREF_IDENT("fail",{}), functionArgs = Absyn.FUNCTIONARGS({},{})),impl,st,performVectorization,pre,info)
       then (cache,body,NONE(),NONE(),st);
 
@@ -1505,7 +1505,7 @@ algorithm
       list<Absyn.ElementItem> ld;
       list<SCode.Element> ld2,ld3,ld4;
       list<tuple<SCode.Element, DAE.Mod>> ld_mod;      
-      DAE.DAElist dae,dae1;
+      DAE.DAElist dae1;
       list<DAE.Element> dae1_2Elts;
       Env.Env env2;
       ClassInf.State dummyFunc;

@@ -98,7 +98,7 @@ algorithm
       list<tuple<Integer,Integer,Integer>> derivedAlgs,derivedMultiEqn;
       Boolean add;
       array<BackendDAE.MultiDimEquation> ae,ae1;
-      list<BackendDAE.MultiDimEquation> listae,listae1;
+      list<BackendDAE.MultiDimEquation> listae1;
       list<DAE.Exp> crefOrDerCref,crefOrDerCref1,crefOrDerCref11,crefOrDerCref2,crefOrDerCref21,crefOrDerCref3,derCref1,derCref2;
       list<Integer> dimSize;
       String msg;
@@ -342,7 +342,7 @@ algorithm
       list<list<DAE.ComponentRef>> crefslstls;
       list<DAE.ComponentRef> crefs;
       list<Boolean> blst;
-      String cr_str,cr_str_1,e_str,str,s1;
+      String e_str,str,s1;
       DAE.Exp e,e_1,e1_1,e2_1,e1,e2,e3_1,e3,d_e1,exp,e0,zero;
       BackendDAE.Variables timevars;
       DAE.Operator op,rel;
@@ -813,7 +813,7 @@ algorithm
       Integer derivativeOrder;
       DAE.Type tp,dtp;
       list<DAE.Type> tlst,tlst1,tlst2;
-      list<DAE.Exp> explst,dexplst,dexplst1,dexplst_1,dexplst1_1;
+      list<DAE.Exp> dexplst,dexplst1,dexplst_1,dexplst1_1;
       list<Boolean> blst,blst1;
       list<String> typlststring;
       String typstring,dastring;      
@@ -922,7 +922,7 @@ algorithm
   (outExp) := matchcontinue (inExp,inVarsandFuncs)
     local 
       list<DAE.Exp> expl,expl1,dexpl;
-      DAE.Exp e,e1;
+      DAE.Exp e1;
       BackendDAE.Variables timevars;
       Absyn.Path a,da;
       Boolean b,c;

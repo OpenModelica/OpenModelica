@@ -1210,7 +1210,7 @@ algorithm
   outInteractiveVariableLst := matchcontinue (inIdent,inInteractiveVariableLst)
     local
       String ident,id2;
-      Values.Value v,val2;
+      Values.Value val2;
       list<InteractiveVariable> rest, rest2;
       InteractiveVariable var;
 
@@ -1811,7 +1811,7 @@ algorithm
       list<SCode.Class> s,s_1;
       Absyn.Modification mod;
       Absyn.Path path_1,path,wpath;
-      Integer rest,count,n;
+      Integer count,n;
       list<Absyn.NamedArg> nargs;
       Boolean b1,b2,b,omcfound,gcc_res,touch_res,rm_res,uname_res;
       list<LoadedFile> lf;
@@ -2760,7 +2760,7 @@ algorithm
     Components comps;
     Absyn.Path class_path;
     ComponentReplacementRules comp_repsrules;
-    Real t1,t2,t3;
+    Real t3;
     case(p,class_,cref1,cref2)
       equation
         comps = extractAllComponents(p, Absyn.crefToPath(class_)) "class in package" ;
@@ -2805,7 +2805,7 @@ algorithm
       list<String> paths;
       String paths_1,paths_2;
       Absyn.ComponentRef class_,old_comp,new_comp;
-      Real t1,t2,t3;
+      Real t3;
       Absyn.Class cl;
       Absyn.Path model_path;
       String str;
@@ -2852,11 +2852,11 @@ algorithm
     local
       Absyn.Path class_path;
       ComponentReplacementRules comp_reps;
-      Absyn.Program p_1,p;
+      Absyn.Program p;
       list<String> paths;
-      String paths_1,paths_2;
+      String paths_2;
       Absyn.ComponentRef class_,old_comp,new_comp;
-      Real t1,t2,t3;
+      Real t3;
       Absyn.Class cl;
       Absyn.Path model_path;
       String str;
@@ -4006,7 +4006,7 @@ protected function getComponentreplacementsrules
 algorithm
   outComponentReplacementRules := matchcontinue (inComponents,inComponentReplacementRules,inInteger)
     local
-      Real t1,t2,t3,t4;
+      Real t4;
       Integer len,old_len;
       Components comps;
       ComponentReplacementRules comp_reps,comp_reps_1,comp_reps_2,comp_reps_res;
@@ -4571,7 +4571,7 @@ algorithm
       Absyn.ClassDef e;
       Absyn.Info file_info;
       Absyn.Program p;
-      Real t1,t2,t3;
+      Real t3;
     case (((class_ as Absyn.CLASS(name = id,partialPrefix = a,finalPrefix = b,encapsulatedPrefix = c,restriction = d,body = e,info = file_info)),SOME(pa),(comps,p,env)))
       equation
         false = isReadOnly(file_info);
@@ -4723,7 +4723,7 @@ algorithm
       Absyn.ElementSpec elementspec;
       list<Absyn.ElementItem> res;
       Absyn.ElementItem element;
-      Real t1,t2;
+      Real t2;
     case (_,{},comps,env) then comps;  /* the QUALIFIED path for the class */
     case (pa,(Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = elementspec)) :: res),comps,env)
       equation
@@ -4758,7 +4758,7 @@ algorithm
       list<Absyn.ComponentItem> comp_items;
       Component comp;
       list<Absyn.ElementArg> elementargs;
-      Real t1,t2,t3,t4;
+      Real t4;
       Env.Cache cache;
 
     case (pa,Absyn.COMPONENTS(typeSpec = Absyn.TPATH(path_1,_),components = comp_items),comps,env) /* the QUALIFIED path for the class */
@@ -9053,7 +9053,7 @@ algorithm
     local
       Absyn.Path path;
       String i;
-      Boolean f,e;
+      Boolean e;
       Absyn.Restriction r;
       list<Absyn.ClassPart> parts;
       list<Absyn.ElementItem> publst,protlst;
@@ -9111,7 +9111,7 @@ algorithm
     local
       Absyn.Path path;
       String i;
-      Boolean f,e;
+      Boolean e;
       Absyn.Restriction r;
       list<Absyn.ClassPart> parts;
       list<Absyn.ElementItem> publst;
@@ -9489,10 +9489,10 @@ algorithm
   outProgram := matchcontinue (inProgram1,inProgram2)
     local
       Absyn.Program prg,newp,oldp,p2,newp_1,a,b, p1;
-      Absyn.Class newclass,c1,cdef,newcdef;
+      Absyn.Class c1,cdef,newcdef;
       String name;
       Absyn.Restriction restr;
-      Boolean p,e;
+      Boolean e;
       Absyn.Path path,modelwithin;
       list<Absyn.Class> c2,c3;
       Absyn.ElementSpec elt;
@@ -9597,10 +9597,10 @@ algorithm
   outInteractiveVariableLst:=
   match (inProgram,inInteractiveVariableLst)
     local
-      Absyn.Path path,newscope,path_1;
+      Absyn.Path newscope,path_1;
       Values.Value newscope_1;
-      list<InteractiveVariable> vars_1,vars;
-      String id,id2,id1;
+      list<InteractiveVariable> vars;
+      String id1;
 
     /*
     case (Absyn.BEGIN_DEFINITION(path = Absyn.IDENT(name = id)),vars)
@@ -10611,9 +10611,9 @@ algorithm
       Absyn.Path modelpath,path;
       Absyn.Class cdef;
       list<SCode.Class> p_1;
-      list<Env.Frame> env,env_1;
+      list<Env.Frame> env_1;
       SCode.Class c;
-      String id,str,s;
+      String s;
       Boolean encflag;
       SCode.Restriction restr;
       Absyn.ComponentRef model_;
@@ -10701,9 +10701,9 @@ algorithm
       Absyn.Path modelpath,path;
       Absyn.Class cdef;
       list<SCode.Class> p_1;
-      list<Env.Frame> env,env_1;
+      list<Env.Frame> env_1;
       SCode.Class c;
-      String id,str,s,annStr;
+      String s,annStr;
       Boolean encflag;
       SCode.Restriction restr;
       Integer n,n_1;
@@ -12186,7 +12186,7 @@ algorithm
       list<Absyn.ClassPart> parts;
       Option<String> cmt;
       Absyn.Class cdef;
-      Absyn.Path newpath,inmodel,path;
+      Absyn.Path inmodel,path;
       Absyn.Program p;
     /* a class with parts */
     case (_,_,Absyn.CLASS(body = Absyn.PARTS(classParts = parts,comment = cmt)))
@@ -12445,7 +12445,7 @@ algorithm
       String res;
       list<Absyn.ClassPart> parts;
       Absyn.Class cdef;
-      Absyn.Path newpath,inmodel,path;
+      Absyn.Path inmodel,path;
       Absyn.Program p;
     /* a class with parts */
     case (_,_,Absyn.CLASS(body = Absyn.PARTS(classParts = parts)))
@@ -12784,7 +12784,7 @@ algorithm
   annotationStr := match(inClass, annotationType, inProgram, inModelPath)
     local
       list<Absyn.ElementArg> annlst;
-      String s1, s2, str;
+      String s1,  str;
       list<Absyn.ClassPart> parts;
       Absyn.Program p;
       Absyn.Path path;
@@ -13062,7 +13062,7 @@ protected function getNamedAnnotationInClass
 algorithm
   outString := matchcontinue (inClass,id,f)
     local
-      list<Absyn.ElementItem> publst,protlst,lst;
+      list<Absyn.ElementItem> protlst,lst;
       String str,res;
       list<Absyn.ClassPart> parts;
       list<Absyn.ElementArg> annlst;
@@ -13106,7 +13106,7 @@ protected function getNamedAnnotationInParts
 algorithm
   outString := matchcontinue (inAbsynClassPartsLst,id,f)
     local
-      String s1,s2,str;
+      String str;
       list<Absyn.ElementArg> annlst;
       list<Absyn.ElementItem> xs;
       list<Absyn.ElementItem> contents;
@@ -14035,7 +14035,7 @@ protected function getConnectionStr
 algorithm
   outString := match (inEquation)
     local
-      Absyn.Path p1,p2;
+      Absyn.Path p2;
       String s1,s2,s3,str;
       Absyn.ComponentRef cr1,cr2;
     
@@ -15609,7 +15609,7 @@ algorithm
   outStringLst:=
   matchcontinue (inAbsynComponentItemLst)
     local
-      String s1,str,c1,s2;
+      String str,c1,s2;
       list<String> lst,res;
       Absyn.ComponentItem c2;
       list<Absyn.ComponentItem> rest;
@@ -15692,7 +15692,7 @@ algorithm
   outStringLst:=
   matchcontinue (inAbsynComponentItemLst)
     local
-      String s1,str,c1,s2;
+      String str,c1,s2;
       list<String> lst,res;
       Absyn.ComponentItem c2;
       list<Absyn.ComponentItem> rest;
@@ -16154,7 +16154,7 @@ algorithm
       Absyn.ElementItem a1,e1;
       Absyn.Class c,c1,c2;
       String name1,name,d;
-      Boolean a,e;
+      Boolean e;
       Option<Absyn.RedeclareKeywords> b;
       Absyn.Info info;
       Option<Absyn.ConstrainClass> h;
@@ -17698,7 +17698,7 @@ protected function transformFlatEquation
 algorithm
   outEqn := match(eqn)
     local
-      Absyn.Exp e,e1,e2,e11,e21;
+      Absyn.Exp e1,e2,e11,e21;
       Absyn.Ident id;
       Absyn.ComponentRef name;
       list<Absyn.EquationItem> thenpart,thenpart1,elsepart,elsepart1,forEqns,forEqns1,whenEqns,whenEqns1;
@@ -17959,10 +17959,10 @@ algorithm
       Absyn.Operator op_1,op;
       FuncTypeTplExpType_aToTplExpType_a rel;
       list<Absyn.Exp> expl_1,expl;
-      Absyn.Path fn_1,fn,path_1,path;
-      Boolean t_1,b_1,t,b,scalar_1,scalar;
-      Integer i_1,i;
-      Absyn.Ident id_1,id;
+      Absyn.Path fn,path_1,path;
+      Boolean b_1,t,b,scalar_1,scalar;
+      Integer i;
+      Absyn.Ident id;
       list<tuple<Absyn.Exp,Absyn.Exp>> elseIfBranch,elseIfBranch1;
       Absyn.FunctionArgs fargs,fargs1; Absyn.ComponentRef cfn,cfn_1;
       list<list<Absyn.Exp>> mexpl,mexpl1;
@@ -18110,7 +18110,7 @@ public function traverseExpFunctionArgs
 algorithm
   outTplExpTypeA:= match(inArgs,rel,ext_arg)
     local
-      Absyn.Exp e1,e2,e11,e21;
+      Absyn.Exp e11,e21;
       list<Absyn.NamedArg> nargs;
       list<Absyn.Exp> expl,expl_1;
      case(inArgs as Absyn.FOR_ITER_FARG(exp = _),rel,ext_arg) then((inArgs,ext_arg));
@@ -18580,8 +18580,8 @@ algorithm
     local
       list<Absyn.Class> rest;
       list<Absyn.ClassPart> parts;
-      String ident, baseIdent, tyStr;
-      list<String> enumList,strs;
+      String ident,  tyStr;
+      list<String> strs;
       Absyn.TypeSpec ts;
       Absyn.ElementAttributes attr;
       list<Absyn.EnumLiteral> el;
@@ -18729,7 +18729,7 @@ algorithm
   res := matchcontinue (contents,addFunctions,isPublic)
   local
     list<Absyn.ElementItem> rest;
-    String ident, typeStr, dirStr, varStr, str;
+    String ident, typeStr, dirStr,  str;
     Absyn.Class class_;
     Absyn.Path path;
     list<Absyn.ComponentItem> components;
@@ -18856,7 +18856,7 @@ protected function getElementName
 algorithm
   outString := match (inElementSpec)
     local
-      String path_str,str,import_str,typename,flowPrefixstr,variability_str,dir_str,names_str;
+      String str,import_str,typename,flowPrefixstr,variability_str,dir_str,names_str;
       Absyn.Path path;
       Absyn.TypeSpec typeSpec;
       Absyn.Import import_;
@@ -18894,7 +18894,7 @@ algorithm
   outString:=
   match (inElementSpec)
     local
-      String path_str,str,import_str,typename,flowPrefixstr,variability_str,dir_str,names_str;
+      String str,import_str,typename,flowPrefixstr,variability_str,dir_str,names_str;
       Absyn.Path path;
       Absyn.TypeSpec typeSpec;
       Absyn.Import import_;
@@ -18930,7 +18930,7 @@ algorithm
   outString:= match (inElement,inProgram)
     local
       String desc, tmpStr;
-      list<String> compList, valList;
+      list<String>  valList;
       Absyn.Element el;
       list<Absyn.ComponentItem> comps;
       Boolean f;
@@ -19021,8 +19021,8 @@ protected function getNameFromElementIfVisType
 algorithm
   outString:= matchcontinue (inElementItem, inProgram)
     local
-      String finalPrefix,repl,inout_str,str_restriction,element_str,sline_str,scol_str,eline_str,ecol_str,readonly_str,str,id,file,typename_str,varname_str;
-      Boolean r_1,f,p,fi,e,isReadOnly;
+      String inout_str,str_restriction,element_str,sline_str,scol_str,eline_str,ecol_str,readonly_str,str,id,file,typename_str,varname_str;
+      Boolean f,p,fi,e,isReadOnly;
       Option<Absyn.RedeclareKeywords> r;
       Absyn.InnerOuter inout;
       Absyn.Restriction restr;
@@ -19056,7 +19056,7 @@ algorithm
   outList:=
   matchcontinue (inAbsynElementItemLst, inProgram)
     local
-      String type_str, s1;
+      String  s1;
       list<String> res_list, list2;
       Absyn.ElementItem current, tmp;
       list<Absyn.ElementItem> rest;//, res_list, list2;
@@ -19103,7 +19103,7 @@ algorithm
       list<Absyn.ElementItem> public_elementitem_list,protected_elementitem_list;
       Absyn.Path modelPath_;
       list<String> public_list, protected_list;
-      list<String> strList, all_list;
+      list<String>  all_list;
       Absyn.Program prog;
     case (modelPath_,prog)
       equation
@@ -19198,7 +19198,7 @@ algorithm
       list<String> res;
       list<Absyn.ClassPart> parts;
       Absyn.Class cdef;
-      Absyn.Path newpath,inmodel,path;
+      Absyn.Path inmodel,path;
       Absyn.Program p;
     case (_,_,Absyn.CLASS(body = Absyn.PARTS(classParts = parts)))
       equation

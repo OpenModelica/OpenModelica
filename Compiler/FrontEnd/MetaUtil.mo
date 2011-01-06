@@ -344,7 +344,7 @@ protected function createMetaClassesFromPackage "function: createMetaClassesFrom
 algorithm
   out := matchcontinue(cl)
     local
-      list<Absyn.Class> classes, metaClassesFlat;
+      list<Absyn.Class>  metaClassesFlat;
       list<list<Absyn.Class>> metaClasses;
       String name;
       Boolean     partialPrefix;
@@ -434,7 +434,7 @@ algorithm
       Absyn.Info info;
       Option<Absyn.ConstrainClass> constrainClass;
       Boolean replaceable_;
-      list<Absyn.Class> metaClasses, classes;
+      list<Absyn.Class>  classes;
       list<Absyn.ElementItem> elementItems;
     case (Absyn.ELEMENTITEM(Absyn.ELEMENT(specification=Absyn.CLASSDEF(replaceable_=replaceable_),finalPrefix=finalPrefix,redeclareKeywords=redeclareKeywords,innerOuter=innerOuter,name=name,info=info,constrainClass=constrainClass)),class_)
       then Absyn.ELEMENTITEM(Absyn.ELEMENT(finalPrefix,redeclareKeywords,innerOuter,name,Absyn.CLASSDEF(replaceable_,class_),info,constrainClass));
@@ -484,13 +484,13 @@ algorithm
       list<Absyn.ElementItem> rest;
       Absyn.Class c;      
       list<Absyn.Class> clst;
-      String uniontypeName, n;
-      Boolean p,f,e;
+      String  n;
+      Boolean f,e;
       Absyn.Restriction r;
       Absyn.ClassDef b;
       String fn;
       Boolean ro;
-      Integer index,lns,cns,lne,cne;   
+      Integer cns,lne,cne;   
     
     case({}) then {};
     

@@ -439,7 +439,7 @@ algorithm
       DAE.ElementSource source "the origin of the element";
       list<DAE.Element> daeElts1,daeElts2;
       list<list<DAE.Element>> daeLLst;
-      DAE.FunctionTree funcs,funcs1;
+      DAE.FunctionTree funcs1;
       DAE.Const cnst;
       Boolean unrollForLoops;
       Absyn.Info info;
@@ -967,7 +967,7 @@ algorithm
   outEqn := matchcontinue(inEq)
     local
       DAE.ComponentRef cr1,cr2; 
-      DAE.Exp e1,e2,e;
+      DAE.Exp e2,e;
       DAE.ExpType t;
       DAE.ElementSource source "the origin of the element";
     
@@ -1011,8 +1011,8 @@ This function detect this case and elaborates expressions without vectorization.
 algorithm
   (outCache,outE1,outE2,oprop) := matchcontinue(inCache,env,e1,e2,elabedE1,elabedE2,prop,prop2,impl,inPrefix,info)
     local Env.Cache cache;
-      Boolean b1,b2,b3,b4; 
-      DAE.DAElist fdae1,fdae2,dae;
+      Boolean b3,b4; 
+      DAE.DAElist dae;
       DAE.Exp elabedE1_2, elabedE2_2;
       DAE.Properties prop1;
       Prefix.Prefix pre;
@@ -1818,13 +1818,13 @@ algorithm
 	    Boolean impl;
 	    tuple<DAE.TType, Option<Absyn.Path>> t;
 	    DAE.Exp e_1,e_2;
-	    list<DAE.Statement> sl_1,stmts,stmts1,stmts2;
+	    list<DAE.Statement> stmts,stmts1,stmts2;
 	    String i, str;
 	    Absyn.Exp e;
 	    DAE.Statement stmt;
 	    DAE.Properties prop;
 	    list<tuple<Absyn.ComponentRef,Integer>> lst;
-	    DAE.DAElist dae,dae1,dae2,fdae;
+	    DAE.DAElist fdae;
 	    tuple<Absyn.ComponentRef, Integer> tpl;
 	    DAE.ComponentRef index;
 	    Absyn.ComponentRef cr;
@@ -1907,19 +1907,19 @@ algorithm
 	    Env.Cache cache;
 	    list<Env.Frame> env,env_1;
 	    Prefix.Prefix pre;
-	    list<Absyn.ForIterator> restIterators, iterators;
+	    list<Absyn.ForIterator>  iterators;
 	    list<SCode.Statement> sl;
 	    SCode.Initial initial_;
 	    Boolean impl;
 	    tuple<DAE.TType, Option<Absyn.Path>> t;
-	    DAE.Exp e_1,e_2;
-	    list<DAE.Statement> sl_1,stmts;
+	    DAE.Exp e_2;
+	    list<DAE.Statement> stmts;
 	    String i;
 	    Absyn.Exp e;
-	    DAE.Statement stmt,stmt_1;
+	    DAE.Statement stmt_1;
 	    DAE.Properties prop;
 	    list<tuple<Absyn.ComponentRef,Integer>> lst;
-	    DAE.DAElist dae,dae1,dae2;
+	    DAE.DAElist dae2;
 	    tuple<Absyn.ComponentRef, Integer> tpl;
 	    DAE.ComponentRef index;
 	    Absyn.ComponentRef cr;
@@ -2077,7 +2077,7 @@ algorithm
 	    DAE.Statement stmt,stmt_1;
 	    DAE.Properties prop;
 	    list<tuple<Absyn.ComponentRef,Integer>> lst;
-	    DAE.DAElist dae,dae1,dae2;
+	    DAE.DAElist dae2;
 	    tuple<Absyn.ComponentRef, Integer> tpl;
 	    DAE.ComponentRef index;
 	    Absyn.ComponentRef cr;
@@ -2254,7 +2254,7 @@ algorithm
   (outCache,outEnv,outIH,outDae,outSets,outState,outGraph) := 
   matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inAlgorithm,inBoolean,unrollForLoops,inGraph)
     local
-      list<Env.Frame> env_1,env;
+      list<Env.Frame> env;
       list<DAE.Statement> statements_1;
       Connect.Sets csets;
       ClassInf.State ci_state;
@@ -2315,7 +2315,7 @@ algorithm
   (outCache,outEnv,outIH,outDae,outSets,outState,outGraph):=
   matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inAlgorithm,inBoolean,unrollForLoops,inGraph)
     local
-      list<Env.Frame> env_1,env;
+      list<Env.Frame> env;
       list<DAE.Statement> statements_1;
       Connect.Sets csets;
       ClassInf.State ci_state;
@@ -2326,7 +2326,7 @@ algorithm
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
       DAE.ElementSource source "the origin of the element";
-      DAE.DAElist fdae,dae;
+      DAE.DAElist dae;
       
     case (cache,env,ih,_,pre,csets,ci_state,SCode.ALGORITHM(statements = statements),impl,unrollForLoops,graph)
       equation 
@@ -2371,7 +2371,7 @@ algorithm
       list<SCode.Statement> xs;
       Env.Cache cache;
       Prefix.Prefix pre;
-      DAE.DAElist dae,dae1,dae2;
+      DAE.DAElist dae2;
       InstanceHierarchy ih;
 
     // empty case 
@@ -2407,7 +2407,7 @@ function: instStatement
 algorithm 
   (outCache,outStatements) := matchcontinue (inCache,inEnv,inIH,inPre,inAlgorithm,source,initial_,inBoolean,unrollForLoops)
     local
-      DAE.ComponentRef ce,ce_1;
+      DAE.ComponentRef ce_1;
       DAE.ExpType t;
       DAE.Properties cprop,eprop,prop,prop1,prop2,msgprop,varprop,valprop;
       SCode.Accessibility acc;
@@ -2415,14 +2415,14 @@ algorithm
       DAE.Statement stmt, stmt1;
       list<Env.Frame> env,env_1;
       Absyn.ComponentRef cr;
-      Absyn.Exp e,e1,e2,cond,msg, assignComp,var,value,elseWhenC,vb,matchExp;
+      Absyn.Exp e,e1,e2,cond,msg, var,value,elseWhenC,vb,matchExp;
       Boolean impl,onlyCref,tupleExp;
       list<Absyn.Exp> absynExpList,inputExps,expl;
       list<DAE.Exp> expl_1,expl_2,inputExpsDAE;
       Absyn.MatchType matchType;
-      list<DAE.Properties> cprops, eprops;
-      DAE.Type lt,rt;
-      String s,i,lhs_str,rhs_str,lt_str,rt_str;
+      list<DAE.Properties>  eprops;
+      DAE.Type rt;
+      String i,lhs_str,rhs_str,lt_str,rt_str;
       list<DAE.Statement> tb_1,fb_1,sl_1,stmts;
       list<tuple<DAE.Exp, DAE.Properties, list<DAE.Statement>>> eib_1;
       list<SCode.Statement> tb,fb,sl,elseWhenSt;
@@ -2431,25 +2431,25 @@ algorithm
       Env.Cache cache;
       Prefix.Prefix pre; 
       Absyn.ForIterators forIterators;
-      DAE.DAElist dae,dae1,dae2,dae3,dae4;
+      DAE.DAElist dae4;
       InstanceHierarchy ih;
       Option<SCode.Comment> comment;
       Absyn.Info info;
       Absyn.Case case_;
       list<Absyn.Exp> expList;
-      DAE.Type ty,t2;
-      DAE.Exp vb2,e2_2,e2_2_2; 
+      DAE.Type t2;
+      DAE.Exp e2_2,e2_2_2; 
       Absyn.ForIterators rangeList;
       SCode.Statement absynStmt;
       list<Absyn.Ident> tempLoopVarNames;
-      Absyn.ComponentRef c,c1,c2;
-      list<Absyn.ElementItem> declList,tempLoopVars;
-      list<Absyn.AlgorithmItem> vb_body,tempLoopVarsInit;
+      Absyn.ComponentRef c2;
+      list<Absyn.ElementItem> tempLoopVars;
+      list<Absyn.AlgorithmItem> tempLoopVarsInit;
       list<Absyn.ElementItem> elemList;
       list<Absyn.Exp> varList;
-      Absyn.Exp left,right,lhsExp;
+      Absyn.Exp lhsExp;
       DAE.Exp unvectorisedExpl;
-      String alg_str, scope_str;
+      String  scope_str;
       Absyn.ComponentRef callFunc;
       Absyn.FunctionArgs callArgs;
       Absyn.Exp aea;
@@ -2782,7 +2782,7 @@ algorithm
   matchcontinue (inCache,inEnv,inIH,inPrefix,inIdent,inValue,inAlgItmLst,source,inInitial,inBoolean,unrollForLoops)
     local
       list<Env.Frame> env_1,env_2,env_3,env;
-      DAE.DAElist dae1,dae2,dae;
+      DAE.DAElist dae;
       Prefix.Prefix pre;
       String i;
       Values.Value fst,v;
@@ -2879,14 +2879,14 @@ algorithm
       Boolean impl;
       list<list<DAE.Element>> llb;
       list<list<SCode.EEquation>> es;
-      list<SCode.EEquation> la,e;
+      list<SCode.EEquation> e;
       DAE.DAElist lb;
       Env.Cache cache;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
       SCode.EEquation eee;
       list<DAE.Element> elts;
-      DAE.FunctionTree funcs1,funcs2;
+      DAE.FunctionTree funcs2;
 
     case (cache,env,ih,mod,pre,csets,ci_state,{},_,impl,graph)
       then
@@ -2949,7 +2949,7 @@ algorithm
       list<tuple<Absyn.Exp, list<SCode.Statement>>> tail;
       Env.Cache cache;
       Prefix.Prefix pre;
-      DAE.DAElist dae,dae1,dae2,dae3;
+      DAE.DAElist dae3;
       InstanceHierarchy ih;
       
     case (cache,env,ih,pre,{},source,initial_,impl,unrollForLoops,info) then (cache,{});
@@ -3016,9 +3016,9 @@ algorithm
       InstanceHierarchy ih;
       list<Absyn.Subscript> subs1,subs2;
       list<Absyn.ComponentRef> crefs1,crefs2;
-      list<DAE.Properties> props1,props2;
+      list<DAE.Properties> props2;
       DAE.Const const;
-      Boolean b1,b2;
+      Boolean b2;
       String s1,s2,s3,s4;
 
     // Check if either of the components are conditional components with
@@ -3167,8 +3167,8 @@ algorithm
       DAE.Attributes attr1,attr2,attr;
       Boolean flowPrefix1,flowPrefix2,flowPrefix,streamPrefix1,streamPrefix2,streamPrefix,impl;
       tuple<DAE.TType, Option<Absyn.Path>> ty1,ty2,ty;
-      Connect.Face f1,f2;
-      Connect.Sets sets_1,sets,sets_2,sets_3;
+      Connect.Face f2;
+      Connect.Sets sets,sets_2,sets_3;
       DAE.DAElist dae, daeExpandable;
       list<Env.Frame> env, envExpandable, envComponent, env1, env2, envComponentEmpty;
       Prefix.Prefix pre;
@@ -3615,26 +3615,26 @@ algorithm
   (outCache,outEnv,outIH,outSets,outDae,outGraph) :=
   match (inCache,inEnv,inIH,inSets,inPrefix,inComponentRefLeft,inComponentRefRight,inVariablesUnion,inBoolean,inGraph,info)
     local
-      DAE.ComponentRef c1_1,c2_1,c1_2,c2_2;
-      DAE.ExpType t1,t2;
-      DAE.Properties prop1,prop2;
-      SCode.Accessibility acc1,acc2,acc;
-      DAE.Attributes attr1,attr2,attr;
-      Boolean flowPrefix1,flowPrefix2,flowPrefix,streamPrefix1,streamPrefix2,streamPrefix,impl;
-      tuple<DAE.TType, Option<Absyn.Path>> ty1,ty2,ty;
-      Connect.Face f1,f2;
-      Connect.Sets sets_1,sets,sets_2,sets_3;
+      DAE.ComponentRef c1_2,c2_2;
+      DAE.ExpType t2;
+      DAE.Properties prop2;
+      SCode.Accessibility acc;
+      DAE.Attributes attr;
+      Boolean flowPrefix,streamPrefix1,streamPrefix2,streamPrefix,impl;
+      tuple<DAE.TType, Option<Absyn.Path>> ty;
+      Connect.Face f2;
+      Connect.Sets sets,sets_2,sets_3;
       DAE.DAElist dae, dae1, dae2;
-      list<Env.Frame> env, envExpandable, envComponent, env1, env2;
+      list<Env.Frame> env,    env2;
       Prefix.Prefix pre;
       Absyn.ComponentRef c1,c2,c1_full,c2_full;
       Env.Cache cache;
-      Absyn.InnerOuter io1,io2;
-      SCode.Variability vt1,vt2;
+      Absyn.InnerOuter io2;
+      SCode.Variability vt2;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
-      String componentName, expandableConnectorName;
-      Absyn.Direction dir1,dir2,dir,dirFlipped;
+      String  expandableConnectorName;
+      Absyn.Direction dir,dirFlipped;
       DAE.Binding binding;
       Option<DAE.Const> cnstForRange;
       Lookup.SplicedExpData splicedExpData;
@@ -3982,8 +3982,8 @@ algorithm
       Absyn.Path fpath1, fpath2;
       Integer idim1,idim2,dim_int;
       DAE.Exp zeroVector, crefExp1, crefExp2;
-      list<DAE.Element> elements, breakDAEElements;
-      DAE.FunctionTree functions, equalityConstraintFunctions;
+      list<DAE.Element>  breakDAEElements;
+      DAE.FunctionTree  equalityConstraintFunctions;
       DAE.DAElist equalityConstraintDAE;
       SCode.Class equalityConstraintFunction;
       list<DAE.Dimension> dims,dims2;
@@ -4261,7 +4261,7 @@ algorithm
   (outCache,outEnv,outIH,outSets,outDae,outGraph):=
   matchcontinue (inCache,inEnv,inIH,inSets,inPrefix3,cr1,inFace5,inType6,vt1,cr2,inFace8,inType9,vt2,inFlowPrefix,inStreamPrefix,io1,io2,dim1,i,inGraph,info)
     local
-      DAE.ComponentRef c1_1,c2_1,c1,c2,c21,c11;
+      DAE.ComponentRef c1,c2,c21,c11;
       Connect.Sets sets_1,sets;
       list<Env.Frame> env;
       Prefix.Prefix pre;
@@ -4270,9 +4270,9 @@ algorithm
       SCode.Variability vr;
       Integer dim2;
       DAE.DAElist dae,dae1,dae2;
-      list<DAE.Var> l1,l2;
+      list<DAE.Var> l2;
       Boolean flowPrefix,streamPrefix;
-      String c1_str,t1_str,t2_str,c2_str;
+      String c2_str;
       Env.Cache cache;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
@@ -4959,7 +4959,7 @@ algorithm
       DAE.Statement stmt, stmt1;
       list<Env.Frame> env,env_1;
       Absyn.ComponentRef cr;
-      Absyn.Exp e,e1,e2,cond,msg, assignComp,var,elseWhenC,vb,matchExp;
+      Absyn.Exp e,e1,e2,cond,msg, var,elseWhenC,vb,matchExp;
       Boolean impl,onlyCref,tupleExp;
       list<Absyn.Exp> absynExpList,inputExps,expl;
       list<DAE.Exp> expl_1,expl_2,inputExpsDAE;
@@ -4967,39 +4967,39 @@ algorithm
       list<DAE.Properties> cprops, eprops;
       DAE.Type lt,rt;
       String s,i,lhs_str,rhs_str,lt_str,rt_str;
-      list<DAE.Statement> tb_1,fb_1,sl_1,stmts;
+      list<DAE.Statement> fb_1,sl_1,stmts;
       list<tuple<DAE.Exp, DAE.Properties, list<DAE.Statement>>> eib_1;
-      list<SCode.Statement> tb,fb,sl,elseWhenSt;
-      list<tuple<Absyn.Exp, list<SCode.Statement>>> eib,el,elseWhenRest;
+      list<SCode.Statement> fb,sl,elseWhenSt;
+      list<tuple<Absyn.Exp, list<SCode.Statement>>> elseWhenRest;
       SCode.Statement alg;
       Env.Cache cache;
       Prefix.Prefix pre; 
       Absyn.ForIterators forIterators;
-      DAE.DAElist dae,dae1,dae2,dae3,dae4;
+      DAE.DAElist dae4;
       InstanceHierarchy ih;
       Option<SCode.Comment> comment;
       Absyn.Info info;
       Absyn.Case case_;
       list<Absyn.Exp> expList;
       DAE.Type ty,t2;
-      DAE.Exp vb2,e2_2,e2_2_2; 
+      DAE.Exp e2_2,e2_2_2; 
       Absyn.ForIterators rangeList;
       SCode.Statement absynStmt;
       list<Absyn.Ident> tempLoopVarNames;
-      Absyn.ComponentRef c,c1,c2;
-      list<Absyn.ElementItem> declList,tempLoopVars;
-      list<Absyn.AlgorithmItem> vb_body,tempLoopVarsInit;
+      Absyn.ComponentRef c2;
+      list<Absyn.ElementItem> tempLoopVars;
+      list<Absyn.AlgorithmItem> tempLoopVarsInit;
       list<Absyn.ElementItem> elemList;
       list<Absyn.Exp> varList;
       Absyn.Exp left,right,lhsExp;
       DAE.Exp unvectorisedExpl;
-      String alg_str, scope_str;
+      String  scope_str;
       Absyn.ComponentRef callFunc;
       Absyn.FunctionArgs callArgs;
       Absyn.Exp aea;
       list<DAE.Exp> eexpl;
       Absyn.Path ap;
-      Boolean tuple_, builtin;
+      Boolean  builtin;
       DAE.InlineType inline;
       DAE.ExpType tp;
       String str;

@@ -1718,9 +1718,9 @@ algorithm
     local
       AvlKey key,rkey;
       AvlValue value,rval;
-      Option<AvlTree> left,right;
-      Integer rhval,h;
-      AvlTree t_1,t,right_1,left_1,bt;
+      Option<AvlTree> right;
+      Integer h;
+      AvlTree t,right_1,left_1,bt;
     
     // empty tree
     case (AVLTREENODE(value = NONE(),left = NONE(),right = NONE()),key,value)
@@ -1749,7 +1749,7 @@ algorithm
       AvlKey key,rkey;
       AvlValue value,rval;
       Option<AvlTree> left,right;
-      Integer rhval,h;
+      Integer h;
       AvlTree t_1,t,right_1,left_1,bt;
       Option<AvlTreeValue> oval;
     
@@ -2099,7 +2099,7 @@ protected function avlTreeGet2
 algorithm
   outValue := match (inAvlTree,keyComp,inKey)
     local
-      AvlKey rkey,key;
+      AvlKey key;
       AvlValue rval;
       AvlTree left,right;
     
@@ -2153,7 +2153,7 @@ algorithm
   match (inAvlTree)
     local
       AvlKey rkey;
-      String s1,s2,s3,res;
+      String s2,s3,res;
       AvlValue rval;
       Option<AvlTree> l,r;
       Integer h;
@@ -2301,7 +2301,7 @@ protected function getVariablesFromOptionAvlTree
 algorithm
   variables := match (inAvlTreeOpt)
     local
-      list<String> lst1, lst2, lst;
+      list<String>   lst;
       AvlTree avl;
     // handle nothingness
     case (NONE()) then {};

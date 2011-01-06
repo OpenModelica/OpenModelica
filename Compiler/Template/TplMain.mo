@@ -211,7 +211,7 @@ algorithm
   _ := matchcontinue inFile
     local
       //Tpl.Tokens toks, txttoks;
-      String file, str, strOut, ident, cval;
+      String  str, strOut, ident, cval;
       list<String> chars; 
       Tpl.Text txt;
       Boolean tequal;

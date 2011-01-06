@@ -488,7 +488,7 @@ algorithm
     local
       list<DAE.Function> cdr,cdr_1;
       Absyn.Path newFn,p;
-      Expression.ComponentRef cr1,cr2;
+      Expression.ComponentRef cr2;
       DAE.Function fn, el;
     case(_,{})
       equation
@@ -735,11 +735,11 @@ protected function elabFunctions
 algorithm
   (ofn,odae) := matchcontinue (fns,dae)
     local
-      DAE.Element el,el_1,el1,el1_1,el2,el2_1;
+      DAE.Element el2_1;
       list<DAE.Element> elts,elts_1;
       DAE.Function fn;
       list<DAE.Function> cdr,cdr_1;
-      list<list<DAE.Element>> elm,elm_1;
+      list<list<DAE.Element>> elm_1;
       DAE.ComponentRef cref;
       DAE.VarKind kind;
       DAE.VarDirection direction;
@@ -760,8 +760,8 @@ algorithm
       Boolean pp;
       DAE.ExternalDecl ed;
       list<DAE.Exp> elst,elst_1;
-      DAE.Exp e,e_1,e1,e1_1,e2,e2_1;
-      DAE.Algorithm alg,alg_1;
+      DAE.Exp e2_1;
+      DAE.Algorithm alg_1;
       DAE.InlineType inlineType;
       DAE.ElementSource source "the origin of the element";
       DAE.FunctionTree funcs;
@@ -1750,7 +1750,7 @@ algorithm
       DAE.InlineType inl;
       list<DAE.Exp> args,args2,args_1;
       list<DAE.ComponentRef> crefs;
-      DAE.ComponentRef cref1,cref2;
+      DAE.ComponentRef cref2;
       String str;
     // remove unbox calls from simple types
     case((DAE.UNBOX(exp = e as DAE.CALL(path=orig_p)),(p,inputs,dae,current)))

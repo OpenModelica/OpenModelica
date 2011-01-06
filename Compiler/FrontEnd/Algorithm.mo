@@ -151,8 +151,8 @@ algorithm
       Ident lhs_str,rhs_str,lt_str,rt_str;
       DAE.Exp lhs,rhs,rhs_1,e1,e2,e3;
       DAE.Properties lprop,rprop,lhprop,rhprop;
-      DAE.ExpType t,crt;
-      DAE.ComponentRef c,cr;
+      DAE.ExpType crt;
+      DAE.ComponentRef cr;
       tuple<DAE.TType, Option<Absyn.Path>> lt,rt;
 
     /* It is not allowed to assign to a constant */

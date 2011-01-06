@@ -657,7 +657,7 @@ algorithm
       Value v;
       Integer n,len;
       array<Option<tuple<Key,Value>>> arr;
-      String ps,lens,ns;
+      String lens,ns;
     case ((n,_,arr),pos)
       equation
         (pos <= n) = true;

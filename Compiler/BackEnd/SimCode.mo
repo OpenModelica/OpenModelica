@@ -525,7 +525,7 @@ public function buildCrefExpFromAsub
 algorithm
   cRefOut := matchcontinue(cref, subs)
     local
-      DAE.Exp sub,crefExp;
+      DAE.Exp crefExp;
       DAE.ExpType ty;
       list<DAE.Exp> rest;
       DAE.ComponentRef crNew;
@@ -1091,7 +1091,7 @@ algorithm
   outTpl := matchcontinue inTpl
     local
       DAE.Exp exp,nexp;
-      Integer i,ix;
+      Integer ix;
       String msg;
       list<DAE.Exp> l;
       DAE.ExpType et;
@@ -1174,7 +1174,7 @@ protected function listToCons2
 algorithm
   o := match (ty,es)
     local
-      DAE.Exp e,car,cdr;
+      DAE.Exp car,cdr;
     case (ty,{}) then DAE.LIST(ty,{});
     case (ty,car::es)
       equation
@@ -1316,10 +1316,10 @@ algorithm
   (libs, includes, recordDecls, functions, outBackendDAE, outDAE) :=
   matchcontinue (inDAElist,inBackendDAE,functionTree,inPath)
     local
-      list<Absyn.Path> funcPaths, funcRefPaths, funcNormalPaths;
-      list<String> debugpathstrs,libs1,libs2,includes1,includes2;
-      String debugpathstr,debugstr,filenameprefix, str;
-      list<DAE.Function> funcelems,part_func_elems, funcRefElems, funcNormal;
+      list<Absyn.Path>   funcNormalPaths;
+      list<String> libs1,libs2,includes1,includes2;
+      String  str;
+      list<DAE.Function> funcelems,part_func_elems,  funcNormal;
       list<SCode.Class> p;
       DAE.DAElist dae;
       BackendDAE.BackendDAE dlow;
@@ -1498,8 +1498,8 @@ algorithm
   matchcontinue (inElement,inRecordTypes,inRecordDecls,inIncludes,inLibs)
     local
       DAE.Function fn;
-      String fn_name_str,fn_name_str_1,retstr,extfnname,lang,retstructtype,extfnname_1,n,str;
-      list<DAE.Element> dae,bivars,orgdae,daelist,funrefs, algs, vars, invars, outvars;
+      String extfnname,lang,retstructtype,extfnname_1,n,str;
+      list<DAE.Element> bivars,orgdae,daelist,funrefs, algs, vars, invars, outvars;
       list<String> struct_strs,arg_strs,includes,libs,struct_strs_1,funrefStrs,fn_libs,fn_includes,
       rt,rt_1,struct_funrefs,struct_funrefs_int,defhead,head,foot,body,decl1,decl2, 
       assign_res,ret_var,record_var,record_var_dot,return_stmt;
@@ -1520,7 +1520,7 @@ algorithm
       DAE.InlineType inl;
       list<DAE.Element> daeElts;
       DAE.ExpType expType;
-      list<String> arg_names, arg_tmp1, arg_tmp2, arg_assignments;
+      list<String>    arg_assignments;
       Integer tnr;
       Absyn.Path name;
       
@@ -1829,7 +1829,7 @@ algorithm
   simCode :=
   matchcontinue (functionTree,inBackendDAE2,inIntegerArray3,inIntegerArray4,inIncidenceMatrix5,inIncidenceMatrixT6,inIntegerLstLst7,inClassName,filenamePrefix,inString11,functions,externalFunctionIncludes,libs,simSettingsOpt,recordDecls)
     local
-      String cname, filename, funcfilename, fileDir;
+      String cname,   fileDir;
       list<list<Integer>> blt_states,blt_no_states,comps;
       list<list<Integer>> contBlocks,discBlocks;
       Integer n_h,nres,maxDelayedExpIndex;
@@ -2025,7 +2025,7 @@ algorithm
       array<DAE.Algorithm> al;
       BackendDAE.EventInfo ev;
       BackendDAE.ExternalObjectClasses eoc;
-      list<BackendDAE.Equation> e_lst,re_lst,ie_lst;
+      list<BackendDAE.Equation> ie_lst;
       list<DAE.Algorithm> algs;
       list<BackendDAE.MultiDimEquation> ae_lst;
       
@@ -2167,7 +2167,7 @@ algorithm
   delayedExp :=
   match (delayCallExp)
     local
-      DAE.Exp id, e, delay, delayMax;
+      DAE.Exp  e, delay, delayMax;
       Integer i;
     case (DAE.CALL(path=Absyn.IDENT("delay"), expLst={DAE.ICONST(i),e,delay,delayMax}))
     then ((i, e));
@@ -2542,8 +2542,8 @@ algorithm
     local
       Absyn.Path path,name;
       list<Types.Var> varlst;
-      String first_str, last_str, path_str, sname;
-      list<String> res,strs,rest_strs,decl_strs,rt,rt_1,rt_2,record_definition,fieldNames;
+      String    sname;
+      list<String> rest_strs,decl_strs,rt,rt_1,rt_2,record_definition,fieldNames;
       list<RecordDeclaration> accRecDecls;
       list<Variable> vars;
       Integer index;
@@ -2611,7 +2611,7 @@ algorithm
     local
       Types.Type ty;
       list<Types.Var> rest;
-      list<String> res,strs,strs_rest,rt,rt_1,rt_2;
+      list<String> rt,rt_1,rt_2;
       list<RecordDeclaration> accRecDecls;
     case ({},accRecDecls,rt)
     then (accRecDecls,rt);
@@ -2719,7 +2719,7 @@ algorithm
   (constructors, destructors, aliases) :=
   matchcontinue (var, eclasses)
     local
-      DAE.Element ctor, dstr;
+      DAE.Element  dstr;
       DAE.ComponentRef name;
       DAE.ComponentRef cr;
       list<DAE.Exp> args;
@@ -3217,7 +3217,7 @@ algorithm
       DAE.Exp e1,e2,varexp,exp_,right;
       list<tuple<DAE.Exp, Integer>> conditionsWithHindex;
       BackendDAE.WhenEquation whenEquation,elseWhen;
-      String varname,name,c_name,id,e_1,e,algStr,message;
+      String name,c_name,id,e_1,e,algStr,message;
       DAE.ElementSource source;
       list<DAE.Statement> asserts;
       SimEqSystem elseWhenEquation;
@@ -3381,7 +3381,7 @@ algorithm
     local
       Integer wcIndex;
       DAE.ComponentRef left;
-      DAE.Exp e, right;
+      DAE.Exp  right;
       list<HelpVarInfo> restHelpVarInfo;
       BackendDAE.WhenEquation elseWhenEquation;
       SimEqSystem simElseWhenEq;
@@ -3420,7 +3420,7 @@ algorithm
       list<BackendDAE.Equation> eqns;
       list<SimEqSystem> simeqns;
       String eqstr;
-      DAE.Exp e1,e2;
+      DAE.Exp e2;
       DAE.ComponentRef cr;
     case ({}) then {};
     case (BackendDAE.SOLVED_EQUATION(componentRef = cr, exp = e2)::eqns)
@@ -3483,7 +3483,7 @@ algorithm
       DAE.ExpType exty;
       DAE.InlineType inty;
       DAE.Exp condition1;
-      String s1,s2;
+      String s2;
     case (_, {},_)
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"Could not find help var index for condition"});
@@ -3552,7 +3552,7 @@ algorithm
    Boolean tup,builtin_;
    DAE.ExpType exty;
    DAE.InlineType inty;
-   String s1,s2;
+   String s2;
   case(condition, {}) then condition;
   case (condition as DAE.CALL(path = name as Absyn.IDENT("sample"),expLst=args_,tuple_=tup,builtin=builtin_, ty=exty, inlineType=inty), (hindex, e, _) :: restHelpVarInfo)
       equation
@@ -3586,11 +3586,11 @@ algorithm
   (eqSystems,outEntrylst) :=
   matchcontinue (eqs, arrayEqs, algs, inEntrylst)
     local
-      Integer cg_id,cg_id_1,indx_1,cg_id_2,indx,aindx;
+      Integer cg_id_2,indx,aindx;
       DAE.ExpType tp;
       DAE.Exp res_exp,e1,e2,e;
       list<DAE.Exp> explst;
-      String var,indx_str,stmt;
+      String indx_str,stmt;
       list<BackendDAE.Equation> rest,rest2;
       array<BackendDAE.MultiDimEquation> aeqns;
       VarTransform.VariableReplacements repl;
@@ -3769,7 +3769,7 @@ algorithm
   equations_ :=
   matchcontinue (genDiscrete,skipDiscInAlgorithm,linearSystem,inBackendDAE1,inIntegerArray2,inIntegerArray3,inIntegerLst4,helpVarInfo)
     local
-      String rettp,fn;
+      String fn;
       list<BackendDAE.Equation> eqn_lst,cont_eqn,disc_eqn;
       list<BackendDAE.Var> var_lst,cont_var,disc_var,var_lst_1,cont_var1;
       BackendDAE.Variables vars_1,vars,knvars,exvars;
@@ -3786,14 +3786,14 @@ algorithm
       array<Integer> ass1,ass2;
       list<Integer> block_;
       BackendDAE.ExternalObjectClasses eoc;
-      list<String> retrec,arg,init,locvars,stmts,cleanups,stmts_1,stmts_2;
+      list<String> arg,init,locvars,stmts,cleanups,stmts_1,stmts_2;
       Integer numValues;
       list<SimVar> simVarsDisc;
       list<SimEqSystem> discEqs;
       list<Integer> values;
       list<Integer> value_dims;
       SimEqSystem equation_;      
-      String dstr,dstr1,dstr2;
+      String dstr2;
       list<String> dlstr;
       BackendDAE.BackendDAE subsystem_dae_1,subsystem_dae_2;
       array<Integer> v1,v2,v1_1,v2_1;
@@ -3988,7 +3988,7 @@ algorithm
       list<BackendDAE.Var> var_lst;
       list<DAE.ComponentRef> crefs,crefs1,tcrs;
       array<BackendDAE.MultiDimEquation> ae;
-      String str_id,size_str,func_name,start_stmt,end_stmt;
+      String size_str,func_name,start_stmt,end_stmt;
       VarTransform.VariableReplacements repl;
       array<DAE.Algorithm> algorithms;
       BackendDAE.EventInfo eventInfo;
@@ -4074,10 +4074,10 @@ algorithm
   match (disc_eqn, disc_var)
     local
       list<SimEqSystem> restEqs;
-      Integer cg_id,indx_1,cg_id_1,cg_id_2,indx;
+      Integer cg_id_1,cg_id_2,indx;
       DAE.ComponentRef cr;
       DAE.Exp varexp,expr,e1,e2;
-      String var,indx_str,cr_str,stmt,stmt2;
+      String indx_str,cr_str,stmt,stmt2;
       list<BackendDAE.Equation> eqns;
       BackendDAE.Var v;
       list<BackendDAE.Var> vs;
@@ -4107,8 +4107,8 @@ algorithm
       list<DAE.Exp> rels;
       list<list<Integer>> values,values_1;
       list<Integer> values_2,ss;
-      String s,s2,disc_len_str,values_len_str,stmt1,stmt2;
-      Integer disc_len,values_len;
+      String disc_len_str,values_len_str,stmt1,stmt2;
+      Integer values_len;
       list<BackendDAE.Equation> cont_e,disc_e;
       list<BackendDAE.Var> cont_v,disc_v;
       
@@ -4139,7 +4139,7 @@ algorithm
   matchcontinue
     (mixedEvent,genDiscrete,skipDiscInAlgorithm,inBackendDAE,inTplIntegerIntegerBackendDAEEquationLstOption,inJacobianType,block_,helpVarInfo)
     local
-      Integer cg_id_1,cg_id,eqn_size,unique_id,cg_id1,cg_id2,cg_id3,cg_id4,cg_id5;
+      Integer cg_id,eqn_size,unique_id,cg_id1,cg_id2,cg_id3,cg_id4,cg_id5;
       BackendDAE.BackendDAE dae,d;
       Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> optJac;
       BackendDAE.JacobianType jac_tp;
@@ -4551,7 +4551,7 @@ algorithm
       list<BackendDAE.Equation> eqnLst,eqnLst1;
       BackendDAE.Equation eqn,eqn1;
       VarTransform.VariableReplacements repl,repl1,repl2;
-      DAE.Exp exp,e1,e2,varexp;
+      DAE.Exp e1,e2,varexp;
       list<BackendDAE.Var> varlst,varlst1;
       BackendDAE.Var var;
       
@@ -4651,10 +4651,10 @@ protected function dlowEqToExp
 algorithm
   (exp_,outEntrylst) := matchcontinue (dlowEq, v, arrayEqs, inEntrylst)
     local
-      Integer row, col, index;
+      Integer   index;
       DAE.Exp e;
       DAE.Exp e1,e2,new_exp,new_exp1,rhs_exp,rhs_exp_1,rhs_exp_2;
-      DAE.ExpType tp,tp1;
+      DAE.ExpType tp1;
       list<Integer> ds;
       list<Option<Integer>> ad;
       list<DAE.Subscript> subs;
@@ -4857,8 +4857,8 @@ algorithm
     local
       Integer indx,cg_id_1,cg_id;
       list<Integer> ds;
-      DAE.Exp e1,e2;
-      Expression.ComponentRef cr,origname,cr_1;
+      DAE.Exp e2;
+      Expression.ComponentRef cr_1;
       BackendDAE.Variables vars,knvars;
       BackendDAE.EquationArray eqns,se,ie;
       array<BackendDAE.MultiDimEquation> ae;
@@ -4932,8 +4932,8 @@ protected function createSingleArrayEqnCode2
 algorithm
   equation_ := matchcontinue (inComponentRef1,inComponentRef2,inExp3,inExp4)
     local
-      String s1,s2,stmt,s3,s4,s;
-      Integer cg_id_1,cg_id;
+      String s3,s4,s;
+      Integer cg_id;
       DAE.ComponentRef cr,eltcr,cr2;
       DAE.Exp e1,e2;
       DAE.ExpType ty;      
@@ -5428,17 +5428,17 @@ algorithm
       Integer eqn_1,v,eqn,cg_id,cg_id_1,numValues;
       list<Integer> block_,rest;
       DAE.ComponentRef cr;
-      String cr_str,save_stmt,rettp,fn,stmt;
-      list<BackendDAE.Equation> eqn_lst,cont_eqn,disc_eqn;
-      list<BackendDAE.Var> var_lst,cont_var,disc_var,cont_var1;
-      BackendDAE.Variables vars, vars_1,knvars,exvars;
+      String rettp,fn,stmt;
+      list<BackendDAE.Equation> cont_eqn,disc_eqn;
+      list<BackendDAE.Var> cont_var,disc_var,cont_var1;
+      BackendDAE.Variables vars, knvars,exvars;
       BackendDAE.AliasVariables av;
-      BackendDAE.EquationArray eqns_1,eqns,se,ie;
+      BackendDAE.EquationArray eqns,se,ie;
       BackendDAE.BackendDAE cont_subsystem_dae;
-      array<list<Integer>> m,m_1,mt_1;
+      array<list<Integer>> mt_1;
       Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac;
       BackendDAE.JacobianType jac_tp;
-      list<String> retrec,arg,init,stmts,cleanups,stmts_1;
+      list<String> arg,init,stmts,cleanups,stmts_1;
       DAE.DAElist dae;
       array<BackendDAE.MultiDimEquation> ae;
       array<Algorithm.Algorithm> al;
@@ -5600,7 +5600,7 @@ algorithm
   outTpl:= matchcontinue (inTpl)      
     local
       BackendDAE.Var var;
-      Expression.ComponentRef cr, origname;
+      Expression.ComponentRef  origname;
       BackendDAE.VarKind kind;
       DAE.VarDirection dir;
       Integer indx;
@@ -6282,7 +6282,7 @@ protected function generateHelpVarsInStatement
 algorithm
   (outHelpVars,outStmt,n1) := matchcontinue(n,inStmt)
     local
-      list<Algorithm.Statement> rest, rest1;
+      list<Algorithm.Statement>  rest1;
       Integer nextInd, nextInd1, nextInd2;
       list<Integer> helpVarIndices, helpVarIndices1;
       DAE.Exp condition;
@@ -6361,7 +6361,7 @@ protected function generateHelpVarsInArrayCondition
 algorithm
   (outHelpVars,outExp,n1) := matchcontinue(n,inExp)
     local
-      list<DAE.Exp> rest, el, el1;
+      list<DAE.Exp> rest,  el1;
       Integer nextInd, nextInd1;
       DAE.Exp condition;
       list<HelpVarInfo> helpvars1;
@@ -6579,9 +6579,9 @@ algorithm
   (outTuple):=
   matchcontinue (inTuple)
     local
-      String i_str,helpVarIndexStr,res,resx,res_1;
+      String helpVarIndexStr,res,resx,res_1;
       HelpVarInfo helpInfo;
-      Integer i,helpVarIndex;
+      Integer helpVarIndex;
       list<HelpVarInfo> helpVarInfoList;
       DAE.Exp e;
       list<DAE.Exp> el;
@@ -6933,7 +6933,7 @@ protected function generateMixedDiscreteCombinationValues1
 algorithm
   outStringLstLst := matchcontinue (inStringLstLst)
     local
-      list<list<Integer>> value_1,values_1,values_2,values;
+      list<list<Integer>> values_1,values_2,values;
       list<Integer> value;
       
     case (values as {value}) then values;
@@ -7113,7 +7113,7 @@ algorithm
   (outE1,outE2) := matchcontinue(v,e1,e2)
     local
       DAE.Exp e,e12,e22,vTerm,res,rhs,f;
-      list<DAE.Exp> terms,exps,exps_1,expl_1;
+      list<DAE.Exp> exps,exps_1,expl_1;
       DAE.ExpType tp;
       Boolean b;
       list<Boolean> bls; 
@@ -7356,7 +7356,7 @@ algorithm
   outVariableReplacements := match (inVariableReplacements,inExpComponentRefLst,inInteger)
     local
       VarTransform.VariableReplacements repl,repl_1,repl_2;
-      String pstr,str;
+      String str;
       Integer pos_1,pos;
       DAE.ComponentRef cr,cref_;
       list<Expression.ComponentRef> crs;
@@ -7555,7 +7555,7 @@ protected function splitOutputBlocks
 algorithm
   (contBlocks,discBlocks) := match(dlow,ass1,ass2,m,mT,blocks)
     local BackendDAE.Variables vars,vars2,knvars;
-      list<BackendDAE.Var> varLst, varLstDiscrete;
+      list<BackendDAE.Var>  varLstDiscrete;
       BackendDAE.EquationArray eqns;
     case (dlow as BackendDAE.DAE(orderedVars=vars,knownVars = knvars,orderedEqs=eqns),ass1,ass2,m,mT,blocks) equation
       varLstDiscrete = BackendVariable.getAllDiscreteVarFromVariables(vars);
@@ -7681,11 +7681,11 @@ protected function getCalledFunctionsInFunction2
 algorithm
   outHt := matchcontinue (inPath,pathstr,ht,funcs)
     local
-      String debugpathstr,str;
+      String str;
       Absyn.Path path;
       DAE.Function funcelem;
-      list<DAE.Function> funcelems,elements;
-      list<Absyn.Path> calledfuncs, varfuncs, fnpaths, fns;
+      list<DAE.Function> elements;
+      list<Absyn.Path> calledfuncs, varfuncs,  fns;
       list<String> debugpathstrs;
       DAE.DAElist dae;
       list<DAE.Element> els;
@@ -7995,7 +7995,7 @@ algorithm
       DAE.Stream streamPrefix;
       Option<SCode.Comment> comment;
       BackendDAE.Type tp;
-      String orignameStr, commentStr, name, unit, displayUnit;
+      String  commentStr,  unit, displayUnit;
       Option<DAE.Exp> initVal;
       Boolean isFixed;
       DAE.ExpType type_;
@@ -9429,7 +9429,7 @@ algorithm
       Value v;
       Integer n,len;
       array<Option<tuple<Key,Value>>> arr;
-      String ps,lens,ns;
+      String lens,ns;
     case (VALUE_ARRAY(numberOfElements = n,valueArray = arr),pos)
       equation
         (pos < n) = true;

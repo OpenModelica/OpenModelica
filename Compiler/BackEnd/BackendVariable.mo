@@ -1249,7 +1249,7 @@ algorithm
       BackendDAE.Var v;
       BackendDAE.Value n,pos,len;
       array<Option<BackendDAE.Var>> arr;
-      String ps,lens,ns;
+      String lens,ns;
     case (BackendDAE.VARIABLE_ARRAY(numberOfElements = n,varOptArr = arr),pos)
       equation
         (pos < n) = true;
@@ -1413,7 +1413,7 @@ algorithm
   outTypeALst := matchcontinue (inTypeALst,inPlace)
     local
       list<tuple<Type_a,Integer>> itemlst,rest;
-      Type_a item,outitem;
+      Type_a outitem;
       Integer place,itemplace;
       list<Type_a> out_lst,val_lst;
     case ({},place) then {};
@@ -1710,7 +1710,7 @@ algorithm
   outval:=
   matchcontinue (invar1,invar2)
     local
-      DAE.Ident origName1,origName2;
+      DAE.Ident origName2;
       DAE.ComponentRef varName1, varName2,c1,c2;
       list<DAE.Subscript> arryDim, arryDim1;
       list<DAE.Subscript> subscriptLst, subscriptLst1;
@@ -1810,7 +1810,7 @@ algorithm
   dimlist:=
   match (inarryDim)
     local
-      list<DAE.Subscript> arryDim_lst,rest;
+      list<DAE.Subscript> rest;
       DAE.Subscript arryDim;
       list<Integer> dim_lst,dim_lst1;
       Integer dim;

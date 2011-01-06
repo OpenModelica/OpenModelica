@@ -150,7 +150,7 @@ algorithm
       Boolean b;
       Absyn.ComponentRef cr_1;
       ComponentRef cr;
-      Type t,tp;
+      Type tp;
       list<Absyn.Exp> expl_1,aexpl;
       list<DAE.Exp> expl;
       DAE.Exp e1,e2,e3;
@@ -1939,7 +1939,7 @@ protected function factorsWork
 algorithm
   outExpLst := match (inExp,acc,noFactors,doInverseFactors)
     local
-      list<DAE.Exp> f1,f2,f1_1,f2_1,res,f2_2;
+      list<DAE.Exp> f1_1,f2_1,res,f2_2;
       DAE.Exp e1,e2,e;
       ComponentRef cr;
     case (DAE.BINARY(exp1 = e1,operator = DAE.MUL(ty = _),exp2 = e2),acc,noFactors,doInverseFactors)
@@ -2035,7 +2035,7 @@ public function inverseFactors
 algorithm
   outExp := matchcontinue (inExp)
     local
-      list<DAE.Exp> es_1,es;
+      list<DAE.Exp> es;
       Type tp2,tp;
       DAE.Exp e1,e2,e;
       DAE.Operator op;
@@ -3147,7 +3147,7 @@ algorithm
       Type tp,ety,t2;
       Absyn.CodeNode a;
       ComponentRef cr1,cr2;
-      list<Subscript> subs,ssl;
+      list<Subscript> ssl;
       DAE.InlineType inl;      
       list<list<tuple<DAE.Exp, Boolean>>> lstexpl_1,lstexpl;
       ComponentRef cr,cr_1;
@@ -3508,16 +3508,16 @@ algorithm
     local
       DAE.Exp e1_1,e,e1,e2_1,e2,e3_1,e_1,e3;
       Type_a ext_arg_1,ext_arg_2,ext_arg,ext_arg_3,ext_arg_4;
-      Operator op_1,op;
+      Operator op;
       FuncExpType rel;
       list<DAE.Exp> expl_1,expl;
-      Absyn.Path fn_1,fn,path_1,path;
-      Boolean t_1,b_1,t,b,scalar_1,scalar,built;
-      Type tp_1,tp;
-      Integer i_1,i;
+      Absyn.Path fn,path_1,path;
+      Boolean b_1,t,b,scalar_1,scalar,built;
+      Type tp;
+      Integer i;
       list<list<tuple<DAE.Exp, Boolean>>> lstexpl_1,lstexpl;
-      Integer iscalar_1,iscalar;
-      Ident id_1,id,str;
+      Integer iscalar;
+      Ident id,str;
       list<DAE.Element> localDecls;
       tuple<DAE.Exp,Type_a> res;
       list<String> fieldNames;
@@ -3959,20 +3959,20 @@ algorithm
     local
       DAE.Exp e1_1,e,e1,e2_1,e2,e3_1,e_1,e3;
       Type_a ext_arg_1,ext_arg_2,ext_arg,ext_arg_3;
-      Operator op_1,op;
+      Operator op;
       FuncExpType rel;
       list<DAE.Exp> expl_1,expl;
-      Absyn.Path fn_1,fn,path_1,path;
-      Boolean t_1,b_1,t,b,scalar_1,scalar,built;
-      Type tp_1,tp;
-      Integer i_1,i;
-      String id_1,id,str;
+      Absyn.Path fn,path_1,path;
+      Boolean b_1,t,b,scalar_1,scalar,built;
+      Type tp;
+      Integer i;
+      String id,str;
       list<DAE.Element> localDecls;
       list<DAE.Statement> body;
       list<String> fieldNames;
       DAE.InlineType  inl;
       list<list<tuple<DAE.Exp, Boolean>>> lstexpl_1,lstexpl;
-      Integer iscalar_1,iscalar;
+      Integer iscalar;
       
     
     case (e as DAE.ICONST(_),rel,ext_arg) then ((e,ext_arg));    
@@ -4404,7 +4404,7 @@ algorithm
   outBoolean := matchcontinue (inExp)
     local
       Integer ival;
-      Real rzero,rval;
+      Real rval;
       Boolean res;
       Type t;
       DAE.Exp e;
@@ -4430,7 +4430,7 @@ algorithm
   outBoolean := match (inExp)
     local
       Integer ival;
-      Real rzero,rval;
+      Real rval;
       Boolean res;
       Type t;
       DAE.Exp e;
@@ -4494,7 +4494,7 @@ algorithm
     local
       Integer ival;
       Real rval;
-      Boolean bval,res,b1,b2;
+      Boolean res,b1,b2;
       Ident sval;
       Operator op;
       DAE.Exp e,e1,e2;
@@ -5486,7 +5486,7 @@ protected function expEqualWork
 algorithm
   outBoolean := match (inExp1,inExp2,refEq,noFailedSubExpression)
     local
-      Integer c1,c2,i1,i2;
+      Integer i1,i2;
       String id1,id2,s1,s2,s;
       Boolean b1,c1_1,c2_1,b2,res,b3;
       DAE.Exp e11,e12,e21,e22,e1,e2,e13,e23,er1,er2;

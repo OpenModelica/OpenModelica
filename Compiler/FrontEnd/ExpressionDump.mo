@@ -1771,7 +1771,7 @@ algorithm
   _ := matchcontinue (inExp,inInteger)
     local
       Ident s,sym,fs,rstr,str;
-      Integer x,pri2_1,pri2,pri3,pri1,i;
+      Integer pri2_1,pri2,pri3,pri1,i;
       Real r;
       ComponentRef c;
       DAE.Exp e1,e2,e21,e22,e,t,f,start,stop,step,cr,dim,exp,iterexp,cond;

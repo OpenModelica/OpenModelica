@@ -330,7 +330,7 @@ algorithm
   (outTillNewLineChars, outRestChars, outIsLine) := matchcontinue (inChars)
     local
       Text txt;
-      String str, char;
+      String  char;
       list<String> tnlchars, restchars, chars;
       Boolean isline;
     
@@ -577,7 +577,7 @@ public function popIter
 algorithm
   outText := matchcontinue (inText)
     local
-      Tokens toks, stacktoks, itertoks;
+      Tokens  stacktoks, itertoks;
       list<tuple<Tokens,BlockType>> blstack;
       StringToken tok;
       BlockType blType;
@@ -818,7 +818,7 @@ algorithm
       StringToken tok;
       list<tuple<Tokens,BlockType>> blstack;
       Text txt;
-      String str, tokstr;
+      String  tokstr;
       list<String> chars;
       Integer pos, aind;
       Boolean isstart;
@@ -862,8 +862,8 @@ algorithm
       BlockType bt;
       Text txt;
       String str, accstr;
-      list<String> chars, strLst;
-      Integer nchars, pos, ind, aind, blen;
+      list<String>  strLst;
+      Integer nchars,   aind, blen;
       Boolean isstart;
     
     case (ST_NEW_LINE(), _, _, aind)
@@ -1098,9 +1098,9 @@ algorithm
       list<tuple<Tokens,BlockType>> blstack;
       BlockType bt;
       Text txt;
-      String str, accstr, tokstr;
+      String   tokstr;
       list<String> chars;
-      Integer nchars, tsnchars, pos, ind, aind, w, aoffset, anum, wwidth, blen;
+      Integer nchars, tsnchars,   aind, w, aoffset, anum, wwidth, blen;
       Boolean isstart;
     
     case (BT_TEXT(), toks, nchars, isstart, aind)
@@ -1268,7 +1268,7 @@ algorithm
     local
       Tokens toks;
       StringToken tok, septok;
-      String str, tokstr, sepstr;
+      String   sepstr;
       Integer pos, aind;
       Boolean isstart;
       
@@ -1314,7 +1314,7 @@ algorithm
     local
       Tokens toks;
       StringToken tok, septok, asep, wsep;
-      String str, tokstr, sepstr, awsepstr;
+      String    awsepstr;
       Integer pos, aind, idx, anum, wwidth;
       Boolean isstart;
       
@@ -1378,8 +1378,8 @@ algorithm
    := matchcontinue (inTokens, inActualIndex, inAlignNum, inAlignSeparator, inWrapWidth, inWrapSeparator, inActualPositionOnLine, inAtStartOfLine, inAfterNewLineIndent)
     local
       Tokens toks;
-      StringToken tok, septok, asep, wsep;
-      String str, tokstr, sepstr, awsepstr;
+      StringToken tok,  asep, wsep;
+      String    awsepstr;
       Integer pos, aind, idx, anum, wwidth;
       Boolean isstart;
       
@@ -1448,7 +1448,7 @@ algorithm
   (outActualPositionOnLine, outAtStartOfLine, outAfterNewLineIndent)
    := matchcontinue (inWrapWidth, inWrapSeparator, inActualPositionOnLine, inAtStartOfLine, inAfterNewLineIndent)
     local
-      String str, tokstr, sepstr;
+      String   sepstr;
       Integer pos, aind, wwidth;
       Boolean isstart;
       StringToken wsep;

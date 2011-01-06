@@ -1169,7 +1169,7 @@ algorithm
       Absyn.Info        info;
       Absyn.Within      w;
       Types.Type tp;
-      Absyn.Path funcpath2,complexName;
+      Absyn.Path complexName;
       String s;
       list<Expression.Var> varLst;
       list<String> varNames;
@@ -2287,7 +2287,7 @@ algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
-      Values.Value arr_val,res;
+      Values.Value res;
       Integer dim_val;
       list<Env.Frame> env;
       DAE.Exp str_exp, start_exp, stop_exp;
@@ -2327,7 +2327,7 @@ algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
-      Values.Value arr_val,res;
+      Values.Value res;
       Integer dim_val;
       list<Env.Frame> env;
       DAE.Exp exp, len_exp, justified_exp;
@@ -2927,7 +2927,7 @@ algorithm
   match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
       list<Env.Frame> env;
-      DAE.Exp exp,exp1,exp2;
+      DAE.Exp exp1,exp2;
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st;
       Msg msg;
@@ -2962,7 +2962,7 @@ algorithm
   match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
       list<Env.Frame> env;
-      DAE.Exp exp,exp1,exp2;
+      DAE.Exp exp1,exp2;
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st;
       Msg msg;
@@ -2996,7 +2996,7 @@ algorithm
   match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
       list<Env.Frame> env;
-      DAE.Exp exp,exp1,exp2;
+      DAE.Exp exp1,exp2;
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st;
       Msg msg;
@@ -3005,7 +3005,7 @@ algorithm
       Integer i;
       Real r;
       list<String> chList;
-      list<Values.Value> valList,valList1,valList2;
+      list<Values.Value> valList1,valList2;
     case (cache,env,{exp1},impl,st,msg)
       equation
         (cache,Values.LIST(_::valList1),st) = ceval(cache,env, exp1, impl, st,NONE(), msg);
@@ -3029,7 +3029,7 @@ algorithm
   match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
       list<Env.Frame> env;
-      DAE.Exp exp,exp1,exp2;
+      DAE.Exp exp1,exp2;
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st;
       Msg msg;
@@ -3038,7 +3038,7 @@ algorithm
       Integer i;
       Real r;
       list<String> chList;
-      list<Values.Value> valList,valList1,valList2;
+      list<Values.Value> valList2;
       Values.Value v;
     case (cache,env,{exp1},impl,st,msg)
       equation
@@ -4114,7 +4114,7 @@ algorithm
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
       Real rv1,rv2,rva,rva_1,rvb,rvd,dr;
-      Integer rvai,ri,ri1,ri2,ri_1,di;
+      Integer ri,ri1,ri2,ri_1,di;
       list<Env.Frame> env;
       DAE.Exp exp1,exp2;
       Boolean impl;
@@ -4408,7 +4408,7 @@ algorithm
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st;
       Msg msg;
-      String RowString,matrixDimensionString;
+      String matrixDimensionString;
       Env.Cache cache;
       Values.Value v;      
     
@@ -4546,7 +4546,7 @@ algorithm
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
       list<Values.Value> vlst,vlst2,vlst_1;
-      Integer dim1,i1,i2;
+      Integer i1,i2;
       list<Integer> il;
       list<Env.Frame> env;
       DAE.Exp exp;

@@ -157,7 +157,7 @@ algorithm
       String mp,pd,classfile,classfile_1,class_,mp_1,dirfile,packfile,s;
       Absyn.Program p;
       Absyn.TimeStamp ts;
-      Real t1, t2;
+      Real  t2;
 
     case (class_,mp_1)
       equation
@@ -236,7 +236,7 @@ algorithm
       Absyn.Program p1_1,p2,p;
       list<String> subdirs;
       Absyn.Path wpath_1,wpath;
-      Real t1, t2; String s;
+      Real  t2; String s;
       Absyn.TimeStamp ts;
     case (pack,mp,(within_ as Absyn.TOP()),Absyn.PROGRAM(classes = oldc))
       equation
@@ -395,7 +395,7 @@ algorithm
       list<Absyn.Class> cls,oldc;
       Absyn.Program p_1,p_2;
       list<String> fs;
-      Real t1, t2; String s;
+      Real  t2; String s;
       Absyn.TimeStamp ts;
 
     case ({},mp,within_,Absyn.PROGRAM(classes = cls,within_ = w, globalBuildTimes=ts))

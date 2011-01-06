@@ -1298,7 +1298,7 @@ algorithm
       array<DAE.Algorithm> al;
       BackendDAE.EventInfo wc;
       BackendDAE.ExternalObjectClasses eoc;
-      BackendDAE.BackendDAE daelow, daelow_1;
+      BackendDAE.BackendDAE  daelow_1;
 
     case (BackendDAE.DAE(vars,kv,ev,av,e,se,ie,ae,al,wc,eoc),cr)
       equation
@@ -1549,7 +1549,7 @@ protected function traverseBackendDAEExpsEqn
 algorithm
   (outEquation,outAlgs,outMultiDimEquationArray,outWhenClauseLst,outTypeA) := matchcontinue (inEquation,inAlgs,inMultiDimEquationArray,inWhenClauseLst,func,inTypeA)
     local
-      DAE.Exp dercall,e1_1,e2_1,e1,e2;
+      DAE.Exp e1_1,e2_1,e1,e2;
       DAE.ComponentRef cr,cr1;
       BackendDAE.Value ds,indx,i;
       list<DAE.Exp> expl,expl1,in_,in_1,out,out1;
@@ -2131,7 +2131,7 @@ algorithm
   outTpl := matchcontinue(inTpl)
     local 
       DAE.ComponentRef cr,cr2;
-      DAE.Ident id1,id2;
+      DAE.Ident id2;
       BackendDAE.Var v;
       Integer i;
     case((v,(cr,i)))
@@ -2153,7 +2153,7 @@ protected function varStateSelectHeuristicPrio2
 algorithm
   prio := matchcontinue(cr,vars)
     local
-      list<BackendDAE.Var> varLst,sameCompVarLst;
+      list<BackendDAE.Var> sameCompVarLst;
     case(cr,vars)
       equation
         ((_,true)) = BackendVariable.traverseBackendDAEVars(vars,varInSameComponent,(cr,false));
@@ -2354,7 +2354,7 @@ algorithm
     local
       list<BackendDAE.Key> res1,res11,res1_1;
       list<BackendDAE.Value> res2,vars2,res22,res2_1,rest;
-      BackendDAE.Value e_1,e;
+      BackendDAE.Value e;
       BackendDAE.Equation eqn;
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns;

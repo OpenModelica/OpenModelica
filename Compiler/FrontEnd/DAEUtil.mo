@@ -2143,7 +2143,7 @@ algorithm
   leftSideCrefs := match(inExps,acc,source)
     local
       DAE.Exp e;
-      list<DAE.ComponentRef> crefs1,crefs2;
+      list<DAE.ComponentRef> crefs2;
     case ({},acc,_) then acc;
     case (e::inExps,acc,source)
       equation
@@ -2162,10 +2162,10 @@ TODO: add some error reporting for this."
 algorithm
   leftSideCrefs:= match (inElems,acc)
     local
-      String s1,s2,msg;
+      String msg;
       Integer i;
-      list<DAE.Exp> e1,e2,e3,exps,explist1,explist2,exps1,exps2,exps3;
-      DAE.Exp crefexp,exp,cond,ee1,ee2;
+      list<DAE.Exp> exps,explist1,explist2,exps1,exps2,exps3;
+      DAE.Exp exp,cond,ee1,ee2;
       DAE.ComponentRef cref;
       DAE.VarKind vk;
       DAE.VarDirection vd;
@@ -2173,18 +2173,18 @@ algorithm
       DAE.Flow flowPrefix;
       DAE.Element el;
       DAE.ExtArg retarg;
-      Option<DAE.Exp> bndexp,startvalexp;
+      Option<DAE.Exp> startvalexp;
       list<Absyn.Path> pathlist;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
-      list<DAE.Element> ellist,elements,eqs,eqsfalseb,rest;
+      list<DAE.Element> elements,eqs,eqsfalseb,rest;
       list<list<DAE.Element>> eqstrueb;
-      list<DAE.ComponentRef> lhsCrefs,crefs1,crefs2,crefs3;
+      list<DAE.ComponentRef> crefs1,crefs2,crefs3;
       Option<DAE.Element> elsewhenopt;
       Algorithm.Algorithm alg;
-      String id,fname,lang;
+      String fname,lang;
       Absyn.Path path;
-      list<list<DAE.Exp>> argexps,expslist;
+      list<list<DAE.Exp>> expslist;
       list<DAE.ExtArg> args;
       Option<Absyn.Annotation> ann;
       DAE.ElementSource source "the element origin";
@@ -2670,7 +2670,7 @@ protected function ifEqToExpr
 algorithm
   outElementLst := matchcontinue (inElement,onlyConstantEval)
     local
-      Integer true_eq,false_eq;
+      Integer false_eq;
       String elt_str;
       DAE.Element elt;
       list<DAE.Exp> cond,fbsExp;
@@ -3208,7 +3208,7 @@ algorithm
   otpl := match itpl
     local
       DAE.Exp exp,oexp;
-      Integer arg,oarg;
+      Integer oarg;
     
     case ((exp,oarg)) then Expression.traverseExp(exp,addUniqueIdentifierToCref,oarg);
     
@@ -3446,9 +3446,9 @@ protected function traverseDAEFunc
 algorithm
   (traversedFn,oextraArg) := match (daeFn,func,extraArg)
     local
-      DAE.ComponentRef cr,cr2,cr1,cr1_2;
-      list<DAE.Element> dae,dae2,elist,elist2,elist22,elist1,elist11;
-      DAE.Element elt,elt2,elt22,elt1,elt11;
+      DAE.ComponentRef cr1,cr1_2;
+      list<DAE.Element> elist,elist2,elist22,elist1,elist11;
+      DAE.Element elt1,elt11;
       list<Absyn.Path> clsLst;
       Option<DAE.VariableAttributes> attr;
       DAE.Type ftp,tp;
@@ -3456,10 +3456,10 @@ algorithm
       Option<DAE.Exp> optExp;
       Absyn.InnerOuter io;
       list<Integer> idims;
-      String id,str;
-      list<DAE.Statement> stmts,stmts2;
-      list<list<DAE.Element>> tbs,tbs_1;
-      list<DAE.Exp> conds,conds_1, args;
+      String str;
+      list<DAE.Statement> stmts2;
+      list<list<DAE.Element>> tbs_1;
+      list<DAE.Exp>  args;
       Boolean partialPrefix;
       Absyn.Path path;
       list<DAE.Exp> expl;
@@ -3514,30 +3514,30 @@ protected function traverseDAE2_tail
 algorithm
   (traversedDaeList,oextraArg) := match (daeList,func,extraArg,accumulator)
     local
-      DAE.ComponentRef cr,cr2,cr1,cr1_2;
+      DAE.ComponentRef cr1,cr1_2;
       list<DAE.Element> dae,dae2,elist,elist2,elist22,elist1,elist11;
       DAE.Element elt,elt2,elt22,elt1,elt11;
-      DAE.Function f1,f2;
+      DAE.Function f2;
       DAE.VarKind kind;
       DAE.VarDirection dir;
-      DAE.Type tp,ftp;
+      DAE.Type ftp;
       DAE.InstDims dims;
       DAE.StartValue start;
       DAE.Flow fl;
       DAE.Stream st;
       DAE.ExternalDecl extDecl;
       DAE.VarProtection prot;
-      DAE.Exp bindExp,bindExp2,e,e2,e22,e1,e11,maybeCrExp;
+      DAE.Exp e1,e11,maybeCrExp;
       list<Absyn.Path> clsLst;
       Option<DAE.VariableAttributes> attr;
       Option<SCode.Comment> cmt;
       Option<DAE.Exp> optExp;
       Absyn.InnerOuter io;
       list<DAE.Dimension> idims;
-      String id,str;
-      list<DAE.Statement> stmts,stmts2;
-      list<list<DAE.Element>> tbs,tbs_1;
-      list<DAE.Exp> conds,conds_1, args;
+      String str;
+      list<DAE.Statement> stmts2;
+      list<list<DAE.Element>> tbs_1;
+      list<DAE.Exp>  args;
       Boolean partialPrefix;
       Absyn.Path path;
       list<DAE.Exp> expl;
@@ -3575,7 +3575,7 @@ algorithm
   (outElt,oextraArg) := match (elt,func,extraArg)
     local
       DAE.ComponentRef cr,cr2,cr1,cr1_2;
-      list<DAE.Element> dae,dae2,elist,elist2,elist22,elist1,elist11;
+      list<DAE.Element> elist,elist2,elist22,elist1,elist11;
       DAE.Element elt2,elt22,elt1,elt11;
       DAE.Function f1,f2;
       DAE.VarKind kind;
@@ -3587,7 +3587,7 @@ algorithm
       DAE.Stream st;
       DAE.ExternalDecl extDecl;
       DAE.VarProtection prot;
-      DAE.Exp bindExp,bindExp2,e,e2,e22,e1,e11,maybeCrExp;
+      DAE.Exp e,e2,e22,e1,e11,maybeCrExp;
       list<Absyn.Path> clsLst;
       Option<DAE.VariableAttributes> attr;
       Option<SCode.Comment> cmt;
@@ -4163,7 +4163,7 @@ protected function addComponentType2 "
 algorithm
   outElt := match (elt,inPath)
     local
-      list<DAE.Element> xs_1,xs;
+      list<DAE.Element> xs;
       DAE.ComponentRef cr;
       DAE.VarKind kind;
       DAE.VarDirection dir;
@@ -4427,7 +4427,7 @@ algorithm
   outDae := match(dae1,dae2)
     local
       list<DAE.Element> elts1,elts2,elts;
-      Real t1, t2, ti;
+      Real   ti;
 
     // just append lists 
     case(DAE.DAE(elts1), 
@@ -4541,7 +4541,7 @@ algorithm
       DAE.AvlKey key,rkey;
       DAE.AvlValue value,rval;
       Option<DAE.AvlTree> left,right;
-      Integer rhval,h;
+      Integer h;
       DAE.AvlTree t_1,t,right_1,left_1,bt;
 
       /* empty tree*/
@@ -4813,7 +4813,7 @@ algorithm
     local
       DAE.AvlKey rkey,key;
       DAE.AvlValue rval,res;
-      Option<DAE.AvlTree> optLeft,optRight;
+      Option<DAE.AvlTree> optRight;
       DAE.AvlTree left,right;
       Integer rhval;
     
@@ -5160,9 +5160,9 @@ protected function getUniontypePathsElements
 algorithm
   outPaths := match elements
     local
-      list<Absyn.Path> paths,paths1,paths2;
+      list<Absyn.Path> paths1,paths2;
       list<list<Absyn.Path>> listPaths;
-      list<DAE.Element> els,rest;
+      list<DAE.Element> rest;
       list<DAE.Type> tys;
       DAE.Type ft;
     case {} then {};

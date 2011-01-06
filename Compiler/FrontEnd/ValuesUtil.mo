@@ -906,7 +906,7 @@ algorithm
       list<DAE.ExpType> tpl;
       list<String> namelst;
       list<DAE.ExpVar> varlst;
-      String name, str;
+      String  str;
       Integer ix;
       Absyn.Path path;
       list<String> names;
@@ -1589,7 +1589,7 @@ algorithm
       Integer i1,i2,res,v1,v2,len,len2,dim;
       list<Value> v1lst,v2lst,vres,rest,vlst,col,mat_1,vals,mat,lst1,lst2;
       Value sres,v;
-      String lenstr,len2str;
+      String len2str;
       list<Integer> dims;
       Real r1,r2,rres;
     case ((Values.INTEGER(integer = i1) :: (v1lst as (_ :: _))),(Values.INTEGER(integer = i2) :: (v2lst as (_ :: _))))
@@ -2059,7 +2059,7 @@ algorithm
   _ := match (xs,ids)
     local
       Absyn.Path cname;
-      String s1,s2,res,id;
+      String res,id;
       Value x;
       
       Integer ix;
@@ -2134,7 +2134,7 @@ algorithm
   outInteger:=
   match (inString1,inValue2,inStringLst3,inString4)
     local
-      String datasets,str,filename,timevar,message,oldBuf;
+      String str,filename,timevar,message,oldBuf;
       Value time;
       list<Value> rest;
       list<String> varnames;
@@ -2180,7 +2180,7 @@ public function sendPtolemyplotDataset "function: sendPtolemyplotDataset
 algorithm
   outInteger := match (inValue2,inStringLst3,inString4, interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange)
     local
-      String datasets,str,filename,timevar,message, interpolation2, title2, xLabel2, yLabel2, xRange2, yRange2, oldBuf;
+      String str,filename,timevar,message, interpolation2, title2, xLabel2, yLabel2, xRange2, yRange2, oldBuf;
       Boolean legend2, logX2, logY2, grid2, points2;
       Value time;
       list<Value> rest;
@@ -2217,7 +2217,7 @@ public function sendPtolemyplotDataset2 "function: sendPtolemyplotDataset2
 algorithm
   outInteger := match (inValue2,inStringLst3,visInfo,inString4)
     local
-      String datasets,str,filename,timevar,info,message,oldBuf;
+      String str,filename,timevar,info,message,oldBuf;
       Value time;
       list<Value> rest;
       list<String> varnames;
@@ -2249,7 +2249,7 @@ protected function unparsePtolemyValues "function: unparsePtolemyValues
 algorithm
   _ := match (inValue,inValueLst,inStringLst)
     local
-      String str,str2,res,v1;
+      String res,v1;
       Value time,s1;
       list<Value> xs;
       list<String> vs;
@@ -2281,10 +2281,10 @@ protected function unparsePtolemySet2 "function: unparsePtolemySet2
 algorithm
   _ := matchcontinue (inValue1,inValue2)
     local
-      String s1,s2,res,res_1;
+      String res,res_1;
       Value v1,v2;
       list<Value> v1s,v2s;
-      list<Integer> dims1,dims2;
+      list<Integer> dims2;
 
     case (Values.ARRAY(valueLst = {}),Values.ARRAY(valueLst = {})) then ();
     // adrpo: ignore dimenstions here as we're just printing! otherwise it fails.

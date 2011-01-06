@@ -420,8 +420,8 @@ algorithm
       Absyn.InnerOuter io1,io2;
       Connect.Face f1,f2;
       Prefix.Prefix scope;
-      list<DAE.ComponentRef> src,dst;
-      String s1,s2;
+      list<DAE.ComponentRef> dst;
+      String s2;
       DAE.ElementSource source "the origin of the element";
 
     // the left hand side is an outer!
@@ -701,7 +701,7 @@ algorithm
       DAE.ComponentRef cr1,cr2,cr1Outer,cr2Outer,crefPrefix;
       Absyn.InnerOuter io1,io2;
       Connect.OuterConnect oc;
-      Boolean keepInOuter,inner1,inner2,outer1,outer2,added,b1Outer,b2Outer,b1,b2,b3,b4;
+      Boolean inner1,inner2,outer1,outer2,added,b1Outer,b2Outer,b1,b2,b3,b4;
       Connect.Face f1,f2;
       Prefix.Prefix scope;
       InstHierarchy ih;
@@ -1279,8 +1279,8 @@ algorithm
   modd := matchcontinue(cache,env,ih,prefix,componentName,cr,inMod,io,impl)
   local
     String s1,s2,s;
-    SCode.Mod scmod1,scmod2;
-    DAE.Mod mod1,mod2;
+    SCode.Mod scmod2;
+    DAE.Mod mod2;
   // if we don't have the same modification on inner report error!
   case(_,_,_,_,_,cr,DAE.MOD(finalPrefix = _),Absyn.OUTER(),impl)
     equation
@@ -1448,7 +1448,7 @@ function switchInnerToOuterInEnv
 algorithm
   outEnv := match(inEnv,inCr)
     local
-      Env.Env envIn, envOut, envRest;
+      Env.Env envIn,  envRest;
       DAE.ComponentRef cr;
       Frame f;
     // handle nothingness
@@ -1508,7 +1508,7 @@ algorithm
     local
       DAE.ComponentRef cr;
       Env.AvlKey rkey;
-      String s1,s2,s3,res;
+      String res;
       Env.AvlValue rval;
       Option<AvlTree> l,r;
       Integer h;
@@ -1543,9 +1543,9 @@ algorithm
     local
       DAE.ComponentRef cr;
       Env.AvlKey rkey;
-      String s1,s2,s3,res;
+      String res;
       Env.AvlValue rval;
-      Option<AvlTree> l,r;
+      Option<AvlTree> r;
       Integer h;
       DAE.Var instantiated;
       DAE.Ident name "name";
@@ -2475,7 +2475,7 @@ algorithm
       Value v;
       Integer n,len;
       array<Option<tuple<Key,Value>>> arr;
-      String ps,lens,ns;
+      String lens,ns;
     
     case (VALUE_ARRAY(numberOfElements = n,valueArray = arr),pos)
       equation

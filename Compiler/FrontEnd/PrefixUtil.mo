@@ -645,7 +645,7 @@ algorithm
       list<DAE.Exp> expl;
       Absyn.InnerOuter io;
       InstanceHierarchy ih;
-      Prefix.Prefix innerPrefix,p;
+      Prefix.Prefix p;
       DAE.ComponentRef lastCref;
       Integer b,a;
       list<DAE.Statement> statements;

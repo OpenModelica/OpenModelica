@@ -101,7 +101,7 @@ algorithm
       Boolean encf,impl,notConst;
       SCode.Restriction r;
       list<Env.Frame> cenv,cenv1,cenv3,env2,env,env_1;
-      DAE.Mod outermod,mod_1,mod_2,mods,mods_1,emod_1,emod_2,mod, outerMod, innerMod, mergedMod;
+      DAE.Mod outermod,mod_1,mod_2,mods,mods_1,emod_1,emod_2,mod,   mergedMod;
       list<SCode.Element> importelts,els,els_1,rest,cdefelts,extendselts,classextendselts;
       list<SCode.Equation> eq1,ieq1,eq1_1,ieq1_1,eq2,ieq2,eq3,ieq3,eq,ieq,initeq2;
       list<SCode.AlgorithmSection> alg1,ialg1,alg1_1,ialg1_1,alg2,ialg2,alg3,ialg3,alg,ialg;
@@ -351,15 +351,15 @@ algorithm
       SCode.Class cl;
       list<SCode.Element> rest;
       SCode.ClassDef classDef;
-      Boolean partialPrefix,encapsulatedPrefix;
+      Boolean encapsulatedPrefix;
       SCode.Restriction restriction;
       String name;
       Option<Absyn.ExternalDecl> externalDecl;
       list<SCode.Annotation> annotationLst;
       Option<SCode.Comment> comment;
       list<SCode.Element> els,els1,els2;
-      list<SCode.Equation> nEqn,nEqn1,nEqn2,inEqn,inEqn1,inEqn2;
-      list<SCode.AlgorithmSection> nAlg,nAlg1,nAlg2,inAlg,inAlg1,inAlg2;
+      list<SCode.Equation> inEqn,inEqn1,inEqn2;
+      list<SCode.AlgorithmSection> inAlg,inAlg1,inAlg2;
       list<tuple<SCode.Element, DAE.Mod, Boolean>> compelts;
       SCode.Mod mods;
       DAE.Mod emod;
@@ -401,8 +401,8 @@ algorithm
       Option<Absyn.ExternalDecl> externalDecl;
       list<SCode.Annotation> annotationLst1,annotationLst2;
       Option<SCode.Comment> comment1,comment2;
-      list<SCode.Element> els,els1,els2;
-      list<SCode.Equation> nEqn,nEqn1,nEqn2,inEqn,inEqn1,inEqn2;
+      list<SCode.Element> els1,els2;
+      list<SCode.Equation> nEqn1,nEqn2,inEqn,inEqn1,inEqn2;
       list<SCode.AlgorithmSection> nAlg,nAlg1,nAlg2,inAlg,inAlg1,inAlg2;
       list<tuple<SCode.Element, DAE.Mod, Boolean>> rest,elsAndMods;
       tuple<SCode.Element, DAE.Mod, Boolean> first;
@@ -471,7 +471,7 @@ algorithm
   (outCache,outEnv1,outIH,outSCodeElementLst2,outSCodeEquationLst3,outSCodeEquationLst4,outSCodeAlgorithmLst5,outSCodeAlgorithmLst6):=
   matchcontinue (inCache,inEnv,inIH,inMod,inClass,inBoolean,info)
     local
-      list<SCode.Element> elt_1,elt;
+      list<SCode.Element> elt;
       list<Env.Frame> env,cenv;
       DAE.Mod mod;
       list<SCode.Equation> eq,ieq;
@@ -1150,7 +1150,7 @@ algorithm
   (outCache,outPath) := matchcontinue (cache,env,path,ht)
     local
       String id;
-      list<String> ids,ids1,ids2;
+      list<String> ids2;
       Absyn.Path path1,path2;
     case (cache,env,path1 as Absyn.FULLYQUALIFIED(_),ht) then (cache,path1); 
     case (cache,env,path1,ht)

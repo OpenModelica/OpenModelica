@@ -1047,7 +1047,7 @@ protected function buildClassDependsInElementAttr "help function to buildClassDe
 algorithm
   outDep := match(eltAttr,optPath,cname,dep)
     local 
-      Absyn.Path path,usesName,cname2;
+      Absyn.Path cname2;
       AbsynDep.Depends d; Absyn.Program p; Env.Env env; Absyn.ArrayDim ad;
       HashTable2.HashTable ht;
     
@@ -1214,7 +1214,7 @@ algorithm
   local
     Env.Env cenv;
     SCode.Program p_1;
-    Absyn.Path scope2,path2;
+    Absyn.Path path2;
     case(path,_,_,env,p) equation
       (_,fqPath) = Inst.makeFullyQualified(Env.emptyCache(),env, path);
     then fqPath;
@@ -1245,7 +1245,7 @@ algorithm
   local
     Env.Env cenv;
     SCode.Program p_1;
-    Absyn.Path scope2,path2;
+    Absyn.Path path2;
 
     case(path,scope,className,env,p) equation
       (_,fqPath) = Inst.makeFullyQualified(Env.emptyCache(),env, path);

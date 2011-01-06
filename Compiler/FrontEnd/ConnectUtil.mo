@@ -251,7 +251,7 @@ algorithm
   outSets := matchcontinue(scope,sets,cr1,cr2,io1,io2,f1,f2,source)
     local
       list<Connect.Set> ss;
-      list<DAE.ComponentRef> crs,dc;
+      list<DAE.ComponentRef> dc;
       list<Connect.OuterConnect> oc;
       Connect.OuterConnect new_oc;
     // First check if already added
@@ -1503,7 +1503,7 @@ algorithm
       DAE.Exp e;
       DAE.ElementSource src;
       Absyn.Info info;
-      list<Connect.StreamSetElement> el, inside, outside;
+      list<Connect.StreamSetElement>  inside, outside;
 
     // Unconnected stream connector:
     // inStream(c) = c;

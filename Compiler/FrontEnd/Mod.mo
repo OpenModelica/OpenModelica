@@ -266,7 +266,7 @@ algorithm
       Option<Absyn.Info> oinfo;
       Option<Absyn.ConstrainClass> cc;
       Absyn.Info i;
-      DAE.DAElist dae,dae1,dae2;
+      DAE.DAElist dae2;
       InstanceHierarchy ih;
       Absyn.ElementAttributes attr1;
       list<SCode.Enum> enumLst;
@@ -578,7 +578,7 @@ algorithm
       Prefix.Prefix pre;
       DAE.SubMod x;
       Env.Cache cache;
-      DAE.DAElist dae,dae1,dae2;
+      DAE.DAElist dae2;
       InstanceHierarchy ih;
       
     case (cache,_,ih,_,{},impl,info) then (cache,{});  /* impl */
@@ -708,7 +708,7 @@ algorithm
       SCode.SubMod x;
       list<SCode.SubMod> xs;
       Env.Cache cache;
-      DAE.DAElist dae,dae1,dae2;
+      DAE.DAElist dae2;
       InstanceHierarchy ih;
 
     case (cache,_,_,_,{},impl,info) then (cache,{});  /* impl */
@@ -1041,12 +1041,12 @@ algorithm
   outTypesSubModLst := matchcontinue (inSubMod,inTypesSubModLst,inEnv,inPrefix)
     local
       DAE.SubMod sub,sub1;
-      DAE.Mod m,m1,m2;
-      Ident n1,n2;
-      list<DAE.SubMod> tail,sub2;
+      DAE.Mod m2;
+      Ident n2;
+      list<DAE.SubMod> sub2;
       list<Env.Frame> env;
       Prefix.Prefix pre;
-      list<Integer> i1,i2;
+      list<Integer> i2;
     
     case (sub,{},_,_) then {sub};
     /* adrpo 2010-12-08 DO NOT MERGE SUBS as we then cannot catch duplicate modifications like: (w.start = 1, w(start = 2))  
@@ -1358,7 +1358,7 @@ algorithm
     local
       list<DAE.SubMod> rest;
       DAE.SubMod x;
-      DAE.Mod mod1, mod2, m1, m2;
+      DAE.Mod mod1, mod2,  m2;
       list<FullMod> fullMods;
     
     case ({}) then fail();
@@ -1399,7 +1399,7 @@ algorithm
     local
       Ident id;
       DAE.Mod mod;
-      String s, s1, s2;
+      String   s2;
       list<DAE.SubMod> duplicates, tail;
       DAE.SubMod head;
       
@@ -1850,7 +1850,7 @@ algorithm
   outTypesSubModLst := matchcontinue (inTypesSubModLst1,inTypesSubModLst2,inEnv3,inPrefix4)
     local
       list<DAE.SubMod> s1,s1_1,ss,s2,s2_new,s_rec;
-      DAE.SubMod s_1,s,s_first;
+      DAE.SubMod s,s_first;
       list<Env.Frame> env;
       Prefix.Prefix pre;
     
@@ -2207,7 +2207,7 @@ algorithm
   equal := matchcontinue(subModLst1,subModLst2)
     local    DAE.Ident id1,id2;
       DAE.Mod mod1,mod2;
-      Boolean b1,b2,b3;
+      Boolean b3;
       list<Integer> indx1,indx2;
       list<Boolean> blst1;
     
@@ -3094,7 +3094,7 @@ protected function checkDuplicatesInFullMods "helper function for verifySingleMo
 algorithm 
   _ := matchcontinue(subs,pre,elementName,infoOpt,addErrorMessage)
     local 
-      String n,s1,s2,s3;
+      String s1,s2,s3;
       DAE.Mod mod;
       DAE.SubMod subMod;
       DAE.ComponentRef cref;

@@ -620,9 +620,9 @@ algorithm
       Absyn.ComponentRef cr_1;
       Integer size,length,rest,resI,timeStampI,i;
       list<String> vars_1,vars_2,args,strings,strVars;
-      Real t,t1,t2,time,timeTotal,timeSimulation,timeStamp,val;
+      Real t1,t2,time,timeTotal,timeSimulation,timeStamp,val;
       Interactive.InteractiveStmts istmts;
-      Boolean bval, b, legend, grid, logX, logY, points, builtin, tuple_;
+      Boolean bval, b, legend, grid, logX, logY, points,  tuple_;
       Env.Cache cache;
       list<Interactive.LoadedFile> lf;
       AbsynDep.Depends aDep;
@@ -2582,8 +2582,8 @@ algorithm
       list<DAE.Element> dael;
       list<Interactive.InstantiatedClass> ic_1,ic;
       BackendDAE.BackendDAE dlow,dlow_1,indexed_dlow,indexed_dlow_1;
-      array<list<Integer>> m,mT;
-      array<Integer> ass1,ass2;
+      array<list<Integer>> mT;
+      array<Integer> ass2;
       list<list<Integer>> comps;
       Absyn.ComponentRef a_cref;
       list<String> libs;
@@ -2717,16 +2717,16 @@ algorithm
   (outCache,outValue,outInteractiveSymbolTable) :=
   matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable,inMsg)
     local
-      String filenameprefix,cname_str,filename,funcfilename,makefilename,file_dir;
+      String cname_str,filename,funcfilename,makefilename,file_dir;
       Absyn.Path classname;
-      list<SCode.Class> p_1,sp;
-      DAE.DAElist dae_1,dae;
+      list<SCode.Class> sp;
+      DAE.DAElist dae;
       list<Env.Frame> env;
       list<DAE.Element> dael;
-      list<Interactive.InstantiatedClass> ic_1,ic;
-      BackendDAE.BackendDAE dlow,dlow_1,indexed_dlow,indexed_dlow_1;
-      array<list<Integer>> m,mT;
-      array<Integer> ass1,ass2;
+      list<Interactive.InstantiatedClass> ic;
+      BackendDAE.BackendDAE indexed_dlow_1;
+      array<list<Integer>> mT;
+      array<Integer> ass2;
       list<list<Integer>> comps;
       Absyn.ComponentRef a_cref;
       list<String> libs;
@@ -2741,7 +2741,7 @@ algorithm
       list<Interactive.LoadedFile> lf;
       Absyn.TimeStamp ts;
       AbsynDep.Depends aDep;
-      Integer eqnSize,varSize,simpleEqnSize,elimLevel;
+      Integer simpleEqnSize,elimLevel;
       String errorMsg,eqnSizeStr,varSizeStr,retStr,classNameStr,simpleEqnSizeStr,s1;
       BackendDAE.EquationArray eqns;
       Absyn.Class cls, refactoredClass;
@@ -2857,7 +2857,7 @@ algorithm
       Absyn.Program p,p2;
       Absyn.Class cdef;
       list<Interactive.CompiledCFunction> cf;
-      Real starttime_r,stoptime_r,interval_r,tolerance_r,edit,build,r1,r2,globalEdit,globalBuild,timeCompile;
+      Real interval_r,tolerance_r,edit,build,r1,r2,globalEdit,globalBuild,timeCompile;
       list<Env.Frame> env;
       SimCode.SimulationSettings simSettings;
       DAE.Exp exp,starttime,stoptime,interval,tolerance,method,fileprefix,storeInTemp,noClean,options,outputFormat;
@@ -3678,16 +3678,16 @@ algorithm
   (outCache,outValue,outInteractiveSymbolTable) :=
   matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable,inMsg)
     local
-      String filenameprefix,cname_str,filename,funcfilename,makefilename,file_dir;
+      String cname_str,filename,funcfilename,makefilename,file_dir;
       Absyn.Path classname;
       list<SCode.Class> p_1,sp;
-      DAE.DAElist dae_1,dae;
+      DAE.DAElist dae;
       list<Env.Frame> env;
       list<DAE.Element> dael;
-      list<Interactive.InstantiatedClass> ic_1,ic;
+      list<Interactive.InstantiatedClass> ic;
       BackendDAE.BackendDAE dlow,dlow_1,indexed_dlow,indexed_dlow_1;
-      array<list<Integer>> m,mT;
-      array<Integer> ass1,ass2;
+      array<list<Integer>> mT;
+      array<Integer> ass2;
       list<list<Integer>> comps;
       Absyn.ComponentRef a_cref;
       list<String> libs;
@@ -4107,8 +4107,8 @@ algorithm
   matchcontinue (inCache,inEnv,inExp,inInteractiveSymbolTable,inMsg)
     local
       Boolean cdToTemp;
-      Real starttime_r,stoptime_r,interval_r,tolerance_r;
-      String file_dir,cname_str,init_filename,method_str,filenameprefix,makefilename,oldDir,tempDir,translationLevel;
+      Real interval_r,tolerance_r;
+      String cname_str,init_filename,method_str,filenameprefix,makefilename,oldDir,tempDir,translationLevel;
       list<Interactive.InstantiatedClass> ic_1,ic;
       list<Interactive.InteractiveVariable> iv;
       list<Interactive.CompiledCFunction> cf;
@@ -4245,9 +4245,9 @@ algorithm
       list<String> res;
       list<Absyn.ClassPart> parts;
       Absyn.Class cdef;
-      Absyn.Path newpath,inmodel,path;
+      Absyn.Path inmodel,path;
       Absyn.Program p;
-      String name, baseClassName;
+      String  baseClassName;
     case (_,_,Absyn.CLASS(body = Absyn.PARTS(classParts = parts)))
       equation
         strlist = Interactive.getClassnamesInParts(parts);
@@ -4430,7 +4430,7 @@ algorithm
       list<Interactive.CompiledCFunction> cf;
       Ceval.Msg msg;
       Env.Cache cache;
-      String ret, str, s;
+      String  str, s;
       list<Env.Frame> env;
       Real t1, t2, elapsedTime;
       Absyn.ComponentRef cr;
@@ -4500,7 +4500,7 @@ algorithm
       Absyn.Program p,p2;
       Absyn.Class cdef;
       list<Interactive.CompiledCFunction> cf;
-      Real starttime_r,stoptime_r,interval_r,tolerance_r;
+      Real interval_r,tolerance_r;
       list<Env.Frame> env;
       DAE.Exp exp,starttime,stoptime,interval,method,tolerance,fileprefix,storeInTemp,noClean,options;
       DAE.ComponentRef cr;
@@ -4514,7 +4514,7 @@ algorithm
       Boolean cdToTemp;
       SimCode.SimulationSettings simSettings;
       Absyn.TimeStamp ts;
-      Real r1,r2;
+      Real r2;
     
     // normal call
     case (cache,env,(exp as DAE.CALL(path = Absyn.IDENT(name = _),expLst = ({DAE.CODE(Absyn.C_TYPENAME(classname),_),starttime,stoptime,interval,tolerance, method,fileprefix,storeInTemp,noClean,options}))),(st_1 as Interactive.SYMBOLTABLE(ast = p  as Absyn.PROGRAM(globalBuildTimes=ts),explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)

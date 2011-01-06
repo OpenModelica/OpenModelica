@@ -1233,7 +1233,7 @@ algorithm
       list<Values.Value> vs,vl;
       list<Type> ts;
       list<Var> vars;
-      String cname_str,ident,str;
+      String str;
       Absyn.Path cname,path,utPath;
       list<Ident> ids;
       list<DAE.Exp> explist;
@@ -1471,12 +1471,12 @@ algorithm
     local
       Boolean res;
       Ident l1,l2;
-      list<Var> vl1,vl2,els1,els2;
-      Option<Absyn.Path> op1,op2;
-      Absyn.Path path,p1,p2;
+      list<Var> els1,els2;
+      Option<Absyn.Path> op2;
+      Absyn.Path p1,p2;
       list<Absyn.Path> pathLst;
       Type t1,t2,tp,tp2,tp1;
-      Integer i1,i2;
+      Integer i2;
       ClassInf.State st1,st2;
       Option<Type> bc1,bc2;
       list<Type> type_list1,type_list2,tList1,tList2;
@@ -2529,7 +2529,7 @@ algorithm
   outString:=
   matchcontinue (inVar)
     local
-      Ident t,res,n,bindStr,valStr;
+      Ident res,n,bindStr,valStr;
       Attributes attr;
       Boolean prot;
       Type typ;
@@ -3880,8 +3880,8 @@ algorithm
   matchcontinue (inExp1,inTypeLst2,inTypeLst3)
     local
       DAE.Exp e,e_1,e_2;
-      Type tp,t1,t2;
-      list<Type> res,ts1,ts2;
+      Type t1,t2;
+      list<Type> ts1,ts2;
     case (_,_,{}) then ();
     case (e,(t1 :: ts1),(t2 :: ts2))
       equation
@@ -3983,7 +3983,7 @@ algorithm
       list<Type> tys_1,tys1,tys2;
       list<Ident> l;
       list<Var> v, al;
-      String str,id,id1,id2;
+      String id,id1,id2;
       Absyn.Path path,tp,path1,path2;
       String name;
       list<Absyn.Path> pathList;
@@ -4512,7 +4512,7 @@ algorithm
   (outExp,actualOutType) := matchcontinue (melist,inType,outType,printFailtrace)
     local
       list<DAE.Exp> expl;
-      list<list<DAE.Exp>> rest, elist, elist_1;
+      list<list<DAE.Exp>> rest,  elist_1;
       DAE.ExpType t;
       list<DAE.ExpType> tlist;
       Type t1,t2,t_1;
@@ -5346,7 +5346,7 @@ algorithm
       DAE.Exp e,e_1;
       DAE.ExpType et;
       Type e_type,expected_type,e_type_1;
-      String id,id1,id2;
+      String id2;
 
     case (exp,actual,expected,_,polymorphicBindings,printFailtrace)
       equation
@@ -5699,7 +5699,7 @@ algorithm
       list<String> funcArgNames;
       list<Type> funcArgTypes1, funcArgTypes2, dummyBoxedTypeList;
       list<DAE.Exp> dummyExpList;
-      Type ty1,ty2,resType1,resType2;
+      Type ty2,resType1,resType2;
       TType tty1,tty2;
       Absyn.Path path;
       DAE.FunctionAttributes functionAttributes;
@@ -6066,9 +6066,9 @@ Horribly complicated function to keep track of what happens...
 algorithm
   (outTys,outSolvedBindings) := matchcontinue (tys1,tys2,changed,solvedBindings)
     local
-      Type ty,ty1,ty2;
-      list<Type> tys,rest;
-      String id,id1,id2;
+      Type ty1,ty2;
+      list<Type> rest;
+      String id2;
     case (ty1::tys1,ty2::tys2,_,solvedBindings)
       equation
         ({ty1},solvedBindings) = solveBindings({ty1},{ty2},solvedBindings);
@@ -6165,7 +6165,7 @@ algorithm
       Type ty,ty1,ty2;
       list<FuncArg> farg1,farg2;
       list<Type> tList1,tList2,tys;
-      Absyn.Path path,path1,path2;
+      Absyn.Path path1,path2;
       list<String> ids;
     case (actual,(DAE.T_POLYMORPHIC(id),_),envPath,bindings)
       then addPolymorphicBinding("$" +& id,actual,bindings);

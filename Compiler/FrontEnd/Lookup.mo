@@ -313,8 +313,8 @@ algorithm
       Env.Cache cache;
       Env.Env env;
       Absyn.Path first;
-      list<Absyn.Path> uniontypePaths, metarecordPaths, rest;
-      list<DAE.Type> metarecordTypes, metarecordTypes1, metarecordTypes2, uniontypeTypes, innerTypes;
+      list<Absyn.Path> uniontypePaths,  rest;
+      list<DAE.Type>    uniontypeTypes, innerTypes;
       DAE.Type ty;
     case (cache, env, path, str, ht, acc)
       equation
@@ -384,7 +384,7 @@ algorithm
       SCode.Class c,c_1;
       list<Env.Frame> env,env_1,env2,env_2,env_3,env1,env4,env5,fs,prevFrames;
       Absyn.Path path,ep,packp,p,scope,restPath;
-      String sid,id,s,name,pack;
+      String id,s,name,pack;
       Option<Env.Frame> optFrame;
 
     // First look in cache for environment. If found look up class in that environment.
@@ -569,7 +569,7 @@ algorithm
       DAE.Binding bind;
       String id,id2,str;
       list<Env.Item> fs;
-      list<Env.Frame> env,p_env,cenv,prevFrames;
+      list<Env.Frame> cenv,prevFrames;
       DAE.ComponentRef cref;
       Absyn.Path strippath,path;
       SCode.Class c2;
@@ -609,13 +609,13 @@ algorithm
       Env.Frame fr,f;
       SCode.Class c;
       String id,ident;
-      Boolean encflag,res;
+      Boolean res;
       SCode.Restriction restr;
-      list<Env.Frame> env_1,env2,env,prevFrames;
+      list<Env.Frame> env,prevFrames;
       ClassInf.State ci_state;
       list<Env.Item> fs;
       Env.Cache cache; 
-      DAE.ComponentRef cr,cref;
+      DAE.ComponentRef cref;
       Absyn.Path path,scope;
       Absyn.Ident firstIdent;
 
@@ -661,12 +661,12 @@ algorithm
   matchcontinue (inCache,inEnvItemLst,inEnv,inIdent)
     local
       Env.Frame fr,f;
-      DAE.ComponentRef cr,cref;
+      DAE.ComponentRef cref;
       SCode.Class c;
-      String id,ident;
-      Boolean encflag,more,unique;
+      String ident;
+      Boolean more,unique;
       SCode.Restriction restr;
-      list<Env.Frame> env_1,env2,env,classEnv,componentEnv,prevFrames;
+      list<Env.Frame> env,classEnv,componentEnv,prevFrames;
       ClassInf.State ci_state;
       DAE.Attributes attr;
       tuple<DAE.TType, Option<Absyn.Path>> ty;
@@ -717,7 +717,7 @@ algorithm
       list<Env.Frame> env_1,env,prevFrames;
       String id,ident,str;
       list<Env.Item> fs;
-      Absyn.Path strippath,path;
+      Absyn.Path path;
       Env.Cache cache;
     case (cache,(Env.IMPORT(import_ = Absyn.QUAL_IMPORT(path = Absyn.IDENT(name = id))) :: _),env,ident,inState)
       equation
@@ -1197,7 +1197,7 @@ algorithm
       DAE.Attributes attr;
       DAE.Type ty;
       DAE.Binding bind;
-      DAE.ComponentRef id2,cref,cr,cr1,cr2;
+      DAE.ComponentRef cref,cr,cr1,cr2;
       list<DAE.Subscript> sb;
       Option<String> sid;
       list<Env.Item> items;
@@ -1607,7 +1607,7 @@ algorithm
       Option<String> sid;
       Env.AvlTree httypes;
       Env.AvlTree ht;
-      list<tuple<DAE.TType, Option<Absyn.Path>>> reslist,c1,c2,res;
+      list<tuple<DAE.TType, Option<Absyn.Path>>> c1,c2,res;
       list<Env.Frame> env,fs,env_1,env2,env_2;
       String pack,str;
       SCode.Class c;
@@ -2226,7 +2226,7 @@ algorithm
       Env.Frame frame,f;
       String sid,scope;
       Boolean msg,msgflag;
-      Absyn.Path aid,path;
+      Absyn.Path path;
       Env.Cache cache;
             
     case (cache,env as (frame::_),id,prevFrames,inState,msg) /* msg */ 
@@ -2293,10 +2293,10 @@ algorithm
   (outCache,outClass,outEnv,outPrevFrames) := matchcontinue (inCache,inFrame,inEnv,inIdent,inPrevFrames,inState,inBoolean)
     local
       SCode.Class c;
-      list<Env.Frame> bcenv,env,totenv,env_1,prevFrames;
+      list<Env.Frame> totenv,env_1,prevFrames;
       Option<String> sid;
       Env.AvlTree ht;
-      String id,name;
+      String name;
       list<Env.Item> items;
       Env.Cache cache;
       Env.Item item;
@@ -2540,7 +2540,7 @@ algorithm
     local
       DAE.Exp exp;
       list<DAE.Exp> expl;
-      Integer x,dims;
+      Integer dims;
       Boolean res;
       String str1,str2;
     case(expl,dims)
@@ -2613,7 +2613,7 @@ algorithm
   (outCache,outAttributes,outType,outBinding,constOfForIteratorRange,splicedExpData,outComponentEnv,name) :=
   matchcontinue (inCache,inBinTree,inComponentRef)
     local
-      String n,id;
+      String id;
       Boolean f,streamPrefix;
       SCode.Accessibility acc;
       SCode.Variability vt,vt2;
@@ -2629,7 +2629,7 @@ algorithm
       DAE.ExpType ty2_2;
       Absyn.InnerOuter io;
       Option<DAE.Exp> texp;
-      DAE.Type t,ty1,ty2;
+      DAE.Type ty1,ty2;
       Option<Absyn.Path> p;
       DAE.ComponentRef xCref,tCref,cref_;
       list<DAE.ComponentRef> ltCref;

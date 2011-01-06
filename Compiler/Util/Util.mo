@@ -3570,7 +3570,7 @@ algorithm
     local
       Type_a x,y,i;
       list<Type_a> ys;
-      Integer i_1,n;
+      Integer n;
       Boolean a;
     case (_,{}) then false;
     case (x,(y :: ys))
@@ -7056,7 +7056,7 @@ algorithm
       TypeA hd;
       TypeB hdChanged;
       list<TypeA> rest;
-      list<TypeB> l, result;
+      list<TypeB>  result;
     
     case ({}, _, _) then ();
     
@@ -7094,7 +7094,7 @@ algorithm
   _ := match(inTypeALst, fn, inTypeB, inTypeC, inTypeD)
     local
       Type_a hd; Type_d hdChanged;
-      list<Type_a> rest;  list<Type_d> l, result;
+      list<Type_a> rest;  list<Type_d>  result;
       Type_b extraarg1;
       Type_c extraarg2;
     
@@ -7200,7 +7200,7 @@ public function buildMapStr "function: buildMapStr
 algorithm
   outStr := matchcontinue (inLst1,inLst2, inMiddleDelimiter, inEndDelimiter)
     local
-      list<String> r_1,c,d,ra,rb;
+      list<String> c,d,ra,rb;
       String fa,fb, md, ed, str;
     
     case ({},{}, md, ed) then "";

@@ -778,7 +778,7 @@ algorithm
   match (inVariableReplacements)
     local
       list<DAE.Exp> srcs,dsts;
-      list<String> srcstrs,dststrs,dststrs_1,strs;
+      list<String> dststrs,dststrs_1,strs;
       String str,len_str;
       Integer len;
       HashTable2.HashTable ht;
@@ -908,7 +908,7 @@ algorithm
       HashTable2.HashTable ht,ht_1;
       HashTable3.HashTable invHt,invHt_1;
       String s1,s2,s3,s4,s;
-      Real t1,t2;
+      Real t2;
     // PA: Commented out this, since it will only slow things down without adding any functionality.
     // Once match is available as a complement to matchcontinue, this case could be useful again.
     //case ((repl as REPLACEMENTS(ht,invHt)),src,dst) /* source dest */
@@ -995,7 +995,7 @@ algorithm
   (outRepl,outRlst,outTplLst,outTplLst1):=
   matchcontinue (inRepl,inRlst,inTplLst,inTplLst1)
     local
-      list<tuple<DAE.ComponentRef,DAE.Exp>> tplLst,tplLst1,rest,tplLst_,tplLst_1,tplLst_2;
+      list<tuple<DAE.ComponentRef,DAE.Exp>> tplLst1,rest,tplLst_,tplLst_1,tplLst_2;
       VariableReplacements repl,repl1,repl2;
       tuple<DAE.ComponentRef,DAE.Exp> key;
       DAE.ComponentRef sc;
@@ -1049,7 +1049,7 @@ algorithm
       Integer ind,indx;      
       Expression.Type ty;
       list<DAE.ExpVar> varLst;
-      list<DAE.Exp> expl,expl1;
+      list<DAE.Exp> expl1;
       list<DAE.Subscript> subs;
     // c[?] = e[?]  
     case ((c,e))
@@ -1141,7 +1141,7 @@ algorithm
       DAE.Exp dst,dst_1,olddst;
       HashTable2.HashTable ht,ht_1;
       HashTable3.HashTable invHt,invHt_1;
-      String s1,s2,s3,s4,s;
+      String s;
     case ((repl as REPLACEMENTS(ht,invHt)),src,dst) /* source dest */
       equation
         olddst = BaseHashTable.get(src,ht) "if rule a->b exists, fail" ;
@@ -1303,7 +1303,7 @@ algorithm
       HashTable3.HashTable invHt;
       DAE.Exp dst_1;
       Integer size;
-      Real t1,t2,t3,t4;
+      Real t4;
       String s;
       // old rule a->expr(b1,..,bn) must be updated to a->expr(c_exp,...,bn) when new rule b1->c_exp
       // is introduced
@@ -1358,7 +1358,7 @@ algorithm
   matchcontinue (repl,src,dst)
     local
       DAE.ComponentRef src_1;
-      DAE.Exp newdst,dst_1;
+      DAE.Exp dst_1;
       VariableReplacements repl_1;
       HashTable2.HashTable ht;
       HashTable3.HashTable invHt;
@@ -1528,7 +1528,7 @@ algorithm
   outExp:=
   matchcontinue (inExp,inVariableReplacements,inFuncTypeExpExpToBooleanOption)
     local
-      DAE.ComponentRef cr_1,cr;
+      DAE.ComponentRef cr;
       DAE.Exp e,e1_1,e2_1,e1,e2,e3_1,e3,r_1,r;
       DAE.ExpType t,tp,ety;
       VariableReplacements repl;

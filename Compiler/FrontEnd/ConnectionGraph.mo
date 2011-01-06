@@ -506,7 +506,7 @@ algorithm
       list<DAE.Element> rest, elements;
       DAE.Element el;
       DAE.ComponentRef cr1, cr2; 
-      String str1, str2, str3;
+      String   str3;
     
     // handle the empty case
     case ({}, cr1, cr2) then {};
@@ -925,7 +925,7 @@ algorithm
       DaeEdges connections;
       HashTableCG.HashTable table;
       DAE.ComponentRef dummyRoot;
-      Edges brokenConnections, normalConnections;
+      Edges  normalConnections;
       list<DAE.Element> dae;
       Edges broken;
       String brokenConnectsViaGraphViz;
@@ -1041,7 +1041,7 @@ algorithm
       DaeEdge e;
       list<DAE.Element> els;
       DaeEdges rest, ordered;
-      Boolean isUserBroken, b1, b2;
+      Boolean  b1, b2;
     
     // handle empty case
     case ({}, _) then {};
@@ -1652,7 +1652,7 @@ protected function generateGraphViz
 algorithm
   brokenConnectsViaGraphViz := matchcontinue(modelNameQualified, definiteRoots, potentialRoots, branches, connections, finalRoots, broken)
     local
-      String fileName, i, nrDR, nrPR, nrBR, nrCO, nrFR, nrBC, timeStr, leftyCMD, infoNodeStr, brokenConnects;
+      String fileName, i, nrDR, nrPR, nrBR, nrCO, nrFR, nrBC, timeStr,  infoNodeStr, brokenConnects;
       Real tStart, tEnd, t;
       IOStream.IOStream graphVizStream;
       Integer leftyExitStatus;

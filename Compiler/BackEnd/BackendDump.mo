@@ -102,7 +102,7 @@ algorithm
       Expression.Ident s,s_1,s_2,fs,argstr;
       Absyn.Path fcn;
       list<DAE.Exp> args;
-      DAE.Exp e,e1,e2;
+      DAE.Exp e1,e2;
       Expression.Type ty;
     case( DAE.CALL(path = Absyn.IDENT("DIVISION"), expLst = {e1,e2,DAE.SCONST(_)}, tuple_ = false,builtin = true,ty = ty,inlineType = DAE.NO_INLINE()), _, _)
       equation
@@ -737,9 +737,9 @@ algorithm
   outString := match (inWhenEqn)
     local
       String s1,s2,res,indx_str,is,var_str,intsStr,outsStr;
-      DAE.Exp e1,e2,e;
-      BackendDAE.Value indx,i;
-      list<DAE.Exp> expl,inps,outs;
+      DAE.Exp e2,e;
+      BackendDAE.Value i;
+      list<DAE.Exp> outs;
       DAE.ComponentRef cr;
       BackendDAE.WhenEquation weqn;
     case (BackendDAE.WHEN_EQ(index = i,left = cr,right = e2, elsewhenPart = SOME(weqn)))
@@ -1220,7 +1220,7 @@ algorithm
   match (inBackendDAE,inIntegerLst)
     local
       String s1,s2,res,s3;
-      BackendDAE.Value v_1,v;
+      BackendDAE.Value v;
       DAE.ComponentRef cr;
       BackendDAE.BackendDAE dae;
       BackendDAE.Variables vars;

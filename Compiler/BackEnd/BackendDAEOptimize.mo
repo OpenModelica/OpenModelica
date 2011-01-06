@@ -114,7 +114,7 @@ algorithm
       list<BackendDAE.MultiDimEquation> arreqns,arreqns1,arreqns2;
       BackendDAE.BinTree movedvars_1,states,outputs;
       BackendDAE.Variables vars_1,knvars_1,vars,knvars,knvars_2;
-      list<DAE.Exp> crlst,elst;
+      list<DAE.Exp> elst;
       list<DAE.Algorithm> algs,algs_1;
       list<tuple<list<DAE.Exp>,list<DAE.Exp>>> inputsoutputs;
       BackendDAE.AliasVariables varsAliases;      
@@ -1580,7 +1580,7 @@ algorithm
       DAE.ElementSource source;
       DAE.ExpType identType;
       list<DAE.Subscript> subscriptLst;
-      Integer replace,replace1;
+      Integer replace1;
     
     case (dlow,dlow1,m,mT,v1,v2,comp,vars,exclude,residualeqn,residualeqns,tearingvars,tearingeqns,crlst)
       equation
@@ -2110,7 +2110,7 @@ algorithm
       list<Integer> rest;
       list<list<Integer>> vars;
       Integer var;
-      list<Integer> intlst,ilst2;
+      list<Integer> ilst2;
       Integer i;
       array<Integer> arr,arr1;
       list<String> s,s1;
@@ -2463,9 +2463,9 @@ algorithm
       list<DAE.ComponentRef> restVars;
       Integer algNum;
       
-      list<BackendDAE.Var> currDerivedVariables, restDerivedVariables, derivedVariables;
+      list<BackendDAE.Var>   derivedVariables;
       list<BackendDAE.Equation> currDerivedEquations, restDerivedEquations, derivedEquations;
-      list<DAE.Algorithm> currDerivedAlgorithms, restDerivedAlgorithms, derivedAlgorithms;
+      list<DAE.Algorithm>   derivedAlgorithms;
       
       list<BackendDAE.Var> inputVars, paramVars, stateVars;
       list<tuple<Integer, DAE.ComponentRef>> algorithmsLookUp;
@@ -2514,7 +2514,7 @@ algorithm
       list<BackendDAE.Var> inputVars, paramVars, stateVars;
       Integer index;
       list<DAE.Exp> in_, derivedIn_,out, derivedOut;
-      DAE.Algorithm singleAlgorithm, derivedAlgorithm;
+      DAE.Algorithm  derivedAlgorithm;
       list<tuple<Integer, DAE.ComponentRef>> algorithmsLookUp;
       Integer newAlgIndex;
     case(currEquation as BackendDAE.EQUATION(exp=lhs, scalar=rhs, source=source), var, functions, inputVars, paramVars, stateVars, _) equation
@@ -2942,7 +2942,7 @@ protected function partialAnalyticalDifferentiation
 algorithm
   outExp := match(varExpList, derVarExpList, functionCall, derFname, nDerArgs)
     local
-      DAE.Exp e, currVar, currDerVar, derFun, delta, absCurr;
+      DAE.Exp e, currVar, currDerVar, derFun,  absCurr;
       list<DAE.Exp> restVar, restDerVar, varExpList1Added, varExpListTotal;
       DAE.ExpType et;
       Boolean tuple_, builtin;

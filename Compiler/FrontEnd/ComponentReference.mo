@@ -746,7 +746,7 @@ algorithm
       Boolean res;
       DAE.Ident id1,id2;
       list<DAE.Subscript> ss1,ss2;
-      DAE.ExpType t2,t22;
+      DAE.ExpType t22;
     
     // first is qualified, second is an unqualified ident, return false!
     case (DAE.CREF_QUAL(ident = _), DAE.CREF_IDENT(ident = _)) then false;
@@ -1604,7 +1604,7 @@ algorithm
       DAE.ExpType t2,identType;
       DAE.ComponentRef child;
       list<DAE.Subscript> subs;
-      String name, str1, str2, str;
+      String name,   str;
       
     // debugging case, uncomment for enabling
     // case(child,newSub)

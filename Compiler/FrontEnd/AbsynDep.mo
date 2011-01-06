@@ -381,7 +381,7 @@ algorithm
       AvlKey key,rkey;
       AvlValue value,rval;
       Option<AvlTree> left,right;
-      Integer rhval,h;
+      Integer h;
       AvlTree t_1,t,right_1,left_1,bt;
 
       /* empty tree*/

@@ -221,7 +221,7 @@ algorithm
       Absyn.Path fname;
       list<Ident> vars;
       tuple<String,String> re;
-      String redeclareStr, replaceableStr, partialStr, encapsulatedStr, restrictionStr, prefixKeywords;      
+      String   partialStr, encapsulatedStr, restrictionStr, prefixKeywords;      
       
     // adrpo: BEWARE! the prefix keywords HAVE TO BE IN A SPECIFIC ORDER:
     //  ([final] | [redeclare] [final] [inner] [outer]) [replaceable] [encapsulated] [partial] [restriction] name
@@ -337,14 +337,14 @@ algorithm
   outString := match (inClass)
     local
       Ident is,s1,s2,s2_1,s3,s4,s5,str,n,fi,re,io,s6,s7,s8,s9,name;
-      Integer i_1,i,indent;
+      Integer i,indent;
       Boolean p,f,e;
       Absyn.Restriction r;
       list<Absyn.ClassPart> parts;
       Option<Ident> optcmt;
       Absyn.TypeSpec tspec;
       Absyn.ElementAttributes attr;
-      list<Absyn.ElementArg> m,cmod;
+      list<Absyn.ElementArg> cmod;
       Option<Absyn.Comment> cmt;
       list<Absyn.EnumLiteral> l;
       Absyn.EnumDef ENUM_COLON;
@@ -3998,7 +3998,7 @@ function printIterator
 algorithm
   _ := match(iterator)
     local
-      String s, s1, s2, s3;
+      String    s3;
       Absyn.Exp exp;
       Absyn.Ident id;
       list<tuple<Absyn.Ident, Absyn.Exp>> rest;

@@ -608,7 +608,7 @@ algorithm
       Absyn.Program p;
       Absyn.Path path,cPath;
       Absyn.Exp x1,x2,y1,y2,rx1,rx2,ry1,ry2;
-      Integer ix1,ix2,iy1,iy2;
+      Integer iy2;
       list<Absyn.ElementArg> args,rest,res,trans;
       Absyn.ElementArg arg,iconTrans,diagramTrans;
       Context context, c;
@@ -1095,7 +1095,7 @@ algorithm
       Context context;
 
 
-      Env.Env cenv,env;
+      Env.Env env;
       String str;
       Env.Cache cache;
       String id;
@@ -1482,7 +1482,7 @@ algorithm
       Absyn.Program p;
       list<list<Absyn.Exp>> expMatrix;
       list<Absyn.Exp> expLst;
-      Absyn.Exp x1,x2,y1,y2;
+      Absyn.Exp y2;
       Integer x,color1,color2,color3;
       String val,val1,val2;
       list<String> arrows;

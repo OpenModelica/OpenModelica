@@ -234,7 +234,7 @@ algorithm
   strRow :=
   matchcontinue (inStringLst)
     local
-      String s, s1, s2, x;
+      String s,  s2, x;
       list<String> xs;
     case ({}) then "";
     case ((x :: {})) then x;
@@ -370,7 +370,7 @@ algorithm
   matchcontinue (inVarLst,inInteger)
     local
       String varnostr,dirstr,str,path_str,comment_str,s,indx_str,str1,str2;
-      list<String> paths_lst,path_strs;
+      list<String> path_strs;
       Integer varno_1,indx,varno;
       BackendDAE.Var v;
       DAE.ComponentRef cr,old_name;

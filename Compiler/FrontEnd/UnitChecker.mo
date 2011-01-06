@@ -672,7 +672,7 @@ algorithm
       list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> params1,params2,params3;
       list<MMath.Rational> unitvec1,unitvec2;
       UnitAbsyn.Store st2;
-      UnitAbsyn.SpecUnit su2,su3;
+      UnitAbsyn.SpecUnit su3;
     
     case (UnitAbsyn.UNSPECIFIED(),st)
       then (UnitAbsyn.UNSPECIFIED(),st);
