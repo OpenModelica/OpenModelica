@@ -336,7 +336,7 @@ public function getStateName "function: getStateName
 algorithm
   outPath :=
   matchcontinue (inState)
-    local String s;
+    local
       Absyn.Path p;
     case UNKNOWN(path = p) then p;
     case OPTIMIZATION(path = p) then p;

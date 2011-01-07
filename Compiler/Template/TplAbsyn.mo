@@ -6350,7 +6350,6 @@ algorithm
     local
        Type_a a;
        Type_b b;
-       tuple<Type_a,Type_b> tpl;
        list<tuple<Type_a,Type_b>> lst, lstAl;
        list<tuple<Type_a,Type_c>> lstBy;
     

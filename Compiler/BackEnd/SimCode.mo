@@ -5891,9 +5891,7 @@ algorithm
   outHT :=  matchcontinue (modelInfo)
     local
       HashTableCrefToSimVar ht;
-      list<SimVar> stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, 
-      inputVars, outputVars, paramVars, intParamVars, boolParamVars, 
-      stringAlgVars, stringParamVars, extObjVars;
+      list<SimVar> stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars,   paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars, extObjVars;
     case (MODELINFO(vars = SIMVARS(
       stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, 
       _/*inputVars*/, _/*outputVars*/, paramVars, intParamVars, boolParamVars, 
@@ -5985,7 +5983,6 @@ algorithm
   matchcontinue (inExp)
     local
       DAE.ComponentRef name;
-      HashTable2.HashTable varMappings;
     case (DAE.CREF(componentRef=name)) then ALIAS(name); 
     case (DAE.UNARY(operator=DAE.UMINUS(_),exp=DAE.CREF(componentRef=name))) then NEGATEDALIAS(name);
     case (DAE.UNARY(operator=DAE.UMINUS_ARR(_),exp=DAE.CREF(componentRef=name))) then NEGATEDALIAS(name);

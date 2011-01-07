@@ -1359,13 +1359,15 @@ protected function updateDeducedUnits "updates the deduced units in each DAE.VAR
   output DAE.DAElist outDae;
 algorithm
   outDae := matchcontinue(callScope,store,dae)
-  local UnitAbsyn.Store st; HashTable.HashTable ht; Integer indx;
-    array<Option<UnitAbsyn.Unit>> vec;
-    String unitStr;
-    UnitAbsyn.Unit unit;
-    Option<DAE.VariableAttributes> varOpt;
-    DAE.Element elt,v;
-    list<DAE.Element> elts;
+    local
+      HashTable.HashTable ht;
+      Integer indx;
+      array<Option<UnitAbsyn.Unit>> vec;
+      String unitStr;
+      UnitAbsyn.Unit unit;
+      Option<DAE.VariableAttributes> varOpt;
+      DAE.Element elt,v;
+      list<DAE.Element> elts;
     case(false,_,dae) then dae;
 
       /* Only traverse on top scope */
@@ -1800,7 +1802,6 @@ algorithm
       SCode.Restriction r,rCached;
       SCode.ClassDef d;
       Env.Cache cache;
-      Real time; Boolean b;
       Option<Absyn.ElementAttributes> oDA;
       DAE.EqualityConstraint equalityConstraint;
       CallingScope callscope;
@@ -2060,8 +2061,6 @@ algorithm
       SCode.Restriction r;
       SCode.ClassDef d;
       Env.Cache cache;
-      Real t1;
-      Boolean b;
       Option<Absyn.ElementAttributes> oDA;
       CallingScope callscope;
       ConnectionGraph.ConnectionGraph graph;
@@ -2738,10 +2737,8 @@ algorithm
       Boolean prot;
       InstDims inst_dims;
       Env.Cache cache;
-      Real time; String s2; Boolean b;
       InstanceHierarchy ih;
       InstHashTable instHash;
-
       tuple<Env.Cache, Env.Env, InstanceHierarchy, DAE.Mod, Prefix.Prefix, Connect.Sets,
             ClassInf.State, SCode.Class, Boolean, InstDims> inputs;
       tuple<Env.Env, ClassInf.State> outputs;
@@ -2872,7 +2869,6 @@ algorithm
       Boolean prot,partialPrefix;
       InstDims inst_dims;
       Env.Cache cache;
-      Real time; String s2; Boolean b;
       InstanceHierarchy ih;
       Absyn.Info info;
 
@@ -4176,8 +4172,6 @@ algorithm
     local
       Env.Cache cache;
   	  Env.Env env1;
-  	  DAE.Element daeElt;
-  	  String s;
   	  InstanceHierarchy ih;
 
   	case (cache,env,ih,cl)
@@ -4632,7 +4626,6 @@ algorithm
       Option<list<Absyn.Subscript>> ad;
       SCode.Mod mod;
       Env.Cache cache;
-      Real time; Boolean b;
       InstanceHierarchy ih;
 
       /* long class definition */  /* the normal case, a class with parts */
@@ -6384,8 +6377,6 @@ algorithm
       SCode.Element oldElt,newElt;
       DAE.Mod oldMod,newMod;
       String s1,s2;
-      SCode.Ident n "the component name" ;
-      Absyn.InnerOuter io "the inner/outer/innerouter prefix" ;
       SCode.Mod smod1, smod2;
       Env.Env env, env1, env2;
       Env.Cache cache;
@@ -13894,11 +13885,16 @@ algorithm
   outVarsDae := matchcontinue(inVarsDae,inEquationsDae)
   local
     list<DAE.Element> vars, vars1, equations;
-    DAE.Element var; DAE.Exp e; DAE.ComponentRef componentRef;
-    DAE.VarKind kind; DAE.VarDirection direction;
-    DAE.VarProtection protection; DAE.Type ty;
-    Option<DAE.Exp> binding; DAE.InstDims  dims;
-    DAE.Flow flowPrefix; DAE.Stream streamPrefix;
+    DAE.Element var;
+    DAE.Exp e;
+    DAE.ComponentRef componentRef;
+    DAE.VarKind kind;
+    DAE.VarDirection direction;
+    DAE.VarProtection protection;
+    DAE.Type ty;
+    DAE.InstDims  dims;
+    DAE.Flow flowPrefix;
+    DAE.Stream streamPrefix;
     Option<DAE.VariableAttributes> variableAttributesOption;
     Option<SCode.Comment> absynCommentOption;
     Absyn.InnerOuter innerOuter;

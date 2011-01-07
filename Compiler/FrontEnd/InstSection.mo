@@ -1796,14 +1796,11 @@ algorithm
 	    list<SCode.Statement> sl;
 	    SCode.Initial initial_;
 	    Boolean impl;
-	    tuple<DAE.TType, Option<Absyn.Path>> t;
 	    DAE.Exp e_1;
 	    list<DAE.Statement> stmts;
 	    String i, str;
 	    Absyn.Exp e;
 	    DAE.Properties prop;
-	    list<tuple<Absyn.ComponentRef,Integer>> lst;
-	    tuple<Absyn.ComponentRef, Integer> tpl;
 	    Values.Value v;
 	    DAE.Const cnst;
 	    DAE.Type id_t;
@@ -1882,10 +1879,7 @@ algorithm
 	    list<SCode.Statement> sl;
 	    SCode.Initial initial_;
 	    Boolean impl;
-	    tuple<DAE.TType, Option<Absyn.Path>> t;
 	    list<DAE.Statement> stmts;
-	    list<tuple<Absyn.ComponentRef,Integer>> lst;
-	    tuple<Absyn.ComponentRef,Integer> tpl;
 	    InstanceHierarchy ih;
 
     // adrpo: unroll ALL for loops containing ALG_WHEN... done
@@ -2127,7 +2121,8 @@ protected function instComplexEquation "instantiate a comlex equation, i.e. c = 
   output DAE.DAElist dae;
 algorithm
   dae := matchcontinue(lhs,rhs,tp,source,initial_)
-    local DAE.Element daeEl; String s;
+    local
+      String s;
     // Records
     case(lhs,rhs,tp,source,initial_)
       equation
@@ -2169,7 +2164,7 @@ protected function makeComplexDaeEquation "Creates a DAE.COMPLEX_EQUATION for eq
   output DAE.DAElist dae;
 algorithm
   dae := match(lhs,rhs,source,initial_)
-  local DAE.FunctionTree funcs;
+    local
     case(lhs,rhs,source,SCode.NON_INITIAL())
       then DAE.DAE({DAE.COMPLEX_EQUATION(lhs,rhs,source)});
 

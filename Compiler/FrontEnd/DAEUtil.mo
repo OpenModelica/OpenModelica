@@ -3478,7 +3478,6 @@ algorithm
     local
       list<DAE.Element> dae,dae2;
       DAE.Element elt;
-      DAE.ElementSource source "the origin of the element";
   
     case({},_,extraArg,accumulator)
       equation

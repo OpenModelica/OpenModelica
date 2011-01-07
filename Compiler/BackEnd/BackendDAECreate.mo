@@ -231,7 +231,6 @@ algorithm
       DAE.Element daeEl;
       list<DAE.Element> daeLstRest;
       BackendDAE.BinTree states;
-      DAE.ElementSource source "the element source";
       
     // the empty case 
     case ({},functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,whenclauses,extObjCls,states)
@@ -2476,7 +2475,7 @@ protected function expandDerExp
   output tuple<DAE.Exp,tuple<BackendDAE.Variables,DAE.FunctionTree>> outTpl;
 algorithm
   outTpl := matchcontinue(tpl)
-    local DAE.Exp inExp;
+    local
       BackendDAE.Variables vars;
       BackendDAE.BinTree bt;
       DAE.FunctionTree funcs;

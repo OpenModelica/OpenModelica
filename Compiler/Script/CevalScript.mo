@@ -2805,8 +2805,7 @@ algorithm
       Interactive.InteractiveSymbolTable st,st_1,st2;
       BackendDAE.BackendDAE indexed_dlow_1;
       list<String> libs;
-      String prefix_str,file_dir,cname_str,init_filename,method_str,filenameprefix,
-             makefilename,oldDir,tempDir,tolerance_str,options_str,exeFile,s1,s2,s3;
+      String file_dir,init_filename,method_str,filenameprefix,oldDir,exeFile,s3;
       Absyn.Path classname;
       Absyn.Program p;
       Absyn.Class cdef;
@@ -3974,11 +3973,11 @@ end setBuildTimeVisitor;
 protected function extractNoCleanCommand "Function: extractNoCleanCommand"
 input DAE.Exp inexpl;
 output String outString;
-algorithm outString := matchcontinue(inexpl)
-  local Boolean noclean; String str;
-  case(DAE.BCONST(true)) then "noclean";
-  case(_) then "";
-  end matchcontinue;
+algorithm
+  outString := match (inexpl)
+    case(DAE.BCONST(true)) then "noclean";
+    else "";
+  end match;
 end extractNoCleanCommand;
 
 protected function getWithinStatement " function getWithinStatement
@@ -4420,9 +4419,7 @@ algorithm
       Interactive.InteractiveSymbolTable st,st_1,st2;
       BackendDAE.BackendDAE indexed_dlow_1;
       list<String> libs;
-      String prefix_str,file_dir,cname_str,init_filename,method_str,
-             filenameprefix,makefilename,oldDir,tempDir,options_str,
-             outputFormat_str,s1,s2,s3;
+      String file_dir,method_str,filenameprefix,oldDir,s3;
       Absyn.Path classname;
       Absyn.Program p,p2;
       Absyn.Class cdef;

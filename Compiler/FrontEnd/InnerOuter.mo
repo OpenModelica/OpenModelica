@@ -1545,7 +1545,6 @@ algorithm
       SCode.Accessibility accessibility "accessibility" ;
       SCode.Variability parameter_ "parameter" ;
       Absyn.Direction direction "direction" ;
-      Absyn.InnerOuter innerOuter "inner, outer,  inner outer or unspecified";
       Option<DAE.Const> cnstForRange;
     
     // inner

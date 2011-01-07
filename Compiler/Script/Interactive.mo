@@ -17745,7 +17745,9 @@ protected function transformFlatExpTrav
   output tuple<Absyn.Exp,Integer> outExp;
 algorithm
   outExp := match(inExp)
-  local Absyn.ComponentRef cr; Absyn.Exp e,e1; Integer i;
+    local
+      Absyn.Exp e,e1;
+      Integer i;
     case( (e,i))
       equation
         ((e1,i)) = traverseExp(e,transformFlatExp,0);

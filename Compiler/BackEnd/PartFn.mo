@@ -1394,7 +1394,6 @@ algorithm
       DAE.InstDims  dims "dimensions";
       DAE.Flow flowPrefix "Flow of connector variable. Needed for unconnected flow variables" ;
       DAE.Stream streamPrefix "Stream variables in connectors" ;
-      list<Absyn.Path> pathLst " " ;
       Option<DAE.VariableAttributes> variableAttributesOption;
       Option<SCode.Comment> absynCommentOption;
       Absyn.InnerOuter innerOuter "inner/outer required to 'change' outer references";

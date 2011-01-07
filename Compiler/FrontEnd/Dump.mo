@@ -3625,7 +3625,8 @@ algorithm
   _ := matchcontinue (inExp)
     local
       Ident s,sym;
-      Integer i; Real r; Boolean b; 
+      Integer i;
+      Real r;
       Absyn.ComponentRef c,fcn;
       Absyn.Exp e1,e2,e,t,f,start,stop,step;
       Absyn.Operator op;

@@ -6561,13 +6561,6 @@ algorithm
       DAE.Exp startTime "start time, default 0.0";
       DAE.Exp stopTime "stop time, default 1.0";
       DAE.Exp numberOfIntervals "number of intervals, default 500";
-      DAE.Exp tolerance "tolerance, default 1e-6";
-      DAE.Exp method "method, default 'dassl'";
-      DAE.Exp fileNamePrefix "file name prefix, default ''";
-      DAE.Exp storeInTemp "store in temp, default false";
-      DAE.Exp options "options, default ''";
-      DAE.Exp noClean "no cleaning, default false";
-      DAE.Exp outputFormat "output format, default 'plt'";
       Integer intervals;
       Real stepTime;
       Env.Cache cache;

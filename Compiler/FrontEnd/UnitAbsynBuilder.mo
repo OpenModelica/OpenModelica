@@ -716,11 +716,14 @@ public function instAddStore "Called when instantiating a Real class"
   output UnitAbsyn.InstStore outStore;
 algorithm
   outStore := matchcontinue(store,tp,cr)
-  local UnitAbsyn.Store st; HashTable.HashTable ht; DAE.Exp e; String unitStr;
-    UnitAbsyn.Unit unit; Integer indx;
-    Option<Absyn.Path> optPath;
-    list<DAE.Var> vs;
-    Option<UnitAbsyn.UnitCheckResult> res;
+    local
+      UnitAbsyn.Store st;
+      HashTable.HashTable ht;
+      String unitStr;
+      UnitAbsyn.Unit unit; Integer indx;
+      Option<Absyn.Path> optPath;
+      list<DAE.Var> vs;
+      Option<UnitAbsyn.UnitCheckResult> res;
 
     case(store,_,_) equation
       false = OptManager.getOption("unitChecking");
@@ -1111,9 +1114,11 @@ protected function buildTermCall "builds a term and additional terms from a func
   output UnitAbsyn.Store outStore;
 algorithm
   (ut,extraTerms,outStore) := match(env,path,funcCallExp,expl,divOrMul,ht,store)
-    local list<Integer> formalParamIndxs; Integer resIndx;
-      list<UnitAbsyn.UnitTerm> actTermLst,terms,terms2,extraTerms2; DAE.Type functp;
-       Integer funcInstId;
+    local
+      list<Integer> formalParamIndxs;
+      Integer funcInstId;
+      list<UnitAbsyn.UnitTerm> actTermLst,terms,terms2,extraTerms2;
+      DAE.Type functp;
     case(env,path,funcCallExp,expl,divOrMul,ht,store) equation
        (_,functp,_) = Lookup.lookupType(Env.emptyCache(),env,path,NONE());
        funcInstId=tick();

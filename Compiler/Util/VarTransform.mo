@@ -1347,8 +1347,6 @@ algorithm
   matchcontinue (repl,src,dst)
     local
       DAE.Exp dst_1;
-      HashTable2.HashTable ht;
-      HashTable3.HashTable invHt;
       // for rule a->b1+..+bn, replace all b1 to bn's in the expression;
     case (repl ,src,dst)
       equation

@@ -235,7 +235,6 @@ algorithm
       Absyn.Program p1_1,p2,p;
       list<String> subdirs;
       Absyn.Path wpath_1,wpath;
-      Real  t2; String s;
       Absyn.TimeStamp ts;
     case (pack,mp,(within_ as Absyn.TOP()),Absyn.PROGRAM(classes = oldc))
       equation
@@ -394,7 +393,6 @@ algorithm
       list<Absyn.Class> cls,oldc;
       Absyn.Program p_1,p_2;
       list<String> fs;
-      Real  t2; String s;
       Absyn.TimeStamp ts;
 
     case ({},mp,within_,Absyn.PROGRAM(classes = cls,within_ = w, globalBuildTimes=ts))

@@ -5765,11 +5765,11 @@ public function isNone
   input Option<Type_a> inOption;
   output Boolean out;
   replaceable type Type_a subtypeof Any;
-algorithm out := matchcontinue (inOption)
-    local Type_a item;
+algorithm
+  out := match (inOption)
     case (NONE()) then true;
-    case (_) then false;
-  end matchcontinue;
+    else false;
+  end match;
 end isNone;
 
 public function isSome
@@ -5780,11 +5780,11 @@ public function isSome
   input Option<Type_a> inOption;
   output Boolean out;
   replaceable type Type_a subtypeof Any;
-algorithm out := matchcontinue (inOption)
-    local Type_a item;
-    case (NONE()) then false;
-    case (_) then true;
-  end matchcontinue;
+algorithm
+  out := match (inOption)
+    case NONE() then false;
+    else true;
+  end match;
 end isSome;
 
 public function makeOptIfNonEmptyList "function: stringOption
@@ -7089,8 +7089,9 @@ public function listMap2AllValue
 algorithm
   _ := match(inTypeALst, fn, inTypeB, inTypeC, inTypeD)
     local
-      Type_a hd; Type_d hdChanged;
-      list<Type_a> rest;  list<Type_d>  result;
+      Type_a hd;
+      Type_d hdChanged;
+      list<Type_a> rest;
       Type_b extraarg1;
       Type_c extraarg2;
     
@@ -7127,7 +7128,6 @@ algorithm
   _ := match (inTypeALst,inFuncTypeTypeATypeBToTypeC,inTypeB,value)
     local
       Type_c f_1;
-      list<Type_c> r_1;
       Type_a f;
       list<Type_a> r;
       FuncTypeType_aType_bToType_c fn;
@@ -7166,7 +7166,6 @@ algorithm
   _ := match (inTypeALst,inTypeBLst,inFuncTypeTypeATypeBToTypeC,value)
     local
       Type_c fr;
-      list<Type_c> res;
       Type_a fa;
       list<Type_a> ra;
       Type_b fb;

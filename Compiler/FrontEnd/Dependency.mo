@@ -283,7 +283,10 @@ Added to the top scope.
   output Absyn.Program outP;
 algorithm
   outP := match(p,modelName)
-  local String id; Absyn.TimeStamp timeStamp; Absyn.Path scope; Absyn.Class cl,cl2; Absyn.Program p2;
+    local
+      String id;
+      Absyn.TimeStamp timeStamp;
+      Absyn.Class cl,cl2;
 
     case(p as Absyn.PROGRAM(globalBuildTimes=timeStamp),modelName as Absyn.IDENT(id)) equation
       cl = Interactive.getPathedClassInProgram(modelName,p);
@@ -398,7 +401,7 @@ algorithm
       AbsynDep.Depends d;
       Absyn.Program p;
       Env.Env env;
-      list<Absyn.ElementArg> eltArgs;HashTable2.HashTable ht;
+      HashTable2.HashTable ht;
     case(NONE(), optPath,cname,(d,p,env,ht)) then d;
     case(SOME(mod),optPath,cname,(d,p,env,ht))
       equation
@@ -822,10 +825,12 @@ protected function buildClassDependsInNamedArgs "build class dependencies from n
   output AbsynDep.Depends outDep;
 algorithm
  outDep := match(nargs,optPath,cname,dep)
- local list<Absyn.Exp> args;
-   AbsynDep.Depends d; Absyn.Program p; Env.Env env;
-   Absyn.Exp e;
-   HashTable2.HashTable ht;
+   local
+     AbsynDep.Depends d;
+     Absyn.Program p;
+     Env.Env env;
+     Absyn.Exp e;
+     HashTable2.HashTable ht;
    case({},optPath,cname,(d,p,env,ht)) then d;
 
    case(Absyn.NAMEDARG(_,e)::nargs,optPath,cname,(d,p,env,ht)) equation
