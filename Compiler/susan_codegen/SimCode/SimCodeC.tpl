@@ -835,12 +835,12 @@ case EXTOBJINFO(__) then
       data->parameters = 0;
     }
   
-    if(flags & OUTPUTVARS && data->inputVars) {
+    if(flags & INPUTVARS && data->inputVars) {
       free(data->inputVars);
       data->inputVars = 0;
     }
   
-    if(flags & INPUTVARS && data->outputVars) {
+    if(flags & OUTPUTVARS && data->outputVars) {
       free(data->outputVars);
       data->outputVars = 0;
     }
