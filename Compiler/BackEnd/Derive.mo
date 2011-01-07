@@ -88,9 +88,7 @@ algorithm
       DAE.ElementSource source,source1,sourceStmt;
       Integer index,i_1,index1;
       list<DAE.Exp> in_,in_1,out,out1,expExpLst,expExpLst1; 
-      list<Boolean> blst; 
       DAE.ExpType exptyp;
-      list<DAE.ExpType> exptyplst; 
       array<DAE.Algorithm> a1;
       list<tuple<Integer,Integer,Integer>> derivedAlgs,derivedMultiEqn;
       Boolean add;
@@ -1007,7 +1005,6 @@ algorithm
     local 
       BackendDAE.Variables timevars;
       DAE.FunctionTree functions;
-      tuple<Integer,DAE.derivativeCond> cond;
       Absyn.Path default,fname,da,inDFuncName;
       list<tuple<Integer,DAE.derivativeCond>> cr;
       Integer derivativeOrder;

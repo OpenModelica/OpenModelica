@@ -143,9 +143,12 @@ protected function getTotalProgramDep "Help function to getTotalProgram2"
   output AbsynDep.Depends outDep;
 algorithm
   outDep := matchcontinue(dep,className,p,env)
-  local Absyn.Class cl; AbsynDep.AvlTree classUses; list<Absyn.Path> v;
-    Option<Absyn.Path> optPath;
-    Absyn.ElementSpec comp;
+    local
+      Absyn.Class cl;
+      AbsynDep.AvlTree classUses;
+      list<Absyn.Path> v;
+      Option<Absyn.Path> optPath;
+      Absyn.ElementSpec comp;
 
     case(dep,Absyn.FULLYQUALIFIED(className),p,env) then getTotalProgramDep(dep,className,p,env);
     /* If already added, skip to prevent infinite recursion */

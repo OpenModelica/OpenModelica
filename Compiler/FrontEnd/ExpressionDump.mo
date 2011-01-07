@@ -103,7 +103,6 @@ algorithm
       list<Ident> ss;
       Type t;
       list<DAE.Dimension> dims;
-      list<tuple<Type,Ident>> varlst;
       String s1,ts,res,s;
       list<Var> vars;
       ClassInf.State ci;

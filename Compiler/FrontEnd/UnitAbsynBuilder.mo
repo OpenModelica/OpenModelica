@@ -73,7 +73,6 @@ protected function registerUnitWeightDefineunits "help function to registerUnitW
   input list<SCode.Element> du;
 algorithm
    _ := matchcontinue(du)
-   local String n; Real w;
      /* No defineunits found, for backward compatibility, use default implementation:
      SI system ,with lower cost on Hz and Bq */
      case({}) equation

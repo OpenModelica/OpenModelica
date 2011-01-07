@@ -232,10 +232,6 @@ algorithm
       list<DAE.Element> daeLstRest;
       BackendDAE.BinTree states;
       DAE.ElementSource source "the element source";
-      DAE.ElementSource eq_source; 
-      list<tuple<DAE.Exp,DAE.Exp>> ealst; 
-      String str;      
-      DAE.Element ddl; 
       
     // the empty case 
     case ({},functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,whenclauses,extObjCls,states)
@@ -325,7 +321,6 @@ algorithm
       DAE.Statement s;
       Boolean b1, b2;
       String str;      
-      DAE.Element ddl; 
       
     // adrpo: should we ignore OUTER vars?!
     //case (((v as DAE.VAR(innerOuter=io)) :: xs),states,vars,knvars,extVars,whenclauses)

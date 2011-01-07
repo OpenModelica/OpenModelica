@@ -123,7 +123,7 @@ algorithm
       Boolean b,remove_if,tpl,builtin,b2;
       Ident idn;
       list<DAE.Exp> exps,exps_1,expl,matrix;
-      list<tuple<DAE.Exp, Boolean>> explTpl;
+      list<tuple<DAE.Exp,Boolean>> explTpl;
       list<Subscript> s;
       ComponentRef c_1;
       Operator op;
@@ -766,8 +766,6 @@ algorithm
     local 
       DAE.Exp e,exp,e1,e2,exp_2,exp_3;
       Operator op;
-      String s2; 
-      Boolean b;      
     
     case ((exp as DAE.BINARY(exp1 = e1,operator = op,exp2 = e2))) /* multiple terms/factor simplifications */
       equation

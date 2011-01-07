@@ -1648,7 +1648,6 @@ algorithm
       list<Expression> explst;
       TypedIdents iargs, oargs;
       Expression exp;
-      list<tuple<MatchingExp,Expression>> mcases;
       String litvalue;
       StringToken st;
       
@@ -2009,7 +2008,6 @@ algorithm
       TypeSignature  outtype;
       TemplPackage tplPackage;
       list<ASTDef> astDefs;
-      list<tuple<Ident,TemplateDef>> tpldefs;
       MMExp mmexp,  mmtxt;
       String  str;
       
@@ -4327,7 +4325,6 @@ algorithm
     local
       Ident ident;
       TypeSignature idtype, lt;
-      list<tuple<Ident,TemplateDef>> tpldefs;
       StringToken st;
       String litstr, reason;           
       

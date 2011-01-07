@@ -411,7 +411,6 @@ algorithm
   (outChars, isKeyword) := matchcontinue (inChars, inKeywordChars)
     local
       list<String> chars, kwchars;
-      String  c;      
       
     case (chars, kwchars) 
       equation
@@ -475,7 +474,6 @@ algorithm
     local
       list<String> chars;
       LineInfo linfo;
-      String kw;      
       
     case (chars, linfo) 
       equation

@@ -406,7 +406,6 @@ public function isAtStartOfLine
 algorithm
   _ := match (inTok)
     local
-      list<tuple<Tokens,BlockType>> blstack;
       StringToken tok;
     
     //a new-line at the end
@@ -805,7 +804,6 @@ algorithm
     local
       Tokens toks;
       StringToken tok;
-      list<tuple<Tokens,BlockType>> blstack;
       Integer pos, aind;
       Boolean isstart;
     
@@ -844,7 +842,6 @@ algorithm
    := match (inStringToken, inActualPositionOnLine, inAtStartOfLine, inAfterNewLineIndent)
     local
       Tokens toks;
-      list<tuple<Tokens,BlockType>> blstack;
       BlockType bt;
       String str;
       list<String>  strLst;
@@ -1080,7 +1077,6 @@ algorithm
     local
       Tokens toks;
       StringToken septok, tok, asep, wsep;
-      list<tuple<Tokens,BlockType>> blstack;
       Integer nchars, tsnchars,   aind, w, aoffset, anum, wwidth, blen;
       Boolean isstart;
     

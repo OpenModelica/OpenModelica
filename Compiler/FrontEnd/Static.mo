@@ -10013,7 +10013,6 @@ algorithm
     local
       Ident id,id2;
       DAE.Type ty;
-      tuple<String,DAE.Type> farg;
       list<tuple<Ident, DAE.Type>> ts;
     case (id,(id2,ty) :: ts)
       equation

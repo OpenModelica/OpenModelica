@@ -3229,7 +3229,6 @@ algorithm
       DAE.EqualityConstraint eqConstraint;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
-      String str;      
 
     // This rule describes how to instantiate a class definition
 	  // that extends a basic type. (No equations or algorithms allowed)
@@ -10249,7 +10248,6 @@ algorithm
   local
     DAE.EqMod eq;
     DAE.Exp e;
-    Option<tuple<Absyn.Exp,Boolean>> aoe;
   case(DAE.NAMEMOD(inputVar,mod = DAE.MOD(eqModOption = SOME(eq as DAE.TYPED(modifierAsExp=e)))))
     equation
       then (inputVar,DAE.NO_DERIVATIVE(e));

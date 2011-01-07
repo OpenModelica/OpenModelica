@@ -147,11 +147,10 @@ protected function funcGreaterThan "sorting function for two DAE.Element that ar
   output Boolean res;
 algorithm
   res := matchcontinue(func1,func2)
-  local Absyn.Path p1,p2;
     case(func1,func2) equation
       res = stringCompare(functionNameStr(func1),functionNameStr(func2)) > 0;
     then res;
-    case(_,_) then true;
+    else true;
   end matchcontinue;
 end funcGreaterThan;  
  
