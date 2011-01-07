@@ -67,127 +67,127 @@ class QVBoxLayout;
 
 class OMS : public QMainWindow
 {
-	Q_OBJECT
+  Q_OBJECT
 
 public:
-	OMS( QWidget* parent = 0 );
-	~OMS();
+  OMS( QWidget* parent = 0 );
+  ~OMS();
 
 signals:
-	void emitQuit();
+  void emitQuit();
 
 public slots:
-	void returnPressed();
-	void insertNewline();
-	void prevCommand();
-	void nextCommand();
-	void goHome( bool shift );
-	void codeCompletion( bool same );
-	void codeNextField();
+  void returnPressed();
+  void insertNewline();
+  void prevCommand();
+  void nextCommand();
+  void goHome( bool shift );
+  void codeCompletion( bool same );
+  void codeNextField();
 
-	void loadModel();
-	void loadModelicaLibrary();
-	void exit();
-	void cut();
-	void copy();
-	void paste();
-	void fontSize();
-	void viewToolbar();
-	void viewStatusbar();
-	void aboutOMS();
-	void aboutQT();					// Added 2006-02-21 AF
-	void print();
-	bool startServer();
-	void stopServer();
-	void clear();
+  void loadModel();
+  void loadModelicaLibrary();
+  void exit();
+  void cut();
+  void copy();
+  void paste();
+  void fontSize();
+  void viewToolbar();
+  void viewStatusbar();
+  void aboutOMS();
+  void aboutQT();					// Added 2006-02-21 AF
+  void print();
+  bool startServer();
+  void stopServer();
+  void clear();
 
 private slots:
-	void closeEvent( QCloseEvent *event );		// Added 2006-02-09 AF
+  void closeEvent( QCloseEvent *event );		// Added 2006-02-09 AF
 
 private:
-	void createMoshEdit();
-	//void createMoshError();
-	void createAction();
-	void createMenu();
-	void createToolbar();
-	void exceptionInEval(exception &e);
-	void addCommandLine();
-	void selectCommandLine();
-	QStringList getFunctionNames(QString);
+  void createMoshEdit();
+  //void createMoshError();
+  void createAction();
+  void createMenu();
+  void createToolbar();
+  void exceptionInEval(exception &e);
+  void addCommandLine();
+  void selectCommandLine();
+  QStringList getFunctionNames(QString);
 
-	QFrame* mainFrame_;
-	QTextCursor cursor_;
-	QTextEdit* moshEdit_;
-	//QTextEdit* moshError_;
-	QVBoxLayout* layout_;
-	QString clipboard_;
-	QString omc_version_;
+  QFrame* mainFrame_;
+  QTextCursor cursor_;
+  QTextEdit* moshEdit_;
+  //QTextEdit* moshError_;
+  QVBoxLayout* layout_;
+  QString clipboard_;
+  QString omc_version_;
   QString omhome;
   QString copyright_info_;
 
-	IAEX::InputCellDelegate* delegate_;
-	IAEX::CommandCompletion* commandcompletion_;
-	int fontSize_;
+  IAEX::InputCellDelegate* delegate_;
+  IAEX::CommandCompletion* commandcompletion_;
+  int fontSize_;
 
-	int currentFunction_;
-	QString currentFunctionName_;
-	QStringList* functionList_;
+  int currentFunction_;
+  QString currentFunctionName_;
+  QStringList* functionList_;
 
-	int currentCommand_;
-	QStringList* commands_;
-	QTextCharFormat commandSignFormat_;
-	QTextCharFormat textFormat_;
+  int currentCommand_;
+  QStringList* commands_;
+  QTextCharFormat commandSignFormat_;
+  QTextCharFormat textFormat_;
 
-	QMenu* fileMenu_;
-	QMenu* editMenu_;
-	QMenu* viewMenu_;
-	QMenu* helpMenu_;
-	QAction* loadModel_;
-	QAction* loadModelicaLibrary_;
-	QAction* exit_;
-	QAction* cut_;
-	QAction* copy_;
-	QAction* paste_;
-	QAction* font_;
-	QAction* viewToolbar_;
-	QAction* viewStatusbar_;
-	QAction* aboutOMS_;
-	QAction* aboutQT_;				// Added 2006-02-21 AF
-	QAction* print_;
-	QAction* startServer_;
-	QAction* stopServer_;
-	QAction* clearWindow_;
+  QMenu* fileMenu_;
+  QMenu* editMenu_;
+  QMenu* viewMenu_;
+  QMenu* helpMenu_;
+  QAction* loadModel_;
+  QAction* loadModelicaLibrary_;
+  QAction* exit_;
+  QAction* cut_;
+  QAction* copy_;
+  QAction* paste_;
+  QAction* font_;
+  QAction* viewToolbar_;
+  QAction* viewStatusbar_;
+  QAction* aboutOMS_;
+  QAction* aboutQT_;				// Added 2006-02-21 AF
+  QAction* print_;
+  QAction* startServer_;
+  QAction* stopServer_;
+  QAction* clearWindow_;
 
-	QToolBar* toolbar_;
+  QToolBar* toolbar_;
 };
 
 //********************************
 class MyTextEdit : public QTextEdit
 {
-	Q_OBJECT
+  Q_OBJECT
 
 public:
-	MyTextEdit( QWidget* parent = 0 );
-	virtual ~MyTextEdit();
-	void sendKey( QKeyEvent *event );
+  MyTextEdit( QWidget* parent = 0 );
+  virtual ~MyTextEdit();
+  void sendKey( QKeyEvent *event );
 
 signals:
-	void returnPressed();
-	void insertNewline();
-	void prevCommand();
-	void nextCommand();
-	void goHome( bool shift );
-	void codeCompletion( bool same );
-	void codeNextField();
+  void returnPressed();
+  void insertNewline();
+  void prevCommand();
+  void nextCommand();
+  void goHome( bool shift );
+  void codeCompletion( bool same );
+  void codeNextField();
 
 protected:
-	void keyPressEvent(QKeyEvent *event);
-	void insertFromMimeData(const QMimeData *source);	// Added 2006-01-30
+  void keyPressEvent(QKeyEvent *event);
+  void insertFromMimeData(const QMimeData *source);	// Added 2006-01-30
 
 private:
-	bool insideCommandSign();
-	bool startOfCommandSign();
-	bool sameTab_;
+  bool insideCommandSign();
+  bool startOfCommandSign();
+  bool sameTab_;
 };
 
 

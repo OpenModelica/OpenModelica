@@ -44,8 +44,8 @@ int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
 
-	OMS oms;
-	oms.show();
+  OMS oms;
+  oms.show();
 
     return app.exec();
 }

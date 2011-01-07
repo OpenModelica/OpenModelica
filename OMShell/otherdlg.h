@@ -45,49 +45,49 @@
 
 namespace IAEX
 {
-	/*!
-	 * \class OtherDlg
-	 * \author Anders Fernström
-	 * \date 2005-11-04
-	 *
-	 * \breif Class of opening a dialog window for entering av value...
-	 */
-	class OtherDlg : public QDialog
-	{
-	public:
-		OtherDlg( QWidget *parent, int min, int max)
-			: QDialog(parent), min_(min), max_(max)
-		{
-			ui.setupUi(this);
+  /*!
+   * \class OtherDlg
+   * \author Anders Fernström
+   * \date 2005-11-04
+   *
+   * \breif Class of opening a dialog window for entering av value...
+   */
+  class OtherDlg : public QDialog
+  {
+  public:
+  	OtherDlg( QWidget *parent, int min, int max)
+  		: QDialog(parent), min_(min), max_(max)
+  	{
+  		ui.setupUi(this);
 
-			QString minW;
-			QString maxW;
-			minW.setNum( min_ );
-			maxW.setNum( max_ );
+  		QString minW;
+  		QString maxW;
+  		minW.setNum( min_ );
+  		maxW.setNum( max_ );
 
-			QString text = QString("Enter value (") + minW +
-				QString("-") + maxW + QString(")");
+  		QString text = QString("Enter value (") + minW +
+  			QString("-") + maxW + QString(")");
 
-			ui.label->setText( text );
-		}
-		virtual ~OtherDlg(){}
-		int value()
-		{
-			bool ok;
-			int value = ui.lineEdit->text().toInt(&ok);
+  		ui.label->setText( text );
+  	}
+  	virtual ~OtherDlg(){}
+  	int value()
+  	{
+  		bool ok;
+  		int value = ui.lineEdit->text().toInt(&ok);
 
-			if(ok)
-				if( min_ <= value && value <= max_ )
-					return value;
+  		if(ok)
+  			if( min_ <= value && value <= max_ )
+  				return value;
 
-			return -1;
-		}
+  		return -1;
+  	}
 
-	private:
-		Ui::Dialog ui;
-		int min_;
-		int max_;
-	};
+  private:
+  	Ui::Dialog ui;
+  	int min_;
+  	int max_;
+  };
 }
 
 #endif
