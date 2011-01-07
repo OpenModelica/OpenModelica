@@ -30,7 +30,7 @@
  */
 
 package Constants
-" file:	       Constants.mo
+" file:         Constants.mo
   package:     Constants
   description: definition of a set of constants
 

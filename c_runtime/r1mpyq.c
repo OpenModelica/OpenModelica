@@ -1,19 +1,19 @@
 /* r1mpyq.f -- translated by f2c (version 20041007).
    You must link the resulting object file with libf2c:
-	on Microsoft Windows system, link with libf2c.lib;
-	on Linux or Unix systems, link with .../path/to/libf2c.a -lm
-	or, if you install libf2c.a in a standard place, with -lf2c -lm
-	-- in that order, at the end of the command line, as in
-		cc *.o -lf2c -lm
-	Source for libf2c is in /netlib/f2c/libf2c.zip, e.g.,
+  on Microsoft Windows system, link with libf2c.lib;
+  on Linux or Unix systems, link with .../path/to/libf2c.a -lm
+  or, if you install libf2c.a in a standard place, with -lf2c -lm
+  -- in that order, at the end of the command line, as in
+  	cc *.o -lf2c -lm
+  Source for libf2c is in /netlib/f2c/libf2c.zip, e.g.,
 
-		http://www.netlib.org/f2c/libf2c.zip
+  	http://www.netlib.org/f2c/libf2c.zip
 */
 
 #include "f2c.h"
 
 /* Subroutine */ int r1mpyq_(integer *m, integer *n, doublereal *a, integer *
-	lda, doublereal *v, doublereal *w)
+  lda, doublereal *v, doublereal *w)
 {
     /* Initialized data */
 
@@ -92,35 +92,35 @@
 
     nm1 = *n - 1;
     if (nm1 < 1) {
-	goto L50;
+  goto L50;
     }
     i__1 = nm1;
     for (nmj = 1; nmj <= i__1; ++nmj) {
-	j = *n - nmj;
-	if ((d__1 = v[j], abs(d__1)) > one) {
-	    cos__ = one / v[j];
-	}
-	if ((d__1 = v[j], abs(d__1)) > one) {
+  j = *n - nmj;
+  if ((d__1 = v[j], abs(d__1)) > one) {
+      cos__ = one / v[j];
+  }
+  if ((d__1 = v[j], abs(d__1)) > one) {
 /* Computing 2nd power */
-	    d__2 = cos__;
-	    sin__ = sqrt(one - d__2 * d__2);
-	}
-	if ((d__1 = v[j], abs(d__1)) <= one) {
-	    sin__ = v[j];
-	}
-	if ((d__1 = v[j], abs(d__1)) <= one) {
+      d__2 = cos__;
+      sin__ = sqrt(one - d__2 * d__2);
+  }
+  if ((d__1 = v[j], abs(d__1)) <= one) {
+      sin__ = v[j];
+  }
+  if ((d__1 = v[j], abs(d__1)) <= one) {
 /* Computing 2nd power */
-	    d__2 = sin__;
-	    cos__ = sqrt(one - d__2 * d__2);
-	}
-	i__2 = *m;
-	for (i__ = 1; i__ <= i__2; ++i__) {
-	    temp = cos__ * a[i__ + j * a_dim1] - sin__ * a[i__ + *n * a_dim1];
-	    a[i__ + *n * a_dim1] = sin__ * a[i__ + j * a_dim1] + cos__ * a[
-		    i__ + *n * a_dim1];
-	    a[i__ + j * a_dim1] = temp;
+      d__2 = sin__;
+      cos__ = sqrt(one - d__2 * d__2);
+  }
+  i__2 = *m;
+  for (i__ = 1; i__ <= i__2; ++i__) {
+      temp = cos__ * a[i__ + j * a_dim1] - sin__ * a[i__ + *n * a_dim1];
+      a[i__ + *n * a_dim1] = sin__ * a[i__ + j * a_dim1] + cos__ * a[
+  	    i__ + *n * a_dim1];
+      a[i__ + j * a_dim1] = temp;
 /* L10: */
-	}
+  }
 /* L20: */
     }
 
@@ -128,30 +128,30 @@
 
     i__1 = nm1;
     for (j = 1; j <= i__1; ++j) {
-	if ((d__1 = w[j], abs(d__1)) > one) {
-	    cos__ = one / w[j];
-	}
-	if ((d__1 = w[j], abs(d__1)) > one) {
+  if ((d__1 = w[j], abs(d__1)) > one) {
+      cos__ = one / w[j];
+  }
+  if ((d__1 = w[j], abs(d__1)) > one) {
 /* Computing 2nd power */
-	    d__2 = cos__;
-	    sin__ = sqrt(one - d__2 * d__2);
-	}
-	if ((d__1 = w[j], abs(d__1)) <= one) {
-	    sin__ = w[j];
-	}
-	if ((d__1 = w[j], abs(d__1)) <= one) {
+      d__2 = cos__;
+      sin__ = sqrt(one - d__2 * d__2);
+  }
+  if ((d__1 = w[j], abs(d__1)) <= one) {
+      sin__ = w[j];
+  }
+  if ((d__1 = w[j], abs(d__1)) <= one) {
 /* Computing 2nd power */
-	    d__2 = sin__;
-	    cos__ = sqrt(one - d__2 * d__2);
-	}
-	i__2 = *m;
-	for (i__ = 1; i__ <= i__2; ++i__) {
-	    temp = cos__ * a[i__ + j * a_dim1] + sin__ * a[i__ + *n * a_dim1];
-	    a[i__ + *n * a_dim1] = -sin__ * a[i__ + j * a_dim1] + cos__ * a[
-		    i__ + *n * a_dim1];
-	    a[i__ + j * a_dim1] = temp;
+      d__2 = sin__;
+      cos__ = sqrt(one - d__2 * d__2);
+  }
+  i__2 = *m;
+  for (i__ = 1; i__ <= i__2; ++i__) {
+      temp = cos__ * a[i__ + j * a_dim1] + sin__ * a[i__ + *n * a_dim1];
+      a[i__ + *n * a_dim1] = -sin__ * a[i__ + j * a_dim1] + cos__ * a[
+  	    i__ + *n * a_dim1];
+      a[i__ + j * a_dim1] = temp;
 /* L30: */
-	}
+  }
 /* L40: */
     }
 L50:

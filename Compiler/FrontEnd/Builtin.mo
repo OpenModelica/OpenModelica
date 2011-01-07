@@ -30,7 +30,7 @@
  */
 
 package Builtin
-" file:	       Builtin.mo
+" file:         Builtin.mo
   package:     Builtin
   description: Builting tyepes and variables
 
@@ -2112,7 +2112,7 @@ end isDer;
 
 public function simpleInitialEnv "
 val array2array=  (DAE.T_FUNCTION({(\"x\",(DAE.T_ARRAY)},
-				      (DAE.T_ARRAY),NONE())
+    		      (DAE.T_ARRAY),NONE())
 val array_array2array=
 val int2array= (DAE.T_FUNCTION(\"x\",(DAE.T_ARRAY(1,_)),NONE())
   Specifierar en vector, array of dimension one
@@ -2155,8 +2155,8 @@ public function initialEnv "function: initialEnv
   NOTE:
     The following built in operators can not be described in
     the type system, since they e.g. have arbitrary arguments, etc.
-	- fill
-	- cat
+  - fill
+  - cat
     These operators are catched in the elabBuiltinHandler, along with all
     others.
 "
@@ -2171,7 +2171,7 @@ algorithm
       list<Absyn.Class> initialClasses;
       list<Absyn.Import> imports;
 
-  	// First look for cached version
+    // First look for cached version
     case (cache) equation
       env = Env.getCachedInitialEnv(cache);
     then (cache,env);

@@ -311,19 +311,19 @@ algorithm
 end unparseValueNumbers;
 
 public function safeIntRealOp
-	"Performs mul, div, sub, add and pow on integers and reals.
-	 If for example an integer multiplication does not fit in a
-	 integer, a real is returned instead. The is not the ideal way of
-	 handling this, since the types are decided in run-time. Currently,
-	 this is the simplest and best alternative for the moment though.
+  "Performs mul, div, sub, add and pow on integers and reals.
+   If for example an integer multiplication does not fit in a
+   integer, a real is returned instead. The is not the ideal way of
+   handling this, since the types are decided in run-time. Currently,
+   this is the simplest and best alternative for the moment though.
 
-	 In the future, we should introduce BIG-INTS, or maybe throw exceptions
-	 (when exceptions are available in the language).
-	"
-	input Value val1;
-	input Value val2;
-	input IntRealOp op;
-	output Value outv;
+   In the future, we should introduce BIG-INTS, or maybe throw exceptions
+   (when exceptions are available in the language).
+  "
+  input Value val1;
+  input Value val2;
+  input IntRealOp op;
+  output Value outv;
 algorithm
   outv := matchcontinue(val1, val2, op)
     local
@@ -471,9 +471,9 @@ end safeIntRealOp;
 public function safeLessEq
   "Checks if val1 is less or equal to val2. Val1 or val2 can be integers (or
   something that can be converted to integer) or reals."
-	input Value val1;
-	input Value val2;
-	output Boolean outv;
+  input Value val1;
+  input Value val2;
+  output Boolean outv;
 algorithm
   outv := match(val1, val2)
     local

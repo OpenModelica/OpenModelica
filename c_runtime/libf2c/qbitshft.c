@@ -10,8 +10,8 @@ qbit_shift(a, b) longint a; integer b;
 qbit_shift(longint a, integer b)
 #endif
 {
-	return b >= 0 ? a << b : (longint)((ulongint)a >> -b);
-	}
+  return b >= 0 ? a << b : (longint)((ulongint)a >> -b);
+  }
 #ifdef __cplusplus
 }
 #endif

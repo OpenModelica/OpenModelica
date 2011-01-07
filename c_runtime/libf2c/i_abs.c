@@ -10,7 +10,7 @@ integer i_abs(integer *x)
 #endif
 {
 if(*x >= 0)
-	return(*x);
+  return(*x);
 return(- *x);
 }
 #ifdef __cplusplus

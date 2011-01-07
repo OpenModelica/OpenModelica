@@ -30,7 +30,7 @@
  */
 
 package Util
-" file:	       Util.mo
+" file:         Util.mo
   package:     Util
   description: Miscellanous MetaModelica Compiler (MMC) utilities
 
@@ -54,9 +54,9 @@ package Util
   For instance,
   function listFill
     replaceable type TyVar subtypeof Any;
-  	input TyVar in;
-  	input Integer i;
-  	output list<TyVar>
+    input TyVar in;
+    input Integer i;
+    output list<TyVar>
   ...
   end listFill;
   the type variable TyVar is here used as a generic type for the function listFill,
@@ -4336,9 +4336,9 @@ algorithm
      local list<Type_a> lst;
      case (lst1,lst2,compare)
        equation
-       	lst = listIntersectionOnTrue(lst1,lst2,compare);
-       	true = intEq(listLength(lst), listLength(lst1));
-       	true = intEq(listLength(lst), listLength(lst2));
+         lst = listIntersectionOnTrue(lst1,lst2,compare);
+         true = intEq(listLength(lst), listLength(lst1));
+         true = intEq(listLength(lst), listLength(lst2));
        then true;
      case (_,_,_) then false;
   end matchcontinue;
@@ -4448,14 +4448,14 @@ end listListUnionOnTrue;
 // stefan
 public function listReplaceAtWithList
 "function: listReplaceAtWithList
-	Takes a list, a position, and a list to replace that position
-	Replaces the element at the position with the given list
-	Example: listReplaceAt({\"A\",\"B\"},1,{\"foo\",\"bar\",\"baz\"}) => {\"foo\",\"A\",\"B\",\"baz\"}"
-	input list<Type_a> inReplacementList;
-	input Integer inPosition;
-	input list<Type_a> inList;
-	output list<Type_a> outList;
-	replaceable type Type_a subtypeof Any;
+  Takes a list, a position, and a list to replace that position
+  Replaces the element at the position with the given list
+  Example: listReplaceAt({\"A\",\"B\"},1,{\"foo\",\"bar\",\"baz\"}) => {\"foo\",\"A\",\"B\",\"baz\"}"
+  input list<Type_a> inReplacementList;
+  input Integer inPosition;
+  input list<Type_a> inList;
+  output list<Type_a> outList;
+  replaceable type Type_a subtypeof Any;
 algorithm
   outList := matchcontinue (inReplacementList,inPosition,inList)
     local
@@ -4997,13 +4997,13 @@ end if_;
 // stefan
 public function if_t
 "function: if_t
-	as with if_, but can return one of two different types of values"
-	input Boolean inBoolean;
-	input TypeA inTypeA;
-	input TypeB inTypeB;
-	output tuple<Option<TypeA>, Option<TypeB>> outTuple;
-	replaceable type TypeA subtypeof Any;
-	replaceable type TypeB subtypeof Any;
+  as with if_, but can return one of two different types of values"
+  input Boolean inBoolean;
+  input TypeA inTypeA;
+  input TypeB inTypeB;
+  output tuple<Option<TypeA>, Option<TypeB>> outTuple;
+  replaceable type TypeA subtypeof Any;
+  replaceable type TypeB subtypeof Any;
 algorithm
   outTuple := match(inBoolean,inTypeA,inTypeB)
     local

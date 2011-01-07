@@ -21,29 +21,29 @@ using namespace std;
 #define _MY_SIMULATIONRESULT_H
 
 typedef struct ssd{ //SimulationStepData struct
-	double forTimeStep; //is the lastEmittedTime of this step
-	double *states;//[4];
-	double *statesDerivatives;//[4]; //xd DERIVATIVES
-	double *algebraics;//[17];
-	double *parameters;//[17];
+  double forTimeStep; //is the lastEmittedTime of this step
+  double *states;//[4];
+  double *statesDerivatives;//[4]; //xd DERIVATIVES
+  double *algebraics;//[17];
+  double *parameters;//[17];
 } SimStepData;
 
 typedef struct sdNames{
-	string *statesNames;//[4];
-	string *stateDerivativesNames;//[4];
-	string *algebraicsNames;//[17];
-	string *parametersNames;//[17];
+  string *statesNames;//[4];
+  string *stateDerivativesNames;//[4];
+  string *algebraicsNames;//[17];
+  string *parametersNames;//[17];
 } SimDataNames;
 
 typedef struct sdNamesForTransfer{
-	string *variablesNames;//[21]; //statesNames + algebraicsNames
-	string *parametersNames;//[17]; //parametersNames
+  string *variablesNames;//[21]; //statesNames + algebraicsNames
+  string *parametersNames;//[17]; //parametersNames
 } SimDataNamesFilter;
 
 typedef struct nValues{
-	long nStates;
-	long nAlgebraic;
-	long nParameters;
+  long nStates;
+  long nAlgebraic;
+  long nParameters;
 } SimDataNumbers, *P_SimDataNumbers;
 
 extern SimDataNames* p_simDataNames_SimulationResult;

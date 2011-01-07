@@ -31,7 +31,7 @@
 
 package Dump
 "
-  file:	       Dump.mo
+  file:         Dump.mo
   package:     Dump
   description: debug printing
 
@@ -2986,10 +2986,10 @@ algorithm
         ();
     
     case Absyn.ALG_WHEN_A(boolExpr = e,whenBody = al,elseWhenAlgorithmBranch = eb)
-      /* rule	Print.print_buf \"WHEN_E \" & print_exp(e) &
-	       Print.print_buf \" {\" & print_list_debug(\"print_algorithm\",al, print_algorithmitem, \";\") & Print.print_buf \"}\"
-	       ----------------------------------------------------------
-	       print_algorithm Absyn.ALG_WHEN_E(e,al)
+      /* rule  Print.print_buf \"WHEN_E \" & print_exp(e) &
+         Print.print_buf \" {\" & print_list_debug(\"print_algorithm\",al, print_algorithmitem, \";\") & Print.print_buf \"}\"
+         ----------------------------------------------------------
+         print_algorithm Absyn.ALG_WHEN_E(e,al)
       */
       equation
         Print.printBuf("WHEN_A ");

@@ -362,7 +362,7 @@ double sample(double start, double interval, int hindex) {
     // if (inSample == 0) return 0;
     double tmp = ((globalData->timeValue - start) / interval);
     if (euler_in_use){
-    	tmp = 1;
+      tmp = 1;
         int tmpindex = globalData->curSampleTimeIx;
         if (tmpindex < globalData->nSampleTimes){
             while ((globalData->sampleTimes[tmpindex]).activated == 1){
@@ -765,11 +765,11 @@ int checkForSampleEvent(){
     b = compdbl(&a,&((globalData->sampleTimes[tmpindex]).events));
 
     if (b>=0){
-    	if (sim_verbose) {cout << " ** Sample Event ** " << endl;}
-		if (! (b==0)) {
-			globalData->current_stepsize = (globalData->sampleTimes[tmpindex]).events - globalData->timeValue;
-			if (sim_verbose) {cout << " ** Change Stepsize :  " << globalData->current_stepsize << endl;}
-		}
+      if (sim_verbose) {cout << " ** Sample Event ** " << endl;}
+  	if (! (b==0)) {
+  		globalData->current_stepsize = (globalData->sampleTimes[tmpindex]).events - globalData->timeValue;
+  		if (sim_verbose) {cout << " ** Change Stepsize :  " << globalData->current_stepsize << endl;}
+  	}
         return 1;
     }else{
         return 0;
@@ -786,13 +786,13 @@ void activateSampleEvents(){
     // int returnVal = 0;
     int tmpindex = globalData->curSampleTimeIx;
     b = compdbl(&a,&((globalData->sampleTimes[tmpindex]).events));
-	while (b>=0){
-		(globalData->sampleTimes[tmpindex]).activated = 1;
-		if (sim_verbose) { cout << "Activate Sample Events index: " << tmpindex << endl;}
-		tmpindex++;
-		if (tmpindex >= globalData->nSampleTimes) break;
-		b = compdbl(&a,&((globalData->sampleTimes[tmpindex]).events));
-	}
+  while (b>=0){
+  	(globalData->sampleTimes[tmpindex]).activated = 1;
+  	if (sim_verbose) { cout << "Activate Sample Events index: " << tmpindex << endl;}
+  	tmpindex++;
+  	if (tmpindex >= globalData->nSampleTimes) break;
+  	b = compdbl(&a,&((globalData->sampleTimes[tmpindex]).events));
+  }
 }
 
 void deactivateSampleEvents(){
@@ -805,7 +805,7 @@ void deactivateSampleEvents(){
 
 void deactivateSampleEventsandEquations(){
     while((globalData->sampleTimes[globalData->curSampleTimeIx]).activated == 1){
-    	if (sim_verbose) { cout << "Deactivate Sample Events index: " << globalData->curSampleTimeIx << endl;}
+      if (sim_verbose) { cout << "Deactivate Sample Events index: " << globalData->curSampleTimeIx << endl;}
         (globalData->sampleTimes[globalData->curSampleTimeIx]).activated = 0;
         globalData->helpVars[((globalData->sampleTimes[globalData->curSampleTimeIx]).zc_index)] = 0;
         globalData->curSampleTimeIx++;
@@ -914,11 +914,11 @@ int EventHandle(int flag){
         functionDAE(needToIterate);
         if (sim_verbose) { sim_result->emit();}
         while (needToIterate || checkForDiscreteChanges()){
-        	if (needToIterate){
-        		if (sim_verbose) cout << "reinit call. Iteration needed!" << endl;
-        	}else{
-        		if (sim_verbose) cout << "discrete Var changed. Iteration needed!" << endl;
-        	}
+          if (needToIterate){
+          	if (sim_verbose) cout << "reinit call. Iteration needed!" << endl;
+          }else{
+          	if (sim_verbose) cout << "discrete Var changed. Iteration needed!" << endl;
+          }
             saveall();
             functionDAE(needToIterate);
             if (sim_verbose) { sim_result->emit();}
@@ -939,11 +939,11 @@ int EventHandle(int flag){
         functionDAE(needToIterate);
         if (sim_verbose) { sim_result->emit();}
         while (needToIterate || checkForDiscreteChanges()){
-        	if (needToIterate){
-        		if (sim_verbose) cout << "reinit call. Iteration needed!" << endl;
-        	}else{
-        		if (sim_verbose) cout << "discrete Var changed. Iteration needed!" << endl;
-        	}
+          if (needToIterate){
+          	if (sim_verbose) cout << "reinit call. Iteration needed!" << endl;
+          }else{
+          	if (sim_verbose) cout << "discrete Var changed. Iteration needed!" << endl;
+          }
             saveall();
             functionDAE(needToIterate);
             if (sim_verbose) { sim_result->emit();}

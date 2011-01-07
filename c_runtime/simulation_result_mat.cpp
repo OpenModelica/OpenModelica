@@ -38,7 +38,7 @@
 
 
 simulation_result_mat::simulation_result_mat(const char* filename, 
-					     double tstart, double tstop)
+  				     double tstart, double tstop)
   : simulation_result(filename,numpoints),fp(),data2HdrPos(-1),ntimepoints(0)
 {
   struct omc_varInfo timeValName = {"Time","Simulation time [s]","",-1,-1,-1,-1};
@@ -46,19 +46,19 @@ simulation_result_mat::simulation_result_mat(const char* filename,
   
   const int rank = 9;
   int dims[rank] = { 1, globalData->nStates, globalData->nStates, 
-		     globalData->nAlgebraic, globalData->intVariables.nAlgebraic,
-		     globalData->boolVariables.nAlgebraic, 
-		     globalData->nParameters, globalData->intVariables.nParameters,
-		     globalData->boolVariables.nParameters };
+  	     globalData->nAlgebraic, globalData->intVariables.nAlgebraic,
+  	     globalData->boolVariables.nAlgebraic, 
+  	     globalData->nParameters, globalData->intVariables.nParameters,
+  	     globalData->boolVariables.nParameters };
   struct omc_varInfo* names[rank] = { &timeValName,
-			       globalData->statesNames,
-			       globalData->stateDerivativesNames,
-			       globalData->algebraicsNames,
-			       globalData->int_alg_names,
-			       globalData->bool_alg_names,
-			       globalData->parametersNames,
-			       globalData->int_param_names,
-			       globalData->bool_param_names,
+  		       globalData->statesNames,
+  		       globalData->stateDerivativesNames,
+  		       globalData->algebraicsNames,
+  		       globalData->int_alg_names,
+  		       globalData->bool_alg_names,
+  		       globalData->parametersNames,
+  		       globalData->int_param_names,
+  		       globalData->bool_param_names,
                              };
   const int nVars = globalData->nStates*2+globalData->nAlgebraic
     +globalData->intVariables.nAlgebraic +globalData->boolVariables.nAlgebraic;
@@ -179,9 +179,9 @@ static inline void fixDerInName(char *str, size_t len)
 }
 
 long simulation_result_mat::flattenStrBuf(int rank, const int *dims, 
-					  struct omc_varInfo* src[],
-					  char* &dest, int& longest, int& nstrings,
-					  bool fixNames, bool useComment)
+  				  struct omc_varInfo* src[],
+  				  char* &dest, int& longest, int& nstrings,
+  				  bool fixNames, bool useComment)
 {
   int i,j;
   int len;
@@ -216,8 +216,8 @@ long simulation_result_mat::flattenStrBuf(int rank, const int *dims,
 
 // writes MAT-file matrix header to file
 void simulation_result_mat::writeMatVer4MatrixHeader(const char *name,
-						     int rows, int cols,
-						     bool is_text)
+  					     int rows, int cols,
+  					     bool is_text)
 {
   typedef struct {
     long type;
@@ -243,8 +243,8 @@ void simulation_result_mat::writeMatVer4MatrixHeader(const char *name,
 }
 
 void simulation_result_mat::writeMatVer4Matrix(const char *name, 
-					       int rows, int cols, 
-					       const void *data, bool is_text)
+  				       int rows, int cols, 
+  				       const void *data, bool is_text)
 {
   writeMatVer4MatrixHeader(name,rows,cols,is_text);
 
@@ -255,9 +255,9 @@ void simulation_result_mat::writeMatVer4Matrix(const char *name,
 
 
 void simulation_result_mat::generateDataInfo(double* &dataInfo, 
-					     int& rows, int& cols,
-					     const sim_DATA *mdl_data,
-					     int nVars, int nParams)
+  				     int& rows, int& cols,
+  				     const sim_DATA *mdl_data,
+  				     int nVars, int nParams)
 {
   //size_t nVars = mdl_data->nStates*2+mdl_data->nAlgebraic;
   //rows = 1+nVars+mdl_data->nParameters+mdl_data->nVarsAliases;
@@ -303,9 +303,9 @@ void simulation_result_mat::generateDataInfo(double* &dataInfo,
 }
 
 void simulation_result_mat::generateData_1(double* &data_1, 
-					   int& rows, int& cols,
-					   const sim_DATA *mdl_data,
-					   double tstart, double tstop)
+  				   int& rows, int& cols,
+  				   const sim_DATA *mdl_data,
+  				   double tstart, double tstop)
 {
   int offset;
   // calculate number of rows and columns
@@ -336,5 +336,5 @@ void simulation_result_mat::generateData_1(double* &data_1,
     data_1[offset+i] = (double)mdl_data->boolVariables.parameters[i];
     data_1[offset+i+cols] = (double)mdl_data->boolVariables.parameters[i];
   }
-	 
+   
 }

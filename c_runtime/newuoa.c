@@ -1,37 +1,37 @@
 /* newuoa.f -- translated by f2c (version 20041007).
    You must link the resulting object file with libf2c:
-	on Microsoft Windows system, link with libf2c.lib;
-	on Linux or Unix systems, link with .../path/to/libf2c.a -lm
-	or, if you install libf2c.a in a standard place, with -lf2c -lm
-	-- in that order, at the end of the command line, as in
-		cc *.o -lf2c -lm
-	Source for libf2c is in /netlib/f2c/libf2c.zip, e.g.,
+  on Microsoft Windows system, link with libf2c.lib;
+  on Linux or Unix systems, link with .../path/to/libf2c.a -lm
+  or, if you install libf2c.a in a standard place, with -lf2c -lm
+  -- in that order, at the end of the command line, as in
+  	cc *.o -lf2c -lm
+  Source for libf2c is in /netlib/f2c/libf2c.zip, e.g.,
 
-		http://www.netlib.org/f2c/libf2c.zip
+  	http://www.netlib.org/f2c/libf2c.zip
 */
 
 #include "f2c.h"
 
 /* Subroutine */ int newuoa_(integer *n, integer *npt, doublereal *x,
-	doublereal *rhobeg, doublereal *rhoend, integer *iprint, integer *
-	maxfun, doublereal *w, doublereal *calfun)
+  doublereal *rhobeg, doublereal *rhoend, integer *iprint, integer *
+  maxfun, doublereal *w, doublereal *calfun)
 {
     /* Format strings */
     static char fmt_10[] = "(/4x,\002Return from NEWUOA because NPT is not"
-	    " in\002,\002 the required interval\002)";
+      " in\002,\002 the required interval\002)";
 
     /* Builtin functions */
     integer s_wsfe(cilist *), e_wsfe(void);
 
     /* Local variables */
     static integer id, np, iw, igq, ihq, ixb, ifv, ipq, ivl, ixn, ixo, ixp,
-	    ndim, nptm, ibmat, izmat;
+      ndim, nptm, ibmat, izmat;
     extern /* Subroutine */ int newuob_(integer *, integer *, doublereal *,
-	    doublereal *, doublereal *, integer *, integer *, doublereal *,
-	    doublereal *, doublereal *, doublereal *, doublereal *,
-	    doublereal *, doublereal *, doublereal *, doublereal *,
-	    doublereal *, integer *, doublereal *, doublereal *, doublereal *,
-	     doublereal *);
+      doublereal *, doublereal *, integer *, integer *, doublereal *,
+      doublereal *, doublereal *, doublereal *, doublereal *,
+      doublereal *, doublereal *, doublereal *, doublereal *,
+      doublereal *, integer *, doublereal *, doublereal *, doublereal *,
+       doublereal *);
 
     /* Fortran I/O blocks */
     static cilist io___3 = { 0, 6, 0, fmt_10, 0 };
@@ -79,9 +79,9 @@
     np = *n + 1;
     nptm = *npt - np;
     if (*npt < *n + 2 || *npt > (*n + 2) * np / 2) {
-	s_wsfe(&io___3);
-	e_wsfe();
-	goto L20;
+  s_wsfe(&io___3);
+  e_wsfe();
+  goto L20;
     }
     ndim = *npt + *n;
     ixb = 1;
@@ -103,8 +103,8 @@
 /*     W plus the space that is needed by the last array of NEWUOB. */
 
     newuob_(n, npt, &x[1], rhobeg, rhoend, iprint, maxfun, &w[ixb], &w[ixo], &
-	    w[ixn], &w[ixp], &w[ifv], &w[igq], &w[ihq], &w[ipq], &w[ibmat], &
-	    w[izmat], &ndim, &w[id], &w[ivl], &w[iw], calfun);
+      w[ixn], &w[ixp], &w[ifv], &w[igq], &w[ihq], &w[ipq], &w[ibmat], &
+      w[izmat], &ndim, &w[id], &w[ivl], &w[iw], calfun);
 L20:
     return 0;
 } /* newuoa_ */

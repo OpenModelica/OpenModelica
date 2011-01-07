@@ -31,7 +31,7 @@
 
 package ExpressionSimplify
 "
-  file:	       ExpressionSimplify.mo
+  file:         ExpressionSimplify.mo
   package:     ExpressionSimplify
   description: ExpressionSimplify
 
@@ -874,7 +874,7 @@ algorithm
     case(e1,DAE.SUB_ARR(ty=tp),e2)
       equation
         (DAE.UNARY(_,e2)) = simplify1(e2);
-				e1 = simplify1(e1);
+    		e1 = simplify1(e1);
       then 
         DAE.BINARY(e1,DAE.ADD_ARR(tp),e2);
 
@@ -2231,12 +2231,12 @@ algorithm
         coeff_2 = 0.0 -. coeff_1;
       then
         (e1,coeff_1);
-	  
-		case (DAE.BINARY(exp1 = e1, operator = DAE.POW(ty = _), exp2 = DAE.ICONST(integer = icoeff)))
-			equation
-				coeff_1 = intReal(icoeff);
-			then
-				(e1, coeff_1);
+    
+    case (DAE.BINARY(exp1 = e1, operator = DAE.POW(ty = _), exp2 = DAE.ICONST(integer = icoeff)))
+    	equation
+    		coeff_1 = intReal(icoeff);
+    	then
+    		(e1, coeff_1);
     
     case (DAE.BINARY(exp1 = e1,operator = DAE.MUL(ty = tp),exp2 = e2))
       equation
@@ -2650,7 +2650,7 @@ algorithm
     
     case (DAE.SUB(ty = _),DAE.ICONST(integer = ie1),DAE.ICONST(integer = ie2))
       equation
-	   		val = safeIntOp(ie1,ie2,SUBOP());
+       	val = safeIntOp(ie1,ie2,SUBOP());
       then
         val;
     
@@ -2702,7 +2702,7 @@ algorithm
     
     case (DAE.DIV(ty = _),DAE.ICONST(integer = ie1),DAE.ICONST(integer = ie2))
       equation
-	   		val = safeIntOp(ie1,ie2,DIVOP());
+       	val = safeIntOp(ie1,ie2,DIVOP());
       then
         val;
     
@@ -2728,9 +2728,9 @@ algorithm
     
     case (DAE.POW(ty = _),DAE.ICONST(integer = ie1),DAE.ICONST(integer = ie2))
       equation
-				val = safeIntOp(ie1,ie2,POWOP());
+    		val = safeIntOp(ie1,ie2,POWOP());
       then
-				val;
+    		val;
     
     case (DAE.POW(ty = _),DAE.RCONST(real = re1),DAE.RCONST(real = re2))
       equation
@@ -2825,13 +2825,13 @@ algorithm
 end simplifyBinaryConst;
 
 public function safeIntOp
-	"Safe mul, add, sub or pow operations for integers.
-	 The function returns an integer if possible, otherwise a real.
-	"
-	input Integer val1;
-	input Integer val2;
-	input IntOp op;
-	output DAE.Exp outv;
+  "Safe mul, add, sub or pow operations for integers.
+   The function returns an integer if possible, otherwise a real.
+  "
+  input Integer val1;
+  input Integer val2;
+  input IntOp op;
+  output DAE.Exp outv;
 algorithm
   outv := match(val1, val2, op)
     local
@@ -3259,7 +3259,7 @@ algorithm
     // handle emptyness
     case ({},_) then {};
     
-   	// Remove 1^pow_e
+     // Remove 1^pow_e
     case ((e :: es),pow_e)
       equation
         true = Expression.isConstOne(e);

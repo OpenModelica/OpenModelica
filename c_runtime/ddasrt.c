@@ -1,13 +1,13 @@
 /* ddasrt.f -- translated by f2c (version 20061008).
    You must link the resulting object file with libf2c:
-	on Microsoft Windows system, link with libf2c.lib;
-	on Linux or Unix systems, link with .../path/to/libf2c.a -lm
-	or, if you install libf2c.a in a standard place, with -lf2c -lm
-	-- in that order, at the end of the command line, as in
-		cc *.o -lf2c -lm
-	Source for libf2c is in /netlib/f2c/libf2c.zip, e.g.,
+  on Microsoft Windows system, link with libf2c.lib;
+  on Linux or Unix systems, link with .../path/to/libf2c.a -lm
+  or, if you install libf2c.a in a standard place, with -lf2c -lm
+  -- in that order, at the end of the command line, as in
+  	cc *.o -lf2c -lm
+  Source for libf2c is in /netlib/f2c/libf2c.zip, e.g.,
 
-		http://www.netlib.org/f2c/libf2c.zip
+  	http://www.netlib.org/f2c/libf2c.zip
 */
 
 #include "f2c.h"
@@ -98,10 +98,10 @@ static integer c__802 = 802;
 static doublereal c_b588 = 1.;
 
 /* Subroutine */ int ddasrt_(U_fp res, integer *neq, doublereal *t, 
-	doublereal *y, doublereal *yprime, doublereal *tout, integer *info, 
-	doublereal *rtol, doublereal *atol, integer *idid, doublereal *rwork, 
-	integer *lrw, integer *iwork, integer *liw, doublereal *rpar, integer 
-	*ipar, U_fp jac, U_fp g, integer *ng, integer *jroot)
+  doublereal *y, doublereal *yprime, doublereal *tout, integer *info, 
+  doublereal *rtol, doublereal *atol, integer *idid, doublereal *rwork, 
+  integer *lrw, integer *iwork, integer *liw, doublereal *rpar, integer 
+  *ipar, U_fp jac, U_fp g, integer *ng, integer *jroot)
 {
     /* System generated locals */
     integer i__1;
@@ -128,39 +128,39 @@ static doublereal c_b588 = 1.;
     static doublereal atoli;
     static integer msave, leniw, itemp, nzflg;
     extern /* Subroutine */ int dcopy_(integer *, doublereal *, integer *, 
-	    doublereal *, integer *);
+      doublereal *, integer *);
     static integer ntemp, lenrw;
     static doublereal tdist;
     static integer mxord;
     static doublereal rtoli, tnext, tstop;
     extern doublereal dlamch_(char *, ftnlen);
     extern /* Subroutine */ int ddaini_(doublereal *, doublereal *, 
-	    doublereal *, integer *, U_fp, U_fp, doublereal *, doublereal *, 
-	    integer *, doublereal *, integer *, doublereal *, doublereal *, 
-	    doublereal *, doublereal *, integer *, doublereal *, doublereal *,
-	     integer *, integer *), drchek_(integer *, U_fp, integer *, 
-	    integer *, doublereal *, doublereal *, doublereal *, doublereal *,
-	     doublereal *, doublereal *, integer *, doublereal *, doublereal *
-	    , doublereal *, integer *, integer *, doublereal *, integer *, 
-	    doublereal *, integer *, doublereal *, integer *);
+      doublereal *, integer *, U_fp, U_fp, doublereal *, doublereal *, 
+      integer *, doublereal *, integer *, doublereal *, doublereal *, 
+      doublereal *, doublereal *, integer *, doublereal *, doublereal *,
+       integer *, integer *), drchek_(integer *, U_fp, integer *, 
+      integer *, doublereal *, doublereal *, doublereal *, doublereal *,
+       doublereal *, doublereal *, integer *, doublereal *, doublereal *
+      , doublereal *, integer *, integer *, doublereal *, integer *, 
+      doublereal *, integer *, doublereal *, integer *);
     extern doublereal ddanrm_(integer *, doublereal *, doublereal *, 
-	    doublereal *, integer *);
+      doublereal *, integer *);
     extern /* Subroutine */ int ddatrp_(doublereal *, doublereal *, 
-	    doublereal *, doublereal *, integer *, integer *, doublereal *, 
-	    doublereal *), ddastp_(doublereal *, doublereal *, doublereal *, 
-	    integer *, U_fp, U_fp, doublereal *, doublereal *, integer *, 
-	    integer *, doublereal *, integer *, doublereal *, doublereal *, 
-	    doublereal *, doublereal *, integer *, doublereal *, doublereal *,
-	     doublereal *, doublereal *, doublereal *, doublereal *, 
-	    doublereal *, doublereal *, doublereal *, doublereal *, 
-	    doublereal *, integer *, integer *, integer *, integer *, integer 
-	    *, integer *, integer *), ddawts_(integer *, integer *, 
-	    doublereal *, doublereal *, doublereal *, doublereal *, 
-	    doublereal *, integer *);
+      doublereal *, doublereal *, integer *, integer *, doublereal *, 
+      doublereal *), ddastp_(doublereal *, doublereal *, doublereal *, 
+      integer *, U_fp, U_fp, doublereal *, doublereal *, integer *, 
+      integer *, doublereal *, integer *, doublereal *, doublereal *, 
+      doublereal *, doublereal *, integer *, doublereal *, doublereal *,
+       doublereal *, doublereal *, doublereal *, doublereal *, 
+      doublereal *, doublereal *, doublereal *, doublereal *, 
+      doublereal *, integer *, integer *, integer *, integer *, integer 
+      *, integer *, integer *), ddawts_(integer *, integer *, 
+      doublereal *, doublereal *, doublereal *, doublereal *, 
+      doublereal *, integer *);
     static doublereal uround, ypnorm;
     extern /* Subroutine */ int xerrwv_(char *, integer *, integer *, integer 
-	    *, integer *, integer *, integer *, integer *, doublereal *, 
-	    doublereal *, ftnlen);
+      *, integer *, integer *, integer *, integer *, doublereal *, 
+      doublereal *, ftnlen);
 
 /* ***MODIF */
 /*   WHEN A ROOT IS FOUND YPRIME WAS NOT UPDATED. see c*SS* modifications */
@@ -1041,7 +1041,7 @@ static doublereal c_b588 = 1.;
 
     /* Function Body */
     if (info[1] != 0) {
-	goto L100;
+  goto L100;
     }
 
 /* ----------------------------------------------------------------------- */
@@ -1052,38 +1052,38 @@ static doublereal c_b588 = 1.;
 /*     FIRST CHECK INFO ARRAY TO MAKE SURE ALL ELEMENTS OF INFO */
 /*     ARE EITHER ZERO OR ONE. */
     for (i__ = 2; i__ <= 11; ++i__) {
-	if (info[i__] != 0 && info[i__] != 1) {
-	    goto L701;
-	}
+  if (info[i__] != 0 && info[i__] != 1) {
+      goto L701;
+  }
 /* L10: */
     }
 
     if (*neq <= 0) {
-	goto L702;
+  goto L702;
     }
 
 /*     CHECK AND COMPUTE MAXIMUM ORDER */
     mxord = 5;
     if (info[9] == 0) {
-	goto L20;
+  goto L20;
     }
     mxord = iwork[3];
     if (mxord < 1 || mxord > 5) {
-	goto L703;
+  goto L703;
     }
 L20:
     iwork[3] = mxord;
 
 /*     COMPUTE MTYPE,LENPD,LENRW.CHECK ML AND MU. */
     if (info[6] != 0) {
-	goto L40;
+  goto L40;
     }
 /* Computing 2nd power */
     i__1 = *neq;
     lenpd = i__1 * i__1;
     lenrw = (iwork[3] + 4) * *neq + 50 + lenpd;
     if (info[5] != 0) {
-	goto L30;
+  goto L30;
     }
     iwork[4] = 2;
     goto L60;
@@ -1092,14 +1092,14 @@ L30:
     goto L60;
 L40:
     if (iwork[1] < 0 || iwork[1] >= *neq) {
-	goto L717;
+  goto L717;
     }
     if (iwork[2] < 0 || iwork[2] >= *neq) {
-	goto L718;
+  goto L718;
     }
     lenpd = ((iwork[1] << 1) + iwork[2] + 1) * *neq;
     if (info[5] != 0) {
-	goto L50;
+  goto L50;
     }
     iwork[4] = 5;
     mband = iwork[1] + iwork[2] + 1;
@@ -1115,28 +1115,28 @@ L60:
     leniw = *neq + 20;
     iwork[17] = lenpd;
     if (*lrw < lenrw) {
-	goto L704;
+  goto L704;
     }
     if (*liw < leniw) {
-	goto L705;
+  goto L705;
     }
 
 /*     CHECK TO SEE THAT TOUT IS DIFFERENT FROM T */
 /*     Also check to see that NG is larger than 0. */
     if (*tout == *t) {
-	goto L719;
+  goto L719;
     }
     if (*ng < 0) {
-	goto L730;
+  goto L730;
     }
 
 /*     CHECK HMAX */
     if (info[7] == 0) {
-	goto L70;
+  goto L70;
     }
     hmax = rwork[2];
     if (hmax <= 0.) {
-	goto L710;
+  goto L710;
     }
 L70:
 
@@ -1159,27 +1159,27 @@ L70:
 
 L100:
     if (info[1] == 1) {
-	goto L110;
+  goto L110;
     }
     if (info[1] != -1) {
-	goto L701;
+  goto L701;
     }
 /*     IF WE ARE HERE, THE LAST STEP WAS INTERRUPTED */
 /*     BY AN ERROR CONDITION FROM DDASTP,AND */
 /*     APPROPRIATE ACTION WAS NOT TAKEN. THIS */
 /*     IS A FATAL ERROR. */
     s_copy(msg, "DASSL--  THE LAST STEP TERMINATED WITH A NEGATIVE", (ftnlen)
-	    80, (ftnlen)49);
+      80, (ftnlen)49);
     xerrwv_(msg, &c__49, &c__201, &c__0, &c__0, &c__0, &c__0, &c__0, &c_b30, &
-	    c_b30, (ftnlen)80);
+      c_b30, (ftnlen)80);
     s_copy(msg, "DASSL--  VALUE (=I1) OF IDID AND NO APPROPRIATE", (ftnlen)80,
-	     (ftnlen)47);
+       (ftnlen)47);
     xerrwv_(msg, &c__47, &c__202, &c__0, &c__1, idid, &c__0, &c__0, &c_b30, &
-	    c_b30, (ftnlen)80);
+      c_b30, (ftnlen)80);
     s_copy(msg, "DASSL--  ACTION WAS TAKEN. RUN TERMINATED", (ftnlen)80, (
-	    ftnlen)41);
+      ftnlen)41);
     xerrwv_(msg, &c__41, &c__203, &c__1, &c__0, &c__0, &c__0, &c__0, &c_b30, &
-	    c_b30, (ftnlen)80);
+      c_b30, (ftnlen)80);
     return 0;
 L110:
     iwork[10] = iwork[11];
@@ -1198,25 +1198,25 @@ L200:
     atoli = atol[1];
     i__1 = *neq;
     for (i__ = 1; i__ <= i__1; ++i__) {
-	if (info[2] == 1) {
-	    rtoli = rtol[i__];
-	}
-	if (info[2] == 1) {
-	    atoli = atol[i__];
-	}
-	if (rtoli > 0. || atoli > 0.) {
-	    nzflg = 1;
-	}
-	if (rtoli < 0.) {
-	    goto L706;
-	}
-	if (atoli < 0.) {
-	    goto L707;
-	}
+  if (info[2] == 1) {
+      rtoli = rtol[i__];
+  }
+  if (info[2] == 1) {
+      atoli = atol[i__];
+  }
+  if (rtoli > 0. || atoli > 0.) {
+      nzflg = 1;
+  }
+  if (rtoli < 0.) {
+      goto L706;
+  }
+  if (atoli < 0.) {
+      goto L707;
+  }
 /* L210: */
     }
     if (nzflg == 0) {
-	goto L708;
+  goto L708;
     }
 
 /*     SET UP RWORK STORAGE.IWORK STORAGE IS FIXED */
@@ -1231,7 +1231,7 @@ L200:
     lwm = lpd;
     ntemp = iwork[17] + 1;
     if (info[1] == 1) {
-	goto L400;
+  goto L400;
     }
 
 /* ----------------------------------------------------------------------- */
@@ -1247,13 +1247,13 @@ L200:
 
 /*     SET ERROR WEIGHT VECTOR WT */
     ddawts_(neq, &info[2], &rtol[1], &atol[1], &y[1], &rwork[lwt], &rpar[1], &
-	    ipar[1]);
+      ipar[1]);
 /*      if(iero.gt.0) return */
     i__1 = *neq;
     for (i__ = 1; i__ <= i__1; ++i__) {
-	if (rwork[lwt + i__ - 1] <= 0.) {
-	    goto L713;
-	}
+  if (rwork[lwt + i__ - 1] <= 0.) {
+      goto L713;
+  }
 /* L305: */
     }
 
@@ -1267,19 +1267,19 @@ L200:
 /*     CHECK INITIAL INTERVAL TO SEE THAT IT IS LONG ENOUGH */
     tdist = (d__1 = *tout - *t, abs(d__1));
     if (tdist < hmin) {
-	goto L714;
+  goto L714;
     }
 
 /*     CHECK H0, IF THIS WAS INPUT */
     if (info[8] == 0) {
-	goto L310;
+  goto L310;
     }
     ho = rwork[3];
     if ((*tout - *t) * ho < 0.) {
-	goto L711;
+  goto L711;
     }
     if (ho == 0.) {
-	goto L712;
+  goto L712;
     }
     goto L320;
 L310:
@@ -1289,48 +1289,48 @@ L310:
     ho = tdist * .001;
     ypnorm = ddanrm_(neq, &yprime[1], &rwork[lwt], &rpar[1], &ipar[1]);
     if (ypnorm > .5 / ho) {
-	ho = .5 / ypnorm;
+  ho = .5 / ypnorm;
     }
     d__1 = *tout - *t;
     ho = d_sign(&ho, &d__1);
 /*     ADJUST HO IF NECESSARY TO MEET HMAX BOUND */
 L320:
     if (info[7] == 0) {
-	goto L330;
+  goto L330;
     }
     rh = abs(ho) / rwork[2];
     if (rh > 1.) {
-	ho /= rh;
+  ho /= rh;
     }
 /*     COMPUTE TSTOP, IF APPLICABLE */
 L330:
     if (info[4] == 0) {
-	goto L340;
+  goto L340;
     }
     tstop = rwork[1];
     if ((tstop - *t) * ho < 0.) {
-	goto L715;
+  goto L715;
     }
     if ((*t + ho - tstop) * ho > 0.) {
-	ho = tstop - *t;
+  ho = tstop - *t;
     }
     if ((tstop - *tout) * ho < 0.) {
-	goto L709;
+  goto L709;
     }
 
 /*     COMPUTE INITIAL DERIVATIVE, UPDATING TN AND Y, IF APPLICABLE */
 L340:
     if (info[11] == 0) {
-	goto L350;
+  goto L350;
     }
     ddaini_(&tn, &y[1], &yprime[1], neq, (U_fp)res, (U_fp)jac, &ho, &rwork[
-	    lwt], idid, &rpar[1], &ipar[1], &rwork[lphi], &rwork[51], &rwork[
-	    le], &rwork[lwm], &iwork[1], &hmin, &rwork[9], &info[10], &ntemp);
+      lwt], idid, &rpar[1], &ipar[1], &rwork[lphi], &rwork[51], &rwork[
+      le], &rwork[lwm], &iwork[1], &hmin, &rwork[9], &info[10], &ntemp);
     if (ierode_1.iero > 0) {
-	return 0;
+  return 0;
     }
     if (*idid < 0) {
-	goto L390;
+  goto L390;
     }
 
 /*     LOAD H WITH H0.  STORE H IN RWORK(LH) */
@@ -1343,9 +1343,9 @@ L350:
     itemp = lphi + *neq;
     i__1 = *neq;
     for (i__ = 1; i__ <= i__1; ++i__) {
-	rwork[lphi + i__ - 1] = y[i__];
+  rwork[lphi + i__ - 1] = y[i__];
 /* L370: */
-	rwork[itemp + i__ - 1] = h__ * yprime[i__];
+  rwork[itemp + i__ - 1] = h__ * yprime[i__];
     }
 
 /*     INITIALIZE T0 IN RWORK AND CHECK FOR A ZERO OF G NEAR THE */
@@ -1357,34 +1357,34 @@ L350:
     rwork[30] = h__ * 2.;
     iwork[8] = 1;
     if (*ng == 0) {
-	goto L390;
+  goto L390;
     }
     drchek_(&c__1, (U_fp)g, ng, neq, t, tout, &y[1], &rwork[le], &rwork[lphi],
-	     &rwork[29], &iwork[8], &rwork[lg0], &rwork[lg1], &rwork[lgx], 
-	    jroot, &irt, &rwork[9], &info[3], &rwork[1], &iwork[1], &rpar[1], 
-	    &ipar[1]);
+       &rwork[29], &iwork[8], &rwork[lg0], &rwork[lg1], &rwork[lgx], 
+      jroot, &irt, &rwork[9], &info[3], &rwork[1], &iwork[1], &rpar[1], 
+      &ipar[1]);
     if (ierode_1.iero > 0) {
-	return 0;
+  return 0;
     }
     if (irt != 0) {
-	goto L732;
+  goto L732;
     }
 
 /*     Check for a root in the interval (T0,TN], unless DDASRT */
 /*     did not have to initialize YPRIME. */
 
     if (*ng == 0 || info[11] == 0) {
-	goto L390;
+  goto L390;
     }
     drchek_(&c__3, (U_fp)g, ng, neq, &tn, tout, &y[1], &rwork[le], &rwork[
-	    lphi], &rwork[29], &iwork[8], &rwork[lg0], &rwork[lg1], &rwork[
-	    lgx], jroot, &irt, &rwork[9], &info[3], &rwork[1], &iwork[1], &
-	    rpar[1], &ipar[1]);
+      lphi], &rwork[29], &iwork[8], &rwork[lg0], &rwork[lg1], &rwork[
+      lgx], jroot, &irt, &rwork[9], &info[3], &rwork[1], &iwork[1], &
+      rpar[1], &ipar[1]);
     if (ierode_1.iero > 0) {
-	return 0;
+  return 0;
     }
     if (irt != 1) {
-	goto L390;
+  goto L390;
     }
     iwork[18] = 1;
     *idid = 4;
@@ -1409,20 +1409,20 @@ L400:
     tn = rwork[4];
     h__ = rwork[3];
     if (*ng == 0) {
-	goto L405;
+  goto L405;
     }
 
 /*     Check for a zero of G near TN. */
 
     drchek_(&c__2, (U_fp)g, ng, neq, &tn, tout, &y[1], &rwork[le], &rwork[
-	    lphi], &rwork[29], &iwork[8], &rwork[lg0], &rwork[lg1], &rwork[
-	    lgx], jroot, &irt, &rwork[9], &info[3], &rwork[1], &iwork[1], &
-	    rpar[1], &ipar[1]);
+      lphi], &rwork[29], &iwork[8], &rwork[lg0], &rwork[lg1], &rwork[
+      lgx], jroot, &irt, &rwork[9], &info[3], &rwork[1], &iwork[1], &
+      rpar[1], &ipar[1]);
     if (ierode_1.iero > 0) {
-	return 0;
+  return 0;
     }
     if (irt != 1) {
-	goto L405;
+  goto L405;
     }
     iwork[18] = 1;
     *idid = 4;
@@ -1434,32 +1434,32 @@ L400:
 
 L405:
     if (info[7] == 0) {
-	goto L410;
+  goto L410;
     }
     rh = abs(h__) / rwork[2];
     if (rh > 1.) {
-	h__ /= rh;
+  h__ /= rh;
     }
 L410:
     if (*t == *tout) {
-	goto L719;
+  goto L719;
     }
     if ((*t - *tout) * h__ > 0.) {
-	goto L711;
+  goto L711;
     }
     if (info[4] == 1) {
-	goto L430;
+  goto L430;
     }
     if (info[3] == 1) {
-	goto L420;
+  goto L420;
     }
     if ((tn - *tout) * h__ < 0.) {
-	goto L490;
+  goto L490;
     }
     ddatrp_(&tn, tout, &y[1], &yprime[1], neq, &iwork[8], &rwork[lphi], &
-	    rwork[29]);
+      rwork[29]);
     if (ierode_1.iero > 0) {
-	return 0;
+  return 0;
     }
     *t = *tout;
     *idid = 3;
@@ -1467,15 +1467,15 @@ L410:
     goto L490;
 L420:
     if ((tn - *t) * h__ <= 0.) {
-	goto L490;
+  goto L490;
     }
     if ((tn - *tout) * h__ > 0.) {
-	goto L425;
+  goto L425;
     }
     ddatrp_(&tn, &tn, &y[1], &yprime[1], neq, &iwork[8], &rwork[lphi], &rwork[
-	    29]);
+      29]);
     if (ierode_1.iero > 0) {
-	return 0;
+  return 0;
     }
     *t = tn;
     *idid = 1;
@@ -1483,9 +1483,9 @@ L420:
     goto L490;
 L425:
     ddatrp_(&tn, tout, &y[1], &yprime[1], neq, &iwork[8], &rwork[lphi], &
-	    rwork[29]);
+      rwork[29]);
     if (ierode_1.iero > 0) {
-	return 0;
+  return 0;
     }
     *t = *tout;
     *idid = 3;
@@ -1493,22 +1493,22 @@ L425:
     goto L490;
 L430:
     if (info[3] == 1) {
-	goto L440;
+  goto L440;
     }
     tstop = rwork[1];
     if ((tn - tstop) * h__ > 0.) {
-	goto L715;
+  goto L715;
     }
     if ((tstop - *tout) * h__ < 0.) {
-	goto L709;
+  goto L709;
     }
     if ((tn - *tout) * h__ < 0.) {
-	goto L450;
+  goto L450;
     }
     ddatrp_(&tn, tout, &y[1], &yprime[1], neq, &iwork[8], &rwork[lphi], &
-	    rwork[29]);
+      rwork[29]);
     if (ierode_1.iero > 0) {
-	return 0;
+  return 0;
     }
     *t = *tout;
     *idid = 3;
@@ -1517,21 +1517,21 @@ L430:
 L440:
     tstop = rwork[1];
     if ((tn - tstop) * h__ > 0.) {
-	goto L715;
+  goto L715;
     }
     if ((tstop - *tout) * h__ < 0.) {
-	goto L709;
+  goto L709;
     }
     if ((tn - *t) * h__ <= 0.) {
-	goto L450;
+  goto L450;
     }
     if ((tn - *tout) * h__ > 0.) {
-	goto L445;
+  goto L445;
     }
     ddatrp_(&tn, &tn, &y[1], &yprime[1], neq, &iwork[8], &rwork[lphi], &rwork[
-	    29]);
+      29]);
     if (ierode_1.iero > 0) {
-	return 0;
+  return 0;
     }
     *t = tn;
     *idid = 1;
@@ -1539,9 +1539,9 @@ L440:
     goto L490;
 L445:
     ddatrp_(&tn, tout, &y[1], &yprime[1], neq, &iwork[8], &rwork[lphi], &
-	    rwork[29]);
+      rwork[29]);
     if (ierode_1.iero > 0) {
-	return 0;
+  return 0;
     }
     *t = *tout;
     *idid = 3;
@@ -1550,13 +1550,13 @@ L445:
 L450:
 /*     CHECK WHETHER WE ARE WITH IN ROUNDOFF OF TSTOP */
     if ((d__1 = tn - tstop, abs(d__1)) > uround * 100. * (abs(tn) + abs(h__)))
-	     {
-	goto L460;
+       {
+  goto L460;
     }
     ddatrp_(&tn, &tstop, &y[1], &yprime[1], neq, &iwork[8], &rwork[lphi], &
-	    rwork[29]);
+      rwork[29]);
     if (ierode_1.iero > 0) {
-	return 0;
+  return 0;
     }
     *idid = 2;
     *t = tstop;
@@ -1565,14 +1565,14 @@ L450:
 L460:
     tnext = tn + h__;
     if ((tnext - tstop) * h__ <= 0.) {
-	goto L490;
+  goto L490;
     }
     h__ = tstop - tn;
     rwork[3] = h__;
 
 L490:
     if (done) {
-	goto L590;
+  goto L590;
     }
 
 /* ------------------------------------------------------- */
@@ -1588,12 +1588,12 @@ L490:
 L500:
 /*     CHECK FOR FAILURE TO COMPUTE INITIAL YPRIME */
     if (*idid == -12) {
-	goto L527;
+  goto L527;
     }
 
 /*     CHECK FOR TOO MANY STEPS */
     if (iwork[11] - iwork[10] < 500) {
-	goto L510;
+  goto L510;
     }
     *idid = -1;
     goto L527;
@@ -1601,30 +1601,30 @@ L500:
 /*     UPDATE WT */
 L510:
     ddawts_(neq, &info[2], &rtol[1], &atol[1], &rwork[lphi], &rwork[lwt], &
-	    rpar[1], &ipar[1]);
+      rpar[1], &ipar[1]);
     if (ierode_1.iero > 0) {
-	return 0;
+  return 0;
     }
     i__1 = *neq;
     for (i__ = 1; i__ <= i__1; ++i__) {
-	if (rwork[i__ + lwt - 1] > 0.) {
-	    goto L520;
-	}
-	*idid = -3;
-	goto L527;
+  if (rwork[i__ + lwt - 1] > 0.) {
+      goto L520;
+  }
+  *idid = -3;
+  goto L527;
 L520:
-	;
+  ;
     }
 
 /*     TEST FOR TOO MUCH ACCURACY REQUESTED. */
     r__ = ddanrm_(neq, &rwork[lphi], &rwork[lwt], &rpar[1], &ipar[1]) * 100. *
-	     uround;
+       uround;
     if (r__ <= 1.) {
-	goto L525;
+  goto L525;
     }
 /*     MULTIPLY RTOL AND ATOL BY R AND RETURN */
     if (info[2] == 1) {
-	goto L523;
+  goto L523;
     }
     rtol[1] = r__ * rtol[1];
     atol[1] = r__ * atol[1];
@@ -1633,9 +1633,9 @@ L520:
 L523:
     i__1 = *neq;
     for (i__ = 1; i__ <= i__1; ++i__) {
-	rtol[i__] = r__ * rtol[i__];
+  rtol[i__] = r__ * rtol[i__];
 /* L524: */
-	atol[i__] = r__ * atol[i__];
+  atol[i__] = r__ * atol[i__];
     }
     *idid = -2;
     goto L527;
@@ -1648,26 +1648,26 @@ L525:
 
 /*     TEST H VS. HMAX */
     if (info[7] == 0) {
-	goto L526;
+  goto L526;
     }
     rh = abs(h__) / rwork[2];
     if (rh > 1.) {
-	h__ /= rh;
+  h__ /= rh;
     }
 L526:
 
     ddastp_(&tn, &y[1], &yprime[1], neq, (U_fp)res, (U_fp)jac, &h__, &rwork[
-	    lwt], &info[1], idid, &rpar[1], &ipar[1], &rwork[lphi], &rwork[51]
-	    , &rwork[le], &rwork[lwm], &iwork[1], &rwork[11], &rwork[17], &
-	    rwork[23], &rwork[29], &rwork[35], &rwork[5], &rwork[6], &rwork[7]
-	    , &rwork[8], &hmin, &rwork[9], &iwork[6], &iwork[5], &iwork[7], &
-	    iwork[8], &iwork[9], &info[10], &ntemp);
+      lwt], &info[1], idid, &rpar[1], &ipar[1], &rwork[lphi], &rwork[51]
+      , &rwork[le], &rwork[lwm], &iwork[1], &rwork[11], &rwork[17], &
+      rwork[23], &rwork[29], &rwork[35], &rwork[5], &rwork[6], &rwork[7]
+      , &rwork[8], &hmin, &rwork[9], &iwork[6], &iwork[5], &iwork[7], &
+      iwork[8], &iwork[9], &info[10], &ntemp);
     if (ierode_1.iero > 0) {
-	return 0;
+  return 0;
     }
 L527:
     if (*idid < 0) {
-	goto L600;
+  goto L600;
     }
 
 /* -------------------------------------------------------- */
@@ -1676,20 +1676,20 @@ L527:
 /* -------------------------------------------------------- */
 
     if (*ng == 0) {
-	goto L529;
+  goto L529;
     }
 
 /*     Check for a zero of G near TN. */
 
     drchek_(&c__3, (U_fp)g, ng, neq, &tn, tout, &y[1], &rwork[le], &rwork[
-	    lphi], &rwork[29], &iwork[8], &rwork[lg0], &rwork[lg1], &rwork[
-	    lgx], jroot, &irt, &rwork[9], &info[3], &rwork[1], &iwork[1], &
-	    rpar[1], &ipar[1]);
+      lphi], &rwork[29], &iwork[8], &rwork[lg0], &rwork[lg1], &rwork[
+      lgx], jroot, &irt, &rwork[9], &info[3], &rwork[1], &iwork[1], &
+      rpar[1], &ipar[1]);
     if (ierode_1.iero > 0) {
-	return 0;
+  return 0;
     }
     if (irt != 1) {
-	goto L529;
+  goto L529;
     }
     iwork[18] = 1;
     *idid = 4;
@@ -1700,98 +1700,98 @@ L527:
 
 L529:
     if (info[4] != 0) {
-	goto L540;
+  goto L540;
     }
     if (info[3] != 0) {
-	goto L530;
+  goto L530;
     }
     if ((tn - *tout) * h__ < 0.) {
-	goto L500;
+  goto L500;
     }
     ddatrp_(&tn, tout, &y[1], &yprime[1], neq, &iwork[8], &rwork[lphi], &
-	    rwork[29]);
+      rwork[29]);
     if (ierode_1.iero > 0) {
-	return 0;
+  return 0;
     }
     *idid = 3;
     *t = *tout;
     goto L580;
 L530:
     if ((tn - *tout) * h__ >= 0.) {
-	goto L535;
+  goto L535;
     }
     *t = tn;
     *idid = 1;
     goto L580;
 L535:
     ddatrp_(&tn, tout, &y[1], &yprime[1], neq, &iwork[8], &rwork[lphi], &
-	    rwork[29]);
+      rwork[29]);
     if (ierode_1.iero > 0) {
-	return 0;
+  return 0;
     }
     *idid = 3;
     *t = *tout;
     goto L580;
 L540:
     if (info[3] != 0) {
-	goto L550;
+  goto L550;
     }
     if ((tn - *tout) * h__ < 0.) {
-	goto L542;
+  goto L542;
     }
     ddatrp_(&tn, tout, &y[1], &yprime[1], neq, &iwork[8], &rwork[lphi], &
-	    rwork[29]);
+      rwork[29]);
     if (ierode_1.iero > 0) {
-	return 0;
+  return 0;
     }
     *t = *tout;
     *idid = 3;
     goto L580;
 L542:
     if ((d__1 = tn - tstop, abs(d__1)) <= uround * 100. * (abs(tn) + abs(h__))
-	    ) {
-	goto L545;
+      ) {
+  goto L545;
     }
     tnext = tn + h__;
     if ((tnext - tstop) * h__ <= 0.) {
-	goto L500;
+  goto L500;
     }
     h__ = tstop - tn;
     goto L500;
 L545:
     ddatrp_(&tn, &tstop, &y[1], &yprime[1], neq, &iwork[8], &rwork[lphi], &
-	    rwork[29]);
+      rwork[29]);
     if (ierode_1.iero > 0) {
-	return 0;
+  return 0;
     }
     *idid = 2;
     *t = tstop;
     goto L580;
 L550:
     if ((tn - *tout) * h__ >= 0.) {
-	goto L555;
+  goto L555;
     }
     if ((d__1 = tn - tstop, abs(d__1)) <= uround * 100. * (abs(tn) + abs(h__))
-	    ) {
-	goto L552;
+      ) {
+  goto L552;
     }
     *t = tn;
     *idid = 1;
     goto L580;
 L552:
     ddatrp_(&tn, &tstop, &y[1], &yprime[1], neq, &iwork[8], &rwork[lphi], &
-	    rwork[29]);
+      rwork[29]);
     if (ierode_1.iero > 0) {
-	return 0;
+  return 0;
     }
     *idid = 2;
     *t = tstop;
     goto L580;
 L555:
     ddatrp_(&tn, tout, &y[1], &yprime[1], neq, &iwork[8], &rwork[lphi], &
-	    rwork[29]);
+      rwork[29]);
     if (ierode_1.iero > 0) {
-	return 0;
+  return 0;
     }
     *t = *tout;
     *idid = 3;
@@ -1816,153 +1816,153 @@ L590:
 L600:
     itemp = -(*idid);
     switch (itemp) {
-	case 1:  goto L610;
-	case 2:  goto L620;
-	case 3:  goto L630;
-	case 4:  goto L690;
-	case 5:  goto L690;
-	case 6:  goto L640;
-	case 7:  goto L650;
-	case 8:  goto L660;
-	case 9:  goto L670;
-	case 10:  goto L675;
-	case 11:  goto L680;
-	case 12:  goto L685;
+  case 1:  goto L610;
+  case 2:  goto L620;
+  case 3:  goto L630;
+  case 4:  goto L690;
+  case 5:  goto L690;
+  case 6:  goto L640;
+  case 7:  goto L650;
+  case 8:  goto L660;
+  case 9:  goto L670;
+  case 10:  goto L675;
+  case 11:  goto L680;
+  case 12:  goto L685;
     }
 
 /*     THE MAXIMUM NUMBER OF STEPS WAS TAKEN BEFORE */
 /*     REACHING TOUT */
 L610:
     s_copy(msg, "DASSL--  AT CURRENT T (=R1)  500 STEPS", (ftnlen)80, (ftnlen)
-	    38);
+      38);
     xerrwv_(msg, &c__38, &c__610, &c__0, &c__0, &c__0, &c__0, &c__1, &tn, &
-	    c_b30, (ftnlen)80);
+      c_b30, (ftnlen)80);
     s_copy(msg, "DASSL--  TAKEN ON THIS CALL BEFORE REACHING TOUT", (ftnlen)
-	    80, (ftnlen)48);
+      80, (ftnlen)48);
     xerrwv_(msg, &c__48, &c__611, &c__0, &c__0, &c__0, &c__0, &c__0, &c_b30, &
-	    c_b30, (ftnlen)80);
+      c_b30, (ftnlen)80);
     goto L690;
 
 /*     TOO MUCH ACCURACY FOR MACHINE PRECISION */
 L620:
     s_copy(msg, "DASSL--  AT T (=R1) TOO MUCH ACCURACY REQUESTED", (ftnlen)80,
-	     (ftnlen)47);
+       (ftnlen)47);
     xerrwv_(msg, &c__47, &c__620, &c__0, &c__0, &c__0, &c__0, &c__1, &tn, &
-	    c_b30, (ftnlen)80);
+      c_b30, (ftnlen)80);
     s_copy(msg, "DASSL--  FOR PRECISION OF MACHINE. RTOL AND ATOL", (ftnlen)
-	    80, (ftnlen)48);
+      80, (ftnlen)48);
     xerrwv_(msg, &c__48, &c__621, &c__0, &c__0, &c__0, &c__0, &c__0, &c_b30, &
-	    c_b30, (ftnlen)80);
+      c_b30, (ftnlen)80);
     s_copy(msg, "DASSL--  WERE INCREASED TO APPROPRIATE VALUES", (ftnlen)80, (
-	    ftnlen)45);
+      ftnlen)45);
     xerrwv_(msg, &c__45, &c__622, &c__0, &c__0, &c__0, &c__0, &c__0, &c_b30, &
-	    c_b30, (ftnlen)80);
+      c_b30, (ftnlen)80);
 
     goto L690;
 /*     WT(I) .LE. 0.0D0 FOR SOME I (NOT AT START OF PROBLEM) */
 L630:
     s_copy(msg, "DASSL--  AT T (=R1) SOME ELEMENT OF WT", (ftnlen)80, (ftnlen)
-	    38);
+      38);
     xerrwv_(msg, &c__38, &c__630, &c__0, &c__0, &c__0, &c__0, &c__1, &tn, &
-	    c_b30, (ftnlen)80);
+      c_b30, (ftnlen)80);
     s_copy(msg, "DASSL--  HAS BECOME .LE. 0.0", (ftnlen)80, (ftnlen)28);
     xerrwv_(msg, &c__28, &c__631, &c__0, &c__0, &c__0, &c__0, &c__0, &c_b30, &
-	    c_b30, (ftnlen)80);
+      c_b30, (ftnlen)80);
     goto L690;
 
 /*     ERROR TEST FAILED REPEATEDLY OR WITH H=HMIN */
 L640:
     s_copy(msg, "DASSL--  AT T (=R1) AND STEPSIZE H (=R2) THE", (ftnlen)80, (
-	    ftnlen)44);
+      ftnlen)44);
     xerrwv_(msg, &c__44, &c__640, &c__0, &c__0, &c__0, &c__0, &c__2, &tn, &
-	    h__, (ftnlen)80);
+      h__, (ftnlen)80);
     s_copy(msg, "DASSL--  ERROR TEST FAILED REPEATEDLY OR WITH ABS(H)=HMIN", (
-	    ftnlen)80, (ftnlen)57);
+      ftnlen)80, (ftnlen)57);
     xerrwv_(msg, &c__57, &c__641, &c__0, &c__0, &c__0, &c__0, &c__0, &c_b30, &
-	    c_b30, (ftnlen)80);
+      c_b30, (ftnlen)80);
     goto L690;
 
 /*     CORRECTOR CONVERGENCE FAILED REPEATEDLY OR WITH H=HMIN */
 L650:
     s_copy(msg, "DASSL--  AT T (=R1) AND STEPSIZE H (=R2) THE", (ftnlen)80, (
-	    ftnlen)44);
+      ftnlen)44);
     xerrwv_(msg, &c__44, &c__650, &c__0, &c__0, &c__0, &c__0, &c__2, &tn, &
-	    h__, (ftnlen)80);
+      h__, (ftnlen)80);
     s_copy(msg, "DASSL--  CORRECTOR FAILED TO CONVERGE REPEATEDLY", (ftnlen)
-	    80, (ftnlen)48);
+      80, (ftnlen)48);
     xerrwv_(msg, &c__48, &c__651, &c__0, &c__0, &c__0, &c__0, &c__0, &c_b30, &
-	    c_b30, (ftnlen)80);
+      c_b30, (ftnlen)80);
     s_copy(msg, "DASSL--  OR WITH ABS(H)=HMIN", (ftnlen)80, (ftnlen)28);
     xerrwv_(msg, &c__28, &c__652, &c__0, &c__0, &c__0, &c__0, &c__0, &c_b30, &
-	    c_b30, (ftnlen)80);
+      c_b30, (ftnlen)80);
     goto L690;
 
 /*     THE ITERATION MATRIX IS SINGULAR */
 L660:
     s_copy(msg, "DASSL--  AT T (=R1) AND STEPSIZE H (=R2) THE", (ftnlen)80, (
-	    ftnlen)44);
+      ftnlen)44);
     xerrwv_(msg, &c__44, &c__660, &c__0, &c__0, &c__0, &c__0, &c__2, &tn, &
-	    h__, (ftnlen)80);
+      h__, (ftnlen)80);
     s_copy(msg, "DASSL--  ITERATION MATRIX IS SINGULAR", (ftnlen)80, (ftnlen)
-	    37);
+      37);
     xerrwv_(msg, &c__37, &c__661, &c__0, &c__0, &c__0, &c__0, &c__0, &c_b30, &
-	    c_b30, (ftnlen)80);
+      c_b30, (ftnlen)80);
     goto L690;
 
 /*     CORRECTOR FAILURE PRECEEDED BY ERROR TEST FAILURES. */
 L670:
     s_copy(msg, "DASSL--  AT T (=R1) AND STEPSIZE H (=R2) THE", (ftnlen)80, (
-	    ftnlen)44);
+      ftnlen)44);
     xerrwv_(msg, &c__44, &c__670, &c__0, &c__0, &c__0, &c__0, &c__2, &tn, &
-	    h__, (ftnlen)80);
+      h__, (ftnlen)80);
     s_copy(msg, "DASSL--  CORRECTOR COULD NOT CONVERGE.  ALSO, THE", (ftnlen)
-	    80, (ftnlen)49);
+      80, (ftnlen)49);
     xerrwv_(msg, &c__49, &c__671, &c__0, &c__0, &c__0, &c__0, &c__0, &c_b30, &
-	    c_b30, (ftnlen)80);
+      c_b30, (ftnlen)80);
     s_copy(msg, "DASSL--  ERROR TEST FAILED REPEATEDLY.", (ftnlen)80, (ftnlen)
-	    38);
+      38);
     xerrwv_(msg, &c__38, &c__672, &c__0, &c__0, &c__0, &c__0, &c__0, &c_b30, &
-	    c_b30, (ftnlen)80);
+      c_b30, (ftnlen)80);
     goto L690;
 
 /*     CORRECTOR FAILURE BECAUSE IRES = -1 */
 L675:
     s_copy(msg, "DASSL--  AT T (=R1) AND STEPSIZE H (=R2) THE", (ftnlen)80, (
-	    ftnlen)44);
+      ftnlen)44);
     xerrwv_(msg, &c__44, &c__675, &c__0, &c__0, &c__0, &c__0, &c__2, &tn, &
-	    h__, (ftnlen)80);
+      h__, (ftnlen)80);
     s_copy(msg, "DASSL--  CORRECTOR COULD NOT CONVERGE BECAUSE", (ftnlen)80, (
-	    ftnlen)45);
+      ftnlen)45);
     xerrwv_(msg, &c__45, &c__676, &c__0, &c__0, &c__0, &c__0, &c__0, &c_b30, &
-	    c_b30, (ftnlen)80);
+      c_b30, (ftnlen)80);
     s_copy(msg, "DASSL--  IRES WAS EQUAL TO MINUS ONE", (ftnlen)80, (ftnlen)
-	    36);
+      36);
     xerrwv_(msg, &c__36, &c__677, &c__0, &c__0, &c__0, &c__0, &c__0, &c_b30, &
-	    c_b30, (ftnlen)80);
+      c_b30, (ftnlen)80);
     goto L690;
 
 /*     FAILURE BECAUSE IRES = -2 */
 L680:
     s_copy(msg, "DASSL--  AT T (=R1) AND STEPSIZE H (=R2)", (ftnlen)80, (
-	    ftnlen)40);
+      ftnlen)40);
     xerrwv_(msg, &c__40, &c__680, &c__0, &c__0, &c__0, &c__0, &c__2, &tn, &
-	    h__, (ftnlen)80);
+      h__, (ftnlen)80);
     s_copy(msg, "DASSL--  IRES WAS EQUAL TO MINUS TWO", (ftnlen)80, (ftnlen)
-	    36);
+      36);
     xerrwv_(msg, &c__36, &c__681, &c__0, &c__0, &c__0, &c__0, &c__0, &c_b30, &
-	    c_b30, (ftnlen)80);
+      c_b30, (ftnlen)80);
     goto L690;
 
 /*     FAILED TO COMPUTE INITIAL YPRIME */
 L685:
     s_copy(msg, "DASSL--  AT T (=R1) AND STEPSIZE H (=R2) THE", (ftnlen)80, (
-	    ftnlen)44);
+      ftnlen)44);
     xerrwv_(msg, &c__44, &c__685, &c__0, &c__0, &c__0, &c__0, &c__2, &tn, &ho,
-	     (ftnlen)80);
+       (ftnlen)80);
     s_copy(msg, "DASSL--  INITIAL YPRIME COULD NOT BE COMPUTED", (ftnlen)80, (
-	    ftnlen)45);
+      ftnlen)45);
     xerrwv_(msg, &c__45, &c__686, &c__0, &c__0, &c__0, &c__0, &c__0, &c_b30, &
-	    c_b30, (ftnlen)80);
+      c_b30, (ftnlen)80);
     goto L690;
 L690:
     info[1] = -1;
@@ -1980,148 +1980,148 @@ L690:
 /* ----------------------------------------------------------------------- */
 L701:
     s_copy(msg, "DASSL--  SOME ELEMENT OF INFO VECTOR IS NOT ZERO OR ONE", (
-	    ftnlen)80, (ftnlen)55);
+      ftnlen)80, (ftnlen)55);
     xerrwv_(msg, &c__55, &c__1, &c__0, &c__0, &c__0, &c__0, &c__0, &c_b30, &
-	    c_b30, (ftnlen)80);
+      c_b30, (ftnlen)80);
     goto L750;
 L702:
     s_copy(msg, "DASSL--  NEQ (=I1) .LE. 0", (ftnlen)80, (ftnlen)25);
     xerrwv_(msg, &c__25, &c__2, &c__0, &c__1, neq, &c__0, &c__0, &c_b30, &
-	    c_b30, (ftnlen)80);
+      c_b30, (ftnlen)80);
     goto L750;
 L703:
     s_copy(msg, "DASSL--  MAXORD (=I1) NOT IN RANGE", (ftnlen)80, (ftnlen)34);
     xerrwv_(msg, &c__34, &c__3, &c__0, &c__1, &mxord, &c__0, &c__0, &c_b30, &
-	    c_b30, (ftnlen)80);
+      c_b30, (ftnlen)80);
     goto L750;
 L704:
     s_copy(msg, "DASSL--  RWORK LENGTH NEEDED, LENRW (=I1), EXCEEDS LRW (=I2)"
-	    , (ftnlen)80, (ftnlen)60);
+      , (ftnlen)80, (ftnlen)60);
     xerrwv_(msg, &c__60, &c__4, &c__0, &c__2, &lenrw, lrw, &c__0, &c_b30, &
-	    c_b30, (ftnlen)80);
+      c_b30, (ftnlen)80);
     goto L750;
 L705:
     s_copy(msg, "DASSL--  IWORK LENGTH NEEDED, LENIW (=I1), EXCEEDS LIW (=I2)"
-	    , (ftnlen)80, (ftnlen)60);
+      , (ftnlen)80, (ftnlen)60);
     xerrwv_(msg, &c__60, &c__5, &c__0, &c__2, &leniw, liw, &c__0, &c_b30, &
-	    c_b30, (ftnlen)80);
+      c_b30, (ftnlen)80);
     goto L750;
 L706:
     s_copy(msg, "DASSL--  SOME ELEMENT OF RTOL IS .LT. 0", (ftnlen)80, (
-	    ftnlen)39);
+      ftnlen)39);
     xerrwv_(msg, &c__39, &c__6, &c__0, &c__0, &c__0, &c__0, &c__0, &c_b30, &
-	    c_b30, (ftnlen)80);
+      c_b30, (ftnlen)80);
     goto L750;
 L707:
     s_copy(msg, "DASSL--  SOME ELEMENT OF ATOL IS .LT. 0", (ftnlen)80, (
-	    ftnlen)39);
+      ftnlen)39);
     xerrwv_(msg, &c__39, &c__7, &c__0, &c__0, &c__0, &c__0, &c__0, &c_b30, &
-	    c_b30, (ftnlen)80);
+      c_b30, (ftnlen)80);
     goto L750;
 L708:
     s_copy(msg, "DASSL--  ALL ELEMENTS OF RTOL AND ATOL ARE ZERO", (ftnlen)80,
-	     (ftnlen)47);
+       (ftnlen)47);
     xerrwv_(msg, &c__47, &c__8, &c__0, &c__0, &c__0, &c__0, &c__0, &c_b30, &
-	    c_b30, (ftnlen)80);
+      c_b30, (ftnlen)80);
     goto L750;
 L709:
     s_copy(msg, "DASSL--  INFO(4) = 1 AND TSTOP (=R1) BEHIND TOUT (=R2)", (
-	    ftnlen)80, (ftnlen)54);
+      ftnlen)80, (ftnlen)54);
     xerrwv_(msg, &c__54, &c__9, &c__0, &c__0, &c__0, &c__0, &c__2, &tstop, 
-	    tout, (ftnlen)80);
+      tout, (ftnlen)80);
     goto L750;
 L710:
     s_copy(msg, "DASSL--  HMAX (=R1) .LT. 0.0", (ftnlen)80, (ftnlen)28);
     xerrwv_(msg, &c__28, &c__10, &c__0, &c__0, &c__0, &c__0, &c__1, &hmax, &
-	    c_b30, (ftnlen)80);
+      c_b30, (ftnlen)80);
     goto L750;
 L711:
     s_copy(msg, "DASSL--  TOUT (=R1) BEHIND T (=R2)", (ftnlen)80, (ftnlen)34);
     xerrwv_(msg, &c__34, &c__11, &c__0, &c__0, &c__0, &c__0, &c__2, tout, t, (
-	    ftnlen)80);
+      ftnlen)80);
     goto L750;
 L712:
     s_copy(msg, "DASSL--  INFO(8)=1 AND H0=0.0", (ftnlen)80, (ftnlen)29);
     xerrwv_(msg, &c__29, &c__12, &c__0, &c__0, &c__0, &c__0, &c__0, &c_b30, &
-	    c_b30, (ftnlen)80);
+      c_b30, (ftnlen)80);
     goto L750;
 L713:
     s_copy(msg, "DASSL--  SOME ELEMENT OF WT IS .LE. 0.0", (ftnlen)80, (
-	    ftnlen)39);
+      ftnlen)39);
     xerrwv_(msg, &c__39, &c__13, &c__0, &c__0, &c__0, &c__0, &c__0, &c_b30, &
-	    c_b30, (ftnlen)80);
+      c_b30, (ftnlen)80);
     goto L750;
 L714:
     s_copy(msg, "DASSL-- TOUT (=R1) TOO CLOSE TO T (=R2) TO START INTEGRATION"
-	    , (ftnlen)80, (ftnlen)60);
+      , (ftnlen)80, (ftnlen)60);
     xerrwv_(msg, &c__60, &c__14, &c__0, &c__0, &c__0, &c__0, &c__2, tout, t, (
-	    ftnlen)80);
+      ftnlen)80);
     goto L750;
 L715:
     s_copy(msg, "DASSL--  INFO(4)=1 AND TSTOP (=R1) BEHIND T (=R2)", (ftnlen)
-	    80, (ftnlen)49);
+      80, (ftnlen)49);
     xerrwv_(msg, &c__49, &c__15, &c__0, &c__0, &c__0, &c__0, &c__2, &tstop, t,
-	     (ftnlen)80);
+       (ftnlen)80);
     goto L750;
 L717:
     s_copy(msg, "DASSL--  ML (=I1) ILLEGAL. EITHER .LT. 0 OR .GT. NEQ", (
-	    ftnlen)80, (ftnlen)52);
+      ftnlen)80, (ftnlen)52);
     xerrwv_(msg, &c__52, &c__17, &c__0, &c__1, &iwork[1], &c__0, &c__0, &
-	    c_b30, &c_b30, (ftnlen)80);
+      c_b30, &c_b30, (ftnlen)80);
     goto L750;
 L718:
     s_copy(msg, "DASSL--  MU (=I1) ILLEGAL. EITHER .LT. 0 OR .GT. NEQ", (
-	    ftnlen)80, (ftnlen)52);
+      ftnlen)80, (ftnlen)52);
     xerrwv_(msg, &c__52, &c__18, &c__0, &c__1, &iwork[2], &c__0, &c__0, &
-	    c_b30, &c_b30, (ftnlen)80);
+      c_b30, &c_b30, (ftnlen)80);
     goto L750;
 L719:
     s_copy(msg, "DASSL--  TOUT (=R1) IS EQUAL TO T (=R2)", (ftnlen)80, (
-	    ftnlen)39);
+      ftnlen)39);
     xerrwv_(msg, &c__39, &c__19, &c__0, &c__0, &c__0, &c__0, &c__2, tout, t, (
-	    ftnlen)80);
+      ftnlen)80);
     goto L750;
 L730:
     s_copy(msg, "DASSL--  NG (=I1) .LT. 0", (ftnlen)80, (ftnlen)24);
     xerrwv_(msg, &c__24, &c__30, &c__1, &c__1, ng, &c__0, &c__0, &c_b30, &
-	    c_b30, (ftnlen)80);
+      c_b30, (ftnlen)80);
     goto L750;
 L732:
     s_copy(msg, "DASSL--  ONE OR MORE COMPONENTS OF G HAS A ROOT", (ftnlen)80,
-	     (ftnlen)47);
+       (ftnlen)47);
     xerrwv_(msg, &c__47, &c__32, &c__1, &c__0, &c__0, &c__0, &c__0, &c_b30, &
-	    c_b30, (ftnlen)80);
+      c_b30, (ftnlen)80);
     s_copy(msg, "         TOO NEAR TO THE INITIAL POINT", (ftnlen)80, (ftnlen)
-	    38);
+      38);
     xerrwv_(msg, &c__38, &c__32, &c__1, &c__0, &c__0, &c__0, &c__0, &c_b30, &
-	    c_b30, (ftnlen)80);
+      c_b30, (ftnlen)80);
 L750:
     if (info[1] == -1) {
-	goto L760;
+  goto L760;
     }
     info[1] = -1;
     *idid = -33;
     return 0;
 L760:
     s_copy(msg, "DASSL--  REPEATED OCCURRENCES OF ILLEGAL INPUT", (ftnlen)80, 
-	    (ftnlen)46);
+      (ftnlen)46);
     xerrwv_(msg, &c__46, &c__801, &c__0, &c__0, &c__0, &c__0, &c__0, &c_b30, &
-	    c_b30, (ftnlen)80);
+      c_b30, (ftnlen)80);
 /* L770: */
     s_copy(msg, "DASSL--  RUN TERMINATED. APPARENT INFINITE LOOP", (ftnlen)80,
-	     (ftnlen)47);
+       (ftnlen)47);
     xerrwv_(msg, &c__47, &c__802, &c__1, &c__0, &c__0, &c__0, &c__0, &c_b30, &
-	    c_b30, (ftnlen)80);
+      c_b30, (ftnlen)80);
     return 0;
 /* -----------END OF SUBROUTINE DDASRT------------------------------------ */
 } /* ddasrt_ */
 
 /* Subroutine */ int drchek_(integer *job, S_fp g, integer *ng, integer *neq, 
-	doublereal *tn, doublereal *tout, doublereal *y, doublereal *yp, 
-	doublereal *phi, doublereal *psi, integer *kold, doublereal *g0, 
-	doublereal *g1, doublereal *gx, integer *jroot, integer *irt, 
-	doublereal *uround, integer *info3, doublereal *rwork, integer *iwork,
-	 doublereal *rpar, integer *ipar)
+  doublereal *tn, doublereal *tout, doublereal *y, doublereal *yp, 
+  doublereal *phi, doublereal *psi, integer *kold, doublereal *g0, 
+  doublereal *g1, doublereal *gx, integer *jroot, integer *irt, 
+  doublereal *uround, integer *info3, doublereal *rwork, integer *iwork,
+   doublereal *rpar, integer *ipar)
 {
     /* System generated locals */
     integer phi_dim1, phi_offset, i__1;
@@ -2137,14 +2137,14 @@ L760:
     static integer jflag;
     static doublereal hming;
     extern /* Subroutine */ int dcopy_(integer *, doublereal *, integer *, 
-	    doublereal *, integer *);
+      doublereal *, integer *);
     static logical zroot;
     extern /* Subroutine */ int ddatrp_(doublereal *, doublereal *, 
-	    doublereal *, doublereal *, integer *, integer *, doublereal *, 
-	    doublereal *), droots_(integer *, doublereal *, integer *, 
-	    doublereal *, doublereal *, doublereal *, doublereal *, 
-	    doublereal *, doublereal *, integer *, integer *, integer *, 
-	    doublereal *, doublereal *);
+      doublereal *, doublereal *, integer *, integer *, doublereal *, 
+      doublereal *), droots_(integer *, doublereal *, integer *, 
+      doublereal *, doublereal *, doublereal *, doublereal *, 
+      doublereal *, doublereal *, integer *, integer *, integer *, 
+      doublereal *, doublereal *);
 
 
 /* ***BEGIN PROLOGUE  DRCHEK */
@@ -2213,39 +2213,39 @@ L760:
     i__1 = *ng;
     for (i__ = 1; i__ <= i__1; ++i__) {
 /* L10: */
-	jroot[i__] = 0;
+  jroot[i__] = 0;
     }
     hming = (abs(*tn) + abs(h__)) * *uround * 100.;
 
     switch (*job) {
-	case 1:  goto L100;
-	case 2:  goto L200;
-	case 3:  goto L300;
+  case 1:  goto L100;
+  case 2:  goto L200;
+  case 3:  goto L300;
     }
 
 /* EVALUATE G AT INITIAL T (STORED IN RWORK(LT0)), AND CHECK FOR */
 /* ZERO VALUES.---------------------------------------------------------- */
 L100:
     ddatrp_(tn, &rwork[41], &y[1], &yp[1], neq, kold, &phi[phi_offset], &psi[
-	    1]);
+      1]);
     if (ierode_1.iero > 0) {
-	return 0;
+  return 0;
     }
     (*g)(neq, &rwork[41], &y[1], ng, &g0[1], rpar, ipar);
     if (ierode_1.iero > 0) {
-	return 0;
+  return 0;
     }
     iwork[16] = 1;
     zroot = FALSE_;
     i__1 = *ng;
     for (i__ = 1; i__ <= i__1; ++i__) {
 /* L110: */
-	if ((d__1 = g0[i__], abs(d__1)) <= 0.) {
-	    zroot = TRUE_;
-	}
+  if ((d__1 = g0[i__], abs(d__1)) <= 0.) {
+      zroot = TRUE_;
+  }
     }
     if (! zroot) {
-	goto L190;
+  goto L190;
     }
 /* G HAS A ZERO AT T.  LOOK AT G AT T + (SMALL INCREMENT). -------------- */
     temp1 = d_sign(&hming, &h__);
@@ -2254,23 +2254,23 @@ L100:
     i__1 = *neq;
     for (i__ = 1; i__ <= i__1; ++i__) {
 /* L120: */
-	y[i__] += temp2 * phi[i__ + (phi_dim1 << 1)];
+  y[i__] += temp2 * phi[i__ + (phi_dim1 << 1)];
     }
     (*g)(neq, &rwork[41], &y[1], ng, &g0[1], rpar, ipar);
     if (ierode_1.iero > 0) {
-	return 0;
+  return 0;
     }
     ++iwork[16];
     zroot = FALSE_;
     i__1 = *ng;
     for (i__ = 1; i__ <= i__1; ++i__) {
 /* L130: */
-	if ((d__1 = g0[i__], abs(d__1)) <= 0.) {
-	    zroot = TRUE_;
-	}
+  if ((d__1 = g0[i__], abs(d__1)) <= 0.) {
+      zroot = TRUE_;
+  }
     }
     if (! zroot) {
-	goto L190;
+  goto L190;
     }
 /* G HAS A ZERO AT T AND ALSO CLOSE TO T.  TAKE ERROR RETURN. ----------- */
     *irt = -1;
@@ -2282,68 +2282,68 @@ L190:
 
 L200:
     if (iwork[18] == 0) {
-	goto L260;
+  goto L260;
     }
 /* IF A ROOT WAS FOUND ON THE PREVIOUS STEP, EVALUATE G0 = G(T0). ------- */
     ddatrp_(tn, &rwork[41], &y[1], &yp[1], neq, kold, &phi[phi_offset], &psi[
-	    1]);
+      1]);
     if (ierode_1.iero > 0) {
-	return 0;
+  return 0;
     }
     (*g)(neq, &rwork[41], &y[1], ng, &g0[1], rpar, ipar);
     if (ierode_1.iero > 0) {
-	return 0;
+  return 0;
     }
     ++iwork[16];
     zroot = FALSE_;
     i__1 = *ng;
     for (i__ = 1; i__ <= i__1; ++i__) {
 /* L210: */
-	if ((d__1 = g0[i__], abs(d__1)) <= 0.) {
-	    zroot = TRUE_;
-	}
+  if ((d__1 = g0[i__], abs(d__1)) <= 0.) {
+      zroot = TRUE_;
+  }
     }
     if (! zroot) {
-	goto L260;
+  goto L260;
     }
 /* G HAS A ZERO AT T0.  LOOK AT G AT T + (SMALL INCREMENT). ------------- */
     temp1 = d_sign(&hming, &h__);
     rwork[41] += temp1;
     if ((rwork[41] - *tn) * h__ < 0.) {
-	goto L230;
+  goto L230;
     }
     temp2 = temp1 / h__;
     i__1 = *neq;
     for (i__ = 1; i__ <= i__1; ++i__) {
 /* L220: */
-	y[i__] += temp2 * phi[i__ + (phi_dim1 << 1)];
+  y[i__] += temp2 * phi[i__ + (phi_dim1 << 1)];
     }
     goto L240;
 L230:
     ddatrp_(tn, &rwork[41], &y[1], &yp[1], neq, kold, &phi[phi_offset], &psi[
-	    1]);
+      1]);
     if (ierode_1.iero > 0) {
-	return 0;
+  return 0;
     }
 L240:
     (*g)(neq, &rwork[41], &y[1], ng, &g0[1], rpar, ipar);
     if (ierode_1.iero > 0) {
-	return 0;
+  return 0;
     }
     ++iwork[16];
     zroot = FALSE_;
     i__1 = *ng;
     for (i__ = 1; i__ <= i__1; ++i__) {
-	if ((d__1 = g0[i__], abs(d__1)) > 0.) {
-	    goto L250;
-	}
-	jroot[i__] = 1;
-	zroot = TRUE_;
+  if ((d__1 = g0[i__], abs(d__1)) > 0.) {
+      goto L250;
+  }
+  jroot[i__] = 1;
+  zroot = TRUE_;
 L250:
-	;
+  ;
     }
     if (! zroot) {
-	goto L260;
+  goto L260;
     }
 /* G HAS A ZERO AT T0 AND ALSO CLOSE TO T0.  RETURN ROOT. --------------- */
     *irt = 1;
@@ -2352,24 +2352,24 @@ L250:
 /* G0 HAS NO ZERO COMPONENTS.  PROCEED TO CHECK RELEVANT INTERVAL. ------ */
 L260:
     if (*tn == rwork[42]) {
-	goto L390;
+  goto L390;
     }
 
 L300:
 /* SET T1 TO TN OR TOUT, WHICHEVER COMES FIRST, AND GET G AT T1. -------- */
 /*    if (*info3 == 1) {
-	goto L310;
+  goto L310;
     }*/
     if ((*tout - *tn) * h__ >= 0.) {
-	goto L310;
+  goto L310;
     }
     t1 = *tout;
     if ((t1 - rwork[41]) * h__ <= 0.) {
-	goto L390;
+  goto L390;
     }
     ddatrp_(tn, &t1, &y[1], &yp[1], neq, kold, &phi[phi_offset], &psi[1]);
     if (ierode_1.iero > 0) {
-	return 0;
+  return 0;
     }
     goto L330;
 L310:
@@ -2377,32 +2377,32 @@ L310:
     i__1 = *neq;
     for (i__ = 1; i__ <= i__1; ++i__) {
 /* L320: */
-	y[i__] = phi[i__ + phi_dim1];
+  y[i__] = phi[i__ + phi_dim1];
     }
 L330:
     (*g)(neq, &t1, &y[1], ng, &g1[1], rpar, ipar);
     if (ierode_1.iero > 0) {
-	return 0;
+  return 0;
     }
     ++iwork[16];
 /* CALL DROOTS TO SEARCH FOR ROOT IN INTERVAL FROM T0 TO T1. ------------ */
     jflag = 0;
 L350:
     droots_(ng, &hming, &jflag, &rwork[41], &t1, &g0[1], &g1[1], &gx[1], &x, &
-	    jroot[1], &iwork[20], &iwork[19], &rwork[43], &rwork[44]);
+      jroot[1], &iwork[20], &iwork[19], &rwork[43], &rwork[44]);
     if (ierode_1.iero > 0) {
-	return 0;
+  return 0;
     }
     if (jflag > 1) {
-	goto L360;
+  goto L360;
     }
     ddatrp_(tn, &x, &y[1], &yp[1], neq, kold, &phi[phi_offset], &psi[1]);
     if (ierode_1.iero > 0) {
-	return 0;
+  return 0;
     }
     (*g)(neq, &x, &y[1], ng, &gx[1], rpar, ipar);
     if (ierode_1.iero > 0) {
-	return 0;
+  return 0;
     }
     ++iwork[16];
     goto L350;
@@ -2410,12 +2410,12 @@ L360:
     rwork[41] = x;
     dcopy_(ng, &gx[1], &c__1, &g0[1], &c__1);
     if (jflag == 4) {
-	goto L390;
+  goto L390;
     }
 /* FOUND A ROOT.  INTERPOLATE TO X AND RETURN. -------------------------- */
     ddatrp_(tn, &x, &y[1], &yp[1], neq, kold, &phi[phi_offset], &psi[1]);
     if (ierode_1.iero > 0) {
-	return 0;
+  return 0;
     }
     *irt = 1;
     return 0;
@@ -2426,9 +2426,9 @@ L390:
 } /* drchek_ */
 
 /* Subroutine */ int droots_(integer *ng, doublereal *hmin, integer *jflag, 
-	doublereal *x0, doublereal *x1, doublereal *g0, doublereal *g1, 
-	doublereal *gx, doublereal *x, integer *jroot, integer *imax, integer 
-	*last, doublereal *alpha, doublereal *x2)
+  doublereal *x0, doublereal *x1, doublereal *g0, doublereal *g1, 
+  doublereal *gx, doublereal *x, integer *jroot, integer *imax, integer 
+  *last, doublereal *alpha, doublereal *x2)
 {
     /* Initialized data */
 
@@ -2445,7 +2445,7 @@ L390:
     static integer i__;
     static doublereal t2, tmax;
     extern /* Subroutine */ int dcopy_(integer *, doublereal *, integer *, 
-	    doublereal *, integer *);
+      doublereal *, integer *);
     static logical xroot, zroot, sgnchg;
     static integer imxold, nxlast;
 
@@ -2545,7 +2545,7 @@ L390:
     /* Function Body */
 
     if (*jflag == 1) {
-	goto L200;
+  goto L200;
     }
 /* JFLAG .NE. 1.  CHECK FOR CHANGE IN SIGN OF G OR ZERO AT X1. ---------- */
     *imax = 0;
@@ -2553,27 +2553,27 @@ L390:
     zroot = FALSE_;
     i__1 = *ng;
     for (i__ = 1; i__ <= i__1; ++i__) {
-	if ((d__1 = g1[i__], abs(d__1)) > zero) {
-	    goto L110;
-	}
-	zroot = TRUE_;
-	goto L120;
+  if ((d__1 = g1[i__], abs(d__1)) > zero) {
+      goto L110;
+  }
+  zroot = TRUE_;
+  goto L120;
 /* AT THIS POINT, G0(I) HAS BEEN CHECKED AND CANNOT BE ZERO. ------------ */
 L110:
-	if (d_sign(&c_b588, &g0[i__]) == d_sign(&c_b588, &g1[i__])) {
-	    goto L120;
-	}
-	t2 = (d__1 = g1[i__] / (g1[i__] - g0[i__]), abs(d__1));
-	if (t2 <= tmax) {
-	    goto L120;
-	}
-	tmax = t2;
-	*imax = i__;
+  if (d_sign(&c_b588, &g0[i__]) == d_sign(&c_b588, &g1[i__])) {
+      goto L120;
+  }
+  t2 = (d__1 = g1[i__] / (g1[i__] - g0[i__]), abs(d__1));
+  if (t2 <= tmax) {
+      goto L120;
+  }
+  tmax = t2;
+  *imax = i__;
 L120:
-	;
+  ;
     }
     if (*imax > 0) {
-	goto L130;
+  goto L130;
     }
     sgnchg = FALSE_;
     goto L140;
@@ -2581,7 +2581,7 @@ L130:
     sgnchg = TRUE_;
 L140:
     if (! sgnchg) {
-	goto L400;
+  goto L400;
     }
 /* THERE IS A SIGN CHANGE.  FIND THE FIRST ROOT IN THE INTERVAL. -------- */
     xroot = FALSE_;
@@ -2591,16 +2591,16 @@ L140:
 /* REPEAT UNTIL THE FIRST ROOT IN THE INTERVAL IS FOUND.  LOOP POINT. --- */
 L150:
     if (xroot) {
-	goto L300;
+  goto L300;
     }
     if (nxlast == *last) {
-	goto L160;
+  goto L160;
     }
     *alpha = 1.;
     goto L180;
 L160:
     if (*last == 0) {
-	goto L170;
+  goto L170;
     }
     *alpha *= .5;
     goto L180;
@@ -2609,8 +2609,8 @@ L170:
 L180:
     *x2 = *x1 - (*x1 - *x0) * g1[*imax] / (g1[*imax] - *alpha * g0[*imax]);
     if ((d__1 = *x2 - *x0, abs(d__1)) < *hmin && (d__2 = *x1 - *x0, abs(d__2))
-	     > *hmin * 10.) {
-	*x2 = *x0 + (*x1 - *x0) * .1;
+       > *hmin * 10.) {
+  *x2 = *x0 + (*x1 - *x0) * .1;
     }
     *jflag = 1;
     *x = *x2;
@@ -2624,27 +2624,27 @@ L200:
     zroot = FALSE_;
     i__1 = *ng;
     for (i__ = 1; i__ <= i__1; ++i__) {
-	if ((d__1 = gx[i__], abs(d__1)) > zero) {
-	    goto L210;
-	}
-	zroot = TRUE_;
-	goto L220;
+  if ((d__1 = gx[i__], abs(d__1)) > zero) {
+      goto L210;
+  }
+  zroot = TRUE_;
+  goto L220;
 /* NEITHER G0(I) NOR GX(I) CAN BE ZERO AT THIS POINT. ------------------- */
 L210:
-	if (d_sign(&c_b588, &g0[i__]) == d_sign(&c_b588, &gx[i__])) {
-	    goto L220;
-	}
-	t2 = (d__1 = gx[i__] / (gx[i__] - g0[i__]), abs(d__1));
-	if (t2 <= tmax) {
-	    goto L220;
-	}
-	tmax = t2;
-	*imax = i__;
+  if (d_sign(&c_b588, &g0[i__]) == d_sign(&c_b588, &gx[i__])) {
+      goto L220;
+  }
+  t2 = (d__1 = gx[i__] / (gx[i__] - g0[i__]), abs(d__1));
+  if (t2 <= tmax) {
+      goto L220;
+  }
+  tmax = t2;
+  *imax = i__;
 L220:
-	;
+  ;
     }
     if (*imax > 0) {
-	goto L230;
+  goto L230;
     }
     sgnchg = FALSE_;
     *imax = imxold;
@@ -2654,7 +2654,7 @@ L230:
 L240:
     nxlast = *last;
     if (! sgnchg) {
-	goto L250;
+  goto L250;
     }
 /* SIGN CHANGE BETWEEN X0 AND X2, SO REPLACE X1 WITH X2. ---------------- */
     *x1 = *x2;
@@ -2664,7 +2664,7 @@ L240:
     goto L270;
 L250:
     if (! zroot) {
-	goto L260;
+  goto L260;
     }
 /* ZERO VALUE AT X2 AND NO SIGN CHANGE IN (X0,X2), SO X2 IS A ROOT. ----- */
     *x1 = *x2;
@@ -2679,7 +2679,7 @@ L260:
     xroot = FALSE_;
 L270:
     if ((d__1 = *x1 - *x0, abs(d__1)) <= *hmin) {
-	xroot = TRUE_;
+  xroot = TRUE_;
     }
     goto L150;
 
@@ -2690,25 +2690,25 @@ L300:
     dcopy_(ng, &g1[1], &c__1, &gx[1], &c__1);
     i__1 = *ng;
     for (i__ = 1; i__ <= i__1; ++i__) {
-	jroot[i__] = 0;
-	if ((d__1 = g1[i__], abs(d__1)) > zero) {
-	    goto L310;
-	}
-	jroot[i__] = 1;
-	goto L320;
+  jroot[i__] = 0;
+  if ((d__1 = g1[i__], abs(d__1)) > zero) {
+      goto L310;
+  }
+  jroot[i__] = 1;
+  goto L320;
 L310:
-	if (d_sign(&c_b588, &g0[i__]) != d_sign(&c_b588, &g1[i__])) {
-	    jroot[i__] = 1;
-	}
+  if (d_sign(&c_b588, &g0[i__]) != d_sign(&c_b588, &g1[i__])) {
+      jroot[i__] = 1;
+  }
 L320:
-	;
+  ;
     }
     return 0;
 
 /* NO SIGN CHANGE IN THE INTERVAL.  CHECK FOR ZERO AT RIGHT ENDPOINT. --- */
 L400:
     if (! zroot) {
-	goto L420;
+  goto L420;
     }
 
 /* ZERO VALUE AT X1 AND NO SIGN CHANGE IN (X0,X1).  RETURN JFLAG = 3. --- */
@@ -2716,10 +2716,10 @@ L400:
     dcopy_(ng, &g1[1], &c__1, &gx[1], &c__1);
     i__1 = *ng;
     for (i__ = 1; i__ <= i__1; ++i__) {
-	jroot[i__] = 0;
-	if ((d__1 = g1[i__], abs(d__1)) <= zero) {
-	    jroot[i__] = 1;
-	}
+  jroot[i__] = 0;
+  if ((d__1 = g1[i__], abs(d__1)) <= zero) {
+      jroot[i__] = 1;
+  }
 /* L410: */
     }
     *jflag = 3;

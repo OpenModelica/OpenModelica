@@ -30,7 +30,7 @@
  */
 
 package SCodeUtil
-" file:	       SCodeUtil.mo
+" file:         SCodeUtil.mo
   package:     SCodeUtil
   description: SCodeUtil translates Absyn to SCode intermediate form
 
@@ -156,7 +156,7 @@ algorithm
 
     case (c as Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,body = d,info = file_info))
       equation
-				true = RTOpts.debugFlag("translate");
+    		true = RTOpts.debugFlag("translate");
         Debug.fprintln("translate", "SCodeUtil.translateAbsyn2SCodeClass: Translating class failed:" +& n+&"\n");
       then
         fail();
@@ -369,28 +369,28 @@ algorithm
     // EXTERNALDECL.
     case (SOME(Absyn.EXTERNALDECL(name,l,out,a,NONE())),Absyn.EXTERNAL(_,SOME(ann))::_)
     then SOME(Absyn.EXTERNALDECL(name,l,out,a,SOME(ann)));
-	// Annotation item.
+  // Annotation item.
     case (SOME(Absyn.EXTERNALDECL(name,l,out,a,NONE())),Absyn.PUBLIC(Absyn.ANNOTATIONITEM(ann)::_)::_)
     then SOME(Absyn.EXTERNALDECL(name,l,out,a,SOME(ann)));
     // Next element in public list
     case(decl as SOME(Absyn.EXTERNALDECL(name,l,out,a,NONE())),Absyn.PUBLIC(_::els)::cls)
-		then translateAlternativeExternalAnnotation(decl,Absyn.PUBLIC(els)::cls);
-	// Next classpart list
+    then translateAlternativeExternalAnnotation(decl,Absyn.PUBLIC(els)::cls);
+  // Next classpart list
     case (decl as SOME(Absyn.EXTERNALDECL(name,l,out,a,NONE())),Absyn.PUBLIC({})::cls)
-		then translateAlternativeExternalAnnotation(decl,cls);
+    then translateAlternativeExternalAnnotation(decl,cls);
 
-	case (SOME(Absyn.EXTERNALDECL(name,l,out,a,NONE())),Absyn.PROTECTED(Absyn.ANNOTATIONITEM(ann)::_)::_)
+  case (SOME(Absyn.EXTERNALDECL(name,l,out,a,NONE())),Absyn.PROTECTED(Absyn.ANNOTATIONITEM(ann)::_)::_)
     then SOME(Absyn.EXTERNALDECL(name,l,out,a,SOME(ann)));
     // Next element in public list
     case(decl as SOME(Absyn.EXTERNALDECL(name,l,out,a,NONE())),Absyn.PROTECTED(_::els)::cls)
-		then translateAlternativeExternalAnnotation(decl,Absyn.PROTECTED(els)::cls);
-	// Next classpart list
+    then translateAlternativeExternalAnnotation(decl,Absyn.PROTECTED(els)::cls);
+  // Next classpart list
     case(decl as SOME(Absyn.EXTERNALDECL(name,l,out,a,NONE())),Absyn.PROTECTED({})::cls)
-		then translateAlternativeExternalAnnotation(decl,cls);
-	// Next in list
-	case(decl as SOME(Absyn.EXTERNALDECL(name,l,out,a,NONE())),_::cls)
-		then translateAlternativeExternalAnnotation(decl,cls);
-	// not found
+    then translateAlternativeExternalAnnotation(decl,cls);
+  // Next in list
+  case(decl as SOME(Absyn.EXTERNALDECL(name,l,out,a,NONE())),_::cls)
+    then translateAlternativeExternalAnnotation(decl,cls);
+  // not found
     case (decl,_) then decl;
   end matchcontinue;
 end translateAlternativeExternalAnnotation;
@@ -1243,9 +1243,9 @@ end translateEEquations;
 // stefan
 protected function translateComment
 "function: translateComment
-	turns an Absyn.Comment into an SCode.Comment"
-	input Option<Absyn.Comment> inComment;
-	output Option<SCode.Comment> outComment;
+  turns an Absyn.Comment into an SCode.Comment"
+  input Option<Absyn.Comment> inComment;
+  output Option<SCode.Comment> outComment;
 algorithm
   outComment := match (inComment)
     local

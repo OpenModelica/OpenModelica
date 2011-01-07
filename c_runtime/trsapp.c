@@ -1,21 +1,21 @@
 /* trsapp.f -- translated by f2c (version 20041007).
    You must link the resulting object file with libf2c:
-	on Microsoft Windows system, link with libf2c.lib;
-	on Linux or Unix systems, link with .../path/to/libf2c.a -lm
-	or, if you install libf2c.a in a standard place, with -lf2c -lm
-	-- in that order, at the end of the command line, as in
-		cc *.o -lf2c -lm
-	Source for libf2c is in /netlib/f2c/libf2c.zip, e.g.,
+  on Microsoft Windows system, link with libf2c.lib;
+  on Linux or Unix systems, link with .../path/to/libf2c.a -lm
+  or, if you install libf2c.a in a standard place, with -lf2c -lm
+  -- in that order, at the end of the command line, as in
+  	cc *.o -lf2c -lm
+  Source for libf2c is in /netlib/f2c/libf2c.zip, e.g.,
 
-		http://www.netlib.org/f2c/libf2c.zip
+  	http://www.netlib.org/f2c/libf2c.zip
 */
 
 #include "f2c.h"
 
 /* Subroutine */ int trsapp_(integer *n, integer *npt, doublereal *xopt,
-	doublereal *xpt, doublereal *gq, doublereal *hq, doublereal *pq,
-	doublereal *delta, doublereal *step, doublereal *d__, doublereal *g,
-	doublereal *hd, doublereal *hs, doublereal *crvmin)
+  doublereal *xpt, doublereal *gq, doublereal *hq, doublereal *pq,
+  doublereal *delta, doublereal *step, doublereal *d__, doublereal *g,
+  doublereal *hd, doublereal *hs, doublereal *crvmin)
 {
     /* System generated locals */
     integer xpt_dim1, xpt_offset, i__1, i__2;
@@ -23,7 +23,7 @@
 
     /* Builtin functions */
     double atan(doublereal), sqrt(doublereal), cos(doublereal), sin(
-	    doublereal);
+      doublereal);
 
     /* Local variables */
     static integer i__, j, k;
@@ -32,7 +32,7 @@
     static doublereal ds, sg;
     static integer iu;
     static doublereal ss, dhd, dhs, cth, sgk, shs, sth, qadd, half, qbeg,
-	    qred, qmin, temp, qsav, qnew, zero, ggbeg, alpha, angle, reduc;
+      qred, qmin, temp, qsav, qnew, zero, ggbeg, alpha, angle, reduc;
     static integer iterc;
     static doublereal ggsav, delsq, tempa, tempb;
     static integer isave;
@@ -85,7 +85,7 @@
     i__1 = *n;
     for (i__ = 1; i__ <= i__1; ++i__) {
 /* L10: */
-	d__[i__] = xopt[i__];
+  d__[i__] = xopt[i__];
     }
     goto L170;
 
@@ -96,18 +96,18 @@ L20:
     dd = zero;
     i__1 = *n;
     for (i__ = 1; i__ <= i__1; ++i__) {
-	step[i__] = zero;
-	hs[i__] = zero;
-	g[i__] = gq[i__] + hd[i__];
-	d__[i__] = -g[i__];
+  step[i__] = zero;
+  hs[i__] = zero;
+  g[i__] = gq[i__] + hd[i__];
+  d__[i__] = -g[i__];
 /* L30: */
 /* Computing 2nd power */
-	d__1 = d__[i__];
-	dd += d__1 * d__1;
+  d__1 = d__[i__];
+  dd += d__1 * d__1;
     }
     *crvmin = zero;
     if (dd == zero) {
-	goto L160;
+  goto L160;
     }
     ds = zero;
     ss = zero;
@@ -126,21 +126,21 @@ L50:
     i__1 = *n;
     for (j = 1; j <= i__1; ++j) {
 /* L60: */
-	dhd += d__[j] * hd[j];
+  dhd += d__[j] * hd[j];
     }
 
 /*     Update CRVMIN and set the step-length ALPHA. */
 
     alpha = bstep;
     if (dhd > zero) {
-	temp = dhd / dd;
-	if (iterc == 1) {
-	    *crvmin = temp;
-	}
-	*crvmin = min(*crvmin,temp);
+  temp = dhd / dd;
+  if (iterc == 1) {
+      *crvmin = temp;
+  }
+  *crvmin = min(*crvmin,temp);
 /* Computing MIN */
-	d__1 = alpha, d__2 = gg / dhd;
-	alpha = min(d__1,d__2);
+  d__1 = alpha, d__2 = gg / dhd;
+  alpha = min(d__1,d__2);
     }
     qadd = alpha * (gg - half * alpha * dhd);
     qred += qadd;
@@ -151,48 +151,48 @@ L50:
     gg = zero;
     i__1 = *n;
     for (i__ = 1; i__ <= i__1; ++i__) {
-	step[i__] += alpha * d__[i__];
-	hs[i__] += alpha * hd[i__];
+  step[i__] += alpha * d__[i__];
+  hs[i__] += alpha * hd[i__];
 /* L70: */
 /* Computing 2nd power */
-	d__1 = g[i__] + hs[i__];
-	gg += d__1 * d__1;
+  d__1 = g[i__] + hs[i__];
+  gg += d__1 * d__1;
     }
 
 /*     Begin another conjugate direction iteration if required. */
 
     if (alpha < bstep) {
-	if (qadd <= qred * .01) {
-	    goto L160;
-	}
-	if (gg <= ggbeg * 1e-4) {
-	    goto L160;
-	}
-	if (iterc == itermax) {
-	    goto L160;
-	}
-	temp = gg / ggsav;
-	dd = zero;
-	ds = zero;
-	ss = zero;
-	i__1 = *n;
-	for (i__ = 1; i__ <= i__1; ++i__) {
-	    d__[i__] = temp * d__[i__] - g[i__] - hs[i__];
+  if (qadd <= qred * .01) {
+      goto L160;
+  }
+  if (gg <= ggbeg * 1e-4) {
+      goto L160;
+  }
+  if (iterc == itermax) {
+      goto L160;
+  }
+  temp = gg / ggsav;
+  dd = zero;
+  ds = zero;
+  ss = zero;
+  i__1 = *n;
+  for (i__ = 1; i__ <= i__1; ++i__) {
+      d__[i__] = temp * d__[i__] - g[i__] - hs[i__];
 /* Computing 2nd power */
-	    d__1 = d__[i__];
-	    dd += d__1 * d__1;
-	    ds += d__[i__] * step[i__];
+      d__1 = d__[i__];
+      dd += d__1 * d__1;
+      ds += d__[i__] * step[i__];
 /* L80: */
 /* Computing 2nd power */
-	    d__1 = step[i__];
-	    ss += d__1 * d__1;
-	}
-	if (ds <= zero) {
-	    goto L160;
-	}
-	if (ss < delsq) {
-	    goto L40;
-	}
+      d__1 = step[i__];
+      ss += d__1 * d__1;
+  }
+  if (ds <= zero) {
+      goto L160;
+  }
+  if (ss < delsq) {
+      goto L40;
+  }
     }
     *crvmin = zero;
     itersw = iterc;
@@ -201,20 +201,20 @@ L50:
 
 L90:
     if (gg <= ggbeg * 1e-4) {
-	goto L160;
+  goto L160;
     }
     sg = zero;
     shs = zero;
     i__1 = *n;
     for (i__ = 1; i__ <= i__1; ++i__) {
-	sg += step[i__] * g[i__];
+  sg += step[i__] * g[i__];
 /* L100: */
-	shs += step[i__] * hs[i__];
+  shs += step[i__] * hs[i__];
     }
     sgk = sg + shs;
     angtest = sgk / sqrt(gg * delsq);
     if (angtest <= -.99) {
-	goto L160;
+  goto L160;
     }
 
 /*     Begin the alternative iteration by calculating D and HD and some */
@@ -227,7 +227,7 @@ L90:
     i__1 = *n;
     for (i__ = 1; i__ <= i__1; ++i__) {
 /* L110: */
-	d__[i__] = tempa * (g[i__] + hs[i__]) - tempb * step[i__];
+  d__[i__] = tempa * (g[i__] + hs[i__]) - tempb * step[i__];
     }
     goto L170;
 L120:
@@ -236,10 +236,10 @@ L120:
     dhs = zero;
     i__1 = *n;
     for (i__ = 1; i__ <= i__1; ++i__) {
-	dg += d__[i__] * g[i__];
-	dhd += hd[i__] * d__[i__];
+  dg += d__[i__] * g[i__];
+  dhd += hd[i__] * d__[i__];
 /* L130: */
-	dhs += hd[i__] * step[i__];
+  dhs += hd[i__] * step[i__];
     }
 
 /*     Seek the value of the angle that minimizes Q. */
@@ -253,31 +253,31 @@ L120:
     temp = twopi / (doublereal) (iu + 1);
     i__1 = iu;
     for (i__ = 1; i__ <= i__1; ++i__) {
-	angle = (doublereal) i__ * temp;
-	cth = cos(angle);
-	sth = sin(angle);
-	qnew = (sg + cf * cth) * cth + (dg + dhs * cth) * sth;
-	if (qnew < qmin) {
-	    qmin = qnew;
-	    isave = i__;
-	    tempa = qsav;
-	} else if (i__ == isave + 1) {
-	    tempb = qnew;
-	}
+  angle = (doublereal) i__ * temp;
+  cth = cos(angle);
+  sth = sin(angle);
+  qnew = (sg + cf * cth) * cth + (dg + dhs * cth) * sth;
+  if (qnew < qmin) {
+      qmin = qnew;
+      isave = i__;
+      tempa = qsav;
+  } else if (i__ == isave + 1) {
+      tempb = qnew;
+  }
 /* L140: */
-	qsav = qnew;
+  qsav = qnew;
     }
     if ((doublereal) isave == zero) {
-	tempa = qnew;
+  tempa = qnew;
     }
     if (isave == iu) {
-	tempb = qbeg;
+  tempb = qbeg;
     }
     angle = zero;
     if (tempa != tempb) {
-	tempa -= qmin;
-	tempb -= qmin;
-	angle = half * (tempa - tempb) / (tempa + tempb);
+  tempa -= qmin;
+  tempb -= qmin;
+  angle = half * (tempa - tempb) / (tempa + tempb);
     }
     angle = temp * ((doublereal) isave + angle);
 
@@ -289,17 +289,17 @@ L120:
     gg = zero;
     i__1 = *n;
     for (i__ = 1; i__ <= i__1; ++i__) {
-	step[i__] = cth * step[i__] + sth * d__[i__];
-	hs[i__] = cth * hs[i__] + sth * hd[i__];
+  step[i__] = cth * step[i__] + sth * d__[i__];
+  hs[i__] = cth * hs[i__] + sth * hd[i__];
 /* L150: */
 /* Computing 2nd power */
-	d__1 = g[i__] + hs[i__];
-	gg += d__1 * d__1;
+  d__1 = g[i__] + hs[i__];
+  gg += d__1 * d__1;
     }
     qred += reduc;
     ratio = reduc / qred;
     if (iterc < itermax && ratio > .01) {
-	goto L90;
+  goto L90;
     }
 L160:
     return 0;
@@ -313,41 +313,41 @@ L170:
     i__1 = *n;
     for (i__ = 1; i__ <= i__1; ++i__) {
 /* L180: */
-	hd[i__] = zero;
+  hd[i__] = zero;
     }
     i__1 = *npt;
     for (k = 1; k <= i__1; ++k) {
-	temp = zero;
-	i__2 = *n;
-	for (j = 1; j <= i__2; ++j) {
+  temp = zero;
+  i__2 = *n;
+  for (j = 1; j <= i__2; ++j) {
 /* L190: */
-	    temp += xpt[k + j * xpt_dim1] * d__[j];
-	}
-	temp *= pq[k];
-	i__2 = *n;
-	for (i__ = 1; i__ <= i__2; ++i__) {
+      temp += xpt[k + j * xpt_dim1] * d__[j];
+  }
+  temp *= pq[k];
+  i__2 = *n;
+  for (i__ = 1; i__ <= i__2; ++i__) {
 /* L200: */
-	    hd[i__] += temp * xpt[k + i__ * xpt_dim1];
-	}
+      hd[i__] += temp * xpt[k + i__ * xpt_dim1];
+  }
     }
     ih = 0;
     i__2 = *n;
     for (j = 1; j <= i__2; ++j) {
-	i__1 = j;
-	for (i__ = 1; i__ <= i__1; ++i__) {
-	    ++ih;
-	    if (i__ < j) {
-		hd[j] += hq[ih] * d__[i__];
-	    }
+  i__1 = j;
+  for (i__ = 1; i__ <= i__1; ++i__) {
+      ++ih;
+      if (i__ < j) {
+  	hd[j] += hq[ih] * d__[i__];
+      }
 /* L210: */
-	    hd[i__] += hq[ih] * d__[j];
-	}
+      hd[i__] += hq[ih] * d__[j];
+  }
     }
     if (iterc == 0) {
-	goto L20;
+  goto L20;
     }
     if (iterc <= itersw) {
-	goto L50;
+  goto L50;
     }
     goto L120;
 } /* trsapp_ */

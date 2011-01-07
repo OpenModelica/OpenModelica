@@ -9,7 +9,7 @@ VertexID get_fpred(VertexID u, const TaskGraph &g,map<VertexID,VertexID>*fpred)
   elt = fpred->find(u);
   if (elt == fpred->end()) {
     cerr << "Error finding fpred value for node "
-	 << getTaskID(u,&g) << endl;
+   << getTaskID(u,&g) << endl;
     exit(-1);
   }
   return elt->second;
@@ -19,7 +19,7 @@ double get_est(VertexID u, const TaskGraph &g,map<VertexID,double>* est) {
   elt = est->find(u);
   if (elt == est->end()) {
     cerr << "Error finding est value for node "
-	 << getTaskID(u,&g) << endl;
+   << getTaskID(u,&g) << endl;
     exit(-1);
   }
   return elt->second;
@@ -31,7 +31,7 @@ double get_ect(VertexID u, const TaskGraph &g,map<VertexID,double>*ect) {
   elt = ect->find(u);
   if (elt == ect->end()) {
     cerr << "Error finding est value for node "
-	 << getTaskID(u,&g) << endl;
+   << getTaskID(u,&g) << endl;
     exit(-1);
   }
   return elt->second;
@@ -43,7 +43,7 @@ double get_level(VertexID u, const TaskGraph &g,map<VertexID,double>*level) {
   elt = level->find(u);
   if (elt == level->end()) {
     cerr << "Error finding level value for node "
-	 << getTaskID(u,&g) << endl;
+   << getTaskID(u,&g) << endl;
     exit(-1);
   }
   return elt->second;
@@ -54,7 +54,7 @@ double get_lst(VertexID u, const TaskGraph &g,map<VertexID,double> *lst) {
   elt=lst->find(u);
   if (elt == lst->end()) {
     cerr << "Error finding lst value for node "
-	 << getTaskID(u,&g) << endl;
+   << getTaskID(u,&g) << endl;
     exit(-1);
   }
   return elt->second;
@@ -65,7 +65,7 @@ double get_lct(VertexID u, const TaskGraph &g, map<VertexID,double>*lct) {
   elt=lct->find(u);
   if (elt == lct->end()) {
     cerr << "Error finding lct value for node "
-	 << getTaskID(u,&g) << endl;
+   << getTaskID(u,&g) << endl;
     exit(-1);
   }
   return elt->second;
@@ -114,9 +114,9 @@ void Schedule::tdsPass1()
   //  cerr << "Created visitor." << endl;
 
   reverse_depth_first_search(*m_taskgraph,
-			     vis,
-			     get(vertex_color, *m_taskgraph),
-			     m_end);
+  		     vis,
+  		     get(vertex_color, *m_taskgraph),
+  		     m_end);
 }
 
 void Schedule::tdsPass2()
@@ -215,27 +215,27 @@ void Schedule::tdsPass3()
       //      cerr << "Scheduling. x= " << getTaskID(x,m_taskgraph) << " y= " << getTaskID(y,m_taskgraph) << endl;
       cost = getExecCost(y,m_taskgraph);
       if (isAssigned(y)!= -1) {
-	if (lst(x) - lct(y) >= cost) {
-	  for (tie(p,p_end) = parents(x,*m_taskgraph); p != p_end; p++) {
-	    if (isAssigned(*p)==-1) {
-	      y = *p;
-	      break;
-	    }
-	  }
-	} else {
-	  for (tie(p,p_end) = parents(x,*m_taskgraph); p != p_end; p++) {
-	    if (*p != y) {
-	      z = *p;
-	      if (ect(y) + cost == ect(z)+getExecCost(*p,m_taskgraph) && isAssigned(z)==-1) {
-		y = z;
-		break;
-	      }
-	    }
-	  }
-	}
+  if (lst(x) - lct(y) >= cost) {
+    for (tie(p,p_end) = parents(x,*m_taskgraph); p != p_end; p++) {
+      if (isAssigned(*p)==-1) {
+        y = *p;
+        break;
+      }
+    }
+  } else {
+    for (tie(p,p_end) = parents(x,*m_taskgraph); p != p_end; p++) {
+      if (*p != y) {
+        z = *p;
+        if (ect(y) + cost == ect(z)+getExecCost(*p,m_taskgraph) && isAssigned(z)==-1) {
+  	y = z;
+  	break;
+        }
+      }
+    }
+  }
       }
       if (y != m_start && y != m_end)
-	assignProcessor(y,i);
+  assignProcessor(y,i);
       x=y;
     }
     if (in_degree(x,*m_taskgraph) == 0) {
@@ -244,14 +244,14 @@ void Schedule::tdsPass3()
       x = m_queue->top(); m_queue->pop();
       //      cerr << " x=" << getTaskID(x,m_taskgraph) << endl;
       while(isAssigned(x)!=-1) {
-	if (m_queue->empty()) break;
-	//	cerr << getTaskID(x,m_taskgraph) << " assigned, skipping" <<  endl;
-	x = m_queue->top(); m_queue->pop();
+  if (m_queue->empty()) break;
+  //	cerr << getTaskID(x,m_taskgraph) << " assigned, skipping" <<  endl;
+  x = m_queue->top(); m_queue->pop();
       }
       i = newProcessor();
       //      cerr << getTaskID(x,m_taskgraph) << " assigned: " << isAssigned(x) <<  endl;
       if (isAssigned(x)==-1)
-	assignProcessor(x,i);
+  assignProcessor(x,i);
     }
   }
 }
@@ -294,14 +294,14 @@ int Schedule::mergeTasks(void)
     //    cerr << i->second << " :procCost =" << procCost << endl;
     if (!merged[i->second]) {
       if (min_cost > procCost) {
-	lowest = i->second;
-	min_cost = procCost;
+  lowest = i->second;
+  min_cost = procCost;
       }
     }
     if (!merged[i->second]) {
       if (max_cost < procCost) {
-	highest = i->second;
-	max_cost = procCost;
+  highest = i->second;
+  max_cost = procCost;
       }
     }
   }
@@ -313,7 +313,7 @@ int Schedule::mergeTasks(void)
     map<int,TaskList*>::iterator i; // Take first in queue n
     for( i = m_proclists.begin(); i != m_proclists.end(); i++) {
       if (i->second != lowest && !merged[i->second]) {
-	lowest = i->second; break;
+  lowest = i->second; break;
       }
     }
     if (highest == lowest) { // Still same, mark as merged and restart
@@ -388,16 +388,16 @@ void Schedule::tdsPass4()
 
       while (m_nproc < numProc) {
 
-	temp = mergeTasks();
+  temp = mergeTasks();
 
-	if (temp == -1) {
-	  //cerr << "temp == -1, problem?" << endl;
+  if (temp == -1) {
+    //cerr << "temp == -1, problem?" << endl;
 
-	} else {
-	  numProc-= temp;
-	  //	  cerr << "reduced by " << temp << " to " << numProc
-	  //	       << " (" << m_proclists.size() << ")" << endl;
-	}
+  } else {
+    numProc-= temp;
+    //	  cerr << "reduced by " << temp << " to " << numProc
+    //	       << " (" << m_proclists.size() << ")" << endl;
+  }
       }
   }
   if (m_nproc > numProc) {
@@ -422,12 +422,12 @@ void Schedule::reorderTaskLists()
     while(!t.empty()) {
       VertexID task = t.top(); t.pop();
       if (m_assigned.find(task) == m_assigned.end()) {
-	cerr << "Error can not find m_assigned for task "<< task << endl;
-	exit(-1);
+  cerr << "Error can not find m_assigned for task "<< task << endl;
+  exit(-1);
       }
       set<int>* s =m_assigned.find(task)->second;
       if (s->erase(oldProcNo)>0) {
-	s->insert(p);
+  s->insert(p);
       }
     }
     newMap[p]=i->second;
@@ -456,14 +456,14 @@ TaskList * Schedule::get_tasklist(int processor)
 {
   if (processor < 0 || processor > (int)m_proclists.size()) {
     cerr << "Error, processor no. out of bounds. processor =" << processor
-	 << " proclist size= " << m_proclists.size() << endl;
+   << " proclist size= " << m_proclists.size() << endl;
     exit(-1);
   }
 
   map<int,TaskList*>::iterator i=m_proclists.find(processor);
   if (i == m_proclists.end()) {
     cerr<< "get_tasklist: Error no proclist for processor " << processor
-	<< " proclist size = " << m_proclists.size() << endl;
+  << " proclist size = " << m_proclists.size() << endl;
     exit(-1);
   }
   return i->second;
@@ -495,7 +495,7 @@ void Schedule::printSchedule(ostream &os)
       VertexID task=t.top();
       t.pop();
       os << getTaskID(task,m_taskgraph) << ":"<<task<< " (" << m_level[task] << ", "
-	 << getExecCost(task,m_taskgraph) << ") ";
+   << getExecCost(task,m_taskgraph) << ") ";
     }
     os << endl;
   }

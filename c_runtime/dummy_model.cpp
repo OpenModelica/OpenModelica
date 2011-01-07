@@ -80,9 +80,9 @@ const char* getName( double* ptr)
 }
 
 static char init_fixed[NX+NX+NY+NP]={
-	1/*h*/, 1/*v*/, 1/*default*/, 1/*default*/, 
-	0/*flying*/, 0/*impact*/, 0/*v_new*/, 
-	0/*foo*/, 1/*e*/, 1/*g*/
+  1/*h*/, 1/*v*/, 1/*default*/, 1/*default*/, 
+  0/*flying*/, 0/*impact*/, 0/*v_new*/, 
+  0/*foo*/, 1/*e*/, 1/*g*/
 };
 
 char var_attr[NX+NY+NP]={/*h:*/1+0, /*v:*/1+0, /*flying:*/8+16, /*impact:*/8+16, 
@@ -194,7 +194,7 @@ DATA* initializeDataStruc(DATA_FLAGS flags)
   }
 
   if (flags & PARAMETERS && returnData->stringVariables.nParameters) {
-  	  returnData->stringVariables.parameters = (char**)malloc(sizeof(char*)*returnData->stringVariables.nParameters);
+      returnData->stringVariables.parameters = (char**)malloc(sizeof(char*)*returnData->stringVariables.nParameters);
       assert(returnData->stringVariables.parameters);
       memset(returnData->stringVariables.parameters,0,sizeof(char*)*returnData->stringVariables.nParameters);
   } else {

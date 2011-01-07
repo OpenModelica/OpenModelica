@@ -38,22 +38,22 @@ class ErrorMessage {
 
 public:
   ErrorMessage(long errorID,
-	       std::string type,
-	       std::string severity,
-	       std::string message,
-	       std::list<std::string> &tokens);
+         std::string type,
+         std::string severity,
+         std::string message,
+         std::list<std::string> &tokens);
 
   ErrorMessage(long errorID,
-	       std::string type,
-	       std::string severity, 
-	       std::string message,
-	       std::list<std::string> &tokens,
-	       long startLineNo,
-	       long startColumnNo,
-	       long endLineNo,
-	       long endColumnNo,
-	       bool isReadOnly,	       
-	       std::string filename);
+         std::string type,
+         std::string severity, 
+         std::string message,
+         std::list<std::string> &tokens,
+         long startLineNo,
+         long startColumnNo,
+         long endLineNo,
+         long endColumnNo,
+         bool isReadOnly,	       
+         std::string filename);
 
   long getID() const { return errorID_; };
   

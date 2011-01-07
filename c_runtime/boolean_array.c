@@ -297,20 +297,20 @@ void indexed_assign_boolean_array(boolean_array_t* source,
     idx_size = size_alloc(dest_spec->ndims);
 
     for (i = 0; i < dest_spec->ndims; ++i) {
-	idx_vec1[i] = 0;
+  idx_vec1[i] = 0;
 
-	if (dest_spec->index[i])
+  if (dest_spec->index[i])
             idx_size[i] = imax(dest_spec->dim_size[i],1);
-	else
+  else
             idx_size[i] = dest->dim_size[i];
     }
 
     quit = 0;
     while (1) {
-	for (i = 0, j = 0; i < dest_spec->ndims; ++i) {
-	    if (dest_spec->dim_size[i] != 0) {
-		idx_vec2[j] = idx_vec1[i];
-		++j;
+  for (i = 0, j = 0; i < dest_spec->ndims; ++i) {
+      if (dest_spec->dim_size[i] != 0) {
+  	idx_vec2[j] = idx_vec1[i];
+  	++j;
             }
         }
         boolean_set(dest, calc_base_index_spec(dest->ndims, idx_vec1,
@@ -318,9 +318,9 @@ void indexed_assign_boolean_array(boolean_array_t* source,
                     boolean_get(source, calc_base_index(source->ndims,
                                                         idx_vec2, source)));
 
-	quit = next_index(dest_spec->ndims, idx_vec1, idx_size);
+  quit = next_index(dest_spec->ndims, idx_vec1, idx_size);
 
-	if (quit) break;
+  if (quit) break;
     }
 
     restore_memory_state(mem_state);

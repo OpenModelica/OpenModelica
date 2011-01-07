@@ -21,12 +21,12 @@
 
 struct SimulationStatus
 {
-	enum type
-	{
-		RUNNING,
-		PAUSED,
-		STOPPED
-	};
+  enum type
+  {
+  	RUNNING,
+  	PAUSED,
+  	STOPPED
+  };
 };
 
 extern SimulationStatus::type simulationStatus;

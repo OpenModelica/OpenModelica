@@ -30,7 +30,7 @@
  */
 
 package ClassLoader
-" file:	 ClassLoader.mo
+" file:   ClassLoader.mo
   package:      ClassLoader
   description: Loading of classes from $OPENMODELICALIBRARY.
 

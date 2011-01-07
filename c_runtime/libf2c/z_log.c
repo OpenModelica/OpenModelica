@@ -27,9 +27,9 @@ to be zero.  The weird name is unlikely to collide with anything.)
 
 An example (provided by Ulrich Jakobus) where the bug fix matters is
 
-	double complex a, b
-	a = (.1099557428756427618354862829619, .9857360542953131909982289471372)
-	b = log(a)
+  double complex a, b
+  a = (.1099557428756427618354862829619, .9857360542953131909982289471372)
+  b = log(a)
 
 An alternative to the fix below would be to use 53-bit rounding precision,
 but the means of specifying this 80x87 feature are highly unportable.
@@ -53,69 +53,69 @@ VOID z_log(r, z) doublecomplex *r, *z;
 void z_log(doublecomplex *r, doublecomplex *z)
 #endif
 {
-	double s, s0, t, t2, u, v;
-	double zi = z->i, zr = z->r;
+  double s, s0, t, t2, u, v;
+  double zi = z->i, zr = z->r;
 #ifdef BYPASS_GCC_COMPARE_BUG
-	double (*diff) ANSI((double*,double*));
+  double (*diff) ANSI((double*,double*));
 #endif
 
-	r->i = atan2(zi, zr);
+  r->i = atan2(zi, zr);
 #ifdef Pre20000310
-	r->r = log( f__cabs( zr, zi ) );
+  r->r = log( f__cabs( zr, zi ) );
 #else
-	if (zi < 0)
-		zi = -zi;
-	if (zr < 0)
-		zr = -zr;
-	if (zr < zi) {
-		t = zi;
-		zi = zr;
-		zr = t;
-		}
-	t = zi/zr;
-	s = zr * sqrt(1 + t*t);
-	/* now s = f__cabs(zi,zr), and zr = |zr| >= |zi| = zi */
-	if ((t = s - 1) < 0)
-		t = -t;
-	if (t > .01)
-		r->r = log(s);
-	else {
+  if (zi < 0)
+  	zi = -zi;
+  if (zr < 0)
+  	zr = -zr;
+  if (zr < zi) {
+  	t = zi;
+  	zi = zr;
+  	zr = t;
+  	}
+  t = zi/zr;
+  s = zr * sqrt(1 + t*t);
+  /* now s = f__cabs(zi,zr), and zr = |zr| >= |zi| = zi */
+  if ((t = s - 1) < 0)
+  	t = -t;
+  if (t > .01)
+  	r->r = log(s);
+  else {
 
 #ifdef Comment
 
-	log(1+x) = x - x^2/2 + x^3/3 - x^4/4 + - ...
+  log(1+x) = x - x^2/2 + x^3/3 - x^4/4 + - ...
 
-		 = x(1 - x/2 + x^2/3 -+...)
+  	 = x(1 - x/2 + x^2/3 -+...)
 
-	[sqrt(y^2 + z^2) - 1] * [sqrt(y^2 + z^2) + 1] = y^2 + z^2 - 1, so
+  [sqrt(y^2 + z^2) - 1] * [sqrt(y^2 + z^2) + 1] = y^2 + z^2 - 1, so
 
-	sqrt(y^2 + z^2) - 1 = (y^2 + z^2 - 1) / [sqrt(y^2 + z^2) + 1]
+  sqrt(y^2 + z^2) - 1 = (y^2 + z^2 - 1) / [sqrt(y^2 + z^2) + 1]
 
 #endif /*Comment*/
 
 #ifdef BYPASS_GCC_COMPARE_BUG
-		if (!(diff = gcc_bug_bypass_diff_F2C))
-			diff = diff1;
+  	if (!(diff = gcc_bug_bypass_diff_F2C))
+  		diff = diff1;
 #endif
-		t = ((zr*zr - 1.) + zi*zi) / (s + 1);
-		t2 = t*t;
-		s = 1. - 0.5*t;
-		u = v = 1;
-		do {
-			s0 = s;
-			u *= t2;
-			v += 2;
-			s += u/v - t*u/(v+1);
-			}
+  	t = ((zr*zr - 1.) + zi*zi) / (s + 1);
+  	t2 = t*t;
+  	s = 1. - 0.5*t;
+  	u = v = 1;
+  	do {
+  		s0 = s;
+  		u *= t2;
+  		v += 2;
+  		s += u/v - t*u/(v+1);
+  		}
 #ifdef BYPASS_GCC_COMPARE_BUG
-			while(s - s0 > 1e-18 || (*diff)(&s,&s0) > 0.);
+  		while(s - s0 > 1e-18 || (*diff)(&s,&s0) > 0.);
 #else
-			while(s > s0);
+  		while(s > s0);
 #endif
-		r->r = s*t;
-		}
+  	r->r = s*t;
+  	}
 #endif
-	}
+  }
 #ifdef __cplusplus
 }
 #endif

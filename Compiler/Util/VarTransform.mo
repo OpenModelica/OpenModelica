@@ -30,7 +30,7 @@
  */
 
 package VarTransform
-" file:	       VarTransform.mo
+" file:         VarTransform.mo
   package:     VarTransform
   description: VarTransform contains a Binary Tree representation of variable replacements.
 
@@ -119,9 +119,9 @@ protected import Util;
 public function applyReplacementsDAE "Apply a set of replacement rules on a DAE "
   input DAE.DAElist dae;
   input VariableReplacements repl;
-	input Option<FuncTypeExp_ExpToBoolean> condExpFunc;
-	output DAE.DAElist outDae;
-	partial function FuncTypeExp_ExpToBoolean
+  input Option<FuncTypeExp_ExpToBoolean> condExpFunc;
+  output DAE.DAElist outDae;
+  partial function FuncTypeExp_ExpToBoolean
     input DAE.Exp inExp;
     output Boolean outBoolean;
   end FuncTypeExp_ExpToBoolean;
@@ -141,8 +141,8 @@ protected function applyReplacementsDAEFuncLst "help function to applyReplacemen
   input list<tuple<DAE.AvlKey,DAE.AvlValue>> funcLst;
   input VariableReplacements repl;
   input Option<FuncTypeExp_ExpToBoolean> condExpFunc;
-	output list<tuple<DAE.AvlKey,DAE.AvlValue>> outFuncLst;
-	partial function FuncTypeExp_ExpToBoolean
+  output list<tuple<DAE.AvlKey,DAE.AvlValue>> outFuncLst;
+  partial function FuncTypeExp_ExpToBoolean
     input DAE.Exp inExp;
     output Boolean outBoolean;
   end FuncTypeExp_ExpToBoolean;
@@ -160,11 +160,11 @@ algorithm
 end applyReplacementsDAEFuncLst;
 
 public function applyReplacementsDAEElts "Help function to applyReplacementsDAE, goes though the element list"
-	input list<DAE.Element> inDae;
-	input VariableReplacements repl;
-	input Option<FuncTypeExp_ExpToBoolean> condExpFunc;
-	output list<DAE.Element> outDae;
-	partial function FuncTypeExp_ExpToBoolean
+  input list<DAE.Element> inDae;
+  input VariableReplacements repl;
+  input Option<FuncTypeExp_ExpToBoolean> condExpFunc;
+  output list<DAE.Element> outDae;
+  partial function FuncTypeExp_ExpToBoolean
     input DAE.Exp inExp;
     output Boolean outBoolean;
   end FuncTypeExp_ExpToBoolean;
@@ -369,7 +369,7 @@ protected function applyReplacementsFunctions
   input VariableReplacements repl;
   input Option<FuncTypeExp_ExpToBoolean> condExpFunc;
   output list<DAE.Function> outFns;
-	partial function FuncTypeExp_ExpToBoolean
+  partial function FuncTypeExp_ExpToBoolean
     input DAE.Exp inExp;
     output Boolean outBoolean;
   end FuncTypeExp_ExpToBoolean;
@@ -1437,7 +1437,7 @@ When adding replacement rules, we might not have the correct type availible at t
 Then DAE.ET_OTHER() is used, so when replacing exp and finding DAE.ET_OTHER(), we use the
 type of the expression to be replaced instead.
 TODO: find out why array residual functions containing arrays as xloc[] does not work,
-	    doing that will allow us to use this function for all crefs."
+      doing that will allow us to use this function for all crefs."
   input DAE.Exp inExp;
   input DAE.ExpType inType;
   output DAE.Exp outExp;

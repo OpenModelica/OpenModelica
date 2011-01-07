@@ -30,7 +30,7 @@
  */
 
 package OptManager
-" file:	       OptManager.mo
+" file:         OptManager.mo
   Author:      BZ
   module:      OptManager
   description: Runtime options

@@ -1,13 +1,13 @@
 /* daux.f -- translated by f2c (version 20061008).
    You must link the resulting object file with libf2c:
-	on Microsoft Windows system, link with libf2c.lib;
-	on Linux or Unix systems, link with .../path/to/libf2c.a -lm
-	or, if you install libf2c.a in a standard place, with -lf2c -lm
-	-- in that order, at the end of the command line, as in
-		cc *.o -lf2c -lm
-	Source for libf2c is in /netlib/f2c/libf2c.zip, e.g.,
+  on Microsoft Windows system, link with libf2c.lib;
+  on Linux or Unix systems, link with .../path/to/libf2c.a -lm
+  or, if you install libf2c.a in a standard place, with -lf2c -lm
+  -- in that order, at the end of the command line, as in
+  	cc *.o -lf2c -lm
+  Source for libf2c is in /netlib/f2c/libf2c.zip, e.g.,
 
-		http://www.netlib.org/f2c/libf2c.zip
+  	http://www.netlib.org/f2c/libf2c.zip
 */
 
 #include "f2c.h"
@@ -34,7 +34,7 @@ L10:
     u *= .5;
     comp = u + 1.;
     if (comp != 1.) {
-	goto L10;
+  goto L10;
     }
     ret_val = u * 2.;
     return ret_val;
@@ -42,17 +42,17 @@ L10:
 } /* d1mach_ */
 
 /* Subroutine */ int xerrwv_(char *msg, integer *nmes, integer *nerr, integer 
-	*level, integer *ni, integer *i1, integer *i2, integer *nr, 
-	doublereal *r1, doublereal *r2, ftnlen msg_len)
+  *level, integer *ni, integer *i1, integer *i2, integer *nr, 
+  doublereal *r1, doublereal *r2, ftnlen msg_len)
 {
     /* Format strings */
     static char fmt_10[] = "(1x,80a1)";
     static char fmt_20[] = "(6x,\002In above message,  I1 =\002,i10)";
     static char fmt_30[] = "(6x,\002In above message,  I1 =\002,i10,3x,\002I"
-	    "2 =\002,i10)";
+      "2 =\002,i10)";
     static char fmt_40[] = "(6x,\002In above message,  R1 =\002,e21.13)";
     static char fmt_50[] = "(6x,\002In above,  R1 =\002,e21.13,3x,\002R2 "
-	    "=\002,e21.13)";
+      "=\002,e21.13)";
 
     /* System generated locals */
     integer i__1;
@@ -123,46 +123,46 @@ L10:
     mesflg = 1;
     lunit = 6;
     if (mesflg == 0) {
-	goto L100;
+  goto L100;
     }
 /* Write the message. --------------------------------------------------- */
     io___5.ciunit = lunit;
     s_wsfe(&io___5);
     i__1 = *nmes;
     for (i__ = 1; i__ <= i__1; ++i__) {
-	do_fio(&c__1, msg + i__, (ftnlen)1);
+  do_fio(&c__1, msg + i__, (ftnlen)1);
     }
     e_wsfe();
     if (*ni == 1) {
-	io___7.ciunit = lunit;
-	s_wsfe(&io___7);
-	do_fio(&c__1, (char *)&(*i1), (ftnlen)sizeof(integer));
-	e_wsfe();
+  io___7.ciunit = lunit;
+  s_wsfe(&io___7);
+  do_fio(&c__1, (char *)&(*i1), (ftnlen)sizeof(integer));
+  e_wsfe();
     }
     if (*ni == 2) {
-	io___8.ciunit = lunit;
-	s_wsfe(&io___8);
-	do_fio(&c__1, (char *)&(*i1), (ftnlen)sizeof(integer));
-	do_fio(&c__1, (char *)&(*i2), (ftnlen)sizeof(integer));
-	e_wsfe();
+  io___8.ciunit = lunit;
+  s_wsfe(&io___8);
+  do_fio(&c__1, (char *)&(*i1), (ftnlen)sizeof(integer));
+  do_fio(&c__1, (char *)&(*i2), (ftnlen)sizeof(integer));
+  e_wsfe();
     }
     if (*nr == 1) {
-	io___9.ciunit = lunit;
-	s_wsfe(&io___9);
-	do_fio(&c__1, (char *)&(*r1), (ftnlen)sizeof(doublereal));
-	e_wsfe();
+  io___9.ciunit = lunit;
+  s_wsfe(&io___9);
+  do_fio(&c__1, (char *)&(*r1), (ftnlen)sizeof(doublereal));
+  e_wsfe();
     }
     if (*nr == 2) {
-	io___10.ciunit = lunit;
-	s_wsfe(&io___10);
-	do_fio(&c__1, (char *)&(*r1), (ftnlen)sizeof(doublereal));
-	do_fio(&c__1, (char *)&(*r2), (ftnlen)sizeof(doublereal));
-	e_wsfe();
+  io___10.ciunit = lunit;
+  s_wsfe(&io___10);
+  do_fio(&c__1, (char *)&(*r1), (ftnlen)sizeof(doublereal));
+  do_fio(&c__1, (char *)&(*r2), (ftnlen)sizeof(doublereal));
+  e_wsfe();
     }
 /* Abort the run if LEVEL = 2. ------------------------------------------ */
 L100:
     if (*level != 2) {
-	return 0;
+  return 0;
     }
     s_stop("", (ftnlen)0);
 /* ----------------------- End of Subroutine XERRWV ---------------------- */
@@ -175,9 +175,9 @@ integer i1mach_(integer *i__)
 
     static integer sanity = 987;
     static struct {
-	integer e_1[16];
-	} equiv_0 = { 5, 6, 7, 6, 32, 4, 2, 31, 2147483647, 2, 24, -125, 128, 
-		53, -1021, 1024 };
+  integer e_1[16];
+  } equiv_0 = { 5, 6, 7, 6, 32, 4, 2, 31, 2147483647, 2, 24, -125, 128, 
+  	53, -1021, 1024 };
 
 
     /* Format strings */
@@ -694,17 +694,17 @@ integer i1mach_(integer *i__)
 
 /*  ***  ISSUE STOP 777 IF ALL DATA STATEMENTS ARE COMMENTED... */
     if (sanity != 987) {
-	s_stop("777", (ftnlen)3);
+  s_stop("777", (ftnlen)3);
     }
     if (*i__ < 1 || *i__ > 16) {
-	goto L10;
+  goto L10;
     }
 
     ret_val = imach[*i__ - 1];
 /* /6S */
 /* /7S */
     if (*i__ == 6) {
-	ret_val = 1;
+  ret_val = 1;
     }
 /* / */
     return ret_val;

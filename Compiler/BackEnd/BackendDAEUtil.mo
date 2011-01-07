@@ -30,7 +30,7 @@
  */
 
 package BackendDAEUtil
-" file:	       BackendDAEUtil.mo
+" file:         BackendDAEUtil.mo
   package:     BackendDAEUtil 
   description: BackendDAEUtil comprised functions for BackendDAE data types.
 
@@ -192,24 +192,24 @@ algorithm
 end checkBackendDAEExp;
 
 protected function traversecheckBackendDAEExp
-	input tuple<DAE.Exp, tuple<BackendDAE.Variables,list<DAE.ComponentRef>>> inTuple;
-	output tuple<DAE.Exp, tuple<BackendDAE.Variables,list<DAE.ComponentRef>>> outTuple;
+  input tuple<DAE.Exp, tuple<BackendDAE.Variables,list<DAE.ComponentRef>>> inTuple;
+  output tuple<DAE.Exp, tuple<BackendDAE.Variables,list<DAE.ComponentRef>>> outTuple;
 algorithm
-	outTuple := matchcontinue(inTuple)
-		local
-			DAE.Exp e;
-			BackendDAE.Variables vars,vars1;
-			DAE.ComponentRef cr;
-			list<DAE.ComponentRef> crefs,crefs1;
-			list<DAE.Exp> expl;
-		  list<DAE.ExpVar> varLst;
-		  DAE.Ident ident;
-		  BackendDAE.Var backendVar;
+  outTuple := matchcontinue(inTuple)
+    local
+    	DAE.Exp e;
+    	BackendDAE.Variables vars,vars1;
+    	DAE.ComponentRef cr;
+    	list<DAE.ComponentRef> crefs,crefs1;
+    	list<DAE.Exp> expl;
+      list<DAE.ExpVar> varLst;
+      DAE.Ident ident;
+      BackendDAE.Var backendVar;
 
-		
-		// special case for time, it is never part of the equation system	
-		case ((e as DAE.CREF(componentRef = DAE.CREF_IDENT(ident="time")),(vars,crefs)))
-		  then ((e, (vars,crefs)));
+    
+    // special case for time, it is never part of the equation system	
+    case ((e as DAE.CREF(componentRef = DAE.CREF_IDENT(ident="time")),(vars,crefs)))
+      then ((e, (vars,crefs)));
     
     // Special Case for Records
     case ((e as DAE.CREF(componentRef = cr,ty= DAE.ET_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_))),(vars,crefs)))
@@ -220,35 +220,35 @@ algorithm
         ((e, (vars1,crefs1)));  
     
     // case for Reductions    
-		case ((e as DAE.REDUCTION(ident = ident),(vars,crefs)))
-		  equation
-		    // add ident to vars
-		    cr = ComponentReference.makeCrefIdent(ident,DAE.ET_INT(),{});
-		    backendVar = BackendDAE.VAR(cr,BackendDAE.VARIABLE(),DAE.BIDIR(),BackendDAE.INT(),NONE(),NONE(),{},0,
-		                 DAE.emptyElementSource,NONE(),NONE(),DAE.NON_CONNECTOR(),DAE.NON_STREAM_CONNECTOR());
-		    vars = BackendVariable.addVar(backendVar,vars);
-		  then
-		    ((e, (vars,crefs)));
-		
-		// case for functionpointers    
-		case ((e as DAE.CREF(ty=DAE.ET_FUNCTION_REFERENCE_FUNC(builtin=_)),(vars,crefs)))
-		  then
-		    ((e, (vars,crefs)));		    
-		
-		case ((e as DAE.CREF(componentRef = cr),(vars,crefs)))
-		  equation
-		     (_,_) = BackendVariable.getVar(cr, vars);
-		  then
-		    ((e, (vars,crefs)));
-		
-		case ((e as DAE.CREF(componentRef = cr),(vars,crefs)))
-		  equation
-		     failure((_,_) = BackendVariable.getVar(cr, vars));
-		  then
-		    ((e, (vars,cr::crefs)));
-		
-		case inTuple then inTuple;
-	end matchcontinue;
+    case ((e as DAE.REDUCTION(ident = ident),(vars,crefs)))
+      equation
+        // add ident to vars
+        cr = ComponentReference.makeCrefIdent(ident,DAE.ET_INT(),{});
+        backendVar = BackendDAE.VAR(cr,BackendDAE.VARIABLE(),DAE.BIDIR(),BackendDAE.INT(),NONE(),NONE(),{},0,
+                     DAE.emptyElementSource,NONE(),NONE(),DAE.NON_CONNECTOR(),DAE.NON_STREAM_CONNECTOR());
+        vars = BackendVariable.addVar(backendVar,vars);
+      then
+        ((e, (vars,crefs)));
+    
+    // case for functionpointers    
+    case ((e as DAE.CREF(ty=DAE.ET_FUNCTION_REFERENCE_FUNC(builtin=_)),(vars,crefs)))
+      then
+        ((e, (vars,crefs)));		    
+    
+    case ((e as DAE.CREF(componentRef = cr),(vars,crefs)))
+      equation
+         (_,_) = BackendVariable.getVar(cr, vars);
+      then
+        ((e, (vars,crefs)));
+    
+    case ((e as DAE.CREF(componentRef = cr),(vars,crefs)))
+      equation
+         failure((_,_) = BackendVariable.getVar(cr, vars));
+      then
+        ((e, (vars,cr::crefs)));
+    
+    case inTuple then inTuple;
+  end matchcontinue;
 end traversecheckBackendDAEExp;
 
 /*************************************************

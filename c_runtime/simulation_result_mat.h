@@ -63,16 +63,16 @@ private:
 
   // helper functions  
   static long flattenStrBuf(int rank, const int *dims, struct omc_varInfo* src[],
-			    char* &dest, int& longest, int& nstrings, 
-			    bool fixNames, bool useComment);
+  		    char* &dest, int& longest, int& nstrings, 
+  		    bool fixNames, bool useComment);
   void writeMatVer4MatrixHeader(const char *name, int rows, int cols,
-				bool is_text);
+  			bool is_text);
   void writeMatVer4Matrix(const char *name, int rows, int cols, 
-			  const void *data, bool is_text);
+  		  const void *data, bool is_text);
   static void generateDataInfo(double* &dataInfo, int& rows, int& cols,
-			       const sim_DATA *mdl_data, int nVars, int nParams);
+  		       const sim_DATA *mdl_data, int nVars, int nParams);
   static void generateData_1(double* &data_1, int& rows, int& cols,
-			     const sim_DATA *mdl_data, double tstart, double tstop);
+  		     const sim_DATA *mdl_data, double tstart, double tstop);
 };
 
 #endif /* _SIMULATION_RESULT_MAT_H_ */

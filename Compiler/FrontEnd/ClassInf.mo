@@ -30,11 +30,11 @@
  */
 
 package ClassInf
-" file:	 ClassInf.mo
+" file:   ClassInf.mo
   package:      ClassInf
   description: Class restrictions
 
-  RCS:	 $Id$
+  RCS:   $Id$
 
   This module deals with class inference, i.e. determining if a
   class definition adhers to one of the class restrictions, and, if
@@ -125,13 +125,13 @@ uniontype State "- Machine states, the string contains the classname."
     Absyn.Path path;
   end TYPE_ENUM;
 
-	record EXTERNAL_OBJ
-	  Absyn.Path path;
-	end EXTERNAL_OBJ;
+  record EXTERNAL_OBJ
+    Absyn.Path path;
+  end EXTERNAL_OBJ;
 
-	/* MetaModelica extension */
-	record META_TUPLE
-	  Absyn.Path path;
+  /* MetaModelica extension */
+  record META_TUPLE
+    Absyn.Path path;
   end META_TUPLE;
 
   record META_LIST

@@ -27,25 +27,25 @@ void UnitParserExtImpl__checkpoint(void)
 
 void UnitParserExtImpl__rollback(void)
 {
-	if (rollbackStack.size() == 0) {
-		cerr << "Error, rollback on empty stack" << endl;
-		exit(1);
-	}
-	UnitParser * old = rollbackStack.top();
-	rollbackStack.pop();
-	delete unitParser;
-	unitParser=old;
+  if (rollbackStack.size() == 0) {
+  	cerr << "Error, rollback on empty stack" << endl;
+  	exit(1);
+  }
+  UnitParser * old = rollbackStack.top();
+  rollbackStack.pop();
+  delete unitParser;
+  unitParser=old;
 }
 
 void UnitParserExtImpl__clear(void)
 {
-	if (unitParser) delete unitParser;
-	unitParser = new UnitParser;
+  if (unitParser) delete unitParser;
+  unitParser = new UnitParser;
 }
 
 void UnitParserExtImpl__commit(void)
 {
-	unitParser->commit();
+  unitParser->commit();
 }
 
 void UnitParserExtImpl__registerWeight(const char *name, double weight)
@@ -58,9 +58,9 @@ void UnitParserExtImpl__addBase(const char *name)
 {
    //cout << "addBase(" << name << ")"<<endl;
    if (strcmp(name,"kg")==0) {
-	   unitParser->addBase("","",name,false);
+     unitParser->addBase("","",name,false);
    } else {
-	   unitParser->addBase("","",name,true);
+     unitParser->addBase("","",name,true);
    }
 }
 

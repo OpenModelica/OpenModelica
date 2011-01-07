@@ -30,7 +30,7 @@
  */
 
 package RTOpts
-" file:	       RTOpts.mo
+" file:         RTOpts.mo
   package:     RTOpts
   description: Runtime options
 

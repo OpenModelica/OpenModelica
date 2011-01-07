@@ -29,10 +29,10 @@ double get_lct(VertexID u, const TaskGraph &g, map<VertexID,double>*lct);
 class pass1_visitor : public boost::default_reverse_dfs_visitor {
 public:
   pass1_visitor(map<VertexID,double>*ect,
-		map<VertexID,double>*est,
-		map<VertexID,VertexID>*fpred) : m_ect(ect),
-						m_est(est),
-						m_fpred(fpred) { };
+  	map<VertexID,double>*est,
+  	map<VertexID,VertexID>*fpred) : m_ect(ect),
+  					m_est(est),
+  					m_fpred(fpred) { };
   void finish_vertex(VertexID u, const TaskGraph & g)
   {
     calc_est(u,g);
@@ -52,12 +52,12 @@ public:
       tie(p,p_end) = parents(u,g);
       maxVal = get_ect(*p,g,m_ect);
       for (; p != p_end; p++) {
-	for (tie(p2,p2_end) = parents(u,g); p2 != p2_end; p2++) {
-	  if (*p2 != *p) {
-	    maxVal = max(maxVal,get_ect(*p2,g,m_ect)+getExecCost(*p2,&g));
-	  }
-	}
-	minVal = min(minVal,maxVal);
+  for (tie(p2,p2_end) = parents(u,g); p2 != p2_end; p2++) {
+    if (*p2 != *p) {
+      maxVal = max(maxVal,get_ect(*p2,g,m_ect)+getExecCost(*p2,&g));
+    }
+  }
+  minVal = min(minVal,maxVal);
       }
       (*m_est)[u] = minVal;
     }
@@ -68,8 +68,8 @@ public:
     ParentsIterator p,p_end;
     for(tie(p,p_end) = parents(u,g); p != p_end; p++) {
       if (get_ect(u,g,m_ect) + getExecCost(u,&g) > maxVal) {
-	maxVal = get_ect(u,g,m_ect) + getExecCost(u,&g);
-	(*m_fpred)[u] = *p;
+  maxVal = get_ect(u,g,m_ect) + getExecCost(u,&g);
+  (*m_fpred)[u] = *p;
       }
     }
   };
@@ -105,14 +105,14 @@ protected:
 class pass2_visitor : public default_dfs_visitor {
 public:
   pass2_visitor(map<VertexID,double>*lst,
-		map<VertexID,double>*lct,
-		map<VertexID,double>*ect,
-		map<VertexID,double>*level,
-		map<VertexID,VertexID>*fpred) : m_lst(lst),
-						m_lct(lct),
-						m_ect(ect),
-						m_level(level),
-						m_fpred(fpred) { };
+  	map<VertexID,double>*lct,
+  	map<VertexID,double>*ect,
+  	map<VertexID,double>*level,
+  	map<VertexID,VertexID>*fpred) : m_lst(lst),
+  					m_lct(lct),
+  					m_ect(ect),
+  					m_level(level),
+  					m_fpred(fpred) { };
   void finish_vertex(VertexID u, const TaskGraph & g)
   {
     calc_lct(u,g);
@@ -133,11 +133,11 @@ public:
       (*m_level)[u] = getExecCost(u,&g);
     } else {
       for (tie(c,c_end)=children(u,g); c != c_end; c++) {
-	if (get_fpred(*c,g,m_fpred) == u) {
-	  min1 = min(min1,get_lst(*c,g,m_lst) - getExecCost(*c,&g));
-	} else {
-	  min2 = min(min2, get_lst(*c,g,m_lst));
-	}
+  if (get_fpred(*c,g,m_fpred) == u) {
+    min1 = min(min1,get_lst(*c,g,m_lst) - getExecCost(*c,&g));
+  } else {
+    min2 = min(min2, get_lst(*c,g,m_lst));
+  }
       }
       (*m_lct)[u] = min(min1,min2);
     }
@@ -168,7 +168,7 @@ class LevelCmp
 {
 public:
   LevelCmp(TaskGraph*tg, map<VertexID,double>*level) : m_level(level),
-						       m_taskgraph(tg) {};
+  					       m_taskgraph(tg) {};
   bool operator()(VertexID &v1,VertexID &v2)
   {
     return get_level(v1,*m_taskgraph,m_level) > get_level(v2,*m_taskgraph,m_level);
@@ -183,7 +183,7 @@ class InvLevelCmp
 {
 public:
   InvLevelCmp(TaskGraph*tg, map<VertexID,double>*level) : m_level(level),
-						       m_taskgraph(tg) {};
+  					       m_taskgraph(tg) {};
   bool operator()(VertexID &v1,VertexID &v2)
   {
     return get_level(v1,*m_taskgraph,m_level) < get_level(v2,*m_taskgraph,m_level);

@@ -175,8 +175,8 @@ Set the optional equationBound value"
 algorithm 
   oattr := matchcontinue (bindExp,attr)
     local
-     	Option<DAE.Exp> e1,e2,e3,e4,e5,e6;
-    	tuple<Option<DAE.Exp>, Option<DAE.Exp>> min;
+       Option<DAE.Exp> e1,e2,e3,e4,e5,e6;
+      tuple<Option<DAE.Exp>, Option<DAE.Exp>> min;
       Option<DAE.StateSelect> sSelectOption,sSelectOption2;
       Option<Boolean> ip,fn;
       String s;
@@ -245,135 +245,135 @@ public function splitDAEIntoVarsAndEquations
  and another one which has all the equations and algorithms but no variables.
  Note: the functions are copied to both dae's.
  "
-	input DAE.DAElist inDae;
-	output DAE.DAElist outDaeNoEqAllVars;
-	output DAE.DAElist outDaeAllEqNoVars;
+  input DAE.DAElist inDae;
+  output DAE.DAElist outDaeNoEqAllVars;
+  output DAE.DAElist outDaeAllEqNoVars;
 algorithm
-	(outDaeNoEqAllVars,outDaeAllEqNoVars) := matchcontinue(inDae)
-	  local
-	    DAE.Element v,e;
-	    list<DAE.Element> elts,elts2,elts22,elts1,elts11,elts3,elts33;
-	    String  id;
-	    DAE.ElementSource source "the origin of the element";
-	    Option<SCode.Comment> cmt;
+  (outDaeNoEqAllVars,outDaeAllEqNoVars) := matchcontinue(inDae)
+    local
+      DAE.Element v,e;
+      list<DAE.Element> elts,elts2,elts22,elts1,elts11,elts3,elts33;
+      String  id;
+      DAE.ElementSource source "the origin of the element";
+      Option<SCode.Comment> cmt;
 
-	  case(DAE.DAE({})) then  (DAE.DAE({}),DAE.DAE({}));
+    case(DAE.DAE({})) then  (DAE.DAE({}),DAE.DAE({}));
 
-	  case(DAE.DAE((v as DAE.VAR(componentRef=_))::elts))
-	    equation
-	      (DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts));
-	    then (DAE.DAE(v::elts2),DAE.DAE(elts3));
+    case(DAE.DAE((v as DAE.VAR(componentRef=_))::elts))
+      equation
+        (DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts));
+      then (DAE.DAE(v::elts2),DAE.DAE(elts3));
 
-	  // adrpo: TODO! FIXME! a DAE.COMP SHOULD NOT EVER BE HERE!
-	  case(DAE.DAE(DAE.COMP(id,elts1,source,cmt)::elts2))
-	    equation
-	      (DAE.DAE(elts11),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts1));
-	      (DAE.DAE(elts22),DAE.DAE(elts33)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts2));
-	      elts3 = listAppend(elts3,elts33);
-	    then (DAE.DAE(DAE.COMP(id,elts11,source,cmt)::elts22),DAE.DAE(elts3));
+    // adrpo: TODO! FIXME! a DAE.COMP SHOULD NOT EVER BE HERE!
+    case(DAE.DAE(DAE.COMP(id,elts1,source,cmt)::elts2))
+      equation
+        (DAE.DAE(elts11),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts1));
+        (DAE.DAE(elts22),DAE.DAE(elts33)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts2));
+        elts3 = listAppend(elts3,elts33);
+      then (DAE.DAE(DAE.COMP(id,elts11,source,cmt)::elts22),DAE.DAE(elts3));
 
-	  case(DAE.DAE((e as DAE.EQUATION(exp=_))::elts2))
-	    equation
-	      (DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts2));
-	    then (DAE.DAE(elts2),DAE.DAE(e::elts3));
+    case(DAE.DAE((e as DAE.EQUATION(exp=_))::elts2))
+      equation
+        (DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts2));
+      then (DAE.DAE(elts2),DAE.DAE(e::elts3));
 
-	  case(DAE.DAE((e as DAE.EQUEQUATION(cr1=_))::elts))
-	    equation
-	      (DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts));
-	    then (DAE.DAE(elts2),DAE.DAE(e::elts3));
+    case(DAE.DAE((e as DAE.EQUEQUATION(cr1=_))::elts))
+      equation
+        (DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts));
+      then (DAE.DAE(elts2),DAE.DAE(e::elts3));
 
-	  case(DAE.DAE((e as DAE.INITIALEQUATION(exp1=_))::elts))
-	    equation
-	      (DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts));
-	    then (DAE.DAE(elts2),DAE.DAE(e::elts3));
+    case(DAE.DAE((e as DAE.INITIALEQUATION(exp1=_))::elts))
+      equation
+        (DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts));
+      then (DAE.DAE(elts2),DAE.DAE(e::elts3));
 
-	  case(DAE.DAE((e as DAE.ARRAY_EQUATION(dimension=_))::elts))
-	    equation
-	      (DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts));
-	    then (DAE.DAE(elts2),DAE.DAE(e::elts3));
+    case(DAE.DAE((e as DAE.ARRAY_EQUATION(dimension=_))::elts))
+      equation
+        (DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts));
+      then (DAE.DAE(elts2),DAE.DAE(e::elts3));
 
-		case(DAE.DAE((e as DAE.INITIAL_ARRAY_EQUATION(dimension=_))::elts))
-			equation
-				(DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts));
-			then (DAE.DAE(elts2),DAE.DAE(e::elts3));
+    case(DAE.DAE((e as DAE.INITIAL_ARRAY_EQUATION(dimension=_))::elts))
+    	equation
+    		(DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts));
+    	then (DAE.DAE(elts2),DAE.DAE(e::elts3));
 
-	  case(DAE.DAE((e as DAE.COMPLEX_EQUATION(lhs=_))::elts))
-	    equation
-	      (DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts));
-	    then (DAE.DAE(elts2),DAE.DAE(e::elts3));
+    case(DAE.DAE((e as DAE.COMPLEX_EQUATION(lhs=_))::elts))
+      equation
+        (DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts));
+      then (DAE.DAE(elts2),DAE.DAE(e::elts3));
 
-	  case(DAE.DAE((e as DAE.INITIAL_COMPLEX_EQUATION(lhs=_))::elts))
-	    equation
-	      (DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts));
-	    then (DAE.DAE(elts2),DAE.DAE(e::elts3));
+    case(DAE.DAE((e as DAE.INITIAL_COMPLEX_EQUATION(lhs=_))::elts))
+      equation
+        (DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts));
+      then (DAE.DAE(elts2),DAE.DAE(e::elts3));
 
-	  case(DAE.DAE((e as DAE.INITIALDEFINE(componentRef=_))::elts))
-	    equation
-	      (DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts));
-	    then (DAE.DAE(elts2),DAE.DAE(e::elts3));
+    case(DAE.DAE((e as DAE.INITIALDEFINE(componentRef=_))::elts))
+      equation
+        (DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts));
+      then (DAE.DAE(elts2),DAE.DAE(e::elts3));
 
-	  case(DAE.DAE((e as DAE.DEFINE(componentRef=_))::elts))
-	    equation
-	      (DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts));
-	    then (DAE.DAE(elts2),DAE.DAE(e::elts3));
+    case(DAE.DAE((e as DAE.DEFINE(componentRef=_))::elts))
+      equation
+        (DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts));
+      then (DAE.DAE(elts2),DAE.DAE(e::elts3));
 
-	  case(DAE.DAE((e as DAE.WHEN_EQUATION(condition=_))::elts))
-	    equation
-	      (DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts));
-	    then (DAE.DAE(elts2),DAE.DAE(e::elts3));
+    case(DAE.DAE((e as DAE.WHEN_EQUATION(condition=_))::elts))
+      equation
+        (DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts));
+      then (DAE.DAE(elts2),DAE.DAE(e::elts3));
 
-	  case(DAE.DAE((e as DAE.IF_EQUATION(condition1=_))::elts))
-	    equation
-	      (DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts));
-	    then (DAE.DAE(elts2),DAE.DAE(e::elts3));
+    case(DAE.DAE((e as DAE.IF_EQUATION(condition1=_))::elts))
+      equation
+        (DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts));
+      then (DAE.DAE(elts2),DAE.DAE(e::elts3));
 
-	  case(DAE.DAE((e as DAE.INITIAL_IF_EQUATION(condition1=_))::elts))
-	    equation
-	      (DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts));
-	    then (DAE.DAE(elts2),DAE.DAE(e::elts3));
+    case(DAE.DAE((e as DAE.INITIAL_IF_EQUATION(condition1=_))::elts))
+      equation
+        (DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts));
+      then (DAE.DAE(elts2),DAE.DAE(e::elts3));
 
-	  case(DAE.DAE((e as DAE.ALGORITHM(algorithm_=_))::elts))
-	    equation
-	      (DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts));
-	    then (DAE.DAE(elts2),DAE.DAE(e::elts3));
+    case(DAE.DAE((e as DAE.ALGORITHM(algorithm_=_))::elts))
+      equation
+        (DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts));
+      then (DAE.DAE(elts2),DAE.DAE(e::elts3));
 
-	  case(DAE.DAE((e as DAE.INITIALALGORITHM(algorithm_=_))::elts))
-	    equation
-	      (DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts));
-	    then (DAE.DAE(elts2),DAE.DAE(e::elts3));
+    case(DAE.DAE((e as DAE.INITIALALGORITHM(algorithm_=_))::elts))
+      equation
+        (DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts));
+      then (DAE.DAE(elts2),DAE.DAE(e::elts3));
 
-	  // adrpo: TODO! FIXME! why are external object constructor calls added to the non-equations DAE??
-	  // PA: are these external object constructor CALLS? Do not think so. But they should anyway be in funcs..
-	  case(DAE.DAE((e as DAE.EXTOBJECTCLASS(path=_))::elts))
-	    equation
-	      (DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts));
-	    then (DAE.DAE(e::elts2),DAE.DAE(elts3));
+    // adrpo: TODO! FIXME! why are external object constructor calls added to the non-equations DAE??
+    // PA: are these external object constructor CALLS? Do not think so. But they should anyway be in funcs..
+    case(DAE.DAE((e as DAE.EXTOBJECTCLASS(path=_))::elts))
+      equation
+        (DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts));
+      then (DAE.DAE(e::elts2),DAE.DAE(elts3));
 
-	  case(DAE.DAE((e as DAE.ASSERT(condition=_))::elts))
-	    equation
-	      (DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts));
-	    then (DAE.DAE(elts2),DAE.DAE(e::elts3));
+    case(DAE.DAE((e as DAE.ASSERT(condition=_))::elts))
+      equation
+        (DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts));
+      then (DAE.DAE(elts2),DAE.DAE(e::elts3));
 
-	  case(DAE.DAE((e as DAE.TERMINATE(message=_))::elts))
-	    equation
-	      (DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts));
-	    then (DAE.DAE(elts2),DAE.DAE(e::elts3));
+    case(DAE.DAE((e as DAE.TERMINATE(message=_))::elts))
+      equation
+        (DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts));
+      then (DAE.DAE(elts2),DAE.DAE(e::elts3));
 
-	  case(DAE.DAE((e as DAE.REINIT(componentRef=_))::elts))
-	    equation
-	      (DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts));
-	    then (DAE.DAE(elts2),DAE.DAE(e::elts3));
+    case(DAE.DAE((e as DAE.REINIT(componentRef=_))::elts))
+      equation
+        (DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts));
+      then (DAE.DAE(elts2),DAE.DAE(e::elts3));
 
-	  // handle also NORETCALL! Connections.root(...)
-	  case(DAE.DAE((e as DAE.NORETCALL(functionName=_))::elts))
-	    equation
-	      (DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts));
-	    then (DAE.DAE(elts2),DAE.DAE(e::elts3));
-	  case(DAE.DAE(e::elts))
-	    equation
-	      Debug.fprintln("failtrace", "- DAEUtil.splitDAEIntoVarsAndEquations failed on: " );
-	    then fail();
-	end matchcontinue;
+    // handle also NORETCALL! Connections.root(...)
+    case(DAE.DAE((e as DAE.NORETCALL(functionName=_))::elts))
+      equation
+        (DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts));
+      then (DAE.DAE(elts2),DAE.DAE(e::elts3));
+    case(DAE.DAE(e::elts))
+      equation
+        Debug.fprintln("failtrace", "- DAEUtil.splitDAEIntoVarsAndEquations failed on: " );
+      then fail();
+  end matchcontinue;
 end splitDAEIntoVarsAndEquations;
 
 public function removeVariables "Remove the variables in the list from the DAE"
@@ -638,8 +638,8 @@ algorithm binding := matchcontinue(currVar,inlst)
 end getOuterBinding;
 
 protected function removeInnerAttribute "Help function to removeInnerAttr"
-	 input Absyn.InnerOuter io;
-	 output Absyn.InnerOuter ioOut;
+   input Absyn.InnerOuter io;
+   output Absyn.InnerOuter ioOut;
 algorithm
   ioOut := matchcontinue(io)
     case(Absyn.INNER()) then Absyn.UNSPECIFIED();
@@ -1681,7 +1681,7 @@ algorithm
     */
     case (cache,env,_,el::_,_)
       equation
-				true = RTOpts.debugFlag("failtrace");
+    		true = RTOpts.debugFlag("failtrace");
         str = DAEDump.dumpDebugDAE(DAE.DAE({el}));
         Debug.fprintln("failtrace", "- DAEUtil.daeToRecordValue failed on: " +& str);
       then
@@ -2945,8 +2945,8 @@ algorithm
         oExp = DAE.BINARY(e1, DAE.SUB_ARR(ty), e2);
       then
         oExp;
-		// initial array equation
-		case(DAE.INITIAL_ARRAY_EQUATION(_, e1, e2, _))
+    // initial array equation
+    case(DAE.INITIAL_ARRAY_EQUATION(_, e1, e2, _))
       equation
         ty = Expression.typeof(e1);
         oExp = DAE.BINARY(e1,DAE.SUB_ARR(ty),e2);
@@ -4095,8 +4095,8 @@ algorithm
       DAE.InstDims dim;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
-			DAE.VarProtection prot;
-			Option<DAE.Exp> bind;
+    	DAE.VarProtection prot;
+    	Option<DAE.Exp> bind;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
       Absyn.Path newtype;
@@ -4464,7 +4464,7 @@ algorithm
 
       /* empty tree*/
     case (DAE.AVLTREENODE(value = NONE(),height=h,left = NONE(),right = NONE()),key,value)
-    	then DAE.AVLTREENODE(SOME(DAE.AVLTREEVALUE(key,value)),1,NONE(),NONE());
+      then DAE.AVLTREENODE(SOME(DAE.AVLTREEVALUE(key,value)),1,NONE(),NONE());
 
       /* Replace this node.*/
     case (DAE.AVLTREENODE(value = SOME(DAE.AVLTREEVALUE(rkey,rval)),height=h,left = left,right = right),key,value)

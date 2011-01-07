@@ -31,7 +31,7 @@
 
 package Env
 "
-  file:	       Env.mo
+  file:         Env.mo
   package:     Env
   description: Environmane management
 
@@ -43,7 +43,7 @@ package Env
   - a frame name (corresponding to the class partially instantiated in that frame)
   - a binary tree containing a list of classes
   - a binary tree containing a list of functions (functions are overloaded so serveral
-						     function names can exist)
+    				     function names can exist)
   - a list of unnamed items consisting of import statements
 
   As an example lets consider the following Modelica code:
@@ -66,14 +66,14 @@ package Env
    {
    FRAME(\"A\", {Class:B},{},{},false) ,
    FRAME(\"B\", {Class:M1, Class:M2, Variable:V}, {Type:foo},
-	   {import Modelica.SIunits.},false)
+     {import Modelica.SIunits.},false)
    }
 
   Then, the class M1 is instantiated in a new scope/Frame giving the environment:
    {
    FRAME(\"A\", {Class:B},{},{},false) ,
    FRAME(\"B\", {Class:M1, Class:M2, Variable:V}, {Type:foo},
-	   {Import Modelica.SIunits.},false),
+     {Import Modelica.SIunits.},false),
    FRAME(\"M1, {Variable:x, Variable:y},{},{},false)
    }
 
@@ -102,15 +102,15 @@ public uniontype EnvCache
  record ENVCACHE
    "Cache for environments. The cache consists of a tree
     of environments from which lookupcan be performed."
-   		CacheTree envTree;
+       CacheTree envTree;
   end ENVCACHE;
 end EnvCache;
 
 public uniontype CacheTree
   record CACHETREE
-		Ident	name;
-		Env env;
-		list<CacheTree> children;
+    Ident	name;
+    Env env;
+    list<CacheTree> children;
   end CACHETREE;
 end CacheTree;
 
@@ -696,36 +696,36 @@ algorithm
 end extendFrameDefunit;
 
 public function extendFrameForIterator
-	"Adds a for loop iterator to the environment."
-	input Env env;
-	input String name;
-	input DAE.Type type_;
-	input DAE.Binding binding;
-	input SCode.Variability variability;
-	input Option<DAE.Const> constOfForIteratorRange;
-	output Env new_env;
+  "Adds a for loop iterator to the environment."
+  input Env env;
+  input String name;
+  input DAE.Type type_;
+  input DAE.Binding binding;
+  input SCode.Variability variability;
+  input Option<DAE.Const> constOfForIteratorRange;
+  output Env new_env;
 algorithm
-	new_env := match(env, name, type_, binding, variability, constOfForIteratorRange)
-		local
-			Env new_env_1;
-		case (_, _, _, _,variability,constOfForIteratorRange)
-			equation
-				new_env_1 = extendFrameV(env,
-					DAE.TYPES_VAR(
-						name,
-						DAE.ATTR(false, false, SCode.RW(), variability, Absyn.BIDIR(), Absyn.UNSPECIFIED()),
-						false,
-						type_,
-						binding,
-						constOfForIteratorRange),
-					NONE(), VAR_UNTYPED(), {});
-			then new_env_1;
-	end match;
+  new_env := match(env, name, type_, binding, variability, constOfForIteratorRange)
+    local
+    	Env new_env_1;
+    case (_, _, _, _,variability,constOfForIteratorRange)
+    	equation
+    		new_env_1 = extendFrameV(env,
+    			DAE.TYPES_VAR(
+    				name,
+    				DAE.ATTR(false, false, SCode.RW(), variability, Absyn.BIDIR(), Absyn.UNSPECIFIED()),
+    				false,
+    				type_,
+    				binding,
+    				constOfForIteratorRange),
+    			NONE(), VAR_UNTYPED(), {});
+    	then new_env_1;
+  end match;
 end extendFrameForIterator;
 
 protected function memberImportList "Returns true if import exist in imps"
-	input list<Item> imps;
-	input Absyn.Import imp;
+  input list<Item> imps;
+  input Absyn.Import imp;
   output Boolean res "true if import exist in imps, false otherwise";
 algorithm
   res := matchcontinue (imps,imp)
@@ -818,8 +818,8 @@ public function getClassName
   output Ident name;
 algorithm
    name := match (inEnv)
-   	local Ident n;
-   	case FRAME(optName = SOME(n))::_ then n;
+     local Ident n;
+     case FRAME(optName = SOME(n))::_ then n;
   end match;
 end getClassName;
 
@@ -1222,7 +1222,7 @@ algorithm
   env := match(cache)
     //case (_) then fail();
     case (CACHE(_,SOME(env),_)) equation
-    //	print("getCachedInitialEnv\n");
+    //  print("getCachedInitialEnv\n");
       then env;
   end match;
 end getCachedInitialEnv;
@@ -1234,11 +1234,11 @@ public function setCachedInitialEnv "set the initial environment in the cache"
 algorithm
   outCache := match(inCache,env)
   local
-    	array<Option<EnvCache>> envCache;
-    	array<DAE.FunctionTree> ef;
+      array<Option<EnvCache>> envCache;
+      array<DAE.FunctionTree> ef;
 
     case (CACHE(envCache,_,ef),env) equation
- //    	print("setCachedInitialEnv\n");
+ //      print("setCachedInitialEnv\n");
       then CACHE(envCache,SOME(env),ef);
   end match;
 end setCachedInitialEnv;
@@ -1338,22 +1338,22 @@ algorithm
 end addCachedEnv;
 
 protected function cacheGetEnv "get an environment from the tree cache."
-	input Absyn.Path scope;
-	input Absyn.Path path;
-	input CacheTree tree;
-	output Env env;
+  input Absyn.Path scope;
+  input Absyn.Path path;
+  input CacheTree tree;
+  output Env env;
 algorithm
   env := match(scope,path,tree)
   local
-    	Absyn.Path path2;
+      Absyn.Path path2;
 
-			// Search only current scope. Since scopes higher up might not be cached, we cannot search upwards.
+    	// Search only current scope. Since scopes higher up might not be cached, we cannot search upwards.
     case (path2,path,tree)
       equation
         true = OptManager.getOption("envCache");
         env = cacheGetEnv2(path2,path,tree);
         //print("found ");print(Absyn.pathString(path));print(" in cache at scope");
-				//print(Absyn.pathString(path2));print("  pathEnv:"+&printEnvPathStr(env)+&"\n");
+    		//print(Absyn.pathString(path2));print("  pathEnv:"+&printEnvPathStr(env)+&"\n");
       then env;
   end match;
 end cacheGetEnv;
@@ -1372,7 +1372,7 @@ algorithm
       list<CacheTree> children,children2;
       Absyn.Path path2;
     
-	  //	Simple name found in children, search for model from this scope.
+    //  Simple name found in children, search for model from this scope.
     case (Absyn.IDENT(id1),path,CACHETREE(_,_,CACHETREE(id2,env2,children2)::_))
       equation
         true = stringEq(id1, id2);
@@ -1381,7 +1381,7 @@ algorithm
       then 
         env;
     
-    //	Simple name. try next.
+    //  Simple name. try next.
     case (scope as Absyn.IDENT(id1),path,CACHETREE(id2,env2,_::children))
       equation
         //print("try next ");print(id);print("\n");
@@ -1418,7 +1418,7 @@ algorithm
       list<CacheTree> children1,children2;
       Boolean b;
     
-		// found matching simple name
+    // found matching simple name
     case (Absyn.IDENT(id1),CACHETREE(id2,env,_)::children)
       then Debug.bcallret2(not stringEq(id1, id2), cacheGetEnv3, path, children, env);
     
@@ -1501,7 +1501,7 @@ algorithm
         children2 = cacheAddEnv2(path,children2,env);
       then CACHETREE(id2,env2,children2)::children;
 
-		// simple name, found matching
+    // simple name, found matching
     case (Absyn.IDENT(id1),CACHETREE(id2,env2,children2)::children,env)
       equation
         true = stringEq(id1, id2);
@@ -1561,8 +1561,8 @@ algorithm
 end printCacheStr;
 
 protected function printCacheTreeStr
-	input CacheTree tree;
-	input Integer indent;
+  input CacheTree tree;
+  input Integer indent;
   output String str;
 algorithm
   str:= matchcontinue(tree,indent)
@@ -1576,8 +1576,8 @@ algorithm
         s = Util.stringDelimitList(Util.listMap1(children,printCacheTreeStr,indent+1),"\n");
         s1 = stringAppendList(Util.listFill(" ",indent));
         str = stringAppendList({s1,id,"\n",s});
-	    then str;
-	end matchcontinue;
+      then str;
+  end matchcontinue;
 end printCacheTreeStr;
 
 protected function dummyDump "
@@ -1714,7 +1714,7 @@ algorithm
     
     // empty tree
     case (AVLTREENODE(value = NONE(),left = NONE(),right = NONE()),key,value)
-    	then AVLTREENODE(SOME(AVLTREEVALUE(key,value)),1,NONE(),NONE());
+      then AVLTREENODE(SOME(AVLTREEVALUE(key,value)),1,NONE(),NONE());
     
     case (AVLTREENODE(value = SOME(AVLTREEVALUE(key=rkey))),key,value)
       then balance(avlTreeAdd2(inAvlTree,stringCompare(key,rkey),key,value));
@@ -1743,7 +1743,7 @@ algorithm
       AvlTree t_1,t;
       Option<AvlTreeValue> oval;
     
-		// replace this node
+    // replace this node
     case (AVLTREENODE(value = SOME(AVLTREEVALUE(key=rkey)),height=h,left = left,right = right),0,key,value)
       equation
         // inactive for now, but we should check if we don't replace a class with a var or vice-versa!
@@ -2364,9 +2364,9 @@ This guards against recursive functions."
 algorithm
   outCache := matchcontinue(cache,func)
     local
-    	array<Option<EnvCache>> envCache;
-    	array<DAE.FunctionTree> ef;
-    	Option<Env> ienv;
+      array<Option<EnvCache>> envCache;
+      array<DAE.FunctionTree> ef;
+      Option<Env> ienv;
 
       /* Don't overwrite SOME() with NONE() */
     case (cache, func)
@@ -2391,9 +2391,9 @@ public function addDaeFunction
 algorithm
   outCache := match(inCache,funcs)
     local
-    	array<Option<EnvCache>> envCache;
-    	array<DAE.FunctionTree> ef;
-    	Option<Env> ienv;
+      array<Option<EnvCache>> envCache;
+      array<DAE.FunctionTree> ef;
+      Option<Env> ienv;
     case (CACHE(envCache,ienv,ef),funcs)
       equation
         ef = arrayUpdate(ef,1,DAEUtil.addDaeFunction(funcs, arrayGet(ef, 1)));
@@ -2409,9 +2409,9 @@ public function addDaeExtFunction
 algorithm
   outCache := match(inCache,funcs)
     local
-    	array<Option<EnvCache>> envCache;
-    	array<DAE.FunctionTree> ef;
-    	Option<Env> ienv;
+      array<Option<EnvCache>> envCache;
+      array<DAE.FunctionTree> ef;
+      Option<Env> ienv;
     case (CACHE(envCache,ienv,ef),funcs)
       equation
         ef = arrayUpdate(ef,1,DAEUtil.addDaeExtFunction(funcs, arrayGet(ef,1)));

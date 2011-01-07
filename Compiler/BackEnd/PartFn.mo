@@ -30,7 +30,7 @@
  */
 
 package PartFn
-" file:	       PartFn.mo
+" file:         PartFn.mo
   package:     PartFn
   description: partially evaluated functions
 
@@ -58,7 +58,7 @@ type Ident = String;
 
 public function partEvalBackendDAE
 "function: partEvalBackendDAE
-	handles partially evaluated function in BackendDAE format"
+  handles partially evaluated function in BackendDAE format"
   input list<DAE.Function> inFunctions;
   input BackendDAE.BackendDAE inBackendDAE;
   output list<DAE.Function> outFunctions;
@@ -105,11 +105,11 @@ end partEvalBackendDAE;
 
 protected function partEvalAlgs
 "function: partEvalAlgs
-	elabs an algorithm section in BackendDAE"
-	input array<DAE.Algorithm> inAlgorithms;
-	input list<DAE.Function> inElementList;
-	output array<DAE.Algorithm> outAlgorithms;
-	output list<DAE.Function> outElementList;
+  elabs an algorithm section in BackendDAE"
+  input array<DAE.Algorithm> inAlgorithms;
+  input list<DAE.Function> inElementList;
+  output array<DAE.Algorithm> outAlgorithms;
+  output list<DAE.Function> outElementList;
 algorithm
   (outAlgorithms,outElementList) := matchcontinue(inAlgorithms,inElementList)
     local
@@ -133,11 +133,11 @@ end partEvalAlgs;
 
 protected function partEvalAlgLst
 "function: partEvalAlgLst
-	elabs a list of algorithm sections"
-	input list<DAE.Algorithm> inAlgorithmList;
-	input list<DAE.Function> inElementList;
-	output list<DAE.Algorithm> outAlgorithmList;
-	output list<DAE.Function> outElementList;
+  elabs a list of algorithm sections"
+  input list<DAE.Algorithm> inAlgorithmList;
+  input list<DAE.Function> inElementList;
+  output list<DAE.Algorithm> outAlgorithmList;
+  output list<DAE.Function> outElementList;
 algorithm
   (outAlgorithmList,outElementList) := matchcontinue(inAlgorithmList,inElementList)
     local
@@ -161,11 +161,11 @@ end partEvalAlgLst;
 
 protected function partEvalArrEqs
 "function: partEvalArrEqs
-	elabs calls in array equations"
-	input list<BackendDAE.MultiDimEquation> inMultiDimList;
-	input list<DAE.Function> inElementList;
-	output array<BackendDAE.MultiDimEquation> outMultiDimArr;
-	output list<DAE.Function> outElementList;
+  elabs calls in array equations"
+  input list<BackendDAE.MultiDimEquation> inMultiDimList;
+  input list<DAE.Function> inElementList;
+  output array<BackendDAE.MultiDimEquation> outMultiDimArr;
+  output list<DAE.Function> outElementList;
 algorithm
   (outMultiDimArr,outElementList) := matchcontinue(inMultiDimList,inElementList)
     local
@@ -196,11 +196,11 @@ end partEvalArrEqs;
 
 protected function partEvalVars
 "function: partEvalVars
-	elab calls in lowered variables"
-	input BackendDAE.Variables inVariables;
-	input list<DAE.Function> inFunctions;
-	output BackendDAE.Variables outVariables;
-	output list<DAE.Function> outFunctions;
+  elab calls in lowered variables"
+  input BackendDAE.Variables inVariables;
+  input list<DAE.Function> inFunctions;
+  output BackendDAE.Variables outVariables;
+  output list<DAE.Function> outFunctions;
 algorithm
   (outVariables,outFunctions) := matchcontinue(inVariables,inFunctions)
     local
@@ -227,11 +227,11 @@ end partEvalVars;
 
 protected function partEvalVarLst
 "function: partEvalVarLst
-	evals partevalfuncs in a BackendDAE.var option list"
-	input list<Option<BackendDAE.Var>> inVarList;
-	input list<DAE.Function> inElementList;
-	output list<Option<BackendDAE.Var>> outVarList;
-	output list<DAE.Function> outElementList;
+  evals partevalfuncs in a BackendDAE.var option list"
+  input list<Option<BackendDAE.Var>> inVarList;
+  input list<DAE.Function> inElementList;
+  output list<Option<BackendDAE.Var>> outVarList;
+  output list<DAE.Function> outElementList;
 algorithm
   (outVarList,outElementList) := matchcontinue(inVarList,inElementList)
     local
@@ -275,11 +275,11 @@ end partEvalVarLst;
 
 protected function partEvalEqArr
 "function: partEvalEqArr
-	elabs calls in equations"
-	input BackendDAE.EquationArray inEquationArray;
-	input list<DAE.Function> inFunctions;
-	output BackendDAE.EquationArray outEquationArray;
-	output list<DAE.Function> outFunctions;
+  elabs calls in equations"
+  input BackendDAE.EquationArray inEquationArray;
+  input list<DAE.Function> inFunctions;
+  output BackendDAE.EquationArray outEquationArray;
+  output list<DAE.Function> outFunctions;
 algorithm
   (outEquationArray,outFunctions) := matchcontinue(inEquationArray,inFunctions)
     local
@@ -304,11 +304,11 @@ end partEvalEqArr;
 
 protected function partEvalEqs
 "function: partEvalEqs
-	elabs calls in equations"
-	input list<Option<BackendDAE.Equation>> inEquationList;
-	input list<DAE.Function> inFunctions;
-	output list<Option<BackendDAE.Equation>> outEquationList;
-	output list<DAE.Function> outFunctions;
+  elabs calls in equations"
+  input list<Option<BackendDAE.Equation>> inEquationList;
+  input list<DAE.Function> inFunctions;
+  output list<Option<BackendDAE.Equation>> outEquationList;
+  output list<DAE.Function> outFunctions;
 algorithm
   (outEquationList,outFunctions) := matchcontinue(inEquationList,inFunctions)
     local
@@ -382,11 +382,11 @@ end partEvalEqs;
 
 protected function partEvalWhenEq
 "function: partEvalWhenEq
-	elabs calls in a BackendDAE when equation"
-	input BackendDAE.WhenEquation inWhenEquation;
-	input list<DAE.Function> inElementList;
-	output BackendDAE.WhenEquation outWhenEquation;
-	output list<DAE.Function> outElementList;
+  elabs calls in a BackendDAE when equation"
+  input BackendDAE.WhenEquation inWhenEquation;
+  input list<DAE.Function> inElementList;
+  output BackendDAE.WhenEquation outWhenEquation;
+  output list<DAE.Function> outElementList;
 algorithm
   (outWhenEquation,outElementList) := matchcontinue(inWhenEquation,inElementList)
     local
@@ -416,11 +416,11 @@ end partEvalWhenEq;
 
 public function partEvalDAE
 "function: partEvalDAE
-	goes through the DAE for Expression.PARTEVALFUNCTION, creates new classes and changes the function calls"
-	input DAE.DAElist inDAE;
-	input list<DAE.Function> infuncs;
-	output DAE.DAElist outDAE;
-	output list<DAE.Function> outfuncs;
+  goes through the DAE for Expression.PARTEVALFUNCTION, creates new classes and changes the function calls"
+  input DAE.DAElist inDAE;
+  input list<DAE.Function> infuncs;
+  output DAE.DAElist outDAE;
+  output list<DAE.Function> outfuncs;
 algorithm
   (outDAE,outfuncs) := matchcontinue(inDAE,infuncs)
     local
@@ -448,9 +448,9 @@ end partEvalDAE;
 
 public function createPartEvalFunctions
 "function: createPartEvalFunctions
-	goes through the DAE for Expression.PARTEVALFUNCTION, creates new classes and changes the function calls"
-	input list<DAE.Function> inDAElist;
-	output list<DAE.Function> outDAElist;
+  goes through the DAE for Expression.PARTEVALFUNCTION, creates new classes and changes the function calls"
+  input list<DAE.Function> inDAElist;
+  output list<DAE.Function> outDAElist;
 algorithm
   outDAElist := matchcontinue(inDAElist)
     local
@@ -475,10 +475,10 @@ end createPartEvalFunctions;
 
 protected function replaceFnInFnLst
 "function: replaceFnInFnLst
-	takes a given function and replaces the function with the same path in the daelist with it"
-	input DAE.Function inFunction;
-	input list<DAE.Function> inElementList;
-	output list<DAE.Function> outElementList;
+  takes a given function and replaces the function with the same path in the daelist with it"
+  input DAE.Function inFunction;
+  input list<DAE.Function> inElementList;
+  output list<DAE.Function> outElementList;
 algorithm
   outElementList := matchcontinue(inFunction,inElementList)
     local
@@ -505,11 +505,11 @@ end replaceFnInFnLst;
 
 protected function elabElements
 "function: elabElements
-	goes through a list of DAE.Element for partevalfunction"
-	input list<DAE.Element> inElementList;
-	input list<DAE.Function> inDAE;
-	output list<DAE.Element> outElementList;
-	output list<DAE.Function> outDAE;
+  goes through a list of DAE.Element for partevalfunction"
+  input list<DAE.Element> inElementList;
+  input list<DAE.Function> inDAE;
+  output list<DAE.Element> outElementList;
+  output list<DAE.Function> outDAE;
 algorithm
   (outElementList,outDAE) := matchcontinue(inElementList,inDAE)
     local
@@ -768,11 +768,11 @@ end elabFunctions;
 
 protected function elabAlg
 "function: elabAlg
-	elaborates an algorithm section"
-	input DAE.Algorithm inAlgorithm;
-	input list<DAE.Function> inElementList;
-	output DAE.Algorithm outAlgorithm;
-	output list<DAE.Function> outElementList;
+  elaborates an algorithm section"
+  input DAE.Algorithm inAlgorithm;
+  input list<DAE.Function> inElementList;
+  output DAE.Algorithm outAlgorithm;
+  output list<DAE.Function> outElementList;
 algorithm
   (outAlgorithm,outElementList) := matchcontinue(inAlgorithm,inElementList)
     local
@@ -793,11 +793,11 @@ end elabAlg;
 
 protected function elabStmts
 "function: elabStmts
-	elaborates a list of algorithm statements"
-	input list<DAE.Statement> inStatements;
-	input list<DAE.Function> inElementList;
-	output list<DAE.Statement> outStatements;
-	output list<DAE.Function> outElementList;
+  elaborates a list of algorithm statements"
+  input list<DAE.Statement> inStatements;
+  input list<DAE.Function> inElementList;
+  output list<DAE.Statement> outStatements;
+  output list<DAE.Function> outElementList;
 algorithm
   (outStatements,outElementList) := matchcontinue(inStatements,inElementList)
     local
@@ -923,11 +923,11 @@ end elabStmts;
 
 protected function elabElse
 "function: elabElse
-	elabs an algorithm else case"
-	input DAE.Else inElse;
-	input list<DAE.Function> inElementList;
-	output DAE.Else outElse;
-	output list<DAE.Function> outElementList;
+  elabs an algorithm else case"
+  input DAE.Else inElse;
+  input list<DAE.Function> inElementList;
+  output DAE.Else outElse;
+  output list<DAE.Function> outElementList;
 algorithm
   (outElse,outElementList) := matchcontinue(inElse,inElementList)
     local
@@ -958,11 +958,11 @@ end elabElse;
 
 protected function elabExpMatrix
 "function: elabExpMatrix
-	elabs an exp matrix"
-	input list<list<DAE.Exp>> inExpMatrix;
-	input list<DAE.Function> inElementList;
-	output list<list<DAE.Exp>> outExpMatrix;
-	output list<DAE.Function> outElementList;
+  elabs an exp matrix"
+  input list<list<DAE.Exp>> inExpMatrix;
+  input list<DAE.Function> inElementList;
+  output list<list<DAE.Exp>> outExpMatrix;
+  output list<DAE.Function> outElementList;
 algorithm
   (outExpMatrix,outElementList) := matchcontinue(inExpMatrix,inElementList)
     local
@@ -986,11 +986,11 @@ end elabExpMatrix;
 
 protected function elabExpList
 "function: elabExpList
-	elabs an exp list"
-	input list<DAE.Exp> inExpList;
-	input list<DAE.Function> inElementList;
-	output list<DAE.Exp> outExpList;
-	output list<DAE.Function> outElementList;
+  elabs an exp list"
+  input list<DAE.Exp> inExpList;
+  input list<DAE.Function> inElementList;
+  output list<DAE.Exp> outExpList;
+  output list<DAE.Function> outElementList;
 algorithm
   (outExpList,outElementList) := matchcontinue(inExpList,inElementList)
     local
@@ -1014,11 +1014,11 @@ end elabExpList;
 
 protected function elabExpOption
 "function: elabExpOption
-	elabs an exp option if it is SOME, returns NONE() otherwise"
-	input Option<DAE.Exp> inExp;
-	input list<DAE.Function> inElementList;
-	output Option<DAE.Exp> outExp;
-	output list<DAE.Function> outElementList;
+  elabs an exp option if it is SOME, returns NONE() otherwise"
+  input Option<DAE.Exp> inExp;
+  input list<DAE.Function> inElementList;
+  output Option<DAE.Exp> outExp;
+  output list<DAE.Function> outElementList;
 algorithm
   (outExp,outElementList) := match(inExp,inElementList)
     local
@@ -1035,10 +1035,10 @@ end elabExpOption;
 
 protected function elabExp
 "function: elabExp
-	looks for a function call, checks the arguments for DAE.PARTEVALFUNCTION
-	creates new functions and replaces the call as necessary"
-	input tuple<DAE.Exp, list<DAE.Function>> inTuple;
-	output tuple<DAE.Exp, list<DAE.Function>> outTuple;
+  looks for a function call, checks the arguments for DAE.PARTEVALFUNCTION
+  creates new functions and replaces the call as necessary"
+  input tuple<DAE.Exp, list<DAE.Function>> inTuple;
+  output tuple<DAE.Exp, list<DAE.Function>> outTuple;
 algorithm
   outTuple := matchcontinue(inTuple)
     local
@@ -1065,11 +1065,11 @@ end elabExp;
 
 protected function makeNewFnPath
 "function: makeNewFnPath
-	creates a path for the new function using the path for the caller and the callee"
-	input Absyn.Path inCaller;
-	input Absyn.Path inCallee;
-	output Absyn.Path newPath;
-	String s1,s2,s;
+  creates a path for the new function using the path for the caller and the callee"
+  input Absyn.Path inCaller;
+  input Absyn.Path inCallee;
+  output Absyn.Path newPath;
+  String s1,s2,s;
 algorithm
   s1 := Absyn.pathString(inCaller);
   s2 := Absyn.pathString(inCallee);
@@ -1079,12 +1079,12 @@ end makeNewFnPath;
 
 protected function buildNewFunction
 "function: buildNewFunction
-	creates a new function from the old one, given the old and new paths"
-	input list<DAE.Function> inElementList;
-	input Absyn.Path inPath1;
-	input Absyn.Path inPath2;
-	input Integer inInteger;
-	output list<DAE.Function> outElementList;
+  creates a new function from the old one, given the old and new paths"
+  input list<DAE.Function> inElementList;
+  input Absyn.Path inPath1;
+  input Absyn.Path inPath2;
+  input Integer inInteger;
+  output list<DAE.Function> outElementList;
 algorithm
   outElementList := matchcontinue(inElementList,inPath1,inPath2,inInteger)
     local
@@ -1110,13 +1110,13 @@ end buildNewFunction;
 
 protected function buildNewFunction2
 "function: buildNewFunction2
-	creates a new function based on given data"
-	input DAE.Function bigFunction;
-	input DAE.Function smallFunction;
-	input Absyn.Path inPath;
-	input list<DAE.Function> inElementList;
-	input Integer inInteger;
-	output DAE.Function outFunction;
+  creates a new function based on given data"
+  input DAE.Function bigFunction;
+  input DAE.Function smallFunction;
+  input Absyn.Path inPath;
+  input list<DAE.Function> inElementList;
+  input Integer inInteger;
+  output DAE.Function outFunction;
 algorithm
   outFunction := matchcontinue(bigFunction,smallFunction,inPath,inElementList,inInteger)
     local
@@ -1148,10 +1148,10 @@ end buildNewFunction2;
 
 protected function buildNewFunctionType
 "function: buildNewFunctionType
-	removes the funcarg that is of T_FUNCTION type and inserts the list of vars as funcargs at the end"
-	input DAE.Type inType;
-	input list<DAE.Var> inVarList;
-	output DAE.Type outType;
+  removes the funcarg that is of T_FUNCTION type and inserts the list of vars as funcargs at the end"
+  input DAE.Type inType;
+  input list<DAE.Var> inVarList;
+  output DAE.Type outType;
 algorithm
   outType := matchcontinue(inType,inVarList)
     local
@@ -1177,9 +1177,9 @@ end buildNewFunctionType;
 
 protected function isNotFunctionType
 "function: isNotFunctionType
-	checks to make sure a DAE.FuncArg is not of type T_FUNCTION"
-	input DAE.FuncArg inFuncArg;
-	output Boolean outBoolean;
+  checks to make sure a DAE.FuncArg is not of type T_FUNCTION"
+  input DAE.FuncArg inFuncArg;
+  output Boolean outBoolean;
 algorithm
   outBoolean := matchcontinue(inFuncArg)
     case((_,(DAE.T_FUNCTION(funcArg = _),_))) then false;
@@ -1189,14 +1189,14 @@ end isNotFunctionType;
 
 protected function buildNewFunctionParts
 "function: buildNewFunctionParts
-	inserts variables and alters call expressions in the new function"
-	input list<DAE.Element> inFunctionParts;
-	input DAE.Function smallFunction;
-	input list<DAE.Function> inFunctions;
-	input Integer inInteger;
-	input Absyn.Path inPath;
-	output list<DAE.Element> outFunctionParts;
-	output list<DAE.Var> outVarList;
+  inserts variables and alters call expressions in the new function"
+  input list<DAE.Element> inFunctionParts;
+  input DAE.Function smallFunction;
+  input list<DAE.Function> inFunctions;
+  input Integer inInteger;
+  input Absyn.Path inPath;
+  output list<DAE.Element> outFunctionParts;
+  output list<DAE.Var> outVarList;
 algorithm
   (outFunctionParts,outVarList) := matchcontinue(inFunctionParts,smallFunction,inFunctions,inInteger,inPath)
     local
@@ -1231,9 +1231,9 @@ end buildNewFunctionParts;
 
 protected function buildTypeVar
 "function: buildTypeVar
-	turns a DAE.VAR into Types.VAR"
-	input DAE.Element inElement;
-	output DAE.Var outVar;
+  turns a DAE.VAR into Types.VAR"
+  input DAE.Element inElement;
+  output DAE.Var outVar;
 algorithm
   outVar := matchcontinue(inElement)
     local
@@ -1257,9 +1257,9 @@ end buildTypeVar;
 
 protected function isNotFunctionInput
 "function: isNotFunctionInput
-	checks if an input var is of T_FUNCTION type"
-	input DAE.Element inElement;
-	output Boolean outBoolean;
+  checks if an input var is of T_FUNCTION type"
+  input DAE.Element inElement;
+  output Boolean outBoolean;
 algorithm
   outBoolean := matchcontinue(inElement)
     case(DAE.VAR(direction = DAE.INPUT(),ty = (DAE.T_FUNCTION(funcArg = _),_))) then false;
@@ -1269,10 +1269,10 @@ end isNotFunctionInput;
 
 protected function getFirstNInputs
 "function: getLastNInputs
-	returns the last n inputs from a given list"
-	input list<DAE.Element> inInputs;
-	input Integer inInteger;
-	output list<DAE.Element> outInputs;
+  returns the last n inputs from a given list"
+  input list<DAE.Element> inInputs;
+  input Integer inInteger;
+  output list<DAE.Element> outInputs;
 algorithm
   outInputs := matchcontinue(inInputs,inInteger)
     local
@@ -1291,11 +1291,11 @@ end getFirstNInputs;
 
 protected function insertAfterInputs
 "function: insertAfterInputs
-	goes through the first list of DAE.Element until it finds the end of the inputs
-	then inserts the given list of DAE.Element"
-	input list<DAE.Element> inParts;
-	input list<DAE.Element> inInputs;
-	output list<DAE.Element> outParts;
+  goes through the first list of DAE.Element until it finds the end of the inputs
+  then inserts the given list of DAE.Element"
+  input list<DAE.Element> inParts;
+  input list<DAE.Element> inInputs;
+  output list<DAE.Element> outParts;
 algorithm
   outParts := matchcontinue(inParts,inInputs)
     local
@@ -1327,11 +1327,11 @@ end insertAfterInputs;
 
 protected function renameInput
 "function: renameInput
-	assumes that the given element is a DAE.VAR with Input direction
-	prepends the given string to the ComponentRef"
-	input DAE.Element inElement;
-	input String inString;
-	output DAE.Element outElement;
+  assumes that the given element is a DAE.VAR with Input direction
+  prepends the given string to the ComponentRef"
+  input DAE.Element inElement;
+  input String inString;
+  output DAE.Element outElement;
 algorithm
   outElement := matchcontinue(inElement,inString)
     local
@@ -1355,9 +1355,9 @@ end renameInput;
 
 protected function isInput
 "function: isInput
-	checks if a DAE.Element is an input var or not"
-	input DAE.Element inElement;
-	output Boolean outBoolean;
+  checks if a DAE.Element is an input var or not"
+  input DAE.Element inElement;
+  output Boolean outBoolean;
 algorithm
   outBoolean := matchcontinue(inElement)
     case(DAE.VAR(direction = DAE.INPUT())) then true;
@@ -1367,13 +1367,13 @@ end isInput;
 
 protected function fixCalls
 "function: fixCalls
-	replaces calls in the newly built function with calls to the appropriate function, with the correct number of args"
-	input list<DAE.Element> inParts;
-	input list<DAE.Function> inDAE;
-	input Absyn.Path inPath;
-	input list<DAE.Element> inInputs;
-	input Absyn.Path inCurrent;
-	output list<DAE.Element> outParts;
+  replaces calls in the newly built function with calls to the appropriate function, with the correct number of args"
+  input list<DAE.Element> inParts;
+  input list<DAE.Function> inDAE;
+  input Absyn.Path inPath;
+  input list<DAE.Element> inInputs;
+  input Absyn.Path inCurrent;
+  output list<DAE.Element> outParts;
 algorithm
   outParts := matchcontinue(inParts,inDAE,inPath,inInputs,inCurrent)
     local
@@ -1501,13 +1501,13 @@ end fixCalls;
 
 protected function fixCallsAlg
 "function: fixCallsAlg
-	fixes calls in algorithm sections of the new function"
-	input list<DAE.Statement> inStmts;
-	input list<DAE.Function> inDAE;
-	input Absyn.Path inPath;
-	input list<DAE.Element> inInputs;
-	input Absyn.Path inCurrent;
-	output list<DAE.Statement> outStmts;
+  fixes calls in algorithm sections of the new function"
+  input list<DAE.Statement> inStmts;
+  input list<DAE.Function> inDAE;
+  input Absyn.Path inPath;
+  input list<DAE.Element> inInputs;
+  input Absyn.Path inCurrent;
+  output list<DAE.Statement> outStmts;
 algorithm
   outStmts := matchcontinue(inStmts,inDAE,inPath,inInputs,inCurrent)
     local
@@ -1642,13 +1642,13 @@ end fixCallsAlg;
 
 protected function fixCallsElse
 "function: fixCallsElse
-	fixes calls in an DAE.Else"
-	input DAE.Else inElse;
-	input list<DAE.Function> inDAE;
-	input Absyn.Path inPath;
-	input list<DAE.Element> inInputs;
-	input Absyn.Path inCurrent;
-	output DAE.Else outElse;
+  fixes calls in an DAE.Else"
+  input DAE.Else inElse;
+  input list<DAE.Function> inDAE;
+  input Absyn.Path inPath;
+  input list<DAE.Element> inInputs;
+  input Absyn.Path inCurrent;
+  output DAE.Else outElse;
 algorithm
   outElse := matchcontinue(inElse,inDAE,inPath,inInputs,inCurrent)
     local
@@ -1676,10 +1676,10 @@ end fixCallsElse;
 
 protected function handleExpList2
 "function: handleExpList2
-	helper function to fixCallsAlg"
-	input DAE.Exp inExp;
-	input tuple<Absyn.Path, list<DAE.Element>, list<DAE.Function>, Absyn.Path> inTuple;
-	output DAE.Exp outExp;
+  helper function to fixCallsAlg"
+  input DAE.Exp inExp;
+  input tuple<Absyn.Path, list<DAE.Element>, list<DAE.Function>, Absyn.Path> inTuple;
+  output DAE.Exp outExp;
 algorithm
   outExp := matchcontinue(inExp,inTuple)
     local
@@ -1700,9 +1700,9 @@ end handleExpList2;
 
 protected function fixCall
 "function: fixCall
-	replaces the path and args in a function call"
-	input tuple<DAE.Exp, tuple<Absyn.Path, list<DAE.Element>, list<DAE.Function>, Absyn.Path>> inTuple;
-	output tuple<DAE.Exp, tuple<Absyn.Path, list<DAE.Element>, list<DAE.Function>, Absyn.Path>> outTuple;
+  replaces the path and args in a function call"
+  input tuple<DAE.Exp, tuple<Absyn.Path, list<DAE.Element>, list<DAE.Function>, Absyn.Path>> inTuple;
+  output tuple<DAE.Exp, tuple<Absyn.Path, list<DAE.Element>, list<DAE.Function>, Absyn.Path>> outTuple;
 algorithm
   outTuple := matchcontinue(inTuple)
     local
@@ -1748,10 +1748,10 @@ end fixCall;
 
 protected function replaceFnRef
 "function: replaceFnRef
-	takes 2 arg lists, replaces the function ref in the first one wtih the exps in the second one"
-	input list<DAE.Exp> inOriginalArgs;
-	input list<DAE.Exp> inNewArgs;
-	output list<DAE.Exp> outNewArgs;
+  takes 2 arg lists, replaces the function ref in the first one wtih the exps in the second one"
+  input list<DAE.Exp> inOriginalArgs;
+  input list<DAE.Exp> inNewArgs;
+  output list<DAE.Exp> outNewArgs;
 algorithm
   outNewArgs := matchcontinue(inOriginalArgs,inNewArgs)
     local
@@ -1778,9 +1778,9 @@ end replaceFnRef;
 
 protected function isSimpleArg
 "function: isSimpleArg
-	checks if a funcarg list is simple or not"
-	input list<DAE.Exp> inArgs;
-	output Boolean outBoolean;
+  checks if a funcarg list is simple or not"
+  input list<DAE.Exp> inArgs;
+  output Boolean outBoolean;
 algorithm
   outBoolean := matchcontinue(inArgs)
     local
@@ -1810,12 +1810,12 @@ end isSimpleArg;
 
 protected function getPartEvalFunction
 "function: getPartEvalFunction
-	gets the exp and index of a partevalfunction from a list of exps
-	fail if no partevalfunction is present"
-	input list<DAE.Exp> inExpList;
-	input Integer inInteger "accumulator";
-	output DAE.Exp outExp;
-	output Integer outInteger;
+  gets the exp and index of a partevalfunction from a list of exps
+  fail if no partevalfunction is present"
+  input list<DAE.Exp> inExpList;
+  input Integer inInteger "accumulator";
+  output DAE.Exp outExp;
+  output Integer outInteger;
 algorithm
   (outExp,outInteger) := matchcontinue(inExpList,inInteger)
     local

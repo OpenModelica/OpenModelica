@@ -1143,7 +1143,7 @@ public function lookupVarInPackages "function: lookupVarInPackages
   Note: the splicedExpData is currently not relevant, since constants are always evaluated to a value. 
         However, this might change in the future since it makes more sense to calculate the constants 
         during setup in runtime (to gain precision and postpone choice of precision to runtime)."
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input DAE.ComponentRef inComponentRef;
   input list<Env.Frame> inPrevFrames "Environment in reverse order. Contains frames we previously had in the scope. Will be looked up instead of the environment in order to avoid infinite recursion.";
@@ -2199,7 +2199,7 @@ algorithm
         (cache,c,env,prevFrames);
 
       /* lookup stops at encapsulated classes except for builtin
-	       scope, if not found in builtin scope, error */
+         scope, if not found in builtin scope, error */
     case (cache,(env as (Env.FRAME(optName = SOME(sid),isEncapsulated = true) :: fs)),id,prevFrames,inState,true)
       equation
         (cache,i_env) = Builtin.initialEnv(cache);
@@ -2746,12 +2746,12 @@ algorithm
     local
       DAE.Subscript sub1,sub2;
       list<DAE.Subscript> subs1,subs2;
-		// If a for-iterator is used as subscript we get a cref subscript in inSubs,
-		// but nothing in inSlice because it only contains integers (see
-		// addArrayDimensions above). This case makes sure that for-iterators are
-		// not lost here.
-		case (((sub1 as DAE.INDEX(exp = DAE.CREF(componentRef = _))) :: subs1),
-			subs2)
+    // If a for-iterator is used as subscript we get a cref subscript in inSubs,
+    // but nothing in inSlice because it only contains integers (see
+    // addArrayDimensions above). This case makes sure that for-iterators are
+    // not lost here.
+    case (((sub1 as DAE.INDEX(exp = DAE.CREF(componentRef = _))) :: subs1),
+    	subs2)
       equation
         subs2 = expandWholeDimSubScript(subs1, subs2);
       then

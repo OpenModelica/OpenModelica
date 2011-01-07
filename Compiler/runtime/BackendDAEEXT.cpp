@@ -137,7 +137,7 @@ void BackendDAEEXTImpl__initLowLink(int nvars)
   lowlink.reserve(nvars);
   
   while (lowlink.size() < (unsigned int)nvars)
-  	lowlink.push_back(0);
+    lowlink.push_back(0);
   for (int i =0; i < nvars; i++)
     lowlink[i]=0;
 } 
@@ -148,7 +148,7 @@ void BackendDAEEXTImpl__initNumber(int nvars)
   number.reserve(nvars);
   
   while (number.size() < (unsigned int)nvars)
-  	number.push_back(0);
+    number.push_back(0);
   for (int i =0; i < nvars; i++) 
     number[i]=0;
 } 

@@ -1,13 +1,13 @@
 /* dlinpk.f -- translated by f2c (version 20041007).
    You must link the resulting object file with libf2c:
-	on Microsoft Windows system, link with libf2c.lib;
-	on Linux or Unix systems, link with .../path/to/libf2c.a -lm
-	or, if you install libf2c.a in a standard place, with -lf2c -lm
-	-- in that order, at the end of the command line, as in
-		cc *.o -lf2c -lm
-	Source for libf2c is in /netlib/f2c/libf2c.zip, e.g.,
+  on Microsoft Windows system, link with libf2c.lib;
+  on Linux or Unix systems, link with .../path/to/libf2c.a -lm
+  or, if you install libf2c.a in a standard place, with -lf2c -lm
+  -- in that order, at the end of the command line, as in
+  	cc *.o -lf2c -lm
+  Source for libf2c is in /netlib/f2c/libf2c.zip, e.g.,
 
-		http://www.netlib.org/f2c/libf2c.zip
+  	http://www.netlib.org/f2c/libf2c.zip
 */
 
 #include "f2c.h"
@@ -17,7 +17,7 @@
 static integer c__1 = 1;
 
 /* Subroutine */ int dgefa_(doublereal *a, integer *lda, integer *n, integer *
-	ipvt, integer *info)
+  ipvt, integer *info)
 {
     /* System generated locals */
     integer a_dim1, a_offset, i__1, i__2, i__3;
@@ -27,8 +27,8 @@ static integer c__1 = 1;
     static doublereal t;
     static integer kp1, nm1;
     extern /* Subroutine */ int dscal_(integer *, doublereal *, doublereal *,
-	    integer *), daxpy_(integer *, doublereal *, doublereal *, integer
-	    *, doublereal *, integer *);
+      integer *), daxpy_(integer *, doublereal *, doublereal *, integer
+      *, doublereal *, integer *);
     extern integer idamax_(integer *, doublereal *, integer *);
 
 
@@ -91,73 +91,73 @@ static integer c__1 = 1;
     *info = 0;
     nm1 = *n - 1;
     if (nm1 < 1) {
-	goto L70;
+  goto L70;
     }
     i__1 = nm1;
     for (k = 1; k <= i__1; ++k) {
-	kp1 = k + 1;
+  kp1 = k + 1;
 
 /*        find l = pivot index */
 
-	i__2 = *n - k + 1;
-	l = idamax_(&i__2, &a[k + k * a_dim1], &c__1) + k - 1;
-	ipvt[k] = l;
+  i__2 = *n - k + 1;
+  l = idamax_(&i__2, &a[k + k * a_dim1], &c__1) + k - 1;
+  ipvt[k] = l;
 
 /*        zero pivot implies this column already triangularized */
 
-	if (a[l + k * a_dim1] == 0.) {
-	    goto L40;
-	}
+  if (a[l + k * a_dim1] == 0.) {
+      goto L40;
+  }
 
 /*           interchange if necessary */
 
-	if (l == k) {
-	    goto L10;
-	}
-	t = a[l + k * a_dim1];
-	a[l + k * a_dim1] = a[k + k * a_dim1];
-	a[k + k * a_dim1] = t;
+  if (l == k) {
+      goto L10;
+  }
+  t = a[l + k * a_dim1];
+  a[l + k * a_dim1] = a[k + k * a_dim1];
+  a[k + k * a_dim1] = t;
 L10:
 
 /*           compute multipliers */
 
-	t = -1. / a[k + k * a_dim1];
-	i__2 = *n - k;
-	dscal_(&i__2, &t, &a[k + 1 + k * a_dim1], &c__1);
+  t = -1. / a[k + k * a_dim1];
+  i__2 = *n - k;
+  dscal_(&i__2, &t, &a[k + 1 + k * a_dim1], &c__1);
 
 /*           row elimination with column indexing */
 
-	i__2 = *n;
-	for (j = kp1; j <= i__2; ++j) {
-	    t = a[l + j * a_dim1];
-	    if (l == k) {
-		goto L20;
-	    }
-	    a[l + j * a_dim1] = a[k + j * a_dim1];
-	    a[k + j * a_dim1] = t;
+  i__2 = *n;
+  for (j = kp1; j <= i__2; ++j) {
+      t = a[l + j * a_dim1];
+      if (l == k) {
+  	goto L20;
+      }
+      a[l + j * a_dim1] = a[k + j * a_dim1];
+      a[k + j * a_dim1] = t;
 L20:
-	    i__3 = *n - k;
-	    daxpy_(&i__3, &t, &a[k + 1 + k * a_dim1], &c__1, &a[k + 1 + j *
-		    a_dim1], &c__1);
+      i__3 = *n - k;
+      daxpy_(&i__3, &t, &a[k + 1 + k * a_dim1], &c__1, &a[k + 1 + j *
+  	    a_dim1], &c__1);
 /* L30: */
-	}
-	goto L50;
+  }
+  goto L50;
 L40:
-	*info = k;
+  *info = k;
 L50:
 /* L60: */
-	;
+  ;
     }
 L70:
     ipvt[*n] = *n;
     if (a[*n + *n * a_dim1] == 0.) {
-	*info = *n;
+  *info = *n;
     }
     return 0;
 } /* dgefa_ */
 
 /* Subroutine */ int dgesl_(doublereal *a, integer *lda, integer *n, integer *
-	ipvt, doublereal *b, integer *job)
+  ipvt, doublereal *b, integer *job)
 {
     /* System generated locals */
     integer a_dim1, a_offset, i__1, i__2;
@@ -167,9 +167,9 @@ L70:
     static doublereal t;
     static integer kb, nm1;
     extern doublereal ddot_(integer *, doublereal *, integer *, doublereal *,
-	    integer *);
+      integer *);
     extern /* Subroutine */ int daxpy_(integer *, doublereal *, doublereal *,
-	    integer *, doublereal *, integer *);
+      integer *, doublereal *, integer *);
 
 
 /*     dgesl solves the double precision system */
@@ -239,27 +239,27 @@ L70:
     /* Function Body */
     nm1 = *n - 1;
     if (*job != 0) {
-	goto L50;
+  goto L50;
     }
 
 /*        job = 0 , solve  a * x = b */
 /*        first solve  l*y = b */
 
     if (nm1 < 1) {
-	goto L30;
+  goto L30;
     }
     i__1 = nm1;
     for (k = 1; k <= i__1; ++k) {
-	l = ipvt[k];
-	t = b[l];
-	if (l == k) {
-	    goto L10;
-	}
-	b[l] = b[k];
-	b[k] = t;
+  l = ipvt[k];
+  t = b[l];
+  if (l == k) {
+      goto L10;
+  }
+  b[l] = b[k];
+  b[k] = t;
 L10:
-	i__2 = *n - k;
-	daxpy_(&i__2, &t, &a[k + 1 + k * a_dim1], &c__1, &b[k + 1], &c__1);
+  i__2 = *n - k;
+  daxpy_(&i__2, &t, &a[k + 1 + k * a_dim1], &c__1, &b[k + 1], &c__1);
 /* L20: */
     }
 L30:
@@ -268,11 +268,11 @@ L30:
 
     i__1 = *n;
     for (kb = 1; kb <= i__1; ++kb) {
-	k = *n + 1 - kb;
-	b[k] /= a[k + k * a_dim1];
-	t = -b[k];
-	i__2 = k - 1;
-	daxpy_(&i__2, &t, &a[k * a_dim1 + 1], &c__1, &b[1], &c__1);
+  k = *n + 1 - kb;
+  b[k] /= a[k + k * a_dim1];
+  t = -b[k];
+  i__2 = k - 1;
+  daxpy_(&i__2, &t, &a[k * a_dim1 + 1], &c__1, &b[1], &c__1);
 /* L40: */
     }
     goto L100;
@@ -283,32 +283,32 @@ L50:
 
     i__1 = *n;
     for (k = 1; k <= i__1; ++k) {
-	i__2 = k - 1;
-	t = ddot_(&i__2, &a[k * a_dim1 + 1], &c__1, &b[1], &c__1);
-	b[k] = (b[k] - t) / a[k + k * a_dim1];
+  i__2 = k - 1;
+  t = ddot_(&i__2, &a[k * a_dim1 + 1], &c__1, &b[1], &c__1);
+  b[k] = (b[k] - t) / a[k + k * a_dim1];
 /* L60: */
     }
 
 /*        now solve trans(l)*x = y */
 
     if (nm1 < 1) {
-	goto L90;
+  goto L90;
     }
     i__1 = nm1;
     for (kb = 1; kb <= i__1; ++kb) {
-	k = *n - kb;
-	i__2 = *n - k;
-	b[k] += ddot_(&i__2, &a[k + 1 + k * a_dim1], &c__1, &b[k + 1], &c__1);
-	l = ipvt[k];
-	if (l == k) {
-	    goto L70;
-	}
-	t = b[l];
-	b[l] = b[k];
-	b[k] = t;
+  k = *n - kb;
+  i__2 = *n - k;
+  b[k] += ddot_(&i__2, &a[k + 1 + k * a_dim1], &c__1, &b[k + 1], &c__1);
+  l = ipvt[k];
+  if (l == k) {
+      goto L70;
+  }
+  t = b[l];
+  b[l] = b[k];
+  b[k] = t;
 L70:
 /* L80: */
-	;
+  ;
     }
 L90:
 L100:
@@ -316,7 +316,7 @@ L100:
 } /* dgesl_ */
 
 /* Subroutine */ int dgbfa_(doublereal *abd, integer *lda, integer *n,
-	integer *ml, integer *mu, integer *ipvt, integer *info)
+  integer *ml, integer *mu, integer *ipvt, integer *info)
 {
     /* System generated locals */
     integer abd_dim1, abd_offset, i__1, i__2, i__3, i__4;
@@ -326,8 +326,8 @@ L100:
     static doublereal t;
     static integer i0, j0, j1, lm, mm, ju, jz, kp1, nm1;
     extern /* Subroutine */ int dscal_(integer *, doublereal *, doublereal *,
-	    integer *), daxpy_(integer *, doublereal *, doublereal *, integer
-	    *, doublereal *, integer *);
+      integer *), daxpy_(integer *, doublereal *, doublereal *, integer
+      *, doublereal *, integer *);
     extern integer idamax_(integer *, doublereal *, integer *);
 
 
@@ -430,16 +430,16 @@ L100:
     j0 = *mu + 2;
     j1 = min(*n,m) - 1;
     if (j1 < j0) {
-	goto L30;
+  goto L30;
     }
     i__1 = j1;
     for (jz = j0; jz <= i__1; ++jz) {
-	i0 = m + 1 - jz;
-	i__2 = *ml;
-	for (i__ = i0; i__ <= i__2; ++i__) {
-	    abd[i__ + jz * abd_dim1] = 0.;
+  i0 = m + 1 - jz;
+  i__2 = *ml;
+  for (i__ = i0; i__ <= i__2; ++i__) {
+      abd[i__ + jz * abd_dim1] = 0.;
 /* L10: */
-	}
+  }
 /* L20: */
     }
 L30:
@@ -450,102 +450,102 @@ L30:
 
     nm1 = *n - 1;
     if (nm1 < 1) {
-	goto L130;
+  goto L130;
     }
     i__1 = nm1;
     for (k = 1; k <= i__1; ++k) {
-	kp1 = k + 1;
+  kp1 = k + 1;
 
 /*        zero next fill-in column */
 
-	++jz;
-	if (jz > *n) {
-	    goto L50;
-	}
-	if (*ml < 1) {
-	    goto L50;
-	}
-	i__2 = *ml;
-	for (i__ = 1; i__ <= i__2; ++i__) {
-	    abd[i__ + jz * abd_dim1] = 0.;
+  ++jz;
+  if (jz > *n) {
+      goto L50;
+  }
+  if (*ml < 1) {
+      goto L50;
+  }
+  i__2 = *ml;
+  for (i__ = 1; i__ <= i__2; ++i__) {
+      abd[i__ + jz * abd_dim1] = 0.;
 /* L40: */
-	}
+  }
 L50:
 
 /*        find l = pivot index */
 
 /* Computing MIN */
-	i__2 = *ml, i__3 = *n - k;
-	lm = min(i__2,i__3);
-	i__2 = lm + 1;
-	l = idamax_(&i__2, &abd[m + k * abd_dim1], &c__1) + m - 1;
-	ipvt[k] = l + k - m;
+  i__2 = *ml, i__3 = *n - k;
+  lm = min(i__2,i__3);
+  i__2 = lm + 1;
+  l = idamax_(&i__2, &abd[m + k * abd_dim1], &c__1) + m - 1;
+  ipvt[k] = l + k - m;
 
 /*        zero pivot implies this column already triangularized */
 
-	if (abd[l + k * abd_dim1] == 0.) {
-	    goto L100;
-	}
+  if (abd[l + k * abd_dim1] == 0.) {
+      goto L100;
+  }
 
 /*           interchange if necessary */
 
-	if (l == m) {
-	    goto L60;
-	}
-	t = abd[l + k * abd_dim1];
-	abd[l + k * abd_dim1] = abd[m + k * abd_dim1];
-	abd[m + k * abd_dim1] = t;
+  if (l == m) {
+      goto L60;
+  }
+  t = abd[l + k * abd_dim1];
+  abd[l + k * abd_dim1] = abd[m + k * abd_dim1];
+  abd[m + k * abd_dim1] = t;
 L60:
 
 /*           compute multipliers */
 
-	t = -1. / abd[m + k * abd_dim1];
-	dscal_(&lm, &t, &abd[m + 1 + k * abd_dim1], &c__1);
+  t = -1. / abd[m + k * abd_dim1];
+  dscal_(&lm, &t, &abd[m + 1 + k * abd_dim1], &c__1);
 
 /*           row elimination with column indexing */
 
 /* Computing MIN */
 /* Computing MAX */
-	i__3 = ju, i__4 = *mu + ipvt[k];
-	i__2 = max(i__3,i__4);
-	ju = min(i__2,*n);
-	mm = m;
-	if (ju < kp1) {
-	    goto L90;
-	}
-	i__2 = ju;
-	for (j = kp1; j <= i__2; ++j) {
-	    --l;
-	    --mm;
-	    t = abd[l + j * abd_dim1];
-	    if (l == mm) {
-		goto L70;
-	    }
-	    abd[l + j * abd_dim1] = abd[mm + j * abd_dim1];
-	    abd[mm + j * abd_dim1] = t;
+  i__3 = ju, i__4 = *mu + ipvt[k];
+  i__2 = max(i__3,i__4);
+  ju = min(i__2,*n);
+  mm = m;
+  if (ju < kp1) {
+      goto L90;
+  }
+  i__2 = ju;
+  for (j = kp1; j <= i__2; ++j) {
+      --l;
+      --mm;
+      t = abd[l + j * abd_dim1];
+      if (l == mm) {
+  	goto L70;
+      }
+      abd[l + j * abd_dim1] = abd[mm + j * abd_dim1];
+      abd[mm + j * abd_dim1] = t;
 L70:
-	    daxpy_(&lm, &t, &abd[m + 1 + k * abd_dim1], &c__1, &abd[mm + 1 +
-		    j * abd_dim1], &c__1);
+      daxpy_(&lm, &t, &abd[m + 1 + k * abd_dim1], &c__1, &abd[mm + 1 +
+  	    j * abd_dim1], &c__1);
 /* L80: */
-	}
+  }
 L90:
-	goto L110;
+  goto L110;
 L100:
-	*info = k;
+  *info = k;
 L110:
 /* L120: */
-	;
+  ;
     }
 L130:
     ipvt[*n] = *n;
     if (abd[m + *n * abd_dim1] == 0.) {
-	*info = *n;
+  *info = *n;
     }
     return 0;
 } /* dgbfa_ */
 
 /* Subroutine */ int dgbsl_(doublereal *abd, integer *lda, integer *n,
-	integer *ml, integer *mu, integer *ipvt, doublereal *b, integer *job)
+  integer *ml, integer *mu, integer *ipvt, doublereal *b, integer *job)
 {
     /* System generated locals */
     integer abd_dim1, abd_offset, i__1, i__2, i__3;
@@ -555,9 +555,9 @@ L130:
     static doublereal t;
     static integer kb, la, lb, lm, nm1;
     extern doublereal ddot_(integer *, doublereal *, integer *, doublereal *,
-	    integer *);
+      integer *);
     extern /* Subroutine */ int daxpy_(integer *, doublereal *, doublereal *,
-	    integer *, doublereal *, integer *);
+      integer *, doublereal *, integer *);
 
 
 /*     dgbsl solves the double precision band system */
@@ -635,32 +635,32 @@ L130:
     m = *mu + *ml + 1;
     nm1 = *n - 1;
     if (*job != 0) {
-	goto L50;
+  goto L50;
     }
 
 /*        job = 0 , solve  a * x = b */
 /*        first solve l*y = b */
 
     if (*ml == 0) {
-	goto L30;
+  goto L30;
     }
     if (nm1 < 1) {
-	goto L30;
+  goto L30;
     }
     i__1 = nm1;
     for (k = 1; k <= i__1; ++k) {
 /* Computing MIN */
-	i__2 = *ml, i__3 = *n - k;
-	lm = min(i__2,i__3);
-	l = ipvt[k];
-	t = b[l];
-	if (l == k) {
-	    goto L10;
-	}
-	b[l] = b[k];
-	b[k] = t;
+  i__2 = *ml, i__3 = *n - k;
+  lm = min(i__2,i__3);
+  l = ipvt[k];
+  t = b[l];
+  if (l == k) {
+      goto L10;
+  }
+  b[l] = b[k];
+  b[k] = t;
 L10:
-	daxpy_(&lm, &t, &abd[m + 1 + k * abd_dim1], &c__1, &b[k + 1], &c__1);
+  daxpy_(&lm, &t, &abd[m + 1 + k * abd_dim1], &c__1, &b[k + 1], &c__1);
 /* L20: */
     }
 L30:
@@ -669,13 +669,13 @@ L30:
 
     i__1 = *n;
     for (kb = 1; kb <= i__1; ++kb) {
-	k = *n + 1 - kb;
-	b[k] /= abd[m + k * abd_dim1];
-	lm = min(k,m) - 1;
-	la = m - lm;
-	lb = k - lm;
-	t = -b[k];
-	daxpy_(&lm, &t, &abd[la + k * abd_dim1], &c__1, &b[lb], &c__1);
+  k = *n + 1 - kb;
+  b[k] /= abd[m + k * abd_dim1];
+  lm = min(k,m) - 1;
+  la = m - lm;
+  lb = k - lm;
+  t = -b[k];
+  daxpy_(&lm, &t, &abd[la + k * abd_dim1], &c__1, &b[lb], &c__1);
 /* L40: */
     }
     goto L100;
@@ -686,40 +686,40 @@ L50:
 
     i__1 = *n;
     for (k = 1; k <= i__1; ++k) {
-	lm = min(k,m) - 1;
-	la = m - lm;
-	lb = k - lm;
-	t = ddot_(&lm, &abd[la + k * abd_dim1], &c__1, &b[lb], &c__1);
-	b[k] = (b[k] - t) / abd[m + k * abd_dim1];
+  lm = min(k,m) - 1;
+  la = m - lm;
+  lb = k - lm;
+  t = ddot_(&lm, &abd[la + k * abd_dim1], &c__1, &b[lb], &c__1);
+  b[k] = (b[k] - t) / abd[m + k * abd_dim1];
 /* L60: */
     }
 
 /*        now solve trans(l)*x = y */
 
     if (*ml == 0) {
-	goto L90;
+  goto L90;
     }
     if (nm1 < 1) {
-	goto L90;
+  goto L90;
     }
     i__1 = nm1;
     for (kb = 1; kb <= i__1; ++kb) {
-	k = *n - kb;
+  k = *n - kb;
 /* Computing MIN */
-	i__2 = *ml, i__3 = *n - k;
-	lm = min(i__2,i__3);
-	b[k] += ddot_(&lm, &abd[m + 1 + k * abd_dim1], &c__1, &b[k + 1], &
-		c__1);
-	l = ipvt[k];
-	if (l == k) {
-	    goto L70;
-	}
-	t = b[l];
-	b[l] = b[k];
-	b[k] = t;
+  i__2 = *ml, i__3 = *n - k;
+  lm = min(i__2,i__3);
+  b[k] += ddot_(&lm, &abd[m + 1 + k * abd_dim1], &c__1, &b[k + 1], &
+  	c__1);
+  l = ipvt[k];
+  if (l == k) {
+      goto L70;
+  }
+  t = b[l];
+  b[l] = b[k];
+  b[k] = t;
 L70:
 /* L80: */
-	;
+  ;
     }
 L90:
 L100:
@@ -727,7 +727,7 @@ L100:
 } /* dgbsl_ */
 
 /* Subroutine */ int daxpy_(integer *n, doublereal *da, doublereal *dx,
-	integer *incx, doublereal *dy, integer *incy)
+  integer *incx, doublereal *dy, integer *incy)
 {
     /* System generated locals */
     integer i__1;
@@ -747,13 +747,13 @@ L100:
 
     /* Function Body */
     if (*n <= 0) {
-	return 0;
+  return 0;
     }
     if (*da == 0.) {
-	return 0;
+  return 0;
     }
     if (*incx == 1 && *incy == 1) {
-	goto L20;
+  goto L20;
     }
 
 /*        code for unequal increments or equal increments */
@@ -762,16 +762,16 @@ L100:
     ix = 1;
     iy = 1;
     if (*incx < 0) {
-	ix = (-(*n) + 1) * *incx + 1;
+  ix = (-(*n) + 1) * *incx + 1;
     }
     if (*incy < 0) {
-	iy = (-(*n) + 1) * *incy + 1;
+  iy = (-(*n) + 1) * *incy + 1;
     }
     i__1 = *n;
     for (i__ = 1; i__ <= i__1; ++i__) {
-	dy[iy] += *da * dx[ix];
-	ix += *incx;
-	iy += *incy;
+  dy[iy] += *da * dx[ix];
+  ix += *incx;
+  iy += *incy;
 /* L10: */
     }
     return 0;
@@ -784,31 +784,31 @@ L100:
 L20:
     m = *n % 4;
     if (m == 0) {
-	goto L40;
+  goto L40;
     }
     i__1 = m;
     for (i__ = 1; i__ <= i__1; ++i__) {
-	dy[i__] += *da * dx[i__];
+  dy[i__] += *da * dx[i__];
 /* L30: */
     }
     if (*n < 4) {
-	return 0;
+  return 0;
     }
 L40:
     mp1 = m + 1;
     i__1 = *n;
     for (i__ = mp1; i__ <= i__1; i__ += 4) {
-	dy[i__] += *da * dx[i__];
-	dy[i__ + 1] += *da * dx[i__ + 1];
-	dy[i__ + 2] += *da * dx[i__ + 2];
-	dy[i__ + 3] += *da * dx[i__ + 3];
+  dy[i__] += *da * dx[i__];
+  dy[i__ + 1] += *da * dx[i__ + 1];
+  dy[i__ + 2] += *da * dx[i__ + 2];
+  dy[i__ + 3] += *da * dx[i__ + 3];
 /* L50: */
     }
     return 0;
 } /* daxpy_ */
 
 /* Subroutine */ int dcopy_(integer *n, doublereal *sx, integer *incx,
-	doublereal *sy, integer *incy)
+  doublereal *sy, integer *incy)
 {
     /* System generated locals */
     integer i__1;
@@ -828,10 +828,10 @@ L40:
 
     /* Function Body */
     if (*n <= 0) {
-	return 0;
+  return 0;
     }
     if (*incx == 1 && *incy == 1) {
-	goto L20;
+  goto L20;
     }
 
 /*        code for unequal increments or equal increments */
@@ -840,16 +840,16 @@ L40:
     ix = 1;
     iy = 1;
     if (*incx < 0) {
-	ix = (-(*n) + 1) * *incx + 1;
+  ix = (-(*n) + 1) * *incx + 1;
     }
     if (*incy < 0) {
-	iy = (-(*n) + 1) * *incy + 1;
+  iy = (-(*n) + 1) * *incy + 1;
     }
     i__1 = *n;
     for (i__ = 1; i__ <= i__1; ++i__) {
-	sy[iy] = sx[ix];
-	ix += *incx;
-	iy += *incy;
+  sy[iy] = sx[ix];
+  ix += *incx;
+  iy += *incy;
 /* L10: */
     }
     return 0;
@@ -862,34 +862,34 @@ L40:
 L20:
     m = *n % 7;
     if (m == 0) {
-	goto L40;
+  goto L40;
     }
     i__1 = m;
     for (i__ = 1; i__ <= i__1; ++i__) {
-	sy[i__] = sx[i__];
+  sy[i__] = sx[i__];
 /* L30: */
     }
     if (*n < 7) {
-	return 0;
+  return 0;
     }
 L40:
     mp1 = m + 1;
     i__1 = *n;
     for (i__ = mp1; i__ <= i__1; i__ += 7) {
-	sy[i__] = sx[i__];
-	sy[i__ + 1] = sx[i__ + 1];
-	sy[i__ + 2] = sx[i__ + 2];
-	sy[i__ + 3] = sx[i__ + 3];
-	sy[i__ + 4] = sx[i__ + 4];
-	sy[i__ + 5] = sx[i__ + 5];
-	sy[i__ + 6] = sx[i__ + 6];
+  sy[i__] = sx[i__];
+  sy[i__ + 1] = sx[i__ + 1];
+  sy[i__ + 2] = sx[i__ + 2];
+  sy[i__ + 3] = sx[i__ + 3];
+  sy[i__ + 4] = sx[i__ + 4];
+  sy[i__ + 5] = sx[i__ + 5];
+  sy[i__ + 6] = sx[i__ + 6];
 /* L50: */
     }
     return 0;
 } /* dcopy_ */
 
 /* Subroutine */ int dscal_(integer *n, doublereal *da, doublereal *dx,
-	integer *incx)
+  integer *incx)
 {
     /* System generated locals */
     integer i__1, i__2;
@@ -908,10 +908,10 @@ L40:
 
     /* Function Body */
     if (*n <= 0) {
-	return 0;
+  return 0;
     }
     if (*incx == 1) {
-	goto L20;
+  goto L20;
     }
 
 /*        code for increment not equal to 1 */
@@ -920,7 +920,7 @@ L40:
     i__1 = nincx;
     i__2 = *incx;
     for (i__ = 1; i__2 < 0 ? i__ >= i__1 : i__ <= i__1; i__ += i__2) {
-	dx[i__] = *da * dx[i__];
+  dx[i__] = *da * dx[i__];
 /* L10: */
     }
     return 0;
@@ -933,32 +933,32 @@ L40:
 L20:
     m = *n % 5;
     if (m == 0) {
-	goto L40;
+  goto L40;
     }
     i__2 = m;
     for (i__ = 1; i__ <= i__2; ++i__) {
-	dx[i__] = *da * dx[i__];
+  dx[i__] = *da * dx[i__];
 /* L30: */
     }
     if (*n < 5) {
-	return 0;
+  return 0;
     }
 L40:
     mp1 = m + 1;
     i__2 = *n;
     for (i__ = mp1; i__ <= i__2; i__ += 5) {
-	dx[i__] = *da * dx[i__];
-	dx[i__ + 1] = *da * dx[i__ + 1];
-	dx[i__ + 2] = *da * dx[i__ + 2];
-	dx[i__ + 3] = *da * dx[i__ + 3];
-	dx[i__ + 4] = *da * dx[i__ + 4];
+  dx[i__] = *da * dx[i__];
+  dx[i__ + 1] = *da * dx[i__ + 1];
+  dx[i__ + 2] = *da * dx[i__ + 2];
+  dx[i__ + 3] = *da * dx[i__ + 3];
+  dx[i__ + 4] = *da * dx[i__ + 4];
 /* L50: */
     }
     return 0;
 } /* dscal_ */
 
 doublereal ddot_(integer *n, doublereal *dx, integer *incx, doublereal *dy,
-	integer *incy)
+  integer *incy)
 {
     /* System generated locals */
     integer i__1;
@@ -982,10 +982,10 @@ doublereal ddot_(integer *n, doublereal *dx, integer *incx, doublereal *dy,
     ret_val = 0.;
     dtemp = 0.;
     if (*n <= 0) {
-	return ret_val;
+  return ret_val;
     }
     if (*incx == 1 && *incy == 1) {
-	goto L20;
+  goto L20;
     }
 
 /*        code for unequal increments or equal increments */
@@ -994,16 +994,16 @@ doublereal ddot_(integer *n, doublereal *dx, integer *incx, doublereal *dy,
     ix = 1;
     iy = 1;
     if (*incx < 0) {
-	ix = (-(*n) + 1) * *incx + 1;
+  ix = (-(*n) + 1) * *incx + 1;
     }
     if (*incy < 0) {
-	iy = (-(*n) + 1) * *incy + 1;
+  iy = (-(*n) + 1) * *incy + 1;
     }
     i__1 = *n;
     for (i__ = 1; i__ <= i__1; ++i__) {
-	dtemp += dx[ix] * dy[iy];
-	ix += *incx;
-	iy += *incy;
+  dtemp += dx[ix] * dy[iy];
+  ix += *incx;
+  iy += *incy;
 /* L10: */
     }
     ret_val = dtemp;
@@ -1017,23 +1017,23 @@ doublereal ddot_(integer *n, doublereal *dx, integer *incx, doublereal *dy,
 L20:
     m = *n % 5;
     if (m == 0) {
-	goto L40;
+  goto L40;
     }
     i__1 = m;
     for (i__ = 1; i__ <= i__1; ++i__) {
-	dtemp += dx[i__] * dy[i__];
+  dtemp += dx[i__] * dy[i__];
 /* L30: */
     }
     if (*n < 5) {
-	goto L60;
+  goto L60;
     }
 L40:
     mp1 = m + 1;
     i__1 = *n;
     for (i__ = mp1; i__ <= i__1; i__ += 5) {
-	dtemp = dtemp + dx[i__] * dy[i__] + dx[i__ + 1] * dy[i__ + 1] + dx[
-		i__ + 2] * dy[i__ + 2] + dx[i__ + 3] * dy[i__ + 3] + dx[i__ +
-		4] * dy[i__ + 4];
+  dtemp = dtemp + dx[i__] * dy[i__] + dx[i__ + 1] * dy[i__ + 1] + dx[
+  	i__ + 2] * dy[i__ + 2] + dx[i__ + 3] * dy[i__ + 3] + dx[i__ +
+  	4] * dy[i__ + 4];
 /* L50: */
     }
 L60:
@@ -1116,7 +1116,7 @@ doublereal dnrm2_(integer *n, doublereal *dx, integer *incx)
 /*     data cutlo, cuthi / 4.441e-16,  1.304e19 / */
 
     if (*n > 0) {
-	goto L10;
+  goto L10;
     }
     ret_val = zero;
     goto L300;
@@ -1130,14 +1130,14 @@ L10:
     i__ = 1;
 L20:
     switch (next) {
-	case 0: goto L30;
-	case 1: goto L50;
-	case 2: goto L70;
-	case 3: goto L110;
+  case 0: goto L30;
+  case 1: goto L50;
+  case 2: goto L70;
+  case 3: goto L110;
     }
 L30:
     if ((d__1 = dx[i__], abs(d__1)) > cutlo) {
-	goto L85;
+  goto L85;
     }
     next = 1;
     next_fmt = fmt_50;
@@ -1147,10 +1147,10 @@ L30:
 
 L50:
     if (dx[i__] == zero) {
-	goto L200;
+  goto L200;
     }
     if ((d__1 = dx[i__], abs(d__1)) > cutlo) {
-	goto L85;
+  goto L85;
     }
 
 /*                                prepare for phase 2. */
@@ -1174,7 +1174,7 @@ L105:
 
 L70:
     if ((d__1 = dx[i__], abs(d__1)) > cutlo) {
-	goto L75;
+  goto L75;
     }
 
 /*                     common code for phases 2 and 4. */
@@ -1182,7 +1182,7 @@ L70:
 
 L110:
     if ((d__1 = dx[i__], abs(d__1)) <= xmax) {
-	goto L115;
+  goto L115;
     }
 /* Computing 2nd power */
     d__1 = xmax / dx[i__];
@@ -1214,13 +1214,13 @@ L85:
     i__1 = nn;
     i__2 = *incx;
     for (j = i__; i__2 < 0 ? j >= i__1 : j <= i__1; j += i__2) {
-	if ((d__1 = dx[j], abs(d__1)) >= hitest) {
-	    goto L100;
-	}
+  if ((d__1 = dx[j], abs(d__1)) >= hitest) {
+      goto L100;
+  }
 /* L95: */
 /* Computing 2nd power */
-	d__1 = dx[j];
-	sum += d__1 * d__1;
+  d__1 = dx[j];
+  sum += d__1 * d__1;
     }
     ret_val = sqrt(sum);
     goto L300;
@@ -1228,7 +1228,7 @@ L85:
 L200:
     i__ += *incx;
     if (i__ <= nn) {
-	goto L20;
+  goto L20;
     }
 
 /*              end of main loop. */
@@ -1261,14 +1261,14 @@ integer idamax_(integer *n, doublereal *dx, integer *incx)
     /* Function Body */
     ret_val = 0;
     if (*n < 1) {
-	return ret_val;
+  return ret_val;
     }
     ret_val = 1;
     if (*n == 1) {
-	return ret_val;
+  return ret_val;
     }
     if (*incx == 1) {
-	goto L20;
+  goto L20;
     }
 
 /*        code for increment not equal to 1 */
@@ -1278,13 +1278,13 @@ integer idamax_(integer *n, doublereal *dx, integer *incx)
     ix += *incx;
     i__1 = *n;
     for (i__ = 2; i__ <= i__1; ++i__) {
-	if ((d__1 = dx[ix], abs(d__1)) <= dmax__) {
-	    goto L5;
-	}
-	ret_val = i__;
-	dmax__ = (d__1 = dx[ix], abs(d__1));
+  if ((d__1 = dx[ix], abs(d__1)) <= dmax__) {
+      goto L5;
+  }
+  ret_val = i__;
+  dmax__ = (d__1 = dx[ix], abs(d__1));
 L5:
-	ix += *incx;
+  ix += *incx;
 /* L10: */
     }
     return ret_val;
@@ -1295,13 +1295,13 @@ L20:
     dmax__ = abs(dx[1]);
     i__1 = *n;
     for (i__ = 2; i__ <= i__1; ++i__) {
-	if ((d__1 = dx[i__], abs(d__1)) <= dmax__) {
-	    goto L30;
-	}
-	ret_val = i__;
-	dmax__ = (d__1 = dx[i__], abs(d__1));
+  if ((d__1 = dx[i__], abs(d__1)) <= dmax__) {
+      goto L30;
+  }
+  ret_val = i__;
+  dmax__ = (d__1 = dx[i__], abs(d__1));
 L30:
-	;
+  ;
     }
     return ret_val;
 } /* idamax_ */

@@ -19,12 +19,12 @@
 #include <string>
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
-	#include <winsock.h>
+  #include <winsock.h>
 #else
-	#include <sys/socket.h>
-	#include <sys/types.h>
-	#include <netinet/in.h>
-	#include <netdb.h>
+  #include <sys/socket.h>
+  #include <sys/types.h>
+  #include <netinet/in.h>
+  #include <netdb.h>
 #endif
 
 // Max. Anzahl Verbindungen
@@ -37,10 +37,10 @@ class Socket {
    private:
    // Socketnummer (Socket-Deskriptor)
    int m_sock;
-	 int m_socket_type;
+   int m_socket_type;
    // Struktur sockaddr_in
    sockaddr_in m_addr;
-	 
+   
    public:
    // Konstruktor
    Socket();

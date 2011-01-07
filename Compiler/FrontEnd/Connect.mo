@@ -91,21 +91,21 @@ end Set;
 public
 uniontype Sets "The connection \'Sets\' contains
    - the connection set
-	 - a list of component references occuring in connect statemens
-	 - a list of deleted components
-	 - connect statements to propagate upwards in instance hierachy (inner/outer connectors)
+   - a list of component references occuring in connect statemens
+   - a list of deleted components
+   - connect statements to propagate upwards in instance hierachy (inner/outer connectors)
 
-	The list of componentReferences are used only when evaluating the cardinality operator.
-	It is passed -into- classes to be instantiated, while the Set list is returned -from-
+  The list of componentReferences are used only when evaluating the cardinality operator.
+  It is passed -into- classes to be instantiated, while the Set list is returned -from-
   instantiated classes.
   The list of deleted components is required to be able to remove connections to them."
   record SETS
     list<Set> setLst "the connection set";
     list<DAE.ComponentRef> connection "connection_set connect_refs - list of
-					      crefs in connect statements. This is used to be able to evaluate cardinality.
-					      It is registered in env by Inst.addConnnectionSetToEnv.";
-		list<DAE.ComponentRef> deletedComponents "list of components with conditional declaration = false";
-		list<OuterConnect> outerConnects "connect statements to propagate upwards";
+    			      crefs in connect statements. This is used to be able to evaluate cardinality.
+    			      It is registered in env by Inst.addConnnectionSetToEnv.";
+    list<DAE.ComponentRef> deletedComponents "list of components with conditional declaration = false";
+    list<OuterConnect> outerConnects "connect statements to propagate upwards";
     list<StreamFlowConnect> streamFlowConnects "list of stream-flow associations.";
   end SETS;
 end Sets;

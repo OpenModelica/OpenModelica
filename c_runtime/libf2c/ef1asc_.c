@@ -6,8 +6,8 @@ extern "C" {
 #endif
 
 
-#define M	( (long) (sizeof(long) - 1) )
-#define EVEN(x)	( ( (x)+ M) & (~M) )
+#define M  ( (long) (sizeof(long) - 1) )
+#define EVEN(x)  ( ( (x)+ M) & (~M) )
 
 #ifdef KR_headers
 extern VOID s_copy();
@@ -18,7 +18,7 @@ int ef1asc_(ftnint *a, ftnlen *la, ftnint *b, ftnlen *lb)
 #endif
 {
 s_copy( (char *)a, (char *)b, EVEN(*la), *lb );
-return 0;	/* ignored return value */
+return 0;  /* ignored return value */
 }
 #ifdef __cplusplus
 }

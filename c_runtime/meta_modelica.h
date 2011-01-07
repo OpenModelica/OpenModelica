@@ -66,27 +66,27 @@ typedef unsigned int mmc_uint_t;
 typedef int mmc_sint_t;
 #endif
 
-#define MMC_TAGPTR(p)		((void*)((char*)(p) + 3))
-#define MMC_UNTAGPTR(x)		((void*)((char*)(x) - 3))
+#define MMC_TAGPTR(p)  	((void*)((char*)(p) + 3))
+#define MMC_UNTAGPTR(x)  	((void*)((char*)(x) - 3))
 #define MMC_STRUCTHDR(slots,ctor) (((slots) << 10) + (((ctor) & 255) << 2))
-#define MMC_NILHDR		MMC_STRUCTHDR(0,0)
-#define MMC_CONSHDR		MMC_STRUCTHDR(2,1)
-#define MMC_OFFSET(p,i)		((void*)((void**)(p) + (i)))
-#define MMC_FETCH(p)		(*(void**)(p))
-#define MMC_CAR(X)	MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(X),1))
-#define MMC_CDR(X)	MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(X),2))
+#define MMC_NILHDR  	MMC_STRUCTHDR(0,0)
+#define MMC_CONSHDR  	MMC_STRUCTHDR(2,1)
+#define MMC_OFFSET(p,i)  	((void*)((void**)(p) + (i)))
+#define MMC_FETCH(p)  	(*(void**)(p))
+#define MMC_CAR(X)  MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(X),1))
+#define MMC_CDR(X)  MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(X),2))
 #define MMC_NILTEST(x)  (MMC_GETHDR(x) == MMC_NILHDR)
-#define MMC_IMMEDIATE(i)	((void*)(i))
-#define MMC_TAGFIXNUM(i)	((i) << 1)
-#define MMC_UNTAGFIXNUM(X)	(((mmc_sint_t) X) >> 1)
-#define MMC_REALHDR		(((MMC_SIZE_DBL/MMC_SIZE_INT) << 10) + 9)
+#define MMC_IMMEDIATE(i)  ((void*)(i))
+#define MMC_TAGFIXNUM(i)  ((i) << 1)
+#define MMC_UNTAGFIXNUM(X)  (((mmc_sint_t) X) >> 1)
+#define MMC_REALHDR  	(((MMC_SIZE_DBL/MMC_SIZE_INT) << 10) + 9)
 #define MMC_REALDATA(x) (((struct mmc_real*)MMC_UNTAGPTR(x))->data)
-#define MMC_STRINGHDR(nbytes)	(((nbytes)<<(10-MMC_LOG2_SIZE_INT))+((1<<10)+5))
-#define MMC_HDRSLOTS(hdr)	((hdr) >> 10)
-#define MMC_GETHDR(x)		(*(mmc_uint_t*)MMC_UNTAGPTR(x))
+#define MMC_STRINGHDR(nbytes)  (((nbytes)<<(10-MMC_LOG2_SIZE_INT))+((1<<10)+5))
+#define MMC_HDRSLOTS(hdr)  ((hdr) >> 10)
+#define MMC_GETHDR(x)  	(*(mmc_uint_t*)MMC_UNTAGPTR(x))
 #define MMC_HDRCTOR(hdr) (((hdr) >> 2) & 255)
-#define MMC_HDRISSTRING(hdr)	(((hdr) & ((1<<(10-MMC_LOG2_SIZE_INT))-1)) == 5)
-#define MMC_HDRSTRLEN(hdr)	(((hdr) >> (10-MMC_LOG2_SIZE_INT)) - MMC_SIZE_INT)
+#define MMC_HDRISSTRING(hdr)  (((hdr) & ((1<<(10-MMC_LOG2_SIZE_INT))-1)) == 5)
+#define MMC_HDRSTRLEN(hdr)  (((hdr) >> (10-MMC_LOG2_SIZE_INT)) - MMC_SIZE_INT)
 #define MMC_STRINGDATA(x) (((struct mmc_string*)MMC_UNTAGPTR(x))->data)
 #define MMC_STRUCTDATA(x) (((struct mmc_struct*)MMC_UNTAGPTR(x))->data)
 #define MMC_ARRAY_TAG 255
@@ -95,7 +95,7 @@ typedef int mmc_sint_t;
 #define MMC_INT_MAX ((1<<30)-1)
 #define MMC_INT_MIN (-(1<<30))
 
-#define MMC_DEFSTRUCTLIT(NAME,LEN,CON)	\
+#define MMC_DEFSTRUCTLIT(NAME,LEN,CON)  \
     struct { \
       mmc_uint_t header; \
       const void *data[LEN]; \
@@ -103,14 +103,14 @@ typedef int mmc_sint_t;
 #define MMC_DEFSTRUCT0LIT(NAME,CON) struct mmc_header NAME = { MMC_STRUCTHDR(0,CON) }
 #define MMC_REFSTRUCTLIT(NAME) MMC_TAGPTR(&(NAME).header)
 
-#define MMC_DEFSTRINGLIT(NAME,LEN,VAL)	\
-    struct {				\
-	    mmc_uint_t header;		\
-	    const char data[LEN+1];		\
+#define MMC_DEFSTRINGLIT(NAME,LEN,VAL)  \
+    struct {  			\
+      mmc_uint_t header;		\
+      const char data[LEN+1];		\
     } NAME = { MMC_STRINGHDR(LEN), VAL }
 #define MMC_REFSTRINGLIT(NAME) MMC_TAGPTR(&(NAME).header)
 
-struct mmc_real_lit {	/* there must be no padding between `header' and `data' */
+struct mmc_real_lit {  /* there must be no padding between `header' and `data' */
     mmc_uint_t header;
     double data;
 };
@@ -122,23 +122,23 @@ struct mmc_header {
 };
 
 struct mmc_struct {
-    mmc_uint_t header;	/* MMC_STRUCTHDR(slots,ctor) */
-    void *data[1];	/* `slots' elements */
+    mmc_uint_t header;  /* MMC_STRUCTHDR(slots,ctor) */
+    void *data[1];  /* `slots' elements */
 };
 
 struct mmc_cons_struct {
-    mmc_uint_t header;	/* MMC_STRUCTHDR(slots,ctor) */
-    void *data[2];	/* `slots' elements */
+    mmc_uint_t header;  /* MMC_STRUCTHDR(slots,ctor) */
+    void *data[2];  /* `slots' elements */
 };
 
 struct mmc_real {
-    mmc_uint_t header;	/* MMC_REALHDR */
+    mmc_uint_t header;  /* MMC_REALHDR */
     mmc_uint_t data[MMC_SIZE_DBL/MMC_SIZE_INT];
 };
 
 struct mmc_string {
-    mmc_uint_t header;	/* MMC_STRINGHDR(bytes) */
-    char data[1];	/* `bytes' elements + terminating '\0' */
+    mmc_uint_t header;  /* MMC_STRINGHDR(bytes) */
+    char data[1];  /* `bytes' elements + terminating '\0' */
 };
 
 void *mmc_alloc_bytes(unsigned nbytes);
@@ -169,7 +169,7 @@ static inline void* mmc_mk_scon(const char *s)
     struct mmc_string *p = (struct mmc_string *) mmc_alloc_words(nwords);
     void *res;
     p->header = header;
-    memcpy(p->data, s, nbytes+1);	/* including terminating '\0' */
+    memcpy(p->data, s, nbytes+1);  /* including terminating '\0' */
     res = MMC_TAGPTR(p);
     MMC_CHECK_STRING(res);
     return res;

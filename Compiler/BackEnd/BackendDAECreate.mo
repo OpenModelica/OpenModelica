@@ -2197,17 +2197,17 @@ algorithm
 end extendRange;
 
 protected function expInt "returns the int value of an expression"
-	input DAE.Exp exp;
-  input BackendDAE.Variables inKnVariables;	
-	output Integer i;
+  input DAE.Exp exp;
+  input BackendDAE.Variables inKnVariables;  
+  output Integer i;
 algorithm
-	i := match(exp,inKnVariables)
+  i := match(exp,inKnVariables)
  local 
    Integer i2;
    DAE.ComponentRef cr;
    BackendDAE.Variables knv;
    DAE.Exp e;
-	  case (DAE.ICONST(integer = i2),_) then i2;
+    case (DAE.ICONST(integer = i2),_) then i2;
     case (DAE.ENUM_LITERAL(index = i2),_) then i2;
     case (DAE.CREF(componentRef=cr),knv)
       equation
@@ -2215,7 +2215,7 @@ algorithm
         i2 = expInt(e,knv);  
       then
         i2;
-	end match;
+  end match;
 end expInt;
 
 protected function sortEqn

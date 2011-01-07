@@ -47,17 +47,17 @@ int initialize(const std::string*method);
 
 #ifdef __cplusplus
 extern "C" {
-	void  NEWUOA(
-	long *nz,
-	long *NPT,
-	double *z,
-	double *RHOBEG,
-	double *RHOEND,
-	long *IPRINT,
-	long *MAXFUN,
-	double *W,
-	void (*leastSquare) (long *nz, double *z, double *funcValue)
-	);
+  void  NEWUOA(
+  long *nz,
+  long *NPT,
+  double *z,
+  double *RHOBEG,
+  double *RHOEND,
+  long *IPRINT,
+  long *MAXFUN,
+  double *W,
+  void (*leastSquare) (long *nz, double *z, double *funcValue)
+  );
 } // extern C
 #endif
 
@@ -67,20 +67,20 @@ extern "C" {
 
 #ifdef __cplusplus
 extern "C" {
-	void  NELMEAD(
-	   double *z,
-	   double *STEP,
-	   long *nz,
-	   double *funcValue,
-	   long *MAXF,
-	   long *IPRINT,
-	   double *STOPCR,
-	   long *NLOOP,
-	   long *IQUAD,
-	   double *SIMP,
-	   double *VAR,
-	   void (*leastSquare) (long *nz, double *z, double *funcValue),
-	   long *IFAULT);
+  void  NELMEAD(
+     double *z,
+     double *STEP,
+     long *nz,
+     double *funcValue,
+     long *MAXF,
+     long *IPRINT,
+     double *STOPCR,
+     long *NLOOP,
+     long *IQUAD,
+     double *SIMP,
+     double *VAR,
+     void (*leastSquare) (long *nz, double *z, double *funcValue),
+     long *IFAULT);
 } // extern "C"
 #endif
 

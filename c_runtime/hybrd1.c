@@ -1,19 +1,19 @@
 /* hybrd1.f -- translated by f2c (version 20041007).
    You must link the resulting object file with libf2c:
-	on Microsoft Windows system, link with libf2c.lib;
-	on Linux or Unix systems, link with .../path/to/libf2c.a -lm
-	or, if you install libf2c.a in a standard place, with -lf2c -lm
-	-- in that order, at the end of the command line, as in
-		cc *.o -lf2c -lm
-	Source for libf2c is in /netlib/f2c/libf2c.zip, e.g.,
+  on Microsoft Windows system, link with libf2c.lib;
+  on Linux or Unix systems, link with .../path/to/libf2c.a -lm
+  or, if you install libf2c.a in a standard place, with -lf2c -lm
+  -- in that order, at the end of the command line, as in
+  	cc *.o -lf2c -lm
+  Source for libf2c is in /netlib/f2c/libf2c.zip, e.g.,
 
-		http://www.netlib.org/f2c/libf2c.zip
+  	http://www.netlib.org/f2c/libf2c.zip
 */
 
 #include "f2c.h"
 
 /* Subroutine */ int hybrd1_(U_fp fcn, integer *n, doublereal *x, doublereal *
-	fvec, doublereal *tol, integer *info, doublereal *wa, integer *lwa)
+  fvec, doublereal *tol, integer *info, doublereal *wa, integer *lwa)
 {
     /* Initialized data */
 
@@ -29,11 +29,11 @@
     static doublereal xtol;
     static integer index;
     extern /* Subroutine */ int hybrd_(U_fp, integer *, doublereal *,
-	    doublereal *, doublereal *, integer *, integer *, integer *,
-	    doublereal *, doublereal *, integer *, doublereal *, integer *,
-	    integer *, integer *, doublereal *, integer *, doublereal *,
-	    integer *, doublereal *, doublereal *, doublereal *, doublereal *,
-	     doublereal *);
+      doublereal *, doublereal *, integer *, integer *, integer *,
+      doublereal *, doublereal *, integer *, doublereal *, integer *,
+      integer *, integer *, doublereal *, integer *, doublereal *,
+      integer *, doublereal *, doublereal *, doublereal *, doublereal *,
+       doublereal *);
     static doublereal epsfcn;
     static integer maxfev, nprint;
 
@@ -132,7 +132,7 @@
 /*     check the input parameters for errors. */
 
     if (*n <= 0 || *tol < zero || *lwa < *n * (*n * 3 + 13) / 2) {
-	goto L20;
+  goto L20;
     }
 
 /*     call hybrd. */
@@ -145,18 +145,18 @@
     mode = 2;
     i__1 = *n;
     for (j = 1; j <= i__1; ++j) {
-	wa[j] = one;
+  wa[j] = one;
 /* L10: */
     }
     nprint = 0;
     lr = *n * (*n + 1) / 2;
     index = *n * 6 + lr;
     hybrd_((U_fp)fcn, n, &x[1], &fvec[1], &xtol, &maxfev, &ml, &mu, &epsfcn, &
-	    wa[1], &mode, &factor, &nprint, info, &nfev, &wa[index + 1], n, &
-	    wa[*n * 6 + 1], &lr, &wa[*n + 1], &wa[(*n << 1) + 1], &wa[*n * 3
-	    + 1], &wa[(*n << 2) + 1], &wa[*n * 5 + 1]);
+      wa[1], &mode, &factor, &nprint, info, &nfev, &wa[index + 1], n, &
+      wa[*n * 6 + 1], &lr, &wa[*n + 1], &wa[(*n << 1) + 1], &wa[*n * 3
+      + 1], &wa[(*n << 2) + 1], &wa[*n * 5 + 1]);
     if (*info == 5) {
-	*info = 4;
+  *info = 4;
     }
 L20:
     return 0;

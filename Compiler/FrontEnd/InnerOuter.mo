@@ -30,7 +30,7 @@
  */
 package InnerOuter
 "
-  file:	       InnerOuter.mo
+  file:         InnerOuter.mo
   package:     InnerOuter
   description: Instance hierarchy and functionality to deal with Inner/Outer definitions
 
@@ -451,10 +451,10 @@ end changeInnerOuterInOuterConnect2;
 protected function buildInnerOuterRepl
 "Builds replacement rules for changing outer references
  to the inner variable"
-	input list<DAE.Element> innerVars;
-	input list<DAE.Element> outerVars;
-	input VarTransform.VariableReplacements inRepl;
-	output VarTransform.VariableReplacements outRepl;
+  input list<DAE.Element> innerVars;
+  input list<DAE.Element> outerVars;
+  input VarTransform.VariableReplacements inRepl;
+  output VarTransform.VariableReplacements outRepl;
 algorithm
   outRepl := matchcontinue(innerVars,outerVars,inRepl)
     local VarTransform.VariableReplacements repl; DAE.Element v;
@@ -469,29 +469,29 @@ end buildInnerOuterRepl;
 
 protected function buildInnerOuterReplVar
 "Help function to buildInnerOuterRepl"
-	input DAE.Element innerVar;
-	input list<DAE.Element> outerVars;
-	input VarTransform.VariableReplacements inRepl;
-	output VarTransform.VariableReplacements outRepl;
+  input DAE.Element innerVar;
+  input list<DAE.Element> outerVars;
+  input VarTransform.VariableReplacements inRepl;
+  output VarTransform.VariableReplacements outRepl;
 algorithm
-	outRepl := matchcontinue(innerVar,outerVars,inRepl)
-	  local
+  outRepl := matchcontinue(innerVar,outerVars,inRepl)
+    local
         list<DAE.ComponentRef> outerCrs,ourOuterCrs;
-	    DAE.ComponentRef cr; VarTransform.VariableReplacements repl;
-	  case(DAE.VAR(componentRef = cr, innerOuter = Absyn.INNEROUTER()),outerVars,repl)
-	    equation
+      DAE.ComponentRef cr; VarTransform.VariableReplacements repl;
+    case(DAE.VAR(componentRef = cr, innerOuter = Absyn.INNEROUTER()),outerVars,repl)
+      equation
         outerCrs = Util.listMap(outerVars,DAEUtil.varCref);
-	      ourOuterCrs = Util.listSelect1(outerCrs,cr,isInnerOuterMatch);
-	      cr = DAEUtil.nameInnerouterUniqueCref(cr);
+        ourOuterCrs = Util.listSelect1(outerCrs,cr,isInnerOuterMatch);
+        cr = DAEUtil.nameInnerouterUniqueCref(cr);
         repl = Util.listFold_2r(ourOuterCrs,VarTransform.addReplacement,repl,Expression.crefExp(cr));
-	    then repl;
-	  case(DAE.VAR(componentRef = cr),outerVars,repl)
-	    equation
-	      outerCrs = Util.listMap(outerVars,DAEUtil.varCref);
-	      ourOuterCrs = Util.listSelect1(outerCrs,cr,isInnerOuterMatch);
-	      repl = Util.listFold_2r(ourOuterCrs,VarTransform.addReplacement,repl,Expression.crefExp(cr));
-	    then repl;
-	end matchcontinue;
+      then repl;
+    case(DAE.VAR(componentRef = cr),outerVars,repl)
+      equation
+        outerCrs = Util.listMap(outerVars,DAEUtil.varCref);
+        ourOuterCrs = Util.listSelect1(outerCrs,cr,isInnerOuterMatch);
+        repl = Util.listFold_2r(ourOuterCrs,VarTransform.addReplacement,repl,Expression.crefExp(cr));
+      then repl;
+  end matchcontinue;
 end buildInnerOuterReplVar;
 
 protected function isInnerOuterMatch
@@ -1104,7 +1104,7 @@ Special cases:
   if (innerouter , unspecified) -> do NOT prefix firstelement refers to outer elem
   if (innerouter , outer) -> DO prefix
   else
-  	use normal function( innerOuterBooleans)
+    use normal function( innerOuterBooleans)
 "
 input Absyn.InnerOuter io1;
 input Absyn.InnerOuter io2;
@@ -1339,14 +1339,14 @@ public function switchInnerToOuterAndPrefix
       then
         (DAE.VAR(cr,vk,dir,prot,t,e,id,flowPrefix,streamPrefix,source,dae_var_attr,comment,io) :: r_1);
 
-	  /* If var already have inner/outer, keep it. */
+    /* If var already have inner/outer, keep it. */
     case ( (v as DAE.VAR(componentRef = _)) :: r,io,pre)
       equation
         r_1 = switchInnerToOuterAndPrefix(r, io, pre);
       then
         v :: r_1;
 
-			/* Traverse components */
+    	/* Traverse components */
     case ((DAE.COMP(ident = idName,dAElist = lst,source = source,comment = comment) :: r),io,pre)
       equation
         lst_1 = switchInnerToOuterAndPrefix(lst, io, pre);
@@ -1413,7 +1413,7 @@ public function prefixOuterDaeVars
       then
         (DAE.VAR(cr,vk,dir,prot,t,e,id,flowPrefix,streamPrefix,source,dae_var_attr,comment,io) :: r_1);
 
-		// Traverse components
+    // Traverse components
     case ((DAE.COMP(ident = idName,dAElist = lst,source = source,comment = comment) :: r),crefPrefix)
       equation
         lst_1 = prefixOuterDaeVars(lst, crefPrefix);

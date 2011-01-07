@@ -1,13 +1,13 @@
 /* dogleg.f -- translated by f2c (version 20041007).
    You must link the resulting object file with libf2c:
-	on Microsoft Windows system, link with libf2c.lib;
-	on Linux or Unix systems, link with .../path/to/libf2c.a -lm
-	or, if you install libf2c.a in a standard place, with -lf2c -lm
-	-- in that order, at the end of the command line, as in
-		cc *.o -lf2c -lm
-	Source for libf2c is in /netlib/f2c/libf2c.zip, e.g.,
+  on Microsoft Windows system, link with libf2c.lib;
+  on Linux or Unix systems, link with .../path/to/libf2c.a -lm
+  or, if you install libf2c.a in a standard place, with -lf2c -lm
+  -- in that order, at the end of the command line, as in
+  	cc *.o -lf2c -lm
+  Source for libf2c is in /netlib/f2c/libf2c.zip, e.g.,
 
-		http://www.netlib.org/f2c/libf2c.zip
+  	http://www.netlib.org/f2c/libf2c.zip
 */
 
 #include "f2c.h"
@@ -17,8 +17,8 @@
 static integer c__1 = 1;
 
 /* Subroutine */ int dogleg_(integer *n, doublereal *r__, integer *lr,
-	doublereal *diag, doublereal *qtb, doublereal *delta, doublereal *x,
-	doublereal *wa1, doublereal *wa2)
+  doublereal *diag, doublereal *qtb, doublereal *delta, doublereal *x,
+  doublereal *wa1, doublereal *wa2)
 {
     /* Initialized data */
 
@@ -116,40 +116,40 @@ static integer c__1 = 1;
     jj = *n * (*n + 1) / 2 + 1;
     i__1 = *n;
     for (k = 1; k <= i__1; ++k) {
-	j = *n - k + 1;
-	jp1 = j + 1;
-	jj -= k;
-	l = jj + 1;
-	sum = zero;
-	if (*n < jp1) {
-	    goto L20;
-	}
-	i__2 = *n;
-	for (i__ = jp1; i__ <= i__2; ++i__) {
-	    sum += r__[l] * x[i__];
-	    ++l;
+  j = *n - k + 1;
+  jp1 = j + 1;
+  jj -= k;
+  l = jj + 1;
+  sum = zero;
+  if (*n < jp1) {
+      goto L20;
+  }
+  i__2 = *n;
+  for (i__ = jp1; i__ <= i__2; ++i__) {
+      sum += r__[l] * x[i__];
+      ++l;
 /* L10: */
-	}
+  }
 L20:
-	temp = r__[jj];
-	if (temp != zero) {
-	    goto L40;
-	}
-	l = j;
-	i__2 = j;
-	for (i__ = 1; i__ <= i__2; ++i__) {
+  temp = r__[jj];
+  if (temp != zero) {
+      goto L40;
+  }
+  l = j;
+  i__2 = j;
+  for (i__ = 1; i__ <= i__2; ++i__) {
 /* Computing MAX */
-	    d__2 = temp, d__3 = (d__1 = r__[l], abs(d__1));
-	    temp = max(d__2,d__3);
-	    l = l + *n - i__;
+      d__2 = temp, d__3 = (d__1 = r__[l], abs(d__1));
+      temp = max(d__2,d__3);
+      l = l + *n - i__;
 /* L30: */
-	}
-	temp = epsmch * temp;
-	if (temp == zero) {
-	    temp = epsmch;
-	}
+  }
+  temp = epsmch * temp;
+  if (temp == zero) {
+      temp = epsmch;
+  }
 L40:
-	x[j] = (qtb[j] - sum) / temp;
+  x[j] = (qtb[j] - sum) / temp;
 /* L50: */
     }
 
@@ -157,13 +157,13 @@ L40:
 
     i__1 = *n;
     for (j = 1; j <= i__1; ++j) {
-	wa1[j] = zero;
-	wa2[j] = diag[j] * x[j];
+  wa1[j] = zero;
+  wa2[j] = diag[j] * x[j];
 /* L60: */
     }
     qnorm = enorm_(n, &wa2[1]);
     if (qnorm <= *delta) {
-	goto L140;
+  goto L140;
     }
 
 /*     the gauss-newton direction is not acceptable. */
@@ -172,14 +172,14 @@ L40:
     l = 1;
     i__1 = *n;
     for (j = 1; j <= i__1; ++j) {
-	temp = qtb[j];
-	i__2 = *n;
-	for (i__ = j; i__ <= i__2; ++i__) {
-	    wa1[i__] += r__[l] * temp;
-	    ++l;
+  temp = qtb[j];
+  i__2 = *n;
+  for (i__ = j; i__ <= i__2; ++i__) {
+      wa1[i__] += r__[l] * temp;
+      ++l;
 /* L70: */
-	}
-	wa1[j] /= diag[j];
+  }
+  wa1[j] /= diag[j];
 /* L80: */
     }
 
@@ -190,7 +190,7 @@ L40:
     sgnorm = zero;
     alpha = *delta / qnorm;
     if (gnorm == zero) {
-	goto L120;
+  goto L120;
     }
 
 /*     calculate the point along the scaled gradient */
@@ -198,20 +198,20 @@ L40:
 
     i__1 = *n;
     for (j = 1; j <= i__1; ++j) {
-	wa1[j] = wa1[j] / gnorm / diag[j];
+  wa1[j] = wa1[j] / gnorm / diag[j];
 /* L90: */
     }
     l = 1;
     i__1 = *n;
     for (j = 1; j <= i__1; ++j) {
-	sum = zero;
-	i__2 = *n;
-	for (i__ = j; i__ <= i__2; ++i__) {
-	    sum += r__[l] * wa1[i__];
-	    ++l;
+  sum = zero;
+  i__2 = *n;
+  for (i__ = j; i__ <= i__2; ++i__) {
+      sum += r__[l] * wa1[i__];
+      ++l;
 /* L100: */
-	}
-	wa2[j] = sum;
+  }
+  wa2[j] = sum;
 /* L110: */
     }
     temp = enorm_(n, &wa2[1]);
@@ -221,7 +221,7 @@ L40:
 
     alpha = zero;
     if (sgnorm >= *delta) {
-	goto L120;
+  goto L120;
     }
 
 /*     the scaled gradient direction is not acceptable. */
@@ -239,7 +239,7 @@ L40:
 /* Computing 2nd power */
     d__4 = sgnorm / *delta;
     temp = temp - *delta / qnorm * (d__1 * d__1) + sqrt(d__2 * d__2 + (one -
-	    d__3 * d__3) * (one - d__4 * d__4));
+      d__3 * d__3) * (one - d__4 * d__4));
 /* Computing 2nd power */
     d__1 = sgnorm / *delta;
     alpha = *delta / qnorm * (one - d__1 * d__1) / temp;
@@ -251,7 +251,7 @@ L120:
     temp = (one - alpha) * min(sgnorm,*delta);
     i__1 = *n;
     for (j = 1; j <= i__1; ++j) {
-	x[j] = temp * wa1[j] + alpha * x[j];
+  x[j] = temp * wa1[j] + alpha * x[j];
 /* L130: */
     }
 L140:

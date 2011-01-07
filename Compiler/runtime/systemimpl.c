@@ -633,7 +633,7 @@ static const char* SystemImpl__getUUIDStr()
   unsigned char *tmp;
   UUID uuid;
   if (UuidCreate(&uuid) == RPC_S_OK)
-  	UuidToString(&uuid, &tmp);
+    UuidToString(&uuid, &tmp);
   tmp[36] = '\0';
   memcpy(uuidStr, strlwr((char*)tmp), 36);
   RpcStringFree(&tmp);

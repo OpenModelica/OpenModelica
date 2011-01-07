@@ -1220,7 +1220,7 @@ algorithm
       DAE.Operator op;
       String e_str,s,s2,str;
       list<DAE.Exp> expl_1,expl,sub;
-		  list<Boolean> bLst;      
+      list<Boolean> bLst;      
     
     case (DAE.ICONST(integer = _),_,_) then DAE.RCONST(0.0);
 
@@ -1294,7 +1294,7 @@ algorithm
         true  = Expression.expContains(e2,Expression.makeCrefExp(tv,tp));
         d_e2 = differentiateExp(e2, tv, differentiateIfExp);
         exp = DAE.BINARY(d_e2,DAE.MUL(tp),
-	        DAE.BINARY(e,DAE.MUL(tp),DAE.CALL(Absyn.IDENT("log"),{e1},false,true,tp,DAE.NO_INLINE()))
+          DAE.BINARY(e,DAE.MUL(tp),DAE.CALL(Absyn.IDENT("log"),{e1},false,true,tp,DAE.NO_INLINE()))
           );
       then
         exp;
@@ -1329,9 +1329,9 @@ algorithm
       then
         DAE.BINARY(
           DAE.BINARY(
-          	DAE.BINARY(e1_1,DAE.MUL(tp),e2),
-          	DAE.SUB(tp),
-          	DAE.BINARY(e1,DAE.MUL(tp),e2_1)),
+            DAE.BINARY(e1_1,DAE.MUL(tp),e2),
+            DAE.SUB(tp),
+            DAE.BINARY(e1,DAE.MUL(tp),e2_1)),
           DAE.DIV(tp),
           DAE.BINARY(e2,DAE.MUL(tp),e2));
     
@@ -1510,7 +1510,7 @@ algorithm
         DAE.RCONST(rval);
         
     // derivative of arbitrary function, not dependent of variable, i.e. constant
-		case (DAE.CALL(fname,expl,b,c,tp,inl),tv,differentiateIfExp)
+    case (DAE.CALL(fname,expl,b,c,tp,inl),tv,differentiateIfExp)
       equation
         bLst = Util.listMap1(expl,Expression.expContains, Expression.crefExp(tv));
         false = Util.listReduce(bLst,boolOr);
@@ -1541,8 +1541,8 @@ algorithm
         e2_1 = differentiateExp(e2, tv, differentiateIfExp);
       then
         DAE.RELATION(e1_1,rel,e2_1);
-	  */
-	  
+    */
+    
     // der(x)
     case (DAE.CALL(path = (a as Absyn.IDENT(name = "der")),expLst =
           {(exp as DAE.CREF(componentRef = cr))},tuple_ = b,builtin = c,ty=tp,inlineType=inl),tv,differentiateIfExp)
@@ -1594,11 +1594,11 @@ algorithm
       equation
         false = Expression.expContains(e, Expression.crefExp(cr)) 
         "If the expression does not contain the variable,
-	       the derivative is zero. For efficiency reasons this rule
-	       is last. Otherwise expressions is allways traversed twice
-	       when differentiating." ;
+         the derivative is zero. For efficiency reasons this rule
+         is last. Otherwise expressions is allways traversed twice
+         when differentiating." ;
         tp = Expression.typeof(e);
-        (zero,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));	       
+        (zero,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));         
       then
         zero;
 
@@ -1612,7 +1612,7 @@ algorithm
     
     case (e,cr,differentiateIfExp)
       equation
-				true = RTOpts.debugFlag("failtrace");
+    		true = RTOpts.debugFlag("failtrace");
         s = ExpressionDump.printExpStr(e);
         s2 = ComponentReference.printComponentRefStr(cr);
         str = stringAppendList({"- Derive.differentiateExp ",s," w.r.t: ",s2," failed\n"});

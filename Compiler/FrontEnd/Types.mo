@@ -2684,13 +2684,13 @@ algorithm
   invl := getInputVars(vl);
   outvl := getOutputVars(vl);
   fargs := makeFargsList(invl);
-  rettype := makeReturnType(outvl) "	& Debug.fprint (\"ft\", \" <fargs: \") &
-	Debug.fprint_list (\"ft\", fargs, print_farg, \", \") &
-	Debug.fprint (\"ft\", \" >\") &
+  rettype := makeReturnType(outvl) "  & Debug.fprint (\"ft\", \" <fargs: \") &
+  Debug.fprint_list (\"ft\", fargs, print_farg, \", \") &
+  Debug.fprint (\"ft\", \" >\") &
 
-	Debug.fprint (\"ft\", \" <rettype: \") &
-	Debug.fcall (\"ft\", print_type, rettype) &
-	Debug.fprint (\"ft\", \" >\")
+  Debug.fprint (\"ft\", \" <rettype: \") &
+  Debug.fcall (\"ft\", print_type, rettype) &
+  Debug.fprint (\"ft\", \" >\")
 " ;
   outType := (DAE.T_FUNCTION(fargs,rettype,functionAttributes),SOME(p));
 end makeFunctionType;

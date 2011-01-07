@@ -31,7 +31,7 @@
 
 
 package SimCode
-" file:	       SimCode.mo
+" file:         SimCode.mo
   package:     SimCode
   description: Code generation using Susan templates
 
@@ -492,10 +492,10 @@ end crefNoSub;
 
 public function crefIsScalar
   "Whether a component reference is a scalar depends on what context we are in.
-	If we are generating code for a function, then only crefs without subscripts
-	are scalar. If we are generating code for simulation though, then crefs with
-	only constant subscripts are also scalars, since a variable is generated for
-	each element of an array in the model."
+  If we are generating code for a function, then only crefs without subscripts
+  are scalar. If we are generating code for simulation though, then crefs with
+  only constant subscripts are also scalars, since a variable is generated for
+  each element of an array in the model."
   input DAE.ComponentRef cref;
   input Context context;
   output Boolean isScalar;
@@ -1855,7 +1855,7 @@ algorithm
         nres = listLength(residualEquations);
         
         extObjInfo = createExtObjInfo(dlow2);
-				
+    		
         whenClauses = createSimWhenClauses(dlow2, helpVarInfo);
         zeroCrossings = createZeroCrossings(dlow2);
         zeroCrossingsNeedSave = createZeroCrossingsNeedSave(zeroCrossings, dlow2, ass1, ass2, comps);
@@ -3308,7 +3308,7 @@ algorithm
         // We need to solve an inverse problem of an algorithm section.
         false = ComponentReference.crefEqualNoStringCompare(BackendVariable.varCref(v),varOutput);
         alg = algs[indx + 1];
-        algStr =	DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(alg,source)});
+        algStr =  DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(alg,source)});
         message = stringAppendList({"Inverse Algorithm needs to be solved for in ",algStr,". This is not implemented yet.\n"});
         Error.addMessage(Error.INTERNAL_ERROR,{message});
       then fail();
@@ -4821,7 +4821,7 @@ algorithm
         algOutVars = Util.listMap(algOutExpVars,Expression.expCref);
         // The variables solved for and the output variables of the algorithm must be the same.
         false = Util.listSetEqualOnTrue(solvedVars,algOutVars,ComponentReference.crefEqualNoStringCompare);
-        algStr =	DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(alg,source)});
+        algStr =  DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(alg,source)});
         message = stringAppendList({"Inverse Algorithm needs to be solved for in ",algStr,". This is not implemented yet.\n"});
         Error.addMessage(Error.INTERNAL_ERROR,{message});
       then fail();
@@ -6040,7 +6040,7 @@ algorithm
       array<Algorithm.Algorithm> algorithms,algorithms2;
       BackendDAE.EventInfo eventInfo;
       BackendDAE.ExternalObjectClasses extObjClasses;
-    case	(helpvars,BackendDAE.DAE(orderedVars,knownVars,externalObjects,aliasVars,orderedEqs,
+    case  (helpvars,BackendDAE.DAE(orderedVars,knownVars,externalObjects,aliasVars,orderedEqs,
       removedEqs,initialEqs,arrayEqs,algorithms,eventInfo,extObjClasses))
       equation
         (helpvars1,algorithms2,_) = generateHelpVarsInAlgorithms(listLength(helpvars),algorithms);
@@ -6349,7 +6349,7 @@ protected function buildWhenConditionChecks3
   input list<DAE.Exp> whenConditions   "List of expressions from \"when {exp1, exp2, ...}\" ";
   input Integer whenClauseIndex        "When clause index";
   input Integer nextHelpIndex          "Next available help variable index";
-  input Boolean isElseWhen					   "Whether this lase is an elsewhen or not";
+  input Boolean isElseWhen    			   "Whether this lase is an elsewhen or not";
   output String outString              "Generated c-code";
   output list<HelpVarInfo> helpVarLst;
 algorithm
@@ -6542,7 +6542,7 @@ protected function buildWhenConditionChecks4
   input list<BackendDAE.WhenClause> inBackendDAEWhenClauseLst "List of when clauses.";
   input Integer nextHelpVarIndex                      "index of the next generated help variable.";
   output String outString                             "Generated event checking code";
-  output list<HelpVarInfo> helpVarLst									"List of help variables introduced in this function.";
+  output list<HelpVarInfo> helpVarLst    							"List of help variables introduced in this function.";
 algorithm
   (outString,helpVarLst):=
   matchcontinue (orderOfEquations,inBackendDAEEquationLst,inBackendDAEWhenClauseLst,nextHelpVarIndex)
@@ -6583,14 +6583,14 @@ algorithm
 end buildWhenConditionChecks4;
 
 protected function buildWhenConditionCheckForEquation "
-	Generates eventchecking code given a when equation.
+  Generates eventchecking code given a when equation.
 "
   input Option<BackendDAE.WhenEquation> whenEq            "The equation to check for";
   input list<BackendDAE.WhenClause> inBackendDAEWhenClauseLst "List of when clauses.";
   input Boolean isElseWhen                            "Whether the equation is inside an elsewhen or not.";
   input Integer nextHelpIndex                         "Next avalable help variable index.";
   output String outString                             "Generated event checking code";
-  output list<HelpVarInfo> helpVarLst									"List of help variables introduced in this function.";
+  output list<HelpVarInfo> helpVarLst    							"List of help variables introduced in this function.";
 algorithm
   (outString, helpVarLst) :=
   match (whenEq,inBackendDAEWhenClauseLst,isElseWhen, nextHelpIndex)
@@ -6700,7 +6700,7 @@ protected function zeroCrossingsContainIndex "Returns the zero crossing indices 
 given by input index."
   input Integer eqn "equation index";
   input Integer i "iterator for zc starts at 0 to n-1 zero crossings";
-  input	list<BackendDAE.ZeroCrossing> zcLst;
+  input  list<BackendDAE.ZeroCrossing> zcLst;
   output list<Integer> eqns;
 algorithm
   eqns := matchcontinue(eqn,i,zcLst)

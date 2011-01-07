@@ -67,8 +67,8 @@ public function printDAE "function: printDAE
 algorithm
   _ := matchcontinue (inDAElist)
     local
-    	DAE.DAElist dae;
-    	String str;
+      DAE.DAElist dae;
+      String str;
     
     case dae
       equation
@@ -250,7 +250,7 @@ algorithm
         ExpressionDump.printExp(e);
         Print.printBuf(",dims=");
         Dump.printList(dims, ExpressionDump.printSubscript, ", ");
-        comment_str = dumpCommentOptionStr(comment) "	dump_start_value start &" ;
+        comment_str = dumpCommentOptionStr(comment) "  dump_start_value start &" ;
         Print.printBuf("  comment:");
         Print.printBuf(comment_str);
         Print.printBuf(", ");
@@ -269,7 +269,7 @@ algorithm
         Print.printBuf("((" +& s1);
         Print.printBuf("))");
         */
-        comment_str = dumpCommentOptionStr(comment) "	dump_start_value start &" ;
+        comment_str = dumpCommentOptionStr(comment) "  dump_start_value start &" ;
         Print.printBuf("  comment:");
         Print.printBuf(comment_str);
         Print.printBuf(", ");
@@ -1058,9 +1058,9 @@ algorithm
         Print.printBuf(";\n");
       then
         ();
-		
-		case (DAE.INITIAL_ARRAY_EQUATION(exp = e1, array = e2))
-			equation
+    
+    case (DAE.INITIAL_ARRAY_EQUATION(exp = e1, array = e2))
+    	equation
         Print.printBuf("  ");
         ExpressionDump.printExp(e1);
         Print.printBuf(" = ");
@@ -3021,14 +3021,14 @@ algorithm
       then
         str;
 
-		case ((DAE.INITIAL_ARRAY_EQUATION(exp = e1, array = e2) :: xs), str)
-			equation
+    case ((DAE.INITIAL_ARRAY_EQUATION(exp = e1, array = e2) :: xs), str)
+    	equation
         s1 = ExpressionDump.printExpStr(e1);
         s2 = ExpressionDump.printExpStr(e2);
         str = IOStream.appendList(str, {"  ", s1, " = ", s2, ";\n"});
         str = dumpInitialEquationsStream(xs, str);
       then
-				str;
+    		str;
 
     case ((DAE.INITIAL_COMPLEX_EQUATION(lhs = e1,rhs = e2) :: xs), str)
       equation

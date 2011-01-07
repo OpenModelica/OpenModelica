@@ -30,7 +30,7 @@
  */
 
 package ModUtil
-" file:	       ModUtil.mo
+" file:         ModUtil.mo
   package:     ModUtil
   description: Miscellanous modelica related utilities (The horror, THE HORROR)
 
@@ -443,14 +443,14 @@ algorithm
 end isParameterDaelist;
 
 public function isOuter "Returns true if InnerOuter specification is outer or innerouter"
-	input Absyn.InnerOuter io;
-	output Boolean res;
-	algorithm
-	  res := matchcontinue(io)
-	    case(Absyn.OUTER()) then true;
-	    case(Absyn.INNEROUTER()) then true;
-	    case(_) then false;
-	  end matchcontinue;
+  input Absyn.InnerOuter io;
+  output Boolean res;
+  algorithm
+    res := matchcontinue(io)
+      case(Absyn.OUTER()) then true;
+      case(Absyn.INNEROUTER()) then true;
+      case(_) then false;
+    end matchcontinue;
 end isOuter;
 
 public function isPureOuter "
@@ -465,29 +465,29 @@ end matchcontinue;
 end isPureOuter;
 
 public function isInner "Returns true if InnerOuter specification is inner or innerouter"
-	input Absyn.InnerOuter io;
-	output Boolean res;
-	algorithm
-	  res := matchcontinue(io)
-	    case(Absyn.INNER()) then true;
- 	    case(Absyn.INNEROUTER()) then true;
-	    case(_) then false;
-	  end matchcontinue;
+  input Absyn.InnerOuter io;
+  output Boolean res;
+  algorithm
+    res := matchcontinue(io)
+      case(Absyn.INNER()) then true;
+       case(Absyn.INNEROUTER()) then true;
+      case(_) then false;
+    end matchcontinue;
 end isInner;
 
 public function isUnspecified "Returns true if InnerOuter specification is unspecified,
 i.e. neither inner, outer or inner outer"
-	input Absyn.InnerOuter io;
-	output Boolean res;
-	algorithm
-	  res := matchcontinue(io)
-	    case(Absyn.UNSPECIFIED()) then true;
-	    case(_) then false;
-	  end matchcontinue;
+  input Absyn.InnerOuter io;
+  output Boolean res;
+  algorithm
+    res := matchcontinue(io)
+      case(Absyn.UNSPECIFIED()) then true;
+      case(_) then false;
+    end matchcontinue;
 end isUnspecified;
 
 public function innerOuterEqual "Returns true if two InnerOuter's are equal"
-	input Absyn.InnerOuter io1;
+  input Absyn.InnerOuter io1;
   input Absyn.InnerOuter io2;
   output Boolean res;
 algorithm

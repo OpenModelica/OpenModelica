@@ -85,8 +85,8 @@ uniontype UnitTerm "A unit term is either
 
   record POW "exponentiation"
       UnitTerm ut1;
-    	MMath.Rational exponent "ut^exponent";
-    	DAE.Exp origExp "for proper error reporting";
+      MMath.Rational exponent "ut^exponent";
+      DAE.Exp origExp "for proper error reporting";
   end POW;
 end UnitTerm;
 

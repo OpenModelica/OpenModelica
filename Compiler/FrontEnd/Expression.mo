@@ -31,7 +31,7 @@
 
 package Expression
 "
-  file:	       Expression.mo
+  file:         Expression.mo
   package:     Expression
   description: Expressions
 
@@ -406,20 +406,20 @@ end CodeVarToCref;
 public function realToIntIfPossible
 "converts to ICONST if possible. If it does
  not fit, a RCONST is returned instead."
-	input Real inVal;
-	output DAE.Exp outVal;
+  input Real inVal;
+  output DAE.Exp outVal;
 algorithm
   outVal := matchcontinue(inVal)
     local
       Integer i;
     
-    case	(inVal)
+    case  (inVal)
       equation
         i = realInt(inVal);
       then
         DAE.ICONST(i);
     
-    case	(inVal) then DAE.RCONST(inVal);
+    case  (inVal) then DAE.RCONST(inVal);
   end matchcontinue;
 end realToIntIfPossible;
 
@@ -1069,13 +1069,13 @@ algorithm
 end expReal;
 
 public function expInt "returns the int value if expression is constant Integer"
-	input DAE.Exp exp;
-	output Integer i;
+  input DAE.Exp exp;
+  output Integer i;
 algorithm
-	i := match(exp) local Integer i2;
+  i := match(exp) local Integer i2;
     case (DAE.ICONST(integer = i2)) then i2;
     case (DAE.ENUM_LITERAL(index = i2)) then i2;
-	end match;
+  end match;
 end expInt;
 
 public function varName "Returns the name of a Var"
@@ -1167,10 +1167,10 @@ end getRealConst;
 // stefan
 public function unboxExpType
 "function: unboxExpType
-	takes a type, and if it is boxed, unbox it
-	otherwise return the given type"
-	input Type inType;
-	output Type outType;
+  takes a type, and if it is boxed, unbox it
+  otherwise return the given type"
+  input Type inType;
+  output Type outType;
 algorithm
   outType := matchcontinue(inType)
     local
@@ -1182,8 +1182,8 @@ end unboxExpType;
 
 public function unboxExp
 "takes an expression and unboxes it if it is boxed"
-	input DAE.Exp e;
-	output DAE.Exp outExp;
+  input DAE.Exp e;
+  output DAE.Exp outExp;
 algorithm
   outExp := match (e)
     local
@@ -1198,8 +1198,8 @@ end unboxExp;
 
 public function boxExp
 "takes an expression and boxes it"
-	input DAE.Exp e;
-	output DAE.Exp outExp;
+  input DAE.Exp e;
+  output DAE.Exp outExp;
 algorithm
   outExp := match (e)
     case (DAE.BOX(_)) then e;
@@ -1271,7 +1271,7 @@ public function arrayDimension "
 Author BZ
 Get dimension of array.
 "
-	input Type tp;
+  input Type tp;
   output list<DAE.Dimension> dims;
 algorithm
   dims := matchcontinue(tp)
@@ -1282,7 +1282,7 @@ end arrayDimension;
 
 public function arrayTypeDimensions
 "Return the array dimensions of a type."
-	input Type tp;
+  input Type tp;
   output list<DAE.Dimension> dims;
 algorithm
   dims := match(tp)
@@ -2492,7 +2492,7 @@ protected
   Operator op;
 algorithm
   tp := typeof(e1);
-  b := DAEUtil.expTypeArray(tp) "	array_elt_type(tp) => tp\'" ;
+  b := DAEUtil.expTypeArray(tp) "  array_elt_type(tp) => tp\'" ;
   op := Util.if_(b,DAE.ADD_ARR(tp),DAE.ADD(tp));
   outExp := DAE.BINARY(e1,op,e2);
 end expAdd;
@@ -2557,28 +2557,28 @@ algorithm
       Boolean b;
     case ({}) then DAE.RCONST(0.0);
     case ({e1}) then e1;
-		case ({e1, e2})
-			equation
-				true = isZero(e1);
-			then e2;
-		case ({e1, e2})
-			equation
-				true = isZero(e2);
-			then e1;
-		case ({e1, e2})
-			equation
+    case ({e1, e2})
+    	equation
+    		true = isZero(e1);
+    	then e2;
+    case ({e1, e2})
+    	equation
+    		true = isZero(e2);
+    	then e1;
+    case ({e1, e2})
+    	equation
         tp = typeof(e1) "Take type info from e1, ok since type checking already performed." ;
         b = DAEUtil.expTypeArray(tp);
         op = Util.if_(b,DAE.ADD_ARR(tp),DAE.ADD(tp));
-			then DAE.BINARY(e1, op, e2);			  
-				//res = DAE.BINARY(e1, DAE.ADD(tp), e2);
-			//then res;
+    	then DAE.BINARY(e1, op, e2);			  
+    		//res = DAE.BINARY(e1, DAE.ADD(tp), e2);
+    	//then res;
     /*case ({e1,e2})
       equation
         b1 = isZero(e1);
         tp = typeof(e1) "Take type info from e1, ok since type checking already performed." ;
         res = DAE.BINARY(e1,DAE.ADD(tp),e2);
-				res = Util.if_(b1,e2,res);
+    		res = Util.if_(b1,e2,res);
       then
         res;*/
     case ((e1 :: rest))
@@ -2594,7 +2594,7 @@ algorithm
         res;
     case (lst)
       equation
-				true = RTOpts.debugFlag("failtrace");
+    		true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace","-Expression.makeSum failed, DAE.Exp lst:");
         explst = Util.listMap(lst, ExpressionDump.printExpStr);
         str = Util.stringDelimitList(explst, ", ");
@@ -2618,7 +2618,7 @@ protected
   Operator op;
 algorithm
   tp := typeof(e1);
-  b := DAEUtil.expTypeArray(tp) "	array_elt_type(tp) => tp\'" ;
+  b := DAEUtil.expTypeArray(tp) "  array_elt_type(tp) => tp\'" ;
   op := Util.if_(b,DAE.MUL_ARR(tp),DAE.MUL(tp));
   outExp := DAE.BINARY(e1,op,e2);
 end expMul;
@@ -2695,7 +2695,7 @@ algorithm
         b_isZero = isZero(p1);
         res = Util.if_(b_isZero,makeConstZero(typeof(e)),res);
       then
-			  res;
+    	  res;
     case ({e1,e2})
       equation
         true = isConstOne(e2);
@@ -2723,10 +2723,10 @@ algorithm
         b_isZero = boolOr(b1,b2);
         res = Util.if_(b_isZero,makeConstZero(typeof(e1)),res);
       then
-				res;
+    		res;
     case (lst)
       equation
-				true = RTOpts.debugFlag("failtrace");
+    		true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace","-Expression.makeProductLst failed, DAE.Exp lst:");
         explst = Util.listMap(lst, ExpressionDump.printExpStr);
         str = Util.stringDelimitList(explst, ", ");
@@ -2848,8 +2848,8 @@ end makeConstOne;
 
 public function makeConstZero
 "Generates a zero constant"
-	input Type inType;
-	output DAE.Exp const;
+  input Type inType;
+  output DAE.Exp const;
 algorithm
   const := matchcontinue(inType)
     case (DAE.ET_REAL()) then DAE.RCONST(0.0);
@@ -5836,16 +5836,16 @@ algorithm
         res = expContains(e, cr);
       then
         res;
-		
-		case (DAE.REDUCTION(expr = e), cr)
-			equation
-				res = expContains(e, cr);
-			then
-				res;
+    
+    case (DAE.REDUCTION(expr = e), cr)
+    	equation
+    		res = expContains(e, cr);
+    	then
+    		res;
     
     case (e,cr)
       equation
-				true = RTOpts.debugFlag("failtrace");
+    		true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace", "- Expression.expContains failed\n");
         s = ExpressionDump.printExpStr(e);
         str = stringAppendList({"exp = ",s,"\n"});
@@ -6109,7 +6109,7 @@ algorithm
 end isValidSubscript;
 
 public function subscriptContain "function: subscriptContain
-	This function checks whether sub2 contains sub1 or not(DAE.WHOLEDIM())"
+  This function checks whether sub2 contains sub1 or not(DAE.WHOLEDIM())"
   input list<Subscript> issl1;
   input list<Subscript> issl2;
   output Boolean contained;

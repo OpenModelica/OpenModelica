@@ -72,8 +72,8 @@ RML_BEGIN_LABEL(System__trimChar)
   int end_pos = length - 1;
   char* res;
   if (length == 0) {
-	  rmlA0 = (void*) mk_scon("");
-	  RML_TAILCALLK(rmlSC);
+    rmlA0 = (void*) mk_scon("");
+    RML_TAILCALLK(rmlSC);
   }
   while(start_pos < end_pos){
     if(str[start_pos] == char_to_be_trimmed)
@@ -141,7 +141,7 @@ RML_BEGIN_LABEL(System__substring)
   }
   if ( stopIndex == -999 )
   {
-	  stopIndex = startIndex;
+    stopIndex = startIndex;
   } else if ( stopIndex< startIndex ) {
     RML_TAILCALLK(rmlFC);
   } else if ( stopIndex > len1 ) {
@@ -813,8 +813,8 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(System__windowsNewline)
 {
-	rmlA0 = (void*) mk_scon("\r\n");
-	RML_TAILCALLK(rmlSC);
+  rmlA0 = (void*) mk_scon("\r\n");
+  RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 

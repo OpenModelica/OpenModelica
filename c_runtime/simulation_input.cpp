@@ -52,7 +52,7 @@ void read_commented_value(ifstream &f, signed char *str);
  *  the -f file flag.
  */
  void read_input(int argc, char **argv,
- 				DATA *simData,
+   			DATA *simData,
                 double *start, double *stop,
                 double *stepSize, long *outputSteps,
                 double *tolerance, string* method, string* outputFormat)
@@ -77,9 +77,9 @@ void read_commented_value(ifstream &f, signed char *str);
   if (sim_verbose) { cout << "read stepSize = " << *stepSize << " from init file." << endl; }
   globalData->current_stepsize = *stepSize;
   if (stepSize < 0) { // stepSize < 0 => Automatic number of outputs
-  	*outputSteps = -1;
+    *outputSteps = -1;
   } else {
-  	// Calculate outputSteps from stepSize, start and stop
+    // Calculate outputSteps from stepSize, start and stop
     *outputSteps = (long)(int(*stop-*start) /(*stepSize));
   }
   read_commented_value(file,tolerance);
@@ -103,9 +103,9 @@ void read_commented_value(ifstream &f, signed char *str);
   read_commented_value(file,&nystrchk);
 
   if (nxchk != simData->nStates || nychk != simData->nAlgebraic || npchk != simData->nParameters
-  		|| npintchk != simData->intVariables.nParameters || nyintchk != simData->intVariables.nAlgebraic
-  		|| npboolchk != simData->boolVariables.nParameters || nyboolchk != simData->boolVariables.nAlgebraic
-  		|| npstrchk != simData->stringVariables.nParameters || nystrchk != simData->stringVariables.nAlgebraic) {
+    	|| npintchk != simData->intVariables.nParameters || nyintchk != simData->intVariables.nAlgebraic
+    	|| npboolchk != simData->boolVariables.nParameters || nyboolchk != simData->boolVariables.nAlgebraic
+    	|| npstrchk != simData->stringVariables.nParameters || nystrchk != simData->stringVariables.nAlgebraic) {
     cerr << "Error, input data file does not match model." << endl;
     cerr << "nx in initfile: " << nxchk << " from model code :" << simData->nStates << endl;
     cerr << "ny in initfile: " << nychk << " from model code :" << simData->nAlgebraic << endl;
@@ -122,21 +122,21 @@ void read_commented_value(ifstream &f, signed char *str);
     read_commented_value(file,&simData->states[i]);
     if (sim_verbose) {
     cout << "read " << getName(&simData->states[i]) << " = "
-    	<< simData->states[i] << " from init file." << endl;
+      << simData->states[i] << " from init file." << endl;
     }
   }
   for(int i = 0; i < simData->nStates; i++) { // Read der(x) initial values
     read_commented_value(file,&simData->statesDerivatives[i]);
     if (sim_verbose) {
     cout << "read " << getName(&simData->statesDerivatives[i]) << " = "
-    	<< simData->statesDerivatives[i] << " from init file." << endl;
+      << simData->statesDerivatives[i] << " from init file." << endl;
     }
   }
   for(int i = 0; i < simData->nAlgebraic; i++) { // Read y initial values
     read_commented_value(file,&simData->algebraics[i]);
     if (sim_verbose) {
     cout << "read " << getName(&simData->algebraics[i]) << " = "
-    	<< simData->algebraics[i] << " from init file." << endl;
+      << simData->algebraics[i] << " from init file." << endl;
     }
   }
   for(int i = 0; i < simData->nParameters; i++) { // Read parameter values
@@ -201,26 +201,26 @@ void read_commented_value(ifstream &f, signed char *str);
 inline void read_commented_value(ifstream &f, string *str)
 {
 
-	string line;
-	char c[160];
-  	f.getline(c,160);
-  	line = c;
-  	int pos;
-	if (line.find("\"") != line.npos) {
-		pos = line.rfind("\""); // find end of string
-		*str = string(line.substr(1,pos-1));	// Remove " at beginning and end
-	}
+  string line;
+  char c[160];
+    f.getline(c,160);
+    line = c;
+    int pos;
+  if (line.find("\"") != line.npos) {
+  	pos = line.rfind("\""); // find end of string
+  	*str = string(line.substr(1,pos-1));	// Remove " at beginning and end
+  }
 }
 
 inline void read_commented_value(ifstream &f, const char **str)
 {
-	if (str == NULL) {
-		cerr << "error read_commented_value, no data allocated for storing string" << endl;
-		return;
-	}
-	string line;
-	read_commented_value(f,&line);
-	*str = strdup(line.c_str());
+  if (str == NULL) {
+  	cerr << "error read_commented_value, no data allocated for storing string" << endl;
+  	return;
+  }
+  string line;
+  read_commented_value(f,&line);
+  *str = strdup(line.c_str());
 }
 
 inline void read_commented_value( ifstream &f, double *res)
@@ -232,10 +232,10 @@ inline void read_commented_value( ifstream &f, double *res)
   line = c;
 
   if (line.find("true") != line.npos) {
-	  *res = 1.0;
+    *res = 1.0;
   }
   else if (line.find("false") != line.npos) {
-	  *res = 0.0;
+    *res = 0.0;
   }
   else {
     *res = atof(c);
@@ -251,13 +251,13 @@ inline void read_commented_value( ifstream &f, signed char *res)
   line = c;
 
   if (line.find("true") != line.npos) {
-	  *res = 1;
+    *res = 1;
   }
   else if (line.find("false") != line.npos) {
-	  *res = 0;
+    *res = 0;
   }
   else {
-	*res = 0;
+  *res = 0;
     //*res = atof(c);
   }
 }

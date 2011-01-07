@@ -22,7 +22,7 @@ protected:
   void printVertexSet(set<VertexID> list, ostream &os);
 
   MergeRule(TaskGraph *,TaskGraph *,ContainSetMap *, VertexID, VertexID,double,double,int,
-	    map<VertexID,bool> *removed);
+      map<VertexID,bool> *removed);
   virtual ~MergeRule() {};
   double m_latency;
   double m_bandwidth;

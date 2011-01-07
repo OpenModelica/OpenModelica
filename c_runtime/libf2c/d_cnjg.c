@@ -10,10 +10,10 @@ d_cnjg(r, z) doublecomplex *r, *z;
 d_cnjg(doublecomplex *r, doublecomplex *z)
 #endif
 {
-	doublereal zi = z->i;
-	r->r = z->r;
-	r->i = -zi;
-	}
+  doublereal zi = z->i;
+  r->r = z->r;
+  r->i = -zi;
+  }
 #ifdef __cplusplus
 }
 #endif

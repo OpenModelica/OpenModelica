@@ -2168,7 +2168,7 @@ algorithm
       then
         (cache,env_3,ih,store,DAEUtil.emptyDae,csets,ci_state_1,tys2,bc /* NONE() */,NONE(),NONE(),graph);
 
-   	/* Ignore functions if not implicit instantiation */
+     /* Ignore functions if not implicit instantiation */
     case (cache,env,ih,store,mods,pre,csets,ci_state,cls,_,_,(impl as false),_,graph,_)
       equation
         true = SCode.isFunction(cls);
@@ -3228,7 +3228,7 @@ algorithm
       InstanceHierarchy ih;
 
     // This rule describes how to instantiate a class definition
-	  // that extends a basic type. (No equations or algorithms allowed)
+    // that extends a basic type. (No equations or algorithms allowed)
     case (cache,env,ih,store,mods,pre,csets,ci_state,className,
           SCode.PARTS(elementLst = els,
                       normalEquationLst = {}, initialEquationLst = {},
@@ -3373,7 +3373,7 @@ algorithm
       Absyn.TypeSpec tSpec;
       
     // This rule describes how to instantiate a class definition
-	  // that extends a basic type. (No equations or algorithms allowed)
+    // that extends a basic type. (No equations or algorithms allowed)
     case (cache,env,ih,store,mods,pre,csets,ci_state,className,
           inClassDef6 as SCode.PARTS(elementLst = els,
                       normalEquationLst = {}, initialEquationLst = {},
@@ -3395,8 +3395,8 @@ algorithm
           re,prot,inst_dims,impl,_,graph,instSingleCref,info,stopInst)
       equation
         false = Util.getStatefulBoolean(stopInst);
-       	true = isExternalObject(els);
-       	(cache,env,ih,dae,ci_state) = instantiateExternalObject(cache,env,ih,els,impl);
+         true = isExternalObject(els);
+         (cache,env,ih,dae,ci_state) = instantiateExternalObject(cache,env,ih,els,impl);
       then
         (cache,env,ih,store,dae,csets,ci_state,{},NONE(),NONE(),NONE(),graph);
 
@@ -3430,8 +3430,8 @@ algorithm
         "2. EXTENDS Nodes inst_extends_list only flatten inhteritance structure. It does not perform component instantiations.";
         compelts_1 = addNomod(compelts)
         "Problem. Modifiers on inherited components are unelabed, loosing their
-	                type information. This will not work, since the modifier type
-	                can not always be found.
+                  type information. This will not work, since the modifier type
+                  can not always be found.
          For instance. 
           model B extends B2; end B; model B2 Integer ni=1; end B2;
           model test
@@ -3439,14 +3439,14 @@ algorithm
             B b(ni=n);
           end test;
 
-	       The modifier (n=n) will be untypes when B is instantiated
-	       and the variable n can not be found, since the component b
-	       is instantiated in env of B.
+         The modifier (n=n) will be untypes when B is instantiated
+         and the variable n can not be found, since the component b
+         is instantiated in env of B.
 
-	       Solution:
-	        Redesign instExtendsList to return (SCode.Element, Mod) list and
-	        convert other component elements to the same format, such that
-	        instElement can handle the new format uniformely." ;
+         Solution:
+          Redesign instExtendsList to return (SCode.Element, Mod) list and
+          convert other component elements to the same format, such that
+          instElement can handle the new format uniformely." ;
 
         cdefelts_1 = addNomod(cdefelts);
         
@@ -4112,20 +4112,20 @@ protected function instantiateExternalObject
   output ClassInf.State ciState;
 algorithm
   (outCache,outEnv,outIH,dae,ciState) := matchcontinue(inCache,env,inIH,els,impl)
- 	 local
- 	   SCode.Class destr,constr;
- 	   DAE.Function destr_dae,constr_dae;
- 	   Env.Env env1;
- 	   Env.Cache cache;
- 	   Ident className;
- 	   Absyn.Path classNameFQ;
- 	   DAE.Type functp;
- 	   Env.Frame f;
- 	   list<Env.Frame> fs,fs1;
- 	   InstanceHierarchy ih;
- 	   DAE.ElementSource source "the origin of the element";
- 	   // Explicit instantiation, generate constructor and destructor and the function type.
-    case	(cache,env,ih,els,false)
+    local
+      SCode.Class destr,constr;
+      DAE.Function destr_dae,constr_dae;
+      Env.Env env1;
+      Env.Cache cache;
+      Ident className;
+      Absyn.Path classNameFQ;
+      DAE.Type functp;
+      Env.Frame f;
+      list<Env.Frame> fs,fs1;
+      InstanceHierarchy ih;
+      DAE.ElementSource source "the origin of the element";
+      // Explicit instantiation, generate constructor and destructor and the function type.
+    case  (cache,env,ih,els,false)
       equation
         destr = getExternalObjectDestructor(els);
         constr = getExternalObjectConstructor(els);
@@ -4171,48 +4171,48 @@ algorithm
   (outCache,outIH,fn) := matchcontinue (inCache,env,inIH,cl)
     local
       Env.Cache cache;
-  	  Env.Env env1;
-  	  InstanceHierarchy ih;
+      Env.Env env1;
+      InstanceHierarchy ih;
 
-  	case (cache,env,ih,cl)
-  		equation
-  		  (cache,env1,ih,{fn}) = implicitFunctionInstantiation2(cache,env,ih, DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cl, {});
-  	then
-  	  (cache,ih,fn);
-  	// failure
-  	case (cache,env,ih,cl)
-  	  equation
-  	    print("Inst.instantiateExternalObjectDestructor failed\n");
-  	  then fail();
+    case (cache,env,ih,cl)
+      equation
+        (cache,env1,ih,{fn}) = implicitFunctionInstantiation2(cache,env,ih, DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cl, {});
+    then
+      (cache,ih,fn);
+    // failure
+    case (cache,env,ih,cl)
+      equation
+        print("Inst.instantiateExternalObjectDestructor failed\n");
+      then fail();
    end matchcontinue;
 end instantiateExternalObjectDestructor;
 
 protected function instantiateExternalObjectConstructor
 "instantiates the constructor function of an external object"
-	input Env.Cache inCache;
-	input Env.Env env;
-	input InstanceHierarchy inIH;
-	input SCode.Class cl;
-	output Env.Cache outCache;
-	output InstanceHierarchy outIH;
-	output DAE.Function fn;
-	output DAE.Type tp;
+  input Env.Cache inCache;
+  input Env.Env env;
+  input InstanceHierarchy inIH;
+  input SCode.Class cl;
+  output Env.Cache outCache;
+  output InstanceHierarchy outIH;
+  output DAE.Function fn;
+  output DAE.Type tp;
 algorithm
-	(outCache,outIH,fn,tp) := matchcontinue (inCache,env,inIH,cl)
-	local
+  (outCache,outIH,fn,tp) := matchcontinue (inCache,env,inIH,cl)
+  local
       Env.Cache cache;
       Env.Env env1;
       DAE.Type funcTp;
       InstanceHierarchy ih;
 
-  	case (cache,env,ih,cl)
-  		equation
-  		  (cache,env1,ih,{fn as DAE.FUNCTION(type_ = funcTp, functions=(DAE.FUNCTION_EXT(body=_)::_))})
-  		     	= implicitFunctionInstantiation2(cache,env,ih, DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cl, {}) ;
-  	then
-  	  (cache,ih,fn,funcTp);
-	  case (cache,env,ih,cl)
-  	  equation
+    case (cache,env,ih,cl)
+      equation
+        (cache,env1,ih,{fn as DAE.FUNCTION(type_ = funcTp, functions=(DAE.FUNCTION_EXT(body=_)::_))})
+           	= implicitFunctionInstantiation2(cache,env,ih, DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cl, {}) ;
+    then
+      (cache,ih,fn,funcTp);
+    case (cache,env,ih,cl)
+      equation
         print("Inst.instantiateExternalObjectConstructor failed\n");
     then fail();
       end matchcontinue;
@@ -4642,13 +4642,13 @@ algorithm
         (cache,env2,ih,emods,extcomps,eqs2,initeqs2,alg2,initalg2) =
         partialInstExtendsAndClassExtendsList(cache,env1,ih, mods, extendselts, classextendselts, ci_state, className, true)
         "2. EXTENDS Nodes inst_Extends_List only flatten inhteritance structure. It does not perform component instantiations." ;
-		    lst_constantEls = addNomod(constantEls(els)) " Retrieve all constants";
-	      *//*
-	       Since partial instantiation is done in lookup, we need to add inherited classes here.
-	       Otherwise when looking up e.g. A.B where A inherits the definition of B, and without having a
-	       base class context (since we do not have any element to find it in), the class must be added
-	       to the environment here.
-	      *//*
+        lst_constantEls = addNomod(constantEls(els)) " Retrieve all constants";
+        *//*
+         Since partial instantiation is done in lookup, we need to add inherited classes here.
+         Otherwise when looking up e.g. A.B where A inherits the definition of B, and without having a
+         base class context (since we do not have any element to find it in), the class must be added
+         to the environment here.
+        *//*
         cdefelts2 = classdefElts2(extcomps);
         (env2,ih) = addClassdefsToEnv(env2, ih, pre, cdefelts2,true,NONE()); // Add inherited classes to env
         (cache,env3,ih) = addComponentsToEnv(cache, env2, ih, mods, pre, csets, ci_state,
@@ -4674,13 +4674,13 @@ algorithm
         "2. EXTENDS Nodes inst_Extends_List only flatten inhteritance structure. It does not perform component instantiations." ;
         els = Util.if_(partialPrefix, {}, els);
         // If we partially instantiate a partial package, we filter out constants (maybe we should also filter out functions) /sjoelund
-		    lst_constantEls = listAppend(extcomps,addNomod(constantEls(els))) " Retrieve all constants";
-	      /*
-	       Since partial instantiation is done in lookup, we need to add inherited classes here.
-	       Otherwise when looking up e.g. A.B where A inherits the definition of B, and without having a
-	       base class context (since we do not have any element to find it in), the class must be added
-	       to the environment here.
-	      */
+        lst_constantEls = listAppend(extcomps,addNomod(constantEls(els))) " Retrieve all constants";
+        /*
+         Since partial instantiation is done in lookup, we need to add inherited classes here.
+         Otherwise when looking up e.g. A.B where A inherits the definition of B, and without having a
+         base class context (since we do not have any element to find it in), the class must be added
+         to the environment here.
+        */
         (cdefelts2,extcomps) = classdefElts2(extcomps, partialPrefix);
         (env2,ih) = addClassdefsToEnv(env2, ih, pre, cdefelts2, true,NONE()); // Add inherited classes to env
         (cache,env3,ih) = addComponentsToEnv(cache, env2, ih, mods, pre, csets, ci_state,
@@ -4738,18 +4738,18 @@ algorithm
       SCode.Attributes attr;
       SCode.Element el;
       list<SCode.Element> els,els1;
-  	case ({}) then {};
+    case ({}) then {};
 
     case ((el as SCode.COMPONENT(attributes=attr))::els)
- 	  equation
+     equation
         SCode.CONST() = SCode.attrVariability(attr);
         els1 = constantEls(els);
-	  then (el::els1);
+    then (el::els1);
 
     case (_::els)
       equation
-	      els1 = constantEls(els);
-	   then els1;
+        els1 = constantEls(els);
+     then els1;
   end matchcontinue;
 end constantEls;
 
@@ -5312,16 +5312,16 @@ algorithm
       list<tuple<SCode.Element, DAE.Mod>> allcomps;
       list<SCode.Equation> eqns;
     /* constants does not need to be checked.
-	 * Must return false here to prevent constants from be outputed
-	 * as structural parameters, i.e. \"parameter\" in DAE, which is
-	 * incorrect
-	 */
+   * Must return false here to prevent constants from be outputed
+   * as structural parameters, i.e. \"parameter\" in DAE, which is
+   * incorrect
+   */
     case (SCode.CONST(),_,_,_) then false;
 
     /* Check if structural:
-	 * 1. By investigating array dimensions.
-	 * 2. By investigating if-equations.
-	 */
+   * 1. By investigating array dimensions.
+   * 2. By investigating if-equations.
+   */
     case (param,compname,allcomps,eqns)
       equation
         true = SCode.isParameterOrConst(param);
@@ -5587,16 +5587,16 @@ algorithm
       equation
         compmod = Mod.lookupCompModification(mods, n)
         "PA: PROBLEM, Modifiers should be merged in this phase, but
-	       since undeclared components can not be found (is done in this phase)
-	       the modifiers can not be elaborated to get a variable binding.
-	       Thus, we need to store the merged modifier for elaboration in
-	       the next stage.
+         since undeclared components can not be found (is done in this phase)
+         the modifiers can not be elaborated to get a variable binding.
+         Thus, we need to store the merged modifier for elaboration in
+         the next stage.
 
-	       Solution: Save all modifiers in environment...
-	       Use type T_NOTYPE instead of as earier trying to instantiate,
-	       since instanitation might fail without having correct
-	       modifications, e.g. when instanitating a partial class that must
-	       be redeclared through a modification" ;
+         Solution: Save all modifiers in environment...
+         Use type T_NOTYPE instead of as earier trying to instantiate,
+         since instanitation might fail without having correct
+         modifications, e.g. when instanitating a partial class that must
+         be redeclared through a modification" ;
         cmod_1 = Mod.merge(compmod, cmod, env, pre);
 
         /*
@@ -5822,14 +5822,14 @@ algorithm
     case (cache,env,ih,store,mods,pre,csets,ci_state,
           ((comp as SCode.COMPONENT(component = n,innerOuter=io,
                                     finalPrefix = finalPrefix,replaceablePrefix = repl,protectedPrefix = prot,
-      		                          attributes = (attr as SCode.ATTR(arrayDims = ad,flowPrefix = flowPrefix,
-      		                                                           streamPrefix = streamPrefix, accesibility = acc,
-      		                                                           variability = param,direction = dir)),
-      		                          typeSpec = ( ts as Absyn.TPATH(t, _)),
-      		                          modifications = m,
-      		                          comment = comment,
-      		                          condition=cond,
-      		                          info = aInfo,cc=cc)),cmod),
+                                    attributes = (attr as SCode.ATTR(arrayDims = ad,flowPrefix = flowPrefix,
+                                                                     streamPrefix = streamPrefix, accesibility = acc,
+                                                                     variability = param,direction = dir)),
+                                    typeSpec = ( ts as Absyn.TPATH(t, _)),
+                                    modifications = m,
+                                    comment = comment,
+                                    condition=cond,
+                                    info = aInfo,cc=cc)),cmod),
           inst_dims,impl,callscope,graph)
       equation
         //print("  instElement: A component: " +& n +& "\n");
@@ -5867,8 +5867,8 @@ algorithm
         //(cache,env,ih) = getDerivedEnv(cache,env,ih, bc);
         // can call instVar
         (cache,env2,ih,csets) = updateComponentsInEnv(cache, env, ih, pre, mods, crefs_2, ci_state, csets, impl);
-				//Update the untyped modifiers to typed ones, and extract class and
-				//component modifiers again.
+    		//Update the untyped modifiers to typed ones, and extract class and
+    		//component modifiers again.
         //(cache,mods_1) = Mod.updateMod(cache, env2, ih, pre, mods, impl) ;
         //Refetch the component from environment, since attributes, etc.
         //might have changed.. comp used in redeclare_type below...    
@@ -7159,10 +7159,10 @@ algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
       InstanceHierarchy ih;
       DAE.Mod type_mods;
 
-   	// impl component environment dae elements for component Variables of userdefined type,
-   	// e.g. Point p => Real p[3]; These must be handled separately since even if they do not
-	 	// appear to be an array, they can. Therefore we need to collect
- 	 	// the full dimensionality and call instVar2
+     // impl component environment dae elements for component Variables of userdefined type,
+     // e.g. Point p => Real p[3]; These must be handled separately since even if they do not
+     // appear to be an array, they can. Therefore we need to collect
+      // the full dimensionality and call instVar2
     //case (cache,env,ih,store,ci_state,mod,pre,csets,n,(cl as SCode.CLASS(name = id, classDef = SCode.DERIVED(modifications = mods))),attr,prot,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
     case (cache,env,ih,store,ci_state,mod,pre,csets,n,(cl as SCode.CLASS(name = id)),attr,prot,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
       equation
@@ -8347,33 +8347,33 @@ algorithm
 end instDimExpNonSplit;
 
 protected function instWholeDimFromMod
-	"Tries to determine the size of a WHOLEDIM dimension by looking at a variables
-	modifier."
-	input DAE.Dimension dimensionExp;
-	input DAE.Mod modifier;
-	output DAE.Subscript subscript;
+  "Tries to determine the size of a WHOLEDIM dimension by looking at a variables
+  modifier."
+  input DAE.Dimension dimensionExp;
+  input DAE.Mod modifier;
+  output DAE.Subscript subscript;
 algorithm
-	subscript := matchcontinue(dimensionExp, modifier)
-    local	
+  subscript := matchcontinue(dimensionExp, modifier)
+    local  
       DAE.ExpType tp; 
       DAE.Dimension d;
       DAE.Subscript sub;
-		/*case (DAE.DIM_SUBSCRIPT(subscript = DAE.WHOLEDIM()),
-					DAE.MOD(eqModOption =	
+    /*case (DAE.DIM_SUBSCRIPT(subscript = DAE.WHOLEDIM()),
+    			DAE.MOD(eqModOption =	
             SOME(DAE.TYPED(modifierAsExp = DAE.ARRAY(ty = tp)))))*/
     case (DAE.DIM_UNKNOWN(), DAE.MOD(eqModOption = 
             SOME(DAE.TYPED(modifierAsExp = DAE.ARRAY(ty = tp)))))
-			equation
+    	equation
         (d :: _) = Expression.arrayDimension(tp);
         sub = Expression.dimensionSubscript(d);
-			then sub;
+    	then sub;
     /*case (DAE.DIM_SUBSCRIPT(subscript = DAE.WHOLEDIM()), 
           DAE.MOD(eqModOption = _))*/
     case (DAE.DIM_UNKNOWN(), DAE.MOD(eqModOption = _))
-		  equation
-		    Debug.fprint("failtrace","- Inst.instWholeDimFromMod failed\n");
-		  then fail();
-	end matchcontinue;
+      equation
+        Debug.fprint("failtrace","- Inst.instWholeDimFromMod failed\n");
+      then fail();
+  end matchcontinue;
 end instWholeDimFromMod;
 
 protected function propagateAttributes
@@ -13119,14 +13119,14 @@ protected function addClassdefsToEnv3
 algorithm
   (oenv,outIH,osele) := match(env,inIH,inPrefix,inMod,sele)
     local
-	    DAE.Mod mo,mo2;
-	    SCode.Element sele2;
-	    Env.Env env2;
-	    String str;
-	    SCode.Class retcl;
-	    InstanceHierarchy ih;
-	    list<DAE.SubMod> lsm,lsm2;
-	    Prefix.Prefix pre;
+      DAE.Mod mo,mo2;
+      SCode.Element sele2;
+      Env.Env env2;
+      String str;
+      SCode.Class retcl;
+      InstanceHierarchy ih;
+      list<DAE.SubMod> lsm,lsm2;
+      Prefix.Prefix pre;
 
     case(_,ih,pre,NONE(),_) then fail();
 

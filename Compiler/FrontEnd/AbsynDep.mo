@@ -386,9 +386,9 @@ algorithm
 
       /* empty tree*/
     case (AVLTREENODE(value = NONE(),height=h,left = NONE(),right = NONE()),key,value)
-    	then AVLTREENODE(SOME(AVLTREEVALUE(key,value)),1,NONE(),NONE());
+      then AVLTREENODE(SOME(AVLTREEVALUE(key,value)),1,NONE(),NONE());
 
-		/* Replace this node. NOTE: different from generic impl. Joins the list. */
+    /* Replace this node. NOTE: different from generic impl. Joins the list. */
     case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),height=h,left = left,right = right),key,value)
       equation
         true = ModUtil.pathEqual(rkey,key);

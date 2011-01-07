@@ -276,11 +276,11 @@ void indexed_assign_string_array(string_array_t* source,
     idx_size = size_alloc(dest_spec->ndims);
 
     for (i = 0; i < dest_spec->ndims; ++i) {
-	idx_vec1[i] = 0;
+  idx_vec1[i] = 0;
 
-	if (dest_spec->index[i])
+  if (dest_spec->index[i])
             idx_size[i] = imax(dest_spec->dim_size[i],1);
-	else
+  else
             idx_size[i] = dest->dim_size[i];
     }
 

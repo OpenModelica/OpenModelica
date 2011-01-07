@@ -21,24 +21,24 @@ double d_mod(doublereal *x, doublereal *y)
 #endif
 {
 #ifdef IEEE_drem
-	double xa, ya, z;
-	if ((ya = *y) < 0.)
-		ya = -ya;
-	z = drem(xa = *x, ya);
-	if (xa > 0) {
-		if (z < 0)
-			z += ya;
-		}
-	else if (z > 0)
-		z -= ya;
-	return z;
+  double xa, ya, z;
+  if ((ya = *y) < 0.)
+  	ya = -ya;
+  z = drem(xa = *x, ya);
+  if (xa > 0) {
+  	if (z < 0)
+  		z += ya;
+  	}
+  else if (z > 0)
+  	z -= ya;
+  return z;
 #else
-	double quotient;
-	if( (quotient = *x / *y) >= 0)
-		quotient = floor(quotient);
-	else
-		quotient = -floor(-quotient);
-	return(*x - (*y) * quotient );
+  double quotient;
+  if( (quotient = *x / *y) >= 0)
+  	quotient = floor(quotient);
+  else
+  	quotient = -floor(-quotient);
+  return(*x - (*y) * quotient );
 #endif
 }
 #ifdef __cplusplus

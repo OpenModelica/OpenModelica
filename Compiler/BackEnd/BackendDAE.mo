@@ -30,7 +30,7 @@
  */
 
 package BackendDAE
-" file:	       BackendDAE.mo
+" file:         BackendDAE.mo
   package:     BackendDAE
   description: BackendDAE contains the datatypes used by the backend.
 
@@ -381,14 +381,14 @@ type IncidenceMatrixT = IncidenceMatrix "IncidenceMatrixT : a list of equation i
 public
 uniontype JacobianType "- Jacobian Type"
   record JAC_CONSTANT "If jacobian has only constant values, for system
-			         of equations this means that it can be solved statically." end JAC_CONSTANT;
+    	         of equations this means that it can be solved statically." end JAC_CONSTANT;
 
   record JAC_TIME_VARYING "If jacobian has time varying parts, like parameters or
-				          algebraic variables" end JAC_TIME_VARYING;
+    		          algebraic variables" end JAC_TIME_VARYING;
 
   record JAC_NONLINEAR "If jacobian contains variables that are solved for,
-				      means that a nonlinear system of equations needs to be
-				      solved" end JAC_NONLINEAR;
+    		      means that a nonlinear system of equations needs to be
+    		      solved" end JAC_NONLINEAR;
 
   record JAC_NO_ANALYTIC "No analytic jacobian available" end JAC_NO_ANALYTIC;
 
@@ -405,11 +405,11 @@ end IndexReduction;
 public
 uniontype EquationConstraints "- Equation Constraints"
   record ALLOW_UNDERCONSTRAINED "for e.g. initial eqns.
-						      where not all variables
-						      have a solution" end ALLOW_UNDERCONSTRAINED;
+    				      where not all variables
+    				      have a solution" end ALLOW_UNDERCONSTRAINED;
 
   record EXACT "exact as many equations
-						       as variables" end EXACT;
+    				       as variables" end EXACT;
 
 end EquationConstraints;
 

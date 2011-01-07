@@ -30,7 +30,7 @@
  */
 
 package DAEQuery
-" file:	       DAEQuery.mo
+" file:         DAEQuery.mo
   package:     DAEQuery
   description: DAEQuery contains functionality for query of Incidence Matrix.
 
@@ -600,10 +600,10 @@ algorithm
         res;
     
    // ALGORITHM For now assume that algorithm will be solvable for correct
-	 // variables. I.e. find all variables in algorithm and add to lst.
-	 // If algorithm later on needs to be inverted, i.e. solved for
-	 // different variables than calculated, a non linear solver or
-	 // analysis of algorithm itself needs to be implemented.
+   // variables. I.e. find all variables in algorithm and add to lst.
+   // If algorithm later on needs to be inverted, i.e. solved for
+   // different variables than calculated, a non linear solver or
+   // analysis of algorithm itself needs to be implemented.
     case (vars,BackendDAE.ALGORITHM(index = indx,in_ = inputs,out = outputs)) 
       equation
         lstlst1 = Util.listMap1(inputs, incidenceRowExp, vars);
@@ -728,8 +728,8 @@ algorithm
       equation
         ((BackendDAE.VAR(varKind = BackendDAE.STATE()) :: _),p) =
         BackendVariable.getVar(cr, vars) "If variable x is a state, der(x) is a variable in incidence matrix,
-	                               x is inserted as negative value, since it is needed by debugging and index
-	                               reduction using dummy derivatives" ;
+                                 x is inserted as negative value, since it is needed by debugging and index
+                                 reduction using dummy derivatives" ;
         p_1 = Util.listMap1r(p, intSub, 0);
         pStr = Util.listMap(p_1, intString);
       then

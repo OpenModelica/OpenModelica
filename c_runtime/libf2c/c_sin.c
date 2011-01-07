@@ -14,10 +14,10 @@ extern "C" {
 void c_sin(complex *r, complex *z)
 #endif
 {
-	double zi = z->i, zr = z->r;
-	r->r = sin(zr) * cosh(zi);
-	r->i = cos(zr) * sinh(zi);
-	}
+  double zi = z->i, zr = z->r;
+  r->r = sin(zr) * cosh(zi);
+  r->i = cos(zr) * sinh(zi);
+  }
 #ifdef __cplusplus
 }
 #endif

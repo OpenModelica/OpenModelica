@@ -8,7 +8,7 @@
 
 
 /* Subroutine */ int dgesv_(integer *n, integer *nrhs, doublereal *a, integer
-	*lda, integer *ipiv, doublereal *b, integer *ldb, integer *info)
+  *lda, integer *ipiv, doublereal *b, integer *ldb, integer *info)
 {
 /*  -- LAPACK driver routine (version 3.0) --
        Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,
@@ -77,8 +77,8 @@
     integer a_dim1, a_offset, b_dim1, b_offset, i__1;
     /* Local variables */
     extern /* Subroutine */ int dgetrf_(integer *, integer *, doublereal *,
-	    integer *, integer *, integer *), xerbla_(char *, integer *), dgetrs_(char *, integer *, integer *, doublereal *,
-	    integer *, integer *, doublereal *, integer *, integer *);
+      integer *, integer *, integer *), xerbla_(char *, integer *), dgetrs_(char *, integer *, integer *, doublereal *,
+      integer *, integer *, doublereal *, integer *, integer *);
 
     a_dim1 = *lda;
     a_offset = 1 + a_dim1 * 1;
@@ -91,18 +91,18 @@
     /* Function Body */
     *info = 0;
     if (*n < 0) {
-	*info = -1;
+  *info = -1;
     } else if (*nrhs < 0) {
-	*info = -2;
+  *info = -2;
     } else if (*lda < max(1,*n)) {
-	*info = -4;
+  *info = -4;
     } else if (*ldb < max(1,*n)) {
-	*info = -7;
+  *info = -7;
     }
     if (*info != 0) {
-	i__1 = -(*info);
-	xerbla_("DGESV ", &i__1);
-	return 0;
+  i__1 = -(*info);
+  xerbla_("DGESV ", &i__1);
+  return 0;
     }
 
 /*     Compute the LU factorization of A. */
@@ -112,8 +112,8 @@
 
 /*        Solve the system A*X = B, overwriting B with X. */
 
-	dgetrs_("No transpose", n, nrhs, &a[a_offset], lda, &ipiv[1], &b[
-		b_offset], ldb, info);
+  dgetrs_("No transpose", n, nrhs, &a[a_offset], lda, &ipiv[1], &b[
+  	b_offset], ldb, info);
     }
     return 0;
 
@@ -123,8 +123,8 @@
 
 
 /* Subroutine */ int dgetrs_(char *trans, integer *n, integer *nrhs,
-	doublereal *a, integer *lda, integer *ipiv, doublereal *b, integer *
-	ldb, integer *info)
+  doublereal *a, integer *lda, integer *ipiv, doublereal *b, integer *
+  ldb, integer *info)
 {
 /*  -- LAPACK routine (version 3.0) --
        Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,
@@ -194,10 +194,10 @@
     /* Local variables */
     extern logical lsame_(char *, char *);
     extern /* Subroutine */ int dtrsm_(char *, char *, char *, char *,
-	    integer *, integer *, doublereal *, doublereal *, integer *,
-	    doublereal *, integer *), xerbla_(
-	    char *, integer *), dlaswp_(integer *, doublereal *,
-	    integer *, integer *, integer *, integer *, integer *);
+      integer *, integer *, doublereal *, doublereal *, integer *,
+      doublereal *, integer *), xerbla_(
+      char *, integer *), dlaswp_(integer *, doublereal *,
+      integer *, integer *, integer *, integer *, integer *);
     static logical notran;
 
 
@@ -213,27 +213,27 @@
     *info = 0;
     notran = lsame_(trans, "N");
     if (! notran && ! lsame_(trans, "T") && ! lsame_(
-	    trans, "C")) {
-	*info = -1;
+      trans, "C")) {
+  *info = -1;
     } else if (*n < 0) {
-	*info = -2;
+  *info = -2;
     } else if (*nrhs < 0) {
-	*info = -3;
+  *info = -3;
     } else if (*lda < max(1,*n)) {
-	*info = -5;
+  *info = -5;
     } else if (*ldb < max(1,*n)) {
-	*info = -8;
+  *info = -8;
     }
     if (*info != 0) {
-	i__1 = -(*info);
-	xerbla_("DGETRS", &i__1);
-	return 0;
+  i__1 = -(*info);
+  xerbla_("DGETRS", &i__1);
+  return 0;
     }
 
 /*     Quick return if possible */
 
     if (*n == 0 || *nrhs == 0) {
-	return 0;
+  return 0;
     }
 
     if (notran) {
@@ -242,34 +242,34 @@
 
           Apply row interchanges to the right hand sides. */
 
-	dlaswp_(nrhs, &b[b_offset], ldb, &c__1, n, &ipiv[1], &c__1);
+  dlaswp_(nrhs, &b[b_offset], ldb, &c__1, n, &ipiv[1], &c__1);
 
 /*        Solve L*X = B, overwriting B with X. */
 
-	dtrsm_("Left", "Lower", "No transpose", "Unit", n, nrhs, &c_b12, &a[
-		a_offset], lda, &b[b_offset], ldb);
+  dtrsm_("Left", "Lower", "No transpose", "Unit", n, nrhs, &c_b12, &a[
+  	a_offset], lda, &b[b_offset], ldb);
 
 /*        Solve U*X = B, overwriting B with X. */
 
-	dtrsm_("Left", "Upper", "No transpose", "Non-unit", n, nrhs, &c_b12, &
-		a[a_offset], lda, &b[b_offset], ldb);
+  dtrsm_("Left", "Upper", "No transpose", "Non-unit", n, nrhs, &c_b12, &
+  	a[a_offset], lda, &b[b_offset], ldb);
     } else {
 
 /*        Solve A' * X = B.
 
           Solve U'*X = B, overwriting B with X. */
 
-	dtrsm_("Left", "Upper", "Transpose", "Non-unit", n, nrhs, &c_b12, &a[
-		a_offset], lda, &b[b_offset], ldb);
+  dtrsm_("Left", "Upper", "Transpose", "Non-unit", n, nrhs, &c_b12, &a[
+  	a_offset], lda, &b[b_offset], ldb);
 
 /*        Solve L'*X = B, overwriting B with X. */
 
-	dtrsm_("Left", "Lower", "Transpose", "Unit", n, nrhs, &c_b12, &a[
-		a_offset], lda, &b[b_offset], ldb);
+  dtrsm_("Left", "Lower", "Transpose", "Unit", n, nrhs, &c_b12, &a[
+  	a_offset], lda, &b[b_offset], ldb);
 
 /*        Apply row interchanges to the solution vectors. */
 
-	dlaswp_(nrhs, &b[b_offset], ldb, &c__1, n, &ipiv[1], &c_n1);
+  dlaswp_(nrhs, &b[b_offset], ldb, &c__1, n, &ipiv[1], &c_n1);
     }
 
     return 0;
@@ -279,8 +279,8 @@
 } /* dgetrs_ */
 
 /* Subroutine */ int dtrsm_(char *side, char *uplo, char *transa, char *diag,
-	integer *m, integer *n, doublereal *alpha, doublereal *a, integer *
-	lda, doublereal *b, integer *ldb)
+  integer *m, integer *n, doublereal *alpha, doublereal *a, integer *
+  lda, doublereal *b, integer *ldb)
 {
     /* System generated locals */
     integer a_dim1, a_offset, b_dim1, b_offset, i__1, i__2, i__3;
@@ -390,288 +390,288 @@
     /* Function Body */
     lside = lsame_(side, "L");
     if (lside) {
-	nrowa = *m;
+  nrowa = *m;
     } else {
-	nrowa = *n;
+  nrowa = *n;
     }
     nounit = lsame_(diag, "N");
     upper = lsame_(uplo, "U");
     info = 0;
     if (! lside && ! lsame_(side, "R")) {
-	info = 1;
+  info = 1;
     } else if (! upper && ! lsame_(uplo, "L")) {
-	info = 2;
+  info = 2;
     } else if (! lsame_(transa, "N") && ! lsame_(transa,
-	     "T") && ! lsame_(transa, "C")) {
-	info = 3;
+       "T") && ! lsame_(transa, "C")) {
+  info = 3;
     } else if (! lsame_(diag, "U") && ! lsame_(diag,
-	    "N")) {
-	info = 4;
+      "N")) {
+  info = 4;
     } else if (*m < 0) {
-	info = 5;
+  info = 5;
     } else if (*n < 0) {
-	info = 6;
+  info = 6;
     } else if (*lda < max(1,nrowa)) {
-	info = 9;
+  info = 9;
     } else if (*ldb < max(1,*m)) {
-	info = 11;
+  info = 11;
     }
     if (info != 0) {
-	xerbla_("DTRSM ", &info);
-	return 0;
+  xerbla_("DTRSM ", &info);
+  return 0;
     }
 /*     Quick return if possible. */
     if (*n == 0) {
-	return 0;
+  return 0;
     }
 /*     And when  alpha.eq.zero. */
     if (*alpha == 0.) {
-	i__1 = *n;
-	for (j = 1; j <= i__1; ++j) {
-	    i__2 = *m;
-	    for (i__ = 1; i__ <= i__2; ++i__) {
-		b_ref(i__, j) = 0.;
+  i__1 = *n;
+  for (j = 1; j <= i__1; ++j) {
+      i__2 = *m;
+      for (i__ = 1; i__ <= i__2; ++i__) {
+  	b_ref(i__, j) = 0.;
 /* L10: */
-	    }
+      }
 /* L20: */
-	}
-	return 0;
+  }
+  return 0;
     }
 /*     Start the operations. */
     if (lside) {
-	if (lsame_(transa, "N")) {
+  if (lsame_(transa, "N")) {
 /*           Form  B := alpha*inv( A )*B. */
-	    if (upper) {
-		i__1 = *n;
-		for (j = 1; j <= i__1; ++j) {
-		    if (*alpha != 1.) {
-			i__2 = *m;
-			for (i__ = 1; i__ <= i__2; ++i__) {
-			    b_ref(i__, j) = *alpha * b_ref(i__, j);
+      if (upper) {
+  	i__1 = *n;
+  	for (j = 1; j <= i__1; ++j) {
+  	    if (*alpha != 1.) {
+  		i__2 = *m;
+  		for (i__ = 1; i__ <= i__2; ++i__) {
+  		    b_ref(i__, j) = *alpha * b_ref(i__, j);
 /* L30: */
-			}
-		    }
-		    for (k = *m; k >= 1; --k) {
-			if (b_ref(k, j) != 0.) {
-			    if (nounit) {
-				b_ref(k, j) = b_ref(k, j) / a_ref(k, k);
-			    }
-			    i__2 = k - 1;
-			    for (i__ = 1; i__ <= i__2; ++i__) {
-				b_ref(i__, j) = b_ref(i__, j) - b_ref(k, j) *
-					a_ref(i__, k);
+  		}
+  	    }
+  	    for (k = *m; k >= 1; --k) {
+  		if (b_ref(k, j) != 0.) {
+  		    if (nounit) {
+  			b_ref(k, j) = b_ref(k, j) / a_ref(k, k);
+  		    }
+  		    i__2 = k - 1;
+  		    for (i__ = 1; i__ <= i__2; ++i__) {
+  			b_ref(i__, j) = b_ref(i__, j) - b_ref(k, j) *
+  				a_ref(i__, k);
 /* L40: */
-			    }
-			}
+  		    }
+  		}
 /* L50: */
-		    }
+  	    }
 /* L60: */
-		}
-	    } else {
-		i__1 = *n;
-		for (j = 1; j <= i__1; ++j) {
-		    if (*alpha != 1.) {
-			i__2 = *m;
-			for (i__ = 1; i__ <= i__2; ++i__) {
-			    b_ref(i__, j) = *alpha * b_ref(i__, j);
+  	}
+      } else {
+  	i__1 = *n;
+  	for (j = 1; j <= i__1; ++j) {
+  	    if (*alpha != 1.) {
+  		i__2 = *m;
+  		for (i__ = 1; i__ <= i__2; ++i__) {
+  		    b_ref(i__, j) = *alpha * b_ref(i__, j);
 /* L70: */
-			}
-		    }
-		    i__2 = *m;
-		    for (k = 1; k <= i__2; ++k) {
-			if (b_ref(k, j) != 0.) {
-			    if (nounit) {
-				b_ref(k, j) = b_ref(k, j) / a_ref(k, k);
-			    }
-			    i__3 = *m;
-			    for (i__ = k + 1; i__ <= i__3; ++i__) {
-				b_ref(i__, j) = b_ref(i__, j) - b_ref(k, j) *
-					a_ref(i__, k);
+  		}
+  	    }
+  	    i__2 = *m;
+  	    for (k = 1; k <= i__2; ++k) {
+  		if (b_ref(k, j) != 0.) {
+  		    if (nounit) {
+  			b_ref(k, j) = b_ref(k, j) / a_ref(k, k);
+  		    }
+  		    i__3 = *m;
+  		    for (i__ = k + 1; i__ <= i__3; ++i__) {
+  			b_ref(i__, j) = b_ref(i__, j) - b_ref(k, j) *
+  				a_ref(i__, k);
 /* L80: */
-			    }
-			}
+  		    }
+  		}
 /* L90: */
-		    }
+  	    }
 /* L100: */
-		}
-	    }
-	} else {
+  	}
+      }
+  } else {
 /*           Form  B := alpha*inv( A' )*B. */
-	    if (upper) {
-		i__1 = *n;
-		for (j = 1; j <= i__1; ++j) {
-		    i__2 = *m;
-		    for (i__ = 1; i__ <= i__2; ++i__) {
-			temp = *alpha * b_ref(i__, j);
-			i__3 = i__ - 1;
-			for (k = 1; k <= i__3; ++k) {
-			    temp -= a_ref(k, i__) * b_ref(k, j);
+      if (upper) {
+  	i__1 = *n;
+  	for (j = 1; j <= i__1; ++j) {
+  	    i__2 = *m;
+  	    for (i__ = 1; i__ <= i__2; ++i__) {
+  		temp = *alpha * b_ref(i__, j);
+  		i__3 = i__ - 1;
+  		for (k = 1; k <= i__3; ++k) {
+  		    temp -= a_ref(k, i__) * b_ref(k, j);
 /* L110: */
-			}
-			if (nounit) {
-			    temp /= a_ref(i__, i__);
-			}
-			b_ref(i__, j) = temp;
+  		}
+  		if (nounit) {
+  		    temp /= a_ref(i__, i__);
+  		}
+  		b_ref(i__, j) = temp;
 /* L120: */
-		    }
+  	    }
 /* L130: */
-		}
-	    } else {
-		i__1 = *n;
-		for (j = 1; j <= i__1; ++j) {
-		    for (i__ = *m; i__ >= 1; --i__) {
-			temp = *alpha * b_ref(i__, j);
-			i__2 = *m;
-			for (k = i__ + 1; k <= i__2; ++k) {
-			    temp -= a_ref(k, i__) * b_ref(k, j);
+  	}
+      } else {
+  	i__1 = *n;
+  	for (j = 1; j <= i__1; ++j) {
+  	    for (i__ = *m; i__ >= 1; --i__) {
+  		temp = *alpha * b_ref(i__, j);
+  		i__2 = *m;
+  		for (k = i__ + 1; k <= i__2; ++k) {
+  		    temp -= a_ref(k, i__) * b_ref(k, j);
 /* L140: */
-			}
-			if (nounit) {
-			    temp /= a_ref(i__, i__);
-			}
-			b_ref(i__, j) = temp;
+  		}
+  		if (nounit) {
+  		    temp /= a_ref(i__, i__);
+  		}
+  		b_ref(i__, j) = temp;
 /* L150: */
-		    }
+  	    }
 /* L160: */
-		}
-	    }
-	}
+  	}
+      }
+  }
     } else {
-	if (lsame_(transa, "N")) {
+  if (lsame_(transa, "N")) {
 /*           Form  B := alpha*B*inv( A ). */
-	    if (upper) {
-		i__1 = *n;
-		for (j = 1; j <= i__1; ++j) {
-		    if (*alpha != 1.) {
-			i__2 = *m;
-			for (i__ = 1; i__ <= i__2; ++i__) {
-			    b_ref(i__, j) = *alpha * b_ref(i__, j);
+      if (upper) {
+  	i__1 = *n;
+  	for (j = 1; j <= i__1; ++j) {
+  	    if (*alpha != 1.) {
+  		i__2 = *m;
+  		for (i__ = 1; i__ <= i__2; ++i__) {
+  		    b_ref(i__, j) = *alpha * b_ref(i__, j);
 /* L170: */
-			}
-		    }
-		    i__2 = j - 1;
-		    for (k = 1; k <= i__2; ++k) {
-			if (a_ref(k, j) != 0.) {
-			    i__3 = *m;
-			    for (i__ = 1; i__ <= i__3; ++i__) {
-				b_ref(i__, j) = b_ref(i__, j) - a_ref(k, j) *
-					b_ref(i__, k);
+  		}
+  	    }
+  	    i__2 = j - 1;
+  	    for (k = 1; k <= i__2; ++k) {
+  		if (a_ref(k, j) != 0.) {
+  		    i__3 = *m;
+  		    for (i__ = 1; i__ <= i__3; ++i__) {
+  			b_ref(i__, j) = b_ref(i__, j) - a_ref(k, j) *
+  				b_ref(i__, k);
 /* L180: */
-			    }
-			}
+  		    }
+  		}
 /* L190: */
-		    }
-		    if (nounit) {
-			temp = 1. / a_ref(j, j);
-			i__2 = *m;
-			for (i__ = 1; i__ <= i__2; ++i__) {
-			    b_ref(i__, j) = temp * b_ref(i__, j);
+  	    }
+  	    if (nounit) {
+  		temp = 1. / a_ref(j, j);
+  		i__2 = *m;
+  		for (i__ = 1; i__ <= i__2; ++i__) {
+  		    b_ref(i__, j) = temp * b_ref(i__, j);
 /* L200: */
-			}
-		    }
+  		}
+  	    }
 /* L210: */
-		}
-	    } else {
-		for (j = *n; j >= 1; --j) {
-		    if (*alpha != 1.) {
-			i__1 = *m;
-			for (i__ = 1; i__ <= i__1; ++i__) {
-			    b_ref(i__, j) = *alpha * b_ref(i__, j);
+  	}
+      } else {
+  	for (j = *n; j >= 1; --j) {
+  	    if (*alpha != 1.) {
+  		i__1 = *m;
+  		for (i__ = 1; i__ <= i__1; ++i__) {
+  		    b_ref(i__, j) = *alpha * b_ref(i__, j);
 /* L220: */
-			}
-		    }
-		    i__1 = *n;
-		    for (k = j + 1; k <= i__1; ++k) {
-			if (a_ref(k, j) != 0.) {
-			    i__2 = *m;
-			    for (i__ = 1; i__ <= i__2; ++i__) {
-				b_ref(i__, j) = b_ref(i__, j) - a_ref(k, j) *
-					b_ref(i__, k);
+  		}
+  	    }
+  	    i__1 = *n;
+  	    for (k = j + 1; k <= i__1; ++k) {
+  		if (a_ref(k, j) != 0.) {
+  		    i__2 = *m;
+  		    for (i__ = 1; i__ <= i__2; ++i__) {
+  			b_ref(i__, j) = b_ref(i__, j) - a_ref(k, j) *
+  				b_ref(i__, k);
 /* L230: */
-			    }
-			}
+  		    }
+  		}
 /* L240: */
-		    }
-		    if (nounit) {
-			temp = 1. / a_ref(j, j);
-			i__1 = *m;
-			for (i__ = 1; i__ <= i__1; ++i__) {
-			    b_ref(i__, j) = temp * b_ref(i__, j);
+  	    }
+  	    if (nounit) {
+  		temp = 1. / a_ref(j, j);
+  		i__1 = *m;
+  		for (i__ = 1; i__ <= i__1; ++i__) {
+  		    b_ref(i__, j) = temp * b_ref(i__, j);
 /* L250: */
-			}
-		    }
+  		}
+  	    }
 /* L260: */
-		}
-	    }
-	} else {
+  	}
+      }
+  } else {
 /*           Form  B := alpha*B*inv( A' ). */
-	    if (upper) {
-		for (k = *n; k >= 1; --k) {
-		    if (nounit) {
-			temp = 1. / a_ref(k, k);
-			i__1 = *m;
-			for (i__ = 1; i__ <= i__1; ++i__) {
-			    b_ref(i__, k) = temp * b_ref(i__, k);
+      if (upper) {
+  	for (k = *n; k >= 1; --k) {
+  	    if (nounit) {
+  		temp = 1. / a_ref(k, k);
+  		i__1 = *m;
+  		for (i__ = 1; i__ <= i__1; ++i__) {
+  		    b_ref(i__, k) = temp * b_ref(i__, k);
 /* L270: */
-			}
-		    }
-		    i__1 = k - 1;
-		    for (j = 1; j <= i__1; ++j) {
-			if (a_ref(j, k) != 0.) {
-			    temp = a_ref(j, k);
-			    i__2 = *m;
-			    for (i__ = 1; i__ <= i__2; ++i__) {
-				b_ref(i__, j) = b_ref(i__, j) - temp * b_ref(
-					i__, k);
+  		}
+  	    }
+  	    i__1 = k - 1;
+  	    for (j = 1; j <= i__1; ++j) {
+  		if (a_ref(j, k) != 0.) {
+  		    temp = a_ref(j, k);
+  		    i__2 = *m;
+  		    for (i__ = 1; i__ <= i__2; ++i__) {
+  			b_ref(i__, j) = b_ref(i__, j) - temp * b_ref(
+  				i__, k);
 /* L280: */
-			    }
-			}
+  		    }
+  		}
 /* L290: */
-		    }
-		    if (*alpha != 1.) {
-			i__1 = *m;
-			for (i__ = 1; i__ <= i__1; ++i__) {
-			    b_ref(i__, k) = *alpha * b_ref(i__, k);
+  	    }
+  	    if (*alpha != 1.) {
+  		i__1 = *m;
+  		for (i__ = 1; i__ <= i__1; ++i__) {
+  		    b_ref(i__, k) = *alpha * b_ref(i__, k);
 /* L300: */
-			}
-		    }
+  		}
+  	    }
 /* L310: */
-		}
-	    } else {
-		i__1 = *n;
-		for (k = 1; k <= i__1; ++k) {
-		    if (nounit) {
-			temp = 1. / a_ref(k, k);
-			i__2 = *m;
-			for (i__ = 1; i__ <= i__2; ++i__) {
-			    b_ref(i__, k) = temp * b_ref(i__, k);
+  	}
+      } else {
+  	i__1 = *n;
+  	for (k = 1; k <= i__1; ++k) {
+  	    if (nounit) {
+  		temp = 1. / a_ref(k, k);
+  		i__2 = *m;
+  		for (i__ = 1; i__ <= i__2; ++i__) {
+  		    b_ref(i__, k) = temp * b_ref(i__, k);
 /* L320: */
-			}
-		    }
-		    i__2 = *n;
-		    for (j = k + 1; j <= i__2; ++j) {
-			if (a_ref(j, k) != 0.) {
-			    temp = a_ref(j, k);
-			    i__3 = *m;
-			    for (i__ = 1; i__ <= i__3; ++i__) {
-				b_ref(i__, j) = b_ref(i__, j) - temp * b_ref(
-					i__, k);
+  		}
+  	    }
+  	    i__2 = *n;
+  	    for (j = k + 1; j <= i__2; ++j) {
+  		if (a_ref(j, k) != 0.) {
+  		    temp = a_ref(j, k);
+  		    i__3 = *m;
+  		    for (i__ = 1; i__ <= i__3; ++i__) {
+  			b_ref(i__, j) = b_ref(i__, j) - temp * b_ref(
+  				i__, k);
 /* L330: */
-			    }
-			}
+  		    }
+  		}
 /* L340: */
-		    }
-		    if (*alpha != 1.) {
-			i__2 = *m;
-			for (i__ = 1; i__ <= i__2; ++i__) {
-			    b_ref(i__, k) = *alpha * b_ref(i__, k);
+  	    }
+  	    if (*alpha != 1.) {
+  		i__2 = *m;
+  		for (i__ = 1; i__ <= i__2; ++i__) {
+  		    b_ref(i__, k) = *alpha * b_ref(i__, k);
 /* L350: */
-			}
-		    }
+  		}
+  	    }
 /* L360: */
-		}
-	    }
-	}
+  	}
+      }
+  }
     }
     return 0;
 /*     End of DTRSM . */
@@ -682,7 +682,7 @@
 
 
 /* Subroutine */ int dgetrf_(integer *m, integer *n, doublereal *a, integer *
-	lda, integer *ipiv, integer *info)
+  lda, integer *ipiv, integer *info)
 {
 /*  -- LAPACK routine (version 3.0) --
        Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,
@@ -750,20 +750,20 @@
     /* Local variables */
     static integer i__, j;
     extern /* Subroutine */ int dgemm_(char *, char *, integer *, integer *,
-	    integer *, doublereal *, doublereal *, integer *, doublereal *,
-	    integer *, doublereal *, doublereal *, integer *);
+      integer *, doublereal *, doublereal *, integer *, doublereal *,
+      integer *, doublereal *, doublereal *, integer *);
     static integer iinfo;
     extern /* Subroutine */ int dtrsm_(char *, char *, char *, char *,
-	    integer *, integer *, doublereal *, doublereal *, integer *,
-	    doublereal *, integer *), dgetf2_(
-	    integer *, integer *, doublereal *, integer *, integer *, integer
-	    *);
+      integer *, integer *, doublereal *, doublereal *, integer *,
+      doublereal *, integer *), dgetf2_(
+      integer *, integer *, doublereal *, integer *, integer *, integer
+      *);
     static integer jb, nb;
     extern /* Subroutine */ int xerbla_(char *, integer *);
     extern integer ilaenv_(integer *, char *, char *, integer *, integer *,
-	    integer *, integer *, ftnlen, ftnlen);
+      integer *, integer *, ftnlen, ftnlen);
     extern /* Subroutine */ int dlaswp_(integer *, doublereal *, integer *,
-	    integer *, integer *, integer *, integer *);
+      integer *, integer *, integer *, integer *);
 #define a_ref(a_1,a_2) a[(a_2)*a_dim1 + a_1]
 
 
@@ -775,96 +775,96 @@
     /* Function Body */
     *info = 0;
     if (*m < 0) {
-	*info = -1;
+  *info = -1;
     } else if (*n < 0) {
-	*info = -2;
+  *info = -2;
     } else if (*lda < max(1,*m)) {
-	*info = -4;
+  *info = -4;
     }
     if (*info != 0) {
-	i__1 = -(*info);
-	xerbla_("DGETRF", &i__1);
-	return 0;
+  i__1 = -(*info);
+  xerbla_("DGETRF", &i__1);
+  return 0;
     }
 
 /*     Quick return if possible */
 
     if (*m == 0 || *n == 0) {
-	return 0;
+  return 0;
     }
 
 /*     Determine the block size for this environment. */
 
     nb = ilaenv_(&c__1, "DGETRF", " ", m, n, &c_n1, &c_n1, (ftnlen)6, (ftnlen)
-	    1);
+      1);
     if (nb <= 1 || nb >= min(*m,*n)) {
 
 /*        Use unblocked code. */
 
-	dgetf2_(m, n, &a[a_offset], lda, &ipiv[1], info);
+  dgetf2_(m, n, &a[a_offset], lda, &ipiv[1], info);
     } else {
 
 /*        Use blocked code. */
 
-	i__1 = min(*m,*n);
-	i__2 = nb;
-	for (j = 1; i__2 < 0 ? j >= i__1 : j <= i__1; j += i__2) {
+  i__1 = min(*m,*n);
+  i__2 = nb;
+  for (j = 1; i__2 < 0 ? j >= i__1 : j <= i__1; j += i__2) {
 /* Computing MIN */
-	    i__3 = min(*m,*n) - j + 1;
-	    jb = min(i__3,nb);
+      i__3 = min(*m,*n) - j + 1;
+      jb = min(i__3,nb);
 
 /*           Factor diagonal and subdiagonal blocks and test for exact
              singularity. */
 
-	    i__3 = *m - j + 1;
-	    dgetf2_(&i__3, &jb, &a_ref(j, j), lda, &ipiv[j], &iinfo);
+      i__3 = *m - j + 1;
+      dgetf2_(&i__3, &jb, &a_ref(j, j), lda, &ipiv[j], &iinfo);
 
 /*           Adjust INFO and the pivot indices. */
 
-	    if (*info == 0 && iinfo > 0) {
-		*info = iinfo + j - 1;
-	    }
+      if (*info == 0 && iinfo > 0) {
+  	*info = iinfo + j - 1;
+      }
 /* Computing MIN */
-	    i__4 = *m, i__5 = j + jb - 1;
-	    i__3 = min(i__4,i__5);
-	    for (i__ = j; i__ <= i__3; ++i__) {
-		ipiv[i__] = j - 1 + ipiv[i__];
+      i__4 = *m, i__5 = j + jb - 1;
+      i__3 = min(i__4,i__5);
+      for (i__ = j; i__ <= i__3; ++i__) {
+  	ipiv[i__] = j - 1 + ipiv[i__];
 /* L10: */
-	    }
+      }
 
 /*           Apply interchanges to columns 1:J-1. */
 
-	    i__3 = j - 1;
-	    i__4 = j + jb - 1;
-	    dlaswp_(&i__3, &a[a_offset], lda, &j, &i__4, &ipiv[1], &c__1);
+      i__3 = j - 1;
+      i__4 = j + jb - 1;
+      dlaswp_(&i__3, &a[a_offset], lda, &j, &i__4, &ipiv[1], &c__1);
 
-	    if (j + jb <= *n) {
+      if (j + jb <= *n) {
 
 /*              Apply interchanges to columns J+JB:N. */
 
-		i__3 = *n - j - jb + 1;
-		i__4 = j + jb - 1;
-		dlaswp_(&i__3, &a_ref(1, j + jb), lda, &j, &i__4, &ipiv[1], &
-			c__1);
+  	i__3 = *n - j - jb + 1;
+  	i__4 = j + jb - 1;
+  	dlaswp_(&i__3, &a_ref(1, j + jb), lda, &j, &i__4, &ipiv[1], &
+  		c__1);
 
 /*              Compute block row of U. */
 
-		i__3 = *n - j - jb + 1;
-		dtrsm_("Left", "Lower", "No transpose", "Unit", &jb, &i__3, &
-			c_b16, &a_ref(j, j), lda, &a_ref(j, j + jb), lda);
-		if (j + jb <= *m) {
+  	i__3 = *n - j - jb + 1;
+  	dtrsm_("Left", "Lower", "No transpose", "Unit", &jb, &i__3, &
+  		c_b16, &a_ref(j, j), lda, &a_ref(j, j + jb), lda);
+  	if (j + jb <= *m) {
 
 /*                 Update trailing submatrix. */
 
-		    i__3 = *m - j - jb + 1;
-		    i__4 = *n - j - jb + 1;
-		    dgemm_("No transpose", "No transpose", &i__3, &i__4, &jb,
-			    &c_b19, &a_ref(j + jb, j), lda, &a_ref(j, j + jb),
-			     lda, &c_b16, &a_ref(j + jb, j + jb), lda);
-		}
-	    }
+  	    i__3 = *m - j - jb + 1;
+  	    i__4 = *n - j - jb + 1;
+  	    dgemm_("No transpose", "No transpose", &i__3, &i__4, &jb,
+  		    &c_b19, &a_ref(j + jb, j), lda, &a_ref(j, j + jb),
+  		     lda, &c_b16, &a_ref(j + jb, j + jb), lda);
+  	}
+      }
 /* L20: */
-	}
+  }
     }
     return 0;
 
@@ -906,7 +906,7 @@
 
     /* Format strings */
     static char fmt_9999[] = "(\002 ** On entry to \002,a6,\002 parameter nu"
-	    "mber \002,i2,\002 had \002,\002an illegal value\002)";
+      "mber \002,i2,\002 had \002,\002an illegal value\002)";
     /* Builtin functions */
     integer s_wsfe(cilist *), do_fio(integer *, char *, ftnlen), e_wsfe(void);
     /* Subroutine */ int s_stop(char *, ftnlen);
@@ -930,13 +930,13 @@
 } /* xerbla_ */
 
 /* Subroutine */ int dgemm_(char *transa, char *transb, integer *m, integer *
-	n, integer *k, doublereal *alpha, doublereal *a, integer *lda,
-	doublereal *b, integer *ldb, doublereal *beta, doublereal *c__,
-	integer *ldc)
+  n, integer *k, doublereal *alpha, doublereal *a, integer *lda,
+  doublereal *b, integer *ldb, doublereal *beta, doublereal *c__,
+  integer *ldc)
 {
     /* System generated locals */
     integer a_dim1, a_offset, b_dim1, b_offset, c_dim1, c_offset, i__1, i__2,
-	    i__3;
+      i__3;
     /* Local variables */
     static integer info;
     static logical nota, notb;
@@ -1053,184 +1053,184 @@
     nota = lsame_(transa, "N");
     notb = lsame_(transb, "N");
     if (nota) {
-	nrowa = *m;
-	ncola = *k;
+  nrowa = *m;
+  ncola = *k;
     } else {
-	nrowa = *k;
-	ncola = *m;
+  nrowa = *k;
+  ncola = *m;
     }
     if (notb) {
-	nrowb = *k;
+  nrowb = *k;
     } else {
-	nrowb = *n;
+  nrowb = *n;
     }
 /*     Test the input parameters. */
     info = 0;
     if (! nota && ! lsame_(transa, "C") && ! lsame_(
-	    transa, "T")) {
-	info = 1;
+      transa, "T")) {
+  info = 1;
     } else if (! notb && ! lsame_(transb, "C") && !
-	    lsame_(transb, "T")) {
-	info = 2;
+      lsame_(transb, "T")) {
+  info = 2;
     } else if (*m < 0) {
-	info = 3;
+  info = 3;
     } else if (*n < 0) {
-	info = 4;
+  info = 4;
     } else if (*k < 0) {
-	info = 5;
+  info = 5;
     } else if (*lda < max(1,nrowa)) {
-	info = 8;
+  info = 8;
     } else if (*ldb < max(1,nrowb)) {
-	info = 10;
+  info = 10;
     } else if (*ldc < max(1,*m)) {
-	info = 13;
+  info = 13;
     }
     if (info != 0) {
-	xerbla_("DGEMM ", &info);
-	return 0;
+  xerbla_("DGEMM ", &info);
+  return 0;
     }
 /*     Quick return if possible. */
     if (*m == 0 || *n == 0 || ((*alpha == 0. || *k == 0) && *beta == 1.)) {
-	return 0;
+  return 0;
     }
 /*     And if  alpha.eq.zero. */
     if (*alpha == 0.) {
-	if (*beta == 0.) {
-	    i__1 = *n;
-	    for (j = 1; j <= i__1; ++j) {
-		i__2 = *m;
-		for (i__ = 1; i__ <= i__2; ++i__) {
-		    c___ref(i__, j) = 0.;
+  if (*beta == 0.) {
+      i__1 = *n;
+      for (j = 1; j <= i__1; ++j) {
+  	i__2 = *m;
+  	for (i__ = 1; i__ <= i__2; ++i__) {
+  	    c___ref(i__, j) = 0.;
 /* L10: */
-		}
+  	}
 /* L20: */
-	    }
-	} else {
-	    i__1 = *n;
-	    for (j = 1; j <= i__1; ++j) {
-		i__2 = *m;
-		for (i__ = 1; i__ <= i__2; ++i__) {
-		    c___ref(i__, j) = *beta * c___ref(i__, j);
+      }
+  } else {
+      i__1 = *n;
+      for (j = 1; j <= i__1; ++j) {
+  	i__2 = *m;
+  	for (i__ = 1; i__ <= i__2; ++i__) {
+  	    c___ref(i__, j) = *beta * c___ref(i__, j);
 /* L30: */
-		}
+  	}
 /* L40: */
-	    }
-	}
-	return 0;
+      }
+  }
+  return 0;
     }
 /*     Start the operations. */
     if (notb) {
-	if (nota) {
+  if (nota) {
 /*           Form  C := alpha*A*B + beta*C. */
-	    i__1 = *n;
-	    for (j = 1; j <= i__1; ++j) {
-		if (*beta == 0.) {
-		    i__2 = *m;
-		    for (i__ = 1; i__ <= i__2; ++i__) {
-			c___ref(i__, j) = 0.;
+      i__1 = *n;
+      for (j = 1; j <= i__1; ++j) {
+  	if (*beta == 0.) {
+  	    i__2 = *m;
+  	    for (i__ = 1; i__ <= i__2; ++i__) {
+  		c___ref(i__, j) = 0.;
 /* L50: */
-		    }
-		} else if (*beta != 1.) {
-		    i__2 = *m;
-		    for (i__ = 1; i__ <= i__2; ++i__) {
-			c___ref(i__, j) = *beta * c___ref(i__, j);
+  	    }
+  	} else if (*beta != 1.) {
+  	    i__2 = *m;
+  	    for (i__ = 1; i__ <= i__2; ++i__) {
+  		c___ref(i__, j) = *beta * c___ref(i__, j);
 /* L60: */
-		    }
-		}
-		i__2 = *k;
-		for (l = 1; l <= i__2; ++l) {
-		    if (b_ref(l, j) != 0.) {
-			temp = *alpha * b_ref(l, j);
-			i__3 = *m;
-			for (i__ = 1; i__ <= i__3; ++i__) {
-			    c___ref(i__, j) = c___ref(i__, j) + temp * a_ref(
-				    i__, l);
+  	    }
+  	}
+  	i__2 = *k;
+  	for (l = 1; l <= i__2; ++l) {
+  	    if (b_ref(l, j) != 0.) {
+  		temp = *alpha * b_ref(l, j);
+  		i__3 = *m;
+  		for (i__ = 1; i__ <= i__3; ++i__) {
+  		    c___ref(i__, j) = c___ref(i__, j) + temp * a_ref(
+  			    i__, l);
 /* L70: */
-			}
-		    }
+  		}
+  	    }
 /* L80: */
-		}
+  	}
 /* L90: */
-	    }
-	} else {
+      }
+  } else {
 /*           Form  C := alpha*A'*B + beta*C */
-	    i__1 = *n;
-	    for (j = 1; j <= i__1; ++j) {
-		i__2 = *m;
-		for (i__ = 1; i__ <= i__2; ++i__) {
-		    temp = 0.;
-		    i__3 = *k;
-		    for (l = 1; l <= i__3; ++l) {
-			temp += a_ref(l, i__) * b_ref(l, j);
+      i__1 = *n;
+      for (j = 1; j <= i__1; ++j) {
+  	i__2 = *m;
+  	for (i__ = 1; i__ <= i__2; ++i__) {
+  	    temp = 0.;
+  	    i__3 = *k;
+  	    for (l = 1; l <= i__3; ++l) {
+  		temp += a_ref(l, i__) * b_ref(l, j);
 /* L100: */
-		    }
-		    if (*beta == 0.) {
-			c___ref(i__, j) = *alpha * temp;
-		    } else {
-			c___ref(i__, j) = *alpha * temp + *beta * c___ref(i__,
-				 j);
-		    }
+  	    }
+  	    if (*beta == 0.) {
+  		c___ref(i__, j) = *alpha * temp;
+  	    } else {
+  		c___ref(i__, j) = *alpha * temp + *beta * c___ref(i__,
+  			 j);
+  	    }
 /* L110: */
-		}
+  	}
 /* L120: */
-	    }
-	}
+      }
+  }
     } else {
-	if (nota) {
+  if (nota) {
 /*           Form  C := alpha*A*B' + beta*C */
-	    i__1 = *n;
-	    for (j = 1; j <= i__1; ++j) {
-		if (*beta == 0.) {
-		    i__2 = *m;
-		    for (i__ = 1; i__ <= i__2; ++i__) {
-			c___ref(i__, j) = 0.;
+      i__1 = *n;
+      for (j = 1; j <= i__1; ++j) {
+  	if (*beta == 0.) {
+  	    i__2 = *m;
+  	    for (i__ = 1; i__ <= i__2; ++i__) {
+  		c___ref(i__, j) = 0.;
 /* L130: */
-		    }
-		} else if (*beta != 1.) {
-		    i__2 = *m;
-		    for (i__ = 1; i__ <= i__2; ++i__) {
-			c___ref(i__, j) = *beta * c___ref(i__, j);
+  	    }
+  	} else if (*beta != 1.) {
+  	    i__2 = *m;
+  	    for (i__ = 1; i__ <= i__2; ++i__) {
+  		c___ref(i__, j) = *beta * c___ref(i__, j);
 /* L140: */
-		    }
-		}
-		i__2 = *k;
-		for (l = 1; l <= i__2; ++l) {
-		    if (b_ref(j, l) != 0.) {
-			temp = *alpha * b_ref(j, l);
-			i__3 = *m;
-			for (i__ = 1; i__ <= i__3; ++i__) {
-			    c___ref(i__, j) = c___ref(i__, j) + temp * a_ref(
-				    i__, l);
+  	    }
+  	}
+  	i__2 = *k;
+  	for (l = 1; l <= i__2; ++l) {
+  	    if (b_ref(j, l) != 0.) {
+  		temp = *alpha * b_ref(j, l);
+  		i__3 = *m;
+  		for (i__ = 1; i__ <= i__3; ++i__) {
+  		    c___ref(i__, j) = c___ref(i__, j) + temp * a_ref(
+  			    i__, l);
 /* L150: */
-			}
-		    }
+  		}
+  	    }
 /* L160: */
-		}
+  	}
 /* L170: */
-	    }
-	} else {
+      }
+  } else {
 /*           Form  C := alpha*A'*B' + beta*C */
-	    i__1 = *n;
-	    for (j = 1; j <= i__1; ++j) {
-		i__2 = *m;
-		for (i__ = 1; i__ <= i__2; ++i__) {
-		    temp = 0.;
-		    i__3 = *k;
-		    for (l = 1; l <= i__3; ++l) {
-			temp += a_ref(l, i__) * b_ref(j, l);
+      i__1 = *n;
+      for (j = 1; j <= i__1; ++j) {
+  	i__2 = *m;
+  	for (i__ = 1; i__ <= i__2; ++i__) {
+  	    temp = 0.;
+  	    i__3 = *k;
+  	    for (l = 1; l <= i__3; ++l) {
+  		temp += a_ref(l, i__) * b_ref(j, l);
 /* L180: */
-		    }
-		    if (*beta == 0.) {
-			c___ref(i__, j) = *alpha * temp;
-		    } else {
-			c___ref(i__, j) = *alpha * temp + *beta * c___ref(i__,
-				 j);
-		    }
+  	    }
+  	    if (*beta == 0.) {
+  		c___ref(i__, j) = *alpha * temp;
+  	    } else {
+  		c___ref(i__, j) = *alpha * temp + *beta * c___ref(i__,
+  			 j);
+  	    }
 /* L190: */
-		}
+  	}
 /* L200: */
-	    }
-	}
+      }
+  }
     }
     return 0;
 /*     End of DGEMM . */
@@ -1240,7 +1240,7 @@
 #undef a_ref
 
 /* Subroutine */ int dlaswp_(integer *n, doublereal *a, integer *lda, integer
-	*k1, integer *k2, integer *ipiv, integer *incx)
+  *k1, integer *k2, integer *ipiv, integer *incx)
 {
 /*  -- LAPACK auxiliary routine (version 3.0) --
        Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,
@@ -1311,63 +1311,63 @@
 
     /* Function Body */
     if (*incx > 0) {
-	ix0 = *k1;
-	i1 = *k1;
-	i2 = *k2;
-	inc = 1;
+  ix0 = *k1;
+  i1 = *k1;
+  i2 = *k2;
+  inc = 1;
     } else if (*incx < 0) {
-	ix0 = (1 - *k2) * *incx + 1;
-	i1 = *k2;
-	i2 = *k1;
-	inc = -1;
+  ix0 = (1 - *k2) * *incx + 1;
+  i1 = *k2;
+  i2 = *k1;
+  inc = -1;
     } else {
-	return 0;
+  return 0;
     }
 
     n32 = *n / 32 << 5;
     if (n32 != 0) {
-	i__1 = n32;
-	for (j = 1; j <= i__1; j += 32) {
-	    ix = ix0;
-	    i__2 = i2;
-	    i__3 = inc;
-	    for (i__ = i1; i__3 < 0 ? i__ >= i__2 : i__ <= i__2; i__ += i__3)
-		    {
-		ip = ipiv[ix];
-		if (ip != i__) {
-		    i__4 = j + 31;
-		    for (k = j; k <= i__4; ++k) {
-			temp = a_ref(i__, k);
-			a_ref(i__, k) = a_ref(ip, k);
-			a_ref(ip, k) = temp;
+  i__1 = n32;
+  for (j = 1; j <= i__1; j += 32) {
+      ix = ix0;
+      i__2 = i2;
+      i__3 = inc;
+      for (i__ = i1; i__3 < 0 ? i__ >= i__2 : i__ <= i__2; i__ += i__3)
+  	    {
+  	ip = ipiv[ix];
+  	if (ip != i__) {
+  	    i__4 = j + 31;
+  	    for (k = j; k <= i__4; ++k) {
+  		temp = a_ref(i__, k);
+  		a_ref(i__, k) = a_ref(ip, k);
+  		a_ref(ip, k) = temp;
 /* L10: */
-		    }
-		}
-		ix += *incx;
+  	    }
+  	}
+  	ix += *incx;
 /* L20: */
-	    }
+      }
 /* L30: */
-	}
+  }
     }
     if (n32 != *n) {
-	++n32;
-	ix = ix0;
-	i__1 = i2;
-	i__3 = inc;
-	for (i__ = i1; i__3 < 0 ? i__ >= i__1 : i__ <= i__1; i__ += i__3) {
-	    ip = ipiv[ix];
-	    if (ip != i__) {
-		i__2 = *n;
-		for (k = n32; k <= i__2; ++k) {
-		    temp = a_ref(i__, k);
-		    a_ref(i__, k) = a_ref(ip, k);
-		    a_ref(ip, k) = temp;
+  ++n32;
+  ix = ix0;
+  i__1 = i2;
+  i__3 = inc;
+  for (i__ = i1; i__3 < 0 ? i__ >= i__1 : i__ <= i__1; i__ += i__3) {
+      ip = ipiv[ix];
+      if (ip != i__) {
+  	i__2 = *n;
+  	for (k = n32; k <= i__2; ++k) {
+  	    temp = a_ref(i__, k);
+  	    a_ref(i__, k) = a_ref(ip, k);
+  	    a_ref(ip, k) = temp;
 /* L40: */
-		}
-	    }
-	    ix += *incx;
+  	}
+      }
+      ix += *incx;
 /* L50: */
-	}
+  }
     }
 
     return 0;
@@ -1413,7 +1413,7 @@ logical lsame_(char *ca, char *cb)
 
     ret_val = *(unsigned char *)ca == *(unsigned char *)cb;
     if (ret_val) {
-	return ret_val;
+  return ret_val;
     }
 
 /*     Now test for equivalence if both characters are alphabetic. */
@@ -1434,12 +1434,12 @@ logical lsame_(char *ca, char *cb)
 r
           upper case 'Z'. */
 
-	if (inta >= 97 && inta <= 122) {
-	    inta += -32;
-	}
-	if (intb >= 97 && intb <= 122) {
-	    intb += -32;
-	}
+  if (inta >= 97 && inta <= 122) {
+      inta += -32;
+  }
+  if (intb >= 97 && intb <= 122) {
+      intb += -32;
+  }
 
     } else if (zcode == 233 || zcode == 169) {
 
@@ -1447,14 +1447,14 @@ r
  or
           upper case 'Z'. */
 
-	if ((inta >= 129 && inta <= 137) || (inta >= 145 && inta <= 153) || (inta
-		>= 162 && inta <= 169)) {
-	    inta += 64;
-	}
-	if ((intb >= 129 && intb <= 137) || (intb >= 145 && intb <= 153) || (intb
-		>= 162 && intb <= 169)) {
-	    intb += 64;
-	}
+  if ((inta >= 129 && inta <= 137) || (inta >= 145 && inta <= 153) || (inta
+  	>= 162 && inta <= 169)) {
+      inta += 64;
+  }
+  if ((intb >= 129 && intb <= 137) || (intb >= 145 && intb <= 153) || (intb
+  	>= 162 && intb <= 169)) {
+      intb += 64;
+  }
 
     } else if (zcode == 218 || zcode == 250) {
 
@@ -1462,12 +1462,12 @@ r
 e
           plus 128 of either lower or upper case 'Z'. */
 
-	if (inta >= 225 && inta <= 250) {
-	    inta += -32;
-	}
-	if (intb >= 225 && intb <= 250) {
-	    intb += -32;
-	}
+  if (inta >= 225 && inta <= 250) {
+      inta += -32;
+  }
+  if (intb >= 225 && intb <= 250) {
+      intb += -32;
+  }
     }
     ret_val = inta == intb;
 
@@ -1479,8 +1479,8 @@ e
 } /* lsame_ */
 
 integer ilaenv_(integer *ispec, char *name__, char *opts, integer *n1,
-	integer *n2, integer *n3, integer *n4, ftnlen name_len, ftnlen
-	opts_len)
+  integer *n2, integer *n3, integer *n4, ftnlen name_len, ftnlen
+  opts_len)
 {
 /*  -- LAPACK auxiliary routine (version 3.0) --
        Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,
@@ -1602,17 +1602,17 @@ integer ilaenv_(integer *ispec, char *name__, char *opts, integer *n1,
 
 
     switch (*ispec) {
-	case 1:  goto L100;
-	case 2:  goto L100;
-	case 3:  goto L100;
-	case 4:  goto L400;
-	case 5:  goto L500;
-	case 6:  goto L600;
-	case 7:  goto L700;
-	case 8:  goto L800;
-	case 9:  goto L900;
-	case 10:  goto L1000;
-	case 11:  goto L1100;
+  case 1:  goto L100;
+  case 2:  goto L100;
+  case 3:  goto L100;
+  case 4:  goto L400;
+  case 5:  goto L500;
+  case 6:  goto L600;
+  case 7:  goto L700;
+  case 8:  goto L800;
+  case 9:  goto L900;
+  case 10:  goto L1000;
+  case 11:  goto L1100;
     }
 
 /*     Invalid value for ISPEC */
@@ -1632,64 +1632,64 @@ L100:
 
 /*        ASCII character set */
 
-	if (ic >= 97 && ic <= 122) {
-	    *(unsigned char *)subnam = (char) (ic - 32);
-	    for (i__ = 2; i__ <= 6; ++i__) {
-		ic = *(unsigned char *)&subnam[i__ - 1];
-		if (ic >= 97 && ic <= 122) {
-		    *(unsigned char *)&subnam[i__ - 1] = (char) (ic - 32);
-		}
+  if (ic >= 97 && ic <= 122) {
+      *(unsigned char *)subnam = (char) (ic - 32);
+      for (i__ = 2; i__ <= 6; ++i__) {
+  	ic = *(unsigned char *)&subnam[i__ - 1];
+  	if (ic >= 97 && ic <= 122) {
+  	    *(unsigned char *)&subnam[i__ - 1] = (char) (ic - 32);
+  	}
 /* L10: */
-	    }
-	}
+      }
+  }
 
     } else if (iz == 233 || iz == 169) {
 
 /*        EBCDIC character set */
 
-	if ((ic >= 129 && ic <= 137) || (ic >= 145 && ic <= 153) || (ic >= 162 &&
-		ic <= 169)) {
-	    *(unsigned char *)subnam = (char) (ic + 64);
-	    for (i__ = 2; i__ <= 6; ++i__) {
-		ic = *(unsigned char *)&subnam[i__ - 1];
-		if ((ic >= 129 && ic <= 137) || (ic >= 145 && ic <= 153) || (ic >=
-			162 && ic <= 169)) {
-		    *(unsigned char *)&subnam[i__ - 1] = (char) (ic + 64);
-		}
+  if ((ic >= 129 && ic <= 137) || (ic >= 145 && ic <= 153) || (ic >= 162 &&
+  	ic <= 169)) {
+      *(unsigned char *)subnam = (char) (ic + 64);
+      for (i__ = 2; i__ <= 6; ++i__) {
+  	ic = *(unsigned char *)&subnam[i__ - 1];
+  	if ((ic >= 129 && ic <= 137) || (ic >= 145 && ic <= 153) || (ic >=
+  		162 && ic <= 169)) {
+  	    *(unsigned char *)&subnam[i__ - 1] = (char) (ic + 64);
+  	}
 /* L20: */
-	    }
-	}
+      }
+  }
 
     } else if (iz == 218 || iz == 250) {
 
 /*        Prime machines:  ASCII+128 */
 
-	if (ic >= 225 && ic <= 250) {
-	    *(unsigned char *)subnam = (char) (ic - 32);
-	    for (i__ = 2; i__ <= 6; ++i__) {
-		ic = *(unsigned char *)&subnam[i__ - 1];
-		if (ic >= 225 && ic <= 250) {
-		    *(unsigned char *)&subnam[i__ - 1] = (char) (ic - 32);
-		}
+  if (ic >= 225 && ic <= 250) {
+      *(unsigned char *)subnam = (char) (ic - 32);
+      for (i__ = 2; i__ <= 6; ++i__) {
+  	ic = *(unsigned char *)&subnam[i__ - 1];
+  	if (ic >= 225 && ic <= 250) {
+  	    *(unsigned char *)&subnam[i__ - 1] = (char) (ic - 32);
+  	}
 /* L30: */
-	    }
-	}
+      }
+  }
     }
 
     *(unsigned char *)c1 = *(unsigned char *)subnam;
     sname = *(unsigned char *)c1 == 'S' || *(unsigned char *)c1 == 'D';
     cname = *(unsigned char *)c1 == 'C' || *(unsigned char *)c1 == 'Z';
     if (! (cname || sname)) {
-	return ret_val;
+  return ret_val;
     }
     s_copy(c2, subnam + 1, (ftnlen)2, (ftnlen)2);
     s_copy(c3, subnam + 3, (ftnlen)3, (ftnlen)3);
     s_copy(c4, c3 + 1, (ftnlen)2, (ftnlen)2);
 
     switch (*ispec) {
-	case 1:  goto L110;
-	case 2:  goto L200;
-	case 3:  goto L300;
+  case 1:  goto L110;
+  case 2:  goto L200;
+  case 3:  goto L300;
     }
 
 L110:
@@ -1703,160 +1703,160 @@ L110:
     nb = 1;
 
     if (s_cmp(c2, "GE", (ftnlen)2, (ftnlen)2) == 0) {
-	if (s_cmp(c3, "TRF", (ftnlen)3, (ftnlen)3) == 0) {
-	    if (sname) {
-		nb = 64;
-	    } else {
-		nb = 64;
-	    }
-	} else if (s_cmp(c3, "QRF", (ftnlen)3, (ftnlen)3) == 0 || s_cmp(c3,
-		"RQF", (ftnlen)3, (ftnlen)3) == 0 || s_cmp(c3, "LQF", (ftnlen)
-		3, (ftnlen)3) == 0 || s_cmp(c3, "QLF", (ftnlen)3, (ftnlen)3)
-		== 0) {
-	    if (sname) {
-		nb = 32;
-	    } else {
-		nb = 32;
-	    }
-	} else if (s_cmp(c3, "HRD", (ftnlen)3, (ftnlen)3) == 0) {
-	    if (sname) {
-		nb = 32;
-	    } else {
-		nb = 32;
-	    }
-	} else if (s_cmp(c3, "BRD", (ftnlen)3, (ftnlen)3) == 0) {
-	    if (sname) {
-		nb = 32;
-	    } else {
-		nb = 32;
-	    }
-	} else if (s_cmp(c3, "TRI", (ftnlen)3, (ftnlen)3) == 0) {
-	    if (sname) {
-		nb = 64;
-	    } else {
-		nb = 64;
-	    }
-	}
+  if (s_cmp(c3, "TRF", (ftnlen)3, (ftnlen)3) == 0) {
+      if (sname) {
+  	nb = 64;
+      } else {
+  	nb = 64;
+      }
+  } else if (s_cmp(c3, "QRF", (ftnlen)3, (ftnlen)3) == 0 || s_cmp(c3,
+  	"RQF", (ftnlen)3, (ftnlen)3) == 0 || s_cmp(c3, "LQF", (ftnlen)
+  	3, (ftnlen)3) == 0 || s_cmp(c3, "QLF", (ftnlen)3, (ftnlen)3)
+  	== 0) {
+      if (sname) {
+  	nb = 32;
+      } else {
+  	nb = 32;
+      }
+  } else if (s_cmp(c3, "HRD", (ftnlen)3, (ftnlen)3) == 0) {
+      if (sname) {
+  	nb = 32;
+      } else {
+  	nb = 32;
+      }
+  } else if (s_cmp(c3, "BRD", (ftnlen)3, (ftnlen)3) == 0) {
+      if (sname) {
+  	nb = 32;
+      } else {
+  	nb = 32;
+      }
+  } else if (s_cmp(c3, "TRI", (ftnlen)3, (ftnlen)3) == 0) {
+      if (sname) {
+  	nb = 64;
+      } else {
+  	nb = 64;
+      }
+  }
     } else if (s_cmp(c2, "PO", (ftnlen)2, (ftnlen)2) == 0) {
-	if (s_cmp(c3, "TRF", (ftnlen)3, (ftnlen)3) == 0) {
-	    if (sname) {
-		nb = 64;
-	    } else {
-		nb = 64;
-	    }
-	}
+  if (s_cmp(c3, "TRF", (ftnlen)3, (ftnlen)3) == 0) {
+      if (sname) {
+  	nb = 64;
+      } else {
+  	nb = 64;
+      }
+  }
     } else if (s_cmp(c2, "SY", (ftnlen)2, (ftnlen)2) == 0) {
-	if (s_cmp(c3, "TRF", (ftnlen)3, (ftnlen)3) == 0) {
-	    if (sname) {
-		nb = 64;
-	    } else {
-		nb = 64;
-	    }
-	} else if (sname && s_cmp(c3, "TRD", (ftnlen)3, (ftnlen)3) == 0) {
-	    nb = 32;
-	} else if (sname && s_cmp(c3, "GST", (ftnlen)3, (ftnlen)3) == 0) {
-	    nb = 64;
-	}
+  if (s_cmp(c3, "TRF", (ftnlen)3, (ftnlen)3) == 0) {
+      if (sname) {
+  	nb = 64;
+      } else {
+  	nb = 64;
+      }
+  } else if (sname && s_cmp(c3, "TRD", (ftnlen)3, (ftnlen)3) == 0) {
+      nb = 32;
+  } else if (sname && s_cmp(c3, "GST", (ftnlen)3, (ftnlen)3) == 0) {
+      nb = 64;
+  }
     } else if (cname && s_cmp(c2, "HE", (ftnlen)2, (ftnlen)2) == 0) {
-	if (s_cmp(c3, "TRF", (ftnlen)3, (ftnlen)3) == 0) {
-	    nb = 64;
-	} else if (s_cmp(c3, "TRD", (ftnlen)3, (ftnlen)3) == 0) {
-	    nb = 32;
-	} else if (s_cmp(c3, "GST", (ftnlen)3, (ftnlen)3) == 0) {
-	    nb = 64;
-	}
+  if (s_cmp(c3, "TRF", (ftnlen)3, (ftnlen)3) == 0) {
+      nb = 64;
+  } else if (s_cmp(c3, "TRD", (ftnlen)3, (ftnlen)3) == 0) {
+      nb = 32;
+  } else if (s_cmp(c3, "GST", (ftnlen)3, (ftnlen)3) == 0) {
+      nb = 64;
+  }
     } else if (sname && s_cmp(c2, "OR", (ftnlen)2, (ftnlen)2) == 0) {
-	if (*(unsigned char *)c3 == 'G') {
-	    if (s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ",
-		    (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "LQ", (ftnlen)2, (
-		    ftnlen)2) == 0 || s_cmp(c4, "QL", (ftnlen)2, (ftnlen)2) ==
-		     0 || s_cmp(c4, "HR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(
-		    c4, "TR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "BR", (
-		    ftnlen)2, (ftnlen)2) == 0) {
-		nb = 32;
-	    }
-	} else if (*(unsigned char *)c3 == 'M') {
-	    if (s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ",
-		    (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "LQ", (ftnlen)2, (
-		    ftnlen)2) == 0 || s_cmp(c4, "QL", (ftnlen)2, (ftnlen)2) ==
-		     0 || s_cmp(c4, "HR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(
-		    c4, "TR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "BR", (
-		    ftnlen)2, (ftnlen)2) == 0) {
-		nb = 32;
-	    }
-	}
+  if (*(unsigned char *)c3 == 'G') {
+      if (s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ",
+  	    (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "LQ", (ftnlen)2, (
+  	    ftnlen)2) == 0 || s_cmp(c4, "QL", (ftnlen)2, (ftnlen)2) ==
+  	     0 || s_cmp(c4, "HR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(
+  	    c4, "TR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "BR", (
+  	    ftnlen)2, (ftnlen)2) == 0) {
+  	nb = 32;
+      }
+  } else if (*(unsigned char *)c3 == 'M') {
+      if (s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ",
+  	    (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "LQ", (ftnlen)2, (
+  	    ftnlen)2) == 0 || s_cmp(c4, "QL", (ftnlen)2, (ftnlen)2) ==
+  	     0 || s_cmp(c4, "HR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(
+  	    c4, "TR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "BR", (
+  	    ftnlen)2, (ftnlen)2) == 0) {
+  	nb = 32;
+      }
+  }
     } else if (cname && s_cmp(c2, "UN", (ftnlen)2, (ftnlen)2) == 0) {
-	if (*(unsigned char *)c3 == 'G') {
-	    if (s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ",
-		    (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "LQ", (ftnlen)2, (
-		    ftnlen)2) == 0 || s_cmp(c4, "QL", (ftnlen)2, (ftnlen)2) ==
-		     0 || s_cmp(c4, "HR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(
-		    c4, "TR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "BR", (
-		    ftnlen)2, (ftnlen)2) == 0) {
-		nb = 32;
-	    }
-	} else if (*(unsigned char *)c3 == 'M') {
-	    if (s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ",
-		    (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "LQ", (ftnlen)2, (
-		    ftnlen)2) == 0 || s_cmp(c4, "QL", (ftnlen)2, (ftnlen)2) ==
-		     0 || s_cmp(c4, "HR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(
-		    c4, "TR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "BR", (
-		    ftnlen)2, (ftnlen)2) == 0) {
-		nb = 32;
-	    }
-	}
+  if (*(unsigned char *)c3 == 'G') {
+      if (s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ",
+  	    (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "LQ", (ftnlen)2, (
+  	    ftnlen)2) == 0 || s_cmp(c4, "QL", (ftnlen)2, (ftnlen)2) ==
+  	     0 || s_cmp(c4, "HR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(
+  	    c4, "TR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "BR", (
+  	    ftnlen)2, (ftnlen)2) == 0) {
+  	nb = 32;
+      }
+  } else if (*(unsigned char *)c3 == 'M') {
+      if (s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ",
+  	    (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "LQ", (ftnlen)2, (
+  	    ftnlen)2) == 0 || s_cmp(c4, "QL", (ftnlen)2, (ftnlen)2) ==
+  	     0 || s_cmp(c4, "HR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(
+  	    c4, "TR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "BR", (
+  	    ftnlen)2, (ftnlen)2) == 0) {
+  	nb = 32;
+      }
+  }
     } else if (s_cmp(c2, "GB", (ftnlen)2, (ftnlen)2) == 0) {
-	if (s_cmp(c3, "TRF", (ftnlen)3, (ftnlen)3) == 0) {
-	    if (sname) {
-		if (*n4 <= 64) {
-		    nb = 1;
-		} else {
-		    nb = 32;
-		}
-	    } else {
-		if (*n4 <= 64) {
-		    nb = 1;
-		} else {
-		    nb = 32;
-		}
-	    }
-	}
+  if (s_cmp(c3, "TRF", (ftnlen)3, (ftnlen)3) == 0) {
+      if (sname) {
+  	if (*n4 <= 64) {
+  	    nb = 1;
+  	} else {
+  	    nb = 32;
+  	}
+      } else {
+  	if (*n4 <= 64) {
+  	    nb = 1;
+  	} else {
+  	    nb = 32;
+  	}
+      }
+  }
     } else if (s_cmp(c2, "PB", (ftnlen)2, (ftnlen)2) == 0) {
-	if (s_cmp(c3, "TRF", (ftnlen)3, (ftnlen)3) == 0) {
-	    if (sname) {
-		if (*n2 <= 64) {
-		    nb = 1;
-		} else {
-		    nb = 32;
-		}
-	    } else {
-		if (*n2 <= 64) {
-		    nb = 1;
-		} else {
-		    nb = 32;
-		}
-	    }
-	}
+  if (s_cmp(c3, "TRF", (ftnlen)3, (ftnlen)3) == 0) {
+      if (sname) {
+  	if (*n2 <= 64) {
+  	    nb = 1;
+  	} else {
+  	    nb = 32;
+  	}
+      } else {
+  	if (*n2 <= 64) {
+  	    nb = 1;
+  	} else {
+  	    nb = 32;
+  	}
+      }
+  }
     } else if (s_cmp(c2, "TR", (ftnlen)2, (ftnlen)2) == 0) {
-	if (s_cmp(c3, "TRI", (ftnlen)3, (ftnlen)3) == 0) {
-	    if (sname) {
-		nb = 64;
-	    } else {
-		nb = 64;
-	    }
-	}
+  if (s_cmp(c3, "TRI", (ftnlen)3, (ftnlen)3) == 0) {
+      if (sname) {
+  	nb = 64;
+      } else {
+  	nb = 64;
+      }
+  }
     } else if (s_cmp(c2, "LA", (ftnlen)2, (ftnlen)2) == 0) {
-	if (s_cmp(c3, "UUM", (ftnlen)3, (ftnlen)3) == 0) {
-	    if (sname) {
-		nb = 64;
-	    } else {
-		nb = 64;
-	    }
-	}
+  if (s_cmp(c3, "UUM", (ftnlen)3, (ftnlen)3) == 0) {
+      if (sname) {
+  	nb = 64;
+      } else {
+  	nb = 64;
+      }
+  }
     } else if (sname && s_cmp(c2, "ST", (ftnlen)2, (ftnlen)2) == 0) {
-	if (s_cmp(c3, "EBZ", (ftnlen)3, (ftnlen)3) == 0) {
-	    nb = 1;
-	}
+  if (s_cmp(c3, "EBZ", (ftnlen)3, (ftnlen)3) == 0) {
+      nb = 1;
+  }
     }
     ret_val = nb;
     return ret_val;
@@ -1867,88 +1867,88 @@ L200:
 
     nbmin = 2;
     if (s_cmp(c2, "GE", (ftnlen)2, (ftnlen)2) == 0) {
-	if (s_cmp(c3, "QRF", (ftnlen)3, (ftnlen)3) == 0 || s_cmp(c3, "RQF", (
-		ftnlen)3, (ftnlen)3) == 0 || s_cmp(c3, "LQF", (ftnlen)3, (
-		ftnlen)3) == 0 || s_cmp(c3, "QLF", (ftnlen)3, (ftnlen)3) == 0)
-		 {
-	    if (sname) {
-		nbmin = 2;
-	    } else {
-		nbmin = 2;
-	    }
-	} else if (s_cmp(c3, "HRD", (ftnlen)3, (ftnlen)3) == 0) {
-	    if (sname) {
-		nbmin = 2;
-	    } else {
-		nbmin = 2;
-	    }
-	} else if (s_cmp(c3, "BRD", (ftnlen)3, (ftnlen)3) == 0) {
-	    if (sname) {
-		nbmin = 2;
-	    } else {
-		nbmin = 2;
-	    }
-	} else if (s_cmp(c3, "TRI", (ftnlen)3, (ftnlen)3) == 0) {
-	    if (sname) {
-		nbmin = 2;
-	    } else {
-		nbmin = 2;
-	    }
-	}
+  if (s_cmp(c3, "QRF", (ftnlen)3, (ftnlen)3) == 0 || s_cmp(c3, "RQF", (
+  	ftnlen)3, (ftnlen)3) == 0 || s_cmp(c3, "LQF", (ftnlen)3, (
+  	ftnlen)3) == 0 || s_cmp(c3, "QLF", (ftnlen)3, (ftnlen)3) == 0)
+  	 {
+      if (sname) {
+  	nbmin = 2;
+      } else {
+  	nbmin = 2;
+      }
+  } else if (s_cmp(c3, "HRD", (ftnlen)3, (ftnlen)3) == 0) {
+      if (sname) {
+  	nbmin = 2;
+      } else {
+  	nbmin = 2;
+      }
+  } else if (s_cmp(c3, "BRD", (ftnlen)3, (ftnlen)3) == 0) {
+      if (sname) {
+  	nbmin = 2;
+      } else {
+  	nbmin = 2;
+      }
+  } else if (s_cmp(c3, "TRI", (ftnlen)3, (ftnlen)3) == 0) {
+      if (sname) {
+  	nbmin = 2;
+      } else {
+  	nbmin = 2;
+      }
+  }
     } else if (s_cmp(c2, "SY", (ftnlen)2, (ftnlen)2) == 0) {
-	if (s_cmp(c3, "TRF", (ftnlen)3, (ftnlen)3) == 0) {
-	    if (sname) {
-		nbmin = 8;
-	    } else {
-		nbmin = 8;
-	    }
-	} else if (sname && s_cmp(c3, "TRD", (ftnlen)3, (ftnlen)3) == 0) {
-	    nbmin = 2;
-	}
+  if (s_cmp(c3, "TRF", (ftnlen)3, (ftnlen)3) == 0) {
+      if (sname) {
+  	nbmin = 8;
+      } else {
+  	nbmin = 8;
+      }
+  } else if (sname && s_cmp(c3, "TRD", (ftnlen)3, (ftnlen)3) == 0) {
+      nbmin = 2;
+  }
     } else if (cname && s_cmp(c2, "HE", (ftnlen)2, (ftnlen)2) == 0) {
-	if (s_cmp(c3, "TRD", (ftnlen)3, (ftnlen)3) == 0) {
-	    nbmin = 2;
-	}
+  if (s_cmp(c3, "TRD", (ftnlen)3, (ftnlen)3) == 0) {
+      nbmin = 2;
+  }
     } else if (sname && s_cmp(c2, "OR", (ftnlen)2, (ftnlen)2) == 0) {
-	if (*(unsigned char *)c3 == 'G') {
-	    if (s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ",
-		    (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "LQ", (ftnlen)2, (
-		    ftnlen)2) == 0 || s_cmp(c4, "QL", (ftnlen)2, (ftnlen)2) ==
-		     0 || s_cmp(c4, "HR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(
-		    c4, "TR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "BR", (
-		    ftnlen)2, (ftnlen)2) == 0) {
-		nbmin = 2;
-	    }
-	} else if (*(unsigned char *)c3 == 'M') {
-	    if (s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ",
-		    (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "LQ", (ftnlen)2, (
-		    ftnlen)2) == 0 || s_cmp(c4, "QL", (ftnlen)2, (ftnlen)2) ==
-		     0 || s_cmp(c4, "HR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(
-		    c4, "TR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "BR", (
-		    ftnlen)2, (ftnlen)2) == 0) {
-		nbmin = 2;
-	    }
-	}
+  if (*(unsigned char *)c3 == 'G') {
+      if (s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ",
+  	    (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "LQ", (ftnlen)2, (
+  	    ftnlen)2) == 0 || s_cmp(c4, "QL", (ftnlen)2, (ftnlen)2) ==
+  	     0 || s_cmp(c4, "HR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(
+  	    c4, "TR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "BR", (
+  	    ftnlen)2, (ftnlen)2) == 0) {
+  	nbmin = 2;
+      }
+  } else if (*(unsigned char *)c3 == 'M') {
+      if (s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ",
+  	    (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "LQ", (ftnlen)2, (
+  	    ftnlen)2) == 0 || s_cmp(c4, "QL", (ftnlen)2, (ftnlen)2) ==
+  	     0 || s_cmp(c4, "HR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(
+  	    c4, "TR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "BR", (
+  	    ftnlen)2, (ftnlen)2) == 0) {
+  	nbmin = 2;
+      }
+  }
     } else if (cname && s_cmp(c2, "UN", (ftnlen)2, (ftnlen)2) == 0) {
-	if (*(unsigned char *)c3 == 'G') {
-	    if (s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ",
-		    (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "LQ", (ftnlen)2, (
-		    ftnlen)2) == 0 || s_cmp(c4, "QL", (ftnlen)2, (ftnlen)2) ==
-		     0 || s_cmp(c4, "HR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(
-		    c4, "TR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "BR", (
-		    ftnlen)2, (ftnlen)2) == 0) {
-		nbmin = 2;
-	    }
-	} else if (*(unsigned char *)c3 == 'M') {
-	    if (s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ",
-		    (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "LQ", (ftnlen)2, (
-		    ftnlen)2) == 0 || s_cmp(c4, "QL", (ftnlen)2, (ftnlen)2) ==
-		     0 || s_cmp(c4, "HR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(
-		    c4, "TR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "BR", (
-		    ftnlen)2, (ftnlen)2) == 0) {
-		nbmin = 2;
-	    }
-	}
+  if (*(unsigned char *)c3 == 'G') {
+      if (s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ",
+  	    (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "LQ", (ftnlen)2, (
+  	    ftnlen)2) == 0 || s_cmp(c4, "QL", (ftnlen)2, (ftnlen)2) ==
+  	     0 || s_cmp(c4, "HR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(
+  	    c4, "TR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "BR", (
+  	    ftnlen)2, (ftnlen)2) == 0) {
+  	nbmin = 2;
+      }
+  } else if (*(unsigned char *)c3 == 'M') {
+      if (s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ",
+  	    (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "LQ", (ftnlen)2, (
+  	    ftnlen)2) == 0 || s_cmp(c4, "QL", (ftnlen)2, (ftnlen)2) ==
+  	     0 || s_cmp(c4, "HR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(
+  	    c4, "TR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "BR", (
+  	    ftnlen)2, (ftnlen)2) == 0) {
+  	nbmin = 2;
+      }
+  }
     }
     ret_val = nbmin;
     return ret_val;
@@ -1959,58 +1959,58 @@ L300:
 
     nx = 0;
     if (s_cmp(c2, "GE", (ftnlen)2, (ftnlen)2) == 0) {
-	if (s_cmp(c3, "QRF", (ftnlen)3, (ftnlen)3) == 0 || s_cmp(c3, "RQF", (
-		ftnlen)3, (ftnlen)3) == 0 || s_cmp(c3, "LQF", (ftnlen)3, (
-		ftnlen)3) == 0 || s_cmp(c3, "QLF", (ftnlen)3, (ftnlen)3) == 0)
-		 {
-	    if (sname) {
-		nx = 128;
-	    } else {
-		nx = 128;
-	    }
-	} else if (s_cmp(c3, "HRD", (ftnlen)3, (ftnlen)3) == 0) {
-	    if (sname) {
-		nx = 128;
-	    } else {
-		nx = 128;
-	    }
-	} else if (s_cmp(c3, "BRD", (ftnlen)3, (ftnlen)3) == 0) {
-	    if (sname) {
-		nx = 128;
-	    } else {
-		nx = 128;
-	    }
-	}
+  if (s_cmp(c3, "QRF", (ftnlen)3, (ftnlen)3) == 0 || s_cmp(c3, "RQF", (
+  	ftnlen)3, (ftnlen)3) == 0 || s_cmp(c3, "LQF", (ftnlen)3, (
+  	ftnlen)3) == 0 || s_cmp(c3, "QLF", (ftnlen)3, (ftnlen)3) == 0)
+  	 {
+      if (sname) {
+  	nx = 128;
+      } else {
+  	nx = 128;
+      }
+  } else if (s_cmp(c3, "HRD", (ftnlen)3, (ftnlen)3) == 0) {
+      if (sname) {
+  	nx = 128;
+      } else {
+  	nx = 128;
+      }
+  } else if (s_cmp(c3, "BRD", (ftnlen)3, (ftnlen)3) == 0) {
+      if (sname) {
+  	nx = 128;
+      } else {
+  	nx = 128;
+      }
+  }
     } else if (s_cmp(c2, "SY", (ftnlen)2, (ftnlen)2) == 0) {
-	if (sname && s_cmp(c3, "TRD", (ftnlen)3, (ftnlen)3) == 0) {
-	    nx = 32;
-	}
+  if (sname && s_cmp(c3, "TRD", (ftnlen)3, (ftnlen)3) == 0) {
+      nx = 32;
+  }
     } else if (cname && s_cmp(c2, "HE", (ftnlen)2, (ftnlen)2) == 0) {
-	if (s_cmp(c3, "TRD", (ftnlen)3, (ftnlen)3) == 0) {
-	    nx = 32;
-	}
+  if (s_cmp(c3, "TRD", (ftnlen)3, (ftnlen)3) == 0) {
+      nx = 32;
+  }
     } else if (sname && s_cmp(c2, "OR", (ftnlen)2, (ftnlen)2) == 0) {
-	if (*(unsigned char *)c3 == 'G') {
-	    if (s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ",
-		    (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "LQ", (ftnlen)2, (
-		    ftnlen)2) == 0 || s_cmp(c4, "QL", (ftnlen)2, (ftnlen)2) ==
-		     0 || s_cmp(c4, "HR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(
-		    c4, "TR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "BR", (
-		    ftnlen)2, (ftnlen)2) == 0) {
-		nx = 128;
-	    }
-	}
+  if (*(unsigned char *)c3 == 'G') {
+      if (s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ",
+  	    (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "LQ", (ftnlen)2, (
+  	    ftnlen)2) == 0 || s_cmp(c4, "QL", (ftnlen)2, (ftnlen)2) ==
+  	     0 || s_cmp(c4, "HR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(
+  	    c4, "TR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "BR", (
+  	    ftnlen)2, (ftnlen)2) == 0) {
+  	nx = 128;
+      }
+  }
     } else if (cname && s_cmp(c2, "UN", (ftnlen)2, (ftnlen)2) == 0) {
-	if (*(unsigned char *)c3 == 'G') {
-	    if (s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ",
-		    (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "LQ", (ftnlen)2, (
-		    ftnlen)2) == 0 || s_cmp(c4, "QL", (ftnlen)2, (ftnlen)2) ==
-		     0 || s_cmp(c4, "HR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(
-		    c4, "TR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "BR", (
-		    ftnlen)2, (ftnlen)2) == 0) {
-		nx = 128;
-	    }
-	}
+  if (*(unsigned char *)c3 == 'G') {
+      if (s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ",
+  	    (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "LQ", (ftnlen)2, (
+  	    ftnlen)2) == 0 || s_cmp(c4, "QL", (ftnlen)2, (ftnlen)2) ==
+  	     0 || s_cmp(c4, "HR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(
+  	    c4, "TR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "BR", (
+  	    ftnlen)2, (ftnlen)2) == 0) {
+  	nx = 128;
+      }
+  }
     }
     ret_val = nx;
     return ret_val;
@@ -2066,7 +2066,7 @@ L1000:
        ILAENV = 0 */
     ret_val = 1;
     if (ret_val == 1) {
-	ret_val = ieeeck_(&c__0, &c_b162, &c_b163);
+  ret_val = ieeeck_(&c__0, &c_b162, &c_b163);
     }
     return ret_val;
 
@@ -2077,7 +2077,7 @@ L1100:
        ILAENV = 0 */
     ret_val = 1;
     if (ret_val == 1) {
-	ret_val = ieeeck_(&c__1, &c_b162, &c_b163);
+  ret_val = ieeeck_(&c__1, &c_b162, &c_b163);
     }
     return ret_val;
 
@@ -2125,57 +2125,57 @@ integer ieeeck_(integer *ispec, real *zero, real *one)
     integer ret_val;
     /* Local variables */
     static real neginf, posinf, negzro, newzro, nan1, nan2, nan3, nan4, nan5,
-	    nan6;
+      nan6;
 
 
     ret_val = 1;
 
     posinf = *one / *zero;
     if (posinf <= *one) {
-	ret_val = 0;
-	return ret_val;
+  ret_val = 0;
+  return ret_val;
     }
 
     neginf = -(*one) / *zero;
     if (neginf >= *zero) {
-	ret_val = 0;
-	return ret_val;
+  ret_val = 0;
+  return ret_val;
     }
 
     negzro = *one / (neginf + *one);
     if (negzro != *zero) {
-	ret_val = 0;
-	return ret_val;
+  ret_val = 0;
+  return ret_val;
     }
 
     neginf = *one / negzro;
     if (neginf >= *zero) {
-	ret_val = 0;
-	return ret_val;
+  ret_val = 0;
+  return ret_val;
     }
 
     newzro = negzro + *zero;
     if (newzro != *zero) {
-	ret_val = 0;
-	return ret_val;
+  ret_val = 0;
+  return ret_val;
     }
 
     posinf = *one / newzro;
     if (posinf <= *one) {
-	ret_val = 0;
-	return ret_val;
+  ret_val = 0;
+  return ret_val;
     }
 
     neginf *= posinf;
     if (neginf >= *zero) {
-	ret_val = 0;
-	return ret_val;
+  ret_val = 0;
+  return ret_val;
     }
 
     posinf *= posinf;
     if (posinf <= *one) {
-	ret_val = 0;
-	return ret_val;
+  ret_val = 0;
+  return ret_val;
     }
 
 
@@ -2184,7 +2184,7 @@ integer ieeeck_(integer *ispec, real *zero, real *one)
 /*     Return if we were only asked to check infinity arithmetic */
 
     if (*ispec == 0) {
-	return ret_val;
+  return ret_val;
     }
 
     nan1 = posinf + neginf;
@@ -2200,40 +2200,40 @@ integer ieeeck_(integer *ispec, real *zero, real *one)
     nan6 = nan5 * 0.f;
 
     if (nan1 == nan1) {
-	ret_val = 0;
-	return ret_val;
+  ret_val = 0;
+  return ret_val;
     }
 
     if (nan2 == nan2) {
-	ret_val = 0;
-	return ret_val;
+  ret_val = 0;
+  return ret_val;
     }
 
     if (nan3 == nan3) {
-	ret_val = 0;
-	return ret_val;
+  ret_val = 0;
+  return ret_val;
     }
 
     if (nan4 == nan4) {
-	ret_val = 0;
-	return ret_val;
+  ret_val = 0;
+  return ret_val;
     }
 
     if (nan5 == nan5) {
-	ret_val = 0;
-	return ret_val;
+  ret_val = 0;
+  return ret_val;
     }
 
     if (nan6 == nan6) {
-	ret_val = 0;
-	return ret_val;
+  ret_val = 0;
+  return ret_val;
     }
 
     return ret_val;
 } /* ieeeck_ */
 
 /* Subroutine */ int dgetf2_(integer *m, integer *n, doublereal *a, integer *
-	lda, integer *ipiv, integer *info)
+  lda, integer *ipiv, integer *info)
 {
 /*  -- LAPACK routine (version 3.0) --
        Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,
@@ -2299,12 +2299,12 @@ integer ieeeck_(integer *ispec, real *zero, real *one)
     doublereal d__1;
     /* Local variables */
     extern /* Subroutine */ int dger_(integer *, integer *, doublereal *,
-	    doublereal *, integer *, doublereal *, integer *, doublereal *,
-	    integer *);
+      doublereal *, integer *, doublereal *, integer *, doublereal *,
+      integer *);
     static integer j;
     extern /* Subroutine */ int dscal_(integer *, doublereal *, doublereal *,
-	    integer *), dswap_(integer *, doublereal *, integer *, doublereal
-	    *, integer *);
+      integer *), dswap_(integer *, doublereal *, integer *, doublereal
+      *, integer *);
     static integer jp;
     extern integer idamax_(integer *, doublereal *, integer *);
     extern /* Subroutine */ int xerbla_(char *, integer *);
@@ -2319,22 +2319,22 @@ integer ieeeck_(integer *ispec, real *zero, real *one)
     /* Function Body */
     *info = 0;
     if (*m < 0) {
-	*info = -1;
+  *info = -1;
     } else if (*n < 0) {
-	*info = -2;
+  *info = -2;
     } else if (*lda < max(1,*m)) {
-	*info = -4;
+  *info = -4;
     }
     if (*info != 0) {
-	i__1 = -(*info);
-	xerbla_("DGETF2", &i__1);
-	return 0;
+  i__1 = -(*info);
+  xerbla_("DGETF2", &i__1);
+  return 0;
     }
 
 /*     Quick return if possible */
 
     if (*m == 0 || *n == 0) {
-	return 0;
+  return 0;
     }
 
     i__1 = min(*m,*n);
@@ -2342,39 +2342,39 @@ integer ieeeck_(integer *ispec, real *zero, real *one)
 
 /*        Find pivot and test for singularity. */
 
-	i__2 = *m - j + 1;
-	jp = j - 1 + idamax_(&i__2, &a_ref(j, j), &c__1);
-	ipiv[j] = jp;
-	if (a_ref(jp, j) != 0.) {
+  i__2 = *m - j + 1;
+  jp = j - 1 + idamax_(&i__2, &a_ref(j, j), &c__1);
+  ipiv[j] = jp;
+  if (a_ref(jp, j) != 0.) {
 
 /*           Apply the interchange to columns 1:N. */
 
-	    if (jp != j) {
-		dswap_(n, &a_ref(j, 1), lda, &a_ref(jp, 1), lda);
-	    }
+      if (jp != j) {
+  	dswap_(n, &a_ref(j, 1), lda, &a_ref(jp, 1), lda);
+      }
 
 /*           Compute elements J+1:M of J-th column. */
 
-	    if (j < *m) {
-		i__2 = *m - j;
-		d__1 = 1. / a_ref(j, j);
-		dscal_(&i__2, &d__1, &a_ref(j + 1, j), &c__1);
-	    }
+      if (j < *m) {
+  	i__2 = *m - j;
+  	d__1 = 1. / a_ref(j, j);
+  	dscal_(&i__2, &d__1, &a_ref(j + 1, j), &c__1);
+      }
 
-	} else if (*info == 0) {
+  } else if (*info == 0) {
 
-	    *info = j;
-	}
+      *info = j;
+  }
 
-	if (j < min(*m,*n)) {
+  if (j < min(*m,*n)) {
 
 /*           Update trailing submatrix. */
 
-	    i__2 = *m - j;
-	    i__3 = *n - j;
-	    dger_(&i__2, &i__3, &c_b6, &a_ref(j + 1, j), &c__1, &a_ref(j, j +
-		    1), lda, &a_ref(j + 1, j + 1), lda);
-	}
+      i__2 = *m - j;
+      i__3 = *n - j;
+      dger_(&i__2, &i__3, &c_b6, &a_ref(j + 1, j), &c__1, &a_ref(j, j +
+  	    1), lda, &a_ref(j + 1, j + 1), lda);
+  }
 /* L10: */
     }
     return 0;
@@ -2387,8 +2387,8 @@ integer ieeeck_(integer *ispec, real *zero, real *one)
 
 
 /* Subroutine */ int dger_(integer *m, integer *n, doublereal *alpha,
-	doublereal *x, integer *incx, doublereal *y, integer *incy,
-	doublereal *a, integer *lda)
+  doublereal *x, integer *incx, doublereal *y, integer *incy,
+  doublereal *a, integer *lda)
 {
     /* System generated locals */
     integer a_dim1, a_offset, i__1, i__2;
@@ -2460,66 +2460,66 @@ integer ieeeck_(integer *ispec, real *zero, real *one)
     /* Function Body */
     info = 0;
     if (*m < 0) {
-	info = 1;
+  info = 1;
     } else if (*n < 0) {
-	info = 2;
+  info = 2;
     } else if (*incx == 0) {
-	info = 5;
+  info = 5;
     } else if (*incy == 0) {
-	info = 7;
+  info = 7;
     } else if (*lda < max(1,*m)) {
-	info = 9;
+  info = 9;
     }
     if (info != 0) {
-	xerbla_("DGER  ", &info);
-	return 0;
+  xerbla_("DGER  ", &info);
+  return 0;
     }
 /*     Quick return if possible. */
     if (*m == 0 || *n == 0 || *alpha == 0.) {
-	return 0;
+  return 0;
     }
 /*     Start the operations. In this version the elements of A are
        accessed sequentially with one pass through A. */
     if (*incy > 0) {
-	jy = 1;
+  jy = 1;
     } else {
-	jy = 1 - (*n - 1) * *incy;
+  jy = 1 - (*n - 1) * *incy;
     }
     if (*incx == 1) {
-	i__1 = *n;
-	for (j = 1; j <= i__1; ++j) {
-	    if (y[jy] != 0.) {
-		temp = *alpha * y[jy];
-		i__2 = *m;
-		for (i__ = 1; i__ <= i__2; ++i__) {
-		    a_ref(i__, j) = a_ref(i__, j) + x[i__] * temp;
+  i__1 = *n;
+  for (j = 1; j <= i__1; ++j) {
+      if (y[jy] != 0.) {
+  	temp = *alpha * y[jy];
+  	i__2 = *m;
+  	for (i__ = 1; i__ <= i__2; ++i__) {
+  	    a_ref(i__, j) = a_ref(i__, j) + x[i__] * temp;
 /* L10: */
-		}
-	    }
-	    jy += *incy;
+  	}
+      }
+      jy += *incy;
 /* L20: */
-	}
+  }
     } else {
-	if (*incx > 0) {
-	    kx = 1;
-	} else {
-	    kx = 1 - (*m - 1) * *incx;
-	}
-	i__1 = *n;
-	for (j = 1; j <= i__1; ++j) {
-	    if (y[jy] != 0.) {
-		temp = *alpha * y[jy];
-		ix = kx;
-		i__2 = *m;
-		for (i__ = 1; i__ <= i__2; ++i__) {
-		    a_ref(i__, j) = a_ref(i__, j) + x[ix] * temp;
-		    ix += *incx;
+  if (*incx > 0) {
+      kx = 1;
+  } else {
+      kx = 1 - (*m - 1) * *incx;
+  }
+  i__1 = *n;
+  for (j = 1; j <= i__1; ++j) {
+      if (y[jy] != 0.) {
+  	temp = *alpha * y[jy];
+  	ix = kx;
+  	i__2 = *m;
+  	for (i__ = 1; i__ <= i__2; ++i__) {
+  	    a_ref(i__, j) = a_ref(i__, j) + x[ix] * temp;
+  	    ix += *incx;
 /* L30: */
-		}
-	    }
-	    jy += *incy;
+  	}
+      }
+      jy += *incy;
 /* L40: */
-	}
+  }
     }
     return 0;
 /*     End of DGER  . */
@@ -2527,7 +2527,7 @@ integer ieeeck_(integer *ispec, real *zero, real *one)
 #undef a_ref
 
 /* Subroutine */ int dscal_(integer *n, doublereal *da, doublereal *dx,
-	integer *incx)
+  integer *incx)
 {
     /* System generated locals */
     integer i__1, i__2;
@@ -2542,17 +2542,17 @@ integer ieeeck_(integer *ispec, real *zero, real *one)
     --dx;
     /* Function Body */
     if (*n <= 0 || *incx <= 0) {
-	return 0;
+  return 0;
     }
     if (*incx == 1) {
-	goto L20;
+  goto L20;
     }
 /*        code for increment not equal to 1 */
     nincx = *n * *incx;
     i__1 = nincx;
     i__2 = *incx;
     for (i__ = 1; i__2 < 0 ? i__ >= i__1 : i__ <= i__1; i__ += i__2) {
-	dx[i__] = *da * dx[i__];
+  dx[i__] = *da * dx[i__];
 /* L10: */
     }
     return 0;
@@ -2561,25 +2561,25 @@ integer ieeeck_(integer *ispec, real *zero, real *one)
 L20:
     m = *n % 5;
     if (m == 0) {
-	goto L40;
+  goto L40;
     }
     i__2 = m;
     for (i__ = 1; i__ <= i__2; ++i__) {
-	dx[i__] = *da * dx[i__];
+  dx[i__] = *da * dx[i__];
 /* L30: */
     }
     if (*n < 5) {
-	return 0;
+  return 0;
     }
 L40:
     mp1 = m + 1;
     i__2 = *n;
     for (i__ = mp1; i__ <= i__2; i__ += 5) {
-	dx[i__] = *da * dx[i__];
-	dx[i__ + 1] = *da * dx[i__ + 1];
-	dx[i__ + 2] = *da * dx[i__ + 2];
-	dx[i__ + 3] = *da * dx[i__ + 3];
-	dx[i__ + 4] = *da * dx[i__ + 4];
+  dx[i__] = *da * dx[i__];
+  dx[i__ + 1] = *da * dx[i__ + 1];
+  dx[i__ + 2] = *da * dx[i__ + 2];
+  dx[i__ + 3] = *da * dx[i__ + 3];
+  dx[i__ + 4] = *da * dx[i__ + 4];
 /* L50: */
     }
     return 0;
@@ -2587,7 +2587,7 @@ L40:
 
 
 /* Subroutine */ int dswap_(integer *n, doublereal *dx, integer *incx,
-	doublereal *dy, integer *incy)
+  doublereal *dy, integer *incy)
 {
     /* System generated locals */
     integer i__1;
@@ -2604,28 +2604,28 @@ L40:
     --dx;
     /* Function Body */
     if (*n <= 0) {
-	return 0;
+  return 0;
     }
     if (*incx == 1 && *incy == 1) {
-	goto L20;
+  goto L20;
     }
 /*       code for unequal increments or equal increments not equal
            to 1 */
     ix = 1;
     iy = 1;
     if (*incx < 0) {
-	ix = (-(*n) + 1) * *incx + 1;
+  ix = (-(*n) + 1) * *incx + 1;
     }
     if (*incy < 0) {
-	iy = (-(*n) + 1) * *incy + 1;
+  iy = (-(*n) + 1) * *incy + 1;
     }
     i__1 = *n;
     for (i__ = 1; i__ <= i__1; ++i__) {
-	dtemp = dx[ix];
-	dx[ix] = dy[iy];
-	dy[iy] = dtemp;
-	ix += *incx;
-	iy += *incy;
+  dtemp = dx[ix];
+  dx[ix] = dy[iy];
+  dy[iy] = dtemp;
+  ix += *incx;
+  iy += *incy;
 /* L10: */
     }
     return 0;
@@ -2634,31 +2634,31 @@ L40:
 L20:
     m = *n % 3;
     if (m == 0) {
-	goto L40;
+  goto L40;
     }
     i__1 = m;
     for (i__ = 1; i__ <= i__1; ++i__) {
-	dtemp = dx[i__];
-	dx[i__] = dy[i__];
-	dy[i__] = dtemp;
+  dtemp = dx[i__];
+  dx[i__] = dy[i__];
+  dy[i__] = dtemp;
 /* L30: */
     }
     if (*n < 3) {
-	return 0;
+  return 0;
     }
 L40:
     mp1 = m + 1;
     i__1 = *n;
     for (i__ = mp1; i__ <= i__1; i__ += 3) {
-	dtemp = dx[i__];
-	dx[i__] = dy[i__];
-	dy[i__] = dtemp;
-	dtemp = dx[i__ + 1];
-	dx[i__ + 1] = dy[i__ + 1];
-	dy[i__ + 1] = dtemp;
-	dtemp = dx[i__ + 2];
-	dx[i__ + 2] = dy[i__ + 2];
-	dy[i__ + 2] = dtemp;
+  dtemp = dx[i__];
+  dx[i__] = dy[i__];
+  dy[i__] = dtemp;
+  dtemp = dx[i__ + 1];
+  dx[i__ + 1] = dy[i__ + 1];
+  dy[i__ + 1] = dtemp;
+  dtemp = dx[i__ + 2];
+  dx[i__ + 2] = dy[i__ + 2];
+  dy[i__ + 2] = dtemp;
 /* L50: */
     }
     return 0;
@@ -2682,14 +2682,14 @@ integer idamax_(integer *n, doublereal *dx, integer *incx)
     /* Function Body */
     ret_val = 0;
     if (*n < 1 || *incx <= 0) {
-	return ret_val;
+  return ret_val;
     }
     ret_val = 1;
     if (*n == 1) {
-	return ret_val;
+  return ret_val;
     }
     if (*incx == 1) {
-	goto L20;
+  goto L20;
     }
 /*        code for increment not equal to 1 */
     ix = 1;
@@ -2697,13 +2697,13 @@ integer idamax_(integer *n, doublereal *dx, integer *incx)
     ix += *incx;
     i__1 = *n;
     for (i__ = 2; i__ <= i__1; ++i__) {
-	if ((d__1 = dx[ix], abs(d__1)) <= dmax__) {
-	    goto L5;
-	}
-	ret_val = i__;
-	dmax__ = (d__1 = dx[ix], abs(d__1));
+  if ((d__1 = dx[ix], abs(d__1)) <= dmax__) {
+      goto L5;
+  }
+  ret_val = i__;
+  dmax__ = (d__1 = dx[ix], abs(d__1));
 L5:
-	ix += *incx;
+  ix += *incx;
 /* L10: */
     }
     return ret_val;
@@ -2712,13 +2712,13 @@ L20:
     dmax__ = abs(dx[1]);
     i__1 = *n;
     for (i__ = 2; i__ <= i__1; ++i__) {
-	if ((d__1 = dx[i__], abs(d__1)) <= dmax__) {
-	    goto L30;
-	}
-	ret_val = i__;
-	dmax__ = (d__1 = dx[i__], abs(d__1));
+  if ((d__1 = dx[i__], abs(d__1)) <= dmax__) {
+      goto L30;
+  }
+  ret_val = i__;
+  dmax__ = (d__1 = dx[i__], abs(d__1));
 L30:
-	;
+  ;
     }
     return ret_val;
 } /* idamax_ */

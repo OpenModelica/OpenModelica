@@ -48,7 +48,7 @@ protected import Inst;
 protected import Env;
 
 public function refactorGraphicalAnnotation "function: refactorGraphicalAnnnotation
-	This function refactors the graphical annotations of a class to the modelica standard.
+  This function refactors the graphical annotations of a class to the modelica standard.
 "
   input Absyn.Program wholeAST; //AST
   input Absyn.Class classToRefactor;
@@ -67,7 +67,7 @@ algorithm
 end refactorGraphicalAnnotation;
 
 protected function refactorGraphAnnInClass "function: refactorGraphAnnInClass
-	Helper function to refactorGraphicalAnnotation. Part of the AST traverse.
+  Helper function to refactorGraphicalAnnotation. Part of the AST traverse.
 "
   input Absyn.Class inClass;
   input Absyn.Program inProgram;
@@ -124,7 +124,7 @@ algorithm
 end refactorGraphAnnInClass;
 
 protected function refactorGraphAnnInClassDef "function: refactorGraphAnnInClassDef
-	Helper function to refactorGraphAnnInClass. Part of AST traverse.
+  Helper function to refactorGraphAnnInClass. Part of AST traverse.
 "
   input Absyn.ClassDef inDef;
   input Absyn.Program inProgram;
@@ -169,7 +169,7 @@ algorithm
 end refactorGraphAnnInClassDef;
 
 protected function refactorGraphAnnInClassParts "function: refactorGraphAnnInClassParts
-	Helper function to refactorGraphAnnInClassDef. Part of the AST traverse.
+  Helper function to refactorGraphAnnInClassDef. Part of the AST traverse.
 "
   input list<Absyn.ClassPart> inParts;
   input Absyn.Program inProgram;
@@ -194,7 +194,7 @@ algorithm
 end refactorGraphAnnInClassParts;
 
 protected function refactorGraphAnnInClassPart"function: refactorGraphAnnInClassPart
-	Helper function to refactorGraphAnnInClassParts. Part of the AST traverse.
+  Helper function to refactorGraphAnnInClassParts. Part of the AST traverse.
 "
   input Absyn.ClassPart inPart;
   input Absyn.Program inProgram;
@@ -258,7 +258,7 @@ end refactorGraphAnnInClassPart;
 
 
 protected function refactorGraphAnnInContentList"function: refactorGraphAnnInContentList
-	Helper function to refactorGraphAnnInClassPart. Part of the AST traverse.
+  Helper function to refactorGraphAnnInClassPart. Part of the AST traverse.
 "
   input list<contentType> inList;
   input refactorGraphAnnInContent refactorGraphAnnInItem;
@@ -294,7 +294,7 @@ algorithm
 end refactorGraphAnnInContentList;
 
 protected function refactorGraphAnnInElItem"function: refactorGraphAnnInElItem
-	Helper function to refactorGraphAnnInClassPart. Part of the AST traverse.
+  Helper function to refactorGraphAnnInClassPart. Part of the AST traverse.
 "
   input Absyn.ElementItem inItem;
   input Absyn.Program inProgram;
@@ -325,7 +325,7 @@ algorithm
 end refactorGraphAnnInElItem;
 
 protected function refactorGraphAnnInEqItem"function: refactorGraphAnnInEqItem
-	Helper function to refactorGraphAnnInClassPart. Part of the AST traverse.
+  Helper function to refactorGraphAnnInClassPart. Part of the AST traverse.
 "
   input Absyn.EquationItem inItem;
   input Absyn.Program inProgram;
@@ -361,7 +361,7 @@ algorithm
 end refactorGraphAnnInEqItem;
 
 protected function refactorGraphAnnInAlgItem"function: refactorGraphAnnInAlgItem
-	Helper function to refactorGraphAnnInClassPart. Part of the AST traverse.
+  Helper function to refactorGraphAnnInClassPart. Part of the AST traverse.
 "
   input Absyn.AlgorithmItem inItem;
   input Absyn.Program inProgram;
@@ -399,7 +399,7 @@ end refactorGraphAnnInAlgItem;
 
 protected function refactorGraphAnnInElement"function: refactorGraphAnnInElement
 
-	Helper function to refactorGraphAnnInElItem. Part of the AST traverse.
+  Helper function to refactorGraphAnnInElItem. Part of the AST traverse.
 
 "
   input Absyn.Element inElement;
@@ -442,7 +442,7 @@ end refactorGraphAnnInElement;
 
 protected function refactorConstrainClass "function: refactorGraphAnnInElement
 
-	Helper function to refactorGraphAnnInElItem. Part of the AST traverse.
+  Helper function to refactorGraphAnnInElItem. Part of the AST traverse.
 
 "
   input Option<Absyn.ConstrainClass> inCC;
@@ -455,7 +455,7 @@ algorithm
 
   outCC := match (inCC,inProgram,classPath,inClassEnv)
 
-	local
+  local
       Absyn.Program p;
       Absyn.ElementSpec es,resultSpec;
       Option<Absyn.Comment> com;
@@ -470,12 +470,12 @@ algorithm
         SOME(Absyn.CONSTRAINCLASS(resultSpec,com));
     case(NONE(),_,_,_)
     then NONE();
-	end match;
+  end match;
 end refactorConstrainClass;
 
 protected function refactorGraphAnnInElSpec"function: refactorGraphAnnInElSpec
 
-	Helper function to refactorGraphAnnInElement Part of the AST traverse.
+  Helper function to refactorGraphAnnInElement Part of the AST traverse.
 
 "
   input Absyn.ElementSpec inSpec;
@@ -534,7 +534,7 @@ end refactorGraphAnnInElSpec;
 
 protected function refactorGraphAnnInComponentItem"function: refactorGraphAnnInComponentItem
 
-	Helper function to refactorGraphAnnInElSpec Part of the AST traverse.
+  Helper function to refactorGraphAnnInElSpec Part of the AST traverse.
 
 "
   input Absyn.ComponentItem inCom;
@@ -578,7 +578,7 @@ end refactorGraphAnnInComponentItem;
 
 protected function transformComponentAnnList "function: transformComponentAnnList
 
-	This function transforms old component annotations to new ones
+  This function transforms old component annotations to new ones
 "
 
   input list<Absyn.ElementArg> inArgs;
@@ -615,9 +615,9 @@ algorithm
       finalItem = fi,
       each_ = e,
       componentRef =
-      	Absyn.CREF_IDENT(name = "extent",subscripts = s),
+        Absyn.CREF_IDENT(name = "extent",subscripts = s),
       modification =
-      	SOME(Absyn.CLASSMOD(elementArgLst = args, expOption = SOME(Absyn.MATRIX(matrix = {{x1,y1},{x2,y2}} )))),
+        SOME(Absyn.CLASSMOD(elementArgLst = args, expOption = SOME(Absyn.MATRIX(matrix = {{x1,y1},{x2,y2}} )))),
       comment = com) :: rest,context as ("Component" :: c),res,cPath,path,p,env)
 
       equation
@@ -628,7 +628,7 @@ algorithm
         diagramTrans = getDiagramTransformation(x1,y1,x2,y2,rot,cPath,path,p,env);
         trans = {diagramTrans,iconTrans};
         res = transformComponentAnnList(rest,context,res,cPath,path,p,env);
-        res = {Absyn.MODIFICATION(fi, e, Absyn.CREF_IDENT("Placement",s), SOME(Absyn.CLASSMOD(trans,NONE())),/*NONE,*/com)};//:: res; //SOME(Absyn.ARRAY({Absyn.ARRAY({x1,y1}	),Absyn.ARRAY({x2,y2})}))
+        res = {Absyn.MODIFICATION(fi, e, Absyn.CREF_IDENT("Placement",s), SOME(Absyn.CLASSMOD(trans,NONE())),/*NONE,*/com)};//:: res; //SOME(Absyn.ARRAY({Absyn.ARRAY({x1,y1}  ),Absyn.ARRAY({x2,y2})}))
 
       then res;
 
@@ -643,7 +643,7 @@ algorithm
         rot = getRotationDegree(listAppend(res,rest));
         diagramTrans = getDiagramTransformation(x1,y1,x2,y2,rot,cPath,path,p,env);
         res = transformComponentAnnList(rest,context,res,cPath,path,p,env);
-        res = {Absyn.MODIFICATION(fi, e, Absyn.CREF_IDENT("Placement",s), SOME(Absyn.CLASSMOD({diagramTrans},NONE()))/*NONE*/,com)};//:: res; /*SOME(Absyn.ARRAY({Absyn.ARRAY({x1,y1}	),Absyn.ARRAY({x2,y2})}))*/
+        res = {Absyn.MODIFICATION(fi, e, Absyn.CREF_IDENT("Placement",s), SOME(Absyn.CLASSMOD({diagramTrans},NONE()))/*NONE*/,com)};//:: res; /*SOME(Absyn.ARRAY({Absyn.ARRAY({x1,y1}  ),Absyn.ARRAY({x2,y2})}))*/
 
       then res;
 
@@ -659,8 +659,8 @@ end transformComponentAnnList;
 
 protected function getRestrictionFromPath"function: getRestrictionFromPath
 
-	Helper function to transformComponentAnnList. This function takes a path and a program
-	as arguments and then returns the class restriction to that path.
+  Helper function to transformComponentAnnList. This function takes a path and a program
+  as arguments and then returns the class restriction to that path.
 "
   input Absyn.Path classPath;
   input Absyn.Path inPath;
@@ -703,8 +703,8 @@ end getRestrictionFromPath;
 
 protected function getRestrictionInClass"function: getRestrictionFromClass
 
-	Helper function to getRestrictionInPath. This function takes a class as
-	argument and then returns the restriction to that class.
+  Helper function to getRestrictionInPath. This function takes a class as
+  argument and then returns the restriction to that class.
 "
 
   input Absyn.Class inClass;
@@ -719,8 +719,8 @@ end getRestrictionInClass;
 
 protected function getRotationDegree"function: getRotationDegree
 
-	Helper function to transformComponentAnnList. This function checks if there's a rotation
-	annotation in the ElementArg list and then returns the degree of rotation.
+  Helper function to transformComponentAnnList. This function checks if there's a rotation
+  annotation in the ElementArg list and then returns the degree of rotation.
 "
 
   input list<Absyn.ElementArg> inList;
@@ -758,8 +758,8 @@ end getRotationDegree;
 
 protected function getIconTransformation"function: getIconTransformation
 
-	Helper function to transformComponentAnnList. This function calculates and returns the iconTransformation
-	annotation.
+  Helper function to transformComponentAnnList. This function calculates and returns the iconTransformation
+  annotation.
 "
 
   input Absyn.Exp ax1;
@@ -839,8 +839,8 @@ end getIconTransformation;
 
 protected function getDiagramTransformation"function: getDiagramTransformation
 
-	Helper function to transformComponentAnnList. This function calculates and returns the transformation
-	annotation.
+  Helper function to transformComponentAnnList. This function calculates and returns the transformation
+  annotation.
 "
 
   input Absyn.Exp ax1;
@@ -871,7 +871,7 @@ algorithm
 
       equation
 
-	      rax1 = getValueFromExp(x1);
+        rax1 = getValueFromExp(x1);
         ray1 = getValueFromExp(y1);
         rax2 = getValueFromExp(x2);
         ray2 = getValueFromExp(y2);
@@ -895,7 +895,7 @@ algorithm
 
       equation
 
-	      rax1 = getValueFromExp(x1);
+        rax1 = getValueFromExp(x1);
         ray1 = getValueFromExp(y1);
         rax2 = getValueFromExp(x2);
         ray2 = getValueFromExp(y2);
@@ -922,8 +922,8 @@ end getDiagramTransformation;
 
 protected function getAspectRatioAnn"function: getAspectRatioAnn
 
-	Helper function to getIconTransformation and getDiagramTransformation. This function calculates and returns the aspect ratio
-	annotation.
+  Helper function to getIconTransformation and getDiagramTransformation. This function calculates and returns the aspect ratio
+  annotation.
 "
   input Real x1;
   input Real x2;
@@ -943,7 +943,7 @@ algorithm
     local
 
       Real aspect;
-      Real 	crx1,cry1,crx2,cry2,rx1,rx2,ry1,ry2;
+      Real   crx1,cry1,crx2,cry2,rx1,rx2,ry1,ry2;
 
 
     case(rx1,rx2,ry1,ry2,crx1,cry1,crx2,cry2)
@@ -962,11 +962,11 @@ end getAspectRatioAnn;
 
 protected function getXYAnn"function: getXYAnn
 
-	Helper function to getIconTransformation and getDiagramTransformation. This function calculates and returns the X or Y
-	annotation.
+  Helper function to getIconTransformation and getDiagramTransformation. This function calculates and returns the X or Y
+  annotation.
 "
-	input Real val1;
-	input Real val2;
+  input Real val1;
+  input Real val2;
   input Absyn.Ident name;
   output Absyn.ElementArg res;
 
@@ -992,8 +992,8 @@ end getXYAnn;
 
 protected function getScaleAnn"function: getScaleAnn
 
-	Helper function to getIconTransformation and getDiagramTransformation. This function calculates and returns the scale
-	annotation.
+  Helper function to getIconTransformation and getDiagramTransformation. This function calculates and returns the scale
+  annotation.
 "
   input Real ax1;
   input Real ax2;
@@ -1022,8 +1022,8 @@ end getScaleAnn;
 
 protected function getFlipAnn"function: getFlipAnn
 
-	Helper function to getIconTransformation and getDiagramTransformation. This function calculates and returns the flip
-	annotations.
+  Helper function to getIconTransformation and getDiagramTransformation. This function calculates and returns the flip
+  annotations.
 "
 
   input Real val1;
@@ -1041,8 +1041,8 @@ end getFlipAnn;
 
 protected function getRotationAnn"function: getRotationAnn
 
-	Helper function to getIconTransformation and getDiagramTransformation. This function calculates and returns the rotation
-	annotation.
+  Helper function to getIconTransformation and getDiagramTransformation. This function calculates and returns the rotation
+  annotation.
 "
 
   input Real rot;
@@ -1056,8 +1056,8 @@ end getRotationAnn;
 
 
 protected function getCoordsInPath"function: getCoordsInPath
-	Helper function to transformComponentAnnList. This function takes a path and a program
-	as arguments and then returns the diagram or icon coordinates in that path.
+  Helper function to transformComponentAnnList. This function takes a path and a program
+  as arguments and then returns the diagram or icon coordinates in that path.
 "
   input Absyn.Path classPath;
   input Absyn.Path inPath;
@@ -1094,10 +1094,10 @@ algorithm
 
     case(cPath,path,p,context, env) // if it doesn't work, try the hard way
       equation
-        //	p_1 = SCodeUtil.translateAbsyn2SCode(p);
-        //	(_,env) = Inst.makeSimpleEnvFromProgram(Env.emptyCache,p_1, Absyn.IDENT(""));
+        //  p_1 = SCodeUtil.translateAbsyn2SCode(p);
+        //  (_,env) = Inst.makeSimpleEnvFromProgram(Env.emptyCache,p_1, Absyn.IDENT(""));
         (_,fullPath) = Inst.makeFullyQualified(Env.emptyCache(),env,path);
-        //	print("env:\n");print(Env.printEnvStr(env));
+        //  print("env:\n");print(Env.printEnvStr(env));
         //str = Absyn.pathString(cPath);
         //print("\npath = ");
         //print(str);
@@ -1105,7 +1105,7 @@ algorithm
         cdef = Interactive.getPathedClassInProgram(fullPath,p);
         (x1,y1,x2,y2) = getCoordsInClass(cdef,context);
       then
-	      (x1,y1,x2,y2);//(Absyn.REAL(-100.0),Absyn.REAL(-100.0),Absyn.REAL(100.0),Absyn.REAL(100.0));
+        (x1,y1,x2,y2);//(Absyn.REAL(-100.0),Absyn.REAL(-100.0),Absyn.REAL(100.0),Absyn.REAL(100.0));
 
     case(cPath,path,p,context, env) // if it doesn't work, try the hard way
       equation
@@ -1118,8 +1118,8 @@ end getCoordsInPath;
 
 protected function getCoordsInClass"function: getCoordsInClass
 
-	Helper function to getCoordsInPath. This function takes a class and a program
-	as arguments and then returns the diagram or icon coordinates in that class.
+  Helper function to getCoordsInPath. This function takes a class and a program
+  as arguments and then returns the diagram or icon coordinates in that class.
 "
 
   input Absyn.Class inClass;
@@ -1148,27 +1148,27 @@ algorithm
         (x1,y1,x2,y2);
     case(Absyn.CLASS(body = Absyn.DERIVED(comment =  SOME(Absyn.COMMENT(annotation_ = SOME(Absyn.ANNOTATION(elementArgs = annlist)))))),context)
 
-      	equation
+        equation
 
-      	  (x1,y1,x2,y2) = getCoordsInAnnList(annlist,context);
+          (x1,y1,x2,y2) = getCoordsInAnnList(annlist,context);
 
-			then
-			  (x1,y1,x2,y2);
-/*	    case(Absyn.CLASS(body = Absyn.CLASS_EXTENDS(arguments = annlist,parts = parts1)),context)
+    	then
+    	  (x1,y1,x2,y2);
+/*      case(Absyn.CLASS(body = Absyn.CLASS_EXTENDS(arguments = annlist,parts = parts1)),context)
 
-      	equation
+        equation
 
-      	  //(x1,y1,x2,y2) = getCoordsInAnnList(annlist,context);
-      	  (x1,y1,x2,y2) = getCoordsFromParts(parts1,context);
-			then
-			  (x1,y1,x2,y2);   */
+          //(x1,y1,x2,y2) = getCoordsInAnnList(annlist,context);
+          (x1,y1,x2,y2) = getCoordsFromParts(parts1,context);
+    	then
+    	  (x1,y1,x2,y2);   */
   end match;
 
 end getCoordsInClass;
 
 protected function getCoordsFromParts"function: getCoordsFromParts
 
-	Helper function to getCoordsInClass.
+  Helper function to getCoordsInClass.
 "
   input list<Absyn.ClassPart> inParts;
   input Context contextToGetCoordsFrom;
@@ -1230,7 +1230,7 @@ end getCoordsFromParts;
 
 protected function getCoordsFromElts"function: getCoordsFromElts
 
-	Helper function to getCoordsFromParts.
+  Helper function to getCoordsFromParts.
 "
   input list<Absyn.ElementItem> inElts;
   input Context contextToGetCoordsFrom;
@@ -1261,7 +1261,7 @@ end getCoordsFromElts;
 
 protected function getCoordsFromEqns"function: getCoordsFromEqns
 
-	Helper function to getCoordsFromParts.
+  Helper function to getCoordsFromParts.
 "
 
   input list<Absyn.EquationItem> inEqns;
@@ -1294,7 +1294,7 @@ end getCoordsFromEqns;
 
 protected function getCoordsFromAlgs"function: getCoordsFromAlgs
 
-	Helper function to getCoordsFromParts.
+  Helper function to getCoordsFromParts.
 "
   input list<Absyn.AlgorithmItem> inAlgs;
   input Context contextToGetCoordsFrom;
@@ -1326,7 +1326,7 @@ end getCoordsFromAlgs;
 
 protected function getCoordsInAnnList"function: getCoordsInAnnList
 
-	Helper function to getCoordsFromEqns,elts,algs.
+  Helper function to getCoordsFromEqns,elts,algs.
 "
   input list<Absyn.ElementArg> inAnns;
   input Context contextToGetCoordsFrom;
@@ -1369,7 +1369,7 @@ end getCoordsInAnnList;
 
 protected function getCoordsFromCoordSysArgs"function: getCoordsFromCoordSysArgs
 
-	Helper function to getCoordsInAnnList.
+  Helper function to getCoordsInAnnList.
 "
   input list<Absyn.ElementArg> inAnns;
   output Absyn.Exp x1;
@@ -1405,7 +1405,7 @@ algorithm
     local list<Absyn.ElementArg> rest;
     case (Absyn.MODIFICATION(
       componentRef = Absyn.CREF_IDENT(name = "extent"),
-      modification = SOME(Absyn.CLASSMOD(expOption = SOME(Absyn.ARRAY({Absyn.ARRAY({x1,y1}	),Absyn.ARRAY({x2,y2})}))) )):: rest)
+      modification = SOME(Absyn.CLASSMOD(expOption = SOME(Absyn.ARRAY({Absyn.ARRAY({x1,y1}  ),Absyn.ARRAY({x2,y2})}))) )):: rest)
       equation
       then (x1,y1,x2,y2);
 
@@ -1418,7 +1418,7 @@ end getExtentModification ;
 
 protected function getCoordsFromLayerArgs
 "function: getCoordsFromLayerArgs
-	Helper function to getCoordsInAnnList."
+  Helper function to getCoordsInAnnList."
   input list<Absyn.ElementArg> inAnns;
   output Absyn.Exp x1;
   output Absyn.Exp y1;
@@ -1446,7 +1446,7 @@ end getCoordsFromLayerArgs;
 
 protected function transformConnectAnnList "function: transformConnectAnnList
 
-	This function transforms old connect annotations to new ones
+  This function transforms old connect annotations to new ones
 "
 
   input list<Absyn.ElementArg> inArgs;
@@ -1514,8 +1514,8 @@ algorithm
       equation
 
         args = cleanStyleAttrs(args,{},context);
-				rest = listAppend(args,rest);
-				res = transformConnectAnnList(rest,context,res,p);
+    		rest = listAppend(args,rest);
+    		res = transformConnectAnnList(rest,context,res,p);
 
       then res;
 
@@ -1581,8 +1581,8 @@ end transformConnectAnnList;
 
 protected function transformClassAnnList " function transformClassAnnList
 
-	This function transforms old graphical class annotations (i.e Icon/Diagram layers)
-	to new ones.
+  This function transforms old graphical class annotations (i.e Icon/Diagram layers)
+  to new ones.
 "
 
   input list<Absyn.ElementArg> inArgs;
@@ -1622,7 +1622,7 @@ algorithm
         coord = getCoordSysAnn(listAppend(res,rest),p);
         res = transformClassAnnList(rest,context,res,p);
 
-      then Absyn.MODIFICATION(fi, e, Absyn.CREF_IDENT("Icon",s), SOME(Absyn.CLASSMOD({coord,Absyn.MODIFICATION(false, Absyn.NON_EACH(), Absyn.CREF_IDENT("graphics",{}),SOME(Absyn.CLASSMOD({}, SOME(Absyn.ARRAY(argRes))   )),NONE())}, ex)),com) :: res		;
+      then Absyn.MODIFICATION(fi, e, Absyn.CREF_IDENT("Icon",s), SOME(Absyn.CLASSMOD({coord,Absyn.MODIFICATION(false, Absyn.NON_EACH(), Absyn.CREF_IDENT("graphics",{}),SOME(Absyn.CLASSMOD({}, SOME(Absyn.ARRAY(argRes))   )),NONE())}, ex)),com) :: res    ;
 
     case(Absyn.MODIFICATION(finalItem = fi, each_ = e, componentRef = Absyn.CREF_IDENT(name = "Diagram", subscripts = s), modification = SOME(Absyn.CLASSMOD(elementArgLst = args, expOption =  ex   )), comment = com) :: rest,context as ("Class" :: c),res,p)
 
@@ -1661,7 +1661,7 @@ algorithm
 
       equation
 
-        res = Absyn.MODIFICATION(fi, e, Absyn.CREF_IDENT("extent",s), SOME(Absyn.CLASSMOD(args, SOME(Absyn.ARRAY({Absyn.ARRAY({x1,y1}	),Absyn.ARRAY({x2,y2})})))),com) :: res;
+        res = Absyn.MODIFICATION(fi, e, Absyn.CREF_IDENT("extent",s), SOME(Absyn.CLASSMOD(args, SOME(Absyn.ARRAY({Absyn.ARRAY({x1,y1}  ),Absyn.ARRAY({x2,y2})})))),com) :: res;
         res = transformClassAnnList(rest,context,res,p);
 
       then res;
@@ -1712,8 +1712,8 @@ end transformClassAnnList;
 
 protected function isLayerAnnInList"function: isLayerAnnInList
 
-	Helper function to transformClassAnnList. Returns true if a icon or diagram annotation
-	is in the list, false otherwise.
+  Helper function to transformClassAnnList. Returns true if a icon or diagram annotation
+  is in the list, false otherwise.
 "
   input list<Absyn.ElementArg> inList;
   output Boolean result;
@@ -1754,9 +1754,9 @@ end isLayerAnnInList;
 
 protected function  getCoordSysAnn "function: getCoordSysAnn
 
-	Helper function to transformClassAnnList. Fetches an old coordinate system
-	annotations and returns it. If none it returns the default system for the old
-	standard ([{-100,-100}{100,100}]).
+  Helper function to transformClassAnnList. Fetches an old coordinate system
+  annotations and returns it. If none it returns the default system for the old
+  standard ([{-100,-100}{100,100}]).
 "
 
   input list<Absyn.ElementArg> inArgs;
@@ -1779,7 +1779,7 @@ algorithm
     case ({},_)
 
     then
-      Absyn.MODIFICATION(false, Absyn.NON_EACH(), Absyn.CREF_IDENT("coordinateSystem", {}), SOME(Absyn.CLASSMOD({Absyn.MODIFICATION(false, Absyn.NON_EACH(), Absyn.CREF_IDENT("extent",{}), SOME(Absyn.CLASSMOD({}, SOME(Absyn.ARRAY({Absyn.ARRAY({Absyn.INTEGER(-100),Absyn.INTEGER(-100)}	),Absyn.ARRAY({Absyn.INTEGER(100),Absyn.INTEGER(100)})})))),NONE())},NONE())),NONE())/*Create default*/;
+      Absyn.MODIFICATION(false, Absyn.NON_EACH(), Absyn.CREF_IDENT("coordinateSystem", {}), SOME(Absyn.CLASSMOD({Absyn.MODIFICATION(false, Absyn.NON_EACH(), Absyn.CREF_IDENT("extent",{}), SOME(Absyn.CLASSMOD({}, SOME(Absyn.ARRAY({Absyn.ARRAY({Absyn.INTEGER(-100),Absyn.INTEGER(-100)}  ),Absyn.ARRAY({Absyn.INTEGER(100),Absyn.INTEGER(100)})})))),NONE())},NONE())),NONE())/*Create default*/;
 
     case(Absyn.MODIFICATION(finalItem = fi, each_ = e, componentRef = Absyn.CREF_IDENT(name = "Coordsys", subscripts = s), modification = SOME(Absyn.CLASSMOD(elementArgLst = args, expOption =  ex   )), comment = com) :: rest,p)
 
@@ -1805,8 +1805,8 @@ end getCoordSysAnn;
 
 protected function transAnnLstToCalls " function: transAnnLstToCalls
 
-	Helper function to transformClassAnnList. Some graphical annotations
-	have abstract syntax as CALLS in the new standard
+  Helper function to transformClassAnnList. Some graphical annotations
+  have abstract syntax as CALLS in the new standard
 "
 
   input list<Absyn.ElementArg> inArgs;
@@ -1834,7 +1834,7 @@ algorithm
         c = addContext(context,"Line");
         argRes = transAnnLstToNamedArgs(args,c);
         {} = Util.listSelect1(argRes, "color",nameArgWithName);
-				restRes = transAnnLstToCalls(rest,context);
+    		restRes = transAnnLstToCalls(rest,context);
       then
         Absyn.CALL(Absyn.CREF_IDENT("Line",{}), Absyn.FUNCTIONARGS({},
         Absyn.NAMEDARG("color",Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(255)}))::argRes)) :: restRes;
@@ -1847,7 +1847,7 @@ algorithm
         true = isLinebasedGraphic(c);
         argRes = transAnnLstToNamedArgs(args,c);
         {} = Util.listSelect1(argRes, "lineColor",nameArgWithName);
-				restRes = transAnnLstToCalls(rest,context);
+    		restRes = transAnnLstToCalls(rest,context);
       then
         Absyn.CALL(Absyn.CREF_IDENT(n,{}), Absyn.FUNCTIONARGS({},
         Absyn.NAMEDARG("lineColor",Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(255)}))::argRes)) :: restRes;
@@ -1858,7 +1858,7 @@ algorithm
       equation
         c = addContext(context,n);
         argRes = transAnnLstToNamedArgs(args,c);
-				restRes = transAnnLstToCalls(rest,context);
+    		restRes = transAnnLstToCalls(rest,context);
 
       then
         Absyn.CALL(Absyn.CREF_IDENT(n,{}), Absyn.FUNCTIONARGS({},argRes)) :: restRes;
@@ -1890,8 +1890,8 @@ end nameArgWithName;
 
 protected function transAnnLstToNamedArgs " function: transAnnLstToNamedArgs
 
-	Helper function to transformClassAnnList. Some graphical annotations
-	have abstract syntax as Absyn.NamedArg in the new standard
+  Helper function to transformClassAnnList. Some graphical annotations
+  have abstract syntax as Absyn.NamedArg in the new standard
 "
 
   input list<Absyn.ElementArg> inArgs;
@@ -1925,7 +1925,7 @@ algorithm
 
         restRes = transAnnLstToNamedArgs(rest,context);
 
-      then Absyn.NAMEDARG("extent",Absyn.ARRAY({Absyn.ARRAY({x1,y1}	),Absyn.ARRAY({x2,y2})})) :: restRes;//res;
+      then Absyn.NAMEDARG("extent",Absyn.ARRAY({Absyn.ARRAY({x1,y1}  ),Absyn.ARRAY({x2,y2})})) :: restRes;//res;
 
     case(Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "style"), modification = SOME(Absyn.CLASSMOD(elementArgLst = args))) :: rest,context)
 
@@ -2017,7 +2017,7 @@ algorithm
         val = arrayGet(listArray(gradientMapList),x+1);
         restRes = transAnnLstToNamedArgs(rest,context);
 
-      then Absyn.NAMEDARG("fillPattern",Absyn.CREF(Absyn.CREF_QUAL("FillPattern", {},Absyn.CREF_IDENT(val, {}))))	:: restRes	;
+      then Absyn.NAMEDARG("fillPattern",Absyn.CREF(Absyn.CREF_QUAL("FillPattern", {},Absyn.CREF_IDENT(val, {}))))  :: restRes  ;
 
     case(Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "smooth"), modification = SOME(Absyn.CLASSMOD(expOption =  SOME(exp)   ))) :: rest,context)
 
@@ -2036,7 +2036,7 @@ algorithm
         val2 = arrayGet(listArray(arrows),2);
         restRes = transAnnLstToNamedArgs(rest,context);
 
-      then Absyn.NAMEDARG("arrow",Absyn.ARRAY({Absyn.CREF(Absyn.CREF_QUAL("Arrow", {},Absyn.CREF_IDENT(val1, {}))),Absyn.CREF(Absyn.CREF_QUAL("Arrow",{},Absyn.CREF_IDENT(val2,{})))})):: restRes		;
+      then Absyn.NAMEDARG("arrow",Absyn.ARRAY({Absyn.CREF(Absyn.CREF_QUAL("Arrow", {},Absyn.CREF_IDENT(val1, {}))),Absyn.CREF(Absyn.CREF_QUAL("Arrow",{},Absyn.CREF_IDENT(val2,{})))})):: restRes    ;
 
     case(Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "textStyle"), modification = SOME(Absyn.CLASSMOD( expOption =  SOME(exp)   ))) :: rest,context as ("Text" :: c))
 
@@ -2093,9 +2093,9 @@ end transAnnLstToNamedArgs;
 
 protected function cleanStyleAttrs "function: cleanStyleAttrs
 
-	Helperfunction to the transform functions. The old style attribute and it's
-	contents needs to be adjusted according to priorities before beeing transformed.
-	See also cleanStyleAttrs2.
+  Helperfunction to the transform functions. The old style attribute and it's
+  contents needs to be adjusted according to priorities before beeing transformed.
+  See also cleanStyleAttrs2.
 "
 
   input list<Absyn.ElementArg> inArgs;
@@ -2181,8 +2181,8 @@ end isLineGraphic;
 
 protected function cleanStyleAttrs2 "function: cleanStyleAttrs
 
-	Helperfunction to the transform functions. The old style attribute and it's
-	contents needs to be adjusted according to priorities before beeing transformed.
+  Helperfunction to the transform functions. The old style attribute and it's
+  contents needs to be adjusted according to priorities before beeing transformed.
 "
   input list<Absyn.ElementArg> inArgs;
   input list<Absyn.ElementArg > resultList;
@@ -2202,7 +2202,7 @@ algorithm
 
     case({},resultList,_) then resultList;
 
-    case((arg as Absyn.MODIFICATION(finalItem = fi, each_ = e, componentRef = Absyn.CREF_IDENT(name = "color", subscripts = s), modification = m, comment = com)) :: rest, resultList,context	)
+    case((arg as Absyn.MODIFICATION(finalItem = fi, each_ = e, componentRef = Absyn.CREF_IDENT(name = "color", subscripts = s), modification = m, comment = com)) :: rest, resultList,context  )
       equation
         resultList = Util.listAppendElt(arg,resultList);
         outList = cleanStyleAttrs2(rest,resultList,context);
@@ -2392,8 +2392,8 @@ end cleanStyleAttrs2;
 
 protected function insertFillPatternInList "function insertFillPatternInList
 
-	Helperfunction to cleanStyleAttrs. Inserts a fillPattern attribute in a list
-	of annotations.
+  Helperfunction to cleanStyleAttrs. Inserts a fillPattern attribute in a list
+  of annotations.
 "
 
   input list<Absyn.ElementArg> inArgs;
@@ -2412,8 +2412,8 @@ end insertFillPatternInList;
 
 protected function isGradientInList " function: isGradientInList
 
-	Helperfunction to cleanStyle attrs. Returns true if a Gradient is found in a list
-	of Absyn.ElementArg.
+  Helperfunction to cleanStyle attrs. Returns true if a Gradient is found in a list
+  of Absyn.ElementArg.
 "
   input list<Absyn.ElementArg> inArgs;
   output Boolean result;
@@ -2442,8 +2442,8 @@ end isGradientInList;
 
 protected function isFillPatternInList "function: isFillPatternInList
 
-	Helperfunction to cleanStyleAttrs. Returns true if a fillPattern attribute is
-	found in a list of Absyn.ElementArg.
+  Helperfunction to cleanStyleAttrs. Returns true if a fillPattern attribute is
+  found in a list of Absyn.ElementArg.
 "
 
   input list<Absyn.ElementArg> inArgs;
@@ -2473,8 +2473,8 @@ end isFillPatternInList;
 
 protected function removeFillPatternInList "function: removeFillPatternInList
 
-	Helperfunction to cleanStyleAttrs. Removes a fillPattern attribute if present in a list
-	of Absyn.ElementArg.
+  Helperfunction to cleanStyleAttrs. Removes a fillPattern attribute if present in a list
+  of Absyn.ElementArg.
 "
   input list<Absyn.ElementArg> inList;
   output list<Absyn.ElementArg> outList;
@@ -2504,8 +2504,8 @@ end removeFillPatternInList;
 
 protected function setDefaultFillColor "function: setDefaultFillColor
 
-	Helperfunction to cleanStyleAttrs. Sets a fillColor default value according to dymola
-	standard. Used in case of gradient beeing specified but no fillColor.
+  Helperfunction to cleanStyleAttrs. Sets a fillColor default value according to dymola
+  standard. Used in case of gradient beeing specified but no fillColor.
 "
 
   input list<Absyn.ElementArg> oldList;
@@ -2514,7 +2514,7 @@ protected function setDefaultFillColor "function: setDefaultFillColor
   output list<Absyn.ElementArg> oList;
   output list<Absyn.ElementArg> tList;
 algorithm
-  (oList,tList)	:= matchcontinue (oldList,transformedList)
+  (oList,tList)  := matchcontinue (oldList,transformedList)
     local
       list<Absyn.ElementArg> oLst,tLst;
 
@@ -2531,8 +2531,8 @@ end setDefaultFillColor;
 
 protected function isFillColorInList "function: isFillColorInList
 
-	Helperfunction to setDefaultFillColor. Returns true if a fillColor attribute is found
-	in a list of Absyn.ElementArg.
+  Helperfunction to setDefaultFillColor. Returns true if a fillColor attribute is found
+  in a list of Absyn.ElementArg.
 "
   input list<Absyn.ElementArg> inList;
   output Boolean outBoolean;
@@ -2552,7 +2552,7 @@ end isFillColorInList;
 
 
 protected function setDefaultLineInList "function: setDefaultLineinList
-	Helperfunction to cleanStyleAttrs. Sets the line annotation to defualt values.
+  Helperfunction to cleanStyleAttrs. Sets the line annotation to defualt values.
 "
   input list<Absyn.ElementArg> inList;
   output list<Absyn.ElementArg> outList;
@@ -2592,8 +2592,8 @@ end setDefaultLineInList;
 
 protected function getMappedColor "function: getMappedColor
 
-	Helperfunction during the transformation. Takes a old color representation as input
-	and returns the three RGB representations for that color.
+  Helperfunction during the transformation. Takes a old color representation as input
+  and returns the three RGB representations for that color.
 "
   input Integer inColor "color to be mapped";
   output Integer color1;
@@ -2603,7 +2603,7 @@ algorithm
   (color1,color2,color3) := match (inColor)
     local
       rgbColor rcol;
-      Integer	color;
+      Integer  color;
     case(color)
       equation
         rcol = arrayGet(listArray(colorMapList),color+1);
@@ -2651,7 +2651,7 @@ algorithm
     case(Absyn.UNARY(exp = Absyn.REAL(value = val)))
     then -.val;
   end matchcontinue;
-end getValueFromRealExp;	*/
+end getValueFromRealExp;  */
 
 protected function getValueFromExp
   input Absyn.Exp expr;

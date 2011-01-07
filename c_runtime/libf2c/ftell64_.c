@@ -11,10 +11,10 @@ unit_chk(Unit, who) integer Unit; char *who;
 unit_chk(integer Unit, char *who)
 #endif
 {
-	if (Unit >= MXUNIT || Unit < 0)
-		f__fatal(101, who);
-	return f__units[Unit].ufd;
-	}
+  if (Unit >= MXUNIT || Unit < 0)
+  	f__fatal(101, who);
+  return f__units[Unit].ufd;
+  }
 
  longint
 #ifdef KR_headers
@@ -23,9 +23,9 @@ ftell64_(Unit) integer *Unit;
 ftell64_(integer *Unit)
 #endif
 {
-	FILE *f;
-	return (f = unit_chk(*Unit, "ftell")) ? FTELL(f) : -1L;
-	}
+  FILE *f;
+  return (f = unit_chk(*Unit, "ftell")) ? FTELL(f) : -1L;
+  }
 
  int
 #ifdef KR_headers
@@ -34,19 +34,19 @@ fseek64_(Unit, offset, whence) integer *Unit, *whence; longint *offset;
 fseek64_(integer *Unit, longint *offset, integer *whence)
 #endif
 {
-	FILE *f;
-	int w = (int)*whence;
+  FILE *f;
+  int w = (int)*whence;
 #ifdef SEEK_SET
-	static int wohin[3] = { SEEK_SET, SEEK_CUR, SEEK_END };
+  static int wohin[3] = { SEEK_SET, SEEK_CUR, SEEK_END };
 #endif
-	if (w < 0 || w > 2)
-		w = 0;
+  if (w < 0 || w > 2)
+  	w = 0;
 #ifdef SEEK_SET
-	w = wohin[w];
+  w = wohin[w];
 #endif
-	return	!(f = unit_chk(*Unit, "fseek"))
-		|| FSEEK(f, (OFF_T)*offset, w) ? 1 : 0;
-	}
+  return	!(f = unit_chk(*Unit, "fseek"))
+  	|| FSEEK(f, (OFF_T)*offset, w) ? 1 : 0;
+  }
 #ifdef __cplusplus
 }
 #endif

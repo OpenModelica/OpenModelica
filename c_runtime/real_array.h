@@ -95,14 +95,14 @@ void print_real_array(real_array_t* source);
 
 */
 void indexed_assign_real_array(real_array_t* source,
-			       real_array_t* dest,
-			       index_spec_t* spec);
+  		       real_array_t* dest,
+  		       index_spec_t* spec);
 void simple_indexed_assign_real_array1(real_array_t* source,
-				       int,
-				       real_array_t* dest);
+  			       int,
+  			       real_array_t* dest);
 void simple_indexed_assign_real_array2(real_array_t* source,
-				       int, int,
-				       real_array_t* dest);
+  			       int, int,
+  			       real_array_t* dest);
 
 /*
 

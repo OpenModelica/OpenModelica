@@ -44,7 +44,7 @@ algorithm
 
    case(cache,env,DAE.DAE(elementLst=elts)) equation
      /* TODO: This is very unefficient. It increases instantiationtime by factor 2 for
-    	 instantiation of largeTests/TestNandTotal.mo */
+       instantiation of largeTests/TestNandTotal.mo */
        paths = Util.listListUnion(Util.listMap(elts,DAEUtil.getClassList));
        du = Util.listListUnion(Util.listMap1(paths,retrieveUnitsFromEnv,(cache,env)));
        registerUnitWeightDefineunits(du);

@@ -31,7 +31,7 @@
 
 package ExpressionSolve
 "
-  file:	       ExpressionSolve.mo
+  file:         ExpressionSolve.mo
   package:     ExpressionSolve
   description: ExpressionSolve
 

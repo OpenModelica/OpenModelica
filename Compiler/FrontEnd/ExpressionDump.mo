@@ -31,7 +31,7 @@
 
 package ExpressionDump
 "
-  file:	       ExpressionDump.mo
+  file:         ExpressionDump.mo
   package:     ExpressionDump
   description: ExpressionDump
 
@@ -492,9 +492,9 @@ end printExpListStr;
 // stefan
 public function printExpListStrNoSpace
 "function: printExpListStrNoSpace
-	same as printExpListStr, but the string will not have any spaces or commas between expressions"
-	input list<DAE.Exp> expl;
-	output String res;
+  same as printExpListStr, but the string will not have any spaces or commas between expressions"
+  input list<DAE.Exp> expl;
+  output String res;
 algorithm
   res := stringAppendList(Util.listMap(expl,printExpStr));
 end printExpListStrNoSpace;
@@ -2165,17 +2165,17 @@ public function binopPriority
   Returns a priority number for each operator.
   Used to determine when parenthesis in expressions is required.
   Priorities:
-    and, or		10
-    not		11
-    <, >, =, != etc.	21
-    bin +		32
-    bin -		33
-    			35
-    /			36
-    unary +, unary -	37
-    ^			38
-    :			41
-    {}		51
+    and, or    10
+    not    11
+    <, >, =, != etc.  21
+    bin +    32
+    bin -    33
+        	35
+    /    	36
+    unary +, unary -  37
+    ^    	38
+    :    	41
+    {}    51
 
   LS: Changed precedence for unary +-
    which must be higher than binary operators but lower than power

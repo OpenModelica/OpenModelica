@@ -301,20 +301,20 @@ void indexed_assign_integer_array(integer_array_t* source,
     idx_size = size_alloc(dest_spec->ndims);
 
     for (i = 0; i < dest_spec->ndims; ++i) {
-	idx_vec1[i] = 0;
+  idx_vec1[i] = 0;
 
-	if (dest_spec->index[i])
+  if (dest_spec->index[i])
             idx_size[i] = imax(dest_spec->dim_size[i],1);
-	else
+  else
             idx_size[i] = dest->dim_size[i];
     }
 
     quit = 0;
     while(1) {
-	for (i = 0,j=0; i < dest_spec->ndims; ++i) {
-	    if (dest_spec->dim_size[i] != 0) {
-		idx_vec2[j] = idx_vec1[i];
-		++j;
+  for (i = 0,j=0; i < dest_spec->ndims; ++i) {
+      if (dest_spec->dim_size[i] != 0) {
+  	idx_vec2[j] = idx_vec1[i];
+  	++j;
             }
         }
 
@@ -323,9 +323,9 @@ void indexed_assign_integer_array(integer_array_t* source,
                     integer_get(source, calc_base_index(source->ndims, idx_vec2,
                                                         source)));
 
-	quit = next_index(dest_spec->ndims, idx_vec1, idx_size);
+  quit = next_index(dest_spec->ndims, idx_vec1, idx_size);
 
-	if (quit) break;
+  if (quit) break;
     }
 
     restore_memory_state(mem_state);
@@ -372,30 +372,30 @@ void index_integer_array(integer_array_t* source,
 
     for (i = 0; i < source->ndims; ++i) idx_vec1[i] = 0;
     for (i = 0; i < source_spec->ndims; ++i) {
-	if (source_spec->index[i])
+  if (source_spec->index[i])
             idx_size[i] = imax(source_spec->dim_size[i],1);
-	else
+  else
             idx_size[i] = source->dim_size[i];
     }
 
     quit = 0;
     while(1) {
-	for (i = 0, j = 0; i < source->ndims; ++i) {
+  for (i = 0, j = 0; i < source->ndims; ++i) {
             if ((source_spec->index_type[i] == 'W')
                 ||
                 (source_spec->index_type[i] == 'A')) {
                 idx_vec2[j] = idx_vec1[i];
                 ++j;
             }
-	}
+  }
 
         integer_set(dest, calc_base_index(dest->ndims, idx_vec2, dest),
                     integer_get(source,
                                 calc_base_index_spec(source->ndims, idx_vec1,
                                                      source, source_spec)));
 
-	quit = next_index(source->ndims, idx_vec1, idx_size);
-	if (quit) break;
+  quit = next_index(source->ndims, idx_vec1, idx_size);
+  if (quit) break;
     }
 
     restore_memory_state(mem_state);
@@ -413,8 +413,8 @@ void index_integer_array(integer_array_t* source,
  */
 
 void index_alloc_integer_array(integer_array_t* source,
-			       index_spec_t* source_spec,
-			       integer_array_t* dest)
+  		       index_spec_t* source_spec,
+  		       integer_array_t* dest)
 {
     int i;
     int j;
@@ -436,12 +436,12 @@ void index_alloc_integer_array(integer_array_t* source,
     dest->dim_size = size_alloc(dest->ndims);
 
     for (i = 0,j = 0; i < dest->ndims; ++i) {
-  	while (source_spec->index_type[i+j] == 'S') ++j; /* Skip scalars */
-	if (source_spec->index_type[i+j] == 'W') { /*take whole dimension from source*/
+    while (source_spec->index_type[i+j] == 'S') ++j; /* Skip scalars */
+  if (source_spec->index_type[i+j] == 'W') { /*take whole dimension from source*/
             dest->dim_size[i]=source->dim_size[i+j];
-	} else if (source_spec->index_type[i+j] == 'A') { /* Take dimension size from splice*/
+  } else if (source_spec->index_type[i+j] == 'A') { /* Take dimension size from splice*/
             dest->dim_size[i]=source_spec->dim_size[i+j];
-	}
+  }
     }
 
     alloc_integer_array_data(dest);
@@ -798,9 +798,9 @@ void mul_integer_matrix_product(integer_array_t* a,integer_array_t* b,integer_ar
             tmp = 0;
             for (k = 0; k < k_size; ++k) {
                 tmp += integer_get(a, i*k_size+k)*integer_get(b, k*j_size+j);
-	    }
+      }
             integer_set(dest, i*j_size+j, tmp);
-	}
+  }
     }
 }
 
@@ -823,7 +823,7 @@ void mul_integer_matrix_vector(integer_array_t* a, integer_array_t* b,integer_ar
         tmp = 0;
         for (j = 0; j < j_size; ++j) {
             tmp += integer_get(a, i*j_size+j)*integer_get(b, j);
-	}
+  }
         integer_set(dest, i, tmp);
     }
 }
@@ -848,7 +848,7 @@ void mul_integer_vector_matrix(integer_array_t* a, integer_array_t* b,integer_ar
         tmp = 0;
         for (j = 0; j < j_size; ++j) {
             tmp += integer_get(a, j)*integer_get(b, j*j_size+i);
-	}
+  }
         integer_set(dest, i, tmp);
     }
 }
@@ -920,16 +920,16 @@ void exp_integer_array(integer_array_t* a, modelica_integer n, integer_array_t* 
         if (n==1) {
             clone_integer_array_spec(a,dest);
             copy_integer_array_data(a,dest);
-	} else {
+  } else {
             integer_array_t* tmp = 0;
             clone_integer_array_spec(a,tmp);
             copy_integer_array_data(a,tmp);
             for ( i = 1; i < n; ++i) {
                 mul_integer_matrix_product(a,tmp,dest);
                 copy_integer_array_data(dest,tmp);
-	    }
+      }
             free_integer_array_data(tmp);
-	}
+  }
     }
 }
 
@@ -1126,7 +1126,7 @@ void outer_product_integer_array(integer_array_t* v1,integer_array_t* v2,
         for (j = 0; i < number_of_elements_b; ++j) {
             integer_set(dest, i*number_of_elements_b + j,
                         integer_get(v1, i)*integer_get(v2, j));
-	}
+  }
     }
 }
 
@@ -1144,7 +1144,7 @@ void identity_integer_array(int n, integer_array_t* dest)
     for (i = 0; i < n; ++i) {
         for ( j = 0; j < n; ++j) {
             integer_set(dest, i*n+j, i == j ? 1 : 0);
-	}
+  }
     }
 }
 
@@ -1213,8 +1213,8 @@ modelica_integer max_integer_array(integer_array_t* a)
         for (i = 1; i < nr_of_elements; ++i) {
             if (max_element < integer_get(a, i)) {
                 max_element = integer_get(a, i);
-	    }
-	}
+      }
+  }
     }
 
     return max_element;
@@ -1235,8 +1235,8 @@ modelica_integer min_integer_array(integer_array_t* a)
         for (i = 1; i < nr_of_elements; ++i) {
             if (min_element > integer_get(a, i)) {
                 min_element = integer_get(a, i);
-	    }
-	}
+      }
+  }
     }
 
     return min_element;
@@ -1291,11 +1291,11 @@ void symmetric_integer_array(integer_array_t* a,integer_array_t* dest)
             if (i <= j) {
                 integer_set(dest, i*nr_of_elements + j,
                             integer_get(a, i*nr_of_elements + j));
-	    } else {
+      } else {
                 integer_set(dest, i*nr_of_elements + j,
                             integer_get(a, j*nr_of_elements + i));
-	    }
-	}
+      }
+  }
     }
 }
 

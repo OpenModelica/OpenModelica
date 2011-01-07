@@ -56,7 +56,7 @@ void simulation_result_plt::emit()
 {
   storeExtrapolationData();
   if (actualPoints < maxPoints) {
-	  if(!isInteractiveSimulation())add_result(simulationResultData,&actualPoints); //used for non-interactive simulation
+    if(!isInteractiveSimulation())add_result(simulationResultData,&actualPoints); //used for non-interactive simulation
     return;
   }
   else {
@@ -88,27 +88,27 @@ void simulation_result_plt::add_result(double *data, long *actualPoints)
   ss << (data[currentPos++] = globalData->timeValue) << "\n";
   // .. then states..
   for (int i = 0; i < globalData->nStates; i++, currentPos++) {
- 	ss << globalData->statesNames[i].name << "\n";
+   ss << globalData->statesNames[i].name << "\n";
     ss << (data[currentPos] = globalData->states[i]) << "\n";
   }
   // ..followed by derivatives..
   for (int i = 0; i < globalData->nStates; i++, currentPos++) {
-  	ss << globalData->stateDerivativesNames[i].name << "\n";
+    ss << globalData->stateDerivativesNames[i].name << "\n";
     ss << (data[currentPos] = globalData->statesDerivatives[i]) << "\n";
   }
   // .. and last alg. vars.
   for (int i = 0; i < globalData->nAlgebraic; i++, currentPos++) {
-  	ss << globalData->algebraicsNames[i].name << "\n";
+    ss << globalData->algebraicsNames[i].name << "\n";
     ss << (data[currentPos] = globalData->algebraics[i]) << "\n";
   }
   // .. and int alg. vars.
   for (int i = 0; i < globalData->intVariables.nAlgebraic; i++, currentPos++) {
-  	ss << globalData->int_alg_names[i].name << "\n";
+    ss << globalData->int_alg_names[i].name << "\n";
     ss << (data[currentPos] = (double) globalData->intVariables.algebraics[i]) << "\n";
   }
   // .. and bool alg. vars.
   for (int i = 0; i < globalData->boolVariables.nAlgebraic; i++, currentPos++) {
-  	ss << globalData->bool_alg_names[i].name << "\n";
+    ss << globalData->bool_alg_names[i].name << "\n";
     ss << (data[currentPos] = (double) globalData->boolVariables.algebraics[i]) << "\n";
   }
 
@@ -121,7 +121,7 @@ void simulation_result_plt::add_result(double *data, long *actualPoints)
   (data[currentPos++] = globalData->timeValue);
   // .. then states..
   for (int i = 0; i < globalData->nStates; i++, currentPos++) {
- 	(data[currentPos] = globalData->states[i]);
+   (data[currentPos] = globalData->states[i]);
   }
   // ..followed by derivatives..
   for (int i = 0; i < globalData->nStates; i++, currentPos++) {
@@ -133,11 +133,11 @@ void simulation_result_plt::add_result(double *data, long *actualPoints)
   }
   // .. and int alg. vars.
   for (int i = 0; i < globalData->intVariables.nAlgebraic; i++, currentPos++) {
-	(data[currentPos] = (double) globalData->intVariables.algebraics[i]);
+  (data[currentPos] = (double) globalData->intVariables.algebraics[i]);
   }
   // .. and bool alg. vars.
   for (int i = 0; i < globalData->boolVariables.nAlgebraic; i++, currentPos++) {
-	(data[currentPos] = (double) globalData->boolVariables.algebraics[i]);
+  (data[currentPos] = (double) globalData->boolVariables.algebraics[i]);
   }
 
 
@@ -149,18 +149,18 @@ void simulation_result_plt::add_result(double *data, long *actualPoints)
 
 simulation_result_plt::simulation_result_plt(const char* filename, long numpoints) : simulation_result(filename,numpoints)
 {
-	/*
-	 * Re-Initialization is important because the variables are global and used in every solving step
-	 */
-	simulationResultData = 0;
-	currentPos = 0;
-	actualPoints = 0; // the number of actual points saved
-	dataSize = 0;
-	maxPoints = numpoints;
+  /*
+   * Re-Initialization is important because the variables are global and used in every solving step
+   */
+  simulationResultData = 0;
+  currentPos = 0;
+  actualPoints = 0; // the number of actual points saved
+  dataSize = 0;
+  maxPoints = numpoints;
 
   if (numpoints < 0 ) { // Automatic number of output steps
-  	cerr << "Warning automatic output steps not supported in OpenModelica yet." << endl;
-  	cerr << "Attempt to solve this by allocating large amount of result data." << endl;
+    cerr << "Warning automatic output steps not supported in OpenModelica yet." << endl;
+    cerr << "Attempt to solve this by allocating large amount of result data." << endl;
     numpoints = abs(numpoints);
     maxPoints = abs(numpoints);
   }
@@ -175,18 +175,18 @@ simulation_result_plt::simulation_result_plt(const char* filename, long numpoint
   char* enabled = getenv("enableSendData");
   if(enabled != NULL)
   {
-  	Static::enabled_ = !strcmp(enabled, "1");
+    Static::enabled_ = !strcmp(enabled, "1");
   }
   if(Static::enabled())
-  	initSendData(	globalData->nStates,
-					globalData->nAlgebraic,
-					globalData->intVariables.nAlgebraic,
-					globalData->boolVariables.nAlgebraic,
-					globalData->statesNames,
-					globalData->stateDerivativesNames,
-					globalData->algebraicsNames,
-					globalData->int_alg_names,
-					globalData->bool_alg_names);
+    initSendData(	globalData->nStates,
+  				globalData->nAlgebraic,
+  				globalData->intVariables.nAlgebraic,
+  				globalData->boolVariables.nAlgebraic,
+  				globalData->statesNames,
+  				globalData->stateDerivativesNames,
+  				globalData->algebraicsNames,
+  				globalData->int_alg_names,
+  				globalData->bool_alg_names);
 #endif // CONFIG_WITH_SENDDATA
 }
 
@@ -197,7 +197,7 @@ simulation_result_plt::simulation_result_plt(const char* filename, long numpoint
  * memory for the simulationResultData all the time
  */
 void simulation_result_plt::deallocResult(){
-	free(simulationResultData);
+  free(simulationResultData);
 }
 
 void simulation_result_plt::printPltLine(FILE* f, double time, double val) {
@@ -219,7 +219,7 @@ simulation_result_plt::~simulation_result_plt()
 {
 #ifdef CONFIG_WITH_SENDDATA
   if(Static::enabled())
-  	closeSendData();
+    closeSendData();
 #endif
 
   FILE* f = fopen(filename, "w");

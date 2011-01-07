@@ -71,8 +71,8 @@ extern "C" {
 
 extern void OptManagerImpl__dumpOptions()
 {
-	cout << endl << "Option mappings, (key, value):" <<endl;
-	for(stringMap::const_iterator it = options.begin(); it != options.end(); ++it)
+  cout << endl << "Option mappings, (key, value):" <<endl;
+  for(stringMap::const_iterator it = options.begin(); it != options.end(); ++it)
   {
     cout <<"(" << it->first;
     cout << " ==> " << it->second << ")"<< endl;
@@ -82,28 +82,28 @@ extern void OptManagerImpl__dumpOptions()
 
 int OptManagerImpl__setOption(const char *strEntry, int strValue)
 {
-	stringMap::iterator iter = options.begin();
-	iter = options.find(strEntry);
-	if( iter != options.end() ){
-		options[strEntry] = strValue;
-		return 0;
-	}
-	else{
-		cout << "Error, option " << strEntry << " is not defined in options-map. Every option needs to be defined at program start." << endl;
-		return 1;
-	}
+  stringMap::iterator iter = options.begin();
+  iter = options.find(strEntry);
+  if( iter != options.end() ){
+  	options[strEntry] = strValue;
+  	return 0;
+  }
+  else{
+  	cout << "Error, option " << strEntry << " is not defined in options-map. Every option needs to be defined at program start." << endl;
+  	return 1;
+  }
 }
 
 int OptManagerImpl__getOption(const char *strEntry)
 {
-	stringMap::iterator iter = options.begin();
-	iter = options.find(strEntry);
-	if( iter != options.end() ) {
-		return iter->second;
-	} else {
-		cout << "Error, option " << strEntry << " is not defined in options-map" << endl;
-		return -1;
-	}
+  stringMap::iterator iter = options.begin();
+  iter = options.find(strEntry);
+  if( iter != options.end() ) {
+  	return iter->second;
+  } else {
+  	cout << "Error, option " << strEntry << " is not defined in options-map" << endl;
+  	return -1;
+  }
 }
 
 } // extern "C"

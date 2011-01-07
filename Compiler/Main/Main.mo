@@ -134,7 +134,7 @@ algorithm
       String str_1,str;
       Boolean res;
     case (str) /* Need to check for a whitespace after as well to get the keyword,
-	e.g typeOf function would be taken as a type definition otherwise */
+  e.g typeOf function would be taken as a type definition otherwise */
       equation
         true = Util.strncmp(" ", str, 1);
         clst = stringListStringChar(str);
@@ -144,7 +144,7 @@ algorithm
       then
         res;
     case str /* Need to check for a whitespace after as well to get the keyword,
-	e.g typeOf function would be taken as a type definition otherwise */
+  e.g typeOf function would be taken as a type definition otherwise */
       equation
         false = Util.strncmp("end ", str, 4);
         false = Util.strncmp("type ", str, 5);
@@ -213,8 +213,8 @@ algorithm
       then
         (false,"Ok\n",isymb);
     /* Add a class or function to the interactive symbol table.
-	   * If it is a function, type check it.
-	   */
+     * If it is a function, type check it.
+     */
     case (str,
     (isymb as Interactive.SYMBOLTABLE(
       ast = iprog,depends=aDep,explodedAst = a,instClsLst = b,
@@ -804,8 +804,8 @@ algorithm
         **/
         // Debug.fcall("eqnsizedump",BackendDump.dumpComponentSizes,comps);
         Debug.fcall("bltdump", BackendDump.dumpComponents, comps);
-				str = BackendDump.dumpComponentsGraphStr(BackendDAEUtil.systemSize(dlow_1),m,mT,v1,v2);
-				Debug.fcall("dumpcompgraph",print,str);
+    		str = BackendDump.dumpComponentsGraphStr(BackendDAEUtil.systemSize(dlow_1),m,mT,v1,v2);
+    		Debug.fcall("dumpcompgraph",print,str);
         modpar(dlow_1, v1, v2, comps);
         Debug.fcall("execstat",print, "*** Main -> To simcodegen at time: " +& realString(clock()) +& "\n" );
         simcodegen(cache,env,classname, p, ap, daeimpl, dlow_1, v1, v2, m, mT, comps);

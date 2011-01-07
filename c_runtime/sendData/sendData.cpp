@@ -74,7 +74,7 @@
 
 Connection::Connection()
 {
-  //	app = 0;
+  //  app = 0;
   socket = 0;
 
 }
@@ -100,7 +100,7 @@ const char* Connection::getExternalViewerFileName()
   const char* omhome = getenv("OPENMODELICAHOME");
   if (omhome)
     path = string(omhome) + "/bin/";
-	path += "OMPlotWindow";
+  path += "OMPlotWindow";
 #ifdef WIN32
   path += ".exe";
 #elif defined(__APPLE_CC__)
@@ -213,22 +213,22 @@ QTcpSocket* Connection::newConnection(bool graphics)
 
 bool Static::connect(bool graphics)
 {
-  //	ofstream ofs("uu3u.txt", ios::app);
-  //	ofs << 1 << endl;
+  //  ofstream ofs("uu3u.txt", ios::app);
+  //  ofs << 1 << endl;
 
   if(graphics)
   {
-    //	ofs << 2 << endl;
+    //  ofs << 2 << endl;
     if(socket2.state() != QAbstractSocket::UnconnectedState)
     {
-      //		ofs << 3 << endl;
+      //  	ofs << 3 << endl;
       return true;
-      //			socket2.disconnectFromHost();
-      //			socket2.waitForDisconnected(1000);
+      //  		socket2.disconnectFromHost();
+      //  		socket2.waitForDisconnected(1000);
     }
 
     socket2.connectToHost(QHostAddress::LocalHost, Static::port2);
-    //	ofs << 4 << endl;
+    //  ofs << 4 << endl;
 
     if(socket2.waitForConnected(5000))
       return true;
@@ -247,18 +247,18 @@ bool Static::connect(bool graphics)
           break;
       }
     }
-    //	ofs << 5 << endl;
+    //  ofs << 5 << endl;
     return false;
-    //	ofs << 1 << endl;
+    //  ofs << 1 << endl;
   }
   else
   {
-    //	ofs << 6 << endl;
+    //  ofs << 6 << endl;
     if(socket1.state() != QAbstractSocket::UnconnectedState)
     {
       return true;
-      //			socket1.disconnectFromHost();
-      //			socket1.waitForDisconnected(1000);
+      //  		socket1.disconnectFromHost();
+      //  		socket1.waitForDisconnected(1000);
     }
 
     socket1.connectToHost(QHostAddress::LocalHost, Static::port1);
@@ -348,8 +348,8 @@ bool ellipse(double x0, double y0, double x1, double y1, const char* color, int 
   int fillColorB = fillColorRGB[2];
   */
 
-  //	Connection c;
-  //	QTcpSocket* socket = c.newConnection();
+  //  Connection c;
+  //  QTcpSocket* socket = c.newConnection();
 
 
 
@@ -371,9 +371,9 @@ bool ellipse(double x0, double y0, double x1, double y1, const char* color, int 
 
     out.device()->seek(0);
     out << (quint32)(block.size() - sizeof(quint32));
-    //		socket->write(block);
-    //		socket->flush();
-    //		socket->waitForBytesWritten(5000);
+    //  	socket->write(block);
+    //  	socket->flush();
+    //  	socket->waitForBytesWritten(5000);
     Static::socket2.write(block);
     Static::socket2.flush();
     Static::socket2.waitForBytesWritten(-1);
@@ -390,8 +390,8 @@ bool ellipse(double x0, double y0, double x1, double y1, const char* color, int 
 
 bool rect(double x0, double y0, double x1, double y1, const char* color, int colorR, int colorG, int colorB, const char* fillColor, int fillColorR, int fillColorG, int fillColorB)
 {
-  //	Connection c;
-  //	QTcpSocket* socket = c.newConnection();
+  //  Connection c;
+  //  QTcpSocket* socket = c.newConnection();
   if(Static::connect(true))
   {
     QByteArray block;
@@ -415,9 +415,9 @@ bool rect(double x0, double y0, double x1, double y1, const char* color, int col
     Static::socket2.flush();
     Static::socket2.waitForBytesWritten(-1);
 
-    //		socket->write(block);
-    //		socket->flush();
-    //		socket->waitForBytesWritten(-1);
+    //  	socket->write(block);
+    //  	socket->flush();
+    //  	socket->waitForBytesWritten(-1);
     /*
     socket->disconnectFromHost();
     if(socket->state() == QAbstractSocket::ConnectedState)
@@ -430,8 +430,8 @@ bool rect(double x0, double y0, double x1, double y1, const char* color, int col
 
 bool line(double x0, double y0, double x1, double y1, const char* color, int colorR, int colorG, int colorB, const char* fillColor, int fillColorR, int fillColorG, int fillColorB)
 {
-  //	Connection c;
-  //	QTcpSocket* socket = c.newConnection();
+  //  Connection c;
+  //  QTcpSocket* socket = c.newConnection();
   if(Static::connect(true))
   {
     QByteArray block;
@@ -472,8 +472,8 @@ bool line(double x0, double y0, double x1, double y1, const char* color, int col
 
 bool hold(int status)
 {
-  //	Connection c;
-  //	QTcpSocket* socket = c.newConnection();
+  //  Connection c;
+  //  QTcpSocket* socket = c.newConnection();
   if(Static::connect(true))
   {
     QByteArray block;
@@ -523,13 +523,13 @@ bool pltTable(double* table, size_t r, size_t c) //, const char* legend, int siz
 {
 
   const char* legend[] = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"};
-  //	size_t size = 3;
+  //  size_t size = 3;
   size_t size = c;
 
-  //	Connection C;
-  //	QTcpSocket* socket = C.newConnection();
-  //	if(!socket)
-  //		return false;
+  //  Connection C;
+  //  QTcpSocket* socket = C.newConnection();
+  //  if(!socket)
+  //  	return false;
 
   if(Static::connect(false))
   {
@@ -548,9 +548,9 @@ bool pltTable(double* table, size_t r, size_t c) //, const char* legend, int siz
 
     block.clear();
 
-    //	QString title = QString("title");
-    //	QString xLabel = QString("xlabel");
-    //	QString yLabel = QString("ylabel");
+    //  QString title = QString("title");
+    //  QString xLabel = QString("xlabel");
+    //  QString yLabel = QString("ylabel");
     bool legend_ = true;
     bool grid = true;
     bool logX = false;
@@ -567,7 +567,7 @@ bool pltTable(double* table, size_t r, size_t c) //, const char* legend, int siz
     out << QString("yLabel");
     out << (int)legend_;
     out << (int)grid;
-    //	out << xMin << xMax << yMin << yMax;
+    //  out << xMin << xMax << yMin << yMax;
     out << (int)logX;
     out << (int)logY;
     out << QString(interpolation5);
@@ -627,12 +627,12 @@ bool pltTable(double* table, size_t r, size_t c) //, const char* legend, int siz
     Static::socket1.disconnectFromHost();
     if(Static::socket1.state() == QAbstractSocket::ConnectedState)
       Static::socket1.waitForDisconnected(-1);
-    //	if(socket)
-    //		delete socket;
+    //  if(socket)
+    //  	delete socket;
 
     return true;
   }
-  //	return true;
+  //  return true;
   return false;
 }
 
@@ -710,9 +710,9 @@ void initSendData(int variableCount1, int variableCount2, int variableCount3, in
 
   //*************
 
-  //	QByteArray block;
-  //	QDataStream out(&block, QIODevice::WriteOnly);
-  //	out.setVersion(QDataStream::Qt_4_2);
+  //  QByteArray block;
+  //  QDataStream out(&block, QIODevice::WriteOnly);
+  //  out.setVersion(QDataStream::Qt_4_2);
 
   *Static::out << (quint32)0;
   *Static::out << QString("simulationDataStream-1.2");
@@ -749,7 +749,7 @@ void initSendData(int variableCount1, int variableCount2, int variableCount3, in
   */
   Static::out->device()->seek(0);
   *Static::out << (quint32)0;
-  //	qint64 pos = Static::out->device()->pos();
+  //  qint64 pos = Static::out->device()->pos();
 
 
   *Static::out << (quint32)25;//(2*variableCount1 + variableCount2);
@@ -761,9 +761,9 @@ void initSendData(int variableCount1, int variableCount2, int variableCount3, in
   {
     if(!Static::filterVariables->empty() && !Static::filterVariables->contains(QString(statesNames[i].name)))
       continue;
-    //		cout << statesNames[i] << endl;
+    //  	cout << statesNames[i] << endl;
     *Static::out << QString(statesNames[i].name);
-    //		*Static::out << QColor(Qt::color0);
+    //  	*Static::out << QColor(Qt::color0);
     ++N;
   }
 
@@ -773,7 +773,7 @@ void initSendData(int variableCount1, int variableCount2, int variableCount3, in
     if(!Static::filterVariables->empty() && !Static::filterVariables->contains(QString(stateDerivativesNames[i].name)))
       continue;
     *Static::out << QString(stateDerivativesNames[i].name);
-    //		*Static::out << QColor(Qt::color0);
+    //  	*Static::out << QColor(Qt::color0);
     ++N;
   }
 
@@ -782,7 +782,7 @@ void initSendData(int variableCount1, int variableCount2, int variableCount3, in
     if(!Static::filterVariables->empty() && !Static::filterVariables->contains(QString(algebraicsNames[i].name)))
       continue;
     *Static::out << QString(algebraicsNames[i].name);
-    //		*Static::out << QColor(Qt::color0);
+    //  	*Static::out << QColor(Qt::color0);
     ++N;
   }
 
@@ -791,7 +791,7 @@ void initSendData(int variableCount1, int variableCount2, int variableCount3, in
     if(!Static::filterVariables->empty() && !Static::filterVariables->contains(QString(intAlgebraicsNames[i].name)))
       continue;
     *Static::out << QString(intAlgebraicsNames[i].name);
-    //		*Static::out << QColor(Qt::color0);
+    //  	*Static::out << QColor(Qt::color0);
     ++N;
   }
 
@@ -800,10 +800,10 @@ void initSendData(int variableCount1, int variableCount2, int variableCount3, in
     if(!Static::filterVariables->empty() && !Static::filterVariables->contains(QString(boolAlgebraicsNames[i].name)))
       continue;
     *Static::out << QString(boolAlgebraicsNames[i].name);
-    //		*Static::out << QColor(Qt::color0);
+    //  	*Static::out << QColor(Qt::color0);
     ++N;
   }
-  //	Static::out->device()->seek(pos);
+  //  Static::out->device()->seek(pos);
   Static::out->device()->seek(0);
   *Static::out << (quint32)(Static::block->size() - sizeof(quint32));
   *Static::out << (quint32)N;
@@ -837,7 +837,7 @@ void sendPacket(const char* data)
     *Static::out << (qreal)data2;
   }
 
-  //	cout << "sendPacket:" << endl << data << endl << endl;
+  //  cout << "sendPacket:" << endl << data << endl << endl;
 
   Static::out->device()->seek(0);
   *Static::out << (quint32)(Static::block->size() - sizeof(quint32));
@@ -849,7 +849,7 @@ void sendPacket(const char* data)
 
 void closeSendData()
 {
-  //	cout << "closeSendData" << endl;
+  //  cout << "closeSendData" << endl;
 
   Static::socket->flush();
   Static::socket->waitForBytesWritten(-1);
@@ -970,7 +970,7 @@ void emulateStreamData(const char* data, const char* title, const char* xLabel, 
   out << QString(yLabel);
   out << (int)legend;
   out << (int)grid;
-  //	out << xMin << xMax << yMin << yMax;
+  //  out << xMin << xMax << yMin << yMax;
   out << (int)logX;
   out << (int)logY;
   out << QString(interpolation5);
@@ -1268,12 +1268,12 @@ void emulateStreamData2(const char *info, const char* data, int port)
   out.device()->seek(0);
   out << (quint32)0;
   out << info_str;
-  //	cout << "var size: " << variableNames.size() << endl;
+  //  cout << "var size: " << variableNames.size() << endl;
   out << (quint32)variableNames.size();
 
   for(unsigned int i = 0; i < variableNames.size(); ++i)
   {
-    //		cout << "name: " << variableNames[i].toStdString() << endl;
+    //  	cout << "name: " << variableNames[i].toStdString() << endl;
     out << variableNames[i];
   }
 
@@ -1286,7 +1286,7 @@ void emulateStreamData2(const char *info, const char* data, int port)
 
   block.clear();
 
-  //	cout << "varvals[0]->size = " << variableValues[0]->size() << endl;
+  //  cout << "varvals[0]->size = " << variableValues[0]->size() << endl;
 
   for(quint32 i = 0; i < variableValues[0]->size(); ++i)
   {
@@ -1308,7 +1308,7 @@ void emulateStreamData2(const char *info, const char* data, int port)
     socket->waitForBytesWritten(-1);
 
     block.clear();
-    //		cout << "i: " << i << endl;
+    //  	cout << "i: " << i << endl;
     //_sleep(500);
     if(!(i%100))
       socket->flush();
@@ -1348,7 +1348,7 @@ void emulateStreamData2(const char *info, const char* data, int port)
 
   for(quint32 j = 0; j < variableNames.size(); ++j)
   {
-  //			cout << variableNames[j].toStdString() << ": " << (*variableValues[j])[i] << endl;
+  //  		cout << variableNames[j].toStdString() << ": " << (*variableValues[j])[i] << endl;
   out << variableNames[j];
   out << (*variableValues[j])[i];
   cout << ".";

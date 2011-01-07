@@ -30,7 +30,7 @@
  */
 
 package TaskGraph
-" file:	       TaskGraph.mo
+" file:         TaskGraph.mo
   package:     TaskGraph
   description: Building of task graphs from expressions, and equation systems.
 
@@ -332,12 +332,12 @@ algorithm
         true = BackendVariable.isNonStateVar(v);
         varexp = Expression.crefExp(cr) "print \"Solving for non-states\\n\" &" ;
         (expr,{}) = ExpressionSolve.solve(e1, e2, varexp);
-        buildAssignment(cr, expr, origname_str) "	Expression.print_exp_str e1 => e1s &
-	Expression.print_exp_str e2 => e2s &
-	print \"Equation \" & print e1s & print \" = \" & print e2s &
-	print \" solved for \" & Expression.print_exp_str varexp => s &
-	print s & print \" giving \" &
-	Expression.print_exp_str expr => s2 & print s2 & print \"\\n\" &" ;
+        buildAssignment(cr, expr, origname_str) "  Expression.print_exp_str e1 => e1s &
+  Expression.print_exp_str e2 => e2s &
+  print \"Equation \" & print e1s & print \" = \" & print e2s &
+  print \" solved for \" & Expression.print_exp_str varexp => s &
+  print s & print \" giving \" &
+  Expression.print_exp_str expr => s2 & print s2 & print \"\\n\" &" ;
       then
         ();
     case (BackendDAE.DAE(orderedVars = vars,orderedEqs = eqns),ass1,ass2,e)
@@ -348,9 +348,9 @@ algorithm
         v_1 = i - 1 "i == variable no solved in this equation" ;
         varlst = BackendDAEUtil.varList(vars);
         BackendDAE.VAR(cr,BackendDAE.STATE(),_,_,_,_,_,indx,_,dae_var_attr,comment,flowPrefix,streamPrefix) = listNth(varlst, v_1);
-        indxs = intString(indx) "	print \"solving for state\\n\" &" ;
+        indxs = intString(indx) "  print \"solving for state\\n\" &" ;
         origname_str = ComponentReference.printComponentRefStr(cr);
-        name = ComponentReference.printComponentRefStr(cr) "	Util.string_append_list({\"xd{\",indxs,\"}\"}) => id &" ;
+        name = ComponentReference.printComponentRefStr(cr) "  Util.string_append_list({\"xd{\",indxs,\"}\"}) => id &" ;
         //c_name = Util.modelicaStringToCStr(name,true);
         c_name = name;
         //id = stringAppendList({BackendDAE.derivativeNamePrefix,c_name});
@@ -358,24 +358,24 @@ algorithm
         cr_1 = ComponentReference.makeCrefIdent(id,DAE.ET_REAL(),{});
         varexp = Expression.crefExp(cr_1);
         (expr,{}) = ExpressionSolve.solve(e1, e2, varexp);
-        buildAssignment(cr_1, expr, origname_str) "	Expression.print_exp_str e1 => e1s &
-	Expression.print_exp_str e2 => e2s &
-	print \"Equation \" & print e1s & print \" = \" & print e2s &
-	print \"solved for \" & Expression.print_exp_str varexp => s &
-	print s & print \"giving \" &
-	Expression.print_exp_str expr => s2 & print s2 & print \"\\n\" &" ;
+        buildAssignment(cr_1, expr, origname_str) "  Expression.print_exp_str e1 => e1s &
+  Expression.print_exp_str e2 => e2s &
+  print \"Equation \" & print e1s & print \" = \" & print e2s &
+  print \"solved for \" & Expression.print_exp_str varexp => s &
+  print s & print \"giving \" &
+  Expression.print_exp_str expr => s2 & print s2 & print \"\\n\" &" ;
       then
         ();
-    case (BackendDAE.DAE(orderedVars = vars,orderedEqs = eqns),ass1,ass2,e) /* rule	intSub(e,1) => e\' &
-	BackendDAE.equation_nth(eqns,e\') => BackendDAE.EQUATION(e1,e2,_) &
-	vector_nth(ass2,e\') => v & ( v==variable no solved in this equation ))
-	intSub(v,1) => v\' &
-	BackendDAE.vararray_nth(vararr,v\') => BackendDAE.VAR(cr,_,_,_,_,_,_,_,_,origname,_,dae_var_attr,comment,flow) &
-	let varexp = Expression.crefExp(cr) &
-	not ExpressionSolve.solve(e1,e2,varexp) => _ &
-	print \"nonlinear equation not implemented yet\\n\"
-	--------------------------------
-	build_equation(BackendDAE.DAE(BackendDAE.VARIABLES(_,_,vararr,_,_),_,eqns,_,_,_,_,_),ass1,ass2,e) => fail
+    case (BackendDAE.DAE(orderedVars = vars,orderedEqs = eqns),ass1,ass2,e) /* rule  intSub(e,1) => e\' &
+  BackendDAE.equation_nth(eqns,e\') => BackendDAE.EQUATION(e1,e2,_) &
+  vector_nth(ass2,e\') => v & ( v==variable no solved in this equation ))
+  intSub(v,1) => v\' &
+  BackendDAE.vararray_nth(vararr,v\') => BackendDAE.VAR(cr,_,_,_,_,_,_,_,_,origname,_,dae_var_attr,comment,flow) &
+  let varexp = Expression.crefExp(cr) &
+  not ExpressionSolve.solve(e1,e2,varexp) => _ &
+  print \"nonlinear equation not implemented yet\\n\"
+  --------------------------------
+  build_equation(BackendDAE.DAE(BackendDAE.VARIABLES(_,_,vararr,_,_),_,eqns,_,_,_,_,_),ass1,ass2,e) => fail
  */
       equation
         e_1 = e - 1 "state nonlinear" ;
@@ -385,7 +385,7 @@ algorithm
         varlst = BackendDAEUtil.varList(vars);
         BackendDAE.VAR(cr,BackendDAE.STATE(),_,_,_,_,_,indx,_,dae_var_attr,_,flowPrefix,streamPrefix) = listNth(varlst, v_1);
         indxs = intString(indx);
-        name = ComponentReference.printComponentRefStr(cr) "	Util.string_append_list({\"xd{\",indxs,\"}\"}) => id &" ;
+        name = ComponentReference.printComponentRefStr(cr) "  Util.string_append_list({\"xd{\",indxs,\"}\"}) => id &" ;
         //c_name = Util.modelicaStringToCStr(name,true);
         c_name = name;
         //id = stringAppendList({BackendDAE.derivativeNamePrefix,c_name});
@@ -600,7 +600,7 @@ algorithm
     case (tid,vars,(res :: residuals))
       equation
         vars1 = Expression.extractCrefsFromExp(res) "Collect all variables and construct
-	 a string for the residual, that can be directly used in codegen." ;
+   a string for the residual, that can be directly used in codegen." ;
         vars_1 = Util.listMap(vars, Expression.extractCrefsFromExp);
         vars2 = Util.listFlatten(vars_1);
         vars1_1 = Util.listUnionOnTrue(vars1, vars2, ComponentReference.crefEqual) "No duplicate elements" ;

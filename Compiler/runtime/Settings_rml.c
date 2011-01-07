@@ -145,7 +145,7 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(Settings__getEcho)
 {
-  rmlA0	= (void*) mk_icon(echo);
+  rmlA0  = (void*) mk_icon(echo);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL

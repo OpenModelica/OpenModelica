@@ -100,25 +100,25 @@ typedef enum {
      initializeDataStruc(DATA_INIT_FLAGS) function */
 
   NO_INIT_OF_VECTORS        = 0x00000000,
-  STATES                  	= 0x00000001,
-  STATESDERIVATIVES      	  = 0x00000002,
-  HELPVARS                	= 0x00000004,
-  ALGEBRAICS              	= 0x00000008,
-  PARAMETERS              	= 0x00000010,
-  INITIALRESIDUALS        	= 0x00000020,
-  INPUTVARS               	= 0x00000040,
-  OUTPUTVARS              	= 0x00000080,
-  INITFIXED               	= 0x00000100,
-  EXTERNALVARS			  	    = 0x00000200,
+  STATES                    = 0x00000001,
+  STATESDERIVATIVES          = 0x00000002,
+  HELPVARS                  = 0x00000004,
+  ALGEBRAICS                = 0x00000008,
+  PARAMETERS                = 0x00000010,
+  INITIALRESIDUALS          = 0x00000020,
+  INPUTVARS                 = 0x00000040,
+  OUTPUTVARS                = 0x00000080,
+  INITFIXED                 = 0x00000100,
+  EXTERNALVARS  		  	    = 0x00000200,
 
   /*in initializeDataStruc these are not allocated with malloc!*/
-  MODELNAME               	= 0x00000400,
-  STATESNAMES             	= 0x00000800,
-  STATESDERIVATIVESNAMES  	= 0x00001000,
-  ALGEBRAICSNAMES         	= 0x00002000,
-  PARAMETERSNAMES         	= 0x00004000,
-  INPUTNAMES              	= 0x00008000,
-  OUTPUTNAMES             	= 0x00010000,
+  MODELNAME                 = 0x00000400,
+  STATESNAMES               = 0x00000800,
+  STATESDERIVATIVESNAMES    = 0x00001000,
+  ALGEBRAICSNAMES           = 0x00002000,
+  PARAMETERSNAMES           = 0x00004000,
+  INPUTNAMES                = 0x00008000,
+  OUTPUTNAMES               = 0x00010000,
 
   /*in initializeDataStruc these are not allocated with malloc!*/
   STATESCOMMENTS            = 0x00020000,
@@ -148,7 +148,7 @@ typedef struct sim_DATA_INT {
   modelica_integer* parameters; //p; PARAMETERS
   modelica_integer* inputVars; //in_y INPUTVARS
   modelica_integer* outputVars; //out_y OUTPUTVARS
-  modelica_integer*	algebraics_old, *algebraics_old2;
+  modelica_integer*  algebraics_old, *algebraics_old2;
 
   long nAlgebraic,nParameters;
   long nInputVars,nOutputVars;
@@ -159,7 +159,7 @@ typedef struct sim_DATA_BOOL {
   modelica_boolean* parameters; //p; PARAMETERS
   modelica_boolean* inputVars; //in_y INPUTVARS
   modelica_boolean* outputVars; //out_y OUTPUTVARS
-  modelica_boolean*	algebraics_old, *algebraics_old2;
+  modelica_boolean*  algebraics_old, *algebraics_old2;
 
   long nAlgebraic,nParameters;
   long nInputVars,nOutputVars;
@@ -306,8 +306,8 @@ callExternalObjectConstructors(DATA*);
 int
 function_updateDependents();
 
-/* 	function for calculating all equation sorting order 
-	uses in EventHandle	*/
+/*   function for calculating all equation sorting order 
+  uses in EventHandle	*/
 int
 functionDAE(int& needToIterate);
 
@@ -341,7 +341,7 @@ void function_sampleInit();
 int linear_model_frame(string& out, string A, string B, string C, string D, string x_startvalues, string u_startvalues);
 
 // function for calculation Jacobian
-extern int jac_flag;	// Flag for DASSL to work with analytical Jacobian
+extern int jac_flag;  // Flag for DASSL to work with analytical Jacobian
 int functionJacA(double *t, double *x, double *xd, double* jac);
 int functionJacB(double *t, double *x, double *xd, double* jac);
 int functionJacC(double *t, double *x, double *xd, double* jac);

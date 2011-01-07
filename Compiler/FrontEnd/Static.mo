@@ -4213,11 +4213,11 @@ protected function sameDimensions
   output Boolean res;
 
   list<DAE.Type> types;
-	list<list<DAE.Dimension>> dims;
+  list<list<DAE.Dimension>> dims;
 algorithm
   types := Util.listMap(inProps, Types.getPropType);
-	dims := Util.listMap(types, Types.getDimensions);
-	res := sameDimensions2(dims);
+  dims := Util.listMap(types, Types.getDimensions);
+  res := sameDimensions2(dims);
 end sameDimensions;
 
 protected function sameDimensionsExceptionDimX
@@ -4228,7 +4228,7 @@ protected function sameDimensionsExceptionDimX
   output Boolean res;
 
   list<DAE.Type> types;
-	list<list<DAE.Dimension>> dims;
+  list<list<DAE.Dimension>> dims;
 algorithm
   types := Util.listMap(inProps, Types.getPropType);
   dims := Util.listMap(types, Types.getDimensions);
@@ -4237,48 +4237,48 @@ algorithm
 end sameDimensionsExceptionDimX;
 
 protected function sameDimensions2
-	input list<list<DAE.Dimension>> inDimensions;
+  input list<list<DAE.Dimension>> inDimensions;
   output Boolean outBoolean;
 algorithm
   outBoolean:=
-	matchcontinue (inDimensions)
+  matchcontinue (inDimensions)
     local
-			list<list<DAE.Dimension>> rest_dims;
-			list<DAE.Dimension> dims;
+    	list<list<DAE.Dimension>> rest_dims;
+    	list<DAE.Dimension> dims;
     case _
       equation
-				{} = Util.listFlatten(inDimensions);
+    		{} = Util.listFlatten(inDimensions);
       then
         true;
     case _
       equation
-				dims = Util.listMap(inDimensions, Util.listFirst);
-				rest_dims = Util.listMap(inDimensions, Util.listRest);
-				true = sameDimensions3(dims);
-				true = sameDimensions2(rest_dims);
+    		dims = Util.listMap(inDimensions, Util.listFirst);
+    		rest_dims = Util.listMap(inDimensions, Util.listRest);
+    		true = sameDimensions3(dims);
+    		true = sameDimensions2(rest_dims);
       then
         true;
-		else then false;
+    else then false;
   end matchcontinue;
 end sameDimensions2;
 
 protected function sameDimensions3
   "Helper function to sameDimensions2. Check that all dimensions in a list are equal."
-	input list<DAE.Dimension> inDims;
+  input list<DAE.Dimension> inDims;
   output Boolean outRes;
 algorithm
   outRes := matchcontinue (inDims)
     local
-			DAE.Dimension dim1, dim2;
+    	DAE.Dimension dim1, dim2;
       Boolean res,res2,res_1;
-			list<DAE.Dimension> rest;
+    	list<DAE.Dimension> rest;
     case ({}) then true;
     case ({_}) then true;
-		case ({dim1, dim2}) then Expression.dimensionsEqual(dim1, dim2);
-		case ((dim1 :: (dim2 :: rest)))
+    case ({dim1, dim2}) then Expression.dimensionsEqual(dim1, dim2);
+    case ((dim1 :: (dim2 :: rest)))
       equation
-				res = sameDimensions3((dim2 :: rest));
-				res2 = Expression.dimensionsEqual(dim1, dim2);
+    		res = sameDimensions3((dim2 :: rest));
+    		res2 = Expression.dimensionsEqual(dim1, dim2);
         res_1 = boolAnd(res, res2);
       then
         res_1;
@@ -4709,7 +4709,7 @@ protected function elabBuiltinBoolean
 "function: elabBuiltinBoolean
   This function elaborates on the builtin operator boolean, which extracts
   the boolean value of a Real, Integer or Boolean value."
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
@@ -4733,13 +4733,13 @@ algorithm
     case (cache,env,{s1},_,impl,pre,info)
       equation
         (cache,s1_1,prop) =
-					verifyBuiltInHandlerType(
-					   cache,
-					   env,
-					   {s1},
-					   impl,
-					   Types.isIntegerOrRealOrBooleanOrSubTypeOfEither,
-					   "boolean",pre,info);
+    			verifyBuiltInHandlerType(
+    			   cache,
+    			   env,
+    			   {s1},
+    			   impl,
+    			   Types.isIntegerOrRealOrBooleanOrSubTypeOfEither,
+    			   "boolean",pre,info);
       then
         (cache,s1_1,prop);
   end match;

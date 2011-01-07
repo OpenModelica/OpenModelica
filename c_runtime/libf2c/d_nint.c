@@ -13,7 +13,7 @@ double d_nint(doublereal *x)
 #endif
 {
 return( (*x)>=0 ?
-	floor(*x + .5) : -floor(.5 - *x) );
+  floor(*x + .5) : -floor(.5 - *x) );
 }
 #ifdef __cplusplus
 }

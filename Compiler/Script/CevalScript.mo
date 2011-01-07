@@ -30,7 +30,7 @@
  */
 
 package CevalScript
-" file:	       CevalScript.mo
+" file:         CevalScript.mo
   package:     CevalScript
   description: Constant propagation of expressions
 
@@ -572,7 +572,7 @@ public function cevalInteractiveFunctions
 "function cevalInteractiveFunctions
   This function evaluates the functions
   defined in the interactive environment."
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input DAE.Exp inExp "expression to evaluate";
   input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
@@ -2219,7 +2219,7 @@ algorithm
         (st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       equation
         (cache,Util.SUCCESS()) = Static.instantiateDaeFunction(cache, env, path, false, NONE(), true);
-        (cache,_) = cevalGenerateFunction(cache,env, path) "	& Inst.instantiate_implicit(p\') => d &" ;
+        (cache,_) = cevalGenerateFunction(cache,env, path) "  & Inst.instantiate_implicit(p\') => d &" ;
       then
         (cache,Values.BOOL(true),st);
         

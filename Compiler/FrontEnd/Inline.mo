@@ -31,7 +31,7 @@
 
 // stefan
 package Inline
-" file:	       Inline.mo
+" file:         Inline.mo
   package:     Inline
   description: inline functions
 
@@ -62,10 +62,10 @@ protected import ExpressionSimplify;
 
 public function inlineCalls
 "function: inlineCalls
-	searches for calls where the inline flag is true, and inlines them"
-	input Option<DAE.FunctionTree> inFTree "functions";
-	input list<DAE.InlineType> inITLst;
-	input BackendDAE.BackendDAE inBackendDAE;
+  searches for calls where the inline flag is true, and inlines them"
+  input Option<DAE.FunctionTree> inFTree "functions";
+  input list<DAE.InlineType> inITLst;
+  input BackendDAE.BackendDAE inBackendDAE;
   output BackendDAE.BackendDAE outBackendDAE;
 algorithm
   outBackendDAE := matchcontinue(inFTree,inITLst,inBackendDAE)
@@ -111,10 +111,10 @@ end inlineCalls;
 
 protected function inlineEquationArray "
 function: inlineEquationArray
-	inlines function calls in an equation array"
-	input BackendDAE.EquationArray inEquationArray;
-	input Functiontuple inElementList;
-	output BackendDAE.EquationArray outEquationArray;
+  inlines function calls in an equation array"
+  input BackendDAE.EquationArray inEquationArray;
+  input Functiontuple inElementList;
+  output BackendDAE.EquationArray outEquationArray;
 algorithm
   outEquationArray := matchcontinue(inEquationArray,inElementList)
     local
@@ -139,10 +139,10 @@ end inlineEquationArray;
 
 public function inlineEqOpt "
 function: inlineEqOpt
-	inlines function calls in equations"
-	input Option<BackendDAE.Equation> inEquationOption;
-	input Functiontuple inElementList;
-	output Option<BackendDAE.Equation> outEquationOption;
+  inlines function calls in equations"
+  input Option<BackendDAE.Equation> inEquationOption;
+  input Functiontuple inElementList;
+  output Option<BackendDAE.Equation> outEquationOption;
 algorithm
   outEquationOption := matchcontinue(inEquationOption,inElementList)
     local
@@ -209,10 +209,10 @@ end inlineEqOpt;
 
 protected function inlineWhenEq
 "function: inlineWhenEq
-	inlines function calls in when equations"
-	input BackendDAE.WhenEquation inWhenEquation;
-	input Functiontuple inElementList;
-	output BackendDAE.WhenEquation outWhenEquation;
+  inlines function calls in when equations"
+  input BackendDAE.WhenEquation inWhenEquation;
+  input Functiontuple inElementList;
+  output BackendDAE.WhenEquation outWhenEquation;
 algorithm
   outWhenEquation := matchcontinue(inWhenEquation,inElementList)
     local
@@ -242,10 +242,10 @@ end inlineWhenEq;
 
 protected function inlineVariables
 "function: inlineVariables
-	inlines function calls in variables"
-	input BackendDAE.Variables inVariables;
-	input Functiontuple inElementList;
-	output BackendDAE.Variables outVariables;
+  inlines function calls in variables"
+  input BackendDAE.Variables inVariables;
+  input Functiontuple inElementList;
+  output BackendDAE.Variables outVariables;
 algorithm
   outVariables := matchcontinue(inVariables,inElementList)
     local
@@ -272,10 +272,10 @@ end inlineVariables;
 
 public function inlineVarOpt
 "functio: inlineVarOpt
-	inlines calls in a variable option"
-	input Option<BackendDAE.Var> inVarOption;
-	input Functiontuple inElementList;
-	output Option<BackendDAE.Var> outVarOption;
+  inlines calls in a variable option"
+  input Option<BackendDAE.Var> inVarOption;
+  input Functiontuple inElementList;
+  output Option<BackendDAE.Var> outVarOption;
 algorithm
   outVarOption := matchcontinue(inVarOption,inElementList)
     local
@@ -322,10 +322,10 @@ end inlineVarOpt;
 
 public function inlineMultiDimEqs
 "function: inlineMultiDimEqs
-	inlines function calls in multi dim equations"
-	input BackendDAE.MultiDimEquation inMultiDimEquation;
-	input Functiontuple inElementList;
-	output BackendDAE.MultiDimEquation outMultiDimEquation;
+  inlines function calls in multi dim equations"
+  input BackendDAE.MultiDimEquation inMultiDimEquation;
+  input Functiontuple inElementList;
+  output BackendDAE.MultiDimEquation outMultiDimEquation;
 algorithm
   outMultiDimEquation := matchcontinue(inMultiDimEquation,inElementList)
     local
@@ -350,10 +350,10 @@ end inlineMultiDimEqs;
 
 public function inlineEventInfo
 "function: inlineEventInfo
-	inlines function calls in event info"
-	input BackendDAE.EventInfo inEventInfo;
-	input Functiontuple inElementList;
-	output BackendDAE.EventInfo outEventInfo;
+  inlines function calls in event info"
+  input BackendDAE.EventInfo inEventInfo;
+  input Functiontuple inElementList;
+  output BackendDAE.EventInfo outEventInfo;
 algorithm
   outEventInfo := matchcontinue(inEventInfo,inElementList)
     local
@@ -376,10 +376,10 @@ end inlineEventInfo;
 
 protected function inlineZeroCrossing
 "function: inlineZeroCrossing
-	inlines function calls in a zero crossing"
-	input BackendDAE.ZeroCrossing inZeroCrossing;
-	input Functiontuple inElementList;
-	output BackendDAE.ZeroCrossing outZeroCrossing;
+  inlines function calls in a zero crossing"
+  input BackendDAE.ZeroCrossing inZeroCrossing;
+  input Functiontuple inElementList;
+  output BackendDAE.ZeroCrossing outZeroCrossing;
 algorithm
   outZeroCrossing := matchcontinue(inZeroCrossing,inElementList)
     local
@@ -401,10 +401,10 @@ end inlineZeroCrossing;
 
 protected function inlineWhenClause
 "function: inlineWhenClause
-	inlines function calls in a when clause"
-	input BackendDAE.WhenClause inWhenClause;
-	input Functiontuple inElementList;
-	output BackendDAE.WhenClause outWhenClause;
+  inlines function calls in a when clause"
+  input BackendDAE.WhenClause inWhenClause;
+  input Functiontuple inElementList;
+  output BackendDAE.WhenClause outWhenClause;
 algorithm
   outWhenClause := matchcontinue(inWhenClause,inElementList)
     local
@@ -429,10 +429,10 @@ end inlineWhenClause;
 
 protected function inlineReinitStmt
 "function: inlineReinitStmt
-	inlines function calls in a reinit statement"
-	input BackendDAE.WhenOperator inReinitStatement;
-	input Functiontuple inElementList;
-	output BackendDAE.WhenOperator outReinitStatement;
+  inlines function calls in a reinit statement"
+  input BackendDAE.WhenOperator inReinitStatement;
+  input Functiontuple inElementList;
+  output BackendDAE.WhenOperator outReinitStatement;
 algorithm
   outReinitStatement := matchcontinue(inReinitStatement,inElementList)
     local
@@ -453,10 +453,10 @@ end inlineReinitStmt;
 
 public function inlineExtObjClasses
 "function: inlineExtObjClasses
-	inlines function calls in external object classes"
-	input BackendDAE.ExternalObjectClasses inExtObjClasses;
-	input Functiontuple inElementList;
-	output BackendDAE.ExternalObjectClasses outExtObjClasses;
+  inlines function calls in external object classes"
+  input BackendDAE.ExternalObjectClasses inExtObjClasses;
+  input Functiontuple inElementList;
+  output BackendDAE.ExternalObjectClasses outExtObjClasses;
 algorithm
   outExtObjClasses := matchcontinue(inExtObjClasses,inElementList)
     local
@@ -485,10 +485,10 @@ end inlineExtObjClasses;
 
 public function inlineCallsInFunctions
 "function: inlineDAEElements
-	inlines calls in DAEElements"
-	input list<DAE.Function> inElementList;
-	input Functiontuple inFunctions;
-	output list<DAE.Function> outElementList;
+  inlines calls in DAEElements"
+  input list<DAE.Function> inElementList;
+  input Functiontuple inFunctions;
+  output list<DAE.Function> outElementList;
 algorithm
   outElementList := matchcontinue(inElementList,inFunctions)
     local
@@ -532,10 +532,10 @@ end inlineCallsInFunctions;
 
 protected function inlineDAEElements
 "function: inlineDAEElements
-	inlines calls in DAEElements"
-	input list<DAE.Element> inElementList;
-	input Functiontuple inFunctions;
-	output list<DAE.Element> outElementList;
+  inlines calls in DAEElements"
+  input list<DAE.Element> inElementList;
+  input Functiontuple inFunctions;
+  output list<DAE.Element> outElementList;
 algorithm
   outElementList := matchcontinue(inElementList,inFunctions)
     local
@@ -758,10 +758,10 @@ end inlineDAEElements;
 
 public function inlineAlgorithm
 "function: inlineAlgorithm
-	inline calls in an Algorithm.Algorithm"
-	input Algorithm.Algorithm inAlgorithm;
-	input Functiontuple inElementList;
-	output Algorithm.Algorithm outAlgorithm;
+  inline calls in an Algorithm.Algorithm"
+  input Algorithm.Algorithm inAlgorithm;
+  input Functiontuple inElementList;
+  output Algorithm.Algorithm outAlgorithm;
 algorithm
   outAlgorithm := matchcontinue(inAlgorithm,inElementList)
     local
@@ -782,10 +782,10 @@ end inlineAlgorithm;
 
 protected function inlineStatement
 "function: inlineStatement
-	inlines calls in an Algorithm.Statement"
-	input Algorithm.Statement inStatement;
-	input Functiontuple inElementList;
-	output Algorithm.Statement outStatement;
+  inlines calls in an Algorithm.Statement"
+  input Algorithm.Statement inStatement;
+  input Functiontuple inElementList;
+  output Algorithm.Statement outStatement;
 algorithm
   outStatement := matchcontinue(inStatement,inElementList)
     local
@@ -893,10 +893,10 @@ end inlineStatement;
 
 protected function inlineElse
 "function: inlineElse
-	inlines calls in an Algorithm.Else"
-	input Algorithm.Else inElse;
-	input Functiontuple inElementList;
-	output Algorithm.Else outElse;
+  inlines calls in an Algorithm.Else"
+  input Algorithm.Else inElse;
+  input Functiontuple inElementList;
+  output Algorithm.Else outElse;
 algorithm
   outElse := matchcontinue(inElse,inElementList)
     local
@@ -922,10 +922,10 @@ end inlineElse;
 
 public function inlineExp "
 function: inlineExp
-	inlines calls in an DAE.Exp"
-	input DAE.Exp inExp;
-	input Functiontuple inElementList;
-	output DAE.Exp outExp;
+  inlines calls in an DAE.Exp"
+  input DAE.Exp inExp;
+  input Functiontuple inElementList;
+  output DAE.Exp outExp;
 algorithm
   outExp := matchcontinue(inExp,inElementList)
     local
@@ -943,9 +943,9 @@ end inlineExp;
 
 public function inlineCall
 "function: inlineCall
-	replaces an inline call with the expression from the function"
-	input tuple<DAE.Exp, Functiontuple> inTuple;
-	output tuple<DAE.Exp, Functiontuple> outTuple;
+  replaces an inline call with the expression from the function"
+  input tuple<DAE.Exp, Functiontuple> inTuple;
+  output tuple<DAE.Exp, Functiontuple> outTuple;
 algorithm
   outTuple := matchcontinue(inTuple)
     local
@@ -999,9 +999,9 @@ end checkInlineType;
 
 protected function extendCrefRecords
 "function: extendCrefRecords
-	extends crefs from records"
-	input list<tuple<DAE.ComponentRef, DAE.Exp>> inArgmap;
-	output list<tuple<DAE.ComponentRef, DAE.Exp>> outArgmap;
+  extends crefs from records"
+  input list<tuple<DAE.ComponentRef, DAE.Exp>> inArgmap;
+  output list<tuple<DAE.ComponentRef, DAE.Exp>> outArgmap;
 algorithm
   outArgmap := matchcontinue(inArgmap)
     local
@@ -1046,11 +1046,11 @@ end extendCrefRecords;
 
 protected function extendCrefRecords1
 "function: extendCrefRecords1
-	helper for extendCrefRecords"
-	input DAE.ExpVar ev;
-	input DAE.ComponentRef c;
-	input DAE.ComponentRef e;
-	output tuple<DAE.ComponentRef, DAE.Exp> outArg;
+  helper for extendCrefRecords"
+  input DAE.ExpVar ev;
+  input DAE.ComponentRef c;
+  input DAE.ComponentRef e;
+  output tuple<DAE.ComponentRef, DAE.Exp> outArg;
 algorithm
   outArg := matchcontinue(ev,c,e)
     local
@@ -1075,10 +1075,10 @@ end extendCrefRecords1;
 
 protected function extendCrefRecords2
 "function: extendCrefRecords1
-	helper for extendCrefRecords"
-	input DAE.ExpVar ev;
-	input DAE.ComponentRef c;
-	output DAE.ComponentRef outArg;
+  helper for extendCrefRecords"
+  input DAE.ExpVar ev;
+  input DAE.ComponentRef c;
+  output DAE.ComponentRef outArg;
 algorithm
   outArg := matchcontinue(ev,c)
     local
@@ -1099,10 +1099,10 @@ end extendCrefRecords2;
 
 protected function getFunctionBody
 "function: getFunctionBody
-	returns the body of a function"
-	input Absyn.Path p;
-	input Functiontuple fns;
-	output list<DAE.Element> outfn;
+  returns the body of a function"
+  input Absyn.Path p;
+  input Functiontuple fns;
+  output list<DAE.Element> outfn;
 algorithm
   outfn := matchcontinue(p,fns)
     local
@@ -1122,9 +1122,9 @@ end getFunctionBody;
 
 protected function getRhsExp
 "function: getRhsExp
-	returns the right hand side of an assignment from a function"
-	input list<DAE.Element> inElementList;
-	output DAE.Exp outExp;
+  returns the right hand side of an assignment from a function"
+  input list<DAE.Element> inElementList;
+  output DAE.Exp outExp;
 algorithm
   outExp := matchcontinue(inElementList)
     local
@@ -1148,9 +1148,9 @@ end getRhsExp;
 
 protected function replaceArgs
 "function: replaceArgs
-	finds DAE.CREF and replaces them with new exps if the cref is in the argmap"
-	input tuple<DAE.Exp, list<tuple<DAE.ComponentRef, DAE.Exp>>> inTuple;
-	output tuple<DAE.Exp, list<tuple<DAE.ComponentRef, DAE.Exp>>> outTuple;
+  finds DAE.CREF and replaces them with new exps if the cref is in the argmap"
+  input tuple<DAE.Exp, list<tuple<DAE.ComponentRef, DAE.Exp>>> inTuple;
+  output tuple<DAE.Exp, list<tuple<DAE.ComponentRef, DAE.Exp>>> outTuple;
 algorithm
   outTuple := matchcontinue(inTuple)
     local
@@ -1168,10 +1168,10 @@ end replaceArgs;
 
 protected function getExpFromArgMap
 "function: getExpFromArgMap
-	returns the exp from the given argmap with the given key"
-	input list<tuple<DAE.ComponentRef, DAE.Exp>> inArgMap;
-	input DAE.ComponentRef inComponentRef;
-	output DAE.Exp outExp;
+  returns the exp from the given argmap with the given key"
+  input list<tuple<DAE.ComponentRef, DAE.Exp>> inArgMap;
+  input DAE.ComponentRef inComponentRef;
+  output DAE.Exp outExp;
 algorithm
   outExp := matchcontinue(inArgMap,inComponentRef)
     local
@@ -1202,9 +1202,9 @@ end getExpFromArgMap;
 
 protected function getInputCrefs
 "function: getInputCrefs
-	returns the crefs of vars that are inputs, wild if not input"
-	input DAE.Element inElement;
-	output DAE.ComponentRef outComponentRef;
+  returns the crefs of vars that are inputs, wild if not input"
+  input DAE.Element inElement;
+  output DAE.ComponentRef outComponentRef;
 algorithm
   outComponentRef := matchcontinue(inElement)
     local
@@ -1216,9 +1216,9 @@ end getInputCrefs;
 
 protected function removeWilds
 "function: removeWilds
-	returns false if the given cref is a wild"
-	input DAE.ComponentRef inComponentRef;
-	output Boolean outBoolean;
+  returns false if the given cref is a wild"
+  input DAE.ComponentRef inComponentRef;
+  output Boolean outBoolean;
 algorithm
   outBoolean := matchcontinue(inComponentRef)
     case(DAE.WILD()) then false;

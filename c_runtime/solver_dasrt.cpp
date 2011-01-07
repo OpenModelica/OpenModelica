@@ -249,7 +249,7 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
         if (sim_verbose) {
           cout  << std::setprecision(20) <<
             "Found event " << activeEvent(globalData->nZeroCrossing,jroot) << " at time " << globalData->timeValue << endl;
-       	}
+         }
         sim_result->emit();
 
         saveall();
@@ -320,8 +320,8 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
         // alg vars too.
         acceptedStep = 1;
         functionDAE_output();
-	checkTermination();
-	function_storeDelayed();
+  checkTermination();
+  function_storeDelayed();
         acceptedStep = 0;
         } while (outputSteps >= 0 && idid == 1 && globalData->timeValue < tout); 
 
@@ -361,8 +361,8 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
         // alg vars too.
         acceptedStep=1;
         functionDAE_output();  // discrete variables are seperated so that the can be emited before and after the event.
-	checkTermination();
-	function_storeDelayed();
+  checkTermination();
+  function_storeDelayed();
         acceptedStep=0;
       } while (outputSteps >= 0 && idid == 1 && globalData->timeValue < tout);
     } // end while

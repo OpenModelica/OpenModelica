@@ -1328,11 +1328,11 @@ algorithm
       then
         dae;
 
-		/* array equations */
-		case (e1,e2,(tt as (DAE.T_ARRAY(arrayDim = _),_)),source,initial_)
-			equation
-				dae = instArrayEquation(e1, e2, tt, source, initial_);
-			then dae;
+    /* array equations */
+    case (e1,e2,(tt as (DAE.T_ARRAY(arrayDim = _),_)),source,initial_)
+    	equation
+    		dae = instArrayEquation(e1, e2, tt, source, initial_);
+    	then dae;
 
     /* tuples */
     case (e1,e2,(DAE.T_TUPLE(tupleType = _),_),source,initial_) 
@@ -1599,47 +1599,47 @@ algorithm
 end makeDaeDefine;
 
 protected function instArrayEquation
-	"Instantiates an array equation, i.e. an equation where both sides are arrays."
-	input DAE.Exp lhs;
-	input DAE.Exp rhs;
-	input DAE.Type tp;
-	input DAE.ElementSource source;
-	input SCode.Initial initial_;
-	output DAE.DAElist dae;
+  "Instantiates an array equation, i.e. an equation where both sides are arrays."
+  input DAE.Exp lhs;
+  input DAE.Exp rhs;
+  input DAE.Type tp;
+  input DAE.ElementSource source;
+  input SCode.Initial initial_;
+  output DAE.DAElist dae;
 algorithm 
-	dae := matchcontinue(lhs, rhs, tp, source, initial_)
-		local
-			Boolean b1, b2;
-			list<DAE.Dimension> ds;
-			DAE.Dimension dim, lhs_dim, rhs_dim;
+  dae := matchcontinue(lhs, rhs, tp, source, initial_)
+    local
+    	Boolean b1, b2;
+    	list<DAE.Dimension> ds;
+    	DAE.Dimension dim, lhs_dim, rhs_dim;
       list<DAE.Exp> lhs_idxs, rhs_idxs;
       DAE.Type t;
-			String lhs_str, rhs_str, eq_str;
-			
-		/* Initial array equations with function calls => initial array equations */
-		case (lhs, rhs, tp, source, SCode.INITIAL())
-			equation
-				b1 = Expression.containVectorFunctioncall(lhs);
-				b2 = Expression.containVectorFunctioncall(rhs);
-				true = boolOr(b1, b2);
-				ds = Types.getDimensions(tp);
-				lhs = ExpressionSimplify.simplify(lhs);
-				rhs = ExpressionSimplify.simplify(rhs);
-			then
-				DAE.DAE({DAE.INITIAL_ARRAY_EQUATION(ds, lhs, rhs, source)});
+    	String lhs_str, rhs_str, eq_str;
+    	
+    /* Initial array equations with function calls => initial array equations */
+    case (lhs, rhs, tp, source, SCode.INITIAL())
+    	equation
+    		b1 = Expression.containVectorFunctioncall(lhs);
+    		b2 = Expression.containVectorFunctioncall(rhs);
+    		true = boolOr(b1, b2);
+    		ds = Types.getDimensions(tp);
+    		lhs = ExpressionSimplify.simplify(lhs);
+    		rhs = ExpressionSimplify.simplify(rhs);
+    	then
+    		DAE.DAE({DAE.INITIAL_ARRAY_EQUATION(ds, lhs, rhs, source)});
 
-		/* Arrays with function calls => array equations */
-		case (lhs, rhs, tp, source, SCode.NON_INITIAL())
-			equation
-				b1 = Expression.containVectorFunctioncall(lhs);
-				b2 = Expression.containVectorFunctioncall(rhs);
-				true = boolOr(b1, b2);
-				ds = Types.getDimensions(tp);
-				lhs = ExpressionSimplify.simplify(lhs);
-				rhs = ExpressionSimplify.simplify(rhs);
-			then
-				DAE.DAE({DAE.ARRAY_EQUATION(ds, lhs, rhs, source)});
-				
+    /* Arrays with function calls => array equations */
+    case (lhs, rhs, tp, source, SCode.NON_INITIAL())
+    	equation
+    		b1 = Expression.containVectorFunctioncall(lhs);
+    		b2 = Expression.containVectorFunctioncall(rhs);
+    		true = boolOr(b1, b2);
+    		ds = Types.getDimensions(tp);
+    		lhs = ExpressionSimplify.simplify(lhs);
+    		rhs = ExpressionSimplify.simplify(rhs);
+    	then
+    		DAE.DAE({DAE.ARRAY_EQUATION(ds, lhs, rhs, source)});
+    		
     // Array equation of any size, non-expanding case
     case (lhs, rhs, (DAE.T_ARRAY(arrayType = t, arrayDim = dim), _), source, initial_)
       equation
@@ -1653,7 +1653,7 @@ algorithm
         dae = instArrayElEq(lhs, rhs, t, lhs_idxs, rhs_idxs, source, initial_);
       then
         dae;
-				
+    		
     // Array dimension of known size, expanding case.
     case (lhs, rhs, (DAE.T_ARRAY(arrayType = t, arrayDim = dim), _), source, initial_)
       equation
@@ -1668,7 +1668,7 @@ algorithm
         dae = instArrayElEq(lhs, rhs, t, lhs_idxs, rhs_idxs, source, initial_);
       then
         dae;
-				
+    		
     case (lhs, rhs, (DAE.T_ARRAY(arrayType = t, arrayDim = dim), _), source, initial_)
       equation
         true = RTOpts.splitArrays();
@@ -1686,7 +1686,7 @@ algorithm
         true = RTOpts.splitArrays();
         false = Expression.dimensionKnown(dim);
         // It's ok with array equation of unknown size if checkModel is used.
-			  true = OptManager.getOption("checkModel");
+    	  true = OptManager.getOption("checkModel");
         // Expand along the first dimensions of the expressions, and generate an
         // equation for each pair of elements.
         DAE.ET_ARRAY(arrayDimensions = lhs_dim :: _) = Expression.typeof(lhs);
@@ -1696,48 +1696,48 @@ algorithm
         dae = instArrayElEq(lhs, rhs, t, lhs_idxs, rhs_idxs, source, initial_);
       then
         dae;
-				
-		/* Array equation of unknown size, e.g. Real x[:], y[:]; equation x = y; (expanding case)*/
-		case (lhs, rhs, (DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN()), _), source, SCode.INITIAL())
-			equation
+    		
+    /* Array equation of unknown size, e.g. Real x[:], y[:]; equation x = y; (expanding case)*/
+    case (lhs, rhs, (DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN()), _), source, SCode.INITIAL())
+    	equation
         true = RTOpts.splitArrays();
         // It's ok with array equation of unknown size if checkModel is used.
-			  true = OptManager.getOption("checkModel");
-			  // generate an initial array equation of dim 1
-			  // Now the dimension can be made DAE.DIM_UNKNOWN(), I just don't want to break anything for now -- alleb
-			then 
-				DAE.DAE({DAE.INITIAL_ARRAY_EQUATION({DAE.DIM_INTEGER(1)}, lhs, rhs, source)}); 
+    	  true = OptManager.getOption("checkModel");
+    	  // generate an initial array equation of dim 1
+    	  // Now the dimension can be made DAE.DIM_UNKNOWN(), I just don't want to break anything for now -- alleb
+    	then 
+    		DAE.DAE({DAE.INITIAL_ARRAY_EQUATION({DAE.DIM_INTEGER(1)}, lhs, rhs, source)}); 
 
-		/* Array equation of unknown size, e.g. Real x[:], y[:]; equation x = y; (expanding case)*/
-		case (lhs, rhs, (DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN()), _), source, SCode.NON_INITIAL())
-			equation
+    /* Array equation of unknown size, e.g. Real x[:], y[:]; equation x = y; (expanding case)*/
+    case (lhs, rhs, (DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN()), _), source, SCode.NON_INITIAL())
+    	equation
          true = RTOpts.splitArrays();
         // It's ok with array equation of unknown size if checkModel is used.
-			  true = OptManager.getOption("checkModel");
-			  // generate an array equation of dim 1
-			  // Now the dimension can be made DAE.DIM_UNKNOWN(), I just don't want to break anything for now -- alleb
-			then 
-				DAE.DAE({DAE.ARRAY_EQUATION({DAE.DIM_INTEGER(1)}, lhs, rhs, source)});
-				
-		/* Array equation of unknown size, e.g. Real x[:], y[:]; equation x = y; (expanding case)*/
-		case (lhs, rhs, (DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN()), _), _, _)
-			equation
-			  true = RTOpts.splitArrays();
-			  // It's ok with array equation of unknown size if checkModel is used.
-			  false = OptManager.getOption("checkModel");
-				lhs_str = ExpressionDump.printExpStr(lhs);
-				rhs_str = ExpressionDump.printExpStr(rhs);
-				eq_str = stringAppendList({lhs_str, "=", rhs_str});
-				Error.addMessage(Error.INST_ARRAY_EQ_UNKNOWN_SIZE, {eq_str});
-			then 
-				fail();
+    	  true = OptManager.getOption("checkModel");
+    	  // generate an array equation of dim 1
+    	  // Now the dimension can be made DAE.DIM_UNKNOWN(), I just don't want to break anything for now -- alleb
+    	then 
+    		DAE.DAE({DAE.ARRAY_EQUATION({DAE.DIM_INTEGER(1)}, lhs, rhs, source)});
+    		
+    /* Array equation of unknown size, e.g. Real x[:], y[:]; equation x = y; (expanding case)*/
+    case (lhs, rhs, (DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN()), _), _, _)
+    	equation
+    	  true = RTOpts.splitArrays();
+    	  // It's ok with array equation of unknown size if checkModel is used.
+    	  false = OptManager.getOption("checkModel");
+    		lhs_str = ExpressionDump.printExpStr(lhs);
+    		rhs_str = ExpressionDump.printExpStr(rhs);
+    		eq_str = stringAppendList({lhs_str, "=", rhs_str});
+    		Error.addMessage(Error.INST_ARRAY_EQ_UNKNOWN_SIZE, {eq_str});
+    	then 
+    		fail();
 
-		case (_, _, _, _, _)
-			equation
-				Debug.fprintln("failtrace", "- InstSection.instArrayEquation failed");
-			then
-				fail();
-	end matchcontinue;
+    case (_, _, _, _, _)
+    	equation
+    		Debug.fprintln("failtrace", "- InstSection.instArrayEquation failed");
+    	then
+    		fail();
+  end matchcontinue;
 end instArrayEquation;
 
 protected function instArrayElEq
@@ -1789,24 +1789,24 @@ protected function unrollForLoop
 algorithm
   (outCache,outStatements) := matchcontinue(inCache,inEnv,inIH,inPrefix,inIterators,inForBody,info,source,inInitial,inBool,unrollForLoops)
     local
-	    Env.Cache cache;
-	    list<Env.Frame> env,env_1;
-	    Prefix.Prefix pre;
-	    list<Absyn.ForIterator> restIterators;
-	    list<SCode.Statement> sl;
-	    SCode.Initial initial_;
-	    Boolean impl;
-	    DAE.Exp e_1;
-	    list<DAE.Statement> stmts;
-	    String i, str;
-	    Absyn.Exp e;
-	    DAE.Properties prop;
-	    Values.Value v;
-	    DAE.Const cnst;
-	    DAE.Type id_t;
-	    InstanceHierarchy ih;
-	  
-	  // only one iterator  
+      Env.Cache cache;
+      list<Env.Frame> env,env_1;
+      Prefix.Prefix pre;
+      list<Absyn.ForIterator> restIterators;
+      list<SCode.Statement> sl;
+      SCode.Initial initial_;
+      Boolean impl;
+      DAE.Exp e_1;
+      list<DAE.Statement> stmts;
+      String i, str;
+      Absyn.Exp e;
+      DAE.Properties prop;
+      Values.Value v;
+      DAE.Const cnst;
+      DAE.Type id_t;
+      InstanceHierarchy ih;
+    
+    // only one iterator  
     case (cache,env,ih,pre,{(i,SOME(e))},sl,info,source,initial_,impl,unrollForLoops)
       equation
         (cache,e_1,prop as DAE.PROP((DAE.T_ARRAY(arrayType = id_t),_),cnst),_) = Static.elabExp(cache, env, e, impl,NONE(), true, pre,info);
@@ -1820,7 +1820,7 @@ algorithm
         (cache,stmts) = loopOverRange(cache, env_1, ih, pre, i, v, sl, source, initial_, impl, unrollForLoops);
       then
         (cache,stmts);
-	  
+    
     // multiple for iterators 
     //  for (i in a, j in b, k in c) loop 
     //      stmts; 
@@ -1873,14 +1873,14 @@ protected function instForStatement
 algorithm
   (outCache,outStatements) := matchcontinue(inCache,inEnv,inIH,inPrefix,inIterators,inForBody,info,source,inInitial,inBool,unrollForLoops)
     local
-	    Env.Cache cache;
-	    list<Env.Frame> env;
-	    Prefix.Prefix pre;
-	    list<SCode.Statement> sl;
-	    SCode.Initial initial_;
-	    Boolean impl;
-	    list<DAE.Statement> stmts;
-	    InstanceHierarchy ih;
+      Env.Cache cache;
+      list<Env.Frame> env;
+      Prefix.Prefix pre;
+      list<SCode.Statement> sl;
+      SCode.Initial initial_;
+      Boolean impl;
+      list<DAE.Statement> stmts;
+      InstanceHierarchy ih;
 
     // adrpo: unroll ALL for loops containing ALG_WHEN... done
     case (cache,env,ih,pre,inIterators,sl,info,source,initial_,impl,unrollForLoops)
@@ -2014,24 +2014,24 @@ protected function instForStatement_dispatch
 algorithm
   (outCache,outStatements) := matchcontinue(inCache,inEnv,inIH,inPrefix,inIterators,inForBody,info,source,inInitial,inBool,unrollForLoops)
     local
-	    Env.Cache cache;
-	    list<Env.Frame> env,env_1;
-	    Prefix.Prefix pre;
-	    list<Absyn.ForIterator> restIterators;
-	    list<SCode.Statement> sl;
-	    SCode.Initial initial_;
-	    Boolean impl;
-	    DAE.Type t;
-	    DAE.Exp e_1,e_2;
-	    list<DAE.Statement> sl_1,stmts;
-	    String i;
-	    Absyn.Exp e;
-	    DAE.Statement stmt;
-	    DAE.Properties prop;
-	    list<tuple<Absyn.ComponentRef,Integer>> lst;
-	    tuple<Absyn.ComponentRef, Integer> tpl;
-	    DAE.Const cnst;
-	    InstanceHierarchy ih;
+      Env.Cache cache;
+      list<Env.Frame> env,env_1;
+      Prefix.Prefix pre;
+      list<Absyn.ForIterator> restIterators;
+      list<SCode.Statement> sl;
+      SCode.Initial initial_;
+      Boolean impl;
+      DAE.Type t;
+      DAE.Exp e_1,e_2;
+      list<DAE.Statement> sl_1,stmts;
+      String i;
+      Absyn.Exp e;
+      DAE.Statement stmt;
+      DAE.Properties prop;
+      list<tuple<Absyn.ComponentRef,Integer>> lst;
+      tuple<Absyn.ComponentRef, Integer> tpl;
+      DAE.Const cnst;
+      InstanceHierarchy ih;
 
     // one iterator
     case (cache,env,ih,pre,{(i,SOME(e))},sl,info,source,initial_,impl,unrollForLoops)

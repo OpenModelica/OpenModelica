@@ -30,7 +30,7 @@
  */
 
 package BackendDAEOptimize
-" file:	       BackendDAEOptimize.mo
+" file:         BackendDAEOptimize.mo
   package:     BackendDAEOptimize
   description: BackendDAEOPtimize contains functions that do some kind of
                optimazation on the BackendDAE datatype:
@@ -1629,16 +1629,16 @@ algorithm
         nvars = arrayLength(m_1);
         neqns = arrayLength(mT_1);
         memsize = nvars + nvars "Worst case, all eqns are differentiated once. Create nvars2 assignment elements" ;
-	      assign1 = BackendDAETransform.assignmentsCreate(nvars, memsize, 0);
-	      assign2 = BackendDAETransform.assignmentsCreate(nvars, memsize, 0);
+        assign1 = BackendDAETransform.assignmentsCreate(nvars, memsize, 0);
+        assign2 = BackendDAETransform.assignmentsCreate(nvars, memsize, 0);
         // try matching
-	      BackendDAETransform.checkMatching(dlow_1, (BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT(), BackendDAE.KEEP_SIMPLE_EQN()));
+        BackendDAETransform.checkMatching(dlow_1, (BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT(), BackendDAE.KEEP_SIMPLE_EQN()));
         Debug.fcall("tearingdump", BackendDump.dumpIncidenceMatrix, m_1);
         Debug.fcall("tearingdump", BackendDump.dumpIncidenceMatrixT, mT_1);
         Debug.fcall("tearingdump", BackendDump.dump, dlow_1);
-	      (ass1,ass2,dlow_2,m_2,mT_2,_,_) = BackendDAETransform.matchingAlgorithm2(dlow_1, m_1, mT_1, nvars, neqns, 1, assign1, assign2, (BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT(), BackendDAE.KEEP_SIMPLE_EQN()),DAEUtil.avlTreeNew(),{},{});
-	      v1_1 = BackendDAETransform.assignmentsVector(ass1);
-	      v2_1 = BackendDAETransform.assignmentsVector(ass2);
+        (ass1,ass2,dlow_2,m_2,mT_2,_,_) = BackendDAETransform.matchingAlgorithm2(dlow_1, m_1, mT_1, nvars, neqns, 1, assign1, assign2, (BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT(), BackendDAE.KEEP_SIMPLE_EQN()),DAEUtil.avlTreeNew(),{},{});
+        v1_1 = BackendDAETransform.assignmentsVector(ass1);
+        v2_1 = BackendDAETransform.assignmentsVector(ass2);
         (comps) = BackendDAETransform.strongComponents(m_2, mT_2, v1_1, v2_1);
         Debug.fcall("tearingdump", BackendDump.dumpMatching, v1_1);
         Debug.fcall("tearingdump", BackendDump.dumpComponents, comps);

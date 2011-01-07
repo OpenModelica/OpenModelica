@@ -31,7 +31,7 @@
 
 package ComponentReference
 "
-  file:	       ComponentReference.mo
+  file:         ComponentReference.mo
   package:     ComponentReference
   description: All stuff for ComponentRef datatypes
 
@@ -897,13 +897,13 @@ algorithm
         true;
     // this is a VERY expensive case! Do we NEED IT??!!
     // There is a bug here somewhere or in MetaModelica Compiler (MMC).
-	  // Therefore as a last resort, print the strings and compare.
-	  // adrpo: this is really not needed BUT unfortunately IT IS as
-	  //        QUAL(x, IDENT(y)) == IDENT(x.y)
-	  //        somewhere in the compiler the lhs is replaced by the rhs
-	  //        and makes this case needed! THIS SHOULD BE FIXED!! TODO! FIXME!
-	  //        NOTE: THIS IS NOT A BUG IN MMC!
-	  /* adrpo: comment this and try to make it work faster with the two cases below!
+    // Therefore as a last resort, print the strings and compare.
+    // adrpo: this is really not needed BUT unfortunately IT IS as
+    //        QUAL(x, IDENT(y)) == IDENT(x.y)
+    //        somewhere in the compiler the lhs is replaced by the rhs
+    //        and makes this case needed! THIS SHOULD BE FIXED!! TODO! FIXME!
+    //        NOTE: THIS IS NOT A BUG IN MMC!
+    /* adrpo: comment this and try to make it work faster with the two cases below!
     case (cr1 as DAE.CREF_QUAL(ident = n1),cr2 as DAE.CREF_IDENT)
       equation
         s1 = printComponentRefStr(cr1);
@@ -914,9 +914,9 @@ algorithm
         // enableTrace();
       then
         true;
-	  */
-	  // the following two cases replaces the one below
-	  // right cref is stringified!
+    */
+    // the following two cases replaces the one below
+    // right cref is stringified!
     case (cr1 as DAE.CREF_QUAL(ident = n1),cr2 as DAE.CREF_IDENT(ident = n2))
       equation
         0 = System.stringFind(n2, n1); // n1 should be first in n2!
@@ -925,7 +925,7 @@ algorithm
         true = stringEq(s1, s2);
       then
         true;
-	  // left cref is stringified!
+    // left cref is stringified!
     case (cr1 as DAE.CREF_IDENT(ident = n1),cr2 as DAE.CREF_QUAL(ident = n2))
       equation
         0 = System.stringFind(n1, n2); // n2 should be first in n1!
@@ -1049,7 +1049,7 @@ algorithm
 end crefIsFirstArrayElt;
 
 public function crefHaveSubs "Function: crefHaveSubs
-	Checks whether Componentref has any subscripts, recursive "
+  Checks whether Componentref has any subscripts, recursive "
   input DAE.ComponentRef icr;
   output Boolean ob;
 algorithm ob := matchcontinue(icr)
@@ -1780,23 +1780,23 @@ public function crefStripPrefix
   input DAE.ComponentRef prefix;
   output DAE.ComponentRef outCref;
 algorithm
-	outCref := match(cref,prefix)
-	  local
-	    list<DAE.Subscript> subs1,subs2;
-	    DAE.ComponentRef cr1,cr2;
-	    DAE.Ident id1,id2;
-	  
-	  case(DAE.CREF_QUAL(id1,_,subs1,cr1),DAE.CREF_IDENT(id2,_,subs2))
-	    equation
-	      true = stringEq(id1, id2);
-	      true = Expression.subscriptEqual(subs1,subs2);
-	    then cr1;
-	  
-	  case(DAE.CREF_QUAL(id1,_,subs1,cr1),DAE.CREF_QUAL(id2,_,subs2,cr2))
-	    equation
-	      true = stringEq(id1, id2);
-	      true = Expression.subscriptEqual(subs1,subs2);
-	    then crefStripPrefix(cr1,cr2);
+  outCref := match(cref,prefix)
+    local
+      list<DAE.Subscript> subs1,subs2;
+      DAE.ComponentRef cr1,cr2;
+      DAE.Ident id1,id2;
+    
+    case(DAE.CREF_QUAL(id1,_,subs1,cr1),DAE.CREF_IDENT(id2,_,subs2))
+      equation
+        true = stringEq(id1, id2);
+        true = Expression.subscriptEqual(subs1,subs2);
+      then cr1;
+    
+    case(DAE.CREF_QUAL(id1,_,subs1,cr1),DAE.CREF_QUAL(id2,_,subs2,cr2))
+      equation
+        true = stringEq(id1, id2);
+        true = Expression.subscriptEqual(subs1,subs2);
+      then crefStripPrefix(cr1,cr2);
   end match;
 end crefStripPrefix;
 

@@ -31,7 +31,7 @@
 
 package UnitChecker
 "
-  file:	       UnitChecker.mo
+  file:         UnitChecker.mo
   package:     UnitChecker
   description: Physical unit checking.
 
@@ -882,7 +882,7 @@ algorithm
         print("),");
         printSpecUnitParams(rest);
       then ();
-	end matchcontinue;
+  end matchcontinue;
 end printSpecUnitParams;
 
 public function testUnitOp "Test unit operations"

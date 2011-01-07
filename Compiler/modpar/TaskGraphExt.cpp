@@ -78,8 +78,8 @@ extern int nproc;
     VertexID newID=boost::add_vertex(taskgraph);
     nameVertex(newID,&taskgraph,str);
     put(VertexUniqueIDProperty(&taskgraph),
-	newID,
-	nextID);
+  newID,
+  nextID);
     setTaskType(newID,TempVar,&taskgraph);
     id_map[nextID]=newID;
     setExecCost(newID,1.0,&taskgraph);
@@ -168,9 +168,9 @@ extern int nproc;
     char *filename = RML_STRINGDATA(rmlA0);
     ofstream file(filename);
     my_write_graphviz(file,taskgraph,
-		      make_label_writer(VertexUniqueIDProperty(&taskgraph)),
-		      make_label_writer(EdgeCommCostProperty(&taskgraph))
-		      );
+  	      make_label_writer(VertexUniqueIDProperty(&taskgraph)),
+  	      make_label_writer(EdgeCommCostProperty(&taskgraph))
+  	      );
     file.close();
     RML_TAILCALLK(rmlSC);
   }
@@ -181,9 +181,9 @@ extern int nproc;
     char *filename = RML_STRINGDATA(rmlA0);
     ofstream file(filename);
     my_write_graphviz(file,merged_taskgraph,
-		      make_label_writer(VertexUniqueIDProperty(&merged_taskgraph)),
-		      make_label_writer(EdgeCommCostProperty(&merged_taskgraph))
-		      );
+  	      make_label_writer(VertexUniqueIDProperty(&merged_taskgraph)),
+  	      make_label_writer(EdgeCommCostProperty(&merged_taskgraph))
+  	      );
     file.close();
     RML_TAILCALLK(rmlSC);
   }
@@ -228,15 +228,15 @@ extern int nproc;
     double b = rml_prim_get_real(rmlA1);
 
     //cerr << "latency =" << l
-    //	 << " bandwidth ="  << b << endl;
+    //   << " bandwidth ="  << b << endl;
 
 
     ParallelOptions options(nproc,l,b);
     merged_taskgraph = taskgraph;
     taskmerging.merge(&merged_taskgraph,&taskgraph,&options,
-		      find_task(getTaskID(start_task,&taskgraph),&merged_taskgraph),
-		      find_task(getTaskID(stop_task,&taskgraph),&merged_taskgraph),
-		      &contain_set);
+  	      find_task(getTaskID(start_task,&taskgraph),&merged_taskgraph),
+  	      find_task(getTaskID(stop_task,&taskgraph),&merged_taskgraph),
+  	      &contain_set);
 
     RML_TAILCALLK(rmlSC);
   }
@@ -277,9 +277,9 @@ extern int nproc;
     //cerr << "Schedule with " << n << " processors." << endl;
 
     schedule = new Schedule(&merged_taskgraph,
-			    taskmerging.get_starttask(),
-			    taskmerging.get_endtask(),
-			    n);
+  		    taskmerging.get_starttask(),
+  		    taskmerging.get_endtask(),
+  		    n);
 
     schedule->printSchedule(cerr);
 
@@ -295,8 +295,8 @@ extern int nproc;
     codegen = new Codegen("model.cpp","model.hpp","modelinit.txt");
 
     codegen->initialize(&taskgraph,&merged_taskgraph,schedule,&contain_set,nproc,nx,ny,np,
-			merged_start_task,merged_stop_task,initvars,initstates,initparams,
-			varnames,statenames,paramnames);
+  		merged_start_task,merged_stop_task,initvars,initstates,initparams,
+  		varnames,statenames,paramnames);
 
     codegen->generateCode();
 

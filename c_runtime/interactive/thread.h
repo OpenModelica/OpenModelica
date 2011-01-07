@@ -2,27 +2,27 @@
 #define THREAD_H 
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
-	#include <windows.h>
+  #include <windows.h>
 
-	#define THREAD_RET_TYPE DWORD WINAPI
+  #define THREAD_RET_TYPE DWORD WINAPI
     #define THREAD_RET_TYPE_NO_API DWORD
-	typedef LPVOID THREAD_PARAM_TYPE;
+  typedef LPVOID THREAD_PARAM_TYPE;
 
-	typedef HANDLE MUTEX_HANDLE;
-	typedef HANDLE THREAD_HANDLE;
-	typedef HANDLE SEMAPHORE_HANDLE;
+  typedef HANDLE MUTEX_HANDLE;
+  typedef HANDLE THREAD_HANDLE;
+  typedef HANDLE SEMAPHORE_HANDLE;
 
 #else
-	#include <pthread.h>
-	#include <semaphore.h>
+  #include <pthread.h>
+  #include <semaphore.h>
 
-	typedef void* THREAD_RET_TYPE;
+  typedef void* THREAD_RET_TYPE;
     #define THREAD_RET_TYPE_NO_API THREAD_RET_TYPE
-	typedef void* THREAD_PARAM_TYPE;
+  typedef void* THREAD_PARAM_TYPE;
 
-	typedef pthread_mutex_t MUTEX_HANDLE;
-	typedef pthread_t THREAD_HANDLE;
-	typedef sem_t SEMAPHORE_HANDLE;
+  typedef pthread_mutex_t MUTEX_HANDLE;
+  typedef pthread_t THREAD_HANDLE;
+  typedef sem_t SEMAPHORE_HANDLE;
 #endif
 
 /**
@@ -32,58 +32,58 @@ void delay(unsigned milliseconds);
 
 class Thread
 {
-	public:
-		Thread();
-		~Thread();
-		bool Create(THREAD_RET_TYPE (*func)(THREAD_PARAM_TYPE));
+  public:
+  	Thread();
+  	~Thread();
+  	bool Create(THREAD_RET_TYPE (*func)(THREAD_PARAM_TYPE));
 
-		bool Join();
+  	bool Join();
 
-	private: // Not copyable
-		Thread(const Thread&);
-		Thread& operator= (const Thread&);
+  private: // Not copyable
+  	Thread(const Thread&);
+  	Thread& operator= (const Thread&);
 
-	private:
-		THREAD_HANDLE thread_handle;
+  private:
+  	THREAD_HANDLE thread_handle;
 };
 
 class Mutex
 {
-	public:
-		Mutex();
-		~Mutex();
+  public:
+  	Mutex();
+  	~Mutex();
 
-		bool Lock();
-		bool Unlock();
+  	bool Lock();
+  	bool Unlock();
 
-	private: // Not copyable
-		Mutex(const Mutex&);
-		Mutex& operator= (const Mutex&);
+  private: // Not copyable
+  	Mutex(const Mutex&);
+  	Mutex& operator= (const Mutex&);
 
-	private:
-		MUTEX_HANDLE mutex_handle;
+  private:
+  	MUTEX_HANDLE mutex_handle;
 };
 
 class Semaphore
 {
-	struct Impl;
+  struct Impl;
 
-	public:
-		Semaphore(unsigned initial_count, unsigned max_count);
-		~Semaphore();
+  public:
+  	Semaphore(unsigned initial_count, unsigned max_count);
+  	~Semaphore();
 
-		bool Wait();
-		bool TryWait();
-		bool Post();
-		bool Post(unsigned count);
-		
-	private:
-		Semaphore(const Semaphore&);
-		Semaphore& operator= (const Semaphore&);
+  	bool Wait();
+  	bool TryWait();
+  	bool Post();
+  	bool Post(unsigned count);
+  	
+  private:
+  	Semaphore(const Semaphore&);
+  	Semaphore& operator= (const Semaphore&);
 
-	private:
-		SEMAPHORE_HANDLE semaphore_handle;
-		Impl *impl;
+  private:
+  	SEMAPHORE_HANDLE semaphore_handle;
+  	Impl *impl;
 };
 
 #endif /* THREAD_H */

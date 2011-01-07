@@ -31,7 +31,7 @@
 
 package InstanceHierarchy
 "
-  file:	       InstanceHierarchy.mo
+  file:         InstanceHierarchy.mo
   package:     InstanceHierarchy
   description: Data structure for representing the instance hierarchy
 
@@ -137,7 +137,7 @@ algorithm
 
     case (ih,scope,c::_)
       equation
-				true = RTOpts.debugFlag("instance");
+    		true = RTOpts.debugFlag("instance");
         Debug.fprintln("instance", "InstanceHierarchy.createInstanceFromProgram failed on class:" +& SCode.printClassStr(c));
       then
         fail();
@@ -320,7 +320,7 @@ algorithm
 
     case (scope, el::rest)
       equation
-				true = RTOpts.debugFlag("instance");
+    		true = RTOpts.debugFlag("instance");
         Debug.fprintln("instance", "InstanceHierarchy.createInstanceHierarchyFromElements failed on element: " +& SCode.unparseElementStr(el));
       then
         fail();
@@ -359,7 +359,7 @@ function addConnects
 algorithm
   outInstanceConnects := matchcontinue(scope, equations, inInstanceConnects)
     local
-	    list<SCode.EEquation> eqs, eEquationLst;
+      list<SCode.EEquation> eqs, eEquationLst;
       SCode.EEquation equ;
       list<SCode.Equation> rest;
       InstanceConnects result;

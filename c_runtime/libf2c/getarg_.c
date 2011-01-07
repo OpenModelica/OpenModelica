@@ -21,13 +21,13 @@ register char *t;
 register int i;
 
 if(*n>=0 && *n<xargc)
-	t = xargv[*n];
+  t = xargv[*n];
 else
-	t = "";
+  t = "";
 for(i = 0; i<ls && *t!='\0' ; ++i)
-	*s++ = *t++;
+  *s++ = *t++;
 for( ; i<ls ; ++i)
-	*s++ = ' ';
+  *s++ = ' ';
 }
 #ifdef __cplusplus
 }

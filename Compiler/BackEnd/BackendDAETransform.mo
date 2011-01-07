@@ -30,7 +30,7 @@
  */
 
 package BackendDAETransform
-" file:	       BackendDAETransform.mo
+" file:         BackendDAETransform.mo
   package:     BackendDAETransform
   description: BackendDAETransform contains functions that are needed to perform 
                a transformation to a Block-Lower-Triangular-DAE.

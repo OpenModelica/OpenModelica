@@ -39,11 +39,11 @@ encapsulated package BaseHashTable
   
   RCS: $Id$
 
-	This file is an extension to OpenModelica.
+  This file is an extension to OpenModelica.
 
   Based on HashTable.mo but
-  Key 		= DAE.ComponentRef
-  Value 	= DAE.Exp"
+  Key     = DAE.ComponentRef
+  Value   = DAE.Exp"
 
 
 // Below is the instance specific code. For each hashtable the user must define:

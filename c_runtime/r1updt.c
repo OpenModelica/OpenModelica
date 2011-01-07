@@ -1,13 +1,13 @@
 /* r1updt.f -- translated by f2c (version 20041007).
    You must link the resulting object file with libf2c:
-	on Microsoft Windows system, link with libf2c.lib;
-	on Linux or Unix systems, link with .../path/to/libf2c.a -lm
-	or, if you install libf2c.a in a standard place, with -lf2c -lm
-	-- in that order, at the end of the command line, as in
-		cc *.o -lf2c -lm
-	Source for libf2c is in /netlib/f2c/libf2c.zip, e.g.,
+  on Microsoft Windows system, link with libf2c.lib;
+  on Linux or Unix systems, link with .../path/to/libf2c.a -lm
+  or, if you install libf2c.a in a standard place, with -lf2c -lm
+  -- in that order, at the end of the command line, as in
+  	cc *.o -lf2c -lm
+  Source for libf2c is in /netlib/f2c/libf2c.zip, e.g.,
 
-		http://www.netlib.org/f2c/libf2c.zip
+  	http://www.netlib.org/f2c/libf2c.zip
 */
 
 #include "f2c.h"
@@ -17,7 +17,7 @@
 static integer c__3 = 3;
 
 /* Subroutine */ int r1updt_(integer *m, integer *n, doublereal *s, integer *
-	ls, doublereal *u, doublereal *v, doublereal *w, logical *sing)
+  ls, doublereal *u, doublereal *v, doublereal *w, logical *sing)
 {
     /* Initialized data */
 
@@ -129,8 +129,8 @@ static integer c__3 = 3;
     l = jj;
     i__1 = *m;
     for (i__ = *n; i__ <= i__1; ++i__) {
-	w[i__] = s[l];
-	++l;
+  w[i__] = s[l];
+  ++l;
 /* L10: */
     }
 
@@ -139,62 +139,62 @@ static integer c__3 = 3;
 
     nm1 = *n - 1;
     if (nm1 < 1) {
-	goto L70;
+  goto L70;
     }
     i__1 = nm1;
     for (nmj = 1; nmj <= i__1; ++nmj) {
-	j = *n - nmj;
-	jj -= *m - j + 1;
-	w[j] = zero;
-	if (v[j] == zero) {
-	    goto L50;
-	}
+  j = *n - nmj;
+  jj -= *m - j + 1;
+  w[j] = zero;
+  if (v[j] == zero) {
+      goto L50;
+  }
 
 /*        determine a givens rotation which eliminates the */
 /*        j-th element of v. */
 
-	if ((d__1 = v[*n], abs(d__1)) >= (d__2 = v[j], abs(d__2))) {
-	    goto L20;
-	}
-	cotan = v[*n] / v[j];
+  if ((d__1 = v[*n], abs(d__1)) >= (d__2 = v[j], abs(d__2))) {
+      goto L20;
+  }
+  cotan = v[*n] / v[j];
 /* Computing 2nd power */
-	d__1 = cotan;
-	sin__ = p5 / sqrt(p25 + p25 * (d__1 * d__1));
-	cos__ = sin__ * cotan;
-	tau = one;
-	if (abs(cos__) * giant > one) {
-	    tau = one / cos__;
-	}
-	goto L30;
+  d__1 = cotan;
+  sin__ = p5 / sqrt(p25 + p25 * (d__1 * d__1));
+  cos__ = sin__ * cotan;
+  tau = one;
+  if (abs(cos__) * giant > one) {
+      tau = one / cos__;
+  }
+  goto L30;
 L20:
-	tan__ = v[j] / v[*n];
+  tan__ = v[j] / v[*n];
 /* Computing 2nd power */
-	d__1 = tan__;
-	cos__ = p5 / sqrt(p25 + p25 * (d__1 * d__1));
-	sin__ = cos__ * tan__;
-	tau = sin__;
+  d__1 = tan__;
+  cos__ = p5 / sqrt(p25 + p25 * (d__1 * d__1));
+  sin__ = cos__ * tan__;
+  tau = sin__;
 L30:
 
 /*        apply the transformation to v and store the information */
 /*        necessary to recover the givens rotation. */
 
-	v[*n] = sin__ * v[j] + cos__ * v[*n];
-	v[j] = tau;
+  v[*n] = sin__ * v[j] + cos__ * v[*n];
+  v[j] = tau;
 
 /*        apply the transformation to s and extend the spike in w. */
 
-	l = jj;
-	i__2 = *m;
-	for (i__ = j; i__ <= i__2; ++i__) {
-	    temp = cos__ * s[l] - sin__ * w[i__];
-	    w[i__] = sin__ * s[l] + cos__ * w[i__];
-	    s[l] = temp;
-	    ++l;
+  l = jj;
+  i__2 = *m;
+  for (i__ = j; i__ <= i__2; ++i__) {
+      temp = cos__ * s[l] - sin__ * w[i__];
+      w[i__] = sin__ * s[l] + cos__ * w[i__];
+      s[l] = temp;
+      ++l;
 /* L40: */
-	}
+  }
 L50:
 /* L60: */
-	;
+  ;
     }
 L70:
 
@@ -202,7 +202,7 @@ L70:
 
     i__1 = *m;
     for (i__ = 1; i__ <= i__1; ++i__) {
-	w[i__] += v[*n] * u[i__];
+  w[i__] += v[*n] * u[i__];
 /* L80: */
     }
 
@@ -210,63 +210,63 @@ L70:
 
     *sing = FALSE_;
     if (nm1 < 1) {
-	goto L140;
+  goto L140;
     }
     i__1 = nm1;
     for (j = 1; j <= i__1; ++j) {
-	if (w[j] == zero) {
-	    goto L120;
-	}
+  if (w[j] == zero) {
+      goto L120;
+  }
 
 /*        determine a givens rotation which eliminates the */
 /*        j-th element of the spike. */
 
-	if ((d__1 = s[jj], abs(d__1)) >= (d__2 = w[j], abs(d__2))) {
-	    goto L90;
-	}
-	cotan = s[jj] / w[j];
+  if ((d__1 = s[jj], abs(d__1)) >= (d__2 = w[j], abs(d__2))) {
+      goto L90;
+  }
+  cotan = s[jj] / w[j];
 /* Computing 2nd power */
-	d__1 = cotan;
-	sin__ = p5 / sqrt(p25 + p25 * (d__1 * d__1));
-	cos__ = sin__ * cotan;
-	tau = one;
-	if (abs(cos__) * giant > one) {
-	    tau = one / cos__;
-	}
-	goto L100;
+  d__1 = cotan;
+  sin__ = p5 / sqrt(p25 + p25 * (d__1 * d__1));
+  cos__ = sin__ * cotan;
+  tau = one;
+  if (abs(cos__) * giant > one) {
+      tau = one / cos__;
+  }
+  goto L100;
 L90:
-	tan__ = w[j] / s[jj];
+  tan__ = w[j] / s[jj];
 /* Computing 2nd power */
-	d__1 = tan__;
-	cos__ = p5 / sqrt(p25 + p25 * (d__1 * d__1));
-	sin__ = cos__ * tan__;
-	tau = sin__;
+  d__1 = tan__;
+  cos__ = p5 / sqrt(p25 + p25 * (d__1 * d__1));
+  sin__ = cos__ * tan__;
+  tau = sin__;
 L100:
 
 /*        apply the transformation to s and reduce the spike in w. */
 
-	l = jj;
-	i__2 = *m;
-	for (i__ = j; i__ <= i__2; ++i__) {
-	    temp = cos__ * s[l] + sin__ * w[i__];
-	    w[i__] = -sin__ * s[l] + cos__ * w[i__];
-	    s[l] = temp;
-	    ++l;
+  l = jj;
+  i__2 = *m;
+  for (i__ = j; i__ <= i__2; ++i__) {
+      temp = cos__ * s[l] + sin__ * w[i__];
+      w[i__] = -sin__ * s[l] + cos__ * w[i__];
+      s[l] = temp;
+      ++l;
 /* L110: */
-	}
+  }
 
 /*        store the information necessary to recover the */
 /*        givens rotation. */
 
-	w[j] = tau;
+  w[j] = tau;
 L120:
 
 /*        test for zero diagonal elements in the output s. */
 
-	if (s[jj] == zero) {
-	    *sing = TRUE_;
-	}
-	jj += *m - j + 1;
+  if (s[jj] == zero) {
+      *sing = TRUE_;
+  }
+  jj += *m - j + 1;
 /* L130: */
     }
 L140:
@@ -276,12 +276,12 @@ L140:
     l = jj;
     i__1 = *m;
     for (i__ = *n; i__ <= i__1; ++i__) {
-	s[l] = w[i__];
-	++l;
+  s[l] = w[i__];
+  ++l;
 /* L150: */
     }
     if (s[jj] == zero) {
-	*sing = TRUE_;
+  *sing = TRUE_;
     }
     return 0;
 

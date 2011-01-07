@@ -38,7 +38,7 @@
 
 int modelica_string_ok(modelica_string_t* a)
 {
-	/* Since a modelica string is a char* check that it is not null.*/
+  /* Since a modelica string is a char* check that it is not null.*/
     return (a != NULL ? 1 : 0);
 }
 
@@ -82,43 +82,43 @@ modelica_string_const modelica_string_to_modelica_string_format(modelica_string_
 
 modelica_string_const modelica_integer_to_modelica_string(modelica_integer i, modelica_integer minLen,modelica_boolean leftJustified)
 {
-	char formatStr[40];
-	char buf[400];
-	formatStr[0]='%';
-	if (leftJustified) {
-		sprintf(&formatStr[1],"-%dd",(int)minLen);
-	} else {
-		sprintf(&formatStr[1],"%dd",(int)minLen);
-	}
-	sprintf(buf,formatStr,i);
-	return init_modelica_string(buf);
+  char formatStr[40];
+  char buf[400];
+  formatStr[0]='%';
+  if (leftJustified) {
+  	sprintf(&formatStr[1],"-%dd",(int)minLen);
+  } else {
+  	sprintf(&formatStr[1],"%dd",(int)minLen);
+  }
+  sprintf(buf,formatStr,i);
+  return init_modelica_string(buf);
 }
 
 /* Convert a modelica_real to a modelica_string, used in String(r) */
 
 modelica_string_const modelica_real_to_modelica_string(modelica_real r,modelica_integer minLen,modelica_boolean leftJustified,modelica_integer signDigits)
 {
-	char formatStr[40];
-	char buf[400];
-	formatStr[0]='%';
-	if (leftJustified) {
-		sprintf(&formatStr[1],"-%d.%dg",(int)minLen,(int)signDigits);
-	} else {
-		sprintf(&formatStr[1],"%d.%dg",(int)minLen,(int)signDigits);
-	}
-	sprintf(buf,formatStr,r);
-	return init_modelica_string(buf);
+  char formatStr[40];
+  char buf[400];
+  formatStr[0]='%';
+  if (leftJustified) {
+  	sprintf(&formatStr[1],"-%d.%dg",(int)minLen,(int)signDigits);
+  } else {
+  	sprintf(&formatStr[1],"%d.%dg",(int)minLen,(int)signDigits);
+  }
+  sprintf(buf,formatStr,r);
+  return init_modelica_string(buf);
 }
 
 /* Convert a modelica_boolean to a modelica_string, used in String(b) */
 
 modelica_string_const modelica_boolean_to_modelica_string(modelica_boolean b, modelica_integer minLen, modelica_boolean leftJustified)
 {
-	if (b) {
-		return "true";
-	} else {
-		return "false";
-	}
+  if (b) {
+  	return "true";
+  } else {
+  	return "false";
+  }
 }
 
 /* Convert a modelica_enumeration to a modelica_string, used in String(b) */
@@ -162,7 +162,7 @@ void free_modelica_string(modelica_string_t* a)
 
 modelica_string_const copy_modelica_string(modelica_string_const source)
 {
-	modelica_string_t dest = alloc_modelica_string(modelica_string_length(source));
+  modelica_string_t dest = alloc_modelica_string(modelica_string_length(source));
   memcpy(dest, source, modelica_string_length(source)+1);
   return dest;
 }

@@ -169,20 +169,20 @@ extern char* SettingsImpl__getTempDirectoryPath()
   // On windows, set Temp directory path to Temp directory as returned by GetTempPath,
   // which is usually TMP or TEMP or windows catalogue.
   #ifdef WIN32
-	  int numChars;
-	  char* str,str1;
-	  char tempDirectory[1024];
-		  //extract the temp path
-	  numChars= GetTempPath(1024, tempDirectory);
-	  if (numChars == 1024 || numChars == 0) {
-		  fprintf(stderr, "Error setting temppath in Kernel\n");
+    int numChars;
+    char* str,str1;
+    char tempDirectory[1024];
+  	  //extract the temp path
+    numChars= GetTempPath(1024, tempDirectory);
+    if (numChars == 1024 || numChars == 0) {
+  	  fprintf(stderr, "Error setting temppath in Kernel\n");
       exit(1);
-	  } else {
-	    // Must do replacement in two steps, since the _replace function can not have similar source as target.
-	    str = _replace(tempDirectory,"\\","/");
-	    tempDirectoryPath= _replace(str,"/","\\\\");
-	    free(str);
-	  }
+    } else {
+      // Must do replacement in two steps, since the _replace function can not have similar source as target.
+      str = _replace(tempDirectory,"\\","/");
+      tempDirectoryPath= _replace(str,"/","\\\\");
+      free(str);
+    }
   #else
     const char* str = getenv("TMPDIR");
     if (str == NULL)

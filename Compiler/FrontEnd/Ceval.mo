@@ -30,7 +30,7 @@
  */
 
 package Ceval
-" file:	       Ceval.mo
+" file:         Ceval.mo
   package:     Ceval
   description: Constant propagation of expressions
 
@@ -105,7 +105,7 @@ public function ceval "
   calls are evaluated.
 
   The last argument is an optional dimension."
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input DAE.Exp inExp;
   input Boolean inBoolean "impl";
@@ -116,11 +116,11 @@ public function ceval "
   output Values.Value outValue;
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
 
-	partial function ReductionOperator
-		input Values.Value v1;
-		input Values.Value v2;
-		output Values.Value res;
-	end ReductionOperator;
+  partial function ReductionOperator
+    input Values.Value v1;
+    input Values.Value v2;
+    output Values.Value res;
+  end ReductionOperator;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv,inExp,inBoolean,inInteractiveInteractiveSymbolTableOption,inIntegerOption,inMsg)
@@ -527,34 +527,34 @@ algorithm
       then
         (cache,ValuesUtil.makeArray(vallst),stOpt);
 
-		//POW (integer or real)
+    //POW (integer or real)
     case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.POW(ty=_),exp2 = rh),impl,stOpt,dimOpt,msg)
       equation
         (cache,lhvVal,stOpt) = ceval(cache,env, lh, impl, stOpt, dimOpt, msg);
         (cache,rhvVal,stOpt) = ceval(cache,env, rh, impl, stOpt, dimOpt, msg);
-				resVal = ValuesUtil.safeIntRealOp(lhvVal, rhvVal, Values.POWOP());
+    		resVal = ValuesUtil.safeIntRealOp(lhvVal, rhvVal, Values.POWOP());
       then
         (cache,resVal,stOpt);
 
-		//MUL (integer or real)
+    //MUL (integer or real)
     case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.MUL(ty=_),exp2 = rh),impl,stOpt,dimOpt,msg)
       equation
         (cache,lhvVal,stOpt) = ceval(cache,env, lh, impl, stOpt, dimOpt, msg);
         (cache,rhvVal,stOpt) = ceval(cache,env, rh, impl, stOpt, dimOpt, msg);
-				resVal = ValuesUtil.safeIntRealOp(lhvVal, rhvVal, Values.MULOP());
+    		resVal = ValuesUtil.safeIntRealOp(lhvVal, rhvVal, Values.MULOP());
       then
         (cache,resVal,stOpt);
 
-		//DIV (integer or real)
+    //DIV (integer or real)
     case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.DIV(ty=_),exp2 = rh),impl,stOpt,dimOpt,msg)
       equation
         (cache,lhvVal,stOpt) = ceval(cache,env, lh, impl, stOpt, dimOpt, msg);
         (cache,rhvVal,stOpt) = ceval(cache,env, rh, impl, stOpt, dimOpt, msg);
-				resVal = ValuesUtil.safeIntRealOp(lhvVal, rhvVal, Values.DIVOP());
+    		resVal = ValuesUtil.safeIntRealOp(lhvVal, rhvVal, Values.DIVOP());
       then
         (cache,resVal,stOpt);
 
-		//DIV (handle div by zero)
+    //DIV (handle div by zero)
     case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.DIV(ty =_),exp2 = rh),impl,stOpt,dimOpt,msg)
       equation
         (cache,lhvVal,stOpt) = ceval(cache,env, rh, impl, stOpt, dimOpt, msg);
@@ -565,21 +565,21 @@ algorithm
       then
         fail();
 
-		//ADD (integer or real)
+    //ADD (integer or real)
     case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.ADD(ty=_),exp2 = rh),impl,stOpt,dimOpt,msg)
       equation
         (cache,lhvVal,stOpt) = ceval(cache,env, lh, impl, stOpt, dimOpt, msg);
         (cache,rhvVal,stOpt) = ceval(cache,env, rh, impl, stOpt, dimOpt, msg);
-				resVal = ValuesUtil.safeIntRealOp(lhvVal, rhvVal, Values.ADDOP());
+    		resVal = ValuesUtil.safeIntRealOp(lhvVal, rhvVal, Values.ADDOP());
       then
         (cache,resVal,stOpt);
 
-		//SUB (integer or real)
+    //SUB (integer or real)
     case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.SUB(ty=_),exp2 = rh),impl,stOpt,dimOpt,msg)
       equation
         (cache,lhvVal,stOpt) = ceval(cache,env, lh, impl, stOpt, dimOpt, msg);
         (cache,rhvVal,stOpt) = ceval(cache,env, rh, impl, stOpt, dimOpt, msg);
-				resVal = ValuesUtil.safeIntRealOp(lhvVal, rhvVal, Values.SUBOP());
+    		resVal = ValuesUtil.safeIntRealOp(lhvVal, rhvVal, Values.SUBOP());
       then
         (cache,resVal,stOpt);
 
@@ -959,7 +959,7 @@ protected function cevalBuiltin
   Helper for ceval. Parts for builtin calls are moved here, for readability.
   See ceval for documentation.
   NOTE:    It\'s ok if cevalBuiltin fails. Just means the call was not a builtin function"
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input DAE.Exp inExp;
   input Boolean inBoolean "impl";
@@ -970,7 +970,7 @@ protected function cevalBuiltin
   output Values.Value outValue;
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
   partial function HandlerFunc
-		input Env.Cache inCache;
+    input Env.Cache inCache;
     input list<Env.Frame> inEnvFrameLst;
     input list<DAE.Exp> inExpExpLst;
     input Boolean inBoolean;
@@ -1035,7 +1035,7 @@ protected function cevalBuiltinHandler
   input Absyn.Ident inIdent;
   output HandlerFunc handler;
   partial function HandlerFunc
-  	input Env.Cache inCache;
+    input Env.Cache inCache;
     input Env.Env inEnv;
     input list<DAE.Exp> inExpExpLst;
     input Boolean inBoolean;
@@ -1123,7 +1123,7 @@ protected function cevalCallFunction "function: cevalCallFunction
   This function evaluates CALL expressions, i.e. function calls.
   They are currently evaluated by generating code for the function and
   then dynamicly load the function and call it."
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input DAE.Exp inExp;
   input list<Values.Value> inValuesValueLst;
@@ -1336,7 +1336,7 @@ algorithm
     case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl,builtin = false)),vallst,impl,NONE(),dim,msg) // crap! we have no symboltable!
       equation
         false = RTOpts.debugFlag("nogen");
- 				failure(cevalIsExternalObjectConstructor(cache,funcpath,env));
+     		failure(cevalIsExternalObjectConstructor(cache,funcpath,env));
         // we might actually have a function loaded here already!
         // we need to unload all functions to not get conflicts!
         (cache,funcstr) = CevalScript.cevalGenerateFunction(cache, env, funcpath);
@@ -1368,7 +1368,7 @@ algorithm
 end cevalCallFunction;
 
 protected function cevalIsExternalObjectConstructor
-	input Env.Cache cache;
+  input Env.Cache cache;
   input Absyn.Path funcpath;
   input Env.Env env;
 protected
@@ -1383,7 +1383,7 @@ end cevalIsExternalObjectConstructor;
 
 protected function cevalKnownExternalFuncs "function: cevalKnownExternalFuncs
   Evaluates external functions that are known, e.g. all math functions."
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env env;
   input Absyn.Path funcpath;
   input list<Values.Value> vals;
@@ -1581,7 +1581,7 @@ end cevalFunction;
 
 protected function cevalMatrixElt "function: cevalMatrixElt
   Evaluates the expression of a matrix constructor, e.g. {1,2;3,4}"
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input list<list<tuple<DAE.Exp, Boolean>>> inTplExpExpBooleanLstLst "matrix constr. elts";
   input Boolean inBoolean "impl";
@@ -1612,7 +1612,7 @@ end cevalMatrixElt;
 
 protected function cevalMatrixEltRow "function: cevalMatrixEltRow
   Helper function to cevalMatrixElt"
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input list<tuple<DAE.Exp, Boolean>> inTplExpExpBooleanLst;
   input Boolean inBoolean;
@@ -1646,7 +1646,7 @@ end cevalMatrixEltRow;
 
 protected function cevalBuiltinSize "function: cevalBuiltinSize
   Evaluates the size operator."
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv1;
   input DAE.Exp inExp2;
   input DAE.Exp inDimExp;
@@ -1716,11 +1716,11 @@ algorithm
       equation
         (cache,dims) = Inst.elabComponentArraydimFromEnv(cache,env,cr,Absyn.dummyInfo) 
         "If component not instantiated yet, recursive definition.
-	       For example,
-	         Real x[:](min=fill(1.0,size(x,1))) = {1.0}
-	       When size(x,1) should be determined, x must be instantiated, but
-	       that is not done yet. Solution: Examine Element to find modifier
-	       which will determine dimension size.";
+         For example,
+           Real x[:](min=fill(1.0,size(x,1))) = {1.0}
+         When size(x,1) should be determined, x must be instantiated, but
+         that is not done yet. Solution: Examine Element to find modifier
+         which will determine dimension size.";
         (cache,Values.INTEGER(dimv),st_1) = ceval(cache, env, dimExp, impl, st, NONE(), msg);
         v2 = cevalBuiltinSize3(dims, dimv);
       then
@@ -1771,7 +1771,7 @@ algorithm
       then
         fail();
 
-		// For crefs with value binding e.g. size(x,1) when Real x[:]=fill(0,1);
+    // For crefs with value binding e.g. size(x,1) when Real x[:]=fill(0,1);
     case (cache,env,(exp as DAE.CREF(componentRef = cr,ty = crtp)),dimExp,impl,st,msg)
       equation 
         (cache,attr,tp,binding,_,_,_,_,_) = Lookup.lookupVar(cache, env, cr)  ;     
@@ -1805,13 +1805,13 @@ algorithm
         (cache,Values.INTEGER(len),st_1);
 
     // For expressions with value binding that can not determine type
-		// e.g. size(x,2) when Real x[:,:]=fill(0.0,0,2); empty array with second dimension == 2, no way of 
-		// knowing that from the value. Must investigate the expression itself.
+    // e.g. size(x,2) when Real x[:,:]=fill(0.0,0,2); empty array with second dimension == 2, no way of 
+    // knowing that from the value. Must investigate the expression itself.
     case (cache,env,exp,dimExp,impl,st,msg)
       equation
         (cache,Values.ARRAY({},adims),st_1) = ceval(cache,env, exp, impl, st,NONE(), msg) "try to ceval expression, for constant expressions" ;
         (cache,Values.INTEGER(dimv),st_1) = ceval(cache,env, dimExp, impl, st,NONE(), msg);
-				i = listNth(adims,dimv-1);
+    		i = listNth(adims,dimv-1);
       then
         (cache,Values.INTEGER(i),st_1);
 
@@ -1894,7 +1894,7 @@ end cevalBuiltinSize3;
 protected function cevalBuiltinAbs "function: cevalBuiltinAbs
   author: LP
   Evaluates the abs operator."
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
@@ -1933,7 +1933,7 @@ end cevalBuiltinAbs;
 protected function cevalBuiltinSign "function: cevalBuiltinSign
   author: PA
   Evaluates the sign operator."
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
@@ -1978,7 +1978,7 @@ end cevalBuiltinSign;
 protected function cevalBuiltinExp "function: cevalBuiltinExp
   author: PA
   Evaluates the exp function"
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
@@ -2012,7 +2012,7 @@ protected function cevalBuiltinNoevent "function: cevalBuiltinNoevent
   Evaluates the noEvent operator. During constant evaluation events are not
   considered, so evaluation will simply remove the operator and evaluate the
   operand."
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
@@ -2045,7 +2045,7 @@ protected function cevalBuiltinCardinality "function: cevalBuiltinCardinality
   Evaluates the cardinality operator. The cardinality of a connector
   instance is its number of (inside and outside) connections, i.e.
   number of occurences in connect equations."
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
@@ -2077,7 +2077,7 @@ protected function cevalCardinality "function: cevalCardinality
   author: PA
   counts the number of connect occurences of the
   component ref in equations in current scope."
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input DAE.ComponentRef inComponentRef;
   output Env.Cache outCache;
@@ -2099,7 +2099,7 @@ algorithm
         cr_lst = Util.listSelect1(crs, cr, ComponentReference.crefContainedIn);
         currentPrefixIdent= ComponentReference.crefLastIdent(prefix);
         currentPrefix = ComponentReference.makeCrefIdent(currentPrefixIdent,DAE.ET_OTHER(),{});
- 		    //	Select connect references that has cr as suffix and correct Prefix.
+         //	Select connect references that has cr as suffix and correct Prefix.
         cr_lst = Util.listSelect1R(cr_lst, currentPrefix, ComponentReference.crefPrefixOf);
 
         // Select connect references that are identifiers (inside connectors)
@@ -2114,8 +2114,8 @@ algorithm
         print("\nicrefs =");print(Util.stringDelimitList(Util.listMap(crs,ComponentReference.printComponentRefStr),","));
         print("\ncrefs =");print(Util.stringDelimitList(Util.listMap(cr_totlst,ComponentReference.printComponentRefStr),","));
         print("\n");
-       	print("prefix =");print(ComponentReference.printComponentRefStr(prefix));print("\n");*/
-       //	print("env:");print(Env.printEnvStr(env));
+         print("prefix =");print(ComponentReference.printComponentRefStr(prefix));print("\n");*/
+       //  print("env:");print(Env.printEnvStr(env));
       then
         (cache,res);
   end match;
@@ -2124,7 +2124,7 @@ end cevalCardinality;
 protected function cevalBuiltinCat "function: cevalBuiltinCat
   author: PA
   Evaluates the cat operator, for matrix concatenation."
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
@@ -2161,7 +2161,7 @@ end cevalBuiltinCat;
 protected function cevalBuiltinIdentity "function: cevalBuiltinIdentity
   author: PA
   Evaluates the identity operator."
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
@@ -2182,7 +2182,7 @@ algorithm
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st;
       Msg msg;
-     	Env.Cache cache;
+       Env.Cache cache;
     
     case (cache,env,{dim},impl,st,msg)
       equation
@@ -2199,7 +2199,7 @@ end cevalBuiltinIdentity;
 protected function cevalBuiltinPromote "function: cevalBuiltinPromote
   author: PA
   Evaluates the internal promote operator, for promotion of arrays"
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
@@ -2299,7 +2299,7 @@ protected function cevalBuiltinString "
   author: PA
   Evaluates the String operator String(r), String(i), String(b), String(e).
   TODO: Also evaluate String(r, significantDigits=d), and String(r, format=s)."
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
@@ -2325,7 +2325,7 @@ algorithm
     case (cache,env,{exp, len_exp, justified_exp},impl,st,msg)
       equation
         (cache,Values.INTEGER(i),_) = ceval(cache,env, exp, impl, st,NONE(), msg);
-				str = intString(i);
+    		str = intString(i);
         (cache, str) = cevalBuiltinStringFormat(cache, env, str, len_exp, justified_exp, impl, st, msg);
       then
         (cache,Values.STRING(str),st);
@@ -2333,7 +2333,7 @@ algorithm
     case (cache,env,{exp, len_exp, justified_exp, _},impl,st,msg)
       equation
         (cache,Values.REAL(r),_) = ceval(cache,env, exp, impl, st,NONE(), msg);
-				str = realString(r);
+    		str = realString(r);
         (cache, str) = cevalBuiltinStringFormat(cache, env, str, len_exp, justified_exp, impl, st, msg);
       then
         (cache,Values.STRING(str),st);
@@ -2341,7 +2341,7 @@ algorithm
     case (cache,env,{exp, len_exp, justified_exp},impl,st,msg)
       equation
         (cache,Values.BOOL(b),_) = ceval(cache,env, exp, impl, st,NONE(), msg);
-				str = boolString(b);
+    		str = boolString(b);
         (cache, str) = cevalBuiltinStringFormat(cache, env, str, len_exp, justified_exp, impl, st, msg);
       then
         (cache,Values.STRING(str),st);
@@ -2360,7 +2360,7 @@ end cevalBuiltinString;
 protected function cevalBuiltinStringFormat
   "This function formats a string by using the minimumLength and leftJustified
   arguments to the String function."  
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input String inString;
   input DAE.Exp lengthExp;
@@ -2428,7 +2428,7 @@ end cevalBuiltinStringFormat2;
 protected function cevalBuiltinLinspace "
   author: PA
   Evaluates the linpace function"
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
@@ -2492,7 +2492,7 @@ end cevalBuiltinLinspace2;
 protected function cevalBuiltinPrint "
   author: sjoelund
   Prints a String"
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
@@ -2515,14 +2515,14 @@ algorithm
     case (cache,env,{exp},impl,st,msg)
       equation
         (cache,Values.STRING(str),st) = ceval(cache,env, exp, impl, st,NONE(), msg);
-				print(str);
+    		print(str);
       then
         (cache,Values.NORETCALL(),st);
   end match;
 end cevalBuiltinPrint;
 
 protected function cevalIntReal
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
@@ -2553,7 +2553,7 @@ algorithm
 end cevalIntReal;
 
 protected function cevalIntString
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
@@ -2584,7 +2584,7 @@ algorithm
 end cevalIntString;
 
 protected function cevalRealInt
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
@@ -2615,7 +2615,7 @@ algorithm
 end cevalRealInt;
 
 protected function cevalRealString
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
@@ -2646,7 +2646,7 @@ algorithm
 end cevalRealString;
 
 protected function cevalStringCharInt
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
@@ -2677,7 +2677,7 @@ algorithm
 end cevalStringCharInt;
 
 protected function cevalIntStringChar
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
@@ -2708,7 +2708,7 @@ algorithm
 end cevalIntStringChar;
 
 protected function cevalStringInt
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
@@ -2739,7 +2739,7 @@ algorithm
 end cevalStringInt;
 
 protected function cevalStringListStringChar
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
@@ -2779,7 +2779,7 @@ algorithm
 end generateValueString;
 
 protected function cevalListStringCharString
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
@@ -2816,7 +2816,7 @@ algorithm
 end cevalListStringCharString;
 
 protected function cevalStringAppendList
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
@@ -3091,7 +3091,7 @@ end catDimension2;
 protected function cevalBuiltinFloor "function: cevalBuiltinFloor
   author: LP
   evaluates the floor operator."
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
@@ -3123,7 +3123,7 @@ end cevalBuiltinFloor;
 protected function cevalBuiltinCeil "function cevalBuiltinCeil
   author: LP
   evaluates the ceil operator."
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
@@ -3168,7 +3168,7 @@ end cevalBuiltinCeil;
 protected function cevalBuiltinSqrt "function: cevalBuiltinSqrt
   author: LP
   Evaluates the builtin sqrt operator."
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
@@ -3207,7 +3207,7 @@ end cevalBuiltinSqrt;
 protected function cevalBuiltinSin "function cevalBuiltinSin
   author: LP
   Evaluates the builtin sin function."
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
@@ -3239,7 +3239,7 @@ end cevalBuiltinSin;
 protected function cevalBuiltinSinh "function cevalBuiltinSinh
   author: PA
   Evaluates the builtin sinh function."
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
@@ -3271,7 +3271,7 @@ end cevalBuiltinSinh;
 protected function cevalBuiltinCos "function cevalBuiltinCos
   author: LP
   Evaluates the builtin cos function."
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
@@ -3303,7 +3303,7 @@ end cevalBuiltinCos;
 protected function cevalBuiltinCosh "function cevalBuiltinCosh
   author: PA
   Evaluates the builtin cosh function."
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
@@ -3335,7 +3335,7 @@ end cevalBuiltinCosh;
 protected function cevalBuiltinLog "function cevalBuiltinLog
   author: LP
   Evaluates the builtin Log function."
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
@@ -3365,7 +3365,7 @@ algorithm
 end cevalBuiltinLog;
 
 protected function cevalBuiltinLog10
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
@@ -3397,7 +3397,7 @@ end cevalBuiltinLog10;
 protected function cevalBuiltinTan "function cevalBuiltinTan
   author: LP
   Evaluates the builtin tan function."
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
@@ -3431,7 +3431,7 @@ end cevalBuiltinTan;
 protected function cevalBuiltinTanh "function cevalBuiltinTanh
   author: PA
   Evaluates the builtin tanh function."
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
@@ -3463,7 +3463,7 @@ end cevalBuiltinTanh;
 protected function cevalBuiltinAsin "function cevalBuiltinAsin
   author: PA
   Evaluates the builtin asin function."
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
@@ -3495,7 +3495,7 @@ end cevalBuiltinAsin;
 protected function cevalBuiltinAcos "function cevalBuiltinAcos
   author: PA
   Evaluates the builtin acos function."
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
@@ -3527,7 +3527,7 @@ end cevalBuiltinAcos;
 protected function cevalBuiltinAtan "function cevalBuiltinAtan
   author: PA
   Evaluates the builtin atan function."
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
@@ -3557,7 +3557,7 @@ algorithm
 end cevalBuiltinAtan;
 
 protected function cevalBuiltinAtan2
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
@@ -3590,7 +3590,7 @@ end cevalBuiltinAtan2;
 protected function cevalBuiltinDiv "function cevalBuiltinDiv
   author: LP
   Evaluates the builtin div operator."
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
@@ -3684,7 +3684,7 @@ end cevalBuiltinDiv;
 protected function cevalBuiltinMod "function cevalBuiltinMod
   author: LP
   Evaluates the builtin mod operator."
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
@@ -3787,7 +3787,7 @@ end cevalBuiltinMod;
 protected function cevalBuiltinMax "function cevalBuiltinMax
   author: LP
   Evaluates the builtin max function."
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
@@ -3881,7 +3881,7 @@ end cevalBuiltinMax2;
 protected function cevalBuiltinMin "function: cevalBuiltinMin
   author: PA
   Constant evaluation of builtin min function."
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
@@ -3969,7 +3969,7 @@ end cevalBuiltinMin2;
 protected function cevalBuiltinDifferentiate "function cevalBuiltinDifferentiate
   author: LP
   This function differentiates an equation: x^2 + x => 2x + 1"
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
@@ -4012,7 +4012,7 @@ end cevalBuiltinDifferentiate;
 protected function cevalBuiltinSimplify "function cevalBuiltinSimplify
   author: LP
   this function simplifies an equation: x^2 + x => 2x + 1"
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
@@ -4049,8 +4049,8 @@ end cevalBuiltinSimplify;
 protected function cevalBuiltinRem "function cevalBuiltinRem
   author: LP
   Evaluates the builtin rem operator"
-	input Env.Cache inCache;
-	input Env.Env inEnv;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
@@ -4141,7 +4141,7 @@ end cevalBuiltinRem;
 protected function cevalBuiltinInteger "function cevalBuiltinInteger
   author: LP
   Evaluates the builtin integer operator"
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
@@ -4174,7 +4174,7 @@ end cevalBuiltinInteger;
 protected function cevalBuiltinBoolean "function cevalBuiltinBoolean
  @author: adrpo
   Evaluates the builtin boolean operator"
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
@@ -4226,7 +4226,7 @@ protected function cevalBuiltinRooted
 "function cevalBuiltinRooted
   author: adrpo
   Evaluates the builtin rooted operator from MultiBody"
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
@@ -4256,7 +4256,7 @@ end cevalBuiltinRooted;
 protected function cevalBuiltinIntegerEnumeration "function cevalBuiltinIntegerEnumeration
   author: LP
   Evaluates the builtin Integer operator"
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
@@ -4288,7 +4288,7 @@ protected function cevalBuiltinDiagonal "function cevalBuiltinDiagonal
   This function generates a matrix{n,n} (A) of the vector {a,b,...,n}
   where the diagonal of A is the vector {a,b,...,n}
   ie A{1,1} == a, A{2,2} == b ..."
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
@@ -4330,7 +4330,7 @@ protected function cevalBuiltinDiagonal2 "function: cevalBuiltinDiagonal2
    This is a help function that is calling itself recursively to
    generate the a nxn matrix with some special diagonal elements.
    See cevalBuiltinDiagonal."
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv1;
   input DAE.Exp inExp2;
   input Boolean inBoolean3;
@@ -4438,7 +4438,7 @@ end cevalBuiltinDiagonal2;
 
 protected function cevalBuiltinCross "
   x,y => {x[2]*y[3]-x[3]*y[2],x[3]*y[1]-x[1]*y[3],x[1]*y[2]-x[2]*y[1]}"
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
@@ -4476,7 +4476,7 @@ end cevalBuiltinCross;
 
 protected function cevalBuiltinTranspose "function cevalBuiltinTranspose
   This function transposes the two first dimension of an array A."
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
@@ -4540,8 +4540,8 @@ end cevalBuiltinTranspose2;
 
 protected function cevalBuiltinSizeMatrix "function: cevalBuiltinSizeMatrix
   Helper function for cevalBuiltinSize, for size(A) where A is a matrix."
-	input Env.Cache inCache;
-	input Env.Env inEnv;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
   input DAE.Exp inExp;
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
@@ -4575,15 +4575,15 @@ algorithm
         (cache,v,st);
         
     // For matrix expressions: [1,2;3,4]
-		case (cache, env, DAE.MATRIX(ty = DAE.ET_ARRAY(arrayDimensions = dims)), impl, st, msg)
-			equation
+    case (cache, env, DAE.MATRIX(ty = DAE.ET_ARRAY(arrayDimensions = dims)), impl, st, msg)
+    	equation
         sizelst = Util.listMap(dims, Expression.dimensionSize);
-				v = ValuesUtil.intlistToValue(sizelst);
-			then
-				(cache, v, st);
-	  
-	  // For other matrix expressions e.g. on array form: {{1,2},{3,4}}
-		case (cache,env,exp,impl,st,msg)
+    		v = ValuesUtil.intlistToValue(sizelst);
+    	then
+    		(cache, v, st);
+    
+    // For other matrix expressions e.g. on array form: {{1,2},{3,4}}
+    case (cache,env,exp,impl,st,msg)
       equation
         (cache,v,st) = ceval(cache,env, exp, impl, st,NONE(), msg);
         tp = Types.typeOfValue(v);
@@ -4596,8 +4596,8 @@ end cevalBuiltinSizeMatrix;
 
 protected function cevalBuiltinFill
   "This function constant evaluates calls to the fill function."
-	input Env.Cache inCache;
-	input Env.Env inEnv;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
   input list<DAE.Exp> inExpl;
   input Boolean inImpl;
   input Option<Interactive.InteractiveSymbolTable> inST;
@@ -5055,7 +5055,7 @@ end makeEnumValue;
 public function cevalList "function: cevalList
   This function does constant
   evaluation on a list of expressions."
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
@@ -5089,7 +5089,7 @@ end cevalList;
 protected function cevalCref "function: cevalCref
   Evaluates ComponentRef, i.e. variables, by
   looking up variables in the environment."
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input DAE.ComponentRef inComponentRef;
   input Boolean inBoolean "impl";
@@ -5108,15 +5108,15 @@ algorithm
       Msg msg;
       String scope_str,str;
       Env.Cache cache;
-			Option<DAE.Const> const_for_range;
+    	Option<DAE.Const> const_for_range;
 
-		// Try to lookup the variables binding and constant evaluate it.
-		case (cache, env, c, impl, msg)
-			equation
-				(cache, _, _, binding, const_for_range, _, _, _, _) = Lookup.lookupVar(cache, env, c);
-				(cache, v) = cevalCref2(cache, env, c, binding, const_for_range, impl, msg);
-			then
-				(cache, v);
+    // Try to lookup the variables binding and constant evaluate it.
+    case (cache, env, c, impl, msg)
+    	equation
+    		(cache, _, _, binding, const_for_range, _, _, _, _) = Lookup.lookupVar(cache, env, c);
+    		(cache, v) = cevalCref2(cache, env, c, binding, const_for_range, impl, msg);
+    	then
+    		(cache, v);
 
     // failure in lookup and we have the MSG go-ahead to print the error
     case (cache,env,c,(impl as false),MSG())
@@ -5138,51 +5138,51 @@ algorithm
 end cevalCref;
 
 public function cevalCref2
-	"Helper function to cevalCref2"
-	input Env.Cache inCache;
-	input Env.Env inEnv;
-	input DAE.ComponentRef inCref;
-	input DAE.Binding inBinding;
-	input Option<DAE.Const> constForRange;
-	input Boolean inImpl;
-	input Msg inMsg;
-	output Env.Cache outCache;
-	output Values.Value outValue;
+  "Helper function to cevalCref2"
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input DAE.ComponentRef inCref;
+  input DAE.Binding inBinding;
+  input Option<DAE.Const> constForRange;
+  input Boolean inImpl;
+  input Msg inMsg;
+  output Env.Cache outCache;
+  output Values.Value outValue;
 algorithm
-	(outCache, outValue) := match (inCache, inEnv, inCref, inBinding, constForRange, inImpl, inMsg)
-		local
-			Env.Cache cache;
-			Values.Value v;
-		  String str, scope_str;
+  (outCache, outValue) := match (inCache, inEnv, inCref, inBinding, constForRange, inImpl, inMsg)
+    local
+    	Env.Cache cache;
+    	Values.Value v;
+      String str, scope_str;
     
-		// A variable with no binding and SOME for range constness -> a for iterator
-		case (_, _, _, DAE.UNBOUND(), SOME(_), _, _) then fail();
+    // A variable with no binding and SOME for range constness -> a for iterator
+    case (_, _, _, DAE.UNBOUND(), SOME(_), _, _) then fail();
     
-		// A variable without a binding -> error
-		case (_, _, _, DAE.UNBOUND(), NONE(), false, MSG())
-			equation
-				str = ComponentReference.printComponentRefStr(inCref);
-				scope_str = Env.printEnvPathStr(inEnv);
-				Error.addMessage(Error.NO_CONSTANT_BINDING, {str, scope_str});
-				Debug.fprintln("ceval", "- Ceval.cevalCref on: " +& str +& 
-					" failed with no constant binding in scope: " +& scope_str);
-			then
-				fail();
+    // A variable without a binding -> error
+    case (_, _, _, DAE.UNBOUND(), NONE(), false, MSG())
+    	equation
+    		str = ComponentReference.printComponentRefStr(inCref);
+    		scope_str = Env.printEnvPathStr(inEnv);
+    		Error.addMessage(Error.NO_CONSTANT_BINDING, {str, scope_str});
+    		Debug.fprintln("ceval", "- Ceval.cevalCref on: " +& str +& 
+    			" failed with no constant binding in scope: " +& scope_str);
+    	then
+    		fail();
     
-		// A variable with a binding -> constant evaluate the binding
-		case (_, _, _, _, _, _, _)
-			equation
-				false = crefEqualValue(inCref, inBinding);
-				(cache, v) = cevalCrefBinding(inCache, inEnv, inCref, inBinding, inImpl, inMsg);
-			then
-				(cache, v);
-	end match;
+    // A variable with a binding -> constant evaluate the binding
+    case (_, _, _, _, _, _, _)
+    	equation
+    		false = crefEqualValue(inCref, inBinding);
+    		(cache, v) = cevalCrefBinding(inCache, inEnv, inCref, inBinding, inImpl, inMsg);
+    	then
+    		(cache, v);
+  end match;
 end cevalCref2;
 
 public function cevalCrefBinding "function: cevalCrefBinding
   Helper function to cevalCref.
   Evaluates variables by evaluating their bindings."
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input DAE.ComponentRef inComponentRef;
   input DAE.Binding inBinding;
@@ -5301,7 +5301,7 @@ algorithm
     // if the binding has constant-ness DAE.C_VAR we cannot constant evaluate.
     case (cache,env,_,DAE.EQBOUND(exp = exp,constant_ = DAE.C_VAR()),impl,MSG())
       equation
-				true = RTOpts.debugFlag("ceval");
+    		true = RTOpts.debugFlag("ceval");
         Debug.fprint("ceval", "#- Ceval.cevalCrefBinding failed (nonconstant EQBOUND(");
         expstr = ExpressionDump.printExpStr(exp);
         Debug.fprint("ceval", expstr);
@@ -5340,7 +5340,7 @@ end isRecursiveBinding;
 protected function cevalSubscriptValue "function: cevalSubscriptValue
   Helper function to cevalCrefBinding. It applies
   subscripts to array values to extract array elements."
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input list<DAE.Subscript> inExpSubscriptLst "subscripts to extract";
   input Values.Value inValue;
@@ -5421,7 +5421,7 @@ algorithm
 end cevalSubscriptValue;
 
 protected function cevalSubscriptValueList "Applies subscripts to array values to extract array elements."
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input list<DAE.Subscript> inExpSubscriptLst "subscripts to extract";
   input list<Values.Value> inValue;
@@ -5458,7 +5458,7 @@ public function cevalSubscripts "function: cevalSubscripts
   values. For instance
   the subscript list {1,p,q} (as in x[1,p,q]) where p and q have constant values 2,3 respectively will become
   {1,2,3} (resulting in x[1,2,3])."
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input list<DAE.Subscript> inExpSubscriptLst;
   input list<Integer> inIntegerLst;
@@ -5495,7 +5495,7 @@ end cevalSubscripts;
 public function cevalSubscript "function: cevalSubscript
   This function relates a subscript to its canonical forms, which
   is when all expressions are evaluated to constant values."
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input DAE.Subscript inSubscript;
   input Integer inInteger;
@@ -5710,106 +5710,106 @@ algorithm
 end cevalReduction;
 
 protected function valueAdd
-	"Adds two Values. Used (indirectly) by cevalReduction."
-	input Values.Value v1;
-	input Values.Value v2;
-	output Values.Value res;
+  "Adds two Values. Used (indirectly) by cevalReduction."
+  input Values.Value v1;
+  input Values.Value v2;
+  output Values.Value res;
 algorithm
-	{res} := ValuesUtil.addElementwiseArrayelt({v1}, {v2});
+  {res} := ValuesUtil.addElementwiseArrayelt({v1}, {v2});
 end valueAdd;
 
 protected function valueMul
-	"Multiplies two Values. Used (indirectly) by cevalReduction."
-	input Values.Value v1;
-	input Values.Value v2;
-	output Values.Value res;
+  "Multiplies two Values. Used (indirectly) by cevalReduction."
+  input Values.Value v1;
+  input Values.Value v2;
+  output Values.Value res;
 algorithm
-	res := match(v1, v2)
-	  local 
-	    Integer i1, i2, resI;
-	    Real r1, r2, resR;
-	    	
-		case (Values.INTEGER(i1), Values.INTEGER(i2))
-			equation 
-			  resI = i1 * i2; 
-			then 
-			  Values.INTEGER(resI);
-		
-		case (Values.REAL(r1), Values.REAL(r2))
-			equation 
-			  resR = r1 *. r2; 
-			then 
-			  Values.REAL(resR);
-	end match;
+  res := match(v1, v2)
+    local 
+      Integer i1, i2, resI;
+      Real r1, r2, resR;
+        
+    case (Values.INTEGER(i1), Values.INTEGER(i2))
+    	equation 
+    	  resI = i1 * i2; 
+    	then 
+    	  Values.INTEGER(resI);
+    
+    case (Values.REAL(r1), Values.REAL(r2))
+    	equation 
+    	  resR = r1 *. r2; 
+    	then 
+    	  Values.REAL(resR);
+  end match;
 end valueMul;
 
 protected function valueMax
-	"Returns the maximum of two Values. Used (indirectly) by cevalReduction."
-	input Values.Value v1;
-	input Values.Value v2;
-	output Values.Value res;
+  "Returns the maximum of two Values. Used (indirectly) by cevalReduction."
+  input Values.Value v1;
+  input Values.Value v2;
+  output Values.Value res;
 algorithm
-	res := match(v1, v2)
-	  local 
-	    Integer i1, i2, resI;
-			Real r1, r2, resR;
-	    
-		case (Values.INTEGER(i1), Values.INTEGER(i2))
-			equation 
-			  resI = intMax(i1, i2); 
-			then 
-			  Values.INTEGER(resI);
+  res := match(v1, v2)
+    local 
+      Integer i1, i2, resI;
+    	Real r1, r2, resR;
+      
+    case (Values.INTEGER(i1), Values.INTEGER(i2))
+    	equation 
+    	  resI = intMax(i1, i2); 
+    	then 
+    	  Values.INTEGER(resI);
     
-		case (Values.REAL(r1), Values.REAL(r2))
-			equation 
-			  resR = realMax(r1, r2); 
-			then 
-			  Values.REAL(resR);
-	end match;
+    case (Values.REAL(r1), Values.REAL(r2))
+    	equation 
+    	  resR = realMax(r1, r2); 
+    	then 
+    	  Values.REAL(resR);
+  end match;
 end valueMax;
 
 protected function valueMin
-	"Returns the minimum of two Values. Used (indirectly) by cevalReduction."
-	input Values.Value v1;
-	input Values.Value v2;
-	output Values.Value res;
+  "Returns the minimum of two Values. Used (indirectly) by cevalReduction."
+  input Values.Value v1;
+  input Values.Value v2;
+  output Values.Value res;
 algorithm
-	res := match(v1, v2)
-	  local 
-	    Real r1, r2, resR;
-	    Integer i1, i2, resI;
-	    	
-		case (Values.INTEGER(i1), Values.INTEGER(i2))
-			equation 
-			  resI = intMin(i1, i2); 
-			then 
-			  Values.INTEGER(resI);
-		
-		case (Values.REAL(r1), Values.REAL(r2))
-			equation 
-			  resR = realMin(r1, r2); 
-			then 
-			  Values.REAL(resR);
-	end match;
+  res := match(v1, v2)
+    local 
+      Real r1, r2, resR;
+      Integer i1, i2, resI;
+        
+    case (Values.INTEGER(i1), Values.INTEGER(i2))
+    	equation 
+    	  resI = intMin(i1, i2); 
+    	then 
+    	  Values.INTEGER(resI);
+    
+    case (Values.REAL(r1), Values.REAL(r2))
+    	equation 
+    	  resR = realMin(r1, r2); 
+    	then 
+    	  Values.REAL(resR);
+  end match;
 end valueMin;
 
 protected function lookupReductionOp
-	"Looks up a reduction function based on it's name."
-	input DAE.Ident reductionName;
-	output ReductionOperator op;
+  "Looks up a reduction function based on it's name."
+  input DAE.Ident reductionName;
+  output ReductionOperator op;
 
-	partial function ReductionOperator
-		input Values.Value v1;
-		input Values.Value v2;
-		output Values.Value res;
-	end ReductionOperator;
+  partial function ReductionOperator
+    input Values.Value v1;
+    input Values.Value v2;
+    output Values.Value res;
+  end ReductionOperator;
 algorithm
-	op := match(reductionName)
-		case "max" then valueMax;
-		case "min" then valueMin;
-		case "product" then valueMul;
-		case "sum" then valueAdd;
-	end match;
+  op := match(reductionName)
+    case "max" then valueMax;
+    case "min" then valueMin;
+    case "product" then valueMul;
+    case "sum" then valueAdd;
+  end match;
 end lookupReductionOp;
 
 protected function reductionEmptyRangeValue

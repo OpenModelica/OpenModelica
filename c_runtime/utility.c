@@ -33,8 +33,8 @@
 #include "utility.h"
 
 int in_range_integer(modelica_integer i,
-		     modelica_integer start,
-		     modelica_integer stop)
+  	     modelica_integer start,
+  	     modelica_integer stop)
 {
   if (start <= stop) if ((i >= start) && (i <= stop)) return 1;
   if (start > stop) if ((i >= stop) && (i <= start)) return 1;
@@ -42,8 +42,8 @@ int in_range_integer(modelica_integer i,
 }
 
 int in_range_real(modelica_real i,
-		  modelica_real start,
-		  modelica_real stop)
+  	  modelica_real start,
+  	  modelica_real stop)
 {
   if (start <= stop) if ((i >= start) && (i <= stop)) return 1;
   if (start > stop) if ((i >= stop) && (i <= start)) return 1;
@@ -52,12 +52,12 @@ int in_range_real(modelica_real i,
 
 modelica_real modelica_div(modelica_real x, modelica_real y)
 {
-	return (modelica_real)((modelica_integer)(x/y));
+  return (modelica_real)((modelica_integer)(x/y));
 }
 
 modelica_real modelica_mod_real(modelica_real x, modelica_real y)
 {
-	return (x - floor(x/y) * y);
+  return (x - floor(x/y) * y);
 }
 
 modelica_integer modelica_mod_integer(modelica_integer x, modelica_integer y)

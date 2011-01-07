@@ -137,12 +137,12 @@ int base_array_shape_eq(base_array_t *a, base_array_t *b)
     int i;
 
     if (a->ndims != b->ndims) {
-	fprintf(stderr, "a->ndims != b->ndims, %d != %d\n", a->ndims, b->ndims);
-	return 0;
+  fprintf(stderr, "a->ndims != b->ndims, %d != %d\n", a->ndims, b->ndims);
+  return 0;
     }
 
     for (i = 0; i < a->ndims; ++i) {
-	if (a->dim_size[i] != b->dim_size[i]) {
+  if (a->dim_size[i] != b->dim_size[i]) {
             fprintf(stderr, "a->dim_size[%d] != b->dim_size[%d], %d != %d\n",
                     i, i, (int) a->dim_size[i], (int) b->dim_size[i]);
             return 0;
@@ -175,7 +175,7 @@ int index_spec_fit_base_array(index_spec_t *s, base_array_t *a)
                         i, (int) s->index[i][0], i, (int) a->dim_size[i]);
                 return 0;
             }
-	}
+  }
 
         for (j = 0; j < s->dim_size[i]; ++j) {
             if (s->index[i] && ((s->index[i][j] <= 0) ||
@@ -185,7 +185,7 @@ int index_spec_fit_base_array(index_spec_t *s, base_array_t *a)
                         i, j, (int) s->index[i][j], i, (int) a->dim_size[i]);
                 return 0;
             }
-	}
+  }
     }
 
     return 1;
@@ -196,7 +196,7 @@ size_t base_array_nr_of_elements(base_array_t *a)
     int i;
     size_t nr_of_elements = 1;
     for (i = 0; i < a->ndims; ++i) {
-	nr_of_elements *= a->dim_size[i];
+  nr_of_elements *= a->dim_size[i];
     }
     return nr_of_elements;
 }

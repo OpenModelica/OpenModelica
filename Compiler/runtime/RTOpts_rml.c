@@ -98,16 +98,16 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(RTOpts__eliminationLevel)
 {
-	rmlA0 = mk_icon(elimination_level);
-	RML_TAILCALLK(rmlSC);
+  rmlA0 = mk_icon(elimination_level);
+  RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
 RML_BEGIN_LABEL(RTOpts__setEliminationLevel)
 {
-	long level = (long)RML_UNTAGFIXNUM(rmlA0);
-	elimination_level = level;
-	RML_TAILCALLK(rmlSC);
+  long level = (long)RML_UNTAGFIXNUM(rmlA0);
+  elimination_level = level;
+  RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
@@ -255,7 +255,7 @@ RML_END_LABEL
 RML_BEGIN_LABEL(RTOpts__vectorizationLimit)
 {
   rmlA0 = mk_icon(vectorization_limit);
-	RML_TAILCALLK(rmlSC);
+  RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
@@ -263,7 +263,7 @@ RML_BEGIN_LABEL(RTOpts__setVectorizationLimit)
 {
   long limit = (long)RML_UNTAGFIXNUM(rmlA0);
   set_vectorization_limit(limit);
-	RML_TAILCALLK(rmlSC);
+  RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 

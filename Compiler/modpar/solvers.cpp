@@ -18,17 +18,17 @@ using namespace std;
 double sim_time;
 
 void euler ( double *x, double *xd, double *y, double *p, double *res,
-	     int nx, int ny, int np,
-	     int numpoints,
-	     double start,
-	     double stop,
-	     double step, void (*f)(double*,// x
-			       double*,// xd
-			       double*,// y
-			       double*,// p
-			       int,int,int, //nx,ny,np
-			       double*) // time
-	     )
+       int nx, int ny, int np,
+       int numpoints,
+       double start,
+       double stop,
+       double step, void (*f)(double*,// x
+  		       double*,// xd
+  		       double*,// y
+  		       double*,// p
+  		       int,int,int, //nx,ny,np
+  		       double*) // time
+       )
 {
 
   int npts_per_result=int((stop-start)/(step*(numpoints-2)));
@@ -38,15 +38,15 @@ void euler ( double *x, double *xd, double *y, double *p, double *res,
   for(sim_time=start; sim_time <= stop; sim_time+=step,pt++) {
     if (pt % npts_per_result == 0 || sim_time+step > stop) { // store result
       for (int i=0; i< nx; i++) {
-	res[j++] = x[i];
-	//cerr << "time=" << sim_time<< "  x["<<i<<"]="<<x[i]<< endl;
+  res[j++] = x[i];
+  //cerr << "time=" << sim_time<< "  x["<<i<<"]="<<x[i]<< endl;
       }
       for (int i=0; i< nx; i++) {
-	res[j++] = xd[i];
-	//cerr << "time=" << sim_time<< "  xd["<<i<<"]="<<xd[i]<< endl;
+  res[j++] = xd[i];
+  //cerr << "time=" << sim_time<< "  xd["<<i<<"]="<<xd[i]<< endl;
       }
       for (int i=0; i< ny; i++) {
-	res[j++] = y[i];
+  res[j++] = y[i];
       }
       res[j++] = sim_time; //store time last.
       //      cerr << "storing result for time " << sim_time << " indx :" << j << endl;
@@ -64,10 +64,10 @@ inline void read_commented_value( ifstream &f, double *res);
 inline void read_commented_value( ifstream &f, int *res);
 
 void read_input(int argc, char **argv,
-		double* x,double*xd,double*y,
-		double *p, int nx,int ny, int np,
-		double *start, double *stop,
-		double *step)
+  	double* x,double*xd,double*y,
+  	double *p, int nx,int ny, int np,
+  	double *start, double *stop,
+  	double *step)
 {
 
   string *filename=(string*)getFlagValue("f",argc,argv);
@@ -76,7 +76,7 @@ void read_input(int argc, char **argv,
   ifstream file(filename->c_str());
   if (!file) {
     cerr << "Error, can not read file " << filename
-	 << " as indata to simulation." << endl;
+   << " as indata to simulation." << endl;
     exit(-1);
   }
   //  cerr << "opened file" << endl;

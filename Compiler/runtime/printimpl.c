@@ -239,7 +239,7 @@ static void PrintImpl__clearBuf(void)
 const char* PrintImpl__getString(void)
 {
   if(buf == NULL || buf[0]=='\0' || cursize==0){
-	  return "";
+    return "";
   }
   if (buf == 0) {
     if (increase_buffer() != 0) {

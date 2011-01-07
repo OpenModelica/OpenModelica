@@ -10,7 +10,7 @@ double d_abs(doublereal *x)
 #endif
 {
 if(*x >= 0)
-	return(*x);
+  return(*x);
 return(- *x);
 }
 #ifdef __cplusplus

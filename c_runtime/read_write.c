@@ -41,15 +41,15 @@ char *my_strdup(const char *s) {
 
 int getMyBool(const type_description *desc)
 {
-	switch (desc->type) {
-	case TYPE_DESC_BOOL:
-		/*fprintf(stderr,"returning %d\n",desc->data.boolean ? 1:0)*/;
-		return desc->data.boolean ? 1:0;
-	default:
-		/*fprintf(stderr, "UNKNOWN: Values.Value!\n")*/;
-		break;
-	}  
-	return 0;
+  switch (desc->type) {
+  case TYPE_DESC_BOOL:
+  	/*fprintf(stderr,"returning %d\n",desc->data.boolean ? 1:0)*/;
+  	return desc->data.boolean ? 1:0;
+  default:
+  	/*fprintf(stderr, "UNKNOWN: Values.Value!\n")*/;
+  	break;
+  }  
+  return 0;
 }
 #if 1 /* only used for debug */
 void puttype(const type_description *desc)
@@ -249,7 +249,7 @@ void free_type_description(type_description *desc)
     /* char **n = desc->data.record.name; */
     for (i = 0; i < desc->data.record.elements; i++, e++) {
       free(desc->data.record.name[i]);
-	  free_type_description(e);
+    free_type_description(e);
     }
     if (desc->data.record.elements > 0) {
       free(desc->data.record.element);

@@ -30,10 +30,10 @@
  */
 
 package BackendVariable
-" file:	       mo
+" file:         mo
   package:     BackendVariable
   description: BackendVariables contains the function that deals with the datytypes
-							 BackendDAE.VAR BackendDAE.Variables and BackendVariablesArray.
+    					 BackendDAE.VAR BackendDAE.Variables and BackendVariablesArray.
   
   RCS: $Id$
 "
@@ -499,9 +499,9 @@ algorithm
   outBoolean:=
   matchcontinue (inVar)
     case (inVar)
-		equation
+    equation
       failIfNonState(inVar);
- 	  then true;
+     then true;
     case (_) then false;
   end matchcontinue;
 end isNonStateVar;
@@ -535,7 +535,7 @@ end isDummyStateVar;
 
 public function isVarDiscrete
 " This functions checks if BackendDAE.Var is discrete"
-	input BackendDAE.Var inVar;
+  input BackendDAE.Var inVar;
   output Boolean outBoolean;
 algorithm 
   outBoolean := 

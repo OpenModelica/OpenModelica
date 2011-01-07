@@ -63,24 +63,24 @@ public:
   bool startExternalViewer();
 
 private:
-	QTcpSocket* socket;
-//	QApplication* app;
+  QTcpSocket* socket;
+//  QApplication* app;
 };
 
 class Static
 {
-	public:
-	static QTcpSocket* socket;
-	static QTcpSocket socket1, socket2;
-	static QByteArray* block;
-	static QDataStream* out;
-	static Connection* c;
-	static bool enabled();
-	static int port1, port2;
-	static QStringList* filterVariables;
+  public:
+  static QTcpSocket* socket;
+  static QTcpSocket socket1, socket2;
+  static QByteArray* block;
+  static QDataStream* out;
+  static Connection* c;
+  static bool enabled();
+  static int port1, port2;
+  static QStringList* filterVariables;
 
-	static bool connect(bool graphics = false);
-	static bool enabled_;
+  static bool connect(bool graphics = false);
+  static bool enabled_;
 };
 
 #ifdef __cplusplus
@@ -89,34 +89,34 @@ extern "C"
 {
 #endif
 
-	void setVariableFilter(const char* variables);
-	void setDataPort(int port);
-	void enableSendData(int enable);
-	//void initSendData(int variableCount, const char* variableNames);
-	void initSendData(int variableCount1, int variableCount2, int variableCount3, int variableCount4, struct omc_varInfo* statesNames, struct omc_varInfo* stateDerivativesNames, struct omc_varInfo* algebraicsNames, struct omc_varInfo* intAlgebraicsNames, struct omc_varInfo* boolAlgebraicsNames);
-	void sendPacket(const char* data);
-	void closeSendData();
+  void setVariableFilter(const char* variables);
+  void setDataPort(int port);
+  void enableSendData(int enable);
+  //void initSendData(int variableCount, const char* variableNames);
+  void initSendData(int variableCount1, int variableCount2, int variableCount3, int variableCount4, struct omc_varInfo* statesNames, struct omc_varInfo* stateDerivativesNames, struct omc_varInfo* algebraicsNames, struct omc_varInfo* intAlgebraicsNames, struct omc_varInfo* boolAlgebraicsNames);
+  void sendPacket(const char* data);
+  void closeSendData();
 
-	void emulateStreamData(const char* data, const char* title="Plot by OpenModelica", const char* xLabel = "time", const char* yLabel = "", const char* interpolation="linear", int legend = 1, int grid = 1, int logX=0, int logY=0, int drawPoints = 1, const char* range = "0.0,0.0 0.0,0.0");
-	void emulateStreamData2(const char* info, const char* data, int port=7778);
+  void emulateStreamData(const char* data, const char* title="Plot by OpenModelica", const char* xLabel = "time", const char* yLabel = "", const char* interpolation="linear", int legend = 1, int grid = 1, int logX=0, int logY=0, int drawPoints = 1, const char* range = "0.0,0.0 0.0,0.0");
+  void emulateStreamData2(const char* info, const char* data, int port=7778);
 
-	bool pltTable(double*, size_t r, size_t c); //, const char*, int size);
-	bool plt(const char* var, const char* mdl, const char* title, const char* xLabel, const char* yLabel, bool legend, bool grid, double xmin, double xmax, double ymin, double ymax, bool logX, bool logY, const char* interpolation, bool drawPoints, const char* range);
-	bool pltParametric(const char*, const char*, const char*);
-	bool clear();
-	bool ellipse(double x0, double y0, double x1, double y1, const char* color, int colorR, int colorG, int colorB, const char* fillColor, int fillColorR, int fillColorG, int fillColorB);
-//	bool ellipse(double x0, double y0, double x1, double y1, const char* color, int* colorRGB, int tmp1, const char* fillColor, int* fillColorRGB, int tmp2);
-	bool rect(double x0, double y0, double x1, double y1, const char* color, int colorR, int colorG, int colorB, const char* fillColor, int fillColorR, int fillColorG, int fillColorB);
-	bool line(double x0, double y0, double x1, double y1, const char* color, int colorR, int colorG, int colorB, const char* fillColor, int fillColorR, int fillColorG, int fillColorB);
+  bool pltTable(double*, size_t r, size_t c); //, const char*, int size);
+  bool plt(const char* var, const char* mdl, const char* title, const char* xLabel, const char* yLabel, bool legend, bool grid, double xmin, double xmax, double ymin, double ymax, bool logX, bool logY, const char* interpolation, bool drawPoints, const char* range);
+  bool pltParametric(const char*, const char*, const char*);
+  bool clear();
+  bool ellipse(double x0, double y0, double x1, double y1, const char* color, int colorR, int colorG, int colorB, const char* fillColor, int fillColorR, int fillColorG, int fillColorB);
+//  bool ellipse(double x0, double y0, double x1, double y1, const char* color, int* colorRGB, int tmp1, const char* fillColor, int* fillColorRGB, int tmp2);
+  bool rect(double x0, double y0, double x1, double y1, const char* color, int colorR, int colorG, int colorB, const char* fillColor, int fillColorR, int fillColorG, int fillColorB);
+  bool line(double x0, double y0, double x1, double y1, const char* color, int colorR, int colorG, int colorB, const char* fillColor, int fillColorR, int fillColorG, int fillColorB);
 
-	bool hold(int = 1);
-	bool pltWait(unsigned long msecs);
+  bool hold(int = 1);
+  bool pltWait(unsigned long msecs);
 
-	QColor* stringToColor(const char* str_);
-	QColor* getColor(const char* color, int colorR, int colorG, int colorB);
+  QColor* stringToColor(const char* str_);
+  QColor* getColor(const char* color, int colorR, int colorG, int colorB);
 
-	int getVariableListSize(const char* model);
-	bool getVariableList(const char* model, char* lst);
+  int getVariableListSize(const char* model);
+  bool getVariableList(const char* model, char* lst);
 
 #ifdef __cplusplus
 }

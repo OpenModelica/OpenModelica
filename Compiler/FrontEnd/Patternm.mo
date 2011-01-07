@@ -30,7 +30,7 @@
  */
 
 package Patternm
-" file:	       Patternm.mo
+" file:         Patternm.mo
   package:     Patternm
   description: Patternmatching
 
@@ -71,13 +71,13 @@ protected import Static;
 protected import Util;
 
 protected function generatePositionalArgs "function: generatePositionalArgs
-	author: KS
-	This function is used in the following cases:
-	v := matchcontinue (x)
-  	  case REC(a=1,b=2)
-   	 ...
-	The named arguments a=1 and b=2 must be sorted and transformed into
-	positional arguments (a,b is not necessarely the correct order).
+  author: KS
+  This function is used in the following cases:
+  v := matchcontinue (x)
+      case REC(a=1,b=2)
+      ...
+  The named arguments a=1 and b=2 must be sorted and transformed into
+  positional arguments (a,b is not necessarely the correct order).
 "
   input list<Absyn.Ident> fieldNameList;
   input list<Absyn.NamedArg> namedArgList;
@@ -102,8 +102,8 @@ algorithm
 end generatePositionalArgs;
 
 protected function findFieldExpInList "function: findFieldExpInList
-	author: KS
-	Helper function to generatePositionalArgs
+  author: KS
+  Helper function to generatePositionalArgs
 "
   input Absyn.Ident firstFieldName;
   input list<Absyn.NamedArg> namedArgList;

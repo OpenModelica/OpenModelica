@@ -21,7 +21,7 @@ RML_END_LABEL
 RML_BEGIN_LABEL(UnitParserExt__checkpoint)
 {
   UnitParserExtImpl__checkpoint();
-	RML_TAILCALLK(rmlSC);
+  RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
@@ -36,14 +36,14 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(UnitParserExt__clear)
 {
-	UnitParserExtImpl__clear();
+  UnitParserExtImpl__clear();
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
 RML_BEGIN_LABEL(UnitParserExt__commit)
 {
-	UnitParserExtImpl__commit();
+  UnitParserExtImpl__commit();
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -62,7 +62,7 @@ RML_BEGIN_LABEL(UnitParserExt__addBase)
 {
   const char *name = RML_STRINGDATA(rmlA0);
   UnitParserExtImpl__addBase(name);
-	RML_TAILCALLK(rmlSC);
+  RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
@@ -88,34 +88,34 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(UnitParserExt__unit2str)
 {
-	void* nums=rmlA0; void* denoms=rmlA1; void* tpnoms=rmlA2; void* tpdenoms=rmlA3; void* tpstrs=rmlA4;
-	long int i1,i2;
-	string tpParam;
-	nums = rmlA0;
-	Unit unit;
-	unit.unitVec.clear();
-	unit.typeParamVec.clear();
-	/* Add baseunits*/
-	while(RML_GETHDR(nums) == RML_CONSHDR) {
-		i1 = RML_UNTAGFIXNUM(RML_CAR(nums));
-		i2 = RML_UNTAGFIXNUM(RML_CAR(denoms));
-		unit.unitVec.push_back(Rational(i1,i2));
-		nums = RML_CDR(nums);
-		denoms = RML_CDR(denoms);
-	}
-	/* Add type parameters*/
-	while(RML_GETHDR(tpnoms) == RML_CONSHDR) {
-		i1 = RML_UNTAGFIXNUM(RML_CAR(tpnoms));
-		i2 = RML_UNTAGFIXNUM(RML_CAR(tpdenoms));
-		tpParam = string(RML_STRINGDATA(RML_CAR(tpstrs)));
-		unit.typeParamVec.insert(std::pair<string,Rational>(tpParam,Rational(i1,i2)));
-		tpnoms = RML_CDR(tpnoms);
-		tpdenoms = RML_CDR(tpdenoms);
-	}
-	//string res = unitParser->unit2str(unit);
-	string res = unitParser->prettyPrintUnit2str(unit);
+  void* nums=rmlA0; void* denoms=rmlA1; void* tpnoms=rmlA2; void* tpdenoms=rmlA3; void* tpstrs=rmlA4;
+  long int i1,i2;
+  string tpParam;
+  nums = rmlA0;
+  Unit unit;
+  unit.unitVec.clear();
+  unit.typeParamVec.clear();
+  /* Add baseunits*/
+  while(RML_GETHDR(nums) == RML_CONSHDR) {
+  	i1 = RML_UNTAGFIXNUM(RML_CAR(nums));
+  	i2 = RML_UNTAGFIXNUM(RML_CAR(denoms));
+  	unit.unitVec.push_back(Rational(i1,i2));
+  	nums = RML_CDR(nums);
+  	denoms = RML_CDR(denoms);
+  }
+  /* Add type parameters*/
+  while(RML_GETHDR(tpnoms) == RML_CONSHDR) {
+  	i1 = RML_UNTAGFIXNUM(RML_CAR(tpnoms));
+  	i2 = RML_UNTAGFIXNUM(RML_CAR(tpdenoms));
+  	tpParam = string(RML_STRINGDATA(RML_CAR(tpstrs)));
+  	unit.typeParamVec.insert(std::pair<string,Rational>(tpParam,Rational(i1,i2)));
+  	tpnoms = RML_CDR(tpnoms);
+  	tpdenoms = RML_CDR(tpdenoms);
+  }
+  //string res = unitParser->unit2str(unit);
+  string res = unitParser->prettyPrintUnit2str(unit);
 
-	rmlA0 = (void*) mk_scon((char*)res.c_str());
+  rmlA0 = (void*) mk_scon((char*)res.c_str());
     RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -126,8 +126,8 @@ RML_BEGIN_LABEL(UnitParserExt__str2unit)
     Unit unit;
     UnitRes res = unitParser->str2unit(str,unit);
     if (!res.Ok()) {
-    	std::cerr << "error parsing unit " << str << std::endl;
-    	RML_TAILCALLK(rmlFC);
+      std::cerr << "error parsing unit " << str << std::endl;
+      RML_TAILCALLK(rmlFC);
     }
 
     /* Build rml objects */
@@ -135,15 +135,15 @@ RML_BEGIN_LABEL(UnitParserExt__str2unit)
     /* baseunits */
     vector<Rational>::reverse_iterator rii;
     for(rii=unit.unitVec.rbegin(); rii!=unit.unitVec.rend(); ++rii) {
-    	nums = mk_cons(mk_icon(rii->num),nums);
-    	denoms = mk_cons(mk_icon(rii->denom),denoms);
+      nums = mk_cons(mk_icon(rii->num),nums);
+      denoms = mk_cons(mk_icon(rii->denom),denoms);
     }
     /* type parameters*/
     map<string,Rational>::reverse_iterator rii2;
     for(rii2=unit.typeParamVec.rbegin(); rii2!=unit.typeParamVec.rend(); ++rii2) {
-    	tpnoms = mk_cons(mk_icon(rii2->second.num),tpnoms);
-    	tpdenoms = mk_cons(mk_icon(rii2->second.denom),tpdenoms);
-    	tpstrs = mk_cons(mk_scon((char*)rii2->first.c_str()),tpstrs);
+      tpnoms = mk_cons(mk_icon(rii2->second.num),tpnoms);
+      tpdenoms = mk_cons(mk_icon(rii2->second.denom),tpdenoms);
+      tpstrs = mk_cons(mk_scon((char*)rii2->first.c_str()),tpstrs);
     }
 
     rmlA0 = (void*)nums;

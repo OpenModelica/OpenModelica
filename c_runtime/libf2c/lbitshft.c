@@ -10,8 +10,8 @@ lbit_shift(a, b) integer a; integer b;
 lbit_shift(integer a, integer b)
 #endif
 {
-	return b >= 0 ? a << b : (integer)((uinteger)a >> -b);
-	}
+  return b >= 0 ? a << b : (integer)((uinteger)a >> -b);
+  }
 #ifdef __cplusplus
 }
 #endif

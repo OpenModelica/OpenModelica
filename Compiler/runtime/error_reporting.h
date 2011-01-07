@@ -41,7 +41,7 @@
                       throw ANTLR_USE_NAMESPACE(antlr)RecognitionException("unexpected end of file", \
                                                                            modelicafilename, \
                                                                            LT(1)->getLine(), \
-                                                                           LT(1)->getColumn());	\
+                                                                           LT(1)->getColumn());  \
                     std::list<std::string> tokens; \
                     int errorLine = LT(1)->getLine(); \
                     int errorColumn = LT(1)->getColumn(); \

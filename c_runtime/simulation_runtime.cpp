@@ -226,7 +226,7 @@ int startInteractiveSimulation(int argc, char**argv) {
 
   std::cout << "simulation finished!" << std::endl;
 #else
-	std::cout << "Interactive Simulation not supported when LEAST_DEPENDENCY is defined!!!" << std::endl;
+  std::cout << "Interactive Simulation not supported when LEAST_DEPENDENCY is defined!!!" << std::endl;
 #endif
   return retVal; //TODO 20100211 pv return value implementation / error handling
 }
@@ -237,7 +237,7 @@ int startInteractiveSimulation(int argc, char**argv) {
 int startNonInteractiveSimulation(int argc, char**argv){
   int retVal = -1;
 
-	  /* linear model option is set : -l <lintime> */
+    /* linear model option is set : -l <lintime> */
   int create_linearmodel = (int) flagSet("l", argc, argv);
   string* lintime = (string*) getFlagValue("l",argc,argv);
 
@@ -266,20 +266,20 @@ int startNonInteractiveSimulation(int argc, char**argv){
     measure_start_time = clock();
 
   if(create_linearmodel){
-	  if (lintime == NULL ) {
-		  stop = start;
-	  }else{
-		  stop = atof((*lintime).c_str());
-	  }
-	  cout << "Linearization will performed at point of time: " << stop << endl;
-	  method = "dassl2";
+    if (lintime == NULL ) {
+  	  stop = start;
+    }else{
+  	  stop = atof((*lintime).c_str());
+    }
+    cout << "Linearization will performed at point of time: " << stop << endl;
+    method = "dassl2";
   }
 
   retVal = callSolver(argc, argv, method, outputFormat, start, stop, stepSize, outputSteps, tolerance);
 
   if(create_linearmodel){
-	  retVal = linearize();
-	  cout << "Linear model is created!" << endl;
+    retVal = linearize();
+    cout << "Linear model is created!" << endl;
   }
 
 

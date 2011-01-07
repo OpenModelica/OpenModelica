@@ -1294,7 +1294,7 @@ public function getClassEnvNoElaboration "function: getClassEnvNoElaboration
    This can happen e.g. for
    model A
    model Resistor
-  	Pin p,n;
+    Pin p,n;
     constant Integer n_conn = cardinality(p);
     equation connect(p,n);
    end A;

@@ -251,12 +251,12 @@ extern void* System_substring(const char *inStr, int start, int stop)
   /* Check arguments */
   if ( startIndex < 1 )
   {
-	free(str);
+  free(str);
     MMC_THROW();
   }
   if ( stopIndex == -999 )
   {
-	  stopIndex = startIndex;
+    stopIndex = startIndex;
   } else if ( stopIndex < startIndex ) {
     free(str);
     MMC_THROW();

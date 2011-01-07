@@ -30,7 +30,7 @@
  */
 
 package MetaUtil
-" file:	       MetaUtil.mo
+" file:         MetaUtil.mo
   package:     MetaUtil
   description: Different MetaModelica extension functions.
 
@@ -51,8 +51,8 @@ protected import Types;
 protected import Util;
 
 public function isList "function: isList
-	author: KS
-	Return true if list
+  author: KS
+  Return true if list
 "
   input DAE.Properties prop;
   output Boolean bool;
@@ -845,7 +845,7 @@ algorithm
 end isTupleExp;
 
 public function extractListFromTuple "function: extractListFromTuple
-	author: KS
+  author: KS
  Given an Absyn.Exp, this function will extract the list of expressions if the
  expression is a tuple, otherwise a list of length one is created"
   input Absyn.Exp inExp;

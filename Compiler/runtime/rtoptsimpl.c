@@ -141,7 +141,7 @@ static int set_debug_flags(const char *flagstr)
       debug_flags[flag]=&(debug_flagstr[i]);
       debug_flagstr[i-1]=0;
       if (strcmp("all", debug_flags[flag-1])==0) {
-	debug_all=1;
+  debug_all=1;
       }
       flag++;
     }
@@ -166,27 +166,27 @@ static int set_debug_flags(const char *flagstr)
 
 static int set_debug_flag(char const* strdata, long value)
 {
-	int length=strlen(strdata),i;
-	for (i=0; i<debug_flagc; i++)
-	{
-		if (strcmp(debug_flags[i], strdata)==0)
-		{
-			if(value == 0 )
-			{
-				debug_flags[i] = (char*) "";
-				// TODO: realloc memory when count(empty_entries) > _const
-				return 0;
-			}
-			return 1;
-		}
-		length += strlen( debug_flags[i]);
-	}
-	if(value == 0)
-		return 0;
-	debug_flagc+=1;
-	debug_flags = (char**)realloc(debug_flags, debug_flagc * sizeof(char*));
-	debug_flags[debug_flagc-1] = (char*)strdata;
-	return 1;
+  int length=strlen(strdata),i;
+  for (i=0; i<debug_flagc; i++)
+  {
+  	if (strcmp(debug_flags[i], strdata)==0)
+  	{
+  		if(value == 0 )
+  		{
+  			debug_flags[i] = (char*) "";
+  			// TODO: realloc memory when count(empty_entries) > _const
+  			return 0;
+  		}
+  		return 1;
+  	}
+  	length += strlen( debug_flags[i]);
+  }
+  if(value == 0)
+  	return 0;
+  debug_flagc+=1;
+  debug_flags = (char**)realloc(debug_flags, debug_flagc * sizeof(char*));
+  debug_flags[debug_flagc-1] = (char*)strdata;
+  return 1;
 }
 
 extern int check_debug_flag(char const* strdata)
@@ -198,7 +198,7 @@ extern int check_debug_flag(char const* strdata)
     if (strcmp(debug_flags[i], "failtrace")==0) {
       containFailtrace=1;
       break;
-  	}
+    }
   }
   if (strcmp(strdata,"none")==0 && (debug_none == 1 || containFailtrace==0 ) ) {
     flg=1;
@@ -212,7 +212,7 @@ extern int check_debug_flag(char const* strdata)
       break;
     }
     else if (debug_flags[i][0]=='-' &&
-	     strcmp(debug_flags[i]+1, strdata)==0) {
+       strcmp(debug_flags[i]+1, strdata)==0) {
       flg=0;
       break;
     }
@@ -300,11 +300,11 @@ static enum RTOpts__arg__result RTOptsImpl__arg(const char* arg)
   } else if (strcmp(arg,VERSION_OPT1) == 0 || strcmp(arg,VERSION_OPT2) == 0) {
     version_request = 1;
   } else if(strncmp(arg,TARGET,strLen_TARGET) == 0) {
-  	if (strlen(arg) >= strLen_TARGET && strcmp(&arg[strLen_TARGET], "=gcc") == 0)
-  		simulation_code_target = "gcc";
-  	else if (strlen(arg) >= strLen_TARGET && strcmp(&arg[strLen_TARGET], "=msvc") == 0)
-  		simulation_code_target = "msvc";
-  	else {
+    if (strlen(arg) >= strLen_TARGET && strcmp(&arg[strLen_TARGET], "=gcc") == 0)
+    	simulation_code_target = "gcc";
+    else if (strlen(arg) >= strLen_TARGET && strcmp(&arg[strLen_TARGET], "=msvc") == 0)
+    	simulation_code_target = "msvc";
+    else {
       fprintf(stderr, "# Wrong option: usage: omc [+target=gcc|msvc], default to 'gcc'.\n");
       return ARG_FAILURE;
     }
@@ -400,8 +400,8 @@ static enum RTOpts__arg__result RTOptsImpl__arg(const char* arg)
         debug_flag_info = 1;
         break;
       }
-	    if (arg[2]!='=' ||
-	        set_debug_flags(&(arg[3])) != 0) {
+      if (arg[2]!='=' ||
+          set_debug_flags(&(arg[3])) != 0) {
         fprintf(stderr, "# Flag Usage:  +d=flg1,flg2,...\n");
         fprintf(stderr, "#              +dd for debug flag info\n");
         return ARG_FAILURE;
@@ -440,7 +440,7 @@ static enum RTOpts__arg__result RTOptsImpl__arg(const char* arg)
         return ARG_FAILURE;
       }
       break;
-	  // Which level of algebraic elimination to use.
+    // Which level of algebraic elimination to use.
     case 'e':
       if (arg[2] != '=') {
         fprintf(stderr, "# Flag Usage:  +e=<algebraic_elimination_level 0, 1, 2(default) or 3>");

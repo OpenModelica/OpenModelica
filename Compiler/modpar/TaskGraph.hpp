@@ -5,7 +5,7 @@
 #include <iostream>                      // for std::cout
 #include <utility>                       // for std::pair
 #include <algorithm>                     // for std::for_each
-#include <queue>			 // for priority_queue
+#include <queue>  		 // for priority_queue
 #include <boost/utility.hpp>             // for boost::tie
 #include <boost/graph/graph_traits.hpp>  // for boost::graph_traits
 #include <boost/graph/adjacency_list.hpp>
@@ -49,18 +49,18 @@ struct vertex_tasktype_t {
 enum TaskType {Assignment=0, TempVar=1, LinSys=2, NonLinSys=3, Begin=4, End=5, Copy=6};
 
 typedef boost::property<boost::vertex_name_t,string,
-	 boost::property<vertex_execcost_t,float,
-	  boost::property<vertex_unique_id_t, int,
-	   boost::property<boost::vertex_index_t,int,
-	    boost::property<boost::vertex_color_t, boost::default_color_type,
-	     boost::property<vertex_resultname_t, string,
-	      boost::property<vertex_tasktype_t, TaskType,
-       	       boost::property<vertex_origname_t, string>
-	      >
-	     >
-	    >
+   boost::property<vertex_execcost_t,float,
+    boost::property<vertex_unique_id_t, int,
+     boost::property<boost::vertex_index_t,int,
+      boost::property<boost::vertex_color_t, boost::default_color_type,
+       boost::property<vertex_resultname_t, string,
+        boost::property<vertex_tasktype_t, TaskType,
+                boost::property<vertex_origname_t, string>
+        >
+       >
+      >
            >
-	  >
+    >
          >
         > VertexProperty;
 
@@ -134,13 +134,13 @@ public:
       m_set.insert(*it);
       map<string,int>::iterator pit = s->m_map.find(*it);
       if (pit != s->m_map.end()) {
-	m_map[*it] = pit->second;
+  m_map[*it] = pit->second;
       }
       map<string,int>::iterator pit2 = s->m_num_copies.find(*it);
       if (pit2 != s->m_num_copies.end()) {
-	m_num_copies[*it] = pit2->second;
+  m_num_copies[*it] = pit2->second;
       } else {
-	m_num_copies[*it] = 1; // Should not happen, but set to 1 just in case..
+  m_num_copies[*it] = 1; // Should not happen, but set to 1 just in case..
       }
     }
   };
@@ -166,14 +166,14 @@ public:
 };
 
 typedef boost::property<boost::edge_weight_t, int,
-	 boost::property<edge_result_set_t, ResultSet,
-	  boost::property<edge_priority_t, int >
+   boost::property<edge_result_set_t, ResultSet,
+    boost::property<edge_priority_t, int >
          >
         > EdgeProperty;
 
 typedef boost::adjacency_list<boost::listS, boost::listS,
-			      boost::bidirectionalS,
-		       VertexProperty, EdgeProperty> TaskGraph;
+  		      boost::bidirectionalS,
+  	       VertexProperty, EdgeProperty> TaskGraph;
 
 typedef  boost::property_map<TaskGraph,boost::vertex_name_t> VertexNameMap;
 typedef  boost::property_map<TaskGraph,vertex_execcost_t> VertexExecCostMap;
@@ -289,10 +289,10 @@ void initialize_index(TaskGraph *tg);
 string * genTemp();
 
 EdgeID add_edge(VertexID parent, VertexID child, TaskGraph *tg,
-	      string *result=0,int prio=0);
+        string *result=0,int prio=0);
 
 EdgeID add_edge(VertexID parent, VertexID child, TaskGraph *tg,
-		ResultSet &rset);
+  	ResultSet &rset);
 
 VertexID find_task(VertexID alientask,TaskGraph *alientg,TaskGraph *tg);
 
@@ -318,11 +318,11 @@ template <class T> T max(std::vector<T> v) {
 
 
 template <typename Graph, typename VertexPropertiesWriter,
-	  typename EdgePropertiesWriter, typename GraphPropertiesWriter>
+    typename EdgePropertiesWriter, typename GraphPropertiesWriter>
 inline void my_write_graphviz(std::ostream& out, const Graph& g,
-			      VertexPropertiesWriter vpw,
-			      EdgePropertiesWriter epw,
-			      GraphPropertiesWriter gpw) {
+  		      VertexPropertiesWriter vpw,
+  		      EdgePropertiesWriter epw,
+  		      GraphPropertiesWriter gpw) {
 
   typedef typename boost::graph_traits<Graph>::directed_category cat_type;
   typedef boost::graphviz_io_traits<cat_type> Traits;
@@ -350,7 +350,7 @@ inline void my_write_graphviz(std::ostream& out, const Graph& g,
 template <typename Graph, typename VertexWriter, typename EdgeWriter>
 inline void
 my_write_graphviz(std::ostream& out, const Graph& g,
-		  VertexWriter vw, EdgeWriter ew) {
+  	  VertexWriter vw, EdgeWriter ew) {
   boost::default_writer gw;
   my_write_graphviz(out, g, vw, ew, gw);
 }

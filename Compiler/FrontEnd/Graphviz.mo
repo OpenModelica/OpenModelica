@@ -31,7 +31,7 @@
 
 package Graphviz
 "
-  file:	       Graphviz.mo
+  file:         Graphviz.mo
   package:     Graphviz
   description: Graphviz is a tool for drawing graphs from a textual
                representation. This module generates the textual input 
@@ -56,9 +56,9 @@ type Label = String;
 
 public
 uniontype Node "A graphviz Node is a node of the graph.
-	  It has a type and attributes and children.
-	  It can also have a list of labels, provided by the LNODE
-	  constructor."
+    It has a type and attributes and children.
+    It can also have a list of labels, provided by the LNODE
+    constructor."
   record NODE
     Type type_;
     Attributes attributes;

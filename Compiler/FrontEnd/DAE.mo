@@ -150,12 +150,12 @@ public uniontype Element
     ElementSource source "the origin of the component/equation/algorithm";
   end ARRAY_EQUATION;
 
-	record INITIAL_ARRAY_EQUATION "An initial array equation"
-		list<Dimension> dimension "dimension sizes";
-		Exp exp;
-		Exp array;
-		ElementSource source "the origin of the component/equation/algorithm";
-	end INITIAL_ARRAY_EQUATION;
+  record INITIAL_ARRAY_EQUATION "An initial array equation"
+    list<Dimension> dimension "dimension sizes";
+    Exp exp;
+    Exp array;
+    ElementSource source "the origin of the component/equation/algorithm";
+  end INITIAL_ARRAY_EQUATION;
 
   record COMPLEX_EQUATION "an equation of complex type, e.g. record = func(..)"
     Exp lhs;
@@ -238,8 +238,8 @@ public uniontype Element
   end REINIT;
 
   record NORETCALL "call with no return value, i.e. no equation.
-	  Typically sideeffect call of external function but also
-	  Connections.* i.e. Connections.root(...) functions."
+    Typically sideeffect call of external function but also
+    Connections.* i.e. Connections.root(...) functions."
     Absyn.Path functionName;
     list<Exp> functionArgs;
     ElementSource source "the origin of the component/equation/algorithm";
@@ -523,7 +523,7 @@ uniontype Statement "There are four kinds of statements.  Assignments (`a := b;\
   end STMT_REINIT;
 
   record STMT_NORETCALL "call with no return value, i.e. no equation.
-		   Typically sideeffect call of external function."
+       Typically sideeffect call of external function."
     Exp exp;
     ElementSource source "the origin of the component/equation/algorithm";
   end STMT_NORETCALL;
@@ -838,13 +838,13 @@ uniontype Properties "P.R 1.1 for multiple return arguments from functions,
   record PROP
     Type type_ "type" ;
     Const constFlag "constFlag; if the type is a tuple, each element
-				          have a const flag." ;
+    		          have a const flag." ;
   end PROP;
 
   record PROP_TUPLE
     Type type_;
     TupleConst tupleConst "tupleConst; The elements might be
-							    tuple themselfs." ;
+    					    tuple themselfs." ;
   end PROP_TUPLE;
 
 end Properties;
@@ -1077,7 +1077,7 @@ uniontype Exp "Expressions
 
   record TUPLE
     list<Exp> PR "PR. Tuples, used in func calls returning several
-								  arguments" ;
+    						  arguments" ;
   end TUPLE;
 
   record CAST "Cast operator"
@@ -1130,8 +1130,8 @@ uniontype Exp "Expressions
   end META_OPTION;
 
   /*
-  	Holds a metarecord call
-   	<metarecord>(<args>)
+    Holds a metarecord call
+     <metarecord>(<args>)
   */
   record METARECORDCALL //Metamodelica extension, simbj
     Absyn.Path path;

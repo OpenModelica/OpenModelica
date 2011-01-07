@@ -54,7 +54,7 @@ void simulation_result_csv::emit()
   storeExtrapolationData();
   fprintf(fout, format, globalData->timeValue);
   for (int i = 0; i < globalData->nStates; i++)
-   	fprintf(fout, format, globalData->states[i]);
+     fprintf(fout, format, globalData->states[i]);
   for (int i = 0; i < globalData->nStates; i++)
     fprintf(fout, format, globalData->statesDerivatives[i]);
   for (int i = 0; i < globalData->nAlgebraic; i++)
@@ -78,11 +78,11 @@ simulation_result_csv::simulation_result_csv(const char* filename, long numpoint
 
   fprintf(fout, format, "time");
   for (int i = 0; i < globalData->nStates; i++)
- 	  fprintf(fout, format, globalData->statesNames[i].name);
+     fprintf(fout, format, globalData->statesNames[i].name);
   for (int i = 0; i < globalData->nStates; i++)
- 	  fprintf(fout, format, globalData->stateDerivativesNames[i].name);
+     fprintf(fout, format, globalData->stateDerivativesNames[i].name);
   for (int i = 0; i < globalData->nAlgebraic; i++)
- 	  fprintf(fout, format, globalData->algebraicsNames[i].name);
+     fprintf(fout, format, globalData->algebraicsNames[i].name);
   for (int i = 0; i < globalData->intVariables.nAlgebraic; i++)
     fprintf(fout, format, globalData->intVariables.algebraics[i]);
   for (int i = 0; i < globalData->boolVariables.nAlgebraic; i++)
