@@ -46,47 +46,47 @@
 
 namespace IAEX
 {
-	/*!
-	 * \class ComboBoxSearch
-	 * \author Anders Fernström
-	 * \date 2006-08-24
-	 *
+  /*!
+   * \class ComboBoxSearch
+   * \author Anders Fernström
+   * \date 2006-08-24
+   *
     * \brief Reimplement the QComboBox to get more specified function
-	 * on Qt's combo box for a serach box
-	 */
-	ComboBoxSearch::ComboBoxSearch( QWidget* parent )
-		: QComboBox( parent )
-	{
-	}
+   * on Qt's combo box for a serach box
+   */
+  ComboBoxSearch::ComboBoxSearch( QWidget* parent )
+  	: QComboBox( parent )
+  {
+  }
 
-	/*!
-	 * \author Anders Fernström
-	 * \date 2006-08-24
-	 *
-	 * \brief The class destructor
-	 */
-	ComboBoxSearch::~ComboBoxSearch()
-	{
-	}
+  /*!
+   * \author Anders Fernström
+   * \date 2006-08-24
+   *
+   * \brief The class destructor
+   */
+  ComboBoxSearch::~ComboBoxSearch()
+  {
+  }
 
 
-	// REIMPLEMENTED FUNCTIONS
-	// ------------------------------------------------------------------
+  // REIMPLEMENTED FUNCTIONS
+  // ------------------------------------------------------------------
 
-	/*!
-	 * \author Anders Fernström
-	 * \date 2006-08-24
-	 *
-	 * \brief Reimplement what happen when a key event is sent to the combobox
-	 */
-	void ComboBoxSearch::keyPressEvent( QKeyEvent* event )
-	{
-		if( event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter )
-		{
-			emit returnPressed();
-		}
-		else
-			QComboBox::keyPressEvent( event );
-	}
+  /*!
+   * \author Anders Fernström
+   * \date 2006-08-24
+   *
+   * \brief Reimplement what happen when a key event is sent to the combobox
+   */
+  void ComboBoxSearch::keyPressEvent( QKeyEvent* event )
+  {
+  	if( event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter )
+  	{
+  		emit returnPressed();
+  	}
+  	else
+  		QComboBox::keyPressEvent( event );
+  }
 
 }

@@ -52,22 +52,22 @@ namespace IAEX
    public:
       CellDocumentView(Document *subject) : subject_(subject)
       {
-		 //Connect view to document.
+  	 //Connect view to document.
 
-		  subject_->attach(this);
+  	  subject_->attach(this);
       }
 
       virtual ~CellDocumentView(){}
 
       void update()
       {
-		 if(centralWidget())
-		 {
-			//remove currentwidget.
-		 }
+  	 if(centralWidget())
+  	 {
+  		//remove currentwidget.
+  	 }
 
-		 //Update with new widget.
-		 setCentralWidget(subject_->getState());
+  	 //Update with new widget.
+  	 setCentralWidget(subject_->getState());
       }
 
    private:

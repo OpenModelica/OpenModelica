@@ -47,14 +47,14 @@ using namespace std;
 
 VariableWindow::VariableWindow(GraphWidget* gw, QWidget *parent): QDialog(parent)
 {
-	graphWidget =gw;
+  graphWidget =gw;
 
-	setupUi(this) ;
-	connect(pbCreate, SIGNAL(clicked()), this, SLOT(createCurve()));
-	connect(pbColor, SIGNAL(clicked()), this, SLOT(selectColor()));
-	connect(pbRemove, SIGNAL(clicked()), this, SLOT(removeCurve()));
+  setupUi(this) ;
+  connect(pbCreate, SIGNAL(clicked()), this, SLOT(createCurve()));
+  connect(pbColor, SIGNAL(clicked()), this, SLOT(selectColor()));
+  connect(pbRemove, SIGNAL(clicked()), this, SLOT(removeCurve()));
 
-	updateViews();
+  updateViews();
 }
 
 
@@ -66,97 +66,97 @@ VariableWindow::~VariableWindow()
 
 void VariableWindow::updateViews()
 {
-	QTreeWidgetItem* item;
-	twVariables->clear();
-	cbx->clear();
-	cby->clear();
-	for(map<QString, VariableData*>::iterator i = graphWidget->variables.begin(); i != graphWidget->variables.end(); ++i)
-	{
-		item = new QTreeWidgetItem();
-		item->setText(0, i->first);
-		item->setText(1, QVariant(i->second->count()).toString());
+  QTreeWidgetItem* item;
+  twVariables->clear();
+  cbx->clear();
+  cby->clear();
+  for(map<QString, VariableData*>::iterator i = graphWidget->variables.begin(); i != graphWidget->variables.end(); ++i)
+  {
+  	item = new QTreeWidgetItem();
+  	item->setText(0, i->first);
+  	item->setText(1, QVariant(i->second->count()).toString());
 
-		cbx->addItem(i->first);
-		cby->addItem(i->first);
-		twVariables->insertTopLevelItem(0,item);
-	}
+  	cbx->addItem(i->first);
+  	cby->addItem(i->first);
+  	twVariables->insertTopLevelItem(0,item);
+  }
 
-	twPlotted->clear();
-	for(QList<Curve*>::iterator i = graphWidget->curves.begin(); i != graphWidget->curves.end(); ++i)
-	{
+  twPlotted->clear();
+  for(QList<Curve*>::iterator i = graphWidget->curves.begin(); i != graphWidget->curves.end(); ++i)
+  {
 
-		if(!(*i))
-			continue;
-		item = new QTreeWidgetItem();
+  	if(!(*i))
+  		continue;
+  	item = new QTreeWidgetItem();
 
-		item->setText(0, (*i)->x->variableName());
-		item->setText(1, (*i)->y->variableName());
-		twPlotted->insertTopLevelItem(0, item);
+  	item->setText(0, (*i)->x->variableName());
+  	item->setText(1, (*i)->y->variableName());
+  	twPlotted->insertTopLevelItem(0, item);
 
-	}
+  }
 
 
 }
 
 void VariableWindow::selectColor()
 {
-//	QColorDialog d(this);
+//  QColorDialog d(this);
 
 
-	QColor c = QColorDialog::getColor(lColor->palette().button().color());
+  QColor c = QColorDialog::getColor(lColor->palette().button().color());
 
-	lColor->setPalette(QPalette(c));
+  lColor->setPalette(QPalette(c));
 }
 
 void VariableWindow::createCurve()
 {
 
-	QColor color = lColor->palette().button().color();
-	LegendLabel *l = new LegendLabel(color,cby->currentText(),graphWidget->legendFrame, true, true, 12);
-	graphWidget->legendFrame->setMinimumWidth(max(l->fontMetrics().width(l->text())+41+4, graphWidget->legendFrame->minimumWidth()));
-	l->graphWidget = graphWidget;
+  QColor color = lColor->palette().button().color();
+  LegendLabel *l = new LegendLabel(color,cby->currentText(),graphWidget->legendFrame, true, true, 12);
+  graphWidget->legendFrame->setMinimumWidth(max(l->fontMetrics().width(l->text())+41+4, graphWidget->legendFrame->minimumWidth()));
+  l->graphWidget = graphWidget;
 
 
-	Curve* c = new Curve(graphWidget->variables[cbx->currentText()],graphWidget->variables[cby->currentText()],color, l);
-	l->setCurve(c);
+  Curve* c = new Curve(graphWidget->variables[cbx->currentText()],graphWidget->variables[cby->currentText()],color, l);
+  l->setCurve(c);
 
-	if(rbLinear->isChecked())
-		c->interpolation = INTERPOLATION_LINEAR;
-	else if(rbConstant->isChecked())
-		c->interpolation = INTERPOLATION_CONSTANT;
-	else
-		c->interpolation= INTERPOLATION_NONE;
-	c->drawPoints = cbPoints->isChecked();
+  if(rbLinear->isChecked())
+  	c->interpolation = INTERPOLATION_LINEAR;
+  else if(rbConstant->isChecked())
+  	c->interpolation = INTERPOLATION_CONSTANT;
+  else
+  	c->interpolation= INTERPOLATION_NONE;
+  c->drawPoints = cbPoints->isChecked();
 
-	graphWidget->legendLayout->addWidget(l);
-	graphWidget->curves.push_back(c);
-//	graphWidget->showGraphics();
-	graphWidget->setLogarithmic(true);
-	emit showGraphics();
-	graphWidget->resetZoom();
-	//	graphWidget->
-	updateViews();
+  graphWidget->legendLayout->addWidget(l);
+  graphWidget->curves.push_back(c);
+//  graphWidget->showGraphics();
+  graphWidget->setLogarithmic(true);
+  emit showGraphics();
+  graphWidget->resetZoom();
+  //	graphWidget->
+  updateViews();
 }
 
 void VariableWindow::removeCurve()
 {
 
-	if(!twPlotted->currentItem())
-		return;
-	QString x = twPlotted->currentItem()->text(0);
-	QString y = twPlotted->currentItem()->text(1);
+  if(!twPlotted->currentItem())
+  	return;
+  QString x = twPlotted->currentItem()->text(0);
+  QString y = twPlotted->currentItem()->text(1);
 
-	for(int i = 0; i < graphWidget->curves.size(); ++i)
-	{
-		if(graphWidget->curves[i]->x->variableName() == x && graphWidget->curves[i]->y->variableName() == y)
-		{
-			Curve* c = graphWidget->curves.takeAt(i);
-			delete c;
-			break;
+  for(int i = 0; i < graphWidget->curves.size(); ++i)
+  {
+  	if(graphWidget->curves[i]->x->variableName() == x && graphWidget->curves[i]->y->variableName() == y)
+  	{
+  		Curve* c = graphWidget->curves.takeAt(i);
+  		delete c;
+  		break;
 
-		}
-	}
-			updateViews();
+  	}
+  }
+  		updateViews();
 
 
 }

@@ -47,23 +47,23 @@ using namespace std;
 
 class CompoundWidget: public QWidget, public Ui::CompoundWidget
 {
-	Q_OBJECT
+  Q_OBJECT
 
 public:
-	CompoundWidget(QWidget* parent = 0);
-	~CompoundWidget();
-	void showVis();
-	void hideVis();
+  CompoundWidget(QWidget* parent = 0);
+  ~CompoundWidget();
+  void showVis();
+  void hideVis();
 
 public slots:
-	void resizeY(quint32 w);
-	void showPreferences();
+  void resizeY(quint32 w);
+  void showPreferences();
   void graphicsResizeY(quint32 w);
 
 public:
-	QVBoxLayout* layout;
-	IAEX::VisualizationWidget* visWidget;
-	// QWidget* plotWidget;
+  QVBoxLayout* layout;
+  IAEX::VisualizationWidget* visWidget;
+  // QWidget* plotWidget;
 };
 
 

@@ -137,9 +137,9 @@ namespace IAEX
       QObject::connect( text, SIGNAL( forwardAction(int) ),
         doc_, SIGNAL( forwardAction(int) ));
 
-      //			CellDocument* d = dynamic_cast<CellDocument*>(doc_);
-      //			DocumentView* d2 = d->observers_[0];
-      //			NotebookWindow *d3 = dynamic_cast<NotebookWindow*>(d2);
+      //  		CellDocument* d = dynamic_cast<CellDocument*>(doc_);
+      //  		DocumentView* d2 = d->observers_[0];
+      //  		NotebookWindow *d3 = dynamic_cast<NotebookWindow*>(d2);
       QObject::connect(text->input_, SIGNAL(copyAvailable(bool)), doc_, SIGNAL(copyAvailable(bool)));
       QObject::connect(text->input_, SIGNAL(undoAvailable(bool)), doc_, SIGNAL(undoAvailable(bool)));
       QObject::connect(text->input_, SIGNAL(redoAvailable(bool)), doc_, SIGNAL(redoAvailable(bool)));
@@ -233,7 +233,7 @@ namespace IAEX
       QObject::connect(text->input_, SIGNAL(redoAvailable(bool)), doc_, SIGNAL(redoAvailable(bool)));
       QObject::connect(text->output_, SIGNAL(copyAvailable(bool)), doc_, SIGNAL(copyAvailable(bool)));
 
-      //			if(CellDocument* d = dynamic_cast<CellDocument*>(doc_))
+      //  		if(CellDocument* d = dynamic_cast<CellDocument*>(doc_))
       QObject::connect(doc_, SIGNAL(setAutoIndent(bool)), text->input_, SLOT(setAutoIndent(bool)));
       //QObject::connect(doc_, SIGNAL(evaluate()), text->input_, SIGNAL(eval()));
       text->input_->setAutoIndent(dynamic_cast<CellDocument*>(doc_)->autoIndent);
@@ -297,7 +297,7 @@ namespace IAEX
       QObject::connect(text->text_, SIGNAL(copyAvailable(bool)), doc_, SIGNAL(copyAvailable(bool)));
       QObject::connect(text->text_, SIGNAL(undoAvailable(bool)), doc_, SIGNAL(undoAvailable(bool)));
       QObject::connect(text->text_, SIGNAL(redoAvailable(bool)), doc_, SIGNAL(redoAvailable(bool)));
-      //			QObject::connect(text->output_, SIGNAL(copyAvailable(bool)), this, SLOT(copyAvailable(bool)));
+      //  		QObject::connect(text->output_, SIGNAL(copyAvailable(bool)), this, SLOT(copyAvailable(bool)));
       /*
 
       CellDocument* d = dynamic_cast<CellDocument*>(doc_);

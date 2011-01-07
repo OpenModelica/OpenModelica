@@ -163,8 +163,8 @@ namespace IAEX
         // UTF-8, otherwise swedish letters didn't work.
         // 2005-10-07 AF, Porting, changed from 'toCString()'
         // to 'toByteArray()'
-        //						QTextStream filestream(&file);
-        //						QDataStream filestream(&file);
+        //  					QTextStream filestream(&file);
+        //  					QDataStream filestream(&file);
 
         if (file.isOpen())
           file.close();

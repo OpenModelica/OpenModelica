@@ -41,25 +41,25 @@
 
 class GraphWindow: public QMainWindow, public Ui::graphWindow
 {
-	Q_OBJECT
+  Q_OBJECT
 public:
-	GraphWindow(QWidget* parent = 0);
-	~GraphWindow();
-	int serverPort() {return graphicsView->gwMain->serverPort();}
+  GraphWindow(QWidget* parent = 0);
+  ~GraphWindow();
+  int serverPort() {return graphicsView->gwMain->serverPort();}
 
 signals:
-	void destroyed2();
+  void destroyed2();
 
 public slots:
 
-	void showMessage(QString message);
-	void sceneDestroyed();
-	void showPreferences();
-	void showSimulationData();
-	void saveImage();
+  void showMessage(QString message);
+  void sceneDestroyed();
+  void showPreferences();
+  void showSimulationData();
+  void saveImage();
 
 public:
-	CompoundWidget* compoundWidget;
+  CompoundWidget* compoundWidget;
 
 };
 

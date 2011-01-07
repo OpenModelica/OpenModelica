@@ -44,27 +44,27 @@ enum {INTERPOLATION_NONE, INTERPOLATION_LINEAR, INTERPOLATION_CONSTANT};
 class VariableData: public QList<qreal>
 {
 public:
-	VariableData(QString name_, QColor color_ = Qt::color0)
+  VariableData(QString name_, QColor color_ = Qt::color0)
   {
     currentIndex = 0;
     name = new QString(name_);
     color = color_;
   }
-	VariableData(QString name_, QString id, QString data);
-	~VariableData();
+  VariableData(QString name_, QString id, QString data);
+  ~VariableData();
 
-	QString variableName() {return *name;}
-	void setVariableName(QString name_) {name = new QString(name_);}
+  QString variableName() {return *name;}
+  void setVariableName(QString name_) {name = new QString(name_);}
 
-	quint32 currentIndex;
-	QColor color;
+  quint32 currentIndex;
+  QColor color;
 
-	int interpolation;
-	bool drawPoints;
+  int interpolation;
+  bool drawPoints;
 
 private:
 
-	QString *name;
+  QString *name;
 
 };
 

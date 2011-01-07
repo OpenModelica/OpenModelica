@@ -61,224 +61,224 @@ class CompoundWidget;
 
 class GraphWidget: public QGraphicsView
 {
-	Q_OBJECT
+  Q_OBJECT
 
 public:
-	GraphWidget(QWidget* parent = 0);
-	~GraphWidget();
+  GraphWidget(QWidget* parent = 0);
+  ~GraphWidget();
 
-	//	void printData(QString data);
-	//	void printData2(qreal x0, qreal y0, qreal x1, qreal y1);
+  //	void printData(QString data);
+  //	void printData2(qreal x0, qreal y0, qreal x1, qreal y1);
 
-	quint16 serverPort() {return server->serverPort();}
+  quint16 serverPort() {return server->serverPort();}
 
 public slots:
-	void getData();
-	void acCon();
-	void drawGraphics();
-	void drawLine(QDataStream& ds);
-	void drawPoint(QDataStream& ds);
-	void drawText(QDataStream& ds);
-	void drawRect(QDataStream& ds);
-	void drawEllipse(QDataStream& ds);
-	void readPtolemyDataStream();
-	void ptolemyDataStreamClosed();
-	void plotPtolemyDataStream();
-	void dataStreamClosed();
-	void graphicsStreamClosed();
-	void receiveDataStream();
+  void getData();
+  void acCon();
+  void drawGraphics();
+  void drawLine(QDataStream& ds);
+  void drawPoint(QDataStream& ds);
+  void drawText(QDataStream& ds);
+  void drawRect(QDataStream& ds);
+  void drawEllipse(QDataStream& ds);
+  void readPtolemyDataStream();
+  void ptolemyDataStreamClosed();
+  void plotPtolemyDataStream();
+  void dataStreamClosed();
+  void graphicsStreamClosed();
+  void receiveDataStream();
 
-	void setLogarithmic(bool);
-	void setServerState(bool listen, bool graphics = false);
-	void setStretch(bool b) {stretch = b;}
+  void setLogarithmic(bool);
+  void setServerState(bool listen, bool graphics = false);
+  void setStretch(bool b) {stretch = b;}
 
-	void newWindow();
-	void zoomIn(QRectF);
+  void newWindow();
+  void zoomIn(QRectF);
   void saveImage();
   void exportToClipboard();
 
-	void setExpr(QString);
+  void setExpr(QString);
 
-	void setPan(bool b)
-	{
-		pan = b;
-		if(b)
-		{
-			zoom = false;
-			select=false;
-			setDragMode(QGraphicsView::ScrollHandDrag);
-		}
-	}
+  void setPan(bool b)
+  {
+  	pan = b;
+  	if(b)
+  	{
+  		zoom = false;
+  		select=false;
+  		setDragMode(QGraphicsView::ScrollHandDrag);
+  	}
+  }
 
-	void setSelect(bool b)
-	{
-		select = b;
-		if(b)
-		{
-			zoom = false;
-			pan = false;
-			setDragMode(QGraphicsView::RubberBandDrag);
-			setDragMode(QGraphicsView::NoDrag);
-		}
-	}
+  void setSelect(bool b)
+  {
+  	select = b;
+  	if(b)
+  	{
+  		zoom = false;
+  		pan = false;
+  		setDragMode(QGraphicsView::RubberBandDrag);
+  		setDragMode(QGraphicsView::NoDrag);
+  	}
+  }
 
-	void setZoom(bool b)
-	{
-		zoom = b;
-		if(b)
-		{
-			select = false;
-			pan = false;
-			setDragMode(QGraphicsView::RubberBandDrag);
-		}
-	}
+  void setZoom(bool b)
+  {
+  	zoom = b;
+  	if(b)
+  	{
+  		select = false;
+  		pan = false;
+  		setDragMode(QGraphicsView::RubberBandDrag);
+  	}
+  }
 
-	void resetZoom();
+  void resetZoom();
 
-	void clear();
+  void clear();
 
-	void showGrid(bool);
-	void updateGrid();
+  void showGrid(bool);
+  void updateGrid();
 
-	void setArea(const QRectF& r);
-	void showPreferences();
-	void showVariables();
-	void setAntiAliasing(bool);
-	void setHold(bool);
-	void setHold(QDataStream& ds);
+  void setArea(const QRectF& r);
+  void showPreferences();
+  void showVariables();
+  void setAntiAliasing(bool);
+  void setHold(bool);
+  void setHold(QDataStream& ds);
 
-	void originalZoom();
-	void addFocusBox();
-	void syncCall();
-	void enableServers(bool);
+  void originalZoom();
+  void addFocusBox();
+  void syncCall();
+  void enableServers(bool);
 
 signals:
-	void showPreferences2();
-	void serverState(bool);
-	void newMessage(QString message);
-	void resizeY(quint32);
-	void zoomEvent(QRectF);
-	void scrolled();
-	void scrollBy(int x, int y);
-	void areaChanged(const QRectF& r);
-	void setGridVisible(bool);
-	void holdSet(bool);
-	void newExpr(QString);
-	void showGraphics();
-	void showVariableButton(bool);
-//	void serverState(bool);
+  void showPreferences2();
+  void serverState(bool);
+  void newMessage(QString message);
+  void resizeY(quint32);
+  void zoomEvent(QRectF);
+  void scrolled();
+  void scrollBy(int x, int y);
+  void areaChanged(const QRectF& r);
+  void setGridVisible(bool);
+  void holdSet(bool);
+  void newExpr(QString);
+  void showGraphics();
+  void showVariableButton(bool);
+//  void serverState(bool);
 
 public:
-	GraphScene* graphicsScene;
+  GraphScene* graphicsScene;
 
 protected:
-	void resizeEvent ( QResizeEvent * event );
-	void mouseReleaseEvent ( QMouseEvent * event );
-	void mousePressEvent ( QMouseEvent * event );
+  void resizeEvent ( QResizeEvent * event );
+  void mouseReleaseEvent ( QMouseEvent * event );
+  void mousePressEvent ( QMouseEvent * event );
 
-	void paintEvent(QPaintEvent* pe);
+  void paintEvent(QPaintEvent* pe);
 
-	void showEvent(QShowEvent* event);
-	quint32 blockSize;
+  void showEvent(QShowEvent* event);
+  quint32 blockSize;
 
-	QTcpServer* server, *graphicsServer;
-	QTcpSocket* activeSocket, *graphicsSocket;
-	QDataStream ds, ds2;
+  QTcpServer* server, *graphicsServer;
+  QTcpSocket* activeSocket, *graphicsSocket;
+  QDataStream ds, ds2;
 
-	int tmpint;
+  int tmpint;
 
-	int nr;
-	bool getNames;
-	quint32 variableCount;
-	quint32 packetSize, packetSize2;
+  int nr;
+  bool getNames;
+  quint32 variableCount;
+  quint32 packetSize, packetSize2;
 
-	void createGrid(bool numbersOnly = false);
-	qreal gridDist(qreal &min, qreal &max, qreal dist = -1);
+  void createGrid(bool numbersOnly = false);
+  qreal gridDist(qreal &min, qreal &max, qreal dist = -1);
 
 public:
-	bool getServerState();
-	map<QString, VariableData*> variables;
-	map<QString, Curve*> temporaryCurves;
+  bool getServerState();
+  map<QString, VariableData*> variables;
+  map<QString, Curve*> temporaryCurves;
 
-	void updatePointSizes(QRect r = QRect());
+  void updatePointSizes(QRect r = QRect());
 
-	QRectF currentArea()
-	{
-		return currentArea_;
-	}
+  QRectF currentArea()
+  {
+  	return currentArea_;
+  }
 
-	void setCurrentArea(const QRectF& r)
-	{
-		currentArea_ = r;
-	}
+  void setCurrentArea(const QRectF& r)
+  {
+  	currentArea_ = r;
+  }
 
 private:
-	void drawRulers();
-	void updateScaleFactors()
-	{
-		QPolygonF p = mapToScene(QRect(0,0,10,10));
-		xScaleFactor = p.boundingRect().width()/10;
-		yScaleFactor = p.boundingRect().height()/10;
+  void drawRulers();
+  void updateScaleFactors()
+  {
+  	QPolygonF p = mapToScene(QRect(0,0,10,10));
+  	xScaleFactor = p.boundingRect().width()/10;
+  	yScaleFactor = p.boundingRect().height()/10;
 
-	}
-
-
-	void rescale()
-	{
-
-	}
-
-	bool stretch;
-	bool hold;
-	bool zoom;
-	bool pan;
-	bool select;
-	double xScaleFactor, yScaleFactor;
-
-	QList<Point*> *dataPoints;
-	QColor generateColor(int index);
-	QPoint zoomStart;
-	QMenu* contextMenu;
-
-	QRectF currentArea_;
-	QString zoomStr, gridStr, aAStr;
-	QRectF range;
-	double dataStreamVersion;
-
-public:
-	QString currentExpr;
-
-	QRectF originalArea;
+  }
 
 
-	QGraphicsItemGroup *graphicsItems;
+  void rescale()
+  {
 
-	QList<VariableData*> variableData;
+  }
 
-	QList<Curve*> curves;
-	bool xLog, yLog;
+  bool stretch;
+  bool hold;
+  bool zoom;
+  bool pan;
+  bool select;
+  double xScaleFactor, yScaleFactor;
 
-	QRectF gridArea;
-	QRectF manualArea;
-	bool useManualArea;
-	bool gridVisible;
+  QList<Point*> *dataPoints;
+  QColor generateColor(int index);
+  QPoint zoomStart;
+  QMenu* contextMenu;
+
+  QRectF currentArea_;
+  QString zoomStr, gridStr, aAStr;
+  QRectF range;
+  double dataStreamVersion;
 
 public:
-	bool antiAliasing;
-	QString currentXVar, currentYVar;
-	QStringList yVars;
-	QGraphicsView *gvLeft, *gvBottom;
-	QVBoxLayout* legendLayout;
-	QFrame* legendFrame;
+  QString currentExpr;
 
-	CompoundWidget* compoundwidget;
+  QRectF originalArea;
 
-	qreal xMajorDist, xMinorDist, yMajorDist, yMinorDist; //grid parameters
-	bool fixedYSize, fixedXSize;
-	bool fixedGrid;
 
-	bool doFitInView, doSetArea;
-	QRectF newRect;
-	QAction* aaAction;
+  QGraphicsItemGroup *graphicsItems;
+
+  QList<VariableData*> variableData;
+
+  QList<Curve*> curves;
+  bool xLog, yLog;
+
+  QRectF gridArea;
+  QRectF manualArea;
+  bool useManualArea;
+  bool gridVisible;
+
+public:
+  bool antiAliasing;
+  QString currentXVar, currentYVar;
+  QStringList yVars;
+  QGraphicsView *gvLeft, *gvBottom;
+  QVBoxLayout* legendLayout;
+  QFrame* legendFrame;
+
+  CompoundWidget* compoundwidget;
+
+  qreal xMajorDist, xMinorDist, yMajorDist, yMinorDist; //grid parameters
+  bool fixedYSize, fixedXSize;
+  bool fixedGrid;
+
+  bool doFitInView, doSetArea;
+  QRectF newRect;
+  QAction* aaAction;
 };
 #endif

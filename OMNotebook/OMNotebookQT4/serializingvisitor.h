@@ -61,38 +61,38 @@ using namespace std;
 
 namespace IAEX
 {
-	class SerializingVisitor : public Visitor
-	{
+  class SerializingVisitor : public Visitor
+  {
 
-	public:
-		SerializingVisitor(QDomDocument &domdoc, Document* doc);
-		virtual ~SerializingVisitor();
+  public:
+  	SerializingVisitor(QDomDocument &domdoc, Document* doc);
+  	virtual ~SerializingVisitor();
 
-		virtual void visitCellNodeBefore(Cell *node);
-		virtual void visitCellNodeAfter(Cell *node);
+  	virtual void visitCellNodeBefore(Cell *node);
+  	virtual void visitCellNodeAfter(Cell *node);
 
-		virtual void visitCellGroupNodeBefore(CellGroup *node);
-		virtual void visitCellGroupNodeAfter(CellGroup *node);
+  	virtual void visitCellGroupNodeBefore(CellGroup *node);
+  	virtual void visitCellGroupNodeAfter(CellGroup *node);
 
-		virtual void visitTextCellNodeBefore(TextCell *node);
-		virtual void visitTextCellNodeAfter(TextCell *node);
+  	virtual void visitTextCellNodeBefore(TextCell *node);
+  	virtual void visitTextCellNodeAfter(TextCell *node);
 
-		virtual void visitInputCellNodeBefore(InputCell *node);
-		virtual void visitInputCellNodeAfter(InputCell *node);
+  	virtual void visitInputCellNodeBefore(InputCell *node);
+  	virtual void visitInputCellNodeAfter(InputCell *node);
 
-		virtual void visitGraphCellNodeBefore(GraphCell *node);
-		virtual void visitGraphCellNodeAfter(GraphCell *node);
+  	virtual void visitGraphCellNodeBefore(GraphCell *node);
+  	virtual void visitGraphCellNodeAfter(GraphCell *node);
 
-		virtual void visitCellCursorNodeBefore(CellCursor *cursor);
-		virtual void visitCellCursorNodeAfter(CellCursor *cursor);
+  	virtual void visitCellCursorNodeBefore(CellCursor *cursor);
+  	virtual void visitCellCursorNodeAfter(CellCursor *cursor);
 
-	private:
-		void saveImages( QDomElement &current, QString &text );
+  private:
+  	void saveImages( QDomElement &current, QString &text );
 
-		stack<QDomElement> parents_;
-		QDomElement currentElement_;
-		QDomDocument domdoc_;
-		Document* doc_;
-	};
+  	stack<QDomElement> parents_;
+  	QDomElement currentElement_;
+  	QDomDocument domdoc_;
+  	Document* doc_;
+  };
 }
 #endif

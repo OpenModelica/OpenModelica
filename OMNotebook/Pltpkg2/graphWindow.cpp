@@ -89,22 +89,22 @@ GraphWindow::~GraphWindow()
 
 void GraphWindow::showPreferences()
 {
-	PreferenceWindow* pw = new PreferenceWindow(compoundWidget, 0);
-	pw->setAttribute(Qt::WA_DeleteOnClose);
-	pw->show();
+  PreferenceWindow* pw = new PreferenceWindow(compoundWidget, 0);
+  pw->setAttribute(Qt::WA_DeleteOnClose);
+  pw->show();
 }
 
 void GraphWindow::showSimulationData()
 {
-	VariableWindow* vw = new VariableWindow(compoundWidget->gwMain, 0);
-	vw->setAttribute(Qt::WA_DeleteOnClose);
-	vw->show();
+  VariableWindow* vw = new VariableWindow(compoundWidget->gwMain, 0);
+  vw->setAttribute(Qt::WA_DeleteOnClose);
+  vw->show();
 }
 
 
 void GraphWindow::showMessage(QString message)
 {
-	statusbar->showMessage(message);
+  statusbar->showMessage(message);
 }
 
 void GraphWindow::sceneDestroyed()
@@ -115,44 +115,44 @@ void GraphWindow::sceneDestroyed()
 void GraphWindow::saveImage()
 {
 
-	QString filename = QFileDialog::getSaveFileName(this, "Export image", "untitled", "Portable Network Graphics (*.png);;Windows Bitmap (*.bmp);;Joint Photographic Experts Group (*.jpg)");
+  QString filename = QFileDialog::getSaveFileName(this, "Export image", "untitled", "Portable Network Graphics (*.png);;Windows Bitmap (*.bmp);;Joint Photographic Experts Group (*.jpg)");
 
-	if(!filename.size())
-		return;
+  if(!filename.size())
+  	return;
 
-	QImage i3(compoundWidget->rect().size(),  QImage::Format_RGB32);
-	i3.fill(QColor(Qt::white).rgb());
-	QPainter p(&i3);
-	QRectF target = QRectF(compoundWidget->gwMain->rect());
-	target.moveTo(compoundWidget->gwMain->pos());
-	compoundWidget->gwMain->render(&p, target);
+  QImage i3(compoundWidget->rect().size(),  QImage::Format_RGB32);
+  i3.fill(QColor(Qt::white).rgb());
+  QPainter p(&i3);
+  QRectF target = QRectF(compoundWidget->gwMain->rect());
+  target.moveTo(compoundWidget->gwMain->pos());
+  compoundWidget->gwMain->render(&p, target);
 
-	p.drawRect(target);
+  p.drawRect(target);
 
-	target = QRectF(compoundWidget->gvLeft->rect());
-	target.moveTo(compoundWidget->gvLeft->pos());
-	compoundWidget->gvLeft->render(&p, target);
+  target = QRectF(compoundWidget->gvLeft->rect());
+  target.moveTo(compoundWidget->gvLeft->pos());
+  compoundWidget->gvLeft->render(&p, target);
 
-	target = QRectF(compoundWidget->gvBottom->rect());
-	target.moveTo(compoundWidget->gvBottom->pos());
-	compoundWidget->gvBottom->render(&p, target);
+  target = QRectF(compoundWidget->gvBottom->rect());
+  target.moveTo(compoundWidget->gvBottom->pos());
+  compoundWidget->gvBottom->render(&p, target);
 
-	compoundWidget->yLabel->render(&p, compoundWidget->yLabel->pos());
-	compoundWidget->xLabel->render(&p, compoundWidget->xLabel->pos());
-	compoundWidget->plotTitle->render(&p, compoundWidget->plotTitle->pos());
-
-
-	QList<LegendLabel*> l = compoundWidget->legendFrame->findChildren<LegendLabel*>();
-	for(int i = 0; i < l.size(); ++i)
-		l[i]->render(&p, l[i]->pos()+compoundWidget->legendFrame->pos());
+  compoundWidget->yLabel->render(&p, compoundWidget->yLabel->pos());
+  compoundWidget->xLabel->render(&p, compoundWidget->xLabel->pos());
+  compoundWidget->plotTitle->render(&p, compoundWidget->plotTitle->pos());
 
 
-	if(filename.endsWith("png"))
-		i3.save(filename, "PNG");
-	else if(filename.endsWith("bmp"))
-		i3.save(filename, "BMP");
-	else if(filename.endsWith("jpg") || filename.endsWith("jpeg"))
-		i3.save(filename, "JPG");
-	else
-		i3.save(filename+".bmp", "BMP");
+  QList<LegendLabel*> l = compoundWidget->legendFrame->findChildren<LegendLabel*>();
+  for(int i = 0; i < l.size(); ++i)
+  	l[i]->render(&p, l[i]->pos()+compoundWidget->legendFrame->pos());
+
+
+  if(filename.endsWith("png"))
+  	i3.save(filename, "PNG");
+  else if(filename.endsWith("bmp"))
+  	i3.save(filename, "BMP");
+  else if(filename.endsWith("jpg") || filename.endsWith("jpeg"))
+  	i3.save(filename, "JPG");
+  else
+  	i3.save(filename+".bmp", "BMP");
 }

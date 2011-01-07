@@ -63,34 +63,34 @@ class QDomNode;
 
 namespace IAEX
 {
-	class XMLParser : public NBParser
-	{
-	public:
-		XMLParser( const QString filename, Factory *factory, Document *document, int readmode = READMODE_NORMAL );
-		virtual ~XMLParser();
-		virtual Cell *parse();
+  class XMLParser : public NBParser
+  {
+  public:
+  	XMLParser( const QString filename, Factory *factory, Document *document, int readmode = READMODE_NORMAL );
+  	virtual ~XMLParser();
+  	virtual Cell *parse();
 
-	private:
-		Cell *parseNormal( QDomDocument &domdoc );
-		Cell *parseOld( QDomDocument &domdoc );
+  private:
+  	Cell *parseNormal( QDomDocument &domdoc );
+  	Cell *parseOld( QDomDocument &domdoc );
 
-		// READMODE_NORMAL
-		void traverseCells( Cell *parent, QDomNode &node );
-		void traverseGroupCell( Cell *parent, QDomElement &element );
-		void traverseTextCell( Cell *parent, QDomElement &element );
-		void traverseInputCell( Cell *parent, QDomElement &element );
-		void traverseGraphCell( Cell *parent, QDomElement &element );
-		void addImage( Cell *parent, QDomElement &element );
+  	// READMODE_NORMAL
+  	void traverseCells( Cell *parent, QDomNode &node );
+  	void traverseGroupCell( Cell *parent, QDomElement &element );
+  	void traverseTextCell( Cell *parent, QDomElement &element );
+  	void traverseInputCell( Cell *parent, QDomElement &element );
+  	void traverseGraphCell( Cell *parent, QDomElement &element );
+  	void addImage( Cell *parent, QDomElement &element );
 
-		// READMODE_OLD
-		void xmltraverse( Cell *parent, QDomNode &node );
+  	// READMODE_OLD
+  	void xmltraverse( Cell *parent, QDomNode &node );
 
 
-		// variables
-		QString filename_;
-		Factory *factory_;
-		Document *doc_;
-		int readmode_;
-	};
+  	// variables
+  	QString filename_;
+  	Factory *factory_;
+  	Document *doc_;
+  	int readmode_;
+  };
 };
 #endif

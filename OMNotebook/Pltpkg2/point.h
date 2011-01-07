@@ -46,7 +46,7 @@ class Point: public QGraphicsEllipseItem
 {
  public:
   Point(qreal x1, qreal y1, qreal h, qreal w, QColor color_, const GraphWidget* graphwidget_=0,
-	QGraphicsItem* parent=0, QGraphicsScene* scene=0, const QString& label = "");
+  QGraphicsItem* parent=0, QGraphicsScene* scene=0, const QString& label = "");
   ~Point();
   double xFactor, yFactor;
   double xPos, yPos, hgt, wdt;

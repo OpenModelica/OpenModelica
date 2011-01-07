@@ -50,9 +50,9 @@ namespace IAEX
       virtual Cell *createCell(const QString &style, Cell *parent=0) = 0;
 
 
-	  //Fulhack to compile on VC++
-	 // virtual Cell *createCell(const std::string &style, Cell *parent=0)
-	 // { createCell(QString(style.c_str()), parent);}
+    //Fulhack to compile on VC++
+   // virtual Cell *createCell(const std::string &style, Cell *parent=0)
+   // { createCell(QString(style.c_str()), parent);}
    };
 
    /*! \class NullFactory

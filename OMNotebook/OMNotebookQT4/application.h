@@ -63,9 +63,9 @@ namespace IAEX
       virtual void clearPasteboard() = 0;
       virtual vector<Cell *> pasteboard() = 0;
       virtual void open(const QString filename, int readmode = READMODE_NORMAL) = 0;
-	  virtual void removeTempFiles(QString filename) = 0;		// Added 2006-01-16 AF
-	  virtual vector<DocumentView *> documentViewList() = 0;	// Added 2006-01-27 AF
-	  virtual void removeDocumentView(DocumentView *view) = 0;	// Added 2006-01-27 AF
+    virtual void removeTempFiles(QString filename) = 0;		// Added 2006-01-16 AF
+    virtual vector<DocumentView *> documentViewList() = 0;	// Added 2006-01-27 AF
+    virtual void removeDocumentView(DocumentView *view) = 0;	// Added 2006-01-27 AF
    };
 };
 

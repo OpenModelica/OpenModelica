@@ -43,38 +43,38 @@ using namespace std;
 class Label: public QLabel
 {
 public:
-	Label(QWidget * parent = 0, Qt::WindowFlags f = 0 ): QLabel(parent, f)
-	{
+  Label(QWidget * parent = 0, Qt::WindowFlags f = 0 ): QLabel(parent, f)
+  {
 
-	}
-	Label(const QString & text, QWidget * parent = 0, Qt::WindowFlags f = 0): QLabel(text, parent,f)
-	{
+  }
+  Label(const QString & text, QWidget * parent = 0, Qt::WindowFlags f = 0): QLabel(text, parent,f)
+  {
 
 
-	}
-	~Label()
-	{
+  }
+  ~Label()
+  {
 
-	}
+  }
 
 protected:
-	void paintEvent ( QPaintEvent * event )
-	{
-		QPainter painter(this);
-		render(&painter);
-	}
+  void paintEvent ( QPaintEvent * event )
+  {
+  	QPainter painter(this);
+  	render(&painter);
+  }
 
 public:
-	void render(QPainter* painter, QPointF pos = QPointF())
-	{
-		painter->save();
-		painter->translate(pos.x(), pos.y());
+  void render(QPainter* painter, QPointF pos = QPointF())
+  {
+  	painter->save();
+  	painter->translate(pos.x(), pos.y());
 
-		painter->setFont(font());
-		painter->drawText(rect(), Qt::AlignCenter, text());
+  	painter->setFont(font());
+  	painter->drawText(rect(), Qt::AlignCenter, text());
 
-		painter->restore();
-	}
+  	painter->restore();
+  }
 };
 
 #endif

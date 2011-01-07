@@ -45,9 +45,9 @@ namespace IAEX
     * This factory class knows how to open different fileformats. If a
     * new fileformat should be added the code for parsing the new format.
     *
-	* Do not forget to delete a parser when it is not used anymore.
-	*
-	*
+  * Do not forget to delete a parser when it is not used anymore.
+  *
+  *
     * \todo Check for whitespaces in filename. Whitespaces at the end
     * of a file should be taken care of in some way.(Ingemar Axelsson)
     *
@@ -58,7 +58,7 @@ namespace IAEX
    NBParser *CellParserFactory::createParser(QString filename, Factory *f, Document *document, int readmode)
    {
      // PORT >>filename = filename.stripWhiteSpace();
-	   QString fileName = filename.trimmed();
-	   return new XMLParser(fileName, f, document, readmode);
+     QString fileName = filename.trimmed();
+     return new XMLParser(fileName, f, document, readmode);
    }
 };

@@ -51,13 +51,13 @@ namespace IAEX{
 
    /*! \interface Visitor
     * \author Ingemar Axelsson (and Anders Ferström)
-	* \date 2005-11-30 (update)
+  * \date 2005-11-30 (update)
     *
     * When a new celltype is added to the cellhierarchy a new visitor
     * member function must be added also. This means that it is expensive
     * to add new celltypes.
     *
-	* 2005-11-30 AF, Removed support for imagecells
+  * 2005-11-30 AF, Removed support for imagecells
     */
    class Visitor
    {
@@ -74,7 +74,7 @@ namespace IAEX{
       virtual void visitInputCellNodeBefore(InputCell *node) = 0;
       virtual void visitInputCellNodeAfter(InputCell *node) = 0;
 
-	  virtual void visitGraphCellNodeBefore(GraphCell *node) = 0;
+    virtual void visitGraphCellNodeBefore(GraphCell *node) = 0;
       virtual void visitGraphCellNodeAfter(GraphCell *node) = 0;
 
       virtual void visitCellCursorNodeBefore(CellCursor *cursor) = 0;

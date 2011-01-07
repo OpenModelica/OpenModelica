@@ -63,33 +63,33 @@ namespace IAEX
       storeCommands();
    }
 
-	void CellCommandCenter::executeCommand(Command *cmd)
-	{
-		cmd->setApplication(application());
+  void CellCommandCenter::executeCommand(Command *cmd)
+  {
+  	cmd->setApplication(application());
 
-		//Save for undo redo, or atleast for printing.
-		storage_.push_back(cmd);
+  	//Save for undo redo, or atleast for printing.
+  	storage_.push_back(cmd);
 
-		// 2005-12-01 AF, Added try-catch and messagebox
-		try
-		{
-			cmd->execute();
-		}
-		catch( exception &e )
-		{
-			QString msg = e.what();
+  	// 2005-12-01 AF, Added try-catch and messagebox
+  	try
+  	{
+  		cmd->execute();
+  	}
+  	catch( exception &e )
+  	{
+  		QString msg = e.what();
 
-			if( 0 <= msg.indexOf( "OpenFileCommand()", 0, Qt::CaseInsensitive ))
-			{
-				msg += QString("\r\n\r\nIf you are trying to open an old ") +
-					QString("OMNotebook file, use menu 'File->Import->") +
-					QString("Old OMNotebook file' instead.");
-			}
+  		if( 0 <= msg.indexOf( "OpenFileCommand()", 0, Qt::CaseInsensitive ))
+  		{
+  			msg += QString("\r\n\r\nIf you are trying to open an old ") +
+  				QString("OMNotebook file, use menu 'File->Import->") +
+  				QString("Old OMNotebook file' instead.");
+  		}
 
-			// display message box
-			QMessageBox::warning( 0, "Warning", msg, "OK" );
-		}
-	}
+  		// display message box
+  		QMessageBox::warning( 0, "Warning", msg, "OK" );
+  	}
+  }
 
    CellApplication *CellCommandCenter::application()
    {
@@ -109,7 +109,7 @@ namespace IAEX
 
       for(;i!= storage_.end();++i)
       {
-		  diskstorage << (*i)->commandName().toStdString() << endl;
+  	  diskstorage << (*i)->commandName().toStdString() << endl;
       }
    }
 }

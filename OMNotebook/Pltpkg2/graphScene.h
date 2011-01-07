@@ -41,26 +41,26 @@
 class GraphScene: public QGraphicsScene
 {
 public:
-	GraphScene(QObject * parent = 0): QGraphicsScene(parent)
-	{
-		grid = 0;
-		gridVisible = false;
+  GraphScene(QObject * parent = 0): QGraphicsScene(parent)
+  {
+  	grid = 0;
+  	gridVisible = false;
 
-		xRulerScene = new QGraphicsScene(this);
-		yRulerScene = new QGraphicsScene(this);
-		this->setSceneRect(0,0,.01,.01);
-	}
+  	xRulerScene = new QGraphicsScene(this);
+  	yRulerScene = new QGraphicsScene(this);
+  	this->setSceneRect(0,0,.01,.01);
+  }
 
-	~GraphScene()
-	{
+  ~GraphScene()
+  {
 
-	}
+  }
 
-	QGraphicsItemGroup *grid;
-	QList<QRectF> zoomHistory;
-	bool gridVisible;
+  QGraphicsItemGroup *grid;
+  QList<QRectF> zoomHistory;
+  bool gridVisible;
 
-	QGraphicsScene* xRulerScene, *yRulerScene;
+  QGraphicsScene* xRulerScene, *yRulerScene;
 };
 
 

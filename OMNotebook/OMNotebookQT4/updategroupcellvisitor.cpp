@@ -45,73 +45,73 @@
 
 namespace IAEX
 {
-	/*!
-	 * \class UpdateGroupcellVisitor
-	 * \date 2005-11-30
-	 *
-	 * \brief call funciton 'closeChildCells()' in every GroupCell
-	 */
+  /*!
+   * \class UpdateGroupcellVisitor
+   * \date 2005-11-30
+   *
+   * \brief call funciton 'closeChildCells()' in every GroupCell
+   */
 
-	/*!
-	 * \author Anders Fernström
-	 *
-	 * \brief The class constructor
-	 */
-	UpdateGroupcellVisitor::UpdateGroupcellVisitor()
-	{}
+  /*!
+   * \author Anders Fernström
+   *
+   * \brief The class constructor
+   */
+  UpdateGroupcellVisitor::UpdateGroupcellVisitor()
+  {}
 
-	/*!
-	 * \author Anders Fernström
-	 *
-	 * \brief The class deconstructor
-	 */
-	UpdateGroupcellVisitor::~UpdateGroupcellVisitor()
-	{}
+  /*!
+   * \author Anders Fernström
+   *
+   * \brief The class deconstructor
+   */
+  UpdateGroupcellVisitor::~UpdateGroupcellVisitor()
+  {}
 
-	// CELL
-	void UpdateGroupcellVisitor::visitCellNodeBefore(Cell *)
-	{}
+  // CELL
+  void UpdateGroupcellVisitor::visitCellNodeBefore(Cell *)
+  {}
 
-	void UpdateGroupcellVisitor::visitCellNodeAfter(Cell *)
-	{}
+  void UpdateGroupcellVisitor::visitCellNodeAfter(Cell *)
+  {}
 
-	// GROUPCELL
-	void UpdateGroupcellVisitor::visitCellGroupNodeBefore(CellGroup *node)
-	{
-		node->closeChildCells();
-	}
+  // GROUPCELL
+  void UpdateGroupcellVisitor::visitCellGroupNodeBefore(CellGroup *node)
+  {
+  	node->closeChildCells();
+  }
 
-	void UpdateGroupcellVisitor::visitCellGroupNodeAfter(CellGroup *)
-	{}
+  void UpdateGroupcellVisitor::visitCellGroupNodeAfter(CellGroup *)
+  {}
 
-	// TEXTCELL
-	void UpdateGroupcellVisitor::visitTextCellNodeBefore(TextCell *node)
-	{}
+  // TEXTCELL
+  void UpdateGroupcellVisitor::visitTextCellNodeBefore(TextCell *node)
+  {}
 
-	void UpdateGroupcellVisitor::visitTextCellNodeAfter(TextCell *)
-	{}
+  void UpdateGroupcellVisitor::visitTextCellNodeAfter(TextCell *)
+  {}
 
-	//INPUTCELL
-	void UpdateGroupcellVisitor::visitInputCellNodeBefore(InputCell *node)
-	{}
+  //INPUTCELL
+  void UpdateGroupcellVisitor::visitInputCellNodeBefore(InputCell *node)
+  {}
 
-	void UpdateGroupcellVisitor::visitInputCellNodeAfter(InputCell *)
-	{}
-
-
-	//GRAPHCELL
-
-	void UpdateGroupcellVisitor::visitGraphCellNodeBefore(GraphCell *node)
-	{}
-
-	void UpdateGroupcellVisitor::visitGraphCellNodeAfter(GraphCell *)
-	{}
+  void UpdateGroupcellVisitor::visitInputCellNodeAfter(InputCell *)
+  {}
 
 
-	//CELLCURSOR
-	void UpdateGroupcellVisitor::visitCellCursorNodeBefore(CellCursor *)
-	{}
+  //GRAPHCELL
 
-	void UpdateGroupcellVisitor::visitCellCursorNodeAfter(CellCursor *)
-	{}
+  void UpdateGroupcellVisitor::visitGraphCellNodeBefore(GraphCell *node)
+  {}
+
+  void UpdateGroupcellVisitor::visitGraphCellNodeAfter(GraphCell *)
+  {}
+
+
+  //CELLCURSOR
+  void UpdateGroupcellVisitor::visitCellCursorNodeBefore(CellCursor *)
+  {}
+
+  void UpdateGroupcellVisitor::visitCellCursorNodeAfter(CellCursor *)
+  {}
 }

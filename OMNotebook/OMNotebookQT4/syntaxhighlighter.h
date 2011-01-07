@@ -52,18 +52,18 @@ class QTextDocument;
 
 namespace IAEX
 {
-	/*!
-	* \interface SyntaxHighlighter
-	* \brief Interface that syntaxhighlighters needs to obey to.
-	*
-	* updated file 2006-01-09 to represent the new highlighter that have
-	* been made to run in an new thread.
-	*/
-	class SyntaxHighlighter
-	{
-	public:
-		virtual void highlight(QTextDocument *) = 0;
-	};
+  /*!
+  * \interface SyntaxHighlighter
+  * \brief Interface that syntaxhighlighters needs to obey to.
+  *
+  * updated file 2006-01-09 to represent the new highlighter that have
+  * been made to run in an new thread.
+  */
+  class SyntaxHighlighter
+  {
+  public:
+  	virtual void highlight(QTextDocument *) = 0;
+  };
 }
 
 #endif

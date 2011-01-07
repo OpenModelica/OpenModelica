@@ -298,8 +298,8 @@ namespace IAEX {
       stopHighlighter = false;
       indentText();
       event->ignore();
-      //			QTextBrowser::keyPressEvent( event );
-      //			update();
+      //  		QTextBrowser::keyPressEvent( event );
+      //  		update();
 
     }
 
@@ -609,7 +609,7 @@ namespace IAEX {
 
     input_->setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
     input_->setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
-    //		input_->setContextMenuPolicy( Qt::NoContextMenu );
+    //  	input_->setContextMenuPolicy( Qt::NoContextMenu );
 
     QPalette palette;
     palette.setColor(input_->backgroundRole(), QColor(200,200,255));
@@ -717,7 +717,7 @@ namespace IAEX {
 
     QRegExp newLineEnd("^end\\b");
 
-    //		return s.count(e1) - includeNegative?(s.count(e2) + s.count(e1b)):0;
+    //  	return s.count(e1) - includeNegative?(s.count(e2) + s.count(e1b)):0;
     if(includeNegative)
       return s.count(e1) - s.count(e2) - s.count(e1b);// - s.count(lessIndented);
     else
@@ -1046,7 +1046,7 @@ namespace IAEX {
       input_->mergeCurrentCharFormat( (*style_.textCharFormat()) );
       input_->document()->rootFrame()->setFrameFormat( (*style_.textFrameFormat()) );
       // unselect the text
-      QTextCursor cursor(	input_->textCursor() );
+      QTextCursor cursor(  input_->textCursor() );
       cursor.clearSelection();
       input_->setTextCursor( cursor );
       // 2006-03-02 AF, set chapter counter style
@@ -1056,7 +1056,7 @@ namespace IAEX {
       QTextFrameFormat format = chaptercounter_->document()->rootFrame()->frameFormat();
       format.setMargin( style_.textFrameFormat()->margin() +
         style_.textFrameFormat()->border() +
-        style_.textFrameFormat()->padding()	);
+        style_.textFrameFormat()->padding()  );
       chaptercounter_->document()->rootFrame()->setFrameFormat( format );
 
       chaptercounter_->setAlignment( (Qt::AlignmentFlag)Qt::AlignRight );
@@ -1085,7 +1085,7 @@ namespace IAEX {
     QTextFrameFormat format = chaptercounter_->document()->rootFrame()->frameFormat();
     format.setMargin( style_.textFrameFormat()->margin() +
       style_.textFrameFormat()->border() +
-      style_.textFrameFormat()->padding()	);
+      style_.textFrameFormat()->padding()  );
     chaptercounter_->document()->rootFrame()->setFrameFormat( format );
   }
 
@@ -1923,7 +1923,7 @@ namespace IAEX {
   */
   void GraphCell::addToHighlighter()
   {
-    //		QMessageBox::information(0, "uu3", "addToHighlighter");
+    //  	QMessageBox::information(0, "uu3", "addToHighlighter");
     emit textChanged(true);
     if( input_->toPlainText().isEmpty() )
       return;
@@ -1934,7 +1934,7 @@ namespace IAEX {
     if( dynamic_cast<MyTextEdit2 *>(input_)->isStopingHighlighter() )
       return;
 
-    //		QMessageBox::information(0,"uu3", "add2");
+    //  	QMessageBox::information(0,"uu3", "add2");
 
     HighlighterThread *thread = HighlighterThread::instance();
     thread->addEditor( input_ );

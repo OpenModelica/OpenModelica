@@ -42,22 +42,22 @@
 
 class PreferenceWindow: public QDialog, public Ui::PreferenceDialog
 {
-	Q_OBJECT
+  Q_OBJECT
 public:
-	PreferenceWindow(CompoundWidget* cw, QWidget* parent = 0);
+  PreferenceWindow(CompoundWidget* cw, QWidget* parent = 0);
 
-	~PreferenceWindow();
+  ~PreferenceWindow();
 
 public slots:
-	void apply();
+  void apply();
 
 signals:
-	void setLegend(bool visible);
-	void setGrid(bool visible);
-	void setLogarithmic(bool);
+  void setLegend(bool visible);
+  void setGrid(bool visible);
+  void setLogarithmic(bool);
 
 private:
-	CompoundWidget* compoundWidget;
+  CompoundWidget* compoundWidget;
 
 };
 

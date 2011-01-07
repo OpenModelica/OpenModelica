@@ -48,24 +48,24 @@ class Curve
 {
 
 public:
-	Curve(VariableData* x_, VariableData* y_, QColor& color, LegendLabel* ll);
-	~Curve();
+  Curve(VariableData* x_, VariableData* y_, QColor& color, LegendLabel* ll);
+  ~Curve();
 
 public slots:
-	void showLine(bool b);
-	void showPoints(bool b);
-	void setColor(QColor c);
+  void showLine(bool b);
+  void showPoints(bool b);
+  void setColor(QColor c);
 
 public:
-	QGraphicsItemGroup *line;
-	QList<Point*> dataPoints;
-	LegendLabel* label;
-	bool visible;
-	bool drawPoints;
-	int interpolation;
-	QColor color_;
+  QGraphicsItemGroup *line;
+  QList<Point*> dataPoints;
+  LegendLabel* label;
+  bool visible;
+  bool drawPoints;
+  int interpolation;
+  QColor color_;
 
-	VariableData* x, *y;
+  VariableData* x, *y;
 };
 
 #endif

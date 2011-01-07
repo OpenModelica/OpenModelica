@@ -44,16 +44,16 @@ extern QMutex evalMutex; // adrpo 2009-01-19
 class EvalThread: public QThread
 {
 public:
-	EvalThread(InputCellDelegate* delegate_, QString expr, QObject * parent = 0);
-	~EvalThread();
-	void run();
-	void exceptionInEval(exception &e);
+  EvalThread(InputCellDelegate* delegate_, QString expr, QObject * parent = 0);
+  ~EvalThread();
+  void run();
+  void exceptionInEval(exception &e);
   QString getResult() { return res; }
   QString getError() { return error; }
 
 private:
-	InputCellDelegate* delegate_;
-	QString expr;
+  InputCellDelegate* delegate_;
+  QString expr;
   QString res;
   QString error;
 };

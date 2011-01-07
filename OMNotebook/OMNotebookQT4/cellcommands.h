@@ -55,131 +55,131 @@ using namespace std;
 
 namespace IAEX
 {
-	class AddCellCommand : public Command
-	{
-	public:
-		AddCellCommand(){}
-		virtual ~AddCellCommand(){}
-		virtual QString commandName(){ return QString("AddCellCommand");}
-		void execute();
-	};
+  class AddCellCommand : public Command
+  {
+  public:
+  	AddCellCommand(){}
+  	virtual ~AddCellCommand(){}
+  	virtual QString commandName(){ return QString("AddCellCommand");}
+  	void execute();
+  };
 
 
-	class CreateNewCellCommand : public Command
-	{
-	public:
-		CreateNewCellCommand(const QString &style) : style_(style){}
-		virtual ~CreateNewCellCommand(){}
-		virtual QString commandName(){ return QString("CreateNewCellCommand");}
-		void execute();
-	private:
-		QString style_;
-	};
+  class CreateNewCellCommand : public Command
+  {
+  public:
+  	CreateNewCellCommand(const QString &style) : style_(style){}
+  	virtual ~CreateNewCellCommand(){}
+  	virtual QString commandName(){ return QString("CreateNewCellCommand");}
+  	void execute();
+  private:
+  	QString style_;
+  };
 
 
-	//\todo rename to cut command instead.o
-	class DeleteCurrentCellCommand : public Command
-	{
-	public:
-		DeleteCurrentCellCommand(){}
-		virtual ~DeleteCurrentCellCommand(){}
-		void execute();
-		virtual QString commandName(){ return QString("DeleteCurrentCellCommand");}
-	};
+  //\todo rename to cut command instead.o
+  class DeleteCurrentCellCommand : public Command
+  {
+  public:
+  	DeleteCurrentCellCommand(){}
+  	virtual ~DeleteCurrentCellCommand(){}
+  	void execute();
+  	virtual QString commandName(){ return QString("DeleteCurrentCellCommand");}
+  };
 
 
-	class PasteCellsCommand : public Command
-	{
-	public:
-		PasteCellsCommand(){}
-		virtual ~PasteCellsCommand(){}
-		void execute();
-		QString commandName(){return QString("PasteCellsCommand");}
-	private:
-		void pasteCell( Cell *cell, CellGroup *groupcell = 0 );
-	};
+  class PasteCellsCommand : public Command
+  {
+  public:
+  	PasteCellsCommand(){}
+  	virtual ~PasteCellsCommand(){}
+  	void execute();
+  	QString commandName(){return QString("PasteCellsCommand");}
+  private:
+  	void pasteCell( Cell *cell, CellGroup *groupcell = 0 );
+  };
 
 
-	class CopySelectedCellsCommand : public Command
-	{
-	public:
-		CopySelectedCellsCommand(){}
-		virtual ~CopySelectedCellsCommand(){}
-		void execute();
-		QString commandName(){return QString("CopySelectedCellsCommand");}
-	private:
-	};
+  class CopySelectedCellsCommand : public Command
+  {
+  public:
+  	CopySelectedCellsCommand(){}
+  	virtual ~CopySelectedCellsCommand(){}
+  	void execute();
+  	QString commandName(){return QString("CopySelectedCellsCommand");}
+  private:
+  };
 
 
-	class DeleteSelectedCellsCommand : public Command
-	{
-	public:
-		DeleteSelectedCellsCommand(){}
-		virtual ~DeleteSelectedCellsCommand(){}
-		void execute();
-		virtual QString commandName(){ return QString("DeleteSelectedCellsCommand");}
-	};
+  class DeleteSelectedCellsCommand : public Command
+  {
+  public:
+  	DeleteSelectedCellsCommand(){}
+  	virtual ~DeleteSelectedCellsCommand(){}
+  	void execute();
+  	virtual QString commandName(){ return QString("DeleteSelectedCellsCommand");}
+  };
 
 
-	// Made changes to this class, see cellcommands.cpp /AF
-	class ChangeStyleOnSelectedCellsCommand : public Command
-	{
-	public:
-		ChangeStyleOnSelectedCellsCommand(CellStyle style):style_(style){}
-		virtual ~ChangeStyleOnSelectedCellsCommand(){}
-		void execute();
-		virtual QString commandName(){ return QString("ChangeStyleOnSelectedCellsCommand");}
-	private:
-		CellStyle style_;
-	};
+  // Made changes to this class, see cellcommands.cpp /AF
+  class ChangeStyleOnSelectedCellsCommand : public Command
+  {
+  public:
+  	ChangeStyleOnSelectedCellsCommand(CellStyle style):style_(style){}
+  	virtual ~ChangeStyleOnSelectedCellsCommand(){}
+  	void execute();
+  	virtual QString commandName(){ return QString("ChangeStyleOnSelectedCellsCommand");}
+  private:
+  	CellStyle style_;
+  };
 
-	class ChangeStyleOnCurrentCellCommand : public Command
-	{
-	public:
-		ChangeStyleOnCurrentCellCommand(const QString &style):style_(style){}
-		virtual ~ChangeStyleOnCurrentCellCommand(){}
-		void execute();
-		virtual QString commandName(){ return QString("ChangeStyleOnCurrentCellCommand");}
-	private:
-		QString style_;
-	};
+  class ChangeStyleOnCurrentCellCommand : public Command
+  {
+  public:
+  	ChangeStyleOnCurrentCellCommand(const QString &style):style_(style){}
+  	virtual ~ChangeStyleOnCurrentCellCommand(){}
+  	void execute();
+  	virtual QString commandName(){ return QString("ChangeStyleOnCurrentCellCommand");}
+  private:
+  	QString style_;
+  };
 
-	/*! Makes a groupcell of current cell. Just move the cell down.
-	*
-	* \todo Create a command for converting selected cells into a
-	* groupcell.(Ingemar Axelsson)
-	*
-	* \todo Create commands for moving a cell.(Ingemar Axelsson)
-	*
-	* \todo Implement DRAG and DROP with cells.(Ingemar Axelsson)
-	*/
-	class MakeGroupCellCommand : public Command
-	{
-	public:
-		MakeGroupCellCommand(){}
-		virtual ~MakeGroupCellCommand(){}
-		void execute();
-	};
+  /*! Makes a groupcell of current cell. Just move the cell down.
+  *
+  * \todo Create a command for converting selected cells into a
+  * groupcell.(Ingemar Axelsson)
+  *
+  * \todo Create commands for moving a cell.(Ingemar Axelsson)
+  *
+  * \todo Implement DRAG and DROP with cells.(Ingemar Axelsson)
+  */
+  class MakeGroupCellCommand : public Command
+  {
+  public:
+  	MakeGroupCellCommand(){}
+  	virtual ~MakeGroupCellCommand(){}
+  	void execute();
+  };
 
-	// 2006-04-26 AF, UNGROUP
-	class UngroupCellCommand : public Command
-	{
-	public:
-		UngroupCellCommand(){}
-		virtual ~UngroupCellCommand(){}
-		virtual QString commandName(){ return QString("UngroupCellCommand");}
-		void execute();
-	};
+  // 2006-04-26 AF, UNGROUP
+  class UngroupCellCommand : public Command
+  {
+  public:
+  	UngroupCellCommand(){}
+  	virtual ~UngroupCellCommand(){}
+  	virtual QString commandName(){ return QString("UngroupCellCommand");}
+  	void execute();
+  };
 
-	// 2006-04-26 AF, SPLIT CELL
-	class SplitCellCommand : public Command
-	{
-	public:
-		SplitCellCommand(){}
-		virtual ~SplitCellCommand(){}
-		virtual QString commandName(){ return QString("SplitCellCommand");}
-		void execute();
-	};
+  // 2006-04-26 AF, SPLIT CELL
+  class SplitCellCommand : public Command
+  {
+  public:
+  	SplitCellCommand(){}
+  	virtual ~SplitCellCommand(){}
+  	virtual QString commandName(){ return QString("SplitCellCommand");}
+  	void execute();
+  };
 
 };
 #endif

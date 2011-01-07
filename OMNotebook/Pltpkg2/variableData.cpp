@@ -45,17 +45,17 @@ using namespace std;
 
 VariableData::VariableData(QString name_, QString id, QString data)
 {
-	name = new QString(name_);
+  name = new QString(name_);
 
-	QByteArray ba = QByteArray::fromBase64( data.toLatin1() );
-	QBuffer b(&ba);
-	b.open(QBuffer::ReadOnly);
-	QDataStream ds(&b);
+  QByteArray ba = QByteArray::fromBase64( data.toLatin1() );
+  QBuffer b(&ba);
+  b.open(QBuffer::ReadOnly);
+  QDataStream ds(&b);
 
-	ds >> *this;
-	b.close();
+  ds >> *this;
+  b.close();
 
-	interpolation = INTERPOLATION_LINEAR;
+  interpolation = INTERPOLATION_LINEAR;
 }
 
 VariableData::~VariableData()

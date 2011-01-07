@@ -169,8 +169,8 @@ GraphWidget::GraphWidget(QWidget* parent): QGraphicsView(parent)
   */
   tmp=contextMenu->addAction("New window");
   connect(tmp, SIGNAL(triggered()), this, SLOT(newWindow()));
-  //	tmp->setVisible(false);
-  //	connect(this, SIGNAL(scrolled()), this, SLOT(updateGrid()));
+  //  tmp->setVisible(false);
+  //  connect(this, SIGNAL(scrolled()), this, SLOT(updateGrid()));
 
   aaAction = contextMenu->addAction("Antialiasing");
   aaAction->setCheckable(true);
@@ -328,7 +328,7 @@ void GraphWidget::syncCall()
 
 void GraphWidget::originalZoom()
 {
-  //	this->setMinimumHeight(height() + 50);
+  //  this->setMinimumHeight(height() + 50);
 }
 
 void GraphWidget::addFocusBox()
@@ -2027,23 +2027,23 @@ void GraphWidget::receiveDataStream()
             Line2D* l = new Line2D(x0, y0, x1, y1,color, PLOT_LINE_WIDTH, true);
             temporaryCurves[currentYVar]->line->addToGroup(l);
             l->show();
-			graphicsScene->addItem(l);
+  		graphicsScene->addItem(l);
           }
           else if(temporaryCurves[currentYVar]->interpolation == INTERPOLATION_CONSTANT)
           {
             Line2D* l = new Line2D(x0, y0,x1,y0,color, PLOT_LINE_WIDTH, true);
-			l->setVisible(true);
-			graphicsScene->addItem(l);
+  		l->setVisible(true);
+  		graphicsScene->addItem(l);
             temporaryCurves[currentYVar]->line->addToGroup(l);
             l = new Line2D(x1, y0,x1,y1,color, PLOT_LINE_WIDTH, true);
-			l->setVisible(true);
-			graphicsScene->addItem(l);
+  		l->setVisible(true);
+  		graphicsScene->addItem(l);
             temporaryCurves[currentYVar]->line->addToGroup(l);
           }
           else if(temporaryCurves[currentYVar]->interpolation == INTERPOLATION_NONE)
           {
             Line2D* l = new Line2D(x0, y0, x1, y1,color, PLOT_LINE_WIDTH, true);
-			graphicsScene->addItem(l);
+  		graphicsScene->addItem(l);
             l->setVisible(true);
             temporaryCurves[currentYVar]->line->addToGroup(l);
           }
@@ -2063,12 +2063,12 @@ void GraphWidget::receiveDataStream()
     packetSize = 0;
     ++it;
 
-	graphicsScene->setSceneRect(graphicsScene->itemsBoundingRect());
+  graphicsScene->setSceneRect(graphicsScene->itemsBoundingRect());
     range = graphicsScene->sceneRect();
     setArea(graphicsScene->sceneRect());
-	legendFrame->update();
+  legendFrame->update();
     graphicsScene->update();
-	update();
+  update();
   }
   while(activeSocket->bytesAvailable() >= sizeof(quint32));
 
@@ -2087,14 +2087,14 @@ void GraphWidget::dataStreamClosed()
   // cerr << "tempCurves size: " << temporaryCurves.size() << endl;
   for(map<QString, Curve*>::iterator i = temporaryCurves.begin(); i != temporaryCurves.end(); ++i)
   {
-	curves.append(i->second);
-	graphicsScene->addItem(i->second->line);
+  curves.append(i->second);
+  graphicsScene->addItem(i->second->line);
   }
   // cerr << "variables size: " << variables.size() << endl;
   // clear the variable data!
   variableData.clear();
   for(map<QString, VariableData*>::iterator i = variables.begin(); i != variables.end(); ++i)
-	variableData.append(i->second);
+  variableData.append(i->second);
 
   bool b = graphicsScene->gridVisible;
 
@@ -2102,13 +2102,13 @@ void GraphWidget::dataStreamClosed()
 
   if(range.width() == 0)
   {
-	range.setLeft(graphicsScene->itemsBoundingRect().left());
-	range.setWidth(graphicsScene->itemsBoundingRect().width());
+  range.setLeft(graphicsScene->itemsBoundingRect().left());
+  range.setWidth(graphicsScene->itemsBoundingRect().width());
   }
   if(range.height() == 0)
   {
-	range.setTop(graphicsScene->itemsBoundingRect().top());
-	range.setHeight(graphicsScene->itemsBoundingRect().height());
+  range.setTop(graphicsScene->itemsBoundingRect().top());
+  range.setHeight(graphicsScene->itemsBoundingRect().height());
   }
 
   setArea(range);
@@ -2119,11 +2119,11 @@ void GraphWidget::dataStreamClosed()
 /*
 void GraphWidget::saveImage()
 {
-//	this->setBackgroundBrush(QBrush(Qt::white));
+//  this->setBackgroundBrush(QBrush(Qt::white));
 
-//	graphicsScene->setBackgroundBrush(QBrush(Qt::white));
+//  graphicsScene->setBackgroundBrush(QBrush(Qt::white));
 
-//	graphicsScene->setForegroundBrush(QBrush(Qt::red));
+//  graphicsScene->setForegroundBrush(QBrush(Qt::red));
 
 QGraphicsRectItem* r = new QGraphicsRectItem(mapToScene(rect()).boundingRect());
 QBrush b(Qt::white);
@@ -2131,13 +2131,13 @@ r->setBrush(b);
 r->setZValue(-100);
 graphicsScene->addItem(r);
 
-//	QImage qi(rect().size(),QImage::Format_RGB32);
+//  QImage qi(rect().size(),QImage::Format_RGB32);
 QImage qi(rect().size().width()/2, rect().size().height(),QImage::Format_RGB32);
 QPainter qp;
 
-//	qp.setBackground(QBrush(Qt::white));
+//  qp.setBackground(QBrush(Qt::white));
 
-//	qp.setBackgroundMode( Qt::OpaqueMode);
+//  qp.setBackgroundMode( Qt::OpaqueMode);
 
 
 
@@ -2150,7 +2150,7 @@ qp.begin(&qi);
 render(&qp);
 
 qp.end();
-//	qi.save("u2.png", "PNG");
+//  qi.save("u2.png", "PNG");
 
 QByteArray ba;
 QBuffer buffer(&ba);
@@ -2170,79 +2170,79 @@ delete r;
 void GraphWidget::saveImage()
 {
 
-	QString filename = QFileDialog::getSaveFileName(this, "Export image", "untitled", "Portable Network Graphics (*.png);;Windows Bitmap (*.bmp);;Joint Photographic Experts Group (*.jpg)");
+  QString filename = QFileDialog::getSaveFileName(this, "Export image", "untitled", "Portable Network Graphics (*.png);;Windows Bitmap (*.bmp);;Joint Photographic Experts Group (*.jpg)");
 
-	if(!filename.size())
-		return;
+  if(!filename.size())
+  	return;
 
-	QImage i3(compoundwidget->rect().size(),  QImage::Format_RGB32);
+  QImage i3(compoundwidget->rect().size(),  QImage::Format_RGB32);
 
-	i3.fill(QColor(Qt::white).rgb());
-	QPainter p(&i3);
-	QRectF target = QRectF(compoundwidget->gwMain->rect());
-	target.moveTo(compoundwidget->gwMain->pos());
-	compoundwidget->gwMain->render(&p, target);
+  i3.fill(QColor(Qt::white).rgb());
+  QPainter p(&i3);
+  QRectF target = QRectF(compoundwidget->gwMain->rect());
+  target.moveTo(compoundwidget->gwMain->pos());
+  compoundwidget->gwMain->render(&p, target);
 
-	p.drawRect(target);
+  p.drawRect(target);
 
-	target = QRectF(compoundwidget->gvLeft->rect());
-	target.moveTo(compoundwidget->gvLeft->pos());
-	compoundwidget->gvLeft->render(&p, target);
+  target = QRectF(compoundwidget->gvLeft->rect());
+  target.moveTo(compoundwidget->gvLeft->pos());
+  compoundwidget->gvLeft->render(&p, target);
 
-	target = QRectF(compoundwidget->gvBottom->rect());
-	target.moveTo(compoundwidget->gvBottom->pos());
-	compoundwidget->gvBottom->render(&p, target);
+  target = QRectF(compoundwidget->gvBottom->rect());
+  target.moveTo(compoundwidget->gvBottom->pos());
+  compoundwidget->gvBottom->render(&p, target);
 
-	compoundwidget->yLabel->render(&p, compoundwidget->yLabel->pos());
-	compoundwidget->xLabel->render(&p, compoundwidget->xLabel->pos());
-	compoundwidget->plotTitle->render(&p, compoundwidget->plotTitle->pos());
-
-
-	QList<LegendLabel*> l = compoundwidget->legendFrame->findChildren<LegendLabel*>();
-	for(int i = 0; i < l.size(); ++i)
-		l[i]->render(&p, l[i]->pos()+compoundwidget->legendFrame->pos());
+  compoundwidget->yLabel->render(&p, compoundwidget->yLabel->pos());
+  compoundwidget->xLabel->render(&p, compoundwidget->xLabel->pos());
+  compoundwidget->plotTitle->render(&p, compoundwidget->plotTitle->pos());
 
 
-	if(filename.endsWith("png"))
-		i3.save(filename, "PNG");
-	else if(filename.endsWith("bmp"))
-		i3.save(filename, "BMP");
-	else if(filename.endsWith("jpg") || filename.endsWith("jpeg"))
-		i3.save(filename, "JPG");
-	else
-		i3.save(filename+".bmp", "BMP");
+  QList<LegendLabel*> l = compoundwidget->legendFrame->findChildren<LegendLabel*>();
+  for(int i = 0; i < l.size(); ++i)
+  	l[i]->render(&p, l[i]->pos()+compoundwidget->legendFrame->pos());
+
+
+  if(filename.endsWith("png"))
+  	i3.save(filename, "PNG");
+  else if(filename.endsWith("bmp"))
+  	i3.save(filename, "BMP");
+  else if(filename.endsWith("jpg") || filename.endsWith("jpeg"))
+  	i3.save(filename, "JPG");
+  else
+  	i3.save(filename+".bmp", "BMP");
 }
 
 
 void GraphWidget::exportToClipboard()
 {
 
-	QImage i3(compoundwidget->rect().size(),  QImage::Format_RGB32);
+  QImage i3(compoundwidget->rect().size(),  QImage::Format_RGB32);
 
-	i3.fill(QColor(Qt::white).rgb());
-	QPainter p(&i3);
-	QRectF target = QRectF(compoundwidget->gwMain->rect());
-	target.moveTo(compoundwidget->gwMain->pos());
-	compoundwidget->gwMain->render(&p, target);
+  i3.fill(QColor(Qt::white).rgb());
+  QPainter p(&i3);
+  QRectF target = QRectF(compoundwidget->gwMain->rect());
+  target.moveTo(compoundwidget->gwMain->pos());
+  compoundwidget->gwMain->render(&p, target);
 
-	p.drawRect(target);
+  p.drawRect(target);
 
-	target = QRectF(compoundwidget->gvLeft->rect());
-	target.moveTo(compoundwidget->gvLeft->pos());
-	compoundwidget->gvLeft->render(&p, target);
+  target = QRectF(compoundwidget->gvLeft->rect());
+  target.moveTo(compoundwidget->gvLeft->pos());
+  compoundwidget->gvLeft->render(&p, target);
 
-	target = QRectF(compoundwidget->gvBottom->rect());
-	target.moveTo(compoundwidget->gvBottom->pos());
-	compoundwidget->gvBottom->render(&p, target);
+  target = QRectF(compoundwidget->gvBottom->rect());
+  target.moveTo(compoundwidget->gvBottom->pos());
+  compoundwidget->gvBottom->render(&p, target);
 
-	compoundwidget->yLabel->render(&p, compoundwidget->yLabel->pos());
-	compoundwidget->xLabel->render(&p, compoundwidget->xLabel->pos());
-	compoundwidget->plotTitle->render(&p, compoundwidget->plotTitle->pos());
+  compoundwidget->yLabel->render(&p, compoundwidget->yLabel->pos());
+  compoundwidget->xLabel->render(&p, compoundwidget->xLabel->pos());
+  compoundwidget->plotTitle->render(&p, compoundwidget->plotTitle->pos());
 
 
-	QList<LegendLabel*> l = compoundwidget->legendFrame->findChildren<LegendLabel*>();
-	for(int i = 0; i < l.size(); ++i)
-		l[i]->render(&p, l[i]->pos()+compoundwidget->legendFrame->pos());
+  QList<LegendLabel*> l = compoundwidget->legendFrame->findChildren<LegendLabel*>();
+  for(int i = 0; i < l.size(); ++i)
+  	l[i]->render(&p, l[i]->pos()+compoundwidget->legendFrame->pos());
 
   QClipboard *clipboard = QApplication::clipboard();  
   clipboard->setImage(i3, QClipboard::Clipboard);

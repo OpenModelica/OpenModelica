@@ -63,18 +63,18 @@ namespace IAEX
 
       attribute_t attribute() const
       {
-	 return attribute_;
+   return attribute_;
       }
 
       value_t value() const
       {
-	 return value_;
+   return value_;
       }
 
-	  void setValue( value_t val )
-	  {
-		value_ = val;
-	  }
+    void setValue( value_t val )
+    {
+  	value_ = val;
+    }
 
    private:
       attribute_t attribute_;

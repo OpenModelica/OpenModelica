@@ -43,50 +43,50 @@
 Curve::Curve(VariableData* x_, VariableData* y_, QColor& color, LegendLabel* ll):
 x(x_), y(y_), label(ll)
 {
-	line = new QGraphicsItemGroup;
+  line = new QGraphicsItemGroup;
   setColor(color);
 }
 
 Curve::~Curve()
 {
-	delete line;
-	delete label;
+  delete line;
+  delete label;
 
-//	foreach(Point* p, dataPoints)
-//			delete p;
-	dataPoints.clear();
+//  foreach(Point* p, dataPoints)
+//  		delete p;
+  dataPoints.clear();
 }
 
 
 void Curve::showPoints(bool b)
 {
-	foreach(Point* p, dataPoints)
-		p->setVisible(b);
+  foreach(Point* p, dataPoints)
+  	p->setVisible(b);
 
-	drawPoints = b;
+  drawPoints = b;
 }
 
 void Curve::showLine(bool b)
 {
-	line->setVisible(b);
-	line->update();
-	visible = b;
+  line->setVisible(b);
+  line->update();
+  visible = b;
 }
 
 void Curve::setColor(QColor c)
 {
-	color_ = c;
-	QPen p(c);
+  color_ = c;
+  QPen p(c);
   p.setWidthF(PLOT_LINE_WIDTH);
   p.setCosmetic(true);
-	QList<QGraphicsItem*> l = line->children();
+  QList<QGraphicsItem*> l = line->children();
 
-	for(int i = 0; i < l.size(); ++i)
-		static_cast<Line2D*>(l[i])->setPen(p);
+  for(int i = 0; i < l.size(); ++i)
+  	static_cast<Line2D*>(l[i])->setPen(p);
 
-	for(int i = 0; i < dataPoints.size(); ++i)
-	{
-		dataPoints[i]->color = c;
-		dataPoints[i]->setPen(QPen(c));
-	}
+  for(int i = 0; i < dataPoints.size(); ++i)
+  {
+  	dataPoints[i]->color = c;
+  	dataPoints[i]->setPen(QPen(c));
+  }
 }

@@ -45,7 +45,7 @@
 using namespace std;
 
 Point::Point(qreal x1, qreal y1,qreal h, qreal w, QColor color_, const GraphWidget* graphwidget_,
-	     QGraphicsItem* parent, QGraphicsScene* scene, const QString& label):
+       QGraphicsItem* parent, QGraphicsScene* scene, const QString& label):
   /*label_(label),*/QGraphicsEllipseItem(x1, y1, h, w, parent, scene), graphwidget(graphwidget_)
 {
   color = color_;
@@ -66,7 +66,7 @@ Point::Point(qreal x1, qreal y1,qreal h, qreal w, QColor color_, const GraphWidg
     setToolTip(label);
   else
     setToolTip(graphwidget->currentXVar + QString(": ") + QVariant(xPos).toString() + QString("\n") +
-	       graphwidget->currentYVar +QString(": ") + QVariant(yPos).toString());
+         graphwidget->currentYVar +QString(": ") + QVariant(yPos).toString());
 
   setAcceptsHoverEvents(true);
   QPen qp;
@@ -81,41 +81,41 @@ Point::~Point()
 
 void Point::updateSize()
 {
-	double xScale = graphwidget->matrix().m11()/125;
-	double yScale = graphwidget->matrix().m22()/195;
+  double xScale = graphwidget->matrix().m11()/125;
+  double yScale = graphwidget->matrix().m22()/195;
 
-	double width=150 / xScale;
-	double height = -200 / yScale;
+  double width=150 / xScale;
+  double height = -200 / yScale;
 
-	scale(1/xScale, 1/yScale);
+  scale(1/xScale, 1/yScale);
 }
 
 void Point::move(double x, double y)
 {
-	moveBy(-dx +x, -dy +y);
-	dx = x;
-	dy = y;
+  moveBy(-dx +x, -dy +y);
+  dx = x;
+  dy = y;
 }
 
 void Point::hoverEnterEvent ( QGraphicsSceneHoverEvent * event )
 {
-	QPen qp;
+  QPen qp;
 
 #if QT_VERSION >= 0x400300
-	QBrush b(color.darker());
+  QBrush b(color.darker());
 #else
-	QBrush b(color);
+  QBrush b(color);
 #endif
-	setBrush(b);
+  setBrush(b);
 }
 void Point::hoverLeaveEvent ( QGraphicsSceneHoverEvent * event )
 {
-	QBrush b(Qt::NoBrush);
-	setBrush(b);
+  QBrush b(Qt::NoBrush);
+  setBrush(b);
 
-	QPen qp;
-	qp.setColor(color);
-	setPen(qp);
+  QPen qp;
+  qp.setColor(color);
+  setPen(qp);
 }
 
 void Point::mousePressEvent ( QGraphicsSceneMouseEvent * event )

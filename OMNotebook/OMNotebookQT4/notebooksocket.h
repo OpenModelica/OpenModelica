@@ -54,42 +54,42 @@ class QTcpSocket;
 
 namespace IAEX
 {
-	// forward declaration
-	class CellApplication;
+  // forward declaration
+  class CellApplication;
 
 
-	class NotebookSocket : public QObject
-	{
-		Q_OBJECT
+  class NotebookSocket : public QObject
+  {
+  	Q_OBJECT
 
-	public:
-		NotebookSocket( CellApplication* application );
-		~NotebookSocket();
+  public:
+  	NotebookSocket( CellApplication* application );
+  	~NotebookSocket();
 
-		// core functions
-		bool connectToNotebook();
-		bool closeNotebookSocket();
-		bool sendFilename( QString filename );
+  	// core functions
+  	bool connectToNotebook();
+  	bool closeNotebookSocket();
+  	bool sendFilename( QString filename );
 
 
-	private slots:
-		void receiveNewConnection();
-		void receiveNewSocketMsg();
+  private slots:
+  	void receiveNewConnection();
+  	void receiveNewSocketMsg();
 
-	private:
-		// help function
-		bool tryToConnect();
-		bool startServer();
+  private:
+  	// help function
+  	bool tryToConnect();
+  	bool startServer();
 
-	private:
-		CellApplication* application_;
+  private:
+  	CellApplication* application_;
 
-		QTcpSocket* socket_;
-		QTcpSocket* incommingSocket_;
-		QTcpServer* server_;
+  	QTcpSocket* socket_;
+  	QTcpSocket* incommingSocket_;
+  	QTcpServer* server_;
 
-		bool foundServer_;
-	};
+  	bool foundServer_;
+  };
 }
 
 #endif

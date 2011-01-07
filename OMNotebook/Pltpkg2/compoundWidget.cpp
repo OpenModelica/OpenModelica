@@ -36,107 +36,107 @@
 
 CompoundWidget::CompoundWidget(QWidget* parent):  QWidget(parent)
 {
-//	this->resize(672, 784);
-//	this->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
+//  this->resize(672, 784);
+//  this->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
 //  plotWidget = new QWidget(this);
 //  plotWidget->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
 //  plotWidget->resize(400, 300);
-//	plotWidget->setMinimumHeight(784);
-//	plotWidget->setMinimumWidth(672);
+//  plotWidget->setMinimumHeight(784);
+//  plotWidget->setMinimumWidth(672);
 
-	setupUi(this);
+  setupUi(this);
 
-	QFont f("Arial",10);
-	f.setBold(true);
-	plotTitle->setFont(f); 
-	gwMain->gvBottom = gvBottom;
-	gwMain->gvLeft = gvLeft;
+  QFont f("Arial",10);
+  f.setBold(true);
+  plotTitle->setFont(f); 
+  gwMain->gvBottom = gvBottom;
+  gwMain->gvLeft = gvLeft;
 
-	gvBottom->setScene(gwMain->graphicsScene->xRulerScene);
-	gvLeft->setScene(gwMain->graphicsScene->yRulerScene);
-	gvBottom->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-	gvBottom->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-	gvLeft->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-	gvLeft->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);	
+  gvBottom->setScene(gwMain->graphicsScene->xRulerScene);
+  gvLeft->setScene(gwMain->graphicsScene->yRulerScene);
+  gvBottom->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+  gvBottom->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+  gvLeft->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+  gvLeft->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);	
 
-	connect(gwMain, SIGNAL(resizeY(quint32)), this, SLOT(resizeY(quint32)));
-	connect(gwMain, SIGNAL(showPreferences2()), this, SLOT(showPreferences()));
+  connect(gwMain, SIGNAL(resizeY(quint32)), this, SLOT(resizeY(quint32)));
+  connect(gwMain, SIGNAL(showPreferences2()), this, SLOT(showPreferences()));
 
-	layout = new QVBoxLayout;  
-	legendFrame->setLayout(layout);  
+  layout = new QVBoxLayout;  
+  legendFrame->setLayout(layout);  
 
-//	legendFrame->setMinimumWidth(50);
+//  legendFrame->setMinimumWidth(50);
 
-	gwMain->legendLayout = layout;
-	gwMain->legendFrame = legendFrame;
+  gwMain->legendLayout = layout;
+  gwMain->legendFrame = legendFrame;
 
-	gwMain->compoundwidget = this;
+  gwMain->compoundwidget = this;
 
   //Initialize SoQT
   //#ifdef HAVE_COIN  
-	// SoQt::init(this);
+  // SoQt::init(this);
   //#endif
-	visWidget = new IAEX::VisualizationWidget(this);
-	// connect(visWidget, SIGNAL(resizeY(quint32)), this, SLOT(graphicsResizeY(quint32)));
-	visWidget->hide();
-	
+  visWidget = new IAEX::VisualizationWidget(this);
+  // connect(visWidget, SIGNAL(resizeY(quint32)), this, SLOT(graphicsResizeY(quint32)));
+  visWidget->hide();
+  
 }
 
 CompoundWidget::~CompoundWidget()
 {
 
-	delete gwMain;
-	delete gvLeft;
-	delete gvBottom;
-	delete xLabel;
-	delete yLabel;
-	delete plotTitle;
-	delete layout;
+  delete gwMain;
+  delete gvLeft;
+  delete gvBottom;
+  delete xLabel;
+  delete yLabel;
+  delete plotTitle;
+  delete layout;
   delete visWidget;
 }
 
 void CompoundWidget::showPreferences()
 {
-	PreferenceWindow* pw = new PreferenceWindow(this, 0);
-	pw->setAttribute(Qt::WA_DeleteOnClose);
-	pw->show();
+  PreferenceWindow* pw = new PreferenceWindow(this, 0);
+  pw->setAttribute(Qt::WA_DeleteOnClose);
+  pw->show();
 }
 
 void CompoundWidget::resizeY(quint32 w)
 {
-	gvLeft->setMinimumWidth(w+5);
-	gvLeft->update();
+  gvLeft->setMinimumWidth(w+5);
+  gvLeft->update();
 }
 
 void CompoundWidget::graphicsResizeY(quint32 w)
 {
-	visWidget->setMinimumWidth(w+5);
-	visWidget->update();
+  visWidget->setMinimumWidth(w+5);
+  visWidget->update();
 }
 
 
 void CompoundWidget::showVis() {
-	visWidget->show();
+  visWidget->show();
   gwMain->showGrid(false);
   gwMain->hide();  
   gvLeft->hide();
   gvBottom->hide();
   plotTitle->hide();
-	// plotWidget->hide();
-	xLabel->hide();
-	yLabel->hide();
+  // plotWidget->hide();
+  xLabel->hide();
+  yLabel->hide();
   legendFrame->hide();
 }
 
 void CompoundWidget::hideVis() {
-	visWidget->hide();
-	// plotWidget->show();
+  visWidget->hide();
+  // plotWidget->show();
   gwMain->showGrid(true);
   gwMain->show();
   gvLeft->show();
   gvBottom->show();
   plotTitle->show();
-	xLabel->show();
-	yLabel->show();
+  xLabel->show();
+  yLabel->show();
   legendFrame->show();
 }

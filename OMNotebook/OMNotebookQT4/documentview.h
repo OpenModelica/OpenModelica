@@ -50,20 +50,20 @@ namespace IAEX
     *
     * Base interface for document views.
     *
-	* 2005-10-11 AF, Porting, changed from q3mainwindow to mainwindow
-	* 2005-11-02 AF, Porting, changed Qt::WDestructiveClose in QMainWindow()
-	* to setAttribute(Qt::WA_DeleteOnClose); inside QMainWindow().
+  * 2005-10-11 AF, Porting, changed from q3mainwindow to mainwindow
+  * 2005-11-02 AF, Porting, changed Qt::WDestructiveClose in QMainWindow()
+  * to setAttribute(Qt::WA_DeleteOnClose); inside QMainWindow().
     */
    class DocumentView : public QMainWindow
    {
       Q_OBJECT
    public:
       DocumentView(QWidget *parent=0)
-	 : QMainWindow(parent){ setAttribute(Qt::WA_DeleteOnClose); }
+   : QMainWindow(parent){ setAttribute(Qt::WA_DeleteOnClose); }
       virtual ~DocumentView(){}
 
       virtual void update() = 0;
-	  virtual Document* document() = 0;
+    virtual Document* document() = 0;
 
    };
 };

@@ -42,26 +42,26 @@
 
 class VariableWindow: public QDialog, public Ui::NewGraph
 {
-	Q_OBJECT
+  Q_OBJECT
 public:
-	VariableWindow(GraphWidget* gw, QWidget* parent = 0);
+  VariableWindow(GraphWidget* gw, QWidget* parent = 0);
 
-	~VariableWindow();
+  ~VariableWindow();
 
 public slots:
-	void createCurve();
-	void selectColor();
-	void updateViews();
-	void removeCurve();
+  void createCurve();
+  void selectColor();
+  void updateViews();
+  void removeCurve();
 
 signals:
-	void showGraphics();
-	//	void setLegend(bool visible);
-//	void setGrid(bool visible);
-//	void setLogarithmic(bool);
+  void showGraphics();
+  //	void setLegend(bool visible);
+//  void setGrid(bool visible);
+//  void setLogarithmic(bool);
 
 private:
-	GraphWidget* graphWidget;
+  GraphWidget* graphWidget;
 
 };
 

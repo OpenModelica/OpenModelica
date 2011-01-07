@@ -51,19 +51,19 @@
 
 namespace IAEX
 {
-	/*!
-	 * \breif Interface for all cellfactories.
-	 */
-	class CellFactory : public Factory
-	{
-	public:
-		CellFactory(Document *doc);
-		virtual ~CellFactory();
+  /*!
+   * \breif Interface for all cellfactories.
+   */
+  class CellFactory : public Factory
+  {
+  public:
+  	CellFactory(Document *doc);
+  	virtual ~CellFactory();
 
-		virtual Cell *createCell(const QString &style, Cell *parent=0);
+  	virtual Cell *createCell(const QString &style, Cell *parent=0);
 
-	private:
-		Document *doc_;
-	};
+  private:
+  	Document *doc_;
+  };
 }
 #endif

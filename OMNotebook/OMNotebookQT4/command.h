@@ -104,11 +104,11 @@ namespace IAEX
 
       virtual void execute()
       {
-	 vector<Command*>::iterator i = commands_.begin();
-	 for(;i != commands_.end(); ++i)
-	 {
-	    (*i)->execute();
-	 }
+   vector<Command*>::iterator i = commands_.begin();
+   for(;i != commands_.end(); ++i)
+   {
+      (*i)->execute();
+   }
       }
 
    private:

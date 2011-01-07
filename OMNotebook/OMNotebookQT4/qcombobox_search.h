@@ -46,21 +46,21 @@
 
 namespace IAEX
 {
-	class ComboBoxSearch : public QComboBox
-	{
-		Q_OBJECT
+  class ComboBoxSearch : public QComboBox
+  {
+  	Q_OBJECT
 
-	public:
-		ComboBoxSearch( QWidget* parent );
-		~ComboBoxSearch();
+  public:
+  	ComboBoxSearch( QWidget* parent );
+  	~ComboBoxSearch();
 
-	protected:
-		void keyPressEvent( QKeyEvent* event );
+  protected:
+  	void keyPressEvent( QKeyEvent* event );
 
-	signals:
-		void returnPressed();
+  signals:
+  	void returnPressed();
 
-	};
+  };
 }
 
 #endif

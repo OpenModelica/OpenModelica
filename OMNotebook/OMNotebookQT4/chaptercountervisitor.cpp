@@ -49,162 +49,162 @@
 
 namespace IAEX
 {
-	/*!
-	 * \class ChapterCounterVisitor
-	 * \date 2006-03-02
-	 *
-	 * \brief Update the chapter counters in the document
-	 */
+  /*!
+   * \class ChapterCounterVisitor
+   * \date 2006-03-02
+   *
+   * \brief Update the chapter counters in the document
+   */
 
-	/*!
-	 * \author Anders Fernström
-	 *
-	 * \brief The class constructor
-	 */
-	ChapterCounterVisitor::ChapterCounterVisitor()
-	{
-		for( int i = 0; i < COUNTERS; ++i )
-			counters_[i] = 0;
-	}
+  /*!
+   * \author Anders Fernström
+   *
+   * \brief The class constructor
+   */
+  ChapterCounterVisitor::ChapterCounterVisitor()
+  {
+  	for( int i = 0; i < COUNTERS; ++i )
+  		counters_[i] = 0;
+  }
 
-	/*!
-	 * \author Anders Fernström
-	 *
-	 * \brief The class deconstructor
-	 */
-	ChapterCounterVisitor::~ChapterCounterVisitor()
-	{}
+  /*!
+   * \author Anders Fernström
+   *
+   * \brief The class deconstructor
+   */
+  ChapterCounterVisitor::~ChapterCounterVisitor()
+  {}
 
-	// CELL
-	void ChapterCounterVisitor::visitCellNodeBefore(Cell *)
-	{}
+  // CELL
+  void ChapterCounterVisitor::visitCellNodeBefore(Cell *)
+  {}
 
-	void ChapterCounterVisitor::visitCellNodeAfter(Cell *)
-	{}
+  void ChapterCounterVisitor::visitCellNodeAfter(Cell *)
+  {}
 
-	// GROUPCELL
-	void ChapterCounterVisitor::visitCellGroupNodeBefore(CellGroup *node)
-	{}
+  // GROUPCELL
+  void ChapterCounterVisitor::visitCellGroupNodeBefore(CellGroup *node)
+  {}
 
-	void ChapterCounterVisitor::visitCellGroupNodeAfter(CellGroup *)
-	{}
+  void ChapterCounterVisitor::visitCellGroupNodeAfter(CellGroup *)
+  {}
 
-	// TEXTCELL
-	void ChapterCounterVisitor::visitTextCellNodeBefore(TextCell *node)
-	{
-		int level = node->style()->chapterLevel();
-		if( level > 0 && level <= COUNTERS )
-		{
-			// Add on chapter couner
-			counters_[ level - 1 ]++;
+  // TEXTCELL
+  void ChapterCounterVisitor::visitTextCellNodeBefore(TextCell *node)
+  {
+  	int level = node->style()->chapterLevel();
+  	if( level > 0 && level <= COUNTERS )
+  	{
+  		// Add on chapter couner
+  		counters_[ level - 1 ]++;
 
-			QString counter;
-			QString number;
-			for( int i = 0; i < level; ++i )
-			{
-				number.setNum( counters_[i] );
+  		QString counter;
+  		QString number;
+  		for( int i = 0; i < level; ++i )
+  		{
+  			number.setNum( counters_[i] );
 
-				if( !counter.isEmpty() )
-					counter += ".";
+  			if( !counter.isEmpty() )
+  				counter += ".";
 
-				counter += number;
-			}
+  			counter += number;
+  		}
 
-			// reset all counters avter counter[level]
-			for( int i = level; i < COUNTERS; ++i )
-				counters_[i] = 0;
+  		// reset all counters avter counter[level]
+  		for( int i = level; i < COUNTERS; ++i )
+  			counters_[i] = 0;
 
-			node->setChapterCounter( counter );
-		}
-		else
-		{
-			// clear chapter counter
-			node->setChapterCounter( "" );
-		}
-	}
+  		node->setChapterCounter( counter );
+  	}
+  	else
+  	{
+  		// clear chapter counter
+  		node->setChapterCounter( "" );
+  	}
+  }
 
-	void ChapterCounterVisitor::visitTextCellNodeAfter(TextCell *)
-	{}
+  void ChapterCounterVisitor::visitTextCellNodeAfter(TextCell *)
+  {}
 
-	//INPUTCELL
-	void ChapterCounterVisitor::visitInputCellNodeBefore(InputCell *node)
-	{
-		int level = node->style()->chapterLevel();
-		if( level > 0 && level <= COUNTERS )
-		{
-			// Add on chapter couner
-			counters_[ level - 1 ]++;
+  //INPUTCELL
+  void ChapterCounterVisitor::visitInputCellNodeBefore(InputCell *node)
+  {
+  	int level = node->style()->chapterLevel();
+  	if( level > 0 && level <= COUNTERS )
+  	{
+  		// Add on chapter couner
+  		counters_[ level - 1 ]++;
 
-			QString counter;
-			QString number;
-			for( int i = 0; i < level; ++i )
-			{
-				number.setNum( counters_[i] );
+  		QString counter;
+  		QString number;
+  		for( int i = 0; i < level; ++i )
+  		{
+  			number.setNum( counters_[i] );
 
-				if( !counter.isEmpty() )
-					counter += ".";
+  			if( !counter.isEmpty() )
+  				counter += ".";
 
-				counter += number;
-			}
+  			counter += number;
+  		}
 
-			// reset all counters avter counter[level]
-			for( int i = level; i < COUNTERS; ++i )
-				counters_[i] = 0;
+  		// reset all counters avter counter[level]
+  		for( int i = level; i < COUNTERS; ++i )
+  			counters_[i] = 0;
 
-			node->setChapterCounter( counter );
-		}
-		else
-		{
-			// clear chapter counter
-			node->setChapterCounter( "" );
-		}
-	}
+  		node->setChapterCounter( counter );
+  	}
+  	else
+  	{
+  		// clear chapter counter
+  		node->setChapterCounter( "" );
+  	}
+  }
 
-	void ChapterCounterVisitor::visitInputCellNodeAfter(InputCell *)
-	{}
+  void ChapterCounterVisitor::visitInputCellNodeAfter(InputCell *)
+  {}
 
 
-	//GRAPHCELL
+  //GRAPHCELL
 
-	void ChapterCounterVisitor::visitGraphCellNodeBefore(GraphCell *node)
-	{
-		int level = node->style()->chapterLevel();
-		if( level > 0 && level <= COUNTERS )
-		{
-			// Add on chapter couner
-			counters_[ level - 1 ]++;
+  void ChapterCounterVisitor::visitGraphCellNodeBefore(GraphCell *node)
+  {
+  	int level = node->style()->chapterLevel();
+  	if( level > 0 && level <= COUNTERS )
+  	{
+  		// Add on chapter couner
+  		counters_[ level - 1 ]++;
 
-			QString counter;
-			QString number;
-			for( int i = 0; i < level; ++i )
-			{
-				number.setNum( counters_[i] );
+  		QString counter;
+  		QString number;
+  		for( int i = 0; i < level; ++i )
+  		{
+  			number.setNum( counters_[i] );
 
-				if( !counter.isEmpty() )
-					counter += ".";
+  			if( !counter.isEmpty() )
+  				counter += ".";
 
-				counter += number;
-			}
+  			counter += number;
+  		}
 
-			// reset all counters avter counter[level]
-			for( int i = level; i < COUNTERS; ++i )
-				counters_[i] = 0;
+  		// reset all counters avter counter[level]
+  		for( int i = level; i < COUNTERS; ++i )
+  			counters_[i] = 0;
 
-			node->setChapterCounter( counter );
-		}
-		else
-		{
-			// clear chapter counter
-			node->setChapterCounter( "" );
-		}
-	}
+  		node->setChapterCounter( counter );
+  	}
+  	else
+  	{
+  		// clear chapter counter
+  		node->setChapterCounter( "" );
+  	}
+  }
 
-	void ChapterCounterVisitor::visitGraphCellNodeAfter(GraphCell *)
-	{}
-	//CELLCURSOR
-	void ChapterCounterVisitor::visitCellCursorNodeBefore(CellCursor *)
-	{}
+  void ChapterCounterVisitor::visitGraphCellNodeAfter(GraphCell *)
+  {}
+  //CELLCURSOR
+  void ChapterCounterVisitor::visitCellCursorNodeBefore(CellCursor *)
+  {}
 
-	void ChapterCounterVisitor::visitCellCursorNodeAfter(CellCursor *)
-	{}
+  void ChapterCounterVisitor::visitCellCursorNodeAfter(CellCursor *)
+  {}
 }

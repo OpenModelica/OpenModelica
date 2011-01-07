@@ -52,118 +52,118 @@
 
 namespace IAEX
 {
-	/*!
-	 * \class UpdateLinkVisitor
-	 * \date 2005-12-05
-	 *
-	 * \brief update any links in textcells to reflect any change in
-	 * folder when saving.
-	 */
+  /*!
+   * \class UpdateLinkVisitor
+   * \date 2005-12-05
+   *
+   * \brief update any links in textcells to reflect any change in
+   * folder when saving.
+   */
 
-	/*!
-	 * \author Anders Fernström
-	 *
-	 * \brief The class constructor
-	 */
-	UpdateLinkVisitor::UpdateLinkVisitor(QString oldFilepath, QString newFilepath)
-	{
-		oldDir_.setPath( oldFilepath );
-		newDir_.setPath( newFilepath );
+  /*!
+   * \author Anders Fernström
+   *
+   * \brief The class constructor
+   */
+  UpdateLinkVisitor::UpdateLinkVisitor(QString oldFilepath, QString newFilepath)
+  {
+  	oldDir_.setPath( oldFilepath );
+  	newDir_.setPath( newFilepath );
 
-		if( !oldDir_.exists() || !newDir_.exists() )
-		{
-			string msg = "UpdateLink, old or new dir don't exists.";
-			throw runtime_error( msg.c_str() );
-		}
-	}
+  	if( !oldDir_.exists() || !newDir_.exists() )
+  	{
+  		string msg = "UpdateLink, old or new dir don't exists.";
+  		throw runtime_error( msg.c_str() );
+  	}
+  }
 
-	/*!
-	 * \author Anders Fernström
-	 *
-	 * \brief The class deconstructor
-	 */
-	UpdateLinkVisitor::~UpdateLinkVisitor()
-	{}
+  /*!
+   * \author Anders Fernström
+   *
+   * \brief The class deconstructor
+   */
+  UpdateLinkVisitor::~UpdateLinkVisitor()
+  {}
 
-	// CELL
-	void UpdateLinkVisitor::visitCellNodeBefore(Cell *)
-	{}
+  // CELL
+  void UpdateLinkVisitor::visitCellNodeBefore(Cell *)
+  {}
 
-	void UpdateLinkVisitor::visitCellNodeAfter(Cell *)
-	{}
+  void UpdateLinkVisitor::visitCellNodeAfter(Cell *)
+  {}
 
-	// GROUPCELL
-	void UpdateLinkVisitor::visitCellGroupNodeBefore(CellGroup *node)
-	{}
+  // GROUPCELL
+  void UpdateLinkVisitor::visitCellGroupNodeBefore(CellGroup *node)
+  {}
 
-	void UpdateLinkVisitor::visitCellGroupNodeAfter(CellGroup *)
-	{}
+  void UpdateLinkVisitor::visitCellGroupNodeAfter(CellGroup *)
+  {}
 
-	// TEXTCELL
-	void UpdateLinkVisitor::visitTextCellNodeBefore(TextCell *node)
-	{
-		QString html = node->textHtml();
-		int pos(0);
-		while( true )
-		{
-			int startPos = html.indexOf( "<a href=\"", pos, Qt::CaseInsensitive );
-			if( 0 <= startPos )
-			{
-				// add lengt of '<a href="' to startpos
-				startPos += 9;
+  // TEXTCELL
+  void UpdateLinkVisitor::visitTextCellNodeBefore(TextCell *node)
+  {
+  	QString html = node->textHtml();
+  	int pos(0);
+  	while( true )
+  	{
+  		int startPos = html.indexOf( "<a href=\"", pos, Qt::CaseInsensitive );
+  		if( 0 <= startPos )
+  		{
+  			// add lengt of '<a href="' to startpos
+  			startPos += 9;
 
-				int endPos = html.indexOf( "\"", startPos, Qt::CaseInsensitive );
-				if( 0 <= endPos )
-				{
-					//a link is found, replace it with new link
-					QString oldLink = html.mid( startPos, endPos - startPos );
-					QString newLink = newDir_.relativeFilePath( oldDir_.absoluteFilePath( oldLink ));
-					html.replace( startPos, endPos - startPos, newLink );
+  			int endPos = html.indexOf( "\"", startPos, Qt::CaseInsensitive );
+  			if( 0 <= endPos )
+  			{
+  				//a link is found, replace it with new link
+  				QString oldLink = html.mid( startPos, endPos - startPos );
+  				QString newLink = newDir_.relativeFilePath( oldDir_.absoluteFilePath( oldLink ));
+  				html.replace( startPos, endPos - startPos, newLink );
 
-					//cout << "OLD LINK: " << oldLink.toStdString() << endl;
-					//cout << "NEW LINK: " << newLink.toStdString() << endl;
+  				//cout << "OLD LINK: " << oldLink.toStdString() << endl;
+  				//cout << "NEW LINK: " << newLink.toStdString() << endl;
 
-					// set pos to the end of the link
-					pos = startPos + newLink.length();
-				}
-				else
-				{
-					// this should never happen!
-					string msg = "Error, found no end of linkpath";
+  				// set pos to the end of the link
+  				pos = startPos + newLink.length();
+  			}
+  			else
+  			{
+  				// this should never happen!
+  				string msg = "Error, found no end of linkpath";
                     throw runtime_error( msg.c_str() );
-					break;
-				}
-			}
-			else
-				break;
-		}
+  				break;
+  			}
+  		}
+  		else
+  			break;
+  	}
 
-		// set the new html code to the textcell
-		node->setTextHtml( html );
-	}
+  	// set the new html code to the textcell
+  	node->setTextHtml( html );
+  }
 
-	void UpdateLinkVisitor::visitTextCellNodeAfter(TextCell *)
-	{}
+  void UpdateLinkVisitor::visitTextCellNodeAfter(TextCell *)
+  {}
 
-	//INPUTCELL
-	void UpdateLinkVisitor::visitInputCellNodeBefore(InputCell *node)
-	{}
+  //INPUTCELL
+  void UpdateLinkVisitor::visitInputCellNodeBefore(InputCell *node)
+  {}
 
-	void UpdateLinkVisitor::visitInputCellNodeAfter(InputCell *)
-	{}
+  void UpdateLinkVisitor::visitInputCellNodeAfter(InputCell *)
+  {}
 
-	//GRAPHCELL
-	void UpdateLinkVisitor::visitGraphCellNodeBefore(GraphCell *node)
-	{}
+  //GRAPHCELL
+  void UpdateLinkVisitor::visitGraphCellNodeBefore(GraphCell *node)
+  {}
 
-	void UpdateLinkVisitor::visitGraphCellNodeAfter(GraphCell *)
-	{}
+  void UpdateLinkVisitor::visitGraphCellNodeAfter(GraphCell *)
+  {}
 
 
-	//CELLCURSOR
-	void UpdateLinkVisitor::visitCellCursorNodeBefore(CellCursor *)
-	{}
+  //CELLCURSOR
+  void UpdateLinkVisitor::visitCellCursorNodeBefore(CellCursor *)
+  {}
 
-	void UpdateLinkVisitor::visitCellCursorNodeAfter(CellCursor *)
-	{}
+  void UpdateLinkVisitor::visitCellCursorNodeAfter(CellCursor *)
+  {}
 }

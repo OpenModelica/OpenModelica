@@ -50,45 +50,45 @@ using namespace std;
 
 class LegendLabel: public QLabel
 {
-	Q_OBJECT
+  Q_OBJECT
 
 public:
-	LegendLabel(QColor color_, QString s, QWidget* parent, bool showline, bool showpoints, int maxHeight);
-	~LegendLabel();
+  LegendLabel(QColor color_, QString s, QWidget* parent, bool showline, bool showpoints, int maxHeight);
+  ~LegendLabel();
 
-	void setCurve(Curve* c)
-	{
-		curve = c;
-	}
+  void setCurve(Curve* c)
+  {
+  	curve = c;
+  }
 
 signals:
-	void showLine(bool);
-	void showPoints(bool);
+  void showLine(bool);
+  void showPoints(bool);
 
 public slots:
-	void setLineVisible(bool b);
-	void setPointsVisible(bool b);
-	void selectColor();
-	void deleteCurve();
+  void setLineVisible(bool b);
+  void setPointsVisible(bool b);
+  void selectColor();
+  void deleteCurve();
 
 protected:
-	void paintEvent ( QPaintEvent * event );
+  void paintEvent ( QPaintEvent * event );
 
-	void resizeEvent ( QResizeEvent * event )
-	{
-		setIndent(height() +2);
-	}
+  void resizeEvent ( QResizeEvent * event )
+  {
+  	setIndent(height() +2);
+  }
 
-//	void showEvent(QShowEvent*);
+//  void showEvent(QShowEvent*);
 public:
-	void render(QPainter* painter, QPointF pos = QPointF());
-	GraphWidget* graphWidget;
+  void render(QPainter* painter, QPointF pos = QPointF());
+  GraphWidget* graphWidget;
 
 private:
-	QColor color;
-	QMenu *menu;
-	Curve* curve;
-	bool state;
+  QColor color;
+  QMenu *menu;
+  Curve* curve;
+  bool state;
 
 };
 

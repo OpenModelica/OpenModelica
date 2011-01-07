@@ -46,169 +46,169 @@ using namespace std;
 
 namespace IAEX
 {
-	/*! \class CursorMoveUpCommand
-	*
-	* \brief Moves the cursor up one step.
-	*/
-	class CursorMoveUpCommand : public Command
-	{
-	public:
-		CursorMoveUpCommand(){}
-		virtual ~CursorMoveUpCommand(){}
-		void execute()
-		{
-			try
-			{
-				CellCursor *cursor = document()->getCursor();
+  /*! \class CursorMoveUpCommand
+  *
+  * \brief Moves the cursor up one step.
+  */
+  class CursorMoveUpCommand : public Command
+  {
+  public:
+  	CursorMoveUpCommand(){}
+  	virtual ~CursorMoveUpCommand(){}
+  	void execute()
+  	{
+  		try
+  		{
+  			CellCursor *cursor = document()->getCursor();
 
-				if(cursor->currentCell()->isClosed())
-				{
-					if(cursor->currentCell()->hasChilds())
-					{
-						cursor->currentCell()->child()->setReadOnly(true);
-						cursor->currentCell()->child()->setFocus(false);
-					}
-				}
-				else
-				{
-					cursor->currentCell()->setReadOnly(true);
-					cursor->currentCell()->setFocus(false);
-				}
+  			if(cursor->currentCell()->isClosed())
+  			{
+  				if(cursor->currentCell()->hasChilds())
+  				{
+  					cursor->currentCell()->child()->setReadOnly(true);
+  					cursor->currentCell()->child()->setFocus(false);
+  				}
+  			}
+  			else
+  			{
+  				cursor->currentCell()->setReadOnly(true);
+  				cursor->currentCell()->setFocus(false);
+  			}
 
-				cursor->moveUp();
+  			cursor->moveUp();
 
-				if(cursor->currentCell()->isClosed())
-				{
-					if(cursor->currentCell()->hasChilds())
-					{
-						cursor->currentCell()->child()->setReadOnly(false);
-						cursor->currentCell()->child()->setFocus(true);
-					}
-				}
-				else
-				{
-					cursor->currentCell()->setReadOnly(false);
-					cursor->currentCell()->setFocus(true);
-				}
-			}
-			catch(exception &e)
-			{
-				// 2006-01-30 AF, add exception
-				string str = string("CursorMoveUpCommand(), Exception: ") + e.what();
-				throw runtime_error( str.c_str() );
-			}
-		}
-	};
+  			if(cursor->currentCell()->isClosed())
+  			{
+  				if(cursor->currentCell()->hasChilds())
+  				{
+  					cursor->currentCell()->child()->setReadOnly(false);
+  					cursor->currentCell()->child()->setFocus(true);
+  				}
+  			}
+  			else
+  			{
+  				cursor->currentCell()->setReadOnly(false);
+  				cursor->currentCell()->setFocus(true);
+  			}
+  		}
+  		catch(exception &e)
+  		{
+  			// 2006-01-30 AF, add exception
+  			string str = string("CursorMoveUpCommand(), Exception: ") + e.what();
+  			throw runtime_error( str.c_str() );
+  		}
+  	}
+  };
 
-	/*! \class CursorMoveDownCommand
-	*
-	* \brief Moves the cursor down one step.
-	*/
-	class CursorMoveDownCommand : public Command
-	{
-	public:
-		CursorMoveDownCommand(){}
-		virtual ~CursorMoveDownCommand(){}
-		void execute()
-		{
-			try
-			{
-				CellCursor *cursor = document()->getCursor();
+  /*! \class CursorMoveDownCommand
+  *
+  * \brief Moves the cursor down one step.
+  */
+  class CursorMoveDownCommand : public Command
+  {
+  public:
+  	CursorMoveDownCommand(){}
+  	virtual ~CursorMoveDownCommand(){}
+  	void execute()
+  	{
+  		try
+  		{
+  			CellCursor *cursor = document()->getCursor();
 
-				if(cursor->currentCell()->isClosed())
-				{
-					if(cursor->currentCell()->hasChilds())
-					{
-						cursor->currentCell()->child()->setReadOnly(true);
-						cursor->currentCell()->child()->setFocus(false);
-					}
-				}
-				else
-				{
-					cursor->currentCell()->setReadOnly(true);
-					cursor->currentCell()->setFocus(false);
-				}
+  			if(cursor->currentCell()->isClosed())
+  			{
+  				if(cursor->currentCell()->hasChilds())
+  				{
+  					cursor->currentCell()->child()->setReadOnly(true);
+  					cursor->currentCell()->child()->setFocus(false);
+  				}
+  			}
+  			else
+  			{
+  				cursor->currentCell()->setReadOnly(true);
+  				cursor->currentCell()->setFocus(false);
+  			}
 
-				cursor->moveDown();
+  			cursor->moveDown();
 
-				if(cursor->currentCell()->isClosed())
-				{
-					if(cursor->currentCell()->hasChilds())
-					{
-						cursor->currentCell()->child()->setReadOnly(false);
-						cursor->currentCell()->child()->setFocus(true);
-					}
-				}
-				else
-				{
-					cursor->currentCell()->setReadOnly(false);
-					cursor->currentCell()->setFocus(true);
-				}
-			}
-			catch(exception &e)
-			{
-				// 2006-01-30 AF, add exception
-				string str = string("CursorMoveDownCommand(), Exception: ") + e.what();
-				throw runtime_error( str.c_str() );
-			}
-		}
-	};
+  			if(cursor->currentCell()->isClosed())
+  			{
+  				if(cursor->currentCell()->hasChilds())
+  				{
+  					cursor->currentCell()->child()->setReadOnly(false);
+  					cursor->currentCell()->child()->setFocus(true);
+  				}
+  			}
+  			else
+  			{
+  				cursor->currentCell()->setReadOnly(false);
+  				cursor->currentCell()->setFocus(true);
+  			}
+  		}
+  		catch(exception &e)
+  		{
+  			// 2006-01-30 AF, add exception
+  			string str = string("CursorMoveDownCommand(), Exception: ") + e.what();
+  			throw runtime_error( str.c_str() );
+  		}
+  	}
+  };
 
-	/*! \class CursorMoveAfterCommand
-	*
-	* \brief Moves the cursor after a specific cell.
-	*/
-	class CursorMoveAfterCommand : public Command
-	{
-	public:
-		CursorMoveAfterCommand(Cell *cell):cell_(cell){}
-		virtual ~CursorMoveAfterCommand(){}
-		void execute()
-		{
-			try
-			{
-				CellCursor *cursor = document()->getCursor();
+  /*! \class CursorMoveAfterCommand
+  *
+  * \brief Moves the cursor after a specific cell.
+  */
+  class CursorMoveAfterCommand : public Command
+  {
+  public:
+  	CursorMoveAfterCommand(Cell *cell):cell_(cell){}
+  	virtual ~CursorMoveAfterCommand(){}
+  	void execute()
+  	{
+  		try
+  		{
+  			CellCursor *cursor = document()->getCursor();
 
-				if(cursor->currentCell()->isClosed())
-				{
-					if(cursor->currentCell()->hasChilds())
-					{
-						cursor->currentCell()->child()->setReadOnly(true);
-						cursor->currentCell()->child()->setFocus(false);
-					}
-				}
-				else
-				{
-					cursor->currentCell()->setReadOnly(true);
-					cursor->currentCell()->setFocus(false);
-				}
+  			if(cursor->currentCell()->isClosed())
+  			{
+  				if(cursor->currentCell()->hasChilds())
+  				{
+  					cursor->currentCell()->child()->setReadOnly(true);
+  					cursor->currentCell()->child()->setFocus(false);
+  				}
+  			}
+  			else
+  			{
+  				cursor->currentCell()->setReadOnly(true);
+  				cursor->currentCell()->setFocus(false);
+  			}
 
-				cursor->moveAfter(cell_);
+  			cursor->moveAfter(cell_);
 
-				if(cursor->currentCell()->isClosed())
-				{
-					if(cursor->currentCell()->hasChilds())
-					{
-						cursor->currentCell()->child()->setReadOnly(false);
-						cursor->currentCell()->child()->setFocus(true);
-					}
-				}
-				else
-				{
-					cursor->currentCell()->setReadOnly(false);
-					cursor->currentCell()->setFocus(true);
-				}
+  			if(cursor->currentCell()->isClosed())
+  			{
+  				if(cursor->currentCell()->hasChilds())
+  				{
+  					cursor->currentCell()->child()->setReadOnly(false);
+  					cursor->currentCell()->child()->setFocus(true);
+  				}
+  			}
+  			else
+  			{
+  				cursor->currentCell()->setReadOnly(false);
+  				cursor->currentCell()->setFocus(true);
+  			}
 
-			}
-			catch(exception &e)
-			{
-				// 2006-01-30 AF, add exception
-				string str = string("CursorMoveAfterCommand(), Exception: ") + e.what();
-				throw runtime_error( str.c_str() );
-			}
-		}
-	private:
-		Cell *cell_;
-	};
+  		}
+  		catch(exception &e)
+  		{
+  			// 2006-01-30 AF, add exception
+  			string str = string("CursorMoveAfterCommand(), Exception: ") + e.what();
+  			throw runtime_error( str.c_str() );
+  		}
+  	}
+  private:
+  	Cell *cell_;
+  };
 };
 #endif

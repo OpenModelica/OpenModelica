@@ -67,42 +67,42 @@ class QDomElement;
 
 namespace IAEX
 {
-	class OpenModelicaHighlighter : public SyntaxHighlighter
-	{
-	public:
-		OpenModelicaHighlighter( QString filename, QTextCharFormat standard );
-		virtual ~OpenModelicaHighlighter();
-		void highlight( QTextDocument *doc );
+  class OpenModelicaHighlighter : public SyntaxHighlighter
+  {
+  public:
+  	OpenModelicaHighlighter( QString filename, QTextCharFormat standard );
+  	virtual ~OpenModelicaHighlighter();
+  	void highlight( QTextDocument *doc );
 
-	private:
-		void highlightBlock( QTextBlock block );
-		void initializeQTextCharFormat();
-		void initializeMapping();
-		void parseSettings( QDomElement e, QTextCharFormat *format );
+  private:
+  	void highlightBlock( QTextBlock block );
+  	void initializeQTextCharFormat();
+  	void initializeMapping();
+  	void parseSettings( QDomElement e, QTextCharFormat *format );
 
-	private:
-		QString filename_;
-		QHash<QString,QTextCharFormat> mappings_;
+  private:
+  	QString filename_;
+  	QHash<QString,QTextCharFormat> mappings_;
 
-		bool insideString_;
-		bool insideComment_;
-		QRegExp stringStart_;
-		QRegExp stringEnd_;
-		QRegExp commentStart_;
-		QRegExp commentEnd_;
-		QRegExp commentLine_;
+  	bool insideString_;
+  	bool insideComment_;
+  	QRegExp stringStart_;
+  	QRegExp stringEnd_;
+  	QRegExp commentStart_;
+  	QRegExp commentEnd_;
+  	QRegExp commentLine_;
 
-		QTextCharFormat standardTextFormat_;
-		QTextCharFormat typeFormat_;
-		QTextCharFormat keywordFormat_;
-		QTextCharFormat functionNameFormat_;
-		QTextCharFormat constantFormat_;
-		QTextCharFormat warningFormat_;
-		QTextCharFormat builtInFormat_;
-		QTextCharFormat variableNameFormat_;
-		QTextCharFormat stringFormat_;
-		QTextCharFormat commentFormat_;
-	};
+  	QTextCharFormat standardTextFormat_;
+  	QTextCharFormat typeFormat_;
+  	QTextCharFormat keywordFormat_;
+  	QTextCharFormat functionNameFormat_;
+  	QTextCharFormat constantFormat_;
+  	QTextCharFormat warningFormat_;
+  	QTextCharFormat builtInFormat_;
+  	QTextCharFormat variableNameFormat_;
+  	QTextCharFormat stringFormat_;
+  	QTextCharFormat commentFormat_;
+  };
 }
 
 #endif
