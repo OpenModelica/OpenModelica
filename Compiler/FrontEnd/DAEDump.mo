@@ -228,7 +228,6 @@ algorithm
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
       list<DAE.Element> xs,elts;
-      tuple<DAE.TType, Option<Absyn.Path>> tp;
       list<DAE.Dimension> dl;
       
     case DAE.DAE((DAE.VAR(componentRef = cr,
@@ -1247,7 +1246,6 @@ algorithm
       String fstr;
       Absyn.Path fpath;
       DAE.Function constr,destr;
-      tuple<DAE.TType, Option<Absyn.Path>> t;
     case DAE.EXTOBJECTCLASS(path = fpath,constructor=constr,destructor=destr)
       equation
         Print.printBuf("class ");

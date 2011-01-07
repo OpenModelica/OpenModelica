@@ -1664,7 +1664,7 @@ public function traverseExpFunctionArgs
   replaceable type Type_a subtypeof Any;
 algorithm
   outTplExpTypeA:= match(inArgs,rel,ext_arg)
-    local Exp e1,e2,e11,e21,forExp;
+    local Exp e1,forExp;
       list<NamedArg> nargs;
       list<Exp> expl,expl_1;
       ForIterators iterators;

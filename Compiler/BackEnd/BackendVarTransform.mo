@@ -417,7 +417,7 @@ algorithm
       DAE.Statement statement,statement_1;
       DAE.ExpType type_;
       DAE.Exp e1_1,e2_1,e1,e2,e1_2,e2_2;
-      list<DAE.Exp> expExpLst,expExpLst_1,inputExps;
+      list<DAE.Exp> expExpLst,expExpLst_1;
       DAE.Else else_,else_1;
       DAE.ElementSource source;
       DAE.ComponentRef cr; 

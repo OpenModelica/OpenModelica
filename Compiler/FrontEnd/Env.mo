@@ -492,7 +492,6 @@ algorithm
       Env fs;
       tuple<list<DAE.ComponentRef>,DAE.ComponentRef> crs;
       Boolean encflag;
-      Option<tuple<SCode.Element, DAE.Mod>> c;
       list<SCode.Element> defineUnits;
 
     case ((FRAME(id,st,_,httypes,imps,crs,encflag,defineUnits) :: fs))
@@ -1997,7 +1996,6 @@ protected function exchangeLeft "help function to balance"
 algorithm
   outParent := match(node,parent)
     local
-      Integer height ;
       AvlTree bt;
 
     case(node,parent) equation

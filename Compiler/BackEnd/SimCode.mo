@@ -1694,7 +1694,6 @@ protected function fixOutputIndex
 algorithm
   (simExtArgsOut, extReturnOut) := match (outVars, simExtArgsIn, extReturnIn)
     local
-      Integer outputIndex;
     case (outVars, simExtArgsIn, extReturnIn)
       equation
         simExtArgsOut = Util.listMap1(simExtArgsIn, assignOutputIndex, outVars);
@@ -1974,7 +1973,7 @@ algorithm
       array<Integer> ass1,ass2;
       
       //BackendDAE.Variables v,kv;
-      list<BackendDAE.Var> derivedVariables, varlst,varlst1,varlst2, states, inputvars,inputvars2, outputvars, paramvars;
+      list<BackendDAE.Var>  varlst,varlst1, states, inputvars,inputvars2, outputvars, paramvars;
       list<DAE.ComponentRef> comref_states, comref_inputvars, comref_outputvars;
       
       array<Integer> v1,v2;
@@ -3155,7 +3154,7 @@ algorithm
       Algorithm.Algorithm alg;
       array<Algorithm.Algorithm> algs;
       list<DAE.Statement> algStatements;
-      list<DAE.Exp> inputs,outputs,conditions,algInputs,algOutputs;
+      list<DAE.Exp> conditions,algInputs;
       array<BackendDAE.MultiDimEquation> ae;
       list<SimEqSystem> resEqs;
       list<BackendDAE.WhenClause> wcl;
@@ -4932,7 +4931,6 @@ algorithm
       array<BackendDAE.MultiDimEquation> ae;
       array<Algorithm.Algorithm> al;
       BackendDAE.EventInfo ev;
-      list<tuple<BackendDAE.Equation, list<DAE.Exp>>> divexplst;
       list<SimEqSystem> resEqus1,resEqus2,resEqus3,resEqus4; 
       
     case ((dlow as BackendDAE.DAE(orderedVars=vars,
@@ -5338,7 +5336,6 @@ algorithm
       BackendDAE.Variables vars, knvars,exvars;
       BackendDAE.AliasVariables av;
       BackendDAE.EquationArray eqns,se,ie;
-      Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac;
       array<BackendDAE.MultiDimEquation> ae;
       array<Algorithm.Algorithm> al;
       BackendDAE.EventInfo ev;

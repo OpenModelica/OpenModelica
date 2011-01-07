@@ -588,12 +588,7 @@ algorithm
       list<SCode.Class> scodeP,sp,fp;
       list<Env.Frame> env;
       SCode.Class c;
-      String s1,str,varid,cmd,executable,method_str,outputFormat_str,initfilename,
-             cit,pd,executableSuffixedExe,sim_call,result_file,omhome,pwd,filename_1,
-             filename,omhome_1,plotCmd,tmpPlotFile,call,str_1,scriptstr,res_1,mp,pathstr,
-             name,cname,fileNamePrefix_s,str1,res,errMsg,errorStr,uniqueStr,interpolation, 
-             title,xLabel,yLabel,filename2,liststr,varNameStr,xml_filename,xml_contents,
-             visvar_str;
+      String s1,str,varid,cmd,executable,method_str,outputFormat_str,initfilename,cit,pd,executableSuffixedExe,sim_call,result_file,omhome,pwd,filename_1,filename,omhome_1,plotCmd,tmpPlotFile,call,str_1,mp,pathstr,name,cname,fileNamePrefix_s,str1,res,errMsg,errorStr,uniqueStr,interpolation, title,xLabel,yLabel,filename2,varNameStr,xml_filename,xml_contents,visvar_str;
       DAE.ComponentRef cr,cref,classname;
       Interactive.InteractiveSymbolTable st,newst,st_1;
       Absyn.Program p,pnew,newp,ptot;
@@ -612,9 +607,7 @@ algorithm
       array<list<Integer>> m,mt;
       Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac;
       Values.Value ret_val,simValue,size_value,value,v;
-      DAE.Exp filenameprefix,exp,starttime,stoptime,tolerance,interval,method,size_expression,
-              funcref,bool_exp,storeInTemp,noClean, expOptions, translationLevel,addOriginalIncidenceMatrix,
-              addSolvingInfo,addMathMLCode,dumpResiduals,xRange,yRange,varName,varTimeStamp;
+      DAE.Exp filenameprefix,exp,size_expression,bool_exp,storeInTemp,translationLevel,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,xRange,yRange,varName,varTimeStamp;
       Absyn.ComponentRef cr_1;
       Integer size,length,resI,timeStampI,i;
       list<String> vars_1,vars_2,args,strings,strVars;
@@ -628,7 +621,6 @@ algorithm
       list<tuple<String,Values.Value>> resultValues;
       list<Values.Value> vals;
       list<Real> timeStamps;
-      AbsynDep.Depends dep; AbsynDep.AvlTree uses;
       list<DAE.Exp> expLst;
     
     case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "lookupClass"),expLst = {DAE.CREF(componentRef = cr)}),
@@ -2755,13 +2747,13 @@ algorithm
   (outCache,outSimSettings):=
   matchcontinue (inCache,inEnv,inExp,inInteractiveSymbolTable,inMsg)
     local
-      String prefix_str,method_str,init_filename,cname_str,options_str,outputFormat_str;
+      String method_str,options_str,outputFormat_str;
       Interactive.InteractiveSymbolTable st;
       Values.Value starttime_v,stoptime_v,tolerance_v;
       Integer interval_i;
       Real starttime_r,stoptime_r,tolerance_r;
       list<Env.Frame> env;
-      DAE.Exp starttime,stoptime,interval,toleranceExp,method,options,filenameprefix,outputFormat;
+      DAE.Exp starttime,stoptime,interval,toleranceExp,method,options,outputFormat;
       Ceval.Msg msg;
       Env.Cache cache;
     case (cache,env,DAE.CALL(expLst = {DAE.CODE(Absyn.C_TYPENAME(_),_),starttime,stoptime,interval,toleranceExp,method,_,_,_,options,outputFormat}),
@@ -3649,14 +3641,10 @@ algorithm
       Ceval.Msg msg;
       Env.Cache cache;
       Integer eqnSize,varSize,simpleEqnSize,elimLevel;
-      String errorMsg,errorBuffer,warnings,eqnSizeStr,varSizeStr,retStr,classNameStr,simpleEqnSizeStr,
-             classNameStr_dummy;
+      String errorMsg,warnings,eqnSizeStr,varSizeStr,retStr,classNameStr,simpleEqnSizeStr;
       BackendDAE.EquationArray eqns;
       Boolean partialPrefix,finalPrefix,encapsulatedPrefix,strEmpty;
       Absyn.Restriction restriction;
-      list<Absyn.Class> classes "List of classes";
-      Absyn.Within within_ "Within clause";
-      Absyn.TimeStamp globalBuildTimes "";
       Absyn.Info info;
     
     // handle partial models

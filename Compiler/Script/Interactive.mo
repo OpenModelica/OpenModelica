@@ -17745,7 +17745,7 @@ protected function transformFlatExpTrav
   output tuple<Absyn.Exp,Integer> outExp;
 algorithm
   outExp := match(inExp)
-  local Absyn.ComponentRef cr,cr1; Absyn.Exp e,e1; Integer i;
+  local Absyn.ComponentRef cr; Absyn.Exp e,e1; Integer i;
     case( (e,i))
       equation
         ((e1,i)) = traverseExp(e,transformFlatExp,0);
@@ -17793,7 +17793,7 @@ protected function transformFlatAlgorithm
   output Absyn.Algorithm outAlg;
 algorithm
   outAlg := match(alg)
-    local Absyn.Exp e,e1,e11,e2,e21;
+    local Absyn.Exp e1,e11,e2,e21;
       Absyn.ComponentRef cr,cr1;
       list<Absyn.AlgorithmItem> body,body1,thenPart,thenPart1,elsePart,elsePart1;
       list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> elseIfPart,elseIfPart1,whenBranch,whenBranch1;

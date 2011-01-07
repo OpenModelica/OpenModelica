@@ -805,7 +805,7 @@ algorithm
       list<DAE.Function> dae;
       DAE.ExpType ty;
       DAE.Exp e,e_1,e1,e1_1,e2,e2_1;
-      list<DAE.Exp> elst,elst_1,inputExps;
+      list<DAE.Exp> elst,elst_1;
       DAE.Else els,els_1;
       Boolean b;
       Ident i;
@@ -1378,7 +1378,7 @@ algorithm
   outParts := matchcontinue(inParts,inDAE,inPath,inInputs,inCurrent)
     local
       list<DAE.Function> dae;
-      list<DAE.Element> cdr,cdr_1,inputs,res;
+      list<DAE.Element> cdr,cdr_1,inputs;
       Absyn.Path p,current;
       DAE.Element part;
       DAE.ComponentRef cref;
@@ -1524,7 +1524,7 @@ algorithm
       DAE.Statement stmt,stmt_1;
       list<Integer> ilst;
       DAE.Exp e,e_1,e1,e1_1,e2,e2_1;
-      list<DAE.Exp> elst,elst_1,inputExps;
+      list<DAE.Exp> elst,elst_1;
       DAE.ElementSource source;
     case({},_,_,_,_) then {};
     case(DAE.STMT_ASSIGN(ty,e1,e2,source) :: cdr,dae,p,inputs,current)
@@ -1710,7 +1710,7 @@ algorithm
       DAE.Exp e;
       Absyn.Path p,orig_p,new_p,current;
       list<DAE.Function> dae;
-      list<DAE.Element> inputs,tmp;
+      list<DAE.Element> inputs;
       DAE.ExpType ty,ty_1;
       Boolean tup,bui;
       DAE.InlineType inl;

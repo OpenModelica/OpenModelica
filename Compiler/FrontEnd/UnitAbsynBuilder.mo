@@ -459,7 +459,7 @@ public function printTermStr "print one term to a string"
   output String str;
 algorithm
   str := match(term)
-  local UnitAbsyn.UnitTerm ut1,ut2; String s1,s2,s3;
+  local UnitAbsyn.UnitTerm ut1,ut2; String s1;
     Integer i,i1,i2;
     DAE.Exp e;
     case(UnitAbsyn.ADD(ut1,ut2,e)) equation

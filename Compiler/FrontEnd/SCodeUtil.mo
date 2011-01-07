@@ -678,7 +678,6 @@ algorithm
       Absyn.ComponentRef functionCall;
       Absyn.FunctionArgs functionArgs;
       Absyn.Exp assignComponent,value,boolExpr;
-      list<Absyn.Exp> conditions,switchCases,inputExps;
       list<SCode.Statement> stmts,stmts1,stmts2;
       list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> branches;
       list<tuple<Absyn.Exp, list<SCode.Statement>>> sbranches;
@@ -1288,7 +1287,6 @@ algorithm
       SCode.EEquation eq;
       list<tuple<Absyn.Exp, list<Absyn.EquationItem>>> eis,elsewhen_;
       list<tuple<Absyn.Exp, list<SCode.EEquation>>> elsewhen_1;
-      tuple<Absyn.Exp, list<SCode.EEquation>> firstIf;
       Absyn.ComponentRef c1,c2,cr;
       String i;
       Absyn.ComponentRef fname;

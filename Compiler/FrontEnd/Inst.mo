@@ -2060,7 +2060,8 @@ algorithm
       SCode.Restriction r;
       SCode.ClassDef d;
       Env.Cache cache;
-      Real t1; Boolean b;
+      Real t1;
+      Boolean b;
       Option<Absyn.ElementAttributes> oDA;
       CallingScope callscope;
       ConnectionGraph.ConnectionGraph graph;
@@ -3963,7 +3964,7 @@ algorithm outComps := matchcontinue(acrefs,remainingComps,className,existing)
   local
     String s1,s2;
     Absyn.ComponentRef acr;
-    list<SCode.Element> localComps,elems;
+    list<SCode.Element> localComps;
     list<String> names;
     DAE.ComponentRef cref_;
   case({},_,_,_) then {};
@@ -4818,7 +4819,7 @@ algorithm
       SCode.Mod umod;
       list<Absyn.ComponentRef> crefs,crefs_1;
       Absyn.ComponentRef cref;
-      DAE.Mod cmod_1,cmod,localModifiers,cmod2,redMod;
+      DAE.Mod cmod_1,cmod,cmod2,redMod;
       list<DAE.Mod> ltmod;
       list<tuple<SCode.Element, DAE.Mod>> res,xs;
       tuple<SCode.Element, DAE.Mod> elMod;
@@ -5754,7 +5755,7 @@ algorithm
       Env.Cache cache;
       Absyn.InnerOuter io;
       Option<Absyn.Exp> cond;
-      Boolean alreadyDeclared; Absyn.ComponentRef tref;
+      Boolean alreadyDeclared;
       list<DAE.Var> vars;
       Option<Absyn.Info> aInfo;
       Absyn.Info info;
@@ -6385,7 +6386,6 @@ algorithm
       String s1,s2;
       SCode.Ident n "the component name" ;
       Absyn.InnerOuter io "the inner/outer/innerouter prefix" ;
-      Absyn.TypeSpec ts ;
       SCode.Mod smod1, smod2;
       Env.Env env, env1, env2;
       Env.Cache cache;
@@ -8117,7 +8117,6 @@ algorithm
   (outCache,outEnv,outIH,outSets,outUpdatedComps) :=
   matchcontinue (cache,env,inIH,pre,mod,cref,ci_state,csets,impl,updatedComps)
     local
-      tuple<DAE.TType, Option<Absyn.Path>> ty;
       String n,id;
       Boolean finalPrefix,repl,prot,flowPrefix,streamPrefix;
       Absyn.InnerOuter io;
@@ -9628,7 +9627,6 @@ algorithm
   (outCache,outEnv,outIH,outDae) := matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inSets,inClass,inInstDims)
     local
       Connect.Sets csets;
-      tuple<DAE.TType, Option<Absyn.Path>> ty;
       list<Env.Frame> env,env_2;
       DAE.Mod mod;
       Prefix.Prefix pre;

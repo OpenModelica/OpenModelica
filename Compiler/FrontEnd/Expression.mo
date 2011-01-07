@@ -3956,7 +3956,6 @@ algorithm
       Type tp;
       Integer i;
       String id,str;
-      list<DAE.Element> localDecls;
       list<String> fieldNames;
       DAE.InlineType  inl;
       list<list<tuple<DAE.Exp, Boolean>>> lstexpl_1,lstexpl;
@@ -4422,7 +4421,6 @@ algorithm
       DAE.Exp e;
       list<DAE.Exp> ae;
       list<list<tuple<DAE.Exp, Boolean>>> scalar;      
-      list<tuple<DAE.Exp, Boolean>> aelstlst;       
     
     case (DAE.ICONST(integer = ival)) then intEq(ival,0);
     case (DAE.RCONST(real = rval)) then realEq(rval,0.0);
@@ -4483,7 +4481,6 @@ algorithm
       Type t;
       list<DAE.Exp> ae;
       list<list<tuple<DAE.Exp, Boolean>>> scalar;      
-      list<tuple<DAE.Exp, Boolean>> aelstlst;      
     
     case (_,false) then false;
     case (DAE.ICONST(integer = _),_) then true;

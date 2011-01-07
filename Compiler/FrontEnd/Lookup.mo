@@ -558,7 +558,6 @@ protected function lookupQualifiedImportedVarInFrame "function: lookupQualifiedI
 algorithm 
   (outCref) := matchcontinue (items,ident)
     local
-      tuple<DAE.TType, Option<Absyn.Path>> ty;
       String id;
       list<Env.Item> fs;
       Absyn.Path path;

@@ -1163,7 +1163,6 @@ algorithm
       list<Interactive.CompiledCFunction> newCF;
       String name;
       Boolean ppref, fpref, epref;
-      Absyn.Restriction restriction  "Restriction" ;
       Absyn.ClassDef    body;
       Absyn.Info        info;
       Absyn.Within      w;
@@ -5101,7 +5100,6 @@ algorithm
   (outCache,outValue) :=
   matchcontinue (inCache,inEnv,inComponentRef,inBoolean,inMsg)
     local
-      tuple<DAE.TType, Option<Absyn.Path>> ty;
       DAE.Binding binding;
       Values.Value v;
       list<Env.Frame> env;

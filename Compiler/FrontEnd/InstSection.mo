@@ -2362,8 +2362,6 @@ algorithm
       list<Env.Frame> env;
       Absyn.Exp e,cond,msg, var,value;
       Boolean impl;
-      list<Absyn.Exp> absynExpList,inputExps,expl;
-      list<DAE.Exp> expl_1,expl_2,inputExpsDAE;
       list<DAE.Statement> tb_1,fb_1,sl_1,stmts;
       list<tuple<DAE.Exp, DAE.Properties, list<DAE.Statement>>> eib_1;
       list<SCode.Statement> tb,fb,sl;
@@ -3529,7 +3527,6 @@ algorithm
   match (inCache,inEnv,inIH,inSets,inPrefix,inComponentRefLeft,inComponentRefRight,inVariablesUnion,inBoolean,inGraph,info)
     local
       Boolean impl;
-      tuple<DAE.TType, Option<Absyn.Path>> ty;
       Connect.Sets sets;
       DAE.DAElist dae, dae1, dae2;
       list<Env.Frame> env;
@@ -4850,14 +4847,12 @@ algorithm
       Absyn.ComponentRef cr;
       Absyn.Exp e,e1,e2, var;
       Boolean impl;
-      list<Absyn.Exp> absynExpList,inputExps,expl;
-      list<DAE.Exp> expl_1,expl_2,inputExpsDAE;
+      list<Absyn.Exp> expl;
+      list<DAE.Exp> expl_1,expl_2;
       list<DAE.Properties> cprops, eprops;
       DAE.Type lt,rt;
       String s,lhs_str,rhs_str,lt_str,rt_str;
       list<DAE.Statement> stmts;
-      list<tuple<DAE.Exp, DAE.Properties, list<DAE.Statement>>> eib_1;
-      list<tuple<Absyn.Exp, list<SCode.Statement>>> elseWhenRest;
       Env.Cache cache;
       Prefix.Prefix pre; 
       InstanceHierarchy ih;

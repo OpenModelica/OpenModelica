@@ -123,7 +123,6 @@ algorithm
       Boolean b,remove_if,tpl,builtin,b2;
       Ident idn;
       list<DAE.Exp> exps,exps_1,expl,matrix;
-      list<tuple<DAE.Exp,Boolean>> explTpl;
       list<Subscript> s;
       ComponentRef c_1;
       Operator op;
@@ -1392,7 +1391,6 @@ algorithm
   outExp := matchcontinue (inExp1,inOperator2,inExp3)
     local
       Type tp1,tp2;
-      list<list<tuple<DAE.Exp, Boolean>>> scalar;
       Integer integer1,integer2,i1,i2;
       list<tuple<DAE.Exp, Boolean>> e,e1,e2;
       Operator op,op2;

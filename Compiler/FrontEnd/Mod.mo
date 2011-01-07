@@ -2158,7 +2158,7 @@ Compares two DAE.Mod, returns true if equal"
   output Boolean equal;
 algorithm
   equal := matchcontinue(mod1,mod2)
-    local Boolean b1,b2,b3,b4,f1,f2;
+    local Boolean f1,f2;
       Absyn.Each each1,each2;
       list<DAE.SubMod> submods1,submods2;
       Option<DAE.EqMod> eqmod1,eqmod2;

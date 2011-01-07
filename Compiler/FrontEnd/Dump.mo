@@ -3982,7 +3982,6 @@ algorithm
     local
       Absyn.Exp exp;
       Absyn.Ident id;
-      list<tuple<Absyn.Ident, Absyn.Exp>> rest;
     case ((id, SOME(exp)))
       equation
         Print.printBuf("(");
@@ -4231,7 +4230,7 @@ algorithm
       Absyn.ComponentRef c,fcn;
       Boolean b;
       Real r;
-      Absyn.Exp e,e1,e2,t,f,start,stop,step,head,rest,inputExp,cond,result;
+      Absyn.Exp e,e1,e2,t,f,start,stop,step,head,rest,inputExp,cond;
       Absyn.Operator op;
       list<tuple<Absyn.Exp, Absyn.Exp>> elseif_;
       Absyn.FunctionArgs args;
@@ -6089,7 +6088,6 @@ algorithm
       Absyn.ForIterators iterators;
       Absyn.ComponentRef functionCall;
       Absyn.FunctionArgs functionArgs;
-      list<Absyn.Exp> inputExps, switchCases;
     case Absyn.ALG_ASSIGN(assignComponent,value)
       equation
         Print.printBuf("record Absyn.ALG_ASSIGN assignComponent = ");

@@ -793,7 +793,7 @@ algorithm
       Algorithm.Statement stmt,stmt_1;
       DAE.ExpType t;
       DAE.Exp e,e_1,e1,e1_1,e2,e2_1;
-      list<DAE.Exp> explst,explst_1,inputExps;
+      list<DAE.Exp> explst,explst_1;
       DAE.ComponentRef cref;
       Algorithm.Else a_else,a_else_1;
       list<Algorithm.Statement> stmts,stmts_1;
@@ -1011,8 +1011,6 @@ algorithm
       list<DAE.ExpVar> varLst;
       list<DAE.Exp> expl;
       list<DAE.ComponentRef> crlst;
-      list<list<tuple<DAE.Exp, Boolean>>> scalar;
-      list<tuple<DAE.Exp, Boolean>> flatscalar;
     case ({}) then {}; 
     case((c,e as (DAE.CREF(componentRef = cref,ty=DAE.ET_COMPLEX(varLst=varLst))))::res)
       equation

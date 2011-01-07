@@ -548,8 +548,7 @@ public function printExp2Str
 algorithm
   outString := matchcontinue (inExp, stringDelimiter, opcreffunc, opcallfunc)
     local
-      String s,s_1,s_2,sym,s1,s2,s3,s4,s_3,ifstr,thenstr,elsestr,res,fs,argstr,s5,s_4,s_5,res2,str,
-             crstr,dimstr,expstr,iterstr,id,s1_1,s2_1,s1_2,s2_2,cs,ts,cs_1,ts_1,fs_1,s3_1;
+      String s,s_1,s_2,sym,s1,s2,s3,s4,res,fs,argstr,s_4,res2,str,crstr,dimstr,expstr,iterstr,id,s1_1,s2_1,cs,ts,cs_1,ts_1,fs_1,s3_1;
       Integer ival,i,pe1,p1,p2,pc,pt,pf,p,pstop,pstart,pstep;
       Real rval,r;
       ComponentRef c;
@@ -563,7 +562,7 @@ algorithm
       printCallFunc pcallfunc;
       Boolean b;
       list<DAE.Exp> aexpl;
-      list<list<tuple<DAE.Exp, Boolean>>> lstes;
+      list<list<tuple<DAE.Exp,Boolean>>> lstes;
       Absyn.MatchType matchTy;
       DAE.ExpType et;
       list<DAE.MatchCase> cases;
@@ -1259,8 +1258,7 @@ public function dumpExpStr
 algorithm
   outString := matchcontinue (inExp,inInteger)
     local
-      String gen_str,res_str,s,s_1,s_2,sym,lt,rt,ct,tt,ft,fs,argnodes_1,nodes_1,t1,t2,t3,
-             tystr,istr,crt,dimt,expt,itert,id,tpStr,str;
+      String gen_str,res_str,s,sym,lt,rt,ct,tt,ft,fs,argnodes_1,nodes_1,t1,t2,t3,tystr,istr,crt,dimt,expt,itert,id,tpStr,str;
       Integer level,x,new_level1,new_level2,new_level3,i;
       ComponentRef c;
       DAE.Exp e1,e2,e,t,f,start,stop,step,cr,dim,exp,iterexp,cond,ae1;
@@ -1270,7 +1268,7 @@ algorithm
       list<DAE.Exp> args,es;
       Type tp,ty;
       Real r;
-      list<list<tuple<DAE.Exp, Boolean>>> lstes;
+      list<list<tuple<DAE.Exp,Boolean>>> lstes;
       Boolean b;      
     
     case (DAE.END(),level)

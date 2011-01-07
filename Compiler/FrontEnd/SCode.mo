@@ -2547,7 +2547,7 @@ algorithm
       Absyn.ForIterators iterators;
       Absyn.FunctionArgs functionArgs;
       Absyn.Info info;
-      list<Absyn.Exp> inputExps,switchCases,conditions;
+      list<Absyn.Exp> conditions;
       list<list<Statement>> stmtsList;
       list<Statement> body,trueBranch,elseBranch;
       list<tuple<Absyn.Exp, list<Statement>>> branches;

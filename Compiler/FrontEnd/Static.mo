@@ -752,7 +752,6 @@ algorithm
   (outCache,algStatement) := matchcontinue (eq,comment,info,cache,env,inPrefix)
     local
       Env.Cache localCache;
-      Env.Env localEnv;
       Prefix.Prefix pre;
       String str,strLeft,strRight;
       Absyn.Exp left,right,e;
@@ -5161,7 +5160,6 @@ algorithm
       Prefix.Prefix pre;
       DAE.Type ety,ty,elem_ty;
       list<DAE.Dimension> dims;
-      list<tuple<DAE.TType, Option<Absyn.Path>>> typelist;
       DAE.ExpType expty;
 
     // Replace der of constant Real, Integer or array of Real/Integer by zero(s) 
@@ -5744,7 +5742,7 @@ public function elabBuiltinCross2 "help function to elabBuiltinCross. Public sin
   output list<DAE.Exp> res;
 algorithm
   res := match (v1,v2)
-  local DAE.Exp x1,x2,x3,y1,y2,y3,p1,p2,r1,r2,r3;
+  local DAE.Exp x1,x2,x3,y1,y2,y3,r1,r2,r3;
 
      // {x[2]*y[3]-x[3]*y[2],x[3]*y[1]-x[1]*y[3],x[1]*y[2]-x[2]*y[1]}
     case({x1,x2,x3},{y1,y2,y3}) equation
@@ -6749,10 +6747,8 @@ protected function elabCallInteractive "function: elabCallInteractive
       Boolean impl,enabled;
       Interactive.InteractiveSymbolTable st;
       Ident varid,cname_str,filename,str;
-      DAE.Exp filenameprefix,startTime,stopTime,numberOfIntervals,method,options,size_exp,exp_1,bool_exp_1,storeInTemp,noClean,tolerance,outputFormat,e1_1,e2_1,interpolation,title,legend,grid,logX,logY,xLabel,yLabel,points,xRange,yRange,arr,
-              translationLevel,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,crefExp,
-              crefExp1,crefExp2;
-      tuple<DAE.TType, Option<Absyn.Path>> recordtype;
+      DAE.Exp filenameprefix,size_exp,exp_1,bool_exp_1,storeInTemp,e1_1,e2_1,interpolation,title,legend,grid,logX,logY,xLabel,yLabel,points,xRange,yRange,arr,translationLevel,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,crefExp,crefExp1,crefExp2;
+      DAE.Type recordtype;
       list<Absyn.NamedArg> args;
       list<DAE.Exp> vars_1,vars_2,vars_3,excludeList;
       DAE.Properties ptop,prop;

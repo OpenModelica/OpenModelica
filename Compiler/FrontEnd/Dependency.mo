@@ -145,8 +145,6 @@ algorithm
   outDep := matchcontinue(dep,className,p,env)
     local
       Absyn.Class cl;
-      AbsynDep.AvlTree classUses;
-      list<Absyn.Path> v;
       Option<Absyn.Path> optPath;
       Absyn.ElementSpec comp;
 
@@ -395,13 +393,17 @@ protected function buildClassDependsInModificationOpt "build class dependencies 
   output AbsynDep.Depends outDep;
 algorithm
   outDep := match(optMod,optPath,cname,dep)
-  local Option<Absyn.Exp> optExp; Absyn.Modification mod;
-    AbsynDep.Depends d; Absyn.Program p; Env.Env env;
-    list<Absyn.ElementArg> eltArgs;HashTable2.HashTable ht;
+    local
+      Absyn.Modification mod;
+      AbsynDep.Depends d;
+      Absyn.Program p;
+      Env.Env env;
+      list<Absyn.ElementArg> eltArgs;HashTable2.HashTable ht;
     case(NONE(), optPath,cname,(d,p,env,ht)) then d;
-    case(SOME(mod),optPath,cname,(d,p,env,ht)) equation
-      d = buildClassDependsInModification(mod,optPath,cname,(d,p,env,ht));
-    then d;
+    case(SOME(mod),optPath,cname,(d,p,env,ht))
+      equation
+        d = buildClassDependsInModification(mod,optPath,cname,(d,p,env,ht));
+      then d;
   end match;
 end buildClassDependsInModificationOpt;
 
@@ -432,11 +434,13 @@ protected function buildClassDependsInElementargs "build class dependencies from
   output AbsynDep.Depends outDep;
 algorithm
   outDep := matchcontinue(eltArgs,optPath,cname,dep)
-  local Option<Absyn.Exp> expOpt;
-    AbsynDep.Depends d; Absyn.Program p; Env.Env env;
-    Absyn.Modification mod;
-    Absyn.ElementSpec eltSpec;
-    HashTable2.HashTable ht;
+    local
+      AbsynDep.Depends d;
+      Absyn.Program p;
+      Env.Env env;
+      Absyn.Modification mod;
+      Absyn.ElementSpec eltSpec;
+      HashTable2.HashTable ht;
     case({},optPath,cname,(d,p,env,ht)) then d;
     case(Absyn.MODIFICATION(modification=SOME(mod))::eltArgs,optPath,cname,(d,p,env,ht)) equation
       d = buildClassDependsInModification(mod,optPath,cname,(d,p,env,ht));

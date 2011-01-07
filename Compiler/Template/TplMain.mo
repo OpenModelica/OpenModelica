@@ -218,7 +218,6 @@ algorithm
       TplAbsyn.PathIdent pid;
       TplAbsyn.TypeSignature ts;
       list<TplAbsyn.ASTDef> astDefs;
-      list<tuple<TplAbsyn.Ident, TplAbsyn.TypeInfo>> types;
       TplAbsyn.Expression exp;
       Tpl.StringToken tok;
       Real tstart;
