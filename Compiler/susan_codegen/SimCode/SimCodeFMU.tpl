@@ -334,11 +334,11 @@ case SIMCODE(__) then
   // implementation of the Model Exchange functions
   #include "fmu_model_interface.c"
  
-  <%setStartValues(simCode)%>
+  <%setStartValues(modelInfo)%>
   <%initializeFunction(initialEquations)%>
   <%getEventIndicatorFunction(simCode)%>
   <%eventUpdateFunction(simCode)%>
-  <%getRealFunction(simCode)%>
+  <%getRealFunction(modelInfo)%>
   
   >>
 end fmumodel_identifierFile;
@@ -374,7 +374,7 @@ let numberOfBooleans = intAdd(varInfo.numBoolAlgVars,varInfo.numBoolParams)
   <%vars.stringParamVars |> var => DefineVariables(var,"2") ;separator="\n"%>
   
   // define initial state vector as vector of value references
-  #define STATES { <%vars.stateVars |> SIMVAR(__) => '<%cref(name)%>_'  ;separator=", "%> }
+  #define STATES { <%vars.stateVars |> SIMVAR(__) => '<%crefStr(name)%>_'  ;separator=", "%> }
   
   >>
 end ModelDefineData;
@@ -385,7 +385,7 @@ template DefineDerivativeVariables(SimVar simVar, String prefix)
 match simVar
   case SIMVAR(__) then
   <<
-  #define <%dervativeNameCStyle(name)%> <%prefix%><%index%>
+  #define <%dervativeNameCStyle(name)%> <%prefix%><%index%>;
   >>
 end DefineDerivativeVariables;
 
@@ -403,28 +403,39 @@ match simVar
   case SIMVAR(__) then
   let description = if comment then '// "<%comment%>"'
   <<
-  #define <%cref(name)%>_ <%prefix%><%index%> <%description%>
+  #define <%crefStr(name)%>_ <%prefix%><%index%> <%description%>
   >>
 end DefineVariables;
 
-template setStartValues(SimCode simCode)
+template setStartValues(ModelInfo modelInfo)
  "Generates code in c file for function setStartValues() which will set start values for all variables." 
 ::=
-match simCode
-case SIMCODE(__) then
+match modelInfo
+case MODELINFO(vars=SIMVARS(__)) then
   <<
   // Set values for all variables that define a start value
   void setStartValues(ModelInstance *comp) {
+  
+  <%initVals(vars.stateVars,"r")%>
+  <%initDerivativeVals(vars.derivativeVars)%>
+  <%initVals(vars.algVars,"r")%>
+  <%initVals(vars.paramVars,"r")%>
+  <%initVals(vars.intParamVars,"i")%>
+  <%initVals(vars.intAlgVars,"i")%>
+  <%initVals(vars.boolParamVars,"b")%>
+  <%initVals(vars.boolAlgVars,"b")%>
+  <%initVals(vars.stringParamVars,"s")%>
+  <%initVals(vars.stringAlgVars,"s")%>  
   }
   
   >>
 end setStartValues;
 
-template initializeFunction(list<SimEqSystem> initialEquations)
+template initializeFunction(list<SimEqSystem> allEquations)
   "Generates initialize function for c file."
 ::=
   let &varDecls = buffer "" /*BUFD*/
-  let eqPart = (initialEquations |> eq as SES_SIMPLE_ASSIGN(__) =>
+  let eqPart = (allEquations |> eq as SES_SIMPLE_ASSIGN(__) =>
       equation_(eq, contextOther, &varDecls /*BUFC*/)
     ;separator="\n")
   <<
@@ -434,14 +445,60 @@ template initializeFunction(list<SimEqSystem> initialEquations)
     <%varDecls%>
   
     <%eqPart%>
-  
-    <%initialEquations |> SES_SIMPLE_ASSIGN(__) =>
+    <%initialEquations%>
+    <%allEquations |> SES_SIMPLE_ASSIGN(__) =>
       'if (sim_verbose) { printf("Setting variable start value: %s(start=%f)\n", "<%cref(cref)%>", <%cref(cref)%>); }'
     ;separator="\n"%>
   
   }
   >>
 end initializeFunction;
+
+
+template initVals(list<SimVar> varsLst, String prefix) ::=
+  varsLst |> SIMVAR(__) =>
+  <<
+  <%prefix%>(<%crefStr(name)%>_) = <%match initialValue 
+    case SOME(v) then initVal(v)
+      else setDefaultVal(prefix)
+    %>;
+    >>  
+  ;separator="\n"
+end initVals;
+
+template setDefaultVal(String prefix) 
+::=
+  match prefix 
+  case "r" then "0.0; //default value for real"
+  case "i" then "0; //default value for integer"
+  case "b" then "false; //default value for bool"
+  case "s" then "\"\"; //default value for string"
+end setDefaultVal;
+
+template initDerivativeVals(list<SimVar> varsLst) ::=
+  varsLst |> SIMVAR(__) =>
+  <<
+  r(<%dervativeNameCStyle(name)%>) = <%match initialValue 
+    case SOME(v) then initVal(v)
+      else "0.0 //default"
+    %>;
+    >>  
+  ;separator="\n"
+end initDerivativeVals;
+
+template initVal(Exp initialValue) 
+::=
+  match initialValue 
+  case ICONST(__) then integer
+  case RCONST(__) then real
+  case SCONST(__) then '"<%Util.escapeModelicaStringToCString(string)%>"'
+  case BCONST(__) then if bool then "true" else "false"
+  case ENUM_LITERAL(__) then '<%index%>/*ENUM:<%dotPath(name)%>*/'
+  else "*ERROR* initial value of unknown type"
+end initVal;
+
+
+
 
 
 template eventUpdateFunction(SimCode simCode)
@@ -470,19 +527,44 @@ case SIMCODE(__) then
   >>
 end getEventIndicatorFunction;
 
-template getRealFunction(SimCode simCode)
+template getRealFunction(ModelInfo modelInfo)
  "Generates getReal function for c file."
 ::=
-match simCode
-case SIMCODE(__) then
+match modelInfo
+case MODELINFO(vars=SIMVARS(__)) then
   <<
-  
   fmiReal getReal(ModelInstance* comp, const fmiValueReference vr) {
-    return 0.0;
+    switch (vr) {
+        <%vars.stateVars |> var => SwitchStateVars(var) ;separator="\n"%>
+        <%vars.derivativeVars |> var => SwitchDerivativeVariables(var) ;separator="\n"%>
+        default: 
+        	return 0.0;
+    }
   }
   
   >>
 end getRealFunction;
+
+template SwitchStateVars(SimVar simVar)
+ "Generates code for defining variables in c file for FMU target. "
+::=
+match simVar
+  case SIMVAR(__) then
+  let description = if comment then '// "<%comment%>"'
+  <<
+  case <%crefStr(name)%>_ : return r(<%crefStr(name)%>_);
+  >>
+end SwitchStateVars;
+
+template SwitchDerivativeVariables(SimVar simVar)
+ "Generates code for defining variables in c file for FMU target.  "
+::=
+match simVar
+  case SIMVAR(__) then
+  <<
+  case <%dervativeNameCStyle(name)%> : return r(<%dervativeNameCStyle(name)%>);
+  >>
+end SwitchDerivativeVariables;
 
 template fmuMakefile(SimCode simCode)
  "Generates the contents of the makefile for the simulation case."
