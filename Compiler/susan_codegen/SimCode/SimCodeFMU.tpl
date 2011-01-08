@@ -445,7 +445,6 @@ template initializeFunction(list<SimEqSystem> allEquations)
     <%varDecls%>
   
     <%eqPart%>
-    <%initialEquations%>
     <%allEquations |> SES_SIMPLE_ASSIGN(__) =>
       'if (sim_verbose) { printf("Setting variable start value: %s(start=%f)\n", "<%cref(cref)%>", <%cref(cref)%>); }'
     ;separator="\n"%>
