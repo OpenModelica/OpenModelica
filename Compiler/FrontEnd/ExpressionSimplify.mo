@@ -120,7 +120,7 @@ algorithm
       Integer n,i;
       DAE.Exp e,res,exp,e1_1,exp_1,e1,e_1,e2,e2_1,e3_1,e3,sub,exp1;
       Type t,tp;
-      Boolean b,remove_if,tpl,builtin,b2;
+      Boolean b,b1,remove_if,tpl,builtin,b2;
       Ident idn;
       list<DAE.Exp> exps,exps_1,expl,matrix;
       list<Subscript> s;
@@ -307,6 +307,17 @@ algorithm
       then
         exp1;
     
+    case DAE.MATCHEXPRESSION(inputs={e}, localDecls={}, cases={
+        DAE.CASE(patterns={DAE.PAT_CONSTANT(exp=DAE.BCONST(b1))},localDecls={},body={},result=SOME(e1)),
+        DAE.CASE(patterns={DAE.PAT_CONSTANT(exp=DAE.BCONST(b2))},localDecls={},body={},result=SOME(e2))
+      })
+      equation
+        false = boolEq(b1,b2);
+        e1_1 = Util.if_(b1,e1,e2);
+        e2_1 = Util.if_(b1,e2,e1);
+        e = DAE.IFEXP(e, e1_1, e2_1);
+      then simplify(e);
+
     // anything else
     case e
       then
@@ -783,7 +794,7 @@ algorithm
         e1 = simplify2(e1);
       then 
         DAE.UNARY(op,e1);
-
+        
     case (e) then e;
     
   end matchcontinue;
