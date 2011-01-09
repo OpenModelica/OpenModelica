@@ -114,9 +114,9 @@ void Schedule::tdsPass1()
   //  cerr << "Created visitor." << endl;
 
   reverse_depth_first_search(*m_taskgraph,
-  		     vis,
-  		     get(vertex_color, *m_taskgraph),
-  		     m_end);
+           vis,
+           get(vertex_color, *m_taskgraph),
+           m_end);
 }
 
 void Schedule::tdsPass2()
@@ -227,8 +227,8 @@ void Schedule::tdsPass3()
       if (*p != y) {
         z = *p;
         if (ect(y) + cost == ect(z)+getExecCost(*p,m_taskgraph) && isAssigned(z)==-1) {
-  	y = z;
-  	break;
+    y = z;
+    break;
         }
       }
     }
@@ -245,7 +245,7 @@ void Schedule::tdsPass3()
       //      cerr << " x=" << getTaskID(x,m_taskgraph) << endl;
       while(isAssigned(x)!=-1) {
   if (m_queue->empty()) break;
-  //	cerr << getTaskID(x,m_taskgraph) << " assigned, skipping" <<  endl;
+  //  cerr << getTaskID(x,m_taskgraph) << " assigned, skipping" <<  endl;
   x = m_queue->top(); m_queue->pop();
       }
       i = newProcessor();
@@ -395,8 +395,8 @@ void Schedule::tdsPass4()
 
   } else {
     numProc-= temp;
-    //	  cerr << "reduced by " << temp << " to " << numProc
-    //	       << " (" << m_proclists.size() << ")" << endl;
+    //    cerr << "reduced by " << temp << " to " << numProc
+    //         << " (" << m_proclists.size() << ")" << endl;
   }
       }
   }

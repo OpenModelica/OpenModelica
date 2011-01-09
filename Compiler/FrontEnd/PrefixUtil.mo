@@ -844,7 +844,7 @@ algorithm
 
     case (_,_,_,e,_)
       equation
-    		true = RTOpts.debugFlag("failtrace");
+        true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace", "-prefix_exp failed on exp:");
         s = ExpressionDump.printExpStr(e);
         Debug.fprint("failtrace", s);
@@ -928,7 +928,7 @@ algorithm
     case (localCache,_,_,{},localAccList,_) then (localCache,localAccList);
     // variables
     case (localCache,localEnv,ih,DAE.VAR(cRef,v1,v2,prot,ty,binding,dims,
-          									flowPrefix,streamPrefix,source,vAttr,com,inOut)
+                            flowPrefix,streamPrefix,source,vAttr,com,inOut)
        :: rest,localAccList,pre)
     equation
       (localCache,cRef) = prefixCref(localCache,localEnv,ih,pre,cRef);
@@ -1073,19 +1073,19 @@ algorithm
       then (localCache,elems);
     case (localCache,localEnv,ih,DAE.STMT_THROW(source) :: rest,localAccList,pre)
         equation
-        	elem = DAE.STMT_THROW(source);
+          elem = DAE.STMT_THROW(source);
           localAccList = listAppend(localAccList,Util.listCreate(elem));
           (localCache,elems) = prefixStatements(localCache,localEnv,ih,rest,localAccList,pre);
         then (localCache,elems);
     case (localCache,localEnv,ih,DAE.STMT_RETURN(source) :: rest,localAccList,pre)
         equation
-        	elem = DAE.STMT_RETURN(source);
+          elem = DAE.STMT_RETURN(source);
           localAccList = listAppend(localAccList,Util.listCreate(elem));
           (localCache,elems) = prefixStatements(localCache,localEnv,ih,rest,localAccList,pre);
         then (localCache,elems);
     case (localCache,localEnv,ih,DAE.STMT_BREAK(source) :: rest,localAccList,pre)
         equation
-        	elem = DAE.STMT_BREAK(source);
+          elem = DAE.STMT_BREAK(source);
           localAccList = listAppend(localAccList,Util.listCreate(elem));
           (localCache,elems) = prefixStatements(localCache,localEnv,ih,rest,localAccList,pre);
         then (localCache,elems);

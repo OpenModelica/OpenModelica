@@ -532,7 +532,7 @@ algorithm
       equation
         (cache,lhvVal,stOpt) = ceval(cache,env, lh, impl, stOpt, dimOpt, msg);
         (cache,rhvVal,stOpt) = ceval(cache,env, rh, impl, stOpt, dimOpt, msg);
-    		resVal = ValuesUtil.safeIntRealOp(lhvVal, rhvVal, Values.POWOP());
+        resVal = ValuesUtil.safeIntRealOp(lhvVal, rhvVal, Values.POWOP());
       then
         (cache,resVal,stOpt);
 
@@ -541,7 +541,7 @@ algorithm
       equation
         (cache,lhvVal,stOpt) = ceval(cache,env, lh, impl, stOpt, dimOpt, msg);
         (cache,rhvVal,stOpt) = ceval(cache,env, rh, impl, stOpt, dimOpt, msg);
-    		resVal = ValuesUtil.safeIntRealOp(lhvVal, rhvVal, Values.MULOP());
+        resVal = ValuesUtil.safeIntRealOp(lhvVal, rhvVal, Values.MULOP());
       then
         (cache,resVal,stOpt);
 
@@ -550,7 +550,7 @@ algorithm
       equation
         (cache,lhvVal,stOpt) = ceval(cache,env, lh, impl, stOpt, dimOpt, msg);
         (cache,rhvVal,stOpt) = ceval(cache,env, rh, impl, stOpt, dimOpt, msg);
-    		resVal = ValuesUtil.safeIntRealOp(lhvVal, rhvVal, Values.DIVOP());
+        resVal = ValuesUtil.safeIntRealOp(lhvVal, rhvVal, Values.DIVOP());
       then
         (cache,resVal,stOpt);
 
@@ -570,7 +570,7 @@ algorithm
       equation
         (cache,lhvVal,stOpt) = ceval(cache,env, lh, impl, stOpt, dimOpt, msg);
         (cache,rhvVal,stOpt) = ceval(cache,env, rh, impl, stOpt, dimOpt, msg);
-    		resVal = ValuesUtil.safeIntRealOp(lhvVal, rhvVal, Values.ADDOP());
+        resVal = ValuesUtil.safeIntRealOp(lhvVal, rhvVal, Values.ADDOP());
       then
         (cache,resVal,stOpt);
 
@@ -579,7 +579,7 @@ algorithm
       equation
         (cache,lhvVal,stOpt) = ceval(cache,env, lh, impl, stOpt, dimOpt, msg);
         (cache,rhvVal,stOpt) = ceval(cache,env, rh, impl, stOpt, dimOpt, msg);
-    		resVal = ValuesUtil.safeIntRealOp(lhvVal, rhvVal, Values.SUBOP());
+        resVal = ValuesUtil.safeIntRealOp(lhvVal, rhvVal, Values.SUBOP());
       then
         (cache,resVal,stOpt);
 
@@ -1336,7 +1336,7 @@ algorithm
     case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl,builtin = false)),vallst,impl,NONE(),dim,msg) // crap! we have no symboltable!
       equation
         false = RTOpts.debugFlag("nogen");
-     		failure(cevalIsExternalObjectConstructor(cache,funcpath,env));
+         failure(cevalIsExternalObjectConstructor(cache,funcpath,env));
         // we might actually have a function loaded here already!
         // we need to unload all functions to not get conflicts!
         (cache,funcstr) = CevalScript.cevalGenerateFunction(cache, env, funcpath);
@@ -1811,7 +1811,7 @@ algorithm
       equation
         (cache,Values.ARRAY({},adims),st_1) = ceval(cache,env, exp, impl, st,NONE(), msg) "try to ceval expression, for constant expressions" ;
         (cache,Values.INTEGER(dimv),st_1) = ceval(cache,env, dimExp, impl, st,NONE(), msg);
-    		i = listNth(adims,dimv-1);
+        i = listNth(adims,dimv-1);
       then
         (cache,Values.INTEGER(i),st_1);
 
@@ -2099,7 +2099,7 @@ algorithm
         cr_lst = Util.listSelect1(crs, cr, ComponentReference.crefContainedIn);
         currentPrefixIdent= ComponentReference.crefLastIdent(prefix);
         currentPrefix = ComponentReference.makeCrefIdent(currentPrefixIdent,DAE.ET_OTHER(),{});
-         //	Select connect references that has cr as suffix and correct Prefix.
+         //  Select connect references that has cr as suffix and correct Prefix.
         cr_lst = Util.listSelect1R(cr_lst, currentPrefix, ComponentReference.crefPrefixOf);
 
         // Select connect references that are identifiers (inside connectors)
@@ -2325,7 +2325,7 @@ algorithm
     case (cache,env,{exp, len_exp, justified_exp},impl,st,msg)
       equation
         (cache,Values.INTEGER(i),_) = ceval(cache,env, exp, impl, st,NONE(), msg);
-    		str = intString(i);
+        str = intString(i);
         (cache, str) = cevalBuiltinStringFormat(cache, env, str, len_exp, justified_exp, impl, st, msg);
       then
         (cache,Values.STRING(str),st);
@@ -2333,7 +2333,7 @@ algorithm
     case (cache,env,{exp, len_exp, justified_exp, _},impl,st,msg)
       equation
         (cache,Values.REAL(r),_) = ceval(cache,env, exp, impl, st,NONE(), msg);
-    		str = realString(r);
+        str = realString(r);
         (cache, str) = cevalBuiltinStringFormat(cache, env, str, len_exp, justified_exp, impl, st, msg);
       then
         (cache,Values.STRING(str),st);
@@ -2341,7 +2341,7 @@ algorithm
     case (cache,env,{exp, len_exp, justified_exp},impl,st,msg)
       equation
         (cache,Values.BOOL(b),_) = ceval(cache,env, exp, impl, st,NONE(), msg);
-    		str = boolString(b);
+        str = boolString(b);
         (cache, str) = cevalBuiltinStringFormat(cache, env, str, len_exp, justified_exp, impl, st, msg);
       then
         (cache,Values.STRING(str),st);
@@ -2515,7 +2515,7 @@ algorithm
     case (cache,env,{exp},impl,st,msg)
       equation
         (cache,Values.STRING(str),st) = ceval(cache,env, exp, impl, st,NONE(), msg);
-    		print(str);
+        print(str);
       then
         (cache,Values.NORETCALL(),st);
   end match;
@@ -4576,11 +4576,11 @@ algorithm
         
     // For matrix expressions: [1,2;3,4]
     case (cache, env, DAE.MATRIX(ty = DAE.ET_ARRAY(arrayDimensions = dims)), impl, st, msg)
-    	equation
+      equation
         sizelst = Util.listMap(dims, Expression.dimensionSize);
-    		v = ValuesUtil.intlistToValue(sizelst);
-    	then
-    		(cache, v, st);
+        v = ValuesUtil.intlistToValue(sizelst);
+      then
+        (cache, v, st);
     
     // For other matrix expressions e.g. on array form: {{1,2},{3,4}}
     case (cache,env,exp,impl,st,msg)
@@ -5108,15 +5108,15 @@ algorithm
       Msg msg;
       String scope_str,str;
       Env.Cache cache;
-    	Option<DAE.Const> const_for_range;
+      Option<DAE.Const> const_for_range;
 
     // Try to lookup the variables binding and constant evaluate it.
     case (cache, env, c, impl, msg)
-    	equation
-    		(cache, _, _, binding, const_for_range, _, _, _, _) = Lookup.lookupVar(cache, env, c);
-    		(cache, v) = cevalCref2(cache, env, c, binding, const_for_range, impl, msg);
-    	then
-    		(cache, v);
+      equation
+        (cache, _, _, binding, const_for_range, _, _, _, _) = Lookup.lookupVar(cache, env, c);
+        (cache, v) = cevalCref2(cache, env, c, binding, const_for_range, impl, msg);
+      then
+        (cache, v);
 
     // failure in lookup and we have the MSG go-ahead to print the error
     case (cache,env,c,(impl as false),MSG())
@@ -5151,8 +5151,8 @@ public function cevalCref2
 algorithm
   (outCache, outValue) := match (inCache, inEnv, inCref, inBinding, constForRange, inImpl, inMsg)
     local
-    	Env.Cache cache;
-    	Values.Value v;
+      Env.Cache cache;
+      Values.Value v;
       String str, scope_str;
     
     // A variable with no binding and SOME for range constness -> a for iterator
@@ -5160,22 +5160,22 @@ algorithm
     
     // A variable without a binding -> error
     case (_, _, _, DAE.UNBOUND(), NONE(), false, MSG())
-    	equation
-    		str = ComponentReference.printComponentRefStr(inCref);
-    		scope_str = Env.printEnvPathStr(inEnv);
-    		Error.addMessage(Error.NO_CONSTANT_BINDING, {str, scope_str});
-    		Debug.fprintln("ceval", "- Ceval.cevalCref on: " +& str +& 
-    			" failed with no constant binding in scope: " +& scope_str);
-    	then
-    		fail();
+      equation
+        str = ComponentReference.printComponentRefStr(inCref);
+        scope_str = Env.printEnvPathStr(inEnv);
+        Error.addMessage(Error.NO_CONSTANT_BINDING, {str, scope_str});
+        Debug.fprintln("ceval", "- Ceval.cevalCref on: " +& str +& 
+          " failed with no constant binding in scope: " +& scope_str);
+      then
+        fail();
     
     // A variable with a binding -> constant evaluate the binding
     case (_, _, _, _, _, _, _)
-    	equation
-    		false = crefEqualValue(inCref, inBinding);
-    		(cache, v) = cevalCrefBinding(inCache, inEnv, inCref, inBinding, inImpl, inMsg);
-    	then
-    		(cache, v);
+      equation
+        false = crefEqualValue(inCref, inBinding);
+        (cache, v) = cevalCrefBinding(inCache, inEnv, inCref, inBinding, inImpl, inMsg);
+      then
+        (cache, v);
   end match;
 end cevalCref2;
 
@@ -5301,7 +5301,7 @@ algorithm
     // if the binding has constant-ness DAE.C_VAR we cannot constant evaluate.
     case (cache,env,_,DAE.EQBOUND(exp = exp,constant_ = DAE.C_VAR()),impl,MSG())
       equation
-    		true = RTOpts.debugFlag("ceval");
+        true = RTOpts.debugFlag("ceval");
         Debug.fprint("ceval", "#- Ceval.cevalCrefBinding failed (nonconstant EQBOUND(");
         expstr = ExpressionDump.printExpStr(exp);
         Debug.fprint("ceval", expstr);
@@ -5730,16 +5730,16 @@ algorithm
       Real r1, r2, resR;
         
     case (Values.INTEGER(i1), Values.INTEGER(i2))
-    	equation 
-    	  resI = i1 * i2; 
-    	then 
-    	  Values.INTEGER(resI);
+      equation 
+        resI = i1 * i2; 
+      then 
+        Values.INTEGER(resI);
     
     case (Values.REAL(r1), Values.REAL(r2))
-    	equation 
-    	  resR = r1 *. r2; 
-    	then 
-    	  Values.REAL(resR);
+      equation 
+        resR = r1 *. r2; 
+      then 
+        Values.REAL(resR);
   end match;
 end valueMul;
 
@@ -5752,19 +5752,19 @@ algorithm
   res := match(v1, v2)
     local 
       Integer i1, i2, resI;
-    	Real r1, r2, resR;
+      Real r1, r2, resR;
       
     case (Values.INTEGER(i1), Values.INTEGER(i2))
-    	equation 
-    	  resI = intMax(i1, i2); 
-    	then 
-    	  Values.INTEGER(resI);
+      equation 
+        resI = intMax(i1, i2); 
+      then 
+        Values.INTEGER(resI);
     
     case (Values.REAL(r1), Values.REAL(r2))
-    	equation 
-    	  resR = realMax(r1, r2); 
-    	then 
-    	  Values.REAL(resR);
+      equation 
+        resR = realMax(r1, r2); 
+      then 
+        Values.REAL(resR);
   end match;
 end valueMax;
 
@@ -5780,16 +5780,16 @@ algorithm
       Integer i1, i2, resI;
         
     case (Values.INTEGER(i1), Values.INTEGER(i2))
-    	equation 
-    	  resI = intMin(i1, i2); 
-    	then 
-    	  Values.INTEGER(resI);
+      equation 
+        resI = intMin(i1, i2); 
+      then 
+        Values.INTEGER(resI);
     
     case (Values.REAL(r1), Values.REAL(r2))
-    	equation 
-    	  resR = realMin(r1, r2); 
-    	then 
-    	  Values.REAL(resR);
+      equation 
+        resR = realMin(r1, r2); 
+      then 
+        Values.REAL(resR);
   end match;
 end valueMin;
 

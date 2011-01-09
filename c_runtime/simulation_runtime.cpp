@@ -267,9 +267,9 @@ int startNonInteractiveSimulation(int argc, char**argv){
 
   if(create_linearmodel){
     if (lintime == NULL ) {
-  	  stop = start;
+      stop = start;
     }else{
-  	  stop = atof((*lintime).c_str());
+      stop = atof((*lintime).c_str());
     }
     cout << "Linearization will performed at point of time: " << stop << endl;
     method = "dassl2";

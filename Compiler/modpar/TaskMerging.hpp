@@ -16,7 +16,7 @@ class TLevelCmp
 {
 public:
   TLevelCmp(TaskGraph*tg, map<VertexID,double>*tlevel) : m_tlevel(tlevel),
-  					       m_taskgraph(tg) {};
+                   m_taskgraph(tg) {};
   bool operator()(VertexID &v1,VertexID &v2)
   {
     return get_tlevel(v1,*m_taskgraph,m_tlevel) > get_tlevel(v2,*m_taskgraph,m_tlevel);
@@ -62,17 +62,17 @@ private:
 
   // Helper functions for duplicateParentMerge
   vector<bool> * newTlevelLower(pair<ChildrenIterator ,ChildrenIterator> pair,
-  			VertexID parent,
-  			TaskGraph *tg);
+        VertexID parent,
+        TaskGraph *tg);
 
   vector<bool> *siblingCondition(pair<ChildrenIterator,ChildrenIterator> pair,
-  			 VertexID parent,
-  			 TaskGraph *tg);
+         VertexID parent,
+         TaskGraph *tg);
 
   bool allSiblingsCondition(std::pair<ParentsIterator,ParentsIterator> pair,
-  		    VertexID child,
-  		    VertexID parent,
-  		    TaskGraph *tg);
+          VertexID child,
+          VertexID parent,
+          TaskGraph *tg);
 
   int numberOfTrues(vector<bool> *v);
 

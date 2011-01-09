@@ -86,23 +86,23 @@ void leastSquare2(long *nz, double *z, double *funcValue)
   int ind, indAct, indz;
   int startIndPar = 2*globalData->nStates+globalData->nAlgebraic+globalData->intVariables.nAlgebraic+globalData->boolVariables.nAlgebraic;
   for (ind=0, indAct=0, indz=0; ind<globalData->nStates; ind++)
-  	if (globalData->initFixed[indAct++]==0)
-  		globalData->states[ind] = z[indz++];
+    if (globalData->initFixed[indAct++]==0)
+      globalData->states[ind] = z[indz++];
   // for real parameters
   for (ind=0,indAct=startIndPar; ind<globalData->nParameters; ind++)
-  	if (globalData->initFixed[indAct++]==0)
-  		globalData->parameters[ind] = z[indz++];
+    if (globalData->initFixed[indAct++]==0)
+      globalData->parameters[ind] = z[indz++];
 
   // for int parameters
   for (ind=0,indAct=startIndPar+globalData->nParameters; ind<globalData->intVariables.nParameters; ind++) {
-  	if (globalData->initFixed[indAct++]==0)
-  		globalData->intVariables.parameters[ind] = (modelica_integer)z[indz++];
+    if (globalData->initFixed[indAct++]==0)
+      globalData->intVariables.parameters[ind] = (modelica_integer)z[indz++];
   }
 
   // for bool parameters
   for (ind=0,indAct=startIndPar+globalData->nParameters+globalData->intVariables.nParameters; ind<globalData->boolVariables.nParameters; ind++) {
-  	if (globalData->initFixed[indAct++]==0)
-  		globalData->boolVariables.parameters[ind] = (modelica_boolean)z[indz++];
+    if (globalData->initFixed[indAct++]==0)
+      globalData->boolVariables.parameters[ind] = (modelica_boolean)z[indz++];
   }
 
   /*
@@ -115,13 +115,13 @@ void leastSquare2(long *nz, double *z, double *funcValue)
   functionDAE(needToIterate);
   if (sim_verbose){ sim_result->emit(); }
   while (checkForDiscreteChanges() || needToIterate){
-  	saveall();
-  	functionDAE(needToIterate);
-  	IterationNum++;
-  	if (IterationNum>IterationMax) {
-  		throw TerminateSimulationException(globalData->timeValue,
-  				string("ERROR: Too many Iteration. System is not consistent!\n"));
-  	}
+    saveall();
+    functionDAE(needToIterate);
+    IterationNum++;
+    if (IterationNum>IterationMax) {
+      throw TerminateSimulationException(globalData->timeValue,
+          string("ERROR: Too many Iteration. System is not consistent!\n"));
+    }
   }
   /*  for (ind=0,indy=0,indAct=2*globalData->nStates; ind<globalData->nAlgebraic; ind++)
     if (globalData->initFixed[indAct++]==1)
@@ -134,10 +134,10 @@ void leastSquare2(long *nz, double *z, double *funcValue)
   initial_residual();
 
   for (ind=0, *funcValue=0; ind<globalData->nInitialResiduals; ind++)
-  	*funcValue += globalData->initialResiduals[ind]*globalData->initialResiduals[ind];
+    *funcValue += globalData->initialResiduals[ind]*globalData->initialResiduals[ind];
 
   if (sim_verbose) {
-  	cout << "initial residual: " << *funcValue << endl;
+    cout << "initial residual: " << *funcValue << endl;
   }
 }
 
@@ -154,7 +154,7 @@ int reportResidualValue(double funcValue)
     std::cerr << "(Least Square function value is " << funcValue << ")" << std::endl;
     for (i=0; i<globalData->nInitialResiduals; i++) {
       if (fabs(globalData->initialResiduals[i]) > 1e-6) {
-      	cout << "residual[" << i << "] = " << globalData->initialResiduals[i] << endl;
+        cout << "residual[" << i << "] = " << globalData->initialResiduals[i] << endl;
       }
     }
     return 0 /*-1*/;
@@ -174,8 +174,8 @@ int newuoa_initialization(long& nz,double *z)
   long MAXFUN=50000;
   double RHOEND=1.0e-6;
   double RHOBEG=10; // This should be about one tenth of the greatest
-  	    // expected value of a variable. Perhaps the nominal
-  	    // value can be used for this.
+        // expected value of a variable. Perhaps the nominal
+        // value can be used for this.
   long NPT = 2*nz+1;
   double *W = new double[(NPT+13)*(NPT+nz)+3*nz*(nz+3)/2];
   NEWUOA(&nz,&NPT,z,&RHOBEG,&RHOEND,&IPRINT,&MAXFUN,W,leastSquare);
@@ -288,19 +288,19 @@ int initialize(const std::string*method)
   }
 
   if (sim_verbose) {
-  	cout << "Initialization by method: " << init_method << endl;
-  	cout << "fixed attribute for states:" << endl;
-  	for(int i=0;i<globalData->nStates; i++) {
-  		cout <<	getName(&globalData->states[i]) << "(fixed=" << (globalData->initFixed[i]?"true":"false") << ")"
-  		<< endl;
-  	}
-  	cout << "number of non-fixed variables: " << nz << endl;
+    cout << "Initialization by method: " << init_method << endl;
+    cout << "fixed attribute for states:" << endl;
+    for(int i=0;i<globalData->nStates; i++) {
+      cout <<  getName(&globalData->states[i]) << "(fixed=" << (globalData->initFixed[i]?"true":"false") << ")"
+      << endl;
+    }
+    cout << "number of non-fixed variables: " << nz << endl;
   }
 
   // No initial values to calculate.
   if (nz ==  0) {
     if (sim_verbose) {
-    	cout << "No initial values to calculate" << endl;
+      cout << "No initial values to calculate" << endl;
     }
     return 0;
   }

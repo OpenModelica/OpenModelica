@@ -109,7 +109,7 @@ typedef enum {
   INPUTVARS                 = 0x00000040,
   OUTPUTVARS                = 0x00000080,
   INITFIXED                 = 0x00000100,
-  EXTERNALVARS  		  	    = 0x00000200,
+  EXTERNALVARS              = 0x00000200,
 
   /*in initializeDataStruc these are not allocated with malloc!*/
   MODELNAME                 = 0x00000400,
@@ -307,7 +307,7 @@ int
 function_updateDependents();
 
 /*   function for calculating all equation sorting order 
-  uses in EventHandle	*/
+  uses in EventHandle  */
 int
 functionDAE(int& needToIterate);
 

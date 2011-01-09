@@ -43,7 +43,7 @@ package Env
   - a frame name (corresponding to the class partially instantiated in that frame)
   - a binary tree containing a list of classes
   - a binary tree containing a list of functions (functions are overloaded so serveral
-    				     function names can exist)
+                 function names can exist)
   - a list of unnamed items consisting of import statements
 
   As an example lets consider the following Modelica code:
@@ -108,7 +108,7 @@ end EnvCache;
 
 public uniontype CacheTree
   record CACHETREE
-    Ident	name;
+    Ident  name;
     Env env;
     list<CacheTree> children;
   end CACHETREE;
@@ -707,19 +707,19 @@ public function extendFrameForIterator
 algorithm
   new_env := match(env, name, type_, binding, variability, constOfForIteratorRange)
     local
-    	Env new_env_1;
+      Env new_env_1;
     case (_, _, _, _,variability,constOfForIteratorRange)
-    	equation
-    		new_env_1 = extendFrameV(env,
-    			DAE.TYPES_VAR(
-    				name,
-    				DAE.ATTR(false, false, SCode.RW(), variability, Absyn.BIDIR(), Absyn.UNSPECIFIED()),
-    				false,
-    				type_,
-    				binding,
-    				constOfForIteratorRange),
-    			NONE(), VAR_UNTYPED(), {});
-    	then new_env_1;
+      equation
+        new_env_1 = extendFrameV(env,
+          DAE.TYPES_VAR(
+            name,
+            DAE.ATTR(false, false, SCode.RW(), variability, Absyn.BIDIR(), Absyn.UNSPECIFIED()),
+            false,
+            type_,
+            binding,
+            constOfForIteratorRange),
+          NONE(), VAR_UNTYPED(), {});
+      then new_env_1;
   end match;
 end extendFrameForIterator;
 
@@ -1347,13 +1347,13 @@ algorithm
   local
       Absyn.Path path2;
 
-    	// Search only current scope. Since scopes higher up might not be cached, we cannot search upwards.
+      // Search only current scope. Since scopes higher up might not be cached, we cannot search upwards.
     case (path2,path,tree)
       equation
         true = OptManager.getOption("envCache");
         env = cacheGetEnv2(path2,path,tree);
         //print("found ");print(Absyn.pathString(path));print(" in cache at scope");
-    		//print(Absyn.pathString(path2));print("  pathEnv:"+&printEnvPathStr(env)+&"\n");
+        //print(Absyn.pathString(path2));print("  pathEnv:"+&printEnvPathStr(env)+&"\n");
       then env;
   end match;
 end cacheGetEnv;

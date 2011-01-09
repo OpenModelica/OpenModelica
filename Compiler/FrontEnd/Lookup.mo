@@ -2751,7 +2751,7 @@ algorithm
     // addArrayDimensions above). This case makes sure that for-iterators are
     // not lost here.
     case (((sub1 as DAE.INDEX(exp = DAE.CREF(componentRef = _))) :: subs1),
-    	subs2)
+      subs2)
       equation
         subs2 = expandWholeDimSubScript(subs1, subs2);
       then

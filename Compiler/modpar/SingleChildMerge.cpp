@@ -1,9 +1,9 @@
 #include "SingleChildMerge.hpp"
 
 SingleChildMerge::SingleChildMerge(TaskGraph *tg,TaskGraph * orig_tg,
-  			   ContainSetMap *cmap,
-  			   VertexID inv, VertexID outb,
-  			   double l, double B,int nproc,map<VertexID,bool> *removed)
+           ContainSetMap *cmap,
+           VertexID inv, VertexID outb,
+           double l, double B,int nproc,map<VertexID,bool> *removed)
   : MergeRule(tg,orig_tg,cmap,inv,outb,l,B,nproc,removed)
 {
 
@@ -56,12 +56,12 @@ void SingleChildMerge::mergeTasks(VertexID n1, VertexID n2)
 
     //cerr << "old cost: " << getCommCost(oldEdge) << endl;
     setCommCost(newEdge,
-  	getCommCost(oldEdge),m_taskgraph);
+    getCommCost(oldEdge),m_taskgraph);
   }
 
 
   addContainsTask(p,c); // Need to store that c is in p to be able to
-  		// go back to orig task graph when generating code.
+      // go back to orig task graph when generating code.
 
   // Remove task and edges to the task
   (*m_taskRemoved)[c]=true;

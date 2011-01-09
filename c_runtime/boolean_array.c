@@ -309,8 +309,8 @@ void indexed_assign_boolean_array(boolean_array_t* source,
     while (1) {
   for (i = 0, j = 0; i < dest_spec->ndims; ++i) {
       if (dest_spec->dim_size[i] != 0) {
-  	idx_vec2[j] = idx_vec1[i];
-  	++j;
+    idx_vec2[j] = idx_vec1[i];
+    ++j;
             }
         }
         boolean_set(dest, calc_base_index_spec(dest->ndims, idx_vec1,

@@ -4208,7 +4208,7 @@ algorithm
     case (cache,env,ih,cl)
       equation
         (cache,env1,ih,{fn as DAE.FUNCTION(type_ = funcTp, functions=(DAE.FUNCTION_EXT(body=_)::_))})
-           	= implicitFunctionInstantiation2(cache,env,ih, DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cl, {}) ;
+             = implicitFunctionInstantiation2(cache,env,ih, DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cl, {}) ;
     then
       (cache,ih,fn,funcTp);
     case (cache,env,ih,cl)
@@ -5867,8 +5867,8 @@ algorithm
         //(cache,env,ih) = getDerivedEnv(cache,env,ih, bc);
         // can call instVar
         (cache,env2,ih,csets) = updateComponentsInEnv(cache, env, ih, pre, mods, crefs_2, ci_state, csets, impl);
-    		//Update the untyped modifiers to typed ones, and extract class and
-    		//component modifiers again.
+        //Update the untyped modifiers to typed ones, and extract class and
+        //component modifiers again.
         //(cache,mods_1) = Mod.updateMod(cache, env2, ih, pre, mods, impl) ;
         //Refetch the component from environment, since attributes, etc.
         //might have changed.. comp used in redeclare_type below...    
@@ -8359,14 +8359,14 @@ algorithm
       DAE.Dimension d;
       DAE.Subscript sub;
     /*case (DAE.DIM_SUBSCRIPT(subscript = DAE.WHOLEDIM()),
-    			DAE.MOD(eqModOption =	
+          DAE.MOD(eqModOption =  
             SOME(DAE.TYPED(modifierAsExp = DAE.ARRAY(ty = tp)))))*/
     case (DAE.DIM_UNKNOWN(), DAE.MOD(eqModOption = 
             SOME(DAE.TYPED(modifierAsExp = DAE.ARRAY(ty = tp)))))
-    	equation
+      equation
         (d :: _) = Expression.arrayDimension(tp);
         sub = Expression.dimensionSubscript(d);
-    	then sub;
+      then sub;
     /*case (DAE.DIM_SUBSCRIPT(subscript = DAE.WHOLEDIM()), 
           DAE.MOD(eqModOption = _))*/
     case (DAE.DIM_UNKNOWN(), DAE.MOD(eqModOption = _))

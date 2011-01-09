@@ -82,11 +82,11 @@ public function removeSimpleEquations
   This function moves simple equations on the form a=b from equations 2nd
   in BackendDAE.BackendDAE to simple equations 3rd in BackendDAE.BackendDAE to speed up assignment alg.
   inputs:  (vars: Variables,
-              knownVars: Variables,
-              eqns: BackendDAE.Equation list,
-              simpleEqns: BackendDAE.Equation list,
-        initEqns : Equatoin list,
-              binTree: BinTree)
+            knownVars: Variables,
+            eqns: BackendDAE.Equation list,
+            simpleEqns: BackendDAE.Equation list,
+            initEqns : Equatoin list,
+            binTree: BinTree)
   outputs: (Variables, BackendDAE.Variables, BackendDAE.Equation list, BackendDAE.Equation list
          BackendDAE.Equation list)"
   input BackendDAE.Variables inVariables1;

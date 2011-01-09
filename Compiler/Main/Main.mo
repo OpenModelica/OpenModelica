@@ -804,8 +804,8 @@ algorithm
         **/
         // Debug.fcall("eqnsizedump",BackendDump.dumpComponentSizes,comps);
         Debug.fcall("bltdump", BackendDump.dumpComponents, comps);
-    		str = BackendDump.dumpComponentsGraphStr(BackendDAEUtil.systemSize(dlow_1),m,mT,v1,v2);
-    		Debug.fcall("dumpcompgraph",print,str);
+        str = BackendDump.dumpComponentsGraphStr(BackendDAEUtil.systemSize(dlow_1),m,mT,v1,v2);
+        Debug.fcall("dumpcompgraph",print,str);
         modpar(dlow_1, v1, v2, comps);
         Debug.fcall("execstat",print, "*** Main -> To simcodegen at time: " +& realString(clock()) +& "\n" );
         simcodegen(cache,env,classname, p, ap, daeimpl, dlow_1, v1, v2, m, mT, comps);

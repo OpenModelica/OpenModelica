@@ -118,8 +118,8 @@ void index_integer_array(integer_array_t* source,
                          index_spec_t* spec,
                          integer_array_t* dest);
 void index_alloc_integer_array(integer_array_t* source,
-  		       index_spec_t* spec,
-  		       integer_array_t* dest);
+             index_spec_t* spec,
+             integer_array_t* dest);
 
 void simple_index_alloc_integer_array1(integer_array_t* source,int i1,
                                        integer_array_t* dest);

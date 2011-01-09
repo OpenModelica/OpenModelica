@@ -51,7 +51,7 @@ RML_BEGIN_LABEL(OptManager__setOption)
   char *strEntry = RML_STRINGDATA(rmlA0);
   bool strValue = RML_PRIM_MKBOOL(rmlA1);
   if (OptManagerImpl__setOption(strEntry,strValue))
-  	RML_TAILCALLK(rmlFC);
+    RML_TAILCALLK(rmlFC);
   else
     RML_TAILCALLK(rmlSC);
 }
@@ -62,7 +62,7 @@ RML_BEGIN_LABEL(OptManager__getOption)
   char *strEntry = RML_STRINGDATA(rmlA0);
   int res = OptManagerImpl__getOption(strEntry);
   if (res == -1)
-  	RML_TAILCALLK(rmlFC);
+    RML_TAILCALLK(rmlFC);
   rmlA0 = mk_bcon(res);
   RML_TAILCALLK(rmlSC);
 }

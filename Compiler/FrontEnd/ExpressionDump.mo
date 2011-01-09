@@ -2170,11 +2170,11 @@ public function binopPriority
     <, >, =, != etc.  21
     bin +    32
     bin -    33
-        	35
-    /    	36
+          35
+    /      36
     unary +, unary -  37
-    ^    	38
-    :    	41
+    ^      38
+    :      41
     {}    51
 
   LS: Changed precedence for unary +-

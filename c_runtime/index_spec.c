@@ -122,8 +122,8 @@ void print_size_array(int size, size_t* arr)
   int i;
   printf("{");
   for(i = 0; i < size; ++i) {
-  	printf("%d", (int) arr[i]);
-  	if (i != (size - 1)) printf(",");
+    printf("%d", (int) arr[i]);
+    if (i != (size - 1)) printf(",");
   }
   printf("}\n");
 }
@@ -158,24 +158,24 @@ void print_index_spec(index_spec_t* spec)
   for(i = 0; i < spec->ndims; ++i) {
         switch (spec->index_type[i]) {
         case 'S':
-  		printf("%d", (int) *spec->index[i]);
+      printf("%d", (int) *spec->index[i]);
             break;
         case 'A':
-  		printf("{");
-  		for (k = 0; k < spec->dim_size[i]; ++k) {
-  			printf("%d", (int) spec->index[i][k]);
-  			if (k != (spec->dim_size[i] - 1)) printf(",");
-  		}
-  		printf("}");
+      printf("{");
+      for (k = 0; k < spec->dim_size[i]; ++k) {
+        printf("%d", (int) spec->index[i][k]);
+        if (k != (spec->dim_size[i] - 1)) printf(",");
+      }
+      printf("}");
             break;
         case 'W':
-  		printf(":");
+      printf(":");
             break;
         default:
             printf("INVALID TYPE %c.", spec->index_type[i]);
             break;
         }
-  	if (i != (spec->ndims - 1)) printf(", ");
+    if (i != (spec->ndims - 1)) printf(", ");
   }
   printf("]");
 }

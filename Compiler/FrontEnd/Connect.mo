@@ -102,8 +102,8 @@ uniontype Sets "The connection \'Sets\' contains
   record SETS
     list<Set> setLst "the connection set";
     list<DAE.ComponentRef> connection "connection_set connect_refs - list of
-    			      crefs in connect statements. This is used to be able to evaluate cardinality.
-    			      It is registered in env by Inst.addConnnectionSetToEnv.";
+                crefs in connect statements. This is used to be able to evaluate cardinality.
+                It is registered in env by Inst.addConnnectionSetToEnv.";
     list<DAE.ComponentRef> deletedComponents "list of components with conditional declaration = false";
     list<OuterConnect> outerConnects "connect statements to propagate upwards";
     list<StreamFlowConnect> streamFlowConnects "list of stream-flow associations.";

@@ -169,20 +169,20 @@ static int set_debug_flag(char const* strdata, long value)
   int length=strlen(strdata),i;
   for (i=0; i<debug_flagc; i++)
   {
-  	if (strcmp(debug_flags[i], strdata)==0)
-  	{
-  		if(value == 0 )
-  		{
-  			debug_flags[i] = (char*) "";
-  			// TODO: realloc memory when count(empty_entries) > _const
-  			return 0;
-  		}
-  		return 1;
-  	}
-  	length += strlen( debug_flags[i]);
+    if (strcmp(debug_flags[i], strdata)==0)
+    {
+      if(value == 0 )
+      {
+        debug_flags[i] = (char*) "";
+        // TODO: realloc memory when count(empty_entries) > _const
+        return 0;
+      }
+      return 1;
+    }
+    length += strlen( debug_flags[i]);
   }
   if(value == 0)
-  	return 0;
+    return 0;
   debug_flagc+=1;
   debug_flags = (char**)realloc(debug_flags, debug_flagc * sizeof(char*));
   debug_flags[debug_flagc-1] = (char*)strdata;
@@ -301,9 +301,9 @@ static enum RTOpts__arg__result RTOptsImpl__arg(const char* arg)
     version_request = 1;
   } else if(strncmp(arg,TARGET,strLen_TARGET) == 0) {
     if (strlen(arg) >= strLen_TARGET && strcmp(&arg[strLen_TARGET], "=gcc") == 0)
-    	simulation_code_target = "gcc";
+      simulation_code_target = "gcc";
     else if (strlen(arg) >= strLen_TARGET && strcmp(&arg[strLen_TARGET], "=msvc") == 0)
-    	simulation_code_target = "msvc";
+      simulation_code_target = "msvc";
     else {
       fprintf(stderr, "# Wrong option: usage: omc [+target=gcc|msvc], default to 'gcc'.\n");
       return ARG_FAILURE;

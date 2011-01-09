@@ -43,14 +43,14 @@ string array2string(double* array, int row, int col){
   retVal.precision(16);
     int k=0;
   for (int i=0;i<row;i++){
-  	for (int j=0;j<col;j++){
-  		if (j+1==col)
-  			retVal << array[k++];
-  		else
-  			retVal << array[k++] << ",";
-  	}
-  	if (!((i+1) == row) && !(col == 0))
-  		retVal << ";";
+    for (int j=0;j<col;j++){
+      if (j+1==col)
+        retVal << array[k++];
+      else
+        retVal << array[k++] << ",";
+    }
+    if (!((i+1) == row) && !(col == 0))
+      retVal << ";";
   }
     return retVal.str();
 }
@@ -62,7 +62,7 @@ int linearize()
   int size_A = globalData->nStates;
   int size_Inputs = globalData->nInputVars;
   int size_Outputs = globalData->nOutputVars;
-  double* matrixA	 = new double[size_A*size_A];
+  double* matrixA   = new double[size_A*size_A];
   double* matrixB = new double[size_A*size_Inputs];
   double* matrixC = new double[size_Outputs*size_A];
   double* matrixD = new double[size_Outputs*size_Inputs];

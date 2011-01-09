@@ -29,10 +29,10 @@ double get_lct(VertexID u, const TaskGraph &g, map<VertexID,double>*lct);
 class pass1_visitor : public boost::default_reverse_dfs_visitor {
 public:
   pass1_visitor(map<VertexID,double>*ect,
-  	map<VertexID,double>*est,
-  	map<VertexID,VertexID>*fpred) : m_ect(ect),
-  					m_est(est),
-  					m_fpred(fpred) { };
+    map<VertexID,double>*est,
+    map<VertexID,VertexID>*fpred) : m_ect(ect),
+            m_est(est),
+            m_fpred(fpred) { };
   void finish_vertex(VertexID u, const TaskGraph & g)
   {
     calc_est(u,g);
@@ -105,14 +105,14 @@ protected:
 class pass2_visitor : public default_dfs_visitor {
 public:
   pass2_visitor(map<VertexID,double>*lst,
-  	map<VertexID,double>*lct,
-  	map<VertexID,double>*ect,
-  	map<VertexID,double>*level,
-  	map<VertexID,VertexID>*fpred) : m_lst(lst),
-  					m_lct(lct),
-  					m_ect(ect),
-  					m_level(level),
-  					m_fpred(fpred) { };
+    map<VertexID,double>*lct,
+    map<VertexID,double>*ect,
+    map<VertexID,double>*level,
+    map<VertexID,VertexID>*fpred) : m_lst(lst),
+            m_lct(lct),
+            m_ect(ect),
+            m_level(level),
+            m_fpred(fpred) { };
   void finish_vertex(VertexID u, const TaskGraph & g)
   {
     calc_lct(u,g);
@@ -168,7 +168,7 @@ class LevelCmp
 {
 public:
   LevelCmp(TaskGraph*tg, map<VertexID,double>*level) : m_level(level),
-  					       m_taskgraph(tg) {};
+                   m_taskgraph(tg) {};
   bool operator()(VertexID &v1,VertexID &v2)
   {
     return get_level(v1,*m_taskgraph,m_level) > get_level(v2,*m_taskgraph,m_level);
@@ -183,7 +183,7 @@ class InvLevelCmp
 {
 public:
   InvLevelCmp(TaskGraph*tg, map<VertexID,double>*level) : m_level(level),
-  					       m_taskgraph(tg) {};
+                   m_taskgraph(tg) {};
   bool operator()(VertexID &v1,VertexID &v2)
   {
     return get_level(v1,*m_taskgraph,m_level) < get_level(v2,*m_taskgraph,m_level);

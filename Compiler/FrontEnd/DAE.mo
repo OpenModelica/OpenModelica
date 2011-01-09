@@ -838,13 +838,13 @@ uniontype Properties "P.R 1.1 for multiple return arguments from functions,
   record PROP
     Type type_ "type" ;
     Const constFlag "constFlag; if the type is a tuple, each element
-    		          have a const flag." ;
+                  have a const flag." ;
   end PROP;
 
   record PROP_TUPLE
     Type type_;
     TupleConst tupleConst "tupleConst; The elements might be
-    					    tuple themselfs." ;
+                  tuple themselfs." ;
   end PROP_TUPLE;
 
 end Properties;
@@ -1077,7 +1077,7 @@ uniontype Exp "Expressions
 
   record TUPLE
     list<Exp> PR "PR. Tuples, used in func calls returning several
-    						  arguments" ;
+                  arguments" ;
   end TUPLE;
 
   record CAST "Cast operator"

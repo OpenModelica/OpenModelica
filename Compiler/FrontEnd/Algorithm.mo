@@ -620,7 +620,7 @@ algorithm
       then DAE.STMT_REINIT(var_1,val_1,source);
 
    case (_,_,prop1,prop2,source)  equation
-    	Error.addSourceMessage(Error.INTERNAL_ERROR,{"reinit called with wrong args"},DAEUtil.getElementSourceFileInfo(source));
+      Error.addSourceMessage(Error.INTERNAL_ERROR,{"reinit called with wrong args"},DAEUtil.getElementSourceFileInfo(source));
     then fail();
 
     // TODO: Add checks for reinit here. 1. First argument must be variable. 2. Expressions must be real.

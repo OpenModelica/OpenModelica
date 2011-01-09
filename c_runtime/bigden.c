@@ -4,10 +4,10 @@
   on Linux or Unix systems, link with .../path/to/libf2c.a -lm
   or, if you install libf2c.a in a standard place, with -lf2c -lm
   -- in that order, at the end of the command line, as in
-  	cc *.o -lf2c -lm
+    cc *.o -lf2c -lm
   Source for libf2c is in /netlib/f2c/libf2c.zip, e.g.,
 
-  	http://www.netlib.org/f2c/libf2c.zip
+    http://www.netlib.org/f2c/libf2c.zip
 */
 
 #include "f2c.h"
@@ -155,21 +155,21 @@
   i__2 = *npt;
   for (k = 1; k <= i__2; ++k) {
       if (k != *kopt) {
-  	dstemp = zero;
-  	sstemp = zero;
-  	i__1 = *n;
-  	for (i__ = 1; i__ <= i__1; ++i__) {
-  	    diff = xpt[k + i__ * xpt_dim1] - xopt[i__];
-  	    dstemp += d__[i__] * diff;
+    dstemp = zero;
+    sstemp = zero;
+    i__1 = *n;
+    for (i__ = 1; i__ <= i__1; ++i__) {
+        diff = xpt[k + i__ * xpt_dim1] - xopt[i__];
+        dstemp += d__[i__] * diff;
 /* L40: */
-  	    sstemp += diff * diff;
-  	}
-  	if (dstemp * dstemp / sstemp < dtest) {
-  	    ksav = k;
-  	    dtest = dstemp * dstemp / sstemp;
-  	    ds = dstemp;
-  	    ss = sstemp;
-  	}
+        sstemp += diff * diff;
+    }
+    if (dstemp * dstemp / sstemp < dtest) {
+        ksav = k;
+        dtest = dstemp * dstemp / sstemp;
+        ds = dstemp;
+        ss = sstemp;
+    }
       }
 /* L50: */
   }
@@ -263,29 +263,29 @@ L70:
       i__1 = *npt;
       for (k = 1; k <= i__1; ++k) {
 /* L140: */
-  	sum += zmat[k + j * zmat_dim1] * wvec[k + jc * wvec_dim1];
+    sum += zmat[k + j * zmat_dim1] * wvec[k + jc * wvec_dim1];
       }
       if (j < *idz) {
-  	sum = -sum;
+    sum = -sum;
       }
       i__1 = *npt;
       for (k = 1; k <= i__1; ++k) {
 /* L150: */
-  	prod[k + jc * prod_dim1] += sum * zmat[k + j * zmat_dim1];
+    prod[k + jc * prod_dim1] += sum * zmat[k + j * zmat_dim1];
       }
   }
   if (nw == *ndim) {
       i__1 = *npt;
       for (k = 1; k <= i__1; ++k) {
-  	sum = zero;
-  	i__2 = *n;
-  	for (j = 1; j <= i__2; ++j) {
+    sum = zero;
+    i__2 = *n;
+    for (j = 1; j <= i__2; ++j) {
 /* L160: */
-  	    sum += bmat[k + j * bmat_dim1] * wvec[*npt + j + jc *
-  		    wvec_dim1];
-  	}
+        sum += bmat[k + j * bmat_dim1] * wvec[*npt + j + jc *
+          wvec_dim1];
+    }
 /* L170: */
-  	prod[k + jc * prod_dim1] += sum;
+    prod[k + jc * prod_dim1] += sum;
       }
   }
   i__1 = *n;
@@ -294,7 +294,7 @@ L70:
       i__2 = nw;
       for (i__ = 1; i__ <= i__2; ++i__) {
 /* L180: */
-  	sum += bmat[i__ + j * bmat_dim1] * wvec[i__ + jc * wvec_dim1];
+    sum += bmat[i__ + j * bmat_dim1] * wvec[i__ + jc * wvec_dim1];
       }
 /* L190: */
       prod[*npt + j + jc * prod_dim1] = sum;
@@ -308,38 +308,38 @@ L70:
   sum = zero;
   for (i__ = 1; i__ <= 5; ++i__) {
       par[i__ - 1] = half * prod[k + i__ * prod_dim1] * wvec[k + i__ *
-  	    wvec_dim1];
+        wvec_dim1];
 /* L200: */
       sum += par[i__ - 1];
   }
   den[0] = den[0] - par[0] - sum;
   tempa = prod[k + prod_dim1] * wvec[k + (wvec_dim1 << 1)] + prod[k + (
-  	prod_dim1 << 1)] * wvec[k + wvec_dim1];
+    prod_dim1 << 1)] * wvec[k + wvec_dim1];
   tempb = prod[k + (prod_dim1 << 1)] * wvec[k + (wvec_dim1 << 2)] +
-  	prod[k + (prod_dim1 << 2)] * wvec[k + (wvec_dim1 << 1)];
+    prod[k + (prod_dim1 << 2)] * wvec[k + (wvec_dim1 << 1)];
   tempc = prod[k + prod_dim1 * 3] * wvec[k + wvec_dim1 * 5] + prod[k +
-  	prod_dim1 * 5] * wvec[k + wvec_dim1 * 3];
+    prod_dim1 * 5] * wvec[k + wvec_dim1 * 3];
   den[1] = den[1] - tempa - half * (tempb + tempc);
   den[5] -= half * (tempb - tempc);
   tempa = prod[k + prod_dim1] * wvec[k + wvec_dim1 * 3] + prod[k +
-  	prod_dim1 * 3] * wvec[k + wvec_dim1];
+    prod_dim1 * 3] * wvec[k + wvec_dim1];
   tempb = prod[k + (prod_dim1 << 1)] * wvec[k + wvec_dim1 * 5] + prod[k
-  	+ prod_dim1 * 5] * wvec[k + (wvec_dim1 << 1)];
+    + prod_dim1 * 5] * wvec[k + (wvec_dim1 << 1)];
   tempc = prod[k + prod_dim1 * 3] * wvec[k + (wvec_dim1 << 2)] + prod[k
-  	+ (prod_dim1 << 2)] * wvec[k + wvec_dim1 * 3];
+    + (prod_dim1 << 2)] * wvec[k + wvec_dim1 * 3];
   den[2] = den[2] - tempa - half * (tempb - tempc);
   den[6] -= half * (tempb + tempc);
   tempa = prod[k + prod_dim1] * wvec[k + (wvec_dim1 << 2)] + prod[k + (
-  	prod_dim1 << 2)] * wvec[k + wvec_dim1];
+    prod_dim1 << 2)] * wvec[k + wvec_dim1];
   den[3] = den[3] - tempa - par[1] + par[2];
   tempa = prod[k + prod_dim1] * wvec[k + wvec_dim1 * 5] + prod[k +
-  	prod_dim1 * 5] * wvec[k + wvec_dim1];
+    prod_dim1 * 5] * wvec[k + wvec_dim1];
   tempb = prod[k + (prod_dim1 << 1)] * wvec[k + wvec_dim1 * 3] + prod[k
-  	+ prod_dim1 * 3] * wvec[k + (wvec_dim1 << 1)];
+    + prod_dim1 * 3] * wvec[k + (wvec_dim1 << 1)];
   den[4] = den[4] - tempa - half * tempb;
   den[7] = den[7] - par[3] + par[4];
   tempa = prod[k + (prod_dim1 << 2)] * wvec[k + wvec_dim1 * 5] + prod[k
-  	+ prod_dim1 * 5] * wvec[k + (wvec_dim1 << 2)];
+    + prod_dim1 * 5] * wvec[k + (wvec_dim1 << 2)];
 /* L210: */
   den[8] -= half * tempa;
     }

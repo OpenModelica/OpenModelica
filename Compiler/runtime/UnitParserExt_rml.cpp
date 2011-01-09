@@ -97,20 +97,20 @@ RML_BEGIN_LABEL(UnitParserExt__unit2str)
   unit.typeParamVec.clear();
   /* Add baseunits*/
   while(RML_GETHDR(nums) == RML_CONSHDR) {
-  	i1 = RML_UNTAGFIXNUM(RML_CAR(nums));
-  	i2 = RML_UNTAGFIXNUM(RML_CAR(denoms));
-  	unit.unitVec.push_back(Rational(i1,i2));
-  	nums = RML_CDR(nums);
-  	denoms = RML_CDR(denoms);
+    i1 = RML_UNTAGFIXNUM(RML_CAR(nums));
+    i2 = RML_UNTAGFIXNUM(RML_CAR(denoms));
+    unit.unitVec.push_back(Rational(i1,i2));
+    nums = RML_CDR(nums);
+    denoms = RML_CDR(denoms);
   }
   /* Add type parameters*/
   while(RML_GETHDR(tpnoms) == RML_CONSHDR) {
-  	i1 = RML_UNTAGFIXNUM(RML_CAR(tpnoms));
-  	i2 = RML_UNTAGFIXNUM(RML_CAR(tpdenoms));
-  	tpParam = string(RML_STRINGDATA(RML_CAR(tpstrs)));
-  	unit.typeParamVec.insert(std::pair<string,Rational>(tpParam,Rational(i1,i2)));
-  	tpnoms = RML_CDR(tpnoms);
-  	tpdenoms = RML_CDR(tpdenoms);
+    i1 = RML_UNTAGFIXNUM(RML_CAR(tpnoms));
+    i2 = RML_UNTAGFIXNUM(RML_CAR(tpdenoms));
+    tpParam = string(RML_STRINGDATA(RML_CAR(tpstrs)));
+    unit.typeParamVec.insert(std::pair<string,Rational>(tpParam,Rational(i1,i2)));
+    tpnoms = RML_CDR(tpnoms);
+    tpdenoms = RML_CDR(tpdenoms);
   }
   //string res = unitParser->unit2str(unit);
   string res = unitParser->prettyPrintUnit2str(unit);

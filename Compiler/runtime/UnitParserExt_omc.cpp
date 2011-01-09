@@ -16,20 +16,20 @@ const char* UnitParserExt_unit2str(void *nums, void *denoms, void *tpnoms, void 
   unit.typeParamVec.clear();
   /* Add baseunits*/
   while(MMC_GETHDR(nums) == MMC_CONSHDR) {
-  	i1 = MMC_UNTAGFIXNUM(MMC_CAR(nums));
-  	i2 = MMC_UNTAGFIXNUM(MMC_CAR(denoms));
-  	unit.unitVec.push_back(Rational(i1,i2));
-  	nums = MMC_CDR(nums);
-  	denoms = MMC_CDR(denoms);
+    i1 = MMC_UNTAGFIXNUM(MMC_CAR(nums));
+    i2 = MMC_UNTAGFIXNUM(MMC_CAR(denoms));
+    unit.unitVec.push_back(Rational(i1,i2));
+    nums = MMC_CDR(nums);
+    denoms = MMC_CDR(denoms);
   }
   /* Add type parameters*/
   while(MMC_GETHDR(tpnoms) == MMC_CONSHDR) {
-  	i1 = MMC_UNTAGFIXNUM(MMC_CAR(tpnoms));
-  	i2 = MMC_UNTAGFIXNUM(MMC_CAR(tpdenoms));
-  	tpParam = string(MMC_STRINGDATA(MMC_CAR(tpstrs)));
-  	unit.typeParamVec.insert(std::pair<string,Rational>(tpParam,Rational(i1,i2)));
-  	tpnoms = MMC_CDR(tpnoms);
-  	tpdenoms = MMC_CDR(tpdenoms);
+    i1 = MMC_UNTAGFIXNUM(MMC_CAR(tpnoms));
+    i2 = MMC_UNTAGFIXNUM(MMC_CAR(tpdenoms));
+    tpParam = string(MMC_STRINGDATA(MMC_CAR(tpstrs)));
+    unit.typeParamVec.insert(std::pair<string,Rational>(tpParam,Rational(i1,i2)));
+    tpnoms = MMC_CDR(tpnoms);
+    tpdenoms = MMC_CDR(tpdenoms);
   }
   //string res = unitParser->unit2str(unit);
   string res = unitParser->prettyPrintUnit2str(unit);

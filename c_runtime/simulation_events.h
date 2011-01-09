@@ -93,56 +93,56 @@ const int IterationMax = 200;
 
 #define ZEROCROSSING(ind,exp) { \
   if (euler_in_use){ \
-  	gout[ind] = exp; \
+    gout[ind] = exp; \
   } \
   else {\
-  	gout[ind] = (zeroCrossingEnabled[ind])?double(zeroCrossingEnabled[ind])*exp:1.0; \
+    gout[ind] = (zeroCrossingEnabled[ind])?double(zeroCrossingEnabled[ind])*exp:1.0; \
   } \
 }
 
 #define RELATION(res,x,y,op1,op2)  { \
   if (euler_in_use){ \
-  	res = (x) op1 (y); \
+    res = (x) op1 (y); \
   } \
   else { \
-  	double res1,res2,*statesBackup,*statesDerivativesBackup,*algebraicsBackup,timeBackup;\
-  	modelica_integer* algebraicsIntBackup; \
-  	modelica_boolean* algebraicsBoolBackup; \
-  	if (!inUpdate) { \
-  		res = (x) op1 (y); \
-  	}\
-  	else {\
-  		res = (x) op2 (y); \
-  		if (!res && ((x) op2##= (y))) { \
-  			timeBackup = localData->timeValue;\
-  			localData->timeValue = localData->oldTime;\
-  			statesBackup = localData->states; \
-  			localData->states = localData->states_old; \
-  			statesDerivativesBackup = localData->statesDerivatives; \
-  			localData->statesDerivatives = localData->statesDerivatives_old; \
-  			algebraicsBackup = localData->algebraics; \
-  			localData->algebraics = localData->algebraics_old; \
-  			algebraicsIntBackup = localData->intVariables.algebraics; \
-  			localData->intVariables.algebraics = localData->intVariables.algebraics_old; \
-  			algebraicsBoolBackup = localData->boolVariables.algebraics; \
-  			localData->boolVariables.algebraics = localData->boolVariables.algebraics_old; \
-  			res1 = (x)-(y);\
-  			localData->timeValue = localData->oldTime2;\
-  			localData->states = localData->states_old2; \
-  			localData->statesDerivatives = localData->statesDerivatives_old2; \
-  			localData->algebraics = localData->algebraics_old2; \
-  			localData->intVariables.algebraics = localData->intVariables.algebraics_old2; \
-  			localData->boolVariables.algebraics = localData->boolVariables.algebraics_old2; \
-  			res2 = (x)-(y);\
-  			localData->timeValue = timeBackup;\
-  			localData->states = statesBackup; \
-  			localData->statesDerivatives = statesDerivativesBackup; \
-  			localData->algebraics = algebraicsBackup; \
-  			localData->intVariables.algebraics = algebraicsIntBackup; \
-  			localData->boolVariables.algebraics = algebraicsBoolBackup; \
-  			res = res1 op2##= res2; \
-  		}\
-  	}\
+    double res1,res2,*statesBackup,*statesDerivativesBackup,*algebraicsBackup,timeBackup;\
+    modelica_integer* algebraicsIntBackup; \
+    modelica_boolean* algebraicsBoolBackup; \
+    if (!inUpdate) { \
+      res = (x) op1 (y); \
+    }\
+    else {\
+      res = (x) op2 (y); \
+      if (!res && ((x) op2##= (y))) { \
+        timeBackup = localData->timeValue;\
+        localData->timeValue = localData->oldTime;\
+        statesBackup = localData->states; \
+        localData->states = localData->states_old; \
+        statesDerivativesBackup = localData->statesDerivatives; \
+        localData->statesDerivatives = localData->statesDerivatives_old; \
+        algebraicsBackup = localData->algebraics; \
+        localData->algebraics = localData->algebraics_old; \
+        algebraicsIntBackup = localData->intVariables.algebraics; \
+        localData->intVariables.algebraics = localData->intVariables.algebraics_old; \
+        algebraicsBoolBackup = localData->boolVariables.algebraics; \
+        localData->boolVariables.algebraics = localData->boolVariables.algebraics_old; \
+        res1 = (x)-(y);\
+        localData->timeValue = localData->oldTime2;\
+        localData->states = localData->states_old2; \
+        localData->statesDerivatives = localData->statesDerivatives_old2; \
+        localData->algebraics = localData->algebraics_old2; \
+        localData->intVariables.algebraics = localData->intVariables.algebraics_old2; \
+        localData->boolVariables.algebraics = localData->boolVariables.algebraics_old2; \
+        res2 = (x)-(y);\
+        localData->timeValue = timeBackup;\
+        localData->states = statesBackup; \
+        localData->statesDerivatives = statesDerivativesBackup; \
+        localData->algebraics = algebraicsBackup; \
+        localData->intVariables.algebraics = algebraicsIntBackup; \
+        localData->boolVariables.algebraics = algebraicsBoolBackup; \
+        res = res1 op2##= res2; \
+      }\
+    }\
   } \
 }
 

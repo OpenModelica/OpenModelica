@@ -197,17 +197,17 @@ protected function traversecheckBackendDAEExp
 algorithm
   outTuple := matchcontinue(inTuple)
     local
-    	DAE.Exp e;
-    	BackendDAE.Variables vars,vars1;
-    	DAE.ComponentRef cr;
-    	list<DAE.ComponentRef> crefs,crefs1;
-    	list<DAE.Exp> expl;
+      DAE.Exp e;
+      BackendDAE.Variables vars,vars1;
+      DAE.ComponentRef cr;
+      list<DAE.ComponentRef> crefs,crefs1;
+      list<DAE.Exp> expl;
       list<DAE.ExpVar> varLst;
       DAE.Ident ident;
       BackendDAE.Var backendVar;
 
     
-    // special case for time, it is never part of the equation system	
+    // special case for time, it is never part of the equation system  
     case ((e as DAE.CREF(componentRef = DAE.CREF_IDENT(ident="time")),(vars,crefs)))
       then ((e, (vars,crefs)));
     
@@ -233,7 +233,7 @@ algorithm
     // case for functionpointers    
     case ((e as DAE.CREF(ty=DAE.ET_FUNCTION_REFERENCE_FUNC(builtin=_)),(vars,crefs)))
       then
-        ((e, (vars,crefs)));		    
+        ((e, (vars,crefs)));        
     
     case ((e as DAE.CREF(componentRef = cr),(vars,crefs)))
       equation

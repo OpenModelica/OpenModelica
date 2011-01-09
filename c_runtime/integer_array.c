@@ -313,8 +313,8 @@ void indexed_assign_integer_array(integer_array_t* source,
     while(1) {
   for (i = 0,j=0; i < dest_spec->ndims; ++i) {
       if (dest_spec->dim_size[i] != 0) {
-  	idx_vec2[j] = idx_vec1[i];
-  	++j;
+    idx_vec2[j] = idx_vec1[i];
+    ++j;
             }
         }
 
@@ -413,8 +413,8 @@ void index_integer_array(integer_array_t* source,
  */
 
 void index_alloc_integer_array(integer_array_t* source,
-  		       index_spec_t* source_spec,
-  		       integer_array_t* dest)
+             index_spec_t* source_spec,
+             integer_array_t* dest)
 {
     int i;
     int j;

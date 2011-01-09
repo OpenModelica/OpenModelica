@@ -178,15 +178,15 @@ simulation_result_plt::simulation_result_plt(const char* filename, long numpoint
     Static::enabled_ = !strcmp(enabled, "1");
   }
   if(Static::enabled())
-    initSendData(	globalData->nStates,
-  				globalData->nAlgebraic,
-  				globalData->intVariables.nAlgebraic,
-  				globalData->boolVariables.nAlgebraic,
-  				globalData->statesNames,
-  				globalData->stateDerivativesNames,
-  				globalData->algebraicsNames,
-  				globalData->int_alg_names,
-  				globalData->bool_alg_names);
+    initSendData(  globalData->nStates,
+          globalData->nAlgebraic,
+          globalData->intVariables.nAlgebraic,
+          globalData->boolVariables.nAlgebraic,
+          globalData->statesNames,
+          globalData->stateDerivativesNames,
+          globalData->algebraicsNames,
+          globalData->int_alg_names,
+          globalData->bool_alg_names);
 #endif // CONFIG_WITH_SENDDATA
 }
 

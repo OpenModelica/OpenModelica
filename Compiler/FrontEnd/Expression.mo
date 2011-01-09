@@ -2558,27 +2558,27 @@ algorithm
     case ({}) then DAE.RCONST(0.0);
     case ({e1}) then e1;
     case ({e1, e2})
-    	equation
-    		true = isZero(e1);
-    	then e2;
+      equation
+        true = isZero(e1);
+      then e2;
     case ({e1, e2})
-    	equation
-    		true = isZero(e2);
-    	then e1;
+      equation
+        true = isZero(e2);
+      then e1;
     case ({e1, e2})
-    	equation
+      equation
         tp = typeof(e1) "Take type info from e1, ok since type checking already performed." ;
         b = DAEUtil.expTypeArray(tp);
         op = Util.if_(b,DAE.ADD_ARR(tp),DAE.ADD(tp));
-    	then DAE.BINARY(e1, op, e2);			  
-    		//res = DAE.BINARY(e1, DAE.ADD(tp), e2);
-    	//then res;
+      then DAE.BINARY(e1, op, e2);        
+        //res = DAE.BINARY(e1, DAE.ADD(tp), e2);
+      //then res;
     /*case ({e1,e2})
       equation
         b1 = isZero(e1);
         tp = typeof(e1) "Take type info from e1, ok since type checking already performed." ;
         res = DAE.BINARY(e1,DAE.ADD(tp),e2);
-    		res = Util.if_(b1,e2,res);
+        res = Util.if_(b1,e2,res);
       then
         res;*/
     case ((e1 :: rest))
@@ -2594,7 +2594,7 @@ algorithm
         res;
     case (lst)
       equation
-    		true = RTOpts.debugFlag("failtrace");
+        true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace","-Expression.makeSum failed, DAE.Exp lst:");
         explst = Util.listMap(lst, ExpressionDump.printExpStr);
         str = Util.stringDelimitList(explst, ", ");
@@ -2695,7 +2695,7 @@ algorithm
         b_isZero = isZero(p1);
         res = Util.if_(b_isZero,makeConstZero(typeof(e)),res);
       then
-    	  res;
+        res;
     case ({e1,e2})
       equation
         true = isConstOne(e2);
@@ -2723,10 +2723,10 @@ algorithm
         b_isZero = boolOr(b1,b2);
         res = Util.if_(b_isZero,makeConstZero(typeof(e1)),res);
       then
-    		res;
+        res;
     case (lst)
       equation
-    		true = RTOpts.debugFlag("failtrace");
+        true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace","-Expression.makeProductLst failed, DAE.Exp lst:");
         explst = Util.listMap(lst, ExpressionDump.printExpStr);
         str = Util.stringDelimitList(explst, ", ");
@@ -5838,14 +5838,14 @@ algorithm
         res;
     
     case (DAE.REDUCTION(expr = e), cr)
-    	equation
-    		res = expContains(e, cr);
-    	then
-    		res;
+      equation
+        res = expContains(e, cr);
+      then
+        res;
     
     case (e,cr)
       equation
-    		true = RTOpts.debugFlag("failtrace");
+        true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace", "- Expression.expContains failed\n");
         s = ExpressionDump.printExpStr(e);
         str = stringAppendList({"exp = ",s,"\n"});

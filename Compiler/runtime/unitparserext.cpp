@@ -28,8 +28,8 @@ void UnitParserExtImpl__checkpoint(void)
 void UnitParserExtImpl__rollback(void)
 {
   if (rollbackStack.size() == 0) {
-  	cerr << "Error, rollback on empty stack" << endl;
-  	exit(1);
+    cerr << "Error, rollback on empty stack" << endl;
+    exit(1);
   }
   UnitParser * old = rollbackStack.top();
   rollbackStack.pop();

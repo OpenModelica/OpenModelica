@@ -52,7 +52,7 @@ public:
          long startColumnNo,
          long endLineNo,
          long endColumnNo,
-         bool isReadOnly,	       
+         bool isReadOnly,         
          std::string filename);
 
   long getID() const { return errorID_; };

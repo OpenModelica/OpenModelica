@@ -1612,7 +1612,7 @@ algorithm
     
     case (e,cr,differentiateIfExp)
       equation
-    		true = RTOpts.debugFlag("failtrace");
+        true = RTOpts.debugFlag("failtrace");
         s = ExpressionDump.printExpStr(e);
         s2 = ComponentReference.printComponentRefStr(cr);
         str = stringAppendList({"- Derive.differentiateExp ",s," w.r.t: ",s2," failed\n"});

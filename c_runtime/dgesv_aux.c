@@ -113,7 +113,7 @@
 /*        Solve the system A*X = B, overwriting B with X. */
 
   dgetrs_("No transpose", n, nrhs, &a[a_offset], lda, &ipiv[1], &b[
-  	b_offset], ldb, info);
+    b_offset], ldb, info);
     }
     return 0;
 
@@ -247,12 +247,12 @@
 /*        Solve L*X = B, overwriting B with X. */
 
   dtrsm_("Left", "Lower", "No transpose", "Unit", n, nrhs, &c_b12, &a[
-  	a_offset], lda, &b[b_offset], ldb);
+    a_offset], lda, &b[b_offset], ldb);
 
 /*        Solve U*X = B, overwriting B with X. */
 
   dtrsm_("Left", "Upper", "No transpose", "Non-unit", n, nrhs, &c_b12, &
-  	a[a_offset], lda, &b[b_offset], ldb);
+    a[a_offset], lda, &b[b_offset], ldb);
     } else {
 
 /*        Solve A' * X = B.
@@ -260,12 +260,12 @@
           Solve U'*X = B, overwriting B with X. */
 
   dtrsm_("Left", "Upper", "Transpose", "Non-unit", n, nrhs, &c_b12, &a[
-  	a_offset], lda, &b[b_offset], ldb);
+    a_offset], lda, &b[b_offset], ldb);
 
 /*        Solve L'*X = B, overwriting B with X. */
 
   dtrsm_("Left", "Lower", "Transpose", "Unit", n, nrhs, &c_b12, &a[
-  	a_offset], lda, &b[b_offset], ldb);
+    a_offset], lda, &b[b_offset], ldb);
 
 /*        Apply row interchanges to the solution vectors. */
 
@@ -430,7 +430,7 @@
   for (j = 1; j <= i__1; ++j) {
       i__2 = *m;
       for (i__ = 1; i__ <= i__2; ++i__) {
-  	b_ref(i__, j) = 0.;
+    b_ref(i__, j) = 0.;
 /* L10: */
       }
 /* L20: */
@@ -442,234 +442,234 @@
   if (lsame_(transa, "N")) {
 /*           Form  B := alpha*inv( A )*B. */
       if (upper) {
-  	i__1 = *n;
-  	for (j = 1; j <= i__1; ++j) {
-  	    if (*alpha != 1.) {
-  		i__2 = *m;
-  		for (i__ = 1; i__ <= i__2; ++i__) {
-  		    b_ref(i__, j) = *alpha * b_ref(i__, j);
+    i__1 = *n;
+    for (j = 1; j <= i__1; ++j) {
+        if (*alpha != 1.) {
+      i__2 = *m;
+      for (i__ = 1; i__ <= i__2; ++i__) {
+          b_ref(i__, j) = *alpha * b_ref(i__, j);
 /* L30: */
-  		}
-  	    }
-  	    for (k = *m; k >= 1; --k) {
-  		if (b_ref(k, j) != 0.) {
-  		    if (nounit) {
-  			b_ref(k, j) = b_ref(k, j) / a_ref(k, k);
-  		    }
-  		    i__2 = k - 1;
-  		    for (i__ = 1; i__ <= i__2; ++i__) {
-  			b_ref(i__, j) = b_ref(i__, j) - b_ref(k, j) *
-  				a_ref(i__, k);
+      }
+        }
+        for (k = *m; k >= 1; --k) {
+      if (b_ref(k, j) != 0.) {
+          if (nounit) {
+        b_ref(k, j) = b_ref(k, j) / a_ref(k, k);
+          }
+          i__2 = k - 1;
+          for (i__ = 1; i__ <= i__2; ++i__) {
+        b_ref(i__, j) = b_ref(i__, j) - b_ref(k, j) *
+          a_ref(i__, k);
 /* L40: */
-  		    }
-  		}
+          }
+      }
 /* L50: */
-  	    }
+        }
 /* L60: */
-  	}
+    }
       } else {
-  	i__1 = *n;
-  	for (j = 1; j <= i__1; ++j) {
-  	    if (*alpha != 1.) {
-  		i__2 = *m;
-  		for (i__ = 1; i__ <= i__2; ++i__) {
-  		    b_ref(i__, j) = *alpha * b_ref(i__, j);
+    i__1 = *n;
+    for (j = 1; j <= i__1; ++j) {
+        if (*alpha != 1.) {
+      i__2 = *m;
+      for (i__ = 1; i__ <= i__2; ++i__) {
+          b_ref(i__, j) = *alpha * b_ref(i__, j);
 /* L70: */
-  		}
-  	    }
-  	    i__2 = *m;
-  	    for (k = 1; k <= i__2; ++k) {
-  		if (b_ref(k, j) != 0.) {
-  		    if (nounit) {
-  			b_ref(k, j) = b_ref(k, j) / a_ref(k, k);
-  		    }
-  		    i__3 = *m;
-  		    for (i__ = k + 1; i__ <= i__3; ++i__) {
-  			b_ref(i__, j) = b_ref(i__, j) - b_ref(k, j) *
-  				a_ref(i__, k);
+      }
+        }
+        i__2 = *m;
+        for (k = 1; k <= i__2; ++k) {
+      if (b_ref(k, j) != 0.) {
+          if (nounit) {
+        b_ref(k, j) = b_ref(k, j) / a_ref(k, k);
+          }
+          i__3 = *m;
+          for (i__ = k + 1; i__ <= i__3; ++i__) {
+        b_ref(i__, j) = b_ref(i__, j) - b_ref(k, j) *
+          a_ref(i__, k);
 /* L80: */
-  		    }
-  		}
+          }
+      }
 /* L90: */
-  	    }
+        }
 /* L100: */
-  	}
+    }
       }
   } else {
 /*           Form  B := alpha*inv( A' )*B. */
       if (upper) {
-  	i__1 = *n;
-  	for (j = 1; j <= i__1; ++j) {
-  	    i__2 = *m;
-  	    for (i__ = 1; i__ <= i__2; ++i__) {
-  		temp = *alpha * b_ref(i__, j);
-  		i__3 = i__ - 1;
-  		for (k = 1; k <= i__3; ++k) {
-  		    temp -= a_ref(k, i__) * b_ref(k, j);
+    i__1 = *n;
+    for (j = 1; j <= i__1; ++j) {
+        i__2 = *m;
+        for (i__ = 1; i__ <= i__2; ++i__) {
+      temp = *alpha * b_ref(i__, j);
+      i__3 = i__ - 1;
+      for (k = 1; k <= i__3; ++k) {
+          temp -= a_ref(k, i__) * b_ref(k, j);
 /* L110: */
-  		}
-  		if (nounit) {
-  		    temp /= a_ref(i__, i__);
-  		}
-  		b_ref(i__, j) = temp;
+      }
+      if (nounit) {
+          temp /= a_ref(i__, i__);
+      }
+      b_ref(i__, j) = temp;
 /* L120: */
-  	    }
+        }
 /* L130: */
-  	}
+    }
       } else {
-  	i__1 = *n;
-  	for (j = 1; j <= i__1; ++j) {
-  	    for (i__ = *m; i__ >= 1; --i__) {
-  		temp = *alpha * b_ref(i__, j);
-  		i__2 = *m;
-  		for (k = i__ + 1; k <= i__2; ++k) {
-  		    temp -= a_ref(k, i__) * b_ref(k, j);
+    i__1 = *n;
+    for (j = 1; j <= i__1; ++j) {
+        for (i__ = *m; i__ >= 1; --i__) {
+      temp = *alpha * b_ref(i__, j);
+      i__2 = *m;
+      for (k = i__ + 1; k <= i__2; ++k) {
+          temp -= a_ref(k, i__) * b_ref(k, j);
 /* L140: */
-  		}
-  		if (nounit) {
-  		    temp /= a_ref(i__, i__);
-  		}
-  		b_ref(i__, j) = temp;
+      }
+      if (nounit) {
+          temp /= a_ref(i__, i__);
+      }
+      b_ref(i__, j) = temp;
 /* L150: */
-  	    }
+        }
 /* L160: */
-  	}
+    }
       }
   }
     } else {
   if (lsame_(transa, "N")) {
 /*           Form  B := alpha*B*inv( A ). */
       if (upper) {
-  	i__1 = *n;
-  	for (j = 1; j <= i__1; ++j) {
-  	    if (*alpha != 1.) {
-  		i__2 = *m;
-  		for (i__ = 1; i__ <= i__2; ++i__) {
-  		    b_ref(i__, j) = *alpha * b_ref(i__, j);
+    i__1 = *n;
+    for (j = 1; j <= i__1; ++j) {
+        if (*alpha != 1.) {
+      i__2 = *m;
+      for (i__ = 1; i__ <= i__2; ++i__) {
+          b_ref(i__, j) = *alpha * b_ref(i__, j);
 /* L170: */
-  		}
-  	    }
-  	    i__2 = j - 1;
-  	    for (k = 1; k <= i__2; ++k) {
-  		if (a_ref(k, j) != 0.) {
-  		    i__3 = *m;
-  		    for (i__ = 1; i__ <= i__3; ++i__) {
-  			b_ref(i__, j) = b_ref(i__, j) - a_ref(k, j) *
-  				b_ref(i__, k);
+      }
+        }
+        i__2 = j - 1;
+        for (k = 1; k <= i__2; ++k) {
+      if (a_ref(k, j) != 0.) {
+          i__3 = *m;
+          for (i__ = 1; i__ <= i__3; ++i__) {
+        b_ref(i__, j) = b_ref(i__, j) - a_ref(k, j) *
+          b_ref(i__, k);
 /* L180: */
-  		    }
-  		}
+          }
+      }
 /* L190: */
-  	    }
-  	    if (nounit) {
-  		temp = 1. / a_ref(j, j);
-  		i__2 = *m;
-  		for (i__ = 1; i__ <= i__2; ++i__) {
-  		    b_ref(i__, j) = temp * b_ref(i__, j);
+        }
+        if (nounit) {
+      temp = 1. / a_ref(j, j);
+      i__2 = *m;
+      for (i__ = 1; i__ <= i__2; ++i__) {
+          b_ref(i__, j) = temp * b_ref(i__, j);
 /* L200: */
-  		}
-  	    }
+      }
+        }
 /* L210: */
-  	}
+    }
       } else {
-  	for (j = *n; j >= 1; --j) {
-  	    if (*alpha != 1.) {
-  		i__1 = *m;
-  		for (i__ = 1; i__ <= i__1; ++i__) {
-  		    b_ref(i__, j) = *alpha * b_ref(i__, j);
+    for (j = *n; j >= 1; --j) {
+        if (*alpha != 1.) {
+      i__1 = *m;
+      for (i__ = 1; i__ <= i__1; ++i__) {
+          b_ref(i__, j) = *alpha * b_ref(i__, j);
 /* L220: */
-  		}
-  	    }
-  	    i__1 = *n;
-  	    for (k = j + 1; k <= i__1; ++k) {
-  		if (a_ref(k, j) != 0.) {
-  		    i__2 = *m;
-  		    for (i__ = 1; i__ <= i__2; ++i__) {
-  			b_ref(i__, j) = b_ref(i__, j) - a_ref(k, j) *
-  				b_ref(i__, k);
+      }
+        }
+        i__1 = *n;
+        for (k = j + 1; k <= i__1; ++k) {
+      if (a_ref(k, j) != 0.) {
+          i__2 = *m;
+          for (i__ = 1; i__ <= i__2; ++i__) {
+        b_ref(i__, j) = b_ref(i__, j) - a_ref(k, j) *
+          b_ref(i__, k);
 /* L230: */
-  		    }
-  		}
+          }
+      }
 /* L240: */
-  	    }
-  	    if (nounit) {
-  		temp = 1. / a_ref(j, j);
-  		i__1 = *m;
-  		for (i__ = 1; i__ <= i__1; ++i__) {
-  		    b_ref(i__, j) = temp * b_ref(i__, j);
+        }
+        if (nounit) {
+      temp = 1. / a_ref(j, j);
+      i__1 = *m;
+      for (i__ = 1; i__ <= i__1; ++i__) {
+          b_ref(i__, j) = temp * b_ref(i__, j);
 /* L250: */
-  		}
-  	    }
+      }
+        }
 /* L260: */
-  	}
+    }
       }
   } else {
 /*           Form  B := alpha*B*inv( A' ). */
       if (upper) {
-  	for (k = *n; k >= 1; --k) {
-  	    if (nounit) {
-  		temp = 1. / a_ref(k, k);
-  		i__1 = *m;
-  		for (i__ = 1; i__ <= i__1; ++i__) {
-  		    b_ref(i__, k) = temp * b_ref(i__, k);
+    for (k = *n; k >= 1; --k) {
+        if (nounit) {
+      temp = 1. / a_ref(k, k);
+      i__1 = *m;
+      for (i__ = 1; i__ <= i__1; ++i__) {
+          b_ref(i__, k) = temp * b_ref(i__, k);
 /* L270: */
-  		}
-  	    }
-  	    i__1 = k - 1;
-  	    for (j = 1; j <= i__1; ++j) {
-  		if (a_ref(j, k) != 0.) {
-  		    temp = a_ref(j, k);
-  		    i__2 = *m;
-  		    for (i__ = 1; i__ <= i__2; ++i__) {
-  			b_ref(i__, j) = b_ref(i__, j) - temp * b_ref(
-  				i__, k);
+      }
+        }
+        i__1 = k - 1;
+        for (j = 1; j <= i__1; ++j) {
+      if (a_ref(j, k) != 0.) {
+          temp = a_ref(j, k);
+          i__2 = *m;
+          for (i__ = 1; i__ <= i__2; ++i__) {
+        b_ref(i__, j) = b_ref(i__, j) - temp * b_ref(
+          i__, k);
 /* L280: */
-  		    }
-  		}
+          }
+      }
 /* L290: */
-  	    }
-  	    if (*alpha != 1.) {
-  		i__1 = *m;
-  		for (i__ = 1; i__ <= i__1; ++i__) {
-  		    b_ref(i__, k) = *alpha * b_ref(i__, k);
+        }
+        if (*alpha != 1.) {
+      i__1 = *m;
+      for (i__ = 1; i__ <= i__1; ++i__) {
+          b_ref(i__, k) = *alpha * b_ref(i__, k);
 /* L300: */
-  		}
-  	    }
+      }
+        }
 /* L310: */
-  	}
+    }
       } else {
-  	i__1 = *n;
-  	for (k = 1; k <= i__1; ++k) {
-  	    if (nounit) {
-  		temp = 1. / a_ref(k, k);
-  		i__2 = *m;
-  		for (i__ = 1; i__ <= i__2; ++i__) {
-  		    b_ref(i__, k) = temp * b_ref(i__, k);
+    i__1 = *n;
+    for (k = 1; k <= i__1; ++k) {
+        if (nounit) {
+      temp = 1. / a_ref(k, k);
+      i__2 = *m;
+      for (i__ = 1; i__ <= i__2; ++i__) {
+          b_ref(i__, k) = temp * b_ref(i__, k);
 /* L320: */
-  		}
-  	    }
-  	    i__2 = *n;
-  	    for (j = k + 1; j <= i__2; ++j) {
-  		if (a_ref(j, k) != 0.) {
-  		    temp = a_ref(j, k);
-  		    i__3 = *m;
-  		    for (i__ = 1; i__ <= i__3; ++i__) {
-  			b_ref(i__, j) = b_ref(i__, j) - temp * b_ref(
-  				i__, k);
+      }
+        }
+        i__2 = *n;
+        for (j = k + 1; j <= i__2; ++j) {
+      if (a_ref(j, k) != 0.) {
+          temp = a_ref(j, k);
+          i__3 = *m;
+          for (i__ = 1; i__ <= i__3; ++i__) {
+        b_ref(i__, j) = b_ref(i__, j) - temp * b_ref(
+          i__, k);
 /* L330: */
-  		    }
-  		}
+          }
+      }
 /* L340: */
-  	    }
-  	    if (*alpha != 1.) {
-  		i__2 = *m;
-  		for (i__ = 1; i__ <= i__2; ++i__) {
-  		    b_ref(i__, k) = *alpha * b_ref(i__, k);
+        }
+        if (*alpha != 1.) {
+      i__2 = *m;
+      for (i__ = 1; i__ <= i__2; ++i__) {
+          b_ref(i__, k) = *alpha * b_ref(i__, k);
 /* L350: */
-  		}
-  	    }
+      }
+        }
 /* L360: */
-  	}
+    }
       }
   }
     }
@@ -822,13 +822,13 @@
 /*           Adjust INFO and the pivot indices. */
 
       if (*info == 0 && iinfo > 0) {
-  	*info = iinfo + j - 1;
+    *info = iinfo + j - 1;
       }
 /* Computing MIN */
       i__4 = *m, i__5 = j + jb - 1;
       i__3 = min(i__4,i__5);
       for (i__ = j; i__ <= i__3; ++i__) {
-  	ipiv[i__] = j - 1 + ipiv[i__];
+    ipiv[i__] = j - 1 + ipiv[i__];
 /* L10: */
       }
 
@@ -842,26 +842,26 @@
 
 /*              Apply interchanges to columns J+JB:N. */
 
-  	i__3 = *n - j - jb + 1;
-  	i__4 = j + jb - 1;
-  	dlaswp_(&i__3, &a_ref(1, j + jb), lda, &j, &i__4, &ipiv[1], &
-  		c__1);
+    i__3 = *n - j - jb + 1;
+    i__4 = j + jb - 1;
+    dlaswp_(&i__3, &a_ref(1, j + jb), lda, &j, &i__4, &ipiv[1], &
+      c__1);
 
 /*              Compute block row of U. */
 
-  	i__3 = *n - j - jb + 1;
-  	dtrsm_("Left", "Lower", "No transpose", "Unit", &jb, &i__3, &
-  		c_b16, &a_ref(j, j), lda, &a_ref(j, j + jb), lda);
-  	if (j + jb <= *m) {
+    i__3 = *n - j - jb + 1;
+    dtrsm_("Left", "Lower", "No transpose", "Unit", &jb, &i__3, &
+      c_b16, &a_ref(j, j), lda, &a_ref(j, j + jb), lda);
+    if (j + jb <= *m) {
 
 /*                 Update trailing submatrix. */
 
-  	    i__3 = *m - j - jb + 1;
-  	    i__4 = *n - j - jb + 1;
-  	    dgemm_("No transpose", "No transpose", &i__3, &i__4, &jb,
-  		    &c_b19, &a_ref(j + jb, j), lda, &a_ref(j, j + jb),
-  		     lda, &c_b16, &a_ref(j + jb, j + jb), lda);
-  	}
+        i__3 = *m - j - jb + 1;
+        i__4 = *n - j - jb + 1;
+        dgemm_("No transpose", "No transpose", &i__3, &i__4, &jb,
+          &c_b19, &a_ref(j + jb, j), lda, &a_ref(j, j + jb),
+           lda, &c_b16, &a_ref(j + jb, j + jb), lda);
+    }
       }
 /* L20: */
   }
@@ -1098,21 +1098,21 @@
   if (*beta == 0.) {
       i__1 = *n;
       for (j = 1; j <= i__1; ++j) {
-  	i__2 = *m;
-  	for (i__ = 1; i__ <= i__2; ++i__) {
-  	    c___ref(i__, j) = 0.;
+    i__2 = *m;
+    for (i__ = 1; i__ <= i__2; ++i__) {
+        c___ref(i__, j) = 0.;
 /* L10: */
-  	}
+    }
 /* L20: */
       }
   } else {
       i__1 = *n;
       for (j = 1; j <= i__1; ++j) {
-  	i__2 = *m;
-  	for (i__ = 1; i__ <= i__2; ++i__) {
-  	    c___ref(i__, j) = *beta * c___ref(i__, j);
+    i__2 = *m;
+    for (i__ = 1; i__ <= i__2; ++i__) {
+        c___ref(i__, j) = *beta * c___ref(i__, j);
 /* L30: */
-  	}
+    }
 /* L40: */
       }
   }
@@ -1124,54 +1124,54 @@
 /*           Form  C := alpha*A*B + beta*C. */
       i__1 = *n;
       for (j = 1; j <= i__1; ++j) {
-  	if (*beta == 0.) {
-  	    i__2 = *m;
-  	    for (i__ = 1; i__ <= i__2; ++i__) {
-  		c___ref(i__, j) = 0.;
+    if (*beta == 0.) {
+        i__2 = *m;
+        for (i__ = 1; i__ <= i__2; ++i__) {
+      c___ref(i__, j) = 0.;
 /* L50: */
-  	    }
-  	} else if (*beta != 1.) {
-  	    i__2 = *m;
-  	    for (i__ = 1; i__ <= i__2; ++i__) {
-  		c___ref(i__, j) = *beta * c___ref(i__, j);
+        }
+    } else if (*beta != 1.) {
+        i__2 = *m;
+        for (i__ = 1; i__ <= i__2; ++i__) {
+      c___ref(i__, j) = *beta * c___ref(i__, j);
 /* L60: */
-  	    }
-  	}
-  	i__2 = *k;
-  	for (l = 1; l <= i__2; ++l) {
-  	    if (b_ref(l, j) != 0.) {
-  		temp = *alpha * b_ref(l, j);
-  		i__3 = *m;
-  		for (i__ = 1; i__ <= i__3; ++i__) {
-  		    c___ref(i__, j) = c___ref(i__, j) + temp * a_ref(
-  			    i__, l);
+        }
+    }
+    i__2 = *k;
+    for (l = 1; l <= i__2; ++l) {
+        if (b_ref(l, j) != 0.) {
+      temp = *alpha * b_ref(l, j);
+      i__3 = *m;
+      for (i__ = 1; i__ <= i__3; ++i__) {
+          c___ref(i__, j) = c___ref(i__, j) + temp * a_ref(
+            i__, l);
 /* L70: */
-  		}
-  	    }
+      }
+        }
 /* L80: */
-  	}
+    }
 /* L90: */
       }
   } else {
 /*           Form  C := alpha*A'*B + beta*C */
       i__1 = *n;
       for (j = 1; j <= i__1; ++j) {
-  	i__2 = *m;
-  	for (i__ = 1; i__ <= i__2; ++i__) {
-  	    temp = 0.;
-  	    i__3 = *k;
-  	    for (l = 1; l <= i__3; ++l) {
-  		temp += a_ref(l, i__) * b_ref(l, j);
+    i__2 = *m;
+    for (i__ = 1; i__ <= i__2; ++i__) {
+        temp = 0.;
+        i__3 = *k;
+        for (l = 1; l <= i__3; ++l) {
+      temp += a_ref(l, i__) * b_ref(l, j);
 /* L100: */
-  	    }
-  	    if (*beta == 0.) {
-  		c___ref(i__, j) = *alpha * temp;
-  	    } else {
-  		c___ref(i__, j) = *alpha * temp + *beta * c___ref(i__,
-  			 j);
-  	    }
+        }
+        if (*beta == 0.) {
+      c___ref(i__, j) = *alpha * temp;
+        } else {
+      c___ref(i__, j) = *alpha * temp + *beta * c___ref(i__,
+         j);
+        }
 /* L110: */
-  	}
+    }
 /* L120: */
       }
   }
@@ -1180,54 +1180,54 @@
 /*           Form  C := alpha*A*B' + beta*C */
       i__1 = *n;
       for (j = 1; j <= i__1; ++j) {
-  	if (*beta == 0.) {
-  	    i__2 = *m;
-  	    for (i__ = 1; i__ <= i__2; ++i__) {
-  		c___ref(i__, j) = 0.;
+    if (*beta == 0.) {
+        i__2 = *m;
+        for (i__ = 1; i__ <= i__2; ++i__) {
+      c___ref(i__, j) = 0.;
 /* L130: */
-  	    }
-  	} else if (*beta != 1.) {
-  	    i__2 = *m;
-  	    for (i__ = 1; i__ <= i__2; ++i__) {
-  		c___ref(i__, j) = *beta * c___ref(i__, j);
+        }
+    } else if (*beta != 1.) {
+        i__2 = *m;
+        for (i__ = 1; i__ <= i__2; ++i__) {
+      c___ref(i__, j) = *beta * c___ref(i__, j);
 /* L140: */
-  	    }
-  	}
-  	i__2 = *k;
-  	for (l = 1; l <= i__2; ++l) {
-  	    if (b_ref(j, l) != 0.) {
-  		temp = *alpha * b_ref(j, l);
-  		i__3 = *m;
-  		for (i__ = 1; i__ <= i__3; ++i__) {
-  		    c___ref(i__, j) = c___ref(i__, j) + temp * a_ref(
-  			    i__, l);
+        }
+    }
+    i__2 = *k;
+    for (l = 1; l <= i__2; ++l) {
+        if (b_ref(j, l) != 0.) {
+      temp = *alpha * b_ref(j, l);
+      i__3 = *m;
+      for (i__ = 1; i__ <= i__3; ++i__) {
+          c___ref(i__, j) = c___ref(i__, j) + temp * a_ref(
+            i__, l);
 /* L150: */
-  		}
-  	    }
+      }
+        }
 /* L160: */
-  	}
+    }
 /* L170: */
       }
   } else {
 /*           Form  C := alpha*A'*B' + beta*C */
       i__1 = *n;
       for (j = 1; j <= i__1; ++j) {
-  	i__2 = *m;
-  	for (i__ = 1; i__ <= i__2; ++i__) {
-  	    temp = 0.;
-  	    i__3 = *k;
-  	    for (l = 1; l <= i__3; ++l) {
-  		temp += a_ref(l, i__) * b_ref(j, l);
+    i__2 = *m;
+    for (i__ = 1; i__ <= i__2; ++i__) {
+        temp = 0.;
+        i__3 = *k;
+        for (l = 1; l <= i__3; ++l) {
+      temp += a_ref(l, i__) * b_ref(j, l);
 /* L180: */
-  	    }
-  	    if (*beta == 0.) {
-  		c___ref(i__, j) = *alpha * temp;
-  	    } else {
-  		c___ref(i__, j) = *alpha * temp + *beta * c___ref(i__,
-  			 j);
-  	    }
+        }
+        if (*beta == 0.) {
+      c___ref(i__, j) = *alpha * temp;
+        } else {
+      c___ref(i__, j) = *alpha * temp + *beta * c___ref(i__,
+         j);
+        }
 /* L190: */
-  	}
+    }
 /* L200: */
       }
   }
@@ -1332,18 +1332,18 @@
       i__2 = i2;
       i__3 = inc;
       for (i__ = i1; i__3 < 0 ? i__ >= i__2 : i__ <= i__2; i__ += i__3)
-  	    {
-  	ip = ipiv[ix];
-  	if (ip != i__) {
-  	    i__4 = j + 31;
-  	    for (k = j; k <= i__4; ++k) {
-  		temp = a_ref(i__, k);
-  		a_ref(i__, k) = a_ref(ip, k);
-  		a_ref(ip, k) = temp;
+        {
+    ip = ipiv[ix];
+    if (ip != i__) {
+        i__4 = j + 31;
+        for (k = j; k <= i__4; ++k) {
+      temp = a_ref(i__, k);
+      a_ref(i__, k) = a_ref(ip, k);
+      a_ref(ip, k) = temp;
 /* L10: */
-  	    }
-  	}
-  	ix += *incx;
+        }
+    }
+    ix += *incx;
 /* L20: */
       }
 /* L30: */
@@ -1357,13 +1357,13 @@
   for (i__ = i1; i__3 < 0 ? i__ >= i__1 : i__ <= i__1; i__ += i__3) {
       ip = ipiv[ix];
       if (ip != i__) {
-  	i__2 = *n;
-  	for (k = n32; k <= i__2; ++k) {
-  	    temp = a_ref(i__, k);
-  	    a_ref(i__, k) = a_ref(ip, k);
-  	    a_ref(ip, k) = temp;
+    i__2 = *n;
+    for (k = n32; k <= i__2; ++k) {
+        temp = a_ref(i__, k);
+        a_ref(i__, k) = a_ref(ip, k);
+        a_ref(ip, k) = temp;
 /* L40: */
-  	}
+    }
       }
       ix += *incx;
 /* L50: */
@@ -1448,11 +1448,11 @@ r
           upper case 'Z'. */
 
   if ((inta >= 129 && inta <= 137) || (inta >= 145 && inta <= 153) || (inta
-  	>= 162 && inta <= 169)) {
+    >= 162 && inta <= 169)) {
       inta += 64;
   }
   if ((intb >= 129 && intb <= 137) || (intb >= 145 && intb <= 153) || (intb
-  	>= 162 && intb <= 169)) {
+    >= 162 && intb <= 169)) {
       intb += 64;
   }
 
@@ -1635,10 +1635,10 @@ L100:
   if (ic >= 97 && ic <= 122) {
       *(unsigned char *)subnam = (char) (ic - 32);
       for (i__ = 2; i__ <= 6; ++i__) {
-  	ic = *(unsigned char *)&subnam[i__ - 1];
-  	if (ic >= 97 && ic <= 122) {
-  	    *(unsigned char *)&subnam[i__ - 1] = (char) (ic - 32);
-  	}
+    ic = *(unsigned char *)&subnam[i__ - 1];
+    if (ic >= 97 && ic <= 122) {
+        *(unsigned char *)&subnam[i__ - 1] = (char) (ic - 32);
+    }
 /* L10: */
       }
   }
@@ -1648,14 +1648,14 @@ L100:
 /*        EBCDIC character set */
 
   if ((ic >= 129 && ic <= 137) || (ic >= 145 && ic <= 153) || (ic >= 162 &&
-  	ic <= 169)) {
+    ic <= 169)) {
       *(unsigned char *)subnam = (char) (ic + 64);
       for (i__ = 2; i__ <= 6; ++i__) {
-  	ic = *(unsigned char *)&subnam[i__ - 1];
-  	if ((ic >= 129 && ic <= 137) || (ic >= 145 && ic <= 153) || (ic >=
-  		162 && ic <= 169)) {
-  	    *(unsigned char *)&subnam[i__ - 1] = (char) (ic + 64);
-  	}
+    ic = *(unsigned char *)&subnam[i__ - 1];
+    if ((ic >= 129 && ic <= 137) || (ic >= 145 && ic <= 153) || (ic >=
+      162 && ic <= 169)) {
+        *(unsigned char *)&subnam[i__ - 1] = (char) (ic + 64);
+    }
 /* L20: */
       }
   }
@@ -1667,10 +1667,10 @@ L100:
   if (ic >= 225 && ic <= 250) {
       *(unsigned char *)subnam = (char) (ic - 32);
       for (i__ = 2; i__ <= 6; ++i__) {
-  	ic = *(unsigned char *)&subnam[i__ - 1];
-  	if (ic >= 225 && ic <= 250) {
-  	    *(unsigned char *)&subnam[i__ - 1] = (char) (ic - 32);
-  	}
+    ic = *(unsigned char *)&subnam[i__ - 1];
+    if (ic >= 225 && ic <= 250) {
+        *(unsigned char *)&subnam[i__ - 1] = (char) (ic - 32);
+    }
 /* L30: */
       }
   }
@@ -1705,52 +1705,52 @@ L110:
     if (s_cmp(c2, "GE", (ftnlen)2, (ftnlen)2) == 0) {
   if (s_cmp(c3, "TRF", (ftnlen)3, (ftnlen)3) == 0) {
       if (sname) {
-  	nb = 64;
+    nb = 64;
       } else {
-  	nb = 64;
+    nb = 64;
       }
   } else if (s_cmp(c3, "QRF", (ftnlen)3, (ftnlen)3) == 0 || s_cmp(c3,
-  	"RQF", (ftnlen)3, (ftnlen)3) == 0 || s_cmp(c3, "LQF", (ftnlen)
-  	3, (ftnlen)3) == 0 || s_cmp(c3, "QLF", (ftnlen)3, (ftnlen)3)
-  	== 0) {
+    "RQF", (ftnlen)3, (ftnlen)3) == 0 || s_cmp(c3, "LQF", (ftnlen)
+    3, (ftnlen)3) == 0 || s_cmp(c3, "QLF", (ftnlen)3, (ftnlen)3)
+    == 0) {
       if (sname) {
-  	nb = 32;
+    nb = 32;
       } else {
-  	nb = 32;
+    nb = 32;
       }
   } else if (s_cmp(c3, "HRD", (ftnlen)3, (ftnlen)3) == 0) {
       if (sname) {
-  	nb = 32;
+    nb = 32;
       } else {
-  	nb = 32;
+    nb = 32;
       }
   } else if (s_cmp(c3, "BRD", (ftnlen)3, (ftnlen)3) == 0) {
       if (sname) {
-  	nb = 32;
+    nb = 32;
       } else {
-  	nb = 32;
+    nb = 32;
       }
   } else if (s_cmp(c3, "TRI", (ftnlen)3, (ftnlen)3) == 0) {
       if (sname) {
-  	nb = 64;
+    nb = 64;
       } else {
-  	nb = 64;
+    nb = 64;
       }
   }
     } else if (s_cmp(c2, "PO", (ftnlen)2, (ftnlen)2) == 0) {
   if (s_cmp(c3, "TRF", (ftnlen)3, (ftnlen)3) == 0) {
       if (sname) {
-  	nb = 64;
+    nb = 64;
       } else {
-  	nb = 64;
+    nb = 64;
       }
   }
     } else if (s_cmp(c2, "SY", (ftnlen)2, (ftnlen)2) == 0) {
   if (s_cmp(c3, "TRF", (ftnlen)3, (ftnlen)3) == 0) {
       if (sname) {
-  	nb = 64;
+    nb = 64;
       } else {
-  	nb = 64;
+    nb = 64;
       }
   } else if (sname && s_cmp(c3, "TRD", (ftnlen)3, (ftnlen)3) == 0) {
       nb = 32;
@@ -1768,89 +1768,89 @@ L110:
     } else if (sname && s_cmp(c2, "OR", (ftnlen)2, (ftnlen)2) == 0) {
   if (*(unsigned char *)c3 == 'G') {
       if (s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ",
-  	    (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "LQ", (ftnlen)2, (
-  	    ftnlen)2) == 0 || s_cmp(c4, "QL", (ftnlen)2, (ftnlen)2) ==
-  	     0 || s_cmp(c4, "HR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(
-  	    c4, "TR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "BR", (
-  	    ftnlen)2, (ftnlen)2) == 0) {
-  	nb = 32;
+        (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "LQ", (ftnlen)2, (
+        ftnlen)2) == 0 || s_cmp(c4, "QL", (ftnlen)2, (ftnlen)2) ==
+         0 || s_cmp(c4, "HR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(
+        c4, "TR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "BR", (
+        ftnlen)2, (ftnlen)2) == 0) {
+    nb = 32;
       }
   } else if (*(unsigned char *)c3 == 'M') {
       if (s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ",
-  	    (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "LQ", (ftnlen)2, (
-  	    ftnlen)2) == 0 || s_cmp(c4, "QL", (ftnlen)2, (ftnlen)2) ==
-  	     0 || s_cmp(c4, "HR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(
-  	    c4, "TR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "BR", (
-  	    ftnlen)2, (ftnlen)2) == 0) {
-  	nb = 32;
+        (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "LQ", (ftnlen)2, (
+        ftnlen)2) == 0 || s_cmp(c4, "QL", (ftnlen)2, (ftnlen)2) ==
+         0 || s_cmp(c4, "HR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(
+        c4, "TR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "BR", (
+        ftnlen)2, (ftnlen)2) == 0) {
+    nb = 32;
       }
   }
     } else if (cname && s_cmp(c2, "UN", (ftnlen)2, (ftnlen)2) == 0) {
   if (*(unsigned char *)c3 == 'G') {
       if (s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ",
-  	    (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "LQ", (ftnlen)2, (
-  	    ftnlen)2) == 0 || s_cmp(c4, "QL", (ftnlen)2, (ftnlen)2) ==
-  	     0 || s_cmp(c4, "HR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(
-  	    c4, "TR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "BR", (
-  	    ftnlen)2, (ftnlen)2) == 0) {
-  	nb = 32;
+        (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "LQ", (ftnlen)2, (
+        ftnlen)2) == 0 || s_cmp(c4, "QL", (ftnlen)2, (ftnlen)2) ==
+         0 || s_cmp(c4, "HR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(
+        c4, "TR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "BR", (
+        ftnlen)2, (ftnlen)2) == 0) {
+    nb = 32;
       }
   } else if (*(unsigned char *)c3 == 'M') {
       if (s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ",
-  	    (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "LQ", (ftnlen)2, (
-  	    ftnlen)2) == 0 || s_cmp(c4, "QL", (ftnlen)2, (ftnlen)2) ==
-  	     0 || s_cmp(c4, "HR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(
-  	    c4, "TR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "BR", (
-  	    ftnlen)2, (ftnlen)2) == 0) {
-  	nb = 32;
+        (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "LQ", (ftnlen)2, (
+        ftnlen)2) == 0 || s_cmp(c4, "QL", (ftnlen)2, (ftnlen)2) ==
+         0 || s_cmp(c4, "HR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(
+        c4, "TR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "BR", (
+        ftnlen)2, (ftnlen)2) == 0) {
+    nb = 32;
       }
   }
     } else if (s_cmp(c2, "GB", (ftnlen)2, (ftnlen)2) == 0) {
   if (s_cmp(c3, "TRF", (ftnlen)3, (ftnlen)3) == 0) {
       if (sname) {
-  	if (*n4 <= 64) {
-  	    nb = 1;
-  	} else {
-  	    nb = 32;
-  	}
+    if (*n4 <= 64) {
+        nb = 1;
+    } else {
+        nb = 32;
+    }
       } else {
-  	if (*n4 <= 64) {
-  	    nb = 1;
-  	} else {
-  	    nb = 32;
-  	}
+    if (*n4 <= 64) {
+        nb = 1;
+    } else {
+        nb = 32;
+    }
       }
   }
     } else if (s_cmp(c2, "PB", (ftnlen)2, (ftnlen)2) == 0) {
   if (s_cmp(c3, "TRF", (ftnlen)3, (ftnlen)3) == 0) {
       if (sname) {
-  	if (*n2 <= 64) {
-  	    nb = 1;
-  	} else {
-  	    nb = 32;
-  	}
+    if (*n2 <= 64) {
+        nb = 1;
+    } else {
+        nb = 32;
+    }
       } else {
-  	if (*n2 <= 64) {
-  	    nb = 1;
-  	} else {
-  	    nb = 32;
-  	}
+    if (*n2 <= 64) {
+        nb = 1;
+    } else {
+        nb = 32;
+    }
       }
   }
     } else if (s_cmp(c2, "TR", (ftnlen)2, (ftnlen)2) == 0) {
   if (s_cmp(c3, "TRI", (ftnlen)3, (ftnlen)3) == 0) {
       if (sname) {
-  	nb = 64;
+    nb = 64;
       } else {
-  	nb = 64;
+    nb = 64;
       }
   }
     } else if (s_cmp(c2, "LA", (ftnlen)2, (ftnlen)2) == 0) {
   if (s_cmp(c3, "UUM", (ftnlen)3, (ftnlen)3) == 0) {
       if (sname) {
-  	nb = 64;
+    nb = 64;
       } else {
-  	nb = 64;
+    nb = 64;
       }
   }
     } else if (sname && s_cmp(c2, "ST", (ftnlen)2, (ftnlen)2) == 0) {
@@ -1868,39 +1868,39 @@ L200:
     nbmin = 2;
     if (s_cmp(c2, "GE", (ftnlen)2, (ftnlen)2) == 0) {
   if (s_cmp(c3, "QRF", (ftnlen)3, (ftnlen)3) == 0 || s_cmp(c3, "RQF", (
-  	ftnlen)3, (ftnlen)3) == 0 || s_cmp(c3, "LQF", (ftnlen)3, (
-  	ftnlen)3) == 0 || s_cmp(c3, "QLF", (ftnlen)3, (ftnlen)3) == 0)
-  	 {
+    ftnlen)3, (ftnlen)3) == 0 || s_cmp(c3, "LQF", (ftnlen)3, (
+    ftnlen)3) == 0 || s_cmp(c3, "QLF", (ftnlen)3, (ftnlen)3) == 0)
+     {
       if (sname) {
-  	nbmin = 2;
+    nbmin = 2;
       } else {
-  	nbmin = 2;
+    nbmin = 2;
       }
   } else if (s_cmp(c3, "HRD", (ftnlen)3, (ftnlen)3) == 0) {
       if (sname) {
-  	nbmin = 2;
+    nbmin = 2;
       } else {
-  	nbmin = 2;
+    nbmin = 2;
       }
   } else if (s_cmp(c3, "BRD", (ftnlen)3, (ftnlen)3) == 0) {
       if (sname) {
-  	nbmin = 2;
+    nbmin = 2;
       } else {
-  	nbmin = 2;
+    nbmin = 2;
       }
   } else if (s_cmp(c3, "TRI", (ftnlen)3, (ftnlen)3) == 0) {
       if (sname) {
-  	nbmin = 2;
+    nbmin = 2;
       } else {
-  	nbmin = 2;
+    nbmin = 2;
       }
   }
     } else if (s_cmp(c2, "SY", (ftnlen)2, (ftnlen)2) == 0) {
   if (s_cmp(c3, "TRF", (ftnlen)3, (ftnlen)3) == 0) {
       if (sname) {
-  	nbmin = 8;
+    nbmin = 8;
       } else {
-  	nbmin = 8;
+    nbmin = 8;
       }
   } else if (sname && s_cmp(c3, "TRD", (ftnlen)3, (ftnlen)3) == 0) {
       nbmin = 2;
@@ -1912,41 +1912,41 @@ L200:
     } else if (sname && s_cmp(c2, "OR", (ftnlen)2, (ftnlen)2) == 0) {
   if (*(unsigned char *)c3 == 'G') {
       if (s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ",
-  	    (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "LQ", (ftnlen)2, (
-  	    ftnlen)2) == 0 || s_cmp(c4, "QL", (ftnlen)2, (ftnlen)2) ==
-  	     0 || s_cmp(c4, "HR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(
-  	    c4, "TR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "BR", (
-  	    ftnlen)2, (ftnlen)2) == 0) {
-  	nbmin = 2;
+        (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "LQ", (ftnlen)2, (
+        ftnlen)2) == 0 || s_cmp(c4, "QL", (ftnlen)2, (ftnlen)2) ==
+         0 || s_cmp(c4, "HR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(
+        c4, "TR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "BR", (
+        ftnlen)2, (ftnlen)2) == 0) {
+    nbmin = 2;
       }
   } else if (*(unsigned char *)c3 == 'M') {
       if (s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ",
-  	    (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "LQ", (ftnlen)2, (
-  	    ftnlen)2) == 0 || s_cmp(c4, "QL", (ftnlen)2, (ftnlen)2) ==
-  	     0 || s_cmp(c4, "HR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(
-  	    c4, "TR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "BR", (
-  	    ftnlen)2, (ftnlen)2) == 0) {
-  	nbmin = 2;
+        (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "LQ", (ftnlen)2, (
+        ftnlen)2) == 0 || s_cmp(c4, "QL", (ftnlen)2, (ftnlen)2) ==
+         0 || s_cmp(c4, "HR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(
+        c4, "TR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "BR", (
+        ftnlen)2, (ftnlen)2) == 0) {
+    nbmin = 2;
       }
   }
     } else if (cname && s_cmp(c2, "UN", (ftnlen)2, (ftnlen)2) == 0) {
   if (*(unsigned char *)c3 == 'G') {
       if (s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ",
-  	    (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "LQ", (ftnlen)2, (
-  	    ftnlen)2) == 0 || s_cmp(c4, "QL", (ftnlen)2, (ftnlen)2) ==
-  	     0 || s_cmp(c4, "HR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(
-  	    c4, "TR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "BR", (
-  	    ftnlen)2, (ftnlen)2) == 0) {
-  	nbmin = 2;
+        (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "LQ", (ftnlen)2, (
+        ftnlen)2) == 0 || s_cmp(c4, "QL", (ftnlen)2, (ftnlen)2) ==
+         0 || s_cmp(c4, "HR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(
+        c4, "TR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "BR", (
+        ftnlen)2, (ftnlen)2) == 0) {
+    nbmin = 2;
       }
   } else if (*(unsigned char *)c3 == 'M') {
       if (s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ",
-  	    (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "LQ", (ftnlen)2, (
-  	    ftnlen)2) == 0 || s_cmp(c4, "QL", (ftnlen)2, (ftnlen)2) ==
-  	     0 || s_cmp(c4, "HR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(
-  	    c4, "TR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "BR", (
-  	    ftnlen)2, (ftnlen)2) == 0) {
-  	nbmin = 2;
+        (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "LQ", (ftnlen)2, (
+        ftnlen)2) == 0 || s_cmp(c4, "QL", (ftnlen)2, (ftnlen)2) ==
+         0 || s_cmp(c4, "HR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(
+        c4, "TR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "BR", (
+        ftnlen)2, (ftnlen)2) == 0) {
+    nbmin = 2;
       }
   }
     }
@@ -1960,25 +1960,25 @@ L300:
     nx = 0;
     if (s_cmp(c2, "GE", (ftnlen)2, (ftnlen)2) == 0) {
   if (s_cmp(c3, "QRF", (ftnlen)3, (ftnlen)3) == 0 || s_cmp(c3, "RQF", (
-  	ftnlen)3, (ftnlen)3) == 0 || s_cmp(c3, "LQF", (ftnlen)3, (
-  	ftnlen)3) == 0 || s_cmp(c3, "QLF", (ftnlen)3, (ftnlen)3) == 0)
-  	 {
+    ftnlen)3, (ftnlen)3) == 0 || s_cmp(c3, "LQF", (ftnlen)3, (
+    ftnlen)3) == 0 || s_cmp(c3, "QLF", (ftnlen)3, (ftnlen)3) == 0)
+     {
       if (sname) {
-  	nx = 128;
+    nx = 128;
       } else {
-  	nx = 128;
+    nx = 128;
       }
   } else if (s_cmp(c3, "HRD", (ftnlen)3, (ftnlen)3) == 0) {
       if (sname) {
-  	nx = 128;
+    nx = 128;
       } else {
-  	nx = 128;
+    nx = 128;
       }
   } else if (s_cmp(c3, "BRD", (ftnlen)3, (ftnlen)3) == 0) {
       if (sname) {
-  	nx = 128;
+    nx = 128;
       } else {
-  	nx = 128;
+    nx = 128;
       }
   }
     } else if (s_cmp(c2, "SY", (ftnlen)2, (ftnlen)2) == 0) {
@@ -1992,23 +1992,23 @@ L300:
     } else if (sname && s_cmp(c2, "OR", (ftnlen)2, (ftnlen)2) == 0) {
   if (*(unsigned char *)c3 == 'G') {
       if (s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ",
-  	    (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "LQ", (ftnlen)2, (
-  	    ftnlen)2) == 0 || s_cmp(c4, "QL", (ftnlen)2, (ftnlen)2) ==
-  	     0 || s_cmp(c4, "HR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(
-  	    c4, "TR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "BR", (
-  	    ftnlen)2, (ftnlen)2) == 0) {
-  	nx = 128;
+        (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "LQ", (ftnlen)2, (
+        ftnlen)2) == 0 || s_cmp(c4, "QL", (ftnlen)2, (ftnlen)2) ==
+         0 || s_cmp(c4, "HR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(
+        c4, "TR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "BR", (
+        ftnlen)2, (ftnlen)2) == 0) {
+    nx = 128;
       }
   }
     } else if (cname && s_cmp(c2, "UN", (ftnlen)2, (ftnlen)2) == 0) {
   if (*(unsigned char *)c3 == 'G') {
       if (s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ",
-  	    (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "LQ", (ftnlen)2, (
-  	    ftnlen)2) == 0 || s_cmp(c4, "QL", (ftnlen)2, (ftnlen)2) ==
-  	     0 || s_cmp(c4, "HR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(
-  	    c4, "TR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "BR", (
-  	    ftnlen)2, (ftnlen)2) == 0) {
-  	nx = 128;
+        (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "LQ", (ftnlen)2, (
+        ftnlen)2) == 0 || s_cmp(c4, "QL", (ftnlen)2, (ftnlen)2) ==
+         0 || s_cmp(c4, "HR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(
+        c4, "TR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "BR", (
+        ftnlen)2, (ftnlen)2) == 0) {
+    nx = 128;
       }
   }
     }
@@ -2350,15 +2350,15 @@ integer ieeeck_(integer *ispec, real *zero, real *one)
 /*           Apply the interchange to columns 1:N. */
 
       if (jp != j) {
-  	dswap_(n, &a_ref(j, 1), lda, &a_ref(jp, 1), lda);
+    dswap_(n, &a_ref(j, 1), lda, &a_ref(jp, 1), lda);
       }
 
 /*           Compute elements J+1:M of J-th column. */
 
       if (j < *m) {
-  	i__2 = *m - j;
-  	d__1 = 1. / a_ref(j, j);
-  	dscal_(&i__2, &d__1, &a_ref(j + 1, j), &c__1);
+    i__2 = *m - j;
+    d__1 = 1. / a_ref(j, j);
+    dscal_(&i__2, &d__1, &a_ref(j + 1, j), &c__1);
       }
 
   } else if (*info == 0) {
@@ -2373,7 +2373,7 @@ integer ieeeck_(integer *ispec, real *zero, real *one)
       i__2 = *m - j;
       i__3 = *n - j;
       dger_(&i__2, &i__3, &c_b6, &a_ref(j + 1, j), &c__1, &a_ref(j, j +
-  	    1), lda, &a_ref(j + 1, j + 1), lda);
+        1), lda, &a_ref(j + 1, j + 1), lda);
   }
 /* L10: */
     }
@@ -2489,12 +2489,12 @@ integer ieeeck_(integer *ispec, real *zero, real *one)
   i__1 = *n;
   for (j = 1; j <= i__1; ++j) {
       if (y[jy] != 0.) {
-  	temp = *alpha * y[jy];
-  	i__2 = *m;
-  	for (i__ = 1; i__ <= i__2; ++i__) {
-  	    a_ref(i__, j) = a_ref(i__, j) + x[i__] * temp;
+    temp = *alpha * y[jy];
+    i__2 = *m;
+    for (i__ = 1; i__ <= i__2; ++i__) {
+        a_ref(i__, j) = a_ref(i__, j) + x[i__] * temp;
 /* L10: */
-  	}
+    }
       }
       jy += *incy;
 /* L20: */
@@ -2508,14 +2508,14 @@ integer ieeeck_(integer *ispec, real *zero, real *one)
   i__1 = *n;
   for (j = 1; j <= i__1; ++j) {
       if (y[jy] != 0.) {
-  	temp = *alpha * y[jy];
-  	ix = kx;
-  	i__2 = *m;
-  	for (i__ = 1; i__ <= i__2; ++i__) {
-  	    a_ref(i__, j) = a_ref(i__, j) + x[ix] * temp;
-  	    ix += *incx;
+    temp = *alpha * y[jy];
+    ix = kx;
+    i__2 = *m;
+    for (i__ = 1; i__ <= i__2; ++i__) {
+        a_ref(i__, j) = a_ref(i__, j) + x[ix] * temp;
+        ix += *incx;
 /* L30: */
-  	}
+    }
       }
       jy += *incy;
 /* L40: */

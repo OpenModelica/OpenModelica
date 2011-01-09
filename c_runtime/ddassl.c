@@ -4,10 +4,10 @@
   on Linux or Unix systems, link with .../path/to/libf2c.a -lm
   or, if you install libf2c.a in a standard place, with -lf2c -lm
   -- in that order, at the end of the command line, as in
-  	cc *.o -lf2c -lm
+    cc *.o -lf2c -lm
   Source for libf2c is in /netlib/f2c/libf2c.zip, e.g.,
 
-  	http://www.netlib.org/f2c/libf2c.zip
+    http://www.netlib.org/f2c/libf2c.zip
 */
 
 #include "f2c.h"
@@ -2157,8 +2157,8 @@ L750:
     *idid = -33;
     if (info[1] == -1) {
   xermsg_("SLATEC", "DDASSL", "REPEATED OCCURRENCES OF ILLEGAL INPUT$$"
-  	"RUN TERMINATED. APPARENT INFINITE LOOP", &c_n999, &c__2, (
-  	ftnlen)6, (ftnlen)6, (ftnlen)77);
+    "RUN TERMINATED. APPARENT INFINITE LOOP", &c_n999, &c__2, (
+    ftnlen)6, (ftnlen)6, (ftnlen)77);
     }
 
     info[1] = -1;
@@ -3754,8 +3754,8 @@ L200:
     for (i__ = 1; i__ <= i__1; ++i__) {
 /* Computing MAX */
   d__4 = (d__1 = y[i__], abs(d__1)), d__5 = (d__2 = *h__ * yprime[i__],
-  	abs(d__2)), d__4 = max(d__4,d__5), d__5 = (d__3 = wt[i__],
-  	abs(d__3));
+    abs(d__2)), d__4 = max(d__4,d__5), d__5 = (d__3 = wt[i__],
+    abs(d__3));
   del = squr * max(d__4,d__5);
   d__1 = *h__ * yprime[i__];
   del = d_sign(&del, &d__1);
@@ -3826,8 +3826,8 @@ L500:
       wm[ipsave + k] = yprime[n];
 /* Computing MAX */
       d__4 = (d__1 = y[n], abs(d__1)), d__5 = (d__2 = *h__ * yprime[n],
-  	    abs(d__2)), d__4 = max(d__4,d__5), d__5 = (d__3 = wt[n],
-  	    abs(d__3));
+        abs(d__2)), d__4 = max(d__4,d__5), d__5 = (d__3 = wt[n],
+        abs(d__3));
       del = squr * max(d__4,d__5);
       d__1 = *h__ * yprime[n];
       del = d_sign(&del, &d__1);
@@ -3848,8 +3848,8 @@ L500:
       yprime[n] = wm[ipsave + k];
 /* Computing MAX */
       d__4 = (d__1 = y[n], abs(d__1)), d__5 = (d__2 = *h__ * yprime[n],
-  	    abs(d__2)), d__4 = max(d__4,d__5), d__5 = (d__3 = wt[n],
-  	    abs(d__3));
+        abs(d__2)), d__4 = max(d__4,d__5), d__5 = (d__3 = wt[n],
+        abs(d__3));
       del = squr * max(d__4,d__5);
       d__1 = *h__ * yprime[n];
       del = d_sign(&del, &d__1);
@@ -3865,7 +3865,7 @@ L500:
       i__4 = i2;
       for (i__ = i1; i__ <= i__4; ++i__) {
 /* L520: */
-  	wm[ii + i__] = (e[i__] - delta[i__]) * delinv;
+    wm[ii + i__] = (e[i__] - delta[i__]) * delinv;
       }
 /* L530: */
   }
@@ -4173,8 +4173,8 @@ L400:
     if (*nerr < -9999999 || *nerr > 99999999 || *nerr == 0 || *level < -1 || *
       level > 2) {
   xerprn_(" ***", &c_n1, "FATAL ERROR IN...$$ XERMSG -- INVALID ERROR "
-  	"NUMBER OR LEVEL$$ JOB ABORT DUE TO FATAL ERROR.", &c__72, (
-  	ftnlen)4, (ftnlen)91);
+    "NUMBER OR LEVEL$$ JOB ABORT DUE TO FATAL ERROR.", &c__72, (
+    ftnlen)4, (ftnlen)91);
   xerhlt_(" ***XERMSG -- INVALID INPUT", (ftnlen)27);
   return 0;
     }
@@ -4232,7 +4232,7 @@ L400:
       ltemp = 20;
   } else if (*level == 1) {
       s_copy(temp, "POTENTIALLY RECOVERABLE ERROR,", (ftnlen)30, (
-  	    ftnlen)30);
+        ftnlen)30);
       ltemp = 30;
   } else {
       s_copy(temp, "FATAL ERROR,", (ftnlen)12, (ftnlen)12);
@@ -4244,12 +4244,12 @@ L400:
   if (mkntrl == 2 && *level >= 1 || mkntrl == 1 && *level == 2) {
       i__1 = ltemp;
       s_copy(temp + i__1, " PROGRAM ABORTED.", ltemp + 17 - i__1, (
-  	    ftnlen)17);
+        ftnlen)17);
       ltemp += 17;
   } else {
       i__1 = ltemp;
       s_copy(temp + i__1, " PROGRAM CONTINUES.", ltemp + 19 - i__1, (
-  	    ftnlen)19);
+        ftnlen)19);
       ltemp += 19;
   }
 
@@ -4268,7 +4268,7 @@ L400:
   e_wsfi();
   for (i__ = 16; i__ <= 22; ++i__) {
       if (*(unsigned char *)&temp[i__ - 1] != ' ') {
-  	goto L20;
+    goto L20;
       }
 /* L10: */
   }
@@ -4286,7 +4286,7 @@ L20:
     if (lkntrl != 0) {
   xerprn_(" *  ", &c_n1, " ", &c__72, (ftnlen)4, (ftnlen)1);
   xerprn_(" ***", &c_n1, "END OF MESSAGE", &c__72, (ftnlen)4, (ftnlen)
-  	14);
+    14);
   xerprn_("    ", &c__0, " ", &c__72, (ftnlen)4, (ftnlen)1);
     }
 
@@ -4305,10 +4305,10 @@ L20:
     if (lkntrl > 0) {
   if (*level == 1) {
       xerprn_(" ***", &c_n1, "JOB ABORT DUE TO UNRECOVERED ERROR.", &
-  	    c__72, (ftnlen)4, (ftnlen)35);
+        c__72, (ftnlen)4, (ftnlen)35);
   } else {
       xerprn_(" ***", &c_n1, "JOB ABORT DUE TO FATAL ERROR.", &c__72, (
-  	    ftnlen)4, (ftnlen)29);
+        ftnlen)4, (ftnlen)29);
   }
   xerhlt_(" ", (ftnlen)1);
     }
@@ -4573,20 +4573,20 @@ L50:
   lpiece = min(i__1,i__2);
   if (lpiece < lenmsg + 1 - nextc) {
       for (i__ = lpiece + 1; i__ >= 2; --i__) {
-  	i__1 = nextc + i__ - 2;
-  	if (s_cmp(messg + i__1, " ", nextc + i__ - 1 - i__1, (ftnlen)
-  		1) == 0) {
-  	    lpiece = i__ - 1;
-  	    idelta = 1;
-  	    goto L54;
-  	}
+    i__1 = nextc + i__ - 2;
+    if (s_cmp(messg + i__1, " ", nextc + i__ - 1 - i__1, (ftnlen)
+      1) == 0) {
+        lpiece = i__ - 1;
+        idelta = 1;
+        goto L54;
+    }
 /* L52: */
       }
   }
 L54:
   i__1 = lpref;
   s_copy(cbuff + i__1, messg + (nextc - 1), lpref + lpiece - i__1,
-  	nextc + lpiece - 1 - (nextc - 1));
+    nextc + lpiece - 1 - (nextc - 1));
   nextc = nextc + lpiece + idelta;
     } else if (lpiece == 1) {
 
@@ -4604,17 +4604,17 @@ L54:
   for (i__ = lpiece + 1; i__ >= 2; --i__) {
       i__1 = nextc + i__ - 2;
       if (s_cmp(messg + i__1, " ", nextc + i__ - 1 - i__1, (ftnlen)1) ==
-  	     0) {
-  	lpiece = i__ - 1;
-  	idelta = 1;
-  	goto L58;
+         0) {
+    lpiece = i__ - 1;
+    idelta = 1;
+    goto L58;
       }
 /* L56: */
   }
 L58:
   i__1 = lpref;
   s_copy(cbuff + i__1, messg + (nextc - 1), lpref + lpiece - i__1,
-  	nextc + lpiece - 1 - (nextc - 1));
+    nextc + lpiece - 1 - (nextc - 1));
   nextc = nextc + lpiece + idelta;
     } else {
 
@@ -4624,7 +4624,7 @@ L58:
   --lpiece;
   i__1 = lpref;
   s_copy(cbuff + i__1, messg + (nextc - 1), lpref + lpiece - i__1,
-  	nextc + lpiece - 1 - (nextc - 1));
+    nextc + lpiece - 1 - (nextc - 1));
   nextc = nextc + lpiece + 2;
     }
 
@@ -4803,7 +4803,7 @@ L58:
   i__1[1] = 8, a__1[1] = xern1;
   s_cat(ch__1, a__1, i__1, &c__2, (ftnlen)37);
   xermsg_("SLATEC", "XSETUA", ch__1, &c__1, &c__2, (ftnlen)6, (ftnlen)6,
-  	 (ftnlen)37);
+     (ftnlen)37);
   return 0;
     }
 

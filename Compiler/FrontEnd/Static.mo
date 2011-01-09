@@ -4243,19 +4243,19 @@ algorithm
   outBoolean:=
   matchcontinue (inDimensions)
     local
-    	list<list<DAE.Dimension>> rest_dims;
-    	list<DAE.Dimension> dims;
+      list<list<DAE.Dimension>> rest_dims;
+      list<DAE.Dimension> dims;
     case _
       equation
-    		{} = Util.listFlatten(inDimensions);
+        {} = Util.listFlatten(inDimensions);
       then
         true;
     case _
       equation
-    		dims = Util.listMap(inDimensions, Util.listFirst);
-    		rest_dims = Util.listMap(inDimensions, Util.listRest);
-    		true = sameDimensions3(dims);
-    		true = sameDimensions2(rest_dims);
+        dims = Util.listMap(inDimensions, Util.listFirst);
+        rest_dims = Util.listMap(inDimensions, Util.listRest);
+        true = sameDimensions3(dims);
+        true = sameDimensions2(rest_dims);
       then
         true;
     else then false;
@@ -4269,16 +4269,16 @@ protected function sameDimensions3
 algorithm
   outRes := matchcontinue (inDims)
     local
-    	DAE.Dimension dim1, dim2;
+      DAE.Dimension dim1, dim2;
       Boolean res,res2,res_1;
-    	list<DAE.Dimension> rest;
+      list<DAE.Dimension> rest;
     case ({}) then true;
     case ({_}) then true;
     case ({dim1, dim2}) then Expression.dimensionsEqual(dim1, dim2);
     case ((dim1 :: (dim2 :: rest)))
       equation
-    		res = sameDimensions3((dim2 :: rest));
-    		res2 = Expression.dimensionsEqual(dim1, dim2);
+        res = sameDimensions3((dim2 :: rest));
+        res2 = Expression.dimensionsEqual(dim1, dim2);
         res_1 = boolAnd(res, res2);
       then
         res_1;
@@ -4733,13 +4733,13 @@ algorithm
     case (cache,env,{s1},_,impl,pre,info)
       equation
         (cache,s1_1,prop) =
-    			verifyBuiltInHandlerType(
-    			   cache,
-    			   env,
-    			   {s1},
-    			   impl,
-    			   Types.isIntegerOrRealOrBooleanOrSubTypeOfEither,
-    			   "boolean",pre,info);
+          verifyBuiltInHandlerType(
+             cache,
+             env,
+             {s1},
+             impl,
+             Types.isIntegerOrRealOrBooleanOrSubTypeOfEither,
+             "boolean",pre,info);
       then
         (cache,s1_1,prop);
   end match;
@@ -6445,10 +6445,10 @@ algorithm
       Env.Cache cache;
       Prefix.Prefix pre;
 
-    case (cache,env,fn,args,nargs,impl,st,pre,info,numErrorMessages) /* impl LS: Check if a builtin function call, e.g. size()
+    case (cache,env,fn,args,nargs,impl,st as SOME(_),pre,info,numErrorMessages) /* impl LS: Check if a builtin function call, e.g. size()
         and calculate if so */
       equation
-        (cache,e,prop,st) = elabCallInteractive(cache,env, fn, args, nargs, impl, st,pre,info) "Elaborate interactive function calls, such as simulate(), plot() etc." ;
+        (cache,e,prop,st) = elabCallInteractive(cache,env, fn, args, nargs, impl,st,pre,info) "Elaborate interactive function calls, such as simulate(), plot() etc." ;
       then
         (cache,e,prop,st);
     case (cache,env,fn,args,nargs,impl,st,pre,info,numErrorMessages)

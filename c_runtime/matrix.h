@@ -68,11 +68,11 @@ void * hybrj_(void(*) (int *,double*,double*,double *,int*, int*),
   int r,c;\
   printf("{{"); \
   for(r=0;r<d1;r++) {\
-  	for (c=0;c < d2; c++) {\
-  		printf("%2.3f",A[r+d1*c]);\
-  		if (c != d2-1) printf(",");\
-  	}\
-  	if(r != d1-1) printf("},{");\
+    for (c=0;c < d2; c++) {\
+      printf("%2.3f",A[r+d1*c]);\
+      if (c != d2-1) printf(",");\
+    }\
+    if(r != d1-1) printf("},{");\
   }\
   printf("}}\n"); \
 } while(0)
@@ -80,8 +80,8 @@ void * hybrj_(void(*) (int *,double*,double*,double *,int*, int*),
   int i; \
   printf("{");\
   for(i=0;i<d1;i++) { \
-  	printf("%2.3f",b[i]); \
-  	if (i != d1-1) printf(",");\
+    printf("%2.3f",b[i]); \
+    if (i != d1-1) printf(",");\
   } \
   printf("}\n"); \
 } while(0)
@@ -91,38 +91,38 @@ void * hybrj_(void(*) (int *,double*,double*,double *,int*, int*),
    int retries = 0; \
    int retries2 = 0; \
    while(!giveUp) { \
-  	 giveUp = 1; \
-  	 hybrd_(residual,&n, nls_x,nls_fvec,&xtol,&maxfev,&ml,&mu,&epsfcn, \
+     giveUp = 1; \
+     hybrd_(residual,&n, nls_x,nls_fvec,&xtol,&maxfev,&ml,&mu,&epsfcn, \
           nls_diag,&mode,&factor,&nprint,&info,&nfev,nls_fjac,&ldfjac, \
         nls_r,&lr,nls_qtf,nls_wa1,nls_wa2,nls_wa3,nls_wa4); \
       if (info == 0) { \
           printf("improper input parameters to nonlinear eq. syst %s:%d.\n", __FILE__, __LINE__); \
       } \
         if ((info == 4 || info == 5 )&& retries < 3) { /* first try to decrease factor*/ \
-      	retries++; giveUp = 0; \
-      	factor = factor / 10.0; \
-      	 	if (sim_verbose & LOG_NONLIN_SYS)  \
-      		printf("Solving nonlinear system: iteration not making progress, trying to decrease factor to %f\n",factor); \
+        retries++; giveUp = 0; \
+        factor = factor / 10.0; \
+           if (sim_verbose & LOG_NONLIN_SYS)  \
+          printf("Solving nonlinear system: iteration not making progress, trying to decrease factor to %f\n",factor); \
       } else if ((info == 4 || info == 5) && retries < 5) { /* Then, try with different starting point*/  \
-      	int i; \
-      	for (i=0; i < n; i++) { nls_x[i]+=0.1; }; \
-      	retries++; giveUp=0; \
-      	if (sim_verbose & LOG_NONLIN_SYS) \
-     	 		printf("Solving nonlinear system: iteration not making progress, trying with different starting points (+1e-6)\n"); \
+        int i; \
+        for (i=0; i < n; i++) { nls_x[i]+=0.1; }; \
+        retries++; giveUp=0; \
+        if (sim_verbose & LOG_NONLIN_SYS) \
+            printf("Solving nonlinear system: iteration not making progress, trying with different starting points (+1e-6)\n"); \
         } else if ((info == 4 || info == 5) && retries2 < 1) { /*Then try with old values (instead of extrapolating )*/ \
           retries = 0; retries2++; \
-      	int i; \
-      	for (i=0; i < n; i++) { nls_x[i] = nls_xold[i]; } \
+        int i; \
+        for (i=0; i < n; i++) { nls_x[i] = nls_xold[i]; } \
       } \
       else if (info >= 2 && info <= 5) { \
-      	int i; \
-      	modelErrorCode=ERROR_NONLINSYS; \
-      	printf("error solving nonlinear system nr. %d at time %f\n",no,time); \
+        int i; \
+        modelErrorCode=ERROR_NONLINSYS; \
+        printf("error solving nonlinear system nr. %d at time %f\n",no,time); \
           if (sim_verbose & LOG_NONLIN_SYS) { \
-          	for (i = 0; i<n; i++) { \
-          	printf(" residual[%d] = %f\n",i,nls_fvec[i]); \
-          	printf(" x[%d] = %f\n",i,nls_x[i]); \
-          	} \
+            for (i = 0; i<n; i++) { \
+            printf(" residual[%d] = %f\n",i,nls_fvec[i]); \
+            printf(" x[%d] = %f\n",i,nls_x[i]); \
+            } \
           } \
       } \
    }\
@@ -133,38 +133,38 @@ void * hybrj_(void(*) (int *,double*,double*,double *,int*, int*),
    int retries = 0; \
    int retries2 = 0; \
    while(!giveUp) { \
-  	 giveUp = 1; \
-  	 hybrd_(residual,&n, nls_x,nls_fvec,&xtol,&maxfev,&ml,&mu,&epsfcn, \
+     giveUp = 1; \
+     hybrd_(residual,&n, nls_x,nls_fvec,&xtol,&maxfev,&ml,&mu,&epsfcn, \
           nls_diag,&mode,&factor,&nprint,&info,&nfev,nls_fjac,&ldfjac, \
         nls_r,&lr,nls_qtf,nls_wa1,nls_wa2,nls_wa3,nls_wa4); \
       if (info == 0) { \
           printf("improper input parameters to nonlinear eq. syst %s:%d.\n", __FILE__, __LINE__); \
       } \
         if ((info == 4 || info == 5 )&& retries < 3) { /* first try to decrease factor*/ \
-      	retries++; giveUp = 0; \
-      	factor = factor / 10.0; \
-      	 	if (sim_verbose & LOG_NONLIN_SYS)  \
-      		printf("Solving nonlinear system: iteration not making progress, trying to decrease factor to %f\n",factor); \
+        retries++; giveUp = 0; \
+        factor = factor / 10.0; \
+           if (sim_verbose & LOG_NONLIN_SYS)  \
+          printf("Solving nonlinear system: iteration not making progress, trying to decrease factor to %f\n",factor); \
       } else if ((info == 4 || info == 5) && retries < 5) { /* Then, try with different starting point*/  \
-      	int i; \
-      	for (i=0; i < n; i++) { nls_x[i]+=0.1; }; \
-      	retries++; giveUp=0; \
-      	if (sim_verbose & LOG_NONLIN_SYS) \
-     	 		printf("Solving nonlinear system: iteration not making progress, trying with different starting points (+1e-6)\n"); \
+        int i; \
+        for (i=0; i < n; i++) { nls_x[i]+=0.1; }; \
+        retries++; giveUp=0; \
+        if (sim_verbose & LOG_NONLIN_SYS) \
+            printf("Solving nonlinear system: iteration not making progress, trying with different starting points (+1e-6)\n"); \
         } else if ((info == 4 || info == 5) && retries2 < 1) { /*Then try with old values (instead of extrapolating )*/ \
           retries = 0; retries2++; \
-      	int i; \
-      	for (i=0; i < n; i++) { nls_x[i] = nls_xold[i]; } \
+        int i; \
+        for (i=0; i < n; i++) { nls_x[i] = nls_xold[i]; } \
       } \
       else if (info >= 2 && info <= 5) { \
-      	int i; \
-      	modelErrorCode=ERROR_NONLINSYS; \
-      	printf("error solving nonlinear system nr. %d at time %f\n",no,time); \
+        int i; \
+        modelErrorCode=ERROR_NONLINSYS; \
+        printf("error solving nonlinear system nr. %d at time %f\n",no,time); \
           if (sim_verbose & LOG_NONLIN_SYS) { \
-          	for (i = 0; i<n; i++) { \
-          	printf(" residual[%d] = %f\n",i,nls_fvec[i]); \
-          	printf(" x[%d] = %f\n",i,nls_x[i]); \
-          	} \
+            for (i = 0; i<n; i++) { \
+            printf(" residual[%d] = %f\n",i,nls_fvec[i]); \
+            printf(" x[%d] = %f\n",i,nls_x[i]); \
+            } \
           } \
       } \
    }\
@@ -174,27 +174,27 @@ void * hybrj_(void(*) (int *,double*,double*,double *,int*, int*),
    int giveUp=0; \
    int retries = 0; \
    while(!giveUp) { \
-  	 giveUp = 1; \
-  	 hybrj_(residual,&n, nls_x,nls_fvec,nls_fjac,&ldfjac,&xtol,&maxfev,\
+     giveUp = 1; \
+     hybrj_(residual,&n, nls_x,nls_fvec,nls_fjac,&ldfjac,&xtol,&maxfev,\
           nls_diag,&mode,&factor,&nprint,&info,&nfev,&njev, \
         nls_r,&lr,nls_qtf,nls_wa1,nls_wa2,nls_wa3,nls_wa4); \
       if (info == 0) { \
           printf("improper input parameters to nonlinear eq. syst %s:%d.\n", __FILE__, __LINE__); \
       } \
       if ((info == 4 || info == 5 )&& retries < 3) { /* First try to decrease factor*/ \
-      	retries++; giveUp = 0; \
-      	factor = factor / 10.0; \
-      	 	if (sim_verbose)  \
-      		printf("Solving nonlinear system: iteration not making progress, trying to decrease factor to %f\n",factor); \
+        retries++; giveUp = 0; \
+        factor = factor / 10.0; \
+           if (sim_verbose)  \
+          printf("Solving nonlinear system: iteration not making progress, trying to decrease factor to %f\n",factor); \
       } else if ((info == 4 || info == 5) && retries < 5) { /* Secondly, try with different starting point*/  \
-      	int i; \
-      	for (i=0; i < n; i++) { nls_x[i]+=0.1; }; \
-      	retries++; giveUp=0; \
-      	if (sim_verbose) \
-     	 		printf("Solving nonlinear system: iteration not making progress, trying with different starting points (+1e-6)\n"); \
+        int i; \
+        for (i=0; i < n; i++) { nls_x[i]+=0.1; }; \
+        retries++; giveUp=0; \
+        if (sim_verbose) \
+            printf("Solving nonlinear system: iteration not making progress, trying with different starting points (+1e-6)\n"); \
       } \
       else if (info >= 2 && info <= 5) { \
-      	modelErrorCode=ERROR_NONLINSYS; \
+        modelErrorCode=ERROR_NONLINSYS; \
           printf("error solving nonlinear system nr. %d at time %f\n",no,time); \
       } \
    }\
@@ -336,11 +336,11 @@ for (i=0; i < size; i++) { \
 } \
 if (found_solution && sim_verbose) { /* we found a solution*/ \
   {int i; \
-  	printf("Result of mixed system discrete variables:\n"); \
-  	for (i=0;i<size;i++) { \
-  		printf("%s = %f  pre(%s)= %f\n",getName(loc_ptrs[i]),*loc_ptrs[i], \
-  										getName(loc_ptrs[i]),pre(*loc_ptrs[i])); \
-  	} \
+    printf("Result of mixed system discrete variables:\n"); \
+    for (i=0;i<size;i++) { \
+      printf("%s = %f  pre(%s)= %f\n",getName(loc_ptrs[i]),*loc_ptrs[i], \
+                      getName(loc_ptrs[i]),pre(*loc_ptrs[i])); \
+    } \
   } \
 } \
 } while(0)

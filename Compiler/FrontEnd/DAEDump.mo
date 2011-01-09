@@ -1060,7 +1060,7 @@ algorithm
         ();
     
     case (DAE.INITIAL_ARRAY_EQUATION(exp = e1, array = e2))
-    	equation
+      equation
         Print.printBuf("  ");
         ExpressionDump.printExp(e1);
         Print.printBuf(" = ");
@@ -3022,13 +3022,13 @@ algorithm
         str;
 
     case ((DAE.INITIAL_ARRAY_EQUATION(exp = e1, array = e2) :: xs), str)
-    	equation
+      equation
         s1 = ExpressionDump.printExpStr(e1);
         s2 = ExpressionDump.printExpStr(e2);
         str = IOStream.appendList(str, {"  ", s1, " = ", s2, ";\n"});
         str = dumpInitialEquationsStream(xs, str);
       then
-    		str;
+        str;
 
     case ((DAE.INITIAL_COMPLEX_EQUATION(lhs = e1,rhs = e2) :: xs), str)
       equation

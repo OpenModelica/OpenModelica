@@ -52,7 +52,7 @@ void read_commented_value(ifstream &f, signed char *str);
  *  the -f file flag.
  */
  void read_input(int argc, char **argv,
-   			DATA *simData,
+         DATA *simData,
                 double *start, double *stop,
                 double *stepSize, long *outputSteps,
                 double *tolerance, string* method, string* outputFormat)
@@ -103,9 +103,9 @@ void read_commented_value(ifstream &f, signed char *str);
   read_commented_value(file,&nystrchk);
 
   if (nxchk != simData->nStates || nychk != simData->nAlgebraic || npchk != simData->nParameters
-    	|| npintchk != simData->intVariables.nParameters || nyintchk != simData->intVariables.nAlgebraic
-    	|| npboolchk != simData->boolVariables.nParameters || nyboolchk != simData->boolVariables.nAlgebraic
-    	|| npstrchk != simData->stringVariables.nParameters || nystrchk != simData->stringVariables.nAlgebraic) {
+      || npintchk != simData->intVariables.nParameters || nyintchk != simData->intVariables.nAlgebraic
+      || npboolchk != simData->boolVariables.nParameters || nyboolchk != simData->boolVariables.nAlgebraic
+      || npstrchk != simData->stringVariables.nParameters || nystrchk != simData->stringVariables.nAlgebraic) {
     cerr << "Error, input data file does not match model." << endl;
     cerr << "nx in initfile: " << nxchk << " from model code :" << simData->nStates << endl;
     cerr << "ny in initfile: " << nychk << " from model code :" << simData->nAlgebraic << endl;
@@ -207,16 +207,16 @@ inline void read_commented_value(ifstream &f, string *str)
     line = c;
     int pos;
   if (line.find("\"") != line.npos) {
-  	pos = line.rfind("\""); // find end of string
-  	*str = string(line.substr(1,pos-1));	// Remove " at beginning and end
+    pos = line.rfind("\""); // find end of string
+    *str = string(line.substr(1,pos-1));  // Remove " at beginning and end
   }
 }
 
 inline void read_commented_value(ifstream &f, const char **str)
 {
   if (str == NULL) {
-  	cerr << "error read_commented_value, no data allocated for storing string" << endl;
-  	return;
+    cerr << "error read_commented_value, no data allocated for storing string" << endl;
+    return;
   }
   string line;
   read_commented_value(f,&line);

@@ -1152,16 +1152,16 @@ algorithm
 
           (x1,y1,x2,y2) = getCoordsInAnnList(annlist,context);
 
-    	then
-    	  (x1,y1,x2,y2);
+      then
+        (x1,y1,x2,y2);
 /*      case(Absyn.CLASS(body = Absyn.CLASS_EXTENDS(arguments = annlist,parts = parts1)),context)
 
         equation
 
           //(x1,y1,x2,y2) = getCoordsInAnnList(annlist,context);
           (x1,y1,x2,y2) = getCoordsFromParts(parts1,context);
-    	then
-    	  (x1,y1,x2,y2);   */
+      then
+        (x1,y1,x2,y2);   */
   end match;
 
 end getCoordsInClass;
@@ -1514,8 +1514,8 @@ algorithm
       equation
 
         args = cleanStyleAttrs(args,{},context);
-    		rest = listAppend(args,rest);
-    		res = transformConnectAnnList(rest,context,res,p);
+        rest = listAppend(args,rest);
+        res = transformConnectAnnList(rest,context,res,p);
 
       then res;
 
@@ -1834,7 +1834,7 @@ algorithm
         c = addContext(context,"Line");
         argRes = transAnnLstToNamedArgs(args,c);
         {} = Util.listSelect1(argRes, "color",nameArgWithName);
-    		restRes = transAnnLstToCalls(rest,context);
+        restRes = transAnnLstToCalls(rest,context);
       then
         Absyn.CALL(Absyn.CREF_IDENT("Line",{}), Absyn.FUNCTIONARGS({},
         Absyn.NAMEDARG("color",Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(255)}))::argRes)) :: restRes;
@@ -1847,7 +1847,7 @@ algorithm
         true = isLinebasedGraphic(c);
         argRes = transAnnLstToNamedArgs(args,c);
         {} = Util.listSelect1(argRes, "lineColor",nameArgWithName);
-    		restRes = transAnnLstToCalls(rest,context);
+        restRes = transAnnLstToCalls(rest,context);
       then
         Absyn.CALL(Absyn.CREF_IDENT(n,{}), Absyn.FUNCTIONARGS({},
         Absyn.NAMEDARG("lineColor",Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(255)}))::argRes)) :: restRes;
@@ -1858,7 +1858,7 @@ algorithm
       equation
         c = addContext(context,n);
         argRes = transAnnLstToNamedArgs(args,c);
-    		restRes = transAnnLstToCalls(rest,context);
+        restRes = transAnnLstToCalls(rest,context);
 
       then
         Absyn.CALL(Absyn.CREF_IDENT(n,{}), Absyn.FUNCTIONARGS({},argRes)) :: restRes;

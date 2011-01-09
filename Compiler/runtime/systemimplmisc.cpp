@@ -30,11 +30,11 @@ extern "C" {
 
   char* _replace(const char* source_str, const char* search_str, const char* replace_str)
   {
-  	string str(source_str);
-  	FindAndReplace(str,string(search_str),string(replace_str));
+    string str(source_str);
+    FindAndReplace(str,string(search_str),string(replace_str));
 
-  	char* res = strdup(str.c_str());
-  	return res;
+    char* res = strdup(str.c_str());
+    return res;
   }
 
 }

@@ -4,10 +4,10 @@
   on Linux or Unix systems, link with .../path/to/libf2c.a -lm
   or, if you install libf2c.a in a standard place, with -lf2c -lm
   -- in that order, at the end of the command line, as in
-  	cc *.o -lf2c -lm
+    cc *.o -lf2c -lm
   Source for libf2c is in /netlib/f2c/libf2c.zip, e.g.,
 
-  	http://www.netlib.org/f2c/libf2c.zip
+    http://www.netlib.org/f2c/libf2c.zip
 */
 
 #include "f2c.h"
@@ -131,14 +131,14 @@ L10:
   for (j = kp1; j <= i__2; ++j) {
       t = a[l + j * a_dim1];
       if (l == k) {
-  	goto L20;
+    goto L20;
       }
       a[l + j * a_dim1] = a[k + j * a_dim1];
       a[k + j * a_dim1] = t;
 L20:
       i__3 = *n - k;
       daxpy_(&i__3, &t, &a[k + 1 + k * a_dim1], &c__1, &a[k + 1 + j *
-  	    a_dim1], &c__1);
+        a_dim1], &c__1);
 /* L30: */
   }
   goto L50;
@@ -519,13 +519,13 @@ L60:
       --mm;
       t = abd[l + j * abd_dim1];
       if (l == mm) {
-  	goto L70;
+    goto L70;
       }
       abd[l + j * abd_dim1] = abd[mm + j * abd_dim1];
       abd[mm + j * abd_dim1] = t;
 L70:
       daxpy_(&lm, &t, &abd[m + 1 + k * abd_dim1], &c__1, &abd[mm + 1 +
-  	    j * abd_dim1], &c__1);
+        j * abd_dim1], &c__1);
 /* L80: */
   }
 L90:
@@ -709,7 +709,7 @@ L50:
   i__2 = *ml, i__3 = *n - k;
   lm = min(i__2,i__3);
   b[k] += ddot_(&lm, &abd[m + 1 + k * abd_dim1], &c__1, &b[k + 1], &
-  	c__1);
+    c__1);
   l = ipvt[k];
   if (l == k) {
       goto L70;
@@ -1032,8 +1032,8 @@ L40:
     i__1 = *n;
     for (i__ = mp1; i__ <= i__1; i__ += 5) {
   dtemp = dtemp + dx[i__] * dy[i__] + dx[i__ + 1] * dy[i__ + 1] + dx[
-  	i__ + 2] * dy[i__ + 2] + dx[i__ + 3] * dy[i__ + 3] + dx[i__ +
-  	4] * dy[i__ + 4];
+    i__ + 2] * dy[i__ + 2] + dx[i__ + 3] * dy[i__ + 3] + dx[i__ +
+    4] * dy[i__ + 4];
 /* L50: */
     }
 L60:

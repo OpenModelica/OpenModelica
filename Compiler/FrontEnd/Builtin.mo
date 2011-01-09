@@ -2112,7 +2112,7 @@ end isDer;
 
 public function simpleInitialEnv "
 val array2array=  (DAE.T_FUNCTION({(\"x\",(DAE.T_ARRAY)},
-    		      (DAE.T_ARRAY),NONE())
+              (DAE.T_ARRAY),NONE())
 val array_array2array=
 val int2array= (DAE.T_FUNCTION(\"x\",(DAE.T_ARRAY(1,_)),NONE())
   Specifierar en vector, array of dimension one

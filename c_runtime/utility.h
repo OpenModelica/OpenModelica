@@ -36,12 +36,12 @@
 #include "modelica.h"
 
 int in_range_integer(modelica_integer i,
-  	     modelica_integer start,
-  	     modelica_integer stop);
+         modelica_integer start,
+         modelica_integer stop);
 
 int in_range_real(modelica_real i,
-  	  modelica_real start,
-  	  modelica_real stop);
+      modelica_real start,
+      modelica_real stop);
 
 /* div is already defined in stdlib, so it's redefined here to modelica_div */
 modelica_real modelica_div(modelica_real x, modelica_real y);

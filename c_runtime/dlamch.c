@@ -4,10 +4,10 @@
   on Linux or Unix systems, link with .../path/to/libf2c.a -lm
   or, if you install libf2c.a in a standard place, with -lf2c -lm
   -- in that order, at the end of the command line, as in
-  	cc *.o -lf2c -lm
+    cc *.o -lf2c -lm
   Source for libf2c is in /netlib/f2c/libf2c.zip, e.g.,
 
-  	http://www.netlib.org/f2c/libf2c.zip
+    http://www.netlib.org/f2c/libf2c.zip
 */
 
 #include "f2c.h"
@@ -587,41 +587,41 @@ L10:
 
   if (ngpmin == ngnmin && gpmin == gnmin) {
       if (ngpmin == gpmin) {
-  	lemin = ngpmin;
+    lemin = ngpmin;
 /*            ( Non twos-complement machines, no gradual underflow; */
 /*              e.g.,  VAX ) */
       } else if (gpmin - ngpmin == 3) {
-  	lemin = ngpmin - 1 + lt;
-  	ieee = TRUE_;
+    lemin = ngpmin - 1 + lt;
+    ieee = TRUE_;
 /*            ( Non twos-complement machines, with gradual underflow; */
 /*              e.g., IEEE standard followers ) */
       } else {
-  	lemin = min(ngpmin,gpmin);
+    lemin = min(ngpmin,gpmin);
 /*            ( A guess; no known machine ) */
-  	iwarn = TRUE_;
+    iwarn = TRUE_;
       }
 
   } else if (ngpmin == gpmin && ngnmin == gnmin) {
       if ((i__1 = ngpmin - ngnmin, abs(i__1)) == 1) {
-  	lemin = max(ngpmin,ngnmin);
+    lemin = max(ngpmin,ngnmin);
 /*            ( Twos-complement machines, no gradual underflow; */
 /*              e.g., CYBER 205 ) */
       } else {
-  	lemin = min(ngpmin,ngnmin);
+    lemin = min(ngpmin,ngnmin);
 /*            ( A guess; no known machine ) */
-  	iwarn = TRUE_;
+    iwarn = TRUE_;
       }
 
   } else if ((i__1 = ngpmin - ngnmin, abs(i__1)) == 1 && gpmin == gnmin)
-  	 {
+     {
       if (gpmin - min(ngpmin,ngnmin) == 3) {
-  	lemin = max(ngpmin,ngnmin) - 1 + lt;
+    lemin = max(ngpmin,ngnmin) - 1 + lt;
 /*            ( Twos-complement machines with gradual underflow; */
 /*              no known machine ) */
       } else {
-  	lemin = min(ngpmin,ngnmin);
+    lemin = min(ngpmin,ngnmin);
 /*            ( A guess; no known machine ) */
-  	iwarn = TRUE_;
+    iwarn = TRUE_;
       }
 
   } else {

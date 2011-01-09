@@ -293,9 +293,9 @@ algorithm
       then (DAE.DAE(elts2),DAE.DAE(e::elts3));
 
     case(DAE.DAE((e as DAE.INITIAL_ARRAY_EQUATION(dimension=_))::elts))
-    	equation
-    		(DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts));
-    	then (DAE.DAE(elts2),DAE.DAE(e::elts3));
+      equation
+        (DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts));
+      then (DAE.DAE(elts2),DAE.DAE(e::elts3));
 
     case(DAE.DAE((e as DAE.COMPLEX_EQUATION(lhs=_))::elts))
       equation
@@ -1681,7 +1681,7 @@ algorithm
     */
     case (cache,env,_,el::_,_)
       equation
-    		true = RTOpts.debugFlag("failtrace");
+        true = RTOpts.debugFlag("failtrace");
         str = DAEDump.dumpDebugDAE(DAE.DAE({el}));
         Debug.fprintln("failtrace", "- DAEUtil.daeToRecordValue failed on: " +& str);
       then
@@ -4095,8 +4095,8 @@ algorithm
       DAE.InstDims dim;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
-    	DAE.VarProtection prot;
-    	Option<DAE.Exp> bind;
+      DAE.VarProtection prot;
+      Option<DAE.Exp> bind;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
       Absyn.Path newtype;

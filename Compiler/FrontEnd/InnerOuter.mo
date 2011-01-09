@@ -1346,7 +1346,7 @@ public function switchInnerToOuterAndPrefix
       then
         v :: r_1;
 
-    	/* Traverse components */
+      /* Traverse components */
     case ((DAE.COMP(ident = idName,dAElist = lst,source = source,comment = comment) :: r),io,pre)
       equation
         lst_1 = switchInnerToOuterAndPrefix(lst, io, pre);

@@ -11,7 +11,7 @@ encapsulated package HashTable4 "
   
 /* Below is the instance specific code. For each hashtable the user must define:
 
-Key     	- The key used to uniquely define elements in a hashtable
+Key       - The key used to uniquely define elements in a hashtable
 Value     - The data to associate with each key
 hashFunc   - A function that maps a key to a positive integer.
 keyEqual   - A comparison function between two keys, returns true if equal.

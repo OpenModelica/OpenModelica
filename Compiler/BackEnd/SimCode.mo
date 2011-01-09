@@ -1855,7 +1855,7 @@ algorithm
         nres = listLength(residualEquations);
         
         extObjInfo = createExtObjInfo(dlow2);
-    		
+        
         whenClauses = createSimWhenClauses(dlow2, helpVarInfo);
         zeroCrossings = createZeroCrossings(dlow2);
         zeroCrossingsNeedSave = createZeroCrossingsNeedSave(zeroCrossings, dlow2, ass1, ass2, comps);
@@ -6349,7 +6349,7 @@ protected function buildWhenConditionChecks3
   input list<DAE.Exp> whenConditions   "List of expressions from \"when {exp1, exp2, ...}\" ";
   input Integer whenClauseIndex        "When clause index";
   input Integer nextHelpIndex          "Next available help variable index";
-  input Boolean isElseWhen    			   "Whether this lase is an elsewhen or not";
+  input Boolean isElseWhen             "Whether this lase is an elsewhen or not";
   output String outString              "Generated c-code";
   output list<HelpVarInfo> helpVarLst;
 algorithm
@@ -6542,7 +6542,7 @@ protected function buildWhenConditionChecks4
   input list<BackendDAE.WhenClause> inBackendDAEWhenClauseLst "List of when clauses.";
   input Integer nextHelpVarIndex                      "index of the next generated help variable.";
   output String outString                             "Generated event checking code";
-  output list<HelpVarInfo> helpVarLst    							"List of help variables introduced in this function.";
+  output list<HelpVarInfo> helpVarLst                  "List of help variables introduced in this function.";
 algorithm
   (outString,helpVarLst):=
   matchcontinue (orderOfEquations,inBackendDAEEquationLst,inBackendDAEWhenClauseLst,nextHelpVarIndex)
@@ -6590,7 +6590,7 @@ protected function buildWhenConditionCheckForEquation "
   input Boolean isElseWhen                            "Whether the equation is inside an elsewhen or not.";
   input Integer nextHelpIndex                         "Next avalable help variable index.";
   output String outString                             "Generated event checking code";
-  output list<HelpVarInfo> helpVarLst    							"List of help variables introduced in this function.";
+  output list<HelpVarInfo> helpVarLst                  "List of help variables introduced in this function.";
 algorithm
   (outString, helpVarLst) :=
   match (whenEq,inBackendDAEWhenClauseLst,isElseWhen, nextHelpIndex)

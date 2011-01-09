@@ -47,7 +47,7 @@ uniontype Severity "severity of message"
   record WARNING "Warning when tool succeds but with warning" end WARNING;
 
   record NOTIFICATION "Additional information to user, e.g. what
-    		     actions tool has taken to succed in translation" end NOTIFICATION;
+             actions tool has taken to succed in translation" end NOTIFICATION;
 end Severity;
 
 public
@@ -57,10 +57,10 @@ uniontype MessageType "runtime scripting /interpretation error"
   record GRAMMAR "grammar errors" end GRAMMAR;
 
   record TRANSLATION "instantiation errors: up to
-    			 flat modelica" end TRANSLATION;
+           flat modelica" end TRANSLATION;
 
   record SYMBOLIC "Symbolic manipulation error,
-    			 simcodegen, up to .exe file" end SYMBOLIC;
+           simcodegen, up to .exe file" end SYMBOLIC;
 
   record SIMULATION "Runtime simulation error" end SIMULATION;
 
@@ -70,14 +70,14 @@ end MessageType;
 
 public
 type ErrorID = Integer "Unique error id. Used to
-    	  look up message string and type and severity";
+        look up message string and type and severity";
 
 public
 type MessageTokens = list<String>   "\"Tokens\" to insert into message at
-    		    positions identified by
-    		    - %s for string
-    		    - %l for line no.
-    		    - %c for col. no." ;
+            positions identified by
+            - %s for string
+            - %l for line no.
+            - %c for col. no." ;
 
 public import Absyn;
 
@@ -425,12 +425,12 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
 
           (CONNECTOR_ARRAY_DIFFERENT,TRANSLATION(),ERROR(),
           "Unmatched dimension in equation connect(%s, %s)"),
-    			(MODIFIER_NON_ARRAY_TYPE_WARNING,TRANSLATION(),WARNING(),
-    			"Non-array modification '%s' for array component, possibly due to missing 'each'.\n"),
-    			(BUILTIN_VECTOR_INVALID_DIMENSIONS,TRANSLATION(),ERROR(),
-    			"In scope %s, in component %s: Invalid dimensions %s in %s, no more than one dimension may have size > 1."),
-    			(UNROLL_LOOP_CONTAINING_WHEN,TRANSLATION(),ERROR(),
-    			"Unable to unroll for loop containing when statements or equations: %s\n"),
+          (MODIFIER_NON_ARRAY_TYPE_WARNING,TRANSLATION(),WARNING(),
+          "Non-array modification '%s' for array component, possibly due to missing 'each'.\n"),
+          (BUILTIN_VECTOR_INVALID_DIMENSIONS,TRANSLATION(),ERROR(),
+          "In scope %s, in component %s: Invalid dimensions %s in %s, no more than one dimension may have size > 1."),
+          (UNROLL_LOOP_CONTAINING_WHEN,TRANSLATION(),ERROR(),
+          "Unable to unroll for loop containing when statements or equations: %s\n"),
           (CIRCULAR_PARAM, TRANSLATION(), ERROR(), " Variable '%s' has a cyclic dependency and has variability %s."),
           (NESTED_WHEN, TRANSLATION(), ERROR(),
           "Nested when statements are not allowed."),
@@ -441,7 +441,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (RESTRICTION_VIOLATION,TRANSLATION(),ERROR(),"Restriction violation: %s is a %s, not a %s"),
           (ZERO_STEP_IN_ARRAY_CONSTRUCTOR, TRANSLATION(), ERROR(),
           "Step equals 0 in array constructor %s."),
-    			
+          
            /*
           (CONNECT_STREAM_TO_NONSTREAM,TRANSLATION(),ERROR(),
           "Cannot connect stream component %s to non-stream component %s"),

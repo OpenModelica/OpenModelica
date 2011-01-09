@@ -45,8 +45,8 @@ public:
   Rational(long numerator=0, long denominator=1);
   Rational(const Rational& r);
   virtual ~Rational(){;}
-  long num;	//numerator
-  long denom;	//denominator
+  long num;  //numerator
+  long denom;  //denominator
   bool isZero();
   bool is(long numerator, long denominator=1);
   string toString(); //e.g. "(7/9)". If denominator is one, only numerator is printed, e.g. "7".
@@ -68,29 +68,29 @@ public:
 struct UnitRes{
   UnitRes() : result(UNIT_OK), charNo(0) {;}
   enum ResVal{
-  	UNIT_OK,
-  	UNKNOWN_TOKEN,
-  	UNKNOWN_IDENT,
-  	PARSE_ERROR,
-  	UNIT_OFFSET_ERROR,
-  	UNIT_SCALE_ERROR,
-  	UNIT_WRONG_BASE, //Need to be base 10 for exponent prefixes
-  	UNIT_NOT_FOUND,
-  	PREFIX_NOT_FOUND,
-  	INVALID_INT,
-  	PREFIX_NOT_ALLOWED, //Some units e.g. "kg" are not allowed to have prefix. See SI-brochure v8, page 122, sec. 3.2
-  	BASE_ALREADY_DEFINED,
-  	ERROR_ADDING_UNIT,
-  	UNITS_DEFINED_WITH_DIFFERENT_EXPR
+    UNIT_OK,
+    UNKNOWN_TOKEN,
+    UNKNOWN_IDENT,
+    PARSE_ERROR,
+    UNIT_OFFSET_ERROR,
+    UNIT_SCALE_ERROR,
+    UNIT_WRONG_BASE, //Need to be base 10 for exponent prefixes
+    UNIT_NOT_FOUND,
+    PREFIX_NOT_FOUND,
+    INVALID_INT,
+    PREFIX_NOT_ALLOWED, //Some units e.g. "kg" are not allowed to have prefix. See SI-brochure v8, page 122, sec. 3.2
+    BASE_ALREADY_DEFINED,
+    ERROR_ADDING_UNIT,
+    UNITS_DEFINED_WITH_DIFFERENT_EXPR
   };
 
   UnitRes(ResVal res, unsigned int charNumber = 0) : result(res), charNo(charNumber) {;}
   virtual ~UnitRes(){;}
 
   bool Ok() {return result == UNIT_OK;}
-  ResVal result;			//Result enum
-  unsigned int charNo;	//If error, charcter number in string where the error is
-  string message;			//String message. E.g. for UNKNOWN_IDENT, the identifier is given
+  ResVal result;      //Result enum
+  unsigned int charNo;  //If error, charcter number in string where the error is
+  string message;      //String message. E.g. for UNKNOWN_IDENT, the identifier is given
 };
 
 class Unit{
@@ -110,17 +110,17 @@ public:
   /** Offset to base unit. E.g. celcius have offset 273.15 (i.e. add 273.15 to the value to get it in Kelvin) */
   Rational offset;
 
-  /** Unit type parameter vector. The strings include a prepend apostrophe  ,e.g. "'p"	*/
+  /** Unit type parameter vector. The strings include a prepend apostrophe  ,e.g. "'p"  */
   map<string,Rational> typeParamVec;
 
   /** The quantity name, if known. */
-  string	quantityName;
+  string  quantityName;
 
   /** The unit name, if known. */
-  string	unitName;
+  string  unitName;
 
   /** The unit symbol, if known. */
-  string	unitSymbol;
+  string  unitSymbol;
 
   /* Returns true if both the unitVec only contains zero exponents, and there are no type parameters */
   bool isDimensionless();
@@ -154,7 +154,7 @@ private:
 class Base{
 public:
   Base(string q, string un, string us, bool p, double w=1.0) : quantityName(q),
-  	unitName(un), unitSymbol(us), prefixAllowed(p),weight(w) {;}
+    unitName(un), unitSymbol(us), prefixAllowed(p),weight(w) {;}
   string quantityName;
   string unitName;
   string unitSymbol;
@@ -168,16 +168,16 @@ public:
   Scanner(string str);
   virtual ~Scanner();
   enum TokenType{
-  	TOK_DIV,		//Div '/'
-  	TOK_LPARAN,		//Left parentheses '('
-  	TOK_RPARAN,		//Right parantheses ')'
-  	TOK_DOT,        //Dot character '.'
-  	TOK_EXPO,		//Exponent '^'
-  	TOK_ID,			//Identfier starting with only ascii characters. tokstr contains the string.
-  	TOK_PARAM,		//Unit type parameter. An identifier starting with an apostrophe. tokstr contains the string.
-  	TOK_INT,		//Integer. tokstr contains the string representation of the integer value.
-  	TOK_UNKNOWN,	//Unknown token
-  	TOK_EOS,		//End of string
+    TOK_DIV,    //Div '/'
+    TOK_LPARAN,    //Left parentheses '('
+    TOK_RPARAN,    //Right parantheses ')'
+    TOK_DOT,        //Dot character '.'
+    TOK_EXPO,    //Exponent '^'
+    TOK_ID,      //Identfier starting with only ascii characters. tokstr contains the string.
+    TOK_PARAM,    //Unit type parameter. An identifier starting with an apostrophe. tokstr contains the string.
+    TOK_INT,    //Integer. tokstr contains the string representation of the integer value.
+    TOK_UNKNOWN,  //Unknown token
+    TOK_EOS,    //End of string
   };
 
   /* Returns the next token in the string, or TOK_EOF if it is the last one.
@@ -197,7 +197,7 @@ public:
   bool finished();
 private:
   Scanner::TokenType getTokenInternal(string& tokstr, unsigned int& index);
-  string	     _str;
+  string       _str;
   unsigned int _index;
   unsigned int _lastindex;
 };
@@ -205,8 +205,8 @@ private:
 class DerivedInfo{
 public:
   DerivedInfo(string qn, string un, string usym, string ustr, Rational pe, Rational sf, Rational o, bool pa, double w)
-  	: quantityName(qn), unitName(un), unitSymbol(usym), unitStrExp(ustr), prefixExpo(pe), scaleFactor(sf),
-  	offset(o),prefixAllowed(pa), weight(w) {;}
+    : quantityName(qn), unitName(un), unitSymbol(usym), unitStrExp(ustr), prefixExpo(pe), scaleFactor(sf),
+    offset(o),prefixAllowed(pa), weight(w) {;}
   string quantityName;
   string unitName;
   string unitSymbol;
@@ -233,11 +233,11 @@ public:
                                                Should instead prefix the "derived unit [g]
   */
   void addBase(const string quantityName, const string unitName,
-  	const string unitSymbol, bool prefixAllowed);
+    const string unitSymbol, bool prefixAllowed);
 
   /** Add a derived quantity/unit */
   void addDerived(const string quantityName, const string unitName, const string unitSymbol,
-  	const string unitStrExp, Rational prefixExpo, Rational scaleFactor, Rational offset, bool prefixAllowed, double weight=1.0);
+    const string unitStrExp, Rational prefixExpo, Rational scaleFactor, Rational offset, bool prefixAllowed, double weight=1.0);
 
   /** Multiply the weight factor to an existing unit symbol. If the symbol does not exist, nothing is updated */
     void accumulateWeight(const string unitSymbol, double weight);
@@ -266,7 +266,7 @@ private:
 
   /** Add a derived quantity/unit */
   UnitRes addDerivedInternal(const string quantityName, const string unitName, const string unitSymbol,
-  	const string unitStrExp, Rational prefixExpo, Rational scaleFactor, Rational offset, bool prefixAllowed, double weight);
+    const string unitStrExp, Rational prefixExpo, Rational scaleFactor, Rational offset, bool prefixAllowed, double weight);
 
 
   /** Prefixes */

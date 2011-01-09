@@ -4,10 +4,10 @@
   on Linux or Unix systems, link with .../path/to/libf2c.a -lm
   or, if you install libf2c.a in a standard place, with -lf2c -lm
   -- in that order, at the end of the command line, as in
-  	cc *.o -lf2c -lm
+    cc *.o -lf2c -lm
   Source for libf2c is in /netlib/f2c/libf2c.zip, e.g.,
 
-  	http://www.netlib.org/f2c/libf2c.zip
+    http://www.netlib.org/f2c/libf2c.zip
 */
 
 #include "f2c.h"
@@ -162,7 +162,7 @@ static integer c__1 = 1;
   i__2 = *n;
   for (k = j; k <= i__2; ++k) {
       if (rdiag[k] > rdiag[kmax]) {
-  	kmax = k;
+    kmax = k;
       }
 /* L20: */
   }
@@ -213,17 +213,17 @@ L40:
       sum = zero;
       i__3 = *m;
       for (i__ = j; i__ <= i__3; ++i__) {
-  	sum += a[i__ + j * a_dim1] * a[i__ + k * a_dim1];
+    sum += a[i__ + j * a_dim1] * a[i__ + k * a_dim1];
 /* L60: */
       }
       temp = sum / a[j + j * a_dim1];
       i__3 = *m;
       for (i__ = j; i__ <= i__3; ++i__) {
-  	a[i__ + k * a_dim1] -= temp * a[i__ + j * a_dim1];
+    a[i__ + k * a_dim1] -= temp * a[i__ + j * a_dim1];
 /* L70: */
       }
       if (! (*pivot) || rdiag[k] == zero) {
-  	goto L80;
+    goto L80;
       }
       temp = a[j + k * a_dim1] / rdiag[k];
 /* Computing MAX */
@@ -234,7 +234,7 @@ L40:
 /* Computing 2nd power */
       d__1 = rdiag[k] / wa[k];
       if (p05 * (d__1 * d__1) > epsmch) {
-  	goto L80;
+    goto L80;
       }
       i__3 = *m - j;
       rdiag[k] = enorm_(&i__3, &a[jp1 + k * a_dim1]);

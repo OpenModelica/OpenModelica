@@ -5,7 +5,7 @@
 #include <iostream>                      // for std::cout
 #include <utility>                       // for std::pair
 #include <algorithm>                     // for std::for_each
-#include <queue>  		 // for priority_queue
+#include <queue>       // for priority_queue
 #include <boost/utility.hpp>             // for boost::tie
 #include <boost/graph/graph_traits.hpp>  // for boost::graph_traits
 #include <boost/graph/adjacency_list.hpp>
@@ -172,8 +172,8 @@ typedef boost::property<boost::edge_weight_t, int,
         > EdgeProperty;
 
 typedef boost::adjacency_list<boost::listS, boost::listS,
-  		      boost::bidirectionalS,
-  	       VertexProperty, EdgeProperty> TaskGraph;
+            boost::bidirectionalS,
+           VertexProperty, EdgeProperty> TaskGraph;
 
 typedef  boost::property_map<TaskGraph,boost::vertex_name_t> VertexNameMap;
 typedef  boost::property_map<TaskGraph,vertex_execcost_t> VertexExecCostMap;
@@ -292,7 +292,7 @@ EdgeID add_edge(VertexID parent, VertexID child, TaskGraph *tg,
         string *result=0,int prio=0);
 
 EdgeID add_edge(VertexID parent, VertexID child, TaskGraph *tg,
-  	ResultSet &rset);
+    ResultSet &rset);
 
 VertexID find_task(VertexID alientask,TaskGraph *alientg,TaskGraph *tg);
 
@@ -320,9 +320,9 @@ template <class T> T max(std::vector<T> v) {
 template <typename Graph, typename VertexPropertiesWriter,
     typename EdgePropertiesWriter, typename GraphPropertiesWriter>
 inline void my_write_graphviz(std::ostream& out, const Graph& g,
-  		      VertexPropertiesWriter vpw,
-  		      EdgePropertiesWriter epw,
-  		      GraphPropertiesWriter gpw) {
+            VertexPropertiesWriter vpw,
+            EdgePropertiesWriter epw,
+            GraphPropertiesWriter gpw) {
 
   typedef typename boost::graph_traits<Graph>::directed_category cat_type;
   typedef boost::graphviz_io_traits<cat_type> Traits;
@@ -350,7 +350,7 @@ inline void my_write_graphviz(std::ostream& out, const Graph& g,
 template <typename Graph, typename VertexWriter, typename EdgeWriter>
 inline void
 my_write_graphviz(std::ostream& out, const Graph& g,
-  	  VertexWriter vw, EdgeWriter ew) {
+      VertexWriter vw, EdgeWriter ew) {
   boost::default_writer gw;
   my_write_graphviz(out, g, vw, ew, gw);
 }

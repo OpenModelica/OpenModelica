@@ -4,10 +4,10 @@
   on Linux or Unix systems, link with .../path/to/libf2c.a -lm
   or, if you install libf2c.a in a standard place, with -lf2c -lm
   -- in that order, at the end of the command line, as in
-  	cc *.o -lf2c -lm
+    cc *.o -lf2c -lm
   Source for libf2c is in /netlib/f2c/libf2c.zip, e.g.,
 
-  	http://www.netlib.org/f2c/libf2c.zip
+    http://www.netlib.org/f2c/libf2c.zip
 */
 
 #include "f2c.h"
@@ -72,12 +72,12 @@
       tempb = zmat[*knew + j * zmat_dim1] / temp;
       i__2 = *npt;
       for (i__ = 1; i__ <= i__2; ++i__) {
-  	temp = tempa * zmat[i__ + jl * zmat_dim1] + tempb * zmat[i__
-  		+ j * zmat_dim1];
-  	zmat[i__ + j * zmat_dim1] = tempa * zmat[i__ + j * zmat_dim1]
-  		- tempb * zmat[i__ + jl * zmat_dim1];
+    temp = tempa * zmat[i__ + jl * zmat_dim1] + tempb * zmat[i__
+      + j * zmat_dim1];
+    zmat[i__ + j * zmat_dim1] = tempa * zmat[i__ + j * zmat_dim1]
+      - tempb * zmat[i__ + jl * zmat_dim1];
 /* L10: */
-  	zmat[i__ + jl * zmat_dim1] = temp;
+    zmat[i__ + jl * zmat_dim1] = temp;
       }
       zmat[*knew + j * zmat_dim1] = zero;
   }
@@ -121,7 +121,7 @@
   for (i__ = 1; i__ <= i__1; ++i__) {
 /* L40: */
       zmat[i__ + zmat_dim1] = tempa * zmat[i__ + zmat_dim1] - tempb *
-  	    vlag[i__];
+        vlag[i__];
   }
   if (*idz == 1 && temp < zero) {
       *idz = 2;
@@ -147,17 +147,17 @@
   i__1 = *npt;
   for (i__ = 1; i__ <= i__1; ++i__) {
       zmat[i__ + ja * zmat_dim1] = scala * (tau * zmat[i__ + ja *
-  	    zmat_dim1] - temp * vlag[i__]);
+        zmat_dim1] - temp * vlag[i__]);
 /* L50: */
       zmat[i__ + jb * zmat_dim1] = scalb * (zmat[i__ + jb * zmat_dim1]
-  	    - tempa * w[i__] - tempb * vlag[i__]);
+        - tempa * w[i__] - tempb * vlag[i__]);
   }
   if (denom <= zero) {
       if (*beta < zero) {
-  	++(*idz);
+    ++(*idz);
       }
       if (*beta >= zero) {
-  	iflag = 1;
+    iflag = 1;
       }
   }
     }
@@ -187,10 +187,10 @@
   i__2 = jp;
   for (i__ = 1; i__ <= i__2; ++i__) {
       bmat[i__ + j * bmat_dim1] = bmat[i__ + j * bmat_dim1] + tempa *
-  	    vlag[i__] + tempb * w[i__];
+        vlag[i__] + tempb * w[i__];
       if (i__ > *npt) {
-  	bmat[jp + (i__ - *npt) * bmat_dim1] = bmat[i__ + j *
-  		bmat_dim1];
+    bmat[jp + (i__ - *npt) * bmat_dim1] = bmat[i__ + j *
+      bmat_dim1];
       }
 /* L70: */
   }

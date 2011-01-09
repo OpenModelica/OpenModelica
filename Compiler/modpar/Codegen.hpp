@@ -34,9 +34,9 @@ public:
   ~Codegen();
 
   void initialize(TaskGraph*, TaskGraph*, Schedule *, ContainSetMap *,int nproc,
-  	  int nx, int ny, int np, VertexID start, VertexID stop, vector<double> initvars
-  	  ,vector<double> initstates, vector<double> initparams,
-  	  vector<string> varnames, vector<string> statenames, vector<string> paramnames);
+      int nx, int ny, int np, VertexID start, VertexID stop, vector<double> initvars
+      ,vector<double> initstates, vector<double> initparams,
+      vector<string> varnames, vector<string> statenames, vector<string> paramnames);
 
   void generateCode();
 
@@ -49,12 +49,12 @@ private:
 
   void generateParallelFunctions();
   void generateParallelFunction(TaskList *tasks,
-  			map<VertexID,double>& levelMap,
-  			int procno);
+        map<VertexID,double>& levelMap,
+        int procno);
   void generateParallelFunctionHeader(int procno);
   void generateParallelFunctionBody(TaskList *tasks,
-  			    map<VertexID,double>& levelMap,
-  			    int proc);
+            map<VertexID,double>& levelMap,
+            int proc);
   void generateParallelFunctionPrologue(int procno);
   void generateParallelFunctionEpilogue(int procno);
   void generateParallelFunctionArgument(int procno, ofstream &os);
@@ -70,16 +70,16 @@ private:
 
   void generateRecvData(VertexID task, int proc);
   void generateTaskCode(VertexID task,
-  		map<VertexID,double>& levelMap);
+      map<VertexID,double>& levelMap);
 
   void generateSubTaskCode(VertexID task);
   void generateSendData(VertexID task, int proc,bool genQuit);
   void generateSendCommand(VertexID source, VertexID target,
-  		   int sourceproc,
-  		   int targetproc, bool genQuit);
+         int sourceproc,
+         int targetproc, bool genQuit);
   void generateRecvCommand(VertexID source, VertexID target,
-  		   int sourceproc,
-  		   int targetproc);
+         int sourceproc,
+         int targetproc);
 
   void generateParallelCalls();
   void generateDynamic();

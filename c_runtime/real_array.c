@@ -253,8 +253,8 @@ void put_real_matrix_element(m_real value, int r, int c, real_array_t* dest)
 
 /* Zero based index */
 void simple_indexed_assign_real_array1(real_array_t* source,
-  			       int i1,
-  			       real_array_t* dest)
+               int i1,
+               real_array_t* dest)
 {
     /* Assert that source has the correct dimension */
     /* Assert that dest has the correct dimension */
@@ -262,8 +262,8 @@ void simple_indexed_assign_real_array1(real_array_t* source,
 }
 
 void simple_indexed_assign_real_array2(real_array_t* source,
-  			       int i1, int i2,
-  			       real_array_t* dest)
+               int i1, int i2,
+               real_array_t* dest)
 {
     size_t index;
     /* Assert that source has correct dimension */
@@ -273,8 +273,8 @@ void simple_indexed_assign_real_array2(real_array_t* source,
 }
 
 void indexed_assign_real_array(real_array_t* source,
-  		       real_array_t* dest,
-  		       index_spec_t* dest_spec)
+             real_array_t* dest,
+             index_spec_t* dest_spec)
 {
   _index_t* idx_vec1;
   _index_t* idx_size;
@@ -288,7 +288,7 @@ void indexed_assign_real_array(real_array_t* source,
   assert(index_spec_fit_base_array(dest_spec, dest));
   for (i = 0,j = 0; i < dest_spec->ndims; ++i)
   {
-  	if (dest_spec->dim_size[i] != 0) ++j;
+    if (dest_spec->dim_size[i] != 0) ++j;
   }
   assert(j == source->ndims);
 
@@ -298,40 +298,40 @@ void indexed_assign_real_array(real_array_t* source,
   idx_size = size_alloc(dest_spec->ndims);
 
   for (i = 0; i < dest_spec->ndims; ++i) {
-  	idx_vec1[i] = 0;
+    idx_vec1[i] = 0;
 
-  	if (dest_spec->index[i]) /* is 'S' or 'A' */
-  		idx_size[i] = imax(dest_spec->dim_size[i],1);
-  	else /* is 'W' */
-  		idx_size[i] = dest->dim_size[i];
+    if (dest_spec->index[i]) /* is 'S' or 'A' */
+      idx_size[i] = imax(dest_spec->dim_size[i],1);
+    else /* is 'W' */
+      idx_size[i] = dest->dim_size[i];
   }
 
   quit = 0;
   j = 0;
   while (1) {
-  	/*for (i = 0, j = 0; i < dest_spec->ndims; ++i) {
-  					if (dest_spec->dim_size[i] != 0) {
-  						idx_vec2[j] = idx_vec1[i];
-  						++j;
-  					}
-  	}*/
-  	/*for (i = 0, j = 0; i < dest_spec->ndims; ++i) {
-  		if ((dest_spec->index_type[i] == 'W')
-  			 ||
-  			 (dest_spec->index_type[i] == 'A')) {
-  			 idx_vec2[j] = idx_vec1[i];
-  			++j;
-  		}
-  	}*/
-  	real_set(dest,
-  			calc_base_index_spec(dest->ndims, idx_vec1, dest, dest_spec),
-  			 real_get(source, j++));
-  				/*	 calc_base_index(source->ndims, idx_vec1, source)));*/
-  				/* calc_base_index(source->ndims, idx_vec2, source)));*/
+    /*for (i = 0, j = 0; i < dest_spec->ndims; ++i) {
+            if (dest_spec->dim_size[i] != 0) {
+              idx_vec2[j] = idx_vec1[i];
+              ++j;
+            }
+    }*/
+    /*for (i = 0, j = 0; i < dest_spec->ndims; ++i) {
+      if ((dest_spec->index_type[i] == 'W')
+         ||
+         (dest_spec->index_type[i] == 'A')) {
+         idx_vec2[j] = idx_vec1[i];
+        ++j;
+      }
+    }*/
+    real_set(dest,
+        calc_base_index_spec(dest->ndims, idx_vec1, dest, dest_spec),
+         real_get(source, j++));
+          /*   calc_base_index(source->ndims, idx_vec1, source)));*/
+          /* calc_base_index(source->ndims, idx_vec2, source)));*/
 
-  	quit = next_index(dest_spec->ndims, idx_vec1, idx_size);
+    quit = next_index(dest_spec->ndims, idx_vec1, idx_size);
 
-  	if (quit) break;
+    if (quit) break;
   }
   assert(j == base_array_nr_of_elements(source));
   restore_memory_state(mem_state);
@@ -350,7 +350,7 @@ void indexed_assign_real_array(real_array_t* source,
 
 void index_real_array(real_array_t* source,
                       index_spec_t* source_spec,
-  	      real_array_t* dest)
+          real_array_t* dest)
 {
     _index_t* idx_vec1;
     _index_t* idx_size;
@@ -365,13 +365,13 @@ void index_real_array(real_array_t* source,
     assert(index_spec_fit_base_array(source_spec,source));
 
     /*for (i = 0, j = 0; i < source->ndims; ++i)
-  	{
-  		printf("source_spec->index_type[%d] = %c\n", i, source_spec->index_type[i]);
+    {
+      printf("source_spec->index_type[%d] = %c\n", i, source_spec->index_type[i]);
         if ((source_spec->index_type[i] == 'W')
             ||
             (source_spec->index_type[i] == 'A'))
             ++j;
-  	}
+    }
     assert(j == dest->ndims);*/
     for (i = 0,j = 0; i < source_spec->ndims; ++i)   {
       if (source_spec->dim_size[i] != 0) ++j;
@@ -481,7 +481,7 @@ void index_alloc_real_array(real_array_t* source,
 
     for (i = 0, j = 0; i < source_spec->ndims; ++i) {
          if (source_spec->dim_size[i] != 0) { /* is 'W' or 'A' */
-         	++j;
+           ++j;
          }
     }
     dest->ndims = j;
@@ -489,12 +489,12 @@ void index_alloc_real_array(real_array_t* source,
 
     for (i = 0, j = 0; i < source_spec->ndims; ++i) {
       if (source_spec->dim_size[i] != 0) { /* is 'W' or 'A' */
-      	if(source_spec->index[i]) /* is 'A' */
-      		dest->dim_size[j] = source_spec->dim_size[i];
-      	else  /* is 'W' */
-      		dest->dim_size[j] = source->dim_size[i];
+        if(source_spec->index[i]) /* is 'A' */
+          dest->dim_size[j] = source_spec->dim_size[i];
+        else  /* is 'W' */
+          dest->dim_size[j] = source->dim_size[i];
 
-      	++j;
+        ++j;
       }
     }
 
@@ -749,7 +749,7 @@ void usub_real_array(real_array_t* a)
   nr_of_elements = base_array_nr_of_elements(a);
   for(i = 0; i < nr_of_elements; ++i)
   {
-  	real_set(a, i, -real_get(a, i));
+    real_set(a, i, -real_get(a, i));
   }
 }
 

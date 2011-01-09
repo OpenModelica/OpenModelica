@@ -86,12 +86,12 @@ static int findTime(double time, t_buffer delayStruct)
   int start = 0, end = delayStruct.length();
   double t;
   do {
-  	int i = (start + end) / 2;
-  	t = delayStruct[i].time;
-  	if (t > time)
-  		end = i;
-  	else
-  		start = i;
+    int i = (start + end) / 2;
+    t = delayStruct[i].time;
+    if (t > time)
+      end = i;
+    else
+      start = i;
   } while (t != time && end > start + 1);
   return start;
 }
@@ -102,14 +102,14 @@ void storeDelayedExpression(int exprNumber, double exprValue)
 
   //fprintf(stderr, "storeDelayed %g:%g\n", time, exprValue);
   if (exprNumber < 0) {
-  	fprintf(stderr, "storeDelayedExpression: Invalid expression number %d.\n", exprNumber);
-  	return;
+    fprintf(stderr, "storeDelayedExpression: Invalid expression number %d.\n", exprNumber);
+    return;
   }
 
 
   if (time < tStart) {
-  	fprintf(stderr, "storeDelayedExpression: Time is smaller than starting time. Value ignored.\n");
-  	return;
+    fprintf(stderr, "storeDelayedExpression: Time is smaller than starting time. Value ignored.\n");
+    return;
   }
 
   // Allocate more space for expressions
@@ -131,8 +131,8 @@ double delayImpl(int exprNumber, double exprValue, double time, double delayTime
   assert(exprNumber < numDelayExpressionIndex);
 
   if (time < tStart) {
-  	fprintf(stderr, "delayImpl: Entered at time < starting time.\n");
-  	return exprValue;
+    fprintf(stderr, "delayImpl: Entered at time < starting time.\n");
+    return exprValue;
   }
 
   if (delayTime < 0.0) {
@@ -159,19 +159,19 @@ double delayImpl(int exprNumber, double exprValue, double time, double delayTime
   // For non-scalar arguments the function is vectorized according to Section 10.6.12.
 
   if (time <= tStart + delayTime) {
-  	//fprintf(stderr, "findTime: time <= tStart + delayTime\n");
-  	return (*delayStruct)[0].value;
+    //fprintf(stderr, "findTime: time <= tStart + delayTime\n");
+    return (*delayStruct)[0].value;
   }
   else {
-  	// return expr(time-delayTime)
-  	assert(delayTime >= 0.0);
+    // return expr(time-delayTime)
+    assert(delayTime >= 0.0);
     double skipToTimeStamp = time - delayMax;
-  	double timeStamp = time - delayTime;
-  	double time0, time1, value0, value1;
+    double timeStamp = time - delayTime;
+    double time0, time1, value0, value1;
     
     int i;
 
-  	// find the row for the lower limit
+    // find the row for the lower limit
     if (timeStamp > (*delayStruct)[length - 1].time) {
       // delay between the last accepted time step and the current time
       time0 = (*delayStruct)[length - 1].time;
@@ -194,22 +194,22 @@ double delayImpl(int exprNumber, double exprValue, double time, double delayTime
       if (i>0 && delayMax == delayTime) (*delayStruct).dequeue_n_first(i-1);
     }
 
-  	// was it an exact match?
-  	if (time0 == timeStamp) {
-  		//fprintf(stderr, "delayImpl: Exact match at %lf\n", currentTime);
-  		return value0;
-  	}
-  	else if (time1 == timeStamp) {
-  	  return value1;
-  	}
-  	else {
-  		//fprintf(stderr, "delayImpl: Linear interpolation of %lf between %lf and %lf\n", timeStamp, time0, time1);
+    // was it an exact match?
+    if (time0 == timeStamp) {
+      //fprintf(stderr, "delayImpl: Exact match at %lf\n", currentTime);
+      return value0;
+    }
+    else if (time1 == timeStamp) {
+      return value1;
+    }
+    else {
+      //fprintf(stderr, "delayImpl: Linear interpolation of %lf between %lf and %lf\n", timeStamp, time0, time1);
 
-  		// linear interpolation
-  		double timedif = time1 - time0;
-  		double dt0 = time1 - timeStamp;
-  		double dt1 = timeStamp - time0;
-  		return (value0 * dt0 + value1 * dt1) / timedif;
-  	}
+      // linear interpolation
+      double timedif = time1 - time0;
+      double dt0 = time1 - timeStamp;
+      double dt1 = timeStamp - time0;
+      return (value0 * dt0 + value1 * dt1) / timedif;
+    }
   }
 }

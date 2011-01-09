@@ -766,10 +766,10 @@ int checkForSampleEvent(){
 
     if (b>=0){
       if (sim_verbose) {cout << " ** Sample Event ** " << endl;}
-  	if (! (b==0)) {
-  		globalData->current_stepsize = (globalData->sampleTimes[tmpindex]).events - globalData->timeValue;
-  		if (sim_verbose) {cout << " ** Change Stepsize :  " << globalData->current_stepsize << endl;}
-  	}
+    if (! (b==0)) {
+      globalData->current_stepsize = (globalData->sampleTimes[tmpindex]).events - globalData->timeValue;
+      if (sim_verbose) {cout << " ** Change Stepsize :  " << globalData->current_stepsize << endl;}
+    }
         return 1;
     }else{
         return 0;
@@ -787,11 +787,11 @@ void activateSampleEvents(){
     int tmpindex = globalData->curSampleTimeIx;
     b = compdbl(&a,&((globalData->sampleTimes[tmpindex]).events));
   while (b>=0){
-  	(globalData->sampleTimes[tmpindex]).activated = 1;
-  	if (sim_verbose) { cout << "Activate Sample Events index: " << tmpindex << endl;}
-  	tmpindex++;
-  	if (tmpindex >= globalData->nSampleTimes) break;
-  	b = compdbl(&a,&((globalData->sampleTimes[tmpindex]).events));
+    (globalData->sampleTimes[tmpindex]).activated = 1;
+    if (sim_verbose) { cout << "Activate Sample Events index: " << tmpindex << endl;}
+    tmpindex++;
+    if (tmpindex >= globalData->nSampleTimes) break;
+    b = compdbl(&a,&((globalData->sampleTimes[tmpindex]).events));
   }
 }
 
@@ -915,9 +915,9 @@ int EventHandle(int flag){
         if (sim_verbose) { sim_result->emit();}
         while (needToIterate || checkForDiscreteChanges()){
           if (needToIterate){
-          	if (sim_verbose) cout << "reinit call. Iteration needed!" << endl;
+            if (sim_verbose) cout << "reinit call. Iteration needed!" << endl;
           }else{
-          	if (sim_verbose) cout << "discrete Var changed. Iteration needed!" << endl;
+            if (sim_verbose) cout << "discrete Var changed. Iteration needed!" << endl;
           }
             saveall();
             functionDAE(needToIterate);
@@ -940,9 +940,9 @@ int EventHandle(int flag){
         if (sim_verbose) { sim_result->emit();}
         while (needToIterate || checkForDiscreteChanges()){
           if (needToIterate){
-          	if (sim_verbose) cout << "reinit call. Iteration needed!" << endl;
+            if (sim_verbose) cout << "reinit call. Iteration needed!" << endl;
           }else{
-          	if (sim_verbose) cout << "discrete Var changed. Iteration needed!" << endl;
+            if (sim_verbose) cout << "discrete Var changed. Iteration needed!" << endl;
           }
             saveall();
             functionDAE(needToIterate);

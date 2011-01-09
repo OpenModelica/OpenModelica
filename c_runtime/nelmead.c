@@ -4,10 +4,10 @@
   on Linux or Unix systems, link with .../path/to/libf2c.a -lm
   or, if you install libf2c.a in a standard place, with -lf2c -lm
   -- in that order, at the end of the command line, as in
-  	cc *.o -lf2c -lm
+    cc *.o -lf2c -lm
   Source for libf2c is in /netlib/f2c/libf2c.zip, e.g.,
 
-  	http://www.netlib.org/f2c/libf2c.zip
+    http://www.netlib.org/f2c/libf2c.zip
 */
 
 #include "f2c.h"
@@ -188,7 +188,7 @@ static integer c__1 = 1;
 /*     VAR()   = OUTPUT, CONTAINS THE DIAGONAL ELEMENTS OF THE INVERSE OF */
 /*               THE INFORMATION MATRIX. */
 /*     FUNCTN  = INPUT, NAME OF THE USER'S SUBROUTINE - ARGUMENTS */
-/*   	(NOP,P,FUNC) WHICH RETURNS THE FUNCTION VALUE FOR A GIVEN */
+/*     (NOP,P,FUNC) WHICH RETURNS THE FUNCTION VALUE FOR A GIVEN */
 /*               SET OF PARAMETER VALUES IN ARRAY P. */
 /* ****     FUNCTN MUST BE DECLARED EXTERNAL IN THE CALLING PROGRAM. */
 /*     IFAULT  = OUTPUT, = 0 FOR SUCCESSFUL TERMINATION */
@@ -375,7 +375,7 @@ L150:
     for (i__ = 1; i__ <= i__1; ++i__) {
 /* L170: */
   pstar[i__ - 1] = a * (pbar[i__ - 1] - g[imax + i__ * 21 - 22]) + pbar[
-  	i__ - 1];
+    i__ - 1];
     }
     (*functn)(nop, pstar, &hstar);
     ++neval;
@@ -405,7 +405,7 @@ L180:
     for (i__ = 1; i__ <= i__1; ++i__) {
 /* L190: */
   pstst[i__ - 1] = c__ * (pstar[i__ - 1] - pbar[i__ - 1]) + pbar[i__ -
-  	1];
+    1];
     }
     (*functn)(nop, pstst, &hstst);
     ++neval;
@@ -482,7 +482,7 @@ L260:
     for (i__ = 1; i__ <= i__1; ++i__) {
 /* L270: */
   pstst[i__ - 1] = b * g[imax + i__ * 21 - 22] + (1.f - b) * pbar[i__ -
-  	1];
+    1];
     }
     (*functn)(nop, pstst, &hstst);
     ++neval;
@@ -531,8 +531,8 @@ L300:
   i__2 = *nop;
   for (j = 1; j <= i__2; ++j) {
       if (step[j] != 0.) {
-  	g[i__ + j * 21 - 22] = (g[i__ + j * 21 - 22] + g[imin + j *
-  		21 - 22]) * .5f;
+    g[i__ + j * 21 - 22] = (g[i__ + j * 21 - 22] + g[imin + j *
+      21 - 22]) * .5f;
       }
 /* L310: */
       p[j] = g[i__ + j * 21 - 22];
@@ -549,7 +549,7 @@ L300:
       do_fio(&c__1, (char *)&h__[i__ - 1], (ftnlen)sizeof(doublereal));
       i__2 = *nop;
       for (j = 1; j <= i__2; ++j) {
-  	do_fio(&c__1, (char *)&p[j], (ftnlen)sizeof(doublereal));
+    do_fio(&c__1, (char *)&p[j], (ftnlen)sizeof(doublereal));
       }
       e_wsfe();
   }
@@ -757,8 +757,8 @@ L470:
   i__2 = *nop;
   for (j = 1; j <= i__2; ++j) {
       if (step[j] != 0.) {
-  	g[i__ + j * 21 - 22] = g[i__ + j * 21 - 22] - p[j] + g[i__ +
-  		j * 21 - 22];
+    g[i__ + j * 21 - 22] = g[i__ + j * 21 - 22] - p[j] + g[i__ +
+      j * 21 - 22];
       }
 /* L480: */
       pstst[j - 1] = g[i__ + j * 21 - 22];
@@ -777,8 +777,8 @@ L470:
       do_fio(&c__1, (char *)&hmin, (ftnlen)sizeof(doublereal));
       i__2 = *nop;
       for (j = 1; j <= i__2; ++j) {
-  	do_fio(&c__1, (char *)&pstst[j - 1], (ftnlen)sizeof(
-  		doublereal));
+    do_fio(&c__1, (char *)&pstst[j - 1], (ftnlen)sizeof(
+      doublereal));
       }
       e_wsfe();
   }
@@ -820,8 +820,8 @@ L490:
       i__3 = *nop;
       for (k = 1; k <= i__3; ++k) {
 /* L520: */
-  	pstst[k - 1] = (g[i2 + k * 21 - 22] + g[j1 + k * 21 - 22]) *
-  		.5f;
+    pstst[k - 1] = (g[i2 + k * 21 - 22] + g[j1 + k * 21 - 22]) *
+      .5f;
       }
       (*functn)(nop, pstst, &hstst);
       ++nmore;
@@ -915,7 +915,7 @@ L610:
   i__2 = nap;
   for (j = 1; j <= i__2; ++j) {
       if (j > i__) {
-  	goto L620;
+    goto L620;
       }
       l = i__ * (i__ - 1) / 2 + j;
       goto L630;
@@ -977,15 +977,15 @@ L690:
       h__[j - 1] = 0.;
       i__3 = nap;
       for (k = 1; k <= i__3; ++k) {
-  	if (k > j) {
-  	    goto L700;
-  	}
-  	l = j * (j - 1) / 2 + k;
-  	goto L710;
+    if (k > j) {
+        goto L700;
+    }
+    l = j * (j - 1) / 2 + k;
+    goto L710;
 L700:
-  	l = k * (k - 1) / 2 + j;
+    l = k * (k - 1) / 2 + j;
 L710:
-  	h__[j - 1] += bmat[l - 1] * g[k + i__ * 21 - 22] * .5f;
+    h__[j - 1] += bmat[l - 1] * g[k + i__ * 21 - 22] * .5f;
 /* L720: */
       }
 /* L730: */
@@ -997,7 +997,7 @@ L710:
       i__3 = nap;
       for (k = 1; k <= i__3; ++k) {
 /* L740: */
-  	vc[l - 1] += h__[k - 1] * g[k + j * 21 - 22];
+    vc[l - 1] += h__[k - 1] * g[k + j * 21 - 22];
       }
 /* L750: */
   }
@@ -1332,40 +1332,40 @@ L110:
       w = a[k];
       if (irow == icol) {
 /* Computing 2nd power */
-  	d__1 = w * eta;
-  	rsq = d__1 * d__1;
+    d__1 = w * eta;
+    rsq = d__1 * d__1;
       }
       m = j;
       i__3 = irow;
       for (i__ = 1; i__ <= i__3; ++i__) {
-  	++l;
-  	if (i__ == irow) {
-  	    goto L20;
-  	}
-  	w -= u[l] * u[m];
-  	if (irow == icol) {
+    ++l;
+    if (i__ == irow) {
+        goto L20;
+    }
+    w -= u[l] * u[m];
+    if (irow == icol) {
 /* Computing 2nd power */
-  	    d__2 = u[l];
+        d__2 = u[l];
 /* Computing 2nd power */
-  	    d__1 = d__2 * d__2 * r__[i__];
-  	    rsq += d__1 * d__1;
-  	}
-  	++m;
+        d__1 = d__2 * d__2 * r__[i__];
+        rsq += d__1 * d__1;
+    }
+    ++m;
 /* L10: */
       }
 L20:
       if (irow == icol) {
-  	goto L50;
+    goto L50;
       }
       if (u[l] == 0.) {
-  	goto L30;
+    goto L30;
       }
       u[k] = w / u[l];
       goto L40;
 L30:
       u[k] = 0.;
       if (abs(w) > (d__1 = *rmax * a[k], abs(d__1))) {
-  	goto L100;
+    goto L100;
       }
 L40:
       ;

@@ -4,10 +4,10 @@
   on Linux or Unix systems, link with .../path/to/libf2c.a -lm
   or, if you install libf2c.a in a standard place, with -lf2c -lm
   -- in that order, at the end of the command line, as in
-  	cc *.o -lf2c -lm
+    cc *.o -lf2c -lm
   Source for libf2c is in /netlib/f2c/libf2c.zip, e.g.,
 
-  	http://www.netlib.org/f2c/libf2c.zip
+    http://www.netlib.org/f2c/libf2c.zip
 */
 
 #include "f2c.h"
@@ -117,7 +117,7 @@
   for (i__ = 1; i__ <= i__2; ++i__) {
       temp = cos__ * a[i__ + j * a_dim1] - sin__ * a[i__ + *n * a_dim1];
       a[i__ + *n * a_dim1] = sin__ * a[i__ + j * a_dim1] + cos__ * a[
-  	    i__ + *n * a_dim1];
+        i__ + *n * a_dim1];
       a[i__ + j * a_dim1] = temp;
 /* L10: */
   }
@@ -148,7 +148,7 @@
   for (i__ = 1; i__ <= i__2; ++i__) {
       temp = cos__ * a[i__ + j * a_dim1] + sin__ * a[i__ + *n * a_dim1];
       a[i__ + *n * a_dim1] = -sin__ * a[i__ + j * a_dim1] + cos__ * a[
-  	    i__ + *n * a_dim1];
+        i__ + *n * a_dim1];
       a[i__ + j * a_dim1] = temp;
 /* L30: */
   }

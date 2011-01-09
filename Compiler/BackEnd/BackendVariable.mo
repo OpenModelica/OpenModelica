@@ -33,7 +33,7 @@ package BackendVariable
 " file:         mo
   package:     BackendVariable
   description: BackendVariables contains the function that deals with the datytypes
-    					 BackendDAE.VAR BackendDAE.Variables and BackendVariablesArray.
+               BackendDAE.VAR BackendDAE.Variables and BackendVariablesArray.
   
   RCS: $Id$
 "

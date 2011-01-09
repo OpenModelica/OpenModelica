@@ -4,10 +4,10 @@
   on Linux or Unix systems, link with .../path/to/libf2c.a -lm
   or, if you install libf2c.a in a standard place, with -lf2c -lm
   -- in that order, at the end of the command line, as in
-  	cc *.o -lf2c -lm
+    cc *.o -lf2c -lm
   Source for libf2c is in /netlib/f2c/libf2c.zip, e.g.,
 
-  	http://www.netlib.org/f2c/libf2c.zip
+    http://www.netlib.org/f2c/libf2c.zip
 */
 
 #include "f2c.h"
@@ -258,9 +258,9 @@ L70:
   if (nfm >= 1 && nfm <= *n) {
       gq[nfm] = (f - fbeg) / *rhobeg;
       if (*npt < nf + *n) {
-  	bmat[nfm * bmat_dim1 + 1] = -one / *rhobeg;
-  	bmat[nf + nfm * bmat_dim1] = one / *rhobeg;
-  	bmat[*npt + nfm + nfm * bmat_dim1] = -half * rhosq;
+    bmat[nfm * bmat_dim1 + 1] = -one / *rhobeg;
+    bmat[nf + nfm * bmat_dim1] = one / *rhobeg;
+    bmat[*npt + nfm + nfm * bmat_dim1] = -half * rhosq;
       }
   } else if (nfm > *n) {
       bmat[nf - *n + nfmm * bmat_dim1] = half / *rhobeg;
@@ -365,24 +365,24 @@ L120:
       i__2 = *n;
       for (i__ = 1; i__ <= i__2; ++i__) {
 /* L130: */
-  	sum += xpt[k + i__ * xpt_dim1] * xopt[i__];
+    sum += xpt[k + i__ * xpt_dim1] * xopt[i__];
       }
       temp = pq[k] * sum;
       sum -= half * xoptsq;
       w[*npt + k] = sum;
       i__2 = *n;
       for (i__ = 1; i__ <= i__2; ++i__) {
-  	gq[i__] += temp * xpt[k + i__ * xpt_dim1];
-  	xpt[k + i__ * xpt_dim1] -= half * xopt[i__];
-  	vlag[i__] = bmat[k + i__ * bmat_dim1];
-  	w[i__] = sum * xpt[k + i__ * xpt_dim1] + tempq * xopt[i__];
-  	ip = *npt + i__;
-  	i__3 = i__;
-  	for (j = 1; j <= i__3; ++j) {
+    gq[i__] += temp * xpt[k + i__ * xpt_dim1];
+    xpt[k + i__ * xpt_dim1] -= half * xopt[i__];
+    vlag[i__] = bmat[k + i__ * bmat_dim1];
+    w[i__] = sum * xpt[k + i__ * xpt_dim1] + tempq * xopt[i__];
+    ip = *npt + i__;
+    i__3 = i__;
+    for (j = 1; j <= i__3; ++j) {
 /* L140: */
-  	    bmat[ip + j * bmat_dim1] = bmat[ip + j * bmat_dim1] +
-  		    vlag[i__] * w[j] + w[i__] * vlag[j];
-  	}
+        bmat[ip + j * bmat_dim1] = bmat[ip + j * bmat_dim1] +
+          vlag[i__] * w[j] + w[i__] * vlag[j];
+    }
       }
   }
 
@@ -393,41 +393,41 @@ L120:
       sumz = zero;
       i__2 = *npt;
       for (i__ = 1; i__ <= i__2; ++i__) {
-  	sumz += zmat[i__ + k * zmat_dim1];
+    sumz += zmat[i__ + k * zmat_dim1];
 /* L150: */
-  	w[i__] = w[*npt + i__] * zmat[i__ + k * zmat_dim1];
+    w[i__] = w[*npt + i__] * zmat[i__ + k * zmat_dim1];
       }
       i__2 = *n;
       for (j = 1; j <= i__2; ++j) {
-  	sum = tempq * sumz * xopt[j];
-  	i__1 = *npt;
-  	for (i__ = 1; i__ <= i__1; ++i__) {
+    sum = tempq * sumz * xopt[j];
+    i__1 = *npt;
+    for (i__ = 1; i__ <= i__1; ++i__) {
 /* L160: */
-  	    sum += w[i__] * xpt[i__ + j * xpt_dim1];
-  	}
-  	vlag[j] = sum;
-  	if (k < idz) {
-  	    sum = -sum;
-  	}
-  	i__1 = *npt;
-  	for (i__ = 1; i__ <= i__1; ++i__) {
+        sum += w[i__] * xpt[i__ + j * xpt_dim1];
+    }
+    vlag[j] = sum;
+    if (k < idz) {
+        sum = -sum;
+    }
+    i__1 = *npt;
+    for (i__ = 1; i__ <= i__1; ++i__) {
 /* L170: */
-  	    bmat[i__ + j * bmat_dim1] += sum * zmat[i__ + k *
-  		    zmat_dim1];
-  	}
+        bmat[i__ + j * bmat_dim1] += sum * zmat[i__ + k *
+          zmat_dim1];
+    }
       }
       i__1 = *n;
       for (i__ = 1; i__ <= i__1; ++i__) {
-  	ip = i__ + *npt;
-  	temp = vlag[i__];
-  	if (k < idz) {
-  	    temp = -temp;
-  	}
-  	i__2 = i__;
-  	for (j = 1; j <= i__2; ++j) {
+    ip = i__ + *npt;
+    temp = vlag[i__];
+    if (k < idz) {
+        temp = -temp;
+    }
+    i__2 = i__;
+    for (j = 1; j <= i__2; ++j) {
 /* L180: */
-  	    bmat[ip + j * bmat_dim1] += temp * vlag[j];
-  	}
+        bmat[ip + j * bmat_dim1] += temp * vlag[j];
+    }
       }
   }
 
@@ -440,21 +440,21 @@ L120:
       w[j] = zero;
       i__1 = *npt;
       for (k = 1; k <= i__1; ++k) {
-  	w[j] += pq[k] * xpt[k + j * xpt_dim1];
+    w[j] += pq[k] * xpt[k + j * xpt_dim1];
 /* L190: */
-  	xpt[k + j * xpt_dim1] -= half * xopt[j];
+    xpt[k + j * xpt_dim1] -= half * xopt[j];
       }
       i__1 = j;
       for (i__ = 1; i__ <= i__1; ++i__) {
-  	++ih;
-  	if (i__ < j) {
-  	    gq[j] += hq[ih] * xopt[i__];
-  	}
-  	gq[i__] += hq[ih] * xopt[j];
-  	hq[ih] = hq[ih] + w[i__] * xopt[j] + xopt[i__] * w[j];
+    ++ih;
+    if (i__ < j) {
+        gq[j] += hq[ih] * xopt[i__];
+    }
+    gq[i__] += hq[ih] * xopt[j];
+    hq[ih] = hq[ih] + w[i__] * xopt[j] + xopt[i__] * w[j];
 /* L200: */
-  	bmat[*npt + i__ + j * bmat_dim1] = bmat[*npt + j + i__ *
-  		bmat_dim1];
+    bmat[*npt + i__ + j * bmat_dim1] = bmat[*npt + j + i__ *
+      bmat_dim1];
       }
   }
   i__1 = *n;
@@ -472,8 +472,8 @@ L120:
 
     if (knew > 0) {
   biglag_(n, npt, &xopt[1], &xpt[xpt_offset], &bmat[bmat_offset], &zmat[
-  	zmat_offset], &idz, ndim, &knew, &dstep, &d__[1], &alpha, &
-  	vlag[1], &vlag[*npt + 1], &w[1], &w[np], &w[np + *n]);
+    zmat_offset], &idz, ndim, &knew, &dstep, &d__[1], &alpha, &
+    vlag[1], &vlag[*npt + 1], &w[1], &w[np], &w[np + *n]);
     }
 
 /*     Calculate VLAG and BETA for the current choice of D. The first NPT */
@@ -551,9 +551,9 @@ L120:
   temp = one + alpha * beta / (d__1 * d__1);
   if (abs(temp) <= .8) {
       bigden_(n, npt, &xopt[1], &xpt[xpt_offset], &bmat[bmat_offset], &
-  	    zmat[zmat_offset], &idz, ndim, &kopt, &knew, &d__[1], &w[
-  	    1], &vlag[1], &beta, &xnew[1], &w[*ndim + 1], &w[*ndim *
-  	    6 + 1]);
+        zmat[zmat_offset], &idz, ndim, &kopt, &knew, &d__[1], &w[
+        1], &vlag[1], &beta, &xnew[1], &w[*ndim + 1], &w[*ndim *
+        6 + 1]);
   }
     }
 
@@ -607,7 +607,7 @@ L310:
       ++ih;
       temp = d__[i__] * xnew[j] + d__[j] * xopt[i__];
       if (i__ == j) {
-  	temp = half * temp;
+    temp = half * temp;
       }
 /* L340: */
       vquad += temp * hq[ih];
@@ -693,7 +693,7 @@ L310:
   for (j = 1; j <= i__2; ++j) {
       temp = one;
       if (j < idz) {
-  	temp = -one;
+    temp = -one;
       }
 /* L380: */
 /* Computing 2nd power */
@@ -784,20 +784,20 @@ L410:
       i__1 = *npt;
       for (k = 1; k <= i__1; ++k) {
 /* L700: */
-  	vlag[k] = fval[k] - fval[kopt];
+    vlag[k] = fval[k] - fval[kopt];
       }
       gisq = zero;
       i__1 = *n;
       for (i__ = 1; i__ <= i__1; ++i__) {
-  	sum = zero;
-  	i__2 = *npt;
-  	for (k = 1; k <= i__2; ++k) {
+    sum = zero;
+    i__2 = *npt;
+    for (k = 1; k <= i__2; ++k) {
 /* L710: */
-  	    sum += bmat[k + i__ * bmat_dim1] * vlag[k];
-  	}
-  	gisq += sum * sum;
+        sum += bmat[k + i__ * bmat_dim1] * vlag[k];
+    }
+    gisq += sum * sum;
 /* L720: */
-  	w[i__] = sum;
+    w[i__] = sum;
       }
 
 /*     Test whether to replace the new quadratic model by the least Frobenius */
@@ -805,42 +805,42 @@ L410:
 
       ++itest;
       if (gqsq < gisq * 100.) {
-  	itest = 0;
+    itest = 0;
       }
       if (itest >= 3) {
-  	i__1 = *n;
-  	for (i__ = 1; i__ <= i__1; ++i__) {
+    i__1 = *n;
+    for (i__ = 1; i__ <= i__1; ++i__) {
 /* L730: */
-  	    gq[i__] = w[i__];
-  	}
-  	i__1 = nh;
-  	for (ih = 1; ih <= i__1; ++ih) {
+        gq[i__] = w[i__];
+    }
+    i__1 = nh;
+    for (ih = 1; ih <= i__1; ++ih) {
 /* L740: */
-  	    hq[ih] = zero;
-  	}
-  	i__1 = nptm;
-  	for (j = 1; j <= i__1; ++j) {
-  	    w[j] = zero;
-  	    i__2 = *npt;
-  	    for (k = 1; k <= i__2; ++k) {
+        hq[ih] = zero;
+    }
+    i__1 = nptm;
+    for (j = 1; j <= i__1; ++j) {
+        w[j] = zero;
+        i__2 = *npt;
+        for (k = 1; k <= i__2; ++k) {
 /* L750: */
-  		w[j] += vlag[k] * zmat[k + j * zmat_dim1];
-  	    }
+      w[j] += vlag[k] * zmat[k + j * zmat_dim1];
+        }
 /* L760: */
-  	    if (j < idz) {
-  		w[j] = -w[j];
-  	    }
-  	}
-  	i__1 = *npt;
-  	for (k = 1; k <= i__1; ++k) {
-  	    pq[k] = zero;
-  	    i__2 = nptm;
-  	    for (j = 1; j <= i__2; ++j) {
+        if (j < idz) {
+      w[j] = -w[j];
+        }
+    }
+    i__1 = *npt;
+    for (k = 1; k <= i__1; ++k) {
+        pq[k] = zero;
+        i__2 = nptm;
+        for (j = 1; j <= i__2; ++j) {
 /* L770: */
-  		pq[k] += zmat[k + j * zmat_dim1] * w[j];
-  	    }
-  	}
-  	itest = 0;
+      pq[k] += zmat[k + j * zmat_dim1] * w[j];
+        }
+    }
+    itest = 0;
       }
   }
     }
@@ -918,8 +918,8 @@ L490:
   delta = max(delta,rho);
   if (*iprint >= 2) {
       if (*iprint >= 3) {
-  	s_wsfe(&io___68);
-  	e_wsfe();
+    s_wsfe(&io___68);
+    e_wsfe();
       }
       s_wsfe(&io___69);
       do_fio(&c__1, (char *)&rho, (ftnlen)sizeof(doublereal));
@@ -929,8 +929,8 @@ L490:
       do_fio(&c__1, (char *)&fopt, (ftnlen)sizeof(doublereal));
       i__2 = *n;
       for (i__ = 1; i__ <= i__2; ++i__) {
-  	d__1 = xbase[i__] + xopt[i__];
-  	do_fio(&c__1, (char *)&d__1, (ftnlen)sizeof(doublereal));
+    d__1 = xbase[i__] + xopt[i__];
+    do_fio(&c__1, (char *)&d__1, (ftnlen)sizeof(doublereal));
       }
       e_wsfe();
   }

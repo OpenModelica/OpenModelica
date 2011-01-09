@@ -23,11 +23,11 @@ void euler ( double *x, double *xd, double *y, double *p, double *res,
        double start,
        double stop,
        double step, void (*f)(double*,// x
-  		       double*,// xd
-  		       double*,// y
-  		       double*,// p
-  		       int,int,int, //nx,ny,np
-  		       double*) // time
+             double*,// xd
+             double*,// y
+             double*,// p
+             int,int,int, //nx,ny,np
+             double*) // time
        )
 {
 
@@ -64,10 +64,10 @@ inline void read_commented_value( ifstream &f, double *res);
 inline void read_commented_value( ifstream &f, int *res);
 
 void read_input(int argc, char **argv,
-  	double* x,double*xd,double*y,
-  	double *p, int nx,int ny, int np,
-  	double *start, double *stop,
-  	double *step)
+    double* x,double*xd,double*y,
+    double *p, int nx,int ny, int np,
+    double *start, double *stop,
+    double *step)
 {
 
   string *filename=(string*)getFlagValue("f",argc,argv);

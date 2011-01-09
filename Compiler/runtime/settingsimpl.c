@@ -172,10 +172,10 @@ extern char* SettingsImpl__getTempDirectoryPath()
     int numChars;
     char* str,str1;
     char tempDirectory[1024];
-  	  //extract the temp path
+      //extract the temp path
     numChars= GetTempPath(1024, tempDirectory);
     if (numChars == 1024 || numChars == 0) {
-  	  fprintf(stderr, "Error setting temppath in Kernel\n");
+      fprintf(stderr, "Error setting temppath in Kernel\n");
       exit(1);
     } else {
       // Must do replacement in two steps, since the _replace function can not have similar source as target.

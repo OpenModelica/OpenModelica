@@ -97,8 +97,8 @@ algorithm
         System.setHasExpandableConnectors(false);
         // set the external flag that signals the presence of expandable connectors in the model
         System.setHasStreamConnectors(false);
-        sp = Util.listFold(inClasses, translate2, {});
-        sp = Util.listFold(initialClasses, translate2, sp);
+        sp = Util.listFold(initialClasses, translate2, {});
+        sp = Util.listFold(inClasses, translate2, sp);
         names = Util.listMap(sp, SCode.className);
         names = Util.sort(names,Util.strcmpBool);
         (_,names) = Util.splitUniqueOnBool(names,stringEqual);
@@ -156,7 +156,7 @@ algorithm
 
     case (c as Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,body = d,info = file_info))
       equation
-    		true = RTOpts.debugFlag("translate");
+        true = RTOpts.debugFlag("translate");
         Debug.fprintln("translate", "SCodeUtil.translateAbsyn2SCodeClass: Translating class failed:" +& n+&"\n");
       then
         fail();
