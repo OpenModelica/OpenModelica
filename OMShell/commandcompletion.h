@@ -56,31 +56,31 @@ namespace IAEX
 {
   class CommandCompletion : public QObject
   {
-  	Q_OBJECT
+    Q_OBJECT
 
   public:
-  	static CommandCompletion *instance( const QString &filename );
-  	bool insertCommand( QTextCursor &cursor );
-  	bool nextCommand( QTextCursor &cursor );
-  	QString helpCommand();
-  	bool nextField( QTextCursor &cursor );
+    static CommandCompletion *instance( const QString &filename );
+    bool insertCommand( QTextCursor &cursor );
+    bool nextCommand( QTextCursor &cursor );
+    QString helpCommand();
+    bool nextField( QTextCursor &cursor );
 
 
   private:
-  	void initializeCommands();
-  	void parseCommand(QDomNode node, CommandUnit *item) const;
-  	CommandCompletion( const QString &filename );
+    void initializeCommands();
+    void parseCommand(QDomNode node, CommandUnit *item) const;
+    CommandCompletion( const QString &filename );
 
-  	static CommandCompletion *instance_;
-  	QDomDocument *doc_;
+    static CommandCompletion *instance_;
+    QDomDocument *doc_;
 
-  	int currentCommand_;
-  	int currentField_;
-  	int commandStartPos_;
-  	int commandEndPos_;
+    int currentCommand_;
+    int currentField_;
+    int commandStartPos_;
+    int commandEndPos_;
 
-  	QStringList *currentList_;
-  	QStringList commandList_;
+    QStringList *currentList_;
+    QStringList commandList_;
         QHash<QString,CommandUnit*> commands_;
   };
 }

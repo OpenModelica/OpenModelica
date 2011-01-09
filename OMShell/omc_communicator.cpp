@@ -93,7 +93,7 @@ bool OmcCommunicator::establishConnection()
 {
   if (omc_)
   {
-  	return true;
+    return true;
   }
 
   // ORB initialization.
@@ -118,7 +118,7 @@ bool OmcCommunicator::establishConnection()
 #endif
 
   if (!objectRefFile.exists())
-  	return false;
+    return false;
 
   objectRefFile.open(QIODevice::ReadOnly);
 
@@ -133,11 +133,11 @@ bool OmcCommunicator::establishConnection()
 
   // Test if we have a connection.
   try {
-  	omc_->sendExpression("getClassNames()");
+    omc_->sendExpression("getClassNames()");
   }
   catch (CORBA::Exception&) {
-  	omc_ = 0;
-  	return false;
+    omc_ = 0;
+    return false;
   }
 
   return true;
@@ -173,47 +173,47 @@ void OmcCommunicator::closeConnection()
 QString OmcCommunicator::callOmc(const QString& fnCall)
 {
   if (!omc_) {
-  	//throw OmcError(fnCall);
+    //throw OmcError(fnCall);
 
-  	// 2006-02-02 AF, Added throw exception
-  	string msg = string("OMC-ERROR in function call: ") + fnCall.toStdString();
-  	throw runtime_error( msg.c_str() );
+    // 2006-02-02 AF, Added throw exception
+    string msg = string("OMC-ERROR in function call: ") + fnCall.toStdString();
+    throw runtime_error( msg.c_str() );
   }
 
   QString returnString;
   while (true) {
-  	try {
-  		returnString = omc_->sendExpression( fnCall.toLatin1() );
-  		break;
-  	}
-  	catch (CORBA::Exception&)
-  	{
-  		if( fnCall != "quit()" && fnCall != "quit();" )
-  		{
-  			throw runtime_error("NOT RESPONDING");
-  		}
-  		else
-  			break;
-  	}
+    try {
+      returnString = omc_->sendExpression( fnCall.toLatin1() );
+      break;
+    }
+    catch (CORBA::Exception&)
+    {
+      if( fnCall != "quit()" && fnCall != "quit();" )
+      {
+        throw runtime_error("NOT RESPONDING");
+      }
+      else
+        break;
+    }
   }
 
   // PORT >> returnString = returnString.stripWhiteSpace();
   returnString = returnString.trimmed();
   if (fnCall.startsWith("list(")) {
-  	//emit omcOutput("...");
-  	// qDebug("...");
+    //emit omcOutput("...");
+    // qDebug("...");
   } else {
-  	//emit omcOutput(returnString);
-  	//qDebug(QString(returnString).replace("%"," "));
+    //emit omcOutput(returnString);
+    //qDebug(QString(returnString).replace("%"," "));
   }
 
   if (returnString == "-1") {
-  	string tmp = "[Internal Error] OmcCommunicator::callOmc():\nOmc call \""
-  		+ fnCall.toStdString() + "\" failed!\n\n";
+    string tmp = "[Internal Error] OmcCommunicator::callOmc():\nOmc call \""
+      + fnCall.toStdString() + "\" failed!\n\n";
 
-  	qWarning( tmp.c_str() );
-  	//throw OmcError(fnCall, returnString);
-  	cerr << "OmcError(" << fnCall.toStdString() << ", " << returnString.toStdString() << ")" << endl;
+    qWarning( tmp.c_str() );
+    //throw OmcError(fnCall, returnString);
+    cerr << "OmcError(" << fnCall.toStdString() << ", " << returnString.toStdString() << ")" << endl;
   }
 
   return returnString;

@@ -57,43 +57,43 @@ namespace IAEX
   class CommandUnit
   {
   public:
-  	CommandUnit( QString name ) : name_(name){}
-  	virtual ~CommandUnit(){}
+    CommandUnit( QString name ) : name_(name){}
+    virtual ~CommandUnit(){}
 
-  	QString name(){ return name_; }
-  	QString fullName()
-  	{
-  		QString tmp = name_;
-  		QHash<QString,QString>::iterator d_iter = datafields_.begin();
-  		while( d_iter != datafields_.end() )
-  		{
-  			tmp.replace( d_iter.key(), d_iter.value() );
-  			++d_iter;
-  		}
+    QString name(){ return name_; }
+    QString fullName()
+    {
+      QString tmp = name_;
+      QHash<QString,QString>::iterator d_iter = datafields_.begin();
+      while( d_iter != datafields_.end() )
+      {
+        tmp.replace( d_iter.key(), d_iter.value() );
+        ++d_iter;
+      }
 
-  		return tmp;
-  	}
-  	QString helptext(){ return helptext_; }
+      return tmp;
+    }
+    QString helptext(){ return helptext_; }
 
-  	int numbersField(){ return datafields_.size(); }
-  	QString datafield( QString fieldID )
-  	{
-  		if( datafields_.contains( fieldID ))
-  			return datafields_[fieldID];
-  		else
-  			return QString::null;
-  	}
-  	void addDataField( QString fieldID, QString data )
-  	{
-  		datafields_[fieldID] = data;
-  	}
+    int numbersField(){ return datafields_.size(); }
+    QString datafield( QString fieldID )
+    {
+      if( datafields_.contains( fieldID ))
+        return datafields_[fieldID];
+      else
+        return QString::null;
+    }
+    void addDataField( QString fieldID, QString data )
+    {
+      datafields_[fieldID] = data;
+    }
 
-  	void setHelptext( QString text ){ helptext_ = text; }
+    void setHelptext( QString text ){ helptext_ = text; }
 
   private:
-  	QString name_;
-  	QHash<QString,QString> datafields_;
-  	QString helptext_;
+    QString name_;
+    QHash<QString,QString> datafields_;
+    QString helptext_;
   };
 }
 

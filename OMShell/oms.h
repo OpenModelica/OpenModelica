@@ -95,14 +95,14 @@ public slots:
   void viewToolbar();
   void viewStatusbar();
   void aboutOMS();
-  void aboutQT();					// Added 2006-02-21 AF
+  void aboutQT();          // Added 2006-02-21 AF
   void print();
   bool startServer();
   void stopServer();
   void clear();
 
 private slots:
-  void closeEvent( QCloseEvent *event );		// Added 2006-02-09 AF
+  void closeEvent( QCloseEvent *event );    // Added 2006-02-09 AF
 
 private:
   void createMoshEdit();
@@ -152,7 +152,7 @@ private:
   QAction* viewToolbar_;
   QAction* viewStatusbar_;
   QAction* aboutOMS_;
-  QAction* aboutQT_;				// Added 2006-02-21 AF
+  QAction* aboutQT_;        // Added 2006-02-21 AF
   QAction* print_;
   QAction* startServer_;
   QAction* stopServer_;
@@ -182,7 +182,7 @@ signals:
 
 protected:
   void keyPressEvent(QKeyEvent *event);
-  void insertFromMimeData(const QMimeData *source);	// Added 2006-01-30
+  void insertFromMimeData(const QMimeData *source);  // Added 2006-01-30
 
 private:
   bool insideCommandSign();
