@@ -1231,7 +1231,7 @@ algorithm
                exp = exp),
            mmopts, stmts, intxt, outtxt, locals, scEnv, tplPackage, accMMDecls )
       equation
-    		true = RTOpts.debugFlag("failtrace");
+				true = RTOpts.debugFlag("failtrace");
         (_, idtype, _) 
           = resolveBoundPath(IDENT(ident), scEnv, tplPackage);
         failure(UNRESOLVED_TYPE(_) = idtype);
@@ -1384,7 +1384,7 @@ algorithm
     //warning - more options than expected   
     case ( (optid,_) ::_ )
       equation
-    		true = RTOpts.debugFlag("failtrace");
+				true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace", "Error - more options specified than expected for an expression (first option is '" +& optid +& "').\n");
        then fail();
     
@@ -1949,7 +1949,7 @@ algorithm
     //trying to convert an unresolved value
     case (mmexp, UNRESOLVED_TYPE(reason = reason))
       equation
-    		true = RTOpts.debugFlag("failtrace");
+				true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace", "Error - an unresolved value trying to convert to string. Unresolution reason:\n    " +& reason);
       then
         fail();
@@ -1957,7 +1957,7 @@ algorithm
     //trying to convert a value when there is no conversion for its type
     case (mmexp, ts)
       equation
-    		true = RTOpts.debugFlag("failtrace");
+				true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace", "Error - expression '" +& mmExpString(mmexp) +& "' of type '" 
            +& typeSignatureString(ts) +& "' has no automatic to-string conversion.\n");
       then
@@ -2072,7 +2072,7 @@ algorithm
     
     case (argvals, fname, iargs,  oargs, tyVars, intxt, outtxt, locals, tplPackage)
       equation
-    		true = RTOpts.debugFlag("failtrace");
+				true = RTOpts.debugFlag("failtrace");
         str = "Error - cannot elaborate function\n  "
           +& Tpl.tplString3(TplCodegen.sFunSignature, fname, iargs, oargs)
           +& "\n  for actual parameters  "
@@ -3444,7 +3444,7 @@ algorithm
     
     case ( (ident, mexp) :: fms, fields, astDefs)
       equation
-    		true = RTOpts.debugFlag("failtrace");
+				true = RTOpts.debugFlag("failtrace");
         failure( _ = lookupTupleList(fields, ident) );
         //reason = "#Error - unresolved type - cannot find field '" +& ident +& "'#";
         Debug.fprint("failtrace", "Error - typeCheckMatchingExpRecord failed to find field '" +& ident +& "'\n");
@@ -4268,7 +4268,7 @@ algorithm
     
     case ( path, UNRESOLVED_TYPE(reason), msg)
       equation
-    		true = RTOpts.debugFlag("failtrace");
+				true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace", msg +& " unresolved path '" +& pathIdentString(path) +& "', reason = '" +& reason +& "'.\n");
       then
         fail();
@@ -5024,7 +5024,7 @@ algorithm
     //should not ever happen
     case ( ident, _, _, _, _)
       equation
-    		true = RTOpts.debugFlag("failtrace");
+				true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace", "-!!!lookupUpdateMExpDotPath failed for ident '" +& ident +& "'.\n");
       then
         fail();
@@ -5219,7 +5219,7 @@ algorithm
     
     case ( inid, path, (ident, mexp) :: fms, fields, astDefs )
       equation
-    		true = RTOpts.debugFlag("failtrace");
+				true = RTOpts.debugFlag("failtrace");
         failure( _ = lookupTupleList(fields, ident) );
         Debug.fprint("failtrace", "-Error!!!lookupUpdateMExpRecord failed in lookup for field (type) ident '" +& ident +& "'.\n");
       then 
@@ -5308,14 +5308,14 @@ algorithm
     
     case ( mtype as NAMED_TYPE(name = _), tagpath, _)
       equation
-    		true = RTOpts.debugFlag("failtrace");
+				true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace", "Error - (getFieldsForRecord) for case tag '" +& pathIdentString(tagpath) +& "' failed for reason above.\n");
       then 
         fail();
         
     case ( mtype, tagpath, _)
       equation
-    		true = RTOpts.debugFlag("failtrace");
+				true = RTOpts.debugFlag("failtrace");
         //failure(NAMED_TYPE(_) = mtype);
         Debug.fprint("failtrace", "Error - for case tag '" +& pathIdentString(tagpath) +& "' the input type is not a NAME_TYPE hence not a union/record type.\n");
       then
@@ -5454,14 +5454,14 @@ algorithm
     
     case (NONE(), typeident, {} )
       equation
-    		true = RTOpts.debugFlag("failtrace");
+				true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace", "Error - getTypeInfo failed to lookup the type '" +& typeident +& "' after looking up all AST definitions.\n");
       then 
         fail();
         
     case ( SOME(typepckg), typeident, {} )
       equation
-    		true = RTOpts.debugFlag("failtrace");
+				true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace", "Error - getTypeInfo failed to lookup the type '" +& pathIdentString(typepckg) +& "." +& typeident +& "' after looking up all AST definitions.\n");
       then 
         fail();
@@ -5786,7 +5786,7 @@ algorithm
     
     case (fname as IDENT(templname), TEMPL_PACKAGE(templateDefs = templateDefs))
       equation
-    		true = RTOpts.debugFlag("failtrace");
+				true = RTOpts.debugFlag("failtrace");
         _  =  lookupTupleList(templateDefs, templname);
         Debug.fprint("failtrace", "Error - '" +& templname +& "' is used in a function/template context while it is defined as a constant.\n");
       then 
@@ -5863,7 +5863,7 @@ algorithm
     
     case ( tagident, TI_UNION_TYPE(recTags = rectags) , typeident)
       equation
-    		true = RTOpts.debugFlag("failtrace");
+				true = RTOpts.debugFlag("failtrace");
         failure(_ = lookupTupleList(rectags, tagident));
         Debug.fprint("failtrace", "Error - getFields failed to lookup the union tag '" +& tagident +& "', that is not found in type '" +& typeident +& "'.\n");
       then 
@@ -5877,7 +5877,7 @@ algorithm
     
     case ( tagident, TI_RECORD_TYPE(fields = fields), typeident )
       equation
-    		true = RTOpts.debugFlag("failtrace");
+				true = RTOpts.debugFlag("failtrace");
         false = stringEq(tagident, typeident);
         Debug.fprint("failtrace", "Error - getFields failed to match the tag '" +& tagident +& "', the type '" +& typeident +& "' expected.\n");
       then 
@@ -5886,7 +5886,7 @@ algorithm
     //should not ever happen    
     case ( _, typeinfo, _ )
       equation
-    		true = RTOpts.debugFlag("failtrace");
+				true = RTOpts.debugFlag("failtrace");
         failure(TI_UNION_TYPE(_) = typeinfo); 
         failure(TI_RECORD_TYPE(_) = typeinfo);
         Debug.fprint("failtrace", "- getFields failed - the typeinfo is neither union nor record type.\n");
@@ -5949,7 +5949,7 @@ algorithm
             isDefault     = isdefault,
             types         = typeLst) :: restAstDefs)
       equation
-    		true = RTOpts.debugFlag("failtrace");
+				true = RTOpts.debugFlag("failtrace");
         failure(typeLst = listMap1Tuple22(typeLst, fullyQualifyAstTypeInfo, importckg));
         Debug.fprint("failtrace", "-fullyQualifyASTDefs failed for importckg = " +& pathIdentString(importckg) +& " .\n"); 
       then
@@ -6465,8 +6465,8 @@ end listMap2Tuple22;
 //**************************************
 
 public function canBeEscapedUnquoted
-    input list<String> inStringList;
-    output Boolean outCanBeUnquoted;
+	  input list<String> inStringList;
+	  output Boolean outCanBeUnquoted;
 algorithm 
   outCanBeUnquoted := 
   matchcontinue (inStringList)
@@ -6493,7 +6493,7 @@ algorithm
       then 
         false;
     
-  end matchcontinue;   
+  end matchcontinue;	 
 end canBeEscapedUnquoted;
 
 
@@ -6529,8 +6529,8 @@ end canBeEscapedUnquotedChars;
 
 
 public function canBeOnOneLine
-    input list<String> inStringList;
-    output Boolean outCanBeOnOneLine;
+	  input list<String> inStringList;
+	  output Boolean outCanBeOnOneLine;
 algorithm 
   outCanBeOnOneLine := 
         (listLength(inStringList) <= 4) 

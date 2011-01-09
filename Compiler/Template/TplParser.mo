@@ -526,7 +526,7 @@ algorithm
     
     case (file) 
       equation
-    		true = RTOpts.debugFlag("failtrace");
+				true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace", "Parse error - TplParser.openFile failed for file '" +& file +& "'.\n");
       then fail();
                 
@@ -556,7 +556,7 @@ algorithm
     
     case (file) 
       equation
-    		true = RTOpts.debugFlag("failtrace");
+				true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace", "Parse error - TplParser.templPackageFromFile failed for file '" +& file +& "'.\n");
       then fail();
 
@@ -592,7 +592,7 @@ algorithm
     
     case (_,_) 
       equation
-    		true = RTOpts.debugFlag("failtrace");
+				true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace", "Parse error - TplParser.typeviewDefsFromInterfaceFile failed.\n");
       then fail();
                 
@@ -633,7 +633,7 @@ algorithm
     
     case (_,_,_) 
       equation
-    		true = RTOpts.debugFlag("failtrace");
+				true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace", "Parse error - TplParser.typeviewDefsFromInterfaceFile failed.\n");
       then fail();
                 
@@ -664,7 +664,7 @@ algorithm
     
     case (_) 
       equation
-    		true = RTOpts.debugFlag("failtrace");
+				true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace", "Parse error - TplParser.templateDefToAstDefType failed.\n");
       then fail();
                 
@@ -673,11 +673,11 @@ end templateDefToAstDefType;
 
 /*
 newLine:
-  \r \n  //CR + LF ... Windows
-  |
-  \n     //CR only ... Linux
-  |
-  \r     //LF only ... Mac OS up to 9
+	\r \n  //CR + LF ... Windows
+	|
+	\n     //CR only ... Linux
+	|
+	\r     //LF only ... Mac OS up to 9
 */
 public function newLine
   input list<String> inChars;
@@ -717,13 +717,13 @@ end newLine;
 /*
 // interleave will be applied before every token
 interleave:  //i.e. space / comment
-  [' '\n\r\t] interleave
-  |
-  '//' toEndOfLine  interleave
-  |
-  '/''*' comment  interleave
-  |
-  _ //just nothing
+	[' '\n\r\t] interleave
+	|
+	'//' toEndOfLine  interleave
+	|
+	'/''*' comment  interleave
+	|
+	_ //just nothing
 */
 public function interleave
   input list<String> inChars;
@@ -807,11 +807,11 @@ end toEndOfLine;
 
 
 //comment:
-//  '*''/' 
-//  |
-//  '/''*' comment comment  //nesting is possible
-//  |
-//  any  comment
+//	'*''/' 
+//	|
+//	'/''*' comment comment  //nesting is possible
+//	|
+//	any  comment
 
 public function comment
   input list<String> inChars;
@@ -881,7 +881,7 @@ end afterKeyword;
 
 /*
 identifier:
-  [_A-Za-z]:c  identifier_rest:rest     =>  stringCharListString(c::rest)
+	[_A-Za-z]:c  identifier_rest:rest     =>  stringCharListString(c::rest)
 */
 
 protected constant list<String> keywords = 
@@ -918,7 +918,7 @@ end identifier;
 identifier_rest:
     [_0-9A-Za-z]:c  identifier_rest:rest  =>  c::rest
     |
-  _  =>  {}
+	_  =>  {}
 */
 public function identifier_rest
   input list<String> inChars;
@@ -953,7 +953,7 @@ end identifier_rest;
 
 /*
 pathIdent:
-  identifier:head  pathIdentPath(head):pid => pid 
+	identifier:head  pathIdentPath(head):pid => pid 
 */
 public function pathIdent
   input list<String> inChars;
@@ -983,12 +983,12 @@ end pathIdent;
 
 /*
 pathIdentPath(head):
-  '.' pathIdent:path  =>  PATH_IDENT(head, path)
-  |
-  '.' error "expecting identifier after dot." 
-    => PATH_IDENT(head, TplAbsyn.IDENT("#error#"))
-  |
-  _ =>  IDENT(head)
+	'.' pathIdent:path  =>  PATH_IDENT(head, path)
+	|
+	'.' error "expecting identifier after dot." 
+	  => PATH_IDENT(head, TplAbsyn.IDENT("#error#"))
+	|
+	_ =>  IDENT(head)
 */
 public function pathIdentPath
   input list<String> inChars;
@@ -1084,10 +1084,10 @@ end pathIdentNoOpt;
 
 /*
 templPackage:
-  'package'  pathIdent:pid  stringComment
-    definitions(pid,{},{}):(astDefs,templDefs)
-  endDefPathIdent(pid)  
-  =>   TEMPL_PACKAGE(pid, astDefs,templDefs)
+	'package'  pathIdent:pid  stringComment
+		definitions(pid,{},{}):(astDefs,templDefs)
+	endDefPathIdent(pid)	
+	=> 	TEMPL_PACKAGE(pid, astDefs,templDefs)
 */
 public function templPackage
   input list<String> inChars;
@@ -1130,21 +1130,21 @@ end templPackage;
 
 /*
 definitions(astDefs,templDefs):
-  'import' 'interface' pathIdent:pid stringComment ';' 
-    { ads = typeviewDefsFromInterfaceFile(packageNameToFileName(pid,".mo"), astDefs) }
-    definitions(ads, templDefs):(ads,tds) 
-    => (ads,tds)
-  | 
-  'import' pathIdent:pid unqualImportPostfix:unq stringComment ';'
-    { ads = typeviewDefsFromTemplateFile(pid, unq, astDefs) }
-    definitions(ads, templDefs):(ads,tds) 
-    => (ads,tds)
-//  |
-//  absynDef:ad  definitions(ad::astDefs,templDefs):(ads,tds) => (ads,tds)
-  |
-  templDef:(name, td)  definitions(astDefs,(name,td)::templDefs):(ads,tds) => (ads,tds)
-//  |
-//  error "Expecting 'end' | ['public' | 'protected' ] 'package' definition | template definition starting with an identifier."
+	'import' 'interface' pathIdent:pid stringComment ';' 
+	  { ads = typeviewDefsFromInterfaceFile(packageNameToFileName(pid,".mo"), astDefs) }
+	  definitions(ads, templDefs):(ads,tds) 
+	  => (ads,tds)
+	| 
+	'import' pathIdent:pid unqualImportPostfix:unq stringComment ';'
+	  { ads = typeviewDefsFromTemplateFile(pid, unq, astDefs) }
+	  definitions(ads, templDefs):(ads,tds) 
+	  => (ads,tds)
+//	|
+//	absynDef:ad  definitions(ad::astDefs,templDefs):(ads,tds) => (ads,tds)
+	|
+	templDef:(name, td)  definitions(astDefs,(name,td)::templDefs):(ads,tds) => (ads,tds)
+//	|
+//	error "Expecting 'end' | ['public' | 'protected' ] 'package' definition | template definition starting with an identifier."
 */
 public function definitions
   input list<String> inChars;
@@ -1231,9 +1231,9 @@ end definitions;
 
 /*
 unqualImportPostfix:
-  '.' '*' => true
-  |
-  _ => false
+	'.' '*' => true
+	|
+	_ => false
 */
 public function unqualImportPostfix
   input list<String> inChars;
@@ -1256,7 +1256,7 @@ algorithm
     case (chars, linfo) 
       then (chars, linfo, false);
   end matchcontinue;
-end unqualImportPostfix;  
+end unqualImportPostfix;	
 
 /*
 //optional, may fail
@@ -1317,13 +1317,13 @@ end typeSigNoOpt;
 
 /*
 typeSig_base:
-  'list' '<' typeSig:tof '>'  =>  LIST_TYPE(tof)
-  |
-  'Option' '<' typeSig '>'   =>  OPTION_TYPE(tof)
-  |
-  'tuple' '<' typeSig:ts  typeSig_restList:restLst  '>'  => TUPLE_TYPE(ts::restLst)
-  |
-  pathIdent:pid  =>  NAMED_TYPE(pid)  // +specializations for String, Integer, .... => STRING_TYPE(), ... 
+	'list' '<' typeSig:tof '>'  =>  LIST_TYPE(tof)
+	|
+	'Option' '<' typeSig '>'   =>  OPTION_TYPE(tof)
+	|
+	'tuple' '<' typeSig:ts  typeSig_restList:restLst  '>'  => TUPLE_TYPE(ts::restLst)
+	|
+	pathIdent:pid  =>  NAMED_TYPE(pid)  // +specializations for String, Integer, .... => STRING_TYPE(), ... 
 */
 public function typeSig_base
   input list<String> inChars;
@@ -1381,9 +1381,9 @@ end typeSig_base;
 
 /*
 typeSig_array(base):
-  '[' ':' ']'  typeSig_array(ARRAY_TYPE(base)):ts   =>  ts
-  |
-  _  =>  base
+	'[' ':' ']'  typeSig_array(ARRAY_TYPE(base)):ts   =>  ts
+	|
+	_  =>  base
 */
 public function typeSig_array
   input list<String> inChars;
@@ -1468,11 +1468,11 @@ end typeSigFromPathIdent;
 
 /*
 publicProtected:
-  'public' => true
-  |
-  'protected' => false
-  |
-  _ => true
+	'public' => true
+	|
+	'protected' => false
+	|
+	_ => true
 */
 public function publicProtected
   input list<String> inChars;
@@ -1497,13 +1497,13 @@ algorithm
     case (chars) then (chars, true);
 
   end matchcontinue;
-end publicProtected;  
+end publicProtected;	
 
 /*
 stringComment:
-  '"' stringCommentRest
-  |
-  _ 
+	'"' stringCommentRest
+	|
+	_ 
 */
 public function stringComment
   input list<String> inChars;
@@ -1530,13 +1530,13 @@ algorithm
 end stringComment;
 /*
 stringCommentRest:
-  '\\"' stringCommentRest
-  |
-  '\\' stringCommentRest
-  |
-  ~'"' stringCommentRest
-  |
-  '"'
+	'\\"' stringCommentRest
+	|
+	'\\' stringCommentRest
+	|
+	~'"' stringCommentRest
+	|
+	'"'
 */
 public function stringCommentRest
   input list<String> inChars;
@@ -1621,10 +1621,10 @@ end semicolon;
 
 /*
 interfacePackage(astDefs):
-  'interface' 'package'  pathIdent:pid  stringComment
-    typeviewDefs(astDefs):ads
-  endDefPathIdent(pid)  
-  =>   (pid, ads)
+	'interface' 'package'  pathIdent:pid  stringComment
+		typeviewDefs(astDefs):ads
+	endDefPathIdent(pid)	
+	=> 	(pid, ads)
 */
 public function interfacePackage
   input list<String> inChars;
@@ -1668,9 +1668,9 @@ end interfacePackage;
 
 /*
 typeviewDefs(astDefs):
-  absynDef:ad  typeviewDefs(ad::astDefs):ads => ads
-  |
-  _ => astDefs
+	absynDef:ad  typeviewDefs(ad::astDefs):ads => ads
+	|
+	_ => astDefs
 */
 public function typeviewDefs
   input list<String> inChars;
@@ -1704,10 +1704,10 @@ end typeviewDefs;
 
 /*
 absynDef:
-  publicProtected:isD  'package' pathIdent:pid  stringComment 
-    absynTypes:types
-  endDefPathIdent(pid) 
-  =>  AST_DEF(pid, isD, types)
+	publicProtected:isD  'package' pathIdent:pid  stringComment 
+	  absynTypes:types
+	endDefPathIdent(pid) 
+	=>  AST_DEF(pid, isD, types)
 */
 public function absynDef
   input list<String> inChars;
@@ -1748,7 +1748,7 @@ end absynDef;
 /*
 //not optional, must not fail
 endDefPathIdent(pid):
-  'end' pathIdent:pidEnd ';' // pid == pidEnd | warning
+	'end' pathIdent:pidEnd ';' // pid == pidEnd | warning
 */
 public function endDefPathIdent
   input list<String> inChars;
@@ -1807,7 +1807,7 @@ end endDefPathIdent;
 /*
 //not optional ... must not fail
 endDefIdent(id):
-  'end' identifier:idEnd ';' // id == idEnd | warning
+	'end' identifier:idEnd ';' // id == idEnd | warning
 */
 public function endDefIdent
   input list<String> inChars;
@@ -1866,9 +1866,9 @@ end endDefIdent;
 
 /*
 absynTypes:
-  absynType:(id,ti)  absynTypes:types  => (id,ti) :: types
-  |
-  _ => {}
+	absynType:(id,ti)  absynTypes:types  => (id,ti) :: types
+	|
+	_ => {}
 */
 public function absynTypes
   input list<String> inChars;
@@ -1899,24 +1899,24 @@ algorithm
 end absynTypes;
 /*
 absynType:
-  'uniontype' identifier:id  stringComment
-      recordTags(id):rtags      
-  => (id, TI_UNION_TYPE(rtags))
-  |
-  recordType:(id,fields)
-  => (id, TI_RECORD_TYPE(fields))
-  |
-  'function' identifier:id  stringComment
-    inputFunArgs:inArgs
-    outputFunArgs:outArgs	  
-  endDefIdent(id)
-  => (id, TI_FUN_TYPE(inArgs,outArgs))
-  |
-  'constant'  typeSig:ts  identifier:id  stringComment  ';'
-  => (id, TI_CONST_TYPE(ts))
-  |
-  'type' identifier:id '=' typeSig:ts stringComment  ';'
-  => (id, TI_ALIAS_TYPE(ts))  
+	'uniontype' identifier:id  stringComment
+	    recordTags(id):rtags	    
+	=> (id, TI_UNION_TYPE(rtags))
+	|
+	recordType:(id,fields)
+	=> (id, TI_RECORD_TYPE(fields))
+	|
+	'function' identifier:id  stringComment
+		inputFunArgs:inArgs
+		outputFunArgs:outArgs	  
+	endDefIdent(id)
+	=> (id, TI_FUN_TYPE(inArgs,outArgs))
+	|
+	'constant'  typeSig:ts  identifier:id  stringComment  ';'
+	=> (id, TI_CONST_TYPE(ts))
+	|
+	'type' identifier:id '=' typeSig:ts stringComment  ';'
+	=> (id, TI_ALIAS_TYPE(ts))	
 */
 public function absynType
   input list<String> inChars;
@@ -2005,10 +2005,10 @@ end absynType;
 
 /*
 recordType:
-  'record' identifier:id  stringComment
-      typeDecls:tids
-  'end' identifier:idEnd ';' // id == idEnd
-  => (id,tids)
+	'record' identifier:id  stringComment
+	    typeDecls:tids
+	'end' identifier:idEnd ';' // id == idEnd
+	=> (id,tids)
 */
 public function recordType
   input list<String> inChars;
@@ -2042,11 +2042,11 @@ algorithm
 end recordType;
 /*
 typeDecls:
-  typeSig:ts  identifier:id  stringComment ';'
-  typeDecls:tids  
-  => (id,ts) :: tids
-  |
-  _ => {}
+	typeSig:ts  identifier:id  stringComment ';'
+	typeDecls:tids  
+	=> (id,ts) :: tids
+	|
+	_ => {}
 */
 public function typeDecls
   input list<String> inChars;
@@ -2095,9 +2095,9 @@ algorithm
 end typeDecls;
 /*
 recordTags:
-  recordType:(id,tids)  recordTags:rtags  => (id,tids) :: rtags
-  |
-  _ => {}
+	recordType:(id,tids)  recordTags:rtags  => (id,tids) :: rtags
+	|
+	_ => {}
 */
 public function recordTags
   input list<String> inChars;
@@ -2133,11 +2133,11 @@ algorithm
 end recordTags;
 /*
 inputFunArgs:
-  'input' typeSig:ts  identifier:id  stringComment
-  inputFunArgs:iargs
-  => (id,ts) :: iargs
-  |
-  _ => {} 
+	'input' typeSig:ts  identifier:id  stringComment
+	inputFunArgs:iargs
+	=> (id,ts) :: iargs
+	|
+	_ => {} 
 */
 public function inputFunArgs
   input list<String> inChars;
@@ -2177,11 +2177,11 @@ algorithm
 end inputFunArgs;
 /*
 outputFunArgs:
-  'output' typeSig:ts  identifier:id  stringComment ';'
-  outputFunArgs:oargs
-  => (id,ts) :: oargs
-  |
-  _ => {} 
+	'output' typeSig:ts  identifier:id  stringComment ';'
+	outputFunArgs:oargs
+	=> (id,ts) :: oargs
+	|
+	_ => {} 
 */
 public function outputFunArgs
   input list<String> inChars;
@@ -2222,11 +2222,11 @@ end outputFunArgs;
 
 /*
 typeVars(tyvars):
-  'replaceable' 'type'  identifier:id  'subtypeof' 'Any' ';'
-  typeVars(id :: tyvars):tyvars
-  => tyvars
-  |
-  _ => tyvars 
+	'replaceable' 'type'  identifier:id  'subtypeof' 'Any' ';'
+	typeVars(id :: tyvars):tyvars
+	=> tyvars
+	|
+	_ => tyvars 
 */
 public function typeVars
   input list<String> inChars;
@@ -2267,7 +2267,7 @@ end typeVars;
 templDef:
     'template' identifier:name  
       '(' templArgs:args ')' stringComment
-      templDef_Templ:(exp,lesc,resc) 
+	    templDef_Templ:(exp,lesc,resc) 
     endDefIdent(name) 
       =>  (name, TEMPLATE_DEF(args,lesc,resc,exp))
     |
@@ -2332,11 +2332,11 @@ end templDef;
 
 /*
 templDef_Const:
-  '=' stringConstant:strRevList  
-    =>  STR_TOKEN_DEF(makeStrTokFromRevStrList(strRevList))
-  |
-  '=' literalConstant:(str,litType)  
-    =>  LITERAL_DEF(str, litType) 
+	'=' stringConstant:strRevList  
+	  =>  STR_TOKEN_DEF(makeStrTokFromRevStrList(strRevList))
+	|
+	'=' literalConstant:(str,litType)  
+	  =>  LITERAL_DEF(str, litType) 
 */
 public function templDef_Const
   input list<String> inChars;
@@ -2388,10 +2388,10 @@ end templDef_Const;
 
 /*
 constantType:
-  'String'  => STRING_TYPE()
-  'Integer' => INTEGER_TYPE()
-  'Real'    => REAL_TYPE()
-  'Boolean' => BOOLEAN_TYPE()
+	'String'  => STRING_TYPE()
+	'Integer' => INTEGER_TYPE()
+	'Real'    => REAL_TYPE()
+	'Boolean' => BOOLEAN_TYPE()
 */
 public function constantType
   input list<String> inChars;
@@ -2473,9 +2473,9 @@ end checkConstantType;
 
 /*
 templDef_Templ:
-  '::='  expression(LEsc = '<',REsc = '>'):exp   => (exp,'<','>')
-  ///|
-  //'$$='  expression(LEsc = '$',REsc = '$'):exp   => (exp,'$','$')
+	'::='  expression(LEsc = '<',REsc = '>'):exp   => (exp,'<','>')
+	///|
+	//'$$='  expression(LEsc = '$',REsc = '$'):exp   => (exp,'$','$')
 */
 public function templDef_Templ
   input list<String> inChars;
@@ -2652,9 +2652,9 @@ end implicitArgName;
 
 /*
 templArgs_rest
-  ',' typeSig:ts  argName_nonIt:name  templArgs_rest:rest  =>  (name,ts)::rest
-  |
-  _  => {}
+	',' typeSig:ts  argName_nonIt:name  templArgs_rest:rest  =>  (name,ts)::rest
+	|
+	_  => {}
 */
 public function templArgs_rest
   input list<String> inChars;
@@ -2753,8 +2753,8 @@ end argName_nonIt;
 
 /*
 expression(lesc,resc):
-  expressionNoOptions(lesc,resc):exp  escapedOptions:opts  
-    => makeEscapedExp(exp, opts)
+	expressionNoOptions(lesc,resc):exp  escapedOptions:opts	
+	  => makeEscapedExp(exp, opts)
 */
 public function expression
   input list<String> inChars;
@@ -2809,10 +2809,10 @@ end makeEscapedExp;
 
 /*
 escapedOptions(lesc,resc):
-  ';' identifier:id  escOptionExp(lesc,resc):expOpt  escapedOptions(lesc,resc):opts
-  => (id, expOpt) :: opts
-  |
-  _ => {} 
+	';' identifier:id  escOptionExp(lesc,resc):expOpt  escapedOptions(lesc,resc):opts
+	=> (id, expOpt) :: opts
+	|
+	_ => {} 
 
 */
 public function escapedOptions
@@ -2852,10 +2852,10 @@ end escapedOptions;
 
 /*
 escOptionExp(lesc,resc):
-  '=' expressionLet(lesc,resc):exp
-    => SOME(exp)
-  |
-  _ => NONE
+	'=' expressionLet(lesc,resc):exp
+	  => SOME(exp)
+	|
+	_ => NONE
 */
 public function escOptionExp
   input list<String> inChars;
@@ -2889,8 +2889,8 @@ end escOptionExp;
 
 /* not optional
 expressionNoOptions(lesc,resc):
-  expressionLet(lesc,resc):expLet  mapTailOpt(lesc,resc,expLet):exp
-    => exp
+	expressionLet(lesc,resc):expLet  mapTailOpt(lesc,resc,expLet):exp
+	  => exp
 */
 public function expressionNoOptions
   input list<String> inChars;
@@ -2925,11 +2925,11 @@ end expressionNoOptions;
 
 /*
 mapTailOpt(headExp,lesc,resc):
-  '|>' matchBinding:mexp  
-  indexedByOpt:idxNmOpt  
-  '=>' expressionLet(lesc,resc):exp  =>  MAP(headExp,mexp,exp)
-  |
-  _ => headExp 
+	'|>' matchBinding:mexp  
+	indexedByOpt:idxNmOpt	
+	'=>' expressionLet(lesc,resc):exp  =>  MAP(headExp,mexp,exp)
+	|
+	_ => headExp 
 */
 public function mapTailOpt
   input list<String> inChars;
@@ -2973,10 +2973,10 @@ end mapTailOpt;
 
 /* 
 indexedByOpt:
-  'hasindex' identifier:id
-    => SOME(id)
-  |
-  _ => NONE
+	'hasindex' identifier:id
+		=> SOME(id)
+	|
+	_ => NONE
 */
 public function indexedByOpt
   input list<String> inChars;
@@ -3014,10 +3014,10 @@ end indexedByOpt;
 
 /*
 fromOpt:
-  'from' expression_base:expFrom 
-    => { ("$indexOffset", SOME(expFrom)) }
-  |
-  _ => {}
+	'from' expression_base:expFrom 
+		=> { ("$indexOffset", SOME(expFrom)) }
+	|
+	_ => {}
 */
 public function fromOpt
   input list<String> inChars;
@@ -3053,10 +3053,10 @@ end fromOpt;
 
 /*
 expressionLet(lesc,resc):
-  'let' letExp(lesc,resc):lexp  concatLetExp_rest(lesc,resc):expLst
-     => TEMPLATE(lexp::expLst}, "let", ""); //TODO: should be a LET_EXPRESSION()
-  |
-  expressionMatch(lesc,resc):exp
+	'let' letExp(lesc,resc):lexp  concatLetExp_rest(lesc,resc):expLst
+	   => TEMPLATE(lexp::expLst}, "let", ""); //TODO: should be a LET_EXPRESSION()
+	|
+	expressionMatch(lesc,resc):exp
 */
 public function expressionLet
   input list<String> inChars;
@@ -3096,11 +3096,11 @@ end expressionLet;
 
 /*
 concatLetExp_rest(lesc,resc):
-  'let' letExp(lesc,resc):lexp  concatLetExp_rest(lesc,resc):expLst 
-    =>  lexp::expLst
-  |
-  expression(lesc,resc):exp
-    => {exp}
+	'let' letExp(lesc,resc):lexp  concatLetExp_rest(lesc,resc):expLst 
+	  =>  lexp::expLst
+	|
+	expression(lesc,resc):exp
+	  => {exp}
 */
 /*
 public function concatLetExp_rest
@@ -3149,22 +3149,22 @@ end concatLetExp_rest;
 /*
 must not fail - not optional, at least one must match
 letExp(lesc,resc):
-  '&' identifier:id '=' 'buffer' expression(lesc,resc):exp
-       => TEXT_CREATE(id,exp)
-  |
-  '&' identifier:id '+=' expression(lesc,resc):exp
-       => TEXT_ADD(id,exp)
-  |
-  '()' '=' pathIdent:name  funCall(name,lesc,resc):exp        
-       =>  exp //TODO: noRetCall expression should be here
-  |
-  identifier:id '=' expression(lesc,resc):exp
-    => TEXT_CREATE(id,exp) //TODO: !! a HACK for now
-  
-  //TODO:
-  |
-  letBinding:bd '=' expression(lesc,resc):exp
-    =>  LET_BINDING(bd, exp)
+	'&' identifier:id '=' 'buffer' expression(lesc,resc):exp
+	     => TEXT_CREATE(id,exp)
+	|
+	'&' identifier:id '+=' expression(lesc,resc):exp
+	     => TEXT_ADD(id,exp)
+	|
+	'()' '=' pathIdent:name  funCall(name,lesc,resc):exp   	   
+	     =>  exp //TODO: noRetCall expression should be here
+	|
+	identifier:id '=' expression(lesc,resc):exp
+		=> TEXT_CREATE(id,exp) //TODO: !! a HACK for now
+	
+	//TODO:
+	|
+	letBinding:bd '=' expression(lesc,resc):exp
+	  =>  LET_BINDING(bd, exp)
 */
 public function letExp
   input list<String> inChars;
@@ -3234,7 +3234,7 @@ algorithm
         linfo = parseError(chars, linfo, "Expecting a non-return function call( let () = [package.]funName(args,...) ) at the position.", true);        
       then (chars, linfo, TplAbsyn.ERROR_EXP());
   
-  //TODO: to be  letBinding:bd '=' expression(lesc,resc):exp    =>  LET_BINDING(bd, exp)
+  //TODO: to be  letBinding:bd '=' expression(lesc,resc):exp	  =>  LET_BINDING(bd, exp)
   case (chars, linfo, lesc, resc)
       equation
         (chars, linfo, id) = identifierNoOpt(chars, linfo);
@@ -3260,11 +3260,11 @@ end letExp;
 
 /*
 expressionMatch(lesc,resc):
-  matchExp(lesc,resc):exp 
-    => exp
-  |
-  expressionIf(lesc,resc):exp
-    => exp
+	matchExp(lesc,resc):exp 
+	  => exp
+	|
+	expressionIf(lesc,resc):exp
+	  => exp
 */
 public function expressionMatch
   input list<String> inChars;
@@ -3298,11 +3298,11 @@ end expressionMatch;
 
 /*
 expressionIf(lesc,resc):
-  conditionExp(lesc,resc):exp 
-    => exp
-  |
-  expressionPlus(lesc,resc):exp
-    => exp
+	conditionExp(lesc,resc):exp 
+	  => exp
+	|
+	expressionPlus(lesc,resc):exp
+	  => exp
 */
 public function expressionIf
   input list<String> inChars;
@@ -3337,8 +3337,8 @@ end expressionIf;
 
 /* 
 expressionPlus(lesc,resc):
-  expression_base(lesc,resc):bexp  plusTailOpt(lesc,resc,bexp):exp
-    => exp
+	expression_base(lesc,resc):bexp  plusTailOpt(lesc,resc,bexp):exp
+	  => exp
 */
 public function expressionPlus
   input list<String> inChars;
@@ -3368,11 +3368,11 @@ algorithm
 end expressionPlus;
 
 /*
-plusTailOpt(lesc,resc,bexp):  
-  '+' expression_base(lesc,resc):exp  concatExp_rest(lesc,resc):expLst   //  concatenation … same as "<expression><expression>"
-    => TEMPLATE(bexp::exp::expLst, "+", "");
-  |
-  _ => bexp 
+plusTailOpt(lesc,resc,bexp):	
+	'+' expression_base(lesc,resc):exp  concatExp_rest(lesc,resc):expLst   //  concatenation … same as "<expression><expression>"
+	  => TEMPLATE(bexp::exp::expLst, "+", "");
+	|
+	_ => bexp 
 */
 public function plusTailOpt
   input list<String> inChars;
@@ -3410,9 +3410,9 @@ end plusTailOpt;
 
 /*
 concatExp_rest(lesc,resc):
-  '+' expression_base(lesc,resc):exp  concatExp_rest(lesc,resc):expLst  =>  exp::expLst
-  |
-  _ => {}
+	'+' expression_base(lesc,resc):exp  concatExp_rest(lesc,resc):expLst  =>  exp::expLst
+	|
+	_ => {}
 */
 public function concatExp_rest
   input list<String> inChars;
@@ -3449,27 +3449,27 @@ end concatExp_rest;
 
 /*
 expression_base(lesc,resc):
-  stringConstant:strRevList 
-    => STR_TOKEN(makeStrTokFromRevStrList(strRevList))
-  |
-  literalConstant:(str,litType) 
-    => LITERAL(str,litType)
-  |
-  templateExp(lesc,resc)
-  |
-  '{' '}'  => MAP_ARG_LIST({})                                                             
-  |
-  '{' expressionPlus(lesc,resc):exp  expressionList_rest(lesc,resc):expLst '}'   //  list construction with possible mixed scalars and lists 
-                                                             //… useful in map/concatenation context
-     => MAP_ARG_LIST(exp::expLst)                                                             
-  |
-  '(' expression(lesc,resc):exp ')'
-     => exp
-  | 
-  '&' identifier:id  
-    => BOUND_VALUE(IDENT(name))  //TODO: ref Text buffer
-  |// TODO: create an optional/error reporting variant of pathIdent
-  pathIdent:name  boundValueOrFunCall(name,lesc,resc):exp  =>  exp
+	stringConstant:strRevList 
+	  => STR_TOKEN(makeStrTokFromRevStrList(strRevList))
+	|
+	literalConstant:(str,litType) 
+	  => LITERAL(str,litType)
+	|
+	templateExp(lesc,resc)
+	|
+	'{' '}'  => MAP_ARG_LIST({})	                                                           
+	|
+	'{' expressionPlus(lesc,resc):exp  expressionList_rest(lesc,resc):expLst '}'   //  list construction with possible mixed scalars and lists 
+	                                                           //… useful in map/concatenation context
+	   => MAP_ARG_LIST(exp::expLst)	                                                           
+	|
+	'(' expression(lesc,resc):exp ')'
+	   => exp
+	| 
+	'&' identifier:id  
+	  => BOUND_VALUE(IDENT(name))  //TODO: ref Text buffer
+	|// TODO: create an optional/error reporting variant of pathIdent
+	pathIdent:name  boundValueOrFunCall(name,lesc,resc):exp  =>  exp
 */
 public function expression_base
   input list<String> inChars;
@@ -3551,9 +3551,9 @@ end expression_base;
 
 /*
 boundValueOrFunCall(name,lesc,resc):
-  funCall(name,lesc,resc):exp  => exp
-  |
-  _ => BOUND_VALUE(name)
+	funCall(name,lesc,resc):exp  => exp
+	|
+	_ => BOUND_VALUE(name)
 */
 public function boundValueOrFunCall
   input list<String> inChars;
@@ -3588,10 +3588,10 @@ end boundValueOrFunCall;
 /*
 //may fail
 funCall(name,lesc,resc):
-  '(' ')' => FUN_CALL(name,{})
-  |
-  '(' expression(lesc,resc):exp  expressionList_rest(lesc,resc):expLst ')'  //template  or  intrinsic function
-    => FUN_CALL(name,exp::expLst)
+	'(' ')' => FUN_CALL(name,{})
+	|
+	'(' expression(lesc,resc):exp  expressionList_rest(lesc,resc):expLst ')'  //template  or  intrinsic function
+	  => FUN_CALL(name,exp::expLst)
 */
 public function funCall
   input list<String> inChars;
@@ -3632,10 +3632,10 @@ algorithm
 end funCall;
 
 /*
-expressionList_rest(lesc,resc):  
-  ',' expressionPlus(lesc,resc):exp  expressionList_rest(lesc,resc):expLst => exp::expLst
-  |
-  _ => {} 
+expressionList_rest(lesc,resc):	
+	',' expressionPlus(lesc,resc):exp  expressionList_rest(lesc,resc):expLst => exp::expLst
+	|
+	_ => {} 
 */
 public function expressionList_rest
   input list<String> inChars;
@@ -3672,17 +3672,17 @@ end expressionList_rest;
 
 /*
 stringConstant:
-  '"' doubleQuoteConst({},{}):stRevLst  
-    => stRevLst
-  |
-  //'%'(lquot) stripFirstNewLine verbatimConst(Rquote(lquot),{},{}):stRevLst 
-  //  => stRevLst
-  //|
-  '\\n' escUnquotedChars({}, {"\n"}):stRevLst
-    => stRevLst
-  |
-  '\\' escChar:c  escUnquotedChars({c}, {}):stRevLst
-    => stRevLst
+	'"' doubleQuoteConst({},{}):stRevLst  
+	  => stRevLst
+	|
+	//'%'(lquot) stripFirstNewLine verbatimConst(Rquote(lquot),{},{}):stRevLst 
+	//  => stRevLst
+	//|
+	'\\n' escUnquotedChars({}, {"\n"}):stRevLst
+	  => stRevLst
+	|
+	'\\' escChar:c  escUnquotedChars({c}, {}):stRevLst
+	  => stRevLst
 */
 public function stringConstant
   input list<String> inChars;
@@ -3732,13 +3732,13 @@ end stringConstant;
 /*
 //not optional, must not fail
 literalConstant:
-  //(+|-)?d*(.d+)?(('e'|'E')(+|-)?d+)?  
-  plusMinus:pm digits:ds dotNumber:(dn,ts) exponent(ts):(ex,ts)
-  => (pm+& stringCharListString(ds)+&dn+&ex, ts)  //validate the number - must have integer part or dotpart 
-  |
-  'true' => ("true", BOOLEAN_TYPE())
-  |
-  'false' => ("false", BOOLEAN_TYPE())
+	//(+|-)?d*(.d+)?(('e'|'E')(+|-)?d+)?	
+	plusMinus:pm digits:ds dotNumber:(dn,ts) exponent(ts):(ex,ts)
+	=> (pm+& stringCharListString(ds)+&dn+&ex, ts)  //validate the number - must have integer part or dotpart 
+	|
+	'true' => ("true", BOOLEAN_TYPE())
+	|
+	'false' => ("false", BOOLEAN_TYPE())
 */
 public function literalConstant
   input list<String> inChars;
@@ -3818,21 +3818,21 @@ end rightVerbatimConstQuote;
 
 /*
 doubleQuoteConst(accChars,accStrList):
-  '"' => stringCharListString(listReverse(accChars)) :: accStrList
-  |
-  newLine doubleQuoteConst({}, stringCharListString(listReverse('\n'::accChars))::accStrList):stRevLst 
-  => stRevLst
-  |
-  '\\n' doubleQuoteConst({}, stringCharListString(listReverse('\n'::accChars))::accStrList):stRevLst
-  => stRevLst
-  |
-  '\\'escChar:c doubleQuoteConst(c::accChars,accStrList):stRevLst
-  => stRevLst
-  |
-  c doubleQuoteConst(c::accChars,accStrList):stRevLst
-  => stRevLst
-  |
-  Error end of file
+	'"' => stringCharListString(listReverse(accChars)) :: accStrList
+	|
+	newLine doubleQuoteConst({}, stringCharListString(listReverse('\n'::accChars))::accStrList):stRevLst 
+	=> stRevLst
+	|
+	'\\n' doubleQuoteConst({}, stringCharListString(listReverse('\n'::accChars))::accStrList):stRevLst
+	=> stRevLst
+	|
+	'\\'escChar:c doubleQuoteConst(c::accChars,accStrList):stRevLst
+	=> stRevLst
+	|
+	c doubleQuoteConst(c::accChars,accStrList):stRevLst
+	=> stRevLst
+	|
+	Error end of file
 */
 public function doubleQuoteConst
   input list<String> inChars;
@@ -3896,8 +3896,8 @@ end doubleQuoteConst;
 
 /*
 escChar:
-  ( '\'' | '"' | '?' |  '\\' | 'a' | 'b' | 'f' | 'n' | 'r' | 't' | 'v' | ' ' )
-  => the escaped char
+	( '\'' | '"' | '?' |  '\\' | 'a' | 'b' | 'f' | 'n' | 'r' | 't' | 'v' | ' ' )
+	=> the escaped char
 
 */
 public function escChar
@@ -3925,18 +3925,18 @@ end escChar;
 
 /*
 verbatimConst(rquot, accChars, accStrList):
-  //strip a last inline new line
-  newLine (rquot)'%' =>  stringCharListString(listReverse(accChars)) :: accStrList 
-  |
-  (rquot)'%' =>  stringCharListString(listReverse(accChars)) :: accStrList 
-  |
-  newLine verbatimConst(rquot, {}, stringCharListString(listReverse('\n'::accChars))::accStrList):stRevLst
-    => stRevLst
-  |
-  c  verbatimConst(rquot, c::accChars,accStrList):stRevLst
-    => stRevLst
-  |
-  Error end of file
+	//strip a last inline new line
+	newLine (rquot)'%' =>  stringCharListString(listReverse(accChars)) :: accStrList 
+	|
+	(rquot)'%' =>  stringCharListString(listReverse(accChars)) :: accStrList 
+	|
+	newLine verbatimConst(rquot, {}, stringCharListString(listReverse('\n'::accChars))::accStrList):stRevLst
+	  => stRevLst
+	|
+	c  verbatimConst(rquot, c::accChars,accStrList):stRevLst
+	  => stRevLst
+	|
+	Error end of file
 */
 public function verbatimConst
   input list<String> inChars;
@@ -4006,13 +4006,13 @@ end verbatimConst;
 
 /*
 escUnquotedChars(accChars,accStrList):
-  '\\n' escUnquotedChars({}, stringCharListString(listReverse('\n'::accChars)) :: accStrList):stRevLst
-  => stRevLst
-  |
-  '\\' escChar:c  escUnquotedChars(c::accChars, accStrList):stRevLst
-  => stRevLst
-  |
-  _ => stringCharListString(listReverse(accChars)) :: accStrList
+	'\\n' escUnquotedChars({}, stringCharListString(listReverse('\n'::accChars)) :: accStrList):stRevLst
+	=> stRevLst
+	|
+	'\\' escChar:c  escUnquotedChars(c::accChars, accStrList):stRevLst
+	=> stRevLst
+	|
+	_ => stringCharListString(listReverse(accChars)) :: accStrList
 
 */
 public function escUnquotedChars
@@ -4091,11 +4091,11 @@ end makeStrTokFromRevStrList;
 
 /*
 plusMinus:
-  '+' => "+"
-  |
-  '-' => "-"
-  |
-  _ => ""
+	'+' => "+"
+	|
+	'-' => "-"
+	|
+	_ => ""
 */
 public function plusMinus
   input list<String> inChars;
@@ -4120,9 +4120,9 @@ algorithm
 end plusMinus;
 /*
 digits:
-  [0-9]:d  digits:ds => d::ds
-  |
-  _ => {}
+	[0-9]:d  digits:ds => d::ds
+	|
+	_ => {}
 */
 public function digits
   input list<String> inChars;
@@ -4151,9 +4151,9 @@ algorithm
 end digits;
 /*
 dotNumber:
-  '.' digits:ds  =>  (stringCharListString(ds), REAL_TYPE())
-  |
-  _ => INTEGER_TYPE()   
+	'.' digits:ds  =>  (stringCharListString(ds), REAL_TYPE())
+	|
+	_ => INTEGER_TYPE()	 
 */
 public function dotNumber
   input list<String> inChars;
@@ -4182,11 +4182,11 @@ end dotNumber;
 
 /*
 exponent(typ):
-  'e' plusMinus:pm  digits:ds => ("e"+&pm+&stringCharListString(ds), REAL_TYPE())
-  |
-  'E' plusMinus:pm  digits:ds => ("E"+&pm+&stringCharListString(ds), REAL_TYPE())
-  |
-  => ("",typ)
+	'e' plusMinus:pm  digits:ds => ("e"+&pm+&stringCharListString(ds), REAL_TYPE())
+	|
+	'E' plusMinus:pm  digits:ds => ("E"+&pm+&stringCharListString(ds), REAL_TYPE())
+	|
+	=> ("",typ)
 */
 public function exponent
   input list<String> inChars;
@@ -4226,9 +4226,9 @@ end exponent;
 
 /*
 templateExp(lesc, resc):
-  "'" stripFirstNewLine  templateBody(lesc, resc, isSingleQuote = true, {},{},0)
-  |
-  '<<' stripFirstNewLine templateBody(lesc, resc, isSingleQuote = false,{},{},0 )
+	"'" stripFirstNewLine  templateBody(lesc, resc, isSingleQuote = true, {},{},0)
+	|
+	'<<' stripFirstNewLine templateBody(lesc, resc, isSingleQuote = false,{},{},0 )
 */
 public function templateExp
   input list<String> inChars;
@@ -4285,11 +4285,11 @@ end templateExp;
 /*
 //optional, may fail
 takeSpaceAndNewLine:
-  newLine
+	newLine
   |
   ' ' takeSpaceAndNewLine
-  |
-  '\t' takeSpaceAndNewLine
+	|
+	'\t' takeSpaceAndNewLine
 */
 public function takeSpaceAndNewLine
   input list<String> inChars;
@@ -4322,9 +4322,9 @@ end takeSpaceAndNewLine;
 
 /*
 templateBody(lesc, resc, isSingleQuote, expList, indStack, actInd):
-  lineIndent(0):lineInd  
-    restOfTemplLine(lesc, resc, isSingleQuote, expList, indStack, actInd, lineInd, {}):exp
-  => exp
+	lineIndent(0):lineInd  
+	  restOfTemplLine(lesc, resc, isSingleQuote, expList, indStack, actInd, lineInd, {}):exp
+	=> exp
 */
 public function templateBody
   input list<String> inChars;
@@ -4363,11 +4363,11 @@ end templateBody;
 
 /*
 lineIndent(ind):
-  ' ' lineIndent(ind+1):n  =>  n
-  |
-  '\t' lineIndent(ind+4):n  =>  n
-  |
-  _  =>  ind
+	' ' lineIndent(ind+1):n  =>  n
+	|
+	'\t' lineIndent(ind+4):n  =>  n
+	|
+	_  =>  ind
 
 */
 public function lineIndent
@@ -4400,45 +4400,45 @@ end lineIndent;
 /*
 // & ... no interleave
 restOfTemplLine(lesc, resc, isSingleQuote, expList, indStack, actInd, lineInd, accStrChars):
-  //(lesc)'#' nonTemplateExprWithOpts(lesc,resc):eexp  '#'(resc)
-  //   { (expList, indStack, actInd) = onEscapedExp(eexp, expList, indStack, actInd, lineInd, accStrChars) }
-  //   & restOfTemplLine(lesc,resc,isSingleQuote, expList, indStack, actInd, actInd, {}):exp
-  //   => exp
-  //    
-  //| 
-  (lesc)  (resc)  // a comment | empty expression ... ignore completely   
-     & restOfTemplLineAfterEmptyExp(lesc,resc,isSingleQuote, expList, indStack, actInd, lineInd, accStrChars):exp
-     => exp
-  | 
-  (lesc) '%' expression(lesc,resc):eexp (resc)
-     { (expList, indStack, actInd) = onEscapedExp(eexp, expList, indStack, actInd, lineInd, accStrChars) }
-     & restOfTemplLine(lesc,resc,isSingleQuote, expList, indStack, actInd, actInd, {}):exp
-     => exp
-     
-  | // on \n
-  newLine  
-   { (expList, indStack, actInd) = onNewLine(expList, indStack, actInd, lineInd, accStrChars) }
-   & templateBody(lesc, resc, isSingleQuote, expList, indStack, actInd):exp
-  => exp
-    
-  | //end
-  (isSingleQuote = true) "'" 
-   => 
-    onTemplEnd(expList, indStack, actInd, lineInd, accStrChars) 
-    
-  | //end
-  (isSingleQuote = false) '>>' 
-   => 
-   onTemplEnd(expList, indStack, actInd, lineInd, accStrChars) 
-   
-  |
-  '\' & ( '\' | "'" | (lesc) | (resc) ):c 
-   & restOfTemplLine(lesc, resc, isSingleQuote, expList, indStack, actInd, lineInd, c :: accStrChars) : exp
-    => exp 
-  |
-  any:c  
-    & restOfTemplLine(lesc, resc, isSingleQuote, expList, indStack, actInd, lineInd, c :: accStrChars) : exp
-    => exp
+	//(lesc)'#' nonTemplateExprWithOpts(lesc,resc):eexp  '#'(resc)
+	//   { (expList, indStack, actInd) = onEscapedExp(eexp, expList, indStack, actInd, lineInd, accStrChars) }
+	//   & restOfTemplLine(lesc,resc,isSingleQuote, expList, indStack, actInd, actInd, {}):exp
+	//   => exp
+	//    
+	//| 
+	(lesc)  (resc)	// a comment | empty expression ... ignore completely   
+	   & restOfTemplLineAfterEmptyExp(lesc,resc,isSingleQuote, expList, indStack, actInd, lineInd, accStrChars):exp
+	   => exp
+	| 
+	(lesc) '%' expression(lesc,resc):eexp (resc)
+	   { (expList, indStack, actInd) = onEscapedExp(eexp, expList, indStack, actInd, lineInd, accStrChars) }
+	   & restOfTemplLine(lesc,resc,isSingleQuote, expList, indStack, actInd, actInd, {}):exp
+	   => exp
+	   
+	| // on \n
+	newLine  
+	 { (expList, indStack, actInd) = onNewLine(expList, indStack, actInd, lineInd, accStrChars) }
+	 & templateBody(lesc, resc, isSingleQuote, expList, indStack, actInd):exp
+	=> exp
+	  
+	| //end
+	(isSingleQuote = true) "'" 
+	 => 
+	  onTemplEnd(expList, indStack, actInd, lineInd, accStrChars) 
+	  
+	| //end
+	(isSingleQuote = false) '>>' 
+	 => 
+	 onTemplEnd(expList, indStack, actInd, lineInd, accStrChars) 
+	 
+	|
+	'\' & ( '\' | "'" | (lesc) | (resc) ):c 
+	 & restOfTemplLine(lesc, resc, isSingleQuote, expList, indStack, actInd, lineInd, c :: accStrChars) : exp
+	  => exp 
+	|
+	any:c  
+	  & restOfTemplLine(lesc, resc, isSingleQuote, expList, indStack, actInd, lineInd, c :: accStrChars) : exp
+	  => exp
 */
 public function restOfTemplLine
   input list<String> inChars;
@@ -4547,7 +4547,7 @@ algorithm
         true = (c ==& "\\" or c ==& "'" or c ==& lesc or c ==& resc); 
         (chars, linfo, exp) = restOfTemplLine(chars, linfo, lesc, resc, isSQ, expLst, indStack, actInd, lineInd, c :: accChars);
       then (chars, linfo, exp);
-   */
+	 */
    case (c :: chars, linfo, lesc, resc, isSQ, expLst, indStack, actInd, lineInd, accChars)
       equation
         (chars, linfo, exp) = restOfTemplLine(chars, linfo, lesc, resc, isSQ, expLst, indStack, actInd, lineInd, c :: accChars);
@@ -5210,10 +5210,10 @@ end finalizeLastStringToken;
 
 /*
 conditionExp(lesc,resc):
-  'if' condArgExp(lesc,resc):(isNot, lhsExp, rhsMExpOpt)
-  'then' expressionLet(lesc,resc):trueBr
-  elseBranch(lesc,resc):elseBrOpt
-   => CONDITION(isNot, lhsExp, rhsMExpOpt, trueBr, elseBrOpt)
+	'if' condArgExp(lesc,resc):(isNot, lhsExp, rhsMExpOpt)
+	'then' expressionLet(lesc,resc):trueBr
+	elseBranch(lesc,resc):elseBrOpt
+	 => CONDITION(isNot, lhsExp, rhsMExpOpt, trueBr, elseBrOpt)
 */
 public function conditionExp
   input list<String> inChars;
@@ -5294,10 +5294,10 @@ end thenBranch;
 
 /*
 elseBranch(lesc,resc):
-  'else' expressionLet(lesc,resc):elseBr
-    => SOME(elseBr)
-  |
-  _ => NONE
+	'else' expressionLet(lesc,resc):elseBr
+	  => SOME(elseBr)
+	|
+	_ => NONE
 
 */
 public function elseBranch
@@ -5332,13 +5332,13 @@ end elseBranch;
 /*
 must not fail
 condArgExp:
-  'not' expressionPlus(lesc,resc):lhsExp
-    => (true, lhsExp,NONE())
-  |
-  expressionPlus(lesc,resc):lhsExp
-  //  condArgRHS:(isNot, rshMExpOpt)
-  { isNot = false }
-   => (isNot,lhsExp, rhsMExpOpt)
+	'not' expressionPlus(lesc,resc):lhsExp
+	  => (true, lhsExp,NONE())
+	|
+	expressionPlus(lesc,resc):lhsExp
+	//  condArgRHS:(isNot, rshMExpOpt)
+	{ isNot = false }
+	 => (isNot,lhsExp, rhsMExpOpt)
 */
 public function condArgExp
   input list<String> inChars;
@@ -5379,11 +5379,11 @@ algorithm
 end condArgExp;
 /*
 condArgRHS:
-  'is' 'not' matchBinding:rhsMExp  =>  (true, SOME(rhsMexp))
-  |
-  'is' matchBinding:rhsMExp  =>  (false, SOME(rhsMexp))
-  |
-  _ => (false,NONE())
+	'is' 'not' matchBinding:rhsMExp  =>  (true, SOME(rhsMexp))
+	|
+	'is' matchBinding:rhsMExp  =>  (false, SOME(rhsMexp))
+	|
+	_ => (false,NONE())
 */
 /*
 public function condArgRHS
@@ -5444,14 +5444,14 @@ end condArgRHS;
 /*
 optional, can fail
 matchExp(lesc,resc):
-  'match' expressionIf:exp 
-    matchCaseList(lesc,resc):mcaseLst  { (_::_) = mcaseLst }//not optional
-    matchElseCase(lesc,resc):elseLst
-    matchEndMatch
-   => MATCH(exp, listAppend(mcaseLst, elseLst))
-  //|
-  //matchCaseList(lesc,resc):mcaseLst { (_::_) = mcaseLst }
-  //=> MATCH(BOUND_VALUE(IDENT("it")), mcaseLst) 
+	'match' expressionIf:exp 
+	  matchCaseList(lesc,resc):mcaseLst  { (_::_) = mcaseLst }//not optional
+	  matchElseCase(lesc,resc):elseLst
+	  matchEndMatch
+	 => MATCH(exp, listAppend(mcaseLst, elseLst))
+	//|
+	//matchCaseList(lesc,resc):mcaseLst { (_::_) = mcaseLst }
+	//=> MATCH(BOUND_VALUE(IDENT("it")), mcaseLst) 
 */
 public function matchExp
   input list<String> inChars;
@@ -5497,9 +5497,9 @@ end matchExp;
 
 /*
 matchCase(lesc,resc):
-  'case'  matchBinding:mexp  matchCaseHeads(): mexpHeadLst  
-  'then'  expression:exp
-     => makeMatchCaseLst(mexp::mexpHeadLst,exp)
+	'case'  matchBinding:mexp	matchCaseHeads(): mexpHeadLst  
+	'then'  expression:exp
+	   => makeMatchCaseLst(mexp::mexpHeadLst,exp)
 */
 public function matchCase
   input list<String> inChars;
@@ -5539,10 +5539,10 @@ end matchCase;
 
 /*
 matchElseCase(lesc,resc):
-  'else' expression:exp
-    => {(REST_MATCH(), exp)}
-  |
-  _ => {}
+	'else' expression:exp
+	  => {(REST_MATCH(), exp)}
+	|
+	_ => {}
 */
 public function matchElseCase
   input list<String> inChars;
@@ -5577,9 +5577,9 @@ end matchElseCase;
 
 /*
 matchEndMatch:
-  'end' 'match'
-  |
-  _
+	'end' 'match'
+	|
+	_
 */
 public function matchEndMatch
   input list<String> inChars;
@@ -5611,10 +5611,10 @@ end matchEndMatch;
 
 /*
 matchCaseHeads(lesc,resc):
-  'case'  matchBinding:mexp  matchCaseHeads(): mexpHeadLst  
-     => mexp :: mexpHeadLst
-  |
-  _ => {}
+	'case'  matchBinding:mexp	matchCaseHeads(): mexpHeadLst  
+	   => mexp :: mexpHeadLst
+	|
+	_ => {}
 */
 public function matchCaseHeads
   input list<String> inChars;
@@ -5675,10 +5675,10 @@ end makeMatchCaseLst;
 
 /*
 matchCaseList(lesc,resc):
-  matchCase(lesc,resc):mcaseLst  matchCaseList(lesc,resc):mcrest
-    => listAppend(mcaseLst, mcrest)
-  |
-  _ => {}
+	matchCase(lesc,resc):mcaseLst  matchCaseList(lesc,resc):mcrest
+	  => listAppend(mcaseLst, mcrest)
+	|
+	_ => {}
 */
 public function matchCaseList
   input list<String> inChars;
@@ -5753,8 +5753,8 @@ end matchCaseListNoOpt;
 
 /*
 matchBinding:
-  matchBinding_base:headMExp  matchBinding_tail(headMExp):mexp
-    => mexp
+	matchBinding_base:headMExp  matchBinding_tail(headMExp):mexp
+	  => mexp
 
 */
 public function matchBinding
@@ -5783,10 +5783,10 @@ algorithm
 end matchBinding;
 /*
 matchBinding_tail(headMExp):
-  '::' matchBinding:restMExp
-    => LIST_CONS_MATCH(headMExp, restMExp)
-  |
-  _ => headMExp
+	'::' matchBinding:restMExp
+	  => LIST_CONS_MATCH(headMExp, restMExp)
+	|
+	_ => headMExp
 */
 public function matchBinding_tail
   input list<String> inChars;
@@ -5817,32 +5817,32 @@ algorithm
 end matchBinding_tail;
 /*
 matchBinding_base:
-  'SOME' someBinding_rest:mexp 
-    => SOME_MATCH(mexp)
-  |
-  'NONE' takeEmptyBraces
-    => NONE_MATCH()
-  |
-  '(' matchBinding:headMExp  tupleOrSingleMatch(headMExp):mexp ')'
-    => mexp
-  |
-  '{' '}'
-    => LIST_MATCH({})
-  |
-  '{' matchBinding:headMExp  listMatch_rest:mrest '}
-    => LIST_MATCH(headMExp :: mrest)
-  |
-  stringConstant:strRevList 
-    => STRING_MATCH(stringAppendList(listReverse(strRevList))
-  |
-  literalConstant:(str,litType) 
-    => LITERAL_MATCH(str,litType)
-  |
-  '_'
-    => REST_MATCH()
-  |
-  pathIdent:pid  afterIdentBinding(pid):mexp
-    => mexp
+	'SOME' someBinding_rest:mexp 
+	  => SOME_MATCH(mexp)
+	|
+	'NONE' takeEmptyBraces
+	  => NONE_MATCH()
+	|
+	'(' matchBinding:headMExp  tupleOrSingleMatch(headMExp):mexp ')'
+	  => mexp
+	|
+	'{' '}'
+	  => LIST_MATCH({})
+	|
+	'{' matchBinding:headMExp  listMatch_rest:mrest '}
+	  => LIST_MATCH(headMExp :: mrest)
+	|
+	stringConstant:strRevList 
+	  => STRING_MATCH(stringAppendList(listReverse(strRevList))
+	|
+	literalConstant:(str,litType) 
+	  => LITERAL_MATCH(str,litType)
+	|
+	'_'
+	  => REST_MATCH()
+	|
+	pathIdent:pid  afterIdentBinding(pid):mexp
+	  => mexp
 */
 public function matchBinding_base
   input list<String> inChars;
@@ -5932,13 +5932,13 @@ algorithm
 end matchBinding_base;
 /*
 someBinding_rest:
-  '(' '__' ')'
-    => SOME_MATCH(REST_MATCH())
-  |
-  '(' matchBinding:mexp ')'
-    => SOME_MATCH(mexp)
-  |
-  _ => SOME_MATCH(REST_MATCH())
+	'(' '__' ')'
+	  => SOME_MATCH(REST_MATCH())
+	|
+	'(' matchBinding:mexp ')'
+	  => SOME_MATCH(mexp)
+	|
+	_ => SOME_MATCH(REST_MATCH())
 */
 public function someBinding_rest
   input list<String> inChars;
@@ -5976,9 +5976,9 @@ algorithm
 end someBinding_rest;
 /*
 takeEmptyBraces:
-  '(' ')'
-  |
-  _
+	'(' ')'
+	|
+	_
 */
 public function takeEmptyBraces
   input list<String> inChars;
@@ -6004,10 +6004,10 @@ algorithm
 end takeEmptyBraces;
 /*
 tupleOrSingleMatch(headMExp):
-  ',' matchBinding:secMExp  listMatch_rest:mrest
-    => TUPLE_MATCH(headMExp :: secMExp :: mrest)
-  |
-  _ => headMExp 
+	',' matchBinding:secMExp  listMatch_rest:mrest
+	  => TUPLE_MATCH(headMExp :: secMExp :: mrest)
+	|
+	_ => headMExp 
 
 */
 public function tupleOrSingleMatch
@@ -6042,10 +6042,10 @@ algorithm
 end tupleOrSingleMatch;
 /*
 listMatch_rest:
-  ',' matchBinding:mexp  listMatch_rest:mrest
-    => mexp :: mrest
-  |
-  _ => {}
+	',' matchBinding:mexp  listMatch_rest:mrest
+	  => mexp :: mrest
+	|
+	_ => {}
 
 */
 public function listMatch_rest
@@ -6079,25 +6079,25 @@ algorithm
 end listMatch_rest;
 /*
 afterIdentBinding(pid):
-  '(' ')' 
-    => RECORD_MATCH(pid, {})
-  |
-  '(' '__' ')' 
-    => RECORD_MATCH(pid, {}) //TODO: to be RECORD_TYPE_MATCH(pid)
-  |
-  '(' fieldBinding:fb  fieldBinding_rest:fbs ')'
-    => RECORD_MATCH(pid, fb::fbs)
-  |
-  {pid is PATH_IDENT}
-  => error "Expected '(' after the dot path." 
-  //RECORD_MATCH(pid, {}) 
-  |
-  {pid is IDENT(id)}
-  'as' matchBinding:mexp
-    => BIND_AS_MATCH(id, mexp)
-  |
-  {pid is IDENT(id)}
-  _ => BIND_MATCH(id)
+	'(' ')' 
+	  => RECORD_MATCH(pid, {})
+	|
+	'(' '__' ')' 
+	  => RECORD_MATCH(pid, {}) //TODO: to be RECORD_TYPE_MATCH(pid)
+	|
+	'(' fieldBinding:fb  fieldBinding_rest:fbs ')'
+	  => RECORD_MATCH(pid, fb::fbs)
+	|
+	{pid is PATH_IDENT}
+	=> error "Expected '(' after the dot path." 
+	//RECORD_MATCH(pid, {}) 
+	|
+	{pid is IDENT(id)}
+	'as' matchBinding:mexp
+	  => BIND_AS_MATCH(id, mexp)
+	|
+	{pid is IDENT(id)}
+	_ => BIND_MATCH(id)
 */
 public function afterIdentBinding
   input list<String> inChars;
@@ -6169,8 +6169,8 @@ end afterIdentBinding;
 /*
 must not fail
 fieldBinding:
-  identifier:fldId '=' matchBinding:mexp
-    => (fldId, mexp)
+	identifier:fldId '=' matchBinding:mexp
+	  => (fldId, mexp)
 */
 public function fieldBinding
   input list<String> inChars;
@@ -6205,10 +6205,10 @@ algorithm
 end fieldBinding;
 /*
 fieldBinding_rest:
-  ',' fieldBinding:fb  fieldBinding_rest:fbs
-    => fb :: fbs
-  |
-  _ => {}
+	',' fieldBinding:fb  fieldBinding_rest:fbs
+	  => fb :: fbs
+	|
+	_ => {}
 
 */
 public function fieldBinding_rest
