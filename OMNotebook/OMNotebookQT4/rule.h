@@ -73,7 +73,7 @@ namespace IAEX
 
     void setValue( value_t val )
     {
-  	value_ = val;
+    value_ = val;
     }
 
    private:

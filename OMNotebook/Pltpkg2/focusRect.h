@@ -45,8 +45,8 @@ class FocusRect: public QGraphicsRectItem
 public:
   FocusRect(const QRectF& rect,  GraphWidget* w): QGraphicsRectItem(rect), widget(w)
   {
-  	setAcceptsHoverEvents(true);
-  	setZValue(-2);
+    setAcceptsHoverEvents(true);
+    setZValue(-2);
   }
 
   ~FocusRect()
@@ -55,24 +55,24 @@ public:
 
   void hoverEnterEvent ( QGraphicsSceneHoverEvent * event )
   {
-  	QColor c(0, 255, 0, 50);
-  	QBrush b(c);
-  	setBrush(b);
+    QColor c(0, 255, 0, 50);
+    QBrush b(c);
+    setBrush(b);
   }
 
   void hoverLeaveEvent ( QGraphicsSceneHoverEvent * event )
   {
-  	QColor c(255, 0, 0, 50);
-  	QBrush b(c);
-  	setBrush(b);
+    QColor c(255, 0, 0, 50);
+    QBrush b(c);
+    setBrush(b);
   }
 
   void mousePressEvent ( QGraphicsSceneMouseEvent * event )
   {
 
 
-  	widget->zoomIn(rect());
-  	widget->updatePointSizes(QRect(-1,0,0,0));
+    widget->zoomIn(rect());
+    widget->updatePointSizes(QRect(-1,0,0,0));
   }
 
    GraphWidget* widget;

@@ -55,14 +55,14 @@ int main(int argc, char *argv[])
 {
   try
   {
-  	CellApplication a(argc, argv);
-  	return a.exec();
+    CellApplication a(argc, argv);
+    return a.exec();
   }
   catch(exception &e)
   {
-  	// 2006-01-30 AF, add message box
-  	QString msg = QString("In main(), exception: \n") + e.what();
-  	QMessageBox::warning( 0, "Warning", msg, "OK" );
+    // 2006-01-30 AF, add message box
+    QString msg = QString("In main(), exception: \n") + e.what();
+    QMessageBox::warning( 0, "Warning", msg, "OK" );
   }
 
   return 0;

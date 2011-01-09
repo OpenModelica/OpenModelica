@@ -40,33 +40,33 @@
 */
 
 // notebook
-#define XML_NOTEBOOK  		"Notebook"
+#define XML_NOTEBOOK      "Notebook"
 
 // cell element
-#define XML_GROUPCELL  		"GroupCell"
-#define XML_TEXTCELL  		"TextCell"
-#define XML_INPUTCELL  		"InputCell"
-#define XML_GRAPHCELL  		"GraphCell"
+#define XML_GROUPCELL      "GroupCell"
+#define XML_TEXTCELL      "TextCell"
+#define XML_INPUTCELL      "InputCell"
+#define XML_GRAPHCELL      "GraphCell"
 
 // attribute
-#define XML_CLOSED  			"closed"
-#define XML_STYLE  			"style"
-#define XML_NAME  			"name"
+#define XML_CLOSED        "closed"
+#define XML_STYLE        "style"
+#define XML_NAME        "name"
 
 // child
-#define XML_TEXT  			"Text"
-#define XML_RULE  			"Rule"
-#define XML_IMAGE  			"Image"
-#define XML_INPUTPART  		"Input"
-#define XML_OUTPUTPART  		"Output"
+#define XML_TEXT        "Text"
+#define XML_RULE        "Rule"
+#define XML_IMAGE        "Image"
+#define XML_INPUTPART      "Input"
+#define XML_OUTPUTPART      "Output"
 
-#define XML_FALSE  			"false"
-#define XML_TRUE  			"true"
+#define XML_FALSE        "false"
+#define XML_TRUE        "true"
 
 // Define different read mode
-#define READMODE_NORMAL  			1
-#define READMODE_OLD  			2
-#define READMODE_CONVERTING_ONB  	3
+#define READMODE_NORMAL        1
+#define READMODE_OLD        2
+#define READMODE_CONVERTING_ONB    3
 
 #define XML_GRAPHCELL_AREA  "Area"
 #define XML_GRAPHCELL_LEGEND  "Legend"

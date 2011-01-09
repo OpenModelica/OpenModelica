@@ -68,7 +68,7 @@ namespace IAEX
    */
   PureTextVisitor::PureTextVisitor(QFile *file)
   {
-  	ts_ = new QTextStream( file );
+    ts_ = new QTextStream( file );
   }
 
   /*!
@@ -78,7 +78,7 @@ namespace IAEX
    */
   PureTextVisitor::~PureTextVisitor()
   {
-  	delete ts_;
+    delete ts_;
   }
 
   // CELL
@@ -98,37 +98,37 @@ namespace IAEX
   // TEXTCELL
   void PureTextVisitor::visitTextCellNodeBefore(TextCell *node)
   {
-  	node->viewExpression(false);
+    node->viewExpression(false);
 
-  	// remove img tag before exporting
-  	int pos = 0;
-  	QString html = node->textHtml();
-  	while( true )
-  	{
-  		int start = html.indexOf( "<img src=", pos, Qt::CaseInsensitive );
-  		if( 0 <= start )
-  		{
-  			int end = html.indexOf( "/>", start, Qt::CaseInsensitive );
-  			if( 0 <= end )
-  			{
-  				html.remove( start, (end - start) + 2 );
-  				pos = start;
-  			}
-  			else
-  				break;
-  		}
-  		else
-  			break;
-  	}
-  	QTextEdit tmp;
-  	tmp.setHtml( html );
+    // remove img tag before exporting
+    int pos = 0;
+    QString html = node->textHtml();
+    while( true )
+    {
+      int start = html.indexOf( "<img src=", pos, Qt::CaseInsensitive );
+      if( 0 <= start )
+      {
+        int end = html.indexOf( "/>", start, Qt::CaseInsensitive );
+        if( 0 <= end )
+        {
+          html.remove( start, (end - start) + 2 );
+          pos = start;
+        }
+        else
+          break;
+      }
+      else
+        break;
+    }
+    QTextEdit tmp;
+    tmp.setHtml( html );
 
-  	// 2006-03-03 AF, export chapter counter
-  	if( !node->ChapterCounter().isNull() )
-  		(*ts_) << node->ChapterCounter() << QString(" ");
+    // 2006-03-03 AF, export chapter counter
+    if( !node->ChapterCounter().isNull() )
+      (*ts_) << node->ChapterCounter() << QString(" ");
 
-  	(*ts_) << tmp.toPlainText();
-  	(*ts_) << "\r\n\r\n\r\n";
+    (*ts_) << tmp.toPlainText();
+    (*ts_) << "\r\n\r\n\r\n";
   }
 
   void PureTextVisitor::visitTextCellNodeAfter(TextCell *)
@@ -137,19 +137,19 @@ namespace IAEX
   //INPUTCELL
   void PureTextVisitor::visitInputCellNodeBefore(InputCell *node)
   {
-  	// 2006-03-03 AF, export chapter counter
-  	if( !node->ChapterCounter().isNull() )
-  		(*ts_) << node->ChapterCounter() << QString(" ");
+    // 2006-03-03 AF, export chapter counter
+    if( !node->ChapterCounter().isNull() )
+      (*ts_) << node->ChapterCounter() << QString(" ");
 
-  	(*ts_) << node->text();
-  	(*ts_) << QString( "\r\n\r\n" );
+    (*ts_) << node->text();
+    (*ts_) << QString( "\r\n\r\n" );
 
-  	// 2006-03-03 AF, export output if not an image
-  	if( node->textOutputHtml().indexOf( "<img src=", 0, Qt::CaseInsensitive ) < 0 )
-  	{
-  		(*ts_) << node->textOutput();
-  		(*ts_) << QString( "\r\n\r\n\r\n" );
-  	}
+    // 2006-03-03 AF, export output if not an image
+    if( node->textOutputHtml().indexOf( "<img src=", 0, Qt::CaseInsensitive ) < 0 )
+    {
+      (*ts_) << node->textOutput();
+      (*ts_) << QString( "\r\n\r\n\r\n" );
+    }
   }
 
   void PureTextVisitor::visitInputCellNodeAfter(InputCell *)
@@ -159,19 +159,19 @@ namespace IAEX
 
   void PureTextVisitor::visitGraphCellNodeBefore(GraphCell *node)
   {
-  	// 2006-03-03 AF, export chapter counter
-  	if( !node->ChapterCounter().isNull() )
-  		(*ts_) << node->ChapterCounter() << QString(" ");
+    // 2006-03-03 AF, export chapter counter
+    if( !node->ChapterCounter().isNull() )
+      (*ts_) << node->ChapterCounter() << QString(" ");
 
-  	(*ts_) << node->text();
-  	(*ts_) << QString( "\r\n\r\n" );
+    (*ts_) << node->text();
+    (*ts_) << QString( "\r\n\r\n" );
 
-  	// 2006-03-03 AF, export output if not an image
-  	if( node->textOutputHtml().indexOf( "<img src=", 0, Qt::CaseInsensitive ) < 0 )
-  	{
-  		(*ts_) << node->textOutput();
-  		(*ts_) << QString( "\r\n\r\n\r\n" );
-  	}
+    // 2006-03-03 AF, export output if not an image
+    if( node->textOutputHtml().indexOf( "<img src=", 0, Qt::CaseInsensitive ) < 0 )
+    {
+      (*ts_) << node->textOutput();
+      (*ts_) << QString( "\r\n\r\n\r\n" );
+    }
   }
 
   void PureTextVisitor::visitGraphCellNodeAfter(GraphCell *)

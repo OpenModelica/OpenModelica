@@ -50,7 +50,7 @@ public:
 
   VerticalLabel(const QString & text, QWidget * parent = 0, Qt::WindowFlags f = 0): QLabel(text, parent,f)
   {
-  	setText(text);
+    setText(text);
   }
 
   ~VerticalLabel()
@@ -61,31 +61,31 @@ public:
 protected:
   void paintEvent ( QPaintEvent * event )
   {
-  	QPainter painter(this);
-  	render(&painter);
+    QPainter painter(this);
+    render(&painter);
   }
 
 public:
   void setText(const QString& text)
   {
-  	QLabel::setText(text);
-  	int h = fontMetrics().height();
+    QLabel::setText(text);
+    int h = fontMetrics().height();
 
-  	setMaximumWidth(h);
+    setMaximumWidth(h);
   }
 
   void render(QPainter* painter, QPointF pos = QPointF())
   {
-  	painter->save();
-  	painter->translate(pos.x(), pos.y());
-  	painter->translate(width() /2., height() /2.);
+    painter->save();
+    painter->translate(pos.x(), pos.y());
+    painter->translate(width() /2., height() /2.);
 
-  	painter->rotate(-90);
-  	painter->translate(height() /-2., width() /-2.);
-  	painter->setFont(font());
+    painter->rotate(-90);
+    painter->translate(height() /-2., width() /-2.);
+    painter->setFont(font());
 
-  	painter->drawText(QRect(rect().left(), rect().top(), rect().height(),rect().width()), Qt::AlignCenter, text());
-  	painter->restore();
+    painter->drawText(QRect(rect().left(), rect().top(), rect().height(),rect().width()), Qt::AlignCenter, text());
+    painter->restore();
   }
 };
 

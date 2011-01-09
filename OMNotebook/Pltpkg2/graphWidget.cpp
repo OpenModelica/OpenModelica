@@ -2027,23 +2027,23 @@ void GraphWidget::receiveDataStream()
             Line2D* l = new Line2D(x0, y0, x1, y1,color, PLOT_LINE_WIDTH, true);
             temporaryCurves[currentYVar]->line->addToGroup(l);
             l->show();
-  		graphicsScene->addItem(l);
+      graphicsScene->addItem(l);
           }
           else if(temporaryCurves[currentYVar]->interpolation == INTERPOLATION_CONSTANT)
           {
             Line2D* l = new Line2D(x0, y0,x1,y0,color, PLOT_LINE_WIDTH, true);
-  		l->setVisible(true);
-  		graphicsScene->addItem(l);
+      l->setVisible(true);
+      graphicsScene->addItem(l);
             temporaryCurves[currentYVar]->line->addToGroup(l);
             l = new Line2D(x1, y0,x1,y1,color, PLOT_LINE_WIDTH, true);
-  		l->setVisible(true);
-  		graphicsScene->addItem(l);
+      l->setVisible(true);
+      graphicsScene->addItem(l);
             temporaryCurves[currentYVar]->line->addToGroup(l);
           }
           else if(temporaryCurves[currentYVar]->interpolation == INTERPOLATION_NONE)
           {
             Line2D* l = new Line2D(x0, y0, x1, y1,color, PLOT_LINE_WIDTH, true);
-  		graphicsScene->addItem(l);
+      graphicsScene->addItem(l);
             l->setVisible(true);
             temporaryCurves[currentYVar]->line->addToGroup(l);
           }
@@ -2173,7 +2173,7 @@ void GraphWidget::saveImage()
   QString filename = QFileDialog::getSaveFileName(this, "Export image", "untitled", "Portable Network Graphics (*.png);;Windows Bitmap (*.bmp);;Joint Photographic Experts Group (*.jpg)");
 
   if(!filename.size())
-  	return;
+    return;
 
   QImage i3(compoundwidget->rect().size(),  QImage::Format_RGB32);
 
@@ -2200,17 +2200,17 @@ void GraphWidget::saveImage()
 
   QList<LegendLabel*> l = compoundwidget->legendFrame->findChildren<LegendLabel*>();
   for(int i = 0; i < l.size(); ++i)
-  	l[i]->render(&p, l[i]->pos()+compoundwidget->legendFrame->pos());
+    l[i]->render(&p, l[i]->pos()+compoundwidget->legendFrame->pos());
 
 
   if(filename.endsWith("png"))
-  	i3.save(filename, "PNG");
+    i3.save(filename, "PNG");
   else if(filename.endsWith("bmp"))
-  	i3.save(filename, "BMP");
+    i3.save(filename, "BMP");
   else if(filename.endsWith("jpg") || filename.endsWith("jpeg"))
-  	i3.save(filename, "JPG");
+    i3.save(filename, "JPG");
   else
-  	i3.save(filename+".bmp", "BMP");
+    i3.save(filename+".bmp", "BMP");
 }
 
 
@@ -2242,7 +2242,7 @@ void GraphWidget::exportToClipboard()
 
   QList<LegendLabel*> l = compoundwidget->legendFrame->findChildren<LegendLabel*>();
   for(int i = 0; i < l.size(); ++i)
-  	l[i]->render(&p, l[i]->pos()+compoundwidget->legendFrame->pos());
+    l[i]->render(&p, l[i]->pos()+compoundwidget->legendFrame->pos());
 
   QClipboard *clipboard = QApplication::clipboard();  
   clipboard->setImage(i3, QClipboard::Clipboard);

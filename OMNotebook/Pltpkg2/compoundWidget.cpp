@@ -57,7 +57,7 @@ CompoundWidget::CompoundWidget(QWidget* parent):  QWidget(parent)
   gvBottom->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   gvBottom->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   gvLeft->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-  gvLeft->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);	
+  gvLeft->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);  
 
   connect(gwMain, SIGNAL(resizeY(quint32)), this, SLOT(resizeY(quint32)));
   connect(gwMain, SIGNAL(showPreferences2()), this, SLOT(showPreferences()));

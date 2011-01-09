@@ -52,34 +52,34 @@ namespace IAEX
 
   class SearchForm : public QDialog
   {
-  	Q_OBJECT
+    Q_OBJECT
 
   public:
-  	SearchForm(QWidget* parent, Document* document, bool viewReplace = false);
-  	~SearchForm();
+    SearchForm(QWidget* parent, Document* document, bool viewReplace = false);
+    ~SearchForm();
 
-  	void setDocument( Document* document );
+    void setDocument( Document* document );
 
   private slots:
-  	void search();
-  	void replace();
-  	void replaceAll();
-  	void showHideReplace();
-  	void closeForm();
+    void search();
+    void replace();
+    void replaceAll();
+    void showHideReplace();
+    void closeForm();
 
   private:
-  	void showOrHideReplace();
+    void showOrHideReplace();
 
   private:
-  	Ui::SearchFormClass ui;
+    Ui::SearchFormClass ui;
 
-  	QString searchText_;
-  	QList<Cell*> openedCells_;
+    QString searchText_;
+    QList<Cell*> openedCells_;
 
-  	Document* document_;
-  	bool viewReplace_;
-  	bool matchCase_;
-  	bool matchWord_;
+    Document* document_;
+    bool viewReplace_;
+    bool matchCase_;
+    bool matchWord_;
   };
 }
 #endif // SEARCHFORM_H

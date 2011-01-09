@@ -68,7 +68,7 @@ namespace IAEX
   class NullHighlighter : public SyntaxHighlighter
   {
   public:
-  	virtual void highlight(QTextDocument *){}
+    virtual void highlight(QTextDocument *){}
   };
 
   /*!
@@ -86,9 +86,9 @@ namespace IAEX
    * \brief The class constructor
    */
   HighlighterThread::HighlighterThread( SyntaxHighlighter *highlighter, QObject *parent )
-  	: QThread( parent ),
-  	highlighter_( highlighter ),
-  	stopHighlighting_( true )
+    : QThread( parent ),
+    highlighter_( highlighter ),
+    stopHighlighting_( true )
   {
   }
 
@@ -106,15 +106,15 @@ namespace IAEX
    */
   HighlighterThread *HighlighterThread::instance( SyntaxHighlighter *highlighter, QObject *parent )
   {
-  	if( !instance_ )
-  	{
-  		if( highlighter )
-  			instance_ = new HighlighterThread( highlighter, parent );
-  		else
-  			instance_ = new HighlighterThread( new NullHighlighter(), parent );
-  	}
+    if( !instance_ )
+    {
+      if( highlighter )
+        instance_ = new HighlighterThread( highlighter, parent );
+      else
+        instance_ = new HighlighterThread( new NullHighlighter(), parent );
+    }
 
-  	return instance_;
+    return instance_;
   }
 
 
@@ -130,58 +130,58 @@ namespace IAEX
    */
   void HighlighterThread::run()
   {
-  	//cout << "Highlight-1" << endl;
+    //cout << "Highlight-1" << endl;
 
-  	//2005-12-29
-  	while( true )
-  	{
-  		//cout << "Highlight-2" << endl;
+    //2005-12-29
+    while( true )
+    {
+      //cout << "Highlight-2" << endl;
 
-  		if( !stack_.isEmpty() )
-  		{
-  			QTextEdit *editor = stack_.pop();
+      if( !stack_.isEmpty() )
+      {
+        QTextEdit *editor = stack_.pop();
 
-  			//if( editor->isVisible() )
-  			//{
-  				highlighter_->highlight( editor->document() );
+        //if( editor->isVisible() )
+        //{
+          highlighter_->highlight( editor->document() );
 
 
-  				// force text to be updated
-//  				editor->update();
-//  				QCoreApplication::processEvents();
-//  				QTextCursor cursor = editor->textCursor();
-//  				editor->setTextCursor( cursor );
-  			//}
-  			//else
-  			//{
-  				// add last
-  				//stack_.push_back( editor );
-  			//}
-  		}
+          // force text to be updated
+//          editor->update();
+//          QCoreApplication::processEvents();
+//          QTextCursor cursor = editor->textCursor();
+//          editor->setTextCursor( cursor );
+        //}
+        //else
+        //{
+          // add last
+          //stack_.push_back( editor );
+        //}
+      }
 
-  		// 2006-01-05 AF, check if any editor should be removed
-  		while( !removeQueue_.isEmpty() )
-  		{
-  			//cout << "Highlight - Remove size: " << removeQueue_.size() << endl;
-  			QTextEdit *editor = removeQueue_.dequeue();
-  			int index = stack_.indexOf( editor );
-  			if( index >= 0 )
-  				stack_.remove( index );
-  		}
+      // 2006-01-05 AF, check if any editor should be removed
+      while( !removeQueue_.isEmpty() )
+      {
+        //cout << "Highlight - Remove size: " << removeQueue_.size() << endl;
+        QTextEdit *editor = removeQueue_.dequeue();
+        int index = stack_.indexOf( editor );
+        if( index >= 0 )
+          stack_.remove( index );
+      }
 
-  		//cout << "Highlight - Stack size: " << stack_.size() << endl;
+      //cout << "Highlight - Stack size: " << stack_.size() << endl;
 
-  		// 2006-01-13 AF, stop thread when nothing to do
-  		if( stack_.isEmpty() )
-  		{
-  			//cout << "Highlight: Exit thread" << endl;
-  			//this->exit();
-  			break;
-  		}
+      // 2006-01-13 AF, stop thread when nothing to do
+      if( stack_.isEmpty() )
+      {
+        //cout << "Highlight: Exit thread" << endl;
+        //this->exit();
+        break;
+      }
 
-  	}
+    }
 
-  	//cout << "Highlight-3" << endl;
+    //cout << "Highlight-3" << endl;
   }
 
   /*!
@@ -195,21 +195,21 @@ namespace IAEX
    */
   void HighlighterThread::addEditor( QTextEdit *editor )
   {
-  	if( editor )
-  	{
-  		int index = stack_.indexOf( editor );
-  		if( index >= 0 )
-  		{
-  			stack_.remove( index );
-  			stack_.push( editor );
-  		}
-  		else
-  			stack_.push( editor );
+    if( editor )
+    {
+      int index = stack_.indexOf( editor );
+      if( index >= 0 )
+      {
+        stack_.remove( index );
+        stack_.push( editor );
+      }
+      else
+        stack_.push( editor );
 
-  		// 2006-01-13 AF, restart the thread
-  		if(	!isRunning() && !stopHighlighting_ )
-  			start( QThread::LowPriority );
-  	}
+      // 2006-01-13 AF, restart the thread
+      if(  !isRunning() && !stopHighlighting_ )
+        start( QThread::LowPriority );
+    }
   }
 
   /*!
@@ -223,14 +223,14 @@ namespace IAEX
    */
   void HighlighterThread::removeEditor( QTextEdit *editor )
   {
-  	if( editor )
-  	{
-  		removeQueue_.enqueue( editor );
+    if( editor )
+    {
+      removeQueue_.enqueue( editor );
 
-  		// 2006-01-13 AF, restart the thread
-  		if(	!isRunning() && !stopHighlighting_ )
-  			start( QThread::LowPriority );
-  	}
+      // 2006-01-13 AF, restart the thread
+      if(  !isRunning() && !stopHighlighting_ )
+        start( QThread::LowPriority );
+    }
   }
 
   /*!
@@ -241,15 +241,15 @@ namespace IAEX
    */
   bool HighlighterThread::haveEditor( QTextEdit *editor )
   {
-  	if( editor )
-  	{
-  		if( stack_.indexOf( editor ) >= 0 )
-  			return true;
-  		else
-  			return false;
-  	}
+    if( editor )
+    {
+      if( stack_.indexOf( editor ) >= 0 )
+        return true;
+      else
+        return false;
+    }
 
-  	return false;
+    return false;
   }
 
   /*!
@@ -260,12 +260,12 @@ namespace IAEX
    */
   void HighlighterThread::setStop( bool stop )
   {
-  	stopHighlighting_ = stop;
-  	if( stopHighlighting_ && isRunning() )
-  		this->exit();
+    stopHighlighting_ = stop;
+    if( stopHighlighting_ && isRunning() )
+      this->exit();
 
-  	if( !stopHighlighting_ && !isRunning() )
-  		start( QThread::LowPriority );
+    if( !stopHighlighting_ && !isRunning() )
+      start( QThread::LowPriority );
   }
 
 }

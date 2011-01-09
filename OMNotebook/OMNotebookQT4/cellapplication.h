@@ -51,42 +51,42 @@ namespace IAEX
 
   class CellApplication : public QObject, public Application
   {
-  	Q_OBJECT
+    Q_OBJECT
   public:
-  	CellApplication(int &argc, char *argv[]);
-  	virtual ~CellApplication();
+    CellApplication(int &argc, char *argv[]);
+    virtual ~CellApplication();
 
-  	virtual CommandCenter *commandCenter();
-  	virtual void setCommandCenter(CommandCenter *c);
+    virtual CommandCenter *commandCenter();
+    virtual void setCommandCenter(CommandCenter *c);
 
-  	virtual void addToPasteboard(Cell *c);
-  	virtual void clearPasteboard();
-  	vector<Cell *> pasteboard();
+    virtual void addToPasteboard(Cell *c);
+    virtual void clearPasteboard();
+    vector<Cell *> pasteboard();
 
-  	int exec();
-  	void add(Document *doc);
-  	void add(DocumentView *view);
+    int exec();
+    void add(Document *doc);
+    void add(DocumentView *view);
 
-  	void open(const QString filename, int readmode = READMODE_NORMAL );
-  	void removeTempFiles(QString filename);			// Added 2006-01-16 AF
-  	vector<DocumentView *> documentViewList();		// Added 2006-01-27 AF
-  	void removeDocumentView( DocumentView *view );	// Added 2006-01-27 AF
+    void open(const QString filename, int readmode = READMODE_NORMAL );
+    void removeTempFiles(QString filename);      // Added 2006-01-16 AF
+    vector<DocumentView *> documentViewList();    // Added 2006-01-27 AF
+    void removeDocumentView( DocumentView *view );  // Added 2006-01-27 AF
     QApplication* getApplication() { return app_; }
     QWidget* getMainWindow() { return mainWindow; }
 
   private:
-  	void convertDrModelica();						// Added 2006-03-21 AF
+    void convertDrModelica();            // Added 2006-03-21 AF
 
   private:
-  	QApplication *app_;
+    QApplication *app_;
     QWidget* mainWindow;
-  	vector<Document *> documents_;
-  	vector<DocumentView *> views_;
-  	CommandCenter *cmdCenter_;
-  	vector<Cell *> pasteboard_;
-  	QStringList removeList_;		// Added 2006-01-16 AF
+    vector<Document *> documents_;
+    vector<DocumentView *> views_;
+    CommandCenter *cmdCenter_;
+    vector<Cell *> pasteboard_;
+    QStringList removeList_;    // Added 2006-01-16 AF
 
-  	NotebookSocket *notebooksocket_;
+    NotebookSocket *notebooksocket_;
   };
 }
 

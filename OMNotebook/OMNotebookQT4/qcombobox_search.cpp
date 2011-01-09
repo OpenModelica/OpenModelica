@@ -55,7 +55,7 @@ namespace IAEX
    * on Qt's combo box for a serach box
    */
   ComboBoxSearch::ComboBoxSearch( QWidget* parent )
-  	: QComboBox( parent )
+    : QComboBox( parent )
   {
   }
 
@@ -81,12 +81,12 @@ namespace IAEX
    */
   void ComboBoxSearch::keyPressEvent( QKeyEvent* event )
   {
-  	if( event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter )
-  	{
-  		emit returnPressed();
-  	}
-  	else
-  		QComboBox::keyPressEvent( event );
+    if( event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter )
+    {
+      emit returnPressed();
+    }
+    else
+      QComboBox::keyPressEvent( event );
   }
 
 }

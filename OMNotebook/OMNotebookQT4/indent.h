@@ -71,15 +71,15 @@ private:
   class ISM
   {
   public:
-  	ISM();
-  	~ISM();
+    ISM();
+    ~ISM();
 
-  	void newToken(QString, QString);
-  	int level, lineModifiers, state, nextMod;
-  	bool equation, equationSection, loopBlock;
-  	bool skipNext;
-  	bool lMod;
-  	int oldState;
+    void newToken(QString, QString);
+    int level, lineModifiers, state, nextMod;
+    bool equation, equationSection, loopBlock;
+    bool skipNext;
+    bool lMod;
+    int oldState;
 
 
   };

@@ -72,26 +72,26 @@ void VariableWindow::updateViews()
   cby->clear();
   for(map<QString, VariableData*>::iterator i = graphWidget->variables.begin(); i != graphWidget->variables.end(); ++i)
   {
-  	item = new QTreeWidgetItem();
-  	item->setText(0, i->first);
-  	item->setText(1, QVariant(i->second->count()).toString());
+    item = new QTreeWidgetItem();
+    item->setText(0, i->first);
+    item->setText(1, QVariant(i->second->count()).toString());
 
-  	cbx->addItem(i->first);
-  	cby->addItem(i->first);
-  	twVariables->insertTopLevelItem(0,item);
+    cbx->addItem(i->first);
+    cby->addItem(i->first);
+    twVariables->insertTopLevelItem(0,item);
   }
 
   twPlotted->clear();
   for(QList<Curve*>::iterator i = graphWidget->curves.begin(); i != graphWidget->curves.end(); ++i)
   {
 
-  	if(!(*i))
-  		continue;
-  	item = new QTreeWidgetItem();
+    if(!(*i))
+      continue;
+    item = new QTreeWidgetItem();
 
-  	item->setText(0, (*i)->x->variableName());
-  	item->setText(1, (*i)->y->variableName());
-  	twPlotted->insertTopLevelItem(0, item);
+    item->setText(0, (*i)->x->variableName());
+    item->setText(1, (*i)->y->variableName());
+    twPlotted->insertTopLevelItem(0, item);
 
   }
 
@@ -121,11 +121,11 @@ void VariableWindow::createCurve()
   l->setCurve(c);
 
   if(rbLinear->isChecked())
-  	c->interpolation = INTERPOLATION_LINEAR;
+    c->interpolation = INTERPOLATION_LINEAR;
   else if(rbConstant->isChecked())
-  	c->interpolation = INTERPOLATION_CONSTANT;
+    c->interpolation = INTERPOLATION_CONSTANT;
   else
-  	c->interpolation= INTERPOLATION_NONE;
+    c->interpolation= INTERPOLATION_NONE;
   c->drawPoints = cbPoints->isChecked();
 
   graphWidget->legendLayout->addWidget(l);
@@ -134,7 +134,7 @@ void VariableWindow::createCurve()
   graphWidget->setLogarithmic(true);
   emit showGraphics();
   graphWidget->resetZoom();
-  //	graphWidget->
+  //  graphWidget->
   updateViews();
 }
 
@@ -142,21 +142,21 @@ void VariableWindow::removeCurve()
 {
 
   if(!twPlotted->currentItem())
-  	return;
+    return;
   QString x = twPlotted->currentItem()->text(0);
   QString y = twPlotted->currentItem()->text(1);
 
   for(int i = 0; i < graphWidget->curves.size(); ++i)
   {
-  	if(graphWidget->curves[i]->x->variableName() == x && graphWidget->curves[i]->y->variableName() == y)
-  	{
-  		Curve* c = graphWidget->curves.takeAt(i);
-  		delete c;
-  		break;
+    if(graphWidget->curves[i]->x->variableName() == x && graphWidget->curves[i]->y->variableName() == y)
+    {
+      Curve* c = graphWidget->curves.takeAt(i);
+      delete c;
+      break;
 
-  	}
+    }
   }
-  		updateViews();
+      updateViews();
 
 
 }

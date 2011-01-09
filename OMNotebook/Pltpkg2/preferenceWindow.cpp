@@ -92,34 +92,34 @@ void PreferenceWindow::apply()
   if(vMin->isEnabled())
   {
 
-  	top = QVariant(vMin->text()).toDouble();
-  	bottom = QVariant(vMax->text()).toDouble();
+    top = QVariant(vMin->text()).toDouble();
+    bottom = QVariant(vMax->text()).toDouble();
   }
 
   if(hMin->isEnabled())
   {
-  	left = QVariant(hMin->text()).toDouble();
-  	right = QVariant(hMax->text()).toDouble();
+    left = QVariant(hMin->text()).toDouble();
+    right = QVariant(hMax->text()).toDouble();
   }
 
   QRectF newArea(left, top, right-left, bottom-top);
 
   if(newArea != compoundWidget->gwMain->currentArea())
-  	compoundWidget->gwMain->setArea(newArea);
+    compoundWidget->gwMain->setArea(newArea);
 
   compoundWidget->gwMain->fixedXSize = !hAutoGrid->isChecked();
   compoundWidget->gwMain->fixedYSize = !vAutoGrid->isChecked();
 
   if(!hAutoGrid->isChecked())
   {
-  	compoundWidget->gwMain->xMajorDist = QVariant(hMajorSize->text()).toDouble();
-  	compoundWidget->gwMain->xMinorDist = QVariant(hMinorSize->text()).toDouble();
+    compoundWidget->gwMain->xMajorDist = QVariant(hMajorSize->text()).toDouble();
+    compoundWidget->gwMain->xMinorDist = QVariant(hMinorSize->text()).toDouble();
   }
 
   if(!vAutoGrid->isChecked())
   {
-  	compoundWidget->gwMain->yMajorDist = QVariant(vMajorSize->text()).toDouble();
-  	compoundWidget->gwMain->yMinorDist = QVariant(vMinorSize->text()).toDouble();
+    compoundWidget->gwMain->yMajorDist = QVariant(vMajorSize->text()).toDouble();
+    compoundWidget->gwMain->yMinorDist = QVariant(vMinorSize->text()).toDouble();
   }
 
   compoundWidget->plotTitle->setText(plotTitle->text());
@@ -128,9 +128,9 @@ void PreferenceWindow::apply()
 
   if(vLog->isChecked() != compoundWidget->gwMain->yLog || hLog->isChecked() != compoundWidget->gwMain->xLog)
   {
-  	compoundWidget->gwMain->yLog = vLog->isChecked();
-  	compoundWidget->gwMain->xLog = hLog->isChecked();
-  	emit setLogarithmic(true);
+    compoundWidget->gwMain->yLog = vLog->isChecked();
+    compoundWidget->gwMain->xLog = hLog->isChecked();
+    emit setLogarithmic(true);
   }
 
   emit setGrid(showGrid->isChecked());

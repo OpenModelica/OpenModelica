@@ -81,22 +81,22 @@ namespace IAEX
    * \brief The class constructor
    */
   CellCursor::CellCursor(QWidget *parent)
-  	: Cell(parent),
-  	clickedOn_( false )
+    : Cell(parent),
+    clickedOn_( false )
   {
-  	setHeight(3);
-  	QWidget *content = new CursorWidget(this);
+    setHeight(3);
+    QWidget *content = new CursorWidget(this);
 
-  	setMainWidget(content);
-  	hideTreeView(true);
-  	// PORT >> setBackgroundMode(Qt::PaletteBase);
-  	setBackgroundRole( QPalette::Base );
-  	setBackgroundColor(QColor(100,100,100));
+    setMainWidget(content);
+    hideTreeView(true);
+    // PORT >> setBackgroundMode(Qt::PaletteBase);
+    setBackgroundRole( QPalette::Base );
+    setBackgroundColor(QColor(100,100,100));
 
-  	// 2006-04-27 AF, set cursor shape for cell cursor
-  	QCursor mousecursor = cursor();
-  	mousecursor.setShape( Qt::SizeHorCursor );
-  	setCursor( mousecursor );
+    // 2006-04-27 AF, set cursor shape for cell cursor
+    QCursor mousecursor = cursor();
+    mousecursor.setShape( Qt::SizeHorCursor );
+    setCursor( mousecursor );
   }
 
   /*!
@@ -122,7 +122,7 @@ namespace IAEX
    */
   bool CellCursor::isEditable()
   {
-  	return false;
+    return false;
   }
 
   /*!
@@ -133,7 +133,7 @@ namespace IAEX
    */
   bool CellCursor::isClickedOn()
   {
-  	return clickedOn_;
+    return clickedOn_;
   }
 
   /*!
@@ -144,7 +144,7 @@ namespace IAEX
    */
   void CellCursor::mousePressEvent(QMouseEvent *event)
   {
-  	clickedOn_ = true;
+    clickedOn_ = true;
   }
 
   /*!
@@ -156,7 +156,7 @@ namespace IAEX
    */
   void CellCursor::cursorIsMoved()
   {
-  	clickedOn_ = false;
+    clickedOn_ = false;
   }
 
 
@@ -169,41 +169,41 @@ namespace IAEX
   */
   void CellCursor::accept(Visitor &v)
   {
-  	//Does not have any childs!
-  	v.visitCellCursorNodeBefore(this);
-  	v.visitCellCursorNodeAfter(this);
+    //Does not have any childs!
+    v.visitCellCursorNodeBefore(this);
+    v.visitCellCursorNodeAfter(this);
 
-  	if(hasNext())
-  		next()->accept(v);
+    if(hasNext())
+      next()->accept(v);
   }
 
 
   void CellCursor::addBefore(Cell *newCell)
   {
-  	// 2006-04-27 AF,
-  	cursorIsMoved();
+    // 2006-04-27 AF,
+    cursorIsMoved();
 
-  	if(parentCell()->child() == this)
-  	{ //first in line.
-  		newCell->setParentCell(parentCell());
-  		newCell->setNext(this);
-  		newCell->setPrevious(0);
-  		parentCell()->setChild(newCell);
-  		setPrevious(newCell);
-  	}
-  	else
-  	{
-  		newCell->setParentCell(parentCell());
-  		newCell->setPrevious(previous());
-  		previous()->setNext(newCell);
-  		setPrevious(newCell);
-  		newCell->setNext(this);
-  	}
+    if(parentCell()->child() == this)
+    { //first in line.
+      newCell->setParentCell(parentCell());
+      newCell->setNext(this);
+      newCell->setPrevious(0);
+      parentCell()->setChild(newCell);
+      setPrevious(newCell);
+    }
+    else
+    {
+      newCell->setParentCell(parentCell());
+      newCell->setPrevious(previous());
+      previous()->setNext(newCell);
+      setPrevious(newCell);
+      newCell->setNext(this);
+    }
 
-  	parentCell()->addCellWidget(newCell);
+    parentCell()->addCellWidget(newCell);
 
-  	// TMP EMIT
-  	emit changedPosition();
+    // TMP EMIT
+    emit changedPosition();
   }
 
   /*! \brief Replaces current cell with a new cell.
@@ -214,41 +214,41 @@ namespace IAEX
   */
   void CellCursor::replaceCurrentWith(Cell *newCell)
   {
-  	//       newCell->setParent(currentCell()->parentCell());
-  	//       newCell->setChild(currentCell()->child());
-  	//       newCell->setLast(currentCell()->last());
-  	//       newCell->setPrevious(currentCell()->previous());
-  	//       newCell->setNext(currentCell()->next());
-  	qDebug("replaceWithCurrent");
+    //       newCell->setParent(currentCell()->parentCell());
+    //       newCell->setChild(currentCell()->child());
+    //       newCell->setLast(currentCell()->last());
+    //       newCell->setPrevious(currentCell()->previous());
+    //       newCell->setNext(currentCell()->next());
+    qDebug("replaceWithCurrent");
 
-  	newCell->setText(currentCell()->text());
+    newCell->setText(currentCell()->text());
 
-  	//Replace cell.
-  	deleteCurrentCell();
-  	addBefore(newCell);
-  	qDebug("End replaceWithCurrent");
+    //Replace cell.
+    deleteCurrentCell();
+    addBefore(newCell);
+    qDebug("End replaceWithCurrent");
   }
 
   void CellCursor::removeFromCurrentPosition()
   {
-  	//remove all widgets from parents layout.
-  	Cell *par = parentCell();
-  	par->removeCellWidgets();
+    //remove all widgets from parents layout.
+    Cell *par = parentCell();
+    par->removeCellWidgets();
 
-  	if(parentCell()->child() == this)
-  		parentCell()->setChild(next());
+    if(parentCell()->child() == this)
+      parentCell()->setChild(next());
 
-  	if(parentCell()->last() == this)
-  		parentCell()->setLast(previous());
+    if(parentCell()->last() == this)
+      parentCell()->setLast(previous());
 
-  	if(hasNext())
-  		next()->setPrevious(previous());
+    if(hasNext())
+      next()->setPrevious(previous());
 
-  	if(hasPrevious())
-  		previous()->setNext(next());
+    if(hasPrevious())
+      previous()->setNext(next());
 
-  	//Insert all widgets again.
-  	par->addCellWidgets();
+    //Insert all widgets again.
+    par->addCellWidgets();
   }
 
   /*!
@@ -262,31 +262,31 @@ namespace IAEX
   */
   void CellCursor::removeCurrentCell()
   {
-  	if(hasPrevious()) //If cursor has previous
-  	{
-  		// 2006-04-27 AF,
-  		cursorIsMoved();
+    if(hasPrevious()) //If cursor has previous
+    {
+      // 2006-04-27 AF,
+      cursorIsMoved();
 
-  		Cell *current = previous();
+      Cell *current = previous();
 
-  		removeFromCurrentPosition();
+      removeFromCurrentPosition();
 
-  		if(current->hasPrevious())
-  			current->previous()->setNext(this);
-  		else
-  			parentCell()->setChild(this);
+      if(current->hasPrevious())
+        current->previous()->setNext(this);
+      else
+        parentCell()->setChild(this);
 
-  		setPrevious(current->previous());
+      setPrevious(current->previous());
 
-  		current->setParentCell(0);
-  		current->setPrevious(0);
-  		current->setNext(0);
-  		current->setChild(0);
-  		current->setLast(0);
+      current->setParentCell(0);
+      current->setPrevious(0);
+      current->setNext(0);
+      current->setChild(0);
+      current->setLast(0);
 
-  		current->hide();
-  		parentCell()->addCellWidgets();
-  	}
+      current->hide();
+      parentCell()->addCellWidgets();
+    }
   }
 
   /*! \bug Segfault in cellgroups. Probably a parent, child or last.
@@ -294,97 +294,97 @@ namespace IAEX
   */
   void CellCursor::deleteCurrentCell()
   {
-  	if(hasPrevious()) //If cursor has previous
-  	{
-  		// 2006-04-27 AF,
-  		cursorIsMoved();
+    if(hasPrevious()) //If cursor has previous
+    {
+      // 2006-04-27 AF,
+      cursorIsMoved();
 
-  		//removeCurrentCell();
+      //removeCurrentCell();
 
-  		//OLD CODE
-  		//Remove currentCell.
-  		Cell *current = previous(); //Save a pointer to the cell being deleted.
+      //OLD CODE
+      //Remove currentCell.
+      Cell *current = previous(); //Save a pointer to the cell being deleted.
 
-  		removeCurrentCell();
-  		// removeFromCurrentPosition();
+      removeCurrentCell();
+      // removeFromCurrentPosition();
 
-  		// 	 if(current->hasPrevious())
-  		// 	    current->previous()->setNext(this);
-  		// 	 else
-  		// 	    parentCell()->setChild(this);
+      //    if(current->hasPrevious())
+      //       current->previous()->setNext(this);
+      //    else
+      //       parentCell()->setChild(this);
 
-  		// 	 setPrevious(current->previous());
+      //    setPrevious(current->previous());
 
-  		// 	 current->setParentCell(0);
-  		// 	 current->setPrevious(0);
-  		// 	 current->setNext(0);
-  		// 	 current->setChild(0);
-  		// 	 current->setLast(0);
+      //    current->setParentCell(0);
+      //    current->setPrevious(0);
+      //    current->setNext(0);
+      //    current->setChild(0);
+      //    current->setLast(0);
 
-  		//Segfault on delete.
-  		delete current;
+      //Segfault on delete.
+      delete current;
 
-  		//parentCell()->addCellWidgets();
-  	}
-  	// TMP EMIT
-  	emit changedPosition();
+      //parentCell()->addCellWidgets();
+    }
+    // TMP EMIT
+    emit changedPosition();
   }
 
   /*! Returns current cell.
   */
   Cell *CellCursor::currentCell()
   {
-  	if(!hasPrevious()) //First in group.
-  		return parentCell(); //Will always work.
-  	else
-  		return previous();
+    if(!hasPrevious()) //First in group.
+      return parentCell(); //Will always work.
+    else
+      return previous();
   }
 
   // 2006-08-24 AF, changed so the function returns a boolean value, true if
   // the cursor is moved.
   bool CellCursor::moveUp()
   {
-  	// 2006-08-24 AF,
+    // 2006-08-24 AF,
         bool moved( false );
 
-  	// 2006-04-27 AF,
-  	cursorIsMoved();
+    // 2006-04-27 AF,
+    cursorIsMoved();
 
-  	if( !hasPrevious() )
-  	{
-  		if( parentCell()->hasParentCell() )
-  		{
-  			moveBefore( parentCell() );
-  			moved = true;
-  		}
-  	}
-  	else
-  	{
-  		//previous() exists.
-  		if(previous()->hasChilds())
-  		{
-  			if(!previous()->isClosed())
-  			{
-  				moveToLastChild(previous());
-  				moved = true;
-  			}
-  			else
-  			{
-  				moveBefore(previous());
-  				moved = true;
-  			}
-  		}
-  		else
-  		{
-  			moveBefore(previous());
-  			moved = true;
-  		}
-  	}
-  	emit positionChanged(x(), y(), 5,5);
+    if( !hasPrevious() )
+    {
+      if( parentCell()->hasParentCell() )
+      {
+        moveBefore( parentCell() );
+        moved = true;
+      }
+    }
+    else
+    {
+      //previous() exists.
+      if(previous()->hasChilds())
+      {
+        if(!previous()->isClosed())
+        {
+          moveToLastChild(previous());
+          moved = true;
+        }
+        else
+        {
+          moveBefore(previous());
+          moved = true;
+        }
+      }
+      else
+      {
+        moveBefore(previous());
+        moved = true;
+      }
+    }
+    emit positionChanged(x(), y(), 5,5);
 
-  	// TMP EMIT
-  	emit changedPosition();
-  	return moved;
+    // TMP EMIT
+    emit changedPosition();
+    return moved;
   }
 
   /*!
@@ -398,45 +398,45 @@ namespace IAEX
   */
   bool CellCursor::moveDown()
   {
-  	// 2006-08-24 AF,
+    // 2006-08-24 AF,
         bool moved( false );
 
-  	// 2006-04-27 AF,
-  	cursorIsMoved();
+    // 2006-04-27 AF,
+    cursorIsMoved();
 
-  	if( !hasNext() )
-  	{
-  		if( parentCell()->hasParentCell() )
-  		{
-  			moveAfter( parentCell() );
-  			moved = true;
-  		}
-  	}
-  	else //Has next.
-  	{
-  		if(next()->hasChilds())
-  		{
-  			if(!next()->isClosed())
-  			{
-  				moveToFirstChild(next());
-  				moved = true;
-  			}
-  			else
-  			{
-  				moveAfter(next());
-  				moved = true;
-  			}
-  		}
-  		else
-  		{
-  			moveAfter(next());
-  			moved = true;
-  		}
-  	}
-  	// TMP EMIT
-  	emit changedPosition();
-  	emit positionChanged(x(), y(), 5,5);
-  	return moved;
+    if( !hasNext() )
+    {
+      if( parentCell()->hasParentCell() )
+      {
+        moveAfter( parentCell() );
+        moved = true;
+      }
+    }
+    else //Has next.
+    {
+      if(next()->hasChilds())
+      {
+        if(!next()->isClosed())
+        {
+          moveToFirstChild(next());
+          moved = true;
+        }
+        else
+        {
+          moveAfter(next());
+          moved = true;
+        }
+      }
+      else
+      {
+        moveAfter(next());
+        moved = true;
+      }
+    }
+    // TMP EMIT
+    emit changedPosition();
+    emit positionChanged(x(), y(), 5,5);
+    return moved;
   }
 
   /*! Insert this cell as first child of parent.
@@ -445,26 +445,26 @@ namespace IAEX
   */
   void CellCursor::moveToFirstChild(Cell *parent)
   {
-  	// 2006-04-27 AF,
-  	cursorIsMoved();
+    // 2006-04-27 AF,
+    cursorIsMoved();
 
-  	if(parent->hasChilds())
-  	{
-  		parent->removeCellWidgets();
-  		moveBefore(parent->child());
-  		parent->addCellWidgets();
-  	}
-  	else //No child.
-  	{
-  		//Become first child.
-  		parent->removeCellWidgets();
-  		parent->setChild(this);
-  		parent->setLast(this);
-  		parent->addCellWidgets();
-  	}
+    if(parent->hasChilds())
+    {
+      parent->removeCellWidgets();
+      moveBefore(parent->child());
+      parent->addCellWidgets();
+    }
+    else //No child.
+    {
+      //Become first child.
+      parent->removeCellWidgets();
+      parent->setChild(this);
+      parent->setLast(this);
+      parent->addCellWidgets();
+    }
 
-  	// TMP EMIT
-  	emit changedPosition();
+    // TMP EMIT
+    emit changedPosition();
   }
 
   /*!
@@ -472,22 +472,22 @@ namespace IAEX
   */
   void CellCursor::moveToLastChild(Cell *parent)
   {
-  	// 2006-04-27 AF,
-  	cursorIsMoved();
+    // 2006-04-27 AF,
+    cursorIsMoved();
 
-  	if(parent->hasChilds())
-  	{
-  		parent->removeCellWidgets();
-  		moveAfter(parent->last());
-  		parent->addCellWidgets();
-  	}
-  	else
-  	{
-  		throw runtime_error("LAST CHILD: Tried to move to a child that did not exist.");
-  	}
+    if(parent->hasChilds())
+    {
+      parent->removeCellWidgets();
+      moveAfter(parent->last());
+      parent->addCellWidgets();
+    }
+    else
+    {
+      throw runtime_error("LAST CHILD: Tried to move to a child that did not exist.");
+    }
 
-  	// TMP EMIT
-  	emit changedPosition();
+    // TMP EMIT
+    emit changedPosition();
   }
 
   /*!
@@ -495,44 +495,44 @@ namespace IAEX
   */
   void CellCursor::moveAfter(Cell *current)
   {
-  	// 2006-04-27 AF,
-  	cursorIsMoved();
+    // 2006-04-27 AF,
+    cursorIsMoved();
 
-  	removeFromCurrentPosition();
+    removeFromCurrentPosition();
 
-  	//if(!current->hasParentCell())
-  	//  throw runtime_error("Could not insert after root");
+    //if(!current->hasParentCell())
+    //  throw runtime_error("Could not insert after root");
 
-  	if(current->hasParentCell())
-  	{
-  		current->parentCell()->removeCellWidgets();
+    if(current->hasParentCell())
+    {
+      current->parentCell()->removeCellWidgets();
 
-  		if(current->hasNext() == 0)
-  		{
-  			current->parentCell()->setLast(this);
-  		}
-  		else
-  			current->next()->setPrevious(this);
+      if(current->hasNext() == 0)
+      {
+        current->parentCell()->setLast(this);
+      }
+      else
+        current->next()->setPrevious(this);
 
-  		setParentCell(current->parentCell());
-  		setNext(current->next());
-  		current->setNext(this);
-  		setPrevious(current);
+      setParentCell(current->parentCell());
+      setNext(current->next());
+      current->setNext(this);
+      setPrevious(current);
 
-  		//insert widgets to parents layout.
-  		parentCell()->addCellWidgets();
-  	}
-  	else
-  	{
-  		//If current does not have a parent. That is current is not
-  		//in the celltree at all or that current is the root of the
-  		//tree. It should not be possible to move after the root of
-  		//the tree. Do nothing!
-  	}
+      //insert widgets to parents layout.
+      parentCell()->addCellWidgets();
+    }
+    else
+    {
+      //If current does not have a parent. That is current is not
+      //in the celltree at all or that current is the root of the
+      //tree. It should not be possible to move after the root of
+      //the tree. Do nothing!
+    }
 
-  	// TMP EMIT
-  	emit changedPosition();
-  	//      emit positionChanged(x(), y(), 5,5);
+    // TMP EMIT
+    emit changedPosition();
+    //      emit positionChanged(x(), y(), 5,5);
   }
 
 
@@ -541,37 +541,37 @@ namespace IAEX
   */
   void CellCursor::moveBefore(Cell *current)
   {
-  	// 2006-04-27 AF,
-  	cursorIsMoved();
+    // 2006-04-27 AF,
+    cursorIsMoved();
 
-  	removeFromCurrentPosition();
+    removeFromCurrentPosition();
 
-  	//Remove all widgets from currents parent.
-  	current->parentCell()->removeCellWidgets();
+    //Remove all widgets from currents parent.
+    current->parentCell()->removeCellWidgets();
 
-  	//Move to new position.
-  	if(current->hasParentCell())
-  	{
-  		setParentCell(current->parentCell());
-  		if(!current->hasPrevious())
-  			current->parentCell()->setChild(this);
-  		else
-  			current->previous()->setNext(this);
+    //Move to new position.
+    if(current->hasParentCell())
+    {
+      setParentCell(current->parentCell());
+      if(!current->hasPrevious())
+        current->parentCell()->setChild(this);
+      else
+        current->previous()->setNext(this);
 
-  	}
-  	else
-  		throw runtime_error("Could not insert before root");
+    }
+    else
+      throw runtime_error("Could not insert before root");
 
-  	setPrevious(current->previous());
-  	current->setPrevious(this);
-  	setNext(current);
+    setPrevious(current->previous());
+    current->setPrevious(this);
+    setNext(current);
 
-  	//Insert widgets to parents layout.
-  	parentCell()->addCellWidgets();
+    //Insert widgets to parents layout.
+    parentCell()->addCellWidgets();
 
-  	// TMP EMIT
-  	emit changedPosition();
-  	//      emit positionChanged(x(), y(), 5, 5);
+    // TMP EMIT
+    emit changedPosition();
+    //      emit positionChanged(x(), y(), 5, 5);
   }
 
 
@@ -581,19 +581,19 @@ namespace IAEX
   */
   void CursorWidget::paintEvent(QPaintEvent *event)
   {
-  	QPainter painter(this);
+    QPainter painter(this);
 
-  	QPalette palette;
-  	palette.setColor(this->backgroundRole(), QColor(0,0,0));
-  	this->setPalette(palette);
+    QPalette palette;
+    palette.setColor(this->backgroundRole(), QColor(0,0,0));
+    this->setPalette(palette);
 
-  	// changed from 1 to 3, don\t know way, but something must have
-  	// changed between qt 4 and qt 4.1
-  	painter.setPen(QPen(black,3, SolidLine));
+    // changed from 1 to 3, don\t know way, but something must have
+    // changed between qt 4 and qt 4.1
+    painter.setPen(QPen(black,3, SolidLine));
 
 
 
-  	painter.drawRect(0, 0, width(), height());
-  	QWidget::paintEvent(event);
+    painter.drawRect(0, 0, width(), height());
+    QWidget::paintEvent(event);
   }
 }

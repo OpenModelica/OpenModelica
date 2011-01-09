@@ -85,58 +85,58 @@ namespace IAEX
    * \brief The class constructor
    */
   Cell::Cell(QWidget *parent)
-  	: QWidget(parent),
-  	selected_(false),
-  	treeviewVisible_(true),
-  	viewexpression_(false),
-  	backgroundColor_(QColor(255,255,255)),
-  	parent_(0),
-  	next_(0),
-  	last_(0),
-  	previous_(0),
-  	child_(0),
-  	references_(0)
+    : QWidget(parent),
+    selected_(false),
+    treeviewVisible_(true),
+    viewexpression_(false),
+    backgroundColor_(QColor(255,255,255)),
+    parent_(0),
+    next_(0),
+    last_(0),
+    previous_(0),
+    child_(0),
+    references_(0)
   {
-  	setMouseTracking(true);
-  	setEnabled(true);
-  	
-  	mainlayout_ = new QGridLayout(this);
-  	mainlayout_->setMargin(0);
-  	mainlayout_->setSpacing(0);
+    setMouseTracking(true);
+    setEnabled(true);
+    
+    mainlayout_ = new QGridLayout(this);
+    mainlayout_->setMargin(0);
+    mainlayout_->setSpacing(0);
 
-  	setLayout( mainlayout_ );//AF
-  	setLabel(new QLabel(this));
+    setLayout( mainlayout_ );//AF
+    setLabel(new QLabel(this));
 
-  	setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum));
-  	// PORT >> setBackgroundMode(Qt::PaletteBase);
-  	setBackgroundRole( QPalette::Base );
-  	setTreeWidget(new TreeView(this));
+    setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum));
+    // PORT >> setBackgroundMode(Qt::PaletteBase);
+    setBackgroundRole( QPalette::Base );
+    setTreeWidget(new TreeView(this));
 
-  	QPalette palette;
-  	palette.setColor(backgroundRole(), backgroundColor());
-  	setPalette(palette);
+    QPalette palette;
+    palette.setColor(backgroundRole(), backgroundColor());
+    setPalette(palette);
   }
 
   Cell::Cell(Cell &c) : QWidget()
   {
-  	setMouseTracking(true);
+    setMouseTracking(true);
 
-  	mainlayout_ = new QGridLayout(this);
-  	mainlayout_->setMargin(0);
-  	mainlayout_->setSpacing(0);
+    mainlayout_ = new QGridLayout(this);
+    mainlayout_->setMargin(0);
+    mainlayout_->setSpacing(0);
 
-  	setLabel(new QLabel(this));
+    setLabel(new QLabel(this));
 
-  	setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum));
-  	// PORT >> setBackgroundMode(Qt::PaletteBase);
-  	setBackgroundRole( QPalette::Base );
-  	setTreeWidget(new TreeView(this));
-  	setStyle( *c.style() ); // Added 2005-10-27 AF
+    setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum));
+    // PORT >> setBackgroundMode(Qt::PaletteBase);
+    setBackgroundRole( QPalette::Base );
+    setTreeWidget(new TreeView(this));
+    setStyle( *c.style() ); // Added 2005-10-27 AF
 
 
-  	QPalette palette;
-  	palette.setColor(c.backgroundRole(), c.backgroundColor());
-  	setPalette(palette);
+    QPalette palette;
+    palette.setColor(c.backgroundRole(), c.backgroundColor());
+    setPalette(palette);
   }
 
   /*!
@@ -146,15 +146,15 @@ namespace IAEX
    */
   Cell::~Cell()
   {
-  	//Delete if there are no references to this cell.
-  	if(references_ <= 0)
-  	{
-  		setMouseTracking(false);
+    //Delete if there are no references to this cell.
+    if(references_ <= 0)
+    {
+      setMouseTracking(false);
 
-  		delete treeView_;
-  		delete mainWidget_;
-  		delete label_;
-  	}
+      delete treeView_;
+      delete mainWidget_;
+      delete label_;
+    }
   }
 
   /*!
@@ -168,15 +168,15 @@ namespace IAEX
   void Cell::setStyle(const QString &stylename)
   {
 
-  	Stylesheet *sheet = Stylesheet::instance( "stylesheet.xml" );
-  	CellStyle style = sheet->getStyle( stylename );
+    Stylesheet *sheet = Stylesheet::instance( "stylesheet.xml" );
+    CellStyle style = sheet->getStyle( stylename );
 
-  	if( style.name() != "null" )
-  		setStyle( style );
-  	else
-  	{
-  		cout << "Can't set style, style name: " << stylename.toStdString() << " is not valid" << endl;
-  	}
+    if( style.name() != "null" )
+      setStyle( style );
+    else
+    {
+      cout << "Can't set style, style name: " << stylename.toStdString() << " is not valid" << endl;
+    }
   }
 
   /*!
@@ -190,8 +190,8 @@ namespace IAEX
   void Cell::setStyle(CellStyle style)
   {
 
-  	style_ = style;
-  	applyRulesToStyle();
+    style_ = style;
+    applyRulesToStyle();
   }
 
   /*!
@@ -204,7 +204,7 @@ namespace IAEX
   */
   CellStyle *Cell::style()
   {
-  	return &style_;
+    return &style_;
   }
 
   /*!
@@ -215,7 +215,7 @@ namespace IAEX
   */
   void Cell::setCellTag(QString tagname)
   {
-  	celltag_ = tagname;
+    celltag_ = tagname;
   }
 
   /*!
@@ -228,7 +228,7 @@ namespace IAEX
   */
   QString Cell::cellTag()
   {
-  	return celltag_;
+    return celltag_;
   }
 
   /*!
@@ -242,7 +242,7 @@ namespace IAEX
    */
   const bool Cell::isViewExpression() const
   {
-  	return viewexpression_;
+    return viewexpression_;
   }
 
   /*!
@@ -265,71 +265,71 @@ namespace IAEX
    */
   void Cell::addRule(Rule *r)
   {
-  	// TODO: DEBUG code: Remove when doing release,
-  	// just a check to find new rules
-  	QRegExp expression( "InitializationCell|CellTags|FontSlant|TextAlignment|TextJustification|FontSize|FontWeight|FontFamily|PageWidth|CellMargins|CellDingbat|ImageSize|ImageMargins|ImageRegion|OMNotebook_Margin|OMNotebook_Padding|OMNotebook_Border" );
-  	if( 0 > r->attribute().indexOf( expression ))
-  	{
-  		cout << "[NEW] Rule <" << r->attribute().toStdString() << "> <" << r->value().toStdString() << ">" << endl;
-  	}
-  	else
-  	{
-  		if( r->attribute() == "FontSlant" )
-  		{
-  			QRegExp fontslant( "Italic" );
-  			if( 0 > r->value().indexOf( fontslant ))
-  				cout << "[NEW] Rule Value <FontSlant>, VALUE: " << r->value().toStdString() << endl;
-  		}
-  		else if( r->attribute() == "TextAlignment" )
-  		{
-  			QRegExp textalignment( "Right|Left|Center" );
-  			if( 0 > r->value().indexOf( textalignment ))
-  				cout << "[NEW] Rule Value <TextAlignment>, VALUE: " << r->value().toStdString() << endl;
-  		}
-  		else if( r->attribute() == "TextJustification" )
-  		{
-  			QRegExp textjustification( "1|0" );
-  			if( 0 > r->value().indexOf( textjustification ))
-  				cout << "[NEW] Rule Value <TextJustification>, VALUE: " << r->value().toStdString() << endl;
-  		}
-  		else if( r->attribute() == "FontWeight" )
-  		{
-  			QRegExp fontweight( "Bold|Plain" );
-  			if( 0 > r->value().indexOf( fontweight ))
-  				cout << "[NEW] Rule Value <FontWeight>, VALUE: " << r->value().toStdString() << endl;
-  		}
-  	}
+    // TODO: DEBUG code: Remove when doing release,
+    // just a check to find new rules
+    QRegExp expression( "InitializationCell|CellTags|FontSlant|TextAlignment|TextJustification|FontSize|FontWeight|FontFamily|PageWidth|CellMargins|CellDingbat|ImageSize|ImageMargins|ImageRegion|OMNotebook_Margin|OMNotebook_Padding|OMNotebook_Border" );
+    if( 0 > r->attribute().indexOf( expression ))
+    {
+      cout << "[NEW] Rule <" << r->attribute().toStdString() << "> <" << r->value().toStdString() << ">" << endl;
+    }
+    else
+    {
+      if( r->attribute() == "FontSlant" )
+      {
+        QRegExp fontslant( "Italic" );
+        if( 0 > r->value().indexOf( fontslant ))
+          cout << "[NEW] Rule Value <FontSlant>, VALUE: " << r->value().toStdString() << endl;
+      }
+      else if( r->attribute() == "TextAlignment" )
+      {
+        QRegExp textalignment( "Right|Left|Center" );
+        if( 0 > r->value().indexOf( textalignment ))
+          cout << "[NEW] Rule Value <TextAlignment>, VALUE: " << r->value().toStdString() << endl;
+      }
+      else if( r->attribute() == "TextJustification" )
+      {
+        QRegExp textjustification( "1|0" );
+        if( 0 > r->value().indexOf( textjustification ))
+          cout << "[NEW] Rule Value <TextJustification>, VALUE: " << r->value().toStdString() << endl;
+      }
+      else if( r->attribute() == "FontWeight" )
+      {
+        QRegExp fontweight( "Bold|Plain" );
+        if( 0 > r->value().indexOf( fontweight ))
+          cout << "[NEW] Rule Value <FontWeight>, VALUE: " << r->value().toStdString() << endl;
+      }
+    }
 
 
 
 
 
-  	// *** THE REAL FUNCTION ***
+    // *** THE REAL FUNCTION ***
 
 
-  	// 2006-02-09 AF, ignore some rules. This rules are not added
-  	// to the cell
-  	QRegExp ignoreRules( "PageWidth|CellMargins|CellDingbat|ImageSize|ImageMargins|ImageRegion" );
+    // 2006-02-09 AF, ignore some rules. This rules are not added
+    // to the cell
+    QRegExp ignoreRules( "PageWidth|CellMargins|CellDingbat|ImageSize|ImageMargins|ImageRegion" );
 
-  	if( 0 > r->attribute().indexOf( ignoreRules ) )
-  	{
-  		// check if rule already existes
-  		bool found = false;
-  		rules_t::iterator iter = rules_.begin();
-  		while( iter != rules_.end() )
-  		{
-  			if( 0 == (*iter)->attribute().indexOf( r->attribute(), 0, Qt::CaseInsensitive ) )
-  			{
-  				found = true;
-  				(*iter)->setValue( r->value() );
-  				break;
-  			}
-  			++iter;
-  		}
+    if( 0 > r->attribute().indexOf( ignoreRules ) )
+    {
+      // check if rule already existes
+      bool found = false;
+      rules_t::iterator iter = rules_.begin();
+      while( iter != rules_.end() )
+      {
+        if( 0 == (*iter)->attribute().indexOf( r->attribute(), 0, Qt::CaseInsensitive ) )
+        {
+          found = true;
+          (*iter)->setValue( r->value() );
+          break;
+        }
+        ++iter;
+      }
 
-  		if( !found )
-  			rules_.push_back(r);
-  	}
+      if( !found )
+        rules_.push_back(r);
+    }
   }
 
 
@@ -343,94 +343,94 @@ namespace IAEX
    */
   void Cell::applyRulesToStyle()
   {
-  	rules_t::iterator current = rules_.begin();
-  	while( current != rules_.end() )
-  	{
-  		if( (*current)->attribute() == "FontSlant" )
-  		{
-  			if( (*current)->value() == "Italic" )
-  				style_.textCharFormat()->setFontItalic( true );
-  		}
-  		else if( (*current)->attribute() == "TextAlignment" )
-  		{
-  			if( (*current)->value() == "Left" )
-  				style_.setAlignment( Qt::AlignLeft );
-  			else if( (*current)->value() == "Right" )
-  				style_.setAlignment( Qt::AlignRight );
-  			else if( (*current)->value() == "Center" )
-  				style_.setAlignment( Qt::AlignHCenter );
-  			else if( (*current)->value() == "Justify" )
-  				style_.setAlignment( Qt::AlignJustify );
-  		}
-  		else if( (*current)->attribute() == "TextJustification" )
-  		{
-  			//values: 1,0
-  		}
-  		else if( (*current)->attribute() == "FontSize" )
-  		{
-  			bool ok;
-  			int size = (*current)->value().toInt(&ok);
+    rules_t::iterator current = rules_.begin();
+    while( current != rules_.end() )
+    {
+      if( (*current)->attribute() == "FontSlant" )
+      {
+        if( (*current)->value() == "Italic" )
+          style_.textCharFormat()->setFontItalic( true );
+      }
+      else if( (*current)->attribute() == "TextAlignment" )
+      {
+        if( (*current)->value() == "Left" )
+          style_.setAlignment( Qt::AlignLeft );
+        else if( (*current)->value() == "Right" )
+          style_.setAlignment( Qt::AlignRight );
+        else if( (*current)->value() == "Center" )
+          style_.setAlignment( Qt::AlignHCenter );
+        else if( (*current)->value() == "Justify" )
+          style_.setAlignment( Qt::AlignJustify );
+      }
+      else if( (*current)->attribute() == "TextJustification" )
+      {
+        //values: 1,0
+      }
+      else if( (*current)->attribute() == "FontSize" )
+      {
+        bool ok;
+        int size = (*current)->value().toInt(&ok);
 
-  			if(ok)
-  			{
-  				if( size > 0 )
-  					style_.textCharFormat()->setFontPointSize( size );
-  			}
-  		}
-  		else if( (*current)->attribute() == "FontWeight" )
-  		{
+        if(ok)
+        {
+          if( size > 0 )
+            style_.textCharFormat()->setFontPointSize( size );
+        }
+      }
+      else if( (*current)->attribute() == "FontWeight" )
+      {
 
-  			if( (*current)->value() == "Bold" )
-  				style_.textCharFormat()->setFontWeight( QFont::Bold );
-  			if( (*current)->value() == "Plain" )
-  				style_.textCharFormat()->setFontWeight( QFont::Normal );
-  		}
-  		else if( (*current)->attribute() == "FontFamily" )
-  		{
-  			style_.textCharFormat()->setFontFamily( (*current)->value() );
-  		}
-  		else if( (*current)->attribute() == "InitializationCell" )
-  		{}
-  		else if( (*current)->attribute() == "CellTags" )
-  		{
-  			celltag_ = (*current)->value();
-  		}
-  		else if( (*current)->attribute() == "OMNotebook_Margin" )
-  		{
-  			bool ok;
-  			int value = (*current)->value().toInt(&ok);
+        if( (*current)->value() == "Bold" )
+          style_.textCharFormat()->setFontWeight( QFont::Bold );
+        if( (*current)->value() == "Plain" )
+          style_.textCharFormat()->setFontWeight( QFont::Normal );
+      }
+      else if( (*current)->attribute() == "FontFamily" )
+      {
+        style_.textCharFormat()->setFontFamily( (*current)->value() );
+      }
+      else if( (*current)->attribute() == "InitializationCell" )
+      {}
+      else if( (*current)->attribute() == "CellTags" )
+      {
+        celltag_ = (*current)->value();
+      }
+      else if( (*current)->attribute() == "OMNotebook_Margin" )
+      {
+        bool ok;
+        int value = (*current)->value().toInt(&ok);
 
-  			if(ok)
-  			{
-  				if( value > 0 )
-  					style_.textFrameFormat()->setMargin( value );
-  			}
-  		}
-  		else if( (*current)->attribute() == "OMNotebook_Padding" )
-  		{
-  			bool ok;
-  			int value = (*current)->value().toInt(&ok);
+        if(ok)
+        {
+          if( value > 0 )
+            style_.textFrameFormat()->setMargin( value );
+        }
+      }
+      else if( (*current)->attribute() == "OMNotebook_Padding" )
+      {
+        bool ok;
+        int value = (*current)->value().toInt(&ok);
 
-  			if(ok)
-  			{
-  				if( value > 0 )
-  					style_.textFrameFormat()->setPadding( value );
-  			}
-  		}
-  		else if( (*current)->attribute() == "OMNotebook_Border" )
-  		{
-  			bool ok;
-  			int value = (*current)->value().toInt(&ok);
+        if(ok)
+        {
+          if( value > 0 )
+            style_.textFrameFormat()->setPadding( value );
+        }
+      }
+      else if( (*current)->attribute() == "OMNotebook_Border" )
+      {
+        bool ok;
+        int value = (*current)->value().toInt(&ok);
 
-  			if(ok)
-  			{
-  				if( value > 0 )
-  					style_.textFrameFormat()->setBorder( value );
-  			}
-  		}
+        if(ok)
+        {
+          if( value > 0 )
+            style_.textFrameFormat()->setBorder( value );
+        }
+      }
 
-  		++current;
-  	}
+      ++current;
+    }
   }
 
   /*!
@@ -445,24 +445,24 @@ namespace IAEX
    */
   QTextCursor Cell::textCursor()
   {
-  	QTextCursor cursor;
-  	return cursor;
+    QTextCursor cursor;
+    return cursor;
   }
 
   void Cell::wheelEvent(QWheelEvent * event)
   {
-  	// ignore event and send it up in the event hierarchy
-  	event->ignore();
+    // ignore event and send it up in the event hierarchy
+    event->ignore();
 
-  	if( parentCell() )
-  	{
-  		parentCell()->wheelEvent( event );
-  	}
-  	else
-  	{
-  		// if no parent cell -> top cell
-  		parent()->event( event );
-  	}
+    if( parentCell() )
+    {
+      parentCell()->wheelEvent( event );
+    }
+    else
+    {
+      // if no parent cell -> top cell
+      parent()->event( event );
+    }
   }
 
   /*!
@@ -473,11 +473,11 @@ namespace IAEX
    */
   void Cell::addChapterCounter(QWidget *counter)
   {
-  	mainlayout_->removeWidget( mainWidget_ );
-  	mainlayout_->removeWidget( treeView_ );
-  	mainlayout_->addWidget( counter, 1, 1 );
-  	mainlayout_->addWidget( mainWidget_, 1, 2 );
-  	mainlayout_->addWidget( treeView_, 1, 3, Qt::AlignTop );
+    mainlayout_->removeWidget( mainWidget_ );
+    mainlayout_->removeWidget( treeView_ );
+    mainlayout_->addWidget( counter, 1, 1 );
+    mainlayout_->addWidget( mainWidget_, 1, 2 );
+    mainlayout_->addWidget( treeView_, 1, 3, Qt::AlignTop );
   }
 
 
@@ -504,19 +504,19 @@ namespace IAEX
   */
   void Cell::setMainWidget(QWidget *newWidget)
   {
-  	if(newWidget != 0)
-  	{
-  		mainWidget_ = newWidget;
-  		mainlayout_->addWidget(newWidget,1,1);
+    if(newWidget != 0)
+    {
+      mainWidget_ = newWidget;
+      mainlayout_->addWidget(newWidget,1,1);
 
-  		mainWidget_->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum));
+      mainWidget_->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum));
 
-  		QPalette palette;
-  		palette.setColor(mainWidget_->backgroundRole(), backgroundColor());
-  		mainWidget_->setPalette(palette);
-  	}
-  	else
-  		mainWidget_= 0;
+      QPalette palette;
+      palette.setColor(mainWidget_->backgroundRole(), backgroundColor());
+      mainWidget_->setPalette(palette);
+    }
+    else
+      mainWidget_= 0;
   }
 
   /*!
@@ -525,28 +525,28 @@ namespace IAEX
   */
   QWidget *Cell::mainWidget()
   {
-  	if(!mainWidget_)
-  		throw logic_error("Cell::mainWidget(): No mainWidget set.");
+    if(!mainWidget_)
+      throw logic_error("Cell::mainWidget(): No mainWidget set.");
 
-  	return mainWidget_;
+    return mainWidget_;
   }
 
 
   void Cell::setLabel(QLabel *label)
   {
-  	label_ = label;
-  	mainlayout_->addWidget(label,1,0);
+    label_ = label;
+    mainlayout_->addWidget(label,1,0);
 
-  	QPalette palette;
-  	palette.setColor(label_->backgroundRole(), backgroundColor());
-  	label_->setPalette(palette);
+    QPalette palette;
+    palette.setColor(label_->backgroundRole(), backgroundColor());
+    label_->setPalette(palette);
 
-  	label_->hide();
+    label_->hide();
   }
 
   QLabel *Cell::label()
   {
-  	return label_;
+    return label_;
   }
 
   /*!
@@ -554,22 +554,22 @@ namespace IAEX
   */
   void Cell::setTreeWidget(TreeView *newTreeWidget)
   {
-  	treeView_ = newTreeWidget;
-  	treeView_->setFocusPolicy(Qt::NoFocus);
-  	mainlayout_->addWidget(newTreeWidget,1,2, Qt::AlignTop);
-  	treeView_->setBackgroundColor(backgroundColor());
-  	treeView_->show();
+    treeView_ = newTreeWidget;
+    treeView_->setFocusPolicy(Qt::NoFocus);
+    mainlayout_->addWidget(newTreeWidget,1,2, Qt::AlignTop);
+    treeView_->setBackgroundColor(backgroundColor());
+    treeView_->show();
 
-  	connect(this, SIGNAL(selected(const bool)),
-  		treeView_, SLOT(setSelected(const bool)));
+    connect(this, SIGNAL(selected(const bool)),
+      treeView_, SLOT(setSelected(const bool)));
   }
 
   TreeView *Cell::treeView()
   {
-  	if(!treeView_)
-  		throw logic_error("Cell::treeView(): No treeView set.");
+    if(!treeView_)
+      throw logic_error("Cell::treeView(): No treeView set.");
 
-  	return treeView_;
+    return treeView_;
   }
 
   /*!
@@ -580,24 +580,24 @@ namespace IAEX
   */
   void Cell::hideTreeView(const bool hidden)
   {
-  	if(hidden)
-  	{
-  		treeView_->hide();
-  	}
-  	else
-  	{
-  		treeView_->show();
-  	}
+    if(hidden)
+    {
+      treeView_->hide();
+    }
+    else
+    {
+      treeView_->show();
+    }
 
-  	treeviewVisible_ = !hidden;
-  	repaint();
+    treeviewVisible_ = !hidden;
+    repaint();
   }
 
   /*! \return TRUE if treeview is hidden. Otherwise FALSE.
   */
   const bool Cell::isTreeViewVisible() const
   {
-  	return treeviewVisible_;
+    return treeviewVisible_;
   }
 
   /*! \brief Sets the height of the cell.
@@ -607,17 +607,17 @@ namespace IAEX
   */
   void Cell::setHeight(const int height)
   {
-  	int h = height;
+    int h = height;
 
-  	//! \bug Implement Cell::setHeight() in a correct way. Does not work for
-  	//! widgets larger than 32767. (qt limitation)
-  	/*if(height > 32000)
-  	{
-  		h = 32000;
-  	}*/
+    //! \bug Implement Cell::setHeight() in a correct way. Does not work for
+    //! widgets larger than 32767. (qt limitation)
+    /*if(height > 32000)
+    {
+      h = 32000;
+    }*/
 
-  	if(!treeView_)
-  		throw logic_error("SetHeight(const int height): TreeView is not set.");
+    if(!treeView_)
+      throw logic_error("SetHeight(const int height): TreeView is not set.");
 
 #ifdef __APPLE_CC__
         setMinimumHeight(h);
@@ -640,16 +640,16 @@ namespace IAEX
   */
   void Cell::mouseReleaseEvent(QMouseEvent *event)
   {
-  	// PORT >> if(treeView_->hasMouse())
-  	if(treeView_->testAttribute(Qt::WA_UnderMouse))
-  	{
-  		this->setSelected(!isSelected());
-  		emit cellselected(this, event->modifiers());
-  	}
-  	else
-  	{
-  		//Do nothing.
-  	}
+    // PORT >> if(treeView_->hasMouse())
+    if(treeView_->testAttribute(Qt::WA_UnderMouse))
+    {
+      this->setSelected(!isSelected());
+      emit cellselected(this, event->modifiers());
+    }
+    else
+    {
+      //Do nothing.
+    }
   }
 
   /*! \brief
@@ -665,44 +665,44 @@ namespace IAEX
   */
   void Cell::mouseMoveEvent(QMouseEvent *event)
   {
-  	if(event->pos().x() < 0 || event->pos().x() > this->width())
-  	{
-  		//Not inside widget. Do not care
-  	}
-  	else
-  	{
-  		if(event->pos().y() < 0)
-  		{
-  			//if(hasPrevious())
-  			//	    doc()->executeCommand(new CursorMoveAfterCommand(previous()))
-  			//	    doc()->executeCommand(new CursorMoveAfterCommand(this));
-  			// else
-  			// 	    {
-  			// 	       if(parentCell()->hasParentCell()) //Check for errors
-  			// 		  doc()->executeCommand(new CursorMoveAfterCommand(parentCell()->previous()));
-  			// 	       else
-  			// 	       {
-  			// 		  //Do nothing!
-  			// 	       }
-  			// 	    }
-  		}
+    if(event->pos().x() < 0 || event->pos().x() > this->width())
+    {
+      //Not inside widget. Do not care
+    }
+    else
+    {
+      if(event->pos().y() < 0)
+      {
+        //if(hasPrevious())
+        //      doc()->executeCommand(new CursorMoveAfterCommand(previous()))
+        //      doc()->executeCommand(new CursorMoveAfterCommand(this));
+        // else
+        //       {
+        //          if(parentCell()->hasParentCell()) //Check for errors
+        //       doc()->executeCommand(new CursorMoveAfterCommand(parentCell()->previous()));
+        //          else
+        //          {
+        //       //Do nothing!
+        //          }
+        //       }
+      }
 
-  		//  	 else // if(event->pos().y() < height())
-  		//  	 {
-  		//  	    doc()->executeCommand(new CursorMoveAfterCommand(this));
-  		//  	 }
+      //     else // if(event->pos().y() < height())
+      //     {
+      //        doc()->executeCommand(new CursorMoveAfterCommand(this));
+      //     }
 
-  		// 	 if((doc()->getCursor())->currentCell() != this)
-  		//  	 {
-  		//  	    doc()->executeCommand(new CursorMoveAfterCommand(this));
-  		//  	 }
-  	}
+      //    if((doc()->getCursor())->currentCell() != this)
+      //     {
+      //        doc()->executeCommand(new CursorMoveAfterCommand(this));
+      //     }
+    }
   }
 
   void Cell::resizeEvent(QResizeEvent *event)
   {
-  	setHeight(height());
-  	QWidget::resizeEvent(event);
+    setHeight(height());
+    QWidget::resizeEvent(event);
   }
 
   /*!
@@ -710,7 +710,7 @@ namespace IAEX
   */
   const bool Cell::isSelected() const
   {
-  	return selected_;
+    return selected_;
   }
 
   /*! \brief Set the value for selectec_ to true if the cell is
@@ -727,8 +727,8 @@ namespace IAEX
   */
   void Cell::setSelected(const bool sel)
   {
-  	selected_ = sel;
-  	emit selected(selected_);
+    selected_ = sel;
+    emit selected(selected_);
   }
 
   /*! \brief Set the cells background color.
@@ -741,11 +741,11 @@ namespace IAEX
   */
   void Cell::setBackgroundColor(const QColor color)
   {
-  	backgroundColor_ = color;
+    backgroundColor_ = color;
 
-  	QPalette palette;
-  	palette.setColor(backgroundRole(), color);
-  	setPalette(palette);
+    QPalette palette;
+    palette.setColor(backgroundRole(), color);
+    setPalette(palette);
   }
 
   /*!\brief get the current backgroundcolor.
@@ -755,13 +755,13 @@ namespace IAEX
   */
   const QColor Cell::backgroundColor() const
   {
-  	return backgroundColor_;
+    return backgroundColor_;
   }
 
 
   Cell::rules_t Cell::rules() const
   {
-  	return rules_;
+    return rules_;
   }
 
   /////VIRTUALS ////////////////////////////////
@@ -772,135 +772,135 @@ namespace IAEX
   */
   void Cell::accept(Visitor &v)
   {
-  	v.visitCellNodeBefore(this);
+    v.visitCellNodeBefore(this);
 
-  	if(hasChilds())
-  		child()->accept(v);
+    if(hasChilds())
+      child()->accept(v);
 
-  	v.visitCellNodeAfter(this);
+    v.visitCellNodeAfter(this);
 
-  	//Move along.
-  	if(hasNext())
-  		next()->accept(v);
+    //Move along.
+    if(hasNext())
+      next()->accept(v);
   }
 
   void Cell::addCellWidget(Cell *newCell)
   {
-  	parentCell()->addCellWidget(newCell);
+    parentCell()->addCellWidget(newCell);
   }
 
   ////// DATASTRUCTURE IMPLEMENTATION ///////////////////////////
 
   void Cell::setNext(Cell *nxt)
   {
-  	next_ = nxt;
+    next_ = nxt;
   }
 
   Cell *Cell::next()
   {
-  	return next_;
+    return next_;
   }
 
   bool Cell::hasNext()
   {
-  	return next_ != 0;
+    return next_ != 0;
   }
 
   void Cell::setLast(Cell *last)
   {
-  	last_ = last;
+    last_ = last;
   }
 
   Cell *Cell::last()
   {
-  	return last_;
+    return last_;
   }
 
   bool Cell::hasLast()
   {
-  	return hasChilds();
+    return hasChilds();
   }
 
   void Cell::setPrevious(Cell *prev)
   {
-  	previous_ = prev;
+    previous_ = prev;
   }
 
   Cell *Cell::previous()
   {
-  	return previous_;
+    return previous_;
   }
 
   bool Cell::hasPrevious()
   {
-  	return previous_ != 0;
+    return previous_ != 0;
   }
 
   Cell *Cell::parentCell()
   {
-  	return parent_;
+    return parent_;
   }
 
   void Cell::setParentCell(Cell *parent)
   {
-  	//setParent( parent );
-  	parent_ = parent;
+    //setParent( parent );
+    parent_ = parent;
   }
 
   bool Cell::hasParentCell()
   {
-  	return parent_ != 0;
+    return parent_ != 0;
   }
 
   void Cell::setChild(Cell *child)
   {
-  	child_ = child;
+    child_ = child;
   }
 
   Cell *Cell::child()
   {
-  	return child_;
+    return child_;
   }
 
   bool Cell::hasChilds()
   {
-  	return child_ != 0;
+    return child_ != 0;
   }
 
   void Cell::printCell(Cell *current)
   {
-  	cout << "This: " << current << endl
-  		<< "Parent: " << current->parentCell() << endl
-  		<< "Child: " << current->child() << endl
-  		<< "Last: " << current->last() << endl
-  		<< "Next: " << current->next() << endl
-  		<< "Prev: " << current->previous() << endl;
+    cout << "This: " << current << endl
+      << "Parent: " << current->parentCell() << endl
+      << "Child: " << current->child() << endl
+      << "Last: " << current->last() << endl
+      << "Next: " << current->next() << endl
+      << "Prev: " << current->previous() << endl;
   }
 
   void Cell::printSurrounding(Cell *current)
   {
-  	printCell(current);
+    printCell(current);
 
-  	//Print surroundings
-  	if(current->hasNext())
-  	{
-  		printCell(current->next());
-  	}
+    //Print surroundings
+    if(current->hasNext())
+    {
+      printCell(current->next());
+    }
 
-  	if(current->hasPrevious())
-  	{
-  		printCell(current->previous());
-  	}
+    if(current->hasPrevious())
+    {
+      printCell(current->previous());
+    }
 
-  	if(current->hasParentCell())
-  	{
-  		printCell(current->parentCell());
-  	}
+    if(current->hasParentCell())
+    {
+      printCell(current->parentCell());
+    }
 
-  	if(current->hasChilds())
-  	{
-  		printCell(current->child());
-  	}
+    if(current->hasChilds())
+    {
+      printCell(current->child());
+    }
   }
 
   //    void Cell::retain(s)

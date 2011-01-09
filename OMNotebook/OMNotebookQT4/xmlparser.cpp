@@ -80,8 +80,8 @@ namespace IAEX
   * \brief Open an XML file and read the content. The xmlparser support
   * two different read modes:
   * READMODE_NORMAL  : Read the xml file normaly
-  * READMODE_OLD  	: Read the xml file accordantly to the old xml
-  *  				  format used by OMNotebook.
+  * READMODE_OLD    : Read the xml file accordantly to the old xml
+  *            format used by OMNotebook.
   */
 
 
@@ -556,7 +556,7 @@ namespace IAEX
     Cell *graphcell = factory_->createCell( style, parent );
 
     graphcell->setStyle(QString("Input"));
-    //  	graphcell->setStyle(style);
+    //    graphcell->setStyle(style);
 
 
     // go through all children in input cell/element
@@ -573,15 +573,15 @@ namespace IAEX
           GraphCell *gCell = dynamic_cast<GraphCell*>(graphcell);
           gCell->setText(text);
           gCell->compoundwidget->gwMain->currentExpr = e.text();
-          //fjass  			gCell->setText( text );
+          //fjass        gCell->setText( text );
         }
-        /*  			else if( e.tagName() == XML_OUTPUTPART )
+        /*        else if( e.tagName() == XML_OUTPUTPART )
         {
         GraphCell *gCell = dynamic_cast<GraphCell*>(graphcell);
 
         gCell->setTextOutput( e.text() );
         }
-        */  			else if( e.tagName() == XML_OUTPUTPART )
+        */        else if( e.tagName() == XML_OUTPUTPART )
         {
           GraphCell *iCell = dynamic_cast<GraphCell*>(graphcell);
 
@@ -652,7 +652,7 @@ namespace IAEX
           LegendLabel *ll = new LegendLabel(color, yVar, gCell->compoundwidget->gwMain->legendFrame, !(interpolation_ == INTERPOLATION_NONE), points, 12);
           ll->graphWidget = gCell->compoundwidget->gwMain;
           gCell->compoundwidget->gwMain->legendFrame->setMinimumWidth(max(ll->fontMetrics().width(yVar)+41+4, gCell->compoundwidget->gwMain->legendFrame->minimumWidth()));
-          //  				ll->setMaximumHeight(21);
+          //          ll->setMaximumHeight(21);
           gCell->compoundwidget->gwMain->legendLayout->addWidget(ll);
           ll->show();
 
@@ -703,25 +703,25 @@ namespace IAEX
             gCell->compoundwidget->gwMain->graphicsScene->addItem(gCell->compoundwidget->gwMain->graphicsItems);
 
 
-            //  					ds >> rect >> pen >> brush;
-            //  					gCell->compoundwidget->gwMain->graphicsItems->addToGroup(gCell->compoundwidget->gwMain->graphicsScene->addEllipse(rect, pen, brush));
+            //            ds >> rect >> pen >> brush;
+            //            gCell->compoundwidget->gwMain->graphicsItems->addToGroup(gCell->compoundwidget->gwMain->graphicsScene->addEllipse(rect, pen, brush));
 
           }
           else if(type == XML_GRAPHCELL_LINE)
           {
 
-            //  					ds.setVersion(QDataStream::Qt_3_3);
+            //            ds.setVersion(QDataStream::Qt_3_3);
             ds >> line_ >> pen;
 
             QGraphicsLineItem* r = new QGraphicsLineItem(line_);
 
             r->show();
             r->setPen(pen);
-            //  					r->setBrush(brush);
+            //            r->setBrush(brush);
             gCell->compoundwidget->gwMain->graphicsItems->addToGroup(r);
             gCell->compoundwidget->gwMain->graphicsScene->addItem(gCell->compoundwidget->gwMain->graphicsItems);
 
-            //  					gCell->compoundwidget->gwMain->graphicsItems->addToGroup(gCell->compoundwidget->gwMain->graphicsScene->addLine(line_, pen));
+            //            gCell->compoundwidget->gwMain->graphicsItems->addToGroup(gCell->compoundwidget->gwMain->graphicsScene->addLine(line_, pen));
           }
 
           b.close();
@@ -741,9 +741,9 @@ namespace IAEX
 
     // set style, before set text, so all rules are applied to the style
 
-    //  	graphcell->setStyle(QString("Graph"));
+    //    graphcell->setStyle(QString("Graph"));
 
-    //  	graphcell->setText( text ); //fjass
+    //    graphcell->setText( text ); //fjass
 
     GraphCell *gCell = dynamic_cast<GraphCell*>(graphcell);
 

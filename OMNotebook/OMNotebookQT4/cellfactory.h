@@ -57,13 +57,13 @@ namespace IAEX
   class CellFactory : public Factory
   {
   public:
-  	CellFactory(Document *doc);
-  	virtual ~CellFactory();
+    CellFactory(Document *doc);
+    virtual ~CellFactory();
 
-  	virtual Cell *createCell(const QString &style, Cell *parent=0);
+    virtual Cell *createCell(const QString &style, Cell *parent=0);
 
   private:
-  	Document *doc_;
+    Document *doc_;
   };
 }
 #endif

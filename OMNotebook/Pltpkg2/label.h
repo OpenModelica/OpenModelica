@@ -60,20 +60,20 @@ public:
 protected:
   void paintEvent ( QPaintEvent * event )
   {
-  	QPainter painter(this);
-  	render(&painter);
+    QPainter painter(this);
+    render(&painter);
   }
 
 public:
   void render(QPainter* painter, QPointF pos = QPointF())
   {
-  	painter->save();
-  	painter->translate(pos.x(), pos.y());
+    painter->save();
+    painter->translate(pos.x(), pos.y());
 
-  	painter->setFont(font());
-  	painter->drawText(rect(), Qt::AlignCenter, text());
+    painter->setFont(font());
+    painter->drawText(rect(), Qt::AlignCenter, text());
 
-  	painter->restore();
+    painter->restore();
   }
 };
 

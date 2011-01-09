@@ -61,89 +61,89 @@ namespace IAEX
 {
   class SimulationKeypoint {
   public:
-  	SimulationKeypoint(double time);
-  	SimulationKeypoint();
-  	~SimulationKeypoint(void);
+    SimulationKeypoint(double time);
+    SimulationKeypoint();
+    ~SimulationKeypoint(void);
 
-  	void setTime(double time);
-  	void addVar(QString name, float value);
-  	QHash<QString, float> vars;
-  	double time;
-  	QString toString(void);
+    void setTime(double time);
+    void addVar(QString name, float value);
+    QHash<QString, float> vars;
+    double time;
+    QString toString(void);
 
   private:
   };
 
   class SimulationObject {
   public:
-//  	SimulationObject(QString type, QString posVar, QString dirVar, SoSeparator *parent);
-  	SimulationObject(QString type, QString name, QString params, SoSeparator *parent);
-  	SimulationObject(SoSeparator *parent);
-  	~SimulationObject(void);
+//    SimulationObject(QString type, QString posVar, QString dirVar, SoSeparator *parent);
+    SimulationObject(QString type, QString name, QString params, SoSeparator *parent);
+    SimulationObject(SoSeparator *parent);
+    ~SimulationObject(void);
 
-  	QString getName();
-  	QString getPosVar();
-  	void setPosVar(QString val);
-  	QString getDirVar();
-  	void setDirVar(QString val);
-  	QString getType();
-  	void setType(QString val);
-  	SoSeparator* getParent();
-  	void setParent(SoSeparator *val);
-  	SbColor* parseColor(QString coldef);
+    QString getName();
+    QString getPosVar();
+    void setPosVar(QString val);
+    QString getDirVar();
+    void setDirVar(QString val);
+    QString getType();
+    void setType(QString val);
+    SoSeparator* getParent();
+    void setParent(SoSeparator *val);
+    SbColor* parseColor(QString coldef);
 
-  	void setPosition(SbVec3f pos);
-  	void setRotationDir(SbRotation dir);
-  	void setScale(SbVec3f scale);
-  	void setOffset(SbVec3f offset);
+    void setPosition(SbVec3f pos);
+    void setRotationDir(SbRotation dir);
+    void setScale(SbVec3f scale);
+    void setOffset(SbVec3f offset);
 
-  	bool hasPosition;
-  	bool hasRotation;
-  	bool hasSize;
-  	bool hasOffset;
+    bool hasPosition;
+    bool hasRotation;
+    bool hasSize;
+    bool hasOffset;
 
-  	SoTranslation *translation;
-  	SoRotation *rotation;
-  	SoScale *scale;
-  	SoTranslation *offset;
+    SoTranslation *translation;
+    SoRotation *rotation;
+    SoScale *scale;
+    SoTranslation *offset;
 
   private:
-  	QString name;
-  	QString type;
-  	QString posVar;
-  	QString dirVar;
-  	QString modelfilename;
-  	QString shape;
+    QString name;
+    QString type;
+    QString posVar;
+    QString dirVar;
+    QString modelfilename;
+    QString shape;
 
-  	SbColor *color;
-  	SoSeparator *objectGroup;
+    SbColor *color;
+    SoSeparator *objectGroup;
         SoSeparator *parent;
   };
 
-  class SimulationData	{
+  class SimulationData  {
   public:
-  	SimulationData(void);
-  	~SimulationData(void);
+    SimulationData(void);
+    ~SimulationData(void);
 
-  	void parse(QString filename);
-  	void clear(void);
-  	int size(void);
-  	float get_start_time(void);
-  	float get_end_time(void);
-  	void setFrame(float);
-  	SoSeparator *getSceneGraph() { return visroot_; }
-  	void addKeypoint(SimulationKeypoint *);
-  	void addObject(QString type, QString name, QString params);
-  	void viewAll(SbViewportRegion vpr);
+    void parse(QString filename);
+    void clear(void);
+    int size(void);
+    float get_start_time(void);
+    float get_end_time(void);
+    void setFrame(float);
+    SoSeparator *getSceneGraph() { return visroot_; }
+    void addKeypoint(SimulationKeypoint *);
+    void addObject(QString type, QString name, QString params);
+    void viewAll(SbViewportRegion vpr);
 
 
   private:
-  	SoSeparator *visroot_;
-  	SoPerspectiveCamera *cam_;
-  	QList<SimulationKeypoint *> *keyPoints_;
-  	QList<SimulationObject> *objects_;
-  	float start_time;
-  	float end_time;
+    SoSeparator *visroot_;
+    SoPerspectiveCamera *cam_;
+    QList<SimulationKeypoint *> *keyPoints_;
+    QList<SimulationObject> *objects_;
+    float start_time;
+    float end_time;
   };
 }
 

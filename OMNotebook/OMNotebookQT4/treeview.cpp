@@ -118,44 +118,44 @@ namespace IAEX
    */
   void TreeView::paintEvent(QPaintEvent *event)
   {
-  	QPainter painter(this);
+    QPainter painter(this);
 
-  	if(selected_)
-  	{
-  		painter.setPen( QPen( QBrush( selectedColor() ), 10 ));
-  		painter.drawRect( this->rect() );
+    if(selected_)
+    {
+      painter.setPen( QPen( QBrush( selectedColor() ), 10 ));
+      painter.drawRect( this->rect() );
 
-  		painter.setPen(QPen( QBrush( QColor(160,0,0) ), 1, Qt::SolidLine));
-  	}
-  	else
-  	{
-  		painter.setPen( QPen( QBrush( backgroundColor() ), 10 ));
+      painter.setPen(QPen( QBrush( QColor(160,0,0) ), 1, Qt::SolidLine));
+    }
+    else
+    {
+      painter.setPen( QPen( QBrush( backgroundColor() ), 10 ));
 
-  		painter.drawRect( this->rect() );
+      painter.drawRect( this->rect() );
 
-  		painter.setPen(QPen(Qt::black,1, Qt::SolidLine));
-  	}
+      painter.setPen(QPen(Qt::black,1, Qt::SolidLine));
+    }
 
-  	QPolygon points(4);
+    QPolygon points(4);
 
-  	if(closed_)
-  	{
-  		points[0] = QPoint(1,2);
-  		points[1] = QPoint(5,2);
-  		points[2] = QPoint(5, height()-2);
-  		points[3] = QPoint(1, height()-8);
-  	}
-  	else
-  	{
-  		points[0] = QPoint(1,2);
-  		points[1] = QPoint(5,2);
-  		points[2] = QPoint(5,height()-2);
-  		points[3] = QPoint(1,height()-2);
-  	}
+    if(closed_)
+    {
+      points[0] = QPoint(1,2);
+      points[1] = QPoint(5,2);
+      points[2] = QPoint(5, height()-2);
+      points[3] = QPoint(1, height()-8);
+    }
+    else
+    {
+      points[0] = QPoint(1,2);
+      points[1] = QPoint(5,2);
+      points[2] = QPoint(5,height()-2);
+      points[3] = QPoint(1,height()-2);
+    }
 
-  	painter.drawPolyline(points);
+    painter.drawPolyline(points);
 
-  	QWidget::paintEvent(event);
+    QWidget::paintEvent(event);
   }
 
 //////////////////////////////////////////////////////////////////////
@@ -171,46 +171,46 @@ namespace IAEX
 
   void InputTreeView::paintEvent(QPaintEvent *event)
   {
-  	QPainter painter(this);
+    QPainter painter(this);
 
-  	//Selected or not selected
-  	if(selected())
-  	{
-  		painter.setPen( QPen( QBrush( selectedColor() ), 10 ));
-  		painter.drawRect( this->rect() );
+    //Selected or not selected
+    if(selected())
+    {
+      painter.setPen( QPen( QBrush( selectedColor() ), 10 ));
+      painter.drawRect( this->rect() );
 
-  		painter.setPen(QPen( QBrush( QColor(160,0,0) ), 1, Qt::SolidLine));
+      painter.setPen(QPen( QBrush( QColor(160,0,0) ), 1, Qt::SolidLine));
 
-  		painter.drawRect(this->rect().x()-1, this->rect().y(), this->rect().width()-1, this->rect().height()-2);
-  		painter.setPen(QPen(Qt::black,1, Qt::SolidLine));
+      painter.drawRect(this->rect().x()-1, this->rect().y(), this->rect().width()-1, this->rect().height()-2);
+      painter.setPen(QPen(Qt::black,1, Qt::SolidLine));
 
-  	}
-  	else
-  	{
-  		painter.setPen( QPen( QBrush( backgroundColor() ), 10 ));
-
-
+    }
+    else
+    {
+      painter.setPen( QPen( QBrush( backgroundColor() ), 10 ));
 
 
-  		painter.drawRect( this->rect() );
 
-//  		painter.setPen(QPen(Qt::black,1, Qt::SolidLine));
-//  		painter.drawRect(this->rect().x()-1, this->rect().y(), this->rect().width()-1, this->rect().height()-2);
-  		painter.setPen(QPen(Qt::black,1, Qt::SolidLine));
-  	}
 
-  	if(isVisible())
-  	{
-  		QPolygon points(4);
+      painter.drawRect( this->rect() );
 
-  		points[0] = QPoint(1,2);
-  		points[1] = QPoint(5,2);
-  		points[2] = QPoint(5,height()-2);
-  		points[3] = QPoint(1,height()-2);
+//      painter.setPen(QPen(Qt::black,1, Qt::SolidLine));
+//      painter.drawRect(this->rect().x()-1, this->rect().y(), this->rect().width()-1, this->rect().height()-2);
+      painter.setPen(QPen(Qt::black,1, Qt::SolidLine));
+    }
 
-  		painter.drawPolyline(points);
+    if(isVisible())
+    {
+      QPolygon points(4);
 
-  		QWidget::paintEvent(event);
-  	}
+      points[0] = QPoint(1,2);
+      points[1] = QPoint(5,2);
+      points[2] = QPoint(5,height()-2);
+      points[3] = QPoint(1,height()-2);
+
+      painter.drawPolyline(points);
+
+      QWidget::paintEvent(event);
+    }
   }
 }

@@ -57,124 +57,124 @@ namespace IAEX
   class ReplaceAllVisitor : public Visitor
   {
   public:
-  	ReplaceAllVisitor( QString findText, QString replaceText, bool matchCase = false, bool matchWord = false, int* count = 0 )
-  		: findText_( findText ), replaceText_( replaceText ), matchCase_( matchCase ), matchWord_( matchWord ), count_( count )
-  	{}
-  	~ReplaceAllVisitor(){}
+    ReplaceAllVisitor( QString findText, QString replaceText, bool matchCase = false, bool matchWord = false, int* count = 0 )
+      : findText_( findText ), replaceText_( replaceText ), matchCase_( matchCase ), matchWord_( matchWord ), count_( count )
+    {}
+    ~ReplaceAllVisitor(){}
 
-  	// Visitor function - CELL
-  	void visitCellNodeBefore( Cell *node ){}
-  	void visitCellNodeAfter( Cell *node ){}
+    // Visitor function - CELL
+    void visitCellNodeBefore( Cell *node ){}
+    void visitCellNodeAfter( Cell *node ){}
 
-  	// Visitor function - GROUPCELL
-  	void visitCellGroupNodeBefore( CellGroup *node ){}
-  	void visitCellGroupNodeAfter( CellGroup *node ){}
+    // Visitor function - GROUPCELL
+    void visitCellGroupNodeBefore( CellGroup *node ){}
+    void visitCellGroupNodeAfter( CellGroup *node ){}
 
-  	// Visitor function - TEXTCELL
-  	void visitTextCellNodeBefore( TextCell *node )
-  	{
-  		if( node->textEdit() )
-  		{
-  			int options( 0 );
+    // Visitor function - TEXTCELL
+    void visitTextCellNodeBefore( TextCell *node )
+    {
+      if( node->textEdit() )
+      {
+        int options( 0 );
 
-  			// move cursor to start of text
-  			QTextCursor cursor = node->textEdit()->textCursor();
-  			cursor.movePosition( QTextCursor::Start );
-  			node->textEdit()->setTextCursor( cursor );
+        // move cursor to start of text
+        QTextCursor cursor = node->textEdit()->textCursor();
+        cursor.movePosition( QTextCursor::Start );
+        node->textEdit()->setTextCursor( cursor );
 
-  			// match case & match word
-  			if( matchCase_ && matchWord_ )
-  				options = QTextDocument::FindCaseSensitively | QTextDocument::FindWholeWords;
-  			else if( matchCase_ )
-  				options = QTextDocument::FindCaseSensitively;
-  			else if( matchWord_ )
-  				options = QTextDocument::FindWholeWords;
+        // match case & match word
+        if( matchCase_ && matchWord_ )
+          options = QTextDocument::FindCaseSensitively | QTextDocument::FindWholeWords;
+        else if( matchCase_ )
+          options = QTextDocument::FindCaseSensitively;
+        else if( matchWord_ )
+          options = QTextDocument::FindWholeWords;
 
-  			// replace all
-  			while( node->textEdit()->find( findText_, (QTextDocument::FindFlag)options ))
-  			{
-  				node->textEdit()->textCursor().insertText( replaceText_ );
-  				if( count_ )
-  					(*count_)++;
-  			}
-  		}
-  	}
-  	void visitTextCellNodeAfter( TextCell *node ){}
+        // replace all
+        while( node->textEdit()->find( findText_, (QTextDocument::FindFlag)options ))
+        {
+          node->textEdit()->textCursor().insertText( replaceText_ );
+          if( count_ )
+            (*count_)++;
+        }
+      }
+    }
+    void visitTextCellNodeAfter( TextCell *node ){}
 
-  	// Visitor function - INPUTCELL
-  	void visitInputCellNodeBefore( InputCell *node )
-  	{
-  		if( node->textEdit() )
-  		{
-  			int options( 0 );
+    // Visitor function - INPUTCELL
+    void visitInputCellNodeBefore( InputCell *node )
+    {
+      if( node->textEdit() )
+      {
+        int options( 0 );
 
-  			// move cursor to start of text
-  			QTextCursor cursor = node->textEdit()->textCursor();
-  			cursor.movePosition( QTextCursor::Start );
-  			node->textEdit()->setTextCursor( cursor );
+        // move cursor to start of text
+        QTextCursor cursor = node->textEdit()->textCursor();
+        cursor.movePosition( QTextCursor::Start );
+        node->textEdit()->setTextCursor( cursor );
 
-  			// match case & match word
-  			if( matchCase_ && matchWord_ )
-  				options = QTextDocument::FindCaseSensitively | QTextDocument::FindWholeWords;
-  			else if( matchCase_ )
-  				options = QTextDocument::FindCaseSensitively;
-  			else if( matchWord_ )
-  				options = QTextDocument::FindWholeWords;
+        // match case & match word
+        if( matchCase_ && matchWord_ )
+          options = QTextDocument::FindCaseSensitively | QTextDocument::FindWholeWords;
+        else if( matchCase_ )
+          options = QTextDocument::FindCaseSensitively;
+        else if( matchWord_ )
+          options = QTextDocument::FindWholeWords;
 
-  			// replace all
-  			while( node->textEdit()->find( findText_, (QTextDocument::FindFlag)options ))
-  			{
-  				node->textEdit()->textCursor().insertText( replaceText_ );
-  				if( count_ )
-  					(*count_)++;
-  			}
-  		}
-  	}
-  	void visitInputCellNodeAfter( InputCell *node ){}
+        // replace all
+        while( node->textEdit()->find( findText_, (QTextDocument::FindFlag)options ))
+        {
+          node->textEdit()->textCursor().insertText( replaceText_ );
+          if( count_ )
+            (*count_)++;
+        }
+      }
+    }
+    void visitInputCellNodeAfter( InputCell *node ){}
 
 
-  	// Visitor function - GRAPHCELL
-  	void visitGraphCellNodeBefore( GraphCell *node )
-  	{
-  		if( node->textEdit() )
-  		{
-  			int options( 0 );
+    // Visitor function - GRAPHCELL
+    void visitGraphCellNodeBefore( GraphCell *node )
+    {
+      if( node->textEdit() )
+      {
+        int options( 0 );
 
-  			// move cursor to start of text
-  			QTextCursor cursor = node->textEdit()->textCursor();
-  			cursor.movePosition( QTextCursor::Start );
-  			node->textEdit()->setTextCursor( cursor );
+        // move cursor to start of text
+        QTextCursor cursor = node->textEdit()->textCursor();
+        cursor.movePosition( QTextCursor::Start );
+        node->textEdit()->setTextCursor( cursor );
 
-  			// match case & match word
-  			if( matchCase_ && matchWord_ )
-  				options = QTextDocument::FindCaseSensitively | QTextDocument::FindWholeWords;
-  			else if( matchCase_ )
-  				options = QTextDocument::FindCaseSensitively;
-  			else if( matchWord_ )
-  				options = QTextDocument::FindWholeWords;
+        // match case & match word
+        if( matchCase_ && matchWord_ )
+          options = QTextDocument::FindCaseSensitively | QTextDocument::FindWholeWords;
+        else if( matchCase_ )
+          options = QTextDocument::FindCaseSensitively;
+        else if( matchWord_ )
+          options = QTextDocument::FindWholeWords;
 
-  			// replace all
-  			while( node->textEdit()->find( findText_, (QTextDocument::FindFlag)options ))
-  			{
-  				node->textEdit()->textCursor().insertText( replaceText_ );
-  				if( count_ )
-  					(*count_)++;
-  			}
-  		}
-  	}
-  	void visitGraphCellNodeAfter( GraphCell *node ){}
+        // replace all
+        while( node->textEdit()->find( findText_, (QTextDocument::FindFlag)options ))
+        {
+          node->textEdit()->textCursor().insertText( replaceText_ );
+          if( count_ )
+            (*count_)++;
+        }
+      }
+    }
+    void visitGraphCellNodeAfter( GraphCell *node ){}
 
-  	// Visitor function - CURSORCELL
-  	void visitCellCursorNodeBefore( CellCursor *cursor ){}
-  	void visitCellCursorNodeAfter( CellCursor *cursor ){}
+    // Visitor function - CURSORCELL
+    void visitCellCursorNodeBefore( CellCursor *cursor ){}
+    void visitCellCursorNodeAfter( CellCursor *cursor ){}
 
 
   private:
-  	QString findText_;
-  	QString replaceText_;
-  	bool matchCase_;
-  	bool matchWord_;
-  	int* count_;
+    QString findText_;
+    QString replaceText_;
+    bool matchCase_;
+    bool matchWord_;
+    int* count_;
   };
 }
 

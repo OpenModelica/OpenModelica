@@ -61,55 +61,55 @@ namespace IAEX{
 
   class CellGroup : public Cell
   {
-  	Q_OBJECT
+    Q_OBJECT
 
   public:
-  	CellGroup(QWidget *parent=0);
-  	virtual ~CellGroup();
+    CellGroup(QWidget *parent=0);
+    virtual ~CellGroup();
 
-  	virtual void viewExpression(const bool){};
+    virtual void viewExpression(const bool){};
 
-  	//Traversals implementation
-  	virtual void accept(Visitor &v);
+    //Traversals implementation
+    virtual void accept(Visitor &v);
 
-  	//Datastructure implementation.
-  	virtual void addChild(Cell *newCell);
-  	virtual void removeChild(Cell *aCell);
+    //Datastructure implementation.
+    virtual void addChild(Cell *newCell);
+    virtual void removeChild(Cell *aCell);
 
-  	virtual void addCellWidget(Cell *newCell);
-  	virtual void addCellWidgets();
-  	virtual void removeCellWidgets();
+    virtual void addCellWidget(Cell *newCell);
+    virtual void addCellWidgets();
+    virtual void removeCellWidgets();
 
-  	int height();
-  	CellStyle *style();								// Changed 2005-10-28
-  	virtual QString text(){return QString::null;}
+    int height();
+    CellStyle *style();                // Changed 2005-10-28
+    virtual QString text(){return QString::null;}
 
-  	void closeChildCells();							// Added 2005-11-30 AF
+    void closeChildCells();              // Added 2005-11-30 AF
 
-  	//Flag
-  	bool isClosed() const;
-  	bool isEditable();								// Added 2005-10-28 AF
+    //Flag
+    bool isClosed() const;
+    bool isEditable();                // Added 2005-10-28 AF
 
-  	QTextEdit* textEdit();							// Added 2006-08-24 AF
+    QTextEdit* textEdit();              // Added 2006-08-24 AF
 
 
   public slots:
-  	virtual void setStyle( CellStyle style );		// Changed 2005-10-28 AF
-  	void setClosed(const bool closed, bool update = true);
-  	virtual void setFocus(const bool focus);
+    virtual void setStyle( CellStyle style );    // Changed 2005-10-28 AF
+    void setClosed(const bool closed, bool update = true);
+    virtual void setFocus(const bool focus);
 
   protected:
-  	void mouseDoubleClickEvent(QMouseEvent *event);
+    void mouseDoubleClickEvent(QMouseEvent *event);
 
   protected slots:
-  	void adjustHeight();
+    void adjustHeight();
 
   private:
-  	bool closed_;
+    bool closed_;
 
-  	QWidget *main_;
-  	QGridLayout *layout_;
-  	unsigned long newIndex_;
+    QWidget *main_;
+    QGridLayout *layout_;
+    unsigned long newIndex_;
   };
 }
 #endif

@@ -55,35 +55,35 @@ namespace IAEX
   {
 
   public:
-  	RemoveHighlighterVisitor(){}
-  	virtual ~RemoveHighlighterVisitor(){}
+    RemoveHighlighterVisitor(){}
+    virtual ~RemoveHighlighterVisitor(){}
 
-  	virtual void visitCellNodeBefore(Cell *node){}
-  	virtual void visitCellNodeAfter(Cell *node){}
+    virtual void visitCellNodeBefore(Cell *node){}
+    virtual void visitCellNodeAfter(Cell *node){}
 
-  	virtual void visitCellGroupNodeBefore(CellGroup *node){}
-  	virtual void visitCellGroupNodeAfter(CellGroup *node){}
+    virtual void visitCellGroupNodeBefore(CellGroup *node){}
+    virtual void visitCellGroupNodeAfter(CellGroup *node){}
 
-  	virtual void visitTextCellNodeBefore(TextCell *node){}
-  	virtual void visitTextCellNodeAfter(TextCell *node){}
+    virtual void visitTextCellNodeBefore(TextCell *node){}
+    virtual void visitTextCellNodeAfter(TextCell *node){}
 
-  	virtual void visitInputCellNodeBefore(InputCell *node)
-  	{
-  		HighlighterThread *thread = HighlighterThread::instance();
-  		thread->removeEditor( node->textEdit() );
-  	}
-  	virtual void visitInputCellNodeAfter(InputCell *node){}
+    virtual void visitInputCellNodeBefore(InputCell *node)
+    {
+      HighlighterThread *thread = HighlighterThread::instance();
+      thread->removeEditor( node->textEdit() );
+    }
+    virtual void visitInputCellNodeAfter(InputCell *node){}
 
-  	virtual void visitGraphCellNodeBefore(GraphCell *node)
-  	{
-  		HighlighterThread *thread = HighlighterThread::instance();
-  		thread->removeEditor( node->textEdit() );
-  	}
-  	virtual void visitGraphCellNodeAfter(GraphCell *node){}
+    virtual void visitGraphCellNodeBefore(GraphCell *node)
+    {
+      HighlighterThread *thread = HighlighterThread::instance();
+      thread->removeEditor( node->textEdit() );
+    }
+    virtual void visitGraphCellNodeAfter(GraphCell *node){}
 
 
-  	virtual void visitCellCursorNodeBefore(CellCursor *cursor){}
-  	virtual void visitCellCursorNodeAfter(CellCursor *cursor){}
+    virtual void visitCellCursorNodeBefore(CellCursor *cursor){}
+    virtual void visitCellCursorNodeAfter(CellCursor *cursor){}
   };
 }
 #endif

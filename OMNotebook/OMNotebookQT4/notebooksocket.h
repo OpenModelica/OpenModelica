@@ -60,35 +60,35 @@ namespace IAEX
 
   class NotebookSocket : public QObject
   {
-  	Q_OBJECT
+    Q_OBJECT
 
   public:
-  	NotebookSocket( CellApplication* application );
-  	~NotebookSocket();
+    NotebookSocket( CellApplication* application );
+    ~NotebookSocket();
 
-  	// core functions
-  	bool connectToNotebook();
-  	bool closeNotebookSocket();
-  	bool sendFilename( QString filename );
+    // core functions
+    bool connectToNotebook();
+    bool closeNotebookSocket();
+    bool sendFilename( QString filename );
 
 
   private slots:
-  	void receiveNewConnection();
-  	void receiveNewSocketMsg();
+    void receiveNewConnection();
+    void receiveNewSocketMsg();
 
   private:
-  	// help function
-  	bool tryToConnect();
-  	bool startServer();
+    // help function
+    bool tryToConnect();
+    bool startServer();
 
   private:
-  	CellApplication* application_;
+    CellApplication* application_;
 
-  	QTcpSocket* socket_;
-  	QTcpSocket* incommingSocket_;
-  	QTcpServer* server_;
+    QTcpSocket* socket_;
+    QTcpSocket* incommingSocket_;
+    QTcpServer* server_;
 
-  	bool foundServer_;
+    bool foundServer_;
   };
 }
 

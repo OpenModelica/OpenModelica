@@ -41,27 +41,27 @@
 namespace IAEX
 {
   class OmcInteractiveEnvironment : public InputCellDelegate
-  {	
+  {  
   private:
-  	OmcInteractiveEnvironment();
-  	virtual ~OmcInteractiveEnvironment();
+    OmcInteractiveEnvironment();
+    virtual ~OmcInteractiveEnvironment();
 
   public:    
     static OmcInteractiveEnvironment* getInstance();
-  	virtual QString getResult();
-  	virtual QString getError();
-  	virtual void evalExpression(const QString expr);
-  	virtual void closeConnection();
-  	virtual void reconnect();
-  	virtual bool startDelegate();
-  	static bool startOMC();
-  	static QString OMCVersion();
+    virtual QString getResult();
+    virtual QString getError();
+    virtual void evalExpression(const QString expr);
+    virtual void closeConnection();
+    virtual void reconnect();
+    virtual bool startDelegate();
+    static bool startOMC();
+    static QString OMCVersion();
     static QString OpenModelicaHome();
 
   private:
     static OmcInteractiveEnvironment* selfInstance;
-  	OmcCommunicator &comm_;
-  	QString result_;
+    OmcCommunicator &comm_;
+    QString result_;
     QString error_;
   };
 }

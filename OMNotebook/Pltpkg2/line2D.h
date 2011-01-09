@@ -48,7 +48,7 @@ public:
    QPen newPen = QPen(Qt::red), 
    qreal width=0, 
    bool bCosmetic = false,   
-   QGraphicsItem*	parent=0, QGraphicsScene* scene=0);
+   QGraphicsItem*  parent=0, QGraphicsScene* scene=0);
   ~Line2D();
   QRectF boundingRect() const;
 };

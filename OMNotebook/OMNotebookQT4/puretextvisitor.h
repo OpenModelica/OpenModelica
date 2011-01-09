@@ -54,30 +54,30 @@ namespace IAEX
   {
 
   public:
-  	PureTextVisitor(QFile *file);
-  	virtual ~PureTextVisitor();
+    PureTextVisitor(QFile *file);
+    virtual ~PureTextVisitor();
 
-  	virtual void visitCellNodeBefore(Cell *node);
-  	virtual void visitCellNodeAfter(Cell *node);
+    virtual void visitCellNodeBefore(Cell *node);
+    virtual void visitCellNodeAfter(Cell *node);
 
-  	virtual void visitCellGroupNodeBefore(CellGroup *node);
-  	virtual void visitCellGroupNodeAfter(CellGroup *node);
+    virtual void visitCellGroupNodeBefore(CellGroup *node);
+    virtual void visitCellGroupNodeAfter(CellGroup *node);
 
-  	virtual void visitTextCellNodeBefore(TextCell *node);
-  	virtual void visitTextCellNodeAfter(TextCell *node);
+    virtual void visitTextCellNodeBefore(TextCell *node);
+    virtual void visitTextCellNodeAfter(TextCell *node);
 
-  	virtual void visitInputCellNodeBefore(InputCell *node);
-  	virtual void visitInputCellNodeAfter(InputCell *node);
+    virtual void visitInputCellNodeBefore(InputCell *node);
+    virtual void visitInputCellNodeAfter(InputCell *node);
 
-  	virtual void visitGraphCellNodeBefore(GraphCell *node);
-  	virtual void visitGraphCellNodeAfter(GraphCell *node);
+    virtual void visitGraphCellNodeBefore(GraphCell *node);
+    virtual void visitGraphCellNodeAfter(GraphCell *node);
 
 
-  	virtual void visitCellCursorNodeBefore(CellCursor *cursor);
-  	virtual void visitCellCursorNodeAfter(CellCursor *cursor);
+    virtual void visitCellCursorNodeBefore(CellCursor *cursor);
+    virtual void visitCellCursorNodeAfter(CellCursor *cursor);
 
   private:
-  	QTextStream *ts_;
+    QTextStream *ts_;
   };
 }
 #endif

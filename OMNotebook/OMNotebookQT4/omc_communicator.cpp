@@ -353,26 +353,26 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 * \throw ModeqConnectionLost if the connection to Modeq is lost.
 */
 // void ModeqCommunicator::createConnector(const QString& ref,
-//   																			const QStringList& baseClassRefs,
-//   																			const QString& comment,
-//   																			bool encapsulated,
-//   																			bool partial)
+//                                         const QStringList& baseClassRefs,
+//                                         const QString& comment,
+//                                         bool encapsulated,
+//                                         bool partial)
 // {
 //   QString name(ModelicaClassManager::getName(ref));
 //   QString parentClassRef(ModelicaClassManager::getPath(ref));
 
 //   QString fnCall(!parentClassRef.isEmpty() ? "within " + parentClassRef + "; " : "");
 //   fnCall +=
-//   	QString((encapsulated ? "encapsulated " : "")) +
-//   	QString((partial ? "partial " : "")) + "connector " + name + " \"" + comment + "\"";
+//     QString((encapsulated ? "encapsulated " : "")) +
+//     QString((partial ? "partial " : "")) + "connector " + name + " \"" + comment + "\"";
 //   for (QStringList::const_iterator it = baseClassRefs.begin(); it != baseClassRefs.end(); ++it) {
-//   	fnCall += " extends " + *it + ";";
+//     fnCall += " extends " + *it + ";";
 //   }
 //   fnCall += " end " + name + ";";
 //   QString returnString(callModeq(fnCall));
 
 //   if (returnString.lower() != "ok") {
-//   	throw ModeqError(fnCall, returnString);
+//     throw ModeqError(fnCall, returnString);
 //   }
 // }
 
@@ -381,10 +381,10 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 * \throw ModeqConnectionLost if the connection to Modeq is lost.
 */
 // void ModeqCommunicator::createModel(const QString& ref,
-//   																	const QStringList& baseClassRefs,
-//   																	const QString& comment,
-//   																	bool encapsulated,
-//   																	bool partial)
+//                                     const QStringList& baseClassRefs,
+//                                     const QString& comment,
+//                                     bool encapsulated,
+//                                     bool partial)
 // {
 //   QString name(ModelicaClassManager::getName(ref));
 //   QString parentClassRef(ModelicaClassManager::getPath(ref));
@@ -409,10 +409,10 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 * \throw ModeqConnectionLost if the connection to Modeq is lost.
 */
 // void ModeqCommunicator::createBlock(const QString& ref,
-//   																	const QStringList& baseClassRefs,
-//   																	const QString& comment,
-//   																	bool encapsulated,
-//   																	bool partial)
+//                                     const QStringList& baseClassRefs,
+//                                     const QString& comment,
+//                                     bool encapsulated,
+//                                     bool partial)
 // {
 //   QString name(ModelicaClassManager::getName(ref));
 //   QString parentClassRef(ModelicaClassManager::getPath(ref));
@@ -438,10 +438,10 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 * \throw ModeqConnectionLost if the connection to Modeq is lost.
 */
 // void ModeqCommunicator::createRecord(const QString& ref,
-//   																	const QStringList& baseClassRefs,
-//   																	const QString& comment,
-//   																	bool encapsulated,
-//   																	bool partial)
+//                                     const QStringList& baseClassRefs,
+//                                     const QString& comment,
+//                                     bool encapsulated,
+//                                     bool partial)
 // {
 //   QString name(ModelicaClassManager::getName(ref));
 //   QString parentClassRef(ModelicaClassManager::getPath(ref));
@@ -467,10 +467,10 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 * \throw ModeqConnectionLost if the connection to Modeq is lost.
 */
 // void ModeqCommunicator::createFunction(const QString& ref,
-//   																	const QStringList& baseClassRefs,
-//   																	const QString& comment,
-//   																	bool encapsulated,
-//   																	bool partial)
+//                                     const QStringList& baseClassRefs,
+//                                     const QString& comment,
+//                                     bool encapsulated,
+//                                     bool partial)
 // {
 //   QString name(ModelicaClassManager::getName(ref));
 //   QString parentClassRef(ModelicaClassManager::getPath(ref));
@@ -496,10 +496,10 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 * \throw ModeqConnectionLost if the connection to Modeq is lost.
 */
 // void ModeqCommunicator::createPackage(const QString& ref,
-//   																		const QStringList& baseClassRefs,
-//   																		const QString& comment,
-//   																		bool encapsulated,
-//   																		bool partial)
+//                                       const QStringList& baseClassRefs,
+//                                       const QString& comment,
+//                                       bool encapsulated,
+//                                       bool partial)
 // {
 //   QString name(ModelicaClassManager::getName(ref));
 //   QString parentClassRef(ModelicaClassManager::getPath(ref));
@@ -746,7 +746,7 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 // {
 //   // Real and Integer are known primitives. No need to ask Modeq.
 //   if (ref == "Real" || ref == "Integer") {
-//   	return true;
+//     return true;
 //   }
 
 //   QString fnCall("isPrimitive(" + ref + ")");
@@ -882,9 +882,9 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 * \throw ModeqConnectionLost if the connection to Modeq is lost.
 */
 // void ModeqCommunicator::addComponent(const QString& name,
-//   																	 const QString& type,
-//   																	 const QString& ref,
-//   																	 const QString& annotation)
+//                                      const QString& type,
+//                                      const QString& ref,
+//                                      const QString& annotation)
 // {
 //   QString fnCall;
 //   if (annotation.isEmpty()) {
@@ -904,10 +904,10 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 * \throw ModeqConnectionLost if the connection to Modeq is lost.
 */
 // void ModeqCommunicator::updateComponent(const QString& name,
-//   																			const QString& type,
-//   																			const QString& ref,
-//   																			const QString& comment,
-//   																			const QString& annotation)
+//                                         const QString& type,
+//                                         const QString& ref,
+//                                         const QString& comment,
+//                                         const QString& annotation)
 // {
 //   QString temporaryComment(comment);
 //   temporaryComment.replace("\\", "\\\\").replace("\"", "\\\"");
@@ -915,10 +915,10 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 //   QString fnCall;
 //   if (annotation.isEmpty()) {
 //     fnCall = "updateComponent(" + name + "," + type + "," + ref +
-//   		", comment=\"" + temporaryComment + "\")";
+//       ", comment=\"" + temporaryComment + "\")";
 //   } else {
 //     fnCall = "updateComponent(" + name + "," + type + "," + ref +
-//   		", comment=\"" + temporaryComment + "\",annotate=" + annotation + ")";
+//       ", comment=\"" + temporaryComment + "\",annotate=" + annotation + ")";
 //   }
 //   QString returnString(callModeq(fnCall));
 
@@ -1011,31 +1011,31 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 //   // Extract each component from the list of components returned from Modeq.
 //   while (!componentList.isEmpty())
 //   {
-//   	int i;
+//     int i;
 
-//   	// Extract the type.
-//   	i = componentList.find(',');
-//   	if (i == -1) throw ModeqError(fnCall, returnString);	// Parse error.
-//   	QString type(componentList.mid(1, i - 1).stripWhiteSpace());
-//   	componentList = componentList.remove(0, i + 1).stripWhiteSpace();
+//     // Extract the type.
+//     i = componentList.find(',');
+//     if (i == -1) throw ModeqError(fnCall, returnString);  // Parse error.
+//     QString type(componentList.mid(1, i - 1).stripWhiteSpace());
+//     componentList = componentList.remove(0, i + 1).stripWhiteSpace();
 
-//   	// Extract the name.
-//   	i = componentList.find(',');
-//   	if (i == -1) throw ModeqError(fnCall, returnString);	// Parse error.
-//   	QString name(componentList.left(i).stripWhiteSpace());
-//   	componentList = componentList.remove(0, i + 1).stripWhiteSpace();
+//     // Extract the name.
+//     i = componentList.find(',');
+//     if (i == -1) throw ModeqError(fnCall, returnString);  // Parse error.
+//     QString name(componentList.left(i).stripWhiteSpace());
+//     componentList = componentList.remove(0, i + 1).stripWhiteSpace();
 
-//   	// Extract the comment.
-//   	i = 0;
-//   	do {
-//   		i = componentList.find('"', i + 1);
-//   	} while (componentList.at(i - 1) == '\\');
-//   	QString comment(componentList.mid(1, i - 1));
-//   	comment.replace("\\\"", "\"").replace("\\\\", "\\");
-//   	componentList = componentList.remove(0, i + 3).stripWhiteSpace();
+//     // Extract the comment.
+//     i = 0;
+//     do {
+//       i = componentList.find('"', i + 1);
+//     } while (componentList.at(i - 1) == '\\');
+//     QString comment(componentList.mid(1, i - 1));
+//     comment.replace("\\\"", "\"").replace("\\\\", "\\");
+//     componentList = componentList.remove(0, i + 3).stripWhiteSpace();
 
-//   	// Create declaration record.
-//   	componentDeclarations.push_back(ComponentDeclaration(type, name, comment));
+//     // Create declaration record.
+//     componentDeclarations.push_back(ComponentDeclaration(type, name, comment));
 //   }
 
 //   return componentDeclarations;
@@ -1068,26 +1068,26 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 //   // Remove any whitespace in the string to simplify the extraction of annotations.
 //   annotationList = annotationList.remove(' ');
 //   while (!annotationList.isEmpty()) {
-//   	if (annotationList.startsWith("{}")) {
-//   		componentAnnotations.push_back(0);
-//   		annotationList = annotationList.remove(0, 3);
-//   	} else {
-//   		int i(annotationList.find('}'));
-//   		QString annotation(annotationList.mid(0, i + 1));
-//   		annotationList = annotationList.remove(0, i + 2);
-//   		try {
-//   			componentAnnotations.push_back(compiler_->compilePlacementAnnotation(annotation.latin1()));
-//   		} catch (SyntaxError&) {
-//   			// compilePlacementAnnotation never throws SyntaxError as modeq returns {} if a component has a invalid annotation
-//   			qWarning(QString("[Internal Error] ModeqCommunicator::getComponentAnnotations():\n") +
-//   				"Parsing of placement annotation failed. The annotation is ignored.\n");
-//   			QMessageBox::critical(0, tr("Modelica Kernel Error"),
-//   				tr(QString("<NOBR><B>A function call to the Modelica kernel failed.</B><BR><BR>") +
-//   				"The editor and kernel might be in an inconsistent state.<BR>Please restart the editor."));
+//     if (annotationList.startsWith("{}")) {
+//       componentAnnotations.push_back(0);
+//       annotationList = annotationList.remove(0, 3);
+//     } else {
+//       int i(annotationList.find('}'));
+//       QString annotation(annotationList.mid(0, i + 1));
+//       annotationList = annotationList.remove(0, i + 2);
+//       try {
+//         componentAnnotations.push_back(compiler_->compilePlacementAnnotation(annotation.latin1()));
+//       } catch (SyntaxError&) {
+//         // compilePlacementAnnotation never throws SyntaxError as modeq returns {} if a component has a invalid annotation
+//         qWarning(QString("[Internal Error] ModeqCommunicator::getComponentAnnotations():\n") +
+//           "Parsing of placement annotation failed. The annotation is ignored.\n");
+//         QMessageBox::critical(0, tr("Modelica Kernel Error"),
+//           tr(QString("<NOBR><B>A function call to the Modelica kernel failed.</B><BR><BR>") +
+//           "The editor and kernel might be in an inconsistent state.<BR>Please restart the editor."));
 
-//   			componentAnnotations.push_back(0);
-//   		}
-//   	}
+//         componentAnnotations.push_back(0);
+//       }
+//     }
 //   }
 
 //   return componentAnnotations;
@@ -1124,132 +1124,132 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 
 //   // = <expr>?
 //   if (modificationString.startsWith("=")) {
-//   	QString value(modificationString.mid(1));
-//   	modifiers.push_back(new ComponentModifier("", value));
-// //  	qDebug(">>> =" + value);
-// //  	qDebug("");
-//   	return new Modification(name, returnString, modifiers);
+//     QString value(modificationString.mid(1));
+//     modifiers.push_back(new ComponentModifier("", value));
+// //    qDebug(">>> =" + value);
+// //    qDebug("");
+//     return new Modification(name, returnString, modifiers);
 //   }
 //   // := <expr>?
 //   else if (modificationString.startsWith(":=")) {
-//   	QString value(modificationString.mid(2));
-//   	modifiers.push_back(new ComponentModifier("", value));
-// //  	qDebug(">>> =" + value);
-// //  	qDebug("");
-//   	return new Modification(name, returnString, modifiers);
+//     QString value(modificationString.mid(2));
+//     modifiers.push_back(new ComponentModifier("", value));
+// //    qDebug(">>> =" + value);
+// //    qDebug("");
+//     return new Modification(name, returnString, modifiers);
 //   } else {
-//   	if( modificationString.startsWith("(") && modificationString.endsWith(")") )
-//   	{
-//   		// Remove surrounding ()
-//   		modificationString = modificationString.mid(1, modificationString.length() - 2);
-//   	}
+//     if( modificationString.startsWith("(") && modificationString.endsWith(")") )
+//     {
+//       // Remove surrounding ()
+//       modificationString = modificationString.mid(1, modificationString.length() - 2);
+//     }
 
 //   }
 
 //   // Redclaration?
 //   if (modificationString.startsWith("redeclare")) {
-//   	// Skip modifier
-//   	int pDepth(0);
-//   	while (!modificationString.isEmpty()) {
-//   		if (modificationString.startsWith("(")) {
-//   			++pDepth;
-//   		} else if (modificationString.startsWith(")")) {
-//   			--pDepth;
-//   		} else if (modificationString.startsWith(",") && pDepth == 0) {
-//   			modificationString = modificationString.remove(0, 1).stripWhiteSpace();
-//   			break;
-//   		}
-//   		modificationString = modificationString.remove(0, 1);
-//   	}
+//     // Skip modifier
+//     int pDepth(0);
+//     while (!modificationString.isEmpty()) {
+//       if (modificationString.startsWith("(")) {
+//         ++pDepth;
+//       } else if (modificationString.startsWith(")")) {
+//         --pDepth;
+//       } else if (modificationString.startsWith(",") && pDepth == 0) {
+//         modificationString = modificationString.remove(0, 1).stripWhiteSpace();
+//         break;
+//       }
+//       modificationString = modificationString.remove(0, 1);
+//     }
 //   }
 //   // Modification.
 //   else {
-//   	QString componentReference("");
-//   	QString value("");
+//     QString componentReference("");
+//     QString value("");
 
-//   	while (!modificationString.isEmpty()) {
-//   		// Remove any occurence of each and final.
-//   		while (true) {
-//   			if (modificationString.startsWith("each")) {
-//   				modificationString = modificationString.remove(0,4).stripWhiteSpace();
-//   			} else if (modificationString.startsWith("final")) {
-//   				modificationString = modificationString.remove(0,5).stripWhiteSpace();
-//   			} else {
-//   				break;
-//   			}
-//   		}
-//   		int pDepth(0);
+//     while (!modificationString.isEmpty()) {
+//       // Remove any occurence of each and final.
+//       while (true) {
+//         if (modificationString.startsWith("each")) {
+//           modificationString = modificationString.remove(0,4).stripWhiteSpace();
+//         } else if (modificationString.startsWith("final")) {
+//           modificationString = modificationString.remove(0,5).stripWhiteSpace();
+//         } else {
+//           break;
+//         }
+//       }
+//       int pDepth(0);
 
-//   		// Take care of the case (unit="m")=2, (unit="m") is removed
-//   		if( modificationString.startsWith("(") && !modificationString.endsWith(")") ){
+//       // Take care of the case (unit="m")=2, (unit="m") is removed
+//       if( modificationString.startsWith("(") && !modificationString.endsWith(")") ){
 
-//   			while(!modificationString.isEmpty())
-//   			{
-//   				if (modificationString.startsWith("(")) { ++pDepth; }
-//   				else if (modificationString.startsWith(")")) { --pDepth; }
-//   				else if( modificationString.startsWith("=") && pDepth == 0 )
-//   				{
-//   					break;
-//   				}
-//   				modificationString = modificationString.remove(0, 1);
-//   			}
+//         while(!modificationString.isEmpty())
+//         {
+//           if (modificationString.startsWith("(")) { ++pDepth; }
+//           else if (modificationString.startsWith(")")) { --pDepth; }
+//           else if( modificationString.startsWith("=") && pDepth == 0 )
+//           {
+//             break;
+//           }
+//           modificationString = modificationString.remove(0, 1);
+//         }
 
-//   			pDepth = 0;
-//   		}
+//         pDepth = 0;
+//       }
 
-//   		while (!modificationString.isEmpty()) {
-//   			if (modificationString.startsWith("(")) { ++pDepth; }
-//   			else if (modificationString.startsWith(")")) { --pDepth; }
-//   			else if (modificationString.startsWith("=") && pDepth == 0) {
-//   				int bDepth(0), btDepth(0);
-//   				modificationString = modificationString.mid(1).stripWhiteSpace();
-//   				while (true) {
-//   					// Last modifier? (No comma found).
-//   					if (modificationString.isEmpty()) {
-//   						break;
-//   					}
-//   					else if (modificationString.startsWith("(")) { ++pDepth; }
-//   					else if (modificationString.startsWith(")")) { --pDepth; }
-//   					else if (modificationString.startsWith("{")) { ++bDepth; }
-//   					else if (modificationString.startsWith("}")) { --bDepth; }
-//   					else if (modificationString.startsWith("[")) { ++btDepth; }
-//   					else if (modificationString.startsWith("]")) { --btDepth;	}
-//   					else if (modificationString.startsWith(",") && pDepth == 0 && bDepth == 0 && btDepth == 0) {
-//   						modificationString = modificationString.mid(1).stripWhiteSpace();
-//   						break;
-//   					}
-//   					value += modificationString.at(0);
-//   					modificationString = modificationString.remove(0, 1);
-//   				}
-//   				break;
-//   			}
+//       while (!modificationString.isEmpty()) {
+//         if (modificationString.startsWith("(")) { ++pDepth; }
+//         else if (modificationString.startsWith(")")) { --pDepth; }
+//         else if (modificationString.startsWith("=") && pDepth == 0) {
+//           int bDepth(0), btDepth(0);
+//           modificationString = modificationString.mid(1).stripWhiteSpace();
+//           while (true) {
+//             // Last modifier? (No comma found).
+//             if (modificationString.isEmpty()) {
+//               break;
+//             }
+//             else if (modificationString.startsWith("(")) { ++pDepth; }
+//             else if (modificationString.startsWith(")")) { --pDepth; }
+//             else if (modificationString.startsWith("{")) { ++bDepth; }
+//             else if (modificationString.startsWith("}")) { --bDepth; }
+//             else if (modificationString.startsWith("[")) { ++btDepth; }
+//             else if (modificationString.startsWith("]")) { --btDepth;  }
+//             else if (modificationString.startsWith(",") && pDepth == 0 && bDepth == 0 && btDepth == 0) {
+//               modificationString = modificationString.mid(1).stripWhiteSpace();
+//               break;
+//             }
+//             value += modificationString.at(0);
+//             modificationString = modificationString.remove(0, 1);
+//           }
+//           break;
+//         }
 
-//   			componentReference += modificationString.at(0);
-//   			modificationString = modificationString.remove(0, 1);
-//   		}
+//         componentReference += modificationString.at(0);
+//         modificationString = modificationString.remove(0, 1);
+//       }
 
-//   		// Remove any colon at the end of the component reference (happens when := is used).
-//   		if (componentReference.endsWith(":")) {
-//   			componentReference = componentReference.left(componentReference.length() - 1);
-//   		}
+//       // Remove any colon at the end of the component reference (happens when := is used).
+//       if (componentReference.endsWith(":")) {
+//         componentReference = componentReference.left(componentReference.length() - 1);
+//       }
 
-//   		// Remove any inner modifications from the component reference.
-//   		int i(componentReference.find('('));
-//   		if (i > 0) {
-//   			componentReference = componentReference.left(i);
-//   		}
+//       // Remove any inner modifications from the component reference.
+//       int i(componentReference.find('('));
+//       if (i > 0) {
+//         componentReference = componentReference.left(i);
+//       }
 
-//   		// Do not store any deep modifiers.
-//   		if (componentReference.find('.') > 0) {
-//   			continue;
-//   		}
-//   		modifiers.push_back(new ComponentModifier(componentReference, value));
+//       // Do not store any deep modifiers.
+//       if (componentReference.find('.') > 0) {
+//         continue;
+//       }
+//       modifiers.push_back(new ComponentModifier(componentReference, value));
 
-//   		//			qDebug(">>> " + componentReference + "=" + value);
-//   		//			qDebug(modificationString);
-//   		componentReference = "";
-//   		value = "";
-//   	}
+//       //      qDebug(">>> " + componentReference + "=" + value);
+//       //      qDebug(modificationString);
+//       componentReference = "";
+//       value = "";
+//     }
 
 //   }
 
@@ -1261,9 +1261,9 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 * \throw ModeqConnectionLost if the connection to Modeq is lost.
 */
 // void ModeqCommunicator::addConnection(const QString& sourceConnectorRef,
-//   																		const QString& destinationConnectorRef,
-//   																		const QString& ref,
-//   																		const QString& annotation)
+//                                       const QString& destinationConnectorRef,
+//                                       const QString& ref,
+//                                       const QString& annotation)
 // {
 //   QString fnCall = "addConnection(" + sourceConnectorRef + "," + destinationConnectorRef + "," +
 //     ref + "," + annotation + ")";
@@ -1279,9 +1279,9 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 * \throw ModeqConnectionLost if the connection to Modeq is lost.
 */
 // void ModeqCommunicator::updateConnection(const QString& sourceConnectorRef,
-//   																			 const QString& destinationConnectorRef,
-//   																			 const QString& ref,
-//   																			 const QString& annotation)
+//                                          const QString& destinationConnectorRef,
+//                                          const QString& ref,
+//                                          const QString& annotation)
 // {
 //   QString fnCall = "updateConnection(" + sourceConnectorRef + "," + destinationConnectorRef + "," +
 //     ref + "," + annotation + ")";
@@ -1297,8 +1297,8 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 * \throw ModeqConnectionLost if the connection to Modeq is lost.
 */
 // void ModeqCommunicator::deleteConnection(const QString& sourceConnectorRef,
-//   																			 const QString& destinationConnectorRef,
-//   																			 const QString& ref)
+//                                          const QString& destinationConnectorRef,
+//                                          const QString& ref)
 // {
 //   QString fnCall("deleteConnection(" + sourceConnectorRef + "," + destinationConnectorRef + "," + ref + ")");
 //   QString returnString(callModeq(fnCall));
@@ -1410,17 +1410,17 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 * \see ModelicaClassManager::setClassDefinition()
 */
 // void ModeqCommunicator::updateClassDefinition(const QString& ref,
-//   																						const QString& definition)
+//                                               const QString& definition)
 // {
 //   QString fnCall;
 //   if (!ModelicaClassManager::getPath(ref).isEmpty()) {
-//   	fnCall += "within " + ModelicaClassManager::getPath(ref) + "; ";
+//     fnCall += "within " + ModelicaClassManager::getPath(ref) + "; ";
 //   }
 //   fnCall += definition;
 //   QString returnString(callModeq(fnCall));
 
 //   if (returnString != "Ok") {
-//   	throw SyntaxError(returnString);
+//     throw SyntaxError(returnString);
 //   }
 // }
 

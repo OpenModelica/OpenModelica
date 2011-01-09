@@ -67,14 +67,14 @@ namespace IAEX
    */
   UpdateLinkVisitor::UpdateLinkVisitor(QString oldFilepath, QString newFilepath)
   {
-  	oldDir_.setPath( oldFilepath );
-  	newDir_.setPath( newFilepath );
+    oldDir_.setPath( oldFilepath );
+    newDir_.setPath( newFilepath );
 
-  	if( !oldDir_.exists() || !newDir_.exists() )
-  	{
-  		string msg = "UpdateLink, old or new dir don't exists.";
-  		throw runtime_error( msg.c_str() );
-  	}
+    if( !oldDir_.exists() || !newDir_.exists() )
+    {
+      string msg = "UpdateLink, old or new dir don't exists.";
+      throw runtime_error( msg.c_str() );
+    }
   }
 
   /*!
@@ -102,44 +102,44 @@ namespace IAEX
   // TEXTCELL
   void UpdateLinkVisitor::visitTextCellNodeBefore(TextCell *node)
   {
-  	QString html = node->textHtml();
-  	int pos(0);
-  	while( true )
-  	{
-  		int startPos = html.indexOf( "<a href=\"", pos, Qt::CaseInsensitive );
-  		if( 0 <= startPos )
-  		{
-  			// add lengt of '<a href="' to startpos
-  			startPos += 9;
+    QString html = node->textHtml();
+    int pos(0);
+    while( true )
+    {
+      int startPos = html.indexOf( "<a href=\"", pos, Qt::CaseInsensitive );
+      if( 0 <= startPos )
+      {
+        // add lengt of '<a href="' to startpos
+        startPos += 9;
 
-  			int endPos = html.indexOf( "\"", startPos, Qt::CaseInsensitive );
-  			if( 0 <= endPos )
-  			{
-  				//a link is found, replace it with new link
-  				QString oldLink = html.mid( startPos, endPos - startPos );
-  				QString newLink = newDir_.relativeFilePath( oldDir_.absoluteFilePath( oldLink ));
-  				html.replace( startPos, endPos - startPos, newLink );
+        int endPos = html.indexOf( "\"", startPos, Qt::CaseInsensitive );
+        if( 0 <= endPos )
+        {
+          //a link is found, replace it with new link
+          QString oldLink = html.mid( startPos, endPos - startPos );
+          QString newLink = newDir_.relativeFilePath( oldDir_.absoluteFilePath( oldLink ));
+          html.replace( startPos, endPos - startPos, newLink );
 
-  				//cout << "OLD LINK: " << oldLink.toStdString() << endl;
-  				//cout << "NEW LINK: " << newLink.toStdString() << endl;
+          //cout << "OLD LINK: " << oldLink.toStdString() << endl;
+          //cout << "NEW LINK: " << newLink.toStdString() << endl;
 
-  				// set pos to the end of the link
-  				pos = startPos + newLink.length();
-  			}
-  			else
-  			{
-  				// this should never happen!
-  				string msg = "Error, found no end of linkpath";
+          // set pos to the end of the link
+          pos = startPos + newLink.length();
+        }
+        else
+        {
+          // this should never happen!
+          string msg = "Error, found no end of linkpath";
                     throw runtime_error( msg.c_str() );
-  				break;
-  			}
-  		}
-  		else
-  			break;
-  	}
+          break;
+        }
+      }
+      else
+        break;
+    }
 
-  	// set the new html code to the textcell
-  	node->setTextHtml( html );
+    // set the new html code to the textcell
+    node->setTextHtml( html );
   }
 
   void UpdateLinkVisitor::visitTextCellNodeAfter(TextCell *)

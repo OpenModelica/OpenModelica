@@ -56,7 +56,7 @@ public slots:
 
 signals:
   void showGraphics();
-  //	void setLegend(bool visible);
+  //  void setLegend(bool visible);
 //  void setGrid(bool visible);
 //  void setLogarithmic(bool);
 

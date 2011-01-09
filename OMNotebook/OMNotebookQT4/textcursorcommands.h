@@ -54,20 +54,20 @@ namespace IAEX
   class TextCursorCutText : public Command
   {
   public:
-  	TextCursorCutText(){}
-  	virtual ~TextCursorCutText(){}
-  	virtual QString commandName(){ return QString("TextCursorCutText"); }
-  	void execute();
+    TextCursorCutText(){}
+    virtual ~TextCursorCutText(){}
+    virtual QString commandName(){ return QString("TextCursorCutText"); }
+    void execute();
   };
 
   // Added 2006-02-07 AF
   class TextCursorCopyText : public Command
   {
   public:
-  	TextCursorCopyText(){}
-  	virtual ~TextCursorCopyText(){}
-  	virtual QString commandName(){ return QString("TextCursorCopyText"); }
-  	void execute();
+    TextCursorCopyText(){}
+    virtual ~TextCursorCopyText(){}
+    virtual QString commandName(){ return QString("TextCursorCopyText"); }
+    void execute();
   };
 
 
@@ -75,180 +75,180 @@ namespace IAEX
   class TextCursorPasteText : public Command
   {
   public:
-  	TextCursorPasteText(){}
-  	virtual ~TextCursorPasteText(){}
-  	virtual QString commandName(){ return QString("TextCursorPasteText"); }
-  	void execute();
+    TextCursorPasteText(){}
+    virtual ~TextCursorPasteText(){}
+    virtual QString commandName(){ return QString("TextCursorPasteText"); }
+    void execute();
   };
 
   class TextCursorChangeFontFamily : public Command
   {
   public:
-  	TextCursorChangeFontFamily(QString family)
-  		: family_(family){}
-  	virtual ~TextCursorChangeFontFamily(){}
-  	virtual QString commandName(){ return QString("TextCursorChangeFontFamily"); }
-  	void execute();
+    TextCursorChangeFontFamily(QString family)
+      : family_(family){}
+    virtual ~TextCursorChangeFontFamily(){}
+    virtual QString commandName(){ return QString("TextCursorChangeFontFamily"); }
+    void execute();
 
   private:
-  	QString family_;
+    QString family_;
   };
 
 
   class TextCursorChangeFontFace : public Command
   {
   public:
-  	TextCursorChangeFontFace(int face)
-  		: face_(face){}
-  	virtual ~TextCursorChangeFontFace(){}
-  	virtual QString commandName(){ return QString("TextCursorChangeFontFace"); }
-  	void execute();
+    TextCursorChangeFontFace(int face)
+      : face_(face){}
+    virtual ~TextCursorChangeFontFace(){}
+    virtual QString commandName(){ return QString("TextCursorChangeFontFace"); }
+    void execute();
 
   private:
-  	int face_;
+    int face_;
   };
 
 
   class TextCursorChangeFontSize : public Command
   {
   public:
-  	TextCursorChangeFontSize(int size)
-  		: size_(size){}
-  	virtual ~TextCursorChangeFontSize(){}
-  	virtual QString commandName(){ return QString("TextCursorChangeFontSize"); }
-  	void execute();
+    TextCursorChangeFontSize(int size)
+      : size_(size){}
+    virtual ~TextCursorChangeFontSize(){}
+    virtual QString commandName(){ return QString("TextCursorChangeFontSize"); }
+    void execute();
 
   private:
-  	int size_;
+    int size_;
   };
 
 
   class TextCursorChangeFontStretch : public Command
   {
   public:
-  	TextCursorChangeFontStretch(int stretch)
-  		: stretch_(stretch){}
-  	virtual ~TextCursorChangeFontStretch(){}
-  	virtual QString commandName(){ return QString("TextCursorChangeFontStretch"); }
-  	void execute();
+    TextCursorChangeFontStretch(int stretch)
+      : stretch_(stretch){}
+    virtual ~TextCursorChangeFontStretch(){}
+    virtual QString commandName(){ return QString("TextCursorChangeFontStretch"); }
+    void execute();
 
   private:
-  	int stretch_;
+    int stretch_;
   };
 
 
   class TextCursorChangeFontColor : public Command
   {
   public:
-  	TextCursorChangeFontColor(QColor color)
-  		: color_(color){}
-  	virtual ~TextCursorChangeFontColor(){}
-  	virtual QString commandName(){ return QString("TextCursorChangeFontColor"); }
-  	void execute();
+    TextCursorChangeFontColor(QColor color)
+      : color_(color){}
+    virtual ~TextCursorChangeFontColor(){}
+    virtual QString commandName(){ return QString("TextCursorChangeFontColor"); }
+    void execute();
 
   private:
-  	QColor color_;
+    QColor color_;
   };
 
 
   class TextCursorChangeTextAlignment : public Command
   {
   public:
-  	TextCursorChangeTextAlignment(int alignment)
-  		: alignment_(alignment){}
-  	virtual ~TextCursorChangeTextAlignment(){}
-  	virtual QString commandName(){ return QString("TextCursorChangeTextAlignment"); }
-  	void execute();
+    TextCursorChangeTextAlignment(int alignment)
+      : alignment_(alignment){}
+    virtual ~TextCursorChangeTextAlignment(){}
+    virtual QString commandName(){ return QString("TextCursorChangeTextAlignment"); }
+    void execute();
 
   private:
-  	int alignment_;
+    int alignment_;
   };
 
 
   class TextCursorChangeVerticalAlignment : public Command
   {
   public:
-  	TextCursorChangeVerticalAlignment(int alignment)
-  		: alignment_(alignment){}
-  	virtual ~TextCursorChangeVerticalAlignment(){}
-  	virtual QString commandName(){ return QString("TextCursorChangeVerticalAlignment"); }
-  	void execute();
+    TextCursorChangeVerticalAlignment(int alignment)
+      : alignment_(alignment){}
+    virtual ~TextCursorChangeVerticalAlignment(){}
+    virtual QString commandName(){ return QString("TextCursorChangeVerticalAlignment"); }
+    void execute();
 
   private:
-  	int alignment_;
+    int alignment_;
   };
 
 
   class TextCursorChangeMargin : public Command
   {
   public:
-  	TextCursorChangeMargin(int margin)
-  		: margin_(margin){}
-  	virtual ~TextCursorChangeMargin(){}
-  	virtual QString commandName(){ return QString("TextCursorChangeMargin"); }
-  	void execute();
+    TextCursorChangeMargin(int margin)
+      : margin_(margin){}
+    virtual ~TextCursorChangeMargin(){}
+    virtual QString commandName(){ return QString("TextCursorChangeMargin"); }
+    void execute();
 
   private:
-  	int margin_;
+    int margin_;
   };
 
 
   class TextCursorChangePadding : public Command
   {
   public:
-  	TextCursorChangePadding(int padding)
-  		: padding_(padding){}
-  	virtual ~TextCursorChangePadding(){}
-  	virtual QString commandName(){ return QString("TextCursorChangePadding"); }
-  	void execute();
+    TextCursorChangePadding(int padding)
+      : padding_(padding){}
+    virtual ~TextCursorChangePadding(){}
+    virtual QString commandName(){ return QString("TextCursorChangePadding"); }
+    void execute();
 
   private:
-  	int padding_;
+    int padding_;
   };
 
 
   class TextCursorChangeBorder : public Command
   {
   public:
-  	TextCursorChangeBorder(int border)
-  		: border_(border){}
-  	virtual ~TextCursorChangeBorder(){}
-  	virtual QString commandName(){ return QString("TextCursorChangeBorder"); }
-  	void execute();
+    TextCursorChangeBorder(int border)
+      : border_(border){}
+    virtual ~TextCursorChangeBorder(){}
+    virtual QString commandName(){ return QString("TextCursorChangeBorder"); }
+    void execute();
 
   private:
-  	int border_;
+    int border_;
   };
 
 
   class TextCursorInsertImage : public Command
   {
   public:
-  	TextCursorInsertImage(QString filepath, QSize size)
-  		: filepath_(filepath), height_(size.height()), width_(size.width()){}
-  	virtual ~TextCursorInsertImage(){}
-  	virtual QString commandName(){ return QString("TextCursorInsertImage"); }
-  	void execute();
+    TextCursorInsertImage(QString filepath, QSize size)
+      : filepath_(filepath), height_(size.height()), width_(size.width()){}
+    virtual ~TextCursorInsertImage(){}
+    virtual QString commandName(){ return QString("TextCursorInsertImage"); }
+    void execute();
 
   private:
-  	QString filepath_;
-  	int height_;
-  	int width_;
+    QString filepath_;
+    int height_;
+    int width_;
   };
 
 
   class TextCursorInsertLink : public Command
   {
   public:
-  	TextCursorInsertLink( QString filepath, QTextCursor& cursor_ )
-  		: filepath_(filepath), cursor(cursor_){}
-  	virtual ~TextCursorInsertLink(){}
-  	virtual QString commandName(){ return QString("TextCursorInsertLink"); }
-  	void execute();
+    TextCursorInsertLink( QString filepath, QTextCursor& cursor_ )
+      : filepath_(filepath), cursor(cursor_){}
+    virtual ~TextCursorInsertLink(){}
+    virtual QString commandName(){ return QString("TextCursorInsertLink"); }
+    void execute();
 
   private:
-  	QString filepath_;
-  	QTextCursor cursor;
+    QString filepath_;
+    QTextCursor cursor;
   };
 }
 

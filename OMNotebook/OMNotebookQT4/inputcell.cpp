@@ -81,10 +81,10 @@ namespace IAEX
   class SleeperThread : public QThread
   {
   public:
-  	static void msleep(unsigned long msecs)
-  	{
-  		QThread::msleep(msecs);
-  	}
+    static void msleep(unsigned long msecs)
+    {
+      QThread::msleep(msecs);
+    }
   };
 
 
@@ -98,9 +98,9 @@ namespace IAEX
    * clicks on the editor
    */
   MyTextEdit::MyTextEdit(QWidget *parent)
-  	: QTextBrowser(parent),
-  	inCommand(false),
-  	stopHighlighter(false)
+    : QTextBrowser(parent),
+    inCommand(false),
+    stopHighlighter(false)
   {
   }
 
@@ -110,7 +110,7 @@ namespace IAEX
 
   bool MyTextEdit::isStopingHighlighter()
   {
-  	return stopHighlighter;
+    return stopHighlighter;
   }
 
   /*!
@@ -126,17 +126,17 @@ namespace IAEX
    */
   void MyTextEdit::mousePressEvent(QMouseEvent *event)
   {
-  	stopHighlighter = false;
-  	inCommand = false;
-  	QTextBrowser::mousePressEvent(event);
+    stopHighlighter = false;
+    inCommand = false;
+    QTextBrowser::mousePressEvent(event);
 
-  	if( event->modifiers() == Qt::ShiftModifier ||
-  		textCursor().hasSelection() )
-  	{
-  		return;
-  	}
+    if( event->modifiers() == Qt::ShiftModifier ||
+      textCursor().hasSelection() )
+    {
+      return;
+    }
 
-  	emit clickOnCell();
+    emit clickOnCell();
   }
 
   /*!
@@ -148,9 +148,9 @@ namespace IAEX
    */
   void MyTextEdit::wheelEvent(QWheelEvent * event)
   {
-  	// ignore event and send it up in the event hierarchy
-  	event->ignore();
-  	emit wheelMove( event );
+    // ignore event and send it up in the event hierarchy
+    event->ignore();
+    emit wheelMove( event );
   }
 
   /*!
@@ -166,124 +166,124 @@ namespace IAEX
   void MyTextEdit::keyPressEvent(QKeyEvent *event )
   {
 
-  	// EVAL, key: SHIFT + RETURN || SHIFT + ENTER
-  	if( event->modifiers() == Qt::ShiftModifier &&
+    // EVAL, key: SHIFT + RETURN || SHIFT + ENTER
+    if( event->modifiers() == Qt::ShiftModifier &&
 
-  		(event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter) )
-  	{
-  		inCommand = false;
-  		stopHighlighter = false;
+      (event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter) )
+    {
+      inCommand = false;
+      stopHighlighter = false;
 
-  		event->accept();
-  		emit eval();
-  	}
-  	// COMMAND COMPLETION, key: SHIFT + TAB (= BACKTAB) || CTRL + SPACE
-  	else if( (event->modifiers() == Qt::ShiftModifier && event->key() == Qt::Key_Backtab ) ||
-  		(event->modifiers() == Qt::ControlModifier && event->key() == Qt::Key_Space) )
-  	{
-  		stopHighlighter = false;
+      event->accept();
+      emit eval();
+    }
+    // COMMAND COMPLETION, key: SHIFT + TAB (= BACKTAB) || CTRL + SPACE
+    else if( (event->modifiers() == Qt::ShiftModifier && event->key() == Qt::Key_Backtab ) ||
+      (event->modifiers() == Qt::ControlModifier && event->key() == Qt::Key_Space) )
+    {
+      stopHighlighter = false;
 
-  		event->accept();
-  		if( inCommand )
-  		{
-  			emit nextCommand();
-  		}
-  		else
-  		{
-  			inCommand = true;
-  			emit command();
-  		}
-  	}
-  	// COMMAND COMPLETION- NEXT FIELD, key: CTRL + TAB
-  	else if( event->modifiers() == Qt::ControlModifier &&
-  		event->key() == Qt::Key_Tab )
-  	{
-  		stopHighlighter = false;
+      event->accept();
+      if( inCommand )
+      {
+        emit nextCommand();
+      }
+      else
+      {
+        inCommand = true;
+        emit command();
+      }
+    }
+    // COMMAND COMPLETION- NEXT FIELD, key: CTRL + TAB
+    else if( event->modifiers() == Qt::ControlModifier &&
+      event->key() == Qt::Key_Tab )
+    {
+      stopHighlighter = false;
 
-  		event->accept();
-  		inCommand = false;
-  		emit nextField();
-  	}
-  	// BACKSPACE, DELETE
-  	else if( event->key() == Qt::Key_Backspace ||
-  		event->key() == Qt::Key_Delete )
-  	{
-  		inCommand = false;
-  		stopHighlighter = true;
+      event->accept();
+      inCommand = false;
+      emit nextField();
+    }
+    // BACKSPACE, DELETE
+    else if( event->key() == Qt::Key_Backspace ||
+      event->key() == Qt::Key_Delete )
+    {
+      inCommand = false;
+      stopHighlighter = true;
 
-  		QTextBrowser::keyPressEvent( event );
-  	}
-  	// ALT+ENTER (ignore)
-  	else if( event->modifiers() == Qt::AltModifier &&
-  		( event->key() == Qt::Key_Enter || event->key() == Qt::Key_Return ))
-  	{
-  		inCommand = false;
-  		stopHighlighter = false;
+      QTextBrowser::keyPressEvent( event );
+    }
+    // ALT+ENTER (ignore)
+    else if( event->modifiers() == Qt::AltModifier &&
+      ( event->key() == Qt::Key_Enter || event->key() == Qt::Key_Return ))
+    {
+      inCommand = false;
+      stopHighlighter = false;
 
-  		event->ignore();
-  	}
-  	// PAGE UP (ignore)
-  	else if( event->key() == Qt::Key_PageUp )
-  	{
-  		inCommand = false;
-  		stopHighlighter = false;
+      event->ignore();
+    }
+    // PAGE UP (ignore)
+    else if( event->key() == Qt::Key_PageUp )
+    {
+      inCommand = false;
+      stopHighlighter = false;
 
-  		event->ignore();
-  	}
-  	// PAGE DOWN (ignore)
-  	else if( event->key() == Qt::Key_PageDown )
-  	{
-  		inCommand = false;
-  		stopHighlighter = false;
+      event->ignore();
+    }
+    // PAGE DOWN (ignore)
+    else if( event->key() == Qt::Key_PageDown )
+    {
+      inCommand = false;
+      stopHighlighter = false;
 
-  		event->ignore();
-  	}
-  	// CTRL+C
-  	else if( event->modifiers() == Qt::ControlModifier &&
-  		event->key() == Qt::Key_C )
-  	{
-  		inCommand = false;
-  		stopHighlighter = false;
+      event->ignore();
+    }
+    // CTRL+C
+    else if( event->modifiers() == Qt::ControlModifier &&
+      event->key() == Qt::Key_C )
+    {
+      inCommand = false;
+      stopHighlighter = false;
 
-  		event->ignore();
-  		emit forwardAction( 1 );
-  	}
-  	// CTRL+X
-  	else if( event->modifiers() == Qt::ControlModifier &&
-  		event->key() == Qt::Key_X )
-  	{
-  		inCommand = false;
-  		stopHighlighter = false;
+      event->ignore();
+      emit forwardAction( 1 );
+    }
+    // CTRL+X
+    else if( event->modifiers() == Qt::ControlModifier &&
+      event->key() == Qt::Key_X )
+    {
+      inCommand = false;
+      stopHighlighter = false;
 
-  		event->ignore();
-  		emit forwardAction( 2 );
-  	}
-  	// CTRL+V
-  	else if( event->modifiers() == Qt::ControlModifier &&
-  		event->key() == Qt::Key_V )
-  	{
-  		inCommand = false;
-  		stopHighlighter = false;
+      event->ignore();
+      emit forwardAction( 2 );
+    }
+    // CTRL+V
+    else if( event->modifiers() == Qt::ControlModifier &&
+      event->key() == Qt::Key_V )
+    {
+      inCommand = false;
+      stopHighlighter = false;
 
-  		event->ignore();
-  		emit forwardAction( 3 );
-  	}
+      event->ignore();
+      emit forwardAction( 3 );
+    }
 
-  	// TAB
-  	else if( event->key() == Qt::Key_Tab )
-  	{
-  		inCommand = false;
-  		stopHighlighter = false;
+    // TAB
+    else if( event->key() == Qt::Key_Tab )
+    {
+      inCommand = false;
+      stopHighlighter = false;
 
             textCursor().insertText( "  " );
-  	}
-  	else
-  	{
-  		inCommand = false;
-  		stopHighlighter = false;
+    }
+    else
+    {
+      inCommand = false;
+      stopHighlighter = false;
 
-  		QTextBrowser::keyPressEvent( event );
-  	}
+      QTextBrowser::keyPressEvent( event );
+    }
   }
 
   /*!
@@ -296,15 +296,15 @@ namespace IAEX
    */
   void MyTextEdit::insertFromMimeData(const QMimeData *source)
   {
-  	if( source->hasText() )
-  	{
-  		QMimeData *newSource = new QMimeData();
-  		newSource->setText( source->text() );
-  		QTextBrowser::insertFromMimeData( newSource );
-  		delete newSource;
-  	}
-  	else
-  		QTextBrowser::insertFromMimeData( source );
+    if( source->hasText() )
+    {
+      QMimeData *newSource = new QMimeData();
+      newSource->setText( source->text() );
+      QTextBrowser::insertFromMimeData( newSource );
+      delete newSource;
+    }
+    else
+      QTextBrowser::insertFromMimeData( source );
   }
 
   /*!
@@ -338,29 +338,29 @@ namespace IAEX
    * the document to insert images to the output part if ploting.
    */
   InputCell::InputCell(Document *doc, QWidget *parent)
-  	: Cell(parent),
-  	evaluated_(false),
-  	closed_(true),
-  	delegate_(0),
-  	oldHeight_( 0 ),
-  	document_(doc)
+    : Cell(parent),
+    evaluated_(false),
+    closed_(true),
+    delegate_(0),
+    oldHeight_( 0 ),
+    document_(doc)
   {
-  	QWidget *main = new QWidget(this);
-  	setMainWidget(main);
+    QWidget *main = new QWidget(this);
+    setMainWidget(main);
 
-  	layout_ = new QGridLayout(mainWidget());
-  	layout_->setMargin(0);
-  	layout_->setSpacing(0);
+    layout_ = new QGridLayout(mainWidget());
+    layout_->setMargin(0);
+    layout_->setSpacing(0);
 
-  	setTreeWidget(new InputTreeView(this));
+    setTreeWidget(new InputTreeView(this));
 
-  	//2005-10-07 AF, Porting, change from 'QWidget::' to 'Qt::'
-  	setFocusPolicy(Qt::NoFocus);
+    //2005-10-07 AF, Porting, change from 'QWidget::' to 'Qt::'
+    setFocusPolicy(Qt::NoFocus);
 
-  	createInputCell();
-  	createOutputCell();
+    createInputCell();
+    createOutputCell();
 
-  	//setBackgroundColor(QColor(200,200,255));
+    //setBackgroundColor(QColor(200,200,255));
   }
 
   /*!
@@ -370,30 +370,30 @@ namespace IAEX
    */
   InputCell::~InputCell()
   {
-  	//2006-01-05 AF, check if input texteditor is in the highlighter,
-  	//if it is - wait for 60 ms and check again.
-  	HighlighterThread *thread = HighlighterThread::instance();
-  	int sleepTime = 0;
-  	bool firstTime = true;
-  	while( thread->haveEditor( input_ ) )
-  	{
-  		if( firstTime )
-  		{
-  			thread->removeEditor( input_ );
-  			firstTime = false;
-  		}
+    //2006-01-05 AF, check if input texteditor is in the highlighter,
+    //if it is - wait for 60 ms and check again.
+    HighlighterThread *thread = HighlighterThread::instance();
+    int sleepTime = 0;
+    bool firstTime = true;
+    while( thread->haveEditor( input_ ) )
+    {
+      if( firstTime )
+      {
+        thread->removeEditor( input_ );
+        firstTime = false;
+      }
 
-  		SleeperThread::msleep( 60 );
-  		sleepTime++;
+      SleeperThread::msleep( 60 );
+      sleepTime++;
 
-  		if( sleepTime > 100 )
-  			break;
-  	}
+      if( sleepTime > 100 )
+        break;
+    }
 
 
-  	delete input_;
-  	delete output_;
-  	//delete syntaxHighlighter_;
+    delete input_;
+    delete output_;
+    //delete syntaxHighlighter_;
   }
 
   /*!
@@ -413,58 +413,58 @@ namespace IAEX
    */
   void InputCell::createInputCell()
   {
-  	input_ = new MyTextEdit( mainWidget() );
-  	layout_->addWidget( input_, 1, 1 );
+    input_ = new MyTextEdit( mainWidget() );
+    layout_->addWidget( input_, 1, 1 );
 
-  	// 2006-03-02 AF, Add a chapter counter
-  	createChapterCounter();
+    // 2006-03-02 AF, Add a chapter counter
+    createChapterCounter();
 
-  	//input_->setReadOnly( false );
-  	input_->setReadOnly( true );
-  	input_->setUndoRedoEnabled( true );
-  	//input_->setFrameStyle( QFrame::NoFrame );
-  	input_->setFrameShape( QFrame::Box );
-  	input_->setAutoFormatting( QTextEdit::AutoNone );
+    //input_->setReadOnly( false );
+    input_->setReadOnly( true );
+    input_->setUndoRedoEnabled( true );
+    //input_->setFrameStyle( QFrame::NoFrame );
+    input_->setFrameShape( QFrame::Box );
+    input_->setAutoFormatting( QTextEdit::AutoNone );
 
-  	input_->setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
-  	input_->setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
-//  	input_->setContextMenuPolicy( Qt::NoContextMenu );
+    input_->setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
+    input_->setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
+//    input_->setContextMenuPolicy( Qt::NoContextMenu );
 
-  	QPalette palette;
-  	palette.setColor(input_->backgroundRole(), QColor(200,200,255));
-  	input_->setPalette(palette);
+    QPalette palette;
+    palette.setColor(input_->backgroundRole(), QColor(200,200,255));
+    input_->setPalette(palette);
 
-  	// is this needed, don't know /AF
-  	input_->installEventFilter(this);
+    // is this needed, don't know /AF
+    input_->installEventFilter(this);
 
 
-  	connect( input_, SIGNAL( textChanged() ),
-  		this, SLOT( contentChanged() ));
+    connect( input_, SIGNAL( textChanged() ),
+      this, SLOT( contentChanged() ));
 
-  		connect( input_, SIGNAL( clickOnCell() ),
-  		this, SLOT( clickEvent() ));
-  	connect( input_, SIGNAL( wheelMove(QWheelEvent*) ),
-  		this, SLOT( wheelEvent(QWheelEvent*) ));
-  	// 2005-12-15 AF, new connections
-  	connect( input_, SIGNAL( eval() ),
-  		this, SLOT( eval() ));
-  	connect( input_, SIGNAL( command() ),
-  		this, SLOT( command() ));
-  	connect( input_, SIGNAL( nextCommand() ),
-  		this, SLOT( nextCommand() ));
-  	connect( input_, SIGNAL( nextField() ),
-  		this, SLOT( nextField() ));
-  	//2005-12-29 AF
-  	connect( input_, SIGNAL( textChanged() ),
-  		this, SLOT( addToHighlighter() ));
-  	// 2006-01-17 AF, new...
-  	connect( input_, SIGNAL( currentCharFormatChanged(const QTextCharFormat &) ),
-  		this, SLOT( charFormatChanged(const QTextCharFormat &) ));
-  	// 2006-04-27 AF,
-  	connect( input_, SIGNAL( forwardAction(int) ),
-  		this, SIGNAL( forwardAction(int) ));
+      connect( input_, SIGNAL( clickOnCell() ),
+      this, SLOT( clickEvent() ));
+    connect( input_, SIGNAL( wheelMove(QWheelEvent*) ),
+      this, SLOT( wheelEvent(QWheelEvent*) ));
+    // 2005-12-15 AF, new connections
+    connect( input_, SIGNAL( eval() ),
+      this, SLOT( eval() ));
+    connect( input_, SIGNAL( command() ),
+      this, SLOT( command() ));
+    connect( input_, SIGNAL( nextCommand() ),
+      this, SLOT( nextCommand() ));
+    connect( input_, SIGNAL( nextField() ),
+      this, SLOT( nextField() ));
+    //2005-12-29 AF
+    connect( input_, SIGNAL( textChanged() ),
+      this, SLOT( addToHighlighter() ));
+    // 2006-01-17 AF, new...
+    connect( input_, SIGNAL( currentCharFormatChanged(const QTextCharFormat &) ),
+      this, SLOT( charFormatChanged(const QTextCharFormat &) ));
+    // 2006-04-27 AF,
+    connect( input_, SIGNAL( forwardAction(int) ),
+      this, SIGNAL( forwardAction(int) ));
 
-  	contentChanged();
+    contentChanged();
   }
 
   /*!
@@ -479,31 +479,31 @@ namespace IAEX
    */
   void InputCell::createOutputCell()
   {
-  	output_ = new MyTextEdit( mainWidget() );
-  	layout_->addWidget( output_, 2, 1 );
+    output_ = new MyTextEdit( mainWidget() );
+    layout_->addWidget( output_, 2, 1 );
 
-  	output_->setReadOnly( true );
-  	//output_->setFrameShape( QFrame::Panel );
-  	output_->setFrameShape( QFrame::Box );
-  	output_->setAutoFormatting( QTextEdit::AutoNone );
+    output_->setReadOnly( true );
+    //output_->setFrameShape( QFrame::Panel );
+    output_->setFrameShape( QFrame::Box );
+    output_->setAutoFormatting( QTextEdit::AutoNone );
 
-  	output_->setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
-  	output_->setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
-//  	output_->setContextMenuPolicy( Qt::NoContextMenu );
+    output_->setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
+    output_->setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
+//    output_->setContextMenuPolicy( Qt::NoContextMenu );
 
-  	connect( output_, SIGNAL( textChanged() ),
-  		this, SLOT(contentChanged()));
-  	connect( output_, SIGNAL( clickOnCell() ),
-  		this, SLOT( clickEventOutput() ));
-  	connect( output_, SIGNAL( wheelMove(QWheelEvent*) ),
-  		this, SLOT( wheelEvent(QWheelEvent*) ));
+    connect( output_, SIGNAL( textChanged() ),
+      this, SLOT(contentChanged()));
+    connect( output_, SIGNAL( clickOnCell() ),
+      this, SLOT( clickEventOutput() ));
+    connect( output_, SIGNAL( wheelMove(QWheelEvent*) ),
+      this, SLOT( wheelEvent(QWheelEvent*) ));
 
-  	connect(output_, SIGNAL(forwardAction(int)), this, SIGNAL(forwardAction(int)));
+    connect(output_, SIGNAL(forwardAction(int)), this, SIGNAL(forwardAction(int)));
 
-  	setOutputStyle();
+    setOutputStyle();
 
 
-  	output_->hide();
+    output_->hide();
   }
 
   /*!
@@ -514,28 +514,28 @@ namespace IAEX
    */
   void InputCell::setOutputStyle()
   {
-  	// Set the correct style for the QTextEdit output_
-  	output_->selectAll();
+    // Set the correct style for the QTextEdit output_
+    output_->selectAll();
 
-  	Stylesheet *sheet = Stylesheet::instance( "stylesheet.xml" );
-  	CellStyle style = sheet->getStyle( "Output" );
+    Stylesheet *sheet = Stylesheet::instance( "stylesheet.xml" );
+    CellStyle style = sheet->getStyle( "Output" );
 
-  	if( style.name() != "null" )
-  	{
-  		output_->setAlignment( (Qt::AlignmentFlag)style.alignment() );
-  		output_->mergeCurrentCharFormat( (*style.textCharFormat()) );
-  		output_->document()->rootFrame()->setFrameFormat( (*style.textFrameFormat()) );
-  	}
-  	else
-  	{
-  		// 2006-01-30 AF, add message box
-  		QString msg = "No Output style defened, please define a Output style in stylesheet.xml";
-  		QMessageBox::warning( 0, "Warning", msg, "OK" );
-  	}
+    if( style.name() != "null" )
+    {
+      output_->setAlignment( (Qt::AlignmentFlag)style.alignment() );
+      output_->mergeCurrentCharFormat( (*style.textCharFormat()) );
+      output_->document()->rootFrame()->setFrameFormat( (*style.textFrameFormat()) );
+    }
+    else
+    {
+      // 2006-01-30 AF, add message box
+      QString msg = "No Output style defened, please define a Output style in stylesheet.xml";
+      QMessageBox::warning( 0, "Warning", msg, "OK" );
+    }
 
-  	QTextCursor cursor = output_->textCursor();
-  	cursor.clearSelection();
-  	output_->setTextCursor( cursor );
+    QTextCursor cursor = output_->textCursor();
+    cursor.clearSelection();
+    output_->setTextCursor( cursor );
   }
 
   /*!
@@ -546,20 +546,20 @@ namespace IAEX
    */
   void InputCell::createChapterCounter()
   {
-  	chaptercounter_ = new MyTextEdit(this);
-  	chaptercounter_->setFrameStyle( QFrame::NoFrame );
-  	chaptercounter_->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding));
-  	chaptercounter_->setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
-  	chaptercounter_->setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
-  	chaptercounter_->setContextMenuPolicy( Qt::NoContextMenu );
+    chaptercounter_ = new MyTextEdit(this);
+    chaptercounter_->setFrameStyle( QFrame::NoFrame );
+    chaptercounter_->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding));
+    chaptercounter_->setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
+    chaptercounter_->setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
+    chaptercounter_->setContextMenuPolicy( Qt::NoContextMenu );
 
-  	chaptercounter_->setFixedWidth(50);
-  	chaptercounter_->setReadOnly( true );
+    chaptercounter_->setFixedWidth(50);
+    chaptercounter_->setReadOnly( true );
 
-  	connect( chaptercounter_, SIGNAL( clickOnCell() ),
-  		this, SLOT( clickEvent() ));
+    connect( chaptercounter_, SIGNAL( clickOnCell() ),
+      this, SLOT( clickEvent() ));
 
-  	addChapterCounter( chaptercounter_ );
+    addChapterCounter( chaptercounter_ );
   }
 
   /*!
@@ -572,7 +572,7 @@ namespace IAEX
    */
   QString InputCell::text()
   {
-  	return input_->toPlainText();
+    return input_->toPlainText();
   }
 
   /*!
@@ -585,7 +585,7 @@ namespace IAEX
    */
   QString InputCell::textHtml()
   {
-  	return input_->toHtml();
+    return input_->toHtml();
   }
 
   /*!
@@ -599,7 +599,7 @@ namespace IAEX
    */
   QString InputCell::textOutput()
   {
-  	return output_->toPlainText();
+    return output_->toPlainText();
   }
 
   /*!
@@ -613,7 +613,7 @@ namespace IAEX
    */
   QString InputCell::textOutputHtml()
   {
-  	return output_->toHtml();
+    return output_->toHtml();
   }
 
   /*!
@@ -627,7 +627,7 @@ namespace IAEX
    */
   QTextCursor InputCell::textCursor()
   {
-  	return input_->textCursor();
+    return input_->textCursor();
   }
 
   /*!
@@ -640,7 +640,7 @@ namespace IAEX
    */
   QTextEdit *InputCell::textEdit()
   {
-  	return input_;
+    return input_;
   }
 
   /*!
@@ -653,7 +653,7 @@ namespace IAEX
    */
   QTextEdit* InputCell::textEditOutput()
   {
-  	return output_;
+    return output_;
   }
 
   /*!
@@ -673,48 +673,48 @@ namespace IAEX
    */
   void InputCell::setText(QString text)
   {
-  	// 2005-12-16 AF, block signals
-  	input_->document()->blockSignals(true);
+    // 2005-12-16 AF, block signals
+    input_->document()->blockSignals(true);
 
-  	// 2005-10-04 AF, added some code to replace/remove
-  	QString tmp = text.replace("<br>", "\n");
-  	tmp.replace( "&nbsp;&nbsp;&nbsp;&nbsp;", "  " );
+    // 2005-10-04 AF, added some code to replace/remove
+    QString tmp = text.replace("<br>", "\n");
+    tmp.replace( "&nbsp;&nbsp;&nbsp;&nbsp;", "  " );
 
-  	// 2005-12-08 AF, remove any <span style tag
-  	QRegExp spanEnd( "</span>" );
-  	tmp.remove( spanEnd );
-  	int pos = 0;
-  	while( true )
-  	{
-  		int startpos = tmp.indexOf( "<span", pos, Qt::CaseInsensitive );
-  		if( startpos >= 0 )
-  		{
-  			int endpos = tmp.indexOf( "\">", startpos );
-  			if( endpos >= 0 )
-  			{
-  				endpos += 2;
-  				tmp.remove( startpos, endpos - startpos );
-  			}
-  			else
-  				break;
-  		}
-  		else
-  			break;
+    // 2005-12-08 AF, remove any <span style tag
+    QRegExp spanEnd( "</span>" );
+    tmp.remove( spanEnd );
+    int pos = 0;
+    while( true )
+    {
+      int startpos = tmp.indexOf( "<span", pos, Qt::CaseInsensitive );
+      if( startpos >= 0 )
+      {
+        int endpos = tmp.indexOf( "\">", startpos );
+        if( endpos >= 0 )
+        {
+          endpos += 2;
+          tmp.remove( startpos, endpos - startpos );
+        }
+        else
+          break;
+      }
+      else
+        break;
 
-  		pos = startpos;
+      pos = startpos;
 
-  	}
+    }
 
-  	// set the text
-  	input_->setPlainText( tmp );
+    // set the text
+    input_->setPlainText( tmp );
 
-  	// 2005-12-16 AF, unblock signals and tell highlighter to highlight
-  	input_->document()->blockSignals(false);
+    // 2005-12-16 AF, unblock signals and tell highlighter to highlight
+    input_->document()->blockSignals(false);
 //      input_->document()->setHtml( input_->toHtml() );
 //      input_->document()->setPlainText( input_->toPlainText() );   // This causes a crash with Qt >= 4.2
-  	input_->document()->rootFrame()->setFrameFormat( (*style_.textFrameFormat()) );
+    input_->document()->rootFrame()->setFrameFormat( (*style_.textFrameFormat()) );
 
-  	contentChanged();
+    contentChanged();
   }
 
   /*!
@@ -730,10 +730,10 @@ namespace IAEX
    */
   void InputCell::setTextHtml(QString html)
   {
-  	input_->setHtml( html );
-  	setStyle( style_ );
+    input_->setHtml( html );
+    setStyle( style_ );
 
-  	contentChanged();
+    contentChanged();
   }
 
   /*!
@@ -746,14 +746,14 @@ namespace IAEX
    */
   void InputCell::setTextOutput(QString text)
   {
-  	if( !text.isNull() && !text.isEmpty() )
-  	{
-  		output_->setPlainText( text );
-  		evaluated_ = true;
-  		//setClosed( false );
+    if( !text.isNull() && !text.isEmpty() )
+    {
+      output_->setPlainText( text );
+      evaluated_ = true;
+      //setClosed( false );
 
-  		contentChanged();
-  	}
+      contentChanged();
+    }
   }
 
   /*!
@@ -770,14 +770,14 @@ namespace IAEX
    */
   void InputCell::setTextOutputHtml(QString html)
   {
-  	if( !html.isNull() && !html.isEmpty() )
-  	{
-  		output_->setHtml( html );
-  		evaluated_ = true;
-  		//setClosed( false );
+    if( !html.isNull() && !html.isEmpty() )
+    {
+      output_->setHtml( html );
+      evaluated_ = true;
+      //setClosed( false );
 
-  		contentChanged();
-  	}
+      contentChanged();
+    }
   }
 
   /*!
@@ -793,7 +793,7 @@ namespace IAEX
    */
   void InputCell::setStyle(const QString &)
   {
-  	Cell::setStyle( "Input" );
+    Cell::setStyle( "Input" );
   }
 
   /*!
@@ -814,43 +814,43 @@ namespace IAEX
    */
   void InputCell::setStyle(CellStyle style)
   {
-  	if( style.name() == "Input" )
-  	{
-  		Cell::setStyle( style );
+    if( style.name() == "Input" )
+    {
+      Cell::setStyle( style );
 
-  		// select all the text
-  		input_->selectAll();
+      // select all the text
+      input_->selectAll();
 
-  		// set the new style settings
-  		input_->setAlignment( (Qt::AlignmentFlag)style_.alignment() );
-  		input_->mergeCurrentCharFormat( (*style_.textCharFormat()) );
-  		input_->document()->rootFrame()->setFrameFormat( (*style_.textFrameFormat()) );
+      // set the new style settings
+      input_->setAlignment( (Qt::AlignmentFlag)style_.alignment() );
+      input_->mergeCurrentCharFormat( (*style_.textCharFormat()) );
+      input_->document()->rootFrame()->setFrameFormat( (*style_.textFrameFormat()) );
 
-  		// unselect the text
-  		QTextCursor cursor(	input_->textCursor() );
-  		cursor.clearSelection();
-  		input_->setTextCursor( cursor );
+      // unselect the text
+      QTextCursor cursor(  input_->textCursor() );
+      cursor.clearSelection();
+      input_->setTextCursor( cursor );
 
-  		// 2006-03-02 AF, set chapter counter style
-  		chaptercounter_->selectAll();
-  		chaptercounter_->mergeCurrentCharFormat( (*style_.textCharFormat()) );
+      // 2006-03-02 AF, set chapter counter style
+      chaptercounter_->selectAll();
+      chaptercounter_->mergeCurrentCharFormat( (*style_.textCharFormat()) );
 
-  		QTextFrameFormat format = chaptercounter_->document()->rootFrame()->frameFormat();
-  		format.setMargin( style_.textFrameFormat()->margin() +
-  		style_.textFrameFormat()->border() +
-  		style_.textFrameFormat()->padding()	);
-  		chaptercounter_->document()->rootFrame()->setFrameFormat( format );
+      QTextFrameFormat format = chaptercounter_->document()->rootFrame()->frameFormat();
+      format.setMargin( style_.textFrameFormat()->margin() +
+      style_.textFrameFormat()->border() +
+      style_.textFrameFormat()->padding()  );
+      chaptercounter_->document()->rootFrame()->setFrameFormat( format );
 
-  		chaptercounter_->setAlignment( (Qt::AlignmentFlag)Qt::AlignRight );
+      chaptercounter_->setAlignment( (Qt::AlignmentFlag)Qt::AlignRight );
 
-  		cursor = chaptercounter_->textCursor();
-  		cursor.clearSelection();
-  		chaptercounter_->setTextCursor( cursor );
-  	}
-  	else
-  	{
-  		setStyle( "Input" );
-  	}
+      cursor = chaptercounter_->textCursor();
+      cursor.clearSelection();
+      chaptercounter_->setTextCursor( cursor );
+    }
+    else
+    {
+      setStyle( "Input" );
+    }
   }
 
   /*!
@@ -861,14 +861,14 @@ namespace IAEX
    */
   void InputCell::setChapterCounter( QString number )
   {
-  	chaptercounter_->selectAll();
-  	chaptercounter_->setPlainText( number );
-  	chaptercounter_->setAlignment( (Qt::AlignmentFlag)Qt::AlignRight );
-  	QTextFrameFormat format = chaptercounter_->document()->rootFrame()->frameFormat();
-  	format.setMargin( style_.textFrameFormat()->margin() +
-  		style_.textFrameFormat()->border() +
-  		style_.textFrameFormat()->padding()	);
-  	chaptercounter_->document()->rootFrame()->setFrameFormat( format );
+    chaptercounter_->selectAll();
+    chaptercounter_->setPlainText( number );
+    chaptercounter_->setAlignment( (Qt::AlignmentFlag)Qt::AlignRight );
+    QTextFrameFormat format = chaptercounter_->document()->rootFrame()->frameFormat();
+    format.setMargin( style_.textFrameFormat()->margin() +
+      style_.textFrameFormat()->border() +
+      style_.textFrameFormat()->padding()  );
+    chaptercounter_->document()->rootFrame()->setFrameFormat( format );
   }
 
   /*!
@@ -880,10 +880,10 @@ namespace IAEX
    */
   QString InputCell::ChapterCounter()
   {
-  	if( chaptercounter_->toPlainText().isEmpty() )
-  		return QString::null;
+    if( chaptercounter_->toPlainText().isEmpty() )
+      return QString::null;
 
-  	return chaptercounter_->toPlainText();
+    return chaptercounter_->toPlainText();
   }
 
   /*!
@@ -895,10 +895,10 @@ namespace IAEX
    */
   QString InputCell::ChapterCounterHtml()
   {
-  	if( chaptercounter_->toPlainText().isEmpty() )
-  		return QString::null;
+    if( chaptercounter_->toPlainText().isEmpty() )
+      return QString::null;
 
-  	return chaptercounter_->toHtml();
+    return chaptercounter_->toHtml();
   }
 
   /*!
@@ -914,23 +914,23 @@ namespace IAEX
    */
   void InputCell::setReadOnly(const bool readonly)
   {
-  	if( readonly )
-  	{
-  		QTextCursor cursor = input_->textCursor();
-  		cursor.clearSelection();
-  		input_->setTextCursor( cursor );
+    if( readonly )
+    {
+      QTextCursor cursor = input_->textCursor();
+      cursor.clearSelection();
+      input_->setTextCursor( cursor );
 
-  		cursor = output_->textCursor();
-  		cursor.clearSelection();
-  		output_->setTextCursor( cursor );
+      cursor = output_->textCursor();
+      cursor.clearSelection();
+      output_->setTextCursor( cursor );
 
-  		// 2006-03-02 AF, clear selection in chapter counter
-  		cursor = chaptercounter_->textCursor();
-  		cursor.clearSelection();
-  		chaptercounter_->setTextCursor( cursor );
-  	}
+      // 2006-03-02 AF, clear selection in chapter counter
+      cursor = chaptercounter_->textCursor();
+      cursor.clearSelection();
+      chaptercounter_->setTextCursor( cursor );
+    }
 
-  	input_->setReadOnly(readonly);
+    input_->setReadOnly(readonly);
   }
 
   /*!
@@ -943,7 +943,7 @@ namespace IAEX
    */
   void InputCell::setEvaluated(const bool evaluated)
   {
-  	evaluated_ = evaluated;
+    evaluated_ = evaluated;
   }
 
   /*!
@@ -959,16 +959,16 @@ namespace IAEX
    */
   void InputCell::setClosed(const bool closed, bool update)
   {
-  	if( closed )
-  		output_->hide();
-  	else
-  	{
-  		if( evaluated_ )
-  			output_->show();
-  	}
+    if( closed )
+      output_->hide();
+    else
+    {
+      if( evaluated_ )
+        output_->show();
+    }
 
-  	closed_ = closed;
-  	contentChanged();
+    closed_ = closed;
+    contentChanged();
   }
 
   /*!
@@ -976,8 +976,8 @@ namespace IAEX
    */
   void InputCell::setFocus(const bool focus)
   {
-  	if(focus)
-  		input_->setFocus();
+    if(focus)
+      input_->setFocus();
   }
 
   /*!
@@ -985,8 +985,8 @@ namespace IAEX
    */
   void InputCell::setFocusOutput(const bool focus)
   {
-  	if(focus)
-  		output_->setFocus();
+    if(focus)
+      output_->setFocus();
   }
 
   /*!
@@ -994,8 +994,8 @@ namespace IAEX
    */
   void InputCell::clickEvent()
   {
-  	//if( input_->isReadOnly() )
-  		emit clicked(this);
+    //if( input_->isReadOnly() )
+      emit clicked(this);
   }
 
   /*!
@@ -1003,7 +1003,7 @@ namespace IAEX
    */
   void InputCell::clickEventOutput()
   {
-  	emit clickedOutput(this);
+    emit clickedOutput(this);
   }
 
   /*!
@@ -1018,34 +1018,34 @@ namespace IAEX
    */
   void InputCell::contentChanged()
   {
-  	int height = input_->document()->documentLayout()->documentSize().toSize().height();
+    int height = input_->document()->documentLayout()->documentSize().toSize().height();
 
-  	if( height < 0 )
-  		height = 30;
+    if( height < 0 )
+      height = 30;
 
-  	// add a little extra, just in case /AF
-  	input_->setMinimumHeight( height + 3 );
+    // add a little extra, just in case /AF
+    input_->setMinimumHeight( height + 3 );
 
-  	if( evaluated_ && !closed_ )
-  	{
-  		int outHeight = output_->document()->documentLayout()->documentSize().toSize().height();
+    if( evaluated_ && !closed_ )
+    {
+      int outHeight = output_->document()->documentLayout()->documentSize().toSize().height();
 
-  		if( outHeight < 0 )
-  			outHeight = 30;
+      if( outHeight < 0 )
+        outHeight = 30;
 
-  		output_->setMinimumHeight( outHeight );
-  		height += outHeight;
-  	}
+      output_->setMinimumHeight( outHeight );
+      height += outHeight;
+    }
 
-  	// add a little extra, just in case, emit 'heightChanged()' if height
-  	// have chagned /AF
-  	setHeight( height + 3 );
-  	emit textChanged();
+    // add a little extra, just in case, emit 'heightChanged()' if height
+    // have chagned /AF
+    setHeight( height + 3 );
+    emit textChanged();
 
-  	if( oldHeight_ != (height + 3) )
-  		emit heightChanged();
+    if( oldHeight_ != (height + 3) )
+      emit heightChanged();
 
-  	oldHeight_ = height + 3;
+    oldHeight_ = height + 3;
   }
 
   /*!
@@ -1059,7 +1059,7 @@ namespace IAEX
    */
   bool InputCell::isClosed()
   {
-  	return closed_;
+    return closed_;
   }
 
   /*!
@@ -1075,7 +1075,7 @@ namespace IAEX
    */
   bool InputCell::isEditable()
   {
-  	return false;
+    return false;
   }
 
   /*!
@@ -1089,7 +1089,7 @@ namespace IAEX
    */
   bool InputCell::isEvaluated()
   {
-  	return evaluated_;
+    return evaluated_;
   }
 
   /*!
@@ -1106,24 +1106,24 @@ namespace IAEX
    */
   bool InputCell::isJavaPlot(QString text)
   {
-  	QRegExp exp( "plot2\\((.*)|plotParametric2\\((.*)" );
+    QRegExp exp( "plot2\\((.*)|plotParametric2\\((.*)" );
 
 
-  	if( text.isNull() )
-  	{
-  		if( 0 <= input_->toPlainText().indexOf( exp, 0 ) )
-  			return true;
-  		else
-  			return false;
-  	}
-  	else
-  	{
-  		if( 0 <= text.indexOf( exp, 0 ) )
-  			return true;
-  		else
-  			return false;
+    if( text.isNull() )
+    {
+      if( 0 <= input_->toPlainText().indexOf( exp, 0 ) )
+        return true;
+      else
+        return false;
+    }
+    else
+    {
+      if( 0 <= text.indexOf( exp, 0 ) )
+        return true;
+      else
+        return false;
 
-  	}
+    }
   }
 
 
@@ -1149,206 +1149,206 @@ namespace IAEX
    */
   void InputCell::eval()
   {
-  	input_->blockSignals(true);
-  	output_->blockSignals(true);
+    input_->blockSignals(true);
+    output_->blockSignals(true);
 
-  	if( hasDelegate() )
-  	{
-  		// Only the text, no html tags. /AF
-  		QString expr = input_->toPlainText();
-  		//expr = expr.simplified();
-
-
-  		QString openmodelica = OmcInteractiveEnvironment::OpenModelicaHome();
-  		if( openmodelica.isEmpty() )
-  			QMessageBox::critical( 0, "OpenModelica Error", "Could not find environment variable OPENMODELICAHOME; OMNotebook will therefore not work correctly" );
-
-  		if( openmodelica.endsWith("/") || openmodelica.endsWith( "\\") )
-  			openmodelica += "tmp/";
-  		else
-  			openmodelica += "/tmp/";
-
-  		QString imagename = "omc_tmp_plot.png";
-
-  		QDir dir1 = QDir::current();
-  		QString filename1 = dir1.absolutePath();
-
-  		QDir dir2 = QDir::current(); dir2.setPath( openmodelica );
-  		QString filename2 = dir2.absolutePath();
-  		if( !filename1.endsWith( "/" ) ) filename1 += "/";
-  		filename1 += imagename;
-  		if( !filename2.endsWith( "/" ) ) filename2 += "/";
-  		filename2 += imagename;
-
-  		// 2006-02-17 AF,
-  		evaluated_ = true;
-  		setClosed(false);
-
-  		// 2006-02-17 AF, set text '{evaluation expression}" during
-  		// evaluation of expressiuon
-  		output_->selectAll();
-  		output_->textCursor().insertText( "{evaluating expression}" );
-  		setOutputStyle();
-  		//output_->setPlainText( "{evaluating expression}" );
-  		output_->update();
-  		QCoreApplication::processEvents();
+    if( hasDelegate() )
+    {
+      // Only the text, no html tags. /AF
+      QString expr = input_->toPlainText();
+      //expr = expr.simplified();
 
 
-  		// remove plot.png if it already exist, don't want any
-  		// old plot.
-  		if( isJavaPlot(input_->toPlainText()) )
-  		{
-  			if( dir1.exists( imagename ))
-  				dir1.remove( imagename );
-  			if( dir2.exists( imagename ))
-  				dir2.remove( imagename );
-  		}
+      QString openmodelica = OmcInteractiveEnvironment::OpenModelicaHome();
+      if( openmodelica.isEmpty() )
+        QMessageBox::critical( 0, "OpenModelica Error", "Could not find environment variable OPENMODELICAHOME; OMNotebook will therefore not work correctly" );
 
-  		// 2006-02-02 AF, Added try-catch
-  		try
-  		{
-  			delegate()->evalExpression( expr );
-  		}
-  		catch( exception &e )
-  		{
-  			exceptionInEval(e);
-  			input_->blockSignals(false);
-  			output_->blockSignals(false);
-  			return;
-  		}
+      if( openmodelica.endsWith("/") || openmodelica.endsWith( "\\") )
+        openmodelica += "tmp/";
+      else
+        openmodelica += "/tmp/";
 
-  		// 2005-11-24 AF, added check to see if the user wants to quit
-  		if( 0 == expr.indexOf( "quit()", 0, Qt::CaseSensitive ))
-  		{
-  			qApp->closeAllWindows();
-  			input_->blockSignals(false);
-  			output_->blockSignals(false);
-  			return;
-  		}
+      QString imagename = "omc_tmp_plot.png";
 
-  		// get the result
-  		QString res = delegate()->getResult();
-  		QString error;
+      QDir dir1 = QDir::current();
+      QString filename1 = dir1.absolutePath();
 
-  		// 2006-02-02 AF, Added try-catch
-  		try
-  		{
-  			error = delegate()->getError();
-  		}
-  		catch( exception &e )
-  		{
-  			exceptionInEval(e);
-  			input_->blockSignals(false);
-  			output_->blockSignals(false);
-  			return;
-  		}
+      QDir dir2 = QDir::current(); dir2.setPath( openmodelica );
+      QString filename2 = dir2.absolutePath();
+      if( !filename1.endsWith( "/" ) ) filename1 += "/";
+      filename1 += imagename;
+      if( !filename2.endsWith( "/" ) ) filename2 += "/";
+      filename2 += imagename;
+
+      // 2006-02-17 AF,
+      evaluated_ = true;
+      setClosed(false);
+
+      // 2006-02-17 AF, set text '{evaluation expression}" during
+      // evaluation of expressiuon
+      output_->selectAll();
+      output_->textCursor().insertText( "{evaluating expression}" );
+      setOutputStyle();
+      //output_->setPlainText( "{evaluating expression}" );
+      output_->update();
+      QCoreApplication::processEvents();
 
 
-  		// if the expression is a plot command and the is no errors
-  		// in the result, find the image and insert it into the
-  		// output part of the cell.
-  		if( isJavaPlot(input_->toPlainText()) && error.isEmpty() )
-  		{
+      // remove plot.png if it already exist, don't want any
+      // old plot.
+      if( isJavaPlot(input_->toPlainText()) )
+      {
+        if( dir1.exists( imagename ))
+          dir1.remove( imagename );
+        if( dir2.exists( imagename ))
+          dir2.remove( imagename );
+      }
 
-  			output_->selectAll();
-  			output_->textCursor().insertText( "{creating plot}" );
-  			//output_->setPlainText( "{creating plot}" );
-  			output_->update();
-  			QCoreApplication::processEvents();
+      // 2006-02-02 AF, Added try-catch
+      try
+      {
+        delegate()->evalExpression( expr );
+      }
+      catch( exception &e )
+      {
+        exceptionInEval(e);
+        input_->blockSignals(false);
+        output_->blockSignals(false);
+        return;
+      }
 
-  			int sleepTime = 1;
-  			bool firstTry = true;
-  			while( true )
-  			{
-  			        QString filename = "";
-  				bool foundIt = false;
-  				/* Search BOTH $OPENMODELICA/tmp and the current directory! */
-  			        if( dir1.exists( imagename )) { filename = filename1; foundIt = true; }
-  				else if( dir2.exists( imagename )) { filename = filename2; foundIt = true; }
+      // 2005-11-24 AF, added check to see if the user wants to quit
+      if( 0 == expr.indexOf( "quit()", 0, Qt::CaseSensitive ))
+      {
+        qApp->closeAllWindows();
+        input_->blockSignals(false);
+        output_->blockSignals(false);
+        return;
+      }
 
-  				if (foundIt)
-  				{
-  					QImage *image = new QImage( filename );
-  					if( !image->isNull() )
-  					{
-  						QString newname = document_->addImage( image );
-  						QTextCharFormat format = output_->currentCharFormat();
+      // get the result
+      QString res = delegate()->getResult();
+      QString error;
 
-  						QTextImageFormat imageformat;
-  						imageformat.merge( format );
-  						imageformat.setHeight( image->height() );
-  						imageformat.setWidth( image->width() );
-  						imageformat.setName( newname );
+      // 2006-02-02 AF, Added try-catch
+      try
+      {
+        error = delegate()->getError();
+      }
+      catch( exception &e )
+      {
+        exceptionInEval(e);
+        input_->blockSignals(false);
+        output_->blockSignals(false);
+        return;
+      }
 
-  						output_->selectAll();
-  						//output_->textCursor().insertText( "{Plot - Generated by PtPlot}" );
-  						//output_->setPlainText("{Plot}\n");
-  						QTextCursor outCursor = output_->textCursor();
-  						//outCursor.movePosition( QTextCursor::End );
-  						outCursor.insertImage( imageformat );
-  						break;
-  					}
-  					else
-  					{
-  						if( firstTry )
-  						{
-  							firstTry = false;
-  							delete image;
-  						}
-  						else
-  						{
-  							output_->selectAll();
-  							output_->textCursor().insertText( "[Error] Unable to read plot image \"" +
-  											  filename1 + " or " + filename2 + "\". Please retry." );
-  							break;
-  						}
-  					}
-  				}
 
-  				if( sleepTime > 25 )
-  				{
-  					output_->selectAll();
-  					output_->textCursor().insertText( "[Error] Unable to find plot image \"" +
-  									  filename1 + " or " + filename2 + "\"" );
-  					break;
-  				}
+      // if the expression is a plot command and the is no errors
+      // in the result, find the image and insert it into the
+      // output part of the cell.
+      if( isJavaPlot(input_->toPlainText()) && error.isEmpty() )
+      {
 
-  				SleeperThread::msleep( 1000 );
-  				sleepTime++;
-  			}
+        output_->selectAll();
+        output_->textCursor().insertText( "{creating plot}" );
+        //output_->setPlainText( "{creating plot}" );
+        output_->update();
+        QCoreApplication::processEvents();
 
-  		}
-  		else
-  		{
-  			// check if resualt is empty
-  			if( res.isEmpty() && error.isEmpty() )
-  				res = "[done]";
+        int sleepTime = 1;
+        bool firstTry = true;
+        while( true )
+        {
+                QString filename = "";
+          bool foundIt = false;
+          /* Search BOTH $OPENMODELICA/tmp and the current directory! */
+                if( dir1.exists( imagename )) { filename = filename1; foundIt = true; }
+          else if( dir2.exists( imagename )) { filename = filename2; foundIt = true; }
 
-  			if( !error.isEmpty() )
-  				res += QString("\n") + error;
+          if (foundIt)
+          {
+            QImage *image = new QImage( filename );
+            if( !image->isNull() )
+            {
+              QString newname = document_->addImage( image );
+              QTextCharFormat format = output_->currentCharFormat();
 
-  			output_->selectAll();
-  			output_->textCursor().insertText( res );
-  			//output_->setPlainText( res );
-  		}
+              QTextImageFormat imageformat;
+              imageformat.merge( format );
+              imageformat.setHeight( image->height() );
+              imageformat.setWidth( image->width() );
+              imageformat.setName( newname );
 
-  		++numEvals_;
-  		/* remove the image */
-  		if( dir1.exists( imagename ))
-  		  dir1.remove( imagename );
-  		if( dir2.exists( imagename ))
-  		  dir2.remove( imagename );
+              output_->selectAll();
+              //output_->textCursor().insertText( "{Plot - Generated by PtPlot}" );
+              //output_->setPlainText("{Plot}\n");
+              QTextCursor outCursor = output_->textCursor();
+              //outCursor.movePosition( QTextCursor::End );
+              outCursor.insertImage( imageformat );
+              break;
+            }
+            else
+            {
+              if( firstTry )
+              {
+                firstTry = false;
+                delete image;
+              }
+              else
+              {
+                output_->selectAll();
+                output_->textCursor().insertText( "[Error] Unable to read plot image \"" +
+                          filename1 + " or " + filename2 + "\". Please retry." );
+                break;
+              }
+            }
+          }
 
-  		contentChanged();
+          if( sleepTime > 25 )
+          {
+            output_->selectAll();
+            output_->textCursor().insertText( "[Error] Unable to find plot image \"" +
+                      filename1 + " or " + filename2 + "\"" );
+            break;
+          }
 
-  		//Emit that the text have changed
-  		emit textChanged(true);
-  	}
-  	else
-  		cout << "Not delegate on inputcell" << endl;
+          SleeperThread::msleep( 1000 );
+          sleepTime++;
+        }
 
-  	input_->blockSignals(false);
-  	output_->blockSignals(false);
+      }
+      else
+      {
+        // check if resualt is empty
+        if( res.isEmpty() && error.isEmpty() )
+          res = "[done]";
+
+        if( !error.isEmpty() )
+          res += QString("\n") + error;
+
+        output_->selectAll();
+        output_->textCursor().insertText( res );
+        //output_->setPlainText( res );
+      }
+
+      ++numEvals_;
+      /* remove the image */
+      if( dir1.exists( imagename ))
+        dir1.remove( imagename );
+      if( dir2.exists( imagename ))
+        dir2.remove( imagename );
+
+      contentChanged();
+
+      //Emit that the text have changed
+      emit textChanged(true);
+    }
+    else
+      cout << "Not delegate on inputcell" << endl;
+
+    input_->blockSignals(false);
+    output_->blockSignals(false);
   }
 
   /*!
@@ -1360,45 +1360,45 @@ namespace IAEX
    */
   void InputCell::exceptionInEval(exception &e)
   {
-  	// 2006-0-09 AF, try to reconnect to OMC first.
-  	try
-  	{
-  		delegate_->closeConnection();
-  		delegate_->reconnect();
-  		eval();
-  	}
-  	catch( exception &e )
-  	{
-  		// unable to reconnect, ask if user want to restart omc.
-  		QString msg = QString( e.what() ) + "\n\nUnable to reconnect with OMC. Do you want to restart OMC?";
-  		int result = QMessageBox::critical( 0, tr("Communication Error with OMC"),
-  			msg,
-  			QMessageBox::Yes | QMessageBox::Default,
-  			QMessageBox::No );
+    // 2006-0-09 AF, try to reconnect to OMC first.
+    try
+    {
+      delegate_->closeConnection();
+      delegate_->reconnect();
+      eval();
+    }
+    catch( exception &e )
+    {
+      // unable to reconnect, ask if user want to restart omc.
+      QString msg = QString( e.what() ) + "\n\nUnable to reconnect with OMC. Do you want to restart OMC?";
+      int result = QMessageBox::critical( 0, tr("Communication Error with OMC"),
+        msg,
+        QMessageBox::Yes | QMessageBox::Default,
+        QMessageBox::No );
 
-  		if( result == QMessageBox::Yes )
-  		{
-  			delegate_->closeConnection();
-  			if( delegate_->startDelegate() )
-  			{
-  				// 2006-03-14 AF, wait before trying to reconnect,
-  				// give OMC time to start up
-  				SleeperThread::msleep( 1000 );
+      if( result == QMessageBox::Yes )
+      {
+        delegate_->closeConnection();
+        if( delegate_->startDelegate() )
+        {
+          // 2006-03-14 AF, wait before trying to reconnect,
+          // give OMC time to start up
+          SleeperThread::msleep( 1000 );
 
-  				//delegate_->closeConnection();
-  				try
-  				{
-  					delegate_->reconnect();
-  					eval();
-  				}
-  				catch( exception &e )
-  				{
-  					QMessageBox::critical( 0, tr("Communication Error"),
-  						tr("<B>Unable to communication correctlly with OMC.</B>") );
-  				}
-  			}
-  		}
-  	}
+          //delegate_->closeConnection();
+          try
+          {
+            delegate_->reconnect();
+            eval();
+          }
+          catch( exception &e )
+          {
+            QMessageBox::critical( 0, tr("Communication Error"),
+              tr("<B>Unable to communication correctlly with OMC.</B>") );
+          }
+        }
+      }
+    }
   }
 
   /*!
@@ -1410,11 +1410,11 @@ namespace IAEX
    */
   void InputCell::command()
   {
-  	CommandCompletion *commandcompletion = CommandCompletion::instance( "commands.xml" );
-  	QTextCursor cursor = input_->textCursor();
+    CommandCompletion *commandcompletion = CommandCompletion::instance( "commands.xml" );
+    QTextCursor cursor = input_->textCursor();
 
-  	if( commandcompletion->insertCommand( cursor ))
-  		input_->setTextCursor( cursor );
+    if( commandcompletion->insertCommand( cursor ))
+      input_->setTextCursor( cursor );
   }
 
   /*!
@@ -1426,12 +1426,12 @@ namespace IAEX
    */
   void InputCell::nextCommand()
   {
-  	qDebug("Next Command");
-  	CommandCompletion *commandcompletion = CommandCompletion::instance( "commands.xml" );
-  	QTextCursor cursor = input_->textCursor();
+    qDebug("Next Command");
+    CommandCompletion *commandcompletion = CommandCompletion::instance( "commands.xml" );
+    QTextCursor cursor = input_->textCursor();
 
-  	if( commandcompletion->nextCommand( cursor ))
-  		input_->setTextCursor( cursor );
+    if( commandcompletion->nextCommand( cursor ))
+      input_->setTextCursor( cursor );
   }
 
   /*!
@@ -1442,12 +1442,12 @@ namespace IAEX
    */
   void InputCell::nextField()
   {
-  	qDebug("Next Field");
-  	CommandCompletion *commandcompletion = CommandCompletion::instance( "commands.xml" );
-  	QTextCursor cursor = input_->textCursor();
+    qDebug("Next Field");
+    CommandCompletion *commandcompletion = CommandCompletion::instance( "commands.xml" );
+    QTextCursor cursor = input_->textCursor();
 
-  	if( commandcompletion->nextField( cursor ))
-  		input_->setTextCursor( cursor );
+    if( commandcompletion->nextField( cursor ))
+      input_->setTextCursor( cursor );
   }
 
   /*!
@@ -1462,19 +1462,19 @@ namespace IAEX
    */
   void InputCell::addToHighlighter()
   {
-  	emit textChanged(true);
+    emit textChanged(true);
 
-  	if( input_->toPlainText().isEmpty() )
-  		return;
+    if( input_->toPlainText().isEmpty() )
+      return;
 
-  	// 2006-01-16 AF, Don't add the text editor if mytextedit
-  	// don't allow it. mytextedit says no if the user removes
-  	// text (backspace or delete).
-  	if( dynamic_cast<MyTextEdit *>(input_)->isStopingHighlighter() )
-  		return;
+    // 2006-01-16 AF, Don't add the text editor if mytextedit
+    // don't allow it. mytextedit says no if the user removes
+    // text (backspace or delete).
+    if( dynamic_cast<MyTextEdit *>(input_)->isStopingHighlighter() )
+      return;
 
-  	HighlighterThread *thread = HighlighterThread::instance();
-  	thread->addEditor( input_ );
+    HighlighterThread *thread = HighlighterThread::instance();
+    thread->addEditor( input_ );
   }
 
   /*!
@@ -1487,15 +1487,15 @@ namespace IAEX
    */
   void InputCell::charFormatChanged(const QTextCharFormat &)
   {
-  	//if( input_->toPlainText().isEmpty() )
-  	//{
-  		input_->blockSignals( true );
-  		input_->setAlignment( (Qt::AlignmentFlag)style_.alignment() );
-  		input_->mergeCurrentCharFormat( (*style_.textCharFormat()) );
-  		input_->document()->rootFrame()->setFrameFormat( (*style_.textFrameFormat()) );
-  		input_->blockSignals( false );
-  		contentChanged();
-  	//}
+    //if( input_->toPlainText().isEmpty() )
+    //{
+      input_->blockSignals( true );
+      input_->setAlignment( (Qt::AlignmentFlag)style_.alignment() );
+      input_->mergeCurrentCharFormat( (*style_.textCharFormat()) );
+      input_->document()->rootFrame()->setFrameFormat( (*style_.textFrameFormat()) );
+      input_->blockSignals( false );
+      contentChanged();
+    //}
   }
 
 
@@ -1508,22 +1508,22 @@ namespace IAEX
   */
   void InputCell::setDelegate(InputCellDelegate *d)
   {
-  	delegate_ = d;
+    delegate_ = d;
   }
 
   InputCellDelegate *InputCell::delegate()
   {
-  	if(!hasDelegate())
-  		throw runtime_error("No delegate.");
+    if(!hasDelegate())
+      throw runtime_error("No delegate.");
 
-  	return delegate_;
+    return delegate_;
   }
 
 
 
   bool InputCell::hasDelegate()
   {
-  	return delegate_ != 0;
+    return delegate_ != 0;
   }
 
 
@@ -1541,23 +1541,23 @@ namespace IAEX
   */
   void InputCell::addCellWidgets()
   {
-  	layout_->addWidget(input_,0,0);
+    layout_->addWidget(input_,0,0);
 
-  	if(evaluated_)
-  		layout_->addWidget(output_,1,0);
+    if(evaluated_)
+      layout_->addWidget(output_,1,0);
   }
 
   void InputCell::removeCellWidgets()
   {
-  	/*
-  	// PORT >> layout_->remove(input_);
-  	if(evaluated_)
-  		layout_->remove(output_);
-  		*/
+    /*
+    // PORT >> layout_->remove(input_);
+    if(evaluated_)
+      layout_->remove(output_);
+      */
 
-  	layout_->removeWidget(input_);
-  	if(evaluated_)
-  		layout_->removeWidget(output_);
+    layout_->removeWidget(input_);
+    if(evaluated_)
+      layout_->removeWidget(output_);
   }
 
   /*! \brief resets the input cell. Removes all output data and
@@ -1565,19 +1565,19 @@ namespace IAEX
   */
   void InputCell::clear()
   {
-  	if(evaluated_)
-  	{
-  		output_->clear();
-  		evaluated_ = false;
-  		// PORT >> layout_->remove(output_);
-  		layout_->removeWidget(output_);
-  	}
+    if(evaluated_)
+    {
+      output_->clear();
+      evaluated_ = false;
+      // PORT >> layout_->remove(output_);
+      layout_->removeWidget(output_);
+    }
 
-  	//input_->setReadOnly(false);
-  	input_->setReadOnly(true);
-  	input_->clear();
-  	treeView()->setClosed(false); //Notis this
-  	setClosed(true);
+    //input_->setReadOnly(false);
+    input_->setReadOnly(true);
+    input_->clear();
+    treeView()->setClosed(false); //Notis this
+    setClosed(true);
   }
 
   /*!
@@ -1588,8 +1588,8 @@ namespace IAEX
   */
   void InputCell::resizeEvent(QResizeEvent *event)
   {
-  	contentChanged();
-  	Cell::resizeEvent(event);
+    contentChanged();
+    Cell::resizeEvent(event);
   }
 
 
@@ -1600,24 +1600,24 @@ namespace IAEX
 
   void InputCell::mouseDoubleClickEvent(QMouseEvent *)
   {
-  	// PORT >>if(treeView()->hasMouse())
-  	if(treeView()->testAttribute(Qt::WA_UnderMouse))
-  	{
-  		setClosed(!closed_);
-  	}
+    // PORT >>if(treeView()->hasMouse())
+    if(treeView()->testAttribute(Qt::WA_UnderMouse))
+    {
+      setClosed(!closed_);
+    }
   }
 
   void InputCell::accept(Visitor &v)
   {
-  	v.visitInputCellNodeBefore(this);
+    v.visitInputCellNodeBefore(this);
 
-  	if(hasChilds())
-  		child()->accept(v);
+    if(hasChilds())
+      child()->accept(v);
 
-  	v.visitInputCellNodeAfter(this);
+    v.visitInputCellNodeAfter(this);
 
-  	if(hasNext())
-  		next()->accept(v);
+    if(hasNext())
+      next()->accept(v);
   }
 
 }

@@ -62,31 +62,31 @@ namespace IAEX
 {
   class Stylesheet : public QObject
   {
-  	Q_OBJECT
+    Q_OBJECT
 
   public:
-  	static Stylesheet *instance(const QString &filename);
+    static Stylesheet *instance(const QString &filename);
 
-  	CellStyle getStyle(const QString &style);
-  	QHash<QString,CellStyle> getAvailableStyles() const;
-  	std::vector<QString> getAvailableStyleNames() const;
+    CellStyle getStyle(const QString &style);
+    QHash<QString,CellStyle> getAvailableStyles() const;
+    std::vector<QString> getAvailableStyleNames() const;
 
   protected:
-  	void initializeStyle();
-  	void traverseStyleSettings(QDomNode p, CellStyle *item) const;
-  	void parseBorderTag(QDomElement element, CellStyle *item) const;
-  	void parseAlignmentTag(QDomElement element, CellStyle *item) const;
-  	void parseFontTag(QDomElement element, CellStyle *item) const;
-  	void parseChapterLevelTag(QDomElement element, CellStyle *item) const;
+    void initializeStyle();
+    void traverseStyleSettings(QDomNode p, CellStyle *item) const;
+    void parseBorderTag(QDomElement element, CellStyle *item) const;
+    void parseAlignmentTag(QDomElement element, CellStyle *item) const;
+    void parseFontTag(QDomElement element, CellStyle *item) const;
+    void parseChapterLevelTag(QDomElement element, CellStyle *item) const;
 
   private:
-  	Stylesheet(const QString filename);
+    Stylesheet(const QString filename);
 
-  	QDomDocument *doc_;
-  	static Stylesheet *instance_;
+    QDomDocument *doc_;
+    static Stylesheet *instance_;
 
-  	QHash<QString,CellStyle> styles_;
-  	std::vector<QString> styleNames_;
+    QHash<QString,CellStyle> styles_;
+    std::vector<QString> styleNames_;
   };
 }
 #endif

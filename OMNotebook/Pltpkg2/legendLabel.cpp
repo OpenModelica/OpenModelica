@@ -88,7 +88,7 @@ void LegendLabel::deleteCurve()
 
   int t = graphWidget->curves.indexOf(curve);
   if(t != -1)
-  	graphWidget->curves.removeAt(t);
+    graphWidget->curves.removeAt(t);
   qDeleteAll(curve->dataPoints);
 
   delete curve;
@@ -102,8 +102,8 @@ void LegendLabel::selectColor()
   QColor c = QColorDialog::getColor(color);
   if(c.isValid())
   {
-  	color = c;
-  	curve->setColor(color);
+    color = c;
+    curve->setColor(color);
   }
 }
 
@@ -122,7 +122,7 @@ void LegendLabel::setPointsVisible(bool b)
 
   curve->showPoints(b);
   if(b)
-  	graphWidget->updatePointSizes();
+    graphWidget->updatePointSizes();
 
   curve->dataPoints[0]->scene()->update();
   emit showPoints(b);
@@ -154,7 +154,7 @@ void LegendLabel::render(QPainter* painter, QPointF pos)
   painter->setPen(Qt::black);
   QBrush b;
   if(state)
-  	b = QBrush(color);
+    b = QBrush(color);
 
   painter->setBrush(b);
   painter->setRenderHints(QPainter::Antialiasing);

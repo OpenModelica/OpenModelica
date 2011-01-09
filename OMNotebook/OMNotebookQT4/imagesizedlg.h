@@ -56,55 +56,55 @@ namespace IAEX
   class ImageSizeDlg : public QDialog
   {
   public:
-  	ImageSizeDlg( QWidget *parent, QImage *image)
-  		: QDialog(parent), image_(image)
-  	{
-  		ui.setupUi(this);
+    ImageSizeDlg( QWidget *parent, QImage *image)
+      : QDialog(parent), image_(image)
+    {
+      ui.setupUi(this);
 
-  		QString width;
-  		width.setNum( image->size().width() );
-  		ui.widthEdit->setText( width );
+      QString width;
+      width.setNum( image->size().width() );
+      ui.widthEdit->setText( width );
 
-  		QString height;
-  		height.setNum( image->size().height() );
-  		ui.heightEdit->setText( height );
+      QString height;
+      height.setNum( image->size().height() );
+      ui.heightEdit->setText( height );
 
-  		//set fixed size
+      //set fixed size
 
-  		setMinimumHeight( this->height() );
-  		setMaximumHeight( this->height() );
-  		setMinimumWidth( this->width() );
-  		setMaximumWidth( this->width() );
-  	}
-  	virtual ~ImageSizeDlg(){}
+      setMinimumHeight( this->height() );
+      setMaximumHeight( this->height() );
+      setMinimumWidth( this->width() );
+      setMaximumWidth( this->width() );
+    }
+    virtual ~ImageSizeDlg(){}
 
-  	QSize value()
-  	{
-  		bool heightOK;
-  		bool widthOK;
+    QSize value()
+    {
+      bool heightOK;
+      bool widthOK;
 
-  		int height = ui.heightEdit->text().toInt( &heightOK );
-  		int width = ui.widthEdit->text().toInt( &widthOK );
+      int height = ui.heightEdit->text().toInt( &heightOK );
+      int width = ui.widthEdit->text().toInt( &widthOK );
 
-  		QSize size;
-  		if( heightOK && widthOK )
-  		{
-  			size.setHeight( height );
-  			size.setWidth( width );
-  		}
-  		else
-  		{
-  			size.setHeight( -1 );
-  			size.setWidth( -1 );
-  		}
+      QSize size;
+      if( heightOK && widthOK )
+      {
+        size.setHeight( height );
+        size.setWidth( width );
+      }
+      else
+      {
+        size.setHeight( -1 );
+        size.setWidth( -1 );
+      }
 
-  		return size;
-  	}
+      return size;
+    }
 
 
   private:
-  	Ui::ImageDialog ui;
-  	QImage *image_;
+    Ui::ImageDialog ui;
+    QImage *image_;
   };
 }
 

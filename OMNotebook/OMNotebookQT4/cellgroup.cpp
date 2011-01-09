@@ -76,19 +76,19 @@ namespace IAEX{
    * \brief The class constructor
    */
   CellGroup::CellGroup(QWidget *parent)
-  	: Cell(parent),
-  	closed_(false),
-  	newIndex_(0)
+    : Cell(parent),
+    closed_(false),
+    newIndex_(0)
   {
-  	main_ = new QWidget(this);
+    main_ = new QWidget(this);
 
-  	layout_ = new QGridLayout(main_);
-  	layout_->setMargin(0);
-  	layout_->setSpacing(0);
+    layout_ = new QGridLayout(main_);
+    layout_->setMargin(0);
+    layout_->setSpacing(0);
 
-  	setMainWidget(main_);
+    setMainWidget(main_);
 
-  	style_.setName( "cellgroup" );
+    style_.setName( "cellgroup" );
 
 
   }
@@ -115,8 +115,8 @@ namespace IAEX{
    */
   void CellGroup::setStyle(CellStyle style)
   {
-  	if(closed_)
-  		child()->setStyle(style);
+    if(closed_)
+      child()->setStyle(style);
   }
 
   /*!
@@ -134,12 +134,12 @@ namespace IAEX{
    */
   CellStyle *CellGroup::style()
   {
-  	if(closed_)
-  		return child()->style();
-  	else
-  	{
-  		return &style_;
-  	}
+    if(closed_)
+      return child()->style();
+    else
+    {
+      return &style_;
+    }
   }
 
   /*!
@@ -154,32 +154,32 @@ namespace IAEX{
    */
   void CellGroup::closeChildCells()
   {
-  	if( closed_ )
-  	{
-  		Cell *current = child();
-  		if( current != 0 )
-  		{
-  			current = current->next();
-  			while(current != 0)
-  			{
-  				current->hide();
-  				current = current->next();
-  			}
-  		}
-  	}
-  	else
-  	{
-  		Cell *current = child();
-  		if( current != 0 )
-  		{
-  			current = current->next();
-  			while(current != 0)
-  			{
-  				current->show();
-  				current = current->next();
-  			}
-  		}
-  	}
+    if( closed_ )
+    {
+      Cell *current = child();
+      if( current != 0 )
+      {
+        current = current->next();
+        while(current != 0)
+        {
+          current->hide();
+          current = current->next();
+        }
+      }
+    }
+    else
+    {
+      Cell *current = child();
+      if( current != 0 )
+      {
+        current = current->next();
+        while(current != 0)
+        {
+          current->show();
+          current = current->next();
+        }
+      }
+    }
   }
 
   /*!
@@ -187,7 +187,7 @@ namespace IAEX{
    */
   bool CellGroup::isClosed() const
   {
-  	return closed_;
+    return closed_;
   }
 
   /*!
@@ -203,7 +203,7 @@ namespace IAEX{
    */
   bool CellGroup::isEditable()
   {
-  	return false;
+    return false;
   }
 
   /*!
@@ -217,10 +217,10 @@ namespace IAEX{
    */
   QTextEdit* CellGroup::textEdit()
   {
-  	if( isClosed() && hasChilds() )
-  		return child()->textEdit();
-  	else
-  		return 0;
+    if( isClosed() && hasChilds() )
+      return child()->textEdit();
+    else
+      return 0;
   }
 
   /*!
@@ -245,18 +245,18 @@ namespace IAEX{
    */
   void CellGroup::setClosed(const bool closed, bool update)
   {
-  	closed_ = closed;
+    closed_ = closed;
 
-  	if( hasChilds() )
-  		child()->hideTreeView( closed );
+    if( hasChilds() )
+      child()->hideTreeView( closed );
 
-  	treeView()->setClosed( closed );
-  	setHeight( height() ); //Sends a signal
+    treeView()->setClosed( closed );
+    setHeight( height() ); //Sends a signal
 
 
 
-  	if( update )
-  		emit cellOpened(this, closed_);
+    if( update )
+      emit cellOpened(this, closed_);
   }
 
   /*!
@@ -278,27 +278,27 @@ namespace IAEX{
    */
   int CellGroup::height()
   {
-  	int height = 0;
+    int height = 0;
 
-  	if( closed_ )
-  	{
-  		//Height of the first cell.
-  		height = child()->height();
-  	}
-  	else
-  	{
-  		Cell *current = child();
-  		int h = 0;
-  		while(current != 0)
-  		{
-  			h += current->height();
-  			current = current->next();
-  		}
+    if( closed_ )
+    {
+      //Height of the first cell.
+      height = child()->height();
+    }
+    else
+    {
+      Cell *current = child();
+      int h = 0;
+      while(current != 0)
+      {
+        h += current->height();
+        current = current->next();
+      }
 
-  		height = h;
-  	}
+      height = h;
+    }
 
-  	return height;
+    return height;
   }
 
   /*!
@@ -314,18 +314,18 @@ namespace IAEX{
    */
   void CellGroup::mouseDoubleClickEvent(QMouseEvent *event)
   {
-  	// PORT >>if(treeView()->hasMouse())
-  	if( treeView()->testAttribute(Qt::WA_UnderMouse) )
-  	{
-  		closed_ = !closed_;
-  		setClosed(closed_);
-  		setSelected(false);
-  		closeChildCells();
-  	}
-  	else
-  	{
-  		//Do nothing.
-  	}
+    // PORT >>if(treeView()->hasMouse())
+    if( treeView()->testAttribute(Qt::WA_UnderMouse) )
+    {
+      closed_ = !closed_;
+      setClosed(closed_);
+      setSelected(false);
+      closeChildCells();
+    }
+    else
+    {
+      //Do nothing.
+    }
   }
 
   /*!
@@ -333,15 +333,15 @@ namespace IAEX{
    */
   void CellGroup::adjustHeight()
   {
-  	setHeight( height() );
+    setHeight( height() );
   }
 
   // ***************************************************************
 
   void CellGroup::setFocus(const bool focus)
   {
-  	if(hasChilds())
-  		child()->setFocus(focus);
+    if(hasChilds())
+      child()->setFocus(focus);
   }
 
   /*! \brief Decides if a visitor is allowed to visit the object.
@@ -358,15 +358,15 @@ namespace IAEX{
   */
   void CellGroup::accept(Visitor &v)
   {
-  	v.visitCellGroupNodeBefore(this);
+    v.visitCellGroupNodeBefore(this);
 
-  	if(hasChilds())
-  		child()->accept(v);
+    if(hasChilds())
+      child()->accept(v);
 
-  	v.visitCellGroupNodeAfter(this);
+    v.visitCellGroupNodeAfter(this);
 
-  	if(hasNext())
-  		next()->accept(v);
+    if(hasNext())
+      next()->accept(v);
   }
 
 
@@ -378,27 +378,27 @@ namespace IAEX{
   */
   void CellGroup::addChild(Cell *newCell)
   {
-  	newCell->setParentCell(this);
+    newCell->setParentCell(this);
 
-  	if(hasChilds())
-  	{
-  		Cell *previous = last();
+    if(hasChilds())
+    {
+      Cell *previous = last();
 
-  		newCell->setPrevious(previous);
-  		newCell->setNext(0);
+      newCell->setPrevious(previous);
+      newCell->setNext(0);
 
-  		previous->setNext(newCell);
-  		setLast(newCell);
-  	}
-  	else
-  	{ //First in line.
-  		setChild(newCell);
-  		setLast(newCell);
-  		newCell->setNext(0);
-  		newCell->setPrevious(0);
-  	}
+      previous->setNext(newCell);
+      setLast(newCell);
+    }
+    else
+    { //First in line.
+      setChild(newCell);
+      setLast(newCell);
+      newCell->setNext(0);
+      newCell->setPrevious(0);
+    }
 
-  	addCellWidget(newCell);
+    addCellWidget(newCell);
   }
 
   /*!
@@ -407,86 +407,86 @@ namespace IAEX{
   void CellGroup::removeChild(Cell *aCell)
   {
 
-  	//remove all widgets from parents layout.
-  	Cell *par = aCell->parentCell();
-  	par->removeCellWidgets();
+    //remove all widgets from parents layout.
+    Cell *par = aCell->parentCell();
+    par->removeCellWidgets();
 
-  	Cell *prev = aCell->previous();
-  	Cell *next = aCell->next();
+    Cell *prev = aCell->previous();
+    Cell *next = aCell->next();
 
-  	if(aCell->parentCell()->child() == aCell)
-  		aCell->parentCell()->setChild(aCell->next());
+    if(aCell->parentCell()->child() == aCell)
+      aCell->parentCell()->setChild(aCell->next());
 
-  	if(aCell->parentCell()->last() == aCell)
-  		aCell->parentCell()->setLast(aCell->previous());
+    if(aCell->parentCell()->last() == aCell)
+      aCell->parentCell()->setLast(aCell->previous());
 
-  	if(next)
-  	{
-  		if(prev)
-  			next->setPrevious(prev);
-  	}
+    if(next)
+    {
+      if(prev)
+        next->setPrevious(prev);
+    }
 
-  	if(prev)
-  	{
-  		if(next)
-  			prev->setNext(next);
-  	}
-  	//Insert all widgets again.
-  	par->addCellWidgets();
+    if(prev)
+    {
+      if(next)
+        prev->setNext(next);
+    }
+    //Insert all widgets again.
+    par->addCellWidgets();
   }
 
   //Just add widget. Don´t forget to repaint.
   void CellGroup::addCellWidget(Cell *newCell)
   {
-  	// PORT >> newCell->reparent(mainWidget(), QPoint(0,0), true);
-  	newCell->setParent( mainWidget() );
-  	newCell->move( QPoint(0,0) );
-  	newCell->show();
+    // PORT >> newCell->reparent(mainWidget(), QPoint(0,0), true);
+    newCell->setParent( mainWidget() );
+    newCell->move( QPoint(0,0) );
+    newCell->show();
 
-  	connect(newCell, SIGNAL(heightChanged()),
-  		this, SLOT(adjustHeight()));
+    connect(newCell, SIGNAL(heightChanged()),
+      this, SLOT(adjustHeight()));
 
-  	removeCellWidgets();
-  	addCellWidgets();
+    removeCellWidgets();
+    addCellWidgets();
   }
 
   void CellGroup::removeCellWidgets()
   {
-  	Cell *current = child();
+    Cell *current = child();
 
-  	while(current != 0)
-  	{
-  		// PORT >> layout_->remove(current);
-  		layout_->removeWidget(current);
+    while(current != 0)
+    {
+      // PORT >> layout_->remove(current);
+      layout_->removeWidget(current);
 
-  		current = current->next();
-  	}
+      current = current->next();
+    }
   }
 
   void CellGroup::addCellWidgets()
   {
-  	Cell *current = child();
-  	int i = 0;
+    Cell *current = child();
+    int i = 0;
 
-  	while(current != 0)
-  	{
-  		if(current->parentWidget() != mainWidget())
-  		{
-  			// PORT >> current->reparent(mainWidget(), QPoint(0,0), true);
-  			current->setParent( mainWidget() );
-  			current->move( QPoint(0,0) );
-  			current->show();
+    while(current != 0)
+    {
+      if(current->parentWidget() != mainWidget())
+      {
+        // PORT >> current->reparent(mainWidget(), QPoint(0,0), true);
+        current->setParent( mainWidget() );
+        current->move( QPoint(0,0) );
+        current->show();
 
-  			connect(current, SIGNAL(heightChanged()),
-  				this, SLOT(adjustHeight()));
-  		}
+        connect(current, SIGNAL(heightChanged()),
+          this, SLOT(adjustHeight()));
+      }
 
-  		layout_->addWidget(current,i,0);
-  		++i;
-  		current = current->next();
-  	}
+      layout_->addWidget(current,i,0);
+      ++i;
+      current = current->next();
+    }
 
-  	adjustHeight();
+    adjustHeight();
   }
 
 

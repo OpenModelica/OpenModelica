@@ -75,7 +75,7 @@ namespace IAEX
    *
    */
   MyTextBrowser::MyTextBrowser(QWidget *parent)
-  	: QTextBrowser(parent)
+    : QTextBrowser(parent)
   {
 
   }
@@ -94,7 +94,7 @@ namespace IAEX
    */
   void MyTextBrowser::setSource(const QUrl &name)
   {
-  	emit openLink( &name );
+    emit openLink( &name );
   }
 
   /*!
@@ -106,15 +106,15 @@ namespace IAEX
    */
   void MyTextBrowser::mousePressEvent(QMouseEvent *event)
   {
-  	QTextBrowser::mousePressEvent(event);
+    QTextBrowser::mousePressEvent(event);
 
 
-  	if( event->modifiers() == Qt::ShiftModifier || textCursor().hasSelection() )
-  	{
-  		return; //fjass3
-  	}
+    if( event->modifiers() == Qt::ShiftModifier || textCursor().hasSelection() )
+    {
+      return; //fjass3
+    }
 
-  	emit clickOnCell();
+    emit clickOnCell();
   }
 
   /*!
@@ -126,9 +126,9 @@ namespace IAEX
    */
   void MyTextBrowser::wheelEvent(QWheelEvent * event)
   {
-  	// ignore event and send it up in the event hierarchy
-  	event->ignore();
-  	emit wheelMove( event );
+    // ignore event and send it up in the event hierarchy
+    event->ignore();
+    emit wheelMove( event );
   }
 
   /*!
@@ -142,15 +142,15 @@ namespace IAEX
    */
   void MyTextBrowser::insertFromMimeData(const QMimeData *source)
   {
-  	if( source->hasText() && !source->hasImage() )
-  	{
-  		QMimeData *newSource = new QMimeData();
-  		newSource->setText( source->text() );
-  		QTextBrowser::insertFromMimeData( newSource );
-  		delete newSource;
-  	}
-  	else
-  		QTextBrowser::insertFromMimeData( source );
+    if( source->hasText() && !source->hasImage() )
+    {
+      QMimeData *newSource = new QMimeData();
+      newSource->setText( source->text() );
+      QTextBrowser::insertFromMimeData( newSource );
+      delete newSource;
+    }
+    else
+      QTextBrowser::insertFromMimeData( source );
   }
 
 /*!
@@ -161,47 +161,47 @@ namespace IAEX
    */
   void MyTextBrowser::keyPressEvent(QKeyEvent *event )
   {
-  	// ALT+ENTER (ignore)
-  	if( event->modifiers() == Qt::AltModifier &&
-  		( event->key() == Qt::Key_Enter || event->key() == Qt::Key_Return ))
-  	{
-  		event->ignore();
-  	}
-  	// PAGE UP (ignore)
-  	else if( event->key() == Qt::Key_PageUp )
-  	{
-  		event->ignore();
-  	}
-  	// PAGE DOWN (ignore)
-  	else if( event->key() == Qt::Key_PageDown )
-  	{
-  		event->ignore();
-  	}
-  	// CTRL+C
-  	else if( event->modifiers() == Qt::ControlModifier &&
-  		event->key() == Qt::Key_C )
-  	{
-  		event->ignore();
-  		emit forwardAction( 1 );
-  	}
-  	// CTRL+X
-  	else if( event->modifiers() == Qt::ControlModifier &&
-  		event->key() == Qt::Key_X )
-  	{
-  		event->ignore();
-  		emit forwardAction( 2 );
-  	}
-  	// CTRL+V
-  	else if( event->modifiers() == Qt::ControlModifier &&
-  		event->key() == Qt::Key_V )
-  	{
-  		event->ignore();
-  		emit forwardAction( 3 );
-  	}
-  	else
-  	{
-  		QTextBrowser::keyPressEvent( event );
-  	}
+    // ALT+ENTER (ignore)
+    if( event->modifiers() == Qt::AltModifier &&
+      ( event->key() == Qt::Key_Enter || event->key() == Qt::Key_Return ))
+    {
+      event->ignore();
+    }
+    // PAGE UP (ignore)
+    else if( event->key() == Qt::Key_PageUp )
+    {
+      event->ignore();
+    }
+    // PAGE DOWN (ignore)
+    else if( event->key() == Qt::Key_PageDown )
+    {
+      event->ignore();
+    }
+    // CTRL+C
+    else if( event->modifiers() == Qt::ControlModifier &&
+      event->key() == Qt::Key_C )
+    {
+      event->ignore();
+      emit forwardAction( 1 );
+    }
+    // CTRL+X
+    else if( event->modifiers() == Qt::ControlModifier &&
+      event->key() == Qt::Key_X )
+    {
+      event->ignore();
+      emit forwardAction( 2 );
+    }
+    // CTRL+V
+    else if( event->modifiers() == Qt::ControlModifier &&
+      event->key() == Qt::Key_V )
+    {
+      event->ignore();
+      emit forwardAction( 3 );
+    }
+    else
+    {
+      QTextBrowser::keyPressEvent( event );
+    }
 
   }
 
@@ -234,18 +234,18 @@ namespace IAEX
    * \brief The class constructor
    */
   TextCell::TextCell(QWidget *parent)
-  	: Cell(parent),
-  	oldHeight_( 0 )
+    : Cell(parent),
+    oldHeight_( 0 )
   {
-  	setFocusPolicy(Qt::NoFocus);
-  	createTextWidget();
+    setFocusPolicy(Qt::NoFocus);
+    createTextWidget();
   }
 
   TextCell::TextCell(TextCell &t)
-  	: Cell(t)
+    : Cell(t)
   {
-  	setText(t.text());
-  	setStyle(*t.style());
+    setText(t.text());
+    setStyle(*t.style());
   }
 
   /*!
@@ -255,8 +255,8 @@ namespace IAEX
    */
   TextCell::~TextCell()
   {
-  	setMainWidget(0);
-  	delete text_;
+    setMainWidget(0);
+    delete text_;
   }
 
   /*!
@@ -273,50 +273,50 @@ namespace IAEX
    */
   void TextCell::createTextWidget()
   {
-  	text_ = new MyTextBrowser(this);
-  	setMainWidget(text_);
+    text_ = new MyTextBrowser(this);
+    setMainWidget(text_);
 
-  	// 2006-03-02 AF, Add a chapter counter
-  	createChapterCounter();
+    // 2006-03-02 AF, Add a chapter counter
+    createChapterCounter();
 
-  	text_->setReadOnly( true );
-  	text_->setUndoRedoEnabled( true );
-  	text_->setFrameStyle( QFrame::NoFrame );
-  	text_->setAutoFormatting( QTextEdit::AutoNone );
-
-
-  	text_->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed));
-  	text_->setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
-  	text_->setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
-//  	text_->setContextMenuPolicy( Qt::NoContextMenu ); //fjass
+    text_->setReadOnly( true );
+    text_->setUndoRedoEnabled( true );
+    text_->setFrameStyle( QFrame::NoFrame );
+    text_->setAutoFormatting( QTextEdit::AutoNone );
 
 
-
-  	connect( text_, SIGNAL( textChanged() ),
-  		this, SLOT( contentChanged() ));
-
-  	connect( text_, SIGNAL( openLink(const QUrl *) ),
-  		this, SLOT( openLinkInternal(const QUrl *) ));
-
-  	connect( text_, SIGNAL( clickOnCell() ),
-  		this, SLOT( clickEvent() ));
-  	connect( text_, SIGNAL( wheelMove(QWheelEvent*) ),
-  		this, SLOT( wheelEvent(QWheelEvent*) ));
-  	// 2006-01-17 AF, new...
-  	connect( text_, SIGNAL( currentCharFormatChanged(const QTextCharFormat &) ),
-  		this, SLOT( charFormatChanged(const QTextCharFormat &) ));
-  	connect( text_, SIGNAL( textChanged() ),
-  		this, SLOT( textChangedInternal() ));
-  	// 2006-02-10 AF, new...
-  	connect( text_, SIGNAL( highlighted(const QUrl &) ),
-  		this, SLOT( hoverOverLink(const QUrl &) ));
-  	// 2006-04-27 AF,
-  	connect( text_, SIGNAL( forwardAction(int) ),
-  		this, SIGNAL( forwardAction(int) ));
+    text_->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed));
+    text_->setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
+    text_->setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
+//    text_->setContextMenuPolicy( Qt::NoContextMenu ); //fjass
 
 
-//  	connect(text_, SIGNAL(anchorClicked(const QUrl&)), this, SLOT(openLinkIternal(const QUrl&)));
-  	contentChanged();
+
+    connect( text_, SIGNAL( textChanged() ),
+      this, SLOT( contentChanged() ));
+
+    connect( text_, SIGNAL( openLink(const QUrl *) ),
+      this, SLOT( openLinkInternal(const QUrl *) ));
+
+    connect( text_, SIGNAL( clickOnCell() ),
+      this, SLOT( clickEvent() ));
+    connect( text_, SIGNAL( wheelMove(QWheelEvent*) ),
+      this, SLOT( wheelEvent(QWheelEvent*) ));
+    // 2006-01-17 AF, new...
+    connect( text_, SIGNAL( currentCharFormatChanged(const QTextCharFormat &) ),
+      this, SLOT( charFormatChanged(const QTextCharFormat &) ));
+    connect( text_, SIGNAL( textChanged() ),
+      this, SLOT( textChangedInternal() ));
+    // 2006-02-10 AF, new...
+    connect( text_, SIGNAL( highlighted(const QUrl &) ),
+      this, SLOT( hoverOverLink(const QUrl &) ));
+    // 2006-04-27 AF,
+    connect( text_, SIGNAL( forwardAction(int) ),
+      this, SIGNAL( forwardAction(int) ));
+
+
+//    connect(text_, SIGNAL(anchorClicked(const QUrl&)), this, SLOT(openLinkIternal(const QUrl&)));
+    contentChanged();
   }
 
   /*!
@@ -327,20 +327,20 @@ namespace IAEX
    */
   void TextCell::createChapterCounter()
   {
-  	chaptercounter_ = new MyTextBrowser(this);
-  	chaptercounter_->setFrameStyle( QFrame::NoFrame );
-  	chaptercounter_->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding));
-  	chaptercounter_->setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
-  	chaptercounter_->setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
-  	chaptercounter_->setContextMenuPolicy( Qt::NoContextMenu );
+    chaptercounter_ = new MyTextBrowser(this);
+    chaptercounter_->setFrameStyle( QFrame::NoFrame );
+    chaptercounter_->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding));
+    chaptercounter_->setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
+    chaptercounter_->setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
+    chaptercounter_->setContextMenuPolicy( Qt::NoContextMenu );
 
-  	chaptercounter_->setFixedWidth(50);
-  	chaptercounter_->setReadOnly( true );
+    chaptercounter_->setFixedWidth(50);
+    chaptercounter_->setReadOnly( true );
 
-  	connect( chaptercounter_, SIGNAL( clickOnCell() ),
-  		this, SLOT( clickEvent() ));
+    connect( chaptercounter_, SIGNAL( clickOnCell() ),
+      this, SLOT( clickEvent() ));
 
-  	addChapterCounter( chaptercounter_ );
+    addChapterCounter( chaptercounter_ );
   }
 
   /*!
@@ -353,7 +353,7 @@ namespace IAEX
    */
   QString TextCell::text()
   {
-  	return text_->toPlainText();
+    return text_->toPlainText();
   }
 
   /*!
@@ -366,7 +366,7 @@ namespace IAEX
    */
   QString TextCell::textHtml()
   {
-  	return text_->toHtml();
+    return text_->toHtml();
   }
 
   /*!
@@ -380,7 +380,7 @@ namespace IAEX
    */
   QTextCursor TextCell::textCursor()
   {
-  	return text_->textCursor();
+    return text_->textCursor();
   }
 
   /*!
@@ -393,7 +393,7 @@ namespace IAEX
    */
   QTextEdit* TextCell::textEdit()
   {
-  	return text_;
+    return text_;
   }
 
   /*!
@@ -415,44 +415,44 @@ namespace IAEX
    */
   void TextCell::setText( QString text )
   {
-  	// check if the text contains html code, if so - set the
-  	// text with correct function.
-  	QRegExp expression( "&nbsp;|<b>|<B>|</b>|</B>|<br>|<BR>|</a>|</A>|<sup>|<SUP>|</sup>|</SUP>|<sub>|<SUP>|</sub>|</SUB>|<span|<SPAN|</span>|</SPAN>" );
-  	QRegExp expressionTag( "<.*" );
-  	if( 0 <= text.indexOf( expression ))
-  	{
-  		// 2005-12-06 AF, ugly way to get the style, when inserting
-  		// text containg some html tags.
-  		text_->setPlainText( "TMP_OMNOTEBOOK" );
-  		setStyle( *style() );
-  		QString html = text_->toHtml();
-  		int pos = html.indexOf( "TMP_OMNOTEBOOK", 0, Qt::CaseInsensitive );
-  		html.replace( pos, 14, text );
-  		text_->setHtml( html );
-  		text_->setAlignment( (Qt::AlignmentFlag)style_.alignment() );
-  		text_->document()->rootFrame()->setFrameFormat( (*style_.textFrameFormat()) );
+    // check if the text contains html code, if so - set the
+    // text with correct function.
+    QRegExp expression( "&nbsp;|<b>|<B>|</b>|</B>|<br>|<BR>|</a>|</A>|<sup>|<SUP>|</sup>|</SUP>|<sub>|<SUP>|</sub>|</SUB>|<span|<SPAN|</span>|</SPAN>" );
+    QRegExp expressionTag( "<.*" );
+    if( 0 <= text.indexOf( expression ))
+    {
+      // 2005-12-06 AF, ugly way to get the style, when inserting
+      // text containg some html tags.
+      text_->setPlainText( "TMP_OMNOTEBOOK" );
+      setStyle( *style() );
+      QString html = text_->toHtml();
+      int pos = html.indexOf( "TMP_OMNOTEBOOK", 0, Qt::CaseInsensitive );
+      html.replace( pos, 14, text );
+      text_->setHtml( html );
+      text_->setAlignment( (Qt::AlignmentFlag)style_.alignment() );
+      text_->document()->rootFrame()->setFrameFormat( (*style_.textFrameFormat()) );
 
-  		//setTextHtml( text );
-  	}
-  	else if( 0 <= text.indexOf( expressionTag ))
-  	{
-  		qDebug( "Possible HTML tag in text:" );
-  		qDebug( text.toStdString().c_str() );
+      //setTextHtml( text );
+    }
+    else if( 0 <= text.indexOf( expressionTag ))
+    {
+      qDebug( "Possible HTML tag in text:" );
+      qDebug( text.toStdString().c_str() );
 
-  		text_->setPlainText( text );
-  		setStyle( style_ );
+      text_->setPlainText( text );
+      setStyle( style_ );
 
-  		contentChanged();
-  	}
-  	else
-  	{
-  		text_->setPlainText( text );
-  		setStyle( style_ );
+      contentChanged();
+    }
+    else
+    {
+      text_->setPlainText( text );
+      setStyle( style_ );
 
-  		contentChanged();
-  	}
+      contentChanged();
+    }
 
-  	text_->setUndoRedoEnabled( true );
+    text_->setUndoRedoEnabled( true );
   }
 
   /*!
@@ -470,10 +470,10 @@ namespace IAEX
    */
   void TextCell::setText( QString text, QTextCharFormat format )
   {
-  	text_->setCurrentCharFormat( format );
-  	text_->setPlainText( text );
-  	contentChanged();
-  	text_->setUndoRedoEnabled( true );
+    text_->setCurrentCharFormat( format );
+    text_->setPlainText( text );
+    contentChanged();
+    text_->setUndoRedoEnabled( true );
   }
 
   /*!
@@ -489,12 +489,12 @@ namespace IAEX
    */
   void TextCell::setTextHtml(QString html)
   {
-  	text_->setHtml( html );
-  	text_->setAlignment( (Qt::AlignmentFlag)style_.alignment() );
-  	text_->document()->rootFrame()->setFrameFormat( (*style_.textFrameFormat()) );
+    text_->setHtml( html );
+    text_->setAlignment( (Qt::AlignmentFlag)style_.alignment() );
+    text_->document()->rootFrame()->setFrameFormat( (*style_.textFrameFormat()) );
 
-  	contentChanged();
-  	text_->setUndoRedoEnabled( true );
+    contentChanged();
+    text_->setUndoRedoEnabled( true );
   }
 
   /*!
@@ -507,7 +507,7 @@ namespace IAEX
    */
   void TextCell::setStyle(const QString &stylename)
   {
-  	Cell::setStyle( stylename );
+    Cell::setStyle( stylename );
   }
 
   /*!
@@ -535,63 +535,63 @@ namespace IAEX
    */
   void TextCell::setStyle(CellStyle style)
   {
-  	Cell::setStyle( style );
+    Cell::setStyle( style );
 
 // select all the text,
-  	// don't do it if the text contains an image, qt krasches if a
-  	// cell contains starts with a image and the entier cell is
-  	// selected.
-  	// ignore this in version 4.1. of QT
-  	//if( text_->toHtml().indexOf( "file:///", 0) < 0 )
+    // don't do it if the text contains an image, qt krasches if a
+    // cell contains starts with a image and the entier cell is
+    // selected.
+    // ignore this in version 4.1. of QT
+    //if( text_->toHtml().indexOf( "file:///", 0) < 0 )
 
 
-  	text_->selectAll();
+    text_->selectAll();
 
-  	// set the new style settings
-  	text_->mergeCurrentCharFormat( (*style_.textCharFormat()) );
-  	text_->document()->rootFrame()->setFrameFormat( (*style_.textFrameFormat()) );
-  	text_->setAlignment( (Qt::AlignmentFlag)style_.alignment() );
+    // set the new style settings
+    text_->mergeCurrentCharFormat( (*style_.textCharFormat()) );
+    text_->document()->rootFrame()->setFrameFormat( (*style_.textFrameFormat()) );
+    text_->setAlignment( (Qt::AlignmentFlag)style_.alignment() );
 
-  	// unselect the text, reset cursor position
-  	QTextCursor cursor(	text_->textCursor() );
-  	cursor.clearSelection();
-  	text_->setTextCursor( cursor );
-
-
-  	// clear the undo/redo
-  	text_->setUndoRedoEnabled( false );
-  	text_->setUndoRedoEnabled( true );
-
-  	// ugly trick to make the sure that the links haven't change color
-  	//if( !text_->toPlainText().isEmpty() )
-  	//	text_->setHtml( text_->toHtml() );
-
-  	// 2006-03-02 AF, set chapter counter style
-
-  	if(chaptercounter_->document()->isEmpty())
-  		chaptercounter_->document()->setPlainText(" "); //070606 This seems to eliminate the style bug..
+    // unselect the text, reset cursor position
+    QTextCursor cursor(  text_->textCursor() );
+    cursor.clearSelection();
+    text_->setTextCursor( cursor );
 
 
-  	chaptercounter_->selectAll();
-  	chaptercounter_->mergeCurrentCharFormat( (*style_.textCharFormat()) );
+    // clear the undo/redo
+    text_->setUndoRedoEnabled( false );
+    text_->setUndoRedoEnabled( true );
+
+    // ugly trick to make the sure that the links haven't change color
+    //if( !text_->toPlainText().isEmpty() )
+    //  text_->setHtml( text_->toHtml() );
+
+    // 2006-03-02 AF, set chapter counter style
+
+    if(chaptercounter_->document()->isEmpty())
+      chaptercounter_->document()->setPlainText(" "); //070606 This seems to eliminate the style bug..
+
+
+    chaptercounter_->selectAll();
+    chaptercounter_->mergeCurrentCharFormat( (*style_.textCharFormat()) );
 
 
 
-  	QTextFrameFormat format = chaptercounter_->document()->rootFrame()->frameFormat();
+    QTextFrameFormat format = chaptercounter_->document()->rootFrame()->frameFormat();
 
-  	format.setMargin( style_.textFrameFormat()->margin() +
-  		style_.textFrameFormat()->border() +
-  		style_.textFrameFormat()->padding()	);
-  	chaptercounter_->document()->rootFrame()->setFrameFormat( format );
-
-
-  	chaptercounter_->setAlignment( (Qt::AlignmentFlag)Qt::AlignRight );
+    format.setMargin( style_.textFrameFormat()->margin() +
+      style_.textFrameFormat()->border() +
+      style_.textFrameFormat()->padding()  );
+    chaptercounter_->document()->rootFrame()->setFrameFormat( format );
 
 
-  	cursor = chaptercounter_->textCursor();
+    chaptercounter_->setAlignment( (Qt::AlignmentFlag)Qt::AlignRight );
 
-  	cursor.clearSelection();
-  	chaptercounter_->setTextCursor( cursor );
+
+    cursor = chaptercounter_->textCursor();
+
+    cursor.clearSelection();
+    chaptercounter_->setTextCursor( cursor );
 
 
 
@@ -605,14 +605,14 @@ namespace IAEX
    */
   void TextCell::setChapterCounter( QString number )
   {
-  	chaptercounter_->selectAll();
-  	chaptercounter_->setPlainText( number );
-  	chaptercounter_->setAlignment( (Qt::AlignmentFlag)Qt::AlignRight );
-  	QTextFrameFormat format = chaptercounter_->document()->rootFrame()->frameFormat();
-  	format.setMargin( style_.textFrameFormat()->margin() +
-  		style_.textFrameFormat()->border() +
-  		style_.textFrameFormat()->padding()	);
-  	chaptercounter_->document()->rootFrame()->setFrameFormat( format );
+    chaptercounter_->selectAll();
+    chaptercounter_->setPlainText( number );
+    chaptercounter_->setAlignment( (Qt::AlignmentFlag)Qt::AlignRight );
+    QTextFrameFormat format = chaptercounter_->document()->rootFrame()->frameFormat();
+    format.setMargin( style_.textFrameFormat()->margin() +
+      style_.textFrameFormat()->border() +
+      style_.textFrameFormat()->padding()  );
+    chaptercounter_->document()->rootFrame()->setFrameFormat( format );
   }
 
   /*!
@@ -624,10 +624,10 @@ namespace IAEX
    */
   QString TextCell::ChapterCounter()
   {
-  	if( chaptercounter_->toPlainText().isEmpty() )
-  		return QString::null;
+    if( chaptercounter_->toPlainText().isEmpty() )
+      return QString::null;
 
-  	return chaptercounter_->toPlainText();
+    return chaptercounter_->toPlainText();
   }
 
   /*!
@@ -639,10 +639,10 @@ namespace IAEX
    */
   QString TextCell::ChapterCounterHtml()
   {
-  	if( chaptercounter_->toPlainText().isEmpty() )
-  		return QString::null;
+    if( chaptercounter_->toPlainText().isEmpty() )
+      return QString::null;
 
-  	return chaptercounter_->toHtml();
+    return chaptercounter_->toHtml();
   }
 
   /*!
@@ -659,26 +659,26 @@ namespace IAEX
    */
   void TextCell::setReadOnly(const bool readonly)
   {
-  	if( readonly )
-  	{
-  		QTextCursor cursor = text_->textCursor();
-  		cursor.clearSelection();
-  		text_->setTextCursor( cursor );
+    if( readonly )
+    {
+      QTextCursor cursor = text_->textCursor();
+      cursor.clearSelection();
+      text_->setTextCursor( cursor );
 
-  		// 2006-03-02 AF, clear selection in chapter counter
-  		cursor = chaptercounter_->textCursor();
-  		cursor.clearSelection();
-  		chaptercounter_->setTextCursor( cursor );
-  	}
+      // 2006-03-02 AF, clear selection in chapter counter
+      cursor = chaptercounter_->textCursor();
+      cursor.clearSelection();
+      chaptercounter_->setTextCursor( cursor );
+    }
 
-  	text_->setReadOnly(readonly);
-  	text_->setTextInteractionFlags(text_->textInteractionFlags() | 	Qt::LinksAccessibleByMouse | Qt::LinksAccessibleByKeyboard);
-  	/* Removed /AF
-  	if(readonly)
-  		text_->setFrameStyle(QFrame::NoFrame);
-  	else
-  		text_->setFrameStyle(QFrame::Panel|QFrame::Sunken);
-  	*/
+    text_->setReadOnly(readonly);
+    text_->setTextInteractionFlags(text_->textInteractionFlags() |   Qt::LinksAccessibleByMouse | Qt::LinksAccessibleByKeyboard);
+    /* Removed /AF
+    if(readonly)
+      text_->setFrameStyle(QFrame::NoFrame);
+    else
+      text_->setFrameStyle(QFrame::Panel|QFrame::Sunken);
+    */
   }
 
   /*!
@@ -686,8 +686,8 @@ namespace IAEX
    */
   void TextCell::setFocus(const bool focus)
   {
-  	if(focus)
-  		text_->setFocus();
+    if(focus)
+      text_->setFocus();
   }
 
   /*!
@@ -697,20 +697,20 @@ namespace IAEX
    */
   void TextCell::clickEvent()
   {
-  	//if( text_->isReadOnly() )
+    //if( text_->isReadOnly() )
 //  QTextCursor c = textCursor();
 
 //  if(textCursor().charFormat().isAnchor())
-//  	openLinkInternal(QUrl(textCursor().charFormat().anchorHref())); //fjass
+//    openLinkInternal(QUrl(textCursor().charFormat().anchorHref())); //fjass
 //  else
 
-  	emit clicked(this);
+    emit clicked(this);
 //  {
-//  	QUrl u(c.charFormat().anchorHref());
+//    QUrl u(c.charFormat().anchorHref());
 
-//  	setReadOnly(true);
+//    setReadOnly(true);
 
-//  	if
+//    if
 //  }
 
   }
@@ -727,24 +727,24 @@ namespace IAEX
    */
   void TextCell::contentChanged()
   {
-  	int height = text_->document()->documentLayout()->documentSize().toSize().height();
+    int height = text_->document()->documentLayout()->documentSize().toSize().height();
 
-  	//cout << "Height: " << height << endl;
+    //cout << "Height: " << height << endl;
 
-  	if( height < 0 )
-  		height = 30;
+    if( height < 0 )
+      height = 30;
 
-  	text_->setMinimumHeight( height );
+    text_->setMinimumHeight( height );
 
-  	// add a little extra, just in case, emit 'heightChanged()' if height
-  	// have chagned /AF
-  	setHeight( height + 5 );
-  	emit textChanged();
+    // add a little extra, just in case, emit 'heightChanged()' if height
+    // have chagned /AF
+    setHeight( height + 5 );
+    emit textChanged();
 
-  	if( oldHeight_ != (height + 5) )
-  		emit heightChanged();
+    if( oldHeight_ != (height + 5) )
+      emit heightChanged();
 
-  	oldHeight_ = height + 5;
+    oldHeight_ = height + 5;
   }
 
   /*!
@@ -753,11 +753,11 @@ namespace IAEX
    */
   void TextCell::hoverOverLink(const QUrl &link)
   {
-  	if( oldHoverLink_ != (link.path() + link.fragment()) )
-  	{
-  		oldHoverLink_ = link.path() + link.fragment();
-  		emit hoverOverUrl( link );
-  	}
+    if( oldHoverLink_ != (link.path() + link.fragment()) )
+    {
+      oldHoverLink_ = link.path() + link.fragment();
+      emit hoverOverUrl( link );
+    }
   }
 
   /*!
@@ -768,12 +768,12 @@ namespace IAEX
    */
   void TextCell::openLinkInternal(const QUrl *url)
   {
-  	emit openLink(url);
+    emit openLink(url);
   }
 
   void TextCell::openLinkInternal(const QUrl &url)
   {
-  	emit openLink(&url);
+    emit openLink(&url);
   }
 
 
@@ -782,7 +782,7 @@ namespace IAEX
    */
   void TextCell::textChangedInternal()
   {
-  	emit textChanged( true );
+    emit textChanged( true );
   }
 
   /*!
@@ -795,15 +795,15 @@ namespace IAEX
    */
   void TextCell::charFormatChanged(const QTextCharFormat &)
   {
-  	if( text_->toPlainText().isEmpty() )
-  	{
-  		text_->blockSignals( true );
-  		text_->setAlignment( (Qt::AlignmentFlag)style_.alignment() );
-  		text_->mergeCurrentCharFormat( (*style_.textCharFormat()) );
-  		text_->document()->rootFrame()->setFrameFormat( (*style_.textFrameFormat()) );
-  		text_->blockSignals( false );
-  		contentChanged();
-  	}
+    if( text_->toPlainText().isEmpty() )
+    {
+      text_->blockSignals( true );
+      text_->setAlignment( (Qt::AlignmentFlag)style_.alignment() );
+      text_->mergeCurrentCharFormat( (*style_.textCharFormat()) );
+      text_->document()->rootFrame()->setFrameFormat( (*style_.textFrameFormat()) );
+      text_->blockSignals( false );
+      contentChanged();
+    }
   }
 
 
@@ -820,7 +820,7 @@ namespace IAEX
    */
   bool TextCell::isEditable()
   {
-  	return true;
+    return true;
   }
 
   /*!
@@ -835,36 +835,36 @@ namespace IAEX
    */
   void TextCell::viewExpression(const bool expr)
   {
-  	if( expr != isViewExpression() )
-  	{
-  		text_->blockSignals( true );
+    if( expr != isViewExpression() )
+    {
+      text_->blockSignals( true );
 
-  		if( expr )
-  		{
-  			viewexpression_ = true;
-  			text_->setCurrentCharFormat( *style_.textCharFormat() );
-  			text_->setPlainText( text_->toHtml() );
+      if( expr )
+      {
+        viewexpression_ = true;
+        text_->setCurrentCharFormat( *style_.textCharFormat() );
+        text_->setPlainText( text_->toHtml() );
 
-  			QPalette palette;
-  			palette.setColor( text_->backgroundRole(),
-  				QColor( 180, 180, 180 ) );
-  			text_->setPalette(palette);
-  		}
-  		else
-  		{
-  			viewexpression_ = false;
-  			text_->setHtml( text_->toPlainText() );
-  			text_->document()->rootFrame()->setFrameFormat( (*style_.textFrameFormat()) );
+        QPalette palette;
+        palette.setColor( text_->backgroundRole(),
+          QColor( 180, 180, 180 ) );
+        text_->setPalette(palette);
+      }
+      else
+      {
+        viewexpression_ = false;
+        text_->setHtml( text_->toPlainText() );
+        text_->document()->rootFrame()->setFrameFormat( (*style_.textFrameFormat()) );
 
-  			QPalette palette;
-  			palette.setColor( text_->backgroundRole(),
-  				backgroundColor() );
-  			text_->setPalette(palette);
-  		}
+        QPalette palette;
+        palette.setColor( text_->backgroundRole(),
+          backgroundColor() );
+        text_->setPalette(palette);
+      }
 
-  		text_->blockSignals( false );
-  		contentChanged();
-  	}
+      text_->blockSignals( false );
+      contentChanged();
+    }
   }
 
 
@@ -879,17 +879,17 @@ namespace IAEX
 
   void TextCell::accept(Visitor &v)
   {
-  	v.visitTextCellNodeBefore(this);
+    v.visitTextCellNodeBefore(this);
 
-  	if(hasChilds())
-  	{
-  		child()->accept(v);
-  	}
-  	v.visitTextCellNodeAfter(this);
+    if(hasChilds())
+    {
+      child()->accept(v);
+    }
+    v.visitTextCellNodeAfter(this);
 
-  	//Move along.
-  	if(hasNext())
-  		next()->accept(v);
+    //Move along.
+    if(hasNext())
+      next()->accept(v);
   }
 
   /*!
@@ -898,13 +898,13 @@ namespace IAEX
   */
   void TextCell::resizeEvent(QResizeEvent *event)
   {
-  	contentChanged();
-  	Cell::resizeEvent(event);
+    contentChanged();
+    Cell::resizeEvent(event);
   }
 
   void TextCell::clear()
   {
-  	text_->clear();
+    text_->clear();
   }
 
 

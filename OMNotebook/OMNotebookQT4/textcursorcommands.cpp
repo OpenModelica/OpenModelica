@@ -69,42 +69,42 @@ namespace IAEX
      */
   void TextCursorCutText::execute()
   {
-  	Cell *cell = document()->getCursor()->currentCell();
-  	if( cell )
-  	{
-  		if( typeid(InputCell) == typeid(*cell) )
-  		{
-  			InputCell *inputcell = dynamic_cast<InputCell*>(cell);
-  			if( inputcell->textEditOutput()->hasFocus() &&
-  				inputcell->isEvaluated() )
-  			{
-  				inputcell->textEditOutput()->copy();
-  			}
-  			else
-  				inputcell->textEdit()->cut();
-  		}
-  		else if( typeid(GraphCell) == typeid(*cell) )
-  		{
-  			GraphCell *graphcell = dynamic_cast<GraphCell*>(cell);
-  			if( graphcell->textEditOutput()->hasFocus() &&
-  				graphcell->isEvaluated() )
-  			{
-  				graphcell->textEditOutput()->copy();
-  			}
-  			else
-  				graphcell->textEdit()->cut();
-  		}
+    Cell *cell = document()->getCursor()->currentCell();
+    if( cell )
+    {
+      if( typeid(InputCell) == typeid(*cell) )
+      {
+        InputCell *inputcell = dynamic_cast<InputCell*>(cell);
+        if( inputcell->textEditOutput()->hasFocus() &&
+          inputcell->isEvaluated() )
+        {
+          inputcell->textEditOutput()->copy();
+        }
+        else
+          inputcell->textEdit()->cut();
+      }
+      else if( typeid(GraphCell) == typeid(*cell) )
+      {
+        GraphCell *graphcell = dynamic_cast<GraphCell*>(cell);
+        if( graphcell->textEditOutput()->hasFocus() &&
+          graphcell->isEvaluated() )
+        {
+          graphcell->textEditOutput()->copy();
+        }
+        else
+          graphcell->textEdit()->cut();
+      }
 
 
-  		else
-  		{
-  			QTextEdit *editor = cell->textEdit();
-  			if( editor )
-  			{
-  				editor->cut();
-  			}
-  		}
-  	}
+      else
+      {
+        QTextEdit *editor = cell->textEdit();
+        if( editor )
+        {
+          editor->cut();
+        }
+      }
+    }
   }
 
 
@@ -117,40 +117,40 @@ namespace IAEX
      */
   void TextCursorCopyText::execute()
   {
-  	Cell *cell = document()->getCursor()->currentCell();
-  	if( cell )
-  	{
-  		if( typeid(InputCell) == typeid(*cell) )
-  		{
-  			InputCell *inputcell = dynamic_cast<InputCell*>(cell);
-  			if( inputcell->textEditOutput()->hasFocus() &&
-  				inputcell->isEvaluated() )
-  			{
-  				inputcell->textEditOutput()->copy();
-  			}
-  			else
-  				inputcell->textEdit()->copy();
-  		}
-  		else if( typeid(GraphCell) == typeid(*cell) )
-  		{
-  			GraphCell *graphcell = dynamic_cast<GraphCell*>(cell);
-  			if( graphcell->textEditOutput()->hasFocus() &&
-  				graphcell->isEvaluated() )
-  			{
-  				graphcell->textEditOutput()->copy();
-  			}
-  			else
-  				graphcell->textEdit()->copy();
-  		}
-  		else
-  		{
-  			QTextEdit *editor = cell->textEdit();
-  			if( editor )
-  			{
-  				editor->copy();
-  			}
-  		}
-  	}
+    Cell *cell = document()->getCursor()->currentCell();
+    if( cell )
+    {
+      if( typeid(InputCell) == typeid(*cell) )
+      {
+        InputCell *inputcell = dynamic_cast<InputCell*>(cell);
+        if( inputcell->textEditOutput()->hasFocus() &&
+          inputcell->isEvaluated() )
+        {
+          inputcell->textEditOutput()->copy();
+        }
+        else
+          inputcell->textEdit()->copy();
+      }
+      else if( typeid(GraphCell) == typeid(*cell) )
+      {
+        GraphCell *graphcell = dynamic_cast<GraphCell*>(cell);
+        if( graphcell->textEditOutput()->hasFocus() &&
+          graphcell->isEvaluated() )
+        {
+          graphcell->textEditOutput()->copy();
+        }
+        else
+          graphcell->textEdit()->copy();
+      }
+      else
+      {
+        QTextEdit *editor = cell->textEdit();
+        if( editor )
+        {
+          editor->copy();
+        }
+      }
+    }
   }
 
 
@@ -163,11 +163,11 @@ namespace IAEX
      */
   void TextCursorPasteText::execute()
   {
-  	QTextEdit *editor = document()->getCursor()->currentCell()->textEdit();
-  	if( editor )
-  	{
-  		editor->paste();
-  	}
+    QTextEdit *editor = document()->getCursor()->currentCell()->textEdit();
+    if( editor )
+    {
+      editor->paste();
+    }
   }
 
 
@@ -180,10 +180,10 @@ namespace IAEX
      */
   void TextCursorChangeFontFamily::execute()
   {
-  	QTextEdit *editor = document()->getCursor()->currentCell()->textEdit();
+    QTextEdit *editor = document()->getCursor()->currentCell()->textEdit();
 
-  	if( editor )
-  		editor->setFontFamily( family_ );
+    if( editor )
+      editor->setFontFamily( family_ );
   }
 
 
@@ -203,65 +203,65 @@ namespace IAEX
      */
   void TextCursorChangeFontFace::execute()
   {
-  	QTextEdit *editor = document()->getCursor()->currentCell()->textEdit();
-  	QFont font;
+    QTextEdit *editor = document()->getCursor()->currentCell()->textEdit();
+    QFont font;
 
-  	if( editor )
-  	{
-  		switch( face_ )
-  		{
-  		case 0: // Plain
-  			editor->setFontWeight( QFont::Normal );
-  			editor->setFontItalic( false );
-  			editor->setFontUnderline( false );
+    if( editor )
+    {
+      switch( face_ )
+      {
+      case 0: // Plain
+        editor->setFontWeight( QFont::Normal );
+        editor->setFontItalic( false );
+        editor->setFontUnderline( false );
 
-  			font = editor->currentFont();
-  			font.setStrikeOut( false );
-  			editor->setCurrentFont( font );
-  			break;
-  		case 1: // Bold
-  			if( editor->fontWeight() != QFont::Normal )
-  				editor->setFontWeight( QFont::Normal );
-  			else
-  				editor->setFontWeight( QFont::Bold );
-  			break;
-  		case 2: // Italic
-  			if( editor->fontItalic() )
-  				editor->setFontItalic( false );
-  			else
-  				editor->setFontItalic( true );
-  			break;
-  		case 3: // Underline
-  			if( editor->fontUnderline() )
-  				editor->setFontUnderline( false );
-  			else
-  				editor->setFontUnderline( true );
-  			break;
-  		case 4: // Strickout
-  			font = editor->currentFont();
-  			if( font.strikeOut() )
-  				font.setStrikeOut( false );
-  			else
-  				font.setStrikeOut( true );
-  			editor->setCurrentFont( font );
-  			break;
-  		}
+        font = editor->currentFont();
+        font.setStrikeOut( false );
+        editor->setCurrentFont( font );
+        break;
+      case 1: // Bold
+        if( editor->fontWeight() != QFont::Normal )
+          editor->setFontWeight( QFont::Normal );
+        else
+          editor->setFontWeight( QFont::Bold );
+        break;
+      case 2: // Italic
+        if( editor->fontItalic() )
+          editor->setFontItalic( false );
+        else
+          editor->setFontItalic( true );
+        break;
+      case 3: // Underline
+        if( editor->fontUnderline() )
+          editor->setFontUnderline( false );
+        else
+          editor->setFontUnderline( true );
+        break;
+      case 4: // Strickout
+        font = editor->currentFont();
+        if( font.strikeOut() )
+          font.setStrikeOut( false );
+        else
+          font.setStrikeOut( true );
+        editor->setCurrentFont( font );
+        break;
+      }
 
-  		// ugly trick to make the sure that the links haven't change
-  		// color
-  		/*
-  		if( !editor->toPlainText().isEmpty() )
-  		{
-  			int start = editor->textCursor().selectionStart();
-  			int end = editor->textCursor().selectionEnd();
-  			editor->setHtml( editor->toHtml() );
+      // ugly trick to make the sure that the links haven't change
+      // color
+      /*
+      if( !editor->toPlainText().isEmpty() )
+      {
+        int start = editor->textCursor().selectionStart();
+        int end = editor->textCursor().selectionEnd();
+        editor->setHtml( editor->toHtml() );
 
-  			QTextCursor cursor( editor->textCursor() );
-  			cursor.setPosition( start );
-  			cursor.setPosition( end, QTextCursor::KeepAnchor );
-  			editor->setTextCursor( cursor );
-  		}*/
-  	}
+        QTextCursor cursor( editor->textCursor() );
+        cursor.setPosition( start );
+        cursor.setPosition( end, QTextCursor::KeepAnchor );
+        editor->setTextCursor( cursor );
+      }*/
+    }
   }
 
 
@@ -277,10 +277,10 @@ namespace IAEX
      */
   void TextCursorChangeFontSize::execute()
   {
-  	QTextEdit *editor = document()->getCursor()->currentCell()->textEdit();
+    QTextEdit *editor = document()->getCursor()->currentCell()->textEdit();
 
-  	if( editor )
-  		editor->setFontPointSize( size_ );
+    if( editor )
+      editor->setFontPointSize( size_ );
 
   }
 
@@ -297,28 +297,28 @@ namespace IAEX
      */
   void TextCursorChangeFontStretch::execute()
   {
-  	QTextCursor cursor( document()->getCursor()->currentCell()->textCursor() );
-  	if( !cursor.isNull() )
-  	{
-  		QTextCharFormat format = cursor.charFormat();
-  		QFont font = format.font();
+    QTextCursor cursor( document()->getCursor()->currentCell()->textCursor() );
+    if( !cursor.isNull() )
+    {
+      QTextCharFormat format = cursor.charFormat();
+      QFont font = format.font();
 
-  		int oldStretch = font.stretch();
-  		if( oldStretch != stretch_ )
-  		{
-  			font.setStretch( stretch_ );
-  			format.setFont( font );
+      int oldStretch = font.stretch();
+      if( oldStretch != stretch_ )
+      {
+        font.setStretch( stretch_ );
+        format.setFont( font );
 
-  			cursor.mergeCharFormat ( format );
+        cursor.mergeCharFormat ( format );
 
-  			if( oldStretch == cursor.charFormat().font().stretch() )
-  			{
-  				// 2006-01-30 AF, add message box
-  				QString msg = "QT was unable to stretch the font";
-  				QMessageBox::warning( 0, "Warning", msg, "OK" );
-  			}
-  		}
-  	}
+        if( oldStretch == cursor.charFormat().font().stretch() )
+        {
+          // 2006-01-30 AF, add message box
+          QString msg = "QT was unable to stretch the font";
+          QMessageBox::warning( 0, "Warning", msg, "OK" );
+        }
+      }
+    }
 
   }
 
@@ -338,29 +338,29 @@ namespace IAEX
      */
   void TextCursorChangeFontColor::execute()
   {
-  	QTextEdit *editor = document()->getCursor()->currentCell()->textEdit();
+    QTextEdit *editor = document()->getCursor()->currentCell()->textEdit();
 
-  	if( editor )
-  	{
-  		editor->setTextColor( color_ );
+    if( editor )
+    {
+      editor->setTextColor( color_ );
 
 
-  		// ugly trick to make the sure that the links haven't change
-  		// color
-  		/*
-  		if( !editor->toPlainText().isEmpty() )
-  		{
-  			int start = editor->textCursor().selectionStart();
-  			int end = editor->textCursor().selectionEnd();
-  			editor->setHtml( editor->toHtml() );
+      // ugly trick to make the sure that the links haven't change
+      // color
+      /*
+      if( !editor->toPlainText().isEmpty() )
+      {
+        int start = editor->textCursor().selectionStart();
+        int end = editor->textCursor().selectionEnd();
+        editor->setHtml( editor->toHtml() );
 
-  			QTextCursor cursor( editor->textCursor() );
-  			cursor.setPosition( start );
-  			cursor.setPosition( end, QTextCursor::KeepAnchor );
-  			editor->setTextCursor( cursor );
-  		}
-  		*/
-  	}
+        QTextCursor cursor( editor->textCursor() );
+        cursor.setPosition( start );
+        cursor.setPosition( end, QTextCursor::KeepAnchor );
+        editor->setTextCursor( cursor );
+      }
+      */
+    }
   }
 
 
@@ -376,28 +376,28 @@ namespace IAEX
      */
   void TextCursorChangeTextAlignment::execute()
   {
-  	QTextEdit *editor = document()->getCursor()->currentCell()->textEdit();
+    QTextEdit *editor = document()->getCursor()->currentCell()->textEdit();
 
-  	if( editor )
-  	{
-  		editor->setAlignment( (Qt::Alignment)alignment_ );
+    if( editor )
+    {
+      editor->setAlignment( (Qt::Alignment)alignment_ );
 
-  		// create a rule for the alignment
-  		Rule *rule;
-  		if( (Qt::Alignment)alignment_ == Qt::AlignLeft )
-  			rule = new Rule( "TextAlignment", "Left" );
-  		else if( (Qt::Alignment)alignment_ == Qt::AlignRight )
-  			rule = new Rule( "TextAlignment", "Right" );
-  		else if( (Qt::Alignment)alignment_ == Qt::AlignHCenter )
-  			rule = new Rule( "TextAlignment", "Center" );
-  		else if( (Qt::Alignment)alignment_ == Qt::AlignJustify )
-  			rule = new Rule( "TextAlignment", "Justify" );
+      // create a rule for the alignment
+      Rule *rule;
+      if( (Qt::Alignment)alignment_ == Qt::AlignLeft )
+        rule = new Rule( "TextAlignment", "Left" );
+      else if( (Qt::Alignment)alignment_ == Qt::AlignRight )
+        rule = new Rule( "TextAlignment", "Right" );
+      else if( (Qt::Alignment)alignment_ == Qt::AlignHCenter )
+        rule = new Rule( "TextAlignment", "Center" );
+      else if( (Qt::Alignment)alignment_ == Qt::AlignJustify )
+        rule = new Rule( "TextAlignment", "Justify" );
 
-  		document()->getCursor()->currentCell()->addRule( rule );
+      document()->getCursor()->currentCell()->addRule( rule );
 
-  		// update the cells style
-  		document()->getCursor()->currentCell()->style()->setAlignment( alignment_ );
-  	}
+      // update the cells style
+      document()->getCursor()->currentCell()->style()->setAlignment( alignment_ );
+    }
   }
 
 
@@ -413,15 +413,15 @@ namespace IAEX
      */
   void TextCursorChangeVerticalAlignment::execute()
   {
-  	QTextCursor cursor( document()->getCursor()->currentCell()->textCursor() );
-  	if( !cursor.isNull() )
-  	{
+    QTextCursor cursor( document()->getCursor()->currentCell()->textCursor() );
+    if( !cursor.isNull() )
+    {
 
-  		QTextCharFormat format = cursor.charFormat();
-  		format.setVerticalAlignment( (QTextCharFormat::VerticalAlignment)alignment_ );
+      QTextCharFormat format = cursor.charFormat();
+      format.setVerticalAlignment( (QTextCharFormat::VerticalAlignment)alignment_ );
 
-  		cursor.mergeCharFormat ( format );
-  	}
+      cursor.mergeCharFormat ( format );
+    }
   }
 
 
@@ -437,23 +437,23 @@ namespace IAEX
      */
   void TextCursorChangeMargin::execute()
   {
-  	QTextEdit *editor = document()->getCursor()->currentCell()->textEdit();
+    QTextEdit *editor = document()->getCursor()->currentCell()->textEdit();
 
-  	if( editor )
-  	{
-  		QTextFrameFormat format = editor->document()->rootFrame()->frameFormat();
-  		format.setMargin( margin_ );
-  		editor->document()->rootFrame()->setFrameFormat( format );
+    if( editor )
+    {
+      QTextFrameFormat format = editor->document()->rootFrame()->frameFormat();
+      format.setMargin( margin_ );
+      editor->document()->rootFrame()->setFrameFormat( format );
 
-  		// create a rule for the margin
-  		QString ruleValue;
-  		ruleValue.setNum( margin_ );
-  		Rule *rule = new Rule( "OMNotebook_Margin", ruleValue );
-  		document()->getCursor()->currentCell()->addRule( rule );
+      // create a rule for the margin
+      QString ruleValue;
+      ruleValue.setNum( margin_ );
+      Rule *rule = new Rule( "OMNotebook_Margin", ruleValue );
+      document()->getCursor()->currentCell()->addRule( rule );
 
-  		// update the cells style
-  		document()->getCursor()->currentCell()->style()->textFrameFormat()->setMargin( margin_ );
-  	}
+      // update the cells style
+      document()->getCursor()->currentCell()->style()->textFrameFormat()->setMargin( margin_ );
+    }
   }
 
 
@@ -469,23 +469,23 @@ namespace IAEX
      */
   void TextCursorChangePadding::execute()
   {
-  	QTextEdit *editor = document()->getCursor()->currentCell()->textEdit();
+    QTextEdit *editor = document()->getCursor()->currentCell()->textEdit();
 
-  	if( editor )
-  	{
-  		QTextFrameFormat format = editor->document()->rootFrame()->frameFormat();
-  		format.setPadding( padding_ );
-  		editor->document()->rootFrame()->setFrameFormat( format );
+    if( editor )
+    {
+      QTextFrameFormat format = editor->document()->rootFrame()->frameFormat();
+      format.setPadding( padding_ );
+      editor->document()->rootFrame()->setFrameFormat( format );
 
-  		// create a rule for the padding
-  		QString ruleValue;
-  		ruleValue.setNum( padding_ );
-  		Rule *rule = new Rule( "OMNotebook_Padding", ruleValue );
-  		document()->getCursor()->currentCell()->addRule( rule );
+      // create a rule for the padding
+      QString ruleValue;
+      ruleValue.setNum( padding_ );
+      Rule *rule = new Rule( "OMNotebook_Padding", ruleValue );
+      document()->getCursor()->currentCell()->addRule( rule );
 
-  		// update the cells style
-  		document()->getCursor()->currentCell()->style()->textFrameFormat()->setPadding( padding_ );
-  	}
+      // update the cells style
+      document()->getCursor()->currentCell()->style()->textFrameFormat()->setPadding( padding_ );
+    }
   }
 
 
@@ -501,23 +501,23 @@ namespace IAEX
      */
   void TextCursorChangeBorder::execute()
   {
-  	QTextEdit *editor = document()->getCursor()->currentCell()->textEdit();
+    QTextEdit *editor = document()->getCursor()->currentCell()->textEdit();
 
-  	if( editor )
-  	{
-  		QTextFrameFormat format = editor->document()->rootFrame()->frameFormat();
-  		format.setBorder( border_ );
-  		editor->document()->rootFrame()->setFrameFormat( format );
+    if( editor )
+    {
+      QTextFrameFormat format = editor->document()->rootFrame()->frameFormat();
+      format.setBorder( border_ );
+      editor->document()->rootFrame()->setFrameFormat( format );
 
-  		// create a rule for the border
-  		QString ruleValue;
-  		ruleValue.setNum( border_ );
-  		Rule *rule = new Rule( "OMNotebook_Border", ruleValue );
-  		document()->getCursor()->currentCell()->addRule( rule );
+      // create a rule for the border
+      QString ruleValue;
+      ruleValue.setNum( border_ );
+      Rule *rule = new Rule( "OMNotebook_Border", ruleValue );
+      document()->getCursor()->currentCell()->addRule( rule );
 
-  		// update the cells style
-  		document()->getCursor()->currentCell()->style()->textFrameFormat()->setBorder( border_ );
-  	}
+      // update the cells style
+      document()->getCursor()->currentCell()->style()->textFrameFormat()->setBorder( border_ );
+    }
   }
 
 
@@ -530,41 +530,41 @@ namespace IAEX
      */
   void TextCursorInsertImage::execute()
   {
-  	QTextCursor cursor( document()->getCursor()->currentCell()->textCursor() );
-  	if( !cursor.isNull() )
-  	{
-  		QImage* image = new QImage( filepath_ );
-  		if( !image->isNull() )
-  		{
-  			QString imagename = document()->addImage( image );
+    QTextCursor cursor( document()->getCursor()->currentCell()->textCursor() );
+    if( !cursor.isNull() )
+    {
+      QImage* image = new QImage( filepath_ );
+      if( !image->isNull() )
+      {
+        QString imagename = document()->addImage( image );
 
-  			QTextCursor cursor( document()->getCursor()->currentCell()->textCursor() );
-  			if( !cursor.isNull() )
-  			{
-  				QTextEdit *editor = document()->getCursor()->currentCell()->textEdit();
-  				if( editor )
-  				{
-  					// save text settings and set them after image have been inserted
-  					QTextCharFormat format = cursor.charFormat();
-  					if( editor->toPlainText().isEmpty() )
-  						format = *document()->getCursor()->currentCell()->style()->textCharFormat();
+        QTextCursor cursor( document()->getCursor()->currentCell()->textCursor() );
+        if( !cursor.isNull() )
+        {
+          QTextEdit *editor = document()->getCursor()->currentCell()->textEdit();
+          if( editor )
+          {
+            // save text settings and set them after image have been inserted
+            QTextCharFormat format = cursor.charFormat();
+            if( editor->toPlainText().isEmpty() )
+              format = *document()->getCursor()->currentCell()->style()->textCharFormat();
 
-  					QTextImageFormat imageformat;
-  					imageformat.merge( format );
-  					imageformat.setHeight( height_ );
-  					imageformat.setWidth( width_ );
-  					imageformat.setName( imagename );
+            QTextImageFormat imageformat;
+            imageformat.merge( format );
+            imageformat.setHeight( height_ );
+            imageformat.setWidth( width_ );
+            imageformat.setName( imagename );
 
-  					cursor.insertImage( imageformat );
-  				}
-  			}
-  		}
-  		else
-  		{
-  			string str = string("Could not open image: ") + filepath_.toStdString().c_str();
-  			throw runtime_error( str.c_str() );
-  		}
-  	}
+            cursor.insertImage( imageformat );
+          }
+        }
+      }
+      else
+      {
+        string str = string("Could not open image: ") + filepath_.toStdString().c_str();
+        throw runtime_error( str.c_str() );
+      }
+    }
   }
 
 
@@ -579,40 +579,40 @@ namespace IAEX
 
   {
 
-//  	QTextCursor cursor( document()->getCursor()->currentCell()->textCursor() );
-  	if( !cursor.isNull() )
-  	{
-  		if( cursor.hasSelection() )
-  		{
-  			QDir dir;
-  			QString currentfilepath = document()->getFilename();
-  			if( !currentfilepath.isEmpty() && !currentfilepath.isNull() )
-  				dir.setPath( QFileInfo(currentfilepath).absolutePath() );
+//    QTextCursor cursor( document()->getCursor()->currentCell()->textCursor() );
+    if( !cursor.isNull() )
+    {
+      if( cursor.hasSelection() )
+      {
+        QDir dir;
+        QString currentfilepath = document()->getFilename();
+        if( !currentfilepath.isEmpty() && !currentfilepath.isNull() )
+          dir.setPath( QFileInfo(currentfilepath).absolutePath() );
 
-  			// check if dir exist
-  			if( !dir.exists() )
-  				return;
-  			// get the relative link path
-  			QString relativepath = dir.relativeFilePath( filepath_ );
+        // check if dir exist
+        if( !dir.exists() )
+          return;
+        // get the relative link path
+        QString relativepath = dir.relativeFilePath( filepath_ );
 
-  			// create html code for the link and insert it to the document'
-  			QString text = cursor.selection().toHtml();
-  			int fragmentStart = text.indexOf( "<!--StartFragment-->",
-  				0, Qt::CaseInsensitive ) + 20;
-  			int fragmentEnd = text.indexOf( "<!--EndFragment-->",
-  				fragmentStart, Qt::CaseInsensitive );
+        // create html code for the link and insert it to the document'
+        QString text = cursor.selection().toHtml();
+        int fragmentStart = text.indexOf( "<!--StartFragment-->",
+          0, Qt::CaseInsensitive ) + 20;
+        int fragmentEnd = text.indexOf( "<!--EndFragment-->",
+          fragmentStart, Qt::CaseInsensitive );
 
-  			QString html = text.mid( fragmentStart, fragmentEnd - fragmentStart );
-  			QString htmlcode = "<a href=\"" + relativepath + "\">" +
-  				html + "</a>";
-  			cursor.insertFragment( QTextDocumentFragment::fromHtml( htmlcode ));
+        QString html = text.mid( fragmentStart, fragmentEnd - fragmentStart );
+        QString htmlcode = "<a href=\"" + relativepath + "\">" +
+          html + "</a>";
+        cursor.insertFragment( QTextDocumentFragment::fromHtml( htmlcode ));
 
-  			// set the cursor, so there is no selection
+        // set the cursor, so there is no selection
                 QTextEdit *editor = document()->getCursor()->currentCell()->textEdit();
-  			if( editor )
-  				editor->setTextCursor( cursor );
-  		}
-  	}
+        if( editor )
+          editor->setTextCursor( cursor );
+      }
+    }
   }
 
 }

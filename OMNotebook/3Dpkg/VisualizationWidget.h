@@ -63,53 +63,53 @@
 
 namespace IAEX {
   class VisualizationWidget :
-  	public QWidget
+    public QWidget
   {
-  	Q_OBJECT
+    Q_OBJECT
 
   public:
-  	VisualizationWidget(QWidget *parent);
-  	~VisualizationWidget(void);
+    VisualizationWidget(QWidget *parent);
+    ~VisualizationWidget(void);
 
-  	void setServerState(bool listen);
-  	bool getServerState(void);
+    void setServerState(bool listen);
+    bool getServerState(void);
 
 
     signals:
-  	void newMessage(QString message);
-  	void serverState(bool);
+    void newMessage(QString message);
+    void serverState(bool);
 
   public slots:
-  	void getData();
-  	void acceptConnection();
-  	void sliderChanged(int val);
-  	void nextFrame();
-  	void readPtolemyDataStream();
-  	void ptolemyDataStreamClosed();
+    void getData();
+    void acceptConnection();
+    void sliderChanged(int val);
+    void nextFrame();
+    void readPtolemyDataStream();
+    void ptolemyDataStreamClosed();
 
   private:
 #ifdef HAVE_COIN
-  	SoQtExaminerViewer *eviewer_;
-  	SoQtRenderArea *renderarea_;
+    SoQtExaminerViewer *eviewer_;
+    SoQtRenderArea *renderarea_;
 #endif
-  	QFrame *frame_;
-  	QSlider *slider_;
-  	QLabel *label_;
+    QFrame *frame_;
+    QSlider *slider_;
+    QLabel *label_;
 #ifdef HAVE_COIN
-  	SimulationData *simdata_;
+    SimulationData *simdata_;
 #endif
     QWidget *visframe_;
     QVBoxLayout *buttonlayout_;
     QTimer* timer_;
-  	int currentTime_;
-  	QTextBrowser *input_;
+    int currentTime_;
+    QTextBrowser *input_;
 
-  	QTcpServer* server;
-  	QTcpSocket* activeSocket;
-  	QDataStream ds;
-  	quint32 blockSize;
-  	quint32 variableCount;
-  	quint32 packetSize;
+    QTcpServer* server;
+    QTcpSocket* activeSocket;
+    QDataStream ds;
+    quint32 blockSize;
+    quint32 variableCount;
+    quint32 packetSize;
 
   };
 }

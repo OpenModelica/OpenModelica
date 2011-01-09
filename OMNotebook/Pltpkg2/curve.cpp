@@ -53,7 +53,7 @@ Curve::~Curve()
   delete label;
 
 //  foreach(Point* p, dataPoints)
-//  		delete p;
+//      delete p;
   dataPoints.clear();
 }
 
@@ -61,7 +61,7 @@ Curve::~Curve()
 void Curve::showPoints(bool b)
 {
   foreach(Point* p, dataPoints)
-  	p->setVisible(b);
+    p->setVisible(b);
 
   drawPoints = b;
 }
@@ -82,11 +82,11 @@ void Curve::setColor(QColor c)
   QList<QGraphicsItem*> l = line->children();
 
   for(int i = 0; i < l.size(); ++i)
-  	static_cast<Line2D*>(l[i])->setPen(p);
+    static_cast<Line2D*>(l[i])->setPen(p);
 
   for(int i = 0; i < dataPoints.size(); ++i)
   {
-  	dataPoints[i]->color = c;
-  	dataPoints[i]->setPen(QPen(c));
+    dataPoints[i]->color = c;
+    dataPoints[i]->setPen(QPen(c));
   }
 }

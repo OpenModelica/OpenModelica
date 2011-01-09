@@ -77,34 +77,34 @@ namespace IAEX
    * \param filename The file that will be read.
    */
   CommandCompletion::CommandCompletion( const QString filename )
-  	: currentCommand_( -1 ),
-  	currentField_( -1 ),
-  	currentList_( 0 ),
-  	commandStartPos_( 0 ),
-  	commandEndPos_( 0 )
+    : currentCommand_( -1 ),
+    currentField_( -1 ),
+    currentList_( 0 ),
+    commandStartPos_( 0 ),
+    commandEndPos_( 0 )
   {
-  	//read a command file.
-  	doc_ = new QDomDocument( "OMCCommand" );
+    //read a command file.
+    doc_ = new QDomDocument( "OMCCommand" );
 
-  	QFile file( filename );
-  	if(!file.open(QIODevice::ReadOnly))
-  	{
-  		string tmp = "Could not open file: " + filename.toStdString();
-  		throw runtime_error( tmp.c_str() );
-  	}
+    QFile file( filename );
+    if(!file.open(QIODevice::ReadOnly))
+    {
+      string tmp = "Could not open file: " + filename.toStdString();
+      throw runtime_error( tmp.c_str() );
+    }
 
-  	if( !doc_->setContent(&file) )
-  	{
-  		file.close();
-  		string tmp = "Could not read content from file: " +
-  			filename.toStdString() +
-  			" Probably some syntax error in the xml file";
-  		throw runtime_error( tmp.c_str() );
-  	}
-  	file.close();
+    if( !doc_->setContent(&file) )
+    {
+      file.close();
+      string tmp = "Could not read content from file: " +
+        filename.toStdString() +
+        " Probably some syntax error in the xml file";
+      throw runtime_error( tmp.c_str() );
+    }
+    file.close();
 
-  	// initialize all commands in the command file
-  	initializeCommands();
+    // initialize all commands in the command file
+    initializeCommands();
   }
 
   CommandCompletion *CommandCompletion::instance_ = 0;
@@ -120,10 +120,10 @@ namespace IAEX
    */
   CommandCompletion *CommandCompletion::instance( const QString filename )
   {
-  	if( !instance_ )
-  		instance_ = new CommandCompletion( filename );
+    if( !instance_ )
+      instance_ = new CommandCompletion( filename );
 
-  	return instance_;
+    return instance_;
   }
 
   /*
@@ -141,61 +141,61 @@ namespace IAEX
    */
   bool CommandCompletion::insertCommand( QTextCursor &cursor )
   {
-  	// check if cursor is okej
-  	if( !cursor.isNull() )
-  	{
-  		// first remove any old currentList_
-  		if( currentList_ )
-  		{
-  			delete currentList_;
-  			currentList_ = 0;
-  		}
+    // check if cursor is okej
+    if( !cursor.isNull() )
+    {
+      // first remove any old currentList_
+      if( currentList_ )
+      {
+        delete currentList_;
+        currentList_ = 0;
+      }
 
-  		// reset currentCommand_ && currentField_
-  		currentCommand_ = -1;
-  		currentField_ = -1;
+      // reset currentCommand_ && currentField_
+      currentCommand_ = -1;
+      currentField_ = -1;
 
-  		// find current word in text
-  		cursor.movePosition( QTextCursor::StartOfWord, QTextCursor::KeepAnchor );
-  		QString command = cursor.selectedText();
+      // find current word in text
+      cursor.movePosition( QTextCursor::StartOfWord, QTextCursor::KeepAnchor );
+      QString command = cursor.selectedText();
 
-  		if( !command.isNull() && !command.isEmpty() )
-  		{
-  			// check if any comman match the current word in the text
-  			currentList_ = new QStringList();
-  			for( int i = 0; i < commandList_.size(); ++i )
-  			{
-  				if( 0 == commandList_.at(i).indexOf( command, 0, Qt::CaseInsensitive ))
-  					currentList_->append( commandList_.at(i) );
-  			}
+      if( !command.isNull() && !command.isEmpty() )
+      {
+        // check if any comman match the current word in the text
+        currentList_ = new QStringList();
+        for( int i = 0; i < commandList_.size(); ++i )
+        {
+          if( 0 == commandList_.at(i).indexOf( command, 0, Qt::CaseInsensitive ))
+            currentList_->append( commandList_.at(i) );
+        }
 
-  			//cout << "Found commands (" << command.toStdString() << "):" << endl;
-  			//for( int i = 0; i < currentList_->size(); ++i )
-  			//	cout << " >" << currentList_->at(i).toStdString() << endl;
+        //cout << "Found commands (" << command.toStdString() << "):" << endl;
+        //for( int i = 0; i < currentList_->size(); ++i )
+        //  cout << " >" << currentList_->at(i).toStdString() << endl;
 
-  			// found one or more commands that match the word
-  			if( currentList_->size() > 0 )
-  			{
-  				currentCommand_ = 0;
+        // found one or more commands that match the word
+        if( currentList_->size() > 0 )
+        {
+          currentCommand_ = 0;
 
-  				commandStartPos_ = cursor.position();
-  				cursor.insertText( currentList_->at( currentCommand_ ));
-  				commandEndPos_ = cursor.position();
+          commandStartPos_ = cursor.position();
+          cursor.insertText( currentList_->at( currentCommand_ ));
+          commandEndPos_ = cursor.position();
 
-  				// select first field, if any
-  				nextField( cursor );
+          // select first field, if any
+          nextField( cursor );
 
-  				return true;
-  			}
-  			else
-  			{
-  				delete currentList_;
-  				currentList_ = 0;
-  			}
-  		}
-  	}
+          return true;
+        }
+        else
+        {
+          delete currentList_;
+          currentList_ = 0;
+        }
+      }
+    }
 
-  	return false;
+    return false;
   }
 
   /*
@@ -211,34 +211,34 @@ namespace IAEX
    */
   bool CommandCompletion::nextCommand( QTextCursor &cursor )
   {
-  	// check if cursor is okej
-  	if( !cursor.isNull() )
-  	{
-  		// check if currentList_ exists
-  		if( currentCommand_ >= 0 && currentList_ )
-  		{
-  			// if no more commands existes, restart
-  			if( currentCommand_ >= (currentList_->size()-1) )
-  				currentCommand_ = -1;
+    // check if cursor is okej
+    if( !cursor.isNull() )
+    {
+      // check if currentList_ exists
+      if( currentCommand_ >= 0 && currentList_ )
+      {
+        // if no more commands existes, restart
+        if( currentCommand_ >= (currentList_->size()-1) )
+          currentCommand_ = -1;
 
-  			// reset currentField_
-  			currentField_ = -1;
+        // reset currentField_
+        currentField_ = -1;
 
-  			//next command
-  			currentCommand_++;
-  			cursor.setPosition( commandStartPos_ );
-  			cursor.setPosition( commandEndPos_, QTextCursor::KeepAnchor );
-  			cursor.insertText( currentList_->at( currentCommand_ ));
-  			commandEndPos_ = cursor.position();
+        //next command
+        currentCommand_++;
+        cursor.setPosition( commandStartPos_ );
+        cursor.setPosition( commandEndPos_, QTextCursor::KeepAnchor );
+        cursor.insertText( currentList_->at( currentCommand_ ));
+        commandEndPos_ = cursor.position();
 
-  			// select first field, if any
-  			nextField( cursor );
+        // select first field, if any
+        nextField( cursor );
 
-  			return true;
-  		}
-  	}
+        return true;
+      }
+    }
 
-  	return false;
+    return false;
   }
 
   /*
@@ -251,17 +251,17 @@ namespace IAEX
    */
   QString CommandCompletion::helpCommand()
   {
-  	if( currentCommand_ >= 0 )
-  	{
-  		if( currentList_->size() > currentCommand_ )
-  		{
-  			QString command = currentList_->at( currentCommand_ );
-  			if( commands_.contains( command ))
-  				return commands_[command]->helptext();
-  		}
-  	}
+    if( currentCommand_ >= 0 )
+    {
+      if( currentList_->size() > currentCommand_ )
+      {
+        QString command = currentList_->at( currentCommand_ );
+        if( commands_.contains( command ))
+          return commands_[command]->helptext();
+      }
+    }
 
-  	return QString::null;
+    return QString::null;
   }
 
   /*
@@ -277,57 +277,57 @@ namespace IAEX
    */
   bool CommandCompletion::nextField( QTextCursor &cursor )
   {
-  	// check if cursor is okej
-  	if( !cursor.isNull() )
-  	{
-  		if( currentCommand_ >= 0 && currentCommand_ < currentList_->size() )
-  		{
-  			QString command = currentList_->at( currentCommand_ );
+    // check if cursor is okej
+    if( !cursor.isNull() )
+    {
+      if( currentCommand_ >= 0 && currentCommand_ < currentList_->size() )
+      {
+        QString command = currentList_->at( currentCommand_ );
 
-  			if( commands_.contains( command ))
-  			{
-  				if( currentField_ < (commands_[command]->numbersField() - 1) )
-  				{
-  					//next field
-  					currentField_++;
-  					QString fieldID;
-  					fieldID.setNum( currentField_ );
-  					fieldID = "$" + fieldID;
-  					QString field = commands_[command]->datafield( fieldID );
+        if( commands_.contains( command ))
+        {
+          if( currentField_ < (commands_[command]->numbersField() - 1) )
+          {
+            //next field
+            currentField_++;
+            QString fieldID;
+            fieldID.setNum( currentField_ );
+            fieldID = "$" + fieldID;
+            QString field = commands_[command]->datafield( fieldID );
 
-  					if( !field.isNull() )
-  					{
-  						// get text in editor
-  						cursor.setPosition( commandStartPos_ );
-  						cursor.movePosition( QTextCursor::EndOfBlock, QTextCursor::KeepAnchor );
-  						QString text = cursor.selectedText();
+            if( !field.isNull() )
+            {
+              // get text in editor
+              cursor.setPosition( commandStartPos_ );
+              cursor.movePosition( QTextCursor::EndOfBlock, QTextCursor::KeepAnchor );
+              QString text = cursor.selectedText();
 
-  						int pos = text.indexOf( field, 0 );
-  						if( pos >= 0 )
-  						{
-  							// select field
-  							cursor.setPosition( commandStartPos_ + pos );
-  							cursor.setPosition( commandStartPos_ + pos + field.size(), QTextCursor::KeepAnchor );
-  							return true;
-  						}
-  					}
-  				}
-  			}
-  		}
-  	}
+              int pos = text.indexOf( field, 0 );
+              if( pos >= 0 )
+              {
+                // select field
+                cursor.setPosition( commandStartPos_ + pos );
+                cursor.setPosition( commandStartPos_ + pos + field.size(), QTextCursor::KeepAnchor );
+                return true;
+              }
+            }
+          }
+        }
+      }
+    }
 
-  	return false;
+    return false;
   }
 
   /*!
    * \example from commands.xml
    *
    * <command name="simulate($1|, startTime=$2|, stopTime=$3|, numberOfIntervals=$4|)">
-   *	<field name="$1|">modelname</field>
-   *	<field name="$2|">&lt;Real></field>
-   *	<field name="$3|">&lt;Real></field>
-   *	<field name="$4|">&lt;Integer></field>
-   *	<helptext>Translates a model and simulates it. Ex: simulate(dcmotor). Ex: simulate(dcmotor,startTime=0, stopTime=10, numberOfIntervals=1000).</helptext>
+   *  <field name="$1|">modelname</field>
+   *  <field name="$2|">&lt;Real></field>
+   *  <field name="$3|">&lt;Real></field>
+   *  <field name="$4|">&lt;Integer></field>
+   *  <helptext>Translates a model and simulates it. Ex: simulate(dcmotor). Ex: simulate(dcmotor,startTime=0, stopTime=10, numberOfIntervals=1000).</helptext>
    * </command>
    *
    */
@@ -341,27 +341,27 @@ namespace IAEX
    */
   void CommandCompletion::initializeCommands()
   {
-  	QDomElement root = doc_->documentElement();
-  	QDomNode node = root.firstChild();
+    QDomElement root = doc_->documentElement();
+    QDomNode node = root.firstChild();
 
-  	// loop through the DOM tree
-  	while( !node.isNull() )
-  	{
-  		QDomElement element = node.toElement();
-  		if( !element.isNull() )
-  		{
-  			if( element.tagName() == "command" )
-  			{
-  				CommandUnit *unit = new CommandUnit( element.attribute( "name" ));
-  				QDomNode n = element.firstChild();
-  				parseCommand( n, unit );
+    // loop through the DOM tree
+    while( !node.isNull() )
+    {
+      QDomElement element = node.toElement();
+      if( !element.isNull() )
+      {
+        if( element.tagName() == "command" )
+        {
+          CommandUnit *unit = new CommandUnit( element.attribute( "name" ));
+          QDomNode n = element.firstChild();
+          parseCommand( n, unit );
 
-  				commands_.insert( unit->fullName(), unit );
-  				commandList_.append( unit->fullName() );
-  			}
-  		}
-  		node = node.nextSibling();
-  	}
+          commands_.insert( unit->fullName(), unit );
+          commandList_.append( unit->fullName() );
+        }
+      }
+      node = node.nextSibling();
+    }
   }
 
   /*
@@ -372,22 +372,22 @@ namespace IAEX
    */
   void CommandCompletion::parseCommand( QDomNode node, CommandUnit *item ) const
   {
-  	if( !item )
-  		throw runtime_error( "ParseCommand... No ITEM set" );
+    if( !item )
+      throw runtime_error( "ParseCommand... No ITEM set" );
 
-  	while( !node.isNull() )
-  	{
-  		QDomElement element = node.toElement();
+    while( !node.isNull() )
+    {
+      QDomElement element = node.toElement();
 
-  		if( element.tagName() == "field" )
-  			item->addDataField( element.attribute( "name" ), element.text() );
-  		else if( element.tagName() == "helptext" )
-  			item->setHelptext( element.text() );
-  		else
-  			cout << "Tag not known" << element.tagName().toStdString();
+      if( element.tagName() == "field" )
+        item->addDataField( element.attribute( "name" ), element.text() );
+      else if( element.tagName() == "helptext" )
+        item->setHelptext( element.text() );
+      else
+        cout << "Tag not known" << element.tagName().toStdString();
 
-  		node = node.nextSibling();
-  	}
+      node = node.nextSibling();
+    }
   }
 
 }

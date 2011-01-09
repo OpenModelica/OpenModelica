@@ -59,7 +59,7 @@ bool DataSelect::getVariables(const QStringList& vars, QString& xVar, QString& y
   hData->addItems(vars);
 
   if(exec() == QDialog::Rejected)
-  	return false;
+    return false;
 
   xVar = hData->currentText();
   yVar = vData->currentText();

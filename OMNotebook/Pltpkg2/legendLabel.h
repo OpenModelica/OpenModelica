@@ -58,7 +58,7 @@ public:
 
   void setCurve(Curve* c)
   {
-  	curve = c;
+    curve = c;
   }
 
 signals:
@@ -76,7 +76,7 @@ protected:
 
   void resizeEvent ( QResizeEvent * event )
   {
-  	setIndent(height() +2);
+    setIndent(height() +2);
   }
 
 //  void showEvent(QShowEvent*);

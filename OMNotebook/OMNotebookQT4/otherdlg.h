@@ -56,44 +56,44 @@ namespace IAEX
   class OtherDlg : public QDialog
   {
   public:
-  	OtherDlg( QWidget *parent, int min, int max)
-  		: QDialog(parent), min_(min), max_(max)
-  	{
-  		ui.setupUi(this);
+    OtherDlg( QWidget *parent, int min, int max)
+      : QDialog(parent), min_(min), max_(max)
+    {
+      ui.setupUi(this);
 
-  		QString minW;
-  		QString maxW;
-  		minW.setNum( min_ );
-  		maxW.setNum( max_ );
+      QString minW;
+      QString maxW;
+      minW.setNum( min_ );
+      maxW.setNum( max_ );
 
-  		QString text = QString("Enter value (") + minW +
-  			QString("-") + maxW + QString(")");
+      QString text = QString("Enter value (") + minW +
+        QString("-") + maxW + QString(")");
 
-  		ui.label->setText( text );
+      ui.label->setText( text );
 
-  		//set fixed size
-  		setMinimumHeight( height() );
-  		setMaximumHeight( height() );
-  		setMinimumWidth( width() );
-  		setMaximumWidth( width() );
-  	}
-  	virtual ~OtherDlg(){}
-  	int value()
-  	{
-  		bool ok;
-  		int value = ui.lineEdit->text().toInt(&ok);
+      //set fixed size
+      setMinimumHeight( height() );
+      setMaximumHeight( height() );
+      setMinimumWidth( width() );
+      setMaximumWidth( width() );
+    }
+    virtual ~OtherDlg(){}
+    int value()
+    {
+      bool ok;
+      int value = ui.lineEdit->text().toInt(&ok);
 
-  		if(ok)
-  			if( min_ <= value && value <= max_ )
-  				return value;
+      if(ok)
+        if( min_ <= value && value <= max_ )
+          return value;
 
-  		return -1;
-  	}
+      return -1;
+    }
 
   private:
-  	Ui::SelectDialog ui;
-  	int min_;
-  	int max_;
+    Ui::SelectDialog ui;
+    int min_;
+    int max_;
   };
 }
 

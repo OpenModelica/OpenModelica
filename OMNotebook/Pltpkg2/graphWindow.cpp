@@ -118,7 +118,7 @@ void GraphWindow::saveImage()
   QString filename = QFileDialog::getSaveFileName(this, "Export image", "untitled", "Portable Network Graphics (*.png);;Windows Bitmap (*.bmp);;Joint Photographic Experts Group (*.jpg)");
 
   if(!filename.size())
-  	return;
+    return;
 
   QImage i3(compoundWidget->rect().size(),  QImage::Format_RGB32);
   i3.fill(QColor(Qt::white).rgb());
@@ -144,15 +144,15 @@ void GraphWindow::saveImage()
 
   QList<LegendLabel*> l = compoundWidget->legendFrame->findChildren<LegendLabel*>();
   for(int i = 0; i < l.size(); ++i)
-  	l[i]->render(&p, l[i]->pos()+compoundWidget->legendFrame->pos());
+    l[i]->render(&p, l[i]->pos()+compoundWidget->legendFrame->pos());
 
 
   if(filename.endsWith("png"))
-  	i3.save(filename, "PNG");
+    i3.save(filename, "PNG");
   else if(filename.endsWith("bmp"))
-  	i3.save(filename, "BMP");
+    i3.save(filename, "BMP");
   else if(filename.endsWith("jpg") || filename.endsWith("jpeg"))
-  	i3.save(filename, "JPG");
+    i3.save(filename, "JPG");
   else
-  	i3.save(filename+".bmp", "BMP");
+    i3.save(filename+".bmp", "BMP");
 }

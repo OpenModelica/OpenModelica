@@ -39,7 +39,7 @@
  * modified to fit OMNotebook
  */
 
-#define IAEX_SOCKET_PORT  	7777
+#define IAEX_SOCKET_PORT    7777
 
 // STD Headers
 #include <iostream>
@@ -68,15 +68,15 @@ namespace IAEX
    * of the application using tcp sockets.
    */
   NotebookSocket::NotebookSocket( CellApplication* application )
-  	: application_( application ),
-  	server_( 0 ),
-  	foundServer_( false )
+    : application_( application ),
+    server_( 0 ),
+    foundServer_( false )
   {
-  	socket_ = new QTcpSocket();
+    socket_ = new QTcpSocket();
 
-  	//connection
-  	connect( socket_, SIGNAL( readyRead() ),
-  		this, SLOT( receiveNewSocketMsg() ));
+    //connection
+    connect( socket_, SIGNAL( readyRead() ),
+      this, SLOT( receiveNewSocketMsg() ));
   }
 
   /*!
@@ -87,8 +87,8 @@ namespace IAEX
    */
   NotebookSocket::~NotebookSocket()
   {
-  	if( socket_ || server_ )
-  		closeNotebookSocket();
+    if( socket_ || server_ )
+      closeNotebookSocket();
   }
 
 
@@ -108,16 +108,16 @@ namespace IAEX
    */
   bool NotebookSocket::connectToNotebook()
   {
-  	// first try to connect to existing notebook process/application
+    // first try to connect to existing notebook process/application
         if( tryToConnect() )
-  		return true;
+      return true;
 
-  	// unable to connect, try to start server
-  	if( startServer() )
-  		return false;
+    // unable to connect, try to start server
+    if( startServer() )
+      return false;
 
-  	// something is wrong, throw exception
-  	throw runtime_error( "Unable to connect OR start server" );
+    // something is wrong, throw exception
+    throw runtime_error( "Unable to connect OR start server" );
   }
 
   /*!
@@ -128,33 +128,33 @@ namespace IAEX
    */
   bool NotebookSocket::closeNotebookSocket()
   {
-  	// socket
-  	if( socket_ )
-  	{
-  		if( socket_->state() == QAbstractSocket::ConnectedState )
-  		{
-  			socket_->disconnectFromHost();
+    // socket
+    if( socket_ )
+    {
+      if( socket_->state() == QAbstractSocket::ConnectedState )
+      {
+        socket_->disconnectFromHost();
 
-  			if( socket_->state() == QAbstractSocket::ConnectedState )
-  				if( !socket_->waitForDisconnected( 5000 ))
-  					throw runtime_error( "Unable to disconnect socket from host" );
-  		}
+        if( socket_->state() == QAbstractSocket::ConnectedState )
+          if( !socket_->waitForDisconnected( 5000 ))
+            throw runtime_error( "Unable to disconnect socket from host" );
+      }
 
-  		delete socket_;
-  		socket_ = 0;
-  	}
+      delete socket_;
+      socket_ = 0;
+    }
 
-  	// server
-  	if( server_ )
-  	{
-  		if( server_->isListening() )
-  			server_->close();
+    // server
+    if( server_ )
+    {
+      if( server_->isListening() )
+        server_->close();
 
-  		delete server_;
-  		server_ = 0;
-  	}
+      delete server_;
+      server_ = 0;
+    }
 
-  	return true;
+    return true;
   }
 
   /*!
@@ -166,27 +166,27 @@ namespace IAEX
    */
   bool NotebookSocket::sendFilename( QString filename )
   {
-  	cout << "sendFilename()" << endl;
+    cout << "sendFilename()" << endl;
 
-  	// connected socket to correct server
-  	if( foundServer_ )
-  	{
-  		QString file = "FILE: " + filename;
-  		if( socket_->write( file.toStdString().c_str(), file.size() ) == -1 )
-  		{
-  			cout << "[Socket Error] Socket->sendFilename(): " <<
-  				socket_->errorString().toStdString() << endl;
-  			return false;
-  		}
+    // connected socket to correct server
+    if( foundServer_ )
+    {
+      QString file = "FILE: " + filename;
+      if( socket_->write( file.toStdString().c_str(), file.size() ) == -1 )
+      {
+        cout << "[Socket Error] Socket->sendFilename(): " <<
+          socket_->errorString().toStdString() << endl;
+        return false;
+      }
 
-  		if( !socket_->waitForBytesWritten( 5000 ))
-  			return false;
+      if( !socket_->waitForBytesWritten( 5000 ))
+        return false;
 
-  		// sucess
-  		return true;
-  	}
+      // sucess
+      return true;
+    }
 
-  	throw runtime_error( "Didn't found correct server" );
+    throw runtime_error( "Didn't found correct server" );
   }
 
 
@@ -201,50 +201,50 @@ namespace IAEX
    */
   void NotebookSocket::receiveNewConnection()
   {
-  	if( server_->hasPendingConnections() )
-  	{
-  		cout << "NotebookSocket: {new Connection}" << endl;
-  		QTcpSocket* socket = server_->nextPendingConnection();
+    if( server_->hasPendingConnections() )
+    {
+      cout << "NotebookSocket: {new Connection}" << endl;
+      QTcpSocket* socket = server_->nextPendingConnection();
 
-  		// write, ask if OMNNotebook
-  		if( socket->write( "Hello! OMNNotebook?", 25 ) == -1 )
-  		{
-  			cout << "[Socket Error] Server->receiveNewConnection(): " <<
-  				socket->errorString().toStdString() << endl;
-  			return;
-  		}
+      // write, ask if OMNNotebook
+      if( socket->write( "Hello! OMNNotebook?", 25 ) == -1 )
+      {
+        cout << "[Socket Error] Server->receiveNewConnection(): " <<
+          socket->errorString().toStdString() << endl;
+        return;
+      }
 
-  		// wait and see if receive filepath from socket, if not
-  		// asume that it isn't correct notebook.
-  		socket->waitForBytesWritten( 5000 );
-  		if( socket->waitForReadyRead( 8000 ))
-  		{
-  			// read socket data
-  			QByteArray msg = socket->readAll();
-  			QString filename( msg );
+      // wait and see if receive filepath from socket, if not
+      // asume that it isn't correct notebook.
+      socket->waitForBytesWritten( 5000 );
+      if( socket->waitForReadyRead( 8000 ))
+      {
+        // read socket data
+        QByteArray msg = socket->readAll();
+        QString filename( msg );
 
-  			// check if correkt data
-  			if( filename.startsWith( "FILE: " ))
-  			{
-  				// exstract filename
-  				filename = filename.mid( 6, filename.size() - 6 );
-  				cout << "Received filename: <" << filename.toStdString() << ">" << endl;
+        // check if correkt data
+        if( filename.startsWith( "FILE: " ))
+        {
+          // exstract filename
+          filename = filename.mid( 6, filename.size() - 6 );
+          cout << "Received filename: <" << filename.toStdString() << ">" << endl;
 
-  				// tell applicaiton to open filename
-  				application_->open( filename );
-  			}
-  			else
-  				cout << "[Socket Error] Server->receiveNewConnection(): " <<
-  				"Received wrong message." << endl;
-  		}
-  		else
-  			cout << "[Socket Error] Server->receiveNewConnection(): " <<
-  				"Didn't receive any message." << endl;
+          // tell applicaiton to open filename
+          application_->open( filename );
+        }
+        else
+          cout << "[Socket Error] Server->receiveNewConnection(): " <<
+          "Received wrong message." << endl;
+      }
+      else
+        cout << "[Socket Error] Server->receiveNewConnection(): " <<
+          "Didn't receive any message." << endl;
 
-  		// close socket
-  		socket->close();
-  		delete socket;
-  	}
+      // close socket
+      socket->close();
+      delete socket;
+    }
   }
 
   /*!
@@ -255,17 +255,17 @@ namespace IAEX
    */
   void NotebookSocket::receiveNewSocketMsg()
   {
-  	cout << "Socket: Recive new message" << endl;
-  	if( socket_ )
-  	{
-  		QByteArray msg = socket_->readAll();
-  		cout << "Message: <" << msg.data() << ">" << endl;
+    cout << "Socket: Recive new message" << endl;
+    if( socket_ )
+    {
+      QByteArray msg = socket_->readAll();
+      cout << "Message: <" << msg.data() << ">" << endl;
 
-  		if( string( msg.data() ) == string( "Hello! OMNNotebook?" ))
-  			foundServer_ = true;
-  		else
-  			cout << "Received worng message." << endl;
-  	}
+      if( string( msg.data() ) == string( "Hello! OMNNotebook?" ))
+        foundServer_ = true;
+      else
+        cout << "Received worng message." << endl;
+    }
   }
 
 
@@ -282,23 +282,23 @@ namespace IAEX
    */
   bool NotebookSocket::tryToConnect()
   {
-  	// try to connect
-  	socket_->connectToHost( QHostAddress::LocalHost, IAEX_SOCKET_PORT );
-  	if( socket_->waitForConnected( 100 ))
-  	{
-  		if( !socket_->waitForReadyRead( 5000 ))
-  		{
-  			cout << "[Socket Error] tryToConnect(): Didn't recevie any message" << endl;
-  			return false;
-  		}
+    // try to connect
+    socket_->connectToHost( QHostAddress::LocalHost, IAEX_SOCKET_PORT );
+    if( socket_->waitForConnected( 100 ))
+    {
+      if( !socket_->waitForReadyRead( 5000 ))
+      {
+        cout << "[Socket Error] tryToConnect(): Didn't recevie any message" << endl;
+        return false;
+      }
 
-  		// success
-  		return true;
-  	}
+      // success
+      return true;
+    }
 
-  	// unable to connect
-  	socket_->disconnectFromHost();
-  	return false;
+    // unable to connect
+    socket_->disconnectFromHost();
+    return false;
   }
 
   /*!
@@ -310,23 +310,23 @@ namespace IAEX
    */
   bool NotebookSocket::startServer()
   {
-  	// setup server
-  	server_ = new QTcpServer();
-  	server_->setMaxPendingConnections( 5 );
+    // setup server
+    server_ = new QTcpServer();
+    server_->setMaxPendingConnections( 5 );
 
-  	// connect server
-  	connect( server_, SIGNAL( newConnection() ),
-  		this, SLOT( receiveNewConnection() ));
+    // connect server
+    connect( server_, SIGNAL( newConnection() ),
+      this, SLOT( receiveNewConnection() ));
 
-  	// listen
-  	if( !server_->listen( QHostAddress::LocalHost, IAEX_SOCKET_PORT ) )
-  	{
-  		cout << "[Socket Error] Server->listen(): " << server_->errorString().toStdString() << endl;
-  		return false;
-  	}
+    // listen
+    if( !server_->listen( QHostAddress::LocalHost, IAEX_SOCKET_PORT ) )
+    {
+      cout << "[Socket Error] Server->listen(): " << server_->errorString().toStdString() << endl;
+      return false;
+    }
 
-  	// success
-  	return true;
+    // success
+    return true;
   }
 
 }

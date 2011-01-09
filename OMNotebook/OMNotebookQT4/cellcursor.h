@@ -51,52 +51,52 @@ namespace IAEX
 {
   class CellCursor : public Cell
   {
-  	Q_OBJECT
+    Q_OBJECT
 
   public:
-  	CellCursor(QWidget *parent=0);
-  	virtual ~CellCursor();
+    CellCursor(QWidget *parent=0);
+    virtual ~CellCursor();
 
-  	//Insertion
-  	void addBefore(Cell *newCell);
-  	void deleteCurrentCell();
-  	void removeCurrentCell();
-  	void replaceCurrentWith(Cell *newCell);
+    //Insertion
+    void addBefore(Cell *newCell);
+    void deleteCurrentCell();
+    void removeCurrentCell();
+    void replaceCurrentWith(Cell *newCell);
 
-  	Cell *currentCell();
+    Cell *currentCell();
 
-  	//Movment
-  	bool moveUp();									// Changed 2006-08-24 AF
-  	bool moveDown();								// Changed 2006-08-24 AF
+    //Movment
+    bool moveUp();                  // Changed 2006-08-24 AF
+    bool moveDown();                // Changed 2006-08-24 AF
 
-  	void moveToFirstChild(Cell *parent);
-  	void moveToLastChild(Cell *parent);
-  	void moveBefore(Cell *current);
-  	void moveAfter(Cell *current);
+    void moveToFirstChild(Cell *parent);
+    void moveToLastChild(Cell *parent);
+    void moveBefore(Cell *current);
+    void moveAfter(Cell *current);
 
-  	virtual void accept(Visitor &v);
-  	virtual QString text(){return QString::null;}
+    virtual void accept(Visitor &v);
+    virtual QString text(){return QString::null;}
 
-  	//Flag
-  	bool isEditable();								// Added 2005-10-28 AF
-  	bool isClickedOn();								// Added 2006-04-27 AF
+    //Flag
+    bool isEditable();                // Added 2005-10-28 AF
+    bool isClickedOn();                // Added 2006-04-27 AF
 
   public slots:
-  	virtual void setFocus(const bool){}
+    virtual void setFocus(const bool){}
 
   signals:
-  	void changedPosition();
-  	void positionChanged(int x, int y, int xm, int ym);
+    void changedPosition();
+    void positionChanged(int x, int y, int xm, int ym);
 
   protected:
-  	void mousePressEvent(QMouseEvent *event);		// Added 2006-04-27 AF
+    void mousePressEvent(QMouseEvent *event);    // Added 2006-04-27 AF
 
   private:
-  	void cursorIsMoved();							// Added 2006-04-27 AF
-  	void removeFromCurrentPosition();
+    void cursorIsMoved();              // Added 2006-04-27 AF
+    void removeFromCurrentPosition();
 
   private:
-  	bool clickedOn_;
+    bool clickedOn_;
 
   };
 
@@ -104,12 +104,12 @@ namespace IAEX
   class CursorWidget : public QWidget
   {
   public:
-  	CursorWidget(QWidget *parent=0)
-  		:QWidget(parent){}
-  		virtual ~CursorWidget(){}
+    CursorWidget(QWidget *parent=0)
+      :QWidget(parent){}
+      virtual ~CursorWidget(){}
 
   protected:
-  	void paintEvent(QPaintEvent *event);
+    void paintEvent(QPaintEvent *event);
   };
 }
 #endif

@@ -67,8 +67,8 @@ public:
   GraphWidget(QWidget* parent = 0);
   ~GraphWidget();
 
-  //	void printData(QString data);
-  //	void printData2(qreal x0, qreal y0, qreal x1, qreal y1);
+  //  void printData(QString data);
+  //  void printData2(qreal x0, qreal y0, qreal x1, qreal y1);
 
   quint16 serverPort() {return server->serverPort();}
 
@@ -101,36 +101,36 @@ public slots:
 
   void setPan(bool b)
   {
-  	pan = b;
-  	if(b)
-  	{
-  		zoom = false;
-  		select=false;
-  		setDragMode(QGraphicsView::ScrollHandDrag);
-  	}
+    pan = b;
+    if(b)
+    {
+      zoom = false;
+      select=false;
+      setDragMode(QGraphicsView::ScrollHandDrag);
+    }
   }
 
   void setSelect(bool b)
   {
-  	select = b;
-  	if(b)
-  	{
-  		zoom = false;
-  		pan = false;
-  		setDragMode(QGraphicsView::RubberBandDrag);
-  		setDragMode(QGraphicsView::NoDrag);
-  	}
+    select = b;
+    if(b)
+    {
+      zoom = false;
+      pan = false;
+      setDragMode(QGraphicsView::RubberBandDrag);
+      setDragMode(QGraphicsView::NoDrag);
+    }
   }
 
   void setZoom(bool b)
   {
-  	zoom = b;
-  	if(b)
-  	{
-  		select = false;
-  		pan = false;
-  		setDragMode(QGraphicsView::RubberBandDrag);
-  	}
+    zoom = b;
+    if(b)
+    {
+      select = false;
+      pan = false;
+      setDragMode(QGraphicsView::RubberBandDrag);
+    }
   }
 
   void resetZoom();
@@ -204,21 +204,21 @@ public:
 
   QRectF currentArea()
   {
-  	return currentArea_;
+    return currentArea_;
   }
 
   void setCurrentArea(const QRectF& r)
   {
-  	currentArea_ = r;
+    currentArea_ = r;
   }
 
 private:
   void drawRulers();
   void updateScaleFactors()
   {
-  	QPolygonF p = mapToScene(QRect(0,0,10,10));
-  	xScaleFactor = p.boundingRect().width()/10;
-  	yScaleFactor = p.boundingRect().height()/10;
+    QPolygonF p = mapToScene(QRect(0,0,10,10));
+    xScaleFactor = p.boundingRect().width()/10;
+    yScaleFactor = p.boundingRect().height()/10;
 
   }
 

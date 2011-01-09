@@ -62,7 +62,7 @@ namespace IAEX
   class SyntaxHighlighter
   {
   public:
-  	virtual void highlight(QTextDocument *) = 0;
+    virtual void highlight(QTextDocument *) = 0;
   };
 }
 

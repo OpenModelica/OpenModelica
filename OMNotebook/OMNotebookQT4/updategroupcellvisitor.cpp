@@ -78,7 +78,7 @@ namespace IAEX
   // GROUPCELL
   void UpdateGroupcellVisitor::visitCellGroupNodeBefore(CellGroup *node)
   {
-  	node->closeChildCells();
+    node->closeChildCells();
   }
 
   void UpdateGroupcellVisitor::visitCellGroupNodeAfter(CellGroup *)
