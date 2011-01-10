@@ -2228,6 +2228,18 @@ algorithm
       then
         (cache,Values.BOOL(false),st);
 
+    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "generateSeparateCode"),expLst = {}),
+        (st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+      equation
+        sp = SCodeUtil.translateAbsyn2SCode(p);
+        generateFunctions(cache,env,sp);
+      then (cache,Values.BOOL(true),st);
+
+    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "generateSeparateCode"),expLst = {}),
+        (st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+      then
+        (cache,Values.BOOL(false),st);
+
     case (cache,env,
         DAE.CALL(
           path = Absyn.IDENT(name = "loadModel"),
@@ -4562,7 +4574,7 @@ algorithm
         uniontypePaths = DAEUtil.getUniontypePaths(d,{});
         (cache,metarecordTypes) = Lookup.lookupMetarecordsRecursive(cache, env, uniontypePaths);
         
-        SimCode.translateFunctions(pathstr, mainFunction, d, metarecordTypes);
+        SimCode.translateFunctions(pathstr, SOME(mainFunction), d, metarecordTypes);
         compileModel(pathstr, {}, "", "", "");
       then
         (cache, pathstr);
@@ -4578,15 +4590,13 @@ algorithm
         true = RTOpts.debugFlag("generateCodeCheat");
         funcs = Env.getFunctionTree(cache); 
         // First check if the main function exists... If it does not it might be an interactive function...
-        mainFunction = DAEUtil.getNamedFunction(path, funcs);
         pathstr = generateFunctionName(path);
         
         // The list of functions is not ordered, so we need to filter out the main function...
         funcs = Env.getFunctionTree(cache);
         d = DAEUtil.getFunctionList(funcs);
-        d = Util.listSetDifference(d, {mainFunction});
         metarecordTypes = {};
-        SimCode.translateFunctions(pathstr, mainFunction, d, metarecordTypes);
+        SimCode.translateFunctions(pathstr, NONE(), d, metarecordTypes);
       then
         (cache, pathstr);
 
@@ -4602,5 +4612,58 @@ algorithm
         fail();
   end matchcontinue;
 end cevalGenerateFunction;
+
+protected function generateFunctions
+  input Env.Cache cache;
+  input Env.Env env;
+  input list<SCode.Class> sp;
+algorithm
+  _ := match (cache,env,sp)
+    local
+      String name;
+      list<String> names;
+      list<Absyn.Path> paths;
+      list<SCode.Element> elementLst;
+      DAE.FunctionTree funcs;
+      list<DAE.Function> d;
+    case (cache,env,{}) then ();
+    case (cache,env,SCode.CLASS(name="OpenModelica")::sp)
+      equation
+        generateFunctions(cache,env,sp);
+      then ();
+    case (cache,env,SCode.CLASS(name=name,encapsulatedPrefix=true,restriction=SCode.R_PACKAGE(),classDef=SCode.PARTS(elementLst=elementLst))::sp)
+      equation
+        names = Util.listMap(Util.listFilterBoolean(Util.listMap(Util.listFilterBoolean(elementLst, SCode.elementIsClass), SCode.getElementClass), SCode.isFunction), SCode.className);
+        paths = Util.listMap1r(names,Absyn.makeQualifiedPathFromStrings,name);
+        cache = instantiateDaeFunctions(cache, env, paths);
+        funcs = Env.getFunctionTree(cache);
+        d = Util.listMap1(paths, DAEUtil.getNamedFunction, funcs);
+        SimCode.translateFunctions(name, NONE(), d, {});
+        generateFunctions(cache,env,sp);
+      then ();
+    case (cache,env,_::sp)
+      equation
+        generateFunctions(cache,env,sp);
+      then ();
+  end match;
+end generateFunctions;
+
+protected function instantiateDaeFunctions
+  input Env.Cache cache;
+  input Env.Env env;
+  input list<Absyn.Path> paths;
+  output Env.Cache outCache;
+algorithm
+  outCache := matchcontinue (cache,env,paths)
+    local
+      Absyn.Path path;
+    case (cache,env,{}) then cache;
+    case (cache,env,path::paths)
+      equation
+        (cache,Util.SUCCESS()) = Static.instantiateDaeFunction(cache,env,path,false,NONE(),true);
+        cache = instantiateDaeFunctions(cache,env,paths);
+      then cache;
+  end matchcontinue;
+end instantiateDaeFunctions;
 
 end CevalScript;

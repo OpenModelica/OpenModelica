@@ -1174,17 +1174,6 @@ algorithm
       String error_Str;
       DAE.Function func;
     
-    // Try cevalFunction first
-    /*
-    case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl)),vallst,impl,st,_,msg)
-      equation
-        (cache,false) = Static.isExternalObjectFunction(cache,env,funcpath);
-        // Call of record constructors, etc., i.e. functions that can be constant propagated.
-        (cache,newval) = cevalFunction(cache, env, funcpath, vallst, impl, msg);
-      then
-        (cache,newval,st);
-    */
-
     // External functions that are "known" should be evaluated without compilation, e.g. all math functions
     case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl,builtin = builtin)),vallst,impl,st,dim,msg)
       equation
@@ -1525,59 +1514,6 @@ algorithm
         Values.STRING(str);
   end match;
 end cevalKnownExternalFuncs2;
-
-protected function cevalFunction "function: cevalFunction
-  For constant evaluation of functions returning a single value.
-  For now only record constructors."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input Absyn.Path inPath;
-  input list<Values.Value> inValuesValueLst;
-  input Boolean inBoolean;
-  input Msg inMsg;
-  output Env.Cache outCache;
-  output Values.Value outValue;
-algorithm
-  (outCache,outValue) :=
-  matchcontinue (inCache,inEnv,inPath,inValuesValueLst,inBoolean,inMsg)
-    local
-      SCode.Class c;
-      list<Env.Frame> env_1,env;
-      list<String> compnames;
-      DAE.Mod mod;
-      list<DAE.Element> dae;
-      Values.Value value;
-      Absyn.Path funcname;
-      list<Values.Value> vallst;
-      Boolean impl;
-      Msg msg;
-      String s;
-      Env.Cache cache;
-      Env.Env env_2;
-      // Not working properly (only non-nested records)! /sjoelund
-      /*
-    case (cache,env,funcname,vallst,impl,msg) "For record constructors"
-      equation
-        (_,_) = Lookup.lookupRecordConstructorClass(env, funcname);
-        (cache,c,env_1) = Lookup.lookupClass(cache,env, funcname, false);
-        compnames = SCode.componentNames(c);
-        mod = Types.valuesToMods(vallst, compnames);
-        (cache,env_2,_,_,dae,_,_,_,_,_) = Inst.instClass(cache,env_1,InnerOuter.emptyInstHierarchy,UnitAbsyn.noStore, mod, Prefix.NOPRE(), Connect.emptySet, c, {}, impl,
-          Inst.TOP_CALL(),ConnectionGraph.EMPTY);
-        (cache, value) = DAE.daeToRecordValue(cache, env_2, funcname, dae, impl) "adrpo: We need the env here as we need to do variable Lookup!";
-      then
-        (cache,value);
-      */
-
-    case (cache,env,funcname,vallst,(impl as true),msg)
-      equation
-        /*Debug.fprint("failtrace", "- Ceval.cevalFunction: Don't know what to do. impl was always false before:");
-        s = Absyn.pathString(funcname);
-        Debug.fprintln("failtrace", s);*/
-      then
-        fail();
-  end matchcontinue;
-end cevalFunction;
 
 protected function cevalMatrixElt "function: cevalMatrixElt
   Evaluates the expression of a matrix constructor, e.g. {1,2;3,4}"
@@ -5578,29 +5514,6 @@ algorithm
   end matchcontinue;
 end getValueString;
 
-
-protected function cevalTuple
-  input list<DAE.Exp> inexps;
-  output list<Values.Value> oval;
-algorithm 
-  oval := matchcontinue(inexps)
-    local
-      DAE.Exp e;
-      list<DAE.Exp> expl;
-      Values.Value v;
-      list<Values.Value> vs;
-    
-    case({}) then {};
-    
-    case(e ::expl)
-      equation
-        (_,v,_) = ceval(Env.emptyCache(), Env.emptyEnv, e,true,NONE(),NONE(),MSG);
-        vs = cevalTuple(expl);
-      then
-        v::vs;
-end matchcontinue;
-end cevalTuple;
-
 protected function crefEqualValue ""
   input DAE.ComponentRef c;
   input DAE.Binding v;
@@ -5928,8 +5841,8 @@ public function emptyCevalHashTable
   list<Option<tuple<Key,Value>>> lst;
   array<Option<tuple<Key,Value>>> emptyarr;
 algorithm
-  arr := fill({}, 1000);
-  emptyarr := fill(NONE(), 100);
+  arr := arrayCreate(1000, {});
+  emptyarr := arrayCreate(100, NONE());
   hashTable := HASHTABLE(arr,VALUE_ARRAY(0,100,emptyarr),1000,0);
 end emptyCevalHashTable;
 

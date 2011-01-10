@@ -546,8 +546,8 @@ algorithm
   end matchcontinue;
 end expand;
 
-public function abs
-"function: abs
+public function expAbs
+"function: expAbs
   author: PA
   Makes the expression absolute. i.e. non-negative."
   input DAE.Exp inExp;
@@ -575,20 +575,20 @@ algorithm
     
     case (DAE.UNARY(operator = DAE.UMINUS(ty = tp),exp = e))
       equation
-        e_1 = abs(e);
+        e_1 = expAbs(e);
       then
         e_1;
     
     case (DAE.BINARY(exp1 = e1,operator = op,exp2 = e2))
       equation
-        e1_1 = abs(e1);
-        e2_1 = abs(e2);
+        e1_1 = expAbs(e1);
+        e2_1 = expAbs(e2);
       then
         DAE.BINARY(e1_1,op,e2_1);
     
     case (e) then e;
   end matchcontinue;
-end abs;
+end expAbs;
 
 public function stripNoEvent
 "Function that strips all noEvent() calls in an expression"
@@ -4735,7 +4735,7 @@ algorithm
     case(DAE.ET_ARRAY(ty=t2))
       then
         isReal(t2);
-    case(DAE.ET_INT) then true;
+    case(DAE.ET_INT()) then true;
     case(_) then false;
   end matchcontinue;
 end isInt;
@@ -4750,7 +4750,7 @@ algorithm
     case(DAE.ET_ARRAY(ty=t2))
       then
         isReal(t2);
-    case(DAE.ET_REAL) then true;
+    case(DAE.ET_REAL()) then true;
     case(_) then false;
   end matchcontinue;
 end isReal;
@@ -5331,7 +5331,8 @@ expCanBeZero(1+a^2) => false (all terms positive)
   output Boolean canBeZero;
 algorithm
   canBeZero := matchcontinue(e)
-    local list<DAE.Exp> terms;
+    local
+      list<DAE.Exp> terms_;
 
     case(e) equation
       true = isConst(e) and not isZero(e);
@@ -5339,9 +5340,9 @@ algorithm
 
     /* For several terms, all must be positive or zero and at least one must be > 0 */
     case(e) equation
-      (terms as _::_) = terms(e);
-      true = Util.listMapAllValue(terms,expIsPositiveOrZero,true);
-      _::_ = Util.listSelect(terms,expIsPositive);
+      (terms_ as _::_) = terms(e);
+      true = Util.listMapAllValue(terms_,expIsPositiveOrZero,true);
+      _::_ = Util.listSelect(terms_,expIsPositive);
     then 
       false;
 

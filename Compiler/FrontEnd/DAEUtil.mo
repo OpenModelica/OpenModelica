@@ -980,18 +980,6 @@ algorithm
   end matchcontinue;
 end getStartAttrString;
 
-protected function stringToString "function: stringToString
-
-  Convert a string to a Modelica string, enclosed in citation marks.
-"
-  input String str;
-  output String str_1;
-  String str_1;
-algorithm
-  str_1 := stringAppendList({"\"",str,"\""});
-end stringToString;
-
-
 public function getMatchingElements "function getMatchingElements
   author:  LS
 
@@ -1102,7 +1090,7 @@ input DAE.Function inElem;
 output Boolean b;
 algorithm
   b := matchcontinue(inElem)
-    case(DAE.FUNCTION(inlineType=DAE.AFTER_INDEX_RED_INLINE)) then true;
+    case(DAE.FUNCTION(inlineType=DAE.AFTER_INDEX_RED_INLINE())) then true;
     case(_) then false;
   end matchcontinue;
 end isAfterIndexInlineFunc;
@@ -2043,10 +2031,14 @@ public function getNamedFunction "Return the FUNCTION with the given name. Fails
 algorithm
   outElement := matchcontinue (path,functions)
     local
+      String msg;
     case (path,functions) then Util.getOption(avlTreeGet(functions, path));
-    case (path,_)
+    case (path,functions)
       equation
-        Debug.fprintln("failtrace", "- DAEUtil.getNamedFunction failed " +& Absyn.pathString(path));
+        msg = Util.stringDelimitList(Util.listMapMap(getFunctionList(functions), functionName, Absyn.pathString), "\n  ");
+        msg = "DAEUtil.getNamedFunction failed: " +& Absyn.pathString(path) +& "\nThe following functions were part of the cache:\n  ";
+        // Error.addMessage(Error.INTERNAL_ERROR,{msg});
+        Debug.fprintln("failtrace", msg);
       then
         fail();
   end matchcontinue;

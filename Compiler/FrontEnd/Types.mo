@@ -1353,18 +1353,19 @@ algorithm
 end arrayType;
 
 public function setVarInput "Sets a DAE.Var to input"
-  input Var v;
+  input Var var;
   output Var outV;
 algorithm
-  outV := matchcontinue(v)
-  local Ident name;
-    Boolean f,p,streamPrefix;
-    Type tp;
-    Binding bind;
-    SCode.Accessibility a;
-    SCode.Variability v;
-    Absyn.InnerOuter io;
-    Option<DAE.Const> cnstForRange;
+  outV := matchcontinue(var)
+    local
+      Ident name;
+      Boolean f,p,streamPrefix;
+      Type tp;
+      Binding bind;
+      SCode.Accessibility a;
+      SCode.Variability v;
+      Absyn.InnerOuter io;
+      Option<DAE.Const> cnstForRange;
     
     case DAE.TYPES_VAR(name,DAE.ATTR(f,streamPrefix,a,v,_,io),p,tp,bind,cnstForRange)
     then DAE.TYPES_VAR(name,DAE.ATTR(f,streamPrefix,a,v,Absyn.INPUT(),io),p,tp,bind,cnstForRange);
@@ -1909,7 +1910,7 @@ algorithm
       Integer i;
       DAE.Exp e;
     case (t,{}) then t;
-    case (t,DAE.WHOLEDIM::lst)
+    case (t,DAE.WHOLEDIM()::lst)
       equation
         t = makeArraySubscripts((DAE.T_ARRAY(DAE.DIM_UNKNOWN(),t),NONE()),lst);
       then

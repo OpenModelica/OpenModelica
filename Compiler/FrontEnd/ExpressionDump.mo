@@ -1620,7 +1620,6 @@ public function typeOfString
   output String str;
 protected
   Type ty;
-  String str;
 algorithm
   ty := Expression.typeof(inExp);
   str := typeString(ty);

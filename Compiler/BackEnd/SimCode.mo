@@ -169,7 +169,7 @@ end DelayedExpression;
 uniontype FunctionCode
   record FUNCTIONCODE
     String name;
-    Function mainFunction "This function is special; the 'in'-function should be generated for it";
+    Option<Function> mainFunction "This function is special; the 'in'-function should be generated for it";
     list<Function> functions;
     list<DAE.Exp> literals "shared literals";
     list<String> externalFunctionIncludes;
@@ -1043,12 +1043,13 @@ public function translateFunctions
     
  Called from other places in the compiler."
   input String name;
-  input DAE.Function daeMainFunction;
+  input Option<DAE.Function> optMainFunction;
   input list<DAE.Function> daeElements;
   input list<DAE.Type> metarecordTypes;
 algorithm
-  _ := match (name, daeMainFunction, daeElements, metarecordTypes)
+  _ := match (name, optMainFunction, daeElements, metarecordTypes)
     local
+      DAE.Function daeMainFunction;
       Function mainFunction;
       list<Function> fns;
       list<String> libs, includes;
@@ -1056,7 +1057,7 @@ algorithm
       FunctionCode fnCode;
       list<RecordDeclaration> extraRecordDecls;
       list<DAE.Exp> literals;
-    case (name, daeMainFunction, daeElements, metarecordTypes)
+    case (name, SOME(daeMainFunction), daeElements, metarecordTypes)
       equation
         // Create FunctionCode
         (daeElements,(_,(_,_,literals))) = DAEUtil.traverseDAEFunctions(daeMainFunction::daeElements,Expression.traverseSubexpressionsHelper,(replaceLiteralExp,(0,HashTableExpToIndex.emptyHashTableSized(24971),{})));
@@ -1064,7 +1065,19 @@ algorithm
         (mainFunction::fns, extraRecordDecls, includes, libs) = elaborateFunctions(daeElements, metarecordTypes, literals);
         checkValidMainFunction(name, mainFunction);
         makefileParams = createMakefileParams(libs);
-        fnCode = FUNCTIONCODE(name, mainFunction, fns, literals, includes, makefileParams, extraRecordDecls);
+        fnCode = FUNCTIONCODE(name, SOME(mainFunction), fns, literals, includes, makefileParams, extraRecordDecls);
+        // Generate code
+        _ = Tpl.tplString(SimCodeC.translateFunctions, fnCode);
+      then
+        ();
+    case (name, NONE(), daeElements, metarecordTypes)
+      equation
+        // Create FunctionCode
+        (daeElements,(_,(_,_,literals))) = DAEUtil.traverseDAEFunctions(daeElements,Expression.traverseSubexpressionsHelper,(replaceLiteralExp,(0,HashTableExpToIndex.emptyHashTableSized(24971),{})));
+        literals = listReverse(literals);
+        (fns, extraRecordDecls, includes, libs) = elaborateFunctions(daeElements, metarecordTypes, literals);
+        makefileParams = createMakefileParams(libs);
+        fnCode = FUNCTIONCODE(name, NONE(), fns, literals, includes, makefileParams, extraRecordDecls);
         // Generate code
         _ = Tpl.tplString(SimCodeC.translateFunctions, fnCode);
       then

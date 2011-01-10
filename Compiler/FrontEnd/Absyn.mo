@@ -1737,6 +1737,14 @@ output Path p;
 algorithm p := IDENT(s);
 end makeIdentPathFromString;
 
+public function makeQualifiedPathFromStrings ""
+  input String s1;
+  input String s2;
+  output Path p;
+algorithm
+  p := QUALIFIED(s1,IDENT(s2));
+end makeQualifiedPathFromStrings;
+
 public function setTimeStampEdit "Function: getNewTimeStamp
 Update current TimeStamp with a new Edit-time.
 "

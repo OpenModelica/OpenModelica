@@ -2519,7 +2519,7 @@ template commonHeader()
 end commonHeader;
 
 template functionsFile(String filePrefix,
-                       Function mainFunction,
+                       Option<Function> mainFunction,
                        list<Function> functions,
                        list<Exp> literals)
  "Generates the contents of the main C file for the function case."
@@ -2534,7 +2534,7 @@ template functionsFile(String filePrefix,
   
   <%literals |> literal hasindex i0 from 0 => literalExpConst(literal,i0) ; separator="\n"%>
   
-  <%functionBody(mainFunction,true)%>
+  <%match mainFunction case SOME(fn) then functionBody(fn,true)%>
   <%functionBodies(functions)%>
   }
   
@@ -2542,7 +2542,7 @@ template functionsFile(String filePrefix,
 end functionsFile;
 
 template functionsHeaderFile(String filePrefix,
-                       Function mainFunction,
+                       Option<Function> mainFunction,
                        list<Function> functions,
                        list<RecordDeclaration> extraRecordDecls,
                        list<String> includes)
@@ -2558,7 +2558,7 @@ template functionsHeaderFile(String filePrefix,
   
   <%extraRecordDecls |> rd => recordDeclarationHeader(rd) ;separator="\n"%>
   <%externalFunctionIncludes(includes)%>
-  <%functionHeader(mainFunction,true)%>
+  <%match mainFunction case SOME(fn) then functionHeader(fn,true)%>
   <%functionHeaders(functions)%>
 
   #ifdef __cplusplus

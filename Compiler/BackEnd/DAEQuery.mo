@@ -298,7 +298,7 @@ algorithm
   outVarLst:=
   matchcontinue (inVariableArray)
     local
-      Option<BackendDAE.Var>[:] arr;
+      array<Option<BackendDAE.Var>> arr;
       BackendDAE.Var elt;
       Integer lastpos,n,size;
       list<BackendDAE.Var> lst;
@@ -321,7 +321,7 @@ protected function vararrayList2 "function: vararrayList2
 
   Helper function to vararray_list
 "
-  input Option<BackendDAE.Var>[:] inVarOptionArray1;
+  input array<Option<BackendDAE.Var>> inVarOptionArray1;
   input Integer inInteger2;
   input Integer inInteger3;
   output list<BackendDAE.Var> outVarLst;
@@ -330,7 +330,7 @@ algorithm
   matchcontinue (inVarOptionArray1,inInteger2,inInteger3)
     local
       BackendDAE.Var v;
-      Option<BackendDAE.Var>[:] arr;
+      array<Option<BackendDAE.Var>> arr;
       Integer pos,lastpos,pos_1;
       list<BackendDAE.Var> res;
     case (arr,pos,lastpos)

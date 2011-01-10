@@ -7279,6 +7279,10 @@ protected function elabCallInteractive "function: elabCallInteractive
         (cache,makeBuiltinCall("generateCode",{DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER())},
           DAE.ET_BOOL()),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
 
+    case (cache,env,Absyn.CREF_IDENT(name = "generateSeparateCode"),{},{},impl,SOME(st),_,_)
+      then
+        (cache,makeBuiltinCall("generateSeparateCode",{},DAE.ET_BOOL()),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
+
     case (cache,env,Absyn.CREF_IDENT(name = "setLinker"),{Absyn.STRING(value = str)},{},impl,SOME(st),_,_)
       then (cache, makeBuiltinCall("setLinker",{DAE.SCONST(str)},DAE.ET_BOOL()),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
     case (cache,env,Absyn.CREF_IDENT(name = "setLinkerFlags"),{Absyn.STRING(value = str)},{},impl,SOME(st),_,_)

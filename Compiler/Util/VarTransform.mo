@@ -735,7 +735,7 @@ algorithm outElse := matchcontinue(inElse,repl,condExpFunc)
     DAE.Exp e,e_1;
     list<DAE.Statement> st,st_1;
     Algorithm.Else el,el_1;
-  case(DAE.NOELSE(),_,_) then DAE.NOELSE;
+  case(DAE.NOELSE(),_,_) then DAE.NOELSE();
   case(DAE.ELSEIF(e,st,el),repl,condExpFunc)
     equation
       el_1 = replaceEquationsElse(el,repl,condExpFunc);

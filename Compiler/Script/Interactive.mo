@@ -4162,35 +4162,6 @@ algorithm
   end match;
 end lengthComponentReplacementRules;
 
-protected function dumpComponentReplacementRulesToString
-"author: x02lucpo
-  dumps all the componentReplacementRules to string"
-  input ComponentReplacementRules inComponentReplacementRules;
-  output String outString;
-algorithm
-  outString:=
-  matchcontinue (inComponentReplacementRules)
-    local
-      ComponentReplacementRules res,comps;
-      String s1,pa_str,cr1_str,cr2_str,res_str;
-      Absyn.Path cr1_pa,cr2_pa,pa;
-      Absyn.ComponentRef cr1,cr2;
-    case (COMPONENTREPLACEMENTRULES(componentReplacementLst = {})) then "";
-    case ((comps as COMPONENTREPLACEMENTRULES(componentReplacementLst = (COMPONENTREPLACEMENT(which1 = pa,the2 = cr1,the3 = cr2) :: res))))
-      equation
-        res = restComponentReplacementRules(comps);
-        s1 = dumpComponentReplacementRulesToString(res);
-        pa_str = Absyn.pathString(pa);
-        cr1_pa = Absyn.crefToPath(cr1);
-        cr1_str = Absyn.pathString(cr1_pa);
-        cr2_pa = Absyn.crefToPath(cr2);
-        cr2_str = Absyn.pathString(cr2_pa);
-        res_str = stringAppendList({s1,"In class: ",pa_str,"( ",cr1_str," => ",cr2_str," )\n"});
-      then
-        res_str;
-  end matchcontinue;
-end dumpComponentReplacementRulesToString;
-
 protected function firstComponentReplacement
 "author: x02lucpo
  extract the first componentReplacement in
@@ -5037,7 +5008,7 @@ algorithm
       Absyn.Path cr_pa,pa,path;
       Absyn.ComponentRef cr;
     case (COMPONENTS(componentLst = {})) then "";
-    case ((comps as COMPONENTS(componentLst = (COMPONENTITEM(the1 = pa,the2 = path,the3 = cr) :: res))))
+    case ((comps as COMPONENTS(componentLst = (COMPONENTITEM(the1 = pa,the2 = path,the3 = cr) :: _))))
       equation
         res = restComponents(comps);
         s1 = dumpComponentsToString(res);
@@ -5048,7 +5019,7 @@ algorithm
         res_str = stringAppendList({s1,"cl: ",pa_str,"\t type: ",path_str,"\t\t name: ",cr_str,"\n"});
       then
         res_str;
-    case ((comps as COMPONENTS(componentLst = (EXTENDSITEM(the1 = pa,the2 = path) :: res))))
+    case ((comps as COMPONENTS(componentLst = (EXTENDSITEM(the1 = pa,the2 = path) :: _))))
       equation
         res = restComponents(comps);
         s1 = dumpComponentsToString(res);
@@ -15078,7 +15049,8 @@ algorithm
       Boolean b,c,d;
       Absyn.Restriction e;
       Option<String> cmt;
-      list<Absyn.ElementItem> lst1,lst,elts;
+      list<Absyn.ElementItem> lst1,elts;
+      list<Absyn.ClassPart> lst;
       Absyn.Info file_info;
 
     case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
@@ -15089,17 +15061,17 @@ algorithm
                       info = file_info)) /* Search in public list */
       equation
         lst1 = getElementitemsInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(lst,cmt),file_info));
-        lst = listAppend(elts, lst1);
+        lst1 = listAppend(elts, lst1);
       then
-        lst;
+        lst1;
     case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
                       body = Absyn.PARTS(classParts = (Absyn.PROTECTED(contents = elts) :: lst),comment = cmt),
                       info = file_info)) /* Search in protected list */
       equation
         lst1 = getElementitemsInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(lst,cmt),file_info));
-        lst = listAppend(elts, lst1);
+        lst1 = listAppend(elts, lst1);
       then
-        lst;
+        lst1;
 
     /* adrpo: handle also the case model extends X end X; */
     case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
@@ -15110,17 +15082,17 @@ algorithm
                       info = file_info)) /* Search in public list */
       equation
         lst1 = getElementitemsInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(lst,cmt),file_info));
-        lst = listAppend(elts, lst1);
+        lst1 = listAppend(elts, lst1);
       then
-        lst;
+        lst1;
     case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
                       body = Absyn.CLASS_EXTENDS(parts = (Absyn.PROTECTED(contents = elts) :: lst),comment = cmt),
                       info = file_info)) /* Search in protected list */
       equation
         lst1 = getElementitemsInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(lst,cmt),file_info));
-        lst = listAppend(elts, lst1);
+        lst1 = listAppend(elts, lst1);
       then
-        lst;
+        lst1;
 
     case (_) then {};
   end matchcontinue;
@@ -19067,12 +19039,12 @@ algorithm
       list<Absyn.ComponentItem> compelts_1;
       Absyn.ComponentItem compitem;
       Absyn.Exp exp;
-      Absyn.ComponentRef class_;
+      Absyn.ComponentRef cr,class_;
       Absyn.Program p;
-    case (name,class_,p)
+    case (cr,class_,p)
       equation
         p_class = Absyn.crefToPath(class_);
-        Absyn.IDENT(name) = Absyn.crefToPath(name);
+        Absyn.IDENT(name) = Absyn.crefToPath(cr);
         cdef = getPathedClassInProgram(p_class, p);
         comps = getComponentsInClass(cdef);
         compelts = Util.listMap(comps, getComponentitemsInElement);
@@ -19082,10 +19054,10 @@ algorithm
         res = Dump.printExpStr(exp);
       then
         res;
-    case (name,class_,p)
+    case (cr,class_,p)
       equation
         p_class = Absyn.crefToPath(class_);
-        Absyn.IDENT(name) = Absyn.crefToPath(name);
+        Absyn.IDENT(name) = Absyn.crefToPath(cr);
         cdef = getPathedClassInProgram(p_class, p);
         comps = getComponentsInClass(cdef);
         compelts = Util.listMap(comps, getComponentitemsInElement);

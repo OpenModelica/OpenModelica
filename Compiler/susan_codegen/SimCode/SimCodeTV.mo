@@ -72,7 +72,7 @@ package SimCode
   uniontype FunctionCode
     record FUNCTIONCODE
       String name;
-      Function mainFunction;
+      Option<Function> mainFunction;
       list<Function> functions;
       list<DAE.Exp> literals;
       list<String> externalFunctionIncludes;

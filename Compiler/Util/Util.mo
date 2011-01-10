@@ -1405,7 +1405,7 @@ algorithm
       Type_e f3_1;
       list<Type_b> r1_1;
       list<Type_c> r2_1;
-      list<Type_c> r3_1;
+      list<Type_e> r3_1;
       Type_a f;
       list<Type_a> r;
       FuncTypeType_aToType_bType_c fn;
@@ -1784,7 +1784,7 @@ public function listMap4 "function listMap4
   Takes a list and a function and four extra arguments passed to the function.
   The function produces one new value which is used for creating a new list."
   input list<Type_a> inTypeALst;
-  input mapFunc f;
+  input mapFunc fn;
   input Type_b inTypeB;
   input Type_c inTypeC;
   input Type_d inTypeD;
@@ -1806,10 +1806,10 @@ public function listMap4 "function listMap4
   replaceable type Type_f subtypeof Any;
 algorithm
   outTypeELst:=
-  matchcontinue (inTypeALst,f,inTypeB,inTypeC,inTypeD,inTypeE)
+  matchcontinue (inTypeALst,fn,inTypeB,inTypeC,inTypeD,inTypeE)
     local
-      Type_e f_1;
-      list<Type_e> r_1;
+      Type_f f_1;
+      list<Type_f> r_1;
       Type_a f;
       list<Type_a> r;
       mapFunc fn;
@@ -1962,8 +1962,8 @@ algorithm
   outLst:=
   matchcontinue (lst,func,a1,a2,a3,a4,a5,a6,a7)
     local
-      Type_e f_1;
-      list<Type_e> r_1;
+      Type_i f_1;
+      list<Type_i> r_1;
       Type_a f;
       list<Type_a> r;
 
@@ -2018,8 +2018,8 @@ algorithm
   outLst:=
   matchcontinue (lst,func,a1,a2,a3,a4,a5,a6,a7,a8)
     local
-      Type_e f_1;
-      list<Type_e> r_1;
+      Type_i f_1;
+      list<Type_i> r_1;
       Type_a f;
       list<Type_a> r;
 
@@ -2812,7 +2812,7 @@ public function listFold_2r "function: listFold_2
     input Type_b foldArg;
     input Type_a iterated;
     input Type_c extraArg;
-    output Type_b foldArg;
+    output Type_b outFoldArg;
   end FoldFunc;
 algorithm
   res:=
@@ -2943,7 +2943,7 @@ public function listListReverse "function: listListReverse
   input list<list<Type_a>> lsts;
   output list<list<Type_a>> lsts_2;
   replaceable type Type_a subtypeof Any;
-  list<list<Type_a>> lsts_1,lsts_2;
+  list<list<Type_a>> lsts_1;
 algorithm
   lsts_1 := listMap(lsts, listReverse);
   lsts_2 := listReverse(lsts_1);
@@ -3139,12 +3139,12 @@ algorithm
   outTypeCLst:=
   matchcontinue (inTypeALst,inTypeBLst,inFuncTypeTypeATypeBToTypeC)
     local
-      Type_c fr;
-      list<Type_c> res;
-      Type_a fa;
-      list<Type_a> ra;
-      Type_b fb;
-      list<Type_b> rb;
+      list<Type_c> fr;
+      list<list<Type_c>> res;
+      list<Type_a> fa;
+      list<list<Type_a>> ra;
+      list<Type_b> fb;
+      list<list<Type_b>> rb;
       FuncTypeType_aType_bToType_c fn;
     case ({},{},_) then {};
     case ((fa :: ra),(fb :: rb),fn)
@@ -4994,23 +4994,6 @@ algorithm
   end match;
 end if_;
 
-// stefan
-public function if_t
-"function: if_t
-  as with if_, but can return one of two different types of values"
-  input Boolean inBoolean;
-  input TypeA resA;
-  input TypeB resB;
-  output tuple<Option<TypeA>, Option<TypeB>> outTuple;
-  replaceable type TypeA subtypeof Any;
-  replaceable type TypeB subtypeof Any;
-algorithm
-  outTuple := match(inBoolean,resA,resB)
-    case(true,_,_) then ((SOME(resA),NONE()));
-    else ((NONE(),SOME(resB)));
-  end match;
-end if_t;
-
 public function stringContainsChar "Returns true if a string contains a specified character"
   input String str;
   input String char;
@@ -5962,7 +5945,7 @@ algorithm
     case(a,divider)
       equation
         0 = intMod(listLength(a),divider);
-        splitLength = listLength(a) / divider;
+        splitLength = intDiv(listLength(a),divider);
         outTypeALst1 = listSplitEqualParts2(a,splitLength);
         then
           outTypeALst1;

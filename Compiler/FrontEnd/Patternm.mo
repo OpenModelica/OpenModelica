@@ -189,39 +189,39 @@ algorithm
 
     case (cache,env,Absyn.INTEGER(i),ty,info)
       equation
-        et = validPatternType(DAE.T_INTEGER_DEFAULT,ty,info);
+        et = validPatternType(DAE.T_INTEGER_DEFAULT,ty,lhs,info);
       then (cache,DAE.PAT_CONSTANT(et,DAE.ICONST(i)));
 
     case (cache,env,Absyn.REAL(r),ty,info)
       equation
-        et = validPatternType(DAE.T_REAL_DEFAULT,ty,info);
+        et = validPatternType(DAE.T_REAL_DEFAULT,ty,lhs,info);
       then (cache,DAE.PAT_CONSTANT(et,DAE.RCONST(r)));
 
     case (cache,env,Absyn.UNARY(Absyn.UMINUS(),Absyn.INTEGER(i)),ty,info)
       equation
-        et = validPatternType(DAE.T_INTEGER_DEFAULT,ty,info);
+        et = validPatternType(DAE.T_INTEGER_DEFAULT,ty,lhs,info);
         i = -i;
       then (cache,DAE.PAT_CONSTANT(et,DAE.ICONST(i)));
 
     case (cache,env,Absyn.UNARY(Absyn.UMINUS(),Absyn.REAL(r)),ty,info)
       equation
-        et = validPatternType(DAE.T_REAL_DEFAULT,ty,info);
+        et = validPatternType(DAE.T_REAL_DEFAULT,ty,lhs,info);
         r = realNeg(r);
       then (cache,DAE.PAT_CONSTANT(et,DAE.RCONST(r)));
 
     case (cache,env,Absyn.STRING(s),ty,info)
       equation
-        et = validPatternType(DAE.T_STRING_DEFAULT,ty,info);
+        et = validPatternType(DAE.T_STRING_DEFAULT,ty,lhs,info);
       then (cache,DAE.PAT_CONSTANT(et,DAE.SCONST(s)));
 
     case (cache,env,Absyn.BOOL(b),ty,info)
       equation
-        et = validPatternType(DAE.T_BOOL_DEFAULT,ty,info);
+        et = validPatternType(DAE.T_BOOL_DEFAULT,ty,lhs,info);
       then (cache,DAE.PAT_CONSTANT(et,DAE.BCONST(b)));
 
     case (cache,env,Absyn.ARRAY({}),ty,info)
       equation
-        et = validPatternType(DAE.T_LIST_DEFAULT,ty,info);
+        et = validPatternType(DAE.T_LIST_DEFAULT,ty,lhs,info);
       then (cache,DAE.PAT_CONSTANT(et,DAE.LIST(DAE.ET_OTHER(),{})));
 
     case (cache,env,Absyn.ARRAY(exps),ty,info)
@@ -232,7 +232,7 @@ algorithm
 
     case (cache,env,Absyn.CALL(Absyn.CREF_IDENT("NONE",{}),Absyn.FUNCTIONARGS({},{})),ty,info)
       equation
-        _ = validPatternType(DAE.T_NONE_DEFAULT,ty,info);
+        _ = validPatternType(DAE.T_NONE_DEFAULT,ty,lhs,info);
       then (cache,DAE.PAT_CONSTANT(NONE(),DAE.META_OPTION(NONE())));
 
     case (cache,env,Absyn.CALL(Absyn.CREF_IDENT("SOME",{}),Absyn.FUNCTIONARGS({exp},{})),(DAE.T_METAOPTION(ty),_),info)
@@ -271,7 +271,7 @@ algorithm
     case (cache,env,Absyn.AS(id,exp),ty2,info)
       equation
         (cache,DAE.TYPES_VAR(type_ = ty1),_,_) = Lookup.lookupIdent(cache,env,id);
-        et = validPatternType(ty1,ty2,info);
+        et = validPatternType(ty1,ty2,lhs,info);
         (cache,pattern) = elabPattern2(cache,env,exp,ty2,info);
         pattern = Util.if_(Types.isFunctionType(ty2), DAE.PAT_AS_FUNC_PTR(id,pattern), DAE.PAT_AS(id,et,pattern));
       then (cache,pattern);
@@ -279,7 +279,7 @@ algorithm
     case (cache,env,Absyn.CREF(Absyn.CREF_IDENT(id,{})),ty2,info)
       equation
         (cache,DAE.TYPES_VAR(type_ = ty1),_,_) = Lookup.lookupIdent(cache,env,id);
-        et = validPatternType(ty1,ty2,info);
+        et = validPatternType(ty1,ty2,lhs,info);
         pattern = Util.if_(Types.isFunctionType(ty2), DAE.PAT_AS_FUNC_PTR(id,DAE.PAT_WILD()), DAE.PAT_AS(id,et,DAE.PAT_WILD()));
       then (cache,pattern);
 
@@ -394,17 +394,18 @@ end elabPatternCall;
 protected function validPatternType
   input DAE.Type ty1;
   input DAE.Type ty2;
+  input Absyn.Exp lhs;
   input Absyn.Info info;
   output Option<DAE.ExpType> ty;
 algorithm
-  ty := matchcontinue (ty1,ty2,info)
+  ty := matchcontinue (ty1,ty2,lhs,info)
     local
       DAE.ExpType et;
-      String s1,s2;
+      String s,s1,s2;
       DAE.ComponentRef cr;
       DAE.Exp crefExp;
     
-    case (ty1,(DAE.T_BOXED(ty2),_),_)
+    case (ty1,(DAE.T_BOXED(ty2),_),_,_)
       equation
         cr = ComponentReference.makeCrefIdent("#DUMMY#",DAE.ET_OTHER(),{});
         crefExp = Expression.crefExp(cr);
@@ -412,18 +413,19 @@ algorithm
         et = Types.elabType(ty1);
       then SOME(et);
     
-    case (ty1,ty2,_)
+    case (ty1,ty2,_,_)
       equation
         cr = ComponentReference.makeCrefIdent("#DUMMY#",DAE.ET_OTHER(),{});
         crefExp = Expression.crefExp(cr);
         (_,_) = Types.matchType(crefExp,ty2,ty1,true);
       then NONE();
     
-    case (ty1,ty2,info)
+    case (ty1,ty2,lhs,info)
       equation
+        s = Dump.printExpStr(lhs);
         s1 = Types.unparseType(ty1);
         s2 = Types.unparseType(ty2);
-        Error.addSourceMessage(Error.META_TYPE_MISMATCH_PATTERN, {s1,s2}, info);
+        Error.addSourceMessage(Error.META_TYPE_MISMATCH_PATTERN, {s,s1,s2}, info);
       then fail();
   end matchcontinue;
 end validPatternType;
@@ -436,16 +438,17 @@ protected function validUniontype
 algorithm
   _ := matchcontinue (path1,path2,info,lhs)
     local
-      String s1,s2;
+      String s,s1,s2;
     case (path1,path2,_,_)
       equation
         true = Absyn.pathEqual(path1,path2);
       then ();
     else
       equation
+        s = Dump.printExpStr(lhs);
         s1 = Absyn.pathString(path1);
         s2 = Absyn.pathString(path2);
-        Error.addSourceMessage(Error.META_DECONSTRUCTOR_NOT_PART_OF_UNIONTYPE, {s1,s2}, info);
+        Error.addSourceMessage(Error.META_DECONSTRUCTOR_NOT_PART_OF_UNIONTYPE, {s,s1,s2}, info);
       then fail();
   end matchcontinue;
 end validUniontype;

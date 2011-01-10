@@ -1670,6 +1670,7 @@ end intMatrix;
 
 
 //!!! weird type behavior of MM
+/*
 public
 function MuchFun2
   input Tpl.Text txt;
@@ -1688,6 +1689,6 @@ txt := 1;
 
 //(txt) := Tpl.writeTok(txt, Tpl.ST_LINE("Susan is cosmic!\n"));
 end MuchFun2;
-
+*/
 
 end TplMain;

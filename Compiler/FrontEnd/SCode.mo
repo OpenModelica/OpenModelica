@@ -3370,5 +3370,22 @@ algorithm
   outTuple := (traverser, arg);
 end traverseBranchExps;
 
+public function elementIsClass
+  input Element el;
+  output Boolean b;
+algorithm
+  b := match el
+    case CLASSDEF(classDef=_) then true;
+    else false;
+  end match;
+end elementIsClass;
+
+public function getElementClass
+  input Element el;
+  output Class cl;
+algorithm
+  CLASSDEF(classDef=cl) := el;
+end getElementClass;
+
 end SCode;
 

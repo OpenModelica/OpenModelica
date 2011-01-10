@@ -191,9 +191,9 @@ algorithm
     case(DAE.POW_SCALAR_ARRAY(ty=ty)) then " POW_SCALAR_ARRAY ";
     case(DAE.POW_ARR(ty=ty)) then " POW_ARR ";
     case(DAE.POW_ARR2(ty=ty)) then " POW_ARR2 ";
-    case(DAE.OR) then " OR ";
-    case(DAE.AND) then " AND ";
-    case(DAE.NOT) then " NOT ";
+    case(DAE.OR()) then " OR ";
+    case(DAE.AND()) then " AND ";
+    case(DAE.NOT()) then " NOT ";
     case(DAE.LESSEQ(ty=ty)) then " LESSEQ ";
     case(DAE.GREATER(ty=ty)) then " GREATER ";
     case(DAE.GREATEREQ(ty=ty)) then " GREATEREQ ";
@@ -1291,7 +1291,7 @@ algorithm
       then
         str;
     
-    case(DAE.ZERO_DERIVATIVE) then "zeroDerivative";
+    case(DAE.ZERO_DERIVATIVE()) then "zeroDerivative";
   end matchcontinue;
 end derivativeCondStr;
 
