@@ -71,7 +71,7 @@ within the equation element.
 */
 
 
-package XMLDump
+encapsulated package XMLDump
 " file:         XMLDump.mo
   package:     XMLDump
   description: Dumping of DAE as XML

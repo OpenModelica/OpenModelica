@@ -29,7 +29,7 @@
  *
  */
 
-package Interactive
+encapsulated package Interactive
 " file:        Interactive.mo
   package:     Interactive
   description: This module contain functionality for model management,

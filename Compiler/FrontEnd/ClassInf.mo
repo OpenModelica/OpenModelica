@@ -29,7 +29,7 @@
  *
  */
 
-package ClassInf
+encapsulated package ClassInf
 " file:   ClassInf.mo
   package:      ClassInf
   description: Class restrictions

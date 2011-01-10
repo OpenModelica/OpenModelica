@@ -29,7 +29,7 @@
  *
  */
 
-package PartFn
+encapsulated package PartFn
 " file:         PartFn.mo
   package:     PartFn
   description: partially evaluated functions

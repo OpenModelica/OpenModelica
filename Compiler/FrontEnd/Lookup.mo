@@ -29,7 +29,7 @@
  *
  */
 
-package Lookup
+encapsulated package Lookup
 "
   file:         Lookup.mo
   package:     Lookup

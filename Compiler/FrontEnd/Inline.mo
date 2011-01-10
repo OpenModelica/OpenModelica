@@ -30,7 +30,7 @@
  */
 
 // stefan
-package Inline
+encapsulated package Inline
 " file:         Inline.mo
   package:     Inline
   description: inline functions

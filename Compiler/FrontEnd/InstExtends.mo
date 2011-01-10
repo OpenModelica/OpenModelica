@@ -29,7 +29,7 @@
  *
  */
 
-package InstExtends
+encapsulated package InstExtends
 " file:        InstExtends.mo
   package:     InstExtends
   description: Model instantiation

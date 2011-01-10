@@ -29,7 +29,7 @@
  *
  */
 
-package ClassLoader
+encapsulated package ClassLoader
 " file:   ClassLoader.mo
   package:      ClassLoader
   description: Loading of classes from $OPENMODELICALIBRARY.

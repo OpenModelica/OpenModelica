@@ -29,7 +29,7 @@
  *
  */
 
-package Mod
+encapsulated package Mod
 " file:        Mod.mo
   package:     Mod
   description: Modification handling

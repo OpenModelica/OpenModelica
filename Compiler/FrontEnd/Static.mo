@@ -29,7 +29,7 @@
  *
  */
 
-package Static
+encapsulated package Static
 " file:         Static.mo
   package:     Static
   description: Static analysis of expressions

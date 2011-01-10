@@ -29,7 +29,7 @@
  *
  */
 
-package Main
+encapsulated package Main
 " file:        Main.mo
   package:     Main
   description: Modelica main program

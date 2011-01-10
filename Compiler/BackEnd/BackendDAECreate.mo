@@ -29,7 +29,7 @@
  *
  */
 
-package BackendDAECreate
+encapsulated package BackendDAECreate
 " file:         BackendDAECreate.mo
   package:     BackendDAECreate
   description:  This file contains all functions for transforming the DAE structure 

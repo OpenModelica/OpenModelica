@@ -29,7 +29,7 @@
  *
  */
 
-package Types
+encapsulated package Types
 " file:         Types.mo
   package:     Types
   description: Type system

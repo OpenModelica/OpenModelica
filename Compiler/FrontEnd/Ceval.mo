@@ -29,7 +29,7 @@
  *
  */
 
-package Ceval
+encapsulated package Ceval
 " file:         Ceval.mo
   package:     Ceval
   description: Constant propagation of expressions

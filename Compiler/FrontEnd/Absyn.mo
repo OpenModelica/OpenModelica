@@ -29,7 +29,7 @@
  *
  */
 
-package Absyn
+encapsulated package Absyn
 "
   file:        Absyn.mo
   package:     Absyn

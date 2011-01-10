@@ -29,7 +29,7 @@
  *
  */
 
-package SCodeFlatten
+encapsulated package SCodeFlatten
 " file:        SCodeFlatten.mo
   package:     SCodeFlatten
   description: SCode flattening

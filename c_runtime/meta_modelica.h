@@ -164,10 +164,11 @@ static inline void* mmc_mk_scon(const char *s)
     unsigned nbytes = strlen(s);
     unsigned header = MMC_STRINGHDR(nbytes);
     unsigned nwords = MMC_HDRSLOTS(header) + 1;
-    if (nbytes == 0) return mmc_emptystring;
-    if (nbytes == 1) return mmc_strings_len1[*s];
-    struct mmc_string *p = (struct mmc_string *) mmc_alloc_words(nwords);
+    struct mmc_string *p;
     void *res;
+    if (nbytes == 0) return mmc_emptystring;
+    if (nbytes == 1) return mmc_strings_len1[(int)*s];
+    p = (struct mmc_string *) mmc_alloc_words(nwords);
     p->header = header;
     memcpy(p->data, s, nbytes+1);  /* including terminating '\0' */
     res = MMC_TAGPTR(p);

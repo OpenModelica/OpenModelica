@@ -29,7 +29,7 @@
  *
  */
 
-package PrefixUtil
+encapsulated package PrefixUtil
 " file:         PrefixUtil.mo
   package:     PrefixUtil
   description: PrefixUtil management

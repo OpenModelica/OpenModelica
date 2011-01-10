@@ -1,5 +1,5 @@
 
-package Tpl
+encapsulated package Tpl
 
 //import Util;
 protected import Debug;

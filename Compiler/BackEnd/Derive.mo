@@ -29,7 +29,7 @@
  *
  */
 
-package Derive
+encapsulated package Derive
 " file:        Derive.mo
   package:     Derive
   description: Differentiation of equations from BackendDAE.BackendDAE

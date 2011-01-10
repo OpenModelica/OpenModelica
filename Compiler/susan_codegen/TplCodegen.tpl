@@ -1,4 +1,3 @@
-
 package TplCodegen
   
 import interface TplCodegenTV;
@@ -8,7 +7,7 @@ template mmPackage(MMPackage it) ::=
   match it
   case MM_PACKAGE(__) then
     <<
-    package <%pathIdent(name)%>
+    encapsulated package <%pathIdent(name)%>
 
     public import Tpl;
 
@@ -210,7 +209,7 @@ end mmStatements;
 template sTemplPackage(TemplPackage it) ::= 
   match it
   case TEMPL_PACKAGE(__) then 
-	<<
+  <<
     spackage <%pathIdent(name)%>
       <%astDefs |> AST_DEF(__) => 
       <<
@@ -221,17 +220,17 @@ template sTemplPackage(TemplPackage it) ::=
 
     <%templateDefs |> (id, def) => sTemplateDef(def,id) ;separator="\n\n"%>
     end <%pathIdent(name)%>;
-	>>
+  >>
 end sTemplPackage;
 
 template sASTDefType(Ident id, TypeInfo info) ::=
   match info
   case TI_UNION_TYPE(__) then
-	<<
+  <<
     uniontype <%id%>
       <%recTags |> (rid, tids) => sRecordTypeDef(rid, tids) ;separator="\n"%>
     end <%id%>;
-	>>
+  >>
   case TI_RECORD_TYPE(__) then  sRecordTypeDef(id, fields)
   case TI_ALIAS_TYPE(__)  then  'type <%id%> = <%typeSig(aliasType)%>;'
   case TI_FUN_TYPE(__)    then
@@ -240,7 +239,7 @@ template sASTDefType(Ident id, TypeInfo info) ::=
       <%inArgs |> (aid,ts)  => 'input <%typeSig(ts)%> <%aid%>;<%\n%>'%>
       <%outArgs |> (aid,ts) => 'output <%typeSig(ts)%> <%aid%>;<%\n%>'%>
     end <%id%>;
-	>>
+  >>
   case TI_CONST_TYPE(__) then 'constant <%typeSig(constType)%> <%id%>;'
 end sASTDefType;
 
@@ -254,8 +253,8 @@ record <%id%> <%if fields then <<<%"\n"%>
 end sRecordTypeDef;
 
 template sTemplateDef(TemplateDef it, Ident templId) ::= 
-	match it
-	case STR_TOKEN_DEF(__) then '<%templId%> = <%sConstStringToken(value)%>'
+  match it
+  case STR_TOKEN_DEF(__) then '<%templId%> = <%sConstStringToken(value)%>'
 /*
 case TEMPLATE_DEF(__) then 
 {
@@ -275,11 +274,11 @@ template sConstStringToken(StringToken it) ::=
   case ST_STRING(__)   then '"<%mmEscapeStringConst(value,true)%>"'
   case ST_LINE(__)     then '"<%mmEscapeStringConst(line,true)%>"'
   case ST_STRING_LIST(strList = sl) then 
-  	if not canBeOnOneLine(sl) 
-  	then ('"<%sl |> it => mmEscapeStringConst(it,false)%>"' ; absIndent) 
-  	else if canBeEscapedUnquoted(sl) 
-  	     then  (sl |> it => mmEscapeStringConst(it,true))
-  	     else  '"<% sl |> it => mmEscapeStringConst(it,true) %>"'
+    if not canBeOnOneLine(sl) 
+    then ('"<%sl |> it => mmEscapeStringConst(it,false)%>"' ; absIndent) 
+    else if canBeEscapedUnquoted(sl) 
+         then  (sl |> it => mmEscapeStringConst(it,true))
+         else  '"<% sl |> it => mmEscapeStringConst(it,true) %>"'
 end sConstStringToken;
 
 template sTypedIdents(TypedIdents args) ::= 

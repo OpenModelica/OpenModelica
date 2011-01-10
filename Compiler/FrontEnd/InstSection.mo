@@ -29,7 +29,7 @@
  *
  */
 
-package InstSection
+encapsulated package InstSection
 " file:        InstSection.mo
   package:     InstSection
   description: Model instantiation

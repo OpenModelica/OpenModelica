@@ -29,7 +29,7 @@
  *
  */
 
-package Util
+encapsulated package Util
 " file:         Util.mo
   package:     Util
   description: Miscellanous MetaModelica Compiler (MMC) utilities
@@ -7294,5 +7294,34 @@ algorithm
     case (k1,(k2,v)::lst) then Debug.bcallret2(not valueEq(k1,k2), assoc, k1, lst, v);
   end match;
 end assoc;
+
+public function transposeList
+  "Transposes a 2-dimensional rectangular list"
+  input list<list<A>> lst;
+  output list<list<A>> olst;
+  replaceable type A subtypeof Any;
+algorithm
+  olst := transposeList2(lst,{});
+end transposeList;
+
+protected function transposeList2
+  "Transposes a 2-dimensional rectangular list"
+  input list<list<A>> lst;
+  input list<list<A>> acc;
+  output list<list<A>> olst;
+  replaceable type A subtypeof Any;
+algorithm
+  olst := match (lst,acc)
+    local
+      list<A> a;
+    case ({},_) then listReverse(acc);
+    case ({}::_,_) then listReverse(acc);
+    case (lst,acc)
+      equation
+        a = listMap(lst,listFirst);
+        lst = listMap(lst,listRest);
+      then transposeList2(lst,a::acc);
+  end match;
+end transposeList2;
 
 end Util;

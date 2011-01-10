@@ -29,7 +29,7 @@
  *
  */
 
-package BackendEquation
+encapsulated package BackendEquation
 " file:         BackendEquation.mo
   package:     BackendEquation
   description: BackendEquation contains functions that do something with

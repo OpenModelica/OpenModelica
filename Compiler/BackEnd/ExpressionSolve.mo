@@ -29,7 +29,7 @@
  *
  */
 
-package ExpressionSolve
+encapsulated package ExpressionSolve
 "
   file:         ExpressionSolve.mo
   package:     ExpressionSolve

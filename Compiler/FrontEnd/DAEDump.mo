@@ -29,7 +29,7 @@
  *
  */
 
-package DAEDump
+encapsulated package DAEDump
 " file:        DAEDump.mo
   package:     DAEDump
   description: DAEDump output

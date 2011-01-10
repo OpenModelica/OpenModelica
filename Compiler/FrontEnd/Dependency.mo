@@ -29,7 +29,7 @@
  *
  */
 
-package Dependency
+encapsulated package Dependency
 " file:        Dependency.mo
   package:     Dependency
   description: This module contains functionality for dependency

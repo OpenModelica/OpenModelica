@@ -29,7 +29,7 @@
  *
  */
 
-package OptManager
+encapsulated package OptManager
 " file:         OptManager.mo
   Author:      BZ
   module:      OptManager

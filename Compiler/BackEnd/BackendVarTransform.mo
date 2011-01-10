@@ -29,7 +29,7 @@
  *
  */
 
-package BackendVarTransform
+encapsulated package BackendVarTransform
 " file:         BackendVarTransform.mo
   package:     BackendVarTransform
   description: BackendVarTransform contains a Binary Tree representation of variable replacements.

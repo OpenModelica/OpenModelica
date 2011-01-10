@@ -108,8 +108,8 @@ listDelete_rettype listDelete(modelica_metatype, modelica_integer);
 
 modelica_metatype boxptr_listGet(modelica_metatype,modelica_metatype);
 #define boxptr_listAppend listAppend
-#define boxptr_listFirst listFirst
-#define boxptr_listRest listRest
+modelica_metatype boxptr_listFirst(modelica_metatype);
+modelica_metatype boxptr_listRest(modelica_metatype);
 
 /* Option Operations */
 typedef modelica_boolean optionNone_rettype;

@@ -29,7 +29,7 @@
  *
  */
 
-package BackendDAEEXT
+encapsulated package BackendDAEEXT
 " file:        BackendDAEEXT.mo
   package:     BackendDAEEXT
   description: The BackendDAEEXT module is an externally implemented module (in file 

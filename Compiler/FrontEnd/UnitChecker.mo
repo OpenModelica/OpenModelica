@@ -29,7 +29,7 @@
  *
  */
 
-package UnitChecker
+encapsulated package UnitChecker
 "
   file:         UnitChecker.mo
   package:     UnitChecker

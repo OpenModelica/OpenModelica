@@ -1,4 +1,4 @@
-package TplMain "
+encapsulated package TplMain "
 This is the main module of Susan language.
 It only calls the other parts of the compiler
 and contains some tests for basic parts of Susan. 

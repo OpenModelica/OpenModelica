@@ -29,7 +29,7 @@
  *
  */
 
-package SCodeUtil
+encapsulated package SCodeUtil
 " file:         SCodeUtil.mo
   package:     SCodeUtil
   description: SCodeUtil translates Absyn to SCode intermediate form

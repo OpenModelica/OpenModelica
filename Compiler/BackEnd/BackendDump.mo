@@ -29,7 +29,7 @@
  *
  */
 
-package BackendDump
+encapsulated package BackendDump
 " file:        BackendDump.mo
   package:     BackendDump
   description: Unparsing the BackendDAE structure

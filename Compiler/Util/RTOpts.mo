@@ -29,7 +29,7 @@
  *
  */
 
-package RTOpts
+encapsulated package RTOpts
 " file:         RTOpts.mo
   package:     RTOpts
   description: Runtime options

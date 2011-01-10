@@ -29,7 +29,7 @@
  *
  */
 
-package Builtin
+encapsulated package Builtin
 " file:         Builtin.mo
   package:     Builtin
   description: Builting tyepes and variables

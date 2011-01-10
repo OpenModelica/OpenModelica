@@ -1,4 +1,4 @@
-package TplParser
+encapsulated package TplParser
 
 public import Tpl;
 public import Util;

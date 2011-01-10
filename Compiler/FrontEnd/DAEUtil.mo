@@ -29,7 +29,7 @@
  *
  */
 
-package DAEUtil
+encapsulated package DAEUtil
 " file:        DAEUtil.mo
   package:     DAE
   description: DAE management and output

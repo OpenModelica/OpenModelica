@@ -29,7 +29,7 @@
  *
  */
 
-package Dump
+encapsulated package Dump
 "
   file:         Dump.mo
   package:     Dump

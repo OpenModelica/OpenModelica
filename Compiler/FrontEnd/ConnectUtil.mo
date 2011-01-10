@@ -29,7 +29,7 @@
  *
  */
 
-package ConnectUtil
+encapsulated package ConnectUtil
 " file:        ConnectUtil.mo
   package:     ConnectUtil
   description: Connection set management

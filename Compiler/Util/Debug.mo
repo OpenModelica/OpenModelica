@@ -29,7 +29,7 @@
  *
  */
 
-package Debug
+encapsulated package Debug
 " file:        Debug.mo
   package:     Debug
   description: Debug printing
@@ -324,7 +324,7 @@ public function bcallret1
   replaceable type Type_b subtypeof Any;
 algorithm
   res := match (flag,func,arg,default)
-    case (true,func,arg,_)
+    case (true,_,_,_)
       equation
         res = func(arg);
       then res;
@@ -352,7 +352,7 @@ public function bcallret2
   replaceable type Type_c subtypeof Any;
 algorithm
   res := match (flag,func,arg1,arg2,default)
-    case (true,func,arg1,arg2,_)
+    case (true,_,_,_,_)
       equation
         res = func(arg1,arg2);
       then res;
@@ -383,7 +383,7 @@ public function bcallret3
   replaceable type Type_d subtypeof Any;
 algorithm
   res := match (flag,func,arg1,arg2,arg3,default)
-    case (true,func,arg1,arg2,arg3,_)
+    case (true,_,_,_,_,_)
       equation
         res = func(arg1,arg2,arg3);
       then res;

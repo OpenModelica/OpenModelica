@@ -29,7 +29,7 @@
  *
  */
 
-package Constants
+encapsulated package Constants
 " file:         Constants.mo
   package:     Constants
   description: definition of a set of constants

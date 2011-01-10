@@ -29,7 +29,7 @@
  *
  */
 
-package Error
+encapsulated package Error
 "
   file:         Error.mo
   package:     Error

@@ -29,7 +29,7 @@
  *
  */
 
-package ErrorExt
+encapsulated package ErrorExt
 "
   file:         ErrorExt.mo
   package:     ErrorExt

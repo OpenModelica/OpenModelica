@@ -28,7 +28,7 @@
  * See the full OSMC Public License conditions for more details.
  *
  */
-package InnerOuter
+encapsulated package InnerOuter
 "
   file:         InnerOuter.mo
   package:     InnerOuter

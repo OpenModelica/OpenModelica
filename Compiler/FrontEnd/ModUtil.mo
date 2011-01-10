@@ -29,7 +29,7 @@
  *
  */
 
-package ModUtil
+encapsulated package ModUtil
 " file:         ModUtil.mo
   package:     ModUtil
   description: Miscellanous modelica related utilities (The horror, THE HORROR)

@@ -29,7 +29,7 @@
  *
  */
 
-package BackendDAE
+encapsulated package BackendDAE
 " file:         BackendDAE.mo
   package:     BackendDAE
   description: BackendDAE contains the datatypes used by the backend.

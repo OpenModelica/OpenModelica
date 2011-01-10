@@ -1,4 +1,4 @@
-package TplAbsyn
+encapsulated package TplAbsyn
 
 public import Debug;
 public import Util;

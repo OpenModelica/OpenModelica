@@ -29,7 +29,7 @@
  *
  */
 
-package CevalScript
+encapsulated package CevalScript
 " file:         CevalScript.mo
   package:     CevalScript
   description: Constant propagation of expressions

@@ -29,7 +29,7 @@
  *
  */
 
-package TaskGraph
+encapsulated package TaskGraph
 " file:         TaskGraph.mo
   package:     TaskGraph
   description: Building of task graphs from expressions, and equation systems.

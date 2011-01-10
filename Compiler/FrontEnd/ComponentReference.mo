@@ -29,7 +29,7 @@
  *
  */
 
-package ComponentReference
+encapsulated package ComponentReference
 "
   file:         ComponentReference.mo
   package:     ComponentReference

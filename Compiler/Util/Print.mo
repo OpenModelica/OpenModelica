@@ -29,7 +29,7 @@
  *
  */
 
-package Print
+encapsulated package Print
 " file:        Print.mo
   package:     Print
   description: Printing to buffers

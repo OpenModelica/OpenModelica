@@ -29,7 +29,7 @@
  *
  */
 
-package MetaUtil
+encapsulated package MetaUtil
 " file:         MetaUtil.mo
   package:     MetaUtil
   description: Different MetaModelica extension functions.

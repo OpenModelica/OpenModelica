@@ -591,4 +591,14 @@ modelica_metatype boxptr_valueConstructor(modelica_metatype val) {
   return mmc_mk_icon(MMC_HDRCTOR(MMC_GETHDR(val)));
 }
 
+modelica_metatype boxptr_listFirst(modelica_metatype lst)
+{
+  return MMC_CAR(lst);
+}
+
+modelica_metatype boxptr_listRest(modelica_metatype lst)
+{
+  return MMC_CDR(lst);
+}
+
 }

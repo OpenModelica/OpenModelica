@@ -29,7 +29,7 @@
  *
  */
 
-package Patternm
+encapsulated package Patternm
 " file:         Patternm.mo
   package:     Patternm
   description: Patternmatching
@@ -551,6 +551,7 @@ algorithm
         (cache,elabCases,resType,st) = elabMatchCases(cache,env,cases,tys,impl,st,performVectorization,pre,info);
         prop = DAE.PROP(resType,DAE.C_VAR());
         et = Types.elabType(resType);
+        (elabExps,elabCases) = filterUnusedPatterns(elabExps,elabCases) "filterUnusedPatterns() First time to speed up the other optimizations.";
         elabCases = caseDeadCodeEliminiation(matchTy, elabCases, {}, {}, false);
         // Do DCE before converting mc to m
         matchTy = optimizeContinueToMatch(matchTy,elabCases,info);
@@ -558,6 +559,7 @@ algorithm
         ht = getUsedLocalCrefs(RTOpts.debugFlag("patternmSkipFilterUnusedAsBindings"),DAE.MATCHEXPRESSION(matchTy,elabExps,matchDecls,elabCases,et));
         (matchDecls,ht) = filterUnusedDecls(matchDecls,ht,{},HashTableStringToPath.emptyHashTable());
         elabCases = filterUnusedAsBindings(elabCases,ht);
+        (elabExps,elabCases) = filterUnusedPatterns(elabExps,elabCases) "filterUnusedPatterns() Then again to filter out the last parts.";
         exp = DAE.MATCHEXPRESSION(matchTy,elabExps,matchDecls,elabCases,et);
       then (cache,exp,prop,st);
     else
@@ -568,6 +570,58 @@ algorithm
       then fail();
   end matchcontinue;
 end elabMatchExpression;
+
+protected function filterUnusedPatterns
+  "case (1,_,_) then ...; case (2,_,_) then ...; =>"
+  input list<DAE.Exp> inputs "We can only remove inputs that are free from side-effects";
+  input list<DAE.MatchCase> cases;
+  output list<DAE.Exp> outInputs;
+  output list<DAE.MatchCase> outCases;
+algorithm
+  (outInputs,outCases) := matchcontinue (inputs,cases)
+    local
+      list<list<DAE.Pattern>> patternMatrix;
+    case (inputs,cases)
+      equation
+        patternMatrix = Util.transposeList(Util.listMap(cases,getCasePatterns));
+        (true,outInputs,patternMatrix) = filterUnusedPatterns2(inputs,patternMatrix,false,{},{});
+        patternMatrix = Util.transposeList(patternMatrix);
+        cases = Util.listThreadMap(cases,patternMatrix,setCasePatterns);
+      then (outInputs,cases);
+    else (inputs,cases);
+  end matchcontinue;
+end filterUnusedPatterns;
+
+protected function filterUnusedPatterns2
+  "case (1,_,_) then ...; case (2,_,_) then ...; =>"
+  input list<DAE.Exp> inputs "We can only remove inputs that are free from side-effects";
+  input list<list<DAE.Pattern>> patternMatrix;
+  input Boolean change "Only rebuild the cases if something changed";
+  input list<DAE.Exp> inputsAcc;
+  input list<list<DAE.Pattern>> patternMatrixAcc;
+  output Boolean outChange;
+  output list<DAE.Exp> outInputs;
+  output list<list<DAE.Pattern>> outPatternMatrix;
+algorithm
+  (outChange,outInputs,outPatternMatrix) := matchcontinue (inputs,patternMatrix,change,inputsAcc,patternMatrixAcc)
+    local
+      DAE.Exp e;
+      list<DAE.Pattern> pats;
+    case ({},{},true,inputsAcc,patternMatrixAcc)
+      then (true,listReverse(inputsAcc),listReverse(patternMatrixAcc));
+    case (e::inputs,pats::patternMatrix,_,inputsAcc,patternMatrixAcc)
+      equation
+        ((_,true)) = Expression.traverseExp(e,Expression.hasNoSideEffects,true);
+        true = allPatternsWild(pats);
+        (outChange,outInputs,outPatternMatrix) = filterUnusedPatterns2(inputs,patternMatrix,true,inputsAcc,patternMatrixAcc);
+      then (outChange,outInputs,outPatternMatrix);
+    case (e::inputs,pats::patternMatrix,change,inputsAcc,patternMatrixAcc)
+      equation
+        (outChange,outInputs,outPatternMatrix) = filterUnusedPatterns2(inputs,patternMatrix,change,e::inputsAcc,pats::patternMatrixAcc);
+      then (outChange,outInputs,outPatternMatrix);
+    else (false,{},{});
+  end matchcontinue;
+end filterUnusedPatterns2;
 
 protected function getUsedLocalCrefs
   input Boolean skipFilterUnusedAsBindings "if true, traverse the whole expression; else only the bodies and results";
@@ -1284,6 +1338,7 @@ algorithm
       list<DAE.Statement> body;
       list<Absyn.ElementItem> decls;
       Absyn.Info patternInfo,info;
+      Integer len;
     case (cache,env,Absyn.CASE(pattern=pattern,patternInfo=patternInfo,localDecls=decls,equations=eq1,result=result,info=info),tys,impl,st,performVectorization,pre)
       equation
         (cache,SOME((env,DAE.DAE(caseDecls)))) = addLocalDecls(cache,env,decls,Env.caseScopeName,impl,info);
@@ -1297,9 +1352,13 @@ algorithm
       then (cache,DAE.CASE(elabPatterns, caseDecls, body, elabResult, 0, info),elabResult,resType,st);
 
       // ELSE is the same as CASE, but without pattern
-    case (cache,env,Absyn.ELSE(localDecls=decls,equations=eq1,result=result,info=info),_,impl,st,performVectorization,pre)
+    case (cache,env,Absyn.ELSE(localDecls=decls,equations=eq1,result=result,info=info),tys,impl,st,performVectorization,pre)
       equation
-        (cache,elabCase,elabResult,resType,st) = elabMatchCase(cache,env,Absyn.CASE(Absyn.TUPLE({}),info,decls,eq1,result,NONE(),info),{},impl,st,performVectorization,pre); 
+        // Needs to be same length as any other pattern for the simplification algorithms, etc to work properly
+        len = listLength(tys);
+        patterns = Util.listFill(Absyn.CREF(Absyn.WILD()),listLength(tys));
+        pattern = Util.if_(len == 1, Absyn.CREF(Absyn.WILD()), Absyn.TUPLE(patterns));
+        (cache,elabCase,elabResult,resType,st) = elabMatchCase(cache,env,Absyn.CASE(pattern,info,decls,eq1,result,NONE(),info),tys,impl,st,performVectorization,pre); 
       then (cache,elabCase,elabResult,resType,st);
         
   end match;
@@ -1582,5 +1641,31 @@ algorithm
     else false;
   end match;
 end allPatternsWild;
+
+protected function getCasePatterns
+"Accessor function for DAE.Case"
+  input DAE.MatchCase case_;
+  output list<DAE.Pattern> pats;
+algorithm
+  DAE.CASE(patterns=pats) := case_;
+end getCasePatterns;
+  
+protected function setCasePatterns
+"Sets the patterns field in a DAE.Case"
+  input DAE.MatchCase case1;
+  input list<DAE.Pattern> pats;
+  output DAE.MatchCase case2;
+algorithm
+  case2 := match (case1,pats)
+    local
+      list<DAE.Element> localDecls;
+      list<DAE.Statement> body;
+      Option<DAE.Exp> result;
+      Integer jump;
+      Absyn.Info info;
+    case (DAE.CASE(_,localDecls,body,result,jump,info),pats)
+      then DAE.CASE(pats,localDecls,body,result,jump,info);
+  end match;
+end setCasePatterns;
   
 end Patternm;

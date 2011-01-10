@@ -29,7 +29,7 @@
  *
  */
 
-package System
+encapsulated package System
 " file:         System.mo
   package:     System
   description: This file contains runtime system specific function, which are implemented in C.

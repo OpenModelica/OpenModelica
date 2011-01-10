@@ -29,7 +29,7 @@
  *
  */
 
-package BackendDAEOptimize
+encapsulated package BackendDAEOptimize
 " file:         BackendDAEOptimize.mo
   package:     BackendDAEOptimize
   description: BackendDAEOPtimize contains functions that do some kind of

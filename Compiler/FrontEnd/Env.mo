@@ -29,7 +29,7 @@
  *
  */
 
-package Env
+encapsulated package Env
 "
   file:         Env.mo
   package:     Env

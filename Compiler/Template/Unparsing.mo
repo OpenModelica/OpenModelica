@@ -1,4 +1,4 @@
-package	Unparsing
+encapsulated package	Unparsing
 
 public	import	Tpl;
 

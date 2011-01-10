@@ -29,7 +29,7 @@
  *
  */
 
-package BackendDAETransform
+encapsulated package BackendDAETransform
 " file:         BackendDAETransform.mo
   package:     BackendDAETransform
   description: BackendDAETransform contains functions that are needed to perform 

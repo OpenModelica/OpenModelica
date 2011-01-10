@@ -29,7 +29,7 @@
  *
  */
 
-package CevalFunction
+encapsulated package CevalFunction
 " file:         CevalFunction.mo
   package:      CevalFunction
   description:  This module constant evaluates DAE.Function objects, i.e.

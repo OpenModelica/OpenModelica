@@ -29,7 +29,7 @@
  *
  */
 
-package ExpressionSimplify
+encapsulated package ExpressionSimplify
 "
   file:         ExpressionSimplify.mo
   package:     ExpressionSimplify
@@ -313,6 +313,16 @@ algorithm
       })
       equation
         false = boolEq(b1,b2);
+        e1_1 = Util.if_(b1,e1,e2);
+        e2_1 = Util.if_(b1,e2,e1);
+        e = DAE.IFEXP(e, e1_1, e2_1);
+      then simplify(e);
+
+    case DAE.MATCHEXPRESSION(matchType=Absyn.MATCH(), inputs={e}, localDecls={}, cases={
+        DAE.CASE(patterns={DAE.PAT_CONSTANT(exp=DAE.BCONST(b1))},localDecls={},body={},result=SOME(e1)),
+        DAE.CASE(patterns={DAE.PAT_WILD()},localDecls={},body={},result=SOME(e2))
+      })
+      equation
         e1_1 = Util.if_(b1,e1,e2);
         e2_1 = Util.if_(b1,e2,e1);
         e = DAE.IFEXP(e, e1_1, e2_1);

@@ -29,7 +29,7 @@
  *
  */
 
-package Parser
+encapsulated package Parser
 " file:         Parser.mo
   package:     Parser
   description: Interface to external code for parsing

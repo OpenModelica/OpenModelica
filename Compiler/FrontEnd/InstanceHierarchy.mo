@@ -29,7 +29,7 @@
  *
  */
 
-package InstanceHierarchy
+encapsulated package InstanceHierarchy
 "
   file:         InstanceHierarchy.mo
   package:     InstanceHierarchy

@@ -30,7 +30,7 @@
  */
 
 
-package IOStreamExt
+encapsulated package IOStreamExt
 "file:        IOStreamExt.mo
  package:     IOStreamExt
  description: External Stream Utilities

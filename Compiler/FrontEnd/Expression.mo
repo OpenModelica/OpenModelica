@@ -29,7 +29,7 @@
  *
  */
 
-package Expression
+encapsulated package Expression
 "
   file:         Expression.mo
   package:     Expression
@@ -6185,6 +6185,20 @@ algorithm
       case(_,_) then false;
   end matchcontinue;
 end subscriptContain2;
+
+public function hasNoSideEffects
+  "Returns true if the expression is free from side-effects. Use with traverseExp."
+  input tuple<DAE.Exp,Boolean> itpl;
+  output tuple<DAE.Exp,Boolean> otpl;
+algorithm
+  otpl := match itpl
+    local
+      DAE.Exp e;
+    case ((e as DAE.CALL(path=_),_)) then ((e,false));
+    case ((e as DAE.MATCHEXPRESSION(matchType=_),_)) then ((e,false));
+    else itpl;
+  end match;
+end hasNoSideEffects;
 
 end Expression;
 

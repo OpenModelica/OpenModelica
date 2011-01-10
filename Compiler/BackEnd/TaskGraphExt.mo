@@ -28,7 +28,7 @@
  * See the full OSMC Public License conditions for more details.
  *
  */
-package TaskGraphExt
+encapsulated package TaskGraphExt
 " file:         TaskGraphExt.mo
   package:     TaskGraphExt
   description: The external representation of a task graph, using Boost Graph Library in C++.

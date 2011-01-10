@@ -29,7 +29,7 @@
  *
  */
 
-package DumpGraphviz
+encapsulated package DumpGraphviz
 "
   file:         DumpGraphviz.mo
   package:     DumpGraphviz

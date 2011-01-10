@@ -29,7 +29,7 @@
  *
  */
 
-package Algorithm
+encapsulated package Algorithm
 "
   file:         Algorithm.mo
   package:     Algorithm

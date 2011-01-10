@@ -29,7 +29,7 @@
  *
  */
 
-package Values
+encapsulated package Values
 " file:        Values.mo
   package:     Values
   description: Evaluated expression values

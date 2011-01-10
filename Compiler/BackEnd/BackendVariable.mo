@@ -29,7 +29,7 @@
  *
  */
 
-package BackendVariable
+encapsulated package BackendVariable
 " file:         mo
   package:     BackendVariable
   description: BackendVariables contains the function that deals with the datytypes

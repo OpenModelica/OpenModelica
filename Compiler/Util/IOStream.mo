@@ -30,7 +30,7 @@
  */
 
 
-package IOStream
+encapsulated package IOStream
 "file:        IOStream.mo
  package:     IOStream
  description: IOStream Utilities

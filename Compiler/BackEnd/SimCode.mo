@@ -29,8 +29,7 @@
  *
  */
 
-
-package SimCode
+encapsulated package SimCode
 " file:         SimCode.mo
   package:     SimCode
   description: Code generation using Susan templates

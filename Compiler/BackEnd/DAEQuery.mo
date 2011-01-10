@@ -29,7 +29,7 @@
  *
  */
 
-package DAEQuery
+encapsulated package DAEQuery
 " file:         DAEQuery.mo
   package:     DAEQuery
   description: DAEQuery contains functionality for query of Incidence Matrix.

@@ -29,7 +29,7 @@
  *
  */
 
-package Refactor
+encapsulated package Refactor
 " file:        Refactor.mo
   package:     Refactor
   description: Refactoring package

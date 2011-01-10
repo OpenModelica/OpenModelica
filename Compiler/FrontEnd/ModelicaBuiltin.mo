@@ -202,7 +202,7 @@ function classDirectory "Not standard Modelica"
 external "builtin";
 end classDirectory;
 
-package OpenModelica
+encapsulated package OpenModelica
   package Scripting
     function system "Similar to system(3). Executes the given command in the system shell."
       input String callStr "String to call: bash -c $callStr";

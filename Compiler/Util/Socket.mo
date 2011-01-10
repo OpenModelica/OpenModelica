@@ -29,7 +29,7 @@
  *
  */
 
-package Socket
+encapsulated package Socket
 " file:        Socket.mo
   package:     Socket
   description: Modelica socket communication module

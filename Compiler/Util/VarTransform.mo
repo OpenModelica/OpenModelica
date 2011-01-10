@@ -29,7 +29,7 @@
  *
  */
 
-package VarTransform
+encapsulated package VarTransform
 " file:         VarTransform.mo
   package:     VarTransform
   description: VarTransform contains a Binary Tree representation of variable replacements.

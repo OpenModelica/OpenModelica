@@ -29,7 +29,7 @@
  *
  */
 
-package Graphviz
+encapsulated package Graphviz
 "
   file:         Graphviz.mo
   package:     Graphviz

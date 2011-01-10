@@ -29,7 +29,7 @@
  *
  */
 
-package ExpressionDump
+encapsulated package ExpressionDump
 "
   file:         ExpressionDump.mo
   package:     ExpressionDump

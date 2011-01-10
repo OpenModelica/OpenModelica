@@ -29,7 +29,7 @@
  *
  */
 
-package SCode
+encapsulated package SCode
 " file:         SCode.mo
   package:     SCode
   description: SCode intermediate form

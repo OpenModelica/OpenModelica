@@ -29,7 +29,7 @@
  *
  */
 
-package Inst
+encapsulated package Inst
 " file:         Inst.mo
   package:     Inst
   description: Model instantiation

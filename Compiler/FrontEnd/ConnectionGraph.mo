@@ -29,7 +29,7 @@
  *
  */
 
-package ConnectionGraph
+encapsulated package ConnectionGraph
 " file:        ConnectionGraph.mo
   package:     ConnectionGraph
   description: Constant propagation of expressions

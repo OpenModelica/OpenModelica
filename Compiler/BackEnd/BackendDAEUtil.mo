@@ -29,7 +29,7 @@
  *
  */
 
-package BackendDAEUtil
+encapsulated package BackendDAEUtil
 " file:         BackendDAEUtil.mo
   package:     BackendDAEUtil 
   description: BackendDAEUtil comprised functions for BackendDAE data types.
