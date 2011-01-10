@@ -1188,11 +1188,8 @@ algorithm
   outExp := match (e)
     local
       DAE.ExpType ty;
-    case(DAE.BOX(e)) then e;
-    else
-      equation
-        ty = typeof(e);
-      then DAE.UNBOX(e,ty);
+    case (DAE.BOX(e)) then e;
+    else e;
   end match;
 end unboxExp;
 
@@ -6199,6 +6196,17 @@ algorithm
     else itpl;
   end match;
 end hasNoSideEffects;
+
+public function isBuiltinFunctionReference
+  "Returns true if the expression is a reference to a builtin function"
+  input DAE.Exp exp;
+  output Boolean b;
+algorithm
+  b := match exp
+    case DAE.CREF(ty=DAE.ET_FUNCTION_REFERENCE_FUNC(true)) then true;
+    else false;
+  end match;
+end isBuiltinFunctionReference;
 
 end Expression;
 

@@ -941,18 +941,6 @@ uniontype ExpType "- Basic types
   end ET_ARRAY;
 
   // MetaModelica extension. KS
-  record ET_LIST
-    ExpType ty;
-  end ET_LIST;
-
-  record ET_METATUPLE
-    list<ExpType> ty;
-  end ET_METATUPLE;
-
-  record ET_METAOPTION
-    ExpType ty;
-  end ET_METAOPTION;
-
   record ET_FUNCTION_REFERENCE_VAR "MetaModelica Function Reference that is a variable"
   end ET_FUNCTION_REFERENCE_VAR;
   record ET_FUNCTION_REFERENCE_FUNC "MetaModelica Function Reference that is a direct reference to a function"

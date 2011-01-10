@@ -44,6 +44,7 @@ void *mmc_alloc_bytes(unsigned nbytes)
   /* fprintf(stderr, "1 mmc_alloc_bytes(%ld): %ld,%ld\n", nbytes, mmc_cur_malloc_buf, mmc_cur_malloc_buf_ix); */
   if (mmc_cur_malloc_buf == NULL || nbytes>(mmc_cur_malloc_buf_sz-mmc_cur_malloc_buf_ix)) {
     if ( (mmc_cur_malloc_buf = malloc(mmc_cur_malloc_buf_sz)) == 0 ) {
+      fflush(NULL);
       fprintf(stderr, "malloc(%u) failed: %s\n", nbytes, strerror(errno));
       assert(p != 0);
     }

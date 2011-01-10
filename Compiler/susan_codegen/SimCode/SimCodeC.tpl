@@ -5922,10 +5922,17 @@ template expTypeFromExpFlag(Exp exp, Integer flag)
   case c as CODE(__)     then expTypeFlag(c.ty, flag)
   case ASUB(__)          then expTypeFromExpFlag(exp, flag)
   case REDUCTION(__)     then expTypeFromExpFlag(expr, flag)
+  case BOX(__)
+  case CONS(__)
+  case LIST(__)
+  case META_TUPLE(__)
+  case META_OPTION(__)
+  case MATCHEXPRESSION(__)
+  case METARECORDCALL(__)
   case BOX(__)           then match flag case 1 then "metatype" else "modelica_metatype"
   case c as UNBOX(__)    then expTypeFlag(c.ty, flag)
   case c as SHARED_LITERAL(__) then expTypeFlag(c.ty, flag)
-  else "expTypeFromExpFlag:ERROR"
+  else '#error "expTypeFromExpFlag:<%printExpStr(exp)%>"'
 end expTypeFromExpFlag;
 
 

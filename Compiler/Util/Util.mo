@@ -4981,16 +4981,16 @@ public function if_ "function: if_
   Returns the first value (second argument) if the boolean value is
   true, otherwise the second value (third argument) is returned.
   Example: if_(true,\"a\",\"b\") => \"a\""
-  input Boolean inBoolean1;
-  input Type_a inTypeA2;
-  input Type_a inTypeA3;
-  output Type_a outTypeA;
+  input Boolean cond;
+  input Type_a valTrue;
+  input Type_a valFalse;
+  output Type_a outVal;
   replaceable type Type_a subtypeof Any;
+  //annotation(__OpenModelica_EarlyInline = true);
 algorithm
-  outTypeA := match (inBoolean1,inTypeA2,inTypeA3)
-    local Type_a r;
-    case (true,r,_) then r;
-    case (false,_,r) then r;
+  outVal := match (cond,valTrue,valFalse)
+    case (true,_,_) then valTrue;
+    else valFalse;
   end match;
 end if_;
 
@@ -4999,18 +4999,15 @@ public function if_t
 "function: if_t
   as with if_, but can return one of two different types of values"
   input Boolean inBoolean;
-  input TypeA inTypeA;
-  input TypeB inTypeB;
+  input TypeA resA;
+  input TypeB resB;
   output tuple<Option<TypeA>, Option<TypeB>> outTuple;
   replaceable type TypeA subtypeof Any;
   replaceable type TypeB subtypeof Any;
 algorithm
-  outTuple := match(inBoolean,inTypeA,inTypeB)
-    local
-      TypeA resA;
-      TypeB resB;
-    case(true,resA,_) then ((SOME(resA),NONE()));
-    case(false,_,resB) then ((NONE(),SOME(resB)));
+  outTuple := match(inBoolean,resA,resB)
+    case(true,_,_) then ((SOME(resA),NONE()));
+    else ((NONE(),SOME(resB)));
   end match;
 end if_t;
 

@@ -569,7 +569,7 @@ algorithm
     equation
       t = DAE.T_LIST_DEFAULT;
       prop = DAE.PROP(t,DAE.C_CONST());
-    then (cache,DAE.LIST(DAE.ET_LIST(DAE.ET_OTHER()),{}),prop,st);
+    then (cache,DAE.LIST(DAE.ET_METATYPE(),{}),prop,st);
 
   case (cache,env,Absyn.LIST(es),impl,st,doVect,pre,info,_)
     equation
