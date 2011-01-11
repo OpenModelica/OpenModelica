@@ -1046,8 +1046,9 @@ public function translateFunctions
   input Option<DAE.Function> optMainFunction;
   input list<DAE.Function> daeElements;
   input list<DAE.Type> metarecordTypes;
+  input list<String> includes;
 algorithm
-  _ := match (name, optMainFunction, daeElements, metarecordTypes)
+  _ := match (name, optMainFunction, daeElements, metarecordTypes, includes)
     local
       DAE.Function daeMainFunction;
       Function mainFunction;
@@ -1057,12 +1058,12 @@ algorithm
       FunctionCode fnCode;
       list<RecordDeclaration> extraRecordDecls;
       list<DAE.Exp> literals;
-    case (name, SOME(daeMainFunction), daeElements, metarecordTypes)
+    case (name, SOME(daeMainFunction), daeElements, metarecordTypes, includes)
       equation
         // Create FunctionCode
         (daeElements,(_,(_,_,literals))) = DAEUtil.traverseDAEFunctions(daeMainFunction::daeElements,Expression.traverseSubexpressionsHelper,(replaceLiteralExp,(0,HashTableExpToIndex.emptyHashTableSized(24971),{})));
         literals = listReverse(literals);
-        (mainFunction::fns, extraRecordDecls, includes, libs) = elaborateFunctions(daeElements, metarecordTypes, literals);
+        (mainFunction::fns, extraRecordDecls, includes, libs) = elaborateFunctions(daeElements, metarecordTypes, literals, includes);
         checkValidMainFunction(name, mainFunction);
         makefileParams = createMakefileParams(libs);
         fnCode = FUNCTIONCODE(name, SOME(mainFunction), fns, literals, includes, makefileParams, extraRecordDecls);
@@ -1070,12 +1071,12 @@ algorithm
         _ = Tpl.tplString(SimCodeC.translateFunctions, fnCode);
       then
         ();
-    case (name, NONE(), daeElements, metarecordTypes)
+    case (name, NONE(), daeElements, metarecordTypes, includes)
       equation
         // Create FunctionCode
         (daeElements,(_,(_,_,literals))) = DAEUtil.traverseDAEFunctions(daeElements,Expression.traverseSubexpressionsHelper,(replaceLiteralExp,(0,HashTableExpToIndex.emptyHashTableSized(24971),{})));
         literals = listReverse(literals);
-        (fns, extraRecordDecls, includes, libs) = elaborateFunctions(daeElements, metarecordTypes, literals);
+        (fns, extraRecordDecls, includes, libs) = elaborateFunctions(daeElements, metarecordTypes, literals, includes);
         makefileParams = createMakefileParams(libs);
         fnCode = FUNCTIONCODE(name, NONE(), fns, literals, includes, makefileParams, extraRecordDecls);
         // Generate code
@@ -1338,7 +1339,7 @@ algorithm
         funcelems = Inline.inlineCallsInFunctions(funcelems,(NONE(),{DAE.NORM_INLINE(), DAE.AFTER_INDEX_RED_INLINE()}));
         //Debug.fprintln("info", "Generating functions, call Codegen.\n") "debug" ;
         (includes1, libs1) = generateExternalObjectIncludes(dlow);
-        (fns, recordDecls, includes2, libs2) = elaborateFunctions(funcelems, {}, {}); // Do we need metarecords here as well?
+        (fns, recordDecls, includes2, libs2) = elaborateFunctions(funcelems, {}, {}, {}); // Do we need metarecords here as well?
       then
         (Util.listUnion(libs1,libs2), Util.listUnion(includes1,includes2), recordDecls, fns, dlow, dae);
     else
@@ -1419,16 +1420,17 @@ protected function elaborateFunctions
   input list<DAE.Function> daeElements;
   input list<DAE.Type> metarecordTypes;
   input list<DAE.Exp> literals;
+  input list<String> includes;
   output list<Function> functions;
   output list<RecordDeclaration> extraRecordDecls;
-  output list<String> includes;
+  output list<String> outIncludes;
   output list<String> libs;
   protected
   list<Function> fns;
   list<String> outRecordTypes;
 algorithm
   (extraRecordDecls, outRecordTypes) := elaborateRecordDeclarationsForMetarecords(literals,{},{});
-  (functions, outRecordTypes, extraRecordDecls, includes, libs) := elaborateFunctions2(daeElements,{},outRecordTypes,extraRecordDecls,{},{});
+  (functions, outRecordTypes, extraRecordDecls, outIncludes, libs) := elaborateFunctions2(daeElements,{},outRecordTypes,extraRecordDecls,includes,{});
   (extraRecordDecls,_) := elaborateRecordDeclarationsFromTypes(metarecordTypes, extraRecordDecls, outRecordTypes);
 end elaborateFunctions;
 
@@ -1446,7 +1448,7 @@ protected function elaborateFunctions2
   output list<String> outLibs;
 algorithm
   (outFunctions, outRecordTypes, outDecls, outIncludes, outLibs) :=
-  matchcontinue (daeElements, inFunctions, inRecordTypes, inDecls, inIncludes, inLibs)
+  match (daeElements, inFunctions, inRecordTypes, inDecls, inIncludes, inLibs)
     local
       list<Function> accfns, fns;
       Function fn;
@@ -1456,6 +1458,12 @@ algorithm
       list<RecordDeclaration> decls;
     case ({}, accfns, rt, decls, includes, libs)
     then (listReverse(accfns), rt, decls, listReverse(includes), listReverse(libs));
+    case ((DAE.FUNCTION(type_ = (DAE.T_FUNCTION(functionAttributes=DAE.FUNCTION_ATTRIBUTES(isBuiltin=DAE.FUNCTION_BUILTIN_PTR())),_)) :: rest), accfns, rt, decls, includes, libs)
+      equation
+        // skip over builtin functions
+        (fns, rt_2, decls, includes, libs) = elaborateFunctions2(rest, accfns, rt, decls, includes, libs);
+      then
+        (fns, rt_2, decls, includes, libs);
     case ((DAE.FUNCTION(partialPrefix = true) :: rest), accfns, rt, decls, includes, libs)
       equation
         // skip over partial functions
@@ -1475,7 +1483,7 @@ algorithm
         (fns, rt_2, decls, includes, libs) = elaborateFunctions2(rest, (fn :: accfns), rt_1, decls, includes, libs);
       then
         (fns, rt_2, decls, includes, libs);
-  end matchcontinue;
+  end match;
 end elaborateFunctions2;
 
 /* Does the actual work of transforming a DAE.FUNCTION to a Function. */

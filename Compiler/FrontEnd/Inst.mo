@@ -14554,15 +14554,15 @@ algorithm
   attr := match (cl)
     local
       SCode.Restriction restriction;
-      Boolean isExt,purity;
+      Boolean purity;
+      DAE.FunctionBuiltin isBuiltin;
       DAE.InlineType inline;
     case (SCode.CLASS(restriction=restriction))
       equation
         inline = isInlineFunc2(cl);
-        isExt = false; // TODO: We need to check for "builtin" annotation... SCode.restrictionEqual(restriction,SCode.R_EXT_FUNCTION());
-        purity = not (isExt or DAEUtil.hasBooleanNamedAnnotation(cl,"__OpenModelica_Impure"));
-        //print("getFunctionAttributes: " +& boolString(purity) +& boolString(isExt) +& boolString(DAEUtil.hasBooleanNamedAnnotation(cl,"__OpenModelica_Impure")) +& "\n");
-      then DAE.FUNCTION_ATTRIBUTES(inline,purity);
+        isBuiltin = Util.if_(SCode.isBuiltinFunction(cl), DAE.FUNCTION_BUILTIN(), Util.if_(DAEUtil.hasBooleanNamedAnnotation(cl,"__OpenModelica_BuiltinPtr"), DAE.FUNCTION_BUILTIN_PTR(), DAE.FUNCTION_NOT_BUILTIN()));
+        purity = not DAEUtil.hasBooleanNamedAnnotation(cl,"__OpenModelica_Impure");
+      then DAE.FUNCTION_ATTRIBUTES(inline,purity,isBuiltin);
   end match;
 end getFunctionAttributes;
 

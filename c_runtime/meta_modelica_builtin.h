@@ -43,12 +43,15 @@
 extern "C" {
 #endif
 
+#include "meta_modelica_builtin_boxptr.h"
+
 typedef modelica_metatype metamodelica_string;
 typedef const modelica_metatype metamodelica_string_const;
 
 typedef metamodelica_string intString_rettype;
 intString_rettype intString(modelica_integer);
 modelica_metatype boxptr_intString(modelica_metatype);
+modelica_metatype boxptr_intMax(modelica_metatype,modelica_metatype);
 
 /* String Character Conversion */
 typedef modelica_integer stringCharInt_rettype;
@@ -81,6 +84,9 @@ stringHash_rettype stringHash(metamodelica_string_const);
 stringHashDjb2_rettype stringHashDjb2(metamodelica_string_const);
 stringHashSdbm_rettype stringHashSdbm(metamodelica_string_const);
 
+modelica_metatype boxptr_stringEq(modelica_metatype a, modelica_metatype b);
+#define boxptr_stringEqual boxptr_stringEq
+#define boxptr_stringAppend stringAppend
 modelica_metatype boxptr_stringHash(modelica_metatype);
 modelica_metatype boxptr_stringHashDjb2(modelica_metatype);
 modelica_metatype boxptr_stringHashSdmb(modelica_metatype);
@@ -106,10 +112,12 @@ listDelete_rettype listDelete(modelica_metatype, modelica_integer);
 #define listRest(X) MMC_CDR(X)
 #define listFirst(X) MMC_CAR(X)
 
+modelica_metatype boxptr_listNth(modelica_metatype,modelica_metatype);
 modelica_metatype boxptr_listGet(modelica_metatype,modelica_metatype);
 #define boxptr_listAppend listAppend
 modelica_metatype boxptr_listFirst(modelica_metatype);
 modelica_metatype boxptr_listRest(modelica_metatype);
+#define boxptr_listReverse listReverse
 
 /* Option Operations */
 typedef modelica_boolean optionNone_rettype;
@@ -133,6 +141,8 @@ listArray_rettype listArray(modelica_metatype);
 arrayUpdate_rettype arrayUpdate(modelica_metatype, modelica_integer, modelica_metatype);
 arrayCopy_rettype arrayCopy(modelica_metatype);
 arrayAdd_rettype arrayAdd(modelica_metatype, modelica_metatype);
+
+modelica_metatype boxptr_arrayNth(modelica_metatype,modelica_metatype);
 
 /* Misc Operations */
 typedef modelica_integer tick_rettype;

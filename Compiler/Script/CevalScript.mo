@@ -4574,7 +4574,7 @@ algorithm
         uniontypePaths = DAEUtil.getUniontypePaths(d,{});
         (cache,metarecordTypes) = Lookup.lookupMetarecordsRecursive(cache, env, uniontypePaths);
         
-        SimCode.translateFunctions(pathstr, SOME(mainFunction), d, metarecordTypes);
+        SimCode.translateFunctions(pathstr, SOME(mainFunction), d, metarecordTypes, {});
         compileModel(pathstr, {}, "", "", "");
       then
         (cache, pathstr);
@@ -4596,7 +4596,7 @@ algorithm
         funcs = Env.getFunctionTree(cache);
         d = DAEUtil.getFunctionList(funcs);
         metarecordTypes = {};
-        SimCode.translateFunctions(pathstr, NONE(), d, metarecordTypes);
+        SimCode.translateFunctions(pathstr, NONE(), d, metarecordTypes, {});
       then
         (cache, pathstr);
 
@@ -4621,7 +4621,7 @@ algorithm
   _ := match (cache,env,sp)
     local
       String name;
-      list<String> names;
+      list<String> names,dependencies;
       list<Absyn.Path> paths;
       list<SCode.Element> elementLst;
       DAE.FunctionTree funcs;
@@ -4638,7 +4638,11 @@ algorithm
         cache = instantiateDaeFunctions(cache, env, paths);
         funcs = Env.getFunctionTree(cache);
         d = Util.listMap1(paths, DAEUtil.getNamedFunction, funcs);
-        SimCode.translateFunctions(name, NONE(), d, {});
+        (_,(_,dependencies)) = DAEUtil.traverseDAEFunctions(d,Expression.traverseSubexpressionsHelper,(matchQualifiedCalls,{}));
+        print(name +& " has dependencies: " +& Util.stringDelimitList(dependencies,",") +& "\n");
+        dependencies = Util.listMap1(dependencies,stringAppend,".h\"");
+        dependencies = Util.listMap1r(dependencies,stringAppend,"#include \"");
+        SimCode.translateFunctions(name, NONE(), d, {}, dependencies);
         generateFunctions(cache,env,sp);
       then ();
     case (cache,env,_::sp)
@@ -4647,6 +4651,34 @@ algorithm
       then ();
   end match;
 end generateFunctions;
+
+protected function matchQualifiedCalls
+"Collects the packages used by the functions"
+  input tuple<DAE.Exp,list<String>> itpl;
+  output tuple<DAE.Exp,list<String>> otpl;
+algorithm
+  otpl := match itpl
+    local
+      DAE.Exp e;
+      list<String> acc;
+      String name;
+      DAE.ComponentRef cr;
+    case ((e as DAE.CALL(path = Absyn.FULLYQUALIFIED(Absyn.QUALIFIED(name,Absyn.IDENT(_))), builtin = false),acc))
+      equation
+        acc = Util.listConsOnTrue(not listMember(name,acc),name,acc);
+      then ((e,acc));
+    case ((e as DAE.METARECORDCALL(path = Absyn.QUALIFIED(name,Absyn.QUALIFIED(path=Absyn.IDENT(_)))),acc))
+      equation
+        acc = Util.listConsOnTrue(not listMember(name,acc),name,acc);
+      then ((e,acc));
+    case ((e as DAE.CREF(componentRef=cr,ty=DAE.ET_FUNCTION_REFERENCE_FUNC(false)),acc))
+      equation
+        Absyn.QUALIFIED(name,Absyn.IDENT(_)) = ComponentReference.crefToPath(cr);
+        acc = Util.listConsOnTrue(not listMember(name,acc),name,acc);
+      then ((e,acc));
+    case itpl then itpl;
+  end match;
+end matchQualifiedCalls;
 
 protected function instantiateDaeFunctions
   input Env.Cache cache;

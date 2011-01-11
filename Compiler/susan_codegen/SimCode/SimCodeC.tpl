@@ -77,7 +77,7 @@ case FUNCTIONCODE(__) then
   let()= textFile(functionsHeaderFile(filePrefix, mainFunction, functions, extraRecordDecls, externalFunctionIncludes), '<%filePrefix%>.h')
   let()= textFile(functionsFile(filePrefix, mainFunction, functions, literals), '<%filePrefix%>.c')
   let()= textFile(recordsFile(filePrefix, extraRecordDecls), '<%filePrefix%>_records.c')
-  let()= textFile(functionsMakefile(functionCode), '<%filePrefix%>.makefile')
+  let _= (if mainFunction then textFile(functionsMakefile(functionCode), '<%filePrefix%>.makefile'))
   "" // Return empty result since result written to files directly
 end translateFunctions;
 
@@ -2556,8 +2556,8 @@ template functionsHeaderFile(String filePrefix,
   extern "C" {
   #endif
   
-  <%extraRecordDecls |> rd => recordDeclarationHeader(rd) ;separator="\n"%>
   <%externalFunctionIncludes(includes)%>
+  <%extraRecordDecls |> rd => recordDeclarationHeader(rd) ;separator="\n"%>
   <%match mainFunction case SOME(fn) then functionHeader(fn,true)%>
   <%functionHeaders(functions)%>
 

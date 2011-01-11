@@ -4401,6 +4401,17 @@ algorithm
   end matchcontinue;
 end makeFullyQualified;
 
+public function makeNotFullyQualified
+"Makes a path not fully qualified unless it already is."
+  input Path path;
+  output Path outPath;
+algorithm
+  outPath := match path
+    case FULLYQUALIFIED(path) then path;
+    else path; 
+  end match;
+end makeNotFullyQualified;
+
 public function importEqual "function: importEqual
   Compares two import elements. "
   input Import im1;

@@ -749,16 +749,28 @@ public uniontype TType "-TType contains the actual type"
 
 end TType;
 
-public constant FunctionAttributes FUNCTION_ATTRIBUTES_DEFAULT = FUNCTION_ATTRIBUTES(NO_INLINE(),true); 
-public constant FunctionAttributes FUNCTION_ATTRIBUTES_IMPURE = FUNCTION_ATTRIBUTES(NO_INLINE(),false); 
+public constant FunctionAttributes FUNCTION_ATTRIBUTES_BUILTIN = FUNCTION_ATTRIBUTES(NO_INLINE(),true,FUNCTION_BUILTIN()); 
+public constant FunctionAttributes FUNCTION_ATTRIBUTES_DEFAULT = FUNCTION_ATTRIBUTES(NO_INLINE(),true,FUNCTION_NOT_BUILTIN()); 
+public constant FunctionAttributes FUNCTION_ATTRIBUTES_IMPURE = FUNCTION_ATTRIBUTES(NO_INLINE(),false,FUNCTION_NOT_BUILTIN()); 
 
 public
 uniontype FunctionAttributes
   record FUNCTION_ATTRIBUTES
     InlineType inline;
     Boolean isPure;
+    FunctionBuiltin isBuiltin;
   end FUNCTION_ATTRIBUTES;
 end FunctionAttributes;
+
+public
+uniontype FunctionBuiltin
+  record FUNCTION_NOT_BUILTIN "Function is not builtin"
+  end FUNCTION_NOT_BUILTIN;
+  record FUNCTION_BUILTIN "Function is builtin"
+  end FUNCTION_BUILTIN;
+  record FUNCTION_BUILTIN_PTR "The function has a body, but its function pointer is builtin. This means inline code+optimized pointer if need be."
+  end FUNCTION_BUILTIN_PTR;
+end FunctionBuiltin;
 
 public
 uniontype Dimension

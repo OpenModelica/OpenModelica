@@ -47,6 +47,9 @@
 
 extern "C" {
 
+#define GEN_META_MODELICA_BUILTIN_BOXPTR
+#include "meta_modelica_builtin_boxptr.h"
+
 intString_rettype intString(modelica_integer i)
 {
   /* 64-bit integer: 1+log_10(2**63)+1 = 20 digits max */
@@ -61,6 +64,11 @@ intString_rettype intString(modelica_integer i)
 modelica_metatype boxptr_intString(modelica_metatype i)
 {
   return intString(mmc_unbox_integer(i));
+}
+
+modelica_metatype boxptr_intMax(modelica_metatype a,modelica_metatype b)
+{
+  return a > b ? a : b;
 }
 
 /* String Character Conversion */
@@ -101,6 +109,12 @@ stringInt_rettype stringInt(metamodelica_string s)
 
   return res;
 }
+
+modelica_metatype boxptr_stringEq(modelica_metatype a, modelica_metatype b)
+{
+  return mmc_mk_bcon(stringEqual(a,b));
+}
+
 /******************** String HASH Functions ********************/
 /*
  * adrpo 2008-12-02
@@ -409,6 +423,11 @@ modelica_metatype boxptr_listGet(modelica_metatype lst, modelica_metatype i)
   return listGet(lst,MMC_UNTAGFIXNUM(i));
 }
 
+modelica_metatype boxptr_listNth(modelica_metatype lst, modelica_metatype i)
+{
+  return listGet(lst,mmc_unbox_integer(i)+1);
+}
+
 listDelete_rettype listDelete(modelica_metatype lst, modelica_integer ix)
 {
   modelica_metatype *tmpArr;
@@ -528,6 +547,11 @@ arrayAdd_rettype arrayAdd(modelica_metatype arr, modelica_metatype val)
   }
   resp[nelts] = val;
   return res;
+}
+
+modelica_metatype boxptr_arrayNth(modelica_metatype arr,modelica_metatype ix)
+{
+  return arrayGet(arr, mmc_unbox_integer(ix)+1);
 }
 
 /* Misc Operations */

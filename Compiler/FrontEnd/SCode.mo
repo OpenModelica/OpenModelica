@@ -3387,5 +3387,15 @@ algorithm
   CLASSDEF(classDef=cl) := el;
 end getElementClass;
 
+public function isBuiltinFunction
+  input Class cl;
+  output Boolean b;
+algorithm
+  b := match cl
+    case CLASS(restriction=R_EXT_FUNCTION(),classDef=PARTS(externalDecl=SOME(Absyn.EXTERNALDECL(lang=SOME("builtin"))))) then true;
+    else false;
+  end match;
+end isBuiltinFunction;
+
 end SCode;
 

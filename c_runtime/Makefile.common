@@ -39,6 +39,7 @@ jni_md_windows.h \
 matrix.h \
 memory_pool.h \
 meta_modelica_builtin.h \
+meta_modelica_builtin_boxptr.h \
 meta_modelica_real.h \
 meta_modelica_string_lit.h \
 meta_modelica.h \

@@ -1263,19 +1263,6 @@ algorithm
   end matchcontinue;
 end dumpExtObjectClass;
 
-public function printInlineTypeStr 
-"Print what kind of inline we have"
-  input DAE.InlineType it;
-  output String str;
-algorithm
-  str := matchcontinue(it)
-    case(DAE.NO_INLINE()) then "No inline";
-    case(DAE.AFTER_INDEX_RED_INLINE()) then "Inline after index reduction";
-    case(DAE.EARLY_INLINE()) then "Inline as soon as possible";
-    case(DAE.NORM_INLINE()) then "Inline before index reduction";
-  end matchcontinue;
-end printInlineTypeStr;
-
 public function derivativeCondStr "
   Author BZ
   Function for prinding conditions"

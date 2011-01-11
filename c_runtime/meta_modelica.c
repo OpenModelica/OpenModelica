@@ -224,10 +224,9 @@ mmc__uniontype__metarecord__typedef__equal(void* ut,int ex_ctor,int fieldNums)
 }
 */
 
-void debug__print(const char* prefix, void* any)
+void debug__print(void* prefix, void* any)
 {
-  fprintf(stderr, "%s", prefix);
-  printAny(any);
+  fprintf(stderr, "%s%s", MMC_STRINGDATA(prefix), anyString(any));
 }
 
 static char *anyStringBuf = 0;
