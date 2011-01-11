@@ -622,6 +622,7 @@ algorithm
       list<Values.Value> vals;
       list<Real> timeStamps;
       list<DAE.Exp> expLst;
+      list<tuple<String,list<String>>> deps;
     
     case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "lookupClass"),expLst = {DAE.CREF(componentRef = cr)}),
         (st as Interactive.SYMBOLTABLE(
@@ -2232,7 +2233,7 @@ algorithm
         (st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       equation
         sp = SCodeUtil.translateAbsyn2SCode(p);
-        generateFunctions(cache,env,sp);
+        deps = generateFunctions(cache,env,sp,{});
       then (cache,Values.BOOL(true),st);
 
     case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "generateSeparateCode"),expLst = {}),
@@ -4595,8 +4596,7 @@ algorithm
         // The list of functions is not ordered, so we need to filter out the main function...
         funcs = Env.getFunctionTree(cache);
         d = DAEUtil.getFunctionList(funcs);
-        metarecordTypes = {};
-        SimCode.translateFunctions(pathstr, NONE(), d, metarecordTypes, {});
+        SimCode.translateFunctions(pathstr, NONE(), d, {}, {});
       then
         (cache, pathstr);
 
@@ -4617,8 +4617,10 @@ protected function generateFunctions
   input Env.Cache cache;
   input Env.Env env;
   input list<SCode.Class> sp;
+  input list<tuple<String,list<String>>> acc;
+  output list<tuple<String,list<String>>> deps;
 algorithm
-  _ := match (cache,env,sp)
+  deps := match (cache,env,sp,acc)
     local
       String name;
       list<String> names,dependencies;
@@ -4626,12 +4628,12 @@ algorithm
       list<SCode.Element> elementLst;
       DAE.FunctionTree funcs;
       list<DAE.Function> d;
-    case (cache,env,{}) then ();
-    case (cache,env,SCode.CLASS(name="OpenModelica")::sp)
+    case (cache,env,{},acc) then acc;
+    case (cache,env,SCode.CLASS(name="OpenModelica")::sp,acc)
       equation
-        generateFunctions(cache,env,sp);
-      then ();
-    case (cache,env,SCode.CLASS(name=name,encapsulatedPrefix=true,restriction=SCode.R_PACKAGE(),classDef=SCode.PARTS(elementLst=elementLst))::sp)
+        acc = generateFunctions(cache,env,sp,acc);
+      then acc;
+    case (cache,env,SCode.CLASS(name=name,encapsulatedPrefix=true,restriction=SCode.R_PACKAGE(),classDef=SCode.PARTS(elementLst=elementLst))::sp,acc)
       equation
         names = Util.listMap(Util.listFilterBoolean(Util.listMap(Util.listFilterBoolean(elementLst, SCode.elementIsClass), SCode.getElementClass), SCode.isFunction), SCode.className);
         paths = Util.listMap1r(names,Absyn.makeQualifiedPathFromStrings,name);
@@ -4640,15 +4642,16 @@ algorithm
         d = Util.listMap1(paths, DAEUtil.getNamedFunction, funcs);
         (_,(_,dependencies)) = DAEUtil.traverseDAEFunctions(d,Expression.traverseSubexpressionsHelper,(matchQualifiedCalls,{}));
         print(name +& " has dependencies: " +& Util.stringDelimitList(dependencies,",") +& "\n");
+        acc = (name,dependencies)::acc;
         dependencies = Util.listMap1(dependencies,stringAppend,".h\"");
         dependencies = Util.listMap1r(dependencies,stringAppend,"#include \"");
         SimCode.translateFunctions(name, NONE(), d, {}, dependencies);
-        generateFunctions(cache,env,sp);
-      then ();
-    case (cache,env,_::sp)
+        acc = generateFunctions(cache,env,sp,acc);
+      then acc;
+    case (cache,env,_::sp,acc)
       equation
-        generateFunctions(cache,env,sp);
-      then ();
+        acc = generateFunctions(cache,env,sp,acc);
+      then acc;
   end match;
 end generateFunctions;
 
@@ -4667,10 +4670,12 @@ algorithm
       equation
         acc = Util.listConsOnTrue(not listMember(name,acc),name,acc);
       then ((e,acc));
+        /*
     case ((e as DAE.METARECORDCALL(path = Absyn.QUALIFIED(name,Absyn.QUALIFIED(path=Absyn.IDENT(_)))),acc))
       equation
         acc = Util.listConsOnTrue(not listMember(name,acc),name,acc);
       then ((e,acc));
+      */
     case ((e as DAE.CREF(componentRef=cr,ty=DAE.ET_FUNCTION_REFERENCE_FUNC(false)),acc))
       equation
         Absyn.QUALIFIED(name,Absyn.IDENT(_)) = ComponentReference.crefToPath(cr);
