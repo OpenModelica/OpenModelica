@@ -56,6 +56,7 @@ QString Helper::writeAble = QString("Writeable");
 QString Helper::iconView = QString("Icon View");
 QString Helper::diagramView = QString("Diagram View");
 QString Helper::modelicaTextView = QString("Modelica Text View");
+QString Helper::documentationView = QString("View Documentation");
 int Helper::viewWidth = 2000;
 int Helper::viewHeight = 2000;
 qreal Helper::globalIconXScale = 0.15;

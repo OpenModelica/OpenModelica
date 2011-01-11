@@ -160,6 +160,7 @@ private:
     QToolButton *mpIconToolButton;
     QToolButton *mpDiagramToolButton;
     QToolButton *mpModelicaTextToolButton;
+    QToolButton *mpDocumentationViewToolButton;
     QLabel *mpReadOnlyLabel;
     QLabel *mpModelicaTypeLabel;
     QLabel *mpViewTypeLabel;
@@ -205,6 +206,7 @@ public slots:
     void showDiagramView(bool checked);
     void showIconView(bool checked);
     void showModelicaTextView(bool checked);
+    void showDocumentationView();
     bool ModelicaEditorTextChanged();
 };
 

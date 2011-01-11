@@ -57,6 +57,7 @@ public:
     static QString iconView;
     static QString diagramView;
     static QString modelicaTextView;
+    static QString documentationView;
     static int viewWidth;
     static int viewHeight;
     static qreal globalIconXScale;

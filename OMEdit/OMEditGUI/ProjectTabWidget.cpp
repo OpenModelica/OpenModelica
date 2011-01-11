@@ -1024,6 +1024,16 @@ ProjectTab::ProjectTab(int modelicaType, int iconType, bool readOnly, bool isChi
     connect(mpModelicaTextToolButton, SIGNAL(clicked(bool)), SLOT(showModelicaTextView(bool)));
     viewsButtonsHorizontalLayout->addWidget(mpModelicaTextToolButton);
 
+    // documentation view tool button
+    mpDocumentationViewToolButton = new QToolButton;
+    mpDocumentationViewToolButton->setText(Helper::documentationView);
+    mpDocumentationViewToolButton->setIcon(QIcon(":/Resources/icons/info-icon.png"));
+    mpDocumentationViewToolButton->setIconSize(Helper::buttonIconSize);
+    mpDocumentationViewToolButton->setToolTip(Helper::documentationView);
+    mpDocumentationViewToolButton->setAutoRaise(true);
+    connect(mpDocumentationViewToolButton, SIGNAL(pressed()), SLOT(showDocumentationView()));
+    viewsButtonsHorizontalLayout->addWidget(mpDocumentationViewToolButton);
+
     viewsButtonsFrame->setLayout(viewsButtonsHorizontalLayout);
 
     // view buttons box
@@ -1177,6 +1187,12 @@ void ProjectTab::showModelicaTextView(bool checked)
     mpModelicaEditor->mLastValidText = mpModelicaEditor->toPlainText();
     mpModelicaEditor->setFocus();
     mpModelicaEditorWidget->show();
+}
+
+void ProjectTab::showDocumentationView()
+{
+    mpParentProjectTabWidget->mpParentMainWindow->documentationdock->show();
+    mpParentProjectTabWidget->mpParentMainWindow->mpDocumentationWidget->show(mModelNameStructure);
 }
 
 bool ProjectTab::loadModelFromText(QString modelName)
