@@ -29,8 +29,10 @@
  */
 
 #include "rtclock.h"
+#include <assert.h>
 
-static long rt_clock_ncall[NUM_RT_CLOCKS] = {0};
+static long default_rt_clock_ncall[NUM_RT_CLOCKS] = {0};
+static long *rt_clock_ncall = default_rt_clock_ncall;
 
 long rt_ncall(int ix) {
   return rt_clock_ncall[ix];
@@ -40,9 +42,12 @@ long rt_ncall(int ix) {
 
 #include <windows.h>
 
+static LARGE_INTEGER default_acc_tp[NUM_RT_CLOCKS];
+static LARGE_INTEGER default_tick_tp[NUM_RT_CLOCKS];
+
 static LARGE_INTEGER performance_frequency;
-static LARGE_INTEGER acc_tp[NUM_RT_CLOCKS];
-static LARGE_INTEGER tick_tp[NUM_RT_CLOCKS];
+static LARGE_INTEGER *acc_tp;
+static LARGE_INTEGER *tick_tp;
 
 void rt_tick(int ix) {
   static int init = 0;
@@ -87,8 +92,11 @@ double rt_total(int ix) {
 #include <mach/mach_time.h>
 #include <time.h>
 
-static uint64_t acc_tp[NUM_RT_CLOCKS];
-static uint64_t tick_tp[NUM_RT_CLOCKS];
+static uint64_t default_acc_tp[NUM_RT_CLOCKS];
+static uint64_t default_tick_tp[NUM_RT_CLOCKS];
+
+static uint64_t *acc_tp;
+static uint64_t *tick_tp;
 
 void rt_tick(int ix) {
   tick_tp[ix] = mach_absolute_time();
@@ -128,8 +136,11 @@ double rt_total(int ix) {
 
 #include <time.h>
 
-static struct timespec acc_tp[NUM_RT_CLOCKS];
-static struct timespec tick_tp[NUM_RT_CLOCKS];
+static struct timespec default_acc_tp[NUM_RT_CLOCKS];
+static struct timespec default_tick_tp[NUM_RT_CLOCKS];
+
+static struct timespec *acc_tp = default_acc_tp;
+static struct timespec *tick_tp = default_tick_tp;
 
 void rt_tick(int ix) {
   clock_gettime(CLOCK_MONOTONIC, &tick_tp[ix]);
@@ -165,3 +176,14 @@ double rt_total(int ix) {
 }
 
 #endif
+
+void rt_init(int numTimers)
+{
+  if (numTimers < NUM_RT_CLOCKS) return; /* We already have more than we need statically allocated */
+  acc_tp = malloc(sizeof(*acc_tp)*numTimers);
+  tick_tp = malloc(sizeof(*tick_tp)*numTimers);
+  rt_clock_ncall = malloc(sizeof(long)*numTimers);
+  assert(acc_tp != 0);
+  assert(tick_tp != 0);
+  assert(rt_clock_ncall != 0);
+}

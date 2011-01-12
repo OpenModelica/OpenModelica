@@ -50,6 +50,8 @@ extern "C" {
 #define SIM_PROF_TICK_FN(ix) if (measure_time_flag) {rt_tick(ix+SIM_TIMER_FIRST_FUNCTION);}
 #define SIM_PROF_ACC_FN(ix) if (measure_time_flag) {rt_accumulate(ix+SIM_TIMER_FIRST_FUNCTION);}
 
+void rt_init(int numTimer);
+
 void rt_tick(int ix);
 /* tick() ... tock() -> returns the number of seconds since the tick */
 double rt_tock(int ix);

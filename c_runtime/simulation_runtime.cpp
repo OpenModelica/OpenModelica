@@ -265,6 +265,7 @@ int startNonInteractiveSimulation(int argc, char**argv){
   initDelay(start);
 
   if (measure_time_flag) {
+    rt_init(SIM_TIMER_FIRST_FUNCTION+globalData->nFunctions+4 /* sentinel */);
     rt_tick(SIM_TIMER_TOTAL);
     rt_clear(SIM_TIMER_OUTPUT);
     rt_clear(SIM_TIMER_EVENT);
