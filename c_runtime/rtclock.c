@@ -58,13 +58,13 @@ double rt_tock(int ix) {
 
 void rt_clear(int ix)
 {
-  acc_tp[ix] = 0;
+  acc_tp[ix].QuadPart = 0;
 }
 
 void rt_accumulate(int ix) {
   LARGE_INTEGER tock_tp;
   QueryPerformanceCounter(&tock_tp);
-  acc_tp[ix] += tock_tp - tick_tp[ix];
+  acc_tp[ix].QuadPart += tock_tp.QuadPart - tick_tp[ix].QuadPart;
 }
 
 double rt_total(int ix) {
