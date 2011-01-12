@@ -52,10 +52,10 @@ template translateModel(SimCode simCode)
   Modelica model."
 ::=
 match simCode
-case SIMCODE(__) then
+case SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   let()= textFile(simulationFile(simCode), '<%fileNamePrefix%>.cpp')
-  let()= textFile(simulationFunctionsHeaderFile(fileNamePrefix, functions, externalFunctionIncludes, recordDecls), '<%fileNamePrefix%>_functions.h')
-  let()= textFile(simulationFunctionsFile(fileNamePrefix, functions, literals), '<%fileNamePrefix%>_functions.cpp')
+  let()= textFile(simulationFunctionsHeaderFile(fileNamePrefix, modelInfo.functions, externalFunctionIncludes, recordDecls), '<%fileNamePrefix%>_functions.h')
+  let()= textFile(simulationFunctionsFile(fileNamePrefix, modelInfo.functions, literals), '<%fileNamePrefix%>_functions.cpp')
   let()= textFile(recordsFile(fileNamePrefix, recordDecls), '<%fileNamePrefix%>_records.c')
   let()= textFile(simulationMakefile(simCode), '<%fileNamePrefix%>.makefile')
   if simulationSettingsOpt then //tests the Option<> for SOME()
@@ -199,6 +199,7 @@ case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
   #define NI <%varInfo.numInVars%> // number of inputvar on topmodel
   #define NR <%varInfo.numResiduals%> // number of residuals for initialialization function
   #define NEXT <%varInfo.numExternalObjects%> // number of external objects
+  #define NFUNC <%listLength(functions)%> // number of functions used by the simulation
   #define MAXORD 5
   #define NYSTR <%varInfo.numStringAlgVars%> // number of alg. string variables
   #define NPSTR <%varInfo.numStringParamVars%> // number of alg. string variables
@@ -234,6 +235,7 @@ case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
   <%globalDataVarInfoArray("bool_param_names", vars.boolParamVars)%>
   <%globalDataVarInfoArray("string_alg_names", vars.stringAlgVars)%>
   <%globalDataVarInfoArray("string_param_names", vars.stringParamVars)%>
+  <%globalDataFunctionInfoArray("function_names", functions)%>
   
   <%vars.stateVars |> var =>
     globalDataVarDefine(var, "states")
@@ -268,6 +270,7 @@ case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
   <%vars.stringParamVars |> var =>
     globalDataVarDefine(var, "stringVariables.parameters")
   ;separator="\n"%>
+  <%functions |> fn hasindex i0 => '#define <%functionName(fn,false)%>_index <%i0%>'; separator="\n"%>
   
   static char init_fixed[NX+NX+NY+NYINT+NYBOOL+NYSTR+NP+NPINT+NPBOOL+NPSTR] = {
     <%{(vars.stateVars |> SIMVAR(__) =>
@@ -337,16 +340,31 @@ template globalDataVarInfoArray(String name, list<SimVar> items)
   match items
   case {} then
     <<
-    struct omc_varInfo <%name%>[1] = {{"","","",-1,-1,-1,-1}};
+    struct omc_varInfo <%name%>[1] = {{"","",omc_dummyFileInfo}};
     >>
   case items then
     <<
     struct omc_varInfo <%name%>[<%listLength(items)%>] = {
-      <%items |> var as SIMVAR(info=info as INFO(__)) => '{"<%crefStr(var.name)%>","<%var.comment%>","<%info.fileName%>",<%info.lineNumberStart%>,<%info.columnNumberStart%>,<%info.lineNumberEnd%>,<%info.columnNumberEnd%>}'; separator=",\n"%>
+      <%items |> var as SIMVAR(info=info as INFO(__)) => '{"<%crefStr(var.name)%>","<%var.comment%>",{"<%info.fileName%>",<%info.lineNumberStart%>,<%info.columnNumberStart%>,<%info.lineNumberEnd%>,<%info.columnNumberEnd%>}}'; separator=",\n"%>
     };
     >>
 end globalDataVarInfoArray;
 
+template globalDataFunctionInfoArray(String name, list<Function> items)
+ "Generates array with variable names in global data section."
+::=
+  match items
+  case {} then
+    <<
+    struct omc_functionInfo <%name%>[1] = {{"",omc_dummyFileInfo}};
+    >>
+  case items then
+    <<
+    struct omc_functionInfo <%name%>[<%listLength(items)%>] = {
+      <%items |> fn => '{"<%functionName(fn,true)%>",omc_dummyFileInfo}'; separator=",\n"%>
+    };
+    >>
+end globalDataFunctionInfoArray;
 
 template globalDataVarDefine(SimVar simVar, String arrayName)
  "Generates a define statement for a varable in the global data section."
@@ -500,6 +518,7 @@ template functionInitializeDataStruc()
     returnData->nParameters = NP;
     returnData->nInputVars = NI;
     returnData->nOutputVars = NO;
+    returnData->nFunctions = NFUNC;
     returnData->nZeroCrossing = NG;
     returnData->nRawSamples = NG_SAM;
     returnData->nInitialResiduals = NR;
@@ -713,19 +732,25 @@ template functionInitializeDataStruc()
     } else {
       returnData->bool_param_names = 0;
     }
-      
+    
     if(flags & INPUTNAMES) {
       returnData->inputNames = input_names;
     } else {
       returnData->inputNames = 0;
     }
-  
+    
     if(flags & OUTPUTNAMES) {
       returnData->outputNames = output_names;
     } else {
       returnData->outputNames = 0;
     }
-  
+    
+    if(flags & FUNCTIONNAMES) {
+      returnData->functionNames = function_names;
+    } else {
+      returnData->functionNames = 0;
+    }
+
     if(flags & RAWSAMPLES && returnData->nRawSamples) {
       returnData->rawSampleExps = (sample_raw_time*) malloc(sizeof(sample_raw_time)*returnData->nRawSamples);
       assert(returnData->rawSampleExps);
@@ -742,6 +767,7 @@ template functionInitializeDataStruc()
       }
       memset(returnData->extObjs,0,sizeof(void*)*NEXT);
     }
+  
     return returnData;
   }
   
@@ -1102,7 +1128,7 @@ template functionInitSample(list<SampleCondition> sampleConditions)
      calcualted parameters. */
   void function_sampleInit()
   {
-    int i = 0; // Current index
+    <%if timeEventCode then "int i = 0; // Current index"%>
     <%timeEventCode%>
   }
   >>
@@ -2753,14 +2779,14 @@ template expCref(DAE.Exp ecr)
   else "ERROR_NOT_A_CREF"
 end expCref;
 
-template functionName(ComponentRef cr)
+template crefFunctionName(ComponentRef cr)
 ::=
   match cr
   case CREF_IDENT(__) then 
     System.stringReplace(ident, "_", "__")
   case CREF_QUAL(__) then 
-    '<%System.stringReplace(ident, "_", "__")%>_<%functionName(componentRef)%>'
-end functionName;
+    '<%System.stringReplace(ident, "_", "__")%>_<%crefFunctionName(componentRef)%>'
+end crefFunctionName;
 
 template dotPath(Path path)
  "Generates paths with components separated by dots."
@@ -3098,6 +3124,15 @@ template extFunDefArgF77(SimExtArg extArg)
   case SIMEXTARGEXP(__) then extFunDefArg(extArg)
   case SIMEXTARGSIZE(__) then 'int const *'
 end extFunDefArgF77;
+
+
+template functionName(Function fn, Boolean dotPath)
+::=
+  match fn
+  case FUNCTION(__)
+  case EXTERNAL_FUNCTION(__)
+  case RECORD_CONSTRUCTOR(__) then if dotPath then dotPath(name) else underscorePath(name)
+end functionName;
 
 
 template functionBodies(list<Function> functions)
@@ -4549,7 +4584,7 @@ template daeExpCrefRhs(Exp exp, Context context, Text &preExp /*BUFP*/,
     else
       daeExpRecordCrefRhs(t, cr, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   case CREF(componentRef = cr, ty = ET_FUNCTION_REFERENCE_FUNC(__)) then
-    '((modelica_fnptr)boxptr_<%functionName(cr)%>)'
+    '((modelica_fnptr)boxptr_<%crefFunctionName(cr)%>)'
   case CREF(componentRef = cr, ty = ET_FUNCTION_REFERENCE_VAR(__)) then
     '((modelica_fnptr) _<%crefStr(cr)%>)'
   else daeExpCrefRhs2(exp, context, &preExp, &varDecls)
@@ -5135,30 +5170,25 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let argStr = daeExp(s1, context, &preExp, &varDecls)
     unboxRecord(argStr, ty, &preExp, &varDecls)
   
-  // no return calls
-  case CALL(ty=ET_NORETCALL(__)) then
-    let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)%>' ;separator=", ")
-    let funName = '<%underscorePath(path)%>'
-    let &preExp += '<%daeExpCallBuiltinPrefix(builtin)%><%funName%>(<%argStr%>);<%\n%>'
-    '/* NORETCALL */'
-  
-  // non tuple calls (single return value)
-  case CALL(tuple_=false) then
+  case exp as CALL(__) then
     let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)%>' ;separator=", ")
     let funName = '<%underscorePath(path)%>'
     let retType = '<%funName%>_rettype'
-    let retVar = tempDecl(retType, &varDecls /*BUFD*/)
-    let &preExp += '<%retVar%> = <%daeExpCallBuiltinPrefix(builtin)%><%funName%>(<%argStr%>);<%\n%>'
-    if builtin then '<%retVar%>' else '<%retVar%>.<%retType%>_1'
-  
-  // tuple calls (multiple return values)
-  case CALL(tuple_=true) then
-    let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)%>' ;separator=", ")
-    let funName = '<%underscorePath(path)%>'
-    let retType = '<%funName%>_rettype'
-    let retVar = tempDecl(retType, &varDecls /*BUFD*/)
-    let &preExp += '<%retVar%> = <%daeExpCallBuiltinPrefix(builtin)%><%funName%>(<%argStr%>);<%\n%>'
-    '<%retVar%>'
+    let retVar = match exp
+      case CALL(ty=ET_NORETCALL(__)) then ""
+      else tempDecl(retType, &varDecls)
+    let &preExp += if not builtin then match context case SIMULATION(__) then 'SIM_PROF_TICK_FN(<%funName%>_index);<%\n%>'
+    let &preExp += '<%if retVar then '<%retVar%> = '%><%daeExpCallBuiltinPrefix(builtin)%><%funName%>(<%argStr%>);<%\n%>'
+    let &preExp += if not builtin then match context case SIMULATION(__) then 'SIM_PROF_ACC_FN(<%funName%>_index);<%\n%>'
+    match exp
+      // no return calls
+      case CALL(ty=ET_NORETCALL(__)) then '/* NORETCALL */'
+      // non tuple calls (single return value)
+      case CALL(tuple_=false) then
+        if builtin then '<%retVar%>' else '<%retVar%>.<%retType%>_1'
+      // tuple calls (multiple return values)
+      case CALL(tuple_=true) then
+        '<%retVar%>'
 end daeExpCall;
 
 

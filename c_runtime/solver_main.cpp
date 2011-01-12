@@ -172,7 +172,6 @@ int solver_main(int argc, char** argv, double &start,  double &stop, double &ste
     double uround = dlamch_((char*)"P",1);
 
     const string *init_method = getFlagValue("im",argc,argv);
-    int measure_time_flag = (int)flagSet("mt",argc,argv);
 
     int retValIntegrator;
 
@@ -291,14 +290,21 @@ int solver_main(int argc, char** argv, double &start,  double &stop, double &ste
         cout << "Performed initial value calculation." << endl;
         cout << "Start numerical solver from "<< globalData->timeValue << " to "<< stop << endl; 
     }
-    std::fstream fmt;
+    std::ofstream fmt;
+    long stepNo=0;
     if (measure_time_flag) {
-      fmt.open("omc_mt.log", std::fstream::out);
+      fmt.open("omc_mt.log");
+      fmt << "step,time,solver time,";
+      for (int i=0;i<globalData->nFunctions;i++)
+        fmt  << "," << globalData->functionNames[i].name << ",";
+      fmt << endl;
     }
 
     try {
       while( globalData->timeValue < stop ) {
         if (measure_time_flag) {
+          for (int i=0;i<globalData->nFunctions;i++)
+            rt_clear(i+SIM_TIMER_FIRST_FUNCTION);
           rt_tick(SIM_TIMER_STEP);
         }
 
@@ -364,7 +370,10 @@ int solver_main(int argc, char** argv, double &start,  double &stop, double &ste
         functionAliasEquations();
         saveall();
         if (measure_time_flag) {
-          fmt << "Time to calculate step to: " << globalData->timeValue << " " << rt_tock(SIM_TIMER_STEP) << " sec." << std::endl;
+          fmt << stepNo++ << "," << globalData->timeValue << "," << rt_tock(SIM_TIMER_STEP);
+          for (int i=0;i<globalData->nFunctions;i++)
+            fmt << "," << rt_ncall(i+SIM_TIMER_FIRST_FUNCTION) << "," << rt_total(i+SIM_TIMER_FIRST_FUNCTION);
+          fmt << endl;
         }
         sim_result->emit();
 

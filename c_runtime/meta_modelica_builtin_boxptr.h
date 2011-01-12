@@ -7,7 +7,7 @@
 
 #ifdef GEN_META_MODELICA_BUILTIN_BOXPTR
 #define boxptr_unOp(name,box,unbox,op) void* name(void* a) {return box(op(unbox(a)));}
-#define boxptr_binOp(name,box,unbox,op) void* name(void* a, void* b) {return box(unbox(a) op unbox(b));}
+#define boxptr_binOp(name,box,unbox,op) void* name(void* a, void* b) {return box((unbox(a)) op (unbox(b)));}
 #else
 #define boxptr_unOp(name,box,unbox,op) void* name(void*);
 #define boxptr_binOp(name,box,unbox,op) void* name(void*,void*);

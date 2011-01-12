@@ -120,7 +120,6 @@ public constant list<DAE.Exp> listExpLength1 = {DAE.ICONST(0)} "For SimCodeC.tpl
 uniontype SimCode
   record SIMCODE
     ModelInfo modelInfo;
-    list<Function> functions;
     list<DAE.Exp> literals "shared literals";
     list<RecordDeclaration> recordDecls;
     list<String> externalFunctionIncludes;
@@ -185,6 +184,7 @@ uniontype ModelInfo
     String directory;
     VarInfo varInfo;
     SimVars vars;
+    list<Function> functions;
   end MODELINFO;
 end ModelInfo;
 
@@ -1885,7 +1885,7 @@ algorithm
         n_h = listLength(helpVarInfo);
         
         // Add model info
-        modelInfo = createModelInfo(class_, dlow2, n_h, nres, fileDir);
+        modelInfo = createModelInfo(class_, dlow2, functions, n_h, nres, fileDir);
         
         // equation generation for euler, dassl2, rungekutta 
         (contBlocks, _) = splitOutputBlocks(dlow2, ass1, ass2, m, mt, blt_no_states);  
@@ -1937,7 +1937,6 @@ algorithm
         crefToSimVarHT = createCrefToSimVarHT(modelInfo);
         
         simCode = SIMCODE(modelInfo,
-          functions,
           {},
           recordDecls,
           externalFunctionIncludes,
@@ -5405,13 +5404,14 @@ end createZeroCrossingNeedSave;
 protected function createModelInfo
   input Absyn.Path class_;
   input BackendDAE.BackendDAE dlow;
+  input list<Function> functions;
   input Integer numHelpVars;
   input Integer numResiduals;
   input String fileDir;
   output ModelInfo modelInfo;
 algorithm
   modelInfo :=
-  matchcontinue (class_, dlow, numHelpVars, numResiduals, fileDir)
+  matchcontinue (class_, dlow, functions, numHelpVars, numResiduals, fileDir)
     local
       String directory;
       VarInfo varInfo;
@@ -5420,7 +5420,7 @@ algorithm
       Integer numInVars;
       list<SimVar> iv;
       list<SimVar> ov;
-    case (class_, dlow, numHelpVars, numResiduals, fileDir)
+    case (class_, dlow, functions, numHelpVars, numResiduals, fileDir)
       equation
         //name = Absyn.pathString(class_);
         directory = System.trim(fileDir, "\"");
@@ -5431,8 +5431,8 @@ algorithm
         varInfo = createVarInfo(dlow, numOutVars, numInVars, numHelpVars,
           numResiduals);
       then
-        MODELINFO(class_, directory, varInfo, vars);
-    case (_,_,_,_,_)
+        MODELINFO(class_, directory, varInfo, vars, functions);
+    else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"SimCode.createModelInfo failed"});
       then

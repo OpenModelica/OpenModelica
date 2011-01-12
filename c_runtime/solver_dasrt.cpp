@@ -123,7 +123,6 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
     globalData->helpVars[i] = 0;
 
   const string *init_method = getFlagValue("im",argc,argv);
-  int measure_time_flag = (int)flagSet("mt",argc,argv);
 
   inUpdate = 0;
 

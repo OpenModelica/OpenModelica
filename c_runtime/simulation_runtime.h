@@ -49,6 +49,7 @@
 #include "integer_array.h"
 #include "boolean_array.h"
 #include "linearize.h"
+#include "rtclock.h"
 
 #include <stdlib.h>
 #include <fstream>
@@ -76,6 +77,7 @@ protected:
   std::string errorMessage;
 };
 
+extern int measure_time_flag;
 extern int sim_verbose; // control debug output during simulation.
 extern int sim_noemit; // control emitting result data to file
 extern int acceptedStep; // !=0 when accepted step is calculated, 0 otherwise.
@@ -100,35 +102,36 @@ typedef enum {
      initializeDataStruc(DATA_INIT_FLAGS) function */
 
   NO_INIT_OF_VECTORS        = 0x00000000,
-  STATES                    = 0x00000001,
-  STATESDERIVATIVES          = 0x00000002,
-  HELPVARS                  = 0x00000004,
-  ALGEBRAICS                = 0x00000008,
-  PARAMETERS                = 0x00000010,
-  INITIALRESIDUALS          = 0x00000020,
-  INPUTVARS                 = 0x00000040,
-  OUTPUTVARS                = 0x00000080,
-  INITFIXED                 = 0x00000100,
-  EXTERNALVARS              = 0x00000200,
+  STATES                    = 1<<0,
+  STATESDERIVATIVES         = 1<<1,
+  HELPVARS                  = 1<<2,
+  ALGEBRAICS                = 1<<3,
+  PARAMETERS                = 1<<4,
+  INITIALRESIDUALS          = 1<<5,
+  INPUTVARS                 = 1<<6,
+  OUTPUTVARS                = 1<<7,
+  INITFIXED                 = 1<<8,
+  EXTERNALVARS              = 1<<9,
 
   /*in initializeDataStruc these are not allocated with malloc!*/
-  MODELNAME                 = 0x00000400,
-  STATESNAMES               = 0x00000800,
-  STATESDERIVATIVESNAMES    = 0x00001000,
-  ALGEBRAICSNAMES           = 0x00002000,
-  PARAMETERSNAMES           = 0x00004000,
-  INPUTNAMES                = 0x00008000,
-  OUTPUTNAMES               = 0x00010000,
+  MODELNAME                 = 1<<10,
+  STATESNAMES               = 1<<11,
+  STATESDERIVATIVESNAMES    = 1<<12,
+  ALGEBRAICSNAMES           = 1<<13,
+  PARAMETERSNAMES           = 1<<14,
+  INPUTNAMES                = 1<<15,
+  OUTPUTNAMES               = 1<<16,
+  FUNCTIONNAMES             = 1<<17,
 
   /*in initializeDataStruc these are not allocated with malloc!*/
-  STATESCOMMENTS            = 0x00020000,
-  STATESDERIVATIVESCOMMENTS = 0x00040000,
-  ALGEBRAICSCOMMENTS        = 0x00080000,
-  PARAMETERSCOMMENTS        = 0x00100000,
-  INPUTCOMMENTS             = 0x00200000,
-  OUTPUTCOMMENTS            = 0x00400000,
+  STATESCOMMENTS            = 1<<18,
+  STATESDERIVATIVESCOMMENTS = 1<<19,
+  ALGEBRAICSCOMMENTS        = 1<<20,
+  PARAMETERSCOMMENTS        = 1<<21,
+  INPUTCOMMENTS             = 1<<22,
+  OUTPUTCOMMENTS            = 1<<23,
 
-  RAWSAMPLES                = 0x00800000,
+  RAWSAMPLES                = 1<<24,
 
   ALL                       = 0xFFFFFFFF
 } DATA_FLAGS;
@@ -203,7 +206,7 @@ typedef struct sim_DATA {
   void** extObjs; // External objects
   /* nStatesDerivatives == states */
   fortran_integer nStates,nAlgebraic,nParameters;
-  long nInputVars,nOutputVars;
+  long nInputVars,nOutputVars,nFunctions;
   fortran_integer nZeroCrossing/*NG*/;
   long nInitialResiduals/*NR*/;
   long nHelpVars/* NHELP */;
@@ -212,7 +215,7 @@ typedef struct sim_DATA {
   DATA_INT intVariables;
   DATA_BOOL boolVariables;
 
-  const char*  modelName;
+  const char* modelName;
   struct omc_varInfo* statesNames;
   struct omc_varInfo* stateDerivativesNames;
   struct omc_varInfo* algebraicsNames;
@@ -223,6 +226,7 @@ typedef struct sim_DATA {
   struct omc_varInfo* bool_param_names;
   struct omc_varInfo* inputNames;
   struct omc_varInfo* outputNames;
+  struct omc_functionInfo* functionNames;
 
   double startTime; //the start time of the simulation
   double timeValue; //the time for the simulation

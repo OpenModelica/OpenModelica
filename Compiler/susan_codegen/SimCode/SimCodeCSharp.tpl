@@ -97,8 +97,8 @@ end lastIdentOfPath;
 
 template simulationFunctionsBody(SimCode simCode) ::=
 match simCode
-case SIMCODE(modelInfo = MODELINFO(__)) then
-    (functions |> fn => match fn  
+case SIMCODE(modelInfo = modelInfo as MODELINFO(__)) then
+    (modelInfo.functions |> fn => match fn  
           case FUNCTION(__)           then 
             <<
             <%functionBodyRegularFunction(fn, simCode)%>

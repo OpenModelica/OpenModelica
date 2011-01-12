@@ -30,13 +30,19 @@
 
 #include "rtclock.h"
 
+static long rt_clock_ncall[NUM_RT_CLOCKS] = {0};
+
+long rt_ncall(int ix) {
+  return rt_clock_ncall[ix];
+}
+
 #if defined(__MINGW32__) || defined(_MSC_VER)
 
 #include <windows.h>
 
-LARGE_INTEGER performance_frequency;
-LARGE_INTEGER acc_tp[NUM_RT_CLOCKS];
-LARGE_INTEGER tick_tp[NUM_RT_CLOCKS];
+static LARGE_INTEGER performance_frequency;
+static LARGE_INTEGER acc_tp[NUM_RT_CLOCKS];
+static LARGE_INTEGER tick_tp[NUM_RT_CLOCKS];
 
 void rt_tick(int ix) {
   static int init = 0;
@@ -45,6 +51,7 @@ void rt_tick(int ix) {
     QueryPerformanceFrequency(&performance_frequency);
   }
   QueryPerformanceCounter(&tick_tp[ix]);
+  rt_clock_ncall[ix]++;
 }
 
 double rt_tock(int ix) {
@@ -59,6 +66,7 @@ double rt_tock(int ix) {
 void rt_clear(int ix)
 {
   acc_tp[ix].QuadPart = 0;
+  rt_clock_ncall[ix] = 0;
 }
 
 void rt_accumulate(int ix) {
@@ -79,11 +87,12 @@ double rt_total(int ix) {
 #include <mach/mach_time.h>
 #include <time.h>
 
-uint64_t acc_tp[NUM_RT_CLOCKS];
-uint64_t tick_tp[NUM_RT_CLOCKS];
+static uint64_t acc_tp[NUM_RT_CLOCKS];
+static uint64_t tick_tp[NUM_RT_CLOCKS];
 
 void rt_tick(int ix) {
   tick_tp[ix] = mach_absolute_time();
+  rt_clock_ncall[ix]++;
 }
 
 double rt_tock(int ix) {
@@ -99,6 +108,7 @@ double rt_tock(int ix) {
 void rt_clear(int ix)
 {
   acc_tp[ix] = 0;
+  rt_clock_ncall[ix] = 0;
 }
 
 void rt_accumulate(int ix) {
@@ -118,11 +128,12 @@ double rt_total(int ix) {
 
 #include <time.h>
 
-struct timespec acc_tp[NUM_RT_CLOCKS];
-struct timespec tick_tp[NUM_RT_CLOCKS];
+static struct timespec acc_tp[NUM_RT_CLOCKS];
+static struct timespec tick_tp[NUM_RT_CLOCKS];
 
 void rt_tick(int ix) {
   clock_gettime(CLOCK_MONOTONIC, &tick_tp[ix]);
+  rt_clock_ncall[ix]++;
 }
 
 double rt_tock(int ix) {
@@ -135,6 +146,7 @@ void rt_clear(int ix)
 {
   acc_tp[ix].tv_sec = 0;
   acc_tp[ix].tv_nsec = 0;
+  rt_clock_ncall[ix] = 0;
 }
 
 void rt_accumulate(int ix) {

@@ -68,6 +68,7 @@ int terminationAssert = 0;
 char* terminateMessage = 0;
 int warningLevelAssert =  0;
 string TermMsg;
+int measure_time_flag = 0;
 
 int sim_verbose; // Flag for logging
 int sim_noemit; // Flag for not emitting data
@@ -244,7 +245,7 @@ int startNonInteractiveSimulation(int argc, char**argv){
 
 
       /* mesure time option is set : -mt */
-  int measure_time_flag = (int)flagSet("mt",argc,argv);
+  measure_time_flag = (int)flagSet("mt",argc,argv);
   double measure_start_time = 0;
 
   double start = 0.0;

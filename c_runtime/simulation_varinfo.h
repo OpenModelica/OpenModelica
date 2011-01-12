@@ -32,14 +32,30 @@
 #ifndef _SIMULATION_VARINFO_H
 #define _SIMULATION_VARINFO_H
 
-struct omc_varInfo {
-  const char* name;
-  const char* comment;
+typedef struct {
   const char* filename;
   int lineStart;
   int colStart;
   int lineEnd;
-  int colEnd;
+  int colEnd;  
+} omc_fileInfo;
+
+const omc_fileInfo omc_dummyFileInfo = {"",-1,-1,-1,-1};
+
+struct omc_varInfo {
+  const char* name;
+  const char* comment;
+  const omc_fileInfo info;
+};
+
+struct omc_equationInfo {
+  /* int, omc_varInfo**; The variables involved in the equation */
+  /* FileInfo when SimCode has it? */
+};
+
+struct omc_functionInfo {
+  const char* name;
+  const omc_fileInfo info;
 };
 
 #endif

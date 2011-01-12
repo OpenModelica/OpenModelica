@@ -29,7 +29,6 @@ package SimCode
   uniontype SimCode
     record SIMCODE
       ModelInfo modelInfo;
-      list<Function> functions;
       list<DAE.Exp> literals;
       list<RecordDeclaration> recordDecls;
       list<String> externalFunctionIncludes;
@@ -207,9 +206,17 @@ package SimCode
       String directory;
       VarInfo varInfo;
       SimVars vars;
+      list<Function> functions;
     end MODELINFO;
   end ModelInfo;
   
+  uniontype FunctionInfo
+    record FUNCTIONINFO
+      Absyn.Path name;
+      Absyn.Info info;
+    end FUNCTIONINFO;
+  end FunctionInfo;
+
   uniontype VarInfo
 	  record VARINFO
 	    Integer numHelpVars;
