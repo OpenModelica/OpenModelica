@@ -39,6 +39,7 @@
 #include <string>
 #include <iostream>
 #include <iomanip>
+#include "rtclock.h"
 
 using namespace std;
 
@@ -122,6 +123,7 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
     globalData->helpVars[i] = 0;
 
   const string *init_method = getFlagValue("im",argc,argv);
+  int measure_time_flag = (int)flagSet("mt",argc,argv);
 
   inUpdate = 0;
 
@@ -162,6 +164,8 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
     if (sim_verbose) { cout << "Calculated bound parameters" << endl; }
     // Calculate initial values from (fixed) start attributes and intial equation
     // sections
+    if (measure_time_flag)
+      rt_tick(SIM_TIMER_INIT);
     globalData->init=1;
     initial_function(); // calculates e.g. start values depending on e.g parameters.
     saveall(); // adrpo: -> save the initial values to have them in pre(var);
@@ -210,6 +214,10 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
     sim_result->emit();
     calcEnabledZeroCrossings();
     globalData->init = 0;
+    // Initialization complete
+    if (measure_time_flag)
+      rt_accumulate(SIM_TIMER_INIT);
+    
     if (sim_verbose) { cout << "calling DDASRT from "<< globalData->timeValue << " to "<<
       tout << endl; }
     // Take an initial tiny step and then check for events at startTime
@@ -320,8 +328,8 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
         // alg vars too.
         acceptedStep = 1;
         functionDAE_output();
-  checkTermination();
-  function_storeDelayed();
+        checkTermination();
+        function_storeDelayed();
         acceptedStep = 0;
         } while (outputSteps >= 0 && idid == 1 && globalData->timeValue < tout); 
 
@@ -361,8 +369,8 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
         // alg vars too.
         acceptedStep=1;
         functionDAE_output();  // discrete variables are seperated so that the can be emited before and after the event.
-  checkTermination();
-  function_storeDelayed();
+        checkTermination();
+        function_storeDelayed();
         acceptedStep=0;
       } while (outputSteps >= 0 && idid == 1 && globalData->timeValue < tout);
     } // end while

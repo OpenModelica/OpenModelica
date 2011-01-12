@@ -41,6 +41,7 @@
 #include <iomanip>
 #include <algorithm>
 #include <cstdarg>
+#include "rtclock.h"
 
 using namespace std;
 
@@ -168,9 +169,10 @@ int solver_main(int argc, char** argv, double &start,  double &stop, double &ste
 
     int sampleEvent_actived = 0; 
 
-    double uround = dlamch_("P",1);
+    double uround = dlamch_((char*)"P",1);
 
     const string *init_method = getFlagValue("im",argc,argv);
+    int measure_time_flag = (int)flagSet("mt",argc,argv);
 
     int retValIntegrator;
 
@@ -203,6 +205,8 @@ int solver_main(int argc, char** argv, double &start,  double &stop, double &ste
 
     // Calculate initial values from initial_function()
     // saveall() value as pre values
+    if (measure_time_flag)
+      rt_tick(SIM_TIMER_INIT);
     globalData->init=1;
     initial_function();
     saveall();
@@ -210,7 +214,7 @@ int solver_main(int argc, char** argv, double &start,  double &stop, double &ste
     storeExtrapolationData();
     // Calculate initial values from (fixed) start attributes
     if (initialize(init_method)) {
-        throw TerminateSimulationException(globalData->timeValue,
+      throw TerminateSimulationException(globalData->timeValue,
                 string("Error in initialization. Storing results and exiting.\n"));
     }
     saveall();
@@ -219,8 +223,8 @@ int solver_main(int argc, char** argv, double &start,  double &stop, double &ste
     // Calculate stable discrete state
     // and initial ZeroCrossings
     if (globalData->curSampleTimeIx < globalData->nSampleTimes){
-        sampleEvent_actived = checkForSampleEvent();
-        activateSampleEvents();
+      sampleEvent_actived = checkForSampleEvent();
+      activateSampleEvents();
     }
     //Activate sample and evaluate again
     int needToIterate=0;
@@ -275,6 +279,9 @@ int solver_main(int argc, char** argv, double &start,  double &stop, double &ste
     saveall();
     if (sim_verbose){ sim_result->emit(); }
 
+    // Initialization complete
+    if (measure_time_flag)
+      rt_accumulate(SIM_TIMER_INIT);
     globalData->init=0;
 
     // Put initial values to delayed expression buffers
@@ -284,96 +291,108 @@ int solver_main(int argc, char** argv, double &start,  double &stop, double &ste
         cout << "Performed initial value calculation." << endl;
         cout << "Start numerical solver from "<< globalData->timeValue << " to "<< stop << endl; 
     }
-
-    try {
-        while( globalData->timeValue < stop){
-
-            /*
-             * Calculate new step size after an event
-             */
-            if (dideventstep == 1){
-                offset = globalData->timeValue-laststep;
-                dideventstep = 0;
-                if (offset+16*uround > step)
-                    offset = 0;
-            }else{
-                offset = 0;
-            }
-            globalData->current_stepsize = step-offset;
-            if (globalData->timeValue+globalData->current_stepsize>stop){
-                globalData->current_stepsize = stop - globalData->timeValue;
-            }
-
-            if (globalData->curSampleTimeIx < globalData->nSampleTimes){
-                sampleEvent_actived = checkForSampleEvent();
-            }
-            if (sim_verbose){
-                cout << "Call Solver from " << globalData->timeValue << " to " << globalData->timeValue+globalData->current_stepsize << endl;
-            }
-            /* do one integration step
-             *
-             * one step means:
-             * determine all states by Integration-Method
-             * update continuous part with
-             * functionODE_new() and functionAlgebraics();
-             */
-
-            retValIntegrator = solver_main_step(flag,start,stop,reset);
-
-            functionAlgebraics();
-
-            function_storeDelayed();
-
-            if (reset)
-                reset = false;
-
-            //Check for Events
-            if (CheckForNewEvent(&sampleEvent_actived)){
-                stateEvents++;
-                reset = true;
-                dideventstep = 1;
-            }else if (sampleEvent_actived){
-                EventHandle(1);
-                sampleEvents++;
-                reset = true;
-                dideventstep = 1;
-                sampleEvent_actived = 0;
-            }else{
-                laststep = globalData->timeValue;
-            }
-
-            // Emit this time step
-            functionAliasEquations();
-            sim_result->emit();
-            saveall();
-
-
-            //Check for termination of terminate() or assert()
-            checkTermination();
-
-            if (retValIntegrator){
-                throw TerminateSimulationException(globalData->timeValue,
-                        string("Error in Simulation. Solver exit with error.\n"));
-            }
-            if (sim_verbose){
-                cout << "** Step to " << globalData->timeValue << " Done!" << endl;
-            }
-
-
-        }
-        } catch (TerminateSimulationException &e) {
-            cout << e.getMessage() << endl;
-            if (modelTermination) { // terminated from assert, etc.
-                cout << "Simulation terminated at time " << globalData->timeValue << endl;
-                return -1;
-            }
+    std::fstream fmt;
+    if (measure_time_flag) {
+      fmt.open("omc_mt.log", std::fstream::out);
     }
 
-    if (sim_verbose){
-        cout << "\t*** Statistics ***" << endl;
-        cout << "Events: " << stateEvents + sampleEvents<< endl;
-        cout << "State Events: " << stateEvents << endl;
-        cout << "Sample Events: " << sampleEvents << endl;
+    try {
+      while( globalData->timeValue < stop ) {
+        if (measure_time_flag) {
+          rt_tick(SIM_TIMER_STEP);
+        }
+
+        /*
+         * Calculate new step size after an event
+         */
+        if (dideventstep == 1) {
+          offset = globalData->timeValue-laststep;
+          dideventstep = 0;
+          if (offset+16*uround > step)
+            offset = 0;
+        } else {
+          offset = 0;
+        }
+        globalData->current_stepsize = step-offset;
+        if (globalData->timeValue+globalData->current_stepsize>stop) {
+          globalData->current_stepsize = stop - globalData->timeValue;
+        }
+
+        if (globalData->curSampleTimeIx < globalData->nSampleTimes) {
+          sampleEvent_actived = checkForSampleEvent();
+        }
+        if (sim_verbose){
+          cout << "Call Solver from " << globalData->timeValue << " to " << globalData->timeValue+globalData->current_stepsize << endl;
+        }
+        /* do one integration step
+         *
+         * one step means:
+         * determine all states by Integration-Method
+         * update continuous part with
+         * functionODE_new() and functionAlgebraics();
+         */
+
+        retValIntegrator = solver_main_step(flag,start,stop,reset);
+
+        functionAlgebraics();
+
+        function_storeDelayed();
+
+        if (reset)
+          reset = false;
+
+        //Check for Events
+        if (measure_time_flag)
+          rt_tick(SIM_TIMER_EVENT);
+        if (CheckForNewEvent(&sampleEvent_actived)) {
+          stateEvents++;
+          reset = true;
+          dideventstep = 1;
+        } else if (sampleEvent_actived) {
+          EventHandle(1);
+          sampleEvents++;
+          reset = true;
+          dideventstep = 1;
+          sampleEvent_actived = 0;
+        } else {
+          laststep = globalData->timeValue;
+        }
+        if (measure_time_flag)
+          rt_accumulate(SIM_TIMER_EVENT);
+
+        // Emit this time step
+        functionAliasEquations();
+        saveall();
+        if (measure_time_flag) {
+          fmt << "Time to calculate step to: " << globalData->timeValue << " " << rt_tock(SIM_TIMER_STEP) << " sec." << std::endl;
+        }
+        sim_result->emit();
+
+        //Check for termination of terminate() or assert()
+        checkTermination();
+
+        if (retValIntegrator) {
+          throw TerminateSimulationException(globalData->timeValue,
+              string("Error in Simulation. Solver exit with error.\n"));
+        }
+        if (sim_verbose) {
+          cout << "** Step to " << globalData->timeValue << " Done!" << endl;
+        }
+
+      }
+    } catch (TerminateSimulationException &e) {
+      cout << e.getMessage() << endl;
+      if (modelTermination) { // terminated from assert, etc.
+        cout << "Simulation terminated at time " << globalData->timeValue << endl;
+        return -1;
+      }
+    }
+
+    if (sim_verbose) {
+      cout << "\t*** Statistics ***" << endl;
+      cout << "Events: " << stateEvents + sampleEvents<< endl;
+      cout << "State Events: " << stateEvents << endl;
+      cout << "Sample Events: " << sampleEvents << endl;
     }
 
     deinitializeEventData();

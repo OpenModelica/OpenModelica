@@ -52,6 +52,7 @@
 #include "simulation_result_plt.h"
 #include "simulation_result_csv.h"
 #include "simulation_result_mat.h"
+#include "rtclock.h"
 
 using namespace std;
 
@@ -262,8 +263,12 @@ int startNonInteractiveSimulation(int argc, char**argv){
   initSample(start,stop);
   initDelay(start);
 
-  if (measure_time_flag)
-    measure_start_time = clock();
+  if (measure_time_flag) {
+    rt_tick(SIM_TIMER_TOTAL);
+    rt_clear(SIM_TIMER_OUTPUT);
+    rt_clear(SIM_TIMER_EVENT);
+    rt_clear(SIM_TIMER_INIT);
+  }
 
   if(create_linearmodel){
     if (lintime == NULL ) {
@@ -285,8 +290,12 @@ int startNonInteractiveSimulation(int argc, char**argv){
 
   deinitDelay();
 
-  if (measure_time_flag)
-     cout << "Time to calculate simulation: "<< (clock()-measure_start_time)/CLOCKS_PER_SEC <<" sec." << endl;
+  if (measure_time_flag) {
+    cout << "Time to calculate initial values: "<< rt_total(SIM_TIMER_INIT) <<" sec." << endl;
+    cout << "Total time to do event handling: "<< rt_total(SIM_TIMER_EVENT) <<" sec." << endl;
+    cout << "Total time to produce the output file: "<< rt_total(SIM_TIMER_OUTPUT) <<" sec." << endl;
+    cout << "Total time to calculate simulation: "<< rt_tock(SIM_TIMER_TOTAL) <<" sec." << endl;
+  }
   deInitializeDataStruc(globalData,ALL);
 
   return retVal;

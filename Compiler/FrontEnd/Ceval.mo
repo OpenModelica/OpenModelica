@@ -4395,6 +4395,7 @@ algorithm
       Option<Interactive.InteractiveSymbolTable> st;
       Msg msg;
       Env.Cache cache;
+      String str;
     case (cache,env,{xe,ye},impl,st,msg)
       equation
         (cache,Values.ARRAY(xv,{3}),_) = ceval(cache,env, xe, impl, st,NONE(), msg);
@@ -4404,7 +4405,8 @@ algorithm
         (cache,res,st);
     case (_,_,_,_,_,MSG())
       equation
-        Print.printErrorBuf("#- Error, could not evaulate cross. Ceval.cevalBuiltinCross failed.\n");
+        str = "cross" +& ExpressionDump.printExpStr(DAE.TUPLE(inExpExpLst));
+        Error.addMessage(Error.FAILED_TO_EVALUATE_EXPRESSION, {str});
       then
         fail();
   end matchcontinue;

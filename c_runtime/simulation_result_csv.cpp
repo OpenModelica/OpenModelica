@@ -46,12 +46,13 @@
 #include "simulation_runtime.h"
 #include <sstream>
 #include <time.h>
-
+#include "rtclock.h"
 
 void simulation_result_csv::emit()
 {
   const char* format = "%.16g,";
   storeExtrapolationData();
+  rt_tick(SIM_TIMER_OUTPUT);
   fprintf(fout, format, globalData->timeValue);
   for (int i = 0; i < globalData->nStates; i++)
      fprintf(fout, format, globalData->states[i]);
@@ -64,6 +65,7 @@ void simulation_result_csv::emit()
   for (int i = 0; i < globalData->boolVariables.nAlgebraic; i++)
     fprintf(fout, format, globalData->boolVariables.algebraics[i]);
   fprintf(fout, "\n");
+  rt_accumulate(SIM_TIMER_OUTPUT);
 }
 
 simulation_result_csv::simulation_result_csv(const char* filename, long numpoints) : simulation_result(filename,numpoints)
@@ -92,5 +94,7 @@ simulation_result_csv::simulation_result_csv(const char* filename, long numpoint
 
 simulation_result_csv::~simulation_result_csv()
 {
+  rt_tick(SIM_TIMER_OUTPUT);
   fclose(fout);
+  rt_accumulate(SIM_TIMER_OUTPUT);
 }

@@ -354,7 +354,7 @@ AC_ARG_WITH(sendData-Qt, [  --with-sendData-Qt     Compile with support for plot
 ])
 
 if test "Darwin" != `uname`; then
-  LDFLAGS+=" -lrt"
+  LIBSENDDATA_LDFLAGS+=" -lrt"
 fi
 
 dnl Check for libCoin

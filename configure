@@ -4750,7 +4750,7 @@ fi
 
 
 if test "Darwin" != `uname`; then
-  LDFLAGS+=" -lrt"
+  LIBSENDDATA_LDFLAGS+=" -lrt"
 fi
 
 

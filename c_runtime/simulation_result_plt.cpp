@@ -47,6 +47,7 @@
 #include <sstream>
 #include <time.h>
 #include "../Compiler/runtime/config.h"
+#include "rtclock.h"
 
 #ifdef CONFIG_WITH_SENDDATA
 #include "sendData/sendData.h"
@@ -55,11 +56,10 @@
 void simulation_result_plt::emit()
 {
   storeExtrapolationData();
+  rt_tick(SIM_TIMER_OUTPUT);
   if (actualPoints < maxPoints) {
     if(!isInteractiveSimulation())add_result(simulationResultData,&actualPoints); //used for non-interactive simulation
-    return;
-  }
-  else {
+  } else {
     maxPoints = 1.4*maxPoints + (maxPoints-actualPoints) + 2000;
     // cerr << "realloc simulationResultData to a size of " << maxPoints * dataSize * sizeof(double) << endl;
     simulationResultData = (double*)realloc(simulationResultData, maxPoints * dataSize * sizeof(double));
@@ -69,6 +69,7 @@ void simulation_result_plt::emit()
     }
     add_result(simulationResultData,&actualPoints);
   }
+  rt_accumulate(SIM_TIMER_OUTPUT);
 }
 
  /*
@@ -221,6 +222,7 @@ simulation_result_plt::~simulation_result_plt()
   if(Static::enabled())
     closeSendData();
 #endif
+  rt_tick(SIM_TIMER_OUTPUT);
 
   FILE* f = fopen(filename, "w");
   if (!f)
@@ -229,9 +231,6 @@ simulation_result_plt::~simulation_result_plt()
     deallocResult();
     throw SimulationResultFileOpenException();
   }
-
-  clock_t  t0, t1;
-  t0 = clock();
 
   // Rather ugly numbers than unneccessary rounding.
   //f.precision(std::numeric_limits<double>::digits10 + 1);
@@ -295,6 +294,5 @@ simulation_result_plt::~simulation_result_plt()
     throw SimulationResultFileCloseException();
   }
 
-  t1 = clock();
-  // printf ("\telapsed wall clock time for printing simulation results: %g\n", ((double) (t1 - t0))/CLOCKS_PER_SEC);
+  rt_accumulate(SIM_TIMER_OUTPUT);
 }

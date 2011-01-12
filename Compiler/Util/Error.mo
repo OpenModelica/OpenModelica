@@ -271,6 +271,7 @@ public constant ErrorID CONSISTENT_UNITS=518;
 public constant ErrorID INCOMPLETE_UNITS=519;
 public constant ErrorID INCOMPATIBLE_TYPES_FUNC=520;
 public constant ErrorID ASSIGN_RHS_ELABORATION=521;
+public constant ErrorID FAILED_TO_EVALUATE_EXPRESSION = 522;
 
 public constant ErrorID INDEX_REDUCTION_NOTIFICATION=1000;
 public constant ErrorID SELECTED_STATE_DUE_TO_START_NOTIFICATION = 1001;
@@ -687,6 +688,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (META_DEAD_CODE,TRANSLATION(),NOTIFICATION(),"Dead code elimination: %s."),
           (META_UNUSED_DECL,TRANSLATION(),NOTIFICATION(),"Unused local variable: %s."),
           (META_UNUSED_AS_BINDING,TRANSLATION(),NOTIFICATION(),"Removing unused as-binding: %s."),
+          (FAILED_TO_EVALUATE_EXPRESSION,TRANSLATION(),ERROR(),"Could not evaluate expression: %s"),
 
           (COMPILER_WARNING,TRANSLATION(),WARNING(),"%s")
           };

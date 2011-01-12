@@ -35,6 +35,7 @@
 #include <windows.h>
 
 LARGE_INTEGER performance_frequency;
+LARGE_INTEGER acc_tp[NUM_RT_CLOCKS];
 LARGE_INTEGER tick_tp[NUM_RT_CLOCKS];
 
 void rt_tick(int ix) {
@@ -55,11 +56,30 @@ double rt_tock(int ix) {
   return d1 / d2;
 }
 
+void rt_clear(int ix)
+{
+  acc_tp[ix] = 0;
+}
+
+void rt_accumulate(int ix) {
+  LARGE_INTEGER tock_tp;
+  QueryPerformanceCounter(&tock_tp);
+  acc_tp[ix] += tock_tp - tick_tp[ix];
+}
+
+double rt_total(int ix) {
+  double d1,d2;
+  d1 = (double)(acc_tp[ix].QuadPart);
+  d2 = (double) performance_frequency.QuadPart;
+  return d1 / d2;
+}
+
 #elif defined(__APPLE_CC__)
 
 #include <mach/mach_time.h>
 #include <time.h>
 
+uint64_t acc_tp[NUM_RT_CLOCKS];
 uint64_t tick_tp[NUM_RT_CLOCKS];
 
 void rt_tick(int ix) {
@@ -76,10 +96,29 @@ double rt_tock(int ix) {
   return elapsednano * 1e-9;
 }
 
+void rt_clear(int ix)
+{
+  acc_tp[ix] = 0;
+}
+
+void rt_accumulate(int ix) {
+  uint64_t tock_tp = mach_absolute_time();
+  acc_tp[ix] += tock_tp - tick_tp[ix];
+}
+
+double rt_total(int ix) {
+  static mach_timebase_info_data_t info = {0,0};
+  if (info.denom == 0)
+    mach_timebase_info(&info);
+  uint64_t elapsednano = acc_tp[ix] * (info.numer / info.denom);
+  return elapsednano * 1e-9;
+}
+
 #else
 
 #include <time.h>
 
+struct timespec acc_tp[NUM_RT_CLOCKS];
 struct timespec tick_tp[NUM_RT_CLOCKS];
 
 void rt_tick(int ix) {
@@ -90,6 +129,27 @@ double rt_tock(int ix) {
   struct timespec tock_tp = {0,0};
   clock_gettime(CLOCK_MONOTONIC, &tock_tp);
   return (tock_tp.tv_sec - tick_tp[ix].tv_sec) + (tock_tp.tv_nsec - tick_tp[ix].tv_nsec)*1e-9;
+}
+
+void rt_clear(int ix)
+{
+  acc_tp[ix].tv_sec = 0;
+  acc_tp[ix].tv_nsec = 0;
+}
+
+void rt_accumulate(int ix) {
+  struct timespec tock_tp = {0,0};
+  clock_gettime(CLOCK_MONOTONIC, &tock_tp);
+  acc_tp[ix].tv_sec  += tock_tp.tv_sec -tick_tp[ix].tv_sec;
+  acc_tp[ix].tv_nsec += tock_tp.tv_nsec-tick_tp[ix].tv_nsec;
+  if (acc_tp[ix].tv_nsec > 1e9) {
+    acc_tp[ix].tv_sec++;
+    acc_tp[ix].tv_nsec -= 1e9;
+  }
+}
+
+double rt_total(int ix) {
+  return acc_tp[ix].tv_sec + (acc_tp[ix].tv_nsec*1e-9);
 }
 
 #endif

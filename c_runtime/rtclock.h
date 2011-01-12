@@ -31,11 +31,32 @@
 #ifndef __RTCLOCK__H
 #define __RTCLOCK__H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define NUM_RT_CLOCKS 17
 #define NUM_USER_RT_CLOCKS 16
 #define RT_CLOCK_SPECIAL_STOPWATCH 16 /* The 17th clock */
 
+#define SIM_TIMER_TOTAL   0
+#define SIM_TIMER_INIT    1
+#define SIM_TIMER_STEP    2
+#define SIM_TIMER_OUTPUT  3
+#define SIM_TIMER_EVENT   4
+
 void rt_tick(int ix);
+/* tick() ... tock() -> returns the number of seconds since the tick */
 double rt_tock(int ix);
+
+/*clear() ... tick() ... accumulate() ... tick() ... accumulate()
+ * returns the total number of seconds accumulated between the tick() and accumulate() calls */
+void rt_clear(int ix);
+void rt_accumulate(int ix);
+double rt_total(int ix);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

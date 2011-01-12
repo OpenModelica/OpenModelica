@@ -1693,7 +1693,7 @@ algorithm
         makeArray({Values.INTEGER(iz1),Values.INTEGER(iz2),Values.INTEGER(iz3)});
     case (_,_)
       equation
-        Debug.fprintln("failtrace", "- ValuesUtil.crossProduct failed");
+        Error.addMessage(Error.INTERNAL_ERROR, {"ValuesUtil.crossProduct failed"});
       then
         fail();
   end matchcontinue;
