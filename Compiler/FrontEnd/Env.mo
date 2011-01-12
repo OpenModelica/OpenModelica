@@ -92,7 +92,7 @@ public type Env = list<Frame> "an environment is a list of frames";
 
 public uniontype Cache
   record CACHE
-    array<Option<EnvCache>> envCache "The cache contains of environments from which classes can be found";
+    Option<array<EnvCache>> envCache "The cache contains of environments from which classes can be found";
     Option<Env> initialEnv "and the initial environment";
     array<DAE.FunctionTree> functions "set of Option<DAE.Function>; NONE() means instantiation started; SOME() means it's finished";
   end CACHE;
@@ -196,13 +196,15 @@ public function emptyCache
 "returns an empty cache"
   output Cache cache;
  protected
-  array<Option<EnvCache>> arr;
+  Option<array<EnvCache>> envCache;
+  array<EnvCache> arr;
   array<DAE.FunctionTree> instFuncs;
 algorithm
   //print("EMPTYCACHE\n");
-  arr := listArray({NONE()});
+  arr := arrayCreate(1, ENVCACHE(CACHETREE("$global",emptyEnv,{})));
+  envCache := Util.if_(OptManager.getOption("envCache"),SOME(arr),NONE());
   instFuncs := arrayCreate(1, DAEUtil.emptyFuncTree);
-  cache := CACHE(arr,NONE(),instFuncs);
+  cache := CACHE(envCache,NONE(),instFuncs);
 end emptyCache;
 
 public constant String forScopeName="$for loop scope$" "a unique scope used in for equations";
@@ -1234,7 +1236,7 @@ public function setCachedInitialEnv "set the initial environment in the cache"
 algorithm
   outCache := match(inCache,env)
   local
-      array<Option<EnvCache>> envCache;
+      Option<array<EnvCache>> envCache;
       array<DAE.FunctionTree> ef;
 
     case (CACHE(envCache,_,ef),env) equation
@@ -1252,12 +1254,11 @@ algorithm
   env:= match (scope,path,cache)
     local
       CacheTree tree;
-      array<Option<EnvCache>> arr;
+      array<EnvCache> arr;
       array<DAE.FunctionTree> ef;
-   case (scope,path,CACHE(arr ,_,ef))
+   case (scope,path,CACHE(SOME(arr) ,_,ef))
       equation
-        true = OptManager.getOption("envCache");
-        SOME(ENVCACHE(tree)) = arr[1];
+        ENVCACHE(tree) = arr[1];
         env = cacheGetEnv(scope,path,tree);
         //print("got cached env for ");print(Absyn.pathString(path)); print("\n");
       then env;
@@ -1273,30 +1274,20 @@ algorithm
   outCache := matchcontinue(fullpath,inCache,env)
   local CacheTree tree;
     Option<Env> ie;
-    array<Option<EnvCache>> arr;
+    array<EnvCache> arr;
     array<DAE.FunctionTree> ef;
-    case(_,inCache,env)
-      equation
-        false = OptManager.getOption("envCache");
-      then inCache;
+    case (_,inCache as CACHE(envCache=NONE()),_) then inCache;
 
-    case (fullpath,CACHE(arr,ie,ef),env)
+    case (fullpath,CACHE(SOME(arr),ie,ef),env)
       equation
-        NONE() = arr[1];
-        tree = cacheAddEnv(fullpath,CACHETREE("$global",emptyEnv,{}),env);
-        //print("Adding ");print(Absyn.pathString(fullpath));print(" to empty cache\n");
-        arr = arrayUpdate(arr,1,SOME(ENVCACHE(tree)));
-      then CACHE(arr,ie,ef);
-    case (fullpath,CACHE(arr,ie,ef),env)
-      equation
-        SOME(ENVCACHE(tree))=arr[1];
-       // print(" about to Adding ");print(Absyn.pathString(fullpath));print(" to cache:\n");
-      tree = cacheAddEnv(fullpath,tree,env);
+        ENVCACHE(tree)=arr[1];
+        // print(" about to Adding ");print(Absyn.pathString(fullpath));print(" to cache:\n");
+        tree = cacheAddEnv(fullpath,tree,env);
 
-       //print("Adding ");print(Absyn.pathString(fullpath));print(" to cache\n");
+        //print("Adding ");print(Absyn.pathString(fullpath));print(" to cache\n");
         //print(printCacheStr(CACHE(SOME(ENVCACHE(tree)),ie)));
-        arr = arrayUpdate(arr,1,SOME(ENVCACHE(tree)));
-      then CACHE(arr,ie,ef);
+        arr = arrayUpdate(arr,1,ENVCACHE(tree));
+      then inCache /*CACHE(SOME(arr),ie,ef)*/;
     case (_,_,_)
       equation
         print("cacheAdd failed\n");
@@ -1316,11 +1307,9 @@ algorithm
   outCache := matchcontinue(inCache,id,env)
     local
       Absyn.Path path;
-      case(inCache,id,env) equation
-        false = OptManager.getOption("envCache");
-      then inCache;
+    case (inCache as CACHE(envCache=NONE()),id,env) then inCache;
 
-    case(inCache,id,env)
+    case (inCache,id,env)
       equation
         SOME(path) = getEnvPath(env);
         outCache = cacheAdd(path,inCache,env);
@@ -1350,7 +1339,6 @@ algorithm
       // Search only current scope. Since scopes higher up might not be cached, we cannot search upwards.
     case (path2,path,tree)
       equation
-        true = OptManager.getOption("envCache");
         env = cacheGetEnv2(path2,path,tree);
         //print("found ");print(Absyn.pathString(path));print(" in cache at scope");
         //print(Absyn.pathString(path2));print("  pathEnv:"+&printEnvPathStr(env)+&"\n");
@@ -1542,14 +1530,14 @@ algorithm
   str := matchcontinue(cache)
     local 
       CacheTree tree;
-      array<Option<EnvCache>> arr;
+      array<EnvCache> arr;
       array<DAE.FunctionTree> ef;
       String s,s2;
     
     // some cache present
-    case CACHE(arr,_,ef)
+    case CACHE(SOME(arr),_,ef)
       equation
-        SOME(ENVCACHE(tree)) = arr[1];
+        ENVCACHE(tree) = arr[1];
         s = printCacheTreeStr(tree,1);
         str = stringAppendList({"Cache:\n",s,"\n"});
         s2 = DAEDump.dumpFunctionNamesStr(arrayGet(ef,1));
@@ -2364,7 +2352,7 @@ This guards against recursive functions."
 algorithm
   outCache := matchcontinue(cache,func)
     local
-      array<Option<EnvCache>> envCache;
+      Option<array<EnvCache>> envCache;
       array<DAE.FunctionTree> ef;
       Option<Env> ienv;
 
@@ -2391,7 +2379,7 @@ public function addDaeFunction
 algorithm
   outCache := match(inCache,funcs)
     local
-      array<Option<EnvCache>> envCache;
+      Option<array<EnvCache>> envCache;
       array<DAE.FunctionTree> ef;
       Option<Env> ienv;
     case (CACHE(envCache,ienv,ef),funcs)
@@ -2409,7 +2397,7 @@ public function addDaeExtFunction
 algorithm
   outCache := match(inCache,funcs)
     local
-      array<Option<EnvCache>> envCache;
+      Option<array<EnvCache>> envCache;
       array<DAE.FunctionTree> ef;
       Option<Env> ienv;
     case (CACHE(envCache,ienv,ef),funcs)
