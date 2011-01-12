@@ -40,7 +40,7 @@ void *mmc_alloc_bytes(unsigned nbytes)
   static long mmc_cur_malloc_buf_ix=0;
   /* Until we have GC, we simply allocate in 256MB chunks... */
   const long mmc_cur_malloc_buf_sz=256*1024*1024; /* 256MB chunks */
-  void *p;
+  void *p=0;
   /* fprintf(stderr, "1 mmc_alloc_bytes(%ld): %ld,%ld\n", nbytes, mmc_cur_malloc_buf, mmc_cur_malloc_buf_ix); */
   if (mmc_cur_malloc_buf == NULL || nbytes>(mmc_cur_malloc_buf_sz-mmc_cur_malloc_buf_ix)) {
     if ( (mmc_cur_malloc_buf = malloc(mmc_cur_malloc_buf_sz)) == 0 ) {
@@ -54,9 +54,9 @@ void *mmc_alloc_bytes(unsigned nbytes)
   p = mmc_cur_malloc_buf + mmc_cur_malloc_buf_ix;
 
   /* Force 16-byte alignment, like malloc... TODO: Check if this is needed :) */
-  mmc_cur_malloc_buf_ix += nbytes; // + ((nbytes%16) ? 16-(nbytes%16): 0);
+  mmc_cur_malloc_buf_ix += nbytes; /* + ((nbytes%16) ? 16-(nbytes%16): 0); */
 
-  // fprintf(stderr, "2 mmc_alloc_bytes(%ld): %ld,%ld => %ld\n", nbytes, mmc_cur_malloc_buf, mmc_cur_malloc_buf_ix, p);
+  /* fprintf(stderr, "2 mmc_alloc_bytes(%ld): %ld,%ld => %ld\n", nbytes, mmc_cur_malloc_buf, mmc_cur_malloc_buf_ix, p); */
   return p;
 }
 

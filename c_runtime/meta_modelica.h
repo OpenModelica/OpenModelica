@@ -150,7 +150,7 @@ static void *mmc_alloc_words(unsigned nwords)
 
 #define MMC_FALSE (mmc_mk_icon(0))
 #define MMC_TRUE (mmc_mk_icon(1))
-#define mmc_mk_bcon(X) (X != 0 ? MMC_TRUE : MMC_FALSE)
+#define mmc_mk_bcon(X) ((X) != 0 ? MMC_TRUE : MMC_FALSE)
 
 static inline void* mmc_mk_icon(mmc_sint_t i)
 {
