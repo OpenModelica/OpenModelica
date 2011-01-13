@@ -76,11 +76,11 @@ DEFINES += __x86__ \
     __NT__ \
     __OSVERSION__=4 \
     __WIN32__
-LIBS += -LC:\\Thesis\\omniORB-4.1.4\\lib\\x86_win32 \
+LIBS += -L../omniORB-4.1.4-mingw/lib/x86_win32 \ #C:\\Thesis\\omniORB-4.1.4-mingw\\lib\\x86_win32 \
     -lomniORB414_rt \
     -lomnithread34_rt
 
-INCLUDEPATH += C:\\Thesis\\omniORB-4.1.4\\include
+INCLUDEPATH += ../omniORB-4.1.4-mingw/include #C:\\Thesis\\omniORB-4.1.4-mingw\\include
 } else {
     include(OMEdit.config)
 }
