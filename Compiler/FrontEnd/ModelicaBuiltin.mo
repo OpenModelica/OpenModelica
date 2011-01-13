@@ -56,27 +56,6 @@ function sample
 external "builtin";
 end sample;
 
-function div
-  input Real x;
-  input Real y;
-  output Real z;
-external "builtin";
-end div;
-
-function mod
-  input Real x;
-  input Real y;
-  output Real z;
-external "builtin";
-end mod;
-
-function rem
-  input Real x;
-  input Real y;
-  output Real z;
-external "builtin";
-end rem;
-
 function ceil
   input Real x;
   output Real y;
@@ -222,11 +201,27 @@ end homotopy;
 // SCodeFlatten to define which builtin functions exist (SCodeFlatten doesn't
 // care how the functions are defined, only if they exist or not).
 
+function div
+/* Real or Integer in/output */
+external "builtin";
+end div;
+
+function mod
+/* Real or Integer in/output */
+external "builtin";
+end mod;
+
+function rem
+/* Real or Integer in/output */
+external "builtin";
+end rem;
+
 function delay
   external "builtin";
 end delay;
 
 function abs
+/* Real or Integer in/output */
   external "builtin";
 end abs;
 
@@ -338,7 +333,7 @@ function cat
   external "builtin";
 end cat;
 
-function rooted
+function rooted "Not standard Modelica"
   external "builtin";
 end rooted;
 
