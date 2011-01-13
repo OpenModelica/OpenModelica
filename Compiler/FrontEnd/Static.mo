@@ -381,12 +381,10 @@ algorithm
     case (cache,env,e as Absyn.IFEXP(ifExp = _),impl,st,doVect,pre,info,_) /* Conditional expressions */
       equation
         Absyn.IFEXP(ifExp = e1,trueBranch = e2,elseBranch = e3) = Absyn.canonIfExp(e);
-        (cache,e1_1,prop1,st_1) = elabExp(cache,env, e1, impl, st,doVect,pre,info) "if expressions" ;
-        (cache,e2_1,prop2,st_2) = elabExp(cache,env, e2, impl, st_1,doVect,pre,info);
-        (cache,e3_1,prop3,st_3) = elabExp(cache,env, e3, impl, st_2,doVect,pre,info);
-        (cache,e_1,prop) = elabIfexp(cache,env, e1_1, prop1, e2_1, prop2, e3_1, prop3, impl, st,pre);
+        (cache,e1_1,prop1,st_1) = elabExp(cache,env, e1, impl, st,doVect,pre,info) "if expressions";
+        (cache,e_1,prop,st_2) = elabIfExp(cache,env,e1_1,prop1,e2,e3,impl,st,doVect,pre,info);
       then
-        (cache,e_1,prop,st_3);
+        (cache,e_1,prop,st_2);
 
     // adrpo: deal with DynamicSelect(literalExp, dynamicExp) by returning literalExp only!
     case (cache,env,Absyn.CALL(function_ = Absyn.CREF_IDENT("DynamicSelect",_),functionArgs = Absyn.FUNCTIONARGS(args = (e1 :: _),argNames = _)),impl,st,doVect,pre,info,_)
@@ -417,30 +415,6 @@ algorithm
       then
         (cache,e_1,prop1,st);
 
-      /*  case (cache,env,Absyn.CALL(function_ = fn,functionArgs = Absyn.FUNCTIONARGS(args = args,argNames = nargs)),impl,st,doVect,info)
-          equation
-            //true = RTOpts.acceptMetaModelicaGrammar();
-            (cache,env,args,nargs) = MetaUtil.fixListConstructorsInArgs(cache,env,fn,args,nargs);
-            Debug.fprintln("sei", "elab_exp CALL...") "Function calls PA. Only positional arguments are elaborated for now. TODO: Implement elaboration of named arguments." ;
-            (cache,e_1,prop,st_1) = elabCall(cache,env, fn, args, nargs, impl, st, info);
-            c = Types.propAllConst(prop);
-            Debug.fprintln("sei", "elab_exp CALL done");
-          then
-            (cache,e_1,prop_1,st_1);    */
-     /*--------------------------------*/
-
-        /* If fail to elaborate e2 or e3 above check if cond is constant and make non-selected branch
-         undefined. NOTE: Dirty hack to make MSL CombiTable models work!!! */
-    case (cache,env,Absyn.IFEXP(ifExp = e1,trueBranch = e2,elseBranch = e3),impl,st,doVect,pre,info,_) /* Conditional expressions */
-      equation
-        (cache,e1_1,prop1,st_1) = elabExp(cache,env, e1, impl, st,doVect,pre,info);
-        true = Types.isParameterOrConstant(Types.propAllConst(prop1));
-        (cache,Values.BOOL(b),_) = Ceval.ceval(cache, env, e1_1, impl,NONE(), NONE(), Ceval.NO_MSG());
-
-        (cache,e_1,prop,st_2) = elabIfexpBranch(cache,env,b,e1_1,e2,e3, impl, st_1,doVect,pre,info);
-        /* TODO elseif part */
-      then
-        (cache,e_1,prop,st_2);
     case (cache,env,Absyn.CALL(function_ = fn,functionArgs = Absyn.FUNCTIONARGS(args = args,argNames = nargs)),impl,st,doVect,pre,info,_)
       equation
         Debug.fprintln("sei", "elab_exp CALL...") "Function calls PA. Only positional arguments are elaborated for now. TODO: Implement elaboration of named arguments." ;
@@ -611,6 +585,57 @@ algorithm
         fail();
   end matchcontinue;
 end elabExp2;
+
+protected function elabIfExp
+"Elaborates an if-expression. If one of the branches can not be elaborated and
+the condition is parameter or constant; it is evaluated and the correct branch is selected.
+This is a dirty hack to make MSL CombiTable models work!
+Note: Because of this, the function has to rollback or delete an ErrorExt checkpoint."
+  input Env.Cache cache;
+  input Env.Env env;
+  input DAE.Exp condExp;
+  input DAE.Properties condProp;
+  input Absyn.Exp trueExp;
+  input Absyn.Exp falseExp;
+  input Boolean impl;
+  input Option<Interactive.InteractiveSymbolTable> st;
+  input Boolean vect;
+  input Prefix.Prefix pre;
+  input Absyn.Info info;
+  output Env.Cache outCache;
+  output DAE.Exp outExp;
+  output DAE.Properties prop;
+  output Option<Interactive.InteractiveSymbolTable> outSt;
+algorithm
+  (outCache,outExp,prop,outSt) := matchcontinue (cache,env,condExp,condProp,trueExp,falseExp,impl,st,vect,pre,info)
+    local
+      DAE.Exp etrueExp,efalseExp;
+      DAE.Properties trueProp,falseProp;
+      Boolean b;
+    case (cache,env,condExp,condProp,trueExp,falseExp,impl,st,vect,pre,info)
+      equation
+        ErrorExt.setCheckpoint("Static.elabExp:IFEXP");
+        (cache,etrueExp,trueProp,st) = elabExp(cache,env,trueExp,impl,st,vect,pre,info);
+        (cache,efalseExp,falseProp,st) = elabExp(cache,env,falseExp,impl,st,vect,pre,info);
+        (cache,outExp,prop) = makeIfexp(cache,env,condExp,condProp,etrueExp,trueProp,efalseExp,falseProp,impl,st,pre);
+        ErrorExt.delCheckpoint("Static.elabExp:IFEXP");
+      then (cache,outExp,prop,st);
+    case (cache,env,condExp,condProp,trueExp,falseExp,impl,st,vect,pre,info)
+      equation
+        ErrorExt.setCheckpoint("Static.elabExp:IFEXP:HACK") "Extra rollback point so we get the regular error message only once if the hack fails";
+        true = Types.isParameterOrConstant(Types.propAllConst(condProp));
+        (cache,Values.BOOL(b),_) = Ceval.ceval(cache,env,condExp,impl,NONE(),NONE(),Ceval.MSG());
+        (cache,outExp,prop,st) = elabExp(cache,env,Util.if_(b,trueExp,falseExp),impl,st,vect,pre,info);
+        ErrorExt.delCheckpoint("Static.elabExp:IFEXP:HACK");
+        ErrorExt.rollBack("Static.elabExp:IFEXP");
+      then (cache,outExp,prop,st);
+    else
+      equation
+        ErrorExt.rollBack("Static.elabExp:IFEXP:HACK");
+        ErrorExt.delCheckpoint("Static.elabExp:IFEXP");
+      then fail();
+  end matchcontinue;
+end elabIfExp;
 
 // Part of MetaModelica extension
 public function elabListExp "function: elabListExp
@@ -1537,7 +1562,7 @@ algorithm
         (cache,e1_1,prop1) = elabGraphicsExp(cache,env, e1, impl,pre,info);
         (cache,e2_1,prop2) = elabGraphicsExp(cache,env, e2, impl,pre,info);
         (cache,e3_1,prop3) = elabGraphicsExp(cache,env, e3, impl,pre,info);
-        (cache,e_1,prop) = elabIfexp(cache,env, e1_1, prop1, e2_1, prop2, e3_1, prop3, impl,NONE(),pre);
+        (cache,e_1,prop) = makeIfexp(cache,env, e1_1, prop1, e2_1, prop2, e3_1, prop3, impl,NONE(),pre);
       then
         (cache,e_1,prop);
     case (cache,env,Absyn.CALL(function_ = fn,functionArgs = Absyn.FUNCTIONARGS(args = args,argNames = nargs)),impl,pre,info) /* Function calls */
@@ -11974,50 +11999,7 @@ algorithm
   end matchcontinue;
 end subscriptType;
 
-protected function elabIfexpBranch "Dirty hack function that only elaborated the selected branch of an if expression if the other branch
-can not be elaborated (due to e.g. indexing out of bounds in array, etc.)
-The non-selected branch will be replaced by a dummy variable called $undefined such that code generation does not fail later on"
-  input Env.Cache cache;
-  input Env.Env env;
-  input Boolean b "selected branch";
-  input DAE.Exp cond;
-  input Absyn.Exp tbranch;
-  input Absyn.Exp fbranch;
-  input Boolean impl;
-  input Option<Interactive.InteractiveSymbolTable> st;
-  input Boolean doVect;
-  input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
-  output Env.Cache outCache;
-  output DAE.Exp exp;
-  output DAE.Properties prop;
-  output Option<Interactive.InteractiveSymbolTable> outSt;
-algorithm
-  (outCache, exp, prop,outSt) := match(cache,env,b,cond,tbranch,fbranch,impl,st,doVect,inPrefix,info)
-    local 
-      DAE.Exp e2,crefExp; 
-      DAE.Properties prop1;
-      Option<Interactive.InteractiveSymbolTable> st_1;
-      Prefix.Prefix pre;
-      DAE.ComponentRef cref_;
-
-    // Select true-branch
-    case(cache,env,true,cond,tbranch,fbranch,impl,st,doVect,pre,info) equation
-      cref_ = ComponentReference.makeCrefIdent("$undefined",DAE.ET_OTHER(),{});
-      (cache,e2,prop1,st_1) = elabExp(cache,env, tbranch, impl, st,doVect,pre,info);
-      crefExp = Expression.crefExp(cref_);
-    then (cache,DAE.IFEXP(cond,e2,crefExp),prop1,st_1);
-
-    // Select false-branch
-    case(cache,env,false,cond,tbranch,fbranch,impl,st,doVect,pre,info) equation
-      cref_ = ComponentReference.makeCrefIdent("$undefined",DAE.ET_OTHER(),{});
-      (cache,e2,prop1,st_1) = elabExp(cache,env, fbranch, impl, st,doVect,pre,info);
-      crefExp = Expression.crefExp(cref_);
-    then (cache,DAE.IFEXP(cond,crefExp,e2),prop1,st_1);
-  end match;
-end elabIfexpBranch;
-
-protected function elabIfexp "function: elabIfexp  
+protected function makeIfexp "function: makeIfexp  
   This function elaborates on the parts of an if expression."
   input Env.Cache inCache;
   input Env.Env inEnv1;
@@ -12096,11 +12078,11 @@ algorithm
 
     case (_,_,_,_,_,_,_,_,_,_,_)
       equation
-        Print.printBuf("- Static.elabIfexp failed\n");
+        Print.printBuf("- Static.makeIfexp failed\n");
       then
         fail();
   end matchcontinue;
-end elabIfexp;
+end makeIfexp;
 
 protected function cevalIfexpIfConstant "function: cevalIfexpIfConstant
   author: PA

@@ -51,6 +51,7 @@ struct absyn_info{
 };
 // if error_on is true, message is added, otherwise not.
 static bool error_on=true;
+static bool pop_more_on_rollback=false;
 static int numErrorMessages=0;
 
 #include "ErrorMessage.hpp"
@@ -71,15 +72,15 @@ static void push_message(ErrorMessage *msg)
 }
 
 /* pop the top of the message stack (and any duplicate messages that have also been added) */
-static void pop_message()
+static void pop_message(bool rollback)
 {
   ErrorMessage *msg = errorMessageQueue.top();
   if (msg->getSeverity().compare(std::string("Error")) == 0) numErrorMessages--;
   errorMessageQueue.pop();
-  int pop_more = errorMessageQueue.size() > 0 && msg->getFullMessage() == errorMessageQueue.top()->getFullMessage();
+  bool pop_more = (errorMessageQueue.size() > 0 && !(rollback && errorMessageQueue.size() <= checkPoints.back().first) && msg->getFullMessage() == errorMessageQueue.top()->getFullMessage());
   delete msg;
   if (pop_more)
-    pop_message();
+    pop_message(rollback);
 }
 
 /* Adds a message without file info. */
@@ -162,7 +163,7 @@ static void printCheckpointStack(void)
     printf("%5d %s   message:", i, cp.second.c_str());
     while(errorMessageQueue.size() > cp.first && errorMessageQueue.size() > 0){
       res = errorMessageQueue.top()->getMessage()+string(" ")+res;
-      pop_message();
+      pop_message(false);
     }
     printf("%s\n", res.c_str());
   }
@@ -215,7 +216,7 @@ extern void ErrorImpl__rollBack(const char* id)
         res = res+errorMessageQueue.top()->getMessage()+string("\n");
         printf( (string("Deleted: ") + res).c_str());
       }*/
-      pop_message();
+      pop_message(true);
     }
     /*if(!errorMessageQueue.empty()){
       res = res+errorMessageQueue.top()->getMessage()+string("\n");
@@ -244,7 +245,7 @@ extern char* ErrorImpl__rollBackAndPrint(const char* id)
   if(checkPoints.size() > 0){
     while(errorMessageQueue.size() > checkPoints.back().first && errorMessageQueue.size() > 0){
       res = errorMessageQueue.top()->getMessage()+string("\n")+res;
-      pop_message();
+      pop_message(true);
     }
     pair<int,string> cp;
     cp = checkPoints[checkPoints.size()-1];
@@ -321,7 +322,7 @@ extern int ErrorImpl__getNumErrorMessages() {
 extern void ErrorImpl__clearMessages()
 {
   while(!errorMessageQueue.empty()) {
-    pop_message();
+    pop_message(false);
   }
 }
 
@@ -331,7 +332,7 @@ extern std::string ErrorImpl__getMessagesStr()
   std::string res("}");
   while(!errorMessageQueue.empty()) {
     res = errorMessageQueue.top()->getFullMessage() + res;
-    pop_message();
+    pop_message(false);
     if (!errorMessageQueue.empty()) { res = string(",") + res; }
   }
   res = string("{") + res;
@@ -344,7 +345,7 @@ extern std::string ErrorImpl__printMessagesStr()
   std::string res("");
   while(!errorMessageQueue.empty()) {
     res = errorMessageQueue.top()->getMessage()+string("\n")+res;
-    pop_message();
+    pop_message(false);
   }
   return res;
 }
