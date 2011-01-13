@@ -46,8 +46,8 @@ static LARGE_INTEGER default_acc_tp[NUM_RT_CLOCKS];
 static LARGE_INTEGER default_tick_tp[NUM_RT_CLOCKS];
 
 static LARGE_INTEGER performance_frequency;
-static LARGE_INTEGER *acc_tp;
-static LARGE_INTEGER *tick_tp;
+static LARGE_INTEGER *acc_tp=default_acc_tp;
+static LARGE_INTEGER *tick_tp=default_tick_tp;
 
 void rt_tick(int ix) {
   static int init = 0;
@@ -95,8 +95,8 @@ double rt_total(int ix) {
 static uint64_t default_acc_tp[NUM_RT_CLOCKS];
 static uint64_t default_tick_tp[NUM_RT_CLOCKS];
 
-static uint64_t *acc_tp;
-static uint64_t *tick_tp;
+static uint64_t *acc_tp=default_acc_tp;
+static uint64_t *tick_tp=default_tick_tp;
 
 void rt_tick(int ix) {
   tick_tp[ix] = mach_absolute_time();
