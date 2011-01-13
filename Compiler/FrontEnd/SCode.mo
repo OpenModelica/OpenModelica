@@ -2806,9 +2806,132 @@ algorithm
   end matchcontinue;
 end isNotComponent;
 
+public function traverseEEquationsList
+  "Traverses a list of EEquations, calling traverseEEquations on each EEquation
+  in the list."
+  input list<EEquation> inEEquations;
+  input tuple<TraverseFunc, Argument> inTuple;
+  output list<EEquation> outEEquations;
+  output tuple<TraverseFunc, Argument> outTuple;
+
+  replaceable type Argument subtypeof Any;
+
+  partial function TraverseFunc
+    input tuple<EEquation, Argument> inTuple;
+    output tuple<EEquation, Argument> outTuple;
+  end TraverseFunc;
+algorithm
+  (outEEquations, outTuple) := 
+    Util.listMapAndFold(inEEquations, traverseEEquations, inTuple);
+end traverseEEquationsList;
+
+public function traverseEEquations
+  "Traverses an EEquation. For each EEquation it finds it calls the given
+  function with the EEquation and an extra argument which is passed along."
+  input EEquation inEEquation;
+  input tuple<TraverseFunc, Argument> inTuple;
+  output EEquation outEEquation;
+  output tuple<TraverseFunc, Argument> outTuple;
+
+  replaceable type Argument subtypeof Any;
+  
+  partial function TraverseFunc
+    input tuple<EEquation, Argument> inTuple;
+    output tuple<EEquation, Argument> outTuple;
+  end TraverseFunc;
+
+  TraverseFunc traverser;
+  Argument arg;
+  EEquation eq;
+algorithm
+  (traverser, arg) := inTuple;
+  ((eq, arg)) := traverser((inEEquation, arg));
+  (outEEquation, outTuple) := traverseEEquations2(eq, (traverser, arg));
+end traverseEEquations;
+
+public function traverseEEquations2
+  "Helper function to traverseEEquations, does the actual traversing."
+  input EEquation inEEquation;
+  input tuple<TraverseFunc, Argument> inTuple;
+  output EEquation outEEquation;
+  output tuple<TraverseFunc, Argument> outTuple;
+
+  replaceable type Argument subtypeof Any;
+  
+  partial function TraverseFunc
+    input tuple<EEquation, Argument> inTuple;
+    output tuple<EEquation, Argument> outTuple;
+  end TraverseFunc;
+algorithm
+  (outEEquation, outTuple) := match(inEEquation, inTuple)
+    local
+      TraverseFunc traverser;
+      Argument arg;
+      tuple<TraverseFunc, Argument> tup;
+      Absyn.Exp e1, e2;
+      list<Absyn.Exp> expl1;
+      list<list<EEquation>> then_branch;
+      list<EEquation> else_branch, eql;
+      list<tuple<Absyn.Exp, list<EEquation>>> else_when;
+      list<Absyn.NamedArg> args;
+      Absyn.ForIterators iters;
+      Option<Comment> comment;
+      Absyn.Info info;
+      Absyn.ComponentRef cr1, cr2;
+      Ident index;
+
+    case (EQ_IF(expl1, then_branch, else_branch, comment, info), tup)
+      equation
+        (then_branch, tup) = Util.listMapAndFold(then_branch,
+          traverseEEquationsList, tup);
+        (else_branch, tup) = traverseEEquationsList(else_branch, tup);
+      then
+        (EQ_IF(expl1, then_branch, else_branch, comment, info), tup);
+
+    case (EQ_FOR(index, e1, eql, comment, info), tup)
+      equation
+        (eql, tup) = traverseEEquationsList(eql, tup);
+      then
+        (EQ_FOR(index, e1, eql, comment, info), tup);
+
+    case (EQ_WHEN(e1, eql, else_when, comment, info), tup)
+      equation
+        (eql, tup) = traverseEEquationsList(eql, tup);
+        (else_when, tup) = Util.listMapAndFold(else_when,
+          traverseElseWhenEEquations, tup);
+      then
+        (EQ_WHEN(e1, eql, else_when, comment, info), tup);
+
+    else then (inEEquation, inTuple);
+  end match;
+end traverseEEquations2;
+
+protected function traverseElseWhenEEquations
+  "Traverses all EEquations in an else when branch, calling the given function
+  on each EEquation."
+  input tuple<Absyn.Exp, list<EEquation>> inElseWhen;
+  input tuple<TraverseFunc, Argument> inTuple;
+  output tuple<Absyn.Exp, list<EEquation>> outElseWhen;
+  output tuple<TraverseFunc, Argument> outTuple;
+
+  replaceable type Argument subtypeof Any;
+
+  partial function TraverseFunc
+    input tuple<EEquation, Argument> inTuple;
+    output tuple<EEquation, Argument> outTuple;
+  end TraverseFunc;
+
+  Absyn.Exp exp;
+  list<EEquation> eql;
+algorithm
+  (exp, eql) := inElseWhen;
+  (eql, outTuple) := traverseEEquationsList(eql, inTuple);
+  outElseWhen := (exp, eql);
+end traverseElseWhenEEquations;
+
 public function traverseEEquationListExps
-  "Traverses a list of EEquations, calling the given func on each Absyn.Exp it
-  encounters."
+  "Traverses a list of EEquations, calling the given function on each Absyn.Exp
+  it encounters."
   input list<EEquation> inEEquations;
   input tuple<TraverseFunc, Argument> inTuple;
   output list<EEquation> outEEquations;
@@ -2827,7 +2950,8 @@ end traverseEEquationListExps;
 
 public function traverseEEquationExps
   "Traverses an EEquation, calling the given function on each Absyn.Exp it
-  encounters."
+  encounters. This funcion is intended to be used together with
+  traverseEEquations, and does NOT descend into sub-EEquations."
   input EEquation inEEquation;
   input tuple<TraverseFunc, Argument> inTuple;
   output EEquation outEEquation;
@@ -2846,7 +2970,7 @@ algorithm
       Argument arg;
       tuple<TraverseFunc, Argument> tup;
       Absyn.Exp e1, e2;
-      list<Absyn.Exp> expl1, expl2;
+      list<Absyn.Exp> expl1;
       list<list<EEquation>> then_branch;
       list<EEquation> else_branch, eql;
       list<tuple<Absyn.Exp, list<EEquation>>> else_when;
@@ -2860,11 +2984,8 @@ algorithm
     case (EQ_IF(expl1, then_branch, else_branch, comment, info), (traverser, arg))
       equation
         ((expl1, arg)) = Absyn.traverseExpList(expl1, traverser, arg);
-        (then_branch, tup) = Util.listMapAndFold(then_branch, 
-          traverseEEquationListExps, (traverser, arg));
-        (else_branch, tup) = traverseEEquationListExps(else_branch, tup);
       then
-        (EQ_IF(expl1, then_branch, else_branch, comment, info), tup);
+        (EQ_IF(expl1, then_branch, else_branch, comment, info), (traverser, arg));
 
     case (EQ_EQUALS(e1, e2, comment, info), (traverser, arg))
       equation
@@ -2883,15 +3004,14 @@ algorithm
     case (EQ_FOR(index, e1, eql, comment, info), (traverser, arg))
       equation
         ((e1, arg)) = traverser((e1, arg));
-        (eql, tup) = traverseEEquationListExps(eql, (traverser, arg));
       then
-        (EQ_FOR(index, e1, eql, comment, info), tup);
+        (EQ_FOR(index, e1, eql, comment, info), (traverser, arg));
 
     case (EQ_WHEN(e1, eql, else_when, comment, info), (traverser, arg))
       equation
         ((e1, arg)) = traverser((e1, arg));
-        (eql, tup) = traverseEEquationListExps(eql, (traverser, arg));
-        (else_when, tup) = Util.listMapAndFold(else_when, traverseElseWhenExps, tup);
+        (else_when, tup) = Util.listMapAndFold(else_when, traverseElseWhenExps, 
+          (traverser, arg));
       then
         (EQ_WHEN(e1, eql, else_when, comment, info), tup);
 
@@ -3034,8 +3154,8 @@ algorithm
   (traverser, arg) := inTuple;
   (exp, eql) := inElseWhen;
   ((exp, arg)) := traverser((exp, arg));
-  (eql, outTuple) := traverseEEquationListExps(eql, (traverser, arg));
   outElseWhen := (exp, eql);
+  outTuple := (traverser, arg);
 end traverseElseWhenExps;
 
 protected function traverseNamedArgExps

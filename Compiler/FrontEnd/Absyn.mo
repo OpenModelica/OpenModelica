@@ -769,7 +769,7 @@ uniontype Exp "The Exp uniontype is the container of a Modelica expression.
   end END;
 
 
-  record CODE  "Modelica AST Code constructors - MetaModelica extension"
+  record CODE  "Modelica AST Code constructors - OpenModelica extension"
     CodeNode code;
   end CODE;
 
@@ -793,7 +793,7 @@ uniontype Exp "The Exp uniontype is the container of a Modelica expression.
     Option<String> comment       " match expr comment_optional ";
   end MATCHEXP;
 
-    // The following two are only used internaly in the compiler
+  // The following are only used internally in the compiler
   record LIST "Part of MetaModelica extension"
     list<Exp> exps;
   end LIST;
@@ -1066,6 +1066,7 @@ end ExternalDecl;
 protected import Util;
 protected import Print;
 protected import ModUtil;
+protected import Error;
 
 public constant TimeStamp dummyTimeStamp = TIMESTAMP(0.0,0.0);
 
@@ -1730,6 +1731,410 @@ algorithm
       then((e11::pargs,ext_arg));
   end match;
 end traverseExpPosArgs;
+
+public function traverseExpListBidir
+  "Traverses a list of expressions, calling traverseExpBidir on each
+  expression."
+  input list<Exp> inExpl;
+  input tuple<FuncType, FuncType, Argument> inTuple;
+  output list<Exp> outExpl;
+  output tuple<FuncType, FuncType, Argument> outTuple;
+
+  partial function FuncType
+    input tuple<Exp, Argument> inTuple;
+    output tuple<Exp, Argument> outTuple;
+  end FuncType;
+
+  replaceable type Argument subtypeof Any;
+algorithm
+  (outExpl, outTuple) :=
+    Util.listMapAndFold(inExpl, traverseExpBidir, inTuple);
+end traverseExpListBidir;
+
+public function traverseExpBidir
+  "This function takes an expression and a tuple with an enter function, an exit
+  function, and an extra argument. For each expression it encounters it calls
+  the enter function with the expression and the extra argument. It then
+  traverses all subexpressions in the expression and calls traverseExpBidir on
+  them with the updated argument. Finally it calls the exit function, again with
+  the updated argument. This means that this function is bidirectional, and can
+  be used to emulate both top-down and bottom-up traversal."
+  input Exp inExp;
+  input tuple<FuncType, FuncType, Argument> inTuple;
+  output Exp outExp;
+  output tuple<FuncType, FuncType, Argument> outTuple;
+
+  partial function FuncType
+    input tuple<Exp, Argument> inTuple;
+    output tuple<Exp, Argument> outTuple;
+  end FuncType;
+
+  replaceable type Argument subtypeof Any;
+
+  FuncType enter_func, exit_func;
+  Argument arg;
+  Exp e;
+  tuple<FuncType, FuncType, Argument> tup;
+algorithm
+  (enter_func, exit_func, arg) := inTuple;
+  ((e, arg)) := enter_func((inExp, arg));
+  (e, (_, _, arg)) := traverseExpBidirSubExps(e, 
+    (enter_func, exit_func, arg));
+  ((outExp, arg)) := exit_func((e, arg));
+  outTuple := (enter_func, exit_func, arg);
+end traverseExpBidir;
+
+public function traverseExpOptBidir
+  "Same as traverseExpBidir, but with an optional expression. Calls
+  traverseExpBidir if the option is SOME(), or just returns the input if it's
+  NONE()"
+  input Option<Exp> inExp;
+  input tuple<FuncType, FuncType, Argument> inTuple;
+  output Option<Exp> outExp;
+  output tuple<FuncType, FuncType, Argument> outTuple;
+
+  partial function FuncType
+    input tuple<Exp, Argument> inTuple;
+    output tuple<Exp, Argument> outTuple;
+  end FuncType;
+
+  replaceable type Argument subtypeof Any;
+algorithm
+  (outExp, outTuple) := match(inExp, inTuple)
+    local
+      Exp e;
+      tuple<FuncType, FuncType, Argument> tup;
+
+    case (SOME(e), tup)
+      equation
+        (e, tup) = traverseExpBidir(e, tup);
+      then
+        (SOME(e), tup);
+
+    case (NONE(), _) then (inExp, inTuple);
+  end match;
+end traverseExpOptBidir;
+
+protected function traverseExpBidirSubExps
+  "Helper function to traverseExpBidir. Traverses the subexpressions of an
+  expression and calls traverseExpBidir on them."
+  input Exp inExp;
+  input tuple<FuncType, FuncType, Argument> inTuple;
+  output Exp outExp;
+  output tuple<FuncType, FuncType, Argument> outTuple;
+
+  partial function FuncType
+    input tuple<Exp, Argument> inTuple;
+    output tuple<Exp, Argument> outTuple;
+  end FuncType;
+
+  replaceable type Argument subtypeof Any;
+algorithm
+  (outExp, outTuple) := match(inExp, inTuple)
+    local
+      Exp e1, e2, e3;
+      Option<Exp> oe1;
+      tuple<FuncType, FuncType, Argument> tup;
+      Operator op;
+      ComponentRef cref;
+      list<tuple<Exp, Exp>> else_ifs;
+      list<Exp> expl;
+      list<list<Exp>> mat_expl;
+      FunctionArgs fargs;
+      String error_msg;
+
+    case (INTEGER(value = _), _) then (inExp, inTuple);
+    case (REAL(value = _), _) then (inExp, inTuple);
+    case (STRING(value = _), _) then (inExp, inTuple);
+    case (BOOL(value = _), _) then (inExp, inTuple);
+
+    case (CREF(componentRef = cref), tup)
+      equation
+        (cref, tup) = traverseExpBidirCref(cref, tup);
+      then
+        (CREF(cref), tup);
+
+    case (BINARY(exp1 = e1, op = op, exp2 = e2), tup)
+      equation
+        (e1, tup) = traverseExpBidir(e1, tup);
+        (e2, tup) = traverseExpBidir(e2, tup);
+      then
+        (BINARY(e1, op, e2), tup);
+
+    case (UNARY(op = op, exp = e1), tup)
+      equation
+        (e1, tup) = traverseExpBidir(e1, tup);
+      then
+        (UNARY(op, e1), tup);
+
+    case (LBINARY(exp1 = e1, op = op, exp2 = e2), tup)
+      equation
+        (e1, tup) = traverseExpBidir(e1, tup);
+        (e2, tup) = traverseExpBidir(e2, tup);
+      then
+        (LBINARY(e1, op, e2), tup);
+
+    case (LUNARY(op = op, exp = e1), tup)
+      equation
+        (e1, tup) = traverseExpBidir(e1, tup);
+      then
+        (LUNARY(op, e1), tup);
+
+    case (RELATION(exp1 = e1, op = op, exp2 = e2), tup)
+      equation
+        (e1, tup) = traverseExpBidir(e1, tup);
+        (e2, tup) = traverseExpBidir(e2, tup);
+      then
+        (RELATION(e1, op, e2), tup);
+
+    case (IFEXP(ifExp = e1, trueBranch = e2, elseBranch = e3, 
+        elseIfBranch = else_ifs), tup)
+      equation
+        (e1, tup) = traverseExpBidir(e1, tup);
+        (e2, tup) = traverseExpBidir(e2, tup);
+        (e3, tup) = traverseExpBidir(e3, tup);
+        (else_ifs, tup) = Util.listMapAndFold(else_ifs,
+          traverseExpBidirElseIf, tup);
+      then
+        (IFEXP(e1, e2, e3, else_ifs), tup);
+
+    case (CALL(function_ = cref, functionArgs = fargs), tup)
+      equation
+        (fargs, tup) = traverseExpBidirFunctionArgs(fargs, tup);
+      then
+        (CALL(cref, fargs), tup);
+
+    case (PARTEVALFUNCTION(function_ = cref, functionArgs = fargs), tup)
+      equation
+        (fargs, tup) = traverseExpBidirFunctionArgs(fargs, tup);
+      then
+        (PARTEVALFUNCTION(cref, fargs), tup);
+
+    case (ARRAY(arrayExp = expl), tup)
+      equation
+        (expl, tup) = traverseExpListBidir(expl, tup);
+      then
+        (ARRAY(expl), tup);
+
+    case (MATRIX(matrix = mat_expl), tup)
+      equation
+        (mat_expl, tup) = Util.listMapAndFold(mat_expl,
+          traverseExpListBidir, tup);
+      then
+        (MATRIX(mat_expl), tup);
+
+    case (RANGE(start = e1, step = oe1, stop = e2), tup)
+      equation
+        (e1, tup) = traverseExpBidir(e1, tup);
+        (oe1, tup) = traverseExpOptBidir(oe1, tup);
+        (e2, tup) = traverseExpBidir(e2, tup);
+      then
+        (RANGE(e1, oe1, e2), tup);
+
+    case (END(), _) then (inExp, inTuple);
+
+    case (TUPLE(expressions = expl), tup)
+      equation
+        (expl, tup) = traverseExpListBidir(expl, tup);
+      then
+        (TUPLE(expl), tup);
+
+    else
+      equation
+        error_msg = "in Absyn.traverseExpBidirSubExps - Unknown expression: ";
+        error_msg = error_msg +& Dump.printExpStr(inExp);
+        Error.addMessage(Error.INTERNAL_ERROR, {error_msg});
+      then
+        fail();
+
+  end match;
+end traverseExpBidirSubExps;
+
+public function traverseExpBidirCref
+  "Helper function to traverseExpBidirSubExps. Traverses any expressions in a
+  component reference (i.e. in it's subscripts)."
+  input ComponentRef inCref;
+  input tuple<FuncType, FuncType, Argument> inTuple;
+  output ComponentRef outCref;
+  output tuple<FuncType, FuncType, Argument> outTuple;
+
+  partial function FuncType
+    input tuple<Exp, Argument> inTuple;
+    output tuple<Exp, Argument> outTuple;
+  end FuncType;
+
+  replaceable type Argument subtypeof Any;
+algorithm
+  (outCref, outTuple) := match(inCref, inTuple)
+    local
+      Ident name;
+      ComponentRef cr;
+      list<Subscript> subs;
+      tuple<FuncType, FuncType, Argument> tup;
+
+    case (CREF_FULLYQUALIFIED(componentRef = cr), _)
+      equation
+        (cr, tup) = traverseExpBidirCref(cr, inTuple);
+      then
+        (CREF_FULLYQUALIFIED(cr), tup);
+
+    case (CREF_QUAL(name = name, subScripts = subs, componentRef = cr), _)
+      equation
+        (subs, tup) = Util.listMapAndFold(subs, traverseExpBidirSubs, inTuple);
+        (cr, tup) = traverseExpBidirCref(cr, tup);
+      then
+        (CREF_QUAL(name, subs, cr), tup);
+
+    case (CREF_IDENT(name = name, subscripts = subs), _)
+      equation
+        (subs, tup) = Util.listMapAndFold(subs, traverseExpBidirSubs, inTuple);
+      then
+        (CREF_IDENT(name, subs), tup);
+
+    case (WILD(), _) then (inCref, inTuple);
+  end match;
+end traverseExpBidirCref;
+
+public function traverseExpBidirSubs
+  "Helper function to traverseExpBidirCref. Traverses expressions in a
+  subscript."
+  input Subscript inSubscript;
+  input tuple<FuncType, FuncType, Argument> inTuple;
+  output Subscript outSubscript;
+  output tuple<FuncType, FuncType, Argument> outTuple;
+
+  partial function FuncType
+    input tuple<Exp, Argument> inTuple;
+    output tuple<Exp, Argument> outTuple;
+  end FuncType;
+
+  replaceable type Argument subtypeof Any;
+algorithm
+  (outSubscript, outTuple) := match(inSubscript, inTuple)
+    local
+      Exp sub_exp;
+      tuple<FuncType, FuncType, Argument> tup;
+
+    case (SUBSCRIPT(subScript = sub_exp), tup)
+      equation
+        (sub_exp, tup) = traverseExpBidir(sub_exp, tup);
+      then
+        (SUBSCRIPT(sub_exp), tup);
+
+    case (NOSUB(), _) then (inSubscript, inTuple);
+  end match;
+end traverseExpBidirSubs;
+
+public function traverseExpBidirElseIf
+  "Helper function to traverseExpBidirSubExps. Traverses the expressions in an
+  elseif branch."
+  input tuple<Exp, Exp> inElseIf;
+  input tuple<FuncType, FuncType, Argument> inTuple;
+  output tuple<Exp, Exp> outElseIf;
+  output tuple<FuncType, FuncType, Argument> outTuple;
+
+  partial function FuncType
+    input tuple<Exp, Argument> inTuple;
+    output tuple<Exp, Argument> outTuple;
+  end FuncType;
+
+  replaceable type Argument subtypeof Any;
+
+  Exp e1, e2;
+  tuple<FuncType, FuncType, Argument> tup;
+algorithm
+  (e1, e2) := inElseIf;
+  (e1, tup) := traverseExpBidir(e1, inTuple);
+  (e2, outTuple) := traverseExpBidir(e2, tup);
+  outElseIf := (e1, e2);
+end traverseExpBidirElseIf;
+  
+public function traverseExpBidirFunctionArgs
+  "Helper function to traverseExpBidirSubExps. Traverses the expressions in a
+  list of function argument."
+  input FunctionArgs inArgs;
+  input tuple<FuncType, FuncType, Argument> inTuple;
+  output FunctionArgs outArgs;
+  output tuple<FuncType, FuncType, Argument> outTuple;
+
+  partial function FuncType
+    input tuple<Exp, Argument> inTuple;
+    output tuple<Exp, Argument> outTuple;
+  end FuncType;
+
+  replaceable type Argument subtypeof Any;
+algorithm
+  (outArgs, outTuple) := match(inArgs, inTuple)
+    local
+      Exp e;
+      list<Exp> expl;
+      list<NamedArg> named_args;
+      ForIterators iters;
+      tuple<FuncType, FuncType, Argument> tup;
+
+    case (FUNCTIONARGS(args = expl, argNames = named_args), tup)
+      equation
+        (expl, tup) = traverseExpListBidir(expl, tup);
+        (named_args, tup) = Util.listMapAndFold(named_args,
+          traverseExpBidirNamedArg, tup);
+      then
+        (FUNCTIONARGS(expl, named_args), tup);
+
+    case (FOR_ITER_FARG(exp = e, iterators = iters), tup)
+      equation
+        (e, tup) = traverseExpBidir(e, tup);
+        (iters, tup) = Util.listMapAndFold(iters,
+          traverseExpBidirIterator, tup);
+      then
+        (FOR_ITER_FARG(e, iters), tup);
+  end match;
+end traverseExpBidirFunctionArgs;
+  
+public function traverseExpBidirNamedArg
+  "Helper function to traverseExpBidirFunctionArgs. Traverses the expressions in
+  a named function argument."
+  input NamedArg inArg;
+  input tuple<FuncType, FuncType, Argument> inTuple;
+  output NamedArg outArg;
+  output tuple<FuncType, FuncType, Argument> outTuple;
+
+  partial function FuncType
+    input tuple<Exp, Argument> inTuple;
+    output tuple<Exp, Argument> outTuple;
+  end FuncType;
+
+  replaceable type Argument subtypeof Any;
+
+  Ident name;
+  Exp value;
+algorithm
+  NAMEDARG(name, value) := inArg;
+  (value, outTuple) := traverseExpBidir(value, inTuple);
+  outArg := NAMEDARG(name, value);
+end traverseExpBidirNamedArg;  
+
+public function traverseExpBidirIterator
+  "Helper function to traverseExpBidirFunctionArgs. Traverses the expressions in
+  an iterator."
+  input ForIterator inIterator;
+  input tuple<FuncType, FuncType, Argument> inTuple;
+  output ForIterator outIterator;
+  output tuple<FuncType, FuncType, Argument> outTuple;
+
+  partial function FuncType
+    input tuple<Exp, Argument> inTuple;
+    output tuple<Exp, Argument> outTuple;
+  end FuncType;
+
+  replaceable type Argument subtypeof Any;
+
+  Ident name;
+  Option<Exp> value;
+algorithm
+  (name, value) := inIterator;
+  (value, outTuple) := traverseExpOptBidir(value, inTuple);
+  outIterator := (name, value);
+end traverseExpBidirIterator;
 
 public function makeIdentPathFromString ""
 input String s;

@@ -56,6 +56,27 @@ function sample
 external "builtin";
 end sample;
 
+function div
+  input Real x;
+  input Real y;
+  output Real z;
+external "builtin";
+end div;
+
+function mod
+  input Real x;
+  input Real y;
+  output Real z;
+external "builtin";
+end mod;
+
+function rem
+  input Real x;
+  input Real y;
+  output Real z;
+external "builtin";
+end rem;
+
 function ceil
   input Real x;
   output Real y;
@@ -190,6 +211,178 @@ function log10
   output Real y(unit="1");
 external "builtin";
 end log10;
+
+function homotopy
+  input Real actual;
+  input Real simplified;
+  output Real outValue;
+end homotopy;
+
+// Dummy functions that can't be properly defined in Modelica, but used by
+// SCodeFlatten to define which builtin functions exist (SCodeFlatten doesn't
+// care how the functions are defined, only if they exist or not).
+
+function delay
+  external "builtin";
+end delay;
+
+function abs
+  external "builtin";
+end abs;
+
+function min
+  external "builtin";
+end min;
+
+function max
+  external "builtin";
+end max;
+
+function sum
+  external "builtin";
+end sum;
+
+function product
+  external "builtin";
+end product;
+
+function transpose
+  external "builtin";
+end transpose;
+
+function outerProduct
+  external "builtin";
+end outerProduct;
+
+function symmetric
+  external "builtin";
+end symmetric;
+
+function cross
+  external "builtin";
+end cross;
+
+function skew
+  external "builtin";
+end skew;
+
+function smooth
+  external "builtin";
+end smooth;
+
+function diagonal
+  external "builtin";
+end diagonal;
+
+function cardinality
+  external "builtin";
+end cardinality;
+
+function array
+  external "builtin";
+end array;
+
+function zeros
+  external "builtin";
+end zeros;
+
+function ones
+  external "builtin";
+end ones;
+
+function fill
+  external "builtin";
+end fill;
+
+function linspace
+  external "builtin";
+end linspace;
+
+function noEvent
+  external "builtin";
+end noEvent;
+
+function pre
+  external "builtin";
+end pre;
+
+function change
+  external "builtin";
+end change;
+
+function reinit
+  external "builtin";
+end reinit;
+
+function ndims
+  external "builtin";
+end ndims;
+
+function size
+  external "builtin";
+end size;
+
+function scalar
+  external "builtin";
+end scalar;
+
+function vector
+  external "builtin";
+end vector;
+
+function matrix
+  external "builtin";
+end matrix;
+
+function cat
+  external "builtin";
+end cat;
+
+function rooted
+  external "builtin";
+end rooted;
+
+function actualStream
+  external "builtin";
+end actualStream;
+
+function inStream
+  external "builtin";
+end inStream;
+
+encapsulated package Connections
+  function branch
+    external "builtin";
+  end branch;
+
+  function root
+    external "builtin";
+  end root;
+
+  function potentialRoot
+    external "builtin";
+  end potentialRoot;
+
+  function isRoot
+    external "builtin";
+  end isRoot;
+end Connections;
+
+encapsulated package Subtask
+  type SamplingType = enumeration(Disabled, Continuous, Periodic);
+  
+  function decouple
+    external "builtin";
+  end decouple;
+
+  function activated
+    external "builtin";
+  end activated;
+
+  function lastInterval
+    external "builtin";
+  end lastInterval;
+end Subtask;
 
 function print "Not standard Modelica, but very useful for debugging."
   input String str;

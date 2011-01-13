@@ -38,13 +38,6 @@ encapsulated package SCodeFlatten
 
   This module flattens the SCode representation by removing all extends, imports
   and redeclares, and fully qualifying class names.
-    
-  TODO: 
-    * Split SCode.traverseEEquationExps in the same way as traverseStatements
-      and traverseStatementExps so that for-loops in equation can be handled.
-
-    * Handle builtin types and functions.
-    
 "
 
 public import Absyn;
@@ -95,10 +88,21 @@ protected uniontype Item
     SCode.Class cls;
     Env env;
   end CLASS;
+
+  record BUILTIN
+    String name;
+  end BUILTIN;
 end Item;
 
 protected type Env = list<Frame>;
 protected constant Env emptyEnv = {};
+
+protected constant Item BUILTIN_REAL = BUILTIN("Real");
+protected constant Item BUILTIN_INTEGER = BUILTIN("Integer");
+protected constant Item BUILTIN_BOOLEAN = BUILTIN("Boolean");
+protected constant Item BUILTIN_STRING = BUILTIN("String");
+protected constant Item BUILTIN_STATESELECT = BUILTIN("StateSelect");
+protected constant Item BUILTIN_EXTERNALOBJECT = BUILTIN("ExternalObject");
 
 public function flatten
   input SCode.Program inProgram;
@@ -156,19 +160,14 @@ algorithm
 
     case (SCode.PARTS(el, neql, ieql, nal, ial, extdecl, annl, cmt), env)
       equation
-        (ex, cl, im, co, ud) = sortElements(el);
-        // Lookup component types, modifications and conditions.
-        co = Util.listMap1(co, lookupComponent, env);
-        // Lookup base class and modifications in extends clauses.
-        ex = Util.listMap1(ex, lookupExtends, env);
-        // Lookup class definitions.
-        cl = Util.listMap1(cl, lookupClassDefElementNames, env);
+        // Lookup elements.
+        el = Util.listMap1(el, lookupElement, env);
+
         // Lookup equations and algorithm names.
         neql = Util.listMap1(neql, lookupEquation, env);
         ieql = Util.listMap1(ieql, lookupEquation, env);
         nal = Util.listMap1(nal, lookupAlgorithm, env);
         ial = Util.listMap1(ial, lookupAlgorithm, env);
-        el = Util.listFlatten({im, ex, cl, co, ud});
         cdef = SCode.PARTS(el, neql, ieql, nal, ial, extdecl, annl, cmt);
       then
         cdef;
@@ -184,53 +183,27 @@ algorithm
   end match;
 end lookupClassDefNames;
 
-protected function sortElements
-  input list<SCode.Element> inElements;
-  output list<SCode.Element> outExtends;
-  output list<SCode.Element> outClassdefs;
-  output list<SCode.Element> outImports;
-  output list<SCode.Element> outComponents;
-  output list<SCode.Element> outUnitDefinitions;
+protected function lookupElement
+  input SCode.Element inElement;
+  input Env inEnv;
+  output SCode.Element outElement;
 algorithm
-  (outExtends, outClassdefs, outImports, outComponents, outUnitDefinitions) :=
-  match(inElements)
-    local
-      SCode.Element e;
-      list<SCode.Element> rest_el, ex, cl, im, co, ud;
+  outElement := match(inElement, inEnv)
+    // Lookup component types, modifications and conditions.
+    case (SCode.COMPONENT(component = _), _)
+      then lookupComponent(inElement, inEnv);
 
-    case ({}) then ({}, {}, {}, {}, {});
+    // Lookup class definitions.
+    case (SCode.CLASSDEF(name = _), _)
+      then lookupClassDefElementNames(inElement, inEnv);
 
-    case ((e as SCode.EXTENDS(baseClassPath = _)) :: rest_el)
-      equation
-        (ex, cl, im, co, ud) = sortElements(rest_el);
-      then
-        (e :: ex, cl, im, co, ud);
+    // Lookup base class and modifications in extends clauses.
+    case (SCode.EXTENDS(baseClassPath = _), _)
+      then lookupExtends(inElement, inEnv);
 
-    case ((e as SCode.CLASSDEF(name = _)) :: rest_el)
-      equation
-        (ex, cl, im, co, ud) = sortElements(rest_el);
-      then
-        (ex, e :: cl, im, co, ud);
-
-    case ((e as SCode.IMPORT(imp = _)) :: rest_el)
-      equation
-        (ex, cl, im, co, ud) = sortElements(rest_el);
-      then
-        (ex, cl, e :: im, co, ud);
-
-    case ((e as SCode.COMPONENT(component = _)) :: rest_el)
-      equation
-        (ex, cl, im, co, ud) = sortElements(rest_el);
-      then
-        (ex, cl, im, e :: co, ud);
-
-    case ((e as SCode.DEFINEUNIT(name = _)) :: rest_el)
-      equation
-        (ex, cl, im, co, ud) = sortElements(rest_el);
-      then
-        (ex, cl, im, co, e :: ud);
+    else then inElement;
   end match;
-end sortElements;
+end lookupElement;
     
 protected function lookupClassDefElementNames
   input SCode.Element inClassDefElement;
@@ -265,7 +238,7 @@ protected
 algorithm
   SCode.COMPONENT(name, io, fp, rp, pp, attr, type_spec, mod, cmt, cond, 
     info, cc) := inComponent;
-  (_, type_spec) := lookupTypeSpec(type_spec, inEnv);
+  (_, type_spec, _) := lookupTypeSpec(type_spec, inEnv);
   mod := lookupModifier(mod, inEnv);
   cond := lookupOptExp(cond, inEnv);
   outComponent := SCode.COMPONENT(name, io, fp, rp, pp, attr, type_spec, mod,
@@ -277,20 +250,22 @@ protected function lookupTypeSpec
   input Env inEnv;
   output Item outItem;
   output Absyn.TypeSpec outTypeSpec;
+  output Env outTypeEnv;
 algorithm
-  (outItem, outTypeSpec) := matchcontinue(inTypeSpec, inEnv)
+  (outItem, outTypeSpec, outTypeEnv) := matchcontinue(inTypeSpec, inEnv)
     local
       Absyn.Path path;
+      Absyn.Ident name;
       Option<Absyn.ArrayDim> array_dim;
       Item item;
+      Env env;
 
     case (Absyn.TPATH(path, array_dim), _)
       equation
-        (item, path, _) = lookupName(path, inEnv);
+        (item, path, SOME(env)) = lookupName(path, inEnv);
       then
-        (item, Absyn.TPATH(path, array_dim));
+        (item, Absyn.TPATH(path, array_dim), env);
 
-    //else then (inTypeSpec;
   end matchcontinue;
 end lookupTypeSpec;
 
@@ -303,9 +278,11 @@ protected
   SCode.Mod mod;
   Option<SCode.Annotation> ann;
   Absyn.Info info;
+  Env env;
 algorithm
   SCode.EXTENDS(path, mod, ann, info) := inExtends;
-  (_, path, _) := lookupName(path, inEnv);
+  env := removeExtendsFromLocalScope(inEnv);
+  (_, path, _) := lookupName(path, env);
   mod := lookupModifier(mod, inEnv);
   outExtends := SCode.EXTENDS(path, mod, ann, info);
 end lookupExtends;
@@ -318,9 +295,35 @@ protected
   SCode.EEquation equ;
 algorithm
   SCode.EQUATION(equ) := inEquation;
-  (equ, _) := SCode.traverseEEquationExps(equ, (traverseExp, inEnv));
+  (equ, _) := SCode.traverseEEquations(equ, (lookupEEquationTraverser, inEnv));
   outEquation := SCode.EQUATION(equ);
 end lookupEquation;
+
+protected function lookupEEquationTraverser
+  input tuple<SCode.EEquation, Env> inTuple;
+  output tuple<SCode.EEquation, Env> outTuple;
+algorithm
+  outTuple := match(inTuple)
+    local
+      SCode.EEquation equ;
+      SCode.Ident iter_name;
+      Env env;
+
+    case ((equ as SCode.EQ_FOR(index = iter_name), env))
+      equation
+        env = extendEnvWithIterator((iter_name, NONE()), env);
+        (equ, _) = SCode.traverseEEquationExps(equ, (traverseExp, env));
+      then
+        ((equ, env));
+
+    case ((equ, env))
+      equation
+        (equ, _) = SCode.traverseEEquationExps(equ, (traverseExp, env));
+      then
+        ((equ, env));
+
+  end match;
+end lookupEEquationTraverser;
 
 protected function traverseExp
   input tuple<Absyn.Exp, Env> inTuple;
@@ -330,7 +333,9 @@ protected
   Env env;
 algorithm
   (exp, env) := inTuple;
-  outTuple := Absyn.traverseExp(exp, lookupExpTraverser, env);
+  (exp, (_, _, env)) := Absyn.traverseExpBidir(exp,
+    (lookupExpTraverserEnter, lookupExpTraverserExit, env));
+  outTuple := (exp, env);
 end traverseExp;
 
 protected function lookupAlgorithm
@@ -483,7 +488,8 @@ protected function lookupExp
   input Env inEnv;
   output Absyn.Exp outExp;
 algorithm
-  ((outExp, _)) := Absyn.traverseExp(inExp, lookupExpTraverser, inEnv);
+  (outExp, _) := Absyn.traverseExpBidir(inExp, 
+    (lookupExpTraverserEnter, lookupExpTraverserExit, inEnv));
 end lookupExp;
 
 protected function lookupOptExp
@@ -505,7 +511,7 @@ algorithm
   end match;
 end lookupOptExp;
 
-protected function lookupExpTraverser
+protected function lookupExpTraverserEnter
   input tuple<Absyn.Exp, Env> inTuple;
   output tuple<Absyn.Exp, Env> outTuple;
 algorithm
@@ -515,12 +521,20 @@ algorithm
       Absyn.ComponentRef cref;
       Absyn.FunctionArgs args;
       Absyn.Exp exp;
+      Absyn.ForIterators iters;
 
     case ((Absyn.CREF(componentRef = cref), env))
       equation
         cref = lookupComponentRef(cref, env);
       then
         ((Absyn.CREF(cref), env));
+
+    case ((exp as Absyn.CALL(functionArgs = 
+        Absyn.FOR_ITER_FARG(iterators = iters)), env))
+      equation
+        env = extendEnvWithIterators(iters, env);
+      then
+        ((exp, env));
 
     case ((Absyn.CALL(function_ = cref, functionArgs = args), env))
       equation
@@ -538,7 +552,40 @@ algorithm
     
     else then inTuple;
   end matchcontinue;
-end lookupExpTraverser;
+end lookupExpTraverserEnter;
+
+protected function lookupExpTraverserExit
+  input tuple<Absyn.Exp, Env> inTuple;
+  output tuple<Absyn.Exp, Env> outTuple;
+algorithm
+  outTuple := match(inTuple)
+    local
+      Absyn.Exp e;
+      Env env;
+
+    case ((e as Absyn.CALL(functionArgs = Absyn.FOR_ITER_FARG(iterators = _)),
+        FRAME(frameType = IMPLICIT_SCOPE()) :: env))
+      then
+        ((e, env));
+
+    else then inTuple;
+  end match;
+end lookupExpTraverserExit;
+
+
+protected function lookupBuiltinType
+  input Absyn.Ident inName;
+  output Item outItem;
+algorithm
+  outItem := match(inName)
+    case "Real" then BUILTIN_REAL;
+    case "Integer" then BUILTIN_INTEGER;
+    case "Boolean" then BUILTIN_BOOLEAN;
+    case "String" then BUILTIN_STRING;
+    case "StateSelect" then BUILTIN_STATESELECT;
+    case "ExternalObject" then BUILTIN_EXTERNALOBJECT;
+  end match;
+end lookupBuiltinType;
 
 protected function lookupName
   "Looks up a simple or qualified name in the environment and returns the
@@ -559,29 +606,38 @@ algorithm
       Env env;
       Option<Env> item_env;
 
+    case (Absyn.IDENT(name = id), _)
+      equation
+        item = lookupBuiltinType(id);
+      then
+        (item, inName, SOME(emptyEnv));
+
     // Simple name.
     case (Absyn.IDENT(name = id), _)
       equation
-        (item, new_path) = lookupSimpleName(id, inEnv);
-        item_env = getItemEnv(item);
+        (item, new_path, env) = lookupSimpleName(id, inEnv);
       then
-        (item, new_path, item_env);
+        (item, new_path, SOME(env));
 
+    // Simple name.
+    case (Absyn.IDENT(name = id), _)
+      equation
+        print("lookupName failed for " +& id +& "\n");
+        (item, new_path, env) = lookupSimpleName(id, inEnv);
+      then
+        (item, new_path, SOME(env));
+        
     // Qualified name.
     case (Absyn.QUALIFIED(name = id, path = path), _)
       equation
         // Look up the first identifier.
-        (item, new_path) = lookupSimpleName(id, inEnv);
-        item_env = getItemEnv(item);
+        (item, new_path, env) = lookupSimpleName(id, inEnv);
         // Look up the rest of the name in the environment of the first
-        // identifier. The top scope is needed if we have to look up through
-        // imports.
-        env = getEnvTopScope(inEnv);
-        (item, path) = lookupNameInItem(path, item, env);
+        // identifier.
+        (item, path, env) = lookupNameInItem(path, item, env);
         path = Absyn.joinPaths(new_path, path);
-        item_env = mergeItemEnv(item, item_env);
       then
-        (item, path, item_env);
+        (item, path, SOME(env));
 
     else
       equation
@@ -606,6 +662,10 @@ algorithm
     local
       Absyn.ComponentRef cref;
 
+    case (Absyn.CREF_QUAL(name = "StateSelect", subScripts = {}, 
+        componentRef = Absyn.CREF_IDENT(name = _)), _)
+      then inCref;
+
     case (_, _)
       equation
         // First look up all subscripts, because all subscripts should be found
@@ -615,6 +675,19 @@ algorithm
         cref = lookupComponentRef2(cref, inEnv);
       then
         cref;
+
+    case (_, _)
+      equation
+        print("lookupComponentRef failed for " +&
+        Absyn.printComponentRefStr(inCref) +& "\n");
+        // First look up all subscripts, because all subscripts should be found
+        // in the enclosing scope of the component reference.
+        cref = lookupComponentRefSubs(inCref, inEnv);
+        // Then look up the component reference itself.
+        cref = lookupComponentRef2(cref, inEnv);
+      then
+        cref;
+
 
     else
       equation
@@ -643,7 +716,7 @@ algorithm
 
     case (Absyn.CREF_IDENT(name, subs), inEnv)
       equation
-        (_, path) = lookupSimpleName(name, inEnv);
+        (_, path, _) = lookupSimpleName(name, inEnv);
         cref = Absyn.pathToCrefWithSubs(path, subs);
       then
         cref;
@@ -651,15 +724,13 @@ algorithm
     case (Absyn.CREF_QUAL(name, subs, rest_cref), inEnv)
       equation
         // Lookup the first identifier.
-        (item, new_path) = lookupSimpleName(name, inEnv);
+        (item, new_path, env) = lookupSimpleName(name, inEnv);
         cref = Absyn.pathToCrefWithSubs(new_path, subs);
 
         // Lookup the rest of the cref in the enclosing scope of the first
-        // identifier (also pass along the top scope, in case we need to look up
-        // through imports).
-        env = getEnvTopScope(inEnv);
+        // identifier.
         (item, rest_cref) = lookupCrefInItem(rest_cref, item, env);
-        cref = Absyn.joinCrefs(cref, rest_cref); 
+        cref = joinCrefs(cref, rest_cref); 
       then
         cref;
 
@@ -672,6 +743,17 @@ algorithm
   end match;
 end lookupComponentRef2;
 
+protected function joinCrefs
+  input Absyn.ComponentRef inCref1;
+  input Absyn.ComponentRef inCref2;
+  output Absyn.ComponentRef outCref;
+algorithm
+  outCref := match(inCref1, inCref2)
+    case (_, Absyn.CREF_FULLYQUALIFIED(componentRef = _)) then inCref2;
+    else then Absyn.joinCrefs(inCref1, inCref2);
+  end match;
+end joinCrefs;
+    
 protected function lookupComponentRefSubs
   input Absyn.ComponentRef inCref;
   input Env inEnv;
@@ -710,8 +792,10 @@ protected function lookupSimpleName
   input Env inEnv;
   output Item outItem;
   output Absyn.Path outPath;
+  output Env outEnv;
 algorithm
-  (SOME(outItem), SOME(outPath)) := lookupSimpleName2(inName, inEnv);
+  (SOME(outItem), SOME(outPath), SOME(outEnv)) := 
+    lookupSimpleName2(inName, inEnv);
 end lookupSimpleName;
 
 protected function lookupSimpleName2
@@ -719,26 +803,28 @@ protected function lookupSimpleName2
   input Env inEnv;
   output Option<Item> outItem;
   output Option<Absyn.Path> outPath;
+  output Option<Env> outEnv;
 algorithm
-  (outItem, outPath) := matchcontinue(inName, inEnv)
+  (outItem, outPath, outEnv) := matchcontinue(inName, inEnv)
     local
       FrameType frame_type;
       Env rest_env;
       Option<Item> opt_item;
       Option<Absyn.Path> opt_path;
+      Option<Env> opt_env;
 
     case (_, _)
       equation
-        (opt_item, opt_path) = lookupInLocalScope(inName, inEnv);
+        (opt_item, opt_path, opt_env) = lookupInLocalScope(inName, inEnv);
       then
-        (opt_item, opt_path);
+        (opt_item, opt_path, opt_env);
 
     case (_, FRAME(frameType = frame_type) :: rest_env)
       equation
         frameNotEncapsulated(frame_type);
-        (opt_item, opt_path) = lookupSimpleName2(inName, rest_env);
+        (opt_item, opt_path, opt_env) = lookupSimpleName2(inName, rest_env);
       then
-        (opt_item, opt_path);
+        (opt_item, opt_path, opt_env);
 
   end matchcontinue;
 end lookupSimpleName2;
@@ -761,11 +847,12 @@ protected function lookupInLocalScope
   input Env inEnv;
   output Option<Item> outItem;
   output Option<Absyn.Path> outPath;
+  output Option<Env> outEnv;
 algorithm
-  (outItem, outPath) := matchcontinue(inName, inEnv)
+  (outItem, outPath, outEnv) := matchcontinue(inName, inEnv)
     local
       AvlTree cls_and_vars;
-      Env rest_env;
+      Env rest_env, env;
       Item item;
       Option<Item> opt_item;
       Option<Absyn.Path> opt_path;
@@ -773,42 +860,45 @@ algorithm
       FrameType frame_type;
       list<Absyn.Path> exts;
       Absyn.Path path;
+      Option<Env> opt_env;
 
     // Look among the locally declared components.
     case (_, FRAME(clsAndVars = cls_and_vars) :: _)
       equation
         item = avlTreeGet(cls_and_vars, inName);
       then
-        (SOME(item), SOME(Absyn.IDENT(inName)));
+      (SOME(item), SOME(Absyn.IDENT(inName)), SOME(inEnv));
 
     // Look among the inherited components.
     case (_, FRAME(extendsTable = EXTENDS_TABLE(baseClasses = exts)) :: _)
       equation
-        (item, path) = lookupInBaseClasses(inName, exts, inEnv);
+        (item, path, env) = lookupInBaseClasses(inName, exts, inEnv);
       then
-        (SOME(item), SOME(path));
+        (SOME(item), SOME(path), SOME(env));
 
     // Look among the qualified imports.
     case (_, FRAME(importTable = IMPORT_TABLE(qualifiedImports = imps)) :: _)
       equation
-        (opt_item, opt_path) = lookupInQualifiedImports(inName, imps, inEnv);
+        (opt_item, opt_path, opt_env) = 
+          lookupInQualifiedImports(inName, imps, inEnv);
       then
-        (opt_item, opt_path);
+        (opt_item, opt_path, opt_env);
 
     // Look among the unqualified imports.
     case (_, FRAME(importTable = IMPORT_TABLE(unqualifiedImports = imps)) :: _)
       equation
-        (opt_item, opt_path) = lookupInUnqualifiedImports(inName, imps, inEnv);
+        (opt_item, opt_path, opt_env) = 
+          lookupInUnqualifiedImports(inName, imps, inEnv);
       then
-        (opt_item, opt_path);
+        (opt_item, opt_path, opt_env);
 
     // Look in the next scope only if the current scope is an implicit scope
     // created by a for loop.
     case (_, FRAME(frameType = IMPLICIT_SCOPE()) :: rest_env)
       equation
-        (opt_item, opt_path) = lookupInLocalScope(inName, rest_env);
+        (opt_item, opt_path, opt_env) = lookupInLocalScope(inName, rest_env);
       then
-        (opt_item, opt_path);
+        (opt_item, opt_path, opt_env);
 
   end matchcontinue;
 end lookupInLocalScope;
@@ -820,6 +910,7 @@ protected function lookupInBaseClasses
   input Env inEnv;
   output Item outItem;
   output Absyn.Path outPath;
+  output Env outEnv;
 
   Env env;
 algorithm
@@ -827,7 +918,8 @@ algorithm
   // extended classes should not be found by lookup through the extends-clauses
   // (Modelica Specification 3.2, section 5.6.1.).
   env := removeExtendsFromLocalScope(inEnv);
-  (outItem, outPath) := lookupInBaseClasses2(inName, inBaseClasses, env);
+  (outItem, outPath, outEnv) := 
+    lookupInBaseClasses2(inName, inBaseClasses, env);
 end lookupInBaseClasses;
 
 protected function lookupInBaseClasses2
@@ -836,8 +928,9 @@ protected function lookupInBaseClasses2
   input Env inEnv;
   output Item outItem;
   output Absyn.Path outPath;
+  output Env outEnv;
 algorithm
-  (outItem, outPath) := matchcontinue(inName, inBaseClasses, inEnv)
+  (outItem, outPath, outEnv) := matchcontinue(inName, inBaseClasses, inEnv)
     local
       Absyn.Path bc, path;
       list<Absyn.Path> rest_bc;
@@ -848,16 +941,16 @@ algorithm
     case (_, bc :: _, inEnv)
       equation
         (item, _, SOME(env)) = lookupName(bc, inEnv);
-        (item, path) = lookupNameInItem(Absyn.IDENT(inName), item, env);
+        (item, path, env) = lookupNameInItem(Absyn.IDENT(inName), item, env);
       then
-        (item, path);
+        (item, path, env);
 
     // No match, check the rest of the base classes.
     case (_, _ :: rest_bc, _)
       equation
-        (item, path) = lookupInBaseClasses2(inName, rest_bc, inEnv);
+        (item, path, env) = lookupInBaseClasses2(inName, rest_bc, inEnv);
       then
-        (item, path);
+        (item, path, env);
 
   end matchcontinue;
 end lookupInBaseClasses2;
@@ -868,8 +961,9 @@ protected function lookupInQualifiedImports
   input Env inEnv;
   output Option<Item> outItem;
   output Option<Absyn.Path> outPath;
+  output Option<Env> outEnv;
 algorithm
-  (outItem, outPath) := matchcontinue(inName, inImports, inEnv)
+  (outItem, outPath, outEnv) := matchcontinue(inName, inImports, inEnv)
     local
       Absyn.Ident name;
       Absyn.Path path;
@@ -878,22 +972,25 @@ algorithm
       Import imp;
       Option<Item> opt_item;
       Option<Absyn.Path> opt_path;
+      Option<Env> opt_env;
+      Env env;
 
     // No match, search the rest of the list of imports.
     case (_, Absyn.NAMED_IMPORT(name = name) :: rest_imps, _)
       equation
         false = stringEqual(inName, name);
-        (opt_item, opt_path) = lookupInQualifiedImports(inName, rest_imps, inEnv);
+        (opt_item, opt_path, opt_env) = 
+          lookupInQualifiedImports(inName, rest_imps, inEnv);
       then
-        (opt_item, opt_path);
+        (opt_item, opt_path, opt_env);
 
     // Match, look up the fully qualified import path.
     case (_, Absyn.NAMED_IMPORT(name = name, path = path) :: _, _)
       equation
         true = stringEqual(inName, name);
-        (item, path) = lookupFullyQualified(path, inEnv);  
+        (item, path, env) = lookupFullyQualified(path, inEnv);  
       then
-        (SOME(item), SOME(path));
+        (SOME(item), SOME(path), SOME(env));
 
     // Partial match, return NONE(). This is when only part of the import path
     // can be found, in which case we should stop looking further.
@@ -901,7 +998,7 @@ algorithm
       equation
         true = stringEqual(inName, name);
       then
-        (NONE(), NONE());
+        (NONE(), NONE(), NONE());
 
   end matchcontinue;
 end lookupInQualifiedImports;
@@ -912,14 +1009,17 @@ protected function lookupInUnqualifiedImports
   input Env inEnv;
   output Option<Item> outItem;
   output Option<Absyn.Path> outPath;
+  output Option<Env> outEnv;
 algorithm
-  (outItem, outPath) := matchcontinue(inName, inImports, inEnv)
+  (outItem, outPath, outEnv) := matchcontinue(inName, inImports, inEnv)
     local
       Item item;
       Absyn.Path path, path2;
       Option<Item> opt_item;
       Option<Absyn.Path> opt_path;
       list<Import> rest_imps;
+      Env env;
+      Option<Env> opt_env;
 
     // For each unqualified import we have to look up the package the import
     // points to, and then look among the public member of the package for the
@@ -927,21 +1027,21 @@ algorithm
     case (_, Absyn.UNQUAL_IMPORT(path = path) :: _, _)
       equation
         // Look up the import path.
-        (item, path) = lookupFullyQualified(path, inEnv);
+        (item, path, env) = lookupFullyQualified(path, inEnv);
         // Look up the name among the public member of the found package.
-        (item, path2) = lookupNameInItem(Absyn.IDENT(inName), item, emptyEnv);
+        (item, path2, env) = lookupNameInItem(Absyn.IDENT(inName), item, emptyEnv);
         // Combine the paths for the name and the package it was found in.
         path = Absyn.joinPaths(path, path2);
       then
-        (SOME(item), SOME(path));
+        (SOME(item), SOME(path), SOME(env));
 
     // No match, continue with the rest of the imports.
     case (_, _ :: rest_imps, _)
       equation
-        (opt_item, opt_path) = 
+        (opt_item, opt_path, opt_env) = 
           lookupInUnqualifiedImports(inName, rest_imps, inEnv);
       then
-        (opt_item, opt_path);
+        (opt_item, opt_path, opt_env);
   end matchcontinue;
 end lookupInUnqualifiedImports;
 
@@ -950,72 +1050,47 @@ protected function lookupFullyQualified
   input Env inEnv;
   output Item outItem;
   output Absyn.Path outPath;
+  output Env outEnv;
 protected
   Env env;
   Frame top_scope;
   Absyn.Path path, path2;
   Option<Absyn.Path> opt_path;
 algorithm
-  env := listReverse(inEnv);
-  (opt_path, path, top_scope :: _) := descendEnv(inName, env);
-  (outItem, outPath) := lookupNameInPackage(path, {top_scope});
+  env := getEnvTopScope(inEnv);
+  (outItem, outPath, outEnv) := lookupNameInPackage(inName, env);
+  outPath := Absyn.FULLYQUALIFIED(outPath);
 end lookupFullyQualified;
-
-protected function descendEnv
-  input Absyn.Path inName;
-  input Env inEnv;
-  output Option<Absyn.Path> outDescendedPath;
-  output Absyn.Path outRemainingPath;
-  output Env outEnv;
-algorithm
-  (outDescendedPath, outRemainingPath, outEnv) := matchcontinue(inName, inEnv)
-    local
-      Absyn.Ident name1, name2;
-      Option<Absyn.Path> desc_path;
-      Absyn.Path rem_path;
-      Env rest_env;
-
-    case (Absyn.QUALIFIED(name = name1, path = rem_path), 
-        _ :: (rest_env as (FRAME(name = SOME(name2)) :: _)))
-      equation
-        true = stringEqual(name1, name2);
-        (desc_path, rem_path, rest_env) = descendEnv(rem_path, rest_env);
-        desc_path = Absyn.prefixOptPath(name1, desc_path);
-      then
-        (desc_path, rem_path, rest_env);
-
-    else then (NONE(), inName, inEnv);
-  end matchcontinue;
-end descendEnv;
 
 protected function lookupNameInPackage
   input Absyn.Path inName;
   input Env inEnv;
   output Item outItem;
   output Absyn.Path outPath;
+  output Env outEnv;
 algorithm
-  (outItem, outPath) := match(inName, inEnv)
+  (outItem, outPath, outEnv) := match(inName, inEnv)
     local
       Absyn.Ident name;
       Absyn.Path path, new_path;
       AvlTree cls_and_vars;
       Frame top_scope;
-      Env rest_env;
+      Env rest_env, env;
       Item item;
 
     case (Absyn.IDENT(name = name), _)
       equation
-        (SOME(item), SOME(path)) = lookupInLocalScope(name, inEnv);
+        (SOME(item), SOME(path), SOME(env)) = lookupInLocalScope(name, inEnv);
       then
-        (item, path);
+        (item, path, env);
 
     case (Absyn.QUALIFIED(name = name, path = path), top_scope :: _)
       equation
-        (SOME(item), SOME(new_path)) = lookupInLocalScope(name, inEnv); 
-        (item, path) = lookupNameInItem(path, item, {top_scope});
+        (SOME(item), SOME(new_path), SOME(env)) = lookupInLocalScope(name, inEnv); 
+        (item, path, env) = lookupNameInItem(path, item, env);
         path = Absyn.joinPaths(new_path, path);
       then
-        (item, path);
+        (item, path, env);
 
   end match;
 end lookupNameInPackage;
@@ -1034,19 +1109,21 @@ algorithm
       Absyn.ComponentRef cref, cref_rest;
       Item item;
       Frame top_scope;
+      Env env;
      
     case (Absyn.CREF_IDENT(name = name, subscripts = subs), _)
       equation
-        (SOME(item), SOME(new_path)) = lookupInLocalScope(name, inEnv);
+        (SOME(item), SOME(new_path), _) = lookupInLocalScope(name, inEnv);
         cref = Absyn.pathToCrefWithSubs(new_path, subs);
       then
         (item, cref);
 
     case (Absyn.CREF_QUAL(name = name, subScripts = subs, 
-        componentRef = cref_rest), top_scope :: _)
+        componentRef = cref_rest), _)
       equation
-        (SOME(item), SOME(new_path)) = lookupInLocalScope(name, inEnv);
-        (item, cref_rest) = lookupCrefInItem(cref_rest, item, {top_scope});
+        (SOME(item), SOME(new_path), SOME(env)) = 
+          lookupInLocalScope(name, inEnv);
+        (item, cref_rest) = lookupCrefInItem(cref_rest, item, env);
         cref = Absyn.pathToCrefWithSubs(new_path, subs);
         cref = Absyn.joinCrefs(cref, cref_rest);
       then
@@ -1061,29 +1138,30 @@ protected function lookupNameInItem
   input Env inEnv;
   output Item outItem;
   output Absyn.Path outPath;
+  output Env outEnv;
 algorithm
-  (outItem, outPath) := match(inName, inItem, inEnv)
+  (outItem, outPath, outEnv) := match(inName, inItem, inEnv)
     local
       SCode.Element var;
       Item item;
       Absyn.Path path;
       Frame class_env;
-      Env env;
+      Env env, type_env;
       Absyn.TypeSpec type_spec;
 
     case (_, VAR(var = SCode.COMPONENT(typeSpec = type_spec)), _) 
       equation
-        (item, _) = lookupTypeSpec(type_spec, inEnv);
-        (item, path) = lookupNameInItem(inName, item, inEnv);
+        (item, _, type_env) = lookupTypeSpec(type_spec, inEnv);
+        (item, path, env) = lookupNameInItem(inName, item, type_env);
       then
-        (item, path);
+        (item, path, env);
 
     case (_, CLASS(env = {class_env}), _) 
       equation
         env = class_env :: inEnv;
-        (item, path) = lookupNameInPackage(inName, env);
+        (item, path, env) = lookupNameInPackage(inName, env);
       then
-        (item, path);
+        (item, path, env);
 
   end match;
 end lookupNameInItem;
@@ -1100,13 +1178,13 @@ algorithm
       Item item;
       Absyn.ComponentRef cref;
       Frame class_env;
-      Env env;
+      Env env, type_env;
       Absyn.TypeSpec type_spec;
 
     case (_, VAR(var = SCode.COMPONENT(typeSpec = type_spec)), _)
       equation
-        (item, _) = lookupTypeSpec(type_spec, inEnv);
-        (item, cref) = lookupCrefInItem(inCref, item, inEnv);
+        (item, _, type_env) = lookupTypeSpec(type_spec, inEnv);
+        (item, cref) = lookupCrefInItem(inCref, item, type_env);
       then
         (item, cref);
 
@@ -1434,10 +1512,18 @@ algorithm
       list<SCode.Enum> enums;
       Absyn.TypeSpec enum_type;
       Env env;
+      Absyn.Path path;
 
     case (_, SCode.PARTS(elementLst = el), _)
       equation
         env = Util.listFold(el, extendEnvWithElement, inEnv);
+      then
+        env;
+
+    case (_, SCode.DERIVED(typeSpec = Absyn.TPATH(path = path)), _)
+      equation
+        env = extendEnvWithExtends(SCode.EXTENDS(path, SCode.NOMOD(), NONE(),
+          Absyn.dummyInfo), inEnv);
       then
         env;
 
@@ -1484,6 +1570,9 @@ algorithm
         env = extendEnvWithImport(inElement, inEnv);
       then
         env;
+
+    case (SCode.DEFINEUNIT(name = _), _)
+      then inEnv;
 
   end match;
 end extendEnvWithElement;
@@ -1634,13 +1723,6 @@ algorithm
 end getEnvPath;
 
 protected function buildInitialEnv
-  "This might not be needed! It might be a better idea to handle builtin types
-  in a special way so we don't need to search through the whole environment to
-  find them. According to Modelica 3.2 section 4.8: 
-    Redeclaration of any of these types is an error, and the names are reserved
-    such that it is illegal to declare an element with these names.
-  "
-
   output Env outInitialEnv;
 protected
   AvlTree tree;
@@ -1651,22 +1733,21 @@ algorithm
   exts := newExtendsTable();
   imps := newImportTable();
 
-  tree := avlTreeAdd(tree, "Real", CLASS(
-    SCode.CLASS("Real", false, false, SCode.R_CLASS(), 
-    SCode.PARTS({}, {}, {}, {}, {}, NONE(), {}, NONE()),
-    Absyn.dummyInfo), emptyEnv));
-  tree := avlTreeAdd(tree, "Integer", CLASS(
-    SCode.CLASS("Integer", false, false, SCode.R_CLASS(), 
-    SCode.PARTS({}, {}, {}, {}, {}, NONE(), {}, NONE()),
-    Absyn.dummyInfo), emptyEnv));
-  tree := avlTreeAdd(tree, "Boolean", CLASS(
-    SCode.CLASS("Boolean", false, false, SCode.R_CLASS(),
-    SCode.PARTS({}, {}, {}, {}, {}, NONE(), {}, NONE()),
-    Absyn.dummyInfo), emptyEnv));
+  tree := avlTreeAdd(tree, "time", VAR(
+    SCode.COMPONENT("time", Absyn.UNSPECIFIED(), false, false, false,
+    SCode.ATTR({}, false, false, SCode.RO(), SCode.VAR(), Absyn.INPUT()),
+    Absyn.TPATH(Absyn.IDENT("Real"), NONE()), SCode.NOMOD(),
+    NONE(), NONE(), NONE(), NONE())));
+
   tree := avlTreeAdd(tree, "String", CLASS(
-    SCode.CLASS("String", false, false, SCode.R_CLASS(), 
-    SCode.PARTS({}, {}, {}, {}, {}, NONE(), {}, NONE()),
-    Absyn.dummyInfo), emptyEnv));
+    SCode.CLASS("String", false, false, SCode.R_FUNCTION(),
+      SCode.PARTS({}, {}, {}, {}, {}, NONE(), {}, NONE()), Absyn.dummyInfo),
+    emptyEnv));
+
+  tree := avlTreeAdd(tree, "Integer", CLASS(
+    SCode.CLASS("Integer", false, false, SCode.R_FUNCTION(),
+      SCode.PARTS({}, {}, {}, {}, {}, NONE(), {}, NONE()), Absyn.dummyInfo),
+    emptyEnv));
 
   outInitialEnv := {FRAME(NONE(), NORMAL_SCOPE(), tree, exts, imps)};
 end buildInitialEnv;
