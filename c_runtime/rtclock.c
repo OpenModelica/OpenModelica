@@ -30,7 +30,7 @@
 
 #include "rtclock.h"
 #include <assert.h>
-#include <malloc.h>
+#include <stdlib.h>
 
 static long default_rt_clock_ncall[NUM_RT_CLOCKS] = {0};
 static long *rt_clock_ncall = default_rt_clock_ncall;
