@@ -10362,133 +10362,72 @@ algorithm
       list<DAE.Exp> exps;
     
     // return inExp if no vectorization is to be done
-    case(inRef,cache,env,impl,inExp,splicedExpData,doVect as false,_,info) then inExp;
-    
-    case(Absyn.CREF_IDENT(id,assl),cache,env,impl, exp1 as DAE.CREF(DAE.CREF_IDENT(id2,_,essl),ty),Lookup.SPLICEDEXPDATA(SOME(DAE.CREF(cr,_)),idTp),doVect,pre,info)
+    case(_, _, _, _, _, _, false, _, _) then inExp;
+       
+    case(Absyn.CREF_IDENT(subscripts = assl), cache, env, impl,
+        DAE.CREF(componentRef = DAE.CREF_IDENT(ident = id2, subscriptLst = essl)),
+        _, doVect, pre, info)
       equation
-        (_,_,const as DAE.C_VAR()) = elabSubscripts(cache,env,assl,impl,pre,info);
-        exps = makeASUBArrayAdressing2(essl,pre);
-        ty2 = ComponentReference.crefLastType(cr);
-        cref_ = ComponentReference.makeCrefIdent(id2,ty2,{});
-        crefExp = Expression.makeCrefExp(cref_,ty2);
-        exp1 = Expression.makeASUB(crefExp,exps);
-      then
-        exp1;
-    
-    case(Absyn.CREF_IDENT(id,assl),cache,env,impl, exp1 as DAE.CREF(DAE.CREF_IDENT(id2,ty2,essl),ty),_,doVect,pre,info)
-      equation
-        (_,_,const as DAE.C_VAR()) = elabSubscripts(cache,env,assl,impl,pre,info);
-        exps = makeASUBArrayAdressing2( essl,pre);
-        cref_ = ComponentReference.makeCrefIdent(id2,ty2,{});
-        crefExp = Expression.makeCrefExp(cref_,ty);
-        exp1 = Expression.makeASUB(crefExp,exps);
-      then
-        exp1;
-    
-    case(_,_,_,_, (exp1 as DAE.CREF(DAE.CREF_IDENT(id2,_,essl),ty)),Lookup.SPLICEDEXPDATA(SOME(DAE.CREF(cr,_)),idTp),doVect,_,info)
-      equation
-        tty2 = ComponentReference.crefLastType(cr);
-        cref_ = ComponentReference.makeCrefIdent(id2,tty2,essl);
-        exp1 = Expression.makeCrefExp(cref_,ty);
-      then
-        exp1;
-    
-    // Qualified cref, might be a package constant.
-    case(_, _, _, _, DAE.CREF(componentRef = cr, ty = ty), _, _, pre, info)
-      equation
-        (essl as _ :: _) = ComponentReference.crefLastSubs(cr);
-        cr = ComponentReference.crefStripLastSubs(cr);
-        exps = makeASUBArrayAdressing2(essl, pre);
-        crefExp = Expression.crefExp(cr);
+        (_, _, DAE.C_VAR()) = elabSubscripts(cache, env, assl, impl, pre, info);
+        exps = Util.listMap(essl, Expression.subscriptExp);
+        (ty, ty2) = getSplicedCrefTypes(inExp, splicedExpData);
+        cref_ = ComponentReference.makeCrefIdent(id2, ty2, {});
+        crefExp = Expression.makeCrefExp(cref_, ty);
         exp1 = Expression.makeASUB(crefExp, exps);
       then
         exp1;
     
-    // adrpo: return exp1 here instead of exp2
-    //        returning exp2 generates x.y[{1,2,3}] for  x.Real[3].y;
-    case(_,_,_,_, (exp1 as DAE.CREF(DAE.CREF_QUAL(id2,_,essl,crr2),ty)), Lookup.SPLICEDEXPDATA(SOME(exp2 as DAE.CREF(cr,_)),idTp),doVect,_,info)
+    case(_, _, _, _, DAE.CREF(componentRef = 
+          DAE.CREF_IDENT(ident = id2, subscriptLst = essl), ty = ty),
+        Lookup.SPLICEDEXPDATA(splicedExp = SOME(DAE.CREF(componentRef = cr))),
+        _, _, _)
       equation
-        //Debug.fprint("failtrace", "-Qualified asubs not yet implemented\n");
-      then
-        exp1; // adrpo why it was returning here exp2???
-    
-    case(_,_,_,_,exp1,_,doVect,_,info)
+        tty2 = ComponentReference.crefLastType(cr);
+        cref_ = ComponentReference.makeCrefIdent(id2, tty2, essl);
+        exp1 = Expression.makeCrefExp(cref_, ty);
       then
         exp1;
+    
+    // Qualified cref, might be a package constant.
+    case(_, _, _, _, DAE.CREF(componentRef = cr, ty = ty), _, _, _, _)
+      equation
+        (essl as _ :: _) = ComponentReference.crefLastSubs(cr);
+        cr = ComponentReference.crefStripLastSubs(cr);
+        exps = Util.listMap(essl, Expression.subscriptExp);
+        crefExp = Expression.crefExp(cr);
+        exp1 = Expression.makeASUB(crefExp, exps);
+      then
+        exp1;
+      
+    else then inExp;
   end matchcontinue;
 end makeASUBArrayAdressing;
 
-protected function makeASUBArrayAdressing2
-"function makeASUBArrayAdressing
-  This function is supposed to remake
-  CREFS with a variable subscript to a ASUB"
-  input list<DAE.Subscript> inSSL;
-  input Prefix.Prefix inPrefix;
-  output list<DAE.Exp> outExp;
+protected function getSplicedCrefTypes
+  "This function was refactored from makeASUBArrayAdressing to avoid
+  elabSubscripts being called twice. If you understand what this function does,
+  please update this comment."
+  input DAE.Exp inCref;
+  input Lookup.SplicedExpData inSplicedExpData;
+  output DAE.ExpType outType1;
+  output DAE.ExpType outType2;
 algorithm
-  outExp := matchcontinue (inSSL,inPrefix)
+  (outType1, outType2) := match(inCref, inSplicedExpData)
     local
-      DAE.Exp exp1,b1,b2,crefExp;
-      list<DAE.Exp> expl1,expl2;
-      String id2,str,pre_str;
-      DAE.Subscript sub;
-      DAE.ExpType ety1,ty2;
-      list<DAE.Subscript> subs,subs2;
-      DAE.Operator op;
-      Prefix.Prefix pre;
-      DAE.ComponentRef cref_;
+      DAE.ExpType ty1, ty2;
+      DAE.ComponentRef cr;
 
-    // empty list
-    case( {},_ ) then {};
-    
-    // an integer index in the list head
-    case( (sub as DAE.INDEX(exp = exp1 as DAE.ICONST(_)))::subs,pre )
+    case (_, Lookup.SPLICEDEXPDATA(splicedExp = SOME(DAE.CREF(componentRef = cr))))
       equation
-        expl1 = makeASUBArrayAdressing2(subs,pre);
+        ty2 = ComponentReference.crefLastType(cr);
       then
-        (exp1::expl1);
-    
-    // a component reference in the list head
-    case( (sub as DAE.INDEX(exp1 as DAE.CREF(DAE.CREF_IDENT(id2,_,{}),ety1)))::subs ,pre )
-      equation
-        expl1 = makeASUBArrayAdressing2(subs,pre);
-      then
-        (exp1::expl1);
-    
-    // ??!! what's up with this?? TODO! FIXME!
-    case( (sub as DAE.INDEX(DAE.CREF(DAE.CREF_IDENT(id2,ty2,subs2),ety1)))::subs ,pre)
-      equation
-        expl1 = makeASUBArrayAdressing2(subs,pre);
-        expl2 = makeASUBArrayAdressing2(subs2,pre);
-        cref_ = ComponentReference.makeCrefIdent(id2,ty2,{});
-        crefExp = Expression.makeCrefExp(cref_,ety1);
-        exp1 = Expression.makeASUB(crefExp,expl2);
-      then
-        (exp1::expl1);
-    
-    // an binary expression as index
-    case( (sub as DAE.INDEX(DAE.BINARY(b1,op,b2)))::subs ,pre)
-      equation
-        // TODO! make some check here
-        expl2 = makeASUBArrayAdressing2(subs,pre);
-        exp1 = DAE.BINARY(b1,op,b2);
-      then
-        exp1 :: expl2;
-    
-    // time to fail
-    case( ((sub as DAE.INDEX(exp1)))::subs ,pre)
-      equation
-        // enabled with +d=failtrace
-        true = RTOpts.debugFlag("failtrace");
-        str = ExpressionDump.printExpStr(exp1);
-        pre_str = PrefixUtil.printPrefixStr3(pre);
-        Debug.traceln("- Static.makeASUBArrayAdressing2 failed for INDEX(" +& str +& ") in component " +& pre_str);
-        // adrpo: don't do any further as we anyway fail!
-        // expl2 = makeASUBArrayAdressing2(subs);
-      then
-        fail();
-  end matchcontinue;
-end makeASUBArrayAdressing2;
+        (ty2, ty2);
+
+    case (DAE.CREF(componentRef = DAE.CREF_IDENT(identType = ty2), ty = ty1), _)
+      then (ty1, ty2);
+
+  end match;
+end getSplicedCrefTypes;
 
 /* This function will be usefull when we implement Qualified subs such as:
 a.b[1,j] or a[1].b[1,j]. As of now, a[j].b[i] will not be possible since
