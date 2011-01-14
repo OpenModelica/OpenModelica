@@ -173,6 +173,13 @@ algorithm
           false,matrix);
       then
         e;
+
+    // MetaModelica builtin operators are calls, which means this has to be done
+    // before the generic CALL case     
+    case e
+      equation
+        true = RTOpts.acceptMetaModelicaGrammar();
+      then simplifyMetaModelica(e);
     
     // simplify argument expression of functions
     case DAE.CALL( path, exps_1, b,b2, t,b3)
@@ -307,6 +314,24 @@ algorithm
       then
         exp1;
     
+    // anything else
+    case e
+      then
+        e;
+  end matchcontinue;
+end simplify1;
+
+protected function simplifyMetaModelica "simplifies MetaModelica expressions"
+  input DAE.Exp exp;
+  output DAE.Exp outExp;
+algorithm
+  outExp := matchcontinue exp
+    local
+      DAE.Exp e,e1,e2,e1_1,e2_1;
+      Boolean b1,b2;
+      DAE.ExpType tp;
+      Absyn.Path path;
+      list<DAE.Exp> el;
     case DAE.MATCHEXPRESSION(inputs={e}, localDecls={}, cases={
         DAE.CASE(patterns={DAE.PAT_CONSTANT(exp=DAE.BCONST(b1))},localDecls={},body={},result=SOME(e1)),
         DAE.CASE(patterns={DAE.PAT_CONSTANT(exp=DAE.BCONST(b2))},localDecls={},body={},result=SOME(e2))
@@ -328,12 +353,39 @@ algorithm
         e = DAE.IFEXP(e, e1_1, e2_1);
       then simplify(e);
 
-    // anything else
-    case e
-      then
-        e;
+    case DAE.CALL(path=Absyn.IDENT("listAppend"),expLst={e1,e2})
+      equation
+        DAE.LIST(el) = simplify(e1);
+        el = listReverse(el);
+        e2_1 = simplify(e2);
+        e = Util.listFold(el, Expression.makeCons, e2_1);
+      then simplify(e);
+
+    case DAE.CALL(path=Absyn.IDENT("listAppend"),expLst={e1,e2},ty=tp)
+      equation
+        DAE.LIST(valList={}) = simplify(e2);
+      then simplify(e1);
+
+    case DAE.CALL(path=path as Absyn.IDENT("listReverse"),expLst={e1},ty=tp)
+      equation
+        DAE.LIST(el) = simplify(e1);
+        el = Util.listMap(el,simplify);
+        el = listReverse(el);
+        e1_1 = DAE.LIST(el);
+      then e1_1;
+
+    case DAE.LIST(el)
+      equation
+        el = Util.listMap(el,simplify);
+      then DAE.LIST(el);
+
+    case DAE.CONS(e1,e2)
+      equation
+        DAE.LIST(el) = simplify(e2);
+        e1_1 = simplify(e1);
+      then DAE.LIST(e1_1::el);
   end matchcontinue;
-end simplify1;
+end simplifyMetaModelica;
 
 protected function simplifyCast "help function to simplify1"
   input DAE.Exp exp;
@@ -473,7 +525,7 @@ algorithm
     case ({},acc)
       equation
         acc = listReverse(acc);
-        exp = DAE.LIST(DAE.ET_STRING(),acc);
+        exp = DAE.LIST(acc);
       then Static.makeBuiltinCall("stringAppendList",{exp},DAE.ET_STRING());
     case (DAE.SCONST(s1)::rest,DAE.SCONST(s2)::acc)
       equation

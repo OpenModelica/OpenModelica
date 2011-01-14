@@ -4213,8 +4213,7 @@ algorithm
         true = RTOpts.acceptMetaModelicaGrammar();
         t2 = boxIfUnboxedType(t2);
         (elist_1, _) = matchTypeList(elist, t1, t2, printFailtrace);
-        t = elabType(t2);
-        e_1 = DAE.LIST(t,elist_1);
+        e_1 = DAE.LIST(elist_1);
         t2 = (DAE.T_LIST(t2),NONE());
       then (e_1, t2);
     case (e as DAE.ARRAY(DAE.ET_ARRAY(ty = t),_,elist),(DAE.T_ARRAY(arrayType=t1),_),(DAE.T_BOXED(t2),p2),printFailtrace)
@@ -4224,8 +4223,7 @@ algorithm
         (elist_1, t2) = listMatchSuperType(elist_1, tys1, printFailtrace);
         t2 = boxIfUnboxedType(t2);
         (elist_1, _) = matchTypeList(elist_1, t1, t2, printFailtrace);
-        t = elabType(t2);
-        e_1 = DAE.LIST(t,elist_1);
+        e_1 = DAE.LIST(elist_1);
         t2 = (DAE.T_LIST(t2),NONE());
       then (e_1, t2);
     case (e as DAE.MATRIX(DAE.ET_ARRAY(ty = t),_,melist),t1,t2,printFailtrace)
@@ -4233,16 +4231,14 @@ algorithm
         true = RTOpts.acceptMetaModelicaGrammar();
         elist_big = Util.listListMap(melist, Util.tuple21);
         (elist,ty2) = typeConvertMatrixToList(elist_big,t1,t2,printFailtrace);
-        t = elabType(ty2);
-        e_1 = DAE.LIST(t,elist);
+        e_1 = DAE.LIST(elist);
       then (e_1,ty2);
-    case (e as DAE.LIST(_,elist),(DAE.T_LIST(t1),_),(DAE.T_LIST(t2),p2),printFailtrace)
+    case (e as DAE.LIST(elist),(DAE.T_LIST(t1),_),(DAE.T_LIST(t2),p2),printFailtrace)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         (elist_1, tys1) = matchTypeList(elist, t1, t2, printFailtrace);
         (elist_1, t2) = listMatchSuperType(elist_1, tys1, printFailtrace);
-        t = elabType(t2);
-        e_1 = DAE.LIST(t,elist_1);
+        e_1 = DAE.LIST(elist_1);
         t2 = (DAE.T_LIST(t2),NONE());
       then (e_1, t2);
 
@@ -4533,8 +4529,7 @@ protected
   DAE.ExpType t;
 algorithm
   (elist_1,t1::_) := matchTypeList(elist, inType, outType, printFailtrace);
-  t := elabType(t1);
-  out := DAE.LIST(t, elist_1);
+  out := DAE.LIST(elist_1);
   t1 := (DAE.T_LIST(t1),NONE());
 end typeConvertMatrixRowToList;
 

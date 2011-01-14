@@ -993,7 +993,7 @@ algorithm
         (explist,_) = Types.matchTypeTuple(explist, typelist, Util.listMap(typelist, Types.boxIfUnboxedType), true);
       then DAE.META_TUPLE(explist);
 
-    case (Values.LIST({})) then DAE.LIST(DAE.ET_OTHER(),{});
+    case (Values.LIST({})) then DAE.LIST({});
 
     case (Values.LIST(vallist))
       equation
@@ -1001,8 +1001,7 @@ algorithm
         typelist = Util.listMap(vallist, Types.typeOfValue);
         vt = Types.boxIfUnboxedType(Util.listReduce(typelist,Types.superType));
         explist = Types.matchTypes(explist, typelist, vt, true);
-        t = Types.elabType(vt);
-      then DAE.LIST(t, explist);
+      then DAE.LIST(explist);
 
       /* MetaRecord */
     case (Values.RECORD(path,vallist,namelst,ix))

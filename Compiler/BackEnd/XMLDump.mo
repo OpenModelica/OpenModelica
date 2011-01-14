@@ -1842,12 +1842,12 @@ algorithm
         // NOT PART OF THE MODELICA LANGUAGE
       then  ();
       // MetaModelica list
-    case (DAE.LIST(_,es))
+    case (DAE.LIST(valList=es))
       equation
         // NOT PART OF THE MODELICA LANGUAGE
       then ();
         // MetaModelica list cons
-    case (DAE.CONS(_,e1,e2))
+    case (DAE.CONS(car=e1,cdr=e2))
       equation
         // NOT PART OF THE MODELICA LANGUAGE
       then ();

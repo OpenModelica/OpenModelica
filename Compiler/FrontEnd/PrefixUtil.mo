@@ -816,16 +816,16 @@ algorithm
         (cache,DAE.REDUCTION(fcn,exp_1,id,iterexp_1));
 
     // MetaModelica extension. KS
-    case (cache,env,ih,DAE.LIST(t,es),p)
+    case (cache,env,ih,DAE.LIST(es),p)
       equation
         (cache,es_1) = prefixExpList(cache, env, ih, es, p);
-      then (cache,DAE.LIST(t,es_1));
+      then (cache,DAE.LIST(es_1));
 
-    case (cache,env,ih,DAE.CONS(t,e1,e2),p)
+    case (cache,env,ih,DAE.CONS(e1,e2),p)
       equation
         (cache,e1) = prefixExp(cache, env, ih, e1, p);
         (cache,e2) = prefixExp(cache, env, ih, e2, p);
-      then (cache,DAE.CONS(t,e1,e2));
+      then (cache,DAE.CONS(e1,e2));
 
     case (cache,env,ih,DAE.META_TUPLE(es),p)
       equation

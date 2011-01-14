@@ -64,29 +64,6 @@ algorithm
   end matchcontinue;
 end isList;
 
-public function simplifyListExp "function: simplifyListExp
-Author: KS
-Used by Static.elabExp to simplify some cons/list expressions.
-"
-  input DAE.ExpType t;
-  input DAE.Exp e1;
-  input DAE.Exp e2;
-  output DAE.Exp expOut;
-algorithm
-  expOut :=
-  matchcontinue (t,e1,e2)
-    local
-      DAE.Exp localE1,localE2;
-      DAE.ExpType tLocal;
-      list<DAE.Exp> expList,expList2;
-    case (tLocal,localE1,DAE.LIST(_,expList))
-      equation
-        expList2 = localE1::expList;
-      then DAE.LIST(tLocal,expList2);
-    case (tLocal,localE1,localE2) then DAE.CONS(tLocal,localE1,localE2);
-  end matchcontinue;
-end simplifyListExp;
-
 public function transformArrayNodesToListNodes "function: transformArrayNodesToListNodes"
   input list<Absyn.Exp> inList;
   input list<Absyn.Exp> accList;
@@ -97,21 +74,21 @@ algorithm
     local
       list<Absyn.Exp> localAccList,es,restList;
       Absyn.Exp firstExp;
-    case ({},localAccList) then localAccList;
+    case ({},localAccList) then listReverse(localAccList);
     case (Absyn.ARRAY({}) :: restList,localAccList)
       equation
-        localAccList = listAppend(localAccList,{Absyn.LIST({})});
+        localAccList = Absyn.LIST({})::localAccList;
         localAccList = transformArrayNodesToListNodes(restList,localAccList);
       then localAccList;
     case (Absyn.ARRAY(es) :: restList,localAccList)
       equation
         es = transformArrayNodesToListNodes(es,{});
-        localAccList = listAppend(localAccList,{Absyn.LIST(es)});
+        localAccList = Absyn.LIST(es)::localAccList;
         localAccList = transformArrayNodesToListNodes(restList,localAccList);
       then localAccList;
     case (firstExp :: restList,localAccList)
       equation
-        localAccList = listAppend(localAccList,{firstExp});
+        localAccList = firstExp::localAccList;
         localAccList = transformArrayNodesToListNodes(restList,localAccList);
       then localAccList;
   end matchcontinue;

@@ -1111,12 +1111,10 @@ uniontype Exp "Expressions
 
   /* Part of MetaModelica extension. KS */
   record LIST "MetaModelica list"
-    ExpType ty;
     list<Exp> valList;
   end LIST;
 
   record CONS "MetaModelica list cons"
-    ExpType ty;
     Exp car;
     Exp cdr;
   end CONS;

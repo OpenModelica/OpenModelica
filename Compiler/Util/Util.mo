@@ -4819,8 +4819,7 @@ public function tuple21 "function: tuple21
   replaceable type Type_a subtypeof Any;
   replaceable type Type_b subtypeof Any;
 algorithm
-  outTypeA:=
-  match (inTplTypeATypeB)
+  outTypeA:=match (inTplTypeATypeB)
     local Type_a a;
     case ((a,_)) then a;
   end match;

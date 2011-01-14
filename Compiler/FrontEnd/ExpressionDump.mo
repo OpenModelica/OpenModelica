@@ -842,7 +842,7 @@ algorithm
         s;
 
     // MetaModelica list
-    case (DAE.LIST(_,es), _, _, _)        
+    case (DAE.LIST(valList=es), _, _, _)        
       equation
         s = Util.stringDelimitList(Util.listMap3(es,printExp2Str, stringDelimiter, opcreffunc, opcallfunc),",");
         s = stringAppendList({"List(", s, ")"});
@@ -850,7 +850,7 @@ algorithm
         s;
 
     // MetaModelica list cons
-    case (DAE.CONS(_,e1,e2), _, _, _)
+    case (DAE.CONS(car=e1,cdr=e2), _, _, _)
       equation
         s1 = printExp2Str(e1, stringDelimiter, opcreffunc, opcallfunc);
         s2 = printExp2Str(e2, stringDelimiter, opcreffunc, opcallfunc);
@@ -2046,7 +2046,7 @@ algorithm
         ();
 
     // MetaModelica list
-    case (DAE.LIST(_,es),_)
+    case (DAE.LIST(valList=es),_)
       equation
         Print.printBuf("List(");
         printList(es, printExp, ",");
@@ -2077,7 +2077,7 @@ algorithm
         ();
 
     // MetaModelica list cons
-    case (DAE.CONS(_,e1,e2),_)
+    case (DAE.CONS(car=e1,cdr=e2),_)
       equation
         Print.printBuf("listCons(");
         printExp(e1);

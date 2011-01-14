@@ -1509,8 +1509,8 @@ algorithm
     case (DAE.SIZE(_,SOME(_))) then DAE.ET_ARRAY(DAE.ET_INT(),{DAE.DIM_UNKNOWN()});
     
     // MetaModelica extension
-    case (DAE.LIST(ty = tp)) then DAE.ET_METATYPE(); // was tp, but the type of a LIST is a LIST
-    case (DAE.CONS(ty = tp)) then DAE.ET_METATYPE(); // CONS creates lists
+    case (DAE.LIST(valList = _)) then DAE.ET_METATYPE();
+    case (DAE.CONS(car = _)) then DAE.ET_METATYPE();
     case (DAE.META_TUPLE(_)) then DAE.ET_METATYPE();
     case (DAE.TUPLE(_)) then DAE.ET_METATYPE();
     case (DAE.META_OPTION(_))then DAE.ET_METATYPE();
@@ -3685,18 +3685,18 @@ algorithm
         ((e,ext_arg_3));
     
     // MetaModelica list
-    case ((e as DAE.CONS(tp,e1,e2)),rel,ext_arg)
+    case ((e as DAE.CONS(e1,e2)),rel,ext_arg)
       equation
         ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
         ((e2_1,ext_arg_2)) = traverseExp(e2, rel, ext_arg_1);
-        ((e,ext_arg_3)) = rel((DAE.CONS(tp,e1_1,e2_1),ext_arg_2));
+        ((e,ext_arg_3)) = rel((DAE.CONS(e1_1,e2_1),ext_arg_2));
       then
         ((e,ext_arg_3));
 
-    case ((e as DAE.LIST(tp,expl)),rel,ext_arg)
+    case ((e as DAE.LIST(expl)),rel,ext_arg)
       equation
         ((expl_1,ext_arg_1)) = traverseExpList(expl, rel, ext_arg);
-        ((e,ext_arg_2)) = rel((DAE.LIST(tp,expl_1),ext_arg_1));
+        ((e,ext_arg_2)) = rel((DAE.LIST(expl_1),ext_arg_1));
       then
         ((e,ext_arg_2));
 
@@ -4095,18 +4095,18 @@ algorithm
         ((DAE.REDUCTION(path,e1_1,id,e2_1),ext_arg_2));
     
     // MetaModelica list
-    case ((e as DAE.CONS(tp,e1,e2)),rel,ext_arg)
+    case ((e as DAE.CONS(e1,e2)),rel,ext_arg)
       equation
         ((e1_1,ext_arg_1)) = traverseExpTopDown(e1, rel, ext_arg);
         ((e2_1,ext_arg_2)) = traverseExpTopDown(e2, rel, ext_arg_1);
       then
-        ((DAE.CONS(tp,e1_1,e2_1),ext_arg_2));
+        ((DAE.CONS(e1_1,e2_1),ext_arg_2));
     
-    case ((e as DAE.LIST(tp,expl)),rel,ext_arg)
+    case ((e as DAE.LIST(expl)),rel,ext_arg)
       equation
         ((expl_1,ext_arg_1)) = traverseExpListTopDown(expl, rel, ext_arg);
       then
-        ((DAE.LIST(tp,expl_1),ext_arg_1));
+        ((DAE.LIST(expl_1),ext_arg_1));
     
     case ((e as DAE.META_TUPLE(expl)),rel,ext_arg)
       equation
@@ -6208,6 +6208,14 @@ algorithm
     else false;
   end match;
 end isBuiltinFunctionReference;
+
+public function makeCons "DAE.CONS"
+  input DAE.Exp car;
+  input DAE.Exp cdr;
+  output DAE.Exp exp;
+algorithm
+  exp := DAE.CONS(car,cdr);
+end makeCons;
 
 end Expression;
 

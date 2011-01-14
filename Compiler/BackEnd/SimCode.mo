@@ -1166,24 +1166,23 @@ algorithm
     local
       list<DAE.Exp> es;
       DAE.ExpType ty;
-    case DAE.LIST(ty,es as _::_) then listToCons2(ty,es);
+    case DAE.LIST(es as _::_) then listToCons2(es);
   end match;
 end listToCons;
 
 protected function listToCons2
 "Converts a DAE.LIST to a chain of DAE.CONS"
-  input DAE.ExpType ty;
   input list<DAE.Exp> es;
   output DAE.Exp o;
 algorithm
-  o := match (ty,es)
+  o := match es
     local
       DAE.Exp car,cdr;
-    case (ty,{}) then DAE.LIST(ty,{});
-    case (ty,car::es)
+    case ({}) then DAE.LIST({});
+    case (car::es)
       equation
-        cdr = listToCons2(ty,es);
-      then DAE.CONS(ty,car,cdr);
+        cdr = listToCons2(es);
+      then DAE.CONS(car,cdr);
   end match;
 end listToCons2;
 

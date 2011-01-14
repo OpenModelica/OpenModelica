@@ -517,11 +517,7 @@ algorithm
        (e1_1,_) = Types.matchType(e1_1, t1, t, true);
        (e2_1,_) = Types.matchType(e2_1, (DAE.T_LIST(t2),NONE()), (DAE.T_LIST(t),NONE()), true);
 
-       // If the second expression is a DAE.LIST, then we can create a DAE.LIST
-       // instead of DAE.CONS
-       tp_1 = Types.elabType(t);
-       exp = MetaUtil.simplifyListExp(tp_1,e1_1,e2_1);
-
+       exp = DAE.CONS(e1_1,e2_1);
        c = Types.constAnd(c1,c2);
        prop = DAE.PROP((DAE.T_LIST(t),NONE()),c);
      then (cache,exp,prop,st);
@@ -543,7 +539,7 @@ algorithm
     equation
       t = DAE.T_LIST_DEFAULT;
       prop = DAE.PROP(t,DAE.C_CONST());
-    then (cache,DAE.LIST(DAE.ET_METATYPE(),{}),prop,st);
+    then (cache,DAE.LIST({}),prop,st);
 
   case (cache,env,Absyn.LIST(es),impl,st,doVect,pre,info,_)
     equation
@@ -554,8 +550,7 @@ algorithm
       t = Types.boxIfUnboxedType(Util.listReduce(typeList, Types.superType));
       es_1 = Types.matchTypes(es_1, typeList, t, true);
       prop = DAE.PROP((DAE.T_LIST(t),NONE()),c);
-      tp_1 = Types.elabType(t);
-    then (cache,DAE.LIST(tp_1,es_1),prop,st_2);
+    then (cache,DAE.LIST(es_1),prop,st_2);
        // ----------------------------------
 
       // Pattern matching has its own module that handles match expressions
@@ -674,16 +669,14 @@ algorithm
       list<DAE.Properties> propList;
       list<DAE.Type> typeList;
       DAE.ExpType t2;
-    case (cache,env,{},prop,_,st,_,_,info)
-      then (cache,DAE.LIST(DAE.ET_OTHER(),{}),prop,st);
+    case (cache,env,{},prop,_,st,_,_,info) then (cache,DAE.LIST({}),prop,st);
     case (cache,env,expList,prop as DAE.PROP((DAE.T_LIST(t),_),c),impl,st,doVect,pre,info)
       equation
         (cache,expExpList,propList,st) = elabExpList(cache,env,expList,impl,st,doVect,pre,info);
         typeList = Util.listMap(propList, Types.getPropType);
         (expExpList, t) = Types.listMatchSuperType(expExpList, typeList, true);
-        t2 = Types.elabType(t);
       then
-        (cache,DAE.LIST(t2,expExpList),DAE.PROP((DAE.T_LIST(t),NONE()),c),st);
+        (cache,DAE.LIST(expExpList),DAE.PROP((DAE.T_LIST(t),NONE()),c),st);
     case (_,_,_,_,_,_,_,_,_)
       equation
         Debug.fprintln("failtrace", "- elabListExp failed, non-matching args in list constructor?");

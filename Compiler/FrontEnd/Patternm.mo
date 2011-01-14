@@ -222,7 +222,7 @@ algorithm
     case (cache,env,Absyn.ARRAY({}),ty,info)
       equation
         et = validPatternType(DAE.T_LIST_DEFAULT,ty,lhs,info);
-      then (cache,DAE.PAT_CONSTANT(et,DAE.LIST(DAE.ET_OTHER(),{})));
+      then (cache,DAE.PAT_CONSTANT(et,DAE.LIST({})));
 
     case (cache,env,Absyn.ARRAY(exps),ty,info)
       equation

@@ -695,11 +695,9 @@ package DAE
     end REDUCTION;
     record END end END;
     record LIST
-      ExpType ty;
       list<Exp> valList;
     end LIST;
     record CONS
-      ExpType ty;
       Exp car;
       Exp cdr;
     end CONS;
