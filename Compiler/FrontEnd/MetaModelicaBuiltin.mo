@@ -648,6 +648,7 @@ function debug_print
   input String str;
   input TypeA a;
   replaceable type TypeA subtypeof Any;
+  annotation(__OpenModelica_Impure = true);
 external "builtin";
 end debug_print;
 

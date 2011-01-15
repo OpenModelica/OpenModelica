@@ -108,6 +108,10 @@ uniontype Value
   record NORETCALL
   end NORETCALL;
   
+  record META_BOX
+    Value value;
+  end META_BOX;
+  
   record META_FAIL
     "If the result of constant evaluation of a MetaModelica function call is fail(),
     we need to propagate this value in order to avoid running the code over and over again.

@@ -1105,8 +1105,8 @@ algorithm
     case "listLength" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalListLength;
     case "listAppend" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalListAppend;
     case "listReverse" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalListReverse;
+    case "listHead" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalListFirst;
     case "listRest" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalListRest;
-    case "listFirst" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalListFirst;
 
     //case "semiLinear" then cevalBuiltinSemiLinear;
     //case "delay" then cevalBuiltinDelay;
@@ -2930,7 +2930,7 @@ algorithm
       equation
         (cache,Values.LIST(v::_),st) = ceval(cache,env, exp1, impl, st,NONE(), msg);
       then
-        (cache,v,st);
+        (cache,Values.META_BOX(v),st);
   end match;
 end cevalListFirst;
 

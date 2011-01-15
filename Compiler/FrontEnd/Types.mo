@@ -1300,6 +1300,10 @@ algorithm
         ts = Util.listMap(ts, boxIfUnboxedType);
       then
         ((DAE.T_METATUPLE(ts),NONE()));
+    case Values.META_BOX(v)
+      equation
+        tp = typeOfValue(v);
+      then boxIfUnboxedType(tp);
     case (v)
       equation
         str = "- Types.typeOfValue failed: " +& ValuesUtil.valString(v);

@@ -1013,7 +1013,12 @@ algorithm
       then DAE.METARECORDCALL(path,explist,namelst,ix);
 
     case (Values.META_FAIL())
-      then DAE.CALL(Absyn.IDENT("fail"),{},false,false,DAE.ET_OTHER(),DAE.NO_INLINE());
+      then DAE.CALL(Absyn.IDENT("fail"),{},false,true,DAE.ET_OTHER(),DAE.NO_INLINE());
+
+    case (Values.META_BOX(v))
+      equation
+        e = valueExp(v);
+      then DAE.BOX(e);
 
     case (v)
       equation
@@ -1993,6 +1998,14 @@ algorithm
     case ((Values.OPTION(NONE())))
       equation
         Print.printBuf("NONE()");
+      then
+        ();
+
+    case ((Values.META_BOX(r)))
+      equation
+        Print.printBuf("#(");
+        valString2(r);
+        Print.printBuf(")");
       then
         ();
 

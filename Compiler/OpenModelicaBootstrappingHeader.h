@@ -214,6 +214,21 @@ extern struct record_description Values_Value_NORETCALL__desc;
 static const MMC_DEFSTRUCTLIT(Values__NORETCALL__struct,1,16) {&Values_Value_NORETCALL__desc}};
 static void *Values__NORETCALL = MMC_REFSTRUCTLIT(Values__NORETCALL__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
+#ifndef Values_Value_META__BOX__desc_added
+#define Values_Value_META__BOX__desc_added
+const char* Values_Value_META__BOX__desc__fields[1] = {"value"};
+struct record_description Values_Value_META__BOX__desc = {
+  "Values_Value_META__BOX",
+  "Values.Value.META_BOX",
+  Values_Value_META__BOX__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description Values_Value_META__BOX__desc;
+#endif
+#define Values__META_5fBOX_3dBOX1 17
+#define Values__META_5fBOX(value) (mmc_mk_box2(17,&Values_Value_META__BOX__desc,value))
+#ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Values_Value_META__FAIL__desc_added
 #define Values_Value_META__FAIL__desc_added
 const char* Values_Value_META__FAIL__desc__fields[0] = {};
@@ -226,8 +241,8 @@ struct record_description Values_Value_META__FAIL__desc = {
 #else /* Only use the file as a header */
 extern struct record_description Values_Value_META__FAIL__desc;
 #endif
-#define Values__META_5fFAIL_3dBOX0 17
-static const MMC_DEFSTRUCTLIT(Values__META_5fFAIL__struct,1,17) {&Values_Value_META__FAIL__desc}};
+#define Values__META_5fFAIL_3dBOX0 18
+static const MMC_DEFSTRUCTLIT(Values__META_5fFAIL__struct,1,18) {&Values_Value_META__FAIL__desc}};
 static void *Values__META_5fFAIL = MMC_REFSTRUCTLIT(Values__META_5fFAIL__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Values_IntRealOp_MULOP__desc_added

@@ -328,10 +328,13 @@ algorithm
   outExp := matchcontinue exp
     local
       DAE.Exp e,e1,e2,e1_1,e2_1;
-      Boolean b1,b2;
+      Boolean b,b1,b2;
       DAE.ExpType tp;
       Absyn.Path path;
       list<DAE.Exp> el;
+      Integer i;
+      Real r;
+      String s;
     case DAE.MATCHEXPRESSION(inputs={e}, localDecls={}, cases={
         DAE.CASE(patterns={DAE.PAT_CONSTANT(exp=DAE.BCONST(b1))},localDecls={},body={},result=SOME(e1)),
         DAE.CASE(patterns={DAE.PAT_CONSTANT(exp=DAE.BCONST(b2))},localDecls={},body={},result=SOME(e2))
@@ -366,6 +369,24 @@ algorithm
         DAE.LIST(valList={}) = simplify(e2);
       then simplify(e1);
 
+    case DAE.CALL(path=path as Absyn.IDENT("intString"),expLst={e1},ty=tp)
+      equation
+        DAE.ICONST(i) = simplify(e1);
+        s = intString(i);
+      then DAE.SCONST(s);
+
+    case DAE.CALL(path=path as Absyn.IDENT("realString"),expLst={e1},ty=tp)
+      equation
+        DAE.RCONST(r) = simplify(e1);
+        s = realString(r);
+      then DAE.SCONST(s);
+
+    case DAE.CALL(path=path as Absyn.IDENT("boolString"),expLst={e1},ty=tp)
+      equation
+        DAE.BCONST(b) = simplify(e1);
+        s = boolString(b);
+      then DAE.SCONST(s);
+
     case DAE.CALL(path=path as Absyn.IDENT("listReverse"),expLst={e1},ty=tp)
       equation
         DAE.LIST(el) = simplify(e1);
@@ -373,6 +394,12 @@ algorithm
         el = listReverse(el);
         e1_1 = DAE.LIST(el);
       then e1_1;
+
+    case DAE.CALL(path=path as Absyn.IDENT("listLength"),expLst={e1},ty=tp)
+      equation
+        DAE.LIST(el) = simplify(e1);
+        i = listLength(el);
+      then DAE.ICONST(i);
 
     case DAE.LIST(el)
       equation
@@ -384,6 +411,17 @@ algorithm
         DAE.LIST(el) = simplify(e2);
         e1_1 = simplify(e1);
       then DAE.LIST(e1_1::el);
+
+    case DAE.CONS(e1,e2)
+      equation
+        e1_1 = simplify(e1);
+        e2_1 = simplify(e2);
+      then DAE.CONS(e1_1,e2_1);
+
+    case DAE.UNBOX(exp=e1)
+      equation
+        DAE.BOX(e1_1) = simplify(e1);
+      then e1_1;
   end matchcontinue;
 end simplifyMetaModelica;
 

@@ -8330,7 +8330,7 @@ algorithm
         (isBuiltin,fn_1) = isBuiltinFunc(fn_1,functype);
         builtin = valueEq(DAE.FUNCTION_BUILTIN(),isBuiltin);
         const = Util.listFold(constlist, Types.constAnd, DAE.C_CONST());
-        const = Util.if_(RTOpts.debugFlag("rml") or (not isPure), DAE.C_VAR(), const) "in RML no function needs to be ceval'ed; this speeds up compilation significantly when bootstrapping";
+        const = Util.if_((RTOpts.debugFlag("rml") and not builtin) or (not isPure), DAE.C_VAR(), const) "in RML no function needs to be ceval'ed; this speeds up compilation significantly when bootstrapping";
         (cache,const) = determineConstSpecialFunc(cache,env,const,fn);
         tyconst = elabConsts(restype, const);
         prop = getProperties(restype, tyconst);
