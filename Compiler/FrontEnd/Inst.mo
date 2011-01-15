@@ -1028,6 +1028,11 @@ algorithm
       then
         fail();
 
+    case (cache,env,ih,{(c as SCode.CLASS(name = "OpenModelica"))}) /* Ignore ModelicaBuiltin.mo */
+      equation
+        Error.addMessage(Error.NO_CLASSES_LOADED, {});
+      then fail();
+
     case (cache,env,ih,{(c as SCode.CLASS(name = n, classDef = cdef))})
       equation
         Debug.fcall("execstat",print, "*** Inst -> enter at time: " +& realString(clock()) +& "\n" );
