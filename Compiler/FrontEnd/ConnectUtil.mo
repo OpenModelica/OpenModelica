@@ -1816,7 +1816,16 @@ protected function setsEqual
   input Connect.Set inSet2;
   output Boolean equalSets;
 algorithm
-  equalSets := matchcontinue(inSet1,inSet2)
+  equalSets := setsEqual2(referenceEq(inSet1,inSet2),inSet1,inSet2);
+end setsEqual;
+
+protected function setsEqual2
+  input Boolean refEqual;
+  input Connect.Set inSet1;
+  input Connect.Set inSet2;
+  output Boolean equalSets;
+algorithm
+  equalSets := match (refEqual,inSet1,inSet2)
     local
       DAE.ComponentRef cr1,cr2;
       list<Connect.EquSetElement> equRest1,equRest2;
@@ -1824,49 +1833,38 @@ algorithm
       list<Connect.StreamSetElement> streamRest1,streamRest2;
       Connect.Face face1,face2;
 
-    // pointer equality testing first.
-    case (inSet1, inSet2)
-      equation
-        true = referenceEq(inSet1, inSet2);         
-      then true;
-
+    case (true,_,_) then true;
     // deal with empty case
-    case (Connect.EQU({}), Connect.EQU({})) then true;
-    case (Connect.FLOW({}), Connect.FLOW({})) then true;
-    case (Connect.STREAM({}), Connect.STREAM({})) then true;      
+    case (_,Connect.EQU({}), Connect.EQU({})) then true;
+    case (_,Connect.FLOW({}), Connect.FLOW({})) then true;
+    case (_,Connect.STREAM({}), Connect.STREAM({})) then true;      
 
     // deal with non empty Connect.EQU
-    case (Connect.EQU((cr1,face1,_)::equRest1), 
-          Connect.EQU((cr2,face2,_)::equRest2))
+    case (_,Connect.EQU((cr1,face1,_)::equRest1),Connect.EQU((cr2,face2,_)::equRest2))
       equation
-        true = faceEqual(face1, face2);
-        true = ComponentReference.crefEqualNoStringCompare(cr1, cr2);
-        true = setsEqual(Connect.EQU(equRest1),Connect.EQU(equRest2));
-      then
-        true;
+        equalSets = faceEqual(face1, face2);
+        equalSets = Debug.bcallret2(equalSets, ComponentReference.crefEqualNoStringCompare, cr1, cr2, false);
+        equalSets = Debug.bcallret3(equalSets, setsEqual2, false, Connect.EQU(equRest1), Connect.EQU(equRest2), false);
+      then equalSets;
 
     // deal with non empty Connect.FLOW
-    case (Connect.FLOW((cr1,face1,_)::flowRest1), 
-          Connect.FLOW((cr2,face2,_)::flowRest2))
+    case (_,Connect.FLOW((cr1,face1,_)::flowRest1),Connect.FLOW((cr2,face2,_)::flowRest2))
       equation
-        true = faceEqual(face1, face2);
-        true = ComponentReference.crefEqualNoStringCompare(cr1, cr2);
-        true = setsEqual(Connect.FLOW(flowRest1),Connect.FLOW(flowRest2));
-      then
-        true;
+        equalSets = faceEqual(face1, face2);
+        equalSets = Debug.bcallret2(equalSets, ComponentReference.crefEqualNoStringCompare, cr1, cr2, false);
+        equalSets = Debug.bcallret3(equalSets, setsEqual2, false, Connect.FLOW(flowRest1),Connect.FLOW(flowRest2), false);
+      then equalSets;
 
     // deal with non empty Connect.STREAM
-    case (Connect.STREAM((cr1,_,face1,_)::streamRest1), 
-          Connect.STREAM((cr2,_,face2,_)::streamRest2))
+    case (_,Connect.STREAM((cr1,_,face1,_)::streamRest1),Connect.STREAM((cr2,_,face2,_)::streamRest2))
       equation
-        true = faceEqual(face1, face2);
-        true = ComponentReference.crefEqualNoStringCompare(cr1, cr2);
-        true = setsEqual(Connect.STREAM(streamRest1),Connect.STREAM(streamRest2));
-      then
-        true;        
-    case (_, _) then false;
-  end matchcontinue;
-end setsEqual;
+        equalSets = faceEqual(face1, face2);
+        equalSets = Debug.bcallret2(equalSets, ComponentReference.crefEqualNoStringCompare, cr1, cr2, false);
+        equalSets = Debug.bcallret3(equalSets, setsEqual2, false, Connect.STREAM(streamRest1),Connect.STREAM(streamRest2), false);
+      then equalSets;
+    else false;
+  end match;
+end setsEqual2;
 
 //- Merging
 

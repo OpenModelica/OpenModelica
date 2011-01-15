@@ -740,7 +740,7 @@ public function crefPrefixOf
   input DAE.ComponentRef fullCref;
   output Boolean outBoolean;
 algorithm
-  outBoolean := matchcontinue (prefixCref,fullCref)
+  outBoolean := match (prefixCref,fullCref)
     local
       DAE.ComponentRef cr1,cr2;
       Boolean res;
@@ -754,9 +754,9 @@ algorithm
     case (DAE.CREF_QUAL(ident = id1, subscriptLst = ss1,componentRef = cr1),
           DAE.CREF_QUAL(ident = id2, subscriptLst = ss2,componentRef = cr2))
       equation
-        true = stringEq(id1, id2);
-        true = Expression.subscriptEqual(ss1, ss2);
-        res = crefPrefixOf(cr1, cr2);
+        res = stringEq(id1, id2);
+        res = Debug.bcallret2(res, Expression.subscriptEqual, ss1, ss2, false);
+        res = Debug.bcallret2(res, crefPrefixOf, cr1, cr2, false);
       then
         res;
     
@@ -764,17 +764,13 @@ algorithm
     //                    even if the first one DOESN'T HAVE SUBSCRIPTS!
     case (DAE.CREF_IDENT(ident = id1,subscriptLst = {}),
           DAE.CREF_QUAL(ident = id2,subscriptLst = ss2))
-      equation
-        true = stringEq(id1, id2);
-      then
-        true;
+      then stringEq(id1, id2);
     
     // first is an ID, second is qualified, see if one is prefix of the other
     case (DAE.CREF_IDENT(ident = id1,subscriptLst = ss1),
           DAE.CREF_QUAL(ident = id2,subscriptLst = ss2))
       equation
-        true = stringEq(id1, id2);
-        res = Expression.subscriptEqual(ss1, ss2);
+        res = Debug.bcallret2(stringEq(id1, id2), Expression.subscriptEqual, ss1, ss2, false);
       then
         res;
         
@@ -782,18 +778,14 @@ algorithm
     //                    even if the first one DOESN'T HAVE SUBSCRIPTS!
     case (DAE.CREF_IDENT(ident = id1,subscriptLst = {}),
           DAE.CREF_IDENT(ident = id2,subscriptLst = ss2))
-      equation
-        true = stringEq(id1, id2);
-      then
-        true;
+      then stringEq(id1, id2);
     
     case (DAE.CREF_IDENT(ident = id1,subscriptLst = ss1),
           DAE.CREF_IDENT(ident = id2,subscriptLst = ss2))
       equation
-        true = stringEq(id1, id2);
-        res = Expression.subscriptEqual(ss1, ss2);
+        res = Debug.bcallret2(stringEq(id1, id2), Expression.subscriptEqual, ss1, ss2, false);
       then
-        res;    
+        res;
     
     /* adrpo: 2010-10-07. already handled by the cases above!
                           they might be equal, a.b.c is a prefix of a.b.c
@@ -808,7 +800,7 @@ algorithm
       equation
         // print("Expression.crefPrefixOf: " +& printComponentRefStr(cr1) +& " NOT PREFIX OF " +& printComponentRefStr(cr2) +& "\n");
       then false;
-  end matchcontinue;
+  end match;
 end crefPrefixOf;
 
 public function crefNotPrefixOf "negation of crefPrefixOf"
@@ -945,42 +937,50 @@ public function crefEqualNoStringCompare
   IMPORTANT! do not use this function if you have
   stringified components, meaning this function will
   return false for: cref1: QUAL(x, IDENT(x)) != cref2: IDENT(x.y)"
+  input DAE.ComponentRef cr1;
+  input DAE.ComponentRef cr2;
+  output Boolean res;
+algorithm
+  res := crefEqualNoStringCompare2(referenceEq(cr1,cr2),cr1,cr2);
+end crefEqualNoStringCompare;
+
+protected function crefEqualNoStringCompare2
+"function: crefEqualNoStringCompare
+  Returns true if two component references are equal!
+  IMPORTANT! do not use this function if you have
+  stringified components, meaning this function will
+  return false for: cref1: QUAL(x, IDENT(x)) != cref2: IDENT(x.y)"
+  input Boolean refEq;
   input DAE.ComponentRef inComponentRef1;
   input DAE.ComponentRef inComponentRef2;
-  output Boolean outBoolean;
+  output Boolean res;
 algorithm
-  outBoolean := matchcontinue (inComponentRef1,inComponentRef2)
+  res := match (refEq,inComponentRef1,inComponentRef2)
     local
       DAE.Ident n1,n2;
       list<DAE.Subscript> idx1,idx2;
       DAE.ComponentRef cr1,cr2;
 
     // check for pointer equality first, if they point to the same thing, they are equal
-    case (inComponentRef1,inComponentRef2)
-      equation
-        true = referenceEq(inComponentRef1,inComponentRef2);
-      then
-        true;
+    case (true,_,_) then true;
 
     // simple identifiers
-    case (DAE.CREF_IDENT(ident = n1,subscriptLst = idx1),DAE.CREF_IDENT(ident = n2,subscriptLst = idx2))
+    case (_,DAE.CREF_IDENT(ident = n1,subscriptLst = idx1),DAE.CREF_IDENT(ident = n2,subscriptLst = idx2))
       equation
-        true = stringEq(n1, n2);
-        true = Expression.subscriptEqual(idx1, idx2);
-      then
-        true;
+        res = stringEq(n1, n2);
+        res = Debug.bcallret2(res, Expression.subscriptEqual, idx1, idx2, false);
+      then res;
     // qualified crefs
-    case (DAE.CREF_QUAL(ident = n1,subscriptLst = idx1,componentRef = cr1),DAE.CREF_QUAL(ident = n2,subscriptLst = idx2,componentRef = cr2))
+    case (_,DAE.CREF_QUAL(ident = n1,subscriptLst = idx1,componentRef = cr1),DAE.CREF_QUAL(ident = n2,subscriptLst = idx2,componentRef = cr2))
       equation
-        true = stringEq(n1, n2);
-        true = crefEqualNoStringCompare(cr1, cr2);
-        true = Expression.subscriptEqual(idx1, idx2);
-      then
-        true;
+        res = stringEq(n1, n2);
+        res = Debug.bcallret3(res, crefEqualNoStringCompare2, referenceEq(cr1,cr2), cr1, cr2, false);
+        res = Debug.bcallret2(res, Expression.subscriptEqual, idx1, idx2, false);
+      then res;
     // the crefs are not equal!
-    case (_,_) then false;
-  end matchcontinue;
-end crefEqualNoStringCompare;
+    else false;
+  end match;
+end crefEqualNoStringCompare2;
 
 public function crefEqualReturn
 "function: crefEqualReturn
