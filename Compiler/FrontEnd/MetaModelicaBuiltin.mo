@@ -464,6 +464,14 @@ function stringHashDjb2
 external "builtin";
 end stringHashDjb2;
 
+function stringHashDjb2Mod "Does hashing+modulo without intermediate results.
+If you have intermediate results you need to use absolute values, etc. It's a pain."
+  input String str;
+  input Integer mod;
+  output Integer hash;
+external "builtin";
+end stringHashDjb2Mod;
+
 function stringHashSdbm
   input String str;
   output Integer hash;

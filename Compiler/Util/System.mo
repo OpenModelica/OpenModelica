@@ -714,4 +714,12 @@ literal in C. For example unescapedStringLength('\"')=1, unescapedStringLength('
   external "C" length=SystemImpl__unescapedStringLength(unescapedString) annotation(Library = "omcruntime");
 end unescapedStringLength;
 
+public function stringHashDjb2Mod
+  "Roughly the same as intMod(stringHashDjb2(str),mod); but works even when the size of an RML integer differs from OMC"
+  input String str;
+  input Integer mod;
+  output Integer hash;
+  external "builtin";
+end stringHashDjb2Mod;
+
 end System;

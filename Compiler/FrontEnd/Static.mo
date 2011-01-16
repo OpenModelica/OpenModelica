@@ -6258,7 +6258,6 @@ algorithm
     case "Integer" then elabBuiltinIntegerEnum;
     case "inStream" then elabBuiltinInStream;
     case "actualStream" then elabBuiltinActualStream;
-      
     case "substring" then elabBuiltinSubString;
   end match;
 end elabBuiltinHandler;

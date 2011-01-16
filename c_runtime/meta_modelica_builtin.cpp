@@ -135,7 +135,7 @@ static inline unsigned long sdbm_hash(const unsigned char* str)
 }
 
 /* adrpo: really bad hash :) */
-stringInt_rettype stringHash(metamodelica_string_const s)
+stringHash_rettype stringHash(metamodelica_string_const s)
 {
   const char* str = MMC_STRINGDATA(s);
   long res = 0, i=0;
@@ -144,7 +144,7 @@ stringInt_rettype stringHash(metamodelica_string_const s)
 }
 
 /* adrpo: see the comment above about djb2 hash */
-stringInt_rettype stringHashDjb2(metamodelica_string_const s)
+stringHashDjb2_rettype stringHashDjb2(metamodelica_string_const s)
 {
   const char* str = MMC_STRINGDATA(s);
   long res = djb2_hash((const unsigned char*)str);
@@ -153,8 +153,18 @@ stringInt_rettype stringHashDjb2(metamodelica_string_const s)
   return res;
 }
 
+/* adrpo: see the comment above about djb2 hash */
+stringHashDjb2Mod_rettype stringHashDjb2Mod(metamodelica_string_const s, modelica_integer mod)
+{
+  const char* str = MMC_STRINGDATA(s);
+  long res = djb2_hash((const unsigned char*)str) % (unsigned modelica_integer) mod;
+  res = abs(res);
+  // fprintf(stderr, "stringHashDjb2Mod %s %ld-> %ld %ld %ld\n", str, mod, res, mmc_mk_icon(res), mmc_unbox_integer(mmc_mk_icon(res)));
+  return res;
+}
+
 /* adrpo: see the comment above about sdbm hash */
-stringInt_rettype stringHashSdbm(metamodelica_string_const s)
+stringHashSdbm_rettype stringHashSdbm(metamodelica_string_const s)
 {
   const char* str = MMC_STRINGDATA(s);
   long res = sdbm_hash((const unsigned char*)str);

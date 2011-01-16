@@ -63,6 +63,7 @@ intStringChar_rettype intStringChar(modelica_integer);
 typedef modelica_integer stringInt_rettype;
 typedef modelica_integer stringHash_rettype;
 typedef modelica_integer stringHashDjb2_rettype;
+typedef modelica_integer stringHashDjb2Mod_rettype;
 typedef modelica_integer stringHashSdbm_rettype;
 typedef modelica_metatype stringListStringChar_rettype;
 typedef metamodelica_string stringAppendList_rettype;
@@ -81,7 +82,11 @@ stringGetStringChar_rettype stringGetStringChar(metamodelica_string,modelica_int
 stringUpdateStringChar_rettype stringUpdateStringChar(metamodelica_string, metamodelica_string, modelica_integer);
 stringHash_rettype stringHash(metamodelica_string_const);
 stringHashDjb2_rettype stringHashDjb2(metamodelica_string_const);
+stringHashDjb2Mod_rettype stringHashDjb2Mod(metamodelica_string_const,modelica_integer);
 stringHashSdbm_rettype stringHashSdbm(metamodelica_string_const);
+
+#define System_stringHashDjb2Mod_rettype stringHashDjb2Mod_rettype
+#define System_stringHashDjb2Mod stringHashDjb2Mod
 
 modelica_metatype boxptr_stringEq(modelica_metatype a, modelica_metatype b);
 #define boxptr_stringEqual boxptr_stringEq

@@ -68,6 +68,7 @@ protected import MetaUtil;
 protected import RTOpts;
 protected import SCodeUtil;
 protected import Static;
+protected import System;
 protected import Util;
 
 protected function generatePositionalArgs "function: generatePositionalArgs
@@ -639,19 +640,18 @@ algorithm
       Integer ix;
       String str;
       // Always jump to the last pattern as a default case? Seems reasonable, but requires knowledge about the other patterns...
-      /* Disable strings...
     case ({},ixs,DAE.ET_STRING())
       equation
         // Should probably start at realCeil(log2(listLength(ixs))), but we don't have log2 in RML :)
+        true = listLength(ixs)>7; // hashing has a considerable overhead, only convert to switch if it is worth it
         ix = findMinMod(ixs,1);
       then (DAE.ET_STRING(),ix);
     case (DAE.PAT_CONSTANT(exp=DAE.SCONST(str))::pats,ixs,_)
       equation
-        ix = stringHashDjb2(str);
+        ix = System.stringHashDjb2Mod(str,65536);
         false = listMember(ix,ixs);
         (ty,extraarg) = findPatternToConvertToSwitch2(pats,ix::ixs,DAE.ET_STRING());
       then (ty,extraarg);
-      */
     case ({},_,DAE.ET_METATYPE()) then (ty,0);
     case (DAE.PAT_CALL(index=ix)::pats,ixs,_)
       equation

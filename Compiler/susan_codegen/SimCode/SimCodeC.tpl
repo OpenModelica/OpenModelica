@@ -5531,7 +5531,7 @@ case exp as MATCHEXPRESSION(__) then
     ""; empty)
   let ix = match exp.matchType
     case MATCH(switch=SOME((switchIndex,ET_STRING(__),div))) then
-      'modelica_mod_integer(stringHashDjb2(<%prefix%>_in<%switchIndex%>),<%div%>)'
+      'stringHashDjb2Mod(<%prefix%>_in<%switchIndex%>,<%div%>)'
     case MATCH(switch=SOME((switchIndex,ET_METATYPE(__),_))) then
       'valueConstructor(<%prefix%>_in<%switchIndex%>)'
     else tempDecl('int', &varDeclsInner)
@@ -5602,7 +5602,7 @@ template switchIndex(Pattern pattern, Integer extraArg)
 ::=
   match pattern
     case PAT_CALL(__) then 'case <%getValueCtor(index)%>'
-    case PAT_CONSTANT(exp=e as SCONST(__)) then 'case <%intMod(stringHashDjb2(e.string),extraArg)%>'
+    case PAT_CONSTANT(exp=e as SCONST(__)) then 'case <%stringHashDjb2Mod(e.string,extraArg)%> /* <%e.string%> */'
     else 'default'
 end switchIndex;
 

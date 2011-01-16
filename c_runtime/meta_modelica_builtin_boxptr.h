@@ -56,5 +56,6 @@ boxptr_unOp(boxptr_realString,(void*),mmc_unbox_real,realString)
 
 #undef boxptr_unOp
 #undef boxptr_binOp
+#undef boxptr_binFn
 
 #endif

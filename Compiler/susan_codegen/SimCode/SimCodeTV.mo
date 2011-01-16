@@ -21,17 +21,6 @@ package builtin
     output Integer c;
   end intAdd;
   
-  function intMod
-    input Integer a;
-    input Integer b;
-    output Integer c;
-  end intMod;
-  
-  function stringHashDjb2
-    input String str;
-    output Integer hash;
-  end stringHashDjb2;
-  
 end builtin;
 
 
@@ -527,6 +516,12 @@ package System
     output Integer result;
   end unescapedStringLength;
 
+  function stringHashDjb2Mod
+    input String str;
+    input Integer mod;
+    output Integer hash;
+  end stringHashDjb2Mod;
+  
 end System;
 
 

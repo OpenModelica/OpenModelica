@@ -1939,3 +1939,10 @@ RML_BEGIN_LABEL(System__unescapedStringLength)
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
+
+RML_BEGIN_LABEL(System__stringHashDjb2Mod)
+{
+  rmlA0 = mk_icon(stringHashDjb2Mod(rmlA0,RML_UNTAGFIXNUM(rmlA1)));
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
