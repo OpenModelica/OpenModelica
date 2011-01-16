@@ -545,6 +545,7 @@ algorithm
       String str;
       DAE.Exp exp;
       HashTableStringToPath.HashTable ht;
+      DAE.MatchType elabMatchTy;
     case (cache,env,Absyn.MATCHEXP(matchTy=matchTy,inputExp=inExp,localDecls=decls,cases=cases),impl,st,performVectorization,pre,info,numError)
       equation
         (cache,SOME((env,DAE.DAE(matchDecls)))) = addLocalDecls(cache,env,decls,Env.matchScopeName,impl,info);
@@ -559,11 +560,12 @@ algorithm
         // Do DCE before converting mc to m
         matchTy = optimizeContinueToMatch(matchTy,elabCases,info);
         elabCases = optimizeContinueJumps(matchTy, elabCases);
-        ht = getUsedLocalCrefs(RTOpts.debugFlag("patternmSkipFilterUnusedAsBindings"),DAE.MATCHEXPRESSION(matchTy,elabExps,matchDecls,elabCases,et));
+        ht = getUsedLocalCrefs(RTOpts.debugFlag("patternmSkipFilterUnusedAsBindings"),DAE.MATCHEXPRESSION(DAE.MATCHCONTINUE(),elabExps,matchDecls,elabCases,et));
         (matchDecls,ht) = filterUnusedDecls(matchDecls,ht,{},HashTableStringToPath.emptyHashTable());
         elabCases = filterUnusedAsBindings(elabCases,ht);
         (elabExps,elabCases) = filterUnusedPatterns(elabExps,elabCases) "filterUnusedPatterns() Then again to filter out the last parts.";
-        exp = DAE.MATCHEXPRESSION(matchTy,elabExps,matchDecls,elabCases,et);
+        elabMatchTy = optimizeMatchToSwitch(matchTy,elabCases,info);
+        exp = DAE.MATCHEXPRESSION(elabMatchTy,elabExps,matchDecls,elabCases,et);
       then (cache,exp,prop,st);
     else
       equation
@@ -573,6 +575,111 @@ algorithm
       then fail();
   end matchcontinue;
 end elabMatchExpression;
+
+protected function optimizeMatchToSwitch
+  "match str case 'str1' ... case 'str2' case 'str3' => switch hash(str)...
+  match ut case UT1 ... case UT2 ... case UT3 => switch valueConstructor(ut)...
+  Works if all values are unique. Also works if there is one 'default' case at the end of the list.
+  
+  NOT YET WORKING CODE! Code generation does not know about this.
+  We need DAE.MATCH/CONTINUE/SWITCH instead of Absyn.MATCH/CONTINUE
+  "
+  input Absyn.MatchType matchTy;
+  input list<DAE.MatchCase> cases;
+  input Absyn.Info info;
+  output DAE.MatchType outType;
+algorithm
+  outType := matchcontinue (matchTy,cases,info)
+    local
+      tuple<Integer,DAE.ExpType,Integer> tpl;
+      list<list<DAE.Pattern>> patternMatrix;
+      String str;
+    case (Absyn.MATCHCONTINUE(),_,_) then DAE.MATCHCONTINUE();
+    case (_,cases,_)
+      equation
+        true = listLength(cases) > 2;
+        patternMatrix = Util.transposeList(Util.listMap(cases,getCasePatterns));
+        tpl = findPatternToConvertToSwitch(patternMatrix,0,info);
+        Error.assertionOrAddSourceMessage(not RTOpts.debugFlag("patternmAllInfo"),Error.MATCH_TO_SWITCH_OPTIMIZATION, {}, info);
+      then DAE.MATCH(SOME(tpl));
+    else DAE.MATCH(NONE());
+  end matchcontinue;
+end optimizeMatchToSwitch;
+
+protected function findPatternToConvertToSwitch
+  input list<list<DAE.Pattern>> patternMatrix;
+  input Integer index;
+  input Absyn.Info info;
+  output tuple<Integer,DAE.ExpType,Integer> tpl;
+algorithm
+  tpl := matchcontinue  (patternMatrix,index,info)
+    local
+      list<DAE.Pattern> pats;
+      String str;
+      DAE.ExpType ty;
+      Integer extraarg;
+    case (pats::patternMatrix,index,info)
+      equation
+        (ty,extraarg) = findPatternToConvertToSwitch2(pats, {}, DAE.ET_OTHER());
+      then ((index,ty,extraarg));
+    case (_::patternMatrix,index,info)
+      then findPatternToConvertToSwitch(patternMatrix,index+1,info);
+  end matchcontinue;
+end findPatternToConvertToSwitch;
+
+protected function findPatternToConvertToSwitch2
+  input list<DAE.Pattern> pats;
+  input list<Integer> ixs;
+  input DAE.ExpType ty;
+  output DAE.ExpType outTy;
+  output Integer extraarg;
+algorithm
+  (outTy,extraarg) := match (pats,ixs,ty)
+    local
+      Integer ix;
+      String str;
+      // Always jump to the last pattern as a default case? Seems reasonable, but requires knowledge about the other patterns...
+      /* Disable strings...
+    case ({},ixs,DAE.ET_STRING())
+      equation
+        // Should probably start at realCeil(log2(listLength(ixs))), but we don't have log2 in RML :)
+        ix = findMinMod(ixs,1);
+      then (DAE.ET_STRING(),ix);
+    case (DAE.PAT_CONSTANT(exp=DAE.SCONST(str))::pats,ixs,_)
+      equation
+        ix = stringHashDjb2(str);
+        false = listMember(ix,ixs);
+        (ty,extraarg) = findPatternToConvertToSwitch2(pats,ix::ixs,DAE.ET_STRING());
+      then (ty,extraarg);
+      */
+    case ({},_,DAE.ET_METATYPE()) then (ty,0);
+    case (DAE.PAT_CALL(index=ix)::pats,ixs,_)
+      equation
+        false = listMember(ix,ixs);
+        (ty,extraarg) = findPatternToConvertToSwitch2(pats,ix::ixs,DAE.ET_METATYPE());
+      then (ty,extraarg);
+  end match;
+end findPatternToConvertToSwitch2;
+
+protected function findMinMod
+  input list<Integer> ixs;
+  input Integer mod;
+  output Integer outMod;
+algorithm
+  outMod := matchcontinue (ixs,mod)
+    case (ixs,mod)
+      equation
+        ixs = Util.listMap1(ixs, intMod, mod);
+        ixs = Util.sort(ixs, intLt);
+        (_,{}) = Util.splitUniqueOnBool(ixs, intEq);
+        // This mod was high enough that all values were distinct
+      then mod;
+    else
+      equation
+        true = mod < 65536;
+      then findMinMod(ixs,mod*2);
+  end matchcontinue;
+end findMinMod;
 
 protected function filterUnusedPatterns
   "case (1,_,_) then ...; case (2,_,_) then ...; =>"
@@ -1670,5 +1777,13 @@ algorithm
       then DAE.CASE(pats,localDecls,body,result,jump,info);
   end match;
 end setCasePatterns;
+
+public function getValueCtor
+  "Get the constructor index of a uniontype record based on its index in the uniontype"
+  input Integer ix;
+  output Integer ctor;
+algorithm
+  ctor := ix+3;
+end getValueCtor;
   
 end Patternm;

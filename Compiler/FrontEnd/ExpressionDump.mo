@@ -563,7 +563,7 @@ algorithm
       Boolean b;
       list<DAE.Exp> aexpl;
       list<list<tuple<DAE.Exp,Boolean>>> lstes;
-      Absyn.MatchType matchTy;
+      DAE.MatchType matchTy;
       DAE.ExpType et;
       list<DAE.MatchCase> cases;
       DAE.Pattern pat;
@@ -893,7 +893,7 @@ algorithm
     
     case (DAE.MATCHEXPRESSION(matchType=matchTy,inputs=es,cases=cases), _, _, _)
       equation
-        s1 = Dump.printMatchType(matchTy);
+        s1 = printMatchType(matchTy);
         s2 = printExp2Str(DAE.TUPLE(es), stringDelimiter, opcreffunc, opcallfunc);
         s3 = stringAppendList(Util.listMap(cases,printCase2Str));
         s = stringAppendList({s1,s2,"\n",s3,"  end ",s1});
@@ -916,6 +916,17 @@ algorithm
         "#UNKNOWN EXPRESSION# ----eee ";
   end matchcontinue;
 end printExp2Str;
+
+protected function printMatchType
+  input DAE.MatchType ty;
+  output String str;
+algorithm
+  str := match ty
+    case DAE.MATCHCONTINUE() then "matchcontinue";
+    case DAE.MATCH(NONE()) then "match";
+    case DAE.MATCH(SOME(_)) then "match /* switch */";
+  end match;
+end printMatchType;
 
 protected function printCase2Str
   "Prints a matchcase as string"
@@ -1776,7 +1787,7 @@ algorithm
       list<list<tuple<DAE.Exp, Boolean>>> lstes;
       DAE.Exp ae1;
       Boolean b;
-      Absyn.MatchType matchTy;
+      DAE.MatchType matchTy;
       list<DAE.MatchCase> cases;
       DAE.Pattern pat;
     
@@ -2100,13 +2111,13 @@ algorithm
 
     case (DAE.MATCHEXPRESSION(matchType=matchTy,inputs=es,cases=cases), _)
       equation
-        Print.printBuf(Dump.printMatchType(matchTy));
+        Print.printBuf(printMatchType(matchTy));
         Print.printBuf(" (");
         printList(es, printExp, ",");
         Print.printBuf(") \n");
         Print.printBuf(stringAppendList(Util.listMap(cases,printCase2Str)));
         Print.printBuf("  end ");
-        Print.printBuf(Dump.printMatchType(matchTy));
+        Print.printBuf(printMatchType(matchTy));
       then ();
 
     case (DAE.BOX(e),_)

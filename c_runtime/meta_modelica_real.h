@@ -45,8 +45,6 @@ extern "C" {
 
 typedef modelica_string realString_rettype;
 realString_rettype realString(modelica_real);
-modelica_metatype boxptr_realString(modelica_metatype);
-modelica_metatype boxptr_realPow(modelica_metatype,modelica_metatype);
 modelica_metatype boxptr_realMin(modelica_metatype,modelica_metatype);
 modelica_metatype boxptr_realMax(modelica_metatype,modelica_metatype);
 

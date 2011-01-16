@@ -50,7 +50,6 @@ typedef const modelica_metatype metamodelica_string_const;
 
 typedef metamodelica_string intString_rettype;
 intString_rettype intString(modelica_integer);
-modelica_metatype boxptr_intString(modelica_metatype);
 modelica_metatype boxptr_intMax(modelica_metatype,modelica_metatype);
 
 /* String Character Conversion */
@@ -162,7 +161,7 @@ typedef modelica_boolean referenceEq_rettype;
 
 getGlobalRoot_rettype getGlobalRoot(int ix);
 void setGlobalRoot(int ix, modelica_metatype val);
-valueConstructor_rettype valueConstructor(modelica_metatype val);
+#define valueConstructor(val) MMC_HDRCTOR(MMC_GETHDR(val))
 
 modelica_metatype boxptr_getGlobalRoot(modelica_metatype);
 void boxptr_setGlobalRoot(modelica_metatype, modelica_metatype);

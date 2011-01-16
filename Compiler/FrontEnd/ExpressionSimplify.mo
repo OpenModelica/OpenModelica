@@ -346,7 +346,7 @@ algorithm
         e = DAE.IFEXP(e, e1_1, e2_1);
       then simplify(e);
 
-    case DAE.MATCHEXPRESSION(matchType=Absyn.MATCH(), inputs={e}, localDecls={}, cases={
+    case DAE.MATCHEXPRESSION(matchType=DAE.MATCH(switch=_), inputs={e}, localDecls={}, cases={
         DAE.CASE(patterns={DAE.PAT_CONSTANT(exp=DAE.BCONST(b1))},localDecls={},body={},result=SOME(e1)),
         DAE.CASE(patterns={DAE.PAT_WILD()},localDecls={},body={},result=SOME(e2))
       })

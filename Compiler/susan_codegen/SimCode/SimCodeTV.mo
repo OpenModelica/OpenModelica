@@ -8,11 +8,29 @@ package builtin
     output Integer result;
   end listLength;
   
+  function listNth
+    replaceable type TypeVar subtypeof Any;    
+    input list<TypeVar> lst;
+    input Integer ix;
+    output TypeVar result;
+  end listNth;
+  
   function intAdd
     input Integer a;
     input Integer b;
     output Integer c;
   end intAdd;
+  
+  function intMod
+    input Integer a;
+    input Integer b;
+    output Integer c;
+  end intMod;
+  
+  function stringHashDjb2
+    input String str;
+    output Integer hash;
+  end stringHashDjb2;
   
 end builtin;
 
@@ -537,11 +555,6 @@ package Absyn
     end FULLYQUALIFIED;
   end Path;
   
-  uniontype MatchType
-    record MATCH end MATCH;
-    record MATCHCONTINUE end MATCHCONTINUE;
-  end MatchType;
-
   uniontype Info
     record INFO
       String fileName;
@@ -714,7 +727,7 @@ package DAE
       Integer index;
     end METARECORDCALL;
     record MATCHEXPRESSION
-      Absyn.MatchType matchType;
+      DAE.MatchType matchType;
       list<Exp> inputs;
       list<Element> localDecls;
       list<MatchCase> cases;
@@ -1071,6 +1084,13 @@ package DAE
       Exp exp;
     end INDEX;
   end Subscript;
+
+  uniontype MatchType
+    record MATCHCONTINUE end MATCHCONTINUE;
+    record MATCH
+      Option<tuple<Integer,ExpType,Integer>> switch;
+    end MATCH;
+  end MatchType;
 
 end DAE;
 
@@ -1482,26 +1502,6 @@ uniontype Statement "The Statement type describes one algorithm statement in an 
     Absyn.Info info;
   end ALG_THROW;
 
-  record ALG_MATCHCASES
-    Absyn.MatchType matchType;
-    list<Absyn.Exp> inputExps;
-    list<Absyn.Exp> switchCases;
-    Option<Comment> comment;
-    Absyn.Info info;
-  end ALG_MATCHCASES;
-
-  record ALG_GOTO
-    String labelName;
-    Option<Comment> comment;
-    Absyn.Info info;
-  end ALG_GOTO;
-
-  record ALG_LABEL
-    String labelName;
-    Option<Comment> comment;
-    Absyn.Info info;
-  end ALG_LABEL;
-
   record ALG_FAILURE
     list<Statement> stmts;
     Option<Comment> comment;
@@ -1664,5 +1664,12 @@ package Settings
     output String outString;
   end getVersionNr;
 end Settings;
+
+package Patternm
+  function getValueCtor
+    input Integer ix;
+    output Integer ctor;
+  end getValueCtor;
+end Patternm;
 
 end SimCodeTV;

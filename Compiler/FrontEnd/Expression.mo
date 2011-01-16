@@ -3509,7 +3509,7 @@ algorithm
       list<String> fieldNames;
       DAE.InlineType  inl;
       list<DAE.MatchCase> cases;
-      Absyn.MatchType matchTy;
+      DAE.MatchType matchTy;
     
     case ((e as DAE.ICONST(_)),rel,ext_arg)
       equation

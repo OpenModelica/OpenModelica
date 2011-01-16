@@ -3985,7 +3985,7 @@ algorithm
       list<DAE.ExpType> expTypes;
       DAE.ExpType et,ety1;
       list<DAE.MatchCase> cases;
-      Absyn.MatchType matchTy;
+      DAE.MatchType matchTy;
       list<DAE.Element> localDecls;
 
       /* Array expressions: expression dimension [dim1], expected dimension [dim2] */

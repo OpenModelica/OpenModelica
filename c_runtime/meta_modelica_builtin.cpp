@@ -61,11 +61,6 @@ intString_rettype intString(modelica_integer i)
   return res;
 }
 
-modelica_metatype boxptr_intString(modelica_metatype i)
-{
-  return intString(mmc_unbox_integer(i));
-}
-
 modelica_metatype boxptr_intMax(modelica_metatype a,modelica_metatype b)
 {
   return a > b ? a : b;
@@ -599,10 +594,6 @@ void setGlobalRoot(int ix, modelica_metatype val) {
   global_roots[ix] = val;
 }
 
-valueConstructor_rettype valueConstructor(modelica_metatype val) {
-  return MMC_HDRCTOR(MMC_GETHDR(val));
-}
-
 modelica_metatype boxptr_getGlobalRoot(modelica_metatype ix) {
   return global_roots[MMC_UNTAGFIXNUM(ix)];
 }
@@ -612,7 +603,7 @@ void boxptr_setGlobalRoot(modelica_metatype ix, modelica_metatype val) {
 }
 
 modelica_metatype boxptr_valueConstructor(modelica_metatype val) {
-  return mmc_mk_icon(MMC_HDRCTOR(MMC_GETHDR(val)));
+  return mmc_mk_icon(valueConstructor(val));
 }
 
 modelica_metatype boxptr_listFirst(modelica_metatype lst)

@@ -5100,6 +5100,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let &preExp += '<%tvar%> = <%typeStr%>_to_modelica_string_format(<%sExp%>, <%formatExp%>);<%\n%>'
     '<%tvar%>'
   
+
   case CALL(tuple_=false, builtin=true,
             path=IDENT(name="String"),
             expLst={s, minlen, leftjust}) then
@@ -5528,7 +5529,12 @@ case exp as MATCHEXPRESSION(__) then
     let &varDeclsInput += '<%expTypeFromExpModelica(exp)%> <%decl%>;<%\n%>'
     let &expInput += '<%decl%> = <%daeExp(exp, context, &preExpInput, &varDeclsInput)%>;<%\n%>'
     ""; empty)
-  let ix = tempDecl('int', &varDeclsInner)
+  let ix = match exp.matchType
+    case MATCH(switch=SOME((switchIndex,ET_STRING(__),div))) then
+      'modelica_mod_integer(stringHashDjb2(<%prefix%>_in<%switchIndex%>),<%div%>)'
+    case MATCH(switch=SOME((switchIndex,ET_METATYPE(__),_))) then
+      'valueConstructor(<%prefix%>_in<%switchIndex%>)'
+    else tempDecl('int', &varDeclsInner)
   let done = tempDecl('int', &varDeclsInner)
   let onPatternFail = match exp.matchType case MATCHCONTINUE(__) then "MMC_THROW()" case MATCH(__) then "break"
   let &preExp +=
@@ -5540,10 +5546,13 @@ case exp as MATCHEXPRESSION(__) then
         {
           <%varDeclsInner%>
           <%preExpInner%>
-          for (<%ix%> = 0, <%done%> = 0; <%ix%> < <%listLength(cases)%> && !<%done%>; <%ix%>++) {
+          <%match exp.matchType
+          case MATCH(switch=SOME(_)) then '<%done%> = 0;<%\n%>{'
+          else 'for (<%ix%> = 0, <%done%> = 0; <%ix%> < <%listLength(exp.cases)%> && !<%done%>; <%ix%>++) {'
+          %>
             <% match exp.matchType case MATCHCONTINUE(__) then "MMC_TRY()" %>
             switch (<%ix%>) {
-            <%daeExpMatchCases(cases,tupleAssignExps,ix,res,prefix,onPatternFail,done,context,&varDecls)%>
+            <%daeExpMatchCases(exp.cases,tupleAssignExps,exp.matchType,ix,res,prefix,onPatternFail,done,context,&varDecls)%>
             }
             <% match exp.matchType case MATCHCONTINUE(__) then "MMC_CATCH()" %>
           }
@@ -5554,7 +5563,7 @@ case exp as MATCHEXPRESSION(__) then
   res
 end daeExpMatch2;
 
-template daeExpMatchCases(list<MatchCase> cases, list<Exp> tupleAssignExps, Text ix, Text res, Text prefix, Text onPatternFail, Text done, Context context, Text &varDecls)
+template daeExpMatchCases(list<MatchCase> cases, list<Exp> tupleAssignExps, DAE.MatchType ty, Text ix, Text res, Text prefix, Text onPatternFail, Text done, Context context, Text &varDecls)
 ::=
   cases |> c as CASE(__) hasindex i0 =>
   let &varDeclsCaseInner = buffer ""
@@ -5572,7 +5581,7 @@ template daeExpMatchCases(list<MatchCase> cases, list<Exp> tupleAssignExps, Text
         '<%res%>_targ<%i1%> = <%retStruct%>.targ<%i1%>;<%\n%>')
     case SOME(e) then '<%res%> = <%daeExp(e,context,&preRes,&varDeclsCaseInner)%>;<%\n%>')
   let _ = (elementVars(c.localDecls) |> var => varInit(var, "", 0, &varDeclsCaseInner, &preExpCaseInner))
-  <<case <%i0%>: {
+  <<<%match ty case MATCH(switch=SOME((n,_,ea))) then switchIndex(listNth(c.patterns,n),ea) else 'case <%i0%>'%>: {
     <%varDeclsCaseInner%>
     <%preExpCaseInner%>
     <%patternMatching%> 
@@ -5588,6 +5597,14 @@ template daeExpMatchCases(list<MatchCase> cases, list<Exp> tupleAssignExps, Text
   }<%\n%>
   >>
 end daeExpMatchCases;
+
+template switchIndex(Pattern pattern, Integer extraArg)
+::=
+  match pattern
+    case PAT_CALL(__) then 'case <%getValueCtor(index)%>'
+    case PAT_CONSTANT(exp=e as SCONST(__)) then 'case <%intMod(stringHashDjb2(e.string),extraArg)%>'
+    else 'default'
+end switchIndex;
 
 template daeExpBox(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/)
  "Generates code for a match expression."
@@ -5713,7 +5730,7 @@ template daeExpMetarecordcall(Exp exp, Context context, Text &preExp /*BUFP*/,
 ::=
 match exp
 case METARECORDCALL(__) then
-  let newIndex = incrementInt(index, 3)
+  let newIndex = getValueCtor(index)
   let argsStr = if args then
       ', <%args |> exp =>
         daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
@@ -5975,6 +5992,7 @@ template expTypeFromOpFlag(Operator op, Integer flag)
   case o as MUL(__)
   case o as DIV(__)
   case o as POW(__)
+
   case o as UMINUS(__)
   case o as UPLUS(__)
   case o as UMINUS_ARR(__)
@@ -6185,7 +6203,7 @@ template literalExpConst(Exp lit, Integer index) "These should all be declared s
     <%meta%> = MMC_REFSTRUCTLIT(<%tmp%>);
     >>
   case METARECORDCALL(__) then
-    let newIndex = intAdd(index, 3)
+    let newIndex = getValueCtor(index)
     <<
     static const MMC_DEFSTRUCTLIT(<%tmp%>,<%intAdd(1,listLength(args))%>,<%newIndex%>) {&<%underscorePath(path)%>__desc,<%args |> exp => literalExpConstBoxedVal(exp); separator=","%>}};
     <%meta%> = MMC_REFSTRUCTLIT(<%tmp%>);

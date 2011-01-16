@@ -15,8 +15,9 @@ public import Expression;
 public import ExpressionDump;
 public import RTOpts;
 public import Settings;
+public import Patternm;
 
-protected function lm_15
+protected function lm_16
   input Tpl.Text in_txt;
   input SCode.Program in_items;
 
@@ -37,16 +38,16 @@ algorithm
            i_cl :: rest )
       equation
         txt = classExternalHeader(txt, i_cl, "");
-        txt = lm_15(txt, rest);
+        txt = lm_16(txt, rest);
       then txt;
 
     case ( txt,
            _ :: rest )
       equation
-        txt = lm_15(txt, rest);
+        txt = lm_16(txt, rest);
       then txt;
   end matchcontinue;
-end lm_15;
+end lm_16;
 
 public function programExternalHeader
   input Tpl.Text txt;
@@ -60,7 +61,7 @@ algorithm
                                    "extern \"C\" {\n",
                                    "#endif\n"
                                }, true));
-  out_txt := lm_15(out_txt, a_program);
+  out_txt := lm_16(out_txt, a_program);
   out_txt := Tpl.softNewLine(out_txt);
   out_txt := Tpl.writeTok(out_txt, Tpl.ST_STRING_LIST({
                                        "#ifdef __cplusplus\n",
@@ -70,7 +71,7 @@ algorithm
                                    }, true));
 end programExternalHeader;
 
-protected function lm_17
+protected function lm_18
   input Tpl.Text in_txt;
   input list<SCode.Element> in_items;
   input SCode.Ident in_a_c_name;
@@ -95,19 +96,19 @@ algorithm
            a_c_name )
       equation
         txt = elementExternalHeader(txt, i_elt, a_c_name);
-        txt = lm_17(txt, rest, a_c_name);
+        txt = lm_18(txt, rest, a_c_name);
       then txt;
 
     case ( txt,
            _ :: rest,
            a_c_name )
       equation
-        txt = lm_17(txt, rest, a_c_name);
+        txt = lm_18(txt, rest, a_c_name);
       then txt;
   end matchcontinue;
-end lm_17;
+end lm_18;
 
-protected function fun_18
+protected function fun_19
   input Tpl.Text in_txt;
   input SCode.Class in_a_cl;
 
@@ -123,14 +124,14 @@ algorithm
     case ( txt,
            SCode.CLASS(classDef = SCode.PARTS(elementLst = i_p_elementLst), name = i_c_name) )
       equation
-        txt = lm_17(txt, i_p_elementLst, i_c_name);
+        txt = lm_18(txt, i_p_elementLst, i_c_name);
       then txt;
 
     case ( txt,
            _ )
       then txt;
   end matchcontinue;
-end fun_18;
+end fun_19;
 
 public function classExternalHeader
   input Tpl.Text txt;
@@ -139,7 +140,7 @@ public function classExternalHeader
 
   output Tpl.Text out_txt;
 algorithm
-  out_txt := fun_18(txt, a_cl);
+  out_txt := fun_19(txt, a_cl);
 end classExternalHeader;
 
 public function pathString
@@ -181,39 +182,6 @@ algorithm
   end matchcontinue;
 end pathString;
 
-protected function lm_21
-  input Tpl.Text in_txt;
-  input list<SCode.Element> in_items;
-
-  output Tpl.Text out_txt;
-algorithm
-  out_txt :=
-  matchcontinue(in_txt, in_items)
-    local
-      Tpl.Text txt;
-      list<SCode.Element> rest;
-      SCode.Ident i_component;
-
-    case ( txt,
-           {} )
-      then txt;
-
-    case ( txt,
-           SCode.COMPONENT(component = i_component) :: rest )
-      equation
-        txt = Tpl.writeStr(txt, i_component);
-        txt = Tpl.nextIter(txt);
-        txt = lm_21(txt, rest);
-      then txt;
-
-    case ( txt,
-           _ :: rest )
-      equation
-        txt = lm_21(txt, rest);
-      then txt;
-  end matchcontinue;
-end lm_21;
-
 protected function lm_22
   input Tpl.Text in_txt;
   input list<SCode.Element> in_items;
@@ -234,9 +202,7 @@ algorithm
     case ( txt,
            SCode.COMPONENT(component = i_component) :: rest )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
         txt = Tpl.writeStr(txt, i_component);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
         txt = Tpl.nextIter(txt);
         txt = lm_22(txt, rest);
       then txt;
@@ -249,7 +215,42 @@ algorithm
   end matchcontinue;
 end lm_22;
 
-protected function fun_23
+protected function lm_23
+  input Tpl.Text in_txt;
+  input list<SCode.Element> in_items;
+
+  output Tpl.Text out_txt;
+algorithm
+  out_txt :=
+  matchcontinue(in_txt, in_items)
+    local
+      Tpl.Text txt;
+      list<SCode.Element> rest;
+      SCode.Ident i_component;
+
+    case ( txt,
+           {} )
+      then txt;
+
+    case ( txt,
+           SCode.COMPONENT(component = i_component) :: rest )
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
+        txt = Tpl.writeStr(txt, i_component);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
+        txt = Tpl.nextIter(txt);
+        txt = lm_23(txt, rest);
+      then txt;
+
+    case ( txt,
+           _ :: rest )
+      equation
+        txt = lm_23(txt, rest);
+      then txt;
+  end matchcontinue;
+end lm_23;
+
+protected function fun_24
   input Tpl.Text in_txt;
   input list<SCode.Element> in_a_p_elementLst;
   input Tpl.Text in_a_fields;
@@ -320,7 +321,7 @@ algorithm
         txt = Tpl.writeTok(txt, Tpl.ST_NEW_LINE());
       then txt;
   end matchcontinue;
-end fun_23;
+end fun_24;
 
 public function elementExternalHeader
   input Tpl.Text in_txt;
@@ -355,10 +356,10 @@ algorithm
            a_pack )
       equation
         l_fields = Tpl.pushIter(Tpl.emptyTxt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_STRING(",")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
-        l_fields = lm_21(l_fields, i_p_elementLst);
+        l_fields = lm_22(l_fields, i_p_elementLst);
         l_fields = Tpl.popIter(l_fields);
         l_fieldsStr = Tpl.pushIter(Tpl.emptyTxt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_STRING(",")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
-        l_fieldsStr = lm_22(l_fieldsStr, i_p_elementLst);
+        l_fieldsStr = lm_23(l_fieldsStr, i_p_elementLst);
         l_fieldsStr = Tpl.popIter(l_fieldsStr);
         l_omcname = Tpl.writeStr(Tpl.emptyTxt, a_pack);
         l_omcname = Tpl.writeTok(l_omcname, Tpl.ST_STRING("_"));
@@ -433,7 +434,7 @@ algorithm
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(" "));
         txt = Tpl.writeText(txt, l_ctor);
         txt = Tpl.softNewLine(txt);
-        txt = fun_23(txt, i_p_elementLst, l_fields, l_omcname, l_ctor, l_fullname);
+        txt = fun_24(txt, i_p_elementLst, l_fields, l_omcname, l_ctor, l_fullname);
       then txt;
 
     case ( txt,

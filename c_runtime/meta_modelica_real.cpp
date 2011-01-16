@@ -85,16 +85,6 @@ realString_rettype realString(modelica_real r)
   return res;
 }
 
-modelica_metatype boxptr_realString(modelica_metatype r)
-{
-  return realString(mmc_prim_get_real(r));
-}
-
-modelica_metatype boxptr_realPow(modelica_metatype a,modelica_metatype b)
-{
-  return mmc_mk_rcon(pow(mmc_unbox_real(a),mmc_unbox_real(b)));
-}
-
 modelica_metatype boxptr_realMin(modelica_metatype a,modelica_metatype b)
 {
   return mmc_mk_rcon(fmin(mmc_unbox_real(a),mmc_unbox_real(b)));

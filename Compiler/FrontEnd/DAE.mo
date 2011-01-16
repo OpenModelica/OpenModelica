@@ -1139,7 +1139,7 @@ uniontype Exp "Expressions
   end METARECORDCALL;
   
   record MATCHEXPRESSION
-    Absyn.MatchType matchType;
+    MatchType matchType;
     list<Exp> inputs;
     list<Element> localDecls;
     list<MatchCase> cases;
@@ -1182,6 +1182,13 @@ public uniontype MatchCase
     Absyn.Info info;
   end CASE;
 end MatchCase;
+
+public uniontype MatchType
+  record MATCHCONTINUE end MATCHCONTINUE;
+  record MATCH
+    Option<tuple<Integer,ExpType,Integer>> switch "The index of the pattern to switch over, its type and an the value to divide string hashes with";
+  end MATCH;
+end MatchType;
 
 public uniontype Pattern "Patterns deconstruct expressions"
   record PAT_WILD "_"
