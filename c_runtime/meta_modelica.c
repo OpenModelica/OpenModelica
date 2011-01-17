@@ -131,7 +131,10 @@ valueEq_rettype valueEq(modelica_metatype lhs, modelica_metatype rhs)
   h_lhs = MMC_GETHDR(lhs);
   h_rhs = MMC_GETHDR(rhs);
 
-  if (h_lhs == MMC_NILHDR && h_rhs == MMC_NILHDR) {
+  if (h_lhs != h_rhs)
+    return 0;
+
+  if (h_lhs == MMC_NILHDR) {
     return 1;
   }
 
@@ -142,23 +145,19 @@ valueEq_rettype valueEq(modelica_metatype lhs, modelica_metatype rhs)
     return d1 == d2;
   }
   if (MMC_HDRISSTRING(h_lhs)) {
-    if (MMC_HDRSTRLEN(h_lhs) == MMC_HDRSTRLEN(h_rhs))
-      return 0 == strcmp(MMC_STRINGDATA(lhs),MMC_STRINGDATA(rhs));
-    return 0;
+    return 0 == strcmp(MMC_STRINGDATA(lhs),MMC_STRINGDATA(rhs));
   }
 
   numslots = MMC_HDRSLOTS(h_lhs);
   ctor = 255 & (h_lhs >> 2);
-  if (numslots != MMC_HDRSLOTS(h_rhs))
-    return 0;
-  if (ctor != (255 & (h_rhs >> 2)))
-    return 0;
   
   if (numslots>0 && ctor > 1) { /* RECORD */
     lhs_desc = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(lhs),1));
     rhs_desc = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(rhs),1));
+    /* Slow; not needed
     if (0 != strcmp(lhs_desc->name,rhs_desc->name))
       return 0;
+    */
     for (i=2; i<=numslots; i++) {
       lhs_data = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(lhs),i));
       rhs_data = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(rhs),i));
