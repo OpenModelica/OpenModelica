@@ -2377,12 +2377,13 @@ algorithm
   s := pathString2(path, ".");
 end pathString;
 
-public function pathHash "Hashes a path."
+public function pathHashMod "Hashes a path."
   input Path path;
+  input Integer mod;
   output Integer hash;
 algorithm
-  hash := stringHashDjb2(pathString(path));
-end pathHash;
+  hash := System.stringHashDjb2Mod(pathString(path),mod);
+end pathHashMod;
 
 public function optPathString "function: optPathString
   Returns a path converted to string or an empty string if nothing exist"

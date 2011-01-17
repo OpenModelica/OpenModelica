@@ -88,6 +88,7 @@ typedef int mmc_sint_t;
 #define MMC_HDRISSTRING(hdr)  (((hdr) & ((1<<(10-MMC_LOG2_SIZE_INT))-1)) == 5)
 #define MMC_HDRSTRLEN(hdr)  (((hdr) >> (10-MMC_LOG2_SIZE_INT)) - MMC_SIZE_INT)
 #define MMC_STRINGDATA(x) (((struct mmc_string*)MMC_UNTAGPTR(x))->data)
+#define MMC_HDRISSTRUCT(hdr) (!((hdr) & 3))
 #define MMC_STRUCTDATA(x) (((struct mmc_struct*)MMC_UNTAGPTR(x))->data)
 #define MMC_ARRAY_TAG 255
 #define MMC_STRLEN(x) (MMC_HDRSTRLEN(MMC_GETHDR(x)))
@@ -331,6 +332,11 @@ void *mmc_mk_box_no_assign(int slots, unsigned ctor);
 
 typedef modelica_integer valueEq_rettype;
 valueEq_rettype valueEq(modelica_metatype,modelica_metatype);
+modelica_metatype boxptr_valueEq(modelica_metatype,modelica_metatype);
+
+typedef modelica_integer valueHashMod_rettype;
+valueHashMod_rettype valueHashMod(modelica_metatype,modelica_integer);
+void* boxptr_valueHashMod(void *p, void *mod);
 
 void mmc__unbox(modelica_metatype box, void* res);
 

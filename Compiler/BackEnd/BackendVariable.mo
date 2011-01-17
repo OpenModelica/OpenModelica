@@ -2455,8 +2455,7 @@ algorithm
       String str;
     case (cr,BackendDAE.VARIABLES(crefIdxLstArr = hashvec,strIdxLstArr = oldhashvec,varArr = varr,bucketSize = bsize,numberOfVars = n))
       equation
-        hval = HashTable2.hashFunc(cr);
-        hashindx = intMod(hval, bsize);
+        hashindx = HashTable2.hashFunc(cr, bsize);
         indexes = hashvec[hashindx + 1];
         indx = getVar3(cr, indexes, getVar4(cr, indexes));
         ((v as BackendDAE.VAR(varName = cr2))) = vararrayNth(varr, indx);
@@ -2465,8 +2464,7 @@ algorithm
         true;
     case (cr,BackendDAE.VARIABLES(crefIdxLstArr = hashvec,strIdxLstArr = oldhashvec,varArr = varr,bucketSize = bsize,numberOfVars = n))
       equation
-        hval = HashTable2.hashFunc(cr);
-        hashindx = intMod(hval, bsize);
+        hashindx = HashTable2.hashFunc(cr, bsize);
         indexes = hashvec[hashindx + 1];
         indx = getVar3(cr, indexes, getVar4(cr, indexes));
         failure((_) = vararrayNth(varr, indx));
@@ -2522,8 +2520,7 @@ algorithm
       equation
         failure((_,_) = getVar(cr, vars));
         // print("adding when not existing previously\n");
-        hval = HashTable2.hashFunc(cr);
-        indx = intMod(hval, bsize);
+        indx = HashTable2.hashFunc(cr, bsize);
         newpos = vararrayLength(varr);
         varr_1 = vararrayAdd(varr, v);
         indexes = hashvec[indx + 1];
@@ -2653,8 +2650,7 @@ algorithm
       BackendDAE.VariableArray varr;
     case (cr,BackendDAE.VARIABLES(crefIdxLstArr = hashvec,strIdxLstArr = oldhashvec,varArr = varr,bucketSize = bsize,numberOfVars = n))
       equation
-        hval = HashTable2.hashFunc(cr);
-        hashindx = intMod(hval, bsize);
+        hashindx = HashTable2.hashFunc(cr, bsize);
         indexes = hashvec[hashindx + 1];
         indx = getVar3(cr, indexes, getVar4(cr,indexes));
         ((v as BackendDAE.VAR(varName = cr2, flowPrefix = flowPrefix))) = vararrayNth(varr, indx);
@@ -2722,8 +2718,7 @@ algorithm
     case (cr,(vars as BackendDAE.VARIABLES(crefIdxLstArr = hashvec,strIdxLstArr = oldhashvec,varArr = varr,bucketSize = bsize,numberOfVars = n)))
       equation
         cr_1 = ComponentReference.subscriptCref(cr, {DAE.INDEX(DAE.ICONST(1))}) "one dimensional arrays" ;
-        hval = HashTable2.hashFunc(cr_1);
-        hashindx = intMod(hval, bsize);
+        hashindx = HashTable2.hashFunc(cr_1, bsize);
         indexes = hashvec[hashindx + 1];
         indx = getVar3(cr_1, indexes, getVar4(cr_1, indexes));
         ((v as BackendDAE.VAR(varName = cr2, arryDim = instdims, flowPrefix = flowPrefix))) = vararrayNth(varr, indx);
@@ -2734,8 +2729,7 @@ algorithm
     case (cr,(vars as BackendDAE.VARIABLES(crefIdxLstArr = hashvec,strIdxLstArr = oldhashvec,varArr = varr,bucketSize = bsize,numberOfVars = n))) /* two dimensional arrays */
       equation
         cr_1 = ComponentReference.subscriptCref(cr, {DAE.INDEX(DAE.ICONST(1)),DAE.INDEX(DAE.ICONST(1))});
-        hval = HashTable2.hashFunc(cr_1);
-        hashindx = intMod(hval, bsize);
+        hashindx = HashTable2.hashFunc(cr_1, bsize);
         indexes = hashvec[hashindx + 1];
         indx = getVar3(cr_1, indexes, getVar4(cr_1, indexes));
         ((v as BackendDAE.VAR(varName = cr2, arryDim = instdims, flowPrefix = flowPrefix))) = vararrayNth(varr, indx);

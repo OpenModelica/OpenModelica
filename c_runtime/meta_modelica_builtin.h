@@ -87,12 +87,14 @@ stringHashSdbm_rettype stringHashSdbm(metamodelica_string_const);
 
 #define System_stringHashDjb2Mod_rettype stringHashDjb2Mod_rettype
 #define System_stringHashDjb2Mod stringHashDjb2Mod
+#define boxptr_System_stringHashDjb2Mod boxptr_stringHashDjb2Mod
 
 modelica_metatype boxptr_stringEq(modelica_metatype a, modelica_metatype b);
 #define boxptr_stringEqual boxptr_stringEq
 #define boxptr_stringAppend stringAppend
 modelica_metatype boxptr_stringHash(modelica_metatype);
 modelica_metatype boxptr_stringHashDjb2(modelica_metatype);
+modelica_metatype boxptr_stringHashDjb2Mod(modelica_metatype,modelica_metatype);
 modelica_metatype boxptr_stringHashSdmb(modelica_metatype);
 
 /* List Operations */

@@ -706,6 +706,14 @@ function valueEq
 external "builtin";
 end valueEq;
 
+function valueHashMod
+  input TypeA value;
+  input Integer mod;
+  output Integer hash;
+  replaceable type TypeA subtypeof Any;
+external "builtin";
+end valueHashMod;
+
 function referenceEq
   "This is a very fast comparison of two values.
   It only checks if the pointers are equal."

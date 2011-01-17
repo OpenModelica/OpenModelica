@@ -163,6 +163,11 @@ stringHashDjb2Mod_rettype stringHashDjb2Mod(metamodelica_string_const s, modelic
   return res;
 }
 
+modelica_metatype boxptr_stringHashDjb2Mod(modelica_metatype v,modelica_metatype mod)
+{
+  return mmc_mk_icon(stringHashDjb2Mod(v,mmc_unbox_integer(mod)));
+}
+
 /* adrpo: see the comment above about sdbm hash */
 stringHashSdbm_rettype stringHashSdbm(metamodelica_string_const s)
 {

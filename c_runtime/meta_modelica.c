@@ -479,3 +479,58 @@ void printTypeOfAny(void* any) /* for debugging */
   fprintf(stderr, "%s:%d: %d slots; ctor %d - FAILED to detect the type\n", __FILE__, __LINE__, numslots, ctor);
   EXIT(1);
 }
+
+unsigned long mmc_prim_hash(void *p)
+{
+  unsigned long hash = 0;
+  void **pp = NULL;
+  mmc_uint_t phdr = 0;
+  mmc_uint_t slots = 0;
+  
+mmc_prim_hash_tail_recur:
+  if ((0 == ((mmc_sint_t)p & 1)))
+  {
+    return hash + (unsigned long)MMC_UNTAGFIXNUM(p);
+  } 
+  
+  phdr = MMC_GETHDR(p);
+  hash += (unsigned long)phdr;
+
+  if( phdr == MMC_REALHDR ) 
+  {
+    return hash + (unsigned long)mmc_unbox_real(p);
+  } 
+  
+  if( MMC_HDRISSTRING(phdr) ) 
+  {
+    return hash + (unsigned long)stringHashDjb2(p);
+  }
+  
+  if( MMC_HDRISSTRUCT(phdr) ) 
+  {
+    slots = MMC_HDRSLOTS(phdr);
+    pp = MMC_STRUCTDATA(p);
+    hash += MMC_HDRCTOR(phdr);
+    if (slots == 0) 
+      return hash;
+
+    while ( --slots > 0)
+    {
+       hash += mmc_prim_hash(*pp++);
+    }
+    p = *pp;
+    goto mmc_prim_hash_tail_recur;
+  }
+  return hash;
+}
+
+modelica_integer valueHashMod(void *p, modelica_integer mod)
+{
+  modelica_integer res = mmc_prim_hash(p) % (unsigned long) mod;
+  return res;
+}
+
+void* boxptr_valueHashMod(void *p, void *mod)
+{
+  return mmc_mk_icon(mmc_prim_hash(p) % (unsigned long) mmc_unbox_integer(mod));
+}

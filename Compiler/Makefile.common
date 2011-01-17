@@ -124,6 +124,7 @@ HashTable5.mo \
 HashTableCG.mo \
 HashTableStringToPath.mo \
 HashTableExpToIndex.mo \
+HashTableExpType.mo \
 IOStream.mo \
 Util.mo \
 VarTransform.mo \

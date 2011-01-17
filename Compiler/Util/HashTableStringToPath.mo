@@ -22,6 +22,7 @@ keyEqual   - A comparison function between two keys, returns true if equal.
 public import Absyn;
 public import BaseHashTable;
 protected import Util;
+protected import System;
 
 public type Key = String;
 public type Value = Absyn.Path;
@@ -37,6 +38,7 @@ public type HashTable = tuple<
 
 partial function FuncHashCref
   input Key cr;
+  input Integer mod;
   output Integer res;
 end FuncHashCref;
 
@@ -74,7 +76,7 @@ public function emptyHashTableSized
   input Integer size;
   output HashTable hashTable;
 algorithm
-  hashTable := BaseHashTable.emptyHashTableWork(size,intDiv(size,10),(stringHashDjb2,stringEq,Util.id,Absyn.pathString));
+  hashTable := BaseHashTable.emptyHashTableWork(size,intDiv(size,10),(System.stringHashDjb2Mod,stringEq,Util.id,Absyn.pathString));
 end emptyHashTableSized;
 
 end HashTableStringToPath;

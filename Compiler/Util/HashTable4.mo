@@ -39,6 +39,7 @@ public type HashTable = tuple<
 
 partial function FuncHashCref
   input Key cr;
+  input Integer mod;
   output Integer res;
 end FuncHashCref;
 
@@ -61,11 +62,13 @@ end FuncExpStr;
 protected function hashFunc
 "Calculates a hash value for Key"
   input Key cr;
+  input Integer mod;
   output Integer res;
+protected
   String crstr;
 algorithm
   crstr := ExpressionDump.printExpStr(cr);
-  res := stringHashDjb2(crstr);
+  res := System.stringHashDjb2Mod(crstr,mod);
 end hashFunc;
 
 public function emptyHashTable

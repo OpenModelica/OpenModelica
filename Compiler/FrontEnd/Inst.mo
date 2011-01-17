@@ -14109,6 +14109,7 @@ public type InstHashTable = tuple<
 
 partial function FuncHashKey
   input Key cr;
+  input Integer mod;
   output Integer res;
 end FuncHashKey;
 
@@ -14154,7 +14155,7 @@ public function emptyInstHashTableSized
   input Integer size;
   output InstHashTable hashTable;
 algorithm
-  hashTable := BaseHashTable.emptyHashTableWork(size,intDiv(size,10),(Absyn.pathHash,Absyn.pathEqual,Absyn.pathString,opaqVal));
+  hashTable := BaseHashTable.emptyHashTableWork(size,intDiv(size,10),(Absyn.pathHashMod,Absyn.pathEqual,Absyn.pathString,opaqVal));
 end emptyInstHashTableSized;
 
 /* end HashTable */

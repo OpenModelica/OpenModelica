@@ -38,6 +38,7 @@ public type HashTable = tuple<
 
 partial function FuncHashCref
   input Key cr;
+  input Integer mod;
   output Integer res;
 end FuncHashCref;
 

@@ -76,7 +76,7 @@ protected
   type HashVector = array<list<tuple<Key,Integer>>>;
   type ValueArray = tuple<Integer,Integer,array<Option<tuple<Key,Value>>>>;
   type FuncsTuple = tuple<FuncHash,FuncEq,FuncKeyString,FuncValString>;
-  partial function FuncHash input Key key; output Integer hash; end FuncHash;
+  partial function FuncHash input Key key; input Integer mod; output Integer hash; end FuncHash;
   partial function FuncEq input Key key1; input Key key2; output Boolean b; end FuncEq;
   partial function FuncKeyString input Key key; output String str; end FuncKeyString;
   partial function FuncValString input Value val; output String str; end FuncValString;
@@ -101,7 +101,7 @@ public function add
   type HashVector = array<list<tuple<Key,Integer>>>;
   type ValueArray = tuple<Integer,Integer,array<Option<tuple<Key,Value>>>>;
   type FuncsTuple = tuple<FuncHash,FuncEq,FuncKeyString,FuncValString>;
-  partial function FuncHash input Key key; output Integer hash; end FuncHash;
+  partial function FuncHash input Key key; input Integer mod; output Integer hash; end FuncHash;
   partial function FuncEq input Key key1; input Key key2; output Boolean b; end FuncEq;
   partial function FuncKeyString input Key key; output String str; end FuncKeyString;
   partial function FuncValString input Value val; output String str; end FuncValString;
@@ -121,8 +121,7 @@ algorithm
     case ((v as (key,value)),(hashTable as (hashvec,varr,bsize,n,fntpl as (hashFunc,_,_,_))))
       equation
         failure((_) = get(key, hashTable));
-        hval = hashFunc(key);
-        indx = intMod(hval, bsize);
+        indx = hashFunc(key, bsize);
         newpos = valueArrayLength(varr);
         varr_1 = valueArrayAdd(varr, v);
         indexes = hashvec[indx + 1];
@@ -145,7 +144,7 @@ algorithm
         print("bsize: ");
         print(intString(bsize));
         print(" key: ");
-        hval = hashFunc(key);
+        hval = hashFunc(key,bsize);
         print(intString(hval));
         print("\n");
       then
@@ -168,7 +167,7 @@ public function addNoUpdCheck
   type HashVector = array<list<tuple<Key,Integer>>>;
   type ValueArray = tuple<Integer,Integer,array<Option<tuple<Key,Value>>>>;
   type FuncsTuple = tuple<FuncHash,FuncEq,FuncKeyString,FuncValString>;
-  partial function FuncHash input Key key; output Integer hash; end FuncHash;
+  partial function FuncHash input Key key; input Integer mod; output Integer hash; end FuncHash;
   partial function FuncEq input Key key1; input Key key2; output Boolean b; end FuncEq;
   partial function FuncKeyString input Key key; output String str; end FuncKeyString;
   partial function FuncValString input Value val; output String str; end FuncValString;
@@ -189,8 +188,7 @@ algorithm
     // Adding when not existing previously
     case ((v as (key,value)),(hashvec,varr,bsize,n,fntpl as (hashFunc,_,_,_)))
       equation
-        hval = hashFunc(key);
-        indx = intMod(hval, bsize);
+        indx = hashFunc(key, bsize);
         newpos = valueArrayLength(varr);
         varr_1 = valueArrayAdd(varr, v);
         indexes = hashvec[indx + 1];
@@ -223,7 +221,7 @@ public function delete
   type HashVector = array<list<tuple<Key,Integer>>>;
   type ValueArray = tuple<Integer,Integer,array<Option<tuple<Key,Value>>>>;
   type FuncsTuple = tuple<FuncHash,FuncEq,FuncKeyString,FuncValString>;
-  partial function FuncHash input Key key; output Integer hash; end FuncHash;
+  partial function FuncHash input Key key; input Integer mod; output Integer hash; end FuncHash;
   partial function FuncEq input Key key1; input Key key2; output Boolean b; end FuncEq;
   partial function FuncKeyString input Key key; output String str; end FuncKeyString;
   partial function FuncValString input Value val; output String str; end FuncValString;
@@ -267,7 +265,7 @@ public function get
   type HashVector = array<list<tuple<Key,Integer>>>;
   type ValueArray = tuple<Integer,Integer,array<Option<tuple<Key,Value>>>>;
   type FuncsTuple = tuple<FuncHash,FuncEq,FuncKeyString,FuncValString>;
-  partial function FuncHash input Key key; output Integer hash; end FuncHash;
+  partial function FuncHash input Key key; input Integer mod; output Integer hash; end FuncHash;
   partial function FuncEq input Key key1; input Key key2; output Boolean b; end FuncEq;
   partial function FuncKeyString input Key key; output String str; end FuncKeyString;
   partial function FuncValString input Value val; output String str; end FuncValString;
@@ -287,7 +285,7 @@ protected function get1 "help function to get"
   type HashVector = array<list<tuple<Key,Integer>>>;
   type ValueArray = tuple<Integer,Integer,array<Option<tuple<Key,Value>>>>;
   type FuncsTuple = tuple<FuncHash,FuncEq,FuncKeyString,FuncValString>;
-  partial function FuncHash input Key key; output Integer hash; end FuncHash;
+  partial function FuncHash input Key key; input Integer mod; output Integer hash; end FuncHash;
   partial function FuncEq input Key key1; input Key key2; output Boolean b; end FuncEq;
   partial function FuncKeyString input Key key; output String str; end FuncKeyString;
   partial function FuncValString input Value val; output String str; end FuncValString;
@@ -304,8 +302,7 @@ algorithm
       FuncHash hashFunc;
     case (key,(hashvec,varr,bsize,n,(hashFunc,keyEqual,_,_)))
       equation
-        hval = hashFunc(key);
-        hashindx = intMod(hval, bsize);
+        hashindx = hashFunc(key, bsize);
         indexes = hashvec[hashindx + 1];
         indx = get2(key, indexes, keyEqual);
         (k, v) = valueArrayNth(varr, indx);
@@ -352,7 +349,7 @@ public function dumpHashTable ""
   type HashVector = array<list<tuple<Key,Integer>>>;
   type ValueArray = tuple<Integer,Integer,array<Option<tuple<Key,Value>>>>;
   type FuncsTuple = tuple<FuncHash,FuncEq,FuncKeyString,FuncValString>;
-  partial function FuncHash input Key key; output Integer hash; end FuncHash;
+  partial function FuncHash input Key key; input Integer mod; output Integer hash; end FuncHash;
   partial function FuncEq input Key key1; input Key key2; output Boolean b; end FuncEq;
   partial function FuncKeyString input Key key; output String str; end FuncKeyString;
   partial function FuncValString input Value val; output String str; end FuncValString;
@@ -400,7 +397,7 @@ public function hashTableValueList "return the Value entries as a list of Values
   type HashVector = array<list<tuple<Key,Integer>>>;
   type ValueArray = tuple<Integer,Integer,array<Option<tuple<Key,Value>>>>;
   type FuncsTuple = tuple<FuncHash,FuncEq,FuncKeyString,FuncValString>;
-  partial function FuncHash input Key key; output Integer hash; end FuncHash;
+  partial function FuncHash input Key key; input Integer mod; output Integer hash; end FuncHash;
   partial function FuncEq input Key key1; input Key key2; output Boolean b; end FuncEq;
   partial function FuncKeyString input Key key; output String str; end FuncKeyString;
   partial function FuncValString input Value val; output String str; end FuncValString;
@@ -418,7 +415,7 @@ public function hashTableKeyList "return the Key entries as a list of Keys"
   type HashVector = array<list<tuple<Key,Integer>>>;
   type ValueArray = tuple<Integer,Integer,array<Option<tuple<Key,Value>>>>;
   type FuncsTuple = tuple<FuncHash,FuncEq,FuncKeyString,FuncValString>;
-  partial function FuncHash input Key key; output Integer hash; end FuncHash;
+  partial function FuncHash input Key key; input Integer mod; output Integer hash; end FuncHash;
   partial function FuncEq input Key key1; input Key key2; output Boolean b; end FuncEq;
   partial function FuncKeyString input Key key; output String str; end FuncKeyString;
   partial function FuncValString input Value val; output String str; end FuncValString;
@@ -436,7 +433,7 @@ public function hashTableList "returns the entries in the hashTable as a list of
   type HashVector = array<list<tuple<Key,Integer>>>;
   type ValueArray = tuple<Integer,Integer,array<Option<tuple<Key,Value>>>>;
   type FuncsTuple = tuple<FuncHash,FuncEq,FuncKeyString,FuncValString>;
-  partial function FuncHash input Key key; output Integer hash; end FuncHash;
+  partial function FuncHash input Key key; input Integer mod; output Integer hash; end FuncHash;
   partial function FuncEq input Key key1; input Key key2; output Boolean b; end FuncEq;
   partial function FuncKeyString input Key key; output String str; end FuncKeyString;
   partial function FuncValString input Value val; output String str; end FuncValString;

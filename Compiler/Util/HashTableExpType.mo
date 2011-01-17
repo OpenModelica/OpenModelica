@@ -1,11 +1,11 @@
-encapsulated package HashTable "
+encapsulated package HashTableExpType "
   This file is an extension to OpenModelica.
 
   Copyright (c) 2007 MathCore Engineering AB
 
   All rights reserved.
 
-  RCS: $Id$
+  RCS: $Id: HashTable.mo 7667 2011-01-09 17:37:10Z sjoelund.se $
 
   "
   
@@ -21,11 +21,12 @@ keyEqual   - A comparison function between two keys, returns true if equal.
 
 public import BaseHashTable;
 public import DAE;
-protected import ComponentReference;
-protected import HashTable2;
+protected import ExpressionDump;
+protected import Types;
+protected import System;
 
-public type Key = DAE.ComponentRef;
-public type Value = Integer;
+public type Key = DAE.Type;
+public type Value = DAE.ExpType;
 
 public type HashTableCrefFunctionsType = tuple<FuncHashCref,FuncCrefEqual,FuncCrefStr,FuncExpStr>;
 public type HashTable = tuple<
@@ -58,6 +59,18 @@ partial function FuncExpStr
   output String res;
 end FuncExpStr;
 
+protected function hashFunc
+"Calculates a hash value for Key"
+  input Key key;
+  input Integer mod;
+  output Integer res;
+protected
+  String keystr;
+algorithm
+  //keystr := Types.unparseType(key);
+  res := valueHashMod(key,mod); //System.stringHashDjb2Mod(keystr,mod);
+end hashFunc;
+
 public function emptyHashTable
 "
   Returns an empty HashTable.
@@ -76,7 +89,7 @@ public function emptyHashTableSized
   input Integer size;
   output HashTable hashTable;
 algorithm
-  hashTable := BaseHashTable.emptyHashTableWork(size,intDiv(size,10),(HashTable2.hashFunc,ComponentReference.crefEqual,ComponentReference.printComponentRefStr,intString));
+  hashTable := BaseHashTable.emptyHashTableWork(size,intDiv(size,10),(hashFunc,valueEq,Types.unparseType,ExpressionDump.typeString));
 end emptyHashTableSized;
 
-end HashTable;
+end HashTableExpType;
