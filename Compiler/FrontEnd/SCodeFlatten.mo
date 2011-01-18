@@ -160,6 +160,8 @@ algorithm
 
     case (SCode.PARTS(el, neql, ieql, nal, ial, extdecl, annl, cmt), env)
       equation
+        env = Util.listFold(el, extendEnvWithClassExtends, env);
+
         // Lookup elements.
         el = Util.listMap1(el, lookupElement, env);
 
@@ -311,7 +313,7 @@ algorithm
 
     case ((equ as SCode.EQ_FOR(index = iter_name), env))
       equation
-        env = extendEnvWithIterator((iter_name, NONE()), env);
+        env = extendEnvWithIterators({(iter_name, NONE())}, env);
         (equ, _) = SCode.traverseEEquationExps(equ, (traverseExp, env));
       then
         ((equ, env));
@@ -688,7 +690,6 @@ algorithm
       then
         cref;
 
-
     else
       equation
         print("- SCodeFlatten.lookupComponentRef failed for " +&
@@ -858,7 +859,6 @@ algorithm
       Option<Absyn.Path> opt_path;
       list<Import> imps;
       FrameType frame_type;
-      list<Absyn.Path> exts;
       Absyn.Path path;
       Option<Env> opt_env;
 
@@ -870,9 +870,9 @@ algorithm
       (SOME(item), SOME(Absyn.IDENT(inName)), SOME(inEnv));
 
     // Look among the inherited components.
-    case (_, FRAME(extendsTable = EXTENDS_TABLE(baseClasses = exts)) :: _)
+    case (_, _)
       equation
-        (item, path, env) = lookupInBaseClasses(inName, exts, inEnv);
+        (item, path, _, env) = lookupInBaseClasses(inName, inEnv);
       then
         (SOME(item), SOME(path), SOME(env));
 
@@ -906,20 +906,22 @@ end lookupInLocalScope;
 protected function lookupInBaseClasses
   "Looks up an identifier by following the extends clauses in a scope."
   input Absyn.Ident inName;
-  input list<Absyn.Path> inBaseClasses;
   input Env inEnv;
   output Item outItem;
   output Absyn.Path outPath;
+  output Absyn.Path outBaseClass;
   output Env outEnv;
 
   Env env;
+  list<Absyn.Path> bcl;
 algorithm
+  FRAME(extendsTable = EXTENDS_TABLE(baseClasses = bcl as _ :: _)) :: _ := inEnv;
   // We need to remove the extends from the current scope, because the names of
   // extended classes should not be found by lookup through the extends-clauses
   // (Modelica Specification 3.2, section 5.6.1.).
   env := removeExtendsFromLocalScope(inEnv);
-  (outItem, outPath, outEnv) := 
-    lookupInBaseClasses2(inName, inBaseClasses, env);
+  (outItem, outPath, outBaseClass, outEnv) := 
+    lookupInBaseClasses2(inName, bcl, env);
 end lookupInBaseClasses;
 
 protected function lookupInBaseClasses2
@@ -928,9 +930,11 @@ protected function lookupInBaseClasses2
   input Env inEnv;
   output Item outItem;
   output Absyn.Path outPath;
+  output Absyn.Path outBaseClass;
   output Env outEnv;
 algorithm
-  (outItem, outPath, outEnv) := matchcontinue(inName, inBaseClasses, inEnv)
+  (outItem, outPath, outBaseClass, outEnv) := 
+  matchcontinue(inName, inBaseClasses, inEnv)
     local
       Absyn.Path bc, path;
       list<Absyn.Path> rest_bc;
@@ -943,14 +947,14 @@ algorithm
         (item, _, SOME(env)) = lookupName(bc, inEnv);
         (item, path, env) = lookupNameInItem(Absyn.IDENT(inName), item, env);
       then
-        (item, path, env);
+        (item, path, bc, env);
 
     // No match, check the rest of the base classes.
     case (_, _ :: rest_bc, _)
       equation
-        (item, path, env) = lookupInBaseClasses2(inName, rest_bc, inEnv);
+        (item, path, bc, env) = lookupInBaseClasses2(inName, rest_bc, inEnv);
       then
-        (item, path, env);
+        (item, path, bc, env);
 
   end matchcontinue;
 end lookupInBaseClasses2;
@@ -1378,16 +1382,27 @@ protected function extendEnvWithClass
   input SCode.Class inClass;
   input Env inEnv;
   output Env outEnv;
-protected
-  String cls_name;
-  Env class_env;
-  SCode.ClassDef cdef;
-  Absyn.Path cls_path;
 algorithm
-  SCode.CLASS(name = cls_name, classDef = cdef) := inClass;
-  class_env := newEnvironment(SOME(cls_name));
-  class_env := extendEnvWithClassComponents(cls_name, cdef, class_env);
-  outEnv := extendEnvWithItem(CLASS(inClass, class_env), inEnv, cls_name);
+  outEnv := match(inClass, inEnv)
+    local
+      String cls_name;
+      Env class_env, env;
+      SCode.ClassDef cdef;
+      Absyn.Path cls_path;
+
+    // Class extends are handled in lookupClassDefNames, and should not be added
+    // to the environment here.
+    case (SCode.CLASS(classDef = SCode.CLASS_EXTENDS(baseClassName = _)), _)
+      then inEnv;
+
+    case (SCode.CLASS(name = cls_name, classDef = cdef), _)
+      equation
+        class_env = newEnvironment(SOME(cls_name));
+        class_env = extendEnvWithClassComponents(cls_name, cdef, class_env);
+        env = extendEnvWithItem(CLASS(inClass, class_env), inEnv, cls_name);
+      then
+        env;
+  end match;
 end extendEnvWithClass;
 
 protected function removeExtendsFromLocalScope
@@ -1700,6 +1715,74 @@ algorithm
     NONE(), NONE(), NONE(), NONE());
   outEnv := extendEnvWithElement(iter, inEnv);
 end extendEnvWithIterator;
+
+protected function extendEnvWithClassExtends
+  input SCode.Element inClassExtends;
+  input Env inEnv;
+  output Env outEnv;
+algorithm
+  outEnv := match(inClassExtends, inEnv)
+    local
+      SCode.Ident bc;
+      list<SCode.Element> el;
+      Absyn.Path path;
+      Boolean pp, ep;
+      SCode.Restriction res;
+      Absyn.Info info;
+      Env env;
+
+    // When a 'redeclare class extends X' is encountered we insert a 'class X
+    // extends BaseClass.X' into the environment, with the same elements as the
+    // class extends clause. BaseClass is the class that class X is inherited
+    // from. This allows use to look up elements in class extends, because
+    // lookup can handle normal extends.
+    case (SCode.CLASSDEF(classDef = SCode.CLASS(
+          partialPrefix = pp,
+          encapsulatedPrefix = ep,
+          restriction = res,
+          classDef = SCode.CLASS_EXTENDS(baseClassName = bc, elementLst = el),
+          info = info)), _)
+      equation
+        // Look up which extends the base class comes from and add it to the
+        // base class name.
+        path = lookupBaseClass(bc, inEnv, info);
+        path = Absyn.joinPaths(path, Absyn.IDENT(bc));
+        // Insert a 'class bc extends path' into the environment.
+        el = SCode.EXTENDS(path, SCode.NOMOD(), NONE(), Absyn.dummyInfo) :: el;
+        env = extendEnvWithClass(SCode.CLASS(bc, pp, ep, res, 
+          SCode.PARTS(el, {}, {}, {}, {}, NONE(), {}, NONE()), info), inEnv);
+      then env;
+
+    else then inEnv;
+  end match;
+end extendEnvWithClassExtends;
+
+protected function lookupBaseClass
+  "Looks up from which base class a certain class is inherited from by searching
+  the extends in the local scope."
+  input SCode.Ident inClass;
+  input Env inEnv;
+  input Absyn.Info inInfo;
+  output Absyn.Path outBaseClass;
+algorithm
+  outBaseClass := matchcontinue(inClass, inEnv, inInfo)
+    local
+      Absyn.Path bc;
+
+    case (_, _, _)
+      equation
+        (_, _, bc, _) = lookupInBaseClasses(inClass, inEnv);
+      then
+        bc;
+
+    else
+      equation
+        print("- SCodeFlatten.lookupBaseClass: Could not find "
+        +& inClass +& " among the inherited classes.\n");
+      then
+        fail();
+  end matchcontinue;
+end lookupBaseClass;
 
 protected function getEnvPath
   input Env inEnv;
