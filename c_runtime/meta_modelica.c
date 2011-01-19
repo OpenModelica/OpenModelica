@@ -60,36 +60,12 @@ void *mmc_alloc_bytes(unsigned nbytes)
   return p;
 }
 
-union mmc_double_as_words {
-    double d;
-    mmc_uint_t data[MMC_SIZE_DBL/MMC_SIZE_INT];
-};
-
-void mmc_prim_set_real(struct mmc_real *p, double d)
-{
-  union mmc_double_as_words u;
-  u.d = d;
-  p->data[0] = u.data[0];
-  if (MMC_SIZE_DBL/MMC_SIZE_INT > 1)
-    p->data[1] = u.data[1];
-}
-
 void* mmc_mk_rcon(double d)
 {
-    struct mmc_real *p = mmc_alloc_words(MMC_SIZE_DBL/MMC_SIZE_INT + 1);
-    mmc_prim_set_real(p, d);
+    struct mmc_real *p = mmc_alloc_words(sizeof(struct mmc_real)/MMC_SIZE_INT);
     p->header = MMC_REALHDR;
+    p->data = d;
     return MMC_TAGPTR(p);
-}
-
-double mmc_prim_get_real(void *p)
-{
-    union mmc_double_as_words u;
-    if ((0 == ((mmc_sint_t)p & 1))) return MMC_UNTAGFIXNUM(p);
-    u.data[0] = MMC_REALDATA(p)[0];
-    if (MMC_SIZE_DBL/MMC_SIZE_INT > 1)
-      u.data[1] = MMC_REALDATA(p)[1];
-    return u.d;
 }
 
 void *mmc_mk_box_arr(int slots, unsigned ctor, const void** args)
@@ -140,8 +116,8 @@ valueEq_rettype valueEq(modelica_metatype lhs, modelica_metatype rhs)
 
   if (h_lhs == MMC_REALHDR) {
     double d1,d2;
-    d1 = mmc_prim_get_real(lhs);
-    d2 = mmc_prim_get_real(rhs);
+    d1 = MMC_REALDATA(lhs);
+    d2 = MMC_REALDATA(rhs);
     return d1 == d2;
   }
   if (MMC_HDRISSTRING(h_lhs)) {
@@ -264,7 +240,7 @@ inline static int anyStringWork(void* any, int ix)
 
   if (hdr == MMC_REALHDR) {
     checkAnyStringBufSize(ix,40);
-    ix += sprintf(anyStringBuf+ix, "%.7g", (double) mmc_prim_get_real(any));
+    ix += sprintf(anyStringBuf+ix, "%.7g", (double) MMC_REALDATA(any));
     return ix;
   }
   if (MMC_HDRISSTRING(hdr)) {

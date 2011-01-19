@@ -111,11 +111,7 @@ typedef int mmc_sint_t;
     } NAME = { MMC_STRINGHDR(LEN), VAL }
 #define MMC_REFSTRINGLIT(NAME) MMC_TAGPTR(&(NAME).header)
 
-struct mmc_real_lit {  /* there must be no padding between `header' and `data' */
-    mmc_uint_t header;
-    double data;
-};
-#define MMC_DEFREALLIT(NAME,VAL) struct mmc_real_lit NAME = {MMC_REALHDR,VAL}
+#define MMC_DEFREALLIT(NAME,VAL) struct mmc_real NAME = {MMC_REALHDR,VAL}
 #define MMC_REFREALLIT(NAME) MMC_TAGPTR(&(NAME).header)
 
 struct mmc_header {
@@ -134,7 +130,7 @@ struct mmc_cons_struct {
 
 struct mmc_real {
     mmc_uint_t header;  /* MMC_REALHDR */
-    mmc_uint_t data[MMC_SIZE_DBL/MMC_SIZE_INT];
+    double data;
 };
 
 struct mmc_string {
@@ -371,15 +367,13 @@ typedef modelica_real     mmc__unbox__real_rettype;
 typedef modelica_string_t mmc__unbox__string_rettype;
 typedef base_array_t      mmc__unbox__array_rettype;
 
-modelica_real mmc_prim_get_real(void *p);
-
 #define mmc_mk_integer mmc_mk_icon
 #define mmc_mk_boolean mmc_mk_bcon
 #define mmc_mk_real mmc_mk_rcon
 
 #define mmc_unbox_boolean(X) MMC_UNTAGFIXNUM(X)
 #define mmc_unbox_integer(X) MMC_UNTAGFIXNUM(X)
-#define mmc_unbox_real(X) mmc_prim_get_real(X)
+#define mmc_unbox_real(X) MMC_REALDATA(X)
 #define mmc_unbox_string(X) MMC_STRINGDATA(X)
 #define mmc_unbox_array(X) (*((base_array_t*)X))
 

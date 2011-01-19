@@ -62,7 +62,7 @@
 #define RML_STRINGDATA MMC_STRINGDATA
 #define RML_UNTAGFIXNUM MMC_UNTAGFIXNUM
 #define RML_NILHDR MMC_NILHDR
-#define rml_prim_get_real mmc_prim_get_real
+#define rml_prim_get_real MMC_REALDATA
 #define RML_REALHDR MMC_REALHDR
 #define RML_HDRISSTRING MMC_HDRISSTRING
 #define RML_HDRSLOTS MMC_HDRSLOTS

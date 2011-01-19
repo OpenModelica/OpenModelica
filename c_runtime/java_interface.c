@@ -689,7 +689,7 @@ jobject mmc_to_jobject(JNIEnv* env, void* mmc)
     return NewJavaInteger(env,MMC_UNTAGFIXNUM(mmc));
   hdr = MMC_GETHDR(mmc);
   if (hdr == MMC_REALHDR) /* REAL */
-    return NewJavaDouble(env,*((jdouble*)MMC_REALDATA(mmc)));
+    return NewJavaDouble(env,MMC_REALDATA(mmc));
   if (MMC_HDRISSTRING(hdr)) /* STRING */
     return NewJavaString(env,MMC_STRINGDATA(mmc));
   if (hdr == MMC_NILHDR) /* Empty list; Tested, but not in OMC. */ {
