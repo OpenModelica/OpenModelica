@@ -16,7 +16,7 @@ echo 'void* mmc_emptystring = MMC_REFSTRINGLIT(OMC_STRINGLIT_0);'
 for i in $HEX; do
 for j in $HEX; do
   if [ $i$j != "00" ] ; then
-    echo "static MMC_DEFSTRINGLIT(OMC_STRINGLIT_1_$i$j,1,\"\\\\x$i$j\");"
+    echo "static MMC_DEFSTRINGLIT(OMC_STRINGLIT_1_$i$j,1,\"\\x$i$j\");"
   fi
 done
 done
