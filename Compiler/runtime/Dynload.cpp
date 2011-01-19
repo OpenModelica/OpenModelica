@@ -445,12 +445,15 @@ static void *value_to_mmc(void* value)
 {
   switch (RML_HDRCTOR(RML_GETHDR(value))) {
   case Values__INTEGER_3dBOX1:
-  case Values__REAL_3dBOX1:
   case Values__BOOL_3dBOX1:
   case Values__STRING_3dBOX1: {
     void *data = RML_STRUCTDATA(value)[UNBOX_OFFSET+0];
     return data;
   };
+  case Values__REAL_3dBOX1: {
+    void *data = RML_STRUCTDATA(value)[UNBOX_OFFSET+0];
+    return mmc_mk_rcon(rml_prim_get_real(data));
+  }
   case Values__ARRAY_3dBOX2:
     printf("Parsing of array inside uniontype failed\n");
     return 0;
