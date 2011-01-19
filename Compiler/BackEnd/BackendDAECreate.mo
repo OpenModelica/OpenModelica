@@ -2561,6 +2561,8 @@ protected function mergeZeroCrossing "function: mergeZeroCrossing
 
   Merges two zero crossings into one by makeing the union of the lists of
   equaions and when clauses they appear in.
+  modified: 2011-01 by wbraun
+  merge to ZeroCrosssing with the lowest index 
 "
   input BackendDAE.ZeroCrossing inZeroCrossing1;
   input BackendDAE.ZeroCrossing inZeroCrossing2;
@@ -2643,15 +2645,14 @@ public function findZeroCrossings "function: findZeroCrossings
   output list<BackendDAE.MultiDimEquation> outMultiDimEqs;
   output list<BackendDAE.WhenClause> outWhenClauseLst;
   output list<DAE.Algorithm> outAlgs;
-  //output Integer numberRelations;
 algorithm
   (res_1,outEquationLst,outMultiDimEqs,outWhenClauseLst,outAlgs) := findZeroCrossings2(vars, knvars,eq,multiDimEqs,0, wc, 0, algs,0,{},0);
-  //numberRelations := listLength(res_1);  
 end findZeroCrossings;
 
 protected function findZeroCrossings2 "function: findZeroCrossings2
 
   Helper function to find_zero_crossing.
+  modified: 2011-01 by wbraun
 "
   input BackendDAE.Variables inVariables1;
   input BackendDAE.Variables knvars;
@@ -2701,6 +2702,26 @@ algorithm
       list<Integer> dimsize;
       
     case (_,_,{},mdeqs,_,{},_,{},_,res,_) then (res,{},mdeqs,{},{});
+    
+    // all algorithm stmts are processed firstly
+    case (v,knvars,el,mdeqs,eq_count,xsWhen,wc_count,(DAE.ALGORITHM_STMTS(stmts)::algs),countZC,zcs,alg_indx)
+      equation
+        ((stmts_1,(_,_,_,(res,countZC),(_,_,_,_)))) = traverseStmtsExps(stmts, collectZCAlgs, (DAE.RCONST(0.0),{},DAE.RCONST(0.0),(zcs,countZC),(alg_indx,v,knvars,el)),knvars);
+        alg_indx = alg_indx + 1;
+        (res1,eq_reslst,mdeqs_res1,wc_reslst,algs_res) = findZeroCrossings2(v, knvars,el,mdeqs,eq_count, xsWhen, wc_count,algs,countZC,res,alg_indx);
+      then
+        (res1,eq_reslst,mdeqs_res1,wc_reslst,DAE.ALGORITHM_STMTS(stmts_1)::algs_res);
+    
+    // then all when clauses are processed 
+    case (v,knvars,el,mdeqs,eq_count,((wc as BackendDAE.WHEN_CLAUSE(condition = daeExp,reinitStmtLst=whenOperations , elseClause = elseClause_ )) :: xsWhen),wc_count,{},countZC,zcs,_)
+      equation
+        wc_count = wc_count + 1;
+        (eres1,countZC,res) = findZeroCrossings3(daeExp,zcs,countZC,-1,wc_count,v,knvars);
+        (res1,eq_reslst,mdeqs_res1,wc_reslst,algs) = findZeroCrossings2(v, knvars,el,mdeqs,eq_count, xsWhen, wc_count,{},countZC,res,0);
+      then
+        (res1,eq_reslst,mdeqs_res1,BackendDAE.WHEN_CLAUSE(eres1,whenOperations,elseClause_)::wc_reslst,algs);
+      
+    // after all algorithms and when clauses are processed, all equations are processed 
     case (v,knvars,((e as BackendDAE.EQUATION(exp = e1,scalar = e2, source= source_)) :: xs),mdeqs,eq_count,{},_,{},countZC,zcs,_)
       equation
         eq_count = eq_count + 1;
@@ -2744,29 +2765,14 @@ algorithm
       then
         (res1,BackendDAE.RESIDUAL_EQUATION(eres1,source_)::eq_reslst,mdeqs_res1,wc_reslst,algs);
         
-        // let when equation pass they are discrete and can't contain ZeroCrossings 
+    // let when equation pass they are discrete and can't contain ZeroCrossings 
     case (v,knvars,(e :: xs),mdeqs,eq_count,{},_,{},countZC,res,_)
       equation
         eq_count = eq_count + 1;
         (res1,eq_reslst,mdeqs_res1,wc_reslst,algs) = findZeroCrossings2(v, knvars,xs,mdeqs,eq_count, {}, 0,{},countZC,res,0);
       then
         (res1,e::eq_reslst,mdeqs_res1,wc_reslst,algs);
-
-    case (v,knvars,el,mdeqs,eq_count,((wc as BackendDAE.WHEN_CLAUSE(condition = daeExp,reinitStmtLst=whenOperations , elseClause = elseClause_ )) :: xsWhen),wc_count,{},countZC,zcs,_)
-      equation
-        wc_count = wc_count + 1;
-        (eres1,countZC,res) = findZeroCrossings3(daeExp,zcs,countZC,-1,wc_count,v,knvars);
-        (res1,eq_reslst,mdeqs_res1,wc_reslst,algs) = findZeroCrossings2(v, knvars,el,mdeqs,eq_count, xsWhen, wc_count,{},countZC,res,0);
-      then
-        (res1,eq_reslst,mdeqs_res1,BackendDAE.WHEN_CLAUSE(eres1,whenOperations,elseClause_)::wc_reslst,algs);
-    case (v,knvars,el,mdeqs,eq_count,xsWhen,wc_count,(DAE.ALGORITHM_STMTS(stmts)::algs),countZC,zcs,alg_indx)
-      equation
-        ((stmts_1,(_,_,_,(res,countZC),(_,_,_,_)))) = traverseStmtsExps(stmts, collectZCAlgs, (DAE.RCONST(0.0),{},DAE.RCONST(0.0),(zcs,countZC),(alg_indx,v,knvars,el)),knvars);
-        alg_indx = alg_indx + 1;
-        (res1,eq_reslst,mdeqs_res1,wc_reslst,algs_res) = findZeroCrossings2(v, knvars,el,mdeqs,eq_count, xsWhen, wc_count,algs,countZC,res,alg_indx);
-      then
-        (res1,eq_reslst,mdeqs_res1,wc_reslst,DAE.ALGORITHM_STMTS(stmts_1)::algs_res);
-  end matchcontinue;
+   end matchcontinue;
 end findZeroCrossings2;
 
 protected function findZeroCrossings3
@@ -2788,7 +2794,8 @@ end findZeroCrossings3;
 
 protected function collectZC "function: collectZeroCrossings
 
-  Collects zero crossings
+  Collects zero crossings in equations
+  modified: 2011-01 by wbraun
 "
   input tuple<DAE.Exp, tuple<tuple<list<BackendDAE.ZeroCrossing>,Integer>, tuple<Integer,Integer,BackendDAE.Variables,BackendDAE.Variables>>> inTplExpExpTplExpExpLstVariables;
   output tuple<DAE.Exp,  Boolean, tuple<tuple<list<BackendDAE.ZeroCrossing>,Integer>, tuple<Integer,Integer,BackendDAE.Variables,BackendDAE.Variables>>> outTplExpExpTplExpExpLstVariables;
@@ -2813,14 +2820,14 @@ algorithm
         zc = mergeZeroCrossings(zc);
         indx = indx + (listLength(zc) - listLength(zeroCrossings));  
       then ((e,true,((zc,indx),(eq_count,wc_count,vars,knvars))));
-        /* function with discrete expressions generate no zerocrossing */
+    // function with discrete expressions generate no zerocrossing
     case (((e as DAE.RELATION(exp1 = e1,operator = op,exp2 = e2)),((zeroCrossings,indx),(eq_count,wc_count,vars,knvars)))) 
       equation
         true = BackendDAEUtil.isDiscreteExp(e1, vars,knvars);
         true = BackendDAEUtil.isDiscreteExp(e2, vars,knvars);
       then
         ((e,true,((zeroCrossings,indx),(eq_count,wc_count,vars,knvars))));
-        /* All other functions generate zerocrossing. */  
+    // All other functions generate zerocrossing.
     case (((e as DAE.RELATION(exp1 = e1,operator = op,exp2 = e2)),((zeroCrossings,indx),(eq_count,wc_count,vars,knvars))))
       equation
         e_1 = DAE.RELATION(e1,op,e2,indx,NONE());
@@ -2838,7 +2845,10 @@ end collectZC;
 
 protected function collectZCAlgs "function: collectZeroCrossings
 
-  Collects zero crossings
+  Collects zero crossings in algorithms stamts, beside for loops those are
+  processed by collectZCAlgsFor
+  
+  modified: 2011-01 by wbraun 
 "
   input tuple<DAE.Exp, tuple<DAE.Exp, list<DAE.Exp>,DAE.Exp, tuple<list<BackendDAE.ZeroCrossing>,Integer>, tuple<Integer,BackendDAE.Variables,BackendDAE.Variables,list<BackendDAE.Equation>>>> inTplExpExpTplExpExpLstVariables;
   output tuple<DAE.Exp, Boolean, tuple<DAE.Exp, list<DAE.Exp>, DAE.Exp, tuple<list<BackendDAE.ZeroCrossing>,Integer>, tuple<Integer,BackendDAE.Variables,BackendDAE.Variables,list<BackendDAE.Equation>>>> outTplExpExpTplExpExpLstVariables;
@@ -2867,13 +2877,13 @@ algorithm
         zc = mergeZeroCrossings(zc);
         indx = indx + (listLength(zc) - listLength(zeroCrossings));
       then ((e,true,(iterator,le,range,(zc,indx),(alg_indx,vars,knvars,eqns))));
-        /* function with discrete expressions generate no zerocrossing */
+    // function with discrete expressions generate no zerocrossing
     case (((e as DAE.RELATION(exp1 = e1,operator = op,exp2 = e2)),(iterator,le,range,(zeroCrossings,indx),(alg_indx,vars,knvars,eqns)))) 
       equation
         true = BackendDAEUtil.isDiscreteExp(e1, vars,knvars);
         true = BackendDAEUtil.isDiscreteExp(e2, vars,knvars);
       then ((e,true,(iterator,le,range,(zeroCrossings,indx),(alg_indx,vars,knvars,eqns))));
-        /* All other functions generate zerocrossing. */  
+    // All other functions generate zerocrossing.
     case (((e as DAE.RELATION(exp1 = e1,operator = op,exp2 = e2)),(iterator,le,range,(zeroCrossings,indx),(alg_indx,vars,knvars,eqns))))
       equation
         e_1 = DAE.RELATION(e1,op,e2,indx,NONE());  
@@ -2890,9 +2900,10 @@ algorithm
 end collectZCAlgs;
 
 protected function traverseStmtsExps "function: traverseStmtExps
-  Helper function for  traverseStmtsExps.
   Handles the traversing of list<DAE.Statement>.
-  Works with the help of Expression.traverseExpTopDown"
+  Works with the help of Expression.traverseExpTopDown to find 
+  ZeroCrossings in algorithm statements
+  modified: 2011-01 by wbraun"
   input list<DAE.Statement> inStmts;
   input FuncExpType func;
   input tuple<DAE.Exp, list<DAE.Exp>, DAE.Exp, tuple<list<BackendDAE.ZeroCrossing>,Integer>, tuple<Integer,BackendDAE.Variables,BackendDAE.Variables,list<BackendDAE.Equation>>> extraArg;
@@ -2902,7 +2913,6 @@ protected function traverseStmtsExps "function: traverseStmtExps
     input tuple<DAE.Exp,tuple<DAE.Exp, list<DAE.Exp>, DAE.Exp, tuple<list<BackendDAE.ZeroCrossing>,Integer>, tuple<Integer,BackendDAE.Variables,BackendDAE.Variables,list<BackendDAE.Equation>>>> arg; 
     output tuple<DAE.Exp, Boolean, tuple<DAE.Exp, list<DAE.Exp>, DAE.Exp, tuple<list<BackendDAE.ZeroCrossing>,Integer>, tuple<Integer,BackendDAE.Variables,BackendDAE.Variables,list<BackendDAE.Equation>>>> oarg; 
   end FuncExpType;
-  //replaceable type Type_a subtypeof Any;
 algorithm
   (outTplStmtTypeA) := match(inStmts,func,extraArg,knvars)
     local
@@ -3008,8 +3018,6 @@ algorithm
         
     case (((x as DAE.STMT_REINIT(var = e,value=e2, source = source)) :: xs),func, extraArg, knvars)
       equation
-        //((e_1,extraArg)) = Expression.traverseExpTopDown(e, func, extraArg);
-        //((e_2,extraArg)) = Expression.traverseExpTopDown(e2, func, extraArg);
         ((xs_1, extraArg)) = traverseStmtsExps(xs, func, extraArg, knvars);
       then ((x :: xs_1,extraArg));
         
@@ -3064,8 +3072,9 @@ end traverseStmtsExps;
 
 protected function traverseStmtsElseExps "
 Author: BZ, 2008-12
-Helper function for traverseStmt
-"
+Helper function for traverseStmtsExps
+to find ZeroCrosssings in algorithm Else statements
+modified: 2011-01 by wbraun"
   input Algorithm.Else inElse;
   input FuncExpType func;
   input tuple<DAE.Exp, list<DAE.Exp>, DAE.Exp, tuple<list<BackendDAE.ZeroCrossing>,Integer>, tuple<Integer,BackendDAE.Variables,BackendDAE.Variables,list<BackendDAE.Equation>>> extraArg;
@@ -3075,7 +3084,6 @@ Helper function for traverseStmt
     input tuple<DAE.Exp,tuple<DAE.Exp, list<DAE.Exp>, DAE.Exp, tuple<list<BackendDAE.ZeroCrossing>,Integer>, tuple<Integer,BackendDAE.Variables,BackendDAE.Variables,list<BackendDAE.Equation>>>> arg; 
     output tuple<DAE.Exp,Boolean, tuple<DAE.Exp, list<DAE.Exp>, DAE.Exp, tuple<list<BackendDAE.ZeroCrossing>,Integer>, tuple<Integer,BackendDAE.Variables,BackendDAE.Variables,list<BackendDAE.Equation>>>> oarg;
   end FuncExpType;
-  //replaceable type Type_a subtypeof Any;
 algorithm
   outTplStmtTypeA := matchcontinue(inElse,func,extraArg,knvars)
     local
@@ -3099,7 +3107,8 @@ end traverseStmtsElseExps;
 
 protected function collectZCAlgsFor "function: collectZeroCrossings
 
-  Collects zero crossings in for loops
+  Collects zero crossings in for loops  
+  added: 2011-01 by wbraun 
 "
   input tuple<DAE.Exp, tuple<DAE.Exp, list<DAE.Exp>, DAE.Exp, tuple<list<BackendDAE.ZeroCrossing>,Integer>, tuple<Integer,BackendDAE.Variables,BackendDAE.Variables,list<BackendDAE.Equation>>>> inTplExpExpTplExpExpLstVariables;
   output tuple<DAE.Exp, Boolean, tuple<DAE.Exp, list<DAE.Exp>, DAE.Exp, tuple<list<BackendDAE.ZeroCrossing>,Integer>, tuple<Integer,BackendDAE.Variables,BackendDAE.Variables,list<BackendDAE.Equation>>>> outTplExpExpTplExpExpLstVariables;
@@ -3131,13 +3140,13 @@ algorithm
         zc = mergeZeroCrossings(zc);
         indx = indx + (listLength(zc) - listLength(zeroCrossings));  
       then ((e,true,(iterator,inExpLst,range,(zc,indx),(alg_indx,vars,knvars,eqns))));
-        /* function with discrete expressions generate no zerocrossing */
+    // function with discrete expressions generate no zerocrossing.
     case (((e as DAE.RELATION(exp1 = e1,operator = op,exp2 = e2)),(iterator,inExpLst,range,(zeroCrossings,indx),(alg_indx,vars,knvars,eqns)))) 
       equation
         true = BackendDAEUtil.isDiscreteExp(e1, vars,knvars);
         true = BackendDAEUtil.isDiscreteExp(e2, vars,knvars);
       then ((e,true,(iterator,inExpLst,range,(zeroCrossings,indx),(alg_indx,vars,knvars,eqns))));
-        /* All other functions generate zerocrossing. */  
+    // All other functions generate zerocrossing.
     case (((e as DAE.RELATION(exp1 = e1,operator = op,exp2 = e2)),(iterator,inExpLst,range as DAE.RANGE(exp=startvalue,expOption=stepvalueopt),(zeroCrossings,indx),(alg_indx,vars,knvars,eqns))))
       equation
         b1 = Expression.expContains(e1,iterator);
@@ -3147,7 +3156,6 @@ algorithm
         istart = expInt(startvalue,knvars);
         istep = expInt(stepvalue,knvars);
         e_1 = DAE.RELATION(e1,op,e2,indx,SOME((iterator,istart,istep)));
-        //(stmts,_) = DAEUtil.traverseDAEEquationsStmts(replaceExp,((e,e_1)));
         (explst,indx) = replaceIteratorwithStaticValues(e,iterator,inExpLst,indx); 
         eqs = BackendEquation.equationAlgorithmEqnsNr(eqns,alg_indx,0);
         zc = makeZeroCrossings(explst, eqs, {});
@@ -3156,14 +3164,13 @@ algorithm
         itmp = (listLength(zc)-listLength(zeroCrossings));
         eres = Util.if_((itmp>0),e_1,e); 
       then ((e,true,(iterator,inExpLst,range,(zc,indx),(alg_indx,vars,knvars,eqns))));
-        /* All other functions generate zerocrossing. */  
+    // All other functions generate zerocrossing.  
     case (((e as DAE.RELATION(exp1 = e1,operator = op,exp2 = e2)),(iterator,inExpLst,range,(zeroCrossings,indx),(alg_indx,vars,knvars,eqns))))
       equation
         b1 = Expression.expContains(e1,iterator);
         b2 = Expression.expContains(e2,iterator);
         false = Util.boolOrList({b1,b2});
         e_1 = DAE.RELATION(e1,op,e2,indx,NONE());
-        //(stmts,_) = DAEUtil.traverseDAEEquationsStmts(stmts,replaceExp,((e,e_1)));
         eqs = BackendEquation.equationAlgorithmEqnsNr(eqns,alg_indx,0);
         zc = makeZeroCrossings({e_1}, eqs, {});
         zc = listAppend(zeroCrossings, zc);
@@ -3210,8 +3217,9 @@ end replaceIteratorwithStaticValues;
 
 
 protected function traverseStmtsForExps
-"function: traverseStmtsForExps
-  "
+"Helper function for traverseStmtsExps
+ to processed for loops to search ZeroCrosssings 
+ modified: 2011-01 by wbraun"
   input DAE.Exp inIteratorExp;
   input list<DAE.Exp> inExplst;
   input DAE.Exp inRange;
@@ -3224,7 +3232,6 @@ protected function traverseStmtsForExps
     input tuple<DAE.Exp, tuple<DAE.Exp, list<DAE.Exp>, DAE.Exp,tuple<list<BackendDAE.ZeroCrossing>,Integer>, tuple<Integer,BackendDAE.Variables,BackendDAE.Variables,list<BackendDAE.Equation>>>> arg; 
     output tuple<DAE.Exp, Boolean, tuple<DAE.Exp, list<DAE.Exp>, DAE.Exp,tuple<list<BackendDAE.ZeroCrossing>,Integer>, tuple<Integer,BackendDAE.Variables,BackendDAE.Variables,list<BackendDAE.Equation>>>> oarg;
   end FuncExpType;
-  //replaceable type Type_a subtypeof Any;
 algorithm
   outTplStmtTypeA := matchcontinue (inIteratorExp,inExplst,inRange,inStmts,knvars,func,extraArg)
     local
