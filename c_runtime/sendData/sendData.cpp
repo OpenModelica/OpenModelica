@@ -679,7 +679,7 @@ void enableSendData(int enable)
   Static::enabled_ = enable;
 }
 
-void initSendData(int variableCount1, int variableCount2, int variableCount3, int variableCount4, struct omc_varInfo* statesNames, struct omc_varInfo* stateDerivativesNames, struct omc_varInfo* algebraicsNames, struct omc_varInfo* intAlgebraicsNames, struct omc_varInfo* boolAlgebraicsNames)
+void initSendData(int variableCount1, int variableCount2, int variableCount3, int variableCount4, const struct omc_varInfo* statesNames, const struct omc_varInfo* stateDerivativesNames, const struct omc_varInfo* algebraicsNames, const struct omc_varInfo* intAlgebraicsNames, const struct omc_varInfo* boolAlgebraicsNames)
 {
   char* port = getenv("sendDataPort");
   if(port != NULL && strlen(port))

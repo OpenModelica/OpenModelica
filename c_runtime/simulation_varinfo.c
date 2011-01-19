@@ -29,48 +29,24 @@
  *
  */
 
-#ifndef _SIMULATION_VARINFO_H
-#define _SIMULATION_VARINFO_H
+#include "simulation_varinfo.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-typedef struct {
-  const char* filename;
-  int lineStart;
-  int colStart;
-  int lineEnd;
-  int colEnd;  
-} omc_fileInfo;
-
-const omc_fileInfo omc_dummyFileInfo = {"",-1,-1,-1,-1};
-
-struct omc_varInfo {
-  const char* name;
-  const char* comment;
-  const omc_fileInfo info;
-};
-
-struct omc_equationInfo {
-  const char *name;
-  int numVar;
-  const struct omc_varInfo* vars; /* The variables involved in the equation */
-  const omc_fileInfo info;
-};
-
-struct omc_functionInfo {
-  const char* name;
-  const omc_fileInfo info;
-};
-
-typedef enum {ERROR_AT_TIME,NO_PROGRESS_START_POINT,NO_PROGRESS_FACTOR,IMPROPER_INPUT} equationSystemError;
-
-void printErrorEqSyst(equationSystemError,struct omc_equationInfo,double var);
-
-#ifdef __cplusplus
+void printErrorEqSyst(equationSystemError err, struct omc_equationInfo eq, double var)
+{
+  switch (err) {
+  case ERROR_AT_TIME:
+    printf("Error solving nonlinear system %s at time %g\n", eq.name, var);
+    break;
+  case NO_PROGRESS_START_POINT:
+    printf("Solving nonlinear system %s: iteration not making progress, trying with different starting points (+%g)\n", eq.name, var);
+    break;
+  case NO_PROGRESS_FACTOR:
+    printf("Solving nonlinear system %s: iteration not making progress, trying to decrease factor to %g\n", eq.name, var);
+    break;
+  case IMPROPER_INPUT:
+    printf("improper input parameters to nonlinear eq. syst: %s at time %g\n", eq.name, var);
+    break;
+  default:
+    printf("Unknown equation system error: %d %s %g\n", err, eq.name, var);
+  }
 }
-#endif
-
-#endif
-

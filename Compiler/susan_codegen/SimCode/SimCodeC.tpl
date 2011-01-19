@@ -93,6 +93,8 @@ case SIMCODE(__) then
   
   <%globalData(modelInfo)%>
   
+  <%equationInfo(allEquationsPlusWhen)%>
+  
   <%functionGetName(modelInfo)%>
   
   <%functionDivisionError()%>
@@ -335,19 +337,20 @@ case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
 end globalData;
 
 
-template globalDataVarInfoArray(String name, list<SimVar> items)
+template globalDataVarInfoArray(String _name, list<SimVar> items)
  "Generates array with variable names in global data section."
 ::=
   match items
   case {} then
     <<
-    struct omc_varInfo <%name%>[1] = {{"","",omc_dummyFileInfo}};
+    const struct omc_varInfo <%_name%>[1] = {{"","",omc_dummyFileInfo}};
     >>
   case items then
     <<
-    struct omc_varInfo <%name%>[<%listLength(items)%>] = {
+    const struct omc_varInfo <%_name%>[<%listLength(items)%>] = {
       <%items |> var as SIMVAR(info=info as INFO(__)) => '{"<%crefStr(var.name)%>","<%var.comment%>",{"<%info.fileName%>",<%info.lineNumberStart%>,<%info.columnNumberStart%>,<%info.lineNumberEnd%>,<%info.columnNumberEnd%>}}'; separator=",\n"%>
     };
+    <%items |> var as SIMVAR(info=info as INFO(__)) hasindex i0 => '#define <%cref(var.name)%>__varInfo <%_name%>[<%i0%>]'; separator="\n"%>
     >>
 end globalDataVarInfoArray;
 
@@ -520,6 +523,7 @@ template functionInitializeDataStruc()
     returnData->nInputVars = NI;
     returnData->nOutputVars = NO;
     returnData->nFunctions = NFUNC;
+    returnData->nProfileBlocks = n_omc_equationInfo_reverse_prof_index;
     returnData->nZeroCrossing = NG;
     returnData->nRawSamples = NG_SAM;
     returnData->nInitialResiduals = NR;
@@ -750,6 +754,13 @@ template functionInitializeDataStruc()
       returnData->functionNames = function_names;
     } else {
       returnData->functionNames = 0;
+    }
+
+    if(flags & EQUATIONINFO) {
+      returnData->equationInfo = equation_info;
+      returnData->equationInfo_reverse_prof_index = omc_equationInfo_reverse_prof_index;
+    } else {
+      returnData->equationInfo = 0;
     }
 
     if(flags & RAWSAMPLES && returnData->nRawSamples) {
@@ -1268,11 +1279,13 @@ template functionExtraResiduals(list<SimEqSystem> allEquations)
      {
        state mem_state;
        <%varDecls%>
+       SIM_PROF_TICK_EQ(SIM_PROF_EQ_<%index%>);
        mem_state = get_memory_state();
        <%algs%>
        <%prebody%>
        <%body%>
        restore_memory_state(mem_state);
+       SIM_PROF_ACC_EQ(SIM_PROF_EQ_<%index%>);
      }
      >>
    ;separator="\n\n")
@@ -2256,6 +2269,7 @@ case SES_LINEAR(__) then
   let bname = 'b<%uid%>'
   let mixedPostfix = if partOfMixed then "_mixed" //else ""
   <<
+  <% if not partOfMixed then 'SIM_PROF_TICK_EQ(SIM_PROF_EQ_<%index%>);<%\n%>' %>
   declare_matrix(<%aname%>, <%size%>, <%size%>);
   declare_vector(<%bname%>, <%size%>);
   <%simJac |> (row, col, eq as SES_RESIDUAL(__)) =>
@@ -2270,6 +2284,7 @@ case SES_LINEAR(__) then
   ;separator="\n"%>
   solve_linear_equation_system<%mixedPostfix%>(<%aname%>, <%bname%>, <%size%>, <%uid%>);
   <%vars |> SIMVAR(__) hasindex i0 => '<%cref(name)%> = get_vector_elt(<%bname%>, <%i0%>);' ;separator="\n"%><%inlineVars(context,vars)%>
+  <% if not partOfMixed then 'SIM_PROF_ACC_EQ(SIM_PROF_EQ_<%index%>);<%\n%>' %>
   >>
 end equationLinear;
 
@@ -2291,6 +2306,7 @@ case SES_MIXED(__) then
       >>
     ;separator="\n")
   <<
+  SIM_PROF_TICK_EQ(SIM_PROF_EQ_<%index%>);
   mixed_equation_system(<%numDiscVarsStr%>);
   double values[<%valuesLenStr%>] = {<%values ;separator=", "%>};
   int value_dims[<%numDiscVarsStr%>] = {<%value_dims ;separator=", "%>};
@@ -2305,6 +2321,7 @@ case SES_MIXED(__) then
     check_discrete_values(<%numDiscVarsStr%>, <%valuesLenStr%>);
   }
   mixed_equation_system_end(<%numDiscVarsStr%>);
+  SIM_PROF_ACC_EQ(SIM_PROF_EQ_<%index%>);
   >>
 end equationMixed;
 
@@ -2323,12 +2340,16 @@ case SES_NONLINEAR(__) then
     nls_xold[<%i0%>] = $P$old<%cref(name)%>;
     >>
   ;separator="\n"%>
-  solve_nonlinear_system(residualFunc<%index%>, <%index%>);
+  solve_nonlinear_system(residualFunc<%index%>, <%reverseLookupEquationNumber(index)%>);
   <%crefs |> name hasindex i0 => '<%cref(name)%> = nls_x[<%i0%>];' ;separator="\n"%>
   end_nonlinear_system();<%inlineCrefs(context,crefs)%>
   >>
 end equationNonlinear;
 
+template reverseLookupEquationNumber(Integer index)
+::=
+  'localData->equationInfo[omc_equationInfo_reverse_prof_index[SIM_PROF_EQ_<%index%>]]'
+end reverseLookupEquationNumber;
 
 template equationWhen(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/)
  "Generates a when equation."
@@ -4097,23 +4118,18 @@ case ecr as CREF(componentRef=WILD(__)) then
   ''
 case CREF(ty= t as DAE.ET_ARRAY(__)) then
   let lhsStr = scalarLhsCref(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-  match context case SIMULATION(__) then
-    <<
-    copy_<%expTypeShort(t)%>_array_data_mem(&<%rhsStr%>, &<%lhsStr%>);
-    >>
+  match context
+  case SIMULATION(__)
   case SIMULATION2(__) then
     <<
     copy_<%expTypeShort(t)%>_array_data_mem(&<%rhsStr%>, &<%lhsStr%>);
-    >> 
+    >>
   else
     '<%lhsStr%> = <%rhsStr%>;'
 case UNARY(exp = e as CREF(ty= t as DAE.ET_ARRAY(__))) then
   let lhsStr = scalarLhsCref(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-  match context case SIMULATION(__) then
-    <<
-    usub_<%expTypeShort(t)%>_array(&<%rhsStr%>);<%\n%>
-    copy_<%expTypeShort(t)%>_array_data_mem(&<%rhsStr%>, &<%lhsStr%>);
-    >>
+  match context
+  case SIMULATION(__)
   case SIMULATION2(__) then
     <<
     usub_<%expTypeShort(t)%>_array(&<%rhsStr%>);<%\n%>
@@ -5246,6 +5262,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let &preExp += '<%tvar%> = <%typeStr%>_to_modelica_string_format(<%sExp%>, <%formatExp%>);<%\n%>'
     '<%tvar%>'
   
+
   case CALL(tuple_=false, builtin=true,
             path=IDENT(name="String"),
             expLst={s, minlen, leftjust}) then
@@ -5323,9 +5340,9 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let retVar = match exp
       case CALL(ty=ET_NORETCALL(__)) then ""
       else tempDecl(retType, &varDecls)
-    let &preExp += if not builtin then match context case SIMULATION(__) then 'SIM_PROF_TICK_FN(<%funName%>_index);<%\n%>' case SIMULATION2(__) then 'SIM_PROF_TICK_FN(<%funName%>_index);<%\n%>'
+    let &preExp += if not builtin then match context case SIMULATION(__) case SIMULATION2(__) then 'SIM_PROF_TICK_FN(<%funName%>_index);<%\n%>'
     let &preExp += '<%if retVar then '<%retVar%> = '%><%daeExpCallBuiltinPrefix(builtin)%><%funName%>(<%argStr%>);<%\n%>'
-    let &preExp += if not builtin then match context case SIMULATION(__) then 'SIM_PROF_ACC_FN(<%funName%>_index);<%\n%>'
+    let &preExp += if not builtin then match context case SIMULATION(__) case SIMULATION2(__) then 'SIM_PROF_ACC_FN(<%funName%>_index);<%\n%>'
     match exp
       // no return calls
       case CALL(ty=ET_NORETCALL(__)) then '/* NORETCALL */'
@@ -6373,6 +6390,64 @@ template literalExpConstBoxedVal(Exp lit)
   case lit as SHARED_LITERAL(__) then '_OMC_LIT<%lit.index%>'
   else '<%\n%>#error "literalExpConstBoxedVal failed: <%printExpStr(lit)%>"<%\n%>'
 end literalExpConstBoxedVal;
+
+template equationInfo(list<SimEqSystem> eqs)
+::=
+  match eqs
+  case {} then "const struct omc_equationInfo equation_info[1] = {{0,NULL,omc_dummyFileInfo}};"
+  else
+    let &preBuf = buffer ""
+    let res =
+    <<
+    const struct omc_equationInfo equation_info[<%listLength(eqs)%>] = {
+      <% eqs |> eq hasindex i0 => match eq
+      case SES_RESIDUAL(__) then '{"SES_RESIDUAL <%i0%>",0,NULL,omc_dummyFileInfo}'
+      case SES_SIMPLE_ASSIGN(__) then
+        let var = '<%cref(cref)%>__varInfo'
+        '{"SES_SIMPLE_ASSIGN <%i0%>",1,&<%var%>,<%var%>.info}'
+      case SES_ARRAY_CALL_ASSIGN(__) then
+        let var = '<%cref(componentRef)%>__varInfo'
+        '{"SES_ARRAY_CALL_ASSIGN <%i0%>",0,NULL,omc_dummyFileInfo}'
+      case SES_ALGORITHM(__) then '{"SES_ALGORITHM <%i0%>",0,NULL,omc_dummyFileInfo}'
+      case SES_WHEN(__) then '{"SES_WHEN <%i0%>",0,NULL,omc_dummyFileInfo}'
+      case SES_LINEAR(__) then '{"LINEAR<%index%>",0,NULL,omc_dummyFileInfo}'
+      case SES_NONLINEAR(__) then
+        let &preBuf += 'const omc_varInfo residualFunc<%index%>_crefs[<%listLength(crefs)%>] = {<%crefs|>cr=>'<%cref(cr)%>__varInfo'; separator=","%>};'
+        '{"residualFunc<%index%>",<%listLength(crefs)%>,residualFunc<%index%>_crefs,omc_dummyFileInfo}'
+      case SES_MIXED(__) then '{"MIXED<%index%>",0,NULL,omc_dummyFileInfo}'
+      else '{"unknown equation <%i0%>",0,NULL,omc_dummyFileInfo}' ; separator=",\n"%>
+    };
+    >>
+    <<
+    <%preBuf%>
+    <%res%>
+    <% eqs |> eq hasindex i0 => match eq
+      case SES_MIXED(__)
+      case SES_LINEAR(__)
+      case SES_NONLINEAR(__) then '#define SIM_PROF_EQ_<%index%> <%i0%>'
+    ; separator="\n"
+    %>
+    const int n_omc_equationInfo_reverse_prof_index = 0<% eqs |> eq hasindex i0 => match eq
+        case SES_MIXED(__)
+        case SES_LINEAR(__)
+        case SES_NONLINEAR(__) then '+1'
+      %>;
+    const int omc_equationInfo_reverse_prof_index[] = {
+      <% eqs |> eq hasindex i0 => match eq
+        case SES_MIXED(__)
+        case SES_LINEAR(__)
+        case SES_NONLINEAR(__) then '<%i0%>,<%\n%>'
+      ; empty
+      %>
+    };
+    <% eqs |> eq hasindex i0 => match eq
+      case SES_MIXED(__)
+      case SES_LINEAR(__)
+      case SES_NONLINEAR(__) then '#define SIM_PROF_EQ_<%index%> <%i0%>'
+    ; separator="\n"
+    %>
+    >>
+end equationInfo;
 
 end SimCodeC;
 

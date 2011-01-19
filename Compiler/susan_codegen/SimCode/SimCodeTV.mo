@@ -177,6 +177,7 @@ package SimCode
       list<DAE.Statement> statements;
     end SES_ALGORITHM;
     record SES_LINEAR
+      Integer index;
       Boolean partOfMixed;
       list<SimVar> vars;
       list<DAE.Exp> beqs;
@@ -188,6 +189,7 @@ package SimCode
       list<DAE.ComponentRef> crefs;
     end SES_NONLINEAR;
     record SES_MIXED
+      Integer index;
       SimEqSystem cont;
       list<SimVar> discVars;
       list<SimEqSystem> discEqs;

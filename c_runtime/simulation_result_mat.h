@@ -62,7 +62,7 @@ private:
   unsigned long ntimepoints; // count of how many time emits() was called
 
   // helper functions  
-  static long flattenStrBuf(int rank, const int *dims, struct omc_varInfo* src[],
+  static long flattenStrBuf(int rank, const int *dims, const struct omc_varInfo* src[],
           char* &dest, int& longest, int& nstrings, 
           bool fixNames, bool useComment);
   void writeMatVer4MatrixHeader(const char *name, int rows, int cols,

@@ -275,7 +275,6 @@ startNonInteractiveSimulation(int argc, char**argv)
 
   /* mesure time option is set : -mt */
   measure_time_flag = (int) flagSet("mt", argc, argv);
-  double measure_start_time = 0;
 
   double start = 0.0;
   double stop = 5.0;
@@ -294,7 +293,7 @@ startNonInteractiveSimulation(int argc, char**argv)
 
   if (measure_time_flag)
     {
-      rt_init(SIM_TIMER_FIRST_FUNCTION + globalData->nFunctions + 4 /* sentinel */);
+      rt_init(SIM_TIMER_FIRST_FUNCTION + globalData->nFunctions + globalData->nProfileBlocks + 4 /* sentinel */);
       rt_tick( SIM_TIMER_TOTAL);
       rt_clear( SIM_TIMER_OUTPUT);
       rt_clear( SIM_TIMER_EVENT);

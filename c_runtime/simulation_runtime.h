@@ -101,37 +101,38 @@ typedef enum {
 /*   These are flags for the generated
    initializeDataStruc(DATA_INIT_FLAGS) function */
 
-  NO_INIT_OF_VECTORS  = 0x00000000,
-  STATES      = 1<<0,
-  STATESDERIVATIVES   = 1<<1,
-  HELPVARS      = 1<<2,
-  ALGEBRAICS    = 1<<3,
-  PARAMETERS    = 1<<4,
-  INITIALRESIDUALS    = 1<<5,
-  INPUTVARS     = 1<<6,
-  OUTPUTVARS    = 1<<7,
-  INITFIXED     = 1<<8,
-  EXTERNALVARS    = 1<<9,
+  NO_INIT_OF_VECTORS      = 0x00000000,
+  STATES                  = 1<<0,
+  STATESDERIVATIVES       = 1<<1,
+  HELPVARS                = 1<<2,
+  ALGEBRAICS              = 1<<3,
+  PARAMETERS              = 1<<4,
+  INITIALRESIDUALS        = 1<<5,
+  INPUTVARS               = 1<<6,
+  OUTPUTVARS              = 1<<7,
+  INITFIXED               = 1<<8,
+  EXTERNALVARS            = 1<<9,
 
   /*in initializeDataStruc these are not allocated with malloc!*/
-  MODELNAME     = 1<<10,
-  STATESNAMES     = 1<<11,
+  MODELNAME               = 1<<10,
+  STATESNAMES             = 1<<11,
   STATESDERIVATIVESNAMES  = 1<<12,
-  ALGEBRAICSNAMES     = 1<<13,
-  PARAMETERSNAMES     = 1<<14,
-  INPUTNAMES    = 1<<15,
-  OUTPUTNAMES     = 1<<16,
-  FUNCTIONNAMES     = 1<<17,
+  ALGEBRAICSNAMES         = 1<<13,
+  PARAMETERSNAMES         = 1<<14,
+  INPUTNAMES              = 1<<15,
+  OUTPUTNAMES             = 1<<16,
+  FUNCTIONNAMES           = 1<<17,
+  EQUATIONINFO            = 1<<18,
 
   /*in initializeDataStruc these are not allocated with malloc!*/
-  STATESCOMMENTS    = 1<<18,
-  STATESDERIVATIVESCOMMENTS = 1<<19,
-  ALGEBRAICSCOMMENTS  = 1<<20,
-  PARAMETERSCOMMENTS  = 1<<21,
-  INPUTCOMMENTS     = 1<<22,
-  OUTPUTCOMMENTS    = 1<<23,
+  STATESCOMMENTS            = 1<<19,
+  STATESDERIVATIVESCOMMENTS = 1<<20,
+  ALGEBRAICSCOMMENTS        = 1<<21,
+  PARAMETERSCOMMENTS        = 1<<22,
+  INPUTCOMMENTS             = 1<<23,
+  OUTPUTCOMMENTS            = 1<<24,
 
-  RAWSAMPLES    = 1<<24,
+  RAWSAMPLES    = 1<<25,
 
   ALL       = 0xFFFFFFFF
 } DATA_FLAGS;
@@ -206,7 +207,7 @@ typedef struct sim_DATA {
   void** extObjs; // External objects
   /* nStatesDerivatives == states */
   fortran_integer nStates,nAlgebraic,nParameters;
-  long nInputVars,nOutputVars,nFunctions;
+  long nInputVars,nOutputVars,nFunctions,nProfileBlocks;
   fortran_integer nZeroCrossing/*NG*/;
   long nRelations/*NREL*/;
   long nInitialResiduals/*NR*/;
@@ -217,17 +218,19 @@ typedef struct sim_DATA {
   DATA_BOOL boolVariables;
 
   const char* modelName;
-  struct omc_varInfo* statesNames;
-  struct omc_varInfo* stateDerivativesNames;
-  struct omc_varInfo* algebraicsNames;
-  struct omc_varInfo* parametersNames;
-  struct omc_varInfo* int_alg_names;
-  struct omc_varInfo* int_param_names;
-  struct omc_varInfo* bool_alg_names;
-  struct omc_varInfo* bool_param_names;
-  struct omc_varInfo* inputNames;
-  struct omc_varInfo* outputNames;
-  struct omc_functionInfo* functionNames;
+  const struct omc_varInfo* statesNames;
+  const struct omc_varInfo* stateDerivativesNames;
+  const struct omc_varInfo* algebraicsNames;
+  const struct omc_varInfo* parametersNames;
+  const struct omc_varInfo* int_alg_names;
+  const struct omc_varInfo* int_param_names;
+  const struct omc_varInfo* bool_alg_names;
+  const struct omc_varInfo* bool_param_names;
+  const struct omc_varInfo* inputNames;
+  const struct omc_varInfo* outputNames;
+  const struct omc_functionInfo* functionNames;
+  const struct omc_equationInfo* equationInfo;
+  const int* equationInfo_reverse_prof_index;
 
   double startTime; //the start time of the simulation
   double timeValue; //the time for the simulation

@@ -345,14 +345,15 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
     }
   std::ofstream fmt;
   long stepNo = 0;
-  if (measure_time_flag)
-    {
-      fmt.open("omc_mt.log");
-      fmt << "step,time,solver time,";
-      for (int i = 0; i < globalData->nFunctions; i++)
-        fmt << "," << globalData->functionNames[i].name << ",";
-      fmt << endl;
-    }
+  if (measure_time_flag) {
+    fmt.open("omc_mt.log");
+    fmt << "step,time,solver time";
+    for (int i = 0; i < globalData->nFunctions; i++)
+      fmt << "," << globalData->functionNames[i].name << ",";
+    for (int i = 0; i < globalData->nProfileBlocks; i++)
+      fmt << "," << globalData->equationInfo[globalData->equationInfo_reverse_prof_index[i]].name << ",";
+    fmt << endl;
+  }
 
   try
   {
@@ -360,7 +361,7 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
         {
           if (measure_time_flag)
             {
-              for (int i = 0; i < globalData->nFunctions; i++)
+              for (int i = 0; i < globalData->nFunctions+globalData->nProfileBlocks; i++)
                 rt_clear(i + SIM_TIMER_FIRST_FUNCTION);
               rt_tick( SIM_TIMER_STEP);
             }
@@ -447,15 +448,14 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
           // Emit this time step
           functionAliasEquations();
           saveall();
-          if (measure_time_flag)
-            {
-              fmt << stepNo++ << "," << globalData->timeValue << ","
-                  << rt_tock(SIM_TIMER_STEP);
-              for (int i = 0; i < globalData->nFunctions; i++)
-                fmt << "," << rt_ncall(i + SIM_TIMER_FIRST_FUNCTION) << ","
-                << rt_total(i + SIM_TIMER_FIRST_FUNCTION);
-              fmt << endl;
-            }
+          if (measure_time_flag) {
+            fmt << stepNo++ << "," << globalData->timeValue << "," << rt_tock(SIM_TIMER_STEP);
+            for (int i = 0; i < globalData->nFunctions; i++)
+              fmt << "," << rt_ncall(i + SIM_TIMER_FIRST_FUNCTION) << "," << rt_total(i + SIM_TIMER_FIRST_FUNCTION);
+            for (int i = globalData->nFunctions; i < globalData->nFunctions+globalData->nProfileBlocks; i++)
+              fmt << "," << rt_ncall(i + SIM_TIMER_FIRST_FUNCTION) << "," << rt_total(i + SIM_TIMER_FIRST_FUNCTION);
+            fmt << endl;
+          }
           SaveZeroCrossings();
           sim_result->emit();
 

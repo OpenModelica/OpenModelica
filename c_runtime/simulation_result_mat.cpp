@@ -41,7 +41,7 @@ simulation_result_mat::simulation_result_mat(const char* filename,
                double tstart, double tstop)
   : simulation_result(filename,numpoints),fp(),data2HdrPos(-1),ntimepoints(0)
 {
-  struct omc_varInfo timeValName = {"Time","Simulation time [s]","",-1,-1,-1,-1};
+  const struct omc_varInfo timeValName = {"Time","Simulation time [s]",{"",-1,-1,-1,-1}};
   const char Aclass[] = "A1 bt. ir1 na  Tj  re  ac  nt  so   r   y   ";
   
   const int rank = 9;
@@ -50,7 +50,7 @@ simulation_result_mat::simulation_result_mat(const char* filename,
          globalData->boolVariables.nAlgebraic, 
          globalData->nParameters, globalData->intVariables.nParameters,
          globalData->boolVariables.nParameters };
-  struct omc_varInfo* names[rank] = { &timeValName,
+  const struct omc_varInfo* names[rank] = { &timeValName,
              globalData->statesNames,
              globalData->stateDerivativesNames,
              globalData->algebraicsNames,
@@ -179,7 +179,7 @@ static inline void fixDerInName(char *str, size_t len)
 }
 
 long simulation_result_mat::flattenStrBuf(int rank, const int *dims, 
-            struct omc_varInfo* src[],
+            const struct omc_varInfo* src[],
             char* &dest, int& longest, int& nstrings,
             bool fixNames, bool useComment)
 {

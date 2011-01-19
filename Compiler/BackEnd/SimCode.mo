@@ -364,6 +364,7 @@ uniontype SimEqSystem
     list<DAE.Statement> statements;
   end SES_ALGORITHM;
   record SES_LINEAR
+    Integer index;
     Boolean partOfMixed;
     list<SimVar> vars;
     list<DAE.Exp> beqs;
@@ -375,6 +376,7 @@ uniontype SimEqSystem
     list<DAE.ComponentRef> crefs;
   end SES_NONLINEAR;
   record SES_MIXED
+    Integer index;
     SimEqSystem cont;
     list<SimVar> discVars;
     list<SimEqSystem> discEqs;
@@ -3767,6 +3769,7 @@ algorithm
       list<Integer> comps_flat;
       list<list<Integer>> r,t;
       list<Integer> rf,tf;
+      Integer index;
       
       // create always a linear system of equations 
     case (genDiscrete,skipDiscInAlgorithm,true,(daelow as BackendDAE.DAE(vars,knvars,exvars,av,eqns,se,ie,ae,al,ev,eoc)),ass1,ass2,block_,helpVarInfo)
@@ -3854,8 +3857,9 @@ algorithm
         // adrpo: TODO! FIXME! THIS FUNCTION is madness!
         //        for 34 discrete values you need a list of 34 about 4926277576697053184 times!!!
         (values, value_dims) = extractValuesAndDims(cont_eqn, cont_var, disc_eqn, disc_var); // ({1,0},{2});
+        (index::_) = block_;
       then
-        {SES_MIXED(equation_, simVarsDisc, discEqs, values, value_dims)};
+        {SES_MIXED(index, equation_, simVarsDisc, discEqs, values, value_dims)};
         
         // continuous system of equations try tearing algorithm
     case (genDiscrete, skipDiscInAlgorithm, false,(daelow as BackendDAE.DAE(vars,knvars,exvars,av,eqns,se,ie,ae,al,ev,eoc)),ass1,ass2,block_,helpVarInfo)
@@ -4185,8 +4189,9 @@ algorithm
         dlowEqs = BackendDAEUtil.equationList(eqn);
         (beqs,_) = listMap3passthrough(dlowEqs, dlowEqToExp, v, arrayEqs, {});
         simJac = Util.listMap1(jac, jacToSimjac, v);
+        index = Util.listFirst(block_); // use first equation nr as index
       then
-        {SES_LINEAR(mixedEvent, simVars, beqs, simJac)};
+        {SES_LINEAR(index, mixedEvent, simVars, beqs, simJac)};
         
         // Time varying nonlinear jacobian. Non-linear system of equations.
     case (mixedEvent,_,skipDiscInAlgorithm,BackendDAE.DAE(orderedVars = v,knownVars = kv,orderedEqs = eqn,arrayEqs=ae,algorithms=algorithms),SOME(jac),BackendDAE.JAC_NONLINEAR(),block_,helpVarInfo)
@@ -4550,7 +4555,8 @@ algorithm
       BackendDAE.Variables v;
       BackendDAE.EquationArray eqn;
       list<BackendDAE.Equation> dlowEqs;
-      array<BackendDAE.MultiDimEquation> ae;      
+      array<BackendDAE.MultiDimEquation> ae;
+      Integer index;      
       
     case ({r},mixedEvent,daelow, Ass1, Ass2, helpVarInfo)
       equation
@@ -4568,8 +4574,9 @@ algorithm
         simVars = listReverse(simVars);
         (beqs,_) = listMap3passthrough(dlowEqs, dlowEqToExp, v, ae, {});
         simJac = Util.listMap1(jac, jacToSimjac, v);
+        index = Util.listFirst(block_); // use first equation nr as index
       then
-        {SES_LINEAR(mixedEvent, simVars, beqs, simJac)};
+        {SES_LINEAR(index, mixedEvent, simVars, beqs, simJac)};
   end match;
 end generateRelaxedResidualEqns;
 
@@ -8476,25 +8483,25 @@ algorithm
          then
          SES_ALGORITHM();
          */              
-    case (SES_LINEAR(partOfMixed = partOfMixed,vars = vars, beqs = elst, simJac = simJac),inDlowMode)
+    case (SES_LINEAR(index,partOfMixed,vars,elst,simJac),inDlowMode)
       equation
         (simJac1,divLst) = listMap1_2(simJac,addDivExpErrorMsgtosimJac,inDlowMode);
         (elst1,divLst1) = listMap1_2(elst,addDivExpErrorMsgtoExp,inDlowMode);
         divLst2 = listAppend(divLst,divLst1);
       then
-        (SES_LINEAR(partOfMixed,vars,elst1,simJac1),divLst2);      
+        (SES_LINEAR(index,partOfMixed,vars,elst1,simJac1),divLst2);      
     case (SES_NONLINEAR(index = index,eqs = discEqs, crefs = crefs),inDlowMode)
       equation
         (discEqs,divLst) =  listMap1_2(discEqs,addDivExpErrorMsgtoSimEqSystem,inDlowMode);
       then
         (SES_NONLINEAR(index,discEqs,crefs),divLst);      
-    case (SES_MIXED(cont = cont,discVars = vars, discEqs = discEqs, values = values, value_dims = value_dims),inDlowMode)
+    case (SES_MIXED(index,cont,vars,discEqs,values,value_dims),inDlowMode)
       equation
         (cont1,divLst) = addDivExpErrorMsgtoSimEqSystem(cont,inDlowMode);
         (discEqs1,divLst1) = listMap1_2(discEqs,addDivExpErrorMsgtoSimEqSystem,inDlowMode);
         divLst2 = listAppend(divLst,divLst1);
       then
-        (SES_MIXED(cont1,vars,discEqs1,values,value_dims),divLst2);
+        (SES_MIXED(index,cont1,vars,discEqs1,values,value_dims),divLst2);
         /*    case (SES_WHEN(left = cr, right = e, conditions = conditions),inDlowMode)
          equation
          (e,divLst) = addDivExpErrorMsgtoExp(e,inDlowMode);
