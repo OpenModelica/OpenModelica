@@ -4993,4 +4993,11 @@ algorithm
   e := CONS(e1,e2);
 end makeCons;
 
+public function crefIdent
+  input ComponentRef cr;
+  output String str;
+algorithm
+  CREF_IDENT(str,{}) := cr; 
+end crefIdent;
+
 end Absyn;

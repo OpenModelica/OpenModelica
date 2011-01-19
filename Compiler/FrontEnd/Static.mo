@@ -6296,44 +6296,49 @@ protected function isBuiltinFunc "function: isBuiltinFunc
   input Absyn.Path inPath "the path of the found function";
   input DAE.Type ty;
   output DAE.FunctionBuiltin isBuiltin;
+  output Boolean b;
   output Absyn.Path outPath "make the path non-FQ";
 algorithm
-  (isBuiltin,outPath) := matchcontinue (inPath,ty)
+  (isBuiltin,b,outPath) := matchcontinue (inPath,ty)
     local
       Ident id;
       Absyn.Path path;
       Env.Cache cache;
-    case (path,(DAE.T_FUNCTION(functionAttributes=DAE.FUNCTION_ATTRIBUTES(isBuiltin=isBuiltin)),_))
+    case (path,(DAE.T_FUNCTION(functionAttributes=DAE.FUNCTION_ATTRIBUTES(isBuiltin=isBuiltin as DAE.FUNCTION_BUILTIN(_))),_))
       equation
-        false = valueEq(isBuiltin,DAE.FUNCTION_NOT_BUILTIN());
         path = Absyn.makeNotFullyQualified(path);
-      then (isBuiltin,path);
+      then (isBuiltin,true,path);
+    case (path,(DAE.T_FUNCTION(functionAttributes=DAE.FUNCTION_ATTRIBUTES(isBuiltin=isBuiltin as DAE.FUNCTION_BUILTIN_PTR())),_))
+      equation
+        path = Absyn.makeNotFullyQualified(path);
+      then (isBuiltin,false,path);
     case (Absyn.IDENT(name = id),_)
       equation
         _ = elabBuiltinHandler(id);
       then
-        (DAE.FUNCTION_BUILTIN(),inPath);
+        (DAE.FUNCTION_BUILTIN(SOME(id)),true,inPath);
     case (Absyn.QUALIFIED("OpenModelicaInternal",Absyn.IDENT(name = id)),_)
       equation
         _ = elabBuiltinHandlerInternal(id);
       then
-        (DAE.FUNCTION_BUILTIN(),inPath);
+        (DAE.FUNCTION_BUILTIN(SOME(id)),true,inPath);
     case (Absyn.FULLYQUALIFIED(path),ty)
       equation
-        (DAE.FUNCTION_BUILTIN(),path) = isBuiltinFunc(path,ty);
+        (isBuiltin as DAE.FUNCTION_BUILTIN(_),_,path) = isBuiltinFunc(path,ty);
       then
-        (DAE.FUNCTION_BUILTIN(),path);
+        (isBuiltin,true,path);
     
-    case (Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")),_) then (DAE.FUNCTION_BUILTIN(),inPath);
+    case (Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")),_)
+      then (DAE.FUNCTION_BUILTIN(NONE()),true,inPath);
     
     // elaborate substring (Modelica.Utilities.Strings.substring(string, startIndex, endIndex)
     case (inPath,_)
       equation
         Builtin.isSubstring(inPath);
         _ = elabBuiltinHandler("substring");
-      then (DAE.FUNCTION_BUILTIN(),inPath);    
+      then (DAE.FUNCTION_BUILTIN(NONE()),true,inPath);    
     
-    case (path,_) then (DAE.FUNCTION_NOT_BUILTIN(),path);
+    case (path,_) then (DAE.FUNCTION_NOT_BUILTIN(),false,path);
   end matchcontinue;
 end isBuiltinFunc;
 
@@ -8326,8 +8331,7 @@ algorithm
           "The constness of a function depends on the inputs. If all inputs are constant the call itself is constant." ;
         (fn_1,functype) = deoverloadFuncname(fn, functype);
         tuple_ = isTuple(restype);
-        (isBuiltin,fn_1) = isBuiltinFunc(fn_1,functype);
-        builtin = valueEq(DAE.FUNCTION_BUILTIN(),isBuiltin);
+        (isBuiltin,builtin,fn_1) = isBuiltinFunc(fn_1,functype);
         const = Util.listFold(constlist, Types.constAnd, DAE.C_CONST());
         const = Util.if_((RTOpts.debugFlag("rml") and not builtin) or (not isPure), DAE.C_VAR(), const) "in RML no function needs to be ceval'ed; this speeds up compilation significantly when bootstrapping";
         (cache,const) = determineConstSpecialFunc(cache,env,const,fn);
@@ -8548,14 +8552,14 @@ algorithm
       then (cache,Util.SUCCESS());
 
       /* Recursive calls (by looking at envinronment) skipped */
-    case(cache,env,name,false,NONE(),_,_)
+    case(cache,env,name,_,NONE(),_,_)
       equation
         false = Env.isTopScope(env);
         true = Absyn.pathSuffixOf(name,Env.getEnvName(env));            
       then (cache,Util.SUCCESS());
 
     /* Recursive calls (by looking in cache) skipped */
-    case(cache,env,name,false,_,_,_)
+    case(cache,env,name,_,_,_,_)
       equation
         (cache,cl,env) = Lookup.lookupClass(cache,env,name,false);
         (cache,name) = Inst.makeFullyQualified(cache,env,name);
@@ -8563,7 +8567,7 @@ algorithm
       then (cache,Util.SUCCESS());
 
     /* Class must be looked up*/
-    case(cache,env,name,false,NONE(),_,_)
+    case(cache,env,name,_,NONE(),_,_)
       equation
         (cache,cl,env) = Lookup.lookupClass(cache,env,name,false);
         (cache,name) = Inst.makeFullyQualified(cache,env,name);
@@ -8572,14 +8576,14 @@ algorithm
       then (cache,Util.SUCCESS());
 
     /* class already available*/
-    case(cache,env,name,false,SOME(cl),_,_)
+    case(cache,env,name,_,SOME(cl),_,_)
       equation
         (cache,name) = Inst.makeFullyQualified(cache,env,name);
         (cache,env,_) = Inst.implicitFunctionInstantiation(cache,env,InnerOuter.emptyInstHierarchy,DAE.NOMOD(),Prefix.NOPRE(),Connect.emptySet,cl,{});
       then (cache,Util.SUCCESS());
 
     /* Call to function reference variable */
-    case (cache,env,name,false,NONE(),_,_)
+    case (cache,env,name,_,NONE(),_,_)
       equation
         cref = pathToComponentRef(name);
         (cache,_,(DAE.T_FUNCTION(funcArg = _),_),_,_,_,env,_,_) = Lookup.lookupVar(cache,env,cref);
@@ -9025,9 +9029,8 @@ algorithm
       Absyn.Path fn;
       String name;
       DAE.TType tty;
-    case (_,(tty as DAE.T_FUNCTION(functionAttributes = DAE.FUNCTION_ATTRIBUTES(isBuiltin=DAE.FUNCTION_BUILTIN())),SOME(fn)))
+    case (_,(tty as DAE.T_FUNCTION(functionAttributes = DAE.FUNCTION_ATTRIBUTES(isBuiltin=DAE.FUNCTION_BUILTIN(SOME(name)))),_))
       equation
-        name = Absyn.pathLastIdent(fn);
         fn = Absyn.IDENT(name);
       then (fn,(tty,SOME(fn)));
     case (_,(DAE.T_FUNCTION(funcArg = _),SOME(fn))) then (fn,inType);
@@ -10210,7 +10213,7 @@ algorithm
         //true = RTOpts.debugFlag("fnptr") or RTOpts.acceptMetaModelicaGrammar();
         path = Absyn.crefToPath(c);
         (cache,{t}) = Lookup.lookupFunctionsInEnv(cache,env,path,info);
-        (isBuiltin, path) = isBuiltinFunc(path,t);
+        (isBuiltin,_,path) = isBuiltinFunc(path,t);
         isBuiltinFn = not valueEq(DAE.FUNCTION_NOT_BUILTIN(),isBuiltin);
         (tt,optPath) = t;
         t = (tt, Util.if_(isBuiltinFn, SOME(path), optPath)) "some builtin functions store NONE() there";

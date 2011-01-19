@@ -11499,7 +11499,7 @@ algorithm
   end matchcontinue;
 end daeDeclare4;
 
-public function mktype
+protected function mktype
 "function: mktype
   From a class typename, its inference state, and a list of subcomponents,
   this function returns DAE.Type.  If the class inference state
@@ -11527,6 +11527,7 @@ algorithm
       DAE.Type resType;
       ClassInf.State classState;
       DAE.EqualityConstraint equalityConstraint;
+      DAE.FunctionAttributes funcattr;
     case (p,ClassInf.TYPE_INTEGER(path = _),v,_,_,_)
       equation
         somep = getOptPath(p);
@@ -11555,7 +11556,8 @@ algorithm
     /* Insert function type construction here after checking input/output arguments? see Types.mo T_FUNCTION */
     case (p,(st as ClassInf.FUNCTION(path = _)),vl,_,_,cl)
       equation
-        functype = Types.makeFunctionType(p, vl, getFunctionAttributes(cl));
+        funcattr = getFunctionAttributes(cl,vl);
+        functype = Types.makeFunctionType(p, vl, funcattr);
       then
         functype;
     case (_, ClassInf.ENUMERATION(path = p), _, SOME(enumtype), _, _)
@@ -11634,6 +11636,7 @@ algorithm
       Option<Absyn.Path> somep;
       SCode.Class cl;
       Option<tuple<DAE.TType, Option<Absyn.Path>>> bc;
+      DAE.FunctionAttributes funcattr;
     case (p,ci,vs,SOME(tp),_)
       equation
         true = Types.isArray(tp);
@@ -11669,7 +11672,8 @@ algorithm
     /* Insert function type construction here after checking input/output arguments? see Types.mo T_FUNCTION */
     case (p,(st as ClassInf.FUNCTION(path = _)),vl,_,cl)
       equation
-        functype = Types.makeFunctionType(p, vl, getFunctionAttributes(cl));
+        funcattr = getFunctionAttributes(cl,vl);
+        functype = Types.makeFunctionType(p, vl, funcattr);
       then
         functype;
     case (p, ClassInf.ENUMERATION(path = _), _, SOME(enumtype), _)
@@ -14555,21 +14559,32 @@ protected function getFunctionAttributes
 "Looks at the annotations of an SCode.Class to create the function attributes,
 i.e. Inline and Purity"
   input SCode.Class cl;
+  input list<DAE.Var> vl;
   output DAE.FunctionAttributes attr;
 algorithm
-  attr := match (cl)
+  attr := matchcontinue (cl,vl)
     local
       SCode.Restriction restriction;
       Boolean purity;
       DAE.FunctionBuiltin isBuiltin;
       DAE.InlineType inline;
-    case (SCode.CLASS(restriction=restriction))
+      String name;
+      list<DAE.Var> inVars,outVars;
+    case (SCode.CLASS(restriction=SCode.R_EXT_FUNCTION()),vl)
+      equation
+        inVars = Util.listFilter(vl,Types.isInputVar);
+        outVars = Util.listFilter(vl,Types.isOutputVar);
+        name = SCode.isBuiltinFunction(cl,Util.listMap(inVars,Types.varName),Util.listMap(outVars,Types.varName));
+        inline = isInlineFunc2(cl);
+        purity = not DAEUtil.hasBooleanNamedAnnotation(cl,"__OpenModelica_Impure");
+      then (DAE.FUNCTION_ATTRIBUTES(inline,purity,DAE.FUNCTION_BUILTIN(SOME(name))));
+    case (SCode.CLASS(restriction=restriction),_)
       equation
         inline = isInlineFunc2(cl);
-        isBuiltin = Util.if_(SCode.isBuiltinFunction(cl), DAE.FUNCTION_BUILTIN(), Util.if_(DAEUtil.hasBooleanNamedAnnotation(cl,"__OpenModelica_BuiltinPtr"), DAE.FUNCTION_BUILTIN_PTR(), DAE.FUNCTION_NOT_BUILTIN()));
+        isBuiltin = Util.if_(DAEUtil.hasBooleanNamedAnnotation(cl,"__OpenModelica_BuiltinPtr"), DAE.FUNCTION_BUILTIN_PTR(), DAE.FUNCTION_NOT_BUILTIN());
         purity = not DAEUtil.hasBooleanNamedAnnotation(cl,"__OpenModelica_Impure");
       then DAE.FUNCTION_ATTRIBUTES(inline,purity,isBuiltin);
-  end match;
+  end matchcontinue;
 end getFunctionAttributes;
 
 protected function checkFunctionElement

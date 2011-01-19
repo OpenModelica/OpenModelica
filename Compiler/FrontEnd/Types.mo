@@ -2941,11 +2941,8 @@ algorithm
   end match;
 end getConnectorVars;
 
-protected function isInputVar "function: isInputVar
-  author: LS
-
-  Succeds if variable is an input variable.
-"
+public function isInputVar
+"Succeds if variable is an input variable."
   input Var inVar;
 algorithm
   _:=
@@ -2963,11 +2960,8 @@ algorithm
   end match;
 end isInputVar;
 
-protected function isOutputVar "function: isOutputVar
-  author: LS
-
-  Succeds if variable is an output variable.
-"
+public function isOutputVar
+"Succeds if variable is an output variable."
   input Var inVar;
 algorithm
   _:=

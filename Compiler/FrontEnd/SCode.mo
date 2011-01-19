@@ -3507,13 +3507,38 @@ algorithm
   CLASSDEF(classDef=cl) := el;
 end getElementClass;
 
+protected constant list<String> knownExternalCFunctions = {"acos"};
+
 public function isBuiltinFunction
   input Class cl;
-  output Boolean b;
+  input list<String> inVars;
+  input list<String> outVars;
+  output String name;
 algorithm
-  b := match cl
-    case CLASS(restriction=R_EXT_FUNCTION(),classDef=PARTS(externalDecl=SOME(Absyn.EXTERNALDECL(lang=SOME("builtin"))))) then true;
-    else false;
+  name := match (cl,inVars,outVars)
+    local
+      Absyn.Info info;
+      String inc,outVar1,outVar2,name1,name2;
+      list<String> argsStr;
+      list<Absyn.Exp> args;
+    case (CLASS(name=name,restriction=R_EXT_FUNCTION(),classDef=PARTS(externalDecl=SOME(Absyn.EXTERNALDECL(funcName=NONE(),lang=SOME("builtin"))))),_,_)
+      then name;
+    case (CLASS(restriction=R_EXT_FUNCTION(),classDef=PARTS(externalDecl=SOME(Absyn.EXTERNALDECL(funcName=SOME(name),lang=SOME("builtin"))))),_,_)
+      then name;
+    case (CLASS(restriction=R_EXT_FUNCTION(),
+      classDef=PARTS(externalDecl=SOME(Absyn.EXTERNALDECL(funcName=SOME(name),lang=SOME("C"),output_=SOME(Absyn.CREF_IDENT(outVar2,{})),args=args)))),inVars,{outVar1})
+      equation
+        true = listMember(name,{"sin","cos","tan","asin","acos","atan","atan2","sinh","cosh","tanh","exp","log","log10","sqrt"});
+        true = outVar2 ==& outVar1;
+        argsStr = Util.listMapMap(args, Absyn.expCref, Absyn.crefIdent);
+        equality(argsStr = inVars);
+      then name;
+    case (CLASS(name=name,
+      restriction=R_EXT_FUNCTION(),
+      classDef=PARTS(externalDecl=SOME(Absyn.EXTERNALDECL(funcName=NONE(),lang=SOME("C"))))),_,_)
+      equation
+        true = listMember(name,{"sin","cos","tan","asin","acos","atan","atan","sinh","cosh","tanh","exp","log","log10","sqrt"});
+      then name;
   end match;
 end isBuiltinFunction;
 
