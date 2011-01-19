@@ -468,7 +468,7 @@ algorithm
   end matchcontinue;
 end dumpBackendDAEEqnList2;
 
-protected function dumpZcStr
+public function dumpZcStr
 "function: dumpZcStr
   Dumps a zerocrossing into a string, for debugging purposes."
   input BackendDAE.ZeroCrossing inZeroCrossing;
@@ -476,21 +476,23 @@ protected function dumpZcStr
 algorithm
   outString:=
   match (inZeroCrossing)
-    local
-      list<String> eq_s_list,wc_s_list;
-      String eq_s,wc_s,str,str2;
-      DAE.Exp e;
-      list<BackendDAE.Value> eq,wc;
-    case BackendDAE.ZERO_CROSSING(relation_ = e,occurEquLst = eq,occurWhenLst = wc)
-      equation
-        eq_s_list = Util.listMap(eq, intString);
-        eq_s = Util.stringDelimitList(eq_s_list, ",");
-        wc_s_list = Util.listMap(wc, intString);
-        wc_s = Util.stringDelimitList(wc_s_list, ",");
-        str = ExpressionDump.printExpStr(e);
-        str2 = stringAppendList({str," in equations [",eq_s,"] and when conditions [",wc_s,"]"});
-      then
-        str2;
+  local
+  list<String> eq_s_list,wc_s_list;
+  String eq_s,wc_s,str,str2,str_index;
+  DAE.Exp e;
+  Integer index_;
+  list<BackendDAE.Value> eq,wc;
+  case BackendDAE.ZERO_CROSSING(relation_ = e as DAE.RELATION(index=index_),occurEquLst = eq,occurWhenLst = wc)
+  equation
+  eq_s_list = Util.listMap(eq, intString);
+  eq_s = Util.stringDelimitList(eq_s_list, ",");
+  wc_s_list = Util.listMap(wc, intString);
+  wc_s = Util.stringDelimitList(wc_s_list, ",");
+  str = ExpressionDump.printExpStr(e);
+  str_index=intString(index_);
+  str2 = stringAppendList({str," with index = ",str_index," in equations [",eq_s,"] and when conditions [",wc_s,"]"});
+  then
+  str2;
   end match;
 end dumpZcStr;
 

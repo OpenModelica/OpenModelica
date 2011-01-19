@@ -45,33 +45,33 @@
 
 extern "C" {
   void  DDASRT(
-         int (*res) (double *t, double *y, double *yprime, double *delta, fortran_integer *ires, double *rpar, fortran_integer* ipar),
-         fortran_integer *neq,
-         double *t,
-         double *y,
-         double *yprime,
-         double *tout,
-         fortran_integer *info,
-         double *rtol,
-         double *atol,
-         fortran_integer *idid,
-         double *rwork,
-         fortran_integer *lrw,
-         fortran_integer *iwork,
-         fortran_integer *liw,
-         double *rpar,
-         fortran_integer *ipar,
-         int (*jac) (double *t, double *y, double *yprime, double *delta, double *cj, double *rpar, fortran_integer* ipar),
-         int (*g) (fortran_integer *neqm, double *t, double *y, fortran_integer *ng, double *gout, double *rpar, fortran_integer* ipar),
-         fortran_integer *ng,
-         fortran_integer *jroot
-         );
+      int (*res) (double *t, double *y, double *yprime, double *delta, fortran_integer *ires, double *rpar, fortran_integer* ipar),
+      fortran_integer *neq,
+      double *t,
+      double *y,
+      double *yprime,
+      double *tout,
+      fortran_integer *info,
+      double *rtol,
+      double *atol,
+      fortran_integer *idid,
+      double *rwork,
+      fortran_integer *lrw,
+      fortran_integer *iwork,
+      fortran_integer *liw,
+      double *rpar,
+      fortran_integer *ipar,
+      int (*jac) (double *t, double *y, double *yprime, double *delta, double *cj, double *rpar, fortran_integer* ipar),
+      int (*g) (fortran_integer *neqm, double *t, double *y, fortran_integer *ng, double *gout, double *rpar, fortran_integer* ipar),
+      fortran_integer *ng,
+      fortran_integer *jroot
+  );
 
-         double dlamch_(char*,int);
+  double dlamch_(char*,int);
 } // extern "C"
 
 int solver_main( int argc, char** argv,double &start,  double &stop, double &step, long &outputSteps,
-                double &tolerance,int flag);
+    double &tolerance,int flag);
 
 
 #endif

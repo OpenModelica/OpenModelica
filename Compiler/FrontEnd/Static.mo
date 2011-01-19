@@ -372,7 +372,7 @@ algorithm
         c = Types.constAnd(c1, c2);
         (cache,ops) = operators(cache,op, env, t1, t2);
         (op_1,{e1_2,e2_2},rtype) = deoverload(ops,{(e1_1,t1),(e2_1,t2)},e,pre);
-        exp_1 = replaceOperatorWithFcall(DAE.RELATION(e1_2,op_1,e2_2), c);
+        exp_1 = replaceOperatorWithFcall(DAE.RELATION(e1_2,op_1,e2_2,-1,NONE()), c);
         exp_1 = ExpressionSimplify.simplify(exp_1);
         prop = DAE.PROP(rtype,c);
         warnUnsafeRelations(env,c,t1,t2,e1_2,e2_2,op_1,pre);
@@ -1548,7 +1548,7 @@ algorithm
         (cache,ops) = operators(cache,op, env, t1, t2);
         (op_1,{e1_2,e2_2},rtype) = deoverload(ops, {(e1_1,t1),(e2_1,t2)}, exp,pre);
       then
-        (cache,DAE.RELATION(e1_2,op_1,e2_2),DAE.PROP(rtype,c));
+        (cache,DAE.RELATION(e1_2,op_1,e2_2,-1,NONE()),DAE.PROP(rtype,c));
     case (cache,env,e as Absyn.IFEXP(ifExp = _),impl,pre,info) /* Conditional expressions */
       equation
         Absyn.IFEXP(ifExp = e1,trueBranch = e2,elseBranch = e3) = Absyn.canonIfExp(e);

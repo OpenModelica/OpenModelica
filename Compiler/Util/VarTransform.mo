@@ -1527,6 +1527,9 @@ algorithm
       String id;
       list<list<tuple<DAE.Exp, Boolean>>> bexpl_1,bexpl;
       DAE.InlineType inlineType;
+      Integer index_;
+      Option<tuple<DAE.Exp,Integer,Integer>> isExpisASUB;
+            
     case ((e as DAE.CREF(componentRef = cr,ty = t)),repl,cond)
       equation
         true = replaceExpCond(cond, e);
@@ -1560,12 +1563,12 @@ algorithm
         e1_1 = replaceExp(e1, repl, cond);
       then
         DAE.LUNARY(op,e1_1);
-    case (DAE.RELATION(exp1 = e1,operator = op,exp2 = e2),repl,cond)
+    case (DAE.RELATION(exp1 = e1,operator = op,exp2 = e2, index=index_, optionExpisASUB= isExpisASUB),repl,cond)
       equation
         e1_1 = replaceExp(e1, repl, cond);
         e2_1 = replaceExp(e2, repl, cond);
       then
-        DAE.RELATION(e1_1,op,e2_1);
+        DAE.RELATION(e1_1,op,e2_1,-1,NONE());
     case ((e as DAE.IFEXP(expCond = e1,expThen = e2,expElse = e3)),repl,cond)
       equation
         true = replaceExpCond(cond, e);

@@ -54,14 +54,14 @@ class SimulationResultReallocException : SimulationResultBaseException {};
  */
 class simulation_result { 
 protected:
-const char* filename;
-const long numpoints;
+  const char* filename;
+  const long numpoints;
 public:
 
-simulation_result(const char* filename, long numpoints) : filename(filename), numpoints(numpoints) {};
-virtual ~simulation_result() {};
-virtual void emit() =0;
-virtual const char* result_type() = 0;
+  simulation_result(const char* filename, long numpoints) : filename(filename), numpoints(numpoints) {};
+  virtual ~simulation_result() {};
+  virtual void emit() =0;
+  virtual const char* result_type() = 0;
 
 };
 

@@ -909,4 +909,33 @@ algorithm outEqn := match(inTpl,Source)
  end match;
 end generateEQUATION;
 
+public function equationAlgorithmEqnsNr 
+"Retrieve a list equation numbers for a given algorithm index"
+  input list<BackendDAE.Equation> eqlst;
+  input Integer index;
+  input Integer count;
+  output list<Integer> out;
+algorithm
+  out := matchcontinue (eqlst,index,count)
+    local 
+      BackendDAE.Equation e;
+      list<BackendDAE.Equation> rest;
+      Integer i, count_1;
+      list<Integer> res;
+    case ({},_,_) then {};
+    case ((BackendDAE.ALGORITHM(index=i)::rest),index,count)
+      equation
+        true = (index == i);
+        count_1 = count+1;
+        //print("Equation e = "+& intString(count_1) +&" for algorithm index = "+& intString(index)+&" !\n");
+        res = equationAlgorithmEqnsNr(rest,index,count_1);
+      then (count_1::res);
+    case (e::rest,index,count)
+      equation
+        count = count+1;
+        res = equationAlgorithmEqnsNr(rest,index,count);
+      then res;
+  end matchcontinue;
+end equationAlgorithmEqnsNr;
+
 end BackendEquation;

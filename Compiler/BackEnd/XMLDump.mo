@@ -1612,7 +1612,7 @@ algorithm
         dumpExp2(e1);
         dumpStrCloseTag(MathMLApply);
       then();
-   case ((e as DAE.RELATION(e1,op,e2)))
+   case ((e as DAE.RELATION(exp1=e1,operator=op,exp2=e2)))
       equation
         sym = relopSymbol(op);
         dumpStrOpenTag(MathMLApply);

@@ -72,6 +72,7 @@ template translateFunctions(FunctionCode functionCode)
   MetaModelica functions." 
 ::=
 match functionCode
+
 case FUNCTIONCODE(__) then
   let filePrefix = name
   let()= textFile(functionsHeaderFile(filePrefix, mainFunction, functions, extraRecordDecls, externalFunctionIncludes), '<%filePrefix%>.h')
@@ -1569,7 +1570,7 @@ template functionODE(list<SimEqSystem> derivativEquations)
 ::=
   let &varDecls = buffer "" /*BUFD*/
   let odeEquations = (derivativEquations |> eq =>
-      equation_(eq, contextSimulationNonDiscrete, &varDecls /*BUFD*/)
+      equation_(eq, contextSimulation2NonDiscrete, &varDecls /*BUFC*/)
     ;separator="\n")
   <<
   int functionODE_new()
@@ -1591,7 +1592,7 @@ template functionAlgebraic(list<SimEqSystem> algebraicEquations)
 ::=
   let &varDecls = buffer "" /*BUFD*/
   let algEquations = (algebraicEquations |> eq =>
-      equation_(eq, contextSimulationNonDiscrete, &varDecls /*BUFD*/)
+      equation_(eq, contextSimulation2NonDiscrete, &varDecls /*BUFC*/)
     ;separator="\n")
   <<
   /* for continuous time variables */
@@ -1609,13 +1610,36 @@ template functionAlgebraic(list<SimEqSystem> algebraicEquations)
   >>
 end functionAlgebraic;
 
+template functiondiscreteAlgebraics(list<SimEqSystem> discalgebraicEquations)
+ "Generates function in simulation file."
+::=
+  let &varDecls = buffer "" /*BUFD*/
+  let discalgEquations = (discalgebraicEquations |> eq =>
+      equation_(eq, contextSimulation2NonDiscrete, &varDecls /*BUFC*/)
+    ;separator="\n")
+  <<
+  /* for continuous time variables */
+  int functiondiscAlgebraics()
+  {
+    state mem_state;
+    <%varDecls%>
+  
+    mem_state = get_memory_state();
+    <%discalgEquations%>
+    restore_memory_state(mem_state);
+  
+    return 0;
+  }
+  >>
+end functiondiscreteAlgebraics;
+
 template functionAliasEquation(list<SimEqSystem> removedEquations)
  "Generates function in simulation file."
 ::=
   let &varDecls = buffer "" /*BUFD*/
   let removedPart = (removedEquations |> eq =>
-      equation_(eq, contextSimulationNonDiscrete, &varDecls /*BUFD*/)
-    ;separator="\n")
+      equation_(eq, contextSimulation2NonDiscrete, &varDecls /*BUFC*/)
+    ;separator="\n")   
   <<
   /* for continuous time variables */
   int functionAliasEquations()
@@ -1687,7 +1711,7 @@ template functionDAE( list<SimEqSystem> allEquationsPlusWhen,
 ::=
   let &varDecls = buffer "" /*BUFD*/
   let eqs = (allEquationsPlusWhen |> eq =>
-      equation_(eq, contextSimulationDiscrete, &varDecls /*BUFD*/)
+      equation_(eq, contextSimulation2Discrete, &varDecls /*BUFD*/)
     ;separator="\n")
     
   let reinit = (whenClauses |> when hasindex i0 =>
@@ -1992,7 +2016,7 @@ template zeroCrossingsTpl2(list<ZeroCrossing> zeroCrossings, Text &varDecls /*BU
 end zeroCrossingsTpl2;
 
 
-template zeroCrossingTpl2(Integer index, Exp relation, Text &varDecls /*BUFP*/)
+template zeroCrossingTpl2(Integer index1, Exp relation, Text &varDecls /*BUFP*/)
  "Generates code for a zero crossing."
 ::=
   match relation
@@ -2003,13 +2027,13 @@ template zeroCrossingTpl2(Integer index, Exp relation, Text &varDecls /*BUFP*/)
     let e2 = daeExp(exp2, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     <<
     <%preExp%>
-    ZEROCROSSING(<%index%>, <%op%>(<%e1%>, <%e2%>));
+    ZEROCROSSING(<%index1%>, <%op%>(<%e1%>, <%e2%>));
     >>
   case CALL(path=IDENT(name="sample"), expLst={start, interval}) then
   << >>
   else
     <<
-    // UNKNOWN ZERO CROSSING for <%index%>
+    // UNKNOWN ZERO CROSSING for <%index1%>
     >>
 end zeroCrossingTpl2;
 
@@ -2024,7 +2048,7 @@ template zeroCrossingsTpl(list<ZeroCrossing> zeroCrossings, Text &varDecls /*BUF
 end zeroCrossingsTpl;
 
 
-template zeroCrossingTpl(Integer index, Exp relation, Text &varDecls /*BUFP*/)
+template zeroCrossingTpl(Integer index1, Exp relation, Text &varDecls /*BUFP*/)
  "Generates code for a zero crossing."
 ::=
   match relation
@@ -2035,7 +2059,7 @@ template zeroCrossingTpl(Integer index, Exp relation, Text &varDecls /*BUFP*/)
     let e2 = daeExp(exp2, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     <<
     <%preExp%>
-    ZEROCROSSING(<%index%>, <%op%>(<%e1%>, <%e2%>));
+    ZEROCROSSING(<%index1%>, <%op%>(<%e1%>, <%e2%>));
     >>
   case CALL(path=IDENT(name="sample"), expLst={start, interval}) then
     let &preExp = buffer "" /*BUFD*/
@@ -2043,7 +2067,7 @@ template zeroCrossingTpl(Integer index, Exp relation, Text &varDecls /*BUFP*/)
     let e2 = daeExp(interval, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     <<
     <%preExp%>
-    ZEROCROSSING(<%index%>,Sample(*t,<%e1%>,<%e2%>));
+    ZEROCROSSING(<%index1%>,Sample(*t,<%e1%>,<%e2%>));
     >>
   else
     <<
@@ -2059,13 +2083,13 @@ template timeEventsTpl(list<SampleCondition> sampleConditions, Text &varDecls /*
   ;separator="\n")
 end timeEventsTpl;
 
-template timeEventTpl(Integer index, Exp relation, Text &varDecls /*BUFP*/)
+template timeEventTpl(Integer index1, Exp relation, Text &varDecls /*BUFP*/)
  "Generates code for a zero crossing."
 ::=
   match relation
   case RELATION(__) then
     <<
-    /* <%index%> Not a time event */
+    /* <%index1%> Not a time event */
     >>
   case CALL(path=IDENT(name="sample"), expLst={start, interval,_}) then
     let &preExp = buffer "" /*BUFD*/
@@ -2075,11 +2099,11 @@ template timeEventTpl(Integer index, Exp relation, Text &varDecls /*BUFP*/)
     <%preExp%>
     localData->rawSampleExps[i].start = <%e1%>;
     localData->rawSampleExps[i].interval = <%e2%>;
-    localData->rawSampleExps[i++].zc_index = <%index%>;
+    localData->rawSampleExps[i++].zc_index = <%index1%>;
     >>
   else
     <<
-    /* UNKNOWN ZERO CROSSING for <%index%> */
+    /* UNKNOWN ZERO CROSSING for <%index1%> */
     >>
 end timeEventTpl;
 
@@ -2310,7 +2334,6 @@ template equationWhen(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/)
  "Generates a when equation."
 ::=
 match eq
-//case SES_WHEN(left=left, right=right,conditions=conditions) then
 case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) then
   let &preExp = buffer "" /*BUFD*/
   let &helpInits = buffer "" /*BUFD*/
@@ -3890,7 +3913,6 @@ template funStatement(Statement stmt, Text &varDecls /*BUFP*/)
     "NOT IMPLEMENTED FUN STATEMENT"
 end funStatement;
 
-
 template algStatement(DAE.Statement stmt, Context context, Text &varDecls /*BUFP*/)
  "Generates an algorithm statement."
 ::=
@@ -4078,12 +4100,21 @@ case CREF(ty= t as DAE.ET_ARRAY(__)) then
   match context case SIMULATION(__) then
     <<
     copy_<%expTypeShort(t)%>_array_data_mem(&<%rhsStr%>, &<%lhsStr%>);
+    >>
+  case SIMULATION2(__) then
+    <<
+    copy_<%expTypeShort(t)%>_array_data_mem(&<%rhsStr%>, &<%lhsStr%>);
     >> 
   else
     '<%lhsStr%> = <%rhsStr%>;'
 case UNARY(exp = e as CREF(ty= t as DAE.ET_ARRAY(__))) then
   let lhsStr = scalarLhsCref(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   match context case SIMULATION(__) then
+    <<
+    usub_<%expTypeShort(t)%>_array(&<%rhsStr%>);<%\n%>
+    copy_<%expTypeShort(t)%>_array_data_mem(&<%rhsStr%>, &<%lhsStr%>);
+    >>
+  case SIMULATION2(__) then
     <<
     usub_<%expTypeShort(t)%>_array(&<%rhsStr%>);<%\n%>
     copy_<%expTypeShort(t)%>_array_data_mem(&<%rhsStr%>, &<%lhsStr%>);
@@ -4350,6 +4381,22 @@ case SIMULATION(genDiscrete=true) then
     }
     <%else%>
     >>
+  end match
+case SIMULATION2(genDiscrete=true) then
+  match when
+  case STMT_WHEN(__) then
+    let preIf = algStatementWhenPre(when, &varDecls /*BUFD*/)
+    let statements = (statementLst |> stmt =>
+        algStatement(stmt, context, &varDecls /*BUFD*/)
+      ;separator="\n")
+    let else = algStatementWhenElse(elseWhen, &varDecls /*BUFD*/)
+    <<
+    <%preIf%>
+    if (<%helpVarIndices |> idx => 'edge(localData->helpVars[<%idx%>])' ;separator=" || "%>) {
+      <%statements%>
+    }
+    <%else%>
+    >>    
 end algStmtWhen;
 
 
@@ -4904,8 +4951,92 @@ case rel as RELATION(__) then
     case GREATEREQ(__) then
       let &preExp += 'RELATIONGREATEREQ(<%res%>, <%e1%>, <%e2%>);<%\n%>'
       res
+    end match
+  case SIMULATION2(genDiscrete=false) then
+     match rel.optionExpisASUB
+     case NONE() then
+        let e1 = daeExp(rel.exp1, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+        let e2 = daeExp(rel.exp2, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+        let res = tempDecl("modelica_boolean", &varDecls /*BUFC*/)
+        match rel.operator
+        case LESS(__) then
+          let &preExp += 'RELATIONTOZC(<%res%>, <%e1%>, <%e2%>, <%rel.index%>,Less,<);<%\n%>'
+          res
+        case LESSEQ(__) then
+          let &preExp += 'RELATIONTOZC(<%res%>, <%e1%>, <%e2%>, <%rel.index%>,LessEq,<=);<%\n%>'
+          res
+        case GREATER(__) then
+          let &preExp += 'RELATIONTOZC(<%res%>, <%e1%>, <%e2%>, <%rel.index%>,Greater,>);<%\n%>'
+          res
+        case GREATEREQ(__) then
+          let &preExp += 'RELATIONTOZC(<%res%>, <%e1%>, <%e2%>, <%rel.index%>,GreaterEq,>=);<%\n%>'
+          res
+        end match
+    case SOME((exp,i,j)) then
+	    let e1 = daeExp(rel.exp1, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+	    let e2 = daeExp(rel.exp2, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+	    let iterator = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+	    let res = tempDecl("modelica_boolean", &varDecls /*BUFC*/)
+	    //let e3 = daeExp(createArray(i), context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+	    match rel.operator
+	    case LESS(__) then
+	      let &preExp += 'RELATIONTOZC(<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>,Less,<);<%\n%>'
+	      res
+	    case LESSEQ(__) then
+	      let &preExp += 'RELATIONTOZC(<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>,LessEq,<=);<%\n%>'
+	      res
+	    case GREATER(__) then
+	      let &preExp += 'RELATIONTOZC(<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>,Greater,>);<%\n%>'
+	      res
+	    case GREATEREQ(__) then
+	      let &preExp += 'RELATIONTOZC(<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>,GreaterEq,>=);<%\n%>'
+	      res
+        end match
+      end match
+   case SIMULATION2(genDiscrete=true) then
+     match rel.optionExpisASUB
+     case NONE() then
+        let e1 = daeExp(rel.exp1, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+        let e2 = daeExp(rel.exp2, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+        let res = tempDecl("modelica_boolean", &varDecls /*BUFC*/)
+        match rel.operator
+        case LESS(__) then
+          let &preExp += 'SAVEZEROCROSS(<%res%>, <%e1%>, <%e2%>, <%rel.index%>,Less,<);<%\n%>'
+          res
+        case LESSEQ(__) then
+          let &preExp += 'SAVEZEROCROSS(<%res%>, <%e1%>, <%e2%>, <%rel.index%>,LessEq,<=);<%\n%>'
+          res
+        case GREATER(__) then
+          let &preExp += 'SAVEZEROCROSS(<%res%>, <%e1%>, <%e2%>, <%rel.index%>,Greater,>);<%\n%>'
+          res
+        case GREATEREQ(__) then
+          let &preExp += 'SAVEZEROCROSS(<%res%>, <%e1%>, <%e2%>, <%rel.index%>,GreaterEq,>=);<%\n%>'
+          res
+        end match
+    case SOME((exp,i,j)) then
+         let e1 = daeExp(rel.exp1, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+         let e2 = daeExp(rel.exp2, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+         let res = tempDecl("modelica_boolean", &varDecls /*BUFC*/)
+         //let e3 = daeExp(createArray(i), context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+         let iterator = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+		 match rel.operator
+		 case LESS(__) then
+		    let &preExp += 'SAVEZEROCROSS(<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>,Less,<);<%\n%>'
+		    res
+		 case LESSEQ(__) then
+		    let &preExp += 'SAVEZEROCROSS(<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>,LessEq,<=);<%\n%>'
+		    res
+		 case GREATER(__) then
+		    let &preExp += 'SAVEZEROCROSS(<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>,Greater,>);<%\n%>'
+		    res
+		 case GREATEREQ(__) then
+		    let &preExp += 'SAVEZEROCROSS(<%res%>, <%e1%>, <%e2%>,<%rel.index%> + (<%iterator%> - <%i%>)/<%j%>,GreaterEq,>=);<%\n%>'
+		    res
+   	     end match
+   	   end match
+	end match
+end match
 end daeExpRelationSim;
-
 
 template daeExpIf(Exp exp, Context context, Text &preExp /*BUFP*/,
                   Text &varDecls /*BUFP*/)
@@ -4993,7 +5124,6 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
   
   case CALL(tuple_=false, builtin=true, ty = ET_ENUMERATION(__),
             path=IDENT(name="min"), expLst={e1,e2}) then
-
     let var1 = daeExp(e1, context, &preExp, &varDecls)
     let var2 = daeExp(e2, context, &preExp, &varDecls)
     'std::min((modelica_integer)<%var1%>,(modelica_integer)<%var2%>)'  
@@ -5013,6 +5143,22 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
             path=IDENT(name="abs"), expLst={e1}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls)
     'fabs(<%var1%>)'
+  
+    //sqrt 
+  case CALL(tuple_=false, builtin=true,
+            path=IDENT(name="sqrt"),
+            expLst={e1}) then
+    //relation = DAE.LBINARY(e1,DAE.GREATEREQ(ET_REAL()),DAE.RCONST(0))
+    //string = DAE.SCONST('Model error: Argument of sqrt should  >= 0')
+    //let retPre = assertCommon(relation,s, context, &varDecls)
+    let retPre = assertCommon(createAssertforSqrt(e1),createDAEString("Model error: Argument of sqrt should  >= 0"), context, &varDecls)
+    let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)%>' ;separator=", ")
+    let funName = '<%underscorePath(path)%>'
+    let retType = '<%funName%>_rettype'
+    let &preExp += '<%retPre%>'
+    let retVar = tempDecl(retType, &varDecls /*BUFD*/)
+    let &preExp += '<%retVar%> = <%daeExpCallBuiltinPrefix(builtin)%><%funName%>(<%argStr%>);<%\n%>'
+    if builtin then '<%retVar%>' else '<%retVar%>.<%retType%>_1'
   
   case CALL(tuple_=false, builtin=true,
             path=IDENT(name="div"), expLst={e1,e2}, ty = ET_INT()) then
@@ -5100,7 +5246,6 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let &preExp += '<%tvar%> = <%typeStr%>_to_modelica_string_format(<%sExp%>, <%formatExp%>);<%\n%>'
     '<%tvar%>'
   
-
   case CALL(tuple_=false, builtin=true,
             path=IDENT(name="String"),
             expLst={s, minlen, leftjust}) then
@@ -5178,7 +5323,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let retVar = match exp
       case CALL(ty=ET_NORETCALL(__)) then ""
       else tempDecl(retType, &varDecls)
-    let &preExp += if not builtin then match context case SIMULATION(__) then 'SIM_PROF_TICK_FN(<%funName%>_index);<%\n%>'
+    let &preExp += if not builtin then match context case SIMULATION(__) then 'SIM_PROF_TICK_FN(<%funName%>_index);<%\n%>' case SIMULATION2(__) then 'SIM_PROF_TICK_FN(<%funName%>_index);<%\n%>'
     let &preExp += '<%if retVar then '<%retVar%> = '%><%daeExpCallBuiltinPrefix(builtin)%><%funName%>(<%argStr%>);<%\n%>'
     let &preExp += if not builtin then match context case SIMULATION(__) then 'SIM_PROF_ACC_FN(<%funName%>_index);<%\n%>'
     match exp

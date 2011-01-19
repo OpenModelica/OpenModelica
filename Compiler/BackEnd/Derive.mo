@@ -497,7 +497,7 @@ algorithm
         Builtin.isAbs(fname);
         e1_1 = differentiateExpTime(exp, (timevars,functions));
       then 
-        DAE.IFEXP(DAE.RELATION(e1_1,DAE.GREATER(DAE.ET_REAL()),DAE.RCONST(0.0)), e1_1, DAE.UNARY(DAE.UMINUS(DAE.ET_REAL()),e1_1));
+        DAE.IFEXP(DAE.RELATION(e1_1,DAE.GREATER(DAE.ET_REAL()),DAE.RCONST(0.0),-1,NONE()), e1_1, DAE.UNARY(DAE.UMINUS(DAE.ET_REAL()),e1_1));
 
     case (e0 as DAE.BINARY(exp1 = e1,operator = DAE.POW(tp),exp2 = (e2 as DAE.RCONST(_))),(timevars,functions)) /* ax^(a-1) */
       equation
@@ -1348,7 +1348,7 @@ algorithm
         true = Expression.expContains(exp, Expression.crefExp(tv));
         exp_1 = differentiateExp(exp, tv, differentiateIfExp);
       then 
-        DAE.IFEXP(DAE.RELATION(exp_1,DAE.GREATER(DAE.ET_REAL()),DAE.RCONST(0.0)), exp_1, DAE.UNARY(DAE.UMINUS(DAE.ET_REAL()),exp_1));
+        DAE.IFEXP(DAE.RELATION(exp_1,DAE.GREATER(DAE.ET_REAL()),DAE.RCONST(0.0),-1,NONE()), exp_1, DAE.UNARY(DAE.UMINUS(DAE.ET_REAL()),exp_1));
     
     // der(tanh(x)) = der(x) / cosh(x)
     case (DAE.CALL(path = fname,expLst = (exp :: {}),tuple_ = b,builtin = c,ty=tp,inlineType=inl),tv,differentiateIfExp)

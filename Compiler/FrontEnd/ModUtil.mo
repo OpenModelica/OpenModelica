@@ -125,6 +125,8 @@ algorithm
       Integer i,a;
       list<list<DAE.Exp>> es,es_1;
       DAE.ExpType tp;
+      Integer index_;
+      Option<tuple<DAE.Exp,Integer,Integer>> isExpisASUB;        
       
     case (str,r,rarg,DAE.CREF(componentRef = cr,ty = t))
       equation
@@ -167,12 +169,12 @@ algorithm
       then
         DAE.LUNARY(op,e1_1);
     
-    case (str,r,rarg,DAE.RELATION(exp1 = e1,operator = op,exp2 = e2))
+    case (str,r,rarg,DAE.RELATION(exp1 = e1,operator = op,exp2 = e2, index=index_, optionExpisASUB= isExpisASUB))
       equation
         e1_1 = stringPrefixComponentRef(str, r, rarg, e1);
         e2_1 = stringPrefixComponentRef(str, r, rarg, e2);
       then
-        DAE.RELATION(e1_1,op,e2_1);
+        DAE.RELATION(e1_1,op,e2_1,index_,isExpisASUB);
     
     case (str,r,rarg,DAE.IFEXP(expCond = e1,expThen = e2,expElse = e3))
       equation

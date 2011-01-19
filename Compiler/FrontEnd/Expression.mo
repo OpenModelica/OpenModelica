@@ -196,7 +196,7 @@ algorithm
       ae1 = unelabExp(e1);
     then Absyn.LUNARY(aop,ae1);
 
-    case(DAE.RELATION(e1,op,e2)) equation
+    case(DAE.RELATION(exp1=e1,operator=op,exp2=e2)) equation
       aop = unelabOperator(op);
       ae1 = unelabExp(e1);
       ae2 = unelabExp(e2);
@@ -3139,6 +3139,8 @@ algorithm
       list<list<tuple<DAE.Exp, Boolean>>> lstexpl_1,lstexpl;
       ComponentRef cr,cr_1;
       String name,id;
+      Integer index_;
+      Option<tuple<DAE.Exp,Integer,Integer>> isExpisASUB;
     
     case (expr,source,target) /* expr source expr target expr */
       equation
@@ -3174,13 +3176,13 @@ algorithm
       then
         (DAE.LUNARY(op,e1_1),c);
     
-    case (DAE.RELATION(exp1 = e1,operator = op,exp2 = e2),source,target)
+    case (DAE.RELATION(exp1 = e1,operator = op,exp2 = e2, index=index_, optionExpisASUB= isExpisASUB),source,target)
       equation
         (e1_1,c1) = replaceExp(e1, source, target);
         (e2_1,c2) = replaceExp(e2, source, target);
         c = c1 + c2;
       then
-        (DAE.RELATION(e1_1,op,e2_1),c);
+        (DAE.RELATION(e1_1,op,e2_1,index_,isExpisASUB),c);
     
     case (DAE.IFEXP(expCond = e1,expThen = e2,expElse = e3),source,target)
       equation
@@ -3510,6 +3512,8 @@ algorithm
       DAE.InlineType  inl;
       list<DAE.MatchCase> cases;
       DAE.MatchType matchTy;
+      Integer index_;
+      Option<tuple<DAE.Exp,Integer,Integer>> isExpisASUB;       
     
     case ((e as DAE.ICONST(_)),rel,ext_arg)
       equation
@@ -3576,11 +3580,11 @@ algorithm
         ((e,ext_arg_3));
     
     // relation
-    case ((e as DAE.RELATION(exp1 = e1,operator = op,exp2 = e2)),rel,ext_arg)
+    case ((e as DAE.RELATION(exp1 = e1,operator = op,exp2 = e2, index=index_, optionExpisASUB= isExpisASUB)),rel,ext_arg)
       equation
         ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
         ((e2_1,ext_arg_2)) = traverseExp(e2, rel, ext_arg_1);
-        ((e,ext_arg_3)) = rel((DAE.RELATION(e1_1,op,e2_1),ext_arg_2));
+        ((e,ext_arg_3)) = rel((DAE.RELATION(e1_1,op,e2_1,index_,isExpisASUB),ext_arg_2));
       then
         ((e,ext_arg_3));
     
@@ -3957,6 +3961,8 @@ algorithm
       DAE.InlineType  inl;
       list<list<tuple<DAE.Exp, Boolean>>> lstexpl_1,lstexpl;
       Integer iscalar;
+      Integer index_;
+      Option<tuple<DAE.Exp,Integer,Integer>> isExpisASUB;      
       
     
     case (e as DAE.ICONST(_),rel,ext_arg) then ((e,ext_arg));    
@@ -3997,12 +4003,12 @@ algorithm
         ((DAE.LBINARY(e1_1,op,e2_1),ext_arg_2));
     
     // relation
-    case (e as DAE.RELATION(exp1 = e1,operator = op,exp2 = e2),rel,ext_arg)
+    case (e as DAE.RELATION(exp1 = e1,operator = op,exp2 = e2, index=index_, optionExpisASUB= isExpisASUB),rel,ext_arg)
       equation
         ((e1_1,ext_arg_1)) = traverseExpTopDown(e1, rel, ext_arg);
         ((e2_1,ext_arg_2)) = traverseExpTopDown(e2, rel, ext_arg_1);
       then
-        ((DAE.RELATION(e1_1,op,e2_1),ext_arg_2));
+        ((DAE.RELATION(e1_1,op,e2_1,index_,isExpisASUB),ext_arg_2));
     
     // if expressions
     case ((e as DAE.IFEXP(expCond = e1,expThen = e2,expElse = e3)),rel,ext_arg)

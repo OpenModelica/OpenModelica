@@ -99,41 +99,41 @@ extern const int ERROR_LINSYS;
 
 typedef enum {
 /*   These are flags for the generated
-     initializeDataStruc(DATA_INIT_FLAGS) function */
+   initializeDataStruc(DATA_INIT_FLAGS) function */
 
-  NO_INIT_OF_VECTORS        = 0x00000000,
-  STATES                    = 1<<0,
-  STATESDERIVATIVES         = 1<<1,
-  HELPVARS                  = 1<<2,
-  ALGEBRAICS                = 1<<3,
-  PARAMETERS                = 1<<4,
-  INITIALRESIDUALS          = 1<<5,
-  INPUTVARS                 = 1<<6,
-  OUTPUTVARS                = 1<<7,
-  INITFIXED                 = 1<<8,
-  EXTERNALVARS              = 1<<9,
-
-  /*in initializeDataStruc these are not allocated with malloc!*/
-  MODELNAME                 = 1<<10,
-  STATESNAMES               = 1<<11,
-  STATESDERIVATIVESNAMES    = 1<<12,
-  ALGEBRAICSNAMES           = 1<<13,
-  PARAMETERSNAMES           = 1<<14,
-  INPUTNAMES                = 1<<15,
-  OUTPUTNAMES               = 1<<16,
-  FUNCTIONNAMES             = 1<<17,
+  NO_INIT_OF_VECTORS  = 0x00000000,
+  STATES      = 1<<0,
+  STATESDERIVATIVES   = 1<<1,
+  HELPVARS      = 1<<2,
+  ALGEBRAICS    = 1<<3,
+  PARAMETERS    = 1<<4,
+  INITIALRESIDUALS    = 1<<5,
+  INPUTVARS     = 1<<6,
+  OUTPUTVARS    = 1<<7,
+  INITFIXED     = 1<<8,
+  EXTERNALVARS    = 1<<9,
 
   /*in initializeDataStruc these are not allocated with malloc!*/
-  STATESCOMMENTS            = 1<<18,
+  MODELNAME     = 1<<10,
+  STATESNAMES     = 1<<11,
+  STATESDERIVATIVESNAMES  = 1<<12,
+  ALGEBRAICSNAMES     = 1<<13,
+  PARAMETERSNAMES     = 1<<14,
+  INPUTNAMES    = 1<<15,
+  OUTPUTNAMES     = 1<<16,
+  FUNCTIONNAMES     = 1<<17,
+
+  /*in initializeDataStruc these are not allocated with malloc!*/
+  STATESCOMMENTS    = 1<<18,
   STATESDERIVATIVESCOMMENTS = 1<<19,
-  ALGEBRAICSCOMMENTS        = 1<<20,
-  PARAMETERSCOMMENTS        = 1<<21,
-  INPUTCOMMENTS             = 1<<22,
-  OUTPUTCOMMENTS            = 1<<23,
+  ALGEBRAICSCOMMENTS  = 1<<20,
+  PARAMETERSCOMMENTS  = 1<<21,
+  INPUTCOMMENTS     = 1<<22,
+  OUTPUTCOMMENTS    = 1<<23,
 
-  RAWSAMPLES                = 1<<24,
+  RAWSAMPLES    = 1<<24,
 
-  ALL                       = 0xFFFFFFFF
+  ALL       = 0xFFFFFFFF
 } DATA_FLAGS;
 
 typedef struct sim_DATA_STRING {
@@ -208,6 +208,7 @@ typedef struct sim_DATA {
   fortran_integer nStates,nAlgebraic,nParameters;
   long nInputVars,nOutputVars,nFunctions;
   fortran_integer nZeroCrossing/*NG*/;
+  long nRelations/*NREL*/;
   long nInitialResiduals/*NR*/;
   long nHelpVars/* NHELP */;
   //extern char init_fixed[];
@@ -250,6 +251,11 @@ extern DATA *globalData;
 
 extern int modelErrorCode;
 extern simulation_result *sim_result;
+
+extern double *gout;
+extern double *gout_old;
+extern modelica_boolean *gout_res;
+extern modelica_boolean *backuprelations;
 
 /*
  * this is used for initialize the DATA structure that is used in

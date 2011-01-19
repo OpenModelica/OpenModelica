@@ -3931,7 +3931,7 @@ algorithm
       then
         (cache,env,ih,sets,DAE.DAE({
           DAE.ASSERT(
-            DAE.RELATION(crefExp1,DAE.EQUAL(DAE.ET_BOOL()),crefExp2),
+            DAE.RELATION(crefExp1,DAE.EQUAL(DAE.ET_BOOL()),crefExp2,-1,NONE()),
             DAE.SCONST("automatically generated from connect"),
             source) // set the origin of the element
           }),graph);

@@ -450,11 +450,17 @@ uniontype Context
   end OTHER;
   record INLINE_CONTEXT
   end INLINE_CONTEXT;
+  //Context for dassl2, rungekutta, euler
+  record SIMULATION2
+  Boolean genDiscrete;
+  end SIMULATION2;  
 end Context;
 
 
 public constant Context contextSimulationNonDiscrete  = SIMULATION(false);
 public constant Context contextSimulationDiscrete     = SIMULATION(true);
+public constant Context contextSimulation2NonDiscrete = SIMULATION2(false);
+public constant Context contextSimulation2Discrete  = SIMULATION2(true);
 public constant Context contextInlineSolver           = INLINE_CONTEXT();
 public constant Context contextFunction               = FUNCTION_CONTEXT();
 public constant Context contextOther                  = OTHER();
@@ -736,9 +742,24 @@ algorithm
   end matchcontinue;
 end isMatrixExpansion;
 
+public function createAssertforSqrt
+   input DAE.Exp inExp;
+   output DAE.Exp outExp;
+algorithm
+  outExp := 
+  matchcontinue (inExp)
+  case(_) then DAE.RELATION(inExp,DAE.GREATEREQ(DAE.ET_REAL()),DAE.RCONST(0.0),-1,NONE());
+  end matchcontinue;
+end createAssertforSqrt;
+
+public function createDAEString
+   input String inString;
+   output DAE.Exp outExp;
+algorithm
+  outExp := DAE.SCONST(inString);
+end createDAEString;
+
 /** end of TypeView published functions **/
-
-
 
 
 public function createSimulationSettings
@@ -2044,6 +2065,7 @@ algorithm
         Debug.fcall("jacdump2", print, "Dump of daelow for Matrix A.\n");
         (deriveddlow2, v1, v2, comps1) = BackendDAEOptimize.generateLinearMatrix(deriveddlow1,functions,comref_states,comref_states,varlst);
         JacAEquations = createEquations(false, false, false, false, true, deriveddlow2, v1, v2, comps1, {});
+        Debug.fcall("jacdump2", print, "Equations created for Matrix A!\n");
         v = BackendVariable.daeVars(deriveddlow2);
         JacAVars =  BackendVariable.traverseBackendDAEVars(v,traversingdlowvarToSimvar,{});
         JacAVars = listReverse(JacAVars);
@@ -2051,6 +2073,7 @@ algorithm
         Debug.fcall("jacdump2", print, "Dump of daelow for Matrix C.\n");
         (deriveddlow2, v1, v2, comps1) = BackendDAEOptimize.generateLinearMatrix(deriveddlow1,functions,comref_outputvars,comref_states,varlst);
         JacCEquations = createEquations(false, false, false, false, true, deriveddlow2, v1, v2, comps1, {});
+        Debug.fcall("jacdump2", print, "Equations created for Matrix C!\n");
         v = BackendVariable.daeVars(deriveddlow2);
         JacCVars =  BackendVariable.traverseBackendDAEVars(v,traversingdlowvarToSimvar,{});
         JacAVars = listReverse(JacAVars);
@@ -3060,6 +3083,7 @@ algorithm
       list<Integer> zcEqns;
       list<SimEqSystem> equations_,equations1;
       list<String> str;
+      String s;
       
       // handle empty
     case (includeWhen, skipDiscInZc, genDiscrete, skipDiscInAlgorithm, linearSystem, dlow, ass1, ass2, {}, helpVarInfo) then {};
@@ -3180,36 +3204,24 @@ algorithm
       DAE.Exp e1,e2,varexp,exp_,right;
       list<tuple<DAE.Exp, Integer>> conditionsWithHindex;
       BackendDAE.WhenEquation whenEquation,elseWhen;
-      String algStr,message;
+      String algStr,message,eqStr;
       DAE.ElementSource source;
       list<DAE.Statement> asserts;
       SimEqSystem elseWhenEquation;
       
       // solve always a linear equations 
     case (eqNum,
-        BackendDAE.DAE(orderedVars=vars, orderedEqs=eqns),
+        dlow as BackendDAE.DAE(orderedVars=vars, orderedEqs=eqns),
         ass1, ass2, helpVarInfo, true, skipDiscInAlgorithm)
       equation
-        (BackendDAE.EQUATION(e1, e2,_), v as BackendDAE.VAR(varName = cr, varKind = kind))
+        (eqn as BackendDAE.EQUATION(e1, e2,_), v as BackendDAE.VAR(varName = cr, varKind = kind))
         = getEquationAndSolvedVar(eqNum, eqns, vars, ass2);
+        eqStr =  BackendDump.equationStr(eqn);
         varexp = Expression.crefExp(cr);
-        exp_ = ExpressionSolve.solveLin(e1, e2, varexp);
+        exp_  = ExpressionSolve.solveLin(e1, e2, varexp);
       then
         {SES_SIMPLE_ASSIGN(cr, exp_)};  
-        
-        /*           
-         // when eq
-          case (eqNum,
-          BackendDAE.DAE(orderedVars=vars, orderedEqs=eqns, eventInfo=BackendDAE.EVENT_INFO(whenClauseLst=wcl)),
-          ass1, ass2, helpVarInfo, false, skipDiscInAlgorithm)
-          equation
-          (BackendDAE.WHEN_EQUATION(whenEquation,_),_) = getEquationAndSolvedVar(eqNum, eqns, vars, ass2);
-          BackendDAE.WHEN_EQ(wcIndex, left, right,_) = whenEquation;
-          conditions = getConditionList(wcl, wcIndex);
-          conditionsWithHindex = Util.listMap1(conditions, addHindexForCondition, helpVarInfo);
-          then
-          {SES_WHEN(left, right, conditionsWithHindex)};*/
-        
+    
         // when eq without else
     case (eqNum,
         BackendDAE.DAE(orderedVars=vars, orderedEqs=eqns, eventInfo=BackendDAE.EVENT_INFO(whenClauseLst=wcl)),
@@ -3315,6 +3327,7 @@ algorithm
         // section.
         true = ComponentReference.crefEqualNoStringCompare(BackendVariable.varCref(v),varOutput);
         alg = algs[indx + 1];
+        algStr =  DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(alg,source)});
         DAE.ALGORITHM_STMTS(algStatements) = BackendDAEUtil.collateAlgorithm(alg, NONE());
       then
         {SES_ALGORITHM(algStatements)};
@@ -3759,6 +3772,7 @@ algorithm
     case (genDiscrete,skipDiscInAlgorithm,true,(daelow as BackendDAE.DAE(vars,knvars,exvars,av,eqns,se,ie,ae,al,ev,eoc)),ass1,ass2,block_,helpVarInfo)
       equation
         //print("\ncreateOdeSystem -> Linear: ...\n");
+        //BackendDump.printEquations(block_,daelow);
         // extract the variables and equations of the block.
         (eqn_lst,var_lst) = Util.listMap32(block_, getEquationAndSolvedVar, eqns, vars, ass2);
         eqn_lst = replaceDerOpInEquationList(eqn_lst);
@@ -3787,6 +3801,7 @@ algorithm
     case (false, skipDiscInAlgorithm, false,(daelow as BackendDAE.DAE(vars,knvars,exvars,av,eqns,se,ie,ae,al, ev,eoc)),ass1,ass2,block_,helpVarInfo)
       equation
         //print("\ncreateOdeSystem -> Mixed: cont\n");
+        //BackendDump.printEquations(block_,daelow);
         (eqn_lst,var_lst) = Util.listMap32(block_, getEquationAndSolvedVar, eqns, vars, ass2);
         eqn_lst = replaceDerOpInEquationList(eqn_lst);
         true = isMixedSystem(var_lst,eqn_lst);
@@ -3812,7 +3827,8 @@ algorithm
         // mixed system of equations, both continous and discrete eqns
     case (true, skipDiscInAlgorithm, false,(dlow as BackendDAE.DAE(vars,knvars,exvars,av,eqns,se,ie,ae,al, ev,eoc)),ass1,ass2,block_,helpVarInfo)
       equation
-        // print("\ncreateOdeSystem -> Mixed: cont. and discrete\n");
+        //print("\ncreateOdeSystem -> Mixed: cont. and discrete\n");
+        //BackendDump.printEquations(block_,dlow);
         (eqn_lst,var_lst) = Util.listMap32(block_, getEquationAndSolvedVar, eqns, vars, ass2);
         eqn_lst = replaceDerOpInEquationList(eqn_lst);
         true = isMixedSystem(var_lst,eqn_lst);
@@ -3876,6 +3892,7 @@ algorithm
     case (genDiscrete, skipDiscInAlgorithm, false,(daelow as BackendDAE.DAE(vars,knvars,exvars,av,eqns,se,ie,ae,al,ev,eoc)),ass1,ass2,block_,helpVarInfo)
       equation
         //print("\ncreateOdeSystem -> Cont sys: ...\n");
+        //BackendDump.printEquations(block_,daelow);
         // extract the variables and equations of the block.
         (eqn_lst,var_lst) = Util.listMap32(block_, getEquationAndSolvedVar, eqns, vars, ass2);
         eqn_lst = replaceDerOpInEquationList(eqn_lst);

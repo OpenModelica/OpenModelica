@@ -644,6 +644,8 @@ algorithm
       Prefix.Prefix p;
       Integer b,a;
       DAE.ExpType t,tp;
+      Integer index_;
+      Option<tuple<DAE.Exp,Integer,Integer>> isExpisASUB;        
       
     // no prefix, return the input expression
     case (cache,_,_,e,Prefix.NOPRE()) then (cache,e);
@@ -723,12 +725,12 @@ algorithm
       then
         (cache,DAE.LUNARY(o,e1_1));
 
-    case (cache,env,ih,DAE.RELATION(exp1 = e1,operator = o,exp2 = e2),p)
+    case (cache,env,ih,DAE.RELATION(exp1 = e1,operator = o,exp2 = e2, index=index_, optionExpisASUB= isExpisASUB),p)
       equation
         (cache,e1_1) = prefixExp(cache, env, ih, e1, p);
         (cache,e2_1) = prefixExp(cache, env, ih, e2, p);
       then
-        (cache,DAE.RELATION(e1_1,o,e2_1));
+        (cache,DAE.RELATION(e1_1,o,e2_1,index_,isExpisASUB));
 
     case (cache,env,ih,DAE.IFEXP(expCond = e1,expThen = e2,expElse = e3),p)
       equation

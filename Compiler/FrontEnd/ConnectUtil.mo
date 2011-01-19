@@ -1553,7 +1553,7 @@ algorithm
         instream_exp = evaluateInStream(inStreamCref, inSets);
         // actualStream(stream_var) = if flow_var > 0 then inStream(stream_var)
         //                                            else stream_var;
-        e = DAE.IFEXP(DAE.RELATION(flow_exp, DAE.GREATER(ety), DAE.RCONST(0.0)),
+        e = DAE.IFEXP(DAE.RELATION(flow_exp, DAE.GREATER(ety), DAE.RCONST(0.0),-1,NONE()),
             instream_exp, stream_exp);
       then
         e;  

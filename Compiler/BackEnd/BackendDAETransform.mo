@@ -163,7 +163,7 @@ algorithm
         algs = arrayList(al);
         (v,kv,e_lst,re_lst,ie_lst,ae_lst,algs,av) = BackendDAEOptimize.removeSimpleEquations(v,kv, e_lst, re_lst, ie_lst, ae_lst, algs, s); 
          BackendDAE.EVENT_INFO(whenClauseLst=whenclauses) = ev;
-        (zero_crossings) = BackendDAECreate.findZeroCrossings(v,kv,e_lst,ae_lst,whenclauses,algs);
+        (zero_crossings,e_lst,ae_lst,whenclauses,algs) = BackendDAECreate.findZeroCrossings(v,kv,e_lst,ae_lst,whenclauses,algs);
         e = BackendDAEUtil.listEquation(e_lst);
         re = BackendDAEUtil.listEquation(re_lst);
         ie = BackendDAEUtil.listEquation(ie_lst);

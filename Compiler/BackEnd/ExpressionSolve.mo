@@ -153,16 +153,16 @@ algorithm
       DAE.Exp crexp,crexp2,rhs,lhs,res,res_1,cr,e1,e2,e3;
       DAE.ComponentRef cr1,cr2;
       DAE.ExpType tp,tp1;
-    /*
-    case(debuge1,debuge2,debuge3) // FOR DEBBUGING...
-      local DAE.Exp debuge1,debuge2,debuge3;
-      equation
-        print("(Expression.mo debugging)  To solve: rhs: " +&
-          printExpStr(debuge1) +& " lhs: " +&
-          printExpStr(debuge2) +& " with respect to: " +&
-          printExpStr(debuge3) +& "\n");
-      then
-        fail();*/
+    
+    // case(debuge1,debuge2,debuge3) // FOR DEBBUGING...
+    //  local DAE.Exp debuge1,debuge2,debuge3;
+    //  equation
+    //    print("(Expression.mo debugging)  To solve: rhs: " +&
+    //      printExpStr(debuge1) +& " lhs: " +&
+    //     printExpStr(debuge2) +& " with respect to: " +&
+    //      printExpStr(debuge3) +& "\n");
+    //  then
+    //    fail();
     
     // special case when already solved, cr1 = rhs, otherwise division by zero when dividing with derivative
     case (crexp,rhs,crexp2)
@@ -173,7 +173,7 @@ algorithm
         false = Expression.expContains(rhs, crexp);
         res_1 = ExpressionSimplify.simplify1(rhs);
       then
-        res_1;
+        (res_1);
 
     // special case when already solved, lhs = cr1, otherwise division by zero  when dividing with derivative
     case (lhs,crexp ,crexp2)
@@ -184,7 +184,7 @@ algorithm
         false = Expression.expContains(lhs, crexp);
         res_1 = ExpressionSimplify.simplify1(lhs);
       then
-        res_1;    
+        (res_1);    
 
     // solving linear equation system using newton iteration ( converges directly )
     case (lhs,rhs,(cr as DAE.CREF(componentRef = _)))
@@ -199,7 +199,7 @@ algorithm
         (res,{}) = solve2(lhs, rhs, cr, true);
         res_1 = ExpressionSimplify.simplify1(res);
       then
-        res_1;
+        (res_1);
 
     // solving linear equation system using newton iteration ( converges directly )
     case (lhs,rhs,(cr as DAE.CREF(componentRef = _)))
@@ -207,7 +207,7 @@ algorithm
         (res,{}) = solve2(lhs, rhs, cr, true);
         res_1 = ExpressionSimplify.simplify1(res);
       then
-        res_1;
+        (res_1);
     
     case (lhs,DAE.IFEXP(e1,e2,e3),(cr as DAE.CREF(componentRef = _)))
       equation
@@ -228,8 +228,8 @@ algorithm
     case (e1,e2,e3)
       equation
         Debug.fprint("failtrace", "-Expression.solve failed\n");
-        //print("solve ");print(printExpStr(e1));print(" = ");print(printExpStr(e2));
-        //print(" w.r.t ");print(printExpStr(e3));print(" failed\n");
+        //print("solve ");print(ExpressionDump.printExpStr(e1));print(" = ");print(ExpressionDump.printExpStr(e2));
+        //print(" w.r.t ");print(ExpressionDump.printExpStr(e3));print(" failed\n");
       then
         fail();
   end matchcontinue;
@@ -295,7 +295,7 @@ algorithm
         sa = ExpressionDump.printExpStr(a);
         estr = stringAppendList({"Singular expression ",se1," = ",se2," because ",sa," is Zero!"});
       then
-        (rhs_1,DAE.STMT_ASSERT(DAE.RELATION(a,DAE.NEQUAL(tp),z),DAE.SCONST(estr),DAE.emptyElementSource)::asserts); 
+        (rhs_1,DAE.STMT_ASSERT(DAE.RELATION(a,DAE.NEQUAL(tp),z,-1,NONE()),DAE.SCONST(estr),DAE.emptyElementSource)::asserts); 
        
     // swapped args: a*(b-c) = 0  solve for b     
     case (e2,e1,(crexp as DAE.CREF(componentRef = cr)),linExp)
@@ -310,7 +310,7 @@ algorithm
         sa = ExpressionDump.printExpStr(a);
         estr = stringAppendList({"Singular expression ",se1," = ",se2," because ",sa," is Zero!"});
       then
-        (rhs_1,DAE.STMT_ASSERT(DAE.RELATION(a,DAE.NEQUAL(tp),z),DAE.SCONST(estr),DAE.emptyElementSource)::asserts); 
+        (rhs_1,DAE.STMT_ASSERT(DAE.RELATION(a,DAE.NEQUAL(tp),z,-1,NONE()),DAE.SCONST(estr),DAE.emptyElementSource)::asserts); 
 
     case (e1,e2,(crexp as DAE.CREF(componentRef = cr)), linExp)
       equation

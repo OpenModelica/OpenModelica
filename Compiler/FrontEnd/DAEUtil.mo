@@ -1981,7 +1981,7 @@ algorithm
         e1_1 = toModelicaFormExp(e1);
         e2_1 = toModelicaFormExp(e2);
       then
-        DAE.RELATION(e1_1,op,e2_1);
+        DAE.RELATION(e1_1,op,e2_1,-1,NONE());
     case (DAE.IFEXP(expCond = e1,expThen = e2,expElse = e3))
       equation
         e1_1 = toModelicaFormExp(e1);

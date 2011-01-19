@@ -125,6 +125,10 @@ package SimCode
     end OTHER;
     record INLINE_CONTEXT
     end INLINE_CONTEXT;
+    //Context for dassl2, rungekutta, euler
+    record SIMULATION2
+      Boolean genDiscrete;
+    end SIMULATION2;
   end Context;
   
   uniontype Variable
@@ -354,6 +358,8 @@ package SimCode
   
   constant Context contextSimulationNonDiscrete;
   constant Context contextSimulationDiscrete;
+  constant Context contextSimulation2NonDiscrete;
+  constant Context contextSimulation2Discrete;
   constant Context contextInlineSolver;
   constant Context contextFunction;
   constant Context contextOther;  
@@ -403,8 +409,7 @@ package SimCode
     input DAE.ExpVar inVar;
     output DAE.Exp outExp;
   end makeCrefRecordExp;
-  
-  
+   
   function cref2simvar
     input DAE.ComponentRef cref;
     input SimCode simCode;
@@ -422,12 +427,27 @@ package SimCode
     output DAE.Exp outExp;
   end hackArrayReverseToCref;
 
-  function hackMatrixReverseToCref
-    input DAE.Exp inExp;
-    input Context context; 
-    output DAE.Exp outExp;
-  end hackMatrixReverseToCref;
+	function hackMatrixReverseToCref
+	  input DAE.Exp inExp;
+	  input Context context; 
+	  output DAE.Exp outExp;
+	end hackMatrixReverseToCref;
+	
+	function createArray
+	  input Integer size;
+	  output DAE.Exp outArray;
+	end createArray;
+	
+	function createAssertforSqrt
+	  input DAE.Exp inExp;
+	  output DAE.Exp outExp;
+	end createAssertforSqrt;
 
+  function createDAEString
+   input String inString;
+   output DAE.Exp outExp;
+  end createDAEString;
+  
   function isBoxedFunction
     input Function fn;
     output Boolean b;
@@ -646,7 +666,9 @@ package DAE
     record RELATION
       Exp exp1;
       Operator operator;
-      Exp exp2; 
+      Exp exp2;
+      Integer index;
+      Option<tuple<DAE.Exp,Integer,Integer>> optionExpisASUB; 
     end RELATION;
     record IFEXP
       Exp expCond;

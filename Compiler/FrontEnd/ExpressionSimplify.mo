@@ -129,6 +129,8 @@ algorithm
       DAE.InlineType inline,b3;
       Absyn.Path fn, path;
       list<list<tuple<DAE.Exp, Boolean>>> matr,matr2;
+      Integer index_;
+      Option<tuple<DAE.Exp,Integer,Integer>> isExpisASUB;
         
     // noEvent propagated to relations and event triggering functions
     case(DAE.CALL(Absyn.IDENT("noEvent"),{e},tpl,builtin,tp,inline))
@@ -258,11 +260,11 @@ algorithm
         e_1;
     
     // relations 
-    case ((exp as DAE.RELATION(exp1 = e1,operator = op,exp2 = e2)))
+    case ((exp as DAE.RELATION(exp1 = e1,operator = op,exp2 = e2, index=index_, optionExpisASUB= isExpisASUB)))
       equation
         e1_1 = simplify1(e1);
         e2_1 = simplify1(e2);
-        exp_1 = DAE.RELATION(e1_1,op,e2_1);
+        exp_1 = DAE.RELATION(e1_1,op,e2_1,index_,isExpisASUB);
         e = simplifyBinary(exp_1, op, e1_1, e2_1);
       then
         e;
