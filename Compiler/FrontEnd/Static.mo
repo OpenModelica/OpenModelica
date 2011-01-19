@@ -8324,7 +8324,7 @@ algorithm
         (cache,args_1,constlist,restype,functype as (DAE.T_FUNCTION(functionAttributes = DAE.FUNCTION_ATTRIBUTES(isPure = isPure, inline = inline)),_),vect_dims,slots) =
           elabTypes(cache, env, args, nargs, typelist, true/* Check types*/, impl,pre,info)
           "The constness of a function depends on the inputs. If all inputs are constant the call itself is constant." ;
-        fn_1 = deoverloadFuncname(fn, functype);
+        (fn_1,functype) = deoverloadFuncname(fn, functype);
         tuple_ = isTuple(restype);
         (isBuiltin,fn_1) = isBuiltinFunc(fn_1,functype);
         builtin = valueEq(DAE.FUNCTION_BUILTIN(),isBuiltin);
@@ -8345,7 +8345,7 @@ algorithm
         //callExp = VarTransform.replaceExp(callExp, inputVarsRepl, NONE());        
 
         //debugPrintString = Util.if_(Util.isEqual(DAE.NORM_INLINE,inline)," Inline: " +& Absyn.pathString(fn_1) +& "\n", "");print(debugPrintString);
-
+        
         (call_exp,prop_1) = vectorizeCall(callExp, vect_dims, slots2, prop);
 
         /* Instantiate the function and add to dae function tree*/
@@ -9018,13 +9018,21 @@ protected function deoverloadFuncname
   input Absyn.Path inPath;
   input DAE.Type inType;
   output Absyn.Path outPath;
+  output DAE.Type outType;
 algorithm
-  outPath:=
-  matchcontinue (inPath,inType)
-    local Absyn.Path fn,fn_1;
-    case (fn,(DAE.T_FUNCTION(funcArg = _),SOME(fn_1))) then fn_1;
-    case (fn,(_,_)) then fn;
-  end matchcontinue;
+  (outPath,outType) := match (inPath,inType)
+    local
+      Absyn.Path fn;
+      String name;
+      DAE.TType tty;
+    case (_,(tty as DAE.T_FUNCTION(functionAttributes = DAE.FUNCTION_ATTRIBUTES(isBuiltin=DAE.FUNCTION_BUILTIN())),SOME(fn)))
+      equation
+        name = Absyn.pathLastIdent(fn);
+        fn = Absyn.IDENT(name);
+      then (fn,(tty,SOME(fn)));
+    case (_,(DAE.T_FUNCTION(funcArg = _),SOME(fn))) then (fn,inType);
+    else (inPath,inType);
+  end match;
 end deoverloadFuncname;
 
 protected function isTuple
