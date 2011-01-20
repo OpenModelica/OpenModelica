@@ -438,16 +438,14 @@ algorithm
       then
         DAE.BINARY(e_1,DAE.DIV(DAE.ET_REAL()),e);
 
-    case (DAE.CALL(path = fname,expLst = expl,tuple_=false,builtin = true,ty=tp,inlineType=inl),(timevars,functions))
+    case (DAE.CALL(path = fname as Absyn.IDENT("max"),expLst = expl,tuple_=false,builtin = true,ty=tp,inlineType=inl),(timevars,functions))
       equation
-        Builtin.isMax(fname);
         expl_1 = Util.listMap1(expl, differentiateExpTime, (timevars,functions));
       then
         DAE.CALL(fname,expl_1,false,true,tp,inl);
 
-    case (DAE.CALL(path = fname,expLst = expl,tuple_=false,builtin = true,ty=tp,inlineType=inl),(timevars,functions))
+    case (DAE.CALL(path = fname as Absyn.IDENT("min"),expLst = expl,tuple_=false,builtin = true,ty=tp,inlineType=inl),(timevars,functions))
       equation
-        Builtin.isMin(fname);
         expl_1 = Util.listMap1(expl, differentiateExpTime, (timevars,functions));
       then
         DAE.CALL(fname,expl_1,false,true,tp,inl);
@@ -459,17 +457,15 @@ algorithm
         DAE.BINARY(e_1,DAE.DIV(DAE.ET_REAL()),
           DAE.BINARY(DAE.RCONST(2.0),DAE.MUL(DAE.ET_REAL()),e0));
 
-    case (DAE.CALL(path = fname,expLst = {e1,e2},tuple_=false,builtin = true,ty=tp,inlineType=inl),(timevars,functions))
+    case (DAE.CALL(path = fname as Absyn.IDENT("cross"),expLst = {e1,e2},tuple_=false,builtin = true,ty=tp,inlineType=inl),(timevars,functions))
       equation
-        Builtin.isCross(fname);
         e1_1 = differentiateExpTime(e1, (timevars,functions));
         e2_1 = differentiateExpTime(e2, (timevars,functions));
       then
         DAE.BINARY(DAE.CALL(fname,{e1,e2_1},false,true,tp,inl),DAE.ADD_ARR(tp),DAE.CALL(fname,{e1_1,e2},false,true,tp,inl));
 
-    case (DAE.CALL(path = fname,expLst = expl,tuple_=false,builtin = true,ty=tp,inlineType=inl),(timevars,functions))
+    case (DAE.CALL(path = fname as Absyn.IDENT("transpose"),expLst = expl,tuple_=false,builtin = true,ty=tp,inlineType=inl),(timevars,functions))
       equation
-        Builtin.isTranspose(fname);
         expl_1 = Util.listMap1(expl, differentiateExpTime, (timevars,functions));
       then
         DAE.CALL(fname,expl_1,false,true,tp,inl);

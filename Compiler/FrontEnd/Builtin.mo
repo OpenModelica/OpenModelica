@@ -797,10 +797,10 @@ Currently only 'time' is a builtin variable.
 input DAE.ComponentRef cref;
 output Boolean b;
 algorithm
-  b := matchcontinue(cref)
+  b := match (cref)
     case(DAE.CREF_IDENT(ident="time")) then true;
-    case(_) then false;  
-  end matchcontinue;
+    else false;  
+  end match;
 end variableIsBuiltin;
 
 public function isSubstring
@@ -813,61 +813,6 @@ algorithm
     case (Absyn.FULLYQUALIFIED(inPath)) equation isSubstring(inPath); then ();
   end match;
 end isSubstring;
-
-public function isCross ""
-  input Absyn.Path inPath;
-algorithm
-  _:=
-  match (inPath)
-    case (Absyn.IDENT(name = "cross")) then ();
-    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "cross")))) then ();
-    case (Absyn.FULLYQUALIFIED(inPath)) equation isCross(inPath); then ();
-  end match;
-end isCross;
-
-public function isMax
-  input Absyn.Path inPath;
-algorithm
-  _:=
-  match (inPath)
-    case (Absyn.IDENT(name = "max")) then ();
-    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "max")))) then ();
-    case (Absyn.FULLYQUALIFIED(inPath)) equation isMax(inPath); then ();
-  end match;
-end isMax;
-
-public function isMin
-  input Absyn.Path inPath;
-algorithm
-  _:=
-  match (inPath)
-    case (Absyn.IDENT(name = "min")) then ();
-    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "min")))) then ();
-    case (Absyn.FULLYQUALIFIED(inPath)) equation isMin(inPath); then ();
-  end match;
-end isMin;
-
-public function isTranspose
-  input Absyn.Path inPath;
-algorithm
-  _:=
-  match (inPath)
-    case (Absyn.IDENT(name = "transpose")) then ();
-    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "transpose")))) then ();
-    case (Absyn.FULLYQUALIFIED(inPath)) equation isTranspose(inPath); then ();
-  end match;
-end isTranspose;
-
-public function isSkew
-  input Absyn.Path inPath;
-algorithm
-  _:=
-  matchcontinue (inPath)
-    case (Absyn.IDENT(name = "skew")) then ();
-    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "skew")))) then ();
-    case (Absyn.FULLYQUALIFIED(inPath)) equation isSkew(inPath); then ();
-  end matchcontinue;
-end isSkew;
 
 public function isDer
   input Absyn.Path inPath;

@@ -51,7 +51,6 @@ public type Type = DAE.ExpType;
 public type Subscript = DAE.Subscript;
 
 // protected imports
-protected import Builtin;
 protected import ComponentReference;
 protected import DAEUtil;
 protected import Debug;
@@ -586,11 +585,11 @@ algorithm
     Absyn.Path path; DAE.Exp e,e1;
     
     // der(constant) ==> 0
-    case(DAE.CALL(path=Absyn.IDENT("der"),expLst ={e})) 
+    case(DAE.CALL(path=Absyn.IDENT("der"),expLst ={e}))
       equation
         true = Expression.isConst(e);
-      e1 = simplifyBuiltinConstantDer(e);
-    then e1;
+        e1 = simplifyBuiltinConstantDer(e);
+      then e1;
     
     // sqrt function
     case(DAE.CALL(path=Absyn.IDENT("sqrt"),expLst={e})) 
@@ -658,40 +657,32 @@ algorithm
         DAE.RCONST(r);
         
     // min function on integers
-    case(DAE.CALL(path=path,expLst={DAE.ICONST(i), DAE.ICONST(j)}))
+    case(DAE.CALL(path=Absyn.IDENT("min"),expLst={DAE.ICONST(i), DAE.ICONST(j)}))
       equation
-        Builtin.isMin(path);
         i = intMin(i, j);
-      then
-        DAE.ICONST(i);
+      then DAE.ICONST(i);
 
     // min function on reals
-    case(DAE.CALL(path=path,expLst={e, e1})) 
+    case(DAE.CALL(path=Absyn.IDENT("min"),expLst={e, e1})) 
       equation
-        Builtin.isMin(path);
         v1 = Expression.getRealConst(e);
         v2 = Expression.getRealConst(e1);
         r = realMin(v1, v2);
-      then 
-        DAE.RCONST(r);  
+      then DAE.RCONST(r);  
 
     // min function on integers
-    case(DAE.CALL(path=path,expLst={DAE.ICONST(i), DAE.ICONST(j)}))
+    case(DAE.CALL(path=Absyn.IDENT("max"),expLst={DAE.ICONST(i), DAE.ICONST(j)}))
       equation
-        Builtin.isMax(path);
         i = intMax(i, j);
-      then
-        DAE.ICONST(i);
+      then DAE.ICONST(i);
 
     // max function on reals
-    case(DAE.CALL(path=path,expLst={e, e1})) 
+    case(DAE.CALL(path=Absyn.IDENT("max"),expLst={e, e1})) 
       equation
-        Builtin.isMax(path);
         v1 = Expression.getRealConst(e);
         v2 = Expression.getRealConst(e1);
         r = realMax(v1, v2);
-      then 
-        DAE.RCONST(r);              
+      then DAE.RCONST(r);              
   end matchcontinue;
 end simplifyBuiltinConstantCalls;
 
