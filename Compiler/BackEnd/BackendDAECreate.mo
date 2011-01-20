@@ -2963,7 +2963,7 @@ algorithm
         failure(((DAE.CREF(_,_),_,_)) = func((Expression.crefExp(cr), extraArg)));
         true = RTOpts.debugFlag("failtrace");
         print(DAEDump.ppStatementStr(x));
-        print("Warning, not allowed to set the componentRef to a expression in DAEUtil.traverseStmtsExps\n");  
+        print("Warning, not allowed to set the componentRef to a expression in BackendDAECreate.traverseStmtsExps for ZeroCrosssing\n");  
         ((xs_1, extraArg)) = traverseStmtsExps(xs, func, extraArg, knvars);
       then ((DAE.STMT_ASSIGN_ARR(tp,cr,e_1,source) :: xs_1,extraArg));
         
@@ -2978,7 +2978,7 @@ algorithm
     case (((x as DAE.STMT_FOR(type_=tp,iterIsArray=b1,iter=id1,range=e,statementLst=stmts, source = source)) :: xs),func, extraArg, knvars)
       equation
         cr = ComponentReference.makeCrefIdent(id1, tp, {});
-        iteratorExp = Expression.crefExp(cr);   
+        iteratorExp = Expression.crefExp(cr);
         iteratorexps = extendRange(e,knvars);
         ((stmts2, extraArg)) = traverseStmtsForExps(iteratorExp, iteratorexps,e, stmts, knvars, func, extraArg);
         ((xs_1, extraArg)) = traverseStmtsExps(xs, func, extraArg, knvars);
@@ -3163,7 +3163,7 @@ algorithm
         zc = mergeZeroCrossings(zc);
         itmp = (listLength(zc)-listLength(zeroCrossings));
         eres = Util.if_((itmp>0),e_1,e); 
-      then ((e,true,(iterator,inExpLst,range,(zc,indx),(alg_indx,vars,knvars,eqns))));
+      then ((eres,true,(iterator,inExpLst,range,(zc,indx),(alg_indx,vars,knvars,eqns))));
     // All other functions generate zerocrossing.  
     case (((e as DAE.RELATION(exp1 = e1,operator = op,exp2 = e2)),(iterator,inExpLst,range,(zeroCrossings,indx),(alg_indx,vars,knvars,eqns))))
       equation

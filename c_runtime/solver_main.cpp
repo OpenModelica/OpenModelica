@@ -320,14 +320,13 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
               "ERROR: Too many Iteration. System is not consistent!\n"));
         }
     }
-  SaveZeroCrossings();
-  reset = true;
   functionAliasEquations();
+  SaveZeroCrossings();
+  initializeZeroCrossings();
+  reset = true;
   saveall();
-  if (sim_verbose)
-    {
-      sim_result->emit();
-    }
+
+  sim_result->emit();
 
   // Initialization complete
   if (measure_time_flag)
@@ -345,15 +344,18 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
     }
   std::ofstream fmt;
   long stepNo = 0;
-  if (measure_time_flag) {
-    fmt.open("omc_mt.log");
-    fmt << "step,time,solver time";
-    for (int i = 0; i < globalData->nFunctions; i++)
-      fmt << "," << globalData->functionNames[i].name << ",";
-    for (int i = 0; i < globalData->nProfileBlocks; i++)
-      fmt << "," << globalData->equationInfo[globalData->equationInfo_reverse_prof_index[i]].name << ",";
-    fmt << endl;
-  }
+  if (measure_time_flag)
+    {
+      fmt.open("omc_mt.log");
+      fmt << "step,time,solver time";
+      for (int i = 0; i < globalData->nFunctions; i++)
+        fmt << "," << globalData->functionNames[i].name << ",";
+      for (int i = 0; i < globalData->nProfileBlocks; i++)
+        fmt << ","
+        << globalData->equationInfo[globalData->equationInfo_reverse_prof_index[i]].name
+        << ",";
+      fmt << endl;
+    }
 
   try
   {
@@ -361,7 +363,8 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
         {
           if (measure_time_flag)
             {
-              for (int i = 0; i < globalData->nFunctions+globalData->nProfileBlocks; i++)
+              for (int i = 0; i < globalData->nFunctions
+              + globalData->nProfileBlocks; i++)
                 rt_clear(i + SIM_TIMER_FIRST_FUNCTION);
               rt_tick( SIM_TIMER_STEP);
             }
@@ -407,16 +410,9 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
           retValIntegrator = solver_main_step(flag, start, stop, reset);
 
           functionAlgebraics();
-
-          /*
-           // Emit this time step
-           functionAliasEquations();
-           SaveZeroCrossings();
-           sim_result->emit();
-           saveall();
-           */
-          SaveZeroCrossings();
+          functionAliasEquations();
           function_storeDelayed();
+          SaveZeroCrossings();
 
           if (reset)
             reset = false;
@@ -429,6 +425,7 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
               stateEvents++;
               reset = true;
               dideventstep = 1;
+              SaveZeroCrossings();
             }
           else if (sampleEvent_actived)
             {
@@ -437,6 +434,7 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
               reset = true;
               dideventstep = 1;
               sampleEvent_actived = 0;
+              SaveZeroCrossings();
             }
           else
             {
@@ -446,17 +444,21 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
             rt_accumulate( SIM_TIMER_EVENT);
 
           // Emit this time step
-          functionAliasEquations();
           saveall();
-          if (measure_time_flag) {
-            fmt << stepNo++ << "," << globalData->timeValue << "," << rt_tock(SIM_TIMER_STEP);
-            for (int i = 0; i < globalData->nFunctions; i++)
-              fmt << "," << rt_ncall(i + SIM_TIMER_FIRST_FUNCTION) << "," << rt_total(i + SIM_TIMER_FIRST_FUNCTION);
-            for (int i = globalData->nFunctions; i < globalData->nFunctions+globalData->nProfileBlocks; i++)
-              fmt << "," << rt_ncall(i + SIM_TIMER_FIRST_FUNCTION) << "," << rt_total(i + SIM_TIMER_FIRST_FUNCTION);
-            fmt << endl;
-          }
-          SaveZeroCrossings();
+          if (measure_time_flag)
+            {
+              fmt << stepNo++ << "," << globalData->timeValue << ","
+                  << rt_tock(SIM_TIMER_STEP);
+              for (int i = 0; i < globalData->nFunctions; i++)
+                fmt << "," << rt_ncall(i + SIM_TIMER_FIRST_FUNCTION) << ","
+                << rt_total(i + SIM_TIMER_FIRST_FUNCTION);
+              for (int i = globalData->nFunctions; i < globalData->nFunctions
+              + globalData->nProfileBlocks; i++)
+                fmt << "," << rt_ncall(i + SIM_TIMER_FIRST_FUNCTION) << ","
+                << rt_total(i + SIM_TIMER_FIRST_FUNCTION);
+              fmt << endl;
+            }
+          //SaveZeroCrossings();
           sim_result->emit();
 
           //Check for termination of terminate() or assert()

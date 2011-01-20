@@ -1911,8 +1911,8 @@ algorithm
         
         // equation generation for euler, dassl2, rungekutta 
         (contBlocks, _) = splitOutputBlocks(dlow2, ass1, ass2, m, mt, blt_no_states);  
-        odeEquations = createEquations(false, false, false, true, false, dlow2, ass1, ass2, blt_states, helpVarInfo);
-        algebraicEquations = createEquations(false, false, false, true, false, dlow2, ass1, ass2, contBlocks, helpVarInfo);
+        odeEquations = createEquations(false, false, false, false, false, dlow2, ass1, ass2, blt_states, helpVarInfo);
+        algebraicEquations = createEquations(false, false, false, false, false, dlow2, ass1, ass2, contBlocks, helpVarInfo);
         allEquationsPlusWhen = createEquations(true, false, true, false, false, dlow2, ass1, ass2, comps, helpVarInfo);
         
         allEquations = createEquations(false, false, true, false, false, dlow2, ass1, ass2, comps, helpVarInfo);

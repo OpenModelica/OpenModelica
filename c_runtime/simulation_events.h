@@ -42,50 +42,85 @@
 #include "boolean_array.h"
 #include "fortran_types.h"
 
-int initializeEventData();
-void deinitializeEventData();
+int
+initializeEventData();
+void
+deinitializeEventData();
 
-int checkForDiscreteVarChanges();
-void calcEnabledZeroCrossings();
-void CheckForNewEvents(double *t);
-void CheckForInitialEvents(double *t);
-void checkForInitialZeroCrossings(fortran_integer* jroot);
-void StartEventIteration(double *t);
-void StateEventHandler(fortran_integer jroot[], double *t);
-void AddEvent(long);
+int
+checkForDiscreteVarChanges();
+void
+calcEnabledZeroCrossings();
+void
+CheckForNewEvents(double *t);
+void
+CheckForInitialEvents(double *t);
+void
+checkForInitialZeroCrossings(fortran_integer* jroot);
+void
+StartEventIteration(double *t);
+void
+StateEventHandler(fortran_integer jroot[], double *t);
+void
+AddEvent(long);
 
-void saveall();
+void
+saveall();
 
-void save(double & var);
-void save(modelica_integer & var);
-void save(modelica_boolean & var);
-void save(const char* & var);
+void
+save(double & var);
+void
+save(modelica_integer & var);
+void
+save(modelica_boolean & var);
+void
+save(const char* & var);
 
-double pre(double & var);
-modelica_integer pre(modelica_integer & var);
-signed char pre(signed char & var);
-const char* pre(const char* & var);
+double
+pre(double & var);
+modelica_integer
+pre(modelica_integer & var);
+signed char
+pre(signed char & var);
+const char*
+pre(const char* & var);
 
-bool edge(double& var);
-bool edge(modelica_integer& var);
-bool edge(modelica_boolean& var);
+bool
+edge(double& var);
+bool
+edge(modelica_integer& var);
+bool
+edge(modelica_boolean& var);
 
-bool change(double& var);
-bool change(modelica_integer& var);
-bool change(modelica_boolean& var);
-bool change(const char*& var);
+bool
+change(double& var);
+bool
+change(modelica_integer& var);
+bool
+change(modelica_boolean& var);
+bool
+change(const char*& var);
 
-double Sample(double t, double start ,double interval);
-double sample(double start ,double interval, int hindex);
-void initSample(double start,double stop);
+double
+Sample(double t, double start, double interval);
+double
+sample(double start, double interval, int hindex);
+void
+initSample(double start, double stop);
 
-double Less(double a,double b);
-double LessEq(double a,double b);
-double Greater(double a,double b);
-double GreaterEq(double a,double b);
+double
+Less(double a, double b);
+double
+LessEq(double a, double b);
+double
+Greater(double a, double b);
+double
+GreaterEq(double a, double b);
 
-void checkTermination();
-int checkForSampleEvent();
+void
+checkTermination();
+int
+checkForSampleEvent();
 
 extern long inUpdate;
 extern int euler_in_use;
@@ -170,7 +205,8 @@ extern modelica_boolean* gout_res;
 #define initial() localData->init
 
 int
-function_zeroCrossing(fortran_integer *neqm, double *t, double *x, fortran_integer *ng, double *gout, double *rpar, fortran_integer* ipar);
+function_zeroCrossing(fortran_integer *neqm, double *t, double *x,
+    fortran_integer *ng, double *gout, double *rpar, fortran_integer* ipar);
 
 int
 handleZeroCrossing(long index);
@@ -181,34 +217,50 @@ function_when(int i);
 extern long* zeroCrossingEnabled;
 
 int
-function_onlyZeroCrossings(double* gout ,double* t);
+function_onlyZeroCrossings(double* gout, double* t);
 
-int CheckForNewEvent(int *sampleactived);
+int
+CheckForNewEvent(int *sampleactived);
 
-int EventHandle(int);
+int
+EventHandle(int);
 
-void FindRoot(double*);
+void
+FindRoot(double*);
 
-int checkForDiscreteChanges();
+int
+checkForDiscreteChanges();
 
-void SaveZeroCrossings();
+void
+SaveZeroCrossings();
 
-void activateSampleEvents();
+void
+initializeZeroCrossings();
 
-double BiSection(double*, double*, double*, double*, long int*);
+void
+activateSampleEvents();
 
-int CheckZeroCrossings(long int*);
+double
+BiSection(double*, double*, double*, double*, long int*);
 
-int function_updateSample();
+int
+CheckZeroCrossings(long int*);
+
+int
+function_updateSample();
 
 #define INTERVAL 1
 #define NOINTERVAL 0
 
 extern double TOL;
 
-void debugPrintHelpVars();
-void deactivateSampleEvent();
-void deactivateSampleEventsandEquations();
-void debugSampleEvents();
+void
+debugPrintHelpVars();
+void
+deactivateSampleEvent();
+void
+deactivateSampleEventsandEquations();
+void
+debugSampleEvents();
 
 #endif

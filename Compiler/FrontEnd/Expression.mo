@@ -5835,9 +5835,12 @@ algorithm
       then
         res;
     
-    case (DAE.ASUB(exp = e,sub = _),cr)
+    case (DAE.ASUB(exp = e,sub = explist),cr)
       equation
+        reslist = Util.listMap1(explist, expContains, cr);
+        res1 = Util.boolOrList(reslist);
         res = expContains(e, cr);
+        res = Util.boolOrList({res1,res});
       then
         res;
     
