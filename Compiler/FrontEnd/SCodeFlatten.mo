@@ -57,9 +57,16 @@ protected uniontype ImportTable
   end IMPORT_TABLE;
 end ImportTable;
 
+protected uniontype Extends
+  record EXTENDS
+    Absyn.Path baseClass;
+    list<SCode.Element> redeclareModifiers;
+  end EXTENDS;
+end Extends;
+
 protected uniontype ExtendsTable
   record EXTENDS_TABLE
-    list<Absyn.Path> baseClasses;
+    list<Extends> baseClasses;
   end EXTENDS_TABLE;
 end ExtendsTable;
 
@@ -621,14 +628,6 @@ algorithm
       then
         (item, new_path, SOME(env));
 
-    // Simple name.
-    case (Absyn.IDENT(name = id), _)
-      equation
-        print("lookupName failed for " +& id +& "\n");
-        (item, new_path, env) = lookupSimpleName(id, inEnv);
-      then
-        (item, new_path, SOME(env));
-        
     // Qualified name.
     case (Absyn.QUALIFIED(name = id, path = path), _)
       equation
@@ -640,7 +639,20 @@ algorithm
         path = Absyn.joinPaths(new_path, path);
       then
         (item, path, SOME(env));
-
+      
+    // Qualified name.
+    case (Absyn.QUALIFIED(name = id, path = path), _)
+      equation
+        print("Failed!\n");
+        // Look up the first identifier.
+        (item, new_path, env) = lookupSimpleName(id, inEnv);
+        // Look up the rest of the name in the environment of the first
+        // identifier.
+        (item, path, env) = lookupNameInItem(path, item, env);
+        path = Absyn.joinPaths(new_path, path);
+      then
+        (item, path, SOME(env));
+          
     else
       equation
         print("- SCodeFlatten.lookupName failed for " +&
@@ -913,7 +925,7 @@ protected function lookupInBaseClasses
   output Env outEnv;
 
   Env env;
-  list<Absyn.Path> bcl;
+  list<Extends> bcl;
 algorithm
   FRAME(extendsTable = EXTENDS_TABLE(baseClasses = bcl as _ :: _)) :: _ := inEnv;
   // We need to remove the extends from the current scope, because the names of
@@ -926,7 +938,7 @@ end lookupInBaseClasses;
 
 protected function lookupInBaseClasses2
   input Absyn.Ident inName;
-  input list<Absyn.Path> inBaseClasses;
+  input list<Extends> inBaseClasses;
   input Env inEnv;
   output Item outItem;
   output Absyn.Path outPath;
@@ -937,14 +949,16 @@ algorithm
   matchcontinue(inName, inBaseClasses, inEnv)
     local
       Absyn.Path bc, path;
-      list<Absyn.Path> rest_bc;
+      list<Extends> rest_bc;
       Item item;
       Env env;
+      list<SCode.Element> redecls;
 
     // Look in the first base class.
-    case (_, bc :: _, inEnv)
+    case (_, EXTENDS(baseClass = bc, redeclareModifiers = redecls) :: _, inEnv)
       equation
         (item, _, SOME(env)) = lookupName(bc, inEnv);
+        (item, env) = replaceRedeclaredClassesInEnv(redecls, item, env, inEnv);
         (item, path, env) = lookupNameInItem(Absyn.IDENT(inName), item, env);
       then
         (item, path, bc, env);
@@ -1033,7 +1047,7 @@ algorithm
         // Look up the import path.
         (item, path, env) = lookupFullyQualified(path, inEnv);
         // Look up the name among the public member of the found package.
-        (item, path2, env) = lookupNameInItem(Absyn.IDENT(inName), item, emptyEnv);
+        (item, path2, env) = lookupNameInItem(Absyn.IDENT(inName), item, env);
         // Combine the paths for the name and the package it was found in.
         path = Absyn.joinPaths(path, path2);
       then
@@ -1152,10 +1166,16 @@ algorithm
       Frame class_env;
       Env env, type_env;
       Absyn.TypeSpec type_spec;
+      SCode.Mod mods;
+      list<SCode.Element> redeclares;
 
-    case (_, VAR(var = SCode.COMPONENT(typeSpec = type_spec)), _) 
+    case (_, VAR(var = SCode.COMPONENT(typeSpec = type_spec, 
+        modifications = mods)), _)
       equation
         (item, _, type_env) = lookupTypeSpec(type_spec, inEnv);
+        redeclares = extractRedeclaresFromModifier(mods);
+        (item, type_env) = 
+          replaceRedeclaredClassesInEnv(redeclares, item, type_env, inEnv);
         (item, path, env) = lookupNameInItem(inName, item, type_env);
       then
         (item, path, env);
@@ -1184,10 +1204,16 @@ algorithm
       Frame class_env;
       Env env, type_env;
       Absyn.TypeSpec type_spec;
+      SCode.Mod mods;
+      list<SCode.Element> redeclares;
 
-    case (_, VAR(var = SCode.COMPONENT(typeSpec = type_spec)), _)
+    case (_, VAR(var = SCode.COMPONENT(typeSpec = type_spec, 
+        modifications = mods)), _)
       equation
         (item, _, type_env) = lookupTypeSpec(type_spec, inEnv);
+        redeclares = extractRedeclaresFromModifier(mods);
+        (item, type_env) = 
+          replaceRedeclaredClassesInEnv(redeclares, item, type_env, inEnv);
         (item, cref) = lookupCrefInItem(inCref, item, type_env);
       then
         (item, cref);
@@ -1202,6 +1228,359 @@ algorithm
   end match;
 end lookupCrefInItem;
 
+protected function replaceRedeclaredClassesInEnv
+  "If a variable has modifications that redeclare classes in it's instance we
+  need to replace those classes in the environment so that the lookup finds the
+  right classes. This function takes a list of redeclares from a variables
+  modifications and applies them to the environment of the variables type."
+  input list<SCode.Element> inRedeclares "The redeclares from the modifications.";
+  input Item inItem "The type of the variable.";
+  input Env inTypeEnv "The enclosing scopes of the type.";
+  input Env inVarEnv "The environment in which the variable was declared.";
+  output Item outItem;
+  output Env outEnv;
+algorithm
+  (outItem, outEnv) := matchcontinue(inRedeclares, inItem, inTypeEnv, inVarEnv)
+    local
+      list<SCode.Element> redeclares;
+      SCode.Class cls;
+      Env env;
+      Frame item_env;
+
+    case (_, VAR(var = _), _, _) then (inItem, inTypeEnv);
+    case (_, BUILTIN(name = _), _, _) then (inItem, inTypeEnv);
+
+    case (_, CLASS(cls = cls, env = {item_env}), _, _)
+      equation
+        redeclares = Util.listMap1(inRedeclares, qualifyRedeclare, inVarEnv);
+        // Merge the types environment with it's enclosing scopes to get the
+        // enclosing scopes of the classes we need to replace.
+        env = item_env :: inTypeEnv;
+        env = Util.listFold(redeclares, replaceRedeclaredClassInEnv, env);
+        item_env :: env = env;
+      then
+        (CLASS(cls, {item_env}), env);
+
+    else
+      equation
+        print("- SCodeFlatten.replaceRedeclaredClassesInEnv failed!\n");
+      then
+        fail();
+  end matchcontinue;
+end replaceRedeclaredClassesInEnv;
+
+protected function extractRedeclaresFromModifier
+  input SCode.Mod inMod;
+  output list<SCode.Element> outRedeclares;
+algorithm
+  outRedeclares := match(inMod)
+    local
+      list<SCode.SubMod> sub_mods;
+      list<SCode.Element> redeclares;
+    
+    case (SCode.MOD(subModLst = sub_mods))
+      equation
+        redeclares = Util.listFold(sub_mods, extractRedeclareFromSubMod, {});
+      then
+        redeclares;
+
+    else then {};
+  end match;
+end extractRedeclaresFromModifier;
+
+protected function extractRedeclareFromSubMod
+  input SCode.SubMod inMod;
+  input list<SCode.Element> inRedeclares;
+  output list<SCode.Element> outRedeclares;
+algorithm
+  outRedeclares := match(inMod, inRedeclares)
+    local
+      SCode.Element redecl;
+
+    case (SCode.NAMEMOD(A = SCode.REDECL(elementLst = 
+        {redecl as SCode.CLASSDEF(name = _)})), _)
+      then redecl :: inRedeclares;
+
+    else then inRedeclares;
+  end match;
+end extractRedeclareFromSubMod;
+
+protected function qualifyRedeclare
+  "Since a modifier might redeclare a class in a type with a class that is not
+  reachable from the type we need to fully qualify the class. Ex:
+    A a(redeclare package P = P1)
+  where P1 is not reachable from A."
+  input SCode.Element inElement;
+  input Env inEnv;
+  output SCode.Element outElement;
+algorithm
+  outElement := matchcontinue(inElement, inEnv)
+    local
+      SCode.Ident name, name2;
+      Boolean fp, rp, pp, ep;
+      Option<Absyn.ConstrainClass> cc;
+      Option<Absyn.ArrayDim> ad;
+      Absyn.Path path;
+      SCode.Mod mods;
+      Absyn.ElementAttributes attr;
+      Option<SCode.Comment> cmt;
+      Env env;
+      SCode.Restriction res;
+      Absyn.Info info;
+
+    case (SCode.CLASSDEF(
+          name = name, 
+          finalPrefix = fp, 
+          replaceablePrefix = rp,
+          classDef = SCode.CLASS(
+            name = name2,
+            partialPrefix = pp,
+            encapsulatedPrefix = ep,
+            restriction = res,
+            classDef = SCode.DERIVED(
+              typeSpec = Absyn.TPATH(path, ad),
+              modifications = mods, 
+              attributes = attr, 
+              comment = cmt),
+            info = info),
+          cc = cc), _)
+      equation
+        (_, path, SOME(env)) = lookupName(path, inEnv);
+        path = mergePathWithEnvPath(path, env);
+      then
+        SCode.CLASSDEF(name, fp, rp, 
+          SCode.CLASS(name2, pp, ep, res,
+            SCode.DERIVED(Absyn.TPATH(path, ad), mods, attr, cmt),
+            info), cc);
+
+    else
+      equation
+        print("- SCodeFlatten.qualifyRedeclare failed on " +&
+          SCode.printElementStr(inElement) +& " in " +&
+          Absyn.pathString(getEnvPath(inEnv)) +& "\n");
+      then
+        fail();
+  end matchcontinue;
+end qualifyRedeclare;
+
+protected function mergePathWithEnvPath
+  input Absyn.Path inPath;
+  input Env inEnv;
+  output Absyn.Path outPath;
+algorithm
+  outPath := matchcontinue(inPath, inEnv)
+    local
+      Absyn.Path path;
+
+    case (_, _)
+      equation
+        path = Absyn.pathPrefix(inPath);
+        true = Absyn.pathEqual(path, getEnvPath(inEnv));
+      then
+        inPath;
+
+    case (_, _)
+      equation
+        path = getEnvPath(inEnv);
+        path = Absyn.joinPaths(path, inPath);
+      then
+        path;
+
+    else then inPath;
+  end matchcontinue;
+end mergePathWithEnvPath;
+
+protected function replaceRedeclaredClassInEnv
+  input SCode.Element inRedeclare;
+  input Env inEnv;
+  output Env outEnv;
+algorithm
+  outEnv := match(inRedeclare, inEnv)
+    local
+      SCode.Ident name;
+      SCode.Class cls;
+      Env env;
+      Item item;
+      Absyn.Path path;
+      Option<Env> opt_env;
+
+    case (SCode.CLASSDEF(name = name, classDef = cls), _)
+      equation
+        (item, path, SOME(env)) = lookupName(Absyn.IDENT(name), inEnv);
+        path = Absyn.joinPaths(getEnvPath(env), path);
+        env = replaceClassInEnv(path, cls, inEnv);
+      then
+        env;
+
+    else then inEnv;
+  end match;
+end replaceRedeclaredClassInEnv;
+        
+protected function replaceClassInEnv
+  "Replaces a class in the environment with another class, which is needed for
+  redeclare. There are two cases here: either the class we want to replace is in
+  the current path or it's somewhere else in the environment. If it's in the
+  current path we can just go through the frames until we find the right frame
+  to replace the class in. If it's not we need to look up the correct class in
+  the environment and continue into the class's environment."
+  input Absyn.Path inPath;
+  input SCode.Class inClass;
+  input Env inEnv;
+  output Env outEnv;
+protected
+  Env env;
+  Boolean next_scope_available;
+algorithm
+  // Reverse the frame order so that the frames are in the same order as the path.
+  env := listReverse(inEnv);
+  env := replaceClassInEnv2(inPath, inClass, env);
+  outEnv := listReverse(env);
+end replaceClassInEnv;
+
+protected function checkNextScopeAvailability
+  "Checks if the next scope in the environment is the scope we are looking for
+  next. If the first identifier in the path has the same name as the next scope
+  it returns true, otherwise false."
+  input Absyn.Path inPath;
+  input Env inEnv;
+  output Boolean isAvailable;
+algorithm
+  isAvailable := match(inPath, inEnv)
+    local
+      String name, scope_name;
+
+    case (Absyn.QUALIFIED(name = name), _ :: FRAME(name = SOME(scope_name)) :: _)
+      then stringEqual(name, scope_name);
+
+    else then false;
+  end match;
+end checkNextScopeAvailability;
+
+protected function replaceClassInEnv2
+  "Helper function to replaceClassInEnv."
+  input Absyn.Path inPath;
+  input SCode.Class inClass;
+  input Env inEnv;
+  output Env outEnv;
+algorithm
+  outEnv := replaceClassInEnv3(inPath, inClass, inEnv,
+    checkNextScopeAvailability(inPath, inEnv));
+end replaceClassInEnv2;
+
+protected function replaceClassInEnv3
+  "Helper function to replaceClassInEnv."
+  input Absyn.Path inPath;
+  input SCode.Class inClass;
+  input Env inEnv;
+  input Boolean inNextScopeAvailable;
+  output Env outEnv;
+algorithm
+  outEnv := matchcontinue(inPath, inClass, inEnv, inNextScopeAvailable)
+    local
+      String name, scope_name;
+      Absyn.Path path;
+      Env env, rest_env;
+      Frame f;
+
+    // A simple identifier means that the class should be replaced in the
+    // current scope.
+    case (Absyn.IDENT(name = name), _, _, _)
+      equation
+        env = replaceClassInScope(name, inClass, inEnv);
+      then
+        env;
+
+    // If the next frame is the next scope we want to reach we can just continue
+    // into it.
+    case (Absyn.QUALIFIED(path = path), _, f :: rest_env, true)
+      equation
+        rest_env = replaceClassInEnv2(path, inClass, rest_env);
+        env = f :: rest_env;
+      then
+        env;
+
+    // If there are no more scopes available in the environment we need to start
+    // going into classes in the environment instead.
+    case (Absyn.QUALIFIED(name = name, path = path), _, _, false)
+      equation
+        env = replaceClassInClassEnv(inPath, inClass, inEnv);
+      then
+        env;
+
+    else
+      equation
+        print("- SCodeFlatten.replaceClassInEnv3 failed.\n");
+      then
+        fail();
+
+  end matchcontinue;
+end replaceClassInEnv3;
+
+protected function replaceClassInScope
+  "Replaces a class in the current scope."
+  input SCode.Ident inClassName;
+  input SCode.Class inClass;
+  input Env inEnv;
+  output Env outEnv;
+protected
+  Option<String> name;
+  FrameType ty;
+  AvlTree tree;
+  ExtendsTable exts;
+  ImportTable imps;
+  Env env, class_env;
+  SCode.ClassDef cdef;
+algorithm
+  FRAME(name, ty, tree, exts, imps) :: env := inEnv;
+  class_env := newEnvironment(SOME(inClassName));
+  SCode.CLASS(classDef = cdef) := inClass;
+  class_env := extendEnvWithClassComponents(inClassName, cdef, class_env);
+  tree := avlTreeReplace(tree, inClassName, CLASS(inClass, class_env));
+  outEnv := FRAME(name, ty, tree, exts, imps) :: env;
+end replaceClassInScope;
+
+protected function replaceClassInClassEnv
+  "Replaces a class in the environment of another class."
+  input Absyn.Path inClassPath;
+  input SCode.Class inClass;
+  input Env inEnv;
+  output Env outEnv;
+algorithm
+  outEnv := match(inClassPath, inClass, inEnv)
+    local
+      Option<String> frame_name;
+      FrameType ty;
+      AvlTree tree;
+      ExtendsTable exts;
+      ImportTable imps;
+      Env rest_env, class_env, env;
+      Item item;
+      String name;
+      Absyn.Path path;
+      SCode.Class cls;
+
+    // A simple identifier means that we have reached the environment in which
+    // the class should be replaced.
+    case (Absyn.IDENT(name = name), _, _)
+      equation
+        env = replaceClassInScope(name, inClass, inEnv);
+      then
+        env;
+
+    // A qualified path means that we should look up the first identifier and
+    // continue into the found class's environment.
+    case (Absyn.QUALIFIED(name = name, path = path), _,
+        FRAME(frame_name, ty, tree, exts, imps) :: rest_env)
+      equation
+        CLASS(cls = cls, env = class_env) = avlTreeGet(tree, name);
+        class_env = replaceClassInClassEnv(path, inClass, class_env);
+        tree = avlTreeReplace(tree, name, CLASS(cls, class_env)); 
+      then
+        FRAME(frame_name, ty, tree, exts, imps) :: rest_env;
+
+  end match;
+end replaceClassInClassEnv;
+        
 //protected function expandExtend
 //  input SCode.Element inElement;
 //  input Env inEnv;
@@ -1306,32 +1685,6 @@ algorithm
   top_scope :: _ := env;
   outEnv := {top_scope};
 end getEnvTopScope;
-
-protected function getItemEnv
-  input Item inItem;
-  output Option<Env> outEnv;
-algorithm
-  outEnv := match(inItem)
-    local Env env;
-
-    case VAR(var = _) then NONE();
-    case CLASS(env = env) then SOME(env);
-  end match;
-end getItemEnv;
-
-protected function mergeItemEnv
-  input Item inItem;
-  input Option<Env> inEnv;
-  output Option<Env> outEnv;
-algorithm
-  outEnv := match(inItem, inEnv)
-    local 
-      Frame cls_frame;
-      Env env;
-    case (CLASS(env = {cls_frame}), SOME(env)) then SOME(cls_frame :: env);
-    else then NONE();
-  end match;
-end mergeItemEnv;
 
 protected function getFrameType
   input Boolean isEncapsulated;
@@ -1506,13 +1859,17 @@ protected
   FrameType ty;
   AvlTree tree;
   ImportTable imps;
-  list<Absyn.Path> exts;
-  Env rest;
+  list<Extends> exts;
+  Env rest_env;
   Absyn.Path bc;
+  SCode.Mod mods;
+  list<SCode.Element> redecls;
 algorithm
-  SCode.EXTENDS(baseClassPath = bc) := inExtends;
-  FRAME(name, ty, tree, EXTENDS_TABLE(exts), imps) :: rest := inEnv;
-  outEnv := FRAME(name, ty, tree, EXTENDS_TABLE(bc :: exts), imps) :: rest;
+  SCode.EXTENDS(baseClassPath = bc, modifications = mods) := inExtends;
+  redecls := extractRedeclaresFromModifier(mods);
+  FRAME(name, ty, tree, EXTENDS_TABLE(exts), imps) :: rest_env := inEnv;
+  exts := EXTENDS(bc, redecls) :: exts;
+  outEnv := FRAME(name, ty, tree, EXTENDS_TABLE(exts), imps) :: rest_env;
 end extendEnvWithExtends;
 
 protected function extendEnvWithClassComponents
@@ -1793,6 +2150,10 @@ algorithm
       String name;
       Absyn.Path path;
       Env rest;
+
+    case ({FRAME(name = SOME(name))})
+      then Absyn.IDENT(name);
+
     case ({FRAME(name = SOME(name)), FRAME(name = NONE())}) 
       then Absyn.IDENT(name);
 
@@ -1864,101 +2225,180 @@ algorithm
   tree := AVLTREENODE(NONE(),0,NONE(),NONE());
 end avlTreeNew;
 
-protected function avlTreeAdd 
-  "Help function to avlTreeAdd."
+protected function avlTreeAdd
+  "Inserts a new value into the tree."
   input AvlTree inAvlTree;
   input AvlKey inKey;
   input AvlValue inValue;
   output AvlTree outAvlTree;
 algorithm
-  outAvlTree := matchcontinue (inAvlTree, inKey, inValue)
+  outAvlTree := match(inAvlTree, inKey, inValue)
     local
       AvlKey key, rkey;
-      AvlValue value, rval;
-      Option<AvlTree> left, right;
-      Integer h;
-      AvlTree t, bt;
-  
-    // empty tree
-    case (AVLTREENODE(value = NONE(), height = h, left = NONE(), right = NONE()),
-        key,value)
-      then AVLTREENODE(SOME(AVLTREEVALUE(key, value)), 1, NONE(), NONE());
-      
-    // insert to right
-    case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey, rval)), 
-        height = h, left = left, right = right), key, value)
-      equation
-        1 = stringCompare(key, rkey); // bigger
-        t = createEmptyAvlIfNone(right);
-        t = avlTreeAdd(t, key, value);
-        bt = balance(AVLTREENODE(SOME(AVLTREEVALUE(rkey, rval)), h, left, SOME(t)));
-      then
-        bt;
-      
-    // insert to left subtree
-    case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey, rval)),
-          height = h,left = left, right = right), key, value)
-      equation
-        -1 = stringCompare(key, rkey); // smaller
-        t = createEmptyAvlIfNone(left);
-        t = avlTreeAdd(t, key, value);
-        bt = balance(AVLTREENODE(SOME(AVLTREEVALUE(rkey, rval)), h, SOME(t), right));
-      then
-        bt;
+      AvlValue value;
 
-    case (AVLTREENODE(value = SOME(AVLTREEVALUE(key = rkey))), key, _)
-      equation
-        true = stringEqual(key, rkey);
-        print("Identifier " +& key +& " already exists in this scope\n");
-      then
-        fail();
-    
+    // empty tree
+    case (AVLTREENODE(value = NONE(), left = NONE(), right = NONE()), _, _)
+      then AVLTREENODE(SOME(AVLTREEVALUE(inKey, inValue)), 1, NONE(), NONE());
+
+    case (AVLTREENODE(value = SOME(AVLTREEVALUE(key = rkey))), key, value)
+      then balance(avlTreeAdd2(inAvlTree, stringCompare(key, rkey), key, value));
+ 
     else
       equation
-        print("avlTreeAdd failed\n");
-      then
-        fail();
-  end matchcontinue;
+        Error.addMessage(Error.INTERNAL_ERROR, {"Env.avlTreeAdd failed"});
+      then fail();
+
+  end match;
 end avlTreeAdd;
 
-protected function avlTreeGet 
+protected function avlTreeAdd2
+  "Helper function to avlTreeAdd."
+  input AvlTree inAvlTree;
+  input Integer inKeyComp;
+  input AvlKey inKey;
+  input AvlValue inValue;
+  output AvlTree outAvlTree;
+algorithm
+  outAvlTree := match(inAvlTree, inKeyComp, inKey, inValue)
+    local
+      AvlKey key;
+      AvlValue value;
+      Option<AvlTree> left, right;
+      Integer h;
+      AvlTree t;
+      Option<AvlTreeValue> oval;
+
+    // Don't allow replacing of nodes.
+    case (_, 0, key, _)
+      equation
+        print("Identifier " +& key +& " already exists in this scope!\n");
+      then
+        fail();
+
+    // Insert into right subtree.
+    case (AVLTREENODE(value = oval, height = h, left = left, right = right),
+        1, key, value)
+      equation
+        t = createEmptyAvlIfNone(right);
+        t = avlTreeAdd(t, key, value);
+      then  
+        AVLTREENODE(oval, h, left, SOME(t));
+
+    // Insert into left subtree.
+    case (AVLTREENODE(value = oval, height = h, left = left, right = right),
+        -1, key, value)
+      equation
+        t = createEmptyAvlIfNone(left);
+        t = avlTreeAdd(t, key, value);
+      then
+        AVLTREENODE(oval, h, SOME(t), right);
+  end match;
+end avlTreeAdd2;
+
+protected function avlTreeGet
   "Get a value from the binary tree given a key."
   input AvlTree inAvlTree;
   input AvlKey inKey;
   output AvlValue outValue;
+protected
+  AvlKey rkey;
 algorithm
-  outValue := matchcontinue (inAvlTree,inKey)
-    local
-        AvlKey rkey,key;
-      AvlValue rval,res;
-      AvlTree left,right;
-    
-    // Found node.
-    case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey, rval))), key)
-      equation
-        0 = stringCompare(rkey, key);
-      then
-        rval;
-    
-    // search to the right
-    case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey, rval)), 
-        right = SOME(right)), key)
-      equation
-        1 = stringCompare(key,rkey);
-        res = avlTreeGet(right, key);
-      then
-        res;
-
-    // search to the left
-    case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey, rval)),
-        left = SOME(left)), key)
-      equation
-        -1 = stringCompare(key,rkey);
-        res = avlTreeGet(left, key);
-      then
-        res;
-  end matchcontinue;
+  AVLTREENODE(value = SOME(AVLTREEVALUE(key = rkey))) := inAvlTree;
+  outValue := avlTreeGet2(inAvlTree, stringCompare(inKey, rkey), inKey);
 end avlTreeGet;
+
+protected function avlTreeGet2
+  "Helper function to avlTreeGet."
+  input AvlTree inAvlTree;
+  input Integer inKeyComp;
+  input AvlKey inKey;
+  output AvlValue outValue;
+algorithm
+  outValue := match(inAvlTree, inKeyComp, inKey)
+    local
+      AvlKey key;
+      AvlValue rval;
+      AvlTree left, right;
+
+    // Found match.
+    case (AVLTREENODE(value = SOME(AVLTREEVALUE(value = rval))), 0, _)
+      then rval;
+
+    // Search to the right.
+    case (AVLTREENODE(right = SOME(right)), 1, key)
+      then avlTreeGet(right, key);
+
+    // Search to the left.
+    case (AVLTREENODE(left = SOME(left)), -1, key)
+      then avlTreeGet(left, key);
+  end match;
+end avlTreeGet2;
+
+protected function avlTreeReplace
+  "Replaces the value of an already existing node in the tree with a new value."
+  input AvlTree inAvlTree;
+  input AvlKey inKey;
+  input AvlValue inValue;
+  output AvlTree outAvlTree;
+algorithm
+  outAvlTree := match(inAvlTree, inKey, inValue)
+    local
+      AvlKey key, rkey;
+      AvlValue value;
+
+    case (AVLTREENODE(value = SOME(AVLTREEVALUE(key = rkey))), key, value)
+      then balance(avlTreeReplace2(inAvlTree, stringCompare(key, rkey), key, value));
+ 
+    else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {"Env.avlTreeAdd failed"});
+      then fail();
+
+  end match;
+end avlTreeReplace;
+
+protected function avlTreeReplace2
+  "Helper function to avlTreeReplace."
+  input AvlTree inAvlTree;
+  input Integer inKeyComp;
+  input AvlKey inKey;
+  input AvlValue inValue;
+  output AvlTree outAvlTree;
+algorithm
+  outAvlTree := match(inAvlTree, inKeyComp, inKey, inValue)
+    local
+      AvlKey key, rkey;
+      AvlValue value;
+      Option<AvlTree> left, right;
+      Integer h;
+      AvlTree t;
+      Option<AvlTreeValue> oval;
+
+    // Replace this node.
+    case (AVLTREENODE(value = SOME(_), height = h, left = left, right = right),
+        0, key, value)
+      then AVLTREENODE(SOME(AVLTREEVALUE(key, value)), h, left, right);
+
+    // Insert into right subtree.
+    case (AVLTREENODE(value = oval, height = h, left = left, right = right),
+        1, key, value)
+      equation
+        t = createEmptyAvlIfNone(right);
+        t = avlTreeReplace(t, key, value);
+      then  
+        AVLTREENODE(oval, h, left, SOME(t));
+
+    // Insert into left subtree.
+    case (AVLTREENODE(value = oval, height = h, left = left, right = right),
+        -1, key, value)
+      equation
+        t = createEmptyAvlIfNone(left);
+        t = avlTreeReplace(t, key, value);
+      then
+        AVLTREENODE(oval, h, SOME(t), right);
+  end match;
+end avlTreeReplace2;
 
 protected function createEmptyAvlIfNone 
   "Help function to AvlTreeAdd"
