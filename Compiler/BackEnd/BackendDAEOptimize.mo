@@ -2743,39 +2743,38 @@ algorithm
     then DAE.UNARY(op, e1_);
       
     // sin(x)
-    case (DAE.CALL(path=fname, expLst={e1}), x, functions, inputVars, paramVars, stateVars) equation
-      Builtin.isSin(fname);
-      e1_ = differentiateWithRespectToX(e1, x, functions, inputVars, paramVars, stateVars);
-    then DAE.BINARY(e1_, DAE.MUL(DAE.ET_REAL()), DAE.CALL(Absyn.IDENT("cos"),{e1},false,true,DAE.ET_REAL(),DAE.NO_INLINE()));
+    case (DAE.CALL(path=Absyn.IDENT("sin"), expLst={e1}), x, functions, inputVars, paramVars, stateVars)
+      equation
+        e1_ = differentiateWithRespectToX(e1, x, functions, inputVars, paramVars, stateVars);
+      then DAE.BINARY(e1_, DAE.MUL(DAE.ET_REAL()), DAE.CALL(Absyn.IDENT("cos"),{e1},false,true,DAE.ET_REAL(),DAE.NO_INLINE()));
 
     // cos(x)          
-    case (DAE.CALL(path=fname, expLst={e1}), x, functions, inputVars, paramVars, stateVars) equation
-      Builtin.isCos(fname);
-      e1_ = differentiateWithRespectToX(e1, x, functions, inputVars, paramVars, stateVars);
-    then DAE.UNARY(DAE.UMINUS(DAE.ET_REAL()), DAE.BINARY(e1_,DAE.MUL(DAE.ET_REAL()), DAE.CALL(Absyn.IDENT("sin"),{e1},false,true,DAE.ET_REAL(),DAE.NO_INLINE())));
+    case (DAE.CALL(path=Absyn.IDENT("cos"), expLst={e1}), x, functions, inputVars, paramVars, stateVars)
+      equation
+        e1_ = differentiateWithRespectToX(e1, x, functions, inputVars, paramVars, stateVars);
+      then DAE.UNARY(DAE.UMINUS(DAE.ET_REAL()), DAE.BINARY(e1_,DAE.MUL(DAE.ET_REAL()), DAE.CALL(Absyn.IDENT("sin"),{e1},false,true,DAE.ET_REAL(),DAE.NO_INLINE())));
 
     // ln(x)          
-    case (DAE.CALL(path=fname, expLst={e1}), x, functions, inputVars, paramVars, stateVars) equation
-      Builtin.isLog(fname);
-      e1_ = differentiateWithRespectToX(e1, x, functions, inputVars, paramVars, stateVars);
-    then DAE.BINARY(e1_, DAE.DIV(DAE.ET_REAL()), e1);
+    case (DAE.CALL(path=Absyn.IDENT("log"), expLst={e1}), x, functions, inputVars, paramVars, stateVars)
+      equation
+        e1_ = differentiateWithRespectToX(e1, x, functions, inputVars, paramVars, stateVars);
+      then DAE.BINARY(e1_, DAE.DIV(DAE.ET_REAL()), e1);
 
     // log10(x)          
-    case (DAE.CALL(path=fname, expLst={e1}), x, functions, inputVars, paramVars, stateVars) equation
-      Builtin.isLog10(fname);
-      e1_ = differentiateWithRespectToX(e1, x, functions, inputVars, paramVars, stateVars);
-    then DAE.BINARY(e1_, DAE.DIV(DAE.ET_REAL()), DAE.BINARY(e1, DAE.MUL(DAE.ET_REAL()), DAE.CALL(Absyn.IDENT("log"),{DAE.RCONST(10.0)},false,true,DAE.ET_REAL(),DAE.NO_INLINE())));
+    case (DAE.CALL(path=Absyn.IDENT("log10"), expLst={e1}), x, functions, inputVars, paramVars, stateVars)
+      equation
+        e1_ = differentiateWithRespectToX(e1, x, functions, inputVars, paramVars, stateVars);
+      then DAE.BINARY(e1_, DAE.DIV(DAE.ET_REAL()), DAE.BINARY(e1, DAE.MUL(DAE.ET_REAL()), DAE.CALL(Absyn.IDENT("log"),{DAE.RCONST(10.0)},false,true,DAE.ET_REAL(),DAE.NO_INLINE())));
 
     // exp(x)          
-    case (DAE.CALL(path=fname, expLst={e1}), x, functions, inputVars, paramVars, stateVars) equation
-      Builtin.isExp(fname);
-      e1_ = differentiateWithRespectToX(e1, x, functions, inputVars, paramVars, stateVars);
-    then DAE.BINARY(e1_,DAE.MUL(DAE.ET_REAL()), DAE.CALL(fname,{e1},false,true,DAE.ET_REAL(),DAE.NO_INLINE()));
+    case (DAE.CALL(path=fname as Absyn.IDENT("exp"), expLst={e1}), x, functions, inputVars, paramVars, stateVars)
+      equation
+        e1_ = differentiateWithRespectToX(e1, x, functions, inputVars, paramVars, stateVars);
+      then DAE.BINARY(e1_,DAE.MUL(DAE.ET_REAL()), DAE.CALL(fname,{e1},false,true,DAE.ET_REAL(),DAE.NO_INLINE()));
   
     // sqrt(x)
-    case (DAE.CALL(path=fname, expLst={e1}), x, functions, inputVars, paramVars, stateVars)
+    case (DAE.CALL(path=Absyn.IDENT("sqrt"), expLst={e1}), x, functions, inputVars, paramVars, stateVars)
       equation
-        Builtin.isSqrt(fname) "sqrt(x) => 1(2  sqrt(x))  der(x)" ;
         e1_ = differentiateWithRespectToX(e1, x, functions, inputVars, paramVars, stateVars);
       then
         DAE.BINARY(
@@ -2784,33 +2783,34 @@ algorithm
           DAE.CALL(Absyn.IDENT("sqrt"),{e1},false,true,DAE.ET_REAL(),DAE.NO_INLINE()))),DAE.MUL(DAE.ET_REAL()),e1_);
         
     // abs(x)          
-    case (DAE.CALL(path=fname, expLst={e1}), x, functions, inputVars, paramVars, stateVars) equation
-      Builtin.isAbs(fname);
-      e1_ = differentiateWithRespectToX(e1, x, functions, inputVars, paramVars, stateVars);
-    then DAE.IFEXP(DAE.RELATION(e1_,DAE.GREATER(DAE.ET_REAL()),DAE.RCONST(0.0),-1,NONE()), e1_, DAE.UNARY(DAE.UMINUS(DAE.ET_REAL()),e1_));
+    case (DAE.CALL(path=Absyn.IDENT("abs"), expLst={e1}), x, functions, inputVars, paramVars, stateVars)
+      equation
+        e1_ = differentiateWithRespectToX(e1, x, functions, inputVars, paramVars, stateVars);
+      then DAE.IFEXP(DAE.RELATION(e1_,DAE.GREATER(DAE.ET_REAL()),DAE.RCONST(0.0),-1,NONE()), e1_, DAE.UNARY(DAE.UMINUS(DAE.ET_REAL()),e1_));
       
       // differentiate if-expressions
-    case (DAE.IFEXP(expCond=e, expThen=e1, expElse=e2), x, functions, inputVars, paramVars, stateVars) equation
-      e1_ = differentiateWithRespectToX(e1, x, functions, inputVars, paramVars, stateVars);
-      e2_ = differentiateWithRespectToX(e2, x, functions, inputVars, paramVars, stateVars);
-    then DAE.IFEXP(e, e1_, e2_);
+    case (DAE.IFEXP(expCond=e, expThen=e1, expElse=e2), x, functions, inputVars, paramVars, stateVars)
+      equation
+        e1_ = differentiateWithRespectToX(e1, x, functions, inputVars, paramVars, stateVars);
+        e2_ = differentiateWithRespectToX(e2, x, functions, inputVars, paramVars, stateVars);
+      then DAE.IFEXP(e, e1_, e2_);
 
     // extern functions (analytical)
     case (e as DAE.CALL(path=fname, expLst=expList1, tuple_=tuple_, builtin=builtin, ty=et, inlineType=inlineType), x, functions, inputVars, paramVars, stateVars)
-    equation
+      equation
         nArgs = listLength(expList1);
         (DAE.FUNCTION_DER_MAPPER(derivativeFunction=derFname,conditionRefs=conditions), tp) = Derive.getFunctionMapper(fname, functions);
         expList2 = deriveExpListwrtstate(expList1, nArgs, conditions, x, functions, inputVars, paramVars, stateVars);
         e1 = partialAnalyticalDifferentiation(expList1, expList2, e, derFname, listLength(expList2));  
-    then e1;
+      then e1;
 
     // extern functions (numeric)
     case (e as DAE.CALL(path=fname, expLst=expList1, tuple_=tuple_, builtin=builtin, ty=et, inlineType=inlineType), x, functions, inputVars, paramVars, stateVars)
-    equation
+      equation
         nArgs = listLength(expList1);
         expList2 = deriveExpListwrtstate2(expList1, nArgs, x, functions, inputVars, paramVars, stateVars);
         e1 = partialNumericalDifferentiation(expList1, expList2, x, e);  
-    then e1;
+      then e1;
            
     case(e, x, _, _, _, _)
       equation

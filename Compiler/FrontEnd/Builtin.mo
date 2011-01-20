@@ -803,73 +803,6 @@ algorithm
   end matchcontinue;
 end variableIsBuiltin;
 
-
-public function isTanh
-  input Absyn.Path inPath;
-algorithm
-  _:=
-  match (inPath)
-    case (Absyn.IDENT(name = "tanh")) then ();
-    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "tanh")))) then ();
-    case (Absyn.FULLYQUALIFIED(inPath)) equation isTanh(inPath); then ();
-  end match;
-end isTanh;
-
-public function isCosh
-  input Absyn.Path inPath;
-algorithm
-  _:=
-  match (inPath)
-    case (Absyn.IDENT(name = "cosh")) then ();
-    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "cosh")))) then ();
-    case (Absyn.FULLYQUALIFIED(inPath)) equation isCosh(inPath); then ();
-  end match;
-end isCosh;
-
-public function isACos
-  input Absyn.Path inPath;
-algorithm
-  _:=
-  match (inPath)
-    case (Absyn.IDENT(name = "acos")) then ();
-    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "acos")))) then ();
-    case (Absyn.FULLYQUALIFIED(inPath)) equation isACos(inPath); then ();
-  end match;
-end isACos;
-
-public function isASin
-  input Absyn.Path inPath;
-algorithm
-  _:=
-  match (inPath)
-    case (Absyn.IDENT(name = "asin")) then ();
-    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "asin")))) then ();
-    case (Absyn.FULLYQUALIFIED(inPath)) equation isASin(inPath); then ();
-  end match;
-end isASin;
-
-public function isATan
-  input Absyn.Path inPath;
-algorithm
-  _:=
-  match (inPath)
-    case (Absyn.IDENT(name = "atan")) then ();
-    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "atan")))) then ();
-    case (Absyn.FULLYQUALIFIED(inPath)) equation isATan(inPath); then ();
-  end match;
-end isATan;
-
-public function isATan2
-  input Absyn.Path inPath;
-algorithm
-  _:=
-  match (inPath)
-    case (Absyn.IDENT(name = "atan2")) then ();
-    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "atan2")))) then ();
-    case (Absyn.FULLYQUALIFIED(inPath)) equation isATan2(inPath); then ();
-  end match;
-end isATan2;
-
 public function isSubstring
   input Absyn.Path inPath;
 algorithm
@@ -880,94 +813,6 @@ algorithm
     case (Absyn.FULLYQUALIFIED(inPath)) equation isSubstring(inPath); then ();
   end match;
 end isSubstring;
-
-public function isSinh
-  input Absyn.Path inPath;
-algorithm
-  _:=
-  match (inPath)
-    case (Absyn.IDENT(name = "sinh")) then ();
-    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "sinh")))) then ();
-    case (Absyn.FULLYQUALIFIED(inPath)) equation isSinh(inPath); then ();
-  end match;
-end isSinh;
-
-public function isSin
-  input Absyn.Path inPath;
-algorithm
-  _:=
-  match (inPath)
-    case (Absyn.IDENT(name = "sin")) then ();
-    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "sin")))) then ();
-    case (Absyn.FULLYQUALIFIED(inPath)) equation isSin(inPath); then ();
-  end match;
-end isSin;
-
-public function isCos ""
-  input Absyn.Path inPath;
-algorithm
-  _:=
-  match (inPath)
-    case (Absyn.IDENT(name = "cos")) then ();
-    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "cos")))) then ();
-    case (Absyn.FULLYQUALIFIED(inPath)) equation isCos(inPath); then ();
-  end match;
-end isCos;
-
-public function isExp ""
-  input Absyn.Path inPath;
-algorithm
-  _:=
-  match (inPath)
-    case (Absyn.IDENT(name = "exp")) then ();
-    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "exp")))) then ();
-    case (Absyn.FULLYQUALIFIED(inPath)) equation isExp(inPath);  then ();
-  end match;
-end isExp;
-
-public function isLog ""
-  input Absyn.Path inPath;
-algorithm
-  _:=
-  match (inPath)
-    case (Absyn.IDENT(name = "log")) then ();
-    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "log")))) then ();
-    case (Absyn.FULLYQUALIFIED(inPath)) equation isLog(inPath); then ();
-  end match;
-end isLog;
-
-public function isLog10 ""
-  input Absyn.Path inPath;
-algorithm
-  _:=
-  match (inPath)
-    case (Absyn.IDENT(name = "log10")) then ();
-    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "log10")))) then ();
-    case (Absyn.FULLYQUALIFIED(inPath)) equation isLog10(inPath); then ();
-  end match;
-end isLog10;
-
-public function isSqrt ""
-  input Absyn.Path inPath;
-algorithm
-  _:=
-  match (inPath)
-    case (Absyn.IDENT(name = "sqrt")) then ();
-    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "sqrt")))) then ();
-    case (Absyn.FULLYQUALIFIED(inPath)) equation isSqrt(inPath); then ();
-  end match;
-end isSqrt;
-
-public function isTan ""
-  input Absyn.Path inPath;
-algorithm
-  _:=
-  match (inPath)
-    case (Absyn.IDENT(name = "tan")) then ();
-    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "tan")))) then ();
-    case (Absyn.FULLYQUALIFIED(inPath)) equation isTan(inPath); then ();
-  end match;
-end isTan;
 
 public function isCross ""
   input Absyn.Path inPath;
@@ -1023,17 +868,6 @@ algorithm
     case (Absyn.FULLYQUALIFIED(inPath)) equation isSkew(inPath); then ();
   end matchcontinue;
 end isSkew;
-
-public function isAbs
-  input Absyn.Path inPath;
-algorithm
-  _:=
-  match (inPath)
-    case (Absyn.IDENT(name = "abs")) then ();
-    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "abs")))) then ();
-    case (Absyn.FULLYQUALIFIED(inPath)) equation isAbs(inPath); then ();
-  end match;
-end isAbs;
 
 public function isDer
   input Absyn.Path inPath;

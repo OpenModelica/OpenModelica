@@ -566,7 +566,7 @@ algorithm
       equation
         acc = listReverse(acc);
         exp = DAE.LIST(acc);
-      then Static.makeBuiltinCall("stringAppendList",{exp},DAE.ET_STRING());
+      then Expression.makeBuiltinCall("stringAppendList",{exp},DAE.ET_STRING());
     case (DAE.SCONST(s1)::rest,DAE.SCONST(s2)::acc)
       equation
         s = s2 +& s1;
@@ -593,9 +593,8 @@ algorithm
     then e1;
     
     // sqrt function
-    case(DAE.CALL(path=path,expLst={e})) 
+    case(DAE.CALL(path=Absyn.IDENT("sqrt"),expLst={e})) 
       equation
-        Builtin.isSqrt(path);
         r = realSqrt(Expression.getRealConst(e));
       then 
         DAE.RCONST(r);
@@ -615,25 +614,22 @@ algorithm
         DAE.ICONST(i);
     
     // sin function
-    case(DAE.CALL(path=path,expLst={e})) 
+    case(DAE.CALL(path=Absyn.IDENT("sin"),expLst={e})) 
       equation
-        Builtin.isSin(path);
         r = realSin(Expression.getRealConst(e));
       then 
         DAE.RCONST(r);
     
     // cos function
-    case(DAE.CALL(path=path,expLst={e})) 
+    case(DAE.CALL(path=Absyn.IDENT("cos"),expLst={e})) 
       equation
-        Builtin.isCos(path);
         r = realCos(Expression.getRealConst(e));
       then 
         DAE.RCONST(r);
     
     // tangent function
-    case(DAE.CALL(path=path,expLst={e})) 
+    case(DAE.CALL(path=Absyn.IDENT("tan"),expLst={e})) 
       equation
-        Builtin.isTan(path);
         v1 = realSin(Expression.getRealConst(e));
         v2 = realCos(Expression.getRealConst(e));
         r = v1 /. v2;
@@ -641,25 +637,22 @@ algorithm
         DAE.RCONST(r);
     
     // DAE.Exp function
-    case(DAE.CALL(path=path,expLst={e})) 
+    case(DAE.CALL(path=Absyn.IDENT("exp"),expLst={e})) 
       equation
-        Builtin.isExp(path);
         r = realExp(Expression.getRealConst(e));
       then 
         DAE.RCONST(r);
     
     // log function
-    case(DAE.CALL(path=path,expLst={e})) 
+    case(DAE.CALL(path=Absyn.IDENT("log"),expLst={e})) 
       equation
-        Builtin.isLog(path);
         r = realLn(Expression.getRealConst(e));
       then 
         DAE.RCONST(r);
         
     // log10 function
-    case(DAE.CALL(path=path,expLst={e})) 
+    case(DAE.CALL(path=Absyn.IDENT("log10"),expLst={e})) 
       equation
-        Builtin.isLog10(path);
         r = realLog10(Expression.getRealConst(e));
       then 
         DAE.RCONST(r);

@@ -6223,5 +6223,15 @@ algorithm
   exp := DAE.CONS(car,cdr);
 end makeCons;
 
+public function makeBuiltinCall
+  "Create a DAE.CALL with the given data for a call to a builtin function."
+  input String name;
+  input list<DAE.Exp> args;
+  input DAE.ExpType result_type;
+  output DAE.Exp call;
+algorithm
+  call := DAE.CALL(Absyn.IDENT(name),args,false,true,result_type,DAE.NO_INLINE());
+end makeBuiltinCall;
+
 end Expression;
 
