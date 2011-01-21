@@ -10138,7 +10138,7 @@ algorithm
       SCode.Accessibility acc,acc_1;
       SCode.Variability variability;
       Option<Absyn.Path> optPath;
-      DAE.Type t;
+      DAE.Type t,resTy;
       DAE.TType tt;
       DAE.Binding binding;
       DAE.Exp exp,exp1,exp2,crefExp,expASUB;
@@ -10217,11 +10217,12 @@ algorithm
         isBuiltinFn = not valueEq(DAE.FUNCTION_NOT_BUILTIN(),isBuiltin);
         (tt,optPath) = t;
         t = (tt, Util.if_(isBuiltinFn, SOME(path), optPath)) "some builtin functions store NONE() there";
-        (_,SOME(fpath)) = t;
+        (DAE.T_FUNCTION(funcResultType=resTy),SOME(fpath)) = t;
+        et = Types.elabType(resTy);
         t = Types.makeFunctionPolymorphicReference(t);
         c = Absyn.pathToCref(fpath);
         expCref = ComponentReference.toExpCref(c);
-        exp = Expression.makeCrefExp(expCref,DAE.ET_FUNCTION_REFERENCE_FUNC(isBuiltinFn));
+        exp = Expression.makeCrefExp(expCref,DAE.ET_FUNCTION_REFERENCE_FUNC(isBuiltinFn,et));
         // This is not done by lookup - only elabCall. So we should do it here.
         (cache,Util.SUCCESS()) = instantiateDaeFunction(cache,env,path,isBuiltinFn,NONE(),true);
       then

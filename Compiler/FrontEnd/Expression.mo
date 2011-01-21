@@ -1188,7 +1188,7 @@ algorithm
   outExp := match (e)
     local
       DAE.ExpType ty;
-    case (DAE.BOX(e)) then e;
+    case (DAE.BOX(e)) then unboxExp(e);
     else e;
   end match;
 end unboxExp;
@@ -4135,6 +4135,19 @@ algorithm
         ((expl_1,ext_arg_1)) = traverseExpListTopDown(expl, rel, ext_arg);
       then
         ((DAE.METARECORDCALL(fn,expl_1,fieldNames,i),ext_arg_1));
+
+    case (DAE.UNBOX(e1,tp),rel,ext_arg)
+      equation
+        ((e1_1,ext_arg_1)) = traverseExpTopDown(e1, rel, ext_arg);
+      then
+        ((DAE.UNBOX(e1_1,tp),ext_arg_1));
+
+    case (DAE.BOX(e1),rel,ext_arg)
+      equation
+        ((e1_1,ext_arg_1)) = traverseExpTopDown(e1, rel, ext_arg);
+      then
+        ((DAE.BOX(e1_1),ext_arg_1));
+    
     // ---------------------
 
     case (e,rel,ext_arg)
@@ -4142,8 +4155,7 @@ algorithm
         str = ExpressionDump.printExpStr(e);
         str = "Expression.traverseExpTopDown1 not implemented correctly: " +& str;
         Error.addMessage(Error.INTERNAL_ERROR, {str});
-      then
-        fail();          
+      then fail();          
   end matchcontinue;       
 end traverseExpTopDown1;
 
@@ -5311,7 +5323,9 @@ public function isCrefScalar
   output Boolean isScalar;
 algorithm
   isScalar := matchcontinue(inExp)
-    local ComponentRef cr; Boolean b;  
+    local
+      ComponentRef cr;
+      Boolean b;  
     
     case DAE.CREF(ty = DAE.ET_ARRAY(ty = _))
       equation
@@ -5322,7 +5336,7 @@ algorithm
     
     case DAE.CREF(ty = _) then true;
     
-    case _ then false;
+    else false;
   end matchcontinue;
 end isCrefScalar;
 
@@ -5345,12 +5359,13 @@ algorithm
     then false;
 
     /* For several terms, all must be positive or zero and at least one must be > 0 */
-    case(e) equation
-      (terms_ as _::_) = terms(e);
-      true = Util.listMapAllValue(terms_,expIsPositiveOrZero,true);
-      _::_ = Util.listSelect(terms_,expIsPositive);
-    then 
-      false;
+    case(e)
+      equation
+        (terms_ as _::_) = terms(e);
+        true = Util.listMapAllValue(terms_,expIsPositiveOrZero,true);
+        _::_ = Util.listSelect(terms_,expIsPositive);
+      then 
+        false;
 
     case(e) then true;
   end matchcontinue;
@@ -5366,7 +5381,8 @@ See also expIsPositiveOrZero.
   output Boolean res;
 algorithm
   res := matchcontinue(e)
-    local DAE.Exp e1,e2;
+    local
+      DAE.Exp e1,e2;
 
      /* constant >= 0 */
     case(e) equation
@@ -5374,7 +5390,7 @@ algorithm
       false = expReal(e) <. intReal(0);
     then true;
 
-    case(_) then false;
+    else false;
   end matchcontinue;
 end expIsPositive;
 
@@ -5405,7 +5421,7 @@ algorithm
     case(DAE.BINARY(e1,DAE.MUL(_),e2)) equation
       true = expEqual(e1,e2);
     then true;
-    case(_) then false;
+    else false;
   end matchcontinue;
 end expIsPositiveOrZero;
 
@@ -5414,11 +5430,13 @@ public function isEven "returns true if expression is even"
   output Boolean even;
 algorithm
   even := matchcontinue(e)
-  local Integer i;
-    case(DAE.ICONST(i)) equation
-     0 = intMod(i,2);
-    then true;
-    case(_) then false;
+    local
+      Integer i;
+    case(DAE.ICONST(i))
+      equation
+        0 = intMod(i,2);
+      then true;
+    else false;
   end matchcontinue;
 end isEven;
 
@@ -5429,7 +5447,7 @@ algorithm
   res := matchcontinue(tp)
     case(DAE.ET_REAL()) then  true;
     case(DAE.ET_INT()) then true;
-    case(_) then false;
+    else false;
   end matchcontinue;
 end isIntegerOrReal;
 
@@ -6213,7 +6231,7 @@ public function isBuiltinFunctionReference
   output Boolean b;
 algorithm
   b := match exp
-    case DAE.CREF(ty=DAE.ET_FUNCTION_REFERENCE_FUNC(true)) then true;
+    case DAE.CREF(ty=DAE.ET_FUNCTION_REFERENCE_FUNC(builtin=true)) then true;
     else false;
   end match;
 end isBuiltinFunctionReference;
@@ -6222,6 +6240,7 @@ public function makeCons "DAE.CONS"
   input DAE.Exp car;
   input DAE.Exp cdr;
   output DAE.Exp exp;
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   exp := DAE.CONS(car,cdr);
 end makeCons;
@@ -6232,6 +6251,7 @@ public function makeBuiltinCall
   input list<DAE.Exp> args;
   input DAE.ExpType result_type;
   output DAE.Exp call;
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   call := DAE.CALL(Absyn.IDENT(name),args,false,true,result_type,DAE.NO_INLINE());
 end makeBuiltinCall;

@@ -58,6 +58,7 @@ protected import ComponentReference;
 protected import Debug;
 protected import DAEUtil;
 protected import Expression;
+protected import ExpressionDump;
 protected import ExpressionSimplify;
 
 public function inlineCalls
@@ -1149,8 +1150,8 @@ end getRhsExp;
 protected function replaceArgs
 "function: replaceArgs
   finds DAE.CREF and replaces them with new exps if the cref is in the argmap"
-  input tuple<DAE.Exp, list<tuple<DAE.ComponentRef, DAE.Exp>>> inTuple;
-  output tuple<DAE.Exp, list<tuple<DAE.ComponentRef, DAE.Exp>>> outTuple;
+  input tuple<DAE.Exp, list<tuple<DAE.ComponentRef,DAE.Exp>>> inTuple;
+  output tuple<DAE.Exp, list<tuple<DAE.ComponentRef,DAE.Exp>>> outTuple;
 algorithm
   outTuple := matchcontinue(inTuple)
     local
@@ -1179,20 +1180,46 @@ algorithm
         e = ExpressionSimplify.simplify(e);
       then
         ((e,argmap));
+        /* TODO: Use the inlineType of the function reference! */
     case((DAE.CALL(path,expLst,tuple_,false,DAE.ET_METATYPE(),inlineType),argmap))
       equation
         cref = ComponentReference.pathToCref(path);
-        (e as DAE.CREF(componentRef=cref)) = getExpFromArgMap(argmap,cref);
+        (e as DAE.CREF(componentRef=cref,ty=ty)) = getExpFromArgMap(argmap,cref);
         path = ComponentReference.crefToPath(cref);
         expLst = Util.listMap(expLst,Expression.unboxExp);
         b = Expression.isBuiltinFunctionReference(e);
-        e = DAE.CALL(path,expLst,tuple_,b,DAE.ET_METATYPE(),inlineType);
+        ty2 = functionReferenceType(ty);
+        e = DAE.CALL(path,expLst,tuple_,b,ty2,inlineType);
+        e = boxIfUnboxedFunRef(e,ty);
         e = ExpressionSimplify.simplify(e);
-      then
-        ((e,argmap));
+      then ((e,argmap));
     case((e,argmap)) then ((e,argmap));
   end matchcontinue;
 end replaceArgs;
+
+protected function boxIfUnboxedFunRef
+  input DAE.Exp exp;
+  input DAE.ExpType ty;
+  output DAE.Exp outExp;
+algorithm
+  outExp := match (exp,ty)
+    case (exp,DAE.ET_FUNCTION_REFERENCE_FUNC(resType=DAE.ET_METATYPE())) then exp;
+    case (exp,DAE.ET_FUNCTION_REFERENCE_FUNC(resType=DAE.ET_STRING())) then exp;
+    case (exp,DAE.ET_FUNCTION_REFERENCE_FUNC(resType=_))
+      then DAE.BOX(exp);
+    else exp;
+  end match;
+end boxIfUnboxedFunRef;
+
+protected function functionReferenceType
+  input DAE.ExpType ty1;
+  output DAE.ExpType ty2;
+algorithm
+  ty2 := match ty1
+    case DAE.ET_FUNCTION_REFERENCE_FUNC(resType=ty2) then ty2;
+    else ty1;
+  end match;
+end functionReferenceType;
 
 protected function getExpFromArgMap
 "function: getExpFromArgMap

@@ -423,6 +423,11 @@ algorithm
       equation
         DAE.BOX(e1_1) = simplify(e1);
       then e1_1;
+
+    case DAE.IFEXP(e,DAE.BOX(e1),DAE.BOX(e2))
+      equation
+        e = simplify(DAE.IFEXP(e,e1,e2));
+      then DAE.BOX(e);
   end matchcontinue;
 end simplifyMetaModelica;
 

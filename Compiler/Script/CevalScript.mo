@@ -4676,7 +4676,7 @@ algorithm
         acc = Util.listConsOnTrue(not listMember(name,acc),name,acc);
       then ((e,acc));
       */
-    case ((e as DAE.CREF(componentRef=cr,ty=DAE.ET_FUNCTION_REFERENCE_FUNC(false)),acc))
+    case ((e as DAE.CREF(componentRef=cr,ty=DAE.ET_FUNCTION_REFERENCE_FUNC(builtin=false)),acc))
       equation
         Absyn.QUALIFIED(name,Absyn.IDENT(_)) = ComponentReference.crefToPath(cr);
         acc = Util.listConsOnTrue(not listMember(name,acc),name,acc);

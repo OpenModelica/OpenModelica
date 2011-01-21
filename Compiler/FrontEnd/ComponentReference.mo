@@ -173,6 +173,7 @@ public function makeCrefIdent
   input DAE.ExpType identType "type of the identifier, without considering the subscripts";
   input list<DAE.Subscript> subscriptLst;
   output DAE.ComponentRef outCrefIdent;
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   outCrefIdent := DAE.CREF_IDENT(ident, identType, subscriptLst); // shareCref(DAE.CREF_IDENT(ident, identType, subscriptLst));
 end makeCrefIdent;
@@ -185,6 +186,7 @@ public function makeCrefQual
   input list<DAE.Subscript> subscriptLst;
   input DAE.ComponentRef componentRef;
   output DAE.ComponentRef outCrefQual;
+  annotation(__OpenModelica_EarlyInline = true);
 protected
   DAE.ComponentRef subCref;
 algorithm

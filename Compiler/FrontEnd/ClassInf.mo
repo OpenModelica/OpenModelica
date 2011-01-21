@@ -443,7 +443,7 @@ algorithm
     case (BLOCK(path = p),NEWDEF()) then BLOCK(p);
     case (CONNECTOR(path = p,isExpandable=isExpandable),NEWDEF()) then CONNECTOR(p,isExpandable);
     case (TYPE(path = p),NEWDEF()) then TYPE(p); // A type can be constructed with long definition
-     case (PACKAGE(path = p),NEWDEF()) then PACKAGE(p);
+    case (PACKAGE(path = p),NEWDEF()) then PACKAGE(p);
     case (FUNCTION(path = p),NEWDEF()) then FUNCTION(p);
     case (ENUMERATION(path = p),NEWDEF()) then ENUMERATION(p);
     case (IS_NEW(path = p),NEWDEF()) then IS_NEW(p);

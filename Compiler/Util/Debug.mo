@@ -322,7 +322,7 @@ public function bcallret1
   end FuncTypeType_aToType_b;
   replaceable type Type_a subtypeof Any;
   replaceable type Type_b subtypeof Any;
-  //annotation(__OpenModelica_EarlyInline = true);
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   res := match (flag,func,arg,default)
     case (true,_,_,_)
@@ -351,7 +351,7 @@ public function bcallret2
   replaceable type Type_a subtypeof Any;
   replaceable type Type_b subtypeof Any;
   replaceable type Type_c subtypeof Any;
-  //annotation(__OpenModelica_EarlyInline = true);
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   res := match (flag,func,arg1,arg2,default)
     case (true,_,_,_,_)
@@ -383,7 +383,7 @@ public function bcallret3
   replaceable type Type_b subtypeof Any;
   replaceable type Type_c subtypeof Any;
   replaceable type Type_d subtypeof Any;
-  //annotation(__OpenModelica_EarlyInline = true);
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   res := match (flag,func,arg1,arg2,arg3,default)
     case (true,_,_,_,_,_)
