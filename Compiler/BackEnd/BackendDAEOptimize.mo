@@ -110,7 +110,7 @@ algorithm
   matchcontinue (inVariables1,inVariables2,inEquationLst3,inEquationLst4,inEquationLst5,inArrayEquationLst,inAlgs,inBinTree6)
     local
       VarTransform.VariableReplacements repl,replc,replc_1,vartransf,vartransf1;
-      list<BackendDAE.Equation> eqns_1,seqns,eqns_2,seqns_1,ieqns_1,eqns_3,seqns_2,ieqns_2,seqns_4,seqns_3,eqns,reqns,ieqns;
+      list<BackendDAE.Equation> eqns_1,seqns,eqns_2,seqns_1,ieqns_1,eqns_3,seqns_2,ieqns_2,seqns_4,seqns_3,eqns,reqns,reqns_1,ieqns;
       list<BackendDAE.MultiDimEquation> arreqns,arreqns1,arreqns2;
       BackendDAE.BinTree movedvars_1,states,outputs;
       BackendDAE.Variables vars_1,knvars_1,vars,knvars,knvars_2;
@@ -137,12 +137,13 @@ algorithm
         eqns_3 = BackendVarTransform.replaceEquations(eqns_2, vartransf1);
         seqns_2 = BackendVarTransform.replaceEquations(seqns_1, vartransf1);
         ieqns_2 = BackendVarTransform.replaceEquations(ieqns_1, vartransf1);
+        reqns_1 = BackendVarTransform.replaceEquations(reqns, vartransf1);
         arreqns2 = BackendVarTransform.replaceMultiDimEquations(arreqns1, vartransf1);
         algs_1 = BackendVarTransform.replaceAlgorithms(algs,vartransf1);
         (vars_1,knvars_1) = BackendVariable.moveVariables(vars, knvars, movedvars_1);
         inputsoutputs = Util.listMap1r(algs_1,BackendDAECreate.lowerAlgorithmInputsOutputs,vars_1);
         eqns_3 = Util.listMap1(eqns_3,updateAlgorithmInputsOutputs,inputsoutputs);
-        seqns_3 = listAppend(seqns_2, reqns) "& print_vars_statistics(vars\',knvars\')" ;
+        seqns_3 = listAppend(seqns_2, reqns_1) "& print_vars_statistics(vars\',knvars\')" ;
         (knvars_2,seqns_4,varsAliases) = removeConstantEqns(knvars_1,seqns_3,BackendDAEUtil.emptyAliasVariables());
         Debug.fcall("dumpalias", BackendDump.dumpAliasVariables, varsAliases);
       then
@@ -967,8 +968,8 @@ algorithm
         eqn = BackendDAEUtil.equationNth(eqns,pos_1);
         BackendDAE.EQUATION(exp=e1,scalar=e2) = eqn;
         // variable time not there
-        ((_,false)) = Expression.traverseExpTopDown(e1, traversingParameterEqnsFinder, false);
-        ((_,false)) = Expression.traverseExpTopDown(e2, traversingParameterEqnsFinder, false);
+        ((_,(false,_,_))) = Expression.traverseExpTopDown(e1, traversingParameterEqnsFinder, (false,v,kn));
+        ((_,(false,_,_))) = Expression.traverseExpTopDown(e2, traversingParameterEqnsFinder, (false,v,kn));
         cre = Expression.crefExp(cr);
         (es,{}) = ExpressionSolve.solve(e1,e2,cre);
         // set kind to PARAM
@@ -996,18 +997,25 @@ end removeParameterEqnsFinder;
 
 public function traversingParameterEqnsFinder "
 Author: Frenkel 2010-12"
-  input tuple<DAE.Exp, Boolean > inExp;
-  output tuple<DAE.Exp,Boolean, Boolean > outExp;
+  input tuple<DAE.Exp, tuple<Boolean,BackendDAE.Variables,BackendDAE.Variables> > inExp;
+  output tuple<DAE.Exp, Boolean, tuple<Boolean,BackendDAE.Variables,BackendDAE.Variables> > outExp;
 algorithm 
   outExp := matchcontinue(inExp)
     local
       DAE.Exp e;      
       Boolean b;
+      BackendDAE.Variables vars,knvars;
+      DAE.ComponentRef cr;
     
-    case((e as DAE.CREF(DAE.CREF_IDENT(ident = "time",subscriptLst = {}),_), _)) then ((e,false,true));
-    case((e as DAE.CALL(path = Absyn.IDENT(name = "sample"), expLst = {_,_}), _)) then ((e,false,true ));
-    case((e as DAE.CALL(path = Absyn.IDENT(name = "pre"), expLst = {_}), _)) then ((e,false,true ));
-    case((e,b)) then ((e,not b,b));
+    case((e as DAE.CREF(componentRef = cr),(_,vars,knvars)))
+      equation
+        b = BackendVariable.isTopLevelInputOrOutput(cr,vars,knvars);
+      then
+        ((e,not b,(b,vars,knvars)));
+    case((e as DAE.CREF(DAE.CREF_IDENT(ident = "time",subscriptLst = {}),_), (_,vars,knvars))) then ((e,false,(true,vars,knvars)));
+    case((e as DAE.CALL(path = Absyn.IDENT(name = "sample"), expLst = {_,_}), (_,vars,knvars))) then ((e,false,(true,vars,knvars) ));
+    case((e as DAE.CALL(path = Absyn.IDENT(name = "pre"), expLst = {_}), (_,vars,knvars))) then ((e,false,(true,vars,knvars) ));
+    case((e,(b,vars,knvars))) then ((e,not b,(b,vars,knvars)));
     
   end matchcontinue;
 end traversingParameterEqnsFinder;
