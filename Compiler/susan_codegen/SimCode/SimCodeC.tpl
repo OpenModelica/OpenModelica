@@ -2914,12 +2914,7 @@ template functionHeader(Function fn, Boolean inFunc)
           (funArgs |> var => funArgBoxedDefinition(var) ;separator=", ")
       let boxedHeader = if acceptMetaModelicaGrammar() then
         <<
-        #define <%fname%>_rettypeboxed_1 targ1
-        typedef struct <%fname%>_rettypeboxed_s {
-          modelica_metatype targ1;
-        } <%fname%>_rettypeboxed;
-        
-        <%fname%>_rettypeboxed boxptr_<%fname%>(<%funArgsBoxedStr%>);
+        modelica_metatype boxptr_<%fname%>(<%funArgsBoxedStr%>);
         >>
       <<
       #define <%fname%>_rettype_1 targ1
@@ -3390,31 +3385,13 @@ template boxRecordConstructor(Function fn)
 match fn
 case RECORD_CONSTRUCTOR(__) then
   let() = System.tmpTickReset(1)
-  let &varDecls = buffer ""
-  let &preExp = buffer ""
-  let stateVar = if not acceptMetaModelicaGrammar() then tempDecl("state", &varDecls)
   let fname = underscorePath(name)
-  let retType = '<%fname%>_rettypeboxed'
-  let retVar = tempDecl(retType, &varDecls)
-  /*let funArgsStr = (funArgs |> var as VARIABLE(__) =>
-    let varStr = crefStr(name)
-    funArgBox(varStr, ty, &preExp, &varDecls)
-    ;separator=", ")*/
   let funArgsStr = (funArgs |> var as VARIABLE(__) => contextCref(name,contextFunction) ;separator=", ")
-  let boxRetVar = tempDecl("modelica_metatype", &varDecls)
   let funArgCount = incrementInt(listLength(funArgs), 1)
   <<
-  <%retType%> boxptr_<%fname%>(<%funArgs |> var => funArgBoxedDefinition(var) ;separator=", "%>)
+  modelica_metatype boxptr_<%fname%>(<%funArgs |> var => funArgBoxedDefinition(var) ;separator=", "%>)
   {
-    <%varDecls%>
-    <%if not acceptMetaModelicaGrammar() then '<%stateVar%> = get_memory_state();'%>
-
-    <%preExp%>
-    <%boxRetVar%> = mmc_mk_box<%funArgCount%>(3, &<%fname%>__desc, <%funArgsStr%>);
-    <%retVar%>.<%retType%>_1 = <%boxRetVar%>;
-
-    <%if not acceptMetaModelicaGrammar() then 'restore_memory_state(<%stateVar%>);'%>
-    return <%retVar%>;
+    return mmc_mk_box<%funArgCount%>(3, &<%fname%>__desc, <%funArgsStr%>);
   }
   >>
 end boxRecordConstructor;
