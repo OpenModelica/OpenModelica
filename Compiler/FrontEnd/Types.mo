@@ -3616,6 +3616,7 @@ algorithm
       TypeMemoryEntryListArray tyMem;
       TypeMemoryEntryList tyLst;
       DAE.ExpType expTy;
+      Type t;
       TType tt;
       Integer indexBasedOnValueConstructor;
       String str;
@@ -3634,6 +3635,7 @@ algorithm
     case ((DAE.T_META_ARRAY(_),_)) then etMetaType;
     case ((DAE.T_METAOPTION(_),_)) then etMetaType;
     case ((DAE.T_METATUPLE(_),_)) then etMetaType;
+    case ((DAE.T_COMPLEX(complexVarLst={},complexTypeOption=SOME(t)),_)) then elabType(t);
 
     // see if we have it in memory
     case (inType as (tt, _))
@@ -3703,13 +3705,6 @@ algorithm
         (_,dims) = flattenArrayTypeOpt(t);
       then
         DAE.ET_ARRAY(t_1,dims);
-
-    case ( (DAE.T_COMPLEX(CIS,{},SOME(t),_),_))
-      equation
-        // name = ClassInf.getStateName(CIS);
-        // print("CS: " +& Absyn.pathString(name) +& "\n");
-      then 
-        elabType(t);
 
     case ((DAE.T_COMPLEX(CIS,tcvl,NONE(),_),_))
       equation
