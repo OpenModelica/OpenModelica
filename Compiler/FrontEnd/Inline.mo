@@ -45,6 +45,7 @@ encapsulated package Inline
 public import Absyn;
 public import BackendDAE;
 public import DAE;
+public import Error;
 public import SCode;
 public import Util;
 public import Values;
@@ -58,8 +59,8 @@ protected import ComponentReference;
 protected import Debug;
 protected import DAEUtil;
 protected import Expression;
-protected import ExpressionDump;
 protected import ExpressionSimplify;
+protected import Types;
 
 public function inlineCalls
 "function: inlineCalls
@@ -1115,7 +1116,8 @@ algorithm
       then body;
     case(_,_)
       equation
-        Debug.fprintln("failtrace","Inline.getFunctionBody failed");
+        Debug.fprintln("failtrace", "Inline.getFunctionBody failed");
+        // Error.addMessage(Error.INTERNAL_ERROR, {"Inline.getFunctionBody failed"});
       then
         fail();        
   end matchcontinue;
@@ -1181,14 +1183,14 @@ algorithm
       then
         ((e,argmap));
         /* TODO: Use the inlineType of the function reference! */
-    case((DAE.CALL(path,expLst,tuple_,false,DAE.ET_METATYPE(),inlineType),argmap))
+    case((DAE.CALL(path,expLst,tuple_,false,DAE.ET_METATYPE(),_),argmap))
       equation
         cref = ComponentReference.pathToCref(path);
         (e as DAE.CREF(componentRef=cref,ty=ty)) = getExpFromArgMap(argmap,cref);
         path = ComponentReference.crefToPath(cref);
         expLst = Util.listMap(expLst,Expression.unboxExp);
         b = Expression.isBuiltinFunctionReference(e);
-        ty2 = functionReferenceType(ty);
+        (ty2,inlineType) = functionReferenceType(ty);
         e = DAE.CALL(path,expLst,tuple_,b,ty2,inlineType);
         e = boxIfUnboxedFunRef(e,ty);
         e = ExpressionSimplify.simplify(e);
@@ -1198,26 +1200,40 @@ algorithm
 end replaceArgs;
 
 protected function boxIfUnboxedFunRef
+  "Replacing a function pointer with a regular function means that you:
+  (1) Need to unbox all inputs
+  (2) Need to box the output if it was not done before
+  This function handles (2)
+  "
   input DAE.Exp exp;
   input DAE.ExpType ty;
   output DAE.Exp outExp;
 algorithm
   outExp := match (exp,ty)
-    case (exp,DAE.ET_FUNCTION_REFERENCE_FUNC(resType=DAE.ET_METATYPE())) then exp;
-    case (exp,DAE.ET_FUNCTION_REFERENCE_FUNC(resType=DAE.ET_STRING())) then exp;
-    case (exp,DAE.ET_FUNCTION_REFERENCE_FUNC(resType=_))
-      then DAE.BOX(exp);
+    local
+      DAE.Type t;
+    case (exp,DAE.ET_FUNCTION_REFERENCE_FUNC(functionType=(DAE.T_FUNCTION(funcResultType=t),_)))
+      equation
+        exp = Util.if_(Types.isBoxedType(t), exp, DAE.BOX(exp));
+      then exp;
     else exp;
   end match;
 end boxIfUnboxedFunRef;
 
 protected function functionReferenceType
+  "Retrieves the ExpType that the call should have (this changes if the replacing
+  function does not return a boxed value).
+  We also return the inline type of the new call."
   input DAE.ExpType ty1;
   output DAE.ExpType ty2;
+  output DAE.InlineType inline;
 algorithm
-  ty2 := match ty1
-    case DAE.ET_FUNCTION_REFERENCE_FUNC(resType=ty2) then ty2;
-    else ty1;
+  (ty2,inline) := match ty1
+    local
+      DAE.Type ty;
+    case DAE.ET_FUNCTION_REFERENCE_FUNC(functionType=(DAE.T_FUNCTION(functionAttributes=DAE.FUNCTION_ATTRIBUTES(inline=inline),funcResultType=ty),_))
+      then (Types.elabType(ty),inline);
+    else (ty1,DAE.NO_INLINE());
   end match;
 end functionReferenceType;
 

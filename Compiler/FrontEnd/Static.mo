@@ -10138,15 +10138,14 @@ algorithm
       SCode.Accessibility acc,acc_1;
       SCode.Variability variability;
       Option<Absyn.Path> optPath;
-      DAE.Type t,resTy;
+      DAE.Type t,origt;
       DAE.TType tt;
       DAE.Binding binding;
       DAE.Exp exp,exp1,exp2,crefExp,expASUB;
       list<Env.Frame> env;
       Absyn.ComponentRef c;
-      Boolean impl;
       Env.Cache cache;
-      Boolean doVect,isBuiltinFn;
+      Boolean impl,doVect,isBuiltinFn,isBuiltinFnOrInlineBuiltin;
       DAE.ExpType et;
       Absyn.InnerOuter io;
       String s,scope;
@@ -10213,16 +10212,15 @@ algorithm
         //true = RTOpts.debugFlag("fnptr") or RTOpts.acceptMetaModelicaGrammar();
         path = Absyn.crefToPath(c);
         (cache,{t}) = Lookup.lookupFunctionsInEnv(cache,env,path,info);
-        (isBuiltin,_,path) = isBuiltinFunc(path,t);
-        isBuiltinFn = not valueEq(DAE.FUNCTION_NOT_BUILTIN(),isBuiltin);
+        (isBuiltin,isBuiltinFn,path) = isBuiltinFunc(path,t);
+        isBuiltinFnOrInlineBuiltin = not valueEq(DAE.FUNCTION_NOT_BUILTIN(),isBuiltin);
         (tt,optPath) = t;
-        t = (tt, Util.if_(isBuiltinFn, SOME(path), optPath)) "some builtin functions store NONE() there";
-        (DAE.T_FUNCTION(funcResultType=resTy),SOME(fpath)) = t;
-        et = Types.elabType(resTy);
+        origt = (tt, Util.if_(isBuiltinFn, SOME(path), optPath)) "some builtin functions store NONE() there";
+        (_,SOME(fpath)) = t;
         t = Types.makeFunctionPolymorphicReference(t);
         c = Absyn.pathToCref(fpath);
         expCref = ComponentReference.toExpCref(c);
-        exp = Expression.makeCrefExp(expCref,DAE.ET_FUNCTION_REFERENCE_FUNC(isBuiltinFn,et));
+        exp = Expression.makeCrefExp(expCref,DAE.ET_FUNCTION_REFERENCE_FUNC(isBuiltinFnOrInlineBuiltin,origt));
         // This is not done by lookup - only elabCall. So we should do it here.
         (cache,Util.SUCCESS()) = instantiateDaeFunction(cache,env,path,isBuiltinFn,NONE(),true);
       then

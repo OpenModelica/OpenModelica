@@ -958,7 +958,7 @@ uniontype ExpType "- Basic types
   end ET_FUNCTION_REFERENCE_VAR;
   record ET_FUNCTION_REFERENCE_FUNC "MetaModelica Function Reference that is a direct reference to a function"
     Boolean builtin;
-    ExpType resType "type of the non-boxptr function";
+    Type functionType "type of the non-boxptr function";
   end ET_FUNCTION_REFERENCE_FUNC;
 
   record ET_METATYPE "MetaModelica boxed types (any)" end ET_METATYPE;

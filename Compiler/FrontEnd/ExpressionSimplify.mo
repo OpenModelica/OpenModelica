@@ -287,26 +287,13 @@ algorithm
       then
         e;
     
-    // if condition is constant
-    case (DAE.IFEXP(expCond = e1,expThen = e2,expElse = e3))
-      equation
-        e1_1 = simplify1(e1);
-        true = Expression.isConst(e1_1);
-        b = Expression.getBoolConst(e1_1);
-        res = Util.if_(b,e2,e3);
-        res = simplify1(res);
-      then
-        res;
-    
     // if true and false branches are equal
     case (DAE.IFEXP(expCond = e1,expThen = e2,expElse = e3))
       equation
+        e1_1 = simplify1(e1);
         e2_1 = simplify1(e2);
         e3_1 = simplify1(e3);
-        remove_if = Expression.expEqual(e2_1, e3_1);
-        res = Util.if_(remove_if, e2_1, DAE.IFEXP(e1,e2_1,e3_1));
-      then
-        res;
+      then simplifyIfExp(e1_1,e2_1,e3_1);
     
     // component references
     case DAE.CREF(componentRef = c_1 as DAE.CREF_IDENT(idn,_,s),ty=t)
@@ -321,6 +308,34 @@ algorithm
         e;
   end matchcontinue;
 end simplify1;
+
+protected function simplifyIfExp
+  "Handles simplification of if-expressions"
+  input DAE.Exp cond;
+  input DAE.Exp tb;
+  input DAE.Exp fb;
+  output DAE.Exp exp;
+algorithm
+  exp := match (cond,tb,fb)
+    local
+      Boolean remove_if;
+      // Condition is constant
+    case (DAE.BCONST(true),tb,fb) then tb;
+    case (DAE.BCONST(false),tb,fb) then fb;
+      // The expression is the condition
+    case (exp,DAE.BCONST(true),DAE.BCONST(false)) then exp;
+    case (exp,DAE.BCONST(false),DAE.BCONST(true))
+      equation
+        exp = DAE.LUNARY(DAE.NOT(), exp);
+      then simplify1(exp);
+      // Are the branches equal?
+    case (cond,tb,fb)
+      equation
+        remove_if = Expression.expEqual(tb,fb);
+        exp = Util.if_(remove_if, tb, DAE.IFEXP(cond,tb,fb));
+      then exp;
+  end match;
+end simplifyIfExp;
 
 protected function simplifyMetaModelica "simplifies MetaModelica expressions"
   input DAE.Exp exp;
