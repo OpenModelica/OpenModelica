@@ -4985,7 +4985,7 @@ public function if_ "function: if_
   input Type_a valFalse;
   output Type_a outVal;
   replaceable type Type_a subtypeof Any;
-  annotation(__OpenModelica_EarlyInline = true);
+  // annotation(__OpenModelica_EarlyInline = true);
 algorithm
   outVal := match (cond,valTrue,valFalse)
     case (true,_,_) then valTrue;

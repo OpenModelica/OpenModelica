@@ -5061,29 +5061,31 @@ template daeExpIf(Exp exp, Context context, Text &preExp /*BUFP*/,
 match exp
 case IFEXP(__) then
   let condExp = daeExp(expCond, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-  let condVar = tempDecl("modelica_boolean", &varDecls /*BUFD*/)
-  let resVarType = expTypeFromExpArrayIf(expThen)
-  let resVar = tempDecl(resVarType, &varDecls /*BUFD*/)
   let &preExpThen = buffer "" /*BUFD*/
   let eThen = daeExp(expThen, context, &preExpThen /*BUFC*/, &varDecls /*BUFD*/)
   let &preExpElse = buffer "" /*BUFD*/
   let eElse = daeExp(expElse, context, &preExpElse /*BUFC*/, &varDecls /*BUFD*/)
-  let &preExp +=  
-  <<
-  <%condVar%> = (modelica_boolean)<%condExp%>;
-  if (<%condVar%>) {
-    <%preExpThen%>
-    <%resVar%> = (<%resVarType%>)<%eThen%>;
-  } else {
-    <%preExpElse%>
-    <%resVar%> = (<%resVarType%>)<%eElse%>;
-  }<%\n%>
-  >>
-  resVar
-//  An alternative solution?
-//  <<
-//  ((<%condVar%>)?<%eThen%>:<%eElse%>)
-//  >>
+  let shortIfExp = if preExpThen then "" else if preExpElse then "" else "x"
+  (if shortIfExp
+    then
+      // Safe to do if eThen and eElse don't emit pre-expressions
+      '(<%condExp%>?<%eThen%>:<%eElse%>)'
+    else
+      let condVar = tempDecl("modelica_boolean", &varDecls /*BUFD*/)
+      let resVarType = expTypeFromExpArrayIf(expThen)
+      let resVar = tempDecl(resVarType, &varDecls /*BUFD*/)
+      let &preExp +=  
+      <<
+      <%condVar%> = (modelica_boolean)<%condExp%>;
+      if (<%condVar%>) {
+        <%preExpThen%>
+        <%resVar%> = (<%resVarType%>)<%eThen%>;
+      } else {
+        <%preExpElse%>
+        <%resVar%> = (<%resVarType%>)<%eElse%>;
+      }<%\n%>
+      >>
+      resVar)
 end daeExpIf;
 
 
