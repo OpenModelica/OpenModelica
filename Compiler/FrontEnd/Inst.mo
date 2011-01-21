@@ -3595,7 +3595,7 @@ algorithm
         new_ci_state = ClassInf.start(r, Env.getEnvName(env3));
         mods_1 = Mod.merge(mods, mod_1, cenv_2, pre);
         eq = Mod.modEquation(mods_1) "instantiate array dimensions" ;
-        (cache,dims) = elabArraydimOpt(cache,cenv_2, Absyn.CREF_IDENT("",{}),cn, ad, eq, impl,NONE(),true,pre,info) "owncref not valid here" ;
+        (cache,dims) = elabArraydimOpt(cache,cenv_2, Absyn.CREF_IDENT("",{}),cn, ad, eq, impl,NONE(),true,pre,info,inst_dims) "owncref not valid here" ;
         inst_dims2 = instDimExpLst(dims, impl);
         inst_dims_1 = Util.listListAppendLast(inst_dims, inst_dims2);
         (cache,env_2,ih,store,dae,csets_1,ci_state_1,vars,bc,oDA,eqConstraint,graph) = instClassIn(cache,cenv_2,ih,store,mods_1, pre, csets, new_ci_state, c, prot,
@@ -3622,7 +3622,7 @@ algorithm
         new_ci_state = ClassInf.start(r, Env.getEnvName(cenv_2));
         mods_1 = Mod.merge(mods, mod_1, cenv_2, pre);
         eq = Mod.modEquation(mods_1) "instantiate array dimensions" ;
-        (cache,dims) = elabArraydimOpt(cache,cenv_2, Absyn.CREF_IDENT("",{}),cn, ad, eq, impl,NONE(),true,pre,info) "owncref not valid here" ;
+        (cache,dims) = elabArraydimOpt(cache,cenv_2, Absyn.CREF_IDENT("",{}),cn, ad, eq, impl,NONE(),true,pre,info,inst_dims) "owncref not valid here" ;
         inst_dims2 = instDimExpLst(dims, impl);
         inst_dims_1 = Util.listListAppendLast(inst_dims, inst_dims2);
         (cache,env_2,ih,store,dae,csets_1,ci_state_1,vars,bc,oDA,eqConstraint,graph) = instClassIn(cache,cenv_2,ih,store,mods_1, pre, csets, new_ci_state, c, prot,
@@ -5930,7 +5930,7 @@ algorithm
         
         // The variable declaration and the (optional) equation modification are inspected for array dimensions.
         is_function_input = isFunctionInput(ci_state, dir);
-        (cache,dims) = elabArraydim(cache, env2_1, owncref, t,ad, eq, impl,NONE(), true, is_function_input,pre,Util.getOptionOrDefault(aInfo,Absyn.dummyInfo));
+        (cache,dims) = elabArraydim(cache, env2_1, owncref, t,ad, eq, impl,NONE(), true, is_function_input,pre,Util.getOptionOrDefault(aInfo,Absyn.dummyInfo), inst_dims);
 
         //Instantiate the component  
         inst_dims = listAppend(inst_dims,{{}}); // Start a new "set" of inst_dims for this component (in instance hierarchy), see InstDims
@@ -6056,7 +6056,7 @@ algorithm
         // The variable declaration and the (optional) equation modification are inspected for array dimensions.
         // Gather all the dimensions
         // (Absyn.IDENT("Integer") is used as a dummie)
-        (cache,dims) = elabArraydim(cache,env, owncref, Absyn.IDENT("Integer"),ad,NONE(), impl,NONE(),true, false,pre,info);
+        (cache,dims) = elabArraydim(cache,env, owncref, Absyn.IDENT("Integer"),ad,NONE(), impl,NONE(),true, false,pre,info,inst_dims);
 
         // Instantiate the component
         (cache,compenv,ih,store,dae,csets_1,ty,graphNew) = 
@@ -7477,7 +7477,7 @@ algorithm
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
         (cache,dae_var_attr) = instDaeVariableAttributes(cache,env, mod, ty, {}) "idxs\'" ;
         // Attempt to set the correct type for array variable. Does not work correctly yet.
-        ty = Types.liftArraySubscriptList(ty, Util.listFirst(inst_dims) /*idxs*/);   
+        ty = Types.liftArraySubscriptList(ty, Util.listFlatten(inst_dims) /*idxs*/);   
 
         dae2 = instModEquation(cr, ty, mod, source, impl);
         start = instStartBindingExp(mod, ty);
@@ -7818,7 +7818,7 @@ algorithm
         owncref = Absyn.CREF_IDENT(id,{});
         ad_1 = getOptionArraydim(ad);
         // Absyn.IDENT("Integer") used as a dummie
-        (cache,dim1) = elabArraydim(cache,env, owncref, Absyn.IDENT("Integer"), ad_1,NONE(), impl,NONE(),true, false,pre,info);
+        (cache,dim1) = elabArraydim(cache,env, owncref, Absyn.IDENT("Integer"), ad_1,NONE(), impl,NONE(),true, false,pre,info,dims);
       then (cache,dim1,cl,DAE.NOMOD());
 
     // Partial function definitions with no output - stefan
@@ -7849,7 +7849,7 @@ algorithm
         mods_3 = Mod.lookupCompModification(mods_2, id);
         (cache,dim1,cl,type_mods) = getUsertypeDimensions(cache,cenv,ih, mods_3, pre, cl, dims, impl);
         type_mods = Mod.merge(mod_1, type_mods, env, pre);
-        (cache,dim2) = elabArraydim(cache,env, owncref, cn, ad_1, eq, impl,NONE(),true, false,pre,info);
+        (cache,dim2) = elabArraydim(cache,env, owncref, cn, ad_1, eq, impl,NONE(),true, false,pre,info,dims);
         res = listAppend(dim2, dim1);
       then
         (cache,res,cl,type_mods);
@@ -8258,7 +8258,7 @@ algorithm
         eq = Mod.modEquation(mod_3);
         
         owncref = Absyn.CREF_IDENT(name,{});
-        (cache,dims) = elabArraydim(cache,env,owncref,path,ad,eq,impl,NONE(),true, false,pre,rinfo)
+        (cache,dims) = elabArraydim(cache,env,owncref,path,ad,eq,impl,NONE(),true, false,pre,rinfo,{})
         "The variable declaration and the (optional) equation modification are inspected for array dimensions." ;        
         /* Instantiate the component */
         (cache,compenv,ih,_,_,_,ty,_) = 
@@ -9058,11 +9058,12 @@ protected function elabArraydimOpt
   input Boolean performVectorization;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
+  input InstDims inInstDims;
   output Env.Cache outCache;
   output list<DAE.Dimension> outDimensionLst;
 algorithm
   (outCache,outDimensionLst) :=
-  match (inCache,inEnv,inComponentRef,path,inAbsynArrayDimOption,inTypesEqModOption,inBoolean,inInteractiveInteractiveSymbolTableOption,performVectorization,inPrefix,info)
+  match (inCache,inEnv,inComponentRef,path,inAbsynArrayDimOption,inTypesEqModOption,inBoolean,inInteractiveInteractiveSymbolTableOption,performVectorization,inPrefix,info,inInstDims)
     local
       list<DAE.Dimension> res;
       list<Env.Frame> env;
@@ -9074,12 +9075,13 @@ algorithm
       Env.Cache cache;
       Boolean doVect;
       Prefix.Prefix pre;
-    case (cache,env,owncref,path,SOME(ad),eq,impl,st,doVect,pre,info)
+      InstDims inst_dims;
+    case (cache,env,owncref,path,SOME(ad),eq,impl,st,doVect,pre,info,inst_dims)
       equation
-        (cache,res) = elabArraydim(cache,env, owncref, path,ad, eq, impl, st,doVect, false,pre,info);
+        (cache,res) = elabArraydim(cache,env, owncref, path,ad, eq, impl, st,doVect, false,pre,info,inst_dims);
       then
         (cache,res);
-    case (cache,env,owncref,path,NONE(),eq,impl,st,doVect,_,_) then (cache,{});
+    case (cache,env,owncref,path,NONE(),eq,impl,st,doVect,_,_,_) then (cache,{});
   end match;
 end elabArraydimOpt;
 
@@ -9108,12 +9110,13 @@ protected function elabArraydim
   input Boolean isFunctionInput;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
+  input InstDims inInstDims;
   output Env.Cache outCache;
   output list<DAE.Dimension> outDimensionLst;
 algorithm
   (outCache,outDimensionLst) :=
   matchcontinue
-    (inCache,inEnv,inComponentRef,path,inArrayDim,inTypesEqModOption,inBoolean,inInteractiveInteractiveSymbolTableOption,performVectorization,isFunctionInput,inPrefix,info)
+    (inCache,inEnv,inComponentRef,path,inArrayDim,inTypesEqModOption,inBoolean,inInteractiveInteractiveSymbolTableOption,performVectorization,isFunctionInput,inPrefix,info,inInstDims)
     local
       list<DAE.Dimension> dim,dim1,dim2;
       list<DAE.Dimension> dim3;
@@ -9131,48 +9134,49 @@ algorithm
       Prefix.Prefix pre;
       Absyn.Exp aexp;
       Option<DAE.EqMod> eq;
+      InstDims inst_dims;
 
     // The size of function input arguments should not be set here, since they
     // may vary depending on the inputs. So we ignore any modifications on input
     // variables here.
-    case (cache, env, cref, path, ad, _, impl, st, doVect, true,pre,info)
+    case (cache, env, cref, path, ad, _, impl, st, doVect, true,pre,info,_)
       equation
         (cache, dim) = elabArraydimDecl(cache, env, cref, ad, true, st, doVect,pre,info);
       then
         (cache, dim);
         
-    case (cache,env,cref,path,ad,NONE(),impl,st,doVect, _,pre,info) /* impl */
+    case (cache,env,cref,path,ad,NONE(),impl,st,doVect, _,pre,info,_) /* impl */
       equation
         (cache,dim) = elabArraydimDecl(cache,env, cref, ad, impl, st,doVect,pre,info);
       then
         (cache,dim);
-    case (cache,env,cref,path,ad,SOME(DAE.TYPED(e,_,prop,_)),impl,st,doVect, _ ,pre,info) /* Untyped expressions must be elaborated. */
+    case (cache,env,cref,path,ad,SOME(DAE.TYPED(e,_,prop,_)),impl,st,doVect, _ ,pre,info,inst_dims) /* Untyped expressions must be elaborated. */
       equation
         t = Types.getPropType(prop);
         (cache,dim1) = elabArraydimDecl(cache,env, cref, ad, impl, st,doVect,pre,info);
-        dim2 = elabArraydimType(t, ad, e, path, pre, cref, info);
+        dim2 = elabArraydimType(t, ad, e, path, pre, cref, info,inst_dims);
         //Debug.traceln("TYPED: " +& ExpressionDump.printExpStr(e) +& " s: " +& Env.printEnvPathStr(env));
         dim3 = Util.listThreadMap(dim1, dim2, compatibleArraydim);
       then
         (cache,dim3);
-    case (cache,env,cref,path,ad,SOME(DAE.UNTYPED(aexp)),impl,st,doVect, _,pre,info)
+    case (cache,env,cref,path,ad,SOME(DAE.UNTYPED(aexp)),impl,st,doVect, _,pre,info,inst_dims)
       equation
         (cache,e_1,prop,_) = Static.elabExp(cache,env, aexp, impl, st,doVect,pre,info);
         (cache, e_1, prop) = Ceval.cevalIfConstant(cache, env, e_1, prop, impl);
         t = Types.getPropType(prop);
         (cache,dim1) = elabArraydimDecl(cache,env, cref, ad, impl, st,doVect,pre,info);
-        dim2 = elabArraydimType(t, ad, e_1, path, pre, cref, info);
+        dim2 = elabArraydimType(t, ad, e_1, path, pre, cref, info,inst_dims);
         //Debug.traceln("UNTYPED");
         dim3 = Util.listThreadMap(dim1, dim2, compatibleArraydim);
       then
         (cache,dim3);
-    case (cache,env,cref,path,ad,SOME(DAE.TYPED(e,_,DAE.PROP(t,_),_)),impl,st,doVect, _,pre,info)
+    case (cache,env,cref,path,ad,SOME(DAE.TYPED(e,_,DAE.PROP(t,_),_)),impl,st,doVect, _,pre,info,inst_dims)
       equation
         // adrpo: do not display error when running checkModel 
         //        TODO! FIXME! check if this doesn't actually get rid of useful error messages
         false = OptManager.getOption("checkModel");
         (cache,dim1) = elabArraydimDecl(cache,env, cref, ad, impl, st,doVect,pre,info);
-        dim2 = elabArraydimType(t, ad, e, path, pre, cref, info);
+        dim2 = elabArraydimType(t, ad, e, path, pre, cref, info,inst_dims);
         failure(dim3 = Util.listThreadMap(dim1, dim2, compatibleArraydim));
         e_str = ExpressionDump.printExpStr(e);
         t_str = Types.unparseType(t);
@@ -9181,7 +9185,7 @@ algorithm
       then
         fail();
     // print some failures
-    case (_,_,cref,path,ad,eq,_,_,_,_,_,_)
+    case (_,_,cref,path,ad,eq,_,_,_,_,_,_,_)
       equation
         // only display when the failtrace flag is on
         true = RTOpts.debugFlag("failtrace");
@@ -9490,21 +9494,32 @@ protected function elabArraydimType
   input Prefix.Prefix inPrefix;
   input Absyn.ComponentRef componentRef;
   input Absyn.Info info;
+  input InstDims inInstDims;
   output list<DAE.Dimension> outDimensionLst;
 algorithm
-  outDimensionLst := matchcontinue(inType,inArrayDim,exp,path,inPrefix,componentRef,info)
+  outDimensionLst := matchcontinue(inType,inArrayDim,exp,path,inPrefix,componentRef,info,inInstDims)
     local
       tuple<DAE.TType, Option<Absyn.Path>> t;
       list<Absyn.Subscript> ad;
       String tpStr,adStr,expStr,str;
-    case(t,ad,exp,path,_,_,_)
+      InstDims id;
+      list<DAE.Subscript> flat_id;
+    case(t,ad,exp,path,_,_,_,_)
       equation
+        true = RTOpts.splitArrays();
         true = (Types.numberOfDimensions(t) >= listLength(ad));
-        adStr = Absyn.pathString(path) +& Dump.printArraydimStr(ad);
-        outDimensionLst = elabArraydimType2(t,ad);
+        outDimensionLst = elabArraydimType2(t,ad,{});
       then outDimensionLst;
 
-    case(t,ad,exp,path,inPrefix,componentRef,_)
+    case(t,ad,exp,path,_,_,_,id)
+      equation
+        false = RTOpts.splitArrays();
+        flat_id = Util.listFlatten(id);
+        true = (Types.numberOfDimensions(t) >= listLength(ad) + listLength(flat_id));
+        outDimensionLst = elabArraydimType2(t,ad,flat_id); 
+      then outDimensionLst;
+
+    case(t,ad,exp,path,inPrefix,componentRef,_,_)
       equation
         adStr = Absyn.pathString(path) +& Dump.printArraydimStr(ad);
         tpStr = Types.unparseType(t);
@@ -9519,27 +9534,37 @@ protected function elabArraydimType2
 "Help function to elabArraydimType."
   input DAE.Type inType;
   input Absyn.ArrayDim inArrayDim;
+  input list<DAE.Subscript> inSubs;
   output list<DAE.Dimension> outDimensionOptionLst;
 algorithm
-  outDimensionOptionLst := matchcontinue (inType,inArrayDim)
+  outDimensionOptionLst := matchcontinue (inType,inArrayDim,inSubs)
     local
       DAE.Dimension d;
       list<DAE.Dimension> l;
       tuple<DAE.TType, Option<Absyn.Path>> t;
       list<Absyn.Subscript> ad;
-    case ((DAE.T_ARRAY(arrayDim = d, arrayType = t), _), (_ :: ad))
+      list<DAE.Subscript> subs;
+      DAE.Subscript sub;
+    case ((DAE.T_ARRAY(arrayDim = d, arrayType = t), _), ad, (sub::subs))
       equation
-        l = elabArraydimType2(t, ad);
+        //d1 = Expression.subscriptDimension(sub);
+        // _ = compatibleArraydim(d,d1);  TODO: Implement the comparison in the non-expanded case! -- alleb
+        l = elabArraydimType2(t, ad,subs);
+      then
+        l;
+    case ((DAE.T_ARRAY(arrayDim = d, arrayType = t), _), (_ :: ad),{})
+      equation
+        l = elabArraydimType2(t, ad,{});
       then
         (d :: l);
-    case (_,{}) then {};
+    case (_,{},{}) then {};
     /* adrpo: handle also complex type!
     case ((DAE.T_COMPLEX(complexTypeOption=SOME(t)),_),ad)
       equation
         l = elabArraydimType2(t, ad);
       then
         l; */
-    case (t,(_ :: ad)) /* PR, for debugging */
+    case (t,(_ :: ad),_) /* PR, for debugging */
       equation
         true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace", "Undefined!");
@@ -12514,7 +12539,7 @@ algorithm
         (cache,mod_1) = Mod.elabMod(cache, env, ih, Prefix.NOPRE(), mod, impl, rinfo);
         mod_1 = Mod.merge(outerMod,mod_1,cenv,Prefix.NOPRE());
         owncref = Absyn.CREF_IDENT(id,{});
-        (cache,dimexp) = elabArraydim(cache,env, owncref,t, dim,NONE(), false,NONE(),true, false,Prefix.NOPRE(),rinfo);
+        (cache,dimexp) = elabArraydim(cache,env, owncref,t, dim,NONE(), false,NONE(),true, false,Prefix.NOPRE(),rinfo,{});
         //Debug.fprint("recconst", "calling inst_var\n");
         (cache,_,ih,_,_,_,tp_1,_) = instVar(cache,cenv, ih, UnitAbsyn.noStore,ClassInf.FUNCTION(Absyn.IDENT("")), mod_1, Prefix.NOPRE(),
           Connect.emptySet, id, cl, attr, prot,dimexp, {}, {}, impl, comment,io,finalPrefix,info,ConnectionGraph.EMPTY, env);
@@ -13444,7 +13469,7 @@ algorithm
         cl2 = removeCrefFromCrefs(cl1, c1);
         (cache,c,cenv) = Lookup.lookupClass(cache,env, sty, true);
         rinfo = Util.getOptionOrDefault(info,Absyn.dummyInfo);
-        (cache,dims) = elabArraydim(cache,cenv, c1, sty, ad,NONE(), impl,NONE(),true, false,pre,rinfo);
+        (cache,dims) = elabArraydim(cache,cenv, c1, sty, ad,NONE(), impl,NONE(),true, false,pre,rinfo,inst_dims);
         (cache,compenv,ih,store,_,_,ty,_) = 
           instVar(cache,cenv,ih, store,state, DAE.NOMOD(), pre, csets, n, c, attr, prot, dims, {}, inst_dims, true,NONE(),io,finalPrefix,info,ConnectionGraph.EMPTY,env);
 
