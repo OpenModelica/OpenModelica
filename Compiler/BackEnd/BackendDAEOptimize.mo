@@ -1007,12 +1007,12 @@ algorithm
       BackendDAE.Variables vars,knvars;
       DAE.ComponentRef cr;
     
+    case((e as DAE.CREF(DAE.CREF_IDENT(ident = "time",subscriptLst = {}),_), (_,vars,knvars))) then ((e,false,(true,vars,knvars)));
     case((e as DAE.CREF(componentRef = cr),(_,vars,knvars)))
       equation
         b = BackendVariable.isTopLevelInputOrOutput(cr,vars,knvars);
       then
         ((e,not b,(b,vars,knvars)));
-    case((e as DAE.CREF(DAE.CREF_IDENT(ident = "time",subscriptLst = {}),_), (_,vars,knvars))) then ((e,false,(true,vars,knvars)));
     case((e as DAE.CALL(path = Absyn.IDENT(name = "sample"), expLst = {_,_}), (_,vars,knvars))) then ((e,false,(true,vars,knvars) ));
     case((e as DAE.CALL(path = Absyn.IDENT(name = "pre"), expLst = {_}), (_,vars,knvars))) then ((e,false,(true,vars,knvars) ));
     case((e,(b,vars,knvars))) then ((e,not b,(b,vars,knvars)));
