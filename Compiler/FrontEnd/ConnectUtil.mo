@@ -1439,6 +1439,7 @@ protected function makeInStreamCall
   "Creates an inStream call expression."
   input DAE.Exp inStreamExp;
   output DAE.Exp outInStreamCall;
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   outInStreamCall := DAE.CALL(Absyn.IDENT("inStream"), {inStreamExp}, false,
     false, DAE.ET_OTHER(), DAE.NO_INLINE());
@@ -1448,6 +1449,7 @@ protected function makePositiveMaxCall
   "Generates a max(flow_exp, eps) call."
   input DAE.Exp inFlowExp;
   output DAE.Exp outPositiveMaxCall;
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   outPositiveMaxCall := DAE.CALL(Absyn.IDENT("max"), 
     {inFlowExp, DAE.RCONST(1e-15)}, false, true, DAE.ET_REAL(), DAE.NO_INLINE());
@@ -1733,6 +1735,7 @@ protected function newFlowSet "function: newFlowSet
   input Connect.Face inFace;
   input DAE.ElementSource source "the origin of the element";
   output Connect.Set outSet;
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   outSet := Connect.FLOW({(inComponentRef, inFace, source)});
 end newFlowSet;
@@ -1807,6 +1810,7 @@ protected function newStreamSet "function: newStreamSet
   input Connect.Face inFace;
   input DAE.ElementSource source "the origin of the element";
   output Connect.Set outSet;
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   outSet := Connect.STREAM({(inStreamCref, inFlowCref, inFace, source)});
 end newStreamSet;

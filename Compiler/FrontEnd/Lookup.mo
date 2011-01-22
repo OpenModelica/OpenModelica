@@ -2114,7 +2114,7 @@ protected function buildRecordConstructorResultElt
   input SCode.Ident id;
   input Env.Env env;
   output SCode.Element outElement;
-  list<SCode.SubMod> submodlst;
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   //print(" creating element of type: " +& id +& "\n");
   //print(" with generated mods:" +& SCode.printSubs1Str(submodlst) +& "\n");

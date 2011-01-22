@@ -162,6 +162,7 @@ public function makeDummyCref
 "@author: adrpo
   This function creates a dummy component reference"
   output DAE.ComponentRef outCrefIdent;
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   outCrefIdent := dummyCref; // shareCref(dummyCref);
 end makeDummyCref;

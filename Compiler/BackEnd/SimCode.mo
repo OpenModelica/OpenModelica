@@ -757,6 +757,7 @@ end createAssertforSqrt;
 public function createDAEString
    input String inString;
    output DAE.Exp outExp;
+   annotation(__OpenModelica_EarlyInline = true);
 algorithm
   outExp := DAE.SCONST(inString);
 end createDAEString;
@@ -3655,6 +3656,7 @@ end createNonlinearResidualEquations;
 protected function makeSES_RESIDUAL
   input DAE.Exp inExp;
   output SimEqSystem outSimEqn;
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   outSimEqn := SES_RESIDUAL(inExp);
 end makeSES_RESIDUAL;

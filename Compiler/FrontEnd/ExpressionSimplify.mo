@@ -516,6 +516,7 @@ protected function addCast
   input DAE.Exp inExp;
   input Type inType;
   output DAE.Exp outExp;
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   outExp:=DAE.CAST(inType,inExp);
 end addCast;

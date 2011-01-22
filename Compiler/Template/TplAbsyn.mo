@@ -1763,6 +1763,7 @@ public function tplStatement
   input Ident inOutArg;
   
   output MMExp outStmt;
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   outStmt := MM_ASSIGN( {inOutArg}, 
                 MM_FN_CALL( PATH_IDENT("Tpl",IDENT(inFunName)), 
@@ -1776,6 +1777,7 @@ public function pushBlockStatement
   input Ident inOutArg;
   
   output MMExp outStmt;
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   outStmt := 
    MM_ASSIGN( 

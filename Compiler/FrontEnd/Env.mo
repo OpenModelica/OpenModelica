@@ -1684,6 +1684,7 @@ end AvlTreeValue;
 
 public function avlTreeNew "Return an empty tree"
   output AvlTree tree;
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   tree := AVLTREENODE(NONE(),0,NONE(),NONE());
 end avlTreeNew;

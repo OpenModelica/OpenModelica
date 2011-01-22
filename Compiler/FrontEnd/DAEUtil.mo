@@ -4387,6 +4387,7 @@ end valueStr;
 
 public function avlTreeNew "Return an empty tree"
   output DAE.AvlTree tree;
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   tree := emptyFuncTree; // DAE.AVLTREENODE(NONE(),0,NONE(),NONE());
 end avlTreeNew;

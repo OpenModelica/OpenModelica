@@ -2710,6 +2710,7 @@ end cevalStringListStringChar;
 protected function generateValueString
   input String str;
   output Values.Value val;
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   val := Values.STRING(str);
 end generateValueString;

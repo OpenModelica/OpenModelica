@@ -9885,7 +9885,6 @@ algorithm
         ty1 = setFullyQualifiedTypename(ty,fpath);
 
         env_1 = Env.extendFrameT(env_1, n, ty1);
-
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());        
       then
@@ -14644,6 +14643,12 @@ algorithm
         name = ComponentReference.printComponentRefStr(cr);
         Error.addSourceMessage(Error.FUNCTION_ELEMENT_WRONG_PROTECTION,{name,"protected","public"},DAEUtil.getElementSourceFileInfo(source));
       then fail();
+        
+    case (DAE.ALGORITHM(algorithm_=DAE.ALGORITHM_STMTS({DAE.STMT_ASSIGN(exp=DAE.METARECORDCALL(path=_))})),info)
+      equation
+        // We need to know the inlineType to make a good notification
+        // Error.addSourceMessage(true,Error.COMPILER_NOTIFICATION, {"metarecordcall"}, info);
+      then ();
     case (DAE.ALGORITHM(algorithm_=_),_) then ();
     else
       equation

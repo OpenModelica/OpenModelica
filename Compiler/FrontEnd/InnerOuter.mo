@@ -1579,6 +1579,7 @@ public function emptyInstInner
   input Prefix.Prefix innerPrefix;
   input String name;
   output InstInner outInstInner;
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   outInstInner := INST_INNER(innerPrefix, name, Absyn.UNSPECIFIED(), "", Absyn.IDENT(""), "", NONE(), {});
 end emptyInstInner;

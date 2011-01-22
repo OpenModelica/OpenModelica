@@ -850,6 +850,7 @@ protected function makeFunctionVariable
   input DAE.Type inType;
   input DAE.Binding inBinding;
   output DAE.Var outVar;
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   outVar := DAE.TYPES_VAR(
     inName,

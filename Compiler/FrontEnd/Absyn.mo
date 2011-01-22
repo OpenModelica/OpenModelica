@@ -1076,6 +1076,7 @@ public function getNewTimeStamp "Function: getNewTimeStamp
 generate a new timestamp with edittime>buildtime.
 "
 output TimeStamp ts;
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   ts := TIMESTAMP(0.0,1.0);
 end getNewTimeStamp;
@@ -2137,15 +2138,18 @@ algorithm
 end traverseExpBidirIterator;
 
 public function makeIdentPathFromString ""
-input String s;
-output Path p;
-algorithm p := IDENT(s);
+  input String s;
+  output Path p;
+  annotation(__OpenModelica_EarlyInline = true);
+algorithm
+  p := IDENT(s);
 end makeIdentPathFromString;
 
 public function makeQualifiedPathFromStrings ""
   input String s1;
   input String s2;
   output Path p;
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   p := QUALIFIED(s1,IDENT(s2));
 end makeQualifiedPathFromStrings;
@@ -2255,6 +2259,7 @@ end expCref;
 public function crefExp "returns the componentRef of an expression if matches."
  input ComponentRef cr;
  output Exp exp;
+ annotation(__OpenModelica_EarlyInline = true);
 algorithm
   exp := CREF(cr);
 end crefExp;
@@ -4989,6 +4994,7 @@ public function makeCons
   input Exp e1;
   input Exp e2;
   output Exp e;
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   e := CONS(e1,e2);
 end makeCons;

@@ -464,6 +464,7 @@ public function intDimension
   "Converts an integer to an array dimension."
   input Integer value;
   output DAE.Dimension dim;
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   dim := DAE.DIM_INTEGER(value);
 end intDimension;
@@ -2825,6 +2826,7 @@ public function makeIntegerExp
 "Creates an integer constant expression given the integer input."
   input Integer i;
   output DAE.Exp e;
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   e := DAE.ICONST(i);
 end makeIntegerExp;
@@ -2980,6 +2982,7 @@ public function makeIndexSubscript
   Creates a Subscript INDEX from an Expression."
   input DAE.Exp exp;
   output Subscript subscript;
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   subscript := DAE.INDEX(exp);
 end makeIndexSubscript;
@@ -2988,6 +2991,7 @@ public function makeVar "Creates a Var given a name and Type"
   input String name;
   input Type tp;
   output Var v;
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   v:= DAE.COMPLEX_VAR(name,tp);
 end makeVar;

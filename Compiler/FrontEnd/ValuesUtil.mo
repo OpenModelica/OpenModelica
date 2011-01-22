@@ -139,6 +139,7 @@ protected function valueExpTypeExpVar "help function to valueExpType"
   input DAE.ExpType etp;
   input String name;
   output DAE.ExpVar expVar;
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   expVar := DAE.COMPLEX_VAR(name,etp);
 end valueExpTypeExpVar;
