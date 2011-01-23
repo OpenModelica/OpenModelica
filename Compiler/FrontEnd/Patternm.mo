@@ -595,13 +595,16 @@ algorithm
       tuple<Integer,DAE.ExpType,Integer> tpl;
       list<list<DAE.Pattern>> patternMatrix;
       String str;
+      DAE.ExpType ty;
     case (Absyn.MATCHCONTINUE(),_,_) then DAE.MATCHCONTINUE();
     case (_,cases,_)
       equation
         true = listLength(cases) > 2;
         patternMatrix = Util.transposeList(Util.listMap(cases,getCasePatterns));
         tpl = findPatternToConvertToSwitch(patternMatrix,0,info);
-        Error.assertionOrAddSourceMessage(not RTOpts.debugFlag("patternmAllInfo"),Error.MATCH_TO_SWITCH_OPTIMIZATION, {}, info);
+        (_,ty,_) = tpl;
+        str = ExpressionDump.typeString(ty);
+        Error.assertionOrAddSourceMessage(not RTOpts.debugFlag("patternmAllInfo"),Error.MATCH_TO_SWITCH_OPTIMIZATION, {str}, info);
       then DAE.MATCH(SOME(tpl));
     else DAE.MATCH(NONE());
   end matchcontinue;
@@ -646,17 +649,22 @@ algorithm
         true = listLength(ixs)>7; // hashing has a considerable overhead, only convert to switch if it is worth it
         ix = findMinMod(ixs,1);
       then (DAE.ET_STRING(),ix);
+    case ({},_,_) then (ty,0);
     case (DAE.PAT_CONSTANT(exp=DAE.SCONST(str))::pats,ixs,_)
       equation
         ix = System.stringHashDjb2Mod(str,65536);
         false = listMember(ix,ixs);
         (ty,extraarg) = findPatternToConvertToSwitch2(pats,ix::ixs,DAE.ET_STRING());
       then (ty,extraarg);
-    case ({},_,DAE.ET_METATYPE()) then (ty,0);
     case (DAE.PAT_CALL(index=ix)::pats,ixs,_)
       equation
         false = listMember(ix,ixs);
         (ty,extraarg) = findPatternToConvertToSwitch2(pats,ix::ixs,DAE.ET_METATYPE());
+      then (ty,extraarg);
+    case (DAE.PAT_CONSTANT(exp=DAE.ICONST(ix))::pats,ixs,_)
+      equation
+        false = listMember(ix,ixs);
+        (ty,extraarg) = findPatternToConvertToSwitch2(pats,ix::ixs,DAE.ET_INT());
       then (ty,extraarg);
   end match;
 end findPatternToConvertToSwitch2;

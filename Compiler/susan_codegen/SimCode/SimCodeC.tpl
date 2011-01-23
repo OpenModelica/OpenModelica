@@ -5675,6 +5675,10 @@ case exp as MATCHEXPRESSION(__) then
       'stringHashDjb2Mod(<%prefix%>_in<%switchIndex%>,<%div%>)'
     case MATCH(switch=SOME((switchIndex,ET_METATYPE(__),_))) then
       'valueConstructor(<%prefix%>_in<%switchIndex%>)'
+    case MATCH(switch=SOME((switchIndex,ty as ET_INT(__),_))) then
+      '<%prefix%>_in<%switchIndex%>'
+    case MATCH(switch=SOME(_)) then
+      '<%\n%>#error "unknown switch"<%\n%>'
     else tempDecl('int', &varDeclsInner)
   let done = tempDecl('int', &varDeclsInner)
   let onPatternFail = match exp.matchType case MATCHCONTINUE(__) then "MMC_THROW()" case MATCH(__) then "break"
@@ -5744,6 +5748,7 @@ template switchIndex(Pattern pattern, Integer extraArg)
   match pattern
     case PAT_CALL(__) then 'case <%getValueCtor(index)%>'
     case PAT_CONSTANT(exp=e as SCONST(__)) then 'case <%stringHashDjb2Mod(e.string,extraArg)%> /* <%e.string%> */'
+    case PAT_CONSTANT(exp=e as ICONST(__)) then 'case <%e.integer%>'
     else 'default'
 end switchIndex;
 

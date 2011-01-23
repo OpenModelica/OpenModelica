@@ -691,7 +691,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (META_UNUSED_DECL,TRANSLATION(),NOTIFICATION(),"Unused local variable: %s."),
           (META_UNUSED_AS_BINDING,TRANSLATION(),NOTIFICATION(),"Removing unused as-binding: %s."),
           (FAILED_TO_EVALUATE_EXPRESSION,TRANSLATION(),ERROR(),"Could not evaluate expression: %s"),
-          (MATCH_TO_SWITCH_OPTIMIZATION,TRANSLATION(),NOTIFICATION(),"Converted match expression to switch."),
+          (MATCH_TO_SWITCH_OPTIMIZATION,TRANSLATION(),NOTIFICATION(),"Converted match expression to switch of type %s."),
 
           (COMPILER_NOTIFICATION,TRANSLATION(),NOTIFICATION(),"%s"),
           (COMPILER_WARNING,TRANSLATION(),WARNING(),"%s")
