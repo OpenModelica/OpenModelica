@@ -580,10 +580,11 @@ end elabMatchExpression;
 protected function optimizeMatchToSwitch
   "match str case 'str1' ... case 'str2' case 'str3' => switch hash(str)...
   match ut case UT1 ... case UT2 ... case UT3 => switch valueConstructor(ut)...
-  Works if all values are unique. Also works if there is one 'default' case at the end of the list.
-  
-  NOT YET WORKING CODE! Code generation does not know about this.
-  We need DAE.MATCH/CONTINUE/SWITCH instead of Absyn.MATCH/CONTINUE
+  match int case 1 ... case 17 ... case 2 => switch(int)...
+  Works if all values are unique. Also works if there is one 'default' case at the end of the list (and there is only 1 pattern):
+    case (1,_) ... case (_,_) ... works
+    case (1,2) ... case (_,_) ... does not work
+  .
   "
   input Absyn.MatchType matchTy;
   input list<DAE.MatchCase> cases;
@@ -601,7 +602,7 @@ algorithm
       equation
         true = listLength(cases) > 2;
         patternMatrix = Util.transposeList(Util.listMap(cases,getCasePatterns));
-        tpl = findPatternToConvertToSwitch(patternMatrix,0,info);
+        tpl = findPatternToConvertToSwitch(patternMatrix,0,listLength(patternMatrix),info);
         (_,ty,_) = tpl;
         str = ExpressionDump.typeString(ty);
         Error.assertionOrAddSourceMessage(not RTOpts.debugFlag("patternmAllInfo"),Error.MATCH_TO_SWITCH_OPTIMIZATION, {str}, info);
@@ -613,21 +614,22 @@ end optimizeMatchToSwitch;
 protected function findPatternToConvertToSwitch
   input list<list<DAE.Pattern>> patternMatrix;
   input Integer index;
+  input Integer numPatternsInMatrix "If there is only 1 pattern, we can optimize the default case";
   input Absyn.Info info;
   output tuple<Integer,DAE.ExpType,Integer> tpl;
 algorithm
-  tpl := matchcontinue  (patternMatrix,index,info)
+  tpl := matchcontinue  (patternMatrix,index,numPatternsInMatrix,info)
     local
       list<DAE.Pattern> pats;
       String str;
       DAE.ExpType ty;
       Integer extraarg;
-    case (pats::patternMatrix,index,info)
+    case (pats::patternMatrix,index,numPatternsInMatrix,info)
       equation
-        (ty,extraarg) = findPatternToConvertToSwitch2(pats, {}, DAE.ET_OTHER());
+        (ty,extraarg) = findPatternToConvertToSwitch2(pats, {}, DAE.ET_OTHER(), numPatternsInMatrix);
       then ((index,ty,extraarg));
-    case (_::patternMatrix,index,info)
-      then findPatternToConvertToSwitch(patternMatrix,index+1,info);
+    case (_::patternMatrix,index,numPatternsInMatrix,info)
+      then findPatternToConvertToSwitch(patternMatrix,index+1,numPatternsInMatrix,info);
   end matchcontinue;
 end findPatternToConvertToSwitch;
 
@@ -635,37 +637,43 @@ protected function findPatternToConvertToSwitch2
   input list<DAE.Pattern> pats;
   input list<Integer> ixs;
   input DAE.ExpType ty;
+  input Integer numPatternsInMatrix;
   output DAE.ExpType outTy;
   output Integer extraarg;
 algorithm
-  (outTy,extraarg) := match (pats,ixs,ty)
+  (outTy,extraarg) := match (pats,ixs,ty,numPatternsInMatrix)
     local
       Integer ix;
       String str;
-      // Always jump to the last pattern as a default case? Seems reasonable, but requires knowledge about the other patterns...
-    case ({},ixs,DAE.ET_STRING())
-      equation
-        // Should probably start at realCeil(log2(listLength(ixs))), but we don't have log2 in RML :)
-        true = listLength(ixs)>7; // hashing has a considerable overhead, only convert to switch if it is worth it
-        ix = findMinMod(ixs,1);
-      then (DAE.ET_STRING(),ix);
-    case ({},_,_) then (ty,0);
-    case (DAE.PAT_CONSTANT(exp=DAE.SCONST(str))::pats,ixs,_)
+    case (DAE.PAT_CONSTANT(exp=DAE.SCONST(str))::pats,ixs,_,numPatternsInMatrix)
       equation
         ix = System.stringHashDjb2Mod(str,65536);
         false = listMember(ix,ixs);
-        (ty,extraarg) = findPatternToConvertToSwitch2(pats,ix::ixs,DAE.ET_STRING());
+        (ty,extraarg) = findPatternToConvertToSwitch2(pats,ix::ixs,DAE.ET_STRING(),numPatternsInMatrix);
       then (ty,extraarg);
-    case (DAE.PAT_CALL(index=ix)::pats,ixs,_)
+    case (DAE.PAT_CALL(index=ix)::pats,ixs,_,numPatternsInMatrix)
       equation
         false = listMember(ix,ixs);
-        (ty,extraarg) = findPatternToConvertToSwitch2(pats,ix::ixs,DAE.ET_METATYPE());
+        (ty,extraarg) = findPatternToConvertToSwitch2(pats,ix::ixs,DAE.ET_METATYPE(),numPatternsInMatrix);
       then (ty,extraarg);
-    case (DAE.PAT_CONSTANT(exp=DAE.ICONST(ix))::pats,ixs,_)
+    case (DAE.PAT_CONSTANT(exp=DAE.ICONST(ix))::pats,ixs,_,numPatternsInMatrix)
       equation
         false = listMember(ix,ixs);
-        (ty,extraarg) = findPatternToConvertToSwitch2(pats,ix::ixs,DAE.ET_INT());
+        (ty,extraarg) = findPatternToConvertToSwitch2(pats,ix::ixs,DAE.ET_INT(),numPatternsInMatrix);
       then (ty,extraarg);
+
+    case ({},ixs,DAE.ET_STRING(),_)
+      equation
+        true = listLength(ixs)>11; // hashing has a considerable overhead, only convert to switch if it is worth it
+        ix = findMinMod(ixs,1);
+      then (DAE.ET_STRING(),ix);
+    case ({_},ixs,DAE.ET_STRING(),1)
+      equation
+        true = listLength(ixs)>11; // hashing has a considerable overhead, only convert to switch if it is worth it
+        ix = findMinMod(ixs,1);
+      then (DAE.ET_STRING(),ix);
+    case ({},_,_,_) then (ty,0);
+    case ({_},_,_,1) then (ty,0);
   end match;
 end findPatternToConvertToSwitch2;
 

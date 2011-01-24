@@ -55,6 +55,8 @@ intString_rettype intString(modelica_integer i)
   /* 64-bit integer: 1+log_10(2**63)+1 = 20 digits max */
   static char buffer[32];
   void *res;
+  if (i>=0 && i<=9) /* Small integers are used so much it makes sense to cache them */
+    return mmc_strings_len1['0'+i];
   sprintf(buffer, "%ld", (long) i);
   res = mmc_mk_scon(buffer);
   MMC_CHECK_STRING(res);
