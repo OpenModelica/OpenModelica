@@ -1228,6 +1228,7 @@ namespace IAEX
     {
       cell->setSelected( true );
       selectedCells_.push_back( cell );
+	  emit copyAvailable(true);
     }
   }
 
@@ -1260,6 +1261,7 @@ namespace IAEX
       (*i)->setSelected(false);
 
     selectedCells_.clear();
+	emit copyAvailable(false);
   }
 
   // 2006-04-18 AF, Reimplemented the function. Also added support
