@@ -123,47 +123,47 @@ namespace IAEX
    * \todo Remove the dependency of QFrame from document.(Ingemar Axelsson)
    */
   CellDocument::CellDocument( CellApplication *a, const QString filename,
-int readmode )
-: changed_(false),
-open_(false),
-saved_(false),
-app_(a),
-currentImageNo_(0),
-lastClickedCell_(0)
+    int readmode )
+    : changed_(false),
+    open_(false),
+    saved_(false),
+    app_(a),
+    currentImageNo_(0),
+    lastClickedCell_(0)
   {
-filename_ = filename;
-//Initialize SoQT
+    filename_ = filename;
+    //Initialize SoQT
 
-mainFrame_ = new QFrame(a->getMainWindow());
+    mainFrame_ = new QFrame(a->getMainWindow());
 
-mainFrame_->setSizePolicy(QSizePolicy(QSizePolicy::Expanding,
-  QSizePolicy::Expanding));
+    mainFrame_->setSizePolicy(QSizePolicy(QSizePolicy::Expanding,
+      QSizePolicy::Expanding));
 
-mainLayout_ = new QGridLayout(mainFrame_);
-mainLayout_->setMargin(0);
-mainLayout_->setSpacing(0);
+    mainLayout_ = new QGridLayout(mainFrame_);
+    mainLayout_->setMargin(0);
+    mainLayout_->setSpacing(0);
 
-//Initialize workspace.
-factory_ = new CellFactory(this);
-setWorkspace(factory_->createCell("cellgroup"));
+    //Initialize workspace.
+    factory_ = new CellFactory(this);
+    setWorkspace(factory_->createCell("cellgroup"));
 
-// 2005-11-28 AF
-connect( this, SIGNAL( cursorChanged() ),
-  this, SLOT( updateScrollArea() ));
+    // 2005-11-28 AF
+    connect( this, SIGNAL( cursorChanged() ),
+      this, SLOT( updateScrollArea() ));
 
-// 2005-12-01 AF, Added try-catch
-try
-{
-  if(filename_ != QString::null)
-open( filename_, readmode );
-}
-catch( exception &e )
-{
-  throw e;
-}
+    // 2005-12-01 AF, Added try-catch
+    try
+    {
+      if(filename_ != QString::null)
+        open( filename_, readmode );
+    }
+    catch( exception &e )
+    {
+      throw e;
+    }
 
 
-//open_ = true; // 2005-09-26 AF, not sure if this should be here //070903 HE, probably not
+//    open_ = true; // 2005-09-26 AF, not sure if this should be here //070903 HE, probably not
   }
 
   /*!
@@ -173,24 +173,24 @@ catch( exception &e )
    */
   CellDocument::~CellDocument()
   {
-delete scroll_;
-delete mainLayout_;
-//delete workspace_;
-delete mainFrame_;
-delete factory_;
+    delete scroll_;
+    delete mainLayout_;
+    //delete workspace_;
+    delete mainFrame_;
+    delete factory_;
 
-// 2006-01-16 AF (update), remove all images in memory and add
-// the temporary images to removelist in the main applicaiton
-QHash<QString, QImage*>::iterator i_iter = images_.begin();
-while( i_iter != images_.end() )
-{
-  // add temporary images to removelist
-  application()->removeTempFiles( i_iter.key() );
+    // 2006-01-16 AF (update), remove all images in memory and add
+    // the temporary images to removelist in the main applicaiton
+    QHash<QString, QImage*>::iterator i_iter = images_.begin();
+    while( i_iter != images_.end() )
+    {
+      // add temporary images to removelist
+      application()->removeTempFiles( i_iter.key() );
 
-  // delete image
-  delete i_iter.value();
-  ++i_iter;
-}
+      // delete image
+      delete i_iter.value();
+      ++i_iter;
+    }
   }
 
 
@@ -207,37 +207,37 @@ while( i_iter != images_.end() )
    */
   void CellDocument::open( const QString filename, int readmode )
   {
-filename_ = filename;
+    filename_ = filename;
 
-ParserFactory *parserFactory = new CellParserFactory();
-NBParser *parser = parserFactory->createParser(filename_, factory_, this, readmode);
+    ParserFactory *parserFactory = new CellParserFactory();
+    NBParser *parser = parserFactory->createParser(filename_, factory_, this, readmode);
 
-// 2005-12-01 AF, Added try-catch
-try
-{
-  Cell *cell = parser->parse();
-  setWorkspace( cell );
-}
-catch( exception e )
-{
-  delete parserFactory;
-  delete parser;
-  throw e;
-}
+    // 2005-12-01 AF, Added try-catch
+    try
+    {
+      Cell *cell = parser->parse();
+      setWorkspace( cell );
+    }
+    catch( exception e )
+    {
+      delete parserFactory;
+      delete parser;
+      throw e;
+    }
 
 
-//Delete the parser after it is used.
-delete parserFactory;
-delete parser;
+    //Delete the parser after it is used.
+    delete parserFactory;
+    delete parser;
 
-// 2005-09-22 AF, Added this...
-open_ = true;
+    // 2005-09-22 AF, Added this...
+    open_ = true;
 
-// 2005-11-02 AF, set saved_ to true if the loaded file is .onb
-if( 0 < filename_.indexOf( ".onb", 0, Qt::CaseInsensitive ) )
-  saved_ = true;
-else
-  saved_ = false;
+    // 2005-11-02 AF, set saved_ to true if the loaded file is .onb
+    if( 0 < filename_.indexOf( ".onb", 0, Qt::CaseInsensitive ) )
+      saved_ = true;
+    else
+      saved_ = false;
   }
 
   /*!
@@ -248,8 +248,8 @@ else
    */
   void CellDocument::cursorChangeStyle(CellStyle style)
   {
-//Invoke style changes to all selected cells.
-executeCommand(new ChangeStyleOnSelectedCellsCommand(style));
+    //Invoke style changes to all selected cells.
+    executeCommand(new ChangeStyleOnSelectedCellsCommand(style));
   }
 
   /*!
@@ -274,35 +274,35 @@ executeCommand(new ChangeStyleOnSelectedCellsCommand(style));
    */
   void CellDocument::setWorkspace(Cell *newWorkspace)
   {
-scroll_ = new QScrollArea( mainFrame_ );
-scroll_->setWidgetResizable( true );
-scroll_->setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
-scroll_->setVerticalScrollBarPolicy( Qt::ScrollBarAsNeeded );
+    scroll_ = new QScrollArea( mainFrame_ );
+    scroll_->setWidgetResizable( true );
+    scroll_->setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
+    scroll_->setVerticalScrollBarPolicy( Qt::ScrollBarAsNeeded );
 
-mainLayout_->addWidget(scroll_, 1, 1);
+    mainLayout_->addWidget(scroll_, 1, 1);
 
-workspace_ = newWorkspace;
+    workspace_ = newWorkspace;
 
-// PORT >> workspace_->reparent(scroll_->viewport(), QPoint(0,0), true);
-//workspace_->setParent( scroll_->viewport() );
-//workspace_->move( QPoint(0,0) );
-//workspace_->show();
+    // PORT >> workspace_->reparent(scroll_->viewport(), QPoint(0,0), true);
+    //workspace_->setParent( scroll_->viewport() );
+    //workspace_->move( QPoint(0,0) );
+    //workspace_->show();
 
-scroll_->setWidget( workspace_ );
+    scroll_->setWidget( workspace_ );
 
-//?? Should this be done by the factory?
-current_ = dynamic_cast<CellCursor*>(factory_->createCell("cursor", workspace_));
+    //?? Should this be done by the factory?
+    current_ = dynamic_cast<CellCursor*>(factory_->createCell("cursor", workspace_));
 
 
-//Make the cursor visible at all time.
-//QObject::connect(current_, SIGNAL(positionChanged(int, int, int, int)),
-//  vp_, SLOT(ensureVisible(int, int, int, int)));
+    //Make the cursor visible at all time.
+    //QObject::connect(current_, SIGNAL(positionChanged(int, int, int, int)),
+    //  vp_, SLOT(ensureVisible(int, int, int, int)));
 
-workspace_->addChild( current_ );
+    workspace_->addChild( current_ );
 
-//To hide the outhermost treeview.
-workspace_->hideTreeView( true );
-workspace_->show();
+    //To hide the outhermost treeview.
+    workspace_->hideTreeView( true );
+    workspace_->show();
   }
 
   /*!
@@ -310,8 +310,8 @@ workspace_->show();
    */
   void CellDocument::cursorStepUp()
   {
-executeCommand(new CursorMoveUpCommand());
-emit cursorChanged();
+    executeCommand(new CursorMoveUpCommand());
+    emit cursorChanged();
   }
 
   /*!
@@ -319,8 +319,8 @@ emit cursorChanged();
    */
   void CellDocument::cursorStepDown()
   {
-executeCommand(new CursorMoveDownCommand());
-emit cursorChanged();
+    executeCommand(new CursorMoveDownCommand());
+    emit cursorChanged();
   }
 
   /*!
@@ -331,16 +331,16 @@ emit cursorChanged();
    */
   void CellDocument::cursorAddCell()
   {
-try
-{
-  executeCommand(new AddCellCommand());
-  open_ = true;
-  emit cursorChanged();
-}
-catch( exception &e )
-{
-  throw e;
-}
+    try
+    {
+      executeCommand(new AddCellCommand());
+      open_ = true;
+      emit cursorChanged();
+    }
+    catch( exception &e )
+    {
+      throw e;
+    }
   }
 
   /*!
@@ -351,15 +351,15 @@ catch( exception &e )
    */
   void CellDocument::cursorUngroupCell()
   {
-try
-{
-  executeCommand( new UngroupCellCommand() );
-  emit cursorChanged();
-}
-catch( exception &e )
-{
-  throw e;
-}
+    try
+    {
+      executeCommand( new UngroupCellCommand() );
+      emit cursorChanged();
+    }
+    catch( exception &e )
+    {
+      throw e;
+    }
   }
 
   /*!
@@ -370,15 +370,15 @@ catch( exception &e )
    */
   void CellDocument::cursorSplitCell()
   {
-try
-{
-  executeCommand( new SplitCellCommand() );
-  emit cursorChanged();
-}
-catch( exception &e )
-{
-  throw e;
-}
+    try
+    {
+      executeCommand( new SplitCellCommand() );
+      emit cursorChanged();
+    }
+    catch( exception &e )
+    {
+      throw e;
+    }
   }
 
   /*!
@@ -386,12 +386,12 @@ catch( exception &e )
    */
   void CellDocument::cursorDeleteCell()
   {
-executeCommand(new DeleteSelectedCellsCommand());
-qDebug("cursorDeleteCell");
+    executeCommand(new DeleteSelectedCellsCommand());
+    qDebug("cursorDeleteCell");
 
-//emit cursorChanged(); //This causes an untracable segfault.
+    //emit cursorChanged(); //This causes an untracable segfault.
 
-qDebug("Finished");
+    qDebug("Finished");
   }
 
   /*!
@@ -401,7 +401,7 @@ qDebug("Finished");
    */
   void CellDocument::cursorCutCell()
   {
-executeCommand(new DeleteCurrentCellCommand());
+    executeCommand(new DeleteCurrentCellCommand());
   }
 
   /*!
@@ -409,7 +409,7 @@ executeCommand(new DeleteCurrentCellCommand());
    */
   void CellDocument::cursorCopyCell()
   {
-executeCommand(new CopySelectedCellsCommand());
+    executeCommand(new CopySelectedCellsCommand());
   }
 
   /*!
@@ -417,7 +417,7 @@ executeCommand(new CopySelectedCellsCommand());
    */
   void CellDocument::cursorPasteCell()
   {
-executeCommand(new PasteCellsCommand());
+    executeCommand(new PasteCellsCommand());
   }
 
   /*!
@@ -425,17 +425,17 @@ executeCommand(new PasteCellsCommand());
    */
   void CellDocument::cursorMoveAfter(Cell *aCell, const bool open)
   {
-//if(!open)
-executeCommand(new CursorMoveAfterCommand(aCell));
-// else
-//   {
-//if(aCell->hasChilds())
-//   executeCommand(new CursorMoveAfterCommand(aCell->child()));
-//else
-//   executeCommand(new CursorMoveAfterCommand(aCell));
-//   }
+    //if(!open)
+    executeCommand(new CursorMoveAfterCommand(aCell));
+    // else
+    //       {
+    //    if(aCell->hasChilds())
+    //       executeCommand(new CursorMoveAfterCommand(aCell->child()));
+    //    else
+    //       executeCommand(new CursorMoveAfterCommand(aCell));
+    //       }
 
-emit cursorChanged();
+    emit cursorChanged();
   }
 
   /*!
@@ -446,7 +446,7 @@ emit cursorChanged();
    */
   void CellDocument::textcursorCutText()
   {
-executeCommand( new TextCursorCutText() );
+    executeCommand( new TextCursorCutText() );
   }
 
   /*!
@@ -457,7 +457,7 @@ executeCommand( new TextCursorCutText() );
    */
   void CellDocument::textcursorCopyText()
   {
-executeCommand( new TextCursorCopyText() );
+    executeCommand( new TextCursorCopyText() );
   }
 
   /*!
@@ -468,7 +468,7 @@ executeCommand( new TextCursorCopyText() );
    */
   void CellDocument::textcursorPasteText()
   {
-executeCommand( new TextCursorPasteText() );
+    executeCommand( new TextCursorPasteText() );
   }
 
   /*!
@@ -482,7 +482,7 @@ executeCommand( new TextCursorPasteText() );
    */
   void CellDocument::textcursorChangeFontFamily(QString family)
   {
-executeCommand( new TextCursorChangeFontFamily(family) );
+    executeCommand( new TextCursorChangeFontFamily(family) );
   }
 
   /*!
@@ -496,7 +496,7 @@ executeCommand( new TextCursorChangeFontFamily(family) );
    */
   void CellDocument::textcursorChangeFontFace(int face)
   {
-executeCommand( new TextCursorChangeFontFace(face) );
+    executeCommand( new TextCursorChangeFontFace(face) );
   }
 
   /*!
@@ -510,7 +510,7 @@ executeCommand( new TextCursorChangeFontFace(face) );
    */
   void CellDocument::textcursorChangeFontSize(int size)
   {
-executeCommand( new TextCursorChangeFontSize(size) );
+    executeCommand( new TextCursorChangeFontSize(size) );
   }
 
   /*!
@@ -524,7 +524,7 @@ executeCommand( new TextCursorChangeFontSize(size) );
    */
   void CellDocument::textcursorChangeFontStretch(int stretch)
   {
-executeCommand( new TextCursorChangeFontStretch(stretch) );
+    executeCommand( new TextCursorChangeFontStretch(stretch) );
   }
 
   /*!
@@ -538,7 +538,7 @@ executeCommand( new TextCursorChangeFontStretch(stretch) );
    */
   void CellDocument::textcursorChangeFontColor(QColor color)
   {
-executeCommand( new TextCursorChangeFontColor(color) );
+    executeCommand( new TextCursorChangeFontColor(color) );
   }
 
   /*!
@@ -551,7 +551,7 @@ executeCommand( new TextCursorChangeFontColor(color) );
    */
   void CellDocument::textcursorChangeTextAlignment(int alignment)
   {
-executeCommand( new TextCursorChangeTextAlignment(alignment) );
+    executeCommand( new TextCursorChangeTextAlignment(alignment) );
   }
 
   /*!
@@ -565,7 +565,7 @@ executeCommand( new TextCursorChangeTextAlignment(alignment) );
    */
   void CellDocument::textcursorChangeVerticalAlignment(int alignment)
   {
-executeCommand( new TextCursorChangeVerticalAlignment(alignment) );
+    executeCommand( new TextCursorChangeVerticalAlignment(alignment) );
   }
 
   /*!
@@ -578,7 +578,7 @@ executeCommand( new TextCursorChangeVerticalAlignment(alignment) );
    */
   void CellDocument::textcursorChangeMargin(int margin)
   {
-executeCommand( new TextCursorChangeMargin(margin) );
+    executeCommand( new TextCursorChangeMargin(margin) );
   }
 
   /*!
@@ -591,7 +591,7 @@ executeCommand( new TextCursorChangeMargin(margin) );
    */
   void CellDocument::textcursorChangePadding(int padding)
   {
-executeCommand( new TextCursorChangePadding(padding) );
+    executeCommand( new TextCursorChangePadding(padding) );
   }
 
   /*!
@@ -604,7 +604,7 @@ executeCommand( new TextCursorChangePadding(padding) );
    */
   void CellDocument::textcursorChangeBorder(int border)
   {
-executeCommand( new TextCursorChangeBorder(border) );
+    executeCommand( new TextCursorChangeBorder(border) );
   }
 
   /*!
@@ -617,7 +617,7 @@ executeCommand( new TextCursorChangeBorder(border) );
    */
   void CellDocument::textcursorInsertImage(QString filepath, QSize size)
   {
-executeCommand( new TextCursorInsertImage(filepath, size) );
+    executeCommand( new TextCursorInsertImage(filepath, size) );
   }
 
   /*!
@@ -640,37 +640,37 @@ executeCommand( new TextCursorInsertImage(filepath, size) );
    */
   QString CellDocument::addImage(QImage *image)
   {
-// first find a correct temp filename
-QDir dir;
+    // first find a correct temp filename
+    QDir dir;
 
-// 2006-02-13 AF, store images in temp dir
-dir.setPath( dir.absolutePath() + "/OMNotebook_tempfiles" );
+    // 2006-02-13 AF, store images in temp dir
+    dir.setPath( dir.absolutePath() + "/OMNotebook_tempfiles" );
 
-QString name;
-while( true )
-{
-  currentImageNo_++;
-  name.setNum( currentImageNo_ );
-  name += ".png";
-  if( !dir.exists( name ))
-break;
-}
+    QString name;
+    while( true )
+    {
+      currentImageNo_++;
+      name.setNum( currentImageNo_ );
+      name += ".png";
+      if( !dir.exists( name ))
+        break;
+    }
 
-name = dir.absolutePath() + "/" + name;
+    name = dir.absolutePath() + "/" + name;
 
-// save the image temporary to the harddrive
-QImageWriter writer( name, "png" );
-writer.setDescription( "Temporary OMNotebook image" );
-writer.setQuality( 100 );
-writer.write( *image );
+    // save the image temporary to the harddrive
+    QImageWriter writer( name, "png" );
+    writer.setDescription( "Temporary OMNotebook image" );
+    writer.setQuality( 100 );
+    writer.write( *image );
 
-images_[ name ] = image;
+    images_[ name ] = image;
 
-// 2005-12-12 AF, Add file:/// to filename
-name = QString("file:///") + name;
+    // 2005-12-12 AF, Add file:/// to filename
+    name = QString("file:///") + name;
 
-// return the imagename
-return name;
+    // return the imagename
+    return name;
   }
 
   /*!
@@ -687,19 +687,19 @@ return name;
    */
   QImage *CellDocument::getImage(QString name)
   {
-name.remove( "file:///" );
+    name.remove( "file:///" );
 
-QImage *image;
+    QImage *image;
 
-if( images_.contains( name ))
-  image = images_[name];
-else
-{
-  cout << "Could not find image: " << name.toStdString() << endl;
-  image = new QImage();
-}
+    if( images_.contains( name ))
+      image = images_[name];
+    else
+    {
+      cout << "Could not find image: " << name.toStdString() << endl;
+      image = new QImage();
+    }
 
-return image;
+    return image;
   }
 
   /*!
@@ -712,7 +712,7 @@ return image;
    */
   void CellDocument::textcursorInsertLink( QString filepath, QTextCursor& cursor )
   {
-executeCommand( new TextCursorInsertLink( filepath, cursor ));
+    executeCommand( new TextCursorInsertLink( filepath, cursor ));
   }
 
   /*!
@@ -720,7 +720,7 @@ executeCommand( new TextCursorInsertLink( filepath, cursor ));
    */
   bool CellDocument::hasChanged() const
   {
-return changed_;
+    return changed_;
   }
 
   /*!
@@ -728,7 +728,7 @@ return changed_;
    */
   bool CellDocument::isOpen() const
   {
-return open_;
+    return open_;
   }
 
   /*!
@@ -736,7 +736,7 @@ return open_;
    */
   bool CellDocument::isSaved() const
   {
-return saved_;
+    return saved_;
   }
 
   /*!
@@ -747,28 +747,28 @@ return saved_;
    */
   bool CellDocument::isEmpty() const
   {
-bool empty( false );
-if( workspace_ )
-{
-  if( workspace_->hasChilds() )
-  {
-Cell* cell = workspace_->child();
-if( cell )
-{
-  if( !cell->hasNext() )
-if( typeid( (*cell) ) == typeid( CellCursor ))
-  empty = true;
-}
-else
-  empty = true;
-  }
-  else
-empty = true;
-}
-else
-  empty = true;
+    bool empty( false );
+    if( workspace_ )
+    {
+      if( workspace_->hasChilds() )
+      {
+        Cell* cell = workspace_->child();
+        if( cell )
+        {
+          if( !cell->hasNext() )
+            if( typeid( (*cell) ) == typeid( CellCursor ))
+              empty = true;
+        }
+        else
+          empty = true;
+      }
+      else
+        empty = true;
+    }
+    else
+      empty = true;
 
-return empty;
+    return empty;
   }
 
   /*!
@@ -787,107 +787,107 @@ return empty;
    */
   void CellDocument::updateScrollArea()
   {
-if( scroll_->verticalScrollBar()->isVisible() )
-{
-  CellCursor *cursor = getCursor();
-  if( cursor )
-  {
-// ignore, if selected cell is a groupcell
-if( typeid( *cursor->currentCell() ) != typeid( CellGroup ) )
-{
-  // calculate the position of the cursor, by adding the height
-  // of all the cells before the cellcursor, using a visitor
-  CursorPosVisitor visitor;
-  runVisitor( visitor );
-  int pos = visitor.position();
+    if( scroll_->verticalScrollBar()->isVisible() )
+    {
+      CellCursor *cursor = getCursor();
+      if( cursor )
+      {
+        // ignore, if selected cell is a groupcell
+        if( typeid( *cursor->currentCell() ) != typeid( CellGroup ) )
+        {
+          // calculate the position of the cursor, by adding the height
+          // of all the cells before the cellcursor, using a visitor
+          CursorPosVisitor visitor;
+          runVisitor( visitor );
+          int pos = visitor.position();
 
-  // size of scrollarea
-  int scrollTop = scroll_->widget()->visibleRegion().boundingRect().top();
-  int scrollBottom = scroll_->widget()->visibleRegion().boundingRect().bottom();
+          // size of scrollarea
+          int scrollTop = scroll_->widget()->visibleRegion().boundingRect().top();
+          int scrollBottom = scroll_->widget()->visibleRegion().boundingRect().bottom();
 
-  // cell height
-  int height = cursor->currentCell()->height();
+          // cell height
+          int height = cursor->currentCell()->height();
 
 #ifndef QT_NO_DEBUG_OUTPUT
 
-  cout << "*********************************************" << endl;
-  cout << "SCROLL TOP: " << scrollTop << endl;
-  cout << "SCROLL BOTTOM: " << scrollBottom << endl;
-  cout << "CELL CURSOR: " << pos << endl;
-  cout << "CELL HEIGHT: " << height << endl;
+          cout << "*********************************************" << endl;
+          cout << "SCROLL TOP: " << scrollTop << endl;
+          cout << "SCROLL BOTTOM: " << scrollBottom << endl;
+          cout << "CELL CURSOR: " << pos << endl;
+          cout << "CELL HEIGHT: " << height << endl;
 #endif
 
 
 
-  // TO BIG
-  if( height > (scrollBottom-scrollTop) )
-  {
-qDebug( "TO BIG" );
-// cell so big that it span over entire viewarea
-return;
-  }
-  // END OF DOCUMENT
-  else if( pos > (scroll_->widget()->height() - 2 ) &&
-scrollBottom > (scroll_->widget()->height() - 2 ) )
-  {
+          // TO BIG
+          if( height > (scrollBottom-scrollTop) )
+          {
+            qDebug( "TO BIG" );
+            // cell so big that it span over entire viewarea
+            return;
+          }
+          // END OF DOCUMENT
+          else if( pos > (scroll_->widget()->height() - 2 ) &&
+            scrollBottom > (scroll_->widget()->height() - 2 ) )
+          {
 #ifndef QT_NO_DEBUG_OUTPUT
-cout << "END OF DOCUMENT, widget height(" << scroll_->widget()->height() << ")" << endl;
+            cout << "END OF DOCUMENT, widget height(" << scroll_->widget()->height() << ")" << endl;
 #endif
-// 2006-03-03 AF, ignore if cursor at end of document
-return;
-  }
-  // UP
-  else if( (pos - height) < scrollTop )
-  {
-// cursor have moved above the viewarea of the
-// scrollbar, move up the scrollbar
+            // 2006-03-03 AF, ignore if cursor at end of document
+            return;
+          }
+          // UP
+          else if( (pos - height) < scrollTop )
+          {
+            // cursor have moved above the viewarea of the
+            // scrollbar, move up the scrollbar
 
-// remove cell height + a little extra
-pos -= (height + 10);
-if( pos < 0 )
-  pos = 0;
+            // remove cell height + a little extra
+            pos -= (height + 10);
+            if( pos < 0 )
+              pos = 0;
 
-// set new scrollvalue
-cout << "UP: old(" << scroll_->verticalScrollBar()->value() << "), new(" << pos << ")" << endl;
-scroll_->verticalScrollBar()->setValue( pos );
-  }
-  // DOWN
-  else if( pos > (scrollBottom - 10) )
-  {
-// cursor have moved below the viewarea of the
-// scrollbar, move down the scrollbar
+            // set new scrollvalue
+            cout << "UP: old(" << scroll_->verticalScrollBar()->value() << "), new(" << pos << ")" << endl;
+            scroll_->verticalScrollBar()->setValue( pos );
+          }
+          // DOWN
+          else if( pos > (scrollBottom - 10) )
+          {
+            // cursor have moved below the viewarea of the
+            // scrollbar, move down the scrollbar
 
-// add cell height + a little extra to scrollbar
-//pos = height + 20 + scroll_->verticalScrollBar()->value();
+            // add cell height + a little extra to scrollbar
+            //pos = height + 20 + scroll_->verticalScrollBar()->value();
 
-// add differens between cell cursor position och scroll bottom
-// to the scroll value
-pos = scroll_->verticalScrollBar()->value() + (pos - (scrollBottom - 10));
+            // add differens between cell cursor position och scroll bottom
+            // to the scroll value
+            pos = scroll_->verticalScrollBar()->value() + (pos - (scrollBottom - 10));
 
-if( pos >= scroll_->verticalScrollBar()->maximum() )
-{
+            if( pos >= scroll_->verticalScrollBar()->maximum() )
+            {
 #ifndef QT_NO_DEBUG_OUTPUT
-  cout << "more then max!" << endl;
+              cout << "more then max!" << endl;
 #endif
-  scroll_->verticalScrollBar()->triggerAction( QAbstractSlider::SliderToMaximum );
-  //pos = scroll_->verticalScrollBar()->maximum();
+              scroll_->verticalScrollBar()->triggerAction( QAbstractSlider::SliderToMaximum );
+              //pos = scroll_->verticalScrollBar()->maximum();
 
-  // a little extra to the max value of the scrollbar
-  //scroll_->verticalScrollBar()->setMaximum( 5 +
-  //  scroll_->verticalScrollBar()->maximum() );
-}
-else
-{
-  // set new scrollvalue
+              // a little extra to the max value of the scrollbar
+              //scroll_->verticalScrollBar()->setMaximum( 5 +
+              //  scroll_->verticalScrollBar()->maximum() );
+            }
+            else
+            {
+              // set new scrollvalue
 #ifndef QT_NO_DEBUG_OUTPUT
-  cout << "DOWN: old(" << scroll_->verticalScrollBar()->value() << "), new(" << pos << ")" << endl;
+              cout << "DOWN: old(" << scroll_->verticalScrollBar()->value() << "), new(" << pos << ")" << endl;
 #endif
-  scroll_->verticalScrollBar()->setValue( pos );
-}
-  }
-}
-  }
-}
+              scroll_->verticalScrollBar()->setValue( pos );
+            }
+          }
+        }
+      }
+    }
   }
 
   /*!
@@ -898,8 +898,8 @@ else
    */
   void CellDocument::setChanged( bool changed )
   {
-changed_ = changed;
-emit contentChanged();
+    changed_ = changed;
+    emit contentChanged();
   }
 
   /*!
@@ -908,30 +908,30 @@ emit contentChanged();
    */
   void CellDocument::hoverOverUrl( const QUrl &link )
   {
-QString filelink = link.path();
+    QString filelink = link.path();
 
-if( !link.fragment().isEmpty() )
-  filelink += QString("#") + link.fragment();
+    if( !link.fragment().isEmpty() )
+      filelink += QString("#") + link.fragment();
 
-if( !filelink.isEmpty() && !link.path().isEmpty() )
-{
-  if( filename_.isEmpty() || filename_.isEmpty() )
-  {
-// replace '\' with '/' in the link path
-filelink.replace( "\\", "/" );
+    if( !filelink.isEmpty() && !link.path().isEmpty() )
+    {
+      if( filename_.isEmpty() || filename_.isEmpty() )
+      {
+        // replace '\' with '/' in the link path
+        filelink.replace( "\\", "/" );
 
-QDir dir;
-filelink = dir.absolutePath() + "/" + filelink;
-  }
-  else
-  {
-// replace '\' with '/' in the link path
-filelink.replace( "\\", "/" );
-filelink = QFileInfo(filename_).absolutePath() + "/" + filelink;
-  }
-}
+        QDir dir;
+        filelink = dir.absolutePath() + "/" + filelink;
+      }
+      else
+      {
+        // replace '\' with '/' in the link path
+        filelink.replace( "\\", "/" );
+        filelink = QFileInfo(filename_).absolutePath() + "/" + filelink;
+      }
+    }
 
-emit hoverOverFile( filelink );
+        emit hoverOverFile( filelink );
   }
 
   /*!
@@ -939,41 +939,41 @@ emit hoverOverFile( filelink );
    */
   void CellDocument::mouseClickedOnCell(Cell *clickedCell)
   {
-// 2006-04-25, AF
-if( lastClickedCell_ == clickedCell )
-  return;
-else
-  lastClickedCell_ = clickedCell;
+    // 2006-04-25, AF
+    if( lastClickedCell_ == clickedCell )
+      return;
+    else
+      lastClickedCell_ = clickedCell;
 
 
-//Deselect all selection
-clearSelection();
+    //Deselect all selection
+    clearSelection();
 
-//Remove focus from old cell.
-if(getCursor()->currentCell()->isClosed())
-{
-  getCursor()->currentCell()->child()->setReadOnly(true);
-  getCursor()->currentCell()->child()->setFocus(false);
-}
-else
-{
-  getCursor()->currentCell()->setReadOnly(true);
-}
+    //Remove focus from old cell.
+    if(getCursor()->currentCell()->isClosed())
+    {
+      getCursor()->currentCell()->child()->setReadOnly(true);
+      getCursor()->currentCell()->child()->setFocus(false);
+    }
+    else
+    {
+      getCursor()->currentCell()->setReadOnly(true);
+    }
 
-//Add focus to the cell clicked on.
-if(clickedCell->parentCell()->isClosed())
-{
-  getCursor()->moveAfter(clickedCell->parentCell());
-}
-else
-{
-  getCursor()->moveAfter(clickedCell); //Results in bus error why?
-}
+    //Add focus to the cell clicked on.
+    if(clickedCell->parentCell()->isClosed())
+    {
+      getCursor()->moveAfter(clickedCell->parentCell());
+    }
+    else
+    {
+      getCursor()->moveAfter(clickedCell); //Results in bus error why?
+    }
 
-clickedCell->setReadOnly(false);
-clickedCell->setFocus(true);
+    clickedCell->setReadOnly(false);
+    clickedCell->setFocus(true);
 
-emit cursorChanged();
+    emit cursorChanged();
   }
 
   /*!
@@ -984,49 +984,49 @@ emit cursorChanged();
    */
   void CellDocument::mouseClickedOnCellOutput(Cell *clickedCell)
   {
-clearSelection();
+    clearSelection();
 
-//Remove focus from old cell.
-if(getCursor()->currentCell()->isClosed())
-{
-  getCursor()->currentCell()->child()->setReadOnly(true);
-  getCursor()->currentCell()->child()->setFocus(false);
-}
-else
-{
-  getCursor()->currentCell()->setReadOnly(true);
-}
+    //Remove focus from old cell.
+    if(getCursor()->currentCell()->isClosed())
+    {
+      getCursor()->currentCell()->child()->setReadOnly(true);
+      getCursor()->currentCell()->child()->setFocus(false);
+    }
+    else
+    {
+      getCursor()->currentCell()->setReadOnly(true);
+    }
 
-//Add focus to the cell clicked on.
-if(clickedCell->parentCell()->isClosed())
-{
-  getCursor()->moveAfter(clickedCell->parentCell());
-}
-else
-{
-  getCursor()->moveAfter(clickedCell); //Results in bus error why?
-}
+    //Add focus to the cell clicked on.
+    if(clickedCell->parentCell()->isClosed())
+    {
+      getCursor()->moveAfter(clickedCell->parentCell());
+    }
+    else
+    {
+      getCursor()->moveAfter(clickedCell); //Results in bus error why?
+    }
 
-if( typeid(InputCell) == typeid(*clickedCell))
-{
-  InputCell *inputcell = dynamic_cast<InputCell*>(clickedCell);
-  inputcell->setReadOnly(false);
-  inputcell->setFocusOutput(true);
-}
-else if(typeid(GraphCell) == typeid(*clickedCell))
-{
-  GraphCell *graphcell = dynamic_cast<GraphCell*>(clickedCell);
-  graphcell->setReadOnly(false);
-  graphcell->setFocusOutput(true);
-}
+    if( typeid(InputCell) == typeid(*clickedCell))
+    {
+      InputCell *inputcell = dynamic_cast<InputCell*>(clickedCell);
+      inputcell->setReadOnly(false);
+      inputcell->setFocusOutput(true);
+    }
+    else if(typeid(GraphCell) == typeid(*clickedCell))
+    {
+      GraphCell *graphcell = dynamic_cast<GraphCell*>(clickedCell);
+      graphcell->setReadOnly(false);
+      graphcell->setFocusOutput(true);
+    }
 
-else
-{
-  clickedCell->setReadOnly(false);
-  clickedCell->setFocus(true);
-}
+    else
+    {
+      clickedCell->setReadOnly(false);
+      clickedCell->setFocus(true);
+    }
 
-emit cursorChanged();
+    emit cursorChanged();
   }
 
   /*!
@@ -1041,38 +1041,38 @@ emit cursorChanged();
   void CellDocument::linkClicked(const QUrl *link)
 //  void CellDocument::anchorClicked(const QUrl *link)
   {
-// 2006-02-10 AF, check if path is empty
-fprintf(stderr, "received link: %s\n", link->toString().toStdString().c_str());
-fflush(stderr); fflush(stdout);
-if( !link->path().isEmpty() )
-{
-  // 2005-12-05 AF, check if filename exists, otherwise use work dir
-  if( filename_.isEmpty() )
-  {
-// replace '\' with '/' in the link path
-QString linkpath = link->toLocalFile();
-linkpath.replace( "\\", "/" );
+    // 2006-02-10 AF, check if path is empty
+    fprintf(stderr, "received link: %s\n", link->toString().toStdString().c_str());
+    fflush(stderr); fflush(stdout);
+    if( !link->path().isEmpty() )
+    {
+      // 2005-12-05 AF, check if filename exists, otherwise use work dir
+      if( filename_.isEmpty() )
+      {
+        // replace '\' with '/' in the link path
+        QString linkpath = link->toLocalFile();
+        linkpath.replace( "\\", "/" );
 
-QDir dir;
-executeCommand(new OpenFileCommand( dir.absolutePath() + '/' + linkpath ));
-  }
-  else
-  {
-// replace '\' with '/' in the link path
-QString linkpath = link->toLocalFile();
-linkpath.replace( "\\", "/" );
+        QDir dir;
+        executeCommand(new OpenFileCommand( dir.absolutePath() + '/' + linkpath ));
+      }
+      else
+      {
+        // replace '\' with '/' in the link path
+        QString linkpath = link->toLocalFile();
+        linkpath.replace( "\\", "/" );
 
-executeCommand(new OpenFileCommand( QFileInfo(filename_).absolutePath() + '/' + linkpath ));
-  }
-}
+        executeCommand(new OpenFileCommand( QFileInfo(filename_).absolutePath() + '/' + linkpath ));
+      }
+    }
 
 
-// 2006-02-10 AF, check if there is a link fragment
-if( !link->fragment().isEmpty() )
-{
-  //should handel internal document links in some way
+    // 2006-02-10 AF, check if there is a link fragment
+    if( !link->fragment().isEmpty() )
+    {
+      //should handel internal document links in some way
 
-}
+    }
   }
 
 
@@ -1092,20 +1092,20 @@ if( !link->fragment().isEmpty() )
   */
   bool CellDocument::eventFilter(QObject *o, QEvent *e)
   {
-if(o == workspace_)
-{
-  if(e->type() == QEvent::MouseButtonPress)
-  {
-qDebug("Clicked");
-  }
-}
+    if(o == workspace_)
+    {
+      if(e->type() == QEvent::MouseButtonPress)
+      {
+        qDebug("Clicked");
+      }
+    }
 
-return QObject::eventFilter(o,e);
+    return QObject::eventFilter(o,e);
   }
 
   CellCursor *CellDocument::getCursor()
   {
-return current_;
+    return current_;
   }
 
   /*!
@@ -1119,8 +1119,8 @@ return current_;
   */
   void CellDocument::executeCommand(Command *cmd)
   {
-cmd->setDocument(this);
-application()->commandCenter()->executeCommand(cmd);
+    cmd->setDocument(this);
+    application()->commandCenter()->executeCommand(cmd);
   }
 
   /*!
@@ -1128,7 +1128,7 @@ application()->commandCenter()->executeCommand(cmd);
   */
   Factory *CellDocument::cellFactory()
   {
-return factory_;
+    return factory_;
   }
 
   /*!
@@ -1139,22 +1139,22 @@ return factory_;
    */
   Cell* CellDocument::getMainCell()
   {
-return workspace_;
+    return workspace_;
   }
 
   QString CellDocument::getFilename()
   {
-return filename_;
+    return filename_;
   }
 
   void CellDocument::setFilename( QString filename )
   {
-filename_ = filename;
+    filename_ = filename;
   }
 
   void CellDocument::setSaved( bool saved )
   {
-saved_ = saved;
+    saved_ = saved;
   }
 
 
@@ -1163,13 +1163,13 @@ saved_ = saved;
   */
   void CellDocument::close()
   {
-//workspace_->close(true); //Close widget
-//mainLayout_->deleteLater();
-workspace_->close();
+    //workspace_->close(true); //Close widget
+    //mainLayout_->deleteLater();
+    workspace_->close();
 
-setWorkspace(factory_->createCell("cellgroup"));
-workspace_->hide();
-open_ = false;
+    setWorkspace(factory_->createCell("cellgroup"));
+    workspace_->hide();
+    open_ = false;
   }
 
   /*! \brief Toggles the main workspace treeview.
@@ -1181,14 +1181,14 @@ open_ = false;
   */
   void CellDocument::toggleMainTreeView()
   {
-workspace_->hideTreeView(!workspace_->isTreeViewVisible());
+    workspace_->hideTreeView(!workspace_->isTreeViewVisible());
   }
 
 
   //Ever used?
   void CellDocument::cursorChangedPosition()
   {
-//   emit cursorChanged();
+    //       emit cursorChanged();
   }
 
   /*!
@@ -1196,10 +1196,10 @@ workspace_->hideTreeView(!workspace_->isTreeViewVisible());
   */
   void CellDocument::setEditable(bool editable)
   {
-if(current_->hasPrevious())
-{
-  current_->previous()->setReadOnly(!editable);
-}
+    if(current_->hasPrevious())
+    {
+      current_->previous()->setReadOnly(!editable);
+    }
   }
 
   /*! \brief Runs a visitor on the cellstructure.
@@ -1210,8 +1210,8 @@ if(current_->hasPrevious())
   */
   void CellDocument::runVisitor(Visitor &v)
   {
-//For all workspace_ child! Not ws itself.
-workspace_->accept(v);
+    //For all workspace_ child! Not ws itself.
+    workspace_->accept(v);
   }
 
   ////SELECTION HANDLING/////////////////////////
@@ -1224,12 +1224,12 @@ workspace_->accept(v);
    */
   void CellDocument::addSelectedCell( Cell* cell )
   {
-if( cell )
-{
-  cell->setSelected( true );
-  selectedCells_.push_back( cell );
-	  emit copyAvailable(true);
-}
+    if( cell )
+    {
+      cell->setSelected( true );
+      selectedCells_.push_back( cell );
+      emit copyAvailable(true);
+    }
   }
 
   /*!
@@ -1240,195 +1240,196 @@ if( cell )
    */
   void CellDocument::removeSelectedCell( Cell* cell )
   {
-if( cell )
-{
-  vector<Cell*>::iterator found = std::find( selectedCells_.begin(),
-selectedCells_.end(), cell );
+    if( cell )
+    {
+      vector<Cell*>::iterator found = std::find( selectedCells_.begin(),
+        selectedCells_.end(), cell );
 
-  if( found != selectedCells_.end() )
-  {
-(*found)->setSelected( false );
-selectedCells_.erase( found );
-  }
-}
+      if( found != selectedCells_.end() )
+      {
+        (*found)->setSelected( false );
+        selectedCells_.erase( found );
+      }
+    }
   }
 
   void CellDocument::clearSelection()
   {
-vector<Cell*>::iterator i = selectedCells_.begin();
+    vector<Cell*>::iterator i = selectedCells_.begin();
 
-for(;i!= selectedCells_.end();++i)
-  (*i)->setSelected(false);
+    for(;i!= selectedCells_.end();++i)
+      (*i)->setSelected(false);
 
-selectedCells_.clear();
-	emit copyAvailable(false);
+    selectedCells_.clear();
+    emit copyAvailable(false);
   }
 
   // 2006-04-18 AF, Reimplemented the function. Also added support
   // for selecting several cells by holding SHIFT down
   void CellDocument::selectedACell( Cell *selected, Qt::KeyboardModifiers state )
   {
-if( selected )
-{
-  // if SHIFT is pressed, select all cells from last cell
-  if( state == Qt::ShiftModifier &&
-selected->isSelected() &&
-selectedCells_.size() > 0 )
-  {
-// if last selected cell and this selected cell aren't
-// int the same groupcell this funciton can't be used.
-Cell *lastCell = selectedCells_[ selectedCells_.size() - 1 ];
-if( selected->parentCell() == lastCell->parentCell() )
-{
-  // check which cell is first in list
-  int count(0);
-  int cellCount(0);
-  int lastCellCound(0);
+    if( selected )
+    {
+      // if SHIFT is pressed, select all cells from last cell
+      if( state == Qt::ShiftModifier &&
+        selected->isSelected() &&
+        selectedCells_.size() > 0 )
+      {
+        // if last selected cell and this selected cell aren't
+        // int the same groupcell this funciton can't be used.
+        Cell *lastCell = selectedCells_[ selectedCells_.size() - 1 ];
+        if( selected->parentCell() == lastCell->parentCell() )
+        {
+          // check which cell is first in list
+          int count(0);
+          int cellCount(0);
+          int lastCellCound(0);
 
-  Cell *current = selected->next();
-  while( current )
-  {
-// don't count cursor
-if( typeid(CellCursor) != typeid(*current) )
-  ++cellCount;
+          Cell *current = selected->next();
+          while( current )
+          {
+            // don't count cursor
+            if( typeid(CellCursor) != typeid(*current) )
+              ++cellCount;
 
-current = current->next();
-  }
+            current = current->next();
+          }
 
-  current = lastCell->next();
-  while( current )
-  {
-// don't count cursor
-if( typeid(CellCursor) != typeid(*current) )
-  ++lastCellCound;
+          current = lastCell->next();
+          while( current )
+          {
+            // don't count cursor
+            if( typeid(CellCursor) != typeid(*current) )
+              ++lastCellCound;
 
-current = current->next();
-  }
+            current = current->next();
+          }
 
-  // LASTCELL, last in list
-  if( cellCount > lastCellCound )
-  {
-count = ( cellCount - lastCellCound ) + 1; // also add last cell
-removeSelectedCell( lastCell );
+          // LASTCELL, last in list
+          if( cellCount > lastCellCound )
+          {
+            count = ( cellCount - lastCellCound ) + 1; // also add last cell
+            removeSelectedCell( lastCell );
 
-current = selected;
-for( int i = 0; i < count; ++i )
-{
-  // don't add cursor
-  if( typeid(CellCursor) != typeid(*current) )
-addSelectedCell( current );
-  else
-++count;
+            current = selected;
+            for( int i = 0; i < count; ++i )
+            {
+              // don't add cursor
+              if( typeid(CellCursor) != typeid(*current) )
+                addSelectedCell( current );
+              else
+                ++count;
 
-  current = current->next();
-}
-  }
-  // LASTCELL, first in list
-  else
-  {
-count = ( lastCellCound - cellCount );
+              current = current->next();
+            }
+          }
+          // LASTCELL, first in list
+          else
+          {
+            count = ( lastCellCound - cellCount );
 
-current = lastCell->next();
-for( int i = 0; i < count; ++i )
-{
-  // don't add cursor
-  if( typeid(CellCursor) != typeid(*current) )
-addSelectedCell( current );
-  else
-++count;
+            current = lastCell->next();
+            for( int i = 0; i < count; ++i )
+            {
+              // don't add cursor
+              if( typeid(CellCursor) != typeid(*current) )
+                addSelectedCell( current );
+              else
+                ++count;
 
-  current = current->next();
-}
-  }
-}
-else
-{
-  selected->setSelected( false );
-  return;
-}
-  }
-  // if CTRL is pressed, keep existing selections
-  else if( state == Qt::ControlModifier )
-  {
-if( selected->isSelected() )
-  addSelectedCell( selected );
-else
-  removeSelectedCell( selected );
-  }
-  else
-  {
-bool flag = ( selectedCells_.size() > 1 );
-clearSelection();
+              current = current->next();
+            }
+          }
+        }
+        else
+        {
+          selected->setSelected( false );
+          return;
+        }
+      }
+      // if CTRL is pressed, keep existing selections
+      else if( state == Qt::ControlModifier )
+      {
+        if( selected->isSelected() )
+          addSelectedCell( selected );
+        else
+          removeSelectedCell( selected );
+      }
+      else
+      {
+        bool flag = ( selectedCells_.size() > 1 );
+        clearSelection();
 
-if( flag || selected->isSelected() )
-  addSelectedCell( selected );
-else
-  removeSelectedCell( selected );
-  }
+        if( flag || selected->isSelected() )
+          addSelectedCell( selected );
+        else
+          removeSelectedCell( selected );
+      }
 
-  // move cell cursor to cell
-  //cursorMoveAfter( selected, false );
-}
+      // move cell cursor to cell
+      //cursorMoveAfter( selected, false );
+    }
   }
 
   vector<Cell*> CellDocument::getSelection()
   {
-return selectedCells_;
+    return selectedCells_;
   }
 
   /////OBSERVER IMPLEMENTATION//////////////
 
   void CellDocument::attach(DocumentView *d)
   {
-observers_.push_back(d);
-NotebookWindow *w = dynamic_cast<NotebookWindow*>(d);
-connect(this, SIGNAL(copyAvailable(bool)), w->copyAction, SLOT(setEnabled(bool)));
-connect(this, SIGNAL(copyAvailable(bool)), w->cutAction, SLOT(setEnabled(bool)));
-connect(this, SIGNAL(undoAvailable(bool)), w->undoAction, SLOT(setEnabled(bool)));
-connect(this, SIGNAL(redoAvailable(bool)), w->redoAction, SLOT(setEnabled(bool)));
+    observers_.push_back(d);
+    NotebookWindow *w = dynamic_cast<NotebookWindow*>(d);
+    connect(this, SIGNAL(copyAvailable(bool)), w->copyAction, SLOT(setEnabled(bool)));
+    connect(this, SIGNAL(copyAvailable(bool)), w->cutAction, SLOT(setEnabled(bool)));
+    connect(this, SIGNAL(undoAvailable(bool)), w->undoAction, SLOT(setEnabled(bool)));
+    connect(this, SIGNAL(redoAvailable(bool)), w->redoAction, SLOT(setEnabled(bool)));
 
 
   }
 
   void CellDocument::detach(DocumentView *d)
   {
-observers_t::iterator found = find(observers_.begin(),
-  observers_.end(),
-  d);
-if(found != observers_.end())
-  observers_.erase(found);
+    observers_t::iterator found = find(observers_.begin(),
+      observers_.end(),
+      d);
+    if(found != observers_.end())
+      observers_.erase(found);
   }
 
   void CellDocument::notify()
   {
-observers_t::iterator i = observers_.begin();
-for(;i != observers_.end(); ++i)
-{
-  (*i)->update();
-}
+    observers_t::iterator i = observers_.begin();
+    for(;i != observers_.end(); ++i)
+    {
+      (*i)->update();
+    }
   }
 
   ///////CURSOR METHODS///////////////////////////////
 
   QFrame *CellDocument::getState()
   {
-return mainFrame_;
+    return mainFrame_;
   }
 
 
 
   void CellDocument::showHTML(bool b)
   {
-getCursor()->currentCell()->viewExpression(b);
+    getCursor()->currentCell()->viewExpression(b);
 
   }
 
 
   void CellDocument::setAutoIndent2(bool b)
   {
-emit setAutoIndent(b);
-autoIndent = b;
+    emit setAutoIndent(b);
+    autoIndent = b;
   }
 
 
 };
+
