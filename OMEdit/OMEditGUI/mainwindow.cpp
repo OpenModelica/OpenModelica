@@ -625,11 +625,7 @@ void MainWindow::openAbout()
                         .append("Copyright ").append(dateStr + 7)
                         .append(" Link").append(QChar(246, 0)).append("ping University.\n")
                         .append("Distributed under OSMC-PL and GPL, see www.openmodelica.org.\n\n")
-                        .append("Created by Adeel Asghar and Sonia Tariq as part of their final thesis.\n\n")
-                        .append("Supervisor: Dr. Mohsen Torabzadeh-Tari\n")
-                        .append("Advisor: Mr. Martin Sj").append(QChar(246, 0)).append("lund\n")
-                        .append("Examiner: Prof. Peter Fritzson\n\n")
-                        .append("Special Thanks to Dr. Adrian Pop for helping in OMC related issues.");
+                        .append("Created by Adeel Asghar and Sonia Tariq as part of their final thesis.");
 
     QMessageBox::about(this, QString("About ").append(Helper::applicationName), aboutText);
 }
