@@ -595,6 +595,8 @@ algorithm
     local
       tuple<Integer,DAE.ExpType,Integer> tpl;
       list<list<DAE.Pattern>> patternMatrix;
+      list<Option<list<DAE.Pattern>>> optPatternMatrix;
+      Integer numNonEmptyColumns;
       String str;
       DAE.ExpType ty;
     case (Absyn.MATCHCONTINUE(),_,_) then DAE.MATCHCONTINUE();
@@ -602,7 +604,8 @@ algorithm
       equation
         true = listLength(cases) > 2;
         patternMatrix = Util.transposeList(Util.listMap(cases,getCasePatterns));
-        tpl = findPatternToConvertToSwitch(patternMatrix,0,listLength(patternMatrix),info);
+        (optPatternMatrix,numNonEmptyColumns) = removeWildPatternColumnsFromMatrix(patternMatrix,{},0);
+        tpl = findPatternToConvertToSwitch(optPatternMatrix,0,numNonEmptyColumns,info);
         (_,ty,_) = tpl;
         str = ExpressionDump.typeString(ty);
         Error.assertionOrAddSourceMessage(not RTOpts.debugFlag("patternmAllInfo"),Error.MATCH_TO_SWITCH_OPTIMIZATION, {str}, info);
@@ -611,8 +614,31 @@ algorithm
   end matchcontinue;
 end optimizeMatchToSwitch;
 
-protected function findPatternToConvertToSwitch
+protected function removeWildPatternColumnsFromMatrix
   input list<list<DAE.Pattern>> patternMatrix;
+  input list<Option<list<DAE.Pattern>>> acc;
+  input Integer numAcc;
+  output list<Option<list<DAE.Pattern>>> optPatternMatrix;
+  output Integer numNonEmptyColumns;
+algorithm
+  (optPatternMatrix,numNonEmptyColumns) := matchcontinue (patternMatrix,acc,numAcc)
+    local
+      Boolean alwaysMatch;
+      list<DAE.Pattern> pats;
+      Option<list<DAE.Pattern>> optPats;
+    case ({},acc,numAcc) then (listReverse(acc),numAcc);
+    case (pats::patternMatrix,acc,numAcc)
+      equation
+        alwaysMatch = allPatternsAlwaysMatch(Util.listStripLast(pats));
+        optPats = Util.if_(alwaysMatch,NONE(),SOME(pats));
+        numAcc = Util.if_(alwaysMatch,numAcc,numAcc+1);
+        (acc,numAcc) = removeWildPatternColumnsFromMatrix(patternMatrix,optPats::acc,numAcc);
+      then (acc,numAcc);
+  end matchcontinue;
+end removeWildPatternColumnsFromMatrix;
+
+protected function findPatternToConvertToSwitch
+  input list<Option<list<DAE.Pattern>>> patternMatrix;
   input Integer index;
   input Integer numPatternsInMatrix "If there is only 1 pattern, we can optimize the default case";
   input Absyn.Info info;
@@ -624,7 +650,7 @@ algorithm
       String str;
       DAE.ExpType ty;
       Integer extraarg;
-    case (pats::patternMatrix,index,numPatternsInMatrix,info)
+    case (SOME(pats)::patternMatrix,index,numPatternsInMatrix,info)
       equation
         (ty,extraarg) = findPatternToConvertToSwitch2(pats, {}, DAE.ET_OTHER(), numPatternsInMatrix);
       then ((index,ty,extraarg));
@@ -1767,6 +1793,22 @@ algorithm
     else false;
   end match;
 end allPatternsWild;
+
+protected function allPatternsAlwaysMatch
+  "Returns true if all patterns in the list are wildcards or as-bindings"
+  input list<DAE.Pattern> pats;
+  output Boolean b;
+algorithm
+  b := match pats
+    local
+      DAE.Pattern pat;
+    case {} then true;
+    case DAE.PAT_WILD()::pats then allPatternsAlwaysMatch(pats);
+    case DAE.PAT_AS(pat=pat)::pats then allPatternsAlwaysMatch(pat::pats);
+    case DAE.PAT_AS_FUNC_PTR(pat=pat)::pats then allPatternsAlwaysMatch(pat::pats);
+    else false;
+  end match;
+end allPatternsAlwaysMatch;
 
 protected function getCasePatterns
 "Accessor function for DAE.Case"
