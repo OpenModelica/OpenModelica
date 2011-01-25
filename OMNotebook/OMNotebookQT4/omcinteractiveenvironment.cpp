@@ -233,7 +233,11 @@ namespace IAEX
         flag = true;
       else
         flag = false;
+#ifdef _MSC_VER
+      _sleep(1);
+#else
       sleep(1);
+#endif
 
     }
     catch( exception &e )
