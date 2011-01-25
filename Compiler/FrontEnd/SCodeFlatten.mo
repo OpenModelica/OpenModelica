@@ -693,7 +693,7 @@ algorithm
     case (_, _)
       equation
         print("lookupComponentRef failed for " +&
-        Absyn.printComponentRefStr(inCref) +& "\n");
+        Absyn.printComponentRefStr(inCref) +& " in " +& getEnvName(inEnv) +& "\n");
         // First look up all subscripts, because all subscripts should be found
         // in the enclosing scope of the component reference.
         cref = lookupComponentRefSubs(inCref, inEnv);
@@ -1317,6 +1317,7 @@ algorithm
   outElement := matchcontinue(inElement, inEnv)
     local
       SCode.Ident name, name2;
+      Absyn.Ident id;
       Boolean fp, rp, pp, ep;
       Option<Absyn.ConstrainClass> cc;
       Option<Absyn.ArrayDim> ad;
@@ -1371,18 +1372,12 @@ algorithm
   outPath := matchcontinue(inPath, inEnv)
     local
       Absyn.Path path;
+      Absyn.Ident id;
 
     case (_, _)
       equation
-        path = Absyn.pathPrefix(inPath);
-        true = Absyn.pathEqual(path, getEnvPath(inEnv));
-      then
-        inPath;
-
-    case (_, _)
-      equation
-        path = getEnvPath(inEnv);
-        path = Absyn.joinPaths(path, inPath);
+        id = Absyn.pathLastIdent(inPath);
+        path = Absyn.joinPaths(getEnvPath(inEnv), Absyn.IDENT(id));
       then
         path;
 
