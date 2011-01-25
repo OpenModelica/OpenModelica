@@ -618,5 +618,23 @@ function getClassesInModelicaPath
 external "builtin";
 end getClassesInModelicaPath;
 
+function strictRMLCheck
+  output String message "empty if there was no problem";
+external "builtin";
+end strictRMLCheck;
+
+/* These don't influence anything...
+function getClassNamesForSimulation
+  output String classNamesForSimulation;
+external "builtin";
+end getClassNamesForSimulation;
+
+function setClassNamesForSimulation
+  input String classNamesForSimulation;
+  output Boolean success;
+external "builtin";
+end setClassNamesForSimulation;
+*/
+
 end Scripting;
 end OpenModelica;

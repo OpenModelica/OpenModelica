@@ -82,6 +82,7 @@ protected import ExpressionDump;
 protected import Inst;
 protected import InnerOuter;
 protected import Lookup;
+protected import MetaUtil;
 protected import ModUtil;
 protected import OptManager;
 protected import Prefix;
@@ -899,6 +900,19 @@ algorithm
         (cache,Values.BOOL(true),st);
         
     case (cache,env,
+        DAE.CALL(path = Absyn.IDENT(name = "getTempDirectoryPath"),expLst = {}),
+        (st as Interactive.SYMBOLTABLE(
+          ast = p,
+          explodedAst = sp,
+          instClsLst = ic,
+          lstVarVal = iv,
+          compiledFunctions = cf)),msg)
+      equation
+        res = Settings.getTempDirectoryPath();
+      then
+        (cache,Values.STRING(res),st);
+        
+    case (cache,env,
         DAE.CALL(
           path = Absyn.IDENT(name = "setInstallationDirectoryPath"),
           expLst = {DAE.SCONST(string = cmd)}),
@@ -913,19 +927,6 @@ algorithm
         Settings.setInstallationDirectoryPath(cmd);
       then
         (cache,Values.BOOL(true),st);
-        
-    case (cache,env,
-        DAE.CALL(path = Absyn.IDENT(name = "getTempDirectoryPath"),expLst = {}),
-        (st as Interactive.SYMBOLTABLE(
-          ast = p,
-          explodedAst = sp,
-          instClsLst = ic,
-          lstVarVal = iv,
-          compiledFunctions = cf)),msg)
-      equation
-        res = Settings.getTempDirectoryPath();
-      then
-        (cache,Values.STRING(res),st);
         
     case (cache,env,
         DAE.CALL(path = Absyn.IDENT(name = "getInstallationDirectoryPath"),expLst = {}),
@@ -2419,6 +2420,14 @@ algorithm
         setEcho(bval);
       then
         (cache,v,st);
+    case (cache,env,DAE.CALL(path = Absyn.IDENT("strictRMLCheck"),expLst = {}),st as Interactive.SYMBOLTABLE(ast = p),msg)
+      equation
+        _ = Util.listMap1r(Util.listMap(Interactive.getFunctionsInProgram(p), SCodeUtil.translateClass), MetaUtil.strictRMLCheck, true);
+        str = Error.printMessagesStr();
+        v = Values.STRING(str);
+      then
+        (cache,v,st);
+
     case (cache,env,(exp as
         DAE.CALL(
           path = Absyn.IDENT(name = "dumpXMLDAE"),

@@ -1954,20 +1954,6 @@ algorithm
 
     case (istmts, st as SYMBOLTABLE(ast = p))
       equation
-        // Check all functions for some stuff RML doesn't
-        // In an API call so we easily can test it
-        matchApiFunction(istmts, "strictRMLCheck");
-        {} = getApiFunctionArgs(istmts);
-        aclasses = getFunctionsInProgram(p);
-        _ = Util.listMap1r(Util.listMap(aclasses, SCodeUtil.translateClass), MetaUtil.strictRMLCheck, true);
-        resstr = Error.printMessagesStr();
-        resstr = stringAppend("\"", resstr);
-        resstr = stringAppend(resstr, "\"");
-      then
-        (resstr,st);
-
-    case (istmts, st as SYMBOLTABLE(ast = p))
-      equation
         matchApiFunction(istmts, "deleteClass");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         (resstr,newp) = deleteClass(cr, p);
@@ -2415,22 +2401,6 @@ algorithm
       equation
         matchApiFunction(istmts, "getClassNames");
       then ("{}",st);
-
-    case (istmts, st)
-      equation
-        matchApiFunction(istmts, "getClassNamesForSimulation");
-        {} = getApiFunctionArgs(istmts);
-        resstr = System.getClassnamesForSimulation();
-      then
-        (resstr,st);
-
-    case (istmts, st)
-      equation
-        matchApiFunction(istmts, "setClassNamesForSimulation");
-        {Absyn.STRING(value = str)} = getApiFunctionArgs(istmts);
-        System.setClassnamesForSimulation(str);
-      then
-        ("true",st);
 
     case (istmts, st as SYMBOLTABLE(ast = p))
       equation
@@ -19190,7 +19160,7 @@ algorithm
   end match;
 end getSymbolTableAST;
 
-protected function getFunctionsInProgram
+public function getFunctionsInProgram
   input Absyn.Program prog;
   output list<Absyn.Class> funcs;
   list<Absyn.Class> classes;
