@@ -49,7 +49,7 @@
 // QT includes
 #include <QtGui/QApplication>
 #include <QtGui/QMessageBox>
-#include <QtCore>
+#include <Qt/QtCore>
 
 
 using namespace std;
