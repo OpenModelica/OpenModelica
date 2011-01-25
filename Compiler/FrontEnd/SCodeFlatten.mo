@@ -67,6 +67,7 @@ end Extends;
 protected uniontype ExtendsTable
   record EXTENDS_TABLE
     list<Extends> baseClasses;
+    list<SCode.Class> classExtends;
   end EXTENDS_TABLE;
 end ExtendsTable;
 
@@ -120,6 +121,7 @@ algorithm
   env := newEnvironment(NONE());
   env := buildInitialEnv();
   env := extendEnvWithClasses(inProgram, env);
+  env := insertClassExtendsIntoEnv(env);
   outProgram := flattenProgram(inProgram, env);
 end flatten;
 
@@ -167,8 +169,6 @@ algorithm
 
     case (SCode.PARTS(el, neql, ieql, nal, ial, extdecl, annl, cmt), env)
       equation
-        env = Util.listFold(el, extendEnvWithClassExtends, env);
-
         // Lookup elements.
         el = Util.listMap1(el, lookupElement, env);
 
@@ -261,7 +261,7 @@ protected function lookupTypeSpec
   output Absyn.TypeSpec outTypeSpec;
   output Env outTypeEnv;
 algorithm
-  (outItem, outTypeSpec, outTypeEnv) := matchcontinue(inTypeSpec, inEnv)
+  (outItem, outTypeSpec, outTypeEnv) := match(inTypeSpec, inEnv)
     local
       Absyn.Path path;
       Absyn.Ident name;
@@ -275,7 +275,7 @@ algorithm
       then
         (item, Absyn.TPATH(path, array_dim), env);
 
-  end matchcontinue;
+  end match;
 end lookupTypeSpec;
 
 protected function lookupExtends
@@ -879,7 +879,7 @@ algorithm
       equation
         item = avlTreeGet(cls_and_vars, inName);
       then
-      (SOME(item), SOME(Absyn.IDENT(inName)), SOME(inEnv));
+        (SOME(item), SOME(Absyn.IDENT(inName)), SOME(inEnv));
 
     // Look among the inherited components.
     case (_, _)
@@ -1412,6 +1412,13 @@ algorithm
       then
         env;
 
+    case (_, _)
+      equation
+        print("Not a class def: " +& SCode.printElementStr(inRedeclare) +&
+            "\n");
+      then
+        inEnv;
+
     else then inEnv;
   end match;
 end replaceRedeclaredClassInEnv;
@@ -1430,11 +1437,15 @@ protected function replaceClassInEnv
 protected
   Env env;
   Boolean next_scope_available;
+  Frame f;
 algorithm
   // Reverse the frame order so that the frames are in the same order as the path.
   env := listReverse(inEnv);
-  env := replaceClassInEnv2(inPath, inClass, env);
-  outEnv := listReverse(env);
+  // Make the redeclare in both the current environment and the global.
+  // TODO: do this in a better way.
+  f :: env := replaceClassInEnv2(inPath, inClass, env);
+  {f} := replaceClassInEnv2(inPath, inClass, {f});
+  outEnv := listReverse(f :: env);
 end replaceClassInEnv;
 
 protected function checkNextScopeAvailability
@@ -1720,7 +1731,7 @@ end newImportTable;
 protected function newExtendsTable
   output ExtendsTable outExtends;
 algorithm
-  outExtends := EXTENDS_TABLE({});
+  outExtends := EXTENDS_TABLE({}, {});
 end newExtendsTable;
 
 protected function extendEnvWithClasses
@@ -1743,10 +1754,8 @@ algorithm
       SCode.ClassDef cdef;
       Absyn.Path cls_path;
 
-    // Class extends are handled in lookupClassDefNames, and should not be added
-    // to the environment here.
     case (SCode.CLASS(classDef = SCode.CLASS_EXTENDS(baseClassName = _)), _)
-      then inEnv;
+      then addClassExtendsToEnvExtendsTable(inClass, inEnv);
 
     case (SCode.CLASS(name = cls_name, classDef = cdef), _)
       equation
@@ -1855,22 +1864,50 @@ protected function extendEnvWithExtends
   input Env inEnv;
   output Env outEnv;
 protected
-  Option<String> name;
-  FrameType ty;
-  AvlTree tree;
-  ImportTable imps;
-  list<Extends> exts;
-  Env rest_env;
   Absyn.Path bc;
   SCode.Mod mods;
   list<SCode.Element> redecls;
 algorithm
   SCode.EXTENDS(baseClassPath = bc, modifications = mods) := inExtends;
   redecls := extractRedeclaresFromModifier(mods);
-  FRAME(name, ty, tree, EXTENDS_TABLE(exts), imps) :: rest_env := inEnv;
-  exts := EXTENDS(bc, redecls) :: exts;
-  outEnv := FRAME(name, ty, tree, EXTENDS_TABLE(exts), imps) :: rest_env;
+  outEnv := addExtendsToEnvExtendsTable(EXTENDS(bc, redecls), inEnv);
 end extendEnvWithExtends;
+
+protected function addExtendsToEnvExtendsTable
+  input Extends inExtends;
+  input Env inEnv;
+  output Env outEnv;
+protected
+  Option<String> name;
+  FrameType ty;
+  AvlTree tree;
+  ImportTable imps;
+  list<Extends> exts;
+  list<SCode.Class> ce;
+  Env rest_env;
+algorithm
+  FRAME(name, ty, tree, EXTENDS_TABLE(exts, ce), imps) :: rest_env := inEnv;
+  exts := inExtends :: exts;
+  outEnv := FRAME(name, ty, tree, EXTENDS_TABLE(exts, ce), imps) :: rest_env;
+end addExtendsToEnvExtendsTable;
+
+protected function addClassExtendsToEnvExtendsTable
+  input SCode.Class inClassExtends;
+  input Env inEnv;
+  output Env outEnv;
+protected
+  Option<String> name;
+  FrameType ty;
+  AvlTree tree;
+  ImportTable imps;
+  list<Extends> exts;
+  list<SCode.Class> ce;
+  Env rest_env;
+algorithm
+  FRAME(name, ty, tree, EXTENDS_TABLE(exts, ce), imps) :: rest_env := inEnv;
+  ce := inClassExtends :: ce;
+  outEnv := FRAME(name, ty, tree, EXTENDS_TABLE(exts, ce), imps) :: rest_env;
+end addClassExtendsToEnvExtendsTable;
 
 protected function extendEnvWithClassComponents
   input String inClassName;
@@ -1921,12 +1958,18 @@ algorithm
 
     case (SCode.COMPONENT(component = _), _)
       equation
+        //print("Extending environment with component " +&
+        //    getEnvName(inEnv) +& "." +&
+        //    SCode.elementName(inElement) +& "\n");
         env = extendEnvWithVar(inElement, inEnv);
       then
         env;
 
     case (SCode.CLASSDEF(classDef = _), _)
       equation
+        //print("Extending environment with class def " +&
+        //    getEnvName(inEnv) +& "." +&
+        //    SCode.elementName(inElement) +& "\n");
         env = extendEnvWithClassDef(inElement, inEnv);
       then
         env;
@@ -2073,8 +2116,65 @@ algorithm
   outEnv := extendEnvWithElement(iter, inEnv);
 end extendEnvWithIterator;
 
+protected function insertClassExtendsIntoEnv
+  input Env inEnv;
+  output Env outEnv;
+protected
+  Env env, rest_env;
+  Option<String> name;
+  FrameType ty;
+  AvlTree tree;
+  list<Extends> bcl;
+  list<SCode.Class> ce;
+  ImportTable imps;
+algorithm
+  FRAME(extendsTable = EXTENDS_TABLE(classExtends = ce)) :: _ := inEnv;
+  env := Util.listFold(ce, extendEnvWithClassExtends, inEnv);
+  FRAME(name, ty, tree, EXTENDS_TABLE(bcl, _), imps) :: rest_env := env;
+  SOME(tree) := insertClassExtendsIntoClassEnv(SOME(tree), inEnv);
+  outEnv := FRAME(name, ty, tree, EXTENDS_TABLE(bcl, {}), imps) :: rest_env;
+end insertClassExtendsIntoEnv;
+
+protected function insertClassExtendsIntoClassEnv
+  input Option<AvlTree> inTree;
+  input Env inEnv;
+  output Option<AvlTree> outTree;
+algorithm
+  outEnv := match(inTree, inEnv)
+    local
+      String name;
+      Integer h;
+      Option<AvlTree> left, right;
+      Env rest_env;
+      SCode.Class cls;
+      Frame class_frame;
+      Option<AvlTreeValue> value;
+
+    case (NONE(), _) then inTree;
+
+    case (SOME(AVLTREENODE(value = SOME(AVLTREEVALUE(
+          key = name, value = CLASS(cls = cls, env = {class_frame}))),
+        height = h, left = left, right = right)), _)
+      equation
+        class_frame :: rest_env = insertClassExtendsIntoEnv(class_frame :: inEnv);
+        left = insertClassExtendsIntoClassEnv(left, inEnv);
+        right = insertClassExtendsIntoClassEnv(right, inEnv);
+      then
+        SOME(AVLTREENODE(SOME(AVLTREEVALUE(name, CLASS(cls, {class_frame}))), h,
+          left, right)); 
+
+    case (SOME(AVLTREENODE(value = value, height = h, 
+        left = left, right = right)), _)
+      equation
+        left = insertClassExtendsIntoClassEnv(left, inEnv);
+        right = insertClassExtendsIntoClassEnv(right, inEnv);
+      then
+        SOME(AVLTREENODE(value, h, left, right));
+  end match;
+end insertClassExtendsIntoClassEnv;
+
 protected function extendEnvWithClassExtends
-  input SCode.Element inClassExtends;
+  input SCode.Class inClassExtends;
   input Env inEnv;
   output Env outEnv;
 algorithm
@@ -2087,25 +2187,29 @@ algorithm
       SCode.Restriction res;
       Absyn.Info info;
       Env env;
+      SCode.Mod mods;
 
     // When a 'redeclare class extends X' is encountered we insert a 'class X
     // extends BaseClass.X' into the environment, with the same elements as the
     // class extends clause. BaseClass is the class that class X is inherited
     // from. This allows use to look up elements in class extends, because
     // lookup can handle normal extends.
-    case (SCode.CLASSDEF(classDef = SCode.CLASS(
-          partialPrefix = pp,
-          encapsulatedPrefix = ep,
-          restriction = res,
-          classDef = SCode.CLASS_EXTENDS(baseClassName = bc, elementLst = el),
-          info = info)), _)
+    case (SCode.CLASS(
+        partialPrefix = pp,
+        encapsulatedPrefix = ep,
+        restriction = res,
+        classDef = SCode.CLASS_EXTENDS(
+          baseClassName = bc, 
+          modifications = mods,
+          elementLst = el),
+        info = info), _)
       equation
         // Look up which extends the base class comes from and add it to the
         // base class name.
         path = lookupBaseClass(bc, inEnv, info);
         path = Absyn.joinPaths(path, Absyn.IDENT(bc));
         // Insert a 'class bc extends path' into the environment.
-        el = SCode.EXTENDS(path, SCode.NOMOD(), NONE(), Absyn.dummyInfo) :: el;
+        el = SCode.EXTENDS(path, mods, NONE(), info) :: el;
         env = extendEnvWithClass(SCode.CLASS(bc, pp, ep, res, 
           SCode.PARTS(el, {}, {}, {}, {}, NONE(), {}, NONE()), info), inEnv);
       then env;
@@ -2140,6 +2244,24 @@ algorithm
         fail();
   end matchcontinue;
 end lookupBaseClass;
+
+protected function getEnvName
+  input Env inEnv;
+  output String outString;
+algorithm
+  outString := matchcontinue(inEnv)
+    local
+      String str;
+
+    case _
+      equation
+        str = Absyn.pathString(getEnvPath(inEnv));
+      then
+        str;
+
+    else then "";
+  end matchcontinue;
+end getEnvName;
 
 protected function getEnvPath
   input Env inEnv;
@@ -2224,6 +2346,144 @@ protected function avlTreeNew
 algorithm
   tree := AVLTREENODE(NONE(),0,NONE(),NONE());
 end avlTreeNew;
+
+protected function printEnvStr
+  input Env inEnv;
+  output String outString;
+protected
+  Frame f;
+algorithm
+  f :: _ := inEnv;
+  outString := printFrameStr(f);
+end printEnvStr;
+
+protected function printFrameStr
+  input Frame inFrame;
+  output String outString;
+protected
+  Option<String> name;
+  FrameType ty;
+  AvlTree tree;
+  ExtendsTable exts;
+  ImportTable imps;
+  String name_str, ty_str, tree_str, ext_str, imp_str;
+algorithm
+  FRAME(name, ty, tree, exts, imps) := inFrame;
+  name_str := printFrameNameStr(name);
+  ty_str := printFrameTypeStr(ty);
+  tree_str := printAvlTreeStr(SOME(tree));
+  ext_str := printExtendsTableStr(exts);
+  imp_str := printImportTableStr(imps);
+  name_str := "<<<" +& ty_str +& " frame " +& name_str +& ">>>\n";
+  outString := name_str +& 
+    "\tImports:\n" +& imp_str +&
+    "\n\tExtends:\n" +& ext_str +&
+    "\n\tComponents:\n" +& tree_str +& "\n";
+end printFrameStr;
+
+protected function printFrameNameStr
+  input Option<String> inFrame;
+  output String outString;
+algorithm
+  outString := match(inFrame)
+    local
+      String name;
+
+    case NONE() then "global";
+    case SOME(name) then name;
+  end match;
+end printFrameNameStr;
+
+protected function printFrameTypeStr
+  input FrameType inFrame;
+  output String outString;
+algorithm
+  outString := match(inFrame)
+    case NORMAL_SCOPE then "Normal";
+    case ENCAPSULATED_SCOPE then "Encapsulated";
+    case IMPLICIT_SCOPE then "Implicit";
+  end match;
+end printFrameTypeStr;
+
+protected function printAvlTreeStr
+  input Option<AvlTree> inTree;
+  output String outString;
+algorithm
+  outString := match(inTree)
+    local
+      Option<AvlTree> left, right;
+      AvlTreeValue value;
+      String left_str, right_str, value_str;
+
+    case (NONE()) then "";
+    case (SOME(AVLTREENODE(value = SOME(value), left = left, right = right)))
+      equation
+        left_str = printAvlTreeStr(left);
+        right_str = printAvlTreeStr(right);
+        value_str = printAvlValueStr(value);
+        value_str = value_str +& left_str +& right_str;
+      then
+        value_str;
+  end match;
+end printAvlTreeStr;
+
+protected function printAvlValueStr
+  input AvlTreeValue inValue;
+  output String outString;
+algorithm
+  outString := match(inValue)
+    local
+      String key_str, value_str;
+
+    case (AVLTREEVALUE(key = key_str, value = CLASS(cls = _)))
+      then "\t\tClass " +& key_str +& "\n";
+
+    case (AVLTREEVALUE(key = key_str, value = VAR(var = _)))
+      then "\t\tVar " +& key_str +& "\n";
+
+    case (AVLTREEVALUE(key = key_str, value = BUILTIN(name = _)))
+      then "\t\tBuiltin " +& key_str +& "\n";
+  end match;
+end printAvlValueStr;
+
+protected function printExtendsTableStr
+  input ExtendsTable inExtendsTable;
+  output String outString;
+protected
+  list<Extends> bcl;
+algorithm
+  EXTENDS_TABLE(baseClasses = bcl) := inExtendsTable;
+  outString := Util.stringDelimitList(Util.listMap(bcl, printExtendsStr), "\n");
+end printExtendsTableStr;
+
+protected function printExtendsStr
+  input Extends inExtends;
+  output String outString;
+protected
+  Absyn.Path bc;
+  list<SCode.Element> mods;
+  String mods_str;
+algorithm
+  EXTENDS(baseClass = bc, redeclareModifiers = mods) := inExtends;
+  mods_str := Util.stringDelimitList(
+    Util.listMap(mods, SCode.printElementStr), "\n");
+  outString := "\t\t" +& Absyn.pathString(bc) +& "(" +& mods_str +& ")";
+end printExtendsStr;
+
+protected function printImportTableStr
+  input ImportTable inImports;
+  output String outString;
+protected
+  list<Import> qual_imps, unqual_imps;
+  String qual_str, unqual_str;
+algorithm
+  IMPORT_TABLE(qual_imps, unqual_imps) := inImports;
+  qual_str := Util.stringDelimitList(
+    Util.listMap(qual_imps, Absyn.printImportString), "\n\t\t");
+  unqual_str := Util.stringDelimitList(
+    Util.listMap(unqual_imps, Absyn.printImportString), "\n\t\t");
+  outString := "\t\t" +& qual_str +& unqual_str;
+end printImportTableStr;
 
 protected function avlTreeAdd
   "Inserts a new value into the tree."
@@ -2348,7 +2608,7 @@ algorithm
       AvlValue value;
 
     case (AVLTREENODE(value = SOME(AVLTREEVALUE(key = rkey))), key, value)
-      then balance(avlTreeReplace2(inAvlTree, stringCompare(key, rkey), key, value));
+      then avlTreeReplace2(inAvlTree, stringCompare(key, rkey), key, value);
  
     else
       equation
