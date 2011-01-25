@@ -585,10 +585,11 @@ algorithm
   matchcontinue (inCache,inEnv,inExp,inInteractiveSymbolTable,inMsg)
     local
       Absyn.Path path,p1,classpath,className;
+      list<Values.Value> vals;
       list<SCode.Class> scodeP,sp,fp;
       list<Env.Frame> env;
       SCode.Class c;
-      String s1,str,varid,cmd,executable,method_str,outputFormat_str,initfilename,cit,pd,executableSuffixedExe,sim_call,result_file,omhome,pwd,filename_1,filename,omhome_1,plotCmd,tmpPlotFile,call,str_1,mp,pathstr,name,cname,fileNamePrefix_s,str1,res,errMsg,errorStr,uniqueStr,interpolation, title,xLabel,yLabel,filename2,varNameStr,xml_filename,xml_contents,visvar_str;
+      String s1,str,varid,cmd,executable,method_str,outputFormat_str,initfilename,cit,pd,executableSuffixedExe,sim_call,result_file,filename_1,filename,omhome_1,plotCmd,tmpPlotFile,call,str_1,mp,pathstr,name,cname,fileNamePrefix_s,str1,errMsg,errorStr,uniqueStr,interpolation, title,xLabel,yLabel,filename2,varNameStr,xml_filename,xml_contents,visvar_str,pwd,omhome,omlib,omcpath,os,platform,usercflags,senddata,res,workdir,gcc,confcmd,touch_file,uname;
       DAE.ComponentRef cr,cref,classname;
       Interactive.InteractiveSymbolTable st,newst,st_1;
       Absyn.Program p,pnew,newp,ptot;
@@ -613,13 +614,12 @@ algorithm
       list<String> vars_1,vars_2,args,strings,strVars;
       Real t1,t2,time,timeTotal,timeSimulation,timeStamp,val;
       Interactive.InteractiveStmts istmts;
-      Boolean bval, b, legend, grid, logX, logY, points;
+      Boolean bval, b, legend, grid, logX, logY, points, gcc_res, omcfound, rm_res, touch_res, uname_res;
       Env.Cache cache;
       list<Interactive.LoadedFile> lf;
       AbsynDep.Depends aDep;
       Absyn.ComponentRef crefCName;
       list<tuple<String,Values.Value>> resultValues;
-      list<Values.Value> vals;
       list<Real> timeStamps;
       list<DAE.Exp> expLst;
       list<tuple<String,list<String>>> deps;
@@ -2088,23 +2088,14 @@ algorithm
       then
         (cache,Values.BOOL(false),st);
         
-    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "setCommandLineOptions"),expLst = {DAE.ARRAY(array = options)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "setCommandLineOptions"),expLst = {DAE.SCONST(string = str)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       equation
-        strings = Util.listMap(options, sconstToString);
-        args = RTOpts.args(strings);
+        args = RTOpts.args({str});
       then
         (Env.emptyCache(),Values.BOOL(true),st);
         
-    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "setCommandLineOptions"),expLst = {DAE.ARRAY(array = options)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
-      equation
-        strings = Util.listMap(options, sconstToString);
-        failure(args = RTOpts.args(strings));
-      then
-        (cache,Values.BOOL(false),st);
-        
-    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "setCommandLineOptions"),expLst = _),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
-    then
-      (cache,Values.BOOL(false),st);        
+    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "setCommandLineOptions"),expLst = {_}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+      then (cache,Values.BOOL(false),st);
         
     case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "cd"),expLst = {DAE.SCONST(string = str)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       equation
@@ -2471,6 +2462,41 @@ algorithm
               lstVarVal = iv,
               compiledFunctions = cf)),msg) /* failing build_model */
     then (cache,ValuesUtil.makeArray({Values.STRING("Xml dump error."),Values.STRING("")}),st_1);
+      
+        /* Checks the installation of OpenModelica and tries to find common errors */
+    case (cache,env,exp as DAE.CALL(path=Absyn.IDENT("checkSettings"),expLst={}),st,msg)
+      equation
+        vars_1 = {"OPENMODELICAHOME","OPENMODELICALIBRARY","OMC_PATH","OMC_FOUND","MODELICAUSERCFLAGS","WORKING_DIRECTORY","CREATE_FILE_WORKS","REMOVE_FILE_WORKS","OS","SYSTEM_INFO","SENDDATALIBS","C_COMPILER","C_COMPILER_RESPONDING","CONFIGURE_CMDLINE"};
+        omhome = Settings.getInstallationDirectoryPath();
+        omlib = Settings.getModelicaPath();
+        omcpath = omhome +& "/bin/omc" +& System.getExeExt();
+        omcfound = System.regularFileExists(omcpath);
+        os = System.os();
+        touch_file = "omc.checksettings.create_file_test";
+        usercflags = Util.makeValueOrDefault(System.readEnv,"MODELICAUSERCFLAGS","");
+        workdir = System.pwd();
+        touch_res = 0 == System.systemCall("touch " +& touch_file);
+        uname_res = 0 == System.systemCall("uname -a > " +& touch_file);
+        uname = System.readFile(touch_file);
+        rm_res = 0 == System.systemCall("rm " +& touch_file);
+        platform = System.platform();
+        senddata = System.getSendDataLibs();
+        gcc = System.getCCompiler();
+        gcc_res = 0 == System.systemCall(gcc +& " -v");
+        confcmd = System.configureCommandLine();
+        vals = {Values.STRING(omhome),Values.STRING(omlib),
+                Values.STRING(omcpath),Values.BOOL(omcfound),
+                Values.STRING(usercflags),
+                Values.STRING(workdir),
+                Values.BOOL(touch_res),
+                Values.BOOL(rm_res),
+                Values.STRING(os),
+                Values.STRING(uname),
+                Values.STRING(senddata),
+                Values.STRING(gcc),
+                Values.BOOL(gcc_res),
+                Values.STRING(confcmd)};
+      then (cache,Values.RECORD(Absyn.IDENT("OpenModelica.Scripting.CheckSettingsResult"),vals,vars_1,-1),st);
   end matchcontinue;
 end cevalInteractiveFunctions;
 

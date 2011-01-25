@@ -3308,7 +3308,6 @@ algorithm
   matchcontinue (inCache,inEnv,inExp,inType,inValuesValueLst,constVar,inPrefix)
     local
       list<DAE.Exp> arraylist;
-      Ident dimension;
       DAE.ExpType at;
       Boolean a;
       list<Env.Frame> env;
@@ -3324,7 +3323,6 @@ algorithm
     case (cache,env,s,sty,{Values.INTEGER(integer = v)},c1,_)
       equation
         arraylist = buildExpList(s, v);
-        dimension = intString(v);
         sty2 = (DAE.T_ARRAY(DAE.DIM_INTEGER(v),sty),NONE());
         at = Types.elabType(sty2);
         a = Types.isArray(sty2);
@@ -3334,7 +3332,6 @@ algorithm
       equation
         (cache,exp,DAE.PROP(ty,con)) = elabBuiltinFill2(cache,env, s, sty, rest,c1,pre);
         arraylist = buildExpList(exp, v);
-        dimension = intString(v);
         sty2 = (DAE.T_ARRAY(DAE.DIM_INTEGER(v),ty),NONE());
         at = Types.elabType(sty2);
         a = Types.isArray(sty2);
@@ -6739,8 +6736,8 @@ protected function elabCallInteractive "function: elabCallInteractive
   input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.ComponentRef inComponentRef;
-  input list<Absyn.Exp> inAbsynExpLst;
-  input list<Absyn.NamedArg> inAbsynNamedArgLst;
+  input list<Absyn.Exp> inExps;
+  input list<Absyn.NamedArg> inNamedArgs;
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Prefix.Prefix inPrefix;
@@ -6751,7 +6748,7 @@ protected function elabCallInteractive "function: elabCallInteractive
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
  algorithm
   (outCache,outExp,outProperties,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inComponentRef,inAbsynExpLst,inAbsynNamedArgLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inPrefix,info)
+  matchcontinue (inCache,inEnv,inComponentRef,inExps,inNamedArgs,inBoolean,inInteractiveInteractiveSymbolTableOption,inPrefix,info)
     local
       DAE.ComponentRef cr_1,cr2_1;
       list<Env.Frame> env;
@@ -6772,15 +6769,23 @@ protected function elabCallInteractive "function: elabCallInteractive
       Prefix.Prefix pre;
       Absyn.Path className;
       list<DAE.Exp> simulationArgs;
+      String name;
+    
+    case (cache,env,cr2 as Absyn.CREF_IDENT(name = name),inExps,inNamedArgs,impl,SOME(st),_,_)
+      equation
+        ErrorExt.setCheckpoint("Scripting");
+        cr = Absyn.joinCrefs(Absyn.CREF_QUAL("OpenModelica",{},Absyn.CREF_IDENT("Scripting",{})),cr2);
+        (cache,exp_1,prop,st_1) = elabExp(cache,env,Absyn.CALL(cr,Absyn.FUNCTIONARGS(inExps,inNamedArgs)),impl,SOME(st),false,inPrefix,info);
+        ErrorExt.delCheckpoint("Scripting");
+      then (cache,exp_1,prop,st_1);
+    
+    case (cache,env,Absyn.CREF_IDENT(name = _),_,_,_,SOME(st),_,_)
+      equation
+        ErrorExt.rollBack("Scripting");
+      then fail();
 
     case (cache,env,Absyn.CREF_IDENT(name = "typeOf"),{Absyn.CREF(componentRef = Absyn.CREF_IDENT(name = varid,subscripts = {}))},{},impl,SOME(st),_,_) then (cache,DAE.CALL(Absyn.IDENT("typeOf"),
           {DAE.CODE(Absyn.C_VARIABLENAME(Absyn.CREF_IDENT(varid,{})),DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE()),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
-
-    case (cache,env,Absyn.CREF_IDENT(name = "clear"),{},{},impl,SOME(st),_,_)
-      then (cache, Expression.makeBuiltinCall("clear",{},DAE.ET_BOOL()),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
-
-    case (cache,env,Absyn.CREF_IDENT(name = "clearVariables"),{},{},impl,SOME(st),_,_)
-      then (cache, Expression.makeBuiltinCall("clearVariables",{},DAE.ET_BOOL()),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "list"),{},{},impl,SOME(st),_,_)
       then (cache, Expression.makeBuiltinCall("list",{},DAE.ET_STRING()),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
@@ -6871,19 +6876,19 @@ protected function elabCallInteractive "function: elabCallInteractive
 
     case (cache,env,Absyn.CREF_IDENT(name = "buildModel"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_)
       equation 
-        (cache, simulationArgs) = getSimulationArguments(cache, env, inAbsynExpLst, inAbsynNamedArgLst, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, info);
+        (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, info);
       then
         (cache,Expression.makeBuiltinCall("buildModel",simulationArgs,DAE.ET_OTHER()),DAE.PROP((DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_STRING_DEFAULT),NONE()),DAE.C_VAR()),SOME(st));
     
     case (cache,env,Absyn.CREF_IDENT(name = "buildModelBeast"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_)
       equation 
-        (cache, simulationArgs) = getSimulationArguments(cache, env, inAbsynExpLst, inAbsynNamedArgLst, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, info);
+        (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, info);
       then
         (cache,Expression.makeBuiltinCall("buildModelBeast",simulationArgs,DAE.ET_OTHER()),DAE.PROP((DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_STRING_DEFAULT),NONE()),DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "simulate"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_) /* Fill in rest of defaults here */
       equation
-        (cache, simulationArgs) = getSimulationArguments(cache, env, inAbsynExpLst, inAbsynNamedArgLst, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, info); 
+        (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, info); 
         recordtype = CevalScript.getSimulationResultType();
       then
         (cache,Expression.makeBuiltinCall("simulate",simulationArgs,DAE.ET_OTHER()),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
@@ -7269,27 +7274,16 @@ protected function elabCallInteractive "function: elabCallInteractive
       then
         (cache,Expression.makeBuiltinCall("plotParametric",vars_1,DAE.ET_BOOL()),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
 
-    case (cache,env,Absyn.CREF_IDENT(name = "enableSendData"),{Absyn.BOOL(value = enabled)},{},impl,SOME(st),_,_)
-       then (cache, Expression.makeBuiltinCall("enableSendData",{DAE.BCONST(enabled)},DAE.ET_BOOL()),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
-
-    case (cache,env,Absyn.CREF_IDENT(name = "setDataPort"),{Absyn.INTEGER(value = port)},{},impl,SOME(st),_,_)
-       then (cache, Expression.makeBuiltinCall("setDataPort",{DAE.ICONST(port)},DAE.ET_BOOL()),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
-
     case (cache,env,Absyn.CREF_IDENT(name = "setVariableFilter"),{Absyn.ARRAY(arrayExp = strings)},{},impl,SOME(st),_,_)
       equation
         vars_1 = elabVariablenames(strings);
       then (cache, Expression.makeBuiltinCall("setVariableFilter",{DAE.ARRAY(DAE.ET_OTHER(), false, vars_1)},DAE.ET_BOOL()),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
-
 
     case (cache,env,Absyn.CREF_IDENT(name = "timing"),{exp},{},impl,SOME(st),pre,_)
       equation
         (cache,exp_1,prop,st_1) = elabExp(cache,env, exp, impl, SOME(st),true,pre,info);
       then
         (cache,Expression.makeBuiltinCall("timing",{exp_1},DAE.ET_REAL()),DAE.PROP(DAE.T_REAL_DEFAULT,DAE.C_VAR()),st_1);
-
-    case (cache,env,Absyn.CREF_IDENT(name = "generateHeader"),{Absyn.STRING(value=str)},{},impl,SOME(st),_,_)
-      then
-        (cache,Expression.makeBuiltinCall("generateHeader",{DAE.SCONST(str)},DAE.ET_BOOL()),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "generateCode"),{Absyn.CREF(componentRef = cr)},{},impl,SOME(st),_,_)
       equation
@@ -7298,101 +7292,15 @@ protected function elabCallInteractive "function: elabCallInteractive
         (cache,Expression.makeBuiltinCall("generateCode",{DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER())},
           DAE.ET_BOOL()),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
 
-    case (cache,env,Absyn.CREF_IDENT(name = "generateSeparateCode"),{},{},impl,SOME(st),_,_)
-      then
-        (cache,Expression.makeBuiltinCall("generateSeparateCode",{},DAE.ET_BOOL()),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
-
-    case (cache,env,Absyn.CREF_IDENT(name = "setLinker"),{Absyn.STRING(value = str)},{},impl,SOME(st),_,_)
-      then (cache, Expression.makeBuiltinCall("setLinker",{DAE.SCONST(str)},DAE.ET_BOOL()),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
-    case (cache,env,Absyn.CREF_IDENT(name = "setLinkerFlags"),{Absyn.STRING(value = str)},{},impl,SOME(st),_,_)
-      then (cache, Expression.makeBuiltinCall("setLinkerFlags",{DAE.SCONST(str)},DAE.ET_BOOL()),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
-    case (cache,env,Absyn.CREF_IDENT(name = "setCompiler"),{Absyn.STRING(value = str)},{},impl,SOME(st),_,_)
-      then (cache, Expression.makeBuiltinCall("setCompiler",{DAE.SCONST(str)},DAE.ET_BOOL()),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
-
-      case (cache,env,Absyn.CREF_IDENT(name = "verifyCompiler"),{},{},impl,SOME(st),_,_)
-        then (cache, Expression.makeBuiltinCall("verifyCompiler",{},DAE.ET_BOOL()),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
-
-    case (cache,env,Absyn.CREF_IDENT(name = "setCompilerPath"),{Absyn.STRING(value = str)},{},impl,SOME(st),_,_)
-      then (cache, Expression.makeBuiltinCall("setCompilerPath",{DAE.SCONST(str)},DAE.ET_BOOL()),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
-
-    case (cache,env,Absyn.CREF_IDENT(name = "setCompileCommand"),{Absyn.STRING(value = str)},{},impl,SOME(st),_,_)
-      then (cache, Expression.makeBuiltinCall("setCompileCommand",{DAE.SCONST(str)},DAE.ET_BOOL()),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
-
-    case (cache,env,Absyn.CREF_IDENT(name = "setPlotCommand"),{Absyn.STRING(value = str)},{},impl,SOME(st),_,_)
-      then (cache, Expression.makeBuiltinCall("setPlotCommand",{DAE.SCONST(str)},DAE.ET_BOOL()),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
-
-    case (cache,env,Absyn.CREF_IDENT(name = "getSettings"),{},{},impl,SOME(st),_,_)
-      then (cache, Expression.makeBuiltinCall("getSettings",{},DAE.ET_STRING()),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
-
-    case (cache,env,Absyn.CREF_IDENT(name = "setTempDirectoryPath"),{Absyn.STRING(value = str)},{},impl,SOME(st),_,_)
-      then (cache, Expression.makeBuiltinCall("setTempDirectoryPath",{DAE.SCONST(str)},DAE.ET_BOOL()),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
-
-    case (cache,env,Absyn.CREF_IDENT(name = "getTempDirectoryPath"),{},{},impl,SOME(st),_,_)
-      then (cache, Expression.makeBuiltinCall("getTempDirectoryPath",{},DAE.ET_STRING()),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
-
-    case (cache,env,Absyn.CREF_IDENT(name = "setInstallationDirectoryPath"),{Absyn.STRING(value = str)},{},impl,SOME(st),_,_)
-      then (cache, Expression.makeBuiltinCall("setInstallationDirectoryPath",{DAE.SCONST(str)},DAE.ET_BOOL()),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
-
-    case (cache,env,Absyn.CREF_IDENT(name = "getInstallationDirectoryPath"),{},{},impl,SOME(st),_,_)
-      then (cache, Expression.makeBuiltinCall("getInstallationDirectoryPath",{},DAE.ET_STRING()),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
-
-    case (cache,env,Absyn.CREF_IDENT(name = "getModelicaPath"),{},{},impl,SOME(st),_,_)
-      then (cache, Expression.makeBuiltinCall("getModelicaPath",{},DAE.ET_BOOL()),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
-
-    case (cache,env,Absyn.CREF_IDENT(name = "setModelicaPath"),{Absyn.STRING(value = str)},{},impl,SOME(st),_,_)
-      then (cache, Expression.makeBuiltinCall("setModelicaPath",{DAE.SCONST(str)},DAE.ET_BOOL()),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
-
-    case (cache,env,Absyn.CREF_IDENT(name = "setCompilerFlags"),{Absyn.STRING(value = str)},{},impl,SOME(st),_,_)
-      then (cache, Expression.makeBuiltinCall("setCompilerFlags",{DAE.SCONST(str)},DAE.ET_BOOL()),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
-
-    case (cache,env,Absyn.CREF_IDENT(name = "setDebugFlags"),{Absyn.STRING(value = str)},{},impl,SOME(st),_,_)
-      then (cache, Expression.makeBuiltinCall("setDebugFlags",{DAE.SCONST(str)},DAE.ET_BOOL()),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
-
-    case (cache,env,Absyn.CREF_IDENT(name = "setCommandLineOptions"),{stringArray},{},impl,SOME(st),pre,_)
-      equation
-          (_,arr,_,_) = elabExp(Env.emptyCache(), {}, stringArray, false, NONE(), true,pre,info);
-       then 
-         (cache, Expression.makeBuiltinCall("setCommandLineOptions",{arr},DAE.ET_BOOL()),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
-
     case (cache,env,Absyn.CREF_IDENT(name = "cd"),{Absyn.STRING(value = str)},{},impl,SOME(st),_,_)
       then (cache, Expression.makeBuiltinCall("cd",{DAE.SCONST(str)},DAE.ET_STRING()),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "cd"),{},{},impl,SOME(st),_,_)
       then (cache, Expression.makeBuiltinCall("cd",{},DAE.ET_STRING()),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
 
-    case (cache,env,Absyn.CREF_IDENT(name = "getVersion"),{},{},impl,SOME(st),_,_)
-      then (cache, Expression.makeBuiltinCall("getVersion",{},DAE.ET_STRING()),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
-
-    case (cache,env,Absyn.CREF_IDENT(name = "getTempDirectoryPath"),{},{},impl,SOME(st),_,_)
-      then (cache, Expression.makeBuiltinCall("getTempDirectoryPath",{},DAE.ET_STRING()),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
-
-    case (cache,env,Absyn.CREF_IDENT(name = "system"),{Absyn.STRING(value = str)},{},impl,SOME(st),_,_)
-      then (cache, Expression.makeBuiltinCall("system",{DAE.SCONST(str)},DAE.ET_INT()),DAE.PROP(DAE.T_INTEGER_DEFAULT,DAE.C_VAR()),SOME(st));
-
-    case (cache,env,Absyn.CREF_IDENT(name = "readFile"),{Absyn.STRING(value = str)},{},impl,SOME(st),_,_)
-      then (cache, Expression.makeBuiltinCall("readFile",{DAE.SCONST(str)},DAE.ET_STRING()),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
-
-    case (cache,env,Absyn.CREF_IDENT(name = "readFileNoNumeric"),{Absyn.STRING(value = str)},{},impl,SOME(st),_,_)
-      then (cache, Expression.makeBuiltinCall("readFileNoNumeric",{DAE.SCONST(str)},DAE.ET_STRING()),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
-
     case (cache,env,Absyn.CREF_IDENT(name = "listVariables"),{},{},impl,SOME(st),_,_)
       then (cache, Expression.makeBuiltinCall("listVariables",{},DAE.ET_OTHER()),
         DAE.PROP((DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_NOTYPE(),NONE())),NONE()),DAE.C_VAR()),SOME(st));  /* Returns an array of \"component references\" */
-
-    case (cache,env,Absyn.CREF_IDENT(name = "getErrorString"),{},{},impl,SOME(st),_,_)
-      then (cache, Expression.makeBuiltinCall("getErrorString",{},DAE.ET_STRING()),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
-
-    case (cache,env,Absyn.CREF_IDENT(name = "getMessagesString"),{},{},impl,SOME(st),_,_)
-      then (cache, Expression.makeBuiltinCall("getMessagesString",{},DAE.ET_STRING()),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
-
-    case (cache,env,Absyn.CREF_IDENT(name = "clearMessages"),{},{},impl,SOME(st),_,_)
-      then (cache, Expression.makeBuiltinCall("clearMessages",{},DAE.ET_BOOL()),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
-
-    case (cache,env,Absyn.CREF_IDENT(name = "getMessagesStringInternal"),{},{},impl,SOME(st),_,_)
-      then (cache, Expression.makeBuiltinCall("getMessagesStringInternal",{},DAE.ET_STRING()),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
-
-    case (cache,env,Absyn.CREF_IDENT(name = "runScript"),{Absyn.STRING(value = str)},{},impl,SOME(st),_,_)
-      then (cache, Expression.makeBuiltinCall("runScript",{DAE.SCONST(str)},DAE.ET_STRING()),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "loadModel"),{Absyn.CREF(componentRef = cr)},{},impl,SOME(st),_,_)
       equation
@@ -7402,9 +7310,6 @@ protected function elabCallInteractive "function: elabCallInteractive
 
     case (cache,env,Absyn.CREF_IDENT(name = "deleteFile"),{Absyn.STRING(value = str)},{},impl,SOME(st),_,_)
       then (cache, Expression.makeBuiltinCall("deleteFile",{DAE.SCONST(str)},DAE.ET_BOOL()),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
-
-    case (cache,env,Absyn.CREF_IDENT(name = "loadFile"),{Absyn.STRING(value = str)},{},impl,SOME(st),_,_)
-      then (cache, Expression.makeBuiltinCall("loadFile",{DAE.SCONST(str)},DAE.ET_BOOL()),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "saveModel"),{Absyn.STRING(value = str),Absyn.CREF(componentRef = cr)},{},impl,SOME(st),_,_)
       equation
@@ -7423,12 +7328,6 @@ protected function elabCallInteractive "function: elabCallInteractive
         className = Absyn.crefToPath(cr);
       then
         (cache,Expression.makeBuiltinCall("save",{DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER())},DAE.ET_BOOL()),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
-
-    case (cache,env,Absyn.CREF_IDENT(name = "saveAll"),{Absyn.STRING(value = str)},{},impl,SOME(st),_,_)
-      then (cache, Expression.makeBuiltinCall("saveAll",{DAE.SCONST(str)},DAE.ET_BOOL()),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
-
-    case (cache,env,Absyn.CREF_IDENT(name = "help"),{},{},impl,SOME(st),_,_)
-      then (cache, Expression.makeBuiltinCall("help",{},DAE.ET_STRING()),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "getUnit"),{Absyn.CREF(componentRef = cr),Absyn.CREF(componentRef = cr2)},{},impl,SOME(st),pre,_)
       equation
@@ -7511,15 +7410,6 @@ protected function elabCallInteractive "function: elabCallInteractive
       then
         (cache,Expression.makeBuiltinCall("getStateSelect",{crefExp1,crefExp2},DAE.ET_STRING()),DAE.PROP(
           (DAE.T_ENUMERATION(NONE(),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{},{}),NONE()),DAE.C_VAR()),SOME(st));
-
-    case (cache,env,Absyn.CREF_IDENT(name = "echo"),{bool_exp},{},impl,SOME(st),pre,_)
-      equation
-        (cache,bool_exp_1,prop,st_1) = elabExp(cache,env, bool_exp, impl, SOME(st),true,pre,info);
-      then
-        (cache,Expression.makeBuiltinCall("echo",{bool_exp_1},DAE.ET_STRING()),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_CONST()),SOME(st));
-
-    case (cache,env,Absyn.CREF_IDENT(name = "getClassesInModelicaPath"),{},{},impl,SOME(st),_,_)
-      then (cache,Expression.makeBuiltinCall("getClassesInModelicaPath",{},DAE.ET_STRING()),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_CONST()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "checkExamplePackages"),{},args,impl,SOME(st),pre,_)
       equation

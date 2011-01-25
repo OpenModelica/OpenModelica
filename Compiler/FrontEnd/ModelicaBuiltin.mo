@@ -51,6 +51,9 @@ end terminal;
 function sample
   input Real start;
   input Real interval;
+  // Implement it like this?
+  // parameter input Real start(fixed=false);
+  // parameter input Real interval(fixed=false);
   output Boolean isSample;
   annotation(__OpenModelica_Impure = true);
 external "builtin";
@@ -391,11 +394,229 @@ external "builtin";
 end classDirectory;
 
 encapsulated package OpenModelica
-  package Scripting
-    function system "Similar to system(3). Executes the given command in the system shell."
-      input String callStr "String to call: bash -c $callStr";
-      output Integer retval "Return value of the system call; usually 0 on success";
-    external "builtin";
-    end system;
-  end Scripting;
+package Scripting
+
+record CheckSettingsResult
+  String OPENMODELICAHOME,OPENMODELICALIBRARY,OMC_PATH;
+  Boolean OMC_FOUND;
+  String MODELICAUSERCFLAGS,WORKING_DIRECTORY;
+  Boolean CREATE_FILE_WORKS,REMOVE_FILE_WORKS;
+  String OS, SYSTEM_INFO,SENDDATALIBS,C_COMPILER;
+  Boolean C_COMPILER_RESPONDING;
+  String CONFIGURE_CMDLINE;
+end CheckSettingsResult;
+
+function checkSettings
+  output CheckSettingsResult result;
+external "builtin";
+end checkSettings;
+
+function loadFile
+  input String fileName;
+  output Boolean success;
+external "builtin";
+end loadFile;
+ 
+function system "Similar to system(3). Executes the given command in the system shell."
+  input String callStr "String to call: bash -c $callStr";
+  output Integer retval "Return value of the system call; usually 0 on success";
+external "builtin";
+end system;
+
+function saveAll
+  input String fileName;
+  output Boolean success;
+external "builtin";
+end saveAll;
+
+function help
+  output String helpText;
+external "builtin";
+end help;
+
+function clear
+  output Boolean success;
+external "builtin";
+end clear;
+
+function clearVariables
+  output Boolean success;
+external "builtin";
+end clearVariables;
+
+function enableSendData
+  input Boolean enabled;
+  output Boolean success;
+external "builtin";
+end enableSendData;
+
+function setDataPort
+  input Integer port;
+  output Boolean success;
+external "builtin";
+end setDataPort;
+
+function generateHeader
+  input String fileName;
+  output Boolean success;
+external "builtin";
+end generateHeader;
+
+function generateSeparateCode
+  output Boolean success;
+external "builtin";
+end generateSeparateCode;
+
+function setLinker
+  input String linker;
+  output Boolean success;
+external "builtin";
+end setLinker;
+
+function setLinkerFlags
+  input String linkerFlags;
+  output Boolean success;
+external "builtin";
+end setLinkerFlags;
+
+function setCompiler
+  input String compiler;
+  output Boolean success;
+external "builtin";
+end setCompiler;
+
+function verifyCompiler
+  output Boolean compilerWorks;
+external "builtin";
+end verifyCompiler;
+
+function setCompilerPath
+  input String compilerPath;
+  output Boolean success;
+external "builtin";
+end setCompilerPath;
+
+function setCompileCommand
+  input String compileCommand;
+  output Boolean success;
+external "builtin";
+end setCompileCommand;
+
+function setPlotCommand
+  input String plotCommand;
+  output Boolean success;
+external "builtin";
+end setPlotCommand;
+
+function getSettings
+  output String settings;
+external "builtin";
+end getSettings;
+
+function setTempDirectoryPath
+  input String tempDirectoryPath;
+  output Boolean success;
+external "builtin";
+end setTempDirectoryPath;
+
+function getTempDirectoryPath
+  output String tempDirectoryPath;
+external "builtin";
+end getTempDirectoryPath;
+
+function setInstallationDirectoryPath
+  input String installationDirectoryPath;
+  output Boolean success;
+external "builtin";
+end setInstallationDirectoryPath;
+
+function getInstallationDirectoryPath
+  output String installationDirectoryPath;
+external "builtin";
+end getInstallationDirectoryPath;
+
+function setModelicaPath
+  input String modelicaPath;
+  output Boolean success;
+external "builtin";
+end setModelicaPath;
+
+function getModelicaPath
+  output String modelicaPath;
+external "builtin";
+end getModelicaPath;
+
+function setCompilerFlags
+  input String compilerFlags;
+  output Boolean success;
+external "builtin";
+end setCompilerFlags;
+
+function setDebugFlags
+  input String debugFlags;
+  output Boolean success;
+external "builtin";
+end setDebugFlags;
+
+function setCommandLineOptions
+  input String option;
+  output Boolean success;
+external "builtin";
+end setCommandLineOptions;
+
+function getVersion
+  output String version;
+external "builtin";
+end getVersion;
+
+function readFile
+  input String fileName;
+  output String contents;
+external "builtin";
+end readFile;
+
+function readFileNoNumeric
+  input String fileName;
+  output String contents;
+external "builtin";
+end readFileNoNumeric;
+
+function getErrorString
+  output String errorString;
+external "builtin";
+end getErrorString;
+
+function getMessagesString
+  output String messagesString;
+external "builtin";
+end getMessagesString;
+
+function getMessagesStringInternal
+  output String messagesString;
+external "builtin";
+end getMessagesStringInternal;
+
+function clearMessages
+  output Boolean success;
+external "builtin";
+end clearMessages;
+
+function runScript
+  input String fileName "*.mos";
+  output String result;
+external "builtin";
+end runScript;
+
+function echo
+  input Boolean setEcho;
+  output Boolean newEcho;
+external "builtin";
+end echo;
+
+function getClassesInModelicaPath
+  output String classesInModelicaPath;
+external "builtin";
+end getClassesInModelicaPath;
+
+end Scripting;
 end OpenModelica;
