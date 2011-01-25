@@ -640,19 +640,6 @@ algorithm
       then
         (item, path, SOME(env));
       
-    // Qualified name.
-    case (Absyn.QUALIFIED(name = id, path = path), _)
-      equation
-        print("Failed!\n");
-        // Look up the first identifier.
-        (item, new_path, env) = lookupSimpleName(id, inEnv);
-        // Look up the rest of the name in the environment of the first
-        // identifier.
-        (item, path, env) = lookupNameInItem(path, item, env);
-        path = Absyn.joinPaths(new_path, path);
-      then
-        (item, path, SOME(env));
-          
     else
       equation
         print("- SCodeFlatten.lookupName failed for " +&
@@ -692,8 +679,6 @@ algorithm
 
     case (_, _)
       equation
-        print("lookupComponentRef failed for " +&
-        Absyn.printComponentRefStr(inCref) +& " in " +& getEnvName(inEnv) +& "\n");
         // First look up all subscripts, because all subscripts should be found
         // in the enclosing scope of the component reference.
         cref = lookupComponentRefSubs(inCref, inEnv);
@@ -706,7 +691,7 @@ algorithm
       equation
         print("- SCodeFlatten.lookupComponentRef failed for " +&
           Absyn.printComponentRefStr(inCref) +& " in " +&
-          Absyn.pathString(getEnvPath(inEnv)) +& "\n");
+          getEnvName(inEnv) +& "\n");
       then
         fail();
 
@@ -2090,7 +2075,7 @@ protected function extendEnvWithIterators
 protected
   Frame frame;
 algorithm
-  frame := newFrame(NONE(), IMPLICIT_SCOPE());
+  frame := newFrame(SOME("$for$"), IMPLICIT_SCOPE());
   outEnv := Util.listFold(inIterators, extendEnvWithIterator, frame :: inEnv);
 end extendEnvWithIterators;
 
@@ -2307,6 +2292,15 @@ algorithm
 
   tree := avlTreeAdd(tree, "Integer", CLASS(
     SCode.CLASS("Integer", false, false, SCode.R_FUNCTION(),
+      SCode.PARTS({}, {}, {}, {}, {}, NONE(), {}, NONE()), Absyn.dummyInfo),
+    emptyEnv));
+
+  // Modelica.Fluid.Pipes.BaseClasses.HeatTransfer.LocalPipeFlowHeatTransfer
+  // tries to call a function called spliceFunction. This seems to be a built-in
+  // Dymola function, so until this has been fixed we'll just pretend that we
+  // also have it.
+  tree := avlTreeAdd(tree, "spliceFunction", CLASS(
+    SCode.CLASS("spliceFunction", false, false, SCode.R_FUNCTION(),
       SCode.PARTS({}, {}, {}, {}, {}, NONE(), {}, NONE()), Absyn.dummyInfo),
     emptyEnv));
 
