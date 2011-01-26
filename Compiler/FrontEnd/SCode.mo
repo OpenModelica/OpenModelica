@@ -3542,5 +3542,51 @@ algorithm
   end match;
 end isBuiltinFunction;
 
+public function getEEquationInfo
+  "Extracts the Absyn.Info from an EEquation."
+  input EEquation inEEquation;
+  output Absyn.Info outInfo;
+algorithm
+  outInfo := match(inEEquation)
+    local
+      Absyn.Info info;
+
+    case EQ_IF(info = info) then info;
+    case EQ_EQUALS(info = info) then info;
+    case EQ_CONNECT(info = info) then info;
+    case EQ_FOR(info = info) then info;
+    case EQ_WHEN(info = info) then info;
+    case EQ_ASSERT(info = info) then info;
+    case EQ_TERMINATE(info = info) then info;
+    case EQ_REINIT(info = info) then info;
+    case EQ_NORETCALL(info = info) then info;
+  end match;
+end getEEquationInfo;
+
+public function getStatementInfo
+  "Extracts the Absyn.Info from a Statement."
+  input Statement inStatement;
+  output Absyn.Info outInfo;
+algorithm
+  outInfo := match(inStatement)
+    local
+      Absyn.Info info;
+
+    case ALG_ASSIGN(info = info) then info;
+    case ALG_IF(info = info) then info;
+    case ALG_FOR(info = info) then info;
+    case ALG_WHILE(info = info) then info;
+    case ALG_WHEN_A(info = info) then info;
+    case ALG_NORETCALL(info = info) then info;
+    case ALG_RETURN(info = info) then info;
+    case ALG_BREAK(info = info) then info;
+    case ALG_TRY(info = info) then info;
+    case ALG_CATCH(info = info) then info;
+    case ALG_CATCH(info = info) then info;
+    case ALG_THROW(info = info) then info;
+    case ALG_FAILURE(info = info) then info;
+  end match;
+end getStatementInfo;
+
 end SCode;
 

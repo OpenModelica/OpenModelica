@@ -44,9 +44,11 @@ public import Absyn;
 public import SCode;
 
 protected import Debug;
-protected import Error;
-protected import Util;
 protected import Dump;
+protected import Error;
+protected import ErrorExt;
+protected import System;
+protected import Util;
 
 protected type Import = Absyn.Import;
 
@@ -61,6 +63,7 @@ protected uniontype Extends
   record EXTENDS
     Absyn.Path baseClass;
     list<SCode.Element> redeclareModifiers;
+    Absyn.Info info;
   end EXTENDS;
 end Extends;
 
@@ -118,11 +121,15 @@ public function flatten
 protected
   Env env;
 algorithm
+  //System.startTimer();
   env := newEnvironment(NONE());
   env := buildInitialEnv();
   env := extendEnvWithClasses(inProgram, env);
   env := insertClassExtendsIntoEnv(env);
   outProgram := flattenProgram(inProgram, env);
+  //System.stopTimer();
+  //print("flatten took " +& realString(System.getTimerIntervalTime()) +& 
+  //  " seconds\n");
 end flatten;
 
 protected function flattenProgram
@@ -171,6 +178,7 @@ algorithm
       equation
         // Lookup elements.
         el = Util.listMap1(el, lookupElement, env);
+        el = Util.listFilter(el, isNotImport);
 
         // Lookup equations and algorithm names.
         neql = Util.listMap1(neql, lookupEquation, env);
@@ -191,6 +199,15 @@ algorithm
     else then inClassDef;
   end match;
 end lookupClassDefNames;
+
+protected function isNotImport
+  input SCode.Element inElement;
+algorithm
+  _ := match(inElement)
+    case SCode.IMPORT(imp = _) then fail();
+    else then ();
+  end match;
+end isNotImport;
 
 protected function lookupElement
   input SCode.Element inElement;
@@ -233,35 +250,122 @@ protected function lookupComponent
   input SCode.Element inComponent;
   input Env inEnv;
   output SCode.Element outComponent;
-protected
-  SCode.Ident name;
-  Absyn.InnerOuter io;
-  Boolean fp, rp, pp;
-  SCode.Attributes attr;
-  Absyn.TypeSpec type_spec;
-  SCode.Mod mod;
-  Option<SCode.Comment> cmt;
-  Option<Absyn.Exp> cond;
-  Option<Absyn.Info> info;
-  Option<Absyn.ConstrainClass> cc;
 algorithm
-  SCode.COMPONENT(name, io, fp, rp, pp, attr, type_spec, mod, cmt, cond, 
-    info, cc) := inComponent;
-  (_, type_spec, _) := lookupTypeSpec(type_spec, inEnv);
-  mod := lookupModifier(mod, inEnv);
-  cond := lookupOptExp(cond, inEnv);
-  outComponent := SCode.COMPONENT(name, io, fp, rp, pp, attr, type_spec, mod,
-    cmt, cond, info, cc);
+  outComponent := matchcontinue(inComponent, inEnv)
+    local
+      SCode.Ident name;
+      Absyn.InnerOuter io;
+      Boolean fp, rp, pp;
+      SCode.Attributes attr;
+      Absyn.TypeSpec type_spec;
+      SCode.Mod mod;
+      Option<SCode.Comment> cmt;
+      Option<Absyn.Exp> cond;
+      Option<Absyn.Info> opt_info;
+      Option<Absyn.ConstrainClass> cc;
+      Absyn.Info info;
+
+    case (SCode.COMPONENT(name, io, fp, rp, pp, attr, type_spec, mod, cmt, cond,
+        opt_info, cc), _)
+      equation
+        ErrorExt.setCheckpoint("lookupComponent");
+        info = getOptionalInfo(opt_info);
+        (_, type_spec, _) = lookupTypeSpec(type_spec, inEnv, info);
+        mod = lookupModifier(mod, inEnv, info);
+        cond = lookupOptExp(cond, inEnv, info);
+        ErrorExt.delCheckpoint("lookupComponent");
+      then
+        SCode.COMPONENT(name, io, fp, rp, pp, attr, type_spec, mod, cmt, cond,
+          opt_info, cc);
+
+    // Something failed in the previous case. This might happen with the MSL
+    // which sometimes defines conditional components that use functions that it
+    // doesn't really have access to. So check if the component happens to have
+    // condition = false, and if that's the case we can just ignore it (along
+    // with any error messages from the previous case).
+    case (SCode.COMPONENT(condition = cond), _)
+      equation
+        false = evaluateConditionalExp(cond, inEnv);
+        ErrorExt.rollBack("lookupComponent");
+      then
+        inComponent;
+
+    // Make sure that the checkpoint is deleted properly.
+    else
+      equation
+        ErrorExt.delCheckpoint("lookupComponent");
+      then
+        fail();
+
+  end matchcontinue;
 end lookupComponent;
+
+protected function getOptionalInfo
+  input Option<Absyn.Info> inInfo;
+  output Absyn.Info outInfo;
+algorithm
+  outInfo := match(inInfo)
+    local
+      Absyn.Info info;
+
+    case SOME(info) then info;
+    case NONE()
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, 
+          {"in SCodeFlatten.getOptionalInfo: no component information given"});
+      then
+        Absyn.dummyInfo;
+  end match;
+end getOptionalInfo;
+
+protected function evaluateConditionalExp
+  input Option<Absyn.Exp> inExp;
+  input Env inEnv;
+  output Boolean outResult;
+algorithm
+  outResult := match(inExp, inEnv)
+    local
+      Absyn.Exp exp;
+
+    case (SOME(exp), _) then evaluateBinding(exp, inEnv);
+  end match;
+end evaluateConditionalExp;
+        
+protected function evaluateBinding
+  input Absyn.Exp inExp;
+  input Env inEnv;
+  output Boolean outResult;
+algorithm
+  outResult := match(inExp, inEnv)
+    local
+      Boolean res;
+      Absyn.ComponentRef cref;
+      Absyn.Path path;
+      Absyn.Exp exp;
+      Env env;
+
+    case (Absyn.BOOL(value = res), _) then res;
+    case (Absyn.CREF(componentRef = cref), _)
+      equation
+        path = Absyn.crefToPath(cref);
+        (VAR(var = SCode.COMPONENT(modifications = 
+            SCode.MOD(absynExpOption = SOME((exp, _))))), _, SOME(env)) = 
+          lookupName(path, inEnv, Absyn.dummyInfo);
+      then 
+        evaluateBinding(exp, env);
+
+  end match;
+end evaluateBinding;
 
 protected function lookupTypeSpec
   input Absyn.TypeSpec inTypeSpec;
   input Env inEnv;
+  input Absyn.Info inInfo;
   output Item outItem;
   output Absyn.TypeSpec outTypeSpec;
   output Env outTypeEnv;
 algorithm
-  (outItem, outTypeSpec, outTypeEnv) := match(inTypeSpec, inEnv)
+  (outItem, outTypeSpec, outTypeEnv) := match(inTypeSpec, inEnv, inInfo)
     local
       Absyn.Path path;
       Absyn.Ident name;
@@ -269,9 +373,9 @@ algorithm
       Item item;
       Env env;
 
-    case (Absyn.TPATH(path, array_dim), _)
+    case (Absyn.TPATH(path, array_dim), _, _)
       equation
-        (item, path, SOME(env)) = lookupName(path, inEnv);
+        (item, path, SOME(env)) = lookupName(path, inEnv, inInfo);
       then
         (item, Absyn.TPATH(path, array_dim), env);
 
@@ -291,8 +395,8 @@ protected
 algorithm
   SCode.EXTENDS(path, mod, ann, info) := inExtends;
   env := removeExtendsFromLocalScope(inEnv);
-  (_, path, _) := lookupName(path, env);
-  mod := lookupModifier(mod, inEnv);
+  (_, path, _) := lookupName(path, env, info);
+  mod := lookupModifier(mod, inEnv, info);
   outExtends := SCode.EXTENDS(path, mod, ann, info);
 end lookupExtends;
 
@@ -317,17 +421,19 @@ algorithm
       SCode.EEquation equ;
       SCode.Ident iter_name;
       Env env;
+      Absyn.Info info;
 
-    case ((equ as SCode.EQ_FOR(index = iter_name), env))
+    case ((equ as SCode.EQ_FOR(index = iter_name, info = info), env))
       equation
         env = extendEnvWithIterators({(iter_name, NONE())}, env);
-        (equ, _) = SCode.traverseEEquationExps(equ, (traverseExp, env));
+        (equ, _) = SCode.traverseEEquationExps(equ, (traverseExp, (env, info)));
       then
         ((equ, env));
 
     case ((equ, env))
       equation
-        (equ, _) = SCode.traverseEEquationExps(equ, (traverseExp, env));
+        info = SCode.getEEquationInfo(equ);
+        (equ, _) = SCode.traverseEEquationExps(equ, (traverseExp, (env, info)));
       then
         ((equ, env));
 
@@ -335,16 +441,17 @@ algorithm
 end lookupEEquationTraverser;
 
 protected function traverseExp
-  input tuple<Absyn.Exp, Env> inTuple;
-  output tuple<Absyn.Exp, Env> outTuple;
+  input tuple<Absyn.Exp, tuple<Env, Absyn.Info>> inTuple;
+  output tuple<Absyn.Exp, tuple<Env, Absyn.Info>> outTuple;
 protected
   Absyn.Exp exp;
   Env env;
+  Absyn.Info info;
 algorithm
-  (exp, env) := inTuple;
-  (exp, (_, _, env)) := Absyn.traverseExpBidir(exp,
-    (lookupExpTraverserEnter, lookupExpTraverserExit, env));
-  outTuple := (exp, env);
+  (exp, (env, info)) := inTuple;
+  (exp, (_, _, (env, info))) := Absyn.traverseExpBidir(exp,
+    (lookupExpTraverserEnter, lookupExpTraverserExit, (env, info)));
+  outTuple := (exp, (env, info));
 end traverseExp;
 
 protected function lookupAlgorithm
@@ -379,17 +486,19 @@ algorithm
       Absyn.ForIterators iters;
       Env env;
       SCode.Statement stmt;
+      Absyn.Info info;
 
-    case ((stmt as SCode.ALG_FOR(iterators = iters), env))
+    case ((stmt as SCode.ALG_FOR(iterators = iters, info = info), env))
       equation
         env = extendEnvWithIterators(iters, env);
-        (stmt, _) = SCode.traverseStatementExps(stmt, (traverseExp, env));
+        (stmt, _) = SCode.traverseStatementExps(stmt, (traverseExp, (env, info)));
       then
         ((stmt, env));
 
     case ((stmt, env)) 
       equation
-        (stmt, _) = SCode.traverseStatementExps(stmt, (traverseExp, env));
+        info = SCode.getStatementInfo(stmt);
+        (stmt, _) = SCode.traverseStatementExps(stmt, (traverseExp, (env, info)));
       then
         ((stmt, env));
 
@@ -399,9 +508,10 @@ end lookupStatementTraverser;
 protected function lookupModifier
   input SCode.Mod inMod;
   input Env inEnv;
+  input Absyn.Info inInfo;
   output SCode.Mod outMod;
 algorithm
-  outMod := match(inMod, inEnv)
+  outMod := match(inMod, inEnv, inInfo)
     local
       Boolean fp;
       Absyn.Each ep;
@@ -409,65 +519,67 @@ algorithm
       Option<tuple<Absyn.Exp, Boolean>> opt_exp;
       list<SCode.Element> el;
 
-    case (SCode.MOD(fp, ep, sub_mods, opt_exp), _)
+    case (SCode.MOD(fp, ep, sub_mods, opt_exp), _, inInfo)
       equation
-        opt_exp = lookupModOptExp(opt_exp, inEnv);
-        sub_mods = Util.listMap1(sub_mods, lookupSubMod, inEnv);
+        opt_exp = lookupModOptExp(opt_exp, inEnv, inInfo);
+        sub_mods = Util.listMap2(sub_mods, lookupSubMod, inEnv, inInfo);
       then
         SCode.MOD(fp, ep, sub_mods, opt_exp);
 
-    case (SCode.REDECL(fp, el), _)
+    case (SCode.REDECL(fp, el), _, _)
       equation
         //print("SCodeFlatten.lookupModifier: REDECL\n");
       then
         //fail();
         inMod;
 
-    case (SCode.NOMOD(), _) then inMod;
+    case (SCode.NOMOD(), _, _) then inMod;
   end match;
 end lookupModifier;
 
 protected function lookupModOptExp
   input Option<tuple<Absyn.Exp, Boolean>> inOptExp;
   input Env inEnv;
+  input Absyn.Info inInfo;
   output Option<tuple<Absyn.Exp, Boolean>> outOptExp;
 algorithm
-  outOptExp := match(inOptExp, inEnv)
+  outOptExp := match(inOptExp, inEnv, inInfo)
     local
       Absyn.Exp exp;
       Boolean delay_elab;
 
-    case (SOME((exp, delay_elab)), _)
+    case (SOME((exp, delay_elab)), _, _)
       equation
-        exp = lookupExp(exp, inEnv);
+        exp = lookupExp(exp, inEnv, inInfo);
       then
         SOME((exp, delay_elab));
 
-    case (NONE(), _) then inOptExp;
+    case (NONE(), _, _) then inOptExp;
   end match;
 end lookupModOptExp;
 
 protected function lookupSubMod
   input SCode.SubMod inSubMod;
   input Env inEnv;
+  input Absyn.Info inInfo;
   output SCode.SubMod outSubMod;
 algorithm
-  outSubMod := match(inSubMod, inEnv)
+  outSubMod := match(inSubMod, inEnv, inInfo)
     local
       SCode.Ident ident;
       list<SCode.Subscript> subs;
       SCode.Mod mod;
 
-    case (SCode.NAMEMOD(ident = ident, A = mod), _)
+    case (SCode.NAMEMOD(ident = ident, A = mod), _, _)
       equation
-        mod = lookupModifier(mod, inEnv);
+        mod = lookupModifier(mod, inEnv, inInfo);
       then
         SCode.NAMEMOD(ident, mod);
 
-    case (SCode.IDXMOD(subscriptLst = subs, an = mod), _)
+    case (SCode.IDXMOD(subscriptLst = subs, an = mod), _, _)
       equation
-        subs = Util.listMap1(subs, lookupSubscript, inEnv);
-        mod = lookupModifier(mod, inEnv);
+        subs = Util.listMap2(subs, lookupSubscript, inEnv, inInfo);
+        mod = lookupModifier(mod, inEnv, inInfo);
       then
         SCode.IDXMOD(subs, mod);
   end match;
@@ -476,106 +588,114 @@ end lookupSubMod;
 protected function lookupSubscript
   input SCode.Subscript inSub;
   input Env inEnv;
+  input Absyn.Info inInfo;
   output SCode.Subscript outSub;
 algorithm
-  outSub := match(inSub, inEnv)
+  outSub := match(inSub, inEnv, inInfo)
     local
       Absyn.Exp exp;
 
-    case (Absyn.SUBSCRIPT(subScript = exp), _)
+    case (Absyn.SUBSCRIPT(subScript = exp), _, _)
       equation
-        exp = lookupExp(exp, inEnv);
+        exp = lookupExp(exp, inEnv, inInfo);
       then
         Absyn.SUBSCRIPT(exp);
 
-    case (Absyn.NOSUB(), _) then inSub;
+    case (Absyn.NOSUB(), _, _) then inSub;
   end match;
 end lookupSubscript;
 
 protected function lookupExp
   input Absyn.Exp inExp;
   input Env inEnv;
+  input Absyn.Info inInfo;
   output Absyn.Exp outExp;
 algorithm
   (outExp, _) := Absyn.traverseExpBidir(inExp, 
-    (lookupExpTraverserEnter, lookupExpTraverserExit, inEnv));
+    (lookupExpTraverserEnter, lookupExpTraverserExit, (inEnv, inInfo)));
 end lookupExp;
 
 protected function lookupOptExp
   input Option<Absyn.Exp> inExp;
   input Env inEnv;
+  input Absyn.Info inInfo;
   output Option<Absyn.Exp> outExp;
 algorithm
-  outExp := match(inExp, inEnv)
+  outExp := match(inExp, inEnv, inInfo)
     local
       Absyn.Exp exp;
 
-    case (SOME(exp), _)
+    case (SOME(exp), _, _)
       equation
-        exp = lookupExp(exp, inEnv);
+        exp = lookupExp(exp, inEnv, inInfo);
       then
         SOME(exp);
 
-    case (NONE(), _) then NONE();
+    case (NONE(), _, _) then inExp;
   end match;
 end lookupOptExp;
 
 protected function lookupExpTraverserEnter
-  input tuple<Absyn.Exp, Env> inTuple;
-  output tuple<Absyn.Exp, Env> outTuple;
+  input tuple<Absyn.Exp, tuple<Env, Absyn.Info>> inTuple;
+  output tuple<Absyn.Exp, tuple<Env, Absyn.Info>> outTuple;
 algorithm
-  outTuple := matchcontinue(inTuple)
+  outTuple := match(inTuple)
     local
       Env env;
       Absyn.ComponentRef cref;
       Absyn.FunctionArgs args;
       Absyn.Exp exp;
       Absyn.ForIterators iters;
+      Absyn.Info info;
+      tuple<Env, Absyn.Info> tup;
 
-    case ((Absyn.CREF(componentRef = cref), env))
+    case ((Absyn.CREF(componentRef = cref), tup as (env, info)))
       equation
-        cref = lookupComponentRef(cref, env);
+        cref = lookupComponentRef(cref, env, info);
       then
-        ((Absyn.CREF(cref), env));
+        ((Absyn.CREF(cref), tup));
 
     case ((exp as Absyn.CALL(functionArgs = 
-        Absyn.FOR_ITER_FARG(iterators = iters)), env))
+        Absyn.FOR_ITER_FARG(iterators = iters)), (env, info)))
       equation
         env = extendEnvWithIterators(iters, env);
       then
-        ((exp, env));
+        ((exp, (env, info)));
 
-    case ((Absyn.CALL(function_ = cref, functionArgs = args), env))
+    case ((Absyn.CALL(function_ = cref, functionArgs = args), 
+        tup as (env, info)))
       equation
-        cref = lookupComponentRef(cref, env);
+        cref = lookupComponentRef(cref, env, info);
         // TODO: handle function arguments
       then
-        ((Absyn.CALL(cref, args), env));
+        ((Absyn.CALL(cref, args), tup));
 
-    case ((Absyn.PARTEVALFUNCTION(function_ = cref, functionArgs = args), env))
+    case ((Absyn.PARTEVALFUNCTION(function_ = cref, functionArgs = args), 
+        tup as (env, info)))
       equation
-        cref = lookupComponentRef(cref, env);
+        cref = lookupComponentRef(cref, env, info);
         // TODO: handle function arguments
       then
-        ((Absyn.PARTEVALFUNCTION(cref, args), env));
+        ((Absyn.PARTEVALFUNCTION(cref, args), tup));
     
     else then inTuple;
-  end matchcontinue;
+  end match;
 end lookupExpTraverserEnter;
 
 protected function lookupExpTraverserExit
-  input tuple<Absyn.Exp, Env> inTuple;
-  output tuple<Absyn.Exp, Env> outTuple;
+  input tuple<Absyn.Exp, tuple<Env, Absyn.Info>> inTuple;
+  output tuple<Absyn.Exp, tuple<Env, Absyn.Info>> outTuple;
 algorithm
   outTuple := match(inTuple)
     local
       Absyn.Exp e;
       Env env;
+      Absyn.Info info;
 
     case ((e as Absyn.CALL(functionArgs = Absyn.FOR_ITER_FARG(iterators = _)),
-        FRAME(frameType = IMPLICIT_SCOPE()) :: env))
+        (FRAME(frameType = IMPLICIT_SCOPE()) :: env, info)))
       then
-        ((e, env));
+        ((e, (env, info)));
 
     else then inTuple;
   end match;
@@ -603,48 +723,51 @@ protected function lookupName
   class."
   input Absyn.Path inName;
   input Env inEnv;
+  input Absyn.Info inInfo;
   output Item outItem;
   output Absyn.Path outName;
   output Option<Env> outEnv;
 algorithm
-  (outItem, outName, outEnv) := matchcontinue(inName, inEnv)
+  (outItem, outName, outEnv) := matchcontinue(inName, inEnv, inInfo)
     local
       Absyn.Ident id;
       Item item;
       Absyn.Path path, new_path;
       Env env;
       Option<Env> item_env;
+      String name_str, env_str;
 
-    case (Absyn.IDENT(name = id), _)
+    case (Absyn.IDENT(name = id), _, _)
       equation
         item = lookupBuiltinType(id);
       then
         (item, inName, SOME(emptyEnv));
 
     // Simple name.
-    case (Absyn.IDENT(name = id), _)
+    case (Absyn.IDENT(name = id), _, _)
       equation
         (item, new_path, env) = lookupSimpleName(id, inEnv);
       then
         (item, new_path, SOME(env));
 
     // Qualified name.
-    case (Absyn.QUALIFIED(name = id, path = path), _)
+    case (Absyn.QUALIFIED(name = id, path = path), _, _)
       equation
         // Look up the first identifier.
         (item, new_path, env) = lookupSimpleName(id, inEnv);
         // Look up the rest of the name in the environment of the first
         // identifier.
         (item, path, env) = lookupNameInItem(path, item, env);
-        path = Absyn.joinPaths(new_path, path);
+        path = joinPaths(new_path, path);
       then
         (item, path, SOME(env));
       
     else
       equation
-        print("- SCodeFlatten.lookupName failed for " +&
-          Absyn.pathString(inName) +& " in " +&
-          Absyn.pathString(getEnvPath(inEnv)) +& "\n");
+        name_str = Absyn.pathString(inName);
+        env_str = getEnvName(inEnv);
+        Error.addSourceMessage(Error.LOOKUP_VARIABLE_ERROR,
+          {cref_str, env_str}, inInfo);
       then
         fail();
         
@@ -656,32 +779,24 @@ protected function lookupComponentRef
   qualified."
   input Absyn.ComponentRef inCref;
   input Env inEnv;
+  input Absyn.Info inInfo;
   output Absyn.ComponentRef outCref;
 
 algorithm
-  outCref := matchcontinue(inCref, inEnv)
+  outCref := matchcontinue(inCref, inEnv, inInfo)
     local
       Absyn.ComponentRef cref;
+      String cref_str, env_str;
 
     case (Absyn.CREF_QUAL(name = "StateSelect", subScripts = {}, 
-        componentRef = Absyn.CREF_IDENT(name = _)), _)
+        componentRef = Absyn.CREF_IDENT(name = _)), _, _)
       then inCref;
 
-    case (_, _)
+    case (_, _, _)
       equation
         // First look up all subscripts, because all subscripts should be found
         // in the enclosing scope of the component reference.
-        cref = lookupComponentRefSubs(inCref, inEnv);
-        // Then look up the component reference itself.
-        cref = lookupComponentRef2(cref, inEnv);
-      then
-        cref;
-
-    case (_, _)
-      equation
-        // First look up all subscripts, because all subscripts should be found
-        // in the enclosing scope of the component reference.
-        cref = lookupComponentRefSubs(inCref, inEnv);
+        cref = lookupComponentRefSubs(inCref, inEnv, inInfo);
         // Then look up the component reference itself.
         cref = lookupComponentRef2(cref, inEnv);
       then
@@ -689,9 +804,10 @@ algorithm
 
     else
       equation
-        print("- SCodeFlatten.lookupComponentRef failed for " +&
-          Absyn.printComponentRefStr(inCref) +& " in " +&
-          getEnvName(inEnv) +& "\n");
+        cref_str = Absyn.printComponentRefStr(inCref);
+        env_str = getEnvName(inEnv);
+        Error.addSourceMessage(Error.LOOKUP_VARIABLE_ERROR, 
+          {cref_str, env_str}, inInfo);
       then
         fail();
 
@@ -712,14 +828,14 @@ algorithm
       Env env;
       Item item;
 
-    case (Absyn.CREF_IDENT(name, subs), inEnv)
+    case (Absyn.CREF_IDENT(name, subs), _)
       equation
         (_, path, _) = lookupSimpleName(name, inEnv);
         cref = Absyn.pathToCrefWithSubs(path, subs);
       then
         cref;
 
-    case (Absyn.CREF_QUAL(name, subs, rest_cref), inEnv)
+    case (Absyn.CREF_QUAL(name, subs, rest_cref), _)
       equation
         // Lookup the first identifier.
         (item, new_path, env) = lookupSimpleName(name, inEnv);
@@ -732,7 +848,7 @@ algorithm
       then
         cref;
 
-    case (Absyn.CREF_FULLYQUALIFIED(componentRef = cref), inEnv)
+    case (Absyn.CREF_FULLYQUALIFIED(componentRef = cref), _)
       equation
         cref = lookupComponentRef2(cref, inEnv);
       then
@@ -755,30 +871,31 @@ end joinCrefs;
 protected function lookupComponentRefSubs
   input Absyn.ComponentRef inCref;
   input Env inEnv;
+  input Absyn.Info inInfo;
   output Absyn.ComponentRef outCref;
 algorithm
-  outCref := match(inCref, inEnv)
+  outCref := match(inCref, inEnv, inInfo)
     local
       Absyn.Ident name;
       Absyn.ComponentRef cref;
       list<Absyn.Subscript> subs;
 
-    case (Absyn.CREF_IDENT(name, subs), _)
+    case (Absyn.CREF_IDENT(name, subs), _, _)
       equation
-        subs = Util.listMap1(subs, lookupSubscript, inEnv);
+        subs = Util.listMap2(subs, lookupSubscript, inEnv, inInfo);
       then
         Absyn.CREF_IDENT(name, subs);
 
-    case (Absyn.CREF_QUAL(name, subs, cref), _)
+    case (Absyn.CREF_QUAL(name, subs, cref), _, _)
       equation
-        subs = Util.listMap1(subs, lookupSubscript, inEnv);
-        cref = lookupComponentRefSubs(cref, inEnv);
+        subs = Util.listMap2(subs, lookupSubscript, inEnv, inInfo);
+        cref = lookupComponentRefSubs(cref, inEnv, inInfo);
       then
         Absyn.CREF_QUAL(name, subs, cref);
 
-    case (Absyn.CREF_FULLYQUALIFIED(componentRef = cref), _)
+    case (Absyn.CREF_FULLYQUALIFIED(componentRef = cref), _, _)
       equation
-        cref = lookupComponentRefSubs(cref, inEnv);
+        cref = lookupComponentRefSubs(cref, inEnv, inInfo);
       then
         Absyn.CREF_FULLYQUALIFIED(cref);
 
@@ -938,11 +1055,13 @@ algorithm
       Item item;
       Env env;
       list<SCode.Element> redecls;
+      Absyn.Info info;
 
     // Look in the first base class.
-    case (_, EXTENDS(baseClass = bc, redeclareModifiers = redecls) :: _, inEnv)
+    case (_, EXTENDS(baseClass = bc, redeclareModifiers = redecls, 
+        info = info) :: _, inEnv)
       equation
-        (item, _, SOME(env)) = lookupName(bc, inEnv);
+        (item, _, SOME(env)) = lookupName(bc, inEnv, info);
         (item, env) = replaceRedeclaredClassesInEnv(redecls, item, env, inEnv);
         (item, path, env) = lookupNameInItem(Absyn.IDENT(inName), item, env);
       then
@@ -1034,7 +1153,7 @@ algorithm
         // Look up the name among the public member of the found package.
         (item, path2, env) = lookupNameInItem(Absyn.IDENT(inName), item, env);
         // Combine the paths for the name and the package it was found in.
-        path = Absyn.joinPaths(path, path2);
+        path = joinPaths(path, path2);
       then
         (SOME(item), SOME(path), SOME(env));
 
@@ -1065,6 +1184,32 @@ algorithm
   outPath := Absyn.FULLYQUALIFIED(outPath);
 end lookupFullyQualified;
 
+protected function joinPaths
+  input Absyn.Path inPath1;
+  input Absyn.Path inPath2;
+  output Absyn.Path outPath;
+algorithm
+  outPath := match(inPath1, inPath2)
+    local
+      Absyn.Ident id;
+      Absyn.Path path;
+
+    case (_, Absyn.FULLYQUALIFIED(path = _)) then inPath2;
+    case (Absyn.IDENT(name = id), _) then Absyn.QUALIFIED(id, inPath2);
+    case (Absyn.QUALIFIED(name = id, path = path), _)
+      equation
+        path = joinPaths(path, inPath2);
+      then
+        Absyn.QUALIFIED(id, path);
+
+    case (Absyn.FULLYQUALIFIED(path = path), _)
+      equation
+        path = joinPaths(path, inPath2);
+      then
+        Absyn.FULLYQUALIFIED(path);
+  end match;
+end joinPaths;
+
 protected function lookupNameInPackage
   input Absyn.Path inName;
   input Env inEnv;
@@ -1091,7 +1236,7 @@ algorithm
       equation
         (SOME(item), SOME(new_path), SOME(env)) = lookupInLocalScope(name, inEnv); 
         (item, path, env) = lookupNameInItem(path, item, env);
-        path = Absyn.joinPaths(new_path, path);
+        path = joinPaths(new_path, path);
       then
         (item, path, env);
 
@@ -1153,11 +1298,14 @@ algorithm
       Absyn.TypeSpec type_spec;
       SCode.Mod mods;
       list<SCode.Element> redeclares;
+      Option<Absyn.Info> opt_info;
+      Absyn.Info info;
 
     case (_, VAR(var = SCode.COMPONENT(typeSpec = type_spec, 
-        modifications = mods)), _)
+        modifications = mods, info = opt_info)), _)
       equation
-        (item, _, type_env) = lookupTypeSpec(type_spec, inEnv);
+        info = getOptionalInfo(opt_info);
+        (item, _, type_env) = lookupTypeSpec(type_spec, inEnv, info);
         redeclares = extractRedeclaresFromModifier(mods);
         (item, type_env) = 
           replaceRedeclaredClassesInEnv(redeclares, item, type_env, inEnv);
@@ -1191,11 +1339,14 @@ algorithm
       Absyn.TypeSpec type_spec;
       SCode.Mod mods;
       list<SCode.Element> redeclares;
+      Option<Absyn.Info> opt_info;
+      Absyn.Info info;
 
     case (_, VAR(var = SCode.COMPONENT(typeSpec = type_spec, 
-        modifications = mods)), _)
+        modifications = mods, info = opt_info)), _)
       equation
-        (item, _, type_env) = lookupTypeSpec(type_spec, inEnv);
+        info = getOptionalInfo(opt_info);
+        (item, _, type_env) = lookupTypeSpec(type_spec, inEnv, info);
         redeclares = extractRedeclaresFromModifier(mods);
         (item, type_env) = 
           replaceRedeclaredClassesInEnv(redeclares, item, type_env, inEnv);
@@ -1331,7 +1482,7 @@ algorithm
             info = info),
           cc = cc), _)
       equation
-        (_, path, SOME(env)) = lookupName(path, inEnv);
+        (_, path, SOME(env)) = lookupName(path, inEnv, info);
         path = mergePathWithEnvPath(path, env);
       then
         SCode.CLASSDEF(name, fp, rp, 
@@ -1383,10 +1534,12 @@ algorithm
       Item item;
       Absyn.Path path;
       Option<Env> opt_env;
+      Absyn.Info info;
 
-    case (SCode.CLASSDEF(name = name, classDef = cls), _)
+    case (SCode.CLASSDEF(name = name, classDef = 
+        cls as SCode.CLASS(info = info)), _)
       equation
-        (item, path, SOME(env)) = lookupName(Absyn.IDENT(name), inEnv);
+        (item, path, SOME(env)) = lookupName(Absyn.IDENT(name), inEnv, info);
         path = Absyn.joinPaths(getEnvPath(env), path);
         env = replaceClassInEnv(path, cls, inEnv);
       then
@@ -1847,10 +2000,12 @@ protected
   Absyn.Path bc;
   SCode.Mod mods;
   list<SCode.Element> redecls;
+  Absyn.Info info;
 algorithm
-  SCode.EXTENDS(baseClassPath = bc, modifications = mods) := inExtends;
+  SCode.EXTENDS(baseClassPath = bc, modifications = mods, info = info) := 
+    inExtends;
   redecls := extractRedeclaresFromModifier(mods);
-  outEnv := addExtendsToEnvExtendsTable(EXTENDS(bc, redecls), inEnv);
+  outEnv := addExtendsToEnvExtendsTable(EXTENDS(bc, redecls, info), inEnv);
 end extendEnvWithExtends;
 
 protected function addExtendsToEnvExtendsTable

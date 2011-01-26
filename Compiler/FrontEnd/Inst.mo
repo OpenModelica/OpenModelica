@@ -156,6 +156,7 @@ protected import Util;
 protected import Values;
 protected import ValuesUtil;
 protected import System;
+protected import SCodeFlatten;
 
 public function newIdent
 "function: newIdent
@@ -203,6 +204,7 @@ algorithm
       InstanceHierarchy oIH1, oIH2, iIH;
     case (cache,iIH,p)
       equation
+        //p = SCodeFlatten.flatten(p);
         // Debug.fprintln("insttr", "instantiate");
         pnofunc = Util.listSelect(p, isNotFunction);
         pfunc = Util.listSelect(p, SCode.isFunction);
@@ -305,6 +307,7 @@ algorithm
 
     case (cache,ih,(cdecls as (_ :: _)),(path as Absyn.IDENT(name = name2))) /* top level class */
       equation
+        //cdecls = SCodeFlatten.flatten(cdecls);
         (cache,env) = Builtin.initialEnv(cache);
         (cache,env_1,ih,dae1) = instClassDecls(cache, env, ih, cdecls, path);
         (cache,env_2,ih,dae2) = instClassInProgram(cache, env_1, ih, cdecls, path);
@@ -324,6 +327,7 @@ algorithm
 
     case (cache,ih,(cdecls as (_ :: _)),(path as Absyn.QUALIFIED(name = name))) /* class in package */
       equation
+        //cdecls = SCodeFlatten.flatten(cdecls);
         pathstr = Absyn.pathString(path);
                 
         //System.startTimer();
