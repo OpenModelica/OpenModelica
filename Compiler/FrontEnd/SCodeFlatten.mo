@@ -309,12 +309,7 @@ algorithm
       Absyn.Info info;
 
     case SOME(info) then info;
-    case NONE()
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR, 
-          {"in SCodeFlatten.getOptionalInfo: no component information given"});
-      then
-        Absyn.dummyInfo;
+    case NONE() then Absyn.dummyInfo;
   end match;
 end getOptionalInfo;
 
@@ -1392,7 +1387,7 @@ algorithm
         // Merge the types environment with it's enclosing scopes to get the
         // enclosing scopes of the classes we need to replace.
         env = item_env :: inTypeEnv;
-        env = Util.listFold(redeclares, replaceRedeclaredClassInEnv, env);
+        env = Util.listFold(redeclares, replaceRedeclaredElementInEnv, env);
         item_env :: env = env;
       then
         (CLASS(cls, {item_env}), env);
@@ -1437,14 +1432,19 @@ algorithm
         {redecl as SCode.CLASSDEF(name = _)})), _)
       then redecl :: inRedeclares;
 
+    case (SCode.NAMEMOD(A = SCode.REDECL(elementLst =
+        {redecl as SCode.COMPONENT(component = _)})), _)
+      then redecl :: inRedeclares;
+
     else then inRedeclares;
   end match;
 end extractRedeclareFromSubMod;
 
 protected function qualifyRedeclare
-  "Since a modifier might redeclare a class in a type with a class that is not
-  reachable from the type we need to fully qualify the class. Ex:
-    A a(redeclare package P = P1)
+  "Since a modifier might redeclare an element in a variable with a type that
+  is not reachable from the component type we need to fully qualify the element. 
+    Ex:
+      A a(redeclare package P = P1)
   where P1 is not reachable from A."
   input SCode.Element inElement;
   input Env inEnv;
@@ -1459,11 +1459,16 @@ algorithm
       Option<Absyn.ArrayDim> ad;
       Absyn.Path path;
       SCode.Mod mods;
-      Absyn.ElementAttributes attr;
+      Absyn.ElementAttributes eattr;
       Option<SCode.Comment> cmt;
       Env env;
       SCode.Restriction res;
       Absyn.Info info;
+      Absyn.InnerOuter io;
+      SCode.Attributes attr;
+      Option<Absyn.Exp> cond;
+      Option<Absyn.Info> opt_info;
+      Option<Absyn.ArrayDim> array_dim;
 
     case (SCode.CLASSDEF(
           name = name, 
@@ -1477,18 +1482,26 @@ algorithm
             classDef = SCode.DERIVED(
               typeSpec = Absyn.TPATH(path, ad),
               modifications = mods, 
-              attributes = attr, 
+              attributes = eattr, 
               comment = cmt),
             info = info),
           cc = cc), _)
       equation
-        (_, path, SOME(env)) = lookupName(path, inEnv, info);
-        path = mergePathWithEnvPath(path, env);
+        path = qualifyPath(path, inEnv, info);
       then
         SCode.CLASSDEF(name, fp, rp, 
           SCode.CLASS(name2, pp, ep, res,
-            SCode.DERIVED(Absyn.TPATH(path, ad), mods, attr, cmt),
+            SCode.DERIVED(Absyn.TPATH(path, ad), mods, eattr, cmt),
             info), cc);
+
+    case (SCode.COMPONENT(name, io, fp, rp, pp, attr, 
+        Absyn.TPATH(path, array_dim), mods, cmt, cond, opt_info, cc), _)
+      equation
+        info = getOptionalInfo(opt_info);
+        path = qualifyPath(path, inEnv, info);
+      then
+        SCode.COMPONENT(name, io, fp, rp, pp, attr, 
+          Absyn.TPATH(path, array_dim), mods, cmt, cond, opt_info, cc);
 
     else
       equation
@@ -1499,6 +1512,19 @@ algorithm
         fail();
   end matchcontinue;
 end qualifyRedeclare;
+
+protected function qualifyPath
+  input Absyn.Path inPath;
+  input Env inEnv;
+  input Absyn.Info inInfo;
+  output Absyn.Path outPath;
+protected
+  Absyn.Path path;
+  Env env;
+algorithm
+  (_, path, SOME(env)) := lookupName(inPath, inEnv, inInfo);
+  outPath := mergePathWithEnvPath(path, env);
+end qualifyPath;
 
 protected function mergePathWithEnvPath
   input Absyn.Path inPath;
@@ -1521,7 +1547,7 @@ algorithm
   end matchcontinue;
 end mergePathWithEnvPath;
 
-protected function replaceRedeclaredClassInEnv
+protected function replaceRedeclaredElementInEnv
   input SCode.Element inRedeclare;
   input Env inEnv;
   output Env outEnv;
@@ -1531,40 +1557,42 @@ algorithm
       SCode.Ident name;
       SCode.Class cls;
       Env env;
-      Item item;
       Absyn.Path path;
       Option<Env> opt_env;
       Absyn.Info info;
+      Option<Absyn.Info> opt_info;
 
     case (SCode.CLASSDEF(name = name, classDef = 
         cls as SCode.CLASS(info = info)), _)
       equation
-        (item, path, SOME(env)) = lookupName(Absyn.IDENT(name), inEnv, info);
-        path = Absyn.joinPaths(getEnvPath(env), path);
-        env = replaceClassInEnv(path, cls, inEnv);
+        (_, path, SOME(env)) = lookupName(Absyn.IDENT(name), inEnv, info);
+        path = joinPaths(getEnvPath(env), path);
+        env = replaceElementInEnv(path, inRedeclare, inEnv);
       then
         env;
 
-    case (_, _)
+    case (SCode.COMPONENT(component = name, info = opt_info), _)
       equation
-        print("Not a class def: " +& SCode.printElementStr(inRedeclare) +&
-            "\n");
+        info = getOptionalInfo(opt_info);
+        (_, path, SOME(env)) = lookupName(Absyn.IDENT(name), inEnv, info);
+        path = joinPaths(getEnvPath(env), path);
+        env = replaceElementInEnv(path, inRedeclare, inEnv);
       then
-        inEnv;
+        env;
 
     else then inEnv;
   end match;
-end replaceRedeclaredClassInEnv;
+end replaceRedeclaredElementInEnv;
         
-protected function replaceClassInEnv
-  "Replaces a class in the environment with another class, which is needed for
-  redeclare. There are two cases here: either the class we want to replace is in
-  the current path or it's somewhere else in the environment. If it's in the
-  current path we can just go through the frames until we find the right frame
-  to replace the class in. If it's not we need to look up the correct class in
-  the environment and continue into the class's environment."
+protected function replaceElementInEnv
+  "Replaces an element in the environment with another element, which is needed
+  for redeclare. There are two cases here: either the element we want to replace
+  is in the current path or it's somewhere else in the environment. If it's in
+  the current path we can just go through the frames until we find the right
+  frame to replace the element in. If it's not we need to look up the correct
+  class in the environment and continue into the class's environment."
   input Absyn.Path inPath;
-  input SCode.Class inClass;
+  input SCode.Element inElement;
   input Env inEnv;
   output Env outEnv;
 protected
@@ -1576,10 +1604,10 @@ algorithm
   env := listReverse(inEnv);
   // Make the redeclare in both the current environment and the global.
   // TODO: do this in a better way.
-  f :: env := replaceClassInEnv2(inPath, inClass, env);
-  {f} := replaceClassInEnv2(inPath, inClass, {f});
+  f :: env := replaceElementInEnv2(inPath, inElement, env);
+  {f} := replaceElementInEnv2(inPath, inElement, {f});
   outEnv := listReverse(f :: env);
-end replaceClassInEnv;
+end replaceElementInEnv;
 
 protected function checkNextScopeAvailability
   "Checks if the next scope in the environment is the scope we are looking for
@@ -1600,37 +1628,37 @@ algorithm
   end match;
 end checkNextScopeAvailability;
 
-protected function replaceClassInEnv2
+protected function replaceElementInEnv2
   "Helper function to replaceClassInEnv."
   input Absyn.Path inPath;
-  input SCode.Class inClass;
+  input SCode.Element inElement;
   input Env inEnv;
   output Env outEnv;
 algorithm
-  outEnv := replaceClassInEnv3(inPath, inClass, inEnv,
+  outEnv := replaceElementInEnv3(inPath, inElement, inEnv,
     checkNextScopeAvailability(inPath, inEnv));
-end replaceClassInEnv2;
+end replaceElementInEnv2;
 
-protected function replaceClassInEnv3
+protected function replaceElementInEnv3
   "Helper function to replaceClassInEnv."
   input Absyn.Path inPath;
-  input SCode.Class inClass;
+  input SCode.Element inElement;
   input Env inEnv;
   input Boolean inNextScopeAvailable;
   output Env outEnv;
 algorithm
-  outEnv := matchcontinue(inPath, inClass, inEnv, inNextScopeAvailable)
+  outEnv := matchcontinue(inPath, inElement, inEnv, inNextScopeAvailable)
     local
       String name, scope_name;
       Absyn.Path path;
       Env env, rest_env;
       Frame f;
 
-    // A simple identifier means that the class should be replaced in the
+    // A simple identifier means that the element should be replaced in the
     // current scope.
     case (Absyn.IDENT(name = name), _, _, _)
       equation
-        env = replaceClassInScope(name, inClass, inEnv);
+        env = replaceElementInScope(name, inElement, inEnv);
       then
         env;
 
@@ -1638,7 +1666,7 @@ algorithm
     // into it.
     case (Absyn.QUALIFIED(path = path), _, f :: rest_env, true)
       equation
-        rest_env = replaceClassInEnv2(path, inClass, rest_env);
+        rest_env = replaceElementInEnv2(path, inElement, rest_env);
         env = f :: rest_env;
       then
         env;
@@ -1647,50 +1675,65 @@ algorithm
     // going into classes in the environment instead.
     case (Absyn.QUALIFIED(name = name, path = path), _, _, false)
       equation
-        env = replaceClassInClassEnv(inPath, inClass, inEnv);
+        env = replaceElementInClassEnv(inPath, inElement, inEnv);
       then
         env;
 
     else
       equation
-        print("- SCodeFlatten.replaceClassInEnv3 failed.\n");
+        print("- SCodeFlatten.replaceElementInEnv3 failed.\n");
       then
         fail();
 
   end matchcontinue;
-end replaceClassInEnv3;
+end replaceElementInEnv3;
 
-protected function replaceClassInScope
-  "Replaces a class in the current scope."
-  input SCode.Ident inClassName;
-  input SCode.Class inClass;
+protected function replaceElementInScope
+  "Replaces an element in the current scope."
+  input SCode.Ident inElementName;
+  input SCode.Element inElement;
   input Env inEnv;
   output Env outEnv;
 protected
-  Option<String> name;
-  FrameType ty;
-  AvlTree tree;
-  ExtendsTable exts;
-  ImportTable imps;
-  Env env, class_env;
-  SCode.ClassDef cdef;
 algorithm
-  FRAME(name, ty, tree, exts, imps) :: env := inEnv;
-  class_env := newEnvironment(SOME(inClassName));
-  SCode.CLASS(classDef = cdef) := inClass;
-  class_env := extendEnvWithClassComponents(inClassName, cdef, class_env);
-  tree := avlTreeReplace(tree, inClassName, CLASS(inClass, class_env));
-  outEnv := FRAME(name, ty, tree, exts, imps) :: env;
-end replaceClassInScope;
+  outEnv := match(inElementName, inElement, inEnv)
+    local
+      Option<String> name;
+      FrameType ty;
+      AvlTree tree;
+      ExtendsTable exts;
+      ImportTable imps;
+      Env env, class_env;
+      SCode.ClassDef cdef;
+      SCode.Class cls;
 
-protected function replaceClassInClassEnv
-  "Replaces a class in the environment of another class."
+    case (_, SCode.CLASSDEF(classDef = cls as SCode.CLASS(classDef = cdef)), 
+        FRAME(name, ty, tree, exts, imps) :: env)
+      equation
+        class_env = newEnvironment(SOME(inElementName));
+        class_env = extendEnvWithClassComponents(inElementName, cdef, class_env);
+        tree = avlTreeReplace(tree, inElementName, CLASS(cls, class_env));
+      then
+        FRAME(name, ty, tree, exts, imps) :: env;
+
+    case (_, SCode.COMPONENT(component = _),
+        FRAME(name, ty, tree, exts, imps) :: env)
+      equation
+        tree = avlTreeReplace(tree, inElementName, VAR(inElement));
+      then
+        FRAME(name, ty, tree, exts, imps) :: env;
+
+  end match;
+end replaceElementInScope;
+
+protected function replaceElementInClassEnv
+  "Replaces an element in the environment of a class."
   input Absyn.Path inClassPath;
-  input SCode.Class inClass;
+  input SCode.Element inElement;
   input Env inEnv;
   output Env outEnv;
 algorithm
-  outEnv := match(inClassPath, inClass, inEnv)
+  outEnv := match(inClassPath, inElement, inEnv)
     local
       Option<String> frame_name;
       FrameType ty;
@@ -1704,10 +1747,10 @@ algorithm
       SCode.Class cls;
 
     // A simple identifier means that we have reached the environment in which
-    // the class should be replaced.
+    // the element should be replaced.
     case (Absyn.IDENT(name = name), _, _)
       equation
-        env = replaceClassInScope(name, inClass, inEnv);
+        env = replaceElementInScope(name, inElement, inEnv);
       then
         env;
 
@@ -1717,13 +1760,13 @@ algorithm
         FRAME(frame_name, ty, tree, exts, imps) :: rest_env)
       equation
         CLASS(cls = cls, env = class_env) = avlTreeGet(tree, name);
-        class_env = replaceClassInClassEnv(path, inClass, class_env);
+        class_env = replaceElementInClassEnv(path, inElement, class_env);
         tree = avlTreeReplace(tree, name, CLASS(cls, class_env)); 
       then
         FRAME(frame_name, ty, tree, exts, imps) :: rest_env;
 
   end match;
-end replaceClassInClassEnv;
+end replaceElementInClassEnv;
         
 //protected function expandExtend
 //  input SCode.Element inElement;
