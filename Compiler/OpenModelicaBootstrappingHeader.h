@@ -1584,7 +1584,7 @@ extern struct record_description Absyn_Algorithm_ALG__FAILURE__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Modification_CLASSMOD__desc_added
 #define Absyn_Modification_CLASSMOD__desc_added
-const char* Absyn_Modification_CLASSMOD__desc__fields[2] = {"elementArgLst","expOption"};
+const char* Absyn_Modification_CLASSMOD__desc__fields[2] = {"elementArgLst","eqMod"};
 struct record_description Absyn_Modification_CLASSMOD__desc = {
   "Absyn_Modification_CLASSMOD",
   "Absyn.Modification.CLASSMOD",
@@ -1595,7 +1595,38 @@ struct record_description Absyn_Modification_CLASSMOD__desc = {
 extern struct record_description Absyn_Modification_CLASSMOD__desc;
 #endif
 #define Absyn__CLASSMOD_3dBOX2 3
-#define Absyn__CLASSMOD(elementArgLst,expOption) (mmc_mk_box3(3,&Absyn_Modification_CLASSMOD__desc,elementArgLst,expOption))
+#define Absyn__CLASSMOD(elementArgLst,eqMod) (mmc_mk_box3(3,&Absyn_Modification_CLASSMOD__desc,elementArgLst,eqMod))
+#ifdef ADD_METARECORD_DEFINTIONS
+#ifndef Absyn_EqMod_NOMOD__desc_added
+#define Absyn_EqMod_NOMOD__desc_added
+const char* Absyn_EqMod_NOMOD__desc__fields[0] = {};
+struct record_description Absyn_EqMod_NOMOD__desc = {
+  "Absyn_EqMod_NOMOD",
+  "Absyn.EqMod.NOMOD",
+  Absyn_EqMod_NOMOD__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description Absyn_EqMod_NOMOD__desc;
+#endif
+#define Absyn__NOMOD_3dBOX0 3
+static const MMC_DEFSTRUCTLIT(Absyn__NOMOD__struct,1,3) {&Absyn_EqMod_NOMOD__desc}};
+static void *Absyn__NOMOD = MMC_REFSTRUCTLIT(Absyn__NOMOD__struct);
+#ifdef ADD_METARECORD_DEFINTIONS
+#ifndef Absyn_EqMod_EQMOD__desc_added
+#define Absyn_EqMod_EQMOD__desc_added
+const char* Absyn_EqMod_EQMOD__desc__fields[2] = {"exp","info"};
+struct record_description Absyn_EqMod_EQMOD__desc = {
+  "Absyn_EqMod_EQMOD",
+  "Absyn.EqMod.EQMOD",
+  Absyn_EqMod_EQMOD__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description Absyn_EqMod_EQMOD__desc;
+#endif
+#define Absyn__EQMOD_3dBOX2 4
+#define Absyn__EQMOD(exp,info) (mmc_mk_box3(4,&Absyn_EqMod_EQMOD__desc,exp,info))
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_ElementArg_MODIFICATION__desc_added
 #define Absyn_ElementArg_MODIFICATION__desc_added

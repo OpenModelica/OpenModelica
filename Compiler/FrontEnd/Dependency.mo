@@ -418,14 +418,18 @@ protected function buildClassDependsInModification "build class dependencies fro
   output AbsynDep.Depends outDep;
 algorithm
   outDep := match(mod,optPath,cname,dep)
-  local Option<Absyn.Exp> optExp;
-    AbsynDep.Depends d; Absyn.Program p; Env.Env env;
-    list<Absyn.ElementArg> eltArgs;
-    HashTable2.HashTable ht;
-    case(Absyn.CLASSMOD(eltArgs,optExp),optPath,cname,(d,p,env,ht)) equation
-      d = buildClassDependsInElementargs(eltArgs,optPath,cname,(d,p,env,ht));
-      d = buildClassDependsInOptExp(optExp,optPath,cname,(d,p,env,ht));
-    then d;
+    local
+      Absyn.EqMod eqMod;
+      AbsynDep.Depends d;
+      Absyn.Program p;
+      Env.Env env;
+      list<Absyn.ElementArg> eltArgs;
+      HashTable2.HashTable ht;
+    case(Absyn.CLASSMOD(eltArgs,eqMod),optPath,cname,(d,p,env,ht))
+      equation
+        d = buildClassDependsInElementargs(eltArgs,optPath,cname,(d,p,env,ht));
+        d = buildClassDependsInEqMod(eqMod,optPath,cname,(d,p,env,ht));
+      then d;
   end match;
 end buildClassDependsInModification;
 
@@ -1080,6 +1084,20 @@ algorithm
     case(NONE(),optPath,cname,(d,p,env,ht)) then d;
   end match;
 end buildClassDependsInOptExp;
+
+protected function buildClassDependsInEqMod "build class dependencies from Option<Absyn.Exp>"
+  input Absyn.EqMod eqMod;
+  input Option<Absyn.Path> optPath;
+  input Absyn.Path cname;
+  input tuple<AbsynDep.Depends,Absyn.Program,Env.Env, HashTable2.HashTable > dep;
+  output AbsynDep.Depends outDep;
+algorithm
+  outDep := match(eqMod,optPath,cname,dep)
+  local AbsynDep.Depends d; Absyn.Program p; Env.Env env; Absyn.Exp e;HashTable2.HashTable ht;
+    case(Absyn.EQMOD(exp=e),optPath,cname,(d,p,env,ht)) then buildClassDependsInExp(e,optPath,cname,(d,p,env,ht));
+    case(Absyn.NOMOD(),optPath,cname,(d,p,env,ht)) then d;
+  end match;
+end buildClassDependsInEqMod;
 
 protected function buildClassDependsinArrayDim " help function to e.g buildClassDependsInTypeSpec"
   input Absyn.ArrayDim ad;

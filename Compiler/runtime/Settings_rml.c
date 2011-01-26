@@ -96,7 +96,8 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(Settings__getTempDirectoryPath)
 {
-  if(tempDirectoryPath)
+  SettingsImpl__getTempDirectoryPath();
+  if (tempDirectoryPath)
     rmlA0 = (void*) mk_scon(strdup(tempDirectoryPath));
   else
     rmlA0 = (void*) mk_scon("");

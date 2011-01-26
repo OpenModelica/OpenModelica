@@ -852,6 +852,12 @@ algorithm
       then
         (cache,Values.BOOL(true),st);
         
+    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "getCompileCommand"),expLst = {}),st,msg)
+      equation
+        res = Settings.getCompileCommand();
+      then
+        (cache,Values.STRING(res),st);
+        
     case (cache,env,
         DAE.CALL(
           path = Absyn.IDENT(name = "setPlotCommand"),
@@ -864,26 +870,6 @@ algorithm
             compiledFunctions = cf)),msg)
       then
         (cache,Values.BOOL(false),st);
-        
-    case (cache,env,
-        DAE.CALL(path = Absyn.IDENT(name = "getSettings"),expLst = {}),
-        (st as Interactive.SYMBOLTABLE(
-          ast = p,explodedAst = sp,
-          instClsLst = ic,
-          lstVarVal = iv,
-          compiledFunctions = cf)),msg)
-      equation
-        res = "";
-        str1 = Settings.getCompileCommand();
-        res = stringAppendList({res,"Compile command: ", str1,"\n"});
-        str1 = Settings.getTempDirectoryPath();
-        res = stringAppendList({res,"Temp folder path: ", str1,"\n"});
-        str1 = Settings.getInstallationDirectoryPath();
-        res = stringAppendList({res,"Installation folder: ", str1,"\n"});
-        str1 = Settings.getModelicaPath();
-        res = stringAppendList({res,"Modelica path: ", str1,"\n"});
-      then
-        (cache,Values.STRING(res),st);
         
     case (cache,env,
         DAE.CALL(path = Absyn.IDENT(name = "setTempDirectoryPath"),expLst = {DAE.SCONST(string = cmd)}),
@@ -912,6 +898,20 @@ algorithm
       then
         (cache,Values.STRING(res),st);
         
+    case (cache, env, DAE.CALL(path = Absyn.IDENT(name = "setEnvironmentVar"), expLst = {varName,exp}), st, msg)
+      equation
+        (cache,Values.STRING(varid),SOME(st)) = Ceval.ceval(cache, env, varName, true, SOME(st), NONE(), msg);
+        (cache,Values.STRING(str),SOME(st)) = Ceval.ceval(cache, env, exp, true, SOME(st), NONE(), msg);
+        b = 0 == System.setEnv(varid,str,true);
+      then
+        (cache,Values.BOOL(b),st);
+
+    case (cache, env, DAE.CALL(path = Absyn.IDENT(name = "getEnvironmentVar"), expLst = {DAE.SCONST(varid)}), st, msg)
+      equation
+        res = Util.makeValueOrDefault(System.readEnv, varid, "");
+      then
+        (cache,Values.STRING(res),st);
+
     case (cache,env,
         DAE.CALL(
           path = Absyn.IDENT(name = "setInstallationDirectoryPath"),
@@ -968,6 +968,56 @@ algorithm
       then
         (cache,Values.BOOL(true),st);
         
+    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "getAnnotationVersion"),expLst = {}),st,msg)
+      equation
+        res = RTOpts.getAnnotationVersion();
+      then
+        (cache,Values.STRING(res),st);
+
+    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "getNoSimplify"),expLst = {}),st,msg)
+      equation
+        b = RTOpts.getNoSimplify();
+      then
+        (cache,Values.BOOL(b),st);
+
+    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "setNoSimplify"),expLst = {DAE.BCONST(b)}),st,msg)
+      equation
+        RTOpts.setNoSimplify(b);
+      then
+        (cache,Values.BOOL(true),st);
+
+    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "setNoSimplify"),expLst = _),st,msg)
+      then
+        (cache,Values.BOOL(false),st);
+
+    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "getShowAnnotations"),expLst = {}),st,msg)
+      equation
+        b = RTOpts.showAnnotations();
+      then
+        (cache,Values.BOOL(b),st);
+
+    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "setShowAnnotations"),expLst = {DAE.BCONST(b)}),st,msg)
+      equation
+        RTOpts.setShowAnnotations(b);
+      then
+        (cache,Values.BOOL(true),st);
+
+    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "setShowAnnotations"),expLst = _),st,msg)
+      then
+        (cache,Values.BOOL(false),st);
+
+    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "getVectorizationLimit"),expLst = {}),st,msg)
+      equation
+        i = RTOpts.vectorizationLimit();
+      then
+        (cache,Values.INTEGER(i),st);
+
+    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "getOrderConnections"),expLst = {}),st,msg)
+      equation
+        b = RTOpts.orderConnections();
+      then
+        (cache,Values.BOOL(b),st);
+
     case (cache,env,(exp as
         DAE.CALL(
           path = Absyn.IDENT(name = "buildModel"),
@@ -2073,53 +2123,41 @@ algorithm
       then
         (cache,Values.BOOL(true),st);
         
-    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "setDebugFlags"),expLst = {DAE.SCONST(string = str)}),
-        (st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "setCommandLineOptions"),expLst = {exp}),st,msg)
       equation
-        str_1 = stringAppend("+d=", str);
-        args = RTOpts.args({str_1});
-      then
-        (Env.emptyCache(),Values.BOOL(true),st);
-        
-    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "setDebugFlags"),expLst = {DAE.SCONST(string = str)}),
-        (st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
-      equation
-        str_1 = stringAppend("+d=", str);
-        failure(args = RTOpts.args({str_1}));
-      then
-        (cache,Values.BOOL(false),st);
-        
-    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "setCommandLineOptions"),expLst = {DAE.SCONST(string = str)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
-      equation
+        (cache,Values.STRING(str),SOME(st)) = Ceval.ceval(cache,env,exp,false,SOME(st),NONE(),msg);
         args = RTOpts.args({str});
       then
         (Env.emptyCache(),Values.BOOL(true),st);
         
-    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "setCommandLineOptions"),expLst = {_}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "setCommandLineOptions"),expLst = {exp}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       then (cache,Values.BOOL(false),st);
         
-    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "cd"),expLst = {DAE.SCONST(string = str)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "cd"),expLst = {exp}),
+        (st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       equation
+        (cache,Values.STRING(""),SOME(st)) = Ceval.ceval(cache,env,exp,true,SOME(st),NONE(),msg);
+        str_1 = System.pwd();
+      then
+        (cache,Values.STRING(str_1),st);
+        
+    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "cd"),expLst = {exp}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+      equation
+        (cache,Values.STRING(str),SOME(st)) = Ceval.ceval(cache,env,exp,true,SOME(st),NONE(),msg);
         resI = System.cd(str);
         (resI == 0) = true;
         str_1 = System.pwd();
       then
         (cache,Values.STRING(str_1),st);
         
-    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "cd"),expLst = {DAE.SCONST(string = str)}),
+    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "cd"),expLst = {exp}),
         (st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg) /* no such directory */
       equation
+        (cache,Values.STRING(str),SOME(st)) = Ceval.ceval(cache,env,exp,true,SOME(st),NONE(),msg);
         failure(true = System.directoryExists(str));
         res = stringAppendList({"Error, directory ",str," does not exist,"});
       then
         (cache,Values.STRING(res),st);
-        
-    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "cd"),expLst = {}),
-        (st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
-      equation
-        str_1 = System.pwd();
-      then
-        (cache,Values.STRING(str_1),st);
         
     case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "getVersion"),expLst = {}),
         (st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
@@ -2142,9 +2180,9 @@ algorithm
       then
         (cache,Values.INTEGER(resI),st);
         
-    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "readFile"),expLst = {DAE.SCONST(string = str)}),
-        (st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "readFile"),expLst = {exp}),st,msg)
       equation
+        (cache,Values.STRING(str),SOME(st)) = Ceval.ceval(cache,env,exp,true,SOME(st),NONE(),msg);
         str_1 = System.readFile(str);
       then
         (cache,Values.STRING(str_1),st);
@@ -2158,13 +2196,6 @@ algorithm
         
     case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "getErrorString"),expLst = {}),
         (st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
-      equation
-        str = Error.printMessagesStr();
-      then
-        (cache,Values.STRING(str),st);
-        
-    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "getMessagesString"),expLst = {}),
-        (st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg) /* New error message implementation */
       equation
         str = Error.printMessagesStr();
       then
@@ -2347,19 +2378,6 @@ algorithm
       then
         (cache,Values.BOOL(false),st);
         
-    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "help"),expLst = {}),
-        (st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
-      equation
-        omhome = Settings.getInstallationDirectoryPath();
-        omhome_1 = System.trim(omhome, "\"");
-        cit = winCitation();
-        pd = System.pathDelimiter();
-        filename = stringAppendList({omhome_1,pd,"share",pd,"doc",pd,"omc",pd,"omc_helptext.txt"});
-        print(filename);
-        str = System.readFile(filename);
-      then
-        (cache,Values.STRING(str),st);
-        
     case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "getUnit"),expLst = {DAE.CREF(componentRef = cref),DAE.CREF(componentRef = classname)}),st,msg)
       equation
         (cache,v,st_1) = getBuiltinAttribute(cache,classname, cref, "unit", st);
@@ -2472,6 +2490,29 @@ algorithm
               compiledFunctions = cf)),msg) /* failing build_model */
     then (cache,ValuesUtil.makeArray({Values.STRING("Xml dump error."),Values.STRING("")}),st_1);
       
+    case (cache,env,DAE.CALL(path = Absyn.IDENT("getAstAsCorbaString"),expLst={DAE.SCONST("<interactive>")}),st as Interactive.SYMBOLTABLE(ast=p),msg)
+      equation
+        Print.clearBuf();
+        Dump.getAstAsCorbaString(p);
+        res = Print.getString();
+        Print.clearBuf();
+      then
+        (cache,Values.STRING(res),st);
+
+    case (cache,env,DAE.CALL(path = Absyn.IDENT("getAstAsCorbaString"),expLst={DAE.SCONST(str)}),st as Interactive.SYMBOLTABLE(ast=p),msg)
+      equation
+        Print.clearBuf();
+        Dump.getAstAsCorbaString(p);
+        Print.writeBuf(str);
+        Print.clearBuf();
+        str = "Wrote result to file: " +& str;
+      then
+        (cache,Values.STRING(str),st);
+
+    case (cache,env,DAE.CALL(path = Absyn.IDENT("getAstAsCorbaString"),expLst=_),st,msg)
+      then
+        (cache,Values.STRING("Failed to output string"),st);
+
         /* Checks the installation of OpenModelica and tries to find common errors */
     case (cache,env,exp as DAE.CALL(path=Absyn.IDENT("checkSettings"),expLst={}),st,msg)
       equation
@@ -3569,17 +3610,18 @@ algorithm
       Option<Interactive.InteractiveSymbolTable> st;
       Ceval.Msg msg;
       Env.Cache cache;
-    case (cache,env,Absyn.CLASSMOD(elementArgLst = eltargs,expOption = SOME(e)),impl,st,msg,info)
+      Absyn.Info info2;
+    case (cache,env,Absyn.CLASSMOD(elementArgLst = eltargs,eqMod = Absyn.EQMOD(e,info2)),impl,st,msg,info)
       equation
         (cache,e_1) = cevalAstExp(cache,env, e, impl, st, msg, info);
         (cache,eltargs_1) = cevalAstEltargs(cache,env, eltargs, impl, st, msg, info);
       then
-        (cache,Absyn.CLASSMOD(eltargs_1,SOME(e_1)));
-    case (cache,env,Absyn.CLASSMOD(elementArgLst = eltargs,expOption = NONE()),impl,st,msg,info)
+        (cache,Absyn.CLASSMOD(eltargs_1,Absyn.EQMOD(e_1,info2)));
+    case (cache,env,Absyn.CLASSMOD(elementArgLst = eltargs,eqMod = Absyn.NOMOD()),impl,st,msg,info)
       equation
         (cache,eltargs_1) = cevalAstEltargs(cache,env, eltargs, impl, st, msg, info);
       then
-        (cache,Absyn.CLASSMOD(eltargs_1,NONE()));
+        (cache,Absyn.CLASSMOD(eltargs_1,Absyn.NOMOD()));
   end match;
 end cevalAstModification;
 

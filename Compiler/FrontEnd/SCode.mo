@@ -655,17 +655,17 @@ algorithm str := matchcontinue(oam,comp)
     Absyn.Exp exp;
     list<Absyn.ElementArg> laea;
     Absyn.ElementArg aea;
-  case(Absyn.CLASSMOD(_,SOME(exp)),comp)
+  case(Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=exp)),comp)
     equation
       str = comp +& " = " +&Dump.printExpStr(exp);
       then
         str;
-  case(Absyn.CLASSMOD((laea as aea::{}),NONE()),comp)
+  case(Absyn.CLASSMOD((laea as aea::{}),Absyn.NOMOD()),comp)
     equation
     str = comp +& "(" +&prettyPrintElementModifier(aea) +&")";
     then
       str;
-  case(Absyn.CLASSMOD((laea as _::{}),NONE()),comp)
+  case(Absyn.CLASSMOD((laea as _::{}),Absyn.NOMOD()),comp)
     equation
       str = comp +& "({" +& Util.stringDelimitList(Util.listMap(laea,prettyPrintElementModifier),", ") +& "})";
     then

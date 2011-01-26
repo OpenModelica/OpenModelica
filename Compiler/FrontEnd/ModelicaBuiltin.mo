@@ -406,12 +406,12 @@ record CheckSettingsResult
   String CONFIGURE_CMDLINE;
 end CheckSettingsResult;
 
-function checkSettings
+function checkSettings "Display some diagnostics"
   output CheckSettingsResult result;
 external "builtin";
 end checkSettings;
 
-function loadFile
+function loadFile "load file (*.mo) and merge it with the loaded AST"
   input String fileName;
   output Boolean success;
 external "builtin";
@@ -423,15 +423,17 @@ function system "Similar to system(3). Executes the given command in the system 
 external "builtin";
 end system;
 
-function saveAll
+function saveAll "save the entire loaded AST to file"
   input String fileName;
   output Boolean success;
 external "builtin";
 end saveAll;
 
-function help
+function help "display the OpenModelica help text"
   output String helpText;
-external "builtin";
+  annotation(__OpenModelica_EarlyInline = true);
+algorithm
+  helpText := readFile(getInstallationDirectoryPath() + "/share/doc/omc/omc_helptext.txt"); 
 end help;
 
 function clear
@@ -496,6 +498,11 @@ function setCompilerPath
 external "builtin";
 end setCompilerPath;
 
+function getCompileCommand
+  output String compileCommand;
+external "builtin";
+end getCompileCommand;
+
 function setCompileCommand
   input String compileCommand;
   output Boolean success;
@@ -510,7 +517,18 @@ end setPlotCommand;
 
 function getSettings
   output String settings;
-external "builtin";
+  annotation(__OpenModelica_EarlyInline = true);
+algorithm
+  settings := // newline instead of \n due to elabExp of strings not unescaping from Absyn
+    "Compile command: " + getCompileCommand() + "
+" +
+    "Temp folder path: " + getTempDirectoryPath() + "
+" +
+    "Installation folder: " + getInstallationDirectoryPath() + "
+" +
+    "Modelica path: " + getModelicaPath() + "
+"
+  ;
 end getSettings;
 
 function setTempDirectoryPath
@@ -524,24 +542,46 @@ function getTempDirectoryPath
 external "builtin";
 end getTempDirectoryPath;
 
-function setInstallationDirectoryPath
+function getEnvironmentVar
+  input String var;
+  output String value "returns empty string on failure";
+external "builtin";
+end getEnvironmentVar;
+
+function setEnvironmentVar
+  input String var;
+  input String value;
+  output Boolean success;
+external "builtin";
+end setEnvironmentVar;
+
+function appendEnvironmentVar
+  input String var;
+  input String value;
+  output String result "returns \"error\" if the variable could not be appended";
+  annotation(__OpenModelica_EarlyInline = true);
+algorithm
+  result := if setEnvironmentVar(var,getEnvironmentVar(var)+value) then getEnvironmentVar(var) else "error";
+end appendEnvironmentVar;
+        
+function setInstallationDirectoryPath "Sets the OPENMODELICAHOME environment variable. Use this method instead of setEnvironmentVar"
   input String installationDirectoryPath;
   output Boolean success;
 external "builtin";
 end setInstallationDirectoryPath;
 
-function getInstallationDirectoryPath
+function getInstallationDirectoryPath "This returns OPENMODELICAHOME if it is set; on some platforms the default path is returned if it is not set."
   output String installationDirectoryPath;
 external "builtin";
 end getInstallationDirectoryPath;
 
-function setModelicaPath
+function setModelicaPath "The Modelica Library Path - MODELICAPATH in the language specification; OPENMODELICALIBRARY in OpenModelica."
   input String modelicaPath;
   output Boolean success;
 external "builtin";
 end setModelicaPath;
 
-function getModelicaPath
+function getModelicaPath "The Modelica Library Path - MODELICAPATH in the language specification; OPENMODELICALIBRARY in OpenModelica."
   output String modelicaPath;
 external "builtin";
 end getModelicaPath;
@@ -552,73 +592,86 @@ function setCompilerFlags
 external "builtin";
 end setCompilerFlags;
 
-function setDebugFlags
+function setDebugFlags "example input: failtrace,-noevalfunc"
   input String debugFlags;
   output Boolean success;
-external "builtin";
+  annotation(__OpenModelica_EarlyInline = true);
+algorithm
+  success := setCommandLineOptions("+d=" + debugFlags);
 end setDebugFlags;
 
 function setCommandLineOptions
+  "The input is a regular command-line flag given to OMC, e.g. +d=failtrace or +g=MetaModelica"
   input String option;
   output Boolean success;
 external "builtin";
 end setCommandLineOptions;
 
 function getVersion
+  "Returns the version of the Modelica compiler"
   output String version;
 external "builtin";
 end getVersion;
 
 function readFile
+  "The contents of the given file are returned.
+  Note that if the function fails, the error message is returned as a string instead of multiple output or similar."
   input String fileName;
   output String contents;
 external "builtin";
 end readFile;
 
 function readFileNoNumeric
+  "Returns the contents of the file, with anything resembling a (real) number stripped out, and at the end adding:
+  Filter count from number domain: n.
+  This should probably be changed to multiple outputs; the filtered string and an integer.
+  Does anyone use this API call?"
   input String fileName;
   output String contents;
 external "builtin";
 end readFileNoNumeric;
 
 function getErrorString
+  "[file.mo:n:n-n:n:b] Error: message"
   output String errorString;
 external "builtin";
 end getErrorString;
 
 function getMessagesString
+  "see getErrorString()"
   output String messagesString;
-external "builtin";
+external "builtin" messagesString=getErrorString();
 end getMessagesString;
 
 function getMessagesStringInternal
+  "{{[file.mo:n:n-n:n:b] Error: message, TRANSLATION, Error, code}}"
   output String messagesString;
 external "builtin";
 end getMessagesStringInternal;
 
-function clearMessages
+function clearMessages "Clears the error buffer"
   output Boolean success;
 external "builtin";
 end clearMessages;
 
-function runScript
+function runScript "Runs the mos-script specified by the filename."
   input String fileName "*.mos";
   output String result;
 external "builtin";
 end runScript;
 
-function echo
+function echo "echo(false) disables Interactive output, echo(true) enables it again."
   input Boolean setEcho;
   output Boolean newEcho;
 external "builtin";
 end echo;
 
-function getClassesInModelicaPath
+function getClassesInModelicaPath "MathCore-specific or not? Who knows!"
   output String classesInModelicaPath;
 external "builtin";
 end getClassesInModelicaPath;
 
-function strictRMLCheck
+function strictRMLCheck "Checks if any loaded function"
   output String message "empty if there was no problem";
 external "builtin";
 end strictRMLCheck;
@@ -635,6 +688,87 @@ function setClassNamesForSimulation
 external "builtin";
 end setClassNamesForSimulation;
 */
+
+function getAnnotationVersion
+  output String annotationVersion;
+external "builtin";
+end getAnnotationVersion;
+
+function setAnnotationVersion
+  input String annotationVersion;
+  output Boolean success;
+  annotation(__OpenModelica_EarlyInline = true);
+algorithm
+  success := setCommandLineOptions("+annotationVersion=" + annotationVersion); 
+end setAnnotationVersion;
+
+function getNoSimplify
+  output Boolean noSimplify;
+external "builtin";
+end getNoSimplify;
+
+function setNoSimplify
+  input Boolean noSimplify;
+  output Boolean success;
+external "builtin";
+end setNoSimplify;
+
+function getVectorizationLimit
+  output Integer vectorizationLimit;
+external "builtin";
+end getVectorizationLimit;
+
+function setVectorizationLimit
+  input Integer vectorizationLimit;
+  output Boolean success;
+  annotation(__OpenModelica_EarlyInline = true);
+algorithm
+  success := setCommandLineOptions("+v=" + String(vectorizationLimit));
+end setVectorizationLimit;
+
+function setShowAnnotations
+  input Boolean show;
+  output Boolean success;
+external "builtin";
+end setShowAnnotations;
+
+function getShowAnnotations
+  output Boolean show;
+external "builtin";
+end getShowAnnotations;
+
+function setOrderConnections
+  input Boolean orderConnections;
+  output Boolean success;
+  annotation(__OpenModelica_EarlyInline = true);
+algorithm
+  success := setCommandLineOptions("+orderConnections=" + String(orderConnections));
+end setOrderConnections;
+
+function getOrderConnections
+  output Boolean orderConnections;
+external "builtin";
+end getOrderConnections;
+
+function getAstAsCorbaString "Print the whole AST on the CORBA format for records, e.g.
+  record Absyn.PROGRAM
+    classes = ...,
+    within_ = ...,
+    globalBuildTimes = ...
+  end Absyn.PROGRAM;"
+  input String fileName := "<interactive>";
+  output String result "returns the string if fileName is interactive; else it returns ok or error depending on if writing the file succeeded";
+external "builtin";
+end getAstAsCorbaString;
+
+function cd "change directory to the given path (which may be either relative or absolute)
+  returns the new working directory on success or a message on failure
+  if the given path is the empty string, the function simply returns the current working directory
+  "
+  input String newWorkingDirectory := "";
+  output String workingDirectory;
+external "builtin";
+end cd;
 
 end Scripting;
 end OpenModelica;

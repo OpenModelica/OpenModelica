@@ -2120,7 +2120,7 @@ protected function insertClassExtendsIntoClassEnv
   input Env inEnv;
   output Option<AvlTree> outTree;
 algorithm
-  outEnv := match(inTree, inEnv)
+  outTree := match(inTree, inEnv)
     local
       String name;
       Integer h;

@@ -499,12 +499,12 @@ declaration returns [void* ast] :
  */
 
 modification returns [void* ast] :
-  ( cm=class_modification ( EQUALS e=expression )?
-  | EQUALS e=expression
-  | ASSIGN e=expression
+  ( cm=class_modification ( eq=EQUALS e=expression )?
+  | eq=EQUALS e=expression
+  | eq=ASSIGN e=expression
   )
     {
-      ast = Absyn__CLASSMOD(or_nil(cm), mk_some_or_none(e));
+      ast = Absyn__CLASSMOD(or_nil(cm), e ? Absyn__EQMOD(e,INFO($eq)) : Absyn__NOMOD);
     }
   ;
 

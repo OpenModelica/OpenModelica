@@ -936,8 +936,6 @@ algorithm
       
       Absyn.PROGRAM(classes=initialClasses) = getInitialFunctions();
       env = Env.extendFrameClasses(env, listReverse(Util.listFold(initialClasses, SCodeUtil.translate2, {}))) "Add classes in the initial env";
-      imports = getInitialImports();        
-      env = Util.listFoldR(imports, Env.extendFrameI, env);
       cache = Env.setCachedInitialEnv(cache,env);
     then (cache,env);
   end matchcontinue;
@@ -998,33 +996,6 @@ algorithm
       then fail();
   end matchcontinue;
 end getInitialFunctions;
-
-public function getInitialImports
-"Fetches the list of imports that are implicitly added in the initial environment.
-Most of these are renaming imports, e.g. import arccos = acos."
-  output list<Absyn.Import> imports;
-algorithm
-  imports := matchcontinue ()
-    local
-      Absyn.Program initialProgram;
-      list<Absyn.ElementItem> eitems;
-      String str;
-    case ()
-      equation
-        false = RTOpts.acceptMetaModelicaGrammar();
-      then {};
-    case ()
-      equation
-        str = Settings.getInstallationDirectoryPath() +& "/lib/omc/MetaModelicaBuiltinImports.mo";
-        initialProgram = Parser.parse(str);
-        Absyn.PROGRAM(classes = {Absyn.CLASS(name = "MetaModelicaBuiltinImports", body = Absyn.PARTS(classParts = {Absyn.PUBLIC(eitems)}))}) = initialProgram;
-      then Util.listMap(SCodeUtil.translateEitemlist(eitems,false), SCodeUtil.getImportFromElement);
-    else
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"Failed to get initial imports"});
-      then fail();
-  end matchcontinue;
-end getInitialImports;
 
 end Builtin;
 

@@ -7292,12 +7292,6 @@ protected function elabCallInteractive "function: elabCallInteractive
         (cache,Expression.makeBuiltinCall("generateCode",{DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER())},
           DAE.ET_BOOL()),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
 
-    case (cache,env,Absyn.CREF_IDENT(name = "cd"),{Absyn.STRING(value = str)},{},impl,SOME(st),_,_)
-      then (cache, Expression.makeBuiltinCall("cd",{DAE.SCONST(str)},DAE.ET_STRING()),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
-
-    case (cache,env,Absyn.CREF_IDENT(name = "cd"),{},{},impl,SOME(st),_,_)
-      then (cache, Expression.makeBuiltinCall("cd",{},DAE.ET_STRING()),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
-
     case (cache,env,Absyn.CREF_IDENT(name = "listVariables"),{},{},impl,SOME(st),_,_)
       then (cache, Expression.makeBuiltinCall("listVariables",{},DAE.ET_OTHER()),
         DAE.PROP((DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_NOTYPE(),NONE())),NONE()),DAE.C_VAR()),SOME(st));  /* Returns an array of \"component references\" */

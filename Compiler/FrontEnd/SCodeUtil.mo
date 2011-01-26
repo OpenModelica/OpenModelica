@@ -277,7 +277,7 @@ algorithm
     case Absyn.DERIVED(typeSpec = t,attributes = attr,arguments = a,comment = cmt)
       equation
         // Debug.fprintln("translate", "translating derived class: " +& Dump.unparseTypeSpec(t));
-        mod = translateMod(SOME(Absyn.CLASSMOD(a,NONE())), false, Absyn.NON_EACH()) "TODO: attributes of derived classes" ;
+        mod = translateMod(SOME(Absyn.CLASSMOD(a,Absyn.NOMOD())), false, Absyn.NON_EACH()) "TODO: attributes of derived classes" ;
         scodeCmt = translateComment(cmt);
       then
         SCode.DERIVED(t,mod,attr,scodeCmt);
@@ -328,7 +328,7 @@ algorithm
         initeqs = translateClassdefInitialequations(parts);
         als = translateClassdefAlgorithms(parts);
         initals = translateClassdefInitialalgorithms(parts);
-        mod = translateMod(SOME(Absyn.CLASSMOD(cmod,NONE())), false, Absyn.NON_EACH());
+        mod = translateMod(SOME(Absyn.CLASSMOD(cmod,Absyn.NOMOD())), false, Absyn.NON_EACH());
         scodeCmt = translateComment(SOME(Absyn.COMMENT(NONE(), cmtString)));
       then
         SCode.CLASS_EXTENDS(name,mod,els,eqs,initeqs,als,initals,anns,scodeCmt);
@@ -935,7 +935,7 @@ algorithm
       SCode.Mod m;
     case(Absyn.ANNOTATION(args))
       equation
-        m = translateMod(SOME(Absyn.CLASSMOD(args,NONE())), false, Absyn.NON_EACH());
+        m = translateMod(SOME(Absyn.CLASSMOD(args,Absyn.NOMOD())), false, Absyn.NON_EACH());
         res = SCode.ANNOTATION(m);
       then
         res;
@@ -1065,7 +1065,7 @@ algorithm
     case (cc,finalPrefix,_,repl,prot,Absyn.EXTENDS(path = path,elementArg = args,annotationOpt = NONE()),info)
       equation
         // Debug.fprintln("translate", "translating extends: " +& Absyn.pathString(n));
-        mod = translateMod(SOME(Absyn.CLASSMOD(args,NONE())), false, Absyn.NON_EACH());
+        mod = translateMod(SOME(Absyn.CLASSMOD(args,Absyn.NOMOD())), false, Absyn.NON_EACH());
         file_info = Util.getOptionOrDefault(info, Absyn.dummyInfo);
       then
         {SCode.EXTENDS(path,mod,NONE(),file_info)};
@@ -1073,7 +1073,7 @@ algorithm
     case (cc,finalPrefix,_,repl,prot,Absyn.EXTENDS(path = path,elementArg = args,annotationOpt = SOME(absann)),info)
       equation
         // Debug.fprintln("translate", "translating extends: " +& Absyn.pathString(n));
-        mod = translateMod(SOME(Absyn.CLASSMOD(args,NONE())), false, Absyn.NON_EACH());
+        mod = translateMod(SOME(Absyn.CLASSMOD(args,Absyn.NOMOD())), false, Absyn.NON_EACH());
         ann = translateAnnotation(absann);
         file_info = Util.getOptionOrDefault(info, Absyn.dummyInfo);
       then
@@ -1425,15 +1425,15 @@ algorithm
       list<Absyn.ElementArg> l;
 
     case (NONE(),_,_) then SCode.NOMOD();  /* final */
-    case (SOME(Absyn.CLASSMOD({},(SOME(e)))),finalPrefix,each_) then SCode.MOD(finalPrefix,each_,{},SOME((e,false)));
-    case (SOME(Absyn.CLASSMOD({},(NONE()))),finalPrefix,each_) then SCode.MOD(finalPrefix,each_,{},NONE());
-    case (SOME(Absyn.CLASSMOD(l,SOME(e))),finalPrefix,each_)
+    case (SOME(Absyn.CLASSMOD({},(Absyn.EQMOD(exp=e)))),finalPrefix,each_) then SCode.MOD(finalPrefix,each_,{},SOME((e,false)));
+    case (SOME(Absyn.CLASSMOD({},(Absyn.NOMOD()))),finalPrefix,each_) then SCode.MOD(finalPrefix,each_,{},NONE());
+    case (SOME(Absyn.CLASSMOD(l,Absyn.EQMOD(exp=e))),finalPrefix,each_)
       equation
         subs = translateArgs(l);
       then
         SCode.MOD(finalPrefix,each_,subs,SOME((e,false)));
 
-    case (SOME(Absyn.CLASSMOD(l,NONE())),finalPrefix,each_)
+    case (SOME(Absyn.CLASSMOD(l,Absyn.NOMOD())),finalPrefix,each_)
       equation
         subs = translateArgs(l);
       then

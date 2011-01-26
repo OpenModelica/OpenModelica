@@ -2320,46 +2320,11 @@ algorithm
           ceval(cache, inEnv, lengthExp, inBoolean, inST,NONE(), inMsg);
         (cache, Values.BOOL(boolean = left_justified), _) = 
           ceval(cache, inEnv, justifiedExp, inBoolean, inST,NONE(), inMsg);
-        str = cevalBuiltinStringFormat2(inString, stringLength(inString), min_length, left_justified);
+        str = ExpressionSimplify.cevalBuiltinStringFormat(inString, stringLength(inString), min_length, left_justified);
       then
         (cache, str);
   end match;
 end cevalBuiltinStringFormat;
-
-protected function cevalBuiltinStringFormat2
-  "Helper function to cevalBuiltinStringFormat, does the actual formatting."  
-  input String inString;
-  input Integer stringLength;
-  input Integer minLength;
-  input Boolean leftJustified;
-  output String outString;
-algorithm
-  outString := matchcontinue(inString, stringLength, minLength, leftJustified)
-    local
-      String str;
-      Integer fill_size;
-    // The string is longer than the minimum length, do nothing.
-    case (_, _, _, _)
-      equation
-        true = stringLength >= minLength;
-      then
-        inString;
-    // leftJustified is false, append spaces at the beginning of the string.
-    case (_, _, _, false)
-      equation
-        fill_size = minLength - stringLength;
-        str = stringAppendList(Util.listFill(" ", fill_size)) +& inString;
-      then
-        str;
-    // leftJustified is true, append spaces at the end of the string.
-    case (_, _, _, true)
-      equation
-        fill_size = minLength - stringLength;
-        str = inString +& stringAppendList(Util.listFill(" ", fill_size));
-      then
-        str;
-  end matchcontinue;
-end cevalBuiltinStringFormat2;
 
 protected function cevalBuiltinLinspace "
   author: PA

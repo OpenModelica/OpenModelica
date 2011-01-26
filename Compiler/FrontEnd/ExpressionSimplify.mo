@@ -528,11 +528,13 @@ algorithm
   outExp := match(exp)
     local
       list<DAE.Exp> expl;
-      DAE.Exp e;
+      DAE.Exp e,len_exp,just_exp;
       DAE.ExpType tp;
       list<DAE.Exp> v1, v2;
       Boolean scalar;
       list<Values.Value> valueLst;
+      Integer i;
+      String str;
     
     // cross
     case (e as DAE.CALL(path = Absyn.IDENT("cross"), builtin = true, expLst = expl))
@@ -556,12 +558,91 @@ algorithm
       then
         outExp;
 
+    case (DAE.CALL(path = Absyn.IDENT("String"), builtin = true, expLst = {e,len_exp,just_exp}))
+      equation
+        e = simplify1(e);
+        len_exp = simplify1(len_exp);
+        just_exp = simplify1(just_exp);
+      then simplifyBuiltinStringFormat(e,len_exp,just_exp);
+
     case (DAE.CALL(path = Absyn.IDENT("stringAppendList"), builtin = true, expLst = {e}))
       equation
         DAE.LIST(valList = expl) = simplify1(e);
       then simplifyStringAppendList(expl,{});
   end match;
 end simplifyBuiltinCalls;
+
+protected function simplifyBuiltinStringFormat
+  input DAE.Exp exp;
+  input DAE.Exp len_exp;
+  input DAE.Exp just_exp;
+  output DAE.Exp outExp;
+algorithm
+  outExp := match (exp,len_exp,just_exp)
+    local
+      Integer i,len;
+      Real r;
+      Boolean b,just;
+      String str;
+      Absyn.Path name;
+    case (DAE.ICONST(i),DAE.ICONST(len),DAE.BCONST(just))
+      equation
+        str = intString(i);
+        str = cevalBuiltinStringFormat(str,stringLength(str),len,just);
+      then DAE.SCONST(str);
+    case (DAE.RCONST(r),DAE.ICONST(len),DAE.BCONST(just))
+      equation
+        str = realString(r);
+        str = cevalBuiltinStringFormat(str,stringLength(str),len,just);
+      then DAE.SCONST(str);
+    case (DAE.BCONST(b),DAE.ICONST(len),DAE.BCONST(just))
+      equation
+        str = boolString(b);
+        str = cevalBuiltinStringFormat(str,stringLength(str),len,just);
+      then DAE.SCONST(str);
+    case (DAE.ENUM_LITERAL(name=name),DAE.ICONST(len),DAE.BCONST(just))
+      equation
+        str = Absyn.pathLastIdent(name);
+        str = cevalBuiltinStringFormat(str,stringLength(str),len,just);
+      then DAE.SCONST(str);
+    else Expression.makeBuiltinCall("String",{exp,len_exp,just_exp},DAE.ET_STRING());
+  end match;
+end simplifyBuiltinStringFormat;
+
+public function cevalBuiltinStringFormat
+  "Helper function to cevalBuiltinStringFormat, does the actual formatting."  
+  input String inString;
+  input Integer stringLength;
+  input Integer minLength;
+  input Boolean leftJustified;
+  output String outString;
+algorithm
+  outString := matchcontinue(inString, stringLength, minLength, leftJustified)
+    local
+      String str;
+      Integer fill_size;
+    // The string is longer than the minimum length, do nothing.
+    case (_, _, _, _)
+      equation
+        true = stringLength >= minLength;
+      then
+        inString;
+    // leftJustified is false, append spaces at the beginning of the string.
+    case (_, _, _, false)
+      equation
+        fill_size = minLength - stringLength;
+        str = stringAppendList(Util.listFill(" ", fill_size)) +& inString;
+      then
+        str;
+    // leftJustified is true, append spaces at the end of the string.
+    case (_, _, _, true)
+      equation
+        fill_size = minLength - stringLength;
+        str = inString +& stringAppendList(Util.listFill(" ", fill_size));
+      then
+        str;
+  end matchcontinue;
+end cevalBuiltinStringFormat;
 
 protected function simplifyStringAppendList
 "

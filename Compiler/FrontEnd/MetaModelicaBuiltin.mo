@@ -445,6 +445,15 @@ algorithm
   b := s1 == s2;
 end stringEq;
 
+function stringEqual
+  input String s1;
+  input String s2;
+  output Boolean b;
+  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
+algorithm
+  b := s1 == s2;
+end stringEqual;
+
 function stringCompare
   input String s1;
   input String s2;
@@ -737,3 +746,106 @@ function optionNone "Returns true if the input is NONE()"
   output Boolean isNone;
 external "builtin";
 end optionNone;
+
+function listStringCharString
+  input list<String> strs;
+  output String str;
+external "builtin" str=stringAppendList(strs);
+end listStringCharString;
+
+function stringCharListString
+  input list<String> strs;
+  output String str;
+external "builtin" str=stringAppendList(strs);
+end stringCharListString;
+
+function realCos
+  input Real x;
+  output Real y;
+external "builtin" y=cos(x);
+end realCos;
+
+function realCosh
+  input Real x;
+  output Real y;
+external "builtin" y=cosh(x);
+end realCosh;
+
+function realAcos
+  input Real x;
+  output Real y;
+external "builtin" y=acos(x);
+end realAcos;
+
+function realSin
+  input Real x;
+  output Real y;
+external "builtin" y=sin(x);
+end realSin;
+
+function realSinh
+  input Real x;
+  output Real y;
+external "builtin" y=sinh(x);
+end realSinh;
+
+function realAsin
+  input Real x;
+  output Real y;
+external "builtin" y=asin(x);
+end realAsin;
+
+function realAtan
+  input Real x;
+  output Real y;
+external "builtin" y=atan(x);
+end realAtan;
+
+function realAtan2
+  input Real x1;
+  input Real x2;
+  output Real y;
+external "builtin" y=atan2(x1,x2);
+end realAtan2;
+
+function realTanh
+  input Real x;
+  output Real y;
+external "builtin" y=tanh(x);
+end realTanh;
+
+function realExp
+  input Real x(unit = "1");
+  output Real y(unit = "1");
+external "builtin" y=exp(x);
+end realExp;
+
+function realLn
+  input Real x(unit = "1");
+  output Real y(unit = "1");
+external "builtin" y=log(x);
+end realLn;
+
+function realLog10
+  input Real x(unit = "1");
+  output Real y(unit = "1");
+external "builtin" y=log10(x);
+end realLog10;
+
+function realCeil
+  input Real x;
+  output Real y;
+external "builtin" y=ceil(x);
+end realCeil;
+
+function realFloor
+  input Real x;
+  output Real y;
+external "builtin" y=floor(x);
+end realFloor;
+
+function realSqrt
+  input Real x(unit = "'p");
+  output Real y(unit = "'p(1/2)");
+external "builtin" y=sqrt(x);
+end realSqrt;

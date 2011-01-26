@@ -591,10 +591,20 @@ uniontype Modification "Modifications are described by the `Modification\' type.
   - Modifications"
   record CLASSMOD
     list<ElementArg> elementArgLst;
-    Option<Exp> expOption;
+    EqMod eqMod;
   end CLASSMOD;
 
 end Modification;
+
+public
+uniontype EqMod
+  record NOMOD
+  end NOMOD;
+  record EQMOD
+    Exp exp;
+    Info info;
+  end EQMOD;
+end EqMod;
 
 public
 uniontype ElementArg "Wrapper for things that modify elements, modifications and redeclarations"
@@ -4878,7 +4888,7 @@ algorithm
   onlyLiterals := matchcontinue(inMod)
     local
       list<ElementArg> dive, rest;
-      Option<Exp> expOpt;
+      EqMod eqMod;
       Boolean b1, b2, b3, b;
 
     case ({}) then true;
@@ -4892,9 +4902,9 @@ algorithm
 
     
     // search inside, some(exp)
-    case (MODIFICATION(modification = SOME(CLASSMOD(dive, expOpt))) :: rest)
+    case (MODIFICATION(modification = SOME(CLASSMOD(dive, eqMod))) :: rest)
       equation
-        b1 = onlyLiteralsInExpOpt(expOpt);
+        b1 = onlyLiteralsInEqMod(eqMod);
         b2 = onlyLiteralsInAnnotationMod(dive);
         b3 = onlyLiteralsInAnnotationMod(rest);
         b = boolAnd(b1, boolAnd(b2, b3));
@@ -4913,25 +4923,25 @@ algorithm
   end matchcontinue;
 end onlyLiteralsInAnnotationMod;
   
-protected function onlyLiteralsInExpOpt  
+protected function onlyLiteralsInEqMod  
 "@author: adrpo
   This function checks if an optional expression only contains literal expressions"
-  input Option<Exp> inExpOpt;
+  input EqMod eqMod;
   output Boolean onlyLiterals;
 algorithm
-  onlyLiterals := matchcontinue(inExpOpt)
+  onlyLiterals := match (eqMod)
     local
       Exp exp;
       list<Exp> lst;
       Boolean b;
 
-    case (NONE()) then true;
+    case (NOMOD()) then true;
     
     // DynamicSelect returns true! 
-    case (SOME(CALL(function_ = CREF_IDENT(name = "DynamicSelect")))) then true;
+    case (EQMOD(exp=CALL(function_ = CREF_IDENT(name = "DynamicSelect")))) then true;
     
     // search inside, some(exp)
-    case (SOME(exp))
+    case (EQMOD(exp=exp))
       equation
          ((_, lst)) = traverseExp(exp, onlyLiteralsInExp, {});
          // if list is empty (no crefs were added)
@@ -4940,8 +4950,8 @@ algorithm
          // print("Crefs in annotations: (" +& Util.stringDelimitList(Util.listMap(inAnnotationMod, Dump.printExpStr), ", ") +& ")\n");
       then
         b;
-  end matchcontinue;        
-end onlyLiteralsInExpOpt;
+  end match;        
+end onlyLiteralsInEqMod;
 
 protected function onlyLiteralsInExp 
 "@author: adrpo 

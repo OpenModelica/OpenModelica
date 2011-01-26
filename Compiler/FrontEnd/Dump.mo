@@ -890,14 +890,14 @@ algorithm
       list<Absyn.ElementArg> l;
       Absyn.Exp e;
     case (Absyn.CLASSMOD(elementArgLst = {})) then "";
-    case (Absyn.CLASSMOD(elementArgLst = l,expOption = NONE()))
+    case (Absyn.CLASSMOD(elementArgLst = l,eqMod = Absyn.NOMOD()))
       equation
         s1 = getStringList(l, unparseElementArgStr, ", ");
         s2 = stringAppend("(", s1);
         str = stringAppend(s2, ")");
       then
         str;
-    case (Absyn.CLASSMOD(expOption = SOME(e)))
+    case (Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp=e)))
       equation
         s1 = printExpStr(e);
         str = stringAppendList({" = ",s1});
@@ -1383,7 +1383,7 @@ algorithm
     case (Absyn.ANNOTATION(elementArgs = mod))
       equation
         Print.printBuf("ANNOTATION(");
-        printModification(Absyn.CLASSMOD(mod,NONE()));
+        printModification(Absyn.CLASSMOD(mod,Absyn.NOMOD()));
         Print.printBuf(")");
       then
         ();
@@ -1477,14 +1477,14 @@ algorithm
       Integer i;
     case (0,SOME(Absyn.ANNOTATION(mod)))
       equation
-        s1 = unparseClassModificationStr(Absyn.CLASSMOD(mod,NONE()));
+        s1 = unparseClassModificationStr(Absyn.CLASSMOD(mod,Absyn.NOMOD()));
         s2 = stringAppend(" annotation", s1);
         str = s2; // stringAppend(s2, "");
       then
         str;
     case (i,SOME(Absyn.ANNOTATION(mod)))
       equation
-        s1 = unparseClassModificationStr(Absyn.CLASSMOD(mod,NONE()));
+        s1 = unparseClassModificationStr(Absyn.CLASSMOD(mod,Absyn.NOMOD()));
         is = indentStr(i);
         str = stringAppendList({is,"annotation",s1});
       then
@@ -2367,8 +2367,8 @@ algorithm
   matchcontinue (inModification)
     local
       list<Absyn.ElementArg> l;
-      Option<Absyn.Exp> e;
-    case (Absyn.CLASSMOD(elementArgLst = l,expOption = e))
+      Absyn.EqMod e;
+    case (Absyn.CLASSMOD(elementArgLst = l,eqMod = e))
       equation
         Print.printBuf("Absyn.CLASSMOD([");
         printMod1(l);
@@ -2409,21 +2409,21 @@ protected function printMod2 "function: printMod2
 
   Helper relaton to print_mod1
 "
-  input Option<Absyn.Exp> inAbsynExpOption;
+  input Absyn.EqMod inAbsynExpOption;
 algorithm
   _:=
   match (inAbsynExpOption)
     local Absyn.Exp e;
-    case NONE()
+    case Absyn.NOMOD()
       equation
-        Print.printBuf("NONE()");
+        Print.printBuf("Absyn.NOMOD()");
       then
         ();
-    case SOME(e)
+    case Absyn.EQMOD(exp=e)
       equation
-        Print.printBuf("SOME(");
+        Print.printBuf("Absyn.EQMOD([");
         printExp(e);
-        Print.printBuf(")");
+        Print.printBuf("])");
       then
         ();
   end match;
@@ -2462,12 +2462,12 @@ algorithm
     local
       Ident s1,s2,str;
       list<Absyn.ElementArg> l;
-      Option<Absyn.Exp> e;
-    case (Absyn.CLASSMOD(elementArgLst = {},expOption = NONE())) then "()";  /* Special case for empty modifications */
-    case (Absyn.CLASSMOD(elementArgLst = l, expOption = e))
+      Absyn.EqMod eqMod;
+    case (Absyn.CLASSMOD(elementArgLst = {},eqMod = Absyn.NOMOD())) then "()";  /* Special case for empty modifications */
+    case (Absyn.CLASSMOD(elementArgLst = l,eqMod = eqMod))
       equation
         s1 = unparseMod1Str(l);
-        s2 = unparseMod2Str(e);
+        s2 = unparseMod2Str(eqMod);
         str = stringAppend(s1, s2);
       then
         str;
@@ -2506,16 +2506,15 @@ protected function unparseMod2Str "function: unparseMod2Str
 
   Helper function to unparse_mod1_str
 "
-  input Option<Absyn.Exp> inAbsynExpOption;
+  input Absyn.EqMod eqMod;
   output String outString;
 algorithm
-  outString:=
-  match (inAbsynExpOption)
+  outString := match eqMod
     local
       Ident s1,str;
       Absyn.Exp e;
-    case NONE() then "";
-    case SOME(e)
+    case Absyn.NOMOD() then "";
+    case Absyn.EQMOD(exp=e)
       equation
         s1 = printExpStr(e);
         str = stringAppend(" = ", s1);
@@ -5936,17 +5935,39 @@ algorithm
   _ := match mod
     local
       list<Absyn.ElementArg> elementArgLst;
-      Option<Absyn.Exp> expOption;
-    case Absyn.CLASSMOD(elementArgLst, expOption)
+      Absyn.EqMod eqMod;
+    case Absyn.CLASSMOD(elementArgLst, eqMod)
       equation
         Print.printBuf("record Absyn.CLASSMOD elementArgLst = ");
         printListAsCorbaString(elementArgLst, printElementArgAsCorbaString, ",");
-        Print.printBuf(", expOption = ");
-        printOption(expOption, printExpAsCorbaString);
+        Print.printBuf(", eqMod = ");
+        printEqModAsCorbaString(eqMod);
         Print.printBuf(" end Absyn.CLASSMOD;");
      then ();
   end match;
 end printModificationAsCorbaString;
+
+protected function printEqModAsCorbaString
+  input Absyn.EqMod eqMod;
+algorithm
+  _ := match eqMod
+    local
+      Absyn.Exp exp;
+      Absyn.Info info;
+    case Absyn.NOMOD()
+      equation
+        Print.printBuf("record Absyn.NOMOD end Absyn.NOMOD;");
+      then ();
+    case Absyn.EQMOD(exp,info)
+      equation
+        Print.printBuf("record Absyn.EQMOD exp = ");
+        printExpAsCorbaString(exp);
+        Print.printBuf(", info = ");
+        printInfoAsCorbaString(info);
+        Print.printBuf(" end Absyn.EQMOD;");
+      then ();
+  end match;
+end printEqModAsCorbaString;
 
 protected function printEquationItemAsCorbaString
   input Absyn.EquationItem el;

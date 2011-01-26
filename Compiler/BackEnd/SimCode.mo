@@ -8175,14 +8175,14 @@ algorithm
       Absyn.Exp exp;
     case (eltarg)
       equation
-        Absyn.CLASSMOD(_,SOME(Absyn.ARRAY(arr))) =
+        Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=Absyn.ARRAY(arr))) =
         Interactive.getModificationValue(eltarg, Absyn.CREF_IDENT("Library",{}));
         libsList = Util.listMap(arr, getLibraryStringInGccFormat); 
       then
         Util.listFlatten(libsList);
     case (eltarg)
       equation
-        Absyn.CLASSMOD(_,SOME(exp)) =
+        Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=exp)) =
         Interactive.getModificationValue(eltarg, Absyn.CREF_IDENT("Library",{}));
         libs = getLibraryStringInGccFormat(exp);
       then
@@ -8202,7 +8202,7 @@ algorithm
       list<Absyn.ElementArg> eltarg;
     case (eltarg)
       equation
-        Absyn.CLASSMOD(_,SOME(Absyn.STRING(inc))) = Interactive.getModificationValue(eltarg, Absyn.CREF_IDENT("Include",{}));
+        Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=Absyn.STRING(inc))) = Interactive.getModificationValue(eltarg, Absyn.CREF_IDENT("Include",{}));
         inc_1 = System.stringReplace(inc, "\\\"", "\"");
       then
         {inc_1};
