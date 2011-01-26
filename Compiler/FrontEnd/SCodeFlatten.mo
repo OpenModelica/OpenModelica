@@ -767,7 +767,7 @@ algorithm
         name_str = Absyn.pathString(inName);
         env_str = getEnvName(inEnv);
         Error.addSourceMessage(Error.LOOKUP_VARIABLE_ERROR,
-          {cref_str, env_str}, inInfo);
+          {name_str, env_str}, inInfo);
       then
         fail();
         
