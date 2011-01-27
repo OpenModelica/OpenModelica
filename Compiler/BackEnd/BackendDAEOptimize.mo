@@ -1003,16 +1003,18 @@ algorithm
   outExp := matchcontinue(inExp)
     local
       DAE.Exp e;      
-      Boolean b;
+      Boolean b,b1,b2;
       BackendDAE.Variables vars,knvars;
       DAE.ComponentRef cr;
     
-    case((e as DAE.CREF(DAE.CREF_IDENT(ident = "time",subscriptLst = {}),_), (_,vars,knvars))) then ((e,false,(true,vars,knvars)));
-    case((e as DAE.CREF(componentRef = cr),(_,vars,knvars)))
+    case((e as DAE.CREF(DAE.CREF_IDENT(ident = "time",subscriptLst = {}),_), (_,vars,knvars)))
+      then ((e,false,(true,vars,knvars)));
+    case((e as DAE.CREF(componentRef = cr),(b,vars,knvars)))
       equation
-        b = BackendVariable.isTopLevelInputOrOutput(cr,vars,knvars);
+        b1 = BackendVariable.isTopLevelInputOrOutput(cr,vars,knvars);
+        b2 = b or b1;
       then
-        ((e,not b,(b,vars,knvars)));
+        ((e,not b2,(b2,vars,knvars)));
     case((e as DAE.CALL(path = Absyn.IDENT(name = "sample"), expLst = {_,_}), (_,vars,knvars))) then ((e,false,(true,vars,knvars) ));
     case((e as DAE.CALL(path = Absyn.IDENT(name = "pre"), expLst = {_}), (_,vars,knvars))) then ((e,false,(true,vars,knvars) ));
     case((e,(b,vars,knvars))) then ((e,not b,(b,vars,knvars)));
