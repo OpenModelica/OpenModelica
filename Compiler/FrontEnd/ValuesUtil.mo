@@ -39,13 +39,13 @@ encapsulated package ValuesUtil
   The package Values contains utility functions for handling evaluated
   expression values."
 
+public import Absyn;
 public import DAE;
 public import Values;
 
 public type Value = Values.Value;
 public type IntRealOp = Values.IntRealOp;
 
-protected import Absyn;
 protected import Debug;
 protected import Dump;
 protected import Error;
@@ -2411,5 +2411,12 @@ public function extractValueString
 algorithm
   Values.STRING(str) := val;
 end extractValueString;
+
+public function getCode
+  input Values.Value val;
+  output Absyn.CodeNode code;
+algorithm
+  Values.CODE(code) := val;
+end getCode;
 
 end ValuesUtil;
