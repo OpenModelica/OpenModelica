@@ -29,9 +29,9 @@
  *
  */
 
-encapsulated package SCodeFlatten
-" file:        SCodeFlatten.mo
-  package:     SCodeFlatten
+encapsulated package SCodeFlattenRedeclare
+" file:        SCodeFlattenRedeclare.mo
+  package:     SCodeFlattenRedeclare
   description: SCode flattening
 
   RCS: $Id$
@@ -40,34 +40,18 @@ encapsulated package SCodeFlatten
   and redeclares, and fully qualifying class names.
 "
 
+public import Absyn;
 public import SCode;
-public import SCodeFlattenImports;
-public import SCodeFlattenExtends;
-public import SCodeFlattenRedeclare;
+public import SCodeEnv;
 
-protected import SCodeEnv;
+public type Env = SCodeEnv.Env;
 
-protected type Env = SCodeEnv.Env;
-
-public function flatten
+public function flattenProgram
   input SCode.Program inProgram;
+  input Env inEnv;
   output SCode.Program outProgram;
-protected
-  Env env;
 algorithm
-  //System.startTimer();
-  env := SCodeEnv.newEnvironment(NONE());
-  env := SCodeEnv.buildInitialEnv();
-  env := SCodeEnv.extendEnvWithClasses(inProgram, env);
-  env := SCodeEnv.insertClassExtendsIntoEnv(env);
-  
-  outProgram := SCodeFlattenImports.flattenProgram(inProgram, env);
-  outProgram := SCodeFlattenExtends.flattenProgram(inProgram, env);
-  outProgram := SCodeFlattenRedeclare.flattenProgram(inProgram, env);
-  //System.stopTimer();
-  //print("flatten took " +& realString(System.getTimerIntervalTime()) +& 
-  //  " seconds\n");
-end flatten;
+  outProgram := inProgram;
+end flattenProgram;
 
-
-end SCodeFlatten;
+end SCodeFlattenRedeclare;
