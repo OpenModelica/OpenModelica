@@ -112,27 +112,29 @@ typedef enum {
   OUTPUTVARS              = 1<<7,
   INITFIXED               = 1<<8,
   EXTERNALVARS            = 1<<9,
+  JACOBIANVARS            = 1<<10,
 
   /*in initializeDataStruc these are not allocated with malloc!*/
-  MODELNAME               = 1<<10,
-  STATESNAMES             = 1<<11,
-  STATESDERIVATIVESNAMES  = 1<<12,
-  ALGEBRAICSNAMES         = 1<<13,
-  PARAMETERSNAMES         = 1<<14,
-  INPUTNAMES              = 1<<15,
-  OUTPUTNAMES             = 1<<16,
-  FUNCTIONNAMES           = 1<<17,
-  EQUATIONINFO            = 1<<18,
+  MODELNAME               = 1<<11,
+  STATESNAMES             = 1<<12,
+  STATESDERIVATIVESNAMES  = 1<<13,
+  ALGEBRAICSNAMES         = 1<<14,
+  PARAMETERSNAMES         = 1<<15,
+  INPUTNAMES              = 1<<16,
+  OUTPUTNAMES             = 1<<17,
+  FUNCTIONNAMES           = 1<<18,
+  EQUATIONINFO            = 1<<19,
+  JACOBIANNAMES           = 1<<20,
 
   /*in initializeDataStruc these are not allocated with malloc!*/
-  STATESCOMMENTS            = 1<<19,
-  STATESDERIVATIVESCOMMENTS = 1<<20,
-  ALGEBRAICSCOMMENTS        = 1<<21,
-  PARAMETERSCOMMENTS        = 1<<22,
-  INPUTCOMMENTS             = 1<<23,
-  OUTPUTCOMMENTS            = 1<<24,
+  STATESCOMMENTS            = 1<<21,
+  STATESDERIVATIVESCOMMENTS = 1<<22,
+  ALGEBRAICSCOMMENTS        = 1<<23,
+  PARAMETERSCOMMENTS        = 1<<24,
+  INPUTCOMMENTS             = 1<<25,
+  OUTPUTCOMMENTS            = 1<<26,
 
-  RAWSAMPLES    = 1<<25,
+  RAWSAMPLES    = 1<<27,
 
   ALL       = 0xFFFFFFFF
 } DATA_FLAGS;
@@ -194,6 +196,7 @@ typedef struct sim_DATA {
   double* outputVars; //out_y OUTPUTVARS
   double* helpVars;
   double* initialResiduals;
+  double* jacobianVars;
 
   // Old values used for extrapolation
   double* states_old,*states_old2;
@@ -209,6 +212,7 @@ typedef struct sim_DATA {
   fortran_integer nStates,nAlgebraic,nParameters;
   long nInputVars,nOutputVars,nFunctions,nProfileBlocks;
   fortran_integer nZeroCrossing/*NG*/;
+  long nJacobianvars;
   long nRelations/*NREL*/;
   long nInitialResiduals/*NR*/;
   long nHelpVars/* NHELP */;
@@ -228,6 +232,7 @@ typedef struct sim_DATA {
   const struct omc_varInfo* bool_param_names;
   const struct omc_varInfo* inputNames;
   const struct omc_varInfo* outputNames;
+  const struct omc_varInfo* jacobian_names;
   const struct omc_functionInfo* functionNames;
   const struct omc_equationInfo* equationInfo;
   const int* equationInfo_reverse_prof_index;

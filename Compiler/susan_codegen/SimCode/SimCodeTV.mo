@@ -248,6 +248,7 @@ package SimCode
 	    Integer numExternalObjects;
 	    Integer numStringAlgVars;
 	    Integer numStringParamVars;
+	    Integer numJacobianVars;
 	  end VARINFO;
 	end VarInfo;
 	
@@ -266,6 +267,7 @@ package SimCode
 	    list<SimVar> stringAlgVars;
 	    list<SimVar> stringParamVars;
 	    list<SimVar> extObjVars;
+	    list<SimVar> jacobianVars; //all vars for the matrices A,B,C,D
 	  end SIMVARS;
 	end SimVars;
   
@@ -445,15 +447,26 @@ package SimCode
 	  output DAE.Exp outExp;
 	end createAssertforSqrt;
 
-  function createDAEString
-   input String inString;
-   output DAE.Exp outExp;
-  end createDAEString;
+    function appendAllequation
+      input list<JacobianMatrix> inJacobianMatrix;
+      output list<SimEqSystem> eqn;
+    end appendAllequation;
+ 
+    function appendLists
+      input list<SimEqSystem> inEqn1;
+      input list<SimEqSystem> inEqn2;
+      output list<SimEqSystem> outEqn;
+    end appendLists;
+ 
+    function createDAEString
+      input String inString;
+      output DAE.Exp outExp;
+    end createDAEString;
   
-  function isBoxedFunction
-    input Function fn;
-    output Boolean b;
-  end isBoxedFunction;
+    function isBoxedFunction
+      input Function fn;
+      output Boolean b;
+    end isBoxedFunction;
 
 end SimCode;
 

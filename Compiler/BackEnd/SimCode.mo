@@ -207,6 +207,7 @@ uniontype VarInfo
     Integer numExternalObjects;
     Integer numStringAlgVars;
     Integer numStringParamVars;
+    Integer numJacobianVars;
   end VARINFO;
 end VarInfo;
 
@@ -226,6 +227,7 @@ uniontype SimVars
     list<SimVar> stringAlgVars;
     list<SimVar> stringParamVars;
     list<SimVar> extObjVars;
+    list<SimVar> jacobianVars; //all vars for the matrices A,B,C,D
   end SIMVARS;
 end SimVars;
 
@@ -462,7 +464,7 @@ end Context;
 public constant Context contextSimulationNonDiscrete  = SIMULATION(false);
 public constant Context contextSimulationDiscrete     = SIMULATION(true);
 public constant Context contextSimulation2NonDiscrete = SIMULATION2(false);
-public constant Context contextSimulation2Discrete  = SIMULATION2(true);
+public constant Context contextSimulation2Discrete    = SIMULATION2(true);
 public constant Context contextInlineSolver           = INLINE_CONTEXT();
 public constant Context contextFunction               = FUNCTION_CONTEXT();
 public constant Context contextOther                  = OTHER();
@@ -761,6 +763,50 @@ public function createDAEString
 algorithm
   outExp := DAE.SCONST(inString);
 end createDAEString;
+
+public function appendAllequation
+  input list<JacobianMatrix> inJacobianMatrix;
+  output list<SimEqSystem> outEqn;
+algorithm 
+  outEqn := 
+  matchcontinue(inJacobianMatrix)
+      local
+        list<SimEqSystem> tmp,tmp1;
+        list<JacobianMatrix> rest;
+    case (((tmp,_,_))::rest)
+      equation
+        tmp1 = appendAllequation(rest);
+        tmp1 = listAppend(tmp,tmp1);
+      then tmp1;
+   case({}) then {};
+end matchcontinue;
+end appendAllequation;
+
+public function appendAllVars
+  input list<JacobianMatrix> inJacobianMatrix;
+  output list<SimVar> outVars;
+algorithm 
+  outVars := 
+  matchcontinue(inJacobianMatrix)
+      local
+        list<SimVar> tmp,tmp1;
+        list<JacobianMatrix> rest;
+    case (((_,tmp,_))::rest)
+      equation
+        tmp1 = appendAllVars(rest);
+        tmp1 = listAppend(tmp,tmp1);
+      then tmp1;
+   case({}) then {};
+end matchcontinue;
+end appendAllVars;
+
+public function appendLists
+  input list<SimEqSystem> inEqn1;
+  input list<SimEqSystem> inEqn2;
+  output list<SimEqSystem> outEqn;
+algorithm 
+  outEqn := listAppend(inEqn1,inEqn2);
+end appendLists;
 
 /** end of TypeView published functions **/
 
@@ -1957,6 +2003,9 @@ algorithm
         allEquations = applyResidualReplacements(allEquations);
         
         LinearMats = createLinearModelMatrixes(functionTree,dlow,ass1,ass2);
+        
+        modelInfo = expandModelInfoVars(LinearMats,modelInfo);
+        
         crefToSimVarHT = createCrefToSimVarHT(modelInfo);
         
         simCode = SIMCODE(modelInfo,
@@ -2000,6 +2049,40 @@ algorithm
   end matchcontinue;
 end createSimCode;
 
+
+protected function expandModelInfoVars
+"Expand Modelinfo with jacobain Vars"
+  input list<JacobianMatrix> inJacs;
+  input ModelInfo inModelinfo;
+  output ModelInfo outModelinfo;
+algorithm
+  outModelinfo := 
+  match (inJacs,inModelinfo)
+    local
+      list<SimVar> jacvars;
+      SimVars linearVars,vars,simvarsandlinearvars;
+      ModelInfo minfo;
+      Absyn.Path name;
+      String dir;
+      VarInfo varinfo;
+      list<Function> functions;
+      Integer nx, ny, np, ng, ng_sam, ng_sam_1, next, ny_string, np_string, ng_1;
+      Integer nhv,nin, nresi, nout, ny_int, np_int, ny_bool, np_bool;
+      Integer njacvars;
+       
+      case(inJacs,minfo as (MODELINFO(name,dir,VARINFO(nhv, ng_1, ng_sam_1, nx, ny, ny_int, ny_bool, np, np_int, np_bool, nout, nin,
+          nresi, next, ny_string, np_string,_),vars,functions)))
+        equation
+          jacvars = appendAllVars(inJacs);
+          jacvars = rewriteIndex(jacvars,0);
+          njacvars = listLength(jacvars);
+          linearVars = SIMVARS({}, {}, {}, {}, {}, {}, {}, {}, {},{},{},{},{},jacvars);
+          simvarsandlinearvars = mergeVars(vars,linearVars);
+        then MODELINFO(name, dir, VARINFO(nhv, ng_1, ng_sam_1, nx, ny, ny_int, ny_bool, np, np_int, np_bool, nout, nin,
+          nresi, next, ny_string, np_string,njacvars), simvarsandlinearvars, functions);
+   end match;
+end expandModelInfoVars;
+          
 
 protected function createLinearModelMatrixes
   input DAE.FunctionTree functions;
@@ -3221,9 +3304,9 @@ algorithm
         = getEquationAndSolvedVar(eqNum, eqns, vars, ass2);
         eqStr =  BackendDump.equationStr(eqn);
         varexp = Expression.crefExp(cr);
-        exp_  = ExpressionSolve.solveLin(e1, e2, varexp);
+        (exp_,asserts) = solve(e1, e2, varexp);
       then
-        {SES_SIMPLE_ASSIGN(cr, exp_)};  
+        {SES_ALGORITHM(asserts),SES_SIMPLE_ASSIGN(cr, exp_)};
     
         // when eq without else
     case (eqNum,
@@ -5486,7 +5569,7 @@ algorithm
         ng_sam_1 = filterNg(ng_sam);
       then
         VARINFO(numHelpVars, ng_1, ng_sam_1, nx, ny, ny_int, ny_bool, np, np_int, np_bool, numOutVars, numInVars,
-          numResiduals, next, ny_string, np_string);
+          numResiduals, next, ny_string, np_string,0);
     case (_,_,_,_,_)
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"createVarInfo failed"});
@@ -5515,7 +5598,7 @@ algorithm
       initialEqs=ie))
       equation
         /* Extract from variable list */  
-        ((varsOut,_)) = BackendVariable.traverseBackendDAEVars(vars,extractVarsFromList,(SIMVARS({}, {}, {}, {}, {}, {}, {}, {}, {},{},{},{},{}),aliasVars)); 
+        ((varsOut,_)) = BackendVariable.traverseBackendDAEVars(vars,extractVarsFromList,(SIMVARS({}, {}, {}, {}, {}, {}, {}, {}, {},{},{},{},{},{}),aliasVars)); 
         /* Extract from known variable list */
         ((varsOut,_)) = BackendVariable.traverseBackendDAEVars(knvars,extractVarsFromList,(varsOut,aliasVars));
         /* Extract from external object list */
@@ -5625,7 +5708,7 @@ algorithm
           BackendVariable.isExtObj(dlowVar), simvar, extObjVars);
       then
         SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars, outputVars,
-          paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars, extObjVars);
+          paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars, extObjVars,{});
   end match;
 end extractVarFromVar;
 
@@ -5696,12 +5779,13 @@ algorithm
       list<SimVar> stringAlgVars, stringAlgVars1, stringAlgVars2;
       list<SimVar> stringParamVars, stringParamVars1, stringParamVars2;
       list<SimVar> extObjVars, extObjVars1, extObjVars2;
+      list<SimVar> jacVars, jacVars1, jacVars2;
     case (SIMVARS(stateVars1, derivativeVars1, algVars1, intAlgVars1, boolAlgVars1, inputVars1,
       outputVars1, paramVars1, intParamVars1, boolParamVars1, stringAlgVars1, stringParamVars1,
-      extObjVars1),
+      extObjVars1,jacVars1),
       SIMVARS(stateVars2, derivativeVars2, algVars2, intAlgVars2, boolAlgVars2, inputVars2,
         outputVars2, paramVars2, intParamVars2, boolParamVars2, stringAlgVars2, stringParamVars2,
-        extObjVars2))
+        extObjVars2,jacVars2))
       equation
         stateVars = listAppend(stateVars1, stateVars2);
         derivativeVars = listAppend(derivativeVars1, derivativeVars2);
@@ -5716,9 +5800,10 @@ algorithm
         stringAlgVars = listAppend(stringAlgVars1, stringAlgVars2);
         stringParamVars = listAppend(stringParamVars1, stringParamVars2);
         extObjVars = listAppend(extObjVars1, extObjVars2);
+        jacVars = listAppend(jacVars1, jacVars2);
       then
         SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars, outputVars,
-          paramVars,intParamVars,boolParamVars, stringAlgVars, stringParamVars, extObjVars);
+          paramVars,intParamVars,boolParamVars, stringAlgVars, stringParamVars, extObjVars,jacVars);
     case (_,_)
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"mergeVars failed"});
@@ -5747,9 +5832,10 @@ algorithm
       list<SimVar> stringAlgVars;
       list<SimVar> stringParamVars;
       list<SimVar> extObjVars;
+      list<SimVar> jacVars;
     case (SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars,
       outputVars, paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars,
-      extObjVars))
+      extObjVars,jacVars))
       equation
         stateVars = Util.sort(stateVars, varIndexComparer);
         derivativeVars = Util.sort(derivativeVars, varIndexComparer);
@@ -5764,9 +5850,10 @@ algorithm
         stringAlgVars = Util.sort(stringAlgVars, varIndexComparer);
         stringParamVars = Util.sort(stringParamVars, varIndexComparer);
         extObjVars = Util.sort(extObjVars, varIndexComparer);
+        jacVars = Util.sort(jacVars, varIndexComparer);
       then SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars,
         outputVars, paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars,
-        extObjVars);
+        extObjVars,jacVars);
   end match;
 end sortSimvarsOnIndex;
 
@@ -5789,9 +5876,10 @@ algorithm
       list<SimVar> stringAlgVars;
       list<SimVar> stringParamVars;
       list<SimVar> extObjVars;
+      list<SimVar> jacVars;
     case (SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars,
       outputVars, paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars,
-      extObjVars))
+      extObjVars,jacVars))
       equation
         algVars = rewriteIndex(algVars, 0);
         intAlgVars = rewriteIndex(intAlgVars,0);
@@ -5801,9 +5889,10 @@ algorithm
         boolParamVars = rewriteIndex(boolParamVars, 0);
         stringAlgVars = rewriteIndex(stringAlgVars, 0);
         stringParamVars = rewriteIndex(stringParamVars, 0);
+        jacVars = rewriteIndex(jacVars, 0);
       then SIMVARS(stateVars, derivativeVars, algVars,intAlgVars, boolAlgVars, inputVars,
         outputVars, paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars,
-        extObjVars);
+        extObjVars,jacVars);
   end match;
 end fixIndex;
 
@@ -5871,17 +5960,18 @@ algorithm
       list<SimVar> stringAlgVars;
       list<SimVar> stringParamVars;
       list<SimVar> extObjVars;
+      list<SimVar> jacVars;
       /* no initial equations so nothing to do */
     case (_, {}) then simvarsIn;
     case (SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars,
       outputVars, paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars,
-      extObjVars), initCrefs)
+      extObjVars,jacVars), initCrefs)
       equation
         true = Util.listMapAllValue(stateVars, simvarFixed,true);
         stateVars = Util.listMap1(stateVars, nonFixifyIfHasInit, initCrefs);
       then SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars,
         outputVars, paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars,
-        extObjVars);
+        extObjVars,jacVars);
       /* not all were fixed so nothing to do */
     else simvarsIn;
   end matchcontinue;
@@ -5940,7 +6030,7 @@ algorithm
     case (MODELINFO(vars = SIMVARS(
       stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, 
       _/*inputVars*/, _/*outputVars*/, paramVars, intParamVars, boolParamVars, 
-      stringAlgVars, stringParamVars, extObjVars)))
+      stringAlgVars, stringParamVars, extObjVars,_)))
       equation
         ht = emptyHashTable();
         ht = Util.listFold(stateVars, addSimVarToHashTable, ht);

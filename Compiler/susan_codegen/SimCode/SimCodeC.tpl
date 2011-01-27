@@ -93,7 +93,7 @@ case SIMCODE(__) then
   
   <%globalData(modelInfo)%>
   
-  <%equationInfo(allEquationsPlusWhen)%>
+  <%equationInfo(appendLists(appendAllequation(JacobianMatrixes),allEquationsPlusWhen))%>
   
   <%functionGetName(modelInfo)%>
   
@@ -210,6 +210,7 @@ case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
   #define NPINT <%varInfo.numIntParams%> // number of alg. int variables
   #define NYBOOL <%varInfo.numBoolAlgVars%> // number of alg. bool variables
   #define NPBOOL <%varInfo.numBoolParams%> // number of alg. bool variables
+  #define NJACVARS <%varInfo.numJacobianVars%> // number of jacobian variables
   
   static DATA* localData = 0;
   #define time localData->timeValue
@@ -238,6 +239,7 @@ case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
   <%globalDataVarInfoArray("bool_param_names", vars.boolParamVars)%>
   <%globalDataVarInfoArray("string_alg_names", vars.stringAlgVars)%>
   <%globalDataVarInfoArray("string_param_names", vars.stringParamVars)%>
+  <%globalDataVarInfoArray("jacobian_names", vars.jacobianVars)%>
   <%globalDataFunctionInfoArray("function_names", functions)%>
   
   <%vars.stateVars |> var =>
@@ -273,6 +275,9 @@ case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
   <%vars.stringParamVars |> var =>
     globalDataVarDefine(var, "stringVariables.parameters")
   ;separator="\n"%>
+  <%vars.jacobianVars |> var =>
+    globalDataVarDefine(var, "jacobianVars")
+  ;separator="\n"%>  
   <%functions |> fn hasindex i0 => '#define <%functionName(fn,false)%>_index <%i0%>'; separator="\n"%>
   
   static char init_fixed[NX+NX+NY+NYINT+NYBOOL+NYSTR+NP+NPINT+NPBOOL+NPSTR] = {
@@ -373,6 +378,15 @@ end globalDataFunctionInfoArray;
 template globalDataVarDefine(SimVar simVar, String arrayName)
  "Generates a define statement for a varable in the global data section."
 ::=
+match arrayName
+case "jacobianVars" then
+  match simVar
+  case SIMVAR(__) then
+    <<
+    #define <%cref(name)%> localData-><%arrayName%>[<%index%>]
+    >> 
+  end match
+case _ then
   match simVar
   case SIMVAR(arrayCref=SOME(c)) then
     <<
@@ -534,6 +548,7 @@ template functionInitializeDataStruc()
     returnData->intVariables.nAlgebraic = NYINT;
     returnData->boolVariables.nParameters = NPBOOL;
     returnData->boolVariables.nAlgebraic = NYBOOL;
+    returnData->nJacobianvars = NJACVARS;
   
     if(flags & STATES && returnData->nStates) {
       returnData->states = (double*) malloc(sizeof(double)*returnData->nStates);
@@ -669,6 +684,14 @@ template functionInitializeDataStruc()
       returnData->inputVars = 0;
     }
   
+   if(flags & JACOBIANVARS && returnData->nJacobianvars) {
+      returnData->jacobianVars = (double*) malloc(sizeof(double)*returnData->nJacobianvars);
+      assert(returnData->jacobianVars);
+      memset(returnData->jacobianVars,0,sizeof(double)*returnData->nJacobianvars);
+    } else {
+      returnData->jacobianVars = 0;
+    }
+  
     if(flags & INITIALRESIDUALS && returnData->nInitialResiduals) {
       returnData->initialResiduals = (double*) malloc(sizeof(double)*returnData->nInitialResiduals);
       assert(returnData->initialResiduals);
@@ -748,6 +771,12 @@ template functionInitializeDataStruc()
       returnData->outputNames = output_names;
     } else {
       returnData->outputNames = 0;
+    }
+    
+    if(flags & JACOBIANNAMES) {
+      returnData->jacobian_names = jacobian_names;
+    } else {
+      returnData->jacobian_names = 0;
     }
     
     if(flags & FUNCTIONNAMES) {
@@ -881,6 +910,11 @@ case EXTOBJINFO(__) then
     if(flags & OUTPUTVARS && data->outputVars) {
       free(data->outputVars);
       data->outputVars = 0;
+    }
+    
+    if(flags & JACOBIANVARS && data->jacobianVars) {
+      free(data->jacobianVars);
+      data->jacobianVars = 0;
     }
     
     if(flags & INITIALRESIDUALS && data->initialResiduals){
@@ -1779,8 +1813,8 @@ template functionCheckForDiscreteChanges(list<ComponentRef> discreteModelVars)
   {
     int needToIterate = 0;
   
-    <%discreteModelVars |> var =>
-      'if (change(<%cref(var)%>)) { needToIterate=1; }'
+    <%discreteModelVars |> var as CREF_IDENT(__) =>
+      'if (change(<%cref(var)%>)) { if (sim_verbose) { cout << "Discrete Var <%crefStr(var)%> : " << (<%extType(identType)%>) pre(<%cref(var)%>) << " to " << (<%extType(identType)%>) <%cref(var)%> << endl;}  needToIterate=1; }'
     ;separator="\n"%>
     
     return needToIterate;
@@ -1842,7 +1876,7 @@ template defvars(SimVar item)
 match item
 case SIMVAR(__) then 
   <<
-  double <%cref(name)%>;
+  <%cref(name)%> = 0;
   >>
 end defvars;
 
