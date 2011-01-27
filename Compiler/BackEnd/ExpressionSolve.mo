@@ -138,6 +138,107 @@ algorithm
   end matchcontinue;
 end solve;
 
+public function solveLin
+"function: solve linear equation
+  Solves an equation consisting of a right hand side (rhs) and a
+  left hand side (lhs), with respect to the expression given as
+  third argument, usually a variable."
+  input DAE.Exp inExp1;
+  input DAE.Exp inExp2;
+  input DAE.Exp inExp3;
+  output DAE.Exp outExp;
+  output list<DAE.Statement> outAsserts;
+algorithm
+  outExp := matchcontinue (inExp1,inExp2,inExp3)
+    local
+      DAE.Exp crexp,crexp2,rhs,lhs,res,res_1,cr,e1,e2,e3;
+      DAE.ComponentRef cr1,cr2;
+      DAE.ExpType tp,tp1;
+      list<DAE.Statement> asserts,asserts1,asserts2;
+    
+    // case(debuge1,debuge2,debuge3) // FOR DEBBUGING...
+    //  local DAE.Exp debuge1,debuge2,debuge3;
+    //  equation
+    //    print("(Expression.mo debugging)  To solve: rhs: " +&
+    //      printExpStr(debuge1) +& " lhs: " +&
+    //     printExpStr(debuge2) +& " with respect to: " +&
+    //      printExpStr(debuge3) +& "\n");
+    //  then
+    //    fail();
+    
+    // special case when already solved, cr1 = rhs, otherwise division by zero when dividing with derivative
+    case (crexp,rhs,crexp2)
+      equation
+        cr1 = crOrDerCr(crexp);
+        cr2 = crOrDerCr(crexp2);
+        true = ComponentReference.crefEqual(cr1, cr2);
+        false = Expression.expContains(rhs, crexp);
+        res_1 = ExpressionSimplify.simplify1(rhs);
+      then
+        (res_1,{});
+
+    // special case when already solved, lhs = cr1, otherwise division by zero  when dividing with derivative
+    case (lhs,crexp ,crexp2)
+      equation
+        cr1 = crOrDerCr(crexp);
+        cr2 = crOrDerCr(crexp2);
+        true = ComponentReference.crefEqual(cr1, cr2);
+        false = Expression.expContains(lhs, crexp);
+        res_1 = ExpressionSimplify.simplify1(lhs);
+      then
+        (res_1,{});    
+
+    // solving linear equation system using newton iteration ( converges directly )
+    case (lhs,rhs,(cr as DAE.CREF(componentRef = _)))
+      equation
+        true = hasOnlyFactors(lhs,rhs);
+        tp = Expression.typeof(lhs);
+        e1 = Expression.makeConstOne(tp);
+        lhs = Expression.makeSum({lhs,e1}); 
+        tp1 = Expression.typeof(rhs);
+        e2 = Expression.makeConstOne(tp1);
+        lhs = Expression.makeSum({rhs,e2}); 
+        (res,asserts) = solve2(lhs, rhs, cr, true);
+        res_1 = ExpressionSimplify.simplify1(res);
+      then
+        (res_1,asserts);
+
+    // solving linear equation system using newton iteration ( converges directly )
+    case (lhs,rhs,(cr as DAE.CREF(componentRef = _)))
+      equation
+        (res,asserts) = solve2(lhs, rhs, cr, true);
+        res_1 = ExpressionSimplify.simplify1(res);
+      then
+        (res_1,asserts);
+    
+    case (lhs,DAE.IFEXP(e1,e2,e3),(cr as DAE.CREF(componentRef = _)))
+      equation
+        (rhs,asserts) = solveLin(lhs,e2,cr);
+        (res,asserts1) = solveLin(lhs,e3,cr);
+        res_1 = ExpressionSimplify.simplify1(DAE.IFEXP(e1,rhs,res));
+        asserts2 = listAppend(asserts,asserts1);
+      then
+        (res_1,asserts2);
+    
+    case (DAE.IFEXP(e1,e2,e3),rhs,(cr as DAE.CREF(componentRef = _)))
+      equation
+        (rhs,asserts) = solveLin(rhs,e2,cr);
+        (res,asserts1) = solveLin(rhs,e3,cr);
+        res_1 = ExpressionSimplify.simplify1(DAE.IFEXP(e1,rhs,res));
+        asserts2 = listAppend(asserts,asserts1);
+      then
+        (res_1,asserts2);
+        
+    case (e1,e2,e3)
+      equation
+        Debug.fprint("failtrace", "-Expression.solve failed\n");
+        //print("solve ");print(ExpressionDump.printExpStr(e1));print(" = ");print(ExpressionDump.printExpStr(e2));
+        //print(" w.r.t ");print(ExpressionDump.printExpStr(e3));print(" failed\n");
+      then
+        fail();
+  end matchcontinue;
+end solveLin;
+
 protected function solve2
 "function: solve2
   This function solves an equation e1 = e2 with

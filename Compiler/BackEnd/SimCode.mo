@@ -3213,7 +3213,7 @@ algorithm
         equations = listAppend(equations1,equations);  
       then
         equations;
-        
+       
         // a linear system of equations 
     case (includeWhen, skipDiscInZc, genDiscrete,  skipDiscInAlgorithm, true, dlow, ass1, ass2, (comp as (_ :: (_ :: _))) :: restComps, helpVarInfo)
       equation
@@ -3224,19 +3224,19 @@ algorithm
         equations1;
         
         // single equation
-    case (includeWhen, skipDiscInZc, genDiscrete, skipDiscInAlgorithm, linearSystem, dlow, ass1, ass2, {index} :: restComps, helpVarInfo)
+    case (includeWhen, skipDiscInZc, genDiscrete, skipDiscInAlgorithm, false, dlow, ass1, ass2, {index} :: restComps, helpVarInfo)
       equation
-        equations1 = createEquation(index, dlow, ass1, ass2, helpVarInfo, linearSystem, skipDiscInAlgorithm);
-        equations = createEquations(includeWhen, skipDiscInZc, genDiscrete,  skipDiscInAlgorithm, linearSystem, dlow, ass1, ass2, restComps, helpVarInfo);
+        equations1 = createEquation(index, dlow, ass1, ass2, helpVarInfo, false, skipDiscInAlgorithm);
+        equations = createEquations(includeWhen, skipDiscInZc, genDiscrete,  skipDiscInAlgorithm, false, dlow, ass1, ass2, restComps, helpVarInfo);
         equations = listAppend(equations1,equations);
       then
         equations;
         
         // multiple equations that must be solved together (algebraic loop)
-    case (includeWhen, skipDiscInZc, genDiscrete, skipDiscInAlgorithm, linearSystem, dlow, ass1, ass2, (comp as (_ :: (_ :: _))) :: restComps, helpVarInfo)
+    case (includeWhen, skipDiscInZc, genDiscrete, skipDiscInAlgorithm, false, dlow, ass1, ass2, (comp as (_ :: (_ :: _))) :: restComps, helpVarInfo)
       equation
-        equations_ = createOdeSystem(genDiscrete, skipDiscInAlgorithm, linearSystem, dlow, ass1, ass2, comp, helpVarInfo);
-        equations = createEquations(includeWhen, skipDiscInZc, genDiscrete, skipDiscInAlgorithm, linearSystem, dlow, ass1, ass2, restComps, helpVarInfo);
+        equations_ = createOdeSystem(genDiscrete, skipDiscInAlgorithm, false, dlow, ass1, ass2, comp, helpVarInfo);
+        equations = createEquations(includeWhen, skipDiscInZc, genDiscrete, skipDiscInAlgorithm, false, dlow, ass1, ass2, restComps, helpVarInfo);
         equations1 = listAppend(equations_,equations); 
       then
         equations1;
@@ -3304,7 +3304,7 @@ algorithm
         = getEquationAndSolvedVar(eqNum, eqns, vars, ass2);
         eqStr =  BackendDump.equationStr(eqn);
         varexp = Expression.crefExp(cr);
-        (exp_,asserts) = solve(e1, e2, varexp);
+        (exp_,asserts) = ExpressionSolve.solveLin(e1, e2, varexp);
       then
         {SES_ALGORITHM(asserts),SES_SIMPLE_ASSIGN(cr, exp_)};
     
