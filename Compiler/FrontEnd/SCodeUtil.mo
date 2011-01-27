@@ -1469,11 +1469,10 @@ algorithm
       then
         (sub :: subs);
 
-    case ((Absyn.REDECLARATION(finalItem = finalPrefix,redeclareKeywords = keywords,each_ = each_,elementSpec = spec,constrainClass = constropt) :: xs))
+    case ((Absyn.REDECLARATION(finalItem = finalPrefix,redeclareKeywords = keywords,each_ = each_,elementSpec = spec,constrainClass = constropt, info = info) :: xs))
       equation
         subs = translateArgs(xs);
         n = Absyn.elementSpecName(spec);
-        info = Absyn.elementSpecInfo(spec);
         elist = translateElementspec(constropt,finalPrefix, Absyn.UNSPECIFIED(),NONE(), false, spec, info)
         "LS:: do not know what to use for *protected*, so using false
          LS:: do not know what to use for *replaceable*, so using false" ;

@@ -3226,18 +3226,18 @@ algorithm
         cr_1 = replaceStartInComponentRef(cr, old_comp, new_comp);
       then
         Absyn.MODIFICATION(b,each_,cr_1,NONE(),str);
-    case (Absyn.REDECLARATION(finalItem = b,redeclareKeywords = redecl,each_ = each_,elementSpec = element_spec,constrainClass = SOME(Absyn.CONSTRAINCLASS(element_spec2,c))),old_comp,new_comp)
+    case (Absyn.REDECLARATION(finalItem = b,redeclareKeywords = redecl,each_ = each_,elementSpec = element_spec,constrainClass = SOME(Absyn.CONSTRAINCLASS(element_spec2,c)),info = info),old_comp,new_comp)
       equation
         element_spec_1 = renameComponentInElementSpec(element_spec, old_comp, new_comp);
         element_spec2_1 = renameComponentInElementSpec(element_spec2, old_comp, new_comp);
       then
         Absyn.REDECLARATION(b,redecl,each_,element_spec_1,
-          SOME(Absyn.CONSTRAINCLASS(element_spec2_1,c)));
-    case (Absyn.REDECLARATION(finalItem = b,redeclareKeywords = redecl,each_ = each_,elementSpec = element_spec,constrainClass = NONE()),old_comp,new_comp)
+          SOME(Absyn.CONSTRAINCLASS(element_spec2_1,c)),info);
+    case (Absyn.REDECLARATION(finalItem = b,redeclareKeywords = redecl,each_ = each_,elementSpec = element_spec,constrainClass = NONE(),info=info),old_comp,new_comp)
       equation
         element_spec_1 = renameComponentInElementSpec(element_spec, old_comp, new_comp);
       then
-        Absyn.REDECLARATION(b,redecl,each_,element_spec_1,NONE());
+        Absyn.REDECLARATION(b,redecl,each_,element_spec_1,NONE(),info);
   end match;
 end renameComponentInElementArg;
 

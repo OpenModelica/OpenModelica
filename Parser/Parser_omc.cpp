@@ -39,7 +39,7 @@ void* Parser_parse(const char* filename)
   void *res = parseFile(filename,PARSE_MODELICA);
   if (res == NULL)
     MMC_THROW();
-  // printAny(res);
+  printAny(res);
   return res;
 }
 

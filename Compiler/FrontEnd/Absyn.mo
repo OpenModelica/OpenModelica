@@ -622,6 +622,7 @@ uniontype ElementArg "Wrapper for things that modify elements, modifications and
     Each each_ "each" ;
     ElementSpec elementSpec "elementSpec" ;
     Option<ConstrainClass> constrainClass "class definition or declaration" ;
+    Info info "needed because ElementSpec does not contain this info; Element does";
   end REDECLARATION;
 
 end ElementArg;
@@ -2229,21 +2230,6 @@ algorithm
   end match;
 end elementSpecName;
 
-public function elementSpecInfo
-  "Extracts the Absyn.Info for an ElementSpec. At the moment it just returns
-  dummyInfo for components, because they do not contain any info yet."
-  input ElementSpec inElementSpec;
-  output Info outInfo;
-algorithm
-  outInfo := match(inElementSpec)
-    local
-      Info info;
-
-    case CLASSDEF(class_ = CLASS(info = info)) then info;
-    case COMPONENTS(components = _) then dummyInfo;
-  end match;
-end elementSpecInfo;
-  
 public function printImportString "Function: printImportString
 This function takes a Absyn.Import and prints it as a flat-string.
 "

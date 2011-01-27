@@ -6420,6 +6420,7 @@ algorithm
       Absyn.RedeclareKeywords redeclareKeywords;
       Absyn.ElementSpec elementSpec;
       Option<Absyn.ConstrainClass> constrainClass;
+      Absyn.Info info;
     case Absyn.MODIFICATION(finalItem,each_,componentRef,modification,comment)
       equation
         Print.printBuf("record Absyn.MODIFICATION finalItem = ");
@@ -6434,7 +6435,7 @@ algorithm
         printStringCommentOption(comment);
         Print.printBuf(" end Absyn.MODIFICATION;");
       then ();
-    case Absyn.REDECLARATION(finalItem,redeclareKeywords,each_,elementSpec,constrainClass)
+    case Absyn.REDECLARATION(finalItem,redeclareKeywords,each_,elementSpec,constrainClass,info)
       equation
         Print.printBuf("record Absyn.REDECLARATION finalItem = ");
         Print.printBuf(Util.if_(finalItem,"true","false"));
@@ -6446,6 +6447,8 @@ algorithm
         printElementSpecAsCorbaString(elementSpec);
         Print.printBuf(", constrainClass = ");
         printOption(constrainClass, printConstrainClassAsCorbaString);
+        Print.printBuf(", info = ");
+        printInfoAsCorbaString(info);
         Print.printBuf(" end Absyn.REDECLARATION;");
       then ();
   end match;

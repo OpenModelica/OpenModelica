@@ -517,15 +517,15 @@ argument_list returns [void* ast] :
   ;
 
 argument returns [void* ast] :
-  ( em=element_modification_or_replaceable {ast = em;}
-  | er=element_redeclaration {ast = er;}
+  ( em=element_modification_or_replaceable {$ast = $em.ast;}
+  | er=element_redeclaration {$ast = $er.ast;}
   )
   ;
 
 element_modification_or_replaceable returns [void* ast] :
     (e=EACH)? (f=FINAL)? (em=element_modification[e ? Absyn__EACH : Absyn__NON_5fEACH, mk_bcon(f)] | er=element_replaceable[e != NULL,f != NULL,false])
       {
-        ast = em ? em : er;
+        ast = $em.ast ? $em.ast : $er.ast;
       }
     ;
 
@@ -537,22 +537,22 @@ element_redeclaration returns [void* ast] :
   REDECLARE (e=EACH)? (f=FINAL)?
   ( (cdef=class_definition[f != NULL] | cc=component_clause1) | er=element_replaceable[e != NULL,f != NULL,true] )
      {
-       if (er) {
-         ast = er;
+       if ($er.ast) {
+         $ast = $er.ast;
        } else {
-         if (!cc)
-          cc = Absyn__CLASSDEF(RML_FALSE,cdef.ast);
-         ast = Absyn__REDECLARATION(mk_bcon(f), make_redeclare_keywords(false,true), e ? Absyn__EACH : Absyn__NON_5fEACH, cc, mk_none());
+         $ast = Absyn__REDECLARATION(mk_bcon(f), make_redeclare_keywords(false,true), e ? Absyn__EACH : Absyn__NON_5fEACH, $cc.ast ? $cc.ast : Absyn__CLASSDEF(RML_FALSE,$cdef.ast), mk_none(), INFO($start));
        }
      }
   ;
 
-element_replaceable [int each, int final, int redeclare] returns [void* ast] :
+element_replaceable [int each, int final, int redeclare] returns [void* ast] @init {
+  $ast = NULL;
+} :
   REPLACEABLE ( cd=class_definition[final] | e_spec=component_clause1 ) constr=constraining_clause_comment?
     {
-      ast = Absyn__REDECLARATION(mk_bcon(final), make_redeclare_keywords(true,redeclare),
-                                 each ? Absyn__EACH : Absyn__NON_5fEACH, e_spec ? e_spec : Absyn__CLASSDEF(RML_TRUE, cd.ast),
-                                 mk_some_or_none($constr.ast));
+      $ast = Absyn__REDECLARATION(mk_bcon(final), make_redeclare_keywords(true,redeclare),
+                                  each ? Absyn__EACH : Absyn__NON_5fEACH, e_spec ? e_spec : Absyn__CLASSDEF(RML_TRUE, $cd.ast),
+                                  mk_some_or_none($constr.ast), NULL);
     }
   ;
   

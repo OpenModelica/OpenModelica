@@ -149,7 +149,7 @@ public function solveLin
   output DAE.Exp outExp;
   output list<DAE.Statement> outAsserts;
 algorithm
-  outExp := matchcontinue (inExp1,inExp2,inExp3)
+  (outExp,outAsserts) := matchcontinue (inExp1,inExp2,inExp3)
     local
       DAE.Exp crexp,crexp2,rhs,lhs,res,res_1,cr,e1,e2,e3;
       DAE.ComponentRef cr1,cr2;

@@ -1645,7 +1645,7 @@ extern struct record_description Absyn_ElementArg_MODIFICATION__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_ElementArg_REDECLARATION__desc_added
 #define Absyn_ElementArg_REDECLARATION__desc_added
-const char* Absyn_ElementArg_REDECLARATION__desc__fields[5] = {"finalItem","redeclareKeywords","each_","elementSpec","constrainClass"};
+const char* Absyn_ElementArg_REDECLARATION__desc__fields[6] = {"finalItem","redeclareKeywords","each_","elementSpec","constrainClass","info"};
 struct record_description Absyn_ElementArg_REDECLARATION__desc = {
   "Absyn_ElementArg_REDECLARATION",
   "Absyn.ElementArg.REDECLARATION",
@@ -1655,8 +1655,8 @@ struct record_description Absyn_ElementArg_REDECLARATION__desc = {
 #else /* Only use the file as a header */
 extern struct record_description Absyn_ElementArg_REDECLARATION__desc;
 #endif
-#define Absyn__REDECLARATION_3dBOX5 4
-#define Absyn__REDECLARATION(finalItem,redeclareKeywords,each_,elementSpec,constrainClass) (mmc_mk_box6(4,&Absyn_ElementArg_REDECLARATION__desc,finalItem,redeclareKeywords,each_,elementSpec,constrainClass))
+#define Absyn__REDECLARATION_3dBOX6 4
+#define Absyn__REDECLARATION(finalItem,redeclareKeywords,each_,elementSpec,constrainClass,info) (mmc_mk_box7(4,&Absyn_ElementArg_REDECLARATION__desc,finalItem,redeclareKeywords,each_,elementSpec,constrainClass,info))
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_RedeclareKeywords_REDECLARE__desc_added
 #define Absyn_RedeclareKeywords_REDECLARE__desc_added
