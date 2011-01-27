@@ -1248,14 +1248,14 @@ algorithm
   tree := AVLTREENODE(NONE(),0,NONE(),NONE());
 end avlTreeNew;
 
-protected function printEnvStr
+public function printEnvStr
   input Env inEnv;
   output String outString;
 protected
-  Frame f;
+  Env env;
 algorithm
-  f :: _ := inEnv;
-  outString := printFrameStr(f);
+  env := listReverse(inEnv);
+  outString := Util.stringDelimitList(Util.listMap(env, printFrameStr), "\n");
 end printEnvStr;
 
 protected function printFrameStr
@@ -1317,6 +1317,7 @@ algorithm
       String left_str, right_str, value_str;
 
     case (NONE()) then "";
+    case (SOME(AVLTREENODE(value = NONE()))) then "";
     case (SOME(AVLTREENODE(value = SOME(value), left = left, right = right)))
       equation
         left_str = printAvlTreeStr(left);
@@ -1325,6 +1326,7 @@ algorithm
         value_str = value_str +& left_str +& right_str;
       then
         value_str;
+
   end match;
 end printAvlTreeStr;
 

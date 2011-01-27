@@ -98,6 +98,7 @@ algorithm
         // set the external flag that signals the presence of expandable connectors in the model
         System.setHasStreamConnectors(false);
         sp = Util.listFold(initialClasses, translate2, {});
+        //sp = {};
         sp = Util.listFold(inClasses, translate2, sp);
         names = Util.listMap(sp, SCode.className);
         names = Util.sort(names,Util.strcmpBool);
@@ -105,7 +106,6 @@ algorithm
         checkForDuplicateClassesInTopScope(names);
         sp = listReverse(sp);
         
-        //sp = SCodeFlatten.flatten(sp);
         //print(Util.stringDelimitList(Util.listMap(sp, SCode.printClassStr), "\n"));
         // retrieve the expandable connector presence external flag
         hasExpandableConnectors = System.getHasExpandableConnectors();

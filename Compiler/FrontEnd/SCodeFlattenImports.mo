@@ -84,16 +84,17 @@ protected
 algorithm
   SCode.CLASS(name, part_pre, encap_pre, restriction, cdef, info) := inClass;
   env := SCodeEnv.enterScope(inEnv, name);
-  cdef := flattenClassDefs(cdef, env);
+  cdef := flattenClassDefs(cdef, env, info);
   outClass := SCode.CLASS(name, part_pre, encap_pre, restriction, cdef, info);
 end flattenClasses;
 
 protected function flattenClassDefs
   input SCode.ClassDef inClassDef;
   input Env inEnv;
+  input Absyn.Info inInfo;
   output SCode.ClassDef outClassDef;
 algorithm
-  outClassDef := match(inClassDef, inEnv)
+  outClassDef := match(inClassDef, inEnv, inInfo)
     local
       list<SCode.Element> el, ex, cl, im, co, ud;
       list<SCode.Equation> neql, ieql;
@@ -102,27 +103,38 @@ algorithm
       list<SCode.Annotation> annl;
       Option<SCode.Comment> cmt;
       SCode.ClassDef cdef;
+      Absyn.TypeSpec ty;
+      SCode.Mod mods;
+      Absyn.ElementAttributes attr;
       Env env;
 
-    case (SCode.PARTS(el, neql, ieql, nal, ial, extdecl, annl, cmt), env)
+    case (SCode.PARTS(el, neql, ieql, nal, ial, extdecl, annl, cmt), _, _)
       equation
         // Lookup elements.
-        el = Util.listMap1(el, flattenElement, env);
+        el = Util.listMap1(el, flattenElement, inEnv);
         el = Util.listFilter(el, isNotImport);
 
         // Lookup equations and algorithm names.
-        neql = Util.listMap1(neql, flattenEquation, env);
-        ieql = Util.listMap1(ieql, flattenEquation, env);
-        nal = Util.listMap1(nal, flattenAlgorithm, env);
-        ial = Util.listMap1(ial, flattenAlgorithm, env);
+        neql = Util.listMap1(neql, flattenEquation, inEnv);
+        ieql = Util.listMap1(ieql, flattenEquation, inEnv);
+        nal = Util.listMap1(nal, flattenAlgorithm, inEnv);
+        ial = Util.listMap1(ial, flattenAlgorithm, inEnv);
         cdef = SCode.PARTS(el, neql, ieql, nal, ial, extdecl, annl, cmt);
       then
         cdef;
 
+    case (SCode.DERIVED(ty, mods, attr, cmt), _, _)
+      equation
+        env = SCodeEnv.removeExtendsFromLocalScope(inEnv);
+        (_, ty, _) = SCodeLookup.lookupTypeSpec(ty, env, inInfo);
+        mods = flattenModifier(mods, inEnv, inInfo);
+      then
+        SCode.DERIVED(ty, mods, attr, cmt);
+
     //case (SCode.CLASS_EXTENDS
     //case (SCode.DERIVED
 
-    case (SCode.ENUMERATION(enumLst = _), _) then inClassDef;
+    case (SCode.ENUMERATION(enumLst = _), _, _) then inClassDef;
 
     //case (SCode.OVERLOAD
     //case (SCode.PDER
@@ -222,7 +234,7 @@ algorithm
     // Make sure that the checkpoint is deleted properly.
     else
       equation
-        ErrorExt.delCheckpoint("lookupComponent");
+        ErrorExt.delCheckpoint("flattenComponent");
       then
         fail();
 

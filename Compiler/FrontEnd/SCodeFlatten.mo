@@ -62,8 +62,8 @@ algorithm
   env := SCodeEnv.insertClassExtendsIntoEnv(env);
   
   outProgram := SCodeFlattenImports.flattenProgram(inProgram, env);
-  outProgram := SCodeFlattenExtends.flattenProgram(inProgram, env);
-  outProgram := SCodeFlattenRedeclare.flattenProgram(inProgram, env);
+  outProgram := SCodeFlattenExtends.flattenProgram(outProgram, env);
+  outProgram := SCodeFlattenRedeclare.flattenProgram(outProgram, env);
   //System.stopTimer();
   //print("flatten took " +& realString(System.getTimerIntervalTime()) +& 
   //  " seconds\n");
