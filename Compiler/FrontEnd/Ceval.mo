@@ -673,7 +673,7 @@ algorithm
       equation
         (cache,Values.INTEGER(start_1),stOpt) = ceval(cache,env, start, impl, stOpt, dimOpt, msg);
         (cache,Values.INTEGER(stop_1),stOpt) = ceval(cache,env, stop, impl, stOpt, dimOpt, msg);
-        arr = cevalRange(start_1, 1, stop_1);
+        arr = Util.listMap(ExpressionSimplify.simplifyRange(start_1, 1, stop_1), ValuesUtil.makeInteger);
       then
         (cache,ValuesUtil.makeArray(arr),stOpt);
     
@@ -683,7 +683,7 @@ algorithm
         (cache,Values.INTEGER(start_1),stOpt) = ceval(cache,env, start, impl, stOpt, dimOpt, msg);
         (cache,Values.INTEGER(step_1),stOpt) = ceval(cache,env, step, impl, stOpt, dimOpt, msg);
         (cache,Values.INTEGER(stop_1),stOpt) = ceval(cache,env, stop, impl, stOpt, dimOpt, msg);
-        arr = cevalRange(start_1, step_1, stop_1);
+        arr = Util.listMap(ExpressionSimplify.simplifyRange(start_1, step_1, stop_1), ValuesUtil.makeInteger);
       then
         (cache,ValuesUtil.makeArray(arr),stOpt);
     
@@ -703,7 +703,7 @@ algorithm
         (cache,Values.REAL(realStop1),stOpt) = ceval(cache,env, stop, impl, stOpt, dimOpt, msg);
         // diff = realStop1 -. realStart1;
         realStep1 = intReal(1);
-        arr = cevalRangeReal(realStart1, realStep1, realStop1);
+        arr = Util.listMap(ExpressionSimplify.simplifyRangeReal(realStart1, realStep1, realStop1), ValuesUtil.makeReal);
       then
         (cache,ValuesUtil.makeArray(arr),stOpt);
 
@@ -713,7 +713,7 @@ algorithm
         (cache,Values.REAL(realStart1),stOpt) = ceval(cache,env, start, impl, stOpt, dimOpt, msg);
         (cache,Values.REAL(realStep1),stOpt) = ceval(cache,env, step, impl, stOpt, dimOpt, msg);
         (cache,Values.REAL(realStop1),stOpt) = ceval(cache,env, stop, impl, stOpt, dimOpt, msg);
-        arr = cevalRangeReal(realStart1, realStep1, realStop1);
+        arr = Util.listMap(ExpressionSimplify.simplifyRangeReal(realStart1, realStep1, realStop1), ValuesUtil.makeReal);
       then
         (cache,ValuesUtil.makeArray(arr),stOpt);
 
@@ -4761,166 +4761,6 @@ algorithm
   end match;
 end cevalRelationNotEqual;
 
-public function cevalRange
-  "This function evaluates an Integer range expression."
-  input Integer inStart;
-  input Integer inStep;
-  input Integer inStop;
-  output list<Values.Value> outValues;
-algorithm
-  outValues := matchcontinue(inStart, inStep, inStop)
-    local
-      list<Values.Value> vals;
-      String error_str;
-
-    case (_, 0, _)
-      equation
-        error_str = Util.stringDelimitList(
-          Util.listMap({inStart, inStep, inStop}, intString), ":");
-        Error.addMessage(Error.ZERO_STEP_IN_ARRAY_CONSTRUCTOR, {error_str});
-      then
-        fail();
-
-    case (_, _, _)
-      equation
-        false = intEq(inStep, 0);
-        true = (inStart == inStop);
-      then
-        {Values.INTEGER(inStart)};
-
-    case (_, _, _)
-      equation
-        false = intEq(inStep, 0);
-        true = (inStep > 0);
-        vals = cevalRange2(inStart, inStep, inStop, intGt, {});
-      then
-        vals;
-
-    case (_, _, _)
-      equation
-        false = intEq(inStep, 0);
-        true = (inStep < 0);
-        vals = cevalRange2(inStart, inStep, inStop, intLt, {});
-      then
-        vals;
-  end matchcontinue;
-end cevalRange;
-
-public function cevalRange2
-  "Helper function to cevalRange."
-  input Integer inStart;
-  input Integer inStep;
-  input Integer inStop;
-  input CompFunc compFunc;
-  input list<Values.Value> inValues;
-  output list<Values.Value> outValues;
-
-  partial function CompFunc
-    input Integer inValue1;
-    input Integer inValue2;
-    output Boolean outRes;
-  end CompFunc;
-algorithm
-  outValues := matchcontinue(inStart, inStep, inStop, compFunc, inValues)
-    local
-      Integer next;
-      list<Values.Value> vals;
-
-    case (_, _, _, _, _)
-      equation
-        true = compFunc(inStart, inStop);
-      then
-        listReverse(inValues);
-
-    case (_, _, _, _, _)
-      equation
-        next = inStart + inStep;
-        vals = Values.INTEGER(inStart) :: inValues;
-        vals = cevalRange2(next, inStep, inStop, compFunc, vals);
-      then
-        vals;
-  end matchcontinue;
-end cevalRange2;
-        
-public function cevalRangeReal
-  "This function evaluates a Real range expression."
-  input Real inStart;
-  input Real inStep;
-  input Real inStop;
-  output list<Values.Value> outValues;
-algorithm
-  outValues := matchcontinue(inStart, inStep, inStop)
-    local
-      list<Values.Value> vals;
-      String error_str;
-
-    case (_, _, _)
-      equation
-        equality(inStep = 0.0);
-        error_str = Util.stringDelimitList(
-          Util.listMap({inStart, inStep, inStop}, realString), ":");
-        Error.addMessage(Error.ZERO_STEP_IN_ARRAY_CONSTRUCTOR, {error_str});
-      then
-        fail();
-
-    case (_, _, _)
-      equation
-        equality(inStart = inStop);
-      then
-        {Values.REAL(inStart)};
-
-    case (_, _, _)
-      equation
-        true = (inStep >. 0.0);
-        vals = cevalRangeReal2(inStart, inStep, inStop, realGt, {});
-      then
-        vals;
-
-    case (_, _, _)
-      equation
-        true = (inStep <. 0.0);
-        vals = cevalRangeReal2(inStart, inStep, inStop, realLt, {});
-      then
-        vals;
-  end matchcontinue;
-end cevalRangeReal;
-
-public function cevalRangeReal2
-  "Helper function to cevalRangeReal."
-  input Real inStart;
-  input Real inStep;
-  input Real inStop;
-  input CompFunc compFunc;
-  input list<Values.Value> inValues;
-  output list<Values.Value> outValues;
-
-  partial function CompFunc
-    input Real inValue1;
-    input Real inValue2;
-    output Boolean outRes;
-  end CompFunc;
-algorithm
-  outValues := matchcontinue(inStart, inStep, inStop, compFunc, inValues)
-    local
-      Real next;
-      list<Values.Value> vals;
-
-    case (_, _, _, _, _)
-      equation
-        true = compFunc(inStart, inStop);
-      then
-        listReverse(inValues);
-
-    case (_, _, _, _, _)
-      equation
-        next = inStart +. inStep;
-        vals = Values.REAL(inStart) :: inValues;
-        vals = cevalRangeReal2(next, inStep, inStop, compFunc, vals);
-      then
-        vals;
-  end matchcontinue;
-end cevalRangeReal2;
-        
 public function cevalRangeEnum
   "Evaluates a range expression on the form enum.lit1 : enum.lit2"
   input Integer startIndex;

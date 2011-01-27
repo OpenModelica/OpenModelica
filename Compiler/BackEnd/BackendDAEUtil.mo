@@ -1868,14 +1868,14 @@ algorithm
     local
       list<DAE.Exp> arrayElements;
       Integer start, stop;
-      list<Values.Value> vals;
+      list<Integer> vals;
     
     case (DAE.ARRAY(array = arrayElements)) then arrayElements;
     
     case (DAE.RANGE(exp = DAE.ICONST(integer = start), range = DAE.ICONST(integer = stop), expOption = NONE()))
       equation
-        vals = Ceval.cevalRange(start, 1, stop);
-        arrayElements = Util.listMap(vals, ValuesUtil.valueExp);
+        vals = ExpressionSimplify.simplifyRange(start, 1, stop);
+        arrayElements = Util.listMap(vals, Expression.makeIntegerExp);
       then
         arrayElements;  
     

@@ -43,6 +43,7 @@ encapsulated package ExpressionSimplify
 // public imports
 public import Absyn;
 public import DAE;
+public import Error;
 
 public type ComponentRef = DAE.ComponentRef;
 public type Ident = String;
@@ -2463,7 +2464,9 @@ algorithm
       list<Boolean> bls;
       list<list<tuple<DAE.Exp, Boolean>>> mexps;
       list<tuple<DAE.Exp, Boolean>> mexpl;
-      DAE.Exp e1,e2,cond,exp; 
+      DAE.Exp e1,e2,cond,exp,start,stop,step;
+      Integer istart,istop,istep,ival;
+      Real rstart,rstop,rstep,rval; 
       DAE.ComponentRef c,c_1;
       list<Subscript> s,s_1;
       Integer n;
@@ -2476,6 +2479,40 @@ algorithm
       then 
         exp;
     
+    case (DAE.RANGE(DAE.ET_INT(),start,NONE(),stop),sub) 
+      equation
+        DAE.ICONST(istart) = simplify1(start);
+        DAE.ICONST(istop) = simplify1(stop);
+        ival = listGet(simplifyRange(istart,1,istop),sub);
+        exp = DAE.ICONST(ival);
+      then exp;
+        
+    case (DAE.RANGE(DAE.ET_INT(),start,SOME(step),stop),sub) 
+      equation
+        DAE.ICONST(istart) = simplify1(start);
+        DAE.ICONST(istep) = simplify1(step);
+        DAE.ICONST(istop) = simplify1(stop);
+        ival = listGet(simplifyRange(istart,istep,istop),sub);
+        exp = DAE.ICONST(ival);
+      then exp;
+    
+    case (DAE.RANGE(DAE.ET_REAL(),start,NONE(),stop),sub) 
+      equation
+        DAE.RCONST(rstart) = simplify1(start);
+        DAE.RCONST(rstop) = simplify1(stop);
+        rval = listGet(simplifyRangeReal(rstart,1.0,rstop),sub);
+        exp = DAE.RCONST(rval);
+      then exp;
+        
+    case (DAE.RANGE(DAE.ET_REAL(),start,SOME(step),stop),sub) 
+      equation
+        DAE.RCONST(rstart) = simplify1(start);
+        DAE.RCONST(rstep) = simplify1(step);
+        DAE.RCONST(rstop) = simplify1(stop);
+        rval = listGet(simplifyRangeReal(rstart,rstep,rstop),sub);
+        exp = DAE.RCONST(rval);
+      then exp;
+
     // subscript of a matrix
     case(DAE.MATRIX(t,n,mexps),sub) 
       equation
@@ -3764,5 +3801,156 @@ algorithm outop := match(inop)
 end match;
 end removeOperatorDimension;
 
+public function simplifyRange
+  "This function evaluates an Integer range expression."
+  input Integer inStart;
+  input Integer inStep;
+  input Integer inStop;
+  output list<Integer> outValues;
+algorithm
+  outValues := matchcontinue(inStart, inStep, inStop)
+    local
+      list<Integer> vals;
+      String error_str;
+
+    case (_, 0, _)
+      equation
+        error_str = Util.stringDelimitList(
+          Util.listMap({inStart, inStep, inStop}, intString), ":");
+        Error.addMessage(Error.ZERO_STEP_IN_ARRAY_CONSTRUCTOR, {error_str});
+      then
+        fail();
+
+    case (_, _, _)
+      equation
+        false = intEq(inStep, 0);
+        true = (inStart == inStop);
+      then
+        {inStart};
+
+    case (_, _, _)
+      equation
+        false = intEq(inStep, 0);
+        true = (inStep > 0);
+      then simplifyRange2(inStart, inStep, inStop, intGt, {});
+
+    case (_, _, _)
+      equation
+        false = intEq(inStep, 0);
+        true = (inStep < 0);
+      then simplifyRange2(inStart, inStep, inStop, intLt, {});
+  end matchcontinue;
+end simplifyRange;
+
+protected function simplifyRange2
+  "Helper function to cevalRange."
+  input Integer inStart;
+  input Integer inStep;
+  input Integer inStop;
+  input CompFunc compFunc;
+  input list<Integer> inValues;
+  output list<Integer> outValues;
+
+  partial function CompFunc
+    input Integer inValue1;
+    input Integer inValue2;
+    output Boolean outRes;
+  end CompFunc;
+algorithm
+  outValues := matchcontinue(inStart, inStep, inStop, compFunc, inValues)
+    local
+      Integer next;
+      list<Integer> vals;
+
+    case (_, _, _, _, _)
+      equation
+        true = compFunc(inStart, inStop);
+      then
+        listReverse(inValues);
+
+    case (_, _, _, _, _)
+      equation
+        next = inStart + inStep;
+        vals = inStart :: inValues;
+        vals = simplifyRange2(next, inStep, inStop, compFunc, vals);
+      then
+        vals;
+  end matchcontinue;
+end simplifyRange2;
+        
+public function simplifyRangeReal
+  "This function evaluates a Real range expression."
+  input Real inStart;
+  input Real inStep;
+  input Real inStop;
+  output list<Real> outValues;
+algorithm
+  outValues := matchcontinue(inStart, inStep, inStop)
+    local
+      list<Values.Value> vals;
+      String error_str;
+
+    case (_, _, _)
+      equation
+        equality(inStep = 0.0);
+        error_str = Util.stringDelimitList(
+          Util.listMap({inStart, inStep, inStop}, realString), ":");
+        Error.addMessage(Error.ZERO_STEP_IN_ARRAY_CONSTRUCTOR, {error_str});
+      then
+        fail();
+
+    case (_, _, _)
+      equation
+        equality(inStart = inStop);
+      then {inStart};
+
+    case (_, _, _)
+      equation
+        true = (inStep >. 0.0);
+      then simplifyRangeReal2(inStart, inStep, inStop, realGt, {});
+
+    case (_, _, _)
+      equation
+        true = (inStep <. 0.0);
+      then simplifyRangeReal2(inStart, inStep, inStop, realLt, {});
+  end matchcontinue;
+end simplifyRangeReal;
+
+protected function simplifyRangeReal2
+  "Helper function to cevalRangeReal."
+  input Real inStart;
+  input Real inStep;
+  input Real inStop;
+  input CompFunc compFunc;
+  input list<Real> inValues;
+  output list<Real> outValues;
+
+  partial function CompFunc
+    input Real inValue1;
+    input Real inValue2;
+    output Boolean outRes;
+  end CompFunc;
+algorithm
+  outValues := matchcontinue(inStart, inStep, inStop, compFunc, inValues)
+    local
+      Real next;
+      list<Real> vals;
+
+    case (_, _, _, _, _)
+      equation
+        true = compFunc(inStart, inStop);
+      then
+        listReverse(inValues);
+
+    case (_, _, _, _, _)
+      equation
+        next = inStart +. inStep;
+        vals = inStart :: inValues;
+        vals = simplifyRangeReal2(next, inStep, inStop, compFunc, vals);
+      then
+        vals;
+  end matchcontinue;
+end simplifyRangeReal2;
+        
 end ExpressionSimplify;
 

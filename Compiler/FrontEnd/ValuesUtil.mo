@@ -1865,6 +1865,13 @@ algorithm
   v := Values.REAL(r);
 end makeReal;
 
+public function makeInteger "Creates an integer value "
+  input Integer i;
+  output Value v;
+algorithm
+  v := Values.INTEGER(i);
+end makeInteger;
+
 public function makeArray "function: makeArray
 
   Construct an array of a list of Values.
