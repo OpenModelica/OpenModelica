@@ -798,7 +798,6 @@ algorithm
       SCode.Mod modifications;
       Option<SCode.Comment> comment;
       Option<Absyn.Exp> condition;
-      Option<Absyn.Info> infoOpt;
       Absyn.Info info;
       Option<Absyn.ConstrainClass> cc;
       SCode.ClassDef classDef;
@@ -806,12 +805,12 @@ algorithm
       Option<SCode.Annotation> optAnnotation;
       Absyn.Path extendsPath;
     
-    case (cache,env,SCode.COMPONENT(component, innerOuter, finalPrefix, replaceablePrefix, protectedPrefix, attributes, typeSpec, modifications, comment, condition, infoOpt, cc),ht)
+    case (cache,env,SCode.COMPONENT(component, innerOuter, finalPrefix, replaceablePrefix, protectedPrefix, attributes, typeSpec, modifications, comment, condition, info, cc),ht)
       equation
         //Debug.fprintln("debug","fix comp " +& SCode.printElementStr(elt));
         (cache,modifications) = fixModifications(cache,env,modifications,ht);
         (cache,typeSpec) = fixTypeSpec(cache,env,typeSpec,ht);
-      then (cache,SCode.COMPONENT(component, innerOuter, finalPrefix, replaceablePrefix, protectedPrefix, attributes, typeSpec, modifications, comment, condition, infoOpt, cc));
+      then (cache,SCode.COMPONENT(component, innerOuter, finalPrefix, replaceablePrefix, protectedPrefix, attributes, typeSpec, modifications, comment, condition, info, cc));
     case (cache,env,SCode.CLASSDEF(id,finalPrefix,replaceablePrefix,SCode.CLASS(name,partialPrefix,true,restriction,classDef,info),cc),ht)
       equation
         //Debug.fprintln("debug","fixClassdef " +& id);

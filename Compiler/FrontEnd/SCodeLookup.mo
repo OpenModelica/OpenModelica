@@ -425,13 +425,11 @@ algorithm
       Absyn.TypeSpec type_spec;
       SCode.Mod mods;
       list<SCode.Element> redeclares;
-      Option<Absyn.Info> opt_info;
       Absyn.Info info;
 
     case (_, SCodeEnv.VAR(var = SCode.COMPONENT(typeSpec = type_spec, 
-        modifications = mods, info = opt_info)), _)
+        modifications = mods, info = info)), _)
       equation
-        info = SCodeEnv.getOptionalInfo(opt_info);
         (item, _, type_env) = lookupTypeSpec(type_spec, inEnv, info);
         redeclares = SCodeEnv.extractRedeclaresFromModifier(mods);
         (item, type_env) = 
@@ -466,13 +464,11 @@ algorithm
       Absyn.TypeSpec type_spec;
       SCode.Mod mods;
       list<SCode.Element> redeclares;
-      Option<Absyn.Info> opt_info;
       Absyn.Info info;
 
     case (_, SCodeEnv.VAR(var = SCode.COMPONENT(typeSpec = type_spec, 
-        modifications = mods, info = opt_info)), _)
+        modifications = mods, info = info)), _)
       equation
-        info = SCodeEnv.getOptionalInfo(opt_info);
         (item, _, type_env) = lookupTypeSpec(type_spec, inEnv, info);
         redeclares = SCodeEnv.extractRedeclaresFromModifier(mods);
         (item, type_env) = SCodeEnv.replaceRedeclaredClassesInEnv(redeclares, item, type_env, inEnv);

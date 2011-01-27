@@ -233,21 +233,19 @@ algorithm
       SCode.Mod mod;
       Option<SCode.Comment> cmt;
       Option<Absyn.Exp> cond;
-      Option<Absyn.Info> opt_info;
       Option<Absyn.ConstrainClass> cc;
       Absyn.Info info;
 
     case (SCode.COMPONENT(name, io, fp, rp, pp, attr, type_spec, mod, cmt, cond,
-        opt_info, cc), _)
+        info, cc), _)
       equation
         ErrorExt.setCheckpoint("flattenComponent");
-        info = SCodeEnv.getOptionalInfo(opt_info);
         (_, type_spec, _) = SCodeLookup.lookupTypeSpec(type_spec, inEnv, info);
         mod = flattenModifier(mod, inEnv, info);
         cond = flattenOptExp(cond, inEnv, info);
         ErrorExt.delCheckpoint("flattenComponent");
       then
-        SCode.COMPONENT(name, io, fp, rp, pp, attr, type_spec, mod, cmt, cond, opt_info, cc);
+        SCode.COMPONENT(name, io, fp, rp, pp, attr, type_spec, mod, cmt, cond, info, cc);
 
     // Something failed in the previous case. This might happen with the MSL
     // which sometimes defines conditional components that use functions that it

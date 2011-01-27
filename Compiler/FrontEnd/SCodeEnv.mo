@@ -43,13 +43,9 @@ encapsulated package SCodeEnv
 public import Absyn;
 public import SCode;
 
-protected import Debug;
-protected import Dump;
 protected import Error;
-protected import ErrorExt;
 protected import Util;
 protected import SCodeLookup;
-protected import System;
 
 
 public type Import = Absyn.Import;
@@ -144,7 +140,6 @@ algorithm
       Absyn.InnerOuter io;
       SCode.Attributes attr;
       Option<Absyn.Exp> cond;
-      Option<Absyn.Info> opt_info;
       Option<Absyn.ArrayDim> array_dim;
 
     case (SCode.CLASSDEF(
@@ -172,13 +167,12 @@ algorithm
             info), cc);
 
     case (SCode.COMPONENT(name, io, fp, rp, pp, attr, 
-        Absyn.TPATH(path, array_dim), mods, cmt, cond, opt_info, cc), _)
+        Absyn.TPATH(path, array_dim), mods, cmt, cond, info, cc), _)
       equation
-        info = getOptionalInfo(opt_info);
         path = qualifyPath(path, inEnv, info);
       then
         SCode.COMPONENT(name, io, fp, rp, pp, attr, 
-          Absyn.TPATH(path, array_dim), mods, cmt, cond, opt_info, cc);
+          Absyn.TPATH(path, array_dim), mods, cmt, cond, info, cc);
 
     else
       equation
@@ -223,19 +217,6 @@ algorithm
     else then inPath;
   end matchcontinue;
 end mergePathWithEnvPath;
-
-public function getOptionalInfo
-  input Option<Absyn.Info> inInfo;
-  output Absyn.Info outInfo;
-algorithm
-  outInfo := match(inInfo)
-    local
-      Absyn.Info info;
-
-    case SOME(info) then info;
-    case NONE() then Absyn.dummyInfo;
-  end match;
-end getOptionalInfo;
 
 public function joinPaths
   input Absyn.Path inPath1;
@@ -782,7 +763,7 @@ algorithm
   enum_lit := SCode.COMPONENT(lit_name, Absyn.UNSPECIFIED(), 
     false, false, false, 
     SCode.ATTR({}, false, false, SCode.RO(), SCode.CONST(), Absyn.BIDIR()),
-    inEnumType, SCode.NOMOD(), NONE(), NONE(), NONE(), NONE());
+    inEnumType, SCode.NOMOD(), NONE(), NONE(), Absyn.dummyInfo, NONE());
   outEnv := extendEnvWithElement(enum_lit, inEnv);
 end extendEnvWithEnum;
 
@@ -810,7 +791,7 @@ algorithm
     false, false, false,
     SCode.ATTR({}, false, false, SCode.RO(), SCode.CONST(), Absyn.BIDIR()),
     Absyn.TPATH(Absyn.IDENT(""), NONE()), SCode.NOMOD(),
-    NONE(), NONE(), NONE(), NONE());
+    NONE(), NONE(), Absyn.dummyInfo, NONE());
   outEnv := extendEnvWithElement(iter, inEnv);
 end extendEnvWithIterator;
 
@@ -884,7 +865,6 @@ algorithm
       Absyn.Path path;
       Option<Env> opt_env;
       Absyn.Info info;
-      Option<Absyn.Info> opt_info;
 
     case (SCode.CLASSDEF(name = name, classDef = 
         cls as SCode.CLASS(info = info)), _)
@@ -895,9 +875,8 @@ algorithm
       then
         env;
 
-    case (SCode.COMPONENT(component = name, info = opt_info), _)
+    case (SCode.COMPONENT(component = name, info = info), _)
       equation
-        info = getOptionalInfo(opt_info);
         (_, path, SOME(env)) = SCodeLookup.lookupName(Absyn.IDENT(name), inEnv, info);
         path = joinPaths(getEnvPath(env), path);
         env = replaceElementInEnv(path, inRedeclare, inEnv);
@@ -1195,7 +1174,7 @@ algorithm
     SCode.COMPONENT("time", Absyn.UNSPECIFIED(), false, false, false,
     SCode.ATTR({}, false, false, SCode.RO(), SCode.VAR(), Absyn.INPUT()),
     Absyn.TPATH(Absyn.IDENT("Real"), NONE()), SCode.NOMOD(),
-    NONE(), NONE(), NONE(), NONE())));
+    NONE(), NONE(), Absyn.dummyInfo, NONE())));
 
   tree := avlTreeAdd(tree, "String", CLASS(
     SCode.CLASS("String", false, false, SCode.R_FUNCTION(),
@@ -1431,11 +1410,14 @@ algorithm
       Integer h;
       AvlTree t;
       Option<AvlTreeValue> oval;
+      Absyn.Info info;
 
     // Don't allow replacing of nodes.
     case (_, 0, key, _)
       equation
-        print("Identifier " +& key +& " already exists in this scope!\n");
+        info = getItemInfo(inValue);        
+        Error.addSourceMessage(Error.DOUBLE_DECLARATION_OF_ELEMENTS,
+          {inKey}, info);
       then
         fail();
 
@@ -1458,6 +1440,20 @@ algorithm
         AVLTREENODE(oval, h, SOME(t), right);
   end match;
 end avlTreeAdd2;
+
+protected function getItemInfo
+  input Item inItem;
+  output Absyn.Info outInfo;
+algorithm
+  outInfo := match(inItem)
+    local
+      Absyn.Info info;
+
+    case (VAR(var = SCode.COMPONENT(info = info))) then info;
+    case (CLASS(cls = SCode.CLASS(info = info))) then info;
+    case (BUILTIN(name = _)) then Absyn.dummyInfo;
+  end match;
+end getItemInfo;
 
 public function avlTreeGet
   "Get a value from the binary tree given a key."

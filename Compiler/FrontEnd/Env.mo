@@ -1769,7 +1769,7 @@ protected function checkValueReplacementCompatible
 algorithm
   _ := match(val1, val2)
     local
-      Option<Absyn.Info> aInfo;
+      Absyn.Info aInfo;
       String n1, n2;
 
     // var can replace var
@@ -1784,7 +1784,7 @@ algorithm
     case (val1, val2)
       equation
         (n1, n2, aInfo) = getNamesAndInfoFromVal(val1, val2); 
-        Error.addMessageOrSourceMessage(Error.COMPONENT_NAME_SAME_AS_TYPE_NAME, {n1,n2}, aInfo);
+        Error.addSourceMessage(Error.COMPONENT_NAME_SAME_AS_TYPE_NAME, {n1,n2}, aInfo);
       then 
         ();
   end match;
@@ -1795,11 +1795,11 @@ protected function getNamesAndInfoFromVal
   input AvlValue val2;
   output String name1;
   output String name2;
-  output Option<Absyn.Info> info;
+  output Absyn.Info info;
 algorithm
   (name1, name2, info) := matchcontinue(val1, val2)
     local
-      Option<Absyn.Info> aInfo;
+      Absyn.Info aInfo;
       String n1, n2, n;
       Env env;
     
@@ -1826,7 +1826,7 @@ algorithm
         n1 = valueStr(val1);
         n2 = valueStr(val2);
       then 
-        (n1, n2, NONE());
+        (n1, n2, Absyn.dummyInfo);
   end matchcontinue;
 end getNamesAndInfoFromVal;
 

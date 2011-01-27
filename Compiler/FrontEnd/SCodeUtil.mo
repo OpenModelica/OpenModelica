@@ -57,7 +57,6 @@ protected import ExpandableConnectors;
 protected import Inst;
 protected import InstanceHierarchy;
 protected import MetaUtil;
-protected import SCodeFlatten;
 protected import System;
 protected import Types;
 protected import Util;
@@ -967,7 +966,7 @@ algorithm
 
     case (Absyn.ELEMENT(name = name, constrainClass = cc,finalPrefix = f,innerOuter = io, redeclareKeywords = repl,specification = s,info = info),prot)
       equation
-        es = translateElementspec(cc, f, io, repl,  prot, s,SOME(info));
+        es = translateElementspec(cc, f, io, repl,  prot, s, info);
       then
         es;
 
@@ -1019,7 +1018,7 @@ protected function translateElementspec
   input Option<Absyn.RedeclareKeywords> inAbsynRedeclareKeywordsOption2;
   input Boolean inBoolean3;
   input Absyn.ElementSpec inElementSpec4;
-  input Option<Absyn.Info> info;
+  input Absyn.Info info;
   output list<SCode.Element> outElementLst;
 algorithm
   outElementLst := match (cc,finalPrefix,io,inAbsynRedeclareKeywordsOption2,inBoolean3,inElementSpec4,info)
@@ -1032,7 +1031,6 @@ algorithm
       String n;
       Absyn.Restriction re;
       Absyn.ClassDef de;
-      Absyn.Info file_info;
       SCode.Mod mod;
       list<Absyn.ElementArg> args;
       list<SCode.Element> xs_1;
@@ -1051,33 +1049,30 @@ algorithm
       Absyn.Annotation absann;
       SCode.Annotation ann;
       Absyn.Variability variability;
+      Absyn.Info i;
 
-    case (cc,finalPrefix,_,repl,prot,
-      Absyn.CLASSDEF(replaceable_ = rp,
-                     class_ = (cl as Absyn.CLASS(name = n,partialPrefix = pa,finalPrefix = fi,encapsulatedPrefix = e,restriction = re,body = de,info = file_info))),info)
+    case (cc,finalPrefix,_,repl,prot, Absyn.CLASSDEF(replaceable_ = rp, class_ = (cl as Absyn.CLASS(name = n,partialPrefix = pa,finalPrefix = fi,encapsulatedPrefix = e,restriction = re,body = de,info = i))),_)
       equation
         // Debug.fprintln("translate", "translating local class: " +& n);
         re_1 = translateRestriction(cl, re); // uniontype will not get translated!
         de_1 = translateClassdef(de);
       then
-        {SCode.CLASSDEF(n,finalPrefix,rp,SCode.CLASS(n,pa,e,re_1,de_1,file_info),cc)};
+        {SCode.CLASSDEF(n,finalPrefix,rp,SCode.CLASS(n,pa,e,re_1,de_1,i),cc)};
 
     case (cc,finalPrefix,_,repl,prot,Absyn.EXTENDS(path = path,elementArg = args,annotationOpt = NONE()),info)
       equation
         // Debug.fprintln("translate", "translating extends: " +& Absyn.pathString(n));
         mod = translateMod(SOME(Absyn.CLASSMOD(args,Absyn.NOMOD())), false, Absyn.NON_EACH());
-        file_info = Util.getOptionOrDefault(info, Absyn.dummyInfo);
       then
-        {SCode.EXTENDS(path,mod,NONE(),file_info)};
+        {SCode.EXTENDS(path,mod,NONE(),info)};
 
     case (cc,finalPrefix,_,repl,prot,Absyn.EXTENDS(path = path,elementArg = args,annotationOpt = SOME(absann)),info)
       equation
         // Debug.fprintln("translate", "translating extends: " +& Absyn.pathString(n));
         mod = translateMod(SOME(Absyn.CLASSMOD(args,Absyn.NOMOD())), false, Absyn.NON_EACH());
         ann = translateAnnotation(absann);
-        file_info = Util.getOptionOrDefault(info, Absyn.dummyInfo);
       then
-        {SCode.EXTENDS(path,mod,SOME(ann),file_info)};
+        {SCode.EXTENDS(path,mod,SOME(ann),info)};
 
     case (cc,_,_,_,_,Absyn.COMPONENTS(components = {}),info) then {};
 
@@ -1396,11 +1391,10 @@ algorithm
       SCode.Mod a8;
       Option<SCode.Comment> a10;
       Option<Absyn.Exp> a11;
-      Option<Absyn.Info> a12;
       Option<Absyn.ConstrainClass> a13;
 
-  case(SCode.COMPONENT(a1,a2,a3,a4,a5,a6,a7,a8,a10,a11,a12,a13), nfo)
-    then SCode.COMPONENT(a1,a2,a3,a4,a5,a6,a7,a8,a10,a11,SOME(nfo),a13);
+  case(SCode.COMPONENT(a1,a2,a3,a4,a5,a6,a7,a8,a10,a11,_,a13), nfo)
+    then SCode.COMPONENT(a1,a2,a3,a4,a5,a6,a7,a8,a10,a11,nfo,a13);
 
   case(elem,_) then elem;
     end matchcontinue;
@@ -1464,6 +1458,7 @@ algorithm
       Absyn.RedeclareKeywords keywords;
       Absyn.ElementSpec spec;
       Option<Absyn.ConstrainClass> constropt;
+      Absyn.Info info;
 
     case {} then {};
     case ((Absyn.MODIFICATION(finalItem = finalPrefix,each_ = each_,componentRef = cref,modification = mod,comment = cmt) :: xs))
@@ -1478,7 +1473,8 @@ algorithm
       equation
         subs = translateArgs(xs);
         n = Absyn.elementSpecName(spec);
-        elist = translateElementspec(constropt,finalPrefix, Absyn.UNSPECIFIED(),NONE(), false, spec,NONE())
+        info = Absyn.elementSpecInfo(spec);
+        elist = translateElementspec(constropt,finalPrefix, Absyn.UNSPECIFIED(),NONE(), false, spec, info)
         "LS:: do not know what to use for *protected*, so using false
          LS:: do not know what to use for *replaceable*, so using false" ;
       then

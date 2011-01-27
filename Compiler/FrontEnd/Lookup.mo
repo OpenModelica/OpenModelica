@@ -2023,16 +2023,14 @@ algorithm
       Option<Absyn.Exp> cond;
       SCode.Mod mod,umod;
       DAE.Mod mod_1, compMod, fullMod, selectedMod, cmod;
-      Option<Absyn.Info> nfo;
       Option<Absyn.ConstrainClass> cc;
       Absyn.Info info;
 
     case ({},_,_) then {};
     
     // final becomes protected, Modelica Spec 3.2, Section 12.6, Record Constructor Functions, page 140
-    case ((((comp as SCode.COMPONENT(id,io,fl as true,repl,prot,SCode.ATTR(d,f,st,ac,var,dir),tp,mod,comment,cond,nfo,cc)),cmod) :: rest),mods,env)
+    case ((((comp as SCode.COMPONENT(id,io,fl as true,repl,prot,SCode.ATTR(d,f,st,ac,var,dir),tp,mod,comment,cond,info,cc)),cmod) :: rest),mods,env)
       equation
-        info = Util.getOptionOrDefault(nfo, Absyn.dummyInfo);
         (_,mod_1) = Mod.elabMod(Env.emptyCache(), env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod, false, info);
         mod_1 = Mod.merge(mods,mod_1,env,Prefix.NOPRE());
         // adrpo: this was wrong, you won't find any id modification there!!!
@@ -2050,12 +2048,11 @@ algorithm
         // var = SCode.VAR();
         // dir = Absyn.INPUT();
       then
-        (SCode.COMPONENT(id,io,fl,repl,prot,SCode.ATTR(d,f,st,ac,var,dir),tp,umod,comment,cond,nfo,cc) :: res);
+        (SCode.COMPONENT(id,io,fl,repl,prot,SCode.ATTR(d,f,st,ac,var,dir),tp,umod,comment,cond,info,cc) :: res);
     
     // constants become protected, Modelica Spec 3.2, Section 12.6, Record Constructor Functions, page 140
-    case ((((comp as SCode.COMPONENT(id,io,fl,repl,prot,SCode.ATTR(d,f,st,ac,var as SCode.CONST(),dir),tp,mod,comment,cond,nfo,cc)),cmod) :: rest),mods,env)
+    case ((((comp as SCode.COMPONENT(id,io,fl,repl,prot,SCode.ATTR(d,f,st,ac,var as SCode.CONST(),dir),tp,mod,comment,cond,info,cc)),cmod) :: rest),mods,env)
       equation
-        info = Util.getOptionOrDefault(nfo, Absyn.dummyInfo);
         (_,mod_1) = Mod.elabMod(Env.emptyCache(), env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod, false, info);
         mod_1 = Mod.merge(mods,mod_1,env,Prefix.NOPRE());
         // adrpo: this was wrong, you won't find any id modification there!!!
@@ -2073,12 +2070,11 @@ algorithm
         // var = SCode.VAR();
         dir = Absyn.INPUT();
       then
-        (SCode.COMPONENT(id,io,fl,repl,prot,SCode.ATTR(d,f,st,ac,var,dir),tp,umod,comment,cond,nfo,cc) :: res);
+        (SCode.COMPONENT(id,io,fl,repl,prot,SCode.ATTR(d,f,st,ac,var,dir),tp,umod,comment,cond,info,cc) :: res);
     
     // all others, add input see Modelica Spec 3.2, Section 12.6, Record Constructor Functions, page 140
-    case ((((comp as SCode.COMPONENT(id,io,fl,repl,prot,SCode.ATTR(d,f,st,ac,var,dir),tp,mod,comment,cond,nfo,cc)),cmod) :: rest),mods,env)
+    case ((((comp as SCode.COMPONENT(id,io,fl,repl,prot,SCode.ATTR(d,f,st,ac,var,dir),tp,mod,comment,cond,info,cc)),cmod) :: rest),mods,env)
       equation
-        info = Util.getOptionOrDefault(nfo, Absyn.dummyInfo);
         (_,mod_1) = Mod.elabMod(Env.emptyCache(), env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod, false, info);
         mod_1 = Mod.merge(mods,mod_1,env,Prefix.NOPRE());
         // adrpo: this was wrong, you won't find any id modification there!!!
@@ -2096,7 +2092,7 @@ algorithm
         // var = SCode.VAR();
         dir = Absyn.INPUT();
       then
-        (SCode.COMPONENT(id,io,fl,repl,prot,SCode.ATTR(d,f,st,ac,var,dir),tp,umod,comment,cond,nfo,cc) :: res);
+        (SCode.COMPONENT(id,io,fl,repl,prot,SCode.ATTR(d,f,st,ac,var,dir),tp,umod,comment,cond,info,cc) :: res);
 
     case ((comp,cmod)::_,mods,_)
       equation
@@ -2123,7 +2119,7 @@ algorithm
   outElement := SCode.COMPONENT("result",Absyn.UNSPECIFIED(),false,false,false,
           SCode.ATTR({},false,false,SCode.RW(),SCode.VAR(),Absyn.OUTPUT()),
           Absyn.TPATH(Absyn.IDENT(id),NONE()),
-          SCode.NOMOD(),NONE(),NONE(),NONE(),NONE());
+          SCode.NOMOD(),NONE(),NONE(),Absyn.dummyInfo,NONE());
 end buildRecordConstructorResultElt;
 
 public function isInBuiltinEnv

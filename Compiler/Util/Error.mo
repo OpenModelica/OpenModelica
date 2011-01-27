@@ -245,6 +245,7 @@ public constant ErrorID DUPLICATE_CLASSES_TOP_LEVEL=157;
 public constant ErrorID WHEN_EQ_LHS=158;
 public constant ErrorID GENERIC_ELAB_EXPRESSION=159;
 public constant ErrorID EXTENDS_EXTERNAL=160;
+public constant ErrorID DOUBLE_DECLARATION_OF_ELEMENTS=161;
 
 public constant ErrorID UNBOUND_PARAMETER_WITH_START_VALUE_WARNING=499;
 public constant ErrorID UNBOUND_PARAMETER_WARNING=500;
@@ -686,6 +687,8 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (WHEN_EQ_LHS,TRANSLATION(),ERROR(),"Invalid left-hand side of when-equation: %s."),
           (GENERIC_ELAB_EXPRESSION,TRANSLATION(),ERROR(),"Failed to elaborate expression: %s"),
           (EXTENDS_EXTERNAL,TRANSLATION(),WARNING(),"Ignoring external declaration of the extended class: %s."),
+          (DOUBLE_DECLARATION_OF_ELEMENTS,TRANSLATION(),ERROR(),
+            "An element with name %s is already declared in this scope."),
           (MATCHCONTINUE_TO_MATCH_OPTIMIZATION,TRANSLATION(),NOTIFICATION(),"This matchcontinue expression has no overlapping patterns and should be using match instead of matchcontinue."),
           (META_DEAD_CODE,TRANSLATION(),NOTIFICATION(),"Dead code elimination: %s."),
           (META_UNUSED_DECL,TRANSLATION(),NOTIFICATION(),"Unused local variable: %s."),
@@ -706,21 +709,15 @@ public function updateCurrentComponent "Function: updateCurrentComponent
 This function takes a String and set the global var to 
 which the current variable the compiler is working with."
   input String component;
-  input Option<Absyn.Info> info;
-algorithm _ :=
-  match (component, info)
-      local String filename; Integer i1,i2,i3,i4; Boolean b1;
-  case(component,SOME(Absyn.INFO(filename,b1,i1,i2,i3,i4,_)))
-    equation
-      filename = fixFilenameForTestsuite(filename);
-      ErrorExt.updateCurrentComponent(component,b1,filename,i1,i3,i2,i4);
-      then ();
-  case(component,NONE())
-        equation
-      ErrorExt.updateCurrentComponent(component,false,"",-1,-1,-1,-1);
-      then ();
-end match;
-
+  input Absyn.Info info;
+protected
+  String filename;
+  Integer ls, le, cs, ce;
+  Boolean ro;
+algorithm
+  Absyn.INFO(filename, ro, ls, cs, le, ce, _) := info;
+  filename := fixFilenameForTestsuite(filename);
+  ErrorExt.updateCurrentComponent(component, ro, filename, ls, le, cs, ce);
 end updateCurrentComponent;
 
 public function addMessage "Implementation of Relations

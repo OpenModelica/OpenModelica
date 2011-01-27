@@ -4983,13 +4983,12 @@ algorithm
       InstDims inst_dims;
       Boolean impl;
       Env.Cache cache;
-      Option<Absyn.Info> info;
+      Absyn.Info info;
       CallingScope callscope;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
       String elementName;
       SCode.Element ele;
-      Absyn.Info rinfo;
       String comp_name;
       DAE.ComponentRef comp_cr;
 
@@ -5006,8 +5005,7 @@ algorithm
         (elementName, info) = extractCurrentName(ele);
         Mod.verifySingleMod(mod,pre,elementName,info);
         
-        rinfo = Util.getOptionOrDefault(info, Absyn.dummyInfo);
-        (true, cache) = isConditionalComponent(cache, env, ele, pre, rinfo);
+        (true, cache) = isConditionalComponent(cache, env, ele, pre, info);
 
         // Add the deleted component to the connection set, so that we know
         // which connections to ignore.
@@ -5042,7 +5040,7 @@ algorithm
           instElement(cache,env,ih,store, mod, pre, csets, ci_state, el, inst_dims, impl, callscope, graph);
         /*s1 = Util.if_(stringEq("n", str),DAE.dumpElementsStr(dae1),"");
         print(s1) "To print what happened to a specific var";*/
-        Error.updateCurrentComponent("",NONE());
+        Error.updateCurrentComponent("",Absyn.dummyInfo);
         (cache,env_2,ih,store,dae2,csets_2,ci_state_2,tys2,graph) =
           instElementList(cache,env_1,ih,store, mod, pre, csets_1, ci_state_1, els, inst_dims, impl, callscope, graph);
         tys = listAppend(tys1, tys2);
@@ -5432,7 +5430,7 @@ algorithm
       list<SCode.Equation> eqns;
       InstDims instdims;
       Option<Absyn.Exp> aExp;
-      Option<Absyn.Info> aInfo;
+      Absyn.Info aInfo;
       Option<Absyn.ConstrainClass> cc;
       InstanceHierarchy ih;
       Env.Cache cache;
@@ -5452,7 +5450,7 @@ algorithm
       equation
         true = stringEq(n, Absyn.pathLastIdent(tpp));
         ns = Env.printEnvPathStr(env) +& "." +& Absyn.pathString(tpp);
-        Error.addMessageOrSourceMessage(Error.COMPONENT_NAME_SAME_AS_TYPE_NAME, {n,ns}, aInfo);
+        Error.addSourceMessage(Error.COMPONENT_NAME_SAME_AS_TYPE_NAME, {n,ns}, aInfo);
       then
         fail();
 
@@ -5581,7 +5579,7 @@ algorithm
       Option<SCode.Comment> comment;
       list<tuple<SCode.Element, DAE.Mod>> xs,comps;
       InstDims inst_dims;
-      Option<Absyn.Info> info;
+      Absyn.Info info;
       Option<Absyn.Exp> condition;
       Option<Absyn.ConstrainClass> cc;
       InstanceHierarchy ih;
@@ -5759,7 +5757,6 @@ algorithm
       Option<Absyn.Exp> cond;
       Boolean alreadyDeclared;
       list<DAE.Var> vars;
-      Option<Absyn.Info> aInfo;
       Absyn.Info info;
       Absyn.TypeSpec ts,tSpec;
       Absyn.Ident id;
@@ -5838,14 +5835,14 @@ algorithm
                                     modifications = m,
                                     comment = comment,
                                     condition=cond,
-                                    info = aInfo,cc=cc)),cmod),
+                                    info = info,cc=cc)),cmod),
           inst_dims,impl,callscope,graph)
       equation
         //print("  instElement: A component: " +& n +& "\n");
         //Debug.fprintln("debug"," instElement " +& n +& " in s:" +& Env.printEnvPathStr(env) +& " m: " +& SCode.printModStr(m) +& " cm : " +& Mod.printModStr(cmod));
         //false = stringEq(n, Absyn.pathLastIdent(t));
         m = traverseModAddFinal(m, finalPrefix);
-        comp = SCode.COMPONENT(n,io,finalPrefix,repl,prot,attr,ts,m,comment,cond,aInfo,cc);
+        comp = SCode.COMPONENT(n,io,finalPrefix,repl,prot,attr,ts,m,comment,cond,info,cc);
         // Fails if multiple decls not identical
         alreadyDeclared = checkMultiplyDeclared(cache,env,mods,pre,csets,ci_state,(comp,cmod),inst_dims,impl);
         ci_state = ClassInf.trans(ci_state, ClassInf.FOUND_COMPONENT(n));
@@ -5872,7 +5869,7 @@ algorithm
         crefs3 = getCrefFromCond(cond);
         crefs_1 = Util.listFlatten({crefs,crefs2,crefs3});
         // can call instVar
-        (cache,env,ih,store,crefs_2) = removeSelfReferenceAndUpdate(cache,env,ih,store,crefs_1,owncref,t,ci_state,csets,prot,attr,impl,io,inst_dims,pre,mods,finalPrefix,aInfo);
+        (cache,env,ih,store,crefs_2) = removeSelfReferenceAndUpdate(cache,env,ih,store,crefs_1,owncref,t,ci_state,csets,prot,attr,impl,io,inst_dims,pre,mods,finalPrefix,info);
         //(cache,env,ih) = getDerivedEnv(cache,env,ih, bc);
         // can call instVar
         (cache,env2,ih,csets) = updateComponentsInEnv(cache, env, ih, pre, mods, crefs_2, ci_state, csets, impl);
@@ -5890,7 +5887,6 @@ algorithm
         //(cache,_,SOME((comp,_)),_,_) = Lookup.lookupIdentLocal(cache, env2, n);
         //classmod_1 = Mod.lookupModificationP(mods_1, t);
         //mm_1 = Mod.lookupCompModification(mods_1, n);
-        info = Util.getOptionOrDefault(aInfo, Absyn.dummyInfo);
         (cache,classmod_1) = Mod.updateMod(cache, env2, ih, pre, classmod, impl, info);
         (cache,mm_1) = Mod.updateMod(cache, env2, ih, pre, mm, impl, info);
         
@@ -5934,17 +5930,17 @@ algorithm
         
         // The variable declaration and the (optional) equation modification are inspected for array dimensions.
         is_function_input = isFunctionInput(ci_state, dir);
-        (cache,dims) = elabArraydim(cache, env2_1, owncref, t,ad, eq, impl,NONE(), true, is_function_input,pre,Util.getOptionOrDefault(aInfo,Absyn.dummyInfo), inst_dims);
+        (cache,dims) = elabArraydim(cache, env2_1, owncref, t,ad, eq, impl,NONE(), true, is_function_input,pre,info, inst_dims);
 
         //Instantiate the component  
         inst_dims = listAppend(inst_dims,{{}}); // Start a new "set" of inst_dims for this component (in instance hierarchy), see InstDims
         (cache,mod_1) = Mod.updateMod(cache, cenv, ih, pre, mod_1, impl, info);
         
         // adrpo: 2010-09-28: check if the IDX mod doesn't overlap!
-        Mod.checkIdxModsForNoOverlap(mod_1, PrefixUtil.prefixAdd(n, {}, pre, param, ci_state), aInfo);
+        Mod.checkIdxModsForNoOverlap(mod_1, PrefixUtil.prefixAdd(n, {}, pre, param, ci_state), info);
         
         (cache,compenv,ih,store,dae,csets_1,ty,graphNew) = 
-          instVar(cache,cenv,ih,store, ci_state, mod_1, pre, csets, n, cl, attr, prot, dims, {}, inst_dims, impl, comment,io,finalPrefix,aInfo,graph,env2_1);
+          instVar(cache,cenv,ih,store, ci_state, mod_1, pre, csets, n, cl, attr, prot, dims, {}, inst_dims, impl, comment,io,finalPrefix,info,graph,env2_1);
         
         // print("instElement -> component: " +& n +& " ty: " +& Types.printTypeStr(ty) +& "\n");
         
@@ -5990,14 +5986,13 @@ algorithm
     //------------------------------------------------------------------------
     case (cache,env,ih,store,mods,pre,csets,ci_state,
           ((comp as SCode.COMPONENT(n,io,finalPrefix,repl,prot,attr as SCode.ATTR(ad,flowPrefix,streamPrefix,acc,param,dir),
-                                    tSpec as Absyn.TCOMPLEX(typeName,_,_),m,comment,cond,aInfo,cc),cmod)),
+                                    tSpec as Absyn.TCOMPLEX(typeName,_,_),m,comment,cond,info,cc),cmod)),
           inst_dims,impl,_,graph)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         // see if we have a modification on the inner component
         m = traverseModAddFinal(m, finalPrefix);
-        info = Util.getOptionOrDefault(aInfo,Absyn.dummyInfo);
-        comp = SCode.COMPONENT(n,io,finalPrefix,repl,prot,attr,tSpec,m,comment,cond,aInfo,cc);
+        comp = SCode.COMPONENT(n,io,finalPrefix,repl,prot,attr,tSpec,m,comment,cond,info,cc);
 
         // Fails if multiple decls not identical
         alreadyDeclared = checkMultiplyDeclared(cache,env,mods,pre,csets,ci_state,(comp,cmod),inst_dims,impl);
@@ -6064,7 +6059,7 @@ algorithm
 
         // Instantiate the component
         (cache,compenv,ih,store,dae,csets_1,ty,graphNew) = 
-          instVar(cache,env, ih, store,ci_state, m_1, pre, csets, n, cl, attr, prot, dims, {}, inst_dims, impl, comment,io,finalPrefix,aInfo,graph,env);
+          instVar(cache,env, ih, store,ci_state, m_1, pre, csets, n, cl, attr, prot, dims, {}, inst_dims, impl, comment,io,finalPrefix,info,graph,env);
         
         // print("instElement -> component: " +& n +& " ty: " +& Types.printTypeStr(ty) +& "\n");
         
@@ -6095,7 +6090,7 @@ algorithm
           (SCode.COMPONENT(component = n, innerOuter=io,finalPrefix = finalPrefix,replaceablePrefix = repl,
                            protectedPrefix = prot,
                            attributes=SCode.ATTR(variability=vt),typeSpec =
-           Absyn.TPATH(t,_),cc=cc),_),_,_,_,_)
+                           Absyn.TPATH(t,_),cc=cc, info = info),_),_,_,_,_)
       equation
         //false = stringEq(n, Absyn.pathLastIdent(t));
         failure((_,cl,cenv) = Lookup.lookupClass(cache,env, t, false));
@@ -6104,7 +6099,7 @@ algorithm
         pre_1 = PrefixUtil.prefixAdd(n, {}, pre,vt,ci_state);
         ns = PrefixUtil.printPrefixStrIgnoreNoPre(pre_1);
         // Debug.fcall (\"instdb\", Env.print_env, env)
-        Error.addMessage(Error.LOOKUP_ERROR_COMPNAME, {s,scope_str,ns});
+        Error.addSourceMessage(Error.LOOKUP_ERROR_COMPNAME, {s,scope_str,ns}, info);
         true = RTOpts.debugFlag("failtrace");
         Debug.traceln("Lookup class failed:" +& Absyn.pathString(t));
       then
@@ -6391,7 +6386,7 @@ algorithm
       Env.Cache cache;
       SCode.Class c1, c2;
       Absyn.Path tpath1, tpath2;
-      Option<Absyn.Info> aInfo;
+      Absyn.Info aInfo;
       Boolean fp1,fp2,rp1,rp2,pp1,pp2;
       Absyn.InnerOuter io1,io2;
       SCode.Attributes attr1,attr2;
@@ -6436,7 +6431,7 @@ algorithm
         // add a warning and let it continue!
         s1 = SCode.unparseElementStr(oldElt);
         s2 = SCode.unparseElementStr(newElt);
-        Error.addMessageOrSourceMessage(Error.DUPLICATE_ELEMENTS_NOT_SYNTACTICALLY_IDENTICAL,{s1,s2}, aInfo);
+        Error.addSourceMessage(Error.DUPLICATE_ELEMENTS_NOT_SYNTACTICALLY_IDENTICAL,{s1,s2}, aInfo);
       then ();    
     
     // fail baby and add a source message!
@@ -6444,7 +6439,7 @@ algorithm
       equation
         s1 = SCode.unparseElementStr(oldElt);
         s2 = SCode.unparseElementStr(newElt);
-        Error.addMessageOrSourceMessage(Error.DUPLICATE_ELEMENTS_NOT_IDENTICAL,{s1,s2}, aInfo);
+        Error.addSourceMessage(Error.DUPLICATE_ELEMENTS_NOT_IDENTICAL,{s1,s2}, aInfo);
         //print(" *** error message added *** \n");
       then fail();        
   end matchcontinue;
@@ -6587,7 +6582,7 @@ algorithm
     case (cache,env,ih,(m as DAE.REDECL(tplSCodeElementModLst = (((redecl as
           SCode.COMPONENT(component = n1,finalPrefix = finalPrefix,replaceablePrefix = repl,protectedPrefix = prot,
                           typeSpec = t,modifications = mod,comment = comment,
-                          innerOuter = io, attributes = at,condition = cond, info = nfo
+                          innerOuter = io, attributes = at,condition = cond, info = info
                             )),rmod) :: rest))),
           SCode.COMPONENT(component = n2,finalPrefix = false,replaceablePrefix = repl2,protectedPrefix = prot2,
                           typeSpec = t2,modifications = old_mod,cc=(cc as SOME(Absyn.CONSTRAINCLASS(elementSpec=_)))),
@@ -6597,7 +6592,6 @@ algorithm
         compsOnConstrain = extractConstrainingComps(cc,env,pre) "extract components belonging to constraining class";
         crefs = getCrefFromMod(mod);
         (cache,env_1,ih,csets) = updateComponentsInEnv(cache, env, ih, pre, DAE.NOMOD(), crefs, ci_state, csets, impl);
-        info = Util.getOptionOrDefault(nfo, Absyn.dummyInfo);
         (cache,m_1) = Mod.elabMod(cache,env_1, ih, pre, mod, impl, info);
         (cache,old_m_1) = Mod.elabMod(cache,env_1, ih, pre, old_mod, impl, info);
 
@@ -6607,14 +6601,14 @@ algorithm
         innerCompMod = Mod.merge(m_1,old_m_1,env_1,pre) "inner comp modifier merg(new_inner, old_inner) ";
         compMod = Mod.merge(rmod,cmod,env_1,pre) "outer comp modifier";
 
-        redComp = SCode.COMPONENT(n1,io,finalPrefix,repl,prot,at,t,mod,comment,cond,nfo,cc);
+        redComp = SCode.COMPONENT(n1,io,finalPrefix,repl,prot,at,t,mod,comment,cond,info,cc);
         m_2 = Mod.merge(compMod, innerCompMod, env_1, pre);
       then
         (cache,env_1,ih,redComp,m_2,csets);
 
 // no constraining type on comp, throw away modifiers prior to redeclaration
     case (cache,env,ih,(m as DAE.REDECL(tplSCodeElementModLst = (((redecl as
-          SCode.COMPONENT(component = n1,typeSpec = t,modifications = mod,comment = comment, info = nfo)),rmod) :: rest))),
+          SCode.COMPONENT(component = n1,typeSpec = t,modifications = mod,comment = comment, info = info)),rmod) :: rest))),
           SCode.COMPONENT(component = n2,finalPrefix = false,replaceablePrefix = repl2,protectedPrefix = prot2,
                           typeSpec = t2,modifications = old_mod,cc=(cc as NONE())),
           pre,ci_state,csets,impl,cmod)
@@ -6622,7 +6616,6 @@ algorithm
         true = stringEq(n1, n2);
         crefs = getCrefFromMod(mod);
         (cache,env_1,ih,csets) = updateComponentsInEnv(cache,env,ih, pre, DAE.NOMOD(), crefs, ci_state, csets, impl) "m" ;
-        info = Util.getOptionOrDefault(nfo, Absyn.dummyInfo);
         (cache,m_1) = Mod.elabMod(cache, env_1, ih, pre, mod, impl, info);
         (cache,old_m_1) = Mod.elabMod(cache, env_1, ih, pre, old_mod, impl, info);
         m_2 = Mod.merge(rmod, m_1, env_1, pre);
@@ -6805,7 +6798,7 @@ protected function instVar
   input Option<SCode.Comment> inSCodeCommentOption;
   input Absyn.InnerOuter io;
   input Boolean finalPrefix;
-  input Option<Absyn.Info> info;
+  input Absyn.Info info;
   input ConnectionGraph.ConnectionGraph inGraph;
   input Env.Env componentDefinitionParentEnv;
   output Env.Cache outCache;
@@ -7132,7 +7125,7 @@ protected function instVar_dispatch "function: instVar_dispatch
   input Option<SCode.Comment> inSCodeCommentOption;
   input Absyn.InnerOuter io;
   input Boolean finalPrefix;
-  input Option<Absyn.Info> info;
+  input Absyn.Info info;
   input ConnectionGraph.ConnectionGraph inGraph;
   output Env.Cache outCache;
   output Env.Env outEnv;
@@ -7183,9 +7176,9 @@ algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
         (cache,(dims_1 as (_ :: _)),cl,type_mods) = getUsertypeDimensions(cache, env, ih, mod, pre, cl, inst_dims, impl);
         mod = Mod.merge(mod, type_mods, env, pre);
         attr = propagateClassPrefix(attr,pre);
-        (cache,compenv,ih,store,dae,csets_1,ty_1,graph) = instVar2(cache,env,ih,store, ci_state, mod, pre, csets, n, cl, attr, prot, dims_1, idxs, inst_dims, impl, comment,io,finalPrefix, Util.getOptionOrDefault(info, Absyn.dummyInfo),graph);
+        (cache,compenv,ih,store,dae,csets_1,ty_1,graph) = instVar2(cache,env,ih,store, ci_state, mod, pre, csets, n, cl, attr, prot, dims_1, idxs, inst_dims, impl, comment,io,finalPrefix, info, graph);
         ty = ty_1; // adrpo: this doubles the dimension! ty = makeArrayType(dims_1, ty_1);
-        Error.updateCurrentComponent("",NONE());
+        Error.updateCurrentComponent("",Absyn.dummyInfo);
       then
         (cache,compenv,ih,store,dae,csets_1,ty,graph);
 
@@ -7201,14 +7194,14 @@ algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
         (cache,compenv,ih,store,dae,csets_1,ty_1,graph) =
         instVar2(cache,env,ih,store, ci_state, mod, pre, csets, n,
                  cl, attr, prot, dims, idxs, inst_dims, impl,
-                 comment,io,finalPrefix,Util.getOptionOrDefault(info, Absyn.dummyInfo),graph);
-        Error.updateCurrentComponent("",NONE());
+                 comment,io,finalPrefix,info, graph);
+        Error.updateCurrentComponent("",Absyn.dummyInfo);
       then
         (cache,compenv,ih,store,dae,csets_1,ty_1,graph);
 
     case(_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
-        Error.updateCurrentComponent("",NONE());
+        Error.updateCurrentComponent("",Absyn.dummyInfo);
       then fail();
   end matchcontinue;
 end instVar_dispatch;
@@ -8136,7 +8129,7 @@ algorithm
       Option<Absyn.Exp> cond;
       DAE.Var tyVar;
       Env.InstStatus is;
-      Option<Absyn.Info> info;
+      Absyn.Info info;
       InstanceHierarchy ih;
       Option<Absyn.ConstrainClass> cc;
       
@@ -8213,7 +8206,7 @@ protected function updateComponentInEnv2
   input Boolean prot;
   input Boolean finalPrefix;
   input Absyn.InnerOuter io;
-  input Option<Absyn.Info> info;
+  input Absyn.Info info;
   input SCode.Mod m;
   input DAE.Mod cmod;
   input DAE.Mod mod;
@@ -8238,16 +8231,15 @@ algorithm
       DAE.Binding binding;
       Absyn.ComponentRef owncref;
       InstanceHierarchy ih;
-      Absyn.Info rinfo;
+
     case (cache,env,cenv,ih,pre,path,name,ad,cl,attr,dattr,prot,finalPrefix,io,info,m,cmod,mod,cref,ci_state,csets,impl,updatedComps)
       equation
         1 = BaseHashTable.get(cref, updatedComps);
       then (cache,env,ih,csets,updatedComps);
     case (cache,env,cenv,ih,pre,path,name,ad,cl,attr,dattr,prot,finalPrefix,io,info,m,cmod,mod,cref,ci_state,csets,impl,updatedComps)
       equation        
-        rinfo = Util.getOptionOrDefault(info,Absyn.dummyInfo);
         ErrorExt.setCheckpoint("updateComponentInEnv2");
-        (cache,m_1) = Mod.elabMod(cache, env, ih, Prefix.NOPRE(), m, impl, rinfo)
+        (cache,m_1) = Mod.elabMod(cache, env, ih, Prefix.NOPRE(), m, impl, info)
         "Prefix does not matter, since we only update types
          in env, and does not make any dae elements, etc.." ;
         ErrorExt.rollBack("updateComponentInEnv2")
@@ -8258,11 +8250,11 @@ algorithm
         mod = Mod.merge(classmod, mm, env, Prefix.NOPRE());
         mod_1 = Mod.merge(mod, m_1, env, Prefix.NOPRE());
         mod_2 = Mod.merge(cmod, mod_1, env, Prefix.NOPRE());
-        (cache,mod_3) = Mod.updateMod(cache, env, ih, Prefix.NOPRE(),mod_2,impl,rinfo);
+        (cache,mod_3) = Mod.updateMod(cache, env, ih, Prefix.NOPRE(),mod_2,impl,info);
         eq = Mod.modEquation(mod_3);
         
         owncref = Absyn.CREF_IDENT(name,{});
-        (cache,dims) = elabArraydim(cache,env,owncref,path,ad,eq,impl,NONE(),true, false,pre,rinfo,{})
+        (cache,dims) = elabArraydim(cache,env,owncref,path,ad,eq,impl,NONE(),true, false,pre,info,{})
         "The variable declaration and the (optional) equation modification are inspected for array dimensions." ;        
         /* Instantiate the component */
         (cache,compenv,ih,_,_,_,ty,_) = 
@@ -8271,7 +8263,7 @@ algorithm
         // print("updateComponentInEnv -> 1 component: " +& n +& " ty: " +& Types.printTypeStr(ty) +& "\n");        
         
         /* The environment is extended with the new variable binding. */
-        (cache,binding) = makeBinding(cache, env, attr, mod_3, ty, pre, name, rinfo);
+        (cache,binding) = makeBinding(cache, env, attr, mod_3, ty, pre, name, info);
         /* type info present */
         //Debug.fprintln("debug","VAR " +& name +& " has new type " +& Types.unparseType(ty) +& ", " +& Types.printBindingStr(binding) +& "m:" +& SCode.printModStr(m));
         env = Env.updateFrameV(env, DAE.TYPES_VAR(name,dattr,prot,ty,binding,NONE()), Env.VAR_TYPED(), compenv);
@@ -10450,7 +10442,7 @@ algorithm
       Absyn.TypeSpec typeSpc;
       Option<SCode.Comment> comm;
       Option<Absyn.Exp> cond;
-      Option<Absyn.Info> inf;
+      Absyn.Info info;
       Option<Absyn.ConstrainClass> cc_; 
       Boolean modFinPre;
       Absyn.Each modEachPre;
@@ -10461,11 +10453,11 @@ algorithm
           protectedPrefix = proPre, attributes = attr as SCode.ATTR(direction = Absyn.OUTPUT()), 
           typeSpec = typeSpc,
           modifications = SCode.MOD(finalPrefix = modFinPre, eachPrefix = modEachPre, subModLst = modSubML, absynExpOption = SOME(_)),
-          comment = comm, condition = cond, info = inf, cc = cc_))
+          comment = comm, condition = cond, info = info, cc = cc_))
       equation
         modBla = SCode.MOD(modFinPre,modEachPre,modSubML,NONE());
       then 
-        SCode.COMPONENT(id,inOut,finPre,repPre,proPre,attr,typeSpc,modBla,comm,cond,inf,cc_);
+        SCode.COMPONENT(id,inOut,finPre,repPre,proPre,attr,typeSpc,modBla,comm,cond,info,cc_);
     case (e) then (e);          
   end matchcontinue; 
 end stripFuncOutputsMod;
@@ -11523,6 +11515,12 @@ algorithm
       then DAE.DAE({DAE.VAR(vn,kind,dir,prot,ty,e,finst_dims,fl,st,source,dae_var_attr,comment,io)});
     /*----------------------------*/
     
+    case (c,ty,_,_,_,_,_,_,_,_,_,_,_,_,source,_)
+      equation
+        true = Types.isBoxedType(ty);
+      then
+        fail();
+        
     case (c,ty,_,_,_,_,_,_,_,_,_,_,_,_,source,_) then DAEUtil.emptyDae; 
   end matchcontinue;
 end daeDeclare4;
@@ -12517,10 +12515,9 @@ algorithm
       Env.Cache cache;
       Absyn.InnerOuter io;
       Boolean finalPrefix;
-      Option<Absyn.Info> info;
+      Absyn.Info info;
       InstanceHierarchy ih;
       Option<Absyn.ConstrainClass> cc;
-      Absyn.Info rinfo;
 
     case (cache,env,ih,
           SCode.COMPONENT(info = info, component = id,replaceablePrefix = repl,protectedPrefix = prot,
@@ -12538,11 +12535,10 @@ algorithm
         //Debug.fprint("recconst", "inst_record_constructor_elt called\n");
         (cache,cl,cenv) = Lookup.lookupClass(cache,env, t, true);
         //Debug.fprint("recconst", "looked up class\n");
-        rinfo = Util.getOptionOrDefault(info, Absyn.dummyInfo);
-        (cache,mod_1) = Mod.elabMod(cache, env, ih, Prefix.NOPRE(), mod, impl, rinfo);
+        (cache,mod_1) = Mod.elabMod(cache, env, ih, Prefix.NOPRE(), mod, impl, info);
         mod_1 = Mod.merge(outerMod,mod_1,cenv,Prefix.NOPRE());
         owncref = Absyn.CREF_IDENT(id,{});
-        (cache,dimexp) = elabArraydim(cache,env, owncref,t, dim,NONE(), false,NONE(),true, false,Prefix.NOPRE(),rinfo,{});
+        (cache,dimexp) = elabArraydim(cache,env, owncref,t, dim,NONE(), false,NONE(),true, false,Prefix.NOPRE(),info,{});
         //Debug.fprint("recconst", "calling inst_var\n");
         (cache,_,ih,_,_,_,tp_1,_) = instVar(cache,cenv, ih, UnitAbsyn.noStore,ClassInf.FUNCTION(Absyn.IDENT("")), mod_1, Prefix.NOPRE(),
           Connect.emptySet, id, cl, attr, prot,dimexp, {}, {}, impl, comment,io,finalPrefix,info,ConnectionGraph.EMPTY, env);
@@ -12550,7 +12546,7 @@ algorithm
         Debug.fprint("recconst", Types.printTypeStr(tp_1));
         //Debug.fprint("recconst", "\nMod=");
         Debug.fcall("recconst", Mod.printMod, mod_1);
-        (cache,bind) = makeBinding(cache,env, attr, mod_1, tp_1, Prefix.NOPRE(), id, rinfo);
+        (cache,bind) = makeBinding(cache,env, attr, mod_1, tp_1, Prefix.NOPRE(), id, info);
       then
         (cache,ih,DAE.TYPES_VAR(id,DAE.ATTR(f,s,acc,var,dir,Absyn.UNSPECIFIED()),prot,tp_1,bind,NONE()));
 
@@ -12695,27 +12691,26 @@ protected function extractCurrentName
  Extracts SCode.Element name."
   input SCode.Element sele;
   output String ostring;
-  output Option<Absyn.Info> oinfo;
+  output Absyn.Info oinfo;
 algorithm
   (ostring ,oinfo) := match(sele)
     local
       Absyn.Path path;
       String name_,ret;
       Absyn.Import imp;
-      Option<Absyn.Info> infoOpt;
       Absyn.Info info;
 
   case(SCode.EXTENDS(baseClassPath=path))
     equation
       ret = Absyn.pathString(path);
-    then (ret,NONE());
+    then (ret,Absyn.dummyInfo);
   case(SCode.CLASSDEF(name = name_, classDef=SCode.CLASS(info = info)))
-    then (name_,SOME(info));
-  case(SCode.COMPONENT(component = name_, info=infoOpt))
-    then (name_,infoOpt);
+    then (name_,info);
+  case(SCode.COMPONENT(component = name_, info=info))
+    then (name_,info);
   case(SCode.IMPORT(imp))
     equation name_ = Absyn.printImportString(imp);
-      then (name_,NONE());
+    then (name_,Absyn.dummyInfo);
 end match;
 end extractCurrentName;
 
@@ -13279,7 +13274,7 @@ algorithm oltuple := matchcontinue(ltuple)
     Boolean c3,c4,c5;
     Option<SCode.Comment> c10;
     Option<Absyn.Exp> c11;
-    Option<Absyn.Info> c12;
+    Absyn.Info c12;
     Absyn.Path p;
     Option<SCode.Annotation> ann;
     Absyn.Info info;
@@ -13423,7 +13418,7 @@ protected function removeSelfReferenceAndUpdate
   input Prefix.Prefix pre;
   input DAE.Mod mods;
   input Boolean finalPrefix;
-  input Option<Absyn.Info> info;
+  input Absyn.Info info;
   output Env.Cache outCache;
   output Env.Env outEnv;
   output InstanceHierarchy outIH;
@@ -13452,7 +13447,6 @@ algorithm
       list<DAE.Dimension> dims;
       DAE.Var new_var;
       InstanceHierarchy ih;
-      Absyn.Info rinfo;
 
     case(cache,env,ih,store,cl1,c1,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
@@ -13471,8 +13465,7 @@ algorithm
       equation
         cl2 = removeCrefFromCrefs(cl1, c1);
         (cache,c,cenv) = Lookup.lookupClass(cache,env, sty, true);
-        rinfo = Util.getOptionOrDefault(info,Absyn.dummyInfo);
-        (cache,dims) = elabArraydim(cache,cenv, c1, sty, ad,NONE(), impl,NONE(),true, false,pre,rinfo,inst_dims);
+        (cache,dims) = elabArraydim(cache,cenv, c1, sty, ad,NONE(), impl,NONE(),true, false,pre,info,inst_dims);
         (cache,compenv,ih,store,_,_,ty,_) = 
           instVar(cache,cenv,ih, store,state, DAE.NOMOD(), pre, csets, n, c, attr, prot, dims, {}, inst_dims, true,NONE(),io,finalPrefix,info,ConnectionGraph.EMPTY,env);
 

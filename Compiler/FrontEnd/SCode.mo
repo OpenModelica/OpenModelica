@@ -456,7 +456,7 @@ uniontype Element "- Elements
     Mod modifications             "the modifications to be applied to the component";
     Option<Comment> comment       "this if for extraction of comments and annotations from Absyn";
     Option<Absyn.Exp> condition   "the conditional declaration of a component";
-    Option<Absyn.Info> info       "this is for line and column numbers, also file name.";
+    Absyn.Info info       "this is for line and column numbers, also file name.";
     Option<Absyn.ConstrainClass> cc "The constraining class for the component";
   end COMPONENT;
 
@@ -2499,7 +2499,7 @@ algorithm
           literal, Absyn.UNSPECIFIED(), true, false, false,
           ATTR({}, false, false, RO(), CONST(), Absyn.BIDIR()),
           Absyn.TPATH(Absyn.IDENT("EnumType"),NONE()), 
-          NOMOD(), comment,NONE(), NONE(),NONE());
+          NOMOD(), comment,NONE(), info,NONE());
     case (ENUM(literal = literal), _)
       equation
         info_str = Error.infoStr(info);

@@ -263,7 +263,6 @@ algorithm
       SCode.Attributes attr;
       SCode.Mod mod;
       Option<Absyn.Exp> cond;
-      Option<Absyn.Info> oinfo;
       Option<Absyn.ConstrainClass> cc;
       Absyn.Info i;
       InstanceHierarchy ih;
@@ -289,12 +288,11 @@ algorithm
         then ((SCode.CLASSDEF(cn,fi,repl,SCode.CLASS(cn,p,enc,restr,SCode.ENUMERATION(enumLst,comment),i),cc),DAE.NOMOD())::modElts);
 
         // redeclare of component declaration
-      case(cache,env,ih,pre,f,SCode.COMPONENT(compname,io,fi,repl,prot,attr,tp,mod,cmt,cond,oinfo,cc)::elts,impl,info) equation
-        info = Util.getOptionOrDefault(oinfo,info);
+      case(cache,env,ih,pre,f,SCode.COMPONENT(compname,io,fi,repl,prot,attr,tp,mod,cmt,cond,i,cc)::elts,impl,info) equation
         (cache,emod) = elabMod(cache,env,ih,pre,mod,impl,info);
         (modElts) = elabModRedeclareElements(cache,env,ih,pre,f,elts,impl,info);
         (cache,tp1) = elabModQualifyTypespec(cache,env,tp);
-      then ((SCode.COMPONENT(compname,io,fi,repl,prot,attr,tp1,mod,cmt,cond,SOME(info),cc),emod)::modElts);
+      then ((SCode.COMPONENT(compname,io,fi,repl,prot,attr,tp1,mod,cmt,cond,i,cc),emod)::modElts);
     end match;
 end elabModRedeclareElements;
 
@@ -1356,7 +1354,7 @@ algorithm
         // make sure x is not present in the rest
         fullMods = getFullModsFromSubMods(ComponentReference.makeCrefIdent("", DAE.ET_OTHER(), {}), inSubModLst);
         // print("FullModsTry: " +& Util.stringDelimitList(Util.listMap1(fullMods, prettyPrintFullMod, 1), " ||| ") +& "\n");        
-        checkDuplicatesInFullMods(fullMods, Prefix.NOPRE(), "", NONE(), false);
+        checkDuplicatesInFullMods(fullMods, Prefix.NOPRE(), "", Absyn.dummyInfo, false);
         mod2 = tryMergeSubMods(rest);
         mod = merge(mod1, mod2, {}, Prefix.NOPRE());
       then
@@ -1366,7 +1364,7 @@ algorithm
         // make sure x is not present in the rest
         fullMods = getFullModsFromSubMods(ComponentReference.makeCrefIdent("", DAE.ET_OTHER(), {}), inSubModLst);
         // print("FullModsTry: " +& Util.stringDelimitList(Util.listMap1(fullMods, prettyPrintFullMod, 1), " ||| ") +& "\n");
-        checkDuplicatesInFullMods(fullMods, Prefix.NOPRE(), "", NONE(), false);
+        checkDuplicatesInFullMods(fullMods, Prefix.NOPRE(), "", Absyn.dummyInfo, false);
         mod2 = tryMergeSubMods(rest);
         mod = merge(mod1, mod2, {}, Prefix.NOPRE());
       then
@@ -1753,7 +1751,7 @@ algorithm
       Absyn.Each each_,each2;
       Option<Absyn.Exp> cond;
       Option<Absyn.ConstrainClass> cc;
-      Option<Absyn.Info> info;
+      Absyn.Info info;
       SCode.Element celm,elementOne;
     
     
@@ -2742,9 +2740,9 @@ public function checkIdxModsForNoOverlap
   A a(x[2] = {1.0,3.0}, x[2,1] = 2.0);"
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
-  input Option<Absyn.Info> infoOpt;
+  input Absyn.Info info;
 algorithm
-  _ := matchcontinue(inMod, inPrefix, infoOpt)
+  _ := matchcontinue(inMod, inPrefix, info)
     local
       list<DAE.SubMod> subModLst;
       list<tuple<String, DAE.SubMod>> indexes, overlap;
@@ -2763,7 +2761,7 @@ algorithm
     case(DAE.MOD(subModLst={DAE.IDXMOD(mod=_)}, eqModOption=NONE()), _, _) then ();
 
     // if eqmod is an array and we have indexmods, we have overlap
-    case(DAE.MOD(subModLst=subModLst, eqModOption=SOME(eqMod)), pre, infoOpt)
+    case(DAE.MOD(subModLst=subModLst, eqModOption=SOME(eqMod)), pre, info)
       equation
         // we have properties
         DAE.TYPED(properties = props) = eqMod;
@@ -2786,7 +2784,7 @@ algorithm
         str1 = "(" +& str1 +& ")";
         str2 = str3 +& "=" +& Types.unparseEqMod(eqMod);
         // generate a warning
-        Error.addMessageOrSourceMessage(Error.MODIFICATION_AND_MODIFICATION_INDEX_OVERLAP, {str1, str2, str3}, infoOpt);
+        Error.addSourceMessage(Error.MODIFICATION_AND_MODIFICATION_INDEX_OVERLAP, {str1, str2, str3}, info);
       then ();
 
     // modifications, no overlap
@@ -2802,7 +2800,7 @@ algorithm
       then
         ();
     // modifications, overlap, source message
-    case(DAE.MOD(subModLst=subModLst), pre, infoOpt)
+    case(DAE.MOD(subModLst=subModLst), pre, info)
       equation
         indexes = getAllIndexesFromIdxMods(subModLst);
         // get the overlap
@@ -2821,7 +2819,7 @@ algorithm
                  ", ");
         str1 = "(" +& str1 +& ")";
         // generate a warning
-        Error.addMessageOrSourceMessage(Error.MODIFICATION_INDEX_OVERLAP, {str1, str2}, infoOpt);
+        Error.addSourceMessage(Error.MODIFICATION_INDEX_OVERLAP, {str1, str2}, info);
       then
         ();
   end matchcontinue;
@@ -2991,15 +2989,15 @@ Fails on; a(x=3, redeclare Integer x)"
   input DAE.Mod m;
   input Prefix.Prefix pre;
   input String elementName;
-  input Option<Absyn.Info> infoOpt;
+  input Absyn.Info info;
 algorithm 
-  _ := match(m,pre,elementName,infoOpt)
+  _ := match(m,pre,elementName,info)
     local
       DAE.Mod mod;
       DAE.ComponentRef cref;
       list<FullMod> fullMods;
     
-    case(mod,pre,elementName,infoOpt)
+    case(mod,pre,elementName,info)
       equation
         cref = PrefixUtil.makeCrefFromPrefixNoFail(pre);
         // print("Prefix:" +& PrefixUtil.printPrefixStr(pre)+& "\n"); 
@@ -3010,7 +3008,7 @@ algorithm
         // print("Element Mod: " +& printModStr(mod) +& "\n");
         fullMods = getFullModsFromMod(cref, mod);
         // print("FullMods: " +& Util.stringDelimitList(Util.listMap1(fullMods, prettyPrintFullMod, 1), " ||| ") +& "\n");
-        checkDuplicatesInFullMods(fullMods, pre, elementName, infoOpt, true);
+        checkDuplicatesInFullMods(fullMods, pre, elementName, info, true);
       then
         ();
   end match;
@@ -3065,33 +3063,33 @@ protected function checkDuplicatesInFullMods "helper function for verifySingleMo
   input list<FullMod> subs;
   input Prefix.Prefix pre;
   input String elementName;
-  input Option<Absyn.Info> infoOpt;
+  input Absyn.Info info;
   input Boolean addErrorMessage;  
 algorithm 
-  _ := matchcontinue(subs,pre,elementName,infoOpt,addErrorMessage)
+  _ := matchcontinue(subs,pre,elementName,info,addErrorMessage)
     local 
       String s1,s2,s3;
       list<FullMod> rest, duplicates;
       FullMod fullMod;
     
-    case({},pre,elementName,infoOpt,addErrorMessage) then ();
+    case({},pre,elementName,info,addErrorMessage) then ();
     
-    case(fullMod::rest,pre,elementName,infoOpt,addErrorMessage)
+    case(fullMod::rest,pre,elementName,info,addErrorMessage)
       equation
         false = Util.listContainsWithCompareFunc(fullMod,rest,fullModCrefsEqual);
-        checkDuplicatesInFullMods(rest,pre,elementName,infoOpt,addErrorMessage);
+        checkDuplicatesInFullMods(rest,pre,elementName,info,addErrorMessage);
       then
         ();
     
     // do not add a message
-    case(fullMod::rest,pre,elementName,infoOpt,addErrorMessage as false)
+    case(fullMod::rest,pre,elementName,info,addErrorMessage as false)
       equation
         true = Util.listContainsWithCompareFunc(fullMod,rest,fullModCrefsEqual);
       then
         fail();
     
     // add a message
-    case(fullMod::rest,pre,elementName,infoOpt,addErrorMessage as true)
+    case(fullMod::rest,pre,elementName,info,addErrorMessage as true)
       equation
         true = Util.listContainsWithCompareFunc(fullMod,rest,fullModCrefsEqual);
         duplicates = Util.listSelect1(rest, fullMod, fullModCrefsEqual);
@@ -3099,7 +3097,7 @@ algorithm
         s2 = PrefixUtil.makePrefixString(pre);
         s3 = Util.stringDelimitList(Util.listMap1(duplicates, prettyPrintFullMod, 1), ", ");
         s2 = s2 +& ", duplicates are: " +& s3;
-        Error.addMessageOrSourceMessage(Error.MULTIPLE_MODIFIER, {s1,s2}, infoOpt);
+        Error.addSourceMessage(Error.MULTIPLE_MODIFIER, {s1,s2}, info);
       then
         fail();
   end matchcontinue;
