@@ -125,6 +125,7 @@ algorithm
 
     case (SCode.DERIVED(ty, mods, attr, cmt), _, _)
       equation
+        checkRecursiveShortDefinition(ty, inEnv, inInfo);
         env = SCodeEnv.removeExtendsFromLocalScope(inEnv);
         (_, ty, _) = SCodeLookup.lookupTypeSpec(ty, env, inInfo);
         mods = flattenModifier(mods, inEnv, inInfo);
@@ -141,6 +142,35 @@ algorithm
     else then inClassDef;
   end match;
 end flattenClassDefs;
+
+protected function checkRecursiveShortDefinition
+  input Absyn.TypeSpec inTypeSpec;
+  input Env inEnv;
+  input Absyn.Info inInfo;
+algorithm
+  _ := matchcontinue(inTypeSpec, inEnv, inInfo)
+    local
+      Absyn.Path path;
+      String type_name, env_name;
+      
+    case (Absyn.TPATH(path = path), 
+          SCodeEnv.FRAME(name = SOME(env_name)) :: _, _)
+      equation
+        type_name = Absyn.pathFirstIdent(path);
+        false = stringEqual(type_name, env_name);
+      then
+        ();
+
+    case (Absyn.TPATH(path = path), 
+          SCodeEnv.FRAME(name = SOME(env_name)) :: _, _)
+      equation
+        type_name = Absyn.pathString(path);
+        Error.addSourceMessage(Error.RECURSIVE_SHORT_CLASS_DEFINITION, 
+          {env_name, type_name}, inInfo);
+      then
+        fail();
+  end matchcontinue;
+end checkRecursiveShortDefinition;
 
 protected function isNotImport
   input SCode.Element inElement;
