@@ -164,7 +164,7 @@ public:
 
     void closeEvent(QCloseEvent *event);
 private slots:
-    void openSimulation();
+    void openSimulation(); 
     void openNewModel();
     void openNewClass();
     void openNewConnector();

@@ -59,6 +59,9 @@ class PolygonAnnotation;
 class RectangleAnnotation;
 class EllipseAnnotation;
 class TextAnnotation;
+class TextWidget;
+class BitmapAnnotation;
+class BitmapWidget;
 
 class GraphicsScene : public QGraphicsScene
 {
@@ -80,7 +83,8 @@ private:
     void createPolygonShape(QPointF point);
     void createRectangleShape(QPointF point);
     void createEllipseShape(QPointF point);
-    void createTextShape(QPointF point);
+    void createTextShape(QPointF point);    
+    void createBitmapShape(QPointF point);
 public:
     GraphicsView(int iconType, ProjectTab *parent = 0);
     void addComponentObject(Component *icon);
@@ -101,6 +105,10 @@ public:
     RectangleAnnotation *mpRectangleShape;
     EllipseAnnotation *mpEllipseShape;
     TextAnnotation *mpTextShape;
+    TextWidget *mpTextWidget;
+    BitmapAnnotation *mpBitmapShape;
+    BitmapWidget *mpBitmapWidget;
+
     int mIconType;
     bool mIsCreatingConnector;
     bool mIsMovingComponents;
@@ -108,7 +116,8 @@ public:
     bool mIsCreatingPolygon;
     bool mIsCreatingRectangle;
     bool mIsCreatingEllipse;
-    bool mIsCreatingText;
+    bool mIsCreatingText;    
+    bool mIsCreatingBitmap;
     QVector<Connector*> mConnectorsVector;
     ProjectTab *mpParentProjectTab;
     QAction *mpCancelConnectionAction;

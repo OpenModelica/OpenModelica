@@ -32,36 +32,270 @@
  */
 
 #include "TextAnnotation.h"
+#include "SimulationWidget.h"
 
 TextAnnotation::TextAnnotation(QString shape, Component *pParent)
     : ShapeAnnotation(pParent), mpComponent(pParent)
 {
-    // initialize the Line Patterns map.
-    this->mLinePatternsMap.insert("None", Qt::NoPen);
-    this->mLinePatternsMap.insert("Solid", Qt::SolidLine);
-    this->mLinePatternsMap.insert("Dash", Qt::DashLine);
-    this->mLinePatternsMap.insert("Dot", Qt::DotLine);
-    this->mLinePatternsMap.insert("DashDot", Qt::DashDotLine);
-    this->mLinePatternsMap.insert("DashDotDot", Qt::DashDotDotLine);
-
-    // initialize the Fill Patterns map.
-    this->mFillPatternsMap.insert("None", Qt::NoBrush);
-    this->mFillPatternsMap.insert("Solid", Qt::SolidPattern);
-    this->mFillPatternsMap.insert("Horizontal", Qt::HorPattern);
-    this->mFillPatternsMap.insert("Vertical", Qt::VerPattern);
-    this->mFillPatternsMap.insert("Cross", Qt::CrossPattern);
-    this->mFillPatternsMap.insert("Forward", Qt::FDiagPattern);
-    this->mFillPatternsMap.insert("Backward", Qt::BDiagPattern);
-    this->mFillPatternsMap.insert("CrossDiag", Qt::DiagCrossPattern);
-    this->mFillPatternsMap.insert("HorizontalCylinder", Qt::LinearGradientPattern);
-    this->mFillPatternsMap.insert("VerticalCylinder", Qt::LinearGradientPattern);
-    this->mFillPatternsMap.insert("Sphere", Qt::RadialGradientPattern);
-
-    // initialize font weigth and italic property.
+    initializeFields();
     this->mFontWeight = -1;
     this->mFontItalic = false;
+    this->mFontBold = false;
+    this->mFontUnderLine = false;
+    parseShapeAnnotation(shape, mpComponent->mpOMCProxy);
+}
 
-    // Remove { } from shape
+TextAnnotation::TextAnnotation(GraphicsView *graphicsView, QGraphicsItem *pParent)
+    : ShapeAnnotation(graphicsView, pParent)
+{
+    // initialize all fields with default values
+    initializeFields();
+    this->mFontItalic = false;
+    this->mFontBold = false;
+    this->mFontUnderLine = false;
+    mTextString = QString("Text Here");
+    mIsCustomShape = true;
+    setAcceptHoverEvents(true);
+    connect(this, SIGNAL(updateShapeAnnotation()), mpGraphicsView, SLOT(addClassAnnotation()));
+}
+
+TextAnnotation::TextAnnotation(QString shape, GraphicsView *graphicsView, QGraphicsItem *pParent)
+    : ShapeAnnotation(graphicsView, pParent)
+{    
+    // initialize all fields with default values
+    initializeFields();
+    this->mFontItalic = false;
+    this->mFontBold = false;
+    this->mFontUnderLine = false;
+    mIsCustomShape = true;
+    parseShapeAnnotation(shape, mpGraphicsView->mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy);    
+    setAcceptHoverEvents(true);
+    connect(this, SIGNAL(updateShapeAnnotation()), mpGraphicsView, SLOT(addClassAnnotation()));
+}
+
+QRectF TextAnnotation::boundingRect() const
+{    
+    return shape().boundingRect();
+}
+
+QPainterPath TextAnnotation::shape() const
+{
+    QPainterPath path;
+    QPointF p1 = this->mExtent.at(0);
+    QPointF p2 = this->mExtent.at(1);
+
+    qreal left = qMin(p1.x(), p2.x());
+    qreal top = qMin(p1.y(), p2.y());
+    qreal width = fabs(p1.x() - p2.x());
+    qreal height = fabs(p1.y() - p2.y());
+
+    QRectF rect (left, top, width, height);
+    path.addRoundedRect(rect, mCornerRadius, mCornerRadius);
+
+    return path;
+}
+
+void TextAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
+{
+    Q_UNUSED(option);
+    Q_UNUSED(widget);
+
+    QPointF p1 = this->mExtent.at(0);
+    QPointF p2 = this->mExtent.at(1);
+
+    qreal left = qMin(p1.x(), p2.x());
+    qreal top = qMin(p1.y(), p2.y());
+    qreal width = fabs(p1.x() - p2.x());
+    qreal height = fabs(p1.y() - p2.y());
+
+    top = -top;
+    height = -height;
+
+    QRectF rect (left, top, width, height);          
+
+    this -> mFontSize = width;
+
+    while(mFontSize > -height)
+        mFontSize = mFontSize - 0.05;
+    while(mFontSize > width/5.6)
+        mFontSize = mFontSize - 0.05;
+
+    if(!mIsCustomShape)
+    {
+        this -> mFontSize = width;
+
+        while(mFontSize > -height)
+            mFontSize = mFontSize - 0.05;
+        while(mFontSize > width/15)
+            mFontSize = mFontSize - 0.05;
+    }    
+
+    painter->scale(1.0, -1.0);
+    QPen pen(this->mLineColor, this->mThickness, this->mLinePattern);
+    pen.setCosmetic(true);
+    painter->setPen(pen);
+    painter->setBrush(QBrush(this->mFillColor, Qt::SolidPattern));
+    painter->setFont(QFont(this->mFontName, this->mDefaultFontSize + this->mFontSize, this->mFontWeight, this->mFontItalic));
+    painter->drawText(rect, Qt::AlignCenter, this->mTextString, &rect);
+}
+
+void TextAnnotation::checkNameString()
+{
+    if (this->mTextString.contains("%name"))
+    {
+        // if it is a root item the get name
+        if (!mpComponent->mpParentComponent)
+            mTextString = mpComponent->getName();
+        else if (!mpComponent->mpComponentProperties)
+            mTextString = mpComponent->getRootParentComponent()->getName();
+        else if (mpComponent->mpComponentProperties)
+            mTextString = mpComponent->mpComponentProperties->getName();
+    }
+}
+
+void TextAnnotation::checkParameterString()
+{
+    QString parameterString;
+
+    foreach (IconParameters *parameter, mpComponent->mpIconParametersList)
+    {
+        // paramter can be in form R=%R
+        parameterString = QString(parameter->getName()).append("=%").append(parameter->getName());
+        if (parameterString == mTextString)
+        {
+            mTextString = QString(parameter->getName()).append("=").append(parameter->getDefaultValue());
+            break;
+        }
+        // paramter can be in form %R
+        parameterString = QString("%").append(parameter->getName());
+        if (parameterString == mTextString)
+        {
+            mTextString = QString(parameter->getDefaultValue());
+            break;
+        }
+    }
+}
+
+QString TextAnnotation::getTextString()
+{
+    return mTextString.trimmed();
+}
+
+void TextAnnotation::setTextString(QString text)
+{
+    mTextString = text;
+    update(boundingRect());
+}
+
+void TextAnnotation::drawRectangleCornerItems()
+{
+    mIsFinishedCreatingShape = true;
+    for (int i = 0 ; i < this->mExtent.size() ; i++)
+    {
+        QPointF point = this->mExtent.at(i);
+        RectangleCornerItem *rectangleCornerItem = new RectangleCornerItem(point.x(), point.y(), i, this);
+        mRectangleCornerItemsList.append(rectangleCornerItem);
+    }
+    emit updateShapeAnnotation();
+}
+
+void TextAnnotation::addPoint(QPointF point)
+{
+    mExtent.append(point);
+}
+
+void TextAnnotation::updatePoint(int index, QPointF point)
+{
+    mExtent.replace(index, point);
+}
+
+void TextAnnotation::updateEndPoint(QPointF point)
+{
+    mExtent.back() = point;    
+}
+
+void TextAnnotation::updateAnnotation()
+{
+    emit updateShapeAnnotation();
+}
+
+QString TextAnnotation::getShapeAnnotation()
+{
+    QString annotationString;
+    annotationString.append("Text(");
+
+    if (!mVisible)
+    {
+        annotationString.append("visible=false,");
+    }    
+
+    annotationString.append("rotation=").append(QString::number(this->rotation())).append(",");
+
+    annotationString.append("lineColor={");
+    annotationString.append(QString::number(mLineColor.red())).append(",");
+    annotationString.append(QString::number(mLineColor.green())).append(",");
+    annotationString.append(QString::number(mLineColor.blue()));
+    annotationString.append("},");    
+
+    annotationString.append("fillColor={");
+    annotationString.append(QString::number(mFillColor.red())).append(",");
+    annotationString.append(QString::number(mFillColor.green())).append(",");
+    annotationString.append(QString::number(mFillColor.blue()));
+    annotationString.append("},");
+
+    QMap<QString, Qt::PenStyle>::iterator it;
+    for (it = this->mLinePatternsMap.begin(); it != this->mLinePatternsMap.end(); ++it)
+    {
+        if (it.value() == mLinePattern)
+        {
+            annotationString.append("pattern=LinePattern.").append(it.key()).append(",");
+            break;
+        }
+    }
+
+    QMap<QString, Qt::BrushStyle>::iterator fill_it;
+    for (fill_it = this->mFillPatternsMap.begin(); fill_it != this->mFillPatternsMap.end(); ++fill_it)
+    {
+        if (fill_it.value() == mFillPattern)
+        {
+            annotationString.append("fillPattern=FillPattern.").append(fill_it.key()).append(",");
+            break;
+        }
+    }
+
+    annotationString.append("lineThickness=").append(QString::number(mThickness)).append(",");
+    annotationString.append("extent={{");
+    annotationString.append(QString::number(mapToScene(mExtent.at(0)).x())).append(",");
+    annotationString.append(QString::number(mapToScene(mExtent.at(0)).y())).append("},{");
+    annotationString.append(QString::number(mapToScene(mExtent.at(1)).x())).append(",");
+    annotationString.append(QString::number(mapToScene(mExtent.at(1)).y()));
+    annotationString.append("}}");
+
+    annotationString.append(",textString=");
+    annotationString.append('"');
+    annotationString.append(this->getTextString());
+    annotationString.append('"');
+
+    if(mFontItalic || mFontBold || mFontUnderLine)
+    {
+        annotationString.append("textStyle={");
+        {
+            if(mFontItalic)
+                annotationString.append("TextStyle.Italic,");
+            if(mFontBold)
+                annotationString.append("TextStyle.Bold,");
+            if(mFontUnderLine)
+                annotationString.append("TextStyle.UnderLine");
+        }
+        annotationString.append("}");
+    }
+
+    annotationString.append(")");
+    return annotationString;
+}
+
+void TextAnnotation::parseShapeAnnotation(QString shape, OMCProxy *omc)
+{
 
     shape = shape.replace("{", "");
     shape = shape.replace("}", "");
@@ -77,13 +311,13 @@ TextAnnotation::TextAnnotation(QString shape, Component *pParent)
     this->mVisible = static_cast<QString>(list.at(0)).contains("true");
 
     int index = 0;
-    if (mpComponent->mpOMCProxy->mAnnotationVersion == OMCProxy::ANNOTATION_VERSION3X)
+    if (omc->mAnnotationVersion == OMCProxy::ANNOTATION_VERSION3X)
     {
-        mOrigin.setX(static_cast<QString>(list.at(1)).toFloat());
-        mOrigin.setY(static_cast<QString>(list.at(2)).toFloat());
+      mOrigin.setX(static_cast<QString>(list.at(1)).toFloat());
+      mOrigin.setY(static_cast<QString>(list.at(2)).toFloat());
 
-        mRotation = static_cast<QString>(list.at(3)).toFloat();
-        index = 3;
+      mRotation = static_cast<QString>(list.at(3)).toFloat();
+      index = 3;
     }
 
     // 2,3,4 items of list contains the line color.
@@ -153,10 +387,15 @@ TextAnnotation::TextAnnotation(QString shape, Component *pParent)
 
     // 15 item of the list contains the text string.
     index = index + 1;
-    this->mTextString = StringHandler::removeFirstLastQuotes(list.at(index));
 
-    checkNameString();
-    checkParameterString();
+    if(mIsCustomShape)
+        this->mTextString = StringHandler::removeFirstLastQuotes(list.at(index));
+    else
+    {
+        this->mTextString = StringHandler::removeFirstLastQuotes(list.at(index));
+        checkNameString();
+        checkParameterString();
+    }
 
     // 16 item of the list contains the font size.
     index = index + 1;
@@ -170,133 +409,71 @@ TextAnnotation::TextAnnotation(QString shape, Component *pParent)
     }
     else
     {
-        this->mFontName = "Tahoma";
+        //this->mFontName = "Tahoma";
+        this->mFontName = qApp->font().family();
     }
 
     //if item is Diagram view then dont change the font value
-    if (mpComponent->mType == StringHandler::DIAGRAM)
-        this->mDefaultFontSize = 15;
-    else
-        this->mDefaultFontSize = 25;
-
+    //    if (mpComponent->mType == StringHandler::DIAGRAM)
+    //        this->mDefaultFontSize = 15;
+    //    else
+    //        this->mDefaultFontSize = 25;
 }
 
-QRectF TextAnnotation::boundingRect() const
+//TextWidget declarations
+
+TextWidget::TextWidget(TextAnnotation *pTextShape, MainWindow *parent)
+    : QDialog(parent, Qt::WindowTitleHint)
 {
-    if (mExtent.size() < 2)
-        return QRectF();
-    else
-        return QRectF(mExtent.at(0), mExtent.at(1));
+    setWindowTitle(QString(Helper::applicationName).append(" - Text"));
+    setAttribute(Qt::WA_DeleteOnClose);
+    setMaximumSize(175, 150);
+    mpParentMainWindow = parent;
+    mpTextAnnotation = pTextShape;
+    setUpForm();
 }
 
-void TextAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
+void TextWidget::setUpForm()
 {
-    Q_UNUSED(option);
-    Q_UNUSED(widget);
+    mpTextLabel = new QLabel(tr("Text of Label:"));
+    mpTextBox = new QLineEdit(mpTextAnnotation->getTextString());
 
-    QPointF p1 = this->mExtent.at(0);
-    QPointF p2 = this->mExtent.at(1);
+    mpEditButton = new QPushButton(tr("Ok"));
+    mpEditButton->setAutoDefault(true);
+    connect(mpEditButton, SIGNAL(pressed()), this, SLOT(edit()));
 
-    qreal left = qMin(p1.x(), p2.x());
-    qreal top = qMin(p1.y(), p2.y());
-    qreal width = fabs(p1.x() - p2.x());
-    qreal height = fabs(p1.y() - p2.y());
+    mpCancelButton = new QPushButton(tr("Cancel"));
+    mpCancelButton->setAutoDefault(false);
+    connect(mpCancelButton, SIGNAL(pressed()), this, SLOT(reject()));
 
-    top = -top;
-    height = -height;
+    mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
+    mpButtonBox->addButton(mpEditButton, QDialogButtonBox::ActionRole);
+    mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
 
-    QRectF rect (left, top, width, height);
+    QGridLayout *mainLayout = new QGridLayout;
 
-    /*switch (this->mFillPattern)
+    mainLayout->addWidget(mpTextLabel, 0, 0);
+    mainLayout->addWidget(mpTextBox, 1, 0);
+    mainLayout->addWidget(mpButtonBox, 2, 0);
+
+    setLayout(mainLayout);
+}
+
+void TextWidget::edit()
+{
+    if(mpTextBox->text().isEmpty())
     {
-    case Qt::LinearGradientPattern:
-        {
-            QLinearGradient gradient(rect.center().x(), rect.center().y(), rect.center().x(), rect.y());
-            gradient.setColorAt(0.0, this->mFillColor);
-            gradient.setColorAt(1.0, this->mLineColor);
-            gradient.setSpread(QGradient::ReflectSpread);
-            painter->setBrush(gradient);
-            break;
-        }
-    case Qt::Dense1Pattern:
-        {
-            QLinearGradient gradient(rect.center().x(), rect.center().y(), rect.x(), rect.center().y());
-            gradient.setColorAt(0.0, this->mFillColor);
-            gradient.setColorAt(1.0, this->mLineColor);
-            gradient.setSpread(QGradient::ReflectSpread);
-            painter->setBrush(gradient);
-            break;
-        }
-    case Qt::RadialGradientPattern:
-        {
-            QRadialGradient gradient(rect.center().x(), rect.center().y(), width);
-            gradient.setColorAt(0.0, this->mFillColor);
-            gradient.setColorAt(1.0, this->mLineColor);
-            gradient.setSpread(QGradient::ReflectSpread);
-            painter->setBrush(gradient);
-            break;
-        }
-    case Qt::NoBrush:
-        {
-            painter->setBrush(QBrush(this->mFillColor, Qt::SolidPattern));
-        }
-    default:
-        painter->setBrush(QBrush(this->mFillColor, this->mFillPattern));
-        break;
-    }*/
-    painter->scale(1.0, -1.0);
-    QPen pen(this->mLineColor, this->mThickness, this->mLinePattern);
-    pen.setCosmetic(true);
-    painter->setPen(pen);
-    painter->setBrush(QBrush(this->mFillColor, Qt::SolidPattern));
-    painter->setFont(QFont(this->mFontName, this->mDefaultFontSize + this->mFontSize, this->mFontWeight, this->mFontItalic));
-    painter->drawText(rect, Qt::AlignCenter, this->mTextString, &rect);
-}
-
-void TextAnnotation::checkNameString()
-{
-    if (this->mTextString.contains("%name"))
-    {
-        // if it is a root item the get name
-        if (!mpComponent->mpParentComponent)
-            mTextString = mpComponent->getName();
-        else if (!mpComponent->mpComponentProperties)
-            mTextString = mpComponent->getRootParentComponent()->getName();
-        else if (mpComponent->mpComponentProperties)
-            mTextString = mpComponent->mpComponentProperties->getName();
+        return;
     }
+    mpTextAnnotation->setTextString(mpTextBox -> text());
+    mpTextAnnotation->updateAnnotation();
+    accept();
 }
 
-void TextAnnotation::checkParameterString()
+void TextWidget::show()
 {
-    QString parameterString;
-
-    foreach (IconParameters *parameter, mpComponent->mpIconParametersList)
-    {
-        // paramter can be in form R=%R
-        parameterString = QString(parameter->getName()).append("=%").append(parameter->getName());
-        if (parameterString == mTextString)
-        {
-            mTextString = QString(parameter->getName()).append("=").append(parameter->getDefaultValue());
-            break;
-        }
-        // paramter can be in form %R
-        parameterString = QString("%").append(parameter->getName());
-        if (parameterString == mTextString)
-        {
-            mTextString = QString(parameter->getDefaultValue());
-            break;
-        }
-    }
+    setVisible(true);
 }
 
-QString TextAnnotation::getTextString()
-{
-    return mTextString.trimmed();
-}
 
-void TextAnnotation::setTextString(QString text)
-{
-    mTextString = text;
-    update(boundingRect());
-}
+

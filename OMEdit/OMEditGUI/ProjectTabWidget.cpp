@@ -66,7 +66,8 @@ GraphicsView::GraphicsView(int iconType, ProjectTab *parent)
     this->mIsCreatingPolygon = false;
     this->mIsCreatingRectangle = false;
     this->mIsCreatingEllipse = false;
-    this->mIsCreatingText = false;
+    this->mIsCreatingText = false;    
+    this->mIsCreatingBitmap = false;
     //this->setMinimumSize(Helper::viewWidth, Helper::viewHeight);
     this->setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
     this->setTransformationAnchor(QGraphicsView::AnchorUnderMouse);
@@ -354,7 +355,7 @@ void GraphicsView::mouseMoveEvent(QMouseEvent *event)
         mpLineShape->updateEndPoint(this->mapToScene(event->pos()));
         mpLineShape->update();
     }
-    //If creating rectangle shape, the end points shall be updated to the mouse position.
+    //If creating polygon shape, the end points shall be updated to the mouse position.
     else if (this->mIsCreatingPolygon)
     {
         mpPolygonShape->updateEndPoint(this->mapToScene(event->pos()));
@@ -366,11 +367,23 @@ void GraphicsView::mouseMoveEvent(QMouseEvent *event)
         mpRectangleShape->updateEndPoint(this->mapToScene(event->pos()));
         mpRectangleShape->update();
     }
-    //If creating rectangle shape, the end points shall be updated to the mouse position.
+    //If creating ellipse shape, the end points shall be updated to the mouse position.
     else if (this->mIsCreatingEllipse)
     {
         mpEllipseShape->updateEndPoint(this->mapToScene(event->pos()));
         mpEllipseShape->update();
+    }
+    //If creating text shape, the end points shall be updated to the mouse position.
+    else if (this->mIsCreatingText)
+    {
+        mpTextShape->updateEndPoint(this->mapToScene(event->pos()));
+        mpTextShape->update();
+    }
+     //If creating bitmap shape, the end points shall be updated to the mouse position.
+    else if (this->mIsCreatingBitmap)
+    {
+        mpBitmapShape->updateEndPoint(this->mapToScene(event->pos()));
+        mpBitmapShape->update();
     }
 }
 
@@ -390,10 +403,10 @@ void GraphicsView::mousePressEvent(QMouseEvent *event)
         // if we are starting to create a line then create line object and add to graphicsview
         createLineShape(this->mapToScene(event->pos()));
     }
-    // if left button presses and we are starting to create a Line
+    // if left button presses and we are starting to create a Polygon
     else if ((event->button() == Qt::LeftButton) && pMainWindow->polygonAction->isChecked())
     {
-        // if we are starting to create a line then create line object and add to graphicsview
+        // if we are starting to create a polygon then create line object and add to graphicsview
         createPolygonShape(this->mapToScene(event->pos()));
     }
     // if left button presses and we are starting to create a Rectangle
@@ -407,6 +420,18 @@ void GraphicsView::mousePressEvent(QMouseEvent *event)
     {
         // if we are starting to create a rectangle then create rectangle object and add to graphicsview
         createEllipseShape(this->mapToScene(event->pos()));
+    }
+    // if left button presses and we are starting to create a Text
+    else if ((event->button() == Qt::LeftButton) && pMainWindow->textAction->isChecked())
+    {
+        // if we are starting to create a text then create text object and add to graphicsview
+        createTextShape(this->mapToScene(event->pos()));
+    }
+    // if left button presses and we are starting to create a BITMAP
+    else if ((event->button() == Qt::LeftButton) && pMainWindow->bitmapAction->isChecked())
+    {
+        // if we are starting to create a BITMAP then create BITMAP object and add to graphicsview
+        createBitmapShape(this->mapToScene(event->pos()));
     }
     // if left button presses and we are not creating a connector
     else if ((event->button() == Qt::LeftButton))
@@ -423,7 +448,7 @@ void GraphicsView::mousePressEvent(QMouseEvent *event)
     /* don't send mouse press events to items if we are creating something, only send them if creating a connector
        because for connector we need to select end port */
     if (!mIsCreatingLine and !mIsCreatingPolygon and !mIsCreatingRectangle and !mIsCreatingEllipse
-        and !mIsCreatingText)
+        and !mIsCreatingText and !mIsCreatingBitmap)
     {
         QGraphicsView::mousePressEvent(event);
     }
@@ -666,7 +691,75 @@ void GraphicsView::createEllipseShape(QPointF point)
 
 void GraphicsView::createTextShape(QPointF point)
 {
+    if (mpParentProjectTab->isReadOnly())
+        return;
 
+    if (!this->mIsCreatingText)
+    {
+        this->mIsCreatingText = true;
+        mpTextShape = new TextAnnotation(this);
+        mpTextShape->addPoint(point);
+        mpTextShape->addPoint(point);
+        this->scene()->addItem(mpTextShape);
+    }
+    // if we are already creating a text then simply finish creating it.
+    else
+    {
+        // finish creating the text
+        this->mIsCreatingText = false;
+        // add the line to shapes list
+        addShapeObject(mpTextShape);
+        mpTextShape->setFlags(QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable);
+        mpTextShape->drawRectangleCornerItems();
+        // make the toolbar button of line unchecked
+        mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->textAction->setChecked(false);
+
+        mpTextWidget = new TextWidget(mpTextShape, mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow);
+        mpTextWidget -> show();
+    }
+}
+
+void GraphicsView::createBitmapShape(QPointF point)
+{       
+    if (mpParentProjectTab->isReadOnly())
+        return;
+
+    if (!this->mIsCreatingBitmap)        
+    {
+        //If  model doesnt exist, then alert the user...
+        if(mpParentProjectTab->mModelFileName.isEmpty())
+        {
+            QMessageBox *msgBox = new QMessageBox(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow);
+            msgBox->setWindowTitle(QString(Helper::applicationName));
+            msgBox->setIcon(QMessageBox::Warning);
+            msgBox->setText(QString("The class needs to be saved before you can insert a bitmap"));
+            msgBox->setStandardButtons(QMessageBox::Ok);
+            msgBox->setDefaultButton(QMessageBox::Ok);
+            int answer = msgBox->exec();
+            mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->bitmapAction->setChecked(false);
+            return;
+        }
+
+        this->mIsCreatingBitmap = true;
+        mpBitmapShape = new BitmapAnnotation(this);
+        mpBitmapShape->addPoint(point);
+        mpBitmapShape->addPoint(point);
+        this->scene()->addItem(mpBitmapShape);
+    }
+    else
+    {
+        // finish creating the bitmap
+        this->mIsCreatingBitmap = false;
+        // add the line to shapes list
+        addShapeObject(mpBitmapShape);
+        mpBitmapShape->setFlags(QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable);
+        mpBitmapShape->drawRectangleCornerItems();
+        // make the toolbar button of line unchecked
+        mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->bitmapAction->setChecked(false);
+
+        mpBitmapWidget = new BitmapWidget(mpBitmapShape, mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow);
+        mpBitmapWidget->show();
+    }
 }
 
 void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
@@ -881,7 +974,7 @@ void GraphicsView::selectAll()
 }
 
 void GraphicsView::addClassAnnotation()
-{
+{    
     MainWindow *pMainWindow = mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow;
     int counter = 0;
     QString annotationString;
@@ -1540,9 +1633,46 @@ void ProjectTab::getModelShapes(QString annotationString, int type)
             ellipseAnnotation->setSelectionBoxPassive();
         }
         if (shape.startsWith("Text"))
-        {
+        {            
             shape = shape.mid(QString("Text").length());
             shape = StringHandler::removeFirstLastBrackets(shape);
+
+            TextAnnotation *textAnnotation = new TextAnnotation(shape, mpGraphicsView);
+            textAnnotation->setFlags(QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable);
+            // add the shapeannotation item to shapes list
+            if (type == StringHandler::ICON)
+            {
+                mpGraphicsView->addShapeObject(textAnnotation);
+                mpGraphicsView->scene()->addItem(textAnnotation);
+            }
+            else if (type == StringHandler::DIAGRAM)
+            {
+                mpDiagramGraphicsView->addShapeObject(textAnnotation);
+                mpDiagramGraphicsView->scene()->addItem(textAnnotation);
+            }
+            textAnnotation->drawRectangleCornerItems();
+            textAnnotation->setSelectionBoxPassive();
+        }
+        if (shape.startsWith("Bitmap"))
+        {            
+            shape = shape.mid(QString("Bitmap").length());
+            shape = StringHandler::removeFirstLastBrackets(shape);
+
+            BitmapAnnotation *bitmapAnnotation = new BitmapAnnotation(shape, mpGraphicsView);
+            bitmapAnnotation->setFlags(QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable);
+            // add the shapeannotation item to shapes list
+            if (type == StringHandler::ICON)
+            {
+                mpGraphicsView->addShapeObject(bitmapAnnotation);
+                mpGraphicsView->scene()->addItem(bitmapAnnotation);
+            }
+            else if (type == StringHandler::DIAGRAM)
+            {
+                mpDiagramGraphicsView->addShapeObject(bitmapAnnotation);
+                mpDiagramGraphicsView->scene()->addItem(bitmapAnnotation);
+            }
+            bitmapAnnotation->drawRectangleCornerItems();
+            bitmapAnnotation->setSelectionBoxPassive();
         }
     }
 }
@@ -2059,7 +2189,7 @@ bool ProjectTabWidget::saveModel(bool saveAs)
             return false;
         }
         else
-        {
+        {            
             // set the source file in OMC
             pMainWindow->mpOMCProxy->setSourceFile(pCurrentTab->mModelNameStructure, modelFileName);
             // if opened tab is a package save all of its child models
@@ -2201,6 +2331,7 @@ void ProjectTabWidget::openModel(QString fileName)
         else
             fileName = name;
     }
+
 
     // create new OMC instance and load the file in it
     OMCProxy *omc = new OMCProxy(mpParentMainWindow, false);

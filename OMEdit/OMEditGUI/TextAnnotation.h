@@ -36,39 +36,64 @@
 
 #include "ShapeAnnotation.h"
 #include "Component.h"
+#include "mainwindow.h"
 
 class OMCProxy;
 
 class TextAnnotation : public ShapeAnnotation
 {
+    Q_OBJECT
 private:
-    bool mVisible;
-    QPointF mOrigin;
-    qreal mRotation;
-    QColor mLineColor;
-    QColor mFillColor;
-    QMap<QString, Qt::PenStyle> mLinePatternsMap;
-    Qt::PenStyle mLinePattern;
-    QMap<QString, Qt::BrushStyle> mFillPatternsMap;
-    Qt::BrushStyle mFillPattern;
-    qreal mThickness;
-    QList<QPointF> mExtent;
     QString mTextString;
-    int mFontSize;
+    double mFontSize;
     QString mFontName;
     int mFontWeight;
     bool mFontItalic;
+    bool mFontBold;
+    bool mFontUnderLine;
     int mDefaultFontSize;
 public:
     TextAnnotation(QString shape, Component *pParent = 0);
+    TextAnnotation(GraphicsView *graphicsView, QGraphicsItem *pParent = 0);
+    TextAnnotation(QString shape, GraphicsView *graphicsView, QGraphicsItem *pParent = 0);    
+
     QRectF boundingRect() const;
+    QString getTextString();
+    QPainterPath shape() const;
+    QString getShapeAnnotation();
+
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
     void checkNameString();
     void checkParameterString();
-    QString getTextString();
     void setTextString(QString text);
+    void drawRectangleCornerItems();
+    void updateEndPoint(QPointF point);
+    void addPoint(QPointF point);
+    void updateAnnotation();
+    void parseShapeAnnotation(QString shape, OMCProxy *omc);
 
     Component *mpComponent;
+public slots:
+    void updatePoint(int index, QPointF point);
+};
+
+class TextWidget : public QDialog
+{
+    Q_OBJECT
+public:
+    TextWidget(TextAnnotation *pTextShape, MainWindow *parent = 0);
+    MainWindow *mpParentMainWindow;
+    void setUpForm();
+    void show();    
+private:
+   QLabel *mpTextLabel;
+   QLineEdit *mpTextBox;
+   QPushButton *mpEditButton;
+   QPushButton *mpCancelButton;
+   QDialogButtonBox *mpButtonBox;
+   TextAnnotation *mpTextAnnotation;   
+public slots:
+    void edit();
 };
 
 #endif // TEXTANNOTATION_H

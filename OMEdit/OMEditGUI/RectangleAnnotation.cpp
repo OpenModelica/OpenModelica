@@ -150,7 +150,7 @@ void RectangleAnnotation::drawRectangleAnnotaion(QPainter *painter)
 
     QPen pen(mLineColor, mThickness, mLinePattern);
     pen.setCosmetic(true);
-    painter->setPen(pen);
+    painter->setPen(pen);    
 
     path.addRoundedRect(rect, mCornerRadius, mCornerRadius);
     painter->drawPath(path);
@@ -228,7 +228,7 @@ QString RectangleAnnotation::getShapeAnnotation()
     annotationString.append(QString::number(mapToScene(mExtent.at(0)).y())).append("},{");
     annotationString.append(QString::number(mapToScene(mExtent.at(1)).x())).append(",");
     annotationString.append(QString::number(mapToScene(mExtent.at(1)).y()));
-    annotationString.append("}}");
+    annotationString.append("}}");        
 
     annotationString.append(")");
     return annotationString;

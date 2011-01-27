@@ -332,6 +332,12 @@ void MainWindow::createActions()
     textAction->setStatusTip(tr("Draws a text."));
     textAction->setCheckable(true);
     connect(textAction, SIGNAL(triggered()), SLOT(toggleShapesButton()));
+
+    // Add the bitmap picture
+    bitmapAction = new QAction(QIcon(":/Resources/icons/bitmap-shape.png"), tr("Bitmap"), shapesActionGroup);
+    bitmapAction->setStatusTip(tr("Imports a bitmap."));
+    bitmapAction->setCheckable(true);
+    connect(bitmapAction, SIGNAL(triggered()), SLOT(toggleShapesButton()));
 }
 
 //! Creates the menus
@@ -481,6 +487,8 @@ void MainWindow::createToolbars()
     shapesToolBar->addAction(rectangleAction);
     shapesToolBar->addAction(ellipseAction);
     shapesToolBar->addAction(textAction);
+    //ADD bitmapaction HK
+    shapesToolBar->addAction(bitmapAction);
 
     simulationToolBar = addToolBar(tr("Simulation"));
     simulationToolBar->setAllowedAreas(Qt::TopToolBarArea);

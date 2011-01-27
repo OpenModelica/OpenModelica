@@ -44,6 +44,7 @@
 #include "RectangleAnnotation.h"
 #include "EllipseAnnotation.h"
 #include "TextAnnotation.h"
+#include "BitmapAnnotation.h"
 #include "IconProperties.h"
 #include "IconParameters.h"
 #include "ComponentsProperties.h"
@@ -59,6 +60,7 @@ class PolygonAnnotation;
 class RectangleAnnotation;
 class EllipseAnnotation;
 class TextAnnotation;
+class BitmapAnnotation;
 class IconProperties;
 class IconParameters;
 class Transformation;

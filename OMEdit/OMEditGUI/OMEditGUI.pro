@@ -38,7 +38,8 @@ SOURCES += main.cpp\
     Component.cpp \
     Transformation.cpp \
     DocumentationWidget.cpp \
-    OptionsWidget.cpp
+    OptionsWidget.cpp \
+    BitmapAnnotation.cpp
 
 HEADERS  += mainwindow.h \
     ProjectTabWidget.h \
@@ -56,7 +57,7 @@ HEADERS  += mainwindow.h \
     PolygonAnnotation.h \
     RectangleAnnotation.h \
     EllipseAnnotation.h \
-    TextAnnotation.h \
+    TextAnnotation.h \    
     ComponentsProperties.h \
     CornerItem.h \
     ConnectorWidget.h \
@@ -68,7 +69,9 @@ HEADERS  += mainwindow.h \
     Component.h \
     Transformation.h \
     DocumentationWidget.h \
-    OptionsWidget.h
+    OptionsWidget.h \
+    BitmapAnnotation.h
+
 
 # -------For OMNIorb
 win32 {
