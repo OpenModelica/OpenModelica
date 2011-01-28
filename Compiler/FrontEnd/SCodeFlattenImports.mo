@@ -127,7 +127,7 @@ algorithm
       equation
         checkRecursiveShortDefinition(ty, inEnv, inInfo);
         env = SCodeEnv.removeExtendsFromLocalScope(inEnv);
-        (_, ty, _) = SCodeLookup.lookupTypeSpec(ty, env, inInfo);
+        ty = flattenTypeSpec(ty, env, inInfo);
         mods = flattenModifier(mods, inEnv, inInfo);
       then
         SCode.DERIVED(ty, mods, attr, cmt);
@@ -169,6 +169,8 @@ algorithm
           {env_name, type_name}, inInfo);
       then
         fail();
+
+    case (Absyn.TCOMPLEX(path = _), _, _) then ();
   end matchcontinue;
 end checkRecursiveShortDefinition;
 
@@ -240,7 +242,7 @@ algorithm
         info, cc), _)
       equation
         ErrorExt.setCheckpoint("flattenComponent");
-        (_, type_spec, _) = SCodeLookup.lookupTypeSpec(type_spec, inEnv, info);
+        type_spec = flattenTypeSpec(type_spec, inEnv, info);
         mod = flattenModifier(mod, inEnv, info);
         cond = flattenOptExp(cond, inEnv, info);
         ErrorExt.delCheckpoint("flattenComponent");
@@ -269,6 +271,39 @@ algorithm
   end matchcontinue;
 end flattenComponent;
 
+protected function flattenTypeSpec
+  input Absyn.TypeSpec inTypeSpec;
+  input Env inEnv;
+  input Absyn.Info inInfo;
+  output Absyn.TypeSpec outTypeSpec;
+algorithm
+  outTypeSpec := match(inTypeSpec, inEnv, inInfo)
+    local
+      Absyn.Path path;
+      Option<Absyn.ArrayDim> ad;
+      list<Absyn.TypeSpec> tys;
+
+    // A normal type.
+    case (Absyn.TPATH(path = path, arrayDim = ad), _, _)
+      equation
+        (_, path, _) = SCodeLookup.lookupName(path, inEnv, inInfo);
+      then
+        Absyn.TPATH(path, ad);
+
+    // A polymorphic type, i.e. replaceable type Type subtypeof Any.
+    case (Absyn.TCOMPLEX(path = Absyn.IDENT("polymorphic")), _, _)
+      then inTypeSpec;
+
+    // A MetaModelica type such as list or tuple.
+    case (Absyn.TCOMPLEX(path = path, typeSpecs = tys, arrayDim = ad), _, _)
+      equation
+        tys = Util.listMap2(tys, flattenTypeSpec, inEnv, inInfo);
+      then
+        Absyn.TCOMPLEX(path, tys, ad);
+
+  end match;
+end flattenTypeSpec;
+        
 protected function evaluateConditionalExp
   input Option<Absyn.Exp> inExp;
   input Env inEnv;
@@ -586,6 +621,9 @@ algorithm
       then
         ((exp, (env, info)));
 
+    case ((Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "SOME")), _)) 
+      then inTuple;
+
     case ((Absyn.CALL(function_ = cref, functionArgs = args), 
         tup as (env, info)))
       equation
@@ -602,6 +640,11 @@ algorithm
       then
         ((Absyn.PARTEVALFUNCTION(cref, args), tup));
     
+    case ((exp as Absyn.MATCHEXP(matchTy = _), tup as (env, info)))
+      equation
+        env = SCodeEnv.extendEnvWithMatch(exp, env);
+      then
+        ((exp, (env, info)));
     else then inTuple;
   end match;
 end flattenExpTraverserEnter;
@@ -617,6 +660,11 @@ algorithm
       Absyn.Info info;
 
     case ((e as Absyn.CALL(functionArgs = Absyn.FOR_ITER_FARG(iterators = _)),
+        (SCodeEnv.FRAME(frameType = SCodeEnv.IMPLICIT_SCOPE()) :: env, info)))
+      then
+        ((e, (env, info)));
+
+    case ((e as Absyn.MATCHEXP(matchTy = _), 
         (SCodeEnv.FRAME(frameType = SCodeEnv.IMPLICIT_SCOPE()) :: env, info)))
       then
         ((e, (env, info)));

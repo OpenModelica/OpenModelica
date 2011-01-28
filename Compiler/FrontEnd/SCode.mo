@@ -3582,7 +3582,6 @@ algorithm
     case ALG_BREAK(info = info) then info;
     case ALG_TRY(info = info) then info;
     case ALG_CATCH(info = info) then info;
-    case ALG_CATCH(info = info) then info;
     case ALG_THROW(info = info) then info;
     case ALG_FAILURE(info = info) then info;
   end match;

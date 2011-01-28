@@ -744,8 +744,12 @@ end clock;
 function optionNone "Returns true if the input is NONE()"
   input Option<TypeA> opt;
   output Boolean isNone;
+  replaceable type TypeA subtypeof Any;
 external "builtin";
 end optionNone;
+
+type NONE end NONE;
+type SOME end SOME;
 
 function listStringCharString
   input list<String> strs;

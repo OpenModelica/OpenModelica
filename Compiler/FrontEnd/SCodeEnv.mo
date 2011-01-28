@@ -46,6 +46,7 @@ public import SCode;
 protected import Error;
 protected import Util;
 protected import SCodeLookup;
+protected import SCodeUtil;
 
 
 public type Import = Absyn.Import;
@@ -795,6 +796,42 @@ algorithm
   outEnv := extendEnvWithElement(iter, inEnv);
 end extendEnvWithIterator;
 
+public function extendEnvWithMatch
+  input Absyn.Exp inMatchExp;
+  input Env inEnv;
+  output Env outEnv;
+protected
+  Frame frame;
+  list<Absyn.ElementItem> local_decls;
+algorithm
+  frame := newFrame(SOME("$match$"), IMPLICIT_SCOPE());
+  Absyn.MATCHEXP(localDecls = local_decls) := inMatchExp;
+  outEnv := Util.listFold(local_decls, extendEnvWithElementItem, 
+    frame :: inEnv);
+end extendEnvWithMatch;
+
+protected function extendEnvWithElementItem
+  input Absyn.ElementItem inElementItem;
+  input Env inEnv;
+  output Env outEnv;
+algorithm
+  outEnv := match(inElementItem, inEnv)
+    local
+      Absyn.Element element;
+      list<SCode.Element> el;
+      Env env;
+
+    case (Absyn.ELEMENTITEM(element = element), _)
+      equation
+        el = SCodeUtil.translateElement(element, true);
+        env = Util.listFold(el, extendEnvWithElement, inEnv);
+      then 
+        env;
+
+    else then inEnv;
+  end match;
+end extendEnvWithElementItem;
+
 public function insertClassExtendsIntoEnv
   input Env inEnv;
   output Env outEnv;
@@ -1143,6 +1180,9 @@ algorithm
       String name;
       Absyn.Path path;
       Env rest;
+
+    case (FRAME(frameType = IMPLICIT_SCOPE) :: rest)
+      then getEnvPath(rest);
 
     case ({FRAME(name = SOME(name))})
       then Absyn.IDENT(name);

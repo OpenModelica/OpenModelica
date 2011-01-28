@@ -430,7 +430,7 @@ algorithm
     case (_, SCodeEnv.VAR(var = SCode.COMPONENT(typeSpec = type_spec, 
         modifications = mods, info = info)), _)
       equation
-        (item, _, type_env) = lookupTypeSpec(type_spec, inEnv, info);
+        (item, type_env) = lookupTypeSpec(type_spec, inEnv, info);
         redeclares = SCodeEnv.extractRedeclaresFromModifier(mods);
         (item, type_env) = 
           SCodeEnv.replaceRedeclaredClassesInEnv(redeclares, item, type_env, inEnv);
@@ -469,7 +469,7 @@ algorithm
     case (_, SCodeEnv.VAR(var = SCode.COMPONENT(typeSpec = type_spec, 
         modifications = mods, info = info)), _)
       equation
-        (item, _, type_env) = lookupTypeSpec(type_spec, inEnv, info);
+        (item, type_env) = lookupTypeSpec(type_spec, inEnv, info);
         redeclares = SCodeEnv.extractRedeclaresFromModifier(mods);
         (item, type_env) = SCodeEnv.replaceRedeclaredClassesInEnv(redeclares, item, type_env, inEnv);
         (item, cref) = lookupCrefInItem(inCref, item, type_env);
@@ -603,6 +603,8 @@ algorithm
         componentRef = Absyn.CREF_IDENT(name = _)), _, _)
       then inCref;
 
+    case (Absyn.WILD(), _, _) then inCref;
+
     case (_, _, _)
       equation
         // First look up all subscripts, because all subscripts should be found
@@ -684,24 +686,25 @@ public function lookupTypeSpec
   input Env inEnv;
   input Absyn.Info inInfo;
   output Item outItem;
-  output Absyn.TypeSpec outTypeSpec;
   output Env outTypeEnv;
 algorithm
-  (outItem, outTypeSpec, outTypeEnv) := match(inTypeSpec, inEnv, inInfo)
+  (outItem, outTypeEnv) := match(inTypeSpec, inEnv, inInfo)
     local
       Absyn.Path path;
       Absyn.Ident name;
-      Option<Absyn.ArrayDim> array_dim;
       Item item;
       Env env;
 
-    case (Absyn.TPATH(path, array_dim), _, _)
+    case (Absyn.TPATH(path = path), _, _)
       equation
-        (item, path, SOME(env)) = lookupName(path, inEnv, inInfo);
+        (item, _, SOME(env)) = lookupName(path, inEnv, inInfo);
       then
-        (item, Absyn.TPATH(path, array_dim), env);
+        (item, env);
 
+    case (Absyn.TCOMPLEX(path = Absyn.IDENT(name = name)), _, _)
+      then (SCodeEnv.BUILTIN(name), SCodeEnv.emptyEnv);
+         
   end match;
 end lookupTypeSpec;
-    
+   
 end SCodeLookup;

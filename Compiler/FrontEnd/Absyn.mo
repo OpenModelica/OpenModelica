@@ -1854,6 +1854,11 @@ algorithm
       list<list<Exp>> mat_expl;
       FunctionArgs fargs;
       String error_msg;
+      Ident id;
+      MatchType match_ty;
+      list<ElementItem> match_decls;
+      list<Case> match_cases;
+      Option<String> cmt;
 
     case (INTEGER(value = _), _) then (inExp, inTuple);
     case (REAL(value = _), _) then (inExp, inTuple);
@@ -1950,6 +1955,34 @@ algorithm
         (expl, tup) = traverseExpListBidir(expl, tup);
       then
         (TUPLE(expl), tup);
+
+    case (AS(id = id, exp = e1), tup)
+      equation
+        (e1, tup) = traverseExpBidir(e1, tup);
+      then
+        (AS(id, e1), tup);
+
+    case (CONS(head = e1, rest = e2), tup)
+      equation
+        (e1, tup) = traverseExpBidir(e1, tup);
+        (e2, tup) = traverseExpBidir(e2, tup);
+      then
+        (CONS(e1, e2), tup);
+
+    case (MATCHEXP(matchTy = match_ty, inputExp = e1, localDecls = match_decls,
+        cases = match_cases, comment = cmt), tup)
+      equation
+        (e1, tup) = traverseExpBidir(e1, tup);
+        (match_cases, tup) = Util.listMapAndFold(match_cases,
+          traverseMatchCase, tup);
+      then
+        (MATCHEXP(match_ty, e1, match_decls, match_cases, cmt), tup);
+
+    case (LIST(exps = expl), tup)
+      equation
+        (expl, tup) = traverseExpListBidir(expl, tup);
+      then
+        (LIST(expl), tup);
 
     else
       equation
@@ -2147,6 +2180,23 @@ algorithm
   (value, outTuple) := traverseExpOptBidir(value, inTuple);
   outIterator := (name, value);
 end traverseExpBidirIterator;
+
+protected function traverseMatchCase
+  input Case inMatchCase;
+  input tuple<FuncType, FuncType, Argument> inTuple;
+  output Case outMatchCase;
+  output tuple<FuncType, FuncType, Argument> outTuple;
+
+  partial function FuncType
+    input tuple<Exp, Argument> inTuple;
+    output tuple<Exp, Argument> outTuple;
+  end FuncType;
+
+  replaceable type Argument subtypeof Any;
+algorithm
+  outMatchCase := inMatchCase;
+  outTuple := inTuple;
+end traverseMatchCase;
 
 public function makeIdentPathFromString ""
   input String s;
