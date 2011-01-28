@@ -361,9 +361,9 @@ element returns [void* ast] @declarations {
   ;
 
 import_clause returns [void* ast] :
-  IMPORT (imp=explicit_import_name | imp=implicit_import_name) cmt=comment
+  im=IMPORT (imp=explicit_import_name | imp=implicit_import_name) cmt=comment
     {
-      ast = Absyn__IMPORT(imp, mk_some_or_none(cmt));
+      ast = Absyn__IMPORT(imp, mk_some_or_none(cmt), INFO($im));
     }
   ;
 defineunit_clause returns [void* ast] :

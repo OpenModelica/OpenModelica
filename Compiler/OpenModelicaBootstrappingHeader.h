@@ -1067,7 +1067,7 @@ extern struct record_description Absyn_ElementSpec_EXTENDS__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_ElementSpec_IMPORT__desc_added
 #define Absyn_ElementSpec_IMPORT__desc_added
-const char* Absyn_ElementSpec_IMPORT__desc__fields[2] = {"import_","comment"};
+const char* Absyn_ElementSpec_IMPORT__desc__fields[3] = {"import_","comment","info"};
 struct record_description Absyn_ElementSpec_IMPORT__desc = {
   "Absyn_ElementSpec_IMPORT",
   "Absyn.ElementSpec.IMPORT",
@@ -1077,8 +1077,8 @@ struct record_description Absyn_ElementSpec_IMPORT__desc = {
 #else /* Only use the file as a header */
 extern struct record_description Absyn_ElementSpec_IMPORT__desc;
 #endif
-#define Absyn__IMPORT_3dBOX2 5
-#define Absyn__IMPORT(import_,comment) (mmc_mk_box3(5,&Absyn_ElementSpec_IMPORT__desc,import_,comment))
+#define Absyn__IMPORT_3dBOX3 5
+#define Absyn__IMPORT(import_,comment,info) (mmc_mk_box4(5,&Absyn_ElementSpec_IMPORT__desc,import_,comment,info))
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_ElementSpec_COMPONENTS__desc_added
 #define Absyn_ElementSpec_COMPONENTS__desc_added

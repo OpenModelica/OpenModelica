@@ -7574,6 +7574,7 @@ algorithm
       Absyn.ElementSpec spec;
       Option<Absyn.Comment> cmt;
       list<Absyn.ElementArg> elargs;
+      Absyn.Info info;
 
     case (Absyn.COMPONENTS(attributes = a,typeSpec = Absyn.TPATH(path_1,x),components = comp_items),old_comp,new_comp,env) /* the old name for the component signal if something in class have been changed rule */
       equation
@@ -7592,11 +7593,11 @@ algorithm
         new_path = changeLastIdent(path_1, new_comp);
       then
         (Absyn.EXTENDS(new_path,elargs,annOpt),true);
-    case (Absyn.IMPORT(import_ = import_,comment = cmt),old_comp,new_comp,env)
+    case (Absyn.IMPORT(import_ = import_,comment = cmt, info = info),old_comp,new_comp,env)
       equation
         (import_1,changed) = renameClassInImport(import_, old_comp, new_comp, env);
       then
-        (Absyn.IMPORT(import_1,cmt),changed);
+        (Absyn.IMPORT(import_1,cmt,info),changed);
     case (spec,_,comps,env) then (spec,false);
   end matchcontinue;
 end renameClassInElementSpec;

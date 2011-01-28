@@ -336,9 +336,10 @@ algorithm
           d = buildClassDependsInElementAttr(attr,optPath,cname,(d,p,env,ht));
           d = buildClassDependsInComponentItems(citems,optPath,cname,(d,p,env,ht));
         then d;
-        case(_,Absyn.IMPORT(import_,_),optPath,cname,(d,p,env,ht)) equation
-          d = buildClassDependsInImport(import_,optPath,cname,(d,p,env,ht));
-        then d;
+        case(_,Absyn.IMPORT(import_=import_),optPath,cname,(d,p,env,ht))
+          equation
+            d = buildClassDependsInImport(import_,optPath,cname,(d,p,env,ht));
+          then d;
 
         case(false,Absyn.CLASSDEF(class_=cl as Absyn.CLASS(name="equalityConstraint", body = classDef)),optPath,cname,(d,p,env,ht))
           equation

@@ -5848,6 +5848,7 @@ algorithm
       Option<Absyn.Annotation> annotationOpt;
       list<Absyn.ElementArg> elementArg;
       Absyn.Path path;
+      Absyn.Info info;
     case Absyn.CLASSDEF(replaceable_,class_)
       equation
         Print.printBuf("record Absyn.CLASSDEF replaceable_ = ");
@@ -5866,12 +5867,14 @@ algorithm
         printOption(annotationOpt, printAnnotationAsCorbaString);
         Print.printBuf(" end Absyn.EXTENDS;");
       then ();
-    case Absyn.IMPORT(import_, comment)
+    case Absyn.IMPORT(import_, comment, info)
       equation
         Print.printBuf("record Absyn.IMPORT import_ = ");
         printImportAsCorbaString(import_);
         Print.printBuf(", comment = ");
         printOption(comment, printCommentAsCorbaString);
+        Print.printBuf(", info = ");
+        printInfoAsCorbaString(info);
         Print.printBuf(" end Absyn.IMPORT;");
       then ();
     case Absyn.COMPONENTS(attributes,typeSpec,components)

@@ -386,6 +386,7 @@ uniontype ElementSpec "An element is something that occurs in a public or protec
   record IMPORT
     Import import_ "import" ;
     Option<Comment> comment "comment" ;
+    Info info;
   end IMPORT;
 
   record COMPONENTS
