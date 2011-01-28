@@ -3641,6 +3641,7 @@ algorithm
           SCode.DERIVED(Absyn.TCOMPLEX(path=_),modifications = mod),
           re,prot,inst_dims,impl,_,graph,instSingleCref,info,stopInst)
       equation
+        true = RTOpts.acceptMetaModelicaGrammar();
         false = Mod.emptyModOrEquality(mods) and SCode.emptyModOrEquality(mod);
         Error.addSourceMessage(Error.META_COMPLEX_TYPE_MOD, {}, info);
       then fail();

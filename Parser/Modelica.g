@@ -201,14 +201,14 @@ class_specifier2 returns [void* ast, const char *s2] @init {
     }
 | EQUALS attr=base_prefix path=type_specifier ( cm=class_modification )? cmt=comment
     {
-      $ast = Absyn__DERIVED(path, attr, or_nil(cm), mk_some_or_none(cmt));
+      $ast = Absyn__DERIVED($path.ast, attr, or_nil(cm), mk_some_or_none(cmt));
     }
 | EQUALS cs=enumeration {$ast=cs;}
 | EQUALS cs=pder {$ast=cs;}
 | EQUALS cs=overloading {$ast=cs;}
 | SUBTYPEOF ts=type_specifier
    {
-     $ast = Absyn__DERIVED(Absyn__TCOMPLEX(Absyn__IDENT(mk_scon("polymorphic")),mk_cons(ts,mk_nil()),mk_nil()),
+     $ast = Absyn__DERIVED(Absyn__TCOMPLEX(Absyn__IDENT(mk_scon("polymorphic")),mk_cons($ts.ast,mk_nil()),mk_nil()),
                            Absyn__ATTR(RML_FALSE,RML_FALSE,Absyn__VAR,Absyn__BIDIR,mk_nil()),mk_nil(),mk_none());
    }
 )
@@ -413,15 +413,15 @@ component_clause returns [void* ast] @declarations {
   tp=type_prefix path=type_specifier clst=component_list
     {
       // Take the last (array subscripts) from type and move it to ATTR
-      if (RML_GETHDR(path) == RML_STRUCTHDR(2, Absyn__TPATH_3dBOX2)) // is TPATH(path, arr)
+      if (RML_GETHDR($path.ast) == RML_STRUCTHDR(2, Absyn__TPATH_3dBOX2)) // is TPATH(path, arr)
 			{
-				struct rml_struct *p = (struct rml_struct*)RML_UNTAGPTR(path);
+				struct rml_struct *p = (struct rml_struct*)RML_UNTAGPTR($path.ast);
 				ar_option = p->data[1+UNBOX_OFFSET];  // get the array option
 				p->data[1+UNBOX_OFFSET] = mk_none();  // replace the array with nothing
 			}
-			else if (RML_GETHDR(path) == RML_STRUCTHDR(3, Absyn__TCOMPLEX_3dBOX3))
+			else if (RML_GETHDR($path.ast) == RML_STRUCTHDR(3, Absyn__TCOMPLEX_3dBOX3))
 			{
-				struct rml_struct *p = (struct rml_struct*)RML_UNTAGPTR(path);
+				struct rml_struct *p = (struct rml_struct*)RML_UNTAGPTR($path.ast);
 				ar_option = p->data[2+UNBOX_OFFSET];         // get the array option
 				p->data[2+UNBOX_OFFSET] = mk_none();  // replace the array with nothing
 			}
@@ -443,7 +443,7 @@ component_clause returns [void* ast] @declarations {
 				}
 		  }
 
-      ast = Absyn__COMPONENTS(Absyn__ATTR(tp.flow, tp.stream, tp.variability, tp.direction, arr), path, clst);
+      ast = Absyn__COMPONENTS(Absyn__ATTR(tp.flow, tp.stream, tp.variability, tp.direction, arr), $path.ast, clst);
     }
   ;
 
@@ -459,17 +459,20 @@ type_prefix returns [void* flow, void* stream, void* variability, void* directio
 
 type_specifier returns [void* ast] :
   np=name_path
-  (LESS ts=type_specifier_list GREATER)? (as=array_subscripts)?
+  (lt=LESS ts=type_specifier_list gt=GREATER)? (as=array_subscripts)?
     {
-      if (ts != NULL)
-        ast = Absyn__TCOMPLEX(np,ts,mk_some_or_none(as));
-      else
-        ast = Absyn__TPATH(np,mk_some_or_none(as));
+      if (ts != NULL) {
+        modelicaParserAssert(metamodelica_enabled(),"Algebraic data types are only available in MetaModelica", type_specifier, $start->line, $start->charPosition+1, $gt->line, $gt->charPosition+2);
+
+        $ast = Absyn__TCOMPLEX(np,ts,mk_some_or_none(as));
+      } else {
+        $ast = Absyn__TPATH(np,mk_some_or_none(as));
+      }
     }
   ;
 
 type_specifier_list returns [void* ast] :
-  np1=type_specifier (COMMA np2=type_specifier_list)? {ast = mk_cons(np1,or_nil(np2));}
+  np1=type_specifier (COMMA np2=type_specifier_list)? {ast = mk_cons($np1.ast,or_nil(np2));}
   ;
 
 component_list returns [void* ast] :
@@ -559,7 +562,7 @@ element_replaceable [int each, int final, int redeclare] returns [void* ast] @in
 component_clause1 returns [void* ast] :
   attr=base_prefix ts=type_specifier comp_decl=component_declaration1
     {
-      ast = Absyn__COMPONENTS(attr, ts, mk_cons(comp_decl, mk_nil()));
+      ast = Absyn__COMPONENTS(attr, $ts.ast, mk_cons(comp_decl, mk_nil()));
     }
   ;
 
