@@ -2674,8 +2674,8 @@ algorithm
         res = instdimsIntOptList(ss);
       then
         DAE.DIM_UNKNOWN() :: res;
-    // The case of non-expanded arrays. Possibly SLICE will have to be replaced by something else     
-    case (DAE.SLICE(exp=e) :: ss) 
+    // The case of non-expanded arrays.      
+    case (DAE.WHOLE_NONEXP(exp=e) :: ss) 
       equation
         false = RTOpts.splitArrays();
         res = instdimsIntOptList(ss);
@@ -7521,7 +7521,7 @@ algorithm
         false = RTOpts.splitArrays();
         // Try to deduce the dimension from the modifier.
         dime = instWholeDimFromMod(dim, mod);
-        dime2 = makeRangeSubscript(dime);
+        dime2 = makeNonExpSubscript(dime);
         dim = Expression.subscriptDimension(dime);
         inst_dims_1 = Util.listListAppendLast(inst_dims, {dime2});
         (cache,compenv,ih,store,dae,csets,ty,graph) =
@@ -8341,10 +8341,10 @@ algorithm
       Integer i;
 
     case (DAE.DIM_UNKNOWN(),_) then DAE.WHOLEDIM();
-    case (DAE.DIM_INTEGER(integer = i),_) then DAE.SLICE(DAE.RANGE(DAE.ET_INT(),DAE.ICONST(1),NONE(),DAE.ICONST(i)));
-    case (DAE.DIM_ENUM(size = i), _) then DAE.SLICE(DAE.RANGE(DAE.ET_INT(),DAE.ICONST(1),NONE(),DAE.ICONST(i)));
-    case (DAE.DIM_EXP(exp = e as DAE.RANGE(exp = _)), _) then DAE.INDEX(e);
-    case (DAE.DIM_EXP(exp = e), _) then DAE.SLICE(DAE.RANGE(DAE.ET_INT(),DAE.ICONST(1),NONE(),e));
+    case (DAE.DIM_INTEGER(integer = i),_) then DAE.WHOLE_NONEXP(DAE.ICONST(i));
+    case (DAE.DIM_ENUM(size = i), _) then DAE.WHOLE_NONEXP(DAE.ICONST(i));
+    //case (DAE.DIM_EXP(exp = e as DAE.RANGE(exp = _)), _) then DAE.INDEX(e);
+    case (DAE.DIM_EXP(exp = e), _) then DAE.WHOLE_NONEXP(e);
   end matchcontinue;
 end instDimExpNonSplit;
 
@@ -14534,7 +14534,7 @@ algorithm
   end match;
 end handleStreamOperatorsExp;
 
-protected function makeRangeSubscript
+protected function makeNonExpSubscript
   input DAE.Subscript inSubscript;
   output DAE.Subscript outSubscript;
 algorithm
@@ -14543,11 +14543,11 @@ algorithm
     DAE.Exp e;
     DAE.Subscript subscript;
     case DAE.INDEX(e)
-      then DAE.SLICE(DAE.RANGE(DAE.ET_INT(),DAE.ICONST(1),NONE(),e));
-    case (subscript as DAE.SLICE(_))
+      then DAE.WHOLE_NONEXP(e);
+    case (subscript as DAE.WHOLE_NONEXP(_))
       then subscript;    
   end match;
-end makeRangeSubscript;
+end makeNonExpSubscript;
 
 protected function checkSelfReference
   input String inName;

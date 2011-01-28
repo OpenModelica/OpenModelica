@@ -1924,6 +1924,11 @@ algorithm
         t = makeArraySubscripts((DAE.T_ARRAY(DAE.DIM_UNKNOWN(),t),NONE()),lst);
       then
         t;
+    case (t,DAE.WHOLE_NONEXP(e)::lst)
+      equation
+        t = makeArraySubscripts((DAE.T_ARRAY(DAE.DIM_UNKNOWN(),t),NONE()),lst);
+      then
+        t;
 
     case (t,DAE.INDEX(DAE.ICONST(i))::lst)
       equation
@@ -6267,15 +6272,15 @@ algorithm
       Integer i;
       DAE.Exp e;
     // An array with an explicit dimension  
-    case (ty,DAE.SLICE(DAE.RANGE(exp=DAE.ICONST(1),expOption=NONE(),range=DAE.ICONST(i))))   
+    case (ty,DAE.WHOLE_NONEXP(exp=DAE.ICONST(i)))   
       then ((DAE.T_ARRAY(DAE.DIM_INTEGER(i),ty),NONE()));   
-    case (ty,DAE.INDEX(DAE.RANGE(exp=DAE.ICONST(1),expOption=NONE(),range=DAE.ICONST(i))))   
-      then ((DAE.T_ARRAY(DAE.DIM_INTEGER(i),ty),NONE()));
+    /*case (ty,DAE.INDEX(exp=DAE.ICONST(i)))   
+      then ((DAE.T_ARRAY(DAE.DIM_INTEGER(i),ty),NONE()));*/
     // An array with parametric dimension  
-    case (ty,DAE.SLICE(DAE.RANGE(exp=DAE.ICONST(1),expOption=NONE(),range = e)))   
+    case (ty,DAE.WHOLE_NONEXP(exp = e))   
       then ((DAE.T_ARRAY(DAE.DIM_EXP(e),ty),NONE()));   
-    case (ty,DAE.INDEX(DAE.RANGE(exp=DAE.ICONST(1),expOption=NONE(),range = e)))   
-      then ((DAE.T_ARRAY(DAE.DIM_EXP(e),ty),NONE()));   
+    /*case (ty,DAE.INDEX(DAE.RANGE(exp=DAE.ICONST(1),expOption=NONE(),range = e)))   
+      then ((DAE.T_ARRAY(DAE.DIM_EXP(e),ty),NONE()));*/   
     // All other kinds of subscripts denote an index, so the type stays the same
     case (ty,_)
       then ty;       

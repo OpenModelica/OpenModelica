@@ -453,6 +453,11 @@ algorithm
         s = dumpExpStr(e1,0);
       then
         s;
+    case (DAE.WHOLE_NONEXP(exp = e1))
+      equation
+        s = dumpExpStr(e1,0);
+      then
+        "1:"+&s;
   end match;
 end debugPrintSubscriptStr;
 
@@ -477,6 +482,11 @@ algorithm
         s = printExpStr(e1);
       then
         s;
+    case (DAE.WHOLE_NONEXP(exp = e1))
+      equation
+        s = printExpStr(e1);
+      then
+        "1:"+&s;
   end match;
 end printSubscriptStr;
 
@@ -1753,6 +1763,12 @@ algorithm
         ();
     case (DAE.SLICE(exp = e1))
       equation
+        printExp(e1);
+      then
+        ();
+    case (DAE.WHOLE_NONEXP(exp = e1))
+      equation
+        Print.printBuf("1:");
         printExp(e1);
       then
         ();

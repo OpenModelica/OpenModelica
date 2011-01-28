@@ -1349,13 +1349,13 @@ algorithm
     case  DAE.WHOLEDIM() then DAE.DIM_UNKNOWN();
     
     // Special cases for non-expanded arrays
-    case  DAE.SLICE(DAE.RANGE(exp=DAE.ICONST(1),expOption=NONE(),range=DAE.ICONST(x)))
+    case  DAE.WHOLE_NONEXP(exp = DAE.ICONST(x))
       equation
         false = RTOpts.splitArrays();
       then
         DAE.DIM_INTEGER(x);
     
-    case DAE.SLICE(DAE.RANGE(exp=DAE.ICONST(1),expOption=NONE(),range=e))
+    case DAE.WHOLE_NONEXP(exp=e)
       equation
         false = RTOpts.splitArrays();
       then
@@ -6097,6 +6097,9 @@ algorithm
     // indexes as heads, compare the index exps and then compare the rest
     case ((DAE.INDEX(exp = e1) :: xs1),(DAE.INDEX(exp = e2) :: xs2))
       then subscriptEqual(xs1, xs2) and expEqual(e1, e2);
+
+    case ((DAE.WHOLE_NONEXP(exp = e1) :: xs1),(DAE.WHOLE_NONEXP(exp = e2) :: xs2))
+      then subscriptEqual(xs1, xs2) and expEqual(e1, e2);
     
     // subscripts are not equal, return false  
     else false;
@@ -6155,6 +6158,12 @@ algorithm
     case({},_) then true;
     
     case(ss1 ::ssl1, (ss2 as DAE.WHOLEDIM())::ssl2)
+      equation
+        b = subscriptContain(ssl1,ssl2);
+      then b;
+
+    // Should there be additional checking in this case?
+    case(ss1 ::ssl1, (ss2 as DAE.WHOLE_NONEXP(_))::ssl2)
       equation
         b = subscriptContain(ssl1,ssl2);
       then b;

@@ -1420,6 +1420,11 @@ uniontype Subscript "The `Subscript\' and `ComponentRef\' datatypes are simple
   record INDEX
     Exp exp "a[i+1]" ;
   end INDEX;
+  
+  record WHOLE_NONEXP "Used for non-expanded arrays. Should probably be combined with WHOLEDIM
+    into one case with Option<Exp> argument."
+    Exp exp;
+  end WHOLE_NONEXP;  
 
 end Subscript;
 /* -- End Expression.mo -- */

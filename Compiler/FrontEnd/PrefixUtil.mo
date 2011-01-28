@@ -525,6 +525,10 @@ algorithm
       (cache,exp) = prefixExp(cache,env,inIH,exp,pre);
     then (cache,DAE.SLICE(exp));
     
+    case(cache,env,inIH,pre,DAE.WHOLE_NONEXP(exp)) equation
+      (cache,exp) = prefixExp(cache,env,inIH,exp,pre);
+    then (cache,DAE.WHOLE_NONEXP(exp));
+    
     case(cache,env,inIH,pre,DAE.INDEX(exp)) equation
       (cache,exp) = prefixExp(cache,env,inIH,exp,pre);
     then (cache,DAE.INDEX(exp));
