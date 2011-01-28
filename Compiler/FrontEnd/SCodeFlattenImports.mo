@@ -286,7 +286,7 @@ algorithm
     // A normal type.
     case (Absyn.TPATH(path = path, arrayDim = ad), _, _)
       equation
-        (_, path, _) = SCodeLookup.lookupName(path, inEnv, inInfo);
+        (_, path, _) = SCodeLookup.lookupClassName(path, inEnv, inInfo);
       then
         Absyn.TPATH(path, ad);
 
@@ -336,7 +336,7 @@ algorithm
         path = Absyn.crefToPath(cref);
         (SCodeEnv.VAR(var = SCode.COMPONENT(modifications = 
             SCode.MOD(absynExpOption = SOME((exp, _))))), _, SOME(env)) = 
-          SCodeLookup.lookupName(path, inEnv, Absyn.dummyInfo);
+          SCodeLookup.lookupClassName(path, inEnv, Absyn.dummyInfo);
       then 
         evaluateBinding(exp, env);
 
@@ -356,7 +356,7 @@ protected
 algorithm
   SCode.EXTENDS(path, mod, ann, info) := inExtends;
   env := SCodeEnv.removeExtendsFromLocalScope(inEnv);
-  (_, path, _) := SCodeLookup.lookupName(path, env, info);
+  (_, path, _) := SCodeLookup.lookupBaseClassName(path, env, info);
   mod := flattenModifier(mod, inEnv, info);
   outExtends := SCode.EXTENDS(path, mod, ann, info);
 end flattenExtends;
@@ -706,62 +706,5 @@ algorithm
 
   end match;
 end flattenComponentRefSubs;
-
         
-//protected function expandExtend
-//  input SCode.Element inElement;
-//  input Env inEnv;
-//  input SCode.ClassDef inClassDef;
-//  output SCode.ClassDef outClassDef;
-//algorithm
-//  outClassDef := matchcontinue(inElement, inEnv, inClassDef)
-//    local
-//      Absyn.Path path;
-//      SCode.Mod mods;
-//      SCode.ClassDef base_cdef, merged_cdef;
-//
-//    case (SCode.EXTENDS(baseClassPath = path, modifications = mods), _, _)
-//      equation
-//        SCode.CLASS(classDef = base_cdef) = SCodeLookup.lookupName(path, inEnv);
-//        merged_cdef = mergeClassDefs(base_cdef, inClassDef);
-//      then
-//        merged_cdef;
-//
-//  end matchcontinue;
-//end expandExtend;
-//
-//protected function mergeClassDefs
-//  input SCode.ClassDef inClassDef1;
-//  input SCode.ClassDef inClassDef2;
-//  output SCode.ClassDef outClassDef;
-//algorithm
-//  outClassDef := matchcontinue(inClassDef1, inClassDef2)
-//    local
-//      list<SCode.Element> el1, el2;
-//      list<SCode.Equation> neql1, neql2, ieql1, ieql2;
-//      list<SCode.AlgorithmSection> nal1, nal2, ial1, ial2;
-//      list<SCode.Annotation> annl;
-//      Option<SCode.Comment> cmt;
-//
-//    case (SCode.PARTS(el1, neql1, ieql1, nal1, ial1, NONE(), _, _),
-//          SCode.PARTS(el2, neql2, ieql2, nal2, ial2, NONE(), annl, cmt))
-//      equation
-//        // TODO: Handle duplicate elements!
-//        el1 = listAppend(el1, el2);
-//        neql1 = listAppend(neql1, neql2);
-//        ieql1 = listAppend(ieql1, ieql2);
-//        nal1 = listAppend(nal1, nal2);
-//        ial1 = listAppend(ial1, ial2);
-//      then
-//        SCode.PARTS(el1, neql1, ieql1, nal1, ial2, NONE(), annl, cmt);
-//
-//    else
-//      equation
-//        Debug.fprintln("failtrace", "- SCodeFlatten.mergeClassDefs failed.");
-//      then
-//        fail();
-//  end matchcontinue;
-//end mergeClassDefs;
-// 
-
 end SCodeFlattenImports;

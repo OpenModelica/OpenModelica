@@ -2194,9 +2194,189 @@ protected function traverseMatchCase
 
   replaceable type Argument subtypeof Any;
 algorithm
-  outMatchCase := inMatchCase;
-  outTuple := inTuple;
+  (outMatchCase, outTuple) := match(inMatchCase, inTuple)
+    local
+      tuple<FuncType, FuncType, Argument> tup;
+      Exp pattern, result;
+      Info info, pinfo;
+      list<ElementItem> ldecls;
+      list<EquationItem> eql;
+      Option<String> cmt;
+
+    case (CASE(pattern = pattern, patternInfo = pinfo, localDecls = ldecls, 
+        equations = eql, result = result, comment = cmt, info = info), tup)
+      equation
+        (pattern, tup) = traverseExpBidir(pattern, tup);
+        (eql, tup) = Util.listMapAndFold(eql, traverseEquationItemBidir, tup);
+        (result, tup) = traverseExpBidir(result, tup);
+      then
+        (CASE(pattern, pinfo, ldecls, eql, result, cmt, info), tup);
+
+    case (ELSE(localDecls = ldecls, equations = eql, result = result, 
+        comment = cmt, info = info), tup)
+      equation
+        (eql, tup) = Util.listMapAndFold(eql, traverseEquationItemBidir, tup);
+        (result, tup) = traverseExpBidir(result, tup);
+      then
+        (ELSE(ldecls, eql, result, cmt, info), tup);
+
+  end match;
 end traverseMatchCase;
+
+protected function traverseEquationItemListBidir
+  input list<EquationItem> inEquationItems;
+  input tuple<FuncType, FuncType, Argument> inTuple;
+  output list<EquationItem> outEquationItems;
+  output tuple<FuncType, FuncType, Argument> outTuple;
+
+  partial function FuncType
+    input tuple<Exp, Argument> inTuple;
+    output tuple<Exp, Argument> outTuple;
+  end FuncType;
+
+  replaceable type Argument subtypeof Any;
+algorithm
+  (outEquationItems, outTuple) := Util.listMapAndFold(inEquationItems,
+    traverseEquationItemBidir, inTuple);
+end traverseEquationItemListBidir;
+
+protected function traverseEquationItemBidir
+  input EquationItem inEquationItem;
+  input tuple<FuncType, FuncType, Argument> inTuple;
+  output EquationItem outEquationItem;
+  output tuple<FuncType, FuncType, Argument> outTuple;
+
+  partial function FuncType
+    input tuple<Exp, Argument> inTuple;
+    output tuple<Exp, Argument> outTuple;
+  end FuncType;
+
+  replaceable type Argument subtypeof Any;
+algorithm
+  (outEquationItem, outTuple) := match(inEquationItem, inTuple)
+    local
+      tuple<FuncType, FuncType, Argument> tup;
+      Equation eq;
+      Option<Comment> cmt;
+      Info info;
+
+    case (EQUATIONITEM(equation_ = eq, comment = cmt, info = info), tup)
+      equation
+        (eq, tup) = traverseEquationBidir(eq, tup);
+      then
+        (EQUATIONITEM(eq, cmt, info), tup);
+
+    case (EQUATIONITEMANN(annotation_ = _), _) 
+      then (inEquationItem, inTuple);
+  
+  end match;
+end traverseEquationItemBidir;
+
+public function traverseEquationBidir
+  input Equation inEquation;
+  input tuple<FuncType, FuncType, Argument> inTuple;
+  output Equation outEquation;
+  output tuple<FuncType, FuncType, Argument> outTuple;
+
+  partial function FuncType
+    input tuple<Exp, Argument> inTuple;
+    output tuple<Exp, Argument> outTuple;
+  end FuncType;
+
+  replaceable type Argument subtypeof Any;
+algorithm
+  (outEquation, outTuple) := match(inEquation, inTuple)
+    local
+      tuple<FuncType, FuncType, Argument> tup;
+      Exp e1, e2;
+      list<EquationItem> eqil1, eqil2;
+      list<tuple<Exp, list<EquationItem>>> else_branch;
+      ComponentRef cref1, cref2;
+      ForIterators iters;
+      FunctionArgs func_args;
+      EquationItem eq;
+
+    case (EQ_IF(ifExp = e1, equationTrueItems = eqil1, 
+        elseIfBranches = else_branch, equationElseItems = eqil2), tup)
+      equation
+        (e1, tup) = traverseExpBidir(e1, tup);
+        (eqil1, tup) = traverseEquationItemListBidir(eqil1, tup);
+        (else_branch, tup) = Util.listMapAndFold(else_branch,
+          traverseEquationBidirElse, tup);
+        (eqil2, tup) = traverseEquationItemListBidir(eqil2, tup);
+      then
+        (EQ_IF(e1, eqil1, else_branch, eqil2), tup);
+
+    case (EQ_EQUALS(leftSide = e1, rightSide = e2), tup)
+      equation
+        (e1, tup) = traverseExpBidir(e1, tup);
+        (e2, tup) = traverseExpBidir(e2, tup);
+      then
+        (EQ_EQUALS(e1, e2), tup);
+
+    case (EQ_CONNECT(connector1 = cref1, connector2 = cref2), tup)
+      equation
+        (cref1, tup) = traverseExpBidirCref(cref1, tup);
+        (cref2, tup) = traverseExpBidirCref(cref2, tup);
+      then
+        (EQ_CONNECT(cref1, cref2), tup);
+
+    case (EQ_FOR(iterators = iters, forEquations = eqil1), tup)
+      equation
+        (iters, tup) = Util.listMapAndFold(iters, 
+          traverseExpBidirIterator, tup);
+        (eqil1, tup) = traverseEquationItemListBidir(eqil1, tup);
+      then
+        (EQ_FOR(iters, eqil1), tup);
+
+    case (EQ_WHEN_E(whenExp = e1, whenEquations = eqil1, 
+        elseWhenEquations = else_branch), tup)
+      equation
+        (e1, tup) = traverseExpBidir(e1, tup);
+        (eqil1, tup) = traverseEquationItemListBidir(eqil1, tup);
+        (else_branch, tup) = Util.listMapAndFold(else_branch,
+          traverseEquationBidirElse, tup);
+      then
+        (EQ_WHEN_E(e1, eqil1, else_branch), tup);
+
+    case (EQ_NORETCALL(functionName = cref1, functionArgs = func_args), tup)
+      equation
+        (cref1, tup) = traverseExpBidirCref(cref1, tup);
+        (func_args, tup) = traverseExpBidirFunctionArgs(func_args, tup);
+      then
+        (EQ_NORETCALL(cref1, func_args), tup);
+
+    case (EQ_FAILURE(equ = eq), tup)
+      equation
+        (eq, tup) = traverseEquationItemBidir(eq, tup);
+      then
+        (EQ_FAILURE(eq), tup);
+
+  end match;
+end traverseEquationBidir;
+
+protected function traverseEquationBidirElse
+  input tuple<Exp, list<EquationItem>> inElse;
+  input tuple<FuncType, FuncType, Argument> inTuple;
+  output tuple<Exp, list<EquationItem>> outElse;
+  output tuple<FuncType, FuncType, Argument> outTuple;
+
+  partial function FuncType
+    input tuple<Exp, Argument> inTuple;
+    output tuple<Exp, Argument> outTuple;
+  end FuncType;
+
+  replaceable type Argument subtypeof Any;
+protected
+  Exp e;
+  list<EquationItem> eqil;
+  tuple<FuncType, FuncType, Argument> tup;
+algorithm
+  (e, eqil) := inElse;
+  (e, tup) := traverseExpBidir(e, inTuple);
+  (eqil, outTuple) := traverseEquationItemListBidir(eqil, tup);
+  outElse := (e, eqil);
+end traverseEquationBidirElse;
 
 public function makeIdentPathFromString ""
   input String s;

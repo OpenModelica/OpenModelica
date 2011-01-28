@@ -194,7 +194,7 @@ protected
   Absyn.Path path;
   Env env;
 algorithm
-  (_, path, SOME(env)) := SCodeLookup.lookupName(inPath, inEnv, inInfo);
+  (_, path, SOME(env)) := SCodeLookup.lookupClassName(inPath, inEnv, inInfo);
   outPath := mergePathWithEnvPath(path, env);
 end qualifyPath;
 
@@ -906,7 +906,8 @@ algorithm
     case (SCode.CLASSDEF(name = name, classDef = 
         cls as SCode.CLASS(info = info)), _)
       equation
-        (_, path, SOME(env)) = SCodeLookup.lookupName(Absyn.IDENT(name), inEnv, info);
+        (_, path, SOME(env)) = 
+          SCodeLookup.lookupClassName(Absyn.IDENT(name), inEnv, info);
         path = joinPaths(getEnvPath(env), path);
         env = replaceElementInEnv(path, inRedeclare, inEnv);
       then
@@ -914,7 +915,8 @@ algorithm
 
     case (SCode.COMPONENT(component = name, info = info), _)
       equation
-        (_, path, SOME(env)) = SCodeLookup.lookupName(Absyn.IDENT(name), inEnv, info);
+        (_, path, SOME(env)) = 
+          SCodeLookup.lookupVariableName(Absyn.IDENT(name), inEnv, info);
         path = joinPaths(getEnvPath(env), path);
         env = replaceElementInEnv(path, inRedeclare, inEnv);
       then

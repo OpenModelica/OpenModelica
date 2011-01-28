@@ -41,6 +41,7 @@ encapsulated package SCodeLookup
 "
 
 public import Absyn;
+public import Error;
 public import SCode;
 public import SCodeEnv;
 
@@ -52,7 +53,6 @@ public type FrameType = SCodeEnv.FrameType;
 public type AvlTree = SCodeEnv.AvlTree;
 public type Import = Absyn.Import;
 
-protected import Error;
 protected import SCodeFlattenImports;
 
 public function lookupSimpleName
@@ -214,7 +214,7 @@ algorithm
     case (_, SCodeEnv.EXTENDS(baseClass = bc, redeclareModifiers = redecls, 
         info = info) :: _, inEnv)
       equation
-        (item, _, SOME(env)) = lookupName(bc, inEnv, info);
+        (item, _, SOME(env)) = lookupBaseClassName(bc, inEnv, info);
         (item, env) = SCodeEnv.replaceRedeclaredClassesInEnv(redecls, item, env, inEnv);
         (item, path, env) = lookupNameInItem(Absyn.IDENT(inName), item, env);
       then
@@ -527,19 +527,23 @@ algorithm
   end match;
 end lookupBuiltinType;
 
-public function lookupName
+protected function lookupName
   "Looks up a simple or qualified name in the environment and returns the
   environment item corresponding to the name, the fully qualified path for the
   name and optionally the enclosing scope of the name if the name references a
-  class."
+  class. This function doesn't know what kind of thing the name references, so
+  to get meaningful error messages you should use one of the lookup****Name
+  below instead."
   input Absyn.Path inName;
   input Env inEnv;
   input Absyn.Info inInfo;
+  input Error.ErrorID inErrorType;
   output Item outItem;
   output Absyn.Path outName;
   output Option<Env> outEnv;
 algorithm
-  (outItem, outName, outEnv) := matchcontinue(inName, inEnv, inInfo)
+  (outItem, outName, outEnv) := 
+  matchcontinue(inName, inEnv, inInfo, inErrorType)
     local
       Absyn.Ident id;
       Item item;
@@ -548,21 +552,21 @@ algorithm
       Option<Env> item_env;
       String name_str, env_str;
 
-    case (Absyn.IDENT(name = id), _, _)
+    case (Absyn.IDENT(name = id), _, _, _)
       equation
         item = lookupBuiltinType(id);
       then
         (item, inName, SOME(SCodeEnv.emptyEnv));
 
     // Simple name.
-    case (Absyn.IDENT(name = id), _, _)
+    case (Absyn.IDENT(name = id), _, _, _)
       equation
         (item, new_path, env) = lookupSimpleName(id, inEnv);
       then
         (item, new_path, SOME(env));
 
     // Qualified name.
-    case (Absyn.QUALIFIED(name = id, path = path), _, _)
+    case (Absyn.QUALIFIED(name = id, path = path), _, _, _)
       equation
         // Look up the first identifier.
         (item, new_path, env) = lookupSimpleName(id, inEnv);
@@ -577,13 +581,51 @@ algorithm
       equation
         name_str = Absyn.pathString(inName);
         env_str = SCodeEnv.getEnvName(inEnv);
-        Error.addSourceMessage(Error.LOOKUP_VARIABLE_ERROR,
-          {name_str, env_str}, inInfo);
+        Error.addSourceMessage(inErrorType, {name_str, env_str}, inInfo);
       then
         fail();
         
   end matchcontinue;
 end lookupName;
+
+public function lookupClassName
+  "Calls lookupName with the 'Class not found' error message."
+  input Absyn.Path inName;
+  input Env inEnv;
+  input Absyn.Info inInfo;
+  output Item outItem;
+  output Absyn.Path outName;
+  output Option<Env> outEnv;
+algorithm
+  (outItem, outName, outEnv) := lookupName(inName, inEnv, inInfo,
+    Error.LOOKUP_ERROR);
+end lookupClassName;
+
+public function lookupBaseClassName
+  "Calls lookupName with the 'Baseclass not found' error message."
+  input Absyn.Path inName;
+  input Env inEnv;
+  input Absyn.Info inInfo;
+  output Item outItem;
+  output Absyn.Path outName;
+  output Option<Env> outEnv;
+algorithm
+  (outItem, outName, outEnv) := lookupName(inName, inEnv, inInfo,
+    Error.LOOKUP_BASECLASS_ERROR);
+end lookupBaseClassName;
+
+public function lookupVariableName
+  "Calls lookupName with the 'Variable not found' error message."
+  input Absyn.Path inName;
+  input Env inEnv;
+  input Absyn.Info inInfo;
+  output Item outItem;
+  output Absyn.Path outName;
+  output Option<Env> outEnv;
+algorithm
+  (outItem, outName, outEnv) := lookupName(inName, inEnv, inInfo,
+    Error.LOOKUP_VARIABLE_ERROR);
+end lookupVariableName;
 
 public function lookupComponentRef
   "Look up a component reference in the environment and returns it fully
@@ -697,7 +739,7 @@ algorithm
 
     case (Absyn.TPATH(path = path), _, _)
       equation
-        (item, _, SOME(env)) = lookupName(path, inEnv, inInfo);
+        (item, _, SOME(env)) = lookupClassName(path, inEnv, inInfo);
       then
         (item, env);
 
