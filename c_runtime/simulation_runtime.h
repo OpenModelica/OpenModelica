@@ -121,8 +121,6 @@ typedef enum {
   STATESDERIVATIVESNAMES  = 1<<13,
   ALGEBRAICSNAMES         = 1<<14,
   PARAMETERSNAMES         = 1<<15,
-  INPUTNAMES              = 1<<16,
-  OUTPUTNAMES             = 1<<17,
   FUNCTIONNAMES           = 1<<18,
   EQUATIONINFO            = 1<<19,
   JACOBIANNAMES           = 1<<20,

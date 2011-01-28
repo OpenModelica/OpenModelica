@@ -230,8 +230,6 @@ case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
   <%globalDataVarInfoArray("state_names", vars.stateVars)%>
   <%globalDataVarInfoArray("derivative_names", vars.derivativeVars)%>
   <%globalDataVarInfoArray("algvars_names", vars.algVars)%>
-  <%globalDataVarInfoArray("input_names", vars.inputVars)%>
-  <%globalDataVarInfoArray("output_names", vars.outputVars)%>
   <%globalDataVarInfoArray("param_names", vars.paramVars)%>
   <%globalDataVarInfoArray("int_alg_names", vars.intAlgVars)%>
   <%globalDataVarInfoArray("int_param_names", vars.intParamVars)%>
@@ -759,18 +757,6 @@ template functionInitializeDataStruc()
       returnData->bool_param_names = bool_param_names;
     } else {
       returnData->bool_param_names = 0;
-    }
-    
-    if(flags & INPUTNAMES) {
-      returnData->inputNames = input_names;
-    } else {
-      returnData->inputNames = 0;
-    }
-    
-    if(flags & OUTPUTNAMES) {
-      returnData->outputNames = output_names;
-    } else {
-      returnData->outputNames = 0;
     }
     
     if(flags & JACOBIANNAMES) {
