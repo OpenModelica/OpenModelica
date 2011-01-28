@@ -5512,7 +5512,7 @@ algorithm
         (cache,env_2,ih);
 
     /* Import statement */
-    case (cache,env,ih,mod,pre,csets,cistate,((SCode.IMPORT(_),_) :: xs),allcomps,eqns,instdims,impl)
+    case (cache,env,ih,mod,pre,csets,cistate,((SCode.IMPORT(imp = _),_) :: xs),allcomps,eqns,instdims,impl)
       equation
         (cache,env_2,ih) = addComponentsToEnv(cache, env, ih, mod, pre, csets, cistate, xs, allcomps, eqns, instdims, impl);
       then
@@ -12709,9 +12709,9 @@ algorithm
     then (name_,info);
   case(SCode.COMPONENT(component = name_, info=info))
     then (name_,info);
-  case(SCode.IMPORT(imp))
+  case(SCode.IMPORT(imp = imp, info = info))
     equation name_ = Absyn.printImportString(imp);
-    then (name_,Absyn.dummyInfo);
+  then (name_,info);
 end match;
 end extractCurrentName;
 
@@ -13286,7 +13286,7 @@ algorithm oltuple := matchcontinue(ltuple)
       mod = traverseModAddFinal2(c8);
     then
       SCode.COMPONENT(c1,c2,c3,c4,c5,c6,c7,mod,c10,c11,c12,c13)::rest;
-  case((ele as SCode.IMPORT(_))::rest)
+  case((ele as SCode.IMPORT(imp = _))::rest)
     equation
       rest = traverseModAddFinal3(rest);
     then ele::rest;

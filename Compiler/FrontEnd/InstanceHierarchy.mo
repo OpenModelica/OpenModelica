@@ -298,7 +298,7 @@ algorithm
       then
         i::ihrest;
 
-    case (scope, (el as SCode.IMPORT(_))::rest)
+    case (scope, (el as SCode.IMPORT(imp = _))::rest)
       equation
         fpath = makePath(scope, "$import$");
         fullCref = Absyn.pathToCref(fpath);

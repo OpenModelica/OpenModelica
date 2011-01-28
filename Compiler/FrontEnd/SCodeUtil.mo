@@ -1092,11 +1092,11 @@ algorithm
       then
         (SCode.COMPONENT(n,io,finalPrefix,repl_1,prot,SCode.ATTR(tot_dim,fl,st,SCode.RW(),pa_1,di),t,mod,comment_1,cond,info,cc) :: xs_1);
 
-    case (cc,finalPrefix,_,repl,prot,Absyn.IMPORT(import_ = imp),_)
+    case (cc,finalPrefix,_,repl,prot,Absyn.IMPORT(import_ = imp, info = info),_)
       equation
         // Debug.fprintln("translate", "translating import: " +& Dump.unparseImportStr(imp));
       then
-        {SCode.IMPORT(imp)};
+        {SCode.IMPORT(imp, info)};
   end match;
 end translateElementspec;
 
@@ -1827,7 +1827,7 @@ public function getImportFromElement
   input SCode.Element elt;
   output Absyn.Import imp;
 algorithm
-  SCode.IMPORT(imp) := elt;
+  SCode.IMPORT(imp = imp) := elt;
 end getImportFromElement;
 
 protected function checkForDuplicateClassesInTopScope

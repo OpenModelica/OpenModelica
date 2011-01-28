@@ -55,6 +55,13 @@ public type Import = Absyn.Import;
 
 protected import SCodeFlattenImports;
 
+public constant Item BUILTIN_REAL = SCodeEnv.BUILTIN("Real");
+public constant Item BUILTIN_INTEGER = SCodeEnv.BUILTIN("Integer");
+public constant Item BUILTIN_BOOLEAN = SCodeEnv.BUILTIN("Boolean");
+public constant Item BUILTIN_STRING = SCodeEnv.BUILTIN("String");
+public constant Item BUILTIN_STATESELECT = SCodeEnv.BUILTIN("StateSelect");
+public constant Item BUILTIN_EXTERNALOBJECT = SCodeEnv.BUILTIN("ExternalObject");
+
 public function lookupSimpleName
   "Looks up a simple identifier in the environment and returns the environment
   item, the path, and the enclosing scope of the name."
@@ -568,12 +575,12 @@ public function lookupBuiltinType
   output Item outItem;
 algorithm
   outItem := match(inName)
-    case "Real" then SCodeEnv.BUILTIN_REAL;
-    case "Integer" then SCodeEnv.BUILTIN_INTEGER;
-    case "Boolean" then SCodeEnv.BUILTIN_BOOLEAN;
-    case "String" then SCodeEnv.BUILTIN_STRING;
-    case "StateSelect" then SCodeEnv.BUILTIN_STATESELECT;
-    case "ExternalObject" then SCodeEnv.BUILTIN_EXTERNALOBJECT;
+    case "Real" then BUILTIN_REAL;
+    case "Integer" then BUILTIN_INTEGER;
+    case "Boolean" then BUILTIN_BOOLEAN;
+    case "String" then BUILTIN_STRING;
+    case "StateSelect" then BUILTIN_STATESELECT;
+    case "ExternalObject" then BUILTIN_EXTERNALOBJECT;
   end match;
 end lookupBuiltinType;
 

@@ -43,10 +43,12 @@ encapsulated package SCodeEnv
 public import Absyn;
 public import SCode;
 
+protected import Debug;
 protected import Error;
-protected import Util;
+protected import RTOpts;
 protected import SCodeLookup;
 protected import SCodeUtil;
+protected import Util;
 
 
 public type Import = Absyn.Import;
@@ -106,13 +108,6 @@ end Item;
 
 public type Env = list<Frame>;
 public constant Env emptyEnv = {};
-
-public constant Item BUILTIN_REAL = BUILTIN("Real");
-public constant Item BUILTIN_INTEGER = BUILTIN("Integer");
-public constant Item BUILTIN_BOOLEAN = BUILTIN("Boolean");
-public constant Item BUILTIN_STRING = BUILTIN("String");
-public constant Item BUILTIN_STATESELECT = BUILTIN("StateSelect");
-public constant Item BUILTIN_EXTERNALOBJECT = BUILTIN("ExternalObject");
 
 protected function qualifyRedeclare
   "Since a modifier might redeclare an element in a variable with a type that
@@ -177,6 +172,7 @@ algorithm
 
     else
       equation
+        true = RTOpts.debugFlag("failtrace");
         print("- SCodeFlatten.qualifyRedeclare failed on " +&
           SCode.printElementStr(inElement) +& " in " +&
           Absyn.pathString(getEnvPath(inEnv)) +& "\n");
@@ -435,6 +431,7 @@ algorithm
       list<Import> qual_imps, unqual_imps;
       FrameType ty;
       Env rest;
+      Absyn.Info info;
 
     // Unqualified imports
     case (SCode.IMPORT(imp = imp as Absyn.UNQUAL_IMPORT(path = _)), 
@@ -445,11 +442,11 @@ algorithm
         FRAME(name, ty, tree, exts, IMPORT_TABLE(qual_imps, unqual_imps)) :: rest;
 
     // Qualified imports
-    case (SCode.IMPORT(imp = imp), 
+    case (SCode.IMPORT(imp = imp, info = info), 
         FRAME(name, ty, tree, exts, IMPORT_TABLE(qual_imps, unqual_imps)) :: rest)
       equation
         imp = translateQualifiedImportToNamed(imp);
-        checkUniqueQualifiedImport(imp, qual_imps);
+        checkUniqueQualifiedImport(imp, qual_imps, info);
         qual_imps = imp :: qual_imps;
       then
         FRAME(name, ty, tree, exts, IMPORT_TABLE(qual_imps, unqual_imps)) :: rest;
@@ -526,7 +523,8 @@ algorithm
 
     else
       equation
-        print("- SCodeFlatten.replaceRedeclaredClassesInEnv failed!\n");
+        true = RTOpts.debugFlag("failtrace");
+        Debug.traceln("- SCodeFlatten.replaceRedeclaredClassesInEnv failed!");
       then
         fail();
   end matchcontinue;
@@ -657,18 +655,12 @@ algorithm
 
     case (SCode.COMPONENT(component = _), _)
       equation
-        //print("Extending environment with component " +&
-        //    getEnvName(inEnv) +& "." +&
-        //    SCode.elementName(inElement) +& "\n");
         env = extendEnvWithVar(inElement, inEnv);
       then
         env;
 
     case (SCode.CLASSDEF(classDef = _), _)
       equation
-        //print("Extending environment with class def " +&
-        //    getEnvName(inEnv) +& "." +&
-        //    SCode.elementName(inElement) +& "\n");
         env = extendEnvWithClassDef(inElement, inEnv);
       then
         env;
@@ -694,11 +686,27 @@ end extendEnvWithElement;
 protected function checkUniqueQualifiedImport
   input Import inImport;
   input list<Import> inImports;
-protected
-  Absyn.Ident name;
+  input Absyn.Info inInfo;
 algorithm
-  false := Util.listContainsWithCompareFunc(inImport, inImports,
-    compareQualifiedImportNames);
+  _ := matchcontinue(inImport, inImports, inInfo)
+    local
+      Absyn.Ident name;
+
+    case (_, _, _)
+      equation
+        false = Util.listContainsWithCompareFunc(inImport, inImports,
+          compareQualifiedImportNames);
+      then
+        ();
+
+    case (Absyn.NAMED_IMPORT(name = name), _, _)
+      equation
+        Error.addSourceMessage(Error.MULTIPLE_QUALIFIED_IMPORTS_WITH_SAME_NAME,
+          {name}, inInfo);
+      then
+        fail();
+
+  end matchcontinue;
 end checkUniqueQualifiedImport;
 
 protected function compareQualifiedImportNames
@@ -715,41 +723,12 @@ algorithm
     case (Absyn.NAMED_IMPORT(name = name1), Absyn.NAMED_IMPORT(name = name2))
       equation
         true = stringEqual(name1, name2);
-        print("Error: qualified import with same names: " +& name1 +& "!\n");
       then
         true;
 
     else then false;
   end matchcontinue;
 end compareQualifiedImportNames;
-
-protected function checkUniqueQualifiedImport2
-  input Absyn.Ident inName;
-  input list<Import> inImports;
-algorithm
-  _ := matchcontinue(inName, inImports)
-    local
-      Absyn.Ident name;
-      Import imp;
-      list<Import> rest_imps;
-
-    case (_, {}) then ();
-
-    case (_, Absyn.NAMED_IMPORT(name = name) :: _)
-      equation
-        true = stringEqual(name, inName);
-        print("Error: qualified import with same names: " +& name +& "!\n");
-      then
-        fail();
-
-    case (_, _ :: rest_imps)
-      equation
-        checkUniqueQualifiedImport2(inName, rest_imps);
-      then
-        ();
-
-  end matchcontinue;
-end checkUniqueQualifiedImport2;
 
 protected function extendEnvWithEnum
   input SCode.Enum inEnum;
@@ -1023,7 +1002,8 @@ algorithm
 
     else
       equation
-        print("- SCodeFlatten.replaceElementInEnv3 failed.\n");
+        true = RTOpts.debugFlag("failtrace");
+        Debug.traceln("- SCodeFlatten.replaceElementInEnv3 failed.");
       then
         fail();
 

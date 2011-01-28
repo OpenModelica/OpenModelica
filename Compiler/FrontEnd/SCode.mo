@@ -443,6 +443,7 @@ uniontype Element "- Elements
 
   record IMPORT "an import element"
     Absyn.Import imp "the import definition";
+    Absyn.Info info;
   end IMPORT;
 
   record COMPONENT "a component"
@@ -1569,7 +1570,7 @@ public function elementEqual
        then 
          true;
      
-     case (IMPORT(im1), IMPORT(im2))      
+    case (IMPORT(imp = im1), IMPORT(imp = im2))      
        equation
          true = Absyn.importEqual(im1,im2);
        then 
