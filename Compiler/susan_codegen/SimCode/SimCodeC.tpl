@@ -5638,14 +5638,14 @@ template daeExpReductionFnName(String reduction_op, String type)
   match reduction_op
   case "sum" then
     match type
-    case "modelica_integer" then "intAdd"
-    case "modelica_real" then "realAdd"
+    case "modelica_integer" then "reduction_sum"
+    case "modelica_real" then "reduction_sum"
     else "INVALID_TYPE"
     end match
   case "product" then
     match type
-    case "modelica_integer" then "intMul"
-    case "modelica_real" then "realMul"
+    case "modelica_integer" then "reduction_product"
+    case "modelica_real" then "reduction_product"
     else "INVALID_TYPE"
     end match  
   else reduction_op

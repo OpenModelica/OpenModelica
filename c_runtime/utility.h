@@ -53,4 +53,7 @@ modelica_integer modelica_mod_integer(modelica_integer x, modelica_integer y);
 modelica_real modelica_rem_real(modelica_real x, modelica_real y);
 modelica_integer modelica_rem_integer(modelica_integer x, modelica_integer y);
 
+#define reduction_sum(X,Y) ((X)+(Y))
+#define reduction_product(X,Y) ((X)*(Y))
+
 #endif

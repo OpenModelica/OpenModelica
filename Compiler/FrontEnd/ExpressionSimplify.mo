@@ -529,7 +529,7 @@ algorithm
   outExp := match(exp)
     local
       list<DAE.Exp> expl;
-      DAE.Exp e,len_exp,just_exp;
+      DAE.Exp e,len_exp,just_exp,e1,e2;
       DAE.ExpType tp;
       list<DAE.Exp> v1, v2;
       Boolean scalar;
@@ -537,6 +537,18 @@ algorithm
       Integer i;
       String str;
     
+    // min/max function on arrays of only 1 element
+    case (DAE.CALL(path=Absyn.IDENT("min"),expLst={DAE.ARRAY(array={e})})) then simplify1(e);
+    case (DAE.CALL(path=Absyn.IDENT("max"),expLst={DAE.ARRAY(array={e})})) then simplify1(e);
+    case (DAE.CALL(path=Absyn.IDENT("min"),ty=DAE.ET_ARRAY(tp,{_}),expLst={DAE.ARRAY(array={e1,e2})}))
+      equation
+        e = Expression.makeBuiltinCall("min",{e1,e2},tp);
+      then simplify1(e);
+    case (DAE.CALL(path=Absyn.IDENT("max"),ty=DAE.ET_ARRAY(tp,{_}),expLst={DAE.ARRAY(array={e1,e2})}))
+      equation
+        e = Expression.makeBuiltinCall("max",{e1,e2},tp);
+      then simplify1(e);
+
     // cross
     case (e as DAE.CALL(path = Absyn.IDENT("cross"), builtin = true, expLst = expl))
       equation
