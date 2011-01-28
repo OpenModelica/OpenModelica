@@ -246,6 +246,7 @@ public constant ErrorID WHEN_EQ_LHS=158;
 public constant ErrorID GENERIC_ELAB_EXPRESSION=159;
 public constant ErrorID EXTENDS_EXTERNAL=160;
 public constant ErrorID DOUBLE_DECLARATION_OF_ELEMENTS=161;
+public constant ErrorID INVALID_REDECLARATION_OF_CLASS=162;
 
 public constant ErrorID UNBOUND_PARAMETER_WITH_START_VALUE_WARNING=499;
 public constant ErrorID UNBOUND_PARAMETER_WARNING=500;
@@ -689,6 +690,8 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (EXTENDS_EXTERNAL,TRANSLATION(),WARNING(),"Ignoring external declaration of the extended class: %s."),
           (DOUBLE_DECLARATION_OF_ELEMENTS,TRANSLATION(),ERROR(),
             "An element with name %s is already declared in this scope."),
+          (INVALID_REDECLARATION_OF_CLASS,TRANSLATION(),ERROR(),
+          "Invalid redeclaration of class %s, class extends only allowed on inherited classes."),
           (MATCHCONTINUE_TO_MATCH_OPTIMIZATION,TRANSLATION(),NOTIFICATION(),"This matchcontinue expression has no overlapping patterns and should be using match instead of matchcontinue."),
           (META_DEAD_CODE,TRANSLATION(),NOTIFICATION(),"Dead code elimination: %s."),
           (META_UNUSED_DECL,TRANSLATION(),NOTIFICATION(),"Unused local variable: %s."),

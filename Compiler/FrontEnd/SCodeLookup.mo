@@ -56,6 +56,8 @@ public type Import = Absyn.Import;
 protected import SCodeFlattenImports;
 
 public function lookupSimpleName
+  "Looks up a simple identifier in the environment and returns the environment
+  item, the path, and the enclosing scope of the name."
   input Absyn.Ident inName;
   input Env inEnv;
   output Item outItem;
@@ -67,6 +69,8 @@ algorithm
 end lookupSimpleName;
 
 public function lookupSimpleName2
+  "Helper function to lookupSimpleName. Looks up a simple identifier in the
+  environment."
   input Absyn.Ident inName;
   input Env inEnv;
   output Option<Item> outItem;
@@ -81,12 +85,15 @@ algorithm
       Option<Absyn.Path> opt_path;
       Option<Env> opt_env;
 
+    // Check the local scope.
     case (_, _)
       equation
         (opt_item, opt_path, opt_env) = lookupInLocalScope(inName, inEnv);
       then
         (opt_item, opt_path, opt_env);
 
+    // If not found in the local scope, check the next frame unless the current
+    // frame is encapsulated.
     case (_, SCodeEnv.FRAME(frameType = frame_type) :: rest_env)
       equation
         frameNotEncapsulated(frame_type);
@@ -98,6 +105,7 @@ algorithm
 end lookupSimpleName2;
 
 public function frameNotEncapsulated
+  "Fails if the frame type is encapsulated, otherwise succeeds."
   input FrameType frameType;
 algorithm
   _ := match(frameType)
@@ -154,13 +162,13 @@ algorithm
     // Look among the unqualified imports.
     case (_, SCodeEnv.FRAME(importTable = SCodeEnv.IMPORT_TABLE(unqualifiedImports = imps)) :: _)
       equation
-        (opt_item, opt_path, opt_env) = 
+        (item, path, env) = 
           lookupInUnqualifiedImports(inName, imps, inEnv);
       then
-        (opt_item, opt_path, opt_env);
+        (SOME(item), SOME(path), SOME(env));
 
     // Look in the next scope only if the current scope is an implicit scope
-    // created by a for loop.
+    // (for example a for or match/matchcontinue scope).
     case (_, SCodeEnv.FRAME(frameType = SCodeEnv.IMPLICIT_SCOPE()) :: rest_env)
       equation
         (opt_item, opt_path, opt_env) = lookupInLocalScope(inName, rest_env);
@@ -182,7 +190,8 @@ public function lookupInBaseClasses
   Env env;
   list<Extends> bcl;
 algorithm
-  SCodeEnv.FRAME(extendsTable = SCodeEnv.EXTENDS_TABLE(baseClasses = bcl as _ :: _)) :: _ := inEnv;
+  SCodeEnv.FRAME(extendsTable = 
+    SCodeEnv.EXTENDS_TABLE(baseClasses = bcl as _ :: _)) :: _ := inEnv;
   // We need to remove the extends from the current scope, because the names of
   // extended classes should not be found by lookup through the extends-clauses
   // (Modelica Specification 3.2, section 5.6.1.).
@@ -192,6 +201,8 @@ algorithm
 end lookupInBaseClasses;
 
 public function lookupInBaseClasses2
+  "Helper function to lookupInBaseClasses. Looks up an identifier through the
+  extends clauses in a scope."
   input Absyn.Ident inName;
   input list<Extends> inBaseClasses;
   input Env inEnv;
@@ -214,7 +225,9 @@ algorithm
     case (_, SCodeEnv.EXTENDS(baseClass = bc, redeclareModifiers = redecls, 
         info = info) :: _, inEnv)
       equation
+        // Find the base class.
         (item, _, SOME(env)) = lookupBaseClassName(bc, inEnv, info);
+        // Look in the base class.
         (item, env) = SCodeEnv.replaceRedeclaredClassesInEnv(redecls, item, env, inEnv);
         (item, path, env) = lookupNameInItem(Absyn.IDENT(inName), item, env);
       then
@@ -231,6 +244,12 @@ algorithm
 end lookupInBaseClasses2;
 
 public function lookupInQualifiedImports
+  "Looks up a name through the qualified imports in a scope. If it finds the
+  name it returns the item, path, and environment for the name. It can also find
+  a partial match, in which case it returns NONE() to signal that the lookup
+  shouldn't look further. This can happen if the have an 'import A.B' and an
+  element 'B.C', but C is not in A.B. Finally it can also fail to find anything,
+  in which case it simply fails as normal."
   input Absyn.Ident inName;
   input list<Import> inImports;
   input Env inEnv;
@@ -279,22 +298,22 @@ algorithm
 end lookupInQualifiedImports;
 
 public function lookupInUnqualifiedImports
+  "Looks up a name through the qualified imports in a scope. If it finds the
+  name it returns the item, path, and environment for the name, otherwise it
+  fails."
   input Absyn.Ident inName;
   input list<Import> inImports;
   input Env inEnv;
-  output Option<Item> outItem;
-  output Option<Absyn.Path> outPath;
-  output Option<Env> outEnv;
+  output Item outItem;
+  output Absyn.Path outPath;
+  output Env outEnv;
 algorithm
   (outItem, outPath, outEnv) := matchcontinue(inName, inImports, inEnv)
     local
       Item item;
       Absyn.Path path, path2;
-      Option<Item> opt_item;
-      Option<Absyn.Path> opt_path;
       list<Import> rest_imps;
       Env env;
-      Option<Env> opt_env;
 
     // For each unqualified import we have to look up the package the import
     // points to, and then look among the public member of the package for the
@@ -308,19 +327,21 @@ algorithm
         // Combine the paths for the name and the package it was found in.
         path = SCodeEnv.joinPaths(path, path2);
       then
-        (SOME(item), SOME(path), SOME(env));
+        (item, path, env);
 
     // No match, continue with the rest of the imports.
     case (_, _ :: rest_imps, _)
       equation
-        (opt_item, opt_path, opt_env) = 
+        (item, path, env) = 
           lookupInUnqualifiedImports(inName, rest_imps, inEnv);
       then
-        (opt_item, opt_path, opt_env);
+        (item, path, env);
   end matchcontinue;
 end lookupInUnqualifiedImports;
 
 public function lookupFullyQualified
+  "Looks up a fully qualified path in the environment, returning the
+  environment item, path and environment of the name if found."
   input Absyn.Path inName;
   input Env inEnv;
   output Item outItem;
@@ -338,6 +359,8 @@ algorithm
 end lookupFullyQualified;
 
 public function lookupNameInPackage
+  "Looks up a name inside the environment of a package, returning the
+  environment item, path and environment of the name if found." 
   input Absyn.Path inName;
   input Env inEnv;
   output Item outItem;
@@ -353,15 +376,20 @@ algorithm
       Env rest_env, env;
       Item item;
 
+    // Simple name, look in the local scope.
     case (Absyn.IDENT(name = name), _)
       equation
         (SOME(item), SOME(path), SOME(env)) = lookupInLocalScope(name, inEnv);
       then
         (item, path, env);
 
+    // Qualified name.
     case (Absyn.QUALIFIED(name = name, path = path), top_scope :: _)
       equation
-        (SOME(item), SOME(new_path), SOME(env)) = lookupInLocalScope(name, inEnv); 
+        // Look up the name in the local scope.
+        (SOME(item), SOME(new_path), SOME(env)) = 
+          lookupInLocalScope(name, inEnv); 
+        // Look for the rest of the path in the found item.
         (item, path, env) = lookupNameInItem(path, item, env);
         path = SCodeEnv.joinPaths(new_path, path);
       then
@@ -371,6 +399,8 @@ algorithm
 end lookupNameInPackage;
 
 public function lookupCrefInPackage
+  "Looks up a component reference inside the environment of a package, returning
+  the environment item, path and environment of the reference if found."
   input Absyn.ComponentRef inCref;
   input Env inEnv;
   output Item outItem;
@@ -386,6 +416,7 @@ algorithm
       Frame top_scope;
       Env env;
      
+    // Simple identifier, look in the local scope.
     case (Absyn.CREF_IDENT(name = name, subscripts = subs), _)
       equation
         (SOME(item), SOME(new_path), _) = lookupInLocalScope(name, inEnv);
@@ -393,11 +424,14 @@ algorithm
       then
         (item, cref);
 
+    // Qualified identifier.
     case (Absyn.CREF_QUAL(name = name, subScripts = subs, 
         componentRef = cref_rest), _)
       equation
+        // Look in the local scope.
         (SOME(item), SOME(new_path), SOME(env)) = 
           lookupInLocalScope(name, inEnv);
+        // Look for the rest of the reference in the found item.
         (item, cref_rest) = lookupCrefInItem(cref_rest, item, env);
         cref = Absyn.pathToCrefWithSubs(new_path, subs);
         cref = Absyn.joinCrefs(cref, cref_rest);
@@ -408,6 +442,8 @@ algorithm
 end lookupCrefInPackage;
 
 public function lookupNameInItem
+  "Looks up a name inside of an item, which can be either a variable or a
+  class."
   input Absyn.Path inName;
   input Item inItem;
   input Env inEnv;
@@ -427,10 +463,13 @@ algorithm
       list<SCode.Element> redeclares;
       Absyn.Info info;
 
+    // A variable.
     case (_, SCodeEnv.VAR(var = SCode.COMPONENT(typeSpec = type_spec, 
         modifications = mods, info = info)), _)
       equation
+        // Look up the variable type.
         (item, type_env) = lookupTypeSpec(type_spec, inEnv, info);
+        // Apply redeclares to the type and look for the name inside the type.
         redeclares = SCodeEnv.extractRedeclaresFromModifier(mods);
         (item, type_env) = 
           SCodeEnv.replaceRedeclaredClassesInEnv(redeclares, item, type_env, inEnv);
@@ -438,8 +477,10 @@ algorithm
       then
         (item, path, env);
 
+    // A class.
     case (_, SCodeEnv.CLASS(env = {class_env}), _) 
       equation
+        // Look in the class's environment.
         env = class_env :: inEnv;
         (item, path, env) = lookupNameInPackage(inName, env);
       then
@@ -449,6 +490,8 @@ algorithm
 end lookupNameInItem;
 
 public function lookupCrefInItem
+  "Looks up a component reference inside of an item, which can be either a
+  variable or a class."
   input Absyn.ComponentRef inCref;
   input Item inItem;
   input Env inEnv;
@@ -466,18 +509,23 @@ algorithm
       list<SCode.Element> redeclares;
       Absyn.Info info;
 
+    // A variable.
     case (_, SCodeEnv.VAR(var = SCode.COMPONENT(typeSpec = type_spec, 
         modifications = mods, info = info)), _)
       equation
+        // Look up the variables' type.
         (item, type_env) = lookupTypeSpec(type_spec, inEnv, info);
+        // Apply redeclares to the type and look for the name inside the type.
         redeclares = SCodeEnv.extractRedeclaresFromModifier(mods);
         (item, type_env) = SCodeEnv.replaceRedeclaredClassesInEnv(redeclares, item, type_env, inEnv);
         (item, cref) = lookupCrefInItem(inCref, item, type_env);
       then
         (item, cref);
 
+    // A class.
     case (_, SCodeEnv.CLASS(env = {class_env}), _)
       equation
+        // Look in the class's environment.
         env = class_env :: inEnv;
         (item, cref) = lookupCrefInPackage(inCref, env);
       then
@@ -506,14 +554,16 @@ algorithm
 
     else
       equation
-        print("- SCodeFlatten.lookupBaseClass: Could not find "
-        +& inClass +& " among the inherited classes.\n");
+        Error.addSourceMessage(Error.INVALID_REDECLARATION_OF_CLASS,
+          {inClass}, inInfo);
       then
         fail();
   end matchcontinue;
 end lookupBaseClass;
 
 public function lookupBuiltinType
+  "Checks if a name references a builtin type, and returns an environment item
+  for that type or fails."
   input Absyn.Ident inName;
   output Item outItem;
 algorithm
@@ -529,11 +579,11 @@ end lookupBuiltinType;
 
 protected function lookupName
   "Looks up a simple or qualified name in the environment and returns the
-  environment item corresponding to the name, the fully qualified path for the
-  name and optionally the enclosing scope of the name if the name references a
-  class. This function doesn't know what kind of thing the name references, so
-  to get meaningful error messages you should use one of the lookup****Name
-  below instead."
+  environment item corresponding to the name, the path for the name and
+  optionally the enclosing scope of the name if the name references a class.
+  This function doesn't know what kind of thing the name references, so to get
+  meaningful error messages you should use one of the lookup****Name below
+  instead."
   input Absyn.Path inName;
   input Env inEnv;
   input Absyn.Info inInfo;
@@ -552,6 +602,7 @@ algorithm
       Option<Env> item_env;
       String name_str, env_str;
 
+    // A builtin type.
     case (Absyn.IDENT(name = id), _, _, _)
       equation
         item = lookupBuiltinType(id);
@@ -641,12 +692,15 @@ algorithm
       Absyn.ComponentRef cref;
       String cref_str, env_str;
 
+    // Special case for StateSelect, do nothing.
     case (Absyn.CREF_QUAL(name = "StateSelect", subScripts = {}, 
         componentRef = Absyn.CREF_IDENT(name = _)), _, _)
       then inCref;
 
+    // Wildcard.
     case (Absyn.WILD(), _, _) then inCref;
 
+    // All other component references.
     case (_, _, _)
       equation
         // First look up all subscripts, because all subscripts should be found
@@ -670,6 +724,8 @@ algorithm
 end lookupComponentRef;
 
 public function lookupComponentRef2
+  "Helper function to lookupComponentRef. Does the actual look up of the
+  component reference."
   input Absyn.ComponentRef inCref;
   input Env inEnv;
   output Absyn.ComponentRef outCref;
@@ -683,6 +739,7 @@ algorithm
       Env env;
       Item item;
 
+    // A simple name.
     case (Absyn.CREF_IDENT(name, subs), _)
       equation
         (_, path, _) = lookupSimpleName(name, inEnv);
@@ -690,6 +747,7 @@ algorithm
       then
         cref;
 
+    // A qualified name.
     case (Absyn.CREF_QUAL(name, subs, rest_cref), _)
       equation
         // Lookup the first identifier.
@@ -703,6 +761,7 @@ algorithm
       then
         cref;
 
+    // A fully qualified name.
     case (Absyn.CREF_FULLYQUALIFIED(componentRef = cref), _)
       equation
         cref = lookupComponentRef2(cref, inEnv);
@@ -713,6 +772,9 @@ algorithm
 end lookupComponentRef2;
 
 public function joinCrefs
+  "Joins two component references. If the second cref is fully qualified it just
+  returns the cref, because then it has been looked up through an import and
+  already points directly at the class. Otherwise is just calls Absyn.joinCrefs."
   input Absyn.ComponentRef inCref1;
   input Absyn.ComponentRef inCref2;
   output Absyn.ComponentRef outCref;
@@ -724,6 +786,8 @@ algorithm
 end joinCrefs;
 
 public function lookupTypeSpec
+  "Looks up a type specification and returns the environment item and enclosing
+  scopes of the type."
   input Absyn.TypeSpec inTypeSpec;
   input Env inEnv;
   input Absyn.Info inInfo;
@@ -737,12 +801,14 @@ algorithm
       Item item;
       Env env;
 
+    // A normal type.
     case (Absyn.TPATH(path = path), _, _)
       equation
         (item, _, SOME(env)) = lookupClassName(path, inEnv, inInfo);
       then
         (item, env);
 
+    // A MetaModelica type such as list or tuple.
     case (Absyn.TCOMPLEX(path = Absyn.IDENT(name = name)), _, _)
       then (SCodeEnv.BUILTIN(name), SCodeEnv.emptyEnv);
          
