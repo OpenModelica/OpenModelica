@@ -32,6 +32,8 @@
 #ifndef _SIMULATION_VARINFO_H
 #define _SIMULATION_VARINFO_H
 
+#include <stdio.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -41,10 +43,11 @@ typedef struct {
   int lineStart;
   int colStart;
   int lineEnd;
-  int colEnd;  
+  int colEnd;
+  int readonly;
 } omc_fileInfo;
 
-const omc_fileInfo omc_dummyFileInfo = {"",-1,-1,-1,-1};
+extern const omc_fileInfo omc_dummyFileInfo;
 
 struct omc_varInfo {
   const char* name;
@@ -67,6 +70,8 @@ struct omc_functionInfo {
 typedef enum {ERROR_AT_TIME,NO_PROGRESS_START_POINT,NO_PROGRESS_FACTOR,IMPROPER_INPUT} equationSystemError;
 
 void printErrorEqSyst(equationSystemError,struct omc_equationInfo,double var);
+
+void printInfo(FILE *stream, omc_fileInfo info);
 
 #ifdef __cplusplus
 }

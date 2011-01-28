@@ -68,6 +68,7 @@ int terminationAssert = 0;
 char* terminateMessage = 0;
 int warningLevelAssert = 0;
 string TermMsg;
+omc_fileInfo TermInfo = omc_dummyFileInfo;
 int measure_time_flag = 0;
 
 int sim_verbose; // Flag for logging

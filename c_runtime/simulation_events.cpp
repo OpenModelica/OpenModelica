@@ -891,6 +891,8 @@ change(modelica_boolean& var)
 void
 checkTermination()
 {
+  if (terminationAssert || terminationTerminate)
+    printInfo(stdout, TermInfo);
   if (terminationAssert)
     {
       if (warningLevelAssert)

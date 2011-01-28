@@ -81,6 +81,7 @@ typedef modelica_integer size_integer_array_rettype;
 #include "meta_modelica_builtin.h"
 #include "meta_modelica_real.h"
 #include "matrix.h"
+#include "simulation_varinfo.h"
 
 
 /* math functions (-lm)*/

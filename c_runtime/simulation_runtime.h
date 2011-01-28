@@ -86,6 +86,7 @@ extern int terminationTerminate; // Becomes non-zero when user terminates simula
 extern int terminationAssert; // Becomes non-zero when model call assert simulation.
 extern int warningLevelAssert; // Becomes non-zero when model call assert with warning level.
 extern string TermMsg; // message for termination.
+extern omc_fileInfo TermInfo; // message for termination.
 
 
 /* Flags for controlling logging to stdout */
@@ -370,10 +371,10 @@ int callSolver(int, char**, string, string, double, double, double, long, double
 
 double newTime(double t, double step,double stop);
 
-#define MODELICA_ASSERT(msg) { terminationAssert = 1; TermMsg = msg; }
+#define MODELICA_ASSERT(info,msg) { terminationAssert = 1; TermMsg = msg; TermInfo = info;}
 
 #define MODELICA_TERMINATE(msg)  { modelTermination=1; \
-terminationTerminate = 1; TermMsg = msg; }
+terminationTerminate = 1; TermMsg = msg; TermInfo = omc_dummyFileInfo; }
 
 #define initial() localData->init
 

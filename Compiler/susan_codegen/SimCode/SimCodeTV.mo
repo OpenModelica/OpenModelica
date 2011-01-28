@@ -588,13 +588,15 @@ package Absyn
   uniontype Info
     record INFO
       String fileName;
+      Boolean isReadOnly;
       Integer lineNumberStart;
       Integer columnNumberStart;
       Integer lineNumberEnd;
       Integer columnNumberEnd;
     end INFO;
   end Info;
-
+  
+  constant Info dummyInfo;
 end Absyn;
 
 
@@ -1124,6 +1126,11 @@ package DAE
     end MATCH;
   end MatchType;
 
+  uniontype ElementSource
+    record SOURCE
+      Absyn.Info info;
+    end SOURCE;
+  end ElementSource;
 end DAE;
 
 
@@ -1703,5 +1710,12 @@ package Patternm
     output Integer ctor;
   end getValueCtor;
 end Patternm;
+
+package Error
+  function infoStr
+    input Absyn.Info info;
+    output String str;
+  end infoStr;
+end Error;
 
 end SimCodeTV;

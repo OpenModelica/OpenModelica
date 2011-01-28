@@ -353,7 +353,7 @@ template globalDataVarInfoArray(String _name, list<SimVar> items)
   case items then
     <<
     const struct omc_varInfo <%_name%>[<%listLength(items)%>] = {
-      <%items |> var as SIMVAR(info=info as INFO(__)) => '{"<%crefStr(var.name)%>","<%var.comment%>",{"<%info.fileName%>",<%info.lineNumberStart%>,<%info.columnNumberStart%>,<%info.lineNumberEnd%>,<%info.columnNumberEnd%>}}'; separator=",\n"%>
+      <%items |> var as SIMVAR(info=info as INFO(__)) => '{"<%crefStr(var.name)%>","<%var.comment%>",{<%infoArgs(info)%>}}'; separator=",\n"%>
     };
     <%items |> var as SIMVAR(info=info as INFO(__)) hasindex i0 => '#define <%cref(var.name)%>__varInfo <%_name%>[<%i0%>]'; separator="\n"%>
     >>
@@ -1486,8 +1486,8 @@ case TERMINATE(__) then
   <<
   <%preExp%>  MODELICA_TERMINATE(<%msgVar%>);
   >>
-case ASSERT(__) then
-  assertCommon(condition, message, contextSimulationDiscrete, &varDecls)
+case ASSERT(source=SOURCE(info=info)) then
+  assertCommon(condition, message, contextSimulationDiscrete, &varDecls, info)
 end functionWhenReinitStatement;
 
 
@@ -1540,8 +1540,8 @@ template functionWhenReinitStatementThen(list<WhenOperator> reinits, Text &varDe
                 <%preExp%> 
                 MODELICA_TERMINATE(<%msgVar%>);
                 >>
-  case ASSERT(__) then 
-    assertCommon(condition, message, contextSimulationDiscrete, &varDecls)
+  case ASSERT(source=SOURCE(info=info)) then 
+    assertCommon(condition, message, contextSimulationDiscrete, &varDecls, info)
   ;separator="\n")
   <<
    <%body%>  
@@ -2631,7 +2631,7 @@ template functionsFile(String filePrefix,
   <<
   #include "<%filePrefix%>.h"
   #include <algorithm>
-  #define MODELICA_ASSERT(msg) { fprintf(stderr,"Modelica Assert: %s!\n", msg); }
+  #define MODELICA_ASSERT(info,msg) { printInfo(stderr,info); fprintf(stderr,"Modelica Assert: %s!\n", msg); }
   #define MODELICA_TERMINATE(msg) { fprintf(stderr,"Modelica Terminate: %s!\n", msg); fflush(stderr); }
 
   extern "C" {
@@ -4293,8 +4293,8 @@ template algStmtAssert(DAE.Statement stmt, Context context, Text &varDecls /*BUF
  "Generates an assert algorithm statement."
 ::=
 match stmt
-case STMT_ASSERT(__) then
-  assertCommon(cond, msg, context, &varDecls)
+case STMT_ASSERT(source=SOURCE(info=info)) then
+  assertCommon(cond, msg, context, &varDecls, info)
 end algStmtAssert;
 
 template algStmtTerminate(DAE.Statement stmt, Context context, Text &varDecls /*BUFP*/)
@@ -5180,7 +5180,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     //relation = DAE.LBINARY(e1,DAE.GREATEREQ(ET_REAL()),DAE.RCONST(0))
     //string = DAE.SCONST('Model error: Argument of sqrt should  >= 0')
     //let retPre = assertCommon(relation,s, context, &varDecls)
-    let retPre = assertCommon(createAssertforSqrt(e1),createDAEString("Model error: Argument of sqrt should  >= 0"), context, &varDecls)
+    let retPre = assertCommon(createAssertforSqrt(e1),createDAEString("Model error: Argument of sqrt should be >= 0"), context, &varDecls, dummyInfo)
     let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)%>' ;separator=", ")
     let funName = '<%underscorePath(path)%>'
     let retType = '<%funName%>_rettype'
@@ -6314,7 +6314,13 @@ template patternMatch(Pattern pat, Text rhs, Text onPatternFail, Text &varDecls,
   else 'UNKNOWN_PATTERN /* rhs: <%rhs%> */<%\n%>'
 end patternMatch;
 
-template assertCommon(Exp condition, Exp message, Context context, Text &varDecls)
+template infoArgs(Info info)
+::=
+  match info
+  case INFO(__) then '"<%fileName%>",<%lineNumberStart%>,<%columnNumberStart%>,<%lineNumberEnd%>,<%columnNumberEnd%>,<%isReadOnly%>'
+end infoArgs;
+
+template assertCommon(Exp condition, Exp message, Context context, Text &varDecls, Info info)
 ::=
   let &preExpCond = buffer ""
   let &preExpMsg = buffer ""
@@ -6324,7 +6330,8 @@ template assertCommon(Exp condition, Exp message, Context context, Text &varDecl
   <%preExpCond%>
   if (!<%condVar%>) {
     <%preExpMsg%>
-    MODELICA_ASSERT(<%msgVar%>);
+    omc_fileInfo info = {<%infoArgs(info)%>};
+    MODELICA_ASSERT(info, <%msgVar%>);
   }
   >>
 end assertCommon;

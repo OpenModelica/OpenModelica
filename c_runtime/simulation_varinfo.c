@@ -31,6 +31,8 @@
 
 #include "simulation_varinfo.h"
 
+const omc_fileInfo omc_dummyFileInfo = {"",-1,-1,-1,-1,1};
+
 void printErrorEqSyst(equationSystemError err, struct omc_equationInfo eq, double var)
 {
   switch (err) {
@@ -49,4 +51,9 @@ void printErrorEqSyst(equationSystemError err, struct omc_equationInfo eq, doubl
   default:
     printf("Unknown equation system error: %d %s %g\n", err, eq.name, var);
   }
+}
+
+void printInfo(FILE *stream, omc_fileInfo info)
+{
+  fprintf(stream, "[%s:%d:%d-%d:%d:%s] ", info.filename, info.lineStart, info.colStart, info.lineEnd, info.colEnd, info.readonly ? "readonly" : "writable");
 }
