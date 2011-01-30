@@ -1544,16 +1544,19 @@ void ProjectTab::getModelShapes(QString annotationString, int type)
         {
             shape = shape.mid(QString("Line").length());
             shape = StringHandler::removeFirstLastBrackets(shape);
-            LineAnnotation *lineAnnotation = new LineAnnotation(shape, mpGraphicsView);
-            lineAnnotation->setFlags(QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable);
+            LineAnnotation *lineAnnotation;
             // add the shapeannotation item to shapes list
             if (type == StringHandler::ICON)
             {
+                lineAnnotation = new LineAnnotation(shape, mpGraphicsView);
+                lineAnnotation->setFlags(QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable);
                 mpGraphicsView->addShapeObject(lineAnnotation);
                 mpGraphicsView->scene()->addItem(lineAnnotation);
             }
             else if (type == StringHandler::DIAGRAM)
             {
+                lineAnnotation = new LineAnnotation(shape, mpDiagramGraphicsView);
+                lineAnnotation->setFlags(QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable);
                 mpDiagramGraphicsView->addShapeObject(lineAnnotation);
                 mpDiagramGraphicsView->scene()->addItem(lineAnnotation);
             }
@@ -1570,16 +1573,19 @@ void ProjectTab::getModelShapes(QString annotationString, int type)
         {
             shape = shape.mid(QString("Polygon").length());
             shape = StringHandler::removeFirstLastBrackets(shape);
-            PolygonAnnotation *polygonAnnotation = new PolygonAnnotation(shape, mpGraphicsView);
-            polygonAnnotation->setFlags(QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable);
+            PolygonAnnotation *polygonAnnotation;
             // add the shapeannotation item to shapes list
             if (type == StringHandler::ICON)
             {
+                polygonAnnotation = new PolygonAnnotation(shape, mpGraphicsView);
+                polygonAnnotation->setFlags(QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable);
                 mpGraphicsView->addShapeObject(polygonAnnotation);
                 mpGraphicsView->scene()->addItem(polygonAnnotation);
             }
             else if (type == StringHandler::DIAGRAM)
             {
+                polygonAnnotation = new PolygonAnnotation(shape, mpDiagramGraphicsView);
+                polygonAnnotation->setFlags(QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable);
                 mpDiagramGraphicsView->addShapeObject(polygonAnnotation);
                 mpDiagramGraphicsView->scene()->addItem(polygonAnnotation);
             }
@@ -1596,16 +1602,19 @@ void ProjectTab::getModelShapes(QString annotationString, int type)
         {
             shape = shape.mid(QString("Rectangle").length());
             shape = StringHandler::removeFirstLastBrackets(shape);
-            RectangleAnnotation *rectangleAnnotation = new RectangleAnnotation(shape, mpGraphicsView);
-            rectangleAnnotation->setFlags(QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable);
+            RectangleAnnotation *rectangleAnnotation;
             // add the shapeannotation item to shapes list
             if (type == StringHandler::ICON)
             {
+                rectangleAnnotation = new RectangleAnnotation(shape, mpGraphicsView);
+                rectangleAnnotation->setFlags(QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable);
                 mpGraphicsView->addShapeObject(rectangleAnnotation);
                 mpGraphicsView->scene()->addItem(rectangleAnnotation);
             }
             else if (type == StringHandler::DIAGRAM)
             {
+                rectangleAnnotation = new RectangleAnnotation(shape, mpDiagramGraphicsView);
+                rectangleAnnotation->setFlags(QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable);
                 mpDiagramGraphicsView->addShapeObject(rectangleAnnotation);
                 mpDiagramGraphicsView->scene()->addItem(rectangleAnnotation);
             }
@@ -1616,16 +1625,19 @@ void ProjectTab::getModelShapes(QString annotationString, int type)
         {
             shape = shape.mid(QString("Ellipse").length());
             shape = StringHandler::removeFirstLastBrackets(shape);
-            EllipseAnnotation *ellipseAnnotation = new EllipseAnnotation(shape, mpGraphicsView);
-            ellipseAnnotation->setFlags(QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable);
+            EllipseAnnotation *ellipseAnnotation;
             // add the shapeannotation item to shapes list
             if (type == StringHandler::ICON)
             {
+                ellipseAnnotation = new EllipseAnnotation(shape, mpGraphicsView);
+                ellipseAnnotation->setFlags(QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable);
                 mpGraphicsView->addShapeObject(ellipseAnnotation);
                 mpGraphicsView->scene()->addItem(ellipseAnnotation);
             }
             else if (type == StringHandler::DIAGRAM)
             {
+                ellipseAnnotation = new EllipseAnnotation(shape, mpDiagramGraphicsView);
+                ellipseAnnotation->setFlags(QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable);
                 mpDiagramGraphicsView->addShapeObject(ellipseAnnotation);
                 mpDiagramGraphicsView->scene()->addItem(ellipseAnnotation);
             }
@@ -1636,17 +1648,19 @@ void ProjectTab::getModelShapes(QString annotationString, int type)
         {            
             shape = shape.mid(QString("Text").length());
             shape = StringHandler::removeFirstLastBrackets(shape);
-
-            TextAnnotation *textAnnotation = new TextAnnotation(shape, mpGraphicsView);
-            textAnnotation->setFlags(QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable);
+            TextAnnotation *textAnnotation;
             // add the shapeannotation item to shapes list
             if (type == StringHandler::ICON)
             {
+                textAnnotation = new TextAnnotation(shape, mpGraphicsView);
+                textAnnotation->setFlags(QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable);
                 mpGraphicsView->addShapeObject(textAnnotation);
                 mpGraphicsView->scene()->addItem(textAnnotation);
             }
             else if (type == StringHandler::DIAGRAM)
             {
+                textAnnotation = new TextAnnotation(shape, mpDiagramGraphicsView);
+                textAnnotation->setFlags(QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable);
                 mpDiagramGraphicsView->addShapeObject(textAnnotation);
                 mpDiagramGraphicsView->scene()->addItem(textAnnotation);
             }
@@ -1657,17 +1671,19 @@ void ProjectTab::getModelShapes(QString annotationString, int type)
         {            
             shape = shape.mid(QString("Bitmap").length());
             shape = StringHandler::removeFirstLastBrackets(shape);
-
-            BitmapAnnotation *bitmapAnnotation = new BitmapAnnotation(shape, mpGraphicsView);
-            bitmapAnnotation->setFlags(QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable);
+            BitmapAnnotation *bitmapAnnotation;
             // add the shapeannotation item to shapes list
             if (type == StringHandler::ICON)
             {
+                bitmapAnnotation = new BitmapAnnotation(shape, mpGraphicsView);
+                bitmapAnnotation->setFlags(QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable);
                 mpGraphicsView->addShapeObject(bitmapAnnotation);
                 mpGraphicsView->scene()->addItem(bitmapAnnotation);
             }
             else if (type == StringHandler::DIAGRAM)
             {
+                bitmapAnnotation = new BitmapAnnotation(shape, mpDiagramGraphicsView);
+                bitmapAnnotation->setFlags(QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable);
                 mpDiagramGraphicsView->addShapeObject(bitmapAnnotation);
                 mpDiagramGraphicsView->scene()->addItem(bitmapAnnotation);
             }
