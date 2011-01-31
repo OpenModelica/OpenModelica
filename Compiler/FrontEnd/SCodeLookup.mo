@@ -159,7 +159,8 @@ algorithm
         (SOME(item), SOME(path), SOME(env));
 
     // Look among the qualified imports.
-    case (_, SCodeEnv.FRAME(importTable = SCodeEnv.IMPORT_TABLE(qualifiedImports = imps)) :: _)
+    case (_, SCodeEnv.FRAME(importTable = 
+        SCodeEnv.IMPORT_TABLE(hidden = false, qualifiedImports = imps)) :: _)
       equation
         (opt_item, opt_path, opt_env) = 
           lookupInQualifiedImports(inName, imps, inEnv);
@@ -167,7 +168,8 @@ algorithm
         (opt_item, opt_path, opt_env);
 
     // Look among the unqualified imports.
-    case (_, SCodeEnv.FRAME(importTable = SCodeEnv.IMPORT_TABLE(unqualifiedImports = imps)) :: _)
+    case (_, SCodeEnv.FRAME(importTable = 
+        SCodeEnv.IMPORT_TABLE(hidden = false, unqualifiedImports = imps)) :: _)
       equation
         (item, path, env) = 
           lookupInUnqualifiedImports(inName, imps, inEnv);
@@ -203,6 +205,7 @@ algorithm
   // extended classes should not be found by lookup through the extends-clauses
   // (Modelica Specification 3.2, section 5.6.1.).
   env := SCodeEnv.removeExtendsFromLocalScope(inEnv);
+  env := SCodeEnv.setImportTableHidden(env, false);
   (outItem, outPath, outBaseClass, outEnv) := 
     lookupInBaseClasses2(inName, bcl, env);
 end lookupInBaseClasses;
@@ -234,6 +237,9 @@ algorithm
       equation
         // Find the base class.
         (item, _, SOME(env)) = lookupBaseClassName(bc, inEnv, info);
+				// Hide the imports to make sure that we don't find the name via them
+				// (imports are not inherited).
+        item = SCodeEnv.setImportsInItemHidden(item, true);
         // Look in the base class.
         (item, env) = SCodeEnv.replaceRedeclaredClassesInEnv(redecls, item, env, inEnv);
         (item, path, env) = lookupNameInItem(Absyn.IDENT(inName), item, env);
@@ -387,6 +393,7 @@ algorithm
     case (Absyn.IDENT(name = name), _)
       equation
         (SOME(item), SOME(path), SOME(env)) = lookupInLocalScope(name, inEnv);
+        env = SCodeEnv.setImportTableHidden(env, false);
       then
         (item, path, env);
 
@@ -396,6 +403,8 @@ algorithm
         // Look up the name in the local scope.
         (SOME(item), SOME(new_path), SOME(env)) = 
           lookupInLocalScope(name, inEnv); 
+        env = SCodeEnv.setImportTableHidden(env, false);
+        //item = SCodeEnv.setImportsInItemHidden(item, false);
         // Look for the rest of the path in the found item.
         (item, path, env) = lookupNameInItem(path, item, env);
         path = SCodeEnv.joinPaths(new_path, path);
@@ -472,10 +481,11 @@ algorithm
 
     // A variable.
     case (_, SCodeEnv.VAR(var = SCode.COMPONENT(typeSpec = type_spec, 
-        modifications = mods, info = info)), _)
+        modifications = mods, info = info)), env)
       equation
+        //env = SCodeEnv.setImportTableHidden(env, false);
         // Look up the variable type.
-        (item, type_env) = lookupTypeSpec(type_spec, inEnv, info);
+        (item, type_env) = lookupTypeSpec(type_spec, env, info);
         // Apply redeclares to the type and look for the name inside the type.
         redeclares = SCodeEnv.extractRedeclaresFromModifier(mods);
         (item, type_env) = 
@@ -549,23 +559,7 @@ public function lookupBaseClass
   input Absyn.Info inInfo;
   output Absyn.Path outBaseClass;
 algorithm
-  outBaseClass := matchcontinue(inClass, inEnv, inInfo)
-    local
-      Absyn.Path bc;
-
-    case (_, _, _)
-      equation
-        (_, _, bc, _) = lookupInBaseClasses(inClass, inEnv);
-      then
-        bc;
-
-    else
-      equation
-        Error.addSourceMessage(Error.INVALID_REDECLARATION_OF_CLASS,
-          {inClass}, inInfo);
-      then
-        fail();
-  end matchcontinue;
+  (_, _, outBaseClass, _) := lookupInBaseClasses(inClass, inEnv);
 end lookupBaseClass;
 
 public function lookupBuiltinType

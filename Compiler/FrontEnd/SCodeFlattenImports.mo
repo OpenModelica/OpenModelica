@@ -362,11 +362,45 @@ protected
   Env env;
 algorithm
   SCode.EXTENDS(path, mod, ann, info) := inExtends;
+  true := checkNotExtendsDependent(path, inEnv, info);
   env := SCodeEnv.removeExtendsFromLocalScope(inEnv);
   (_, path, _) := SCodeLookup.lookupBaseClassName(path, env, info);
   mod := flattenModifier(mod, inEnv, info);
   outExtends := SCode.EXTENDS(path, mod, ann, info);
 end flattenExtends;
+
+protected function checkNotExtendsDependent
+  "The Modelica specification 3.2 says (section 5.6.1): 'The lookup of the names
+  of extended classes should give the same result before and after flattening
+  the extends. One should not find any element used during this flattening by
+  lookup through the extends-clauses.' This means that it's not allowed to have
+  a name in an extends-clause that's inherited from another extends-clause. This
+  function checks this, and returns true if an extends doesn't depend on an
+  extend in the local scope."
+  input Absyn.Path inBaseClass;
+  input Env inEnv;
+  input Absyn.Info inInfo;
+  output Boolean outResult;
+algorithm
+  _ := matchcontinue(inBaseClass, inEnv, inInfo)
+    local
+      Absyn.Path bc;
+      Absyn.Ident id;
+      String bc_name;
+
+    case (_, _, _)
+      equation
+        id = Absyn.pathFirstIdent(inBaseClass);
+        bc = SCodeLookup.lookupBaseClass(id, inEnv, inInfo);
+        bc_name = Absyn.pathString(bc);
+        Error.addSourceMessage(Error.EXTENDS_INHERITED_FROM_LOCAL_EXTENDS,
+          {bc_name, id}, inInfo);
+      then
+        false;
+
+    else then true;
+  end matchcontinue;
+end checkNotExtendsDependent;
 
 protected function flattenEquation
   input SCode.Equation inEquation;

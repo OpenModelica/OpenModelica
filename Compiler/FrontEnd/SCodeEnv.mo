@@ -55,6 +55,12 @@ public type Import = Absyn.Import;
 
 public uniontype ImportTable
   record IMPORT_TABLE
+		// Imports should not be inherited, but removing them from the environment
+		// when doing lookup through extends causes problems for the lookup later
+		// on, because for example components may have types that depends on imports.
+		// The hidden flag allows the lookup to 'hide' the imports temporarily,
+		// without actually removing them.
+		Boolean hidden "If true means that the imports are hidden.";
     list<Import> qualifiedImports;
     list<Import> unqualifiedImports;
   end IMPORT_TABLE;
@@ -318,7 +324,7 @@ end newFrame;
 protected function newImportTable
   output ImportTable outImports;
 algorithm
-  outImports := IMPORT_TABLE({}, {});
+  outImports := IMPORT_TABLE(false, {}, {});
 end newImportTable;
 
 protected function newExtendsTable
@@ -377,6 +383,49 @@ algorithm
   outEnv := FRAME(name, ty, tree, exts, imps) :: rest;
 end removeExtendsFromLocalScope;
   
+public function setImportTableHidden
+	"Sets the 'hidden' flag in the import table in the local scope of the given
+	environment."
+  input Env inEnv;
+  input Boolean inHidden;
+  output Env outEnv;
+protected
+  Option<String> name;
+  FrameType ty;
+  AvlTree tree;
+  ImportTable imps;
+  ExtendsTable exts;
+  Env rest;
+  list<Import> qi, uqi;
+algorithm
+  FRAME(name = name, frameType = ty, clsAndVars = tree, extendsTable = exts,
+    importTable = IMPORT_TABLE(qualifiedImports = qi, unqualifiedImports = uqi))
+    :: rest := inEnv;
+  outEnv := FRAME(name, ty, tree, exts, IMPORT_TABLE(inHidden, qi, uqi)) :: rest;
+end setImportTableHidden;
+
+public function setImportsInItemHidden
+	"Sets the 'hidden' flag in the import table for the given items environment if
+	the item is a class. Otherwise does nothing."
+  input Item inItem;
+  input Boolean inHidden;
+  output Item outItem;
+algorithm
+  outItem := match(inItem, inHidden)
+    local
+      SCode.Class cls;
+      Env env;
+
+    case (CLASS(cls = cls, env = env), _)
+      equation
+        env = setImportTableHidden(env, inHidden);
+      then
+        CLASS(cls, env);
+
+    else then inItem;
+  end match;
+end setImportsInItemHidden;
+
 protected function extendEnvWithClassDef
   input SCode.Element inClassDefElement;
   input Env inEnv;
@@ -432,24 +481,28 @@ algorithm
       FrameType ty;
       Env rest;
       Absyn.Info info;
+      Boolean hidden;
 
     // Unqualified imports
     case (SCode.IMPORT(imp = imp as Absyn.UNQUAL_IMPORT(path = _)), 
-        FRAME(name, ty, tree, exts, IMPORT_TABLE(qual_imps, unqual_imps)) :: rest)
+        FRAME(name, ty, tree, exts, 
+          IMPORT_TABLE(hidden, qual_imps, unqual_imps)) :: rest)
       equation
         unqual_imps = imp :: unqual_imps;
       then
-        FRAME(name, ty, tree, exts, IMPORT_TABLE(qual_imps, unqual_imps)) :: rest;
+        FRAME(name, ty, tree, exts, 
+          IMPORT_TABLE(hidden, qual_imps, unqual_imps)) :: rest;
 
     // Qualified imports
-    case (SCode.IMPORT(imp = imp, info = info), 
-        FRAME(name, ty, tree, exts, IMPORT_TABLE(qual_imps, unqual_imps)) :: rest)
+    case (SCode.IMPORT(imp = imp, info = info), FRAME(name, ty, tree, exts,
+        IMPORT_TABLE(hidden, qual_imps, unqual_imps)) :: rest)
       equation
         imp = translateQualifiedImportToNamed(imp);
         checkUniqueQualifiedImport(imp, qual_imps, info);
         qual_imps = imp :: qual_imps;
       then
-        FRAME(name, ty, tree, exts, IMPORT_TABLE(qual_imps, unqual_imps)) :: rest;
+        FRAME(name, ty, tree, exts, 
+          IMPORT_TABLE(hidden, qual_imps, unqual_imps)) :: rest;
   end match;
 end extendEnvWithImport;
 
@@ -1095,7 +1148,7 @@ protected function extendEnvWithClassExtends
   input Env inEnv;
   output Env outEnv;
 algorithm
-  outEnv := match(inClassExtends, inEnv)
+  outEnv := matchcontinue(inClassExtends, inEnv)
     local
       SCode.Ident bc;
       list<SCode.Element> el;
@@ -1131,8 +1184,15 @@ algorithm
           SCode.PARTS(el, {}, {}, {}, {}, NONE(), {}, NONE()), info), inEnv);
       then env;
 
-    else then inEnv;
-  end match;
+    case (SCode.CLASS(classDef = 
+        SCode.CLASS_EXTENDS(baseClassName = bc), info = info), _)
+      equation
+        Error.addSourceMessage(Error.INVALID_REDECLARATION_OF_CLASS,
+          {bc}, info);
+      then
+        fail();
+
+  end matchcontinue;
 end extendEnvWithClassExtends;
 
 public function getEnvName
@@ -1381,7 +1441,8 @@ protected
   list<Import> qual_imps, unqual_imps;
   String qual_str, unqual_str;
 algorithm
-  IMPORT_TABLE(qual_imps, unqual_imps) := inImports;
+  IMPORT_TABLE(qualifiedImports = qual_imps, unqualifiedImports = unqual_imps) 
+    := inImports;
   qual_str := Util.stringDelimitList(
     Util.listMap(qual_imps, Absyn.printImportString), "\n\t\t");
   unqual_str := Util.stringDelimitList(
