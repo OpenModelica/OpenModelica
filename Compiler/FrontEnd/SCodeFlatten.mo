@@ -49,7 +49,7 @@ protected import SCodeEnv;
 
 protected type Env = SCodeEnv.Env;
 
-public function flatten
+public function flattenProgram
   input SCode.Program inProgram;
   output SCode.Program outProgram;
 protected
@@ -67,7 +67,25 @@ algorithm
   //System.stopTimer();
   //print("flatten took " +& realString(System.getTimerIntervalTime()) +& 
   //  " seconds\n");
-end flatten;
+end flattenProgram;
 
+public function flattenClass
+  input SCode.Class inClass;
+  output SCode.Class outClass;
+algorithm
+  outClass := matchcontinue(inClass)
+    local
+      SCode.Class cls;
+
+    case _ then inClass;
+
+    case _
+      equation
+        {cls} = flattenProgram({inClass});
+      then
+        cls;
+
+  end matchcontinue;
+end flattenClass;
 
 end SCodeFlatten;

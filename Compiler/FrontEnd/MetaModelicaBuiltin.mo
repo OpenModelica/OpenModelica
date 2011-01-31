@@ -853,3 +853,7 @@ function realSqrt
   output Real y(unit = "'p(1/2)");
 external "builtin" y=sqrt(x);
 end realSqrt;
+
+function fail
+  external "builtin";
+end fail;

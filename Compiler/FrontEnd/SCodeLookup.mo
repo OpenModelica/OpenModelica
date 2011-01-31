@@ -622,7 +622,7 @@ algorithm
         (item, new_path, env) = lookupSimpleName(id, inEnv);
       then
         (item, new_path, SOME(env));
-
+        
     // Qualified name.
     case (Absyn.QUALIFIED(name = id, path = path), _, _, _)
       equation

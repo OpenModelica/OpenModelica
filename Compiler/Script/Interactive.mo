@@ -49,27 +49,28 @@ encapsulated package Interactive
 //public imports
 public import Absyn;
 public import AbsynDep;
+public import ConnectionGraph;
+public import DAE;
+public import Env;
 public import OptManager;
 public import SCode;
 public import SCodeUtil;
-public import DAE;
-public import Env;
 public import Settings;
-public import ConnectionGraph;
 public import Values;
 
 // protected imports
 protected import ComponentReference;
 protected import DAEUtil;
+protected import Dependency;
 protected import ErrorExt;
 protected import Expression;
 protected import ExpressionDump;
 protected import InnerOuter;
 protected import MetaUtil;
+protected import SCodeFlatten;
 protected import Types;
 protected import UnitAbsyn;
 protected import ValuesUtil;
-protected import Dependency;
 
 /*
 ** CompiledCFunction
@@ -413,6 +414,8 @@ algorithm
       equation
         env = buildEnvFromSymboltable(st);
         scode_class = SCodeUtil.translateClass(absyn_class);
+        scode_class = SCodeFlatten.flattenClass(scode_class);
+
         (_,env_1,_) =
           Inst.implicitFunctionInstantiation(Env.emptyCache(),env,InnerOuter.emptyInstHierarchy,
                                              DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, scode_class, {});

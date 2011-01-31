@@ -67,10 +67,10 @@ public function flattenProgram
   input Env inEnv;
   output SCode.Program outProgram;
 algorithm
-  outProgram := Util.listMap1(inProgram, flattenClasses, inEnv);
+  outProgram := Util.listMap1(inProgram, flattenClass, inEnv);
 end flattenProgram;
 
-protected function flattenClasses
+public function flattenClass
   input SCode.Class inClass;
   input Env inEnv;
   output SCode.Class outClass;
@@ -84,11 +84,11 @@ protected
 algorithm
   SCode.CLASS(name, part_pre, encap_pre, restriction, cdef, info) := inClass;
   env := SCodeEnv.enterScope(inEnv, name);
-  cdef := flattenClassDefs(cdef, env, info);
+  cdef := flattenClassDef(cdef, env, info);
   outClass := SCode.CLASS(name, part_pre, encap_pre, restriction, cdef, info);
-end flattenClasses;
+end flattenClass;
 
-protected function flattenClassDefs
+protected function flattenClassDef
   input SCode.ClassDef inClassDef;
   input Env inEnv;
   input Absyn.Info inInfo;
@@ -131,7 +131,7 @@ algorithm
 
     else then inClassDef;
   end match;
-end flattenClassDefs;
+end flattenClassDef;
 
 protected function checkRecursiveShortDefinition
   input Absyn.TypeSpec inTypeSpec;
@@ -223,7 +223,7 @@ protected
   Option<Absyn.ConstrainClass> cc;
 algorithm
   SCode.CLASSDEF(name, fp, rp, cls, cc) := inClassDefElement;
-  cls := flattenClasses(cls, inEnv);
+  cls := flattenClass(cls, inEnv);
   outClassDefElement := SCode.CLASSDEF(name, fp, rp, cls, cc);
 end flattenClassDefElements;
 
