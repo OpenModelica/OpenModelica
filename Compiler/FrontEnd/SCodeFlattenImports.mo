@@ -102,10 +102,8 @@ algorithm
       Option<Absyn.ExternalDecl> extdecl;
       list<SCode.Annotation> annl;
       Option<SCode.Comment> cmt;
-      SCode.ClassDef cdef;
       Absyn.TypeSpec ty;
-      SCode.Mod mods;
-      Absyn.ElementAttributes attr;
+      SCode.ClassDef cdef;
       Env env;
 
     case (SCode.PARTS(el, neql, ieql, nal, ial, extdecl, annl, cmt), _, _)
@@ -123,22 +121,14 @@ algorithm
       then
         cdef;
 
-    case (SCode.DERIVED(ty, mods, attr, cmt), _, _)
+    case (SCode.DERIVED(typeSpec = ty), _, _)
       equation
         checkRecursiveShortDefinition(ty, inEnv, inInfo);
         env = SCodeEnv.removeExtendsFromLocalScope(inEnv);
-        ty = flattenTypeSpec(ty, env, inInfo);
-        mods = flattenModifier(mods, inEnv, inInfo);
+        cdef = flattenDerivedClassDef(inClassDef, env, inInfo);
       then
-        SCode.DERIVED(ty, mods, attr, cmt);
+        cdef;
 
-    //case (SCode.CLASS_EXTENDS
-    //case (SCode.DERIVED
-
-    case (SCode.ENUMERATION(enumLst = _), _, _) then inClassDef;
-
-    //case (SCode.OVERLOAD
-    //case (SCode.PDER
     else then inClassDef;
   end match;
 end flattenClassDefs;
@@ -173,6 +163,23 @@ algorithm
     case (Absyn.TCOMPLEX(path = _), _, _) then ();
   end matchcontinue;
 end checkRecursiveShortDefinition;
+
+protected function flattenDerivedClassDef
+  input SCode.ClassDef inClassDef;
+  input Env inEnv;
+  input Absyn.Info inInfo;
+  output SCode.ClassDef outClassDef;
+protected
+  Absyn.TypeSpec ty;
+  SCode.Mod mods;
+  Absyn.ElementAttributes attr;
+  Option<SCode.Comment> cmt;
+algorithm
+  SCode.DERIVED(ty, mods, attr, cmt) := inClassDef;
+  ty := flattenTypeSpec(ty, inEnv, inInfo);
+  mods := flattenModifier(mods, inEnv, inInfo);
+  outClassDef := SCode.DERIVED(ty, mods, attr, cmt);
+end flattenDerivedClassDef;
 
 protected function isNotImport
   input SCode.Element inElement;
@@ -488,10 +495,9 @@ algorithm
 
     case (SCode.REDECL(fp, el), _, _)
       equation
-        //print("SCodeFlatten.lookupModifier: REDECL\n");
+        el = Util.listMap1(el, flattenRedeclare, inEnv); 
       then
-        //fail();
-        inMod;
+        SCode.REDECL(fp, el);
 
     case (SCode.NOMOD(), _, _) then inMod;
   end match;
@@ -544,6 +550,46 @@ algorithm
         SCode.IDXMOD(subs, mod);
   end match;
 end flattenSubMod;
+
+protected function flattenRedeclare
+  input SCode.Element inElement;
+  input Env inEnv;
+  output SCode.Element outElement;
+algorithm
+  outElement := match(inElement, inEnv)
+    local
+      SCode.Ident name, name2;
+      Boolean fp, rp, pp, ep;
+      Option<Absyn.ConstrainClass> cc;
+      SCode.Restriction res;
+      Absyn.Info info;
+      SCode.Element element;
+      SCode.ClassDef cdef;
+
+    case (SCode.CLASSDEF(name, fp, rp, 
+        SCode.CLASS(name2, pp, ep, res, 
+          cdef as SCode.DERIVED(typeSpec = _), info), cc), _)
+      equation
+        cdef = flattenDerivedClassDef(cdef, inEnv, info);
+      then
+        SCode.CLASSDEF(name, fp, rp, 
+          SCode.CLASS(name2, pp, ep, res, cdef, info), cc);
+
+    case (SCode.COMPONENT(component = _), _)
+      equation
+        element = flattenComponent(inElement, inEnv);
+      then
+        element;
+
+    else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, 
+          {"Unknown redeclare in SCodeFlattenImports.flattenRedeclare"});
+      then
+        fail();
+
+  end match;
+end flattenRedeclare;
 
 protected function flattenSubscript
   input SCode.Subscript inSub;
