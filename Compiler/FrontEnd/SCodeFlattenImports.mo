@@ -565,6 +565,11 @@ algorithm
         SCode.CLASSDEF(name, fp, rp, 
           SCode.CLASS(name2, pp, ep, res, cdef, info), cc);
 
+    case (SCode.CLASSDEF(classDef = SCode.CLASS(
+        classDef = SCode.ENUMERATION(enumLst = _))), _)
+      then
+        inElement;
+              
     case (SCode.COMPONENT(component = _), _)
       equation
         element = flattenComponent(inElement, inEnv);
