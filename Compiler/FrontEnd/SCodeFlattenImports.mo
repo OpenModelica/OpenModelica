@@ -103,7 +103,8 @@ algorithm
       list<SCode.Annotation> annl;
       Option<SCode.Comment> cmt;
       Absyn.TypeSpec ty;
-      SCode.ClassDef cdef;
+      SCode.Mod mods;
+      Absyn.ElementAttributes attr;
       Env env;
 
     case (SCode.PARTS(el, neql, ieql, nal, ial, extdecl, annl, cmt), _, _)
@@ -117,17 +118,19 @@ algorithm
         ieql = Util.listMap1(ieql, flattenEquation, inEnv);
         nal = Util.listMap1(nal, flattenAlgorithm, inEnv);
         ial = Util.listMap1(ial, flattenAlgorithm, inEnv);
-        cdef = SCode.PARTS(el, neql, ieql, nal, ial, extdecl, annl, cmt);
       then
-        cdef;
+        SCode.PARTS(el, neql, ieql, nal, ial, extdecl, annl, cmt);
 
-    case (SCode.DERIVED(typeSpec = ty), _, _)
+    case (SCode.DERIVED(ty, mods, attr, cmt), env, _)
       equation
-        checkRecursiveShortDefinition(ty, inEnv, inInfo);
-        env = SCodeEnv.removeExtendsFromLocalScope(inEnv);
-        cdef = flattenDerivedClassDef(inClassDef, env, inInfo);
+        checkRecursiveShortDefinition(ty, env, inInfo);
+        mods = flattenModifier(mods, env, inInfo);
+        // Remove the extends from the local scope before flattening the derived
+        // type, because the type should not be look up via itself.
+        env = SCodeEnv.removeExtendsFromLocalScope(env);
+        ty = flattenTypeSpec(ty, env, inInfo);
       then
-        cdef;
+        SCode.DERIVED(ty, mods, attr, cmt);
 
     else then inClassDef;
   end match;
