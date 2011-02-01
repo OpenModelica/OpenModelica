@@ -374,7 +374,7 @@ defineunit_clause returns [void* ast] :
   ;
 
 explicit_import_name returns [void* ast] :
-  id=IDENT EQUALS p=name_path {ast = Absyn__NAMED_5fIMPORT(token_to_scon(id),p);}
+  (id=IDENT|id=CODE) EQUALS p=name_path {ast = Absyn__NAMED_5fIMPORT(token_to_scon(id),p);}
   ;
 
 implicit_import_name returns [void* ast] :
@@ -1030,8 +1030,8 @@ name_path returns [void* ast] :
   ;
 
 name_path2 returns [void* ast] :
-  { LA(2)!=DOT }? id=IDENT {ast = Absyn__IDENT(token_to_scon(id));}
-  | id=IDENT DOT p=name_path {ast = Absyn__QUALIFIED(token_to_scon(id),p);}
+  { LA(2)!=DOT }? (id=IDENT|id=CODE) {ast = Absyn__IDENT(token_to_scon(id));}
+  | (id=IDENT|id=CODE) DOT p=name_path {ast = Absyn__QUALIFIED(token_to_scon(id),p);}
   ;
 
 name_path_star returns [void* ast, int unqual] :
@@ -1043,12 +1043,12 @@ name_path_star returns [void* ast, int unqual] :
   ;
 
 name_path_star2 returns [void* ast, int unqual] :
-    { LA(2) != DOT }? id=IDENT ( uq=STAR_EW )?
+    { LA(2) != DOT }? (id=IDENT|id=CODE) ( uq=STAR_EW )?
     {
       $ast = Absyn__IDENT(token_to_scon(id));
       $unqual = uq != 0;
     }
-  | id=IDENT DOT p=name_path_star2
+  | (id=IDENT|id=CODE) DOT p=name_path_star2
     {
       $ast = Absyn__QUALIFIED(token_to_scon(id),p.ast);
       $unqual = p.unqual;

@@ -6580,4 +6580,15 @@ algorithm
   end match;
 end unboxedFunctionType;
 
+public function printCodeTypeStr
+  input DAE.CodeType ct;
+  output String str;
+algorithm
+  str := match ct
+    case DAE.C_TYPENAME() then "OpenModelica.Code.TypeName";
+    case DAE.C_VARIABLENAME() then "OpenModelica.Code.VariableName";
+    else "Types.printCodeTypeStr failed";
+  end match;
+end printCodeTypeStr;
+
 end Types;

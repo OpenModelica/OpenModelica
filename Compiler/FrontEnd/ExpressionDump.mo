@@ -577,6 +577,7 @@ algorithm
       DAE.ExpType et;
       list<DAE.MatchCase> cases;
       DAE.Pattern pat;
+      Absyn.CodeNode code;
     
     case (DAE.END(), _, _, _) then "end";
     
@@ -918,6 +919,8 @@ algorithm
 
     case (DAE.PATTERN(pattern=pat),_,_,_)
       then Patternm.patternStr(pat);
+        
+    case (DAE.CODE(code=code),_,_,_) then "$Code(" +& Dump.printCodeStr(code) +& ")";
 
     case (e, _, _, _)
       equation

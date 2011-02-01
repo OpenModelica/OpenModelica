@@ -1283,10 +1283,17 @@ These are MetaModelica extensions."
   input Boolean isPartialFn;
   output DAE.Type outType;
 algorithm
-  outType := match (ty,isPartialFn)
+  outType := matchcontinue (ty,isPartialFn)
+    local
+      String name;
+    case ((_,SOME(Absyn.FULLYQUALIFIED(Absyn.QUALIFIED("OpenModelica",Absyn.QUALIFIED("Code",Absyn.IDENT(name)))))),_)
+      then Util.assoc(name,{
+        ("TypeName",(DAE.T_CODE(DAE.C_TYPENAME()),NONE())),
+        ("VariableName",(DAE.T_CODE(DAE.C_VARIABLENAME()),NONE()))
+      });
     case (ty,false) then ty;
     case (ty,true) then Types.makeFunctionPolymorphicReference(ty);
-  end match;
+  end matchcontinue;
 end fixInstClassType;
 
 protected function updateEnumerationEnvironment

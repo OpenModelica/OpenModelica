@@ -6796,12 +6796,6 @@ protected function elabCallInteractive "function: elabCallInteractive
       then
         (cache, Expression.makeBuiltinCall("list",{DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER())},DAE.ET_STRING()),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
 
-    case (cache,env,Absyn.CREF_IDENT(name = "checkModel"),{Absyn.CREF(componentRef = cr)},{},impl,SOME(st),_,_)
-      equation
-        className = Absyn.crefToPath(cr);
-      then (cache,Expression.makeBuiltinCall("checkModel",
-            {DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER())},DAE.ET_STRING()),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
-
     case (cache,env,Absyn.CREF_IDENT(name = "checkAllModelsRecursive"),{Absyn.CREF(componentRef = cr)},{},impl,SOME(st),_,_)
       equation
         className = Absyn.crefToPath(cr);
@@ -9740,10 +9734,20 @@ algorithm
       Ident id;
       DAE.Properties props;
       Prefix.Prefix pre;
+      DAE.CodeType ct;
 
     // the empty case
     case (cache, _, {}, _, slots, checkTypes, impl, polymorphicBindings,pre,info)
       then (cache,slots,{},polymorphicBindings);
+
+    case (cache, env, (e :: es), ((farg as (_,(DAE.T_CODE(ct),_))) :: vs), slots, checkTypes as true, impl, polymorphicBindings,pre,info)
+      equation
+        e_1 = elabCodeExp(e,ct,info);
+        (cache,slots_1,clist,polymorphicBindings) =
+        elabPositionalInputArgs(cache, env, es, vs, slots, checkTypes, impl, polymorphicBindings, pre, info);
+        newslots = fillSlot(farg, e_1, {}, slots_1,checkTypes,pre,info);
+      then
+        (cache,newslots,(DAE.C_VAR() :: clist),polymorphicBindings);
 
     // exact match
     case (cache, env, (e :: es), ((farg as (_,vt)) :: vs), slots, checkTypes as true, impl, polymorphicBindings,pre,info)
@@ -13333,5 +13337,31 @@ algorithm
   SLOT(slotFilled = res) := s;
   res := b and res;
 end slotAnd;
+
+protected function elabCodeExp
+  input Absyn.Exp exp;
+  input DAE.CodeType ct;
+  input Absyn.Info info;
+  output DAE.Exp outExp;
+algorithm
+  outExp := match (exp,ct,info)
+    local
+      String s1,s2;
+      Absyn.ComponentRef cr;
+      Absyn.Path path;
+    case (Absyn.CREF(componentRef=cr),DAE.C_TYPENAME(),_)
+      equation
+        path = Absyn.crefToPath(cr);
+      then DAE.CODE(Absyn.C_TYPENAME(path),DAE.ET_OTHER());
+    case (Absyn.CREF(componentRef=cr),DAE.C_VARIABLENAME(),_)
+      then DAE.CODE(Absyn.C_VARIABLENAME(cr),DAE.ET_OTHER());
+    case (exp,ct,info)
+      equation
+        s1 = Dump.printExpStr(exp);
+        s2 = Types.printCodeTypeStr(ct);
+        Error.addSourceMessage(Error.ELAB_CODE_EXP_FAILED, {s1,s2}, info);
+      then fail();
+  end match;
+end elabCodeExp;
 
 end Static;

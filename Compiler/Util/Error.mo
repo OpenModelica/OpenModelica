@@ -249,6 +249,7 @@ public constant ErrorID DOUBLE_DECLARATION_OF_ELEMENTS=161;
 public constant ErrorID INVALID_REDECLARATION_OF_CLASS=162;
 public constant ErrorID MULTIPLE_QUALIFIED_IMPORTS_WITH_SAME_NAME=163;
 public constant ErrorID EXTENDS_INHERITED_FROM_LOCAL_EXTENDS=164;
+public constant ErrorID ELAB_CODE_EXP_FAILED=165;
 
 public constant ErrorID UNBOUND_PARAMETER_WITH_START_VALUE_WARNING=499;
 public constant ErrorID UNBOUND_PARAMETER_WARNING=500;
@@ -704,6 +705,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (META_UNUSED_AS_BINDING,TRANSLATION(),NOTIFICATION(),"Removing unused as-binding: %s."),
           (FAILED_TO_EVALUATE_EXPRESSION,TRANSLATION(),ERROR(),"Could not evaluate expression: %s"),
           (MATCH_TO_SWITCH_OPTIMIZATION,TRANSLATION(),NOTIFICATION(),"Converted match expression to switch of type %s."),
+          (ELAB_CODE_EXP_FAILED,TRANSLATION(),ERROR(),"Failed to elaborate %s as a code expression of type %s."),
 
           (COMPILER_NOTIFICATION,TRANSLATION(),NOTIFICATION(),"%s"),
           (COMPILER_WARNING,TRANSLATION(),WARNING(),"%s")

@@ -746,8 +746,20 @@ public uniontype TType "-TType contains the actual type"
   record T_META_ARRAY
     Type ty;
   end T_META_ARRAY;
+  
+  record T_CODE
+    CodeType ty;
+  end T_CODE;
 
 end TType;
+
+public uniontype CodeType
+  record C_TYPENAME
+  end C_TYPENAME;
+  
+  record C_VARIABLENAME
+  end C_VARIABLENAME;
+end CodeType;
 
 public constant FunctionAttributes FUNCTION_ATTRIBUTES_BUILTIN = FUNCTION_ATTRIBUTES(NO_INLINE(),true,FUNCTION_BUILTIN(NONE())); 
 public constant FunctionAttributes FUNCTION_ATTRIBUTES_DEFAULT = FUNCTION_ATTRIBUTES(NO_INLINE(),true,FUNCTION_NOT_BUILTIN()); 

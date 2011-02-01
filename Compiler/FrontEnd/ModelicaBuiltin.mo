@@ -394,7 +394,19 @@ external "builtin";
 end classDirectory;
 
 encapsulated package OpenModelica
+
+type Code "Code quoting is not a uniontype yet because that would require enabling MetaModelica extensions in the regular compiler.
+Besides, it has special semantics."
+
+type TypeName "A path, for example the name of a class, e.g. A.B.C or .A.B" end TypeName;
+type VariableName "A variable name, e.g. a.b or a[1].b[3].c" end VariableName;
+
+end Code;
+
 package Scripting
+  
+import OpenModelica.Code.TypeName;
+import OpenModelica.Code.VariableName;
 
 record CheckSettingsResult
   String OPENMODELICAHOME,OPENMODELICALIBRARY,OMC_PATH;
@@ -769,6 +781,12 @@ function cd "change directory to the given path (which may be either relative or
   output String workingDirectory;
 external "builtin";
 end cd;
+
+function checkModel
+  input TypeName className;
+  output String result;
+external "builtin";
+end checkModel;
 
 end Scripting;
 end OpenModelica;
