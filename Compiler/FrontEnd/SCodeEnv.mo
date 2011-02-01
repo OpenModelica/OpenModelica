@@ -1223,7 +1223,7 @@ algorithm
       Absyn.Path path;
       Env rest;
 
-    case (FRAME(frameType = IMPLICIT_SCOPE) :: rest)
+    case (FRAME(frameType = IMPLICIT_SCOPE()) :: rest)
       then getEnvPath(rest);
 
     case ({FRAME(name = SOME(name))})
@@ -1361,9 +1361,9 @@ protected function printFrameTypeStr
   output String outString;
 algorithm
   outString := match(inFrame)
-    case NORMAL_SCOPE then "Normal";
-    case ENCAPSULATED_SCOPE then "Encapsulated";
-    case IMPLICIT_SCOPE then "Implicit";
+    case NORMAL_SCOPE() then "Normal";
+    case ENCAPSULATED_SCOPE() then "Encapsulated";
+    case IMPLICIT_SCOPE() then "Implicit";
   end match;
 end printFrameTypeStr;
 

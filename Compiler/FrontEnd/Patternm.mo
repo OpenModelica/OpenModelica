@@ -171,7 +171,7 @@ protected function elabPattern2
   output Env.Cache outCache;
   output DAE.Pattern pattern;
 algorithm
-  (outCache,pattern) := match (cache,env,lhs,ty,info)
+  (outCache,pattern) := matchcontinue (cache,env,lhs,ty,info)
     local
       list<Absyn.Exp> exps;
       list<DAE.Type> tys;
@@ -291,7 +291,7 @@ algorithm
         str = Dump.printExpStr(lhs) +& " of type " +& Types.unparseType(ty);
         Error.addSourceMessage(Error.META_INVALID_PATTERN, {str}, info);
       then fail();
-  end match;
+  end matchcontinue;
 end elabPattern2;
 
 protected function elabPatternTuple

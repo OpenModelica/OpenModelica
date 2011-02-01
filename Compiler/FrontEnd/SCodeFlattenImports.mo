@@ -382,7 +382,7 @@ protected function checkNotExtendsDependent
   input Absyn.Info inInfo;
   output Boolean outResult;
 algorithm
-  _ := matchcontinue(inBaseClass, inEnv, inInfo)
+  outResult := matchcontinue(inBaseClass, inEnv, inInfo)
     local
       Absyn.Path bc;
       Absyn.Ident id;
