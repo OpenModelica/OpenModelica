@@ -55,12 +55,18 @@ public type Import = Absyn.Import;
 
 protected import SCodeFlattenImports;
 
-public constant Item BUILTIN_REAL = SCodeEnv.BUILTIN("Real");
-public constant Item BUILTIN_INTEGER = SCodeEnv.BUILTIN("Integer");
-public constant Item BUILTIN_BOOLEAN = SCodeEnv.BUILTIN("Boolean");
-public constant Item BUILTIN_STRING = SCodeEnv.BUILTIN("String");
-public constant Item BUILTIN_STATESELECT = SCodeEnv.BUILTIN("StateSelect");
-public constant Item BUILTIN_EXTERNALOBJECT = SCodeEnv.BUILTIN("ExternalObject");
+public constant Item BUILTIN_REAL = 
+  SCodeEnv.BUILTIN("Real", SCodeEnv.emptyEnv);
+public constant Item BUILTIN_INTEGER = 
+  SCodeEnv.BUILTIN("Integer", SCodeEnv.emptyEnv);
+public constant Item BUILTIN_BOOLEAN = 
+  SCodeEnv.BUILTIN("Boolean", SCodeEnv.emptyEnv);
+public constant Item BUILTIN_STRING = 
+  SCodeEnv.BUILTIN("String", SCodeEnv.emptyEnv);
+public constant Item BUILTIN_STATESELECT = 
+  SCodeEnv.BUILTIN("StateSelect", SCodeEnv.emptyEnv);
+public constant Item BUILTIN_EXTERNALOBJECT = 
+  SCodeEnv.BUILTIN("ExternalObject", SCodeEnv.emptyEnv);
 
 public function lookupSimpleName
   "Looks up a simple identifier in the environment and returns the environment
@@ -108,6 +114,17 @@ algorithm
       then
         (opt_item, opt_path, opt_env);
 
+    // If the current frame is encapsulated, check for builtin types and
+    // functions in the top scope.
+    case (_, SCodeEnv.FRAME(frameType = SCodeEnv.ENCAPSULATED_SCOPE()) :: 
+        rest_env)
+      equation
+        rest_env = SCodeEnv.getEnvTopScope(rest_env);
+        (opt_item, opt_path, opt_env) = lookupSimpleName2(inName, rest_env);
+        checkBuiltinItem(opt_item);
+      then
+        (opt_item, opt_path, opt_env);
+
   end matchcontinue;
 end lookupSimpleName2;
 
@@ -120,6 +137,18 @@ algorithm
     else then ();
   end match;
 end frameNotEncapsulated;
+
+protected function checkBuiltinItem
+  input Option<Item> inItem;
+algorithm
+  _ := match(inItem)
+    local
+      String name;
+
+    case (SOME(SCodeEnv.BUILTIN(name = _))) then ();
+    case (NONE()) then ();
+  end match;
+end checkBuiltinItem;
 
 public function lookupInLocalScope
   "Looks up a simple identifier in the environment. Returns SOME(item) if an
@@ -237,8 +266,8 @@ algorithm
       equation
         // Find the base class.
         (item, _, SOME(env)) = lookupBaseClassName(bc, inEnv, info);
-				// Hide the imports to make sure that we don't find the name via them
-				// (imports are not inherited).
+        // Hide the imports to make sure that we don't find the name via them
+        // (imports are not inherited).
         item = SCodeEnv.setImportsInItemHidden(item, true);
         // Look in the base class.
         (item, env) = SCodeEnv.replaceRedeclaredClassesInEnv(redecls, item, env, inEnv);
@@ -806,7 +835,7 @@ algorithm
 
     // A MetaModelica type such as list or tuple.
     case (Absyn.TCOMPLEX(path = Absyn.IDENT(name = name)), _, _)
-      then (SCodeEnv.BUILTIN(name), SCodeEnv.emptyEnv);
+      then (SCodeEnv.BUILTIN(name, SCodeEnv.emptyEnv), SCodeEnv.emptyEnv);
          
   end match;
 end lookupTypeSpec;

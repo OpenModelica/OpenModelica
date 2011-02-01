@@ -6456,7 +6456,7 @@ algorithm
       list<Absyn.NamedArg> nargs;
       Boolean impl;
       Absyn.Path fn_1;
-      Ident fnstr,argstr,prestr,s,name;
+      Ident fnstr,argstr,prestr,s,name,env_str;
       list<Ident> argstrs;
       Env.Cache cache;
       Prefix.Prefix pre;
@@ -6483,6 +6483,15 @@ algorithm
         prestr = PrefixUtil.printPrefixStr3(pre);
         Error.addSourceMessage(Error.WRONG_TYPE_OR_NO_OF_ARGS, {s,prestr}, info);
       then fail();
+
+    case (_, _, Absyn.CREF_INVALID(componentRef = fn), _, _, _, _, _, _, _)
+      equation
+        fnstr = Absyn.printComponentRefStr(fn);
+        env_str = Env.printEnvPathStr(inEnv);
+        Error.addSourceMessage(Error.LOOKUP_FUNCTION_ERROR, 
+          {fnstr, env_str}, info);
+      then
+        fail();
 
     /* Interactive mode */
     case (cache,env,fn,args,nargs,(impl as true),st,pre,info,numErrorMessages)

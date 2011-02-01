@@ -198,6 +198,7 @@ function homotopy
   input Real actual;
   input Real simplified;
   output Real outValue;
+external "builtin";
 end homotopy;
 
 // Dummy functions that can't be properly defined in Modelica, but used by

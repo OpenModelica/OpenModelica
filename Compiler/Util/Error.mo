@@ -249,7 +249,8 @@ public constant ErrorID DOUBLE_DECLARATION_OF_ELEMENTS=161;
 public constant ErrorID INVALID_REDECLARATION_OF_CLASS=162;
 public constant ErrorID MULTIPLE_QUALIFIED_IMPORTS_WITH_SAME_NAME=163;
 public constant ErrorID EXTENDS_INHERITED_FROM_LOCAL_EXTENDS=164;
-public constant ErrorID ELAB_CODE_EXP_FAILED=165;
+public constant ErrorID LOOKUP_FUNCTION_ERROR=165;
+public constant ErrorID ELAB_CODE_EXP_FAILED=166;
 
 public constant ErrorID UNBOUND_PARAMETER_WITH_START_VALUE_WARNING=499;
 public constant ErrorID UNBOUND_PARAMETER_WARNING=500;
@@ -699,6 +700,8 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           "Qualified import name %s already exists in this scope."),
           (EXTENDS_INHERITED_FROM_LOCAL_EXTENDS,TRANSLATION(),ERROR(),
           "Extends %s depends on inherited element %s."),
+          (LOOKUP_FUNCTION_ERROR,TRANSLATION(),ERROR(),
+          "Function %s not found in scope %s."),
           (MATCHCONTINUE_TO_MATCH_OPTIMIZATION,TRANSLATION(),NOTIFICATION(),"This matchcontinue expression has no overlapping patterns and should be using match instead of matchcontinue."),
           (META_DEAD_CODE,TRANSLATION(),NOTIFICATION(),"Dead code elimination: %s."),
           (META_UNUSED_DECL,TRANSLATION(),NOTIFICATION(),"Unused local variable: %s."),

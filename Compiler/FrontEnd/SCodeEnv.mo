@@ -55,12 +55,12 @@ public type Import = Absyn.Import;
 
 public uniontype ImportTable
   record IMPORT_TABLE
-		// Imports should not be inherited, but removing them from the environment
-		// when doing lookup through extends causes problems for the lookup later
-		// on, because for example components may have types that depends on imports.
-		// The hidden flag allows the lookup to 'hide' the imports temporarily,
-		// without actually removing them.
-		Boolean hidden "If true means that the imports are hidden.";
+    // Imports should not be inherited, but removing them from the environment
+    // when doing lookup through extends causes problems for the lookup later
+    // on, because for example components may have types that depends on
+    // imports.  The hidden flag allows the lookup to 'hide' the imports
+    // temporarily, without actually removing them.
+    Boolean hidden "If true means that the imports are hidden.";
     list<Import> qualifiedImports;
     list<Import> unqualifiedImports;
   end IMPORT_TABLE;
@@ -109,6 +109,7 @@ public uniontype Item
 
   record BUILTIN
     String name;
+    Env env;
   end BUILTIN;
 end Item;
 
@@ -278,9 +279,11 @@ public function enterScope
 protected
   Frame cls_env;
   AvlTree cls_and_vars;
+  Item item;
 algorithm
   FRAME(clsAndVars = cls_and_vars) :: _ := inEnv;
-  CLASS(env = {cls_env}) := avlTreeGet(cls_and_vars, inName);
+  item := avlTreeGet(cls_and_vars, inName);
+  {cls_env} := getItemEnv(item);
   outEnv := cls_env :: inEnv;
 end enterScope;
 
@@ -353,6 +356,15 @@ algorithm
       SCode.ClassDef cdef;
       Absyn.Path cls_path;
 
+    case (SCode.CLASS(name = cls_name, classDef = cdef as SCode.PARTS(
+        externalDecl = SOME(Absyn.EXTERNALDECL(lang = SOME("builtin"))))), _)
+      equation
+        class_env = openScope(emptyEnv, inClass);
+        class_env = extendEnvWithClassComponents(cls_name, cdef, class_env);
+        env = extendEnvWithItem(BUILTIN(cls_name, class_env), inEnv, cls_name);
+      then
+        env;
+
     case (SCode.CLASS(classDef = SCode.CLASS_EXTENDS(baseClassName = _)), _)
       then addClassExtendsToEnvExtendsTable(inClass, inEnv);
 
@@ -384,8 +396,8 @@ algorithm
 end removeExtendsFromLocalScope;
   
 public function setImportTableHidden
-	"Sets the 'hidden' flag in the import table in the local scope of the given
-	environment."
+  "Sets the 'hidden' flag in the import table in the local scope of the given
+  environment."
   input Env inEnv;
   input Boolean inHidden;
   output Env outEnv;
@@ -405,8 +417,8 @@ algorithm
 end setImportTableHidden;
 
 public function setImportsInItemHidden
-	"Sets the 'hidden' flag in the import table for the given items environment if
-	the item is a class. Otherwise does nothing."
+  "Sets the 'hidden' flag in the import table for the given items environment if
+  the item is a class. Otherwise does nothing."
   input Item inItem;
   input Boolean inHidden;
   output Item outItem;
@@ -1252,30 +1264,10 @@ algorithm
   exts := newExtendsTable();
   imps := newImportTable();
 
-  tree := avlTreeAdd(tree, "time", VAR(
-    SCode.COMPONENT("time", Absyn.UNSPECIFIED(), false, false, false,
-    SCode.ATTR({}, false, false, SCode.RO(), SCode.VAR(), Absyn.INPUT()),
-    Absyn.TPATH(Absyn.IDENT("Real"), NONE()), SCode.NOMOD(),
-    NONE(), NONE(), Absyn.dummyInfo, NONE())));
-
-  tree := avlTreeAdd(tree, "String", CLASS(
-    SCode.CLASS("String", false, false, SCode.R_FUNCTION(),
-      SCode.PARTS({}, {}, {}, {}, {}, NONE(), {}, NONE()), Absyn.dummyInfo),
-    emptyEnv));
-
-  tree := avlTreeAdd(tree, "Integer", CLASS(
-    SCode.CLASS("Integer", false, false, SCode.R_FUNCTION(),
-      SCode.PARTS({}, {}, {}, {}, {}, NONE(), {}, NONE()), Absyn.dummyInfo),
-    emptyEnv));
-
-  // Modelica.Fluid.Pipes.BaseClasses.HeatTransfer.LocalPipeFlowHeatTransfer
-  // tries to call a function called spliceFunction. This seems to be a built-in
-  // Dymola function, so until this has been fixed we'll just pretend that we
-  // also have it.
-  tree := avlTreeAdd(tree, "spliceFunction", CLASS(
-    SCode.CLASS("spliceFunction", false, false, SCode.R_FUNCTION(),
-      SCode.PARTS({}, {}, {}, {}, {}, NONE(), {}, NONE()), Absyn.dummyInfo),
-    emptyEnv));
+  tree := avlTreeAdd(tree, "time", BUILTIN("time", emptyEnv));
+  tree := avlTreeAdd(tree, "String", BUILTIN("String", emptyEnv));
+  tree := avlTreeAdd(tree, "Integer", BUILTIN("Integer", emptyEnv));
+  tree := avlTreeAdd(tree, "spliceFunction", BUILTIN("spliceFunction", emptyEnv));
 
   outInitialEnv := {FRAME(NONE(), NORMAL_SCOPE(), tree, exts, imps)};
 end buildInitialEnv;
@@ -1537,6 +1529,19 @@ algorithm
     case (BUILTIN(name = _)) then Absyn.dummyInfo;
   end match;
 end getItemInfo;
+
+protected function getItemEnv
+  input Item inItem;
+  output Env outEnv;
+algorithm
+  outEnv := match(inItem)
+    local
+      Env env;
+
+    case (CLASS(env = env)) then env;
+    case (BUILTIN(env = env)) then env;
+  end match;
+end getItemEnv;
 
 public function avlTreeGet
   "Get a value from the binary tree given a key."
