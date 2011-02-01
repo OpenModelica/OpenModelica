@@ -3994,6 +3994,7 @@ algorithm
         oldDir = System.pwd();
         changeToTempDirectory(cdToTemp);
         (cache,filenameprefix) = extractFilePrefix(cache,env, fileprefix, st, msg);
+        filenameprefix = Util.if_(filenameprefix ==& "<default>", Absyn.pathString(classname), filenameprefix);
         cname_str = Absyn.pathString(classname);
         p_1 = SCodeUtil.translateAbsyn2SCode(p);
         (cache,env,_,dae_1) = Inst.instantiateClass(cache, InnerOuter.emptyInstHierarchy, p_1, classname);

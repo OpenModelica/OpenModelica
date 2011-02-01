@@ -2008,6 +2008,7 @@ algorithm
   _:= matchcontinue (fun)
     local
       Absyn.Path name;
+    case DAE.FUNCTION(type_ = (DAE.T_FUNCTION(functionAttributes = DAE.FUNCTION_ATTRIBUTES(isBuiltin = DAE.FUNCTION_BUILTIN(_))),_)) then ();
     case(fun)
       equation
         name = DAEUtil.functionName(fun);

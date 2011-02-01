@@ -788,5 +788,86 @@ function checkModel
 external "builtin";
 end checkModel;
 
+function checkAllModelsRecursive
+  input TypeName className;
+  output String result;
+external "builtin";
+end checkAllModelsRecursive;
+
+function typeOf
+  input VariableName variableName;
+  output String result;
+external "builtin";
+end typeOf;
+
+function instantiateModel
+  input TypeName className;
+  output String result;
+external "builtin";
+end instantiateModel;
+
+function generateCode "The input is a function name for which C-code is generated and compiled into a dll/so"
+  input TypeName className;
+  output Boolean success;
+external "builtin";
+end generateCode;
+
+function loadModel "Parses the getModelicaPath(), and finds the package to load. If the input is Modelica.XXX, the complete Modelica AST is loaded."
+  input TypeName className;
+  output Boolean success;
+external "builtin";
+end loadModel;
+
+function deleteFile "Deletes a file with the given name"
+  input String fileName;
+  output Boolean success;
+external "builtin";
+end deleteFile;
+
+function saveModel
+  input String fileName;
+  input TypeName className;
+  output Boolean success;
+external "builtin";
+end saveModel;
+
+function saveTotalModel
+  input String fileName;
+  input TypeName className;
+  output Boolean success;
+external "builtin";
+end saveTotalModel;
+
+function save
+  input TypeName className;
+  output Boolean success;
+external "builtin";
+end save;
+
+function translateGraphics
+  input TypeName className;
+  output String result;
+external "builtin";
+end translateGraphics;
+
+function readSimulationResultSize
+  input String fileName;
+  output Integer sz "The number of intervals that are present in the output file";
+external "builtin";
+end readSimulationResultSize;
+
+function dumpXMLDAE
+  input TypeName className;
+  input String translationLevel := "flat";
+  input Boolean addOriginalIncidenceMatrix := false;
+  input Boolean addSolvingInfo := false;
+  input Boolean addMathMLCode := false;
+  input Boolean dumpResiduals := false;
+  input String fileNamePrefix := "<default>" "this is the className in string form by default";
+  input Boolean storeInTemp := false;
+  output String result[2] "Contents, Message/Filename; why is this an array and not 2 output arguments?";
+external "builtin";
+end dumpXMLDAE;
+
 end Scripting;
 end OpenModelica;

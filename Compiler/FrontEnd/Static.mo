@@ -6784,9 +6784,6 @@ protected function elabCallInteractive "function: elabCallInteractive
         ErrorExt.rollBack("Scripting");
       then fail();
 
-    case (cache,env,Absyn.CREF_IDENT(name = "typeOf"),{Absyn.CREF(componentRef = Absyn.CREF_IDENT(name = varid,subscripts = {}))},{},impl,SOME(st),_,_) then (cache,DAE.CALL(Absyn.IDENT("typeOf"),
-          {DAE.CODE(Absyn.C_VARIABLENAME(Absyn.CREF_IDENT(varid,{})),DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE()),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
-
     case (cache,env,Absyn.CREF_IDENT(name = "list"),{},{},impl,SOME(st),_,_)
       then (cache, Expression.makeBuiltinCall("list",{},DAE.ET_STRING()),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
 
@@ -6795,18 +6792,6 @@ protected function elabCallInteractive "function: elabCallInteractive
         className = Absyn.crefToPath(cr);
       then
         (cache, Expression.makeBuiltinCall("list",{DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER())},DAE.ET_STRING()),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
-
-    case (cache,env,Absyn.CREF_IDENT(name = "checkAllModelsRecursive"),{Absyn.CREF(componentRef = cr)},{},impl,SOME(st),_,_)
-      equation
-        className = Absyn.crefToPath(cr);
-      then (cache,Expression.makeBuiltinCall("checkAllModelsRecursive",
-          {DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER())},DAE.ET_STRING()),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
-
-    case (cache,env,Absyn.CREF_IDENT(name = "translateGraphics"),{Absyn.CREF(componentRef = cr)},{},impl,SOME(st),_,_)
-      equation
-        className = Absyn.crefToPath(cr);
-      then (cache,Expression.makeBuiltinCall("translateGraphics",
-            {DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER())},DAE.ET_STRING()),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "translateModel"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_)
       equation
@@ -6860,14 +6845,6 @@ protected function elabCallInteractive "function: elabCallInteractive
         (cache,Expression.makeBuiltinCall("exportDAEtoMatlab",
           {DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER()),filenameprefix},DAE.ET_STRING()),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
 
-    case (cache,env,Absyn.CREF_IDENT(name = "instantiateModel"),{Absyn.CREF(componentRef = cr)},{},impl,SOME(st),pre,_)
-      equation
-        className = Absyn.crefToPath(cr);
-        (cache,cr_1) = elabUntypedCref(cache,env, cr, impl,pre,info);
-      then
-        (cache, Expression.makeBuiltinCall("instantiateModel",
-          {DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER())},DAE.ET_STRING()),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
-
     case (cache,env,Absyn.CREF_IDENT(name = "buildModel"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_)
       equation 
         (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, info);
@@ -6905,11 +6882,6 @@ protected function elabCallInteractive "function: elabCallInteractive
           DAE.ET_ARRAY(DAE.ET_REAL(),{DAE.DIM_INTEGER(var_len),DAE.DIM_INTEGER(size)})),DAE.PROP(
           (DAE.T_ARRAY(DAE.DIM_INTEGER(var_len),
           (DAE.T_ARRAY(DAE.DIM_INTEGER(size),DAE.T_REAL_DEFAULT),NONE())),NONE()),DAE.C_VAR()),SOME(st));
-
-    case (cache,env,Absyn.CREF_IDENT(name = "readSimulationResultSize"),{Absyn.STRING(value = filename)},args,impl,SOME(st),_,_) 
-      /* elab_variablenames(vars) => vars\' & list_length(vars) => var_len */  
-    then (cache, Expression.makeBuiltinCall("readSimulationResultSize",{DAE.SCONST(filename)},DAE.ET_OTHER()),
-      DAE.PROP(DAE.T_INTEGER_DEFAULT,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "plot2"),{e1},{},impl,SOME(st),_,_)
       equation
@@ -7279,43 +7251,9 @@ protected function elabCallInteractive "function: elabCallInteractive
       then
         (cache,Expression.makeBuiltinCall("timing",{exp_1},DAE.ET_REAL()),DAE.PROP(DAE.T_REAL_DEFAULT,DAE.C_VAR()),st_1);
 
-    case (cache,env,Absyn.CREF_IDENT(name = "generateCode"),{Absyn.CREF(componentRef = cr)},{},impl,SOME(st),_,_)
-      equation
-        className = Absyn.crefToPath(cr);
-      then
-        (cache,Expression.makeBuiltinCall("generateCode",{DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER())},
-          DAE.ET_BOOL()),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
-
     case (cache,env,Absyn.CREF_IDENT(name = "listVariables"),{},{},impl,SOME(st),_,_)
       then (cache, Expression.makeBuiltinCall("listVariables",{},DAE.ET_OTHER()),
         DAE.PROP((DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_NOTYPE(),NONE())),NONE()),DAE.C_VAR()),SOME(st));  /* Returns an array of \"component references\" */
-
-    case (cache,env,Absyn.CREF_IDENT(name = "loadModel"),{Absyn.CREF(componentRef = cr)},{},impl,SOME(st),_,_)
-      equation
-        className = Absyn.crefToPath(cr);
-      then
-        (cache,Expression.makeBuiltinCall("loadModel",{DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER())},DAE.ET_BOOL()),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
-
-    case (cache,env,Absyn.CREF_IDENT(name = "deleteFile"),{Absyn.STRING(value = str)},{},impl,SOME(st),_,_)
-      then (cache, Expression.makeBuiltinCall("deleteFile",{DAE.SCONST(str)},DAE.ET_BOOL()),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
-
-    case (cache,env,Absyn.CREF_IDENT(name = "saveModel"),{Absyn.STRING(value = str),Absyn.CREF(componentRef = cr)},{},impl,SOME(st),_,_)
-      equation
-          className = Absyn.crefToPath(cr);
-      then
-        (cache,Expression.makeBuiltinCall("saveModel",{DAE.SCONST(str),DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER())},DAE.ET_BOOL()),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
-
-    case (cache,env,Absyn.CREF_IDENT(name = "saveTotalModel"),{Absyn.STRING(value = str),Absyn.CREF(componentRef = cr)},{},impl,SOME(st),_,_)
-      equation
-          className = Absyn.crefToPath(cr);
-      then
-        (cache,Expression.makeBuiltinCall("saveTotalModel",{DAE.SCONST(str),DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER())},DAE.ET_BOOL()),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
-
-    case (cache,env,Absyn.CREF_IDENT(name = "save"),{Absyn.CREF(componentRef = cr)},{},impl,SOME(st),_,_)
-      equation
-        className = Absyn.crefToPath(cr);
-      then
-        (cache,Expression.makeBuiltinCall("save",{DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER())},DAE.ET_BOOL()),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "getUnit"),{Absyn.CREF(componentRef = cr),Absyn.CREF(componentRef = cr2)},{},impl,SOME(st),pre,_)
       equation
@@ -7426,29 +7364,6 @@ protected function elabCallInteractive "function: elabCallInteractive
         excludeListSize = listLength(excludeList);
       then (cache,Expression.makeBuiltinCall("checkExamplePackages",{DAE.ARRAY(DAE.ET_ARRAY(DAE.ET_OTHER(),{DAE.DIM_INTEGER(excludeListSize)}),false,excludeList),DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER()),DAE.SCONST(str)},DAE.ET_STRING()),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_CONST()),SOME(st));
 
-     case (cache,env,Absyn.CREF_IDENT(name = "dumpXMLDAE"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_)
-      equation
-        className = Absyn.crefToPath(cr);
-        cname_str = Absyn.pathString(className);
-        (cache,translationLevel) = getOptionalNamedArg(cache, env, SOME(st), impl, "translationLevel",
-                                                      DAE.T_STRING_DEFAULT, args, DAE.SCONST("flat"),pre,info);
-        (cache,addOriginalIncidenceMatrix) = getOptionalNamedArg(cache,env, SOME(st), impl, "addOriginalIncidenceMatrix",
-          DAE.T_BOOL_DEFAULT, args, DAE.BCONST(false),pre,info);
-        (cache,addSolvingInfo) = getOptionalNamedArg(cache,env, SOME(st), impl, "addSolvingInfo",
-          DAE.T_BOOL_DEFAULT, args, DAE.BCONST(false),pre,info);
-        (cache,addMathMLCode) = getOptionalNamedArg(cache,env, SOME(st), impl, "addMathMLCode",
-          DAE.T_BOOL_DEFAULT, args, DAE.BCONST(false),pre,info);
-        (cache,dumpResiduals) = getOptionalNamedArg(cache,env, SOME(st), impl, "dumpResiduals",
-          DAE.T_BOOL_DEFAULT, args, DAE.BCONST(false),pre,info);
-        (cache,filenameprefix) = getOptionalNamedArg(cache,env, SOME(st), impl, "fileNamePrefix",
-          DAE.T_STRING_DEFAULT, args, DAE.SCONST(cname_str),pre,info);
-        (cache,storeInTemp) = getOptionalNamedArg(cache,env, SOME(st), impl, "storeInTemp",
-          DAE.T_BOOL_DEFAULT, args, DAE.BCONST(false),pre,info);
-      then
-        (cache,Expression.makeBuiltinCall("dumpXMLDAE",
-          {DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER()),translationLevel,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,filenameprefix,storeInTemp},DAE.ET_OTHER()),DAE.PROP(
-          (
-          DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_STRING_DEFAULT),NONE()),DAE.C_VAR()),SOME(st));
   end matchcontinue;
 end elabCallInteractive;
 
