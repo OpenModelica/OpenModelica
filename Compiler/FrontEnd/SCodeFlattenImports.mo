@@ -248,12 +248,30 @@ protected
 algorithm
   SCode.COMPONENT(name, io, fp, rp, pp, attr, type_spec, mod, cmt, cond, 
     info, cc) := inComponent;
+  attr := flattenAttributes(attr, inEnv, info);
   type_spec := flattenTypeSpec(type_spec, inEnv, info);
   mod := flattenModifier(mod, inEnv, info);
   cond := flattenOptExp(cond, inEnv, info);
   outComponent := SCode.COMPONENT(name, io, fp, rp, pp, attr, type_spec, mod,
     cmt, cond, info, cc);
 end flattenComponent;
+
+protected function flattenAttributes
+  input SCode.Attributes inAttributes;
+  input Env inEnv;
+  input Absyn.Info inInfo;
+  output SCode.Attributes outAttributes;
+protected
+  Absyn.ArrayDim ad;
+  Boolean fp, sp;
+  SCode.Accessibility acc;
+  SCode.Variability var;
+  Absyn.Direction dir;
+algorithm
+  SCode.ATTR(ad, fp, sp, acc, var, dir) := inAttributes;
+  ad := Util.listMap2(ad, flattenSubscript, inEnv, inInfo);
+  outAttributes := SCode.ATTR(ad, fp, sp, acc, var, dir);
+end flattenAttributes;
 
 protected function flattenTypeSpec
   input Absyn.TypeSpec inTypeSpec;
