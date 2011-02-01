@@ -806,7 +806,7 @@ algorithm
         Debug.fcall("bltdump", BackendDump.dumpComponents, comps);
         str = BackendDump.dumpComponentsGraphStr(BackendDAEUtil.systemSize(dlow_1),m,mT,v1,v2);
         Debug.fcall("dumpcompgraph",print,str);
-        modpar(dlow_1, v1, v2, comps);
+        modpar(cache, env, dlow_1, v1, v2, comps);
         Debug.fcall("execstat",print, "*** Main -> To simcodegen at time: " +& realString(clock()) +& "\n" );
         simcodegen(cache,env,classname, p, ap, daeimpl, dlow_1, v1, v2, m, mT, comps);
       then
@@ -827,13 +827,14 @@ end optimizeDae;
 protected function modpar
 "function: modpar
   The automatic paralellzation module."
+  input Env.Cache cache;
+  input Env.Env env;
   input BackendDAE.BackendDAE inBackendDAE1;
   input array<Integer> inIntegerArray2;
   input array<Integer> inIntegerArray3;
   input list<list<Integer>> inIntegerLstLst4;
 algorithm
-  _:=
-  matchcontinue (inBackendDAE1,inIntegerArray2,inIntegerArray3,inIntegerLstLst4)
+  _ := matchcontinue (cache,env,inBackendDAE1,inIntegerArray2,inIntegerArray3,inIntegerLstLst4)
     local
       Integer n,nx,ny,np;
       BackendDAE.BackendDAE indexed_dae,indexed_dae_1,dae;
@@ -841,16 +842,16 @@ algorithm
       String timestr,nps;
       array<Integer> ass1,ass2;
       list<list<Integer>> comps;
-    case (_,_,_,_)
+    case (_,_,_,_,_,_)
       equation
         n = RTOpts.noProc() "If modpar not enabled, nproc = 0, return" ;
         (n == 0) = true;
       then
         ();
-    case (dae,ass1,ass2,comps)
+    case (cache,env,dae,ass1,ass2,comps)
       equation
         indexed_dae = BackendDAEUtil.translateDae(dae,NONE());
-        indexed_dae_1 = BackendDAEUtil.calculateValues(indexed_dae);
+        indexed_dae_1 = BackendDAEUtil.calculateValues(cache,env,indexed_dae);
         TaskGraph.buildTaskgraph(indexed_dae_1, ass1, ass2, comps);
         TaskGraphExt.dumpGraph("model.viz");
         l = RTOpts.latency();
@@ -875,7 +876,7 @@ algorithm
         print("done\n");
       then
         ();
-    case (_,_,_,_)
+    else
       equation
         Debug.fprint("failtrace", "-modpar failed\n");
       then
@@ -926,7 +927,7 @@ algorithm
         Print.clearBuf();
         Debug.fcall("execstat",print, "*** Main -> simcodgen -> translateDae: " +& realString(clock()) +& "\n" );
         indexed_dlow = BackendDAEUtil.translateDae(dlow,NONE());
-        indexed_dlow_1 = BackendDAEUtil.calculateValues(indexed_dlow);
+        indexed_dlow_1 = BackendDAEUtil.calculateValues(cache,env,indexed_dlow);
         Debug.fcall("dumpindxdae", BackendDump.dump, indexed_dlow_1);
         cname_str = Absyn.pathString(classname);
         //filename = stringAppendList({cname_str,".cpp"});

@@ -49,6 +49,7 @@ encapsulated package BackendDAEUtil
 
 public import BackendDAE;
 public import DAE;
+public import Env;
 
 protected import Absyn;
 protected import BackendDump;
@@ -62,7 +63,6 @@ protected import DAEUtil;
 protected import Derive; 
 protected import Debug;
 protected import Error;
-protected import Env;
 protected import Expression;
 protected import ExpressionSimplify;
 protected import ExpressionDump;
@@ -928,10 +928,12 @@ end calculateVarSizes;
 public function calculateValues "function: calculateValues
   author: PA
   This function calculates the values from the parameter binding expressions."
+  input Env.Cache cache;
+  input Env.Env env;
   input BackendDAE.BackendDAE inBackendDAE;
   output BackendDAE.BackendDAE outBackendDAE;
 algorithm
-  outBackendDAE := match (inBackendDAE)
+  outBackendDAE := match (cache,env,inBackendDAE)
     local
       list<BackendDAE.Var> knvarlst;
       BackendDAE.Variables knvars,vars,extVars;
@@ -941,11 +943,11 @@ algorithm
       array<DAE.Algorithm> al;
       BackendDAE.EventInfo wc;
       BackendDAE.ExternalObjectClasses extObjCls;
-    case (BackendDAE.DAE(orderedVars = vars,knownVars = knvars,externalObjects=extVars,aliasVars = av,orderedEqs = eqns,
+    case (cache,env,BackendDAE.DAE(orderedVars = vars,knownVars = knvars,externalObjects=extVars,aliasVars = av,orderedEqs = eqns,
                  removedEqs = seqns,initialEqs = ie,arrayEqs = ae,algorithms = al,eventInfo = wc,extObjClasses=extObjCls))
       equation
         knvarlst = varList(knvars);
-        knvarlst = Util.listMap1(knvarlst, calculateValue, knvars);
+        knvarlst = Util.listMap3(knvarlst, calculateValue, cache, env, knvars);
         knvars = listVar(knvarlst);
       then
         BackendDAE.DAE(vars,knvars,extVars,av,eqns,seqns,ie,ae,al,wc,extObjCls);
@@ -954,10 +956,12 @@ end calculateValues;
 
 protected function calculateValue
   input BackendDAE.Var inVar;
+  input Env.Cache cache;
+  input Env.Env env;
   input BackendDAE.Variables vars;
   output BackendDAE.Var outVar;
 algorithm
-  outVar := matchcontinue(inVar, vars)
+  outVar := matchcontinue(inVar, cache, env, vars)
     local
       DAE.ComponentRef cr;
       BackendDAE.VarKind vk;
@@ -974,13 +978,16 @@ algorithm
       Values.Value v;
     case (BackendDAE.VAR(varName = cr, varKind = vk, varDirection = vd, varType = ty,
           bindExp = SOME(e), arryDim = dims, index = idx, source = src, 
-          values = va, comment = c, flowPrefix = fp, streamPrefix = sp), _)
+          values = va, comment = c, flowPrefix = fp, streamPrefix = sp), cache, env, _)
       equation
         ((e2, _)) = Expression.traverseExp(e, replaceCrefsWithValues, vars);
+        // Is this supposed to be Ceval with the cache+env
+        // (_, v, _) = Ceval.ceval(cache, env, e2, false,NONE(), NONE(), Ceval.MSG());
+        // Or should the error messages be disabled, i.e. Ceval.NO_MSG()
         (_, v, _) = Ceval.ceval(Env.emptyCache(), Env.emptyEnv, e2, false,NONE(), NONE(), Ceval.MSG());
       then
         BackendDAE.VAR(cr, vk, vd, ty, SOME(e), SOME(v), dims, idx, src, va, c, fp, sp);
-    case (_, _) then inVar;
+    else inVar;
   end matchcontinue;
 end calculateValue;
 

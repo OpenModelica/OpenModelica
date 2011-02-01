@@ -4066,7 +4066,7 @@ algorithm
         (ass1,ass2,dlow_1,m,mT) = BackendDAETransform.matchingAlgorithm(dlow, m, mT, (BackendDAE.INDEX_REDUCTION(),BackendDAE.EXACT(), BackendDAE.REMOVE_SIMPLE_EQN()),Env.getFunctionTree(cache));
         (comps) = BackendDAETransform.strongComponents(m, mT, ass1, ass2);
         indexed_dlow = BackendDAEUtil.translateDae(dlow_1,NONE());
-        indexed_dlow_1 = BackendDAEUtil.calculateValues(indexed_dlow);
+        indexed_dlow_1 = BackendDAEUtil.calculateValues(cache,env,indexed_dlow);
         xml_filename = stringAppendList({filenameprefix,".xml"});
         funcelems = DAEUtil.getFunctionList(Env.getFunctionTree(cache));
         Print.clearBuf();

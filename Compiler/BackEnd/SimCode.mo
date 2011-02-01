@@ -935,7 +935,7 @@ algorithm
         dlow_1 = Inline.inlineCalls(SOME(funcs),{DAE.NORM_INLINE(),DAE.AFTER_INDEX_RED_INLINE()},dlow_1);
         (comps) = BackendDAETransform.strongComponents(m, mT, ass1, ass2);
         indexed_dlow = BackendDAEUtil.translateDae(dlow_1,NONE());
-        indexed_dlow_1 = BackendDAEUtil.calculateValues(indexed_dlow);
+        indexed_dlow_1 = BackendDAEUtil.calculateValues(cache,env,indexed_dlow);
         Debug.fprint("bltdump", "indexed DAE:\n");
         Debug.fcall("bltdump", BackendDump.dumpIncidenceMatrix, m);
         Debug.fcall("bltdump", BackendDump.dumpIncidenceMatrixT, mT);
@@ -1072,7 +1072,7 @@ algorithm
         dlow_1 = Inline.inlineCalls(SOME(funcs),{DAE.NORM_INLINE(),DAE.AFTER_INDEX_RED_INLINE()},dlow_1);
         (comps) = BackendDAETransform.strongComponents(m, mT, ass1, ass2);
         indexed_dlow = BackendDAEUtil.translateDae(dlow_1,NONE());
-        indexed_dlow_1 = BackendDAEUtil.calculateValues(indexed_dlow);
+        indexed_dlow_1 = BackendDAEUtil.calculateValues(cache, env, indexed_dlow);
         Debug.fprint("bltdump", "indexed DAE:\n");
         Debug.fcall("bltdump", BackendDump.dumpIncidenceMatrix, m);
         Debug.fcall("bltdump", BackendDump.dumpIncidenceMatrixT, mT);
