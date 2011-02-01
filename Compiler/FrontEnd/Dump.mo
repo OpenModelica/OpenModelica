@@ -3482,6 +3482,14 @@ algorithm
         Print.printBuf("Absyn.WILD");
       then
         ();
+
+    case Absyn.CREF_INVALID(componentRef = cr)
+      equation
+        Print.printBuf("Absyn.CREF_INVALID(\"");
+        printComponentRef(cr);
+        Print.printBuf("\")");
+      then
+        ();
   end match;
 end printComponentRef;
 
@@ -3545,6 +3553,9 @@ algorithm
         s_3;
     
     case Absyn.WILD() then "_";
+
+    case Absyn.CREF_INVALID(componentRef = cr)
+      then printComponentRefStr(cr);
   end match;
 end printComponentRefStr;
 
@@ -5282,6 +5293,13 @@ algorithm
       equation
         Print.printBuf("record Absyn.WILD end Absyn.WILD;");
       then ();
+    case Absyn.CREF_INVALID(componentRef = p)
+      equation
+        Print.printBuf("record Absyn.CREF_INVALID componentRef = ");
+        printComponentRefAsCorbaString(p);
+        Print.printBuf(" end Absyn.CREF_INVALID;");
+      then
+        ();
   end match;
 end printComponentRefAsCorbaString;
 

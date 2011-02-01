@@ -712,14 +712,9 @@ algorithm
       then
         cref;
 
-    else
-      equation
-        cref_str = Absyn.printComponentRefStr(inCref);
-        env_str = SCodeEnv.getEnvName(inEnv);
-        Error.addSourceMessage(Error.LOOKUP_VARIABLE_ERROR, 
-          {cref_str, env_str}, inInfo);
-      then
-        fail();
+    // Otherwise, mark the cref as invalid, which is ok as long as it's not
+    // actually used anywhere.
+    else then Absyn.CREF_INVALID(inCref);
 
   end matchcontinue;
 end lookupComponentRef;

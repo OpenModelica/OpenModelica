@@ -979,6 +979,11 @@ uniontype ComponentRef "A component reference is the fully or partially qualifie
 
   record WILD end WILD;
 
+  record CREF_INVALID
+    "Used to indicate a cref that could not be found, which is legal as long as
+    it's not used."
+    ComponentRef componentRef;
+  end CREF_INVALID;
 end ComponentRef;
 
 
@@ -2038,6 +2043,7 @@ algorithm
         (CREF_IDENT(name, subs), tup);
 
     case (WILD(), _) then (inCref, inTuple);
+    case (CREF_INVALID(componentRef = _), _) then (inCref, inTuple);
   end match;
 end traverseExpBidirCref;
 
@@ -2536,6 +2542,8 @@ algorithm
         s1 = "." +& s2;
       then s1;
     case (WILD()) then "_";
+    case (CREF_INVALID(componentRef = child))
+      then printComponentRefStr(child);
   end match;
 end printComponentRefStr;
 
@@ -3169,6 +3177,7 @@ algorithm
     case (STRING(value = _),checkSubs) then {};
     case (BOOL(value = _),checkSubs) then {};
     case (CREF(componentRef = WILD()),_) then {};
+    case (CREF(componentRef = CREF_INVALID(componentRef = _)), _) then {};
     case (CREF(componentRef = cr),false) then {cr};
 
     case (CREF(componentRef = (cr)),true)
@@ -4900,6 +4909,7 @@ algorithm
         then lst;
       case(id, CREF_FULLYQUALIFIED(cref)) then findIteratorInCRef(id,cref);
       case (_,WILD()) then {};
+      case (_, CREF_INVALID(componentRef = _)) then {};
   end match;
 end findIteratorInCRef;
 

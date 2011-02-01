@@ -228,7 +228,7 @@ dgesv_(&n,&nrhs,&A[0],&lda,ipiv,&b[0],&ldb,&info); \
    printf("Error solving linear system of equations (no. %d) at time %f. Argument %d illegal.\n",id,localData->timeValue,info); \
  } \
  else if (info > 0) { \
-   printf("Error sovling linear system of equations (no. %d) at time %f, system is singular.\n",id,localData->timeValue); \
+   printf("Error solving linear system of equations (no. %d) at time %f, system is singular.\n",id,localData->timeValue); \
  } \
 delete [] ipiv; \
 } while (0) /* (no trailing ; ) */

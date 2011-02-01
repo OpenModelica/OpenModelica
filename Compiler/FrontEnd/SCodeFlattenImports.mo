@@ -231,51 +231,25 @@ protected function flattenComponent
   input SCode.Element inComponent;
   input Env inEnv;
   output SCode.Element outComponent;
+protected
+  SCode.Ident name;
+  Absyn.InnerOuter io;
+  Boolean fp, rp, pp;
+  SCode.Attributes attr;
+  Absyn.TypeSpec type_spec;
+  SCode.Mod mod;
+  Option<SCode.Comment> cmt;
+  Option<Absyn.Exp> cond;
+  Option<Absyn.ConstrainClass> cc;
+  Absyn.Info info;
 algorithm
-  outComponent := matchcontinue(inComponent, inEnv)
-    local
-      SCode.Ident name;
-      Absyn.InnerOuter io;
-      Boolean fp, rp, pp;
-      SCode.Attributes attr;
-      Absyn.TypeSpec type_spec;
-      SCode.Mod mod;
-      Option<SCode.Comment> cmt;
-      Option<Absyn.Exp> cond;
-      Option<Absyn.ConstrainClass> cc;
-      Absyn.Info info;
-
-    case (SCode.COMPONENT(name, io, fp, rp, pp, attr, type_spec, mod, cmt, cond,
-        info, cc), _)
-      equation
-        ErrorExt.setCheckpoint("flattenComponent");
-        type_spec = flattenTypeSpec(type_spec, inEnv, info);
-        mod = flattenModifier(mod, inEnv, info);
-        cond = flattenOptExp(cond, inEnv, info);
-        ErrorExt.delCheckpoint("flattenComponent");
-      then
-        SCode.COMPONENT(name, io, fp, rp, pp, attr, type_spec, mod, cmt, cond, info, cc);
-
-    // Something failed in the previous case. This might happen with the MSL
-    // which sometimes defines conditional components that use functions that it
-    // doesn't really have access to. So check if the component happens to have
-    // condition = false, and if that's the case we can just ignore it (along
-    // with any error messages from the previous case).
-    case (SCode.COMPONENT(condition = cond), _)
-      equation
-        false = evaluateConditionalExp(cond, inEnv);
-        ErrorExt.rollBack("flattenComponent");
-      then
-        inComponent;
-
-    // Make sure that the checkpoint is deleted properly.
-    else
-      equation
-        ErrorExt.delCheckpoint("flattenComponent");
-      then
-        fail();
-
-  end matchcontinue;
+  SCode.COMPONENT(name, io, fp, rp, pp, attr, type_spec, mod, cmt, cond, 
+    info, cc) := inComponent;
+  type_spec := flattenTypeSpec(type_spec, inEnv, info);
+  mod := flattenModifier(mod, inEnv, info);
+  cond := flattenOptExp(cond, inEnv, info);
+  outComponent := SCode.COMPONENT(name, io, fp, rp, pp, attr, type_spec, mod,
+    cmt, cond, info, cc);
 end flattenComponent;
 
 protected function flattenTypeSpec
@@ -311,45 +285,6 @@ algorithm
   end match;
 end flattenTypeSpec;
         
-protected function evaluateConditionalExp
-  input Option<Absyn.Exp> inExp;
-  input Env inEnv;
-  output Boolean outResult;
-algorithm
-  outResult := match(inExp, inEnv)
-    local
-      Absyn.Exp exp;
-
-    case (SOME(exp), _) then evaluateBinding(exp, inEnv);
-  end match;
-end evaluateConditionalExp;
-        
-protected function evaluateBinding
-  input Absyn.Exp inExp;
-  input Env inEnv;
-  output Boolean outResult;
-algorithm
-  outResult := match(inExp, inEnv)
-    local
-      Boolean res;
-      Absyn.ComponentRef cref;
-      Absyn.Path path;
-      Absyn.Exp exp;
-      Env env;
-
-    case (Absyn.BOOL(value = res), _) then res;
-    case (Absyn.CREF(componentRef = cref), _)
-      equation
-        path = Absyn.crefToPath(cref);
-        (SCodeEnv.VAR(var = SCode.COMPONENT(modifications = 
-            SCode.MOD(absynExpOption = SOME((exp, _))))), _, SOME(env)) = 
-          SCodeLookup.lookupClassName(path, inEnv, Absyn.dummyInfo);
-      then 
-        evaluateBinding(exp, env);
-
-  end match;
-end evaluateBinding;
-
 protected function flattenExtends
   input SCode.Element inExtends;
   input Env inEnv;
