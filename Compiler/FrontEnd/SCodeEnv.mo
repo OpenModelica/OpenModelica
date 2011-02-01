@@ -358,7 +358,7 @@ algorithm
 
     case (SCode.CLASS(name = cls_name, classDef = cdef), _)
       equation
-        class_env = newEnvironment(SOME(cls_name));
+        class_env = openScope(emptyEnv, inClass);
         class_env = extendEnvWithClassComponents(cls_name, cdef, class_env);
         env = extendEnvWithItem(CLASS(inClass, class_env), inEnv, cls_name);
       then
@@ -1085,7 +1085,7 @@ algorithm
     case (_, SCode.CLASSDEF(classDef = cls as SCode.CLASS(classDef = cdef)), 
         FRAME(name, ty, tree, exts, imps) :: env)
       equation
-        class_env = newEnvironment(SOME(inElementName));
+        class_env = openScope(emptyEnv, cls);
         class_env = extendEnvWithClassComponents(inElementName, cdef, class_env);
         tree = avlTreeReplace(tree, inElementName, CLASS(cls, class_env));
       then
