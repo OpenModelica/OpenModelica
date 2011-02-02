@@ -634,6 +634,22 @@ function readFile
 external "builtin";
 end readFile;
 
+function readFileShowLineNumbers "Prefixes each line in the file with <n>:, where n is the line number"
+  input String fileName;
+  output String out;
+protected
+  String str,line,nl:="
+";
+  Integer num:=1;
+algorithm
+  str := readFile(fileName);
+  out := "";
+  for line in strtok(str,nl) loop
+    out := out + String(num) + ": " + line + nl;
+    num := num + 1;
+  end for;
+end readFileShowLineNumbers;
+
 function readFileNoNumeric
   "Returns the contents of the file, with anything resembling a (real) number stripped out, and at the end adding:
   Filter count from number domain: n.
@@ -887,6 +903,13 @@ function val
   output Real valAtTime;
 external "builtin";
 end val;
+
+function strtok
+  input String string;
+  input String token;
+  output String[:] strings;
+external "builtin";
+end strtok;
 
 end Scripting;
 end OpenModelica;

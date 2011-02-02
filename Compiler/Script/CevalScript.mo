@@ -629,7 +629,7 @@ algorithm
       list<SCode.Class> scodeP,sp,fp;
       list<Env.Frame> env;
       SCode.Class c;
-      String s1,str,varid,cmd,executable,method_str,outputFormat_str,initfilename,cit,pd,executableSuffixedExe,sim_call,result_file,filename_1,filename,omhome_1,plotCmd,tmpPlotFile,call,str_1,mp,pathstr,name,cname,fileNamePrefix_s,str1,errMsg,errorStr,uniqueStr,interpolation, title,xLabel,yLabel,filename2,varNameStr,xml_filename,xml_contents,visvar_str,pwd,omhome,omlib,omcpath,os,platform,usercflags,senddata,res,workdir,gcc,confcmd,touch_file,uname,filenameprefix;
+      String s1,str,token,varid,cmd,executable,method_str,outputFormat_str,initfilename,cit,pd,executableSuffixedExe,sim_call,result_file,filename_1,filename,omhome_1,plotCmd,tmpPlotFile,call,str_1,mp,pathstr,name,cname,fileNamePrefix_s,str1,errMsg,errorStr,uniqueStr,interpolation, title,xLabel,yLabel,filename2,varNameStr,xml_filename,xml_contents,visvar_str,pwd,omhome,omlib,omcpath,os,platform,usercflags,senddata,res,workdir,gcc,confcmd,touch_file,uname,filenameprefix;
       DAE.ComponentRef cr,cref,classname;
       Interactive.InteractiveSymbolTable newst,st_1;
       Absyn.Program p,pnew,newp,ptot;
@@ -1325,6 +1325,12 @@ algorithm
     case (cache,env,"getAstAsCorbaString",_,st,msg)
       then
         (cache,Values.STRING("Failed to output string"),st);
+        
+    case (cache,env,"strtok",{Values.STRING(str),Values.STRING(token)},st,msg)
+      equation
+        vals = Util.listMap(System.strtok(str,token), ValuesUtil.makeString);
+        i = listLength(vals);
+      then (cache,Values.ARRAY(vals,{i}),st);
 
         /* Checks the installation of OpenModelica and tries to find common errors */
     case (cache,env,"checkSettings",{},st,msg)

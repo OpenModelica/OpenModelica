@@ -129,11 +129,11 @@ public function tolower
 end tolower;
 
 public function strtok
-  input String inString1;
-  input String inString2;
-  output list<String> outStringLst;
+  input String string;
+  input String token;
+  output list<String> strings;
 
-  external "C" outStringLst=System_strtok(inString1,inString2) annotation(Library = "omcruntime");
+  external "C" outStringLst=System_strtok(string,token) annotation(Library = "omcruntime");
 end strtok;
 
 public function substring

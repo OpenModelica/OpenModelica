@@ -1872,6 +1872,13 @@ algorithm
   v := Values.INTEGER(i);
 end makeInteger;
 
+public function makeString "Creates a string value "
+  input String s;
+  output Value v;
+algorithm
+  v := Values.STRING(s);
+end makeString;
+
 public function makeArray "function: makeArray
 
   Construct an array of a list of Values.
