@@ -662,6 +662,7 @@ algorithm
       list<Real> timeStamps;
       list<DAE.Exp> expLst;
       list<tuple<String,list<String>>> deps;
+      Absyn.CodeNode codeNode;
     
     /* Does not exist in the env...
     case (cache,env,"lookupClass",{Values.CODE(Absyn.C_TYPENAME(path))},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
@@ -679,6 +680,11 @@ algorithm
       then
         (cache,Values.STRING(str),st);
      */
+     
+    case (cache,env,"codeToString",{Values.CODE(codeNode)},st,msg)
+      equation
+        str = Dump.printCodeStr(codeNode);
+      then (cache,Values.STRING(str),st);
     
     case (cache,env,"typeOf",{Values.CODE(Absyn.C_VARIABLENAME(Absyn.CREF_IDENT(name = varid)))},(st as Interactive.SYMBOLTABLE(lstVarVal = iv)),msg)
       equation

@@ -857,6 +857,12 @@ function readSimulationResultSize
 external "builtin";
 end readSimulationResultSize;
 
+function codeToString
+  input Code className;
+  output String string;
+external "builtin";
+end codeToString;
+
 function dumpXMLDAE
   input TypeName className;
   input String translationLevel := "flat";
@@ -869,6 +875,18 @@ function dumpXMLDAE
   output String result[2] "Contents, Message/Filename; why is this an array and not 2 output arguments?";
 external "builtin";
 end dumpXMLDAE;
+
+function listVariables
+  output TypeName variables[:];
+external "builtin";
+end listVariables;
+
+function val
+  input VariableName exp;
+  input Real time;
+  output Real valAtTime;
+external "builtin";
+end val;
 
 end Scripting;
 end OpenModelica;

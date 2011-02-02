@@ -1290,7 +1290,7 @@ algorithm
       then Util.assoc(name,{
         ("TypeName",(DAE.T_CODE(DAE.C_TYPENAME()),NONE())),
         ("VariableName",(DAE.T_CODE(DAE.C_VARIABLENAME()),NONE()))
-      });
+        });
     case (ty,false) then ty;
     case (ty,true) then Types.makeFunctionPolymorphicReference(ty);
   end matchcontinue;

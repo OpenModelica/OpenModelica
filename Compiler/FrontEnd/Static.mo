@@ -7120,15 +7120,6 @@ protected function elabCallInteractive "function: elabCallInteractive
         (cache,Expression.makeBuiltinCall("plot",{DAE.ARRAY(DAE.ET_OTHER(),false,vars_1), interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange},
           DAE.ET_BOOL()),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
 
-   case (cache,env,Absyn.CREF_IDENT(name = "val"),{e1,e2},{},impl,SOME(st),pre,_)
-      equation
-        {e1_1} = elabVariablenames({e1});
-        (cache,e2_1,ptop,st_1) = elabExp(cache, env, e2, false, SOME(st),true,pre,info);
-        Types.integerOrReal(Types.arrayElementType(Types.getPropType(ptop)));
-      then
-        (cache,Expression.makeBuiltinCall("val",{e1_1,e2_1},
-          DAE.ET_REAL()),DAE.PROP(DAE.T_REAL_DEFAULT,DAE.C_VAR()),SOME(st));
-
     case (cache,env,Absyn.CREF_IDENT(name = "plotParametric2"),vars,{},impl,SOME(st),_,_) /* PlotParametric is similar to plot but does not allow a single CREF as an
    argument as you are plotting at least one variable as a function of another.
    Thus, plotParametric has to take an array as an argument, or two componentRefs. */
@@ -7259,10 +7250,6 @@ protected function elabCallInteractive "function: elabCallInteractive
         (cache,exp_1,prop,st_1) = elabExp(cache,env, exp, impl, SOME(st),true,pre,info);
       then
         (cache,Expression.makeBuiltinCall("timing",{exp_1},DAE.ET_REAL()),DAE.PROP(DAE.T_REAL_DEFAULT,DAE.C_VAR()),st_1);
-
-    case (cache,env,Absyn.CREF_IDENT(name = "listVariables"),{},{},impl,SOME(st),_,_)
-      then (cache, Expression.makeBuiltinCall("listVariables",{},DAE.ET_OTHER()),
-        DAE.PROP((DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_NOTYPE(),NONE())),NONE()),DAE.C_VAR()),SOME(st));  /* Returns an array of \"component references\" */
 
     case (cache,env,Absyn.CREF_IDENT(name = "getUnit"),{Absyn.CREF(componentRef = cr),Absyn.CREF(componentRef = cr2)},{},impl,SOME(st),pre,_)
       equation
@@ -13279,6 +13266,8 @@ algorithm
       then DAE.CODE(Absyn.C_TYPENAME(path),DAE.ET_OTHER());
     case (Absyn.CREF(componentRef=cr),DAE.C_VARIABLENAME(),_)
       then DAE.CODE(Absyn.C_VARIABLENAME(cr),DAE.ET_OTHER());
+    case (Absyn.CALL(Absyn.CREF_IDENT("der",{}),Absyn.FUNCTIONARGS(args={Absyn.CREF(componentRef=cr)},argNames={})),DAE.C_VARIABLENAME(),_)
+      then DAE.CODE(Absyn.C_EXPRESSION(exp),DAE.ET_OTHER());
     case (exp,ct,info)
       equation
         s1 = Dump.printExpStr(exp);
