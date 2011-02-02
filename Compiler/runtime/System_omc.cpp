@@ -495,4 +495,10 @@ extern const char* System_getCorbaLibs()
   return CONFIG_CORBALIBS;
 }
 
+extern int System_regex(const char *str, const char *re)
+{
+  int res = SystemImpl__regex(str,re);
+  return res;
+}
+
 }

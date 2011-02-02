@@ -650,6 +650,57 @@ algorithm
   end for;
 end readFileShowLineNumbers;
 
+/*
+function readFilePostprocessLineDirective "
+  Searches lines for the #modelicaLine directive. If it is found, all lines up
+  until the next #modelicaLine or #endModelicaLine are put on a single file,
+  following a #line linenumber \"filename\" line.
+  This causes GCC to output an executable that we can set breakpoints in and
+  debug.
+  Note: You could use a stack to keep track of start/end of #modelicaLine and
+  match them up. But this is not really desirable since that will cause extra
+  breakpoints for the same line (you would get breakpoints before and after
+  each case if you break on a match-expression, etc).
+  "
+  input String fileName;
+  output String out;
+protected
+  constant String regexStart := "^ *..#modelicaLine";
+  constant String regexEnd := "^ *..#endModelicaLine";
+  String str,line,currentModelicaFileName,nl:="
+";
+  Integer lineNumInOutputFile:=1;
+  Boolean insideModelicaLine:=false;
+algorithm
+  str := readFile(fileName);
+  out := "";
+  for line in strtok(str,nl) loop
+    if regexMatches(line,regexStart) then
+      insideModelicaLine := true;
+      
+      out := out + "#line " + String(strtok(line,":")[2]) + "\"" + strtok(strtok(line,":")[1],"#modelicaLine ")[2] + "\"" + ln + line + ln;
+      lineNumInOutputFile := lineNumInOutputFile + 1;
+    elseif regexMatches(line,regexEnd) then
+      insideModelicaLine := false;
+      out := out + ln + "#line " + String(lineNumInOutputFile+1) + "\"" + fileName + "\"" + ln + line + ln;
+      lineNumInOutputFile := lineNumInOutputFile + 3;
+    elseif insideModelicaLine then
+      out := out + " " + line;
+    else
+      out := out + line + ln;
+      lineNumInOutputFile := lineNumInOutputFile + 1;
+    end if;
+  end for;
+end readFilePostprocessLineDirective;
+*/
+
+function regex "WARNING: This call is subject to change. It should return a tuple: enum(Found,NotFound,Failure) and the (first) matching substring"
+  input String str;
+  input String re;
+  output Boolean status;
+external "builtin";
+end regex;
+
 function readFileNoNumeric
   "Returns the contents of the file, with anything resembling a (real) number stripped out, and at the end adding:
   Filter count from number domain: n.

@@ -629,7 +629,7 @@ algorithm
       list<SCode.Class> scodeP,sp,fp;
       list<Env.Frame> env;
       SCode.Class c;
-      String s1,str,token,varid,cmd,executable,method_str,outputFormat_str,initfilename,cit,pd,executableSuffixedExe,sim_call,result_file,filename_1,filename,omhome_1,plotCmd,tmpPlotFile,call,str_1,mp,pathstr,name,cname,fileNamePrefix_s,str1,errMsg,errorStr,uniqueStr,interpolation, title,xLabel,yLabel,filename2,varNameStr,xml_filename,xml_contents,visvar_str,pwd,omhome,omlib,omcpath,os,platform,usercflags,senddata,res,workdir,gcc,confcmd,touch_file,uname,filenameprefix;
+      String s1,str,re,token,varid,cmd,executable,method_str,outputFormat_str,initfilename,cit,pd,executableSuffixedExe,sim_call,result_file,filename_1,filename,omhome_1,plotCmd,tmpPlotFile,call,str_1,mp,pathstr,name,cname,fileNamePrefix_s,str1,errMsg,errorStr,uniqueStr,interpolation, title,xLabel,yLabel,filename2,varNameStr,xml_filename,xml_contents,visvar_str,pwd,omhome,omlib,omcpath,os,platform,usercflags,senddata,res,workdir,gcc,confcmd,touch_file,uname,filenameprefix;
       DAE.ComponentRef cr,cref,classname;
       Interactive.InteractiveSymbolTable newst,st_1;
       Absyn.Program p,pnew,newp,ptot;
@@ -720,6 +720,12 @@ algorithm
       then
         (cache,Values.BOOL(true),newst);
     
+    case (cache,env,"regex",{Values.STRING(str),Values.STRING(re)},st,msg)
+      equation
+        b = System.regex(str,re);
+      then
+        (cache,Values.BOOL(b),st);
+
     case (cache,env,"list",{},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
       equation
         str = Dump.unparseStr(p,false);

@@ -39,6 +39,7 @@
 #include <sys/types.h>
 #include <time.h>
 #include <math.h>
+#include <regex.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -964,6 +965,28 @@ extern int SystemImpl__unescapedStringLength(const char* str)
     str++;
   }
   return i;
+}
+
+extern int SystemImpl__regex(const char* str, const char* re)
+{
+  regex_t myregex;
+  int rc,res;
+  memset(&myregex, 1, sizeof(regex_t));
+  rc = regcomp(&myregex, re, REG_EXTENDED|REG_NOSUB);
+  if (rc) {
+    char err_buf[2048] = {0};
+    int len = 0;
+    len += snprintf(err_buf+len,2040-len,"Failed to compile regular expression: %s with error: ", re);
+    len += regerror(rc, &myregex, err_buf+len, 2048-len);
+    len += snprintf(err_buf+len,2040-len,".");
+    len += snprintf(err_buf+len,2040-len,".");
+    c_add_message(-1, "SCRIPTING", "Error", err_buf, NULL, 0);
+    regfree(&myregex);
+    return 0;
+  }
+  res = regexec(&myregex, str, 1, NULL, 0);
+  regfree(&myregex);
+  return res == 0;
 }
 
 #ifdef __cplusplus

@@ -95,6 +95,14 @@ public function stringFindString "locates substring searchStr in str. If succeed
   external "C" outString=System_stringFindString(str,searchStr) annotation(Library = "omcruntime");
 end stringFindString;
 
+public function regex "Returns true if the string matches the regular expression"
+  input String str;
+  input String re;
+  output Boolean matches;
+  
+  external "C" matches=System_regex(str,re) annotation(Library = "omcruntime");
+end regex;
+
 public function strncmp
   input String inString1;
   input String inString2;
