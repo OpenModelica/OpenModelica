@@ -51,6 +51,8 @@ pointers, some changes need to be done to code generation */
 typedef void* modelica_fnptr;
 
 #include <stdlib.h>
+#include <limits.h>
+#include <float.h>
 
 #include "compat.h"
 #include "modelica_string.h"

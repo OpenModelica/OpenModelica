@@ -5670,15 +5670,15 @@ template daeExpReductionStartValue(String reduction_op, String type)
   match reduction_op
   case "min" then
     match type
-    case "modelica_integer" then "1073741823"
-    case "modelica_real" then "1.e60"
+    case "modelica_integer" then "LONG_MAX"
+    case "modelica_real" then "DBL_MAX"
     else "INVALID_TYPE"
     end match
   case "max" then 
     match type
 
-    case "modelica_integer" then "-1073741823"
-    case "modelica_real" then "-1.e60"
+    case "modelica_integer" then "LONG_MIN"
+    case "modelica_real" then "DBL_MIN"
     else "INVALID_TYPE"
     end match
   case "sum" then "0"

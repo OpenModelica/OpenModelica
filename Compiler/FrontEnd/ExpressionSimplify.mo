@@ -303,6 +303,12 @@ algorithm
       then
         exp1;
     
+    case DAE.REDUCTION(path = _)
+      equation
+        exp1 = simplifyReduction(inExp);
+      then
+        exp1;
+
     // anything else
     case e
       then
@@ -3964,5 +3970,37 @@ algorithm
   end matchcontinue;
 end simplifyRangeReal2;
         
+protected function simplifyReduction
+  input DAE.Exp inReduction;
+  output DAE.Exp outValue;
+algorithm
+  outValue := match(inReduction)
+    local
+      DAE.Exp expr, value, cref;
+      DAE.Ident iter_name;
+      DAE.ExpType ty;
+
+    case (DAE.REDUCTION(path = Absyn.IDENT("array"), expr = expr, 
+        ident = iter_name, range = DAE.ARRAY(array = {value})))
+      equation
+        ty = Expression.typeof(expr);
+        cref = DAE.CREF(DAE.CREF_IDENT(iter_name, ty, {}), ty);
+        (expr, _) = Expression.replaceExp(expr, cref, value);
+      then
+        DAE.ARRAY(DAE.ET_ARRAY(ty, {DAE.DIM_INTEGER(1)}), true, {expr});
+
+    case (DAE.REDUCTION(expr = expr, ident = iter_name, 
+        range = DAE.ARRAY(array = {value})))
+      equation
+        ty = Expression.typeof(expr);
+        cref = DAE.CREF(DAE.CREF_IDENT(iter_name, ty, {}), ty);
+        (expr, _) = Expression.replaceExp(expr, cref, value);
+      then
+        expr;
+
+  end match;
+end simplifyReduction;
+
+
 end ExpressionSimplify;
 
