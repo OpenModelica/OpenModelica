@@ -58,6 +58,7 @@ public import DAE;
 public import Env;
 public import SCode;
 public import Values;
+public import Interactive;
 
 // protected imports
 protected import Ceval;
@@ -75,6 +76,7 @@ protected import Util;
 protected import ValuesUtil;
 
 // [TYPE]  Types
+public type SymbolTable = Option<Interactive.InteractiveSymbolTable>;
 
 // This type represents a list of dependencies for a variable, where the first
 // component reference is the variable itself.
@@ -98,11 +100,13 @@ public function evaluate
   input Env.Env inEnv;
   input DAE.Function inFunction;
   input list<Values.Value> inFunctionArguments;
+  input SymbolTable inST;
   output Env.Cache outCache;
   output Values.Value outResult;
+  output SymbolTable outST;
 algorithm
-  (outCache, outResult) := 
-  matchcontinue(inCache, inEnv, inFunction, inFunctionArguments)
+  (outCache, outResult, outST) := 
+  matchcontinue(inCache, inEnv, inFunction, inFunctionArguments, inST)
     local
       Absyn.Path p;
       DAE.FunctionDefinition func;
@@ -110,6 +114,7 @@ algorithm
       Values.Value result;
       String func_name;
       Env.Cache cache;
+      SymbolTable st;
 
     // The DAE.FUNCTION structure might contain an optional function derivative
     // mapping which is why functions below is a list. We only evaluate the
@@ -118,13 +123,13 @@ algorithm
         path = p,
         functions = func :: _,
         type_ = ty,
-        partialPrefix = false), _)
+        partialPrefix = false), _, st)
       equation
         func_name = Absyn.pathString(p);
-        (cache, result) = evaluateFunctionDefinition(inCache, inEnv, func_name,
-          func, ty, inFunctionArguments); 
+        (cache, result, st) = evaluateFunctionDefinition(inCache, inEnv, func_name,
+          func, ty, inFunctionArguments, st); 
       then
-        (cache, result);
+        (cache, result, st);
 
     else
       equation
@@ -144,11 +149,13 @@ protected function evaluateFunctionDefinition
   input DAE.FunctionDefinition inFunc;
   input DAE.Type inFuncType;
   input list<Values.Value> inFuncArgs;
+  input SymbolTable inST;
   output Env.Cache outCache;
   output Values.Value outResult;
+  output SymbolTable outST;
 algorithm
-  (outCache, outResult) := 
-  matchcontinue(inCache, inEnv, inFuncName, inFunc, inFuncType, inFuncArgs)
+  (outCache, outResult, outST) := 
+  matchcontinue(inCache, inEnv, inFuncName, inFunc, inFuncType, inFuncArgs, inST)
     local
       list<DAE.Element> body;
       list<DAE.Element> vars, output_vars;
@@ -156,8 +163,9 @@ algorithm
       Env.Env env;
       list<Values.Value> return_values;
       Values.Value return_value;
+      SymbolTable st;
     
-    case (_, _, _, DAE.FUNCTION_DEF(body = body), _, _)
+    case (_, _, _, DAE.FUNCTION_DEF(body = body), _, _, st)
       equation
         // Split the definition into function variables and statements.
         (vars, body) = Util.listSplitOnFirstMatch(body, DAEUtil.isNotVar);
@@ -166,15 +174,16 @@ algorithm
         output_vars = Util.listFilter(vars, DAEUtil.isOutputVar);
         vars = sortFunctionVarsByDependency(vars);
         // Create an environment for the function and add all function variables.
-        (cache, env) = setupFunctionEnvironment(inCache, inEnv, inFuncName, vars, inFuncArgs);
+        (cache, env, st) = 
+          setupFunctionEnvironment(inCache, inEnv, inFuncName, vars, inFuncArgs, st);
         // Evaluate the body of the function.
-        (cache, env, _) = evaluateElements(body, cache, env, NEXT());
+        (cache, env, _, st) = evaluateElements(body, cache, env, NEXT(), st);
         // Fetch the values of the output variables.
         return_values = Util.listMap1(output_vars, getFunctionReturnValue, env);
         // If we have several output variables they should be boxed into a tuple.
         return_value = boxReturnValue(return_values);
       then
-        (cache, return_value);
+        (cache, return_value, st);
     
     else
       equation
@@ -190,26 +199,31 @@ protected function evaluateElements
   input Env.Cache inCache;
   input Env.Env inEnv;
   input LoopControl inLoopControl;
+  input SymbolTable inST;
   output Env.Cache outCache;
   output Env.Env outEnv;
   output LoopControl outLoopControl;
+  output SymbolTable outST;
 algorithm
-  (outCache, outEnv, outLoopControl) := 
-  match(inElements, inCache, inEnv, inLoopControl)
+  (outCache, outEnv, outLoopControl, outST) := 
+  match(inElements, inCache, inEnv, inLoopControl, inST)
     local
       DAE.Element elem;
       list<DAE.Element> rest_elems;
       Env.Cache cache;
       Env.Env env;
       LoopControl loop_ctrl;
-    case (_, _, _, RETURN()) then (inCache, inEnv, inLoopControl);
-    case ({}, _, _, _) then (inCache, inEnv, NEXT());
-    case (elem :: rest_elems, _, _, _)
+      SymbolTable st;
+
+    case (_, _, _, RETURN(), _) then (inCache, inEnv, inLoopControl, inST);
+    case ({}, _, _, _, _) then (inCache, inEnv, NEXT(), inST);
+    case (elem :: rest_elems, _, _, _, st)
       equation
-        (cache, env, loop_ctrl) = evaluateElement(elem, inCache, inEnv);
-        (cache, env, loop_ctrl) = evaluateElements(rest_elems, cache, env, loop_ctrl);
+        (cache, env, loop_ctrl, st) = evaluateElement(elem, inCache, inEnv, st);
+        (cache, env, loop_ctrl, st) =   
+          evaluateElements(rest_elems, cache, env, loop_ctrl, st);
       then
-        (cache, env, loop_ctrl);
+        (cache, env, loop_ctrl, st);
   end match;
 end evaluateElements;
 
@@ -218,23 +232,26 @@ protected function evaluateElement
   input DAE.Element inElement;
   input Env.Cache inCache;
   input Env.Env inEnv;
+  input SymbolTable inST;
   output Env.Cache outCache;
   output Env.Env outEnv;
   output LoopControl outLoopControl;
+  output SymbolTable outST;
 algorithm
-  (outCache, outEnv, outLoopControl) := match(inElement, inCache, inEnv)
+  (outCache, outEnv, outLoopControl, outST) := match(inElement, inCache, inEnv, inST)
     local
       Env.Cache cache;
       Env.Env env;
       LoopControl loop_ctrl;
       list<DAE.Statement> sl;
+      SymbolTable st;
 
-    case (DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS(statementLst = sl)), _, _)
+    case (DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS(statementLst = sl)), _, _, st)
       equation
         (sl, env) = DAEUtil.traverseDAEEquationsStmts(sl, optimizeExp, inEnv);
-        (cache, env, loop_ctrl) = evaluateStatements(sl, inCache, env);
+        (cache, env, loop_ctrl, st) = evaluateStatements(sl, inCache, env, st);
       then
-        (cache, env, loop_ctrl);
+        (cache, env, loop_ctrl, st);
    end match;
 end evaluateElement;
 
@@ -243,11 +260,14 @@ protected function evaluateStatement
   input DAE.Statement inStatement;
   input Env.Cache inCache;
   input Env.Env inEnv;
+  input SymbolTable inST;
   output Env.Cache outCache;
   output Env.Env outEnv;
   output LoopControl outLoopControl;
+  output SymbolTable outST;
 algorithm
-  (outCache, outEnv, outLoopControl) := matchcontinue(inStatement, inCache, inEnv)
+  (outCache, outEnv, outLoopControl, outST) := 
+  matchcontinue(inStatement, inCache, inEnv, inST)
     local
       Env.Cache cache;
       Env.Env env;
@@ -256,56 +276,61 @@ algorithm
       Values.Value rhs_val;
       list<DAE.Statement> statements;
       LoopControl loop_ctrl;
+      SymbolTable st;
 
-    case (DAE.STMT_ASSIGN(exp1 = lhs, exp = rhs), cache, env)
+    case (DAE.STMT_ASSIGN(exp1 = lhs, exp = rhs), cache, env, st)
       equation
-        (cache, rhs_val) = cevalExp(rhs, cache, env);
+        (cache, rhs_val, st) = cevalExp(rhs, cache, env, st);
         lhs_cref = extractLhsComponentRef(lhs);
-        (cache, env) = assignVariable(lhs_cref, rhs_val, cache, env);
+        (cache, env, st) = assignVariable(lhs_cref, rhs_val, cache, env, st);
       then
-        (cache, env, NEXT());
+        (cache, env, NEXT(), st);
 
-    case (DAE.STMT_TUPLE_ASSIGN(expExpLst = _), _, _)
+    case (DAE.STMT_TUPLE_ASSIGN(expExpLst = _), _, _, st)
       equation
-        (cache, env) = evaluateTupleAssignStatement(inStatement, inCache, inEnv); 
+        (cache, env, st) = 
+          evaluateTupleAssignStatement(inStatement, inCache, inEnv, st); 
       then
-        (cache, env, NEXT());
+        (cache, env, NEXT(), st);
 
-    case (DAE.STMT_ASSIGN_ARR(componentRef = lhs_cref, exp = rhs), _, env)
+    case (DAE.STMT_ASSIGN_ARR(componentRef = lhs_cref, exp = rhs), _, env, st)
       equation
-        (cache, rhs_val) = cevalExp(rhs, inCache, env);
-        (cache, env) = assignVariable(lhs_cref, rhs_val, cache, env);
+        (cache, rhs_val, st) = cevalExp(rhs, inCache, env, st);
+        (cache, env, st) = assignVariable(lhs_cref, rhs_val, cache, env, st);
       then
-        (cache, env, NEXT());
+        (cache, env, NEXT(), st);
 
-    case (DAE.STMT_IF(exp = _), _, _)
+    case (DAE.STMT_IF(exp = _), _, _, st)
       equation
-        (cache, env, loop_ctrl) = evaluateIfStatement(inStatement, inCache, inEnv);
+        (cache, env, loop_ctrl, st) = 
+          evaluateIfStatement(inStatement, inCache, inEnv, st);
       then
-        (cache, env, loop_ctrl);
+        (cache, env, loop_ctrl, st);
 
-    case (DAE.STMT_FOR(type_ = _), _, _)
+    case (DAE.STMT_FOR(type_ = _), _, _, st)
       equation
-        (cache, env, loop_ctrl) = evaluateForStatement(inStatement, inCache, inEnv);
+        (cache, env, loop_ctrl, st) = 
+          evaluateForStatement(inStatement, inCache, inEnv, st);
       then
-        (cache, env, loop_ctrl);
+        (cache, env, loop_ctrl, st);
 
-    case (DAE.STMT_WHILE(exp = condition, statementLst = statements), _, _)
+    case (DAE.STMT_WHILE(exp = condition, statementLst = statements), _, _, st)
       equation
-        (cache, env, loop_ctrl) = evaluateWhileStatement(condition, statements,
-          inCache, inEnv, NEXT());
+        (cache, env, loop_ctrl, st) = 
+          evaluateWhileStatement(condition, statements, inCache, inEnv, NEXT(), st);
       then
-        (cache, env, loop_ctrl);
+        (cache, env, loop_ctrl, st);
 
     // If the condition is true in the assert, do nothing. If the condition
     // is false we should stop the instantiation (depending on the assertion
     // level), but we can't really do much about that here. So right now we just
     // fail.
-    case (DAE.STMT_ASSERT(cond = condition), _, _)
+    case (DAE.STMT_ASSERT(cond = condition), _, _, st)
       equation
-        (cache, Values.BOOL(boolean = true)) = cevalExp(condition, inCache, inEnv);
+        (cache, Values.BOOL(boolean = true), st) = 
+          cevalExp(condition, inCache, inEnv, st);
       then
-        (cache, inEnv, NEXT());
+        (cache, inEnv, NEXT(), st);
 
     // Non-returning function calls should probably be constant evaluated, but
     // causes problem when we call functions with side-effects (such as in the
@@ -317,15 +342,15 @@ algorithm
       then
         (inEnv, NEXT());*/
 
-    case (DAE.STMT_RETURN(source = _), _, _)
+    case (DAE.STMT_RETURN(source = _), _, _, _)
       then
-        (inCache, inEnv, RETURN());
+        (inCache, inEnv, RETURN(), inST);
 
-    case (DAE.STMT_BREAK(source = _), _, _)
+    case (DAE.STMT_BREAK(source = _), _, _, _)
       then
-        (inCache, inEnv, BREAK());
+        (inCache, inEnv, BREAK(), inST);
 
-    case (_, _, _)
+    else
       equation
         true = RTOpts.debugFlag("failtrace");
         Debug.traceln("- CevalFunction.evaluateStatement failed for:");
@@ -341,12 +366,14 @@ protected function evaluateStatements
   input list<DAE.Statement> inStatement;
   input Env.Cache inCache;
   input Env.Env inEnv;
+  input SymbolTable inST;
   output Env.Cache outCache;
   output Env.Env outEnv;
   output LoopControl outLoopControl;
+  output SymbolTable outST;
 algorithm
-  (outCache, outEnv, outLoopControl) := 
-    evaluateStatements2(inStatement, inCache, inEnv, NEXT());
+  (outCache, outEnv, outLoopControl, outST) := 
+    evaluateStatements2(inStatement, inCache, inEnv, NEXT(), inST);
 end evaluateStatements;
 
 protected function evaluateStatements2
@@ -356,27 +383,31 @@ protected function evaluateStatements2
   input Env.Cache inCache;
   input Env.Env inEnv;
   input LoopControl inLoopControl;
+  input SymbolTable inST;
   output Env.Cache outCache;
   output Env.Env outEnv;
   output LoopControl outLoopControl;
+  output SymbolTable outST;
 algorithm
-  (outCache, outEnv, outLoopControl) := 
-  matchcontinue(inStatement, inCache, inEnv, inLoopControl)
+  (outCache, outEnv, outLoopControl, outST) := 
+  matchcontinue(inStatement, inCache, inEnv, inLoopControl, inST)
     local
       DAE.Statement stmt;
       list<DAE.Statement> rest_stmts;
       Env.Cache cache;
       Env.Env env;
       LoopControl loop_ctrl;
-    case (_, _, _, BREAK()) then (inCache, inEnv, inLoopControl);
-    case (_, _, _, RETURN()) then (inCache, inEnv, inLoopControl);
-    case ({}, _, _, _) then (inCache, inEnv, inLoopControl);
-    case (stmt :: rest_stmts, _, _, NEXT())
+      SymbolTable st;
+    case (_, _, _, BREAK(), _) then (inCache, inEnv, inLoopControl, inST);
+    case (_, _, _, RETURN(), _) then (inCache, inEnv, inLoopControl, inST);
+    case ({}, _, _, _, _) then (inCache, inEnv, inLoopControl, inST);
+    case (stmt :: rest_stmts, _, _, NEXT(), st)
       equation
-        (cache, env, loop_ctrl) = evaluateStatement(stmt, inCache, inEnv);
-        (cache, env, loop_ctrl) = evaluateStatements2(rest_stmts, cache, env, loop_ctrl);
+        (cache, env, loop_ctrl, st) = evaluateStatement(stmt, inCache, inEnv, st);
+        (cache, env, loop_ctrl, st) = 
+          evaluateStatements2(rest_stmts, cache, env, loop_ctrl, st);
       then
-        (cache, env, loop_ctrl);
+        (cache, env, loop_ctrl, st);
   end matchcontinue;
 end evaluateStatements2;
 
@@ -387,10 +418,12 @@ protected function evaluateTupleAssignStatement
   input DAE.Statement inStatement;
   input Env.Cache inCache;
   input Env.Env inEnv;
+  input SymbolTable inST;
   output Env.Cache outCache;
   output Env.Env outEnv;
+  output SymbolTable outST;
 algorithm
-  (outCache, outEnv) := match(inStatement, inCache, inEnv)
+  (outCache, outEnv, outST) := match(inStatement, inCache, inEnv, inST)
     local
       list<DAE.Exp> lhs_expl;
       DAE.Exp rhs;
@@ -398,13 +431,16 @@ algorithm
       list<DAE.ComponentRef> lhs_crefs;
       Env.Cache cache;
       Env.Env env;
-    case (DAE.STMT_TUPLE_ASSIGN(expExpLst = lhs_expl, exp = rhs), _, env)
+      SymbolTable st;
+
+    case (DAE.STMT_TUPLE_ASSIGN(expExpLst = lhs_expl, exp = rhs), _, env, st)
       equation
-        (cache, Values.TUPLE(valueLst = rhs_vals)) = cevalExp(rhs, inCache, env);
+        (cache, Values.TUPLE(valueLst = rhs_vals), st) = 
+          cevalExp(rhs, inCache, env, st);
         lhs_crefs = Util.listMap(lhs_expl, extractLhsComponentRef);
-        (cache, env) = assignTuple(lhs_crefs, rhs_vals, cache, env);
+        (cache, env, st) = assignTuple(lhs_crefs, rhs_vals, cache, env, st);
       then
-        (cache, env);
+      (cache, env, st);
   end match;
 end evaluateTupleAssignStatement;
 
@@ -413,11 +449,14 @@ protected function evaluateIfStatement
   input DAE.Statement inStatement;
   input Env.Cache inCache;
   input Env.Env inEnv;
+  input SymbolTable inST;
   output Env.Cache outCache;
   output Env.Env outEnv;
   output LoopControl outLoopControl;
+  output SymbolTable outST;
 algorithm
-  (outCache, outEnv, outLoopControl) := match(inStatement, inCache, inEnv)
+  (outCache, outEnv, outLoopControl, outST) := 
+  match(inStatement, inCache, inEnv, inST)
     local
       DAE.Exp cond;
       list<DAE.Statement> stmts;
@@ -426,13 +465,16 @@ algorithm
       Env.Env env;
       Boolean bool_cond;
       LoopControl loop_ctrl;
-    case (DAE.STMT_IF(exp = cond, statementLst = stmts, else_ = else_branch), _, _)
+      SymbolTable st;
+
+    case (DAE.STMT_IF(exp = cond, statementLst = stmts, else_ = else_branch), _, _, st)
       equation
-        (cache, Values.BOOL(boolean = bool_cond)) = cevalExp(cond, inCache, inEnv);
-        (cache, env, loop_ctrl) = evaluateIfStatement2(bool_cond, stmts,
-          else_branch, cache, inEnv);
+        (cache, Values.BOOL(boolean = bool_cond), st) = 
+          cevalExp(cond, inCache, inEnv, st);
+        (cache, env, loop_ctrl, st) = evaluateIfStatement2(bool_cond, stmts,
+          else_branch, cache, inEnv, st);
       then
-        (cache, env, loop_ctrl);
+        (cache, env, loop_ctrl, st);
   end match;
 end evaluateIfStatement;
 
@@ -443,12 +485,14 @@ protected function evaluateIfStatement2
   input DAE.Else inElse;
   input Env.Cache inCache;
   input Env.Env inEnv;
+  input SymbolTable inST;
   output Env.Cache outCache;
   output Env.Env outEnv;
   output LoopControl outLoopControl;
+  output SymbolTable outST;
 algorithm
-  (outCache, outEnv, outLoopControl) := 
-  match(inCondition, inStatements, inElse, inCache, inEnv)
+  (outCache, outEnv, outLoopControl, outST) := 
+  match(inCondition, inStatements, inElse, inCache, inEnv, inST)
     local
       Env.Cache cache;
       Env.Env env;
@@ -457,32 +501,36 @@ algorithm
       Boolean bool_condition;
       DAE.Else else_branch;
       LoopControl loop_ctrl;
+      SymbolTable st;
+
     // If the condition is true, evaluate the statements in the if branch.
-    case (true, statements, _, _, env)
+    case (true, statements, _, _, env, st)
       equation
-        (cache, env, loop_ctrl) = evaluateStatements(statements, inCache, env);
+        (cache, env, loop_ctrl, st) = 
+          evaluateStatements(statements, inCache, env, st);
       then
-        (cache, env, loop_ctrl);
+        (cache, env, loop_ctrl, st);
     // If the condition is false and we have an else, evaluate the statements in
     // the else branch.
-    case (false, _, DAE.ELSE(statementLst = statements), _, env)
+    case (false, _, DAE.ELSE(statementLst = statements), _, env, st)
       equation
-        (cache, env, loop_ctrl) = evaluateStatements(statements, inCache, env);
+        (cache, env, loop_ctrl, st) = 
+          evaluateStatements(statements, inCache, env, st);
       then
-        (cache, env, loop_ctrl);
+        (cache, env, loop_ctrl, st);
     // If the condition is false and we have an else if, call this function
     // again recursively.
     case (false, _, DAE.ELSEIF(exp = condition, statementLst = statements, 
-        else_ = else_branch), _, env)
+        else_ = else_branch), _, env, st)
       equation
-        (cache, Values.BOOL(boolean = bool_condition)) = 
-          cevalExp(condition, inCache, env);
-        (cache, env, loop_ctrl) = 
-          evaluateIfStatement2(bool_condition, statements, else_branch, cache, env);
+        (cache, Values.BOOL(boolean = bool_condition), st) = 
+          cevalExp(condition, inCache, env, st);
+        (cache, env, loop_ctrl, st) = 
+          evaluateIfStatement2(bool_condition, statements, else_branch, cache, env, st);
       then
-        (cache, env, loop_ctrl);
+        (cache, env, loop_ctrl, st);
      // If the condition is false and we have no else branch, just continue.
-    case (false, _, DAE.NOELSE(), _, _) then (inCache, inEnv, NEXT());
+    case (false, _, DAE.NOELSE(), _, _, _) then (inCache, inEnv, NEXT(), inST);
   end match;
 end evaluateIfStatement2;
   
@@ -491,11 +539,14 @@ protected function evaluateForStatement
   input DAE.Statement inStatement;
   input Env.Cache inCache;
   input Env.Env inEnv;
+  input SymbolTable inST;
   output Env.Cache outCache;
   output Env.Env outEnv;
   output LoopControl outLoopControl;
+  output SymbolTable outST;
 algorithm
-  (outCache, outEnv, outLoopControl) := matchcontinue(inStatement, inCache, inEnv)
+  (outCache, outEnv, outLoopControl, outST) := 
+  matchcontinue(inStatement, inCache, inEnv, inST)
     local
       DAE.ExpType ety;
       DAE.Type ty;
@@ -509,35 +560,36 @@ algorithm
       Env.Env env;
       DAE.ComponentRef iter_cr;
       LoopControl loop_ctrl;
+      SymbolTable st;
 
     // The case where the range is an array.
     case (DAE.STMT_FOR(type_ = ety, iter = iter_name,
-        range = range, statementLst = statements), _, env)
+        range = range, statementLst = statements), _, env, st)
       equation
-        (cache, Values.ARRAY(valueLst = range_vals)) = 
-          cevalExp(range, inCache, env);
+        (cache, Values.ARRAY(valueLst = range_vals), st) = 
+          cevalExp(range, inCache, env, st);
         (env, ty, iter_cr) = extendEnvWithForScope(iter_name, ety, env);
-        (cache, env, loop_ctrl) = evaluateForLoopArray(cache, env, iter_cr,
-          ty, range_vals, statements, NEXT());
+        (cache, env, loop_ctrl, st) = evaluateForLoopArray(cache, env, iter_cr,
+          ty, range_vals, statements, NEXT(), st);
       then
-        (cache, env, loop_ctrl);
+      (cache, env, loop_ctrl, st);
 
     // The case where the range is a range on the form start:step:stop.
     case (DAE.STMT_FOR(type_ = ety, iter = iter_name, 
         range = DAE.RANGE(exp = start, expOption = opt_step, range = stop),
-        statementLst = statements), cache, env)
+        statementLst = statements), cache, env, st)
       equation
         step = Util.getOptionOrDefault(opt_step, DAE.ICONST(1));
-        (cache, start_val) = cevalExp(start, cache, env);
-        (cache, step_val) = cevalExp(step, cache, env);
-        (cache, stop_val) = cevalExp(stop, cache, env);
+        (cache, start_val, st) = cevalExp(start, cache, env, st);
+        (cache, step_val, st) = cevalExp(step, cache, env, st);
+        (cache, stop_val, st) = cevalExp(stop, cache, env, st);
         (env, ty, iter_cr) = extendEnvWithForScope(iter_name, ety, env);
-        (cache, env, loop_ctrl) = evaluateForLoopRange(cache, env, iter_cr, ty,
-          start_val, step_val, stop_val, statements, NEXT());
+        (cache, env, loop_ctrl, st) = evaluateForLoopRange(cache, env, iter_cr, ty,
+          start_val, step_val, stop_val, statements, NEXT(), st);
       then
-        (cache, env, loop_ctrl);
+        (cache, env, loop_ctrl, st);
 
-    case (DAE.STMT_FOR(range = range), _, _)
+    case (DAE.STMT_FOR(range = range), _, _, _)
       equation
         true = RTOpts.debugFlag("failtrace");
         Debug.traceln("- evaluateForStatement not implemented for:");
@@ -556,29 +608,34 @@ protected function evaluateForLoopArray
   input list<Values.Value> inValues;
   input list<DAE.Statement> inStatements;
   input LoopControl inLoopControl;
+  input SymbolTable inST;
   output Env.Cache outCache;
   output Env.Env outEnv;
   output LoopControl outLoopControl;
+  output SymbolTable outST;
 algorithm
-  (outCache, outEnv, outLoopControl) := matchcontinue(inCache, inEnv, inIter,
-      inIterType, inValues, inStatements, inLoopControl)
+  (outCache, outEnv, outLoopControl, outST) := matchcontinue(inCache, inEnv, inIter,
+      inIterType, inValues, inStatements, inLoopControl, inST)
     local
       Values.Value value;
       list<Values.Value> rest_vals;
       Env.Cache cache;
       Env.Env env;
       LoopControl loop_ctrl;
-    case (_, _, _, _, _, _, BREAK()) then (inCache, inEnv, NEXT());
-    case (_, _, _, _, _, _, RETURN()) then (inCache, inEnv, inLoopControl);
-    case (_, _, _, _, {}, _, _) then (inCache, inEnv, inLoopControl);
-    case (_, env, _, _, value :: rest_vals, _, NEXT())
+      SymbolTable st;
+
+    case (_, _, _, _, _, _, BREAK(), _) then (inCache, inEnv, NEXT(), inST);
+    case (_, _, _, _, _, _, RETURN(), _) then (inCache, inEnv, inLoopControl, inST);
+    case (_, _, _, _, {}, _, _, _) then (inCache, inEnv, inLoopControl, inST);
+    case (_, env, _, _, value :: rest_vals, _, NEXT(), st)
       equation
         env = updateVariableBinding(inIter, env, inIterType, value);
-        (cache, env, loop_ctrl) = evaluateStatements(inStatements, inCache, env);
-        (cache, env, loop_ctrl) = evaluateForLoopArray(cache, env, inIter,
-          inIterType, rest_vals, inStatements, loop_ctrl);
+        (cache, env, loop_ctrl, st) = 
+          evaluateStatements(inStatements, inCache, env, st);
+        (cache, env, loop_ctrl, st) = evaluateForLoopArray(cache, env, inIter,
+          inIterType, rest_vals, inStatements, loop_ctrl, st);
       then
-        (cache, env, loop_ctrl);
+        (cache, env, loop_ctrl, st);
   end matchcontinue;
 end evaluateForLoopArray;
 
@@ -594,36 +651,41 @@ protected function evaluateForLoopRange
   input Values.Value inStopValue;
   input list<DAE.Statement> inStatements;
   input LoopControl inLoopControl;
+  input SymbolTable inST;
   output Env.Cache outCache;
   output Env.Env outEnv;
   output LoopControl outLoopControl;
+  output SymbolTable outST;
 algorithm
-  (outCache, outEnv, outLoopControl) := 
+  (outCache, outEnv, outLoopControl, outST) := 
   matchcontinue(inCache, inEnv, inIter, inIterType, inStartValue, inStepValue,
-      inStopValue, inStatements, inLoopControl)
+      inStopValue, inStatements, inLoopControl, inST)
     local
       Env.Cache cache;
       Env.Env env;
       Values.Value next_val;
       LoopControl loop_ctrl;
-    case (_, _, _, _, _, _, _, _, BREAK()) then (inCache, inEnv, NEXT());
-    case (_, _, _, _, _, _, _, _, RETURN()) then (inCache, inEnv, inLoopControl);
-    case (cache, env, _, _, _, _, _, _, NEXT())
+      SymbolTable st;
+
+    case (_, _, _, _, _, _, _, _, BREAK(), _) then (inCache, inEnv, NEXT(), inST);
+    case (_, _, _, _, _, _, _, _, RETURN(), _) then (inCache, inEnv, inLoopControl, inST);
+    case (cache, env, _, _, _, _, _, _, NEXT(), st)
       equation
         true = ValuesUtil.safeLessEq(inStartValue, inStopValue);
         env = updateVariableBinding(inIter, env, inIterType, inStartValue);
-        (cache, env, loop_ctrl) = evaluateStatements(inStatements, cache, env);
+        (cache, env, loop_ctrl, st) = 
+          evaluateStatements(inStatements, cache, env, st);
         next_val = ValuesUtil.safeIntRealOp(inStartValue, inStepValue, 
           Values.ADDOP());
-        (cache, env, loop_ctrl) = evaluateForLoopRange(cache, env, inIter,
-          inIterType, next_val, inStepValue, inStopValue, inStatements, loop_ctrl);
+        (cache, env, loop_ctrl, st) = evaluateForLoopRange(cache, env, inIter,
+          inIterType, next_val, inStepValue, inStopValue, inStatements, loop_ctrl, st);
       then
-        (cache, env, loop_ctrl);
+        (cache, env, loop_ctrl, st);
     else
       equation
         false = ValuesUtil.safeLessEq(inStartValue, inStopValue);
       then
-        (inCache, inEnv, NEXT());
+        (inCache, inEnv, NEXT(), inST);
   end matchcontinue;
 end evaluateForLoopRange;
 
@@ -634,31 +696,38 @@ protected function evaluateWhileStatement
   input Env.Cache inCache;
   input Env.Env inEnv;
   input LoopControl inLoopControl;
+  input SymbolTable inST;
   output Env.Cache outCache;
   output Env.Env outEnv;
   output LoopControl outLoopControl;
+  output SymbolTable outST;
 algorithm
-  (outCache, outEnv, outLoopControl) := 
-  matchcontinue(inCondition, inStatements, inCache, inEnv, inLoopControl)
+  (outCache, outEnv, outLoopControl, outST) := 
+  matchcontinue(inCondition, inStatements, inCache, inEnv, inLoopControl, inST)
     local
       Env.Cache cache;
       Env.Env env;
       LoopControl loop_ctrl;
-    case (_, _, _, _, BREAK()) then (inCache, inEnv, NEXT());
-    case (_, _, _, _, RETURN()) then (inCache, inEnv, inLoopControl);
-    case (_, _, _, _, _)
+      SymbolTable st;
+
+    case (_, _, _, _, BREAK(), _) then (inCache, inEnv, NEXT(), inST);
+    case (_, _, _, _, RETURN(), _) then (inCache, inEnv, inLoopControl, inST);
+    case (_, _, _, _, _, st)
       equation
-        (cache, Values.BOOL(boolean = true)) = cevalExp(inCondition, inCache, inEnv);
-        (cache, env, loop_ctrl) = evaluateStatements(inStatements, cache, inEnv);
-        (cache, env, loop_ctrl) = 
-          evaluateWhileStatement(inCondition, inStatements, cache, env, loop_ctrl);
+        (cache, Values.BOOL(boolean = true), st) = 
+          cevalExp(inCondition, inCache, inEnv, st);
+        (cache, env, loop_ctrl, st) = 
+          evaluateStatements(inStatements, cache, inEnv, st);
+        (cache, env, loop_ctrl, st) = 
+          evaluateWhileStatement(inCondition, inStatements, cache, env, loop_ctrl, st);
       then
-        (cache, env, loop_ctrl);
+        (cache, env, loop_ctrl, st);
     else
       equation
-        (cache, Values.BOOL(boolean = false)) = cevalExp(inCondition, inCache, inEnv);
+        (cache, Values.BOOL(boolean = false), st) = 
+          cevalExp(inCondition, inCache, inEnv, inST);
       then
-        (cache, inEnv, NEXT());
+        (cache, inEnv, NEXT(), st);
   end matchcontinue;
 end evaluateWhileStatement;
 
@@ -687,10 +756,12 @@ protected function cevalExp
   input DAE.Exp inExp;
   input Env.Cache inCache;
   input Env.Env inEnv;
+  input SymbolTable inST;
   output Env.Cache outCache;
   output Values.Value outValue;
+  output SymbolTable outST;
 algorithm
-  (outCache, outValue, _) := Ceval.ceval(inCache, inEnv, inExp, true, NONE(), 
+  (outCache, outValue, outST) := Ceval.ceval(inCache, inEnv, inExp, true, inST, 
     NONE(), Ceval.NO_MSG());
 end cevalExp;
 
@@ -703,12 +774,14 @@ protected function setupFunctionEnvironment
   input String inFuncName;
   input list<DAE.Element> inFuncVars;
   input list<Values.Value> inFuncArgs;
+  input SymbolTable inST;
   output Env.Cache outCache;
   output Env.Env outEnv;
+  output SymbolTable outST;
 algorithm
   outEnv := Env.openScope(inEnv, false, SOME(inFuncName), SOME(Env.FUNCTION_SCOPE()));
-  (outCache, outEnv) := 
-    extendEnvWithFunctionVars(inCache, outEnv, inFuncVars, inFuncArgs);
+  (outCache, outEnv, outST) := 
+    extendEnvWithFunctionVars(inCache, outEnv, inFuncVars, inFuncArgs, inST);
 end setupFunctionEnvironment;
 
 protected function extendEnvWithFunctionVars
@@ -718,10 +791,13 @@ protected function extendEnvWithFunctionVars
   input Env.Env inEnv;
   input list<DAE.Element> inFuncVars;
   input list<Values.Value> inFuncArgs;
+  input SymbolTable inST;
   output Env.Cache outCache;
   output Env.Env outEnv;
+  output SymbolTable outST;
 algorithm
-  (outCache, outEnv) := matchcontinue(inCache, inEnv, inFuncVars, inFuncArgs)
+  (outCache, outEnv, outST) := 
+  matchcontinue(inCache, inEnv, inFuncVars, inFuncArgs, inST)
     local
       DAE.Element e;
       list<DAE.Element> el;
@@ -730,37 +806,38 @@ algorithm
       Env.Cache cache;
       Env.Env env;
       DAE.Exp binding_exp;
+      SymbolTable st;
     
-    case (_, _, {}, {}) then (inCache, inEnv);
+    case (_, _, {}, {}, _) then (inCache, inEnv, inST);
     
     // For an input arguments we take the first value in the list of input
     // values, and assigns the value to the variable that we create.
-    case (_, env, (e as DAE.VAR(direction = DAE.INPUT())) :: el, val :: rest_vals)
+    case (_, env, (e as DAE.VAR(direction = DAE.INPUT())) :: el, val :: rest_vals, st)
       equation
-        (cache, env) = extendEnvWithElement(e, SOME(val), inCache, env);
-        (cache, env) = extendEnvWithFunctionVars(inCache, env, el, rest_vals);
+        (cache, env, st) = extendEnvWithElement(e, SOME(val), inCache, env, st);
+        (cache, env, st) = extendEnvWithFunctionVars(inCache, env, el, rest_vals, st);
       then
-        (cache, env);
+        (cache, env, st);
     
     // Non-input arguments might have a default binding, so we use that if it's
     // available.
-    case (_, env, (e as DAE.VAR(direction = _, binding = SOME(binding_exp))) :: el, _)
+    case (_, env, (e as DAE.VAR(direction = _, binding = SOME(binding_exp))) :: el, _, st)
       equation
-        (cache, val) = cevalExp(binding_exp, inCache, inEnv);
-        (cache, env) = extendEnvWithElement(e, SOME(val), cache, env);
-        (cache, env) = extendEnvWithFunctionVars(cache, env, el, inFuncArgs);
+        (cache, val, st) = cevalExp(binding_exp, inCache, inEnv, st);
+        (cache, env, st) = extendEnvWithElement(e, SOME(val), cache, env, st);
+        (cache, env, st) = extendEnvWithFunctionVars(cache, env, el, inFuncArgs, st);
       then
-        (cache, env);
+        (cache, env, st);
     
     // Otherwise, just add the variable to the environment.
-    case (_, env, (e as DAE.VAR(direction = _)) :: el, _)
+    case (_, env, (e as DAE.VAR(direction = _)) :: el, _, st)
       equation
-        (cache, env) = extendEnvWithElement(e, NONE(), inCache, env);
-        (cache, env) = extendEnvWithFunctionVars(inCache, env, el, inFuncArgs);
+        (cache, env, st) = extendEnvWithElement(e, NONE(), inCache, env, st);
+        (cache, env, st) = extendEnvWithFunctionVars(inCache, env, el, inFuncArgs, st);
       then
-        (cache, env);
+        (cache, env, st);
     
-    case (_, env, e :: _, _)
+    case (_, env, e :: _, _, _)
       equation
         true = RTOpts.debugFlag("failtrace");
         Debug.traceln("- CevalFunction.extendEnvWithFunctionVars failed for:");
@@ -777,10 +854,13 @@ protected function extendEnvWithElement
   input Option<Values.Value> inBindingValue;
   input Env.Cache inCache;
   input Env.Env inEnv;
+  input SymbolTable inST;
   output Env.Cache outCache;
   output Env.Env outEnv;
+  output SymbolTable outST;
 algorithm
-  (outCache, outEnv) := match(inElement, inBindingValue, inCache, inEnv)
+  (outCache, outEnv, outST) := 
+  match(inElement, inBindingValue, inCache, inEnv, inST)
     local
       DAE.ComponentRef cr;
       String name;
@@ -788,12 +868,15 @@ algorithm
       DAE.InstDims dims;
       Env.Cache cache;
       Env.Env env;
-    case (DAE.VAR(componentRef = cr, ty = ty, dims = dims), _, _, _)
+      SymbolTable st;
+
+    case (DAE.VAR(componentRef = cr, ty = ty, dims = dims), _, _, _, st)
       equation
         name = ComponentReference.crefStr(cr);
-        (cache, env) = extendEnvWithVar(name, ty, inBindingValue, dims, inCache, inEnv);
+        (cache, env, st) = 
+          extendEnvWithVar(name, ty, inBindingValue, dims, inCache, inEnv, st);
       then
-        (cache, env);
+        (cache, env, st);
   end match;
 end extendEnvWithElement;
         
@@ -806,40 +889,46 @@ protected function extendEnvWithVar
   input DAE.InstDims inDims;
   input Env.Cache inCache;
   input Env.Env inEnv;
+  input SymbolTable inST;
   output Env.Cache outCache;
   output Env.Env outEnv;
+  output SymbolTable outST;
 algorithm
-  (outCache, outEnv) := 
-  matchcontinue(inName, inType, inOptValue, inDims, inCache, inEnv)
+  (outCache, outEnv, outST) := 
+  matchcontinue(inName, inType, inOptValue, inDims, inCache, inEnv, inST)
     local
       DAE.Type ty;
       DAE.Var var;
       DAE.Binding binding;
       Env.Cache cache;
       Env.Env env, record_env;
+      SymbolTable st;
 
     // Records are special, since they have their own environment with their
     // components in them. A record variable is thus always unbound, and their
     // values are instead determined by their components values.
-    case (_, _, _, _, _, _)
+    case (_, _, _, _, _, _, _)
       equation
         true = Types.isRecord(inType);
-        (cache, ty) = appendDimensions(inType, inOptValue, inDims, inCache, inEnv);
+        (cache, ty, st) = 
+          appendDimensions(inType, inOptValue, inDims, inCache, inEnv, inST);
         var = makeFunctionVariable(inName, ty, DAE.UNBOUND());
-        (cache, record_env) = makeRecordEnvironment(inType, inOptValue, cache);
+        (cache, record_env, st) = 
+          makeRecordEnvironment(inType, inOptValue, cache, st);
         env = Env.extendFrameV(inEnv, var, NONE(), Env.VAR_TYPED(), record_env);
       then
-        (cache, env);
+        (cache, env, st);
 
     // Normal variables.
     else
       equation
         binding = getBinding(inOptValue);
-        (cache, ty) = appendDimensions(inType, inOptValue, inDims, inCache, inEnv);
+        (cache, ty, st) = 
+          appendDimensions(inType, inOptValue, inDims, inCache, inEnv, inST);
         var = makeFunctionVariable(inName, ty, binding);
         env = Env.extendFrameV(inEnv, var, NONE(), Env.VAR_TYPED(), {});
       then
-        (cache, env);
+        (cache, env, st);
   end matchcontinue;
 end extendEnvWithVar;
 
@@ -878,25 +967,30 @@ protected function makeRecordEnvironment
   input DAE.Type inRecordType;
   input Option<Values.Value> inOptValue;
   input Env.Cache inCache;
+  input SymbolTable inST;
   output Env.Cache outCache;
   output Env.Env outRecordEnv;
+  output SymbolTable outST;
 algorithm
-  (outCache, outRecordEnv) := match(inRecordType, inOptValue, inCache)
+  (outCache, outRecordEnv, outST) := 
+  match(inRecordType, inOptValue, inCache, inST)
     local
       list<DAE.Var> var_lst;
       list<Option<Values.Value>> vals;
       Env.Cache cache;
       Env.Env env;
+      SymbolTable st;
+
     case ((DAE.T_COMPLEX(
         complexClassType = ClassInf.RECORD(path = _),
-        complexVarLst = var_lst), _), _, _)
+        complexVarLst = var_lst), _), _, _, st)
       equation
         env = Env.newEnvironment();
         vals = getRecordValues(inOptValue, inRecordType);
-        ((cache, env)) = Util.listThreadFold(var_lst, vals,
-          extendEnvWithRecordVar, (inCache, env));
+        ((cache, env, st)) = Util.listThreadFold(var_lst, vals,
+          extendEnvWithRecordVar, (inCache, env, st));
       then
-        (cache, env);
+        (cache, env, st);
   end match;
 end makeRecordEnvironment;
   
@@ -933,8 +1027,8 @@ protected function extendEnvWithRecordVar
   "This function extends an environment with a record component."
   input DAE.Var inVar;
   input Option<Values.Value> inOptValue;
-  input tuple<Env.Cache, Env.Env> inEnv;
-  output tuple<Env.Cache, Env.Env> outEnv;
+  input tuple<Env.Cache, Env.Env, SymbolTable> inEnv;
+  output tuple<Env.Cache, Env.Env, SymbolTable> outEnv;
 algorithm
   outEnv := match(inVar, inOptValue, inEnv)
     local
@@ -942,11 +1036,14 @@ algorithm
       DAE.Type ty;
       Env.Cache cache;
       Env.Env env;
-    case (DAE.TYPES_VAR(name = name, type_ = ty), _, (cache, env))
+      SymbolTable st;
+
+    case (DAE.TYPES_VAR(name = name, type_ = ty), _, (cache, env, st))
       equation
-        (cache, env) = extendEnvWithVar(name, ty, inOptValue, {}, cache, env);
-        outEnv = (cache,env);
-      then outEnv;
+        (cache, env, st) = extendEnvWithVar(name, ty, inOptValue, {}, cache, env, st);
+        outEnv = (cache, env, st);
+      then
+        outEnv;
   end match;
 end extendEnvWithRecordVar;
 
@@ -981,14 +1078,17 @@ protected function appendDimensions
   input DAE.InstDims inDims;
   input Env.Cache inCache;
   input Env.Env inEnv;
+  input SymbolTable inST;
   output Env.Cache outCache;
   output DAE.Type outType;
+  output SymbolTable outST;
 protected
   list<Integer> binding_dims;
 algorithm
   binding_dims := ValuesUtil.valueDimensions(
     Util.getOptionOrDefault(inOptBinding, Values.INTEGER(0)));
-  (outCache, outType) := appendDimensions2(inType, inDims, binding_dims, inCache, inEnv);
+  (outCache, outType, outST) := 
+    appendDimensions2(inType, inDims, binding_dims, inCache, inEnv, inST);
 end appendDimensions;
         
 protected function appendDimensions2
@@ -1000,11 +1100,13 @@ protected function appendDimensions2
   input list<Integer> inBindingDims;
   input Env.Cache inCache;
   input Env.Env inEnv;
+  input SymbolTable inST;
   output Env.Cache outCache;
   output DAE.Type outType;
+  output SymbolTable outST;
 algorithm
-  (outCache, outType) := 
-  matchcontinue(inType, inDims, inBindingDims, inCache, inEnv)
+  (outCache, outType, outST) := 
+  matchcontinue(inType, inDims, inBindingDims, inCache, inEnv, inST)
     local
       DAE.InstDims rest_dims;
       DAE.Exp dim_exp;
@@ -1015,31 +1117,34 @@ algorithm
       list<Integer> bind_dims;
       DAE.Subscript sub;
       Env.Cache cache;
+      SymbolTable st;
     
-    case (ty, {}, _, _, _) then (inCache, ty);
+    case (ty, {}, _, _, _, _) then (inCache, ty, inST);
     
     // Use the given dimension if the dimension has been declared. The list of
     // dimensions might be empty in this case, so listRestOrEmpty is used
     // instead of matching.
-    case (ty, DAE.INDEX(exp = dim_exp) :: rest_dims, bind_dims, _, _)
+    case (ty, DAE.INDEX(exp = dim_exp) :: rest_dims, bind_dims, _, _, st)
       equation
-        (cache, dim_val) = cevalExp(dim_exp, inCache, inEnv);
+        (cache, dim_val, st) = cevalExp(dim_exp, inCache, inEnv, st);
         dim_int = ValuesUtil.valueInteger(dim_val);
         dim = Expression.intDimension(dim_int);
         bind_dims = Util.listRestOrEmpty(bind_dims);
-        (cache, ty) = appendDimensions2(ty, rest_dims, bind_dims, inCache, inEnv);
+        (cache, ty, st) = 
+          appendDimensions2(ty, rest_dims, bind_dims, inCache, inEnv, st);
       then
-        (cache, (DAE.T_ARRAY(dim, ty), NONE()));
+        (cache, (DAE.T_ARRAY(dim, ty), NONE()), st);
     
     // Otherwise, take the dimension from the binding.
-    case (ty, DAE.WHOLEDIM() :: rest_dims, dim_int :: bind_dims, _, _)
+    case (ty, DAE.WHOLEDIM() :: rest_dims, dim_int :: bind_dims, _, _, st)
       equation
         dim = Expression.intDimension(dim_int);
-        (cache, ty) = appendDimensions2(ty, rest_dims, bind_dims, inCache, inEnv);
+        (cache, ty, st) = 
+          appendDimensions2(ty, rest_dims, bind_dims, inCache, inEnv, st);
       then
-        (cache, (DAE.T_ARRAY(dim, ty), NONE()));
+        (cache, (DAE.T_ARRAY(dim, ty), NONE()), st);
     
-    case (_, sub :: _, _, _, _)
+    case (_, sub :: _, _, _, _, _)
       equation
         Debug.fprintln("failtrace", "- CevalFunction.appendDimensions2 failed");
       then
@@ -1055,10 +1160,13 @@ protected function assignVariable
   input Values.Value inNewValue;
   input Env.Cache inCache;
   input Env.Env inEnv;
+  input SymbolTable inST;
   output Env.Cache outCache;
   output Env.Env outEnv;
+  output SymbolTable outST;
 algorithm
-  (outCache, outEnv) := matchcontinue(inVariableCref, inNewValue, inCache, inEnv)
+  (outCache, outEnv, outST) := 
+  matchcontinue(inVariableCref, inNewValue, inCache, inEnv, inST)
     local
       DAE.ComponentRef cr, cr_rest;
       Env.Cache cache;
@@ -1070,48 +1178,49 @@ algorithm
       DAE.Var var;
       Env.InstStatus inst_status;
       String id;
+      SymbolTable st;
 
     // A record assignment.
     case (cr as DAE.CREF_IDENT(ident = id, subscriptLst = {}, identType = ety as
-        DAE.ET_COMPLEX(complexClassType = ClassInf.RECORD(path = _))), _, _, _)
+        DAE.ET_COMPLEX(complexClassType = ClassInf.RECORD(path = _))), _, _, _, st)
       equation
         (_, var, _, inst_status, env) =
           Lookup.lookupIdentLocal(inCache, inEnv, id);
-        (cache, env) = assignRecord(ety, inNewValue, inCache, env);
+        (cache, env, st) = assignRecord(ety, inNewValue, inCache, env, st);
         env = Env.updateFrameV(inEnv, var, inst_status, env);
       then
-        (cache, env);
+        (cache, env, st);
 
     // If we get a scalar we just update the value.
-    case (cr as DAE.CREF_IDENT(subscriptLst = {}), _, _, _)
+    case (cr as DAE.CREF_IDENT(subscriptLst = {}), _, _, _, st)
       equation
         (ty, _) = getVariableTypeAndBinding(cr, inEnv);
         env = updateVariableBinding(cr, inEnv, ty, inNewValue);
       then
-        (inCache, env);
+        (inCache, env, st);
 
     // If we get a vector we first get the old value and update the relevant
     // part of it, and then update the variables value.
-    case (cr as DAE.CREF_IDENT(subscriptLst = subs), _, _, _)
+    case (cr as DAE.CREF_IDENT(subscriptLst = subs), _, _, _, st)
       equation
         cr = ComponentReference.crefStripSubs(cr);
         (ty, val) = getVariableTypeAndValue(cr, inEnv); 
-        (cache, val) = assignVector(inNewValue, val, subs, inCache, inEnv);
+        (cache, val, st) = assignVector(inNewValue, val, subs, inCache, inEnv, st);
         env = updateVariableBinding(cr, inEnv, ty, val);
       then
-        (cache, env);
+        (cache, env, st);
 
     // A qualified component reference is a record component, so first lookup
     // the records environment, and then assign the variable in that environment.
     case (cr as DAE.CREF_QUAL(ident = id, subscriptLst = {},
-        componentRef = cr_rest), _, _, _)
+        componentRef = cr_rest), _, _, _, st)
       equation
         (_, var, _, inst_status, env) =
           Lookup.lookupIdentLocal(inCache, inEnv, id);
-        (cache, env) = assignVariable(cr_rest, inNewValue, inCache, env);
+        (cache, env, st) = assignVariable(cr_rest, inNewValue, inCache, env, st);
         env = Env.updateFrameV(inEnv, var, inst_status, env);
       then
-        (cache, env);
+        (cache, env, st);
   end matchcontinue;
 end assignVariable;
 
@@ -1122,10 +1231,13 @@ protected function assignTuple
   input list<Values.Value> inRhsValues;
   input Env.Cache inCache;
   input Env.Env inEnv;
+  input SymbolTable inST;
   output Env.Cache outCache;
   output Env.Env outEnv;
+  output SymbolTable outST;
 algorithm
-  (outCache, outEnv) := match(inLhsCrefs, inRhsValues, inCache, inEnv)
+  (outCache, outEnv, outST) := 
+  match(inLhsCrefs, inRhsValues, inCache, inEnv, inST)
     local
       DAE.ComponentRef cr;
       list<DAE.ComponentRef> rest_crefs;
@@ -1133,13 +1245,14 @@ algorithm
       list<Values.Value> rest_vals;
       Env.Cache cache;
       Env.Env env;
-    case ({}, _, cache, env) then (cache, env);
-    case (cr :: rest_crefs, value :: rest_vals, cache, env)
+      SymbolTable st;
+    case ({}, _, cache, env, st) then (cache, env, st);
+    case (cr :: rest_crefs, value :: rest_vals, cache, env, st)
       equation
-        (cache, env) = assignVariable(cr, value, cache, env);
-        (cache, env) = assignTuple(rest_crefs, rest_vals, cache, env);
+        (cache, env, st) = assignVariable(cr, value, cache, env, st);
+        (cache, env, st) = assignTuple(rest_crefs, rest_vals, cache, env, st);
       then
-        (cache, env);
+        (cache, env, st);
   end match;
 end assignTuple;
 
@@ -1148,20 +1261,23 @@ protected function assignRecord
   input Values.Value inValue;
   input Env.Cache inCache;
   input Env.Env inEnv;
+  input SymbolTable inST;
   output Env.Cache outCache;
   output Env.Env outEnv;
+  output SymbolTable outST;
 algorithm
-  (outCache, outEnv) := match(inType, inValue, inCache, inEnv)
+  (outCache, outEnv, outST) := match(inType, inValue, inCache, inEnv, inST)
     local
       list<Values.Value> values;
       list<DAE.ExpVar> vars;
       Env.Cache cache;
       Env.Env env;
-    case (DAE.ET_COMPLEX(varLst = vars), Values.RECORD(orderd = values), _, _)
+      SymbolTable st;
+    case (DAE.ET_COMPLEX(varLst = vars), Values.RECORD(orderd = values), _, _, st)
       equation
-        (cache, env) = assignRecordComponents(vars, values, inCache, inEnv);
+        (cache, env, st) = assignRecordComponents(vars, values, inCache, inEnv, st);
       then
-        (cache, env);
+        (cache, env, st);
   end match;
 end assignRecord;
 
@@ -1170,10 +1286,12 @@ protected function assignRecordComponents
   input list<Values.Value> inValues;
   input Env.Cache inCache;
   input Env.Env inEnv;
+  input SymbolTable inST;
   output Env.Cache outCache;
   output Env.Env outEnv;
+  output SymbolTable outST;
 algorithm
-  (outCache, outEnv) := match(inVars, inValues, inCache, inEnv)
+  (outCache, outEnv, outST) := match(inVars, inValues, inCache, inEnv, inST)
     local
       list<DAE.ExpVar> rest_vars;
       Values.Value val;
@@ -1183,14 +1301,15 @@ algorithm
       DAE.ExpType ety;
       Env.Cache cache;
       Env.Env env;
+      SymbolTable st;
     case (DAE.COMPLEX_VAR(name = name, tp = ety) :: rest_vars,
-          val :: rest_vals, _ , _)
+      val :: rest_vals, _ , _, st)
       equation
         cr = ComponentReference.makeCrefIdent(name, ety, {});
-        (cache, env) = assignVariable(cr, val, inCache, inEnv);
-        (cache, env) = assignRecordComponents(rest_vars, rest_vals, cache, env);
+        (cache, env, st) = assignVariable(cr, val, inCache, inEnv, st);
+        (cache, env, st) = assignRecordComponents(rest_vars, rest_vals, cache, env, st);
       then
-        (cache, env);
+        (cache, env, st);
   end match;
 end assignRecordComponents;
   
@@ -1202,11 +1321,13 @@ protected function assignVector
   input list<DAE.Subscript> inSubscripts;
   input Env.Cache inCache;
   input Env.Env inEnv;
+  input SymbolTable inST;
   output Env.Cache outCache;
   output Values.Value outResult;
+  output SymbolTable outST;
 algorithm
-  (outCache, outResult) := 
-  matchcontinue(inNewValue, inOldValue, inSubscripts, inCache, inEnv)
+  (outCache, outResult, outST) := 
+  matchcontinue(inNewValue, inOldValue, inSubscripts, inCache, inEnv, inST)
     local
       DAE.Exp e;
       Values.Value index, val;
@@ -1217,52 +1338,54 @@ algorithm
       DAE.Subscript sub;
       list<DAE.Subscript> rest_subs;
       Env.Cache cache;
+      SymbolTable st;
 
     // No subscripts, we have either reached the end of the recursion or the
     // whole vector was assigned.
-    case (_, _, {}, _, _) then (inCache, inNewValue);
+    case (_, _, {}, _, _, _) then (inCache, inNewValue, inST);
 
     // An index subscript. Extract the indicated vector element and update it
     // with assignVector, and then put it back in the list of old values.
     case (_, Values.ARRAY(valueLst = values, dimLst = dims), 
-        DAE.INDEX(exp = e) :: rest_subs, _, _)
+        DAE.INDEX(exp = e) :: rest_subs, _, _, st)
       equation
-        (cache, index) = cevalExp(e, inCache, inEnv);
+        (cache, index, st) = cevalExp(e, inCache, inEnv, st);
         i = ValuesUtil.valueInteger(index) - 1;
         val = listNth(values, i);
-        (cache, val) = assignVector(inNewValue, val, rest_subs, cache, inEnv);
+        (cache, val, st) = assignVector(inNewValue, val, rest_subs, cache, inEnv, st);
         values = Util.listReplaceAt(val, i, values);
       then
-        (cache, Values.ARRAY(values, dims));
+        (cache, Values.ARRAY(values, dims), st);
 
     // A slice.
     case (Values.ARRAY(valueLst = values),
         Values.ARRAY(valueLst = old_values, dimLst = dims),
-        DAE.SLICE(exp = e) :: rest_subs, _, _)
+        DAE.SLICE(exp = e) :: rest_subs, _, _, st)
       equation
         // Evaluate the slice range to a list of values.
-        (cache, Values.ARRAY(valueLst = (indices as (Values.INTEGER(integer = i) :: _)))) =
-          cevalExp(e, inCache, inEnv);
+        (cache, Values.ARRAY(valueLst = (indices as (Values.INTEGER(integer = i) :: _))), st) =
+        cevalExp(e, inCache, inEnv, st);
         // Split the list of old values at the first slice index.
         (old_values, old_values2) = Util.listSplit(old_values, i - 1);
         // Update the rest of the old value with assignSlice.
-        (cache, values2) = 
-          assignSlice(values, old_values2, indices, rest_subs, i, cache, inEnv);
+        (cache, values2, st) = 
+          assignSlice(values, old_values2, indices, rest_subs, i, cache, inEnv, st);
         // Assemble the list of values again.
         values = listAppend(old_values, values2);
       then
-        (cache, Values.ARRAY(values, dims));
+        (cache, Values.ARRAY(values, dims), st);
 
     // A : (whole dimension).
     case (Values.ARRAY(valueLst = values), 
           Values.ARRAY(valueLst = values2, dimLst = dims),
-        DAE.WHOLEDIM() :: rest_subs, _, _)
+        DAE.WHOLEDIM() :: rest_subs, _, _, st)
       equation
-        (cache, values) = assignWholeDim(values, values2, rest_subs, inCache, inEnv);
+        (cache, values, st) = 
+          assignWholeDim(values, values2, rest_subs, inCache, inEnv, st);
       then
-        (cache, Values.ARRAY(values, dims));
+        (cache, Values.ARRAY(values, dims), st);
 
-    case (_, _, sub :: _, _, _)
+    case (_, _, sub :: _, _, _, _)
       equation
         true = RTOpts.debugFlag("failtrace");
         print("- CevalFunction.assignVector failed on: ");
@@ -1282,35 +1405,38 @@ protected function assignSlice
   input Integer inIndex;
   input Env.Cache inCache;
   input Env.Env inEnv;
+  input SymbolTable inST;
   output Env.Cache outCache;
   output list<Values.Value> outResult;
+  output SymbolTable outST;
 algorithm
-  (outCache, outResult) := 
+  (outCache, outResult, outST) := 
   matchcontinue(inNewValues, inOldValues, inIndices, inSubscripts, inIndex,
-      inCache, inEnv)
+  inCache, inEnv, inST)
     local
       Values.Value v1, v2, index;
       list<Values.Value> vl1, vl2, rest_indices;
       Env.Cache cache;
+      SymbolTable st;
 
-    case (_, _, {}, _, _, _, _) then (inCache, inOldValues);
+    case (_, _, {}, _, _, _, _, _) then (inCache, inOldValues, inST);
 
     // Skip indices that are smaller than the next index in the slice.
-    case (vl1, v2 :: vl2, index :: rest_indices, _, _, _, _)
+    case (vl1, v2 :: vl2, index :: rest_indices, _, _, _, _, st)
       equation
         true = (inIndex < ValuesUtil.valueInteger(index));
-        (cache, vl1) = assignSlice(vl1, vl2, inIndices, inSubscripts, 
-          inIndex + 1, inCache, inEnv);
+        (cache, vl1, st) = assignSlice(vl1, vl2, inIndices, inSubscripts, 
+          inIndex + 1, inCache, inEnv, st);
       then
-        (cache, v2 :: vl1);
+        (cache, v2 :: vl1, st);
         
-    case (v1 :: vl1, v2 :: vl2, _ :: rest_indices, _, _, _, _)
+    case (v1 :: vl1, v2 :: vl2, _ :: rest_indices, _, _, _, _, st)
       equation
-        (cache, v1) = assignVector(v1, v2, inSubscripts, inCache, inEnv);
-        (cache, vl1) = assignSlice(vl1, vl2, rest_indices, inSubscripts, 
-          inIndex + 1, inCache, inEnv);
+        (cache, v1, st) = assignVector(v1, v2, inSubscripts, inCache, inEnv, st);
+        (cache, vl1, st) = assignSlice(vl1, vl2, rest_indices, inSubscripts, 
+          inIndex + 1, inCache, inEnv, st);
       then
-        (cache, v1 :: vl1);
+        (cache, v1 :: vl1, st);
   end matchcontinue;
 end assignSlice;
 
@@ -1321,22 +1447,25 @@ protected function assignWholeDim
   input list<DAE.Subscript> inSubscripts;
   input Env.Cache inCache;
   input Env.Env inEnv;
+  input SymbolTable inST;
   output Env.Cache outCache;
   output list<Values.Value> outResult;
+  output SymbolTable outST;
 algorithm
-  (outCache, outResult) := 
-  match(inNewValues, inOldValues, inSubscripts, inCache, inEnv)
+  (outCache, outResult, outST) := 
+  match(inNewValues, inOldValues, inSubscripts, inCache, inEnv, inST)
     local
       Values.Value v1, v2;
       list<Values.Value> vl1, vl2;
       Env.Cache cache;
-    case ({}, _, _, _, _) then (inCache, {});
-    case (v1 :: vl1, v2 :: vl2, _, _, _)
+      SymbolTable st;
+    case ({}, _, _, _, _, _) then (inCache, {}, inST);
+    case (v1 :: vl1, v2 :: vl2, _, _, _, st)
       equation
-        (cache, v1) = assignVector(v1, v2, inSubscripts, inCache, inEnv);
-        (cache, vl1) = assignWholeDim(vl1, vl2, inSubscripts, inCache, inEnv);
+        (cache, v1, st) = assignVector(v1, v2, inSubscripts, inCache, inEnv, st);
+        (cache, vl1, st) = assignWholeDim(vl1, vl2, inSubscripts, inCache, inEnv, st);
       then
-        (cache, v1 :: vl1);
+        (cache, v1 :: vl1, st);
   end match;
 end assignWholeDim;
 
