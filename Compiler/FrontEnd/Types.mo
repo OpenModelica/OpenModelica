@@ -4033,7 +4033,7 @@ algorithm
         (begin_1,_) = typeConvert(begin, ty1, ty2, printFailtrace);
         (step_1,_) = typeConvert(step, ty1, ty2, printFailtrace);
         (stop_1,_) = typeConvert(stop, ty1, ty2, printFailtrace);
-        at = elabType(ty0);
+        at = elabType(ty2);
       then
         (DAE.RANGE(at,begin_1,SOME(step_1),stop_1),(DAE.T_ARRAY(dim1,ty2),p));
 
@@ -4044,7 +4044,7 @@ algorithm
         true = Expression.dimensionsKnownAndEqual(dim1, dim2);
         (begin_1,_) = typeConvert(begin, ty1, ty2, printFailtrace);
         (stop_1,_) = typeConvert(stop, ty1, ty2, printFailtrace);
-        at = elabType(ty0);
+        at = elabType(ty2);
       then
         (DAE.RANGE(at,begin_1,NONE(),stop_1),(DAE.T_ARRAY(dim1,ty2),p));
 
