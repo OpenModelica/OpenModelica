@@ -1336,14 +1336,15 @@ cases returns [void* ast] :
   ;
 
 cases2 returns [void* ast] :
-  ( (ELSE (cmt=string_comment es=local_clause (EQUATION eqs=equation_list_then)? THEN)? exp=expression SEMICOLON)?
+  ( (el=ELSE (cmt=string_comment es=local_clause (EQUATION eqs=equation_list_then)? th=THEN)? exp=expression SEMICOLON)?
     {
       if (es != NULL)
         c_add_source_message(2, "SYNTAX", "Warning", "case local declarations are deprecated. Move all case- and else-declarations to the match local declarations.",
                              NULL, 0, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition+1,
                              ModelicaParser_readonly, ModelicaParser_filename_C);
+      if ($th) $el = $th;
       if (exp)
-       $ast = mk_cons(Absyn__ELSE(or_nil(es),or_nil(eqs),exp,mk_some_or_none(cmt),INFO($start)),mk_nil());
+       $ast = mk_cons(Absyn__ELSE(or_nil(es),or_nil(eqs),exp,INFO($el),mk_some_or_none(cmt),INFO($start)),mk_nil());
       else
        $ast = mk_nil();
     }
@@ -1355,13 +1356,13 @@ cases2 returns [void* ast] :
   ;
 
 onecase returns [void* ast] :
-  (CASE pat=pattern cmt=string_comment es=local_clause (EQUATION eqs=equation_list_then)? THEN exp=expression SEMICOLON)
+  (CASE pat=pattern cmt=string_comment es=local_clause (EQUATION eqs=equation_list_then)? th=THEN exp=expression SEMICOLON)
     {
         if (es != NULL)
           c_add_source_message(2, "SYNTAX", "Warning", "case local declarations are deprecated. Move all case- and else-declarations to the match local declarations.",
                                NULL, 0, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition+1,
                                ModelicaParser_readonly, ModelicaParser_filename_C);
-        $ast = Absyn__CASE(pat.ast,pat.info,or_nil(es),or_nil(eqs),exp,mk_some_or_none(cmt),INFO($start));
+        $ast = Absyn__CASE(pat.ast,pat.info,or_nil(es),or_nil(eqs),exp,INFO($th),mk_some_or_none(cmt),INFO($start));
     }
   ;
 

@@ -950,19 +950,28 @@ algorithm
     local
       list<DAE.Pattern> patterns;
       list<DAE.Statement> body;
-      Option<DAE.Exp> result;
+      DAE.Exp result;
       String resultStr,patternsStr,bodyStr;
-    case DAE.CASE(patterns=patterns, body={}, result=result)
+    case DAE.CASE(patterns=patterns, body={}, result=SOME(result))
       equation
         patternsStr = Patternm.patternStr(DAE.PAT_META_TUPLE(patterns));
-        resultStr = Util.getOptionOrDefault(Util.applyOption(result, printExpStr), "fail()");
+        resultStr = printExpStr(result);
       then stringAppendList({"    case ",patternsStr," then ",resultStr,";\n"});
-    case DAE.CASE(patterns=patterns, body=body, result=result)
+    case DAE.CASE(patterns=patterns, body={}, result=NONE())
       equation
         patternsStr = Patternm.patternStr(DAE.PAT_META_TUPLE(patterns));
-        resultStr = Util.getOptionOrDefault(Util.applyOption(result, printExpStr), "fail()");
+      then stringAppendList({"    case ",patternsStr," then fail();\n"});
+    case DAE.CASE(patterns=patterns, body=body, result=SOME(result))
+      equation
+        patternsStr = Patternm.patternStr(DAE.PAT_META_TUPLE(patterns));
+        resultStr = printExpStr(result);
         bodyStr = stringAppendList(Util.listMap1(body, DAEDump.ppStmtStr, 8));
       then stringAppendList({"    case ",patternsStr,"\n      algorithm\n",bodyStr,"      then ",resultStr,";\n"});
+    case DAE.CASE(patterns=patterns, body=body, result=NONE())
+      equation
+        patternsStr = Patternm.patternStr(DAE.PAT_META_TUPLE(patterns));
+        bodyStr = stringAppendList(Util.listMap1(body, DAEDump.ppStmtStr, 8));
+      then stringAppendList({"    case ",patternsStr,"\n      algorithm\n",bodyStr,"      then fail();\n"});
   end match;
 end printCase2Str;
 

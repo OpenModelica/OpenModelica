@@ -2213,7 +2213,7 @@ extern struct record_description Absyn_Exp_LIST__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Case_CASE__desc_added
 #define Absyn_Case_CASE__desc_added
-const char* Absyn_Case_CASE__desc__fields[7] = {"pattern","patternInfo","localDecls","equations","result","comment","info"};
+const char* Absyn_Case_CASE__desc__fields[8] = {"pattern","patternInfo","localDecls","equations","result","resultInfo","comment","info"};
 struct record_description Absyn_Case_CASE__desc = {
   "Absyn_Case_CASE",
   "Absyn.Case.CASE",
@@ -2223,12 +2223,12 @@ struct record_description Absyn_Case_CASE__desc = {
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Case_CASE__desc;
 #endif
-#define Absyn__CASE_3dBOX7 3
-#define Absyn__CASE(pattern,patternInfo,localDecls,equations,result,comment,info) (mmc_mk_box8(3,&Absyn_Case_CASE__desc,pattern,patternInfo,localDecls,equations,result,comment,info))
+#define Absyn__CASE_3dBOX8 3
+#define Absyn__CASE(pattern,patternInfo,localDecls,equations,result,resultInfo,comment,info) (mmc_mk_box9(3,&Absyn_Case_CASE__desc,pattern,patternInfo,localDecls,equations,result,resultInfo,comment,info))
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Case_ELSE__desc_added
 #define Absyn_Case_ELSE__desc_added
-const char* Absyn_Case_ELSE__desc__fields[5] = {"localDecls","equations","result","comment","info"};
+const char* Absyn_Case_ELSE__desc__fields[6] = {"localDecls","equations","result","resultInfo","comment","info"};
 struct record_description Absyn_Case_ELSE__desc = {
   "Absyn_Case_ELSE",
   "Absyn.Case.ELSE",
@@ -2238,8 +2238,8 @@ struct record_description Absyn_Case_ELSE__desc = {
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Case_ELSE__desc;
 #endif
-#define Absyn__ELSE_3dBOX5 4
-#define Absyn__ELSE(localDecls,equations,result,comment,info) (mmc_mk_box6(4,&Absyn_Case_ELSE__desc,localDecls,equations,result,comment,info))
+#define Absyn__ELSE_3dBOX6 4
+#define Absyn__ELSE(localDecls,equations,result,resultInfo,comment,info) (mmc_mk_box7(4,&Absyn_Case_ELSE__desc,localDecls,equations,result,resultInfo,comment,info))
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_MatchType_MATCH__desc_added
 #define Absyn_MatchType_MATCH__desc_added

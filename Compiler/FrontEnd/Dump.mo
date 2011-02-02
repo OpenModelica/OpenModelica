@@ -3920,7 +3920,7 @@ algorithm
       list<Absyn.EquationItem> e;
       Absyn.Exp r;
       Option<String> c;
-    case Absyn.CASE(p, _, l, e, r, c, _)
+    case Absyn.CASE(p, _, l, e, r, _, c, _)
       equation
         Print.printBuf("Absyn.CASE(");
         Print.printBuf("Pattern(");
@@ -3935,7 +3935,7 @@ algorithm
         printStringCommentOption(c);
         Print.printBuf(")");
       then ();
-    case Absyn.ELSE(l, e, r, c, _)
+    case Absyn.ELSE(l, e, r, _, c, _)
       equation
         Print.printBuf("Absyn.ELSE(\nLocal Decls(");
         printElementitems(l);
@@ -4543,13 +4543,13 @@ algorithm
       list<Absyn.EquationItem> eq;
       Absyn.Exp r;
       Option<String> c;
-    case Absyn.CASE(p, _, {}, {}, r, c, _)
+    case Absyn.CASE(p, _, {}, {}, r, _, c, _)
       equation
         s1 = printExpStr(p);
         s4 = printExpStr(r);
         s = stringAppendList({"\tcase (", s1, ") then ", s4, ";"});
       then s;
-    case Absyn.CASE(p, _, l, eq, r, c, _)
+    case Absyn.CASE(p, _, l, eq, r, _, c, _)
       equation
         s1 = printExpStr(p);
         s2 = unparseLocalElements(3, l);
@@ -4557,12 +4557,12 @@ algorithm
         s4 = printExpStr(r);
         s = stringAppendList({"\tcase (", s1, ")", s2, s3, "\t  then ", s4, ";"});
       then s;
-    case Absyn.ELSE({}, {}, r, c, _)
+    case Absyn.ELSE({}, {}, r, _, c, _)
       equation
         s4 = printExpStr(r);
         s = stringAppendList({"\telse then ", s4, ";"});
       then s;
-    case Absyn.ELSE(l, eq, r, c, _)
+    case Absyn.ELSE(l, eq, r, _, c, _)
       equation
         s2 = unparseLocalElements(3, l);
         s3 = unparseLocalEquations(3, eq);
@@ -6758,30 +6758,32 @@ algorithm
   _ := match case_
     local
       Absyn.Exp pattern;
-      Absyn.Info patternInfo,info;
+      Absyn.Info patternInfo,info,resultInfo;
       list<Absyn.ElementItem> localDecls;
       list<Absyn.EquationItem>  equations;
       Absyn.Exp result;
       Option<String> comment;
-    case Absyn.CASE(pattern,patternInfo,localDecls,equations,result,comment,info)
+    case Absyn.CASE(pattern,patternInfo,localDecls,equations,result,resultInfo,comment,info)
       equation
         Print.printBuf("record Absyn.CASE pattern = ");
         printExpAsCorbaString(pattern);
         Print.printBuf(", patternInfo = ");
-        printInfo(patternInfo);
+        printInfoAsCorbaString(patternInfo);
         Print.printBuf(", localDecls = ");
         printListAsCorbaString(localDecls, printElementItemAsCorbaString, ",");
         Print.printBuf(", equations = ");
         printListAsCorbaString(equations, printEquationItemAsCorbaString, ",");
         Print.printBuf(", result = ");
         printExpAsCorbaString(result);
+        Print.printBuf(", resultInfo = ");
+        printInfoAsCorbaString(resultInfo);
         Print.printBuf(", comment = ");
         printStringCommentOption(comment);
         Print.printBuf(", info = ");
-        printInfo(info);
+        printInfoAsCorbaString(info);
         Print.printBuf(" end Absyn.CASE;");
       then ();
-    case Absyn.ELSE(localDecls,equations,result,comment,info)
+    case Absyn.ELSE(localDecls,equations,result,resultInfo,comment,info)
       equation
         Print.printBuf("record Absyn.ELSE localDecls = ");
         printListAsCorbaString(localDecls, printElementItemAsCorbaString, ",");
@@ -6789,10 +6791,12 @@ algorithm
         printListAsCorbaString(equations, printEquationItemAsCorbaString, ",");
         Print.printBuf(", result = ");
         printExpAsCorbaString(result);
+        Print.printBuf(", resultInfo = ");
+        printInfoAsCorbaString(resultInfo);
         Print.printBuf(", comment = ");
         printStringCommentOption(comment);
         Print.printBuf(", info = ");
-        printInfo(info);
+        printInfoAsCorbaString(info);
         Print.printBuf(" end Absyn.ELSE;");
       then ();
   end match;

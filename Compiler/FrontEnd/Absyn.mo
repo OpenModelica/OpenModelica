@@ -819,6 +819,7 @@ uniontype Case "case in match or matchcontinue"
     list<ElementItem> localDecls " local decls ";
     list<EquationItem>  equations " equations [] for no equations ";
     Exp result " result ";
+    Info resultInfo "file information of the result-exp";
     Option<String> comment " comment after case like: case pattern string_comment ";
     Info info "file information of the whole case";
   end CASE;
@@ -827,6 +828,7 @@ uniontype Case "case in match or matchcontinue"
     list<ElementItem> localDecls " local decls ";
     list<EquationItem>  equations " equations [] for no equations ";
     Exp result " result ";
+    Info resultInfo "file information of the result-exp";
     Option<String> comment " comment after case like: case pattern string_comment ";
     Info info "file information of the whole case";
   end ELSE;
@@ -2205,27 +2207,27 @@ algorithm
     local
       tuple<FuncType, FuncType, Argument> tup;
       Exp pattern, result;
-      Info info, pinfo;
+      Info info, resultInfo, pinfo;
       list<ElementItem> ldecls;
       list<EquationItem> eql;
       Option<String> cmt;
 
     case (CASE(pattern = pattern, patternInfo = pinfo, localDecls = ldecls, 
-        equations = eql, result = result, comment = cmt, info = info), tup)
+        equations = eql, result = result, resultInfo = resultInfo, comment = cmt, info = info), tup)
       equation
         (pattern, tup) = traverseExpBidir(pattern, tup);
         (eql, tup) = Util.listMapAndFold(eql, traverseEquationItemBidir, tup);
         (result, tup) = traverseExpBidir(result, tup);
       then
-        (CASE(pattern, pinfo, ldecls, eql, result, cmt, info), tup);
+        (CASE(pattern, pinfo, ldecls, eql, result, resultInfo, cmt, info), tup);
 
-    case (ELSE(localDecls = ldecls, equations = eql, result = result, 
+    case (ELSE(localDecls = ldecls, equations = eql, result = result, resultInfo = resultInfo,
         comment = cmt, info = info), tup)
       equation
         (eql, tup) = Util.listMapAndFold(eql, traverseEquationItemBidir, tup);
         (result, tup) = traverseExpBidir(result, tup);
       then
-        (ELSE(ldecls, eql, result, cmt, info), tup);
+        (ELSE(ldecls, eql, result, resultInfo, cmt, info), tup);
 
   end match;
 end traverseMatchCase;

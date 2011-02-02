@@ -806,13 +806,13 @@ algorithm
       list<DAE.Statement> body;
       Option<DAE.Exp> result;
       Integer jump;
-      Absyn.Info info;
+      Absyn.Info resultInfo, info;
     case ({},_) then {};
-    case (DAE.CASE(patterns, localDecls, body, result, jump, info)::cases,ht)
+    case (DAE.CASE(patterns, localDecls, body, result, resultInfo, jump, info)::cases,ht)
       equation
         (patterns,_) = traversePatternList(patterns, removePatternAsBinding, (ht,info));
         cases = filterUnusedAsBindings(cases,ht);
-      then DAE.CASE(patterns, localDecls, body, result, jump, info)::cases;
+      then DAE.CASE(patterns, localDecls, body, result, resultInfo, jump, info)::cases;
   end match;
 end filterUnusedAsBindings;
 
@@ -1248,10 +1248,10 @@ algorithm
       list<DAE.Element> localDecls;
       list<DAE.Statement> body;
       Option<DAE.Exp> result;
-      Absyn.Info info;
+      Absyn.Info resultInfo, info;
     case (case_,0) then case_;
-    case (DAE.CASE(patterns, localDecls, body, result, _, info), jump)
-      then DAE.CASE(patterns, localDecls, body, result, jump, info);
+    case (DAE.CASE(patterns, localDecls, body, result, resultInfo, _, info), jump)
+      then DAE.CASE(patterns, localDecls, body, result, resultInfo, jump, info);
   end match;
 end updateMatchCaseJump;
 
@@ -1489,9 +1489,9 @@ algorithm
       list<SCode.Statement> algs;
       list<DAE.Statement> body;
       list<Absyn.ElementItem> decls;
-      Absyn.Info patternInfo,info;
+      Absyn.Info patternInfo,resultInfo,info;
       Integer len;
-    case (cache,env,Absyn.CASE(pattern=pattern,patternInfo=patternInfo,localDecls=decls,equations=eq1,result=result,info=info),tys,impl,st,performVectorization,pre)
+    case (cache,env,Absyn.CASE(pattern=pattern,patternInfo=patternInfo,localDecls=decls,equations=eq1,result=result,resultInfo=resultInfo,info=info),tys,impl,st,performVectorization,pre)
       equation
         (cache,SOME((env,DAE.DAE(caseDecls)))) = addLocalDecls(cache,env,decls,Env.caseScopeName,impl,info);
         patterns = MetaUtil.extractListFromTuple(pattern, 0);
@@ -1500,17 +1500,17 @@ algorithm
         (cache,eqAlgs) = Static.fromEquationsToAlgAssignments(eq1,{},cache,env,pre);
         algs = SCodeUtil.translateClassdefAlgorithmitems(eqAlgs);
         (cache,body) = InstSection.instStatements(cache, env, InnerOuter.emptyInstHierarchy, pre, algs, DAEUtil.addElementSourceFileInfo(DAE.emptyElementSource,patternInfo), SCode.NON_INITIAL(), true, Inst.neverUnroll);
-        (cache,body,elabResult,resType,st) = elabResultExp(cache,env,body,result,impl,st,performVectorization,pre,patternInfo);
-      then (cache,DAE.CASE(elabPatterns, caseDecls, body, elabResult, 0, info),elabResult,resType,st);
+        (cache,body,elabResult,resultInfo,resType,st) = elabResultExp(cache,env,body,result,impl,st,performVectorization,pre,resultInfo);
+      then (cache,DAE.CASE(elabPatterns, caseDecls, body, elabResult, resultInfo, 0, info),elabResult,resType,st);
 
       // ELSE is the same as CASE, but without pattern
-    case (cache,env,Absyn.ELSE(localDecls=decls,equations=eq1,result=result,info=info),tys,impl,st,performVectorization,pre)
+    case (cache,env,Absyn.ELSE(localDecls=decls,equations=eq1,result=result,resultInfo=resultInfo,info=info),tys,impl,st,performVectorization,pre)
       equation
         // Needs to be same length as any other pattern for the simplification algorithms, etc to work properly
         len = listLength(tys);
         patterns = Util.listFill(Absyn.CREF(Absyn.WILD()),listLength(tys));
         pattern = Util.if_(len == 1, Absyn.CREF(Absyn.WILD()), Absyn.TUPLE(patterns));
-        (cache,elabCase,elabResult,resType,st) = elabMatchCase(cache,env,Absyn.CASE(pattern,info,decls,eq1,result,NONE(),info),tys,impl,st,performVectorization,pre); 
+        (cache,elabCase,elabResult,resType,st) = elabMatchCase(cache,env,Absyn.CASE(pattern,info,decls,eq1,result,resultInfo,NONE(),info),tys,impl,st,performVectorization,pre); 
       then (cache,elabCase,elabResult,resType,st);
         
   end match;
@@ -1529,23 +1529,24 @@ protected function elabResultExp
   output Env.Cache outCache;
   output list<DAE.Statement> outBody;
   output Option<DAE.Exp> resExp;
+  output Absyn.Info resultInfo;
   output Option<DAE.Type> resType;
   output Option<Interactive.InteractiveSymbolTable> outSt;
 algorithm
-  (outCache,outBody,resExp,resType,outSt) := matchcontinue (cache,env,body,exp,impl,st,performVectorization,pre,info)
+  (outCache,outBody,resExp,resultInfo,resType,outSt) := matchcontinue (cache,env,body,exp,impl,st,performVectorization,pre,info)
     local
       DAE.Exp elabExp;
       DAE.Properties prop;
       DAE.Type ty;
     case (cache,env,body,Absyn.CALL(function_ = Absyn.CREF_IDENT("fail",{}), functionArgs = Absyn.FUNCTIONARGS({},{})),impl,st,performVectorization,pre,info)
-      then (cache,body,NONE(),NONE(),st);
+      then (cache,body,NONE(),info,NONE(),st);
 
     case (cache,env,body,exp,impl,st,performVectorization,pre,info)
       equation
         (cache,elabExp,prop,st) = Static.elabExp(cache,env,exp,impl,st,performVectorization,pre,info);
-        (body,elabExp) = elabResultExp2(RTOpts.debugFlag("patternmSkipMoveLastExp"),body,elabExp); 
+        (body,elabExp,info) = elabResultExp2(RTOpts.debugFlag("patternmSkipMoveLastExp"),body,elabExp,info); 
         ty = Types.getPropType(prop);
-      then (cache,body,SOME(elabExp),SOME(ty),st);
+      then (cache,body,SOME(elabExp),info,SOME(ty),st);
   end matchcontinue;
 end elabResultExp;
 
@@ -1564,27 +1565,29 @@ protected function elabResultExp2
   input Boolean skipPhase;
   input list<DAE.Statement> body;
   input DAE.Exp elabExp;
+  input Absyn.Info info;
   output list<DAE.Statement> outBody;
   output DAE.Exp outExp;
+  output Absyn.Info outInfo;
 algorithm
-  (outBody,outExp) := matchcontinue (skipPhase,body,elabExp)
+  (outBody,outExp,outInfo) := matchcontinue (skipPhase,body,elabExp,info)
     local
       DAE.Exp elabCr1,elabCr2;
       list<DAE.Exp> elabCrs1,elabCrs2;
-    case (true,body,elabExp) then (body,elabExp);
-    case (_,body,elabCr2 as DAE.CREF(ty=_))
+    case (true,body,elabExp,info) then (body,elabExp,info);
+    case (_,body,elabCr2 as DAE.CREF(ty=_),_)
       equation
-        (DAE.STMT_ASSIGN(exp1=elabCr1,exp=elabExp),body) = Util.listSplitLast(body);
+        (DAE.STMT_ASSIGN(exp1=elabCr1,exp=elabExp,source=DAE.SOURCE(info=info)),body) = Util.listSplitLast(body);
         true = Expression.expEqual(elabCr1,elabCr2);
-        (body,elabExp) = elabResultExp2(false,body,elabExp);
-      then (body,elabExp);
-    case (_,body,DAE.TUPLE(elabCrs2))
+        (body,elabExp,info) = elabResultExp2(false,body,elabExp,info);
+      then (body,elabExp,info);
+    case (_,body,DAE.TUPLE(elabCrs2),_)
       equation
-        (DAE.STMT_TUPLE_ASSIGN(expExpLst=elabCrs1,exp=elabExp),body) = Util.listSplitLast(body);
+        (DAE.STMT_TUPLE_ASSIGN(expExpLst=elabCrs1,exp=elabExp,source=DAE.SOURCE(info=info)),body) = Util.listSplitLast(body);
         Util.listThreadMapAllValue(elabCrs1, elabCrs2, Expression.expEqual, true);
-        (body,elabExp) = elabResultExp2(false,body,elabExp);
-      then (body,elabExp);
-    else (body,elabExp);
+        (body,elabExp,info) = elabResultExp2(false,body,elabExp,info);
+      then (body,elabExp,info);
+    else (body,elabExp,info);
   end matchcontinue;
 end elabResultExp2;
 
@@ -1632,13 +1635,13 @@ algorithm
       DAE.Exp exp;
       DAE.MatchCase case_;
       Integer jump;
-      Absyn.Info info2;
+      Absyn.Info resultInfo,info2;
     case ({},{},_) then {};
     
-    case (DAE.CASE(patterns,decls,body,SOME(_),jump,info2)::cases,exp::exps,info)
+    case (DAE.CASE(patterns,decls,body,SOME(_),resultInfo,jump,info2)::cases,exp::exps,info)
       equation
         cases = fixCaseReturnTypes2(cases,exps,info);
-      then DAE.CASE(patterns,decls,body,SOME(exp),jump,info2)::cases;
+      then DAE.CASE(patterns,decls,body,SOME(exp),resultInfo,jump,info2)::cases;
     
     case ((case_ as DAE.CASE(result=NONE()))::cases,exps,info)
       equation
@@ -1671,14 +1674,14 @@ algorithm
       list<DAE.Statement> body;
       Option<DAE.Exp> result;
       Integer jump;
-      Absyn.Info info;
+      Absyn.Info resultInfo,info;
     case ({},_,a) then ({},a);
-    case (DAE.CASE(patterns,decls,body,result,jump,info)::cases,_,a)
+    case (DAE.CASE(patterns,decls,body,result,resultInfo,jump,info)::cases,_,a)
       equation
         (body,(_,a)) = DAEUtil.traverseDAEEquationsStmts(body,Expression.traverseSubexpressionsHelper,(func,a));
         ((result,a)) = Expression.traverseExpOpt(result,func,a);
         (cases,a) = traverseCases(cases,func,a); 
-      then (DAE.CASE(patterns,decls,body,result,jump,info)::cases,a);
+      then (DAE.CASE(patterns,decls,body,result,resultInfo,jump,info)::cases,a);
   end match;
 end traverseCases;
 
@@ -1830,9 +1833,9 @@ algorithm
       list<DAE.Statement> body;
       Option<DAE.Exp> result;
       Integer jump;
-      Absyn.Info info;
-    case (DAE.CASE(_,localDecls,body,result,jump,info),pats)
-      then DAE.CASE(pats,localDecls,body,result,jump,info);
+      Absyn.Info resultInfo,info;
+    case (DAE.CASE(_,localDecls,body,result,resultInfo,jump,info),pats)
+      then DAE.CASE(pats,localDecls,body,result,resultInfo,jump,info);
   end match;
 end setCasePatterns;
 

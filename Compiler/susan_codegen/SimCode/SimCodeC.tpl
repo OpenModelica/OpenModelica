@@ -3931,10 +3931,33 @@ template funStatement(Statement stmt, Text &varDecls /*BUFP*/)
     "NOT IMPLEMENTED FUN STATEMENT"
 end funStatement;
 
+template statementInfoString(DAE.Statement stmt)
+::=
+  match stmt
+  case STMT_ASSIGN(__)
+  case STMT_ASSIGN_ARR(__)
+  case STMT_TUPLE_ASSIGN(__)
+  case STMT_IF(__)
+  case STMT_FOR(__)
+  case STMT_WHILE(__)
+  case STMT_ASSERT(__)
+  case STMT_TERMINATE(__)
+  case STMT_WHEN(__)
+  case STMT_BREAK(__)
+  case STMT_FAILURE(__)
+  case STMT_TRY(__)
+  case STMT_CATCH(__)
+  case STMT_THROW(__)
+  case STMT_RETURN(__)
+  case STMT_NORETCALL(__)
+  case STMT_REINIT(__)
+  then (match source case s as SOURCE(__) then infoStr(s.info))
+end statementInfoString;
+
 template algStatement(DAE.Statement stmt, Context context, Text &varDecls /*BUFP*/)
  "Generates an algorithm statement."
 ::=
-  match stmt
+  let res = match stmt
   case s as STMT_ASSIGN(exp1=PATTERN(__)) then algStmtAssignPattern(s, context, &varDecls /*BUFD*/)
   case s as STMT_ASSIGN(__)         then algStmtAssign(s, context, &varDecls /*BUFD*/)
   case s as STMT_ASSIGN_ARR(__)     then algStmtAssignArr(s, context, &varDecls /*BUFD*/)
@@ -3944,8 +3967,6 @@ template algStatement(DAE.Statement stmt, Context context, Text &varDecls /*BUFP
   case s as STMT_WHILE(__)          then algStmtWhile(s, context, &varDecls /*BUFD*/)
   case s as STMT_ASSERT(__)         then algStmtAssert(s, context, &varDecls /*BUFD*/)
   case s as STMT_TERMINATE(__)      then algStmtTerminate(s, context, &varDecls /*BUFD*/)
-
-
   case s as STMT_WHEN(__)           then algStmtWhen(s, context, &varDecls /*BUFD*/)
   case s as STMT_BREAK(__)          then 'break;<%\n%>'
   case s as STMT_FAILURE(__)        then algStmtFailure(s, context, &varDecls /*BUFD*/)
@@ -3956,6 +3977,11 @@ template algStatement(DAE.Statement stmt, Context context, Text &varDecls /*BUFP
   case s as STMT_NORETCALL(__)      then algStmtNoretcall(s, context, &varDecls /*BUFD*/)
   case s as STMT_REINIT(__)     then algStmtReinit(s, context, &varDecls /*BUFD*/)
   else "#error NOT_IMPLEMENTED_ALG_STATEMENT"
+  <<
+  /*#modelicaLine <%statementInfoString(stmt)%>*/
+  <%res%>
+  /*#endModelicaLine*/
+  >>
 end algStatement;
 
 
@@ -5756,7 +5782,9 @@ template daeExpMatchCases(list<MatchCase> cases, list<Exp> tupleAssignExps, DAE.
     %>
     <%assignments%>
     <%stmts%>
-    <% if c.result then '<%preRes%><%caseRes%>' else 'MMC_THROW();<%\n%>'%>
+    /*#modelicaLine <%infoStr(c.resultInfo)%>*/
+    <% if c.result then '<%preRes%><%caseRes%>' else 'MMC_THROW();<%\n%>' %>
+    /*#endModelicaLine*/
     <%done%> = 1;
     break;
   }<%\n%>
@@ -6138,6 +6166,7 @@ template expTypeFromExpFlag(Exp exp, Integer flag)
   case BOX(__)
   case CONS(__)
   case LIST(__)
+
   case META_TUPLE(__)
   case META_OPTION(__)
   case MATCHEXPRESSION(__)

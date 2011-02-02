@@ -1197,6 +1197,7 @@ public uniontype MatchCase
     list<Element> localDecls;
     list<Statement> body;
     Option<Exp> result;
+    Absyn.Info resultInfo "We need to keep the line info here so we can set a breakpoint at the last statement of a match-expression";
     Integer jump "the number of iterations we should skip if we succeed with pattern-matching, but don't succeed";
     Absyn.Info info;
   end CASE;

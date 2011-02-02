@@ -789,6 +789,7 @@ package DAE
       list<Element> localDecls;
       list<Statement> body;
       Option<Exp> result;
+      Absyn.Info resultInfo;
       Integer jump;
     end CASE;
   end MatchCase;
