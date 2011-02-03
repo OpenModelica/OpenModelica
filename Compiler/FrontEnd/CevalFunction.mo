@@ -1040,7 +1040,8 @@ algorithm
 
     case (DAE.TYPES_VAR(name = name, type_ = ty), _, (cache, env, st))
       equation
-        (cache, env, st) = extendEnvWithVar(name, ty, inOptValue, {}, cache, env, st);
+        (cache, env, st) = 
+          extendEnvWithVar(name, ty, inOptValue, {}, cache, env, st);
         outEnv = (cache, env, st);
       then
         outEnv;
@@ -1135,7 +1136,7 @@ algorithm
       then
         (cache, (DAE.T_ARRAY(dim, ty), NONE()), st);
     
-    // Otherwise, take the dimension from the binding.
+    // Otherwise, take the dimension from the binding if it's an input.
     case (ty, DAE.WHOLEDIM() :: rest_dims, dim_int :: bind_dims, _, _, st)
       equation
         dim = Expression.intDimension(dim_int);
@@ -1143,6 +1144,14 @@ algorithm
           appendDimensions2(ty, rest_dims, bind_dims, inCache, inEnv, st);
       then
         (cache, (DAE.T_ARRAY(dim, ty), NONE()), st);
+    
+    // If the variable is not an input, set the dimension size to 0 (dynamic size).
+    case (ty, DAE.WHOLEDIM() :: rest_dims, bind_dims, _, _, st)
+      equation
+        (cache, ty, st) =
+          appendDimensions2(ty, rest_dims, bind_dims, inCache, inEnv, st);
+      then
+        (cache, (DAE.T_ARRAY(DAE.DIM_INTEGER(0), ty), NONE()), st);
     
     case (_, sub :: _, _, _, _, _)
       equation

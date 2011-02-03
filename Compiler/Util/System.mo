@@ -141,7 +141,7 @@ public function strtok
   input String token;
   output list<String> strings;
 
-  external "C" outStringLst=System_strtok(string,token) annotation(Library = "omcruntime");
+  external "C" string=System_strtok(string,token) annotation(Library = "omcruntime");
 end strtok;
 
 public function substring
