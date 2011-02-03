@@ -741,10 +741,10 @@ algorithm
     local
       DAE.ComponentRef cref;
     case DAE.CREF(componentRef = cref) then cref;
-    case DAE.PATTERN(_) then fail();
     else
       equation
-        print("- CevalFunction.extractLhsComponentRef failed on " +&
+        Debug.fprintln("failtrace", 
+          "- CevalFunction.extractLhsComponentRef failed on " +&
           ExpressionDump.printExpStr(inExp) +& "\n");
       then
         fail();
@@ -1188,6 +1188,9 @@ algorithm
       Env.InstStatus inst_status;
       String id;
       SymbolTable st;
+
+    // Wildcard, no need to assign anything.
+    case (DAE.WILD(), _, _, _, _) then (inCache, inEnv, inST);
 
     // A record assignment.
     case (cr as DAE.CREF_IDENT(ident = id, subscriptLst = {}, identType = ety as
