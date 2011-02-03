@@ -694,12 +694,38 @@ algorithm
 end readFilePostprocessLineDirective;
 */
 
-function regex "WARNING: This call is subject to change. It should return a tuple: enum(Found,NotFound,Failure) and the (first) matching substring"
+function regex  "Sets the error buffer and returns -1 if the regex does not compile.
+
+  The returned result is the same as POSIX regex():
+  The first value is the complete matched string
+  The rest are the substrings that you wanted.
+  For example:
+  regex(lorem,\" \([A-Za-z]*\) \([A-Za-z]*\) \",maxMatches=3)
+  => {\" ipsum dolor \",\"ipsum\",\"dolor\"}
+  This means if you have n groups, you want maxMatches=n+1
+"
   input String str;
   input String re;
-  output Boolean status;
+  input Integer maxMatches := 1 "The maximum number of matches that will be returned";
+  input Boolean extended := true "Use POSIX extended or regular syntax";
+  input Boolean caseInsensitive := false;
+  output Integer numMatches "-1 is an error, 0 means no match, else returns a number 1..maxMatches";
+  output String matchedSubstrings[maxMatches] "unmatched strings are returned as empty";
 external "builtin";
 end regex;
+
+function regexBool "Returns true if the string matches the regular expression"
+  input String str;
+  input String re;
+  input Boolean extended := true "Use POSIX extended or regular syntax";
+  input Boolean caseInsensitive := false;
+  output Boolean matches;
+protected
+  Integer numMatches;
+algorithm
+  numMatches := regex(str,re,0,extended,caseInsensitive);
+  matches := numMatches == 1;
+end regexBool;
 
 function readFileNoNumeric
   "Returns the contents of the file, with anything resembling a (real) number stripped out, and at the end adding:

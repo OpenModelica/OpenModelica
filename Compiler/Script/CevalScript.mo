@@ -649,11 +649,11 @@ algorithm
       Values.Value ret_val,simValue,size_value,value,v;
       DAE.Exp exp,size_expression,bool_exp,storeInTemp,translationLevel,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,xRange,yRange,varName,varTimeStamp;
       Absyn.ComponentRef cr_1;
-      Integer size,length,resI,timeStampI,i;
-      list<String> vars_1,vars_2,args,strings,strVars;
+      Integer size,length,resI,timeStampI,i,n;
+      list<String> vars_1,vars_2,args,strings,strVars,strs;
       Real t1,t2,time,timeTotal,timeSimulation,timeStamp,val;
       Interactive.InteractiveStmts istmts;
-      Boolean bval, b, legend, grid, logX, logY, points, gcc_res, omcfound, rm_res, touch_res, uname_res;
+      Boolean bval, b, legend, grid, logX, logY, points, gcc_res, omcfound, rm_res, touch_res, uname_res, extended, insensitive;
       Env.Cache cache;
       list<Interactive.LoadedFile> lf;
       AbsynDep.Depends aDep;
@@ -720,11 +720,21 @@ algorithm
       then
         (cache,Values.BOOL(true),newst);
     
-    case (cache,env,"regex",{Values.STRING(str),Values.STRING(re)},st,msg)
+    case (cache,env,"regex",{Values.STRING(str),Values.STRING(re),Values.INTEGER(i),Values.BOOL(extended),Values.BOOL(insensitive)},st,msg)
       equation
-        b = System.regex(str,re);
+        (n,strs) = System.regex(str,re,i,extended,insensitive);
+        vals = Util.listMap(strs,ValuesUtil.makeString);
+        v = Values.ARRAY(vals,{i});
       then
-        (cache,Values.BOOL(b),st);
+        (cache,Values.TUPLE({Values.INTEGER(n),v}),st);
+
+    case (cache,env,"regex",{Values.STRING(str),Values.STRING(re),Values.INTEGER(i),Values.BOOL(extended),Values.BOOL(insensitive)},st,msg)
+      equation
+        strs = Util.listFill("",i);
+        vals = Util.listMap(strs,ValuesUtil.makeString);
+        v = Values.ARRAY(vals,{i});
+      then
+        (cache,Values.TUPLE({Values.INTEGER(-1),v}),st);
 
     case (cache,env,"list",{},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
       equation

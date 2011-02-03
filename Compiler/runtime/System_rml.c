@@ -1949,7 +1949,11 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(System__regex)
 {
-  rmlA0 = mk_icon(SystemImpl__regex(RML_STRINGDATA(rmlA0),RML_STRINGDATA(rmlA1)));
-  RML_TAILCALLK(rmlSC);
+  int nmatch;
+  rmlA1 = SystemImpl__regex(RML_STRINGDATA(rmlA0),RML_STRINGDATA(rmlA1),RML_UNTAGFIXNUM(rmlA2),RML_UNTAGFIXNUM(rmlA3),RML_UNTAGFIXNUM(rmlA4),&nmatch);
+  rmlA0 = mk_icon(nmatch);
+  if (rmlA1)
+    RML_TAILCALLK(rmlSC);
+  RML_TAILCALLK(rmlFC);
 }
 RML_END_LABEL

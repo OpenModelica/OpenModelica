@@ -95,12 +95,25 @@ public function stringFindString "locates substring searchStr in str. If succeed
   external "C" outString=System_stringFindString(str,searchStr) annotation(Library = "omcruntime");
 end stringFindString;
 
-public function regex "Returns true if the string matches the regular expression"
+public function regex "Fails and sets Error.mo if the regex does not compile.
+
+  The returned result is the same as POSIX regex():
+  The first value is the complete matched string
+  The rest are the substrings that you wanted.
+  For example:
+  regex(lorem,\" \([A-Za-z]*\) \([A-Za-z]*\) \",maxMatches=3)
+  => {\" ipsum dolor \",\"ipsum\",\"dolor\"}
+  This means if you have n groups, you want maxMatches=n+1
+"
   input String str;
   input String re;
-  output Boolean matches;
+  input Integer maxMatches "The maximum number of matches that will be returned";
+  input Boolean extended "Use POSIX extended or regular syntax";
+  input Boolean sensitive;
+  output Integer numMatches "0 means no match, else returns a number 1..maxMatches (1 if maxMatches<0)";
+  output list<String> strs "This list has length = maxMatches. Substrings that did not match are filled with the empty string";
   
-  external "C" matches=System_regex(str,re) annotation(Library = "omcruntime");
+  external "C" numMatches=System_regex(str,re,maxMatches,extended,sensitive,strs) annotation(Library = "omcruntime");
 end regex;
 
 public function strncmp
@@ -141,7 +154,7 @@ public function strtok
   input String token;
   output list<String> strings;
 
-  external "C" string=System_strtok(string,token) annotation(Library = "omcruntime");
+  external "C" strings=System_strtok(string,token) annotation(Library = "omcruntime");
 end strtok;
 
 public function substring

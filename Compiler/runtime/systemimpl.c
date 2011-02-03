@@ -967,12 +967,17 @@ extern int SystemImpl__unescapedStringLength(const char* str)
   return i;
 }
 
-extern int SystemImpl__regex(const char* str, const char* re)
+extern void* SystemImpl__regex(const char* str, const char* re, int maxn, int extended, int sensitive, int *nmatch)
 {
+  void *lst;
+  char *dup;
   regex_t myregex;
-  int rc,res;
+  regmatch_t matches[maxn];
+  int i,rc,res;
+  int flags = (extended ? REG_EXTENDED : 0) | (sensitive ? REG_ICASE : 0) | (maxn ? 0 : REG_NOSUB);
   memset(&myregex, 1, sizeof(regex_t));
-  rc = regcomp(&myregex, re, REG_EXTENDED|REG_NOSUB);
+  rc = regcomp(&myregex, re, flags);
+  lst = mk_nil();
   if (rc) {
     char err_buf[2048] = {0};
     int len = 0;
@@ -982,11 +987,32 @@ extern int SystemImpl__regex(const char* str, const char* re)
     len += snprintf(err_buf+len,2040-len,".");
     c_add_message(-1, "SCRIPTING", "Error", err_buf, NULL, 0);
     regfree(&myregex);
-    return 0;
+    return NULL;
   }
-  res = regexec(&myregex, str, 1, NULL, 0);
+  res = regexec(&myregex, str, maxn, matches, 0);
+  lst = mk_nil();
+  *nmatch = 0;
+  if (!maxn)
+    (*nmatch)+= res == 0;
+  else {
+    if (maxn) {
+      dup = strdup(str);
+      for (i=maxn-1; i>=0; i--) {
+        if (!res && matches[i].rm_so != -1) {
+          memcpy(dup, str + matches[i].rm_so, matches[i].rm_eo - matches[i].rm_so);
+          dup[matches[i].rm_eo - matches[i].rm_so] = '\0';
+          lst = mk_cons(mk_scon(dup),lst);
+          (*nmatch)++;
+        } else {
+          lst = mk_cons(mk_scon(""),lst);
+        }
+      }
+      free(dup);
+    }
+  }
+  
   regfree(&myregex);
-  return res == 0;
+  return lst;
 }
 
 #ifdef __cplusplus

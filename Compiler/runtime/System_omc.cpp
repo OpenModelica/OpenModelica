@@ -495,9 +495,10 @@ extern const char* System_getCorbaLibs()
   return CONFIG_CORBALIBS;
 }
 
-extern int System_regex(const char *str, const char *re)
+extern void* System_regex(const char* str, const char* re, int maxn, int extended, int sensitive, int *nmatch)
 {
-  int res = SystemImpl__regex(str,re);
+  void *res = SystemImpl__regex(str,re,maxn,extended,sensitive,nmatch);
+  if (res==NULL) MMC_THROW();
   return res;
 }
 
