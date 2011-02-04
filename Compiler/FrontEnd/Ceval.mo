@@ -5514,6 +5514,28 @@ algorithm
   end match;
 end valueMin;
 
+protected function valueArrayCons
+  "Returns the cons of two values. Used by cevalReduction for array reductions."
+  input Values.Value v1;
+  input Values.Value v2;
+  output Values.Value res;
+algorithm
+  res := match(v1, v2)
+    local
+      list<Values.Value> vals;
+      Integer dim_size;
+      list<Integer> rest_dims;
+
+    case (_, Values.ARRAY(valueLst = vals, dimLst = dim_size :: rest_dims))
+      equation
+        dim_size = dim_size + 1;
+      then 
+        Values.ARRAY(v1 :: vals, dim_size :: rest_dims);
+
+    else then Values.ARRAY({v1, v2}, {2});
+  end match;
+end valueArrayCons;
+
 protected function lookupReductionOp
   "Looks up a reduction function based on it's name."
   input DAE.Ident reductionName;
@@ -5530,6 +5552,7 @@ algorithm
     case "min" then valueMin;
     case "product" then valueMul;
     case "sum" then valueAdd;
+    case "array" then valueArrayCons;
   end match;
 end lookupReductionOp;
 
@@ -5544,6 +5567,7 @@ algorithm
     case "min" then Values.REAL(1e60);
     case "product" then Values.INTEGER(1);
     case "sum" then Values.INTEGER(0);
+    case "array" then Values.ARRAY({}, {0});
   end match;
 end reductionEmptyRangeValue;
       
