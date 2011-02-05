@@ -8213,7 +8213,7 @@ algorithm
       equation
         true = "Windows_NT" ==& System.os();
         str = "-l" +& str;
-      then {str, "-lmico2313", "-lws2_32"};    
+      then {str, "-lmico2313", "-lws2_32", "-lregex"};
         
         // The library is not actually named libLapack.so.
         // Which is a problem, since MSL says it does.
