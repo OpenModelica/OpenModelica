@@ -502,4 +502,18 @@ extern void* System_regex(const char* str, const char* re, int maxn, int extende
   return res;
 }
 
+extern char* System_escapedString(char* str)
+{
+  char *res = SystemImpl__escapedString(str);
+  if (res == NULL) return str;
+  return res;
+}
+
+extern char* System_unescapedString(char* str)
+{
+  char *res = SystemImpl__unescapedString(str);
+  if (res == NULL) return str;
+  return res;
+}
+
 }

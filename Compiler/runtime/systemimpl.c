@@ -967,6 +967,93 @@ extern int SystemImpl__unescapedStringLength(const char* str)
   return i;
 }
 
+extern char* SystemImpl__unescapedString(const char* str)
+{
+  int len1,len2;
+  char *res;
+  int i=0;
+  len1 = strlen(str);
+  len2 = SystemImpl__unescapedStringLength(str);
+  if (len1 == len2) return NULL;
+  res = (char*) malloc(len2+1);
+  while (*str) {
+    res[i] = str[0];
+    if (str[0] == '\\') {
+      switch (str[1]) {
+      case '\'':
+        str++; res[i]='\''; break;
+      case '"':
+        str++; res[i]='\"'; break;
+      case '?':
+        str++; res[i]='\?'; break;
+      case '\\':
+        str++; res[i]='\\'; break;
+      case 'a':
+        str++; res[i]='\a'; break;
+      case 'b':
+        str++; res[i]='\b'; break;
+      case 'f':
+        str++; res[i]='\f'; break;
+      case 'n':
+        str++; res[i]='\n'; break;
+      case 'r':
+        str++; res[i]='\r'; break;
+      case 't':
+        str++; res[i]='\t'; break;
+      case 'v':
+        str++; res[i]='\v'; break;
+      }
+    }
+    i++;
+    str++;
+  }
+  res[i] = '\0';
+  return res;
+}
+
+extern int SystemImpl__escapedStringLength(const char* str)
+{
+  int i=0;
+  while (*str) {
+    switch (*str) {
+      case '"':
+      case '\\':
+      case '\a':
+      case '\b':
+      case '\f':
+      case '\v': i++;
+      default: i++;
+    }
+    str++;
+  }
+  return i;
+}
+
+extern char* SystemImpl__escapedString(const char* str)
+{
+  int len1,len2;
+  char *res;
+  int i=0;
+  len1 = strlen(str);
+  len2 = SystemImpl__escapedStringLength(str);
+  if (len1 == len2) return NULL;
+  res = (char*) malloc(len2+1);
+  while (*str) {
+    switch (*str) {
+      case '"': res[i++] = '\\'; res[i++] = '"'; break;
+      case '\\': res[i++] = '\\'; res[i++] = '\\'; break;
+      case '\a': res[i++] = '\\'; res[i++] = 'a'; break;
+      case '\b': res[i++] = '\\'; res[i++] = 'b'; break;
+      case '\f': res[i++] = '\\'; res[i++] = 'f'; break;
+      case '\v': res[i++] = '\\'; res[i++] = 'v'; break;
+      default: res[i++] = *str;
+    }
+    str++;
+  }
+  res[i] = '\0';
+  return res;
+}
+
 extern void* SystemImpl__regex(const char* str, const char* re, int maxn, int extended, int sensitive, int *nmatch)
 {
   void *lst;

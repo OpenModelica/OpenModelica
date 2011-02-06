@@ -557,6 +557,10 @@ package System
     output Integer hash;
   end stringHashDjb2Mod;
   
+  function escapedString
+    input String unescapedString;
+    output String escapedString;
+  end escapedString;
 end System;
 
 

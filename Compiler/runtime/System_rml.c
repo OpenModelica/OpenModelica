@@ -1957,3 +1957,29 @@ RML_BEGIN_LABEL(System__regex)
   RML_TAILCALLK(rmlFC);
 }
 RML_END_LABEL
+
+RML_BEGIN_LABEL(System__unescapedString)
+{
+  char *str = SystemImpl__unescapedString(RML_STRINGDATA(rmlA0));
+  if (str == NULL) {
+    RML_TAILCALLK(rmlSC);
+  } else {
+    rmlA0 = mk_scon(str);
+    free(str);
+    RML_TAILCALLK(rmlSC);
+  }
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__escapedString)
+{
+  char *str = SystemImpl__escapedString(RML_STRINGDATA(rmlA0));
+  if (str == NULL) {
+    RML_TAILCALLK(rmlSC);
+  } else {
+    rmlA0 = mk_scon(str);
+    free(str);
+    RML_TAILCALLK(rmlSC);
+  }
+}
+RML_END_LABEL

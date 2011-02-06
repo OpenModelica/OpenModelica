@@ -101,7 +101,7 @@ public function regex "Fails and sets Error.mo if the regex does not compile.
   The first value is the complete matched string
   The rest are the substrings that you wanted.
   For example:
-  regex(lorem,\" \([A-Za-z]*\) \([A-Za-z]*\) \",maxMatches=3)
+  regex(lorem,\" \\([A-Za-z]*\\) \\([A-Za-z]*\\) \",maxMatches=3)
   => {\" ipsum dolor \",\"ipsum\",\"dolor\"}
   This means if you have n groups, you want maxMatches=n+1
 "
@@ -726,6 +726,22 @@ See man 3 basename."
   // We need to strdup the input, so we can't use basename() directly
   external "C" base = System_basename(filename) annotation(Library = "omcruntime");
 end basename;
+
+public function escapedString
+"Because list() requires escape-sequences to be in the AST, we need to be
+able to unescape them in some places of the code."
+  input String unescapedString;
+  output String escapedString;
+  external "C" escapedString=System_escapedString(unescapedString) annotation(Library = "omcruntime");
+end escapedString;
+
+public function unescapedString
+"Because list() requires escape-sequences to be in the AST, we need to be
+able to unescape them in some places of the code."
+  input String escapedString;
+  output String unescapedString;
+  external "C" unescapedString=System_unescapedString(escapedString) annotation(Library = "omcruntime");
+end unescapedString;
 
 public function unescapedStringLength
 "Calculates the C string length of the input, if the input was used as a string

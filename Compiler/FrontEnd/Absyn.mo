@@ -1791,17 +1791,17 @@ public function traverseExpBidir
 
   replaceable type Argument subtypeof Any;
 
-  FuncType enter_func, exit_func;
+  FuncType enterFunc, exitFunc;
   Argument arg;
   Exp e;
   tuple<FuncType, FuncType, Argument> tup;
 algorithm
-  (enter_func, exit_func, arg) := inTuple;
-  ((e, arg)) := enter_func((inExp, arg));
+  (enterFunc, exitFunc, arg) := inTuple;
+  ((e, arg)) := enterFunc((inExp, arg));
   (e, (_, _, arg)) := traverseExpBidirSubExps(e, 
-    (enter_func, exit_func, arg));
-  ((outExp, arg)) := exit_func((e, arg));
-  outTuple := (enter_func, exit_func, arg);
+    (enterFunc, exitFunc, arg));
+  ((outExp, arg)) := exitFunc((e, arg));
+  outTuple := (enterFunc, exitFunc, arg);
 end traverseExpBidir;
 
 public function traverseExpOptBidir

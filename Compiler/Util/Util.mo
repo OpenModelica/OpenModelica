@@ -6417,7 +6417,8 @@ public function escapeModelicaStringToCString
   input String modelicaString;
   output String cString;
 algorithm
-  cString := System.stringReplace(modelicaString, "\n", "\\n");
+  // C cannot handle newline in string constants
+  cString := System.stringReplace(System.escapedString(modelicaString), "\n", "\\n");
 end escapeModelicaStringToCString;
 
 

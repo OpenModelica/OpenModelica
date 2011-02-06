@@ -62,6 +62,7 @@ protected import Patternm;
 protected import RTOpts;
 protected import Util;
 protected import Print;
+protected import System;
 
 /*
  * - Printing expressions
@@ -595,6 +596,7 @@ algorithm
     
     case (DAE.SCONST(string = s), stringDelimiter, _, _)
       equation
+        s = System.escapedString(s);
         s = stringAppendList({stringDelimiter, s, stringDelimiter});
       then
         s;
@@ -1131,6 +1133,7 @@ algorithm
     
     case (DAE.SCONST(string = s))
       equation
+        s = System.escapedString(s);
         s = stringAppendList({"\"", s, "\""});
       then
         Graphviz.LNODE("SCONST",{s},{},{});
@@ -1330,6 +1333,7 @@ algorithm
     case (DAE.SCONST(string = s),level) /* Graphviz.LNODE(\"SCONST\",{s\'\'},{},{}) */
       equation
         gen_str = genStringNTime("   |", level);
+        s = System.escapedString(s);
         res_str = stringAppendList({gen_str,"SCONST ","\"", s,"\"\n"});
       then
         res_str;
@@ -1835,6 +1839,7 @@ algorithm
     
     case (DAE.SCONST(string = s),_)
       equation
+        s = System.escapedString(s);
         Print.printBuf("\"");
         Print.printBuf(s);
         Print.printBuf("\"");

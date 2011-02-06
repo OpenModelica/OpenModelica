@@ -638,14 +638,12 @@ function readFileShowLineNumbers "Prefixes each line in the file with <n>:, wher
   input String fileName;
   output String out;
 protected
-  String str,line,nl:="
-";
+  String line;
   Integer num:=1;
 algorithm
-  str := readFile(fileName);
   out := "";
-  for line in strtok(str,nl) loop
-    out := out + String(num) + ": " + line + nl;
+  for line in strtok(readFile(fileName),"\n") loop
+    out := out + String(num) + ": " + line + "\n";
     num := num + 1;
   end for;
 end readFileShowLineNumbers;
@@ -700,7 +698,7 @@ function regex  "Sets the error buffer and returns -1 if the regex does not comp
   The first value is the complete matched string
   The rest are the substrings that you wanted.
   For example:
-  regex(lorem,\" \([A-Za-z]*\) \([A-Za-z]*\) \",maxMatches=3)
+  regex(lorem,\" \\([A-Za-z]*\\) \\([A-Za-z]*\\) \",maxMatches=3)
   => {\" ipsum dolor \",\"ipsum\",\"dolor\"}
   This means if you have n groups, you want maxMatches=n+1
 "

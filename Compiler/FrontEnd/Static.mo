@@ -296,6 +296,8 @@ algorithm
         (cache,DAE.RCONST(r),DAE.PROP(DAE.T_REAL_DEFAULT,DAE.C_CONST()),st);
 
     case (cache,_,Absyn.STRING(value = s),impl,st,doVect,_,info,_)
+      equation
+        s = System.unescapedString(s);
       then
         (cache,DAE.SCONST(s),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_CONST()),st);
 

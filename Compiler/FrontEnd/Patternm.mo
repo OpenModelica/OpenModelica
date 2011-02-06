@@ -213,6 +213,7 @@ algorithm
     case (cache,env,Absyn.STRING(s),ty,info)
       equation
         et = validPatternType(DAE.T_STRING_DEFAULT,ty,lhs,info);
+        s = System.unescapedString(s);
       then (cache,DAE.PAT_CONSTANT(et,DAE.SCONST(s)));
 
     case (cache,env,Absyn.BOOL(b),ty,info)

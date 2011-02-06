@@ -6362,6 +6362,7 @@ template literalExpConst(Exp lit, Integer index) "These should all be declared s
     if acceptMetaModelicaGrammar() then
       match unescapedStringLength(escstr)
       case 0 then '#define <%name%> mmc_emptystring'
+
       case 1 then '#define <%name%> mmc_strings_len1["<%escstr%>"[0]]'
       else
       <<
