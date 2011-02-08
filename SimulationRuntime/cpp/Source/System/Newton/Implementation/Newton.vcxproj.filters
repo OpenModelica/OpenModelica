@@ -1,0 +1,31 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Headerfiles">
+      <UniqueIdentifier>{a7ffa907-9d27-4b34-b9f8-48e4c4ec2919}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Sourcecodefiles">
+      <UniqueIdentifier>{da4682bd-123b-4ea3-9fba-a25dfd325dc6}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Newton.h">
+      <Filter>Headerfiles</Filter>
+    </ClInclude>
+    <ClInclude Include="NewtonSettings.h">
+      <Filter>Headerfiles</Filter>
+    </ClInclude>
+    <ClInclude Include="stdafx.h">
+      <Filter>Headerfiles</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Newton.cpp">
+      <Filter>Sourcecodefiles</Filter>
+    </ClCompile>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>Sourcecodefiles</Filter>
+    </ClCompile>
+    <ClCompile Include="NewtonSettings.cpp" />
+  </ItemGroup>
+</Project>

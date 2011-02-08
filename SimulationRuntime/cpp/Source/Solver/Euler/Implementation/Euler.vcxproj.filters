@@ -1,0 +1,33 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Headerfiles">
+      <UniqueIdentifier>{e149b977-1fd7-4140-b248-e7a712911fbf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Sourcecodefiles">
+      <UniqueIdentifier>{3ac6071d-347e-4461-be45-21c35baf2236}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Euler.h">
+      <Filter>Headerfiles</Filter>
+    </ClInclude>
+    <ClInclude Include="EulerSettings.h">
+      <Filter>Headerfiles</Filter>
+    </ClInclude>
+    <ClInclude Include="stdafx.h">
+      <Filter>Headerfiles</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Euler.cpp">
+      <Filter>Sourcecodefiles</Filter>
+    </ClCompile>
+    <ClCompile Include="EulerSettings.cpp">
+      <Filter>Sourcecodefiles</Filter>
+    </ClCompile>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>Sourcecodefiles</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

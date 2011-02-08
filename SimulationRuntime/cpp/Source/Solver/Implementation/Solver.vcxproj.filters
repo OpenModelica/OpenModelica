@@ -1,0 +1,45 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Interfaces">
+      <UniqueIdentifier>{8a19f07c-f18b-4e44-9535-32e7380bdde2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Implementation">
+      <UniqueIdentifier>{29fbafe0-39ed-4623-985d-86e041af932b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Implementation\Sourcecodefiles">
+      <UniqueIdentifier>{59c350f4-cc78-4dac-afce-3b2f2dc4f886}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Implementation\Headerfiles">
+      <UniqueIdentifier>{d6a6a0ed-cdfb-4315-bfcd-243e1f668020}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\Interfaces\IDAESolver.h">
+      <Filter>Interfaces</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Interfaces\ISolverSettings.h">
+      <Filter>Interfaces</Filter>
+    </ClInclude>
+    <ClInclude Include="SolverDefaultImplementation.h">
+      <Filter>Implementation\Headerfiles</Filter>
+    </ClInclude>
+    <ClInclude Include="SolverSettings.h">
+      <Filter>Implementation\Headerfiles</Filter>
+    </ClInclude>
+    <ClInclude Include="stdafx.h">
+      <Filter>Implementation\Headerfiles</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="SolverDefaultImplementation.cpp">
+      <Filter>Implementation\Sourcecodefiles</Filter>
+    </ClCompile>
+    <ClCompile Include="SolverSettings.cpp">
+      <Filter>Implementation\Sourcecodefiles</Filter>
+    </ClCompile>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>Implementation\Sourcecodefiles</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>
