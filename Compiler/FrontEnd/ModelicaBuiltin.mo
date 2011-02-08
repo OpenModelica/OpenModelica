@@ -446,7 +446,7 @@ function help "display the OpenModelica help text"
   output String helpText;
   annotation(__OpenModelica_EarlyInline = true);
 algorithm
-  helpText := readFile(getInstallationDirectoryPath() + "/share/doc/omc/omc_helptext.txt"); 
+  helpText := readFile(getInstallationDirectoryPath() + "/share/doc/omc/omc_helptext.txt");
 end help;
 
 function clear
@@ -648,7 +648,6 @@ algorithm
   end for;
 end readFileShowLineNumbers;
 
-/*
 function readFilePostprocessLineDirective "
   Searches lines for the #modelicaLine directive. If it is found, all lines up
   until the next #modelicaLine or #endModelicaLine are put on a single file,
@@ -665,32 +664,33 @@ function readFilePostprocessLineDirective "
 protected
   constant String regexStart := "^ *..#modelicaLine";
   constant String regexEnd := "^ *..#endModelicaLine";
-  String str,line,currentModelicaFileName,nl:="
-";
-  Integer lineNumInOutputFile:=1;
+  constant String regexSplit := "^ *..#modelicaLine .([A-Za-z.]*):([0-9]*):[0-9]*-[0-9]*:[0-9]*...$";
+  constant Integer numInRegex := 3;
+  String str,line,currentModelicaFileName;
+  Integer lineNumInOutputFile:=1,numMatches:=0;
   Boolean insideModelicaLine:=false;
+  String splitLine[numInRegex] := {"","",""};
 algorithm
   str := readFile(fileName);
   out := "";
-  for line in strtok(str,nl) loop
-    if regexMatches(line,regexStart) then
+  for line in strtok(str,"\n") loop
+    (numMatches,splitLine) := regex(line,regexSplit,numInRegex);
+    if numMatches == 3 then
       insideModelicaLine := true;
-      
-      out := out + "#line " + String(strtok(line,":")[2]) + "\"" + strtok(strtok(line,":")[1],"#modelicaLine ")[2] + "\"" + ln + line + ln;
+      out := out + "#line " + splitLine[3] + " \"" + splitLine[2] + "\"\n";
       lineNumInOutputFile := lineNumInOutputFile + 1;
-    elseif regexMatches(line,regexEnd) then
+    elseif regexBool(line,regexEnd) then
       insideModelicaLine := false;
-      out := out + ln + "#line " + String(lineNumInOutputFile+1) + "\"" + fileName + "\"" + ln + line + ln;
+      out := out + "\n" + "#line " + String(lineNumInOutputFile+1) + " \"" + fileName + "\"\n";
       lineNumInOutputFile := lineNumInOutputFile + 3;
     elseif insideModelicaLine then
       out := out + " " + line;
     else
-      out := out + line + ln;
+      out := out + line + "\n";
       lineNumInOutputFile := lineNumInOutputFile + 1;
     end if;
   end for;
 end readFilePostprocessLineDirective;
-*/
 
 function regex  "Sets the error buffer and returns -1 if the regex does not compile.
 

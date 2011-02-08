@@ -251,6 +251,7 @@ public constant ErrorID MULTIPLE_QUALIFIED_IMPORTS_WITH_SAME_NAME=163;
 public constant ErrorID EXTENDS_INHERITED_FROM_LOCAL_EXTENDS=164;
 public constant ErrorID LOOKUP_FUNCTION_ERROR=165;
 public constant ErrorID ELAB_CODE_EXP_FAILED=166;
+public constant ErrorID EQUATION_TRANSITION_FAILURE=167;
 
 public constant ErrorID UNBOUND_PARAMETER_WITH_START_VALUE_WARNING=499;
 public constant ErrorID UNBOUND_PARAMETER_WARNING=500;
@@ -375,6 +376,8 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           "In class %s, equations not allowed in records"),
           (EQUATION_IN_CONNECTOR,TRANSLATION(),ERROR(),
           "In class %s, equations not allowed in connectors"),
+          (EQUATION_TRANSITION_FAILURE,TRANSLATION(),ERROR(),
+          "Equations are not allowed in %s."),
           (UNKNOWN_EXTERNAL_LANGUAGE,TRANSLATION(),ERROR(),
           "Unknown external language %s in external function declaration"),
           (DIFFERENT_NO_EQUATION_IF_BRANCHES,TRANSLATION(),ERROR(),

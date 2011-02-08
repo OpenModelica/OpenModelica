@@ -1090,7 +1090,7 @@ algorithm
     case "cross" then cevalBuiltinCross;
     case "fill" then cevalBuiltinFill;
     case "Modelica.Utilities.Strings.substring" then cevalBuiltinSubstring;
-    case "print" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalBuiltinPrint;    
+    case "print" then cevalBuiltinPrint;    
     // MetaModelica type conversions
     case "intReal" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalIntReal;
     case "intString" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalIntString;

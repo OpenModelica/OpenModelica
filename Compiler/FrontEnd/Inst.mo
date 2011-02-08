@@ -9783,7 +9783,7 @@ public function implicitFunctionInstantiation
   output Env.Env outEnv;
   output InstanceHierarchy outIH;
 algorithm
-  (outCache,outEnv,outIH):= matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inSets,inClass,inInstDims)
+  (outCache,outEnv,outIH):= match (inCache,inEnv,inIH,inMod,inPrefix,inSets,inClass,inInstDims)
     local
       Connect.Sets csets;
       tuple<DAE.TType, Option<Absyn.Path>> ty1;
@@ -9800,7 +9800,7 @@ algorithm
       list<DAE.Function> funs;
       DAE.Function fun;
       SCode.Restriction r;
-    
+      
     case (cache,env,ih,mod,pre,csets,(c as SCode.CLASS(name = n,restriction = SCode.R_RECORD())),inst_dims)
       equation
         (cache,c,cenv) = Lookup.lookupRecordConstructorClass(cache,env,Absyn.IDENT(n));
@@ -9824,7 +9824,7 @@ algorithm
         Debug.traceln("- Inst.implicitFunctionInstantiation failed " +& n);
         Debug.traceln("  Scope: " +& Env.printEnvPathStr(env));
       then fail();
-  end matchcontinue;
+  end match;
 end implicitFunctionInstantiation;
 
 protected function implicitFunctionInstantiation2

@@ -357,8 +357,15 @@ algorithm
       String s;
     case (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inEEquation,inInitial,inBoolean,inGraph,_)
       equation
+        inState = ClassInf.trans(inState,ClassInf.FOUND_EQUATION());
         (outCache,outEnv,outIH,outDae,outSets,outState,outGraph) = instEquationCommonWork(inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inEEquation,inInitial,inBoolean,inGraph);
       then (outCache,outEnv,outIH,outDae,outSets,outState,outGraph);
+    case (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inEEquation,inInitial,inBoolean,inGraph,_)
+      equation
+        failure(_ = ClassInf.trans(inState,ClassInf.FOUND_EQUATION()));
+        s = ClassInf.printStateStr(inState);
+        Error.addSourceMessage(Error.EQUATION_TRANSITION_FAILURE, {s}, SCode.equationFileInfo(inEEquation));
+      then fail();
         // We only want to print a generic error message if no other error message was printed
         // Providing two error messages for the same error is confusing (but better than none) 
     case (_,_,_,_,_,_,_,inEEquation,_,_,_,errorCount)
