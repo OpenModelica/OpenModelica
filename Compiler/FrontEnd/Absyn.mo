@@ -3983,6 +3983,33 @@ algorithm
   end match;
 end crefLastSubs;
 
+public function crefHasSubscripts "function: crefHasSubscripts
+  This function finds if a cref has subscripts"
+  input ComponentRef inComponentRef;
+  output Boolean outHasSubscripts;
+algorithm
+  outHasSubscripts := match (inComponentRef)
+    local
+      Ident i;
+      Boolean b;
+      ComponentRef c;
+    
+    case CREF_IDENT(name = i,subscripts = {}) then false;
+    
+    case CREF_QUAL(name = i,subScripts = {},componentRef = c)
+      equation
+        b = crefHasSubscripts(c);
+      then
+        b;
+    
+    case CREF_FULLYQUALIFIED(componentRef = c)
+      equation
+        b = crefHasSubscripts(c);
+      then
+        b;
+  end match;
+end crefHasSubscripts;
+
 public function getSubsFromCref "
 Author: BZ, 2009-09
  Extract subscripts of crefs.
