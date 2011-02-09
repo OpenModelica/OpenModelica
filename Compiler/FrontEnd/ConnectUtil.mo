@@ -1549,7 +1549,7 @@ algorithm
     case (_, _)
       equation
         flow_cr = getStreamFlowAssociation(inStreamCref, inSets);
-        ety = ComponentReference.crefType(inStreamCref);
+        ety = ComponentReference.crefLastType(flow_cr);
         flow_exp = Expression.crefExp(flow_cr);
         stream_exp = Expression.crefExp(inStreamCref);
         instream_exp = evaluateInStream(inStreamCref, inSets);
