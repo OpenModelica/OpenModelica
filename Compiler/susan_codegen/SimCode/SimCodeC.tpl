@@ -2549,7 +2549,7 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__), vars = vars as S
   "<%s.outputFormat%>" // outputFormat
   <%vi.numStateVars%> // n states
   <%vi.numAlgVars%> // n alg vars
-  <%vi.numParams%> //n parameters
+  <%vi.numParams%> // n parameters
   <%vi.numIntParams%> // n int parameters
   <%vi.numIntAlgVars%> // n int variables
   <%vi.numBoolParams%> // n bool parameters
