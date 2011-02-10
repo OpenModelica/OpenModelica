@@ -4861,8 +4861,10 @@ algorithm
       equation
         BackendDAE.ARRAY_EQUATION(index=indx) = BackendDAEUtil.equationNth(eqns,0);
         BackendDAE.MULTIDIM_EQUATION(ds,e1,e2,source) = ae[indx + 1];
-        DAE.ARRAY(scalar=true,array=ea1) = e1;
-        DAE.ARRAY(scalar=true,array=ea2) = e2;
+        true = Expression.isArray(e1) or Expression.isMatrix(e1);
+        true = Expression.isArray(e2) or Expression.isMatrix(e2);
+        ea1 = Expression.flattenArrayExpToList(e1);
+        ea2 = Expression.flattenArrayExpToList(e2);
         ea1 = BackendDAEUtil.collateArrExpList(ea1,NONE());
         ea2 = BackendDAEUtil.collateArrExpList(ea2,NONE());
         ealst = Util.listThreadTuple(ea1,ea2);

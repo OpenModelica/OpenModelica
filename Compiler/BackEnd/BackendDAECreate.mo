@@ -46,7 +46,6 @@ public import DAE;
 protected import Algorithm;
 protected import BackendDAEUtil;
 protected import BackendDAEOptimize;
-protected import BackendDump;
 protected import BackendEquation;
 protected import BackendVariable;
 protected import ComponentReference;
@@ -118,7 +117,10 @@ algorithm
         //        no states AND ONLY if addDummyDerivative is set to true!
         shouldAddDummyDerivative =  boolAnd(addDummyDerivativeIfNeeded, daeContainsNoStates);
         (vars,eqns) = addDummyState(vars, eqns, shouldAddDummyDerivative);
-
+        
+        (aeqns,vars) = addFunctionRetVar(aeqns,vars);
+        ((aeqns,eqns)) = Util.listFold(aeqns,splitArrayEqn,({},eqns));        
+        ((iaeqns,ieqns)) = Util.listFold(iaeqns,splitArrayEqn,({},ieqns));         
         whenclauses_1 = listReverse(whenclauses);
         (algeqns,algeqns1,ialgeqns) = lowerAlgorithms(vars, algs, ialgs);
         (multidimeqns,imultidimeqns) = lowerMultidimeqns(vars, aeqns, iaeqns);
@@ -159,6 +161,9 @@ algorithm
         shouldAddDummyDerivative =  boolAnd(addDummyDerivativeIfNeeded, daeContainsNoStates);
         (vars,eqns) = addDummyState(vars, eqns, shouldAddDummyDerivative);
 
+        (aeqns,vars) = addFunctionRetVar(aeqns,vars);
+        ((aeqns,eqns)) = Util.listFold(aeqns,splitArrayEqn,({},eqns));        
+        ((iaeqns,ieqns)) = Util.listFold(iaeqns,splitArrayEqn,({},ieqns));        
         whenclauses_1 = listReverse(whenclauses);
         (algeqns,algeqns1,ialgeqns) = lowerAlgorithms(vars, algs, ialgs);
        (multidimeqns,imultidimeqns) = lowerMultidimeqns(vars, aeqns, iaeqns);
@@ -301,14 +306,13 @@ algorithm
       BackendDAE.Value count,count_1;
       DAE.Algorithm a,a1,a2;
       DAE.ComponentRef cr;
-      DAE.ElementSource source "the element source";
+      DAE.ElementSource source,eq_source;
       list<DAE.Element> daeElts;
       Absyn.Info info;
       Absyn.Path path;
       DAE.Function constr,destr;
       list<DAE.Exp> targets;
       list<DAE.Exp> sources;
-      DAE.ElementSource eq_source; 
       DAE.Exp e_11,e_21;
       list<DAE.Exp> ea1,ea2;
       list<tuple<DAE.Exp,DAE.Exp>> ealst; 
@@ -440,19 +444,7 @@ algorithm
         iaeqns2 = listAppend(iaeqns, iaeqns1);
       then
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns2,algs,ialgs,whenclauses_1,extObjCls,states);
-    
-    // array equations
-    case (daeEl as DAE.ARRAY_EQUATION(dimension = _,exp = e1,array = e2),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,whenclauses_1,extObjCls,states)
-      equation
-        BackendDAE.MULTIDIM_EQUATION(left=e_11 as DAE.ARRAY(scalar=true,array=ea1),
-                          right=e_21 as DAE.ARRAY(scalar=true,array=ea2),source=source)
-          = lowerArrEqn(daeEl,functionTree);
-        ealst = Util.listThreadTuple(ea1,ea2);
-        re = Util.listMap1(ealst,BackendEquation.generateEQUATION,source);
-        eqns = listAppend(re, eqns);
-      then
-        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,whenclauses_1,extObjCls,states);
-    
+       
     // array equations
     case (daeEl as DAE.ARRAY_EQUATION(dimension = _,exp = e1,array = e2),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,whenclauses_1,extObjCls,states)
       equation
@@ -460,18 +452,6 @@ algorithm
       then
         (vars,knvars,extVars,eqns,reqns,ieqns,backendMultiDimEq :: aeqns,iaeqns,algs,ialgs,whenclauses_1,extObjCls,states);
         
-    // initial array equations 
-    case (daeEl as DAE.INITIAL_ARRAY_EQUATION(dimension = _,exp = e1,array = e2),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,whenclauses_1,extObjCls,states)
-      equation
-        BackendDAE.MULTIDIM_EQUATION(left=e_11 as DAE.ARRAY(scalar=true,array=ea1),
-                          right=e_21 as DAE.ARRAY(scalar=true,array=ea2),source=source)
-          = lowerArrEqn(daeEl,functionTree);
-        ealst = Util.listThreadTuple(ea1,ea2);
-        re = Util.listMap1(ealst,BackendEquation.generateEQUATION,source);
-        ieqns = listAppend(re, ieqns);
-      then
-        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,whenclauses_1,extObjCls,states);    
-    
     // initial array equations
     case (daeEl as DAE.INITIAL_ARRAY_EQUATION(dimension = _, exp = e1, array = e2),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,whenclauses_1,extObjCls,states)
       equation
@@ -1021,6 +1001,208 @@ algorithm
         BackendDAE.MULTIDIM_EQUATION(ds,e1_3,e2_3,source);
   end match;
 end lowerArrEqn;
+
+protected function splitArrayEqn"
+Author: Frenkel TUD 2011-02"
+  input  BackendDAE.MultiDimEquation inAEqn;
+  input  tuple<list<BackendDAE.MultiDimEquation>,list<BackendDAE.Equation>> inTpl;
+  output tuple<list<BackendDAE.MultiDimEquation>,list<BackendDAE.Equation>> outTpl;
+algorithm
+  outTpl := 
+  matchcontinue (inAEqn,inTpl)
+    local
+      BackendDAE.MultiDimEquation aeqn;
+      list<BackendDAE.MultiDimEquation> aeqs;
+      list<BackendDAE.Equation> eqns,eqns1,re;
+      DAE.ElementSource source; 
+      DAE.Exp e1,e2;
+      list<DAE.Exp> ea1,ea2;
+      list<tuple<DAE.Exp,DAE.Exp>> ealst; 
+    case (BackendDAE.MULTIDIM_EQUATION(left=e1,right=e2,source=source),(aeqs,eqns))
+      equation
+        true = Expression.isArray(e1) or Expression.isMatrix(e1);
+        true = Expression.isArray(e2) or Expression.isMatrix(e2);
+        ea1 = Expression.flattenArrayExpToList(e1);
+        ea2 = Expression.flattenArrayExpToList(e2);          
+        ealst = Util.listThreadTuple(ea1,ea2);
+        re = Util.listMap1(ealst,BackendEquation.generateEQUATION,source);
+        eqns1 = listAppend(eqns,re);
+      then
+        ((aeqs,eqns1));
+    case (aeqn,(aeqs,eqns)) then ((aeqn::aeqs,eqns));
+  end matchcontinue;
+end splitArrayEqn;
+
+public function addFunctionRetVar"
+Author: Frenkel TUD 2011-02"
+  input list<BackendDAE.MultiDimEquation> inAEqs;
+  input BackendDAE.Variables inVars;
+  output list<BackendDAE.MultiDimEquation> outAEqs;
+  output BackendDAE.Variables outVars;
+algorithm
+  (outAEqs,outVars):=
+  matchcontinue (inAEqs,inVars)
+    local
+      list<BackendDAE.MultiDimEquation> aeqs,raeqs;
+      BackendDAE.Variables vars;
+    case (aeqs,vars)
+      equation
+        // traverse algorithms and add an equation tmp = func() and replace func with tmp
+        (raeqs,vars,_) = addFunctionRetVar1(aeqs,vars,1,{}); 
+      then
+        (raeqs,vars);
+    case (aeqs,vars) then (aeqs,vars);
+  end matchcontinue;
+end addFunctionRetVar;
+
+public function addFunctionRetVar1"
+Author: Frenkel TUD 2011-02"
+  input list<BackendDAE.MultiDimEquation> inAEqs;
+  input BackendDAE.Variables inVars;
+  input Integer inI;
+  input list<BackendDAE.MultiDimEquation> inAEqsAcc;
+  output list<BackendDAE.MultiDimEquation> outAEqs;
+  output BackendDAE.Variables outVars;
+  output Integer outI;
+algorithm
+  (outAEqs,outVars,outI) := match(inAEqs, inVars, inI, inAEqsAcc)
+    local
+      list<BackendDAE.MultiDimEquation> rest,l,result;
+      BackendDAE.MultiDimEquation hd;
+      BackendDAE.Variables vars;
+      Integer i;
+    case ({}, vars, i, l) then (listReverse(l),vars,i);
+    case (hd::rest, vars, i, l)
+      equation
+        (l,vars,i) = addFunctionRetVar2(hd,vars,i,l);
+        (result,vars,i) = addFunctionRetVar1(rest, vars, i, l);
+    then
+        (result,vars,i);
+  end match;
+end addFunctionRetVar1;
+
+public function addFunctionRetVar2"
+Author: Frenkel TUD 2011-02"
+  input BackendDAE.MultiDimEquation inAEq;
+  input BackendDAE.Variables inVars;
+  input Integer inI;
+  input list<BackendDAE.MultiDimEquation> inAEqsAcc;
+  output list<BackendDAE.MultiDimEquation> outAEqs;
+  output BackendDAE.Variables outVars;
+  output Integer outI;
+algorithm
+  (outAEqs,outVars,outI) := matchcontinue(inAEq, inVars, inI, inAEqsAcc)
+    local
+      list<BackendDAE.MultiDimEquation> l,result;
+      BackendDAE.MultiDimEquation hd;
+      BackendDAE.Variables vars;
+      Integer i;
+      list<Integer> dimSize;
+      DAE.Exp left,right;
+      DAE.ElementSource source;
+      Boolean b1,b2;
+    case (BackendDAE.MULTIDIM_EQUATION(dimSize=dimSize,left=left,right=right,source=source), vars, i, l)
+      equation
+        ((_,b1)) = Expression.traverseExpTopDown(left, traversingBinaryFinder, false);
+        ((_,b2)) = Expression.traverseExpTopDown(right, traversingBinaryFinder, false);
+        true = b1 or b2;
+        ((left,(vars,i,l,_))) = Expression.traverseExp(left,addFunctionRetVar3,(vars,i,l,source));
+        ((right,(vars,i,l,_))) = Expression.traverseExp(right,addFunctionRetVar3,(vars,i,l,source));
+        left = ExpressionSimplify.simplify(left);
+        right = ExpressionSimplify.simplify(right);
+        result = BackendDAE.MULTIDIM_EQUATION(dimSize,left,right,source)::l;
+    then
+        (result,vars,i);
+    case (hd, vars, i, l) then (hd::l, vars, i);
+  end matchcontinue;
+end addFunctionRetVar2;
+
+protected function traversingBinaryFinder "
+Author: Frenkel 2011-02"
+  input tuple<DAE.Exp, Boolean > inExp;
+  output tuple<DAE.Exp, Boolean, Boolean > outExp;
+algorithm 
+  outExp := matchcontinue(inExp)
+    local
+      DAE.Exp e;      
+      Boolean b; 
+    case((e as DAE.BINARY(exp1=_), _))
+      then ((e,false,true));
+  case((e,b)) then ((e,not b,b));    
+  end matchcontinue;
+end traversingBinaryFinder;
+
+protected function addFunctionRetVar3
+"Help function to e.g. addFunctionRetVar"
+  input tuple<DAE.Exp,tuple<BackendDAE.Variables,Integer,list<BackendDAE.MultiDimEquation>,DAE.ElementSource>> tpl;
+  output tuple<DAE.Exp,tuple<BackendDAE.Variables,Integer,list<BackendDAE.MultiDimEquation>,DAE.ElementSource>> outTpl;
+algorithm
+  outTpl := matchcontinue(tpl)
+    local
+      BackendDAE.Variables vars,vars_1;
+      DAE.Exp e1,left,left1;
+      DAE.ExpType ty,tp,tp1;
+      Integer i;
+      list<BackendDAE.MultiDimEquation> aeqs;
+      list<Integer> dimSize;
+      DAE.ElementSource source;
+      Absyn.Path path;
+      DAE.ComponentRef cr,id;
+      list<DAE.Dimension> ad;
+      list<list<DAE.Subscript>> subslst,subslst1;
+      list<DAE.ComponentRef> crlst;
+      list<BackendDAE.Var> varlst;
+      BackendDAE.Type btp;
+    case((e1 as DAE.CALL(path=path,ty=ty as DAE.ET_ARRAY(arrayDimensions=ad,ty=tp)),(vars,i,aeqs,source)))
+     equation
+      dimSize = Util.listMap(ad, Expression.dimensionSize);
+      cr = ComponentReference.pathToCref(path);
+      id = ComponentReference.makeCrefIdent(intString(i),ty,{});
+      cr = ComponentReference.joinCrefs(cr,id);
+      left = Expression.makeCrefExp(cr,ty);
+      subslst = BackendDAEUtil.dimensionsToRange(ad);
+      subslst1 = BackendDAEUtil.rangesToSubscripts(subslst);
+      crlst = Util.listMap1r(subslst1,ComponentReference.subscriptCref,cr);
+      tp1 = Expression.unliftArray(tp);
+      btp = expTypeToBackendType(tp1);
+      varlst = Util.listMap1(crlst,makeVariable,btp);
+      vars_1 = BackendVariable.addVars(varlst, vars);      
+      ((left1,_)) = BackendDAEUtil.extendArrExp((left,NONE()));
+    then ((left1,(vars_1,i+1,BackendDAE.MULTIDIM_EQUATION(dimSize,left,e1,source)::aeqs,source)));
+    case tpl then tpl;
+  end matchcontinue;
+end addFunctionRetVar3;
+
+protected function makeVariable "function: makeVariable
+  author: Frenkel TUD 2011-02"
+  input DAE.ComponentRef inCref;
+  input BackendDAE.Type inType;
+  output BackendDAE.Var outVar;
+algorithm
+  outVar:= BackendDAE.VAR(inCref, BackendDAE.VARIABLE(),DAE.BIDIR(),inType,NONE(),NONE(),{},-1,
+                            DAE.emptyElementSource,
+                            NONE(),NONE(),DAE.NON_CONNECTOR(),DAE.NON_STREAM());
+end makeVariable;
+
+protected function expTypeToBackendType
+"Transforms a DAE.ExpType to BackendDAE.Type
+"
+  input  DAE.ExpType inType;
+  output BackendDAE.Type outType;
+algorithm
+  outType := match(inType)
+    local
+      list<String> strLst;
+      Absyn.Path path;
+    case DAE.ET_INT() then BackendDAE.INT();
+    case DAE.ET_REAL() then BackendDAE.REAL();
+    case DAE.ET_BOOL() then BackendDAE.BOOL();
+    case DAE.ET_STRING() then BackendDAE.STRING();
+    case DAE.ET_ENUMERATION(names = strLst) then BackendDAE.ENUMERATION(strLst);
+    case DAE.ET_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(path)) then BackendDAE.EXT_OBJECT(path);
+    case (_) then fail();
+  end match;
+end expTypeToBackendType;
 
 protected function lowerComplexEqn
 "function: lowerComplexEqn
