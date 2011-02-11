@@ -3272,6 +3272,21 @@ algorithm
         exp = Expression.makeBuiltinCall("fill", s_1 :: dims_1, exp_type);
      then
        (cache, exp, prop);
+    
+    // Non-constant dimensons are also allowed in the case of non-expanded arrays
+    // TODO: check that the diemnsions are parametric?  
+    case (cache, env, (s :: dims), _, impl,pre,info)
+      equation
+        false = RTOpts.splitArrays();
+        (cache, s_1, DAE.PROP(sty, c1), _) = elabExp(cache, env, s, impl,NONE(), true,pre,info);
+        (cache, dims_1, dimprops, _) = elabExpList(cache, env, dims, impl,NONE(), true,pre,info);
+        sty = makeFillArgListType(sty, dimprops);
+        exp_type = Types.elabType(sty);
+        c1 = Types.constAnd(c1, DAE.C_PARAM());
+        prop = DAE.PROP(sty, c1);
+        exp = Expression.makeBuiltinCall("fill", s_1 :: dims_1, exp_type);
+     then
+       (cache, exp, prop);
       
     case (cache,env,dims,_,impl,pre,info)
       equation

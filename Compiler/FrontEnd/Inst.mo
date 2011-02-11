@@ -2299,6 +2299,7 @@ algorithm
         then v::varLst;
     case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("max",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre,ty)
       equation
+        true = RTOpts.splitArrays();
         varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre,ty);
         v = instBuiltinAttribute(cache,env,"max",optVal,exp,DAE.T_REAL_DEFAULT,p);
         then v::varLst;
@@ -2311,6 +2312,7 @@ algorithm
         then v::varLst;
     case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("start",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre,ty)
       equation
+        true = RTOpts.splitArrays();
         varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre,ty);
         v = instBuiltinAttribute(cache,env,"start",optVal,exp,DAE.T_REAL_DEFAULT,p);
         then v::varLst;
@@ -9543,7 +9545,7 @@ protected function elabArraydimType2
 algorithm
   outDimensionOptionLst := matchcontinue (inType,inArrayDim,inSubs)
     local
-      DAE.Dimension d;
+      DAE.Dimension d,d1;
       list<DAE.Dimension> l;
       tuple<DAE.TType, Option<Absyn.Path>> t;
       list<Absyn.Subscript> ad;
@@ -9551,8 +9553,8 @@ algorithm
       DAE.Subscript sub;
     case ((DAE.T_ARRAY(arrayDim = d, arrayType = t), _), ad, (sub::subs))
       equation
-        //d1 = Expression.subscriptDimension(sub);
-        // _ = compatibleArraydim(d,d1);  TODO: Implement the comparison in the non-expanded case! -- alleb
+        d1 = Expression.subscriptDimension(sub);
+         _ = compatibleArraydim(d,d1);
         l = elabArraydimType2(t, ad,subs);
       then
         l;
