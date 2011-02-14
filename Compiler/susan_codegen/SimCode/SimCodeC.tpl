@@ -158,6 +158,8 @@ case SIMCODE(__) then
   
   <%functionCheckForDiscreteChanges(discreteModelVars2)%>
   
+  <%functionAssertsforCheck(algorithmAndEquationAsserts)%>
+  
   <%generateLinearMatrixes(JacobianMatrixes)%>
   
   <%functionlinearmodel(modelInfo)%>
@@ -1794,20 +1796,52 @@ end functionOnlyZeroCrossing;
 template functionCheckForDiscreteChanges(list<ComponentRef> discreteModelVars)
   "Generates function in simulation file."
 ::=
+
+  let changediscreteVars = (discreteModelVars |> var => match var case CREF_QUAL(__) case CREF_IDENT(__) then
+       'if (change(<%cref(var)%>)) { if (sim_verbose) { cout << "Discrete Var <%crefStr(var)%> : " << (<%crefType(var)%>) pre(<%cref(var)%>) << " to " << (<%crefType(var)%>) <%cref(var)%> << endl;}  needToIterate=1; }'
+    ;separator="\n")
   <<
   int checkForDiscreteChanges()
   {
     int needToIterate = 0;
   
-    <%discreteModelVars |> var as CREF_IDENT(__) =>
-      'if (change(<%cref(var)%>)) { if (sim_verbose) { cout << "Discrete Var <%crefStr(var)%> : " << (<%extType(identType)%>) pre(<%cref(var)%>) << " to " << (<%extType(identType)%>) <%cref(var)%> << endl;}  needToIterate=1; }'
-    ;separator="\n"%>
+    <%changediscreteVars%>
     
     return needToIterate;
   }
   >>
 //  if (sim_verbose) { cout << "Discrete Var <%crefStr(var)%> : " << (double) pre(<%cref(var)%>) << " to " << (double) <%cref(var)%> << endl;} 
 end functionCheckForDiscreteChanges;
+
+template crefType(ComponentRef cr)
+ "Like cref but with cast if type is integer."
+::=
+  match cr
+  case CREF_IDENT(__) then '<%extType(identType)%>'
+  case CREF_QUAL(__)  then '<%crefType(componentRef)%>'
+  else "crefType:ERROR"
+end crefType;
+
+
+template functionAssertsforCheck(list<DAE.Statement> algorithmAndEquationAsserts)
+ "Generates function in simulation file."
+::=
+  let &varDecls = buffer "" /*BUFD*/
+  let algAndEqAssertsPart = (algorithmAndEquationAsserts |> stmt =>
+      algStatement(stmt, contextSimulation2Discrete, &varDecls /*BUFD*/)
+    ;separator="\n")
+  <<
+  /* for continuous time variables */
+  int checkForAsserts()
+  {
+    <%varDecls%>
+  
+    <%algAndEqAssertsPart%>
+  
+    return 0;
+  }
+  >>
+end functionAssertsforCheck;
 
 template functionJac(list<SimEqSystem> JacEquations, list<SimVar> JacVars, String MatrixName)
  "Generates function in simulation file."
@@ -4592,7 +4626,6 @@ template scalarLhsCref(Exp ecr, Context context, Text &preExp, Text &varDecls)
   else
     "ONLY_IDENT_OR_QUAL_CREF_SUPPORTED_SLHS"
 end scalarLhsCref;
-
 
 template rhsCref(ComponentRef cr, ExpType ty)
  "Like cref but with cast if type is integer."

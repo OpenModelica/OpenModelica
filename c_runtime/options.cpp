@@ -60,7 +60,7 @@ const string* getFlagValue(const char *option, int argc, char **argv)
   for (int i=0; i<argc;i++) {
     string tmpStr=string(argv[i]);
     if (("-"+string(option))==string(argv[i])) {
-      if (argc >= i+1) {
+      if (argc > i+1) {
   return new string(argv[i+1]);
       }
     }

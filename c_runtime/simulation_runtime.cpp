@@ -404,6 +404,14 @@ callSolver(int argc, char**argv, string method, string outputFormat,
           << "'" << endl;
     }
 
+  int methodflag = (int) flagSet("s", argc, argv);
+  if (methodflag)
+    {
+      string* solvermethod = (string*) getFlagValue("s", argc, argv);
+      if (!(solvermethod == NULL))
+        method.assign(*solvermethod);
+    }
+
   if (method == "")
     {
       if (sim_verbose)

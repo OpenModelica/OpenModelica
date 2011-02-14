@@ -347,6 +347,9 @@ int initial_function();
 // parameters, e.g. parameter Real n=1/m;
 int bound_parameters();
 
+// function for checking for asserts and terminate
+int checkForAsserts();
+
 // function for calculate residual values for the initial equations
 // and fixed start attibutes
 int initial_residual();

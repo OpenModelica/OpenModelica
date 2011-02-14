@@ -1407,9 +1407,9 @@ algorithm
       BackendDAE.Variables vars,knvars;
       DAE.ComponentRef cr;
       BackendDAE.VarKind kind;
-      DAE.Exp e;
+      DAE.Exp e,e1,e2;
       Option<Boolean> blst;
-      Boolean b;
+      Boolean b,b1,b2;
       Boolean res;
       BackendDAE.Var backendVar;
 
@@ -1461,9 +1461,12 @@ algorithm
       then
         ((e,false,(vars,knvars,SOME(b))));
     
-    case (((e as DAE.RELATION(exp1 = _),(vars,knvars,blst)))) 
+    case (((e as DAE.RELATION(exp1 = e1, exp2 = e2),(vars,knvars,blst)))) 
       equation
-       b = Util.getOptionOrDefault(blst,true);
+       b1 = isDiscreteExp(e1,vars,knvars);
+       b2 = isDiscreteExp(e2,vars,knvars);
+       b = Util.boolOrList({b1,b2});
+       b = Util.getOptionOrDefault(blst,b);
       then ((e,false,(vars,knvars,SOME(b))));           
     case (((e as DAE.CALL(path = Absyn.IDENT(name = "pre")),(vars,knvars,blst)))) 
       equation
@@ -5058,7 +5061,7 @@ algorithm
   end match;
 end traverseBackendDAEExpsSubscript;
 
-protected function traverseBackendDAEExpsEqns "function: traverseBackendDAEExpsEqns
+public function traverseBackendDAEExpsEqns "function: traverseBackendDAEExpsEqns
   author: Frenkel TUD
 
   Helper for traverseBackendDAEExpsEqns

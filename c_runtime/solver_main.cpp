@@ -243,6 +243,32 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
   storeExtrapolationData();
   storeExtrapolationData();
   // Calculate initial values from (fixed) start attributes
+
+  int needToIterate = 0;
+  int IterationNum = 0;
+  functionDAE(needToIterate);
+  functionAliasEquations();
+
+  //work-around problem with discrete algorithm vars
+  //
+  //functionDAE(needToIterate);
+  //functionAliasEquations();
+  if (sim_verbose)
+    {
+      sim_result->emit();
+    }
+  while (checkForDiscreteChanges() || needToIterate)
+    {
+      saveall();
+      functionDAE(needToIterate);
+      IterationNum++;
+      if (IterationNum > IterationMax)
+        {
+          throw TerminateSimulationException(globalData->timeValue, string(
+              "ERROR: Too many Iteration. System is not consistent!\n"));
+        }
+    }
+
   if (initialize(init_method))
     {
       throw TerminateSimulationException(globalData->timeValue, string(
@@ -262,8 +288,8 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
       activateSampleEvents();
     }
   //Activate sample and evaluate again
-  int needToIterate = 0;
-  int IterationNum = 0;
+  needToIterate = 0;
+  IterationNum = 0;
   functionDAE(needToIterate);
   if (sim_verbose)
     {
@@ -291,6 +317,11 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
   saveall();
   sim_result->emit();
 
+  // Initialization complete
+  if (measure_time_flag)
+    rt_accumulate( SIM_TIMER_INIT);
+  globalData->init = 0;
+
   if (globalData->timeValue >= stop)
     {
       if (sim_verbose)
@@ -299,6 +330,7 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
         }
       return 0;
     }
+
 
   // Do a tiny step to initialize ZeroCrossing that are fulfilled
   globalData->current_stepsize = calcTinyStep(start, stop);
@@ -321,6 +353,8 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
         }
     }
   functionAliasEquations();
+  // Put initial values to delayed expression buffers
+  function_storeDelayed();
   SaveZeroCrossings();
   initializeZeroCrossings();
   reset = true;
@@ -328,13 +362,7 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
 
   sim_result->emit();
 
-  // Initialization complete
-  if (measure_time_flag)
-    rt_accumulate( SIM_TIMER_INIT);
-  globalData->init = 0;
 
-  // Put initial values to delayed expression buffers
-  function_storeDelayed();
 
   if (sim_verbose)
     {
@@ -425,7 +453,6 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
               stateEvents++;
               reset = true;
               dideventstep = 1;
-              SaveZeroCrossings();
             }
           else if (sampleEvent_actived)
             {
@@ -434,7 +461,6 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
               reset = true;
               dideventstep = 1;
               sampleEvent_actived = 0;
-              SaveZeroCrossings();
             }
           else
             {
@@ -458,11 +484,17 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
                 << rt_total(i + SIM_TIMER_FIRST_FUNCTION);
               fmt << endl;
             }
-          //SaveZeroCrossings();
+          SaveZeroCrossings();
           sim_result->emit();
 
           //Check for termination of terminate() or assert()
-          checkTermination();
+          if (terminationAssert || terminationTerminate)
+            {
+              terminationAssert = 0;
+              terminationTerminate = 0;
+              checkForAsserts();
+              checkTermination();
+            }
 
           if (retValIntegrator)
             {

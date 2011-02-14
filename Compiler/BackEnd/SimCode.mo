@@ -1973,7 +1973,7 @@ algorithm
         parameterEquations = createParameterEquations(dlow2);
         removedEquations = createRemovedEquations(dlow2);
         algorithmAndEquationAsserts = createAlgorithmAndEquationAsserts(dlow2);
-                discreteModelVars = extractDiscreteModelVars(dlow2, mt);
+        discreteModelVars = extractDiscreteModelVars(dlow2, mt);
         discreteModelVars2 = extractDiscreteModelVars2(dlow2, mt);
         makefileParams = createMakefileParams(libs);
         (delayedExps,maxDelayedExpIndex) = extractDelayedExpressions(dlow2);
@@ -2850,14 +2850,58 @@ algorithm
   algorithmAndEquationAsserts := match (dlow)
     local
       array<Algorithm.Algorithm> algs;
-      list<Algorithm.Statement> res;
+      list<Algorithm.Statement> res,res1;
+      BackendDAE.EquationArray eqns;
       
-    case(BackendDAE.DAE(algorithms=algs))
+    case(BackendDAE.DAE(algorithms=algs,orderedEqs=eqns))
       equation
         res = createAlgorithmAndEquationAssertsFromAlgs(arrayList(algs));
+        res1 = BackendDAEUtil.traverseBackendDAEExpsEqns(eqns,findSqrtCallsforAsserts,{});
+        res = listAppend(res,res1);
       then res;
   end match;
 end createAlgorithmAndEquationAsserts;
+
+protected function findSqrtCallsforAsserts
+  input tuple<DAE.Exp, list<Algorithm.Statement>> inTpl;
+  output tuple<DAE.Exp, list<Algorithm.Statement>> outTpl;
+algorithm
+  outTpl :=
+  matchcontinue inTpl
+    local  
+      DAE.Exp exp;
+      list<Algorithm.Statement> inasserts;
+    case ((exp,inasserts))
+      equation
+        ((_,inasserts)) = Expression.traverseExp(exp,findSqrtCallsforAssertsExps,inasserts);
+       then
+        ((exp,inasserts));
+    case inTpl then inTpl;
+  end matchcontinue;      
+end findSqrtCallsforAsserts;
+
+protected function findSqrtCallsforAssertsExps
+  input tuple<DAE.Exp, list<Algorithm.Statement>> inTuple;
+  output tuple<DAE.Exp, list<Algorithm.Statement>> outTuple;
+algorithm
+  outTuple := matchcontinue(inTuple)
+    local
+      DAE.Exp e,e1;
+      String estr;
+      Algorithm.Statement addAssert;
+      list<Algorithm.Statement> inasserts;
+    
+    // special case for time, it is never part of the equation system  
+    case (((e as DAE.CALL(tuple_=false, builtin=true,path=Absyn.IDENT(name="sqrt"), expLst={e1})),inasserts))
+      equation
+        estr = "Model error: Argument of sqrt should be >= 0";
+        addAssert = DAE.STMT_ASSERT(DAE.RELATION(e1,DAE.GREATEREQ(DAE.ET_REAL()),DAE.RCONST(0.0),-1,NONE()),DAE.SCONST(estr),DAE.emptyElementSource);
+      then ((e, addAssert::inasserts));
+    
+    case inTuple then inTuple;
+  end matchcontinue;
+end findSqrtCallsforAssertsExps;
+
 
 protected function createAlgorithmAndEquationAssertsFromAlgs
   input list<Algorithm.Algorithm> algs;
@@ -2977,7 +3021,7 @@ algorithm
         // replace var with cref
         vLst1 = BackendEquation.traverseBackendDAEEqns(e,traversingisVarDiscreteCrefFinder2,{});
         vLst2 = BackendVariable.traverseBackendDAEVars(v,traversingisVarDiscreteCrefFinder,{});
-        vLst2 = Util.listUnionOnTrue(vLst1, vLst2, ComponentReference.crefEqual);
+        vLst2 = Util.listUnionComp(vLst1, vLst2, ComponentReference.crefEqual);
       then vLst2;
   end match;
 end extractDiscreteModelVars2;

@@ -41,6 +41,8 @@
 #include "integer_array.h"
 #include "boolean_array.h"
 #include "fortran_types.h"
+#include <list>
+using namespace std;
 
 int
 initializeEventData();
@@ -144,10 +146,10 @@ extern modelica_boolean* gout_res;
 }
 #define SAVEZEROCROSS(res,exp1,exp2,index,op_w,op) { \
     if (index == -1){ \
-        res = (exp1) op (exp2); \
+        res = ((exp1) op (exp2)); \
     } else{ \
-        res = (exp1) op (exp2); \
-        backuprelations[index] = res; \
+        res = ((exp1) op (exp2)); \
+        backuprelations[index] = ((exp1) op (exp2)); \
     }\
 }
 
@@ -241,10 +243,10 @@ void
 activateSampleEvents();
 
 double
-BiSection(double*, double*, double*, double*, long int*);
+BiSection(double*, double*, double*, double*, list<int> *);
 
 int
-CheckZeroCrossings(long int*);
+CheckZeroCrossings(list<int>*);
 
 int
 function_updateSample();

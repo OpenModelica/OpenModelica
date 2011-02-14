@@ -235,6 +235,11 @@ void print_boolean_array(boolean_array_t *source)
     }
 }
 
+char print_boolean(m_boolean value)
+{
+    return value ? 'T' : 'F';
+}
+
 void put_boolean_element(m_boolean value, int i1, boolean_array_t *dest)
 {
     /* Assert that dest has correct dimension */

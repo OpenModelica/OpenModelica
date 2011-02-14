@@ -108,7 +108,6 @@ void leastSquare2(long *nz, double *z, double *funcValue)
   /*
    * functionODE_new();
    * functionAlgebraics();
-   * functionDAE_output2();
    */
   int needToIterate=0;
   int IterationNum=0;

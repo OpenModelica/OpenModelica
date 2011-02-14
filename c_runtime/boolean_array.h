@@ -91,6 +91,7 @@ void put_boolean_matrix_element(m_boolean value, int r, int c, boolean_array_t* 
 
 void print_boolean_matrix(boolean_array_t* source);
 void print_boolean_array(boolean_array_t* source);
+char print_boolean(m_boolean value);
 /*
 
  a[1:3] := b;
