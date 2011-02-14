@@ -438,16 +438,21 @@ void LibraryTree::addModelicaStandardLibrary()
     mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->loadStandardLibrary();
     if (mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->isStandardLibraryLoaded())
     {
-        LibraryTreeNode *newTreePost = new LibraryTreeNode(QString("Modelica"), QString(""), QString("Modelica"),
-                                                           (QTreeWidget*)0);
-        newTreePost->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
-        insertTopLevelItem(0, newTreePost);
+        // It should be possible to load multiple libraries in OMEdit...
+        const int numLib=1;
+        const char *libs[numLib] = {"Modelica"};
+        for (int i=0; i<numLib; i++) {
+            LibraryTreeNode *newTreePost = new LibraryTreeNode(QString(libs[i]), QString(""), QString(libs[i]),
+                                                               (QTreeWidget*)0);
+            newTreePost->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
+            insertTopLevelItem(0, newTreePost);
 
-        // get the Icon for Modelica tree node
-        LibraryLoader *libraryLoader = new LibraryLoader(newTreePost, tr("Modelica"), this);
-        libraryLoader->start(QThread::HighestPriority);
-        while (libraryLoader->isRunning())
-            qApp->processEvents();
+            // get the Icon for Modelica tree node
+            LibraryLoader *libraryLoader = new LibraryLoader(newTreePost, tr(libs[i]), this);
+            libraryLoader->start(QThread::HighestPriority);
+            while (libraryLoader->isRunning())
+                qApp->processEvents();
+        }
 
 //        addClass("Ground", "", "Modelica.Electrical.Analog.Basic.", true);
 //        addClass("Resistor", "", "Modelica.Electrical.Analog.Basic.", true);
