@@ -2559,10 +2559,14 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
   CFLAGS=-I"<%makefileParams.omhome%>/include/omc" <%makefileParams.cflags%>
   LDFLAGS=-L"<%makefileParams.omhome%>/lib/omc" <%makefileParams.ldflags%>
   SENDDATALIBS=<%makefileParams.senddatalibs%>
+  PERL="perl"
   
   .PHONY: <%fileNamePrefix%>
-  <%fileNamePrefix%>: <%fileNamePrefix%>.cpp <%fileNamePrefix%>_functions.cpp <%fileNamePrefix%>_functions.h <%fileNamePrefix%>_records.c
-  <%\t%> $(CXX) -I. -o <%fileNamePrefix%>$(EXEEXT) <%fileNamePrefix%>.cpp <%fileNamePrefix%>_functions.cpp <%dirExtra%> <%libsPos1%> <%libsPos2%> -lsim -linteractive $(CFLAGS) $(SENDDATALIBS) $(LDFLAGS) -lf2c <%fileNamePrefix%>_records.c 
+  <%fileNamePrefix%>: <%fileNamePrefix%>.conv.cpp <%fileNamePrefix%>_functions.cpp <%fileNamePrefix%>_functions.h <%fileNamePrefix%>_records.c
+  <%\t%> $(CXX) -I. -o <%fileNamePrefix%>$(EXEEXT) <%fileNamePrefix%>.conv.cpp <%fileNamePrefix%>_functions.cpp <%dirExtra%> <%libsPos1%> <%libsPos2%> -lsim -linteractive $(CFLAGS) $(SENDDATALIBS) $(LDFLAGS) -lf2c <%fileNamePrefix%>_records.c 
+  <%fileNamePrefix%>.conv.cpp: <%fileNamePrefix%>.cpp
+  <%\t%> $(PERL) <%makefileParams.omhome%>/share/omc/scripts/convert_lines.pl $< $@.tmp
+  <%\t%> @mv $@.tmp $@
   >>
 end simulationMakefile;
 
@@ -2712,10 +2716,14 @@ case FUNCTIONCODE(makefileParams=MAKEFILE_PARAMS(__)) then
   CFLAGS= -I"<%makefileParams.omhome%>/include/omc" <%makefileParams.cflags%>
   LDFLAGS= -L"<%makefileParams.omhome%>/lib/omc" <%makefileParams.ldflags%>
   SENDDATALIBS=<%makefileParams.senddatalibs%>
+  PERL="perl"
   
   .PHONY: <%name%>
-  <%name%>: <%name%>.c <%name%>.h <%name%>_records.c
-  <%\t%> $(LINK) -o <%name%>$(DLLEXT) <%name%>.c <%libsStr%> $(CFLAGS) $(LDFLAGS) $(SENDDATALIBS) -lm <%name%>_records.c 
+  <%name%>: <%name%>.conv.c <%name%>.h <%name%>_records.c
+  <%\t%> $(LINK) -o <%name%>$(DLLEXT) <%name%>.conv.c <%libsStr%> $(CFLAGS) $(LDFLAGS) $(SENDDATALIBS) -lm <%name%>_records.c 
+  <%name%>.conv.c: <%name%>.c
+  <%\t%> $(PERL) <%makefileParams.omhome%>/share/omc/scripts/convert_lines.pl $< $@.tmp
+  <%\t%> @mv $@.tmp $@
   >>
 end functionsMakefile;
 
