@@ -98,46 +98,6 @@ extern const int LOG_DEBUG;
 extern const int ERROR_NONLINSYS;
 extern const int ERROR_LINSYS;
 
-typedef enum {
-/*   These are flags for the generated
-   initializeDataStruc(DATA_INIT_FLAGS) function */
-
-  NO_INIT_OF_VECTORS      = 0x00000000,
-  STATES                  = 1<<0,
-  STATESDERIVATIVES       = 1<<1,
-  HELPVARS                = 1<<2,
-  ALGEBRAICS              = 1<<3,
-  PARAMETERS              = 1<<4,
-  INITIALRESIDUALS        = 1<<5,
-  INPUTVARS               = 1<<6,
-  OUTPUTVARS              = 1<<7,
-  INITFIXED               = 1<<8,
-  EXTERNALVARS            = 1<<9,
-  JACOBIANVARS            = 1<<10,
-
-  /*in initializeDataStruc these are not allocated with malloc!*/
-  MODELNAME               = 1<<11,
-  STATESNAMES             = 1<<12,
-  STATESDERIVATIVESNAMES  = 1<<13,
-  ALGEBRAICSNAMES         = 1<<14,
-  PARAMETERSNAMES         = 1<<15,
-  FUNCTIONNAMES           = 1<<18,
-  EQUATIONINFO            = 1<<19,
-  JACOBIANNAMES           = 1<<20,
-
-  /*in initializeDataStruc these are not allocated with malloc!*/
-  STATESCOMMENTS            = 1<<21,
-  STATESDERIVATIVESCOMMENTS = 1<<22,
-  ALGEBRAICSCOMMENTS        = 1<<23,
-  PARAMETERSCOMMENTS        = 1<<24,
-  INPUTCOMMENTS             = 1<<25,
-  OUTPUTCOMMENTS            = 1<<26,
-
-  RAWSAMPLES    = 1<<27,
-
-  ALL       = 0xFFFFFFFF
-} DATA_FLAGS;
-
 typedef struct sim_DATA_STRING {
   const char** algebraics; //y ALGVARS
   const char** parameters; //p; PARAMETERS
@@ -154,6 +114,7 @@ typedef struct sim_DATA_INT {
   modelica_integer* inputVars; //in_y INPUTVARS
   modelica_integer* outputVars; //out_y OUTPUTVARS
   modelica_integer*  algebraics_old, *algebraics_old2;
+  modelica_boolean* algebraicsFilterOutput; // True if this variable should be filtered
 
   long nAlgebraic,nParameters;
   long nInputVars,nOutputVars;
@@ -164,7 +125,8 @@ typedef struct sim_DATA_BOOL {
   modelica_boolean* parameters; //p; PARAMETERS
   modelica_boolean* inputVars; //in_y INPUTVARS
   modelica_boolean* outputVars; //out_y OUTPUTVARS
-  modelica_boolean*  algebraics_old, *algebraics_old2;
+  modelica_boolean* algebraics_old, *algebraics_old2;
+  modelica_boolean* algebraicsFilterOutput; // True if this variable should be filtered
 
   long nAlgebraic,nParameters;
   long nInputVars,nOutputVars;
@@ -186,7 +148,7 @@ typedef struct sim_DATA {
   /* this is the data structure for saving important data for this simulation. */
   /* Each generated function have a DATA* parameter wich contain the data. */
   /* A object for the data can be created using */
-  /* initializeDataStruc(DATA_FLAGS) function*/
+  /* initializeDataStruc() function*/
   double* states; //x STATES
   double* statesDerivatives; //xd DERIVATIVES
   double* algebraics; //y ALGVARS
@@ -196,6 +158,11 @@ typedef struct sim_DATA {
   double* helpVars;
   double* initialResiduals;
   double* jacobianVars;
+
+  // True if the variable should be filtered
+  modelica_boolean* statesFilterOutput;
+  modelica_boolean* statesDerivativesFilterOutput;
+  modelica_boolean* algebraicsFilterOutput;
 
   // Old values used for extrapolation
   double* states_old,*states_old2;
@@ -277,12 +244,12 @@ extern modelica_boolean *backuprelations;
  * This flag should be the same for second argument in deInitializeDataStruc
  * to avoid memory leak.
  */
-DATA* initializeDataStruc(DATA_FLAGS flags);
+DATA* initializeDataStruc();
 
 /* this frees the memory that is allocated in the data-structure.
  * The second argument must have the same value as the argument in initializeDataStruc
  */
-void deInitializeDataStruc(DATA* data, DATA_FLAGS flags);
+void deInitializeDataStruc(DATA* data);
 /* this is used to set the localData in the generated code
  * that is used in the diferrent generated functions
  *

@@ -55,7 +55,8 @@ void read_commented_value(ifstream &f, signed char *str);
          DATA *simData,
                 double *start, double *stop,
                 double *stepSize, long *outputSteps,
-                double *tolerance, string* method, string* outputFormat)
+                double *tolerance, string* method,
+                string* outputFormat, string* variableFilter)
 {
 
   string *filename=(string*)getFlagValue("f",argc,argv);
@@ -88,6 +89,8 @@ void read_commented_value(ifstream &f, signed char *str);
   if (sim_verbose) { cout << "read method = " << *method << " from init file." << endl; }
   read_commented_value(file,outputFormat);
   if (sim_verbose) { cout << "read outputFormat = " << *outputFormat << " from init file." << endl; }
+  read_commented_value(file,variableFilter);
+  if (sim_verbose) { cout << "read variableFilter = " << *variableFilter << " from init file." << endl; }
   modelica_integer nxchk,nychk,npchk;
   modelica_integer nyintchk,npintchk;
   modelica_integer nyboolchk,npboolchk;
@@ -202,10 +205,10 @@ inline void read_commented_value(ifstream &f, string *str)
 {
 
   string line;
-  char c[160];
-    f.getline(c,160);
-    line = c;
-    int pos;
+  char c[2048];
+  f.getline(c,2048);
+  line = c;
+  int pos;
   if (line.find("\"") != line.npos) {
     pos = line.rfind("\""); // find end of string
     *str = string(line.substr(1,pos-1));  // Remove " at beginning and end
@@ -223,7 +226,7 @@ inline void read_commented_value(ifstream &f, const char **str)
   *str = strdup(line.c_str());
 }
 
-inline void read_commented_value( ifstream &f, double *res)
+inline void read_commented_value(ifstream &f, double *res)
 {
   string line;
 //  f >> *res;

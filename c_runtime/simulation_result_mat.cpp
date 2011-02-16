@@ -49,17 +49,18 @@ simulation_result_mat::simulation_result_mat(const char* filename,
          globalData->nAlgebraic, globalData->intVariables.nAlgebraic,
          globalData->boolVariables.nAlgebraic, 
          globalData->nParameters, globalData->intVariables.nParameters,
-         globalData->boolVariables.nParameters };
+         globalData->boolVariables.nParameters
+  };
   const struct omc_varInfo* names[rank] = { &timeValName,
-             globalData->statesNames,
-             globalData->stateDerivativesNames,
-             globalData->algebraicsNames,
-             globalData->int_alg_names,
-             globalData->bool_alg_names,
-             globalData->parametersNames,
-             globalData->int_param_names,
-             globalData->bool_param_names,
-                             };
+         globalData->statesNames,
+         globalData->stateDerivativesNames,
+         globalData->algebraicsNames,
+         globalData->int_alg_names,
+         globalData->bool_alg_names,
+         globalData->parametersNames,
+         globalData->int_param_names,
+         globalData->bool_param_names,
+  };
   const int nVars = globalData->nStates*2+globalData->nAlgebraic
     +globalData->intVariables.nAlgebraic +globalData->boolVariables.nAlgebraic;
   const int nParams = globalData->nParameters+globalData->intVariables.nParameters

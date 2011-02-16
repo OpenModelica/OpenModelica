@@ -523,7 +523,7 @@ template functionInitializeDataStruc()
  "Generates function in simulation file."
 ::=
   <<
-  DATA* initializeDataStruc(DATA_FLAGS flags)
+  DATA* initializeDataStruc()
   {  
     DATA* returnData = (DATA*)malloc(sizeof(DATA));
   
@@ -550,35 +550,41 @@ template functionInitializeDataStruc()
     returnData->boolVariables.nAlgebraic = NYBOOL;
     returnData->nJacobianvars = NJACVARS;
   
-    if(flags & STATES && returnData->nStates) {
+    if (returnData->nStates) {
       returnData->states = (double*) malloc(sizeof(double)*returnData->nStates);
+      returnData->statesFilterOutput = (modelica_boolean*) malloc(sizeof(modelica_boolean)*returnData->nStates);
       returnData->states_old = (double*) malloc(sizeof(double)*returnData->nStates);
       returnData->states_old2 = (double*) malloc(sizeof(double)*returnData->nStates);
       assert(returnData->states&&returnData->states_old&&returnData->states_old2);
       memset(returnData->states,0,sizeof(double)*returnData->nStates);
+      memset(returnData->statesFilterOutput,0,sizeof(modelica_boolean)*returnData->nStates);
       memset(returnData->states_old,0,sizeof(double)*returnData->nStates);
       memset(returnData->states_old2,0,sizeof(double)*returnData->nStates);
     } else {
       returnData->states = 0;
+      returnData->statesFilterOutput = 0;
       returnData->states_old = 0;
       returnData->states_old2 = 0;
     }
   
-    if(flags & STATESDERIVATIVES && returnData->nStates) {
+    if (returnData->nStates) {
       returnData->statesDerivatives = (double*) malloc(sizeof(double)*returnData->nStates);
+      returnData->statesDerivativesFilterOutput = (modelica_boolean*) malloc(sizeof(modelica_boolean)*returnData->nStates);
       returnData->statesDerivatives_old = (double*) malloc(sizeof(double)*returnData->nStates);
       returnData->statesDerivatives_old2 = (double*) malloc(sizeof(double)*returnData->nStates);
       assert(returnData->statesDerivatives&&returnData->statesDerivatives_old&&returnData->statesDerivatives_old2);
       memset(returnData->statesDerivatives,0,sizeof(double)*returnData->nStates);
+      memset(returnData->statesDerivativesFilterOutput,0,sizeof(modelica_boolean)*returnData->nStates);
       memset(returnData->statesDerivatives_old,0,sizeof(double)*returnData->nStates);
       memset(returnData->statesDerivatives_old2,0,sizeof(double)*returnData->nStates);
     } else {
       returnData->statesDerivatives = 0;
+      returnData->statesDerivativesFilterOutput = 0;
       returnData->statesDerivatives_old = 0;
       returnData->statesDerivatives_old2 = 0;
     }
   
-    if(flags & HELPVARS && returnData->nHelpVars) {
+    if (returnData->nHelpVars) {
       returnData->helpVars = (double*) malloc(sizeof(double)*returnData->nHelpVars);
       assert(returnData->helpVars);
       memset(returnData->helpVars,0,sizeof(double)*returnData->nHelpVars);
@@ -586,21 +592,24 @@ template functionInitializeDataStruc()
       returnData->helpVars = 0;
     }
   
-    if(flags & ALGEBRAICS && returnData->nAlgebraic) {
+    if (returnData->nAlgebraic) {
       returnData->algebraics = (double*) malloc(sizeof(double)*returnData->nAlgebraic);
+      returnData->algebraicsFilterOutput = (modelica_boolean*) malloc(sizeof(modelica_boolean)*returnData->nAlgebraic);
       returnData->algebraics_old = (double*) malloc(sizeof(double)*returnData->nAlgebraic);
       returnData->algebraics_old2 = (double*) malloc(sizeof(double)*returnData->nAlgebraic);
       assert(returnData->algebraics&&returnData->algebraics_old&&returnData->algebraics_old2);
       memset(returnData->algebraics,0,sizeof(double)*returnData->nAlgebraic);
+      memset(returnData->algebraicsFilterOutput,0,sizeof(modelica_boolean)*returnData->nAlgebraic);
       memset(returnData->algebraics_old,0,sizeof(double)*returnData->nAlgebraic);
       memset(returnData->algebraics_old2,0,sizeof(double)*returnData->nAlgebraic);
     } else {
       returnData->algebraics = 0;
+      returnData->algebraicsFilterOutput = 0;
       returnData->algebraics_old = 0;
       returnData->algebraics_old2 = 0;
     }
   
-    if (flags & ALGEBRAICS && returnData->stringVariables.nAlgebraic) {
+    if (returnData->stringVariables.nAlgebraic) {
       returnData->stringVariables.algebraics = (const char**)malloc(sizeof(char*)*returnData->stringVariables.nAlgebraic);
       assert(returnData->stringVariables.algebraics);
       memset(returnData->stringVariables.algebraics,0,sizeof(char*)*returnData->stringVariables.nAlgebraic);
@@ -608,35 +617,41 @@ template functionInitializeDataStruc()
       returnData->stringVariables.algebraics=0;
     }
     
-    if (flags & ALGEBRAICS && returnData->intVariables.nAlgebraic) {
+    if (returnData->intVariables.nAlgebraic) {
       returnData->intVariables.algebraics = (modelica_integer*)malloc(sizeof(modelica_integer)*returnData->intVariables.nAlgebraic);
+      returnData->intVariables.algebraicsFilterOutput = (modelica_boolean*) malloc(sizeof(modelica_boolean)*returnData->intVariables.nAlgebraic);
       returnData->intVariables.algebraics_old = (modelica_integer*)malloc(sizeof(modelica_integer)*returnData->intVariables.nAlgebraic);
       returnData->intVariables.algebraics_old2 = (modelica_integer*)malloc(sizeof(modelica_integer)*returnData->intVariables.nAlgebraic);
       assert(returnData->intVariables.algebraics&&returnData->intVariables.algebraics_old&&returnData->intVariables.algebraics_old2);
       memset(returnData->intVariables.algebraics,0,sizeof(modelica_integer)*returnData->intVariables.nAlgebraic);
+      memset(returnData->intVariables.algebraicsFilterOutput,0,sizeof(modelica_boolean)*returnData->intVariables.nAlgebraic);
       memset(returnData->intVariables.algebraics_old,0,sizeof(modelica_integer)*returnData->intVariables.nAlgebraic);
       memset(returnData->intVariables.algebraics_old2,0,sizeof(modelica_integer)*returnData->intVariables.nAlgebraic);
     } else {
       returnData->intVariables.algebraics=0;
+      returnData->intVariables.algebraicsFilterOutput=0;
       returnData->intVariables.algebraics_old = 0;
       returnData->intVariables.algebraics_old2 = 0;
     }
 
-    if (flags & ALGEBRAICS && returnData->boolVariables.nAlgebraic) {
+    if (returnData->boolVariables.nAlgebraic) {
       returnData->boolVariables.algebraics = (modelica_boolean*)malloc(sizeof(modelica_boolean)*returnData->boolVariables.nAlgebraic);
+      returnData->boolVariables.algebraicsFilterOutput = (modelica_boolean*) malloc(sizeof(modelica_boolean)*returnData->boolVariables.nAlgebraic);
       returnData->boolVariables.algebraics_old = (signed char*)malloc(sizeof(modelica_boolean)*returnData->boolVariables.nAlgebraic);
       returnData->boolVariables.algebraics_old2 = (signed char*)malloc(sizeof(modelica_boolean)*returnData->boolVariables.nAlgebraic);
       assert(returnData->boolVariables.algebraics&&returnData->boolVariables.algebraics_old&&returnData->boolVariables.algebraics_old2);
       memset(returnData->boolVariables.algebraics,0,sizeof(modelica_boolean)*returnData->boolVariables.nAlgebraic);
+      memset(returnData->boolVariables.algebraicsFilterOutput,0,sizeof(modelica_boolean)*returnData->boolVariables.nAlgebraic);
       memset(returnData->boolVariables.algebraics_old,0,sizeof(modelica_boolean)*returnData->boolVariables.nAlgebraic);
       memset(returnData->boolVariables.algebraics_old2,0,sizeof(modelica_boolean)*returnData->boolVariables.nAlgebraic);
     } else {
       returnData->boolVariables.algebraics=0;
+      returnData->boolVariables.algebraicsFilterOutput=0;
       returnData->boolVariables.algebraics_old = 0;
       returnData->boolVariables.algebraics_old2 = 0;
     }
     
-    if(flags & PARAMETERS && returnData->nParameters) {
+    if (returnData->nParameters) {
       returnData->parameters = (double*) malloc(sizeof(double)*returnData->nParameters);
       assert(returnData->parameters);
       memset(returnData->parameters,0,sizeof(double)*returnData->nParameters);
@@ -644,7 +659,7 @@ template functionInitializeDataStruc()
       returnData->parameters = 0;
     }
   
-    if (flags & PARAMETERS && returnData->stringVariables.nParameters) {
+    if (returnData->stringVariables.nParameters) {
       returnData->stringVariables.parameters = (const char**)malloc(sizeof(char*)*returnData->stringVariables.nParameters);
         assert(returnData->stringVariables.parameters);
         memset(returnData->stringVariables.parameters,0,sizeof(char*)*returnData->stringVariables.nParameters);
@@ -652,7 +667,7 @@ template functionInitializeDataStruc()
         returnData->stringVariables.parameters=0;
     }
     
-    if (flags & PARAMETERS && returnData->intVariables.nParameters) {
+    if (returnData->intVariables.nParameters) {
       returnData->intVariables.parameters = (modelica_integer*)malloc(sizeof(modelica_integer)*returnData->intVariables.nParameters);
         assert(returnData->intVariables.parameters);
         memset(returnData->intVariables.parameters,0,sizeof(modelica_integer)*returnData->intVariables.nParameters);
@@ -660,7 +675,7 @@ template functionInitializeDataStruc()
         returnData->intVariables.parameters=0;
     }
     
-    if (flags & PARAMETERS && returnData->boolVariables.nParameters) {
+    if (returnData->boolVariables.nParameters) {
       returnData->boolVariables.parameters = (modelica_boolean*)malloc(sizeof(modelica_boolean)*returnData->boolVariables.nParameters);
         assert(returnData->boolVariables.parameters);
         memset(returnData->boolVariables.parameters,0,sizeof(modelica_boolean)*returnData->boolVariables.nParameters);
@@ -668,7 +683,7 @@ template functionInitializeDataStruc()
         returnData->boolVariables.parameters=0;
     }
     
-    if(flags & OUTPUTVARS && returnData->nOutputVars) {
+    if (returnData->nOutputVars) {
       returnData->outputVars = (double*) malloc(sizeof(double)*returnData->nOutputVars);
       assert(returnData->outputVars);
       memset(returnData->outputVars,0,sizeof(double)*returnData->nOutputVars);
@@ -676,7 +691,7 @@ template functionInitializeDataStruc()
       returnData->outputVars = 0;
     }
   
-    if(flags & INPUTVARS && returnData->nInputVars) {
+    if (returnData->nInputVars) {
       returnData->inputVars = (double*) malloc(sizeof(double)*returnData->nInputVars);
       assert(returnData->inputVars);
       memset(returnData->inputVars,0,sizeof(double)*returnData->nInputVars);
@@ -684,7 +699,7 @@ template functionInitializeDataStruc()
       returnData->inputVars = 0;
     }
   
-   if(flags & JACOBIANVARS && returnData->nJacobianvars) {
+   if (returnData->nJacobianvars) {
       returnData->jacobianVars = (double*) malloc(sizeof(double)*returnData->nJacobianvars);
       assert(returnData->jacobianVars);
       memset(returnData->jacobianVars,0,sizeof(double)*returnData->nJacobianvars);
@@ -692,7 +707,7 @@ template functionInitializeDataStruc()
       returnData->jacobianVars = 0;
     }
   
-    if(flags & INITIALRESIDUALS && returnData->nInitialResiduals) {
+    if (returnData->nInitialResiduals) {
       returnData->initialResiduals = (double*) malloc(sizeof(double)*returnData->nInitialResiduals);
       assert(returnData->initialResiduals);
       memset(returnData->initialResiduals,0,sizeof(double)*returnData->nInitialResiduals);
@@ -700,87 +715,22 @@ template functionInitializeDataStruc()
       returnData->initialResiduals = 0;
     }
   
-    if(flags & INITFIXED) {
-      returnData->initFixed = init_fixed;
-    } else {
-      returnData->initFixed = 0;
-    }
-  
-    /*   names   */
-    if(flags & MODELNAME) {
-      returnData->modelName = model_name;
-    } else {
-      returnData->modelName = 0;
-    }
+    returnData->initFixed = init_fixed;
+    returnData->modelName = model_name;
+    returnData->statesNames = state_names;
+    returnData->stateDerivativesNames = derivative_names;
+    returnData->algebraicsNames = algvars_names;
+    returnData->int_alg_names = int_alg_names;
+    returnData->bool_alg_names = bool_alg_names;
+    returnData->parametersNames = param_names;
+    returnData->int_param_names = int_param_names;
+    returnData->bool_param_names = bool_param_names;
+    returnData->jacobian_names = jacobian_names;
+    returnData->functionNames = function_names;
+    returnData->equationInfo = equation_info;
+    returnData->equationInfo_reverse_prof_index = omc_equationInfo_reverse_prof_index;
     
-    if(flags & STATESNAMES) {
-      returnData->statesNames = state_names;
-    } else {
-      returnData->statesNames = 0;
-    }
-  
-    if(flags & STATESDERIVATIVESNAMES) {
-      returnData->stateDerivativesNames = derivative_names;
-    } else {
-      returnData->stateDerivativesNames = 0;
-    }
-  
-    if(flags & ALGEBRAICSNAMES) {
-      returnData->algebraicsNames = algvars_names;
-    } else {
-      returnData->algebraicsNames = 0;
-    }
-    
-    if(flags & ALGEBRAICSNAMES) {
-      returnData->int_alg_names = int_alg_names;
-    } else {
-      returnData->int_alg_names = 0;
-    }
-
-    if(flags & ALGEBRAICSNAMES) {
-      returnData->bool_alg_names = bool_alg_names;
-    } else {
-      returnData->bool_alg_names = 0;
-    }
-  
-    if(flags & PARAMETERSNAMES) {
-      returnData->parametersNames = param_names;
-    } else {
-      returnData->parametersNames = 0;
-    }
-    
-    if(flags & PARAMETERSNAMES) {
-      returnData->int_param_names = int_param_names;
-    } else {
-      returnData->int_param_names = 0;
-    }
-
-    if(flags & PARAMETERSNAMES) {
-      returnData->bool_param_names = bool_param_names;
-    } else {
-      returnData->bool_param_names = 0;
-    }
-    
-    if(flags & JACOBIANNAMES) {
-      returnData->jacobian_names = jacobian_names;
-    } else {
-      returnData->jacobian_names = 0;
-    }
-    
-    if(flags & FUNCTIONNAMES) {
-      returnData->functionNames = function_names;
-    } else {
-      returnData->functionNames = 0;
-    }
-
-    if(flags & EQUATIONINFO) {
-      returnData->equationInfo = equation_info;
-      returnData->equationInfo_reverse_prof_index = omc_equationInfo_reverse_prof_index;
-    } else {
-      returnData->equationInfo = 0;
-    }
-
-    if(flags & RAWSAMPLES && returnData->nRawSamples) {
+    if (returnData->nRawSamples) {
       returnData->rawSampleExps = (sample_raw_time*) malloc(sizeof(sample_raw_time)*returnData->nRawSamples);
       assert(returnData->rawSampleExps);
       memset(returnData->rawSampleExps,0,sizeof(sample_raw_time)*returnData->nRawSamples);
@@ -788,13 +738,15 @@ template functionInitializeDataStruc()
       returnData->rawSampleExps = 0;
     }
 
-    if (flags & EXTERNALVARS) {
+    if (NEXT) {
       returnData->extObjs = (void**)malloc(sizeof(void*)*NEXT);
       if (!returnData->extObjs) {
         printf("error allocating external objects\n");
         exit(-2);
       }
       memset(returnData->extObjs,0,sizeof(void*)*NEXT);
+    } else {
+      returnData->extObjs = 0;
     }
   
     return returnData;
@@ -835,86 +787,86 @@ template functionDeInitializeDataStruc(ExtObjInfo extObjInfo)
 match extObjInfo
 case EXTOBJINFO(__) then
   <<
-  void deInitializeDataStruc(DATA* data, DATA_FLAGS flags)
+  void deInitializeDataStruc(DATA* data)
   {
     if(!data)
       return;
   
-    if(flags & STATES && data->states) {
+    if (data->states) {
       free(data->states);
       data->states = 0;
     }
   
-    if(flags & STATES && data->states_old) {
+    if (data->states_old) {
       free(data->states_old);
       data->states_old = 0;
     }
 
-    if(flags & STATES && data->states_old2) {
+    if (data->states_old2) {
       free(data->states_old2);
       data->states_old2 = 0;
     }
 
-    if(flags & STATESDERIVATIVES && data->statesDerivatives) {
+    if (data->statesDerivatives) {
       free(data->statesDerivatives);
       data->statesDerivatives = 0;
     }
   
-    if(flags & STATESDERIVATIVES && data->statesDerivatives_old) {
+    if (data->statesDerivatives_old) {
       free(data->statesDerivatives_old);
       data->statesDerivatives_old = 0;
     }
   
-    if(flags & STATESDERIVATIVES && data->statesDerivatives_old2) {
+    if (data->statesDerivatives_old2) {
       free(data->statesDerivatives_old2);
       data->statesDerivatives_old2 = 0;
     }
   
-    if(flags & ALGEBRAICS && data->algebraics) {
+    if (data->algebraics) {
       free(data->algebraics);
       data->algebraics = 0;
     }
   
-    if(flags & ALGEBRAICS && data->algebraics_old) {
+    if (data->algebraics_old) {
       free(data->algebraics_old);
       data->algebraics_old = 0;
     }
   
-    if(flags & ALGEBRAICS && data->algebraics_old2) {
+    if (data->algebraics_old2) {
       free(data->algebraics_old2);
       data->algebraics_old2 = 0;
     }
   
-    if(flags & PARAMETERS && data->parameters) {
+    if (data->parameters) {
       free(data->parameters);
       data->parameters = 0;
     }
   
-    if(flags & INPUTVARS && data->inputVars) {
+    if (data->inputVars) {
       free(data->inputVars);
       data->inputVars = 0;
     }
   
-    if(flags & OUTPUTVARS && data->outputVars) {
+    if (data->outputVars) {
       free(data->outputVars);
       data->outputVars = 0;
     }
     
-    if(flags & JACOBIANVARS && data->jacobianVars) {
+    if (data->jacobianVars) {
       free(data->jacobianVars);
       data->jacobianVars = 0;
     }
     
-    if(flags & INITIALRESIDUALS && data->initialResiduals){
+    if (data->initialResiduals){
       free(data->initialResiduals);
       data->initialResiduals = 0;
     }
-    if (flags & EXTERNALVARS && data->extObjs) {
+    if (data->extObjs) {
       <%destructors |> (fnName, var) => '<%fnName%>(<%cref(var)%>);' ;separator="\n"%>
       free(data->extObjs);
       data->extObjs = 0;
     }
-    if(flags & RAWSAMPLES && data->rawSampleExps) {
+    if (data->rawSampleExps) {
       free(data->rawSampleExps);
       data->rawSampleExps = 0;
     }
@@ -2585,6 +2537,7 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__), vars = vars as S
   <%s.tolerance%> // tolerance
   "<%s.method%>" // method
   "<%s.outputFormat%>" // outputFormat
+  "<%s.variableFilter%>" // variableFilter
   <%vi.numStateVars%> // n states
   <%vi.numAlgVars%> // n alg vars
   <%vi.numParams%> // n parameters
@@ -5674,6 +5627,7 @@ template daeExpReductionLoop(Exp exp, Text &body, Context context, Text &varDecl
   appropriate for loop template."
 ::=
 match exp
+
 case REDUCTION(range = RANGE(__)) then
   let identType = expTypeModelica(range.ty)
   let identTypeShort = expTypeFromExpShort(expr)
@@ -5879,6 +5833,7 @@ template arrayScalarRhs(ExpType ty, list<Exp> subs, String arrName, Context cont
   let dimsLenStr = listLength(subs)
   let dimsValuesStr = (subs |> exp =>
       daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+
     ;separator=", ")
   match arrayType
     case "metatype_array" then

@@ -111,7 +111,8 @@ package SimCode
       Real tolerance;
       String method;
       String options;
-      String outputFormat;      
+      String outputFormat;
+      String variableFilter;
     end SIMULATION_SETTINGS;
   end SimulationSettings;
   

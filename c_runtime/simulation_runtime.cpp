@@ -37,6 +37,7 @@
 #include <cstdio>
 #include <cstring>
 #include <cassert>
+#include <regex.h>
 #include "simulation_runtime.h"
 #include "simulation_input.h"
 #include "solver_dasrt.h"
@@ -60,7 +61,7 @@ bool interactiveSimuation = false; //This variable signals if an simulation sess
 
 /* Global Data */
 /***************/
-const char* version = "20100629";
+const char* version = "20110215";
 // Becomes non-zero when model terminates simulation.
 int modelTermination = 0;
 int terminationTerminate = 0;
@@ -263,6 +264,41 @@ startInteractiveSimulation(int argc, char**argv)
 }
 
 /**
+ * Read the variable filter and mark variables that should not be part of the result file.
+ * This phase is skipped for interactive simulations
+ */
+void initializeOutputFilter(DATA* data, string variableFilter)
+{
+  regex_t myregex;
+  int flags = REG_EXTENDED;
+  int rc;
+  string tmp = ("^(" + variableFilter + ")$");
+  const char *filter = tmp.c_str(); // C++ strings are horrible to work with...
+  if (0 == strcmp(filter, ".*")) // This matches all variables, so we don't need to do anything
+    return;
+
+  rc = regcomp(&myregex, filter, flags);
+  if (rc) {
+    char err_buf[2048] = {0};
+    regerror(rc, &myregex, err_buf, 2048);
+    std::cerr << "Failed to compile regular expression: " << filter << " with error: " << err_buf << ". Defaulting to outputting all variables." << std::endl;
+    return;
+  }
+  for (int i = 0; i < data->nStates; i++) if (!data->statesFilterOutput[i])
+    data->statesFilterOutput[i] = regexec(&myregex, data->statesNames[i].name, 0, NULL, 0) != 0;
+  for (int i = 0; i < data->nStates; i++) if (!data->statesDerivativesFilterOutput[i])
+    data->statesDerivativesFilterOutput[i] = regexec(&myregex, data->stateDerivativesNames[i].name, 0, NULL, 0) != 0;
+  for (int i = 0; i < data->nAlgebraic; i++) if (!data->algebraicsFilterOutput[i])
+    data->algebraicsFilterOutput[i] = regexec(&myregex, data->algebraicsNames[i].name, 0, NULL, 0) != 0;
+  for (int i = 0; i < data->intVariables.nAlgebraic; i++) if (!data->intVariables.algebraicsFilterOutput[i])
+    data->intVariables.algebraicsFilterOutput[i] = regexec(&myregex, data->int_alg_names[i].name, 0, NULL, 0) != 0;
+  for (int i = 0; i < data->boolVariables.nAlgebraic; i++) if (!data->boolVariables.algebraicsFilterOutput[i])
+    data->boolVariables.algebraicsFilterOutput[i] = regexec(&myregex, data->bool_alg_names[i].name, 0, NULL, 0) != 0;
+  regfree(&myregex);
+  return;
+}
+
+/**
  * Starts a non-interactive simulation
  */
 int
@@ -282,9 +318,10 @@ startNonInteractiveSimulation(int argc, char**argv)
   double stepSize = 0.05;
   long outputSteps = 500;
   double tolerance = 1e-4;
-  string method, outputFormat;
+  string method, outputFormat, variableFilter;
   read_input(argc, argv, globalData, &start, &stop, &stepSize, &outputSteps,
-      &tolerance, &method, &outputFormat);
+      &tolerance, &method, &outputFormat, &variableFilter);
+  initializeOutputFilter(globalData,variableFilter);
   callExternalObjectConstructors(globalData);
   globalData->lastEmittedTime = start;
   globalData->forceEmit = 0;
@@ -292,52 +329,41 @@ startNonInteractiveSimulation(int argc, char**argv)
   initSample(start, stop);
   initDelay(start);
 
-  if (measure_time_flag)
-    {
-      rt_init(SIM_TIMER_FIRST_FUNCTION + globalData->nFunctions + globalData->nProfileBlocks + 4 /* sentinel */);
-      rt_tick( SIM_TIMER_TOTAL);
-      rt_clear( SIM_TIMER_OUTPUT);
-      rt_clear( SIM_TIMER_EVENT);
-      rt_clear( SIM_TIMER_INIT);
-    }
+  if (measure_time_flag) {
+    rt_init(SIM_TIMER_FIRST_FUNCTION + globalData->nFunctions + globalData->nProfileBlocks + 4 /* sentinel */);
+    rt_tick( SIM_TIMER_TOTAL);
+    rt_clear( SIM_TIMER_OUTPUT);
+    rt_clear( SIM_TIMER_EVENT);
+    rt_clear( SIM_TIMER_INIT);
+  }
 
-  if (create_linearmodel)
-    {
-      if (lintime == NULL)
-        {
-          stop = start;
-        }
-      else
-        {
-          stop = atof((*lintime).c_str());
-        }
-      cout << "Linearization will performed at point of time: " << stop << endl;
-      method = "dassl2";
+  if (create_linearmodel) {
+    if (lintime == NULL) {
+      stop = start;
+    } else {
+      stop = atof((*lintime).c_str());
     }
+    cout << "Linearization will performed at point of time: " << stop << endl;
+    method = "dassl2";
+  }
 
   retVal = callSolver(argc, argv, method, outputFormat, start, stop, stepSize,
       outputSteps, tolerance);
 
-  if (create_linearmodel)
-    {
-      retVal = linearize();
-      cout << "Linear model is created!" << endl;
-    }
+  if (create_linearmodel) {
+    retVal = linearize();
+    cout << "Linear model is created!" << endl;
+  }
 
   deinitDelay();
 
-  if (measure_time_flag)
-    {
-      cout << "Time to calculate initial values: " << rt_total(SIM_TIMER_INIT)
-          << " sec." << endl;
-      cout << "Total time to do event handling: " << rt_total(SIM_TIMER_EVENT)
-          << " sec." << endl;
-      cout << "Total time to produce the output file: " << rt_total(
-          SIM_TIMER_OUTPUT) << " sec." << endl;
-      cout << "Total time to calculate simulation: "
-          << rt_tock(SIM_TIMER_TOTAL) << " sec." << endl;
-    }
-  deInitializeDataStruc(globalData, ALL);
+  if (measure_time_flag) {
+    cout << "Time to calculate initial values: " << rt_total(SIM_TIMER_INIT) << " sec." << endl;
+    cout << "Total time to do event handling: " << rt_total(SIM_TIMER_EVENT) << " sec." << endl;
+    cout << "Total time to produce the output file: " << rt_total(SIM_TIMER_OUTPUT) << " sec." << endl;
+    cout << "Total time to calculate simulation: " << rt_tock(SIM_TIMER_TOTAL) << " sec." << endl;
+  }
+  deInitializeDataStruc(globalData);
 
   return retVal;
 }
@@ -361,159 +387,99 @@ callSolver(int argc, char**argv, string method, string outputFormat,
   // Create a result file
   string *result_file = (string*) getFlagValue("r", argc, argv);
   string result_file_cstr;
-  if (!result_file)
-    {
-      result_file_cstr = string(globalData->modelName) + string("_res.")
-          + outputFormat; /* TODO: Fix result file name based on mode */
-    }
-  else
-    {
-      result_file_cstr = *result_file;
-    }
+  if (!result_file) {
+    result_file_cstr = string(globalData->modelName) + string("_res.") + outputFormat; /* TODO: Fix result file name based on mode */
+  } else {
+    result_file_cstr = *result_file;
+  }
   long maxSteps = 2 * outputSteps + 2 * globalData->nSampleTimes;
-  if (isInteractiveSimulation() || sim_noemit || 0 == strcmp("empty",
-      outputFormat.c_str()))
-    {
-      sim_result = new simulation_result_empty(result_file_cstr.c_str(),
-          maxSteps);
-    }
-  else if (0 == strcmp("csv", outputFormat.c_str()))
-    {
-      sim_result
-          = new simulation_result_csv(result_file_cstr.c_str(), maxSteps);
-    }
-  else if (0 == strcmp("bin", outputFormat.c_str()))
-    {
-      sim_result
-          = new simulation_result_bin(result_file_cstr.c_str(), maxSteps);
-    }
-  else if (0 == strcmp("mat", outputFormat.c_str()))
-    {
-      sim_result = new simulation_result_mat(result_file_cstr.c_str(), start,
-          stop);
-    }
-  else
-    { /* Default to plt */
-      sim_result
-          = new simulation_result_plt(result_file_cstr.c_str(), maxSteps);
-    }
-  if (sim_verbose)
-    {
-      cout << "Allocated simulation result data storage for method '"
-          << sim_result->result_type() << "' and file='" << result_file_cstr
-          << "'" << endl;
-    }
+  if (isInteractiveSimulation() || sim_noemit || 0 == strcmp("empty", outputFormat.c_str())) {
+    sim_result = new simulation_result_empty(result_file_cstr.c_str(),maxSteps);
+  } else if (0 == strcmp("csv", outputFormat.c_str())) {
+    sim_result = new simulation_result_csv(result_file_cstr.c_str(), maxSteps);
+  } else if (0 == strcmp("bin", outputFormat.c_str())) {
+    sim_result = new simulation_result_bin(result_file_cstr.c_str(), maxSteps);
+  }
+  else if (0 == strcmp("mat", outputFormat.c_str())) {
+    sim_result = new simulation_result_mat(result_file_cstr.c_str(), start, stop);
+  } else { /* Default to plt */
+    sim_result = new simulation_result_plt(result_file_cstr.c_str(), maxSteps);
+  }
+  if (sim_verbose) {
+    cout << "Allocated simulation result data storage for method '"
+         << sim_result->result_type() << "' and file='" << result_file_cstr
+         << "'" << endl;
+  }
 
   int methodflag = (int) flagSet("s", argc, argv);
-  if (methodflag)
-    {
-      string* solvermethod = (string*) getFlagValue("s", argc, argv);
-      if (!(solvermethod == NULL))
-        method.assign(*solvermethod);
-    }
+  if (methodflag) {
+    string* solvermethod = (string*) getFlagValue("s", argc, argv);
+    if (!(solvermethod == NULL))
+      method.assign(*solvermethod);
+  }
 
-  if (method == "")
-    {
-      if (sim_verbose)
-        {
-          cout << "No Recognized solver, using dassl." << endl;
-        }
-      //retVal = solver_main(argc,argv,start,stop,stepSize,outputSteps,tolerance,3);
-      retVal = dassl_main(argc, argv, start, stop, stepSize, outputSteps,
-          tolerance);
+  if (method == "") {
+    if (sim_verbose) {
+      cout << "No Recognized solver, using dassl." << endl;
     }
-  else if (method == std::string("euler"))
-    {
-      if (sim_verbose)
-        {
-          cout << "Recognized solver: " << method << "." << endl;
-        }
-      retVal = solver_main(argc, argv, start, stop, stepSize, outputSteps,
-          tolerance, 1);
+    //retVal = solver_main(argc,argv,start,stop,stepSize,outputSteps,tolerance,3);
+    retVal = dassl_main(argc, argv, start, stop, stepSize, outputSteps,
+    tolerance);
+  } else if (method == std::string("euler")) {
+    if (sim_verbose) {
+      cout << "Recognized solver: " << method << "." << endl;
     }
-  else if (method == std::string("rungekutta"))
-    {
-      if (sim_verbose)
-        {
-          cout << "Recognized solver: " << method << "." << endl;
-        }
-      retVal = solver_main(argc, argv, start, stop, stepSize, outputSteps,
-          tolerance, 2);
+    retVal = solver_main(argc, argv, start, stop, stepSize, outputSteps, tolerance, 1);
+  } else if (method == std::string("rungekutta")) {
+    if (sim_verbose) {
+      cout << "Recognized solver: " << method << "." << endl;
     }
-  else if (method == std::string("dassl2"))
-    {
-      if (sim_verbose)
-        {
-          cout << "Recognized solver: " << method << "." << endl;
-        }
-      retVal = solver_main(argc, argv, start, stop, stepSize, outputSteps,
-          tolerance, 3);
+    retVal = solver_main(argc, argv, start, stop, stepSize, outputSteps, tolerance, 2);
+  } else if (method == std::string("dassl2")) {
+    if (sim_verbose) {
+      cout << "Recognized solver: " << method << "." << endl;
     }
-  else if (method == std::string("dasslold"))
-    {
-      if (sim_verbose)
-        {
-          cout << "Recognized solver: " << method << "." << endl;
-        }
-      retVal = dassl_main(argc, argv, start, stop, stepSize, outputSteps,
-          tolerance);
+    retVal = solver_main(argc, argv, start, stop, stepSize, outputSteps, tolerance, 3);
+  } else if (method == std::string("dasslold")) {
+    if (sim_verbose) {
+      cout << "Recognized solver: " << method << "." << endl;
     }
-  else if (method == std::string("inline-euler"))
-    {
-      if (!_omc_force_solver || std::string(_omc_force_solver) != std::string(
-          "inline-euler"))
-        {
-          cout << "Recognized solver: " << method
-              << ", but the executable was not compiled with support for it. Compile with -D_OMC_INLINE_EULER."
-              << endl;
-          retVal = 1;
-        }
-      else
-        {
-          if (sim_verbose)
-            {
-              cout << "Recognized solver: " << method << "." << endl;
-            }
-          retVal = solver_main(argc, argv, start, stop, stepSize, outputSteps,
-              tolerance, 4);
-        }
-    }
-  else if (method == std::string("inline-rungekutta"))
-    {
-      if (!_omc_force_solver || std::string(_omc_force_solver) != std::string(
-          "inline-rungekutta"))
-        {
-          cout << "Recognized solver: " << method
-              << ", but the executable was not compiled with support for it. Compile with -D_OMC_INLINE_RK."
-              << endl;
-          retVal = 1;
-        }
-      else
-        {
-          if (sim_verbose)
-            {
-              cout << "Recognized solver: " << method << "." << endl;
-            }
-          retVal = solver_main(argc, argv, start, stop, stepSize, outputSteps,
-              tolerance, 4);
-        }
-    }
-  else if (method == std::string("dassl"))
-    {
-      if (sim_verbose)
-        {
-          cout << "Recognized solver: " << method << "." << endl;
-        }
-      retVal = dassl_main(argc, argv, start, stop, stepSize, outputSteps,
-          tolerance);
-    }
-  else
-    {
-      cout << "Unrecognized solver: " << method
-          << "; valid solvers are dassl,euler,rungekutta,dassl2,inline-euler or inline-rungekutta."
-          << endl;
+    retVal = dassl_main(argc, argv, start, stop, stepSize, outputSteps, tolerance);
+  } else if (method == std::string("inline-euler")) {
+    if (!_omc_force_solver || std::string(_omc_force_solver) != std::string("inline-euler")) {
+      cout << "Recognized solver: " << method
+           << ", but the executable was not compiled with support for it. Compile with -D_OMC_INLINE_EULER."
+           << endl;
       retVal = 1;
+    } else {
+      if (sim_verbose) {
+        cout << "Recognized solver: " << method << "." << endl;
+      }
+      retVal = solver_main(argc, argv, start, stop, stepSize, outputSteps, tolerance, 4);
     }
+  } else if (method == std::string("inline-rungekutta")) {
+    if (!_omc_force_solver || std::string(_omc_force_solver) != std::string("inline-rungekutta")) {
+      cout << "Recognized solver: " << method
+           << ", but the executable was not compiled with support for it. Compile with -D_OMC_INLINE_RK."
+           << endl;
+      retVal = 1;
+    } else {
+      if (sim_verbose) {
+        cout << "Recognized solver: " << method << "." << endl;
+      }
+      retVal = solver_main(argc, argv, start, stop, stepSize, outputSteps, tolerance, 4);
+    }
+  } else if (method == std::string("dassl")) {
+    if (sim_verbose) {
+      cout << "Recognized solver: " << method << "." << endl;
+    }
+    retVal = dassl_main(argc, argv, start, stop, stepSize, outputSteps, tolerance);
+  } else {
+    cout << "Unrecognized solver: " << method
+         << "; valid solvers are dassl,euler,rungekutta,dassl2,inline-euler or inline-rungekutta."
+         << endl;
+    retVal = 1;
+  }
 
   delete sim_result;
 
@@ -526,54 +492,48 @@ callSolver(int argc, char**argv, string method, string outputFormat,
 int
 initRuntimeAndSimulation(int argc, char**argv)
 {
-  if (argc == 2 && flagSet("?", argc, argv))
-    {
-      //cout << "usage: " << argv[0]  << " <-f initfile> <-r result file> -m solver:{dassl, euler} -v" << endl;
-      cout << "usage: " << argv[0]
-          << " <-f initfile> <-r result file> -m solver:{dassl, dassl2, rungekutta, euler} -v <-interactive> <-port value>"
-          << endl;
-      EXIT(0);
-    }
-  globalData = initializeDataStruc(ALL);
-  if (!globalData)
-    {
-      std::cerr << "Error: Could not initialize the global data structure file"
-          << std::endl;
-    }
+  if (argc == 2 && flagSet("?", argc, argv)) {
+    //cout << "usage: " << argv[0]  << " <-f initfile> <-r result file> -m solver:{dassl, euler} -v" << endl;
+    cout << "usage: " << argv[0]
+         << " <-f initfile> <-r result file> -m solver:{dassl, dassl2, rungekutta, euler} -v <-interactive> <-port value>"
+         << endl;
+    EXIT(0);
+  }
+  globalData = initializeDataStruc();
+  if (!globalData) {
+    std::cerr << "Error: Could not initialize the global data structure file" << std::endl;
+  }
   //this sets the static variable that is in the file with the generated-model functions
   setLocalData(globalData);
-  if (globalData->nStates == 0 && globalData->nAlgebraic == 0)
-    {
-      std::cerr << "No variables in the model." << std::endl;
-      return 1;
-    }
+  if (globalData->nStates == 0 && globalData->nAlgebraic == 0) {
+    std::cerr << "No variables in the model." << std::endl;
+    return 1;
+  }
   /* verbose flag is set : -v */
   sim_verbose = (int) flagSet("v", argc, argv);
   sim_noemit = (int) flagSet("noemit", argc, argv);
   jac_flag = (int) flagSet("jac", argc, argv);
-  if (sim_verbose)
-    {
-      cout << " jac flag set : " << jac_flag << endl;
-    }
+  if (sim_verbose) {
+    cout << " jac flag set : " << jac_flag << endl;
+  }
 
   // ppriv - NO_INTERACTIVE_DEPENDENCY - for simpler debugging in Visual Studio
 #ifndef NO_INTERACTIVE_DEPENDENCY
   interactiveSimuation = flagSet("interactive", argc, argv);
 
-  if (interactiveSimuation && flagSet("port", argc, argv))
-    {
-      cout << "userPort" << endl;
-      string *portvalue = (string*) getFlagValue("port", argc, argv);
-      std::istringstream stream(*portvalue);
-      int userPort;
-      stream >> userPort;
-      setPortOfControlServer(userPort);
-    }
+  if (interactiveSimuation && flagSet("port", argc, argv)) {
+    cout << "userPort" << endl;
+    string *portvalue = (string*) getFlagValue("port", argc, argv);
+    std::istringstream stream(*portvalue);
+    int userPort;
+    stream >> userPort;
+    setPortOfControlServer(userPort);
+  }
 #endif
   int verbose_flags = verboseLevel(argc, argv);
   sim_verbose = verbose_flags ? verbose_flags : sim_verbose;
   //sim_verbose = 1;
-
+  
   return 0;
 }
 
@@ -605,8 +565,8 @@ main(int argc, char**argv)
       retVal = startNonInteractiveSimulation(argc, argv);
     }
 
-  deInitializeDataStruc(globalData, ALL);
+  deInitializeDataStruc(globalData);
   free(globalData);
-  fflush( NULL);
+  fflush(NULL);
   EXIT(retVal);
 }

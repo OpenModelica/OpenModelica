@@ -252,6 +252,7 @@ public constant ErrorID EXTENDS_INHERITED_FROM_LOCAL_EXTENDS=164;
 public constant ErrorID LOOKUP_FUNCTION_ERROR=165;
 public constant ErrorID ELAB_CODE_EXP_FAILED=166;
 public constant ErrorID EQUATION_TRANSITION_FAILURE=167;
+public constant ErrorID METARECORD_CONTAINS_METARECORD_MEMBER=168;
 
 public constant ErrorID UNBOUND_PARAMETER_WITH_START_VALUE_WARNING=499;
 public constant ErrorID UNBOUND_PARAMETER_WARNING=500;
@@ -712,6 +713,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (FAILED_TO_EVALUATE_EXPRESSION,TRANSLATION(),ERROR(),"Could not evaluate expression: %s"),
           (MATCH_TO_SWITCH_OPTIMIZATION,TRANSLATION(),NOTIFICATION(),"Converted match expression to switch of type %s."),
           (ELAB_CODE_EXP_FAILED,TRANSLATION(),ERROR(),"Failed to elaborate %s as a code expression of type %s."),
+          (METARECORD_CONTAINS_METARECORD_MEMBER,TRANSLATION(),ERROR(),"The called uniontype record (%s) contains a member (%s) that has a uniontype record as its type instead of a uniontype."),
 
           (COMPILER_NOTIFICATION,TRANSLATION(),NOTIFICATION(),"%s"),
           (COMPILER_WARNING,TRANSLATION(),WARNING(),"%s")

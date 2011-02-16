@@ -437,11 +437,12 @@ void getSimulationStartData(double *stepSize, long *outputSteps,
 
   double start = 0.0; //unnecessary for interactive simulation
   double stop = 1.0; //unnecessary for interactive simulation
+  string variableFilter; //unnecessary for interactive simulation
 
   gdMutex.Lock();
 
   read_input(argcTEMP, argvTEMP, globalData, &start, &stop, stepSize,
-      outputSteps, tolerance, method, outputFormat);
+      outputSteps, tolerance, method, outputFormat, &variableFilter);
   callExternalObjectConstructors(globalData);
 
   gdMutex.Unlock();

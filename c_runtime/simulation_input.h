@@ -42,6 +42,6 @@ void read_input(int argc, char **argv,
                 DATA *simData,
                 double *start, double *stop,
                 double *stepSize, long *outputSteps,
-                double *tolerance, string* method, string* outputFormat);
+                double *tolerance, string* method, string* outputFormat, string* variableFilter);
 
 #endif

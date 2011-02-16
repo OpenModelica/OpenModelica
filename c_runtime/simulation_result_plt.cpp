@@ -72,6 +72,22 @@ void simulation_result_plt::emit()
   rt_accumulate(SIM_TIMER_OUTPUT);
 }
 
+int simulation_result_plt::calcDataSize()
+{
+  int sz = 1; // time
+  for (int i = 0; i < globalData->nStates; i++) if (!globalData->statesFilterOutput[i])
+      sz++;
+  for (int i = 0; i < globalData->nStates; i++) if (!globalData->statesDerivativesFilterOutput[i])
+      sz++;
+  for (int i = 0; i < globalData->nAlgebraic; i++) if (!globalData->algebraicsFilterOutput[i])
+      sz++;
+  for (int i = 0; i < globalData->intVariables.nAlgebraic; i++) if (!globalData->intVariables.algebraicsFilterOutput[i])
+      sz++;
+  for (int i = 0; i < globalData->boolVariables.nAlgebraic; i++) if (!globalData->boolVariables.algebraicsFilterOutput[i])
+      sz++;
+  return sz;
+}
+
  /*
  * add the values of one step for all variables to the data
  * array to be able to later store this on file.
@@ -89,28 +105,38 @@ void simulation_result_plt::add_result(double *data, long *actualPoints)
   ss << (data[currentPos++] = globalData->timeValue) << "\n";
   // .. then states..
   for (int i = 0; i < globalData->nStates; i++, currentPos++) {
-   ss << globalData->statesNames[i].name << "\n";
-    ss << (data[currentPos] = globalData->states[i]) << "\n";
+    if (!globalData->statesFilterOutput[i]) {
+      ss << globalData->statesNames[i].name << "\n";
+      ss << (data[currentPos] = globalData->states[i]) << "\n";
+    }
   }
   // ..followed by derivatives..
   for (int i = 0; i < globalData->nStates; i++, currentPos++) {
-    ss << globalData->stateDerivativesNames[i].name << "\n";
-    ss << (data[currentPos] = globalData->statesDerivatives[i]) << "\n";
+    if (!globalData->statesDerivativesFilterOutput[i]) {
+      ss << globalData->stateDerivativesNames[i].name << "\n";
+      ss << (data[currentPos] = globalData->statesDerivatives[i]) << "\n";
+    }
   }
   // .. and last alg. vars.
   for (int i = 0; i < globalData->nAlgebraic; i++, currentPos++) {
-    ss << globalData->algebraicsNames[i].name << "\n";
-    ss << (data[currentPos] = globalData->algebraics[i]) << "\n";
+    if (!globalData->algebraicsFilterOutput[i]) {
+      ss << globalData->algebraicsNames[i].name << "\n";
+      ss << (data[currentPos] = globalData->algebraics[i]) << "\n";
+    }
   }
   // .. and int alg. vars.
   for (int i = 0; i < globalData->intVariables.nAlgebraic; i++, currentPos++) {
-    ss << globalData->int_alg_names[i].name << "\n";
-    ss << (data[currentPos] = (double) globalData->intVariables.algebraics[i]) << "\n";
+    if (!globalData->intVariables.algebraicsFilterOutput[i]) {
+      ss << globalData->int_alg_names[i].name << "\n";
+      ss << (data[currentPos] = (double) globalData->intVariables.algebraics[i]) << "\n";
+    }
   }
   // .. and bool alg. vars.
   for (int i = 0; i < globalData->boolVariables.nAlgebraic; i++, currentPos++) {
-    ss << globalData->bool_alg_names[i].name << "\n";
-    ss << (data[currentPos] = (double) globalData->boolVariables.algebraics[i]) << "\n";
+    if (!globalData->boolVariables.algebraicsFilterOutput[i]) {
+      ss << globalData->bool_alg_names[i].name << "\n";
+      ss << (data[currentPos] = (double) globalData->boolVariables.algebraics[i]) << "\n";
+    }
   }
 
   sendPacket(ss.str().c_str());
@@ -119,28 +145,37 @@ void simulation_result_plt::add_result(double *data, long *actualPoints)
 #endif // CONFIG_WITH_SENDDATA
   {
 
-  (data[currentPos++] = globalData->timeValue);
+  data[currentPos++] = globalData->timeValue;
   // .. then states..
-  for (int i = 0; i < globalData->nStates; i++, currentPos++) {
-   (data[currentPos] = globalData->states[i]);
+  for (int i = 0; i < globalData->nStates; i++) {
+    if (!globalData->statesFilterOutput[i]) {
+      data[currentPos++] = globalData->states[i];
+    }
   }
   // ..followed by derivatives..
-  for (int i = 0; i < globalData->nStates; i++, currentPos++) {
-    (data[currentPos] = globalData->statesDerivatives[i]);
+  for (int i = 0; i < globalData->nStates; i++) {
+    if (!globalData->statesDerivativesFilterOutput[i]) {
+      data[currentPos++] = globalData->statesDerivatives[i];
+    }
   }
   // .. and last alg. vars.
-  for (int i = 0; i < globalData->nAlgebraic; i++, currentPos++) {
-    (data[currentPos] = globalData->algebraics[i]);
+  for (int i = 0; i < globalData->nAlgebraic; i++) {
+    if (!globalData->algebraicsFilterOutput[i]) {
+      data[currentPos++] = globalData->algebraics[i];
+    }
   }
   // .. and int alg. vars.
-  for (int i = 0; i < globalData->intVariables.nAlgebraic; i++, currentPos++) {
-  (data[currentPos] = (double) globalData->intVariables.algebraics[i]);
+  for (int i = 0; i < globalData->intVariables.nAlgebraic; i++) {
+    if (!globalData->intVariables.algebraicsFilterOutput[i]) {
+      data[currentPos++] = (double) globalData->intVariables.algebraics[i];
+    }
   }
   // .. and bool alg. vars.
-  for (int i = 0; i < globalData->boolVariables.nAlgebraic; i++, currentPos++) {
-  (data[currentPos] = (double) globalData->boolVariables.algebraics[i]);
+  for (int i = 0; i < globalData->boolVariables.nAlgebraic; i++) {
+    if (!globalData->boolVariables.algebraicsFilterOutput[i]) {
+      data[currentPos++] = (double) globalData->boolVariables.algebraics[i];
+    }
   }
-
 
   }
 
@@ -165,7 +200,7 @@ simulation_result_plt::simulation_result_plt(const char* filename, long numpoint
     numpoints = abs(numpoints);
     maxPoints = abs(numpoints);
   }
-  dataSize = (globalData->nStates*2+globalData->nAlgebraic+globalData->intVariables.nAlgebraic+globalData->boolVariables.nAlgebraic+1);
+  dataSize = calcDataSize();
   simulationResultData = (double*)malloc(numpoints * dataSize * sizeof(double));
   if (!simulationResultData) {
     cerr << "Error allocating simulation result data of size " << numpoints * dataSize << endl;
@@ -174,12 +209,11 @@ simulation_result_plt::simulation_result_plt(const char* filename, long numpoint
   currentPos = 0;
 #ifdef CONFIG_WITH_SENDDATA
   char* enabled = getenv("enableSendData");
-  if(enabled != NULL)
-  {
+  if(enabled != NULL) {
     Static::enabled_ = !strcmp(enabled, "1");
   }
   if(Static::enabled())
-    initSendData(  globalData->nStates,
+    initSendData(globalData->nStates,
           globalData->nAlgebraic,
           globalData->intVariables.nAlgebraic,
           globalData->boolVariables.nAlgebraic,
@@ -249,42 +283,52 @@ simulation_result_plt::~simulation_result_plt()
 
   for(int var = 0; var < globalData->nStates; ++var)
   {
-    fprintf(f, "DataSet: %s\n", globalData->statesNames[var].name);
-    for(int i = 0; i < actualPoints; ++i)
-      printPltLine(f, simulationResultData[i*num_vars], simulationResultData[i*num_vars + 1+var]);
-    fprintf(f, "\n");
+    if (!globalData->statesFilterOutput[var]) {
+      fprintf(f, "DataSet: %s\n", globalData->statesNames[var].name);
+      for(int i = 0; i < actualPoints; ++i)
+        printPltLine(f, simulationResultData[i*num_vars], simulationResultData[i*num_vars + 1+var]);
+      fprintf(f, "\n");
+    }
   }
 
   for(int var = 0; var < globalData->nStates; ++var)
   {
-    fprintf(f, "DataSet: %s\n", globalData->stateDerivativesNames[var].name);
-    for(int i = 0; i < actualPoints; ++i)
-      printPltLine(f, simulationResultData[i*num_vars], simulationResultData[i*num_vars + 1+globalData->nStates+var]);
-    fprintf(f, "\n");
+    if (!globalData->statesDerivativesFilterOutput[var]) {
+      fprintf(f, "DataSet: %s\n", globalData->stateDerivativesNames[var].name);
+      for(int i = 0; i < actualPoints; ++i)
+        printPltLine(f, simulationResultData[i*num_vars], simulationResultData[i*num_vars + 1+globalData->nStates+var]);
+      fprintf(f, "\n");
+    }
   }
 
   for(int var = 0; var < globalData->nAlgebraic; ++var)
   {
-    fprintf(f, "DataSet: %s\n", globalData->algebraicsNames[var].name);
-    for(int i = 0; i < actualPoints; ++i)
-      printPltLine(f, simulationResultData[i*num_vars], simulationResultData[i*num_vars + 1+2*globalData->nStates+var]);
-    fprintf(f, "\n");
+    if (!globalData->algebraicsFilterOutput[var]) {
+      fprintf(f, "DataSet: %s\n", globalData->algebraicsNames[var].name);
+      for(int i = 0; i < actualPoints; ++i)
+        printPltLine(f, simulationResultData[i*num_vars], simulationResultData[i*num_vars + 1+2*globalData->nStates+var]);
+      fprintf(f, "\n");
+    }
   }
 
   for(int var = 0; var < globalData->intVariables.nAlgebraic; ++var)
   {
-    fprintf(f, "DataSet: %s\n", globalData->int_alg_names[var].name);
-    for(int i = 0; i < actualPoints; ++i)
-      printPltLine(f, simulationResultData[i*num_vars], simulationResultData[i*num_vars + 1+2*globalData->nStates+globalData->nAlgebraic+var]);
-    fprintf(f, "\n");
+    if (!globalData->intVariables.algebraicsFilterOutput[var]) {
+      fprintf(f, "DataSet: %s\n", globalData->int_alg_names[var].name);
+      for(int i = 0; i < actualPoints; ++i)
+        printPltLine(f, simulationResultData[i*num_vars], simulationResultData[i*num_vars + 1+2*globalData->nStates+globalData->nAlgebraic+var]);
+      fprintf(f, "\n");
+    }
   }
 
   for(int var = 0; var < globalData->boolVariables.nAlgebraic; ++var)
   {
-    fprintf(f, "DataSet: %s\n", globalData->bool_alg_names[var].name);
-    for(int i = 0; i < actualPoints; ++i)
-      printPltLine(f, simulationResultData[i*num_vars], simulationResultData[i*num_vars + 1+2*globalData->nStates+globalData->nAlgebraic+globalData->intVariables.nAlgebraic+var]);
-    fprintf(f, "\n");
+    if (!globalData->boolVariables.algebraicsFilterOutput[var]) {
+      fprintf(f, "DataSet: %s\n", globalData->bool_alg_names[var].name);
+      for(int i = 0; i < actualPoints; ++i)
+        printPltLine(f, simulationResultData[i*num_vars], simulationResultData[i*num_vars + 1+2*globalData->nStates+globalData->nAlgebraic+globalData->intVariables.nAlgebraic+var]);
+      fprintf(f, "\n");
+    }
   }
 
   deallocResult();

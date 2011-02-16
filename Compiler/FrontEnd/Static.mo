@@ -6688,6 +6688,7 @@ algorithm
       DAE.Exp options "options, default ''";
       DAE.Exp noClean "no cleaning, default false";
       DAE.Exp outputFormat "output format, default 'plt'";
+      DAE.Exp variableFilter "variable filter, regex does whole string matching, i.e. it becomes ^.*$ in the runtime";
       CevalScript.SimulationOptions defaulSimOpt;
       Env.Cache cache;
       Env.Env env;
@@ -6739,6 +6740,10 @@ algorithm
                               args,  CevalScript.getSimulationOption(defaulSimOpt, "outputFormat"),
                               pre, info);
                 
+        (cache,variableFilter) = 
+          getOptionalNamedArg(cache, env, SOME(st), impl, "variableFilter", DAE.T_STRING_DEFAULT, 
+                              args,  CevalScript.getSimulationOption(defaulSimOpt, "variableFilter"),
+                              pre, info);
       then 
         (cache, 
          {DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER()),
@@ -6751,7 +6756,8 @@ algorithm
           storeInTemp,
           noClean,
           options,
-          outputFormat});    
+          outputFormat,
+          variableFilter});    
   
   end match;
 end getSimulationArguments;
@@ -8276,9 +8282,17 @@ algorithm
       
     case (cache,env,t as (DAE.T_METARECORD(fields=vars),SOME(fqPath)),args,nargs,impl,stopElab,st,pre,info)
       equation
-         false = listLength(vars) == listLength(args) + listLength(nargs);
-         fn_str = Types.unparseType(t);
-         Error.addSourceMessage(Error.WRONG_NO_OF_ARGS,{fn_str},info);
+        tys = Util.listMap(vars, Types.getVarType);
+        DAE.TYPES_VAR(name = str) = Util.listSelectFirst(vars, Types.varHasMetaRecordType);
+        fn_str = Absyn.pathString(fqPath);
+        Error.addSourceMessage(Error.METARECORD_CONTAINS_METARECORD_MEMBER,{fn_str,str},info);
+      then (cache,NONE());
+
+    case (cache,env,t as (DAE.T_METARECORD(fields=vars),SOME(fqPath)),args,nargs,impl,stopElab,st,pre,info)
+      equation
+        false = listLength(vars) == listLength(args) + listLength(nargs);
+        fn_str = Types.unparseType(t);
+        Error.addSourceMessage(Error.WRONG_NO_OF_ARGS,{fn_str},info);
       then (cache,NONE());
 
     case (cache,env,t as (DAE.T_METARECORD(index=index,utPath=utPath,fields=vars),SOME(fqPath)),args,nargs,impl,stopElab,st,pre,info)

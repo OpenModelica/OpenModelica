@@ -54,15 +54,15 @@ void simulation_result_csv::emit()
   storeExtrapolationData();
   rt_tick(SIM_TIMER_OUTPUT);
   fprintf(fout, format, globalData->timeValue);
-  for (int i = 0; i < globalData->nStates; i++)
-     fprintf(fout, format, globalData->states[i]);
-  for (int i = 0; i < globalData->nStates; i++)
+  for (int i = 0; i < globalData->nStates; i++) if (!globalData->statesFilterOutput[i])
+    fprintf(fout, format, globalData->states[i]);
+  for (int i = 0; i < globalData->nStates; i++) if (!globalData->statesDerivativesFilterOutput[i])
     fprintf(fout, format, globalData->statesDerivatives[i]);
-  for (int i = 0; i < globalData->nAlgebraic; i++)
+  for (int i = 0; i < globalData->nAlgebraic; i++) if (!globalData->algebraicsFilterOutput[i])
     fprintf(fout, format, globalData->algebraics[i]);
-  for (int i = 0; i < globalData->intVariables.nAlgebraic; i++)
+  for (int i = 0; i < globalData->intVariables.nAlgebraic; i++) if (!globalData->intVariables.algebraicsFilterOutput[i])
     fprintf(fout, format, globalData->intVariables.algebraics[i]);
-  for (int i = 0; i < globalData->boolVariables.nAlgebraic; i++)
+  for (int i = 0; i < globalData->boolVariables.nAlgebraic; i++) if (!globalData->boolVariables.algebraicsFilterOutput[i])
     fprintf(fout, format, globalData->boolVariables.algebraics[i]);
   fprintf(fout, "\n");
   rt_accumulate(SIM_TIMER_OUTPUT);
@@ -79,16 +79,17 @@ simulation_result_csv::simulation_result_csv(const char* filename, long numpoint
   }
 
   fprintf(fout, format, "time");
-  for (int i = 0; i < globalData->nStates; i++)
-     fprintf(fout, format, globalData->statesNames[i].name);
-  for (int i = 0; i < globalData->nStates; i++)
-     fprintf(fout, format, globalData->stateDerivativesNames[i].name);
-  for (int i = 0; i < globalData->nAlgebraic; i++)
-     fprintf(fout, format, globalData->algebraicsNames[i].name);
-  for (int i = 0; i < globalData->intVariables.nAlgebraic; i++)
-    fprintf(fout, format, globalData->intVariables.algebraics[i]);
-  for (int i = 0; i < globalData->boolVariables.nAlgebraic; i++)
-    fprintf(fout, format, globalData->boolVariables.algebraics[i]);
+  for (int i = 0; i < globalData->nStates; i++) if (!globalData->statesFilterOutput[i])
+    fprintf(fout, format, globalData->statesNames[i].name);
+  for (int i = 0; i < globalData->nStates; i++) if (!globalData->statesDerivativesFilterOutput[i])
+    fprintf(fout, format, globalData->stateDerivativesNames[i].name);
+  for (int i = 0; i < globalData->nAlgebraic; i++) if (!globalData->algebraicsFilterOutput[i])
+    fprintf(fout, format, globalData->algebraicsNames[i].name);
+  for (int i = 0; i < globalData->intVariables.nAlgebraic; i++) if (!globalData->intVariables.algebraicsFilterOutput[i])
+    fprintf(fout, format, globalData->int_alg_names[i]);
+  for (int i = 0; i < globalData->boolVariables.nAlgebraic; i++) if (!globalData->boolVariables.algebraicsFilterOutput[i])
+    fprintf(fout, format, globalData->bool_alg_names[i]);
+
   fprintf(fout,"\n");
 }
 

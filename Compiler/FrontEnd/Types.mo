@@ -2359,9 +2359,9 @@ algorithm
     case ((DAE.T_COMPLEX(complexClassType = st,complexVarLst = vars,complexTypeOption = bc),_))
       equation
         compType = Util.stringDelimitList( Util.listMap(Util.genericOption(bc),printTypeStr), ", ");
-       s1 = Util.stringDelimitList(Util.listMap(vars, printVarStr),", ");
-       compType = Util.if_(stringLength(compType)>0, "::derived From::" +& compType,"");
-       str = stringAppendList({"composite(",s1,") ", compType});
+        s1 = Util.stringDelimitList(Util.listMap(vars, printVarStr),", ");
+        compType = Util.if_(stringLength(compType)>0, "::derived From::" +& compType,"");
+        str = stringAppendList({"composite(",s1,") ", compType});
       then
         str;
     
@@ -6590,5 +6590,20 @@ algorithm
     else "Types.printCodeTypeStr failed";
   end match;
 end printCodeTypeStr;
+
+public function varHasMetaRecordType
+  input Var var;
+  output Boolean b;
+algorithm
+  b := match var
+    case DAE.TYPES_VAR(type_ = (DAE.T_BOXED((DAE.T_METARECORD(utPath=_),_)),_))
+      then true;
+    case DAE.TYPES_VAR(type_ = (DAE.T_METARECORD(utPath=_),_))
+      then true;
+    case DAE.TYPES_VAR(type_ = (DAE.T_BOXED(((DAE.T_COMPLEX(complexClassType = ClassInf.META_RECORD(_),complexTypeOption = NONE()),_))),_))
+      then true;
+    else false;
+  end match;
+end varHasMetaRecordType;
 
 end Types;
