@@ -6,6 +6,11 @@ Exit OMShell by pressing Ctrl-d
           Get previously given command.
  down-arrow
           Get next command.
+ 
+ readFile(OpenModelica.Scripting.getInstallationDirectoryPath()+"/lib/omc/ModelicaBuiltin.mo")
+          This file contains the builtin environment in OpenModelica.
+          All functions are described and documented there in full. The following
+          is a list of the most common commands used in OMShell.
 
  <tab>
           Command completion of these builtin commands.
