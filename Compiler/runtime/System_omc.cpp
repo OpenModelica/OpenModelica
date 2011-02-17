@@ -516,4 +516,11 @@ extern char* System_unescapedString(char* str)
   return res;
 }
 
+extern char* System_unquoteIdentifier(char *str)
+{
+  char *res = SystemImpl__unquoteIdentifier(str);
+  if (res == NULL) return str;
+  return res;
+}
+
 }

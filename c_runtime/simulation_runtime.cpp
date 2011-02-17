@@ -388,7 +388,7 @@ callSolver(int argc, char**argv, string method, string outputFormat,
   string *result_file = (string*) getFlagValue("r", argc, argv);
   string result_file_cstr;
   if (!result_file) {
-    result_file_cstr = string(globalData->modelName) + string("_res.") + outputFormat; /* TODO: Fix result file name based on mode */
+    result_file_cstr = string(globalData->modelFilePrefix) + string("_res.") + outputFormat; /* TODO: Fix result file name based on mode */
   } else {
     result_file_cstr = *result_file;
   }

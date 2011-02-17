@@ -569,7 +569,7 @@ algorithm
         Absyn.CREF(Absyn.CREF_IDENT(name = ident,subscripts = {})),value = Absyn.CREF(cr))),
         (st as SYMBOLTABLE(lstVarVal = vars)))
       equation
-        value = getVariableValueLst(listReverse(Absyn.pathToStringList(Absyn.crefToPath(cr))), vars);
+        value = getVariableValueLst(Absyn.pathToStringList(Absyn.crefToPath(cr)), vars);
         str = ValuesUtil.valString(value);
         t = Types.typeOfValue(value);
         newst = addVarToSymboltable(ident, value, t, st);
@@ -904,7 +904,7 @@ algorithm
        * SimulationResult, etc are not in the environment, but it's nice to be able to script them anyway */
     case (Absyn.CREF(cr),(st as SYMBOLTABLE(lstVarVal = vars)),info)
       equation
-        value = getVariableValueLst(listReverse(Absyn.pathToStringList(Absyn.crefToPath(cr))), vars);
+        value = getVariableValueLst(Absyn.pathToStringList(Absyn.crefToPath(cr)), vars);
       then (value,st);
 
     case (exp,(st as SYMBOLTABLE(ast = p)),info)

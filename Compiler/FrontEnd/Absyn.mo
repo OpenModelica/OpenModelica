@@ -2845,9 +2845,7 @@ algorithm outPaths := match(path)
     case (QUALIFIED(name = n,path = p))
       equation
         strings = pathToStringList(p);
-        strings = listAppend(strings,{n});
-        then
-          strings;
+      then n::strings;
 end match;
 end pathToStringList;
 
@@ -5286,5 +5284,12 @@ public function crefIdent
 algorithm
   CREF_IDENT(str,{}) := cr; 
 end crefIdent;
+
+public function unqotePathIdents
+  input Path inPath;
+  output Path path;
+algorithm
+  path := stringListPath(Util.listMap(pathToStringList(inPath), System.unquoteIdentifier));
+end unqotePathIdents;
 
 end Absyn;

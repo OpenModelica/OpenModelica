@@ -562,6 +562,11 @@ package System
     input String unescapedString;
     output String escapedString;
   end escapedString;
+
+  function unquoteIdentifier
+    input String str;
+    output String outStr;
+  end unquoteIdentifier;
 end System;
 
 

@@ -91,7 +91,7 @@ case SIMCODE(__) then
   <<
   <%simulationFileHeader(simCode)%>
   
-  <%globalData(modelInfo)%>
+  <%globalData(modelInfo,fileNamePrefix)%>
   
   <%equationInfo(appendLists(appendAllequation(JacobianMatrixes),allEquationsPlusWhen))%>
   
@@ -188,7 +188,7 @@ case SIMCODE(modelInfo=MODELINFO(__), extObjInfo=EXTOBJINFO(__)) then
 end simulationFileHeader;
 
 
-template globalData(ModelInfo modelInfo)
+template globalData(ModelInfo modelInfo, String fileNamePrefix)
  "Generates global data in simulation file."
 ::=
 match modelInfo
@@ -221,6 +221,7 @@ case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
 
   extern "C" { // adrpo: this is needed for Visual C++ compilation to work!
     const char *model_name="<%dotPath(name)%>";
+    const char *model_fileprefix="<%fileNamePrefix%>";
     const char *model_dir="<%directory%>";
   }
   
@@ -717,6 +718,7 @@ template functionInitializeDataStruc()
   
     returnData->initFixed = init_fixed;
     returnData->modelName = model_name;
+    returnData->modelFilePrefix = model_fileprefix;
     returnData->statesNames = state_names;
     returnData->stateDerivativesNames = derivative_names;
     returnData->algebraicsNames = algvars_names;
@@ -2710,8 +2712,8 @@ template crefToCStr(ComponentRef cr)
  "Helper function to cref."
 ::=
   match cr
-  case CREF_IDENT(__) then '<%ident%><%subscriptsToCStr(subscriptLst)%>'
-  case CREF_QUAL(__) then '<%ident%><%subscriptsToCStr(subscriptLst)%>$P<%crefToCStr(componentRef)%>'
+  case CREF_IDENT(__) then '<%unquoteIdentifier(ident)%><%subscriptsToCStr(subscriptLst)%>'
+  case CREF_QUAL(__) then '<%unquoteIdentifier(ident)%><%subscriptsToCStr(subscriptLst)%>$P<%crefToCStr(componentRef)%>'
   case WILD(__) then ''
   else "CREF_NOT_IDENT_OR_QUAL"
 end crefToCStr;
@@ -2755,8 +2757,8 @@ template crefToMStr(ComponentRef cr)
  "Helper function to crefM."
 ::=
   match cr
-  case CREF_IDENT(__) then '<%ident%><%subscriptsToMStr(subscriptLst)%>'
-  case CREF_QUAL(__) then '<%ident%><%subscriptsToMStr(subscriptLst)%>P<%crefToMStr(componentRef)%>'
+  case CREF_IDENT(__) then '<%unquoteIdentifier(ident)%><%subscriptsToMStr(subscriptLst)%>'
+  case CREF_QUAL(__) then '<%unquoteIdentifier(ident)%><%subscriptsToMStr(subscriptLst)%>P<%crefToMStr(componentRef)%>'
   else "CREF_NOT_IDENT_OR_QUAL"
 end crefToMStr;
 
@@ -2797,8 +2799,8 @@ end arrayCrefCStr;
 template arrayCrefCStr2(ComponentRef cr)
 ::=
   match cr
-  case CREF_IDENT(__) then '<%ident%>'
-  case CREF_QUAL(__) then '<%ident%>$P<%arrayCrefCStr2(componentRef)%>'
+  case CREF_IDENT(__) then '<%unquoteIdentifier(ident)%>'
+  case CREF_QUAL(__) then '<%unquoteIdentifier(ident)%>$P<%arrayCrefCStr2(componentRef)%>'
   else "CREF_NOT_IDENT_OR_QUAL"
 end arrayCrefCStr2;
 
@@ -2842,9 +2844,9 @@ template crefFunctionName(ComponentRef cr)
 ::=
   match cr
   case CREF_IDENT(__) then 
-    System.stringReplace(ident, "_", "__")
+    System.stringReplace(unquoteIdentifier(ident), "_", "__")
   case CREF_QUAL(__) then 
-    '<%System.stringReplace(ident, "_", "__")%>_<%crefFunctionName(componentRef)%>'
+    '<%System.stringReplace(unquoteIdentifier(ident), "_", "__")%>_<%crefFunctionName(componentRef)%>'
 end crefFunctionName;
 
 template dotPath(Path path)

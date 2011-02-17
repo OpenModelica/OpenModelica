@@ -61,7 +61,7 @@ void read_commented_value(ifstream &f, signed char *str);
 
   string *filename=(string*)getFlagValue("f",argc,argv);
   if (filename == NULL) {
-    filename = new string(string(simData->modelName)+"_init.txt");  // model_name defined in generated code for model.
+    filename = new string(string(simData->modelFilePrefix)+"_init.txt");  // model_name defined in generated code for model.
   }
 
   ifstream file(filename->c_str());

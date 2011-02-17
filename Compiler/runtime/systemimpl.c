@@ -1102,6 +1102,27 @@ extern void* SystemImpl__regex(const char* str, const char* re, int maxn, int ex
   return lst;
 }
 
+char* SystemImpl__unquoteIdentifier(const char* str)
+{
+  const char lookupTbl[] = {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'};
+  char *res,*cur;
+  int len,i;
+  const int offset = 10;
+  const char _omcQuot[]="_omcQuot_";
+  if (*str != '\'') return NULL;
+  len = strlen(str)-2;
+  res = (char*) malloc(2*len+offset+64);
+  cur = res;
+  cur += sprintf(cur,"%s",_omcQuot);
+  for (i=0; i<len; i++) {
+    unsigned char c = str[i+1];
+    cur += sprintf(cur,"%c",lookupTbl[c/16]);
+    cur += sprintf(cur,"%c",lookupTbl[c%16]);
+  }
+  *cur = '\0';
+  return res;
+}
+
 #ifdef __cplusplus
 }
 #endif

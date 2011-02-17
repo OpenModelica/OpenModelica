@@ -1983,3 +1983,16 @@ RML_BEGIN_LABEL(System__escapedString)
   }
 }
 RML_END_LABEL
+
+RML_BEGIN_LABEL(System__unquoteIdentifier)
+{
+  char *str = SystemImpl__unquoteIdentifier(RML_STRINGDATA(rmlA0));
+  if (str == NULL) {
+    RML_TAILCALLK(rmlSC);
+  } else {
+    rmlA0 = mk_scon(str);
+    free(str);
+    RML_TAILCALLK(rmlSC);
+  }
+}
+RML_END_LABEL

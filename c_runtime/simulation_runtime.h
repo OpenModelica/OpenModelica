@@ -187,7 +187,8 @@ typedef struct sim_DATA {
   DATA_INT intVariables;
   DATA_BOOL boolVariables;
 
-  const char* modelName;
+  const char* modelName; // For error messages
+  const char* modelFilePrefix; // For filenames, input/output
   const struct omc_varInfo* statesNames;
   const struct omc_varInfo* stateDerivativesNames;
   const struct omc_varInfo* algebraicsNames;

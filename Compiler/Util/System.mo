@@ -759,4 +759,11 @@ public function stringHashDjb2Mod
   external "builtin";
 end stringHashDjb2Mod;
 
+public function unquoteIdentifier
+  "Quoted identifiers, for example 'xyz' need to be translated into canonical form; for example _omcQuot_0x78797A"
+  input String str;
+  output String outStr;
+  external "C" outStr=System_unquoteIdentifier(str);
+end unquoteIdentifier;
+
 end System;

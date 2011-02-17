@@ -6658,6 +6658,7 @@ algorithm
       Absyn.ComponentRef cr;
       DAE.ComponentRef  cr_1;
       list<Absyn.NamedArg> args;
+      list<String> pathIdents;
       Boolean impl;
       Interactive.InteractiveSymbolTable st;
       Prefix.Prefix pre;
@@ -6684,7 +6685,7 @@ algorithm
       equation
         (cache,cr_1) = elabUntypedCref(cache,env,cr,impl,pre,info);
         className = componentRefToPath(cr_1) "this extracts the fileNamePrefix which is used when generating code and init-file" ;
-        cname_str = Absyn.pathString(className);
+        cname_str = Absyn.pathString(Absyn.unqotePathIdents(className)) "easier than checking if the file system supports UTF-8...";
         
         defaulSimOpt = CevalScript.buildSimulationOptionsFromModelExperimentAnnotation(st, className, cname_str);
         
