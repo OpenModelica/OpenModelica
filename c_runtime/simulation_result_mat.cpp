@@ -35,6 +35,7 @@
 #include "simulation_result_mat.h"
 #include <cstring>
 #include <cstdlib>
+#include <stdint.h>
 
 
 simulation_result_mat::simulation_result_mat(const char* filename, 
@@ -221,11 +222,11 @@ void simulation_result_mat::writeMatVer4MatrixHeader(const char *name,
                  bool is_text)
 {
   typedef struct {
-    long type;
-    long mrows;
-    long ncols;
-    long imagf;
-    long namelen;
+    uint32_t type;
+    uint32_t mrows;
+    uint32_t ncols;
+    uint32_t imagf;
+    uint32_t namelen;
   } MHeader_t;
   const int endian_test = 1;
   MHeader_t hdr;
