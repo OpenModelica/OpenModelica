@@ -90,7 +90,7 @@ initializeEventData()
   gout_old = new double[globalData->nZeroCrossing];
   gout_backup = new double[globalData->nZeroCrossing];
   gout_res = new modelica_boolean[globalData->nZeroCrossing];
-  backuprelations = new modelica_boolean[globalData->nRelations];
+  backuprelations = new modelica_boolean[globalData->nZeroCrossing];
   h_saved = new double[globalData->nHelpVars];
   x_saved = new double[globalData->nStates];
   xd_saved = new double[globalData->nStates];
@@ -112,7 +112,7 @@ initializeEventData()
   memset(gout_old, 0, sizeof(double) * globalData->nZeroCrossing);
   memset(gout_backup, 0, sizeof(double) * globalData->nZeroCrossing);
   memset(gout_res, 0, sizeof(modelica_boolean) * globalData->nZeroCrossing);
-  memset(backuprelations, 0, sizeof(modelica_boolean) * globalData->nRelations);
+  memset(backuprelations, 0, sizeof(modelica_boolean) * globalData->nZeroCrossing);
   memset(h_saved, 0, sizeof(double) * globalData->nHelpVars);
   memset(x_saved, 0, sizeof(double) * globalData->nStates);
   memset(xd_saved, 0, sizeof(double) * globalData->nStates);
@@ -1164,6 +1164,7 @@ EventHandle(int flag)
       int needToIterate = 0;
       int IterationNum = 0;
       functionDAE(needToIterate);
+      functionAliasEquations();
       if (sim_verbose)
         {
           sim_result->emit();
@@ -1182,6 +1183,7 @@ EventHandle(int flag)
             }
           saveall();
           functionDAE(needToIterate);
+          functionAliasEquations();
           if (sim_verbose)
             {
               sim_result->emit();

@@ -422,9 +422,9 @@ callSolver(int argc, char**argv, string method, string outputFormat,
     if (sim_verbose) {
       cout << "No Recognized solver, using dassl." << endl;
     }
-    //retVal = solver_main(argc,argv,start,stop,stepSize,outputSteps,tolerance,3);
-    retVal = dassl_main(argc, argv, start, stop, stepSize, outputSteps,
-    tolerance);
+    retVal = solver_main(argc,argv,start,stop,stepSize,outputSteps,tolerance,3);
+    //retVal = dassl_main(argc, argv, start, stop, stepSize, outputSteps,
+    //tolerance);
   } else if (method == std::string("euler")) {
     if (sim_verbose) {
       cout << "Recognized solver: " << method << "." << endl;
@@ -435,7 +435,7 @@ callSolver(int argc, char**argv, string method, string outputFormat,
       cout << "Recognized solver: " << method << "." << endl;
     }
     retVal = solver_main(argc, argv, start, stop, stepSize, outputSteps, tolerance, 2);
-  } else if (method == std::string("dassl2")) {
+  } else if (method == std::string("dassl2") || method == std::string("dassl")) {
     if (sim_verbose) {
       cout << "Recognized solver: " << method << "." << endl;
     }
@@ -469,11 +469,11 @@ callSolver(int argc, char**argv, string method, string outputFormat,
       }
       retVal = solver_main(argc, argv, start, stop, stepSize, outputSteps, tolerance, 4);
     }
-  } else if (method == std::string("dassl")) {
+  /*} else if (method == std::string("dassl")) {
     if (sim_verbose) {
       cout << "Recognized solver: " << method << "." << endl;
     }
-    retVal = dassl_main(argc, argv, start, stop, stepSize, outputSteps, tolerance);
+    retVal = dassl_main(argc, argv, start, stop, stepSize, outputSteps, tolerance);*/
   } else {
     cout << "Unrecognized solver: " << method
          << "; valid solvers are dassl,euler,rungekutta,dassl2,inline-euler or inline-rungekutta."
