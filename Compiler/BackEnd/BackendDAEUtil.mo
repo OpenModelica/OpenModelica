@@ -981,10 +981,7 @@ algorithm
           values = va, comment = c, flowPrefix = fp, streamPrefix = sp), cache, env, _)
       equation
         ((e2, _)) = Expression.traverseExp(e, replaceCrefsWithValues, vars);
-        // Is this supposed to be Ceval with the cache+env
-        // (_, v, _) = Ceval.ceval(cache, env, e2, false,NONE(), NONE(), Ceval.MSG());
-        // Or should the error messages be disabled, i.e. Ceval.NO_MSG()
-        (_, v, _) = Ceval.ceval(Env.emptyCache(), Env.emptyEnv, e2, false,NONE(), NONE(), Ceval.MSG());
+        (_, v, _) = Ceval.ceval(cache, env, e2, false,NONE(), NONE(), Ceval.MSG());
       then
         BackendDAE.VAR(cr, vk, vd, ty, SOME(e), SOME(v), dims, idx, src, va, c, fp, sp);
     else inVar;

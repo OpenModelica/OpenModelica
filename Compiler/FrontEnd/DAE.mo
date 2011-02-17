@@ -829,11 +829,11 @@ uniontype Const "The degree of constantness of an expression is determined by th
     all other variables are not constant and will get C_VAR constantness.
 
   - Variable properties"
-  record C_CONST end C_CONST;
+  record C_CONST "constant " end C_CONST;
 
-  record C_PARAM "\'constant\'s, should always be evaluated" end C_PARAM;
+  record C_PARAM "parameter" end C_PARAM;
 
-  record C_VAR "\'parameter\'s, evaluated if structural not constants, never evaluated" end C_VAR;
+  record C_VAR "continuous" end C_VAR;
 
   record C_UNKNOWN end C_UNKNOWN;
 end Const;
