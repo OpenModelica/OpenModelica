@@ -7162,7 +7162,7 @@ protected function elabCallInteractive "function: elabCallInteractive
         (cache,logY) = getOptionalNamedArg(cache,env, SOME(st), impl, "logY", DAE.T_BOOL_DEFAULT,
           args, DAE.BCONST(false),pre,info);
        (cache,xLabel) = getOptionalNamedArg(cache,env, SOME(st), impl, "xLabel", DAE.T_STRING_DEFAULT,
-          args, DAE.SCONST("time"),pre,info);
+          args, DAE.SCONST(""),pre,info);
         (cache,yLabel) = getOptionalNamedArg(cache,env, SOME(st), impl, "yLabel", DAE.T_STRING_DEFAULT,
           args, DAE.SCONST(""),pre,info);
         (cache,points) = getOptionalNamedArg(cache,env, SOME(st), impl, "points", DAE.T_BOOL_DEFAULT,
