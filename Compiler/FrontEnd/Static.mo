@@ -4443,7 +4443,7 @@ algorithm
       then
         (cache, call, DAE.PROP(elt_ty,c));
                 
-    // min|max(x,y) where x & y are Real scalars.
+    // min|max(x,y) where x & y are scalars.
     case (cache, env, _, {s1, s2}, impl, pre, info)
       equation
         (cache, s1_1, DAE.PROP(ty1, c1), _) = 
@@ -4451,29 +4451,15 @@ algorithm
         (cache, s2_1, DAE.PROP(ty2, c2), _) = 
           elabExp(cache, env, s2, impl,NONE(), true, pre, info);
 
-        true = Types.isRealOrSubTypeReal(ty1) or Types.isRealOrSubTypeReal(ty2);
-        (s1_1,ty) = Types.matchType(s1_1, ty1, DAE.T_REAL_DEFAULT, true);
-        (s2_1,ty) = Types.matchType(s2_1, ty2, DAE.T_REAL_DEFAULT, true);
+        ty = Types.scalarSuperType(ty1,ty2);
+        (s1_1,_) = Types.matchType(s1_1, ty1, ty, true);
+        (s2_1,_) = Types.matchType(s2_1, ty2, ty, true);
         c = Types.constAnd(c1, c2);
         tp = Types.elabType(ty);
         call = Expression.makeBuiltinCall(inFnName, {s1_1, s2_1}, tp);
       then
         (cache, call, DAE.PROP(ty,c));
 
-    // min|max(x,y) where x & y are Integer scalars.
-    case (cache, env, _, {s1, s2}, impl, pre, info)
-      equation
-        (cache, s1_1, DAE.PROP(ty1, c1), _) = 
-          elabExp(cache,env, s1, impl,NONE(),true,pre,info);
-        (cache, s2_1, DAE.PROP(ty2, c2), _) = 
-          elabExp(cache,env, s2, impl,NONE(),true,pre,info);
-
-        true = Types.isInteger(ty1) and Types.isInteger(ty2);
-        c = Types.constAnd(c1, c2);
-        tp = Types.elabType(ty1);
-        call = Expression.makeBuiltinCall(inFnName, {s1_1, s2_1}, tp);
-      then
-        (cache, call, DAE.PROP(ty1,c));
   end matchcontinue;
 end elabBuiltinMinMaxCommon;
 

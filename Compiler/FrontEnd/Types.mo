@@ -6606,4 +6606,23 @@ algorithm
   end match;
 end varHasMetaRecordType;
 
+public function scalarSuperType
+  "Checks that the givens types are scalar and that one is subtype of the other (in the case of integers)."
+  input Type ty1;
+  input Type ty2;
+  output Type ty;
+algorithm
+  ty := matchcontinue (ty1,ty2)
+    case ((DAE.T_INTEGER(_),_),(DAE.T_INTEGER(_),_)) then DAE.T_INTEGER_DEFAULT;
+    case ((DAE.T_REAL(_),_),(DAE.T_REAL(_),_))       then DAE.T_REAL_DEFAULT;
+    case ((DAE.T_INTEGER(_),_),(DAE.T_REAL(_),_))    then DAE.T_REAL_DEFAULT;
+    case ((DAE.T_REAL(_),_),(DAE.T_INTEGER(_),_))    then DAE.T_REAL_DEFAULT;
+    case ((DAE.T_COMPLEX(complexTypeOption = SOME(ty1)),_),ty2) then scalarSuperType(ty1,ty2);
+    case (ty1,(DAE.T_COMPLEX(complexTypeOption = SOME(ty2)),_)) then scalarSuperType(ty1,ty2);
+        
+    case ((DAE.T_BOOL(_),_),(DAE.T_BOOL(_),_))       then DAE.T_BOOL_DEFAULT;
+    // case ((DAE.T_STRING(_),_),(DAE.T_STRING(_),_))   then DAE.T_STRING_DEFAULT;
+  end matchcontinue;
+end scalarSuperType;
+
 end Types;

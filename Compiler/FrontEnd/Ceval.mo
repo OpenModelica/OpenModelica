@@ -3702,7 +3702,7 @@ algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
-      Values.Value v,v_1;
+      Values.Value v,v1,v2,v_1;
       list<Env.Frame> env;
       DAE.Exp arr,s1,s2;
       Boolean impl;
@@ -3714,27 +3714,46 @@ algorithm
     case (cache,env,{arr},impl,st,msg)
       equation
         (cache,v,_) = ceval(cache,env, arr, impl, st,NONE(), msg);
-        (v_1) = cevalBuiltinMax2(v);
+        (v_1) = cevalBuiltinMaxArr(v);
       then
         (cache,v_1,st);
     case (cache,env,{s1,s2},impl,st,msg)
       equation
-        (cache,Values.INTEGER(i1),_) = ceval(cache,env, s1, impl, st,NONE(), msg);
-        (cache,Values.INTEGER(i2),_) = ceval(cache,env, s2, impl, st,NONE(), msg);
-        i = intMax(i1, i2);
+        (cache,v1,_) = ceval(cache,env, s1, impl, st,NONE(), msg);
+        (cache,v2,_) = ceval(cache,env, s2, impl, st,NONE(), msg);
+        v = cevalBuiltinMax2(v1,v2);
       then
-        (cache,Values.INTEGER(i),st);
-    case (cache,env,{s1,s2},impl,st,msg)
-      equation
-        (cache,Values.REAL(r1),_) = ceval(cache,env, s1, impl, st,NONE(), msg);
-        (cache,Values.REAL(r2),_) = ceval(cache,env, s2, impl, st,NONE(), msg);
-        r = realMax(r1, r2);
-      then
-        (cache,Values.REAL(r),st);
+        (cache,v,st);
   end matchcontinue;
 end cevalBuiltinMax;
 
-protected function cevalBuiltinMax2 "function: cevalBuiltinMax2
+protected function cevalBuiltinMax2
+  input Values.Value v1;
+  input Values.Value v2;
+  output Values.Value outValue;
+algorithm
+  outValue := match (v1,v2)
+    local
+      Integer i1,i2,i;
+      Real r1,r2,r;
+      Boolean b1,b2,b;
+      String s1,s2,s;
+    case (Values.INTEGER(i1),Values.INTEGER(i2))
+      equation
+        i = intMax(i1, i2);
+      then Values.INTEGER(i);
+    case (Values.REAL(r1),Values.REAL(r2))
+      equation
+        r = realMax(r1, r2);
+      then Values.REAL(r);
+    case (Values.BOOL(b1),Values.BOOL(b2))
+      equation
+        b = boolOr(b1, b2);
+      then Values.BOOL(b);
+  end match;
+end cevalBuiltinMax2;
+
+protected function cevalBuiltinMaxArr "function: cevalBuiltinMax2
   Helper function to cevalBuiltinMax."
   input Values.Value inValue;
   output Values.Value outValue;
@@ -3752,23 +3771,23 @@ algorithm
     
     case (Values.ARRAY(valueLst = (v1 :: (vls as (_ :: _)))))
       equation
-        (Values.INTEGER(i1)) = cevalBuiltinMax2(v1);
-        (Values.INTEGER(i2)) = cevalBuiltinMax2(ValuesUtil.makeArray(vls));
+        (Values.INTEGER(i1)) = cevalBuiltinMaxArr(v1);
+        (Values.INTEGER(i2)) = cevalBuiltinMaxArr(ValuesUtil.makeArray(vls));
         resI = intMax(i1, i2);
       then
         Values.INTEGER(resI);
     
     case (Values.ARRAY(valueLst = (v1 :: (vls as (_ :: _)))))
       equation
-        (Values.REAL(r1)) = cevalBuiltinMax2(v1);
-        (Values.REAL(r2)) = cevalBuiltinMax2(ValuesUtil.makeArray(vls));
+        (Values.REAL(r1)) = cevalBuiltinMaxArr(v1);
+        (Values.REAL(r2)) = cevalBuiltinMaxArr(ValuesUtil.makeArray(vls));
         resR = realMax(r1, r2);
       then
         Values.REAL(resR);
     
     case (Values.ARRAY(valueLst = {vl}))
       equation
-        (v) = cevalBuiltinMax2(vl);
+        (v) = cevalBuiltinMaxArr(vl);
       then
         v;
     
@@ -3778,7 +3797,7 @@ algorithm
       then
         fail();
   end matchcontinue;
-end cevalBuiltinMax2;
+end cevalBuiltinMaxArr;
 
 protected function cevalBuiltinMin "function: cevalBuiltinMin
   author: PA
@@ -3796,7 +3815,7 @@ algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
-      Values.Value v,v_1;
+      Values.Value v,v1,v2,v_1;
       list<Env.Frame> env;
       DAE.Exp arr,s1,s2;
       Boolean impl;
@@ -3808,27 +3827,46 @@ algorithm
     case (cache,env,{arr},impl,st,msg)
       equation
         (cache,v,_) = ceval(cache,env, arr, impl, st,NONE(), msg);
-        (v_1) = cevalBuiltinMin2(v);
+        (v_1) = cevalBuiltinMinArr(v);
       then
         (cache,v_1,st);
     case (cache,env,{s1,s2},impl,st,msg)
       equation
-        (cache,Values.INTEGER(i1),_) = ceval(cache,env, s1, impl, st,NONE(), msg);
-        (cache,Values.INTEGER(i2),_) = ceval(cache,env, s2, impl, st,NONE(), msg);
-        i = intMin(i1, i2);
+        (cache,v1,_) = ceval(cache,env, s1, impl, st,NONE(), msg);
+        (cache,v2,_) = ceval(cache,env, s2, impl, st,NONE(), msg);
+        v = cevalBuiltinMin2(v1,v2);
       then
-        (cache,Values.INTEGER(i),st);
-    case (cache,env,{s1,s2},impl,st,msg)
-      equation
-        (cache,Values.REAL(r1),_) = ceval(cache,env, s1, impl, st,NONE(), msg);
-        (cache,Values.REAL(r2),_) = ceval(cache,env, s2, impl, st,NONE(), msg);
-        r = realMin(r1, r2);
-      then
-        (cache,Values.REAL(r),st);
+        (cache,v,st);
   end matchcontinue;
 end cevalBuiltinMin;
 
-protected function cevalBuiltinMin2 "function: cevalBuiltinMin2
+protected function cevalBuiltinMin2
+  input Values.Value v1;
+  input Values.Value v2;
+  output Values.Value outValue;
+algorithm
+  outValue := match (v1,v2)
+    local
+      Integer i1,i2,i;
+      Real r1,r2,r;
+      Boolean b1,b2,b;
+      String s1,s2,s;
+    case (Values.INTEGER(i1),Values.INTEGER(i2))
+      equation
+        i = intMin(i1, i2);
+      then Values.INTEGER(i);
+    case (Values.REAL(r1),Values.REAL(r2))
+      equation
+        r = realMin(r1, r2);
+      then Values.REAL(r);
+    case (Values.BOOL(b1),Values.BOOL(b2))
+      equation
+        b = boolAnd(b1, b2);
+      then Values.BOOL(b);
+  end match;
+end cevalBuiltinMin2;
+
+protected function cevalBuiltinMinArr "function: cevalBuiltinMinArr
   Helper function to cevalBuiltinMin."
   input Values.Value inValue;
   output Values.Value outValue;
@@ -3845,28 +3883,28 @@ algorithm
     
     case (Values.ARRAY(valueLst = (v1 :: (vls as (_ :: _)))))
       equation
-        (Values.INTEGER(i1)) = cevalBuiltinMin2(v1);
-        (Values.INTEGER(i2)) = cevalBuiltinMin2(ValuesUtil.makeArray(vls));
+        (Values.INTEGER(i1)) = cevalBuiltinMinArr(v1);
+        (Values.INTEGER(i2)) = cevalBuiltinMinArr(ValuesUtil.makeArray(vls));
         resI = intMin(i1, i2);
       then
         Values.INTEGER(resI);
     
     case (Values.ARRAY(valueLst = (v1 :: (vls as (_ :: _)))))
       equation
-        (Values.REAL(r1)) = cevalBuiltinMin2(v1);
-        (Values.REAL(r2)) = cevalBuiltinMin2(ValuesUtil.makeArray(vls));
+        (Values.REAL(r1)) = cevalBuiltinMinArr(v1);
+        (Values.REAL(r2)) = cevalBuiltinMinArr(ValuesUtil.makeArray(vls));
         resR = realMin(r1, r2);
       then
         Values.REAL(resR);
     
     case (Values.ARRAY(valueLst = {vl}))
       equation
-        (v) = cevalBuiltinMin2(vl);
+        (v) = cevalBuiltinMinArr(vl);
       then
         v;
     
   end matchcontinue;
-end cevalBuiltinMin2;
+end cevalBuiltinMinArr;
 
 protected function cevalBuiltinDifferentiate "function cevalBuiltinDifferentiate
   author: LP

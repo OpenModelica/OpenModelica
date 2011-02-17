@@ -554,6 +554,22 @@ algorithm
       equation
         e = Expression.makeBuiltinCall("max",{e1,e2},tp);
       then simplify1(e);
+    case (DAE.CALL(path=Absyn.IDENT("min"),ty=DAE.ET_BOOL(),expLst={e1,e2}))
+      equation
+        e = DAE.LBINARY(e1,DAE.AND(),e2);
+      then simplify1(e);
+    case (DAE.CALL(path=Absyn.IDENT("max"),ty=DAE.ET_BOOL(),expLst={e1,e2}))
+      equation
+        e = DAE.LBINARY(e1,DAE.OR(),e2);
+      then simplify1(e);
+    case (DAE.CALL(path=Absyn.IDENT("min"),ty=DAE.ET_ARRAY(DAE.ET_BOOL(),_),expLst={DAE.ARRAY(array=expl)}))
+      equation
+        e = Expression.makeLBinary(expl,DAE.AND());
+      then simplify1(e);
+    case (DAE.CALL(path=Absyn.IDENT("max"),ty=DAE.ET_ARRAY(DAE.ET_BOOL(),_),expLst={DAE.ARRAY(array=expl)}))
+      equation
+        e = Expression.makeLBinary(expl,DAE.OR());
+      then simplify1(e);
 
     // cross
     case (e as DAE.CALL(path = Absyn.IDENT("cross"), builtin = true, expLst = expl))

@@ -2535,6 +2535,35 @@ algorithm
   end matchcontinue;
 end makeDiff;
 
+public function makeLBinary
+"Makes a binary logical expression of all elements in the list."
+  input list<DAE.Exp> inExpLst;
+  input DAE.Operator op;
+  output DAE.Exp outExp;
+algorithm
+  outExp := match (inExpLst,op)
+    local
+      DAE.Exp e1,e2,res;
+      list<DAE.Exp> rest,lst;
+      Operator op;
+      String str;
+    case ({},DAE.AND()) then DAE.BCONST(true);
+    case ({},DAE.OR()) then DAE.BCONST(false);
+    case ({e1},_) then e1;
+    case ({e1, e2},op) then DAE.LBINARY(e1,op,e2);
+    case ((e1 :: rest),op)
+      equation
+        res = makeLBinary(rest,op);
+        res = DAE.LBINARY(e1,op,res);
+      then res;
+    else
+      equation
+        str = "Expression.makeLBinary failed for operator " +& ExpressionDump.lbinopSymbol(op);
+        Error.addMessage(Error.INTERNAL_ERROR, {str});
+      then fail();
+  end match;
+end makeLBinary;
+
 public function makeSum
 "function: makeSum
   Takes a list of expressions an makes a sum
