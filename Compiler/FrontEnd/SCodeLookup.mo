@@ -55,18 +55,35 @@ public type Import = Absyn.Import;
 
 protected import SCodeFlattenImports;
 
-public constant Item BUILTIN_REAL = 
-  SCodeEnv.BUILTIN("Real", SCodeEnv.emptyEnv);
-public constant Item BUILTIN_INTEGER = 
-  SCodeEnv.BUILTIN("Integer", SCodeEnv.emptyEnv);
-public constant Item BUILTIN_BOOLEAN = 
-  SCodeEnv.BUILTIN("Boolean", SCodeEnv.emptyEnv);
-public constant Item BUILTIN_STRING = 
-  SCodeEnv.BUILTIN("String", SCodeEnv.emptyEnv);
-public constant Item BUILTIN_STATESELECT = 
-  SCodeEnv.BUILTIN("StateSelect", SCodeEnv.emptyEnv);
-public constant Item BUILTIN_EXTERNALOBJECT = 
-  SCodeEnv.BUILTIN("ExternalObject", SCodeEnv.emptyEnv);
+public constant Item BUILTIN_REAL = SCodeEnv.CLASS(
+  SCode.CLASS("Real", false, false, SCode.R_TYPE(),
+    SCode.PARTS({}, {}, {}, {}, {}, NONE(), {}, NONE()),
+    Absyn.dummyInfo), SCodeEnv.emptyEnv, SCodeEnv.BUILTIN());
+  
+public constant Item BUILTIN_INTEGER = SCodeEnv.CLASS(
+  SCode.CLASS("Integer", false, false, SCode.R_TYPE(),
+    SCode.PARTS({}, {}, {}, {}, {}, NONE(), {}, NONE()),
+    Absyn.dummyInfo), SCodeEnv.emptyEnv, SCodeEnv.BUILTIN());
+
+public constant Item BUILTIN_BOOLEAN = SCodeEnv.CLASS(
+  SCode.CLASS("Boolean", false, false, SCode.R_TYPE(),
+    SCode.PARTS({}, {}, {}, {}, {}, NONE(), {}, NONE()),
+    Absyn.dummyInfo), SCodeEnv.emptyEnv, SCodeEnv.BUILTIN());
+
+public constant Item BUILTIN_STRING = SCodeEnv.CLASS(
+  SCode.CLASS("String", false, false, SCode.R_TYPE(),
+    SCode.PARTS({}, {}, {}, {}, {}, NONE(), {}, NONE()),
+    Absyn.dummyInfo), SCodeEnv.emptyEnv, SCodeEnv.BUILTIN());
+
+public constant Item BUILTIN_STATESELECT = SCodeEnv.CLASS(
+  SCode.CLASS("StateSelect", false, false, SCode.R_ENUMERATION(),
+    SCode.PARTS({}, {}, {}, {}, {}, NONE(), {}, NONE()),
+    Absyn.dummyInfo), SCodeEnv.emptyEnv, SCodeEnv.BUILTIN());
+
+public constant Item BUILTIN_EXTERNALOBJECT = SCodeEnv.CLASS(
+  SCode.CLASS("ExternalObject", true, false, SCode.R_CLASS(),
+    SCode.PARTS({}, {}, {}, {}, {}, NONE(), {}, NONE()),
+    Absyn.dummyInfo), SCodeEnv.emptyEnv, SCodeEnv.BUILTIN());
 
 public function lookupSimpleName
   "Looks up a simple identifier in the environment and returns the environment
@@ -145,7 +162,7 @@ algorithm
     local
       String name;
 
-    case (SOME(SCodeEnv.BUILTIN(name = _))) then ();
+    case (SOME(SCodeEnv.CLASS(classType = SCodeEnv.BUILTIN()))) then ();
     case (NONE()) then ();
   end match;
 end checkBuiltinItem;
@@ -607,7 +624,7 @@ algorithm
   end match;
 end lookupBuiltinType;
 
-protected function lookupName
+public function lookupName
   "Looks up a simple or qualified name in the environment and returns the
   environment item corresponding to the name, the path for the name and
   optionally the enclosing scope of the name if the name references a class.
@@ -617,7 +634,7 @@ protected function lookupName
   input Absyn.Path inName;
   input Env inEnv;
   input Absyn.Info inInfo;
-  input Error.ErrorID inErrorType;
+  input Option<Error.ErrorID> inErrorType;
   output Item outItem;
   output Absyn.Path outName;
   output Option<Env> outEnv;
@@ -631,9 +648,17 @@ algorithm
       Env env;
       Option<Env> item_env;
       String name_str, env_str;
+      Error.ErrorID error_id;
 
     // A builtin type.
     case (Absyn.IDENT(name = id), _, _, _)
+      equation
+        item = lookupBuiltinType(id);
+      then
+        (item, inName, SOME(SCodeEnv.emptyEnv));
+
+    // A builtin type with qualified path, i.e. StateSelect.something.
+    case (Absyn.QUALIFIED(name = id), _, _, _)
       equation
         item = lookupBuiltinType(id);
       then
@@ -658,11 +683,11 @@ algorithm
       then
         (item, path, SOME(env));
       
-    else
+    case (_, _, _, SOME(error_id))
       equation
         name_str = Absyn.pathString(inName);
         env_str = SCodeEnv.getEnvName(inEnv);
-        Error.addSourceMessage(inErrorType, {name_str, env_str}, inInfo);
+        Error.addSourceMessage(error_id, {name_str, env_str}, inInfo);
       then
         fail();
         
@@ -679,7 +704,7 @@ public function lookupClassName
   output Option<Env> outEnv;
 algorithm
   (outItem, outName, outEnv) := lookupName(inName, inEnv, inInfo,
-    Error.LOOKUP_ERROR);
+    SOME(Error.LOOKUP_ERROR));
 end lookupClassName;
 
 public function lookupBaseClassName
@@ -692,7 +717,7 @@ public function lookupBaseClassName
   output Option<Env> outEnv;
 algorithm
   (outItem, outName, outEnv) := lookupName(inName, inEnv, inInfo,
-    Error.LOOKUP_BASECLASS_ERROR);
+    SOME(Error.LOOKUP_BASECLASS_ERROR));
 end lookupBaseClassName;
 
 public function lookupVariableName
@@ -705,7 +730,7 @@ public function lookupVariableName
   output Option<Env> outEnv;
 algorithm
   (outItem, outName, outEnv) := lookupName(inName, inEnv, inInfo,
-    Error.LOOKUP_VARIABLE_ERROR);
+    SOME(Error.LOOKUP_VARIABLE_ERROR));
 end lookupVariableName;
 
 public function lookupComponentRef
@@ -825,6 +850,7 @@ algorithm
       Absyn.Ident name;
       Item item;
       Env env;
+      SCode.Class cls;
 
     // A normal type.
     case (Absyn.TPATH(path = path), _, _)
@@ -835,9 +861,21 @@ algorithm
 
     // A MetaModelica type such as list or tuple.
     case (Absyn.TCOMPLEX(path = Absyn.IDENT(name = name)), _, _)
-      then (SCodeEnv.BUILTIN(name, SCodeEnv.emptyEnv), SCodeEnv.emptyEnv);
+      equation
+        cls = makeDummyMetaType(name);
+      then 
+        (SCodeEnv.CLASS(cls, SCodeEnv.emptyEnv, SCodeEnv.BUILTIN()), 
+          SCodeEnv.emptyEnv);
          
   end match;
 end lookupTypeSpec;
    
+protected function makeDummyMetaType
+  input String inTypeName;
+  output SCode.Class outClass;
+algorithm
+  outClass := SCode.CLASS(inTypeName, false, false, SCode.R_TYPE(),
+    SCode.PARTS({}, {}, {}, {}, {}, NONE(), {}, NONE()), Absyn.dummyInfo);
+end makeDummyMetaType;
+
 end SCodeLookup;

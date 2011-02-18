@@ -127,14 +127,14 @@ algorithm
     case (cache,_,_,_,SCode.NOMOD(),impl,_) then (cache,DAE.NOMOD());
 
     // no top binding
-    case (cache,env,ih,pre,(m as SCode.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,absynExpOption = NONE())),impl,info)
+    case (cache,env,ih,pre,(m as SCode.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,binding = NONE())),impl,info)
       equation
         (cache,subs_1) = elabSubmods(cache, env, ih, pre, subs, impl,info);
       then
         (cache,DAE.MOD(finalPrefix,each_,subs_1,NONE()));
 
     // Only elaborate expressions with non-delayed type checking, see SCode.MOD.
-    case (cache,env,ih,pre,(m as SCode.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,absynExpOption = SOME((e,false)))),impl,info)
+    case (cache,env,ih,pre,(m as SCode.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,binding = SOME((e,false)))),impl,info)
       equation
         (cache,subs_1) = elabSubmods(cache, env, ih, pre, subs, impl,info);
         // print("Mod.elabMod: calling elabExp on mod exp: " +& Dump.printExpStr(e) +& " in env: " +& Env.printEnvPathStr(env) +& "\n");
@@ -148,7 +148,7 @@ algorithm
         (cache,DAE.MOD(finalPrefix,each_,subs_1,SOME(DAE.TYPED(e_2,e_val,prop,SOME(e)))));
 
     // Delayed type checking
-    case (cache,env,ih,pre,(m as SCode.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,absynExpOption = SOME((e,true)))),impl,info)
+    case (cache,env,ih,pre,(m as SCode.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,binding = SOME((e,true)))),impl,info)
       equation
         // print("Mod.elabMod: delayed mod : " +& Dump.printExpStr(e) +& " in env: " +& Env.printEnvPathStr(env) +& "\n");
         (cache,subs_1) = elabSubmods(cache, env, ih, pre, subs, impl, info);
@@ -651,12 +651,12 @@ algorithm
       list<SCode.Element> elist;
       Ident s;
     case (SCode.NOMOD(),_,_) then DAE.NOMOD();
-    case ((m as SCode.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,absynExpOption = NONE())),env,pre)
+    case ((m as SCode.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,binding = NONE())),env,pre)
       equation
         subs_1 = elabUntypedSubmods(subs, env, pre);
       then
         DAE.MOD(finalPrefix,each_,subs_1,NONE());
-    case ((m as SCode.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,absynExpOption = SOME((e,_)))),env,pre)
+    case ((m as SCode.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,binding = SOME((e,_)))),env,pre)
       equation
         subs_1 = elabUntypedSubmods(subs, env, pre);
       then

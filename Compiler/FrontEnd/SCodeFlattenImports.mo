@@ -46,15 +46,8 @@ public import SCodeEnv;
 
 public type Env = SCodeEnv.Env;
 
-protected import Debug;
-protected import Dump;
 protected import Error;
-protected import ErrorExt;
 protected import SCodeLookup;
-protected import SCodeFlattenImports;
-protected import SCodeFlattenExtends;
-protected import SCodeFlattenRedeclare;
-protected import System;
 protected import Util;
 
 protected type Item = SCodeEnv.Item;
@@ -106,6 +99,7 @@ algorithm
       SCode.Mod mods;
       Absyn.ElementAttributes attr;
       Env env;
+      SCode.Ident bc;
 
     case (SCode.PARTS(el, neql, ieql, nal, ial, extdecl, annl, cmt), _, _)
       equation
@@ -121,12 +115,27 @@ algorithm
       then
         SCode.PARTS(el, neql, ieql, nal, ial, extdecl, annl, cmt);
 
+    case (SCode.CLASS_EXTENDS(bc, mods, el, neql, ieql, nal, ial, annl, cmt), _, _)
+      equation
+        // Lookup elements.
+        el = Util.listMap1(el, flattenElement, inEnv);
+        el = Util.listFilter(el, isNotImport);
+
+        // Lookup equations and algorithm names.
+        neql = Util.listMap1(neql, flattenEquation, inEnv);
+        ieql = Util.listMap1(ieql, flattenEquation, inEnv);
+        nal = Util.listMap1(nal, flattenAlgorithm, inEnv);
+        ial = Util.listMap1(ial, flattenAlgorithm, inEnv);
+
+        mods = flattenModifier(mods, inEnv, inInfo);
+      then
+        SCode.CLASS_EXTENDS(bc, mods, el, neql, ieql, nal, ial, annl, cmt);
+        
     case (SCode.DERIVED(ty, mods, attr, cmt), env, _)
       equation
-        checkRecursiveShortDefinition(ty, env, inInfo);
         mods = flattenModifier(mods, env, inInfo);
         // Remove the extends from the local scope before flattening the derived
-        // type, because the type should not be look up via itself.
+        // type, because the type should not be looked up via itself.
         env = SCodeEnv.removeExtendsFromLocalScope(env);
         ty = flattenTypeSpec(ty, env, inInfo);
       then
@@ -135,37 +144,6 @@ algorithm
     else then inClassDef;
   end match;
 end flattenClassDef;
-
-protected function checkRecursiveShortDefinition
-  input Absyn.TypeSpec inTypeSpec;
-  input Env inEnv;
-  input Absyn.Info inInfo;
-algorithm
-  _ := matchcontinue(inTypeSpec, inEnv, inInfo)
-    local
-      Absyn.Path path;
-      String type_name, env_name;
-      
-    case (Absyn.TPATH(path = path), 
-          SCodeEnv.FRAME(name = SOME(env_name)) :: _, _)
-      equation
-        type_name = Absyn.pathFirstIdent(path);
-        false = stringEqual(type_name, env_name);
-      then
-        ();
-
-    case (Absyn.TPATH(path = path), 
-          SCodeEnv.FRAME(name = SOME(env_name)) :: _, _)
-      equation
-        type_name = Absyn.pathString(path);
-        Error.addSourceMessage(Error.RECURSIVE_SHORT_CLASS_DEFINITION, 
-          {env_name, type_name}, inInfo);
-      then
-        fail();
-
-    case (Absyn.TCOMPLEX(path = _), _, _) then ();
-  end matchcontinue;
-end checkRecursiveShortDefinition;
 
 protected function flattenDerivedClassDef
   input SCode.ClassDef inClassDef;
@@ -318,45 +296,11 @@ protected
   Env env;
 algorithm
   SCode.EXTENDS(path, mod, ann, info) := inExtends;
-  true := checkNotExtendsDependent(path, inEnv, info);
   env := SCodeEnv.removeExtendsFromLocalScope(inEnv);
   (_, path, _) := SCodeLookup.lookupBaseClassName(path, env, info);
   mod := flattenModifier(mod, inEnv, info);
   outExtends := SCode.EXTENDS(path, mod, ann, info);
 end flattenExtends;
-
-protected function checkNotExtendsDependent
-  "The Modelica specification 3.2 says (section 5.6.1): 'The lookup of the names
-  of extended classes should give the same result before and after flattening
-  the extends. One should not find any element used during this flattening by
-  lookup through the extends-clauses.' This means that it's not allowed to have
-  a name in an extends-clause that's inherited from another extends-clause. This
-  function checks this, and returns true if an extends doesn't depend on an
-  extend in the local scope."
-  input Absyn.Path inBaseClass;
-  input Env inEnv;
-  input Absyn.Info inInfo;
-  output Boolean outResult;
-algorithm
-  outResult := matchcontinue(inBaseClass, inEnv, inInfo)
-    local
-      Absyn.Path bc;
-      Absyn.Ident id;
-      String bc_name;
-
-    case (_, _, _)
-      equation
-        id = Absyn.pathFirstIdent(inBaseClass);
-        bc = SCodeLookup.lookupBaseClass(id, inEnv, inInfo);
-        bc_name = Absyn.pathString(bc);
-        Error.addSourceMessage(Error.EXTENDS_INHERITED_FROM_LOCAL_EXTENDS,
-          {bc_name, id}, inInfo);
-      then
-        false;
-
-    else then true;
-  end matchcontinue;
-end checkNotExtendsDependent;
 
 protected function flattenEquation
   input SCode.Equation inEquation;
@@ -380,10 +324,32 @@ algorithm
       SCode.Ident iter_name;
       Env env;
       Absyn.Info info;
+      Absyn.ComponentRef cref;
+      Option<SCode.Comment> cmt;
+      Absyn.Exp exp;
+      Absyn.FunctionArgs fargs;
 
     case ((equ as SCode.EQ_FOR(index = iter_name, info = info), env))
       equation
         env = SCodeEnv.extendEnvWithIterators({(iter_name, NONE())}, env);
+        (equ, _) = SCode.traverseEEquationExps(equ, (traverseExp, (env, info)));
+      then
+        ((equ, env));
+
+    case ((SCode.EQ_REINIT(cref = cref, expReinit = exp, comment = cmt,
+        info = info), env))
+      equation
+        cref = SCodeLookup.lookupComponentRef(cref, env, info);
+        equ = SCode.EQ_REINIT(cref, exp, cmt, info);
+        (equ, _) = SCode.traverseEEquationExps(equ, (traverseExp, (env, info)));
+      then
+        ((equ, env));
+
+    case ((SCode.EQ_NORETCALL(functionName = cref, functionArgs = fargs,
+        comment = cmt, info = info), env))
+      equation
+        cref = SCodeLookup.lookupComponentRef(cref, env, info);
+        equ = SCode.EQ_NORETCALL(cref, fargs, cmt, info);
         (equ, _) = SCode.traverseEEquationExps(equ, (traverseExp, (env, info)));
       then
         ((equ, env));
@@ -428,8 +394,6 @@ protected function flattenStatement
   input SCode.Statement inStatement;
   input Env inEnv;
   output SCode.Statement outStatement;
-protected
-  Env env;
 algorithm
   (outStatement, _) := SCode.traverseStatements(inStatement, (flattenStatementTraverser, inEnv));
 end flattenStatement;
@@ -444,10 +408,22 @@ algorithm
       Env env;
       SCode.Statement stmt;
       Absyn.Info info;
+      Absyn.ComponentRef cref;
+      Absyn.FunctionArgs fargs;
+      Option<SCode.Comment> cmt;
 
     case ((stmt as SCode.ALG_FOR(iterators = iters, info = info), env))
       equation
         env = SCodeEnv.extendEnvWithIterators(iters, env);
+        (stmt, _) = SCode.traverseStatementExps(stmt, (traverseExp, (env, info)));
+      then
+        ((stmt, env));
+
+    case ((stmt as SCode.ALG_NORETCALL(functionCall = cref, 
+        functionArgs = fargs, comment = cmt, info = info), env))
+      equation
+        cref = SCodeLookup.lookupComponentRef(cref, env, info);
+        stmt = SCode.ALG_NORETCALL(cref, fargs, cmt, info);
         (stmt, _) = SCode.traverseStatementExps(stmt, (traverseExp, (env, info)));
       then
         ((stmt, env));

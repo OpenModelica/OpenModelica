@@ -71,6 +71,7 @@ Patternm.mo \
 Prefix.mo \
 PrefixUtil.mo \
 SCode.mo \
+SCodeDependency.mo \
 SCodeEnv.mo \
 SCodeLookup.mo \
 SCodeFlattenImports.mo \

@@ -96,7 +96,7 @@ uniontype Mod "- Modifications"
     Boolean finalPrefix "final" ;
     Absyn.Each eachPrefix;
     list<SubMod> subModLst;
-    Option<tuple<Absyn.Exp,Boolean>> absynExpOption "The binding expression of a modification
+    Option<tuple<Absyn.Exp,Boolean>> binding "The binding expression of a modification
     has an expression and a Boolean delayElaboration which is true if elaboration(type checking)
     should be delayed. This can for instance be used when having A a(x = a.y) where a.y can not be
     type checked -before- a is instantiated, which is the current design in instantiation process.";
@@ -714,7 +714,7 @@ algorithm
       list<SubMod> subs;
       Option<tuple<Absyn.Exp,Boolean>> e;
       Mod m;
-    case (MOD(finalPrefix = f,eachPrefix = each_,subModLst = subs,absynExpOption = e)) then MOD(f,each_,{},e);
+    case (MOD(finalPrefix = f,eachPrefix = each_,subModLst = subs,binding = e)) then MOD(f,each_,{},e);
     case (m) then m;
   end matchcontinue;
 end stripSubmod;
@@ -836,7 +836,7 @@ algorithm
         res = stringAppendList({"redeclare(",finalPrefixstr,str,")"});
       then
         res;
-    case MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,absynExpOption = ass)
+    case MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,binding = ass)
       equation
         finalPrefixstr = Util.if_(finalPrefix, "final", "");
         each_str = Dump.unparseEachStr(each_);

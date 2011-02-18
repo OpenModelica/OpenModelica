@@ -40,52 +40,113 @@ encapsulated package SCodeFlatten
   and redeclares, and fully qualifying class names.
 "
 
+public import Absyn;
 public import SCode;
+public import SCodeDependency;
 public import SCodeFlattenImports;
 public import SCodeFlattenExtends;
 public import SCodeFlattenRedeclare;
 
+protected import Debug;
+protected import RTOpts;
 protected import SCodeEnv;
+protected import System;
+protected import Util;
 
 protected type Env = SCodeEnv.Env;
 
 public function flattenProgram
+  "Flattens the last class in a program."
+  input SCode.Program inProgram;
+  output SCode.Program outProgram;
+protected
+  Absyn.Path cls_path;
+algorithm
+  cls_path := getLastClassNameInProgram(inProgram);
+  outProgram := flattenClassInProgram(cls_path, inProgram);
+end flattenProgram;
+
+protected function getLastClassNameInProgram
+  "Returns the name of the last class in the program."
+  input SCode.Program inProgram;
+  output Absyn.Path outClassName;
+protected
+  SCode.Program prog;
+  String name;
+algorithm
+  prog := listReverse(inProgram);
+  SCode.CLASS(name = name) := Util.listSelectFirst(prog, isClass);
+  outClassName := Absyn.IDENT(name);
+end getLastClassNameInProgram;
+
+protected function isClass
+  "Checks if the given SCode.Class is a class, i.e. not a function."
+  input SCode.Class inClass;
+  output Boolean outIsClass;
+algorithm
+  outIsClass := match(inClass)
+    case SCode.CLASS(restriction = SCode.R_FUNCTION()) then false;
+    case SCode.CLASS(restriction = SCode.R_EXT_FUNCTION()) then false;
+    else then true;
+  end match;
+end isClass;
+
+public function flattenClass
+  "Flattens a single class."
+  input SCode.Class inClass;
+  output SCode.Class outClass;
+algorithm
+  {outClass} := flattenProgram({inClass});
+end flattenClass;
+
+public function flattenClassInProgram
+  "Flattens a specific class in a program."
+  input Absyn.Path inClassName;
   input SCode.Program inProgram;
   output SCode.Program outProgram;
 protected
   Env env;
+  SCode.Program prog;
 algorithm
-  //System.startTimer();
-  env := SCodeEnv.newEnvironment(NONE());
-  env := SCodeEnv.buildInitialEnv();
-  env := SCodeEnv.extendEnvWithClasses(inProgram, env);
-  env := SCodeEnv.insertClassExtendsIntoEnv(env);
-  
-  outProgram := SCodeFlattenImports.flattenProgram(inProgram, env);
-  outProgram := SCodeFlattenExtends.flattenProgram(outProgram, env);
-  outProgram := SCodeFlattenRedeclare.flattenProgram(outProgram, env);
-  //System.stopTimer();
-  //print("flatten took " +& realString(System.getTimerIntervalTime()) +& 
-  //  " seconds\n");
-end flattenProgram;
-
-public function flattenClass
-  input SCode.Class inClass;
-  output SCode.Class outClass;
-algorithm
-  outClass := matchcontinue(inClass)
+  outProgram := matchcontinue(inClassName, inProgram)
     local
-      SCode.Class cls;
+      Env env;
+      SCode.Program prog;
 
-    case _ then inClass;
-
-    case _
+    case (_, _)
       equation
-        {cls} = flattenProgram({inClass});
+        false = RTOpts.debugFlag("scodeFlatten");
       then
-        cls;
+        inProgram;
+
+    case (_, prog)
+      equation
+        true = RTOpts.debugFlag("scodeFlatten");
+        //System.startTimer();
+
+        env = SCodeEnv.buildInitialEnv();
+        env = SCodeEnv.extendEnvWithClasses(prog, env);
+        env = SCodeEnv.insertClassExtendsIntoEnv(env);
+
+        (prog, env) = SCodeDependency.analyse(inClassName, env, prog);
+        prog = SCodeFlattenImports.flattenProgram(prog, env);
+        prog = SCodeFlattenExtends.flattenProgram(prog, env);
+        prog = SCodeFlattenRedeclare.flattenProgram(prog, env);
+
+        //System.stopTimer();
+        //Debug.traceln("SCodeFlatten.flattenClassInProgram took " +& 
+        //  realString(System.getTimerIntervalTime()) +& " seconds");
+      then
+        prog;
+
+    else
+      equation
+        Debug.fprintln("failtrace", "SCode.flattenClassInProgram failed on " +&
+          Absyn.pathString(inClassName));
+      then
+        fail();
 
   end matchcontinue;
-end flattenClass;
+end flattenClassInProgram;
 
 end SCodeFlatten;

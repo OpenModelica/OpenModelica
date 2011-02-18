@@ -1591,7 +1591,7 @@ algorithm
     // deal with the empty list
     case (prefix, {}) then {};
     // deal with named modifiers
-    case (prefix, SCode.NAMEMOD(ident, SCode.MOD(absynExpOption = SOME((exp,_))))::subModLst)
+    case (prefix, SCode.NAMEMOD(ident, SCode.MOD(binding = SOME((exp,_))))::subModLst)
       equation
         nArgs = translateSubModToNArgs(prefix, subModLst);
         exp = prefixUnqualifiedCrefsFromExp(exp, prefix);

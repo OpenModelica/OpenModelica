@@ -42,13 +42,13 @@ encapsulated package SCodeEnv
 
 public import Absyn;
 public import SCode;
+public import Util;
 
 protected import Debug;
 protected import Error;
 protected import RTOpts;
 protected import SCodeLookup;
 protected import SCodeUtil;
-protected import Util;
 
 
 public type Import = Absyn.Import;
@@ -94,23 +94,26 @@ public uniontype Frame
     AvlTree clsAndVars;
     ExtendsTable extendsTable;
     ImportTable importTable;
+    Util.StatefulBoolean isUsed "Used by SCodeDependency.";
   end FRAME;
 end Frame;
+
+public uniontype ClassType
+  record USERDEFINED end USERDEFINED;
+  record BUILTIN end BUILTIN;
+end ClassType;
 
 public uniontype Item
   record VAR
     SCode.Element var;
+    Util.StatefulBoolean isUsed "Used by SCodeDependency.";
   end VAR;
 
   record CLASS
     SCode.Class cls;
     Env env;
+    ClassType classType;
   end CLASS;
-
-  record BUILTIN
-    String name;
-    Env env;
-  end BUILTIN;
 end Item;
 
 public type Env = list<Frame>;
@@ -180,15 +183,17 @@ algorithm
     else
       equation
         true = RTOpts.debugFlag("failtrace");
-        print("- SCodeFlatten.qualifyRedeclare failed on " +&
+        Debug.traceln("- SCodeFlatten.qualifyRedeclare failed on " +&
           SCode.printElementStr(inElement) +& " in " +&
-          Absyn.pathString(getEnvPath(inEnv)) +& "\n");
+          Absyn.pathString(getEnvPath(inEnv)));
       then
         fail();
   end matchcontinue;
 end qualifyRedeclare;
 
 protected function qualifyPath
+  "Qualifies a path by looking up a path in the environment, and merging the
+  resulting path with it's environment."
   input Absyn.Path inPath;
   input Env inEnv;
   input Absyn.Info inInfo;
@@ -202,6 +207,7 @@ algorithm
 end qualifyPath;
 
 protected function mergePathWithEnvPath
+  "Merges a path with the environment path."
   input Absyn.Path inPath;
   input Env inEnv;
   output Absyn.Path outPath;
@@ -211,6 +217,7 @@ algorithm
       Absyn.Path path;
       Absyn.Ident id;
 
+    // Try to merge the last identifier in the path with the environment path.
     case (_, _)
       equation
         id = Absyn.pathLastIdent(inPath);
@@ -218,11 +225,15 @@ algorithm
       then
         path;
 
+    // If the previous case failed (which will happen at the top-scope when
+    // getEnvPath fails), just return the path as it is.
     else then inPath;
   end matchcontinue;
 end mergePathWithEnvPath;
 
 public function joinPaths
+  "Joins two paths. This functions is similar to Absyn.joinPaths, but with
+  different semantics for fully qualified paths."
   input Absyn.Path inPath1;
   input Absyn.Path inPath2;
   output Absyn.Path outPath;
@@ -232,6 +243,7 @@ algorithm
       Absyn.Ident id;
       Absyn.Path path;
 
+    // The second path is fully qualified, return only that path.
     case (_, Absyn.FULLYQUALIFIED(path = _)) then inPath2;
     case (Absyn.IDENT(name = id), _) then Absyn.QUALIFIED(id, inPath2);
     case (Absyn.QUALIFIED(name = id, path = path), _)
@@ -240,6 +252,7 @@ algorithm
       then
         Absyn.QUALIFIED(id, path);
 
+    // The first path is fully qualified, merge it with the second path.
     case (Absyn.FULLYQUALIFIED(path = path), _)
       equation
         path = joinPaths(path, inPath2);
@@ -249,6 +262,7 @@ algorithm
 end joinPaths;
 
 public function newEnvironment
+  "Returns a new environment with only one frame."
   input Option<SCode.Ident> inName;
   output Env outEnv;
 protected
@@ -259,6 +273,8 @@ algorithm
 end newEnvironment;
 
 protected function openScope
+  "Open a new class scope in the environment by adding a new frame for the given
+  class."
   input Env inEnv;
   input SCode.Class inClass;
   output Env outEnv;
@@ -273,6 +289,8 @@ algorithm
 end openScope;
 
 public function enterScope
+  "Enters a new scope in the environment by looking up an item in the
+  environment and appending it's frame to the environment."
   input Env inEnv;
   input SCode.Ident inName;
   output Env outEnv;
@@ -288,6 +306,7 @@ algorithm
 end enterScope;
 
 public function getEnvTopScope
+  "Returns the top scope, i.e. last frame in the environment."
   input Env inEnv;
   output Env outEnv;
 protected
@@ -300,6 +319,7 @@ algorithm
 end getEnvTopScope;
 
 protected function getFrameType
+  "Returns a new FrameType given if the frame should be encapsulated or not."
   input Boolean isEncapsulated;
   output FrameType outType;
 algorithm
@@ -310,6 +330,7 @@ algorithm
 end getFrameType;
 
 protected function newFrame
+  "Creates a new frame with an optional name and a frame type."
   input Option<String> inName;
   input FrameType inType;
   output Frame outFrame;
@@ -317,26 +338,53 @@ protected
   AvlTree tree;
   ExtendsTable exts;
   ImportTable imps;
+  Util.StatefulBoolean is_used;
 algorithm
   tree := avlTreeNew();
   exts := newExtendsTable();
   imps := newImportTable();
-  outFrame := FRAME(inName, inType, tree, exts, imps);
+  is_used := Util.makeStatefulBoolean(false);
+  outFrame := FRAME(inName, inType, tree, exts, imps, is_used);
 end newFrame;
 
 protected function newImportTable
+  "Creates a new import table."
   output ImportTable outImports;
 algorithm
   outImports := IMPORT_TABLE(false, {}, {});
 end newImportTable;
 
 protected function newExtendsTable
+  "Creates a new extends table."
   output ExtendsTable outExtends;
 algorithm
   outExtends := EXTENDS_TABLE({}, {});
 end newExtendsTable;
 
+public function newClassItem
+  "Creates a new class environment item."
+  input SCode.Class inClass;
+  input Env inEnv;
+  input ClassType inClassType;
+  output Item outClassItem;
+algorithm
+  outClassItem := CLASS(inClass, inEnv, inClassType);
+end newClassItem;
+  
+public function newVarItem
+  "Creates a new variable environment item."
+  input SCode.Element inVar;
+  input Boolean inIsUsed;
+  output Item outVarItem;
+protected
+  Util.StatefulBoolean is_used;
+algorithm
+  is_used := Util.makeStatefulBoolean(inIsUsed);
+  outVarItem := VAR(inVar, is_used);
+end newVarItem;
+
 public function extendEnvWithClasses
+  "Extends the environment with a list of classes."
   input list<SCode.Class> inClasses;
   input Env inEnv;
   output Env outEnv;
@@ -345,6 +393,7 @@ algorithm
 end extendEnvWithClasses;
 
 protected function extendEnvWithClass
+  "Extends the environment with a class."
   input SCode.Class inClass;
   input Env inEnv;
   output Env outEnv;
@@ -355,30 +404,46 @@ algorithm
       Env class_env, env;
       SCode.ClassDef cdef;
       Absyn.Path cls_path;
+      Option<Absyn.ExternalDecl> ext_decl;
+      ClassType cls_type;
 
-    case (SCode.CLASS(name = cls_name, classDef = cdef as SCode.PARTS(
-        externalDecl = SOME(Absyn.EXTERNALDECL(lang = SOME("builtin"))))), _)
-      equation
-        class_env = openScope(emptyEnv, inClass);
-        class_env = extendEnvWithClassComponents(cls_name, cdef, class_env);
-        env = extendEnvWithItem(BUILTIN(cls_name, class_env), inEnv, cls_name);
-      then
-        env;
-
+    // Class extends are added to the extends table for later use.
     case (SCode.CLASS(classDef = SCode.CLASS_EXTENDS(baseClassName = _)), _)
       then addClassExtendsToEnvExtendsTable(inClass, inEnv);
 
+    // A normal class.
     case (SCode.CLASS(name = cls_name, classDef = cdef), _)
       equation
+        // Create a new environment and add the class's components to it.
         class_env = openScope(emptyEnv, inClass);
         class_env = extendEnvWithClassComponents(cls_name, cdef, class_env);
-        env = extendEnvWithItem(CLASS(inClass, class_env), inEnv, cls_name);
+        cls_type = getClassType(cdef);
+        // Add the class with it's environment to the environment.
+        env = extendEnvWithItem(newClassItem(inClass, class_env, cls_type), 
+          inEnv, cls_name);
       then
         env;
   end match;
 end extendEnvWithClass;
 
+protected function getClassType
+  "Returns a class's type."
+  input SCode.ClassDef inClassDef;
+  output ClassType outType;
+algorithm
+  outType := match(inClassDef)
+    // A builtin class.
+    case (SCode.PARTS(externalDecl = SOME(Absyn.EXTERNALDECL(
+        lang = SOME("builtin"))))) 
+      then BUILTIN();
+    // A user-defined class (i.e. not builtin).
+    else then USERDEFINED();
+  end match;
+end getClassType;
+
 public function removeExtendsFromLocalScope
+  "Removes all extends from the local scope, i.e. inserts a new empty
+  extends-table into the first frame."
   input Env inEnv;
   output Env outEnv;
 protected
@@ -388,13 +453,33 @@ protected
   ImportTable imps;
   ExtendsTable exts;
   Env rest;
+  Util.StatefulBoolean is_used;
 algorithm
-  FRAME(name = name, frameType = ty, clsAndVars = tree, importTable = imps) 
-    :: rest := inEnv;
+  FRAME(name = name, frameType = ty, clsAndVars = tree, importTable = imps,
+    isUsed = is_used) :: rest := inEnv;
   exts := newExtendsTable();
-  outEnv := FRAME(name, ty, tree, exts, imps) :: rest;
+  outEnv := FRAME(name, ty, tree, exts, imps, is_used) :: rest;
 end removeExtendsFromLocalScope;
   
+public function removeClsAndVarsFromFrame
+  "Removes the classes variables from a frame."
+  input Frame inFrame;
+  output Frame outFrame;
+  output AvlTree outClsAndVars;
+protected
+  Option<String> name;
+  FrameType ty;
+  AvlTree tree;
+  ImportTable imps;
+  ExtendsTable exts;
+  Util.StatefulBoolean is_used;
+algorithm
+  FRAME(name = name, frameType = ty, clsAndVars = outClsAndVars, 
+    extendsTable = exts, importTable = imps, isUsed = is_used) := inFrame;
+  tree := avlTreeNew();
+  outFrame := FRAME(name, ty, tree, exts, imps, is_used);
+end removeClsAndVarsFromFrame;
+
 public function setImportTableHidden
   "Sets the 'hidden' flag in the import table in the local scope of the given
   environment."
@@ -409,11 +494,12 @@ protected
   ExtendsTable exts;
   Env rest;
   list<Import> qi, uqi;
+  Util.StatefulBoolean is_used;
 algorithm
   FRAME(name = name, frameType = ty, clsAndVars = tree, extendsTable = exts,
-    importTable = IMPORT_TABLE(qualifiedImports = qi, unqualifiedImports = uqi))
-    :: rest := inEnv;
-  outEnv := FRAME(name, ty, tree, exts, IMPORT_TABLE(inHidden, qi, uqi)) :: rest;
+    importTable = IMPORT_TABLE(qualifiedImports = qi, unqualifiedImports = uqi),
+    isUsed = is_used) :: rest := inEnv;
+  outEnv := FRAME(name, ty, tree, exts, IMPORT_TABLE(inHidden, qi, uqi), is_used) :: rest;
 end setImportTableHidden;
 
 public function setImportsInItemHidden
@@ -427,18 +513,39 @@ algorithm
     local
       SCode.Class cls;
       Env env;
+      ClassType cls_ty;
 
-    case (CLASS(cls = cls, env = env), _)
+    case (CLASS(cls = cls, env = env, classType = cls_ty), _)
       equation
         env = setImportTableHidden(env, inHidden);
       then
-        CLASS(cls, env);
+        CLASS(cls, env, cls_ty);
 
     else then inItem;
   end match;
 end setImportsInItemHidden;
 
+public function isItemUsed
+  "Checks if an item is used or not."
+  input Item inItem;
+  output Boolean isUsed;
+algorithm
+  isUsed := match(inItem)
+    local
+      Util.StatefulBoolean is_used;
+
+    case CLASS(env = {FRAME(isUsed = is_used)})
+      then Util.getStatefulBoolean(is_used);
+
+    case VAR(isUsed = is_used)
+      then Util.getStatefulBoolean(is_used);
+
+    else false;
+  end match;
+end isItemUsed;
+
 protected function extendEnvWithClassDef
+  "Extends the environment with a class definition."
   input SCode.Element inClassDefElement;
   input Env inEnv;
   output Env outEnv;
@@ -450,17 +557,21 @@ algorithm
 end extendEnvWithClassDef;
 
 protected function extendEnvWithVar
+  "Extends the environment with a variable."
   input SCode.Element inVar;
   input Env inEnv;
   output Env outEnv;
 protected
   String var_name;
+  Util.StatefulBoolean is_used;
 algorithm
   SCode.COMPONENT(component = var_name) := inVar; 
-  outEnv := extendEnvWithItem(VAR(inVar), inEnv, var_name);
+  is_used := Util.makeStatefulBoolean(false);
+  outEnv := extendEnvWithItem(VAR(inVar, is_used), inEnv, var_name);
 end extendEnvWithVar;
 
-protected function extendEnvWithItem
+public function extendEnvWithItem
+  "Extends the environment with an environment item."
   input Item inItem;
   input Env inEnv;
   input String inItemName;
@@ -472,13 +583,15 @@ protected
   ImportTable imps;
   FrameType ty;
   Env rest;
+  Util.StatefulBoolean is_used;
 algorithm
-  FRAME(name, ty, tree, exts, imps) :: rest := inEnv;
+  FRAME(name, ty, tree, exts, imps, is_used) :: rest := inEnv;
   tree := avlTreeAdd(tree, inItemName, inItem);
-  outEnv := FRAME(name, ty, tree, exts, imps) :: rest;
+  outEnv := FRAME(name, ty, tree, exts, imps, is_used) :: rest;
 end extendEnvWithItem;
 
 protected function extendEnvWithImport
+  "Extends the environment with an import element."
   input SCode.Element inImport;
   input Env inEnv;
   output Env outEnv;
@@ -494,31 +607,33 @@ algorithm
       Env rest;
       Absyn.Info info;
       Boolean hidden;
+      Util.StatefulBoolean is_used;
 
     // Unqualified imports
     case (SCode.IMPORT(imp = imp as Absyn.UNQUAL_IMPORT(path = _)), 
         FRAME(name, ty, tree, exts, 
-          IMPORT_TABLE(hidden, qual_imps, unqual_imps)) :: rest)
+          IMPORT_TABLE(hidden, qual_imps, unqual_imps), is_used) :: rest)
       equation
         unqual_imps = imp :: unqual_imps;
       then
         FRAME(name, ty, tree, exts, 
-          IMPORT_TABLE(hidden, qual_imps, unqual_imps)) :: rest;
+          IMPORT_TABLE(hidden, qual_imps, unqual_imps), is_used) :: rest;
 
     // Qualified imports
     case (SCode.IMPORT(imp = imp, info = info), FRAME(name, ty, tree, exts,
-        IMPORT_TABLE(hidden, qual_imps, unqual_imps)) :: rest)
+        IMPORT_TABLE(hidden, qual_imps, unqual_imps), is_used) :: rest)
       equation
         imp = translateQualifiedImportToNamed(imp);
         checkUniqueQualifiedImport(imp, qual_imps, info);
         qual_imps = imp :: qual_imps;
       then
         FRAME(name, ty, tree, exts, 
-          IMPORT_TABLE(hidden, qual_imps, unqual_imps)) :: rest;
+          IMPORT_TABLE(hidden, qual_imps, unqual_imps), is_used) :: rest;
   end match;
 end extendEnvWithImport;
 
 protected function translateQualifiedImportToNamed
+  "Translates a qualified import to a named import."
   input Import inImport;
   output Import outImport;
 algorithm
@@ -527,8 +642,10 @@ algorithm
       Absyn.Ident name;
       Absyn.Path path;
 
+    // Already named.
     case Absyn.NAMED_IMPORT(name = _) then inImport;
 
+    // Get the last identifier from the import and use that as the name.
     case Absyn.QUAL_IMPORT(path = path)
       equation
         name = Absyn.pathLastIdent(path);
@@ -538,6 +655,7 @@ algorithm
 end translateQualifiedImportToNamed;
 
 protected function extendEnvWithExtends
+  "Extends the environment with an extends-clause."
   input SCode.Element inExtends;
   input Env inEnv;
   output Env outEnv;
@@ -571,11 +689,11 @@ algorithm
       SCode.Class cls;
       Env env;
       Frame item_env;
+      ClassType cls_ty;
 
     case (_, VAR(var = _), _, _) then (inItem, inTypeEnv);
-    case (_, BUILTIN(name = _), _, _) then (inItem, inTypeEnv);
 
-    case (_, CLASS(cls = cls, env = {item_env}), _, _)
+    case (_, CLASS(cls = cls, env = {item_env}, classType = cls_ty), _, _)
       equation
         redeclares = Util.listMap1(inRedeclares, qualifyRedeclare, inVarEnv);
         // Merge the types environment with it's enclosing scopes to get the
@@ -584,7 +702,7 @@ algorithm
         env = Util.listFold(redeclares, replaceRedeclaredElementInEnv, env);
         item_env :: env = env;
       then
-        (CLASS(cls, {item_env}), env);
+        (CLASS(cls, {item_env}, cls_ty), env);
 
     else
       equation
@@ -596,6 +714,7 @@ algorithm
 end replaceRedeclaredClassesInEnv;
 
 public function extractRedeclaresFromModifier
+  "Returns a list of redeclare elements given a redeclaration modifier."
   input SCode.Mod inMod;
   output list<SCode.Element> outRedeclares;
 algorithm
@@ -615,6 +734,8 @@ algorithm
 end extractRedeclaresFromModifier;
 
 protected function extractRedeclareFromSubMod
+  "Checks a submodifier and adds the redeclare element to the list of redeclares
+  if the modifier is a redeclaration modifier."
   input SCode.SubMod inMod;
   input list<SCode.Element> inRedeclares;
   output list<SCode.Element> outRedeclares;
@@ -623,19 +744,23 @@ algorithm
     local
       SCode.Element redecl;
 
+    // Redeclaration of a class definition.
     case (SCode.NAMEMOD(A = SCode.REDECL(elementLst = 
         {redecl as SCode.CLASSDEF(name = _)})), _)
       then redecl :: inRedeclares;
 
+    // Redeclaration of a component.
     case (SCode.NAMEMOD(A = SCode.REDECL(elementLst =
         {redecl as SCode.COMPONENT(component = _)})), _)
       then redecl :: inRedeclares;
 
+    // Not a redeclaration.
     else then inRedeclares;
   end match;
 end extractRedeclareFromSubMod;
 
 protected function addExtendsToEnvExtendsTable
+  "Adds an Extents to the environment."
   input Extends inExtends;
   input Env inEnv;
   output Env outEnv;
@@ -647,13 +772,15 @@ protected
   list<Extends> exts;
   list<SCode.Class> ce;
   Env rest_env;
+  Util.StatefulBoolean is_used;
 algorithm
-  FRAME(name, ty, tree, EXTENDS_TABLE(exts, ce), imps) :: rest_env := inEnv;
+  FRAME(name, ty, tree, EXTENDS_TABLE(exts, ce), imps, is_used) :: rest_env := inEnv;
   exts := inExtends :: exts;
-  outEnv := FRAME(name, ty, tree, EXTENDS_TABLE(exts, ce), imps) :: rest_env;
+  outEnv := FRAME(name, ty, tree, EXTENDS_TABLE(exts, ce), imps, is_used) :: rest_env;
 end addExtendsToEnvExtendsTable;
 
 protected function addClassExtendsToEnvExtendsTable
+  "Adds a class extends to the environment."
   input SCode.Class inClassExtends;
   input Env inEnv;
   output Env outEnv;
@@ -665,13 +792,15 @@ protected
   list<Extends> exts;
   list<SCode.Class> ce;
   Env rest_env;
+  Util.StatefulBoolean is_used;
 algorithm
-  FRAME(name, ty, tree, EXTENDS_TABLE(exts, ce), imps) :: rest_env := inEnv;
+  FRAME(name, ty, tree, EXTENDS_TABLE(exts, ce), imps, is_used) :: rest_env := inEnv;
   ce := inClassExtends :: ce;
-  outEnv := FRAME(name, ty, tree, EXTENDS_TABLE(exts, ce), imps) :: rest_env;
+  outEnv := FRAME(name, ty, tree, EXTENDS_TABLE(exts, ce), imps, is_used) :: rest_env;
 end addClassExtendsToEnvExtendsTable;
 
 protected function extendEnvWithClassComponents
+  "Extends the environment with a class's components."
   input String inClassName;
   input SCode.ClassDef inClassDef;
   input Env inEnv;
@@ -710,6 +839,7 @@ algorithm
 end extendEnvWithClassComponents;
 
 protected function extendEnvWithElement
+  "Extends the environment with a class element."
   input SCode.Element inElement;
   input Env inEnv;
   output Env outEnv;
@@ -749,6 +879,8 @@ algorithm
 end extendEnvWithElement;
 
 protected function checkUniqueQualifiedImport
+  "Checks that a qualified import is unique, because it's not allowed to have
+  qualified imports the same name."
   input Import inImport;
   input list<Import> inImports;
   input Absyn.Info inInfo;
@@ -775,6 +907,8 @@ algorithm
 end checkUniqueQualifiedImport;
 
 protected function compareQualifiedImportNames
+  "Compares two qualified imports, returning true if they have the same import
+  name, otherwise false."
   input Import inImport1;
   input Import inImport2;
   output Boolean outEqual;
@@ -796,6 +930,7 @@ algorithm
 end compareQualifiedImportNames;
 
 protected function extendEnvWithEnum
+  "Extends the environment with an enumeration."
   input SCode.Enum inEnum;
   input Absyn.TypeSpec inEnumType;
   input Env inEnv;
@@ -813,6 +948,7 @@ algorithm
 end extendEnvWithEnum;
 
 public function extendEnvWithIterators
+  "Extends the environment with a new scope and adds a list of iterators to it."
   input Absyn.ForIterators inIterators;
   input Env inEnv;
   output Env outEnv;
@@ -824,6 +960,7 @@ algorithm
 end extendEnvWithIterators;
 
 protected function extendEnvWithIterator
+  "Extends the environment with an iterator."
   input tuple<Absyn.Ident, Option<Absyn.Exp>> inIterator;
   input Env inEnv;
   output Env outEnv;
@@ -841,6 +978,8 @@ algorithm
 end extendEnvWithIterator;
 
 public function extendEnvWithMatch
+  "Extends the environment with a match-expression, i.e. opens a new scope and
+  adds the local declarations in the match to it."
   input Absyn.Exp inMatchExp;
   input Env inEnv;
   output Env outEnv;
@@ -855,6 +994,7 @@ algorithm
 end extendEnvWithMatch;
 
 protected function extendEnvWithElementItem
+  "Extends the environment with an Absyn.ElementItem."
   input Absyn.ElementItem inElementItem;
   input Env inEnv;
   output Env outEnv;
@@ -867,6 +1007,7 @@ algorithm
 
     case (Absyn.ELEMENTITEM(element = element), _)
       equation
+        // Translate the element item to a SCode element.
         el = SCodeUtil.translateElement(element, true);
         env = Util.listFold(el, extendEnvWithElement, inEnv);
       then 
@@ -877,6 +1018,12 @@ algorithm
 end extendEnvWithElementItem;
 
 public function insertClassExtendsIntoEnv
+  "While building the environment we store all class extends in the extends
+  table. This function will go through the environment and insert all class
+  extends into the environment instead. This is done because we need to know
+  which class is extended (see comment in extendsEnvWithClassExtends), which
+  means we need a complete environment to be able to do look up before this can
+  be done."
   input Env inEnv;
   output Env outEnv;
 protected
@@ -887,15 +1034,18 @@ protected
   list<Extends> bcl;
   list<SCode.Class> ce;
   ImportTable imps;
+  Util.StatefulBoolean is_used;
 algorithm
   FRAME(extendsTable = EXTENDS_TABLE(classExtends = ce)) :: _ := inEnv;
   env := Util.listFold(ce, extendEnvWithClassExtends, inEnv);
-  FRAME(name, ty, tree, EXTENDS_TABLE(bcl, _), imps) :: rest_env := env;
+  FRAME(name, ty, tree, EXTENDS_TABLE(bcl, _), imps, is_used) :: rest_env := env;
   SOME(tree) := insertClassExtendsIntoClassEnv(SOME(tree), inEnv);
-  outEnv := FRAME(name, ty, tree, EXTENDS_TABLE(bcl, {}), imps) :: rest_env;
+  outEnv := FRAME(name, ty, tree, EXTENDS_TABLE(bcl, {}), imps, is_used) :: rest_env;
 end insertClassExtendsIntoEnv;
 
 protected function insertClassExtendsIntoClassEnv
+  "Helper function to insertClassExtendsIntoEnv. Recurses through the class tree
+  and insert class extends into the environment with insertClassExtendsIntoEnv."
   input Option<AvlTree> inTree;
   input Env inEnv;
   output Option<AvlTree> outTree;
@@ -909,19 +1059,22 @@ algorithm
       SCode.Class cls;
       Frame class_frame;
       Option<AvlTreeValue> value;
+      Item item;
+      ClassType cls_ty;
 
     case (NONE(), _) then inTree;
 
     case (SOME(AVLTREENODE(value = SOME(AVLTREEVALUE(
-          key = name, value = CLASS(cls = cls, env = {class_frame}))),
+        key = name, value = CLASS(cls = cls, env = {class_frame}, 
+          classType = cls_ty))),
         height = h, left = left, right = right)), _)
       equation
         class_frame :: rest_env = insertClassExtendsIntoEnv(class_frame :: inEnv);
         left = insertClassExtendsIntoClassEnv(left, inEnv);
         right = insertClassExtendsIntoClassEnv(right, inEnv);
+        item = CLASS(cls, {class_frame}, cls_ty);
       then
-        SOME(AVLTREENODE(SOME(AVLTREEVALUE(name, CLASS(cls, {class_frame}))), h,
-          left, right)); 
+        SOME(AVLTREENODE(SOME(AVLTREEVALUE(name, item)), h, left, right)); 
 
     case (SOME(AVLTREENODE(value = value, height = h, 
         left = left, right = right)), _)
@@ -934,6 +1087,7 @@ algorithm
 end insertClassExtendsIntoClassEnv;
 
 protected function replaceRedeclaredElementInEnv
+  "Replaces a redeclares element in the environment."
   input SCode.Element inRedeclare;
   input Env inEnv;
   output Env outEnv;
@@ -947,6 +1101,7 @@ algorithm
       Option<Env> opt_env;
       Absyn.Info info;
 
+    // A redeclared class definition.
     case (SCode.CLASSDEF(name = name, classDef = 
         cls as SCode.CLASS(info = info)), _)
       equation
@@ -957,6 +1112,7 @@ algorithm
       then
         env;
 
+    // A redeclared component.
     case (SCode.COMPONENT(component = name, info = info), _)
       equation
         (_, path, SOME(env)) = 
@@ -1081,7 +1237,6 @@ protected function replaceElementInScope
   input SCode.Element inElement;
   input Env inEnv;
   output Env outEnv;
-protected
 algorithm
   outEnv := match(inElementName, inElement, inEnv)
     local
@@ -1093,22 +1248,24 @@ algorithm
       Env env, class_env;
       SCode.ClassDef cdef;
       SCode.Class cls;
+      Util.StatefulBoolean is_used;
 
     case (_, SCode.CLASSDEF(classDef = cls as SCode.CLASS(classDef = cdef)), 
-        FRAME(name, ty, tree, exts, imps) :: env)
+        FRAME(name, ty, tree, exts, imps, is_used) :: env)
       equation
         class_env = openScope(emptyEnv, cls);
         class_env = extendEnvWithClassComponents(inElementName, cdef, class_env);
-        tree = avlTreeReplace(tree, inElementName, CLASS(cls, class_env));
+        tree = avlTreeReplace(tree, inElementName, 
+          newClassItem(cls, class_env, USERDEFINED()));
       then
-        FRAME(name, ty, tree, exts, imps) :: env;
+        FRAME(name, ty, tree, exts, imps, is_used) :: env;
 
     case (_, SCode.COMPONENT(component = _),
-        FRAME(name, ty, tree, exts, imps) :: env)
+        FRAME(name, ty, tree, exts, imps, is_used) :: env)
       equation
-        tree = avlTreeReplace(tree, inElementName, VAR(inElement));
+        tree = avlTreeReplace(tree, inElementName, newVarItem(inElement, false));
       then
-        FRAME(name, ty, tree, exts, imps) :: env;
+        FRAME(name, ty, tree, exts, imps, is_used) :: env;
 
   end match;
 end replaceElementInScope;
@@ -1132,6 +1289,8 @@ algorithm
       String name;
       Absyn.Path path;
       SCode.Class cls;
+      Util.StatefulBoolean is_used;
+      ClassType cls_ty;
 
     // A simple identifier means that we have reached the environment in which
     // the element should be replaced.
@@ -1144,13 +1303,14 @@ algorithm
     // A qualified path means that we should look up the first identifier and
     // continue into the found class's environment.
     case (Absyn.QUALIFIED(name = name, path = path), _,
-        FRAME(frame_name, ty, tree, exts, imps) :: rest_env)
+        FRAME(frame_name, ty, tree, exts, imps, is_used) :: rest_env)
       equation
-        CLASS(cls = cls, env = class_env) = avlTreeGet(tree, name);
+        CLASS(cls = cls, env = class_env, classType = cls_ty) = 
+          avlTreeGet(tree, name);
         class_env = replaceElementInClassEnv(path, inElement, class_env);
-        tree = avlTreeReplace(tree, name, CLASS(cls, class_env)); 
+        tree = avlTreeReplace(tree, name, CLASS(cls, class_env, cls_ty)); 
       then
-        FRAME(frame_name, ty, tree, exts, imps) :: rest_env;
+        FRAME(frame_name, ty, tree, exts, imps, is_used) :: rest_env;
 
   end match;
 end replaceElementInClassEnv;
@@ -1208,6 +1368,7 @@ algorithm
 end extendEnvWithClassExtends;
 
 public function getEnvName
+  "Returns the environment path as a string."
   input Env inEnv;
   output String outString;
 algorithm
@@ -1226,6 +1387,8 @@ algorithm
 end getEnvName;
 
 public function getEnvPath
+  "Returns the environment path. Fails for an empty environment or the top
+  scope, which can't be represented as an Absyn.Path."
   input Env inEnv;
   output Absyn.Path outPath;
 algorithm
@@ -1253,24 +1416,83 @@ algorithm
   end match;
 end getEnvPath;
 
+protected function getItemInfo
+  "Returns the Absyn.Info of an environment item."
+  input Item inItem;
+  output Absyn.Info outInfo;
+algorithm
+  outInfo := match(inItem)
+    local
+      Absyn.Info info;
+
+    case (VAR(var = SCode.COMPONENT(info = info))) then info;
+    case (CLASS(cls = SCode.CLASS(info = info))) then info;
+  end match;
+end getItemInfo;
+
+public function getItemEnv
+  "Returns the environment in an environment item."
+  input Item inItem;
+  output Env outEnv;
+algorithm
+  outEnv := match(inItem)
+    local
+      Env env;
+
+    case (CLASS(env = env)) then env;
+  end match;
+end getItemEnv;
+
+public function mergeItemEnv
+  "Merges an environment item's environment with the given environment."
+  input Item inItem;
+  input Env inEnv;
+  output Env outEnv;
+algorithm
+  outEnv := match(inItem, inEnv)
+    local
+      Frame cls_env;
+
+    case (CLASS(env = {cls_env}), _) then cls_env :: inEnv;
+    else then inEnv;
+  end match;
+end mergeItemEnv;
+
 public function buildInitialEnv
+  "Build a new environment that contains some things that can't be represented
+  in ModelicaBuiltin or MetaModelicaBuiltin."
   output Env outInitialEnv;
 public
   AvlTree tree;
   ExtendsTable exts;
   ImportTable imps;
+  Util.StatefulBoolean is_used;
 algorithm
   tree := avlTreeNew();
   exts := newExtendsTable();
   imps := newImportTable();
+  is_used := Util.makeStatefulBoolean(false);
 
-  tree := avlTreeAdd(tree, "time", BUILTIN("time", emptyEnv));
-  tree := avlTreeAdd(tree, "String", BUILTIN("String", emptyEnv));
-  tree := avlTreeAdd(tree, "Integer", BUILTIN("Integer", emptyEnv));
-  tree := avlTreeAdd(tree, "spliceFunction", BUILTIN("spliceFunction", emptyEnv));
+  tree := addDummyClassToTree("time", tree);
+  tree := addDummyClassToTree("String", tree);
+  tree := addDummyClassToTree("Integer", tree);
+  tree := addDummyClassToTree("spliceFunction", tree);
 
-  outInitialEnv := {FRAME(NONE(), NORMAL_SCOPE(), tree, exts, imps)};
+  outInitialEnv := {FRAME(NONE(), NORMAL_SCOPE(), tree, exts, imps, is_used)};
 end buildInitialEnv;
+
+protected function addDummyClassToTree
+  "Insert a dummy class into the AvlTree."
+  input String inName;
+  input AvlTree inTree;
+  output AvlTree outTree;
+protected
+  SCode.Class cls;
+algorithm
+  cls := SCode.CLASS(inName, false, false, SCode.R_CLASS(),
+    SCode.PARTS({}, {}, {}, {}, {}, NONE(), {}, NONE()), Absyn.dummyInfo);
+  outTree := avlTreeAdd(inTree, inName, CLASS(cls, emptyEnv, BUILTIN()));
+end addDummyClassToTree;
 
 // AVL Tree implementation
 public type AvlKey = String;
@@ -1322,7 +1544,7 @@ protected
   ImportTable imps;
   String name_str, ty_str, tree_str, ext_str, imp_str;
 algorithm
-  FRAME(name, ty, tree, exts, imps) := inFrame;
+  FRAME(name, ty, tree, exts, imps, _) := inFrame;
   name_str := printFrameNameStr(name);
   ty_str := printFrameTypeStr(ty);
   tree_str := printAvlTreeStr(SOME(tree));
@@ -1383,7 +1605,7 @@ algorithm
   end match;
 end printAvlTreeStr;
 
-protected function printAvlValueStr
+public function printAvlValueStr
   input AvlTreeValue inValue;
   output String outString;
 algorithm
@@ -1397,8 +1619,6 @@ algorithm
     case (AVLTREEVALUE(key = key_str, value = VAR(var = _)))
       then "\t\tVar " +& key_str +& "\n";
 
-    case (AVLTREEVALUE(key = key_str, value = BUILTIN(name = _)))
-      then "\t\tBuiltin " +& key_str +& "\n";
   end match;
 end printAvlValueStr;
 
@@ -1515,33 +1735,6 @@ algorithm
         AVLTREENODE(oval, h, SOME(t), right);
   end match;
 end avlTreeAdd2;
-
-protected function getItemInfo
-  input Item inItem;
-  output Absyn.Info outInfo;
-algorithm
-  outInfo := match(inItem)
-    local
-      Absyn.Info info;
-
-    case (VAR(var = SCode.COMPONENT(info = info))) then info;
-    case (CLASS(cls = SCode.CLASS(info = info))) then info;
-    case (BUILTIN(name = _)) then Absyn.dummyInfo;
-  end match;
-end getItemInfo;
-
-protected function getItemEnv
-  input Item inItem;
-  output Env outEnv;
-algorithm
-  outEnv := match(inItem)
-    local
-      Env env;
-
-    case (CLASS(env = env)) then env;
-    case (BUILTIN(env = env)) then env;
-  end match;
-end getItemEnv;
 
 public function avlTreeGet
   "Get a value from the binary tree given a key."

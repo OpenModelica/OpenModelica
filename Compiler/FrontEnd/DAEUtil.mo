@@ -2561,7 +2561,7 @@ algorithm
       SCode.SubMod submod;
       SCode.Mod mod;
       String id;
-    case (SCode.NAMEMOD(ident = id,A=SCode.MOD(absynExpOption=SOME((Absyn.BOOL(value=true),_)))) :: rest,namedAnnotation)
+    case (SCode.NAMEMOD(ident = id,A=SCode.MOD(binding=SOME((Absyn.BOOL(value=true),_)))) :: rest,namedAnnotation)
       equation
         true = id ==& namedAnnotation;
       then true;

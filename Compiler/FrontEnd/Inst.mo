@@ -204,7 +204,7 @@ algorithm
       InstanceHierarchy oIH1, oIH2, iIH;
     case (cache,iIH,p)
       equation
-        //p = SCodeFlatten.flattenProgram(p);
+        p = SCodeFlatten.flattenProgram(p);
         // Debug.fprintln("insttr", "instantiate");
         pnofunc = Util.listSelect(p, isNotFunction);
         pfunc = Util.listSelect(p, SCode.isFunction);
@@ -307,7 +307,7 @@ algorithm
 
     case (cache,ih,(cdecls as (_ :: _)),(path as Absyn.IDENT(name = name2))) /* top level class */
       equation
-        //cdecls = SCodeFlatten.flattenProgram(cdecls);
+        cdecls = SCodeFlatten.flattenClassInProgram(inPath, cdecls);
         (cache,env) = Builtin.initialEnv(cache);
         (cache,env_1,ih,dae1) = instClassDecls(cache, env, ih, cdecls, path);
         (cache,env_2,ih,dae2) = instClassInProgram(cache, env_1, ih, cdecls, path);
@@ -327,7 +327,7 @@ algorithm
 
     case (cache,ih,(cdecls as (_ :: _)),(path as Absyn.QUALIFIED(name = name))) /* class in package */
       equation
-        //cdecls = SCodeFlatten.flattenProgram(cdecls);
+        cdecls = SCodeFlatten.flattenClassInProgram(inPath, cdecls);
         pathstr = Absyn.pathString(path);
                 
         //System.startTimer();
@@ -3983,6 +3983,10 @@ algorithm outComps := matchcontinue(acrefs,remainingComps,className,existing)
     list<String> names;
     DAE.ComponentRef cref_;
   case({},_,_,_) then {};
+
+  case (Absyn.CREF_FULLYQUALIFIED(acr) :: acrefs, remainingComps, className, existing)
+    then extractConstantPlusDeps3(acr :: acrefs, remainingComps, className, existing);    
+
   case(Absyn.CREF_QUAL(s1,_,(acr as Absyn.CREF_IDENT(s2,_)))::acrefs,remainingComps,className,existing)
     equation
       true = stringEq(className,s1); // in same scope look up.
@@ -5459,7 +5463,7 @@ algorithm
           ((comp as SCode.COMPONENT(component = n,typeSpec = (tss as Absyn.TPATH(tpp, _)), info = aInfo)),cmod)::xs, _, _, instdims,impl)
       equation
         true = stringEq(n, Absyn.pathLastIdent(tpp));
-        ns = Env.printEnvPathStr(env) +& "." +& Absyn.pathString(tpp);
+        ns = Absyn.pathString(tpp);
         Error.addSourceMessage(Error.COMPONENT_NAME_SAME_AS_TYPE_NAME, {n,ns}, aInfo);
       then
         fail();
@@ -7986,14 +7990,14 @@ algorithm
     case (SCode.REDECL(finalPrefix = b,elementLst = {})) then {};
 
     /* Find in sub modifications e.g A(B=3) find B */
-    case ((mod as SCode.MOD(subModLst = submods,absynExpOption = SOME((e,_)))))
+    case ((mod as SCode.MOD(subModLst = submods,binding = SOME((e,_)))))
       equation
         l1 = getCrefFromSubmods(submods);
         l2 = Absyn.getCrefFromExp(e,true);
         res = listAppend(l2, l1);
       then
         res;
-    case (SCode.MOD(subModLst = submods,absynExpOption = NONE()))
+    case (SCode.MOD(subModLst = submods,binding = NONE()))
       equation
         res = getCrefFromSubmods(submods);
       then
@@ -9969,7 +9973,9 @@ algorithm
       Absyn.Path p;
       Env.Env cenv;
       SCode.Class cdef;
+
     case(cache,env,ih,{},path) then (cache);
+      
     /* Skipped recursive calls (by looking in cache) */
     case(cache,env,ih,p::paths,path)
       equation
@@ -9978,7 +9984,6 @@ algorithm
         Env.checkCachedInstFuncGuard(cache,p);
         cache = instantiateDerivativeFuncs2(cache,env,ih,paths,path);
       then (cache);
-
 
     case(cache,env,ih,p::paths,path)
       equation
@@ -9992,6 +9997,16 @@ algorithm
         cache = Env.addDaeFunction(cache, funcs);
         cache = instantiateDerivativeFuncs2(cache,env,ih,paths,path);
       then (cache);
+
+    else
+      equation
+        true = RTOpts.debugFlag("failtrace");
+        p :: _ = paths;
+        Debug.traceln("- Inst.instantiateDerivativeFuncs2 failed for " +&
+          Absyn.pathString(p));
+      then
+        fail();
+
   end matchcontinue;
 end instantiateDerivativeFuncs2;
 
@@ -10139,7 +10154,7 @@ algorithm element := matchcontinue(subs,elemDecl,baseFunc,inCache,inEnv,inIH,inP
 
   case({},_,_,_,_,_,_,_) then fail();
 
-  case(SCode.NAMEMOD("derivative",(m as SCode.MOD(subModLst = subs2,absynExpOption=SOME(((ae as Absyn.CREF(acr)),_)))))::subs,
+  case(SCode.NAMEMOD("derivative",(m as SCode.MOD(subModLst = subs2,binding=SOME(((ae as Absyn.CREF(acr)),_)))))::subs,
        elemDecl,baseFunc,inCache,inEnv,inIH,inPrefix,info)
     equation
       deriveFunc = Absyn.crefToPath(acr);
@@ -10197,7 +10212,7 @@ algorithm
       
     case({},_,_,_,_,_,_) then {};
       
-    case(SCode.NAMEMOD("noDerivative",(m as SCode.MOD(absynExpOption = SOME(((Absyn.CREF(acr)),_)))))::subs,elemDecl,inCache,inEnv,inIH,inPrefix,info)
+    case(SCode.NAMEMOD("noDerivative",(m as SCode.MOD(binding = SOME(((Absyn.CREF(acr)),_)))))::subs,elemDecl,inCache,inEnv,inIH,inPrefix,info)
     equation
       name = Absyn.printComponentRefStr(acr);
         outconds = getDeriveCondition(subs,elemDecl,inCache,inEnv,inIH,inPrefix,info);
@@ -10205,7 +10220,7 @@ algorithm
     then
       (varPos,DAE.NO_DERIVATIVE(DAE.ICONST(99)))::outconds;
 
-    case(SCode.NAMEMOD("zeroDerivative",(m as SCode.MOD(absynExpOption =  SOME(((Absyn.CREF(acr)),_)) )))::subs,elemDecl,inCache,inEnv,inIH,inPrefix,info)
+    case(SCode.NAMEMOD("zeroDerivative",(m as SCode.MOD(binding =  SOME(((Absyn.CREF(acr)),_)) )))::subs,elemDecl,inCache,inEnv,inIH,inPrefix,info)
     equation
       name = Absyn.printComponentRefStr(acr);
         outconds = getDeriveCondition(subs,elemDecl,inCache,inEnv,inIH,inPrefix,info);
@@ -10213,7 +10228,7 @@ algorithm
     then
       (varPos,DAE.ZERO_DERIVATIVE())::outconds;
         
-    case(SCode.NAMEMOD("noDerivative",(m as SCode.MOD(absynExpOption=_)))::subs,elemDecl,inCache,inEnv,inIH,inPrefix,info)
+    case(SCode.NAMEMOD("noDerivative",(m as SCode.MOD(binding=_)))::subs,elemDecl,inCache,inEnv,inIH,inPrefix,info)
     equation
       (inCache,(elabedMod as DAE.MOD(subModLst={sub}))) = Mod.elabMod(inCache, inEnv, inIH, inPrefix, m, false,info);
       (name,cond) = extractNameAndExp(sub);
@@ -10299,7 +10314,7 @@ algorithm defaultDerivative := matchcontinue(subs,inCache,inEnv,inPrefix)
     Absyn.Exp ae;
     SCode.Mod m;
   case({},inCache,inEnv,inPrefix) then NONE();
-  case(SCode.NAMEMOD("derivative",(m as SCode.MOD(absynExpOption =SOME(((ae as Absyn.CREF(acr)),_)))))::subs,inCache,inEnv,inPrefix)
+  case(SCode.NAMEMOD("derivative",(m as SCode.MOD(binding =SOME(((ae as Absyn.CREF(acr)),_)))))::subs,inCache,inEnv,inPrefix)
     equation
       p = Absyn.crefToPath(acr);
       (_,p) = makeFullyQualified(inCache,inEnv, p);
@@ -10320,7 +10335,7 @@ algorithm order := matchcontinue(subs)
     Absyn.Exp ae;
     SCode.Mod m;
   case({}) then 1;
-  case(SCode.NAMEMOD("order",(m as SCode.MOD(absynExpOption= SOME(((ae as Absyn.INTEGER(order)),_)))))::subs)
+  case(SCode.NAMEMOD("order",(m as SCode.MOD(binding= SOME(((ae as Absyn.INTEGER(order)),_)))))::subs)
   then order;
   case(_::subs) then getDerivativeOrder(subs);
   end matchcontinue;
@@ -10462,7 +10477,7 @@ algorithm
     case (e as SCode.COMPONENT(component = id, innerOuter = inOut, finalPrefix = finPre, replaceablePrefix = repPre, 
           protectedPrefix = proPre, attributes = attr as SCode.ATTR(direction = Absyn.OUTPUT()), 
           typeSpec = typeSpc,
-          modifications = SCode.MOD(finalPrefix = modFinPre, eachPrefix = modEachPre, subModLst = modSubML, absynExpOption = SOME(_)),
+          modifications = SCode.MOD(finalPrefix = modFinPre, eachPrefix = modEachPre, subModLst = modSubML, binding = SOME(_)),
           comment = comm, condition = cond, info = info, cc = cc_))
       equation
         modBla = SCode.MOD(modFinPre,modEachPre,modSubML,NONE());

@@ -2325,6 +2325,37 @@ algorithm
   end match;
 end listMap01;
 
+public function listMap02
+  input list<Type_a> inList;
+  input FuncType inFunc;
+  input Type_b inArg1;
+  input Type_c inArg2;
+  
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+
+  partial function FuncType
+    input Type_a inElement;
+    input Type_b inArg1;
+    input Type_c inArg2;
+  end FuncType;
+algorithm
+  _ := match(inList, inFunc, inArg1, inArg2)
+    local
+      Type_a element;
+      list<Type_a> rest;
+      
+    case ({}, _, _, _) then ();
+    case (element :: rest, _, _, _)
+      equation
+        inFunc(element, inArg1, inArg2);
+        listMap02(rest, inFunc, inArg1, inArg2);
+      then
+        ();
+  end match;
+end listMap02;
+
 public function listMapFlat "function: listMapFlat
   Takes a list and a function over the elements of the lists, which is applied
   for each element, producing a new list."

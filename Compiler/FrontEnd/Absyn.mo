@@ -3862,6 +3862,33 @@ algorithm
   end match;
 end crefToPath;
 
+public function crefToPathIgnoreSubs
+  "Converts a ComponentRef to a Path, ignoring any subscripts."
+  input ComponentRef inComponentRef;
+  output Path outPath;
+algorithm
+  outPath := match(inComponentRef)
+    local
+      Ident i;
+      Path p;
+      ComponentRef c;
+
+    case CREF_IDENT(name = i) then IDENT(i);
+
+    case CREF_QUAL(name = i, componentRef = c)
+      equation
+        p = crefToPathIgnoreSubs(c);
+      then
+        QUALIFIED(i, p);
+
+    case CREF_FULLYQUALIFIED(componentRef = c)
+      equation
+        p = crefToPathIgnoreSubs(c);
+      then
+        FULLYQUALIFIED(p);
+  end match;
+end crefToPathIgnoreSubs;
+
 public function pathToCref "function: pathToCref
   This function converts a Path to a ComponentRef."
   input Path inPath;

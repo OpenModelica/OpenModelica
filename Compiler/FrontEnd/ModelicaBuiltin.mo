@@ -48,6 +48,23 @@ function terminal
 external "builtin";
 end terminal;
 
+type AssertionLevel_ = enumeration(error, warning);
+
+function assert
+  input Boolean condition;
+  input String message;
+  input AssertionLevel_ level;
+external "builtin";
+end assert;
+
+function constrain
+  input Real i1;
+  input Real i2;
+  input Real i3;
+  output Real o1;
+external "builtin";
+end constrain;
+
 function sample
   input Real start;
   input Real interval;
