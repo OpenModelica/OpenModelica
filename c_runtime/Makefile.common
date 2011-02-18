@@ -16,6 +16,7 @@ biglag.o  ddassl.o  dogleg.o  fdjac1.o  hybrj.o   newuoa.o   qrfac.o   trsapp.o 
 daux.o    dlamch.o  dpmpar.o  hybrd.o   lsame.o   newuob.o   r1mpyq.o  update.o division.o\
 java_interface.o meta_modelica.o meta_modelica_builtin.o meta_modelica_real.o \
 meta_modelica_string_lit.o rtclock.o ModelicaUtilities.o simulation_varinfo.o \
+read_matlab4.o \
 $(EXTRA_OBJS)
 
 SIMOBJS = $(FOBJS) simulation_runtime.o simulation_init.o simulation_input.o simulation_events.o linearize.o \
@@ -47,6 +48,7 @@ meta_modelica.h \
 modelica.h \
 modelica_string.h \
 ModelicaUtilities.h \
+read_matlab4.h \
 read_write.h \
 real_array.h \
 ringbuffer.h \
