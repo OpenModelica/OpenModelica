@@ -35,9 +35,6 @@
 #define PLOTWIDGET_H
 
 #include "mainwindow.h"
-#include "qwt_plot.h"
-#include "qwt_plot_curve.h"
-#include "qwt_plot_marker.h"
 
 class MainWindow;
 
