@@ -35,6 +35,9 @@
 #define PLOTWIDGET_H
 
 #include "mainwindow.h"
+#include "qwt_plot.h"
+#include "qwt_plot_curve.h"
+#include "qwt_plot_marker.h"
 
 class MainWindow;
 
@@ -52,7 +55,7 @@ private:
     QLabel *mpPlotTypesLabel;
     QComboBox *mpPlotTypesCombo;
     QTreeWidget *mpPlotVariablesTree;
-    QVBoxLayout *mpVerticalLayout;
+    QVBoxLayout *mpVerticalLayout;    
 public slots:
     void plotVariables(QTreeWidgetItem *item, int column);
     void visualize(QString value);

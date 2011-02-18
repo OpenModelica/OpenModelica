@@ -73,7 +73,7 @@ HEADERS  += mainwindow.h \
     BitmapAnnotation.h
 
 
-# -------For OMNIorb
+# -------For OMNIorb ans QWT
 win32 {
 DEFINES += __x86__ \
     __NT__ \
@@ -82,8 +82,12 @@ DEFINES += __x86__ \
 LIBS += -L../omniORB-4.1.4-mingw/lib/x86_win32 \ #C:\\Thesis\\omniORB-4.1.4-mingw\\lib\\x86_win32 \
     -lomniORB414_rt \
     -lomnithread34_rt
+LIBS += -LC:\\qwt-6.0.0-rc5\\lib \ #-lqwt #-LC:\\qwt-6.0.0-rc5\\lib \
+      -lqwtd
+# win32:LIBS += c:/qwt-6.0.0-rc5/lib/qwt.lib
 
-INCLUDEPATH += ../omniORB-4.1.4-mingw/include #C:\\Thesis\\omniORB-4.1.4-mingw\\include
+INCLUDEPATH += ../omniORB-4.1.4-mingw/include \ #C:\\Thesis\\omniORB-4.1.4-mingw\\include
+INCLUDEPATH += c:/qwt-6.0.0-rc5/include    #C:\\qwt-6.0.0-rc5\\include
 } else {
     include(OMEdit.config)
 }

@@ -13,6 +13,12 @@
  *
  */
 
+//! @file   BitmapAnnotation.h
+//! @author harka011
+//! @date   2011-02-01
+
+//! @brief Class to create the bitmap shape
+
 #ifndef BITMAPANNOTATION_H
 #define BITMAPANNOTATION_H
 
@@ -52,6 +58,8 @@ private:
 public slots:
     void updatePoint(int index, QPointF point);
 };
+
+//! @brief The popup when you create a bitmap shape
 
 class BitmapWidget : public QDialog
 {

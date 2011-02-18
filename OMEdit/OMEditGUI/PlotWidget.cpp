@@ -32,6 +32,7 @@
  */
 
 #include "PlotWidget.h"
+#include <qwt_series_data.h>
 
 PlotWidget::PlotWidget(MainWindow *pParent)
     : QWidget(pParent)
@@ -155,6 +156,16 @@ void PlotWidget::plotVariables(QTreeWidgetItem *item, int column)
 
     if (plotType ==  "Plot")
     {
+        //Call the plot widget exe with model name and variables
+//        QStringList modelAndVariables;
+//        modelAndVariables.append(modelName);
+//        modelAndVariables.append(plotVariablesList);
+//        QProcess process(mpParentMainWindow);
+//        qDebug() << "modelName: " << modelName;
+//        process.execute("C:\\OpenModelicaTrunk\\PlotWidget\\bin\\PlotWidgetGUI.exe", modelAndVariables);
+        //process.start("C:\\OpenModelicaTrunk\\PlotWidget\\bin\\PlotWidgetGUI.exe", plotVariablesList);
+
+
         plotExpression = "plot(" + modelName + ", {" + plotVariablesString + "})";
         setCursor(Qt::WaitCursor);
         if (!mpParentMainWindow->mpOMCProxy->plot(modelName, plotVariablesString))

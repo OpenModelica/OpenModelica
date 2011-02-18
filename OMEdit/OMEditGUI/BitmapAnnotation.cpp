@@ -33,7 +33,6 @@
 
 #include "BitmapAnnotation.h"
 
-
 BitmapAnnotation::BitmapAnnotation(QString shape, Component *pParent)
     : ShapeAnnotation(pParent), mpComponent(pParent)
 {
@@ -47,7 +46,7 @@ BitmapAnnotation::BitmapAnnotation(GraphicsView *graphicsView, QGraphicsItem *pP
     initializeFields();
     mIsCustomShape = true;
     setAcceptHoverEvents(true);
-    mFileName = ":/Resources/icons/bitmap-shape.png";
+    mFileName = ":/Resources/icons/bitmap-shape.png";    
 
     QFile* file = new QFile(":/Resources/icons/bitmap-shape.png");
     file->open(QIODevice::ReadOnly);
@@ -62,8 +61,8 @@ BitmapAnnotation::BitmapAnnotation(QString shape, GraphicsView *graphicsView, QG
 {
     // initialize all fields with default values
     initializeFields();
-    parseShapeAnnotation(shape, mpGraphicsView->mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy);
     mIsCustomShape = true;
+    parseShapeAnnotation(shape, mpGraphicsView->mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy);    
     setAcceptHoverEvents(true);
     connect(this, SIGNAL(updateShapeAnnotation()), mpGraphicsView, SLOT(addClassAnnotation()));
 }
@@ -169,7 +168,6 @@ void BitmapAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *
     if(!mImageSource.isEmpty())
     {
         //open file from image source
-
         QByteArray img = QByteArray::fromBase64(mImageSource.toLatin1());
         QPixmap pix;
         if(pix.loadFromData(img))
@@ -280,9 +278,32 @@ void BitmapAnnotation::parseShapeAnnotation(QString shape, OMCProxy *omc)
         }
     }
 
+    //If not customshape create absolute path.
+    if(!mIsCustomShape)
+    {
+        QString modelPath = mpComponent->mpOMCProxy->getSourceFile(mpComponent->getClassName());
+        QFileInfo qFile(modelPath);
+        qDebug() << qFile.absolutePath();
+        this->mFileName = qFile.absolutePath() + "/" + tempFileName;
+    }
+
     //9 Item contains imagesource
-    index = index + 1;
-    this->mImageSource = StringHandler::removeFirstLastQuotes(list.at(index));
+    if(tempFileName.isEmpty())
+    {
+        index = index + 1;
+        this->mImageSource = StringHandler::removeFirstLastQuotes(list.at(index));
+    }
+
+    //Pic in
+    //C:\OpenModelicaTrunk\libraries\msl32\Modelica\Resources\Images\MultiBody\Examples\Systems
+    //""../../../../Images/MultiBody/Examples/Systems/robot_kr15.bmp""
+
+    //MODEL PATH = C:\OpenModelica1.6.0\lib\omc\omlibrary\msl31/Modelica/Mechanics/MultiBody/Examples/Systems/RobotR3.mo
+    // + RELATIVE PATH = "../../../../Images/MultiBody/Examples/Systems/robot_kr15.bmp
+
+    //EQUALS:
+
+    // ABSOLUTE PATH: C:\OpenModelica1.6.0\lib\omc\omlibrary\msl31/Modelica/Mechanics/MultiBody/Examples/Systems/../../../../Images/MultiBody/Examples/Systems/robot_kr15.bmp
 }
 
 //Bitmapwidget declarations...

@@ -45,13 +45,13 @@ class TextAnnotation : public ShapeAnnotation
     Q_OBJECT
 private:
     QString mTextString;
-    double mFontSize;
+    qreal mFontSize;
     QString mFontName;
     int mFontWeight;
-    bool mFontItalic;
-    bool mFontBold;
+    bool mFontItalic;    
     bool mFontUnderLine;
-    int mDefaultFontSize;
+    //double mDefaultFontSize;
+    Qt::Alignment mHorizontalAlignment;
 public:
     TextAnnotation(QString shape, Component *pParent = 0);
     TextAnnotation(GraphicsView *graphicsView, QGraphicsItem *pParent = 0);
@@ -66,6 +66,12 @@ public:
     void checkNameString();
     void checkParameterString();
     void setTextString(QString text);
+    void setFontName(QString fontName);
+    void setFontSize(double fontSize);
+    void setItalic(bool italic);
+    void setWeight(int bold);
+    void setUnderLine(bool underLine);
+    void setAlignment(Qt::Alignment alignment);
     void drawRectangleCornerItems();
     void updateEndPoint(QPointF point);
     void addPoint(QPointF point);
@@ -85,13 +91,32 @@ public:
     MainWindow *mpParentMainWindow;
     void setUpForm();
     void show();    
+
 private:
    QLabel *mpTextLabel;
    QLineEdit *mpTextBox;
+   QLabel *mpFontLabel;   
+   QLabel *mpFontSizeLabel;
    QPushButton *mpEditButton;
    QPushButton *mpCancelButton;
    QDialogButtonBox *mpButtonBox;
-   TextAnnotation *mpTextAnnotation;   
+   QGroupBox *mpTextGroup;
+   QGroupBox *mpFontGroup;
+   QGroupBox *mpFontSizeGroup;
+
+   QCheckBox *mpCursive;
+   QCheckBox *mpBold;
+   QCheckBox *mpUnderline;
+   QGroupBox *mpStyleGroup;
+
+   QFontComboBox *mpFontFamilyComboBox;
+   QComboBox *mpFontSizeComboBox;
+
+   QComboBox *mpAlignmentComboBox;
+   QGroupBox *mpAlignmentGroup;
+   QLabel *mpAlignmentLabel;
+
+   TextAnnotation *mpTextAnnotation;
 public slots:
     void edit();
 };

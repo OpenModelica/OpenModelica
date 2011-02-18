@@ -331,6 +331,13 @@ bool Component::parseAnnotationString(Component *item, QString value, bool libra
                 item->mpShapesList.append(textAnnotation);
             }
         }
+        if (shape.startsWith("Bitmap"))
+        {
+            shape = shape.mid(QString("Bitmap").length());
+            shape = StringHandler::removeFirstLastBrackets(shape);
+            BitmapAnnotation *bitmapAnnotation = new BitmapAnnotation(shape, item);
+            item->mpShapesList.append(bitmapAnnotation);
+        }
     }
 }
 
