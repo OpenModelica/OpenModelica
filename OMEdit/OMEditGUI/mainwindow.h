@@ -75,6 +75,7 @@ class OMCProxy;
 class ProjectTabWidget;
 class GraphicsView;
 class GraphicsScene;
+class SearchMSLWidget;
 class LibraryWidget;
 class ModelCreator;
 class SimulationWidget;
@@ -94,6 +95,7 @@ public:
     QGridLayout *mpCentralgrid;
     ProjectTabWidget *mpProjectTabs;
     QGridLayout *mpTabgrid;
+    SearchMSLWidget *mpSearchMSLWidget;
     LibraryWidget *mpLibrary;
     SimulationWidget *mpSimulationWidget;
     PlotWidget *mpPlotWidget;
@@ -131,6 +133,8 @@ public:
     QAction *pasteAction;
     QAction *omcLoggerAction;
     QAction *openOMShellAction;
+    QAction *exportToOMNotebookAction;
+    QAction *exportAsImage;
     QAction *openOptions;
     QAction *gridLinesAction;
     QAction *resetZoomAction;
@@ -159,6 +163,7 @@ public:
 
     QDockWidget *plotdock;
     QDockWidget *documentationdock;
+    QDockWidget *searchMSLdock;
 
     bool mExitApplication;
 
@@ -173,7 +178,12 @@ private slots:
     void openNewFunction();
     void openNewPackage();
     void openOMShell();
-    void openConfiguratonOptions();
+    void exportModelToOMNotebook();
+    void createOMNotebookTitleCell(QDomDocument xmlDocument, QDomElement pDomElement);
+    void createOMNotebookImageCell(QDomDocument xmlDocument, QDomElement pDomElement, QString filePath);
+    void createOMNotebookCodeCell(QDomDocument xmlDocument, QDomElement pDomElement);
+    void exportModelAsImage();
+    void openConfigurationOptions();
     void checkModel();
     void openUserManual();
     void openAbout();

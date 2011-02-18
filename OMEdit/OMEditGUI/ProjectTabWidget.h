@@ -216,7 +216,7 @@ public slots:
     void showIconView(bool checked);
     void showModelicaTextView(bool checked);
     void showDocumentationView();
-    bool ModelicaEditorTextChanged();
+    bool modelicaEditorTextChanged();
 };
 
 class MainWindow;

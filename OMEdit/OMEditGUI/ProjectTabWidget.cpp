@@ -772,6 +772,28 @@ void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
         menu.exec(event->globalPos());
         return;         // return from it because at a time we only want one context menu.
     }
+    bool isFound = false;
+    foreach (Component *pCompnent, mComponentsList)
+    {
+        if (pCompnent->isSelected())
+        {
+            isFound = true;
+            break;
+        }
+    }
+    // if no component is selected then show the graphics view context menu
+    if (!isFound)
+    {
+        if (StringHandler::ICON == mIconType)
+        {
+            QMenu menu(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow);
+            mpCancelConnectionAction->setText("Context Menu");
+            menu.addAction(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->exportAsImage);
+            menu.addAction(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->exportToOMNotebookAction);
+            menu.exec(event->globalPos());
+            return;         // return from it because at a time we only want one context menu.
+        }
+    }
     QGraphicsView::contextMenuEvent(event);
 }
 
@@ -1075,9 +1097,14 @@ ProjectTab::ProjectTab(int modelicaType, int iconType, bool readOnly, bool isChi
 
     // set Project Status Bar lables
     mpReadOnlyLabel = isReadOnly() ? new QLabel(Helper::readOnly) : new QLabel(Helper::writeAble);
+    mpReadOnlyLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
     mpModelicaTypeLabel = new QLabel(StringHandler::getModelicaClassType(mModelicaType));
+    mpModelicaTypeLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
     mpViewTypeLabel = new QLabel(StringHandler::getViewType(mIconType));
+    mpViewTypeLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
     mpModelFilePathLabel = new QLabel(tr(""));
+    mpModelFilePathLabel->setWordWrap(true);
+    mpModelFilePathLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
 
     // frame to contain view buttons
     QFrame *viewsButtonsFrame = new QFrame;
@@ -1141,10 +1168,10 @@ ProjectTab::ProjectTab(int modelicaType, int iconType, bool readOnly, bool isChi
     mpProjectStatusBar->setObjectName(tr("PojectStatusBar"));
     mpProjectStatusBar->setSizeGripEnabled(false);
     mpProjectStatusBar->addPermanentWidget(viewsButtonsFrame, 5);
-    mpProjectStatusBar->addPermanentWidget(mpReadOnlyLabel, 10);
-    mpProjectStatusBar->addPermanentWidget(mpModelicaTypeLabel, 10);
+    mpProjectStatusBar->addPermanentWidget(mpReadOnlyLabel, 6);
+    mpProjectStatusBar->addPermanentWidget(mpModelicaTypeLabel, 6);
     mpProjectStatusBar->addPermanentWidget(mpViewTypeLabel, 10);
-    mpProjectStatusBar->addPermanentWidget(mpModelFilePathLabel, 65);
+    mpProjectStatusBar->addPermanentWidget(mpModelFilePathLabel, 73);
 
     // create the layout for Modelica Editor
     QHBoxLayout *modelicaEditorHorizontalLayout = new QHBoxLayout;
@@ -1386,7 +1413,7 @@ void ProjectTab::getModelComponents()
                 LibraryComponent *libComponent;
                 QString result = pMainWindow->mpOMCProxy->getIconAnnotation(componentProperties->getClassName());
                 libComponent = new LibraryComponent(result, componentProperties->getClassName(),
-                                                     mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy);
+                                                    mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy);
                 // add the component to library widget components lists
                 mpParentProjectTabWidget->mpParentMainWindow->mpLibrary->addComponentObject(libComponent);
                 // create a new copy component here
@@ -1744,7 +1771,7 @@ QToolButton* ProjectTab::getModelicaTextToolButton()
 //! @see loadRootModel(QString model)
 //! @see loadSubModel(QString model)
 //! @see updateModel(QString name)
-bool ProjectTab::ModelicaEditorTextChanged()
+bool ProjectTab::modelicaEditorTextChanged()
 {
     // make mIsSaved to false inorder to save the changes to file as well.
     mIsSaved = false;
@@ -2050,6 +2077,15 @@ void ProjectTabWidget::addNewProjectTab(QString modelName, QString modelStructur
     else
     {
         newTab = new ProjectTab(modelicaType, StringHandler::ICON, false, true, this);
+        ProjectTab *pParentTab = getTabByName(StringHandler::removeLastDot(modelStructure));
+        if (pParentTab)
+        {
+            // set the text of the model and make it unsaved.
+            pParentTab->mpModelicaEditor->setText(mpParentMainWindow->mpOMCProxy->list
+                                                 (StringHandler::removeLastDot(modelStructure)));
+            pParentTab->mIsSaved = true;
+            pParentTab->hasChanged();
+        }
     }
     newTab->mModelName = modelName;
     newTab->mModelNameStructure = modelStructure + modelName;
@@ -2154,7 +2190,19 @@ void ProjectTabWidget::saveProjectTab(int index, bool saveAs)
         // if user presses ctrl + s and model is already saved
         if (pCurrentTab->mIsSaved)
         {
-            //Nothing to do
+            //Nothing to do except for package
+            if (pCurrentTab->mModelicaType == StringHandler::PACKAGE)
+            {
+                if (saveModel(saveAs))
+                {
+                    // make sure we only trim * and not any letter of model name.
+                    if (tabName.endsWith('*'))
+                        tabName.chop(1);
+
+                    setTabText(index, tabName);
+                    pCurrentTab->mIsSaved = true;
+                }
+            }
         }
         // if model is not saved then save it
         else
@@ -2191,13 +2239,13 @@ bool ProjectTabWidget::saveModel(bool saveAs)
         {
             modelFileName = QFileDialog::getSaveFileName(this, tr("Save File As"),
                                                          fileDialogSaveDir.currentPath(),
-                                                         Helper::omFileOpenText);
+                                                         Helper::omFileTypes);
         }
         else
         {
             modelFileName = QFileDialog::getSaveFileName(this, tr("Save File"),
                                                          fileDialogSaveDir.currentPath(),
-                                                         Helper::omFileOpenText);
+                                                         Helper::omFileTypes);
         }
 
         if (modelFileName.isEmpty())
@@ -2231,11 +2279,17 @@ bool ProjectTabWidget::saveModel(bool saveAs)
     // if saving the file second time
     else
     {
+        // set the source file in OMC
         pMainWindow->mpOMCProxy->setSourceFile(pCurrentTab->mModelNameStructure, pCurrentTab->mModelFileName);
+        // if opened tab is a package save all of its child models
+        if (pCurrentTab->mModelicaType == StringHandler::PACKAGE)
+            emit modelSaved(pCurrentTab->mModelNameStructure, pCurrentTab->mModelFileName);
+        // finally save the model through OMC
         if (pMainWindow->mpOMCProxy->save(pCurrentTab->mModelNameStructure))
         {
             return true;
         }
+        // if OMC is unable to save the file
         else
         {
             QMessageBox::critical(this, Helper::applicationName + " - Error",
@@ -2281,7 +2335,7 @@ bool ProjectTabWidget::closeProjectTab(int index)
             // Don't Save was clicked
             //if (pTree->deleteNodeTriggered(pTree->getNode(pCurrentTab->mModelNameStructure)))
                 //removeTab(index);
-            pTree->deleteNodeTriggered(pTree->getNode(pCurrentTab->mModelNameStructure));
+            pTree->deleteNodeTriggered(pTree->getNode(pCurrentTab->mModelNameStructure), false);
             return true;
         case QMessageBox::Cancel:
             // Cancel was clicked
@@ -2341,7 +2395,7 @@ void ProjectTabWidget::openModel(QString fileName)
     {
         QString name = QFileDialog::getOpenFileName(this, tr("Choose File"),
                                                         QDir::currentPath() + QString("/../.."),
-                                                        Helper::omFileOpenText);
+                                                        Helper::omFileTypes);
         if (name.isEmpty())
             return;
         else
@@ -2459,6 +2513,10 @@ void ProjectTabWidget::enableProjectToolbar()
         mpParentMainWindow->checkModelAction->setEnabled(true);
         // enable the shapes tool bar
         mpParentMainWindow->shapesToolBar->setEnabled(true);
+        // enable the export as image action
+        mpParentMainWindow->exportAsImage->setEnabled(true);
+        // enable the export to omnotebook action
+        mpParentMainWindow->exportToOMNotebookAction->setEnabled(true);
         mToolBarEnabled = true;
     }
 }
@@ -2474,6 +2532,10 @@ void ProjectTabWidget::disableProjectToolbar()
         mpParentMainWindow->checkModelAction->setEnabled(false);
         // disable the shapes tool bar
         mpParentMainWindow->shapesToolBar->setEnabled(false);
+        // disable the export as image action
+        mpParentMainWindow->exportAsImage->setEnabled(false);
+        // enable the export to omnotebook action
+        mpParentMainWindow->exportToOMNotebookAction->setEnabled(false);
         mToolBarEnabled = false;
     }
 }

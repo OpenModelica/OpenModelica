@@ -299,3 +299,25 @@ QString StringHandler::removeComment(QString value)
     // + 2 to remove */ from the string as well.
     return value.remove(startPos, (endPos - startPos) + 2);
 }
+
+QString StringHandler::getModifierValue(QString value)
+{
+    int element = 0;
+    for(int i = 0 ; i < value.length() ; i++)
+    {
+        switch(value.at(i))
+        {
+        case '(':
+            element++;
+            break;
+        case ')':
+            element--;
+            break;
+        case '=':
+            if (element == 0)
+                return value.mid(i + 1);
+            break;
+        }
+    }
+    return "";
+}

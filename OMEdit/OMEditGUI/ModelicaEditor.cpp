@@ -43,7 +43,7 @@ ModelicaEditor::ModelicaEditor(ProjectTab *pParent)
     setObjectName(tr("ModelicaEditor"));
     // depending on the project tab readonly state set the text view readonly state
     setReadOnly(mpParentProjectTab->isReadOnly());
-    connect(this, SIGNAL(focusOut()), mpParentProjectTab, SLOT(ModelicaEditorTextChanged()));
+    connect(this, SIGNAL(focusOut()), mpParentProjectTab, SLOT(modelicaEditorTextChanged()));
 
     mpFindWidget = new QWidget;
     mpFindWidget->setContentsMargins(0, 0, 0, 0);

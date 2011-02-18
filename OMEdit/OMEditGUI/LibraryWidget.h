@@ -97,7 +97,7 @@ public slots:
     void showContextMenu(QPoint point);
     void renameClass();
     void checkModelicaModel();
-    bool deleteNodeTriggered(ModelicaTreeNode *node = 0);
+    bool deleteNodeTriggered(ModelicaTreeNode *node = 0, bool askQuestion = true);
     void saveChildModels(QString modelName, QString filePath);
 };
 
@@ -142,10 +142,37 @@ private slots:
     void showComponent();
     void viewDocumentation();
     void checkLibraryModel();
-    void loadingLibraryComponent(LibraryTreeNode *treeNode, QString className);
     void treeItemPressed(QTreeWidgetItem *item);
-//protected:
-//    virtual void mousePressEvent(QMouseEvent *event);
+public slots:
+    void loadingLibraryComponent(LibraryTreeNode *treeNode, QString className);
+};
+
+class MSLSearchBox : public QLineEdit
+{
+public:
+    MSLSearchBox();
+
+    QString mDefaultText;
+protected:
+    virtual void focusInEvent(QFocusEvent *event);
+    virtual void focusOutEvent(QFocusEvent *event);
+};
+
+class SearchMSLWidget : public QWidget
+{
+    Q_OBJECT
+public:
+    SearchMSLWidget(MainWindow *pParent = 0);
+
+    MainWindow *mpParentMainWindow;
+private:
+    MSLSearchBox *mpSearchTextBox;
+    QPushButton *mpSearchButton;
+    LibraryTree *mpSearchedItemsTree;
+    QStringList mMSLItemsList;
+
+public slots:
+    void searchMSL();
 };
 
 class LibraryWidget : public QWidget

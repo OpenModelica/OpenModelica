@@ -48,7 +48,8 @@ public:
     static QString OpenModelicaLibrary;
     static QString omcServerName;
     static QString omFileTypes;
-    static QString omFileOpenText;
+    static QString omnotebookFileTypes;
+    static QString imageFileTypes;
     static QString tmpPath;
     static QString settingsFileName;
     static QString documentationBaseUrl;
@@ -72,6 +73,8 @@ public:
     static int headingFontSize;
     static int tabWidth;
     static qreal shapesStrokeWidth;
+    static QString modelicaLibrarySearchText;
+    static QString noItemFound;
 };
 
 class GUIMessages
@@ -105,7 +108,9 @@ public:
         COMMENT_SAVE_ERROR,
         ATTRIBUTES_SAVE_ERROR,
         CHILD_MODEL_SAVE,
-        SEARCH_STRING_NOT_FOUND
+        SEARCH_STRING_NOT_FOUND,
+        FILE_REMOVED_MSG,
+        FILE_MODIFIED_MSG
     };
 
     static QString getMessage(int type);

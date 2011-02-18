@@ -115,6 +115,8 @@ void IconProperties::setUpDialog()
     QGridLayout *gridParametersLayout = new QGridLayout;
     gridParametersLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
 
+
+
     for (int i = 0 ; i < mpComponent->mpIconParametersList.size() ; i++)
     {
         IconParameters *iconParameter = mpComponent->mpIconParametersList.at(i);

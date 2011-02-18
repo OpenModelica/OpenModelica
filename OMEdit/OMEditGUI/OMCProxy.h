@@ -93,6 +93,7 @@ public:
     void loadStandardLibrary();
     bool isStandardLibraryLoaded();
     QStringList getClassNames(QString className = QString());
+    QStringList getClassNamesRecursive(QString className);
     QStringList getPackages(QString packageName);
     bool isPackage(QString className);
     bool isWhat(int type, QString className);
@@ -101,6 +102,9 @@ public:
     QStringList getParameterNames(QString className);
     QString getParameterValue(QString className, QString parameter);
     bool setParameterValue(QString className, QString parameter, QString value);
+    QStringList getComponentModifierNames(QString modelName, QString className);
+    QString getComponentModifierValue(QString modelName, QString className);
+    bool setComponentModifierValue(QString modelName, QString className, QString value);
     QString getIconAnnotation(QString className);
     QString getDiagramAnnotation(QString className);
     int getConnectionCount(QString className);

@@ -56,7 +56,6 @@ MainWindow::MainWindow(SplashScreen *splashScreen, QWidget *parent)
     this->setObjectName("MainWindow");
     this->setWindowTitle(Helper::applicationName + " - "  + Helper::applicationIntroText);
     this->setWindowIcon(QIcon(":/Resources/icons/omeditor.png"));
-    this->setGeometry(0, 0, 950, 670);
     this->setMinimumSize(400, 300);
     this->setContentsMargins(1, 1, 1, 1);
 
@@ -81,9 +80,6 @@ MainWindow::MainWindow(SplashScreen *splashScreen, QWidget *parent)
     if (!mExitApplication)
         mpMessageWidget->printGUIMessage("OpenModelica, Version: " + mpOMCProxy->getVersion());
 
-    //Create a dock for the componentslibrary
-    libdock = new QDockWidget(tr(" Components"), this);
-    libdock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
     mpLibrary = new LibraryWidget(this);
     // Set the annotations version to 3.x
     if (!mExitApplication)
@@ -97,6 +93,18 @@ MainWindow::MainWindow(SplashScreen *splashScreen, QWidget *parent)
     {
         mpLibrary->mpLibraryTree->addModelicaStandardLibrary();
     }
+
+    //Create a dock for the search MSL
+    searchMSLdock = new QDockWidget(tr(" Search MSL"), this);
+    searchMSLdock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+    mpSearchMSLWidget = new SearchMSLWidget(this);
+    searchMSLdock->setWidget(mpSearchMSLWidget);
+    addDockWidget(Qt::LeftDockWidgetArea, searchMSLdock);
+    searchMSLdock->hide();
+
+    //Create a dock for the componentslibrary
+    libdock = new QDockWidget(tr(" Components"), this);
+    libdock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
     libdock->setWidget(mpLibrary);
     addDockWidget(Qt::LeftDockWidgetArea, libdock);
 
@@ -277,8 +285,18 @@ void MainWindow::createActions()
     openOMShellAction->setStatusTip(tr("Opens OpenModelica Shell (OMShell)"));
     connect(openOMShellAction, SIGNAL(triggered()), SLOT(openOMShell()));
 
+    exportToOMNotebookAction = new QAction(tr("Export to OMNotebook"), this);
+    exportToOMNotebookAction->setStatusTip(tr("Exports the current model to OMNotebook"));
+    exportToOMNotebookAction->setEnabled(false);
+    connect(exportToOMNotebookAction, SIGNAL(triggered()), SLOT(exportModelToOMNotebook()));
+
+    exportAsImage = new QAction(tr("Export as Image (png)"), this);
+    exportAsImage->setStatusTip(tr("Exports the current model to Image (png)"));
+    exportAsImage->setEnabled(false);
+    connect(exportAsImage, SIGNAL(triggered()), SLOT(exportModelAsImage()));
+
     openOptions = new QAction(tr("Options"), this);
-    connect(openOptions, SIGNAL(triggered()), SLOT(openConfiguratonOptions()));
+    connect(openOptions, SIGNAL(triggered()), SLOT(openConfigurationOptions()));
 
     closeAction = new QAction(QIcon(":/Resources/icons/close.png"), tr("Close"), this);
     closeAction->setShortcut(QKeySequence("Ctrl+q"));
@@ -398,11 +416,15 @@ void MainWindow::createMenus()
     menuEdit->addAction(copyAction);
     menuEdit->addAction(pasteAction);
 
+    QAction *searchMSLAction = searchMSLdock->toggleViewAction();
+    searchMSLAction->setText(tr("&Search MSL"));
+    searchMSLAction->setShortcut(QKeySequence("Ctrl+Shift+f"));
     QAction *libAction = libdock->toggleViewAction();
     libAction->setText(tr("&Components"));
     QAction *messageAction = messagedock->toggleViewAction();
     messageAction->setText(tr("&Messages"));
 
+    menuView->addAction(searchMSLAction);
     menuView->addAction(libAction);
     menuView->addAction(messageAction);
     menuView->addAction(fileToolBar->toggleViewAction());
@@ -596,7 +618,145 @@ void MainWindow::openOMShell()
     process->start(omShellPath);
 }
 
-void MainWindow::openConfiguratonOptions()
+//! Exports the current model to OMNotebook.
+//! Creates a new onb file and add the model text and model image in it.
+void MainWindow::exportModelToOMNotebook()
+{
+    QDir fileDialogSaveDir;
+
+    QString omnotebookFileName = QFileDialog::getSaveFileName(this, tr("Export to OMNotebook"),
+                                                             fileDialogSaveDir.currentPath(),
+                                                             Helper::omnotebookFileTypes);
+
+    // if user cancels the operation. or closes the export dialog box.
+    if (omnotebookFileName.isEmpty())
+        return;
+
+    // create the xml for the omnotebook file.
+    QDomDocument xmlDocument;
+    // create Notebook element
+    QDomElement notebookElement = xmlDocument.createElement("Notebook");
+    xmlDocument.appendChild(notebookElement);
+    // create title cell
+    createOMNotebookTitleCell(xmlDocument, notebookElement);
+    // create image cell
+    QStringList pathList = omnotebookFileName.split('/');
+    pathList.removeLast();
+    QString modelImagePath(pathList.join("/"));
+    createOMNotebookImageCell(xmlDocument, notebookElement, modelImagePath);
+    // create a code cell
+    createOMNotebookCodeCell(xmlDocument, notebookElement);
+
+    // create a file object and write the xml in it.
+    QFile omnotebookFile(omnotebookFileName);
+    omnotebookFile.open(QIODevice::WriteOnly);
+    QTextStream textStream(&omnotebookFile);
+    textStream << xmlDocument.toString();
+    omnotebookFile.close();
+}
+
+//! creates a title cell in omnotebook xml file
+void MainWindow::createOMNotebookTitleCell(QDomDocument xmlDocument, QDomElement pDomElement)
+{
+    QDomElement textCellElement = xmlDocument.createElement("TextCell");
+    textCellElement.setAttribute("style", "Text");
+    pDomElement.appendChild(textCellElement);
+
+    ProjectTab *pCurrentTab = mpProjectTabs->getCurrentTab();
+    // create text Element
+    QDomElement codeElement = xmlDocument.createElement("Text");
+    codeElement.appendChild(xmlDocument.createTextNode(pCurrentTab->mModelName));
+    textCellElement.appendChild(codeElement);
+}
+
+//! creates a image cell in omnotebook xml file
+void MainWindow::createOMNotebookImageCell(QDomDocument xmlDocument, QDomElement pDomElement, QString filePath)
+{
+    ProjectTab *pCurrentTab = mpProjectTabs->getCurrentTab();
+    QPixmap modelImage(pCurrentTab->mpGraphicsView->viewport()->size());
+    modelImage.fill(QColor(Qt::transparent));
+    QPainter painter(&modelImage);
+    painter.setWindow(pCurrentTab->mpGraphicsView->viewport()->rect());
+    // paint the background color first
+    painter.fillRect(modelImage.rect(), pCurrentTab->mpGraphicsView->palette().background());
+    // paint all the items
+    pCurrentTab->mpGraphicsView->render(&painter, QRectF(painter.viewport()), pCurrentTab->mpGraphicsView->viewport()->rect());
+    painter.end();
+
+    // create textcell element
+    QDomElement textCellElement = xmlDocument.createElement("TextCell");
+    pDomElement.appendChild(textCellElement);
+
+    // create text Element
+    QDomElement textElement = xmlDocument.createElement("Text");
+    textElement.appendChild(xmlDocument.createTextNode("<img src=\""+QString(filePath).append("/OMNotebook_tempfiles/1.png")+"\" />"));
+    textCellElement.appendChild(textElement);
+    // create rule Element
+    QDomElement ruleElement = xmlDocument.createElement("Rule");
+    ruleElement.setAttribute("name", "TextAlignment");
+    ruleElement.appendChild(xmlDocument.createTextNode(tr("Center")));
+    textCellElement.appendChild(ruleElement);
+    // create image Element
+    QDomElement imageElement = xmlDocument.createElement("Image");
+    imageElement.setAttribute("name", QString(filePath).append("/OMNotebook_tempfiles/1.png"));
+
+    // get the base64 encoding of image
+    QBuffer imageBuffer;
+    imageBuffer.open( QBuffer::WriteOnly );
+    QDataStream out( &imageBuffer );
+    out << modelImage;
+    imageBuffer.close();
+
+    imageElement.appendChild(xmlDocument.createTextNode(imageBuffer.buffer().toBase64()));
+    textCellElement.appendChild(imageElement);
+}
+
+//! creates a code cell in omnotebook xml file
+void MainWindow::createOMNotebookCodeCell(QDomDocument xmlDocument, QDomElement pDomElement)
+{
+    QDomElement textCellElement = xmlDocument.createElement("InputCell");
+    pDomElement.appendChild(textCellElement);
+
+    ProjectTab *pCurrentTab = mpProjectTabs->getCurrentTab();
+    // create input Element
+    QDomElement inputElement = xmlDocument.createElement("Input");
+    inputElement.appendChild(xmlDocument.createTextNode(mpOMCProxy->list(pCurrentTab->mModelNameStructure)));
+    textCellElement.appendChild(inputElement);
+    // create output Element
+    QDomElement outputElement = xmlDocument.createElement("Output");
+    outputElement.appendChild(xmlDocument.createTextNode(tr("")));
+    textCellElement.appendChild(outputElement);
+}
+
+void MainWindow::exportModelAsImage()
+{
+    QDir fileDialogSaveDir;
+
+    QString imageFileName = QFileDialog::getSaveFileName(this, tr("Export as Image"), fileDialogSaveDir.currentPath(),
+                                                         Helper::imageFileTypes);
+
+    // if user cancels the operation. or closes the export dialog box.
+    if (imageFileName.isEmpty())
+        return;
+
+    ProjectTab *pCurrentTab = mpProjectTabs->getCurrentTab();
+    QPixmap modelImage(pCurrentTab->mpGraphicsView->viewport()->size());
+    modelImage.fill(QColor(Qt::transparent));
+
+    QPainter painter(&modelImage);
+    painter.setWindow(pCurrentTab->mpGraphicsView->viewport()->rect());
+    // paint the background color first
+    painter.fillRect(modelImage.rect(), pCurrentTab->mpGraphicsView->palette().background());
+    // paint all the items
+    pCurrentTab->mpGraphicsView->render(&painter, QRectF(painter.viewport()), pCurrentTab->mpGraphicsView->viewport()->rect());
+    painter.end();
+
+    // save the image
+    if (!modelImage.save(imageFileName))
+        mpMessageWidget->printGUIErrorMessage("Error saving the image file.");
+}
+
+void MainWindow::openConfigurationOptions()
 {
     this->mpOptionsWidget->show();
 }

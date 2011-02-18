@@ -45,7 +45,7 @@
 #include "LibraryWidget.h"
 
 ModelicaTreeNode::ModelicaTreeNode(QString text, QString parentName, QString tooltip, int type, QTreeWidget *parent)
-    :QTreeWidgetItem(parent)
+    : QTreeWidgetItem(parent)
 {
     mType = type;
     mName = text;
@@ -286,7 +286,7 @@ void ModelicaTree::checkModelicaModel()
     widget->show();
 }
 
-bool ModelicaTree::deleteNodeTriggered(ModelicaTreeNode *node)
+bool ModelicaTree::deleteNodeTriggered(ModelicaTreeNode *node, bool askQuestion)
 {
     QString msg;
     MainWindow *pMainWindow = mpParentLibraryWidget->mpParentMainWindow;
@@ -306,33 +306,39 @@ bool ModelicaTree::deleteNodeTriggered(ModelicaTreeNode *node)
         break;
     }
 
-    QMessageBox *msgBox = new QMessageBox(pMainWindow);
-    msgBox->setWindowTitle(QString(Helper::applicationName).append(" - Question"));
-    msgBox->setIcon(QMessageBox::Question);
-    msgBox->setText(msg);
-    msgBox->setStandardButtons(QMessageBox::Yes | QMessageBox::No);
-    msgBox->setDefaultButton(QMessageBox::Yes);
-
-    int answer = msgBox->exec();
-
-    switch (answer)
+    if (askQuestion)
     {
-    case QMessageBox::Yes:
-        // Yes was clicked. Don't return.
-        break;
-    case QMessageBox::No:
-        // No was clicked
-        return false;
-    default:
-        // should never be reached
-        return false;
+        QMessageBox *msgBox = new QMessageBox(pMainWindow);
+        msgBox->setWindowTitle(QString(Helper::applicationName).append(" - Question"));
+        msgBox->setIcon(QMessageBox::Question);
+        msgBox->setText(msg);
+        msgBox->setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+        msgBox->setDefaultButton(QMessageBox::Yes);
+
+        int answer = msgBox->exec();
+
+        switch (answer)
+        {
+        case QMessageBox::Yes:
+            // Yes was clicked. Don't return.
+            break;
+        case QMessageBox::No:
+            // No was clicked
+            return false;
+        default:
+            // should never be reached
+            return false;
+        }
     }
 
     if (pMainWindow->mpOMCProxy->deleteClass(treeNode->mNameStructure))
     {
         // print the message before deleting node,
-        // because after delete node is not available to print message :)
-        pMainWindow->mpMessageWidget->printGUIInfoMessage("'" + treeNode->mName + "' deleted successfully.");
+        // because after delete treenode is not available to print message :)
+        if (askQuestion)
+        {
+            pMainWindow->mpMessageWidget->printGUIInfoMessage("'" + treeNode->mName + "' deleted successfully.");
+        }
         deleteNode(treeNode);
         if (treeNode->childCount())
             qDeleteAll(treeNode->takeChildren());
@@ -374,6 +380,15 @@ void ModelicaTree::saveChildModels(QString modelName, QString filePath)
                 if (pCurrentTab->mModelicaType == StringHandler::PACKAGE)
                 {
                     saveChildModels(pCurrentTab->mModelNameStructure, filePath);
+                }
+            }
+            // if not found in removed tabs then read the model name form tree
+            else
+            {
+                pMainWindow->mpOMCProxy->setSourceFile(childNode->mNameStructure, filePath);
+                if (childNode->mType == StringHandler::PACKAGE)
+                {
+                    saveChildModels(childNode->mNameStructure, filePath);
                 }
             }
         }
@@ -439,11 +454,13 @@ void LibraryTree::addModelicaStandardLibrary()
     if (mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->isStandardLibraryLoaded())
     {
         // It should be possible to load multiple libraries in OMEdit...
-        const int numLib=1;
-        const char *libs[numLib] = {"Modelica"};
+        const int numLib=2;
+        const char *libs[numLib] = {"Modelica", "ModelicaServices"};
         for (int i=0; i<numLib; i++) {
             LibraryTreeNode *newTreePost = new LibraryTreeNode(QString(libs[i]), QString(""), QString(libs[i]),
-                                                               (QTreeWidget*)0);
+                                                               this);
+            int classType = mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->getClassRestriction(QString(libs[i]));
+            newTreePost->mType = classType;
             newTreePost->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
             insertTopLevelItem(0, newTreePost);
 
@@ -740,6 +757,113 @@ void LibraryTree::treeItemPressed(QTreeWidgetItem *item)
         drag->setHotSpot(QPoint((drag->hotSpot().x() + adjust), (drag->hotSpot().y() + adjust)));
     }
     drag->exec(Qt::CopyAction);
+}
+
+MSLSearchBox::MSLSearchBox()
+    : mDefaultText(Helper::modelicaLibrarySearchText)
+{
+    setText(mDefaultText);
+}
+
+void MSLSearchBox::focusInEvent(QFocusEvent *event)
+{
+    Q_UNUSED(event);
+
+    if (text().compare(mDefaultText) == 0)
+        setText(tr(""));
+}
+
+void MSLSearchBox::focusOutEvent(QFocusEvent *event)
+{
+    Q_UNUSED(event);
+
+    if (text().isEmpty())
+    {
+        setText(mDefaultText);
+    }
+}
+
+SearchMSLWidget::SearchMSLWidget(MainWindow *pParent)
+    : QWidget(pParent)
+{
+    mpParentMainWindow = pParent;
+
+    // get MSL recursive
+    mMSLItemsList = mpParentMainWindow->mpOMCProxy->getClassNamesRecursive(tr("Modelica"));
+
+    // create search controls
+    mpSearchTextBox = new MSLSearchBox;
+    connect(mpSearchTextBox, SIGNAL(returnPressed()), SLOT(searchMSL()));
+
+    mpSearchButton = new QPushButton(tr("Search"));
+    connect(mpSearchButton, SIGNAL(pressed()), SLOT(searchMSL()));
+
+    mpSearchedItemsTree = new LibraryTree(mpParentMainWindow->mpLibrary);
+    mpSearchedItemsTree->setFrameShape(QFrame::StyledPanel);
+    mpSearchedItemsTree->setHeaderLabel(tr("Searched Items"));
+
+    // add the search controls to layout
+    QHBoxLayout *horizontalLayout = new QHBoxLayout;
+    horizontalLayout->addWidget(mpSearchTextBox);
+    horizontalLayout->addWidget(mpSearchButton);
+
+    QVBoxLayout *verticalLayout = new QVBoxLayout;
+    verticalLayout->setContentsMargins(0, 0, 2, 0);
+    verticalLayout->addLayout(horizontalLayout);
+    verticalLayout->addWidget(mpSearchedItemsTree);
+
+    setLayout(verticalLayout);
+}
+
+void SearchMSLWidget::searchMSL()
+{
+    // Remove the items from search tree
+    int i = 0;
+    while(i < mpSearchedItemsTree->topLevelItemCount())
+    {
+        qDeleteAll(mpSearchedItemsTree->topLevelItem(i)->takeChildren());
+        delete mpSearchedItemsTree->topLevelItem(i);
+        i = 0;   //Restart iteration
+    }
+
+    QString foundedItemString;
+    QStringList foundedItemsList;
+
+    foreach (QString item, mMSLItemsList)
+    {
+        item = item.trimmed();
+        // for packages...so that the search don't go inside a package....
+        if (!foundedItemString.isEmpty())
+        {
+            if (item.startsWith(foundedItemString, Qt::CaseInsensitive))
+                continue;
+        }
+        if (item.contains(mpSearchTextBox->text().trimmed(), Qt::CaseInsensitive))
+        {
+            foundedItemString = item;
+            foundedItemsList.append(item);
+        }
+    }
+
+    // if no item is found
+    if (foundedItemsList.isEmpty())
+    {
+        mpSearchedItemsTree->insertTopLevelItem(0, new QTreeWidgetItem(QStringList(Helper::noItemFound)));
+        return;
+    }
+
+    foreach (QString foundedItem, foundedItemsList)
+    {
+        LibraryTreeNode *newTreePost = new LibraryTreeNode(foundedItem, QString(""), foundedItem, mpSearchedItemsTree);
+        newTreePost->mType = mpParentMainWindow->mpOMCProxy->getClassRestriction(foundedItem);
+        mpSearchedItemsTree->insertTopLevelItem(0, newTreePost);
+
+        // get the Icon for Modelica tree node
+        LibraryLoader *libraryLoader = new LibraryLoader(newTreePost, foundedItem, mpSearchedItemsTree);
+        libraryLoader->start(QThread::HighestPriority);
+        while (libraryLoader->isRunning())
+            qApp->processEvents();
+    }
 }
 
 //! Constructor.

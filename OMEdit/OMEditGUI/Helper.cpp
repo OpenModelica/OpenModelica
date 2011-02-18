@@ -40,8 +40,9 @@ QString Helper::applicationIntroText = "OpenModelica Connection Editor";
 QString Helper::OpenModelicaHome = QString();
 QString Helper::OpenModelicaLibrary = QString();
 QString Helper::omcServerName = "OMEdit";
-QString Helper::omFileTypes = "*.mo";
-QString Helper::omFileOpenText = "Modelica Files (*.mo)";
+QString Helper::omFileTypes = "Modelica Files (*.mo)";
+QString Helper::omnotebookFileTypes = "OMNotebook Files (*.onb *.onbz *.nb)";
+QString Helper::imageFileTypes = "Image Files (*.png)";
 #ifdef WIN32
 QString Helper::tmpPath = QString(getenv("OPENMODELICAHOME")).append(QString("/tmp/OMEdit"));
 #else
@@ -69,6 +70,8 @@ QSize Helper::buttonIconSize = QSize(20, 20);
 int Helper::headingFontSize = 18;
 int Helper::tabWidth = 20;
 qreal Helper::shapesStrokeWidth = 5.0;
+QString Helper::modelicaLibrarySearchText = QString("Search Modelica Standard Library");
+QString Helper::noItemFound = QString("Sorry, no items found");
 
 QString Helper::ModelicaSimulationMethods = "DASSL,DASSL2,Euler,Runge-Kutta";
 QString Helper::ModelicaSimulationOutputFormats = "mat,csv,plt,empty";
@@ -131,6 +134,10 @@ QString GUIMessages::getMessage(int type)
         return "The %1 '%2' is contained inside a package. It is automatically saved when you save the package.";
     case SEARCH_STRING_NOT_FOUND:
         return "The search string '%1' is not found.";
+    case FILE_REMOVED_MSG:
+        return "The file '%1' has been removed outside %2. Do you want to keep it?";
+    case FILE_MODIFIED_MSG:
+        return "The file '%1' has been modified outside %2. Do you want to reload it?";
     default:
         return "";
     }

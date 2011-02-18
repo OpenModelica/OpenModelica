@@ -472,6 +472,15 @@ QStringList OMCProxy::getClassNames(QString className)
     return list;
 }
 
+//! Gets the list of classes from OMC recursively.
+//! @param className is the name of the class whose sub classes are retrieved.
+QStringList OMCProxy::getClassNamesRecursive(QString className)
+{
+    sendCommand("getClassNamesRecursive(" + className + ")");
+    QStringList list = getResult().split(" ", QString::SkipEmptyParts);
+    return list;
+}
+
 //! Gets the list of packages from OMC.
 //! @param packageName is the name of the package whose sub packages are retrieved.
 QStringList OMCProxy::getPackages(QString packageName)
@@ -607,6 +616,29 @@ bool OMCProxy::setParameterValue(QString className, QString parameter, QString v
 {
     sendCommand("setParameterValue(" + className + "," + parameter + "," + value + ")");
     if (getResult().contains("Ok"))
+        return true;
+    else
+        return false;
+}
+
+QStringList OMCProxy::getComponentModifierNames(QString modelName, QString className)
+{
+    sendCommand("getComponentModifierNames(" + modelName + "," + className + ")");
+    QString result = StringHandler::removeFirstLastCurlBrackets(getResult());
+    QStringList list = result.split(",", QString::SkipEmptyParts);
+    return list;
+}
+
+QString OMCProxy::getComponentModifierValue(QString modelName, QString className)
+{
+    sendCommand("getComponentModifierValue(" + modelName + "," + className + ")");
+    return StringHandler::getModifierValue(getResult());
+}
+
+bool OMCProxy::setComponentModifierValue(QString modelName, QString className, QString value)
+{
+    sendCommand("setComponentModifierValue(" + modelName + "," + className + ", Code(=" + value + "))");
+    if (getResult().toLower().contains("ok"))
         return true;
     else
         return false;

@@ -59,6 +59,7 @@ public:
     static QString removeLastSlashWord(QString value);
     static QString removeLastWordAfterDot(QString value);
     static QString removeComment(QString value);
+    static QString getModifierValue(QString value);
 };
 
 #endif // STRINGHANDLER_H
