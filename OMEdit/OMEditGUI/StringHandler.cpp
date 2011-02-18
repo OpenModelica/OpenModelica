@@ -305,18 +305,14 @@ QString StringHandler::getModifierValue(QString value)
     int element = 0;
     for(int i = 0 ; i < value.length() ; i++)
     {
-        switch(value.at(i))
-        {
-        case '(':
+        if (value.at(i) == '(')
             element++;
-            break;
-        case ')':
+        else if (value.at(i) == ')')
             element--;
-            break;
-        case '=':
+        else if (value.at(i) == '=')
+        {
             if (element == 0)
                 return value.mid(i + 1);
-            break;
         }
     }
     return "";
