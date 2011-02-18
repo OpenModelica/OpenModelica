@@ -41,6 +41,14 @@ encapsulated package SimulationResults
 public import Values;
 protected import ValuesUtil;
 
+public function val
+  input String filename;
+  input String varname;
+  input Real timeStamp;
+  output Real val;
+external "C" val=SimulationResults_val(filename,varname,timeStamp);
+end val;
+
 public function readPtolemyplotVariables
   input String inString;
   input String inVisVars;

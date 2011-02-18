@@ -1959,66 +1959,6 @@ algorithm
       then
         (cache,Values.STRING("Unknown error while plotting"),st);
         
-        // } visualize
-        
-        /* adpo: val OpenModelica version:
-         case (cache,env,
-         DAE.CALL(
-         path = Absyn.IDENT(name = "val"),
-         expLst = {DAE.ARRAY(array = {varName, varTimeStamp})}),
-         (st as Interactive.SYMBOLTABLE(
-         ast = p,explodedAst = sp,instClsLst = ic,
-         lstVarVal = iv,compiledFunctions = cf,
-         loadedFiles = lf)),msg)
-         equation
-         
-         {varName} = Util.listMap({varName},Expression.CodeVarToCref);
-         vars_1 = Util.listMap({varName}, ExpressionDump.printExpStr);
-         // Util.listMap0(vars_1,print);
-          
-          (cache,Values.REAL(timeStamp),SOME(st)) = Ceval.ceval(cache,env, varTimeStamp, true, SOME(st),NONE(), msg);
-          
-          (cache,Values.RECORD(orderd={Values.STRING(filename)}),_) = Ceval.ceval(cache, env, buildCurrentSimulationResultExp(), true, SOME(st), NONE(), msg);
-          
-          Values.ARRAY({Values.ARRAY(varValues)}) = SimulationResults.readPtolemyplotDataset(filename, vars_1, 0);
-          Values.ARRAY({Values.ARRAY(timeValues)}) = SimulationResults.readPtolemyplotDataset(filename, {"time"}, 0);
-          
-          
-          tV = ValuesUtil.valueReals(timeValues);
-          vV = ValuesUtil.valueReals(varValues);
-          val = System.getVariableValue(timeStamp, tV, vV);
-          then
-          (cache,Values.REAL(val),st);
-          
-          case (cache,env,
-          DAE.CALL(
-          path = Absyn.IDENT(name = "val"),
-          expLst = {DAE.ARRAY(array = {varName, varTimeStamp})}),
-          (st as Interactive.SYMBOLTABLE(
-          ast = p,explodedAst = sp,instClsLst = ic,
-          lstVarVal = iv,compiledFunctions = cf,
-          loadedFiles = lf)),msg)
-          equation
-          
-          {varName} = Util.listMap({varName},Expression.CodeVarToCref);
-          vars_1 = Util.listMap({varName}, ExpressionDump.printExpStr);
-          // Util.listMap0(vars_1,print);
-           
-           (cache,Values.INTEGER(timeStamp),SOME(st)) = Ceval.ceval(cache,env, varTimeStamp, true, SOME(st),NONE(), msg);
-           
-           (cache,Values.RECORD(orderd={Values.STRING(filename)}),_) = Ceval.ceval(cache,env, buildCurrentSimulationResultExp(), true, SOME(st),NONE(), msg);
-           
-           Values.ARRAY({Values.ARRAY(varValues)}) = SimulationResults.readPtolemyplotDataset(filename, vars_1, 0);
-           Values.ARRAY({Values.ARRAY(timeValues)}) = SimulationResults.readPtolemyplotDataset(filename, {"time"}, 0);
-           
-           
-           tV = ValuesUtil.valueReals(timeValues);
-           vV = ValuesUtil.valueReals(varValues);
-           val = System.getVariableValue(intReal(timeStamp), tV, vV);
-           then
-           (cache,Values.REAL(val),st);
-           */
-        
     case (cache,env,
         DAE.CALL(
           path = Absyn.IDENT(name = "val"),
@@ -2028,59 +1968,14 @@ algorithm
             lstVarVal = iv,compiledFunctions = cf,
             loadedFiles = lf)),msg)
       equation
+        (cache,Values.STRING(filename),_) = Ceval.ceval(cache,env,buildCurrentSimulationResultExp(), true, SOME(st),NONE(), msg);
         varName = Expression.CodeVarToCref(varName);
         varNameStr = ExpressionDump.printExpStr(varName);
-        (cache,Values.REAL(timeStamp),SOME(st)) = Ceval.ceval(cache,env, varTimeStamp, true, SOME(st),NONE(), msg);
-        (cache,val) = cevalVal(cache,env,SOME(st),timeStamp,varNameStr);
-      then
-        (cache,Values.REAL(val),st);
-        
-    case (cache,env,
-        DAE.CALL(
-          path = Absyn.IDENT(name = "val"),
-          expLst = {varName, varTimeStamp}),
-          (st as Interactive.SYMBOLTABLE(
-            ast = p,explodedAst = sp,instClsLst = ic,
-            lstVarVal = iv,compiledFunctions = cf,
-            loadedFiles = lf)),msg)
-      equation
-        varName = Expression.CodeVarToCref(varName);
-        varNameStr = ExpressionDump.printExpStr(varName);
-        (cache,Values.INTEGER(timeStampI),SOME(st)) = Ceval.ceval(cache,env, varTimeStamp, true, SOME(st),NONE(), msg);
-        timeStamp = intReal(timeStampI);
-        (cache,val) = cevalVal(cache,env,SOME(st),timeStamp,varNameStr);
-      then
-        (cache,Values.REAL(val),st);
-        
-    case (cache,env,
-        DAE.CALL(
-          path = Absyn.IDENT(name = "val"),
-          expLst = {varName, varTimeStamp}),
-          (st as Interactive.SYMBOLTABLE(
-            ast = p,explodedAst = sp,instClsLst = ic,
-            lstVarVal = iv,compiledFunctions = cf,
-            loadedFiles = lf)),msg)
-      equation
-        varName = Expression.CodeVarToCref(varName);
-        varNameStr = ExpressionDump.printExpStr(varName);
-        (cache,Values.ARRAY(valueLst = vals),SOME(st)) = Ceval.ceval(cache,env, varTimeStamp, true, SOME(st),NONE(), msg);
-        timeStamps = Util.listMap(vals,ValuesUtil.valueReal);
-        (cache,value) = cevalValArray(cache,env,SOME(st),timeStamps,varNameStr);
-      then
-        (cache,value,st);
-        
-    case (cache,env,
-        DAE.CALL(
-          path = Absyn.IDENT(name = "val"),
-          expLst = {DAE.ARRAY(array = expVars)}),
-          (st as Interactive.SYMBOLTABLE(
-            ast = p,explodedAst = sp,instClsLst = ic,
-            lstVarVal = iv,compiledFunctions = cf,
-            loadedFiles = lf)),msg)
-      then
-        (cache,Values.STRING("Error, check variable name and time variables"),st);
-        
-        
+        (cache,v,SOME(st)) = Ceval.ceval(cache,env, varTimeStamp, true, SOME(st),NONE(), msg);
+        timeStamp = ValuesUtil.valueReal(v);
+        val = SimulationResults.val(filename,varNameStr,timeStamp);
+      then (cache,Values.REAL(val),st);
+                
         /* plotparametric This rule represents the normal case when an array of at least two elements
          *  is given as an argument
          */
@@ -2463,61 +2358,6 @@ algorithm
         ();
   end match;
 end setEcho;
-
-protected function cevalValArray "Help function to cevalInteractiveFunctions. Handles val(var,{timestamps})"
-  input Env.Cache cache;
-  input Env.Env env;
-  input Option<Interactive.InteractiveSymbolTable> st;
-  input list<Real> timeStamps;
-  input String varName;
-  output Env.Cache outCache;
-  output Values.Value value;
-algorithm
-  (outCache,value) := match(cache,env,st,timeStamps,varName)
-    local
-      list<Values.Value> vals;
-      Real v,timeStamp;
-      Integer i;
-      list<Integer> dims;
-    case(cache,env,st,{},varName) then (cache,Values.ARRAY({},{0}));
-    case(cache,env,st,timeStamp::timeStamps,varName)
-      equation
-        (cache,v) = cevalVal(cache,env,st,timeStamp,varName);
-        (cache,Values.ARRAY(vals,i::dims)) = cevalValArray(cache,env,st,timeStamps,varName);
-        i = i+1;
-      then (cache,Values.ARRAY(Values.REAL(v)::vals,i::dims));
-  end match;
-end cevalValArray;
-
-protected function cevalVal "Help function to cevalInteractiveFunctions. Handles val(var,timestamp)"
-  input Env.Cache cache;
-  input Env.Env env;
-  input Option<Interactive.InteractiveSymbolTable> stopt;
-  input Real timeStamp;
-  input String varName;
-  output Env.Cache outCache;
-  output Real value;
-algorithm
-  (outCache,value) := match(cache,env,stopt,timeStamp,varName)
-    local 
-      Real val; list<Real> tV, vV; list<Values.Value> varValues, timeValues;
-      Interactive.InteractiveSymbolTable st;
-      String filename;
-    
-    case(cache,env,SOME(st),timeStamp,varName) 
-      equation
-        (cache,Values.STRING(filename),_) = Ceval.ceval(cache, env, buildCurrentSimulationResultExp(), true, SOME(st),NONE(), Ceval.NO_MSG());
-
-        Values.ARRAY(valueLst = {Values.ARRAY(valueLst = varValues)}) = SimulationResults.readPtolemyplotDataset(filename, {varName}, 0);
-        Values.ARRAY(valueLst = {Values.ARRAY(valueLst = timeValues)}) = SimulationResults.readPtolemyplotDataset(filename, {"time"}, 0);
-
-        tV = ValuesUtil.valueReals(timeValues);
-        vV = ValuesUtil.valueReals(varValues);
-        val = System.getVariableValue(timeStamp, tV, vV);
-      then 
-        (cache,val);
-  end match;
-end cevalVal;
 
 public function getIncidenceMatrix "function getIncidenceMatrix
  author: adrpo

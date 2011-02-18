@@ -73,6 +73,8 @@ BackendDAEEXT_rml.o : BackendDAEEXT.cpp
 BackendDAEEXT_omc.o : BackendDAEEXT.cpp $(RML_COMPAT)
 Socket_rml.o : socketimpl.c
 Socket_omc.o : socketimpl.c
+SimulationResults_rml.o : SimulationResults.c
+SimulationResults_omc.o : SimulationResults.c
 ptolemyio_rml.o : ptolemyio.cpp
 ptolemyio_omc.o : ptolemyio.cpp $(RML_COMPAT)
 ErrorMessage.o : ErrorMessage.cpp ErrorMessage.hpp

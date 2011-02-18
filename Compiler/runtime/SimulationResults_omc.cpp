@@ -36,6 +36,8 @@
 
 extern "C" {
 
+#include "SimulationResults.c"
+
 void* read_ptolemy_dataset(const char*filename, int size,const char**vars,int);
 void* read_ptolemy_variables(const char* filename, const char* visvars);
 int read_ptolemy_dataset_size(const char*filename);
@@ -65,6 +67,11 @@ void* SimulationResults_readPtolemyplotDataset(const char *filename, void *lst, 
 void* SimulationResults_readPtolemyplotDatasetSize(const char *filename)
 {
   return Values__INTEGER(mmc_mk_icon(read_ptolemy_dataset_size(filename)));
+}
+
+double SimulationResults_val(const char *filename, const char *varname, double timeStamp)
+{
+  return SimulationResultsImpl__val(filename,varname,timeStamp);
 }
 
 }

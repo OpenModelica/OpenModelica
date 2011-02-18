@@ -33,6 +33,8 @@
 #include "Values.h"
 #include "ValuesUtil.h"
 
+#include "SimulationResults.c"
+
 void* read_ptolemy_dataset(char*filename, int size,char**vars,int);
 void* read_ptolemy_variables(char* filename, char* visvars);
 int read_ptolemy_dataset_size(char*filename);
@@ -98,3 +100,12 @@ RML_BEGIN_LABEL(SimulationResults__readPtolemyplotDatasetSize)
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
+
+RML_BEGIN_LABEL(SimulationResults__val)
+{
+  rmlA0 = mk_rcon(SimulationResultsImpl__val(RML_STRINGDATA(rmlA0),RML_STRINGDATA(rmlA1),rml_prim_get_real(rmlA2)));
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+
