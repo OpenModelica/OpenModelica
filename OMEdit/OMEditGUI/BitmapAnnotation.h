@@ -34,27 +34,23 @@ public:
     BitmapAnnotation(QString shape, Component *pParent = 0);
     BitmapAnnotation(GraphicsView *graphicsView, QGraphicsItem *pParent = 0);
     BitmapAnnotation(QString shape, GraphicsView *graphicsView, QGraphicsItem *pParent = 0);
-
+    QRectF boundingRect() const;
+    QPainterPath shape() const;
+    void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
     void addPoint(QPointF point);
-    void drawRectangleCornerItems();    
     void updateEndPoint(QPointF point);
+    void drawRectangleCornerItems();
+    QString getShapeAnnotation();
+    void parseShapeAnnotation(QString shape, OMCProxy *omc);
     void setFileName(QString fileName);    
     void updateAnnotation();
     void setImageSource(QString imageSource);
-    void parseShapeAnnotation(QString shape, OMCProxy *omc);
-
     QString getFileName();
-    QString getShapeAnnotation();
-
-    QRectF boundingRect() const;
-    void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
-    QPainterPath shape() const;
 
     Component *mpComponent;
 private:
     QString mFileName;
     QString mImageSource;
-
 public slots:
     void updatePoint(int index, QPointF point);
 };

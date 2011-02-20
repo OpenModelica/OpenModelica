@@ -115,11 +115,9 @@ void IconProperties::setUpDialog()
     QGridLayout *gridParametersLayout = new QGridLayout;
     gridParametersLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
 
-
-
-    for (int i = 0 ; i < mpComponent->mpIconParametersList.size() ; i++)
+    for (int i = 0 ; i < mpComponent->mIconParametersList.size() ; i++)
     {
-        IconParameters *iconParameter = mpComponent->mpIconParametersList.at(i);
+        IconParameters *iconParameter = mpComponent->mIconParametersList.at(i);
 
         QLabel *parameterLabel = new QLabel;
         parameterLabel->setText(iconParameter->getName());
@@ -197,33 +195,19 @@ void IconProperties::updateIconProperties()
     QString parameterNewValueString;
 
     // update the parameter if it is changed
-    for (int i = 0 ; i < mpComponent->mpIconParametersList.size() ; i++)
+    for (int i = 0 ; i < mpComponent->mIconParametersList.size() ; i++)
     {
-        IconParameters *iconParameter = mpComponent->mpIconParametersList.at(i);
+        IconParameters *iconParameter = mpComponent->mIconParametersList.at(i);
+        mpComponent->mpOMCProxy->setComponentModifierValue(pProjectTab->mModelNameStructure,
+                                                           QString(mpComponent->getName()).append(".")
+                                                           .append(iconParameter->getName()),
+                                                           mParameterTextBoxesList.at(i)->text().trimmed());
 
-        if (mParameterTextBoxesList.at(i)->text().isEmpty())
-        {
-            mpComponent->mpOMCProxy->setParameterValue(mpComponent->getClassName(),
-                                                            iconParameter->getName(),
-                                                            iconParameter->getDefaultValue());
-
-            parameterOldValueString = QString(iconParameter->getName()).append("=").append(iconParameter->getValue());
-            parameterNewValueString = QString(iconParameter->getName()).append("=").append(iconParameter->getDefaultValue());
-            mpComponent->updateParameterValue(parameterOldValueString, parameterNewValueString);
-            iconParameter->setValue(iconParameter->getDefaultValue());
-
-        }
-        else
-        {
-            mpComponent->mpOMCProxy->setParameterValue(mpComponent->getClassName(),
-                                                            iconParameter->getName(),
-                                                            mParameterTextBoxesList.at(i)->text().trimmed());
-
-            parameterOldValueString = QString(iconParameter->getName()).append("=").append(iconParameter->getValue());
-            parameterNewValueString = QString(iconParameter->getName()).append("=").append(mParameterTextBoxesList.at(i)->text().trimmed());
-            mpComponent->updateParameterValue(parameterOldValueString, parameterNewValueString);
-            iconParameter->setValue(mParameterTextBoxesList.at(i)->text().trimmed());
-        }
+        // update the gui text now
+        parameterOldValueString = QString(iconParameter->getName()).append("=").append(iconParameter->getValue());
+        parameterNewValueString = QString(iconParameter->getName()).append("=").append(mParameterTextBoxesList.at(i)->text().trimmed());
+        mpComponent->updateParameterValue(parameterOldValueString, parameterNewValueString);
+        iconParameter->setValue(mParameterTextBoxesList.at(i)->text().trimmed());
     }
     accept();
 }

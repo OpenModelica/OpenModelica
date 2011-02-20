@@ -85,13 +85,13 @@ public:
     Component(QString value, QString name, QString className, QPointF position, int type, bool connector,
               OMCProxy *omc, GraphicsView *graphicsView, Component *pParent = 0);
     Component(QString value, QString className, int type, bool connector, Component *pParent = 0);
-    Component(QString value, QString className, QString transformationString,
-              ComponentsProperties *pComponentProperties, int type, bool connector, Component *pParent = 0);
+    Component(QString value, QString transformationString, ComponentsProperties *pComponentProperties, int type,
+              bool connector, Component *pParent = 0);
     /* Used for Library Component */
     Component(QString value, QString className, OMCProxy *omc, Component *pParent = 0);
     Component(QString value, QString className, Component *pParent = 0);
-    Component(QString value, QString className, QString transformationString,
-              ComponentsProperties *pComponentProperties, Component *pParent = 0);
+    Component(QString value, QString transformationString, ComponentsProperties *pComponentProperties,
+              Component *pParent = 0);
     /* Used for Library Component */
     /* Copy Constructors */
     Component(Component *pComponent, QString name, QPointF position, int type, bool connector,
@@ -113,7 +113,7 @@ public:
     QList<ShapeAnnotation*> mpShapesList;
     QList<Component*> mpInheritanceList;
     QList<Component*> mpComponentsList;
-    QList<IconParameters*> mpIconParametersList;
+    QList<IconParameters*> mIconParametersList;
     bool mIsLibraryComponent;
     QPointF mOldPosition;
     bool isMousePressed;

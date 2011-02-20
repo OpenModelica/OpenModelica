@@ -98,13 +98,14 @@ public:
     bool isPackage(QString className);
     bool isWhat(int type, QString className);
     int getClassRestriction(QString modelName);
-    QList<IconParameters*> getParameters(QString className);
+    QList<IconParameters*> getParameters(QString modelName, QString className, QString name);
+    IconParameters* getIconParameter(QList<IconParameters*> list, QString value);
     QStringList getParameterNames(QString className);
     QString getParameterValue(QString className, QString parameter);
     bool setParameterValue(QString className, QString parameter, QString value);
-    QStringList getComponentModifierNames(QString modelName, QString className);
-    QString getComponentModifierValue(QString modelName, QString className);
-    bool setComponentModifierValue(QString modelName, QString className, QString value);
+    QStringList getComponentModifierNames(QString modelName, QString name);
+    QString getComponentModifierValue(QString modelName, QString name);
+    bool setComponentModifierValue(QString modelName, QString name, QString value);
     QString getIconAnnotation(QString className);
     QString getDiagramAnnotation(QString className);
     int getConnectionCount(QString className);

@@ -40,7 +40,8 @@ Component::Component(QString value, QString name, QString className, QPointF pos
 {
     mIsLibraryComponent = false;
     mpParentComponent = pParent;
-    mpIconParametersList.append(mpOMCProxy->getParameters(mClassName));
+    mIconParametersList.append(mpOMCProxy->getParameters(mpGraphicsView->mpParentProjectTab->mModelNameStructure,
+                                                         mClassName, mName));
 
     parseAnnotationString(this, value);
     // if component is an icon
@@ -92,18 +93,19 @@ Component::Component(QString value, QString className, int type, bool connector,
 }
 
 /* Called for component annotation instance */
-Component::Component(QString value, QString className, QString transformationString,
-                     ComponentsProperties *pComponentProperties, int type, bool connector, Component *pParent)
-     : ShapeAnnotation(pParent), mAnnotationString(value), mClassName(className),
-       mTransformationString(transformationString), mpComponentProperties(pComponentProperties), mType(type),
-       mIsConnector(connector)
+Component::Component(QString value, QString transformationString,ComponentsProperties *pComponentProperties, int type,
+                     bool connector, Component *pParent)
+     : ShapeAnnotation(pParent), mAnnotationString(value), mTransformationString(transformationString),
+       mpComponentProperties(pComponentProperties), mType(type), mIsConnector(connector)
 {
+    mName = mpComponentProperties->getName();
+    mClassName = mpComponentProperties->getClassName();
     mIsLibraryComponent = false;
     mpParentComponent = pParent;
     mpOMCProxy = pParent->mpOMCProxy;
     mpGraphicsView = pParent->mpGraphicsView;
-    mpComponentProperties = pComponentProperties;
-
+    mIconParametersList.append(mpOMCProxy->getParameters(mpGraphicsView->mpParentProjectTab->mModelNameStructure,
+                                                         mClassName, mName));
     parseAnnotationString(this, mAnnotationString);
 
     mpTransformation = new Transformation(this);
@@ -154,19 +156,23 @@ Component::Component(QString value, QString className, Component *pParent)
 }
 
 /* Used for Library Component. Called for component annotation instance */
-Component::Component(QString value, QString className, QString transformationString,
-                     ComponentsProperties *pComponentProperties, Component *pParent)
-    : ShapeAnnotation(pParent), mAnnotationString(value), mClassName(className),
-      mTransformationString(transformationString), mpComponentProperties(pComponentProperties)
+Component::Component(QString value, QString transformationString, ComponentsProperties *pComponentProperties,
+                     Component *pParent)
+    : ShapeAnnotation(pParent), mAnnotationString(value), mTransformationString(transformationString),
+      mpComponentProperties(pComponentProperties)
 {
+    mName = mpComponentProperties->getName();
+    mClassName = mpComponentProperties->getClassName();
     mIsLibraryComponent = true;
     mpParentComponent = pParent;
     mpOMCProxy = pParent->mpOMCProxy;
     mType = StringHandler::ICON;
     mIsConnector = false;
+
     parseAnnotationString(this, mAnnotationString, true);
     mpTransformation = new Transformation(this);
     setTransform(mpTransformation->getTransformationMatrix());
+
 
     //! @todo Since for some components we get empty annotations but its inherited componets does have annotations
     //! @todo so set the parent give the parent bounding box the value of inherited class boundingbox.
@@ -186,8 +192,8 @@ Component::Component(Component *pComponent, QString name, QPointF position, int 
     // Assing the Graphics View of this component to passed component. In order to avoid exceptions
     pComponent->mpGraphicsView = mpGraphicsView;
     // get the component parameters
-    mpIconParametersList.append(mpOMCProxy->getParameters(mClassName));
-
+    mIconParametersList.append(mpOMCProxy->getParameters(mpGraphicsView->mpParentProjectTab->mModelNameStructure,
+                                                         mClassName, mName));
     parseAnnotationString(this, mAnnotationString);
     // if component is an icon
     if ((mType == StringHandler::ICON))
@@ -836,13 +842,11 @@ void Component::getClassComponents(QString className, int type)
                 Component *component;
                 if (mIsLibraryComponent)
                 {
-                    component = new Component(result, componentProperties->getClassName(),
-                                              componentsAnnotationsList.at(i), componentProperties, this);
+                    component = new Component(result, componentsAnnotationsList.at(i), componentProperties, this);
                 }
                 else
                 {
-                    component = new Component(result, componentProperties->getClassName(),
-                                              componentsAnnotationsList.at(i), componentProperties,
+                    component = new Component(result, componentsAnnotationsList.at(i), componentProperties,
                                               StringHandler::ICON, true, this);
                 }
                 mpComponentsList.append(component);
@@ -916,8 +920,7 @@ void Component::getClassComponents(QString className, int type, Component *pPare
                 {
                     QString result = mpOMCProxy->getIconAnnotation(componentProperties->getClassName());
                     Component *component;
-                    component = new Component(result, componentProperties->getClassName(),
-                                             componentsAnnotationsList.at(i), componentProperties,
+                    component = new Component(result, componentsAnnotationsList.at(i), componentProperties,
                                              StringHandler::ICON, true, pParent);
                     mpComponentsList.append(component);
                     getClassComponents(componentProperties->getClassName(), StringHandler::ICON, component);
@@ -937,8 +940,7 @@ void Component::getClassComponents(QString className, int type, Component *pPare
                 {
                     QString result = mpOMCProxy->getDiagramAnnotation(componentProperties->getClassName());
                     Component *component;
-                    component = new Component(result, componentProperties->getClassName(),
-                                              componentsAnnotationsList.at(i), componentProperties,
+                    component = new Component(result, componentsAnnotationsList.at(i), componentProperties,
                                               StringHandler::DIAGRAM, true, pParent);
                     mpComponentsList.append(component);
                     getClassComponents(componentProperties->getClassName(), StringHandler::DIAGRAM, component);
@@ -947,8 +949,7 @@ void Component::getClassComponents(QString className, int type, Component *pPare
                 {
                     QString result = mpOMCProxy->getIconAnnotation(componentProperties->getClassName());
                     Component *component;
-                    component = new Component(result, componentProperties->getClassName(),
-                                              componentsAnnotationsList.at(i), componentProperties,
+                    component = new Component(result, componentsAnnotationsList.at(i), componentProperties,
                                               StringHandler::DIAGRAM, true, pParent);
                     mpComponentsList.append(component);
                     getClassComponents(componentProperties->getClassName(), StringHandler::ICON, component);
@@ -973,10 +974,9 @@ void Component::copyClassComponents(Component *pComponent)
 
     foreach(Component *component, pComponent->mpComponentsList)
     {
-        Component *portComponent = new Component(component->mAnnotationString, component->mClassName,
-                                                 component->mTransformationString, component->mpComponentProperties,
-                                                 component->mType, component->mIsConnector,
-                                                 this);
+        Component *portComponent = new Component(component->mAnnotationString, component->mTransformationString,
+                                                 component->mpComponentProperties, component->mType,
+                                                 component->mIsConnector, this);
         mpComponentsList.append(portComponent);
         copyClassComponents(component);
     }

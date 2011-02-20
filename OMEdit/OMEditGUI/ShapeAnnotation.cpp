@@ -57,7 +57,6 @@ ShapeAnnotation::~ShapeAnnotation()
 
 void ShapeAnnotation::initializeFields()
 {
-
     // initialize the Line Patterns map.
     this->mLinePatternsMap.insert("None", Qt::NoPen);
     this->mLinePatternsMap.insert("Solid", Qt::SolidLine);

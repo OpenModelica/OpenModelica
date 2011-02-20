@@ -32,10 +32,6 @@
  */
 
 #include "TextAnnotation.h"
-#include "SimulationWidget.h"
-#include "qwt_plot.h"
-#include "qwt_plot_curve.h"
-#include <qwt_plot_marker.h>
 
 TextAnnotation::TextAnnotation(QString shape, Component *pParent)
     : ShapeAnnotation(pParent), mpComponent(pParent)
@@ -165,46 +161,63 @@ void TextAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
     if(this->mFontUnderLine)
         font.setUnderline(true);
     painter->setFont(font);
-    //painter->setFont(QFont(this->mFontName, this->mDefaultFontSize + this->mFontSize, this->mFontWeight, this->mFontItalic));    
-
+    //painter->setFont(QFont(this->mFontName, this->mDefaultFontSize + this->mFontSize, this->mFontWeight, this->mFontItalic));
     painter->drawText(rect, mHorizontalAlignment, this->mTextString);
 }
 
 void TextAnnotation::checkNameString()
 {
+    /* the name of the component can be present in any inherited class . So we start with the main class and then
+       move up the hierarchy looking for the name.
+    */
     if (this->mTextString.contains("%name"))
     {
-        // if it is a root item the get name
-        if (!mpComponent->mpParentComponent)
+        if (!mpComponent->getName().isEmpty())
             mTextString = mpComponent->getName();
-        else if (!mpComponent->mpComponentProperties)
-            mTextString = mpComponent->getRootParentComponent()->getName();
-        else if (mpComponent->mpComponentProperties)
-            mTextString = mpComponent->mpComponentProperties->getName();
+        else
+        {
+            Component *pComponent = mpComponent;
+            while (pComponent->mpParentComponent)
+            {
+                pComponent = pComponent->mpParentComponent;
+                if (!pComponent->getName().isEmpty())
+                {
+                    mTextString = pComponent->getName();
+                    break;
+                }
+            }
+        }
     }
 }
 
 void TextAnnotation::checkParameterString()
 {
-    QString parameterString;
-
-    foreach (IconParameters *parameter, mpComponent->mpIconParametersList)
+    // look for the string in parameters list
+    foreach (IconParameters *parameter, mpComponent->mIconParametersList)
     {
-        // paramter can be in form R=%R
-        parameterString = QString(parameter->getName()).append("=%").append(parameter->getName());
-        if (parameterString == mTextString)
-        {
-            mTextString = QString(parameter->getName()).append("=").append(parameter->getDefaultValue());
+        if (updateParameterString(parameter))
             break;
-        }
-        // paramter can be in form %R
-        parameterString = QString("%").append(parameter->getName());
-        if (parameterString == mTextString)
-        {
-            mTextString = QString(parameter->getDefaultValue());
-            break;
-        }
     }
+}
+
+bool TextAnnotation::updateParameterString(IconParameters *pParamter)
+{
+    QString parameterString;
+    // paramter can be in form R=%R
+    parameterString = QString(pParamter->getName()).append("=%").append(pParamter->getName());
+    if (parameterString == mTextString)
+    {
+        mTextString = QString(pParamter->getName()).append("=").append(pParamter->getDefaultValue());
+        return true;
+    }
+    // paramter can be in form %R
+    parameterString = QString("%").append(pParamter->getName());
+    if (parameterString == mTextString)
+    {
+        mTextString = QString(pParamter->getDefaultValue());
+        return true;
+    }
+    return false;
 }
 
 QString TextAnnotation::getTextString()
@@ -384,7 +397,6 @@ QString TextAnnotation::getShapeAnnotation()
 
 void TextAnnotation::parseShapeAnnotation(QString shape, OMCProxy *omc)
 {
-
     shape = shape.replace("{", "");
     shape = shape.replace("}", "");
 

@@ -39,6 +39,7 @@
 #include "mainwindow.h"
 
 class OMCProxy;
+class IconParameters;
 
 class TextAnnotation : public ShapeAnnotation
 {
@@ -65,6 +66,7 @@ public:
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
     void checkNameString();
     void checkParameterString();
+    bool updateParameterString(IconParameters *pParamter);
     void setTextString(QString text);
     void setFontName(QString fontName);
     void setFontSize(double fontSize);

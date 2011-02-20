@@ -67,6 +67,57 @@ BitmapAnnotation::BitmapAnnotation(QString shape, GraphicsView *graphicsView, QG
     connect(this, SIGNAL(updateShapeAnnotation()), mpGraphicsView, SLOT(addClassAnnotation()));
 }
 
+QRectF BitmapAnnotation::boundingRect() const
+{
+    return shape().boundingRect();
+}
+
+QPainterPath BitmapAnnotation::shape() const
+{
+    QPainterPath path;
+    QPointF p1 = this->mExtent.at(0);
+    QPointF p2 = this->mExtent.at(1);
+
+    qreal left = qMin(p1.x(), p2.x());
+    qreal top = qMin(p1.y(), p2.y());
+    qreal width = fabs(p1.x() - p2.x());
+    qreal height = fabs(p1.y() - p2.y());
+
+    QRectF rect (left, top, width, height);
+    path.addRoundedRect(rect, mCornerRadius, mCornerRadius);
+
+    return path;
+}
+
+void BitmapAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
+{
+    Q_UNUSED(option);
+    Q_UNUSED(widget);
+
+    QPointF p1 = this->mExtent.at(0);
+    QPointF p2 = this->mExtent.at(1);
+
+    qreal left = qMin(p1.x(), p2.x());
+    qreal top = qMin(p1.y(), p2.y());
+    qreal width = fabs(p1.x() - p2.x());
+    qreal height = fabs(p1.y() - p2.y());
+    QRectF rect (left, top, width, height);
+
+    if(!mImageSource.isEmpty())
+    {
+        //open file from image source
+        QByteArray data = QByteArray::fromBase64(mImageSource.toLatin1());
+        QImage image;
+        if(image.loadFromData(data))
+            painter->drawImage(rect, image.mirrored());
+    }
+    else
+    {
+        QImage image(mFileName);
+        painter->drawImage(rect, image.mirrored());
+    }
+}
+
 void BitmapAnnotation::addPoint(QPointF point)
 {
     mExtent.append(point);
@@ -140,79 +191,9 @@ QString BitmapAnnotation::getShapeAnnotation()
     return annotationString;
 }
 
-QRectF BitmapAnnotation::boundingRect() const
-{
-    return shape().boundingRect();
-}
-
-void BitmapAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
-{
-    Q_UNUSED(option);
-    Q_UNUSED(widget);
-
-    QPointF p1 = this->mExtent.at(0);
-    QPointF p2 = this->mExtent.at(1);
-
-    qreal left = qMin(p1.x(), p2.x());
-    qreal top = qMin(p1.y(), p2.y());
-    qreal width = fabs(p1.x() - p2.x());
-    qreal height = fabs(p1.y() - p2.y());
-
-//    top = -top;
-//    height = -height;
-
-    QRectF rect (left, top, width, height);
-
-    //painter->scale(1.0, -1.0);
-
-    if(!mImageSource.isEmpty())
-    {
-        //open file from image source
-        QByteArray img = QByteArray::fromBase64(mImageSource.toLatin1());
-        QPixmap pix;
-        if(pix.loadFromData(img))
-            painter->drawPixmap(rect.toRect(), pix);
-    }
-    else
-    {
-        QPixmap pixmap(mFileName);
-        painter->drawPixmap(rect.toRect(), pixmap);
-    }
-}
-
-QPainterPath BitmapAnnotation::shape() const
-{
-    QPainterPath path;
-    QPointF p1 = this->mExtent.at(0);
-    QPointF p2 = this->mExtent.at(1);
-
-    qreal left = qMin(p1.x(), p2.x());
-    qreal top = qMin(p1.y(), p2.y());
-    qreal width = fabs(p1.x() - p2.x());
-    qreal height = fabs(p1.y() - p2.y());
-
-//    top = -top;
-//    height = -height;
-
-    QRectF rect (left, top, width, height);
-    path.addRoundedRect(rect, mCornerRadius, mCornerRadius);    
-
-    return path;
-}
-
 void BitmapAnnotation::setFileName(QString fileName)
 {
     mFileName = fileName;
-}
-
-void BitmapAnnotation::setImageSource(QString imageSource)
-{
-    mImageSource = imageSource;
-}
-
-QString BitmapAnnotation::getFileName()
-{
-    return mFileName;
 }
 
 void BitmapAnnotation::updateAnnotation()
@@ -283,7 +264,6 @@ void BitmapAnnotation::parseShapeAnnotation(QString shape, OMCProxy *omc)
     {
         QString modelPath = mpComponent->mpOMCProxy->getSourceFile(mpComponent->getClassName());
         QFileInfo qFile(modelPath);
-        qDebug() << qFile.absolutePath();
         this->mFileName = qFile.absolutePath() + "/" + tempFileName;
     }
 
@@ -293,17 +273,16 @@ void BitmapAnnotation::parseShapeAnnotation(QString shape, OMCProxy *omc)
         index = index + 1;
         this->mImageSource = StringHandler::removeFirstLastQuotes(list.at(index));
     }
+}
 
-    //Pic in
-    //C:\OpenModelicaTrunk\libraries\msl32\Modelica\Resources\Images\MultiBody\Examples\Systems
-    //""../../../../Images/MultiBody/Examples/Systems/robot_kr15.bmp""
+void BitmapAnnotation::setImageSource(QString imageSource)
+{
+    mImageSource = imageSource;
+}
 
-    //MODEL PATH = C:\OpenModelica1.6.0\lib\omc\omlibrary\msl31/Modelica/Mechanics/MultiBody/Examples/Systems/RobotR3.mo
-    // + RELATIVE PATH = "../../../../Images/MultiBody/Examples/Systems/robot_kr15.bmp
-
-    //EQUALS:
-
-    // ABSOLUTE PATH: C:\OpenModelica1.6.0\lib\omc\omlibrary\msl31/Modelica/Mechanics/MultiBody/Examples/Systems/../../../../Images/MultiBody/Examples/Systems/robot_kr15.bmp
+QString BitmapAnnotation::getFileName()
+{
+    return mFileName;
 }
 
 //Bitmapwidget declarations...

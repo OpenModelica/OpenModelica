@@ -338,7 +338,7 @@ void GraphicsView::mouseMoveEvent(QMouseEvent *event)
 {
     // don't send mouse move events to items if we are creating something
     if (!mIsCreatingConnector and !mIsCreatingLine and !mIsCreatingPolygon and !mIsCreatingRectangle
-        and !mIsCreatingEllipse and !mIsCreatingText)
+        and !mIsCreatingEllipse and !mIsCreatingText and !mIsCreatingBitmap)
     {
         QGraphicsView::mouseMoveEvent(event);
     }
@@ -379,7 +379,7 @@ void GraphicsView::mouseMoveEvent(QMouseEvent *event)
         mpTextShape->updateEndPoint(this->mapToScene(event->pos()));
         mpTextShape->update();
     }
-     //If creating bitmap shape, the end points shall be updated to the mouse position.
+    //If creating bitmap shape, the end points shall be updated to the mouse position.
     else if (this->mIsCreatingBitmap)
     {
         mpBitmapShape->updateEndPoint(this->mapToScene(event->pos()));
@@ -772,28 +772,28 @@ void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
         menu.exec(event->globalPos());
         return;         // return from it because at a time we only want one context menu.
     }
-    bool isFound = false;
-    foreach (Component *pCompnent, mComponentsList)
-    {
-        if (pCompnent->isSelected())
-        {
-            isFound = true;
-            break;
-        }
-    }
-    // if no component is selected then show the graphics view context menu
-    if (!isFound)
-    {
-        if (StringHandler::ICON == mIconType)
-        {
-            QMenu menu(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow);
-            mpCancelConnectionAction->setText("Context Menu");
-            menu.addAction(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->exportAsImage);
-            menu.addAction(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->exportToOMNotebookAction);
-            menu.exec(event->globalPos());
-            return;         // return from it because at a time we only want one context menu.
-        }
-    }
+//    bool isFound = false;
+//    foreach (Component *pCompnent, mComponentsList)
+//    {
+//        if (pCompnent->isSelected())
+//        {
+//            isFound = true;
+//            break;
+//        }
+//    }
+//    // if no component is selected then show the graphics view context menu
+//    if (!isFound)
+//    {
+//        if (StringHandler::ICON == mIconType)
+//        {
+//            QMenu menu(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow);
+//            mpCancelConnectionAction->setText("Context Menu");
+//            menu.addAction(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->exportAsImage);
+//            menu.addAction(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->exportToOMNotebookAction);
+//            menu.exec(event->globalPos());
+//            return;         // return from it because at a time we only want one context menu.
+//        }
+//    }
     QGraphicsView::contextMenuEvent(event);
 }
 

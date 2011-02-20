@@ -565,19 +565,44 @@ int OMCProxy::getClassRestriction(QString modelName)
         return StringHandler::MODEL;
 }
 
-QList<IconParameters*> OMCProxy::getParameters(QString className)
+QList<IconParameters*> OMCProxy::getParameters(QString modelName, QString className, QString name)
 {
     QList<IconParameters*> iconParametersList;
-    QStringList list = getParameterNames(className);
-
-    for (int i = 0 ; i < list.size() ; i++)
+    // get the list of component modifires
+    QStringList modifiersList = getComponentModifierNames(modelName, name);
+    for (int i = 0 ; i < modifiersList.size() ; i++)
     {
-        QString value = getParameterValue(className, list.at(i));
-        IconParameters *iconParameter = new IconParameters(list.at(i), value);
+        QString value = getComponentModifierValue(modelName, QString(name).append(".")
+                                                  .append(modifiersList.at(i)).trimmed());
+        IconParameters *iconParameter = new IconParameters(QString(modifiersList.at(i)).trimmed(), value);
         iconParametersList.append(iconParameter);
     }
-
+    // get the list of parameters
+    QStringList list = getParameterNames(className);
+    for (int i = 0 ; i < list.size() ; i++)
+    {
+        if (!getIconParameter(iconParametersList, QString(list.at(i)).trimmed()))
+        {
+            QString value = getParameterValue(className, QString(list.at(i)).trimmed());
+            IconParameters *iconParameter = new IconParameters(QString(list.at(i)).trimmed(), value);
+            iconParametersList.append(iconParameter);
+        }
+    }
     return iconParametersList;
+}
+
+IconParameters* OMCProxy::getIconParameter(QList<IconParameters *> list, QString value)
+{
+    IconParameters *pIconParameter = 0;
+    foreach (IconParameters *iconParammeter, list)
+    {
+        if (iconParammeter->getName().compare(value) == 0)
+        {
+            pIconParameter = iconParammeter;
+            break;
+        }
+    }
+    return pIconParameter;
 }
 
 QStringList OMCProxy::getParameterNames(QString className)
@@ -589,8 +614,8 @@ QStringList OMCProxy::getParameterNames(QString className)
     if (expressionResult.isEmpty())
     {
         sendCommand(expression);
-        addExpressionInCommandMap(expression, getResult());
         result = StringHandler::removeFirstLastCurlBrackets(getResult());
+        addExpressionInCommandMap(expression, result);
     }
     else
     {
@@ -621,23 +646,26 @@ bool OMCProxy::setParameterValue(QString className, QString parameter, QString v
         return false;
 }
 
-QStringList OMCProxy::getComponentModifierNames(QString modelName, QString className)
+QStringList OMCProxy::getComponentModifierNames(QString modelName, QString name)
 {
-    sendCommand("getComponentModifierNames(" + modelName + "," + className + ")");
+    sendCommand("getComponentModifierNames(" + modelName + "," + name + ")");
     QString result = StringHandler::removeFirstLastCurlBrackets(getResult());
     QStringList list = result.split(",", QString::SkipEmptyParts);
     return list;
 }
 
-QString OMCProxy::getComponentModifierValue(QString modelName, QString className)
+QString OMCProxy::getComponentModifierValue(QString modelName, QString name)
 {
-    sendCommand("getComponentModifierValue(" + modelName + "," + className + ")");
+    sendCommand("getComponentModifierValue(" + modelName + "," + name + ")");
     return StringHandler::getModifierValue(getResult());
 }
 
-bool OMCProxy::setComponentModifierValue(QString modelName, QString className, QString value)
+bool OMCProxy::setComponentModifierValue(QString modelName, QString name, QString value)
 {
-    sendCommand("setComponentModifierValue(" + modelName + "," + className + ", Code(=" + value + "))");
+    if (value.isEmpty())
+        sendCommand("setComponentModifierValue(" + modelName + "," + name + ", Code((" + value + ")))");
+    else
+        sendCommand("setComponentModifierValue(" + modelName + "," + name + ", Code(=" + value + "))");
     if (getResult().toLower().contains("ok"))
         return true;
     else

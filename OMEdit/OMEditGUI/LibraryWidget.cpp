@@ -771,6 +771,8 @@ void MSLSearchBox::focusInEvent(QFocusEvent *event)
 
     if (text().compare(mDefaultText) == 0)
         setText(tr(""));
+
+    QLineEdit::focusInEvent(event);
 }
 
 void MSLSearchBox::focusOutEvent(QFocusEvent *event)
@@ -781,6 +783,7 @@ void MSLSearchBox::focusOutEvent(QFocusEvent *event)
     {
         setText(mDefaultText);
     }
+    QLineEdit::focusOutEvent(event);
 }
 
 SearchMSLWidget::SearchMSLWidget(MainWindow *pParent)
