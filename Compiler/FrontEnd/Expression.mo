@@ -1876,6 +1876,8 @@ algorithm
     case ((e as DAE.ASUB(exp = _))) then {e};
     case ((e as DAE.SIZE(exp = _))) then {e};
     case ((e as DAE.REDUCTION(path = _))) then {e};
+    case ((e as DAE.BOX(exp = _))) then {e};
+    case ((e as DAE.UNBOX(exp = _))) then {e};
     case (_) then {};
   end matchcontinue;
 end terms;
