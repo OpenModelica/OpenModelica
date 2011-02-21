@@ -75,17 +75,7 @@ QRectF BitmapAnnotation::boundingRect() const
 QPainterPath BitmapAnnotation::shape() const
 {
     QPainterPath path;
-    QPointF p1 = this->mExtent.at(0);
-    QPointF p2 = this->mExtent.at(1);
-
-    qreal left = qMin(p1.x(), p2.x());
-    qreal top = qMin(p1.y(), p2.y());
-    qreal width = fabs(p1.x() - p2.x());
-    qreal height = fabs(p1.y() - p2.y());
-
-    QRectF rect (left, top, width, height);
-    path.addRoundedRect(rect, mCornerRadius, mCornerRadius);
-
+    path.addRoundedRect(getBoundingRect(), mCornerRadius, mCornerRadius);
     return path;
 }
 
@@ -94,27 +84,18 @@ void BitmapAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *
     Q_UNUSED(option);
     Q_UNUSED(widget);
 
-    QPointF p1 = this->mExtent.at(0);
-    QPointF p2 = this->mExtent.at(1);
-
-    qreal left = qMin(p1.x(), p2.x());
-    qreal top = qMin(p1.y(), p2.y());
-    qreal width = fabs(p1.x() - p2.x());
-    qreal height = fabs(p1.y() - p2.y());
-    QRectF rect (left, top, width, height);
-
     if(!mImageSource.isEmpty())
     {
         //open file from image source
         QByteArray data = QByteArray::fromBase64(mImageSource.toLatin1());
         QImage image;
         if(image.loadFromData(data))
-            painter->drawImage(rect, image.mirrored());
+            painter->drawImage(getBoundingRect(), image.mirrored());
     }
     else
     {
         QImage image(mFileName);
-        painter->drawImage(rect, image.mirrored());
+        painter->drawImage(getBoundingRect(), image.mirrored());
     }
 }
 

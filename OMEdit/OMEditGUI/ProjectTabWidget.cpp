@@ -772,28 +772,20 @@ void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
         menu.exec(event->globalPos());
         return;         // return from it because at a time we only want one context menu.
     }
-//    bool isFound = false;
-//    foreach (Component *pCompnent, mComponentsList)
-//    {
-//        if (pCompnent->isSelected())
-//        {
-//            isFound = true;
-//            break;
-//        }
-//    }
-//    // if no component is selected then show the graphics view context menu
-//    if (!isFound)
-//    {
-//        if (StringHandler::ICON == mIconType)
-//        {
-//            QMenu menu(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow);
-//            mpCancelConnectionAction->setText("Context Menu");
-//            menu.addAction(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->exportAsImage);
-//            menu.addAction(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->exportToOMNotebookAction);
-//            menu.exec(event->globalPos());
-//            return;         // return from it because at a time we only want one context menu.
-//        }
-//    }
+    // if some item is right clicked then don't show graphics view context menu
+    ShapeAnnotation *pShape = static_cast<ShapeAnnotation*>(itemAt(event->pos()));
+    if (!pShape)
+    {
+        if (StringHandler::ICON == mIconType)
+        {
+            QMenu menu(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow);
+            mpCancelConnectionAction->setText("Context Menu");
+            menu.addAction(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->exportAsImage);
+            menu.addAction(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->exportToOMNotebookAction);
+            menu.exec(event->globalPos());
+            return;         // return from it because at a time we only want one context menu.
+        }
+    }
     QGraphicsView::contextMenuEvent(event);
 }
 
@@ -1165,7 +1157,7 @@ ProjectTab::ProjectTab(int modelicaType, int iconType, bool readOnly, bool isChi
 
     // create project status bar
     mpProjectStatusBar = new QStatusBar;
-    mpProjectStatusBar->setObjectName(tr("PojectStatusBar"));
+    mpProjectStatusBar->setObjectName(tr("ProjectStatusBar"));
     mpProjectStatusBar->setSizeGripEnabled(false);
     mpProjectStatusBar->addPermanentWidget(viewsButtonsFrame, 5);
     mpProjectStatusBar->addPermanentWidget(mpReadOnlyLabel, 6);

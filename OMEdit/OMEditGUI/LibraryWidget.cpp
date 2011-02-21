@@ -818,6 +818,11 @@ SearchMSLWidget::SearchMSLWidget(MainWindow *pParent)
     setLayout(verticalLayout);
 }
 
+MSLSearchBox* SearchMSLWidget::getMSLSearchTextBox()
+{
+    return mpSearchTextBox;
+}
+
 void SearchMSLWidget::searchMSL()
 {
     // Remove the items from search tree

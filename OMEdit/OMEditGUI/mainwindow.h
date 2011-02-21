@@ -188,6 +188,7 @@ private slots:
     void openUserManual();
     void openAbout();
     void toggleShapesButton();
+    void focusMSLSearch(bool visible);
 private:
     void createActions();
     void createMenus();

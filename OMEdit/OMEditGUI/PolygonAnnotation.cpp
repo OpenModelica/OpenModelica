@@ -70,10 +70,7 @@ QPainterPath PolygonAnnotation::shape() const
 {
     QPainterPath path;
     path.addPolygon(QPolygonF(mPoints));
-
-    QPainterPathStroker stroker;
-    stroker.setWidth(Helper::shapesStrokeWidth);
-    return stroker.createStroke(path);
+    return addPathStroker(path);
 }
 
 void PolygonAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)

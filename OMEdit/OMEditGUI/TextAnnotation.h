@@ -47,12 +47,14 @@ class TextAnnotation : public ShapeAnnotation
 private:
     QString mTextString;
     qreal mFontSize;
+    qreal mCalculatedFontSize;
     QString mFontName;
     int mFontWeight;
     bool mFontItalic;    
     bool mFontUnderLine;
     //double mDefaultFontSize;
     Qt::Alignment mHorizontalAlignment;
+    QRectF mDrawingRect;
 public:
     TextAnnotation(QString shape, Component *pParent = 0);
     TextAnnotation(GraphicsView *graphicsView, QGraphicsItem *pParent = 0);
@@ -62,6 +64,7 @@ public:
     QString getTextString();
     QPainterPath shape() const;
     QString getShapeAnnotation();
+    QRectF getDrawingRect();
 
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
     void checkNameString();
@@ -81,8 +84,11 @@ public:
     void parseShapeAnnotation(QString shape, OMCProxy *omc);
 
     Component *mpComponent;
+signals:
+    void extentChanged();
 public slots:
     void updatePoint(int index, QPointF point);
+    void calculateFontSize();
 };
 
 class TextWidget : public QDialog

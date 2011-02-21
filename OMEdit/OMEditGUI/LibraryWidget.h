@@ -163,6 +163,7 @@ class SearchMSLWidget : public QWidget
     Q_OBJECT
 public:
     SearchMSLWidget(MainWindow *pParent = 0);
+    MSLSearchBox* getMSLSearchTextBox();
 
     MainWindow *mpParentMainWindow;
 private:

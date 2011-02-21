@@ -56,6 +56,8 @@ public:
     void setSelectionBoxPassive();
     void setSelectionBoxHover();
     virtual QString getShapeAnnotation();
+    QRectF getBoundingRect() const;
+    QPainterPath addPathStroker(QPainterPath &path) const;
 
     GraphicsView *mpGraphicsView;
 signals:

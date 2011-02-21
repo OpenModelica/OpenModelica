@@ -100,6 +100,7 @@ MainWindow::MainWindow(SplashScreen *splashScreen, QWidget *parent)
     mpSearchMSLWidget = new SearchMSLWidget(this);
     searchMSLdock->setWidget(mpSearchMSLWidget);
     addDockWidget(Qt::LeftDockWidgetArea, searchMSLdock);
+    connect(searchMSLdock, SIGNAL(visibilityChanged(bool)), SLOT(focusMSLSearch(bool)));
     searchMSLdock->hide();
 
     //Create a dock for the componentslibrary
@@ -153,6 +154,7 @@ MainWindow::MainWindow(SplashScreen *splashScreen, QWidget *parent)
     this->setCentralWidget(mpCentralwidget);
 
     //Create the Statusbar
+
     statusBar = new QStatusBar();
     statusBar->setObjectName("statusBar");
     this->setStatusBar(statusBar);
@@ -632,20 +634,38 @@ void MainWindow::exportModelToOMNotebook()
     if (omnotebookFileName.isEmpty())
         return;
 
+    // create a progress bar
+
+    int endtime = 6;
+    int value = 1;
+    QProgressDialog progressBar(this, Qt::WindowTitleHint);
+    progressBar.setMinimum(0);
+    progressBar.setMaximum(6);
+    progressBar.setLabelText(tr("Exporting model to OMNotebook"));
+    progressBar.setCancelButton(0);
+    progressBar.setWindowModality(Qt::WindowModal);
+    progressBar.setWindowTitle(QString(Helper::applicationName).append(" - Export to OMNotebook"));
+    progressBar.setValue(value);
+    progressBar.show();
+
     // create the xml for the omnotebook file.
     QDomDocument xmlDocument;
     // create Notebook element
     QDomElement notebookElement = xmlDocument.createElement("Notebook");
     xmlDocument.appendChild(notebookElement);
+    progressBar.setValue(value++);
     // create title cell
     createOMNotebookTitleCell(xmlDocument, notebookElement);
+    progressBar.setValue(value++);
     // create image cell
     QStringList pathList = omnotebookFileName.split('/');
     pathList.removeLast();
     QString modelImagePath(pathList.join("/"));
     createOMNotebookImageCell(xmlDocument, notebookElement, modelImagePath);
+    progressBar.setValue(value++);
     // create a code cell
     createOMNotebookCodeCell(xmlDocument, notebookElement);
+    progressBar.setValue(value++);
 
     // create a file object and write the xml in it.
     QFile omnotebookFile(omnotebookFileName);
@@ -653,6 +673,8 @@ void MainWindow::exportModelToOMNotebook()
     QTextStream textStream(&omnotebookFile);
     textStream << xmlDocument.toString();
     omnotebookFile.close();
+    progressBar.setValue(value++);
+    progressBar.hide();
 }
 
 //! creates a title cell in omnotebook xml file
@@ -810,4 +832,12 @@ void MainWindow::toggleShapesButton()
             shapeAction->setChecked(false);
         }
     }
+}
+
+//! Sets the focus on the MSL search text box when the MSL Search dock window is shown
+//! Connected to searchMSLdock signal visibilitychanged.
+void MainWindow::focusMSLSearch(bool visible)
+{
+    if (visible)
+        mpSearchMSLWidget->getMSLSearchTextBox()->setFocus();
 }

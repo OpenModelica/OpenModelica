@@ -63,30 +63,14 @@ RectangleAnnotation::RectangleAnnotation(QString shape, GraphicsView *graphicsVi
 
 QRectF RectangleAnnotation::boundingRect() const
 {
-//    if ((mExtent.size() < 2) or (mIsCustomRectangle and !mIsFinishedCreatingRectangle))
-//        return QRectF();
-//    else
-//        return QRectF(mExtent.at(0), mExtent.at(1));
     return shape().boundingRect();
 }
 
 QPainterPath RectangleAnnotation::shape() const
 {
     QPainterPath path;
-    QPointF p1 = this->mExtent.at(0);
-    QPointF p2 = this->mExtent.at(1);
-
-    qreal left = qMin(p1.x(), p2.x());
-    qreal top = qMin(p1.y(), p2.y());
-    qreal width = fabs(p1.x() - p2.x());
-    qreal height = fabs(p1.y() - p2.y());
-
-    QRectF rect (left, top, width, height);
-    path.addRoundedRect(rect, mCornerRadius, mCornerRadius);
-
-    QPainterPathStroker stroker;
-    stroker.setWidth(Helper::shapesStrokeWidth);
-    return stroker.createStroke(path);
+    path.addRoundedRect(getBoundingRect(), mCornerRadius, mCornerRadius);
+    return addPathStroker(path);
 }
 
 void RectangleAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
@@ -100,21 +84,13 @@ void RectangleAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsIte
 void RectangleAnnotation::drawRectangleAnnotaion(QPainter *painter)
 {
     QPainterPath path;
-    QPointF p1 = mExtent.at(0);
-    QPointF p2 = mExtent.at(1);
-
-    qreal left = qMin(p1.x(), p2.x());
-    qreal top = qMin(p1.y(), p2.y());
-    qreal width = fabs(p1.x() - p2.x());
-    qreal height = fabs(p1.y() - p2.y());
-
-    QRectF rect (left, top, width, height);
 
     switch (this->mFillPattern)
     {
     case Qt::LinearGradientPattern:
         {
-            QLinearGradient gradient(rect.center().x(), rect.center().y(), rect.center().x(), rect.y());
+            QLinearGradient gradient(getBoundingRect().center().x(), getBoundingRect().center().y(),
+                                     getBoundingRect().center().x(), getBoundingRect().y());
             gradient.setColorAt(0.0, this->mFillColor);
             gradient.setColorAt(1.0, this->mLineColor);
             gradient.setSpread(QGradient::ReflectSpread);
@@ -123,7 +99,8 @@ void RectangleAnnotation::drawRectangleAnnotaion(QPainter *painter)
         }
     case Qt::Dense1Pattern:
         {
-            QLinearGradient gradient(rect.center().x(), rect.center().y(), rect.x(), rect.center().y());
+            QLinearGradient gradient(getBoundingRect().center().x(), getBoundingRect().center().y(),
+                                     getBoundingRect().x(), getBoundingRect().center().y());
             gradient.setColorAt(0.0, this->mFillColor);
             gradient.setColorAt(1.0, this->mLineColor);
             gradient.setSpread(QGradient::ReflectSpread);
@@ -132,7 +109,8 @@ void RectangleAnnotation::drawRectangleAnnotaion(QPainter *painter)
         }
     case Qt::RadialGradientPattern:
         {
-            QRadialGradient gradient(rect.center().x(), rect.center().y(), width);
+            QRadialGradient gradient(getBoundingRect().center().x(), getBoundingRect().center().y(),
+                                     getBoundingRect().width());
             gradient.setColorAt(0.0, this->mFillColor);
             gradient.setColorAt(1.0, this->mLineColor);
             gradient.setSpread(QGradient::ReflectSpread);
@@ -152,7 +130,7 @@ void RectangleAnnotation::drawRectangleAnnotaion(QPainter *painter)
     pen.setCosmetic(true);
     painter->setPen(pen);    
 
-    path.addRoundedRect(rect, mCornerRadius, mCornerRadius);
+    path.addRoundedRect(getBoundingRect(), mCornerRadius, mCornerRadius);
     painter->drawPath(path);
 }
 

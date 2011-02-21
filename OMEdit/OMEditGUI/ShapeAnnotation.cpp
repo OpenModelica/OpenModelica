@@ -126,6 +126,26 @@ QString ShapeAnnotation::getShapeAnnotation()
     return QString();
 }
 
+QRectF ShapeAnnotation::getBoundingRect() const
+{
+    QPointF p1 = mExtent.at(0);
+    QPointF p2 = mExtent.at(1);
+
+    qreal left = qMin(p1.x(), p2.x());
+    qreal top = qMin(p1.y(), p2.y());
+    qreal width = fabs(p1.x() - p2.x());
+    qreal height = fabs(p1.y() - p2.y());
+
+    return QRectF (left, top, width, height);
+}
+
+QPainterPath ShapeAnnotation::addPathStroker(QPainterPath &path) const
+{
+    QPainterPathStroker stroker;
+    stroker.setWidth(Helper::shapesStrokeWidth);
+    return stroker.createStroke(path);
+}
+
 //! Tells the component to ask its parent to delete it.
 void ShapeAnnotation::deleteMe()
 {

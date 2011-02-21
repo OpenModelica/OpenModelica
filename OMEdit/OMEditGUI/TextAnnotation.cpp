@@ -40,10 +40,14 @@ TextAnnotation::TextAnnotation(QString shape, Component *pParent)
     this->mFontWeight = -1;
     this->mFontItalic = false;
     this->mFontName = qApp->font().family();
-    this->mHorizontalAlignment = Qt::AlignCenter;
+    this->mHorizontalAlignment = Qt::AlignVCenter;
     this->mFontUnderLine = false;
     this->mFontSize = 0;
+    mCalculatedFontSize = 5;
+
+    connect(this, SIGNAL(extentChanged()), SLOT(calculateFontSize()));
     parseShapeAnnotation(shape, mpComponent->mpOMCProxy);
+    emit extentChanged();
 }
 
 TextAnnotation::TextAnnotation(GraphicsView *graphicsView, QGraphicsItem *pParent)
@@ -54,14 +58,16 @@ TextAnnotation::TextAnnotation(GraphicsView *graphicsView, QGraphicsItem *pParen
     this->mFontWeight = -1;
     this->mFontItalic = false;
     this->mFontName = qApp->font().family();
-    this->mHorizontalAlignment = Qt::AlignCenter;
+    this->mHorizontalAlignment = Qt::AlignVCenter;
     this->mFontUnderLine = false;
     this->mFontSize = 0;
+    mCalculatedFontSize = 5;
     mTextString = QString("Text Here");
     mIsCustomShape = true;
     setAcceptHoverEvents(true);
 
     connect(this, SIGNAL(updateShapeAnnotation()), mpGraphicsView, SLOT(addClassAnnotation()));
+    connect(this, SIGNAL(extentChanged()), SLOT(calculateFontSize()));
 }
 
 TextAnnotation::TextAnnotation(QString shape, GraphicsView *graphicsView, QGraphicsItem *pParent)
@@ -72,35 +78,28 @@ TextAnnotation::TextAnnotation(QString shape, GraphicsView *graphicsView, QGraph
     this->mFontWeight = -1;
     this->mFontItalic = false;
     this->mFontName = qApp->font().family();
-    this->mHorizontalAlignment = Qt::AlignCenter;
+    this->mHorizontalAlignment = Qt::AlignVCenter;
     this->mFontUnderLine = false;
     mIsCustomShape = true;
-    this->mFontSize = 0;    
+    this->mFontSize = 0;
+    mCalculatedFontSize = 5;
 
+    connect(this, SIGNAL(extentChanged()), SLOT(calculateFontSize()));
     parseShapeAnnotation(shape, mpGraphicsView->mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy);    
+    emit extentChanged();
     setAcceptHoverEvents(true);
     connect(this, SIGNAL(updateShapeAnnotation()), mpGraphicsView, SLOT(addClassAnnotation()));
 }
 
 QRectF TextAnnotation::boundingRect() const
-{    
+{
     return shape().boundingRect();
 }
 
 QPainterPath TextAnnotation::shape() const
 {
     QPainterPath path;
-    QPointF p1 = this->mExtent.at(0);
-    QPointF p2 = this->mExtent.at(1);
-
-    qreal left = qMin(p1.x(), p2.x());
-    qreal top = qMin(p1.y(), p2.y());
-    qreal width = fabs(p1.x() - p2.x());
-    qreal height = fabs(p1.y() - p2.y());
-
-    QRectF rect (left, top, width, height);
-    path.addRoundedRect(rect, mCornerRadius, mCornerRadius);
-
+    path.addRoundedRect(getBoundingRect(), mCornerRadius, mCornerRadius);
     return path;
 }
 
@@ -109,60 +108,23 @@ void TextAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
     Q_UNUSED(option);
     Q_UNUSED(widget);
 
-    QPointF p1 = this->mExtent.at(0);
-    QPointF p2 = this->mExtent.at(1);
-
-    qreal left = qMin(p1.x(), p2.x());
-    qreal top = qMin(p1.y(), p2.y());
-    qreal width = fabs(p1.x() - p2.x());
-    qreal height = fabs(p1.y() - p2.y());
-
-    top = -top;
-    height = -height;
-
-    QRectF rect (left, top, width, height);          
-
-    double localFontSize;
-
-    //If fontsize is 0, scale to fit the rectangle
-    if(this->mFontSize == 0)
-    {
-        localFontSize = width;
-
-        while(localFontSize > -height - 3.5)
-        {
-            localFontSize = localFontSize - 0.05;
-        }
-        while(localFontSize > width/7)
-            localFontSize = localFontSize - 0.05;
-        if(-height - 3.5 <= 1)
-            localFontSize = 3;
-
-        if(!mIsCustomShape)
-        {
-            localFontSize = width;
-
-            while(localFontSize > -height)
-                localFontSize = localFontSize - 0.05;
-            while(localFontSize > width/15)
-                localFontSize = localFontSize - 0.05;
-        }
-    }
-    else
-        localFontSize = this->mFontSize;
-
     painter->scale(1.0, -1.0);
     QPen pen(this->mLineColor, this->mThickness, this->mLinePattern);
     pen.setCosmetic(true);
     painter->setPen(pen);
-    painter->setBrush(QBrush(this->mFillColor, Qt::SolidPattern));
-
-    QFont font(this->mFontName, localFontSize, this->mFontWeight, this->mFontItalic);
+    //painter->setBrush(QBrush(this->mFillColor, Qt::SolidPattern));
+    // create the font object
+    QFont font;
+    if (mFontSize == 0)
+        font = QFont(this->mFontName, mCalculatedFontSize, this->mFontWeight, this->mFontItalic);
+    else
+        font = QFont(this->mFontName, mFontSize, this->mFontWeight, this->mFontItalic);
+    // set font underline
     if(this->mFontUnderLine)
         font.setUnderline(true);
     painter->setFont(font);
-    //painter->setFont(QFont(this->mFontName, this->mDefaultFontSize + this->mFontSize, this->mFontWeight, this->mFontItalic));
-    painter->drawText(rect, mHorizontalAlignment, this->mTextString);
+    // draw the font
+    painter->drawText(getDrawingRect(), mHorizontalAlignment, this->mTextString);
 }
 
 void TextAnnotation::checkNameString()
@@ -276,16 +238,21 @@ void TextAnnotation::drawRectangleCornerItems()
 void TextAnnotation::addPoint(QPointF point)
 {
     mExtent.append(point);
+    if (mExtent.size() < 2)
+        return;
+    emit extentChanged();
 }
 
 void TextAnnotation::updatePoint(int index, QPointF point)
 {
     mExtent.replace(index, point);
+    emit extentChanged();
 }
 
 void TextAnnotation::updateEndPoint(QPointF point)
 {
     mExtent.back() = point;    
+    emit extentChanged();
 }
 
 void TextAnnotation::updateAnnotation()
@@ -393,6 +360,13 @@ QString TextAnnotation::getShapeAnnotation()
 
     annotationString.append(")");
     return annotationString;
+}
+
+QRectF TextAnnotation::getDrawingRect()
+{
+    mDrawingRect = QRect (boundingRect().left(), -(boundingRect().top()), boundingRect().width(),
+                          -(boundingRect().height()));
+    return mDrawingRect;
 }
 
 void TextAnnotation::parseShapeAnnotation(QString shape, OMCProxy *omc)
@@ -589,6 +563,53 @@ void TextAnnotation::parseShapeAnnotation(QString shape, OMCProxy *omc)
     //        this->mDefaultFontSize = 15;
     //    else
     //        this->mDefaultFontSize = 25;
+}
+
+void TextAnnotation::calculateFontSize()
+{
+    QFont font(this->mFontName, mCalculatedFontSize, this->mFontWeight, this->mFontItalic);
+    if(this->mFontUnderLine)
+        font.setUnderline(true);
+    QFontMetricsF fontMetric (font);
+    QRectF fontBoundingRect (getDrawingRect().left(), getDrawingRect().top(),
+                             fontMetric.boundingRect(mTextString).width(),
+                             -fontMetric.boundingRect(mTextString).height());
+
+    // if font boundingrect is within original boundingrect
+    if (getDrawingRect().contains(fontBoundingRect))
+    {
+        while (getDrawingRect().contains(fontBoundingRect))
+        {
+            mCalculatedFontSize += 1;
+            font = QFont(this->mFontName, mCalculatedFontSize, this->mFontWeight, this->mFontItalic);
+            if(this->mFontUnderLine)
+                font.setUnderline(true);
+            fontMetric = QFontMetricsF(font);
+            fontBoundingRect = QRectF(getDrawingRect().left(), getDrawingRect().top(),
+                                      fontMetric.boundingRect(mTextString).width(),
+                                      -fontMetric.boundingRect(mTextString).height());
+        }
+        mCalculatedFontSize -= 1;
+    }
+    // if font boundingrect is not within original boundingrect
+    else
+    {
+        while (!getDrawingRect().contains(fontBoundingRect))
+        {
+            mCalculatedFontSize -= 1;
+            // make sure calculated font doesn't go in negative.
+            if (mCalculatedFontSize < 0)
+                break;
+            font = QFont(this->mFontName, mCalculatedFontSize, this->mFontWeight, this->mFontItalic);
+            if(this->mFontUnderLine)
+                font.setUnderline(true);
+            fontMetric = QFontMetricsF(font);
+            fontBoundingRect = QRectF(getDrawingRect().left(), getDrawingRect().top(),
+                                      fontMetric.boundingRect(mTextString).width(),
+                                      -fontMetric.boundingRect(mTextString).height());
+        }
+        mCalculatedFontSize += 1;
+    }
 }
 
 //TextWidget declarations

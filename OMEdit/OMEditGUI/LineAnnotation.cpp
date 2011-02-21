@@ -77,10 +77,7 @@ QPainterPath LineAnnotation::shape() const
             path.moveTo(p1.x(), p1.y());
         path.lineTo(p1.x(), p1.y());
     }
-
-    QPainterPathStroker stroker;
-    stroker.setWidth(Helper::shapesStrokeWidth);
-    return stroker.createStroke(path);
+    return addPathStroker(path);
 }
 
 void LineAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
