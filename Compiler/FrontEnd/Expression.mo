@@ -1857,28 +1857,7 @@ algorithm
       then
         res;
     
-    case ((e as DAE.BINARY(operator = DAE.MUL(ty = _)))) then {e};
-    case ((e as DAE.BINARY(operator = DAE.DIV(ty = _)))) then {e};
-    case ((e as DAE.BINARY(operator = DAE.POW(ty = _)))) then {e};
-    case ((e as DAE.CREF(componentRef = cr))) then {e};
-    case ((e as DAE.ICONST(integer = _))) then {e};
-    case ((e as DAE.RCONST(real = _))) then {e};
-    case ((e as DAE.SCONST(string = _))) then {e};
-    case ((e as DAE.ENUM_LITERAL(name = _))) then {e};
-    case ((e as DAE.UNARY(operator = _))) then {e};
-    case ((e as DAE.IFEXP(expCond = _))) then {e};
-    case ((e as DAE.CALL(path = _))) then {e};
-    case ((e as DAE.PARTEVALFUNCTION(path = _))) then {e};
-    case ((e as DAE.ARRAY(ty = _))) then {e};
-    case ((e as DAE.MATRIX(ty = _))) then {e};
-    case ((e as DAE.RANGE(ty = _))) then {e};
-    case ((e as DAE.CAST(ty = _))) then {e};
-    case ((e as DAE.ASUB(exp = _))) then {e};
-    case ((e as DAE.SIZE(exp = _))) then {e};
-    case ((e as DAE.REDUCTION(path = _))) then {e};
-    case ((e as DAE.BOX(exp = _))) then {e};
-    case ((e as DAE.UNBOX(exp = _))) then {e};
-    case (_) then {};
+    else then {inExp};
   end matchcontinue;
 end terms;
 
