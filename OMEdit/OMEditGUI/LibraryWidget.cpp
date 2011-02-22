@@ -884,8 +884,9 @@ void MSLSuggestCompletion::showCompletion(const QStringList &choices)
     mpPopup->adjustSize();
     mpPopup->setUpdatesEnabled(true);
 
-    int h = mpPopup->sizeHintForRow(0) * qMin(7, choices.count()) + 20;
-    mpPopup->resize(mpPopup->width(), h);
+    // subtract -3 from width and -40 from height to make the suggestion box best fit :D
+    mpPopup->resize(mpMSLSearchBox->mpSearchMSLWidget->mpParentMainWindow->searchMSLdock->width() - 3,
+                    mpMSLSearchBox->mpSearchMSLWidget->mpParentMainWindow->searchMSLdock->height() - 40);
 
     // adjust the position of popup tree
     mpPopup->move(mpMSLSearchBox->mapToGlobal(QPoint(0, mpMSLSearchBox->height())));
