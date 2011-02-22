@@ -101,6 +101,7 @@ end Frame;
 public uniontype ClassType
   record USERDEFINED end USERDEFINED;
   record BUILTIN end BUILTIN;
+  record CLASS_EXTENDS end CLASS_EXTENDS;
 end ClassType;
 
 public uniontype Item
@@ -436,6 +437,10 @@ algorithm
     case (SCode.PARTS(externalDecl = SOME(Absyn.EXTERNALDECL(
         lang = SOME("builtin"))))) 
       then BUILTIN();
+    // A class added by extendEnvWithClassExtends.
+    case (SCode.PARTS(externalDecl = SOME(Absyn.EXTERNALDECL(
+        lang = SOME("class_extends")))))
+      then CLASS_EXTENDS();
     // A user-defined class (i.e. not builtin).
     else then USERDEFINED();
   end match;
@@ -1330,12 +1335,17 @@ algorithm
       Absyn.Info info;
       Env env;
       SCode.Mod mods;
+      Option<Absyn.ExternalDecl> ext_decl;
+      list<SCode.Equation> nel, iel;
+      list<SCode.AlgorithmSection> nal, ial;
 
     // When a 'redeclare class extends X' is encountered we insert a 'class X
     // extends BaseClass.X' into the environment, with the same elements as the
     // class extends clause. BaseClass is the class that class X is inherited
     // from. This allows use to look up elements in class extends, because
-    // lookup can handle normal extends.
+    // lookup can handle normal extends. To be able to differentiate between
+    // normal classes and classes added by this function we mark them as
+    // 'external "class_extends"'.
     case (SCode.CLASS(
         partialPrefix = pp,
         encapsulatedPrefix = ep,
@@ -1343,7 +1353,11 @@ algorithm
         classDef = SCode.CLASS_EXTENDS(
           baseClassName = bc, 
           modifications = mods,
-          elementLst = el),
+          elementLst = el,
+          normalEquationLst = nel,
+          initialEquationLst = iel,
+          normalAlgorithmLst = nal,
+          initialAlgorithmLst = ial),
         info = info), _)
       equation
         // Look up which extends the base class comes from and add it to the
@@ -1352,8 +1366,10 @@ algorithm
         path = Absyn.joinPaths(path, Absyn.IDENT(bc));
         // Insert a 'class bc extends path' into the environment.
         el = SCode.EXTENDS(path, mods, NONE(), info) :: el;
+        ext_decl = SOME(Absyn.EXTERNALDECL(NONE(), SOME("class_extends"), 
+          NONE(), {}, NONE()));
         env = extendEnvWithClass(SCode.CLASS(bc, pp, ep, res, 
-          SCode.PARTS(el, {}, {}, {}, {}, NONE(), {}, NONE()), info), inEnv);
+          SCode.PARTS(el, nel, iel, nal, ial, ext_decl, {}, NONE()), info), inEnv);
       then env;
 
     case (SCode.CLASS(classDef = 
@@ -1611,7 +1627,7 @@ public function printAvlValueStr
 algorithm
   outString := match(inValue)
     local
-      String key_str, value_str;
+      String key_str;
 
     case (AVLTREEVALUE(key = key_str, value = CLASS(cls = _)))
       then "\t\tClass " +& key_str +& "\n";

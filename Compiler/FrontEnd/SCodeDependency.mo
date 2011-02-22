@@ -57,9 +57,11 @@ protected type Import = Absyn.Import;
 
 public function analyse
   "This is the entry point of the dependency analysis. The dependency analysis
-  is done in two steps: first it analyses the program and marks each element in
-  the program that's used, and then it collects the used elements and builds a
-  new program and environment that only contains those elements."
+  is done in three steps: first it analyses the program and marks each element in
+  the program that's used. The it goes through the used classes and checks if
+  they contain any class extends, and if so it checks of those class extends are
+  used or not. Finally it collects the used elements and builds a new program
+  and environment that only contains those elements."
   input Absyn.Path inClassName;
   input Env inEnv;
   input SCode.Program inProgram;
@@ -67,12 +69,13 @@ public function analyse
   output Env outEnv;
 algorithm
   analyseClass(inClassName, inEnv, Absyn.dummyInfo);
+  analyseClassExtends(inEnv);
   (outEnv, outProgram) := collectUsedProgram(inEnv, inProgram);
 end analyse;
 
 protected function analyseClass
-  "Analyzes a class by looking up the class, marking it as used and recursively
-  analyzing it's contents."
+  "Analyses a class by looking up the class, marking it as used and recursively
+  analysing it's contents."
   input Absyn.Path inClassName;
   input Env inEnv;
   input Absyn.Info inInfo;
@@ -1227,6 +1230,124 @@ algorithm
   end match;
 end analyseStatementTraverser;
 
+protected function analyseClassExtends
+  "Goes through the environment and checks if class extends are used or not.
+  This is done since class extends are sometimes implicitly used (see for
+  example the test case mofiles/ClassExtends3.mo), so only going through the
+  first phase of the dependency analysis is not enough to find all class extends
+  that are used. Adding all class extends would also be problematic, since we
+  would have to make sure that any class extend and it's dependencies are marked
+  as used.
+  
+  This phase goes through all used classes, and if it finds a class extends in
+  one of them it sets the use flag to the same as the base class. This is not a
+  perfect solution since it means that all class extends that extend a certain
+  base class will be marked as used, even if only one of them actually use the
+  base class. So we might get some extra dependencies that are actually not
+  used, but it's still better then marking all class extends in the program as
+  used."
+  input Env inEnv;
+protected
+  SCodeEnv.AvlTree tree;
+algorithm
+  SCodeEnv.FRAME(clsAndVars = tree) :: _ := inEnv;
+  analyseAvlTree(SOME(tree), inEnv);
+end analyseClassExtends;
+
+protected function analyseAvlTree
+  "Helper function to analyzeClassExtends. Goes through the nodes in an
+  AvlTree."
+  input Option<SCodeEnv.AvlTree> inTree;
+  input Env inEnv;
+algorithm
+  _ := match(inTree, inEnv)
+    local
+      Option<SCodeEnv.AvlTree> left, right;
+      SCodeEnv.AvlTreeValue value;
+
+    case (NONE(), _) then ();
+    case (SOME(SCodeEnv.AVLTREENODE(value = NONE())), _) then ();
+    case (SOME(SCodeEnv.AVLTREENODE(value = SOME(value), left = left, right = right)), _)
+      equation
+        analyseAvlTree(left, inEnv);
+        analyseAvlTree(right, inEnv);
+        analyseAvlValue(value, inEnv);
+      then
+        ();
+
+  end match;  
+end analyseAvlTree;
+
+protected function analyseAvlValue
+  "Helper function to analyzeClassExtends. Analyses a value in the AvlTree."
+  input SCodeEnv.AvlTreeValue inValue;
+  input Env inEnv;
+algorithm
+  _ := matchcontinue(inValue, inEnv)
+    local
+      String key_str;
+      SCodeEnv.Frame cls_env;
+      Env env;
+      SCode.Class cls;
+      SCodeEnv.ClassType cls_ty;
+      Util.StatefulBoolean is_used;
+      String cls_name;
+
+    // Check if the current environment is not used, we can quit here if that's
+    // the case.
+    case (_, SCodeEnv.FRAME(name = SOME(_), isUsed = is_used) :: _)
+      equation
+        false = Util.getStatefulBoolean(is_used);
+      then
+        ();
+
+    case (SCodeEnv.AVLTREEVALUE(key = key_str, value = SCodeEnv.CLASS(cls = cls, 
+        env = {cls_env}, classType = cls_ty)), _)
+      equation
+        env = cls_env :: inEnv;
+        analyseClassExtendsDef(cls, cls_ty, env);
+        // Check all classes inside of this class too.
+        analyseClassExtends(env);
+      then
+        ();
+
+    else then ();
+  end matchcontinue;
+end analyseAvlValue;
+
+protected function analyseClassExtendsDef
+  "Analyses a class extends definition."
+  input SCode.Class inClass;
+  input SCodeEnv.ClassType inClassType;
+  input Env inEnv;
+algorithm
+  _ := matchcontinue(inClass, inClassType, inEnv)
+    local
+      Item item;
+      Absyn.Info info;
+      Absyn.Path bc;
+      String cls_name;
+      Env env;
+
+    case (SCode.CLASS(name = cls_name, classDef = SCode.PARTS(elementLst = 
+          SCode.EXTENDS(baseClassPath = bc) :: _), info = info), 
+        SCodeEnv.CLASS_EXTENDS(), _)
+      equation
+        // Look up the base class of the class extends, and check if it's used.
+        (item, _, _) = SCodeLookup.lookupClassName(bc, inEnv, info);
+        true = SCodeEnv.isItemUsed(item);
+        // Ok, the base is used, analyse the class extends to mark it and it's
+        // dependencies as used.
+        _ :: env = inEnv;
+        analyseClass(Absyn.IDENT(cls_name), env, info);   
+      then
+        ();
+
+    else then ();
+
+  end matchcontinue;
+end analyseClassExtendsDef;
+
 protected function collectUsedProgram
   "Entry point for the second phase in the dependency analysis. Goes through the
   environment and collects the used elements in a new program and environment."
@@ -1323,8 +1444,6 @@ protected function checkClassUsed
   output Boolean isUsed;
 algorithm
   isUsed := match(inItem, inClassDef)
-    // Class extends are class definitions, but are considered always used.
-    case (_, SCode.CLASS_EXTENDS(baseClassName = _)) then true;
     // GraphicalAnnotationsProgram____ is a special case, since it's not used by
     // anything, but needed during instantiation.
     case (SCodeEnv.CLASS(cls = 
