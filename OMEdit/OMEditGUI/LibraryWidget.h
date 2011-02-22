@@ -147,15 +147,39 @@ public slots:
     void loadingLibraryComponent(LibraryTreeNode *treeNode, QString className);
 };
 
+class MSLSuggestCompletion;
+class SearchMSLWidget;
+
 class MSLSearchBox : public QLineEdit
 {
 public:
-    MSLSearchBox();
+    MSLSearchBox(SearchMSLWidget *pParent = 0);
 
+    SearchMSLWidget *mpSearchMSLWidget;
+    MSLSuggestCompletion *mpMSLSuggestionCompletion;
     QString mDefaultText;
 protected:
     virtual void focusInEvent(QFocusEvent *event);
     virtual void focusOutEvent(QFocusEvent *event);
+};
+
+class MSLSuggestCompletion : QObject
+{
+    Q_OBJECT
+public:
+    MSLSuggestCompletion(MSLSearchBox *pParent = 0);
+    ~MSLSuggestCompletion();
+    bool eventFilter(QObject *pObject, QEvent *event);
+    void showCompletion(const QStringList &choices);
+    QTimer* getTimer();
+public slots:
+    void doneCompletion();
+    void preventSuggestions();
+    void getSuggestions();
+private:
+    MSLSearchBox *mpMSLSearchBox;
+    QTreeWidget *mpPopup;
+    QTimer *mpTimer;
 };
 
 class SearchMSLWidget : public QWidget
@@ -163,8 +187,9 @@ class SearchMSLWidget : public QWidget
     Q_OBJECT
 public:
     SearchMSLWidget(MainWindow *pParent = 0);
-    MSLSearchBox* getMSLSearchTextBox();
+    QStringList getMSLItemsList();
 
+    MSLSearchBox* getMSLSearchTextBox();
     MainWindow *mpParentMainWindow;
 private:
     MSLSearchBox *mpSearchTextBox;

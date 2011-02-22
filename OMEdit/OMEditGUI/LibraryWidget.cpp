@@ -759,10 +759,14 @@ void LibraryTree::treeItemPressed(QTreeWidgetItem *item)
     drag->exec(Qt::CopyAction);
 }
 
-MSLSearchBox::MSLSearchBox()
+MSLSearchBox::MSLSearchBox(SearchMSLWidget *pParent)
     : mDefaultText(Helper::modelicaLibrarySearchText)
 {
     setText(mDefaultText);
+
+    mpSearchMSLWidget = pParent;
+    // create msl suggestion completion object
+    mpMSLSuggestionCompletion = new MSLSuggestCompletion(this);
 }
 
 void MSLSearchBox::focusInEvent(QFocusEvent *event)
@@ -786,6 +790,161 @@ void MSLSearchBox::focusOutEvent(QFocusEvent *event)
     QLineEdit::focusOutEvent(event);
 }
 
+MSLSuggestCompletion::MSLSuggestCompletion(MSLSearchBox *pParent)
+    : QObject(pParent), mpMSLSearchBox(pParent)
+{
+    // set up the popup tree that will show up for suggestion
+    mpPopup = new QTreeWidget;
+    mpPopup->setWindowFlags(Qt::Popup);
+    mpPopup->setFocusPolicy(Qt::NoFocus);
+    mpPopup->setFocusProxy(pParent);
+    mpPopup->setMouseTracking(true);
+    mpPopup->setColumnCount(1);
+    mpPopup->setUniformRowHeights(true);
+    mpPopup->setRootIsDecorated(false);
+    mpPopup->setEditTriggers(QTreeWidget::NoEditTriggers);
+    mpPopup->setSelectionBehavior(QTreeWidget::SelectRows);
+    mpPopup->setFrameStyle(QFrame::Box | QFrame::Plain);
+    //mpPopup->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    mpPopup->header()->hide();
+    // install the event filter
+    mpPopup->installEventFilter(this);
+    connect(mpPopup, SIGNAL(itemClicked(QTreeWidgetItem*,int)), SLOT(doneCompletion()));
+    // set up the timer to get the suggestions
+    mpTimer = new QTimer(this);
+    mpTimer->setSingleShot(true);
+    mpTimer->setInterval(500);
+    connect(mpTimer, SIGNAL(timeout()), SLOT(getSuggestions()));
+    connect(mpMSLSearchBox, SIGNAL(textEdited(QString)), mpTimer, SLOT(start()));
+}
+
+MSLSuggestCompletion::~MSLSuggestCompletion()
+{
+    delete mpPopup;
+    delete mpTimer;
+}
+
+bool MSLSuggestCompletion::eventFilter(QObject *pObject, QEvent *event)
+{
+    if (pObject != mpPopup)
+        return false;
+    if (event->type() == QEvent::MouseButtonPress)
+    {
+        mpPopup->hide();
+        mpMSLSearchBox->setFocus();
+        return true;
+    }
+    if (event->type() == QEvent::KeyPress)
+    {
+        bool consumed = false;
+        int key = static_cast<QKeyEvent*>(event)->key();
+        switch (key) {
+        case Qt::Key_Enter:
+        case Qt::Key_Return:
+            doneCompletion();
+            consumed = true;
+        case Qt::Key_Escape:
+            mpMSLSearchBox->setFocus();
+            mpPopup->hide();
+            consumed = true;
+        case Qt::Key_Up:
+        case Qt::Key_Down:
+        case Qt::Key_Home:
+        case Qt::Key_End:
+        case Qt::Key_PageUp:
+        case Qt::Key_PageDown:
+            break;
+        default:
+            mpMSLSearchBox->setFocus();
+            mpMSLSearchBox->event(event);
+            mpPopup->hide();
+            break;
+        }
+        return consumed;
+    }
+    return false;
+}
+
+//! Reads the suggestions and creates a popup tree of it for the user.
+//! @see getSuggestions()
+void MSLSuggestCompletion::showCompletion(const QStringList &choices)
+{
+    if (choices.isEmpty())
+        return;
+
+    mpPopup->setUpdatesEnabled(false);
+    mpPopup->clear();
+    for (int i = 0; i < choices.count(); ++i) {
+        QTreeWidgetItem * item;
+        item = new QTreeWidgetItem(mpPopup);
+        item->setText(0, choices[i]);
+    }
+    // adjust the size of popup tree
+    mpPopup->resizeColumnToContents(0);
+    mpPopup->adjustSize();
+    mpPopup->setUpdatesEnabled(true);
+
+    int h = mpPopup->sizeHintForRow(0) * qMin(7, choices.count()) + 20;
+    mpPopup->resize(mpPopup->width(), h);
+
+    // adjust the position of popup tree
+    mpPopup->move(mpMSLSearchBox->mapToGlobal(QPoint(0, mpMSLSearchBox->height())));
+    mpPopup->setFocus();
+    mpPopup->show();
+}
+
+QTimer* MSLSuggestCompletion::getTimer()
+{
+    return mpTimer;
+}
+
+//! Puts the selected suggestion text in the MSL SearchTextBox and notifies that the suggestion is completed.
+//! @see showCompletion()
+//! @see getSuggestions()
+void MSLSuggestCompletion::doneCompletion()
+{
+    mpTimer->stop();
+    mpPopup->hide();
+    mpMSLSearchBox->setFocus();
+    QTreeWidgetItem *item = mpPopup->currentItem();
+    if (item)
+        mpMSLSearchBox->setText(item->text(0));
+    else
+        QMetaObject::invokeMethod(mpMSLSearchBox, "returnPressed");
+}
+
+//! Creates the MSL suggestion tree from the Modelica Standards Library items.
+//! @see showCompletion()
+void MSLSuggestCompletion::getSuggestions()
+{
+    if ((mpMSLSearchBox->text().compare(Helper::modelicaLibrarySearchText) == 0) or (mpMSLSearchBox->text().isEmpty()))
+    {
+        preventSuggestions();
+        return;
+    }
+
+    QStringList foundedItemsList;
+    QStringList itemsList = mpMSLSearchBox->mpSearchMSLWidget->getMSLItemsList();
+
+    foreach (QString item, itemsList)
+    {
+        item = item.trimmed();
+        if (item.contains(mpMSLSearchBox->text().trimmed(), Qt::CaseInsensitive))
+            foundedItemsList.append(item);
+    }
+
+    showCompletion(foundedItemsList);
+}
+
+//! Stops the suggestion process.
+//! @see showCompletion()
+//! @see doneCompletion()
+//! @see getSuggestions()
+void MSLSuggestCompletion::preventSuggestions()
+{
+    mpTimer->stop();
+}
+
 SearchMSLWidget::SearchMSLWidget(MainWindow *pParent)
     : QWidget(pParent)
 {
@@ -795,7 +954,7 @@ SearchMSLWidget::SearchMSLWidget(MainWindow *pParent)
     mMSLItemsList = mpParentMainWindow->mpOMCProxy->getClassNamesRecursive(tr("Modelica"));
 
     // create search controls
-    mpSearchTextBox = new MSLSearchBox;
+    mpSearchTextBox = new MSLSearchBox(this);
     connect(mpSearchTextBox, SIGNAL(returnPressed()), SLOT(searchMSL()));
 
     mpSearchButton = new QPushButton(tr("Search"));
@@ -818,6 +977,11 @@ SearchMSLWidget::SearchMSLWidget(MainWindow *pParent)
     setLayout(verticalLayout);
 }
 
+QStringList SearchMSLWidget::getMSLItemsList()
+{
+   return mMSLItemsList;
+}
+
 MSLSearchBox* SearchMSLWidget::getMSLSearchTextBox()
 {
     return mpSearchTextBox;
@@ -825,6 +989,8 @@ MSLSearchBox* SearchMSLWidget::getMSLSearchTextBox()
 
 void SearchMSLWidget::searchMSL()
 {
+    // stop the msl search suggestion completion time
+    mpSearchTextBox->mpMSLSuggestionCompletion->getTimer()->stop();
     // Remove the items from search tree
     int i = 0;
     while(i < mpSearchedItemsTree->topLevelItemCount())
