@@ -857,7 +857,7 @@ bool MSLSuggestCompletion::eventFilter(QObject *pObject, QEvent *event)
         default:
             mpMSLSearchBox->setFocus();
             mpMSLSearchBox->event(event);
-            mpPopup->hide();
+            //mpPopup->hide();
             break;
         }
         return consumed;
