@@ -555,71 +555,68 @@ algorithm
 end noImportElements;
 
 protected function updateComponentsAndClassdefs
-"function: updateComponents
-  author: PA
-  This function takes a list of components and a Mod and returns a list of
-  components  with the modifiers updated.  The function is used when
-  flattening the inheritance structure, resulting in a list of components
-  to insert into the class definition. For instance
+  "This function takes a list of components and a Mod and returns a list of
+  components  with the modifiers updated.  The function is used when flattening
+  the inheritance structure, resulting in a list of components to insert into
+  the class definition. For instance
   model A
     extends B(modifiers)
   end A;
   will result in a list of components
   from B for which modifiers should be applied to."
-  input list<tuple<SCode.Element, DAE.Mod, Boolean>> inTplSCodeElementModLst;
+  input list<tuple<SCode.Element, DAE.Mod, Boolean>> inComponents;
   input DAE.Mod inMod;
   input Env.Env inEnv;
-  output list<tuple<SCode.Element, DAE.Mod, Boolean>> outTplSCodeElementModLst;
-  output DAE.Mod restMod;
-algorithm (outTplSCodeElementModLst,restMod) := matchcontinue (inTplSCodeElementModLst,inMod,inEnv)
+  output list<tuple<SCode.Element, DAE.Mod, Boolean>> outComponents;
+  output DAE.Mod outRestMod;
+algorithm
+  (outComponents, outRestMod) := Util.listMapAndFold1(inComponents, 
+    updateComponentsAndClassdefs2, inMod, inEnv);
+end updateComponentsAndClassdefs;
+
+protected function updateComponentsAndClassdefs2
+  input tuple<SCode.Element, DAE.Mod, Boolean> inComponent;
+  input DAE.Mod inMod;
+  input Env.Env inEnv;
+  output tuple<SCode.Element, DAE.Mod, Boolean> outComponent;
+  output DAE.Mod outRestMod;
+algorithm
+  (outComponent, outRestMod) := matchcontinue(inComponent, inMod, inEnv)
     local
-      DAE.Mod cmod2,mod_1,cmod,mod,emod,mod_rest;
-      list<tuple<SCode.Element, DAE.Mod, Boolean>> res,xs;
-      SCode.Element comp,c;
-      String id;
-      list<Env.Frame> env;
+      SCode.Element comp;
+      DAE.Mod cmod, cmod2, mod_rest;
+      String id, el_str, mod_str1, mod_str2;
       Boolean b;
-    
-    case ({},mod,_) then ({},mod);
-  
-    case ((((comp as SCode.COMPONENT(component = id)),cmod,b) :: xs),mod,env)
+ 
+    case ((comp as SCode.COMPONENT(component = id), cmod, b), _, _)
       equation
         // Debug.traceln(" comp: " +& id +& " " +& Mod.printModStr(mod));
         // take ONLY the modification from the equation if is typed
-        cmod2 = Mod.lookupCompModificationFromEqu(mod, id);
+        cmod2 = Mod.lookupCompModificationFromEqu(inMod, id);
         // Debug.traceln("\tSpecific mods on comp: " +&  Mod.printModStr(cmod2));
-        mod_1 = Mod.merge(cmod2, cmod, env, Prefix.NOPRE());
-        mod_rest = Types.removeMod(mod,id);
-        (res,mod_rest) = updateComponentsAndClassdefs(xs, mod_rest, env);
+        cmod = Mod.merge(cmod2, cmod, inEnv, Prefix.NOPRE());
+        mod_rest = Types.removeMod(inMod, id);
       then
-        (((comp,mod_1,b) :: res),mod_rest);
-    
-    case ((((c as SCode.EXTENDS(baseClassPath = _)),emod,b) :: xs),mod,env)
-      equation
-        (res,mod_rest) = updateComponentsAndClassdefs(xs, mod, env);
-      then
-        (((c,emod,b) :: res),mod_rest);
-    
-    case ((((c as SCode.IMPORT(imp = _)),_,b) :: xs),mod,env)
-      equation
-        (res,mod_rest) = updateComponentsAndClassdefs(xs, mod, env);
-      then
-        (((c,DAE.NOMOD(),b) :: res),mod_rest);
-    
-    case ((((SCode.CLASSDEF(replaceablePrefix = true, name = id)),_,b) :: xs),mod,env)
-      equation
-        DAE.REDECL(_, {(c,cmod)}) = Mod.lookupCompModification(mod, id);
-        mod_rest = Types.removeMod(mod,id);
-        (res,mod_rest) = updateComponentsAndClassdefs(xs, mod_rest, env);
-      then
-        (((c,cmod,b) :: res),mod_rest);
+        ((comp, cmod, b), mod_rest);
 
-    case ((((c as SCode.CLASSDEF(name = id)),cmod,b) :: xs),mod,env)
+    case ((SCode.EXTENDS(baseClassPath = _), _, _), _, _) 
+      then (inComponent, inMod);
+
+    case ((comp as SCode.IMPORT(imp = _), _, b), _ , _)
+      then ((comp, DAE.NOMOD(), b), inMod);
+
+    case ((comp as SCode.CLASSDEF(replaceablePrefix = true, name = id), _, b), _, _)
       equation
-        DAE.NOMOD() = Mod.lookupCompModification(mod, id);
-        (res,mod_rest) = updateComponentsAndClassdefs(xs, mod, env);
+        DAE.REDECL(_, {(comp, cmod)}) = Mod.lookupCompModification(inMod, id);
+        mod_rest = Types.removeMod(inMod, id);
       then
-        (((c,cmod,b) :: res),mod_rest);
+        ((comp, cmod, b), mod_rest);
+
+    case ((comp as SCode.CLASSDEF(name = id), cmod, b), _, _)
+      equation
+        DAE.NOMOD() = Mod.lookupCompModification(inMod, id);
+      then
+        ((comp, cmod, b), inMod);
 
     // adrpo: 
     //  2011-01-19 we can have a modifier in the mods here,
@@ -635,28 +632,25 @@ algorithm (outTplSCodeElementModLst,restMod) := matchcontinue (inTplSCodeElement
     //         if referenceChoice==ReferenceEnthalpy.UserDefined then h_offset else 0, nominal=1.0e5),
     //       Density(start=10, nominal=10),
     //       AbsolutePressure(start=10e5, nominal=10e5)); <--- AbsolutePressure is a type and can have modifications!
-    case ((((c as SCode.CLASSDEF(name = id)),_,b) :: xs),mod,env)
+    case ((comp as SCode.CLASSDEF(name = id), _, b), _, _)
       equation
-        cmod = Mod.lookupCompModification(mod, id);
-        (res,mod_rest) = updateComponentsAndClassdefs(xs, mod, env);
+        cmod = Mod.lookupCompModification(inMod, id);
       then
-        (((c,cmod,b) :: res),mod_rest);
+        ((comp, cmod, b), inMod);
 
-    case ((c,cmod,b)::xs,mod,env)
+    case ((comp, cmod, _), _, _)
       equation
-        Debug.fprintln(
-          "failtrace", 
-          "- InstExtends.updateComponentsAndClassdefs failed on:\n" +&
-          "env = " +& Env.printEnvPathStr(env) +&
-          "\nmod = " +& Mod.printModStr(mod) +&
-          "\ncmod = " +& Mod.printModStr(cmod) +&
-          "\nbool = " +& Util.if_(b, "true", "false") +& "\n" +&
-          SCode.printElementStr(c)
-          );
+        true = RTOpts.debugFlag("failtrace");
+        el_str = SCode.printElementStr(comp);
+        mod_str1 = Mod.printModStr(cmod);
+        mod_str2 = Mod.printModStr(inMod);
+        Debug.traceln("- InstExtends.updateComponentsAndClassdefs failed for component " 
+          +& el_str +& ".\n\tOld modifier: " +& mod_str1 +& 
+                        "\n\tNew modifier: " +& mod_str2);
       then
         fail();
   end matchcontinue;
-end updateComponentsAndClassdefs;
+end updateComponentsAndClassdefs2;
 
 protected function getLocalIdentList
 " Analyzes the elements of a class and fetches a list of components and classdefs,
@@ -831,7 +825,7 @@ algorithm
 
     case (cache,env,elt,ht)
       equation
-        Debug.fprintln("failtrace", "InstExtends.fixElement failed: " +& SCode.printElementStr(elt));
+        Debug.fprintln("failtrace", "SCodeFlattenExtends.fixElement failed: " +& SCode.printElementStr(elt));
       then fail();
   end matchcontinue;
 end fixElement;
@@ -1401,7 +1395,7 @@ algorithm
     case (cache,env,Absyn.BOOL(_),ht) then (cache,exp);
     case (cache,env,exp,ht)
       equation
-        Debug.fprintln("failtrace","InstExtends.fixExp failed: " +& Dump.printExpStr(exp));
+        Debug.fprintln("failtrace","SCodeFlattenExtends.fixExp failed: " +& Dump.printExpStr(exp));
       then fail();
   end matchcontinue;
 end fixExp;

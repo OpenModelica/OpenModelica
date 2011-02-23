@@ -1611,6 +1611,73 @@ algorithm
   end match;
 end listMapAndFold_tail;
 
+public function listMapAndFold1
+  "Takes a list, an extra argument, an extra constant argument, and a function.
+  The function will be applied to each element in the list, and the extra
+  argument will be passed to the function and updated."
+  input list<Type_a> inList;
+  input FuncType inFunc;
+  input Type_b inArg;
+  input Type_c inConstArg;
+  output list<Type_d> outList;
+  output Type_b outArg;
+
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+  replaceable type Type_d subtypeof Any;
+
+  partial function FuncType
+    input Type_a inElem;
+    input Type_b inArg;
+    input Type_c inConstArg;
+    output Type_d outResult;
+    output Type_b outArg;
+  end FuncType;
+algorithm
+  (outList, outArg) := listMapAndFold1_tail(inList, inFunc, inArg, inConstArg, {});
+end listMapAndFold1;
+
+public function listMapAndFold1_tail
+  "Tail recursive implementation of listMapAndFold1."
+  input list<Type_a> inList;
+  input FuncType inFunc;
+  input Type_b inArg;
+  input Type_c inConstArg;
+  input list<Type_d> inAccumList;
+  output list<Type_d> outList;
+  output Type_b outArg;
+
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+  replaceable type Type_d subtypeof Any;
+
+  partial function FuncType
+    input Type_a inElem;
+    input Type_b inArg;
+    input Type_c inConstArg;
+    output Type_d outResult;
+    output Type_b outArg;
+  end FuncType;
+algorithm
+  (outList, outArg) := match(inList, inFunc, inArg, inConstArg, inAccumList)
+    local
+      Type_a e1;
+      list<Type_a> rest_e1;
+      Type_d res;
+      list<Type_d> rest_res;
+    case ({}, _, _, _, _) then (listReverse(inAccumList), inArg);
+    case (e1 :: rest_e1, _, _, _, _)
+      equation
+        (res, inArg) = inFunc(e1, inArg, inConstArg);
+        inAccumList = res :: inAccumList;
+        (rest_res, inArg) = listMapAndFold1_tail(rest_e1, inFunc, inArg, inConstArg, inAccumList);
+      then
+        (rest_res, inArg);
+  end match;
+end listMapAndFold1_tail;
+
 public function listMap2 "function listMap2
   Takes a list and a function and two extra arguments passed to the function.
   The function produces one new value which is used for creating a new list.
