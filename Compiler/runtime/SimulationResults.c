@@ -164,3 +164,27 @@ static int SimulationResultsImpl__readSimulationResultSize(const char *filename)
     return -1;
   }
 }
+
+static void* SimulationResultsImpl__readVars(const char *filename)
+{
+  const char *msg[2] = {"",""};
+  void *res;
+  if (UNKNOWN_PLOT == SimulationResultsImpl__openFile(filename)) {
+    return mk_nil();
+  }
+  res = mk_nil();
+  switch (curFormat) {
+  case MATLAB4: {
+    int i;
+    for (i=matReader.nall-1; i>=0; i--) res = mk_cons(mk_scon(matReader.allInfo[i].name),res);
+    return res;
+  }
+  case PLT: {
+    return read_ptolemy_variables(filename);
+  }
+  default:
+    msg[0] = PlotFormatStr[curFormat];
+    c_add_message(-1, "SCRIPT", "Error", "readSimulationResultSize() not implemented for plot format: %s\n", msg, 1);
+    return mk_nil();
+  }
+}

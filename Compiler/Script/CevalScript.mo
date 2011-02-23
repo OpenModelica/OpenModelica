@@ -1438,7 +1438,7 @@ algorithm
       DAE.Exp filenameprefix,exp,size_expression,bool_exp,storeInTemp,translationLevel,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,xRange,yRange,varName,varTimeStamp;
       Absyn.ComponentRef cr_1;
       Integer size,length,resI,timeStampI,i;
-      list<String> vars_1,vars_2,args,strings,strVars;
+      list<String> vars_1,vars_2,args,strings,strVars,visvars;
       Real t1,t2,time,timeTotal,timeSimulation,timeStamp,val;
       Interactive.InteractiveStmts istmts;
       Boolean bval, b, legend, grid, logX, logY, points, gcc_res, omcfound, rm_res, touch_res, uname_res;
@@ -1497,6 +1497,24 @@ algorithm
         i = SimulationResults.readSimulationResultSize(filename_1);
       then
         (cache,Values.INTEGER(i),st);
+        
+    case (cache,env,
+        DAE.CALL(
+          path = Absyn.IDENT(name = "readSimulationResultVars"),
+          expLst = {DAE.SCONST(string = filename)}),
+          (st as Interactive.SYMBOLTABLE(
+            ast = p,explodedAst = sp,instClsLst = ic,
+            lstVarVal = iv,compiledFunctions = cf,
+            loadedFiles = lf)),msg)
+      equation
+        pwd = System.pwd();
+        pd = System.pathDelimiter();
+        filename_1 = stringAppendList({pwd,pd,filename});
+        args = SimulationResults.readVariables(filename_1);
+        vals = Util.listMap(args, ValuesUtil.makeString);
+        v = ValuesUtil.makeArray(vals);
+      then
+        (cache,v,st);
         
     case (cache,env,
         DAE.CALL(
@@ -1820,56 +1838,19 @@ algorithm
               lstVarVal = iv,compiledFunctions = cf,
               loadedFiles = lf)),msg)
       equation
-        print("visualize(model)\n");
-        
-        //Här ska jag komma in, bygga en vettig argumentlista till readptol...
-        
         //Jag måste få readptol att skicka alla variabler i .plt-filen, och en ide är
         //att göra en egen enkel funktion som i princip är en grep på DataSet: i filen..
         //Kolla på senddata:emulateStreamData
-        
-        //expVars = Util.listMap(expVars,Expression.CodeVarToCref);
-        //expVars = Util.listMap(expVars, ExpressionDump.printExpStr);
-        //vars_2 = Util.listUnionElt("time", vars_1);
-        //vars = Util.listCreate("visualize");
-        visvar_str = Interactive.getElementsOfVisType(className, p);
-        //print("varsofvistype: " +& visvar_str +& "\n");
+        (visvars,visvar_str) = Interactive.getElementsOfVisType(className, p);
         filename = Absyn.pathString(className);
         filename = stringAppendList({filename, "_res.plt"});
-        //print("filename: ");
-        //print(filename);
-        strVars = SimulationResults.readPtolemyplotVariables(filename, visvar_str);
+        strVars = SimulationResults.readVariables(filename);
+        strVars = Util.listFilter1(strVars, visualizationVarShouldBeAdded, visvars);
         vars_2 = Util.listUnionElt("time", strVars);
-        //print(stringAppendList(vars_2));
-        //print(Util.stringDelimitList(vars_2, ", "));
         value = SimulationResults.readPtolemyplotDataset(filename, vars_2, 0);
         resI = ValuesUtil.sendPtolemyplotDataset2(value, vars_2, visvar_str, "Plot by OpenModelica");
       then
         (cache,Values.BOOL(true),st);
-        
-        /*    case (cache,env,
-         DAE.CALL(
-         path = Absyn.IDENT(name = "visualize_"),
-         expLst = {
-         DAE.CODE(Absyn.C_TYPENAME(className),_)
-         }),
-         (st as Interactive.SYMBOLTABLE(
-         ast = p,explodedAst = sp,instClsLst = ic,
-         lstVarVal = iv,compiledFunctions = cf,
-         loadedFiles = lf)),msg)
-         
-         equation
-         
-         // vars = Util.listMap(vars,Expression.CodeVarToCref);
-          //vars_1 = Util.listMap(vars, ExpressionDump.printExpStr);
-           //vars_2 = Util.listUnionElt("time", vars_1);
-            filename = Absyn.pathString(className);
-            filename = stringAppendList({filename, "_res.plt"});
-            vars = SimulationResults.readPtolemyplotVariables(filename);
-            
-            failure(_ = SimulationResults.readPtolemyplotDataset(filename, vars, 0));
-            then
-            (cache,Values.STRING("Error reading the simulation result."),st);*/
         
     case (cache,env,
         DAE.CALL(
@@ -1882,16 +1863,11 @@ algorithm
               lstVarVal = iv,compiledFunctions = cf,
               loadedFiles = lf)),msg)
       equation
-        print("hittaderättigen\n");
         expVars = Util.listMap(expVars,Expression.CodeVarToCref);
         vars_1 = Util.listMap(expVars, ExpressionDump.printExpStr);
         vars_2 = Util.listUnionElt("time", vars_1);
-        //        listMap(vars_2, print);
-        print(stringAppendList(vars_2));
         (cache,Values.STRING(filename),_) = Ceval.ceval(cache,env, buildCurrentSimulationResultExp(), true, SOME(st),NONE(), msg);
-        print("tjo\n");
         value = SimulationResults.readPtolemyplotDataset(filename, vars_2, 0);
-        print("value = " +& ValuesUtil.valString(value));
         resI = ValuesUtil.sendPtolemyplotDataset(value, vars_2, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, title, title);
       then
         (cache,Values.BOOL(true),st);
@@ -2317,6 +2293,25 @@ algorithm
     
   end matchcontinue;
 end cevalInteractiveFunctionsOld;
+
+protected function visualizationVarShouldBeAdded
+  input String var;
+  input list<String> ids;
+algorithm
+  _ := matchcontinue (var,ids)
+    local
+      String id;
+    case (var,id::ids)
+      equation
+        false = 0 == stringLength(id);
+        true = 0 == System.strncmp(var,id,stringLength(id));
+      then ();
+    case (var,_::ids)
+      equation
+        visualizationVarShouldBeAdded(var,ids);
+      then ();
+  end matchcontinue;
+end visualizationVarShouldBeAdded;
 
 protected function sconstToString
 "@author: adrpo

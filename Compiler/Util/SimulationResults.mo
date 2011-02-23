@@ -49,13 +49,12 @@ public function val
 external "C" val=SimulationResults_val(filename,varname,timeStamp);
 end val;
 
-public function readPtolemyplotVariables
-  input String inString;
-  input String inVisVars;
-  output list<String> outStringLst;
+public function readVariables
+  input String filename;
+  output list<String> vars;
 
-  external "C" outStringLst=SimulationResults_readPtolemyplotVariables(inString,inVisVars) annotation(Library = "omcruntime");
-end readPtolemyplotVariables;
+  external "C" vars=SimulationResults_readVariables(filename) annotation(Library = "omcruntime");
+end readVariables;
 
 protected function readPtolemyplotDatasetWork
   input String inString;

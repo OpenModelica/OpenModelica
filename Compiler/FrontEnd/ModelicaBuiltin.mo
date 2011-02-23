@@ -965,6 +965,12 @@ function readSimulationResultSize
 external "builtin";
 end readSimulationResultSize;
 
+function readSimulationResultVars
+  input String fileName;
+  output String[:] vars;
+external "builtin";
+end readSimulationResultVars;
+
 function codeToString
   input Code className;
   output String string;

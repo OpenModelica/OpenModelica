@@ -39,17 +39,12 @@ void SimulationResults_5finit(void)
 {
 }
 
-RML_BEGIN_LABEL(SimulationResults__readPtolemyplotVariables)
+RML_BEGIN_LABEL(SimulationResults__readVariables)
 {
   rml_sint_t i,size;
   char* filename = RML_STRINGDATA(rmlA0);
-  char* visvars = RML_STRINGDATA(rmlA1);
-  void* p;
 
-  rmlA0 = (void*)read_ptolemy_variables(filename, visvars);
-  if (rmlA0 == NULL) {
-    RML_TAILCALLK(rmlFC);
-  }
+  rmlA0 = SimulationResultsImpl__readVars(filename);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL

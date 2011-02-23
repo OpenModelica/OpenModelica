@@ -1545,7 +1545,7 @@ algorithm
       equation
         matchApiFunction(istmts, "getElementsOfVisType");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
-        resstr = getElementsOfVisType(Absyn.crefToPath(cr), p);
+        (_,resstr) = getElementsOfVisType(Absyn.crefToPath(cr), p);
       then
         (resstr,st);
 
@@ -18713,11 +18713,10 @@ public function getElementsOfVisType
   //input Absyn.ComponentRef inComponentRef;
   input Absyn.Path inPath;
   input Absyn.Program inProgram;
-  //output list<Absyn.ElementItem> outList;
-  output String outString;
+  output list<String> names;
+  output String res;
 algorithm
-  outString:=
-  match (inPath,inProgram)
+  (names,res) := match (inPath,inProgram)
     local
 //      Absyn.Path modelpath;
       String i,str;
@@ -18727,7 +18726,7 @@ algorithm
       list<Absyn.ElementItem> public_elementitem_list,protected_elementitem_list;
       Absyn.Path modelPath_;
       list<String> public_list, protected_list;
-      list<String>  all_list;
+      list<String>  all_list, acc;
       Absyn.Program prog;
     case (modelPath_,prog)
       equation
@@ -18738,23 +18737,20 @@ algorithm
         protected_elementitem_list = getProtectedList(parts);
         public_list = constructVisTypesList(public_elementitem_list, prog);
         protected_list = constructVisTypesList(protected_elementitem_list, prog);
-//        elements_str = appendNonEmptyStrings(public_str, protected_str, ", ");
-        all_list = Util.listUnion(public_list, protected_list);
-        //strList = Util.listMap(all_list, getElementVisString);
-        str = Util.stringDelimitList(all_list,"\n");
-        print("elementsofvistype:\n" +& str);
-      then
-        str;
-/*    case (model_,p)
-      equation
-        modelpath = Absyn.crefToPath(model_);
-        Absyn.CLASS(i,p,f,e,r,_,_) = getPathedClassInProgram(modelpath, p) "there are no elements in DERIVED, ENUMERATION, OVERLOAD, CLASS_EXTENDS and PDER
-        maybe later we can give info about that also" ;
-      then
-        "{ }";*/
-//    case (_,_) then "Error";
+        all_list = Util.listUnion(listAppend(public_list, protected_list), {});
+      then (Util.listMap(all_list, getVisElementNameFromStr),Util.stringDelimitList(all_list,"\n"));
+
   end match;
 end getElementsOfVisType;
+
+protected function getVisElementNameFromStr
+  input String str;
+  output String outStr;
+protected
+  list<String> strs;
+algorithm
+  (_,strs as (_::outStr::_)) := System.regex(str,"([A-Za-z0-9().]*),",3,true,false);
+end getVisElementNameFromStr;
 
 protected function getComponentBindingMapable
 "function: getComponentBindingMapable

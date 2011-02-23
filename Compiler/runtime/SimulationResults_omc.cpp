@@ -32,17 +32,16 @@
 #include <stdlib.h>
 
 #include "meta_modelica.h"
+#include "rml_compatibility.h"
 #include "OpenModelicaBootstrappingHeader.h"
 
 extern "C" {
 
 #include "SimulationResults.c"
 
-void* SimulationResults_readPtolemyplotVariables(const char *filename, const char *visvars)
+void* SimulationResults_readVariables(const char *filename, const char *visvars)
 {
-  void* res = read_ptolemy_variables(filename, visvars);
-  if (res == NULL) MMC_THROW();
-  return res;
+  return SimulationResultsImpl__readVars(filename);
 }
 
 extern void* _ValuesUtil_reverseMatrix(void*);
