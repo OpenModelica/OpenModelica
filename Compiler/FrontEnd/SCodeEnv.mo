@@ -818,6 +818,7 @@ algorithm
       Absyn.TypeSpec enum_type;
       Env env;
       Absyn.Path path;
+      SCode.Mod mods;
 
     case (_, SCode.PARTS(elementLst = el), _)
       equation
@@ -825,9 +826,10 @@ algorithm
       then
         env;
 
-    case (_, SCode.DERIVED(typeSpec = Absyn.TPATH(path = path)), _)
+    case (_, SCode.DERIVED(typeSpec = Absyn.TPATH(path = path),
+        modifications = mods), _)
       equation
-        env = extendEnvWithExtends(SCode.EXTENDS(path, SCode.NOMOD(), NONE(),
+        env = extendEnvWithExtends(SCode.EXTENDS(path, mods, NONE(),
           Absyn.dummyInfo), inEnv);
       then
         env;
