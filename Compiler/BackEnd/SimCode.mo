@@ -3349,9 +3349,9 @@ algorithm
         = getEquationAndSolvedVar(eqNum, eqns, vars, ass2);
         eqStr =  BackendDump.equationStr(eqn);
         varexp = Expression.crefExp(cr);
-        (exp_,asserts) = ExpressionSolve.solveLin(e1, e2, varexp);
+        (exp_,_) = ExpressionSolve.solveLin(e1, e2, varexp);
       then
-        {SES_ALGORITHM(asserts),SES_SIMPLE_ASSIGN(cr, exp_)};
+        {SES_SIMPLE_ASSIGN(cr, exp_)};
     
         // when eq without else
     case (eqNum,
@@ -3474,7 +3474,32 @@ algorithm
         message = stringAppendList({"Inverse Algorithm needs to be solved for in ",algStr,". This is not implemented yet.\n"});
         Error.addMessage(Error.INTERNAL_ERROR,{message});
       then fail();
-  end matchcontinue;
+        // Algorithm for single variable.
+    case (eqNum, BackendDAE.DAE(orderedVars=vars,orderedEqs=eqns,algorithms=algs), ass1, ass2, helpVarInfo, true, false)
+      equation
+        (BackendDAE.ALGORITHM(indx,algInputs,DAE.CREF(varOutput,_)::_,source),v) = getEquationAndSolvedVar(eqNum, eqns, vars, ass2);
+        // The output variable of the algorithm must be the variable solved
+        // for, otherwise we need to solve an inverse problem of an algorithm
+        // section.
+        true = ComponentReference.crefEqualNoStringCompare(BackendVariable.varCref(v),varOutput);
+        alg = algs[indx + 1];
+        algStr =  DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(alg,source)});
+        DAE.ALGORITHM_STMTS(algStatements) = BackendDAEUtil.collateAlgorithm(alg, NONE());
+      then
+        {SES_ALGORITHM(algStatements)};
+        
+        // inverse Algorithm for single variable.
+    case (eqNum, BackendDAE.DAE(orderedVars = vars, orderedEqs = eqns,algorithms=algs),ass1,ass2, helpVarInfo, true, skipDiscInAlgorithm)
+      equation
+        (BackendDAE.ALGORITHM(indx,algInputs,DAE.CREF(varOutput,_)::_,source),v) = getEquationAndSolvedVar(eqNum, eqns, vars, ass2);
+        // We need to solve an inverse problem of an algorithm section.
+        false = ComponentReference.crefEqualNoStringCompare(BackendVariable.varCref(v),varOutput);
+        alg = algs[indx + 1];
+        algStr =  DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(alg,source)});
+        message = stringAppendList({"Inverse Algorithm needs to be solved for in ",algStr,". This is not implemented yet.\n"});
+        Error.addMessage(Error.INTERNAL_ERROR,{message});
+      then fail();
+  end matchcontinue;  
 end createEquation;
 
 protected function createElseWhenEquation

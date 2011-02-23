@@ -2370,12 +2370,12 @@ algorithm
         ilst = Util.listIntRange3(istart,istop,istep);
         explst = Util.listMap(ilst,Expression.makeIntegerExp);
       then
-        explst;
+        explst;        
     case (_,_)
       equation
-        print("BackendDAECreate.extendRange failed \n");
+        Debug.fprint("failtrace","BackendDAECreate.extendRange failed. Maybe some ZeroCrossing are not supported\n");
       then
-        fail();
+        ({});
   end matchcontinue;
 end extendRange;
 
@@ -2386,10 +2386,10 @@ protected function expInt "returns the int value of an expression"
 algorithm
   i := match(exp,inKnVariables)
  local 
-   Integer i2;
+   Integer i,i1,i2;
    DAE.ComponentRef cr;
    BackendDAE.Variables knv;
-   DAE.Exp e;
+   DAE.Exp e,e1,e2;
     case (DAE.ICONST(integer = i2),_) then i2;
     case (DAE.ENUM_LITERAL(index = i2),_) then i2;
     case (DAE.CREF(componentRef=cr),knv)
@@ -2398,6 +2398,18 @@ algorithm
         i2 = expInt(e,knv);  
       then
         i2;
+    case (DAE.BINARY(exp1 = e1,operator=DAE.ADD(DAE.ET_INT()),exp2 = e2),knv)
+      equation
+          i1 = expInt(e1,knv);
+          i2 = expInt(e1,knv);
+          i = i1 + i2;
+      then i;
+    case (DAE.BINARY(exp1 = e1,operator=DAE.SUB(DAE.ET_INT()),exp2 = e2),knv)
+      equation
+          i1 = expInt(e1,knv);
+          i2 = expInt(e2,knv);
+          i = i1 - i2;
+      then i;        
   end match;
 end expInt;
 

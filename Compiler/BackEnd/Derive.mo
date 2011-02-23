@@ -475,7 +475,7 @@ algorithm
       equation
         e1_1 = differentiateExpTime(exp, (timevars,functions));
       then 
-        DAE.IFEXP(DAE.RELATION(e1_1,DAE.GREATER(DAE.ET_REAL()),DAE.RCONST(0.0),-1,NONE()), e1_1, DAE.UNARY(DAE.UMINUS(DAE.ET_REAL()),e1_1));
+        DAE.IFEXP(DAE.RELATION(exp,DAE.GREATER(DAE.ET_REAL()),DAE.RCONST(0.0),-1,NONE()), e1_1, DAE.UNARY(DAE.UMINUS(DAE.ET_REAL()),e1_1));
 
     case (e0 as DAE.BINARY(exp1 = e1,operator = DAE.POW(tp),exp2 = (e2 as DAE.RCONST(_))),(timevars,functions)) /* ax^(a-1) */
       equation

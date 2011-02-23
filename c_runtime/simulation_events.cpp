@@ -35,6 +35,7 @@
 #include <math.h>
 #include <string.h> // adrpo - 2006-12-05 -> for memset
 #include <list>
+#include <cfloat>
 using namespace std;
 
 // vectors with saved values used by pre(v)
@@ -412,7 +413,7 @@ LessEq(double a, double b)
 double
 Greater(double a, double b)
 {
-  return b - a;
+  return (b+DBL_MIN) - a;
 }
 
 double
@@ -1050,6 +1051,7 @@ CheckForNewEvent(int* sampleactived)
 {
   //std::copy(gout, gout + globalData->nZeroCrossing, gout_old);
   //function_onlyZeroCrossings(gout,&globalData->timeValue);
+  initializeZeroCrossings();
   if (sim_verbose)
     {
       cout << "Check for events ..." << endl;
@@ -1059,8 +1061,8 @@ CheckForNewEvent(int* sampleactived)
       if (sim_verbose)
         {
           cout << "ZeroCrossing ID: " << i << "\t old = " << gout_old[i]
-               << "\t" << "current = " << gout[i] << "\t" << "Direction: "
-               << zeroCrossingEnabled[i] << endl;
+                                                                      << "\t" << "current = " << gout[i] << "\t" << "Direction: "
+                                                                      << zeroCrossingEnabled[i] << endl;
         }
       if (gout_old[i] == 0)
         {
@@ -1069,7 +1071,7 @@ CheckForNewEvent(int* sampleactived)
               if (sim_verbose)
                 {
                   cout << "adding event " << i << " at time: "
-                       << globalData->timeValue << endl;
+                      << globalData->timeValue << endl;
                 }
               EventList.push_front(i);
             }
@@ -1078,17 +1080,34 @@ CheckForNewEvent(int* sampleactived)
               if (sim_verbose)
                 {
                   cout << "adding event " << i << " at time: "
+                      << globalData->timeValue << endl;
+                }
+              EventList.push_front(i);
+            }/*
+          else if (gout[i] != 0)
+            {
+              if (gout[i] < 0)
+                {
+                  zeroCrossingEnabled[i] = 1;
+                }
+              else
+                {
+                  zeroCrossingEnabled[i] = -1;
+                }
+              if (sim_verbose)
+                {
+                  cout << "adding event " << i << " at time: "
                        << globalData->timeValue << endl;
                 }
               EventList.push_front(i);
-            }
+            }*/
         }
       if ((gout[i] < 0 && gout_old[i] > 0) || (gout[i] > 0 && gout_old[i] < 0))
         {
           if (sim_verbose)
             {
               cout << "adding event " << i << " at time: "
-                   << globalData->timeValue << endl;
+                  << globalData->timeValue << endl;
             }
           EventList.push_front(i);
         }
@@ -1112,7 +1131,7 @@ CheckForNewEvent(int* sampleactived)
       if (sim_verbose)
         {
           cout << "Event Handling at EventTime: " << globalData->timeValue
-               << " done!" << endl;
+              << " done!" << endl;
         }
 
       return 1;
@@ -1588,11 +1607,13 @@ initializeZeroCrossings()
   function_onlyZeroCrossings(gout, &globalData->timeValue);
   for (int i = 0; i < globalData->nZeroCrossing; i++)
     {
-      if (gout[i] > 0)
-        zeroCrossingEnabled[i] = 1;
-      else if (gout[i] < 0)
-        zeroCrossingEnabled[i] = -1;
-      else
-        zeroCrossingEnabled[i] = 0;
+      if (zeroCrossingEnabled[i] == 0){
+          if (gout[i] > 0)
+            zeroCrossingEnabled[i] = 1;
+          else if (gout[i] < 0)
+            zeroCrossingEnabled[i] = -1;
+          else
+            zeroCrossingEnabled[i] = 0;
+      }
     }
 }

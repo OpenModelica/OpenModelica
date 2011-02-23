@@ -35,8 +35,8 @@
 #include "simulation_result.h"
 #include "simulation_runtime.h"
 #include "options.h"
-#include <math.h>
-#include <string>
+#include <cmath>
+#include <cstring>
 #include <iostream>
 #include <iomanip>
 #include <algorithm>
@@ -65,34 +65,104 @@ dummy_Jacobian(double *t, double *y, double *yprime, double *pd, double *cj,
   return 0;
 }
 
-//provides a dummy Jacobian to be used with DASSL
+//provides a analytical Jacobian to be used with DASSL
 int
 Jacobian(double *t, double *y, double *yprime, double *pd, double *cj,
     double *rpar, fortran_integer* ipar)
 {
   int size_A = globalData->nStates;
   double* matrixA = new double[size_A * size_A];
+  //double* backupStates;
+  //backupStates = globalData->states;
 
-  if (functionJacA(t, y, yprime, matrixA))
+  //globalData->states = y;
+  //functionODE_new();
+  //functionAlgebraics();
+  functionJacA(matrixA);
+
+  int k = 0;
+  int l;
+
+  // transpose matrix A, add cj to diagonal elements and store in pd
+  for (int i = 0; i < globalData->nStates; i++)
+    {
+      for (int j = 0; j < globalData->nStates; j++, k++)
+        {
+          l = i + j * globalData->nStates;
+          pd[l] = matrixA[k];
+          if (i == j)
+            {
+              pd[l] -= (double) *cj;
+            }
+        }
+    }
+
+  delete[] matrixA;
+
+  return 0;
+}
+
+
+//provides a numerical Jacobian to be used with DASSL
+int
+JacA_num(double *t, double *y, double *matrixA)
+{
+  double delta_h = 1.e-8;
+  double delta_hh;
+  double* yprime = new double[globalData->nStates];
+  double* yprime_delta_h = new double[globalData->nStates];
+
+  memcpy(globalData->states,y,globalData->nStates*sizeof(double));
+  functionODE_new();
+  memcpy(yprime,globalData->statesDerivatives,globalData->nStates*sizeof(double));
+
+  // matrix A, add cj to diagonal elements and store in pd
+  int l;
+  for (int i = 0; i < globalData->nStates; i++)
+    {
+      delta_hh = delta_h*(globalData->states[i]>0?globalData->states[i]:-globalData->states[i]);
+      delta_hh = ((delta_h > delta_hh)?delta_h:delta_hh);
+      globalData->states[i] += delta_hh;
+      functionODE_new();
+      memcpy(yprime_delta_h,globalData->statesDerivatives,globalData->nStates*sizeof(double));
+      globalData->states[i] -= delta_hh;
+
+      for (int j = 0; j < globalData->nStates; j++)
+        {
+          l = j + i * globalData->nStates;
+          matrixA[l] = (yprime_delta_h[j] - yprime[j])/delta_hh;
+        }
+    }
+
+  delete[] yprime;
+  delete[] yprime_delta_h;
+
+  return 0;
+}
+
+//provides a numerical Jacobian to be used with DASSL
+int
+Jacobian_num(double *t, double *y, double *yprime, double *pd, double *cj,
+    double *rpar, fortran_integer* ipar)
+{
+
+  if (JacA_num(t, y, pd))
     {
       cerr << "Error, can not get Matrix A " << endl;
       return 1;
     }
 
-  int k = 0;
-  int l;
-  for (int i = 0; i < size_A; i++)
+  //  add cj to diagonal elements and store in pd
+  for (int i = 0; i < globalData->nStates; i++)
     {
-      for (int j = 0; j < size_A; j++, k++)
+      for (int j = 0; j < globalData->nStates; j++)
         {
-          l = i + j * size_A;
-          pd[l] = matrixA[k];
           if (i == j)
-            pd[l] -= (double) *cj;
+            {
+              pd[i+j*globalData->nStates] -= (double) *cj;
+            }
         }
     }
-
-  delete[] matrixA;
 
   return 0;
 }
@@ -274,6 +344,7 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
       throw TerminateSimulationException(globalData->timeValue, string(
           "Error in initialization. Storing results and exiting.\n"));
     }
+  SaveZeroCrossings();
   saveall();
   if (sim_verbose)
     {
@@ -331,11 +402,13 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
       return 0;
     }
 
-
+  /*
   // Do a tiny step to initialize ZeroCrossing that are fulfilled
-  globalData->current_stepsize = calcTinyStep(start, stop);
+
+  globalData->current_stepsize = calcTinyStep(start,stop);
   solver_main_step(flag, start, stop, reset);
   functionAlgebraics();
+
 
   //evaluate the system for events
   needToIterate = 0;
@@ -359,8 +432,13 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
   initializeZeroCrossings();
   reset = true;
   saveall();
+  if (sim_verbose)
+    {
+      sim_result->emit();
+    }
+   */
 
-  sim_result->emit();
+
 
 
 
@@ -648,17 +726,21 @@ dasrt_step(double* step, double &start, double &stop, bool &trigger1)
       //rwork[1] = *step;  //define max. stepsize
       /*********************************************************************/
       /*********************************************************************/
-      if (jac_flag)
+
+      if (jac_flag || num_jac_flag)
         info[4] = 1; //use sub-routine JAC
     }
 
+
+  // If an event is triggered and processed restart dassl.
   if (trigger1)
     {
       if (sim_verbose)
         {
           cout << "Event-management forced reset of DDASRT... " << endl;
         }
-      info[0] = 0; // obtain reset
+      // obtain reset
+      info[0] = 0;
     }
 
   // Calculate time steps until TOUT is reached (DASSL calculates beyond TOUT unless info[6] is set to 1!)
@@ -666,7 +748,19 @@ dasrt_step(double* step, double &start, double &stop, bool &trigger1)
   {
       do
         {
+
           tout = globalData->timeValue + *step;
+          // Check that tout is not less than timeValue
+          // else will dassl get in trouble
+          if (globalData->timeValue - tout >= -1e-13)
+            {
+              if (sim_verbose)
+                {
+                  cout << "**Desired step to small try next one. " << endl;
+                }
+              globalData->timeValue = tout;
+              return 0;
+            }
 
           if (sim_verbose)
             {
@@ -674,31 +768,44 @@ dasrt_step(double* step, double &start, double &stop, bool &trigger1)
                   << " to " << tout << "..." << endl;
             }
 
+          // Save all statesDerivatives due to avoid this in functionODE_residual
+          memcpy(globalData->statesDerivativesBackup,globalData->statesDerivatives,globalData->nStates*sizeof(double));
+
           if (jac_flag)
             {
               DDASRT(functionODE_residual, &globalData->nStates,
                   &globalData->timeValue, globalData->states,
-                  globalData->statesDerivatives, &tout, info, &reltol, &abstol,
+                  globalData->statesDerivativesBackup, &tout, info, &reltol, &abstol,
                   &idid, rwork, &lrw, iwork, &liw, globalData->algebraics,
                   &ipar, Jacobian, dummy_zeroCrossing, &NG_var, jroot);
+            }
+          else if(num_jac_flag)
+            {
+              DDASRT(functionODE_residual, &globalData->nStates,
+                  &globalData->timeValue, globalData->states,
+                  globalData->statesDerivativesBackup, &tout, info, &reltol, &abstol,
+                  &idid, rwork, &lrw, iwork, &liw, globalData->algebraics,
+                  &ipar, Jacobian_num, dummy_zeroCrossing, &NG_var, jroot);
             }
           else
             {
               DDASRT(functionODE_residual, &globalData->nStates,
                   &globalData->timeValue, globalData->states,
-                  globalData->statesDerivatives, &tout, info, &reltol, &abstol,
+                  globalData->statesDerivativesBackup, &tout, info, &reltol, &abstol,
                   &idid, rwork, &lrw, iwork, &liw, globalData->algebraics,
                   &ipar, dummy_Jacobian, dummy_zeroCrossing, &NG_var, jroot);
             }
-          /*
-           if (sim_verbose){
-           cout << " value of idid: " << idid << endl;
-           cout << " step size H to be attempted on next step: " << rwork[2] << endl;
-           cout << " current value of independent variable: " << rwork[3] << endl;
-           cout << " stepsize used on last successful step : " << rwork[6] << endl;
-           cout << " number of steps taken so far: " << iwork[10] << endl << endl;
-           }
-           */
+
+
+          if (sim_verbose){
+              cout << " value of idid: " << idid << endl;
+              cout << " step size H to be attempted on next step: " << rwork[2] << endl;
+              cout << " current value of independent variable: " << rwork[3] << endl;
+              cout << " stepsize used on last successful step : " << rwork[6] << endl;
+              cout << " number of steps taken so far: " << iwork[10] << endl << endl;
+              cout << " actual time point outputed: " << tout << endl<< endl;
+          }
+
           if (idid < 0)
             {
               fflush( stderr);

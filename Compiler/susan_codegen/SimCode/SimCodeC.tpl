@@ -573,16 +573,19 @@ template functionInitializeDataStruc()
       returnData->statesDerivativesFilterOutput = (modelica_boolean*) malloc(sizeof(modelica_boolean)*returnData->nStates);
       returnData->statesDerivatives_old = (double*) malloc(sizeof(double)*returnData->nStates);
       returnData->statesDerivatives_old2 = (double*) malloc(sizeof(double)*returnData->nStates);
-      assert(returnData->statesDerivatives&&returnData->statesDerivatives_old&&returnData->statesDerivatives_old2);
+      returnData->statesDerivativesBackup = (double*) malloc(sizeof(double)*returnData->nStates);
+      assert(returnData->statesDerivatives&&returnData->statesDerivatives_old&&returnData->statesDerivatives_old2&&returnData->statesDerivativesBackup);
       memset(returnData->statesDerivatives,0,sizeof(double)*returnData->nStates);
       memset(returnData->statesDerivativesFilterOutput,0,sizeof(modelica_boolean)*returnData->nStates);
       memset(returnData->statesDerivatives_old,0,sizeof(double)*returnData->nStates);
       memset(returnData->statesDerivatives_old2,0,sizeof(double)*returnData->nStates);
+      memset(returnData->statesDerivativesBackup,0,sizeof(double)*returnData->nStates);
     } else {
       returnData->statesDerivatives = 0;
       returnData->statesDerivativesFilterOutput = 0;
       returnData->statesDerivatives_old = 0;
       returnData->statesDerivatives_old2 = 0;
+      returnData->statesDerivativesBackup = 0;
     }
   
     if (returnData->nHelpVars) {
@@ -715,7 +718,7 @@ template functionInitializeDataStruc()
     } else {
       returnData->initialResiduals = 0;
     }
-  
+
     returnData->initFixed = init_fixed;
     returnData->modelName = model_name;
     returnData->modelFilePrefix = model_fileprefix;
@@ -1653,41 +1656,25 @@ template functionODE_residual()
   int functionODE_residual(double *t, double *x, double *xd, double *delta,
                       fortran_integer *ires, double *rpar, fortran_integer *ipar)
   {
-    int i;
-    double temp_xd[NX];
-    double* statesBackup;
-    double* statesDerivativesBackup;
     double timeBackup;
-  
+    double* statesBackup;
+
     timeBackup = localData->timeValue;
     statesBackup = localData->states;
-    statesDerivativesBackup = localData->statesDerivatives;
-    
+
     localData->timeValue = *t;
     localData->states = x;
-    localData->statesDerivatives = temp_xd;
-    
-    memcpy(localData->statesDerivatives, statesDerivativesBackup, localData->nStates*sizeof(double));
-  
     functionODE_new();
   
     /* get the difference between the temp_xd(=localData->statesDerivatives)
        and xd(=statesDerivativesBackup) */
-    for (i=0; i < localData->nStates; i++) {
-      delta[i] = localData->statesDerivatives[i] - statesDerivativesBackup[i];
+    for (int i=0; i < localData->nStates; i++) {
+      delta[i] = localData->statesDerivatives[i] - xd[i];
     }
-  
+    
     localData->states = statesBackup;
-    localData->statesDerivatives = statesDerivativesBackup;
     localData->timeValue = timeBackup;
-  
-    if (modelErrorCode) {
-      if (ires) {
-        *ires = -1;
-      }
-      modelErrorCode =0;
-    }
-  
+
     return 0;
   }
   >>
@@ -1807,36 +1794,22 @@ template functionJac(list<SimEqSystem> JacEquations, list<SimVar> JacVars, Strin
   let Vars_ = (JacVars |> var => 
       defvars(var)
       ;separator="\n")
+      
   let writeJac_ = (JacVars |> var => 
       writejac(var)
     ;separator="\n")   
   <<
-  int functionJac<%MatrixName%>(double *t, double *x, double *xd, double *jac)
+  int functionJac<%MatrixName%>( double *jac)
   {
     state mem_state;
     
-    double* statesBackup;
-    double* statesDerivativesBackup;
-    double timeBackup;
-    
-    timeBackup = localData->timeValue;
-    statesBackup = localData->states;
-    statesDerivativesBackup = localData->statesDerivatives;
-    localData->timeValue = *t;
-    localData->states = x;
-    localData->statesDerivatives = xd;
-    
-    <%Vars_%>
+
     <%varDecls%>
   
     mem_state = get_memory_state();
     <%Equations_%>
     <%writeJac_%>
     restore_memory_state(mem_state);
-    
-    localData->states = statesBackup;
-    localData->statesDerivatives = statesDerivativesBackup;
-    localData->timeValue = timeBackup;
     
     return 0;
   }
@@ -2777,8 +2750,8 @@ template subscriptToMStr(Subscript subscript)
   let &preExp = buffer ""
   let &varDecls = buffer ""
   match subscript
-  case INDEX(__)
-  case SLICE(__) then daeExp(exp, contextSimulationNonDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+  case INDEX(exp=ICONST(integer=i)) then i
+  case SLICE(exp=ICONST(integer=i)) then i
   case WHOLEDIM(__) then "WHOLEDIM"
   else "UNKNOWN_SUBSCRIPT"
 end subscriptToMStr;

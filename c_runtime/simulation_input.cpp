@@ -58,6 +58,9 @@ void read_commented_value(ifstream &f, signed char *str);
                 double *tolerance, string* method,
                 string* outputFormat, string* variableFilter)
 {
+  
+  
+  string *methodc=(string*)getFlagValue("m",argc,argv);
 
   string *filename=(string*)getFlagValue("f",argc,argv);
   if (filename == NULL) {
@@ -85,8 +88,14 @@ void read_commented_value(ifstream &f, signed char *str);
   }
   read_commented_value(file,tolerance);
   if (sim_verbose) { cout << "read tolerance = " << *tolerance << " from init file." << endl; }
-  read_commented_value(file,method);
-  if (sim_verbose) { cout << "read method = " << *method << " from init file." << endl; }
+  if (methodc == NULL){
+    read_commented_value(file,method);
+    if (sim_verbose) { cout << "read method = " << *method << " from init file." << endl; }
+  }else{
+    string tmp;
+    read_commented_value(file,&tmp);
+    if (sim_verbose) { cout << "read method  = " << *methodc << " from commandline." << endl;}
+  }
   read_commented_value(file,outputFormat);
   if (sim_verbose) { cout << "read outputFormat = " << *outputFormat << " from init file." << endl; }
   read_commented_value(file,variableFilter);

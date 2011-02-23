@@ -182,9 +182,9 @@ int newuoa_initialization(long& nz,double *z)
   // Calculate the residual to verify that equations are consistent.
   double funcValue;
   if (euler_in_use){
-    leastSquare(&nz,z,&funcValue);
+    leastSquare2(&nz,z,&funcValue);
   }else {
-  leastSquare2(&nz,z,&funcValue);
+    leastSquare(&nz,z,&funcValue);
   }
 
   delete [] W;

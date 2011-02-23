@@ -69,26 +69,26 @@ int linearize()
   string strA, strB, strC, strD, strX, strU, filename, linearModel;
 
   // Determine Matrix A
-  if (functionJacA(&globalData->timeValue,globalData->states,globalData->statesDerivatives,matrixA)){
+  if (functionJacA(matrixA)){
       cerr << "Error, can not get Matrix A " << endl;
       exit(-1);
   }
   strA = array2string(matrixA,size_A,size_A);
 
   // Determine Matrix B
-  if (functionJacB(&globalData->timeValue,globalData->states,globalData->statesDerivatives,matrixB)){
+  if (functionJacB(matrixB)){
       cerr << "Error, can not get Matrix B " << endl;
       exit(-1);
   }
   strB = array2string(matrixB,size_A,size_Inputs);
   // Determine Matrix C
-  if (functionJacC(&globalData->timeValue,globalData->states,globalData->statesDerivatives,matrixC)){
+  if (functionJacC(matrixC)){
       cerr << "Error, can not get Matrix C " << endl;
       exit(-1);
   }
   strC = array2string(matrixC,size_Outputs,size_A);
   // Determine Matrix D
-  if (functionJacD(&globalData->timeValue,globalData->states,globalData->statesDerivatives,matrixD)){
+  if (functionJacD(matrixD)){
       cerr << "Error, can not get Matrix D " << endl;
       exit(-1);
   }

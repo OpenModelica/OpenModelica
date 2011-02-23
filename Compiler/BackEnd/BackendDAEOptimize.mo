@@ -1986,11 +1986,11 @@ algorithm
       list<tuple<String,Integer>> varTuple;
       array<list<Integer>> m,mT;
       
-      BackendDAE.Variables v,kv,exv;
-      BackendDAE.AliasVariables av;
-      BackendDAE.EquationArray e,re,ie;
-      array<BackendDAE.MultiDimEquation> ae;
-      array<DAE.Algorithm> al;
+      BackendDAE.Variables v,kv,exv,vN,kvN;
+      BackendDAE.AliasVariables av,avN;
+      BackendDAE.EquationArray e,re,ie,eN,reN,ieN;
+      array<BackendDAE.MultiDimEquation> ae,aeN;
+      array<DAE.Algorithm> al,alN;
       BackendDAE.EventInfo ev;
       BackendDAE.ExternalObjectClasses eoc;
       list<BackendDAE.Equation> e_lst,re_lst,ie_lst;
@@ -1999,6 +1999,8 @@ algorithm
       
       list<String> s;
       String str;
+      
+      Integer elimLevel;
       
       case(dlow as BackendDAE.DAE(v,kv,exv,av,e,re,ie,ae,al,ev,eoc),_,{},_,_)
         equation
@@ -2014,24 +2016,30 @@ algorithm
         // prepare index for Matrix and variables for simpleEquations
         derivedVariables = BackendDAEUtil.varList(v);
         (varTuple) = determineIndices(eqvars, diffvars, 0, varlst);
-        BackendDump.printTuple(varTuple);
+        //BackendDump.printTuple(varTuple);
         jacElements = BackendDAE.emptyBintree;
         (derivedVariables,jacElements) = changeIndices(derivedVariables, varTuple, jacElements);
         v = BackendDAEUtil.listVar(derivedVariables);
         
-        // Remove simple Equtaion and 
+        // Remove simple Equtaion and
+        elimLevel = RTOpts.eliminationLevel();
+        RTOpts.setEliminationLevel(2) "Full elimination";
         e_lst = BackendDAEUtil.equationList(e);
         re_lst = BackendDAEUtil.equationList(re);
         ie_lst = BackendDAEUtil.equationList(ie);
         ae_lst = arrayList(ae);
         algs = arrayList(al);
-        (v,kv,e_lst,re_lst,ie_lst,ae_lst,algs,av) = removeSimpleEquations(v,kv, e_lst, re_lst, ie_lst, ae_lst, algs, jacElements); 
-        e = BackendDAEUtil.listEquation(e_lst);
-        re = BackendDAEUtil.listEquation(re_lst);
-        ie = BackendDAEUtil.listEquation(ie_lst);
-        ae = listArray(ae_lst);
-        al = listArray(algs);
-        dlow = BackendDAE.DAE(v,kv,exv,av,e,re,ie,ae,al,ev,eoc);
+        (v,kv,e_lst,re_lst,ie_lst,ae_lst,algs,av) = removeSimpleEquations(v,kv, e_lst, re_lst, ie_lst, ae_lst, algs, jacElements);
+        (v,kv,e_lst,re_lst,ie_lst,ae_lst,algs,av) = removeSimpleEquations(v,kv, e_lst, re_lst, ie_lst, ae_lst, algs, jacElements);
+        (v,kv,e_lst,re_lst,ie_lst,ae_lst,algs,av) = removeSimpleEquations(v,kv, e_lst, re_lst, ie_lst, ae_lst, algs, jacElements);
+        (vN,kvN,e_lst,re_lst,ie_lst,ae_lst,algs,avN) = removeSimpleEquations(v,kv, e_lst, re_lst, ie_lst, ae_lst, algs, jacElements); 
+        eN = BackendDAEUtil.listEquation(e_lst);
+        reN = BackendDAEUtil.listEquation(re_lst);
+        ieN = BackendDAEUtil.listEquation(ie_lst);
+        aeN = listArray(ae_lst);
+        alN = listArray(algs);
+        RTOpts.setEliminationLevel(elimLevel);
+        dlow = BackendDAE.DAE(vN,kvN,exv,avN,eN,reN,ieN,aeN,alN,ev,eoc);
      
         // figure out new matching and the strong components  
         m = BackendDAEUtil.incidenceMatrix(dlow, BackendDAE.NORMAL());
@@ -2056,7 +2064,7 @@ algorithm
         v4 = arrayCreate(listLength(comps1),0);
         v4 = markArray(v3,comps1,v4);
         (comps1,_) = splitBlocks2(comps1,v4,1);
-        
+
         Debug.fcall("jacdump2", BackendDump.dumpComponents, comps1);
         
         then (dlow,v1,v2,comps1);
@@ -2578,17 +2586,19 @@ algorithm
       true = BackendVariable.isStateVar(v1);
       cref = ComponentReference.crefPrefixDer(cref);
       id = ComponentReference.printComponentRefStr(cref) +& BackendDAE.partialDerivativeNamePrefix +& ComponentReference.printComponentRefStr(x);
+      id = Util.stringReplaceChar(id, ",", "$K");
       id = Util.stringReplaceChar(id, ".", "$P");
-      id = Util.stringReplaceChar(id, "[", "$pL");
-      id = Util.stringReplaceChar(id, "]", "$pR");
+      id = Util.stringReplaceChar(id, "[", "$lB");
+      id = Util.stringReplaceChar(id, "]", "$rB");
     then ComponentReference.makeCrefIdent(id, DAE.ET_REAL(), {});
     
     // d(no state)/d(x)
     case(cref, x, _) equation
       id = ComponentReference.printComponentRefStr(cref) +& BackendDAE.partialDerivativeNamePrefix +& ComponentReference.printComponentRefStr(x);
+      id = Util.stringReplaceChar(id, ",", "$K");
       id = Util.stringReplaceChar(id, ".", "$P");
-      id = Util.stringReplaceChar(id, "[", "$pL");
-      id = Util.stringReplaceChar(id, "]", "$pR");
+      id = Util.stringReplaceChar(id, "[", "$lB");
+      id = Util.stringReplaceChar(id, "]", "$rB");
     then ComponentReference.makeCrefIdent(id, DAE.ET_REAL(), {});
       
     case(cref, _, _)
@@ -2623,7 +2633,7 @@ algorithm
       Absyn.Path fname,derFname;
       
       list<DAE.Exp> expList1, expList2;
-      Boolean tuple_, builtin;
+      Boolean tuple_, builtin,b;
       DAE.InlineType inlineType;
       list<BackendDAE.Var> inputVars, paramVars, stateVars, knownVars;
       String str;
@@ -2697,7 +2707,11 @@ algorithm
     case(DAE.CREF(componentRef=cref, ty=et), x, functions, inputVars, paramVars, stateVars, knownVars) equation
       cref_ = differentiateVarWithRespectToX(cref, x, stateVars);
     then DAE.CREF(cref_, et);
-      
+     
+    // a < b
+    case(DAE.RELATION(exp1=e1), x, functions, inputVars, paramVars, stateVars, knownVars)
+    then DAE.RCONST(0.0); 
+       
     // a + b
     case(DAE.BINARY(exp1=e1, operator=DAE.ADD(ty=et), exp2=e2), x, functions, inputVars, paramVars, stateVars, knownVars) equation
       e1_ = differentiateWithRespectToX(e1, x, functions, inputVars, paramVars, stateVars, knownVars);
@@ -2749,6 +2763,24 @@ algorithm
       e = ExpressionSimplify.simplify(z7);
     then e;
     
+    case (DAE.ARRAY(ty = et,scalar = b,array = expList1), x, functions, inputVars, paramVars, stateVars, knownVars)
+      equation
+        expList2 = Util.listMap6(expList1, differentiateWithRespectToX, x, functions, inputVars, paramVars, stateVars, knownVars);
+      then
+        DAE.ARRAY(et,b,expList2);
+    
+    case (DAE.TUPLE(PR = expList1), x, functions, inputVars, paramVars, stateVars, knownVars)
+      equation
+        expList2 = Util.listMap6(expList1, differentiateWithRespectToX, x, functions, inputVars, paramVars, stateVars, knownVars);
+      then
+        DAE.TUPLE(expList2);
+    
+    case (DAE.ASUB(exp = e,sub = expList1), x, functions, inputVars, paramVars, stateVars, knownVars)
+      equation
+        e1_ = differentiateWithRespectToX(e, x, functions, inputVars, paramVars, stateVars, knownVars);
+      then
+       e1_;
+        
     // der(x)
     case (DAE.CALL(path=fname, expLst={e1}), x, functions, inputVars, paramVars, stateVars, knownVars)
       equation
@@ -2809,7 +2841,7 @@ algorithm
     case (DAE.CALL(path=Absyn.IDENT("abs"), expLst={e1}), x, functions, inputVars, paramVars, stateVars, knownVars)
       equation
         e1_ = differentiateWithRespectToX(e1, x, functions, inputVars, paramVars, stateVars, knownVars);
-      then DAE.IFEXP(DAE.RELATION(e1_,DAE.GREATER(DAE.ET_REAL()),DAE.RCONST(0.0),-1,NONE()), e1_, DAE.UNARY(DAE.UMINUS(DAE.ET_REAL()),e1_));
+      then DAE.IFEXP(DAE.RELATION(e1,DAE.GREATER(DAE.ET_REAL()),DAE.RCONST(0.0),-1,NONE()), e1_, DAE.UNARY(DAE.UMINUS(DAE.ET_REAL()),e1_));
       
       // differentiate if-expressions
     case (DAE.IFEXP(expCond=e, expThen=e1, expElse=e2), x, functions, inputVars, paramVars, stateVars, knownVars)

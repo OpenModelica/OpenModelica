@@ -171,6 +171,10 @@ typedef struct sim_DATA {
   double oldTime,oldTime2;
   double current_stepsize;
 
+  // Backup derivative for dassl
+  double* statesDerivativesBackup;
+  double* statesBackup;
+
   char* initFixed; // Fixed attribute for all variables and parameters
   int init; // =1 during initialization, 0 otherwise.
   void** extObjs; // External objects
@@ -330,10 +334,11 @@ int linear_model_frame(string& out, string A, string B, string C, string D, stri
 
 // function for calculation Jacobian
 extern int jac_flag;  // Flag for DASSL to work with analytical Jacobian
-int functionJacA(double *t, double *x, double *xd, double* jac);
-int functionJacB(double *t, double *x, double *xd, double* jac);
-int functionJacC(double *t, double *x, double *xd, double* jac);
-int functionJacD(double *t, double *x, double *xd, double* jac);
+extern int num_jac_flag;  // Flag for DASSL to work with selfmade numerical Jacobian
+int functionJacA(double* jac);
+int functionJacB(double* jac);
+int functionJacC(double* jac);
+int functionJacD(double* jac);
 
 bool isInteractiveSimulation();
 int callSolver(int, char**, string, string, double, double, double, long, double);
