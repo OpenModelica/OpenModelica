@@ -42,7 +42,7 @@ simulation_result_mat::simulation_result_mat(const char* filename,
                double tstart, double tstop)
   : simulation_result(filename,numpoints),fp(),data2HdrPos(-1),ntimepoints(0)
 {
-  const struct omc_varInfo timeValName = {"Time","Simulation time [s]",{"",-1,-1,-1,-1}};
+  const struct omc_varInfo timeValName = {"time","Simulation time [s]",{"",-1,-1,-1,-1}};
   const char Aclass[] = "A1 bt. ir1 na  Tj  re  ac  nt  so   r   y   ";
   
   const int rank = 9;

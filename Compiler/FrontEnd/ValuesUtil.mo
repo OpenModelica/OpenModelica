@@ -57,6 +57,7 @@ protected import Util;
 protected import RTOpts;
 protected import ClassInf;
 protected import Types;
+protected import SimulationResults;
 
 public function typeConvert "function: typeConvert
   Apply type conversion on a list of Values"
@@ -2433,5 +2434,21 @@ public function getCode
 algorithm
   Values.CODE(code) := val;
 end getCode;
+
+public function readDataset
+  input String filename;
+  input list<String> vars;
+  input Integer dimsize;
+  output Values.Value val;
+protected
+  list<list<Real>> rvals;
+  list<list<Values.Value>> vals;
+  list<Values.Value> rows;
+algorithm
+  rvals := SimulationResults.readDataset(filename,vars,dimsize);
+  vals := Util.listListMap_reversed(rvals,makeReal);
+  rows := Util.listMap_reversed(vals,makeArray);
+  val := makeArray(rows);
+end readDataset;
 
 end ValuesUtil;

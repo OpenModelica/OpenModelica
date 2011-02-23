@@ -45,16 +45,9 @@ void* SimulationResults_readVariables(const char *filename, const char *visvars)
 }
 
 extern void* _ValuesUtil_reverseMatrix(void*);
-void* SimulationResults_readPtolemyplotDataset(const char *filename, void *lst, int datasize)
+void* SimulationResults_readDataset(const char *filename, void *vars, int datasize)
 {
-  int i, size = listLength(lst);
-  void *p,*res;
-  const char** vars = (const char**) malloc(sizeof(const char*)*size);
-  for (i=0, p=lst; i<size; i++) {
-    vars[i] = MMC_STRINGDATA(MMC_CAR(p));
-    p = MMC_CDR(p);
-  }
-  res = read_ptolemy_dataset(filename,size,vars,datasize);
+  void *res = SimulationResultsImpl__readDataset(filename,vars,datasize);
   if (res == NULL) MMC_THROW();
   return res;
 }

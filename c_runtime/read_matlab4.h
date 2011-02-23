@@ -49,7 +49,7 @@ ModelicaMatVariable_t *omc_matlab4_find_var(ModelicaMatReader *reader, const cha
  * Note: This function is _not_ defined for parameters; check var->isParam and then send the index
  * No bounds checking is performed. The returned data persists until the reader is closed.
  */
-double* omc_matlab4_read_vals(int *nvals, ModelicaMatReader *reader, int varIndex);
+double* omc_matlab4_read_vals(ModelicaMatReader *reader, int varIndex);
 
 /* Returns 0 on success */
 int omc_matlab4_val(double *res, ModelicaMatReader *reader, ModelicaMatVariable_t *var, double time);

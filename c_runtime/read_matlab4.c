@@ -161,7 +161,7 @@ ModelicaMatVariable_t *omc_matlab4_find_var(ModelicaMatReader *reader, const cha
 }
 
 /* Writes the number of values in the returned array if nvals is non-NULL */
-double* omc_matlab4_read_vals(int *nvals, ModelicaMatReader *reader, int varIndex)
+double* omc_matlab4_read_vals(ModelicaMatReader *reader, int varIndex)
 {
   if (!reader->vars[varIndex]) {
     int i;
@@ -176,7 +176,6 @@ double* omc_matlab4_read_vals(int *nvals, ModelicaMatReader *reader, int varInde
     }
     reader->vars[varIndex] = tmp;
   }
-  if (nvals) *nvals = reader->nrows;
   return reader->vars[varIndex];
 }
 
@@ -235,7 +234,7 @@ int omc_matlab4_val(double *res, ModelicaMatReader *reader, ModelicaMatVariable_
     int i1,i2;
     if (time > reader->params[reader->nparam]) return 1; /* time > stopTime */
     if (time < reader->params[0]) return 1; /* time < startTime */
-    if (!omc_matlab4_read_vals(NULL,reader,0)) return 1;
+    if (!omc_matlab4_read_vals(reader,0)) return 1;
     find_closest_points(time, reader->vars[0], reader->nrows, &i1, &w1, &i2, &w2);
     if (i2 == -1) {
       return omc_matlab4_read_single_val(res,reader,var->index,i1);

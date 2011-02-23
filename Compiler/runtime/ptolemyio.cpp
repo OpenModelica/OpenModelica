@@ -50,18 +50,18 @@ extern "C"
 #include <math.h>
 #include "omc_msvc.h" /* For INFINITY and NAN */
 #include "ptolemyio.h"
-void print_error_buf_impl(const char* str);
+#include "errorext.h"
 
 /* Given a file name and an array of variables, return the RML datastructure
    in Values for Real[size(vars,1],:] i.e. a matrix of variable values, one column for each variable. */
-void * read_ptolemy_dataset(const char*filename, int size,const char**vars,int datasize)
+void * read_ptolemy_dataset(const char*filename, void* vars,int datasize)
 {
   char buf[255];
   void *lst,*olst,*dimLst,*odimLst;
   ifstream stream(filename);
     
   if (!stream) {
-    cerr << "Error opening result file " << filename << endl;
+    c_add_message(-1, "SCRIPT", "Error", "Error opening result file %s.", &filename, 1);
     return NULL;
   }
 
@@ -75,23 +75,21 @@ void * read_ptolemy_dataset(const char*filename, int size,const char**vars,int d
     datasize = readIntervalSize;
   } else {
     if( readIntervalSize == 0) {
-      cerr << "could not read interval size." << endl;
-      print_error_buf_impl("could not read interval size.\n");
+      c_add_message(-1, "SCRIPT", "Error", "could not read interval size.", NULL, 0);
       return NULL;
     }
     if (readIntervalSize != datasize) {
-      cerr << "intervalsize not matching data size." << endl;
-      print_error_buf_impl("intervalsize not matching data size.\n");
+      c_add_message(-1, "SCRIPT", "Error", "interval size not matching data size.", NULL, 0);
       return NULL;
     }
   }
-  dimLst = mk_cons(mk_icon(datasize),mk_nil());
-  odimLst = mk_cons(mk_icon(size),dimLst);
   olst = mk_nil();
-  for (int i=0; i<size; i++) {
+  while (RML_NILHDR != RML_GETHDR(vars)) {
     string readstr;
     double val; char ch;
-    string var(string("DataSet: ")+vars[i]);
+    const char *cvar = RML_STRINGDATA(RML_CAR(vars));
+    string var(string("DataSet: ")+cvar);
+    vars = RML_CDR(vars);
       
     stream.seekg(0); //Reset stream
     // Search to the correct position.
@@ -99,9 +97,7 @@ void * read_ptolemy_dataset(const char*filename, int size,const char**vars,int d
     while( string(buf).find(var) == string(buf).npos || strlen(buf) > var.length()) {
       if (!stream.getline(buf,255)) {
         // if we reached end of file return..
-        string str=string("variable ")+ vars[i]+"  not found in simulation result.\n";
-        cerr << str;
-        print_error_buf_impl((char*)str.c_str());
+        c_add_message(-1, "SCRIPT", "Error", "Variable %s not found in simulation result.", &cvar, 1);
         return NULL;
       }
     }
@@ -136,13 +132,12 @@ void * read_ptolemy_dataset(const char*filename, int size,const char**vars,int d
         else val = NAN;
       }
 
-      lst = (void*)mk_cons(Values__REAL(mk_rcon(val)),lst);
+      lst = (void*)mk_cons(mk_rcon(val),lst);
       j++;
     }
 
-    olst = (void*)mk_cons(Values__ARRAY(lst, dimLst),olst);
+    olst = (void*)mk_cons(lst,olst);
   }
-  olst = Values__ARRAY(olst, odimLst);
   return olst;
 }
 

@@ -2638,23 +2638,28 @@ public function listListMap "function: listListMap
   end FuncTypeType_aToType_b;
   replaceable type Type_b subtypeof Any;
 algorithm
-  outTypeBLstLst:=
-  match (inTypeALstLst,inFuncTypeTypeAToTypeB)
-    local
-      list<Type_b> f_1;
-      list<list<Type_b>> r_1;
-      list<Type_a> f;
-      list<list<Type_a>> r;
-      FuncTypeType_aToType_b fn;
-    case ({},_) then {};
-    case ((f :: r),fn)
-      equation
-        f_1 = listMap(f, fn);
-        r_1 = listListMap(r, fn);
-      then
-        (f_1 :: r_1);
-  end match;
+  outTypeBLstLst := listMap1(inTypeALstLst,listMap,inFuncTypeTypeAToTypeB);
 end listListMap;
+
+public function listListMap_reversed "
+  Takes a list of lists and a function producing one value.
+  The function is applied to each element of the lists resulting
+  in a new list of lists.
+  This function reverses the inner list. 
+  Example: listListMapReverse({ {1,2},{3},{4}},intString) => { {\"4\"},{\"3\"},{\"2\",\"1\"} }"
+  input list<list<Type_a>> inTypeALstLst;
+  input FuncTypeType_aToType_b inFuncTypeTypeAToTypeB;
+  output list<list<Type_b>> outTypeBLstLst;
+  replaceable type Type_a subtypeof Any;
+  partial function FuncTypeType_aToType_b
+    input Type_a inTypeA;
+    output Type_b outTypeB;
+    replaceable type Type_b subtypeof Any;
+  end FuncTypeType_aToType_b;
+  replaceable type Type_b subtypeof Any;
+algorithm
+  outTypeBLstLst := listMap1(inTypeALstLst,listMap_reversed,inFuncTypeTypeAToTypeB);
+end listListMap_reversed;
 
 public function listListMap1 "function listListMap1
   author: PA

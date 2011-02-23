@@ -39,7 +39,6 @@ encapsulated package SimulationResults
   "
 
 public import Values;
-protected import ValuesUtil;
 
 public function val
   input String filename;
@@ -56,29 +55,20 @@ public function readVariables
   external "C" vars=SimulationResults_readVariables(filename) annotation(Library = "omcruntime");
 end readVariables;
 
-protected function readPtolemyplotDatasetWork
-  input String inString;
-  input list<String> inStringLst;
-  input Integer inInteger;
-  output Values.Value outValue;
+public function readDataset
+  input String filename;
+  input list<String> vars;
+  input Integer dimsize;
+  output list<list<Real>> outMatrix;
 
-  external "C" outValue=SimulationResults_readPtolemyplotDataset(inString,inStringLst,inInteger) annotation(Library = "omcruntime");
-end readPtolemyplotDatasetWork;
-
-public function readPtolemyplotDataset
-  input String inString;
-  input list<String> inStringLst;
-  input Integer inInteger;
-  output Values.Value outValue;
-algorithm
-  outValue := ValuesUtil.reverseMatrix(readPtolemyplotDatasetWork(inString,inStringLst,inInteger));
-end readPtolemyplotDataset;
+  external "C" outMatrix=SimulationResults_readDataset(filename,vars,dimsize) annotation(Library = "omcruntime");
+end readDataset;
 
 public function readSimulationResultSize
   input String filename;
   output Integer size;
 
-  external "C" size=SimulationResults_readPtolemyplotDatasetSize(filename) annotation(Library = "omcruntime");
+  external "C" size=SimulationResults_readSimulationResultSize(filename) annotation(Library = "omcruntime");
 end readSimulationResultSize;
 
 end SimulationResults;

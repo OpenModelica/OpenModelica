@@ -184,7 +184,60 @@ static void* SimulationResultsImpl__readVars(const char *filename)
   }
   default:
     msg[0] = PlotFormatStr[curFormat];
-    c_add_message(-1, "SCRIPT", "Error", "readSimulationResultSize() not implemented for plot format: %s\n", msg, 1);
+    c_add_message(-1, "SCRIPT", "Error", "readSimulationResultSize() not implemented for plot format: %s", msg, 1);
     return mk_nil();
+  }
+}
+
+static void* SimulationResultsImpl__readDataset(const char *filename, void *vars, int dimsize)
+{
+  const char *msg[2] = {"",""};
+  void *res,*col;
+  char *var;
+  double *vals;
+  int i;
+  if (UNKNOWN_PLOT == SimulationResultsImpl__openFile(filename)) {
+    return NULL;
+  }
+  res = mk_nil();
+  switch (curFormat) {
+  case MATLAB4: {
+    ModelicaMatVariable_t *mat_var;
+    if (dimsize == 0) {
+      dimsize = matReader.nrows; 
+    } else if (matReader.nrows != dimsize) {
+      fprintf(stderr, "dimsize: %d, rows %d\n", dimsize, matReader.nrows);
+      c_add_message(-1, "SCRIPT", "Error", "readDataset(...): Expected and actual dimension sizes do not match.", NULL, 0);
+    }
+    while (RML_NILHDR != RML_GETHDR(vars)) {
+      var = RML_STRINGDATA(RML_CAR(vars));
+      vars = RML_CDR(vars);
+      mat_var = omc_matlab4_find_var(&matReader,var);
+      if (mat_var == NULL) {
+        msg[1] = var;
+        msg[0] = filename;
+        c_add_message(-1, "SCRIPT", "Error", "Could not read variable %s in file %s.", msg, 2);
+        return NULL;
+      } else if (mat_var->isParam) {
+        col=mk_nil();
+        for (i=0;i<dimsize;i++) col=mk_cons(mk_rcon(matReader.params[mat_var->index]),col);
+        res = mk_cons(col,res);
+      } else {
+        vals = omc_matlab4_read_vals(&matReader,mat_var->index);
+        col=mk_nil();
+        for (i=0;i<dimsize;i++) col=mk_cons(mk_rcon(vals[i]),col);
+        res = mk_cons(col,res);
+      }
+    }
+    return res;
+  }
+  case PLT: {
+    return read_ptolemy_dataset(filename,vars,dimsize);
+    // return NULL;
+  }
+  default:
+    msg[0] = PlotFormatStr[curFormat];
+    c_add_message(-1, "SCRIPT", "Error", "readDataSet() not implemented for plot format: %s\n", msg, 1);
+    return NULL;
   }
 }
