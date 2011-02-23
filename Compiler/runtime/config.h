@@ -35,9 +35,10 @@
 
 #define DEFAULT_CC "g++"
 #define DEFAULT_CXX "g++"
-#define DEFAULT_LDFLAGS "-lc_runtime"
 
 #if defined(__MINGW32__) || defined(_MSC_VER) /* Windows */
+
+#define DEFAULT_LDFLAGS "-lc_runtime -lregex"
 
 #define CONFIG_PLATFORM "WIN32"
 #define CONFIG_USER_IS_ROOT 0
@@ -77,6 +78,8 @@
 #define CONFIG_GROUP_DELIMITER ";"
 
 #else /* Unix */
+
+#define DEFAULT_LDFLAGS "-lc_runtime"
 
 #include "config.unix.h"
 
