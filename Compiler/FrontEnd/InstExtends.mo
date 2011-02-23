@@ -134,10 +134,10 @@ algorithm
         // if we don't check that, then the compiler enters an infinite loop!
         // what we do is removing Icons from extends Icons.BaseLibrary;
         tp = Inst.removeSelfReference(className, tp);
-        print(className +& "\n");
-        print("Type: " +& Absyn.pathString(tp) +& "\n");
+        // print(className +& "\n");
+        // print("Type: " +& Absyn.pathString(tp) +& "\n");
         (cache,(c as SCode.CLASS(name=cn,encapsulatedPrefix=encf,restriction=r)),cenv) = Lookup.lookupClass(cache,env, tp, false);
-        print("Found " +& cn +& "\n");
+        // print("Found " +& cn +& "\n");
 
         outermod = Mod.lookupModificationP(mod, Absyn.IDENT(cn));
         
@@ -157,7 +157,6 @@ algorithm
         (cenv3,ih) = Inst.addClassdefsToEnv(cenv3,ih,pre,importelts,impl,NONE());
         (cenv3,ih) = Inst.addClassdefsToEnv(cenv3,ih,pre,cdefelts,impl,NONE());
 
-        print("1\n");
         (cache,_,ih,mods,compelts1,eq2,ieq2,alg2,ialg2) = instExtendsAndClassExtendsList2(cache,cenv3,ih,outermod,pre,els_1,classextendselts,ci_state,className,impl,isPartialInst)
         "recurse to fully flatten extends elements env";
 
