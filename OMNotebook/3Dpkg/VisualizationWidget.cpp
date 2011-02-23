@@ -52,14 +52,15 @@ namespace IAEX {
 
     QFrame *buttonframe = new QFrame();
     QPushButton *playbutton = new QPushButton("Play");
-    playbutton->setFixedWidth(32);
+    playbutton->setFixedWidth(50);
     QPushButton *stopbutton = new QPushButton("Stop");
-    stopbutton->setFixedWidth(32);
+    stopbutton->setFixedWidth(50);
     QPushButton *rewbutton = new QPushButton("Rew");
-    rewbutton->setFixedWidth(32);
+    rewbutton->setFixedWidth(50);
     label_ = new QLabel();
     label_->setText("0");
     slider_ = new QSlider(Qt::Vertical);
+    slider_->setMinimumWidth(50);
 #ifdef HAVE_COIN
     slider_->setRange(1000*simdata_->get_start_time(), 1000*simdata_->get_end_time());
 #endif
@@ -131,7 +132,7 @@ namespace IAEX {
   void VisualizationWidget::sliderChanged(int val) {
     currentTime_ = val;
     QString num;
-    num.setNum(currentTime_/1000.0);
+    num = num.setNum(currentTime_/1000.0, 'f', 3).rightJustified(8);
     label_->setText(num);
 #ifdef HAVE_COIN
     simdata_->setFrame(currentTime_/1000.0);
