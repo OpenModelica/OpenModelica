@@ -1827,39 +1827,46 @@ algorithm
   end matchcontinue;
 end allTerms;
 
-public function terms "
-function: terms
-  author: PA
-  Returns the terms of the expression if any as a list of expressions"
+public function terms
+  "Returns the terms of the expression if any as a list of expressions"
   input DAE.Exp inExp;
   output list<DAE.Exp> outExpLst;
 algorithm
-  outExpLst := matchcontinue (inExp)
+  outExpLst := terms2(inExp,{},false);
+end terms;
+
+protected function terms2
+  "Returns the terms of the expression if any as a list of expressions"
+  input DAE.Exp inExp;
+  input list<DAE.Exp> acc;
+  input Boolean neg;
+  output list<DAE.Exp> outExpLst;
+algorithm
+  outExpLst := match (inExp,acc,neg)
     local
       list<DAE.Exp> f1,f2,res,f2_1;
       DAE.Exp e1,e2,e;
       ComponentRef cr;
     
-    case (DAE.BINARY(exp1 = e1,operator = DAE.ADD(ty = _),exp2 = e2))
+    case (DAE.BINARY(exp1 = e1,operator = DAE.ADD(ty = _),exp2 = e2),acc,neg)
       equation
-        f1 = terms(e1);
-        f2 = terms(e2);
-        res = listAppend(f1, f2);
-      then
-        res;
+        acc = terms2(e2,acc,neg);
+        acc = terms2(e1,acc,neg);
+      then acc;
     
-    case (DAE.BINARY(exp1 = e1,operator = DAE.SUB(ty = _),exp2 = e2))
+    case (DAE.BINARY(exp1 = e1,operator = DAE.SUB(ty = _),exp2 = e2),acc,neg)
       equation
-        f1 = terms(e1);
-        f2 = terms(e2);
-        f2_1 = Util.listMap(f2, negate);
-        res = listAppend(f1, f2_1);
-      then
-        res;
+        acc = terms2(e2,acc,not neg);
+        acc = terms2(e1,acc,neg);
+      then acc;
     
-    else then {inExp};
-  end matchcontinue;
-end terms;
+    case (e,acc,true)
+      equation
+        e = negate(e);
+      then e::acc;
+    case (e,acc,_) then e::acc;
+  end match;
+end terms2;
 
 public function quotient
 "function: quotient
