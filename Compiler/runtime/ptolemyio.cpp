@@ -49,6 +49,7 @@ extern "C"
 #include <stdlib.h>
 #include <math.h>
 #include "omc_msvc.h" /* For INFINITY and NAN */
+#include "ptolemyio.h"
 void print_error_buf_impl(const char* str);
 
 /* Given a file name and an array of variables, return the RML datastructure
@@ -143,32 +144,6 @@ void * read_ptolemy_dataset(const char*filename, int size,const char**vars,int d
   }
   olst = Values__ARRAY(olst, odimLst);
   return olst;
-}
-
-/* Given a file name, returns the size of that simulation result in that file*/
-int read_ptolemy_dataset_size(const char*filename)
-{
-  char buf[255];
-  ifstream stream(filename);
-    
-  if (!stream) {
-    cerr << "Error opening file" << endl;
-    return 0;
-  }
-
-  // Find interval size
-  while(stream.getline(buf,255) && string(buf).find("#IntervalSize") == string(buf).npos);
-
-  string intervalText=string(buf);
-  int equalPos=intervalText.find("=");
-  int readIntervalSize = atoi(intervalText.substr(equalPos+1).c_str());
-  // exit if intervals not compatible...
-  if( readIntervalSize == 0) {
-    cerr << "could not read interval size." << endl;
-    print_error_buf_impl("could not read interval size.\n");
-    return 0;
-  }
-  return readIntervalSize;
 }
 
 void * read_ptolemy_variables(const char* filename, const char* visvars)
@@ -266,6 +241,25 @@ void * read_ptolemy_variables(const char* filename, const char* visvars)
   }
   //olst = Values__ARRAY(olst);
   return olst;
+}
+
+/* Given a file name, returns the size of that simulation result in that file*/
+int read_ptolemy_dataset_size(const char*filename)
+{
+  char buf[255];
+  ifstream stream(filename);
+    
+  if (!stream) return -1;
+
+  string intervalText;
+  // Find interval size
+  while (getline(stream,intervalText) && intervalText.find("#IntervalSize") == string::npos);
+  if (intervalText.find("#IntervalSize") == string::npos) return -1;
+  int equalPos=intervalText.find("=");
+  int readIntervalSize = atoi(intervalText.substr(equalPos+1).c_str());
+  // exit if intervals not compatible...
+  if( readIntervalSize == 0) return -1;
+  return readIntervalSize;
 }
 
 }

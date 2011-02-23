@@ -35,10 +35,6 @@
 
 #include "SimulationResults.c"
 
-void* read_ptolemy_dataset(char*filename, int size,char**vars,int);
-void* read_ptolemy_variables(char* filename, char* visvars);
-int read_ptolemy_dataset_size(char*filename);
-
 void SimulationResults_5finit(void)
 {
 }
@@ -61,7 +57,7 @@ RML_END_LABEL
 RML_BEGIN_LABEL(SimulationResults__readPtolemyplotDataset)
 {
   rml_sint_t i = 0,size = 0;
-  char **vars = NULL;
+  const char **vars = NULL;
   char* filename = RML_STRINGDATA(rmlA0);
   void *lst = rmlA1;
   rml_sint_t datasize = RML_UNTAGFIXNUM(rmlA2);
@@ -74,7 +70,7 @@ RML_BEGIN_LABEL(SimulationResults__readPtolemyplotDataset)
     ++size;
   }
 
-  vars = (char**)malloc(sizeof(char*)*size);
+  vars = (const char**)malloc(sizeof(char*)*size);
   for (i=0; i<size; i++) {
     vars[i] = RML_STRINGDATA(RML_CAR(p));
     p = RML_CDR(p);
@@ -90,13 +86,10 @@ RML_BEGIN_LABEL(SimulationResults__readPtolemyplotDataset)
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(SimulationResults__readPtolemyplotDatasetSize)
+RML_BEGIN_LABEL(SimulationResults__readSimulationResultSize)
 {
-  int size;
   char* filename = RML_STRINGDATA(rmlA0);
-  void* p;
-  size = read_ptolemy_dataset_size(filename);
-  rmlA0 = (void*)Values__INTEGER(mk_icon(size));
+  rmlA0 = mk_icon(SimulationResultsImpl__readSimulationResultSize(filename));
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL

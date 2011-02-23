@@ -75,12 +75,12 @@ algorithm
   outValue := ValuesUtil.reverseMatrix(readPtolemyplotDatasetWork(inString,inStringLst,inInteger));
 end readPtolemyplotDataset;
 
-public function readPtolemyplotDatasetSize
-  input String inString;
-  output Values.Value outValue;
+public function readSimulationResultSize
+  input String filename;
+  output Integer size;
 
-  external "C" outValue=SimulationResults_readPtolemyplotDatasetSize(inString) annotation(Library = "omcruntime");
-end readPtolemyplotDatasetSize;
+  external "C" size=SimulationResults_readPtolemyplotDatasetSize(filename) annotation(Library = "omcruntime");
+end readSimulationResultSize;
 
 end SimulationResults;
 

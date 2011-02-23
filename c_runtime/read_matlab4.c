@@ -131,7 +131,7 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
       if (1 != fread(reader->params,matrix_length,1,reader->file)) return "Corrupt header: data_1 matrix";
       /* fprintf(stderr, "    startTime = %.6g\n", reader->params[0]);
        * fprintf(stderr, "    stopTime = %.6g\n", reader->params[1]); */
-      for (i=1; i<hdr.ncols; i++) {
+      for (i=1; i<reader->nparam; i++) {
         if (reader->params[i] != reader->params[i+reader->nparam]) return "data_1 matrix contained parameter that changed between start and stop-time";
         /* fprintf(stderr, "    Parameter[%d] = %.6g\n", i, reader->params[i]); */
       }

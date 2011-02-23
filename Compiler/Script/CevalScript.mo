@@ -1494,22 +1494,9 @@ algorithm
         pwd = System.pwd();
         pd = System.pathDelimiter();
         filename_1 = stringAppendList({pwd,pd,filename});
-        value = SimulationResults.readPtolemyplotDatasetSize(filename_1);
+        i = SimulationResults.readSimulationResultSize(filename_1);
       then
-        (cache,value,st);
-        
-    case (cache,env,
-        DAE.CALL(
-          path = Absyn.IDENT(name = "readSimulationResultSize"),
-          expLst = {DAE.SCONST(string = filename)}),
-          (st as Interactive.SYMBOLTABLE(
-            ast = p,explodedAst = sp,instClsLst = ic,
-            lstVarVal = iv,compiledFunctions = cf,
-            loadedFiles = lf)),msg)
-      equation
-        Error.addMessage(Error.SCRIPT_READ_SIM_RES_SIZE_ERROR, {});
-      then
-        fail();
+        (cache,Values.INTEGER(i),st);
         
     case (cache,env,
         DAE.CALL(

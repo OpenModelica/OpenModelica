@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <string.h>
 #include "errorext.h"
+#include "ptolemyio.h"
 #include <math.h>
 #include "omc_msvc.h" /* For INFINITY and NAN */
 
@@ -137,5 +138,29 @@ static double SimulationResultsImpl__val(const char *filename, const char *varna
     msg[0] = PlotFormatStr[curFormat];
     c_add_message(-1, "SCRIPT", "Error", "val() not implemented for plot format: %s\n", msg, 1);
     return NAN;
+  }
+}
+
+static int SimulationResultsImpl__readSimulationResultSize(const char *filename)
+{
+  const char *msg[2] = {"",""};
+  int size;
+  if (UNKNOWN_PLOT == SimulationResultsImpl__openFile(filename)) {
+    return -1;
+  }
+  switch (curFormat) {
+  case MATLAB4: {
+    return matReader.nrows;
+  }
+  case PLT: {
+    size = read_ptolemy_dataset_size(filename);
+    msg[0] = filename;
+    if (size == -1) c_add_message(-1, "SCRIPT", "Error", "Failed to read readSimulationResultSize from file: %s\n", msg, 1);
+    return size;
+  }
+  default:
+    msg[0] = PlotFormatStr[curFormat];
+    c_add_message(-1, "SCRIPT", "Error", "readSimulationResultSize() not implemented for plot format: %s\n", msg, 1);
+    return -1;
   }
 }
