@@ -71,5 +71,9 @@ public function readSimulationResultSize
   external "C" size=SimulationResults_readSimulationResultSize(filename) annotation(Library = "omcruntime");
 end readSimulationResultSize;
 
+public function close
+  external "C" SystemImpl__close() annotation(Library = "omcruntime");
+end close;
+
 end SimulationResults;
 

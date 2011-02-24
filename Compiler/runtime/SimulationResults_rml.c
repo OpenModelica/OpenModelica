@@ -76,4 +76,10 @@ RML_BEGIN_LABEL(SimulationResults__val)
 }
 RML_END_LABEL
 
+RML_BEGIN_LABEL(SimulationResults__close)
+{
+  SimulationResultsImpl__close();
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
 

@@ -19,7 +19,7 @@ static char *curFileName = NULL;
 static ModelicaMatReader matReader;
 static FILE *pltReader;
 
-static void SimulationResultsImpl__closeFile()
+void SimulationResultsImpl__close()
 {
   switch (curFormat) {
   case MATLAB4: omc_free_matlab4_reader(&matReader); break;
@@ -37,7 +37,7 @@ static PlotFormat SimulationResultsImpl__openFile(const char *filename)
   const char *msg[] = {"",""};
   if (curFileName && 0==strcmp(filename,curFileName)) return curFormat; // Super cache :)
   // Start by closing the old file...
-  SimulationResultsImpl__closeFile();
+  SimulationResultsImpl__close();
   
   if (len < 5) format = UNKNOWN_PLOT;
   else if (0 == strcmp(filename+len-4, ".mat")) format = MATLAB4;
