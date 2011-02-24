@@ -549,16 +549,11 @@ function getSettings
   output String settings;
   annotation(__OpenModelica_EarlyInline = true);
 algorithm
-  settings := // newline instead of \n due to elabExp of strings not unescaping from Absyn
-    "Compile command: " + getCompileCommand() + "
-" +
-    "Temp folder path: " + getTempDirectoryPath() + "
-" +
-    "Installation folder: " + getInstallationDirectoryPath() + "
-" +
-    "Modelica path: " + getModelicaPath() + "
-"
-  ;
+  settings :=
+    "Compile command: " + getCompileCommand() + "\n" +
+    "Temp folder path: " + getTempDirectoryPath() + "\n" +
+    "Installation folder: " + getInstallationDirectoryPath() + "\n" +
+    "Modelica path: " + getModelicaPath() + "\n";
 end getSettings;
 
 function setTempDirectoryPath
@@ -959,13 +954,13 @@ function translateGraphics
 external "builtin";
 end translateGraphics;
 
-function readSimulationResultSize
+function readSimulationResultSize "The number of intervals that are present in the output file"
   input String fileName;
-  output Integer sz "The number of intervals that are present in the output file";
+  output Integer sz;
 external "builtin";
 end readSimulationResultSize;
 
-function readSimulationResultVars
+function readSimulationResultVars "Returns the variables in the simulation file; you can use val() and plot() commands using these names"
   input String fileName;
   output String[:] vars;
 external "builtin";
