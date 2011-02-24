@@ -200,6 +200,8 @@ void find_closest_points(double key, double *vec, int nelem, int *index1, double
   do {
     mid = min + (max-min)/2;
     if (key == vec[mid]) {
+      // If we have events (multiple identical time stamps), use the right limit
+      while (mid < max && vec[mid] == vec[mid+1]) mid++;
       *index1 = mid;
       *weight1 = 1.0;
       *index2 = -1;
