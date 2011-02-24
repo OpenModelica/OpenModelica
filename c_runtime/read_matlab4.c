@@ -66,15 +66,15 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
     int nr = fread(&hdr,sizeof(MHeader_t),1,reader->file);
     int matrix_length,element_length;
     char *name;
-    if (nr != 1) return "Corrupt header";
+    if (nr != 1) return "Corrupt header (1)";
     /* fprintf(stderr, "Found matrix type=%04d mrows=%d ncols=%d imagf=%d namelen=%d\n", hdr.type, hdr.mrows, hdr.ncols, hdr.imagf, hdr.namelen); */
     if (hdr.type != matrixTypes[i]) return "Matrix type mismatch";
     if (hdr.imagf > 1) return "Matrix uses imaginary numbers";
     if ((element_length = mat_element_length(hdr.type)) == -1) return "Could not determine size of matrix elements";
     name = (char*) malloc(hdr.namelen);
     nr = fread(name,hdr.namelen,1,reader->file);
-    if (nr != 1) return "Corrupt header";
-    if (name[hdr.namelen-1]) return "Corrupt header";
+    if (nr != 1) return "Corrupt header (2)";
+    if (name[hdr.namelen-1]) return "Corrupt header (3)";
     /* fprintf(stderr, "  Name of matrix: %s\n", name); */
     matrix_length = hdr.mrows*hdr.ncols*(1+hdr.imagf)*element_length;
     if (0 != strcmp(name,matrixNames[i])) return "Matrix name mismatch";
@@ -200,7 +200,7 @@ void find_closest_points(double key, double *vec, int nelem, int *index1, double
   do {
     mid = min + (max-min)/2;
     if (key == vec[mid]) {
-      // If we have events (multiple identical time stamps), use the right limit
+      /* If we have events (multiple identical time stamps), use the right limit */
       while (mid < max && vec[mid] == vec[mid+1]) mid++;
       *index1 = mid;
       *weight1 = 1.0;
@@ -226,6 +226,16 @@ void find_closest_points(double key, double *vec, int nelem, int *index1, double
   *weight2 = 1.0 - *weight1;
 }
 
+double omc_matlab4_startTime(ModelicaMatReader *reader)
+{
+  return reader->params[0];
+}
+
+double omc_matlab4_stopTime(ModelicaMatReader *reader)
+{
+  return reader->params[reader->nparam];
+}
+
 /* Returns 0 on success */
 int omc_matlab4_val(double *res, ModelicaMatReader *reader, ModelicaMatVariable_t *var, double time)
 {
@@ -234,8 +244,8 @@ int omc_matlab4_val(double *res, ModelicaMatReader *reader, ModelicaMatVariable_
   } else {
     double w1,w2,y1,y2;
     int i1,i2;
-    if (time > reader->params[reader->nparam]) return 1; /* time > stopTime */
-    if (time < reader->params[0]) return 1; /* time < startTime */
+    if (time > omc_matlab4_stopTime(reader)) return 1;
+    if (time < omc_matlab4_startTime(reader)) return 1;
     if (!omc_matlab4_read_vals(reader,0)) return 1;
     find_closest_points(time, reader->vars[0], reader->nrows, &i1, &w1, &i2, &w2);
     if (i2 == -1) {

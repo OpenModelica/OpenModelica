@@ -53,6 +53,17 @@
 #include "sendData/sendData.h"
 #endif
 
+static int calcDataSize()
+{
+  int sz = 1; // time
+  for (int i = 0; i < globalData->nStates; i++) if (!globalData->statesFilterOutput[i]) sz++;
+  for (int i = 0; i < globalData->nStates; i++) if (!globalData->statesDerivativesFilterOutput[i]) sz++;
+  for (int i = 0; i < globalData->nAlgebraic; i++) if (!globalData->algebraicsFilterOutput[i]) sz++;
+  for (int i = 0; i < globalData->intVariables.nAlgebraic; i++) if (!globalData->intVariables.algebraicsFilterOutput[i]) sz++;
+  for (int i = 0; i < globalData->boolVariables.nAlgebraic; i++) if (!globalData->boolVariables.algebraicsFilterOutput[i]) sz++;
+  return sz;
+}
+
 void simulation_result_plt::emit()
 {
   storeExtrapolationData();
@@ -70,22 +81,6 @@ void simulation_result_plt::emit()
     add_result(simulationResultData,&actualPoints);
   }
   rt_accumulate(SIM_TIMER_OUTPUT);
-}
-
-int simulation_result_plt::calcDataSize()
-{
-  int sz = 1; // time
-  for (int i = 0; i < globalData->nStates; i++) if (!globalData->statesFilterOutput[i])
-      sz++;
-  for (int i = 0; i < globalData->nStates; i++) if (!globalData->statesDerivativesFilterOutput[i])
-      sz++;
-  for (int i = 0; i < globalData->nAlgebraic; i++) if (!globalData->algebraicsFilterOutput[i])
-      sz++;
-  for (int i = 0; i < globalData->intVariables.nAlgebraic; i++) if (!globalData->intVariables.algebraicsFilterOutput[i])
-      sz++;
-  for (int i = 0; i < globalData->boolVariables.nAlgebraic; i++) if (!globalData->boolVariables.algebraicsFilterOutput[i])
-      sz++;
-  return sz;
 }
 
  /*

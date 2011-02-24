@@ -46,7 +46,6 @@ long dataSize;
 void add_result(double *data, long *actualPoints);
 void deallocResult();
 void printPltLine(FILE* f, double time, double val);
-int calcDataSize();
 
 public:
 

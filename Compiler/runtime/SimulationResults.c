@@ -75,7 +75,7 @@ static PlotFormat SimulationResultsImpl__openFile(const char *filename)
 static double SimulationResultsImpl__val(const char *filename, const char *varname, double timeStamp)
 {
   double res;
-  const char *msg[2] = {"",""};
+  const char *msg[4] = {"","","",""};
   if (UNKNOWN_PLOT == SimulationResultsImpl__openFile(filename)) {
     return NAN;
   }
@@ -89,11 +89,15 @@ static double SimulationResultsImpl__val(const char *filename, const char *varna
       return NAN;
     }
     if (omc_matlab4_val(&res,&matReader,var,timeStamp)) {
-      char buf[64];
+      char buf[64],buf2[64],buf3[64];
       snprintf(buf,60,"%g",timeStamp);
-      msg[1] = varname;
-      msg[0] = buf;
-      c_add_message(-1, "SCRIPT", "Error", "%s not defined at time %s\n", msg, 2);
+      snprintf(buf2,60,"%g",omc_matlab4_startTime(&matReader));
+      snprintf(buf3,60,"%g",omc_matlab4_stopTime(&matReader));
+      msg[3] = varname;
+      msg[2] = buf;
+      msg[1] = buf2;
+      msg[0] = buf3;
+      c_add_message(-1, "SCRIPT", "Error", "%s not defined at time %s (startTime=%s, stopTime=%s).", msg, 4);
       return NAN;
     }
     return res;

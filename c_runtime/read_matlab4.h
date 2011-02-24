@@ -57,4 +57,8 @@ int omc_matlab4_val(double *res, ModelicaMatReader *reader, ModelicaMatVariable_
 /* For debugging */
 void omc_matlab4_print_all_vars(FILE *stream, ModelicaMatReader *reader);
 
+double omc_matlab4_startTime(ModelicaMatReader *reader);
+
+double omc_matlab4_stopTime(ModelicaMatReader *reader);
+
 #endif
