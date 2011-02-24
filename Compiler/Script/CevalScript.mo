@@ -170,7 +170,7 @@ public constant DAE.Exp defaultFileNamePrefix    = DAE.SCONST("")      "default 
 public constant DAE.Exp defaultStoreInTemp       = DAE.BCONST(false)   "default storeInTemp";
 public constant DAE.Exp defaultNoClean           = DAE.BCONST(false)   "default noClean";
 public constant DAE.Exp defaultOptions           = DAE.SCONST("")      "default options";
-public constant DAE.Exp defaultOutputFormat      = DAE.SCONST("plt")   "default outputFormat";
+public constant DAE.Exp defaultOutputFormat      = DAE.SCONST("mat")   "default outputFormat";
 public constant DAE.Exp defaultVariableFilter    = DAE.SCONST(".*")    "default variableFilter; does whole string matching, i.e. it becomes ^.*$ in the runtime";
 
 public constant SimulationOptions defaultSimulationOptions =

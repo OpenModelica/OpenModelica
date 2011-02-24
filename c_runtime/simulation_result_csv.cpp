@@ -86,9 +86,9 @@ simulation_result_csv::simulation_result_csv(const char* filename, long numpoint
   for (int i = 0; i < globalData->nAlgebraic; i++) if (!globalData->algebraicsFilterOutput[i])
     fprintf(fout, format, globalData->algebraicsNames[i].name);
   for (int i = 0; i < globalData->intVariables.nAlgebraic; i++) if (!globalData->intVariables.algebraicsFilterOutput[i])
-    fprintf(fout, format, globalData->int_alg_names[i]);
+    fprintf(fout, format, globalData->int_alg_names[i].name);
   for (int i = 0; i < globalData->boolVariables.nAlgebraic; i++) if (!globalData->boolVariables.algebraicsFilterOutput[i])
-    fprintf(fout, format, globalData->bool_alg_names[i]);
+    fprintf(fout, format, globalData->bool_alg_names[i].name);
 
   fprintf(fout,"\n");
 }

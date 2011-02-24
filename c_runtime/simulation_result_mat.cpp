@@ -203,12 +203,13 @@ long simulation_result_mat::flattenStrBuf(int rank, const int *dims,
 
   // allocate memory
   dest = new char[longest*nstrings+1];
+  memset(dest,longest*nstrings+1,sizeof(char));
   if (!dest) throw SimulationResultMallocException();
   // copy data
   char *ptr = dest;
   for (i = 0; i < rank; ++i)
     for (j = 0; j < dims[i]; ++j) {
-      strncpy(ptr,useComment ? src[i][j].comment : src[i][j].name,longest);
+      strncpy(ptr,useComment ? src[i][j].comment : src[i][j].name,longest+1 /* ensures that we get \0 after the longest string*/);
       if (fixNames) fixDerInName(ptr,strlen(useComment ? src[i][j].comment : src[i][j].name));
       ptr += longest;
     }
