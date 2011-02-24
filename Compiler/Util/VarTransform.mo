@@ -1568,7 +1568,7 @@ algorithm
         e1_1 = replaceExp(e1, repl, cond);
         e2_1 = replaceExp(e2, repl, cond);
       then
-        DAE.RELATION(e1_1,op,e2_1,-1,NONE());
+        DAE.RELATION(e1_1,op,e2_1,index_,isExpisASUB);
     case ((e as DAE.IFEXP(expCond = e1,expThen = e2,expElse = e3)),repl,cond)
       equation
         true = replaceExpCond(cond, e);

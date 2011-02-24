@@ -51,7 +51,7 @@ testlog:
 	cat testsuite/testsuite-trace.txt
 
 testmos:
-	(cd testsuite/mosfiles; time $(MAKE) -f Makefile)
+	(cd testsuite/mosfiles-dassl; time $(MAKE) -f Makefile)
 
 testmo:
 	(cd testsuite/mofiles; time $(MAKE) -f Makefile test)
