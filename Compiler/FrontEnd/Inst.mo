@@ -1289,7 +1289,8 @@ algorithm
     case ((_,SOME(Absyn.FULLYQUALIFIED(Absyn.QUALIFIED("OpenModelica",Absyn.QUALIFIED("Code",Absyn.IDENT(name)))))),_)
       then Util.assoc(name,{
         ("TypeName",(DAE.T_CODE(DAE.C_TYPENAME()),NONE())),
-        ("VariableName",(DAE.T_CODE(DAE.C_VARIABLENAME()),NONE()))
+        ("VariableName",(DAE.T_CODE(DAE.C_VARIABLENAME()),NONE())),
+        ("VariableNames",(DAE.T_CODE(DAE.C_VARIABLENAMES()),NONE()))
         });
     case (ty,false) then ty;
     case (ty,true) then Types.makeFunctionPolymorphicReference(ty);

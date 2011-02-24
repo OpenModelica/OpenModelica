@@ -6587,6 +6587,7 @@ algorithm
   str := match ct
     case DAE.C_TYPENAME() then "OpenModelica.Code.TypeName";
     case DAE.C_VARIABLENAME() then "OpenModelica.Code.VariableName";
+    case DAE.C_VARIABLENAMES() then "OpenModelica.Code.VariableNames";
     else "Types.printCodeTypeStr failed";
   end match;
 end printCodeTypeStr;

@@ -759,6 +759,9 @@ public uniontype CodeType
   
   record C_VARIABLENAME
   end C_VARIABLENAME;
+
+  record C_VARIABLENAMES "Array of VariableName"
+  end C_VARIABLENAMES;
 end CodeType;
 
 public constant FunctionAttributes FUNCTION_ATTRIBUTES_BUILTIN = FUNCTION_ATTRIBUTES(NO_INLINE(),true,FUNCTION_BUILTIN(NONE())); 

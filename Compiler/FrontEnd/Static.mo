@@ -6891,18 +6891,6 @@ protected function elabCallInteractive "function: elabCallInteractive
       then
         (cache,Expression.makeBuiltinCall("jacobian",{crefExp},DAE.ET_STRING()),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
 
-    case (cache,env,Absyn.CREF_IDENT(name = "readSimulationResult"),{Absyn.STRING(value = filename),Absyn.ARRAY(arrayExp = vars),size_absyn},args,impl,SOME(st),pre,_)
-      equation
-        vars_1 = elabVariablenames(vars);
-        (cache,size_exp,ptop,st_1) = elabExp(cache,env, size_absyn, false, SOME(st),true,pre,info);
-        (cache,Values.INTEGER(size),_) = Ceval.ceval(cache,env, size_exp, false, st_1,NONE(), Ceval.MSG());
-        var_len = listLength(vars);
-      then
-        (cache,Expression.makeBuiltinCall("readSimulationResult",{DAE.SCONST(filename),DAE.ARRAY(DAE.ET_OTHER(),false,vars_1),size_exp},
-          DAE.ET_ARRAY(DAE.ET_REAL(),{DAE.DIM_INTEGER(var_len),DAE.DIM_INTEGER(size)})),DAE.PROP(
-          (DAE.T_ARRAY(DAE.DIM_INTEGER(var_len),
-          (DAE.T_ARRAY(DAE.DIM_INTEGER(size),DAE.T_REAL_DEFAULT),NONE())),NONE()),DAE.C_VAR()),SOME(st));
-
     case (cache,env,Absyn.CREF_IDENT(name = "plot2"),{e1},{},impl,SOME(st),_,_)
       equation
         vars_1 = elabVariablenames({e1});
@@ -13274,17 +13262,23 @@ protected function elabCodeExp
   input Absyn.Info info;
   output DAE.Exp outExp;
 algorithm
-  outExp := match (exp,ct,info)
+  outExp := matchcontinue (exp,ct,info)
     local
       String s1,s2;
       Absyn.ComponentRef cr;
       Absyn.Path path;
+      list<DAE.Exp> es_1;
+      list<Absyn.Exp> es;
     case (Absyn.CREF(componentRef=cr),DAE.C_TYPENAME(),_)
       equation
         path = Absyn.crefToPath(cr);
       then DAE.CODE(Absyn.C_TYPENAME(path),DAE.ET_OTHER());
     case (Absyn.CREF(componentRef=cr),DAE.C_VARIABLENAME(),_)
       then DAE.CODE(Absyn.C_VARIABLENAME(cr),DAE.ET_OTHER());
+    case (Absyn.ARRAY(es),DAE.C_VARIABLENAMES(),info)
+      equation
+        es_1 = Util.listMap2(es,elabCodeExp,DAE.C_VARIABLENAME(),info);
+      then DAE.ARRAY(DAE.ET_OTHER(),false,es_1);
     case (Absyn.CALL(Absyn.CREF_IDENT("der",{}),Absyn.FUNCTIONARGS(args={Absyn.CREF(componentRef=cr)},argNames={})),DAE.C_VARIABLENAME(),_)
       then DAE.CODE(Absyn.C_EXPRESSION(exp),DAE.ET_OTHER());
     case (exp,ct,info)
@@ -13293,7 +13287,7 @@ algorithm
         s2 = Types.printCodeTypeStr(ct);
         Error.addSourceMessage(Error.ELAB_CODE_EXP_FAILED, {s1,s2}, info);
       then fail();
-  end match;
+  end matchcontinue;
 end elabCodeExp;
 
 end Static;

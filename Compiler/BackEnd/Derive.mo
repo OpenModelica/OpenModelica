@@ -46,7 +46,6 @@ encapsulated package Derive
 // public imports
 public import Absyn;
 public import BackendDAE;
-public import Builtin;
 public import DAE;
 public import DAEUtil;
 public import RTOpts;

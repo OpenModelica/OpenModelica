@@ -418,6 +418,7 @@ Besides, it has special semantics."
 
 type TypeName "A path, for example the name of a class, e.g. A.B.C or .A.B" end TypeName;
 type VariableName "A variable name, e.g. a.b or a[1].b[3].c" end VariableName;
+type VariableNames "An array of variable names, e.g. {a.b,a[1].b[3].c}" end VariableNames;
 
 end Code;
 
@@ -425,6 +426,7 @@ package Scripting
   
 import OpenModelica.Code.TypeName;
 import OpenModelica.Code.VariableName;
+import OpenModelica.Code.VariableNames;
 
 record CheckSettingsResult
   String OPENMODELICAHOME,OPENMODELICALIBRARY,OMC_PATH;
@@ -953,6 +955,14 @@ function translateGraphics
   output String result;
 external "builtin";
 end translateGraphics;
+
+function readSimulationResult "Reads a result file, returning a matrix corresponding to the variables and size given."
+  input String filename;
+  input VariableNames variables;
+  input Integer size := 0 "0=read any size... If the size is not the same as the result-file, this function fails";
+  output Real result[:,:];
+external "builtin";
+end readSimulationResult;
 
 function readSimulationResultSize "The number of intervals that are present in the output file"
   input String fileName;
