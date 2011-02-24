@@ -41,6 +41,7 @@ T_ANNOTATION;
 BLOCK;
 CODE;
 CODE_EXP;
+CODE_NAME;
 CODE_VAR;
 CLASS;
 CONNECT;
@@ -262,6 +263,7 @@ NL: '\r\n' | '\n';
 
 /* OpenModelica extensions */
 CODE : 'Code' | '$Code';
+CODE_NAME : '$TypeName';
 CODE_EXP : '$Exp';
 CODE_VAR : '$Var';
 

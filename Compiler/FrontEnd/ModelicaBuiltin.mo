@@ -995,24 +995,34 @@ function dumpXMLDAE
 external "builtin";
 end dumpXMLDAE;
 
-function listVariables
+function listVariables "Lists the names of the active variables in the scripting environment."
   output TypeName variables[:];
 external "builtin";
 end listVariables;
 
-function val
-  input VariableName exp;
+function val "Works on the filename pointed to by the scripting variable currentSimulationResult.
+  The result is the value of the variable at a certain time point.
+  For parameters, any time may be given. For variables the startTime<=time<=stopTime needs to hold.
+  On error, nan (Not a Number) is returned and the error buffer contains the message."
+  input VariableName var;
   input Real time;
   output Real valAtTime;
 external "builtin";
 end val;
 
-function strtok
+function strtok "Splits the strings at the places given by the token, for example:
+  strtok(\"abcbdef\",\"b\") => {\"a\",\"c\",\"def\"}"
   input String string;
   input String token;
   output String[:] strings;
 external "builtin";
 end strtok;
+
+function list "Lists the contents of the given class, or all loaded classes"
+  input TypeName class_ := $TypeName(AllLoadedClasses);
+  output String contents;
+external "builtin";
+end list;
 
 end Scripting;
 end OpenModelica;

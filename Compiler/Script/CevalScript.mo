@@ -745,7 +745,7 @@ algorithm
       then
         (cache,Values.TUPLE({Values.INTEGER(-1),v}),st);
 
-    case (cache,env,"list",{},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
+    case (cache,env,"list",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT("AllLoadedClasses")))},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
       equation
         str = Dump.unparseStr(p,false);
       then
@@ -757,6 +757,8 @@ algorithm
         str = Dump.unparseStr(Absyn.PROGRAM({absynClass},Absyn.TOP(),Absyn.TIMESTAMP(0.0,0.0)),false) ;
       then
         (cache,Values.STRING(str),st);
+    
+    case (cache,env,"list",_,st,msg) then (cache,Values.STRING(""),st);
     
     case (cache,env,"jacobian",{Values.CODE(Absyn.C_TYPENAME(path))},
           (st as Interactive.SYMBOLTABLE(

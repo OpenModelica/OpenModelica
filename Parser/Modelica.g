@@ -1213,6 +1213,7 @@ code_expression returns [void* ast] :
           ast = Absyn__CODE(Absyn__C_5fELEMENT(el.ast));
         }
       }
+  | CODE_NAME LPAR name=name_path RPAR {ast = Absyn__CODE(Absyn__C_5fTYPENAME(name));}
   )
   ;
 

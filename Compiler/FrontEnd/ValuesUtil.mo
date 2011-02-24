@@ -908,6 +908,7 @@ algorithm
       list<DAE.ExpVar> varlst;
       Integer ix;
       Absyn.Path path;
+      Absyn.CodeNode code;
 
     case (Values.INTEGER(integer = i)) then DAE.ICONST(i); 
     case (Values.REAL(real = r))       then DAE.RCONST(r);
@@ -1021,6 +1022,9 @@ algorithm
       equation
         e = valueExp(v);
       then DAE.BOX(e);
+
+    case (Values.CODE(A=code))
+      then DAE.CODE(code,DAE.ET_OTHER());
 
     case (v)
       equation

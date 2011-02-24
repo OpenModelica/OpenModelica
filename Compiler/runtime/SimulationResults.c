@@ -208,6 +208,7 @@ static void* SimulationResultsImpl__readDataset(const char *filename, void *vars
     } else if (matReader.nrows != dimsize) {
       fprintf(stderr, "dimsize: %d, rows %d\n", dimsize, matReader.nrows);
       c_add_message(-1, "SCRIPT", "Error", "readDataset(...): Expected and actual dimension sizes do not match.", NULL, 0);
+      return NULL;
     }
     while (RML_NILHDR != RML_GETHDR(vars)) {
       var = RML_STRINGDATA(RML_CAR(vars));

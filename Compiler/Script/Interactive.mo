@@ -582,8 +582,9 @@ algorithm
         (st as SYMBOLTABLE(ast = p)))
       equation
         env = buildEnvFromSymboltable(st);
-        (cache,sexp,DAE.PROP(t,_),SOME(st_1)) = Static.elabExp(Env.emptyCache(),env, exp, true, SOME(st),true,Prefix.NOPRE(),info);
+        (cache,sexp,DAE.PROP(_,_),SOME(st_1)) = Static.elabExp(Env.emptyCache(),env, exp, true, SOME(st),true,Prefix.NOPRE(),info);
         (_,value,SOME(st_2)) = Ceval.ceval(cache,env, sexp, true, SOME(st_1),NONE(), Ceval.MSG());
+        t = Types.typeOfValue(value) "This type can be more specific than the elaborated type; if the dimensions are unknown...";
         str = ValuesUtil.valString(value);
         newst = addVarToSymboltable(ident, value, t, st_2);
       then

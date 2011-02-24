@@ -1483,6 +1483,7 @@ algorithm
       list<String> names1, names2;
       DAE.Dimension dim1,dim2;
       list<FuncArg> farg1,farg2;
+      DAE.CodeType c1,c2;
     
     case ((DAE.T_ANYTYPE(_),_),(_,_)) then true;
     case ((_,_),(DAE.T_ANYTYPE(_),_)) then true;
@@ -1623,6 +1624,8 @@ algorithm
       then Absyn.pathEqual(p1,p2);
     case((DAE.T_UNIONTYPE(_),SOME(p1)),(DAE.T_COMPLEX(complexClassType=ClassInf.UNIONTYPE(_)),SOME(p2)))
       then Absyn.pathEqual(p1,p2);
+
+    case ((DAE.T_CODE(c1),_),(DAE.T_CODE(c2),_)) then valueEq(c1,c2);
 
     case (t1,t2)
       equation
@@ -2106,6 +2109,7 @@ algorithm
       TType t;
       Absyn.Path path,p;
       list<Type> tys;
+      DAE.CodeType codeType;
 
     case ((DAE.T_INTEGER(varLstInt = {}),_)) then "Integer";
     case ((DAE.T_REAL(varLstReal = {}),_)) then "Real";
@@ -2254,6 +2258,7 @@ algorithm
     case ((DAE.T_NORETCALL(),_)) then "#NORETCALL#";
     case ((DAE.T_NOTYPE(),_)) then "#NOTYPE#";
     case ((DAE.T_ANYTYPE(anyClassType = _),_)) then "#ANYTYPE#";
+    case ((DAE.T_CODE(ty = codeType),_)) then printCodeTypeStr(codeType);
     case (ty) then "Internal error Types.unparseType: not implemented yet\n";
   end match;
 end unparseType;

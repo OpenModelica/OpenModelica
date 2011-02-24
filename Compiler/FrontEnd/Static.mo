@@ -1422,9 +1422,8 @@ algorithm
   outType:=
   match (inEnv,inCode)
     local list<Env.Frame> env;
-    case (env,Absyn.C_TYPENAME(path = _)) then ((DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("TypeName")),{},NONE(),NONE()),NONE()));
-    case (env,Absyn.C_VARIABLENAME(componentRef = _)) then ((DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("VariableName")),{},NONE(),NONE()),
-          NONE()));
+    case (env,Absyn.C_TYPENAME(path = _)) then ((DAE.T_CODE(DAE.C_TYPENAME()),NONE()));
+    case (env,Absyn.C_VARIABLENAME(componentRef = _)) then ((DAE.T_CODE(DAE.C_VARIABLENAME()),NONE()));
     case (env,Absyn.C_EQUATIONSECTION(boolean = _)) then ((
           DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("EquationSection")),{},NONE(),NONE()),NONE()));
     case (env,Absyn.C_ALGORITHMSECTION(boolean = _)) then ((
@@ -6803,15 +6802,6 @@ protected function elabCallInteractive "function: elabCallInteractive
       equation
         ErrorExt.rollBack("Scripting");
       then fail();
-
-    case (cache,env,Absyn.CREF_IDENT(name = "list"),{},{},impl,SOME(st),_,_)
-      then (cache, Expression.makeBuiltinCall("list",{},DAE.ET_STRING()),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
-
-    case (cache,env,Absyn.CREF_IDENT(name = "list"),{Absyn.CREF(componentRef = cr)},{},impl,SOME(st),_,_)
-      equation
-        className = Absyn.crefToPath(cr);
-      then
-        (cache, Expression.makeBuiltinCall("list",{DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER())},DAE.ET_STRING()),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "translateModel"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_)
       equation
