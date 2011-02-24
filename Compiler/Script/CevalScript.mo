@@ -270,6 +270,23 @@ algorithm
   outExp := Expression.makeCrefExp(cref,DAE.ET_OTHER());
 end buildCurrentSimulationResultExp;
 
+protected function cevalCurrentSimulationResultExp
+  input Env.Cache cache;
+  input Env.Env env;
+  input String inputFilename;
+  input Interactive.InteractiveSymbolTable st;
+  input Ceval.Msg msg;
+  output Env.Cache outCache;
+  output String filename;
+algorithm
+  (outCache,filename) := match (cache,env,inputFilename,st,msg)
+    case (_,_,"<default>",_,_)
+      equation
+        (cache,Values.STRING(filename),_) = Ceval.ceval(cache,env,buildCurrentSimulationResultExp(),true,SOME(st),NONE(),msg);
+      then (cache,filename);
+    else (cache,inputFilename);
+  end match;
+end cevalCurrentSimulationResultExp;
 
 public function buildSimulationOptions
 "@author: adrpo
@@ -1519,19 +1536,12 @@ algorithm
       then
         (cache,v,st);
         
-    case (cache,env,
-        DAE.CALL(
-          path = Absyn.IDENT(name = "plot2"),
-          expLst = {DAE.ARRAY(array = expVars)}),
-          (st as Interactive.SYMBOLTABLE(
-            ast = p,explodedAst = sp,instClsLst = ic,
-            lstVarVal = iv,compiledFunctions = cf,
-            loadedFiles = lf)),msg)
+    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "plot2"),expLst = {DAE.ARRAY(array = expVars),DAE.SCONST(filename)}),st,msg)
       equation
         expVars = Util.listMap(expVars,Expression.CodeVarToCref);
-        vars_1 = Util.listMap(expVars, ExpressionDump.printExpStr) "plot2" ;
+        vars_1 = Util.listMap(expVars, ExpressionDump.printExpStr);
         vars_2 = Util.listUnionElt("time", vars_1);
-        (cache,Values.STRING(filename),_) = Ceval.ceval(cache,env,buildCurrentSimulationResultExp(), true, SOME(st),NONE(), msg);
+        (cache,filename) = cevalCurrentSimulationResultExp(cache,env,filename,st,msg);
         value = ValuesUtil.readDataset(filename, vars_2, 0);
         pwd = System.pwd();
         cit = winCitation();
@@ -1545,188 +1555,56 @@ algorithm
         call = stringAppendList({cit,plotCmd," \"",tmpPlotFile,"\"",cit});
         
         _ = System.systemCall(call);
-      then
-        (cache,Values.BOOL(true),st);
-        
-    case (cache,env,
-        DAE.CALL(
-          path = Absyn.IDENT(name = "plot2"),
-          expLst = {DAE.ARRAY(array = expVars)}),
-          (st as Interactive.SYMBOLTABLE(
-            ast = p,explodedAst = sp,instClsLst = ic,
-            lstVarVal = iv,compiledFunctions = cf,
-            loadedFiles = lf)),msg)
-      equation
-        expVars = Util.listMap(expVars,Expression.CodeVarToCref);
-        vars_1 = Util.listMap(expVars, ExpressionDump.printExpStr) "Catch error reading simulation file." ;
-        vars_2 = Util.listUnionElt("time", vars_1);
-        (cache,Values.STRING(filename),_) = Ceval.ceval(cache,env,buildCurrentSimulationResultExp(), true, SOME(st),NONE(), msg);
-        failure(_ = ValuesUtil.readDataset(filename, vars_2, 0));
-      then
-        (cache,Values.STRING("Error reading the simulation result."),st);
-        
-    case (cache,env,
-        DAE.CALL(
-          path = Absyn.IDENT(name = "plot2"),
-          expLst = {DAE.ARRAY(array = expVars)}),
-          (st as Interactive.SYMBOLTABLE(
-            ast = p,explodedAst = sp,instClsLst = ic,
-            lstVarVal = iv,compiledFunctions = cf,
-            loadedFiles = lf)),msg)
-      equation
-        expVars = Util.listMap(expVars,Expression.CodeVarToCref);
-        vars_1 = Util.listMap(expVars, ExpressionDump.printExpStr) "Catch error reading simulation file." ;
-        vars_2 = Util.listUnionElt("time", vars_1);
-        failure((_,_,_) = Ceval.ceval(cache,env,buildCurrentSimulationResultExp(), true, SOME(st),NONE(), Ceval.NO_MSG()));
-      then
-        (cache,Values.STRING("No simulation result to plot."),st);
+      then (cache,Values.BOOL(true),st);
         
         // plot error
-    case (cache,env,
-        DAE.CALL(
-          path = Absyn.IDENT(name = "plot2"),
-          expLst = {DAE.ARRAY(array = expVars)}),
-          (st as Interactive.SYMBOLTABLE(
-            ast = p,explodedAst = sp,instClsLst = ic,
-            lstVarVal = iv,compiledFunctions = cf,
-            loadedFiles = lf)),msg)
-      then
-        (cache,Values.STRING("Unknown error while plotting"),st);
-        
-        //plotAll(model) - file missing
-    case (cache,env,
-        DAE.CALL(
-          path = Absyn.IDENT(name = "plotAll"),
-          expLst = {
-            DAE.CODE(Absyn.C_TYPENAME(className),_),
-            DAE.SCONST(string = interpolation), DAE.SCONST(string = title), DAE.BCONST(bool = legend), DAE.BCONST(bool = grid), DAE.BCONST(bool = logX), DAE.BCONST(bool = logY), DAE.SCONST(string = xLabel), DAE.SCONST(string = yLabel), DAE.BCONST(bool = points), xRange, yRange
-            }),
-            (st as Interactive.SYMBOLTABLE(
-              ast = p,explodedAst = sp,instClsLst = ic,
-              lstVarVal = iv,compiledFunctions = cf,
-              loadedFiles = lf)),msg)
-      equation        
-        //        vars = Util.listMap(vars,Expression.CodeVarToCref);
-        //        vars_1 = Util.listMap(vars, ExpressionDump.printExpStr) "plotAll" ;
-        //        vars_2 = Util.listUnionElt("time", vars_1);
-        
-        filename = Absyn.pathString(className);
-        filename2 = stringAppendList({filename, "_res.plt"});
-        
-        failure(_ = System.getVariableNames(filename2));
-        //        vars_2 = Util.stringSplitAtChar(str, " ");
-        //        vars_2 =
-        
-        
-        // value = ValuesUtil.readDataset(filename2, vars_2, 0);
-        
-        
-        //       failure(_ = ValuesUtil.readDataset(filename2, vars_2, 0));
-      then
-        (cache,Values.STRING("Error reading the simulation result."),st);
-        //        resI = ValuesUtil.sendPtolemyplotDataset(value, vars_2, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, ExpressionDump.printExpStr(xRange), ExpressionDump.printExpStr(yRange));
-        
-        //      then
-        //       (cache,Values.BOOL(true),st);
+    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "plot2")),st,msg)
+      then (cache,Values.BOOL(false),st);
         
         //plotAll(model)
     case (cache,env,
         DAE.CALL(
           path = Absyn.IDENT(name = "plotAll"),
           expLst = {
-            DAE.CODE(Absyn.C_TYPENAME(className),_),
+            DAE.SCONST(string = filename),
             DAE.SCONST(string = interpolation), DAE.SCONST(string = title), DAE.BCONST(bool = legend), DAE.BCONST(bool = grid), DAE.BCONST(bool = logX), DAE.BCONST(bool = logY), DAE.SCONST(string = xLabel), DAE.SCONST(string = yLabel), DAE.BCONST(bool = points), xRange, yRange
             }),
-            (st as Interactive.SYMBOLTABLE(
-              ast = p,explodedAst = sp,instClsLst = ic,
-              lstVarVal = iv,compiledFunctions = cf,
-              loadedFiles = lf)),msg)
+            st,msg)
       equation        
-        //        vars = Util.listMap(vars,Expression.CodeVarToCref);
-        //        vars_1 = Util.listMap(vars, ExpressionDump.printExpStr) "plotAll" ;
-        //        vars_2 = Util.listUnionElt("time", vars_1);
+        (cache,filename) = cevalCurrentSimulationResultExp(cache,env,filename,st,msg);
         
-        filename = Absyn.pathString(className);
-        filename2 = stringAppendList({filename, "_res.plt"});
-        
-        str = System.getVariableNames(filename2);
-        vars_2 = Util.stringSplitAtChar(str, " ");
-        //        vars_2 =
-        
-        
-        value = ValuesUtil.readDataset(filename2, vars_2, 0);
-        
-        resI = ValuesUtil.sendPtolemyplotDataset(value, vars_2, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, ExpressionDump.printExpStr(xRange), ExpressionDump.printExpStr(yRange));
-      then
-        (cache,Values.BOOL(true),st);
-        
-    //plotAll() - missing file
-    case (cache,env,
-        DAE.CALL(
-          path = Absyn.IDENT(name = "plotAll"),
-          expLst = {
-            //        DAE.CODE(Absyn.C_TYPENAME(className),_),
-            DAE.SCONST(string = interpolation), DAE.SCONST(string = title), DAE.BCONST(bool = legend), DAE.BCONST(bool = grid), DAE.BCONST(bool = logX), DAE.BCONST(bool = logY), DAE.SCONST(string = xLabel), DAE.SCONST(string = yLabel), DAE.BCONST(bool = points), xRange, yRange
-            }),
-            (st as Interactive.SYMBOLTABLE(
-              ast = p,explodedAst = sp,instClsLst = ic,
-              lstVarVal = iv,compiledFunctions = cf,
-              loadedFiles = lf)),msg)
-      equation
-        (cache,Values.STRING(filename),_) = Ceval.ceval(cache,env,buildCurrentSimulationResultExp(), true, SOME(st),NONE(), msg);
-        failure(_ = System.getVariableNames(filename));
-        //      vars_2 = Util.stringSplitAtChar(str, " ");
-        //      failure(_ = ValuesUtil.readDataset(filename, vars_2, 0));
-      then
-        (cache,Values.STRING("Error reading the simulation result."),st);
-        
-    //plotAll()
-    case (cache,env,
-        DAE.CALL(
-          path = Absyn.IDENT(name = "plotAll"),
-          expLst = {
-            //        DAE.CODE(Absyn.C_TYPENAME(className),_),
-            DAE.SCONST(string = interpolation), DAE.SCONST(string = title), DAE.BCONST(bool = legend), DAE.BCONST(bool = grid), DAE.BCONST(bool = logX), DAE.BCONST(bool = logY), DAE.SCONST(string = xLabel), DAE.SCONST(string = yLabel), DAE.BCONST(bool = points), xRange, yRange
-            }),
-            (st as Interactive.SYMBOLTABLE(
-              ast = p,explodedAst = sp,instClsLst = ic,
-              lstVarVal = iv,compiledFunctions = cf,
-              loadedFiles = lf)),msg)
-      equation
-        (cache,Values.STRING(filename),_) = Ceval.ceval(cache,env,buildCurrentSimulationResultExp(), true, SOME(st),NONE(), msg);
-        str = System.getVariableNames(filename);
-        vars_2 = Util.stringSplitAtChar(str, " ");
+        vars_2 = Util.listSetDifference(SimulationResults.readVariables(filename),{"time"});
+        vars_2 = "time" :: vars_2;        
         value = ValuesUtil.readDataset(filename, vars_2, 0);
         
         resI = ValuesUtil.sendPtolemyplotDataset(value, vars_2, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, ExpressionDump.printExpStr(xRange), ExpressionDump.printExpStr(yRange));
       then
         (cache,Values.BOOL(true),st);
-     
+        
+    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "plotAll")),st,msg)
+      then (cache,Values.BOOL(false),st);
+
       // plot without sendData support is plot2()
     case (cache,env,DAE.CALL(path=Absyn.IDENT("plot")),st,msg)
       equation
         false = System.getHasSendDataSupport();
       then (cache,Values.STRING("OpenModelica is compiled without Qt. Configure it with-sendData-Qt and recompile. Or use a command like plot2() that does not require Qt."),st);
 
-    // plot(model, x)
+    // plot(x, model)
     case (cache,env,
         DAE.CALL(
           path = Absyn.IDENT(name = "plot"),
           expLst = {
-            DAE.CODE(Absyn.C_TYPENAME(className),_),
             DAE.ARRAY(array = expVars),
+            DAE.SCONST(string = filename),
             DAE.SCONST(string = interpolation), DAE.SCONST(string = title), DAE.BCONST(bool = legend), DAE.BCONST(bool = grid), DAE.BCONST(bool = logX), DAE.BCONST(bool = logY), DAE.SCONST(string = xLabel), DAE.SCONST(string = yLabel), DAE.BCONST(bool = points), xRange, yRange
             }),
-            (st as Interactive.SYMBOLTABLE(
-              ast = p,explodedAst = sp,instClsLst = ic,
-              lstVarVal = iv,compiledFunctions = cf,
-              loadedFiles = lf)),msg)
+            st,msg)
       equation
         expVars = Util.listMap(expVars,Expression.CodeVarToCref);
-        vars_1 = Util.listMap(expVars, ExpressionDump.printExpStr) "plot" ;
+        vars_1 = Util.listMap(expVars, ExpressionDump.printExpStr);
         vars_2 = Util.listUnionElt("time", vars_1);
-        filename = Absyn.pathString(className);
-        filename = stringAppendList({filename, "_res.plt"});
+        (cache,filename) = cevalCurrentSimulationResultExp(cache,env,filename,st,msg);
         
         value = ValuesUtil.readDataset(filename, vars_2, 0);
         
@@ -1734,99 +1612,9 @@ algorithm
       then
         (cache,Values.BOOL(true),st);
         
-    case (cache,env,
-        DAE.CALL(
-          path = Absyn.IDENT(name = "plot"),
-          expLst = {
-            DAE.CODE(Absyn.C_TYPENAME(className),_),
-            DAE.ARRAY(array = expVars),
-            DAE.SCONST(string = interpolation), DAE.SCONST(string = title), DAE.BCONST(bool = legend), DAE.BCONST(bool = grid), DAE.BCONST(bool = logX), DAE.BCONST(bool = logY), DAE.SCONST(string = xLabel), DAE.SCONST(string = yLabel), DAE.BCONST(bool = points), xRange, yRange
-            }),
-            (st as Interactive.SYMBOLTABLE(
-              ast = p,explodedAst = sp,instClsLst = ic,
-              lstVarVal = iv,compiledFunctions = cf,
-              loadedFiles = lf)),msg)
-      equation
-        expVars = Util.listMap(expVars,Expression.CodeVarToCref);
-        vars_1 = Util.listMap(expVars, ExpressionDump.printExpStr) "plot" ;
-        vars_2 = Util.listUnionElt("time", vars_1);
-        filename = Absyn.pathString(className);
-        filename = stringAppendList({filename, "_res.plt"});
-        
-        failure(_ = ValuesUtil.readDataset(filename, vars_2, 0));
+    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "plot")),st,msg)
       then
-        (cache,Values.STRING("Error reading the simulation result."),st);
-        
-    case (cache,env, //plot2({x,y})
-        DAE.CALL(
-          path = Absyn.IDENT(name = "plot"),
-          expLst = {DAE.ARRAY(array = expVars),
-            DAE.SCONST(string = interpolation), DAE.SCONST(string = title), DAE.BCONST(bool = legend), DAE.BCONST(bool = grid), DAE.BCONST(bool = logX), DAE.BCONST(bool = logY), DAE.SCONST(string = xLabel), DAE.SCONST(string = yLabel), DAE.BCONST(bool = points), xRange, yRange
-            }),
-            (st as Interactive.SYMBOLTABLE(
-              ast = p,explodedAst = sp,instClsLst = ic,
-              lstVarVal = iv,compiledFunctions = cf,
-              loadedFiles = lf)),msg)
-      equation
-        expVars = Util.listMap(expVars,Expression.CodeVarToCref);
-        vars_1 = Util.listMap(expVars, ExpressionDump.printExpStr) "plot" ;
-        vars_2 = Util.listUnionElt("time", vars_1);
-        (cache,Values.STRING(filename),_) = Ceval.ceval(cache, env, buildCurrentSimulationResultExp(), true, SOME(st),NONE(), msg);
-        value = ValuesUtil.readDataset(filename, vars_2, 0);
-        resI = ValuesUtil.sendPtolemyplotDataset(value, vars_2, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, ExpressionDump.printExpStr(xRange), ExpressionDump.printExpStr(yRange));
-      then
-        (cache,Values.BOOL(true),st);
-        
-    case (cache,env,
-        DAE.CALL(
-          path = Absyn.IDENT(name = "plot"),
-          expLst = {DAE.ARRAY(array = expVars),
-            DAE.SCONST(string = interpolation), DAE.SCONST(string = title), DAE.BCONST(bool = legend), DAE.BCONST(bool = grid), DAE.BCONST(bool = logX), DAE.BCONST(bool = logY), DAE.SCONST(string = xLabel), DAE.SCONST(string = yLabel), DAE.BCONST(bool = points), xRange, yRange
-            }),
-            (st as Interactive.SYMBOLTABLE(
-              ast = p,explodedAst = sp,instClsLst = ic,
-              lstVarVal = iv,compiledFunctions = cf,
-              loadedFiles = lf)),msg)
-      equation
-        expVars = Util.listMap(expVars,Expression.CodeVarToCref);
-        vars_1 = Util.listMap(expVars, ExpressionDump.printExpStr) "Catch error reading simulation file." ;
-        vars_2 = Util.listUnionElt("time", vars_1);
-        (cache,Values.STRING(filename),_) = Ceval.ceval(cache, env, buildCurrentSimulationResultExp(), true, SOME(st),NONE(), msg);
-        failure(_ = ValuesUtil.readDataset(filename, vars_2, 0));
-      then
-        (cache,Values.STRING("Error reading the simulation result."),st);
-        
-    case (cache,env,
-        DAE.CALL(
-          path = Absyn.IDENT(name = "plot"),
-          expLst = {DAE.ARRAY(array = expVars),
-            DAE.SCONST(string = interpolation), DAE.SCONST(string = title), DAE.BCONST(bool = legend), DAE.BCONST(bool = grid), DAE.BCONST(bool = logX), DAE.BCONST(bool = logY), DAE.SCONST(string = xLabel), DAE.SCONST(string = yLabel), DAE.BCONST(bool = points), xRange, yRange
-            }),
-            (st as Interactive.SYMBOLTABLE(
-              ast = p,explodedAst = sp,instClsLst = ic,
-              lstVarVal = iv,compiledFunctions = cf,
-              loadedFiles = lf)),msg)
-      equation
-        expVars = Util.listMap(expVars,Expression.CodeVarToCref);
-        vars_1 = Util.listMap(expVars, ExpressionDump.printExpStr) "Catch error reading simulation file." ;
-        vars_2 = Util.listUnionElt("time", vars_1);
-        failure((_,_,_) = Ceval.ceval(cache,env,
-          buildCurrentSimulationResultExp(), true, SOME(st),NONE(), Ceval.NO_MSG()));
-      then
-        (cache,Values.STRING("No simulation result to plot."),st);
-        
-    case (cache,env,
-        DAE.CALL(
-          path = Absyn.IDENT(name = "plot"),
-          expLst = {DAE.ARRAY(array = expVars),
-            DAE.SCONST(string = interpolation), DAE.SCONST(string = title), DAE.BCONST(bool = legend), DAE.BCONST(bool = grid), DAE.BCONST(bool = logX), DAE.BCONST(bool = logY), DAE.SCONST(string = xLabel), DAE.SCONST(string = yLabel), DAE.BCONST(bool = points), xRange, yRange
-            }),
-            (st as Interactive.SYMBOLTABLE(
-              ast = p,explodedAst = sp,instClsLst = ic,
-              lstVarVal = iv,compiledFunctions = cf,
-              loadedFiles = lf)),msg)
-      then
-        (cache,Values.STRING("Unknown error while plotting"),st);
+        (cache,Values.BOOL(false),st);
         
         // he-mag, visualize
         // visualize(model, x)
@@ -1855,75 +1643,9 @@ algorithm
       then
         (cache,Values.BOOL(true),st);
         
-    case (cache,env,
-        DAE.CALL(
-          path = Absyn.IDENT(name = "visualize"),
-          expLst = {DAE.ARRAY(array = expVars),
-            DAE.SCONST(string = interpolation), DAE.SCONST(string = title), DAE.BCONST(bool = legend), DAE.BCONST(bool = grid), DAE.BCONST(bool = logX), DAE.BCONST(bool = logY), DAE.SCONST(string = xLabel), DAE.SCONST(string = yLabel), DAE.BCONST(bool = points)
-            }),
-            (st as Interactive.SYMBOLTABLE(
-              ast = p,explodedAst = sp,instClsLst = ic,
-              lstVarVal = iv,compiledFunctions = cf,
-              loadedFiles = lf)),msg)
-      equation
-        expVars = Util.listMap(expVars,Expression.CodeVarToCref);
-        vars_1 = Util.listMap(expVars, ExpressionDump.printExpStr);
-        vars_2 = Util.listUnionElt("time", vars_1);
-        (cache,Values.STRING(filename),_) = Ceval.ceval(cache,env, buildCurrentSimulationResultExp(), true, SOME(st),NONE(), msg);
-        value = ValuesUtil.readDataset(filename, vars_2, 0);
-        resI = ValuesUtil.sendPtolemyplotDataset(value, vars_2, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, title, title);
+    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "visualize")),st,msg)
       then
-        (cache,Values.BOOL(true),st);
-        
-    case (cache,env,
-        DAE.CALL(
-          path = Absyn.IDENT(name = "visualize"),
-          expLst = {DAE.ARRAY(array = expVars),
-            DAE.SCONST(string = interpolation), DAE.SCONST(string = title), DAE.BCONST(bool = legend), DAE.BCONST(bool = grid), DAE.BCONST(bool = logX), DAE.BCONST(bool = logY), DAE.SCONST(string = xLabel), DAE.SCONST(string = yLabel), DAE.BCONST(bool = points)
-            }),
-            (st as Interactive.SYMBOLTABLE(
-              ast = p,explodedAst = sp,instClsLst = ic,
-              lstVarVal = iv,compiledFunctions = cf,
-              loadedFiles = lf)),msg)
-      equation
-        expVars = Util.listMap(expVars,Expression.CodeVarToCref);
-        vars_1 = Util.listMap(expVars, ExpressionDump.printExpStr) "Catch error reading simulation file." ;
-        vars_2 = Util.listUnionElt("time", vars_1);
-        (cache,Values.STRING(filename),_) = Ceval.ceval(cache, env, buildCurrentSimulationResultExp(), true, SOME(st), NONE(), msg);
-        failure(_ = ValuesUtil.readDataset(filename, vars_2, 0));
-      then
-        (cache,Values.STRING("Error reading the simulation result."),st);
-        
-    case (cache,env,
-        DAE.CALL(
-          path = Absyn.IDENT(name = "visualize"),
-          expLst = {DAE.ARRAY(array = expVars),
-            DAE.SCONST(string = interpolation), DAE.SCONST(string = title), DAE.BCONST(bool = legend), DAE.BCONST(bool = grid), DAE.BCONST(bool = logX), DAE.BCONST(bool = logY), DAE.SCONST(string = xLabel), DAE.SCONST(string = yLabel), DAE.BCONST(bool = points)
-            }),
-            (st as Interactive.SYMBOLTABLE(
-              ast = p,explodedAst = sp,instClsLst = ic,
-              lstVarVal = iv,compiledFunctions = cf,
-              loadedFiles = lf)),msg)
-      equation
-        expVars = Util.listMap(expVars,Expression.CodeVarToCref);
-        vars_1 = Util.listMap(expVars, ExpressionDump.printExpStr) "Catch error reading simulation file." ;
-        vars_2 = Util.listUnionElt("time", vars_1);
-        failure((_,_,_) = Ceval.ceval(cache, env, buildCurrentSimulationResultExp(), true, SOME(st), NONE(), Ceval.NO_MSG()));
-      then
-        (cache,Values.STRING("No simulation result to plot."),st);
-        
-    case (cache,env,
-        DAE.CALL(
-          path = Absyn.IDENT(name = "visualize"),
-          expLst = {DAE.ARRAY(array = expVars),
-            DAE.SCONST(string = interpolation), DAE.SCONST(string = title), DAE.BCONST(bool = legend), DAE.BCONST(bool = grid), DAE.BCONST(bool = logX), DAE.BCONST(bool = logY), DAE.SCONST(string = xLabel), DAE.SCONST(string = yLabel), DAE.BCONST(bool = points)
-            }),
-            (st as Interactive.SYMBOLTABLE(
-              ast = p,explodedAst = sp,instClsLst = ic,
-              lstVarVal = iv,compiledFunctions = cf,
-              loadedFiles = lf)),msg)
-      then
-        (cache,Values.STRING("Unknown error while plotting"),st);
+        (cache,Values.BOOL(false),st);
         
     case (cache,env,
         DAE.CALL(

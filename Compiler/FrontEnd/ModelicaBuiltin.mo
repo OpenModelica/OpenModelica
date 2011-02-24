@@ -418,7 +418,7 @@ Besides, it has special semantics."
 
 type TypeName "A path, for example the name of a class, e.g. A.B.C or .A.B" end TypeName;
 type VariableName "A variable name, e.g. a.b or a[1].b[3].c" end VariableName;
-type VariableNames "An array of variable names, e.g. {a.b,a[1].b[3].c}" end VariableNames;
+type VariableNames "An array of variable names, e.g. {a.b,a[1].b[3].c}, or a single VariableName" end VariableNames;
 
 end Code;
 
@@ -1023,6 +1023,70 @@ function list "Lists the contents of the given class, or all loaded classes"
   output String contents;
 external "builtin";
 end list;
+
+partial function basePlotFunction "extending this does not seem to work at the moment :("
+  input VariableNames vars;
+  input String fileName := "<default>";
+  input String interpolation := "linear";
+  input String title := "Plot by OpenModelica";
+  input Boolean legend := true;
+  input Boolean grid := true;
+  input Boolean logX := false;
+  input Boolean logY := false;
+  input String xLabel := "time";
+  input String yLabel := "";
+  input Boolean points := false;
+  input Real xRange[2] := {0.0,0.0};
+  input Real yRange[2] := {0.0,0.0};
+  output Boolean success;
+end basePlotFunction;
+
+function plot
+  input VariableNames vars;
+  input String fileName := "<default>";
+  input String interpolation := "linear";
+  input String title := "Plot by OpenModelica";
+  input Boolean legend := true;
+  input Boolean grid := true;
+  input Boolean logX := false;
+  input Boolean logY := false;
+  input String xLabel := "time";
+  input String yLabel := "";
+  input Boolean points := false;
+  input Real xRange[2] := {0.0,0.0};
+  input Real yRange[2] := {0.0,0.0};
+  output Boolean success;
+external "builtin";
+end plot;
+
+function plotAll
+  input String fileName := "<default>";
+  input String interpolation := "linear";
+  input String title := "Plot by OpenModelica";
+  input Boolean legend := true;
+  input Boolean grid := true;
+  input Boolean logX := false;
+  input Boolean logY := false;
+  input String xLabel := "time";
+  input String yLabel := "";
+  input Boolean points := false;
+  input Real xRange[2] := {0.0,0.0};
+  input Real yRange[2] := {0.0,0.0};
+  output Boolean success;
+external "builtin";
+end plotAll;
+
+function plot2
+  input VariableNames vars;
+  input String fileName := "<default>";
+  output Boolean success;
+external "builtin";
+end plot2;
+
+function visualize
+  input TypeName classToVisualize;
+  output Boolean success;
+end visualize;
 
 end Scripting;
 end OpenModelica;
