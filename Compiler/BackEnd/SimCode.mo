@@ -8272,14 +8272,14 @@ Note: Normally only outputs a single string, but Lapack on MinGW is special."
 algorithm
   strs := matchcontinue exp
     local
-      String str;
+      String str,str2;
       
       // Lapack on MinGW/Windows is linked against f2c
     case Absyn.STRING("Lapack")
       equation
         true = "Windows_NT" ==& System.os();
       then {"-llapack-mingw", "-ltmglib-mingw", "-lblas-mingw", "-lf2c"};
-        
+      
         // omcruntime on windows needs linking with mico2313 and wsock!
     case Absyn.STRING(str as "omcruntime")
       equation
@@ -8298,6 +8298,14 @@ algorithm
       equation
         str = System.getCorbaLibs();
       then {str};
+        
+        // If omcruntime is linked statically against omniORB, we need to include those here as well
+    case Absyn.STRING(str as "omcruntime")
+      equation
+        false = "Windows_NT" ==& System.os();
+        str = "-l" +& str;
+        str2 = System.getCorbaLibs();
+      then {str, str2};
         
         // If the string contains a dot, it's a good path that should not be prefix -l
     case Absyn.STRING(str)
