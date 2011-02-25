@@ -7,7 +7,7 @@ QMAKE=@QMAKE@
 EXE=@EXE@
 NAME=OMShell
 
-.PHONY: always $(NAME)$(EXE)
+.PHONY: always $(NAME)
 
 all: build
 
@@ -20,16 +20,12 @@ clean: Makefile
 omc_communication.cc omc_communication.h: $(runtimedir)/omc_communication.idl
 	@IDLCMD@ $<
 
-$(NAME)$(EXE): Makefile OMShell.config omc_communication.cc
+$(NAME): Makefile OMShell.config omc_communication.cc
 	make -f Makefile
-ifeq ($(EXE),.app)
-$(NAME): $(NAME)$(EXE) always
-	cp -p $</Contents/MacOS/$(NAME) $@
-endif
 
 build: $(NAME)
 	mkdir -p $(builddir_share)/omshell/
-	cp -p $(NAME) $(builddir_bin)
+	if [ "$(EXE)" = ".app" ]; then cp -rp $(NAME)$(EXE) ../build/Applications/ ; else cp -p $(NAME) $(builddir_bin); fi
 	cp -p ../OMNotebook/OMNotebookQT4/commands.xml $(builddir_share)/omshell/
 
 Makefile.unix: Makefile.unix.in
