@@ -627,10 +627,6 @@ algorithm
         (cache,value,st) = cevalInteractiveFunctions2(cache,env,name,valLst,st,msg);
       then (cache,value,st);
 
-    case (cache,env,exp,st,msg)
-      equation
-        (cache,value,st) = cevalInteractiveFunctionsOld(cache,env,exp,st,msg);
-      then (cache,value,st);
   end matchcontinue;
 end cevalInteractiveFunctions;
 
@@ -672,11 +668,11 @@ algorithm
       list<DAE.Exp> expVars,options;
       array<list<Integer>> m,mt;
       Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac;
-      Values.Value ret_val,simValue,size_value,value,v;
-      DAE.Exp exp,size_expression,bool_exp,storeInTemp,translationLevel,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,xRange,yRange,varName,varTimeStamp;
+      Values.Value ret_val,simValue,size_value,value,v,cvar,xRange,yRange;
+      DAE.Exp exp,size_expression,bool_exp,storeInTemp,translationLevel,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,varName,varTimeStamp;
       Absyn.ComponentRef cr_1;
       Integer size,length,resI,timeStampI,i,n;
-      list<String> vars_1,vars_2,args,strings,strVars,strs;
+      list<String> vars_1,vars_2,args,strings,strVars,strs,visvars;
       Real t1,t2,time,timeTotal,timeSimulation,timeStamp,val;
       Interactive.InteractiveStmts istmts;
       Boolean bval, b, legend, grid, logX, logY, points, gcc_res, omcfound, rm_res, touch_res, uname_res, extended, insensitive;
@@ -689,6 +685,7 @@ algorithm
       list<DAE.Exp> expLst;
       list<tuple<String,list<String>>> deps;
       Absyn.CodeNode codeNode;
+      list<Values.Value> cvars;
     
     /* Does not exist in the env...
     case (cache,env,"lookupClass",{Values.CODE(Absyn.C_TYPENAME(path))},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
@@ -1341,6 +1338,15 @@ algorithm
       then
         (cache,Values.BOOL(true),st);
         
+    case (cache,env,"saveModel",{Values.STRING(name),Values.CODE(Absyn.C_TYPENAME(classpath))},
+        (st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+      equation
+        absynClass = Interactive.getPathedClassInProgram(classpath, p);
+        str = Dump.unparseStr(Absyn.PROGRAM({absynClass},Absyn.TOP(),Absyn.TIMESTAMP(0.0,0.0)),true);
+        Error.addMessage(Error.WRITING_FILE_ERROR, {name});
+      then
+        (cache,Values.BOOL(false),st);
+    
     case (cache,env,"saveModel",{Values.STRING(name),Values.CODE(Absyn.C_TYPENAME(classpath))},st,msg)
       equation
         cname = Absyn.pathString(classpath);
@@ -1417,79 +1423,11 @@ algorithm
         (cache,v,st_1) = getBuiltinAttribute(cache,path,ComponentReference.toExpCref(cr_1),str,st);
       then
         (cache,v,st_1);
-    case (cache,env,_,_,st,msg)
-      then
-        (cache,Values.META_FAIL(),st);
- end matchcontinue;
-end cevalInteractiveFunctions2;
-        
-protected function cevalInteractiveFunctionsOld
-"function cevalInteractiveFunctions
-  This function evaluates the functions
-  defined in the interactive environment."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input DAE.Exp inExp "expression to evaluate";
-  input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
-  input Ceval.Msg inMsg;
-  output Env.Cache outCache;
-  output Values.Value outValue;
-  output Interactive.InteractiveSymbolTable outInteractiveSymbolTable;
-algorithm
-  (outCache,outValue,outInteractiveSymbolTable):=
-  matchcontinue (inCache,inEnv,inExp,inInteractiveSymbolTable,inMsg)
-    local
-      Absyn.Path path,p1,classpath,className;
-      list<Values.Value> vals;
-      list<SCode.Class> scodeP,sp,fp;
-      list<Env.Frame> env;
-      SCode.Class c;
-      String s1,str,varid,cmd,executable,method_str,outputFormat_str,initfilename,cit,pd,executableSuffixedExe,sim_call,result_file,filename_1,filename,omhome_1,plotCmd,tmpPlotFile,call,str_1,mp,pathstr,name,cname,fileNamePrefix_s,str1,errMsg,errorStr,uniqueStr,interpolation, title,xLabel,yLabel,filename2,varNameStr,xml_filename,xml_contents,visvar_str,pwd,omhome,omlib,omcpath,os,platform,usercflags,senddata,res,workdir,gcc,confcmd,touch_file,uname;
-      DAE.ComponentRef cr,cref,classname;
-      Interactive.InteractiveSymbolTable st,newst,st_1;
-      Absyn.Program p,pnew,newp,ptot;
-      list<Interactive.InstantiatedClass> ic,ic_1;
-      list<Interactive.InteractiveVariable> iv;
-      list<Interactive.CompiledCFunction> cf;
-      Ceval.Msg msg;
-      DAE.Type tp;
-      Absyn.Class absynClass;
-      DAE.DAElist dae;
-      BackendDAE.BackendDAE daelow;
-      BackendDAE.Variables vars;
-      BackendDAE.EquationArray eqnarr;
-      array<BackendDAE.MultiDimEquation> ae;
-      list<DAE.Exp> expVars,options;
-      array<list<Integer>> m,mt;
-      Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac;
-      Values.Value ret_val,simValue,size_value,value,v;
-      DAE.Exp filenameprefix,exp,size_expression,bool_exp,storeInTemp,translationLevel,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,xRange,yRange,varName,varTimeStamp;
-      Absyn.ComponentRef cr_1;
-      Integer size,length,resI,timeStampI,i;
-      list<String> vars_1,vars_2,args,strings,strVars,visvars;
-      Real t1,t2,time,timeTotal,timeSimulation,timeStamp,val;
-      Interactive.InteractiveStmts istmts;
-      Boolean bval, b, legend, grid, logX, logY, points, gcc_res, omcfound, rm_res, touch_res, uname_res;
-      Env.Cache cache;
-      list<Interactive.LoadedFile> lf;
-      AbsynDep.Depends aDep;
-      Absyn.ComponentRef crefCName;
-      list<tuple<String,Values.Value>> resultValues;
-      list<Real> timeStamps;
-      list<DAE.Exp> expLst;
-      list<tuple<String,list<String>>> deps;
-    
-    case (cache,env,
-        DAE.CALL(path = Absyn.IDENT(name = "readSimulationResult"),
-          expLst = {DAE.SCONST(string = filename),DAE.ARRAY(array = expVars),size_expression}),
-          (st as Interactive.SYMBOLTABLE(
-            ast = p,explodedAst = sp,instClsLst = ic,
-            lstVarVal = iv,compiledFunctions = cf,
-            loadedFiles = lf)),msg)
+
+
+    case (cache,env,"readSimulationResult",{Values.STRING(filename),Values.ARRAY(valueLst=cvars),Values.INTEGER(size)},st,msg)
       equation
-        (cache,(size_value as Values.INTEGER(size)),SOME(st)) = Ceval.ceval(cache, env, size_expression, true, SOME(st), NONE(), msg);
-        expVars = Util.listMap(expVars,Expression.CodeVarToCref);
-        vars_1 = Util.listMap(expVars, ExpressionDump.printExpStr);
+        vars_1 = Util.listMap(cvars, ValuesUtil.printCodeVariableName);
         pwd = System.pwd();
         pd = System.pathDelimiter();
         filename_1 = stringAppendList({pwd,pd,filename});
@@ -1497,27 +1435,12 @@ algorithm
       then
         (cache,value,st);
         
-    case (cache,env,
-        DAE.CALL(
-          path = Absyn.IDENT(name = "readSimulationResult"),
-          expLst = {DAE.SCONST(string = filename),DAE.ARRAY(ty = _),_}),
-          (st as Interactive.SYMBOLTABLE(
-            ast = p,explodedAst = sp,instClsLst = ic,
-            lstVarVal = iv,compiledFunctions = cf,
-            loadedFiles = lf)),msg)
+    case (cache,env,"readSimulationResult",_,_,_)
       equation
         Error.addMessage(Error.SCRIPT_READ_SIM_RES_ERROR, {});
-      then
-        fail();
+      then (cache,Values.META_FAIL(),st);
         
-    case (cache,env,
-        DAE.CALL(
-          path = Absyn.IDENT(name = "readSimulationResultSize"),
-          expLst = {DAE.SCONST(string = filename)}),
-          (st as Interactive.SYMBOLTABLE(
-            ast = p,explodedAst = sp,instClsLst = ic,
-            lstVarVal = iv,compiledFunctions = cf,
-            loadedFiles = lf)),msg)
+    case (cache,env,"readSimulationResultSize",{Values.STRING(filename)},st,msg)
       equation
         pwd = System.pwd();
         pd = System.pathDelimiter();
@@ -1526,14 +1449,7 @@ algorithm
       then
         (cache,Values.INTEGER(i),st);
         
-    case (cache,env,
-        DAE.CALL(
-          path = Absyn.IDENT(name = "readSimulationResultVars"),
-          expLst = {DAE.SCONST(string = filename)}),
-          (st as Interactive.SYMBOLTABLE(
-            ast = p,explodedAst = sp,instClsLst = ic,
-            lstVarVal = iv,compiledFunctions = cf,
-            loadedFiles = lf)),msg)
+    case (cache,env,"readSimulationResultVars",{Values.STRING(filename)},st,msg)
       equation
         pwd = System.pwd();
         pd = System.pathDelimiter();
@@ -1544,10 +1460,9 @@ algorithm
       then
         (cache,v,st);
         
-    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "plot2"),expLst = {DAE.ARRAY(array = expVars),DAE.SCONST(filename)}),st,msg)
+    case (cache,env,"plot2",{Values.ARRAY(valueLst = cvars),Values.STRING(filename)},st,msg)
       equation
-        expVars = Util.listMap(expVars,Expression.CodeVarToCref);
-        vars_1 = Util.listMap(expVars, ExpressionDump.printExpStr);
+        vars_1 = Util.listMap(cvars, ValuesUtil.printCodeVariableName);
         vars_2 = Util.listUnionElt("time", vars_1);
         (cache,filename) = cevalCurrentSimulationResultExp(cache,env,filename,st,msg);
         value = ValuesUtil.readDataset(filename, vars_2, 0);
@@ -1566,18 +1481,26 @@ algorithm
       then (cache,Values.BOOL(true),st);
         
         // plot error
-    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "plot2")),st,msg)
-      then (cache,Values.BOOL(false),st);
+    case (cache,env,"plot",_,st,msg) then (cache,Values.BOOL(false),st);
         
         //plotAll(model)
-    case (cache,env,
-        DAE.CALL(
-          path = Absyn.IDENT(name = "plotAll"),
-          expLst = {
-            DAE.SCONST(string = filename),
-            DAE.SCONST(string = interpolation), DAE.SCONST(string = title), DAE.BCONST(bool = legend), DAE.BCONST(bool = grid), DAE.BCONST(bool = logX), DAE.BCONST(bool = logY), DAE.SCONST(string = xLabel), DAE.SCONST(string = yLabel), DAE.BCONST(bool = points), xRange, yRange
-            }),
-            st,msg)
+    case (cache,env,"plotAll",
+        {
+          Values.STRING(filename),
+          Values.STRING(interpolation),
+          Values.STRING(title),
+          Values.BOOL(legend),
+          Values.BOOL(grid),
+          Values.BOOL(logX),
+          Values.BOOL(logY),
+          Values.STRING(xLabel),
+          Values.STRING(yLabel),
+          Values.BOOL(points),
+          xRange,
+          yRange
+        },
+        st,
+        msg)
       equation        
         (cache,filename) = cevalCurrentSimulationResultExp(cache,env,filename,st,msg);
         
@@ -1585,57 +1508,59 @@ algorithm
         vars_2 = "time" :: vars_2;        
         value = ValuesUtil.readDataset(filename, vars_2, 0);
         
-        resI = ValuesUtil.sendPtolemyplotDataset(value, vars_2, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, ExpressionDump.printExpStr(xRange), ExpressionDump.printExpStr(yRange));
+        resI = ValuesUtil.sendPtolemyplotDataset(value, vars_2, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, ValuesUtil.valString(xRange), ValuesUtil.valString(yRange));
       then
         (cache,Values.BOOL(true),st);
         
-    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "plotAll")),st,msg)
+    case (cache,env,"plotAll",_,st,msg)
       then (cache,Values.BOOL(false),st);
 
       // plot without sendData support is plot2()
-    case (cache,env,DAE.CALL(path=Absyn.IDENT("plot")),st,msg)
+    case (cache,env,"plot",_,st,msg)
       equation
         false = System.getHasSendDataSupport();
       then (cache,Values.STRING("OpenModelica is compiled without Qt. Configure it with-sendData-Qt and recompile. Or use a command like plot2() that does not require Qt."),st);
 
     // plot(x, model)
-    case (cache,env,
-        DAE.CALL(
-          path = Absyn.IDENT(name = "plot"),
-          expLst = {
-            DAE.ARRAY(array = expVars),
-            DAE.SCONST(string = filename),
-            DAE.SCONST(string = interpolation), DAE.SCONST(string = title), DAE.BCONST(bool = legend), DAE.BCONST(bool = grid), DAE.BCONST(bool = logX), DAE.BCONST(bool = logY), DAE.SCONST(string = xLabel), DAE.SCONST(string = yLabel), DAE.BCONST(bool = points), xRange, yRange
-            }),
-            st,msg)
+    case (cache,env,"plot",
+        {
+          Values.ARRAY(valueLst = cvars),
+          Values.STRING(filename),
+          Values.STRING(interpolation),
+          Values.STRING(title),
+          Values.BOOL(legend),
+          Values.BOOL(grid),
+          Values.BOOL(logX),
+          Values.BOOL(logY),
+          Values.STRING(xLabel),
+          Values.STRING(yLabel),
+          Values.BOOL(points),
+          xRange,
+          yRange
+        },
+        st,msg)
       equation
-        expVars = Util.listMap(expVars,Expression.CodeVarToCref);
-        vars_1 = Util.listMap(expVars, ExpressionDump.printExpStr);
+        vars_1 = Util.listMap(cvars, ValuesUtil.printCodeVariableName);
         vars_2 = Util.listUnionElt("time", vars_1);
         (cache,filename) = cevalCurrentSimulationResultExp(cache,env,filename,st,msg);
         
         value = ValuesUtil.readDataset(filename, vars_2, 0);
         
-        resI = ValuesUtil.sendPtolemyplotDataset(value, vars_2, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, ExpressionDump.printExpStr(xRange), ExpressionDump.printExpStr(yRange));
+        resI = ValuesUtil.sendPtolemyplotDataset(value, vars_2, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, ValuesUtil.valString(xRange), ValuesUtil.valString(yRange));
       then
         (cache,Values.BOOL(true),st);
         
-    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "plot")),st,msg)
+    case (cache,env,"plot",_,st,msg)
       then
         (cache,Values.BOOL(false),st);
         
         // he-mag, visualize
         // visualize(model, x)
-    case (cache,env,
-        DAE.CALL(
-          path = Absyn.IDENT(name = "visualize"),
-          expLst = {
-            DAE.CODE(Absyn.C_TYPENAME(className),_)
-            }),
-            (st as Interactive.SYMBOLTABLE(
-              ast = p,explodedAst = sp,instClsLst = ic,
-              lstVarVal = iv,compiledFunctions = cf,
-              loadedFiles = lf)),msg)
+    case (cache,env,"visualize",{Values.CODE(Absyn.C_TYPENAME(className))},
+        (st as Interactive.SYMBOLTABLE(
+          ast = p,explodedAst = sp,instClsLst = ic,
+          lstVarVal = iv,compiledFunctions = cf,
+          loadedFiles = lf)),msg)
       equation
         //Jag måste få readptol att skicka alla variabler i .plt-filen, och en ide är
         //att göra en egen enkel funktion som i princip är en grep på DataSet: i filen..
@@ -1651,35 +1576,23 @@ algorithm
       then
         (cache,Values.BOOL(true),st);
         
-    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "visualize")),st,msg)
+    case (cache,env,"visualize",_,st,msg)
       then
         (cache,Values.BOOL(false),st);
         
-    case (cache,env,
-        DAE.CALL(
-          path = Absyn.IDENT(name = "val"),
-          expLst = {varName, varTimeStamp}),
-          (st as Interactive.SYMBOLTABLE(
-            ast = p,explodedAst = sp,instClsLst = ic,
-            lstVarVal = iv,compiledFunctions = cf,
-            loadedFiles = lf)),msg)
+    case (cache,env,"val",{cvar,Values.REAL(timeStamp)},st,msg)
       equation
         (cache,Values.STRING(filename),_) = Ceval.ceval(cache,env,buildCurrentSimulationResultExp(), true, SOME(st),NONE(), msg);
-        varName = Expression.CodeVarToCref(varName);
-        varNameStr = ExpressionDump.printExpStr(varName);
-        (cache,v,SOME(st)) = Ceval.ceval(cache,env, varTimeStamp, true, SOME(st),NONE(), msg);
-        timeStamp = ValuesUtil.valueReal(v);
+        varNameStr = ValuesUtil.printCodeVariableName(cvar);
         val = SimulationResults.val(filename,varNameStr,timeStamp);
       then (cache,Values.REAL(val),st);
                 
         /* plotparametric This rule represents the normal case when an array of at least two elements
          *  is given as an argument
          */
-    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "plotParametric2"),expLst = {exp,DAE.ARRAY(array=expVars),DAE.SCONST(filename)}),st,msg)
+    case (cache,env,"plotParametric2",{cvar,Values.ARRAY(valueLst=cvars),Values.STRING(filename)},st,msg)
       equation
-        expVars = exp::expVars;
-        expVars = Util.listMap(expVars,Expression.CodeVarToCref);
-        vars_1 = Util.listMap(expVars, ExpressionDump.printExpStr);
+        vars_1 = Util.listMap(cvar::cvars, ValuesUtil.printCodeVariableName);
         length = listLength(vars_1);
         (length > 1) = true;
         (cache,filename) = cevalCurrentSimulationResultExp(cache,env,filename,st,msg);
@@ -1698,22 +1611,28 @@ algorithm
       then
         (cache,Values.BOOL(true),st);
         
-    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "plotParametric2")),st,msg) then (cache,Values.BOOL(false),st);
+    case (cache,env,"plotParametric2",_,st,msg) then (cache,Values.BOOL(false),st);
         
-    case (cache,env,
-        DAE.CALL(path = Absyn.IDENT(name = "plotParametric"),
-          expLst = {exp,DAE.ARRAY(array = expVars),DAE.SCONST(filename),
-            DAE.SCONST(string = interpolation), DAE.SCONST(string = title), DAE.BCONST(bool = legend), DAE.BCONST(bool = grid), DAE.BCONST(bool = logX), DAE.BCONST(bool = logY), DAE.SCONST(string = xLabel), DAE.SCONST(string = yLabel), DAE.BCONST(bool = points), xRange, yRange
-            }),
-            
-            (st as Interactive.SYMBOLTABLE(
-              ast = p,explodedAst = sp,instClsLst = ic,
-              lstVarVal = iv,compiledFunctions = cf,
-              loadedFiles = lf)),msg)
+    case (cache,env,"plotParametric",
+        {
+          cvar,
+          Values.ARRAY(valueLst = cvars),
+          Values.STRING(filename),
+          Values.STRING(interpolation),
+          Values.STRING(title),
+          Values.BOOL(legend),
+          Values.BOOL(grid),
+          Values.BOOL(logX),
+          Values.BOOL(logY),
+          Values.STRING(xLabel),
+          Values.STRING(yLabel),
+          Values.BOOL(points),
+          xRange,
+          yRange
+        },
+        st,msg)
       equation
-        expVars = exp::expVars;
-        expVars = Util.listMap(expVars,Expression.CodeVarToCref);
-        vars_1 = Util.listMap(expVars, ExpressionDump.printExpStr);
+        vars_1 = Util.listMap(cvar::cvars, ValuesUtil.printCodeVariableName);
         length = listLength(vars_1);
         (length > 1) = true;
         (cache,filename) = cevalCurrentSimulationResultExp(cache,env,filename,st,msg);
@@ -1727,91 +1646,43 @@ algorithm
         plotCmd = stringAppendList({cit,omhome_1,pd,"share",pd,"omc",pd,"scripts",pd,"doPlot",cit});
         uniqueStr = intString(tick());
         tmpPlotFile = stringAppendList({pwd,pd,"tmpPlot_",uniqueStr,".plt"});
-        resI = ValuesUtil.sendPtolemyplotDataset(value, vars_1, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, ExpressionDump.printExpStr(xRange), ExpressionDump.printExpStr(yRange));
+        resI = ValuesUtil.sendPtolemyplotDataset(value, vars_1, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, ValuesUtil.valString(xRange), ValuesUtil.valString(yRange));
       then
         (cache,Values.BOOL(true),st);
         
-    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "plotParametric")),st,msg)
+    case (cache,env,"plotParametric",_,st,msg)
       then (cache,Values.BOOL(false),st);
         
-    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "enableSendData"),expLst = {DAE.BCONST(bool = b)}),
-        (st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+    case (cache,env,"echo",{v as Values.BOOL(bval)},st,msg)
+      equation
+        setEcho(bval);
+      then (cache,v,st);
+
+    case (cache,env,"enableSendData",{Values.BOOL(b)},st,msg)
       equation
         System.enableSendData(b);
       then
         (cache,Values.BOOL(true),st);
         
-    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "echo"),expLst = {bool_exp}),st,msg)
-      equation
-        (cache,(v as Values.BOOL(bval)),SOME(st_1)) = Ceval.ceval(cache,env, bool_exp, true, SOME(st),NONE(), msg);
-        setEcho(bval);
-      then
-        (cache,v,st);
-    case (cache,env,DAE.CALL(path = Absyn.IDENT("strictRMLCheck"),expLst = {}),st as Interactive.SYMBOLTABLE(ast = p),msg)
+    case (cache,env,"strictRMLCheck",_,st as Interactive.SYMBOLTABLE(ast = p),msg)
       equation
         _ = Util.listMap1r(Util.listMap(Interactive.getFunctionsInProgram(p), SCodeUtil.translateClass), MetaUtil.strictRMLCheck, true);
         str = Error.printMessagesStr();
         v = Values.STRING(str);
-      then
-        (cache,v,st);
+      then (cache,v,st);
 
-    case (cache,env,(exp as
-        DAE.CALL(
-          path = Absyn.IDENT(name = "dumpXMLDAE"),
-          expLst =
-          {DAE.CODE(Absyn.C_TYPENAME(className),_),
-            translationLevel,
-            addOriginalIncidenceMatrix,
-            addSolvingInfo,
-            addMathMLCode,
-            dumpResiduals,
-            filenameprefix,
-            storeInTemp})),
-            (st_1 as Interactive.SYMBOLTABLE(
-              ast = p,
-              explodedAst = sp,
-              instClsLst = ic,
-              lstVarVal = iv,
-              compiledFunctions = cf)),msg)
+    case (cache,env,"dumpXMLDAE",vals,st,msg)
       equation
-        (cache,st,xml_filename,xml_contents) = dumpXMLDAE(cache,env, exp, st_1, msg);
+        (cache,st,xml_filename,xml_contents) = dumpXMLDAE(cache,env,vals,st, msg);
       then
         (cache,ValuesUtil.makeArray({Values.STRING(xml_filename),Values.STRING(xml_contents)}),st);
         
-    case (cache,env,(exp as
-        DAE.CALL(
-          path = Absyn.IDENT(name = "dumpXMLDAE"),
-          expLst =
-          {
-            DAE.CODE(Absyn.C_TYPENAME(className),_),
-            translationLevel,
-            addOriginalIncidenceMatrix,
-            addSolvingInfo,
-            addMathMLCode,
-            dumpResiduals,
-            filenameprefix,
-            storeInTemp})),
-            (st_1 as Interactive.SYMBOLTABLE(
-              ast = p,
-              explodedAst = sp,
-              instClsLst = ic,
-              lstVarVal = iv,
-              compiledFunctions = cf)),msg) /* failing build_model */
-    then (cache,ValuesUtil.makeArray({Values.STRING("Xml dump error."),Values.STRING("")}),st_1);
-      
-    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "saveModel"),expLst = {DAE.SCONST(string = name),DAE.CREF(componentRef = cr)}),
-        (st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
-      equation
-        classpath = Static.componentRefToPath(cr) "Error writing to file" ;
-        absynClass = Interactive.getPathedClassInProgram(classpath, p);
-        str = Dump.unparseStr(Absyn.PROGRAM({absynClass},Absyn.TOP(),Absyn.TIMESTAMP(0.0,0.0)),true);
-        Error.addMessage(Error.WRITING_FILE_ERROR, {name});
-      then
-        (cache,Values.BOOL(false),st);
-    
-  end matchcontinue;
-end cevalInteractiveFunctionsOld;
+    case (cache,env,"dumpXMLDAE",_,st,msg)
+      then (cache,ValuesUtil.makeArray({Values.STRING("Xml dump error."),Values.STRING("")}),st);
 
+ end matchcontinue;
+end cevalInteractiveFunctions2;
+        
 protected function visualizationVarShouldBeAdded
   input String var;
   input list<String> ids;
@@ -3320,12 +3191,12 @@ algorithm
   end matchcontinue;
 end subtractDummy;
 
-public function dumpXMLDAE "function dumpXMLDAE
+protected function dumpXMLDAE "function dumpXMLDAE
  author: fildo
  This function outputs the DAE system corresponding to a specific model."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input DAE.Exp inExp;
+  input list<Values.Value> vals;
   input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
   input Ceval.Msg inMsg;
   output Env.Cache outCache;
@@ -3334,7 +3205,7 @@ public function dumpXMLDAE "function dumpXMLDAE
   output String xml_contents;
 algorithm
   (outCache,outInteractiveSymbolTable3,xml_filename,xml_contents) :=
-  matchcontinue (inCache,inEnv,inExp,inInteractiveSymbolTable,inMsg)
+  matchcontinue (inCache,inEnv,vals,inInteractiveSymbolTable,inMsg)
     local
       Boolean cdToTemp;
       String cname_str,filenameprefix,oldDir,translationLevel;
@@ -3346,7 +3217,7 @@ algorithm
       Absyn.Program p;
       BackendDAE.BackendDAE dlow,dlow_1,indexed_dlow,indexed_dlow_1;
       Env.Cache cache;
-      DAE.Exp exp,fileprefix,storeInTemp,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals;
+      Boolean addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals;
       Interactive.InteractiveSymbolTable st,st_1;
       Ceval.Msg msg;
       list<DAE.Function> funcelems;
@@ -3356,23 +3227,17 @@ algorithm
       list<SCode.Class> p_1,sp;
       list<list<Integer>> comps;
     
-    case (cache,env,(exp as DAE.CALL(path = Absyn.IDENT(name = _),
-      expLst = {DAE.CODE(Absyn.C_TYPENAME(classname),_),DAE.SCONST(string=translationLevel),addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,fileprefix,storeInTemp})),
-      (st_1 as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+    case (cache,env,{Values.CODE(Absyn.C_TYPENAME(classname)),Values.STRING(string="flat"),Values.BOOL(addOriginalIncidenceMatrix),Values.BOOL(addSolvingInfo),Values.BOOL(addMathMLCode),Values.BOOL(dumpResiduals),Values.STRING(filenameprefix),Values.BOOL(cdToTemp)},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
       equation
         //translationLevel=DAE.SCONST(string="flat")
-        true=stringEq(translationLevel,"flat");
         _ = Error.getMessagesStr() "Clear messages";
-        (cache,Values.BOOL(cdToTemp),SOME(st)) = Ceval.ceval(cache,env, storeInTemp, true, SOME(st_1),NONE(), msg);
         oldDir = System.pwd();
         changeToTempDirectory(cdToTemp);
-        (cache,filenameprefix) = extractFilePrefix(cache,env, fileprefix, st, msg);
         filenameprefix = Util.if_(filenameprefix ==& "<default>", Absyn.pathString(classname), filenameprefix);
         cname_str = Absyn.pathString(classname);
         p_1 = SCodeUtil.translateAbsyn2SCode(p);
         (cache,env,_,dae_1) = Inst.instantiateClass(cache, InnerOuter.emptyInstHierarchy, p_1, classname);
         dae = DAEUtil.transformationsBeforeBackend(dae_1);
-        ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(classname,dae,env));
         dlow = BackendDAECreate.lower(dae, Env.getFunctionTree(cache), true, true);//Verificare cosa fa
         xml_filename = stringAppendList({filenameprefix,".xml"});
         funcelems = DAEUtil.getFunctionList(Env.getFunctionTree(cache));
@@ -3384,24 +3249,17 @@ algorithm
       then
         (cache,st,xml_contents,stringAppend("The model has been dumped to xml file: ",xml_filename));
       
-    case (cache,env,(exp as DAE.CALL(path = Absyn.IDENT(name = _),
-      expLst = {DAE.CODE(Absyn.C_TYPENAME(classname),_),DAE.SCONST(string=translationLevel),
-                addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,fileprefix,storeInTemp})),
-      (st_1 as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+    case (cache,env,{Values.CODE(Absyn.C_TYPENAME(classname)),Values.STRING(string="optimiser"),Values.BOOL(addOriginalIncidenceMatrix),Values.BOOL(addSolvingInfo),Values.BOOL(addMathMLCode),Values.BOOL(dumpResiduals),Values.STRING(filenameprefix),Values.BOOL(cdToTemp)},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
       equation
         //translationLevel=DAE.SCONST(string="optimiser")
         //asInSimulationCode==false => it's NOT necessary to do all the translation's steps before dumping with xml
-        true=stringEq(translationLevel,"optimiser");
         _ = Error.getMessagesStr() "Clear messages";
-        (cache,Values.BOOL(cdToTemp),SOME(st)) = Ceval.ceval(cache,env, storeInTemp, true, SOME(st_1),NONE(), msg);
         oldDir = System.pwd();
         changeToTempDirectory(cdToTemp);
-        (cache,filenameprefix) = extractFilePrefix(cache,env, fileprefix, st, msg);
         cname_str = Absyn.pathString(classname);
         p_1 = SCodeUtil.translateAbsyn2SCode(p);
         (cache,env,_,dae_1) = Inst.instantiateClass(cache, InnerOuter.emptyInstHierarchy, p_1, classname);
         dae = DAEUtil.transformationsBeforeBackend(dae_1);
-        ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(classname,dae,env));
         dlow = BackendDAECreate.lower(dae, Env.getFunctionTree(cache), true, true);
         m = BackendDAEUtil.incidenceMatrix(dlow, BackendDAE.NORMAL());
         mT = BackendDAEUtil.transposeMatrix(m);
@@ -3417,23 +3275,17 @@ algorithm
       then
         (cache,st,xml_contents,stringAppend("The model has been dumped to xml file: ",xml_filename));
       
-    case (cache,env,(exp as DAE.CALL(path = Absyn.IDENT(name = _),
-      expLst = {DAE.CODE(Absyn.C_TYPENAME(classname),_),DAE.SCONST(string=translationLevel),addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,fileprefix,storeInTemp})),
-      (st_1 as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+    case (cache,env,{Values.CODE(Absyn.C_TYPENAME(classname)),Values.STRING(string="backEnd"),Values.BOOL(addOriginalIncidenceMatrix),Values.BOOL(addSolvingInfo),Values.BOOL(addMathMLCode),Values.BOOL(dumpResiduals),Values.STRING(filenameprefix),Values.BOOL(cdToTemp)},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
       equation
         //translationLevel=DAE.SCONST(string="backEnd")
         //asInSimulationCode==true => it's necessary to do all the translation's steps before dumping with xml
-        true=stringEq(translationLevel,"backEnd");
         _ = Error.getMessagesStr() "Clear messages";
-        (cache,Values.BOOL(cdToTemp),SOME(st)) = Ceval.ceval(cache,env, storeInTemp, true, SOME(st_1),NONE(), msg);
         oldDir = System.pwd();
         changeToTempDirectory(cdToTemp);
-        (cache,filenameprefix) = extractFilePrefix(cache,env, fileprefix, st, msg);
         cname_str = Absyn.pathString(classname);
         p_1 = SCodeUtil.translateAbsyn2SCode(p);
         (cache,env,_,dae_1) = Inst.instantiateClass(cache, InnerOuter.emptyInstHierarchy, p_1, classname);
         dae = DAEUtil.transformationsBeforeBackend(dae_1);
-        ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(classname,dae,env));
         dlow = BackendDAECreate.lower(dae, Env.getFunctionTree(cache), true, true);
         m = BackendDAEUtil.incidenceMatrix(dlow, BackendDAE.NORMAL());
         mT = BackendDAEUtil.transposeMatrix(m);
@@ -3451,9 +3303,6 @@ algorithm
       then
         (cache,st,xml_contents,stringAppend("The model has been dumped to xml file: ",xml_filename));
     
-    case (_,_,_,_,_)
-      then
-        fail();
   end matchcontinue;
 end dumpXMLDAE;
 

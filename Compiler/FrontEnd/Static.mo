@@ -12825,6 +12825,8 @@ algorithm
       Absyn.Path path;
       list<DAE.Exp> es_1;
       list<Absyn.Exp> es;
+      DAE.ExpType et;
+      Integer i;
     case (Absyn.CREF(componentRef=cr),DAE.C_TYPENAME(),_)
       equation
         path = Absyn.crefToPath(cr);
@@ -12832,11 +12834,15 @@ algorithm
     case (Absyn.CREF(componentRef=cr),DAE.C_VARIABLENAME(),_)
       then DAE.CODE(Absyn.C_VARIABLENAME(cr),DAE.ET_OTHER());
     case (Absyn.CREF(componentRef=cr),DAE.C_VARIABLENAMES(),info)
-      then DAE.ARRAY(DAE.ET_OTHER(),false,{DAE.CODE(Absyn.C_VARIABLENAME(cr),DAE.ET_OTHER())});
+      equation
+        et = DAE.ET_ARRAY(DAE.ET_OTHER(),{DAE.DIM_INTEGER(1)});
+      then DAE.ARRAY(et,false,{DAE.CODE(Absyn.C_VARIABLENAME(cr),DAE.ET_OTHER())});
     case (Absyn.ARRAY(es),DAE.C_VARIABLENAMES(),info)
       equation
         es_1 = Util.listMap2(es,elabCodeExp,DAE.C_VARIABLENAME(),info);
-      then DAE.ARRAY(DAE.ET_OTHER(),false,es_1);
+        i = listLength(es);
+        et = DAE.ET_ARRAY(DAE.ET_OTHER(),{DAE.DIM_INTEGER(i)});
+      then DAE.ARRAY(et,false,es_1);
     case (Absyn.CALL(Absyn.CREF_IDENT("der",{}),Absyn.FUNCTIONARGS(args={Absyn.CREF(componentRef=cr)},argNames={})),DAE.C_VARIABLENAME(),_)
       then DAE.CODE(Absyn.C_EXPRESSION(exp),DAE.ET_OTHER());
     case (exp,ct,info)

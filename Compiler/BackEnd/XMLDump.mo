@@ -553,8 +553,8 @@ the output is like:
 "
   input list<BackendDAE.MultiDimEquation> inMultiDimEquationLst;
   input String inContent;
-  input DAE.Exp addMathMLCode;
-  input DAE.Exp dumpResiduals;
+  input Boolean addMathMLCode;
+  input Boolean dumpResiduals;
 algorithm
   _:=
   matchcontinue (inMultiDimEquationLst,inContent,addMathMLCode,dumpResiduals)
@@ -600,8 +600,8 @@ The output, if the list is not empty is something like this:
 </ARRAY_EQUATION>
 "
   input list<BackendDAE.MultiDimEquation> inMultiDimEquationLst;
-  input DAE.Exp addMathMLCode;
-  input DAE.Exp dumpResiduals;
+  input Boolean addMathMLCode;
+  input Boolean dumpResiduals;
 algorithm
   _:=
   match (inMultiDimEquationLst,addMathMLCode,dumpResiduals)
@@ -610,7 +610,7 @@ algorithm
       DAE.Exp e1,e2;
       list<BackendDAE.MultiDimEquation> es;
     case ({},_,_) then ();
-    case ((BackendDAE.MULTIDIM_EQUATION(left = e1,right = e2) :: es),DAE.BCONST(bool=true),DAE.BCONST(bool=false))
+    case ((BackendDAE.MULTIDIM_EQUATION(left = e1,right = e2) :: es),true,false)
       equation
         s1 = ExpressionDump.printExpStr(e1);
         s2 = ExpressionDump.printExpStr(e2);
@@ -628,9 +628,9 @@ algorithm
         dumpStrCloseTag(MATH);
         dumpStrCloseTag(MathML);
         dumpStrCloseTag(ARRAY_EQUATION);
-        dumpArrayEqns2(es,DAE.BCONST(true),DAE.BCONST(false));
+        dumpArrayEqns2(es,true,false);
       then ();
-    case ((BackendDAE.MULTIDIM_EQUATION(left = e1,right = e2) :: es),DAE.BCONST(bool=false),DAE.BCONST(false))
+    case ((BackendDAE.MULTIDIM_EQUATION(left = e1,right = e2) :: es),false,false)
       equation
         s1 = ExpressionDump.printExpStr(e1);
         s2 = ExpressionDump.printExpStr(e2);
@@ -639,9 +639,9 @@ algorithm
         s = stringAppendList({s1," = ",s2,"\n"});
         dumpStrOpenTagAttr(ARRAY_EQUATION, EXP_STRING, s);
         dumpStrCloseTag(ARRAY_EQUATION);
-        dumpArrayEqns2(es,DAE.BCONST(false),DAE.BCONST(false));
+        dumpArrayEqns2(es,false,false);
       then ();
-    case ((BackendDAE.MULTIDIM_EQUATION(left = e1,right = e2) :: es),DAE.BCONST(bool=true),DAE.BCONST(bool=true))
+    case ((BackendDAE.MULTIDIM_EQUATION(left = e1,right = e2) :: es),true,true)
       equation
         s1 = ExpressionDump.printExpStr(e1);
         s2 = ExpressionDump.printExpStr(e2);
@@ -663,9 +663,9 @@ algorithm
         dumpStrCloseTag(MATH);
         dumpStrCloseTag(MathML);
         dumpStrCloseTag(ARRAY_EQUATION);
-        dumpArrayEqns2(es,DAE.BCONST(true),DAE.BCONST(true));
+        dumpArrayEqns2(es,true,true);
       then ();
-    case ((BackendDAE.MULTIDIM_EQUATION(left = e1,right = e2) :: es),DAE.BCONST(bool=false),DAE.BCONST(true))
+    case ((BackendDAE.MULTIDIM_EQUATION(left = e1,right = e2) :: es),false,true)
       equation
         s1 = ExpressionDump.printExpStr(e1);
         s2 = ExpressionDump.printExpStr(e2);
@@ -674,7 +674,7 @@ algorithm
         s = stringAppendList({s1," - (",s2,") = 0\n"});
         dumpStrOpenTagAttr(ARRAY_EQUATION, EXP_STRING, s);
         dumpStrCloseTag(ARRAY_EQUATION);
-        dumpArrayEqns2(es,DAE.BCONST(false),DAE.BCONST(true));
+        dumpArrayEqns2(es,false,true);
       then ();
   end match;
 end dumpArrayEqns2;
@@ -711,7 +711,7 @@ printed.
 "
   input Option<DAE.Exp> inOptExpExp;
   input Option<Values.Value> inOptValuesValue;
-  input DAE.Exp addMathMLCode;
+  input Boolean addMathMLCode;
 
   algorithm
     _:=
@@ -719,7 +719,7 @@ printed.
       local
         DAE.Exp e;
         Values.Value b;
-        DAE.Exp addMMLCode;
+        Boolean addMMLCode;
   case(NONE(),NONE(),_)
     equation
     then();
@@ -1005,10 +1005,10 @@ the relative tag is not printed.
 "
   input BackendDAE.BackendDAE inBackendDAE;
   input list<DAE.Function> functions;
-  input DAE.Exp addOriginalIncidenceMatrix;
-  input DAE.Exp addSolvingInfo;
-  input DAE.Exp addMathMLCode;
-  input DAE.Exp dumpResiduals;
+  input Boolean addOriginalIncidenceMatrix;
+  input Boolean addSolvingInfo;
+  input Boolean addMathMLCode;
+  input Boolean dumpResiduals;
 algorithm
   _ := match (inBackendDAE,functions,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals)
     local
@@ -1053,7 +1053,7 @@ algorithm
 
       list<DAE.Function> inFunctions;
 
-      DAE.Exp addOrInMatrix,addSolInfo,addMML,dumpRes;
+      Boolean addOrInMatrix,addSolInfo,addMML,dumpRes;
 
 
     case (BackendDAE.DAE(vars_orderedVars as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_orderedVars,strIdxLstArr=strIdxLstArr_orderedVars,varArr=varArr_orderedVars,bucketSize=bucketSize_orderedVars,numberOfVars=numberOfVars_orderedVars),
@@ -1121,7 +1121,7 @@ sudh as:
 "
   input Option<DAE.VariableAttributes> dae_var_attr;
   input String Content;
-  input DAE.Exp addMathMLCode;
+  input Boolean addMathMLCode;
  algorithm
    _:= matchcontinue(dae_var_attr,Content,addMathMLCode)
      local
@@ -1130,7 +1130,7 @@ sudh as:
        Option<DAE.Exp> Initial,nominal;
        Option<DAE.Exp> fixed;
        Option<DAE.StateSelect> stateSel;
-       DAE.Exp addMMLCode;
+       Boolean addMMLCode;
        Option<DAE.Exp> equationBound;
        Option<Boolean> isProtected;
        Option<Boolean> finalPrefix;
@@ -1229,13 +1229,13 @@ The output is:
 "
   input list<BackendDAE.Equation> eqns;
   input String inContent;
-  input DAE.Exp addMathMLCode;
-  input DAE.Exp dumpResiduals;
+  input Boolean addMathMLCode;
+  input Boolean dumpResiduals;
 algorithm
   _:=
   matchcontinue (eqns,inContent,addMathMLCode,dumpResiduals)
     local
-      DAE.Exp addMMLCode;
+      Boolean addMMLCode;
       Integer len;
     case ({},_,_,_) then ();
     case (eqns,inContent,_,_)
@@ -1260,8 +1260,8 @@ protected function dumpEqns2 "
 "
   input list<BackendDAE.Equation> inEquationLst;
   input Integer inInteger;
-  input DAE.Exp addMathMLCode;
-  input DAE.Exp dumpResiduals;
+  input Boolean addMathMLCode;
+  input Boolean dumpResiduals;
 algorithm
   _:=
   match (inEquationLst,inInteger,addMathMLCode,dumpResiduals)
@@ -1269,14 +1269,14 @@ algorithm
       BackendDAE.Value index;
       BackendDAE.Equation eqn;
       list<BackendDAE.Equation> eqns;
-      DAE.Exp addMMLCode;
+      Boolean addMMLCode;
     case ({},_,_,_) then ();
-    case ((eqn :: eqns),index,addMMLCode,DAE.BCONST(bool=false))
+    case ((eqn :: eqns),index,addMMLCode,false)
       equation
         dumpEquation(eqn, intString(index),addMMLCode);
-        dumpEqns2(eqns, index+1,addMMLCode,DAE.BCONST(false));
+        dumpEqns2(eqns, index+1,addMMLCode,false);
       then ();
-    case ((eqn :: eqns),index,addMMLCode,DAE.BCONST(bool=true))
+    case ((eqn :: eqns),index,addMMLCode,true)
       equation
         //dumpEquation(BackendEquation.equationToResidualForm(eqn), intString(index),addMMLCode);
         //This should be done as above. The problem is that the BackendEquation.equationToResidualForm(eqn) method
@@ -1292,7 +1292,7 @@ algorithm
         dumpResidual(eqn, intString(index),addMMLCode);
         //will be substituted with:
         //dumpEquation(BackendEquation.equationToResidualForm(eqn), intString(index),addMMLCode);
-        dumpEqns2(eqns, index+1,addMMLCode,DAE.BCONST(true));
+        dumpEqns2(eqns, index+1,addMMLCode,true);
       then ();
   end match;
 end dumpEqns2;
@@ -1330,7 +1330,7 @@ For example, if the element is an Array of Equations:
 "
   input BackendDAE.Equation inEquation;
   input String inIndexNumber;
-  input DAE.Exp addMathMLCode;
+  input Boolean addMathMLCode;
 algorithm
   _:=
   match (inEquation,inIndexNumber,addMathMLCode)
@@ -1340,9 +1340,9 @@ algorithm
       BackendDAE.Value indx,i;
       list<DAE.Exp> expl;
       DAE.ComponentRef cr;
-      DAE.Exp addMMLCode;
+      Boolean addMMLCode;
 
-    case (BackendDAE.EQUATION(exp = e1,scalar = e2),indexS,DAE.BCONST(bool=true))
+    case (BackendDAE.EQUATION(exp = e1,scalar = e2),indexS,true)
       equation
         s1 = ExpressionDump.printExpStr(e1);
         s2 = ExpressionDump.printExpStr(e2);
@@ -1362,7 +1362,7 @@ algorithm
         dumpStrCloseTag(MathML);
         dumpStrCloseTag(EQUATION);
       then ();
-    case (BackendDAE.EQUATION(exp = e1,scalar = e2),indexS,DAE.BCONST(bool=false))
+    case (BackendDAE.EQUATION(exp = e1,scalar = e2),indexS,false)
       equation
         s1 = ExpressionDump.printExpStr(e1);
         s2 = ExpressionDump.printExpStr(e2);
@@ -1386,7 +1386,7 @@ algorithm
         dumpStrCloseTag(ADDITIONAL_INFO);
         dumpStrCloseTag(ARRAY_OF_EQUATIONS);
       then ();
-    case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2),indexS,DAE.BCONST(bool=true))
+    case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2),indexS,true)
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
         s2 = ExpressionDump.printExpStr(e2);
@@ -1405,7 +1405,7 @@ algorithm
         dumpStrCloseTag(MathML);
         dumpStrCloseTag(stringAppend(SOLVED,EQUATION_));
       then ();
-    case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2),indexS,DAE.BCONST(bool=false))
+    case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2),indexS,false)
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
         s2 = ExpressionDump.printExpStr(e2);
@@ -1415,7 +1415,7 @@ algorithm
         Print.printBuf(res);
         dumpStrCloseTag(stringAppend(SOLVED,EQUATION_));
       then ();
-    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(index = i,left = cr,right = e2)),indexS,DAE.BCONST(bool=true))
+    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(index = i,left = cr,right = e2)),indexS,true)
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
         s2 = ExpressionDump.printExpStr(e2);
@@ -1436,7 +1436,7 @@ algorithm
         dumpStrTagContent(stringAppend(stringAppend(WHEN,EQUATION_),ID_),is);
         dumpStrCloseTag(stringAppend(WHEN,EQUATION_));
       then ();
-    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(index = i,left = cr,right = e2)),indexS,DAE.BCONST(bool=false))
+    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(index = i,left = cr,right = e2)),indexS,false)
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
         s2 = ExpressionDump.printExpStr(e2);
@@ -1448,7 +1448,7 @@ algorithm
         dumpStrTagContent(stringAppend(stringAppend(WHEN,EQUATION_),ID_),is);
         dumpStrCloseTag(stringAppend(WHEN,EQUATION_));
       then ();
-    case (BackendDAE.RESIDUAL_EQUATION(exp = e),indexS,DAE.BCONST(bool=true))
+    case (BackendDAE.RESIDUAL_EQUATION(exp = e),indexS,true)
       equation
         s1 = ExpressionDump.printExpStr(e);
         s1 = Util.xmlEscape(s1);
@@ -1466,7 +1466,7 @@ algorithm
         dumpStrCloseTag(MathML);
         dumpStrCloseTag(stringAppend(RESIDUAL,EQUATION_));
       then ();
-    case (BackendDAE.RESIDUAL_EQUATION(exp = e),indexS,DAE.BCONST(bool=false))
+    case (BackendDAE.RESIDUAL_EQUATION(exp = e),indexS,false)
       equation
         s1 = ExpressionDump.printExpStr(e);
         s1 = Util.xmlEscape(s1);
@@ -1500,13 +1500,13 @@ public function dumpExp
   </MathML>"
   input DAE.Exp e;
   //output String s;
-  input DAE.Exp addMathMLCode;
+  input Boolean addMathMLCode;
 algorithm
   _:=
   matchcontinue (e,addMathMLCode)
     local
       DAE.Exp inExp;
-    case(inExp,DAE.BCONST(bool=true))
+    case(inExp,true)
       equation
         dumpStrOpenTag(MathML);
         dumpStrOpenTagAttr(MATH, MathMLXmlns, MathMLWeb);
@@ -1514,7 +1514,7 @@ algorithm
         dumpStrCloseTag(MATH);
         dumpStrCloseTag(MathML);
       then();
-    case(_,DAE.BCONST(bool=false))
+    case(_,false)
       then();
     case(_,_) then();
   end matchcontinue;
@@ -2308,7 +2308,7 @@ the output is like:
  "
   input list<DAE.Exp> inLstExp;
   input String inContent;
-  input DAE.Exp addMathMLCode;
+  input Boolean addMathMLCode;
 algorithm
   _:=
   matchcontinue (inLstExp,inContent,addMathMLCode)
@@ -2357,7 +2357,7 @@ The output, if the list is not empty is something like this:
 "
   input list<DAE.Exp> inLstExp;
   input String Content;
-  input DAE.Exp addMathMLCode;
+  input Boolean addMathMLCode;
 algorithm
   _:=
   match (inLstExp,Content,addMathMLCode)
@@ -2549,7 +2549,7 @@ See dumpExp function for more details.
 "
   input Option<DAE.Exp> inExpExpOption;
   input String Content;
-  input DAE.Exp addMathMLCode;
+  input Boolean addMathMLCode;
 algorithm
   _:=
   match (inExpExpOption,Content,addMathMLCode)
@@ -2607,13 +2607,13 @@ standard output like:
 "
   input Option<Values.Value> inValueValueOption;
   input String Content;
-  input DAE.Exp addMathMLCode;
+  input Boolean addMathMLCode;
 algorithm
   _ :=
   match (inValueValueOption,Content,addMathMLCode)
     local
       Values.Value v;
-      DAE.Exp addMMLCode;
+      Boolean addMMLCode;
     case (NONE(),_,_)  then ();
     case (SOME(v),Content,addMMLCode)
       equation
@@ -2659,8 +2659,8 @@ public function dumpSolvingInfo "
     </SolvingInfo>
   </AdditionalInfo>
   "
-  input DAE.Exp addOriginalIncidenceMatrix;
-  input DAE.Exp addSolvingInfo;
+  input Boolean addOriginalIncidenceMatrix;
+  input Boolean addSolvingInfo;
   input BackendDAE.BackendDAE inBackendDAE;
 algorithm
   _:=
@@ -2670,8 +2670,8 @@ algorithm
       array<list<Integer>> m,mT;
       array<Integer> v1,v2;
       list<list<Integer>> comps;
-    case (DAE.BCONST(bool=false),DAE.BCONST(bool=false),_) then ();
-  case (DAE.BCONST(bool=true),DAE.BCONST(bool=true),dlow)
+  case (false,false,_) then ();
+  case (true,true,dlow)
     equation
       m = BackendDAEUtil.incidenceMatrix(dlow, BackendDAE.NORMAL());
       mT = BackendDAEUtil.transposeMatrix(m);
@@ -2689,7 +2689,7 @@ algorithm
       dumpStrCloseTag(SOLVING_INFO);
       dumpStrCloseTag(ADDITIONAL_INFO);
     then ();
-  case (DAE.BCONST(bool=true),DAE.BCONST(bool=false),dlow)
+  case (true,false,dlow)
     equation
       m = BackendDAEUtil.incidenceMatrix(dlow, BackendDAE.NORMAL());
       mT = BackendDAEUtil.transposeMatrix(m);
@@ -2699,7 +2699,7 @@ algorithm
       dumpStrCloseTag(ORIGINAL_INCIDENCE_MATRIX);
       dumpStrCloseTag(ADDITIONAL_INFO);
     then ();
-  case (DAE.BCONST(bool=false),DAE.BCONST(bool=true),dlow)
+  case (false,true,dlow)
     equation
       m = BackendDAEUtil.incidenceMatrix(dlow, BackendDAE.NORMAL());
       mT = BackendDAEUtil.transposeMatrix(m);
@@ -3215,10 +3215,12 @@ is:
   input array<list<BackendDAE.CrefIndex>> crefIdxLstArr;
   input array<list<BackendDAE.StringIndex>> strIdxLstArr;
   input String Content;
-  input DAE.Exp addMathMLCode;
+  input Boolean addMathMLCode;
 algorithm
-    _ := matchcontinue (vars,crefIdxLstArr,strIdxLstArr,Content,addMathMLCode)
-   local Integer len;DAE.Exp addMMLCode;
+  _ := matchcontinue (vars,crefIdxLstArr,strIdxLstArr,Content,addMathMLCode)
+    local
+      Integer len;
+      Boolean addMMLCode;
     case ({},_,_,_,_)
       then();
     case (vars,crefIdxLstArr,strIdxLstArr,Content,_)
@@ -3266,7 +3268,7 @@ See dumpVariable for more details on the XML output.
 "
   input list<BackendDAE.Var> inVarLst;
   input Integer inInteger;
-  input DAE.Exp addMathMLCode;
+  input Boolean addMathMLCode;
 algorithm
   _ := match (inVarLst,inInteger,addMathMLCode)
     local
@@ -3286,7 +3288,7 @@ algorithm
       DAE.InstDims arry_Dim;
       Option<Values.Value> b;
       Integer var_1;
-      DAE.Exp addMMLCode;
+      Boolean addMMLCode;
       DAE.ElementSource source "the origin of the element";
 
     case ({},_,_) then ();
@@ -3333,7 +3335,7 @@ See dumpVariable for more details on the XML output.
   input array<list<BackendDAE.CrefIndex>> crefIdxLstArr;
   input array<list<BackendDAE.StringIndex>> strIdxLstArr;
   input Integer inInteger;
-  input DAE.Exp addMathMLCode;
+  input Boolean addMathMLCode;
 algorithm
   _ := match (inVarLst,crefIdxLstArr,strIdxLstArr,inInteger,addMathMLCode)
     local
@@ -3353,7 +3355,7 @@ algorithm
       DAE.InstDims arry_Dim;
       Option<Values.Value> b;
       Integer var_1;
-      DAE.Exp addMMLCode;
+      Boolean addMMLCode;
       DAE.ElementSource source "the origin of the element";
 
     case ({},_,_,_,_) then ();
@@ -3401,7 +3403,7 @@ the zero crossing list. The output is:
 "
   input list<BackendDAE.ZeroCrossing> zeroCross;
   input String inContent;
-  input DAE.Exp addMathMLCode;
+  input Boolean addMathMLCode;
 algorithm
   _:=
   matchcontinue (zeroCross,inContent,addMathMLCode)
@@ -3448,12 +3450,13 @@ of the zero crossing elements in XML format. The output is:
 </stringAppend(ZERO_CROSSING,ELEMENT_)>
  "
   input list<BackendDAE.ZeroCrossing> inZeroCrossingLst;
-  input DAE.Exp addMathMLCode;
+  input Boolean addMathMLCode;
 algorithm
   _:=
   match (inZeroCrossingLst,addMathMLCode)
     local
-      DAE.Exp e,addMMLCode;
+      DAE.Exp e;
+      Boolean addMMLCode;
       list<BackendDAE.Value> eq,wc;
       list<BackendDAE.ZeroCrossing> zcLst;
     case ({},_) then ();
@@ -3563,7 +3566,7 @@ For example, if the element is an Array of Equations:
 "
   input BackendDAE.Equation inEquation;
   input String inIndexNumber;
-  input DAE.Exp addMathMLCode;
+  input Boolean addMathMLCode;
 algorithm
   _:=
   match (inEquation,inIndexNumber,addMathMLCode)
@@ -3573,9 +3576,9 @@ algorithm
       BackendDAE.Value indx,i;
       list<DAE.Exp> expl;
       DAE.ComponentRef cr;
-      DAE.Exp addMMLCode;
+      Boolean addMMLCode;
 
-    case (BackendDAE.EQUATION(exp = e1,scalar = e2),indexS,DAE.BCONST(bool=true))
+    case (BackendDAE.EQUATION(exp = e1,scalar = e2),indexS,true)
       equation
         s1 = ExpressionDump.printExpStr(e1);
         s2 = ExpressionDump.printExpStr(e2);
@@ -3599,7 +3602,7 @@ algorithm
         dumpStrCloseTag(MathML);
         dumpStrCloseTag(EQUATION);
       then ();
-    case (BackendDAE.EQUATION(exp = e1,scalar = e2),indexS,DAE.BCONST(bool=false))
+    case (BackendDAE.EQUATION(exp = e1,scalar = e2),indexS,false)
       equation
         s1 = ExpressionDump.printExpStr(e1);
         s2 = ExpressionDump.printExpStr(e2);
@@ -3623,7 +3626,7 @@ algorithm
         dumpStrCloseTag(ADDITIONAL_INFO);
         dumpStrCloseTag(ARRAY_OF_EQUATIONS);
       then ();
-    case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2),indexS,DAE.BCONST(bool=true))
+    case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2),indexS,true)
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
         s2 = ExpressionDump.printExpStr(e2);
@@ -3646,7 +3649,7 @@ algorithm
         dumpStrCloseTag(MathML);
         dumpStrCloseTag(stringAppend(SOLVED,EQUATION_));
       then ();
-    case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2),indexS,DAE.BCONST(bool=false))
+    case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2),indexS,false)
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
         s2 = ExpressionDump.printExpStr(e2);
@@ -3656,7 +3659,7 @@ algorithm
         Print.printBuf(res);
         dumpStrCloseTag(stringAppend(SOLVED,EQUATION_));
       then ();
-    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(index = i,left = cr,right = e2)),indexS,DAE.BCONST(bool=true))
+    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(index = i,left = cr,right = e2)),indexS,true)
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
         s2 = ExpressionDump.printExpStr(e2);
@@ -3681,7 +3684,7 @@ algorithm
         dumpStrTagContent(stringAppend(stringAppend(WHEN,EQUATION_),ID_),is);
         dumpStrCloseTag(stringAppend(WHEN,EQUATION_));
       then ();
-    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(index = i,left = cr,right = e2)),indexS,DAE.BCONST(bool=false))
+    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(index = i,left = cr,right = e2)),indexS,false)
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
         s2 = ExpressionDump.printExpStr(e2);
@@ -3693,7 +3696,7 @@ algorithm
         dumpStrTagContent(stringAppend(stringAppend(WHEN,EQUATION_),ID_),is);
         dumpStrCloseTag(stringAppend(WHEN,EQUATION_));
       then ();
-    case (BackendDAE.RESIDUAL_EQUATION(exp = e),indexS,DAE.BCONST(bool=true))
+    case (BackendDAE.RESIDUAL_EQUATION(exp = e),indexS,true)
       equation
         s1 = ExpressionDump.printExpStr(e);
         s1 = Util.xmlEscape(s1);
@@ -3711,7 +3714,7 @@ algorithm
         dumpStrCloseTag(MathML);
         dumpStrCloseTag(stringAppend(RESIDUAL,EQUATION_));
       then ();
-    case (BackendDAE.RESIDUAL_EQUATION(exp = e),indexS,DAE.BCONST(bool=false))
+    case (BackendDAE.RESIDUAL_EQUATION(exp = e),indexS,false)
       equation
         s1 = ExpressionDump.printExpStr(e);
         s1 = Util.xmlEscape(s1);

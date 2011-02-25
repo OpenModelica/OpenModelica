@@ -2455,4 +2455,20 @@ algorithm
   val := makeArray(rows);
 end readDataset;
 
+public function printCodeVariableName
+  input Values.Value val;
+  output String str;
+algorithm
+  str := match val
+    local
+      Absyn.ComponentRef cr;
+      Absyn.Exp exp;
+      // der(x)
+    case Values.CODE(Absyn.C_EXPRESSION(exp)) then Dump.printExpStr(exp);
+      // x
+    case Values.CODE(Absyn.C_VARIABLENAME(cr))
+      then Dump.printComponentRefStr(cr);
+  end match;
+end printCodeVariableName;
+
 end ValuesUtil;
