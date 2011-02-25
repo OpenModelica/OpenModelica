@@ -286,7 +286,7 @@ elif test ! "$WANT_OMNIORB" = "no"; then
   fi
   USE_CORBA="-DUSE_CORBA -DUSE_OMNIORB";
   QT_USE_CORBA="USE_OMNIORB"
-  CORBALIBS="-lomniORB4 -lomnithread -lpthread";
+  CORBALIBS="$WANT_OMNIORB/lib/libomniORB4.a $WANT_OMNIORB/lib/libomnithread.a -lpthread"
   DESIRED_CORBA="omniorb"
 else
   USE_CORBA="";
