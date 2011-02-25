@@ -1736,19 +1736,6 @@ algorithm
       then
         (cache,Values.BOOL(true),st);
         
-    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "setVariableFilter"),expLst = {DAE.ARRAY(array=expVars)}),
-        (st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
-      equation
-        expVars = Util.listMap(expVars,Expression.CodeVarToCref);
-        strings = Util.listMap(expVars, ExpressionDump.printExpStr);
-        // print("setVariableFilter\n");
-        // print(stringAppendList(vars_1));
-        // print("\n");
-        // _ = ValuesUtil.setVariableFilter(vars_1);
-        _ = System.setVariableFilter(Util.stringDelimitList(strings, "|"));
-      then
-        (cache,Values.BOOL(true),st);
-        
     case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "getUnit"),expLst = {DAE.CREF(componentRef = cref),DAE.CREF(componentRef = classname)}),st,msg)
       equation
         (cache,v,st_1) = getBuiltinAttribute(cache,classname, cref, "unit", st);

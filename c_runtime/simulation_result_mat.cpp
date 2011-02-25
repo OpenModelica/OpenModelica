@@ -37,6 +37,8 @@
 #include <cstdlib>
 #include <stdint.h>
 
+static const struct omc_varInfo timeValName = {"time","Simulation time [s]",{"",-1,-1,-1,-1}};
+
 static int calcDataSize()
 {
   int sz = 1; // time
@@ -48,23 +50,10 @@ static int calcDataSize()
   return sz;
 }
 
-simulation_result_mat::simulation_result_mat(const char* filename, 
-               double tstart, double tstop)
-  : simulation_result(filename,numpoints),fp(),data2HdrPos(-1),ntimepoints(0)
+static const omc_varInfo** calcDataNames(int dataSize)
 {
-  const struct omc_varInfo timeValName = {"time","Simulation time [s]",{"",-1,-1,-1,-1}};
-  const char Aclass[] = "A1 bt. ir1 na  Tj  re  ac  nt  so   r   y   ";
-  
-  const struct omc_varInfo** names;
-  const int nParams = globalData->nParameters+globalData->intVariables.nParameters
-    +globalData->boolVariables.nParameters;
-
-  char *stringMatrix = NULL;
-  int rows, cols, numVars, curVar;
-  double *doubleMatrix = NULL;
-  numVars = calcDataSize();
-  names = (const omc_varInfo**) malloc((numVars+nParams)*sizeof(struct omc_varInfo*));
-  curVar = 0;
+  const omc_varInfo** names = (const omc_varInfo**) malloc(dataSize*sizeof(struct omc_varInfo*));
+  int curVar = 0;
   names[curVar++] = &timeValName;
   for (int i = 0; i < globalData->nStates; i++) if (!globalData->statesFilterOutput[i])
       names[curVar++] = &globalData->statesNames[i];
@@ -82,7 +71,24 @@ simulation_result_mat::simulation_result_mat(const char* filename,
       names[curVar++] = &globalData->int_param_names[i];
   for (int i = 0; i < globalData->boolVariables.nParameters; i++)
       names[curVar++] = &globalData->bool_param_names[i];
-  // fprintf(stderr, "curVar=%d, nVars=%d, nParams=%d\n", curVar, numVars, nParams);
+  return names;
+}
+
+simulation_result_mat::simulation_result_mat(const char* filename, 
+               double tstart, double tstop)
+  : simulation_result(filename,numpoints),fp(),data2HdrPos(-1),ntimepoints(0)
+{
+  const char Aclass[] = "A1 bt. ir1 na  Tj  re  ac  nt  so   r   y   ";
+  
+  const struct omc_varInfo** names;
+  const int nParams = globalData->nParameters+globalData->intVariables.nParameters
+    +globalData->boolVariables.nParameters;
+
+  char *stringMatrix = NULL;
+  int rows, cols, numVars;
+  double *doubleMatrix = NULL;
+  numVars = calcDataSize();
+  names = calcDataNames(numVars+nParams);
   
   try {
     // open file

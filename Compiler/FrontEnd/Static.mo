@@ -6881,11 +6881,6 @@ protected function elabCallInteractive "function: elabCallInteractive
       then
         (cache,Expression.makeBuiltinCall("jacobian",{crefExp},DAE.ET_STRING()),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
 
-    case (cache,env,Absyn.CREF_IDENT(name = "setVariableFilter"),{Absyn.ARRAY(arrayExp = strings)},{},impl,SOME(st),_,_)
-      equation
-        vars_1 = elabVariablenames(strings);
-      then (cache, Expression.makeBuiltinCall("setVariableFilter",{DAE.ARRAY(DAE.ET_OTHER(), false, vars_1)},DAE.ET_BOOL()),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
-
     case (cache,env,Absyn.CREF_IDENT(name = "timing"),{exp},{},impl,SOME(st),pre,_)
       equation
         (cache,exp_1,prop,st_1) = elabExp(cache,env, exp, impl, SOME(st),true,pre,info);

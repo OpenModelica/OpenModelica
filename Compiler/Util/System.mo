@@ -295,13 +295,6 @@ public function setDataPort
   external "C" SystemImpl__setDataPort(port) annotation(Library = "omcruntime");
 end setDataPort;
 
-public function setVariableFilter
-  input String variables;
-  output Boolean b;
-algorithm
-  b := 0==setEnv("sendDataFilter",variables,true);
-end setVariableFilter;
-
 public function sendData2
   input String info;
   input String data;

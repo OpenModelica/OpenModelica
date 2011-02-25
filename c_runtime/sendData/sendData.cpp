@@ -642,32 +642,9 @@ QTcpSocket* Static::socket = 0;
 QByteArray* Static::block = 0;
 QDataStream* Static::out = 0;
 Connection* Static::c = 0;
-QStringList* Static::filterVariables = 0;
 int Static::port1 = 7778;
 int Static::port2 = 7779;
 bool Static::enabled_ = false;
-
-void setVariableFilter(const char* variables)
-{
-  // fprintf(stderr,"variable filters:%s\n", variables);
-  // fflush(stderr);
-  QString var(variables);
-  var = "time|" + var; // always add time!
-  var = var.replace("|", " ");
-  stringstream ss;
-  ss << var.toStdString();
-  if(!Static::filterVariables)
-    Static::filterVariables = new QStringList;
-
-  Static::filterVariables->clear();
-  string str;
-  while(ss.good() && ss >> str)
-  {
-    Static::filterVariables->push_back(QString(str.c_str()));
-    // fprintf(stderr,"variable filter:%s\n", str.c_str());
-    // fflush(stderr);
-  }
-}
 
 void setDataPort(int port)
 {
@@ -679,16 +656,11 @@ void enableSendData(int enable)
   Static::enabled_ = enable;
 }
 
-void initSendData(int variableCount1, int variableCount2, int variableCount3, int variableCount4, const struct omc_varInfo* statesNames, const struct omc_varInfo* stateDerivativesNames, const struct omc_varInfo* algebraicsNames, const struct omc_varInfo* intAlgebraicsNames, const struct omc_varInfo* boolAlgebraicsNames)
+void initSendData(int variableCount, const struct omc_varInfo** names)
 {
   char* port = getenv("sendDataPort");
   if(port != NULL && strlen(port))
     setDataPort(QVariant(port).toInt());
-  char* filter = getenv("sendDataFilter");
-  if(filter != NULL && strlen(filter))
-    setVariableFilter(filter);
-  else
-    setVariableFilter("");
 
   if(Static::socket)
   {
@@ -752,57 +724,17 @@ void initSendData(int variableCount1, int variableCount2, int variableCount3, in
   //  qint64 pos = Static::out->device()->pos();
 
 
-  *Static::out << (quint32)25;//(2*variableCount1 + variableCount2);
-  quint32 N = 1;
+  *Static::out << (quint32) variableCount;
+  quint32 N = 0;
 
-  *Static::out << QString("time");
-
-  for(int i = 0; i < variableCount1; ++i)
+  for(int i = 0; i < variableCount; ++i)
   {
-    if(!Static::filterVariables->empty() && !Static::filterVariables->contains(QString(statesNames[i].name)))
-      continue;
-    //  	cout << statesNames[i] << endl;
-    *Static::out << QString(statesNames[i].name);
+    // cout << names[i]->name << endl;
+    *Static::out << QString(names[i]->name);
     //  	*Static::out << QColor(Qt::color0);
     ++N;
   }
 
-
-  for(int i = 0; i < variableCount1; ++i)
-  {
-    if(!Static::filterVariables->empty() && !Static::filterVariables->contains(QString(stateDerivativesNames[i].name)))
-      continue;
-    *Static::out << QString(stateDerivativesNames[i].name);
-    //  	*Static::out << QColor(Qt::color0);
-    ++N;
-  }
-
-  for(int i = 0; i < variableCount2; ++i)
-  {
-    if(!Static::filterVariables->empty() && !Static::filterVariables->contains(QString(algebraicsNames[i].name)))
-      continue;
-    *Static::out << QString(algebraicsNames[i].name);
-    //  	*Static::out << QColor(Qt::color0);
-    ++N;
-  }
-
-  for(int i = 0; i < variableCount3; ++i)
-  {
-    if(!Static::filterVariables->empty() && !Static::filterVariables->contains(QString(intAlgebraicsNames[i].name)))
-      continue;
-    *Static::out << QString(intAlgebraicsNames[i].name);
-    //  	*Static::out << QColor(Qt::color0);
-    ++N;
-  }
-
-  for(int i = 0; i < variableCount4; ++i)
-  {
-    if(!Static::filterVariables->empty() && !Static::filterVariables->contains(QString(boolAlgebraicsNames[i].name)))
-      continue;
-    *Static::out << QString(boolAlgebraicsNames[i].name);
-    //  	*Static::out << QColor(Qt::color0);
-    ++N;
-  }
   //  Static::out->device()->seek(pos);
   Static::out->device()->seek(0);
   *Static::out << (quint32)(Static::block->size() - sizeof(quint32));
@@ -831,13 +763,11 @@ void sendPacket(const char* data)
   while(ss.good() && ss >> str)
   {
     ss >> data2;
-    if(!Static::filterVariables->empty() && !Static::filterVariables->contains(QString(str.c_str())))
-      continue;
     *Static::out << QString(str.c_str());
     *Static::out << (qreal)data2;
   }
 
-  //  cout << "sendPacket:" << endl << data << endl << endl;
+  // cout << "sendPacket:" << endl << data << endl << endl;
 
   Static::out->device()->seek(0);
   *Static::out << (quint32)(Static::block->size() - sizeof(quint32));

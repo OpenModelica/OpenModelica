@@ -53,6 +53,8 @@
 #include "sendData/sendData.h"
 #endif
 
+static const struct omc_varInfo timeValName = {"time","Simulation time [s]",{"",-1,-1,-1,-1}};
+
 static int calcDataSize()
 {
   int sz = 1; // time
@@ -62,6 +64,24 @@ static int calcDataSize()
   for (int i = 0; i < globalData->intVariables.nAlgebraic; i++) if (!globalData->intVariables.algebraicsFilterOutput[i]) sz++;
   for (int i = 0; i < globalData->boolVariables.nAlgebraic; i++) if (!globalData->boolVariables.algebraicsFilterOutput[i]) sz++;
   return sz;
+}
+
+static const omc_varInfo** calcDataNames(int dataSize)
+{
+  const omc_varInfo** names = (const omc_varInfo**) malloc(dataSize*sizeof(struct omc_varInfo*));
+  int curVar = 0;
+  names[curVar++] = &timeValName;
+  for (int i = 0; i < globalData->nStates; i++) if (!globalData->statesFilterOutput[i])
+      names[curVar++] = &globalData->statesNames[i];
+  for (int i = 0; i < globalData->nStates; i++) if (!globalData->statesDerivativesFilterOutput[i])
+      names[curVar++] = &globalData->stateDerivativesNames[i];
+  for (int i = 0; i < globalData->nAlgebraic; i++) if (!globalData->algebraicsFilterOutput[i])
+      names[curVar++] = &globalData->algebraicsNames[i];
+  for (int i = 0; i < globalData->intVariables.nAlgebraic; i++) if (!globalData->intVariables.algebraicsFilterOutput[i])
+      names[curVar++] = &globalData->int_alg_names[i];
+  for (int i = 0; i < globalData->boolVariables.nAlgebraic; i++) if (!globalData->boolVariables.algebraicsFilterOutput[i])
+      names[curVar++] = &globalData->bool_alg_names[i];
+  return names;
 }
 
 void simulation_result_plt::emit()
@@ -207,16 +227,11 @@ simulation_result_plt::simulation_result_plt(const char* filename, long numpoint
   if(enabled != NULL) {
     Static::enabled_ = !strcmp(enabled, "1");
   }
-  if(Static::enabled())
-    initSendData(globalData->nStates,
-          globalData->nAlgebraic,
-          globalData->intVariables.nAlgebraic,
-          globalData->boolVariables.nAlgebraic,
-          globalData->statesNames,
-          globalData->stateDerivativesNames,
-          globalData->algebraicsNames,
-          globalData->int_alg_names,
-          globalData->bool_alg_names);
+  if(Static::enabled()) {
+    const omc_varInfo** names = calcDataNames(dataSize);
+    initSendData(dataSize,names);
+    free(names);
+  }
 #endif // CONFIG_WITH_SENDDATA
 }
 
