@@ -1481,7 +1481,7 @@ algorithm
       then (cache,Values.BOOL(true),st);
         
         // plot error
-    case (cache,env,"plot",_,st,msg) then (cache,Values.BOOL(false),st);
+    case (cache,env,"plot2",_,st,msg) then (cache,Values.BOOL(false),st);
         
         //plotAll(model)
     case (cache,env,"plotAll",
