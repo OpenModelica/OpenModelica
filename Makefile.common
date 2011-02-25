@@ -1,6 +1,7 @@
 .PHONY : all omc omcd debug release mosh clean .testvariables mkbuilddirs all omc omcd debug release mosh clean qtclean qtclean-common
 
 top_builddir = .
+builddir_app=$(top_builddir)/build/Applications/
 builddir_bin=$(top_builddir)/build/bin
 builddir_lib=$(top_builddir)/build/lib
 builddir_inc=$(top_builddir)/build/include/omc
@@ -8,6 +9,7 @@ builddir_doc=$(top_builddir)/build/share/doc
 builddir_share=$(top_builddir)/build/share/
 builddir_java=$(top_builddir)/build/share/omc/java/
 
+INSTALL_APPDIR     = ${DESTDIR}${prefix}/Applications/
 INSTALL_BINDIR     = ${DESTDIR}${bindir}
 INSTALL_LIBDIR     = ${DESTDIR}${libdir}/
 INSTALL_INCLUDEDIR = ${DESTDIR}${includedir}/omc
@@ -19,6 +21,7 @@ INSTALL_JAVADIR    = ${DESTDIR}${datadir}/omc/java
 .PHONY : c_runtime omc omcd release debug qtclient mosh all mkbuilddirs test install-dirs susan susan_all susgen sustst
 
 mkbuilddirs:
+	if [ "$(EXE)" = ".app" ]; then mkdir -p $(builddir_app); fi
 	mkdir -p $(builddir_bin)
 	mkdir -p $(builddir_lib)/omc
 	mkdir -p $(builddir_inc)
@@ -112,6 +115,7 @@ clean: qtclean
 	build/bin/omc build/bin/omc.exe build/bin/omcd build/bin/omcd.exe build/bin/omcp build/bin/omcp.exe  build/bin/omc-diff build/bin/omc-diff.exe
 
 install-dirs:
+	if [ "$(EXE)" = ".app" ]; then mkdir -p ${INSTALL_APPDIR}; fi
 	mkdir -p ${INSTALL_BINDIR}
 	mkdir -p ${INSTALL_LIBDIR}
 	mkdir -p ${INSTALL_INCLUDEDIR}
@@ -125,6 +129,8 @@ install-dirs:
 
 install: install-dirs
 	echo Installing OpenModelica...
+	# Application directory (OSX)
+	if [ "$(EXE)" = ".app" ]; then cp -rp ${builddir_app} $(INSTALL_APPDIR); fi
 	# Binaries
 	cp -rp ${builddir_bin}/* ${INSTALL_BINDIR}
 	# Libraries
