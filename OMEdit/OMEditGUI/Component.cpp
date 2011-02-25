@@ -516,12 +516,14 @@ QVariant Component::itemChange(GraphicsItemChange change, const QVariant &value)
             emit componentPositionChanged();
         }
     }
+#if (QT_VERSION >= QT_VERSION_CHECK(4, 7, 0))
     else if (change == QGraphicsItem::ItemRotationHasChanged)
     {
         emit componentRotated(true);
         updateAnnotationString();
         updateSelectionBox();
     }
+#endif
     return value;
 }
 

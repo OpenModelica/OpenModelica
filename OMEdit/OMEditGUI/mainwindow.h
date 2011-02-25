@@ -46,8 +46,8 @@
 #include <QSplashScreen>
 #include <QProgressBar>
 
-#if (QT_VERSION < QT_VERSION_CHECK(4, 7, 0))
-    #error "OMEdit requires Qt 4.7.0 or newer"
+#if (QT_VERSION < QT_VERSION_CHECK(4, 6, 0))
+    #error "OMEdit requires Qt 4.6.0 or newer"
 #endif
 
 #include "OMCProxy.h"
