@@ -3786,6 +3786,8 @@ algorithm
         res = rel((e,ext_arg));
       then res;
 
+    case (e as DAE.CODE(code = _),rel,ext_arg) then ((e,ext_arg));
+
     case (e,rel,ext_arg)
       equation
         str = ExpressionDump.printExpStr(e);

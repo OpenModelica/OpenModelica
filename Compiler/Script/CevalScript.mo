@@ -1412,6 +1412,14 @@ algorithm
                 Values.STRING(confcmd)};
       then (cache,Values.RECORD(Absyn.IDENT("OpenModelica.Scripting.CheckSettingsResult"),vals,vars_1,-1),st);
         
+    case (cache,env,"getBuiltinAttribute",{Values.STRING(str),Values.CODE(Absyn.C_VARIABLENAME(cr_1)),Values.CODE(Absyn.C_TYPENAME(path))},st,msg)
+      equation
+        (cache,v,st_1) = getBuiltinAttribute(cache,path,ComponentReference.toExpCref(cr_1),str,st);
+      then
+        (cache,v,st_1);
+    case (cache,env,_,_,st,msg)
+      then
+        (cache,Values.META_FAIL(),st);
  end matchcontinue;
 end cevalInteractiveFunctions2;
         
@@ -1729,66 +1737,9 @@ algorithm
     case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "enableSendData"),expLst = {DAE.BCONST(bool = b)}),
         (st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       equation
-        //        print("enableSendData\n");
-        //        print(boolString(b));
-        //        print("\n");
         System.enableSendData(b);
       then
         (cache,Values.BOOL(true),st);
-        
-    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "getUnit"),expLst = {DAE.CREF(componentRef = cref),DAE.CREF(componentRef = classname)}),st,msg)
-      equation
-        (cache,v,st_1) = getBuiltinAttribute(cache,classname, cref, "unit", st);
-      then
-        (cache,v,st_1);
-        
-    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "getQuantity"),expLst = {DAE.CREF(componentRef = cref),DAE.CREF(componentRef = classname)}),st,msg)
-      equation
-        (cache,v,st_1) = getBuiltinAttribute(cache,classname, cref, "quantity", st);
-      then
-        (cache,v,st_1);
-        
-    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "getDisplayUnit"),expLst = {DAE.CREF(componentRef = cref),DAE.CREF(componentRef = classname)}),st,msg)
-      equation
-        (cache,v,st_1) = getBuiltinAttribute(cache,classname, cref, "displayUnit", st);
-      then
-        (cache,v,st_1);
-        
-    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "getMin"),expLst = {DAE.CREF(componentRef = cref),DAE.CREF(componentRef = classname)}),st,msg)
-      equation
-        (cache,v,st_1) = getBuiltinAttribute(cache,classname, cref, "min", st);
-      then
-        (cache,v,st_1);
-        
-    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "getMax"),expLst = {DAE.CREF(componentRef = cref),DAE.CREF(componentRef = classname)}),st,msg)
-      equation
-        (cache,v,st_1) = getBuiltinAttribute(cache,classname, cref, "max", st);
-      then
-        (cache,v,st_1);
-        
-    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "getStart"),expLst = {DAE.CREF(componentRef = cref),DAE.CREF(componentRef = classname)}),st,msg)
-      equation
-        (cache,v,st_1) = getBuiltinAttribute(cache,classname, cref, "start", st);
-      then
-        (cache,v,st_1);
-        
-    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "getFixed"),expLst = {DAE.CREF(componentRef = cref),DAE.CREF(componentRef = classname)}),st,msg)
-      equation
-        (cache,v,st_1) = getBuiltinAttribute(cache,classname, cref, "fixed", st);
-      then
-        (cache,v,st_1);
-        
-    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "getNominal"),expLst = {DAE.CREF(componentRef = cref),DAE.CREF(componentRef = classname)}),st,msg)
-      equation
-        (cache,v,st_1) = getBuiltinAttribute(cache,classname, cref, "nominal", st);
-      then
-        (cache,v,st_1);
-        
-    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "getStateSelect"),expLst = {DAE.CREF(componentRef = cref),DAE.CREF(componentRef = classname)}),st,msg)
-      equation
-        (cache,v,st_1) = getBuiltinAttribute(cache,classname, cref, "stateSelect", st);
-      then
-        (cache,v,st_1);
         
     case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "echo"),expLst = {bool_exp}),st,msg)
       equation
@@ -3164,7 +3115,7 @@ protected function getBuiltinAttribute "function: getBuiltinAttribute
   Retrieves a builtin attribute of a variable in a class by instantiating
   the class and retrieving the attribute value from the flat variable."
   input Env.Cache inCache;
-  input DAE.ComponentRef inComponentRef1;
+  input Absyn.Path classname;
   input DAE.ComponentRef inComponentRef2;
   input String inString3;
   input Interactive.InteractiveSymbolTable inInteractiveSymbolTable4;
@@ -3173,12 +3124,11 @@ protected function getBuiltinAttribute "function: getBuiltinAttribute
   output Interactive.InteractiveSymbolTable outInteractiveSymbolTable;
 algorithm
   (outCache,outValue,outInteractiveSymbolTable):=
-  matchcontinue (inCache,inComponentRef1,inComponentRef2,inString3,inInteractiveSymbolTable4)
+  matchcontinue (inCache,classname,inComponentRef2,inString3,inInteractiveSymbolTable4)
     local
-      Absyn.Path classname_1;
       DAE.DAElist dae,dae1;
       list<Env.Frame> env,env_1,env3,env4;
-      DAE.ComponentRef cref_1,classname,cref;
+      DAE.ComponentRef cref_1,cref;
       DAE.Attributes attr;
       tuple<DAE.TType, Option<Absyn.Path>> ty;
       DAE.Exp exp;
@@ -3207,8 +3157,7 @@ algorithm
         lstVarVal = vars,
         compiledFunctions = cf)))
       equation
-        classname_1 = Static.componentRefToPath(classname) "Check cached instantiated class" ;
-        Interactive.INSTCLASS(_,dae,env) = Interactive.getInstantiatedClass(ic, classname_1);
+        Interactive.INSTCLASS(_,dae,env) = Interactive.getInstantiatedClass(ic, classname);
         cref_1 = ComponentReference.joinCrefs(cref, ComponentReference.makeCrefIdent("stateSelect",DAE.ET_OTHER(),{}));
         (cache,attr,ty,DAE.EQBOUND(exp,_,_,_),_,_,_,_,_) = Lookup.lookupVar(cache, env, cref_1); 
         str = ExpressionDump.printExpStr(exp);
@@ -3225,18 +3174,17 @@ algorithm
         compiledFunctions = cf,
         loadedFiles = lf))
       equation
-        classname_1 = Static.componentRefToPath(classname);
-        ptot = Dependency.getTotalProgram(classname_1,p);
+        ptot = Dependency.getTotalProgram(classname,p);
         p_1 = SCodeUtil.translateAbsyn2SCode(ptot);
         (cache,env) = Inst.makeEnvFromProgram(cache,p_1, Absyn.IDENT(""));
-        (cache,(c as SCode.CLASS(name=n,encapsulatedPrefix=encflag,restriction=r)),env_1) = Lookup.lookupClass(cache,env, classname_1, true);
+        (cache,(c as SCode.CLASS(name=n,encapsulatedPrefix=encflag,restriction=r)),env_1) = Lookup.lookupClass(cache,env,classname,true);
         env3 = Env.openScope(env_1, encflag, SOME(n), SOME(Env.CLASS_SCOPE()));
         ci_state = ClassInf.start(r, Env.getEnvName(env3));
         (cache,env4,_,_,dae1,csets_1,ci_state_1,tys,_,_,_,_) = Inst.instClassIn(cache,env3, InnerOuter.emptyInstHierarchy,UnitAbsyn.noStore,DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
           ci_state, c, false, {}, false, Inst.INNER_CALL(), ConnectionGraph.EMPTY,NONE());
         cref_1 = ComponentReference.crefPrependIdent(cref, "stateSelect",{},DAE.ET_OTHER());
         (cache,attr,ty,DAE.EQBOUND(exp,_,_,_),_,_,_,_,_) = Lookup.lookupVar(cache, env4, cref_1);
-        ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(classname_1,dae1,env4));
+        ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(classname,dae1,env4));
         str = ExpressionDump.printExpStr(exp);
       then
         (cache,Values.STRING(str),Interactive.SYMBOLTABLE(p,aDep,sp,ic_1,vars,cf,lf));
@@ -3249,8 +3197,7 @@ algorithm
         lstVarVal = vars,
         compiledFunctions = cf)))
       equation
-        classname_1 = Static.componentRefToPath(classname);
-        Interactive.INSTCLASS(_,dae,env) = Interactive.getInstantiatedClass(ic, classname_1);
+        Interactive.INSTCLASS(_,dae,env) = Interactive.getInstantiatedClass(ic, classname);
         cref_1 = ComponentReference.crefPrependIdent(cref, attribute,{},DAE.ET_OTHER());
         (cache,attr,ty,DAE.VALBOUND(v,_),_,_,_,_,_) = Lookup.lookupVar(cache, env, cref_1);
       then
@@ -3266,18 +3213,17 @@ algorithm
         compiledFunctions = cf,
         loadedFiles = lf)))
       equation
-        classname_1 = Static.componentRefToPath(classname);
-        ptot = Dependency.getTotalProgram(classname_1,p);
+        ptot = Dependency.getTotalProgram(classname,p);
         p_1 = SCodeUtil.translateAbsyn2SCode(ptot);
         (cache,env) = Inst.makeEnvFromProgram(cache,p_1, Absyn.IDENT(""));
-        (cache,(c as SCode.CLASS(name=n,encapsulatedPrefix=encflag,restriction=r)),env_1) = Lookup.lookupClass(cache,env, classname_1, true);
+        (cache,(c as SCode.CLASS(name=n,encapsulatedPrefix=encflag,restriction=r)),env_1) = Lookup.lookupClass(cache,env,classname,true);
         env3 = Env.openScope(env_1, encflag, SOME(n), SOME(Env.CLASS_SCOPE()));
         ci_state = ClassInf.start(r, Env.getEnvName(env3));
         (cache,env4,_,_,dae1,csets_1,ci_state_1,tys,_,_,_,_) = Inst.instClassIn(cache,env3, InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
           ci_state, c, false, {}, false, Inst.INNER_CALL(), ConnectionGraph.EMPTY,NONE());
         cref_1 = ComponentReference.crefPrependIdent(cref,attribute,{},DAE.ET_OTHER());
         (cache,attr,ty,DAE.VALBOUND(v,_),_,_,_,_,_) = Lookup.lookupVar(cache, env4, cref_1);
-        ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(classname_1,dae1,env4));
+        ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(classname,dae1,env4));
       then
         (cache,v,Interactive.SYMBOLTABLE(p,aDep,sp,ic_1,vars,cf,lf));
 
