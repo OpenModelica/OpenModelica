@@ -532,18 +532,6 @@ RML_BEGIN_LABEL(System__readEnv)
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(System__getVariableNames)
-{
-  char* model = RML_STRINGDATA(rmlA0);
-  char* res = SystemImpl__getVariableNames(model);
-  if (res == NULL)
-    RML_TAILCALLK(rmlFC);
-  rmlA0 = (void*)mk_scon(res);
-  free(res);
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
 RML_BEGIN_LABEL(System__time)
 {
   rmlA0 = (void*) mk_rcon(SystemImpl__time());

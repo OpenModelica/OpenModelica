@@ -114,8 +114,6 @@ static const char *select_from_dir = NULL;
 
 #ifdef CONFIG_WITH_SENDDATA
 // SendData crap
-int getVariableListSize(const char* model);
-unsigned char getVariableList(const char* model, char* lst);
 void emulateStreamData(const char* data, const char*, const char*, const char*, const char*, int, int, int, int, int, const char*);
 void emulateStreamData2(const char*, const char*, int);
 #endif
@@ -922,21 +920,6 @@ static void addSendDataError(const char* functionName)
       "%s failed because OpenModelica was configured without sendData support.",
       &functionName,
       1);
-}
-
-static char* SystemImpl__getVariableNames(const char* model)
-{
-#ifdef CONFIG_WITH_SENDDATA
-  int size = getVariableListSize(model);
-  char *res;
-  if(!size) return NULL;
-  res = (char*)malloc(sizeof(char)*size +1);
-  getVariableList(model, res);
-  return res;
-#else
-  addSendDataError("getVariableNames");
-  return NULL;
-#endif
 }
 
 /* If the Modelica string is used as a C string literal, this

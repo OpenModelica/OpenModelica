@@ -328,12 +328,6 @@ public function readFile
   external "C" outString = System_readFile(inString) annotation(Library = "omcruntime");
 end readFile;
 
-public function getVariableNames
-  input String modelname;
-  output String variables;
-  external "C" variables=System_getVariableNames(modelname) annotation(Library = "omcruntime");
-end getVariableNames;
-
 public function systemCall
   input String inString;
   output Integer outInteger;

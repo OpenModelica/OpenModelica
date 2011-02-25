@@ -1667,19 +1667,14 @@ algorithm
         /* plotparametric This rule represents the normal case when an array of at least two elements
          *  is given as an argument
          */
-    case (cache,env,
-        DAE.CALL(path = Absyn.IDENT(name = "plotParametric2"),expLst = expVars),
-        (st as Interactive.SYMBOLTABLE(
-          ast = p,explodedAst = sp,instClsLst = ic,
-          lstVarVal = iv,compiledFunctions = cf,
-          loadedFiles = lf)),msg)
+    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "plotParametric2"),expLst = {exp,DAE.ARRAY(array=expVars),DAE.SCONST(filename)}),st,msg)
       equation
+        expVars = exp::expVars;
         expVars = Util.listMap(expVars,Expression.CodeVarToCref);
         vars_1 = Util.listMap(expVars, ExpressionDump.printExpStr);
         length = listLength(vars_1);
         (length > 1) = true;
-        (cache,Values.STRING(filename),_) = Ceval.ceval(cache,env,
-          buildCurrentSimulationResultExp(), true, SOME(st),NONE(), msg);
+        (cache,filename) = cevalCurrentSimulationResultExp(cache,env,filename,st,msg);
         value = ValuesUtil.readDataset(filename, vars_1, 0);
         pwd = System.pwd();
         cit = winCitation();
@@ -1695,65 +1690,11 @@ algorithm
       then
         (cache,Values.BOOL(true),st);
         
-    case (cache,env,
-        DAE.CALL(path = Absyn.IDENT(name = "plotParametric2"),expLst = expVars),
-        (st as Interactive.SYMBOLTABLE(
-          ast = p,explodedAst = sp,instClsLst = ic,
-          lstVarVal = iv,compiledFunctions = cf,
-          loadedFiles = lf)),msg)
-      equation
-        expVars = Util.listMap(expVars,Expression.CodeVarToCref);
-        vars_1 = Util.listMap(expVars, ExpressionDump.printExpStr) "Catch error with less than two elements (=variables) in the array.
-           This means we cannot plot var2 as a function of var1 as var2 is missing" ;
-        length = listLength(vars_1);
-        (length < 2) = true;
-      then
-        (cache,Values.STRING("Error: Less than two variables given to plotParametric."),st);
+    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "plotParametric2")),st,msg) then (cache,Values.BOOL(false),st);
         
-    case (cache,env,
-        DAE.CALL(path = Absyn.IDENT(name = "plotParametric2"),expLst = expVars),
-        (st as Interactive.SYMBOLTABLE(
-          ast = p,explodedAst = sp,instClsLst = ic,
-          lstVarVal = iv,compiledFunctions = cf,
-          loadedFiles = lf)),msg)
-      equation
-        expVars = Util.listMap(expVars,Expression.CodeVarToCref);
-        vars_1 = Util.listMap(expVars, ExpressionDump.printExpStr) "Catch error reading simulation file." ;
-        (cache,Values.STRING(filename),_) = Ceval.ceval(cache,env,
-          buildCurrentSimulationResultExp(), true, SOME(st),NONE(), msg) "Util.list_union_elt(\"time\",vars\') => vars\'\' &" ;
-        failure(_ = ValuesUtil.readDataset(filename, vars_1, 0));
-      then
-        (cache,Values.STRING("Error reading the simulation result."),st);
-        
-    case (cache,env,
-        DAE.CALL(path = Absyn.IDENT(name = "plotParametric2"),expLst = expVars),
-        (st as Interactive.SYMBOLTABLE(
-          ast = p,explodedAst = sp,instClsLst = ic,
-          lstVarVal = iv,compiledFunctions = cf,
-          loadedFiles = lf)),msg)
-      equation
-        expVars = Util.listMap(expVars,Expression.CodeVarToCref);
-        vars_1 = Util.listMap(expVars, ExpressionDump.printExpStr) "Catch error reading simulation file." ;
-        failure((_,_,_) = Ceval.ceval(cache,env,
-          buildCurrentSimulationResultExp(), true, SOME(st),NONE(), Ceval.NO_MSG())) "Util.list_union_elt(\"time\",vars\') => vars\'\' &" ;
-      then
-        (cache,Values.STRING("No simulation result to plot."),st);
-        
-    case (cache,env,
-        DAE.CALL(path = Absyn.IDENT(name = "plotParametric2"),expLst = expVars),
-        (st as Interactive.SYMBOLTABLE(
-          ast = p,explodedAst = sp,instClsLst = ic,
-          lstVarVal = iv,compiledFunctions = cf,
-          loadedFiles = lf)),msg)
-      then
-        (cache,Values.STRING("Unknown error while plotting"),st);
-        /* end plotparametric */
-        
-        //plotParametric2(modell, x,y,interpolation)
     case (cache,env,
         DAE.CALL(path = Absyn.IDENT(name = "plotParametric"),
-          expLst = {   DAE.CODE(Absyn.C_TYPENAME(className),_),
-            DAE.ARRAY(array = expVars),
+          expLst = {exp,DAE.ARRAY(array = expVars),DAE.SCONST(filename),
             DAE.SCONST(string = interpolation), DAE.SCONST(string = title), DAE.BCONST(bool = legend), DAE.BCONST(bool = grid), DAE.BCONST(bool = logX), DAE.BCONST(bool = logY), DAE.SCONST(string = xLabel), DAE.SCONST(string = yLabel), DAE.BCONST(bool = points), xRange, yRange
             }),
             
@@ -1762,12 +1703,12 @@ algorithm
               lstVarVal = iv,compiledFunctions = cf,
               loadedFiles = lf)),msg)
       equation
+        expVars = exp::expVars;
         expVars = Util.listMap(expVars,Expression.CodeVarToCref);
         vars_1 = Util.listMap(expVars, ExpressionDump.printExpStr);
         length = listLength(vars_1);
         (length > 1) = true;
-        filename = Absyn.pathString(className);
-        filename = stringAppendList({filename, "_res.plt"});
+        (cache,filename) = cevalCurrentSimulationResultExp(cache,env,filename,st,msg);
         
         value = ValuesUtil.readDataset(filename, vars_1, 0);
         pwd = System.pwd();
@@ -1782,94 +1723,8 @@ algorithm
       then
         (cache,Values.BOOL(true),st);
         
-        //plotParametric2(x,y,interpolation)
-    case (cache,env,
-        DAE.CALL(path = Absyn.IDENT(name = "plotParametric"),
-          expLst = {DAE.ARRAY(array = expVars),
-            DAE.SCONST(string = interpolation), DAE.SCONST(string = title), DAE.BCONST(bool = legend), DAE.BCONST(bool = grid), DAE.BCONST(bool = logX), DAE.BCONST(bool = logY), DAE.SCONST(string = xLabel), DAE.SCONST(string = yLabel), DAE.BCONST(bool = points), xRange, yRange
-            }),
-            (st as Interactive.SYMBOLTABLE(
-              ast = p,explodedAst = sp,instClsLst = ic,
-              lstVarVal = iv,compiledFunctions = cf,
-              loadedFiles = lf)),msg)
-      equation
-        expVars = Util.listMap(expVars,Expression.CodeVarToCref);
-        vars_1 = Util.listMap(expVars, ExpressionDump.printExpStr);
-        length = listLength(vars_1);
-        (length > 1) = true;
-        (cache,Values.STRING(filename),_) = Ceval.ceval(cache,env,
-          buildCurrentSimulationResultExp(), true, SOME(st),NONE(), msg);
-        value = ValuesUtil.readDataset(filename, vars_1, 0);
-        resI = ValuesUtil.sendPtolemyplotDataset(value, vars_1, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, ExpressionDump.printExpStr(xRange), ExpressionDump.printExpStr(yRange));
-      then
-        (cache,Values.BOOL(true),st);
-        
-    case (cache,env,
-        DAE.CALL(path = Absyn.IDENT(name = "plotParametric"),expLst = expVars),
-        (st as Interactive.SYMBOLTABLE(
-          ast = p,explodedAst = sp,instClsLst = ic,
-          lstVarVal = iv,compiledFunctions = cf,
-          loadedFiles = lf)),msg)
-      equation
-        expVars = Util.listMap(expVars,Expression.CodeVarToCref);
-        vars_1 = Util.listMap(expVars, ExpressionDump.printExpStr) "Catch error reading simulation file." ;
-        failure((_,_,_) = Ceval.ceval(cache,env,
-          buildCurrentSimulationResultExp(), true, SOME(st),NONE(), Ceval.NO_MSG())) "Util.list_union_elt(\"time\",vars\') => vars\'\' &" ;
-      then
-        (cache,Values.STRING("No simulation result to plot."),st);
-    
-    case (cache,env,
-        DAE.CALL(path = Absyn.IDENT(name = "plotParametric"),expLst = expVars),
-        (st as Interactive.SYMBOLTABLE(
-          ast = p,explodedAst = sp,instClsLst = ic,
-          lstVarVal = iv,compiledFunctions = cf,
-          loadedFiles = lf)),msg)
-      equation
-        expVars = Util.listMap(expVars,Expression.CodeVarToCref);
-        vars_1 = Util.listMap(expVars, ExpressionDump.printExpStr) "Catch error with less than two elements (=variables) in the array.
-           This means we cannot plot var2 as a function of var1 as var2 is missing" ;
-        length = listLength(vars_1);
-        (length < 2) = true;
-      then
-        (cache,Values.STRING("Error: Less than two variables given to plotParametric."),st);
-        
-    case (cache,env,
-        DAE.CALL(path = Absyn.IDENT(name = "plotParametric"),expLst = expVars),
-        (st as Interactive.SYMBOLTABLE(
-          ast = p,explodedAst = sp,instClsLst = ic,
-          lstVarVal = iv,compiledFunctions = cf,
-          loadedFiles = lf)),msg)
-      equation
-        expVars = Util.listMap(expVars,Expression.CodeVarToCref);
-        vars_1 = Util.listMap(expVars, ExpressionDump.printExpStr) "Catch error reading simulation file." ;
-        (cache,Values.STRING(filename),_) = Ceval.ceval(cache,env,
-          buildCurrentSimulationResultExp(), true, SOME(st),NONE(), msg) "Util.list_union_elt(\"time\",vars\') => vars\'\' &" ;
-        failure(_ = ValuesUtil.readDataset(filename, vars_1, 0));
-      then
-        (cache,Values.STRING("Error reading the simulation result."),st);
-        
-    case (cache,env,
-        DAE.CALL(path = Absyn.IDENT(name = "plotParametric"),expLst = expVars),
-        (st as Interactive.SYMBOLTABLE(
-          ast = p,explodedAst = sp,instClsLst = ic,
-          lstVarVal = iv,compiledFunctions = cf,
-          loadedFiles = lf)),msg)
-      equation
-        expVars = Util.listMap(expVars,Expression.CodeVarToCref);
-        vars_1 = Util.listMap(expVars, ExpressionDump.printExpStr) "Catch error reading simulation file." ;
-        failure((_,_,_) = Ceval.ceval(cache,env, buildCurrentSimulationResultExp(), true, SOME(st),NONE(), Ceval.NO_MSG())) "Util.list_union_elt(\"time\",vars\') => vars\'\' &" ;
-      then
-        (cache,Values.STRING("No simulation result to plot."),st);
-        
-    case (cache,env,
-        DAE.CALL(path = Absyn.IDENT(name = "plotParametric"),expLst = expVars),
-        (st as Interactive.SYMBOLTABLE(
-          ast = p,explodedAst = sp,instClsLst = ic,
-          lstVarVal = iv,compiledFunctions = cf,
-          loadedFiles = lf)),msg)
-      then
-        (cache,Values.STRING("Unknown error while plotting"),st);
-        /* end plotparametric */
+    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "plotParametric")),st,msg)
+      then (cache,Values.BOOL(false),st);
         
     case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "enableSendData"),expLst = {DAE.BCONST(bool = b)}),
         (st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)

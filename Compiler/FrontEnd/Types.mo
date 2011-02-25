@@ -1304,6 +1304,7 @@ algorithm
       equation
         tp = typeOfValue(v);
       then boxIfUnboxedType(tp);
+    case Values.NORETCALL() then DAE.T_NORETCALL_DEFAULT;
     case (v)
       equation
         str = "- Types.typeOfValue failed: " +& ValuesUtil.valString(v);

@@ -1024,69 +1024,147 @@ function list "Lists the contents of the given class, or all loaded classes"
 external "builtin";
 end list;
 
-partial function basePlotFunction "extending this does not seem to work at the moment :("
-  input VariableNames vars;
-  input String fileName := "<default>";
-  input String interpolation := "linear";
-  input String title := "Plot by OpenModelica";
-  input Boolean legend := true;
-  input Boolean grid := true;
-  input Boolean logX := false;
-  input Boolean logY := false;
-  input String xLabel := "time";
-  input String yLabel := "";
-  input Boolean points := false;
-  input Real xRange[2] := {0.0,0.0};
-  input Real yRange[2] := {0.0,0.0};
-  output Boolean success;
+partial function basePlotFunction "Extending this does not seem to work at the moment. A real shame; functions below are copy-paste and all need to be updated if the interface changes."
+  input String fileName := "<default>" "The filename containing the variables. <default> will read the last simulation result";
+  input String interpolation := "linear" "
+    Determines if the simulation data should be interpolated to allow drawing of continuous lines in the diagram.
+    \"linear\" results in linear interpolation between data points, \"constant\" keeps the value of the last known
+    data point until a new one is found and \"none\" results in a diagram where only known data points are plotted."
+  ;
+  input String title := "Plot by OpenModelica" "This text will be used as the diagram title.";
+  input Boolean legend := true "Determines whether or not the variable legend is shown.";
+  input Boolean grid := true "Determines whether or not a grid is shown in the diagram.";
+  input Boolean logX := false "Determines whether or not the horizontal axis is logarithmically scaled.";
+  input Boolean logY := false "Determines whether or not the vertical axis is logarithmically scaled.";
+  input String xLabel := "time" "This text will be used as the horizontal label in the diagram.";
+  input String yLabel := "" "This text will be used as the vertical label in the diagram.";
+  input Boolean points := false "Determines whether or not the data points should be indicated by a dot in the diagram.";
+  input Real xRange[2] := {0.0,0.0} "Determines the horizontal interval that is visible in the diagram. {0,0} will select a suitable range.";
+  input Real yRange[2] := {0.0,0.0} "Determines the vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
+  output Boolean success "Returns true on success";
 end basePlotFunction;
 
-function plot
-  input VariableNames vars;
-  input String fileName := "<default>";
-  input String interpolation := "linear";
-  input String title := "Plot by OpenModelica";
-  input Boolean legend := true;
-  input Boolean grid := true;
-  input Boolean logX := false;
-  input Boolean logY := false;
-  input String xLabel := "time";
-  input String yLabel := "";
-  input Boolean points := false;
-  input Real xRange[2] := {0.0,0.0};
-  input Real yRange[2] := {0.0,0.0};
-  output Boolean success;
+function plot "Launches a plot window using OMPlotWindow. Returns true on success.
+  If OpenModelica was compiled without sendData support, this function will return false.
+  
+  Example command sequences:
+  simulate(A);plot({x,y,z});
+  simulate(A);plot(x);
+  simulate(A,fileNamePrefix=\"B\");simulate(C);plot(z,\"B.mat\",legend=false);
+  "
+  input VariableNames vars "The variables you want to plot";
+  input String fileName := "<default>" "The filename containing the variables. <default> will read the last simulation result";
+  input String interpolation := "linear" "
+    Determines if the simulation data should be interpolated to allow drawing of continuous lines in the diagram.
+    \"linear\" results in linear interpolation between data points, \"constant\" keeps the value of the last known
+    data point until a new one is found and \"none\" results in a diagram where only known data points are plotted."
+  ;
+  input String title := "Plot by OpenModelica" "This text will be used as the diagram title.";
+  input Boolean legend := true "Determines whether or not the variable legend is shown.";
+  input Boolean grid := true "Determines whether or not a grid is shown in the diagram.";
+  input Boolean logX := false "Determines whether or not the horizontal axis is logarithmically scaled.";
+  input Boolean logY := false "Determines whether or not the vertical axis is logarithmically scaled.";
+  input String xLabel := "time" "This text will be used as the horizontal label in the diagram.";
+  input String yLabel := "" "This text will be used as the vertical label in the diagram.";
+  input Boolean points := false "Determines whether or not the data points should be indicated by a dot in the diagram.";
+  input Real xRange[2] := {0.0,0.0} "Determines the horizontal interval that is visible in the diagram. {0,0} will select a suitable range.";
+  input Real yRange[2] := {0.0,0.0} "Determines the vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
+  output Boolean success "Returns true on success";
 external "builtin";
 end plot;
 
-function plotAll
-  input String fileName := "<default>";
-  input String interpolation := "linear";
-  input String title := "Plot by OpenModelica";
-  input Boolean legend := true;
-  input Boolean grid := true;
-  input Boolean logX := false;
-  input Boolean logY := false;
-  input String xLabel := "time";
-  input String yLabel := "";
-  input Boolean points := false;
-  input Real xRange[2] := {0.0,0.0};
-  input Real yRange[2] := {0.0,0.0};
-  output Boolean success;
+function plotAll "Works in the same way as plot(), but does not accept any
+  variable names as input. Instead, all variables are part of the plot window.
+  
+  Example command sequences:
+  simulate(A);plotAll();
+  simulate(A,fileNamePrefix=\"B\");simulate(C);plotAll(x,\"B.mat\");
+  "
+  input String fileName := "<default>" "The filename containing the variables. <default> will read the last simulation result";
+  input String interpolation := "linear" "
+    Determines if the simulation data should be interpolated to allow drawing of continuous lines in the diagram.
+    \"linear\" results in linear interpolation between data points, \"constant\" keeps the value of the last known
+    data point until a new one is found and \"none\" results in a diagram where only known data points are plotted."
+  ;
+  input String title := "Plot by OpenModelica" "This text will be used as the diagram title.";
+  input Boolean legend := true "Determines whether or not the variable legend is shown.";
+  input Boolean grid := true "Determines whether or not a grid is shown in the diagram.";
+  input Boolean logX := false "Determines whether or not the horizontal axis is logarithmically scaled.";
+  input Boolean logY := false "Determines whether or not the vertical axis is logarithmically scaled.";
+  input String xLabel := "time" "This text will be used as the horizontal label in the diagram.";
+  input String yLabel := "" "This text will be used as the vertical label in the diagram.";
+  input Boolean points := false "Determines whether or not the data points should be indicated by a dot in the diagram.";
+  input Real xRange[2] := {0.0,0.0} "Determines the horizontal interval that is visible in the diagram. {0,0} will select a suitable range.";
+  input Real yRange[2] := {0.0,0.0} "Determines the vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
+  output Boolean success "Returns true on success";
 external "builtin";
 end plotAll;
 
-function plot2
+function plot2 "Uses the Java-based plot window (ptplot.jar) to launch a plot,
+  similar to the plot() command. This command accepts fewer options, but works
+  even when OpenModelica was not compiled with sendData support.
+  
+  Example command sequences:
+  simulate(A);plot2({x,y});
+  simulate(A,fileNamePrefix=\"B\");simulate(C);plot2(x,\"B.mat\");
+  "
   input VariableNames vars;
   input String fileName := "<default>";
-  output Boolean success;
+  output Boolean success "Returns true on success";
 external "builtin";
 end plot2;
 
-function visualize
+function visualize "Uses the 3D visualization package, SimpleVisual.mo, to
+  visualize the model. See chapter 3.4 (3D Animation) of the OpenModelica
+  System Documentation for more details.
+  
+  Example command sequence:
+  simulate(A,outputFormat=\"plt\");visualize(A);
+  "
   input TypeName classToVisualize;
-  output Boolean success;
+  output Boolean success "Returns true on success";
 end visualize;
+
+function plotParametric "Plots the y-variables as a function of the x-variable.
+
+  Example command sequences:
+  simulate(A);plotParametric(x,y);
+  simulate(A,fileNamePrefix=\"B\");simulate(C);plotParametric(x,{y1,y2,y3},fileName=\"B.mat\",yLabel=\"[V]\");
+  "
+  input VariableName xVariable;
+  input VariableNames yVariables;
+  input String fileName := "<default>" "The filename containing the variables. <default> will read the last simulation result";
+  input String interpolation := "linear" "
+    Determines if the simulation data should be interpolated to allow drawing of continuous lines in the diagram.
+    \"linear\" results in linear interpolation between data points, \"constant\" keeps the value of the last known
+    data point until a new one is found and \"none\" results in a diagram where only known data points are plotted."
+  ;
+  input String title := "Plot by OpenModelica" "This text will be used as the diagram title.";
+  input Boolean legend := true "Determines whether or not the variable legend is shown.";
+  input Boolean grid := true "Determines whether or not a grid is shown in the diagram.";
+  input Boolean logX := false "Determines whether or not the horizontal axis is logarithmically scaled.";
+  input Boolean logY := false "Determines whether or not the vertical axis is logarithmically scaled.";
+  input String xLabel := "" "This text will be used as the horizontal label in the diagram.";
+  input String yLabel := "" "This text will be used as the vertical label in the diagram.";
+  input Boolean points := false "Determines whether or not the data points should be indicated by a dot in the diagram.";
+  input Real xRange[2] := {0.0,0.0} "Determines the horizontal interval that is visible in the diagram. {0,0} will select a suitable range.";
+  input Real yRange[2] := {0.0,0.0} "Determines the vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
+  output Boolean success "Returns true on success";
+external "builtin";
+end plotParametric;
+
+function plotParametric2 "Plots the y-variables as a function of the x-variable.
+
+  Example command sequences:
+  simulate(A);plotParametric2(x,y);
+  simulate(A,fileNamePrefix=\"B\");simulate(C);plotParametric2(x,{y1,y2,y3},\"B.mat\");
+  "
+  input VariableName xVariable;
+  input VariableNames yVariables;
+  input String fileName := "<default>";
+  output Boolean success "Returns true on success";
+external "builtin";
+end plotParametric2;
 
 end Scripting;
 end OpenModelica;

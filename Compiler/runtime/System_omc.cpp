@@ -300,13 +300,6 @@ extern double System_getVariableValue(double _timeStamp, void* _timeValues, void
   return res;
 }
 
-extern const char* System_getVariableNames(const char* _modelname)
-{
-  char* res = SystemImpl__getVariableNames(_modelname);
-  if(res==NULL) MMC_THROW();
-  return res; /* it's malloc'ed already */
-}
-
 extern void* System_getFileModificationTime(const char *fileName)
 {
   struct stat attrib;   // create a file attribute structure
