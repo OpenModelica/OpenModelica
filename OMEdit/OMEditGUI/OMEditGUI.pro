@@ -39,7 +39,8 @@ SOURCES += main.cpp\
     Transformation.cpp \
     DocumentationWidget.cpp \
     OptionsWidget.cpp \
-    BitmapAnnotation.cpp
+    BitmapAnnotation.cpp \
+    ../../c_runtime/read_matlab4.c
 
 HEADERS  += mainwindow.h \
     ProjectTabWidget.h \
@@ -70,7 +71,8 @@ HEADERS  += mainwindow.h \
     Transformation.h \
     DocumentationWidget.h \
     OptionsWidget.h \
-    BitmapAnnotation.h
+    BitmapAnnotation.h \
+    ../../c_runtime/read_matlab4.h
 
 # -------For OMNIorb
 win32 {
@@ -81,7 +83,7 @@ DEFINES += __x86__ \
 LIBS += -L$$(OMDEV)/lib/omniORB-4.1.4-mingw/lib/x86_win32 \
     -lomniORB414_rt \
     -lomnithread34_rt
-INCLUDEPATH += $$(OMDEV)/lib/omniORB-4.1.4-mingw/include
+INCLUDEPATH += $$(OMDEV)/lib/omniORB-4.1.4-mingw/include ../../c_runtime/
 } else {
     include(OMEdit.config)
 }

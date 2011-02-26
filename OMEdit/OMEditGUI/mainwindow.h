@@ -134,6 +134,7 @@ public:
     QAction *omcLoggerAction;
     QAction *openOMShellAction;
     QAction *exportToOMNotebookAction;
+    QAction *importFromOMNotebookAction;
     QAction *exportAsImage;
     QAction *openOptions;
     QAction *gridLinesAction;
@@ -160,6 +161,7 @@ public:
     QToolBar *viewToolBar;
     QToolBar *shapesToolBar;
     QToolBar *simulationToolBar;
+    QToolBar *omnotebookToolbar;
 
     QDockWidget *plotdock;
     QDockWidget *documentationdock;
@@ -182,6 +184,7 @@ private slots:
     void createOMNotebookTitleCell(QDomDocument xmlDocument, QDomElement pDomElement);
     void createOMNotebookImageCell(QDomDocument xmlDocument, QDomElement pDomElement, QString filePath);
     void createOMNotebookCodeCell(QDomDocument xmlDocument, QDomElement pDomElement);
+    void importModelfromOMNotebook();
     void exportModelAsImage();
     void openConfigurationOptions();
     void checkModel();

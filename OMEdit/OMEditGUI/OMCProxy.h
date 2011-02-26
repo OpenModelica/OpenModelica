@@ -146,7 +146,9 @@ public:
     bool deleteConnection(QString from, QString to, QString className);
     bool instantiateModel(QString modelName);
     bool simulate(QString modelName, QString simualtionParameters);
-    bool plot(QString modelName, QString plotVariables);
+    //bool plot(QString modelName, QString plotVariables);
+    // modified plot API call
+    bool plot(QString plotVariables, QString fileName);
     bool plotParametric(QString modelName, QString plotVariables);
     bool visualize(QString modelName);
     QString checkModel(QString modelName);

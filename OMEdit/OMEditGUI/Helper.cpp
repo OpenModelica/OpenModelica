@@ -74,7 +74,7 @@ QString Helper::modelicaLibrarySearchText = QString("Search Modelica Standard Li
 QString Helper::noItemFound = QString("Sorry, no items found");
 
 QString Helper::ModelicaSimulationMethods = "DASSL,DASSL2,Euler,Runge-Kutta";
-QString Helper::ModelicaSimulationOutputFormats = "mat,csv,plt,empty";
+QString Helper::ModelicaSimulationOutputFormats = "mat,plt,csv,empty";
 
 QString GUIMessages::getMessage(int type)
 {

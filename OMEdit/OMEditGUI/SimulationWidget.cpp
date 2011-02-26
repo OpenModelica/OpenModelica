@@ -90,7 +90,6 @@ void SimulationWidget::setUpForm()
     mpOutputFormatLabel = new QLabel(tr("Output Format:"));
     mpOutputFormatComboBox = new QComboBox;
     mpOutputFormatComboBox->addItems(Helper::ModelicaSimulationOutputFormats.toLower().split(","));
-    mpOutputFormatComboBox->setCurrentIndex(mpOutputFormatComboBox->findText("plt"));
 
     gridIntegrationLayout->addWidget(mpMethodLabel, 0, 0);
     gridIntegrationLayout->addWidget(mpMethodComboBox, 0, 1);
@@ -244,12 +243,14 @@ void SimulationWidget::simulate()
             if (!message.isEmpty())
                 message = QString(" with message:\n").append(message);
 
-            // if simualtion output format is not plt then dont show plot window.
+            // if simualtion output format is not plt and mat then dont show plot window.
             // only show user the message that result file is created.
-            if (mpOutputFormatComboBox->currentText().compare("plt") == 0)
+            QRegExp regExp("\\b(mat|plt)\\b");
+            if (regExp.indexIn(mpOutputFormatComboBox->currentText()) != -1)
             {
                 mpParentMainWindow->mpPlotWidget->readPlotVariables(QString(projectTab->mModelNameStructure)
-                                                                    .append("_res.plt"));
+                                                                    .append("_res.")
+                                                                    .append(mpOutputFormatComboBox->currentText()));
                 mpParentMainWindow->plotdock->show();
                 mpParentMainWindow->mpMessageWidget->printGUIInfoMessage(QString("Simulated '")
                                                                          .append(projectTab->mModelNameStructure)

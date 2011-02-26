@@ -55,5 +55,7 @@
         <file>Resources/icons/exit.png</file>
         <file>Resources/icons/type-icon.png</file>
         <file>Resources/icons/bitmap-shape.png</file>
+        <file>Resources/icons/import-omnotebook.png</file>
+        <file>Resources/icons/export-omnotebook.png</file>
     </qresource>
 </RCC>

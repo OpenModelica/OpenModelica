@@ -287,10 +287,14 @@ void MainWindow::createActions()
     openOMShellAction->setStatusTip(tr("Opens OpenModelica Shell (OMShell)"));
     connect(openOMShellAction, SIGNAL(triggered()), SLOT(openOMShell()));
 
-    exportToOMNotebookAction = new QAction(tr("Export to OMNotebook"), this);
+    exportToOMNotebookAction = new QAction(QIcon(":/Resources/icons/export-omnotebook.png"), tr("Export to OMNotebook"), this);
     exportToOMNotebookAction->setStatusTip(tr("Exports the current model to OMNotebook"));
     exportToOMNotebookAction->setEnabled(false);
     connect(exportToOMNotebookAction, SIGNAL(triggered()), SLOT(exportModelToOMNotebook()));
+
+    importFromOMNotebookAction = new QAction(QIcon(":/Resources/icons/import-omnotebook.png"), tr("Import from OMNotebook"), this);
+    importFromOMNotebookAction->setStatusTip(tr("Imports the models from OMNotebook"));
+    connect(importFromOMNotebookAction, SIGNAL(triggered()), SLOT(importModelfromOMNotebook()));
 
     exportAsImage = new QAction(tr("Export as Image (png)"), this);
     exportAsImage->setStatusTip(tr("Exports the current model to Image (png)"));
@@ -421,6 +425,7 @@ void MainWindow::createMenus()
     QAction *searchMSLAction = searchMSLdock->toggleViewAction();
     searchMSLAction->setText(tr("&Search MSL"));
     searchMSLAction->setShortcut(QKeySequence("Ctrl+Shift+f"));
+    searchMSLAction->setIcon(QIcon(":/Resources/icons/search.png"));
     QAction *libAction = libdock->toggleViewAction();
     libAction->setText(tr("&Components"));
     QAction *messageAction = messagedock->toggleViewAction();
@@ -445,6 +450,9 @@ void MainWindow::createMenus()
 
     menuTools->addAction(omcLoggerAction);
     menuTools->addAction(openOMShellAction);
+//    menuTools->addSeparator();
+//    menuTools->addAction(exportToOMNotebookAction);
+//    menuTools->addAction(importFromOMNotebookAction);
     menuTools->addSeparator();
     menuTools->addAction(openOptions);
 
@@ -518,6 +526,11 @@ void MainWindow::createToolbars()
     simulationToolBar->setAllowedAreas(Qt::TopToolBarArea);
     simulationToolBar->addAction(simulationAction);
     simulationToolBar->addAction(plotAction);
+
+//    omnotebookToolbar = addToolBar(tr("OMNotebook"));
+//    omnotebookToolbar->setAllowedAreas(Qt::TopToolBarArea);
+//    omnotebookToolbar->addAction(exportToOMNotebookAction);
+//    omnotebookToolbar->addAction(importFromOMNotebookAction);
 }
 
 //! Open Simulation Window
@@ -622,6 +635,7 @@ void MainWindow::openOMShell()
 
 //! Exports the current model to OMNotebook.
 //! Creates a new onb file and add the model text and model image in it.
+//! @see importModelfromOMNotebook();
 void MainWindow::exportModelToOMNotebook()
 {
     QDir fileDialogSaveDir;
@@ -635,12 +649,11 @@ void MainWindow::exportModelToOMNotebook()
         return;
 
     // create a progress bar
-
     int endtime = 6;
     int value = 1;
     QProgressDialog progressBar(this, Qt::WindowTitleHint);
     progressBar.setMinimum(0);
-    progressBar.setMaximum(6);
+    progressBar.setMaximum(endtime);
     progressBar.setLabelText(tr("Exporting model to OMNotebook"));
     progressBar.setCancelButton(0);
     progressBar.setWindowModality(Qt::WindowModal);
@@ -748,6 +761,65 @@ void MainWindow::createOMNotebookCodeCell(QDomDocument xmlDocument, QDomElement 
     QDomElement outputElement = xmlDocument.createElement("Output");
     outputElement.appendChild(xmlDocument.createTextNode(tr("")));
     textCellElement.appendChild(outputElement);
+}
+
+//! Imports the models from OMNotebook.
+//! @see exportModelToOMNotebook();
+void MainWindow::importModelfromOMNotebook()
+{
+    QString fileName = QFileDialog::getOpenFileName(this, tr("Choose File"),
+                                                    QDir::currentPath() + QString("/../.."),
+                                                    Helper::omnotebookFileTypes);
+    if (fileName.isEmpty())
+        return;
+
+    // create a progress bar
+    int endtime = 3;
+    int value = 1;
+    QProgressDialog progressBar(this, Qt::WindowTitleHint);
+    progressBar.setMinimum(0);
+    progressBar.setMaximum(endtime);
+    progressBar.setAutoReset(false);
+    progressBar.setLabelText(tr("Importing data from OMNotebook"));
+    progressBar.setCancelButton(0);
+    progressBar.setWindowModality(Qt::WindowModal);
+    progressBar.setWindowTitle(QString(Helper::applicationName).append(" - Import from OMNotebook"));
+    progressBar.setValue(value);
+    progressBar.show();
+
+    // open the xml file
+    QFile file(fileName);
+    if (!file.open(QIODevice::ReadOnly))
+    {
+        mpMessageWidget->printGUIErrorMessage(tr("Error opening the file"));
+        progressBar.hide();
+        return;
+    }
+    progressBar.setValue(value++);
+
+    // create the xml from the omnotebook file.
+    QDomDocument xmlDocument;
+    if (!xmlDocument.setContent(&file))
+    {
+        mpMessageWidget->printGUIErrorMessage(tr("Error reading the xml file."));
+        progressBar.hide();
+        return;
+    }
+    progressBar.setValue(value++);
+    // read the file
+    QDomNodeList nodes = xmlDocument.elementsByTagName(tr("Input"));
+    endtime = endtime + nodes.size();
+    progressBar.setMaximum(endtime);
+    for (int i = 0; i < nodes.size(); i++)
+    {
+        if (nodes.at(i).toElement().text().toLower().startsWith("model"))
+        {
+            mpProjectTabs->openModel(nodes.at(i).toElement().text());
+        }
+        qDebug() << nodes.at(i).nodeName() << nodes.at(i).toElement().text();
+        progressBar.setValue(value++);
+    }
+    progressBar.hide();
 }
 
 void MainWindow::exportModelAsImage()

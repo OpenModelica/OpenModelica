@@ -151,9 +151,9 @@ bool OMCProxy::startServer()
         QFile objectRefFile;
         QString fileIdentifier;
         if (mDisplayErrors)
-            fileIdentifier = qApp->sessionId().append(QTime::currentTime().toString().remove(":"));
+            fileIdentifier = qApp->sessionId().append(QTime::currentTime().toString(tr("hh:mm:ss:zzz")).remove(":"));
         else
-            fileIdentifier = QString("temp-").append(qApp->sessionId().append(QTime::currentTime().toString().remove(":")));
+            fileIdentifier = QString("temp-").append(qApp->sessionId().append(QTime::currentTime().toString(tr("hh:mm:ss:zzz")).remove(":")));
 
         #ifdef WIN32 // Win32
             objectRefFile.setFileName(QString(QDir::tempPath()).append(QDir::separator()).append("openmodelica.objid.").append(this->mName).append(fileIdentifier));
@@ -1138,9 +1138,19 @@ bool OMCProxy::simulate(QString modelName, QString simualtionParameters)
         return false;
 }
 
-bool OMCProxy::plot(QString modelName, QString plotVariables)
+//bool OMCProxy::plot(QString modelName, QString plotVariables)
+//{
+//    sendCommand("plot(" + modelName + ",{" + plotVariables + "})");
+//    if (getResult().contains("true"))
+//        return true;
+//    else
+//        return false;
+//}
+
+// modified plot API call
+bool OMCProxy::plot(QString plotVariables, QString fileName)
 {
-    sendCommand("plot(" + modelName + ",{" + plotVariables + "})");
+    sendCommand("plot({" + plotVariables + "}, " + fileName + ")");
     if (getResult().contains("true"))
         return true;
     else

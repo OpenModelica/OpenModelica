@@ -43,6 +43,8 @@ class PlotWidget : public QWidget
     Q_OBJECT
 public:
     PlotWidget(MainWindow *pParent = 0);
+    QList<QString> readPltFile(QString filePath);
+    QList<QString> readMatFile(QString filePath);
 
     MainWindow *mpParentMainWindow;
 

@@ -32,6 +32,7 @@
  */
 
 #include "PlotWidget.h"
+#include "read_matlab4.h"
 
 PlotWidget::PlotWidget(MainWindow *pParent)
     : QWidget(pParent)
@@ -64,10 +65,8 @@ PlotWidget::PlotWidget(MainWindow *pParent)
     connect(mpPlotTypesCombo, SIGNAL(currentIndexChanged(QString)), SLOT(visualize(QString)));
 }
 
-void PlotWidget::readPlotVariables(QString fileName)
+QList<QString> PlotWidget::readPltFile(QString filePath)
 {
-    // need to replace \\ to / so that QFile can close the file properly, otherwise we can't open it second time
-    QString filePath = QString(Helper::tmpPath.replace("\\", "/")).append("/").append(fileName);
     QFile simulationResultFile(filePath);
     simulationResultFile.open(QIODevice::ReadOnly);
 
@@ -86,6 +85,45 @@ void PlotWidget::readPlotVariables(QString fileName)
         }
     }
     simulationResultFile.close();
+    return plotVariablesList;
+}
+
+QList<QString> PlotWidget::readMatFile(QString filePath)
+{
+    QList<QString> plotVariablesList;
+    ModelicaMatReader reader;
+    // read the mat file structure
+    omc_new_matlab4_reader(filePath.toLatin1(), &reader);
+
+    // read the mat file structure
+    for (int i = 0 ; i < reader.nall ; i++)
+    {
+        QString plotVariable = QString(reader.allInfo[i].name);
+        if (!plotVariable.contains("dummy"))
+            plotVariablesList.append(plotVariable);
+    }
+    // free the mat reader
+    omc_free_matlab4_reader(&reader);
+    return plotVariablesList;
+}
+
+void PlotWidget::readPlotVariables(QString fileName)
+{
+    // need to replace \\ to / so that QFile can close the file properly, otherwise we can't open it second time
+    QString filePath = QString(Helper::tmpPath.replace("\\", "/")).append("/").append(fileName);
+
+    QStringList fileNameList = filePath.split('.');
+    QString fileExtension = fileNameList.last();
+    QList<QString> plotVariablesList;
+
+    if (fileExtension.compare("plt") == 0)
+    {
+        plotVariablesList = readPltFile(filePath);
+    }
+    else if (fileExtension.compare("mat") == 0)
+    {
+        plotVariablesList = readMatFile(filePath);
+    }
     addPlotVariablestoTree(fileName, plotVariablesList);
 }
 
@@ -152,14 +190,17 @@ void PlotWidget::plotVariables(QTreeWidgetItem *item, int column)
     QString modelName = parentItem->toolTip(column).remove((parentItem->toolTip(column).length() - 8),
                                                            (parentItem->toolTip(column).length() - 1));
     QString plotType = mpPlotTypesCombo->currentText();
+    MessageWidget *pMessageWidget = mpParentMainWindow->mpMessageWidget;
 
     if (plotType ==  "Plot")
     {        
         plotExpression = "plot(" + modelName + ", {" + plotVariablesString + "})";
         setCursor(Qt::WaitCursor);
-        if (!mpParentMainWindow->mpOMCProxy->plot(modelName, plotVariablesString))
+        //if (!mpParentMainWindow->mpOMCProxy->plot(modelName, plotVariablesString))
+        if (!mpParentMainWindow->mpOMCProxy->plot(plotVariablesString, parentItem->toolTip(column)))
         {
-            mpParentMainWindow->mpMessageWidget->printGUIErrorMessage(mpParentMainWindow->mpOMCProxy->getResult());
+            pMessageWidget->printGUIErrorMessage(QString(mpParentMainWindow->mpOMCProxy->getResult())
+                                                 .append(mpParentMainWindow->mpOMCProxy->getErrorString()));
         }
         unsetCursor();
     }
@@ -169,7 +210,8 @@ void PlotWidget::plotVariables(QTreeWidgetItem *item, int column)
         setCursor(Qt::WaitCursor);
         if (!mpParentMainWindow->mpOMCProxy->plotParametric(modelName, plotVariablesString))
         {
-            mpParentMainWindow->mpMessageWidget->printGUIErrorMessage(mpParentMainWindow->mpOMCProxy->getResult());
+            pMessageWidget->printGUIErrorMessage(QString(mpParentMainWindow->mpOMCProxy->getResult())
+                                                 .append(mpParentMainWindow->mpOMCProxy->getErrorString()));
         }
         unsetCursor();
     }
@@ -179,7 +221,8 @@ void PlotWidget::plotVariables(QTreeWidgetItem *item, int column)
         setCursor(Qt::WaitCursor);
         if (!mpParentMainWindow->mpOMCProxy->visualize(modelName))
         {
-            mpParentMainWindow->mpMessageWidget->printGUIErrorMessage(mpParentMainWindow->mpOMCProxy->getResult());
+            pMessageWidget->printGUIErrorMessage(QString(mpParentMainWindow->mpOMCProxy->getResult())
+                                                 .append(mpParentMainWindow->mpOMCProxy->getErrorString()));
         }
         unsetCursor();
     }

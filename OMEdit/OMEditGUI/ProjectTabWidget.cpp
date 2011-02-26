@@ -117,7 +117,7 @@ void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
     //! @todo Grid Lines changes when resize the window. Update it.
     if (mpParentProjectTab->mpParentProjectTabWidget->mShowLines)
     {
-        painter->scale(1.0, -1.0);
+        //painter->scale(1.0, -1.0);
         painter->setBrush(Qt::NoBrush);
         painter->setPen(Qt::gray);
 
@@ -781,7 +781,7 @@ void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
             QMenu menu(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow);
             mpCancelConnectionAction->setText("Context Menu");
             menu.addAction(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->exportAsImage);
-            menu.addAction(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->exportToOMNotebookAction);
+            //menu.addAction(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->exportToOMNotebookAction);
             menu.exec(event->globalPos());
             return;         // return from it because at a time we only want one context menu.
         }
@@ -1918,7 +1918,7 @@ ProjectTabWidget::ProjectTabWidget(MainWindow *parent)
     mShowLines = false;
     mToolBarEnabled = true;
 
-    connect(mpParentMainWindow->openAction, SIGNAL(triggered()), this,SLOT(openModel()));
+    connect(mpParentMainWindow->openAction, SIGNAL(triggered()), this,SLOT(openFile()));
     connect(mpParentMainWindow->saveAction, SIGNAL(triggered()), this,SLOT(saveProjectTab()));
     connect(mpParentMainWindow->saveAsAction, SIGNAL(triggered()), this,SLOT(saveProjectTabAs()));
     connect(this,SIGNAL(tabCloseRequested(int)),SLOT(closeProjectTab(int)));
@@ -2381,7 +2381,7 @@ bool ProjectTabWidget::closeAllProjectTabs()
 
 //! Loads a model from a file and opens it in a new project tab.
 //! @see saveModel(bool saveAs)
-void ProjectTabWidget::openModel(QString fileName)
+void ProjectTabWidget::openFile(QString fileName)
 {
     if (fileName.isEmpty())
     {
@@ -2393,7 +2393,6 @@ void ProjectTabWidget::openModel(QString fileName)
         else
             fileName = name;
     }
-
 
     // create new OMC instance and load the file in it
     OMCProxy *omc = new OMCProxy(mpParentMainWindow, false);
@@ -2423,7 +2422,7 @@ void ProjectTabWidget::openModel(QString fileName)
     if (existModel)
     {
         QMessageBox *msgBox = new QMessageBox(mpParentMainWindow);
-        msgBox->setWindowTitle(QString(Helper::applicationName).append(" - Question"));
+        msgBox->setWindowTitle(QString(Helper::applicationName).append(" - Information"));
         msgBox->setIcon(QMessageBox::Information);
         msgBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE)));
         msgBox->setInformativeText(QString(GUIMessages::getMessage(GUIMessages::REDEFING_EXISTING_MODELS))
@@ -2435,7 +2434,57 @@ void ProjectTabWidget::openModel(QString fileName)
     // if no conflicting model found then just load the file simply
     else
     {
-        mpParentMainWindow->mpLibrary->loadModel(fileName, modelsList);
+        mpParentMainWindow->mpLibrary->loadFile(fileName, modelsList);
+    }
+    // quit the temporary OMC
+    omc->stopServer();
+}
+
+//! Loads a model and opens it in a new project tab.
+//! @see saveModel(bool saveAs)
+void ProjectTabWidget::openModel(QString modelText)
+{
+    // create new OMC instance and load the file in it
+    OMCProxy *omc = new OMCProxy(mpParentMainWindow, false);
+    // if error in loading file
+    if (!omc->saveModifiedModel(modelText))
+    {
+        QString message = QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE))
+                          .append(omc->getErrorString());
+        mpParentMainWindow->mpMessageWidget->printGUIErrorMessage(message);
+        return;
+    }
+    // get the class names now to check if they are already loaded or not
+    QStringList existingmodelsList;
+    QStringList modelsList = omc->getClassNames();
+    bool existModel = false;
+    // check if the model already exists in OMEdit OMC instance
+    foreach(QString model, modelsList)
+    {
+        if (mpParentMainWindow->mpOMCProxy->existClass(model))
+        {
+            existingmodelsList.append(model);
+            existModel = true;
+        }
+    }
+
+    // check if existModel is true
+    if (existModel)
+    {
+        QMessageBox *msgBox = new QMessageBox(mpParentMainWindow);
+        msgBox->setWindowTitle(QString(Helper::applicationName).append(" - Information"));
+        msgBox->setIcon(QMessageBox::Information);
+        msgBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE)));
+        msgBox->setInformativeText(QString(GUIMessages::getMessage(GUIMessages::REDEFING_EXISTING_MODELS))
+                                   .arg(existingmodelsList.join(",")).append("\n")
+                                   .append(GUIMessages::getMessage(GUIMessages::DELETE_AND_LOAD)));
+        msgBox->setStandardButtons(QMessageBox::Ok);
+        msgBox->exec();
+    }
+    // if no conflicting model found then just load the file simply
+    else
+    {
+        mpParentMainWindow->mpLibrary->loadModel(modelText, modelsList);
     }
     // quit the temporary OMC
     omc->stopServer();

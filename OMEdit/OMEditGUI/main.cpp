@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
     // if user has requested to open the file by passing it in argument then,
     if (!fileName.isEmpty())
     {
-        mainwindow.mpProjectTabs->openModel(fileName);
+        mainwindow.mpProjectTabs->openFile(fileName);
     }
     mainwindow.showMaximized();
     splashScreen.finish(&mainwindow);

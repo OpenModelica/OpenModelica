@@ -213,7 +213,8 @@ public:
     ~LibraryWidget();
     void addModelicaNode(QString name, int type, QString parentName=QString(), QString parentStructure=QString());
     void addModelFiles(QString fileName, QString parentFileName=QString(), QString parentStructure=QString());
-    void loadModel(QString path, QStringList modelsList);
+    void loadFile(QString path, QStringList modelsList);
+    void loadModel(QString modelText, QStringList modelsList);
     void addComponentObject(LibraryComponent *libraryComponent);
     Component* getComponentObject(QString className);
     LibraryComponent* getLibraryComponentObject(QString className);

@@ -813,7 +813,7 @@ MSLSuggestCompletion::MSLSuggestCompletion(MSLSearchBox *pParent)
     // set up the timer to get the suggestions
     mpTimer = new QTimer(this);
     mpTimer->setSingleShot(true);
-    mpTimer->setInterval(500);
+    mpTimer->setInterval(100);
     connect(mpTimer, SIGNAL(timeout()), SLOT(getSuggestions()));
     connect(mpMSLSearchBox, SIGNAL(textEdited(QString)), mpTimer, SLOT(start()));
 }
@@ -849,8 +849,6 @@ bool MSLSuggestCompletion::eventFilter(QObject *pObject, QEvent *event)
             consumed = true;
         case Qt::Key_Up:
         case Qt::Key_Down:
-        case Qt::Key_Home:
-        case Qt::Key_End:
         case Qt::Key_PageUp:
         case Qt::Key_PageDown:
             break;
@@ -921,6 +919,7 @@ void MSLSuggestCompletion::getSuggestions()
     if ((mpMSLSearchBox->text().compare(Helper::modelicaLibrarySearchText) == 0) or (mpMSLSearchBox->text().isEmpty()))
     {
         preventSuggestions();
+        mpPopup->hide();
         return;
     }
 
@@ -1105,10 +1104,23 @@ void LibraryWidget::addModelFiles(QString fileName, QString parentFileName, QStr
     }
 }
 
-void LibraryWidget::loadModel(QString path, QStringList modelsList)
+void LibraryWidget::loadFile(QString path, QStringList modelsList)
 {
     // load the file in OMC
     mpParentMainWindow->mpOMCProxy->loadFile(path);
+
+    foreach (QString model, modelsList)
+    {
+        addModelFiles(model, tr(""), tr(""));
+    }
+    // make the modelica files tab visible in library widget dock window
+    mpLibraryTabs->setCurrentWidget(mpModelicaTree);
+}
+
+void LibraryWidget::loadModel(QString modelText, QStringList modelsList)
+{
+    // load the file in OMC
+    mpParentMainWindow->mpOMCProxy->saveModifiedModel(modelText);
 
     foreach (QString model, modelsList)
     {
