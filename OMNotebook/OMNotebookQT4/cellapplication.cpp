@@ -146,9 +146,10 @@ namespace IAEX
     // try to start it
     // 2006-02-09 AF, Start of OMC have been moved to omcineractice-
     // environment
+    OmcInteractiveEnvironment* omcEnv;
     try
     {
-      OmcInteractiveEnvironment* zz = OmcInteractiveEnvironment::getInstance();
+      OmcInteractiveEnvironment* omcEnv = OmcInteractiveEnvironment::getInstance();
     }
     catch( exception &e )
     {
@@ -156,7 +157,7 @@ namespace IAEX
       if( !OmcInteractiveEnvironment::startOMC() )
       {
         QMessageBox::critical( 0, "OMC Error", "Was unable to start OMC, OMNotebook will therefore be unable to evaluate Modelica expressions." );
-        //exit( -1 );
+        exit( -1 );
       }
     }
 
@@ -175,6 +176,24 @@ namespace IAEX
     if(!d.exists(openmodelica))
     {
       QMessageBox::critical( 0, "OpenModelica Error", "The environment variable OPENMODELICAHOME="+openmodelica+" is not a valid directory" );
+      exit(1);
+    }
+
+    // Avoid cluttering the whole disk with omc temp-files
+    OmcInteractiveEnvironment *env = OmcInteractiveEnvironment::getInstance();
+    QString getTempStr = "getTempDirectoryPath()";
+    env->evalExpression( getTempStr );
+    QString tmpDir = env->getResult()+"/OMNotebook/";
+    tmpDir.remove("\"");
+    if (!QDir().exists(tmpDir)) QDir().mkdir(tmpDir);
+    tmpDir = QDir(tmpDir).canonicalPath();
+    cout << "Temp.Dir " << tmpDir.toStdString() << std::endl;
+    QString cdCmd = "cd(\"" + tmpDir + "\")";
+    env->evalExpression(cdCmd);
+    QString cdRes = env->getResult();
+    cdRes.remove("\"");
+    if (0 != tmpDir.compare(cdRes)) {
+      QMessageBox::critical( 0, "OpenModelica Error", "Could not create or cd to temp-dir\nCommand:\n  "+tmpDir+"\nReturned:\n  "+cdRes);
       exit(1);
     }
 
