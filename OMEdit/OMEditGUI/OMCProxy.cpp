@@ -45,6 +45,7 @@
 #include "OMCThread.h"
 #include "StringHandler.h"
 #include <omniORB4/CORBA.h>
+#include "../../Compiler/runtime/config.h"
 
 //! @class OMCProxy
 //! @brief It contains the reference of the CORBA object used to communicate with the OpenModelica Compiler.
@@ -144,7 +145,7 @@ bool OMCProxy::startServer()
             throw std::runtime_error(GUIMessages::getMessage(GUIMessages::OPEN_MODELICA_HOME_NOT_FOUND).toStdString());
           omcPath = QString( omhome ) + "bin/omc.exe";
         #else /* unix */
-          omcPath = (omhome ? QString(omhome)+"bin/omc" : "omc");
+          omcPath = (omhome ? QString(omhome)+"bin/omc" : QString(CONFIG_DEFAULT_OPENMODELICAHOME) + "/bin/omc");
         #endif
 
         // Check the IOR file created by omc.exe
