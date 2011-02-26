@@ -65,8 +65,8 @@
 		<helptext>Plot var2 relative to var1 from the most recently simulated model. Ex: plotParametric(x,y).</helptext>
 	</command>
   <command name="plotAll($0)">
-    <field name="$0">className</field>
-    <helptext>Plot all variables from the specified model. Ex: plotAll(Class).</helptext>
+    <field name="$0">"className_res.mat"</field>
+    <helptext>Plot all variables from the specified file. Ex: plotAll("Class_res.mat").</helptext>
   </command>
   <command name="readFile($0)">
 		<field name="$0">str</field>
@@ -98,7 +98,7 @@
 		<field name="$3">500</field>
 		<field name="$4">1e-4</field>
     <field name="$5">"dassl"</field>
-    <field name="$6">"plt"</field>
+    <field name="$6">"mat"</field>
 		<helptext>Translates a model and simulates it. Ex: simulate(dcmotor). Ex: simulate(dcmotor,startTime=0, stopTime=10, numberOfIntervals=1000).</helptext>
 	</command>
 	<command name="buildModel($0, startTime=$1, stopTime=$2, numberOfIntervals=$3, tolerance=$4, storeInTemp=$5, method=$6, outputFormat=$7)">
@@ -109,7 +109,7 @@
 		<field name="$4">1e-4</field>
 		<field name="$5">false</field>
     <field name="$6">"dassl"</field>
-    <field name="$7">"plt"</field>
+    <field name="$7">"mat"</field>
 		<helptext>Translates a model and simulates it. Ex: buildModel(dcmotor). Ex: buildMotor(dcmotor,startTime=0, stopTime=10, numberOfIntervals=1000).</helptext>
 	</command>
 	<command name="system($0)">
