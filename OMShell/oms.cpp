@@ -1127,14 +1127,21 @@ bool OMS::startServer()
         omcNowStarted = true;
 
         // get version no
+        QString getTempStr = "getTempDirectoryPath()";
+        delegate_->evalExpression( getTempStr );
+        cout << "Temp.Dir " << delegate_->getResult().toStdString() << std::endl;
+
         QString getVersionStr = "getVersion()";
         delegate_->evalExpression( getVersionStr );
         omc_version_ = delegate_->getResult();
         omc_version_.remove( "\"" );
+        cout << "OMC version " << omc_version_.toStdString() << std::endl;
+
         // get omhome
         delegate_->evalExpression( getOMHomeStr );
         omhome = delegate_->getResult();
         omhome.remove( "\"" );
+        cout << "OPENMODELICAHOME: " << omhome.toStdString() << std::endl;
       }
     }
   }
