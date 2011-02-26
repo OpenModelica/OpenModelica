@@ -99,7 +99,7 @@ simulation_result_mat::simulation_result_mat(const char* filename,
     writeMatVer4Matrix("Aclass", 4, 11, Aclass, true); 
     
     // flatten variables' names
-    flattenStrBuf(numVars+nParams, names, stringMatrix, rows, cols, true, false);
+    flattenStrBuf(numVars+nParams, names, stringMatrix, rows, cols, false /* We cannot plot derivatives if we fix the names ... */, false);
     // write `name' matrix
     writeMatVer4Matrix("name", rows, cols, stringMatrix, true);
     delete[] stringMatrix; stringMatrix = NULL;
