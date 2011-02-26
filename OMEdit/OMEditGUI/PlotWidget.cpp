@@ -32,7 +32,7 @@
  */
 
 #include "PlotWidget.h"
-#include "read_matlab4.h"
+#include "../../c_runtime/read_matlab4.h"
 
 PlotWidget::PlotWidget(MainWindow *pParent)
     : QWidget(pParent)
