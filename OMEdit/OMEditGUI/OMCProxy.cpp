@@ -1151,7 +1151,7 @@ bool OMCProxy::simulate(QString modelName, QString simualtionParameters)
 // modified plot API call
 bool OMCProxy::plot(QString plotVariables, QString fileName)
 {
-    sendCommand("plot({" + plotVariables + "}, " + fileName + ")");
+    sendCommand("plot({" + plotVariables + "}, \"" + fileName + "\")");
     if (getResult().contains("true"))
         return true;
     else
