@@ -276,6 +276,10 @@ void initializeOutputFilter(DATA* data, string variableFilter)
   int rc;
   string tmp = ("^(" + variableFilter + ")$");
   const char *filter = tmp.c_str(); // C++ strings are horrible to work with...
+  if (data->nStates > 0 && 0 == strcmp(data->statesNames[0].name,"$dummy")) {
+    data->statesFilterOutput[0] = 1;
+    data->statesDerivativesFilterOutput[0] = 1;
+  }
   if (0 == strcmp(filter, ".*")) // This matches all variables, so we don't need to do anything
     return;
 
