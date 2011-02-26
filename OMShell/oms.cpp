@@ -1129,7 +1129,13 @@ bool OMS::startServer()
         // get version no
         QString getTempStr = "getTempDirectoryPath()";
         delegate_->evalExpression( getTempStr );
-        cout << "Temp.Dir " << delegate_->getResult().toStdString() << std::endl;
+        QString tmpDir = delegate_->getResult()+"/OMShell/";
+        tmpDir.remove("\"");
+        if (!QDir().exists(tmpDir)) QDir().mkdir(tmpDir);
+        tmpDir = "cd(\"" + tmpDir + "\")";
+        cout << "Temp.Dir " << tmpDir.toStdString() << std::endl;
+        delegate_->evalExpression(tmpDir);
+        cout << "cdToTempDir: " << delegate_->getResult().toStdString() << std::endl;
 
         QString getVersionStr = "getVersion()";
         delegate_->evalExpression( getVersionStr );
