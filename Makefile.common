@@ -9,7 +9,7 @@ builddir_doc=$(top_builddir)/build/share/doc
 builddir_share=$(top_builddir)/build/share/
 builddir_java=$(top_builddir)/build/share/omc/java/
 
-INSTALL_APPDIR     = ${DESTDIR}/Applications/
+INSTALL_APPDIR     = ${DESTDIR}/Applications/MacPorts/
 INSTALL_BINDIR     = ${DESTDIR}${bindir}
 INSTALL_LIBDIR     = ${DESTDIR}${libdir}/
 INSTALL_INCLUDEDIR = ${DESTDIR}${includedir}/omc
