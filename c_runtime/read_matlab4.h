@@ -37,6 +37,9 @@ typedef struct {
  * The internal data is free'd by omc_free_matlab4_reader.
  * The data persists until free'd, and is safe to use in your own data-structures
  */
+#ifdef __cplusplus
+extern "C" {
+#endif
 const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *reader);
 
 void omc_free_matlab4_reader(ModelicaMatReader *reader);
@@ -60,5 +63,8 @@ void omc_matlab4_print_all_vars(FILE *stream, ModelicaMatReader *reader);
 double omc_matlab4_startTime(ModelicaMatReader *reader);
 
 double omc_matlab4_stopTime(ModelicaMatReader *reader);
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif
