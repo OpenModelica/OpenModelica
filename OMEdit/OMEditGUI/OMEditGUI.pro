@@ -10,7 +10,7 @@ TARGET = OMEdit
 TEMPLATE = app
 
 SOURCES += main.cpp\
-        mainwindow.cpp \
+    mainwindow.cpp \
     ProjectTabWidget.cpp \
     LibraryWidget.cpp \
     MessageWidget.cpp \
@@ -99,3 +99,5 @@ RESOURCES += resource_omedit.qrc
 RC_FILE = rc_omedit.rc
 
 DESTDIR = ../bin
+
+ICON = Resources/icons/omedit.icns
