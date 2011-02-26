@@ -83,7 +83,7 @@ DEFINES += __x86__ \
 LIBS += -L$$(OMDEV)/lib/omniORB-4.1.4-mingw/lib/x86_win32 \
     -lomniORB414_rt \
     -lomnithread34_rt
-INCLUDEPATH += $$(OMDEV)/lib/omniORB-4.1.4-mingw/include ../../c_runtime/
+INCLUDEPATH += $$(OMDEV)/lib/omniORB-4.1.4-mingw/include
 } else {
     include(OMEdit.config)
 }
