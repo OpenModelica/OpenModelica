@@ -96,9 +96,9 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(Settings__getTempDirectoryPath)
 {
-  SettingsImpl__getTempDirectoryPath();
-  if (tempDirectoryPath)
-    rmlA0 = (void*) mk_scon(strdup(tempDirectoryPath));
+  const char *tdp = SettingsImpl__getTempDirectoryPath();
+  if (tdp)
+    rmlA0 = (void*) mk_scon(tdp);
   else
     rmlA0 = (void*) mk_scon("");
   RML_TAILCALLK(rmlSC);
@@ -164,15 +164,15 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(Settings__dumpSettings)
 {
+  const char *str;
   if(compileCommand)
     printf("compile command: %s\n",compileCommand);
 
   if(compilePath)
     printf("Compiler path: %s\n",compilePath);
 
-
-  if(tempDirectoryPath)
-    printf("temp directory path: %s\n",tempDirectoryPath);
+  if(0 != (str = SettingsImpl__getTempDirectoryPath()))
+    printf("temp directory path: %s\n",str);
 
   RML_TAILCALLK(rmlSC);
 }

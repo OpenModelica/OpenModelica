@@ -163,7 +163,7 @@ extern void SettingsImpl__setTempDirectoryPath(const char *path)
   tempDirectoryPath = strdup(path);
 }
 
-extern char* SettingsImpl__getTempDirectoryPath()
+extern const char* SettingsImpl__getTempDirectoryPath()
 {
   if (tempDirectoryPath == NULL) {
   // On windows, set Temp directory path to Temp directory as returned by GetTempPath,
@@ -186,7 +186,7 @@ extern char* SettingsImpl__getTempDirectoryPath()
   #else
     const char* str = getenv("TMPDIR");
     if (str == NULL)
-      str = "/tmp";
+      str = strdup("/tmp");
     tempDirectoryPath = strdup(str);
   #endif
   }

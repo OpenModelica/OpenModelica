@@ -76,7 +76,7 @@ extern const char* Settings_getVersionNr()
 
 extern const char* Settings_getTempDirectoryPath()
 {
-  return strdup(SettingsImpl__getTempDirectoryPath());
+  return SettingsImpl__getTempDirectoryPath();
 }
 
 }

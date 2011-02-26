@@ -311,7 +311,7 @@ int CorbaImpl__initialize()
   mgr = poa->the_POAManager();
 
   /* get temp dir */
-  char* tmpDir = SettingsImpl__getTempDirectoryPath();
+  const char* tmpDir = SettingsImpl__getTempDirectoryPath();
   /* get the user name */
   char *user = getenv("USER");
   if (user==NULL) { user="nobody"; }
@@ -347,7 +347,6 @@ int CorbaImpl__initialize()
       ref = poa->id_to_reference (oid.in());
       objref_file << tmpDir << "/openmodelica." << user << ".objid";    
   }
-  free(tmpDir);
 
   str = orb->object_to_string (ref.in());
   /* Write reference to file */
