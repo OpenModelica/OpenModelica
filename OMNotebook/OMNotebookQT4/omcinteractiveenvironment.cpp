@@ -43,6 +43,7 @@
 
 //IAEX Headers
 #include "omcinteractiveenvironment.h"
+#include "../../Compiler/runtime/config.h"
 
 using namespace std;
 
@@ -216,7 +217,7 @@ namespace IAEX
 #ifdef WIN32
       omc = QString( omhome ) + "/bin/omc.exe";
 #else /* unix */
-      omc = (omhome ? QString(omhome)+"/bin/omc" : "omc");
+      omc = (omhome ? QString(omhome)+"/bin/omc" : QString(CONFIG_DEFAULT_OPENMODELICAHOME)+"/bin/omc");
 #endif
 
       QStringList parameters;
