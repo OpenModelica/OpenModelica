@@ -27,3 +27,5 @@ SOURCES += commandcompletion.cpp \
            main.cpp
 
 RESOURCES += oms.qrc
+
+ICON = Resources/omshell.icns
