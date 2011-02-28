@@ -371,7 +371,7 @@ template globalDataFunctionInfoArray(String name, list<Function> items)
   case items then
     <<
     struct omc_functionInfo <%name%>[<%listLength(items)%>] = {
-      <%items |> fn => '{"<%functionName(fn,true)%>",omc_dummyFileInfo}'; separator=",\n"%>
+      <%items |> fn => '{"<%functionName(fn,true)%>",{<%infoArgs(functionInfo(fn))%>}}'; separator=",\n"%>
     };
     >>
 end globalDataFunctionInfoArray;
@@ -441,7 +441,7 @@ template functionGetName(ModelInfo modelInfo)
 match modelInfo
 case MODELINFO(vars=SIMVARS(__)) then
   <<
-  const char* getName(double* ptr)
+  const char* getNameReal(double* ptr)
   {
     <%vars.stateVars |> SIMVAR(__) =>
       'if (&<%cref(name)%> == ptr) return state_names[<%index%>].name;'
@@ -458,7 +458,7 @@ case MODELINFO(vars=SIMVARS(__)) then
     return "";
   }
   
-  const char* getName(modelica_integer* ptr)
+  const char* getNameInt(modelica_integer* ptr)
   {
     <%vars.intAlgVars |> SIMVAR(__) =>
       'if (&<%cref(name)%> == ptr) return int_alg_names[<%index%>].name;'
@@ -469,7 +469,7 @@ case MODELINFO(vars=SIMVARS(__)) then
     return "";
   }
   
-  const char* getName(modelica_boolean* ptr)
+  const char* getNameBool(modelica_boolean* ptr)
   {
     <%vars.boolAlgVars |> SIMVAR(__) =>
       'if (&<%cref(name)%> == ptr) return bool_alg_names[<%index%>].name;'
@@ -480,6 +480,16 @@ case MODELINFO(vars=SIMVARS(__)) then
     return "";
   }
   
+  const char* getNameString(const char** ptr)
+  {
+    <%vars.stringAlgVars |> SIMVAR(__) =>
+      'if (&<%cref(name)%> == ptr) return string_alg_names[<%index%>].name;'
+    ;separator="\n"%>
+    <%vars.stringParamVars |> SIMVAR(__) =>
+      'if (&<%cref(name)%> == ptr) return string_param_names[<%index%>].name;'
+    ;separator="\n"%>
+    return "";
+  }
   >>
 end functionGetName;
 
@@ -727,9 +737,11 @@ template functionInitializeDataStruc()
     returnData->algebraicsNames = algvars_names;
     returnData->int_alg_names = int_alg_names;
     returnData->bool_alg_names = bool_alg_names;
+    returnData->string_alg_names = string_alg_names;
     returnData->parametersNames = param_names;
     returnData->int_param_names = int_param_names;
     returnData->bool_param_names = bool_param_names;
+    returnData->string_param_names = string_param_names;
     returnData->jacobian_names = jacobian_names;
     returnData->functionNames = function_names;
     returnData->equationInfo = equation_info;
@@ -1476,7 +1488,7 @@ template functionWhenReinitStatementThen(list<WhenOperator> reinits, Text &varDe
      <<
       <%preExp%>
                 <%cref(stateVar)%> = <%val%>;
-                needToIterate=1;
+                *needToIterate=1;
                 >>
     case TERMINATE(__) then 
       let &preExp = buffer "" /*BUFD*/
@@ -1694,11 +1706,11 @@ template functionDAE( list<SimEqSystem> allEquationsPlusWhen,
       genreinits(when, &varDecls,i0)
     ;separator="\n")
   <<
-  int functionDAE(int &needToIterate)
+  int functionDAE(int *needToIterate)
   {
     state mem_state;
     <%varDecls%>
-    needToIterate = 0;
+    *needToIterate = 0;
     inUpdate=initial()?0:1;
   
     mem_state = get_memory_state();
@@ -4054,6 +4066,7 @@ template indexedAssign(DAE.ExpType ty, String exp, DAE.ComponentRef cr,
 end indexedAssign;
 
 template copyArrayData(DAE.ExpType ty, String exp, DAE.ComponentRef cr,
+
   Context context)
 ::=
   let type = expTypeArray(ty)

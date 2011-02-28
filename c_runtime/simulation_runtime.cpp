@@ -48,11 +48,11 @@
 #ifndef NO_INTERACTIVE_DEPENDENCY
 #include "omi_ServiceInterface.h"
 #endif
-#include "simulation_result_bin.h"
 #include "simulation_result_empty.h"
 #include "simulation_result_plt.h"
 #include "simulation_result_csv.h"
 #include "simulation_result_mat.h"
+#include "simulation_modelinfo.h"
 #include "rtclock.h"
 
 using namespace std;
@@ -234,8 +234,7 @@ verboseLevel(int argc, char**argv)
  * Signals the type of the simulation
  * retuns true for interactive and false for non-interactive
  */
-bool
-isInteractiveSimulation()
+int isInteractiveSimulation()
 {
   return interactiveSimuation;
 }
@@ -403,10 +402,7 @@ callSolver(int argc, char**argv, string method, string outputFormat,
       sim_result = new simulation_result_empty(result_file_cstr.c_str(),maxSteps);
   } else if (0 == strcmp("csv", outputFormat.c_str())) {
       sim_result = new simulation_result_csv(result_file_cstr.c_str(), maxSteps);
-  } else if (0 == strcmp("bin", outputFormat.c_str())) {
-      sim_result = new simulation_result_bin(result_file_cstr.c_str(), maxSteps);
-  }
-  else if (0 == strcmp("mat", outputFormat.c_str())) {
+  } else if (0 == strcmp("mat", outputFormat.c_str())) {
       sim_result = new simulation_result_mat(result_file_cstr.c_str(), start, stop);
   } else { /* Default to plt */
       sim_result = new simulation_result_plt(result_file_cstr.c_str(), maxSteps);
@@ -555,20 +551,21 @@ int
 main(int argc, char**argv)
 {
   int retVal = -1;
-
+  const string *modelInfo;
+  
   if (initRuntimeAndSimulation(argc, argv)) //initRuntimeAndSimulation returns 1 if an error occurs
     return 1;
 
-  if (interactiveSimuation)
-    {
-      //cout << "startInteractiveSimulation: " << version << endl;
-      retVal = startInteractiveSimulation(argc, argv);
-    }
-  else
-    {
-      //cout << "startNonInteractiveSimulation: " << version << endl;
-      retVal = startNonInteractiveSimulation(argc, argv);
-    }
+  if (0 != (modelInfo = getOption("modelinfo", argc, argv))) {
+    retVal = printModelInfo(globalData, modelInfo->c_str());
+    delete modelInfo;
+  } else if (interactiveSimuation) {
+    //cout << "startInteractiveSimulation: " << version << endl;
+    retVal = startInteractiveSimulation(argc, argv);
+  } else {
+    //cout << "startNonInteractiveSimulation: " << version << endl;
+    retVal = startNonInteractiveSimulation(argc, argv);
+  }
 
   deInitializeDataStruc(globalData);
   free(globalData);

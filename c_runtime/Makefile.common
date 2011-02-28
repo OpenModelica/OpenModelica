@@ -19,8 +19,11 @@ meta_modelica_string_lit.o rtclock.o ModelicaUtilities.o simulation_varinfo.o \
 read_matlab4.o \
 $(EXTRA_OBJS)
 
-SIMOBJS = $(FOBJS) simulation_runtime.o simulation_init.o simulation_input.o simulation_events.o linearize.o \
-solver_dasrt.o solver_main.o simulation_result_plt.o simulation_result_csv.o simulation_result_bin.o simulation_result_mat.o simulation_delay.o tables.o options.o dgesv_aux.o $(EXTRA_SIMOBJS)
+SIMOBJS = $(FOBJS) simulation_runtime.o simulation_init.o simulation_input.o \
+simulation_events.o linearize.o solver_dasrt.o solver_main.o \
+simulation_result_plt.o simulation_result_csv.o simulation_result_bin.o \
+simulation_result_mat.o simulation_delay.o tables.o options.o dgesv_aux.o \
+simulation_modelinfo.o $(EXTRA_SIMOBJS)
 
 HFILES = \
 base_array.h \
@@ -60,7 +63,7 @@ simulation_events.h \
 simulation_init.h \
 simulation_inline_solver.h \
 simulation_input.h \
-simulation_result_bin.h \
+simulation_modelinfo.h \
 simulation_result_csv.h \
 simulation_result_empty.h \
 simulation_result.h \

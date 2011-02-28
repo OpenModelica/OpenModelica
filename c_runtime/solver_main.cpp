@@ -316,7 +316,7 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
 
   int needToIterate = 0;
   int IterationNum = 0;
-  functionDAE(needToIterate);
+  functionDAE(&needToIterate);
   functionAliasEquations();
 
   //work-around problem with discrete algorithm vars
@@ -330,7 +330,7 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
   while (checkForDiscreteChanges() || needToIterate)
     {
       saveall();
-      functionDAE(needToIterate);
+      functionDAE(&needToIterate);
       IterationNum++;
       if (IterationNum > IterationMax)
         {
@@ -361,7 +361,7 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
   //Activate sample and evaluate again
   needToIterate = 0;
   IterationNum = 0;
-  functionDAE(needToIterate);
+  functionDAE(&needToIterate);
   if (sim_verbose)
     {
       sim_result->emit();
@@ -369,7 +369,7 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
   while (checkForDiscreteChanges() || needToIterate)
     {
       saveall();
-      functionDAE(needToIterate);
+      functionDAE(&needToIterate);
       IterationNum++;
       if (IterationNum > IterationMax)
         {

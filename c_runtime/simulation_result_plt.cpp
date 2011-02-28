@@ -283,21 +283,24 @@ simulation_result_plt::~simulation_result_plt()
   fprintf(f, "TitleText: OpenModelica simulation plot\n");
   fprintf(f, "XLabel: t\n\n");
 
-  int num_vars = 1+globalData->nStates*2+globalData->nAlgebraic+globalData->intVariables.nAlgebraic+globalData->boolVariables.nAlgebraic;
+  int num_vars = calcDataSize();
+  int varn = 0;
 
   // time variable.
   fprintf(f, "DataSet: time\n");
   for(int i = 0; i < actualPoints; ++i)
     printPltLine(f, simulationResultData[i*num_vars], simulationResultData[i*num_vars]);
   fprintf(f, "\n");
+  varn++;
 
   for(int var = 0; var < globalData->nStates; ++var)
   {
     if (!globalData->statesFilterOutput[var]) {
       fprintf(f, "DataSet: %s\n", globalData->statesNames[var].name);
       for(int i = 0; i < actualPoints; ++i)
-        printPltLine(f, simulationResultData[i*num_vars], simulationResultData[i*num_vars + 1+var]);
+        printPltLine(f, simulationResultData[i*num_vars], simulationResultData[i*num_vars + varn]);
       fprintf(f, "\n");
+      varn++;
     }
   }
 
@@ -306,8 +309,9 @@ simulation_result_plt::~simulation_result_plt()
     if (!globalData->statesDerivativesFilterOutput[var]) {
       fprintf(f, "DataSet: %s\n", globalData->stateDerivativesNames[var].name);
       for(int i = 0; i < actualPoints; ++i)
-        printPltLine(f, simulationResultData[i*num_vars], simulationResultData[i*num_vars + 1+globalData->nStates+var]);
+        printPltLine(f, simulationResultData[i*num_vars], simulationResultData[i*num_vars + varn]);
       fprintf(f, "\n");
+      varn++;
     }
   }
 
@@ -316,8 +320,9 @@ simulation_result_plt::~simulation_result_plt()
     if (!globalData->algebraicsFilterOutput[var]) {
       fprintf(f, "DataSet: %s\n", globalData->algebraicsNames[var].name);
       for(int i = 0; i < actualPoints; ++i)
-        printPltLine(f, simulationResultData[i*num_vars], simulationResultData[i*num_vars + 1+2*globalData->nStates+var]);
+        printPltLine(f, simulationResultData[i*num_vars], simulationResultData[i*num_vars + varn]);
       fprintf(f, "\n");
+      varn++;
     }
   }
 
@@ -326,8 +331,9 @@ simulation_result_plt::~simulation_result_plt()
     if (!globalData->intVariables.algebraicsFilterOutput[var]) {
       fprintf(f, "DataSet: %s\n", globalData->int_alg_names[var].name);
       for(int i = 0; i < actualPoints; ++i)
-        printPltLine(f, simulationResultData[i*num_vars], simulationResultData[i*num_vars + 1+2*globalData->nStates+globalData->nAlgebraic+var]);
+        printPltLine(f, simulationResultData[i*num_vars], simulationResultData[i*num_vars + varn]);
       fprintf(f, "\n");
+      varn++;
     }
   }
 
@@ -336,8 +342,9 @@ simulation_result_plt::~simulation_result_plt()
     if (!globalData->boolVariables.algebraicsFilterOutput[var]) {
       fprintf(f, "DataSet: %s\n", globalData->bool_alg_names[var].name);
       for(int i = 0; i < actualPoints; ++i)
-        printPltLine(f, simulationResultData[i*num_vars], simulationResultData[i*num_vars + 1+2*globalData->nStates+globalData->nAlgebraic+globalData->intVariables.nAlgebraic+var]);
+        printPltLine(f, simulationResultData[i*num_vars], simulationResultData[i*num_vars + varn]);
       fprintf(f, "\n");
+      varn++;
     }
   }
 

@@ -338,8 +338,8 @@ if (found_solution && sim_verbose) { /* we found a solution*/ \
   {int i; \
     printf("Result of mixed system discrete variables:\n"); \
     for (i=0;i<size;i++) { \
-      printf("%s = %f  pre(%s)= %f\n",getName(loc_ptrs[i]),*loc_ptrs[i], \
-                      getName(loc_ptrs[i]),pre(*loc_ptrs[i])); \
+      printf("%s = %f  pre(%s)= %f\n",getNameReal(loc_ptrs[i]),*loc_ptrs[i], \
+                      getNameReal(loc_ptrs[i]),pre(*loc_ptrs[i])); \
     } \
   } \
 } \

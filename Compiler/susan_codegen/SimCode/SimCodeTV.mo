@@ -308,6 +308,7 @@ package SimCode
       list<Variable> functionArguments;
       list<Variable> variableDeclarations;
       list<Statement> body;
+      Absyn.Info info;
     end FUNCTION;
     record EXTERNAL_FUNCTION
       Absyn.Path name;
@@ -320,10 +321,12 @@ package SimCode
       list<Variable> biVars;
       Libs libs;
       String language;
+      Absyn.Info info;
     end EXTERNAL_FUNCTION;
     record RECORD_CONSTRUCTOR
       Absyn.Path name;
       list<Variable> funArgs;
+      Absyn.Info info;
     end RECORD_CONSTRUCTOR;
   end Function;
   
@@ -468,6 +471,11 @@ package SimCode
       input Function fn;
       output Boolean b;
     end isBoxedFunction;
+    
+    function functionInfo
+      input Function fn;
+      output Absyn.Info info;
+    end functionInfo;
 
 end SimCode;
 

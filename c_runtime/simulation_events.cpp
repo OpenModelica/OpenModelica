@@ -34,6 +34,7 @@
 //#include "utility.h" // ppriv 2010-06-23 - removed "utility.h" due to clash of abs() macro from "f2c.h" with <math.h> in MSVC (abs is intrinsic function instead macro) and no usage here
 #include <math.h>
 #include <string.h> // adrpo - 2006-12-05 -> for memset
+#include <stdio.h>
 #include <list>
 #include <cfloat>
 using namespace std;
@@ -690,7 +691,7 @@ save(double & var)
   long ind;
   if (sim_verbose)
     {
-      printf("save %s = %f\n", getName(&var), var);
+      printf("save %s = %f\n", getNameReal(&var), var);
     }
   ind = long(pvar - globalData->helpVars);
   if (ind >= 0 && ind < globalData->nHelpVars)
@@ -726,7 +727,7 @@ save(modelica_integer & var)
   long ind;
   if (sim_verbose)
     {
-      printf("save %s = %d\n", getName(&var), (int)var);
+      printf("save %s = %d\n", getNameInt(&var), (int)var);
     }
   ind = long(pvar - globalData->intVariables.algebraics);
   if (ind >= 0 && ind < globalData->intVariables.nAlgebraic)
@@ -744,7 +745,7 @@ save(modelica_boolean & var)
   long ind;
   if (sim_verbose)
     {
-      printf("save %s = %o\n", getName(&var), var);
+      printf("save %s = %o\n", getNameBool(&var), var);
     }
   ind = long(pvar - globalData->boolVariables.algebraics);
   if (ind >= 0 && ind < globalData->boolVariables.nAlgebraic)
@@ -762,7 +763,7 @@ save(const char* & var)
   long ind;
   if (sim_verbose)
     {
-      printf("save %s = %s\n", getName((double*) pvar), var);
+      printf("save %s = %s\n", getNameString(pvar), var);
     }
   ind = long(pvar - globalData->stringVariables.nAlgebraic);
   if (ind >= 0 && ind < globalData->stringVariables.nAlgebraic)
@@ -894,8 +895,10 @@ change(modelica_boolean& var)
 void
 checkTermination()
 {
-  if (terminationAssert || terminationTerminate)
+  if (terminationAssert || terminationTerminate) {
     printInfo(stdout, TermInfo);
+    fputc(' ', stdout);
+  }
   if (terminationAssert)
     {
       if (warningLevelAssert)
@@ -1182,7 +1185,7 @@ EventHandle(int flag)
       //determined complete system
       int needToIterate = 0;
       int IterationNum = 0;
-      functionDAE(needToIterate);
+      functionDAE(&needToIterate);
       functionAliasEquations();
       if (sim_verbose)
         {
@@ -1201,7 +1204,7 @@ EventHandle(int flag)
                 cout << "discrete Var changed. Iteration needed!" << endl;
             }
           saveall();
-          functionDAE(needToIterate);
+          functionDAE(&needToIterate);
           functionAliasEquations();
           if (sim_verbose)
             {
@@ -1230,7 +1233,7 @@ EventHandle(int flag)
       //evaluate and emit results before sample events are activated
       int needToIterate = 0;
       int IterationNum = 0;
-      functionDAE(needToIterate);
+      functionDAE(&needToIterate);
       if (sim_verbose)
         {
           sim_result->emit();
@@ -1248,7 +1251,7 @@ EventHandle(int flag)
                 cout << "discrete Var changed. Iteration needed!" << endl;
             }
           saveall();
-          functionDAE(needToIterate);
+          functionDAE(&needToIterate);
           if (sim_verbose)
             {
               sim_result->emit();
@@ -1267,7 +1270,7 @@ EventHandle(int flag)
       //Activate sample and evaluate again
       activateSampleEvents();
 
-      functionDAE(needToIterate);
+      functionDAE(&needToIterate);
       if (sim_verbose)
         {
           sim_result->emit();
@@ -1285,7 +1288,7 @@ EventHandle(int flag)
                 cout << "discrete Var changed. Iteration needed!" << endl;
             }
           saveall();
-          functionDAE(needToIterate);
+          functionDAE(&needToIterate);
           if (sim_verbose)
             {
               sim_result->emit();

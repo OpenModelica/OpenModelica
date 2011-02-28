@@ -41,17 +41,22 @@
 #define _SIMULATION_RUNTIME_H
 
 #include "compat.h"
+#include "fortran_types.h"
+#include "simulation_varinfo.h"
+#include "integer_array.h"
+#include "boolean_array.h"
+#include "rtclock.h"
+
+#include <stdlib.h>
+
+#ifdef __cplusplus
+
+#include "linearize.h"
 #include "simulation_events.h"
 #include "simulation_delay.h"
 #include "simulation_result.h"
 #include "simulation_inline_solver.h"
-#include "simulation_varinfo.h"
-#include "integer_array.h"
-#include "boolean_array.h"
-#include "linearize.h"
-#include "rtclock.h"
 
-#include <stdlib.h>
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -77,16 +82,23 @@ protected:
   std::string errorMessage;
 };
 
+extern string TermMsg; /* message for termination. */
+extern simulation_result *sim_result;
+/* function with template for linear model */
+int linear_model_frame(string& out, string A, string B, string C, string D, string x_startvalues, string u_startvalues);
+int callSolver(int, char**, string, string, double, double, double, long, double);
+
+#endif /* cplusplus */
+
 extern int measure_time_flag;
-extern int sim_verbose; // control debug output during simulation.
-extern int sim_noemit; // control emitting result data to file
-extern int acceptedStep; // !=0 when accepted step is calculated, 0 otherwise.
-extern int modelTermination; // Becomes non-zero when user terminates simulation.
-extern int terminationTerminate; // Becomes non-zero when user terminates simulation.
-extern int terminationAssert; // Becomes non-zero when model call assert simulation.
-extern int warningLevelAssert; // Becomes non-zero when model call assert with warning level.
-extern string TermMsg; // message for termination.
-extern omc_fileInfo TermInfo; // message for termination.
+extern int sim_verbose; /* control debug output during simulation. */
+extern int sim_noemit; /* control emitting result data to file */
+extern int acceptedStep; /* !=0 when accepted step is calculated, 0 otherwise. */
+extern int modelTermination; /* Becomes non-zero when user terminates simulation. */
+extern int terminationTerminate; /* Becomes non-zero when user terminates simulation. */
+extern int terminationAssert; /* Becomes non-zero when model call assert simulation. */
+extern int warningLevelAssert; /* Becomes non-zero when model call assert with warning level. */
+extern omc_fileInfo TermInfo; /* message for termination. */
 
 
 /* Flags for controlling logging to stdout */
@@ -99,34 +111,34 @@ extern const int ERROR_NONLINSYS;
 extern const int ERROR_LINSYS;
 
 typedef struct sim_DATA_STRING {
-  const char** algebraics; //y ALGVARS
-  const char** parameters; //p; PARAMETERS
-  const char** inputVars;  //in_y INPUTVARS
-  const char** outputVars; //out_y OUTPUTVARS
+  const char** algebraics;
+  const char** parameters;
+  const char** inputVars;
+  const char** outputVars;
 
   long nAlgebraic,nParameters;
   long nInputVars,nOutputVars;
 } DATA_STRING;
 
 typedef struct sim_DATA_INT {
-  modelica_integer* algebraics; //y ALGVARS
-  modelica_integer* parameters; //p; PARAMETERS
-  modelica_integer* inputVars; //in_y INPUTVARS
-  modelica_integer* outputVars; //out_y OUTPUTVARS
+  modelica_integer* algebraics;
+  modelica_integer* parameters;
+  modelica_integer* inputVars;
+  modelica_integer* outputVars;
   modelica_integer*  algebraics_old, *algebraics_old2;
-  modelica_boolean* algebraicsFilterOutput; // True if this variable should be filtered
+  modelica_boolean* algebraicsFilterOutput; /* True if this variable should be filtered */
 
   long nAlgebraic,nParameters;
   long nInputVars,nOutputVars;
 } DATA_INT;
 
 typedef struct sim_DATA_BOOL {
-  modelica_boolean* algebraics; //y ALGVARS
-  modelica_boolean* parameters; //p; PARAMETERS
-  modelica_boolean* inputVars; //in_y INPUTVARS
-  modelica_boolean* outputVars; //out_y OUTPUTVARS
+  modelica_boolean* algebraics;
+  modelica_boolean* parameters;
+  modelica_boolean* inputVars;
+  modelica_boolean* outputVars;
   modelica_boolean* algebraics_old, *algebraics_old2;
-  modelica_boolean* algebraicsFilterOutput; // True if this variable should be filtered
+  modelica_boolean* algebraicsFilterOutput; /* True if this variable should be filtered */
 
   long nAlgebraic,nParameters;
   long nInputVars,nOutputVars;
@@ -149,35 +161,35 @@ typedef struct sim_DATA {
   /* Each generated function have a DATA* parameter wich contain the data. */
   /* A object for the data can be created using */
   /* initializeDataStruc() function*/
-  double* states; //x STATES
-  double* statesDerivatives; //xd DERIVATIVES
-  double* algebraics; //y ALGVARS
-  double* parameters; //p; PARAMETERS
-  double* inputVars; //in_y INPUTVARS
-  double* outputVars; //out_y OUTPUTVARS
+  double* states;
+  double* statesDerivatives;
+  double* algebraics;
+  double* parameters;
+  double* inputVars;
+  double* outputVars;
   double* helpVars;
   double* initialResiduals;
   double* jacobianVars;
 
-  // True if the variable should be filtered
+  /* True if the variable should be filtered */
   modelica_boolean* statesFilterOutput;
   modelica_boolean* statesDerivativesFilterOutput;
   modelica_boolean* algebraicsFilterOutput;
 
-  // Old values used for extrapolation
+  /* Old values used for extrapolation */
   double* states_old,*states_old2;
   double* statesDerivatives_old,*statesDerivatives_old2;
   double* algebraics_old,*algebraics_old2;
   double oldTime,oldTime2;
   double current_stepsize;
 
-  // Backup derivative for dassl
+  /* Backup derivative for dassl */
   double* statesDerivativesBackup;
   double* statesBackup;
 
-  char* initFixed; // Fixed attribute for all variables and parameters
-  int init; // =1 during initialization, 0 otherwise.
-  void** extObjs; // External objects
+  char* initFixed; /* Fixed attribute for all variables and parameters */
+  int init; /* =1 during initialization, 0 otherwise. */
+  void** extObjs; /* External objects */
   /* nStatesDerivatives == states */
   fortran_integer nStates,nAlgebraic,nParameters;
   long nInputVars,nOutputVars,nFunctions,nProfileBlocks;
@@ -186,13 +198,13 @@ typedef struct sim_DATA {
   long nRelations/*NREL*/;
   long nInitialResiduals/*NR*/;
   long nHelpVars/* NHELP */;
-  //extern char init_fixed[];
+  /* extern char init_fixed[]; */
   DATA_STRING stringVariables;
   DATA_INT intVariables;
   DATA_BOOL boolVariables;
 
-  const char* modelName; // For error messages
-  const char* modelFilePrefix; // For filenames, input/output
+  const char* modelName; /* For error messages */
+  const char* modelFilePrefix; /* For filenames, input/output */
   const struct omc_varInfo* statesNames;
   const struct omc_varInfo* stateDerivativesNames;
   const struct omc_varInfo* algebraicsNames;
@@ -201,6 +213,8 @@ typedef struct sim_DATA {
   const struct omc_varInfo* int_param_names;
   const struct omc_varInfo* bool_alg_names;
   const struct omc_varInfo* bool_param_names;
+  const struct omc_varInfo* string_alg_names;
+  const struct omc_varInfo* string_param_names;
   const struct omc_varInfo* inputNames;
   const struct omc_varInfo* outputNames;
   const struct omc_varInfo* jacobian_names;
@@ -208,18 +222,18 @@ typedef struct sim_DATA {
   const struct omc_equationInfo* equationInfo;
   const int* equationInfo_reverse_prof_index;
 
-  double startTime; //the start time of the simulation
-  double timeValue; //the time for the simulation
-  //used in some generated function
-  // this is not changed by initializeDataStruc
-  double lastEmittedTime; // The last time value that has been emitted.
-  int forceEmit; // when != 0 force emit, set e.g. by newTime for equidistant output signal.
+  double startTime; /* the start time of the simulation */
+  double timeValue; /* the time for the simulation */
+  /* used in some generated function */
+  /* this is not changed by initializeDataStruc */
+  double lastEmittedTime; /* The last time value that has been emitted. */
+  int forceEmit; /* when != 0 force emit, set e.g. by newTime for equidistant output signal. */
 
-  // An array containing the initial data of samples used in the sim
+  /* An array containing the initial data of samples used in the sim */
   sample_raw_time* rawSampleExps;
   long nRawSamples;
-  // The queue of sample time events to be processed.
-  sample_time* sampleTimes; // Warning: Not implemented yet!
+  /* The queue of sample time events to be processed. */
+  sample_time* sampleTimes; /* Warning: Not implemented yet!? */
   long curSampleTimeIx;
   long nSampleTimes;
 } DATA;
@@ -229,7 +243,6 @@ extern DATA *globalData;
 
 
 extern int modelErrorCode;
-extern simulation_result *sim_result;
 
 extern double *gout;
 extern double *gout_old;
@@ -261,14 +274,15 @@ void deInitializeDataStruc(DATA* data);
  */
 void setLocalData(DATA* data);
 
-// defined in model code. Used to get name of variable by investigating its pointer in the state or alg vectors.
-const char* getName(double* ptr);
-const char* getName(modelica_integer* ptr);
-const char* getName(modelica_boolean* ptr);
+/* defined in model code. Used to get name of variable by investigating its pointer in the state or alg vectors. */
+const char* getNameReal(double* ptr);
+const char* getNameInt(modelica_integer* ptr);
+const char* getNameBool(modelica_boolean* ptr);
+const char* getNameString(const char** ptr);
 
 void storeExtrapolationData();
 
-// function for calculating ouput values
+/* function for calculating ouput values */
 /*used in DDASRT fortran function*/
 int
 functionDAE_output();
@@ -281,14 +295,14 @@ to get new values of discrete varibles*/
 int
 functionDAE_output2();
 
-// function for calculating state values on residual form
+/* function for calculating state values on residual form */
 /*used in DDASRT fortran function*/
 int
 functionDAE_res(double *t, double *x, double *xprime, double *delta, fortran_integer *ires, double *rpar, fortran_integer* ipar);
 int
 functionODE_residual(double *t, double *x, double *xprime, double *delta, fortran_integer *ires, double *rpar, fortran_integer* ipar);
 
-// Function for calling external object constructors
+/* Function for calling external object constructors */
 void
 callExternalObjectConstructors(DATA*);
 
@@ -298,50 +312,44 @@ function_updateDependents();
 /*   function for calculating all equation sorting order 
   uses in EventHandle  */
 int
-functionDAE(int& needToIterate);
+functionDAE(int *needToIterate);
 
-// function for storing value histories of delayed expressions
-// called from functionDAE_output()
+/* function for storing value histories of delayed expressions
+ * called from functionDAE_output()
+ */
 int
 function_storeDelayed();
 
-// function for calculating states on explicit ODE form
+/* function for calculating states on explicit ODE form */
 /*used in functionDAE_res function*/
 int functionODE();
 int functionODE_inline();
 int functionODE_new();
 
-// function for calculate initial values from initial equations
-// and fixed start attibutes
+/* function for calculate initial values from initial equations and fixed start attibutes */
 int initial_function();
 
-// function for calculating bound parameters that depend on other
-// parameters, e.g. parameter Real n=1/m;
+/* function for calculating bound parameters that depend on other parameters, e.g. parameter Real n=1/m; */
 int bound_parameters();
 
-// function for checking for asserts and terminate
+/* function for checking for asserts and terminate */
 int checkForAsserts();
 
-// function for calculate residual values for the initial equations
-// and fixed start attibutes
+/* function for calculate residual values for the initial equations and fixed start attibutes */
 int initial_residual();
 
-// function for initializing time instants when sample() is activated
+/* function for initializing time instants when sample() is activated */
 void function_sampleInit();
 
-// function with template for linear model
-int linear_model_frame(string& out, string A, string B, string C, string D, string x_startvalues, string u_startvalues);
-
-// function for calculation Jacobian
-extern int jac_flag;  // Flag for DASSL to work with analytical Jacobian
-extern int num_jac_flag;  // Flag for DASSL to work with selfmade numerical Jacobian
+/* function for calculation Jacobian */
+extern int jac_flag;  /* Flag for DASSL to work with analytical Jacobian */
+extern int num_jac_flag;  /* Flag for DASSL to work with selfmade numerical Jacobian */
 int functionJacA(double* jac);
 int functionJacB(double* jac);
 int functionJacC(double* jac);
 int functionJacD(double* jac);
 
-bool isInteractiveSimulation();
-int callSolver(int, char**, string, string, double, double, double, long, double);
+int isInteractiveSimulation();
 
 double newTime(double t, double step,double stop);
 

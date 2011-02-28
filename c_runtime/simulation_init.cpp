@@ -111,11 +111,11 @@ void leastSquare2(long *nz, double *z, double *funcValue)
    */
   int needToIterate=0;
   int IterationNum=0;
-  functionDAE(needToIterate);
+  functionDAE(&needToIterate);
   if (sim_verbose){ sim_result->emit(); }
   while (checkForDiscreteChanges() || needToIterate){
     saveall();
-    functionDAE(needToIterate);
+    functionDAE(&needToIterate);
     IterationNum++;
     if (IterationNum>IterationMax) {
       throw TerminateSimulationException(globalData->timeValue,
@@ -290,7 +290,7 @@ int initialize(const std::string*method)
     cout << "Initialization by method: " << init_method << endl;
     cout << "fixed attribute for states:" << endl;
     for(int i=0;i<globalData->nStates; i++) {
-      cout <<  getName(&globalData->states[i]) << "(fixed=" << (globalData->initFixed[i]?"true":"false") << ")"
+      cout << globalData->statesNames[i].name << "(fixed=" << (globalData->initFixed[i]?"true":"false") << ")"
       << endl;
     }
     cout << "number of non-fixed variables: " << nz << endl;

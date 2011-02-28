@@ -55,5 +55,5 @@ void printErrorEqSyst(equationSystemError err, struct omc_equationInfo eq, doubl
 
 void printInfo(FILE *stream, omc_fileInfo info)
 {
-  fprintf(stream, "[%s:%d:%d-%d:%d:%s] ", info.filename, info.lineStart, info.colStart, info.lineEnd, info.colEnd, info.readonly ? "readonly" : "writable");
+  fprintf(stream, "[%s:%d:%d-%d:%d:%s]", info.filename, info.lineStart, info.colStart, info.lineEnd, info.colEnd, info.readonly ? "readonly" : "writable");
 }

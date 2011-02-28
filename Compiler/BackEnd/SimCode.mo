@@ -272,6 +272,7 @@ uniontype Function
     list<Variable> functionArguments;
     list<Variable> variableDeclarations;
     list<Statement> body;
+    Absyn.Info info;
   end FUNCTION;
   record EXTERNAL_FUNCTION
     Absyn.Path name;
@@ -283,10 +284,12 @@ uniontype Function
     list<Variable> outVars;
     list<Variable> biVars;
     String language "C or Fortran";
+    Absyn.Info info;
   end EXTERNAL_FUNCTION;
   record RECORD_CONSTRUCTOR
     Absyn.Path name;
     list<Variable> funArgs;
+    Absyn.Info info;
   end RECORD_CONSTRUCTOR;
 end Function;
 
@@ -1590,9 +1593,11 @@ algorithm
       list<Statement> bodyStmts;
       list<DAE.Element> daeElts;
       Absyn.Path name;
+      DAE.ElementSource source;
+      Absyn.Info info;
       
       // Modelica functions.
-    case (DAE.FUNCTION(path = fpath,
+    case (DAE.FUNCTION(path = fpath, source = source,
       functions = DAE.FUNCTION_DEF(body = daeElts)::_, // might be followed by derivative maps
       type_ = tp as (DAE.T_FUNCTION(funcArg=args, funcResultType=restype), _),
       partialPrefix=false), rt, recordDecls, includes, libs)
@@ -1604,11 +1609,12 @@ algorithm
         varDecls = Util.listMap(vars, daeInOutSimVar);
         algs = Util.listFilter(daeElts, DAEUtil.isAlgorithm);
         bodyStmts = Util.listMap(algs, elaborateStatement);
+        info = DAEUtil.getElementSourceFileInfo(source);
       then
-        (FUNCTION(fpath,outVars,funArgs,varDecls,bodyStmts),rt_1,recordDecls,includes,libs);
+        (FUNCTION(fpath,outVars,funArgs,varDecls,bodyStmts,info),rt_1,recordDecls,includes,libs);
         
         // External functions.
-    case (DAE.FUNCTION(path = fpath,
+    case (DAE.FUNCTION(path = fpath, source = source,
       functions = DAE.FUNCTION_EXT(body =  daeElts, externalDecl = extdecl)::_, // might be followed by derivative maps
       type_ = (tp as (DAE.T_FUNCTION(funcArg = args,funcResultType = restype),_))),rt,recordDecls,includes,libs)
       equation
@@ -1628,18 +1634,20 @@ algorithm
         simextargs = Util.listMap(extargs, extArgsToSimExtArgs);
         extReturn = extArgsToSimExtArgs(extretarg);
         (simextargs, extReturn) = fixOutputIndex(outVars, simextargs, extReturn);
+        info = DAEUtil.getElementSourceFileInfo(source);
       then
         (EXTERNAL_FUNCTION(fpath, extfnname, funArgs, simextargs, extReturn,
-          inVars, outVars, biVars, lang),
+          inVars, outVars, biVars, lang, info),
           rt_1,recordDecls,includes,libs);
         
         // Record constructor.
-    case (DAE.RECORD_CONSTRUCTOR(path = fpath, type_ = tp as (DAE.T_FUNCTION(funcArg = args,funcResultType = restype as (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(name)),_)),_)), rt,recordDecls,includes,libs)
+    case (DAE.RECORD_CONSTRUCTOR(path = fpath, source = source, type_ = tp as (DAE.T_FUNCTION(funcArg = args,funcResultType = restype as (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(name)),_)),_)), rt,recordDecls,includes,libs)
       equation
         funArgs = Util.listMap(args, typesSimFunctionArg);
         (recordDecls,rt_1) = elaborateRecordDeclarationsForRecord(restype, recordDecls, rt);
+        info = DAEUtil.getElementSourceFileInfo(source);
       then
-        (RECORD_CONSTRUCTOR(name, funArgs),rt_1,recordDecls,includes,libs);
+        (RECORD_CONSTRUCTOR(name, funArgs, info),rt_1,recordDecls,includes,libs);
         
         // failure
     case (fn,_,_,_,_)
@@ -9518,6 +9526,15 @@ end valueArrayNth;
 
 /***** end of HashTable ComponentRef -> SimVar *******/
 
-
+public function functionInfo
+  input Function fn;
+  output Absyn.Info info;
+algorithm
+  info := match fn
+    case FUNCTION(info = info) then info;
+    case EXTERNAL_FUNCTION(info = info) then info;
+    case RECORD_CONSTRUCTOR(info = info) then info;
+  end match;
+end functionInfo;
 
 end SimCode;

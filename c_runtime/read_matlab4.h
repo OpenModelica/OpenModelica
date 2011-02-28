@@ -64,7 +64,7 @@ double omc_matlab4_startTime(ModelicaMatReader *reader);
 
 double omc_matlab4_stopTime(ModelicaMatReader *reader);
 #ifdef __cplusplus
-} // extern "C"
+} /* extern "C" */
 #endif
 
 #endif
