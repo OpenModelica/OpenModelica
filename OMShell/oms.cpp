@@ -263,7 +263,7 @@ OMS::OMS( QWidget* parent )
   // windows stuff
   resize( 800, 600 );
   setWindowTitle( tr("OMShell - OpenModelica Shell") );
-  setWindowIcon( QIcon(":/Resources/OMS.bmp") );
+  setWindowIcon( QIcon(":/Resources/omshell-large.svg") );
   statusBar()->showMessage( tr("Ready") );
 
   // sett start message

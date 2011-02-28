@@ -1,6 +1,6 @@
 <RCC>
     <qresource>
-        <file>Resources/OMS.bmp</file>
+        <file>Resources/omshell-large.svg</file>
         <file>Resources/OMS.ico</file>
         <file>Resources/clear.bmp</file>
         <file>Resources/copy.bmp</file>
