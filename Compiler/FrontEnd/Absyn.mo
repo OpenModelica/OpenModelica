@@ -2560,7 +2560,7 @@ end pathEqual;
 
 public function typeSpecEqual "
 Author BZ 2009-01
-Check wheter two type specs are equal or not."
+Check whether two type specs are equal or not."
   input TypeSpec a,b;
   output Boolean ob;
 algorithm 
@@ -3677,18 +3677,9 @@ public function joinPathsOpt "function: joinPathsOpt
   output Path outPath;
 algorithm
   outPath := match (inPath1,inPath2)
-    local
-      Ident str;
-      Path p2,p_1,p;
-    case (NONE(), p2) then p2;
-    case (SOME(IDENT(name = str)),p2) then QUALIFIED(str,p2);
-    case (SOME(QUALIFIED(name = str,path = p)),p2)
-      equation
-        p_1 = joinPaths(p, p2);
-      then
-        QUALIFIED(str,p_1);
-    case(SOME(FULLYQUALIFIED(p)),p2) then joinPaths(p,p2);
-    case(SOME(p),FULLYQUALIFIED(p2)) then joinPaths(p,p2);
+    local Path p;
+    case (NONE(), _) then inPath2;
+    case (SOME(p), _) then joinPaths(p, inPath2);
   end match;
 end joinPathsOpt;
 
@@ -3706,20 +3697,6 @@ algorithm
     case (SOME(p),_) then p;
   end match;
 end selectPathsOpt;
-
-public function optPathAppend "
-Author BZ, 2009-01
-Appends a path to optional 'base'-path.
-"
-  input Option<Path> basePath;
-  input Path lastPath;
-  output Path mergedPath;
-algorithm 
-  mergedPath := match(basePath, lastPath)
-    case(NONE(), _) then lastPath;
-    case(SOME(mergedPath), _) then joinPaths(mergedPath, lastPath);
-  end match;
-end optPathAppend;
 
 public function pathAppendList "function: pathAppendList
   author Lucian

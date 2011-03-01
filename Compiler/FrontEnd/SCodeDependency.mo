@@ -70,7 +70,7 @@ public function analyse
 algorithm
   analyseClass(inClassName, inEnv, Absyn.dummyInfo);
   analyseClassExtends(inEnv);
-  (outEnv, outProgram) := collectUsedProgram(inEnv, inProgram);
+  (outEnv, outProgram) := collectUsedProgram(inEnv, inProgram, inClassName);
 end analyse;
 
 protected function analyseClass
@@ -224,7 +224,7 @@ algorithm
 end checkItemIsClass;
 
 protected function analyseItem
-  "Analyzes an item."
+  "Analyses an item."
   input Item inItem;
   input Option<Env> inEnv;
 algorithm
@@ -262,7 +262,7 @@ algorithm
       equation
         markItemAsUsed(inItem, env);
         env = cls_env :: env;
-        analyseClassDef(cdef, env, info);
+        analyseClassDef(cdef, res, env, info);
         analyseMetaType(res, env, info);
       then
         ();
@@ -352,12 +352,13 @@ algorithm
 end markEnvAsUsed2;
 
 protected function analyseClassDef
-  "Analyzes the contents of a class definition."
+  "Analyses the contents of a class definition."
   input SCode.ClassDef inClassDef;
+  input SCode.Restriction inRestriction;
   input Env inEnv;
   input Absyn.Info inInfo;
 algorithm
-  _ := matchcontinue(inClassDef, inEnv, inInfo)
+  _ := matchcontinue(inClassDef, inRestriction, inEnv, inInfo)
     local
       list<SCode.Element> el;
       SCode.Element e1, e2;
@@ -370,14 +371,16 @@ algorithm
       list<SCode.Annotation> annl;
       Option<Absyn.ExternalDecl> ext_decl;
       Boolean is_ext_obj;
+      Env ty_env;
+      Item ty_item;
 
     // A class made of parts, analyse elements, equation, algorithms, etc.
     case (SCode.PARTS(elementLst = el, normalEquationLst = nel, 
         initialEquationLst = iel, normalAlgorithmLst = nal, 
         initialAlgorithmLst = ial, externalDecl = ext_decl,
-        annotationLst = annl, comment = cmt), _, _)
+        annotationLst = annl, comment = cmt), _, _, _)
       equation
-        Util.listMap01(el, inEnv, analyseElement);
+        Util.listMap02(el, analyseElement, inEnv, inRestriction);
         Util.listMap01(nel, inEnv, analyseEquation);
         Util.listMap01(iel, inEnv, analyseEquation);
         Util.listMap01(nal, inEnv, analyseAlgorithm);
@@ -391,7 +394,7 @@ algorithm
     // The previous case failed, which might happen for an external object.
     // Check if the class definition is an external object and analyse it if
     // that's the case.
-    case (SCode.PARTS(elementLst = el), _, _)
+    case (SCode.PARTS(elementLst = el), _, _, _)
       equation
         isExternalObject(el, inEnv, inInfo);
         analyseClass(Absyn.IDENT("constructor"), inEnv, inInfo);
@@ -403,11 +406,14 @@ algorithm
     case (SCode.CLASS_EXTENDS(baseClassName = bc, modifications = mods,
         elementLst = el, normalEquationLst = nel, initialEquationLst = iel,
         normalAlgorithmLst = nal, initialAlgorithmLst = ial, 
-        annotationLst = annl, comment = cmt), _, _)
+        annotationLst = annl, comment = cmt), _, _, _)
       equation
         analyseClass(Absyn.IDENT(bc), inEnv, inInfo);
-        analyseModifier(mods, inEnv, inInfo);
-        Util.listMap01(el, inEnv, analyseElement);
+        (ty_item, _, SOME(ty_env)) =
+          SCodeLookup.lookupBaseClassName(Absyn.IDENT(bc), inEnv, inInfo);
+        ty_env = SCodeEnv.mergeItemEnv(ty_item, ty_env);
+        analyseModifier(mods, inEnv, ty_env, inInfo);
+        Util.listMap02(el, analyseElement, inEnv, inRestriction);
         Util.listMap01(nel, inEnv, analyseEquation);
         Util.listMap01(iel, inEnv, analyseEquation);
         Util.listMap01(nal, inEnv, analyseAlgorithm);
@@ -419,19 +425,21 @@ algorithm
 
     // A derived class definition.
     case (SCode.DERIVED(typeSpec = ty, modifications = mods, comment = cmt),
-        _, _)
+        _, _, _)
       equation
         checkRecursiveShortDefinition(ty, inEnv, inInfo);
         analyseTypeSpec(ty, inEnv, inInfo);
-        analyseModifier(mods, inEnv, inInfo);
+        (ty_item, ty_env) = SCodeLookup.lookupTypeSpec(ty, inEnv, inInfo);
+        ty_env = SCodeEnv.mergeItemEnv(ty_item, ty_env);
+        analyseModifier(mods, inEnv, ty_env, inInfo);
         analyseComment(cmt, inEnv, inInfo);
       then
         ();  
 
     // Other cases which doesn't need to be analysed.
-    case (SCode.ENUMERATION(enumLst = _), _, _) then ();
-    case (SCode.OVERLOAD(pathLst = _), _, _) then ();
-    case (SCode.PDER(functionPath = _), _, _) then ();
+    case (SCode.ENUMERATION(enumLst = _), _, _, _) then ();
+    case (SCode.OVERLOAD(pathLst = _), _, _, _) then ();
+    case (SCode.PDER(functionPath = _), _, _, _) then ();
   end matchcontinue;
 end analyseClassDef;
 
@@ -605,11 +613,12 @@ algorithm
 end analyseMetaType;
 
 protected function analyseElement
-  "Analyzes an element."
+  "Analyses an element."
   input SCode.Element inElement;
   input Env inEnv;
+  input SCode.Restriction inClassRestriction;
 algorithm
-  _ := match(inElement, inEnv)
+  _ := match(inElement, inEnv, inClassRestriction)
     local
       Absyn.Path bc;
       SCode.Mod mods;
@@ -619,28 +628,38 @@ algorithm
       Option<Absyn.Exp> cond_exp;
       Option<Absyn.ConstrainClass> cc;
       SCode.Class cls;
+      Item ty_item;
+      Env ty_env;
+      SCode.Ident name;
 
     // Fail on 'extends ExternalObject' so we can handle it as a special case in
     // analyseClassDef.
-    case (SCode.EXTENDS(baseClassPath = Absyn.IDENT("ExternalObject")), _)
+    case (SCode.EXTENDS(baseClassPath = Absyn.IDENT("ExternalObject")), _, _)
       then fail();
 
     // An extends-clause.
-    case (SCode.EXTENDS(baseClassPath = bc, modifications = mods, info = info), _)
+    case (SCode.EXTENDS(baseClassPath = bc, modifications = mods, info = info),
+        _, _)
       equation
         true = checkNotExtendsDependent(bc, inEnv, info);
         analyseExtends(bc, inEnv, info);
-        analyseModifier(mods, inEnv, info);
+        (ty_item, _, SOME(ty_env)) = 
+          SCodeLookup.lookupBaseClassName(bc, inEnv, info);
+        ty_env = SCodeEnv.mergeItemEnv(ty_item, ty_env);
+        analyseModifier(mods, inEnv, ty_env, info);
       then
         ();
         
     // A component.
-    case (SCode.COMPONENT(attributes = attr, typeSpec = ty, modifications = mods, 
-        condition = cond_exp, cc = cc, info = info), _)
+    case (SCode.COMPONENT(component = name, attributes = attr, typeSpec = ty,
+        modifications = mods, condition = cond_exp, cc = cc, info = info), _, _)
       equation
+        markAsUsedOnRestriction(name, inClassRestriction, inEnv, info);
         analyseAttributes(attr, inEnv, info);
         analyseTypeSpec(ty, inEnv, info);
-        analyseModifier(mods, inEnv, info);
+        (ty_item, ty_env) = SCodeLookup.lookupTypeSpec(ty, inEnv, info);
+        ty_env = SCodeEnv.mergeItemEnv(ty_item, ty_env);
+        analyseModifier(mods, inEnv, ty_env, info);
         analyseOptExp(cond_exp, inEnv, info);
         analyseConstrainClass(cc, inEnv, info);
       then
@@ -649,7 +668,7 @@ algorithm
     // equalityConstraints may not be explicitly used but might be needed anyway
     // (if the record is used in a connect for example), so always mark it as used.
     case (SCode.CLASSDEF(name = "equalityConstraint", 
-       classDef = cls as SCode.CLASS(info = info)), _)
+       classDef = cls as SCode.CLASS(info = info)), _, _)
       equation
         analyseClass(Absyn.IDENT("equalityConstraint"), inEnv, info);
       then
@@ -658,6 +677,41 @@ algorithm
     else then ();
   end match;
 end analyseElement;
+
+protected function markAsUsedOnRestriction
+  input SCode.Ident inName;
+  input SCode.Restriction inRestriction;
+  input Env inEnv;
+  input Absyn.Info inInfo;
+algorithm
+  _ := matchcontinue(inName, inRestriction, inEnv, inInfo)
+    local
+      SCodeEnv.AvlTree cls_and_vars;
+      Item item;
+      Util.StatefulBoolean is_used;
+
+    case (_, _, SCodeEnv.FRAME(clsAndVars = cls_and_vars) :: _, _)
+      equation
+        true = markAsUsedOnRestriction2(inRestriction);
+        SCodeEnv.VAR(isUsed = is_used) = SCodeEnv.avlTreeGet(cls_and_vars, inName);
+        Util.setStatefulBoolean(is_used, true);
+      then
+        ();
+
+    else then ();
+  end matchcontinue;
+end markAsUsedOnRestriction;
+
+protected function markAsUsedOnRestriction2
+  input SCode.Restriction inRestriction;
+  output Boolean isRestricted;
+algorithm
+  isRestricted := match(inRestriction)
+    case SCode.R_CONNECTOR(isExpandable = _) then true;
+    case SCode.R_RECORD() then true;
+    else false;
+  end match;
+end markAsUsedOnRestriction2;
 
 protected function checkNotExtendsDependent
   "The Modelica specification 3.2 says (section 5.6.1): 'The lookup of the names
@@ -693,7 +747,7 @@ algorithm
 end checkNotExtendsDependent;
 
 protected function analyseExtends
-  "Analyzes an extends-clause."
+  "Analyses an extends-clause."
   input Absyn.Path inClassName;
   input Env inEnv;
   input Absyn.Info inInfo;
@@ -706,7 +760,7 @@ algorithm
 end analyseExtends;
 
 protected function analyseAttributes
-  "Analyzes a components attributes (actually only the array dimensions)."
+  "Analyses a components attributes (actually only the array dimensions)."
   input SCode.Attributes inAttributes;
   input Env inEnv;
   input Absyn.Info inInfo;
@@ -718,30 +772,31 @@ algorithm
 end analyseAttributes;
 
 protected function analyseModifier
-  "Analyzes a modifier."
+  "Analyses a modifier."
   input SCode.Mod inModifier;
   input Env inEnv;
+  input Env inTypeEnv;
   input Absyn.Info inInfo;
 algorithm
-  _ := match(inModifier, inEnv, inInfo)
+  _ := match(inModifier, inEnv, inTypeEnv, inInfo)
     local
       list<SCode.Element> el;
       list<SCode.SubMod> sub_mods;
       Option<tuple<Absyn.Exp, Boolean>> bind_exp;
 
     // No modifier.
-    case (SCode.NOMOD(), _, _) then ();
+    case (SCode.NOMOD(), _, _, _) then ();
 
     // A normal modifier, analyse it's submodifiers and optional binding.
-    case (SCode.MOD(subModLst = sub_mods, binding = bind_exp), _, _)
+    case (SCode.MOD(subModLst = sub_mods, binding = bind_exp), _, _, _)
       equation
-        Util.listMap02(sub_mods, analyseSubMod, inEnv, inInfo);
+        Util.listMap02(sub_mods, analyseSubMod, (inEnv, inTypeEnv), inInfo);
         analyseModBinding(bind_exp, inEnv, inInfo);
       then
         ();
 
     // A redeclaration modifier, analyse the redeclarations.
-    case (SCode.REDECL(elementLst = el), _, _)
+    case (SCode.REDECL(elementLst = el), _, _, _)
       equation
         Util.listMap01(el, inEnv, analyseRedeclare);
       then
@@ -750,7 +805,7 @@ algorithm
 end analyseModifier;
 
 protected function analyseRedeclare
-  "Analyzes a redeclaration element."
+  "Analyses a redeclaration element."
   input SCode.Element inElement;
   input Env inEnv;
 algorithm
@@ -759,13 +814,14 @@ algorithm
       SCode.ClassDef cdef;
       Option<Absyn.ConstrainClass> cc;
       Absyn.Info info;
+      SCode.Restriction restr;
 
     // Class definitions are not analysed in analyseElement but are needed here
     // in case a class is redeclared.
-    case (SCode.CLASSDEF(classDef = SCode.CLASS(classDef = cdef, info = info),
-        cc = cc), _)
+    case (SCode.CLASSDEF(classDef = SCode.CLASS(classDef = cdef, 
+        restriction = restr, info = info), cc = cc), _)
       equation
-        analyseClassDef(cdef, inEnv, info);
+        analyseClassDef(cdef, restr, inEnv, info);
         analyseConstrainClass(cc, inEnv, info);
       then
         ();
@@ -773,14 +829,14 @@ algorithm
     // Otherwise we can just use analyseElements.
     else
       equation
-        analyseElement(inElement, inEnv);
+        analyseElement(inElement, inEnv, SCode.R_CLASS());
       then
         ();
   end match;
 end analyseRedeclare;
 
 protected function analyseConstrainClass
-  "Analyzes a constrain class, i.e. given by constrainedby."
+  "Analyses a constrain class, i.e. given by constrainedby."
   input Option<Absyn.ConstrainClass> inCC;
   input Env inEnv;
   input Absyn.Info inInfo;
@@ -792,32 +848,45 @@ algorithm
 end analyseConstrainClass;
 
 protected function analyseSubMod
-  "Analyzes a submodifier."
+  "Analyses a submodifier."
   input SCode.SubMod inSubMod;
-  input Env inEnv;
+  input tuple<Env, Env> inEnv;
   input Absyn.Info inInfo;
 algorithm
-  _ := match(inSubMod, inEnv, inInfo)
+  _ := matchcontinue(inSubMod, inEnv, inInfo)
     local
+      SCode.Ident ident;
       SCode.Mod m;
       list<SCode.Subscript> subs;
+      Env env, ty_env;
+      Item item;
+      Option<Env> opt_env;
 
-    case (SCode.NAMEMOD(A = m), _, _)
+    case (SCode.NAMEMOD(ident = ident, A = m), (env, ty_env), _)
       equation
-        analyseModifier(m, inEnv, inInfo);
+        (item, _, opt_env) = SCodeLookup.lookupName(Absyn.IDENT(ident),
+          ty_env, inInfo, NONE());
+        analyseItem(item, opt_env);
+        analyseModifier(m, env, ty_env, inInfo);
       then
         ();
 
-    case (SCode.IDXMOD(subscriptLst = subs, an = m), _, _)
+    case (SCode.NAMEMOD(ident = ident, A = m), (env, ty_env), _)
       equation
-        analyseModifier(m, inEnv, inInfo);
+        analyseModifier(m, env, ty_env, inInfo);
       then
         ();
-  end match;
+
+    case (SCode.IDXMOD(subscriptLst = subs, an = m), (env, ty_env), _)
+      equation
+        analyseModifier(m, env, ty_env, inInfo);
+      then
+        ();
+  end matchcontinue;
 end analyseSubMod;
 
 protected function analyseSubscript
-  "Analyzes a subscript."
+  "Analyses a subscript."
   input SCode.Subscript inSubscript;
   input Env inEnv;
   input Absyn.Info inInfo;
@@ -837,7 +906,7 @@ algorithm
 end analyseSubscript;
 
 protected function analyseModBinding
-  "Analyzes an optional modifier binding."
+  "Analyses an optional modifier binding."
   input Option<tuple<Absyn.Exp, Boolean>> inBinding;
   input Env inEnv;
   input Absyn.Info inInfo;
@@ -857,7 +926,7 @@ algorithm
 end analyseModBinding;
 
 protected function analyseTypeSpec
-  "Analyzes a type specificer."
+  "Analyses a type specificer."
   input Absyn.TypeSpec inTypeSpec;
   input Env inEnv;
   input Absyn.Info inInfo;
@@ -889,7 +958,7 @@ algorithm
 end analyseTypeSpec;
 
 protected function analyseExternalDecl
-  "Analyzes an external declaration."
+  "Analyses an external declaration."
   input Option<Absyn.ExternalDecl> inExtDecl;
   input Env inEnv;
   input Absyn.Info inInfo;
@@ -912,7 +981,7 @@ algorithm
 end analyseExternalDecl;
 
 protected function analyseComment
-  "Analyzes an optional comment."
+  "Analyses an optional comment."
   input Option<SCode.Comment> inComment;
   input Env inEnv;
   input Absyn.Info inInfo;
@@ -933,7 +1002,7 @@ algorithm
 end analyseComment;
 
 protected function analyseAnnotation
-  "Analyzes an annotation."
+  "Analyses an annotation."
   input SCode.Annotation inAnnotation;
   input Env inEnv;
   input Absyn.Info inInfo;
@@ -954,7 +1023,7 @@ algorithm
 end analyseAnnotation;
 
 protected function analyseAnnotationMod
-  "Analyzes an annotation modifier."
+  "Analyses an annotation modifier."
   input SCode.SubMod inMod;
   input Env inEnv;
   input Absyn.Info inInfo;
@@ -968,7 +1037,7 @@ algorithm
     // analyse it's modifier to make sure that we get the derivation function.
     case (SCode.NAMEMOD(ident = "derivative", A = mods), _, _)
       equation
-        analyseModifier(mods, inEnv, inInfo);
+        analyseModifier(mods, inEnv, SCodeEnv.emptyEnv, inInfo);
       then
         ();
 
@@ -978,7 +1047,7 @@ algorithm
     case (SCode.NAMEMOD(ident = id, A = mods), _, _) 
       equation
         analyseAnnotationName(id, inEnv, inInfo);
-        analyseModifier(mods, inEnv, inInfo);
+        analyseModifier(mods, inEnv, SCodeEnv.emptyEnv, inInfo);
       then
         ();
 
@@ -987,7 +1056,7 @@ algorithm
 end analyseAnnotationMod;
 
 protected function analyseAnnotationName
-  "Analyzes an annotation name, such as Icon or Line."
+  "Analyses an annotation name, such as Icon or Line."
   input SCode.Ident inName;
   input Env inEnv;
   input Absyn.Info inInfo;
@@ -1093,7 +1162,7 @@ algorithm
 end analyseExp2;
 
 protected function analyseCref
-  "Analyzes a component reference."
+  "Analyses a component reference."
   input Absyn.ComponentRef inCref;
   input Env inEnv;
   input Absyn.Info inInfo;
@@ -1149,7 +1218,7 @@ algorithm
 end analyseExpTraverserExit;
 
 protected function analyseEquation
-  "Analyzes an equation."
+  "Analyses an equation."
   input SCode.Equation inEquation;
   input Env inEnv;
 protected
@@ -1220,7 +1289,7 @@ algorithm
 end traverseExp;
 
 protected function analyseAlgorithm
-  "Analyzes an algorithm."
+  "Analyses an algorithm."
   input SCode.AlgorithmSection inAlgorithm;
   input Env inEnv;
 protected
@@ -1231,7 +1300,7 @@ algorithm
 end analyseAlgorithm;
 
 protected function analyseStatement
-  "Analyzes a statement in an algorithm."
+  "Analyses a statement in an algorithm."
   input SCode.Statement inStatement;
   input Env inEnv;
 algorithm
@@ -1301,7 +1370,7 @@ algorithm
 end analyseClassExtends;
 
 protected function analyseAvlTree
-  "Helper function to analyzeClassExtends. Goes through the nodes in an
+  "Helper function to analyseClassExtends. Goes through the nodes in an
   AvlTree."
   input Option<SCodeEnv.AvlTree> inTree;
   input Env inEnv;
@@ -1325,7 +1394,7 @@ algorithm
 end analyseAvlTree;
 
 protected function analyseAvlValue
-  "Helper function to analyzeClassExtends. Analyses a value in the AvlTree."
+  "Helper function to analyseClassExtends. Analyses a value in the AvlTree."
   input SCodeEnv.AvlTreeValue inValue;
   input Env inEnv;
 algorithm
@@ -1399,6 +1468,7 @@ protected function collectUsedProgram
   environment and collects the used elements in a new program and environment."
   input Env inEnv;
   input SCode.Program inProgram;
+  input Absyn.Path inClassName;
   output Env outEnv;
   output SCode.Program outProgram;
 protected
@@ -1407,7 +1477,8 @@ protected
 algorithm
   env := SCodeEnv.buildInitialEnv();
   SCodeEnv.FRAME(clsAndVars = cls_and_vars) :: _ := inEnv;
-  (outProgram, outEnv) := collectUsedProgram2(cls_and_vars, inProgram, env);
+  (outProgram, outEnv) := 
+    collectUsedProgram2(cls_and_vars, inProgram, inClassName, env);
 end collectUsedProgram;
 
 protected function collectUsedProgram2
@@ -1418,11 +1489,13 @@ protected function collectUsedProgram2
   bit faster but would not have preserved the order of the program."
   input SCodeEnv.AvlTree clsAndVars;
   input SCode.Program inProgram;
+  input Absyn.Path inClassName;
   input Env inAccumEnv;
   output SCode.Program outProgram;
   output Env outAccumEnv;
 algorithm
-  (outProgram, outAccumEnv) := matchcontinue(clsAndVars, inProgram, inAccumEnv)
+  (outProgram, outAccumEnv) := 
+  matchcontinue(clsAndVars, inProgram, inClassName, inAccumEnv)
     local
       SCode.Class cls;
       SCode.Program rest_prog;
@@ -1431,20 +1504,23 @@ algorithm
       Env env;
 
     // We're done!
-    case (_, {}, _) then (inProgram, inAccumEnv);
+    case (_, {}, _, _) then (inProgram, inAccumEnv);
 
     // Try to collect the first class in the list.
-    case (_, (cls as SCode.CLASS(name = name)) :: rest_prog, env)
+    case (_, (cls as SCode.CLASS(name = name)) :: rest_prog, _, env)
       equation
-        (cls, env) = collectUsedClass(cls, clsAndVars, env);
-        (rest_prog, env) = collectUsedProgram2(clsAndVars, rest_prog, env); 
+        (cls, env) = collectUsedClass(cls, clsAndVars, inClassName, env,
+          Absyn.IDENT(name));
+        (rest_prog, env) = 
+          collectUsedProgram2(clsAndVars, rest_prog, inClassName, env);
       then
         (cls :: rest_prog, env);
 
     // Could not collect the class (i.e. it's not used), continue with the rest.
-    case (_, _ :: rest_prog, env)
+    case (_, _ :: rest_prog, _, env)
       equation
-        (rest_prog, env) = collectUsedProgram2(clsAndVars, rest_prog, env);
+        (rest_prog, env) = 
+          collectUsedProgram2(clsAndVars, rest_prog, inClassName, env);
       then
         (rest_prog, env);
 
@@ -1456,7 +1532,9 @@ protected function collectUsedClass
   adds the class to the accumulated environment. Otherwise it just fails."
   input SCode.Class inClass;
   input SCodeEnv.AvlTree inClsAndVars;
+  input Absyn.Path inClassName;
   input Env inAccumEnv;
+  input Absyn.Path inAccumPath;
   output SCode.Class outClass;
   output Env outAccumEnv;
 protected
@@ -1468,6 +1546,7 @@ protected
   Item item;
   SCodeEnv.Frame class_frame;
   Env class_env;
+  Absyn.Path cls_path;
 algorithm
   SCode.CLASS(name, pp, ep, res, cdef, info) := inClass;
   // Check if the class is used.
@@ -1475,7 +1554,8 @@ algorithm
   true := checkClassUsed(item, cdef);
   // The class is used, recursively collect it's contents.
   {class_frame} := SCodeEnv.getItemEnv(item);
-  (cdef, class_env) := collectUsedClassDef(name, cdef, class_frame);
+  (cdef, class_env) := 
+    collectUsedClassDef(cdef, class_frame, inClassName, inAccumPath);
   // Add the class to the new environment.
   outClass := SCode.CLASS(name, pp, ep, res, cdef, info);
   item := updateItemEnv(item, outClass, class_env);
@@ -1521,13 +1601,14 @@ end updateItemEnv;
 
 protected function collectUsedClassDef
   "Collects the contents of a class definition."
-  input SCode.Ident inClassName;
   input SCode.ClassDef inClassDef;
   input SCodeEnv.Frame inClassEnv;
+  input Absyn.Path inClassName;
+  input Absyn.Path inAccumPath;
   output SCode.ClassDef outClass;
   output Env outEnv;
 algorithm
-  (outClass, outEnv) := match(inClassName, inClassDef, inClassEnv)
+  (outClass, outEnv) := match(inClassDef, inClassEnv, inClassName, inAccumPath)
     local
       list<SCode.Element> el;
       list<SCode.Equation> neq, ieq;
@@ -1539,15 +1620,15 @@ algorithm
       SCode.Mod mods;
       Env env;
 
-    case (_, SCode.PARTS(el, neq, ieq, nal, ial, ext_decl, annl, cmt), _)
+    case (SCode.PARTS(el, neq, ieq, nal, ial, ext_decl, annl, cmt), _, _, _)
       equation
-        (el, env) = collectUsedElements(inClassName, el, inClassEnv);
+        (el, env) = collectUsedElements(el, inClassEnv, inClassName, inAccumPath);
       then
         (SCode.PARTS(el, neq, ieq, nal, ial, ext_decl, annl, cmt), env);
 
-    case (_, SCode.CLASS_EXTENDS(bc, mods, el, neq, ieq, nal, ial, annl, cmt), _)
+    case (SCode.CLASS_EXTENDS(bc, mods, el, neq, ieq, nal, ial, annl, cmt), _, _, _)
       equation
-        (el, env) = collectUsedElements(inClassName, el, inClassEnv);
+        (el, env) = collectUsedElements(el, inClassEnv, inClassName, inAccumPath);
       then
         (SCode.CLASS_EXTENDS(bc, mods, el, neq, ieq, nal, ial, annl, cmt), env);
 
@@ -1557,20 +1638,23 @@ end collectUsedClassDef;
          
 protected function collectUsedElements
   "Collects a class definition's elements."
-  input SCode.Ident inClassName;
   input list<SCode.Element> inElements;
   input SCodeEnv.Frame inClassEnv;
+  input Absyn.Path inClassName;
+  input Absyn.Path inAccumPath;
   output list<SCode.Element> outUsedElements;
   output Env outNewEnv;
 protected
   SCodeEnv.Frame empty_class_env;
   SCodeEnv.AvlTree cls_and_vars;
+  Boolean collect_constants;
 algorithm
   // Create a new class environment that preserves the imports and extends.
   (empty_class_env, cls_and_vars) :=
     SCodeEnv.removeClsAndVarsFromFrame(inClassEnv);
-  (outUsedElements, outNewEnv) := 
-    collectUsedElements2(inElements, cls_and_vars, {}, {empty_class_env});
+  collect_constants := Absyn.pathEqual(inClassName, inAccumPath);
+  (outUsedElements, outNewEnv) := collectUsedElements2(inElements, cls_and_vars,
+    {}, {empty_class_env}, inClassName, inAccumPath, collect_constants);
 end collectUsedElements;
 
 protected function collectUsedElements2
@@ -1580,32 +1664,36 @@ protected function collectUsedElements2
   input SCodeEnv.AvlTree inClsAndVars;
   input list<SCode.Element> inAccumElements;
   input Env inAccumEnv;
+  input Absyn.Path inClassName;
+  input Absyn.Path inAccumPath;
+  input Boolean inCollectConstants;
   output list<SCode.Element> outAccumElements;
   output Env outAccumEnv;
 algorithm
-  (outAccumElements, outAccumEnv) := 
-  matchcontinue(inElements, inClsAndVars, inAccumElements, inAccumEnv)
+  (outAccumElements, outAccumEnv) := matchcontinue(inElements, inClsAndVars, 
+      inAccumElements, inAccumEnv, inClassName, inAccumPath, inCollectConstants)
     local
       SCode.Element el;
       list<SCode.Element> rest_el, accum_el;
       Env accum_env;
 
     // Tail recursive function, reverse the result list.
-    case ({}, _, _, _) then (listReverse(inAccumElements), inAccumEnv);
+    case ({}, _, _, _, _, _, _) then (listReverse(inAccumElements), inAccumEnv);
 
-    case (el :: rest_el, _, accum_el, accum_env)
+    case (el :: rest_el, _, accum_el, accum_env, _, _, _)
       equation
-        (el, accum_env) = collectUsedElement(el, inClsAndVars, accum_env);
+        (el, accum_env) = collectUsedElement(el, inClsAndVars, accum_env,
+          inClassName, inAccumPath, inCollectConstants);
         accum_el = el :: accum_el;
-        (accum_el, accum_env) = 
-          collectUsedElements2(rest_el, inClsAndVars, accum_el, accum_env);
+        (accum_el, accum_env) = collectUsedElements2(rest_el, inClsAndVars,
+          accum_el, accum_env, inClassName, inAccumPath, inCollectConstants);
       then
         (accum_el, accum_env);
 
-    case (_ :: rest_el, _, accum_el, accum_env)
+    case (_ :: rest_el, _, accum_el, accum_env, _, _, _)
       equation
-        (accum_el, accum_env) =
-          collectUsedElements2(rest_el, inClsAndVars, accum_el, accum_env);
+        (accum_el, accum_env) = collectUsedElements2(rest_el, inClsAndVars,
+          accum_el, accum_env, inClassName, inAccumPath, inCollectConstants);
       then
         (accum_el, accum_env);
 
@@ -1617,10 +1705,14 @@ protected function collectUsedElement
   input SCode.Element inElement;
   input SCodeEnv.AvlTree inClsAndVars;
   input Env inAccumEnv;
+  input Absyn.Path inClassName;
+  input Absyn.Path inAccumPath;
+  input Boolean inCollectConstants;
   output SCode.Element outElement;
   output Env outAccumEnv;
 algorithm
-  (outElement, outAccumEnv) := match(inElement, inClsAndVars, inAccumEnv)
+  (outElement, outAccumEnv) := match(inElement, inClsAndVars, inAccumEnv, 
+      inClassName, inAccumPath, inCollectConstants)
     local
       SCode.Ident name;
       Boolean fp, rp;
@@ -1628,27 +1720,29 @@ algorithm
       Option<Absyn.ConstrainClass> cc;
       Env env;
       Item item;
+      Absyn.Path cls_path;
 
     // A class definition, just use collectUsedClass.
-    case (SCode.CLASSDEF(name, fp, rp, cls, cc), _, env)
+    case (SCode.CLASSDEF(name, fp, rp, cls, cc), _, env, _, _, _)
       equation
-        (cls, env) = collectUsedClass(cls, inClsAndVars, env);
+        cls_path = Absyn.joinPaths(inAccumPath, Absyn.IDENT(name));
+        (cls, env) = collectUsedClass(cls, inClsAndVars, inClassName, env, cls_path);
       then
         (SCode.CLASSDEF(name, fp, rp, cls, cc), env);
   
     // A constant.
-    //case (SCode.COMPONENT(component = name, 
-    //    attributes = SCode.ATTR(variability = SCode.CONST())), _, _)
-    //  equation
-    //    item = SCodeEnv.avlTreeGet(inClsAndVars, name);
-    //    true = SCodeEnv.isItemUsed(item);
-    //    env = SCodeEnv.extendEnvWithItem(item, inAccumEnv, name);
-    //  then
-    //    (inElement, env);
+    case (SCode.COMPONENT(component = name, 
+      attributes = SCode.ATTR(variability = SCode.CONST())), _, _, _, _, false)
+      equation
+        item = SCodeEnv.avlTreeGet(inClsAndVars, name);
+        true = SCodeEnv.isItemUsed(item);
+        env = SCodeEnv.extendEnvWithItem(item, inAccumEnv, name);
+      then
+        (inElement, env);
         
     // Class components are always collected, regardless of whether they are
     // used or not.
-    case (SCode.COMPONENT(component = name), _, _)
+    case (SCode.COMPONENT(component = name), _, _, _, _, _)
       equation
         item = SCodeEnv.newVarItem(inElement, true);
         env = SCodeEnv.extendEnvWithItem(item, inAccumEnv, name);

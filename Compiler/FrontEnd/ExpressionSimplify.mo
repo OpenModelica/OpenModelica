@@ -3842,76 +3842,9 @@ public function simplifyRange
   input Integer inStop;
   output list<Integer> outValues;
 algorithm
-  outValues := matchcontinue(inStart, inStep, inStop)
-    local
-      list<Integer> vals;
-      String error_str;
-
-    case (_, 0, _)
-      equation
-        error_str = Util.stringDelimitList(
-          Util.listMap({inStart, inStep, inStop}, intString), ":");
-        Error.addMessage(Error.ZERO_STEP_IN_ARRAY_CONSTRUCTOR, {error_str});
-      then
-        fail();
-
-    case (_, _, _)
-      equation
-        false = intEq(inStep, 0);
-        true = (inStart == inStop);
-      then
-        {inStart};
-
-    case (_, _, _)
-      equation
-        false = intEq(inStep, 0);
-        true = (inStep > 0);
-      then simplifyRange2(inStart, inStep, inStop, intGt, {});
-
-    case (_, _, _)
-      equation
-        false = intEq(inStep, 0);
-        true = (inStep < 0);
-      then simplifyRange2(inStart, inStep, inStop, intLt, {});
-  end matchcontinue;
+  outValues := Util.listIntRange3(inStart, inStep, inStop);
 end simplifyRange;
 
-protected function simplifyRange2
-  "Helper function to cevalRange."
-  input Integer inStart;
-  input Integer inStep;
-  input Integer inStop;
-  input CompFunc compFunc;
-  input list<Integer> inValues;
-  output list<Integer> outValues;
-
-  partial function CompFunc
-    input Integer inValue1;
-    input Integer inValue2;
-    output Boolean outRes;
-  end CompFunc;
-algorithm
-  outValues := matchcontinue(inStart, inStep, inStop, compFunc, inValues)
-    local
-      Integer next;
-      list<Integer> vals;
-
-    case (_, _, _, _, _)
-      equation
-        true = compFunc(inStart, inStop);
-      then
-        listReverse(inValues);
-
-    case (_, _, _, _, _)
-      equation
-        next = inStart + inStep;
-        vals = inStart :: inValues;
-        vals = simplifyRange2(next, inStep, inStop, compFunc, vals);
-      then
-        vals;
-  end matchcontinue;
-end simplifyRange2;
-        
 public function simplifyRangeReal
   "This function evaluates a Real range expression."
   input Real inStart;

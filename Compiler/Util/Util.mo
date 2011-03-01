@@ -85,10 +85,11 @@ public uniontype DateTime
   end DATETIME;
 end DateTime;
 
-protected import System;
-protected import Print;
 protected import Debug;
+protected import Error;
 protected import OptManager;
+protected import Print;
+protected import System;
 
 public constant String derivativeNamePrefix="$DER";
 public constant String pointStr = "$P";
@@ -482,87 +483,120 @@ algorithm
   outTypeALst := {inTypeA1, inTypeA2};
 end listMake2;
 
-public function listIntRange3 "
-Returns a list of integers from n to m. Only works if n < m.
-Example listIntRange2(3,9,2) => {3,5,7,9}
-"
+public function listIntRange3 
+  "Returns a list of integers from n to m with step s.
+  Example listIntRange2(3,9,2) => {3,5,7,9}"
   input Integer n;
-  input Integer m;
   input Integer s;
+  input Integer m;
   output list<Integer> res;
 algorithm
-res := listIntRangeHelp(n,m,s);
+  res := listIntRange_tail(n, s, m);
 end listIntRange3;
 
-public function listIntRange2 "
-Returns a list of integers from n to m. Only works if n < m.
-Example listIntRange2(3,5) => {3,4,5}
-"
+public function listIntRange2 
+  "Returns a list of integers from n to m.
+  Example listIntRange2(3,5) => {3,4,5}"
   input Integer n;
   input Integer m;
   output list<Integer> res;
+protected
+  Integer step;
 algorithm
-res := listIntRangeHelp(n,m,1);
+  step := if_(intLt(n, m), 1, -1);
+  res := listIntRange_tail(n, step, m);
 end listIntRange2;
 
-public function listIntRange "function: listIntRange
-  Returns a list of n integers from 1 to N.
+public function listIntRange
+  "Returns a list of n integers from 1 to N.
   Example: listIntRange(3) => {1,2,3}"
   input Integer n;
   output list<Integer> res;
 algorithm
-  res := listIntRangeHelp(1,n,1); /* listIntRange_tail(1, n, {}); */
+  res := listIntRange_tail(1, 1, n);
 end listIntRange;
 
 protected function listIntRange_tail
-  input Integer startInt;
-  input Integer endInt;
-  input list<Integer> accIntegerLst;
-  output list<Integer> outIntegerLst;
+  "Tail recursive implementation of list range."
+  input Integer inStart;
+  input Integer inStep;
+  input Integer inStop;
+  output list<Integer> outResult;
 algorithm
-  outIntegerLst:=
-  matchcontinue (startInt,endInt,accIntegerLst)
+  outResult := matchcontinue(inStart, inStep, inStop)
     local
-      Integer i_1,i,n,hd;
-      list<Integer> res;
-    case (i,n,accIntegerLst)
+      String error_str;
+      Boolean is_done;
+
+    case (_, 0, _)
       equation
-        (i < n) = true;
-        i_1 = i + 1;
-        hd = n-i+1;
-        accIntegerLst = hd::accIntegerLst;
-        res = listIntRange_tail(i_1, n, accIntegerLst);
+        error_str = stringDelimitList(
+          listMap({inStart, inStep, inStop}, intString), ":");
+        Error.addMessage(Error.ZERO_STEP_IN_ARRAY_CONSTRUCTOR, {error_str});
       then
-        res;
-    case (i,n,accIntegerLst)
+        fail();
+
+    case (_, _, _)
       equation
-        hd = n-i+1;
-      then hd::accIntegerLst;
+        false = intEq(inStep, 0);
+        true = (inStart == inStop);
+      then
+        {inStart};
+
+    case (_, _, _)
+      equation
+        false = intEq(inStep, 0);
+        true = (inStep > 0);
+        is_done = (inStart > inStop);
+      then
+        listIntRange_tail2(inStart, inStep, inStop, intGt, is_done, {});
+
+    case (_, _, _)
+      equation
+        false = intEq(inStep, 0);
+        true = (inStep < 0);
+        is_done = (inStart < inStop);
+      then
+        listIntRange_tail2(inStart, inStep, inStop, intLt, is_done, {});
+
   end matchcontinue;
 end listIntRange_tail;
 
-protected function listIntRangeHelp
-  input Integer inInteger1;
-  input Integer inInteger2;
-  input Integer inInteger3;
-  output list<Integer> outIntegerLst;
-algorithm
-  outIntegerLst:=
-  matchcontinue (inInteger1,inInteger2,inInteger3)
-    local
-      Integer i_1,i,n,s;
-      list<Integer> res;
-    case (i,n,s)
-      equation
-        (i < n) = true;
-        i_1 = i + s;
+protected function listIntRange_tail2
+  "Helper function to listIntRange_tail."
+  input Integer inStart;
+  input Integer inStep;
+  input Integer inStop;
+  input CompFunc compFunc;
+  input Boolean isDone;
+  input list<Integer> inValues;
+  output list<Integer> outValues;
 
-        res = listIntRangeHelp(i_1, n,s);
+  partial function CompFunc
+    input Integer inValue1;
+    input Integer inValue2;
+    output Boolean outRes;
+  end CompFunc;
+algorithm
+  outValues := match(inStart, inStep, inStop, compFunc, isDone, inValues)
+    local
+      Integer next;
+      list<Integer> vals;
+      Boolean is_done;
+
+    case (_, _, _, _, true, _)
+      then listReverse(inValues);
+
+    else
+      equation
+        next = inStart + inStep;
+        vals = inStart :: inValues;
+        is_done = compFunc(next, inStop);
       then
-        (i :: res);
-    case (i,n,s) then {i};
-  end matchcontinue;
-end listIntRangeHelp;
+        listIntRange_tail2(next, inStep, inStop, compFunc, is_done, vals);
+
+  end match;
+end listIntRange_tail2;
 
 public function listFirst "function: listFirst
   Returns the first element of a list

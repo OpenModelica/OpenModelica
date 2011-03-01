@@ -2367,7 +2367,7 @@ algorithm
         istart = expInt(startvalue,knv);
         istep = expInt(stepvalue,knv);
         istop = expInt(stopvalue,knv);
-        ilst = Util.listIntRange3(istart,istop,istep);
+        ilst = Util.listIntRange3(istart,istep,istop);
         explst = Util.listMap(ilst,Expression.makeIntegerExp);
       then
         explst;        
