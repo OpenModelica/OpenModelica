@@ -34,7 +34,7 @@ PROG = omc
 PROGD = omcd
 PROGP = omcp
 
-SCRIPT_FILES = Compile doPlot openmodelica.lefty convert_lines.pl
+SCRIPT_FILES = Compile doPlot openmodelica.lefty convert_lines.pl default_profiling.xsl
 
 #SUBDIRS= ast runtime
 SUBDIRS	= runtime modpar

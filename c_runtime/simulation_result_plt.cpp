@@ -53,7 +53,7 @@
 #include "sendData/sendData.h"
 #endif
 
-static const struct omc_varInfo timeValName = {"time","Simulation time [s]",{"",-1,-1,-1,-1}};
+static const struct omc_varInfo timeValName = {0,"time","Simulation time [s]",{"",-1,-1,-1,-1}};
 
 static int calcDataSize()
 {
@@ -200,6 +200,7 @@ void simulation_result_plt::add_result(double *data, long *actualPoints)
 
 simulation_result_plt::simulation_result_plt(const char* filename, long numpoints) : simulation_result(filename,numpoints)
 {
+  rt_tick(SIM_TIMER_OUTPUT);
   /*
    * Re-Initialization is important because the variables are global and used in every solving step
    */
@@ -233,6 +234,7 @@ simulation_result_plt::simulation_result_plt(const char* filename, long numpoint
     free(names);
   }
 #endif // CONFIG_WITH_SENDDATA
+  rt_accumulate(SIM_TIMER_OUTPUT);
 }
 
 /**

@@ -192,7 +192,7 @@ typedef struct sim_DATA {
   void** extObjs; /* External objects */
   /* nStatesDerivatives == states */
   fortran_integer nStates,nAlgebraic,nParameters;
-  long nInputVars,nOutputVars,nFunctions,nProfileBlocks;
+  long nInputVars,nOutputVars,nFunctions,nEquations,nProfileBlocks;
   fortran_integer nZeroCrossing/*NG*/;
   long nJacobianvars;
   long nRelations/*NREL*/;

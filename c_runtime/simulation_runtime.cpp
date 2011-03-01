@@ -336,10 +336,11 @@ startNonInteractiveSimulation(int argc, char**argv)
 
   if (measure_time_flag) {
       rt_init(SIM_TIMER_FIRST_FUNCTION + globalData->nFunctions + globalData->nProfileBlocks + 4 /* sentinel */);
-      rt_tick( SIM_TIMER_TOTAL);
-      rt_clear( SIM_TIMER_OUTPUT);
-      rt_clear( SIM_TIMER_EVENT);
-      rt_clear( SIM_TIMER_INIT);
+      rt_tick( SIM_TIMER_TOTAL );
+      rt_tick( SIM_TIMER_PREINIT );
+      rt_clear( SIM_TIMER_OUTPUT );
+      rt_clear( SIM_TIMER_EVENT );
+      rt_clear( SIM_TIMER_INIT );
   }
 
   if (create_linearmodel) {
@@ -349,25 +350,27 @@ startNonInteractiveSimulation(int argc, char**argv)
           stop = atof((*lintime).c_str());
       }
       cout << "Linearization will performed at point of time: " << stop << endl;
-      method = "dassl2";
+      method = "dassl";
   }
 
   retVal = callSolver(argc, argv, method, outputFormat, start, stop, stepSize,
       outputSteps, tolerance);
 
   if (create_linearmodel) {
+      rt_tick(SIM_TIMER_LINEARIZE);
       retVal = linearize();
+      rt_accumulate(SIM_TIMER_LINEARIZE);
       cout << "Linear model is created!" << endl;
   }
 
-  deinitDelay();
-
   if (measure_time_flag) {
-      cout << "Time to calculate initial values: " << rt_total(SIM_TIMER_INIT) << " sec." << endl;
-      cout << "Total time to do event handling: " << rt_total(SIM_TIMER_EVENT) << " sec." << endl;
-      cout << "Total time to produce the output file: " << rt_total(SIM_TIMER_OUTPUT) << " sec." << endl;
-      cout << "Total time to calculate simulation: " << rt_tock(SIM_TIMER_TOTAL) << " sec." << endl;
+      const string modelInfo = string(globalData->modelFilePrefix) + "_prof.xml";
+      const string plotFile = string(globalData->modelFilePrefix) + "_prof.plt";
+      rt_accumulate(SIM_TIMER_TOTAL);
+      retVal = printModelInfo(globalData, modelInfo.c_str(), plotFile.c_str()) && retVal;
   }
+  
+  deinitDelay();
   deInitializeDataStruc(globalData);
 
   return retVal;
@@ -551,15 +554,11 @@ int
 main(int argc, char**argv)
 {
   int retVal = -1;
-  const string *modelInfo;
   
   if (initRuntimeAndSimulation(argc, argv)) //initRuntimeAndSimulation returns 1 if an error occurs
     return 1;
 
-  if (0 != (modelInfo = getOption("modelinfo", argc, argv))) {
-    retVal = printModelInfo(globalData, modelInfo->c_str());
-    delete modelInfo;
-  } else if (interactiveSimuation) {
+  if (interactiveSimuation) {
     //cout << "startInteractiveSimulation: " << version << endl;
     retVal = startInteractiveSimulation(argc, argv);
   } else {

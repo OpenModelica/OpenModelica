@@ -71,7 +71,7 @@ extern "C" {
 } // extern "C"
 
 int solver_main( int argc, char** argv,double &start,  double &stop, double &step, long &outputSteps,
-    double &tolerance,int flag);
+    double &tolerance, int flag);
 
 
 #endif

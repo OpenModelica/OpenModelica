@@ -305,8 +305,10 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
 
   // Calculate initial values from initial_function()
   // saveall() value as pre values
-  if (measure_time_flag)
-    rt_tick( SIM_TIMER_INIT);
+  if (measure_time_flag) {
+    rt_accumulate(SIM_TIMER_PREINIT);
+    rt_tick(SIM_TIMER_INIT);
+  }
   globalData->init = 1;
   initial_function();
   saveall();
@@ -452,7 +454,8 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
   long stepNo = 0;
   if (measure_time_flag)
     {
-      fmt.open("omc_mt.log");
+      const string filename = string(globalData->modelFilePrefix) + "_prof.csv";
+      fmt.open(filename.c_str());
       fmt << "step,time,solver time";
       for (int i = 0; i < globalData->nFunctions; i++)
         fmt << "," << globalData->functionNames[i].name << ",";
@@ -472,6 +475,7 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
               for (int i = 0; i < globalData->nFunctions
               + globalData->nProfileBlocks; i++)
                 rt_clear(i + SIM_TIMER_FIRST_FUNCTION);
+              rt_clear(SIM_TIMER_STEP);
               rt_tick( SIM_TIMER_STEP);
             }
 
@@ -551,16 +555,19 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
           saveall();
           if (measure_time_flag)
             {
+              rt_tick(SIM_TIMER_OVERHEAD);
+              rt_accumulate(SIM_TIMER_STEP);
               fmt << stepNo++ << "," << globalData->timeValue << ","
-                  << rt_tock(SIM_TIMER_STEP);
+                  << rt_accumulated(SIM_TIMER_STEP);
               for (int i = 0; i < globalData->nFunctions; i++)
                 fmt << "," << rt_ncall(i + SIM_TIMER_FIRST_FUNCTION) << ","
-                << rt_total(i + SIM_TIMER_FIRST_FUNCTION);
+                << rt_accumulated(i + SIM_TIMER_FIRST_FUNCTION);
               for (int i = globalData->nFunctions; i < globalData->nFunctions
               + globalData->nProfileBlocks; i++)
                 fmt << "," << rt_ncall(i + SIM_TIMER_FIRST_FUNCTION) << ","
-                << rt_total(i + SIM_TIMER_FIRST_FUNCTION);
+                << rt_accumulated(i + SIM_TIMER_FIRST_FUNCTION);
               fmt << endl;
+              rt_accumulate(SIM_TIMER_OVERHEAD);
             }
           SaveZeroCrossings();
           sim_result->emit();
@@ -612,22 +619,18 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
 }
 
 int
-euler_ex_step(double* step, int
-    (*f)())
+euler_ex_step(double* step, int (*f)())
 {
   globalData->timeValue += *step;
-  for (int i = 0; i < globalData->nStates; i++)
-    {
-      globalData->states[i] = globalData->states[i]
-                                                 + globalData->statesDerivatives[i] * (*step);
-    }
+  for (int i = 0; i < globalData->nStates; i++) {
+    globalData->states[i] += globalData->statesDerivatives[i] * (*step);
+  }
   f();
   return 0;
 }
 
 int
-rungekutta_step(double* step, int
-    (*f)())
+rungekutta_step(double* step, int (*f)())
 {
   double* backupstates = work_states[rungekutta_s];
   double** k = work_states;

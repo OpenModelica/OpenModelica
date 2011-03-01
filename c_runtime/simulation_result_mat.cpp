@@ -37,7 +37,7 @@
 #include <cstdlib>
 #include <stdint.h>
 
-static const struct omc_varInfo timeValName = {"time","Simulation time [s]",{"",-1,-1,-1,-1}};
+static const struct omc_varInfo timeValName = {0,"time","Simulation time [s]",{"",-1,-1,-1,-1}};
 
 static int calcDataSize()
 {
@@ -87,6 +87,7 @@ simulation_result_mat::simulation_result_mat(const char* filename,
   char *stringMatrix = NULL;
   int rows, cols, numVars;
   double *doubleMatrix = NULL;
+  rt_tick(SIM_TIMER_OUTPUT);
   numVars = calcDataSize();
   names = calcDataNames(numVars+nParams);
   
@@ -134,13 +135,16 @@ simulation_result_mat::simulation_result_mat(const char* filename,
     free(names);
     delete[] stringMatrix;
     delete[] doubleMatrix;
+    rt_accumulate(SIM_TIMER_OUTPUT);
     throw;
   }
   free(names);
+  rt_accumulate(SIM_TIMER_OUTPUT);
 }
 simulation_result_mat::~simulation_result_mat()
 {
   int nVars = calcDataSize();
+  rt_tick(SIM_TIMER_OUTPUT);
   // this is a bad programming practice - closing file in destructor,
   // where a proper error reporting can't be done
   if (fp) {
@@ -152,6 +156,7 @@ simulation_result_mat::~simulation_result_mat()
       // just ignore, we are in destructor
     }
   }
+  rt_accumulate(SIM_TIMER_OUTPUT);
 }
 
 void simulation_result_mat::emit()
@@ -160,6 +165,7 @@ void simulation_result_mat::emit()
 
   // that does not belong here
   storeExtrapolationData();
+  rt_tick(SIM_TIMER_OUTPUT);
 
   // this is done wrong -- a buffering should be used
   // although ofstream does have some buffering, but it is not enough and 
@@ -184,6 +190,7 @@ void simulation_result_mat::emit()
 
   if (!fp) throw SimulationResultBaseException();
   ++ntimepoints;
+  rt_accumulate(SIM_TIMER_OUTPUT);
 }
 
 // from an array of string creates flatten 'char*'-array suitable to be 

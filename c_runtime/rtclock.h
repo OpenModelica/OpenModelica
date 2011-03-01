@@ -40,11 +40,14 @@ extern "C" {
 #define RT_CLOCK_SPECIAL_STOPWATCH 16 /* The 17th clock */
 
 /* Simulation-specific timing macros */
-#define SIM_TIMER_TOTAL   0
-#define SIM_TIMER_INIT    1
-#define SIM_TIMER_STEP    2
-#define SIM_TIMER_OUTPUT  3
-#define SIM_TIMER_EVENT   4
+#define SIM_TIMER_TOTAL          0
+#define SIM_TIMER_INIT           1
+#define SIM_TIMER_STEP           2
+#define SIM_TIMER_OUTPUT         3
+#define SIM_TIMER_EVENT          4
+#define SIM_TIMER_LINEARIZE      5
+#define SIM_TIMER_PREINIT        6
+#define SIM_TIMER_OVERHEAD       7
 #define SIM_TIMER_FIRST_FUNCTION 8
 
 #define SIM_PROF_TICK_FN(ix) if (measure_time_flag) {rt_tick(ix+SIM_TIMER_FIRST_FUNCTION);}
@@ -59,13 +62,18 @@ void rt_tick(int ix);
 /* tick() ... tock() -> returns the number of seconds since the tick */
 double rt_tock(int ix);
 
-/*clear() ... tick() ... accumulate() ... tick() ... accumulate()
+/* clear() ... tick() ... accumulate() ... tick() ... accumulate() ... accumuluated()
  * returns the total number of seconds accumulated between the tick() and accumulate() calls */
+void rt_clear_total(int ix);
+/* clear zeros out the accumulated data, and adds it to the total (we have two levels of accumulation) */
 void rt_clear(int ix);
 void rt_accumulate(int ix); /* Uses integer addition for maximum accuracy and good speed. */
+double rt_accumulated(int ix);
+double rt_max_accumulated(int ix);
 double rt_total(int ix);
 /* Returns the number of times tick() was called since the last clear() */
 long rt_ncall(int ix);
+long rt_ncall_total(int ix);
 
 #ifdef __cplusplus
 }

@@ -1424,13 +1424,6 @@ algorithm
                 Values.STRING(confcmd)};
       then (cache,Values.RECORD(Absyn.IDENT("OpenModelica.Scripting.CheckSettingsResult"),vals,vars_1,-1),st);
         
-    case (cache,env,"getBuiltinAttribute",{Values.STRING(str),Values.CODE(Absyn.C_VARIABLENAME(cr_1)),Values.CODE(Absyn.C_TYPENAME(path))},st,msg)
-      equation
-        (cache,v,st_1) = getBuiltinAttribute(cache,path,ComponentReference.toExpCref(cr_1),str,st);
-      then
-        (cache,v,st_1);
-
-
     case (cache,env,"readSimulationResult",{Values.STRING(filename),Values.ARRAY(valueLst=cvars),Values.INTEGER(size)},st,msg)
       equation
         vars_1 = Util.listMap(cvars, ValuesUtil.printCodeVariableName);
@@ -2999,125 +2992,6 @@ algorithm
       then s;
   end matchcontinue;
 end selectIfNotEmpty;
-
-protected function getBuiltinAttribute "function: getBuiltinAttribute
-  Retrieves a builtin attribute of a variable in a class by instantiating
-  the class and retrieving the attribute value from the flat variable."
-  input Env.Cache inCache;
-  input Absyn.Path classname;
-  input DAE.ComponentRef inComponentRef2;
-  input String inString3;
-  input Interactive.InteractiveSymbolTable inInteractiveSymbolTable4;
-  output Env.Cache outCache;
-  output Values.Value outValue;
-  output Interactive.InteractiveSymbolTable outInteractiveSymbolTable;
-algorithm
-  (outCache,outValue,outInteractiveSymbolTable):=
-  matchcontinue (inCache,classname,inComponentRef2,inString3,inInteractiveSymbolTable4)
-    local
-      DAE.DAElist dae,dae1;
-      list<Env.Frame> env,env_1,env3,env4;
-      DAE.ComponentRef cref_1,cref;
-      DAE.Attributes attr;
-      tuple<DAE.TType, Option<Absyn.Path>> ty;
-      DAE.Exp exp;
-      String str,n,attribute;
-      Interactive.InteractiveSymbolTable st;
-      Absyn.Program p,ptot;
-      list<SCode.Class> sp,p_1;
-      list<Interactive.InstantiatedClass> ic,ic_1;
-      list<Interactive.InteractiveVariable> vars;
-      list<Interactive.CompiledCFunction> cf;
-      SCode.Class c;
-      Boolean encflag;
-      SCode.Restriction r;
-      ClassInf.State ci_state,ci_state_1;
-      Connect.Sets csets_1;
-      list<DAE.Var> tys;
-      Values.Value v;
-      Env.Cache cache;
-      list<Interactive.LoadedFile> lf;
-      AbsynDep.Depends aDep;
-    case (cache,classname,cref,"stateSelect",
-      (st as Interactive.SYMBOLTABLE(
-        ast = p,
-        explodedAst = sp,
-        instClsLst = ic,
-        lstVarVal = vars,
-        compiledFunctions = cf)))
-      equation
-        Interactive.INSTCLASS(_,dae,env) = Interactive.getInstantiatedClass(ic, classname);
-        cref_1 = ComponentReference.joinCrefs(cref, ComponentReference.makeCrefIdent("stateSelect",DAE.ET_OTHER(),{}));
-        (cache,attr,ty,DAE.EQBOUND(exp,_,_,_),_,_,_,_,_) = Lookup.lookupVar(cache, env, cref_1); 
-        str = ExpressionDump.printExpStr(exp);
-      then
-        (cache,Values.STRING(str),st);
-
-    case (cache,classname,cref,"stateSelect",
-      Interactive.SYMBOLTABLE(
-        ast = p,
-        depends = aDep,
-        explodedAst = sp,
-        instClsLst = ic,
-        lstVarVal = vars,
-        compiledFunctions = cf,
-        loadedFiles = lf))
-      equation
-        ptot = Dependency.getTotalProgram(classname,p);
-        p_1 = SCodeUtil.translateAbsyn2SCode(ptot);
-        (cache,env) = Inst.makeEnvFromProgram(cache,p_1, Absyn.IDENT(""));
-        (cache,(c as SCode.CLASS(name=n,encapsulatedPrefix=encflag,restriction=r)),env_1) = Lookup.lookupClass(cache,env,classname,true);
-        env3 = Env.openScope(env_1, encflag, SOME(n), SOME(Env.CLASS_SCOPE()));
-        ci_state = ClassInf.start(r, Env.getEnvName(env3));
-        (cache,env4,_,_,dae1,csets_1,ci_state_1,tys,_,_,_,_) = Inst.instClassIn(cache,env3, InnerOuter.emptyInstHierarchy,UnitAbsyn.noStore,DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
-          ci_state, c, false, {}, false, Inst.INNER_CALL(), ConnectionGraph.EMPTY,NONE());
-        cref_1 = ComponentReference.crefPrependIdent(cref, "stateSelect",{},DAE.ET_OTHER());
-        (cache,attr,ty,DAE.EQBOUND(exp,_,_,_),_,_,_,_,_) = Lookup.lookupVar(cache, env4, cref_1);
-        ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(classname,dae1,env4));
-        str = ExpressionDump.printExpStr(exp);
-      then
-        (cache,Values.STRING(str),Interactive.SYMBOLTABLE(p,aDep,sp,ic_1,vars,cf,lf));
-
-    case (cache,classname,cref,attribute,
-      (st as Interactive.SYMBOLTABLE(
-        ast = p,
-        explodedAst = sp,
-        instClsLst = ic,
-        lstVarVal = vars,
-        compiledFunctions = cf)))
-      equation
-        Interactive.INSTCLASS(_,dae,env) = Interactive.getInstantiatedClass(ic, classname);
-        cref_1 = ComponentReference.crefPrependIdent(cref, attribute,{},DAE.ET_OTHER());
-        (cache,attr,ty,DAE.VALBOUND(v,_),_,_,_,_,_) = Lookup.lookupVar(cache, env, cref_1);
-      then
-        (cache,v,st);
-
-    case (cache,classname,cref,attribute,
-      (st as Interactive.SYMBOLTABLE(
-        ast = p,
-        depends = aDep,
-        explodedAst = sp,
-        instClsLst = ic,
-        lstVarVal = vars,
-        compiledFunctions = cf,
-        loadedFiles = lf)))
-      equation
-        ptot = Dependency.getTotalProgram(classname,p);
-        p_1 = SCodeUtil.translateAbsyn2SCode(ptot);
-        (cache,env) = Inst.makeEnvFromProgram(cache,p_1, Absyn.IDENT(""));
-        (cache,(c as SCode.CLASS(name=n,encapsulatedPrefix=encflag,restriction=r)),env_1) = Lookup.lookupClass(cache,env,classname,true);
-        env3 = Env.openScope(env_1, encflag, SOME(n), SOME(Env.CLASS_SCOPE()));
-        ci_state = ClassInf.start(r, Env.getEnvName(env3));
-        (cache,env4,_,_,dae1,csets_1,ci_state_1,tys,_,_,_,_) = Inst.instClassIn(cache,env3, InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
-          ci_state, c, false, {}, false, Inst.INNER_CALL(), ConnectionGraph.EMPTY,NONE());
-        cref_1 = ComponentReference.crefPrependIdent(cref,attribute,{},DAE.ET_OTHER());
-        (cache,attr,ty,DAE.VALBOUND(v,_),_,_,_,_,_) = Lookup.lookupVar(cache, env4, cref_1);
-        ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(classname,dae1,env4));
-      then
-        (cache,v,Interactive.SYMBOLTABLE(p,aDep,sp,ic_1,vars,cf,lf));
-
-  end matchcontinue;
-end getBuiltinAttribute;
 
 protected function setBuildTime "sets the build time of a class. 
  This is done using traverseClasses and not using updateProgram, 

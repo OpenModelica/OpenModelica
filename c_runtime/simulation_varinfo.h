@@ -50,19 +50,21 @@ typedef struct {
 extern const omc_fileInfo omc_dummyFileInfo;
 
 struct omc_varInfo {
+  int id;
   const char* name;
   const char* comment;
   const omc_fileInfo info;
 };
 
 struct omc_equationInfo {
+  int id;
   const char *name;
   int numVar;
   const struct omc_varInfo* vars; /* The variables involved in the equation */
-  const omc_fileInfo info;
 };
 
 struct omc_functionInfo {
+  int id;
   const char* name;
   const omc_fileInfo info;
 };

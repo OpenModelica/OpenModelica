@@ -191,6 +191,7 @@ end simulationFileHeader;
 template globalData(ModelInfo modelInfo, String fileNamePrefix)
  "Generates global data in simulation file."
 ::=
+let () = System.tmpTickReset(1000)
 match modelInfo
 case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
   <<
@@ -349,12 +350,12 @@ template globalDataVarInfoArray(String _name, list<SimVar> items)
   match items
   case {} then
     <<
-    const struct omc_varInfo <%_name%>[1] = {{"","",omc_dummyFileInfo}};
+    const struct omc_varInfo <%_name%>[1] = {{-1,"","",omc_dummyFileInfo}};
     >>
   case items then
     <<
     const struct omc_varInfo <%_name%>[<%listLength(items)%>] = {
-      <%items |> var as SIMVAR(info=info as INFO(__)) => '{"<%crefStr(var.name)%>","<%var.comment%>",{<%infoArgs(info)%>}}'; separator=",\n"%>
+      <%items |> var as SIMVAR(info=info as INFO(__)) => '{<%System.tmpTick()%>,"<%crefStr(var.name)%>","<%var.comment%>",{<%infoArgs(info)%>}}'; separator=",\n"%>
     };
     <%items |> var as SIMVAR(info=info as INFO(__)) hasindex i0 => '#define <%cref(var.name)%>__varInfo <%_name%>[<%i0%>]'; separator="\n"%>
     >>
@@ -366,12 +367,12 @@ template globalDataFunctionInfoArray(String name, list<Function> items)
   match items
   case {} then
     <<
-    struct omc_functionInfo <%name%>[1] = {{"",omc_dummyFileInfo}};
+    struct omc_functionInfo <%name%>[1] = {{-1,"",omc_dummyFileInfo}};
     >>
   case items then
     <<
     struct omc_functionInfo <%name%>[<%listLength(items)%>] = {
-      <%items |> fn => '{"<%functionName(fn,true)%>",{<%infoArgs(functionInfo(fn))%>}}'; separator=",\n"%>
+      <%items |> fn => '{<%System.tmpTick()%>,"<%functionName(fn,true)%>",{<%infoArgs(functionInfo(fn))%>}}'; separator=",\n"%>
     };
     >>
 end globalDataFunctionInfoArray;
@@ -548,6 +549,7 @@ template functionInitializeDataStruc()
     returnData->nInputVars = NI;
     returnData->nOutputVars = NO;
     returnData->nFunctions = NFUNC;
+    returnData->nEquations = nEquation;
     returnData->nProfileBlocks = n_omc_equationInfo_reverse_prof_index;
     returnData->nZeroCrossing = NG;
     returnData->nRawSamples = NG_SAM;
@@ -4547,6 +4549,7 @@ template elseExpr(DAE.Else else_, Context context, Text &varDecls /*BUFP*/)
     }
     >>
   case ELSE(__) then
+
     <<
     else {
       <%statementLst |> stmt =>
@@ -6419,28 +6422,31 @@ end literalExpConstBoxedVal;
 template equationInfo(list<SimEqSystem> eqs)
 ::=
   match eqs
-  case {} then "const struct omc_equationInfo equation_info[1] = {{0,NULL,omc_dummyFileInfo}};"
+  case {} then "const struct omc_equationInfo equation_info[1] = {{0,NULL}};"
   else
     let &preBuf = buffer ""
     let res =
     <<
+    const int nEquation = <%listLength(eqs)%>;
     const struct omc_equationInfo equation_info[<%listLength(eqs)%>] = {
-      <% eqs |> eq hasindex i0 => match eq
-      case SES_RESIDUAL(__) then '{"SES_RESIDUAL <%i0%>",0,NULL,omc_dummyFileInfo}'
-      case SES_SIMPLE_ASSIGN(__) then
-        let var = '<%cref(cref)%>__varInfo'
-        '{"SES_SIMPLE_ASSIGN <%i0%>",1,&<%var%>,<%var%>.info}'
-      case SES_ARRAY_CALL_ASSIGN(__) then
-        let var = '<%cref(componentRef)%>__varInfo'
-        '{"SES_ARRAY_CALL_ASSIGN <%i0%>",0,NULL,omc_dummyFileInfo}'
-      case SES_ALGORITHM(__) then '{"SES_ALGORITHM <%i0%>",0,NULL,omc_dummyFileInfo}'
-      case SES_WHEN(__) then '{"SES_WHEN <%i0%>",0,NULL,omc_dummyFileInfo}'
-      case SES_LINEAR(__) then '{"LINEAR<%index%>",0,NULL,omc_dummyFileInfo}'
-      case SES_NONLINEAR(__) then
-        let &preBuf += 'const omc_varInfo residualFunc<%index%>_crefs[<%listLength(crefs)%>] = {<%crefs|>cr=>'<%cref(cr)%>__varInfo'; separator=","%>};'
-        '{"residualFunc<%index%>",<%listLength(crefs)%>,residualFunc<%index%>_crefs,omc_dummyFileInfo}'
-      case SES_MIXED(__) then '{"MIXED<%index%>",0,NULL,omc_dummyFileInfo}'
-      else '{"unknown equation <%i0%>",0,NULL,omc_dummyFileInfo}' ; separator=",\n"%>
+      <% eqs |> eq hasindex i0 =>
+        <<{<%System.tmpTick()%>,<%match eq
+          case SES_RESIDUAL(__) then '"SES_RESIDUAL <%i0%>",0,NULL'
+          case SES_SIMPLE_ASSIGN(__) then
+            let var = '<%cref(cref)%>__varInfo'
+            '"SES_SIMPLE_ASSIGN <%i0%>",1,&<%var%>'
+          case SES_ARRAY_CALL_ASSIGN(__) then
+            let var = '<%cref(componentRef)%>__varInfo'
+            '"SES_ARRAY_CALL_ASSIGN <%i0%>",0,NULL'
+          case SES_ALGORITHM(__) then '"SES_ALGORITHM <%i0%>",0,NULL'
+          case SES_WHEN(__) then '"SES_WHEN <%i0%>",0,NULL'
+          case SES_LINEAR(__) then '"LINEAR<%index%>",0,NULL'
+          case SES_NONLINEAR(__) then
+            let &preBuf += 'const omc_varInfo residualFunc<%index%>_crefs[<%listLength(crefs)%>] = {<%crefs|>cr=>'<%cref(cr)%>__varInfo'; separator=","%>};'
+            '"residualFunc<%index%>",<%listLength(crefs)%>,residualFunc<%index%>_crefs'
+          case SES_MIXED(__) then '"MIXED<%index%>",0,NULL'
+          else '"unknown equation <%i0%>",0,NULL'%>}
+        >> ; separator=",\n"%>
     };
     >>
     <<
