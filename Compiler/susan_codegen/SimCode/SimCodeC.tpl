@@ -2498,7 +2498,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
   CFLAGS=-I"<%makefileParams.omhome%>/include/omc" <%makefileParams.cflags%>
   LDFLAGS=-L"<%makefileParams.omhome%>/lib/omc" <%makefileParams.ldflags%>
   SENDDATALIBS=<%makefileParams.senddatalibs%>
-  PERL="perl"
+  PERL=perl
   
   .PHONY: <%fileNamePrefix%>
   <%fileNamePrefix%>: <%fileNamePrefix%>.conv.cpp <%fileNamePrefix%>_functions.cpp <%fileNamePrefix%>_functions.h <%fileNamePrefix%>_records.c
@@ -2656,7 +2656,7 @@ case FUNCTIONCODE(makefileParams=MAKEFILE_PARAMS(__)) then
   CFLAGS= -I"<%makefileParams.omhome%>/include/omc" <%makefileParams.cflags%>
   LDFLAGS= -L"<%makefileParams.omhome%>/lib/omc" <%makefileParams.ldflags%>
   SENDDATALIBS=<%makefileParams.senddatalibs%>
-  PERL="perl"
+  PERL=perl
   
   .PHONY: <%name%>
   <%name%>: <%name%>.conv.c <%name%>.h <%name%>_records.c
