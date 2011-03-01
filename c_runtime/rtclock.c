@@ -33,6 +33,7 @@
 #include <stdlib.h>
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
+#include <windows.h>
 typedef LARGE_INTEGER rtclock_t;
 #elif defined(__APPLE_CC__)
 typedef uint64_t rtclock_t;
@@ -91,8 +92,6 @@ double rt_total(int ix) {
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
 
-#include <windows.h>
-
 static LARGE_INTEGER performance_frequency;
 
 void rt_tick(int ix) {
@@ -137,7 +136,7 @@ void rt_accumulate(int ix) {
   acc_tp[ix].QuadPart += tock_tp.QuadPart - tick_tp[ix].QuadPart;
 }
 
-int rtclock_compare(uint64_t t1, uint64_t t2) {
+int rtclock_compare(rtclock_t t1, rtclock_t t2) {
   return t1.QuadPart-t2.QuadPart;
 }
 
