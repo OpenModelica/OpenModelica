@@ -204,7 +204,7 @@ algorithm
     case (inCrefOrDerCref,e::rest)
       equation
         crefOrDerCref = removeCrefFromDerCref(inCrefOrDerCref,rest);
-        crefOrDerCref1 = Util.listDeleteMemberOnTrue(crefOrDerCref,e,Expression.expEqual);
+        (crefOrDerCref1, _) = Util.listDeleteMemberOnTrue(e,crefOrDerCref,Expression.expEqual);
       then
         crefOrDerCref1;
   end match;

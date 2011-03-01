@@ -1357,7 +1357,7 @@ algorithm
         eqns_1 = Util.listMap1(eqns, intSub, 1);
         eqns_lst = Util.listMap1r(eqns_1, BackendDAEUtil.equationNth, e);
         crefs = BackendEquation.equationsCrefs(eqns_lst);
-        crefs = Util.listDeleteMemberOnTrue(crefs, dummy, ComponentReference.crefEqualNoStringCompare);
+        (crefs, _) = Util.listDeleteMemberOnTrue(dummy, crefs, ComponentReference.crefEqualNoStringCompare);
         state = findState(vars, crefs);
         ({v},{indx}) = BackendVariable.getVar(dummy, vars);
         (dummy_fixed as false) = BackendVariable.varFixed(v);
@@ -1373,7 +1373,7 @@ algorithm
         eqns_1 = Util.listMap1(eqns, intSub, 1);
         eqns_lst = Util.listMap1r(eqns_1, BackendDAEUtil.equationNth, e);
         crefs = BackendEquation.equationsCrefs(eqns_lst);
-        crefs = Util.listDeleteMemberOnTrue(crefs, dummy, ComponentReference.crefEqualNoStringCompare);
+        (crefs, _) = Util.listDeleteMemberOnTrue(dummy, crefs, ComponentReference.crefEqualNoStringCompare);
         state = findState(vars, crefs);
         ({v},{indx}) = BackendVariable.getVar(dummy, vars);
         true = BackendVariable.varFixed(v);

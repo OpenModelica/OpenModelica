@@ -136,6 +136,7 @@ protected import ErrorExt;
 protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
+protected import Graph;
 protected import HashTable;
 protected import HashTable5;
 protected import InstSection;
@@ -4946,6 +4947,140 @@ algorithm
 end addNomod;
 
 public function instElementList
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input InstanceHierarchy inIH;
+  input UnitAbsyn.InstStore store;
+  input DAE.Mod inMod;
+  input Prefix.Prefix inPrefix;
+  input Connect.Sets inSets;
+  input ClassInf.State inState;
+  input list<tuple<SCode.Element, DAE.Mod>> inElements;
+  input InstDims inInstDims;
+  input Boolean inImplInst;
+  input CallingScope inCallingScope;
+  input ConnectionGraph.ConnectionGraph inGraph;
+  output Env.Cache outCache;
+  output Env.Env outEnv;
+  output InstanceHierarchy outIH;
+  output UnitAbsyn.InstStore outStore;
+  output DAE.DAElist outDae;
+  output Connect.Sets outSets;
+  output ClassInf.State outState;
+  output list<DAE.Var> outTypesVarLst;
+  output ConnectionGraph.ConnectionGraph outGraph;
+protected
+  list<tuple<SCode.Element, DAE.Mod>> el;
+algorithm
+  el := sortElementList(inElements);
+  (outCache, outEnv, outIH, outStore, outDae, outSets, outState, outTypesVarLst, outGraph) := 
+    instElementList2(inCache, inEnv, inIH, store, inMod, inPrefix, inSets,
+      inState, el, inInstDims, inImplInst, inCallingScope, inGraph);
+end instElementList;
+
+protected function sortElementList
+  input list<tuple<SCode.Element, DAE.Mod>> inElements;
+  output list<tuple<SCode.Element, DAE.Mod>> outElements;
+algorithm
+  (outElements, _) := Graph.topologicalSort(
+    Graph.buildGraph(inElements, getElementDependencies, inElements),
+    isElementEqual);
+end sortElementList;
+
+protected function getElementDependencies
+  input tuple<SCode.Element, DAE.Mod> inElement;
+  input list<tuple<SCode.Element, DAE.Mod>> inAllElements;
+  output list<tuple<SCode.Element, DAE.Mod>> outDependencies;
+algorithm
+  outDependencies := match(inElement, inAllElements)
+    local
+      Absyn.Exp bind_exp;
+      list<tuple<SCode.Element, DAE.Mod>> deps;
+
+    case ((SCode.COMPONENT(attributes = SCode.ATTR(variability = SCode.CONST()),
+        modifications = SCode.MOD(binding = SOME((bind_exp, _)))), _), _)
+      equation
+        (_, (_, _, (_, deps))) = Absyn.traverseExpBidir(bind_exp,
+          (getElementDependenciesTraverserEnter,
+           getElementDependenciesTraverserExit,
+           (inAllElements, {})));
+      then
+        deps;
+
+    else then {};
+  end match;
+end getElementDependencies;
+
+protected function getElementDependenciesTraverserEnter
+  input tuple<Absyn.Exp, tuple<ElementList, ElementList>> inTuple;
+  output tuple<Absyn.Exp, tuple<ElementList, ElementList>> outTuple;
+  type ElementList = list<tuple<SCode.Element, DAE.Mod>>;
+algorithm
+  outTuple := matchcontinue(inTuple)
+    local
+      Absyn.Exp exp;
+      String id;
+      ElementList all_el, accum_el; 
+      tuple<SCode.Element, DAE.Mod> e;
+
+    case ((exp as Absyn.CREF(componentRef = Absyn.CREF_IDENT(name = id)), 
+        (all_el, accum_el)))
+      equation
+        (all_el, SOME(e)) = Util.listDeleteMemberOnTrue(id, all_el,
+          isElementNamed);
+      then
+        ((exp, (all_el, e :: accum_el)));
+
+    else then inTuple;
+  end matchcontinue;
+end getElementDependenciesTraverserEnter;
+
+protected function getElementDependenciesTraverserExit
+  input tuple<Absyn.Exp, tuple<ElementList, ElementList>> inTuple;
+  output tuple<Absyn.Exp, tuple<ElementList, ElementList>> outTuple;
+  type ElementList = list<tuple<SCode.Element, DAE.Mod>>;
+algorithm
+  outTuple := inTuple;
+end getElementDependenciesTraverserExit;
+
+protected function isElementNamed
+  input String inName;
+  input tuple<SCode.Element, DAE.Mod> inElement;
+  output Boolean isNamed;
+algorithm
+  isNamed := matchcontinue(inName, inElement)
+    local
+      String name;
+
+    case (_, (SCode.COMPONENT(component = name), _))
+      equation
+        true = stringEqual(name, inName);
+      then
+        true;
+
+    else false;
+  end matchcontinue;
+end isElementNamed;
+
+protected function isElementEqual
+  input tuple<SCode.Element, DAE.Mod> inElement1;
+  input tuple<SCode.Element, DAE.Mod> inElement2;
+  output Boolean isEqual;
+algorithm
+  isEqual := matchcontinue(inElement1, inElement2)
+    local
+      String id1, id2;
+
+    case ((SCode.COMPONENT(component = id1), _), 
+          
+      (SCode.COMPONENT(component = id2), _))
+      then stringEqual(id1, id2);
+
+    else then false;
+  end matchcontinue;
+end isElementEqual;
+
+public function instElementList2
 "function: instElementList
   Moved to instClassdef, FIXME: Move commments later
   Instantiate elements one at a time, and concatenate the resulting
@@ -5029,7 +5164,7 @@ algorithm
         csets = ConnectUtil.addDeletedComponent(comp_cr, csets);
 
         (cache, env, ih, store, dae, csets, ci_state, tys, graph) =
-          instElementList(cache, env, ih, store, mod, pre, csets, ci_state, els,
+          instElementList2(cache, env, ih, store, mod, pre, csets, ci_state, els,
             inst_dims, impl, callscope, graph);
       then
         (cache, env, ih, store, dae, csets, ci_state, tys, graph);
@@ -5057,7 +5192,7 @@ algorithm
         print(s1) "To print what happened to a specific var";*/
         Error.updateCurrentComponent("",Absyn.dummyInfo);
         (cache,env_2,ih,store,dae2,csets_2,ci_state_2,tys2,graph) =
-          instElementList(cache,env_1,ih,store, mod, pre, csets_1, ci_state_1, els, inst_dims, impl, callscope, graph);
+          instElementList2(cache,env_1,ih,store, mod, pre, csets_1, ci_state_1, els, inst_dims, impl, callscope, graph);
         tys = listAppend(tys1, tys2);
         dae = DAEUtil.joinDaes(dae1, dae2);
       then
@@ -5065,13 +5200,13 @@ algorithm
 
     case (_,_,_,_,_,_,_,_,els,_,_,_,_)
       equation
-        //print("instElementList failed\n ");
+        //print("instElementList2 failed\n ");
         // no need for this line as we already printed the crappy element that we couldn't instantiate
         // Debug.fprintln("failtrace", "- Inst.instElementList failed");
       then
         fail();
   end matchcontinue;
-end instElementList;
+end instElementList2;
 
 protected function classdefElts2
 "function: classdeElts2

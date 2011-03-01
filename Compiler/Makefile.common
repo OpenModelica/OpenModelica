@@ -123,6 +123,7 @@ UTIL = \
 BaseHashTable.mo \
 Debug.mo \
 Error.mo \
+Graph.mo \
 HashTable.mo \
 HashTable2.mo \
 HashTable3.mo \

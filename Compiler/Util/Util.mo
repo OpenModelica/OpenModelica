@@ -855,22 +855,24 @@ algorithm
 end listNotContains;
 
 public function listContainsWithCompareFunc "function: listContains
-Checks wheter a list contains a value or not."
+  Checks whether a list contains a value or not."
   input Type_a ele;
-  input list<Type_a> elems;
+  input list<Type_b> elems;
   input compareFunc f;
   partial function compareFunc
-    input Type_a inTypeA1;
-    input Type_a inTypeA2;
+    input Type_a inTypeA;
+    input Type_b inTypeB;
     output Boolean outTypeB;
   end compareFunc;
   output Boolean contains;
   replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
 algorithm
   contains := matchcontinue (ele,elems,f)
     local
-      Type_a a,b;
-      list<Type_a> rest;
+      Type_a a;
+      Type_b b;
+      list<Type_b> rest;
       Boolean bool;
     case (_,{},_) then false;
     case (a,b::rest,f)
@@ -3873,38 +3875,118 @@ algorithm
   end match;
 end listDeleteMemberF;
 
-public function listDeleteMemberOnTrue "function: listDeleteMemberOnTrue
-  Takes a list and a value and a comparison function and deletes the first
-  occurence of the value in the list for which the function returns true.
-  Example: listDeleteMemberOnTrue({1,2,3,2},2,intEq) => {1,3,2}"
-  input list<Type_a> inTypeALst;
-  input Type_a inTypeA;
-  input FuncTypeType_aType_aToBoolean inFuncTypeTypeATypeAToBoolean;
-  output list<Type_a> outTypeALst;
-  replaceable type Type_a subtypeof Any;
-  partial function FuncTypeType_aType_aToBoolean
-    input Type_a inTypeA1;
-    input Type_a inTypeA2;
-    output Boolean outBoolean;
-  end FuncTypeType_aType_aToBoolean;
+public function listDeleteMemberOnTrue
+  "Takes a list and a value and a comparison function and deletes the first
+  occurence of the value in the list for which the function returns true. It
+  returns the new list and the deleted element, or only the original list if
+  no element was removed.
+    Example: listDeleteMemberOnTrue({1,2,3,2},2,intEq) => {1,3,2}"
+  input TypeA inValue;
+  input list<TypeB> inList;
+  input CompareFunc inCompareFunc;
+  output list<TypeB> outList;
+  output Option<TypeB> outDeletedElement;
+
+  replaceable type TypeA subtypeof Any;
+  replaceable type TypeB subtypeof Any;
+
+  partial function CompareFunc
+    input TypeA inTypeA;
+    input TypeB inTypeB;
+    output Boolean outIsEqual;
+  end CompareFunc;
 algorithm
-  outTypeALst:=
-  matchcontinue (inTypeALst,inTypeA,inFuncTypeTypeATypeAToBoolean)
+  (outList, outDeletedElement) := matchcontinue(inValue, inList, inCompareFunc)
     local
-      Type_a elt_1,elt;
-      Integer pos;
-      list<Type_a> lst_1,lst;
-      FuncTypeType_aType_aToBoolean cond;
-    case (lst,elt,cond)
+      TypeB e;
+      list<TypeB> el;
+      Boolean is_equal;
+
+    case (_, e :: _, _)
       equation
-        elt_1 = listGetMemberOnTrue(elt, lst, cond) "A bit ugly" ;
-        pos = listPosition(elt_1, lst);
-        lst_1 = listDelete(lst, pos);
+        is_equal = inCompareFunc(inValue, e);
+        (el, e) = listDeleteMemberOnTrue_tail(inValue, inList, inCompareFunc,
+          {}, is_equal);
       then
-        lst_1;
-    case (lst,_,_) then lst;
+        (el, SOME(e));
+
+    else then (inList, NONE());
   end matchcontinue;
 end listDeleteMemberOnTrue;
+
+public function listDeleteMemberOnTrue_tail
+  input TypeA inValue;
+  input list<TypeB> inList;
+  input CompareFunc inCompareFunc;
+  input list<TypeB> inAccumList;
+  input Boolean inIsEqual;
+  output list<TypeB> outList;
+  output TypeB outDeletedElement;
+
+  replaceable type TypeA subtypeof Any;
+  replaceable type TypeB subtypeof Any;
+
+  partial function CompareFunc
+    input TypeA inTypeA;
+    input TypeB inTypeB;
+    output Boolean outIsEqual;
+  end CompareFunc;
+algorithm
+  (outList, outDeletedElement) := 
+  match(inValue, inList, inCompareFunc, inAccumList, inIsEqual)
+    local
+      TypeB e, e2;
+      list<TypeB> el, accum_el;
+      Boolean is_equal;
+
+    case (_, e :: el, _, _, true)
+      then (listAppend(listReverse(inAccumList), el), e);
+
+    case (_, e :: (el as e2 :: _), _, _, _)
+      equation
+        accum_el = e :: inAccumList;
+        is_equal = inCompareFunc(inValue, e2);
+        (el, e) = listDeleteMemberOnTrue_tail(inValue, el, inCompareFunc,
+          accum_el, is_equal);
+      then
+        (el, e);
+  end match;
+end listDeleteMemberOnTrue_tail;
+  
+        
+
+//public function listDeleteMemberOnTrue "function: listDeleteMemberOnTrue
+//  Takes a list and a value and a comparison function and deletes the first
+//  occurence of the value in the list for which the function returns true.
+//  Example: listDeleteMemberOnTrue({1,2,3,2},2,intEq) => {1,3,2}"
+//  input list<Type_a> inTypeALst;
+//  input Type_a inTypeA;
+//  input FuncTypeType_aType_aToBoolean inFuncTypeTypeATypeAToBoolean;
+//  output list<Type_a> outTypeALst;
+//  replaceable type Type_a subtypeof Any;
+//  partial function FuncTypeType_aType_aToBoolean
+//    input Type_a inTypeA1;
+//    input Type_a inTypeA2;
+//    output Boolean outBoolean;
+//  end FuncTypeType_aType_aToBoolean;
+//algorithm
+//  outTypeALst:=
+//  matchcontinue (inTypeALst,inTypeA,inFuncTypeTypeATypeAToBoolean)
+//    local
+//      Type_a elt_1,elt;
+//      Integer pos;
+//      list<Type_a> lst_1,lst;
+//      FuncTypeType_aType_aToBoolean cond;
+//    case (lst,elt,cond)
+//      equation
+//        elt_1 = listGetMemberOnTrue(elt, lst, cond) "A bit ugly" ;
+//        pos = listPosition(elt_1, lst);
+//        lst_1 = listDelete(lst, pos);
+//      then
+//        lst_1;
+//    case (lst,_,_) then lst;
+//  end matchcontinue;
+//end listDeleteMemberOnTrue;
 
 public function listGetMemberOnTrue "function listGetmemberOnTrue
   Takes a value and a list of values and a comparison function over two values.
@@ -4509,7 +4591,7 @@ algorithm
     case (a,{},cond) then a;  /* A B */
     case (a,(x1 :: xs),cond)
       equation
-        a_1 = listDeleteMemberOnTrue(a, x1, cond);
+        (a_1, _) = listDeleteMemberOnTrue(x1, a, cond);
         a_2 = listSetDifferenceOnTrue(a_1, xs, cond);
       then
         a_2;

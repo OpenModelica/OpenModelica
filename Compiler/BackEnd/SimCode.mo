@@ -861,11 +861,10 @@ protected
   list<String> includes;
   list<Function> functions;
   // DAE.DAElist dae2;
-  String filename, funcfilename,fileDir;
+  String filename, funcfilename;
   SimCode simCode;
   list<RecordDeclaration> recordDecls;
   BackendDAE.BackendDAE indexed_dlow,indexed_dlow_1;
-  Real timeBackend,timeSimCode,timeTemplates;
   Absyn.ComponentRef a_cref;
 algorithm
    timeBackend := System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);
@@ -992,11 +991,10 @@ protected
   list<String> includes;
   list<Function> functions;
   // DAE.DAElist dae2;
-  String filename, funcfilename,fileDir;
+  String filename, funcfilename;
   SimCode simCode;
   list<RecordDeclaration> recordDecls;
   BackendDAE.BackendDAE indexed_dlow,indexed_dlow_1;
-  Real timeBackend,timeSimCode,timeTemplates;
   Absyn.ComponentRef a_cref;
 algorithm
    timeBackend := System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);   
