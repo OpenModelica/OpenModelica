@@ -155,7 +155,6 @@ algorithm
         /* NOTE: Here it could be possible to run removeSimpleEquations again, since algebraic equations
         could potentially be removed after a index reduction has been done. However, removing equations here
         also require that e.g. zero crossings, array equations, etc. must be recalculated. */       
-        s = BackendDAEUtil.statesDaelow(dae);
         (dae as BackendDAE.DAE(v,kv,exv,av,e,re,ie,ae,al,ev,eoc),_,_) = BackendDAEOptimize.removeSimpleEquations(dae,inFunctions,SOME(m),SOME(mt)); 
         BackendDAE.EVENT_INFO(whenClauseLst=whenclauses) = ev;
         e_lst = BackendDAEUtil.equationList(e);

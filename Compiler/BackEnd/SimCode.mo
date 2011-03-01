@@ -3338,7 +3338,6 @@ algorithm
       equation
         (eqn as BackendDAE.EQUATION(e1, e2,_), v as BackendDAE.VAR(varName = cr, varKind = kind))
         = getEquationAndSolvedVar(eqNum, eqns, vars, ass2);
-        eqStr =  BackendDump.equationStr(eqn);
         varexp = Expression.crefExp(cr);
         (exp_,_) = ExpressionSolve.solveLin(e1, e2, varexp);
       then
