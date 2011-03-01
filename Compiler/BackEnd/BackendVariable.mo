@@ -489,6 +489,25 @@ algorithm
   end matchcontinue;
 end isStateVar;
 
+public function isState
+  input DAE.ComponentRef inCref;
+  input BackendDAE.Variables inVars;
+  output Boolean outBool;
+algorithm
+  outBool:=
+  matchcontinue(inCref,inVars)
+    local
+      DAE.ComponentRef cr;
+      BackendDAE.Variables vars;      
+    case(cr,vars)
+      equation
+        ((BackendDAE.VAR(varKind = BackendDAE.STATE()) :: _),_) = getVar(cr, vars);
+      then 
+        true;
+    case(_,_) then false;
+  end matchcontinue;
+end isState;
+
 public function isNonStateVar
 "function: isNonStateVar
   this equation checks if the the varkind is state of variable

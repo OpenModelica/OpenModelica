@@ -46,9 +46,7 @@ protected import AbsynDep;
 protected import BackendDAE;
 protected import BackendDAECreate;
 protected import BackendDAETransform;
-protected import BackendDAEOptimize;
 protected import BackendDAEUtil;
-protected import BackendDump;
 protected import Dump;
 protected import DumpGraphviz;
 protected import SCode;
@@ -70,7 +68,6 @@ protected import TaskGraphExt;
 protected import SimCode;
 protected import ErrorExt;
 protected import Error;
-protected import CevalScript;
 protected import Parser;
 protected import Env;
 protected import Settings;
@@ -78,7 +75,6 @@ protected import InnerOuter;
 protected import ClassLoader;
 protected import TplMain;
 protected import DAEDump;
-protected import Inline;
 
 protected function serverLoop
 "function: serverLoop
@@ -773,42 +769,20 @@ algorithm
       Env.Env env;
       DAE.FunctionTree funcs;
       String str;
+      list<String> preOptModules,pastOptModules;
+
     case (cache,env,p,ap,dae,daeimpl,classname)
       equation
         true = runBackendQ();
         Debug.fcall("execstat",print, "*** Main -> To lower dae at time: " +& realString(clock()) +& "\n" );
         funcs = Env.getFunctionTree(cache);
-        dlow = BackendDAECreate.lower(dae, funcs, /* add dummy state if needed */ true, /* simplify */ true);
-        m = BackendDAEUtil.incidenceMatrix(dlow, BackendDAE.NORMAL());
-        mT = BackendDAEUtil.transposeMatrix(m);
-        (dlow,m,mT) = BackendDAEOptimize.removeParameterEqns(dlow,m,mT);
-        Debug.fcall("dumpdaelow", BackendDump.dump, dlow);
-        Debug.fcall("bltdump", BackendDump.dumpIncidenceMatrix, m);
-        Debug.fcall("bltdump", BackendDump.dumpIncidenceMatrixT, mT);
-        Debug.fcall("execstat",print, "*** Main -> To run matching at time: " +& realString(clock()) +& "\n" );
-        (v1,v2,dlow_1,m,mT) = BackendDAETransform.matchingAlgorithm(dlow, m, mT, (BackendDAE.INDEX_REDUCTION(), BackendDAE.EXACT(), BackendDAE.REMOVE_SIMPLE_EQN()),funcs);
-        // late Inline
-        dlow_1 = Inline.inlineCalls(SOME(funcs),{DAE.NORM_INLINE(),DAE.AFTER_INDEX_RED_INLINE()},dlow_1);
-        Debug.fcall("bltdump", BackendDump.dumpIncidenceMatrix, m);
-        Debug.fcall("bltdump", BackendDump.dumpIncidenceMatrixT, mT);
-        Debug.fcall("bltdump", BackendDump.dump, dlow_1);
-        Debug.fcall("bltdump", BackendDump.dumpMatching, v1);
-        (comps) = BackendDAETransform.strongComponents(m, mT, v1, v2);
-        /**
-         * TODO: Activate this when we call it from a command like +d=...
-         *
-         *
-         * str = Absyn.pathString(classname);
-         * str = BackendDAE.unparseStr(dlow, comps, v1, v2, false,str);
-         * //Debug.fcall("flat", BackendDAE.unparseStr,dlow, comps, v1, v2, true);
-        **/
-        // Debug.fcall("eqnsizedump",BackendDump.dumpComponentSizes,comps);
-        Debug.fcall("bltdump", BackendDump.dumpComponents, comps);
-        str = BackendDump.dumpComponentsGraphStr(BackendDAEUtil.systemSize(dlow_1),m,mT,v1,v2);
-        Debug.fcall("dumpcompgraph",print,str);
-        modpar(cache, env, dlow_1, v1, v2, comps);
-        Debug.fcall("execstat",print, "*** Main -> To simcodegen at time: " +& realString(clock()) +& "\n" );
-        simcodegen(cache,env,classname, p, ap, daeimpl, dlow_1, v1, v2, m, mT, comps);
+        dlow = BackendDAECreate.lower(dae,funcs,true);
+        preOptModules = {"removeSimpleEquations","removeParameterEqns","expandDerOperator"};
+        pastOptModules = Util.listConsOnTrue(RTOpts.debugFlag("dumpcompgraph"),"dumpComponentsGraphStr",{});
+        pastOptModules = "lateInline"::pastOptModules;
+        (dlow_1,m,mT,v1,v2,comps) = BackendDAEUtil.getSolvedSystem(cache,env,dlow,funcs,preOptModules,BackendDAETransform.dummyDerivative,pastOptModules);
+        modpar(dlow_1,v1,v2,comps);
+        simcodegen(dlow_1,funcs,classname,p,ap,daeimpl,m,mT,v1,v2,comps);
       then
         ();
     case (_,_,_,_,_,_,_)
@@ -827,32 +801,28 @@ end optimizeDae;
 protected function modpar
 "function: modpar
   The automatic paralellzation module."
-  input Env.Cache cache;
-  input Env.Env env;
   input BackendDAE.BackendDAE inBackendDAE1;
   input array<Integer> inIntegerArray2;
   input array<Integer> inIntegerArray3;
   input list<list<Integer>> inIntegerLstLst4;
 algorithm
-  _ := matchcontinue (cache,env,inBackendDAE1,inIntegerArray2,inIntegerArray3,inIntegerLstLst4)
+  _ := matchcontinue (inBackendDAE1,inIntegerArray2,inIntegerArray3,inIntegerLstLst4)
     local
       Integer n,nx,ny,np;
-      BackendDAE.BackendDAE indexed_dae,indexed_dae_1,dae;
+      BackendDAE.BackendDAE dae;
       Real l,b,t1,t2,time;
       String timestr,nps;
       array<Integer> ass1,ass2;
       list<list<Integer>> comps;
-    case (_,_,_,_,_,_)
+    case (_,_,_,_)
       equation
         n = RTOpts.noProc() "If modpar not enabled, nproc = 0, return" ;
         (n == 0) = true;
       then
         ();
-    case (cache,env,dae,ass1,ass2,comps)
+    case (dae,ass1,ass2,comps)
       equation
-        indexed_dae = BackendDAEUtil.translateDae(dae,NONE());
-        indexed_dae_1 = BackendDAEUtil.calculateValues(cache,env,indexed_dae);
-        TaskGraph.buildTaskgraph(indexed_dae_1, ass1, ass2, comps);
+        TaskGraph.buildTaskgraph(dae, ass1, ass2, comps);
         TaskGraphExt.dumpGraph("model.viz");
         l = RTOpts.latency();
         b = RTOpts.bandwidth();
@@ -867,7 +837,7 @@ algorithm
         TaskGraphExt.dumpMergedGraph("merged_model.viz");
         n = RTOpts.noProc();
         TaskGraphExt.schedule(n);
-        (nx,ny,np,_,_,_,_,_,_,_,_,_) = BackendDAEUtil.calculateSizes(indexed_dae_1);
+        (nx,ny,np,_,_,_,_,_,_,_,_,_) = BackendDAEUtil.calculateSizes(dae);
         nps = intString(np);
         print("=======\nnp =");
         print(nps);
@@ -887,23 +857,23 @@ end modpar;
 protected function simcodegen
 "function simcodegen
   Genereates simulation code using the SimCode module"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input Absyn.Path inPath1;
+  input BackendDAE.BackendDAE inBackendDAE5;
+  input DAE.FunctionTree inFunctionTree;
+  input Absyn.Path inPath;
   input SCode.Program inProgram2;
   input Absyn.Program inProgram3;
-  input DAE.DAElist inDAElist4;
-  input BackendDAE.BackendDAE inBackendDAE5;
-  input array<Integer> inIntegerArray6;
-  input array<Integer> inIntegerArray7;
+  input DAE.DAElist inDAElist4;  
   input BackendDAE.IncidenceMatrix inIncidenceMatrix8;
   input BackendDAE.IncidenceMatrixT inIncidenceMatrixT9;
+  input array<Integer> inIntegerArray6;
+  input array<Integer> inIntegerArray7;
   input list<list<Integer>> inIntegerLstLst10;
 algorithm
   _:=
-  matchcontinue (inCache,inEnv,inPath1,inProgram2,inProgram3,inDAElist4,inBackendDAE5,inIntegerArray6,inIntegerArray7,inIncidenceMatrix8,inIncidenceMatrixT9,inIntegerLstLst10)
+  matchcontinue (inBackendDAE5,inFunctionTree,inPath,inProgram2,inProgram3,inDAElist4,inIncidenceMatrix8,inIncidenceMatrixT9,inIntegerArray6,inIntegerArray7,inIntegerLstLst10)
     local
-      BackendDAE.BackendDAE indexed_dlow,indexed_dlow_1,dlow;
+      BackendDAE.BackendDAE dlow;
+      DAE.FunctionTree functionTree;
       String cname_str,file_dir;
       Absyn.ComponentRef a_cref;
       Absyn.Path classname;
@@ -913,38 +883,25 @@ algorithm
       array<Integer> ass1,ass2;
       array<list<Integer>> m,mt;
       list<list<Integer>> comps;
-      Env.Cache cache;
-      Env.Env env;
       SimCode.SimulationSettings simSettings;
       String methodbyflag;
       Boolean methodflag;
 
-    case (cache,env,classname,p,ap,dae,dlow,ass1,ass2,m,mt,comps) /* classname ass1 ass2 blocks */
+    case (dlow,functionTree,classname,p,ap,dae,m,mt,ass1,ass2,comps) /* classname ass1 ass2 blocks */
       equation
         Debug.fcall("execstat",print, "*** Main -> entering simcodgen: " +& realString(clock()) +& "\n" );
         true = RTOpts.simulationCg();
         Print.clearErrorBuf();
         Print.clearBuf();
-        Debug.fcall("execstat",print, "*** Main -> simcodgen -> translateDae: " +& realString(clock()) +& "\n" );
-        indexed_dlow = BackendDAEUtil.translateDae(dlow,NONE());
-        indexed_dlow_1 = BackendDAEUtil.calculateValues(cache,env,indexed_dlow);
-        Debug.fcall("dumpindxdae", BackendDump.dump, indexed_dlow_1);
         cname_str = Absyn.pathString(classname);
-        //filename = stringAppendList({cname_str,".cpp"});
-        //funcfilename = stringAppendList({cname_str,"_functions.cpp"});
-        //init_filename = stringAppendList({cname_str,"_init.txt"});
-        //makefilename = stringAppendList({cname_str,".makefile"});
-        a_cref = Absyn.pathToCref(classname);
-        file_dir = CevalScript.getFileDir(a_cref, ap);
-        Debug.fcall("execstat",print, "*** Main -> simcodgen -> generateFunctions: " +& realString(clock()) +& "\n" );
         methodflag = RTOpts.debugFlag("SetOldDassl");
         methodbyflag = Util.if_(methodflag,"dasslold","dassl");
         simSettings = SimCode.createSimulationSettings(0.0, 1.0, 500, 1e-6,methodbyflag,"","mat",".*");        
-        (_,_,_,_) = SimCode.generateModelCode(p, dae, indexed_dlow_1, Env.getFunctionTree(cache), classname, cname_str, file_dir, ass1, ass2, m, mt, comps, SOME(simSettings));
+        (_,_,_,_,_,_) = SimCode.generateModelCode(dlow,functionTree,ap,dae,classname,cname_str,SOME(simSettings),m,mt,ass1,ass1,comps);
       then
         ();
     /* If not generating simulation code: Succeed so no error messages are printed */
-    case (_,_,_,_,_,_,_,_,_,_,_,_)
+    case (_,_,_,_,_,_,_,_,_,_,_)
       equation
         false = RTOpts.simulationCg();
       then

@@ -151,22 +151,18 @@ algorithm
         memsize = nvars + nvars "Worst case, all eqns are differentiated once. Create nvars2 assignment elements" ;
         assign1 = assignmentsCreate(nvars, memsize, 0);
         assign2 = assignmentsCreate(nvars, memsize, 0);
-        (ass1,ass2,(dae as BackendDAE.DAE(v,kv,exv,av,e,re,ie,ae,al,ev,eoc)),m,mt,_,_) = matchingAlgorithm2(dae, m, mt, nvars, neqns, 1, assign1, assign2, match_opts,inFunctions,{},{});
+        (ass1,ass2,dae,m,mt,_,_) = matchingAlgorithm2(dae, m, mt, nvars, neqns, 1, assign1, assign2, match_opts,inFunctions,{},{});
         /* NOTE: Here it could be possible to run removeSimpleEquations again, since algebraic equations
         could potentially be removed after a index reduction has been done. However, removing equations here
         also require that e.g. zero crossings, array equations, etc. must be recalculated. */       
         s = BackendDAEUtil.statesDaelow(dae);
+        (dae as BackendDAE.DAE(v,kv,exv,av,e,re,ie,ae,al,ev,eoc),_,_) = BackendDAEOptimize.removeSimpleEquations(dae,inFunctions,SOME(m),SOME(mt)); 
+        BackendDAE.EVENT_INFO(whenClauseLst=whenclauses) = ev;
         e_lst = BackendDAEUtil.equationList(e);
-        re_lst = BackendDAEUtil.equationList(re);
-        ie_lst = BackendDAEUtil.equationList(ie);
         ae_lst = arrayList(ae);
         algs = arrayList(al);
-        (v,kv,e_lst,re_lst,ie_lst,ae_lst,algs,av) = BackendDAEOptimize.removeSimpleEquations(v,kv, e_lst, re_lst, ie_lst, ae_lst, algs, s); 
-         BackendDAE.EVENT_INFO(whenClauseLst=whenclauses) = ev;
         (zero_crossings,e_lst,ae_lst,whenclauses,algs) = BackendDAECreate.findZeroCrossings(v,kv,e_lst,ae_lst,whenclauses,algs);
         e = BackendDAEUtil.listEquation(e_lst);
-        re = BackendDAEUtil.listEquation(re_lst);
-        ie = BackendDAEUtil.listEquation(ie_lst);
         ae = listArray(ae_lst);    
         einfo = BackendDAE.EVENT_INFO(whenclauses,zero_crossings); 
         dae_1 = BackendDAE.DAE(v,kv,exv,av,e,re,ie,ae,al,einfo,eoc); 
@@ -2527,5 +2523,13 @@ algorithm
         fail();
   end matchcontinue;
 end differentiateEqns;
+
+public function dummyDerivative
+  input BackendDAE.BackendDAE inDAE;
+  input DAE.FunctionTree inFunctionTree;
+  output BackendDAE.BackendDAE outDAE;
+algorithm
+  outDAE := inDAE;
+end dummyDerivative; 
 
 end BackendDAETransform;

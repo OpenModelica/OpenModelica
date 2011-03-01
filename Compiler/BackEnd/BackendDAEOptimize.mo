@@ -66,12 +66,42 @@ protected import ExpressionDump;
 protected import ExpressionSolve;
 protected import ExpressionSimplify;
 protected import Error;
+protected import Inline;
 protected import RTOpts;
 protected import Util;
 protected import VarTransform;
 protected import Values;
 protected import ValuesUtil;
 
+/* 
+ * inline functions stuff
+ */
+
+public function lateInlineDAE
+"function lateInlineDAE"
+    input BackendDAE.BackendDAE inDAE;
+    input DAE.FunctionTree inFunctionTree;
+    input BackendDAE.IncidenceMatrix inM;
+    input BackendDAE.IncidenceMatrix inMT;
+    input array<Integer> inAss1;  
+    input array<Integer> inAss2;  
+    input list<list<Integer>> inComps;  
+    output BackendDAE.BackendDAE outDAE;
+    output BackendDAE.IncidenceMatrix outM;
+    output BackendDAE.IncidenceMatrix outMT;
+    output array<Integer> outAss1;  
+    output array<Integer> outAss2;  
+    output list<list<Integer>> outComps; 
+    output Boolean outRunMatching;
+algorithm
+  outDAE := Inline.inlineCalls(SOME(inFunctionTree),{DAE.NORM_INLINE(),DAE.AFTER_INDEX_RED_INLINE()},inDAE);
+  outM := inM;        
+  outMT := inMT;
+  outAss1 := inAss1;
+  outAss2 := inAss2;
+  outComps := inComps;   
+  outRunMatching := false;     
+end lateInlineDAE;
 
 /* 
  * remove simply equations stuff
@@ -89,71 +119,73 @@ public function removeSimpleEquations
             binTree: BinTree)
   outputs: (Variables, BackendDAE.Variables, BackendDAE.Equation list, BackendDAE.Equation list
          BackendDAE.Equation list)"
-  input BackendDAE.Variables inVariables1;
-  input BackendDAE.Variables inVariables2;
-  input list<BackendDAE.Equation> inEquationLst3;
-  input list<BackendDAE.Equation> inEquationLst4;
-  input list<BackendDAE.Equation> inEquationLst5;
-  input list<BackendDAE.MultiDimEquation> inArrayEquationLst;
-  input list<DAE.Algorithm> inAlgs;
-  input BackendDAE.BinTree inBinTree6;
-  output BackendDAE.Variables outVariables1;
-  output BackendDAE.Variables outVariables2;
-  output list<BackendDAE.Equation> outEquationLst3;
-  output list<BackendDAE.Equation> outEquationLst4;
-  output list<BackendDAE.Equation> outEquationLst5;
-  output list<BackendDAE.MultiDimEquation> outArrayEquationLst;
-  output list<DAE.Algorithm> outAlgs;
-  output BackendDAE.AliasVariables aliasVars; // hash tables of alias-variables' replacement (a = b or a = -b)
+  input BackendDAE.BackendDAE inDAE;
+  input DAE.FunctionTree inFunctionTree;
+  input Option<BackendDAE.IncidenceMatrix> inM;
+  input Option<BackendDAE.IncidenceMatrix> inMT;
+  output BackendDAE.BackendDAE outDAE;
+  output Option<BackendDAE.IncidenceMatrix> outM;
+  output Option<BackendDAE.IncidenceMatrix> outMT;
 algorithm
-  (outVariables1,outVariables2,outEquationLst3,outEquationLst4,outEquationLst5,outArrayEquationLst,outAlgs,aliasVars):=
-  matchcontinue (inVariables1,inVariables2,inEquationLst3,inEquationLst4,inEquationLst5,inArrayEquationLst,inAlgs,inBinTree6)
+  (outDAE,outM,outMT):=
+  match (inDAE,inFunctionTree,inM,inMT)
     local
+      DAE.FunctionTree funcs;
+      Option<BackendDAE.IncidenceMatrix> m,mT;
+      BackendDAE.Variables vars,vars_1,knvars,exobj,knvars_1,knvars_2;
+      BackendDAE.AliasVariables av,varsAliases;
+      BackendDAE.EquationArray eqns,eqns1,remeqns,remeqns1,inieqns,inieqns1;
+      array<BackendDAE.MultiDimEquation> arreqns,arreqns1;
+      array<DAE.Algorithm> algorithms,algorithms1;
+      BackendDAE.EventInfo einfo;
+      BackendDAE.ExternalObjectClasses eoc;
       VarTransform.VariableReplacements repl,replc,replc_1,vartransf,vartransf1;
-      list<BackendDAE.Equation> eqns_1,seqns,eqns_2,seqns_1,ieqns_1,eqns_3,seqns_2,ieqns_2,seqns_4,seqns_3,eqns,reqns,reqns_1,ieqns;
-      list<BackendDAE.MultiDimEquation> arreqns,arreqns1,arreqns2;
-      BackendDAE.BinTree movedvars_1,states,outputs;
-      BackendDAE.Variables vars_1,knvars_1,vars,knvars,knvars_2;
+      list<BackendDAE.Equation> eqns_1,seqns,eqns_2,seqns_1,ieqns_1,eqns_3,seqns_2,ieqns_2,seqns_4,seqns_3,lsteqns,reqns,reqns_1,ieqns;
+      list<BackendDAE.MultiDimEquation> lstarreqns,lstarreqns1,lstarreqns2;
+      BackendDAE.BinTree movedvars_1,outputs;
       list<DAE.Algorithm> algs,algs_1;
       list<tuple<list<DAE.Exp>,list<DAE.Exp>>> inputsoutputs;
-      BackendDAE.AliasVariables varsAliases;      
-      //HashTable2.HashTable aliasMappings "mappings alias-variable => true-variable";
-      //Variables aliasVars "alias-variables metadata";
-    case (vars,knvars,eqns,reqns,ieqns,arreqns,algs,states)
-      equation
+      
+    case (BackendDAE.DAE(vars,knvars,exobj,av,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc),funcs,m,mT)
+      equation      
         repl = VarTransform.emptyReplacements();
         replc = VarTransform.emptyReplacements();
-
+        
+        lsteqns = BackendDAEUtil.equationList(eqns);       
+        reqns = BackendDAEUtil.equationList(remeqns);       
+        ieqns = BackendDAEUtil.equationList(inieqns);       
+        lstarreqns = arrayList(arreqns);       
+        algs = arrayList(algorithms);       
         outputs = BackendDAE.emptyBintree;
-        outputs = getOutputsFromAlgorithms(eqns,outputs);
-        (eqns_1,seqns,movedvars_1,vartransf,_,replc_1) = removeSimpleEquations2(eqns, simpleEquation, vars, knvars, BackendDAE.emptyBintree, states, outputs, repl, {},replc);
+        outputs = getOutputsFromAlgorithms(lsteqns,outputs);
+        (eqns_1,seqns,movedvars_1,vartransf,_,replc_1) = removeSimpleEquations2(lsteqns, simpleEquation, vars, knvars, BackendDAE.emptyBintree, outputs, repl, {},replc);
         vartransf1 = VarTransform.addMultiDimReplacements(vartransf);
         Debug.fcall("dumprepl", VarTransform.dumpReplacements, vartransf1);
         Debug.fcall("dumpreplc", VarTransform.dumpReplacements, replc_1);
         eqns_2 = BackendVarTransform.replaceEquations(eqns_1, replc_1);
         seqns_1 = BackendVarTransform.replaceEquations(seqns, replc_1);
         ieqns_1 = BackendVarTransform.replaceEquations(ieqns, replc_1);
-        arreqns1 = BackendVarTransform.replaceMultiDimEquations(arreqns, replc_1);
+        lstarreqns1 = BackendVarTransform.replaceMultiDimEquations(lstarreqns, replc_1);
         eqns_3 = BackendVarTransform.replaceEquations(eqns_2, vartransf1);
         seqns_2 = BackendVarTransform.replaceEquations(seqns_1, vartransf1);
         ieqns_2 = BackendVarTransform.replaceEquations(ieqns_1, vartransf1);
         reqns_1 = BackendVarTransform.replaceEquations(reqns, vartransf1);
-        arreqns2 = BackendVarTransform.replaceMultiDimEquations(arreqns1, vartransf1);
+        lstarreqns2 = BackendVarTransform.replaceMultiDimEquations(lstarreqns1, vartransf1);
         algs_1 = BackendVarTransform.replaceAlgorithms(algs,vartransf1);
         (vars_1,knvars_1) = BackendVariable.moveVariables(vars, knvars, movedvars_1);
         inputsoutputs = Util.listMap1r(algs_1,BackendDAECreate.lowerAlgorithmInputsOutputs,vars_1);
         eqns_3 = Util.listMap1(eqns_3,updateAlgorithmInputsOutputs,inputsoutputs);
         seqns_3 = listAppend(seqns_2, reqns_1) "& print_vars_statistics(vars\',knvars\')" ;
-        (knvars_2,seqns_4,varsAliases) = removeConstantEqns(knvars_1,seqns_3,BackendDAEUtil.emptyAliasVariables());
+        (knvars_2,seqns_4,varsAliases) = removeConstantEqns(knvars_1,seqns_3,av);
         Debug.fcall("dumpalias", BackendDump.dumpAliasVariables, varsAliases);
+        eqns1 = BackendDAEUtil.listEquation(eqns_3);
+        remeqns1 = BackendDAEUtil.listEquation(seqns_4);
+        inieqns1 = BackendDAEUtil.listEquation(ieqns_2);
+        arreqns1 = listArray(lstarreqns2);
+        algorithms1 = listArray(algs_1);
       then
-        (vars_1,knvars_2,eqns_3,seqns_4,ieqns_2,arreqns2, algs_1, varsAliases);
-    case (_,_,_,_,_,_,_,_)
-      equation
-        print("-remove_simple_equations failed\n");
-      then
-        fail();
-  end matchcontinue;
+        (BackendDAE.DAE(vars_1,knvars_2,exobj,varsAliases,eqns1,remeqns1,inieqns1,arreqns1,algorithms1,einfo,eoc),NONE(),NONE());
+  end match;        
 end removeSimpleEquations;
 
 protected function removeSimpleEquations2
@@ -166,7 +198,6 @@ protected function removeSimpleEquations2
   input BackendDAE.Variables vars;
   input BackendDAE.Variables knvars;
   input BackendDAE.BinTree mvars;
-  input BackendDAE.BinTree states;
   input BackendDAE.BinTree outputs;
   input VarTransform.VariableReplacements repl;
   input list<DAE.ComponentRef> inExtendLst;
@@ -185,7 +216,7 @@ protected function removeSimpleEquations2
     output DAE.ElementSource source;
   end FuncTypeSimpleEquation;
 algorithm
-  (outEqns,outSimpleEqns,outMvars,outRepl,outExtendLst,outReplc) := matchcontinue (eqns,funcSimpleEquation,vars,knvars,mvars,states,outputs,repl,inExtendLst,replc)
+  (outEqns,outSimpleEqns,outMvars,outRepl,outExtendLst,outReplc) := matchcontinue (eqns,funcSimpleEquation,vars,knvars,mvars,outputs,repl,inExtendLst,replc)
     local
       BackendDAE.BinTree mvars_1,mvars_2;
       VarTransform.VariableReplacements repl_1,repl_2,replc_1,replc_2;
@@ -198,47 +229,47 @@ algorithm
       list<DAE.ComponentRef> extlst,extlst1;
       BackendDAE.Equation eq1,eq2;      
       
-    case ({},funcSimpleEquation,vars,knvars,mvars,states,outputs,repl,extlst,replc) then ({},{},mvars,repl,extlst,replc);
+    case ({},funcSimpleEquation,vars,knvars,mvars,outputs,repl,extlst,replc) then ({},{},mvars,repl,extlst,replc);
 
-    case (e::eqns,funcSimpleEquation,vars,knvars,mvars,states,outputs,repl,inExtendLst,replc) equation
+    case (e::eqns,funcSimpleEquation,vars,knvars,mvars,outputs,repl,inExtendLst,replc) equation
       {e} = BackendVarTransform.replaceEquations({e},replc);
       {e} = BackendVarTransform.replaceEquations({e},repl);
       (e1 as DAE.CREF(cr1,t),e2,source) = funcSimpleEquation(e,false);
-      failure(_ = BackendDAEUtil.treeGet(states, cr1)) "cr1 not state";
+      false = BackendVariable.isState(cr1, vars) "cr1 not state";
       BackendVariable.isVariable(cr1, vars, knvars) "cr1 not constant";
       false = BackendVariable.isTopLevelInputOrOutput(cr1,vars,knvars);
       failure(_ = BackendDAEUtil.treeGet(outputs, cr1)) "cr1 not output of algorithm";
       (extlst,_,replc_1) = removeSimpleEquations3(inExtendLst,replc,cr1,NONE(),e2,t); 
       repl_1 = VarTransform.addReplacement(repl, cr1, e2);
       mvars_1 = BackendDAEUtil.treeAdd(mvars, cr1, 0);
-      (eqns_1,seqns_1,mvars_2,repl_2,extlst1,replc_2) = removeSimpleEquations2(eqns, funcSimpleEquation, vars, knvars, mvars_1, states, outputs, repl_1, extlst,replc_1);
+      (eqns_1,seqns_1,mvars_2,repl_2,extlst1,replc_2) = removeSimpleEquations2(eqns, funcSimpleEquation, vars, knvars, mvars_1, outputs, repl_1, extlst,replc_1);
     then
       (eqns_1,(BackendDAE.SOLVED_EQUATION(cr1,e2,source) :: seqns_1),mvars_2,repl_2,extlst1,replc_2);
 
       // Swapped args
-    case (e::eqns,funcSimpleEquation,vars,knvars,mvars,states,outputs,repl,inExtendLst,replc) equation
+    case (e::eqns,funcSimpleEquation,vars,knvars,mvars,outputs,repl,inExtendLst,replc) equation
       {e} = BackendVarTransform.replaceEquations({e},replc);
       {BackendDAE.EQUATION(e1,e2,source)} = BackendVarTransform.replaceEquations({e},repl);
       (e1 as DAE.CREF(cr1,t),e2,source) = simpleEquation(BackendDAE.EQUATION(e2,e1,source),true);
-      failure(_ = BackendDAEUtil.treeGet(states, cr1)) "cr1 not state";
+      false = BackendVariable.isState(cr1, vars) "cr1 not state";
       BackendVariable.isVariable(cr1, vars, knvars) "cr1 not constant";
       false = BackendVariable.isTopLevelInputOrOutput(cr1,vars,knvars);
       failure(_ = BackendDAEUtil.treeGet(outputs, cr1)) "cr1 not output of algorithm";
       (extlst,_,replc_1) = removeSimpleEquations3(inExtendLst,replc,cr1,NONE(),e2,t); 
       repl_1 = VarTransform.addReplacement(repl, cr1, e2);
       mvars_1 = BackendDAEUtil.treeAdd(mvars, cr1, 0);
-      (eqns_1,seqns_1,mvars_2,repl_2,extlst1,replc_2) = removeSimpleEquations2(eqns, funcSimpleEquation, vars, knvars, mvars_1, states, outputs, repl_1, extlst,replc_1);
+      (eqns_1,seqns_1,mvars_2,repl_2,extlst1,replc_2) = removeSimpleEquations2(eqns, funcSimpleEquation, vars, knvars, mvars_1, outputs, repl_1, extlst,replc_1);
     then
       (eqns_1,(BackendDAE.SOLVED_EQUATION(cr1,e2,source) :: seqns_1),mvars_2,repl_2,extlst1,replc_2);
 
       // try next equation.
-    case ((e :: eqns),funcSimpleEquation,vars,knvars,mvars,states,outputs,repl,extlst,replc)
+    case ((e :: eqns),funcSimpleEquation,vars,knvars,mvars,outputs,repl,extlst,replc)
       equation
         {eq1} = BackendVarTransform.replaceEquations({e},replc);
         {eq2} = BackendVarTransform.replaceEquations({eq1},repl);
         //print("not removed simple ");print(equationStr(e));print("\n     -> ");print(equationStr(eq1));
         //print("\n\n");
-        (eqns_1,seqns_1,mvars_1,repl_1,extlst1,replc_1) = removeSimpleEquations2(eqns, funcSimpleEquation, vars, knvars, mvars, states, outputs, repl, extlst,replc) "Not a simple variable, check rest" ;
+        (eqns_1,seqns_1,mvars_1,repl_1,extlst1,replc_1) = removeSimpleEquations2(eqns, funcSimpleEquation, vars, knvars, mvars, outputs, repl, extlst,replc) "Not a simple variable, check rest" ;
       then
         ((e :: eqns_1),seqns_1,mvars_1,repl_1,extlst1,replc_1);
   end matchcontinue;
@@ -837,16 +868,19 @@ public function removeParameterEqns
   independendce it change the variability from VARIABLE to Parameter
   and add a bind expression."
   input BackendDAE.BackendDAE inDlow;
-  input BackendDAE.IncidenceMatrix inM;
-  input BackendDAE.IncidenceMatrixT inMT;
+  input DAE.FunctionTree inFunctionTree;
+  input Option<BackendDAE.IncidenceMatrix> inM;
+  input Option<BackendDAE.IncidenceMatrixT> inMT;
   output BackendDAE.BackendDAE outDlow;
-  output BackendDAE.IncidenceMatrix outM;
-  output BackendDAE.IncidenceMatrixT outMT;
+  output Option<BackendDAE.IncidenceMatrix> outM;
+  output Option<BackendDAE.IncidenceMatrixT> outMT;
 algorithm
   (outDlow,outM,outMT):=
-  matchcontinue (inDlow,inM,inMT)
+  matchcontinue (inDlow,inFunctionTree,inM,inMT)
     local
       BackendDAE.BackendDAE dlow,dlow1;
+      DAE.FunctionTree funcs;
+      Option<BackendDAE.IncidenceMatrix> om,omT;
       BackendDAE.IncidenceMatrix m,m_1,m_2;
       BackendDAE.IncidenceMatrixT mT,mT_1;
       BackendDAE.Variables ordvars,knvars,exobj,ordvars1,knvars1,ordvars2,knvars2;
@@ -858,8 +892,17 @@ algorithm
       BackendDAE.ExternalObjectClasses eoc;
       BackendDAE.BinTree movedVars;
       list<Integer> meqns;
-    case (dlow as BackendDAE.DAE(ordvars,knvars,exobj,av,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc),m,mT)
+      case (dlow,funcs,NONE(),_) 
+        equation
+          m = BackendDAEUtil.incidenceMatrix(dlow, BackendDAE.NORMAL());
+          mT = BackendDAEUtil.transposeMatrix(m);
+          (dlow,om,omT) = removeParameterEqns(dlow,funcs,SOME(m),SOME(mT));
+        then
+          (dlow,om,omT);
+    case (dlow as BackendDAE.DAE(ordvars,knvars,exobj,av,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc),funcs,SOME(m),SOME(mT))
       equation
+        // for now check interactive flag to avoid errors there
+        // false = RTOpts.debugFlag("");
         // check equations
         (m_1,(ordvars1,knvars1,eqns1,_,movedVars,meqns)) = traverseIncidenceMatrix(m,removeParameterEqnsFinder,(ordvars,knvars,eqns,mT,BackendDAE.emptyBintree,{}));
         // move changed variables 
@@ -873,8 +916,8 @@ algorithm
         m_2 = BackendDAEUtil.incidenceMatrix(dlow1, BackendDAE.NORMAL());
         // update transposed IncidenceMatrix
         mT_1 = BackendDAEUtil.transposeMatrix(m_2);
-      then (dlow1,m_2,mT_1);
-    case (dlow,m,mT) then (dlow,m,mT);
+      then (dlow1,SOME(m_2),SOME(mT_1));
+    case (dlow,_,om,omT) then (dlow,om,omT);
   end matchcontinue;        
 end removeParameterEqns;
 
@@ -2024,15 +2067,20 @@ algorithm
         // Remove simple Equtaion and
         elimLevel = RTOpts.eliminationLevel();
         RTOpts.setEliminationLevel(2) "Full elimination";
+        
         e_lst = BackendDAEUtil.equationList(e);
         re_lst = BackendDAEUtil.equationList(re);
         ie_lst = BackendDAEUtil.equationList(ie);
         ae_lst = arrayList(ae);
         algs = arrayList(al);
-        (v,kv,e_lst,re_lst,ie_lst,ae_lst,algs,av) = removeSimpleEquations(v,kv, e_lst, re_lst, ie_lst, ae_lst, algs, jacElements);
-        (v,kv,e_lst,re_lst,ie_lst,ae_lst,algs,av) = removeSimpleEquations(v,kv, e_lst, re_lst, ie_lst, ae_lst, algs, jacElements);
-        (v,kv,e_lst,re_lst,ie_lst,ae_lst,algs,av) = removeSimpleEquations(v,kv, e_lst, re_lst, ie_lst, ae_lst, algs, jacElements);
-        (vN,kvN,e_lst,re_lst,ie_lst,ae_lst,algs,avN) = removeSimpleEquations(v,kv, e_lst, re_lst, ie_lst, ae_lst, algs, jacElements); 
+        // why is this done? all simple equations already removed
+//        (v,kv,e_lst,re_lst,ie_lst,ae_lst,algs,av) = removeSimpleEquations(v,kv, e_lst, re_lst, ie_lst, ae_lst, algs, jacElements);
+//        (v,kv,e_lst,re_lst,ie_lst,ae_lst,algs,av) = removeSimpleEquations(v,kv, e_lst, re_lst, ie_lst, ae_lst, algs, jacElements);
+//        (v,kv,e_lst,re_lst,ie_lst,ae_lst,algs,av) = removeSimpleEquations(v,kv, e_lst, re_lst, ie_lst, ae_lst, algs, jacElements);
+//        (vN,kvN,e_lst,re_lst,ie_lst,ae_lst,algs,avN) = removeSimpleEquations(v,kv, e_lst, re_lst, ie_lst, ae_lst, algs, jacElements);
+        vN = v;
+        kvN = kv;
+        avN = av; 
         eN = BackendDAEUtil.listEquation(e_lst);
         reN = BackendDAEUtil.listEquation(re_lst);
         ieN = BackendDAEUtil.listEquation(ie_lst);

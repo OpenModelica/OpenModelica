@@ -647,6 +647,67 @@ algorithm
   end matchcontinue;
 end traverseBackendDAEOptEqnWithUpdate;
 
+public function traverseBackendDAEExpsArrayEqnWithUpdate "function: traverseBackendDAEExpsArrayEqn
+  author: Frenkel TUD
+
+  It is possible to change the equation.
+"
+  replaceable type Type_a subtypeof Any;
+  input BackendDAE.MultiDimEquation inMultiDimEquation;
+  input FuncExpType func;  
+  input Type_a inTypeA;
+  output BackendDAE.MultiDimEquation outMultiDimEquation;
+  output Type_a outTypeA;
+  partial function FuncExpType
+    input tuple<DAE.Exp, Type_a> inTpl;
+    output tuple<DAE.Exp, Type_a> outTpl;
+  end FuncExpType; 
+algorithm
+  (outMultiDimEquation,outTypeA):=
+  match (inMultiDimEquation,func,inTypeA)
+    local 
+      DAE.Exp e1,e2,e1_1,e2_1;
+      list<Integer> dims;
+      DAE.ElementSource source;      
+      Type_a ext_arg_1,ext_arg_2;
+    case (BackendDAE.MULTIDIM_EQUATION(dims,e1,e2,source),func,inTypeA)
+      equation
+        ((e1_1,ext_arg_1)) = func((e1,inTypeA)); 
+        ((e2_1,ext_arg_2)) = func((e2,ext_arg_1)); 
+      then
+        (BackendDAE.MULTIDIM_EQUATION(dims,e1_1,e2_1,source),ext_arg_2);
+  end match;
+end traverseBackendDAEExpsArrayEqnWithUpdate;
+
+public function traverseBackendDAEExpsAlgortihmWithUpdate "function: traverseBackendDAEExpsAlgortihmWithUpdate
+  author: Frenkel TUD
+
+  It is possible to change the equation.
+"
+  replaceable type Type_a subtypeof Any;
+  input DAE.Algorithm inAlg;
+  input FuncExpType func;  
+  input Type_a inTypeA;
+  output DAE.Algorithm outAlg;
+  output Type_a outTypeA;
+  partial function FuncExpType
+    input tuple<DAE.Exp, Type_a> inTpl;
+    output tuple<DAE.Exp, Type_a> outTpl;
+  end FuncExpType; 
+algorithm
+  (outAlg,outTypeA):=
+  match (inAlg,func,inTypeA)
+    local 
+      list<DAE.Statement> stmts;
+      Type_a ext_arg_1;
+    case (DAE.ALGORITHM_STMTS(stmts),func,inTypeA)
+      equation
+        (stmts,ext_arg_1) = DAEUtil.traverseDAEEquationsStmts(stmts,func,inTypeA);
+      then
+        (DAE.ALGORITHM_STMTS(stmts),ext_arg_1);
+  end match;
+end traverseBackendDAEExpsAlgortihmWithUpdate;
+
 public function equationEqual "Returns true if two equations are equal"
   input BackendDAE.Equation e1;
   input BackendDAE.Equation e2;
@@ -937,5 +998,28 @@ algorithm
       then res;
   end matchcontinue;
 end equationAlgorithmEqnsNr;
+
+
+public function daeEqns
+  input BackendDAE.BackendDAE inBackendDAE;
+  output BackendDAE.EquationArray outEqns;
+algorithm
+  outEqns := match (inBackendDAE)
+    local BackendDAE.EquationArray eqnarr;
+    case (BackendDAE.DAE(orderedEqs = eqnarr))
+      then eqnarr;
+  end match;
+end daeEqns;
+
+public function daeArrayEqns
+  input BackendDAE.BackendDAE inBackendDAE;
+  output array<BackendDAE.MultiDimEquation> outEqns;
+algorithm
+  outEqns := match (inBackendDAE)
+    local array<BackendDAE.MultiDimEquation> eqnarr;
+    case (BackendDAE.DAE(arrayEqs = eqnarr))
+      then eqnarr;
+  end match;
+end daeArrayEqns;
 
 end BackendEquation;

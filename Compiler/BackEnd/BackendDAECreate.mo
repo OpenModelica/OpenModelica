@@ -45,7 +45,6 @@ public import DAE;
 
 protected import Algorithm;
 protected import BackendDAEUtil;
-protected import BackendDAEOptimize;
 protected import BackendEquation;
 protected import BackendVariable;
 protected import ComponentReference;
@@ -81,115 +80,62 @@ public function lower
   input DAE.DAElist lst;
   input DAE.FunctionTree functionTree;
   input Boolean addDummyDerivativeIfNeeded;
-  input Boolean simplify;
-//  input Boolean removeTrivEqs "temporal input, for legacy purposes; doesn't add trivial equations to removed equations";
   output BackendDAE.BackendDAE outBackendDAE;
+protected
+  BackendDAE.BinTree s;
+  BackendDAE.Variables vars,knvars,vars_1,extVars;
+  BackendDAE.AliasVariables aliasVars "hash table with alias vars' replacements (a=b or a=-b)";
+  list<BackendDAE.Equation> eqns,reqns,ieqns,algeqns,algeqns1,ialgeqns,multidimeqns,imultidimeqns,eqns_1;
+  list<BackendDAE.MultiDimEquation> aeqns,aeqns1,iaeqns;
+  list<DAE.Algorithm> algs,algs_1,ialgs;
+  list<BackendDAE.WhenClause> whenclauses,whenclauses_1;
+  BackendDAE.EquationArray eqnarr,reqnarr,ieqnarr;
+  array<BackendDAE.MultiDimEquation> arr_md_eqns;
+  array<DAE.Algorithm> algarr;
+  BackendDAE.ExternalObjectClasses extObjCls;
+  Boolean daeContainsNoStates, shouldAddDummyDerivative;
+  BackendDAE.EventInfo einfo;
+  list<DAE.Element> elems;
+  list<BackendDAE.ZeroCrossing> zero_crossings;
 algorithm
-  outBackendDAE := match(lst, functionTree, addDummyDerivativeIfNeeded, simplify)
-    local
-      BackendDAE.BinTree s;
-      BackendDAE.Variables vars,knvars,vars_1,extVars;
-      BackendDAE.AliasVariables aliasVars "hash table with alias vars' replacements (a=b or a=-b)";
-      list<BackendDAE.Equation> eqns,reqns,ieqns,algeqns,algeqns1,ialgeqns,multidimeqns,imultidimeqns,eqns_1;
-      list<BackendDAE.MultiDimEquation> aeqns,aeqns1,iaeqns;
-      list<DAE.Algorithm> algs,algs_1,ialgs;
-      list<BackendDAE.WhenClause> whenclauses,whenclauses_1;
-      list<BackendDAE.ZeroCrossing> zero_crossings;
-      BackendDAE.EquationArray eqnarr,reqnarr,ieqnarr;
-      array<BackendDAE.MultiDimEquation> arr_md_eqns;
-      array<DAE.Algorithm> algarr;
-      BackendDAE.ExternalObjectClasses extObjCls;
-      Boolean daeContainsNoStates, shouldAddDummyDerivative;
-      BackendDAE.EventInfo einfo;
-      list<DAE.Element> elems;
+  (DAE.DAE(elems),functionTree) := processDelayExpressions(lst,functionTree);
+  s := states(elems, BackendDAE.emptyBintree);
+  vars := BackendDAEUtil.emptyVars();
+  knvars := BackendDAEUtil.emptyVars();
+  extVars := BackendDAEUtil.emptyVars();
+  (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,whenclauses,extObjCls,s) := lower2(listReverse(elems), functionTree, vars, knvars, extVars, {}, {}, {}, {}, {}, {}, {}, {}, {}, s);
 
-    case(lst, functionTree, addDummyDerivativeIfNeeded, true) // simplify by default
-      equation
-        (DAE.DAE(elems),functionTree) = processDelayExpressions(lst,functionTree);
-        s = states(elems, BackendDAE.emptyBintree);
-        vars = BackendDAEUtil.emptyVars();
-        knvars = BackendDAEUtil.emptyVars();
-        extVars = BackendDAEUtil.emptyVars();
-        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,whenclauses,extObjCls,s) = lower2(listReverse(elems), functionTree, vars, knvars, extVars, {}, {}, {}, {}, {}, {}, {}, {}, {}, s);
-
-        daeContainsNoStates = hasNoStates(s); // check if the DAE has states
-        // adrpo: add the dummy derivative state ONLY IF the DAE contains
-        //        no states AND ONLY if addDummyDerivative is set to true!
-        shouldAddDummyDerivative =  boolAnd(addDummyDerivativeIfNeeded, daeContainsNoStates);
-        (vars,eqns) = addDummyState(vars, eqns, shouldAddDummyDerivative);
-        
-        (aeqns,vars) = addFunctionRetVar(aeqns,vars);
-        ((aeqns,eqns)) = Util.listFold(aeqns,splitArrayEqn,({},eqns));        
-        ((iaeqns,ieqns)) = Util.listFold(iaeqns,splitArrayEqn,({},ieqns));         
-        whenclauses_1 = listReverse(whenclauses);
-        (algeqns,algeqns1,ialgeqns) = lowerAlgorithms(vars, algs, ialgs);
-        (multidimeqns,imultidimeqns) = lowerMultidimeqns(vars, aeqns, iaeqns);
-        eqns = listAppend(algeqns, eqns);
-        eqns = listAppend(multidimeqns, eqns);
-        ieqns = listAppend(ialgeqns, ieqns);
-        ieqns = listAppend(imultidimeqns, ieqns);
-        aeqns = listAppend(aeqns,iaeqns);
-        algs = listAppend(algs,ialgs);
-        reqns = listAppend(algeqns1, reqns);
-        (vars,knvars,eqns,reqns,ieqns,aeqns1,algs_1,aliasVars) = BackendDAEOptimize.removeSimpleEquations(vars, knvars, eqns, reqns, ieqns, aeqns, algs, s);
-        vars_1 = detectImplicitDiscrete(vars, eqns);
-        vars_1 = detectImplicitDiscreteAlgs(vars_1,knvars, algs_1);
-        eqns_1 = sortEqn(eqns);
-        (eqns_1,ieqns,aeqns1,algs,vars_1) = expandDerOperator(vars_1,eqns_1,ieqns,aeqns1,algs_1,functionTree);
-        (zero_crossings,eqns_1,aeqns1,whenclauses_1,algs) = findZeroCrossings(vars_1,knvars,eqns_1,aeqns1,whenclauses_1,algs);
-        eqnarr = BackendDAEUtil.listEquation(eqns_1);
-        reqnarr = BackendDAEUtil.listEquation(reqns);
-        ieqnarr = BackendDAEUtil.listEquation(ieqns);
-        arr_md_eqns = listArray(aeqns1);
-        algarr = listArray(algs);
-        einfo = Inline.inlineEventInfo(BackendDAE.EVENT_INFO(whenclauses_1,zero_crossings),(SOME(functionTree),{DAE.NORM_INLINE()}));
-        BackendDAEUtil.checkBackendDAEWithErrorMsg(BackendDAE.DAE(vars_1,knvars,extVars,aliasVars,eqnarr,reqnarr,ieqnarr,arr_md_eqns,algarr,einfo,extObjCls));
-      then BackendDAE.DAE(vars_1,knvars,extVars,aliasVars,eqnarr,reqnarr,ieqnarr,arr_md_eqns,algarr,einfo,extObjCls);
-
-    case(lst, functionTree, addDummyDerivativeIfNeeded, false) // do not simplify
-      equation
-        (DAE.DAE(elems),functionTree)  = processDelayExpressions(lst,functionTree);
-        s = states(elems, BackendDAE.emptyBintree);
-        vars = BackendDAEUtil.emptyVars();
-        knvars = BackendDAEUtil.emptyVars();
-        extVars = BackendDAEUtil.emptyVars();
-        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,whenclauses,extObjCls,s) = lower2(listReverse(elems), functionTree, vars, knvars, extVars, {}, {}, {}, {}, {}, {}, {}, {}, {}, s);
-
-        daeContainsNoStates = hasNoStates(s); // check if the DAE has states
-        // adrpo: add the dummy derivative state ONLY IF the DAE contains
-        //        no states AND ONLY if addDummyDerivative is set to true!
-        shouldAddDummyDerivative =  boolAnd(addDummyDerivativeIfNeeded, daeContainsNoStates);
-        (vars,eqns) = addDummyState(vars, eqns, shouldAddDummyDerivative);
-
-        (aeqns,vars) = addFunctionRetVar(aeqns,vars);
-        ((aeqns,eqns)) = Util.listFold(aeqns,splitArrayEqn,({},eqns));        
-        ((iaeqns,ieqns)) = Util.listFold(iaeqns,splitArrayEqn,({},ieqns));        
-        whenclauses_1 = listReverse(whenclauses);
-        (algeqns,algeqns1,ialgeqns) = lowerAlgorithms(vars, algs, ialgs);
-       (multidimeqns,imultidimeqns) = lowerMultidimeqns(vars, aeqns, iaeqns);
-        eqns = listAppend(algeqns, eqns);
-        eqns = listAppend(multidimeqns, eqns);
-        ieqns = listAppend(ialgeqns, ieqns);
-        ieqns = listAppend(imultidimeqns, ieqns);
-        aeqns = listAppend(aeqns,iaeqns);
-        algs = listAppend(algs,ialgs);        
-        reqns = listAppend(algeqns1, reqns);
-        // no simplify (vars,knvars,eqns,reqns,ieqns,aeqns1,algs_1,aliasVars) = BackendDAEOptimize.removeSimpleEquations(vars, knvars, eqns, reqns, ieqns, aeqns, algs, s);
-        aliasVars = BackendDAEUtil.emptyAliasVariables();
-        vars_1 = detectImplicitDiscrete(vars, eqns);
-        vars_1 = detectImplicitDiscreteAlgs(vars_1,knvars, algs);
-        eqns_1 = sortEqn(eqns);
-        // no simplify (eqns_1,ieqns,aeqns1,algs,vars_1) = expandDerOperator(vars_1,eqns_1,ieqns,aeqns1,algs_1,functionTree);
-        (zero_crossings,eqns_1,aeqns,whenclauses_1,algs) = findZeroCrossings(vars_1,knvars,eqns_1,aeqns,whenclauses_1,algs);
-        eqnarr = BackendDAEUtil.listEquation(eqns_1);
-        reqnarr = BackendDAEUtil.listEquation(reqns);
-        ieqnarr = BackendDAEUtil.listEquation(ieqns);
-        arr_md_eqns = listArray(aeqns);
-        algarr = listArray(algs);
-        einfo = Inline.inlineEventInfo(BackendDAE.EVENT_INFO(whenclauses_1,zero_crossings),(SOME(functionTree),{DAE.NORM_INLINE()}));        
-        BackendDAEUtil.checkBackendDAEWithErrorMsg(BackendDAE.DAE(vars_1,knvars,extVars,aliasVars,eqnarr,reqnarr,ieqnarr,arr_md_eqns,algarr,einfo,extObjCls));        
-      then BackendDAE.DAE(vars_1,knvars,extVars,aliasVars,eqnarr,reqnarr,ieqnarr,arr_md_eqns,algarr,einfo,extObjCls);
-  end match;
+  daeContainsNoStates := hasNoStates(s); // check if the DAE has states
+  // adrpo: add the dummy derivative state ONLY IF the DAE contains
+  //        no states AND ONLY if addDummyDerivative is set to true!
+  shouldAddDummyDerivative :=  boolAnd(addDummyDerivativeIfNeeded, daeContainsNoStates);
+  (vars,eqns) := addDummyState(vars, eqns, shouldAddDummyDerivative);
+       
+  (aeqns,vars) := addFunctionRetVar(aeqns,vars);
+  ((aeqns,eqns)) := Util.listFold(aeqns,splitArrayEqn,({},eqns));        
+  ((iaeqns,ieqns)) := Util.listFold(iaeqns,splitArrayEqn,({},ieqns));         
+  whenclauses_1 := listReverse(whenclauses);
+  (algeqns,algeqns1,ialgeqns) := lowerAlgorithms(vars, algs, ialgs);
+  (multidimeqns,imultidimeqns) := lowerMultidimeqns(vars, aeqns, iaeqns);
+  eqns := listAppend(algeqns, eqns);
+  eqns := listAppend(multidimeqns, eqns);
+  ieqns := listAppend(ialgeqns, ieqns);
+  ieqns := listAppend(imultidimeqns, ieqns);
+  aeqns := listAppend(aeqns,iaeqns);
+  algs := listAppend(algs,ialgs);
+  reqns := listAppend(algeqns1, reqns);
+  vars_1 := detectImplicitDiscrete(vars, eqns);
+  vars_1 := detectImplicitDiscreteAlgs(vars_1,knvars, algs);
+  eqns_1 := sortEqn(eqns);
+  (zero_crossings,eqns_1,aeqns,whenclauses_1,algs_1) := findZeroCrossings(vars_1,knvars,eqns_1,aeqns,whenclauses_1,algs);
+  eqnarr := BackendDAEUtil.listEquation(eqns_1);
+  reqnarr := BackendDAEUtil.listEquation(reqns);
+  ieqnarr := BackendDAEUtil.listEquation(ieqns);
+  arr_md_eqns := listArray(aeqns);
+  algarr := listArray(algs_1);
+  einfo := Inline.inlineEventInfo(BackendDAE.EVENT_INFO(whenclauses_1,zero_crossings),(SOME(functionTree),{DAE.NORM_INLINE()}));
+  aliasVars := BackendDAEUtil.emptyAliasVariables();
+  outBackendDAE := BackendDAE.DAE(vars_1,knvars,extVars,aliasVars,eqnarr,reqnarr,ieqnarr,arr_md_eqns,algarr,einfo,extObjCls);
 end lower;
 
 protected function lower2
@@ -2534,33 +2480,40 @@ algorithm
   end matchcontinue;
 end traversingisAlgebraicFinder;
 
-protected function expandDerOperator
+public function expandDerOperator
 "function expandDerOperator
   expands der(expr) using Derive.differentiteExpTime.
   This can not be done in Static, since we need all time-
   dependent variables, which is only available in BackendDAE."
-  input BackendDAE.Variables vars;
-  input list<BackendDAE.Equation> eqns;
-  input list<BackendDAE.Equation> ieqns;
-  input list<BackendDAE.MultiDimEquation> aeqns;
-  input list<DAE.Algorithm> algs;
-  input DAE.FunctionTree functions;
-
-  output list<BackendDAE.Equation> outEqns;
-  output list<BackendDAE.Equation> outIeqns;
-  output list<BackendDAE.MultiDimEquation> outAeqns;
-  output list<DAE.Algorithm> outAlgs;
-  output BackendDAE.Variables outVars;
+  input BackendDAE.BackendDAE inDAE;
+  input DAE.FunctionTree inFunctionTree;
+  input Option<BackendDAE.IncidenceMatrix> inM;
+  input Option<BackendDAE.IncidenceMatrix> inMT;
+  output BackendDAE.BackendDAE outDAE;
+  output Option<BackendDAE.IncidenceMatrix> outM;
+  output Option<BackendDAE.IncidenceMatrix> outMT;
 algorithm
-  (outEqns, outIeqns,outAeqns,outAlgs,outVars) := match(vars,eqns,ieqns,aeqns,algs,functions)
-    case(vars,eqns,ieqns,aeqns,algs,functions)
+  (outDAE,outM,outMT):=
+  match (inDAE,inFunctionTree,inM,inMT)
+    local
+      DAE.FunctionTree funcs;
+      Option<BackendDAE.IncidenceMatrix> m,mT;
+      BackendDAE.Variables vars,knvars,exobj,vars1,vars2,vars3,vars4;
+      BackendDAE.AliasVariables av;
+      BackendDAE.EquationArray eqns,remeqns,inieqns,eqns1,inieqns1;
+      array<BackendDAE.MultiDimEquation> arreqns,arreqns1;
+      array<DAE.Algorithm> algorithms,algorithms1;
+      BackendDAE.EventInfo einfo;
+      BackendDAE.ExternalObjectClasses eoc;
+    case (BackendDAE.DAE(vars,knvars,exobj,av,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc),funcs,m,mT)
       equation
-        (eqns,(vars,_)) = BackendEquation.traverseBackendDAEExpsEqnList(eqns,traverserexpandDerExp,(vars,functions));
-        (ieqns,(vars,_)) = BackendEquation.traverseBackendDAEExpsEqnList(ieqns,traverserexpandDerExp,(vars,functions));
-        (aeqns,(vars,_)) = expandDerOperatorArrEqns(aeqns,(vars,functions));
-        (algs,(vars,_)) = expandDerOperatorAlgs(algs,(vars,functions));
-      then(eqns,ieqns,aeqns,algs,vars);
-  end match;
+        (eqns1,(vars1,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(eqns,traverserexpandDerEquation,(vars,funcs));
+        (inieqns1,(vars2,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(inieqns,traverserexpandDerEquation,(vars1,funcs));
+        (arreqns1,(vars3,_)) = BackendDAEUtil.traverseBackendDAEArrayNoCopyWithUpdate(arreqns,traverserexpandDerExp,BackendEquation.traverseBackendDAEExpsArrayEqnWithUpdate,1,arrayLength(arreqns),(vars2,funcs));
+        (algorithms1,(vars4,_)) = BackendDAEUtil.traverseBackendDAEArrayNoCopyWithUpdate(algorithms,traverserexpandDerExp,BackendEquation.traverseBackendDAEExpsAlgortihmWithUpdate,1,arrayLength(algorithms),(vars3,funcs));        
+      then
+        (BackendDAE.DAE(vars4,knvars,exobj,av,eqns1,remeqns,inieqns1,arreqns1,algorithms1,einfo,eoc),m,mT);
+  end match;        
 end expandDerOperator;
 
 protected function expandDerOperatorAlgs
@@ -2648,20 +2601,29 @@ algorithm
   end match;
 end expandDerOperatorArrEqn;
 
+protected function traverserexpandDerEquation
+  "Help function to e.g. traverserexpandDerEquation"
+  input tuple<BackendDAE.Equation,tuple<BackendDAE.Variables,DAE.FunctionTree>> tpl;
+  output tuple<BackendDAE.Equation,tuple<BackendDAE.Variables,DAE.FunctionTree>> outTpl;
+protected
+   BackendDAE.Equation e,e1;
+   tuple<BackendDAE.Variables,DAE.FunctionTree> ext_arg, ext_art1;
+algorithm
+  (e,ext_arg) := tpl;
+  (e1,ext_art1) := BackendEquation.traverseBackendDAEExpsEqn(e,traverserexpandDerExp,ext_arg);
+  outTpl := ((e1,ext_art1));
+end traverserexpandDerEquation;
+
 protected function traverserexpandDerExp
   "Help function to e.g. traverserexpandDerExp"
   input tuple<DAE.Exp,tuple<BackendDAE.Variables,DAE.FunctionTree>> tpl;
   output tuple<DAE.Exp,tuple<BackendDAE.Variables,DAE.FunctionTree>> outTpl;
+protected
+  DAE.Exp e,e1;
+  tuple<BackendDAE.Variables,DAE.FunctionTree> ext_arg, ext_art1;
 algorithm
-  outTpl := match (tpl)
-    local 
-      DAE.Exp e,e1;
-      tuple<BackendDAE.Variables,DAE.FunctionTree> ext_arg, ext_art1;
-    case((e,ext_arg))
-      equation
-        ((e1,ext_art1)) = Expression.traverseExp(e,expandDerExp,ext_arg);
-      then ((e1,ext_art1));
-  end match;
+  (e,ext_arg) := tpl;
+  outTpl := Expression.traverseExp(e,expandDerExp,ext_arg);
 end traverserexpandDerExp;
 
 protected function expandDerExp

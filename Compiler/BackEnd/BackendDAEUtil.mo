@@ -53,6 +53,9 @@ public import Env;
 
 protected import Absyn;
 protected import BackendDump;
+protected import BackendDAECreate;
+protected import BackendDAEOptimize;
+protected import BackendDAETransform;
 protected import BackendEquation;
 protected import BackendVariable;
 protected import BaseHashTable;
@@ -72,7 +75,6 @@ protected import RTOpts;
 protected import SCode;
 protected import Util;
 protected import Values;
-protected import ValuesUtil;
 protected import VarTransform;
 
 /*************************************************
@@ -4018,6 +4020,35 @@ algorithm
   end matchcontinue;
 end updateTransposedMatrix;
 
+public function getIncidenceMatrixfromOption "function getIncidenceMatrixfromOption"
+  input BackendDAE.BackendDAE inDAE;
+  input Option<BackendDAE.IncidenceMatrix> inM;
+  input Option<BackendDAE.IncidenceMatrix> inMT;  
+  output BackendDAE.IncidenceMatrix outM;
+  output BackendDAE.IncidenceMatrix outMT;
+algorithm
+  (outM,outMT):=
+  matchcontinue (inDAE,inM,inMT)
+    local  
+      BackendDAE.BackendDAE dae;
+      BackendDAE.IncidenceMatrix m,mT;
+    case(dae,NONE(),_)
+      equation  
+        m = incidenceMatrix(dae, BackendDAE.NORMAL());
+        mT = transposeMatrix(m);
+      then
+        (m,mT);
+    case(_,SOME(m),NONE())
+      equation  
+        mT = transposeMatrix(m);
+      then
+        (m,mT);
+    case(_,SOME(m),SOME(mT))
+      then
+        (m,mT);        
+  end matchcontinue;
+end getIncidenceMatrixfromOption;  
+    
 /*************************************
  jacobian stuff
  ************************************/
@@ -5168,5 +5199,453 @@ algorithm
         ext_arg_1;
   end match;
 end traverseAlgorithmExps;
+
+/*************************************************
+ * Equation System Pipeline 
+ ************************************************/
+
+partial function preoptimiseDAEModule
+"function preoptimiseDAEModule 
+  This is the interface for pre optimisation modules."
+  input BackendDAE.BackendDAE inDAE;
+  input DAE.FunctionTree inFunctionTree;
+  input Option<BackendDAE.IncidenceMatrix> inM;
+  input Option<BackendDAE.IncidenceMatrix> inMT;
+  output BackendDAE.BackendDAE outDAE;
+  output Option<BackendDAE.IncidenceMatrix> outM;
+  output Option<BackendDAE.IncidenceMatrix> outMT;
+end preoptimiseDAEModule;  
+
+partial function pastoptimiseDAEModule
+"function pastoptimiseDAEModule 
+  This is the interface for past optimisation modules."
+  input BackendDAE.BackendDAE inDAE;
+  input DAE.FunctionTree inFunctionTree;
+  input BackendDAE.IncidenceMatrix inM;
+  input BackendDAE.IncidenceMatrix inMT;
+  input array<Integer> inAss1;  
+  input array<Integer> inAss2;  
+  input list<list<Integer>> inComps;  
+  output BackendDAE.BackendDAE outDAE;
+  output BackendDAE.IncidenceMatrix outM;
+  output BackendDAE.IncidenceMatrix outMT;
+  output array<Integer> outAss1;  
+  output array<Integer> outAss2;  
+  output list<list<Integer>> outComps;  
+  output Boolean outRunMatching;
+end pastoptimiseDAEModule;
+
+partial function daeHandlerFunc
+"function daeHandlerFunc 
+  This is the interface for the index reduction handler.
+  Note: Not yet finished"
+  input BackendDAE.BackendDAE inDAE;
+  input DAE.FunctionTree outFunctionTree;
+  output BackendDAE.BackendDAE outDAE;
+end daeHandlerFunc; 
+
+public function getSolvedSystem
+" function: getSolvedSystem
+  Run the equation system pipeline."
+  input Env.Cache inCache;
+  input Env.Env inEnv;   
+  input BackendDAE.BackendDAE inDAE;
+  input DAE.FunctionTree functionTree;
+  input list<String> strPreOptModules;
+  input daeHandlerFunc daeHandler;
+  input list<String> strPastOptModules;
+  output BackendDAE.BackendDAE outSODE;
+  output BackendDAE.IncidenceMatrix outM;
+  output BackendDAE.IncidenceMatrix outMT;
+  output array<Integer> outAss1;  
+  output array<Integer> outAss2;  
+  output list<list<Integer>> outComps;
+  partial function preoptimiseDAEModule
+    input BackendDAE.BackendDAE inDAE;
+    input DAE.FunctionTree inFunctionTree;
+    input Option<BackendDAE.IncidenceMatrix> inM;
+    input Option<BackendDAE.IncidenceMatrix> inMT;
+    output BackendDAE.BackendDAE outDAE;
+    output Option<BackendDAE.IncidenceMatrix> outM;
+    output Option<BackendDAE.IncidenceMatrix> outMT;
+  end preoptimiseDAEModule;   
+  partial function daeHandlerFunc
+    input BackendDAE.BackendDAE inDAE;
+    input DAE.FunctionTree inFunctionTree;
+    output BackendDAE.BackendDAE outDAE;
+  end daeHandlerFunc;
+  partial function pastoptimiseDAEModule
+    input BackendDAE.BackendDAE inDAE;
+    input DAE.FunctionTree inFunctionTree;
+    input BackendDAE.IncidenceMatrix inM;
+    input BackendDAE.IncidenceMatrix inMT;
+    input array<Integer> inAss1;  
+    input array<Integer> inAss2;  
+    input list<list<Integer>> inComps;  
+    output BackendDAE.BackendDAE outDAE;
+    output BackendDAE.IncidenceMatrix outM;
+    output BackendDAE.IncidenceMatrix outMT;
+    output array<Integer> outAss1;  
+    output array<Integer> outAss2;  
+    output list<list<Integer>> outComps;  
+    output Boolean outRunMatching;
+  end pastoptimiseDAEModule;
+protected
+  BackendDAE.BackendDAE dae,optdae,sode,optsode,indexed_dlow;
+  Option<BackendDAE.IncidenceMatrix> om,omT;
+  BackendDAE.IncidenceMatrix m,mT,m_1,mT_1;
+  array<Integer> v1,v2,v1_1,v2_1;  
+  list<list<Integer>> comps,comps_1;
+  list<tuple<preoptimiseDAEModule,String>> preOptModules;
+  list<tuple<pastoptimiseDAEModule,String>> pastOptModules;
+algorithm
+  
+  preOptModules := getPreOptModules(strPreOptModules);
+  pastOptModules := getPastOptModules(strPastOptModules);
+  
+  Debug.fcall("dumpdaelow", BackendDump.dump, inDAE);        
+  // pre optimisation phase
+  Debug.fcall("execstat",print, "*** BackendMain -> preoptimiseDAE at time: " +& realString(clock()) +& "\n" );
+  (optdae,om,omT) := preoptimiseDAE(inDAE,functionTree,preOptModules,NONE(),NONE()); 
+
+  // transformation phase (matching and sorting using a index reduction method
+  Debug.fcall("execstat",print, "*** BackendMain -> transformDAE at time: " +& realString(clock()) +& "\n" );
+  (sode,m,mT,v1,v2,comps) := transformDAE(optdae,functionTree,daeHandler,om,omT);
+  Debug.fcall("bltdump", BackendDump.dump, sode);
+  Debug.fcall("bltdump", BackendDump.dumpIncidenceMatrix, m);
+  Debug.fcall("bltdump", BackendDump.dumpIncidenceMatrixT, mT);
+  Debug.fcall("bltdump", BackendDump.dumpMatching, v1);  
+  Debug.fcall("bltdump", BackendDump.dumpComponents, comps);
+
+  // past optimisation phase
+  Debug.fcall("execstat",print, "*** BackendMain -> pastoptimiseDAE at time: " +& realString(clock()) +& "\n" );
+  (sode,outM,outMT,outAss1,outAss2,outComps) := pastoptimiseDAE(sode,functionTree,pastOptModules,m,mT,v1,v2,comps,daeHandler);
+  
+  Debug.fcall("execstat",print, "*** BackendMain -> translateDae: " +& realString(clock()) +& "\n" );
+  indexed_dlow := translateDae(sode,NONE());
+  outSODE := calculateValues(inCache, inEnv, indexed_dlow);
+  Debug.fcall("dumpindxdae", BackendDump.dump, outSODE); 
+end getSolvedSystem;
+
+public function preOptimiseBackendDAE
+"function preOptimiseBackendDAE 
+  Run the optimisation modules"
+  input BackendDAE.BackendDAE inDAE;
+  input DAE.FunctionTree functionTree;
+  input list<String> strPreOptModules;
+  input Option<BackendDAE.IncidenceMatrix> inM;
+  input Option<BackendDAE.IncidenceMatrix> inMT;
+  output BackendDAE.BackendDAE outDAE;
+  output Option<BackendDAE.IncidenceMatrix> outM;
+  output Option<BackendDAE.IncidenceMatrix> outMT;
+protected
+  list<tuple<preoptimiseDAEModule,String>> preOptModules;
+algorithm
+  preOptModules := getPreOptModules(strPreOptModules);
+  (outDAE,outM,outMT) := preoptimiseDAE(inDAE,functionTree,preOptModules,inM,inMT); 
+end preOptimiseBackendDAE; 
+
+protected function preoptimiseDAE
+"function preoptimiseDAE 
+  Run the optimisation modules"
+  input BackendDAE.BackendDAE inDAE;
+  input DAE.FunctionTree functionTree;
+  input list<tuple<preoptimiseDAEModule,String>> optModules;
+  input Option<BackendDAE.IncidenceMatrix> inM;
+  input Option<BackendDAE.IncidenceMatrix> inMT;
+  output BackendDAE.BackendDAE outDAE;
+  output Option<BackendDAE.IncidenceMatrix> outM;
+  output Option<BackendDAE.IncidenceMatrix> outMT;
+algorithm
+  (outDAE,outM,outMT):=
+  matchcontinue (inDAE,functionTree,optModules,inM,inMT)
+    local 
+      BackendDAE.BackendDAE dae,dae1,dae2;
+      DAE.FunctionTree funcs;  
+      preoptimiseDAEModule optModule;
+      list<tuple<preoptimiseDAEModule,String>> rest;
+      String str,moduleStr;
+      Option<BackendDAE.IncidenceMatrix> m,mT,m1,mT1,m2,mT2;
+    case (dae,funcs,{},m,mT) then (dae,m,mT);
+    case (dae,funcs,(optModule,moduleStr)::rest,m,mT)
+      equation
+        (dae1,m1,mT1) = optModule(dae,funcs,m,mT);
+        Debug.fcall("optdaedump", print, stringAppendList({"\nOptimisation Module ",moduleStr,":\n\n"}));
+        Debug.fcall("optdaedump", BackendDump.dump, dae1);
+        (dae2,m2,mT2) = preoptimiseDAE(dae1,funcs,rest,m1,mT1);
+      then
+        (dae2,m2,mT2);
+    case (dae,funcs,(optModule,moduleStr)::rest,m,mT)
+      equation
+        str = stringAppendList({"Optimisation Module ",moduleStr," failed."});
+        Error.addMessage(Error.INTERNAL_ERROR, {str});
+        (dae1,m1,mT1) = preoptimiseDAE(dae,funcs,rest,m,mT); 
+      then
+        (dae1,m1,mT1);
+  end matchcontinue;
+end preoptimiseDAE; 
+
+public function transformDAE
+"function transformDAE 
+  Run the matching Algorithm and the sorting algorithm.
+  In case of an DAE an DAE-Handler is used to reduce
+  the index of the dae."
+  input BackendDAE.BackendDAE inDAE;
+  input DAE.FunctionTree functionTree;
+  input daeHandlerFunc daeHandler;
+  input Option<BackendDAE.IncidenceMatrix> inM;
+  input Option<BackendDAE.IncidenceMatrix> inMT;  
+  output BackendDAE.BackendDAE outDAE;
+  output BackendDAE.IncidenceMatrix outM;
+  output BackendDAE.IncidenceMatrix outMT;
+  output array<Integer> outAss1;  
+  output array<Integer> outAss2;  
+  output list<list<Integer>> outComps;   
+algorithm
+  (outDAE,outM,outMT,outAss1,outAss2,outComps):=
+  matchcontinue (inDAE,functionTree,daeHandler,inM,inMT)
+    local 
+      BackendDAE.BackendDAE dae,ode;
+      DAE.FunctionTree funcs;  
+      String str;
+      Option<BackendDAE.IncidenceMatrix> om,omT;
+      BackendDAE.IncidenceMatrix m,mT,m1,mT1;
+      array<Integer> v1,v2,v1_1,v2_1;
+      list<list<Integer>> comps,comps1;      
+    case (dae,funcs,daeHandler,om,omT)
+      equation
+        (m,mT) = getIncidenceMatrixfromOption(dae,om,omT);
+        // matching algorithm
+        (v1,v2,ode,m1,mT1) = BackendDAETransform.matchingAlgorithm(dae, m, mT, (BackendDAE.INDEX_REDUCTION(), BackendDAE.EXACT(), BackendDAE.REMOVE_SIMPLE_EQN()),funcs);
+        // sorting algorithm
+        (comps) = BackendDAETransform.strongComponents(m1, mT1, v1, v2);
+      then
+        (ode,m1,mT1,v1,v2,comps);
+    case (_,_,_,_,_)
+      equation
+//        str = "Transformation Module failed!";
+//        Error.addMessage(Error.INTERNAL_ERROR, {str});
+      then
+        fail();        
+  end matchcontinue;        
+end transformDAE; 
+
+protected function pastoptimiseDAE
+"function optimiseDAE 
+  Run the optimisation modules"
+  input BackendDAE.BackendDAE inDAE;
+  input DAE.FunctionTree functionTree;  
+  input list<tuple<pastoptimiseDAEModule,String>> optModules;
+  input BackendDAE.IncidenceMatrix inM;
+  input BackendDAE.IncidenceMatrix inMT;
+  input array<Integer> inAss1;  
+  input array<Integer> inAss2;  
+  input list<list<Integer>> inComps;  
+  input daeHandlerFunc daeHandler;
+  output BackendDAE.BackendDAE outDAE;
+  output BackendDAE.IncidenceMatrix outM;
+  output BackendDAE.IncidenceMatrix outMT;
+  output array<Integer> outAss1;  
+  output array<Integer> outAss2;  
+  output list<list<Integer>> outComps; 
+algorithm
+  (outDAE,outM,outMT,outAss1,outAss2,outComps):=
+  matchcontinue (inDAE,functionTree,optModules,inM,inMT,inAss1,inAss2,inComps,daeHandler)
+    local 
+      BackendDAE.BackendDAE dae,dae1,dae2; 
+      DAE.FunctionTree funcs; 
+      pastoptimiseDAEModule optModule;
+      list<tuple<pastoptimiseDAEModule,String>> rest;
+      String str,moduleStr;
+      BackendDAE.IncidenceMatrix m,mT,m1,mT1,m2,mT2;
+      array<Integer> v1,v2,v1_1,v2_1,v1_2,v2_2;
+      list<list<Integer>> comps,comps1,comps2;
+      Boolean runMatching;
+    case (dae,funcs,{},m,mT,v1,v2,comps,_) then (dae,m,mT,v1,v2,comps);
+    case (dae,funcs,(optModule,moduleStr)::rest,m,mT,v1,v2,comps,daeHandler)
+      equation
+        (dae1,m1,mT1,v1_1,v2_1,comps1,runMatching) = optModule(dae,funcs,m,mT,v1,v2,comps);
+        (dae1,m1,mT1,v1_1,v2_1,comps1) = checktransformDAE(runMatching,dae1,funcs,m1,mT1,v1_1,v2_1,comps1,daeHandler);
+        Debug.fcall("optdaedump", print, stringAppendList({"\nOptimisation Module ",moduleStr,":\n\n"}));
+        Debug.fcall("optdaedump", BackendDump.dump, dae1);        
+        (dae2,m2,mT2,v1_2,v2_2,comps2) = pastoptimiseDAE(dae1,funcs,rest,m1,mT1,v1_1,v2_1,comps1,daeHandler);
+      then
+        (dae2,m2,mT2,v1_2,v2_2,comps2);
+    case (dae,funcs,(optModule,moduleStr)::rest,m,mT,v1,v2,comps,daeHandler)
+      equation
+        str = stringAppendList({"Optimisation Module ",moduleStr," failed."});
+        Error.addMessage(Error.INTERNAL_ERROR, {str});
+        (dae1,m1,mT1,v1_1,v2_1,comps1) = pastoptimiseDAE(dae,funcs,rest,m,mT,v1,v2,comps,daeHandler);
+      then   
+        (dae1,m1,mT1,v1_1,v2_1,comps1);
+  end matchcontinue;             
+end pastoptimiseDAE; 
+
+protected function checktransformDAE
+"function checktransformDAE 
+  check if the matching and sorting algorithm should be performed"
+  input Boolean inRunMatching;
+  input BackendDAE.BackendDAE inDAE;
+  input DAE.FunctionTree functionTree;  
+  input BackendDAE.IncidenceMatrix inM;
+  input BackendDAE.IncidenceMatrix inMT;
+  input array<Integer> inAss1;  
+  input array<Integer> inAss2;  
+  input list<list<Integer>> inComps;  
+  input daeHandlerFunc daeHandler;
+  output BackendDAE.BackendDAE outDAE;
+  output BackendDAE.IncidenceMatrix outM;
+  output BackendDAE.IncidenceMatrix outMT;
+  output array<Integer> outAss1;  
+  output array<Integer> outAss2;  
+  output list<list<Integer>> outComps; 
+algorithm
+  (outDAE,outM,outMT,outAss1,outAss2,outComps):=
+  match (inRunMatching,inDAE,functionTree,inM,inMT,inAss1,inAss2,inComps,daeHandler)
+    local 
+      BackendDAE.BackendDAE dae,sode; 
+      DAE.FunctionTree funcs; 
+      BackendDAE.IncidenceMatrix m,mT;
+      array<Integer> v1,v2;
+      list<list<Integer>> comps;
+      Boolean runMatching;
+    case (true,dae,funcs,m,mT,_,_,_,daeHandler)
+      equation
+        (sode,m,mT,v1,v2,comps) = transformDAE(dae,funcs,daeHandler,SOME(m),SOME(mT));
+        Debug.fcall("bltdump", BackendDump.dump, sode);
+        Debug.fcall("bltdump", BackendDump.dumpIncidenceMatrix, m);
+        Debug.fcall("bltdump", BackendDump.dumpIncidenceMatrixT, mT);
+        Debug.fcall("bltdump", BackendDump.dumpMatching, v1);  
+        Debug.fcall("bltdump", BackendDump.dumpComponents, comps);        
+      then
+        (sode,m,mT,v1,v2,comps);
+    case (false,dae,funcs,m,mT,v1,v2,comps,_)
+      then   
+        (dae,m,mT,v1,v2,comps);
+  end match;             
+end checktransformDAE; 
+
+/*************************************************
+ * Optimisation Selection 
+ ************************************************/
+
+protected function getPreOptModules
+" function: getPreOptModules"
+  input list<String> strPreOptModules;
+  output list<tuple<preoptimiseDAEModule,String>> preOptModules;
+  partial function preoptimiseDAEModule
+    input BackendDAE.BackendDAE inDAE;
+    input DAE.FunctionTree inFunctionTree;
+    input Option<BackendDAE.IncidenceMatrix> inM;
+    input Option<BackendDAE.IncidenceMatrix> inMT;
+    output BackendDAE.BackendDAE outDAE;
+    output Option<BackendDAE.IncidenceMatrix> outM;
+    output Option<BackendDAE.IncidenceMatrix> outMT;
+  end preoptimiseDAEModule;   
+protected 
+  list<tuple<preoptimiseDAEModule,String>> allPreOptModules; 
+algorithm
+  allPreOptModules := {(BackendDAEOptimize.removeSimpleEquations,"removeSimpleEquations"),
+          (BackendDAEOptimize.removeParameterEqns,"removeParameterEqns"),
+          (BackendDAECreate.expandDerOperator,"expandDerOperator")};
+ preOptModules := selectOptModules(strPreOptModules,allPreOptModules,{});  
+ preOptModules := listReverse(preOptModules);     
+end getPreOptModules;
+
+protected function getPastOptModules
+" function: getPastOptModules"
+  input list<String> strPastOptModules;
+  output list<tuple<pastoptimiseDAEModule,String>> pastOptModules;
+  partial function pastoptimiseDAEModule
+    input BackendDAE.BackendDAE inDAE;
+    input DAE.FunctionTree inFunctionTree;
+    input BackendDAE.IncidenceMatrix inM;
+    input BackendDAE.IncidenceMatrix inMT;
+    input array<Integer> inAss1;  
+    input array<Integer> inAss2;  
+    input list<list<Integer>> inComps;  
+    output BackendDAE.BackendDAE outDAE;
+    output BackendDAE.IncidenceMatrix outM;
+    output BackendDAE.IncidenceMatrix outMT;
+    output array<Integer> outAss1;  
+    output array<Integer> outAss2;  
+    output list<list<Integer>> outComps;  
+    output Boolean outRunMatching;
+  end pastoptimiseDAEModule;  
+protected 
+  list<tuple<pastoptimiseDAEModule,String>> allPastOptModules; 
+algorithm
+  allPastOptModules := {(BackendDAEOptimize.lateInlineDAE,"lateInline"),
+  (BackendDump.dumpComponentsGraphStr,"dumpComponentsGraphStr")};
+  pastOptModules := selectOptModules(strPastOptModules,allPastOptModules,{}); 
+  pastOptModules := listReverse(pastOptModules);     
+end getPastOptModules;
+
+protected function selectOptModules
+" function: selectPreOptModules"
+  input list<String> strOptModules;
+  input list<tuple<Type_a,String>> inOptModules;
+  input list<tuple<Type_a,String>> accumulator;
+  output list<tuple<Type_a,String>> outOptModules;
+  replaceable type Type_a subtypeof Any;  
+algorithm
+  outOptModules:=
+  matchcontinue (strOptModules,inOptModules,accumulator)
+    local 
+      list<String> restStr;
+      String strOptModul,optModulName,str;
+      tuple<Type_a,String> optModule;
+      list<tuple<Type_a,String>> optModules,optModules1; 
+    case ({},_,_) then {};
+    case (_,{},_) then {};
+    case (strOptModul::{},optModules,accumulator)
+      equation
+        optModule = selectOptModules1(strOptModul,optModules);
+      then   
+        (optModule::accumulator);
+    case (strOptModul::{},optModules,accumulator)
+      then   
+        accumulator;
+    case (strOptModul::restStr,optModules,accumulator)
+      equation
+        optModule = selectOptModules1(strOptModul,optModules);
+      then   
+        selectOptModules(restStr,optModules,optModule::accumulator);
+    case (strOptModul::restStr,optModules,accumulator)
+      equation
+        str = stringAppendList({"Selection of Optimisation Module ",strOptModul," failed."});
+        Error.addMessage(Error.INTERNAL_ERROR, {str});
+      then   
+        selectOptModules(restStr,optModules,accumulator);
+  end matchcontinue; 
+end selectOptModules;
+
+public function selectOptModules1 "
+Author Frenkel TUD 2011-02"
+  input String strOptModule;
+  input list<tuple<Type_a,String>> inOptModules;
+  output tuple<Type_a,String> outOptModule;
+  replaceable type Type_a subtypeof Any;
+algorithm
+  outOptModule := matchcontinue(strOptModule,inOptModules)
+    local
+      Type_a a;
+      String name;
+      tuple<Type_a,String> module;
+      list<tuple<Type_a,String>> rest;
+    case(strOptModule,(module as (a,name))::rest)
+      equation
+        true = stringEqual(name,strOptModule);
+      then
+        module;
+    case(strOptModule,(module as (a,name))::rest)
+      equation
+        false = stringEqual(name,strOptModule);
+      then
+        selectOptModules1(strOptModule,rest);
+    case(_,{})
+      then fail();
+  end matchcontinue;
+end selectOptModules1;
 
 end BackendDAEUtil;

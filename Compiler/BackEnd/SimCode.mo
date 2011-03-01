@@ -839,43 +839,51 @@ end createSimulationSettings;
 public function generateModelCodeFMU
   "Generates code for a model by creating a SimCode structure and calling the
    template-based code generator on it."
-  input SCode.Program program;
-  input DAE.DAElist dae;
-  input BackendDAE.BackendDAE indexedBackendDAE;
+  input BackendDAE.BackendDAE inBackendDAE;
   input DAE.FunctionTree functionTree;
+  input Absyn.Program p;
+  input DAE.DAElist dae;
   input Absyn.Path className;
   input String filenamePrefix;
-  input String fileDir;
-  input array<Integer> equationIndices;
-  input array<Integer> variableIndices;
+  input Option<SimulationSettings> simSettingsOpt;
   input BackendDAE.IncidenceMatrix incidenceMatrix;
   input BackendDAE.IncidenceMatrix incidenceMatrixT;
+  input array<Integer> equationIndices;
+  input array<Integer> variableIndices;
   input list<list<Integer>> strongComponents;
-  input Option<SimulationSettings> simSettingsOpt;
   output BackendDAE.BackendDAE outIndexedBackendDAE;
   output list<String> libs;
+  output String fileDir;
+  output Real timeBackend;
   output Real timeSimCode;
   output Real timeTemplates;
-  
+protected 
   list<String> includes;
   list<Function> functions;
-  DAE.DAElist dae2;
-  String filename, funcfilename;
+  // DAE.DAElist dae2;
+  String filename, funcfilename,fileDir;
   SimCode simCode;
   list<RecordDeclaration> recordDecls;
+  BackendDAE.BackendDAE indexed_dlow,indexed_dlow_1;
+  Real timeBackend,timeSimCode,timeTemplates;
+  Absyn.ComponentRef a_cref;
 algorithm
+   timeBackend := System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);
+   a_cref := Absyn.pathToCref(className);
+   fileDir := CevalScript.getFileDir(a_cref, p);
   System.realtimeTick(CevalScript.RT_CLOCK_BUILD_MODEL);
-  (libs, includes, recordDecls, functions, outIndexedBackendDAE, dae2) :=
-  createFunctions(dae, indexedBackendDAE, functionTree, className);
-  simCode := createSimCode(functionTree, outIndexedBackendDAE, equationIndices, 
-    variableIndices, incidenceMatrix, incidenceMatrixT, strongComponents, 
-    className, filenamePrefix, fileDir, functions, includes, libs, simSettingsOpt, recordDecls); 
+  Debug.fcall("execstat",print, "*** SimCode -> generateFunctions: " +& realString(clock()) +& "\n" );
+  (libs, includes, recordDecls, functions, outIndexedBackendDAE, _) :=
+  createFunctions(dae, inBackendDAE, functionTree, className);
+  simCode := createSimCode(functionTree, outIndexedBackendDAE, equationIndices,
+    variableIndices, incidenceMatrix, incidenceMatrixT, strongComponents,
+    className, filenamePrefix, fileDir, functions, includes, libs, simSettingsOpt, recordDecls);
   timeSimCode := System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);
   
-  System.realtimeTick(CevalScript.RT_CLOCK_BUILD_MODEL);   
-  Tpl.tplNoret(SimCodeC.translateModel, simCode);  
+  System.realtimeTick(CevalScript.RT_CLOCK_BUILD_MODEL);
+  Tpl.tplNoret(SimCodeC.translateModel, simCode);
   Tpl.tplNoret(SimCodeFMU.translateModel, simCode);
-  timeTemplates := System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);   
+  timeTemplates := System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);
 end generateModelCodeFMU;
 
 public function translateModelFMU
@@ -916,6 +924,7 @@ algorithm
       Env.Cache cache;
       DAE.FunctionTree funcs;
       Real timeSimCode, timeTemplates, timeBackend, timeFrontend;
+      list<String> preOptModules,pastOptModules;
     case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p)),filenameprefix,addDummy, inSimSettingsOpt)
       equation
         /* calculate stuff that we need to create SimCode data structure */
@@ -928,31 +937,15 @@ algorithm
         System.realtimeTick(CevalScript.RT_CLOCK_BUILD_MODEL);
         funcs = Env.getFunctionTree(cache);
         dae = DAEUtil.transformationsBeforeBackend(dae);
-        dlow = BackendDAECreate.lower(dae, funcs, addDummy, true);
-        m = BackendDAEUtil.incidenceMatrix(dlow, BackendDAE.NORMAL());
-        mT = BackendDAEUtil.transposeMatrix(m);
-        (dlow,m,mT) = BackendDAEOptimize.removeParameterEqns(dlow,m,mT);
-        Debug.fprint("bltdump", "Lowered DAE:\n");
-        Debug.fcall("bltdump", BackendDump.dump, dlow);
-        (ass1,ass2,dlow_1,m,mT) = BackendDAETransform.matchingAlgorithm(dlow, m, mT, (BackendDAE.INDEX_REDUCTION(),BackendDAE.EXACT(),BackendDAE.REMOVE_SIMPLE_EQN()),funcs);
-        // late Inline
-        dlow_1 = Inline.inlineCalls(SOME(funcs),{DAE.NORM_INLINE(),DAE.AFTER_INDEX_RED_INLINE()},dlow_1);
-        (comps) = BackendDAETransform.strongComponents(m, mT, ass1, ass2);
-        indexed_dlow = BackendDAEUtil.translateDae(dlow_1,NONE());
-        indexed_dlow_1 = BackendDAEUtil.calculateValues(cache,env,indexed_dlow);
-        Debug.fprint("bltdump", "indexed DAE:\n");
-        Debug.fcall("bltdump", BackendDump.dumpIncidenceMatrix, m);
-        Debug.fcall("bltdump", BackendDump.dumpIncidenceMatrixT, mT);
-        Debug.fcall("bltdump", BackendDump.dump, indexed_dlow_1);
-        Debug.fcall("bltdump", BackendDump.dumpMatching, ass1);
-        Debug.fcall("bltdump", BackendDump.dumpComponents, comps);
+        funcs = Env.getFunctionTree(cache);
+        dlow = BackendDAECreate.lower(dae,funcs,true);
+        preOptModules = {"removeSimpleEquations","removeParameterEqns","expandDerOperator"};
+        pastOptModules = {"lateInline"};
+        (dlow_1,m,mT,ass1,ass2,comps) = BackendDAEUtil.getSolvedSystem(cache, env, dlow, funcs,
+          preOptModules, BackendDAETransform.dummyDerivative, pastOptModules);
         Debug.fprintln("dynload", "translateModel: Generating simulation code and functions.");
-        a_cref = Absyn.pathToCref(className);
-        file_dir = CevalScript.getFileDir(a_cref, p);
-        timeBackend = System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);
-        (indexed_dlow_1, libs, timeSimCode, timeTemplates) 
-        = generateModelCodeFMU(p_1, dae, indexed_dlow_1, funcs, className, filenameprefix,
-          file_dir, ass1, ass2, m, mT, comps,inSimSettingsOpt);
+        (indexed_dlow_1,libs,file_dir,timeBackend,timeSimCode,timeTemplates) = 
+          generateModelCodeFMU(dlow_1,funcs,p, dae,  className, filenameprefix, inSimSettingsOpt,m,mT,ass1,ass2,comps);        
         resultValues = 
         {("timeTemplates",Values.REAL(timeTemplates)),
           ("timeSimCode",  Values.REAL(timeSimCode)),
@@ -976,34 +969,43 @@ end translateModelFMU;
 public function generateModelCode
   "Generates code for a model by creating a SimCode structure and calling the
    template-based code generator on it."
-  input SCode.Program program;
-  input DAE.DAElist dae;
-  input BackendDAE.BackendDAE indexedBackendDAE;
+   
+  input BackendDAE.BackendDAE inBackendDAE;
   input DAE.FunctionTree functionTree;
+  input Absyn.Program p;
+  input DAE.DAElist dae;
   input Absyn.Path className;
   input String filenamePrefix;
-  input String fileDir;
-  input array<Integer> equationIndices;
-  input array<Integer> variableIndices;
+  input Option<SimulationSettings> simSettingsOpt;
   input BackendDAE.IncidenceMatrix incidenceMatrix;
   input BackendDAE.IncidenceMatrix incidenceMatrixT;
-  input list<list<Integer>> strongComponents;
-  input Option<SimulationSettings> simSettingsOpt;
+  input array<Integer> equationIndices;  
+  input array<Integer> variableIndices;  
+  input list<list<Integer>> strongComponents;   
   output BackendDAE.BackendDAE outIndexedBackendDAE;
   output list<String> libs;
+  output String fileDir;
+  output Real timeBackend;
   output Real timeSimCode;
-  output Real timeTemplates;
-  
+  output Real timeTemplates;    
+protected 
   list<String> includes;
   list<Function> functions;
   // DAE.DAElist dae2;
-  String filename, funcfilename;
+  String filename, funcfilename,fileDir;
   SimCode simCode;
   list<RecordDeclaration> recordDecls;
+  BackendDAE.BackendDAE indexed_dlow,indexed_dlow_1;
+  Real timeBackend,timeSimCode,timeTemplates;
+  Absyn.ComponentRef a_cref;
 algorithm
+   timeBackend := System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);   
+   a_cref := Absyn.pathToCref(className);
+   fileDir := CevalScript.getFileDir(a_cref, p);   
   System.realtimeTick(CevalScript.RT_CLOCK_BUILD_MODEL);
+  Debug.fcall("execstat",print, "*** SimCode -> generateFunctions: " +& realString(clock()) +& "\n" );
   (libs, includes, recordDecls, functions, outIndexedBackendDAE, _) :=
-  createFunctions(dae, indexedBackendDAE, functionTree, className);
+  createFunctions(dae, inBackendDAE, functionTree, className);
   simCode := createSimCode(functionTree, outIndexedBackendDAE, equationIndices, 
     variableIndices, incidenceMatrix, incidenceMatrixT, strongComponents, 
     className, filenamePrefix, fileDir, functions, includes, libs, simSettingsOpt, recordDecls); 
@@ -1011,7 +1013,7 @@ algorithm
   
   System.realtimeTick(CevalScript.RT_CLOCK_BUILD_MODEL);     
   callTargetTemplates(simCode);
-  timeTemplates := System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);   
+  timeTemplates := System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);  
 end generateModelCode;
 
 public function translateModel
@@ -1052,10 +1054,11 @@ algorithm
       Env.Cache cache;
       DAE.FunctionTree funcs;
       Real timeSimCode, timeTemplates, timeBackend, timeFrontend;
-      
+      list<String> preOptModules,pastOptModules;
+
     case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p)),filenameprefix,addDummy, inSimSettingsOpt)
       equation
-        /* calculate stuff that we need to create SimCode data structure */
+        // calculate stuff that we need to create SimCode data structure 
         System.realtimeTick(CevalScript.RT_CLOCK_BUILD_MODEL);
         //(cache,Values.STRING(filenameprefix),SOME(_)) = Ceval.ceval(cache,env, fileprefix, true, SOME(st),NONE(), msg);
         ptot = Dependency.getTotalProgram(className,p);
@@ -1065,31 +1068,13 @@ algorithm
         System.realtimeTick(CevalScript.RT_CLOCK_BUILD_MODEL);
         dae = DAEUtil.transformationsBeforeBackend(dae);
         funcs = Env.getFunctionTree(cache);
-        dlow = BackendDAECreate.lower(dae, funcs, addDummy, true);
-        m = BackendDAEUtil.incidenceMatrix(dlow, BackendDAE.NORMAL());
-        mT = BackendDAEUtil.transposeMatrix(m);
-        (dlow,m,mT) = BackendDAEOptimize.removeParameterEqns(dlow,m,mT);
-        Debug.fprint("bltdump", "Lowered DAE:\n");
-        Debug.fcall("bltdump", BackendDump.dump, dlow);
-        (ass1,ass2,dlow_1,m,mT) = BackendDAETransform.matchingAlgorithm(dlow, m, mT, (BackendDAE.INDEX_REDUCTION(),BackendDAE.EXACT(),BackendDAE.REMOVE_SIMPLE_EQN()),funcs);
-        // late Inline
-        dlow_1 = Inline.inlineCalls(SOME(funcs),{DAE.NORM_INLINE(),DAE.AFTER_INDEX_RED_INLINE()},dlow_1);
-        (comps) = BackendDAETransform.strongComponents(m, mT, ass1, ass2);
-        indexed_dlow = BackendDAEUtil.translateDae(dlow_1,NONE());
-        indexed_dlow_1 = BackendDAEUtil.calculateValues(cache, env, indexed_dlow);
-        Debug.fprint("bltdump", "indexed DAE:\n");
-        Debug.fcall("bltdump", BackendDump.dumpIncidenceMatrix, m);
-        Debug.fcall("bltdump", BackendDump.dumpIncidenceMatrixT, mT);
-        Debug.fcall("bltdump", BackendDump.dump, indexed_dlow_1);
-        Debug.fcall("bltdump", BackendDump.dumpMatching, ass1);
-        Debug.fcall("bltdump", BackendDump.dumpComponents, comps);
-        Debug.fprintln("dynload", "translateModel: Generating simulation code and functions.");
-        a_cref = Absyn.pathToCref(className);
-        file_dir = CevalScript.getFileDir(a_cref, p);
-        timeBackend = System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);
-        (indexed_dlow_1, libs, timeSimCode, timeTemplates) 
-        = generateModelCode(p_1, dae, indexed_dlow_1, funcs, className, filenameprefix,
-          file_dir, ass1, ass2, m, mT, comps,inSimSettingsOpt);
+        dlow = BackendDAECreate.lower(dae,funcs,true);
+        preOptModules = {"removeSimpleEquations","removeParameterEqns","expandDerOperator"};
+        pastOptModules = {"lateInline"};
+        (dlow_1,m,mT,ass1,ass2,comps) = BackendDAEUtil.getSolvedSystem(cache, env, dlow, funcs,
+          preOptModules, BackendDAETransform.dummyDerivative, pastOptModules);
+        (indexed_dlow_1,libs,file_dir,timeBackend,timeSimCode,timeTemplates) = 
+          generateModelCode(dlow_1,funcs,p, dae,  className, filenameprefix, inSimSettingsOpt,m,mT,ass1,ass2,comps);   
         resultValues = 
         {("timeTemplates",Values.REAL(timeTemplates)),
           ("timeSimCode",  Values.REAL(timeSimCode)),

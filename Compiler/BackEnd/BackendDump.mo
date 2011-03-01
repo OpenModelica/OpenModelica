@@ -1241,22 +1241,37 @@ end dumpMarkedVars;
 public function dumpComponentsGraphStr
 "Dumps the assignment graph used to determine strong
  components to format suitable for Mathematica"
-  input Integer n;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
-  output String res;
+  input BackendDAE.BackendDAE inDAE;
+  input DAE.FunctionTree inFunctionTree;
+  input BackendDAE.IncidenceMatrix inM;
+  input BackendDAE.IncidenceMatrix inMT;
+  input array<Integer> inAss1;  
+  input array<Integer> inAss2;  
+  input list<list<Integer>> inComps;  
+  output BackendDAE.BackendDAE outDAE;
+  output BackendDAE.IncidenceMatrix outM;
+  output BackendDAE.IncidenceMatrix outMT;
+  output array<Integer> outAss1;  
+  output array<Integer> outAss2;  
+  output list<list<Integer>> outComps;
+  output Boolean outRunMatching;
+protected
+  Integer n;
+  list<String> lst;  
+  String s; 
 algorithm
-  res := match(n,m,mT,ass1,ass2)
-    local list<String> lst;  
-    case(n,m,mT,ass1,ass2)
-      equation
-        lst = dumpComponentsGraphStr2(1,n,m,mT,ass1,ass2);
-        res = Util.stringDelimitList(lst,",");
-        res = stringAppendList({"{",res,"}"});
-      then res;
-  end match;
+  n :=  BackendDAEUtil.systemSize(inDAE);
+  lst := dumpComponentsGraphStr2(1,n,inM,inMT,inAss1,inAss2);
+  s := Util.stringDelimitList(lst,",");
+  s := stringAppendList({"{",s,"}"});
+  print(s);
+  outDAE := inDAE;
+  outM := inM;
+  outMT := inMT;
+  outAss1 := inAss1;
+  outAss2 := inAss2;
+  outComps := inComps;
+  outRunMatching := false;
 end dumpComponentsGraphStr;
 
 protected function dumpComponentsGraphStr2 "help function"
