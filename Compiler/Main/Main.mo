@@ -939,7 +939,7 @@ algorithm
         Debug.fcall("execstat",print, "*** Main -> simcodgen -> generateFunctions: " +& realString(clock()) +& "\n" );
         methodflag = RTOpts.debugFlag("SetOldDassl");
         methodbyflag = Util.if_(methodflag,"dasslold","dassl");
-        simSettings = SimCode.createSimulationSettings(0.0, 1.0, 500, 1e-6,methodbyflag,"","plt",".*");        
+        simSettings = SimCode.createSimulationSettings(0.0, 1.0, 500, 1e-6,methodbyflag,"","mat",".*");        
         (_,_,_,_) = SimCode.generateModelCode(p, dae, indexed_dlow_1, Env.getFunctionTree(cache), classname, cname_str, file_dir, ass1, ass2, m, mt, comps, SOME(simSettings));
       then
         ();
