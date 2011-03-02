@@ -90,7 +90,6 @@ protected import Algorithm;
 protected import BackendDAEUtil;
 protected import BackendDAETransform;
 protected import BackendVariable;
-protected import BackendDAEOptimize;
 protected import ComponentReference;
 protected import DAEUtil;
 protected import Dump;

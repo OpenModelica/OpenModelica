@@ -3186,7 +3186,7 @@ algorithm
         funcs = Env.getFunctionTree(cache);
         dlow = BackendDAECreate.lower(dae, funcs, true);
         preOptModules = {"removeSimpleEquations","removeParameterEqns","expandDerOperator"};
-        pastOptModules = {"lateInline"};
+        pastOptModules = {"lateInline","removeSimpleEquations"};
         (indexed_dlow,_,_,_,_,_) = BackendDAEUtil.getSolvedSystem(cache, env, dlow, funcs,
           preOptModules, BackendDAETransform.dummyDerivative, pastOptModules);
         xml_filename = stringAppendList({filenameprefix,".xml"});

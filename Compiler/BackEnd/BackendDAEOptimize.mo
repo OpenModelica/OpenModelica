@@ -107,6 +107,33 @@ end lateInlineDAE;
  * remove simply equations stuff
  */
 
+public function removeSimpleEquationsPast
+"function lateInlineDAE"
+    input BackendDAE.BackendDAE inDAE;
+    input DAE.FunctionTree inFunctionTree;
+    input BackendDAE.IncidenceMatrix inM;
+    input BackendDAE.IncidenceMatrix inMT;
+    input array<Integer> inAss1;  
+    input array<Integer> inAss2;  
+    input list<list<Integer>> inComps;  
+    output BackendDAE.BackendDAE outDAE;
+    output BackendDAE.IncidenceMatrix outM;
+    output BackendDAE.IncidenceMatrix outMT;
+    output array<Integer> outAss1;  
+    output array<Integer> outAss2;  
+    output list<list<Integer>> outComps; 
+    output Boolean outRunMatching;
+protected
+  Option<BackendDAE.IncidenceMatrix> om,omT;
+algorithm
+  (outDAE,om,omT) := removeSimpleEquations(inDAE,inFunctionTree,SOME(inM),SOME(inMT));
+  (outM,outMT) := BackendDAEUtil.getIncidenceMatrixfromOption(outDAE,om,omT);
+  outAss1 := inAss1;
+  outAss2 := inAss2;
+  outComps := inComps;   
+  outRunMatching := true; // until remove simple equations does not update incidence matrix     
+end removeSimpleEquationsPast;
+
 public function removeSimpleEquations
 "function: removeSimpleEquations
   This function moves simple equations on the form a=b from equations 2nd

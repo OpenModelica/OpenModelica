@@ -939,7 +939,7 @@ algorithm
         funcs = Env.getFunctionTree(cache);
         dlow = BackendDAECreate.lower(dae,funcs,true);
         preOptModules = {"removeSimpleEquations","removeParameterEqns","expandDerOperator"};
-        pastOptModules = {"lateInline"};
+        pastOptModules = {"lateInline","removeSimpleEquations"};
         (dlow_1,m,mT,ass1,ass2,comps) = BackendDAEUtil.getSolvedSystem(cache, env, dlow, funcs,
           preOptModules, BackendDAETransform.dummyDerivative, pastOptModules);
         Debug.fprintln("dynload", "translateModel: Generating simulation code and functions.");
@@ -1068,7 +1068,7 @@ algorithm
         funcs = Env.getFunctionTree(cache);
         dlow = BackendDAECreate.lower(dae,funcs,true);
         preOptModules = {"removeSimpleEquations","removeParameterEqns","expandDerOperator"};
-        pastOptModules = {"lateInline"};
+        pastOptModules = {"lateInline","removeSimpleEquations"};
         (dlow_1,m,mT,ass1,ass2,comps) = BackendDAEUtil.getSolvedSystem(cache, env, dlow, funcs,
           preOptModules, BackendDAETransform.dummyDerivative, pastOptModules);
         (indexed_dlow_1,libs,file_dir,timeBackend,timeSimCode,timeTemplates) = 

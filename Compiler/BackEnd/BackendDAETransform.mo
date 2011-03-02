@@ -48,8 +48,6 @@ public import DAE;
 
 
 protected import BackendDump;
-protected import BackendDAECreate;
-protected import BackendDAEOptimize;
 protected import BackendDAEUtil;
 protected import BackendEquation;
 protected import BackendVariable;
@@ -110,17 +108,10 @@ algorithm
       BackendDAE.Value nvars,neqns,memsize;
       String ns,ne;
       BackendDAE.Assignments assign1,assign2,ass1,ass2;
-      BackendDAE.BackendDAE dae,dae_1,dae_2;
-      BackendDAE.Variables v,kv,vars,exv;
-      BackendDAE.AliasVariables av;
-      BackendDAE.EquationArray e,re,ie,eqns;
-      array<BackendDAE.MultiDimEquation> ae;
-      array<DAE.Algorithm> al;
-      BackendDAE.EventInfo ev,einfo;
+      BackendDAE.BackendDAE dae;
+      BackendDAE.Variables vars;
+      BackendDAE.EquationArray eqns;
       array<list<BackendDAE.Value>> m,mt,m_1,mt_1;
-      BackendDAE.BinTree s;
-      list<BackendDAE.Equation> e_lst,re_lst,ie_lst;
-      list<BackendDAE.MultiDimEquation> ae_lst;
       array<BackendDAE.Value> vec1,vec2;
       BackendDAE.MatchingOptions match_opts;
     /* fail case if daelow is empty */
@@ -147,27 +138,11 @@ algorithm
         memsize = nvars + nvars "Worst case, all eqns are differentiated once. Create nvars2 assignment elements" ;
         assign1 = assignmentsCreate(nvars, memsize, 0);
         assign2 = assignmentsCreate(nvars, memsize, 0);
-        (ass1,ass2,dae,m,mt,_,_) = matchingAlgorithm2(dae, m, mt, nvars, neqns, 1, assign1, assign2, match_opts,inFunctions,{},{});
-        /* NOTE: Here it could be possible to run removeSimpleEquations again, since algebraic equations
-        could potentially be removed after a index reduction has been done. However, removing equations here
-        also require that e.g. zero crossings, array equations, etc. must be recalculated. */       
-        (dae_1,_,_) = BackendDAEOptimize.removeSimpleEquations(dae,inFunctions,SOME(m),SOME(mt)); 
-        m_1 = BackendDAEUtil.incidenceMatrix(dae_1, BackendDAE.NORMAL())
-        "Rerun matching to get updated assignments and incidence matrices
-         TODO: instead of rerunning: find out which equations are removed
-               and remove those from assignments and incidence matrix.";
-        mt_1 = BackendDAEUtil.transposeMatrix(m_1);
-        BackendDAEEXT.clearDifferentiated();
-        nvars = arrayLength(m_1);
-        neqns = arrayLength(mt_1);
-        memsize = nvars + nvars;
-        assign1 = assignmentsCreate(nvars, memsize, 0);
-        assign2 = assignmentsCreate(nvars, memsize, 0);
-        (ass1,ass2,dae_2,m,mt,_,_) = matchingAlgorithm2(dae_1, m_1, mt_1, nvars, neqns, 1, assign1, assign2, match_opts, inFunctions,{},{});
+        (ass1,ass2,dae,m_1,mt_1,_,_) = matchingAlgorithm2(dae, m, mt, nvars, neqns, 1, assign1, assign2, match_opts,inFunctions,{},{});
         vec1 = assignmentsVector(ass1);
         vec2 = assignmentsVector(ass2);
       then
-        (vec1,vec2,dae_2,m,mt);
+        (vec1,vec2,dae,m_1,mt_1);
 
     case ((dae as BackendDAE.DAE(orderedVars = vars,orderedEqs = eqns)),m,mt,(match_opts as (_,_,BackendDAE.KEEP_SIMPLE_EQN())),inFunctions)
       equation
