@@ -361,7 +361,7 @@ algorithm
         fail();
     // a normal prop in rhs that contains a T_TUPLE!
     case (expl,lhprops,rhs,DAE.PROP(type_ = (DAE.T_TUPLE(tupleType = tpl),_)),_,source)
-      equation         
+      equation
         bvals = Util.listMap(lhprops, Types.propAnyConst);
         DAE.C_VAR() = Util.listReduce(bvals, Types.constOr);
         lhrtypes = Util.listMap(lhprops, Types.getPropType);        
@@ -376,7 +376,7 @@ algorithm
         bvals = Util.listMap(lhprops, Types.propAnyConst);
         DAE.C_VAR() = Util.listReduce(bvals, Types.constOr);
         lhrtypes = Util.listMap(lhprops, Types.getPropType);        
-        Types.matchTypeTupleCall(rhs, tpl, lhrtypes);        
+        Types.matchTypeTupleCall(rhs, tpl, lhrtypes);
          /* Don\'t use new rhs\', since type conversions of several output args are not clearly defined. */
       then
         DAE.STMT_TUPLE_ASSIGN(DAE.ET_OTHER(),expl,rhs,source);

@@ -2592,7 +2592,7 @@ protected function makeAssignment
   input DAE.ElementSource inSource;
   output Algorithm.Statement outStatement;
 algorithm
-  outStatement := matchcontinue(inLhs, inLhsProps, inRhs, inRhsProps,
+  outStatement := match (inLhs, inLhsProps, inRhs, inRhsProps,
       inAccessibility, inInitial, inSource)
     local
       list<DAE.Properties> wild_props;
@@ -2614,9 +2614,8 @@ algorithm
         Algorithm.makeTupleAssignment(inLhs :: wilds, inLhsProps :: wild_props, inRhs, inRhsProps, inInitial, inSource);
     
     // Otherwise, call Algorithm.makeAssignment as usual.
-    case (_, _, _, _, _, _, _)
-      then Algorithm.makeAssignment(inLhs, inLhsProps, inRhs, inRhsProps, inAccessibility, inInitial, inSource);
-  end matchcontinue;
+    else Algorithm.makeAssignment(inLhs, inLhsProps, inRhs, inRhsProps, inAccessibility, inInitial, inSource);
+  end match;
 end makeAssignment;
 
 protected function containsWhenStatements

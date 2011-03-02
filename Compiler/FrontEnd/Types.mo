@@ -3876,13 +3876,16 @@ algorithm
   _ :=
   matchcontinue (inExp1,inTypeLst2,inTypeLst3)
     local
-      DAE.Exp e;
+      DAE.Exp e,oe;
       Type t1,t2;
       list<Type> ts1,ts2;
     case (_,_,{}) then ();
     case (e,(t1 :: ts1),(t2 :: ts2))
       equation
-        (_,_) = matchType(e, t1, t2, true);
+        // We cannot use matchType here because it does not cast tuple calls properly
+        true = subtype(t1, t2);
+        /* (oe,_) = matchType(e, t1, t2, true);
+        true = Expression.expEqual(e,oe); */
         matchTypeTupleCall(e, ts1, ts2);
       then ();
     case (_,(t1 :: ts1),(t2 :: ts2))

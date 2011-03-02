@@ -1705,6 +1705,7 @@ template functionDAE( list<SimEqSystem> allEquationsPlusWhen,
     ;separator="\n")
     
   let reinit = (whenClauses |> when hasindex i0 =>
+
       genreinits(when, &varDecls,i0)
     ;separator="\n")
   <<
@@ -5431,6 +5432,7 @@ template daeExpMatrixRow(list<tuple<Exp,Boolean>> row, String arrayTypeStr,
  "Helper to daeExpMatrix."
 ::=
   let &varLstStr = buffer "" /*BUFD*/
+
   let preExp2 = (row |> col as (e, b) =>
       let scalarStr = if b then "scalar_" else ""
       let scalarRefStr = if b then "" else "&"
@@ -6228,7 +6230,8 @@ template algStmtAssignPattern(DAE.Statement stmt, Context context, Text &varDecl
     let &preExp = buffer ""
     let &assignments = buffer ""
     let expPart = daeExp(s.exp, context, &preExp, &varDecls)
-    <<<%preExp%>
+    <</* Pattern-matching assignment */
+    <%preExp%>
     <%patternMatch(lhs.pattern,expPart,"MMC_THROW()",&varDecls,&assignments)%><%assignments%>>>
 end algStmtAssignPattern;
 
