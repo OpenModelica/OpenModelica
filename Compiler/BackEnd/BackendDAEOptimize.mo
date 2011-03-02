@@ -77,7 +77,7 @@ protected import ValuesUtil;
  * inline functions stuff
  */
 
-public function lateInlineDAE
+public function lateInline
 "function lateInlineDAE"
     input BackendDAE.BackendDAE inDAE;
     input DAE.FunctionTree inFunctionTree;
@@ -101,7 +101,7 @@ algorithm
   outAss2 := inAss2;
   outComps := inComps;   
   outRunMatching := false;     
-end lateInlineDAE;
+end lateInline;
 
 /* 
  * remove simply equations stuff
@@ -903,7 +903,7 @@ public function removeParameterEqns
   output Option<BackendDAE.IncidenceMatrixT> outMT;
 algorithm
   (outDlow,outM,outMT):=
-  matchcontinue (inDlow,inFunctionTree,inM,inMT)
+  match (inDlow,inFunctionTree,inM,inMT)
     local
       BackendDAE.BackendDAE dlow,dlow1;
       DAE.FunctionTree funcs;
@@ -915,19 +915,13 @@ algorithm
       BackendDAE.EquationArray eqns,remeqns,inieqns,eqns1,eqns2;
       array<BackendDAE.MultiDimEquation> arreqns;
       array<DAE.Algorithm> algorithms;
-      BackendDAE.EventInfo einfo,einfo1;
+      BackendDAE.EventInfo einfo;
       BackendDAE.ExternalObjectClasses eoc;
       BackendDAE.BinTree movedVars;
       list<Integer> meqns;
-      case (dlow,funcs,NONE(),_) 
-        equation
-          m = BackendDAEUtil.incidenceMatrix(dlow, BackendDAE.NORMAL());
-          mT = BackendDAEUtil.transposeMatrix(m);
-          (dlow,om,omT) = removeParameterEqns(dlow,funcs,SOME(m),SOME(mT));
-        then
-          (dlow,om,omT);
-    case (dlow as BackendDAE.DAE(ordvars,knvars,exobj,av,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc),funcs,SOME(m),SOME(mT))
+    case (dlow as BackendDAE.DAE(ordvars,knvars,exobj,av,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc),funcs,inM,inMT)
       equation
+        (m,mT) = BackendDAEUtil.getIncidenceMatrixfromOption(dlow,inM,inMT);
         // for now check interactive flag to avoid errors there
         // false = RTOpts.debugFlag("");
         // check equations
@@ -936,16 +930,13 @@ algorithm
         (ordvars2,knvars2) = BackendVariable.moveVariables(ordvars1,knvars1,movedVars);
         // remove changed eqns
         eqns2 = BackendEquation.equationDelete(eqns1,meqns);
-        // update EventInfo
-        einfo1 = removeEqnsfromEventInfo(meqns,einfo);
         // update IncidenceMatrix
-        dlow1 = BackendDAE.DAE(ordvars2,knvars2,exobj,av,eqns2,remeqns,inieqns,arreqns,algorithms,einfo1,eoc);
+        dlow1 = BackendDAE.DAE(ordvars2,knvars2,exobj,av,eqns2,remeqns,inieqns,arreqns,algorithms,einfo,eoc);
         m_2 = BackendDAEUtil.incidenceMatrix(dlow1, BackendDAE.NORMAL());
         // update transposed IncidenceMatrix
         mT_1 = BackendDAEUtil.transposeMatrix(m_2);
       then (dlow1,SOME(m_2),SOME(mT_1));
-    case (dlow,_,om,omT) then (dlow,om,omT);
-  end matchcontinue;        
+  end match;        
 end removeParameterEqns;
 
 protected function traverseIncidenceMatrix 
@@ -1172,116 +1163,6 @@ algorithm
     then m1;
   end match;
 end removeVarfromIncidenceMatrix;
-
-protected function removeEqnsfromEventInfo
-" function: removeEqnsfromEventInfo
-  autor: Frenkel TUD 2010-12"
-  input list<Integer> inEqns;
-  input BackendDAE.EventInfo inEI;
-  output BackendDAE.EventInfo outEI;
-algorithm
-  outEI := matchcontinue(inEqns,inEI)
-    local 
-      Integer pos;
-      list<Integer> rest;
-      BackendDAE.EventInfo ei,ei1;
-    
-    case({},inEI) then inEI;
-    
-    case(pos::rest,inEI)
-      equation
-      ei = removeEqnfromEventInfo(pos,inEI);
-      ei1 = removeEqnsfromEventInfo(rest,ei);
-    then ei1;
-
-    // do not fail in case of an error        
-    case(pos::rest,inEI)
-      equation
-        Debug.fcall("failtrace",print,"BackendDAEOptimize.removeEqnsfromEventInfo failed\n");
-        ei1 = removeEqnsfromEventInfo(rest,inEI);
-    then ei1;      
-  end matchcontinue;
-end removeEqnsfromEventInfo;
-
-protected function removeEqnfromEventInfo
-" function: removeEqnfromEventInfo
-  autor: Frenkel TUD 2010-12"
-  input Integer inEqn;
-  input BackendDAE.EventInfo inEI;
-  output BackendDAE.EventInfo outEI;
-algorithm
-  outEI := match(inEqn,inEI)
-    local 
-      Integer eqn;
-      list<BackendDAE.WhenClause> whenClauseLst;
-      list<BackendDAE.ZeroCrossing> zeroCrossingLst,zeroCrossingLst1;
-
-    case(eqn,BackendDAE.EVENT_INFO(whenClauseLst,zeroCrossingLst))
-      equation
-      zeroCrossingLst1 = removeEqnfromZeroCrossingLst(eqn,zeroCrossingLst);
-    then BackendDAE.EVENT_INFO(whenClauseLst,zeroCrossingLst1);
-  end match;
-end removeEqnfromEventInfo;
-
-protected function removeEqnsfromZeroCrossingLst
-" function: removeEqnsfromZeroCrossingLst
-  autor: Frenkel TUD 2010-12"
-  input list<Integer> inEqns;
-  input list<BackendDAE.ZeroCrossing> inZCLst;
-  output list<BackendDAE.ZeroCrossing> outZCLs;
-algorithm
-  outZCLs := matchcontinue(inEqns,inZCLst)
-    local 
-      Integer eqn;
-      list<Integer> rest;
-      list<BackendDAE.ZeroCrossing>  zc,zc1;
-    
-    case({},inZCLst) then inZCLst;
-    
-    case(eqn::rest,inZCLst)
-      equation
-      zc = removeEqnfromZeroCrossingLst(eqn,inZCLst);
-      zc1 = removeEqnsfromZeroCrossingLst(rest,zc);
-    then zc1;
-  end matchcontinue;
-end removeEqnsfromZeroCrossingLst;
-
-protected function removeEqnfromZeroCrossingLst
-" function: removeEqnfromZeroCrossingLst
-  autor: Frenkel TUD 2010-12"
-  input Integer inEqn;
-  input list<BackendDAE.ZeroCrossing> inZCLst;
-  output list<BackendDAE.ZeroCrossing> outZCLs;
-algorithm
-  outZCLs := matchcontinue(inEqn,inZCLst)
-    local 
-      Integer eqn;
-      list<BackendDAE.ZeroCrossing>  rest,zclst;
-      DAE.Exp relation_;
-      list<Integer> occurEquLst,occurEquLst1;
-      list<Integer> occurWhenLst;
-    
-     case(_,{}) then inZCLst;
-
-    case(eqn,BackendDAE.ZERO_CROSSING(relation_,{},occurWhenLst)::rest)
-      equation
-      zclst = removeEqnfromZeroCrossingLst(eqn,rest);
-    then BackendDAE.ZERO_CROSSING(relation_,{},occurWhenLst)::zclst;
-
-    // if list occurEquLst and occurWhenLst then remove zero crossing         
-    case(eqn,BackendDAE.ZERO_CROSSING(relation_,occurEquLst,{})::rest)
-      equation
-      {} = Util.listRemoveOnTrue(eqn+1,intEq,occurEquLst);
-      zclst = removeEqnfromZeroCrossingLst(eqn,rest);
-    then zclst;
-    
-    case(eqn,BackendDAE.ZERO_CROSSING(relation_,occurEquLst,occurWhenLst)::rest)
-      equation
-      occurEquLst1 = Util.listRemoveOnTrue(eqn+1,intEq,occurEquLst);
-      zclst = removeEqnfromZeroCrossingLst(eqn,rest);
-    then BackendDAE.ZERO_CROSSING(relation_,occurEquLst1,occurWhenLst)::zclst;
-  end matchcontinue;
-end removeEqnfromZeroCrossingLst;
 
 /*  
  * tearing system of equations stuff 

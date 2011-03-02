@@ -5575,7 +5575,7 @@ protected function getPastOptModules
 protected 
   list<tuple<pastoptimiseDAEModule,String>> allPastOptModules; 
 algorithm
-  allPastOptModules := {(BackendDAEOptimize.lateInlineDAE,"lateInline"),
+  allPastOptModules := {(BackendDAEOptimize.lateInline,"lateInline"),
   (BackendDAEOptimize.removeSimpleEquationsPast,"removeSimpleEquations"),
   (BackendDump.dumpComponentsGraphStr,"dumpComponentsGraphStr")};
   pastOptModules := selectOptModules(strPastOptModules,allPastOptModules,{}); 

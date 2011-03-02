@@ -443,7 +443,7 @@ algorithm
 
     case (dae,m,mt,nv,nf,i,ass1,ass2,(BackendDAE.INDEX_REDUCTION(),eq_cons,r_simple),inFunctions,derivedAlgs,derivedMultiEqn)
       equation
-        (dae,m,mt,derivedAlgs1,derivedMultiEqn1) = reduceIndexDummyDer(dae, m, mt, nv, nf, i, inFunctions,derivedAlgs,derivedMultiEqn) 
+        (dae,m,mt,derivedAlgs1,derivedMultiEqn1) = reduceIndexDummyDer(dae, m, mt, nv, nf, inFunctions,derivedAlgs,derivedMultiEqn) 
         "path_found failed, Try index reduction using dummy derivatives.
          When a constraint exist between states and index reduction is needed
          the dummy derivative will select one of the states as a dummy state
@@ -1130,7 +1130,6 @@ protected function reduceIndexDummyDer
   input BackendDAE.IncidenceMatrixT inIncidenceMatrixT3;
   input Integer inInteger4;
   input Integer inInteger5;
-  input Integer inInteger6;
   input DAE.FunctionTree inFunctions;
   input list<tuple<Integer,Integer,Integer>> inDerivedAlgs;
   input list<tuple<Integer,Integer,Integer>> inDerivedMultiEqn;  
@@ -1141,13 +1140,13 @@ protected function reduceIndexDummyDer
   output list<tuple<Integer,Integer,Integer>> outDerivedMultiEqn;  
 algorithm
   (outBackendDAE,outIncidenceMatrix,outIncidenceMatrixT,outDerivedAlgs,outDerivedMultiEqn):=
-  matchcontinue (inBackendDAE1,inIncidenceMatrix2,inIncidenceMatrixT3,inInteger4,inInteger5,inInteger6,inFunctions,inDerivedAlgs,inDerivedMultiEqn)
+  matchcontinue (inBackendDAE1,inIncidenceMatrix2,inIncidenceMatrixT3,inInteger4,inInteger5,inFunctions,inDerivedAlgs,inDerivedMultiEqn)
     local
       list<BackendDAE.Value> eqns,diff_eqns,eqns_1,stateindx,deqns,reqns,changedeqns;
       list<BackendDAE.Key> states;
       BackendDAE.BackendDAE dae;
       array<list<BackendDAE.Value>> m,mt;
-      BackendDAE.Value nv,nf,stateno,i;
+      BackendDAE.Value nv,nf,stateno;
       DAE.ComponentRef state,dummy_der;
       list<String> es;
       String es_1;
@@ -1156,7 +1155,7 @@ algorithm
       DAE.Exp stateexp,stateexpcall,dummyderexp; 
       DAE.ExpType tp;  
 
-    case (dae,m,mt,nv,nf,i,inFunctions,derivedAlgs,derivedMultiEqn)
+    case (dae,m,mt,nv,nf,inFunctions,derivedAlgs,derivedMultiEqn)
       equation
         eqns = BackendDAEEXT.getMarkedEqns();
         //print("marked equations:");print(Util.stringDelimitList(Util.listMap(eqns,intString),","));
@@ -1194,7 +1193,7 @@ algorithm
       then
         (dae,m,mt,derivedAlgs1,derivedMultiEqn1);
 
-    case (dae,m,mt,nv,nf,i,_,_,_)
+    case (dae,m,mt,nv,nf,_,_,_)
       equation
         eqns = BackendDAEEXT.getMarkedEqns();
         diff_eqns = BackendDAEEXT.getDifferentiatedEqns();
@@ -1213,7 +1212,7 @@ algorithm
       then
         fail();
 
-    case (_,_,_,_,_,_,_,_,_)
+    case (_,_,_,_,_,_,_,_)
       equation
         print("-reduce_index_dummy_der failed\n");
       then
