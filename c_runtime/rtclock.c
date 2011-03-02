@@ -36,8 +36,11 @@
 #include <windows.h>
 typedef LARGE_INTEGER rtclock_t;
 #elif defined(__APPLE_CC__)
+#include <mach/mach_time.h>
+#include <time.h>
 typedef uint64_t rtclock_t;
 #else
+#include <time.h>
 typedef struct timespec rtclock_t;
 #endif
 
@@ -149,9 +152,6 @@ double rtclock_value (LARGE_INTEGER tp) {
 
 #elif defined(__APPLE_CC__)
 
-#include <mach/mach_time.h>
-#include <time.h>
-
 void rt_tick(int ix) {
   tick_tp[ix] = mach_absolute_time();
   rt_clock_ncall[ix]++;
@@ -202,8 +202,6 @@ int rtclock_compare(uint64_t t1, uint64_t t2) {
 }
 
 #else
-
-#include <time.h>
 
 void rt_tick(int ix) {
   clock_gettime(CLOCK_MONOTONIC, &tick_tp[ix]);
