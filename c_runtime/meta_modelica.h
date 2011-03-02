@@ -386,8 +386,9 @@ extern jmp_buf mmc_jumper[MMC_JMP_BUF_SIZE];
 extern int jmp_buf_index;
 */
 extern jmp_buf *mmc_jumper;
+void mmc_catch_dummy_fn();
 #define MMC_TRY() {jmp_buf new_mmc_jumper, *old_jumper; old_jumper = mmc_jumper; mmc_jumper = &new_mmc_jumper; if (setjmp(new_mmc_jumper) == 0) {
-#define MMC_CATCH() } mmc_jumper = old_jumper;}
+#define MMC_CATCH() } mmc_jumper = old_jumper; mmc_catch_dummy_fn();}
 #define MMC_THROW() longjmp(*mmc_jumper,1)
 
 #define MMC_TRY_TOP() MMC_TRY()
