@@ -195,4 +195,253 @@ algorithm
   outNode := (node, edges);
 end removeEdge;
 
+public function findCycles
+  "Returns the cycles in a given graph. It will check each node, and if that
+  node is part of a cycle it will return the cycle. It will also remove the
+  other nodes in the cycle from the list of remaining nodes to check, so the
+  result will be a list of unique cycles.
+
+  This function is not very efficient, so it shouldn't be used for any
+  performance critical tasks.  It's meant to be used together with
+  topologicalSort to print an error message if any cycles are detected."
+  input list<tuple<NodeType, list<NodeType>>> inGraph;
+  input EqualFunc inEqualFunc;
+  output list<list<NodeType>> outCycles;
+
+  replaceable type NodeType subtypeof Any;
+
+  partial function EqualFunc
+    "Given two nodes, returns true if they are equal, otherwise false."
+    input NodeType inNode1;
+    input NodeType inNode2;
+    output Boolean isEqual;
+  end EqualFunc;
+algorithm
+  outCycles := findCycles2(inGraph, inGraph, inEqualFunc);
+end findCycles;
+
+public function findCycles2
+  "Helper function to findCycles."
+  input list<tuple<NodeType, list<NodeType>>> inNodes;
+  input list<tuple<NodeType, list<NodeType>>> inGraph;
+  input EqualFunc inEqualFunc;
+  output list<list<NodeType>> outCycles;
+
+  replaceable type NodeType subtypeof Any;
+
+  partial function EqualFunc
+    "Given two nodes, returns true if they are equal, otherwise false."
+    input NodeType inNode1;
+    input NodeType inNode2;
+    output Boolean isEqual;
+  end EqualFunc;
+algorithm
+  outCycles := matchcontinue(inNodes, inGraph, inEqualFunc)
+    local
+      tuple<NodeType, list<NodeType>> node;
+      list<tuple<NodeType, list<NodeType>>> rest_nodes;
+      list<NodeType> cycle;
+      list<list<NodeType>> rest_cycles;
+
+    case ({}, _, _) then {};
+
+    // Try and find a cycle for the first node.
+    case (node :: rest_nodes, _, _)
+      equation
+        SOME(cycle) = findCycleForNode(node, inGraph, {}, inEqualFunc);
+        rest_nodes = removeNodesFromGraph(cycle, rest_nodes, inEqualFunc);
+        rest_cycles = findCycles2(rest_nodes, inGraph, inEqualFunc);
+      then
+        cycle :: rest_cycles;
+
+    // If previous case failed we couldn't find a cycle for that node, so
+    // continue with the rest of the nodes.
+    case (_ :: rest_nodes, _, _)
+      equation
+        rest_cycles = findCycles2(rest_nodes, inGraph, inEqualFunc);
+      then
+        rest_cycles;
+
+  end matchcontinue;
+end findCycles2;
+
+protected function findCycleForNode
+  "Tries to find a cycle in the graph starting from a given node. This function
+  returns an optional cycle, because it's possible that it will encounter a
+  cycle in which the given node is not a part. This makes it possible to
+  continue searching for another cycle. This function will therefore return some
+  cycle if one was found, or fail or return NONE() if no cycle could be found. A
+  given node might be part of several cycles, but this function will stop as
+  soon as it finds one cycle."
+  input tuple<NodeType, list<NodeType>> inNode;
+  input list<tuple<NodeType, list<NodeType>>> inGraph;
+  input list<NodeType> inVisitedNodes;
+  input EqualFunc inEqualFunc;
+  output Option<list<NodeType>> outCycle;
+
+  replaceable type NodeType subtypeof Any;
+
+  partial function EqualFunc
+    "Given two nodes, returns true if they are equal, otherwise false."
+    input NodeType inNode1;
+    input NodeType inNode2;
+    output Boolean isEqual;
+  end EqualFunc;
+algorithm
+  outCycle := matchcontinue(inNode, inGraph, inVisitedNodes, inEqualFunc)
+    local
+      NodeType node, start_node;
+      list<NodeType> edges, visited_nodes, cycle;
+      Boolean is_start_node;
+      Option<list<NodeType>> opt_cycle;
+      tuple<NodeType, list<NodeType>> last_node;
+
+    case ((node, _), _, _ :: _, _)
+      equation
+        // Check if we have already visited this node.
+        true = Util.listContainsWithCompareFunc(node, inVisitedNodes,
+          inEqualFunc); 
+        // Check if the current node is the start node, in that case we're back
+        // where we started and we have a cycle. Otherwise we just encountered a
+        // cycle in the graph that the start node is not part of.
+        start_node = Util.listLast(inVisitedNodes);
+        is_start_node = inEqualFunc(node, start_node);
+        opt_cycle = Util.if_(is_start_node, SOME(inVisitedNodes), NONE());
+      then
+        opt_cycle;
+
+    case ((node, edges), _, _, _)
+      equation
+        // If we have not visited the current node yet we add it to the list of
+        // visited nodes, and then call findCycleForNode2 on the edges of the node.
+        visited_nodes = node :: inVisitedNodes;
+        cycle = findCycleForNode2(edges, inGraph, visited_nodes, inEqualFunc);
+      then
+        SOME(cycle);
+
+  end matchcontinue;
+end findCycleForNode;
+
+protected function findCycleForNode2
+  "Helper function to findCycleForNode. Calls findNodeInGraph on each node in
+  the given list."
+  input list<NodeType> inNodes;
+  input list<tuple<NodeType, list<NodeType>>> inGraph;
+  input list<NodeType> inVisitedNodes;
+  input EqualFunc inEqualFunc;
+  output list<NodeType> outCycle;
+
+  replaceable type NodeType subtypeof Any;
+
+  partial function EqualFunc
+    "Given two nodes, returns true if they are equal, otherwise false."
+    input NodeType inNode1;
+    input NodeType inNode2;
+    output Boolean isEqual;
+  end EqualFunc;
+algorithm
+  outCycle := matchcontinue(inNodes, inGraph, inVisitedNodes, inEqualFunc)
+    local
+      NodeType node;
+      list<NodeType> rest_nodes, cycle;
+      tuple<NodeType, list<NodeType>> graph_node;
+
+    // Try and find a cycle by following this edge.
+    case (node :: _, _, _, _)
+      equation
+        graph_node = findNodeInGraph(node, inGraph, inEqualFunc);
+        SOME(cycle) = findCycleForNode(graph_node, inGraph, inVisitedNodes,
+          inEqualFunc);
+      then
+        cycle;
+
+    // No cycle found in previous case, check the rest of the edges.
+    case (_ :: rest_nodes, _, _, _)
+      equation
+        cycle = findCycleForNode2(rest_nodes, inGraph, inVisitedNodes,
+          inEqualFunc);
+      then
+        cycle;
+
+  end matchcontinue;
+end findCycleForNode2;
+
+protected function findNodeInGraph
+  "Returns a node and its edges from a graph given a node to search for, or
+  fails if no such node exists in the graph."
+  input NodeType inNode;
+  input list<tuple<NodeType, list<NodeType>>> inGraph;
+  input EqualFunc inEqualFunc;
+  output tuple<NodeType, list<NodeType>> outNode;
+
+  replaceable type NodeType subtypeof Any;
+
+  partial function EqualFunc
+    "Given two nodes, returns true if they are equal, otherwise false."
+    input NodeType inNode1;
+    input NodeType inNode2;
+    output Boolean isEqual;
+  end EqualFunc;
+algorithm
+  outNode := matchcontinue(inNode, inGraph, inEqualFunc)
+    local
+      NodeType node;
+      tuple<NodeType, list<NodeType>> graph_node;
+      list<tuple<NodeType, list<NodeType>>> rest_graph;
+
+    case (_, (graph_node as (node, _)) :: _, _)
+      equation
+        true = inEqualFunc(inNode, node);
+      then
+        graph_node;
+
+    case (_, _ :: rest_graph, _)
+      then findNodeInGraph(inNode, rest_graph, inEqualFunc);
+
+  end matchcontinue;
+end findNodeInGraph;
+
+protected function removeNodesFromGraph
+  "Removed a list of nodes from the graph. Note that only the nodes are removed
+  and not any edges pointing at the nodes."
+  input list<NodeType> inNodes;
+  input list<tuple<NodeType, list<NodeType>>> inGraph;
+  input EqualFunc inEqualFunc;
+  output list<tuple<NodeType, list<NodeType>>> outGraph;
+
+  replaceable type NodeType subtypeof Any;
+
+  partial function EqualFunc
+    "Given two nodes, returns true if they are equal, otherwise false."
+    input NodeType inNode1;
+    input NodeType inNode2;
+    output Boolean isEqual;
+  end EqualFunc;
+algorithm
+  outGraph := matchcontinue(inNodes, inGraph, inEqualFunc)
+    local
+      tuple<NodeType, list<NodeType>> graph_node;
+      list<tuple<NodeType, list<NodeType>>> rest_graph;
+      list<NodeType> rest_nodes;
+      NodeType node;
+
+    case ({}, _, _) then inGraph;
+    case (_, {}, _) then {};
+
+    case (_, (graph_node as (node, _)) :: rest_graph, _)
+      equation
+        (rest_nodes, SOME(_)) = Util.listDeleteMemberOnTrue(node, inNodes,
+          inEqualFunc);
+      then
+        removeNodesFromGraph(rest_nodes, rest_graph, inEqualFunc);
+
+    case (_, graph_node :: rest_graph, _)
+      equation
+        rest_graph = removeNodesFromGraph(inNodes, rest_graph, inEqualFunc);
+      then
+        graph_node :: rest_graph;
+
+  end matchcontinue;
+end removeNodesFromGraph;
+
 end Graph;

@@ -4947,6 +4947,7 @@ algorithm
 end addNomod;
 
 public function instElementList
+  "Instantiates a list of elements."
   input Env.Cache inCache;
   input Env.Env inEnv;
   input InstanceHierarchy inIH;
@@ -4972,34 +4973,45 @@ public function instElementList
 protected
   list<tuple<SCode.Element, DAE.Mod>> el;
 algorithm
-  el := sortElementList(inElements);
+  el := sortElementList(inElements, inEnv);
   (outCache, outEnv, outIH, outStore, outDae, outSets, outState, outTypesVarLst, outGraph) := 
     instElementList2(inCache, inEnv, inIH, store, inMod, inPrefix, inSets,
       inState, el, inInstDims, inImplInst, inCallingScope, inGraph);
 end instElementList;
 
 protected function sortElementList
-  input list<tuple<SCode.Element, DAE.Mod>> inElements;
-  output list<tuple<SCode.Element, DAE.Mod>> outElements;
+  "Sorts constants and parameters by dependencies, so that they are instantiated
+  before they are used."
+  input list<Element> inElements;
+  input Env.Env inEnv;
+  output list<Element> outElements;
+  type Element = tuple<SCode.Element, DAE.Mod>;
+protected
+  list<tuple<Element, list<Element>>> cycles;
 algorithm
-  (outElements, _) := Graph.topologicalSort(
+  (outElements, cycles) := Graph.topologicalSort(
     Graph.buildGraph(inElements, getElementDependencies, inElements),
     isElementEqual);
+  checkCyclicalComponents(cycles, inEnv);
 end sortElementList;
 
 protected function getElementDependencies
+  "Returns the dependencies given an element."
   input tuple<SCode.Element, DAE.Mod> inElement;
   input list<tuple<SCode.Element, DAE.Mod>> inAllElements;
   output list<tuple<SCode.Element, DAE.Mod>> outDependencies;
 algorithm
-  outDependencies := match(inElement, inAllElements)
+  outDependencies := matchcontinue(inElement, inAllElements)
     local
-      Absyn.Exp bind_exp;
+      SCode.Variability var;
+      Absyn.Exp bind_exp, cond_exp;
       list<tuple<SCode.Element, DAE.Mod>> deps;
 
-    case ((SCode.COMPONENT(attributes = SCode.ATTR(variability = SCode.CONST()),
+    // For constants and parameters we check the binding modification.
+    case ((SCode.COMPONENT(attributes = SCode.ATTR(variability = var),
         modifications = SCode.MOD(binding = SOME((bind_exp, _)))), _), _)
       equation
+        true = SCode.isParameterOrConst(var);
         (_, (_, _, (_, deps))) = Absyn.traverseExpBidir(bind_exp,
           (getElementDependenciesTraverserEnter,
            getElementDependenciesTraverserExit,
@@ -5007,11 +5019,25 @@ algorithm
       then
         deps;
 
+    // For other variables we check the condition, since they might be
+    // conditional on a constant or parameter.
+    case ((SCode.COMPONENT(condition = SOME(cond_exp)), _), _)
+      equation
+        (_, (_, _, (_, deps))) = Absyn.traverseExpBidir(cond_exp,
+          (getElementDependenciesTraverserEnter,
+           getElementDependenciesTraverserExit,
+           (inAllElements, {})));
+      then
+        deps;
+
     else then {};
-  end match;
+  end matchcontinue;
 end getElementDependencies;
 
 protected function getElementDependenciesTraverserEnter
+  "Traverse function used by getElementDependencies to collect all dependencies
+  for an element. The first ElementList in the input argument is a list of all
+  elements, and the second is a list of accumulated dependencies."
   input tuple<Absyn.Exp, tuple<ElementList, ElementList>> inTuple;
   output tuple<Absyn.Exp, tuple<ElementList, ElementList>> outTuple;
   type ElementList = list<tuple<SCode.Element, DAE.Mod>>;
@@ -5026,6 +5052,9 @@ algorithm
     case ((exp as Absyn.CREF(componentRef = Absyn.CREF_IDENT(name = id)), 
         (all_el, accum_el)))
       equation
+        // Try and delete the element with the given name from the list of all
+        // elements. If this succeeds, add it to the list of elements. This
+        // ensures that we don't add any dependency more than once.
         (all_el, SOME(e)) = Util.listDeleteMemberOnTrue(id, all_el,
           isElementNamed);
       then
@@ -5036,6 +5065,7 @@ algorithm
 end getElementDependenciesTraverserEnter;
 
 protected function getElementDependenciesTraverserExit
+  "Dummy traversal function used by getElementDependencies."
   input tuple<Absyn.Exp, tuple<ElementList, ElementList>> inTuple;
   output tuple<Absyn.Exp, tuple<ElementList, ElementList>> outTuple;
   type ElementList = list<tuple<SCode.Element, DAE.Mod>>;
@@ -5044,6 +5074,8 @@ algorithm
 end getElementDependenciesTraverserExit;
 
 protected function isElementNamed
+  "Returns true if the given element has the same name as the given string,
+  otherwise false."
   input String inName;
   input tuple<SCode.Element, DAE.Mod> inElement;
   output Boolean isNamed;
@@ -5063,6 +5095,7 @@ algorithm
 end isElementNamed;
 
 protected function isElementEqual
+  "Checks that two elements are equal, i.e. has the same name."
   input tuple<SCode.Element, DAE.Mod> inElement1;
   input tuple<SCode.Element, DAE.Mod> inElement2;
   output Boolean isEqual;
@@ -5072,13 +5105,54 @@ algorithm
       String id1, id2;
 
     case ((SCode.COMPONENT(component = id1), _), 
-          
-      (SCode.COMPONENT(component = id2), _))
+          (SCode.COMPONENT(component = id2), _))
       then stringEqual(id1, id2);
 
     else then false;
   end matchcontinue;
 end isElementEqual;
+
+protected function checkCyclicalComponents
+  "Checks the return value from Graph.topologicalSort. If the list of cycles is
+  not empty, print an error message and fail, since it's not allowed for
+  constants or parameters to have cyclic dependencies."
+  input list<tuple<Element, list<Element>>> inCycles;
+  input Env.Env inEnv;
+  type Element = tuple<SCode.Element, DAE.Mod>;
+algorithm
+  _ := match(inCycles, inEnv)
+    local
+      list<list<Element>> cycles;
+      list<list<String>> names;
+      list<String> cycles_strs;
+      String cycles_str, scope_str;
+
+    case ({}, _) then ();
+
+    else
+      equation
+        cycles = Graph.findCycles(inCycles, isElementEqual);
+        names = Util.listListMap(cycles, elementName);
+        cycles_strs = Util.listMap1(names, Util.stringDelimitList, ",");
+        cycles_str = Util.stringDelimitList(cycles_strs, "}, {");
+        cycles_str = "{" +& cycles_str +& "}";
+        scope_str = Env.printEnvPathStr(inEnv);
+        Error.addMessage(Error.CIRCULAR_COMPONENTS, {scope_str, cycles_str});
+      then
+        fail();
+  end match;
+end checkCyclicalComponents;
+
+protected function elementName
+  "Returns the name of the given element."
+  input tuple<SCode.Element, DAE.Mod> inElement;
+  output String outName;
+protected
+  SCode.Element elem;
+algorithm
+  (elem, _) := inElement;
+  outName := SCode.elementName(elem);
+end elementName;
 
 public function instElementList2
 "function: instElementList

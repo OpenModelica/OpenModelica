@@ -2148,7 +2148,7 @@ algorithm
   end matchcontinue;
 end accessibilityEqual;
 
-protected function variabilityEqual
+public function variabilityEqual
 "function variabilityEqual
   Returns true if two Variablity prefixes are equal"
   input Variability var1;

@@ -254,6 +254,7 @@ public constant ErrorID ELAB_CODE_EXP_FAILED=166;
 public constant ErrorID EQUATION_TRANSITION_FAILURE=167;
 public constant ErrorID METARECORD_CONTAINS_METARECORD_MEMBER=168;
 public constant ErrorID INVALID_EXTERNAL_OBJECT=169;
+public constant ErrorID CIRCULAR_COMPONENTS=170;
 
 public constant ErrorID UNBOUND_PARAMETER_WITH_START_VALUE_WARNING=499;
 public constant ErrorID UNBOUND_PARAMETER_WARNING=500;
@@ -709,6 +710,8 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           "Function %s not found in scope %s."),
           (INVALID_EXTERNAL_OBJECT,TRANSLATION(),ERROR(),
           "Invalid external object %s, %s."),
+          (CIRCULAR_COMPONENTS,TRANSLATION(),ERROR(),
+          "Cyclically dependent constants or parameters found in scope %s: %s"),
           (MATCHCONTINUE_TO_MATCH_OPTIMIZATION,TRANSLATION(),NOTIFICATION(),"This matchcontinue expression has no overlapping patterns and should be using match instead of matchcontinue."),
           (META_DEAD_CODE,TRANSLATION(),NOTIFICATION(),"Dead code elimination: %s."),
           (META_UNUSED_DECL,TRANSLATION(),NOTIFICATION(),"Unused local variable: %s."),
