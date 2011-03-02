@@ -32,6 +32,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
+#include "assert.h"
 #include <simulation_runtime.h>
 
 static void indent(FILE *fout, int n) {
