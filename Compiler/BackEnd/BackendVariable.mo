@@ -2177,9 +2177,9 @@ public function daeVars
   output BackendDAE.Variables vars;
 algorithm
   vars := match (inBackendDAE)
-    local BackendDAE.Variables vars1,vars2;
-    case (BackendDAE.DAE(orderedVars = vars1, knownVars = vars2))
-      then vars1;
+    local BackendDAE.Variables vars;
+    case (BackendDAE.DAE(orderedVars = vars))
+      then vars;
   end match;
 end daeVars;
 
@@ -2188,9 +2188,9 @@ public function daeKnVars
   output BackendDAE.Variables vars;
 algorithm
   vars := match (inBackendDAE)
-    local BackendDAE.Variables vars1,vars2;
-    case (BackendDAE.DAE(orderedVars = vars1, knownVars = vars2))
-      then vars2;
+    local BackendDAE.Variables vars;
+    case (BackendDAE.DAE(knownVars = vars))
+      then vars;
   end match;
 end daeKnVars;
 

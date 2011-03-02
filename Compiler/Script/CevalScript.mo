@@ -68,10 +68,8 @@ protected import BackendDAEOptimize;
 protected import BackendDAETransform;
 protected import BackendEquation;
 protected import BackendVariable;
-protected import ConnectionGraph;
 protected import ClassInf;
 protected import ClassLoader;
-protected import Connect;
 protected import DAEQuery;
 protected import DAEUtil;
 protected import DAEDump;
@@ -79,7 +77,6 @@ protected import Debug;
 protected import Dump;
 protected import Error;
 protected import Expression;
-protected import ExpressionDump;
 protected import Inst;
 protected import InnerOuter;
 protected import Lookup;
@@ -100,7 +97,6 @@ protected import Settings;
 protected import SimulationResults;
 protected import Tpl;
 protected import Types;
-protected import UnitAbsyn;
 protected import Unparsing;
 protected import Util;
 protected import ValuesUtil;
@@ -1775,6 +1771,7 @@ algorithm
         elimLevel = RTOpts.eliminationLevel();
         RTOpts.setEliminationLevel(0); // No variable eliminiation
         dlow = BackendDAECreate.lower(dae, Env.getFunctionTree(cache), false);
+        dlow = BackendDAECreate.findZeroCrossings(dlow);
         RTOpts.setEliminationLevel(elimLevel); // Reset elimination level
         flatModelicaStr = DAEDump.dumpStr(dae,Env.getFunctionTree(cache));
         flatModelicaStr = stringAppend("OldEqStr={'", flatModelicaStr);
@@ -3137,6 +3134,7 @@ algorithm
         dlow = BackendDAECreate.lower(dae, funcs, true); //Verificare cosa fa
         (dlow_1,_,_) = BackendDAEUtil.preOptimiseBackendDAE(dlow,funcs,
             {"removeSimpleEquations","removeParameterEqns","expandDerOperator"},NONE(),NONE());
+        dlow_1 = BackendDAECreate.findZeroCrossings(dlow_1);
         xml_filename = stringAppendList({filenameprefix,".xml"});
         funcelems = DAEUtil.getFunctionList(funcs);
         Print.clearBuf();
@@ -3162,7 +3160,8 @@ algorithm
         dlow = BackendDAECreate.lower(dae, funcs, true); //Verificare cosa fa
         (dlow_1,om,omT) = BackendDAEUtil.preOptimiseBackendDAE(dlow,funcs,
             {"removeSimpleEquations","removeParameterEqns","expandDerOperator"},NONE(),NONE());
-        (dlow_1,_,_,_,_,_) = BackendDAEUtil.transformDAE(dlow_1,funcs,BackendDAETransform.dummyDerivative,om,omT);    
+        (dlow_1,_,_,_,_,_) = BackendDAEUtil.transformDAE(dlow_1,funcs,BackendDAETransform.dummyDerivative,om,omT);
+        dlow_1 = BackendDAECreate.findZeroCrossings(dlow_1);    
         xml_filename = stringAppendList({filenameprefix,".xml"});
         funcelems = DAEUtil.getFunctionList(Env.getFunctionTree(cache));
         Print.clearBuf();

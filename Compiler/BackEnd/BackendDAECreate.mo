@@ -87,7 +87,7 @@ protected
   BackendDAE.AliasVariables aliasVars "hash table with alias vars' replacements (a=b or a=-b)";
   list<BackendDAE.Equation> eqns,reqns,ieqns,algeqns,algeqns1,ialgeqns,multidimeqns,imultidimeqns,eqns_1;
   list<BackendDAE.MultiDimEquation> aeqns,aeqns1,iaeqns;
-  list<DAE.Algorithm> algs,algs_1,ialgs;
+  list<DAE.Algorithm> algs,ialgs;
   list<BackendDAE.WhenClause> whenclauses,whenclauses_1;
   BackendDAE.EquationArray eqnarr,reqnarr,ieqnarr;
   array<BackendDAE.MultiDimEquation> arr_md_eqns;
@@ -127,13 +127,12 @@ algorithm
   vars_1 := detectImplicitDiscrete(vars, eqns);
   vars_1 := detectImplicitDiscreteAlgs(vars_1,knvars, algs);
   eqns_1 := sortEqn(eqns);
-  (zero_crossings,eqns_1,aeqns,whenclauses_1,algs_1) := findZeroCrossings(vars_1,knvars,eqns_1,aeqns,whenclauses_1,algs);
   eqnarr := BackendDAEUtil.listEquation(eqns_1);
   reqnarr := BackendDAEUtil.listEquation(reqns);
   ieqnarr := BackendDAEUtil.listEquation(ieqns);
   arr_md_eqns := listArray(aeqns);
-  algarr := listArray(algs_1);
-  einfo := Inline.inlineEventInfo(BackendDAE.EVENT_INFO(whenclauses_1,zero_crossings),(SOME(functionTree),{DAE.NORM_INLINE()}));
+  algarr := listArray(algs);
+  einfo := Inline.inlineEventInfo(BackendDAE.EVENT_INFO(whenclauses_1,{}),(SOME(functionTree),{DAE.NORM_INLINE()}));
   aliasVars := BackendDAEUtil.emptyAliasVariables();
   outBackendDAE := BackendDAE.DAE(vars_1,knvars,extVars,aliasVars,eqnarr,reqnarr,ieqnarr,arr_md_eqns,algarr,einfo,extObjCls);
 end lower;
@@ -2788,21 +2787,39 @@ end differentZeroCrossing;
 public function findZeroCrossings "function: findZeroCrossings
 
   This function finds all zerocrossings in the list of equations and
-  the list of when clauses. Used in lower2.
+  the list of when clauses.
 "
-  input BackendDAE.Variables vars;
-  input BackendDAE.Variables knvars;
-  input list<BackendDAE.Equation> eq;
-  input list<BackendDAE.MultiDimEquation> multiDimEqs;
-  input list<BackendDAE.WhenClause> wc;
-  input list<DAE.Algorithm> algs;
-  output list<BackendDAE.ZeroCrossing> res_1;
-  output list<BackendDAE.Equation> outEquationLst;
-  output list<BackendDAE.MultiDimEquation> outMultiDimEqs;
-  output list<BackendDAE.WhenClause> outWhenClauseLst;
-  output list<DAE.Algorithm> outAlgs;
+    input BackendDAE.BackendDAE inDAE;
+    output BackendDAE.BackendDAE outDAE;
 algorithm
-  (res_1,outEquationLst,outMultiDimEqs,outWhenClauseLst,outAlgs) := findZeroCrossings2(vars, knvars,eq,multiDimEqs,0, wc, 0, algs,0,{},0);
+  outDAE:=
+  match (inDAE)
+    local
+      BackendDAE.Variables vars,knvars,exobj;
+      BackendDAE.AliasVariables av;
+      BackendDAE.EquationArray eqns,remeqns,inieqns,eqns1;
+      array<BackendDAE.MultiDimEquation> arreqns,arreqns1;
+      array<DAE.Algorithm> algorithms,algorithms1;
+      BackendDAE.EventInfo einfo,einfo1;
+      BackendDAE.ExternalObjectClasses eoc;
+      list<BackendDAE.WhenClause> whenclauses,whenclauses1;
+      list<BackendDAE.Equation> eqs_lst,eqs_lst1;
+      list<BackendDAE.MultiDimEquation> arreqns_lst,arreqns_lst1;
+      list<DAE.Algorithm> algs_lst,algs_lst1;      
+      list<BackendDAE.ZeroCrossing> zero_crossings;
+    case (BackendDAE.DAE(vars,knvars,exobj,av,eqns,remeqns,inieqns,arreqns,algorithms,einfo as BackendDAE.EVENT_INFO(whenClauseLst=whenclauses),eoc))
+      equation
+        eqs_lst = BackendDAEUtil.equationList(eqns);
+        arreqns_lst = arrayList(arreqns);
+        algs_lst = arrayList(algorithms);        
+        (zero_crossings,eqs_lst1,arreqns_lst1,whenclauses1,algs_lst1) = findZeroCrossings2(vars, knvars,eqs_lst,arreqns_lst,0, whenclauses, 0, algs_lst,0,{},0);
+        eqns1 = BackendDAEUtil.listEquation(eqs_lst1);
+        arreqns1 = listArray(arreqns_lst);    
+        algorithms1 = listArray(algs_lst1);    
+        einfo1 = BackendDAE.EVENT_INFO(whenclauses1,zero_crossings);        
+      then
+        (BackendDAE.DAE(vars,knvars,exobj,av,eqns1,remeqns,inieqns,arreqns1,algorithms1,einfo1,eoc));
+  end match; 
 end findZeroCrossings;
 
 protected function findZeroCrossings2 "function: findZeroCrossings2

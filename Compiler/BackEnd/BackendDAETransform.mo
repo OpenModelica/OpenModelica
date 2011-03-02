@@ -123,10 +123,6 @@ algorithm
       list<BackendDAE.MultiDimEquation> ae_lst;
       array<BackendDAE.Value> vec1,vec2;
       BackendDAE.MatchingOptions match_opts;
-      BackendDAE.ExternalObjectClasses eoc;
-      list<BackendDAE.WhenClause> whenclauses;
-      list<BackendDAE.ZeroCrossing> zero_crossings;
-      list<DAE.Algorithm> algs;
     /* fail case if daelow is empty */
     case ((dae as BackendDAE.DAE(orderedVars = vars,orderedEqs = eqns)),m,mt,match_opts,inFunctions)
       equation
@@ -155,16 +151,7 @@ algorithm
         /* NOTE: Here it could be possible to run removeSimpleEquations again, since algebraic equations
         could potentially be removed after a index reduction has been done. However, removing equations here
         also require that e.g. zero crossings, array equations, etc. must be recalculated. */       
-        (dae as BackendDAE.DAE(v,kv,exv,av,e,re,ie,ae,al,ev,eoc),_,_) = BackendDAEOptimize.removeSimpleEquations(dae,inFunctions,SOME(m),SOME(mt)); 
-        BackendDAE.EVENT_INFO(whenClauseLst=whenclauses) = ev;
-        e_lst = BackendDAEUtil.equationList(e);
-        ae_lst = arrayList(ae);
-        algs = arrayList(al);
-        (zero_crossings,e_lst,ae_lst,whenclauses,algs) = BackendDAECreate.findZeroCrossings(v,kv,e_lst,ae_lst,whenclauses,algs);
-        e = BackendDAEUtil.listEquation(e_lst);
-        ae = listArray(ae_lst);    
-        einfo = BackendDAE.EVENT_INFO(whenclauses,zero_crossings); 
-        dae_1 = BackendDAE.DAE(v,kv,exv,av,e,re,ie,ae,al,einfo,eoc); 
+        (dae_1,_,_) = BackendDAEOptimize.removeSimpleEquations(dae,inFunctions,SOME(m),SOME(mt)); 
         m_1 = BackendDAEUtil.incidenceMatrix(dae_1, BackendDAE.NORMAL())
         "Rerun matching to get updated assignments and incidence matrices
          TODO: instead of rerunning: find out which equations are removed
@@ -481,7 +468,7 @@ algorithm
 
     case (dae,m,mt,nv,nf,i,ass1,ass2,(BackendDAE.INDEX_REDUCTION(),eq_cons,r_simple),inFunctions,derivedAlgs,derivedMultiEqn)
       equation
-        ((dae as BackendDAE.DAE(BackendDAE.VARIABLES(_,_,_,_,nv_1),BackendDAE.VARIABLES(_,_,_,_,nkv),_,_,eqns,_,_,_,_,_,_)),m,mt,derivedAlgs1,derivedMultiEqn1) = reduceIndexDummyDer(dae, m, mt, nv, nf, i, inFunctions,derivedAlgs,derivedMultiEqn) 
+        (dae,m,mt,derivedAlgs1,derivedMultiEqn1) = reduceIndexDummyDer(dae, m, mt, nv, nf, i, inFunctions,derivedAlgs,derivedMultiEqn) 
         "path_found failed, Try index reduction using dummy derivatives.
          When a constraint exist between states and index reduction is needed
          the dummy derivative will select one of the states as a dummy state
@@ -492,6 +479,7 @@ algorithm
          In the dummy derivative method this equation is added and the original equation
          u1=u2 is kept. This is not the case for the original pantilides algorithm, where
          the original equation is removed from the system." ;
+        eqns = BackendEquation.daeEqns(dae);
         nf_1 = BackendDAEUtil.equationSize(eqns) "and try again, restarting. This could be optimized later. It should not
                                    be necessary to restart the matching, according to Bernard Bachmann. Instead one
                                    could continue the matching as usual. This was tested (2004-11-22) and it does not
@@ -501,6 +489,7 @@ algorithm
                                    2004-12-29 PA. This was a bug, assignment lists needed to be expanded with the size
                                    of the system in order to work. SO: Matching is not needed to be restarted from
                                    scratch." ;
+        nv_1 = BackendVariable.varsSize(BackendVariable.daeVars(dae));
         nvd = nv_1 - nv;
         ass1_1 = assignmentsExpand(ass1, nvd);
         ass2_1 = assignmentsExpand(ass2, nvd);

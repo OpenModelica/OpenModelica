@@ -3966,7 +3966,7 @@ algorithm
         e_1 = e - 1;
         eqn = equationNth(daeeqns, e_1);
         row = incidenceRow(vars, eqn,wc);
-        m_1 = Util.arrayReplaceAtWithFill(row, e_1 + 1, m, {});
+        m_1 = Util.arrayReplaceAtWithFill(row, e, m, {});
         changedvars1 = varsInEqn(m_1, e);
         (m_2,changedvars2) = updateIncidenceMatrix2(dae, m_1, eqns);
       then
@@ -4001,14 +4001,13 @@ algorithm
       array<list<BackendDAE.Value>> m,mt,mt_1,mt_2;
       list<list<BackendDAE.Value>> mlst;
       list<BackendDAE.Value> row_1,vars;
-      BackendDAE.Value v_1,v;
+      BackendDAE.Value v;
     case ({},m,mt) then mt;
     case ((v :: vars),m,mt)
       equation
         mlst = arrayList(m);
         row_1 = transposeRow(mlst, v, 1);
-        v_1 = v - 1;
-        mt_1 = Util.arrayReplaceAtWithFill(row_1, v_1 + 1, mt, {});
+        mt_1 = Util.arrayReplaceAtWithFill(row_1, v, mt, {});
         mt_2 = updateTransposedMatrix(vars, m, mt_1);
       then
         mt_2;
@@ -5291,7 +5290,7 @@ public function getSolvedSystem
     output Boolean outRunMatching;
   end pastoptimiseDAEModule;
 protected
-  BackendDAE.BackendDAE dae,optdae,sode,optsode,indexed_dlow;
+  BackendDAE.BackendDAE dae,optdae,sode,sode1,optsode,indexed_dlow;
   Option<BackendDAE.IncidenceMatrix> om,omT;
   BackendDAE.IncidenceMatrix m,mT,m_1,mT_1;
   array<Integer> v1,v2,v1_1,v2_1;  
@@ -5321,8 +5320,9 @@ algorithm
   Debug.fcall("execstat",print, "*** BackendMain -> pastoptimiseDAE at time: " +& realString(clock()) +& "\n" );
   (sode,outM,outMT,outAss1,outAss2,outComps) := pastoptimiseDAE(sode,functionTree,pastOptModules,m,mT,v1,v2,comps,daeHandler);
   
+  sode1 := BackendDAECreate.findZeroCrossings(sode);
   Debug.fcall("execstat",print, "*** BackendMain -> translateDae: " +& realString(clock()) +& "\n" );
-  indexed_dlow := translateDae(sode,NONE());
+  indexed_dlow := translateDae(sode1,NONE());
   outSODE := calculateValues(inCache, inEnv, indexed_dlow);
   Debug.fcall("dumpindxdae", BackendDump.dump, outSODE); 
 end getSolvedSystem;
