@@ -36,11 +36,13 @@
 #include "simulation_runtime.h"
 #include "options.h"
 #include <cmath>
-#include <cstring>
+#include <string.h>
 #include <iostream>
 #include <iomanip>
 #include <algorithm>
 #include <cstdarg>
+#include <stdint.h>
+#include <errno.h>
 #include "rtclock.h"
 
 using namespace std;
@@ -450,21 +452,18 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
       cout << "Start numerical solver from " << globalData->timeValue << " to "
           << stop << endl;
     }
-  std::ofstream fmt;
-  long stepNo = 0;
-  if (measure_time_flag)
-    {
-      const string filename = string(globalData->modelFilePrefix) + "_prof.csv";
-      fmt.open(filename.c_str());
-      fmt << "step,time,solver time";
-      for (int i = 0; i < globalData->nFunctions; i++)
-        fmt << "," << globalData->functionNames[i].name << ",";
-      for (int i = 0; i < globalData->nProfileBlocks; i++)
-        fmt << ","
-        << globalData->equationInfo[globalData->equationInfo_reverse_prof_index[i]].name
-        << ",";
-      fmt << endl;
+  FILE *fmt = NULL;
+  uint32_t stepNo = 0;
+  if (measure_time_flag) {
+    const string filename = string(globalData->modelFilePrefix) + "_prof.data";
+    fmt = fopen(filename.c_str(), "wb");
+    if (!fmt) {
+      measure_time_flag = 0;
+      fprintf(stderr, "Warning: Disabled time measurements because the output file could not be opened: %s\n", strerror(errno));
+      fclose(fmt);
+      fmt = NULL;
     }
+  }
 
   try
   {
@@ -555,19 +554,30 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
           saveall();
           if (measure_time_flag)
             {
+              double tmpdbl;
+              uint32_t tmpint;
               rt_tick(SIM_TIMER_OVERHEAD);
               rt_accumulate(SIM_TIMER_STEP);
-              fmt << stepNo++ << "," << globalData->timeValue << ","
-                  << rt_accumulated(SIM_TIMER_STEP);
-              for (int i = 0; i < globalData->nFunctions; i++)
-                fmt << "," << rt_ncall(i + SIM_TIMER_FIRST_FUNCTION) << ","
-                << rt_accumulated(i + SIM_TIMER_FIRST_FUNCTION);
-              for (int i = globalData->nFunctions; i < globalData->nFunctions
-              + globalData->nProfileBlocks; i++)
-                fmt << "," << rt_ncall(i + SIM_TIMER_FIRST_FUNCTION) << ","
-                << rt_accumulated(i + SIM_TIMER_FIRST_FUNCTION);
-              fmt << endl;
+              /* Disable time measurements if we have trouble writing to the file... */
+              measure_time_flag = measure_time_flag && 1 == fwrite(&stepNo, sizeof(uint32_t), 1, fmt);
+              stepNo++;
+              measure_time_flag = measure_time_flag && 1 == fwrite(&globalData->timeValue, sizeof(double), 1, fmt);
+              tmpdbl = rt_accumulated(SIM_TIMER_STEP);
+              measure_time_flag = measure_time_flag && 1 == fwrite(&tmpdbl, sizeof(double), 1, fmt);
+              for (int i = 0; i < globalData->nFunctions + globalData->nProfileBlocks; i++) {
+                tmpint = rt_ncall(i + SIM_TIMER_FIRST_FUNCTION);
+                measure_time_flag = measure_time_flag && 1 == fwrite(&tmpint, sizeof(uint32_t), 1, fmt);
+              }
+              for (int i = 0; i < globalData->nFunctions + globalData->nProfileBlocks; i++) {
+                tmpdbl = rt_accumulated(i + SIM_TIMER_FIRST_FUNCTION);
+                measure_time_flag = measure_time_flag && 1 == fwrite(&tmpdbl, sizeof(double), 1, fmt);
+              }
               rt_accumulate(SIM_TIMER_OVERHEAD);
+              if (!measure_time_flag) {
+                fprintf(stderr, "Warning: Disabled time measurements because the output file could not be generated: %s\n", strerror(errno));
+                fclose(fmt);
+                fmt = NULL;
+              }
             }
           SaveZeroCrossings();
           sim_result->emit();
@@ -601,6 +611,7 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
         { // terminated from assert, etc.
           cout << "Simulation terminated at time " << globalData->timeValue
               << endl;
+          if (fmt) fclose(fmt);
           return -1;
         }
   }
@@ -614,6 +625,7 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
     }
 
   deinitializeEventData();
+  if (fmt) fclose(fmt);
 
   return 0;
 }

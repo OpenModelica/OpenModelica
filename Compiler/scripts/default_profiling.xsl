@@ -33,15 +33,15 @@
 </head>
 
 <body>
-<h1>Model information for <xsl:value-of select="modelinfo/name"/></h1>
+<h1>Profiling information for <xsl:value-of select="modelinfo/name"/></h1>
 
 <h2>Information</h2>
 <p>All times are measured using a real-time wall clock. This means context switching produces bad worst-case execution times (max times) for blocks. If you want better results, use a CPU-time clock or run the command using real-time priviliges (avoiding context switches).</p>
 <p>Note that for blocks where the individual execution time is close to the accuracy of the real-time clock, the maximum measured time may deviate a lot from the average.</p>
-<p>For more details, see <a href="{modelinfo/prefix}_prof.csv"><xsl:value-of select="modelinfo/name"/>_prof.csv</a>.</p>
+<p>For more details, see <a href="{modelinfo/prefix}_prof.xml"><xsl:value-of select="modelinfo/name"/>_prof.xml</a>.</p>
 
 <h2>Summary</h2>
-  <p>What solver/settings were used?</p>
+  <p>What solver/settings were used? This is missing :(</p>
   <table>
   <tr><th class="name">Task</th><th>Time</th><th><abbr title="Fraction of total simulation time">Fraction</abbr></th></tr>
   <tr><td class="name"><abbr title="Choosing solver, allocating data structures, etc (does not include reading the parameter start-values from file)">Pre-Initialization</abbr></td><td><xsl:value-of select="modelinfo/preinitTime"/></td><td><xsl:value-of select="format-number(100 * modelinfo/preinitTime div modelinfo/totalTime,'##0.00')"/>%</td></tr>
@@ -50,8 +50,8 @@
   <tr><td class="name">Creating output file</td><td><xsl:value-of select="modelinfo/outputTime"/></td><td><xsl:value-of select="format-number(100 * modelinfo/outputTime div modelinfo/totalTime,'##0.00')"/>%</td></tr>
   <tr><td class="name">Linearization</td><td><xsl:value-of select="modelinfo/linearizeTime"/></td><td><xsl:value-of select="format-number(100 * modelinfo/linearizeTime div modelinfo/totalTime,'##0.00')"/>%</td></tr>
   <tr><td class="name">Time steps (incl.integration?)</td><td><xsl:value-of select="modelinfo/totalStepsTime"/></td><td><xsl:value-of select="format-number(100 * modelinfo/totalStepsTime div modelinfo/totalTime,'##0.00')"/>%</td></tr>
-  <tr><td class="name">Overhead</td><td><xsl:value-of select="modelinfo/overheadTime"/></td><td><xsl:value-of select="format-number(100 * modelinfo/overheadTime div modelinfo/totalTime,'##0.00')"/>%</td></tr>
-  <tr><td class="name">Unknown</td><td><xsl:value-of select="modelinfo/totalTime - modelinfo/overheadTime - modelinfo/totalStepsTime - modelinfo/linearizeTime - modelinfo/outputTime - modelinfo/eventTime - modelinfo/initTime"/></td>
+  <tr><td class="name"><abbr title="Overhead from creating {profilingdataheader/filename}. The overhead from sampling the real-time clock is embedded in the other times.">Overhead</abbr></td><td><xsl:value-of select="modelinfo/overheadTime"/></td><td><xsl:value-of select="format-number(100 * modelinfo/overheadTime div modelinfo/totalTime,'##0.00')"/>%</td></tr>
+  <tr><td class="name"><abbr title="Some subparts are not measured (between steps, etc), and some overlap (function calls during initialization)">Unknown</abbr></td><td><xsl:value-of select="modelinfo/totalTime - modelinfo/overheadTime - modelinfo/totalStepsTime - modelinfo/linearizeTime - modelinfo/outputTime - modelinfo/eventTime - modelinfo/initTime"/></td>
   <td><xsl:value-of select="format-number(100 * (modelinfo/totalTime - modelinfo/overheadTime - modelinfo/totalStepsTime - modelinfo/linearizeTime - modelinfo/outputTime - modelinfo/eventTime - modelinfo/initTime - modelinfo/preinitTime) div modelinfo/totalTime,'##0.00')"/>%</td></tr>
   <tr><td class="name">Total simulation time</td><td><xsl:value-of select="modelinfo/totalTime"/></td><td>100.00%</td></tr>
   </table>

@@ -39,14 +39,15 @@ static void indent(FILE *fout, int n) {
   while (n--) fputc(' ', fout);
 }
 
-static void printPlotCommand(FILE *plt, const char *prefix, int i, int id) {
+static void printPlotCommand(FILE *plt, const char *prefix, int numFnsAndBlocks, int i, int id) {
+  const char *format = "plot \"%s_prof.data\" binary format=\"%%*uint32%%2double%%*%duint32%%%ddouble\" using 1:%d w l lw 1\n";
   if (!plt) return;
   fputs("set terminal png size 32,32\n", plt);
   fprintf(plt, "set output \"%s_prof.%d.thumb.png\"\n", prefix, id);
-  fprintf(plt, "plot \"%s_prof.csv\" using 2:%d w l lw 1\n", prefix, 2*i+5);
+  fprintf(plt, format, prefix, numFnsAndBlocks, numFnsAndBlocks, 2+i);
   fputs("set terminal svg\n", plt);
   fprintf(plt, "set output \"%s_prof.%d.svg\"\n", prefix, id);
-  fprintf(plt, "plot \"%s_prof.csv\" using 2:%d\n", prefix, 2*i+5);
+  fprintf(plt, format, prefix, numFnsAndBlocks, numFnsAndBlocks, 2+i);
 }
 
 static void printInfoTag(FILE *fout, int level, const omc_fileInfo info) {
@@ -65,10 +66,10 @@ static void printVars(FILE *fout, int level, int n, const struct omc_varInfo *va
   }
 }
 
-static void printFunctions(FILE *fout, FILE *plt, const char *modelFilePrefix, int n, const struct omc_functionInfo *funcs) {
+static void printFunctions(FILE *fout, FILE *plt, const char *modelFilePrefix, DATA *data, const struct omc_functionInfo *funcs) {
   int i;
-  for (i=0; i<n; i++) {
-    printPlotCommand(plt, modelFilePrefix, i, funcs[i].id);
+  for (i=0; i<data->nFunctions; i++) {
+    printPlotCommand(plt, modelFilePrefix, data->nFunctions+data->nProfileBlocks, i, funcs[i].id);
     rt_clear(i + SIM_TIMER_FIRST_FUNCTION);
     indent(fout,2);
     fprintf(fout, "<function id=\"%d\">\n", funcs[i].id);
@@ -86,7 +87,7 @@ static void printProfileBlocks(FILE *fout, FILE *plt, DATA *data) {
   int i;
   for (i = data->nFunctions; i < data->nFunctions + data->nProfileBlocks; i++) {
     const struct omc_equationInfo *eq = &data->equationInfo[data->equationInfo_reverse_prof_index[i-data->nFunctions]];
-    printPlotCommand(plt, data->modelFilePrefix, i, eq->id);
+    printPlotCommand(plt, data->modelFilePrefix, data->nFunctions+data->nProfileBlocks, i, eq->id);
     rt_clear(i + SIM_TIMER_FIRST_FUNCTION);
     indent(fout,2);fprintf(fout, "<profileblock>\n");
     indent(fout,4);fprintf(fout, "<ref refid=\"%d\"/>\n", (int) eq->id);
@@ -110,6 +111,32 @@ static void printEquations(FILE *fout, int n, const struct omc_equationInfo *eqn
   }
 }
 
+static void printProfilingDataHeader(FILE *fout, DATA *data) {
+  int i;
+  indent(fout, 2); fprintf(fout, "<filename>%s_prof.data</filename>\n", data->modelFilePrefix);
+  indent(fout, 2); fprintf(fout, "<format>\n");
+  indent(fout, 4); fprintf(fout, "<double>step</double>\n");
+  indent(fout, 4); fprintf(fout, "<double>time</double>\n");
+  indent(fout, 4); fprintf(fout, "<double>cpu time</double>\n");
+  for (i = 0; i < globalData->nFunctions; i++) {
+    const char *name = globalData->functionNames[i].name;
+    indent(fout, 4); fprintf(fout, "<uint32>%s (calls)</uint32>\n", name);
+  }
+  for (i = 0; i < globalData->nProfileBlocks; i++) {
+    const char *name = globalData->equationInfo[globalData->equationInfo_reverse_prof_index[i]].name;
+    indent(fout, 4); fprintf(fout, "<uint32>%s (calls)</uint32>\n", name);
+  }
+  for (i = 0; i < globalData->nFunctions; i++) {
+    const char *name = globalData->functionNames[i].name;
+    indent(fout, 4); fprintf(fout, "<double>%s (cpu time)</double>\n", name);
+  }
+  for (i = 0; i < globalData->nProfileBlocks; i++) {
+    const char *name = globalData->equationInfo[globalData->equationInfo_reverse_prof_index[i]].name;
+    indent(fout, 4); fprintf(fout, "<double>%s (cpu time)</double>\n", name);
+  }
+  indent(fout, 2); fprintf(fout, "</format>\n");
+}
+
 int printModelInfo(DATA *data, const char *filename, const char *plotfile) {
   static char buf[256];
   FILE *fout = fopen(filename, "w");
@@ -129,10 +156,9 @@ int printModelInfo(DATA *data, const char *filename, const char *plotfile) {
   }
   if (plotCommands) {
     fputs("set terminal svg\n", plotCommands);
-    fputs("set datafile separator \",\"\n", plotCommands);
     fputs("set nokey\n", plotCommands);
     /* The column containing the time spent to calculate each step */
-    printPlotCommand(plotCommands, data->modelFilePrefix, -1, 999);
+    printPlotCommand(plotCommands, data->modelFilePrefix, data->nFunctions+data->nProfileBlocks, 0, 999);
   }
   /* The doctype is needed for id() lookup to work properly */
   fprintf(fout, "<!DOCTYPE doc [\
@@ -169,9 +195,13 @@ int printModelInfo(DATA *data, const char *filename, const char *plotfile) {
   indent(fout, 2); fprintf(fout, "<linearizeTime>%f</linearizeTime>\n", rt_accumulated(SIM_TIMER_LINEARIZE));
   indent(fout, 2); fprintf(fout, "<totalTime>%f</totalTime>\n", rt_accumulated(SIM_TIMER_TOTAL));
   indent(fout, 2); fprintf(fout, "<totalStepsTime>%f</totalStepsTime>\n", rt_total(SIM_TIMER_STEP));
-  indent(fout, 2); fprintf(fout, "<numStep>%d</numStep>\n", rt_ncall_total(SIM_TIMER_STEP));
+  indent(fout, 2); fprintf(fout, "<numStep>%d</numStep>\n", (int) rt_ncall_total(SIM_TIMER_STEP));
   indent(fout, 2); fprintf(fout, "<maxTime>%.9f</maxTime>\n", rt_max_accumulated(SIM_TIMER_STEP));
   fprintf(fout, "</modelinfo>\n");
+
+  fprintf(fout, "<profilingdataheader>\n");
+  printProfilingDataHeader(fout, data);
+  fprintf(fout, "</profilingdataheader>\n");
 
   fprintf(fout, "<variables>\n");
   printVars(fout, 2, data->nStates, data->statesNames);
@@ -187,7 +217,7 @@ int printModelInfo(DATA *data, const char *filename, const char *plotfile) {
   fprintf(fout, "</variables>\n");
 
   fprintf(fout, "<functions>\n");
-  printFunctions(fout, plotCommands, data->modelFilePrefix, data->nFunctions, data->functionNames);
+  printFunctions(fout, plotCommands, data->modelFilePrefix, data, data->functionNames);
   fprintf(fout, "</functions>\n");
 
   fprintf(fout, "<equations>\n");
@@ -204,6 +234,7 @@ int printModelInfo(DATA *data, const char *filename, const char *plotfile) {
   if (plotCommands) {
     char *omhome;
     char *buf;
+    int genHtmlRes;
     omhome = getenv("OPENMODELICAHOME");
     buf = malloc(200 + 2*strlen(plotfile) + (omhome ? strlen(omhome) : 0));
 #if defined(__MINGW32__) || defined(_MSC_VER)
@@ -220,14 +251,14 @@ int printModelInfo(DATA *data, const char *filename, const char *plotfile) {
 #endif
     if (omhome) {
       sprintf(buf, "xsltproc -o %s_prof.html %s/share/omc/scripts/default_profiling.xsl %s_prof.xml", data->modelFilePrefix, omhome, data->modelFilePrefix);
-      if (0 != system(buf)) {
-        fprintf(stdout, "Time measurements stored in %s_prof.xml (for XSL transforms) and %s_prof.csv (the raw data)\n", data->modelFilePrefix, data->modelFilePrefix);
-      } else {
-        fprintf(stdout, "Time measurements stored in %s_prof.html (human-readable), %s_prof.xml (for XSL transforms) and %s_prof.csv (the raw data)\n", data->modelFilePrefix, data->modelFilePrefix, data->modelFilePrefix);
-      }
+      genHtmlRes = system(buf);
     } else {
-      fprintf(stdout, "Time measurements stored in %s_prof.xml (for XSL transforms) and %s_prof.csv (the raw data)\n", data->modelFilePrefix, data->modelFilePrefix);
+      strcpy(buf, "OPENMODELICAHOME missing");
+      genHtmlRes = 1;
     }
+    if (genHtmlRes)
+      fprintf(stderr, "Warning: Failed to generate html version of profiling results: %s\n", buf);
+    fprintf(stdout, "Time measurements stored in %s_prof.html (human-readable), %s_prof.xml (for XSL transforms)\n", data->modelFilePrefix, data->modelFilePrefix);
     free(buf);
   }
   return 0;
