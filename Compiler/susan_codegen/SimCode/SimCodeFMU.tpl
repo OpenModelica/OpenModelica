@@ -128,9 +128,8 @@ template xsdateTime(DateTime dt)
  "YYYY-MM-DDThh:mm:ssZ"
 ::=
   match dt
-  case DATETIME(__) then '<%year%>-<%mon%>-<%mday%>T<%hour%>:<%min%>:<%sec%>Z'
+  case DATETIME(__) then '<%year%>-<%twodigit(mon)%>-<%twodigit(mday)%>T<%twodigit(hour)%>:<%twodigit(min)%>:<%twodigit(sec)%>Z'
 end xsdateTime;
-
 
 template UnitDefinitions(SimCode simCode)
  "Generates code for UnitDefinitions file for FMU target."
@@ -324,10 +323,16 @@ case SIMCODE(__) then
   #include "fmu_model_interface.h"
 
   void setStartValues(ModelInstance *comp);
-  void initialize(ModelInstance* comp, fmiEventInfo* eventInfo);
   void getEventIndicator(ModelInstance* comp, int i);
   void eventUpdate(ModelInstance* comp, fmiEventInfo* eventInfo);
   fmiReal getReal(ModelInstance* comp, const fmiValueReference vr);  
+  fmiStatus setReal(ModelInstance* comp, const fmiValueReference vr, const fmiReal value);  
+  fmiInteger getInteger(ModelInstance* comp, const fmiValueReference vr);  
+  fmiStatus setInteger(ModelInstance* comp, const fmiValueReference vr, const fmiInteger value);  
+  fmiBoolean getBoolean(ModelInstance* comp, const fmiValueReference vr);  
+  fmiStatus setBoolean(ModelInstance* comp, const fmiValueReference vr, const fmiBoolean value);  
+  fmiString getString(ModelInstance* comp, const fmiValueReference vr);  
+  fmiStatus setString(ModelInstance* comp, const fmiValueReference vr, const fmiString value);  
 
   <%ModelDefineData(modelInfo)%>
   
@@ -335,10 +340,17 @@ case SIMCODE(__) then
   #include "fmu_model_interface.c"
  
   <%setStartValues(modelInfo)%>
-  <%initializeFunction(initialEquations)%>
   <%getEventIndicatorFunction(simCode)%>
   <%eventUpdateFunction(simCode)%>
   <%getRealFunction(modelInfo)%>
+  <%setRealFunction(modelInfo)%>
+  <%getIntegerFunction(modelInfo)%>
+  <%setIntegerFunction(modelInfo)%>
+  <%getBooleanFunction(modelInfo)%>
+  <%setBooleanFunction(modelInfo)%>
+  <%getStringFunction(modelInfo)%>
+  <%setStringFunction(modelInfo)%>
+  
   
   >>
 end fmumodel_identifierFile;
@@ -375,6 +387,7 @@ let numberOfBooleans = intAdd(varInfo.numBoolAlgVars,varInfo.numBoolParams)
   
   // define initial state vector as vector of value references
   #define STATES { <%vars.stateVars |> SIMVAR(__) => '<%crefStr(name)%>_'  ;separator=", "%> }
+  #define STATESDERIVATIVES { <%vars.derivativeVars |> SIMVAR(__) => '<%dervativeNameCStyle(name)%>'  ;separator=", "%> }
   
   >>
 end ModelDefineData;
@@ -416,18 +429,17 @@ case MODELINFO(vars=SIMVARS(__)) then
   // Set values for all variables that define a start value
   void setStartValues(ModelInstance *comp) {
   
-  <%initVals(vars.stateVars,"r")%>
+  <%initVals(vars.stateVars,"r","states")%>
   <%initDerivativeVals(vars.derivativeVars)%>
-  <%initVals(vars.algVars,"r")%>
-  <%initVals(vars.paramVars,"r")%>
-  <%initVals(vars.intParamVars,"i")%>
-  <%initVals(vars.intAlgVars,"i")%>
-  <%initVals(vars.boolParamVars,"b")%>
-  <%initVals(vars.boolAlgVars,"b")%>
-  <%initVals(vars.stringParamVars,"s")%>
-  <%initVals(vars.stringAlgVars,"s")%>  
+  <%initVals(vars.algVars,"r","algebraics")%>
+  <%initVals(vars.paramVars,"r","parameters")%>
+  <%initVals(vars.intParamVars,"i","intVariables.parameters")%>
+  <%initVals(vars.intAlgVars,"i","intVariables.algebraics")%>
+  <%initVals(vars.boolParamVars,"b","boolVariables.parameters")%>
+  <%initVals(vars.boolAlgVars,"b","boolVariables.algebraics")%>
+  <%initVals(vars.stringParamVars,"s","stringVariables.parameters")%>
+  <%initVals(vars.stringAlgVars,"s","stringVariables.algebraics")%>  
   }
-  
   >>
 end setStartValues;
 
@@ -454,12 +466,14 @@ template initializeFunction(list<SimEqSystem> allEquations)
 end initializeFunction;
 
 
-template initVals(list<SimVar> varsLst, String prefix) ::=
+template initVals(list<SimVar> varsLst, String prefix, String arrayName) ::=
   varsLst |> SIMVAR(__) =>
   <<
-  <%prefix%>(<%crefStr(name)%>_) = <%match initialValue 
-    case SOME(v) then initVal(v)
-      else setDefaultVal(prefix)
+  globalData-><%arrayName%>[<%index%>] = <%match initialValue
+    case SOME(v) then
+     initVal(v)
+    else 
+     setDefaultVal(prefix)
     %>;
     >>  
   ;separator="\n"
@@ -477,11 +491,13 @@ end setDefaultVal;
 template initDerivativeVals(list<SimVar> varsLst) ::=
   varsLst |> SIMVAR(__) =>
   <<
-  r(<%dervativeNameCStyle(name)%>) = <%match initialValue 
-    case SOME(v) then initVal(v)
-      else "0.0; //default"
-    %>;
-    >>  
+  globalData->statesDerivatives[<%index%>] = <%match initialValue
+    case SOME(v) then
+     initVal(v)
+    else 
+     "0.0; //default"
+    %>; 
+    >>
   ;separator="\n"
 end initDerivativeVals;
 
@@ -534,8 +550,10 @@ case MODELINFO(vars=SIMVARS(__)) then
   <<
   fmiReal getReal(ModelInstance* comp, const fmiValueReference vr) {
     switch (vr) {
-        <%vars.stateVars |> var => SwitchStateVars(var) ;separator="\n"%>
+        <%vars.stateVars |> var => SwitchVars(var,"states") ;separator="\n"%>
         <%vars.derivativeVars |> var => SwitchDerivativeVariables(var) ;separator="\n"%>
+        <%vars.algVars |> var => SwitchVars(var,"algebraics") ;separator="\n"%>
+        <%vars.paramVars |> var => SwitchVars(var,"parameters") ;separator="\n"%>
         default: 
         	return 0.0;
     }
@@ -544,16 +562,159 @@ case MODELINFO(vars=SIMVARS(__)) then
   >>
 end getRealFunction;
 
-template SwitchStateVars(SimVar simVar)
+template setRealFunction(ModelInfo modelInfo)
+ "Generates setReal function for c file."
+::=
+match modelInfo
+case MODELINFO(vars=SIMVARS(__)) then
+  <<
+  fmiStatus setReal(ModelInstance* comp, const fmiValueReference vr, const fmiReal value) {
+    switch (vr) {
+        <%vars.stateVars |> var => SwitchVarsSet(var,"states") ;separator="\n"%>
+        <%vars.derivativeVars |> var => SwitchDerivativeVariablesSet(var) ;separator="\n"%>
+        <%vars.algVars |> var => SwitchVarsSet(var,"algebraics") ;separator="\n"%>
+        <%vars.paramVars |> var => SwitchVarsSet(var,"parameters") ;separator="\n"%>
+        default: 
+        	return fmiError;
+    }
+    return fmiOK;
+  }
+  
+  >>
+end setRealFunction;
+
+template getIntegerFunction(ModelInfo modelInfo)
+ "Generates setInteger function for c file."
+::=
+match modelInfo
+case MODELINFO(vars=SIMVARS(__)) then
+  <<
+  fmiInteger getInteger(ModelInstance* comp, const fmiValueReference vr) {
+    switch (vr) {
+        <%vars.intAlgVars |> var => SwitchVars(var,"intVariables.algebraics") ;separator="\n"%>
+        <%vars.intParamVars |> var => SwitchVars(var,"intVariables.parameters") ;separator="\n"%>
+        default: 
+        	return 0;
+    }
+  }
+  
+  >>
+end getIntegerFunction;
+
+template setIntegerFunction(ModelInfo modelInfo)
+ "Generates setInteger function for c file."
+::=
+match modelInfo
+case MODELINFO(vars=SIMVARS(__)) then
+  <<
+  fmiStatus setInteger(ModelInstance* comp, const fmiValueReference vr, const fmiInteger value) {
+    switch (vr) {
+        <%vars.intAlgVars |> var => SwitchVarsSet(var,"intVariables.algebraics") ;separator="\n"%>
+        <%vars.intParamVars |> var => SwitchVarsSet(var,"intVariables.parameters") ;separator="\n"%>
+        default: 
+        	return fmiError;
+    }
+    return fmiOK;
+  }
+  
+  >>
+end setIntegerFunction;
+
+template getBooleanFunction(ModelInfo modelInfo)
+ "Generates setBoolean function for c file."
+::=
+match modelInfo
+case MODELINFO(vars=SIMVARS(__)) then
+  <<
+  fmiBoolean getBoolean(ModelInstance* comp, const fmiValueReference vr) {
+    switch (vr) {
+        <%vars.boolAlgVars |> var => SwitchVars(var,"boolVariables.algebraics") ;separator="\n"%>
+        <%vars.boolParamVars |> var => SwitchVars(var,"boolVariables.parameters") ;separator="\n"%>
+        default: 
+        	return 0;
+    }
+  }
+  
+  >>
+end getBooleanFunction;
+
+template setBooleanFunction(ModelInfo modelInfo)
+ "Generates setBoolean function for c file."
+::=
+match modelInfo
+case MODELINFO(vars=SIMVARS(__)) then
+  <<
+  fmiStatus setBoolean(ModelInstance* comp, const fmiValueReference vr, const fmiBoolean value) {
+    switch (vr) {
+        <%vars.boolAlgVars |> var => SwitchVarsSet(var,"boolVariables.algebraics") ;separator="\n"%>
+        <%vars.boolParamVars |> var => SwitchVarsSet(var,"boolVariables.parameters") ;separator="\n"%>
+        default: 
+        	return fmiError;
+    }
+    return fmiOK;
+  }
+  
+  >>
+end setBooleanFunction;
+
+template getStringFunction(ModelInfo modelInfo)
+ "Generates setString function for c file."
+::=
+match modelInfo
+case MODELINFO(vars=SIMVARS(__)) then
+  <<
+  fmiString getString(ModelInstance* comp, const fmiValueReference vr) {
+    switch (vr) {
+        <%vars.stringAlgVars |> var => SwitchVars(var,"stringVariables.algebraics") ;separator="\n"%>
+        <%vars.stringParamVars |> var => SwitchVars(var,"stringVariables.parameters") ;separator="\n"%>
+        default: 
+        	return 0;
+    }
+  }
+  
+  >>
+end getStringFunction;
+
+template setStringFunction(ModelInfo modelInfo)
+ "Generates setString function for c file."
+::=
+match modelInfo
+case MODELINFO(vars=SIMVARS(__)) then
+  <<
+  fmiStatus setString(ModelInstance* comp, const fmiValueReference vr, const fmiString value) {
+    switch (vr) {
+        <%vars.stringAlgVars |> var => SwitchVarsSet(var,"stringVariables.algebraics") ;separator="\n"%>
+        <%vars.stringParamVars |> var => SwitchVarsSet(var,"stringVariables.parameters") ;separator="\n"%>
+        default: 
+        	return fmiError;
+    }
+    return fmiOK;
+  }
+  
+  >>
+end setStringFunction;
+
+template SwitchVars(SimVar simVar, String arrayName)
  "Generates code for defining variables in c file for FMU target. "
 ::=
 match simVar
   case SIMVAR(__) then
   let description = if comment then '// "<%comment%>"'
   <<
-  case <%crefStr(name)%>_ : return r(<%crefStr(name)%>_);
+  case <%crefStr(name)%>_ : return globalData-><%arrayName%>[<%index%>]; break;
   >>
-end SwitchStateVars;
+end SwitchVars;
+
+template SwitchVarsSet(SimVar simVar, String arrayName)
+ "Generates code for defining variables in c file for FMU target. "
+::=
+match simVar
+  case SIMVAR(__) then
+  let description = if comment then '// "<%comment%>"'
+  <<
+  case <%crefStr(name)%>_ : globalData-><%arrayName%>[<%index%>]=value; break;
+  >>
+end SwitchVarsSet;
 
 template SwitchDerivativeVariables(SimVar simVar)
  "Generates code for defining variables in c file for FMU target.  "
@@ -561,9 +722,19 @@ template SwitchDerivativeVariables(SimVar simVar)
 match simVar
   case SIMVAR(__) then
   <<
-  case <%dervativeNameCStyle(name)%> : return r(<%dervativeNameCStyle(name)%>);
+  case <%dervativeNameCStyle(name)%> : return globalData->statesDerivatives[<%index%>]; break;
   >>
 end SwitchDerivativeVariables;
+
+template SwitchDerivativeVariablesSet(SimVar simVar)
+ "Generates code for defining variables in c file for FMU target.  "
+::=
+match simVar
+  case SIMVAR(__) then
+  <<
+  case <%dervativeNameCStyle(name)%> : globalData->statesDerivatives[<%index%>]=value; break;
+  >>
+end SwitchDerivativeVariablesSet;
 
 template fmuMakefile(SimCode simCode)
  "Generates the contents of the makefile for the simulation case."

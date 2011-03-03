@@ -476,7 +476,11 @@ package SimCode
       input Function fn;
       output Absyn.Info info;
     end functionInfo;
-
+  
+    function twodigit
+      input Integer i;
+      output String s;
+    end twodigit;
 end SimCode;
 
 

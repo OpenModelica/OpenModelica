@@ -9521,4 +9521,25 @@ algorithm
   end match;
 end functionInfo;
 
+
+function twodigit
+  input Integer i;
+  output String outS;
+algorithm
+  outS := 
+  matchcontinue (i)
+    local String s;
+    case (i)
+      equation
+        (i < 10) = true;
+        s = intString(i);
+        s = stringAppend("0",s);
+      then
+        s;
+    case (i)
+      then
+        intString(i);
+  end matchcontinue;  
+end twodigit;
+
 end SimCode;

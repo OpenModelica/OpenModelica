@@ -37,7 +37,9 @@
 #include <cstdio>
 #include <cstring>
 #include <cassert>
+#ifndef _MSC_VER
 #include <regex.h>
+#endif
 #include "simulation_runtime.h"
 #include "simulation_input.h"
 #include "solver_dasrt.h"
@@ -270,6 +272,7 @@ startInteractiveSimulation(int argc, char**argv)
  */
 void initializeOutputFilter(DATA* data, string variableFilter)
 {
+#ifndef _MSC_VER
   regex_t myregex;
   int flags = REG_EXTENDED;
   int rc;
@@ -300,6 +303,7 @@ void initializeOutputFilter(DATA* data, string variableFilter)
   for (int i = 0; i < data->boolVariables.nAlgebraic; i++) if (!data->boolVariables.algebraicsFilterOutput[i])
     data->boolVariables.algebraicsFilterOutput[i] = regexec(&myregex, data->bool_alg_names[i].name, 0, NULL, 0) != 0;
   regfree(&myregex);
+#endif
   return;
 }
 

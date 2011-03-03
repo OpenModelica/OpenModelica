@@ -7,6 +7,8 @@
 #include <string.h>
 #include <assert.h>
 #include "fmiModelFunctions.h"
+#include "simulation_runtime.h"
+#include "simulation_init.h"
 
 // macros used to define variables
 #define  r(vr) comp->r[vr]
@@ -31,11 +33,12 @@ typedef struct {
     fmiBoolean *b;
     fmiString  *s;
     fmiBoolean *isPositive;
-    fmiReal time;
+    fmiReal *time;
     fmiString instanceName;
     fmiString GUID;
     fmiCallbackFunctions functions;
     fmiBoolean loggingOn;
+	fmiEventInfo eventInfo;
     ModelState state;
 } ModelInstance;
 

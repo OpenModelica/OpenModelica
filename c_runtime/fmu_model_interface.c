@@ -6,6 +6,7 @@ extern "C" {
 // array of value references of states
 #if NUMBER_OF_REALS>0
 fmiValueReference vrStates[NUMBER_OF_STATES] = STATES;
+fmiValueReference vrStatesDerivatives[NUMBER_OF_STATES] = STATESDERIVATIVES;
 #endif
 
 
@@ -89,10 +90,10 @@ fmiComponent fmiInstantiateModel(fmiString instanceName, fmiString GUID,
                    }
                    comp = (ModelInstance *)functions.allocateMemory(1, sizeof(ModelInstance));
                    if (comp) {
-                     comp->r = (fmiReal*)calloc(NUMBER_OF_REALS,    sizeof(fmiReal));
-                     comp->i = (fmiInteger*)calloc(NUMBER_OF_INTEGERS, sizeof(fmiInteger));
-                     comp->b = (fmiBoolean*)calloc(NUMBER_OF_BOOLEANS, sizeof(fmiBoolean));
-                     comp->s = (fmiString*)calloc(NUMBER_OF_STRINGS,  sizeof(fmiString));
+                     comp->r = (fmiReal*)functions.allocateMemory(NUMBER_OF_REALS,    sizeof(fmiReal));
+                     comp->i = (fmiInteger*)functions.allocateMemory(NUMBER_OF_INTEGERS, sizeof(fmiInteger));
+                     comp->b = (fmiBoolean*)functions.allocateMemory(NUMBER_OF_BOOLEANS, sizeof(fmiBoolean));
+                     comp->s = (fmiString*)functions.allocateMemory(NUMBER_OF_STRINGS,  sizeof(fmiString));
                      comp->isPositive = (fmiBoolean*)calloc(NUMBER_OF_EVENT_INDICATORS, sizeof(fmiBoolean));
                    }
                    if (!comp || !comp->r || !comp->i || !comp->b || !comp->s || !comp->isPositive) {
@@ -107,7 +108,25 @@ fmiComponent fmiInstantiateModel(fmiString instanceName, fmiString GUID,
                    comp->functions = functions;
                    comp->loggingOn = loggingOn;
                    comp->state = modelInstantiated;
+                   comp->eventInfo.iterationConverged = fmiTrue;
+                   comp->eventInfo.stateValueReferencesChanged = fmiTrue;
+                   comp->eventInfo.stateValuesChanged = fmiTrue;
+                   comp->eventInfo.terminateSimulation = fmiFalse;
+                   comp->eventInfo.upcomingTimeEvent = fmiFalse;
+                   comp->eventInfo.nextEventTime = 0;
+
+                   globalData = initializeDataStruc();
+                   comp->time = &globalData->timeValue;
+                   setLocalData(globalData);
+                   sim_verbose = comp->loggingOn?1:0;
+                   sim_noemit = 0;
+                   jac_flag = 0;
+                   num_jac_flag = 0;
+                   measure_time_flag = 0;
+
                    setStartValues(comp); // to be implemented by the includer of this file
+
+                   callExternalObjectConstructors(globalData);
                    return comp;
 }
 
@@ -160,7 +179,8 @@ fmiStatus fmiSetReal(fmiComponent c, const fmiValueReference vr[], size_t nvr, c
       return fmiError;
     if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
       "fmiSetReal: #r%d# = %.16g", vr[i], value[i]);
-    comp->r[vr[i]] = value[i];
+    if (setReal(comp, vr[i],value[i]) != fmiOK) // to be implemented by the includer of this file
+      return fmiError; 
   }
   return fmiOK;
 }
@@ -181,7 +201,8 @@ fmiStatus fmiSetInteger(fmiComponent c, const fmiValueReference vr[], size_t nvr
       return fmiError;
     if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
       "fmiSetInteger: #i%d# = %d", vr[i], value[i]);
-    comp->i[vr[i]] = value[i];
+    if (setInteger(comp, vr[i],value[i]) != fmiOK) // to be implemented by the includer of this file
+      return fmiError; 
   }
   return fmiOK;
 }
@@ -202,7 +223,8 @@ fmiStatus fmiSetBoolean(fmiComponent c, const fmiValueReference vr[], size_t nvr
       return fmiError;
     if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
       "fmiSetBoolean: #b%d# = %s", vr[i], value[i] ? "true" : "false");
-    comp->b[vr[i]] = value[i];
+    if (setBoolean(comp, vr[i],value[i]) != fmiOK) // to be implemented by the includer of this file
+      return fmiError; 
   }
   return fmiOK;
 }
@@ -246,7 +268,7 @@ fmiStatus fmiSetTime(fmiComponent c, fmiReal time) {
     return fmiError;
   if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
     "fmiSetTime: time=%.16g", time);
-  comp->time = time;
+  *comp->time = time;
   return fmiOK;
 }
 
@@ -265,7 +287,8 @@ fmiStatus fmiSetContinuousStates(fmiComponent c, const fmiReal x[], size_t nx){
     if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
       "fmiSetContinuousStates: #r%d#=%.16g", vr, x[i]);
     assert(vr>=0 && vr<NUMBER_OF_REALS);
-    comp->r[vr] = x[i];
+    if (setReal(comp, vr,x[i]) != fmiOK) // to be implemented by the includer of this file
+      return fmiError; 
   }
 #endif
   return fmiOK;
@@ -308,7 +331,7 @@ fmiStatus fmiGetInteger(fmiComponent c, const fmiValueReference vr[], size_t nvr
   for (i=0; i<nvr; i++) {
     if (vrOutOfRange(comp, "fmiGetInteger", vr[i], NUMBER_OF_INTEGERS))
       return fmiError;
-    value[i] = comp->i[vr[i]];
+    value[i] = getInteger(comp, vr[i]); // to be implemented by the includer of this file
     if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
       "fmiGetInteger: #i%u# = %d", vr[i], value[i]);
   }
@@ -327,7 +350,7 @@ fmiStatus fmiGetBoolean(fmiComponent c, const fmiValueReference vr[], size_t nvr
   for (i=0; i<nvr; i++) {
     if (vrOutOfRange(comp, "fmiGetBoolean", vr[i], NUMBER_OF_BOOLEANS))
       return fmiError;
-    value[i] = comp->b[vr[i]];
+     value[i] = getBoolean(comp, vr[i]); // to be implemented by the includer of this file
     if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
       "fmiGetBoolean: #b%u# = %s", vr[i], value[i]? "true" : "false");
   }
@@ -346,7 +369,7 @@ fmiStatus fmiGetString(fmiComponent c, const fmiValueReference vr[], size_t nvr,
   for (i=0; i<nvr; i++) {
     if (vrOutOfRange(comp, "fmiGetString", vr[i], NUMBER_OF_STRINGS))
       return fmiError;
-    value[i] = comp->s[vr[i]];
+     value[i] = getString(comp, vr[i]); // to be implemented by the includer of this file
     if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
       "fmiGetString: #s%u# = '%s'", vr[i], value[i]);
   }
@@ -419,8 +442,15 @@ fmiStatus fmiGetDerivatives(fmiComponent c, fmiReal derivatives[], size_t nx) {
   if (nullPointer(comp, "fmiGetDerivatives", "derivatives[]", derivatives))
     return fmiError;
 #if NUMBER_OF_STATES>0
+   // calculate new values
+   function_updateDependents();
+   acceptedStep=1;
+   functionDAE_output();  // discrete variables are seperated so that the can be emited before and after the event.
+   checkTermination();
+   function_storeDelayed();
+   acceptedStep=0;
   for (i=0; i<nx; i++) {
-    fmiValueReference vr = vrStates[i] + 1;
+    fmiValueReference vr = vrStatesDerivatives[i];
     derivatives[i] = getReal(comp, vr); // to be implemented by the includer of this file
     if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
       "fmiGetDerivatives: #r%d# = %.16g", vr, derivatives[i]);
@@ -460,12 +490,50 @@ fmiStatus fmiInitialize(fmiComponent c, fmiBoolean toleranceControlled, fmiReal 
               if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
                 "fmiInitialize: toleranceControlled=%d relativeTolerance=%g",
                 toleranceControlled, relativeTolerance);
-              eventInfo->iterationConverged  = fmiTrue;
-              eventInfo->stateValueReferencesChanged = fmiFalse;
-              eventInfo->stateValuesChanged  = fmiFalse;
-              eventInfo->terminateSimulation = fmiFalse;
-              eventInfo->upcomingTimeEvent   = fmiFalse;
-              initialize(comp, eventInfo); // to be implemented by the includer of this file
+              eventInfo->iterationConverged  = comp->eventInfo.iterationConverged;
+              eventInfo->stateValueReferencesChanged = comp->eventInfo.stateValueReferencesChanged;
+              eventInfo->stateValuesChanged  = comp->eventInfo.stateValuesChanged;
+              eventInfo->terminateSimulation = comp->eventInfo.terminateSimulation;
+              eventInfo->upcomingTimeEvent   = comp->eventInfo.upcomingTimeEvent;
+              globalData->lastEmittedTime = *comp->time;
+              globalData->forceEmit = 0;
+
+              initSample(*comp->time, 1e10);
+              initDelay(*comp->time);
+
+              if (initializeEventData()) return fmiError;
+
+              if(bound_parameters())  return fmiError;
+              globalData->init=1;
+              initial_function(); // calculates e.g. start values depending on e.g parameters.
+              saveall(); // adrpo: -> save the initial values to have them in pre(var);
+              storeExtrapolationData();
+              storeExtrapolationData();
+
+              if (initialize(NULL))  return fmiError;
+
+              // Need to check for events at init=1 since e.g. initial() generate event at initialization.
+              //calcEnabledZeroCrossings();
+              function_updateDependents();
+              CheckForInitialEvents(&globalData->timeValue);
+              StartEventIteration(&globalData->timeValue);
+
+              // Calculate initial derivatives
+              if(functionODE())  return fmiError;
+              // Calculate initial output values
+              acceptedStep = 1;
+              if(functionDAE_output()|| functionDAE_output2())  return fmiError;
+
+              function_updateDependents();
+
+              saveall();
+              checkTermination();
+              function_storeDelayed();
+
+              calcEnabledZeroCrossings();
+              globalData->init = 0;
+              // Initialization complete
+
               comp->state = modelInitialized;
               return fmiOK;
 }
@@ -505,6 +573,11 @@ fmiStatus fmiTerminate(fmiComponent c){
     return fmiError;
   if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
     "fmiTerminate");
+
+  deinitDelay();
+  deInitializeDataStruc(globalData);
+  free(globalData);
+
   comp->state = modelTerminated;
   return fmiOK;
 }

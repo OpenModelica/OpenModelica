@@ -102,7 +102,7 @@ MACRO(BUILDMODELFMU model dir Flags CSRC)
                    ${OMCTRUNCHOME}/c_runtime/fmiModelFunctions.h
 				   ${OMCTRUNCHOME}/c_runtime/fmiModelTypes.h)
   
-  ADD_LIBRARY(${model} ${OMC_OUTPUT} ${CSRC} ${OMC_FMU_CODE})
+  ADD_LIBRARY(${model} SHARED ${OMC_OUTPUT} ${CSRC} ${OMC_FMU_CODE})
   TARGET_LINK_LIBRARIES(${model} sim c_runtime f2c sendData ModelicaExternalC)
 
   # Dependencies
