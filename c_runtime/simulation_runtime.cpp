@@ -317,6 +317,9 @@ startNonInteractiveSimulation(int argc, char**argv)
 
   /* mesure time option is set : -mt */
   measure_time_flag = (int) flagSet("mt", argc, argv);
+  if (measure_time_flag) {
+    fprintf(stderr, "Warning: The -mt is going to be replaced by the simulate option measureTime.\n");
+  }
 
   double start = 0.0;
   double stop = 5.0;

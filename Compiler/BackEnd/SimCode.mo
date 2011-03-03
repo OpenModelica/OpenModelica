@@ -442,7 +442,8 @@ uniontype SimulationSettings
     String method;
     String options;
     String outputFormat;
-    String variableFilter;      
+    String variableFilter;
+    Boolean measureTime;      
   end SIMULATION_SETTINGS;
 end SimulationSettings;
 
@@ -824,6 +825,7 @@ public function createSimulationSettings
   input String options;
   input String outputFormat; 
   input String variableFilter;
+  input Boolean measureTime;
   output SimulationSettings simSettings;  
   protected
   Real stepSize;
@@ -832,7 +834,7 @@ algorithm
   stepSize := (stopTime -. startTime) /. intReal(numberOfIntervals);
   simSettings := SIMULATION_SETTINGS(
     startTime, stopTime, numberOfIntervals, stepSize, tolerance,
-    method, options, outputFormat, variableFilter);
+    method, options, outputFormat, variableFilter, measureTime);
 end createSimulationSettings;
 
 

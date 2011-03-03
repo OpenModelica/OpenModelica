@@ -6664,17 +6664,8 @@ algorithm
       Absyn.Info info;
       String cname_str;
       Absyn.Path className;
-      DAE.Exp startTime "start time, default 0.0";
-      DAE.Exp stopTime "stop time, default 1.0";
-      DAE.Exp numberOfIntervals "number of intervals, default 500";
-      DAE.Exp tolerance "tolerance, default 1e-6";
-      DAE.Exp method "method, default 'dassl'";
-      DAE.Exp fileNamePrefix "file name prefix, default ''";
-      DAE.Exp storeInTemp "store in temp, default false";
-      DAE.Exp options "options, default ''";
-      DAE.Exp noClean "no cleaning, default false";
-      DAE.Exp outputFormat "output format, default 'plt'";
-      DAE.Exp variableFilter "variable filter, regex does whole string matching, i.e. it becomes ^.*$ in the runtime";
+      DAE.Exp startTime,stopTime,numberOfIntervals,tolerance,method;
+      DAE.Exp fileNamePrefix,storeInTemp,options,noClean,outputFormat,variableFilter,measureTime;
       CevalScript.SimulationOptions defaulSimOpt;
       Env.Cache cache;
       Env.Env env;
@@ -6730,6 +6721,11 @@ algorithm
           getOptionalNamedArg(cache, env, SOME(st), impl, "variableFilter", DAE.T_STRING_DEFAULT, 
                               args,  CevalScript.getSimulationOption(defaulSimOpt, "variableFilter"),
                               pre, info);
+
+        (cache,measureTime) = 
+          getOptionalNamedArg(cache, env, SOME(st), impl, "measureTime", DAE.T_BOOL_DEFAULT, 
+                              args,  CevalScript.getSimulationOption(defaulSimOpt, "measureTime"),
+                              pre, info);
       then 
         (cache, 
          {DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER()),
@@ -6743,7 +6739,8 @@ algorithm
           noClean,
           options,
           outputFormat,
-          variableFilter});    
+          variableFilter,
+          measureTime});    
   
   end match;
 end getSimulationArguments;
@@ -6887,7 +6884,7 @@ protected function elabCallInteractive "function: elabCallInteractive
       then
         (cache,Expression.makeBuiltinCall("timing",{exp_1},DAE.ET_REAL()),DAE.PROP(DAE.T_REAL_DEFAULT,DAE.C_VAR()),st_1);
 
-      // MathCore-specific. Should not be in MathCoreBuiltin.mo :p
+      // MathCore-specific. Should be in MathCoreBuiltin.mo :p
     case (cache,env,Absyn.CREF_IDENT(name = "checkExamplePackages"),{},args,impl,SOME(st),pre,_)
       equation
         excludeList = getOptionalNamedArgExpList("exclude", args);

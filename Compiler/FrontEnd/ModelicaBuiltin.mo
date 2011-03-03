@@ -411,6 +411,12 @@ function classDirectory "Not standard Modelica"
 external "builtin";
 end classDirectory;
 
+record SimulationResult
+  String resultFile;
+  String simulationOptions;
+  String messages;
+end SimulationResult;
+
 encapsulated package OpenModelica
 
 type Code "Code quoting is not a uniontype yet because that would require enabling MetaModelica extensions in the regular compiler.

@@ -896,12 +896,12 @@ algorithm
         cname_str = Absyn.pathString(classname);
         methodflag = RTOpts.debugFlag("SetOldDassl");
         methodbyflag = Util.if_(methodflag,"dasslold","dassl");
-        simSettings = SimCode.createSimulationSettings(0.0, 1.0, 500, 1e-6,methodbyflag,"","mat",".*");
+        simSettings = SimCode.createSimulationSettings(0.0, 1.0, 500, 1e-6,methodbyflag,"","mat",".*",false);
         (_,_,_,_,_,_) = SimCode.generateModelCode(dlow,functionTree,ap,dae,classname,cname_str,SOME(simSettings),m,mt,ass1,ass2,comps);
       then
         ();
     /* If not generating simulation code: Succeed so no error messages are printed */
-    case (_,_,_,_,_,_,_,_,_,_,_)
+    else
       equation
         false = RTOpts.simulationCg();
       then
