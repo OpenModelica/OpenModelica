@@ -385,7 +385,7 @@ template DefineDerivativeVariables(SimVar simVar, String prefix)
 match simVar
   case SIMVAR(__) then
   <<
-  #define <%dervativeNameCStyle(name)%> <%prefix%><%index%>;
+  #define <%dervativeNameCStyle(name)%> <%prefix%><%index%>
   >>
 end DefineDerivativeVariables;
 
@@ -479,7 +479,7 @@ template initDerivativeVals(list<SimVar> varsLst) ::=
   <<
   r(<%dervativeNameCStyle(name)%>) = <%match initialValue 
     case SOME(v) then initVal(v)
-      else "0.0 //default"
+      else "0.0; //default"
     %>;
     >>  
   ;separator="\n"

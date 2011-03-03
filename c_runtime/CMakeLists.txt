@@ -144,14 +144,14 @@ SET(c_runtime_sources  boolean_array.c index_spec.c integer_array.c
 					   enorm.c   hybrd1.c  nelmead.c  qform.c
 					   r1updt.c biglag.c  ddassl.c  dogleg.c
 					   fdjac1.c  hybrj.c   newuoa.c   qrfac.c
-					   fdjac1.c  hybrj.c   newuoa.c   qrfac.c
 					   trsapp.c daux.c    dlamch.c  dpmpar.c
 					   hybrd.c   lsame.c   newuob.c   r1mpyq.c
 					   update.c division.c java_interface.c
 					   meta_modelica.c 
 #					   meta_modelica_builtin.cpp
 #					   meta_modelica_real.cpp meta_modelica_string_lit.c
-					   rtclock.c ModelicaUtilities.c simulation_varinfo.c)
+					   rtclock.c ModelicaUtilities.c simulation_varinfo.c
+					   read_matlab4.c)
 
 SET(c_runtime_headers  blaswrap.h f2c.h integer_array.h memory_pool.h
                        modelica_string.h base_array.h inline.h real_array.h
@@ -160,21 +160,21 @@ SET(c_runtime_headers  blaswrap.h f2c.h integer_array.h memory_pool.h
 					   meta_modelica_builtin.h java_interface.h jni.h division.h
 					   jni_md.h jni_md_solaris.h jni_md_windows.h fortran_types.h
 #					   meta_modelica_builtin.h meta_modelica_real.h meta_modelica_string_lit.h
-					   rtclock.h ModelicaUtilities.h simulation_varinfo.h
+					   rtclock.h ModelicaUtilities.h simulation_varinfo.h read_matlab4.h
 					   sendData/sendData.h)				 
 						 
-SET(sim_sources simulation_runtime.cpp simulation_init.cpp simulation_events.cpp linearize.cpp
-                simulation_input.cpp solver_dasrt.cpp solver_main.cpp
-				simulation_result_plt.cpp simulation_result_csv.cpp simulation_result_bin.cpp
+SET(sim_sources simulation_runtime.cpp simulation_init.cpp simulation_input.cpp 
+                simulation_events.cpp linearize.cpp solver_dasrt.cpp solver_main.cpp
+				simulation_result_plt.cpp simulation_result_csv.cpp 
 				simulation_result_mat.cpp simulation_delay.cpp tables.cpp options.cpp
-				dgesv_aux.c  )
+				dgesv_aux.c  simulation_modelinfo.c)
 	
 SET(sim_headers simulation_runtime.h simulation_init.h simulation_input.h
-                simulation_events.h solver_dasrt.h simulation_result.h
-				simulation_delay.h tables.h options.h linearize.h solver_main.h
-				simulation_result_plt.h simulation_result_plt.h simulation_result_mat.h
-				simulation_result_empty.h simulation_result_csv.h simulation_result_bin.h
-				simulation_inline_solver.h )
+                simulation_events.h linearize.h solver_dasrt.h solver_main.h 
+				simulation_result.h simulation_result_plt.h simulation_result_mat.h
+				simulation_result_empty.h simulation_result_csv.h 
+				simulation_delay.h tables.h options.h  
+				simulation_inline_solver.h simulation_modelinfo.h )
 
 
 # Library c_runtime
