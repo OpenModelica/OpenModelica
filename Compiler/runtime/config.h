@@ -63,9 +63,9 @@
    * Visual Studio then use the SSE instructions,
    * not the normal i387 FPU
    */
-  #define DEFAULT_CFLAGS "-msse2 -mfpmath=sse ${MODELICAUSERCFLAGS}"
+  #define DEFAULT_CFLAGS "${SIM_OR_DYNLOAD_OPT_LEVEL} -falign-functions -msse2 -mfpmath=sse ${MODELICAUSERCFLAGS}"
 #else
-  #define DEFAULT_CFLAGS "${MODELICAUSERCFLAGS}"
+  #define DEFAULT_CFLAGS "${SIM_OR_DYNLOAD_OPT_LEVEL} -falign-functions ${MODELICAUSERCFLAGS}"
 #endif
 #if defined(__x86_64__)
   /* -fPIC needed on x86_64! */

@@ -18,10 +18,10 @@
 #endif
 
 #ifdef __APPLE_CC__
-  #define DEFAULT_CFLAGS "-msse2 -mfpmath=sse ${MODELICAUSERCFLAGS}"
+  #define DEFAULT_CFLAGS "${SIM_OR_DYNLOAD_OPT_LEVEL} -falign-functions -msse2 -mfpmath=sse ${MODELICAUSERCFLAGS}"
   #define CONFIG_OS "OSX"
 #else
-  #define DEFAULT_CFLAGS "-march=native -mfpmath=sse ${MODELICAUSERCFLAGS}"
+  #define DEFAULT_CFLAGS "${SIM_OR_DYNLOAD_OPT_LEVEL} -falign-functions -march=native -mfpmath=sse ${MODELICAUSERCFLAGS}"
   #define CONFIG_OS "linux"
 #endif
 

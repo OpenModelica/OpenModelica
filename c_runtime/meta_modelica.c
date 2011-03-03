@@ -509,10 +509,3 @@ void* boxptr_valueHashMod(void *p, void *mod)
 {
   return mmc_mk_icon(mmc_prim_hash(p) % (unsigned long) mmc_unbox_integer(mod));
 }
-
-void mmc_catch_dummy_fn()
-{
-#line 1 "Catch.omc"
-  return;
-}
-/* Keep mmc_catch_dummy_fn() last in the file since it uses #line */

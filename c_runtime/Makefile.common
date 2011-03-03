@@ -15,8 +15,8 @@ ddasrt.o  dlinpk.o  enorm.o   hybrd1.o  nelmead.o  qform.o   r1updt.o \
 biglag.o  ddassl.o  dogleg.o  fdjac1.o  hybrj.o   newuoa.o   qrfac.o   trsapp.o \
 daux.o    dlamch.o  dpmpar.o  hybrd.o   lsame.o   newuob.o   r1mpyq.o  update.o division.o\
 java_interface.o meta_modelica.o meta_modelica_builtin.o meta_modelica_real.o \
-meta_modelica_string_lit.o rtclock.o ModelicaUtilities.o simulation_varinfo.o \
-read_matlab4.o \
+meta_modelica_string_lit.o meta_modelica_catch.o rtclock.o ModelicaUtilities.o \
+simulation_varinfo.o read_matlab4.o \
 $(EXTRA_OBJS)
 
 SIMOBJS = $(FOBJS) simulation_runtime.o simulation_init.o simulation_input.o \
@@ -119,6 +119,9 @@ interactive/libinteractive.a : interactive/omi_Calculation.cpp interactive/omi_C
 libf2c/libf2c.a :
 	cd libf2c && $(MAKE) -f $(LIBF2CMAKEFILE)
 	ranlib $@
+
+meta_modelica_catch.o : meta_modelica_catch.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c -g $<
 
 install: libc_runtime.a libsim.a libf2c/libf2c.a interactive/libinteractive.a $(LIBSENDDATA) omdevinstall ModelicaExternalC/libModelicaExternalC.a
 	cp $(HFILES) $(builddir_inc)/
