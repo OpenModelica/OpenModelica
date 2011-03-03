@@ -118,20 +118,20 @@ static void printProfilingDataHeader(FILE *fout, DATA *data) {
   indent(fout, 4); fprintf(fout, "<double>step</double>\n");
   indent(fout, 4); fprintf(fout, "<double>time</double>\n");
   indent(fout, 4); fprintf(fout, "<double>cpu time</double>\n");
-  for (i = 0; i < globalData->nFunctions; i++) {
-    const char *name = globalData->functionNames[i].name;
+  for (i = 0; i < data->nFunctions; i++) {
+    const char *name = data->functionNames[i].name;
     indent(fout, 4); fprintf(fout, "<uint32>%s (calls)</uint32>\n", name);
   }
-  for (i = 0; i < globalData->nProfileBlocks; i++) {
-    const char *name = globalData->equationInfo[globalData->equationInfo_reverse_prof_index[i]].name;
+  for (i = 0; i < data->nProfileBlocks; i++) {
+    const char *name = data->equationInfo[data->equationInfo_reverse_prof_index[i]].name;
     indent(fout, 4); fprintf(fout, "<uint32>%s (calls)</uint32>\n", name);
   }
-  for (i = 0; i < globalData->nFunctions; i++) {
-    const char *name = globalData->functionNames[i].name;
+  for (i = 0; i < data->nFunctions; i++) {
+    const char *name = data->functionNames[i].name;
     indent(fout, 4); fprintf(fout, "<double>%s (cpu time)</double>\n", name);
   }
-  for (i = 0; i < globalData->nProfileBlocks; i++) {
-    const char *name = globalData->equationInfo[globalData->equationInfo_reverse_prof_index[i]].name;
+  for (i = 0; i < data->nProfileBlocks; i++) {
+    const char *name = data->equationInfo[data->equationInfo_reverse_prof_index[i]].name;
     indent(fout, 4); fprintf(fout, "<double>%s (cpu time)</double>\n", name);
   }
   indent(fout, 2); fprintf(fout, "</format>\n");
