@@ -24,6 +24,7 @@ mkbuilddirs:
 	if [ "$(EXE)" = ".app" ]; then mkdir -p $(builddir_app); fi
 	mkdir -p $(builddir_bin)
 	mkdir -p $(builddir_lib)/omc
+	mkdir -p $(builddir_lib)/omc/libexec
 	mkdir -p $(builddir_inc)
 	mkdir -p $(builddir_java)
 	mkdir -p $(builddir_share)/omc/scripts
