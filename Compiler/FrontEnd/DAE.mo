@@ -395,11 +395,11 @@ end ExtArg;
 
 public uniontype ExternalDecl
   record EXTERNALDECL
-    Ident ident;
-    list<ExtArg> external_ "external function name" ;
-    ExtArg parameters "parameters" ;
-    String returnType "return type" ;
-    Option<Absyn.Annotation> language "language e.g. Library" ;
+    String name;
+    list<ExtArg> args;
+    ExtArg returnArg;
+    String language;
+    Option<Absyn.Annotation> ann;
   end EXTERNALDECL;
 end ExternalDecl;
 

@@ -1463,8 +1463,8 @@ algorithm
     local
       Option<Absyn.Annotation> ann1,ann2;
       list<String> includes1,libs1,includes2,libs2;
-    case (BackendDAE.EXTOBJCLASS(constructor=DAE.FUNCTION(functions={DAE.FUNCTION_EXT(externalDecl=DAE.EXTERNALDECL(language=ann1))}),
-      destructor=DAE.FUNCTION(functions={DAE.FUNCTION_EXT(externalDecl=DAE.EXTERNALDECL(language=ann2))})))
+    case (BackendDAE.EXTOBJCLASS(constructor=DAE.FUNCTION(functions={DAE.FUNCTION_EXT(externalDecl=DAE.EXTERNALDECL(ann=ann1))}),
+      destructor=DAE.FUNCTION(functions={DAE.FUNCTION_EXT(externalDecl=DAE.EXTERNALDECL(ann=ann2))})))
       equation
         (includes1,libs1) = generateExtFunctionIncludes(ann1);
         (includes2,libs2) = generateExtFunctionIncludes(ann2);
@@ -1528,7 +1528,7 @@ algorithm
         (fns, rt_2, decls, includes, libs) = elaborateFunctions2(rest, accfns, rt, decls, includes, libs);
       then
         (fns, rt_2, decls, includes, libs);
-    case (DAE.FUNCTION(functions = DAE.FUNCTION_EXT(externalDecl = DAE.EXTERNALDECL(returnType="builtin"))::_)::rest,accfns,rt,decls,includes,libs)
+    case (DAE.FUNCTION(functions = DAE.FUNCTION_EXT(externalDecl = DAE.EXTERNALDECL(language="builtin"))::_)::rest,accfns,rt,decls,includes,libs)
       equation
         // skip over builtin functions
         (fns, rt_2, decls, includes, libs) = elaborateFunctions2(rest, accfns, rt, decls, includes, libs);
@@ -1603,8 +1603,8 @@ algorithm
       functions = DAE.FUNCTION_EXT(body =  daeElts, externalDecl = extdecl)::_, // might be followed by derivative maps
       type_ = (tp as (DAE.T_FUNCTION(funcArg = args,funcResultType = restype),_))),rt,recordDecls,includes,libs)
       equation
-        DAE.EXTERNALDECL(ident=extfnname, external_=extargs,
-          parameters=extretarg, returnType=lang, language=ann) = extdecl;
+        DAE.EXTERNALDECL(name=extfnname, args=extargs,
+          returnArg=extretarg, language=lang, ann=ann) = extdecl;
         outvars = DAEUtil.getOutputVars(daeElts);
         invars = DAEUtil.getInputVars(daeElts);
         bivars = DAEUtil.getBidirVars(daeElts);
@@ -2822,10 +2822,10 @@ algorithm
         path=path2,
         constructor=DAE.FUNCTION(
           functions={DAE.FUNCTION_EXT(
-            externalDecl=DAE.EXTERNALDECL(ident=cFuncStr))}),
+            externalDecl=DAE.EXTERNALDECL(name=cFuncStr))}),
             destructor=DAE.FUNCTION(
               functions={DAE.FUNCTION_EXT(
-                externalDecl=DAE.EXTERNALDECL(ident=dFuncStr))})) :: _)
+                externalDecl=DAE.EXTERNALDECL(name=dFuncStr))})) :: _)
       equation
         true = ModUtil.pathEqual(path1, path2);
       then ({(name, cFuncStr, args)}, {(dFuncStr, name)}, {});

@@ -466,8 +466,7 @@ algorithm
       String extargsstr,rettystr,str,id,lang;
       list<DAE.ExtArg> extargs;
       DAE.ExtArg retty;
-      Option<Absyn.Annotation> ann;
-    case DAE.EXTERNALDECL(ident = id,external_ = extargs,parameters = retty,returnType = lang,language = ann)
+    case DAE.EXTERNALDECL(name = id,args = extargs,returnArg = retty,language = lang)
       equation
         extargsstr = Dump.getStringList(extargs, dumpExtArgStr, ",");
         rettystr = dumpExtArgStr(retty);
@@ -1333,11 +1332,11 @@ algorithm
       then
         ();
       
-    case DAE.FUNCTION(functions = (DAE.FUNCTION_EXT(externalDecl = DAE.EXTERNALDECL(returnType="builtin"))::_))
+    case DAE.FUNCTION(functions = (DAE.FUNCTION_EXT(externalDecl = DAE.EXTERNALDECL(language="builtin"))::_))
       then
         ();
 
-    case DAE.FUNCTION(path = fpath,inlineType=inlineType,functions = (DAE.FUNCTION_EXT(body = daeElts, externalDecl = DAE.EXTERNALDECL(returnType=lang))::_),type_ = t)
+    case DAE.FUNCTION(path = fpath,inlineType=inlineType,functions = (DAE.FUNCTION_EXT(body = daeElts, externalDecl = DAE.EXTERNALDECL(language=lang))::_),type_ = t)
       equation
         fstr = Absyn.pathString(fpath);
         inlineTypeStr = dumpInlineTypeStr(inlineType);
@@ -3319,11 +3318,11 @@ algorithm
       then
         str;
 
-      case (DAE.FUNCTION(functions=(DAE.FUNCTION_EXT(externalDecl = DAE.EXTERNALDECL(returnType="builtin"))::_)), str)
+      case (DAE.FUNCTION(functions=(DAE.FUNCTION_EXT(externalDecl = DAE.EXTERNALDECL(language="builtin"))::_)), str)
       then
         str;
 
-      case (DAE.FUNCTION(path = fpath,inlineType=inlineType,functions = (DAE.FUNCTION_EXT(body = daeElts, externalDecl = DAE.EXTERNALDECL(returnType=lang))::_),type_ = t), str)
+      case (DAE.FUNCTION(path = fpath,inlineType=inlineType,functions = (DAE.FUNCTION_EXT(body = daeElts, externalDecl = DAE.EXTERNALDECL(language=lang))::_),type_ = t), str)
       equation
         fstr = Absyn.pathString(fpath);
         str = IOStream.append(str, "function ");

@@ -411,11 +411,12 @@ function classDirectory "Not standard Modelica"
 external "builtin";
 end classDirectory;
 
+/* Actually contains more...
 record SimulationResult
   String resultFile;
   String simulationOptions;
   String messages;
-end SimulationResult;
+end SimulationResult; */
 
 encapsulated package OpenModelica
 
