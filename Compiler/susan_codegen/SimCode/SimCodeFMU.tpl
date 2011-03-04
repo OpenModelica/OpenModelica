@@ -193,56 +193,56 @@ case MODELINFO(vars=SIMVARS(__)) then
   <ModelVariables>
   <%System.tmpTickReset(0)%>
   <%vars.stateVars |> var =>
-    ScalarVariable(var,"internal")
+    ScalarVariable(var)
   ;separator="\n"%>  
   <%vars.derivativeVars |> var =>
-    ScalarVariable(var,"internal")
+    ScalarVariable(var)
   ;separator="\n"%>
   <%vars.algVars |> var =>
-    ScalarVariable(var,"internal")
+    ScalarVariable(var)
   ;separator="\n"%>
   <%vars.paramVars |> var =>
-    ScalarVariable(var,"internal")
+    ScalarVariable(var)
   ;separator="\n"%>
   <%System.tmpTickReset(0)%>
   <%vars.intAlgVars |> var =>
-	ScalarVariable(var,"internal")
+	ScalarVariable(var)
   ;separator="\n"%>
   <%vars.intParamVars |> var =>
-    ScalarVariable(var,"internal")
+    ScalarVariable(var)
   ;separator="\n"%>
   <%System.tmpTickReset(0)%>
   <%vars.boolAlgVars |> var =>
-    ScalarVariable(var,"internal")
+    ScalarVariable(var)
   ;separator="\n"%>
   <%vars.boolParamVars |> var =>
-    ScalarVariable(var,"internal")
+    ScalarVariable(var)
   ;separator="\n"%>  
   <%System.tmpTickReset(0)%>
   <%vars.stringAlgVars |> var =>
-    ScalarVariable(var,"internal")
+    ScalarVariable(var)
   ;separator="\n"%>
   <%vars.stringParamVars |> var =>
-    ScalarVariable(var,"internal")
+    ScalarVariable(var)
   ;separator="\n"%> 
   </ModelVariables>  
   >>
 end ModelVariables;
 
-template ScalarVariable(SimVar simVar, String causality)
+template ScalarVariable(SimVar simVar)
  "Generates code for ScalarVariable file for FMU target."
 ::=
 match simVar
 case SIMVAR(__) then
   <<
   <ScalarVariable 
-    <%ScalarVariableAttribute(simVar,causality)%>>
+    <%ScalarVariableAttribute(simVar)%>>
     <%ScalarVariableType(type_,unit,displayUnit,initialValue,isFixed)%>
   </ScalarVariable>  
   >>
 end ScalarVariable;
 
-template ScalarVariableAttribute(SimVar simVar, String causality)
+template ScalarVariableAttribute(SimVar simVar)
  "Generates code for ScalarVariable Attribute file for FMU target."
 ::=
 match simVar
@@ -251,15 +251,26 @@ match simVar
   let variability = getVariablity(varKind)
   let description = if comment then 'description="<%comment%>"' 
   let alias = getAliasVar(aliasvar)
+  let caus = getCausality(causality)
   <<
   name="<%crefStr(name)%>" 
   valueReference="<%valueReference%>" 
   <%description%>
   variability="<%variability%>" 
-  causality="<%causality%>" 
+  causality="<%caus%>" 
   alias="<%alias%>"
   >>  
 end ScalarVariableAttribute;
+
+template getCausality(Causality c)
+ "Returns the Causality Attribute of ScalarVariable."
+::=
+match c
+  case NONECAUS(__) then "none"
+  case INTERNAL(__) then "internal"
+  case OUTPUT(__) then "output"
+  case INPUT(__) then "input"
+end getCausality;
 
 template getVariablity(VarKind varKind)
  "Returns the variablity Attribute of ScalarVariable."

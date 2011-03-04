@@ -288,6 +288,7 @@ package SimCode
       Option<DAE.ComponentRef> arrayCref;
       AliasVariable aliasvar;
       Absyn.Info info;
+      Causality causality;
     end SIMVAR;
   end SimVar;
   
@@ -300,6 +301,13 @@ package SimCode
       DAE.ComponentRef varName;
     end NEGATEDALIAS;
   end AliasVariable;
+  
+  uniontype Causality
+    record NONECAUS end NONECAUS;
+    record INTERNAL end INTERNAL;
+    record OUTPUT end OUTPUT;
+    record INPUT end INPUT;
+  end Causality;  
   
   uniontype Function
     record FUNCTION    

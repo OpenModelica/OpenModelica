@@ -249,6 +249,7 @@ uniontype SimVar
     Option<DAE.ComponentRef> arrayCref;
     AliasVariable aliasvar;
     Absyn.Info info; 
+    Causality causality;
   end SIMVAR;
 end SimVar;
 
@@ -261,6 +262,13 @@ uniontype AliasVariable
     DAE.ComponentRef varName;
   end NEGATEDALIAS;
 end AliasVariable;
+
+uniontype Causality
+  record NONECAUS end NONECAUS;
+  record INTERNAL end INTERNAL;
+  record OUTPUT end OUTPUT;
+  record INPUT end INPUT;
+end Causality; 
 
 // Represents a Modelica or MetaModelica function.
 // TODO: I believe some of these fields can be removed. Check to see what is
@@ -618,7 +626,7 @@ algorithm
         errstr = "Template did not find the simulation variable for "+& ComponentReference.printComponentRefStr(cref) +& ". "; 
         Error.addMessage(Error.INTERNAL_ERROR, {errstr});
       then
-        SIMVAR(badcref, BackendDAE.STATE(), "", "", "", -1, NONE(), false, DAE.ET_REAL(), false, NONE(), NOALIAS(), Absyn.dummyInfo);
+        SIMVAR(badcref, BackendDAE.STATE(), "", "", "", -1, NONE(), false, DAE.ET_REAL(), false, NONE(), NOALIAS(), Absyn.dummyInfo, INTERNAL());
   end matchcontinue;
 end cref2simvar;
 
@@ -2147,7 +2155,7 @@ algorithm
         JacAEquations = createEquations(false, false, false, false, true, deriveddlow2, v1, v2, comps1, {});
         Debug.fcall("jacdump2", print, "Equations created for Matrix A!\n");
         v = BackendVariable.daeVars(deriveddlow2);
-        JacAVars =  BackendVariable.traverseBackendDAEVars(v,traversingdlowvarToSimvar,{});
+        ((JacAVars,_)) =  BackendVariable.traverseBackendDAEVars(v,traversingdlowvarToSimvar,({},kv));
         JacAVars = listReverse(JacAVars);
         // create Matrix C and variables
         Debug.fcall("jacdump2", print, "Dump of daelow for Matrix C.\n");
@@ -2155,7 +2163,7 @@ algorithm
         JacCEquations = createEquations(false, false, false, false, true, deriveddlow2, v1, v2, comps1, {});
         Debug.fcall("jacdump2", print, "Equations created for Matrix C!\n");
         v = BackendVariable.daeVars(deriveddlow2);
-        JacCVars =  BackendVariable.traverseBackendDAEVars(v,traversingdlowvarToSimvar,{});
+        ((JacCVars,_)) =  BackendVariable.traverseBackendDAEVars(v,traversingdlowvarToSimvar,({},kv));
         JacAVars = listReverse(JacAVars);
         // Differentiate the System w.r.t states for matrices B and D
         Debug.fcall("linmodel",print,"Differentiate System w.r.t. inputs.\n");
@@ -2167,14 +2175,14 @@ algorithm
         (deriveddlow2, v1, v2, comps1) = BackendDAEOptimize.generateLinearMatrix(deriveddlow1,functions,comref_states,comref_inputvars,varlst);
         JacBEquations = createEquations(false, false, false, false, true, deriveddlow2, v1, v2, comps1, {});
         v = BackendVariable.daeVars(deriveddlow2);
-        JacBVars =  BackendVariable.traverseBackendDAEVars(v,traversingdlowvarToSimvar,{});
+        ((JacBVars,_)) =  BackendVariable.traverseBackendDAEVars(v,traversingdlowvarToSimvar,({},kv));
         JacBVars = listReverse(JacBVars);
         // create Matrix D and variables
         Debug.fcall("jacdump2", print, "Dump of daelow for Matrix D.\n");
         (deriveddlow2, v1, v2, comps1) = BackendDAEOptimize.generateLinearMatrix(deriveddlow1,functions,comref_outputvars,comref_inputvars,varlst);
         JacDEquations = createEquations(false, false, false, false, true, deriveddlow2, v1, v2, comps1, {});
         v = BackendVariable.daeVars(deriveddlow2);
-        JacDVars =  BackendVariable.traverseBackendDAEVars(v,traversingdlowvarToSimvar,{});
+        ((JacDVars,_)) =  BackendVariable.traverseBackendDAEVars(v,traversingdlowvarToSimvar,({},kv));
         JacDVars = listReverse(JacDVars);
         LinearMats = {(JacAEquations,JacAVars,"A"),(JacBEquations,JacBVars,"B"),(JacCEquations,JacCVars,"C"),(JacDEquations,JacDVars,"D")};  
         
@@ -3999,7 +4007,7 @@ algorithm
         jac = BackendDAEUtil.calculateJacobian(vars_1, eqns_1, ae1, m, mt, true);
         jac_tp = BackendDAEUtil.analyzeJacobian(cont_subsystem_dae, jac);
         {equation_} = createOdeSystem2(true, true,  skipDiscInAlgorithm, cont_subsystem_dae, jac, jac_tp, block_,helpVarInfo);
-        simVarsDisc = Util.listMap1(disc_var, dlowvarToSimvar,NONE());
+        simVarsDisc = Util.listMap2(disc_var, dlowvarToSimvar,NONE(),knvars);
         discEqs = extractDiscEqs(disc_eqn, disc_var);
         // adrpo: TODO! FIXME! THIS FUNCTION is madness!
         //        for 34 discrete values you need a list of 34 about 4926277576697053184 times!!!
@@ -4331,7 +4339,7 @@ algorithm
         // Time varying jacobian. Linear system of equations that needs to be solved during runtime.
     case (mixedEvent,_,skipDiscInAlgorithm,(d as BackendDAE.DAE(orderedVars = v,knownVars = kv,orderedEqs = eqn, arrayEqs = arrayEqs)),SOME(jac),BackendDAE.JAC_TIME_VARYING(),block_,helpVarInfo)
       equation
-        simVars = BackendVariable.traverseBackendDAEVars(v,traversingdlowvarToSimvar,{});  
+        ((simVars,_)) = BackendVariable.traverseBackendDAEVars(v,traversingdlowvarToSimvar,({},kv));  
         simVars = listReverse(simVars); 
         dlowEqs = BackendDAEUtil.equationList(eqn);
         (beqs,_) = listMap3passthrough(dlowEqs, dlowEqToExp, v, arrayEqs, {});
@@ -4699,7 +4707,7 @@ algorithm
       list<DAE.Exp> beqs;
       list<tuple<Integer, Integer, SimEqSystem>> simJac;
       list<SimEqSystem> reqns;
-      BackendDAE.Variables v;
+      BackendDAE.Variables v,kv;
       BackendDAE.EquationArray eqn;
       list<BackendDAE.Equation> dlowEqs;
       array<BackendDAE.MultiDimEquation> ae;
@@ -4711,13 +4719,13 @@ algorithm
       then 
         reqns;
         
-    case (block_ as _::_::_,mixedEvent,daelow as BackendDAE.DAE(orderedVars=v,orderedEqs=eqn,arrayEqs=ae), Ass1, Ass2, helpVarInfo)
+    case (block_ as _::_::_,mixedEvent,daelow as BackendDAE.DAE(orderedVars=v,knownVars=kv,orderedEqs=eqn,arrayEqs=ae), Ass1, Ass2, helpVarInfo)
       equation
         dlowEqs = BackendDAEUtil.equationList(eqn);
         m = BackendDAEUtil.incidenceMatrix(daelow, BackendDAE.NORMAL());
         mT = BackendDAEUtil.transposeMatrix(m);
         SOME(jac) = BackendDAEUtil.calculateJacobian(v, eqn, ae, m, mT,false);
-        simVars = BackendVariable.traverseBackendDAEVars(v,traversingdlowvarToSimvar,{}); 
+        ((simVars,_)) = BackendVariable.traverseBackendDAEVars(v,traversingdlowvarToSimvar,({},kv)); 
         simVars = listReverse(simVars);
         (beqs,_) = listMap3passthrough(dlowEqs, dlowEqToExp, v, ae, {});
         simJac = Util.listMap1(jac, jacToSimjac, v);
@@ -5548,19 +5556,19 @@ algorithm
         v = ass2[eqn_1 + 1];
         (dlowvar as BackendDAE.VAR(varName = cr)) = BackendVariable.getVarAt(vars, v);
         crs = createZeroCrossingNeedSave(dlow, ass1, ass2, rest, blocks);
-        simvar = dlowvarToSimvar(dlowvar,NONE());
+        simvar = dlowvarToSimvar(dlowvar,NONE(),knvars);
       then
         (simvar :: crs);
         
         // zero crossing for single equation
-    case ((dlow as BackendDAE.DAE(orderedVars = vars)), ass1, ass2,
+    case ((dlow as BackendDAE.DAE(orderedVars = vars, knownVars = knvars)), ass1, ass2,
         (eqn :: rest), blocks)
       equation
         eqn_1 = eqn - 1;
         v = ass2[eqn_1 + 1];
         (dlowvar as BackendDAE.VAR(varName = cr)) = BackendVariable.getVarAt(vars, v);
         crs = createZeroCrossingNeedSave(dlow, ass1, ass2, rest, blocks);
-        simvar = dlowvarToSimvar(dlowvar,NONE());
+        simvar = dlowvarToSimvar(dlowvar,NONE(),knvars);
       then
         (simvar :: crs);
         
@@ -5662,11 +5670,11 @@ algorithm
       initialEqs=ie))
       equation
         /* Extract from variable list */  
-        ((varsOut,_)) = BackendVariable.traverseBackendDAEVars(vars,extractVarsFromList,(SIMVARS({}, {}, {}, {}, {}, {}, {}, {}, {},{},{},{},{},{}),aliasVars)); 
+        ((varsOut,_,_)) = BackendVariable.traverseBackendDAEVars(vars,extractVarsFromList,(SIMVARS({}, {}, {}, {}, {}, {}, {}, {}, {},{},{},{},{},{}),aliasVars,knvars)); 
         /* Extract from known variable list */
-        ((varsOut,_)) = BackendVariable.traverseBackendDAEVars(knvars,extractVarsFromList,(varsOut,aliasVars));
+        ((varsOut,_,_)) = BackendVariable.traverseBackendDAEVars(knvars,extractVarsFromList,(varsOut,aliasVars,knvars));
         /* Extract from external object list */
-        ((varsOut,_)) = BackendVariable.traverseBackendDAEVars(extvars,extractVarsFromList,(varsOut,aliasVars));
+        ((varsOut,_,_)) = BackendVariable.traverseBackendDAEVars(extvars,extractVarsFromList,(varsOut,aliasVars,knvars));
         /* sort variables on index */
         varsOut = sortSimvarsOnIndex(varsOut);
         /* Index of algebraic and parameters need 
@@ -5681,20 +5689,21 @@ algorithm
 end createVars;
 
 protected function extractVarsFromList
-  input tuple<BackendDAE.Var, tuple<SimVars,BackendDAE.AliasVariables>> inTpl;
-  output tuple<BackendDAE.Var, tuple<SimVars,BackendDAE.AliasVariables>> outTpl;
+  input tuple<BackendDAE.Var, tuple<SimVars,BackendDAE.AliasVariables,BackendDAE.Variables>> inTpl;
+  output tuple<BackendDAE.Var, tuple<SimVars,BackendDAE.AliasVariables,BackendDAE.Variables>> outTpl;
 algorithm
   outTpl:= matchcontinue (inTpl)      
     local
       BackendDAE.Var var;
       SimVars vars,varsTmp1,varsTmp2;
       BackendDAE.AliasVariables aliasVars;
-    case ((var,(vars,aliasVars)))
+      BackendDAE.Variables v;
+    case ((var,(vars,aliasVars,v)))
       equation
-        varsTmp1 = extractVarFromVar(var,aliasVars);
+        varsTmp1 = extractVarFromVar(var,aliasVars,v);
         varsTmp2 = mergeVars(varsTmp1, vars);
       then
-        ((var,(varsTmp2,aliasVars)));
+        ((var,(varsTmp2,aliasVars,v)));
     case (inTpl) then inTpl;
   end matchcontinue;
 end extractVarsFromList;
@@ -5704,10 +5713,11 @@ end extractVarsFromList;
 protected function extractVarFromVar
   input BackendDAE.Var dlowVar;
   input BackendDAE.AliasVariables aliasVars;
+  input BackendDAE.Variables inVars;
   output SimVars varsOut;
 algorithm
   varsOut :=
-  match (dlowVar,aliasVars)
+  match (dlowVar,aliasVars,inVars)
     local
       list<SimVar> stateVars;
       list<SimVar> derivativeVars;
@@ -5724,7 +5734,8 @@ algorithm
       list<SimVar> extObjVars;
       SimVar simvar;
       SimVar derivSimvar;
-    case (dlowVar,aliasVars)
+      BackendDAE.Variables v;
+    case (dlowVar,aliasVars,v)
       equation
         /* start with empty lists */
         stateVars = {};
@@ -5741,7 +5752,7 @@ algorithm
         stringParamVars = {};
         extObjVars = {};
         /* extract the sim var */
-        simvar = dlowvarToSimvar(dlowVar,SOME(aliasVars));
+        simvar = dlowvarToSimvar(dlowVar,SOME(aliasVars),v);
         derivSimvar = derVarFromStateVar(simvar);
         /* figure out in which lists to put it */
         stateVars = addSimvarIfTrue(
@@ -5793,17 +5804,17 @@ algorithm
       Boolean isDiscrete;
       DAE.ComponentRef arrayCref;
       Absyn.Info info;
-    case (SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, isFixed, type_, isDiscrete, NONE(),_, info))
+    case (SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, isFixed, type_, isDiscrete, NONE(),_, info,_))
       equation
         name = ComponentReference.crefPrefixDer(name);
       then
-        SIMVAR(name, BackendDAE.STATE_DER(), comment, unit, displayUnit, index, NONE(), isFixed, type_, isDiscrete, NONE(), NOALIAS(), info);
-    case (SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, isFixed, type_, isDiscrete, SOME(arrayCref),_, info))
+        SIMVAR(name, BackendDAE.STATE_DER(), comment, unit, displayUnit, index, NONE(), isFixed, type_, isDiscrete, NONE(), NOALIAS(), info, INTERNAL());
+    case (SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, isFixed, type_, isDiscrete, SOME(arrayCref),_, info,_))
       equation
         name = ComponentReference.crefPrefixDer(name);
         arrayCref = ComponentReference.crefPrefixDer(arrayCref);
       then
-        SIMVAR(name, BackendDAE.STATE_DER(), comment, unit, displayUnit, index, NONE(), isFixed, type_, isDiscrete, SOME(arrayCref), NOALIAS(), info);
+        SIMVAR(name, BackendDAE.STATE_DER(), comment, unit, displayUnit, index, NONE(), isFixed, type_, isDiscrete, SOME(arrayCref), NOALIAS(), info, INTERNAL());
   end match;
 end derVarFromStateVar;
 
@@ -5980,11 +5991,12 @@ algorithm
       AliasVariable aliasvar;
       list<SimVar> rest,rest2;
       Absyn.Info info;
+      Causality causality;
     case ({},_) then {};  
-    case (SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, info)::rest,index_)
+    case (SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, info, causality)::rest,index_)
       equation
         rest2 = rewriteIndex(rest, index_ + 1);
-      then (SIMVAR(name, kind, comment, unit, displayUnit, index_, initVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, info)::rest2);
+      then (SIMVAR(name, kind, comment, unit, displayUnit, index_, initVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, info, causality)::rest2);
   end match; 
 end rewriteIndex;
 
@@ -6072,12 +6084,13 @@ algorithm
       AliasVariable aliasvar;
       String varNameStr;
       Absyn.Info info;
-    case (SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, info), initCrefs)
+      Causality causality;
+    case (SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, info, causality), initCrefs)
       equation
         (_ :: _) = Util.listSelect1(initCrefs, name, ComponentReference.crefEqualNoStringCompare);
         varNameStr = ComponentReference.printComponentRefStr(name);
         Error.addSourceMessage(Error.SETTING_FIXED_ATTRIBUTE, {varNameStr}, info);
-      then SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, false, type_, isDiscrete, arrayCref, aliasvar, info);
+      then SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, false, type_, isDiscrete, arrayCref, aliasvar, info, causality);
     case (_, _) then simvarIn;
   end matchcontinue;
 end nonFixifyIfHasInit;
@@ -8041,11 +8054,12 @@ end typesVar;
 protected function dlowvarToSimvar
   input BackendDAE.Var dlowVar;
   input Option<BackendDAE.AliasVariables> optAliasVars;
+  input BackendDAE.Variables inVars;
   output SimVar simVar;
 algorithm
-  simVar := match (dlowVar,optAliasVars)
+  simVar := match (dlowVar,optAliasVars,inVars)
     local
-      Expression.ComponentRef cr;
+      DAE.ComponentRef cr;
       BackendDAE.VarKind kind;
       DAE.VarDirection dir;
       list<Expression.Subscript> inst_dims;
@@ -8064,6 +8078,8 @@ algorithm
       AliasVariable aliasvar;
       DAE.ElementSource source;
       Absyn.Info info;
+      BackendDAE.Variables vars;
+      Causality caus;
     case ((dlowVar as BackendDAE.VAR(varName = cr,
       varKind = kind,
       varDirection = dir,
@@ -8074,7 +8090,7 @@ algorithm
       varType = tp,
       flowPrefix = flowPrefix,
       streamPrefix = streamPrefix,
-      source = source)),optAliasVars)
+      source = source)),optAliasVars,vars)
       equation
         commentStr = unparseCommentOptionNoAnnotationNoQuote(comment);
         (unit, displayUnit) = extractVarUnit(dae_var_attr);
@@ -8085,25 +8101,45 @@ algorithm
         arrayCref = getArrayCref(dlowVar);
         aliasvar = getAliasVar(dlowVar,optAliasVars);
         info = DAEUtil.getElementSourceFileInfo(source);
+        caus = getCausality(dlowVar,vars);
       then
-        SIMVAR(cr, kind, commentStr, unit, displayUnit, indx, initVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, info);
+        SIMVAR(cr, kind, commentStr, unit, displayUnit, indx, initVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, info, caus);
   end match;
 end dlowvarToSimvar;
 
+protected function getCausality
+  input BackendDAE.Var dlowVar;
+  input BackendDAE.Variables inVars;
+  output Causality caus;
+algorithm
+  caus := matchcontinue (dlowVar,inVars)
+    local
+      DAE.ComponentRef cr;
+      BackendDAE.Variables knvars;
+    case (BackendDAE.VAR(varName = DAE.CREF_IDENT(ident = _), varDirection = DAE.OUTPUT()),_) then OUTPUT();
+    case (BackendDAE.VAR(varName = cr,varDirection = DAE.INPUT()),knvars)
+      equation
+        (_,_) = BackendVariable.getVar(cr, knvars);
+      then INPUT();
+    case(_,_) then INTERNAL();
+  end matchcontinue;
+end getCausality;
+
 protected function traversingdlowvarToSimvar
 "autor: Frenkel TUD 2010-11"
-  input tuple<BackendDAE.Var, list<SimVar>> inTpl;
-  output tuple<BackendDAE.Var, list<SimVar>> outTpl;
+  input tuple<BackendDAE.Var, tuple<list<SimVar>,BackendDAE.Variables>> inTpl;
+  output tuple<BackendDAE.Var, tuple<list<SimVar>,BackendDAE.Variables>> outTpl;
 algorithm
   outTpl := match (inTpl)
     local
       BackendDAE.Var v;
       list<SimVar> sv_lst;
       SimVar sv;
-    case ((v,sv_lst))
+      BackendDAE.Variables vars;
+    case ((v,(sv_lst,vars)))
       equation
-        sv = dlowvarToSimvar(v,NONE());
-      then ((v,sv::sv_lst));
+        sv = dlowvarToSimvar(v,NONE(),vars);
+      then ((v,(sv::sv_lst,vars)));
     case inTpl then inTpl; 
   end match;
 end traversingdlowvarToSimvar;
