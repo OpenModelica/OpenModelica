@@ -39,6 +39,7 @@
 #define META_MODELICA_H_
 
 #include "modelica.h"
+#include "meta_modelica_gc.h"
 #include "meta_modelica_string_lit.h"
 
 #if defined(__cplusplus)
@@ -77,6 +78,7 @@ typedef int mmc_sint_t;
 #define MMC_CDR(X)  MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(X),2))
 #define MMC_NILTEST(x)  (MMC_GETHDR(x) == MMC_NILHDR)
 #define MMC_IMMEDIATE(i)  ((void*)(i))
+#define MMC_IS_IMMEDIATE(x)   (!((mmc_uint_t)(x) & 1))
 #define MMC_TAGFIXNUM(i)  ((i) << 1)
 #define MMC_UNTAGFIXNUM(X)  (((mmc_sint_t) X) >> 1)
 #define MMC_REALHDR    (((MMC_SIZE_DBL/MMC_SIZE_INT) << 10) + 9)
@@ -92,6 +94,20 @@ typedef int mmc_sint_t;
 #define MMC_STRUCTDATA(x) (((struct mmc_struct*)MMC_UNTAGPTR(x))->data)
 #define MMC_ARRAY_TAG 255
 #define MMC_STRLEN(x) (MMC_HDRSTRLEN(MMC_GETHDR(x)))
+
+/*
+ * adrpo: if a structure has pointers
+ * Bit 0 is zero if the node contains pointers, 1 otherwise.
+ */
+#define MMC_HDRHASPTRS(hdr)     (!((hdr) & 1))
+/*
+ * adrpo: if this object was marked, used by GC!
+ * [xxxxxxxx1x]        (used during garbage collection) a marked node;
+ */
+#define MMC_HDRISMARKED(hdr)  ((hdr) &  2)
+#define MMC_HDR_MARK(hdr)     ((hdr) |  2)
+#define MMC_HDR_UNMARK(hdr)   ((hdr) & ~2)
+
 
 #define MMC_INT_MAX ((1<<30)-1)
 #define MMC_INT_MIN (-(1<<30))
@@ -137,13 +153,6 @@ struct mmc_string {
     mmc_uint_t header;  /* MMC_STRINGHDR(bytes) */
     char data[1];  /* `bytes' elements + terminating '\0' */
 };
-
-void *mmc_alloc_bytes(unsigned nbytes);
-
-static void *mmc_alloc_words(unsigned nwords)
-{
-  return mmc_alloc_bytes(nwords * sizeof(void*));
-}
 
 #define MMC_FALSE (mmc_mk_icon(0))
 #define MMC_TRUE (mmc_mk_icon(1))
@@ -305,8 +314,8 @@ static inline void *mmc_mk_box(int slots, unsigned ctor, ...)
     return MMC_TAGPTR(p);
 }
 
-static const MMC_DEFSTRUCT0LIT(mmc_nil,0);
-static const MMC_DEFSTRUCT0LIT(mmc_none,1);
+static /* const */ MMC_DEFSTRUCT0LIT(mmc_nil,0);
+static /* const */ MMC_DEFSTRUCT0LIT(mmc_none,1);
 
 #define mmc_mk_nil() MMC_REFSTRUCTLIT(mmc_nil)
 #define mmc_mk_none() MMC_REFSTRUCTLIT(mmc_none)

@@ -17,6 +17,8 @@ daux.o    dlamch.o  dpmpar.o  hybrd.o   lsame.o   newuob.o   r1mpyq.o  update.o 
 java_interface.o meta_modelica.o meta_modelica_builtin.o meta_modelica_real.o \
 meta_modelica_string_lit.o meta_modelica_catch.o rtclock.o ModelicaUtilities.o \
 simulation_varinfo.o read_matlab4.o \
+meta_modelica_gc.o meta_modelica_gc_list.o meta_modelica_gc_stack.o \
+meta_modelica_gc_roots.o meta_modelica_gc_pages.o meta_modelica_gc_stats.o \
 $(EXTRA_OBJS)
 
 SIMOBJS = $(FOBJS) simulation_runtime.o simulation_init.o simulation_input.o \
@@ -45,6 +47,7 @@ matrix.h \
 memory_pool.h \
 meta_modelica_builtin.h \
 meta_modelica_builtin_boxptr.h \
+meta_modelica_gc.h \
 meta_modelica_real.h \
 meta_modelica_string_lit.h \
 meta_modelica.h \
@@ -74,6 +77,11 @@ simulation_varinfo.h \
 solver_dasrt.h \
 solver_main.h \
 string_array.h \
+meta_modelica_gc_stack.h \
+meta_modelica_gc_list.h \
+meta_modelica_gc_roots.h \
+meta_modelica_gc_pages.h \
+meta_modelica_gc_stats.h \
 utility.h \
 linearize.h \
 fmu_model_interface.h \
