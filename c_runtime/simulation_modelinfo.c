@@ -115,7 +115,7 @@ static void printProfilingDataHeader(FILE *fout, DATA *data) {
   int i;
   indent(fout, 2); fprintf(fout, "<filename>%s_prof.data</filename>\n", data->modelFilePrefix);
   indent(fout, 2); fprintf(fout, "<format>\n");
-  indent(fout, 4); fprintf(fout, "<double>step</double>\n");
+  indent(fout, 4); fprintf(fout, "<uint32>step</uint32>\n");
   indent(fout, 4); fprintf(fout, "<double>time</double>\n");
   indent(fout, 4); fprintf(fout, "<double>cpu time</double>\n");
   for (i = 0; i < data->nFunctions; i++) {
@@ -237,13 +237,15 @@ int printModelInfo(DATA *data, const char *filename, const char *plotfile, const
     char *buf;
     int genHtmlRes;
     omhome = getenv("OPENMODELICAHOME");
-    buf = malloc(200 + 2*strlen(plotfile) + (omhome ? strlen(omhome) : 0));
-#if defined(__MINGW32__) || defined(_MSC_VER)
+    buf = malloc(200 + 2*strlen(plotfile) + 2*(omhome ? strlen(omhome) : 0));
     assert(buf);
-    sprintf(buf, "gnuplot %s", plotfile);
-    fclose(plotCommands);
-    if (0 != system(buf)) {
-      fprintf(stderr, "Warning: Plot command failed: %s\n", buf);
+#if defined(__MINGW32__) || defined(_MSC_VER)
+    if (omhome) {
+      sprintf(buf, "%s/lib/libexec/gnuplot/binary/gnuplot.exe %s", omhome, plotfile);
+      fclose(plotCommands);
+      if (0 != system(buf)) {
+        fprintf(stderr, "Warning: Plot command failed: %s\n", buf);
+      }
     }
 #else
     if (0 != pclose(plotCommands)) {
@@ -251,7 +253,17 @@ int printModelInfo(DATA *data, const char *filename, const char *plotfile, const
     }
 #endif
     if (omhome) {
-      sprintf(buf, "xsltproc -o %s_prof.html %s/share/omc/scripts/default_profiling.xsl %s_prof.xml", data->modelFilePrefix, omhome, data->modelFilePrefix);
+#if defined(__MINGW32__) || defined(_MSC_VER)
+      char *xsltproc;
+      sprintf(buf, "%s/lib/omc/libexec/xsltproc/xsltproc.exe", omhome);
+      xsltproc = strdup(buf);
+#else
+      const char *xsltproc = "xsltproc";
+#endif
+      sprintf(buf, "%s -o %s_prof.html %s/share/omc/scripts/default_profiling.xsl %s_prof.xml", xsltproc, data->modelFilePrefix, omhome, data->modelFilePrefix);
+#if defined(__MINGW32__) || defined(_MSC_VER)
+      free(xsltproc);
+#endif
       genHtmlRes = system(buf);
     } else {
       strcpy(buf, "OPENMODELICAHOME missing");
