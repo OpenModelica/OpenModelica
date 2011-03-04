@@ -1,9 +1,9 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2010, Linkï¿½pings University,
+ * Copyright (c) 1998-2010, Linköpings University,
  * Department of Computer and Information Science,
- * SE-58183 Linkï¿½ping, Sweden.
+ * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
@@ -14,7 +14,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linkï¿½pings University, either from the above address,
+ * from Linköpings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
  *
@@ -243,7 +243,7 @@ int printModelInfo(DATA *data, const char *filename, const char *plotfile, const
     sprintf(buf, "gnuplot %s", plotfile);
     fclose(plotCommands);
     if (0 != system(buf)) {
-      fprintf(stderr, "Warning: Plot command failed: \n", buf);
+      fprintf(stderr, "Warning: Plot command failed: %s\n", buf);
     }
 #else
     if (0 != pclose(plotCommands)) {
