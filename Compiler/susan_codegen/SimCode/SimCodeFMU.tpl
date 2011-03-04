@@ -336,6 +336,7 @@ case SIMCODE(__) then
   // include fmu header files, typedefs and macros
   #include "fmiModelFunctions.h"
   #include "fmu_model_interface.h"
+  #include "<%fileNamePrefix%>_functions.h"
 
   void setStartValues(ModelInstance *comp);
   fmiReal getEventIndicator(ModelInstance* comp, int i);
@@ -348,7 +349,8 @@ case SIMCODE(__) then
   fmiStatus setBoolean(ModelInstance* comp, const fmiValueReference vr, const fmiBoolean value);  
   fmiString getString(ModelInstance* comp, const fmiValueReference vr);  
   fmiStatus setString(ModelInstance* comp, const fmiValueReference vr, const fmiString value);  
-
+  fmiStatus setExternalFunction(ModelInstance* c, const fmiValueReference vr, const void* value);
+  
   <%ModelDefineData(modelInfo)%>
   
   // implementation of the Model Exchange functions
@@ -365,7 +367,7 @@ case SIMCODE(__) then
   <%setBooleanFunction(modelInfo)%>
   <%getStringFunction(modelInfo)%>
   <%setStringFunction(modelInfo)%>
-  
+  <%setExternalFunction(modelInfo)%>  
   
   >>
 end fmumodel_identifierFile;
@@ -387,6 +389,7 @@ let numberOfBooleans = intAdd(varInfo.numBoolAlgVars,varInfo.numBoolParams)
   #define NUMBER_OF_INTEGERS <%numberOfIntegers%>
   #define NUMBER_OF_STRINGS <%numberOfStrings%>
   #define NUMBER_OF_BOOLEANS <%numberOfBooleans%>
+  #define NUMBER_OF_EXTERNALFUNCTIONS 0
   
   // define variable data for model
   <%System.tmpTickReset(0)%>
@@ -703,6 +706,23 @@ case MODELINFO(vars=SIMVARS(__)) then
   
   >>
 end setStringFunction;
+
+template setExternalFunction(ModelInfo modelInfo)
+ "Generates setString function for c file."
+::=
+match modelInfo
+case MODELINFO(vars=SIMVARS(__)) then
+  <<
+  fmiStatus setExternalFunction(ModelInstance* c, const fmiValueReference vr, const void* value){
+    switch (vr) {
+        default: 
+        	return fmiError;
+    }
+    return fmiOK;
+  }
+  
+  >>
+end setExternalFunction;
 
 template SwitchVars(SimVar simVar, String arrayName)
  "Generates code for defining variables in c file for FMU target. "

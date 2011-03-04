@@ -588,11 +588,23 @@ fmiStatus fmiTerminate(fmiComponent c){
 
 fmiStatus fmiSetExternalFunction(fmiComponent c, fmiValueReference vr[], size_t nvr, const void* value[])
 {
+  int i;
   ModelInstance* comp = (ModelInstance *)c;
   if (invalidState(comp, "fmiTerminate", modelInitialized))
     return fmiError;
+  if (nvr>0 && nullPointer(comp, "fmiSetReal", "vr[]", vr))
+    return fmiError;
+  if (nvr>0 && nullPointer(comp, "fmiSetReal", "value[]", value))
+    return fmiError;
   if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
     "fmiSetExternalFunction");
+  // no check wether setting the value is allowed in the current state
+  for (i=0; i<nvr; i++) {
+    if (vrOutOfRange(comp, "fmiSetExternalFunction", vr[i], NUMBER_OF_EXTERNALFUNCTIONS))
+      return fmiError;
+    if (setExternalFunction(comp, vr[i],value[i]) != fmiOK) // to be implemented by the includer of this file
+      return fmiError; 
+  }
   return fmiOK;
 };
 
