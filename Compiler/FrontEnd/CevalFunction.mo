@@ -574,21 +574,6 @@ algorithm
       then
       (cache, env, loop_ctrl, st);
 
-    // The case where the range is a range on the form start:step:stop.
-    case (DAE.STMT_FOR(type_ = ety, iter = iter_name, 
-        range = DAE.RANGE(exp = start, expOption = opt_step, range = stop),
-        statementLst = statements), cache, env, st)
-      equation
-        step = Util.getOptionOrDefault(opt_step, DAE.ICONST(1));
-        (cache, start_val, st) = cevalExp(start, cache, env, st);
-        (cache, step_val, st) = cevalExp(step, cache, env, st);
-        (cache, stop_val, st) = cevalExp(stop, cache, env, st);
-        (env, ty, iter_cr) = extendEnvWithForScope(iter_name, ety, env);
-        (cache, env, loop_ctrl, st) = evaluateForLoopRange(cache, env, iter_cr, ty,
-          start_val, step_val, stop_val, statements, NEXT(), st);
-      then
-        (cache, env, loop_ctrl, st);
-
     case (DAE.STMT_FOR(range = range), _, _, _)
       equation
         true = RTOpts.debugFlag("failtrace");
@@ -638,56 +623,6 @@ algorithm
         (cache, env, loop_ctrl, st);
   end matchcontinue;
 end evaluateForLoopArray;
-
-protected function evaluateForLoopRange
-  "This function evaluates a for loop where the range is on the form
-  start:step:stop."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input DAE.ComponentRef inIter;
-  input DAE.Type inIterType;
-  input Values.Value inStartValue;
-  input Values.Value inStepValue;
-  input Values.Value inStopValue;
-  input list<DAE.Statement> inStatements;
-  input LoopControl inLoopControl;
-  input SymbolTable inST;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
-  output LoopControl outLoopControl;
-  output SymbolTable outST;
-algorithm
-  (outCache, outEnv, outLoopControl, outST) := 
-  matchcontinue(inCache, inEnv, inIter, inIterType, inStartValue, inStepValue,
-      inStopValue, inStatements, inLoopControl, inST)
-    local
-      Env.Cache cache;
-      Env.Env env;
-      Values.Value next_val;
-      LoopControl loop_ctrl;
-      SymbolTable st;
-
-    case (_, _, _, _, _, _, _, _, BREAK(), _) then (inCache, inEnv, NEXT(), inST);
-    case (_, _, _, _, _, _, _, _, RETURN(), _) then (inCache, inEnv, inLoopControl, inST);
-    case (cache, env, _, _, _, _, _, _, NEXT(), st)
-      equation
-        true = ValuesUtil.safeLessEq(inStartValue, inStopValue);
-        env = updateVariableBinding(inIter, env, inIterType, inStartValue);
-        (cache, env, loop_ctrl, st) = 
-          evaluateStatements(inStatements, cache, env, st);
-        next_val = ValuesUtil.safeIntRealOp(inStartValue, inStepValue, 
-          Values.ADDOP());
-        (cache, env, loop_ctrl, st) = evaluateForLoopRange(cache, env, inIter,
-          inIterType, next_val, inStepValue, inStopValue, inStatements, loop_ctrl, st);
-      then
-        (cache, env, loop_ctrl, st);
-    else
-      equation
-        false = ValuesUtil.safeLessEq(inStartValue, inStopValue);
-      then
-        (inCache, inEnv, NEXT(), inST);
-  end matchcontinue;
-end evaluateForLoopRange;
 
 protected function evaluateWhileStatement
   "This function evaluates a while statement."

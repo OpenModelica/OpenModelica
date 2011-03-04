@@ -1707,6 +1707,7 @@ template functionDAE( list<SimEqSystem> allEquationsPlusWhen,
   let reinit = (whenClauses |> when hasindex i0 =>
 
 
+
       genreinits(when, &varDecls,i0)
     ;separator="\n")
   <<
@@ -4223,14 +4224,16 @@ case RANGE(__) then
   <<
   <%preExp%>
   <%startVar%> = <%startValue%>; <%stepVar%> = <%stepValue%>; <%stopVar%> = <%stopValue%>; 
-  {
+  if (!<%stepVar%>) {
+    MODELICA_ASSERT(omc_dummyFileInfo, "assertion range step != 0 failed");
+  } else if (!(((<%stepVar%> > 0) && (<%startVar%> > <%stopVar%>)) || ((<%stepVar%> < 0) && (<%startVar%> < <%stopVar%>)))) {
     for(<%type%> <%iterName%> = <%startValue%>; in_range_<%shortType%>(<%iterName%>, <%startVar%>, <%stopVar%>); <%iterName%> += <%stepVar%>) { 
       <%if not acceptMetaModelicaGrammar() then '<%stateVar%> = get_memory_state();'%>
       <%body%>
       <%if not acceptMetaModelicaGrammar() then 'restore_memory_state(<%stateVar%>);'%>
     }
   }
-  >>
+  >> /* else we're looping over a zero-length range */
 end algStmtForRange_impl;
 
 template algStmtForGeneric(DAE.Statement stmt, Context context, Text &varDecls /*BUFP*/)
@@ -4718,6 +4721,7 @@ template daeExpCrefRhsIndexSpec(list<Subscript> subs, Context context,
         let expPart = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
         <<
         (0), make_index_array(1, (int) <%expPart%>), 'S'
+
         >>
       case WHOLEDIM(__) then
         <<
