@@ -122,7 +122,6 @@ fmiComponent fmiInstantiateModel(fmiString instanceName, fmiString GUID,
                    sim_noemit = 0;
                    jac_flag = 0;
                    num_jac_flag = 0;
-                   measure_time_flag = 0;
 
                    setStartValues(comp); // to be implemented by the includer of this file
 
@@ -582,6 +581,20 @@ fmiStatus fmiTerminate(fmiComponent c){
   comp->state = modelTerminated;
   return fmiOK;
 }
+
+// ---------------------------------------------------------------------------
+// FMI functions: set external functions
+// ---------------------------------------------------------------------------
+
+fmiStatus fmiSetExternalFunction(fmiComponent c, fmiValueReference vr[], size_t nvr, const void* value[])
+{
+  ModelInstance* comp = (ModelInstance *)c;
+  if (invalidState(comp, "fmiTerminate", modelInitialized))
+    return fmiError;
+  if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
+    "fmiSetExternalFunction");
+  return fmiOK;
+};
 
 }
 

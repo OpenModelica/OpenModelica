@@ -124,6 +124,7 @@
 #define fmiGetNominalContinuousStates fmiFullName(_fmiGetNominalContinuousStates)
 #define fmiGetStateValueReferences    fmiFullName(_fmiGetStateValueReferences)
 #define fmiTerminate                  fmiFullName(_fmiTerminate)
+#define fmiSetExternalFunction        fmiFullName(_fmiSetExternalFunction)
 
 
 /* Version number */
@@ -208,5 +209,6 @@ extern "C" {
    DllExport fmiStatus fmiGetNominalContinuousStates(fmiComponent c, fmiReal x_nominal[], size_t nx);
    DllExport fmiStatus fmiGetStateValueReferences   (fmiComponent c, fmiValueReference vrx[], size_t nx);
    DllExport fmiStatus fmiTerminate                 (fmiComponent c);
+   DllExport fmiStatus fmiSetExternalFunction       (fmiComponent c, fmiValueReference vr[], size_t nvr, const void* value[]);
 }
 #endif // fmiModelFunctions_h

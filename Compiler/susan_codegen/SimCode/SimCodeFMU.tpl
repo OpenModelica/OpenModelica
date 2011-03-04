@@ -338,7 +338,7 @@ case SIMCODE(__) then
   #include "fmu_model_interface.h"
 
   void setStartValues(ModelInstance *comp);
-  void getEventIndicator(ModelInstance* comp, int i);
+  fmiReal getEventIndicator(ModelInstance* comp, int i);
   void eventUpdate(ModelInstance* comp, fmiEventInfo* eventInfo);
   fmiReal getReal(ModelInstance* comp, const fmiValueReference vr);  
   fmiStatus setReal(ModelInstance* comp, const fmiValueReference vr, const fmiReal value);  
@@ -391,7 +391,7 @@ let numberOfBooleans = intAdd(varInfo.numBoolAlgVars,varInfo.numBoolParams)
   // define variable data for model
   <%System.tmpTickReset(0)%>
   <%vars.stateVars |> var => DefineVariables(var) ;separator="\n"%>
-  <%vars.derivativeVars |> var => DefineDerivativeVariables(var) ;separator="\n"%>
+  <%vars.derivativeVars |> var => DefineVariables(var) ;separator="\n"%>
   <%vars.algVars |> var => DefineVariables(var) ;separator="\n"%>
   <%vars.paramVars |> var => DefineVariables(var) ;separator="\n"%>
   <%System.tmpTickReset(0)%>
@@ -405,21 +405,11 @@ let numberOfBooleans = intAdd(varInfo.numBoolAlgVars,varInfo.numBoolParams)
   <%vars.stringParamVars |> var => DefineVariables(var) ;separator="\n"%>
   
   // define initial state vector as vector of value references
-  #define STATES { <%vars.stateVars |> SIMVAR(__) => '<%crefStr(name)%>_'  ;separator=", "%> }
-  #define STATESDERIVATIVES { <%vars.derivativeVars |> SIMVAR(__) => '<%dervativeNameCStyle(name)%>'  ;separator=", "%> }
+  #define STATES { <%vars.stateVars |> SIMVAR(__) => '<%cref(name)%>_'  ;separator=", "%> }
+  #define STATESDERIVATIVES { <%vars.derivativeVars |> SIMVAR(__) => '<%cref(name)%>_'  ;separator=", "%> }
   
   >>
 end ModelDefineData;
-
-template DefineDerivativeVariables(SimVar simVar)
- "Generates code for defining variables in c file for FMU target.  "
-::=
-match simVar
-  case SIMVAR(__) then
-  <<
-  #define <%dervativeNameCStyle(name)%> <%System.tmpTick()%>
-  >>
-end DefineDerivativeVariables;
 
 template dervativeNameCStyle(ComponentRef cr)
  "Generates the name of a derivative in c style, replaces ( with _"
@@ -435,7 +425,7 @@ match simVar
   case SIMVAR(__) then
   let description = if comment then '// "<%comment%>"'
   <<
-  #define <%crefStr(name)%>_ <%System.tmpTick()%> <%description%>
+  #define <%cref(name)%>_ <%System.tmpTick()%> <%description%>
   >>
 end DefineVariables;
 
@@ -555,7 +545,8 @@ match simCode
 case SIMCODE(__) then
   <<
   // Used to get event indicators
-  void getEventIndicator(ModelInstance* comp, int i) {
+  fmiReal getEventIndicator(ModelInstance* comp, int i) {
+    return 0.0;
   }
   
   >>
@@ -570,7 +561,7 @@ case MODELINFO(vars=SIMVARS(__)) then
   fmiReal getReal(ModelInstance* comp, const fmiValueReference vr) {
     switch (vr) {
         <%vars.stateVars |> var => SwitchVars(var,"states") ;separator="\n"%>
-        <%vars.derivativeVars |> var => SwitchDerivativeVariables(var) ;separator="\n"%>
+        <%vars.derivativeVars |> var => SwitchVars(var,"statesDerivatives") ;separator="\n"%>
         <%vars.algVars |> var => SwitchVars(var,"algebraics") ;separator="\n"%>
         <%vars.paramVars |> var => SwitchVars(var,"parameters") ;separator="\n"%>
         default: 
@@ -590,7 +581,7 @@ case MODELINFO(vars=SIMVARS(__)) then
   fmiStatus setReal(ModelInstance* comp, const fmiValueReference vr, const fmiReal value) {
     switch (vr) {
         <%vars.stateVars |> var => SwitchVarsSet(var,"states") ;separator="\n"%>
-        <%vars.derivativeVars |> var => SwitchDerivativeVariablesSet(var) ;separator="\n"%>
+        <%vars.derivativeVars |> var => SwitchVarsSet(var,"statesDerivatives") ;separator="\n"%>
         <%vars.algVars |> var => SwitchVarsSet(var,"algebraics") ;separator="\n"%>
         <%vars.paramVars |> var => SwitchVarsSet(var,"parameters") ;separator="\n"%>
         default: 
@@ -720,7 +711,7 @@ match simVar
   case SIMVAR(__) then
   let description = if comment then '// "<%comment%>"'
   <<
-  case <%crefStr(name)%>_ : return globalData-><%arrayName%>[<%index%>]; break;
+  case <%cref(name)%>_ : return globalData-><%arrayName%>[<%index%>]; break;
   >>
 end SwitchVars;
 
@@ -731,29 +722,9 @@ match simVar
   case SIMVAR(__) then
   let description = if comment then '// "<%comment%>"'
   <<
-  case <%crefStr(name)%>_ : globalData-><%arrayName%>[<%index%>]=value; break;
+  case <%cref(name)%>_ : globalData-><%arrayName%>[<%index%>]=value; break;
   >>
 end SwitchVarsSet;
-
-template SwitchDerivativeVariables(SimVar simVar)
- "Generates code for defining variables in c file for FMU target.  "
-::=
-match simVar
-  case SIMVAR(__) then
-  <<
-  case <%dervativeNameCStyle(name)%> : return globalData->statesDerivatives[<%index%>]; break;
-  >>
-end SwitchDerivativeVariables;
-
-template SwitchDerivativeVariablesSet(SimVar simVar)
- "Generates code for defining variables in c file for FMU target.  "
-::=
-match simVar
-  case SIMVAR(__) then
-  <<
-  case <%dervativeNameCStyle(name)%> : globalData->statesDerivatives[<%index%>]=value; break;
-  >>
-end SwitchDerivativeVariablesSet;
 
 template fmuMakefile(SimCode simCode)
  "Generates the contents of the makefile for the simulation case."
