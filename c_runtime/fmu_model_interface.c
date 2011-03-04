@@ -592,9 +592,9 @@ fmiStatus fmiSetExternalFunction(fmiComponent c, fmiValueReference vr[], size_t 
   ModelInstance* comp = (ModelInstance *)c;
   if (invalidState(comp, "fmiTerminate", modelInitialized))
     return fmiError;
-  if (nvr>0 && nullPointer(comp, "fmiSetReal", "vr[]", vr))
+  if (nvr>0 && nullPointer(comp, "fmiSetExternalFunction", "vr[]", vr))
     return fmiError;
-  if (nvr>0 && nullPointer(comp, "fmiSetReal", "value[]", value))
+  if (nvr>0 && nullPointer(comp, "fmiSetExternalFunction", "value[]", value))
     return fmiError;
   if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
     "fmiSetExternalFunction");
