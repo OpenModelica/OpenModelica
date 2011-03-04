@@ -41,7 +41,7 @@
 <p>For more details, see <a href="{modelinfo/prefix}_prof.xml"><xsl:value-of select="modelinfo/name"/>_prof.xml</a>.</p>
 
 <h2>Summary</h2>
-  <p>What solver/settings were used? This is missing :(</p>
+  <p>The simulation was done using method="<xsl:value-of select="modelinfo/method"/>".</p>
   <table>
   <tr><th class="name">Task</th><th>Time</th><th><abbr title="Fraction of total simulation time">Fraction</abbr></th></tr>
   <tr><td class="name"><abbr title="Choosing solver, allocating data structures, etc (does not include reading the parameter start-values from file)">Pre-Initialization</abbr></td><td><xsl:value-of select="modelinfo/preinitTime"/></td><td><xsl:value-of select="format-number(100 * modelinfo/preinitTime div modelinfo/totalTime,'##0.00')"/>%</td></tr>

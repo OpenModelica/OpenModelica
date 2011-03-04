@@ -72,7 +72,6 @@ char* terminateMessage = 0;
 int warningLevelAssert = 0;
 string TermMsg;
 omc_fileInfo TermInfo = omc_dummyFileInfo;
-int measure_time_flag = 0;
 
 int sim_verbose; // Flag for logging
 int sim_noemit; // Flag for not emitting data
@@ -320,9 +319,9 @@ startNonInteractiveSimulation(int argc, char**argv)
   string* lintime = (string*) getFlagValue("l", argc, argv);
 
   /* mesure time option is set : -mt */
-  measure_time_flag = (int) flagSet("mt", argc, argv);
-  if (measure_time_flag) {
-    fprintf(stderr, "Warning: The -mt is going to be replaced by the simulate option measureTime.\n");
+  if (flagSet("mt", argc, argv)) {
+    fprintf(stderr, "Error: The -mt was replaced by the simulate option measureTime, which compiles a simulation more suitable for profiling.\n");
+    return 1;
   }
 
   double start = 0.0;
@@ -360,6 +359,13 @@ startNonInteractiveSimulation(int argc, char**argv)
       method = "dassl";
   }
 
+  int methodflag = (int) flagSet("s", argc, argv);
+  if (methodflag) {
+    string* solvermethod = (string*) getFlagValue("s", argc, argv);
+    if (!(solvermethod == NULL))
+      method.assign(*solvermethod);
+  }
+
   retVal = callSolver(argc, argv, method, outputFormat, start, stop, stepSize,
       outputSteps, tolerance);
 
@@ -374,7 +380,7 @@ startNonInteractiveSimulation(int argc, char**argv)
       const string modelInfo = string(globalData->modelFilePrefix) + "_prof.xml";
       const string plotFile = string(globalData->modelFilePrefix) + "_prof.plt";
       rt_accumulate(SIM_TIMER_TOTAL);
-      retVal = printModelInfo(globalData, modelInfo.c_str(), plotFile.c_str()) && retVal;
+      retVal = printModelInfo(globalData, modelInfo.c_str(), plotFile.c_str(), method.c_str()) && retVal;
   }
   
   deinitDelay();
@@ -423,21 +429,7 @@ callSolver(int argc, char**argv, string method, string outputFormat,
           << "'" << endl;
   }
 
-  int methodflag = (int) flagSet("s", argc, argv);
-  if (methodflag) {
-      string* solvermethod = (string*) getFlagValue("s", argc, argv);
-      if (!(solvermethod == NULL))
-        method.assign(*solvermethod);
-  }
-
-  if (method == "") {
-      if (sim_verbose) {
-          cout << "No Recognized solver, using dassl." << endl;
-      }
-      retVal = solver_main(argc,argv,start,stop,stepSize,outputSteps,tolerance,3);
-      //retVal = dassl_main(argc, argv, start, stop, stepSize, outputSteps,
-      //tolerance);
-  } else if (method == std::string("euler")) {
+  if (method == std::string("euler")) {
       if (sim_verbose) {
           cout << "Recognized solver: " << method << "." << endl;
       }

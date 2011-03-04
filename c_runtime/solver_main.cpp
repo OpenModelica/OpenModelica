@@ -458,8 +458,7 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
     const string filename = string(globalData->modelFilePrefix) + "_prof.data";
     fmt = fopen(filename.c_str(), "wb");
     if (!fmt) {
-      measure_time_flag = 0;
-      fprintf(stderr, "Warning: Disabled time measurements because the output file could not be opened: %s\n", strerror(errno));
+      fprintf(stderr, "Warning: Time measurements output file %s could not be opened: %s\n", filename.c_str(), strerror(errno));
       fclose(fmt);
       fmt = NULL;
     }
@@ -552,28 +551,29 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
 
           // Emit this time step
           saveall();
-          if (measure_time_flag)
+          if (fmt)
             {
+              int flag = 1;
               double tmpdbl;
               uint32_t tmpint;
               rt_tick(SIM_TIMER_OVERHEAD);
               rt_accumulate(SIM_TIMER_STEP);
               /* Disable time measurements if we have trouble writing to the file... */
-              measure_time_flag = measure_time_flag && 1 == fwrite(&stepNo, sizeof(uint32_t), 1, fmt);
+              flag = flag && 1 == fwrite(&stepNo, sizeof(uint32_t), 1, fmt);
               stepNo++;
-              measure_time_flag = measure_time_flag && 1 == fwrite(&globalData->timeValue, sizeof(double), 1, fmt);
+              flag = flag && 1 == fwrite(&globalData->timeValue, sizeof(double), 1, fmt);
               tmpdbl = rt_accumulated(SIM_TIMER_STEP);
-              measure_time_flag = measure_time_flag && 1 == fwrite(&tmpdbl, sizeof(double), 1, fmt);
+              flag = flag && 1 == fwrite(&tmpdbl, sizeof(double), 1, fmt);
               for (int i = 0; i < globalData->nFunctions + globalData->nProfileBlocks; i++) {
                 tmpint = rt_ncall(i + SIM_TIMER_FIRST_FUNCTION);
-                measure_time_flag = measure_time_flag && 1 == fwrite(&tmpint, sizeof(uint32_t), 1, fmt);
+                flag = flag && 1 == fwrite(&tmpint, sizeof(uint32_t), 1, fmt);
               }
               for (int i = 0; i < globalData->nFunctions + globalData->nProfileBlocks; i++) {
                 tmpdbl = rt_accumulated(i + SIM_TIMER_FIRST_FUNCTION);
-                measure_time_flag = measure_time_flag && 1 == fwrite(&tmpdbl, sizeof(double), 1, fmt);
+                flag = flag && 1 == fwrite(&tmpdbl, sizeof(double), 1, fmt);
               }
               rt_accumulate(SIM_TIMER_OVERHEAD);
-              if (!measure_time_flag) {
+              if (!flag) {
                 fprintf(stderr, "Warning: Disabled time measurements because the output file could not be generated: %s\n", strerror(errno));
                 fclose(fmt);
                 fmt = NULL;

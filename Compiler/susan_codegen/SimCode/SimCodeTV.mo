@@ -113,6 +113,7 @@ package SimCode
       String options;
       String outputFormat;
       String variableFilter;
+      Boolean measureTime;
     end SIMULATION_SETTINGS;
   end SimulationSettings;
   

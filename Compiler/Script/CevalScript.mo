@@ -2159,7 +2159,6 @@ algorithm
         libs_str = Util.stringDelimitList(libs, " ");
         
         System.writeFile(libsfilename, libs_str);
-        extra_command = setCompileCommandEnvironmentFromSolverMethod(solverMethod);
         // We only need to set OPENMODELICAHOME on Windows, and set doesn't work in bash shells anyway
         // adrpo: 2010-10-05: 
         //        whatever you do, DO NOT add a space before the && otherwise
@@ -2168,7 +2167,7 @@ algorithm
         //        to the environment variable! Don't ask me why, ask Microsoft.
         omhome = Util.if_(System.os() ==& "Windows_NT", "set OPENMODELICAHOME=\"" +& omhome_1 +& "\"&& ", "OPENMODELICAHOME=\"$OPENMODELICAHOME\" ");
         s_call =
-        stringAppendList({omhome,extra_command,
+        stringAppendList({omhome,
           omhome_1,pd,"share",pd,"omc",pd,"scripts",pd,"Compile"," ",fileprefix," ",noClean});
         Debug.fprintln("dynload", "compileModel: running " +& s_call);
         0 = System.systemCall(s_call)  ;
@@ -2252,33 +2251,6 @@ algorithm
       case (variableName) then "";
   end matchcontinue;
 end readEnvNoFail;
-
-protected function setCompileCommandEnvironmentFromSolverMethod
-"Inline solver methods require extra environment variables set"
-  input String method;
-  output String env;
-algorithm
-  env := matchcontinue method
-    local
-      String str, modelicaUserCFlags;
-      
-    case "inline-euler"
-      equation
-        modelicaUserCFlags = readEnvNoFail("MODELICAUSERCFLAGS");
-        // adrpo: In Windows it seems that command set X="%var% some other stuff" && echo %X% 
-        //        DOES NOT EXPAND X correctly, that's why we read and use the environment variable directly
-        str = Util.if_(System.os() ==& "Windows_NT", "set MODELICAUSERCFLAGS=" +& modelicaUserCFlags +& " -D_OMC_INLINE_EULER && ", "MODELICAUSERCFLAGS=\"$MODELICAUSERCFLAGS -D_OMC_INLINE_EULER\" ");
-      then str;
-    case "inline-rungekutta"
-      equation
-        modelicaUserCFlags = readEnvNoFail("MODELICAUSERCFLAGS");         
-        // adrpo: In Windows it seems that command set X="%var% some other stuff" && echo %X% 
-        //        DOES NOT EXPAND X correctly, that's why we read and use the environment variable directly
-        str = Util.if_(System.os() ==& "Windows_NT", "set MODELICAUSERCFLAGS=" +& modelicaUserCFlags +&" -D_OMC_INLINE_RK && ", "MODELICAUSERCFLAGS=\"$MODELICAUSERCFLAGS -D_OMC_INLINE_RK\" ");
-      then str;
-    case _ then "";
-  end matchcontinue;
-end setCompileCommandEnvironmentFromSolverMethod;
 
 protected function winCitation "function: winCitation
   author: PA

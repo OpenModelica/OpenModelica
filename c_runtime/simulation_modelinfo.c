@@ -137,7 +137,7 @@ static void printProfilingDataHeader(FILE *fout, DATA *data) {
   indent(fout, 2); fprintf(fout, "</format>\n");
 }
 
-int printModelInfo(DATA *data, const char *filename, const char *plotfile) {
+int printModelInfo(DATA *data, const char *filename, const char *plotfile, const char *method) {
   static char buf[256];
   FILE *fout = fopen(filename, "w");
   FILE *plotCommands;
@@ -187,6 +187,7 @@ int printModelInfo(DATA *data, const char *filename, const char *plotfile) {
   indent(fout, 2); fprintf(fout, "<name>%s</name>\n", data->modelName);
   indent(fout, 2); fprintf(fout, "<prefix>%s</prefix>\n", data->modelFilePrefix);
   indent(fout, 2); fprintf(fout, "<date>%s</date>\n", buf);
+  indent(fout, 2); fprintf(fout, "<method>%s</method>\n", method);
   indent(fout, 2); fprintf(fout, "<overheadTime>%f</overheadTime>\n", rt_accumulated(SIM_TIMER_OVERHEAD));
   indent(fout, 2); fprintf(fout, "<preinitTime>%f</preinitTime>\n", rt_accumulated(SIM_TIMER_PREINIT));
   indent(fout, 2); fprintf(fout, "<initTime>%f</initTime>\n", rt_accumulated(SIM_TIMER_INIT));
@@ -258,7 +259,7 @@ int printModelInfo(DATA *data, const char *filename, const char *plotfile) {
     }
     if (genHtmlRes)
       fprintf(stderr, "Warning: Failed to generate html version of profiling results: %s\n", buf);
-    fprintf(stdout, "Time measurements stored in %s_prof.html (human-readable), %s_prof.xml (for XSL transforms)\n", data->modelFilePrefix, data->modelFilePrefix);
+    fprintf(stdout, "Time measurements are stored in %s_prof.html (human-readable) and %s_prof.xml (for XSL transforms or more details)\n", data->modelFilePrefix, data->modelFilePrefix);
     free(buf);
   }
   return 0;
