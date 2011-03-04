@@ -237,11 +237,11 @@ int printModelInfo(DATA *data, const char *filename, const char *plotfile, const
     char *buf;
     int genHtmlRes;
     omhome = getenv("OPENMODELICAHOME");
-    buf = malloc(200 + 2*strlen(plotfile) + 2*(omhome ? strlen(omhome) : 0));
+    buf = malloc(230 + 2*strlen(plotfile) + 2*(omhome ? strlen(omhome) : 0));
     assert(buf);
 #if defined(__MINGW32__) || defined(_MSC_VER)
     if (omhome) {
-      sprintf(buf, "%s/lib/libexec/gnuplot/binary/gnuplot.exe %s", omhome, plotfile);
+      sprintf(buf, "%s/lib/omc/libexec/gnuplot/binary/gnuplot.exe %s", omhome, plotfile);
       fclose(plotCommands);
       if (0 != system(buf)) {
         fprintf(stderr, "Warning: Plot command failed: %s\n", buf);

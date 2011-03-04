@@ -80,7 +80,7 @@ simulation_result_mat::simulation_result_mat(const char* filename,
 {
   const char Aclass[] = "A1 bt. ir1 na  Tj  re  ac  nt  so   r   y   ";
   
-  const struct omc_varInfo** names;
+  const struct omc_varInfo** names = NULL;
   const int nParams = globalData->nParameters+globalData->intVariables.nParameters
     +globalData->boolVariables.nParameters;
 
