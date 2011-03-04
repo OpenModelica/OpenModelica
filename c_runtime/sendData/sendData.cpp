@@ -70,7 +70,7 @@
 #include "sendData.h"
 #include <sstream>
 #include <stdexcept>
-
+#include  <errno.h>
 
 Connection::Connection()
 {
@@ -116,11 +116,12 @@ const char* Connection::getExternalViewerFileName()
 bool Connection::startExternalViewer()
 {
   QString path = getExternalViewerFileName();
-  QProcess *plotViewerProcess = new QProcess();
   QString tempPath(QDir::tempPath());
   QString uniq; uniq.sprintf("%05.4f", (double)clock());
   // fprintf(stderr, "uniq %s\n", uniq.toStdString().c_str());
   QString tempFile = tempPath + "/OpenModelica-PlotViewer-" + uniq + "-.log";
+#ifdef WIN32
+  QProcess *plotViewerProcess = new QProcess();
   plotViewerProcess->setWorkingDirectory(tempPath);
   // cerr << "simulation runtime: redirecting the output to: " << tempFile.toStdString() << endl;
   plotViewerProcess->setStandardErrorFile(tempFile, QIODevice::Truncate);
@@ -129,17 +130,27 @@ bool Connection::startExternalViewer()
 
   // 2006-03-14 AF, start viewer
   plotViewerProcess->start( path );
+#else
+  pid_t pID = vfork();
+  if (pID == 0) { // child
+    execl( path.toStdString().c_str(), path.toStdString().c_str(), NULL);
+    fprintf(stderr, "System.systemCall: execl failed %s\n", strerror(errno));
+    fflush(NULL);
+    exit(1);
+  } else if (pID < 0) {
+    fprintf(stderr, "System.systemCall: vfork failed %s\n", strerror(errno));
+    fflush(NULL);
+    return false;
+  }
+#endif
 
+#if defined(WIN32)
   // wait until the process starts up ...
   int ticks = 0;
   while (1)
   {
     ticks++;
-#if defined(WIN32)
     if( plotViewerProcess->waitForStarted(500) ) break;
-#else
-    if( plotViewerProcess->waitForStarted(-1) ) break;
-#endif
     else
     {
       cerr << "simulation runtime: the plot viewer could not start: " << path.toStdString().c_str();
@@ -168,6 +179,10 @@ bool Connection::startExternalViewer()
     sleep(2);
     return true;
   }
+#else
+  sleep(1);
+  return true;
+#endif
 }
 
 QTcpSocket* Connection::newConnection(bool graphics)
