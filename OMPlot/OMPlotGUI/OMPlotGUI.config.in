@@ -1,0 +1,2 @@
+LIBS += -lqwt
+INCLUDEPATH += @with_qwt@
