@@ -230,12 +230,12 @@ namespace IAEX
       omcProcess->start( omc, parameters );
 
       // give time to start up..
-      if( omcProcess->waitForStarted(20000) )
+      if( omcProcess->waitForStarted(30000) )
         flag = true;
       else
         flag = false;
 #ifdef _MSC_VER
-      _sleep(1);
+      _sleep(10);
 #else
       sleep(1);
 #endif
