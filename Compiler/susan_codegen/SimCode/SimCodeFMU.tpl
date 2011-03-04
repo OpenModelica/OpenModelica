@@ -191,64 +191,81 @@ match modelInfo
 case MODELINFO(vars=SIMVARS(__)) then
   <<
   <ModelVariables>
+  <%System.tmpTickReset(0)%>
   <%vars.stateVars |> var =>
-    ScalarVariable(var,"internal",1)
+    ScalarVariable(var,"internal")
   ;separator="\n"%>  
   <%vars.derivativeVars |> var =>
-    ScalarVariable(var,"internal",2)
+    ScalarDerivativeVariable(var,"internal")
   ;separator="\n"%>
   <%vars.algVars |> var =>
-    ScalarVariable(var,"internal",3)
+    ScalarVariable(var,"internal")
   ;separator="\n"%>
   <%vars.paramVars |> var =>
-    ScalarVariable(var,"internal",4)
+    ScalarVariable(var,"internal")
   ;separator="\n"%>
+  <%System.tmpTickReset(0)%>
   <%vars.intAlgVars |> var =>
-	ScalarVariable(var,"internal",1)
+	ScalarVariable(var,"internal")
   ;separator="\n"%>
   <%vars.intParamVars |> var =>
-    ScalarVariable(var,"internal",2)
+    ScalarVariable(var,"internal")
   ;separator="\n"%>
+  <%System.tmpTickReset(0)%>
   <%vars.boolAlgVars |> var =>
-    ScalarVariable(var,"internal",1)
+    ScalarVariable(var,"internal")
   ;separator="\n"%>
   <%vars.boolParamVars |> var =>
-    ScalarVariable(var,"internal",2)
+    ScalarVariable(var,"internal")
   ;separator="\n"%>  
+  <%System.tmpTickReset(0)%>
   <%vars.stringAlgVars |> var =>
-    ScalarVariable(var,"internal",1)
+    ScalarVariable(var,"internal")
   ;separator="\n"%>
   <%vars.stringParamVars |> var =>
-    ScalarVariable(var,"internal",2)
+    ScalarVariable(var,"internal")
   ;separator="\n"%> 
   </ModelVariables>  
   >>
 end ModelVariables;
 
-template ScalarVariable(SimVar simVar, String causality, String offset)
+template ScalarVariable(SimVar simVar, String causality)
  "Generates code for ScalarVariable file for FMU target."
 ::=
 match simVar
 case SIMVAR(__) then
   <<
   <ScalarVariable 
-    <%ScalarVariableAttribute(simVar,causality,offset)%>>
+    <%ScalarVariableAttribute(simVar,causality)%>>
     <%ScalarVariableType(type_,unit,displayUnit,initialValue,isFixed)%>
   </ScalarVariable>  
   >>
 end ScalarVariable;
 
-template ScalarVariableAttribute(SimVar simVar, String causality, String offset)
+template ScalarDerivativeVariable(SimVar simVar, String causality)
+ "Generates code for ScalarVariable file for FMU target."
+::=
+match simVar
+case SIMVAR(__) then
+  <<
+  <ScalarVariable 
+    <%ScalarDerivativeVariableAttribute(simVar,causality)%>>
+    <%ScalarVariableType(type_,unit,displayUnit,initialValue,isFixed)%>
+  </ScalarVariable>  
+  >>
+end ScalarDerivativeVariable;
+
+template ScalarVariableAttribute(SimVar simVar, String causality)
  "Generates code for ScalarVariable Attribute file for FMU target."
 ::=
 match simVar
   case SIMVAR(__) then
-  let valueReference = '<%offset%><%index%>'
+  let valueReference = '<%System.tmpTick()%>'
   let variability = getVariablity(varKind)
   let description = if comment then 'description="<%comment%>"' 
   let alias = getAliasVar(aliasvar)
   <<
-  name="<%crefStr(name)%>" 
+  name="<%crefStr(name)%>_" 
   valueReference="<%valueReference%>" 
   <%description%>
   variability="<%variability%>" 
@@ -256,6 +273,25 @@ match simVar
   alias="<%alias%>"
   >>  
 end ScalarVariableAttribute;
+
+template ScalarDerivativeVariableAttribute(SimVar simVar, String causality)
+ "Generates code for ScalarVariable Attribute file for FMU target."
+::=
+match simVar
+  case SIMVAR(__) then
+  let valueReference = '<%System.tmpTick()%>'
+  let variability = getVariablity(varKind)
+  let description = if comment then 'description="<%comment%>"' 
+  let alias = getAliasVar(aliasvar)
+  <<
+  name="<%dervativeNameCStyle(name)%>" 
+  valueReference="<%valueReference%>" 
+  <%description%>
+  variability="<%variability%>" 
+  causality="<%causality%>" 
+  alias="<%alias%>"
+  >>  
+end ScalarDerivativeVariableAttribute;
 
 template getVariablity(VarKind varKind)
  "Returns the variablity Attribute of ScalarVariable."
@@ -374,16 +410,20 @@ let numberOfBooleans = intAdd(varInfo.numBoolAlgVars,varInfo.numBoolParams)
   #define NUMBER_OF_BOOLEANS <%numberOfBooleans%>
   
   // define variable data for model
-  <%vars.stateVars |> var => DefineVariables(var,"1") ;separator="\n"%>
-  <%vars.derivativeVars |> var => DefineDerivativeVariables(var,"2") ;separator="\n"%>
-  <%vars.algVars |> var => DefineVariables(var,"3") ;separator="\n"%>
-  <%vars.paramVars |> var => DefineVariables(var,"4") ;separator="\n"%>
-  <%vars.intAlgVars |> var => DefineVariables(var,"1") ;separator="\n"%>
-  <%vars.intParamVars |> var => DefineVariables(var,"2") ;separator="\n"%>
-  <%vars.boolAlgVars |> var => DefineVariables(var,"1") ;separator="\n"%>
-  <%vars.boolParamVars |> var => DefineVariables(var,"2") ;separator="\n"%>
-  <%vars.stringAlgVars |> var => DefineVariables(var,"1") ;separator="\n"%>
-  <%vars.stringParamVars |> var => DefineVariables(var,"2") ;separator="\n"%>
+  <%System.tmpTickReset(0)%>
+  <%vars.stateVars |> var => DefineVariables(var) ;separator="\n"%>
+  <%vars.derivativeVars |> var => DefineDerivativeVariables(var) ;separator="\n"%>
+  <%vars.algVars |> var => DefineVariables(var) ;separator="\n"%>
+  <%vars.paramVars |> var => DefineVariables(var) ;separator="\n"%>
+  <%System.tmpTickReset(0)%>
+  <%vars.intAlgVars |> var => DefineVariables(var) ;separator="\n"%>
+  <%vars.intParamVars |> var => DefineVariables(var) ;separator="\n"%>
+  <%System.tmpTickReset(0)%>
+  <%vars.boolAlgVars |> var => DefineVariables(var) ;separator="\n"%>
+  <%vars.boolParamVars |> var => DefineVariables(var) ;separator="\n"%>
+  <%System.tmpTickReset(0)%>
+  <%vars.stringAlgVars |> var => DefineVariables(var) ;separator="\n"%>
+  <%vars.stringParamVars |> var => DefineVariables(var) ;separator="\n"%>
   
   // define initial state vector as vector of value references
   #define STATES { <%vars.stateVars |> SIMVAR(__) => '<%crefStr(name)%>_'  ;separator=", "%> }
@@ -392,13 +432,13 @@ let numberOfBooleans = intAdd(varInfo.numBoolAlgVars,varInfo.numBoolParams)
   >>
 end ModelDefineData;
 
-template DefineDerivativeVariables(SimVar simVar, String prefix)
+template DefineDerivativeVariables(SimVar simVar)
  "Generates code for defining variables in c file for FMU target.  "
 ::=
 match simVar
   case SIMVAR(__) then
   <<
-  #define <%dervativeNameCStyle(name)%> <%prefix%><%index%>
+  #define <%dervativeNameCStyle(name)%> <%System.tmpTick()%>
   >>
 end DefineDerivativeVariables;
 
@@ -409,14 +449,14 @@ template dervativeNameCStyle(ComponentRef cr)
   case CREF_QUAL(ident = "$DER") then 'der_<%crefStr(componentRef)%>_'
 end dervativeNameCStyle;
 
-template DefineVariables(SimVar simVar, String prefix)
+template DefineVariables(SimVar simVar)
  "Generates code for defining variables in c file for FMU target. "
 ::=
 match simVar
   case SIMVAR(__) then
   let description = if comment then '// "<%comment%>"'
   <<
-  #define <%crefStr(name)%>_ <%prefix%><%index%> <%description%>
+  #define <%crefStr(name)%>_ <%System.tmpTick()%> <%description%>
   >>
 end DefineVariables;
 
