@@ -1169,6 +1169,7 @@ algorithm
     case _
       equation
         omhome = Settings.getInstallationDirectoryPath();
+        _ = System.setEnv("OPENMODELICAHOME",omhome,true) "sendData work-around";
         // print("OMHOME:" +& omhome +& "|"); 
         true = "Windows_NT" ==& System.os();
         oldpath = System.readEnv("PATH");
