@@ -1863,6 +1863,11 @@ algorithm
       equation
         (cache, outValMsg, st, indexed_dlow, libs, file_dir, resultValues) =
           SimCode.translateModelFMU(cache,env,className,st,fileNamePrefix,addDummy,inSimSettingsOpt);
+          
+        // compile
+        fileNamePrefix = stringAppend(fileNamePrefix,"_FMU");
+        compileModel(fileNamePrefix , libs, file_dir, "", "");
+          
       then
         (cache,outValMsg,st,indexed_dlow,libs,file_dir,resultValues);
   end match;

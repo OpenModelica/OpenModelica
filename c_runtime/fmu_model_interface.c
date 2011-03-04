@@ -446,6 +446,7 @@ fmiStatus fmiGetDerivatives(fmiComponent c, fmiReal derivatives[], size_t nx) {
    function_updateDependents();
    acceptedStep=1;
    functionDAE_output();  // discrete variables are seperated so that the can be emited before and after the event.
+   functionDAE_output2();
    checkTermination();
    function_storeDelayed();
    acceptedStep=0;

@@ -125,6 +125,7 @@ meta_modelica_catch.o : meta_modelica_catch.c
 
 install: libc_runtime.a libsim.a libf2c/libf2c.a interactive/libinteractive.a $(LIBSENDDATA) omdevinstall ModelicaExternalC/libModelicaExternalC.a
 	cp $(HFILES) $(builddir_inc)/
+	cp fmu_model_interface.c $(builddir_inc)/
 	cp $(LIBS) $(builddir_lib)/
 	cp libf2c/libf2c.* $(builddir_lib)/
 	test -z "$(LIBSENDDATA)" || cp sendData/release/$(LIBSENDDATA) $(builddir_lib)/
