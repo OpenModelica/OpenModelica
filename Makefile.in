@@ -47,6 +47,9 @@ omshell: mkbuilddirs
 	make -C OMShell -f Makefile.unix
 omplotwindow: mkbuilddirs
 	make -C OMNotebook/ext -f Makefile.unix
+# Does not work using qwt-5.2 yet
+omplot: mkbuilddirs
+	make -C OMPlot/OMPlotGUI -f Makefile.unix
 omedit: mkbuilddirs omnotebook
 	make -C OMEdit/OMEditGUI -f Makefile.unix
 
@@ -66,5 +69,10 @@ fix-svn-eol-style:
 
 .PRECIOUS: Makefile
 
-Makefile: Makefile.in
+Makefile: Makefile.in config.status
 	$(top_builddir)/config.status
+
+config.status: configure
+	./config.status -recheck
+configure: configure.in
+	autoconf

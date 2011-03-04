@@ -9,6 +9,7 @@ AC_SUBST(rmlinc)
 AC_SUBST(omc_antlr_jar)
 AC_SUBST(antlrinc)
 AC_SUBST(antlrlib)
+AC_SUBST(with_qwt)
 AC_SUBST(LIBSOCKET)
 AC_SUBST(LIBNSL)
 AC_SUBST(LIBLPSOLVE55)
@@ -32,6 +33,13 @@ AC_SUBST(WITH_SENDDATA)
 AC_SUBST(QMAKE)
 AC_SUBST(EXE)
 AC_SUBST(RML_TRACE)
+
+if test x"$prefix" = xNONE; then
+  PREFIX=`pwd`/build
+else
+  PREFIX=$prefix
+fi
+AC_PREFIX_DEFAULT($PREFIX)
 
 dnl Disables the default CFLAGS="-g -O2"
 if test -z "$CFLAGS"; then
@@ -321,6 +329,26 @@ if test -n "$QMAKE"; then
   AC_MSG_RESULT([$QMAKE])
 fi
 
+if test -n "$QMAKE"; then
+  AC_MSG_CHECKING([for qwt])
+  AC_ARG_WITH(qwt, [  --with-qwt        Compile plotting libraries using qwt. Default searches PREFIX/include/{qwt,qwt-qt4}], [], [with_qwt=check])
+
+  if test x"$with_qwt" = "xcheck"; then
+    for f in /{usr,opt}/include/{qwt,qwt-qt4}/ "$PREFIX/qwt/" "$PREFIX/qwt-qt4/"; do
+      test -f "$f/qwt.h" && with_qwt="$f"
+    done
+  fi
+
+  if test x"$with_qwt" = "xno"; then
+    QMAKE=""
+    AC_MSG_RESULT([disabled])
+  elif test x"$with_qwt" = "xcheck"; then
+    AC_MSG_ERROR([not found])
+  else
+    AC_MSG_RESULT($with_qwt)
+  fi
+fi
+
 if test "Darwin" = `uname`; then
   EXE=".app"
 else
@@ -407,7 +435,7 @@ AC_MSG_RESULT([Not compiling with BOOST]); USE_MODPAR=""; BOOSTHOME=""
 ])
 date=`date "+%Y-%m-%d %H:%M:%S"`
 
-GENERATED_AUTOCONF_FILES="Makefile c_runtime/Makefile mosh/src/Makefile Compiler/Makefile Compiler/omc_release/Makefile Compiler/omc_debug/Makefile Compiler/omc_profiler/Makefile Compiler/runtime/Makefile Compiler/modpar/Makefile c_runtime/interactive/Makefile OMNotebook/ext/OMPlotWindow.config OMNotebook/OMNotebookQT4/OMNotebook.config OMShell/OMShell.config Compiler/runtime/config.unix.h OMNotebook/OMNotebookQT4/Makefile.unix OMShell/Makefile.unix OMNotebook/ext/Makefile.unix Parser/Makefile c_runtime/ModelicaExternalC/Makefile OMEdit/OMEditGUI/Makefile.unix OMEdit/OMEditGUI/OMEdit.config"
+GENERATED_AUTOCONF_FILES="Makefile c_runtime/Makefile mosh/src/Makefile Compiler/Makefile Compiler/omc_release/Makefile Compiler/omc_debug/Makefile Compiler/omc_profiler/Makefile Compiler/runtime/Makefile Compiler/modpar/Makefile c_runtime/interactive/Makefile OMNotebook/ext/OMPlotWindow.config OMNotebook/OMNotebookQT4/OMNotebook.config OMShell/OMShell.config Compiler/runtime/config.unix.h OMNotebook/OMNotebookQT4/Makefile.unix OMShell/Makefile.unix OMNotebook/ext/Makefile.unix Parser/Makefile c_runtime/ModelicaExternalC/Makefile OMEdit/OMEditGUI/Makefile.unix OMEdit/OMEditGUI/OMEdit.config OMPlot/OMPlotGUI/Makefile.unix OMPlot/OMPlotGUI/OMPlotGUI.config"
 
 AC_CONFIG_COMMANDS([config.unix.h.fix],[./configure-post.sh $ac_cs_config])
 
