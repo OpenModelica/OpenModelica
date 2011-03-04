@@ -18,9 +18,13 @@ plotwindow.h \
     ../../c_runtime/read_matlab4.h
 
 
-LIBS += -L $$(OMDEV)/lib/qwt-6.0.0-mingw/lib \ 
-      -lqwtd
+win32 {
+  LIBS += -L $$(OMDEV)/lib/qwt-6.0.0-mingw/lib \ 
+        -lqwtd
 
-INCLUDEPATH += $$(OMDEV)/lib/qwt-6.0.0-mingw/include    
+  INCLUDEPATH += $$(OMDEV)/lib/qwt-6.0.0-mingw/include
+} else {
+  include(OMPlotGUI.config)
+}
 
 DESTDIR = ../bin

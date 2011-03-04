@@ -118,8 +118,8 @@ void PlotWindow::initializePlot()
     mpQwtPlot->replot();
 
     //plotpicker, Plotpanner, plotzoomer
-    mpPlotPicker = new QwtPlotPicker(QwtPlot::xBottom, QwtPlot::yLeft,
-                                     QwtPlotPicker::CrossRubberBand, QwtPicker::AlwaysOn,
+    mpPlotPicker = new QwtPlotPicker((int)QwtPlot::xBottom, (int)QwtPlot::yLeft,
+                                     (int)QwtPlotPicker::CrossRubberBand, (int) QwtPicker::AlwaysOn,
                                      mpQwtPlot->canvas());
     mpPlotPicker->setStateMachine(new QwtPickerDragPointMachine());
     mpPlotPicker->setTrackerPen(QColor(Qt::black));    
