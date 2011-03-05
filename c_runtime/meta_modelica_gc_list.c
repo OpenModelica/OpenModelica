@@ -232,7 +232,7 @@ void list_dump(mmc_List* list)
   }
   else
   {
-	  fprintf(stderr, "\nElements in the List: ");
+      fprintf(stderr, "\nElements in the List: ");
       /* traverse the entire linked list */
       while(curPtr != NULL)
       {
@@ -269,16 +269,16 @@ int list_reverse(mmc_List* list)
 /* clone a list in reverse! */
 mmc_List list_clone(mmc_List list)
 {
-	mmc_List lst = NULL, curPtr = list;
+  mmc_List lst = NULL, curPtr = list;
 
-	/* if empty return empty */
-	if (!curPtr)
-		return lst;
+  /* if empty return empty */
+  if (!curPtr)
+    return lst;
 
     while(curPtr != NULL)
     {
-    	list_cons(&lst, curPtr->el);
-        curPtr = curPtr->next;
+      list_cons(&lst, curPtr->el);
+      curPtr = curPtr->next;
     }
 
     return lst;

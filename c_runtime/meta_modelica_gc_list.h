@@ -41,16 +41,16 @@ extern "C" {
 /* a free slot */
 struct mmc_GC_free_slot
 {
-	modelica_metatype        start; /* the start of the free slot */
-	long                     size;  /* the free slot size */
+  modelica_metatype        start; /* the start of the free slot */
+  long                     size;  /* the free slot size */
 };
 typedef struct mmc_GC_free_slot mmc_GC_free_slot;
 
 /* a linked list */
 struct mmc_ListElement
 {
-	mmc_GC_free_slot el;
-	struct mmc_ListElement *next;
+  mmc_GC_free_slot el;
+  struct mmc_ListElement *next;
 };
 typedef struct mmc_ListElement* mmc_List;
 
