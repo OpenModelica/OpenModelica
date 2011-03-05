@@ -7,18 +7,21 @@ Compiling OMC using OMDev package
 Adrian Pop, adrpo@ida.liu.se, date above.
 
 
-1. Get the OMDev package from:
-   http://www.ida.liu.se/~adrpo/omc/omdev/mingw
-   + this package contains all prerequisites
-     to compile OMC on Windows using MinGW+MSys
+1. Checkout the OMDev package from Subversion:
+   https://openmodelica.ida.liu.se/svn/OpenModelica/installers/windows/OMDev
+   user: anonymous
+   pass: none    <-- write "none" here
+   + this package contains all prerequisites to compile OMC on Windows using MinGW+MSys
 
-2. Unpack for example into:
+2. Make sure you place the OMDev package into:
    c:\OMDev\
    + Follow the instructions in the INSTALL file
 
 3. You should have an OpenModelica directory you got
    from OpenModelica Subversion repository:
-   svn co svn://www.openmodelica.org/svn/OpenModelica/trunk/ OpenModelica
+   svn co https://www.openmodelica.org/svn/OpenModelica/trunk/ OpenModelica
+   user: anonymous
+   pass: none    <-- write "none" here   
 
 4. inside the OpenModelica directory you will find a .project-sample file
    which you should rename to OpenModelica/.project and do whatever modifications
@@ -33,7 +36,7 @@ Adrian Pop, adrpo@ida.liu.se, date above.
    to OpenModelica/.externalToolBuilders/OMDev-MINGW-OpenModelicaBuilder.launch and do whatever
    modifications are needed on it to reflect your paths.
 
-6. Installing Modelica Develioment Tooling (MDT) and Setting your Eclipse workspace
+6. Installing Modelica Development Tooling (MDT) and Setting your Eclipse workspace
    Start Eclipse and follow instructions from:
    http://www.ida.liu.se/~pelab/modelica/OpenModelica/MDT/
    to install MDT. Eclipse will restart at the end.
@@ -58,10 +61,10 @@ Adrian Pop, adrpo@ida.liu.se, date above.
            your directory name
    - Go to Environment tab and change the name of the OMDEV variable from there
      to point to your OMDev installation:
-     c/path/to/your/omdev
+     /c/path/to/your/omdev (/c/OMDev)
 
 9. Running the OMDev-MINGW-OpenModelica builder:
-   To run the OMDev-MINGW-OpenModelicaBuilder press Ctrl+B.
+   To run the OMDev-MINGW-OpenModelicaBuilder press Ctrl+B or right-click project and say rebuild.
    Then the OMDev-MINGW-OpenModelicaBuilder will start
    and compile an OpenModelica/build/omc.exe.
    If the builder refuse to start, please check the ***NOTES*** below.
@@ -72,12 +75,13 @@ Adrian Pop, adrpo@ida.liu.se, date above.
     - OMC_BUILD_STATIC which is not present in Environment tab
       when set to "/static/" (without quotes) will compile a
       independent (static) omc.exe.
+    - to build omc for a release you need to make it static.
 
 11. To run the OpenModelica testsuite you have to:
     If you don't have an OpenModelicaX.Y.Z release installed
      then create a directory called OpenModelica/build/ModelicaLibrary
     in which you unpack the Modelica Standard Library you
-    can take from another directory in Subversion : 
+    can take from another directory in Subversion: 
     https://www.openmodelica.org/svn/OpenModelica/installers/windows/VC7/Setup/zips/ModelicaLib.tar.gz
     To run the testsuite from Eclipse:
     - Ctrl+B and type: test
@@ -124,5 +128,6 @@ For problems with OMDev package, contact:
 Adrian Pop,
 adrpo@ida.liu.se
 
-Last Update:2007-03-09
+Last Update:     2011-03-05
+Previous Update: 2007-03-09 
 
