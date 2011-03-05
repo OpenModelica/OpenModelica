@@ -113,13 +113,15 @@ using the Microsoft Visual Studio .NET 2010
     - Unset environment variable OMDEV (change its name to NOOMDEV)
       + this is needed to make sure no files are missing from
         C:\OpenModelica[x.y.z]\MinGW and compilation/simulation
-        works fine
+        works fine 
     - Install the new OpenModelica
     - test OMShell, OMNotebook, OMEdit, OMPlot*
     
 15. Be extremely proud and glad, you made it! :)
 
-16. Contact us (OpenModelica@ida.liu.se) or me Adrian Pop [Adrian.Pop@liu.se] 
+16. Don't forget to re-set NOOMDEV env. var back to OMDEV :)
+
+17. Contact us (OpenModelica@ida.liu.se) or me Adrian Pop [Adrian.Pop@liu.se] 
     with any comments, suggestions or problems regarding this document!  
 
 That's it,
