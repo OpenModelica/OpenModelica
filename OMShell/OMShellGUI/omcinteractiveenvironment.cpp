@@ -38,7 +38,7 @@
 #include <QtGui/QMessageBox>
 
 #include "omcinteractiveenvironment.h"
-//#include "../Compiler/runtime/config.h"
+#include "../../Compiler/runtime/config.h"
 
 using namespace std;
 

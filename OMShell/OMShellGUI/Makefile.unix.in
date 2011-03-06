@@ -1,4 +1,4 @@
-top_builddir=../
+top_builddir=../../
 builddir_bin=$(top_builddir)/build/bin/
 builddir_share=$(top_builddir)/build/share/
 runtimedir=$(top_builddir)/Compiler/runtime/
@@ -25,8 +25,8 @@ $(NAME): Makefile OMShell.config omc_communication.cc
 
 build: $(NAME)
 	mkdir -p $(builddir_share)/omshell/
-	if [ "$(EXE)" = ".app" ]; then cp -rp $(NAME)$(EXE) ../build/Applications/ ; else cp -p $(NAME) $(builddir_bin); fi
-	cp -p ../OMNotebook/OMNotebookQT4/commands.xml $(builddir_share)/omshell/
+	if [ "$(EXE)" = ".app" ]; then cp -rp ../bin/$(NAME)$(EXE) ../build/Applications/ ; else cp -p ../bin/$(NAME) $(builddir_bin); fi
+	cp -p $(top_builddir)/OMNotebook/OMNotebookGUI/commands.xml $(builddir_share)/omshell/
 
 Makefile.unix: Makefile.unix.in
 	cd $(top_builddir); ./config.status
