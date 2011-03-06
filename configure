@@ -4875,11 +4875,11 @@ Compiler/modpar/Makefile c_runtime/interactive/Makefile \
 Compiler/runtime/config.unix.h \
 Parser/Makefile c_runtime/ModelicaExternalC/Makefile \
 OMNotebook/OMPlotWindow/OMPlotWindow.config \
+OMNotebook/OMPlotWindow/Makefile.unix \
 OMNotebook/OMNotebookGUI/OMNotebook.config \
+OMNotebook/OMNotebookGUI/Makefile.unix \
 OMShell/OMShellGUI/OMShell.config \
-OMNotebook/OMNotebookGUI/Makefile.unix \
 OMShell/OMShellGUI/Makefile.unix \
-OMNotebook/OMNotebookGUI/Makefile.unix \
 OMEdit/OMEditGUI/Makefile.unix \
 OMEdit/OMEditGUI/OMEdit.config \
 OMPlot/OMPlotGUI/Makefile.unix \
