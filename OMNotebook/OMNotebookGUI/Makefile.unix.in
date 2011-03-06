@@ -25,7 +25,7 @@ $(NAME): Makefile OMNotebook.config omc_communication.cc
 
 build: $(NAME)
 	mkdir -p $(builddir_share)/omnotebook/drmodelica/ $(builddir_share)/omnotebook/drcontrol/
-	if [ "$(EXE)" = ".app" ]; then cp -rp $(NAME)$(EXE) ../../build/Applications/ ; else cp -p $(NAME) $(builddir_bin)/$(NAME); fi
+	if [ "$(EXE)" = ".app" ]; then cp -rp ../bin/$(NAME)$(EXE) ../../build/Applications/ ; else cp -p ../bin/$(NAME) $(builddir_bin)/$(NAME); fi
 	cp -p *.xml $(builddir_share)/omnotebook/
 	cp -p OMNotebookHelp.onb $(builddir_share)/omnotebook/
 	(DRMODELICAPWD=`cd ../DrModelica/ && pwd` && \

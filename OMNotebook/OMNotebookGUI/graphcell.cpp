@@ -151,7 +151,7 @@ namespace IAEX {
 
     emit clickOnCell();
     updatePosition();
-    if(state != ERROR)
+    if(state != Error)
       emit setState(Modified);
 
 
@@ -432,7 +432,7 @@ namespace IAEX {
       QTextBrowser::insertFromMimeData( source );
 
     updatePosition();
-    if(state != ERROR)
+    if(state != Error)
       emit setState(Modified);
   }
 
@@ -1638,7 +1638,7 @@ namespace IAEX {
                   output_->selectAll();
                   output_->textCursor().insertText( "[Error] Unable to read plot image \"" +
                     filename1 + "or " + filename2 + "\". Please retry." );
-                  setState(ERROR);
+                  setState(Error);
                   break;
                 }
               }
@@ -1649,7 +1649,7 @@ namespace IAEX {
               output_->selectAll();
               output_->textCursor().insertText( "[Error] Unable to find plot image \"" +
                 filename1 + " or " + filename2  + "\"" );
-              setState(ERROR);
+              setState(Error);
               break;
             }
 
@@ -1669,7 +1669,7 @@ namespace IAEX {
           {
             res += QString("\n") + error;
             // palette.setColor(input_->backgroundRole(), QColor(200,00,00));
-            setState(ERROR);
+            setState(Error);
           }
           else
             setState(Finished);
@@ -1726,7 +1726,7 @@ namespace IAEX {
 
     if( !error.isEmpty() && error.size() != 0)
     {
-      setState(ERROR);
+      setState(Error);
       res += QString("\n") + error;
     }
     else
