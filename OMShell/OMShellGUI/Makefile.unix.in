@@ -15,7 +15,7 @@ Makefile:
 	$(QMAKE)
 
 clean: Makefile
-	rm -rf $(NAME) $(NAME)$(EXE) omc_communication.* Makefile
+	rm -rf ../bin/$(NAME) ../bin/$(NAME)$(EXE) omc_communication.* Makefile
 
 omc_communication.cc omc_communication.h: $(runtimedir)/omc_communication.idl
 	@IDLCMD@ $<
