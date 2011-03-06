@@ -42,11 +42,11 @@ qtclients:
 qtclean: qtclean-common
 else
 omnotebook: mkbuilddirs
-	make -C OMNotebook/OMNotebookQT4 -f Makefile.unix 
+	make -C OMNotebook/OMNotebookGUI -f Makefile.unix 
 omshell: mkbuilddirs
-	make -C OMShell -f Makefile.unix
+	make -C OMShell/OMShellGUI -f Makefile.unix
 omplotwindow: mkbuilddirs
-	make -C OMNotebook/ext -f Makefile.unix
+	make -C OMNotebook/OMPlotWindow -f Makefile.unix
 # Does not work using qwt-5.2 yet
 omplot: mkbuilddirs
 	make -C OMPlot/OMPlotGUI -f Makefile.unix
@@ -56,9 +56,11 @@ omedit: mkbuilddirs omnotebook
 qtclients: omnotebook omshell omplotwindow omedit
 
 qtclean: qtclean-common
-	make -C OMShell -f Makefile.unix clean
-	make -C OMNotebook/ext -f Makefile.unix clean
-	make -C OMNotebook/OMNotebookQT4 -f Makefile.unix clean
+	make -C OMShell/OMShellGUI -f Makefile.unix clean
+	make -C OMNotebook/OMPlotWindow -f Makefile.unix clean
+	make -C OMNotebook/OMNotebookGUI -f Makefile.unix clean
+	make -C OMNotebook/OMEditGUI -f Makefile.unix clean
+	make -C OMPlot/OMPlotGUI -f Makefile.unix clean
 endif
 
 fix-svn-eol-style:
