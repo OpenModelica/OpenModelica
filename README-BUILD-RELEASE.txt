@@ -16,7 +16,7 @@ using the Microsoft Visual Studio .NET 2010
      pass: none      <- write none here
 
     Checkout the VC7 directory from Subversion:
-      https://openmodelica.org/svn/OpenModelica/installers/VC7
+      https://openmodelica.org/svn/OpenModelica/installers/windows/VC7
     into directory:
       trunk\Compiler\VC7
     IMPORTANT: VC7 HAS TO BE CHECKOUT into trunk\Compiler\VC7
