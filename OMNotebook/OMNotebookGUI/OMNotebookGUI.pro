@@ -172,4 +172,10 @@ RC_FILE = rc_omnotebook.rc
 
 DESTDIR = ../bin
 
+UI_DIR = ../generatedfiles/ui
+
+MOC_DIR = ../generatedfiles/moc
+
+RCC_DIR = ../generatedfiles/rcc
+
 CONFIG += warn_off
