@@ -57,7 +57,7 @@ class IndentationState;
 
 namespace IAEX
 {
-  enum graphCellStates {FINISHED, EVAL, ERROR, MODIFIED};
+  enum graphCellStates {Finished, Eval, Error, Modified};
 
   class MyTextEdit2;
   class GraphCell : public Cell

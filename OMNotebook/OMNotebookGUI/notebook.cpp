@@ -2594,7 +2594,7 @@ namespace IAEX
       {
         OmcInteractiveEnvironment *omc = OmcInteractiveEnvironment::getInstance();
 
-        int result = QMessageBox::question( 0, tr("Close OMC"),
+        int result = QMessageBox::question( this, tr("Close OMC"),
           "OK to quit running OpenModelica Compiler process at exit?\n(Answer No if other OMShell/OMNotebook/Graphic editor is still running)",
           QMessageBox::Yes | QMessageBox::Default,
           QMessageBox::No, QMessageBox::Cancel );

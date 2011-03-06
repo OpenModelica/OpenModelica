@@ -31,7 +31,7 @@
  */
 
 #include <QApplication>
-#include "../Pltpkg2/graphWindow.h" 
+#include "../Pltpkg2/graphWindow.h"
 #include "resource.h" 
 using namespace std;
 

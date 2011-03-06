@@ -88,6 +88,9 @@ namespace IAEX
    * 2006-04-10 AF, use environment variable to find xml files
    * 2006-04-10 AF, Open file that is sent to main
    */
+
+    // ******************************************************
+
   CellApplication::CellApplication( int &argc, char *argv[] )
     : QObject()
   {
@@ -160,6 +163,8 @@ namespace IAEX
         exit( -1 );
       }
     }
+
+    SleeperThread::msleep( 3000 );
 
     // when last window closed, the applicaiton should quit also
     QObject::connect(app_, SIGNAL(lastWindowClosed()),
@@ -564,19 +569,20 @@ namespace IAEX
       add(v);
 
       // 2006-01-31 AF, Open window minimized insted of normal
-      v->showMinimized();
+
+      //v->showMinimized();
 
       // 2005-10-11 AF, Porting, added resize so all cells get the
       // correct size. Ugly way!
 
-//      v->resize( 810, 610 ); //not working with Qt 4.3
+      //v->resize( 810, 610 ); //not working with Qt 4.3
 
       // 2006-01-17 AF, when the document have been opened, set the
       // changed variable to false.
       v->document()->setChanged( false );
 
       // 2006-01-31 AF, show window again
-      v->showNormal();
+      v->show();
 
       v->resize( 801, 600 ); //fjass
 
@@ -584,7 +590,6 @@ namespace IAEX
       // childs in the documentview
       UpdateGroupcellVisitor visitor;
       v->document()->runVisitor( visitor );
-
 
       // 2006-05-03 AF, done, start highlighter again
       thread->setStop( false );

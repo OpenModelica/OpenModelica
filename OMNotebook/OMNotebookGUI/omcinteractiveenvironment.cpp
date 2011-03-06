@@ -35,6 +35,7 @@
 #include <stdexcept>
 
 //QT Headers
+#include <QtCore/QDebug>
 #include <QtCore/QDir>
 #include <QtCore/QProcess>
 #include <QtCore/QThread>
@@ -230,15 +231,15 @@ namespace IAEX
       omcProcess->start( omc, parameters );
 
       // give time to start up..
-      if( omcProcess->waitForStarted(30000) )
+      if( omcProcess->waitForStarted(7000) )
         flag = true;
       else
         flag = false;
-#ifdef _MSC_VER
-      _sleep(10);
-#else
-      sleep(1);
-#endif
+//#ifdef _MSC_VER
+//      _sleep(1);
+//#else
+//      sleep(1);
+//#endif
 
     }
     catch( exception &e )

@@ -66,7 +66,6 @@ class QUrl;
 
 
 using namespace IAEX;
-using namespace Qt;
 
 namespace IAEX
 {

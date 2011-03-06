@@ -1,4 +1,4 @@
-#define QT_NO_DEBUG_OUTPUT
+//#define QT_NO_DEBUG_OUTPUT
 /*
  * This file is part of OpenModelica.
  *
@@ -31,7 +31,7 @@
  * regarding the Qt licence: http://www.trolltech.com/products/qt/licensing.html
  */
 
-#include "omc_communicator.hpp"
+#include "omc_communicator.h"
 
 // STD includes
 #include <cmath>
@@ -42,6 +42,7 @@
 #include <exception>
 #include <stdexcept>
 #include <QDir>
+#include <QtCore>
 
 // MME includes
 //#include "annotation.hpp"
@@ -61,7 +62,6 @@
 #include <QtCore/QFile>
 //#include <QtCore/QString> //AF, removed
 //#include <QtCore/QStringList> //AF, removed
-
 
 
 // MICO includes
@@ -114,16 +114,6 @@ bool OmcCommunicator::establishConnection()
   }
 
   try {
-    // ORB initialization.
-    int argc = 4;
-    #if defined(USE_OMNIORB)
-      char *argv[] = { "OMNotebook", "-NoResolve", "-IIOPAddr", "inet:127.0.0.1:0", "-ORBIIOPBlocking"};
-    #else
-      char *argv[] = { "OMNotebook", "-ORBNoResolve", "-ORBIIOPAddr", "inet:127.0.0.1:0", "-ORBIIOPBlocking"};
-    #endif
-
-    CORBA::ORB_var orb = CORBA::ORB_init(argc, argv);
-
     QFile objectRefFile;
 
 #if defined(WIN32) || defined(_WIN32) || defined(_MSC_VER) // Win32
@@ -171,7 +161,9 @@ bool OmcCommunicator::establishConnection()
     fprintf(stderr, "trying to read the corba IOR file %s\n", objectRefFile.fileName().toStdString().c_str());
 
     if (!objectRefFile.exists())
+    {
       return false;
+    }
 
     objectRefFile.open(QIODevice::ReadOnly);
 
@@ -184,12 +176,20 @@ bool OmcCommunicator::establishConnection()
     QString uri( (const char*)buf );
 
     // 2005-10-10 AF, Porting, changes
+    // ORB initialization.
+    int argc = 4;
+    #if defined(USE_OMNIORB)
+      argc = 2;
+      char *argv[] = { "-ORBgiopMaxMsgSize", "10485760" };
+    #else
+      char *argv[] = { "OMNotebook", "-ORBNoResolve", "-ORBIIOPAddr", "inet:127.0.0.1:0", "-ORBIIOPBlocking"};
+    #endif
+
+    CORBA::ORB_var orb = CORBA::ORB_init(argc, argv);
     //CORBA::Object_var obj = orb->string_to_object(uri.stripWhiteSpace().latin1()); //org
     CORBA::Object_var obj = orb->string_to_object( uri.trimmed().toLatin1() );
 
     omc_ = OmcCommunication::_narrow(obj);
-
-
 
     // Test if we have a connection.
     omc_->sendExpression("getClassNames()");

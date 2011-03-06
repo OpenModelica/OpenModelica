@@ -40,6 +40,7 @@
 #include <iostream>
 
 //QT Headers
+#include <QtCore>
 //#include <QtGui/QApplication>
 #include <QtGui/QMessageBox>
 

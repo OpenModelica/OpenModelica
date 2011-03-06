@@ -35,7 +35,7 @@
 
 #include <QtCore/QString>
 
-#include "omc_communicator.hpp"
+#include "omc_communicator.h"
 #include "inputcelldelegate.h"
 
 namespace IAEX

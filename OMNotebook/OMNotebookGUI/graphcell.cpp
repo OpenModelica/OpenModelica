@@ -152,7 +152,7 @@ namespace IAEX {
     emit clickOnCell();
     updatePosition();
     if(state != ERROR)
-      emit setState(MODIFIED);
+      emit setState(Modified);
 
 
   }
@@ -400,7 +400,7 @@ namespace IAEX {
 
   void MyTextEdit2::setModified()
   {
-    emit setState(MODIFIED);
+    emit setState(Modified);
   }
 
   void MyTextEdit2::updatePosition()
@@ -433,7 +433,7 @@ namespace IAEX {
 
     updatePosition();
     if(state != ERROR)
-      emit setState(MODIFIED);
+      emit setState(Modified);
   }
 
   void MyTextEdit2::goToPos(const QUrl& u)
@@ -1446,7 +1446,7 @@ namespace IAEX {
     input_->blockSignals(true);
     output_->blockSignals(true);
 
-    setState(EVAL);
+    setState(Eval);
 
     if( hasDelegate() )
     {
@@ -1662,7 +1662,7 @@ namespace IAEX {
           // check if resualt is empty
           if( res.isEmpty() && error.isEmpty() )
           {
-            setState(FINISHED);
+            setState(Finished);
             res = "[done]";
           }
           if( !error.isEmpty() )
@@ -1672,7 +1672,7 @@ namespace IAEX {
             setState(ERROR);
           }
           else
-            setState(FINISHED);
+            setState(Finished);
           // palette.setColor(input_->backgroundRole(), QColor(200,200,255));
 
           // QPalette palette;
@@ -1721,7 +1721,7 @@ namespace IAEX {
     if( res.isEmpty() && (error.isEmpty() || error.size() == 0) )
     {
       res = "[done]";
-      setState(FINISHED);
+      setState(Finished);
     }
 
     if( !error.isEmpty() && error.size() != 0)
@@ -1730,7 +1730,7 @@ namespace IAEX {
       res += QString("\n") + error;
     }
     else
-      setState(FINISHED);
+      setState(Finished);
 
     QRegExp e("([\\d]+:[\\d]+-[\\d]+:[\\d]+)|([\\d]+:[\\d]+)");
 
@@ -1804,16 +1804,16 @@ namespace IAEX {
     input_->state = state_;
     switch(state_)
     {
-    case MODIFIED:
+    case Modified:
       emit newState("Ready");
       break;
-    case EVAL:
+    case Eval:
       emit newState("Evaluating...");
       break;
-    case FINISHED:
+    case Finished:
       emit newState("Done");
       break;
-    case ERROR:
+    case Error:
       emit newState("Error");
       break;
     }

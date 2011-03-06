@@ -57,8 +57,6 @@ class QUrl;
 
 class CellStyle;
 
-
-
 using namespace std;
 
 namespace IAEX

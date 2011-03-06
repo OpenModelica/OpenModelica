@@ -589,9 +589,7 @@ namespace IAEX
 
     // changed from 1 to 3, don\t know way, but something must have
     // changed between qt 4 and qt 4.1
-    painter.setPen(QPen(black,3, SolidLine));
-
-
+    painter.setPen(QPen(Qt::black,3, Qt::SolidLine));
 
     painter.drawRect(0, 0, width(), height());
     QWidget::paintEvent(event);
