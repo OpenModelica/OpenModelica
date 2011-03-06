@@ -87,6 +87,8 @@ private:
     void createBitmapShape(QPointF point);
 public:
     GraphicsView(int iconType, ProjectTab *parent = 0);
+    void addComponentoView(QString name, QString className, QPoint point, bool isConnector = false,
+                           bool addObject = true, bool diagram = false);
     void addComponentObject(Component *icon);
     void deleteComponentObject(Component *icon);
     void deleteAllComponentObjects();
@@ -134,6 +136,7 @@ signals:
     void keyPressRotateClockwise();
     void keyPressRotateAntiClockwise();
 public slots:
+    void updateSceneRect(const QRectF &rect);
     void addConnector(Component *pComponent);
     void removeConnector();
     void removeConnector(Connector* pConnector);
@@ -197,10 +200,10 @@ public:
     QToolButton* getModelicaTextToolButton();
 
     ProjectTabWidget *mpParentProjectTabWidget;
-    GraphicsView *mpGraphicsView;
-    GraphicsScene *mpGraphicsScene;
     GraphicsView *mpDiagramGraphicsView;
     GraphicsScene *mpDiagramGraphicsScene;
+    GraphicsView *mpIconGraphicsView;
+    GraphicsScene *mpIconGraphicsScene;
     QWidget *mpModelicaEditorWidget;
     ModelicaEditor *mpModelicaEditor;
     QString mModelFileName;
@@ -212,8 +215,8 @@ public:
     int mTabPosition;
 public slots:
     void hasChanged();
-    void showDiagramView(bool checked);
     void showIconView(bool checked);
+    void showDiagramView(bool checked);
     void showModelicaTextView(bool checked);
     void showDocumentationView();
     bool modelicaEditorTextChanged();

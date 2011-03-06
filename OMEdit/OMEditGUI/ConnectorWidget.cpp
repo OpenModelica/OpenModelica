@@ -71,7 +71,7 @@ Connector::Connector(Component *pStartPort, Component *pEndPort, GraphicsView *p
     setStartComponent(pStartPort);
     setEndComponent(pEndPort);
     setPos(mpStartComponent->mapToScene(mpStartComponent->boundingRect().center()));
-    scale(Helper::globalIconXScale, Helper::globalIconYScale);
+    scale(Helper::globalDiagramXScale, Helper::globalDiagramYScale);
     setZValue(-1.0);
     mPoints = points;
 

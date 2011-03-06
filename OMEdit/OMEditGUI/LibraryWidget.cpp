@@ -190,6 +190,12 @@ void ModelicaTree::addNode(QString name, int type, QString parentName, QString p
         ModelicaTreeNode *treeNode = getNode(StringHandler::removeLastDot(parentStructure));
         treeNode->addChild(newTreePost);
     }
+    // load the models icon
+    LibraryLoader *libraryLoader = new LibraryLoader(newTreePost, parentStructure + name, this);
+    libraryLoader->start(QThread::HighestPriority);
+    while (libraryLoader->isRunning())
+        qApp->processEvents();
+
     setCurrentItem(newTreePost);
     mModelicaTreeNodesList.append(newTreePost);
 }
@@ -229,16 +235,16 @@ void ModelicaTree::openProjectTab(QTreeWidgetItem *item, int column)
         ProjectTab *newTab;
         if (treeNode->mParentName.isEmpty())
         {
-            newTab = new ProjectTab(treeNode->mType, StringHandler::ICON, false, false, pMainWindow->mpProjectTabs);
+            newTab = new ProjectTab(treeNode->mType, StringHandler::DIAGRAM, false, false, pMainWindow->mpProjectTabs);
         }
         else
         {
-            newTab = new ProjectTab(treeNode->mType, StringHandler::ICON, false, true, pMainWindow->mpProjectTabs);
+            newTab = new ProjectTab(treeNode->mType, StringHandler::DIAGRAM, false, true, pMainWindow->mpProjectTabs);
             newTab->mIsSaved = true;
         }
         pMainWindow->mpProjectTabs->addProjectTab(newTab, treeNode->mName, treeNode->mNameStructure);
         // make the icon view visible and focused for key press events
-        newTab->showIconView(true);
+        newTab->showDiagramView(true);
     }
     // unset the cursor
     unsetCursor();
@@ -395,6 +401,24 @@ void ModelicaTree::saveChildModels(QString modelName, QString filePath)
     }
 }
 
+void ModelicaTree::loadingLibraryComponent(ModelicaTreeNode *treeNode, QString className)
+{
+    QString result;
+    result = mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->getIconAnnotation(className);
+    LibraryComponent *libComponent = new LibraryComponent(result, className,
+                                                          mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy);
+
+    QPixmap pixmap = libComponent->getComponentPixmap(Helper::iconSize);
+    if (pixmap.isNull())
+    {
+        treeNode->setIcon(0, ModelicaTreeNode::getModelicaNodeIcon(treeNode->mType));
+    }
+    else
+    {
+        treeNode->setIcon(0, QIcon(libComponent->getComponentPixmap(Helper::iconSize)));
+    }
+}
+
 LibraryTreeNode::LibraryTreeNode(QString text, QString parentName, QString tooltip, QTreeWidget *parent)
     : QTreeWidgetItem(parent)
 {
@@ -488,11 +512,17 @@ void LibraryTree::loadModelicaLibraryHierarchy(QString value, QString prefixStr)
     {
         QStringList list = mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->getClassNames(value);
         prefixStr += value + ".";
+        // set the range for progress bar.
+        int progressValue = 0;
+        mpParentLibraryWidget->mpParentMainWindow->mpProgressBar->setRange(0, list.size());
+        mpParentLibraryWidget->mpParentMainWindow->showProgressBar();
         foreach (QString str, list)
         {
             addClass(&tempPackageNodesList, &tempNonPackageNodesList, str,
                      StringHandler::getSubStringFromDots(prefixStr), prefixStr, true);
+            mpParentLibraryWidget->mpParentMainWindow->mpProgressBar->setValue(++progressValue);
         }
+        mpParentLibraryWidget->mpParentMainWindow->hideProgressBar();
     }
 
     //! @todo
@@ -552,7 +582,7 @@ void LibraryTree::addClass(QList<LibraryTreeNode *> *tempPackageNodesList,
                            QList<LibraryTreeNode *> *tempNonPackageNodesList, QString className,
                            QString parentClassName, QString parentStructure, bool hasIcon)
 {
-    mpParentLibraryWidget->mpParentMainWindow->statusBar->showMessage(QString("Loading: ")
+    mpParentLibraryWidget->mpParentMainWindow->mpStatusBar->showMessage(QString("Loading: ")
                                                                       .append(parentStructure + className));
     LibraryTreeNode *newTreePost = new LibraryTreeNode(className, parentClassName,
                                                        QString(parentStructure + className), (QTreeWidget*)0);
@@ -630,7 +660,7 @@ void LibraryTree::expandLib(QTreeWidgetItem *item)
         setCursor(Qt::WaitCursor);
         loadModelicaLibraryHierarchy(item->toolTip(0));
         item->setExpanded(true);
-        mpParentLibraryWidget->mpParentMainWindow->statusBar->clearMessage();
+        mpParentLibraryWidget->mpParentMainWindow->mpStatusBar->clearMessage();
         // Remove the wait cursor
         unsetCursor();
     }
@@ -1231,15 +1261,30 @@ QPixmap LibraryComponent::getComponentPixmap(QSize size)
 
 LibraryLoader::LibraryLoader(LibraryTreeNode *treeNode, QString className, LibraryTree *pParent)
 {
-    mTreeNode = treeNode;
+    mpLibraryTreeNode = treeNode;
     mClassName = className;
-    mpParentLibraryTree = pParent;
+    mpLibraryTree = pParent;
+    mIsLibraryNode = true;
 
     connect(this, SIGNAL(loadLibraryComponent(LibraryTreeNode*,QString)),
-            mpParentLibraryTree, SLOT(loadingLibraryComponent(LibraryTreeNode*,QString)));
+            mpLibraryTree, SLOT(loadingLibraryComponent(LibraryTreeNode*,QString)));
+}
+
+LibraryLoader::LibraryLoader(ModelicaTreeNode *treeNode, QString className, ModelicaTree *pParent)
+{
+    mpModelicaTreeNode = treeNode;
+    mClassName = className;
+    mpModelicaTree = pParent;
+    mIsLibraryNode = false;
+
+    connect(this, SIGNAL(loadLibraryComponent(ModelicaTreeNode*,QString)),
+            mpModelicaTree, SLOT(loadingLibraryComponent(ModelicaTreeNode*,QString)));
 }
 
 void LibraryLoader::run()
 {
-    emit loadLibraryComponent(mTreeNode, mClassName);
+    if (mIsLibraryNode)
+        emit loadLibraryComponent(mpLibraryTreeNode, mClassName);
+    else
+        emit loadLibraryComponent(mpModelicaTreeNode, mClassName);
 }

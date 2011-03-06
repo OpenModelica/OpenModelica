@@ -33,19 +33,21 @@
 
 #include "SimulationWidget.h"
 
-SimulationWidget::SimulationWidget(MainWindow *parent)
-    : QDialog(parent, Qt::WindowTitleHint)
+SimulationWidget::SimulationWidget(MainWindow *pParent)
+    : QDialog(pParent, Qt::WindowTitleHint)
 {
     setWindowTitle(QString(Helper::applicationName).append(" - Simulation"));
     setMinimumSize(375, 350);
-    mpParentMainWindow = parent;
+    mpParentMainWindow = pParent;
 
     setUpForm();
+
+    mpProgressDialog = new ProgressDialog(this);
 }
 
 SimulationWidget::~SimulationWidget()
 {
-
+    delete mpProgressDialog;
 }
 
 void SimulationWidget::setUpForm()
@@ -204,18 +206,11 @@ void SimulationWidget::simulate()
             accept();
             return;
         }
-
-        // show simulation progress bar
-        int endtime = mpNumberofIntervalsTextBox->text().toDouble() * mpStopTimeTextBox->text().toDouble();
-        QProgressDialog progressBar(this, Qt::WindowTitleHint);
-        progressBar.setMinimum(0);
-        progressBar.setMaximum(endtime);
-        progressBar.setLabelText(tr("Running Simulation"));
-        progressBar.setCancelButton(0);
-        progressBar.setWindowModality(Qt::WindowModal);
-        progressBar.setWindowTitle(QString(Helper::applicationName).append(" - Simulation"));
-        progressBar.show();
-        progressBar.setValue(endtime/2);
+        // show the progress bar
+        mpProgressDialog->show();
+        mpParentMainWindow->mpProgressBar->setRange(0, 0);
+        mpParentMainWindow->showProgressBar();
+        mpParentMainWindow->mpStatusBar->showMessage(Helper::running_Simulation);
 
         if (!mpParentMainWindow->mpOMCProxy->simulate(projectTab->mModelNameStructure, simualtionParameters))
         {
@@ -267,8 +262,10 @@ void SimulationWidget::simulate()
                                                                          .append(message));
             }
         }
-        progressBar.setValue(endtime);
-        progressBar.hide();
+
+        mpParentMainWindow->mpStatusBar->clearMessage();
+        mpParentMainWindow->hideProgressBar();
+        mpProgressDialog->hide();
         accept();
     }
 }
@@ -294,4 +291,23 @@ bool SimulationWidget::validate()
     }
 
     return true;
+}
+
+ProgressDialog::ProgressDialog(SimulationWidget *pParent)
+    : QDialog(pParent, Qt::FramelessWindowHint | Qt::WindowTitleHint)
+{
+    setWindowModality(Qt::WindowModal);
+    setWindowTitle(QString(Helper::applicationName).append(" - Simulation"));
+    // create heading label
+    QLabel *headingText = new QLabel(Helper::running_Simulation);
+    headingText->setAlignment(Qt::AlignHCenter);
+    QProgressBar *progressBar = new QProgressBar;
+    progressBar->setRange(0, 0);
+    progressBar->setTextVisible(false);
+    progressBar->setAlignment(Qt::AlignHCenter);
+    // layout the items
+    QVBoxLayout *mainLayout = new QVBoxLayout;
+    mainLayout->addWidget(headingText);
+    mainLayout->addWidget(progressBar);
+    setLayout(mainLayout);
 }

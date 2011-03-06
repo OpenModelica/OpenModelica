@@ -112,7 +112,8 @@ public:
     QMenu *menuSimulation;
     QMenu *menuHelp;
     MessageWidget *mpMessageWidget;
-    QStatusBar *statusBar;
+    QStatusBar *mpStatusBar;
+    QProgressBar *mpProgressBar;
     QPushButton *mpBackButton;
     QAction *newAction;
     QAction *newModelAction;
@@ -192,6 +193,9 @@ private slots:
     void openAbout();
     void toggleShapesButton();
     void focusMSLSearch(bool visible);
+public slots:
+    void showProgressBar();
+    void hideProgressBar();
 private:
     void createActions();
     void createMenus();

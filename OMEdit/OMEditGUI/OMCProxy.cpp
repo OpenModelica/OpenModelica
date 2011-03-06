@@ -44,7 +44,6 @@
 #include "OMCProxy.h"
 #include "OMCThread.h"
 #include "StringHandler.h"
-#include <omniORB4/CORBA.h>
 #include "../../Compiler/runtime/config.h"
 
 //! @class OMCProxy
@@ -71,6 +70,7 @@ OMCProxy::OMCProxy(MainWindow *pParent, bool displayErrors)
     this->mpTextEdit->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
     this->mpTextEdit->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
     this->mpTextEdit->setReadOnly(true);
+    this->mpTextEdit->setLineWrapMode(QTextEdit::WidgetWidth);
     // Set the Layout
     QHBoxLayout *horizontallayout = new QHBoxLayout;
     horizontallayout->setContentsMargins(0, 0, 0, 0);
@@ -130,6 +130,16 @@ QString OMCProxy::getCommandFromMap(QString expression)
         }
     }
     return QString();
+}
+
+void OMCProxy::setExpression(QString expression)
+{
+    mExpression = expression;
+}
+
+QString OMCProxy::getExpression()
+{
+    return mExpression;
 }
 
 //! Starts the OpenModelica Compiler.
@@ -254,7 +264,7 @@ void OMCProxy::stopServer()
 //! @param expression is used to send command as a string.
 //! @see evalCommand(QString expression)
 //! @see OMCThread
-void OMCProxy::sendCommand(QString expression)
+void OMCProxy::sendCommand(const QString expression)
 {
     if (!mHasInitialized)
         if(!startServer())      // if we are unable to start OMC. Exit the application.
@@ -266,8 +276,20 @@ void OMCProxy::sendCommand(QString expression)
     // Send command to server
     try
     {
-        mResult = mOMC->sendExpression(expression.toLatin1());
-        logOMCMessages(expression);
+        setExpression(expression);
+        if (expression.startsWith("simulate"))
+        {
+            QFuture<void> future = QtConcurrent::run(this, &OMCProxy::sendCommand);
+            while (future.isRunning())
+                qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
+            future.waitForFinished();
+            logOMCMessages(expression);
+        }
+        else
+        {
+            mResult = mOMC->sendExpression(expression.toLatin1());
+            logOMCMessages(expression);
+        }
     }
     catch(CORBA::Exception&)
     {
@@ -284,6 +306,11 @@ void OMCProxy::sendCommand(QString expression)
             restartApplication();
         }
     }
+}
+
+void OMCProxy::sendCommand()
+{
+    mResult = mOMC->sendExpression(getExpression().toLatin1());
 }
 
 void OMCProxy::setResult(QString value)
@@ -304,8 +331,12 @@ void OMCProxy::logOMCMessages(QString expression)
     mpTextEdit->append(">>  " + expression);
 
     mpTextEdit->setCurrentFont(QFont("Times New Roman", 10, QFont::Normal, false));
-    mpTextEdit->insertPlainText("\n>>  " + getResult());
-    mpTextEdit->insertPlainText("\n");
+    mpTextEdit->insertPlainText("\n>>  " + getResult() + "\n");
+    //mpTextEdit->insertPlainText("\n");
+    // scroll the text to end
+    QTextCursor textCursor = mpTextEdit->textCursor();
+    textCursor.movePosition(QTextCursor::End);
+    mpTextEdit->setTextCursor(textCursor);
 }
 
 QStringList OMCProxy::createPackagesList()
@@ -898,6 +929,7 @@ QString OMCProxy::changeDirectory(QString directory)
 
 bool OMCProxy::loadFile(QString fileName)
 {
+    fileName = fileName.replace('\\', '/');
     sendCommand("loadFile(\"" + fileName + "\")");
     if (getResult().toLower().contains("true"))
         return true;
@@ -1132,6 +1164,16 @@ bool OMCProxy::instantiateModel(QString modelName)
 bool OMCProxy::simulate(QString modelName, QString simualtionParameters)
 {
     sendCommand("simulate(" + modelName + "," + simualtionParameters + ")");
+    //! @todo Make it more stable. Checking res. as a string is not good here.
+    if (getResult().contains("res."))
+        return true;
+    else
+        return false;
+}
+
+bool OMCProxy::buildModel(QString modelName, QString simualtionParameters)
+{
+    sendCommand("buildModel(" + modelName + "," + simualtionParameters + ")");
     //! @todo Make it more stable. Checking res. as a string is not good here.
     if (getResult().contains("res."))
         return true;

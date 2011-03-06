@@ -99,6 +99,7 @@ public slots:
     void checkModelicaModel();
     bool deleteNodeTriggered(ModelicaTreeNode *node = 0, bool askQuestion = true);
     void saveChildModels(QString modelName, QString filePath);
+    void loadingLibraryComponent(ModelicaTreeNode *treeNode, QString className);
 };
 
 class LibraryTreeNode : public QTreeWidgetItem
@@ -250,14 +251,19 @@ class LibraryLoader : public QThread
     Q_OBJECT
 public:
     LibraryLoader(LibraryTreeNode *treeNode, QString className, LibraryTree *pParent = 0);
+    LibraryLoader(ModelicaTreeNode *treeNode, QString className, ModelicaTree *pParent = 0);
 
-    LibraryTree *mpParentLibraryTree;
-    LibraryTreeNode *mTreeNode;
+    LibraryTree *mpLibraryTree;
+    LibraryTreeNode *mpLibraryTreeNode;
+    ModelicaTree *mpModelicaTree;
+    ModelicaTreeNode *mpModelicaTreeNode;
     QString mClassName;
+    bool mIsLibraryNode;
 protected:
     void run();
 signals:
     void loadLibraryComponent(LibraryTreeNode *treeNode, QString className);
+    void loadLibraryComponent(ModelicaTreeNode *treeNode, QString className);
 };
 
 #endif // LIBRARYWIDGET_H

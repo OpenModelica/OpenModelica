@@ -177,6 +177,7 @@ void ShapeAnnotation::moveUp()
 {
     this->setPos(this->pos().x(), this->mapFromScene(this->mapToScene(this->pos())).y()+1);
     mpGraphicsView->scene()->update();
+    emit updateShapeAnnotation();
 }
 
 //! Slot that moves component one pixel downwards
@@ -187,6 +188,7 @@ void ShapeAnnotation::moveDown()
 {
     this->setPos(this->pos().x(), this->mapFromScene(this->mapToScene(this->pos())).y()-1);
     mpGraphicsView->scene()->update();
+    emit updateShapeAnnotation();
 }
 
 //! Slot that moves component one pixel leftwards
@@ -197,6 +199,7 @@ void ShapeAnnotation::moveLeft()
 {
     this->setPos(this->mapFromScene(this->mapToScene(this->pos())).x()-1, this->pos().y());
     mpGraphicsView->scene()->update();
+    emit updateShapeAnnotation();
 }
 
 //! Slot that moves component one pixel rightwards
@@ -207,6 +210,7 @@ void ShapeAnnotation::moveRight()
 {
     this->setPos(this->mapFromScene(this->mapToScene(this->pos())).x()+1, this->pos().y());
     mpGraphicsView->scene()->update();
+    emit updateShapeAnnotation();
 }
 
 void ShapeAnnotation::rotateClockwise()
@@ -306,6 +310,17 @@ QVariant ShapeAnnotation::itemChange(GraphicsItemChange change, const QVariant &
         if (this->isSelected())
         {
             setSelectionBoxActive();
+            // we first need to disconnect just to make sure we don't make connections two times.
+            /* since we dont do the disconnect when user click on corner item so selecting the item back can
+               create two connections */
+            disconnect(mpGraphicsView, SIGNAL(keyPressDelete()), this, SLOT(deleteMe()));
+            disconnect(mpGraphicsView, SIGNAL(keyPressUp()), this, SLOT(moveUp()));
+            disconnect(mpGraphicsView, SIGNAL(keyPressDown()), this, SLOT(moveDown()));
+            disconnect(mpGraphicsView, SIGNAL(keyPressLeft()), this, SLOT(moveLeft()));
+            disconnect(mpGraphicsView, SIGNAL(keyPressRight()), this, SLOT(moveRight()));
+            disconnect(mpGraphicsView, SIGNAL(keyPressRotateClockwise()), this, SLOT(rotateClockwise()));
+            disconnect(mpGraphicsView, SIGNAL(keyPressRotateAntiClockwise()), this, SLOT(rotateAntiClockwise()));
+            // make the connections now
             connect(mpGraphicsView, SIGNAL(keyPressDelete()), SLOT(deleteMe()));
             connect(mpGraphicsView, SIGNAL(keyPressUp()), SLOT(moveUp()));
             connect(mpGraphicsView, SIGNAL(keyPressDown()), SLOT(moveDown()));

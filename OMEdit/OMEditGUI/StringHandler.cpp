@@ -95,9 +95,9 @@ QString StringHandler::getViewType(int type)
     switch (type)
     {
     case StringHandler::ICON:
-        return "Diagram View";
-    case StringHandler::DIAGRAM:
         return "Icon View";
+    case StringHandler::DIAGRAM:
+        return "Diagram View";
     case StringHandler::MODELICATEXT:
         return "Modelica Text View";
     default:

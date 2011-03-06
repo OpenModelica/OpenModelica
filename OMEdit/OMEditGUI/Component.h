@@ -138,6 +138,7 @@ public:
     void addConnector(Connector *item);
     void setComponentFlags();
     void unsetComponentFlags();
+    QString getTransformationString();
 signals:
     void componentClicked(Component*);
     void componentMoved();

@@ -59,6 +59,7 @@ Component::Component(QString value, QString name, QString className, QPointF pos
             setComponentFlags();
             setAcceptHoverEvents(true);
             getClassComponents(mClassName, mType);
+            createSelectionBox();
             createActions();
         }
     }
@@ -116,7 +117,7 @@ Component::Component(QString value, QString transformationString,ComponentsPrope
     if (mRectangle.width() > 1)
         getRootParentComponent()->mRectangle = mRectangle;
 
-    // if type is icon then allow connections not for diagram view
+    // if type is diagram then allow connections not for icon view
     if (mpParentComponent->mType == StringHandler::ICON)
         connect(this, SIGNAL(componentClicked(Component*)), mpGraphicsView, SLOT(addConnector(Component*)));
 }
@@ -293,7 +294,6 @@ bool Component::parseAnnotationString(Component *item, QString value, bool libra
     }
 
     // Now parse the shapes available in list
-
     foreach (QString shape, shapesList)
     {
         shape = StringHandler::removeFirstLastCurlBrackets(shape);
@@ -394,7 +394,7 @@ void Component::paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
 void Component::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
     // if user is viewing the component in Icon View
-    if ((mpGraphicsView->mIconType == StringHandler::DIAGRAM) or (mpGraphicsView->mpParentProjectTab->isReadOnly()))
+    if ((mpGraphicsView->mIconType == StringHandler::ICON) or (mpGraphicsView->mpParentProjectTab->isReadOnly()))
         return;
     // if we are creating the connector then make sure user can not select and move components
     if ((mpGraphicsView->mIsCreatingConnector) and !mpParentComponent)
@@ -456,7 +456,7 @@ void Component::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
     menu.addAction(pComponent->mpGraphicsView->mpResetRotation);
     menu.addSeparator();
     menu.addAction(pComponent->mpGraphicsView->mpDeleteIconAction);
-    if (pComponent->mType == StringHandler::ICON)
+    if (pComponent->mType == StringHandler::DIAGRAM)
     {
         menu.addSeparator();
         menu.addAction(pComponent->mpIconAttributesAction);
@@ -649,15 +649,13 @@ void Component::unsetComponentFlags()
         setFlag(QGraphicsItem::ItemSendsGeometryChanges, false);
 }
 
-void Component::updateAnnotationString()
+QString Component::getTransformationString()
 {
-    // create the annotation string
-    QString annotationString = "annotate=Placement(";
-    if (mpOMCProxy->mAnnotationVersion == OMCProxy::ANNOTATION_VERSION3X)
-    {
-        annotationString.append("visible=true, ");
-    }
-    annotationString.append("transformation=transformation(origin=");
+    QString annotationString;
+    if (mpGraphicsView->mIconType == StringHandler::ICON)
+        annotationString.append("iconTransformation=transformation(origin=");
+    else if (mpGraphicsView->mIconType == StringHandler::DIAGRAM)
+        annotationString.append("transformation=transformation(origin=");
     // add the icon origin
     annotationString.append("{").append(QString::number(pos().x())).append(",");
     annotationString.append(QString::number(pos().y())).append("}, ");
@@ -677,9 +675,51 @@ void Component::updateAnnotationString()
     // add icon rotation
     annotationString.append("rotation=").append(QString::number(rotation())).append("))");
 
+    return annotationString;
+}
+
+void Component::updateAnnotationString()
+{
+    // create the annotation string
+    QString annotationString = "annotate=Placement(";
+    if (mpOMCProxy->mAnnotationVersion == OMCProxy::ANNOTATION_VERSION3X)
+    {
+        annotationString.append("visible=true, ");
+    }
+    if (mIsConnector)
+    {
+        if (mpGraphicsView->mIconType == StringHandler::ICON)
+        {
+            // first get the component from diagram view and get the transformations
+            Component *pComponent;
+            pComponent = mpGraphicsView->mpParentProjectTab->mpDiagramGraphicsView->getComponentObject(getName());
+            if (pComponent)
+                annotationString.append(pComponent->getTransformationString());
+            // then get the icon transformations
+            annotationString.append(QString(", ").append(getTransformationString()));
+        }
+        else if (mpGraphicsView->mIconType == StringHandler::DIAGRAM)
+        {
+            // first get the component from diagram view and get the transformations
+            annotationString.append(getTransformationString());
+            // then get the icon transformations
+            Component *pComponent;
+            pComponent = mpGraphicsView->mpParentProjectTab->mpIconGraphicsView->getComponentObject(getName());
+            if (pComponent)
+                annotationString.append(QString(", ").append(pComponent->getTransformationString()));
+        }
+    }
+    else
+    {
+        annotationString.append(getTransformationString());
+    }
     // Add component annotation.
     mpOMCProxy->updateComponent(mName, mClassName, mpGraphicsView->mpParentProjectTab->mModelNameStructure,
                                 annotationString);
+
+    // call the addclassannotation if the graphicsview is icon, so the icon in the tree is also updated
+    if (mpGraphicsView->mIconType == StringHandler::ICON)
+        mpGraphicsView->addClassAnnotation();
 }
 
 void Component::resizeComponent(qreal resizeFactorX, qreal resizeFactorY)
@@ -694,8 +734,14 @@ void Component::resizeComponent(qreal resizeFactorX, qreal resizeFactorY)
 //! Tells the component to ask its parent to delete it.
 void Component::deleteMe()
 {
+    // delete the component from model
     mpGraphicsView->deleteComponentObject(this);
+    // remove the component from the scene
     mpGraphicsView->scene()->removeItem(this);
+    // call the addclassannotation if the graphicsview is diagram, so the icon in the tree is also updated
+    if (mpGraphicsView->mIconType == StringHandler::ICON)
+        mpGraphicsView->addClassAnnotation();
+    // delete the component instance
     delete(this);
 }
 
@@ -856,12 +902,12 @@ void Component::getClassComponents(QString className, int type)
                 //getClassComponents(componentProperties->getClassName(), type);
             }
         }
-        else
-        {
-            //! @todo Change it to add all components.............
-            if (!mIsLibraryComponent)
-                mpComponentProperties = components.at(0);
-        }
+//        else
+//        {
+//            //! @todo Change it to add all components.............
+//            if (!mIsLibraryComponent)
+//                mpComponentProperties = components.at(0);
+//        }
         i++;
     }
 }

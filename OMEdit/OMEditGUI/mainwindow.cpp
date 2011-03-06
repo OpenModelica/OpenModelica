@@ -155,9 +155,15 @@ MainWindow::MainWindow(SplashScreen *splashScreen, QWidget *parent)
 
     //Create the Statusbar
 
-    statusBar = new QStatusBar();
-    statusBar->setObjectName("statusBar");
-    this->setStatusBar(statusBar);
+    mpStatusBar = new QStatusBar();
+    mpStatusBar->setObjectName("statusBar");
+    mpStatusBar->setContentsMargins(0, 0, 1, 0);
+    mpProgressBar = new QProgressBar;
+    mpProgressBar->setMaximumWidth(300);
+    mpProgressBar->setTextVisible(false);
+    mpProgressBar->setVisible(false);
+    mpStatusBar->addPermanentWidget(mpProgressBar);
+    this->setStatusBar(mpStatusBar);
 
     // Create a New Project Widget
     mpModelCreator = new ModelCreator(this);
@@ -170,7 +176,7 @@ MainWindow::~MainWindow()
 {
     delete mpProjectTabs;
     delete menubar;
-    delete statusBar;
+    delete mpStatusBar;
     delete mpModelCreator;
     delete mpLibrary;
     delete mpDocumentationWidget;
@@ -450,9 +456,9 @@ void MainWindow::createMenus()
 
     menuTools->addAction(omcLoggerAction);
     menuTools->addAction(openOMShellAction);
-//    menuTools->addSeparator();
-//    menuTools->addAction(exportToOMNotebookAction);
-//    menuTools->addAction(importFromOMNotebookAction);
+    menuTools->addSeparator();
+    menuTools->addAction(exportToOMNotebookAction);
+    menuTools->addAction(importFromOMNotebookAction);
     menuTools->addSeparator();
     menuTools->addAction(openOptions);
 
@@ -527,10 +533,10 @@ void MainWindow::createToolbars()
     simulationToolBar->addAction(simulationAction);
     simulationToolBar->addAction(plotAction);
 
-//    omnotebookToolbar = addToolBar(tr("OMNotebook"));
-//    omnotebookToolbar->setAllowedAreas(Qt::TopToolBarArea);
-//    omnotebookToolbar->addAction(exportToOMNotebookAction);
-//    omnotebookToolbar->addAction(importFromOMNotebookAction);
+    omnotebookToolbar = addToolBar(tr("OMNotebook"));
+    omnotebookToolbar->setAllowedAreas(Qt::TopToolBarArea);
+    omnotebookToolbar->addAction(exportToOMNotebookAction);
+    omnotebookToolbar->addAction(importFromOMNotebookAction);
 }
 
 //! Open Simulation Window
@@ -699,23 +705,23 @@ void MainWindow::createOMNotebookTitleCell(QDomDocument xmlDocument, QDomElement
 
     ProjectTab *pCurrentTab = mpProjectTabs->getCurrentTab();
     // create text Element
-    QDomElement codeElement = xmlDocument.createElement("Text");
-    codeElement.appendChild(xmlDocument.createTextNode(pCurrentTab->mModelName));
-    textCellElement.appendChild(codeElement);
+    QDomElement textElement = xmlDocument.createElement("Text");
+    textElement.appendChild(xmlDocument.createTextNode("<html><head><meta name=\"qrichtext\" content=\"1\" /><head><body style=\"white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;\"><p style=\"margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Arial; font-size:38pt; font-weight:600; color:#000000;\">" + pCurrentTab->mModelName + "</p></body></html>"));
+    textCellElement.appendChild(textElement);
 }
 
 //! creates a image cell in omnotebook xml file
 void MainWindow::createOMNotebookImageCell(QDomDocument xmlDocument, QDomElement pDomElement, QString filePath)
 {
     ProjectTab *pCurrentTab = mpProjectTabs->getCurrentTab();
-    QPixmap modelImage(pCurrentTab->mpGraphicsView->viewport()->size());
+    QPixmap modelImage(pCurrentTab->mpDiagramGraphicsView->viewport()->size());
     modelImage.fill(QColor(Qt::transparent));
     QPainter painter(&modelImage);
-    painter.setWindow(pCurrentTab->mpGraphicsView->viewport()->rect());
+    painter.setWindow(pCurrentTab->mpDiagramGraphicsView->viewport()->rect());
     // paint the background color first
-    painter.fillRect(modelImage.rect(), pCurrentTab->mpGraphicsView->palette().background());
+    painter.fillRect(modelImage.rect(), pCurrentTab->mpDiagramGraphicsView->palette().background());
     // paint all the items
-    pCurrentTab->mpGraphicsView->render(&painter, QRectF(painter.viewport()), pCurrentTab->mpGraphicsView->viewport()->rect());
+    pCurrentTab->mpDiagramGraphicsView->render(&painter, QRectF(painter.viewport()), pCurrentTab->mpDiagramGraphicsView->viewport()->rect());
     painter.end();
 
     // create textcell element
@@ -834,15 +840,15 @@ void MainWindow::exportModelAsImage()
         return;
 
     ProjectTab *pCurrentTab = mpProjectTabs->getCurrentTab();
-    QPixmap modelImage(pCurrentTab->mpGraphicsView->viewport()->size());
+    QPixmap modelImage(pCurrentTab->mpDiagramGraphicsView->viewport()->size());
     modelImage.fill(QColor(Qt::transparent));
 
     QPainter painter(&modelImage);
-    painter.setWindow(pCurrentTab->mpGraphicsView->viewport()->rect());
+    painter.setWindow(pCurrentTab->mpDiagramGraphicsView->viewport()->rect());
     // paint the background color first
-    painter.fillRect(modelImage.rect(), pCurrentTab->mpGraphicsView->palette().background());
+    painter.fillRect(modelImage.rect(), pCurrentTab->mpDiagramGraphicsView->palette().background());
     // paint all the items
-    pCurrentTab->mpGraphicsView->render(&painter, QRectF(painter.viewport()), pCurrentTab->mpGraphicsView->viewport()->rect());
+    pCurrentTab->mpDiagramGraphicsView->render(&painter, QRectF(painter.viewport()), pCurrentTab->mpDiagramGraphicsView->viewport()->rect());
     painter.end();
 
     // save the image
@@ -912,4 +918,18 @@ void MainWindow::focusMSLSearch(bool visible)
 {
     if (visible)
         mpSearchMSLWidget->getMSLSearchTextBox()->setFocus();
+}
+
+//! shows the progress bar contained inside the status bar
+//! @see hideProgressBar()
+void MainWindow::showProgressBar()
+{
+    mpProgressBar->setVisible(true);
+}
+
+//! hides the progress bar contained inside the status bar
+//! @see hideProgressBar()
+void MainWindow::hideProgressBar()
+{
+    mpProgressBar->setVisible(false);
 }

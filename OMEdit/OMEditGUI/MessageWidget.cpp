@@ -144,7 +144,7 @@ void GeneralMessages::printGUIMessage(QString message)
 }
 
 //! @class InfoMessages
-//! @brief This class is     inherited from Messages. It is used to display info messages.
+//! @brief This class is inherited from Messages. It is used to display info messages.
 
 //! Constructor
 //! @param pParent defines a parent to the new instanced object. pParent is the MessageWidget object.

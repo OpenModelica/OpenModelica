@@ -37,12 +37,13 @@
 #include "mainwindow.h"
 
 class MainWindow;
+class ProgressDialog;
 
 class SimulationWidget : public QDialog
 {
     Q_OBJECT
 public:
-    SimulationWidget(MainWindow *parent = 0);
+    SimulationWidget(MainWindow *pParent = 0);
     ~SimulationWidget();
     void setUpForm();
     void show();
@@ -71,8 +72,15 @@ private:
     QPushButton *mpCancelButton;
     QPushButton *mpSimulateButton;
     QDialogButtonBox *mpButtonBox;
+    ProgressDialog *mpProgressDialog;
 public slots:
     void simulate();
+};
+
+class ProgressDialog : public QDialog
+{
+public:
+    ProgressDialog(SimulationWidget *pParent = 0);
 };
 
 #endif // SIMULATIONWIDGET_H

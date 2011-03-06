@@ -54,6 +54,7 @@ private:
     bool mIsStandardLibraryLoaded;
     QString mName;
     QString mResult;
+    QString mExpression;
     bool mDisplayErrors;
     QDialog *mpOMCLogger;
     CustomExpressionBox *mpExpressionTextBox;
@@ -69,6 +70,8 @@ public:
     void getNextCommand();
     void addExpressionInCommandMap(QString expression, QString result);
     QString getCommandFromMap(QString expression);
+    void setExpression(QString expression);
+    QString getExpression();
 
     MainWindow *mpParentMainWindow;
     enum mModelicaAnnotationVersion {ANNOTATION_VERSION2X, ANNOTATION_VERSION3X};
@@ -146,6 +149,7 @@ public:
     bool deleteConnection(QString from, QString to, QString className);
     bool instantiateModel(QString modelName);
     bool simulate(QString modelName, QString simualtionParameters);
+    bool buildModel(QString modelName, QString simualtionParameters);
     //bool plot(QString modelName, QString plotVariables);
     // modified plot API call
     bool plot(QString plotVariables, QString fileName);
@@ -154,6 +158,7 @@ public:
     QString checkModel(QString modelName);
     QString getSimulationOptions(QString modelName);
 public slots:
+    void sendCommand();
     void openOMCLogger();
     void catchException();
     void sendCustomExpression();

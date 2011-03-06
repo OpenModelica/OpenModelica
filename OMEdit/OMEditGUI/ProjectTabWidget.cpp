@@ -80,13 +80,13 @@ GraphicsView::GraphicsView(int iconType, ProjectTab *parent)
     if (!mpParentProjectTab->isReadOnly())
     {
         this->scale(2.0, -2.0);
-        if (mIconType == StringHandler::ICON)
+        if (mIconType == StringHandler::DIAGRAM)
         {
             this->setStyleSheet(QString("background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1")
                                          .append(", stop: 0 lightGray, stop: 1 gray);"));
         }
         // change the background shade if user is in Icon View
-        else if (mIconType == StringHandler::DIAGRAM)
+        else if (mIconType == StringHandler::ICON)
         {
             this->setStyleSheet(QString("background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1")
                                          .append(", stop: 0 gray, stop: 1 lightGray);"));
@@ -113,7 +113,6 @@ void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
     painter->setPen(Qt::black);
     painter->setBrush(QBrush(Qt::white, Qt::SolidPattern));
     painter->drawRect(this->sceneRect());
-
     //! @todo Grid Lines changes when resize the window. Update it.
     if (mpParentProjectTab->mpParentProjectTabWidget->mShowLines)
     {
@@ -139,7 +138,7 @@ void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
             painter->drawLine(xAxis, yAxis, xAxis, sceneRect().bottom());
         }
     }
-    // draw scene rectangle again without brush
+    //draw scene rectangle again without brush
     painter->setPen(Qt::black);
     painter->setBrush(Qt::NoBrush);
     painter->drawRect(this->sceneRect());
@@ -150,7 +149,7 @@ void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
 void GraphicsView::dragMoveEvent(QDragMoveEvent *event)
 {
     // check if the view is readonly or not
-    if (mpParentProjectTab->isReadOnly() or (mIconType == StringHandler::DIAGRAM))
+    if (mpParentProjectTab->isReadOnly())
     {
         event->ignore();
         return;
@@ -173,14 +172,17 @@ void GraphicsView::dropEvent(QDropEvent *event)
 {
     this->setFocus();
     // check if the view is readonly or not
-    if (mpParentProjectTab->isReadOnly() or (mIconType == StringHandler::DIAGRAM))
+    if (mpParentProjectTab->isReadOnly())
     {
         event->ignore();
         return;
     }
 
     if (!event->mimeData()->hasFormat("image/modelica-component"))
+    {
         event->ignore();
+        return;
+    }
 
     QByteArray itemData = event->mimeData()->data("image/modelica-component");
     QDataStream dataStream(&itemData, QIODevice::ReadOnly);
@@ -189,38 +191,86 @@ void GraphicsView::dropEvent(QDropEvent *event)
     dataStream >> className;
 
     MainWindow *pMainWindow = mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow;
-
-    // if item is a class, model, block, connector or record. then we can drop it to the graphicsview
-    if (pMainWindow->mpOMCProxy->isWhat(StringHandler::CLASS, className) or
-        pMainWindow->mpOMCProxy->isWhat(StringHandler::MODEL, className) or
-        pMainWindow->mpOMCProxy->isWhat(StringHandler::BLOCK, className) or
-        pMainWindow->mpOMCProxy->isWhat(StringHandler::CONNECTOR, className) or
-        pMainWindow->mpOMCProxy->isWhat(StringHandler::RECORD, className))
+    // if dropping an item on the diagram layer
+    if (mIconType == StringHandler::DIAGRAM)
     {
-        // Check if the icon is already loaded.
-        Component *oldComponent = pMainWindow->mpLibrary->getComponentObject(className);
-        Component *newComponent;
-        QString iconName = getUniqueComponentName(StringHandler::getLastWordAfterDot(className).toLower());
-
-        if (!oldComponent)
+        // if item is a class, model, block, connector or record. then we can drop it to the graphicsview
+        if (pMainWindow->mpOMCProxy->isWhat(StringHandler::CLASS, className) or
+            pMainWindow->mpOMCProxy->isWhat(StringHandler::MODEL, className) or
+            pMainWindow->mpOMCProxy->isWhat(StringHandler::BLOCK, className) or
+            pMainWindow->mpOMCProxy->isWhat(StringHandler::CONNECTOR, className) or
+            pMainWindow->mpOMCProxy->isWhat(StringHandler::RECORD, className))
         {
-            QString result = pMainWindow->mpOMCProxy->getIconAnnotation(className);
-            newComponent = new Component(result, iconName, className, mapToScene(event->pos()),
-                                         StringHandler::ICON, false, pMainWindow->mpOMCProxy,
-                                         mpParentProjectTab->mpGraphicsView);
+            QString name = getUniqueComponentName(StringHandler::getLastWordAfterDot(className).toLower());
+            if (pMainWindow->mpOMCProxy->isWhat(StringHandler::CONNECTOR, className))
+            {
+                addComponentoView(name, className, event->pos(), true, false, true);
+                mpParentProjectTab->mpIconGraphicsView->addComponentoView(name, className, event->pos(), true, true);
+            }
+            else
+            {
+                addComponentoView(name, className, event->pos());
+            }
+            event->accept();
         }
         else
         {
-            newComponent = new Component(oldComponent, iconName, mapToScene(event->pos()), StringHandler::ICON,
-                                         false, mpParentProjectTab->mpGraphicsView);
+            event->ignore();
         }
-        addComponentObject(newComponent);
-        event->accept();
+    }
+    // if dropping an item on the icon layer
+    else if (mIconType == StringHandler::ICON)
+    {
+        QString name = getUniqueComponentName(StringHandler::getLastWordAfterDot(className).toLower());
+        // if item is a connector. then we can drop it to the graphicsview
+        if (pMainWindow->mpOMCProxy->isWhat(StringHandler::CONNECTOR, className))
+        {
+            addComponentoView(name, className, event->pos(), true, false);
+            mpParentProjectTab->mpDiagramGraphicsView->addComponentoView(name, className, event->pos(), true,
+                                                                         true, true);
+            addClassAnnotation();
+            event->accept();
+        }
+        else
+        {
+            event->ignore();
+        }
+    }
+}
+
+void GraphicsView::addComponentoView(QString name, QString className, QPoint point, bool isConnector,
+                                     bool addObject, bool diagram)
+{
+    MainWindow *pMainWindow = mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow;
+    // Check if the icon is already loaded.
+    Component *oldComponent = pMainWindow->mpLibrary->getComponentObject(className);
+    Component *newComponent;
+
+    // if the item is a connector then we need to get the diagram annotation of it
+    if (diagram)
+    {
+        QString result = pMainWindow->mpOMCProxy->getDiagramAnnotation(className);
+        newComponent = new Component(result, name, className, mapToScene(point), StringHandler::ICON, isConnector,
+                                     pMainWindow->mpOMCProxy, this);
     }
     else
     {
-        event->ignore();
+        if (!oldComponent)
+        {
+            QString result = pMainWindow->mpOMCProxy->getIconAnnotation(className);
+            newComponent = new Component(result, name, className, mapToScene(point), StringHandler::ICON,
+                                         isConnector, pMainWindow->mpOMCProxy, this);
+        }
+        else
+        {
+            newComponent = new Component(oldComponent, name, mapToScene(point), StringHandler::ICON, isConnector,
+                                         this);
+        }
     }
+    if (addObject)
+        addComponentObject(newComponent);
+    else
+        mComponentsList.append(newComponent);
 }
 
 void GraphicsView::addComponentObject(Component *component)
@@ -231,7 +281,6 @@ void GraphicsView::addComponentObject(Component *component)
                                           mpParentProjectTab->mModelNameStructure);
     // add the annotations of icon
     component->updateAnnotationString();
-    // add the component to local list.
     mComponentsList.append(component);
 }
 
@@ -776,17 +825,23 @@ void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
     ShapeAnnotation *pShape = static_cast<ShapeAnnotation*>(itemAt(event->pos()));
     if (!pShape)
     {
-        if (StringHandler::ICON == mIconType)
+        if (StringHandler::DIAGRAM == mIconType)
         {
             QMenu menu(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow);
             mpCancelConnectionAction->setText("Context Menu");
             menu.addAction(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->exportAsImage);
-            //menu.addAction(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->exportToOMNotebookAction);
+            menu.addAction(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->exportToOMNotebookAction);
             menu.exec(event->globalPos());
             return;         // return from it because at a time we only want one context menu.
         }
     }
     QGraphicsView::contextMenuEvent(event);
+}
+
+void GraphicsView::updateSceneRect(const QRectF &rect)
+{
+    //qDebug() << "in update scene rect :: " << rect;
+
 }
 
 //! Begins creation of connector or complete creation of connector depending on the mIsCreatingConnector flag.
@@ -985,6 +1040,12 @@ void GraphicsView::selectAll()
             break;
         }
     }
+
+    // select all shapes like line, rectangle, polygon etc...
+    foreach (ShapeAnnotation *pShape, mShapesList)
+    {
+        pShape->setSelected(true);
+    }
 }
 
 void GraphicsView::addClassAnnotation()
@@ -996,11 +1057,11 @@ void GraphicsView::addClassAnnotation()
     annotationString.append("annotate=");
     if (mIconType == StringHandler::ICON)
     {
-       annotationString.append("Diagram(");
+       annotationString.append("Icon(");
     }
     else if (mIconType == StringHandler::DIAGRAM)
     {
-       annotationString.append("Icon(");
+       annotationString.append("Diagram(");
     }
     if (mShapesList.size() > 0)
     {
@@ -1022,6 +1083,15 @@ void GraphicsView::addClassAnnotation()
        pMainWindow->mpMessageWidget->printGUIErrorMessage("Error in class annotation " +
                                                           pMainWindow->mpOMCProxy->getResult());
     }
+
+    ModelicaTree *pModelicaTree = mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->mpLibrary->mpModelicaTree;
+    ModelicaTreeNode *pModelicaTreeNode = pModelicaTree->getNode(mpParentProjectTab->mModelNameStructure);
+
+    LibraryLoader *libraryLoader = new LibraryLoader(pModelicaTreeNode, mpParentProjectTab->mModelNameStructure,
+                                                     pModelicaTree);
+    libraryLoader->start(QThread::HighestPriority);
+    while (libraryLoader->isRunning())
+        qApp->processEvents();
 }
 
 //! @class GraphicsScene
@@ -1070,14 +1140,14 @@ ProjectTab::ProjectTab(int modelicaType, int iconType, bool readOnly, bool isChi
     setIsChild(isChild);
 
     // icon graphics framework
-    mpGraphicsScene = new GraphicsScene(StringHandler::ICON, this);
-    mpGraphicsView = new GraphicsView(StringHandler::ICON, this);
-    mpGraphicsView->setScene(mpGraphicsScene);
-
-    // diagram graphics framework
     mpDiagramGraphicsScene = new GraphicsScene(StringHandler::DIAGRAM, this);
     mpDiagramGraphicsView = new GraphicsView(StringHandler::DIAGRAM, this);
     mpDiagramGraphicsView->setScene(mpDiagramGraphicsScene);
+
+    // diagram graphics framework
+    mpIconGraphicsScene = new GraphicsScene(StringHandler::ICON, this);
+    mpIconGraphicsView = new GraphicsView(StringHandler::ICON, this);
+    mpIconGraphicsView->setScene(mpIconGraphicsScene);
 
     // create a modelica text editor for modelica text
     mpModelicaEditor = new ModelicaEditor(this);
@@ -1111,7 +1181,7 @@ ProjectTab::ProjectTab(int modelicaType, int iconType, bool readOnly, bool isChi
     mpDiagramToolButton->setToolTip(Helper::iconView);
     mpDiagramToolButton->setAutoRaise(true);
     mpDiagramToolButton->setCheckable(true);
-    connect(mpDiagramToolButton, SIGNAL(clicked(bool)), SLOT(showDiagramView(bool)));
+    connect(mpDiagramToolButton, SIGNAL(clicked(bool)), SLOT(showIconView(bool)));
     viewsButtonsHorizontalLayout->addWidget(mpDiagramToolButton);
 
     // diagram view tool button
@@ -1122,7 +1192,7 @@ ProjectTab::ProjectTab(int modelicaType, int iconType, bool readOnly, bool isChi
     mpIconToolButton->setToolTip(Helper::diagramView);
     mpIconToolButton->setAutoRaise(true);
     mpIconToolButton->setCheckable(true);
-    connect(mpIconToolButton, SIGNAL(clicked(bool)), SLOT(showIconView(bool)));
+    connect(mpIconToolButton, SIGNAL(clicked(bool)), SLOT(showDiagramView(bool)));
     viewsButtonsHorizontalLayout->addWidget(mpIconToolButton);
 
     // modelica text view tool button
@@ -1187,14 +1257,14 @@ ProjectTab::ProjectTab(int modelicaType, int iconType, bool readOnly, bool isChi
     QVBoxLayout *tabLayout = new QVBoxLayout;
     tabLayout->setContentsMargins(2, 2, 2, 2);
     tabLayout->addWidget(mpProjectStatusBar);
-    tabLayout->addWidget(mpGraphicsView);
     tabLayout->addWidget(mpDiagramGraphicsView);
+    tabLayout->addWidget(mpIconGraphicsView);
     tabLayout->addWidget(mpModelicaEditorWidget);
     setLayout(tabLayout);
 
     // Hide the modelica text view, icon view and show diagram view
     mpModelicaEditorWidget->hide();
-    mpDiagramGraphicsView->hide();
+    mpIconGraphicsView->hide();
     mpIconToolButton->setChecked(true);
 }
 
@@ -1246,11 +1316,53 @@ void ProjectTab::hasChanged()
         mpParentProjectTabWidget->setTabText(mpParentProjectTabWidget->currentIndex(), tabName);
         mIsSaved = false;
     }
+
+//    qreal left = fabs(mpDiagramGraphicsView->sceneRect().left()) + 10;
+//    if (mpDiagramGraphicsView->sceneRect().left() < 0)
+//        left = -left;
+//    qreal top = fabs(mpDiagramGraphicsView->sceneRect().top()) + 20;
+//    if (mpDiagramGraphicsView->sceneRect().top() < 0)
+//        top = -top;
+//    qreal width = mpDiagramGraphicsView->sceneRect().width() + 30;
+//    qreal height = mpDiagramGraphicsView->sceneRect().height() + 20;
+
+//    QRectF mSourceRectangle(left, top, width, height);
+//    QRectF mTargetRectangle = mpDiagramGraphicsView->sceneRect();
+//    QPixmap pixmap(Helper::iconSize);
+//    pixmap.fill(QColor(Qt::transparent));
+//    QPainter painter(&pixmap);
+//    painter.setWindow(mTargetRectangle.toRect());
+//    painter.scale(1.0, -1.0);
+//    mpDiagramGraphicsView->scene()->render(&painter, mTargetRectangle, mSourceRectangle);
+//    painter.end();
+
+//    ModelicaTree *pModelicaTree = mpParentProjectTabWidget->mpParentMainWindow->mpLibrary->mpModelicaTree;
+//    ModelicaTreeNode *pModelicaTreeNode = pModelicaTree->getNode(mModelNameStructure);
+//    pModelicaTreeNode->setIcon(0, QIcon(pixmap));
+}
+
+void ProjectTab::showIconView(bool checked)
+{
+    // validate the modelica text before switching to diagram view
+    if (!mpModelicaEditor->validateText())
+    {
+        mpModelicaTextToolButton->setChecked(true);
+        return;
+    }
+
+    mpIconGraphicsView->setFocus();
+    if (!checked or (checked and mpIconGraphicsView->isVisible()))
+        return;
+
+    mpModelicaEditorWidget->hide();
+    mpDiagramGraphicsView->hide();
+    mpIconGraphicsView->show();
+    mpViewTypeLabel->setText(StringHandler::getViewType(StringHandler::ICON));
 }
 
 void ProjectTab::showDiagramView(bool checked)
 {
-    // validate the modelica text before switching to diagram view
+    // validate the modelica text before switching to icon view
     if (!mpModelicaEditor->validateText())
     {
         mpModelicaTextToolButton->setChecked(true);
@@ -1262,28 +1374,9 @@ void ProjectTab::showDiagramView(bool checked)
         return;
 
     mpModelicaEditorWidget->hide();
-    mpGraphicsView->hide();
+    mpIconGraphicsView->hide();
     mpDiagramGraphicsView->show();
     mpViewTypeLabel->setText(StringHandler::getViewType(StringHandler::DIAGRAM));
-}
-
-void ProjectTab::showIconView(bool checked)
-{
-    // validate the modelica text before switching to icon view
-    if (!mpModelicaEditor->validateText())
-    {
-        mpModelicaTextToolButton->setChecked(true);
-        return;
-    }
-
-    mpGraphicsView->setFocus();
-    if (!checked or (checked and mpGraphicsView->isVisible()))
-        return;
-
-    mpModelicaEditorWidget->hide();
-    mpDiagramGraphicsView->hide();
-    mpGraphicsView->show();
-    mpViewTypeLabel->setText(StringHandler::getViewType(StringHandler::ICON));
 }
 
 void ProjectTab::showModelicaTextView(bool checked)
@@ -1291,8 +1384,8 @@ void ProjectTab::showModelicaTextView(bool checked)
     if (!checked or (checked and mpModelicaEditorWidget->isVisible()))
         return;
 
-    mpGraphicsView->hide();
     mpDiagramGraphicsView->hide();
+    mpIconGraphicsView->hide();
     mpViewTypeLabel->setText(StringHandler::getViewType(StringHandler::MODELICATEXT));
     // get the modelica text of the model
     mpModelicaEditor->setText(mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy->list(mModelNameStructure));
@@ -1410,7 +1503,7 @@ void ProjectTab::getModelComponents()
                 mpParentProjectTabWidget->mpParentMainWindow->mpLibrary->addComponentObject(libComponent);
                 // create a new copy component here
                 newComponent = new Component(libComponent->mpComponent, iconName, QPointF(0.0, 0.0),
-                                             StringHandler::ICON, false, mpGraphicsView);
+                                             StringHandler::ICON, false, mpDiagramGraphicsView);
 //                newComponent = new Component(result, iconName, componentProperties->getClassName(), QPointF(0.0, 0.0),
 //                                             StringHandler::ICON, false, pMainWindow->mpOMCProxy, mpGraphicsView);
             }
@@ -1418,10 +1511,10 @@ void ProjectTab::getModelComponents()
             {
                 // create a new copy component here
                 newComponent = new Component(oldComponent, iconName, QPointF(0.0, 0.0), StringHandler::ICON,
-                                             false, mpGraphicsView);
+                                             false, mpDiagramGraphicsView);
             }
             //mpGraphicsView->addComponentObject(newComponent);
-            mpGraphicsView->mComponentsList.append(newComponent);
+            mpDiagramGraphicsView->mComponentsList.append(newComponent);
         }
 
         if (static_cast<QString>(componentsAnnotationsList.at(i)).toLower().contains("error"))
@@ -1465,8 +1558,8 @@ void ProjectTab::getModelConnections()
         QStringList startComponentList = static_cast<QString>(connectionList.at(0)).split(".");
         QStringList endComponentList = static_cast<QString>(connectionList.at(1)).split(".");
 
-        Component *pStartComponent = mpGraphicsView->getComponentObject(startComponentList.at(0));
-        Component *pEndComponent = mpGraphicsView->getComponentObject(endComponentList.at(0));
+        Component *pStartComponent = mpDiagramGraphicsView->getComponentObject(startComponentList.at(0));
+        Component *pEndComponent = mpDiagramGraphicsView->getComponentObject(endComponentList.at(0));
 
         // if Start component and end component not found then continue the loop
         if (!pStartComponent or !pEndComponent)
@@ -1522,9 +1615,9 @@ void ProjectTab::getModelConnections()
             points.append(p);
         }
         // create a connector now
-        Connector *pConnector = new Connector(pStartPort, pEndPort, mpGraphicsView, points);
-        mpGraphicsView->mConnectorsVector.append(pConnector);
-        mpGraphicsView->scene()->addItem(pConnector);
+        Connector *pConnector = new Connector(pStartPort, pEndPort, mpDiagramGraphicsView, points);
+        mpDiagramGraphicsView->mConnectorsVector.append(pConnector);
+        mpDiagramGraphicsView->scene()->addItem(pConnector);
     }
 }
 
@@ -1567,10 +1660,10 @@ void ProjectTab::getModelShapes(QString annotationString, int type)
             // add the shapeannotation item to shapes list
             if (type == StringHandler::ICON)
             {
-                lineAnnotation = new LineAnnotation(shape, mpGraphicsView);
+                lineAnnotation = new LineAnnotation(shape, mpIconGraphicsView);
                 lineAnnotation->setFlags(QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable);
-                mpGraphicsView->addShapeObject(lineAnnotation);
-                mpGraphicsView->scene()->addItem(lineAnnotation);
+                mpIconGraphicsView->addShapeObject(lineAnnotation);
+                mpIconGraphicsView->scene()->addItem(lineAnnotation);
             }
             else if (type == StringHandler::DIAGRAM)
             {
@@ -1596,10 +1689,10 @@ void ProjectTab::getModelShapes(QString annotationString, int type)
             // add the shapeannotation item to shapes list
             if (type == StringHandler::ICON)
             {
-                polygonAnnotation = new PolygonAnnotation(shape, mpGraphicsView);
+                polygonAnnotation = new PolygonAnnotation(shape, mpIconGraphicsView);
                 polygonAnnotation->setFlags(QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable);
-                mpGraphicsView->addShapeObject(polygonAnnotation);
-                mpGraphicsView->scene()->addItem(polygonAnnotation);
+                mpIconGraphicsView->addShapeObject(polygonAnnotation);
+                mpIconGraphicsView->scene()->addItem(polygonAnnotation);
             }
             else if (type == StringHandler::DIAGRAM)
             {
@@ -1625,10 +1718,10 @@ void ProjectTab::getModelShapes(QString annotationString, int type)
             // add the shapeannotation item to shapes list
             if (type == StringHandler::ICON)
             {
-                rectangleAnnotation = new RectangleAnnotation(shape, mpGraphicsView);
+                rectangleAnnotation = new RectangleAnnotation(shape, mpIconGraphicsView);
                 rectangleAnnotation->setFlags(QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable);
-                mpGraphicsView->addShapeObject(rectangleAnnotation);
-                mpGraphicsView->scene()->addItem(rectangleAnnotation);
+                mpIconGraphicsView->addShapeObject(rectangleAnnotation);
+                mpIconGraphicsView->scene()->addItem(rectangleAnnotation);
             }
             else if (type == StringHandler::DIAGRAM)
             {
@@ -1648,10 +1741,10 @@ void ProjectTab::getModelShapes(QString annotationString, int type)
             // add the shapeannotation item to shapes list
             if (type == StringHandler::ICON)
             {
-                ellipseAnnotation = new EllipseAnnotation(shape, mpGraphicsView);
+                ellipseAnnotation = new EllipseAnnotation(shape, mpIconGraphicsView);
                 ellipseAnnotation->setFlags(QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable);
-                mpGraphicsView->addShapeObject(ellipseAnnotation);
-                mpGraphicsView->scene()->addItem(ellipseAnnotation);
+                mpIconGraphicsView->addShapeObject(ellipseAnnotation);
+                mpIconGraphicsView->scene()->addItem(ellipseAnnotation);
             }
             else if (type == StringHandler::DIAGRAM)
             {
@@ -1671,10 +1764,10 @@ void ProjectTab::getModelShapes(QString annotationString, int type)
             // add the shapeannotation item to shapes list
             if (type == StringHandler::ICON)
             {
-                textAnnotation = new TextAnnotation(shape, mpGraphicsView);
+                textAnnotation = new TextAnnotation(shape, mpIconGraphicsView);
                 textAnnotation->setFlags(QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable);
-                mpGraphicsView->addShapeObject(textAnnotation);
-                mpGraphicsView->scene()->addItem(textAnnotation);
+                mpIconGraphicsView->addShapeObject(textAnnotation);
+                mpIconGraphicsView->scene()->addItem(textAnnotation);
             }
             else if (type == StringHandler::DIAGRAM)
             {
@@ -1694,10 +1787,10 @@ void ProjectTab::getModelShapes(QString annotationString, int type)
             // add the shapeannotation item to shapes list
             if (type == StringHandler::ICON)
             {
-                bitmapAnnotation = new BitmapAnnotation(shape, mpGraphicsView);
+                bitmapAnnotation = new BitmapAnnotation(shape, mpIconGraphicsView);
                 bitmapAnnotation->setFlags(QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable);
-                mpGraphicsView->addShapeObject(bitmapAnnotation);
-                mpGraphicsView->scene()->addItem(bitmapAnnotation);
+                mpIconGraphicsView->addShapeObject(bitmapAnnotation);
+                mpIconGraphicsView->scene()->addItem(bitmapAnnotation);
             }
             else if (type == StringHandler::DIAGRAM)
             {
@@ -1718,10 +1811,8 @@ void ProjectTab::getModelIconDiagram()
     MainWindow *pMainWindow = mpParentProjectTabWidget->mpParentMainWindow;
     QString iconAnnotationString = pMainWindow->mpOMCProxy->getIconAnnotation(mModelNameStructure);
     QString diagramAnnotationString = pMainWindow->mpOMCProxy->getDiagramAnnotation(mModelNameStructure);
-    // since in our application icon is interpreted as diagram so pass diagram to function......ugly fix it.
-    getModelShapes(iconAnnotationString, StringHandler::DIAGRAM);
-    // since in our application diagram is interpreted as icon so pass icon to function......ugly fix it.
-    getModelShapes(diagramAnnotationString, StringHandler::ICON);
+    getModelShapes(iconAnnotationString, StringHandler::ICON);
+    getModelShapes(diagramAnnotationString, StringHandler::DIAGRAM);
 }
 
 void ProjectTab::setReadOnly(bool readOnly)
@@ -1795,12 +1886,12 @@ bool ProjectTab::modelicaEditorTextChanged()
                                                         mpModelicaEditor->toPlainText()))
             {
                 // clear the complete view before loading the models again
+                mpIconGraphicsView->removeAllConnectors();
+                mpIconGraphicsView->deleteAllComponentObjects();
+                mpIconGraphicsView->deleteAllShapesObject();
                 mpDiagramGraphicsView->removeAllConnectors();
                 mpDiagramGraphicsView->deleteAllComponentObjects();
                 mpDiagramGraphicsView->deleteAllShapesObject();
-                mpGraphicsView->removeAllConnectors();
-                mpGraphicsView->deleteAllComponentObjects();
-                mpGraphicsView->deleteAllShapesObject();
                 // load model again so that we have models and connectors correctly.
                 pMainWindow->mpOMCProxy->updateSubClass(StringHandler::removeLastWordAfterDot(mModelNameStructure),
                                                         mpModelicaEditor->toPlainText());
@@ -1858,12 +1949,12 @@ bool ProjectTab::modelicaEditorTextChanged()
             if (pMainWindow->mpOMCProxy->saveModifiedModel(mpModelicaEditor->toPlainText()))
             {
                 // clear the complete view before loading the models again
+                mpIconGraphicsView->removeAllConnectors();
+                mpIconGraphicsView->deleteAllComponentObjects();
+                mpIconGraphicsView->deleteAllShapesObject();
                 mpDiagramGraphicsView->removeAllConnectors();
                 mpDiagramGraphicsView->deleteAllComponentObjects();
                 mpDiagramGraphicsView->deleteAllShapesObject();
-                mpGraphicsView->removeAllConnectors();
-                mpGraphicsView->deleteAllComponentObjects();
-                mpGraphicsView->deleteAllShapesObject();
                 // load model again so that we have models and connectors correctly.
                 pMainWindow->mpOMCProxy->saveModifiedModel(mpModelicaEditor->toPlainText());
                 // get the model components and connectors now
@@ -2084,7 +2175,7 @@ void ProjectTabWidget::addNewProjectTab(QString modelName, QString modelStructur
     newTab->mTabPosition = addTab(newTab, newTab->isChild() ? modelName : modelName.append(QString("*")));
     setCurrentWidget(newTab);
     // make the icon view visible and focused for key press events
-    newTab->showIconView(true);
+    newTab->showDiagramView(true);
 }
 
 void ProjectTabWidget::addDiagramViewTab(QTreeWidgetItem *item, int column)
@@ -2092,7 +2183,7 @@ void ProjectTabWidget::addDiagramViewTab(QTreeWidgetItem *item, int column)
     Q_UNUSED(column);
     LibraryTreeNode *treeNode = dynamic_cast<LibraryTreeNode*>(item);
     ProjectTab *newTab = new ProjectTab(mpParentMainWindow->mpOMCProxy->getClassRestriction(treeNode->mNameStructure),
-                                        StringHandler::ICON, true, false, this);
+                                        StringHandler::DIAGRAM, true, false, this);
     newTab->mModelName = treeNode->mName;
     newTab->mModelNameStructure = treeNode->mNameStructure;
     newTab->mTabPosition = addTab(newTab, StringHandler::getLastWordAfterDot(treeNode->mNameStructure));
@@ -2101,7 +2192,7 @@ void ProjectTabWidget::addDiagramViewTab(QTreeWidgetItem *item, int column)
     QString result = mpParentMainWindow->mpOMCProxy->getDiagramAnnotation(treeNode->toolTip(0));
     diagram = new Component(result, newTab->mModelName, newTab->mModelNameStructure, QPointF (0,0),
                             StringHandler::DIAGRAM, false, mpParentMainWindow->mpOMCProxy,
-                            newTab->mpGraphicsView);
+                            newTab->mpDiagramGraphicsView);
 
     Component *oldIconComponent = mpParentMainWindow->mpLibrary->getComponentObject(newTab->mModelNameStructure);
     Component *newIconComponent;
@@ -2111,16 +2202,16 @@ void ProjectTabWidget::addDiagramViewTab(QTreeWidgetItem *item, int column)
         QString result = mpParentMainWindow->mpOMCProxy->getIconAnnotation(newTab->mModelNameStructure);
         newIconComponent = new Component(result, newTab->mModelName, newTab->mModelNameStructure, QPointF (0,0),
                                          StringHandler::ICON, false, mpParentMainWindow->mpOMCProxy,
-                                         newTab->mpDiagramGraphicsView);
+                                         newTab->mpIconGraphicsView);
     }
     else
     {
         newIconComponent = new Component(oldIconComponent, newTab->mModelName, QPointF (0,0), StringHandler::ICON,
-                                        false, newTab->mpDiagramGraphicsView);
+                                        false, newTab->mpIconGraphicsView);
     }
     setCurrentWidget(newTab);
     // make the icon view visible and focused for key press events
-    newTab->showIconView(true);
+    newTab->showDiagramView(true);
 }
 
 //! Saves current project.
@@ -2393,7 +2484,6 @@ void ProjectTabWidget::openFile(QString fileName)
         else
             fileName = name;
     }
-
     // create new OMC instance and load the file in it
     OMCProxy *omc = new OMCProxy(mpParentMainWindow, false);
     // if error in loading file
@@ -2498,10 +2588,10 @@ void ProjectTabWidget::resetZoom()
     ProjectTab *pCurrentTab = getCurrentTab();
     if (pCurrentTab)
     {
-        if (pCurrentTab->mpGraphicsView->isVisible())
-            pCurrentTab->mpGraphicsView->resetZoom();
-        else if (pCurrentTab->mpDiagramGraphicsView->isVisible())
+        if (pCurrentTab->mpDiagramGraphicsView->isVisible())
             pCurrentTab->mpDiagramGraphicsView->resetZoom();
+        else if (pCurrentTab->mpIconGraphicsView->isVisible())
+            pCurrentTab->mpIconGraphicsView->resetZoom();
     }
 }
 
@@ -2513,10 +2603,10 @@ void ProjectTabWidget::zoomIn()
     ProjectTab *pCurrentTab = getCurrentTab();
     if (pCurrentTab)
     {
-        if (pCurrentTab->mpGraphicsView->isVisible())
-            pCurrentTab->mpGraphicsView->zoomIn();
-        else if (pCurrentTab->mpDiagramGraphicsView->isVisible())
+        if (pCurrentTab->mpDiagramGraphicsView->isVisible())
             pCurrentTab->mpDiagramGraphicsView->zoomIn();
+        else if (pCurrentTab->mpIconGraphicsView->isVisible())
+            pCurrentTab->mpIconGraphicsView->zoomIn();
     }
 }
 
@@ -2528,10 +2618,10 @@ void ProjectTabWidget::zoomOut()
     ProjectTab *pCurrentTab = getCurrentTab();
     if (pCurrentTab)
     {
-        if (pCurrentTab->mpGraphicsView->isVisible())
-            pCurrentTab->mpGraphicsView->zoomOut();
-        else if (pCurrentTab->mpDiagramGraphicsView->isVisible())
+        if (pCurrentTab->mpDiagramGraphicsView->isVisible())
             pCurrentTab->mpDiagramGraphicsView->zoomOut();
+        else if (pCurrentTab->mpIconGraphicsView->isVisible())
+            pCurrentTab->mpIconGraphicsView->zoomOut();
     }
 }
 

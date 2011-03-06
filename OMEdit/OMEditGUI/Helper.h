@@ -61,10 +61,10 @@ public:
     static QString documentationView;
     static int viewWidth;
     static int viewHeight;
-    static qreal globalIconXScale;
-    static qreal globalIconYScale;
     static qreal globalDiagramXScale;
     static qreal globalDiagramYScale;
+    static qreal globalIconXScale;
+    static qreal globalIconYScale;
     static QString ModelicaSimulationMethods;
     static QString ModelicaSimulationOutputFormats;
     static int treeIndentation;
@@ -75,6 +75,7 @@ public:
     static qreal shapesStrokeWidth;
     static QString modelicaLibrarySearchText;
     static QString noItemFound;
+    static QString running_Simulation;
 };
 
 class GUIMessages

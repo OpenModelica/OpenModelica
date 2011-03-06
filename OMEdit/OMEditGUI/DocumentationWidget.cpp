@@ -166,9 +166,9 @@ void DocumentationViewer::processLinkHover(QString link, QString title, QString 
     Q_UNUSED(textContent);
 
     if (link.isEmpty())
-        mpParentDocumentationWidget->mpParentMainWindow->statusBar->clearMessage();
+        mpParentDocumentationWidget->mpParentMainWindow->mpStatusBar->clearMessage();
     else
-        mpParentDocumentationWidget->mpParentMainWindow->statusBar->showMessage(link);
+        mpParentDocumentationWidget->mpParentMainWindow->mpStatusBar->showMessage(link);
 }
 
 void DocumentationViewer::mousePressEvent(QMouseEvent *event)

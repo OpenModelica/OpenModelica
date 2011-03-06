@@ -11,7 +11,7 @@ OMEdit uses Qt 4.7.0
 OmniORB
 ------------------------------
 - OMEdit uses the OmniORB 4.1.4.
-- If you have OMDev downloaded then make sure its environment variable is also set. OmniORB is included in OMDev package.
+- If you have OMDev downloaded then make sure its environment variable (OMDEV) is also set. OmniORB is included in OMDev package.
 - If you don't have OMDev then download OmniORB from 
 https://openmodelica.ida.liu.se/svn/OpenModelica/installers/windows/OMDev/lib/omniORB-4.1.4-mingw and set the path in 
 OMEditGUI.pro file accordingly.
