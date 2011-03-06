@@ -41,4 +41,10 @@ RC_FILE = rc_omshell.rc
 
 DESTDIR = ../bin
 
+UI_DIR = ../generatedfiles/ui
+
+MOC_DIR = ../generatedfiles/moc
+
+RCC_DIR = ../generatedfiles/rcc
+
 ICON = Resources/omshell.icns
