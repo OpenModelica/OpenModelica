@@ -29,9 +29,9 @@ omcd: c_runtime docs
 	(cd Compiler && $(MAKE) -f Makefile debug)
 
 qtclean-common:
-	rm -rf OMNotebook/ext/ext$(EXE) OMNotebook/ext/OMPlotWindow$(EXE)
-	rm -rf OMShell/OMShell$(EXE) OMShell/omc_communication.*
-	rm -rf OMNotebook/OMNotebookQT4/OMNotebook$(EXE) OMNotebook/OMNotebookQT4/omc_communication.*
+	rm -rf OMNotebook/bin/OMPlotWindow$(EXE) OMNotebook/OMPlotWindow/OMPlotWindow$(EXE)
+	rm -rf OMShell/bin/OMShell$(EXE) OMShell/OMShellGUI/omc_communication.*
+	rm -rf OMNotebook/bin/OMNotebook$(EXE) OMNotebook/OMNotebookGUI/omc_communication.*
 ifeq ($(QMAKE),)
 qtclients:
 	@echo "*** OpenModelica configured without support for Qt"
