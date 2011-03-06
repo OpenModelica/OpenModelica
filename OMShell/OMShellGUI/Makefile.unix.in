@@ -25,7 +25,7 @@ $(NAME): Makefile OMShell.config omc_communication.cc
 
 build: $(NAME)
 	mkdir -p $(builddir_share)/omshell/
-	if [ "$(EXE)" = ".app" ]; then cp -rp ../bin/$(NAME)$(EXE) ../build/Applications/ ; else cp -p ../bin/$(NAME) $(builddir_bin); fi
+	if [ "$(EXE)" = ".app" ]; then cp -rp ../bin/$(NAME)$(EXE) $(top_builddir)/build/Applications/ ; else cp -p ../bin/$(NAME) $(builddir_bin); fi
 	cp -p $(top_builddir)/OMNotebook/OMNotebookGUI/commands.xml $(builddir_share)/omshell/
 
 Makefile.unix: Makefile.unix.in
