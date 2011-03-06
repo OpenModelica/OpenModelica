@@ -1,0 +1,34 @@
+top_builddir=../
+builddir_bin=$(top_builddir)/build/bin/
+builddir_share=$(top_builddir)/build/share/
+runtimedir=$(top_builddir)/Compiler/runtime/
+
+QMAKE=@QMAKE@
+EXE=@EXE@
+NAME=OMShell
+
+.PHONY: always $(NAME)
+
+all: build
+
+Makefile:
+	$(QMAKE)
+
+clean: Makefile
+	rm -rf $(NAME) $(NAME)$(EXE) omc_communication.* Makefile
+
+omc_communication.cc omc_communication.h: $(runtimedir)/omc_communication.idl
+	@IDLCMD@ $<
+
+$(NAME): Makefile OMShell.config omc_communication.cc
+	make -f Makefile
+
+build: $(NAME)
+	mkdir -p $(builddir_share)/omshell/
+	if [ "$(EXE)" = ".app" ]; then cp -rp $(NAME)$(EXE) ../build/Applications/ ; else cp -p $(NAME) $(builddir_bin); fi
+	cp -p ../OMNotebook/OMNotebookQT4/commands.xml $(builddir_share)/omshell/
+
+Makefile.unix: Makefile.unix.in
+	cd $(top_builddir); ./config.status
+OMShell.config: OMShell.config.in
+	cd $(top_builddir); ./config.status
