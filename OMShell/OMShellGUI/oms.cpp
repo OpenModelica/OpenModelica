@@ -1129,7 +1129,7 @@ bool OMS::startServer()
         // get version no
         QString getTempStr = "getTempDirectoryPath()";
         delegate_->evalExpression( getTempStr );
-        QString tmpDir = delegate_->getResult()+"/OMShell/";
+        QString tmpDir = delegate_->getResult()+"/OpenModelica/";
         tmpDir.remove("\"");
         if (!QDir().exists(tmpDir)) QDir().mkdir(tmpDir);
         tmpDir = "cd(\"" + tmpDir + "\")";
