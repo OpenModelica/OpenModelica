@@ -998,6 +998,45 @@ algorithm
   ocr := cr;
 end crefEqualReturn;
 
+public function crefEqualWithoutSubs
+  "Checks if two crefs are equal, without considering their subscripts."
+  input DAE.ComponentRef cr1;
+  input DAE.ComponentRef cr2;
+  output Boolean res;
+algorithm
+  res := crefEqualWithoutSubs2(referenceEq(cr1, cr2), cr1, cr2);
+end crefEqualWithoutSubs;
+
+protected function crefEqualWithoutSubs2
+  input Boolean refEq;
+  input DAE.ComponentRef cr1;
+  input DAE.ComponentRef cr2;
+  output Boolean res;
+algorithm
+  res := match(refEq, cr1, cr2)
+    local
+      DAE.Ident n1, n2;
+      DAE.ComponentRef cr1, cr2;
+      Boolean r;
+
+    case (true, _, _) then true;
+
+    case (_, DAE.CREF_IDENT(ident = n1), DAE.CREF_IDENT(ident = n2))
+      then stringEq(n1, n2);
+
+    case (_, DAE.CREF_QUAL(ident = n1, componentRef = cr1), 
+             DAE.CREF_QUAL(ident = n2, componentRef = cr2))
+      equation
+        r = stringEq(n1, n2);
+        r = Debug.bcallret3(r, crefEqualWithoutSubs2, referenceEq(cr1, cr2),
+          cr1, cr2, false);
+      then
+        r;
+
+    else false;
+  end match;
+end crefEqualWithoutSubs2;
+        
 public function crefIsIdent
 "returns true if ComponentRef is an ident,
  i.e a => true , a.b => false"
@@ -1044,7 +1083,7 @@ algorithm
     case (cr)
       equation
         ((subs as (_ :: _))) = crefLastSubs(cr);
-        exps = Util.listMap(subs, Expression.subscriptExp);
+        exps = Util.listMap(subs, Expression.subscriptIndexExp);
         // fails if any mapped functions returns false
       then Util.listMapAllValue(exps, Expression.isOne, true);
     else false;

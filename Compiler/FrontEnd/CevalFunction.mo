@@ -67,8 +67,10 @@ protected import ComponentReference;
 protected import DAEDump;
 protected import DAEUtil;
 protected import Debug;
+protected import Error;
 protected import Expression;
 protected import ExpressionDump;
+protected import Graph;
 protected import Lookup;
 protected import RTOpts;
 protected import Types;
@@ -78,9 +80,7 @@ protected import ValuesUtil;
 // [TYPE]  Types
 public type SymbolTable = Option<Interactive.InteractiveSymbolTable>;
 
-// This type represents a list of dependencies for a variable, where the first
-// component reference is the variable itself.
-protected type Dependency = tuple<DAE.ComponentRef, list<DAE.ComponentRef>>;
+protected type FunctionVar = tuple<DAE.Element, Option<Values.Value>>;
 
 // LoopControl is used to control the functions behaviour in different
 // situations. All evaluation functions returns a LoopControl variable that
@@ -159,12 +159,13 @@ algorithm
     local
       list<DAE.Element> body;
       list<DAE.Element> vars, output_vars;
+      list<FunctionVar> func_params;
       Env.Cache cache;
       Env.Env env;
       list<Values.Value> return_values;
       Values.Value return_value;
       SymbolTable st;
-    
+
     case (_, _, _, DAE.FUNCTION_DEF(body = body), _, _, st)
       equation
         // Split the definition into function variables and statements.
@@ -172,10 +173,15 @@ algorithm
         // Save the output variables, so that we can return their values when
         // we're done.
         output_vars = Util.listFilter(vars, DAEUtil.isOutputVar);
-        vars = sortFunctionVarsByDependency(vars);
+
+        // Pair the input arguments to input parameters and sort the function
+        // variables by dependencies.
+        func_params = pairFuncParamsWithArgs(vars, inFuncArgs);
+        func_params = sortFunctionVarsByDependency(func_params);
+
         // Create an environment for the function and add all function variables.
         (cache, env, st) = 
-          setupFunctionEnvironment(inCache, inEnv, inFuncName, vars, inFuncArgs, st);
+          setupFunctionEnvironment(inCache, inEnv, inFuncName, func_params, st);
         // Evaluate the body of the function.
         (cache, env, _, st) = evaluateElements(body, cache, env, NEXT(), st);
         // Fetch the values of the output variables.
@@ -192,6 +198,47 @@ algorithm
         fail();
   end matchcontinue;
 end evaluateFunctionDefinition;
+
+protected function pairFuncParamsWithArgs
+  "This function pairs up the input arguments to the input parameters, so that
+  each input parameter get one input argument. This is done since we sort the
+  function variables by dependencies, and need to keep track of which argument
+  belongs to which parameter."
+  input list<DAE.Element> inElements;
+  input list<Values.Value> inValues;
+  output list<FunctionVar> outFunctionVars;
+algorithm
+  outFunctionVars := match(inElements, inValues)
+    local
+      DAE.Element var;
+      list<DAE.Element> rest_vars;
+      Values.Value val;
+      list<Values.Value> rest_vals;
+      list<FunctionVar> params;
+
+    case ({}, {}) then {};
+
+    case ((var as DAE.VAR(direction = DAE.INPUT())) :: _, {})
+      equation
+        Debug.fprintln("failtrace", "- CevalFunction.pairFuncParamsWithArgs " 
+         +& "failed because of too few input arguments.");
+      then
+        fail();
+
+    case ((var as DAE.VAR(direction = DAE.INPUT())) :: rest_vars, val :: rest_vals)
+      equation
+        params = pairFuncParamsWithArgs(rest_vars, rest_vals);
+      then
+        (var, SOME(val)) :: params;
+
+    case (var :: rest_vars, _)
+      equation
+        params = pairFuncParamsWithArgs(rest_vars, inValues);
+      then
+        (var, NONE()) :: params;
+
+  end match;
+end pairFuncParamsWithArgs;
 
 protected function evaluateElements
   "This function evaluates a list of elements."
@@ -707,8 +754,7 @@ protected function setupFunctionEnvironment
   input Env.Cache inCache;
   input Env.Env inEnv;
   input String inFuncName;
-  input list<DAE.Element> inFuncVars;
-  input list<Values.Value> inFuncArgs;
+  input list<FunctionVar> inFuncParams;
   input SymbolTable inST;
   output Env.Cache outCache;
   output Env.Env outEnv;
@@ -716,7 +762,7 @@ protected function setupFunctionEnvironment
 algorithm
   outEnv := Env.openScope(inEnv, false, SOME(inFuncName), SOME(Env.FUNCTION_SCOPE()));
   (outCache, outEnv, outST) := 
-    extendEnvWithFunctionVars(inCache, outEnv, inFuncVars, inFuncArgs, inST);
+    extendEnvWithFunctionVars(inCache, outEnv, inFuncParams, inST);
 end setupFunctionEnvironment;
 
 protected function extendEnvWithFunctionVars
@@ -724,55 +770,54 @@ protected function extendEnvWithFunctionVars
   input arguments to the function."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input list<DAE.Element> inFuncVars;
-  input list<Values.Value> inFuncArgs;
+  input list<FunctionVar> inFuncParams;
   input SymbolTable inST;
   output Env.Cache outCache;
   output Env.Env outEnv;
   output SymbolTable outST;
 algorithm
   (outCache, outEnv, outST) := 
-  matchcontinue(inCache, inEnv, inFuncVars, inFuncArgs, inST)
+  matchcontinue(inCache, inEnv, inFuncParams, inST)
     local
       DAE.Element e;
-      list<DAE.Element> el;
+      list<FunctionVar> rest_params;
       Values.Value val;
-      list<Values.Value> rest_vals;
       Env.Cache cache;
       Env.Env env;
       DAE.Exp binding_exp;
       SymbolTable st;
     
-    case (_, _, {}, {}, _) then (inCache, inEnv, inST);
+    case (_, _, {}, _) then (inCache, inEnv, inST);
     
-    // For an input arguments we take the first value in the list of input
-    // values, and assigns the value to the variable that we create.
-    case (_, env, (e as DAE.VAR(direction = DAE.INPUT())) :: el, val :: rest_vals, st)
+    // Input parameters are assigned their corresponding input argument given to
+    // the function.
+    case (_, env, (e, SOME(val)) :: rest_params, st)
       equation
         (cache, env, st) = extendEnvWithElement(e, SOME(val), inCache, env, st);
-        (cache, env, st) = extendEnvWithFunctionVars(inCache, env, el, rest_vals, st);
+        (cache, env, st) = extendEnvWithFunctionVars(inCache, env, rest_params, st);
       then
         (cache, env, st);
     
-    // Non-input arguments might have a default binding, so we use that if it's
+    // Non-input parameters might have a default binding, so we use that if it's
     // available.
-    case (_, env, (e as DAE.VAR(direction = _, binding = SOME(binding_exp))) :: el, _, st)
+    case (_, env, ((e as DAE.VAR(binding = SOME(binding_exp))), NONE())
+        :: rest_params, st)
       equation
         (cache, val, st) = cevalExp(binding_exp, inCache, inEnv, st);
         (cache, env, st) = extendEnvWithElement(e, SOME(val), cache, env, st);
-        (cache, env, st) = extendEnvWithFunctionVars(cache, env, el, inFuncArgs, st);
+        (cache, env, st) = extendEnvWithFunctionVars(cache, env, rest_params, st);
       then
         (cache, env, st);
     
     // Otherwise, just add the variable to the environment.
-    case (_, env, (e as DAE.VAR(direction = _)) :: el, _, st)
+    case (_, env, (e, NONE()) :: rest_params, st)
       equation
         (cache, env, st) = extendEnvWithElement(e, NONE(), inCache, env, st);
-        (cache, env, st) = extendEnvWithFunctionVars(inCache, env, el, inFuncArgs, st);
+        (cache, env, st) = extendEnvWithFunctionVars(inCache, env, rest_params, st);
       then
         (cache, env, st);
     
-    case (_, env, e :: _, _, _)
+    case (_, env, (e, _) :: _, _)
       equation
         true = RTOpts.debugFlag("failtrace");
         Debug.traceln("- CevalFunction.extendEnvWithFunctionVars failed for:");
@@ -1647,217 +1692,235 @@ protected function sortFunctionVarsByDependency
   dimensions that depend on the size of another variable. This function sorts
   the list of variables so that any dependencies to a variable will be before
   the variable in resulting list."
-  input list<DAE.Element> inFuncVars;
-  output list<DAE.Element> outFuncVars;
+  input list<FunctionVar> inFuncVars;
+  output list<FunctionVar> outFuncVars;
 protected
-  list<Dependency> dependencies;
+  list<tuple<FunctionVar, list<FunctionVar>>> cycles;
 algorithm
-  // Build a dependency list that shows which variable depends on which. Using a
-  // list for this is not the most efficient way to do it, but if this becomes
-  // an issue then someone uses more function variables than is sane.
-  dependencies := Util.listMap(inFuncVars, buildDependencyList);
-  // Use the dependency list to sort the variables.
-  outFuncVars := sortFunctionVarsByDependency2(inFuncVars, dependencies);
+  (outFuncVars, cycles) := Graph.topologicalSort(
+    Graph.buildGraph(inFuncVars, getElementDependencies, inFuncVars),
+    isElementEqual);
+  checkCyclicalComponents(cycles);
 end sortFunctionVarsByDependency;
 
-protected function sortFunctionVarsByDependency2
-  "Helper function to sortFunctionVarsByDependency. Sorts a list of variables
-  given a list of dependencies."
-  input list<DAE.Element> inFuncVars;
-  input list<Dependency> inDependencies;
-  output list<DAE.Element> outFuncVars;
+protected function getElementDependencies
+  "Returns the dependencies given an element."
+  input FunctionVar inElement;
+  input list<FunctionVar> inAllElements;
+  output list<FunctionVar> outDependencies;
+  type Arg = tuple<list<FunctionVar>, list<FunctionVar>, list<DAE.Ident>>;
 algorithm
-  outFuncVars := match(inFuncVars, inDependencies)
-    local
-      DAE.Element elem;
-      DAE.ComponentRef cref;
-      list<DAE.Element> rest_elems, dep_elems;
-      list<DAE.ComponentRef> deps;
-    
-    case ({}, _) then {};
-    
-    case ((elem as DAE.VAR(componentRef = cref)) :: rest_elems, _)
-      equation
-        // Look up which variables this variable depends on.
-        deps = findDependencies(cref, inDependencies);
-        // Split the rest of the variables based on if this variable depends on
-        // them or not.
-        (dep_elems, rest_elems) = extractDependencies(deps, rest_elems);
-        // Sort the dependencies.
-        dep_elems = sortFunctionVarsByDependency2(dep_elems, inDependencies); 
-        // Sort the non-dependencies.
-        rest_elems = sortFunctionVarsByDependency2(rest_elems, inDependencies);
-        // Assemble the variable list with dependencies before this variable,
-        // and all other variables after.
-        rest_elems = elem :: rest_elems;
-        rest_elems = listAppend(dep_elems, rest_elems);
-      then
-        rest_elems;
-  end match;
-end sortFunctionVarsByDependency2;
-
-protected function extractDependencies
-  "Given a list of dependencies this function splits a list of variables into
-  variables that are dependencies and variable that are not."
-  input list<DAE.ComponentRef> inDependencies;
-  input list<DAE.Element> inFuncVars;
-  output list<DAE.Element> outDepVars;
-  output list<DAE.Element> outRestVars;
-algorithm
-  (outDepVars, outRestVars) := match(inDependencies, inFuncVars)
-    local
-      DAE.ComponentRef dep_cref;
-      list<DAE.ComponentRef> rest_deps;
-      list<DAE.Element> dep_elem, dep_elems, rest_elems;
-    case ({}, _) then ({}, inFuncVars);
-    case (dep_cref :: rest_deps, _)
-      equation
-        (dep_elem, rest_elems) = extractDependency(dep_cref, inFuncVars);
-        (dep_elems, rest_elems) = extractDependencies(rest_deps, rest_elems);
-        dep_elems = listAppend(dep_elem, dep_elems);
-      then
-        (dep_elems, rest_elems);
-  end match;
-end extractDependencies;
-        
-protected function extractDependency
-  "Helper function to extractDependencies. Tries to find a certain variable in
-  the list of variables, and if found it returns ({found variable}, {rest of
-  variables}), otherwise ({}, {all variables})."
-  input DAE.ComponentRef inCref;
-  input list<DAE.Element> inFuncVars;
-  output list<DAE.Element> outDependency;
-  output list<DAE.Element> outRestVars;
-algorithm
-  (outDependency, outRestVars) := matchcontinue(inCref, inFuncVars)
-    local
-      DAE.ComponentRef cr;
-      DAE.Element e;
-      list<DAE.Element> el, el2;
-
-    // No variable found.
-    case (_, {}) then ({}, {});
-
-    // A match was found.
-    case (_, (e as DAE.VAR(componentRef = cr)) :: el)
-      equation
-        true = ComponentReference.crefEqualNoStringCompare(inCref, cr);
-      then
-        ({e}, el);
-
-    // No match, keep searching.
-    case (_, e :: el)
-      equation
-        (el, el2) = extractDependency(inCref, el);
-      then
-        (el, e :: el2);
-  end matchcontinue;
-end extractDependency;
-
-protected function findDependencies
-  "Find the dependencies of a variable in a list of dependencies. This function
-  is recursive, so it will also find the dependencies of the dependencies, and
-  so on."
-  input DAE.ComponentRef inCref;
-  input list<Dependency> inDependencies;
-  output list<DAE.ComponentRef> outDependencies;
-protected
-  list<DAE.ComponentRef> deps;
-  list<list<DAE.ComponentRef>> dep_deps;
-algorithm
-  deps := findDependency(inCref, inDependencies);
-  dep_deps := Util.listMap1(deps, findDependencies, inDependencies);
-  outDependencies := listAppend(Util.listFlatten(dep_deps), deps);
-end findDependencies;
-
-protected function findDependency
-  "Helper function to findDependencies. Finds the correct entry for the variable
-  in the list of dependencies, and returns the list of variables that the
-  variable directly depends on."
-  input DAE.ComponentRef inCref;
-  input list<Dependency> inDependencies;
-  output list<DAE.ComponentRef> outDependencies;
-algorithm
-  outDependencies := matchcontinue(inCref, inDependencies)
-    local
-      DAE.ComponentRef cr;
-      list<DAE.ComponentRef> cl;
-      list<Dependency> rest_deps;
-    case (_, {}) then {};
-    case (_, (cr, cl) :: _)
-      equation
-        true = ComponentReference.crefEqualNoStringCompare(inCref, cr);
-      then
-        cl;
-    case (_, _ :: rest_deps)
-      equation
-        cl = findDependency(inCref, rest_deps);
-      then
-        cl;
-  end matchcontinue;
-end findDependency;
-
-protected function createDependency
-  "A constructor for the Depedency type."
-  input DAE.Element inVar;
-  input list<DAE.ComponentRef> inDependencies;
-  output Dependency outDependency;
-algorithm
-  outDependency := match(inVar, inDependencies)
-    local
-      DAE.ComponentRef cr;
-    case (DAE.VAR(componentRef = cr), _) then ((cr, inDependencies));
-  end match;
-end createDependency;
-
-protected function buildDependencyList
-  "This function build dependency information about a variable, i.e. which
-  variables a certain variable directly depends on."
-  input DAE.Element inVar;
-  output Dependency outDependencies;
-algorithm
-  outDependencies := match(inVar)
+  outDependencies := matchcontinue(inElement, inAllElements)
     local
       DAE.Exp bind_exp;
-      DAE.InstDims dims;
-      list<DAE.ComponentRef> cl, cl2;
-      list<list<DAE.ComponentRef>> subs_crefs;
+      list<FunctionVar> deps;
+      list<DAE.Subscript> dims;
+      Arg arg;
 
-    // A variable with a binding. Both the variables dimensions and binding
-    // might contain dependencies.
-    case DAE.VAR(binding = SOME(bind_exp), dims = dims)
+    case ((DAE.VAR(binding = SOME(bind_exp), dims = dims), _), _)
       equation
-        cl = Expression.extractCrefsFromExp(bind_exp);
-        subs_crefs = Util.listMap(dims, extractCrefsFromSubscript);
-        cl2 = Util.listFlatten(subs_crefs);
-        cl = listAppend(cl, cl2);
+        (_, (_, _, arg as (_, deps, _))) = Expression.traverseExpBidir(
+          bind_exp,
+          (getElementDependenciesTraverserEnter, 
+           getElementDependenciesTraverserExit,
+           (inAllElements, {}, {})));
+        (_, (_, deps, _)) = Util.listMapAndFold(dims,
+          getElementDependenciesFromDims, arg);
       then
-        createDependency(inVar, cl);
+        deps;
 
-    // A variable without a binding. Only the variables dimensions might contain
-    // dependencies.
-    case DAE.VAR(binding = NONE(), dims = dims)
+    case ((DAE.VAR(dims = dims), _), _)
       equation
-        subs_crefs = Util.listMap(dims, extractCrefsFromSubscript);
-        cl = Util.listFlatten(subs_crefs);
+        (_, (_, deps, _)) = Util.listMapAndFold(dims,
+          getElementDependenciesFromDims, (inAllElements, {}, {}));
       then
-        createDependency(inVar, cl);
-  end match;
-end buildDependencyList;
+        deps;
 
-protected function extractCrefsFromSubscript
-  "Extracts all component references from a subscript."
-  input DAE.Subscript inSubscript;
-  output list<DAE.ComponentRef> outCrefs;
-algorithm
-  outCrefs := matchcontinue(inSubscript)
-    local
-      DAE.Exp e;
-    case DAE.SLICE(exp = e) then Expression.extractCrefsFromExp(e);
-    case DAE.INDEX(exp = e) then Expression.extractCrefsFromExp(e);
     else then {};
   end matchcontinue;
-end extractCrefsFromSubscript;
+end getElementDependencies;
+
+protected function getElementDependenciesFromDims
+  "Helper function to getElementDependencies that gets the dependencies from the
+  dimensions of a variable."
+  input DAE.Subscript inSubscript;
+  input Arg inArg;
+  output DAE.Subscript outSubscript;
+  output Arg outArg;
+  type Arg = tuple<list<FunctionVar>, list<FunctionVar>, list<DAE.Ident>>;
+algorithm
+  (outSubscript, outArg) := matchcontinue(inSubscript, inArg)
+    local
+      Arg arg;
+      DAE.Exp sub_exp;
+
+    case (_, _)
+      equation
+        sub_exp = Expression.subscriptExp(inSubscript);
+        (_, (_, _, arg)) = Expression.traverseExpBidir(
+          sub_exp,
+          (getElementDependenciesTraverserEnter,
+           getElementDependenciesTraverserExit,
+           inArg));
+       then
+        (inSubscript, arg);
+
+    else then (inSubscript, inArg);
+  end matchcontinue;
+end getElementDependenciesFromDims;
+
+protected function getElementDependenciesTraverserEnter
+  "Traverse function used by getElementDependencies to collect all dependencies
+  for an element. The extra arguments are a list of all elements, a list of
+  accumulated depencies and a list of iterators from enclosing for-loops."
+  input tuple<DAE.Exp, Arg> inTuple;
+  output tuple<DAE.Exp, Arg> outTuple;
+  type Arg = tuple<list<FunctionVar>, list<FunctionVar>, list<DAE.Ident>>;
+algorithm
+  outTuple := matchcontinue(inTuple)
+    local
+      DAE.Exp exp;
+      DAE.ComponentRef cref;
+      list<FunctionVar> all_el, accum_el;
+      FunctionVar e;
+      DAE.Ident iter;
+      list<DAE.Ident> iters;
+
+    // Check if the crefs matches any of the iterators that might shadow a
+    // function variable, and don't add it as a depency if that's the case.
+    case ((exp as DAE.CREF(componentRef = DAE.CREF_IDENT(ident = iter)), 
+        (all_el, accum_el, iters as _ :: _)))
+      equation
+        true = Util.listContainsWithCompareFunc(iter, iters, stringEqual);
+      then
+        ((exp, (all_el, accum_el, iters)));
+
+    // Otherwise, try to delete the cref from the list of all elements. If that
+    // succeeds, add it to the list of dependencies. Since we have deleted the
+    // element from the list of all variables this ensures that the dependency
+    // list only contains unique elements.
+    case ((exp as DAE.CREF(componentRef = cref), (all_el, accum_el, iters)))
+      equation
+        (all_el, SOME(e)) = Util.listDeleteMemberOnTrue(cref, all_el,
+          isElementNamed);
+      then
+        ((exp, (all_el, e :: accum_el, iters)));
+
+    // If we encounter a reduction, add the iterator to the iterator list so
+    // that we know which iterators shadow function variables.
+    case ((exp as DAE.REDUCTION(ident = iter), (all_el, accum_el, iters)))
+      then
+        ((exp, (all_el, accum_el, iter :: iters)));
+
+    else then inTuple;
+  end matchcontinue;
+end getElementDependenciesTraverserEnter;
+
+protected function getElementDependenciesTraverserExit
+  "Exit traversal function used by getElementDependencies."
+  input tuple<DAE.Exp, Arg> inTuple;
+  output tuple<DAE.Exp, Arg> outTuple;
+  type Arg = tuple<list<FunctionVar>, list<FunctionVar>, list<DAE.Ident>>;
+algorithm
+  outTuple := match(inTuple)
+    local
+      DAE.Exp exp;
+      list<FunctionVar> all_el, accum_el;
+      DAE.Ident iter, iter2;
+      list<DAE.Ident> iters;
+      
+    // If we encounter a reduction, make sure that its iterator matches the
+    // first iterator in the iterator list, and if so remove it from the list.
+    case ((exp as DAE.REDUCTION(ident = iter), (all_el, accum_el, iter2 :: iters)))
+      equation
+        compareIterators(iter, iter2);
+      then
+        ((exp, (all_el, accum_el, iters)));
+
+    else then inTuple;
+  end match;
+end getElementDependenciesTraverserExit;
+
+protected function compareIterators
+  input DAE.Ident inIterator1;
+  input DAE.Ident inIterator2;
+algorithm
+  _ := matchcontinue(inIterator1, inIterator2)
+    case (_, _)
+      equation
+        true = stringEqual(inIterator1, inIterator2);
+      then
+        ();
+
+    // This should never happen, print an error if it does.
+    else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR,
+          {"Different iterators in CevalFunction.compareIterators."});
+      then
+        fail();
+  end matchcontinue;
+end compareIterators;
+
+protected function isElementNamed
+  "Checks if a function parameter has the given name."
+  input DAE.ComponentRef inName;
+  input FunctionVar inElement;
+  output Boolean isNamed;
+protected
+  DAE.ComponentRef name;
+algorithm
+  (DAE.VAR(componentRef = name), _) := inElement;
+  isNamed := ComponentReference.crefEqualWithoutSubs(name, inName);
+end isElementNamed;
+
+protected function isElementEqual
+  "Checks if two function parameters are equal, i.e. have the same name."
+  input FunctionVar inElement1;
+  input FunctionVar inElement2;
+  output Boolean isEqual;
+protected
+  DAE.ComponentRef cr1, cr2;
+algorithm
+  (DAE.VAR(componentRef = cr1), _) := inElement1;
+  (DAE.VAR(componentRef = cr2), _) := inElement2;
+  isEqual := ComponentReference.crefEqualWithoutSubs(cr1, cr2);
+end isElementEqual;
+
+protected function checkCyclicalComponents
+  "Checks the return value from Graph.topologicalSort. If the list of cycles is
+  not empty, print an error message and fail, since it's not allowed for
+  constants or parameters to have cyclic dependencies."
+  input list<tuple<FunctionVar, list<FunctionVar>>> inCycles;
+algorithm
+  _ := match(inCycles)
+    local
+      list<list<FunctionVar>> cycles;
+      list<list<DAE.Element>> elements;
+      list<list<DAE.ComponentRef>> crefs;
+      list<list<String>> names;
+      list<String> cycles_strs;
+      String cycles_str, scope_str;
+
+    case ({}) then ();
+
+    else
+      equation
+        cycles = Graph.findCycles(inCycles, isElementEqual);
+        elements = Util.listListMap(cycles, Util.tuple21);
+        crefs = Util.listListMap(elements, DAEUtil.varCref);
+        names = Util.listListMap(crefs,
+          ComponentReference.printComponentRefStr);
+        cycles_strs = Util.listMap1(names, Util.stringDelimitList, ",");
+        cycles_str = Util.stringDelimitList(cycles_strs, "}, {");
+        cycles_str = "{" +& cycles_str +& "}";
+        scope_str = "";
+        Error.addMessage(Error.CIRCULAR_COMPONENTS, {scope_str, cycles_str});
+      then
+        fail();
+
+  end match;
+end checkCyclicalComponents;
 
 // [EOPT]  Expression optimization functions.
 

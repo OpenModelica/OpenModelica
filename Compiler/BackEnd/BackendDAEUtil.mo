@@ -1738,7 +1738,7 @@ algorithm
     case (DAE.CREF(componentRef = cr), _)
       equation
         subscripts = ComponentReference.crefSubs(cr);
-        subscript_exprs = Util.listMap(subscripts, Expression.subscriptExp);
+        subscript_exprs = Util.listMap(subscripts, Expression.subscriptIndexExp);
         true = isLoopDependentHelper(subscript_exprs, iteratorExp);
       then true;
     case (DAE.ASUB(sub = subscript_exprs), _)

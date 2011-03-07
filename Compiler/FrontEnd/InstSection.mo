@@ -1939,7 +1939,7 @@ algorithm
     case ((cr_exp as DAE.CREF(componentRef = cr), fi))
       equation
         cref_subs = ComponentReference.crefSubs(cr);
-        exp_subs = Util.listMap(cref_subs, Expression.subscriptExp);
+        exp_subs = Util.listMap(cref_subs, Expression.subscriptIndexExp);
         true = isSubsLoopDependent(exp_subs, fi);
         cr = ComponentReference.crefStripSubs(cr);
         cr_type = ComponentReference.crefLastType(cr);

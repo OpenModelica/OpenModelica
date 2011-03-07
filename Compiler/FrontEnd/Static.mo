@@ -939,7 +939,6 @@ algorithm
       equation
         tp = Expression.typeof(e);
         scalar = Expression.typeBuiltin(tp);
-        s = boolString(scalar);
         es_1 = elabMatrixToMatrixExp3(es);
       then
         ((e,scalar) :: es_1);
@@ -9730,7 +9729,7 @@ algorithm
         _, doVect, pre, info)
       equation
         (_, _, DAE.C_VAR()) = elabSubscripts(cache, env, assl, impl, pre, info);
-        exps = Util.listMap(essl, Expression.subscriptExp);
+        exps = Util.listMap(essl, Expression.subscriptIndexExp);
         (ty, ty2) = getSplicedCrefTypes(inExp, splicedExpData);
         cref_ = ComponentReference.makeCrefIdent(id2, ty2, {});
         crefExp = Expression.makeCrefExp(cref_, ty);
@@ -9754,7 +9753,7 @@ algorithm
       equation
         (essl as _ :: _) = ComponentReference.crefLastSubs(cr);
         cr = ComponentReference.crefStripLastSubs(cr);
-        exps = Util.listMap(essl, Expression.subscriptExp);
+        exps = Util.listMap(essl, Expression.subscriptIndexExp);
         crefExp = Expression.crefExp(cr);
         exp1 = Expression.makeASUB(crefExp, exps);
       then
