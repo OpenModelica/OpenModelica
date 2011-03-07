@@ -221,12 +221,12 @@ algorithm
      /* failing */
     case (lhs,lprop,rhs,rprop,_,_,source)
       equation
-        Print.printErrorBuf("- Algorithm.makeAssignment failed\n");
-        Print.printErrorBuf("    ");
-        Print.printErrorBuf(ExpressionDump.printExpStr(lhs));
-        Print.printErrorBuf(" := ");
-        Print.printErrorBuf(ExpressionDump.printExpStr(rhs));
-        Print.printErrorBuf("\n");
+        true = RTOpts.debugFlag("failtrace");
+        Debug.traceln("- Algorithm.makeAssignment failed");
+        Debug.trace("    ");
+        Debug.trace(ExpressionDump.printExpStr(lhs));
+        Debug.trace(" := ");
+        Debug.traceln(ExpressionDump.printExpStr(rhs));
       then
         fail();
   end matchcontinue;
