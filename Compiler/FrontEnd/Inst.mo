@@ -7728,7 +7728,8 @@ algorithm
       equation
         true = RTOpts.splitArrays();
         // Try to deduce the dimension from the modifier.
-        (dime as DAE.INDEX(DAE.ICONST(integer = deduced_dim))) = instWholeDimFromMod(dim, mod);
+        (dime as DAE.INDEX(DAE.ICONST(integer = deduced_dim))) = 
+          instWholeDimFromMod(dim, mod, n, info);
         dim = DAE.DIM_INTEGER(deduced_dim);
         inst_dims_1 = Util.listListAppendLast(inst_dims, {dime});
         (cache,compenv,ih,store,dae,csets,ty,graph) =
@@ -7743,7 +7744,7 @@ algorithm
       equation
         false = RTOpts.splitArrays();
         // Try to deduce the dimension from the modifier.
-        dime = instWholeDimFromMod(dim, mod);
+        dime = instWholeDimFromMod(dim, mod, n, info);
         dime2 = makeNonExpSubscript(dime);
         dim = Expression.subscriptDimension(dime);
         inst_dims_1 = Util.listListAppendLast(inst_dims, {dime2});
@@ -8576,28 +8577,42 @@ protected function instWholeDimFromMod
   modifier."
   input DAE.Dimension dimensionExp;
   input DAE.Mod modifier;
+  input String inVarName;
+  input Absyn.Info inInfo;
   output DAE.Subscript subscript;
 algorithm
-  subscript := matchcontinue(dimensionExp, modifier)
+  subscript := matchcontinue(dimensionExp, modifier, inVarName, inInfo)
     local  
       DAE.ExpType tp; 
       DAE.Dimension d;
       DAE.Subscript sub;
-    /*case (DAE.DIM_SUBSCRIPT(subscript = DAE.WHOLEDIM()),
-          DAE.MOD(eqModOption =  
-            SOME(DAE.TYPED(modifierAsExp = DAE.ARRAY(ty = tp)))))*/
+      DAE.Exp exp;
+      String exp_str;
+
     case (DAE.DIM_UNKNOWN(), DAE.MOD(eqModOption = 
-            SOME(DAE.TYPED(modifierAsExp = DAE.ARRAY(ty = tp)))))
+            SOME(DAE.TYPED(modifierAsExp = DAE.ARRAY(ty = tp)))), _, _)
       equation
         (d :: _) = Expression.arrayDimension(tp);
         sub = Expression.dimensionSubscript(d);
       then sub;
-    /*case (DAE.DIM_SUBSCRIPT(subscript = DAE.WHOLEDIM()), 
-          DAE.MOD(eqModOption = _))*/
-    case (DAE.DIM_UNKNOWN(), DAE.MOD(eqModOption = _))
+
+    // TODO: We should print an error if we fail to deduce the dimensions from
+    // the modifier, but we do not yet handle some cases (such as
+    // Modelica.Blocks.Sources.KinematicPTP), so just print a warning for now.
+    case (DAE.DIM_UNKNOWN(), DAE.MOD(eqModOption = 
+            SOME(DAE.TYPED(modifierAsExp = exp))), _, _)
+      equation
+        exp_str = ExpressionDump.printExpStr(exp);
+        Error.addSourceMessage(Error.FAILURE_TO_DEDUCE_DIMS_FROM_MOD,
+          {inVarName, exp_str}, inInfo);
+      then
+        fail();
+
+    case (DAE.DIM_UNKNOWN(), _, _, _)
       equation
         Debug.fprint("failtrace","- Inst.instWholeDimFromMod failed\n");
-      then fail();
+      then 
+        fail();
   end matchcontinue;
 end instWholeDimFromMod;
 
