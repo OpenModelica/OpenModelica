@@ -188,7 +188,7 @@ namespace IAEX
     OmcInteractiveEnvironment *env = OmcInteractiveEnvironment::getInstance();
     QString getTempStr = "getTempDirectoryPath()";
     env->evalExpression( getTempStr );
-    QString tmpDir = env->getResult()+"/OMNotebook/";
+    QString tmpDir = env->getResult()+"/OpenModelica/";
     tmpDir.remove("\"");
     if (!QDir().exists(tmpDir)) QDir().mkdir(tmpDir);
     tmpDir = QDir(tmpDir).canonicalPath();
