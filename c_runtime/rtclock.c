@@ -31,6 +31,7 @@
 #include "rtclock.h"
 #include <assert.h>
 #include <stdlib.h>
+#include <limits.h>
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
 #include <windows.h>
@@ -44,10 +45,14 @@ typedef uint64_t rtclock_t;
 typedef struct timespec rtclock_t;
 #endif
 
-static long default_rt_clock_ncall[NUM_RT_CLOCKS] = {0};
-static long default_rt_clock_ncall_total[NUM_RT_CLOCKS] = {0};
-static long *rt_clock_ncall = default_rt_clock_ncall;
-static long *rt_clock_ncall_total = default_rt_clock_ncall_total;
+static unsigned long default_rt_clock_ncall[NUM_RT_CLOCKS] = {0};
+static unsigned long default_rt_clock_ncall_min[NUM_RT_CLOCKS] = {0};
+static unsigned long default_rt_clock_ncall_max[NUM_RT_CLOCKS] = {0};
+static unsigned long default_rt_clock_ncall_total[NUM_RT_CLOCKS] = {0};
+static unsigned long *rt_clock_ncall = default_rt_clock_ncall;
+static unsigned long *rt_clock_ncall_min = default_rt_clock_ncall_min;
+static unsigned long *rt_clock_ncall_max = default_rt_clock_ncall_max;
+static unsigned long *rt_clock_ncall_total = default_rt_clock_ncall_total;
 
 static rtclock_t default_total_tp[NUM_RT_CLOCKS];
 static rtclock_t default_max_tp[NUM_RT_CLOCKS];
@@ -77,12 +82,36 @@ void rt_add_ncall(int ix, int n) {
   rt_clock_ncall[ix] += n;
 }
 
-long rt_ncall(int ix) {
+unsigned long rt_ncall(int ix) {
   return rt_clock_ncall[ix];
 }
 
-long rt_ncall_total(int ix) {
+unsigned long rt_ncall_min(int ix) {
+  return rt_clock_ncall_min[ix];
+}
+
+unsigned long rt_ncall_max(int ix) {
+  return rt_clock_ncall_max[ix];
+}
+
+unsigned long rt_ncall_total(int ix) {
   return rt_clock_ncall_total[ix];
+}
+
+void rt_update_min_max_ncall(int ix) {
+  unsigned long nmin = rt_clock_ncall_min[ix];
+  unsigned long nmax = rt_clock_ncall_max[ix];
+  unsigned long n = rt_clock_ncall[ix];
+  if (n == 0) return;
+  rt_clock_ncall_min[ix] = nmin && nmin < n ? nmin : n;
+  rt_clock_ncall_max[ix] = nmax > n ? nmax : n;
+}
+
+void rt_clear_total_ncall(int ix) {
+  rt_clock_ncall[ix] = 0;
+  rt_clock_ncall_total[ix] = 0;
+  rt_clock_ncall_min[ix] = ULONG_MAX;
+  rt_clock_ncall_max[ix] = 0;
 }
 
 double rt_accumulated(int ix) {
@@ -125,6 +154,7 @@ void rt_clear(int ix)
   total_tp[ix].QuadPart += acc_tp[ix].QuadPart;
   rt_clock_ncall_total[ix] += rt_clock_ncall[ix];
   max_tp[ix] = max_rtclock(max_tp[ix],acc_tp[ix]);
+  rt_update_min_max_ncall(ix);
   acc_tp[ix].QuadPart = 0;
   rt_clock_ncall[ix] = 0;
 }
@@ -133,8 +163,7 @@ void rt_clear_total(int ix)
 {
   total_tp[ix].QuadPart = 0;
   acc_tp[ix].QuadPart = 0;
-  rt_clock_ncall[ix] = 0;
-  rt_clock_ncall_total[ix] = 0;
+  rt_clear_total_ncall(ix);
 }
 
 void rt_accumulate(int ix) {
@@ -176,6 +205,7 @@ void rt_clear(int ix)
   total_tp[ix] += acc_tp[ix];
   rt_clock_ncall_total[ix] += rt_clock_ncall[ix];
   max_tp[ix] = max_rtclock(max_tp[ix],acc_tp[ix]);
+  rt_update_min_max_ncall(ix);
   acc_tp[ix] = 0;
   rt_clock_ncall[ix] = 0;
 }
@@ -224,6 +254,7 @@ void rt_clear(int ix)
   total_tp[ix].tv_nsec += acc_tp[ix].tv_nsec;
   rt_clock_ncall_total[ix] += rt_clock_ncall[ix];
   max_tp[ix] = max_rtclock(max_tp[ix],acc_tp[ix]);
+  rt_update_min_max_ncall(ix);
   
   acc_tp[ix].tv_sec = 0;
   acc_tp[ix].tv_nsec = 0;
@@ -274,10 +305,15 @@ void rt_init(int numTimers)
   tick_tp = calloc(numTimers,sizeof(rtclock_t));
   rt_clock_ncall = calloc(numTimers,sizeof(long));
   rt_clock_ncall_total = calloc(numTimers,sizeof(long));
+  rt_clock_ncall_min = malloc(numTimers*sizeof(long));
+  rt_clock_ncall_max = calloc(numTimers,sizeof(long));
+  memset(rt_clock_ncall_min,0xFF,numTimers*sizeof(long));
   assert(acc_tp != 0);
   assert(max_tp != 0);
   assert(total_tp != 0);
   assert(tick_tp != 0);
   assert(rt_clock_ncall != 0);
+  assert(rt_clock_ncall_min != 0);
+  assert(rt_clock_ncall_max != 0);
   assert(rt_clock_ncall_total != 0);
 }

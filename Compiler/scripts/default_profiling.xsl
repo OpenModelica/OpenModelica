@@ -96,7 +96,10 @@
   <tr><th>&nbsp;</th><th class="name">Name</th><th>Calls</th><th>Time</th><th><abbr title="Fraction of total simulation time">Fraction</abbr></th><th><abbr title="The maximum accumulated time of this action during a single time step">Max Time</abbr></th><th><abbr title="Deviation from average execution time">Deviation</abbr></th></tr>
   <xsl:for-each select="functions/function">
     <tr>
-      <td><a href="{//simulation/modelinfo/prefix}_prof.{@id}.svg"><img class="thumb" src="{//simulation/modelinfo/prefix}_prof.{@id}.thumb.png" alt="Graph thumbnail" /></a></td>
+      <td>
+        <a href="{//simulation/modelinfo/prefix}_prof.{@id}.svg"><img class="thumb" src="{//simulation/modelinfo/prefix}_prof.{@id}.thumb.png" alt="Graph thumbnail" /></a>
+        <a href="{//simulation/modelinfo/prefix}_prof.{@id}_count.svg"><img class="thumb" src="{//simulation/modelinfo/prefix}_prof.{@id}_count.thumb.png" alt="Graph thumbnail" /></a>
+      </td>
       <td class="name"><a href="{info/@filename}#line={info/@startline}"><xsl:value-of select="name"/></a></td>
       <td><xsl:value-of select="ncall"/></td>
       <td><xsl:value-of select="time"/></td>
@@ -112,7 +115,10 @@
   <tr><th>&nbsp;</th><th class="name">Name</th><th>Calls</th><th>Time</th><th><abbr title="Fraction of total simulation time">Fraction</abbr></th><th><abbr title="The maximum accumulated time of this action during a single time step">Max Time</abbr></th><th><abbr title="Deviation from average execution time">Deviation</abbr></th></tr>
   <xsl:for-each select="profileblocks/profileblock">
     <tr>
-      <td><a href="{//simulation/modelinfo/prefix}_prof.{ref/@refid}.svg"><img class="thumb" src="{//simulation/modelinfo/prefix}_prof.{ref/@refid}.thumb.png" alt="Graph thumbnail" /></a></td>
+      <td>
+        <a href="{//simulation/modelinfo/prefix}_prof.{ref/@refid}.svg"><img class="thumb" src="{//simulation/modelinfo/prefix}_prof.{ref/@refid}.thumb.png" alt="Graph thumbnail" /></a>
+        <a href="{//simulation/modelinfo/prefix}_prof.{ref/@refid}_count.svg"><img class="thumb" src="{//simulation/modelinfo/prefix}_prof.{ref/@refid}_count.thumb.png" alt="Graph thumbnail" /></a>
+      </td>
       <td class="name"><a href="#{ref/@refid}"><xsl:value-of select="id(ref/@refid)/@name"/></a></td>
       <td><xsl:value-of select="ncall"/></td>
       <td><xsl:value-of select="time"/></td>
