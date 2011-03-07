@@ -300,7 +300,7 @@ match type_
   case ET_REAL(__) then '<Real <%ScalarVariableTypeCommonAttribute(initialValue,isFixed)%> <%ScalarVariableTypeRealAttribute(unit,displayUnit)%>/>' 
   case ET_BOOL(__) then '<Boolean/>' 
   case ET_STRING(__) then '<String/>' 
-  case ET_ENUMERATION(__) then '<Enumeration/>' 
+  case ET_ENUMERATION(__) then '<Integer/>' 
   else 'UNKOWN_TYPE'
 end ScalarVariableType;
 

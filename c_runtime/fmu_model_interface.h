@@ -39,6 +39,7 @@ typedef struct {
     fmiCallbackFunctions functions;
     fmiBoolean loggingOn;
     fmiEventInfo eventInfo;
+    fmiBoolean outputsvalid;
     ModelState state;
 } ModelInstance;
 

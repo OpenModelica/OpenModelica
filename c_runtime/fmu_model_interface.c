@@ -122,6 +122,7 @@ fmiComponent fmiInstantiateModel(fmiString instanceName, fmiString GUID,
                    sim_noemit = 0;
                    jac_flag = 0;
                    num_jac_flag = 0;
+                   warningLevelAssert = 1;
 
                    setStartValues(comp); // to be implemented by the includer of this file
 
@@ -181,6 +182,8 @@ fmiStatus fmiSetReal(fmiComponent c, const fmiValueReference vr[], size_t nvr, c
     if (setReal(comp, vr[i],value[i]) != fmiOK) // to be implemented by the includer of this file
       return fmiError; 
   }
+  comp->outputsvalid = fmiFalse;
+  comp->eventInfo.stateValuesChanged = fmiTrue;
   return fmiOK;
 }
 
@@ -203,6 +206,8 @@ fmiStatus fmiSetInteger(fmiComponent c, const fmiValueReference vr[], size_t nvr
     if (setInteger(comp, vr[i],value[i]) != fmiOK) // to be implemented by the includer of this file
       return fmiError; 
   }
+  comp->outputsvalid = fmiFalse;
+  comp->eventInfo.stateValuesChanged = fmiTrue;
   return fmiOK;
 }
 
@@ -225,6 +230,8 @@ fmiStatus fmiSetBoolean(fmiComponent c, const fmiValueReference vr[], size_t nvr
     if (setBoolean(comp, vr[i],value[i]) != fmiOK) // to be implemented by the includer of this file
       return fmiError; 
   }
+  comp->outputsvalid = fmiFalse;
+  comp->eventInfo.stateValuesChanged = fmiTrue;
   return fmiOK;
 }
 
@@ -258,6 +265,8 @@ fmiStatus fmiSetString(fmiComponent c, const fmiValueReference vr[], size_t nvr,
     }
     strcpy((char*)comp->s[vr[i]], (char*)value[i]);
   }
+  comp->outputsvalid = fmiFalse;
+  comp->eventInfo.stateValuesChanged = fmiTrue;
   return fmiOK;
 }
 
@@ -281,6 +290,8 @@ fmiStatus fmiSetContinuousStates(fmiComponent c, const fmiReal x[], size_t nx){
   if (nullPointer(comp, "fmiSetContinuousStates", "x[]", x))
     return fmiError;
 #if NUMBER_OF_REALS>0
+  comp->eventInfo.stateValuesChanged = fmiTrue;
+  comp->outputsvalid = fmiFalse;
   for (i=0; i<nx; i++) {
     fmiValueReference vr = vrStates[i];
     if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
@@ -307,6 +318,14 @@ fmiStatus fmiGetReal(fmiComponent c, const fmiValueReference vr[], size_t nvr, f
   if (nvr>0 && nullPointer(comp, "fmiGetReal", "value[]", value))
     return fmiError;
 #if NUMBER_OF_REALS>0
+  if (comp->outputsvalid == fmiFalse)
+  {
+     acceptedStep=1;
+     functionDAE_output();
+     functionDAE_output2();
+     acceptedStep=0;  
+	 comp->outputsvalid = fmiTrue;
+  }
   for (i=0; i<nvr; i++) {
     if (vrOutOfRange(comp, "fmiGetReal", vr[i], NUMBER_OF_REALS))
       return fmiError;
@@ -314,8 +333,10 @@ fmiStatus fmiGetReal(fmiComponent c, const fmiValueReference vr[], size_t nvr, f
     if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
       "fmiGetReal: #r%u# = %.16g", vr[i], value[i]);
   }
-#endif
   return fmiOK;
+#else
+  return fmiError;
+#endif
 }
 
 fmiStatus fmiGetInteger(fmiComponent c, const fmiValueReference vr[], size_t nvr, fmiInteger value[]) {
@@ -327,6 +348,15 @@ fmiStatus fmiGetInteger(fmiComponent c, const fmiValueReference vr[], size_t nvr
     return fmiError;
   if (nvr>0 && nullPointer(comp, "fmiGetInteger", "value[]", value))
     return fmiError;
+#if NUMBER_OF_INTEGERS>0
+  if (comp->outputsvalid == fmiFalse)
+  {
+     acceptedStep=1;
+     functionDAE_output();
+     functionDAE_output2();
+     acceptedStep=0;  
+	 comp->outputsvalid = fmiTrue;
+  }
   for (i=0; i<nvr; i++) {
     if (vrOutOfRange(comp, "fmiGetInteger", vr[i], NUMBER_OF_INTEGERS))
       return fmiError;
@@ -335,6 +365,9 @@ fmiStatus fmiGetInteger(fmiComponent c, const fmiValueReference vr[], size_t nvr
       "fmiGetInteger: #i%u# = %d", vr[i], value[i]);
   }
   return fmiOK;
+#else
+  return fmiError;
+#endif
 }
 
 fmiStatus fmiGetBoolean(fmiComponent c, const fmiValueReference vr[], size_t nvr, fmiBoolean value[]) {
@@ -346,6 +379,15 @@ fmiStatus fmiGetBoolean(fmiComponent c, const fmiValueReference vr[], size_t nvr
     return fmiError;
   if (nvr>0 && nullPointer(comp, "fmiGetBoolean", "value[]", value))
     return fmiError;
+#if NUMBER_OF_BOOLEANS>0
+  if (comp->outputsvalid == fmiFalse)
+  {
+     acceptedStep=1;
+     functionDAE_output();
+     functionDAE_output2();
+     acceptedStep=0;  
+	 comp->outputsvalid = fmiTrue;
+  }
   for (i=0; i<nvr; i++) {
     if (vrOutOfRange(comp, "fmiGetBoolean", vr[i], NUMBER_OF_BOOLEANS))
       return fmiError;
@@ -354,6 +396,9 @@ fmiStatus fmiGetBoolean(fmiComponent c, const fmiValueReference vr[], size_t nvr
       "fmiGetBoolean: #b%u# = %s", vr[i], value[i]? "true" : "false");
   }
   return fmiOK;
+#else
+  return fmiError;
+#endif
 }
 
 fmiStatus fmiGetString(fmiComponent c, const fmiValueReference vr[], size_t nvr, fmiString  value[]) {
@@ -365,6 +410,15 @@ fmiStatus fmiGetString(fmiComponent c, const fmiValueReference vr[], size_t nvr,
     return fmiError;
   if (nvr>0 && nullPointer(comp, "fmiGetString", "value[]", value))
     return fmiError;
+#if NUMBER_OF_STRINGS>0
+  if (comp->outputsvalid == fmiFalse)
+  {
+     acceptedStep=1;
+     functionDAE_output();
+     functionDAE_output2();
+     acceptedStep=0;  
+	 comp->outputsvalid = fmiTrue;
+  }
   for (i=0; i<nvr; i++) {
     if (vrOutOfRange(comp, "fmiGetString", vr[i], NUMBER_OF_STRINGS))
       return fmiError;
@@ -373,6 +427,9 @@ fmiStatus fmiGetString(fmiComponent c, const fmiValueReference vr[], size_t nvr,
       "fmiGetString: #s%u# = '%s'", vr[i], value[i]);
   }
   return fmiOK;
+#else
+  return fmiError;
+#endif
 }
 
 fmiStatus fmiGetStateValueReferences(fmiComponent c, fmiValueReference vrx[], size_t nx){
@@ -441,19 +498,18 @@ fmiStatus fmiGetDerivatives(fmiComponent c, fmiReal derivatives[], size_t nx) {
   if (nullPointer(comp, "fmiGetDerivatives", "derivatives[]", derivatives))
     return fmiError;
 #if NUMBER_OF_STATES>0
-   // calculate new values
-   function_updateDependents();
-   acceptedStep=1;
-   functionDAE_output();  // discrete variables are seperated so that the can be emited before and after the event.
-   functionDAE_output2();
-   checkTermination();
-   function_storeDelayed();
-   acceptedStep=0;
-  for (i=0; i<nx; i++) {
-    fmiValueReference vr = vrStatesDerivatives[i];
-    derivatives[i] = getReal(comp, vr); // to be implemented by the includer of this file
-    if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
-      "fmiGetDerivatives: #r%d# = %.16g", vr, derivatives[i]);
+  if (comp->eventInfo.stateValuesChanged == fmiTrue)
+  {
+    // calculate new values
+    function_updateDependents();
+    for (i=0; i<nx; i++) {
+      fmiValueReference vr = vrStatesDerivatives[i];
+      derivatives[i] = getReal(comp, vr); // to be implemented by the includer of this file
+      if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
+        "fmiGetDerivatives: #r%d# = %.16g", vr, derivatives[i]);
+    }
+    comp->eventInfo.stateValuesChanged = fmiFalse;
+    comp->outputsvalid = fmiFalse;
   }
 #endif
   return fmiOK;
