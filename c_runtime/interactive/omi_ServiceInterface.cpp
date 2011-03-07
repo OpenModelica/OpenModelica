@@ -458,7 +458,7 @@ int callSolverFromOM(string method, string outputFormat, double start, double st
   int retVal = -1;
   gdMutex.Lock();
 
-  retVal = callSolver(argcTEMP, argvTEMP, method, outputFormat, start, stop, stepSize, outputSteps, tolerance);
+  retVal = callSolver(argcTEMP, argvTEMP, method, outputFormat, "", start, stop, stepSize, outputSteps, tolerance);
 
   gdMutex.Unlock();
   return retVal;

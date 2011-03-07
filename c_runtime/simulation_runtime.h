@@ -86,7 +86,7 @@ extern string TermMsg; /* message for termination. */
 extern simulation_result *sim_result;
 /* function with template for linear model */
 int linear_model_frame(string& out, string A, string B, string C, string D, string x_startvalues, string u_startvalues);
-int callSolver(int, char**, string, string, double, double, double, long, double);
+int callSolver(int, char**, string, string, string, double, double, double, long, double);
 
 #endif /* cplusplus */
 

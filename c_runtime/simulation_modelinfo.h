@@ -35,7 +35,7 @@
 extern "C" {
 #endif
 
-int printModelInfo(DATA *data, const char *modelinfo, const char *plotinfo, const char *method);
+int printModelInfo(DATA *data, const char *modelinfo, const char *plotinfo, const char *method, const char *outputFormat, const char *outputFilename);
 
 #ifdef __cplusplus
 }

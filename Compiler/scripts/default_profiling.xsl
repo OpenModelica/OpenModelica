@@ -6,6 +6,17 @@
 
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:xhtml="http://www.w3.org/1999/xhtml" >
 
+<xsl:template name="FileSize">
+  <xsl:param name="size" />
+  <xsl:choose>
+    <xsl:when test="string-length($size) = 0">0 B</xsl:when>
+    <xsl:when test="number($size) &lt;= 0">0 B</xsl:when>
+    <xsl:when test="round($size div 1024) &lt; 1"><xsl:value-of select="$size" /> B</xsl:when>
+    <xsl:when test="round($size div 1048576) &lt; 1"><xsl:value-of select="format-number(($size div 1024), '0.0')" /> kB</xsl:when>
+    <xsl:otherwise><xsl:value-of select="format-number(($size div 1048576), '0.00')" /> MB</xsl:otherwise>
+  </xsl:choose>
+</xsl:template>
+
 <xsl:template match="/simulation">
 <html>
 <head>
@@ -40,8 +51,18 @@
 <p>Note that for blocks where the individual execution time is close to the accuracy of the real-time clock, the maximum measured time may deviate a lot from the average.</p>
 <p>For more details, see <a href="{modelinfo/prefix}_prof.xml"><xsl:value-of select="modelinfo/name"/>_prof.xml</a>.</p>
 
+<h2>Settings</h2>
+<table>
+<tr><th class="name">Name</th><th>Value</th></tr>
+<tr><td class="name">Integration method</td><td><xsl:value-of select="modelinfo/method"/></td></tr>
+<tr><td class="name">Output format</td><td><xsl:value-of select="modelinfo/outputFormat"/></td></tr>
+<tr><td class="name">Output name</td><td><a href="{modelinfo/outputFilename}"><xsl:value-of select="modelinfo/outputFilename"/></a></td></tr>
+<tr><td class="name">Output size</td><td><xsl:call-template name="FileSize"><xsl:with-param name="size"><xsl:value-of select="modelinfo/outputFilesize"/></xsl:with-param></xsl:call-template></td></tr>
+<tr><td class="name">Profiling data</td><td><a href="{profilingdataheader/filename}"><xsl:value-of select="profilingdataheader/filename"/></a></td></tr>
+<tr><td class="name">Profiling size</td><td><xsl:call-template name="FileSize"><xsl:with-param name="size"><xsl:value-of select="profilingdataheader/filesize"/></xsl:with-param></xsl:call-template></td></tr>
+</table>
+
 <h2>Summary</h2>
-  <p>The simulation was done using method="<xsl:value-of select="modelinfo/method"/>".</p>
   <table>
   <tr><th class="name">Task</th><th>Time</th><th><abbr title="Fraction of total simulation time">Fraction</abbr></th></tr>
   <tr><td class="name"><abbr title="Choosing solver, allocating data structures, etc (does not include reading the parameter start-values from file)">Pre-Initialization</abbr></td><td><xsl:value-of select="modelinfo/preinitTime"/></td><td><xsl:value-of select="format-number(100 * modelinfo/preinitTime div modelinfo/totalTime,'##0.00')"/>%</td></tr>
@@ -49,7 +70,7 @@
   <tr><td class="name">Event-handling</td><td><xsl:value-of select="modelinfo/eventTime"/></td><td><xsl:value-of select="format-number(100 * modelinfo/eventTime div modelinfo/totalTime,'##0.00')"/>%</td></tr>
   <tr><td class="name">Creating output file</td><td><xsl:value-of select="modelinfo/outputTime"/></td><td><xsl:value-of select="format-number(100 * modelinfo/outputTime div modelinfo/totalTime,'##0.00')"/>%</td></tr>
   <tr><td class="name">Linearization</td><td><xsl:value-of select="modelinfo/linearizeTime"/></td><td><xsl:value-of select="format-number(100 * modelinfo/linearizeTime div modelinfo/totalTime,'##0.00')"/>%</td></tr>
-  <tr><td class="name">Time steps (incl.integration?)</td><td><xsl:value-of select="modelinfo/totalStepsTime"/></td><td><xsl:value-of select="format-number(100 * modelinfo/totalStepsTime div modelinfo/totalTime,'##0.00')"/>%</td></tr>
+  <tr><td class="name">Time steps</td><td><xsl:value-of select="modelinfo/totalStepsTime"/></td><td><xsl:value-of select="format-number(100 * modelinfo/totalStepsTime div modelinfo/totalTime,'##0.00')"/>%</td></tr>
   <tr><td class="name"><abbr title="Overhead from creating {profilingdataheader/filename}. The overhead from sampling the real-time clock is embedded in the other times.">Overhead</abbr></td><td><xsl:value-of select="modelinfo/overheadTime"/></td><td><xsl:value-of select="format-number(100 * modelinfo/overheadTime div modelinfo/totalTime,'##0.00')"/>%</td></tr>
   <tr><td class="name"><abbr title="Some subparts are not measured (between steps, etc), and some overlap (function calls during initialization)">Unknown</abbr></td><td><xsl:value-of select="modelinfo/totalTime - modelinfo/overheadTime - modelinfo/totalStepsTime - modelinfo/linearizeTime - modelinfo/outputTime - modelinfo/eventTime - modelinfo/initTime"/></td>
   <td><xsl:value-of select="format-number(100 * (modelinfo/totalTime - modelinfo/overheadTime - modelinfo/totalStepsTime - modelinfo/linearizeTime - modelinfo/outputTime - modelinfo/eventTime - modelinfo/initTime - modelinfo/preinitTime) div modelinfo/totalTime,'##0.00')"/>%</td></tr>

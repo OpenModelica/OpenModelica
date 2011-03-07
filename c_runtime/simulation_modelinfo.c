@@ -35,6 +35,18 @@
 #include "assert.h"
 #include <simulation_runtime.h>
 
+/* Returns -1 if the file was not found */
+static size_t fileSize(const char *filename) {
+  size_t sz = -1;
+  FILE *f = fopen(filename, "rb");
+  if (f) {
+    fseek(f, 0, SEEK_END);
+    sz = ftell(f);
+    fclose(f);
+  }
+  return sz;
+}
+
 static void indent(FILE *fout, int n) {
   while (n--) fputc(' ', fout);
 }
@@ -112,8 +124,15 @@ static void printEquations(FILE *fout, int n, const struct omc_equationInfo *eqn
 }
 
 static void printProfilingDataHeader(FILE *fout, DATA *data) {
+  char *filename;
   int i;
-  indent(fout, 2); fprintf(fout, "<filename>%s_prof.data</filename>\n", data->modelFilePrefix);
+  
+  filename = malloc(strlen(data->modelFilePrefix) + 15);
+  sprintf(filename, "%s_prof.data", data->modelFilePrefix);
+  indent(fout, 2); fprintf(fout, "<filename>%s</filename>\n", filename);
+  indent(fout, 2); fprintf(fout, "<filesize>%ld</filesize>\n", (long) fileSize(filename));
+  free(filename);
+  
   indent(fout, 2); fprintf(fout, "<format>\n");
   indent(fout, 4); fprintf(fout, "<uint32>step</uint32>\n");
   indent(fout, 4); fprintf(fout, "<double>time</double>\n");
@@ -137,7 +156,7 @@ static void printProfilingDataHeader(FILE *fout, DATA *data) {
   indent(fout, 2); fprintf(fout, "</format>\n");
 }
 
-int printModelInfo(DATA *data, const char *filename, const char *plotfile, const char *method) {
+int printModelInfo(DATA *data, const char *filename, const char *plotfile, const char *method, const char *outputFormat, const char *outputFilename) {
   static char buf[256];
   FILE *fout = fopen(filename, "w");
   FILE *plotCommands;
@@ -188,6 +207,9 @@ int printModelInfo(DATA *data, const char *filename, const char *plotfile, const
   indent(fout, 2); fprintf(fout, "<prefix>%s</prefix>\n", data->modelFilePrefix);
   indent(fout, 2); fprintf(fout, "<date>%s</date>\n", buf);
   indent(fout, 2); fprintf(fout, "<method>%s</method>\n", method);
+  indent(fout, 2); fprintf(fout, "<outputFormat>%s</outputFormat>\n", outputFormat);
+  indent(fout, 2); fprintf(fout, "<outputFilename>%s</outputFilename>\n", outputFilename);
+  indent(fout, 2); fprintf(fout, "<outputFilesize>%ld</outputFilesize>\n", (long) fileSize(outputFilename));
   indent(fout, 2); fprintf(fout, "<overheadTime>%f</overheadTime>\n", rt_accumulated(SIM_TIMER_OVERHEAD));
   indent(fout, 2); fprintf(fout, "<preinitTime>%f</preinitTime>\n", rt_accumulated(SIM_TIMER_PREINIT));
   indent(fout, 2); fprintf(fout, "<initTime>%f</initTime>\n", rt_accumulated(SIM_TIMER_INIT));

@@ -32,6 +32,8 @@
 #ifndef _COMPAT_H
 #define _COMPAT_H
 
+#include "stdio.h"
+
 #if defined(__MINGW32__) || defined(_MSC_VER)
 #define EXIT(code) exit(code)
 #else

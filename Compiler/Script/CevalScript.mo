@@ -985,6 +985,14 @@ algorithm
         (cache,executable,method_str,st,initfilename) = buildModelBeast(cache,env,vals,st,msg);
       then
         (cache,ValuesUtil.makeArray({Values.STRING(executable),Values.STRING(initfilename)}),st);
+    
+      /* Remove output.log before simulate in case it already exists. This is so we can check for the presence of output.log later. */
+    case (cache,env,"simulate",vals,st,msg)
+      equation
+        true = System.regularFileExists("output.log");
+        false = 0 == System.removeFile("output.log");
+        simValue = createSimulationResultFailure("Failed to remove existing file output.log", simOptionsAsString(vals));
+      then (cache,simValue,st);
         
         /* adrpo: see if the model exists before simulation! */
     case (cache,env,"simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_,st as Interactive.SYMBOLTABLE(ast = p),msg)
@@ -1025,6 +1033,16 @@ algorithm
       then
         (cache,simValue,newst);
         
+    case (cache,env,"simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_,st,msg)
+      equation
+        true = System.regularFileExists("output.log");
+        res = System.readFile("output.log");
+        str = Absyn.pathString(className);
+        res = stringAppendList({"Simulation execution failed for model: ", str, "\n", res});
+        simValue = createSimulationResultFailure(res, simOptionsAsString(vals));
+      then
+        (cache,simValue,st);
+
     case (cache,env,"simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_,st,msg)
       equation
         omhome = Settings.getInstallationDirectoryPath() "simulation fail for some other reason than OPENMODELICAHOME not being set." ;

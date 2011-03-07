@@ -365,22 +365,31 @@ startNonInteractiveSimulation(int argc, char**argv)
     if (!(solvermethod == NULL))
       method.assign(*solvermethod);
   }
+  
+  // Create a result file
+  string *result_file = (string*) getFlagValue("r", argc, argv);
+  string result_file_cstr;
+  if (!result_file) {
+      result_file_cstr = string(globalData->modelFilePrefix) + string("_res.") + outputFormat; /* TODO: Fix result file name based on mode */
+  } else {
+      result_file_cstr = *result_file;
+  }
 
-  retVal = callSolver(argc, argv, method, outputFormat, start, stop, stepSize,
+  retVal = callSolver(argc, argv, method, outputFormat, result_file_cstr, start, stop, stepSize,
       outputSteps, tolerance);
 
-  if (create_linearmodel) {
+  if (retVal == 0 && create_linearmodel) {
       rt_tick(SIM_TIMER_LINEARIZE);
       retVal = linearize();
       rt_accumulate(SIM_TIMER_LINEARIZE);
       cout << "Linear model is created!" << endl;
   }
 
-  if (measure_time_flag) {
+  if (retVal == 0 && measure_time_flag) {
       const string modelInfo = string(globalData->modelFilePrefix) + "_prof.xml";
       const string plotFile = string(globalData->modelFilePrefix) + "_prof.plt";
       rt_accumulate(SIM_TIMER_TOTAL);
-      retVal = printModelInfo(globalData, modelInfo.c_str(), plotFile.c_str(), method.c_str()) && retVal;
+      retVal = printModelInfo(globalData, modelInfo.c_str(), plotFile.c_str(), method.c_str(), outputFormat.c_str(), result_file_cstr.c_str()) && retVal;
   }
   
   deinitDelay();
@@ -400,19 +409,12 @@ startNonInteractiveSimulation(int argc, char**argv)
  */
 int
 callSolver(int argc, char**argv, string method, string outputFormat,
+    string result_file_cstr,
     double start, double stop, double stepSize, long outputSteps,
     double tolerance)
 {
   int retVal = -1;
 
-  // Create a result file
-  string *result_file = (string*) getFlagValue("r", argc, argv);
-  string result_file_cstr;
-  if (!result_file) {
-      result_file_cstr = string(globalData->modelFilePrefix) + string("_res.") + outputFormat; /* TODO: Fix result file name based on mode */
-  } else {
-      result_file_cstr = *result_file;
-  }
   long maxSteps = 2 * outputSteps + 2 * globalData->nSampleTimes;
   if (isInteractiveSimulation() || sim_noemit || 0 == strcmp("empty", outputFormat.c_str())) {
       sim_result = new simulation_result_empty(result_file_cstr.c_str(),maxSteps);
@@ -420,8 +422,11 @@ callSolver(int argc, char**argv, string method, string outputFormat,
       sim_result = new simulation_result_csv(result_file_cstr.c_str(), maxSteps);
   } else if (0 == strcmp("mat", outputFormat.c_str())) {
       sim_result = new simulation_result_mat(result_file_cstr.c_str(), start, stop);
-  } else { /* Default to plt */
+  } else if (0 == strcmp("plt", outputFormat.c_str())) {
       sim_result = new simulation_result_plt(result_file_cstr.c_str(), maxSteps);
+  } else {
+      cerr << "Unknown output format: " << outputFormat << endl;
+      return 1;
   }
   if (sim_verbose) {
       cout << "Allocated simulation result data storage for method '"
