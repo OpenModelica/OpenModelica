@@ -154,13 +154,16 @@ win32 {
              __WIN32__
   CORBAINC = $$(OMDEV)/lib/omniORB-4.1.4-mingw/include
   CORBALIBS = -L$$(OMDEV)/lib/omniORB-4.1.4-mingw/lib/x86_win32 -lomniORB414_rt -lomnithread34_rt
-  DEFINES += USE_OMNIORB
+  COIN_LIBS =
+  SOQT_LIBS =
+  USE_CORBA = USE_OMNIORB
 } else {
   include(OMNotebook.config)
 }
 #---------End OMNIorb
 
-LIBS += $${CORBALIBS}
+DEFINES += $${HAVE_COIN} $${USE_CORBA}
+LIBS += $${CORBALIBS} $${COIN_LIBS} $${SOQT_LIBS}
 INCLUDEPATH += $${CORBAINC} \
                ../Pltpkg2 \
                ../3Dpkg
