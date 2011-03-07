@@ -1049,15 +1049,16 @@ algorithm
     // Expansion failed in previous case, generate reduction call.
     case (cache,env,fn,exp,{(iter,SOME(iterexp))},impl,st,doVect,pre,info)
       equation
-        (cache,iterexp_1,DAE.PROP((DAE.T_ARRAY(arrayType = iterty),_),iterconst),_)
+        (cache,iterexp_1,DAE.PROP(iterty,iterconst),_)
           = elabExp(cache, env, iterexp, impl, st, doVect,pre,info);
+        iterty = Types.unliftArrayOrList(iterty);
         env_1 = Env.openScope(env, false, SOME(Env.forIterScopeName),NONE());
         env_1 = Env.extendFrameForIterator(env_1, iter, iterty, DAE.UNBOUND(), 
           SCode.CONST(), SOME(iterconst));
         (cache,exp_1,DAE.PROP(expty, expconst),st) = 
           elabExp(cache, env_1, exp, impl, st, doVect,pre,info);
         const = Types.constAnd(expconst, iterconst);
-        expty = reductionType(fn, expty, iterexp_1);
+        (exp_1,expty) = reductionType(fn, exp_1, expty, iterexp_1);
         prop = DAE.PROP(expty, const);
         fn_1 = Absyn.crefToPath(fn);
       then
@@ -1072,14 +1073,24 @@ end elabCallReduction;
 
 protected function reductionType
   input Absyn.ComponentRef fn;
+  input DAE.Exp inExp;
   input DAE.Type inType;
   input DAE.Exp inRangeExp;
+  output DAE.Exp outExp;
   output DAE.Type outType;
 algorithm
-  outType := match(fn, inType, inRangeExp)
-    case (Absyn.CREF_IDENT(name = "array"), _, _) 
-      then Types.liftArray(inType, DAE.DIM_EXP(inRangeExp));
-    else then inType;
+  (outExp,outType) := match(fn, inExp, inType, inRangeExp)
+    case (Absyn.CREF_IDENT(name = "array"), _, _, _) 
+      then (inExp, Types.liftArray(inType, DAE.DIM_EXP(inRangeExp)));
+    case (Absyn.CREF_IDENT(name = "list"), inExp, _, _)
+      equation
+        (inExp,inType) = Types.matchType(inExp, inType, DAE.T_BOXED_DEFAULT, true);
+      then (inExp,(DAE.T_LIST(inType), NONE()));
+    case (Absyn.CREF_IDENT(name = "listReverse"), inExp, _, _)
+      equation
+        (inExp,inType) = Types.matchType(inExp, inType, DAE.T_BOXED_DEFAULT, true);
+      then (inExp,(DAE.T_LIST(inType), NONE()));
+    else (inExp,inType);
   end match;
 end reductionType;
 

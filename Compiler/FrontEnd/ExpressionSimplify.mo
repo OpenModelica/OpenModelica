@@ -309,6 +309,13 @@ algorithm
       then
         exp1;
 
+    case DAE.REDUCTION(path,e1,idn,e2)
+      equation
+        e1 = simplify1(e1);
+        e2 = simplify1(e2);
+      then
+        DAE.REDUCTION(path,e1,idn,e2);
+
     // anything else
     case e
       then
@@ -357,7 +364,7 @@ algorithm
       list<DAE.Exp> el;
       Integer i;
       Real r;
-      String s;
+      String s,idn;
     case DAE.MATCHEXPRESSION(inputs={e}, localDecls={}, cases={
         DAE.CASE(patterns={DAE.PAT_CONSTANT(exp=DAE.BCONST(b1))},localDecls={},body={},result=SOME(e1)),
         DAE.CASE(patterns={DAE.PAT_CONSTANT(exp=DAE.BCONST(b2))},localDecls={},body={},result=SOME(e2))
@@ -418,6 +425,16 @@ algorithm
         e1_1 = DAE.LIST(el);
       then e1_1;
 
+    case DAE.CALL(path=path as Absyn.IDENT("listReverse"),expLst={DAE.REDUCTION(Absyn.IDENT("list"),e1,idn,e2)},ty=tp)
+      equation
+        e1 = DAE.REDUCTION(Absyn.IDENT("listReverse"),e1,idn,e2);
+      then simplify(e1);
+
+    case DAE.CALL(path=path as Absyn.IDENT("listReverse"),expLst={DAE.REDUCTION(Absyn.IDENT("listReverse"),e1,idn,e2)},ty=tp)
+      equation
+        e1 = DAE.REDUCTION(Absyn.IDENT("list"),e1,idn,e2);
+      then simplify(e1);
+
     case DAE.CALL(path=path as Absyn.IDENT("listLength"),expLst={e1},ty=tp)
       equation
         DAE.LIST(el) = simplify(e1);
@@ -445,6 +462,9 @@ algorithm
       equation
         DAE.BOX(e1_1) = simplify(e1);
       then e1_1;
+
+    case DAE.UNBOX(exp=DAE.BOX(e1)) then e1;
+    case DAE.BOX(DAE.UNBOX(exp=e1)) then e1;
 
     case DAE.IFEXP(e,DAE.BOX(e1),DAE.BOX(e2))
       equation

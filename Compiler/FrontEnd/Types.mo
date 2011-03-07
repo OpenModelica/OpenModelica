@@ -2028,6 +2028,18 @@ algorithm
   end match;
 end unliftArray;
 
+public function unliftArrayOrList
+  input Type inType;
+  output Type outType;
+algorithm
+  outType := match (inType)
+    local
+      Type ty;
+    case ((DAE.T_LIST(ty),_)) then ty;
+    else unliftArray(inType);
+  end match;
+end unliftArrayOrList;
+
 protected function typeArraydim "function: typeArraydim
 
   If type is an array, return it array dimension

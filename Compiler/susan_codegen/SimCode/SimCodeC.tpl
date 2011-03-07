@@ -4329,7 +4329,7 @@ template algStmtForGeneric_impl(Exp exp, Ident iterator, String type,
   <<
   <%preExp%> 
   {
-  <%type%> <%iterName%>;
+    <%type%> <%iterName%>;
   
     for(<%tvar%> = 1; <%tvar%> <= size_of_dimension_<%arrayType%>(<%evar%>, 1); ++<%tvar%>) {
       <%if not acceptMetaModelicaGrammar() then '<%stateVar%> = get_memory_state();'%>
@@ -5674,6 +5674,51 @@ template daeExpReduction(Exp exp, Context context, Text &preExp /*BUFP*/,
  "Generates code for a reduction expression."
 ::=
 match exp
+case REDUCTION(path = IDENT(name = name as "listReverse"), range = range)
+case REDUCTION(path = IDENT(name = name as "list"), range = range) then
+  let &tmpVarDecls = buffer ""
+  let &tmpExpPre = buffer ""
+  let &bodyExpPre = buffer ""
+  let acc = tempDecl("modelica_metatype", &tmpVarDecls)
+  let resHead = tempDecl("modelica_metatype", &varDecls)
+  let resTail = match name case "list" then tempDecl("modelica_metatype*", &tmpVarDecls)
+  let lstExp = daeExp(range, context, &tmpExpPre, &tmpVarDecls)
+  let bodyExp = daeExp(expr, context, &bodyExpPre, &tmpVarDecls)
+  let iteratorName = contextIteratorName(ident, context)
+  let &preExp += <<
+  { /* "<%name%>" reduction */
+    <%tmpVarDecls%>
+    modelica_metatype <%iteratorName%>;
+    <%tmpExpPre%>
+    <%acc%> = <%lstExp%>;
+    <% match name
+       case "list" then
+         <<
+         <%resHead%> = 0;
+         <%resTail%> = &<%resHead%>;
+         >>
+       case "listReverse" then
+         '<%resHead%> = mmc_mk_nil();'
+    %>
+    while (!listEmpty(<%acc%>)) {
+      <%iteratorName%> = MMC_CAR(<%acc%>);
+      <%bodyExpPre%>
+      <% match name
+         case "list" then // Let's save some bytes from being garbage by using runtime trickery. We get a little bit of overhead from filling the CDR with 0 and patching it as we go, but lower memory overhead should make up for it.
+           <<
+           *<%resTail%> = mmc_mk_cons(<%bodyExp%>,0);
+           <%resTail%> = &MMC_CDR(*<%resTail%>);
+           >>
+         case "listReverse" then // This is too easy; the damn list is already in the correct order
+           '<%resHead%> = mmc_mk_cons(<%bodyExp%>,<%resHead%>);'
+      %>
+      <%acc%> = MMC_CDR(<%acc%>);
+    }
+    <% match name case "list" then '*<%resTail%> = mmc_mk_nil();' %>
+  }<%\n%>
+  >>
+  resHead
+// Array reductions
 case REDUCTION(path = IDENT(name = op)) then
   let identType = expTypeFromExpModelica(expr)
   let accFun = daeExpReductionFnName(op, identType)
@@ -5692,7 +5737,7 @@ case REDUCTION(path = IDENT(name = op)) then
   let &preExp +=
     <<
     <%res%> = <%startValue%>;
-    <%daeExpReductionLoop(exp, body, context, &varDecls)%>
+    <%daeExpReductionLoop(exp, body, context, &varDecls)%><%\n%>
     >>
   res
 end daeExpReduction;
@@ -6066,6 +6111,7 @@ match var
 case VARIABLE(__) then 'modelica_metatype'
 case FUNCTION_PTR(__) then 'modelica_fnptr'
 end varTypeBoxed;
+
 
 template expTypeRW(DAE.ExpType type)
  "Helper to writeOutVarRecordMembers."
