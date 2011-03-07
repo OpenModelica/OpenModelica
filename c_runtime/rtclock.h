@@ -55,6 +55,7 @@ extern "C" {
 
 #define SIM_PROF_TICK_EQ(ix) rt_tick(ix+SIM_TIMER_FIRST_FUNCTION+localData->nFunctions)
 #define SIM_PROF_ACC_EQ(ix) rt_accumulate(ix+SIM_TIMER_FIRST_FUNCTION+localData->nFunctions)
+#define SIM_PROF_ADD_NCALL_EQ(ix,num) rt_add_ncall(ix+SIM_TIMER_FIRST_FUNCTION+localData->nFunctions,num)
 
 void rt_init(int numTimer);
 
@@ -74,6 +75,7 @@ double rt_total(int ix);
 /* Returns the number of times tick() was called since the last clear() */
 long rt_ncall(int ix);
 long rt_ncall_total(int ix);
+void rt_add_ncall(int ix, int n);
 
 #ifdef __cplusplus
 }

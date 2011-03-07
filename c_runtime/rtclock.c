@@ -73,6 +73,10 @@ static rtclock_t min_rtclock(rtclock_t t1, rtclock_t t2) {
 
 static double rtclock_value(rtclock_t);
 
+void rt_add_ncall(int ix, int n) {
+  rt_clock_ncall[ix] += n;
+}
+
 long rt_ncall(int ix) {
   return rt_clock_ncall[ix];
 }

@@ -1277,16 +1277,13 @@ template functionExtraResiduals(list<SimEqSystem> allEquations)
        state mem_state;
        <%varDecls%>
        #ifdef _OMC_MEASURE_TIME
-       SIM_PROF_TICK_EQ(SIM_PROF_EQ_<%index%>);
+       SIM_PROF_ADD_NCALL_EQ(SIM_PROF_EQ_<%index%>,1);
        #endif
        mem_state = get_memory_state();
        <%algs%>
        <%prebody%>
        <%body%>
        restore_memory_state(mem_state);
-       #ifdef _OMC_MEASURE_TIME
-       SIM_PROF_ACC_EQ(SIM_PROF_EQ_<%index%>);
-       #endif<%\n%>
      }
      >>
    ;separator="\n\n")
@@ -1405,6 +1402,7 @@ template functionWhen(list<SimWhenClause> whenClauses)
     mem_state = get_memory_state();
   
     switch(i) {
+
       <%cases%>
       default:
         break;
@@ -2353,6 +2351,10 @@ match eq
 case SES_NONLINEAR(__) then
   let size = listLength(crefs)
   <<
+  #ifdef _OMC_MEASURE_TIME
+  SIM_PROF_TICK_EQ(SIM_PROF_EQ_<%index%>);
+  SIM_PROF_ADD_NCALL_EQ(SIM_PROF_EQ_<%index%>,-1);
+  #endif<%\n%>
   start_nonlinear_system(<%size%>);
   <%crefs |> name hasindex i0 =>
     <<
@@ -2363,6 +2365,9 @@ case SES_NONLINEAR(__) then
   solve_nonlinear_system(residualFunc<%index%>, <%reverseLookupEquationNumber(index)%>);
   <%crefs |> name hasindex i0 => '<%cref(name)%> = nls_x[<%i0%>];' ;separator="\n"%>
   end_nonlinear_system();<%inlineCrefs(context,crefs)%>
+  #ifdef _OMC_MEASURE_TIME
+  SIM_PROF_ACC_EQ(SIM_PROF_EQ_<%index%>);
+  #endif<%\n%>
   >>
 end equationNonlinear;
 
