@@ -334,20 +334,21 @@ protected function instExtendsAndClassExtendsList2 "
 algorithm
   (outCache,outEnv,outIH,outMod,outTplSCodeElementModLst,outSCodeNormalEquationLst,outSCodeInitialEquationLst,outSCodeNormalAlgorithmLst,outSCodeInitialAlgorithmLst):=
   instExtendsList(inCache,inEnv,inIH,inMod,inPrefix,inExtendsElementLst,inState,inClassName,inImpl,isPartialInst);
-  (outMod,outTplSCodeElementModLst):=instClassExtendsList(outMod,inClassExtendsElementLst,outTplSCodeElementModLst);
+  (outMod,outTplSCodeElementModLst):=instClassExtendsList(inEnv,outMod,inClassExtendsElementLst,outTplSCodeElementModLst);
 end instExtendsAndClassExtendsList2;
 
 protected function instClassExtendsList
 "Instantiate element nodes of type SCode.CLASS_EXTENDS. This is done by walking
 the extended classes and performing the modifications in-place. The old class
 will no longer be accessible."
+  input Env.Env inEnv;
   input DAE.Mod inMod;
   input list<SCode.Element> inClassExtendsList;
   input list<tuple<SCode.Element, DAE.Mod, Boolean>> inTplSCodeElementModLst;
   output DAE.Mod outMod;
   output list<tuple<SCode.Element, DAE.Mod, Boolean>> outTplSCodeElementModLst;
 algorithm
-  (outMod,outTplSCodeElementModLst) := matchcontinue (inMod,inClassExtendsList,inTplSCodeElementModLst)
+  (outMod,outTplSCodeElementModLst) := matchcontinue (inEnv,inMod,inClassExtendsList,inTplSCodeElementModLst)
     local
       SCode.Element first;
       list<SCode.Element> rest;
@@ -356,13 +357,13 @@ algorithm
       list<tuple<SCode.Element, DAE.Mod, Boolean>> compelts;
       DAE.Mod emod;
       list<String> names;
-    case (emod,{},compelts) then (emod,compelts);
-    case (emod,(first as SCode.CLASSDEF(name=name))::rest,compelts)
+    case (_,emod,{},compelts) then (emod,compelts);
+    case (_,emod,(first as SCode.CLASSDEF(name=name))::rest,compelts)
       equation
-        (emod,compelts) = instClassExtendsList2(emod,name,first,compelts);
-        (emod,compelts) = instClassExtendsList(emod,rest,compelts);
+        (emod,compelts) = instClassExtendsList2(inEnv,emod,name,first,compelts);
+        (emod,compelts) = instClassExtendsList(inEnv,emod,rest,compelts);
       then (emod,compelts);
-    case (_,SCode.CLASSDEF(name=name)::rest,compelts)
+    case (_,_,SCode.CLASSDEF(name=name)::rest,compelts)
       equation
         true = RTOpts.debugFlag("failtrace");
         Debug.traceln("- Inst.instClassExtendsList failed " +& name);
@@ -375,6 +376,7 @@ algorithm
 end instClassExtendsList;
 
 protected function instClassExtendsList2
+  input Env.Env inEnv;
   input DAE.Mod inMod;
   input String inName;
   input SCode.Element inClassExtendsElt;
@@ -382,14 +384,14 @@ protected function instClassExtendsList2
   output DAE.Mod outMod;
   output list<tuple<SCode.Element, DAE.Mod, Boolean>> outTplSCodeElementModLst;
 algorithm
-  (outMod,outTplSCodeElementModLst) := matchcontinue (inMod,inName,inClassExtendsElt,inTplSCodeElementModLst)
+  (outMod,outTplSCodeElementModLst) := matchcontinue (inEnv,inMod,inName,inClassExtendsElt,inTplSCodeElementModLst)
     local
       SCode.Element elt,compelt,classExtendsElt;
       SCode.Class cl,classExtendsClass;
       SCode.ClassDef classDef,classExtendsCdef;
       Boolean partialPrefix2,encapsulatedPrefix2,finalPrefix2,replaceablePrefix2,partialPrefix1,encapsulatedPrefix1,finalPrefix1,replaceablePrefix1;
       SCode.Restriction restriction1,restriction2;
-      String name1,name2;
+      String name1,name2,env_path;
       Option<Absyn.ExternalDecl> externalDecl;
       list<SCode.Annotation> annotationLst1,annotationLst2;
       Option<SCode.Comment> comment1,comment2;
@@ -404,11 +406,12 @@ algorithm
       Absyn.Info info1, info2;
       Boolean b;
 
-    case (emod,name1,classExtendsElt,(SCode.CLASSDEF(name2,finalPrefix2,replaceablePrefix2,cl,cc2),mod1,b)::rest)
+    case (_,emod,name1,classExtendsElt,(SCode.CLASSDEF(name2,finalPrefix2,replaceablePrefix2,cl,cc2),mod1,b)::rest)
       equation
         true = name1 ==& name2; // Compare the name before pattern-matching to speed this up
 
-        name2 = name2 +& "$parent";
+        env_path = Absyn.pathString(Env.getEnvName(inEnv));
+        name2 = env_path +& "." +& name2 +& "$parent";
         SCode.CLASS(_,partialPrefix2,encapsulatedPrefix2,restriction2,SCode.PARTS(els2,nEqn2,inEqn2,nAlg2,inAlg2,externalDecl,annotationLst2,comment2),info2) = cl;
 
         SCode.CLASSDEF(_, finalPrefix1, replaceablePrefix1, classExtendsClass, cc1) = classExtendsElt;
@@ -426,11 +429,11 @@ algorithm
         emod = Mod.renameTopLevelNamedSubMod(emod,name1,name2);
         // Debug.traceln("class extends: " +& SCode.printElementStr(compelt) +& "  " +& SCode.printElementStr(elt));
       then (emod,(compelt,mod1,b)::(elt,DAE.NOMOD(),true)::rest);
-    case (emod,name1,classExtendsElt,first::rest)
+    case (_,emod,name1,classExtendsElt,first::rest)
       equation
-        (emod,rest) = instClassExtendsList2(emod,name1,classExtendsElt,rest);
+        (emod,rest) = instClassExtendsList2(inEnv,emod,name1,classExtendsElt,rest);
       then (emod,first::rest);
-    case (_,_,_,{})
+    case (_,_,_,_,{})
       equation
         Debug.traceln("TODO: Make a proper Error message here - Inst.instClassExtendsList2 couldn't find the class to extend");
       then fail();
