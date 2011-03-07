@@ -17241,7 +17241,7 @@ algorithm
     case(Absyn.NOSUB()) then Absyn.NOSUB();
     case(Absyn.SUBSCRIPT(e))
       equation
-        ((e1,_)) = traverseExp(e,transformFlatExp,0);
+        ((e1,_)) = Absyn.traverseExp(e,transformFlatExp,0);
       then
         Absyn.SUBSCRIPT(e1);
   end match;
@@ -17286,7 +17286,7 @@ algorithm
     case (SOME(Absyn.CLASSMOD(eltArgs,Absyn.EQMOD(e,info))))
       equation
         eltArgs1=Util.listMap(eltArgs,transformFlatElementArg);
-        ((e1,_)) = traverseExp(e,transformFlatExp,0);
+        ((e1,_)) = Absyn.traverseExp(e,transformFlatExp,0);
       then SOME(Absyn.CLASSMOD(eltArgs1,Absyn.EQMOD(e1,info)));
     case (SOME(Absyn.CLASSMOD(eltArgs,Absyn.NOMOD())))
       equation
@@ -17352,7 +17352,7 @@ algorithm
 
     case(Absyn.EQ_IF(e1,thenpart,elseifpart,elsepart))
       equation
-        ((e11,_)) = traverseExp(e1,transformFlatExp,0);
+        ((e11,_)) = Absyn.traverseExp(e1,transformFlatExp,0);
         thenpart1 = Util.listMap(thenpart,transformFlatEquationItem);
         elsepart1 = Util.listMap(elsepart,transformFlatEquationItem);
         elseifpart1 = Util.listMap(elseifpart,transformFlatElseIfPart);
@@ -17361,8 +17361,8 @@ algorithm
 
     case(Absyn.EQ_EQUALS(e1,e2))
       equation
-        ((e11,_)) = traverseExp(e1,transformFlatExp,0);
-        ((e21,_)) = traverseExp(e2,transformFlatExp,0);
+        ((e11,_)) = Absyn.traverseExp(e1,transformFlatExp,0);
+        ((e21,_)) = Absyn.traverseExp(e2,transformFlatExp,0);
       then
         Absyn.EQ_EQUALS(e11,e21);
 
@@ -17375,14 +17375,14 @@ algorithm
 
     case(Absyn.EQ_FOR({(id,SOME(e1))},forEqns))
       equation
-        ((e11,_)) = traverseExp(e1,transformFlatExp,0);
+        ((e11,_)) = Absyn.traverseExp(e1,transformFlatExp,0);
         forEqns1 = Util.listMap(forEqns,transformFlatEquationItem);
       then
         Absyn.EQ_FOR({(id,SOME(e11))},forEqns1);
 
     case(Absyn.EQ_WHEN_E(e1,whenEqns,elseWhenEqns))
       equation
-        ((e11,_)) = traverseExp(e1,transformFlatExp,0);
+        ((e11,_)) = Absyn.traverseExp(e1,transformFlatExp,0);
         elseWhenEqns1 = Util.listMap(elseWhenEqns,transformFlatElseIfPart);
         whenEqns1 = Util.listMap(whenEqns,transformFlatEquationItem);
       then
@@ -17408,7 +17408,7 @@ algorithm
       list<Absyn.EquationItem> eqnitems,eqnitems1;
     case((e1,eqnitems))
       equation
-        ((e11,_)) = traverseExp(e1,transformFlatExp,0);
+        ((e11,_)) = Absyn.traverseExp(e1,transformFlatExp,0);
         eqnitems1 = Util.listMap(eqnitems,transformFlatEquationItem);
       then
         ((e11,eqnitems1));
@@ -17446,7 +17446,7 @@ algorithm
     local Absyn.Exp e1,e11; Absyn.Ident id;
     case(Absyn.NAMEDARG(id,e1))
       equation
-        ((e11,_)) = traverseExp(e1,transformFlatExp,0);
+        ((e11,_)) = Absyn.traverseExp(e1,transformFlatExp,0);
       then Absyn.NAMEDARG(id,e11);
   end match;
 end transformFlatNamedArg;
@@ -17463,7 +17463,7 @@ algorithm
       Integer i;
     case( (e,i))
       equation
-        ((e1,i)) = traverseExp(e,transformFlatExp,0);
+        ((e1,i)) = Absyn.traverseExp(e,transformFlatExp,0);
       then ((e1,i));
   end match;
 end transformFlatExpTrav;
@@ -17516,14 +17516,14 @@ algorithm
       Absyn.FunctionArgs fargs,fargs1;
     case (Absyn.ALG_ASSIGN(Absyn.CREF(cr),e1))
       equation
-        ((e11,_)) = traverseExp(e1,transformFlatExp,0);
+        ((e11,_)) = Absyn.traverseExp(e1,transformFlatExp,0);
         cr1 = transformFlatComponentRef(cr);
       then
         Absyn.ALG_ASSIGN(Absyn.CREF(cr1),e1);
     case (Absyn.ALG_ASSIGN(e1 as Absyn.TUPLE(_),e2))
       equation
-        ((e11,_)) = traverseExp(e1,transformFlatExp,0);
-        ((e21,_)) = traverseExp(e2,transformFlatExp,0);
+        ((e11,_)) = Absyn.traverseExp(e1,transformFlatExp,0);
+        ((e21,_)) = Absyn.traverseExp(e2,transformFlatExp,0);
       then
         Absyn.ALG_ASSIGN(e11,e21);
     case (Absyn.ALG_IF(e1,thenPart,elseIfPart,elsePart))
@@ -17531,24 +17531,24 @@ algorithm
         thenPart1 = Util.listMap(thenPart,transformFlatAlgorithmItem);
         elseIfPart1 =  Util.listMap(elseIfPart,transformFlatElseIfAlgorithm);
         elsePart1 = Util.listMap(elsePart,transformFlatAlgorithmItem);
-        ((e11,_)) = traverseExp(e1,transformFlatExp,0);
+        ((e11,_)) = Absyn.traverseExp(e1,transformFlatExp,0);
     then
       Absyn.ALG_IF(e11,thenPart1,elseIfPart1,elsePart1);
     case (Absyn.ALG_FOR({(id,SOME(e1))},body))
       equation
-        ((e11,_)) = traverseExp(e1,transformFlatExp,0);
+        ((e11,_)) = Absyn.traverseExp(e1,transformFlatExp,0);
         body1 = Util.listMap(body,transformFlatAlgorithmItem);
       then
         Absyn.ALG_FOR({(id,SOME(e11))},body1);
     case(Absyn.ALG_WHILE(e1,body))
       equation
-        ((e11,_)) = traverseExp(e1,transformFlatExp,0);
+        ((e11,_)) = Absyn.traverseExp(e1,transformFlatExp,0);
         body1 = Util.listMap(body,transformFlatAlgorithmItem);
     then
       Absyn.ALG_WHILE(e11,body1);
     case (Absyn.ALG_WHEN_A(e1,body,whenBranch))
       equation
-       ((e11,_)) = traverseExp(e1,transformFlatExp,0);
+       ((e11,_)) = Absyn.traverseExp(e1,transformFlatExp,0);
         body1 = Util.listMap(body,transformFlatAlgorithmItem);
         whenBranch1 =  Util.listMap(whenBranch,transformFlatElseIfAlgorithm);
     then
@@ -17575,247 +17575,11 @@ algorithm
       list<Absyn.AlgorithmItem> algitems,algitems1;
     case((e1,algitems))
       equation
-        ((e11,_)) = traverseExp(e1,transformFlatExp,0);
+        ((e11,_)) = Absyn.traverseExp(e1,transformFlatExp,0);
         algitems1 = Util.listMap(algitems,transformFlatAlgorithmItem);
       then ((e11,algitems1));
   end match;
 end transformFlatElseIfAlgorithm;
-
-public function traverseExp
-"function traverseExp
-  Traverses all subexpressions of an Absyn.Exp expression.
-  Takes a function and an extra argument passed through the traversal.
-  NOTE: This function was copied from Expression.traverseExpression."
-  input Absyn.Exp inExp;
-  input FuncTypeTplExpType_aToTplExpType_a inFuncTypeTplExpTypeAToTplExpTypeA;
-  input Type_a inTypeA;
-  output tuple<Absyn.Exp, Type_a> outTplExpTypeA;
-  partial function FuncTypeTplExpType_aToTplExpType_a
-    input tuple<Absyn.Exp, Type_a> inTplExpTypeA;
-    output tuple<Absyn.Exp, Type_a> outTplExpTypeA;
-    replaceable type Type_a subtypeof Any;
-  end FuncTypeTplExpType_aToTplExpType_a;
-  replaceable type Type_a subtypeof Any;
-algorithm
-  outTplExpTypeA:=
-  matchcontinue (inExp,inFuncTypeTplExpTypeAToTplExpTypeA,inTypeA)
-    local
-      Absyn.Exp e1_1,e,e1,e2_1,e2,e3_1,e_1,e3;
-      Type_a ext_arg_1,ext_arg_2,ext_arg,ext_arg_3,ext_arg_4;
-      Absyn.Operator op_1,op;
-      FuncTypeTplExpType_aToTplExpType_a rel;
-      list<Absyn.Exp> expl_1,expl;
-      list<tuple<Absyn.Exp,Absyn.Exp>> elseIfBranch,elseIfBranch1;
-      Absyn.FunctionArgs fargs,fargs1; Absyn.ComponentRef cfn,cfn_1;
-      list<list<Absyn.Exp>> mexpl,mexpl1;
-
-    case ((e as Absyn.UNARY(op,e1)),rel,ext_arg) /* unary */
-      equation
-        ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
-        ((Absyn.UNARY(op_1,_),ext_arg_2)) = rel((e,ext_arg_1));
-      then
-        ((Absyn.UNARY(op_1,e1_1),ext_arg_2));
-
-    case ((e as Absyn.BINARY(e1,op,e2)),rel,ext_arg) /* binary */
-      equation
-        ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
-        ((e2_1,ext_arg_2)) = traverseExp(e2, rel, ext_arg_1);
-        ((Absyn.BINARY(_,op_1,_),ext_arg_3)) = rel((e,ext_arg_2));
-      then
-        ((Absyn.BINARY(e1_1,op_1,e2_1),ext_arg_3));
-
-    case ((e as Absyn.LUNARY(op,e1)),rel,ext_arg) /* logic unary */
-      equation
-        ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
-        ((Absyn.LUNARY(op_1,_),ext_arg_2)) = rel((e,ext_arg_1));
-      then
-        ((Absyn.LUNARY(op_1,e1_1),ext_arg_2));
-
-    case ((e as Absyn.LBINARY(e1,op,e2)),rel,ext_arg) /* logic binary */
-      equation
-        ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
-        ((e2_1,ext_arg_2)) = traverseExp(e2, rel, ext_arg_1);
-        ((Absyn.LBINARY(_,op_1,_),ext_arg_3)) = rel((e,ext_arg_2));
-      then
-        ((Absyn.LBINARY(e1_1,op_1,e2_1),ext_arg_3));
-
-    case ((e as Absyn.RELATION(e1,op,e2)),rel,ext_arg) /* RELATION */
-      equation
-        ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
-        ((e2_1,ext_arg_2)) = traverseExp(e2, rel, ext_arg_1);
-        ((Absyn.RELATION(_,op_1,_),ext_arg_3)) = rel((e,ext_arg_2));
-      then
-        ((Absyn.RELATION(e1_1,op_1,e2_1),ext_arg_3));
-
-    case ((e as Absyn.IFEXP(e1,e2,e3,elseIfBranch)),rel,ext_arg) /* if expression */
-      equation
-        ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
-        ((e2_1,ext_arg_2)) = traverseExp(e2, rel, ext_arg_1);
-        ((e3_1,ext_arg_3)) = traverseExp(e3, rel, ext_arg_2);
-        ((elseIfBranch1,ext_arg_3)) = traverseExpElseIfBranch(elseIfBranch,rel,ext_arg_3);
-        ((e_1,ext_arg_4)) = rel((e,ext_arg_3));
-      then
-        ((Absyn.IFEXP(e1_1,e2_1,e3_1,elseIfBranch1),ext_arg_4));
-
-    case ((e as Absyn.CALL(cfn,fargs)),rel,ext_arg)
-      equation
-        ((fargs1,ext_arg_1)) = traverseExpFunctionArgs(fargs, rel, ext_arg);
-        ((Absyn.CALL(cfn_1,_),ext_arg_2)) = rel((e,ext_arg_1));
-      then
-        ((Absyn.CALL(cfn_1,fargs1),ext_arg_2));
-
-    case ((e as Absyn.ARRAY(expl)),rel,ext_arg)
-      equation
-        (expl_1,ext_arg_1) = Util.listFoldMap(expl, rel, ext_arg);
-        ((Absyn.ARRAY(_),ext_arg_2)) = rel((e,ext_arg_1));
-      then
-        ((Absyn.ARRAY(expl_1),ext_arg_2));
-
-    case ((e as Absyn.MATRIX(mexpl)),rel,ext_arg)
-      equation
-        (mexpl1,ext_arg_1) = Util.listlistFoldMap(mexpl,rel,ext_arg);
-        ((Absyn.MATRIX(_),ext_arg_2)) = rel((e,ext_arg_1));
-      then
-        ((Absyn.MATRIX(mexpl1),ext_arg_2));
-
-    case ((e as Absyn.RANGE(e1,NONE(),e2)),rel,ext_arg)
-      equation
-        ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
-        ((e2_1,ext_arg_2)) = traverseExp(e2, rel, ext_arg_1);
-        ((Absyn.RANGE(_,_,_),ext_arg_3)) = rel((e,ext_arg_2));
-      then
-        ((Absyn.RANGE(e1_1,NONE(),e2_1),ext_arg_3));
-
-    case ((e as Absyn.RANGE(e1,SOME(e2),e3)),rel,ext_arg)
-      equation
-        ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
-        ((e2_1,ext_arg_2)) = traverseExp(e2, rel, ext_arg_1);
-        ((e3_1,ext_arg_3)) = traverseExp(e3, rel, ext_arg_2);
-        ((Absyn.RANGE(_,_,_),ext_arg_4)) = rel((e,ext_arg_3));
-      then
-        ((Absyn.RANGE(e1_1,SOME(e3),e2_1),ext_arg_4));
-
-    case ((e as Absyn.TUPLE(expl)),rel,ext_arg)
-      equation
-        (expl_1,ext_arg_1) = Util.listFoldMap(expl, rel, ext_arg);
-        ((e_1,ext_arg_2)) = rel((e,ext_arg_1));
-      then
-        ((Absyn.TUPLE(expl_1),ext_arg_2));
-
-    case (e,rel,ext_arg)
-      equation
-        ((e_1,ext_arg_1)) = rel((e,ext_arg));
-      then
-        ((e_1,ext_arg_1));
-  end matchcontinue;
-end traverseExp;
-
-public function traverseExpElseIfBranch
-"function traverseExpElseIfBranch
-  Help function for traverseExp"
-  input list<tuple<Absyn.Exp,Absyn.Exp>> inLst;
-  input FuncTypeTplExpType_aToTplExpType_a rel;
-  input Type_a ext_arg;
-  output tuple<list<tuple<Absyn.Exp,Absyn.Exp>>, Type_a> outTplExpTypeA;
-  partial function FuncTypeTplExpType_aToTplExpType_a
-    input tuple<Absyn.Exp, Type_a> inTplExpTypeA;
-    output tuple<Absyn.Exp, Type_a> outTplExpTypeA;
-    replaceable type Type_a subtypeof Any;
-  end FuncTypeTplExpType_aToTplExpType_a;
-  replaceable type Type_a subtypeof Any;
-algorithm
-  outTplExpTypeA:= match(inLst,rel,ext_arg)
-   local Absyn.Exp e1,e2,e11,e21;
-     list<tuple<Absyn.Exp,Absyn.Exp>> lst;
-    case({},rel,ext_arg) then (({},ext_arg));
-    case((e1,e2)::inLst,rel,ext_arg) equation
-      ((lst,ext_arg)) = traverseExpElseIfBranch(inLst,rel,ext_arg);
-      ((e11,ext_arg)) = traverseExp(e1, rel, ext_arg);
-      ((e21,ext_arg)) = traverseExp(e2, rel, ext_arg);
-    then (((e11,e21)::lst,ext_arg));
-  end match;
-end traverseExpElseIfBranch;
-
-public function traverseExpFunctionArgs
-"function traverseExpFunctionArgs
-  Help function for traverseExp"
-  input Absyn.FunctionArgs inArgs;
-  input FuncTypeTplExpType_aToTplExpType_a rel;
-  input Type_a ext_arg;
-  output tuple<Absyn.FunctionArgs, Type_a> outTplExpTypeA;
-  partial function FuncTypeTplExpType_aToTplExpType_a
-    input tuple<Absyn.Exp, Type_a> inTplExpTypeA;
-    output tuple<Absyn.Exp, Type_a> outTplExpTypeA;
-    replaceable type Type_a subtypeof Any;
-  end FuncTypeTplExpType_aToTplExpType_a;
-  replaceable type Type_a subtypeof Any;
-algorithm
-  outTplExpTypeA:= match(inArgs,rel,ext_arg)
-    local
-      list<Absyn.NamedArg> nargs;
-      list<Absyn.Exp> expl,expl_1;
-     case(inArgs as Absyn.FOR_ITER_FARG(exp = _),rel,ext_arg) then((inArgs,ext_arg));
-     case(Absyn.FUNCTIONARGS(expl,nargs),rel,ext_arg)
-       equation
-         ((expl_1,ext_arg)) = traverseExpPosArgs(expl,rel,ext_arg);
-         ((nargs,ext_arg)) = traverseExpNamedArgs(nargs,rel,ext_arg);
-       then
-         ((Absyn.FUNCTIONARGS(expl_1,nargs),ext_arg));
-  end match;
-end traverseExpFunctionArgs;
-
-protected function traverseExpNamedArgs
-"function traverseExpNamedArgs
-  Help function to traverseExpFunctionArgs"
-  input list<Absyn.NamedArg> nargs;
-  input FuncTypeTplExpType_aToTplExpType_a rel;
-  input Type_a ext_arg;
-  output tuple<list<Absyn.NamedArg>, Type_a> outTplExpTypeA;
-  partial function FuncTypeTplExpType_aToTplExpType_a
-    input tuple<Absyn.Exp, Type_a> inTplExpTypeA;
-    output tuple<Absyn.Exp, Type_a> outTplExpTypeA;
-    replaceable type Type_a subtypeof Any;
-  end FuncTypeTplExpType_aToTplExpType_a;
-  replaceable type Type_a subtypeof Any;
-algorithm
-  outTplExpTypeA:= match(nargs,rel,ext_arg)
-    local
-      Absyn.Exp e1,e11;
-      Absyn.Ident id;
-    case({},rel,ext_arg) then (({},ext_arg));
-     case(Absyn.NAMEDARG(id,e1)::nargs,rel,ext_arg)
-       equation
-         ((e11,ext_arg)) = traverseExp(e1, rel, ext_arg);
-         ((nargs,ext_arg)) = traverseExpNamedArgs(nargs,rel,ext_arg);
-       then ((Absyn.NAMEDARG(id,e11)::nargs,ext_arg));
-  end match;
-end traverseExpNamedArgs;
-
-protected function traverseExpPosArgs
-"function traverseExpPosArgs
-  Help function to traverseExpFunctionArgs"
-  input list<Absyn.Exp> pargs;
-  input FuncTypeTplExpType_aToTplExpType_a rel;
-  input Type_a ext_arg;
-  output tuple<list<Absyn.Exp>, Type_a> outTplExpTypeA;
-  partial function FuncTypeTplExpType_aToTplExpType_a
-    input tuple<Absyn.Exp, Type_a> inTplExpTypeA;
-    output tuple<Absyn.Exp, Type_a> outTplExpTypeA;
-    replaceable type Type_a subtypeof Any;
-  end FuncTypeTplExpType_aToTplExpType_a;
-  replaceable type Type_a subtypeof Any;
-algorithm
-  outTplExpTypeA:= match(pargs,rel,ext_arg)
-    local
-      Absyn.Exp e1,e11;
-     case({},rel,ext_arg) then (({},ext_arg));
-     case(e1::pargs,rel,ext_arg)
-       equation
-         ((e11,ext_arg)) = traverseExp(e1, rel, ext_arg);
-         ((pargs,ext_arg)) = traverseExpPosArgs(pargs,rel,ext_arg);
-       then((e11::pargs,ext_arg));
-  end match;
-end traverseExpPosArgs;
 
 protected function expandUnionTypes
 "@auhtor adrpo
