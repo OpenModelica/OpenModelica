@@ -42,7 +42,7 @@ static fmiBoolean nullPointer(ModelInstance* comp, const char* f, const char* ar
   return fmiFalse;
 }
 
-static fmiBoolean vrOutOfRange(ModelInstance* comp, const char* f, fmiValueReference vr, int end) {
+static fmiBoolean vrOutOfRange(ModelInstance* comp, const char* f, fmiValueReference vr, unsigned int end) {
   if (vr >= end) {
     comp->functions.logger(comp, comp->instanceName, fmiError, "error",
       "%s: Illegal value reference %u.", f, vr);
@@ -163,7 +163,7 @@ void fmiFreeModelInstance(fmiComponent c) {
 // ---------------------------------------------------------------------------
 
 fmiStatus fmiSetReal(fmiComponent c, const fmiValueReference vr[], size_t nvr, const fmiReal value[]){
-  int i;
+  unsigned int i=0;
   ModelInstance* comp = (ModelInstance *)c;
   if (invalidState(comp, "fmiSetReal", modelInstantiated|modelInitialized))
     return fmiError;
@@ -188,7 +188,7 @@ fmiStatus fmiSetReal(fmiComponent c, const fmiValueReference vr[], size_t nvr, c
 }
 
 fmiStatus fmiSetInteger(fmiComponent c, const fmiValueReference vr[], size_t nvr, const fmiInteger value[]){
-  int i;
+  unsigned int i=0;
   ModelInstance* comp = (ModelInstance *)c;
   if (invalidState(comp, "fmiSetInteger", modelInstantiated|modelInitialized))
     return fmiError;
@@ -212,7 +212,7 @@ fmiStatus fmiSetInteger(fmiComponent c, const fmiValueReference vr[], size_t nvr
 }
 
 fmiStatus fmiSetBoolean(fmiComponent c, const fmiValueReference vr[], size_t nvr, const fmiBoolean value[]){
-  int i;
+  unsigned int i=0;
   ModelInstance* comp = (ModelInstance *)c;
   if (invalidState(comp, "fmiSetBoolean", modelInstantiated|modelInitialized))
     return fmiError;
@@ -236,7 +236,7 @@ fmiStatus fmiSetBoolean(fmiComponent c, const fmiValueReference vr[], size_t nvr
 }
 
 fmiStatus fmiSetString(fmiComponent c, const fmiValueReference vr[], size_t nvr, const fmiString value[]){
-  int i, n;
+  unsigned int i=0;
   ModelInstance* comp = (ModelInstance *)c;
   if (invalidState(comp, "fmiSetString", modelInstantiated|modelInitialized))
     return fmiError;
@@ -282,7 +282,7 @@ fmiStatus fmiSetTime(fmiComponent c, fmiReal time) {
 
 fmiStatus fmiSetContinuousStates(fmiComponent c, const fmiReal x[], size_t nx){
   ModelInstance* comp = (ModelInstance *)c;
-  int i;
+  unsigned int i=0;
   if (invalidState(comp, "fmiSetContinuousStates", modelInitialized))
     return fmiError;
   if (invalidNumber(comp, "fmiSetContinuousStates", "nx", nx, NUMBER_OF_STATES))
@@ -309,7 +309,7 @@ fmiStatus fmiSetContinuousStates(fmiComponent c, const fmiReal x[], size_t nx){
 // ---------------------------------------------------------------------------
 
 fmiStatus fmiGetReal(fmiComponent c, const fmiValueReference vr[], size_t nvr, fmiReal value[]) {
-  int i;
+  unsigned int i=0;
   ModelInstance* comp = (ModelInstance *)c;
   if (invalidState(comp, "fmiGetReal", not_modelError))
     return fmiError;
@@ -340,7 +340,7 @@ fmiStatus fmiGetReal(fmiComponent c, const fmiValueReference vr[], size_t nvr, f
 }
 
 fmiStatus fmiGetInteger(fmiComponent c, const fmiValueReference vr[], size_t nvr, fmiInteger value[]) {
-  int i;
+  unsigned int i=0;
   ModelInstance* comp = (ModelInstance *)c;
   if (invalidState(comp, "fmiGetInteger", not_modelError))
     return fmiError;
@@ -371,7 +371,7 @@ fmiStatus fmiGetInteger(fmiComponent c, const fmiValueReference vr[], size_t nvr
 }
 
 fmiStatus fmiGetBoolean(fmiComponent c, const fmiValueReference vr[], size_t nvr, fmiBoolean value[]) {
-  int i;
+  unsigned int i=0;
   ModelInstance* comp = (ModelInstance *)c;
   if (invalidState(comp, "fmiGetBoolean", not_modelError))
     return fmiError;
@@ -402,7 +402,7 @@ fmiStatus fmiGetBoolean(fmiComponent c, const fmiValueReference vr[], size_t nvr
 }
 
 fmiStatus fmiGetString(fmiComponent c, const fmiValueReference vr[], size_t nvr, fmiString  value[]) {
-  int i;
+  unsigned int i=0;
   ModelInstance* comp = (ModelInstance *)c;
   if (invalidState(comp, "fmiGetString", not_modelError))
     return fmiError;
@@ -433,7 +433,7 @@ fmiStatus fmiGetString(fmiComponent c, const fmiValueReference vr[], size_t nvr,
 }
 
 fmiStatus fmiGetStateValueReferences(fmiComponent c, fmiValueReference vrx[], size_t nx){
-  int i;
+  unsigned int i=0;
   ModelInstance* comp = (ModelInstance *)c;
   if (invalidState(comp, "fmiGetStateValueReferences", not_modelError))
     return fmiError;
@@ -452,7 +452,7 @@ fmiStatus fmiGetStateValueReferences(fmiComponent c, fmiValueReference vrx[], si
 }
 
 fmiStatus fmiGetContinuousStates(fmiComponent c, fmiReal states[], size_t nx){
-  int i;
+  unsigned int i=0;
   ModelInstance* comp = (ModelInstance *)c;
   if (invalidState(comp, "fmiGetContinuousStates", not_modelError))
     return fmiError;
@@ -472,7 +472,7 @@ fmiStatus fmiGetContinuousStates(fmiComponent c, fmiReal states[], size_t nx){
 }
 
 fmiStatus fmiGetNominalContinuousStates(fmiComponent c, fmiReal x_nominal[], size_t nx){
-  int i;
+  unsigned int i=0;
   ModelInstance* comp = (ModelInstance *)c;
   if (invalidState(comp, "fmiGetNominalContinuousStates", not_modelError))
     return fmiError;
@@ -489,7 +489,7 @@ fmiStatus fmiGetNominalContinuousStates(fmiComponent c, fmiReal x_nominal[], siz
 }
 
 fmiStatus fmiGetDerivatives(fmiComponent c, fmiReal derivatives[], size_t nx) {
-  int i;
+  unsigned int i=0;
   ModelInstance* comp = (ModelInstance *)c;
   if (invalidState(comp, "fmiGetDerivatives", not_modelError))
     return fmiError;
@@ -516,7 +516,7 @@ fmiStatus fmiGetDerivatives(fmiComponent c, fmiReal derivatives[], size_t nx) {
 }
 
 fmiStatus fmiGetEventIndicators(fmiComponent c, fmiReal eventIndicators[], size_t ni) {
-  int i;
+  unsigned int i=0;
   ModelInstance* comp = (ModelInstance *)c;
   if (invalidState(comp, "fmiGetEventIndicators", not_modelError))
     return fmiError;
@@ -644,9 +644,9 @@ fmiStatus fmiTerminate(fmiComponent c){
 
 fmiStatus fmiSetExternalFunction(fmiComponent c, fmiValueReference vr[], size_t nvr, const void* value[])
 {
-  int i;
+  unsigned int i=0;
   ModelInstance* comp = (ModelInstance *)c;
-  if (invalidState(comp, "fmiTerminate", modelInitialized))
+  if (invalidState(comp, "fmiTerminate", modelInstantiated))
     return fmiError;
   if (nvr>0 && nullPointer(comp, "fmiSetExternalFunction", "vr[]", vr))
     return fmiError;
