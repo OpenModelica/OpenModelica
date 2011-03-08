@@ -324,7 +324,7 @@ fmiStatus fmiGetReal(fmiComponent c, const fmiValueReference vr[], size_t nvr, f
      functionDAE_output();
      functionDAE_output2();
      acceptedStep=0;  
-	 comp->outputsvalid = fmiTrue;
+     comp->outputsvalid = fmiTrue;
   }
   for (i=0; i<nvr; i++) {
     if (vrOutOfRange(comp, "fmiGetReal", vr[i], NUMBER_OF_REALS))
@@ -351,11 +351,11 @@ fmiStatus fmiGetInteger(fmiComponent c, const fmiValueReference vr[], size_t nvr
 #if NUMBER_OF_INTEGERS>0
   if (comp->outputsvalid == fmiFalse)
   {
-     acceptedStep=1;
-     functionDAE_output();
-     functionDAE_output2();
-     acceptedStep=0;  
-	 comp->outputsvalid = fmiTrue;
+    acceptedStep=1;
+    functionDAE_output();
+    functionDAE_output2();
+    acceptedStep=0;  
+    comp->outputsvalid = fmiTrue;
   }
   for (i=0; i<nvr; i++) {
     if (vrOutOfRange(comp, "fmiGetInteger", vr[i], NUMBER_OF_INTEGERS))
@@ -382,11 +382,11 @@ fmiStatus fmiGetBoolean(fmiComponent c, const fmiValueReference vr[], size_t nvr
 #if NUMBER_OF_BOOLEANS>0
   if (comp->outputsvalid == fmiFalse)
   {
-     acceptedStep=1;
-     functionDAE_output();
-     functionDAE_output2();
-     acceptedStep=0;  
-	 comp->outputsvalid = fmiTrue;
+    acceptedStep=1;
+    functionDAE_output();
+    functionDAE_output2();
+    acceptedStep=0;  
+    comp->outputsvalid = fmiTrue;
   }
   for (i=0; i<nvr; i++) {
     if (vrOutOfRange(comp, "fmiGetBoolean", vr[i], NUMBER_OF_BOOLEANS))
@@ -413,11 +413,11 @@ fmiStatus fmiGetString(fmiComponent c, const fmiValueReference vr[], size_t nvr,
 #if NUMBER_OF_STRINGS>0
   if (comp->outputsvalid == fmiFalse)
   {
-     acceptedStep=1;
-     functionDAE_output();
-     functionDAE_output2();
-     acceptedStep=0;  
-	 comp->outputsvalid = fmiTrue;
+    acceptedStep=1;
+    functionDAE_output();
+    functionDAE_output2();
+    acceptedStep=0;  
+    comp->outputsvalid = fmiTrue;
   }
   for (i=0; i<nvr; i++) {
     if (vrOutOfRange(comp, "fmiGetString", vr[i], NUMBER_OF_STRINGS))
