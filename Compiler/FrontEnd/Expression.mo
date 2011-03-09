@@ -51,6 +51,7 @@ encapsulated package Expression
 // public imports
 public import Absyn;
 public import DAE;
+public import Values;
 
 public type ComponentRef = DAE.ComponentRef;
 public type Ident = String;
@@ -270,7 +271,7 @@ algorithm
 
     case(DAE.CODE(code,_)) then Absyn.CODE(code);
 
-    case DAE.REDUCTION(path,e1,s,oe1,e2) equation
+    case DAE.REDUCTION(path,e1,s,oe1,e2,_) equation
       //print("unelab of reduction not impl. yet");
       acref = Absyn.pathToCref(path);
       ae1 = unelabExp(e1);
@@ -3088,10 +3089,13 @@ public function replaceExp
   input DAE.Exp inExp;
   input DAE.Exp inSourceExp;
   input DAE.Exp inTargetExp;
-  output DAE.Exp outExp;
-  output Integer outInteger;
+  output tuple<DAE.Exp,Integer> out;
+protected
+  DAE.Exp exp;
+  Integer i;
 algorithm
-  ((outExp,(_,_,outInteger))) := traverseExpTopDown(inExp,replaceExpWork,(inSourceExp,inTargetExp,0));
+  ((exp,(_,_,i))) := traverseExpTopDown(inExp,replaceExpWork,(inSourceExp,inTargetExp,0));
+  out := (exp,i);
 end replaceExp;
 
 public function replaceExpWork
@@ -3181,6 +3185,7 @@ algorithm
       Integer index_;
       Option<tuple<DAE.Exp,Integer,Integer>> isExpisASUB;
       Option<DAE.Exp> oe1;
+      Option<Values.Value> v;
     
     case ((e as DAE.ICONST(_)),rel,ext_arg)
       equation
@@ -3347,12 +3352,12 @@ algorithm
       then
         ((e,ext_arg_3));
     
-    case ((e as DAE.REDUCTION(path = path,expr = e1,ident = id,guardExp = oe1, range = e2)),rel,ext_arg)
+    case ((e as DAE.REDUCTION(path = path,expr = e1,ident = id,guardExp = oe1, range = e2, defaultValue = v)),rel,ext_arg)
       equation
         ((e1,ext_arg)) = traverseExp(e1, rel, ext_arg);
         ((e2,ext_arg)) = traverseExp(e2, rel, ext_arg);
         ((oe1,ext_arg)) = traverseExpOpt(oe1, rel, ext_arg);
-        ((e,ext_arg)) = rel((DAE.REDUCTION(path,e1,id,oe1,e2),ext_arg));
+        ((e,ext_arg)) = rel((DAE.REDUCTION(path,e1,id,oe1,e2,v),ext_arg));
       then
         ((e,ext_arg));
     
@@ -3634,7 +3639,7 @@ algorithm
       Integer index_;
       Option<tuple<DAE.Exp,Integer,Integer>> isExpisASUB;
       Option<DAE.Exp> oe1;
-      
+      Option<Values.Value> v;
     
     case (e as DAE.ICONST(_),rel,ext_arg) then ((e,ext_arg));    
     case (e as DAE.RCONST(_),rel,ext_arg) then ((e,ext_arg));    
@@ -3764,13 +3769,13 @@ algorithm
     
     case ((e as DAE.CODE(ty=_)),rel,ext_arg) then ((e,ext_arg));    
     
-    case ((e as DAE.REDUCTION(path = path,expr = e1,ident = id,guardExp = oe1, range = e2)),rel,ext_arg)
+    case ((e as DAE.REDUCTION(path = path,expr = e1,ident = id,guardExp = oe1, range = e2, defaultValue = v)),rel,ext_arg)
       equation
         ((e1,ext_arg)) = traverseExpTopDown(e1, rel, ext_arg);
         ((e2,ext_arg)) = traverseExpTopDown(e2, rel, ext_arg);
         ((oe1,ext_arg)) = traverseExpOptTopDown(oe1, rel, ext_arg);
       then
-        ((DAE.REDUCTION(path,e1,id,oe1,e2),ext_arg));
+        ((DAE.REDUCTION(path,e1,id,oe1,e2,v),ext_arg));
     
     // MetaModelica list
     case ((e as DAE.CONS(e1,e2)),rel,ext_arg)
@@ -4166,6 +4171,7 @@ algorithm
       Type ty;
       DAE.InlineType inl_ty;
       list<String> strl;
+      Option<Values.Value> v;
 
     case (DAE.ICONST(integer = _), _) then (inExp, inTuple);
     case (DAE.RCONST(real = _), _) then (inExp, inTuple);
@@ -4284,13 +4290,13 @@ algorithm
     case (DAE.CODE(code = _), tup)
       then (inExp, tup);
 
-    case (DAE.REDUCTION(path = path, expr = e1, ident = id, guardExp = oe1, range = e2), tup)
+    case (DAE.REDUCTION(path = path, expr = e1, ident = id, guardExp = oe1, range = e2, defaultValue = v), tup)
       equation
         (e1, tup) = traverseExpBidir(e1, tup);
         (e2, tup) = traverseExpBidir(e2, tup);
         (oe1, tup) = traverseExpOptBidir(oe1, tup);
       then
-        (DAE.REDUCTION(path, e1, id, oe1, e2), tup);
+        (DAE.REDUCTION(path, e1, id, oe1, e2, v), tup);
 
     case (DAE.END(), _) then (inExp, inTuple);
 

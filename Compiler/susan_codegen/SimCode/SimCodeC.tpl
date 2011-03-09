@@ -4533,6 +4533,7 @@ template algStatementWhenPre(DAE.Statement stmt, Text &varDecls /*BUFP*/)
       else
         ""
     let &preExp = buffer "" /*BUFD*/
+
     let assignments = algStatementWhenPreAssigns(el, helpVarIndices,
                                                &preExp /*BUFC*/,
                                                &varDecls /*BUFD*/)
@@ -5782,7 +5783,9 @@ case REDUCTION(path = IDENT(name = name as "list"), range = range) then
 case REDUCTION(path = IDENT(name = op)) then
   let identType = expTypeFromExpModelica(expr)
   let accFun = daeExpReductionFnName(op, identType)
-  let startValue = daeExpReductionStartValue(op, identType)
+  let startValue = match defaultValue
+    case SOME(v) then daeExp(valueExp(v),context,&preExp,&varDecls)
+    else 'UNKNOWN_START_VALUE;<%\n%>'
   let res = tempDecl(identType, &varDecls)
   let &tmpExpPre = buffer ""
   let tmpExpVar = daeExp(expr, context, &tmpExpPre, &varDecls)
@@ -5838,28 +5841,6 @@ template daeExpReductionFnName(String reduction_op, String type)
   else reduction_op
 end daeExpReductionFnName;
 
-
-template daeExpReductionStartValue(String reduction_op, String type)
- "Helper to daeExpReduction."
-::=
-  match reduction_op
-  case "min" then
-    match type
-    case "modelica_integer" then "LONG_MAX"
-    case "modelica_real" then "DBL_MAX"
-    else "INVALID_TYPE"
-    end match
-  case "max" then 
-    match type
-
-    case "modelica_integer" then "LONG_MIN"
-    case "modelica_real" then "DBL_MIN"
-    else "INVALID_TYPE"
-    end match
-  case "sum" then "0"
-  case "product" then "1"
-  else "UNKNOWN_REDUCTION"
-end daeExpReductionStartValue;
 
 template daeExpMatch(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/)
  "Generates code for a match expression."

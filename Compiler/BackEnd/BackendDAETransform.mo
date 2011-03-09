@@ -1768,7 +1768,7 @@ protected
   DAE.Exp e,e_1,e1,e2;
 algorithm
   (e,(e1,e2)) := inTpl;
-  (e_1,_) := Expression.replaceExp(e,e1,e2);
+  ((e_1,_)) := Expression.replaceExp(e,e1,e2);
   outTpl := ((e_1,(e1,e2)));
 end replaceDummyDer2Exp;
 

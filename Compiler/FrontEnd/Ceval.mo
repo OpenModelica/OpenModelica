@@ -155,6 +155,7 @@ algorithm
       DAE.Exp daeExp;
       ReductionOperator op;
       Absyn.Path path;
+      Option<Values.Value> ov;
       
 
     // uncomment for debugging 
@@ -810,12 +811,12 @@ algorithm
         (cache,v,stOpt);
 
     // reductions
-    case (cache, env, DAE.REDUCTION(Absyn.IDENT(reductionName), expr = daeExp, ident = iter, range = iterexp), impl, stOpt, dimOpt, msg)
+    case (cache, env, DAE.REDUCTION(Absyn.IDENT(reductionName), expr = daeExp, ident = iter, range = iterexp, defaultValue = ov), impl, stOpt, dimOpt, msg)
       equation
         (cache, Values.ARRAY(valueLst = vals), stOpt) = ceval(cache, env, iterexp, impl, stOpt, dimOpt, msg);
         env = Env.openScope(env, false, SOME(Env.forScopeName),NONE());
         op = lookupReductionOp(reductionName);
-        (cache, value, stOpt) = cevalReduction(cache, env, reductionName, op, daeExp, iter, vals, impl, stOpt, dimOpt, msg);
+        (cache, value, stOpt) = cevalReduction(cache, env, reductionName, op, ov, daeExp, iter, vals, impl, stOpt, dimOpt, msg);
       then 
         (cache, value, stOpt);
 
@@ -5412,6 +5413,7 @@ protected function cevalReduction
   input Env.Env env;
   input DAE.Ident opName;
   input ReductionOperator op;
+  input Option<Values.Value> defaultValue;
   input DAE.Exp exp;
   input DAE.Ident iteratorName;
   input list<Values.Value> values;
@@ -5429,7 +5431,7 @@ protected function cevalReduction
     output Values.Value res;
   end ReductionOperator;
 algorithm
-  (newCache, result, newSymbolTable) := matchcontinue(cache, env, opName, op,
+  (newCache, result, newSymbolTable) := matchcontinue(cache, env, opName, op, defaultValue,
     exp, iteratorName, values, implicitInstantiation, symbolTable, dim, msg)
     local
       Values.Value value, value2, reduced_value;
@@ -5439,12 +5441,11 @@ algorithm
       Option<Interactive.InteractiveSymbolTable> new_st;
       DAE.ExpType exp_type; 
       DAE.Type iter_type;
-    case (_, _, _, _, _, _, {}, _, _, _, _)
-      equation
-        value = reductionEmptyRangeValue(opName);
+    case (_, _, _, _, SOME(value), _, _, {}, _, _, _, _)
       then
         (cache, value, symbolTable);
-    case (new_cache, new_env, _, _, _, _, value :: {}, _, new_st, _, _)
+
+    case (new_cache, new_env, _, _, NONE(), _, _, value :: {}, _, new_st, _, _)
       equation
         // range is constant!
         exp_type = Expression.typeof(exp);
@@ -5453,10 +5454,10 @@ algorithm
         (new_cache, value, new_st) = ceval(new_cache, new_env, exp,
           implicitInstantiation, new_st, dim, msg);
         then (new_cache, value, new_st);
-    case (new_cache, new_env, _, _, _, _, value :: rest_values, _, new_st, _, _)
+    case (new_cache, new_env, _, _, _, _, _, value :: rest_values, _, new_st, _, _)
       equation
         // range is constant!
-        (new_cache, value2, new_st) = cevalReduction(new_cache, new_env, opName, op, exp, 
+        (new_cache, value2, new_st) = cevalReduction(new_cache, new_env, opName, op, defaultValue, exp, 
           iteratorName, rest_values, implicitInstantiation, new_st, dim, msg);
         exp_type = Expression.typeof(exp);
         iter_type = Types.expTypetoTypesType(exp_type);
@@ -5594,21 +5595,6 @@ algorithm
   end match;
 end lookupReductionOp;
 
-protected function reductionEmptyRangeValue
-  "Returns the default value for a reduction where the range is empty, 
-   according to the OM standard 10.3.4.1."
-  input DAE.Ident opName;
-  output Values.Value value;
-algorithm
-  value := match(opName)
-    case "max" then Values.REAL(-1e60);
-    case "min" then Values.REAL(1e60);
-    case "product" then Values.INTEGER(1);
-    case "sum" then Values.INTEGER(0);
-    case "array" then Values.ARRAY({}, {0});
-  end match;
-end reductionEmptyRangeValue;
-      
 // ************************************************************************
 //    hash table implementation for storing function pointes for DLLs/SOs
 // ************************************************************************

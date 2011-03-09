@@ -44,6 +44,7 @@ public import DAE;
 public import HashTable2;
 public import HashTable3;
 public import SCode;
+public import Values;
 
 public
 uniontype VariableReplacements 
@@ -1529,6 +1530,7 @@ algorithm
       DAE.InlineType inlineType;
       Integer index_;
       Option<tuple<DAE.Exp,Integer,Integer>> isExpisASUB;
+      Option<Values.Value> v;
             
     case ((e as DAE.CREF(componentRef = cr,ty = t)),repl,cond)
       equation
@@ -1653,13 +1655,13 @@ algorithm
         print("replace_exp on CODE not impl.\n");
       then
         DAE.CODE(a,tp);
-    case ((e as DAE.REDUCTION(path = p,expr = e1,ident = id,guardExp = NONE(),range = r)),repl,cond)
+    case ((e as DAE.REDUCTION(path = p,expr = e1,ident = id,guardExp = NONE(),range = r,defaultValue = v)),repl,cond)
       equation
         true = replaceExpCond(cond, e);
         e1_1 = replaceExp(e1, repl, cond);
         r_1 = replaceExp(r, repl, cond);
       then
-        DAE.REDUCTION(p,e1_1,id,NONE(),r_1);
+        DAE.REDUCTION(p,e1_1,id,NONE(),r_1,v);
     case (e,repl,cond)
       equation
         //Debug.fprintln("failtrace", "- VarTransform.replaceExp failed on: " +& ExpressionDump.printExpStr(e));

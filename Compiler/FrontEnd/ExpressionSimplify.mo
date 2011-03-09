@@ -132,6 +132,7 @@ algorithm
       Integer index_;
       Option<tuple<DAE.Exp,Integer,Integer>> isExpisASUB;
       Option<DAE.Exp> oe1;
+      Option<Values.Value> v;
         
     // noEvent propagated to relations and event triggering functions
     case(DAE.CALL(Absyn.IDENT("noEvent"),{e},tpl,builtin,tp,inline))
@@ -304,19 +305,13 @@ algorithm
       then
         exp1;
     
-    case DAE.REDUCTION(path = _)
-      equation
-        exp1 = simplifyReduction(inExp);
-      then
-        exp1;
-
-    case DAE.REDUCTION(path,e1,idn,oe1,e2)
+    case DAE.REDUCTION(path,e1,idn,oe1,e2,v)
       equation
         e1 = simplify1(e1);
         e2 = simplify1(e2);
         oe1 = Util.applyOption(oe1,simplify1);
-      then
-        DAE.REDUCTION(path,e1,idn,oe1,e2);
+        exp1 = DAE.REDUCTION(path,e1,idn,oe1,e2,v);
+      then simplifyReduction(exp1);
 
     // anything else
     case e
@@ -368,6 +363,7 @@ algorithm
       Real r;
       String s,idn;
       Option<DAE.Exp> oe1;
+      Option<Values.Value> v;
     case DAE.MATCHEXPRESSION(inputs={e}, localDecls={}, cases={
         DAE.CASE(patterns={DAE.PAT_CONSTANT(exp=DAE.BCONST(b1))},localDecls={},body={},result=SOME(e1)),
         DAE.CASE(patterns={DAE.PAT_CONSTANT(exp=DAE.BCONST(b2))},localDecls={},body={},result=SOME(e2))
@@ -428,14 +424,14 @@ algorithm
         e1_1 = DAE.LIST(el);
       then e1_1;
 
-    case DAE.CALL(path=path as Absyn.IDENT("listReverse"),expLst={DAE.REDUCTION(Absyn.IDENT("list"),e1,idn,oe1,e2)},ty=tp)
+    case DAE.CALL(path=path as Absyn.IDENT("listReverse"),expLst={DAE.REDUCTION(Absyn.IDENT("list"),e1,idn,oe1,e2,v)},ty=tp)
       equation
-        e1 = DAE.REDUCTION(Absyn.IDENT("listReverse"),e1,idn,oe1,e2);
+        e1 = DAE.REDUCTION(Absyn.IDENT("listReverse"),e1,idn,oe1,e2,v);
       then simplify(e1);
 
-    case DAE.CALL(path=path as Absyn.IDENT("listReverse"),expLst={DAE.REDUCTION(Absyn.IDENT("listReverse"),e1,idn,oe1,e2)},ty=tp)
+    case DAE.CALL(path=path as Absyn.IDENT("listReverse"),expLst={DAE.REDUCTION(Absyn.IDENT("listReverse"),e1,idn,oe1,e2,v)},ty=tp)
       equation
-        e1 = DAE.REDUCTION(Absyn.IDENT("list"),e1,idn,oe1,e2);
+        e1 = DAE.REDUCTION(Absyn.IDENT("list"),e1,idn,oe1,e2,v);
       then simplify(e1);
 
     case DAE.CALL(path=path as Absyn.IDENT("listLength"),expLst={e1},ty=tp)
@@ -3956,28 +3952,53 @@ algorithm
       DAE.Exp expr, value, cref;
       DAE.Ident iter_name;
       DAE.ExpType ty;
+      list<DAE.Exp> values;
+      Option<Values.Value> defaultValue;
+      Absyn.Path path;
 
-    case (DAE.REDUCTION(path = Absyn.IDENT("array"), expr = expr, 
-        ident = iter_name, range = DAE.ARRAY(array = {value})))
+    case (DAE.REDUCTION(path = path, expr = expr, ident = iter_name, guardExp = NONE(), range = DAE.ARRAY(array = values), defaultValue = defaultValue))
       equation
         ty = Expression.typeof(expr);
         cref = DAE.CREF(DAE.CREF_IDENT(iter_name, ty, {}), ty);
-        (expr, _) = Expression.replaceExp(expr, cref, value);
+        values = Util.listMap(Util.listMap2r(values, Expression.replaceExp, expr, cref), Util.tuple21);
+        expr = simplifyReductionFoldPhase(path,ty,values,defaultValue);
       then
-        DAE.ARRAY(DAE.ET_ARRAY(ty, {DAE.DIM_INTEGER(1)}), true, {expr});
-
-    case (DAE.REDUCTION(expr = expr, ident = iter_name, 
-        range = DAE.ARRAY(array = {value})))
-      equation
-        ty = Expression.typeof(expr);
-        cref = DAE.CREF(DAE.CREF_IDENT(iter_name, ty, {}), ty);
-        (expr, _) = Expression.replaceExp(expr, cref, value);
-      then
-        expr;
+        simplify1(expr);
+    
+    else inReduction;
 
   end match;
 end simplifyReduction;
 
+protected function simplifyReductionFoldPhase
+  input Absyn.Path path;
+  input DAE.ExpType ty;
+  input list<DAE.Exp> exps;
+  input Option<Values.Value> defaultValue;
+  output DAE.Exp exp;
+algorithm
+  exp := match (path,ty,exps,defaultValue)
+    local
+      Integer len;
+      Values.Value val;
+    case (_,_,{},SOME(val)) then ValuesUtil.valueExp(val);
+    case (_,_,{},NONE()) then fail();
+    case (Absyn.IDENT("array"),ty,exps,_)
+      equation
+        len = listLength(exps);
+      then DAE.ARRAY(DAE.ET_ARRAY(ty, {DAE.DIM_INTEGER(len)}), true, exps);
+    case (Absyn.IDENT("min"),ty,exps,_)
+      equation
+        len = listLength(exps);
+      then Expression.makeBuiltinCall("min",{DAE.ARRAY(DAE.ET_ARRAY(ty, {DAE.DIM_INTEGER(len)}), true, exps)},ty);
+    case (Absyn.IDENT("max"),ty,exps,_)
+      equation
+        len = listLength(exps);
+      then Expression.makeBuiltinCall("max",{DAE.ARRAY(DAE.ET_ARRAY(ty, {DAE.DIM_INTEGER(len)}), true, exps)},ty);
+    case (Absyn.IDENT("product"),ty,exps,_) then Expression.makeProductLst(exps); // TODO: Remove listReverse; it's just needed so I don't need to update expected results
+    case (Absyn.IDENT("sum"),ty,exps,_) then Expression.makeSum(exps); // TODO: Remove listReverse; it's just needed so I don't need to update expected results
+  end match;
+end simplifyReductionFoldPhase;
 
 end ExpressionSimplify;
 

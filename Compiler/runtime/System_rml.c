@@ -1984,3 +1984,17 @@ RML_BEGIN_LABEL(System__unquoteIdentifier)
   }
 }
 RML_END_LABEL
+
+RML_BEGIN_LABEL(System__realMaxLit)
+{
+  rmlA0 = mk_rcon(DBL_MAX / 2048);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__intMaxLit)
+{
+  rmlA0 = mk_icon(LONG_MAX / 2);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL

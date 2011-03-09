@@ -1122,12 +1122,13 @@ uniontype Exp "Expressions
     ExpType ty;
   end CODE;
 
-  record REDUCTION "e.g. sum(i*i+1) for i in 1:4"
+  record REDUCTION "e.g. sum(i*i+1 for i in 1:4)"
     Absyn.Path path "array, sum,..";
     Exp expr "expr, e.g i*i+1" ;
     Ident ident "e.g. i";
     Option<Exp> guardExp "Boolean guard-expression";
     Exp range "range Reduction expression e.g. 1:4" ;
+    Option<Values.Value> defaultValue "if there is no default value, the reduction is not defined for 0-length arrays/lists";
   end REDUCTION;
 
   record END "array index to last element, e.g. a{end}:=1;" end END;

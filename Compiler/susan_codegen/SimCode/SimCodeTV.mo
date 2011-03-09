@@ -771,6 +771,7 @@ package DAE
       Ident ident;
       Option<Exp> guardExp;
       Exp range;
+      Option<Values.Value> defaultValue;
     end REDUCTION;
     record END end END;
     record LIST
@@ -1750,5 +1751,15 @@ package Error
     output String str;
   end infoStr;
 end Error;
+
+package Values
+end Values;
+
+package ValuesUtil
+  function valueExp
+    input Values.Value inValue;
+    output DAE.Exp outExp;
+  end valueExp;
+end ValuesUtil;
 
 end SimCodeTV;

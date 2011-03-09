@@ -1980,7 +1980,7 @@ algorithm
     case ({}, {}, _) then {};
     case (clone :: restClones, index :: restIndices, _)
       equation
-        (newElement, _) = Expression.replaceExp(clone, iteratorExp, index);
+        ((newElement, _)) = Expression.replaceExp(clone, iteratorExp, index);
         newElement2 = simplifySubscripts(newElement);
         elements = generateArrayElements(restClones, restIndices, iteratorExp);
       then (newElement2 :: elements);

@@ -2283,7 +2283,7 @@ algorithm
     local
       DAE.Exp e,e1,s,t;
     case((e,(s,t))) equation
-      (e1,_) = Expression.replaceExp(e,s,t);
+      ((e1,_)) = Expression.replaceExp(e,s,t);
     then ((e1,(s,t)));
     case tpl then tpl;
   end matchcontinue;

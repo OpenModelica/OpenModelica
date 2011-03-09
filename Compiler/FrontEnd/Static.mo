@@ -1031,7 +1031,7 @@ algorithm
       inST,performVectorization,inPrefix,info)
     local
       DAE.Exp iterexp_1,exp_1;
-      DAE.Type iterty,expty;
+      DAE.Type fulliterty,iterty,expty;
       DAE.Const iterconst,expconst,const,guardconst;
       list<Env.Frame> env_1,env;
       Option<Interactive.InteractiveSymbolTable> st;
@@ -1048,41 +1048,17 @@ algorithm
       list<DAE.Exp> expl;
       Option<Absyn.Exp> aguardExp;
       Option<DAE.Exp> guardExp;
+      Option<Values.Value> v;
 
-    case (cache, env, fn as Absyn.CREF_IDENT("array", {}), exp, iterators, 
-        impl, st, doVect,pre,info)
-      equation
-        (cache, exp_1, prop, st) = 
-          elabCallReduction3(cache, env, exp, iterators, impl, st, doVect, pre, info);
-      then
-        (cache, exp_1, prop, st);
-
-    // reduction with an empty vector as range expression.
-    case (cache, env, Absyn.CREF_IDENT(reduction_op, {}), _, {Absyn.ITERATOR(range=SOME(iterexp))}, 
-        impl, st, doVect,pre,info)
-      equation
-        (cache, DAE.MATRIX(DAE.ET_ARRAY(_,_), 0, {}), _, _) = 
-          elabExp(cache, env, iterexp, impl, st, doVect,pre,info);
-        exp_1 = reductionDefaultValue(reduction_op);
-      then
-        (cache, exp_1, DAE.PROP(DAE.T_REAL_DEFAULT, DAE.C_CONST()), st);
-
-    // min, max, sum and product - try and expand the reduction,
-    case (cache, env, fn, exp, iterators, impl, st, doVect, pre,info)
-      equation
-        (cache, DAE.ARRAY(array = expl), DAE.PROP(expty, const), st) = 
-          elabCallReduction3(cache, env, exp, iterators, impl, st, doVect, pre, info);
-        exp_1 = Util.listReduce(expl, chooseReductionFn(fn)); 
-        expty = Types.unliftArray(expty);
-      then
-        (cache, exp_1, DAE.PROP(expty, const), st);
-    
     // Expansion failed in previous case, generate reduction call.
     case (cache,env,fn,exp,{Absyn.ITERATOR(iter,aguardExp,SOME(iterexp))},impl,st,doVect,pre,info)
       equation
-        (cache,iterexp_1,DAE.PROP(iterty,iterconst),_)
+        (cache,iterexp_1,DAE.PROP(fulliterty,iterconst),_)
           = elabExp(cache, env, iterexp, impl, st, doVect,pre,info);
-        iterty = Types.unliftArrayOrList(iterty);
+        // We need to evaluate the iterator because the rest of the compiler is stupid
+        (cache,iterexp_1,_) = Ceval.cevalIfConstant(cache,env,iterexp_1,DAE.PROP(fulliterty,DAE.C_CONST()),impl);
+        
+        iterty = Types.unliftArrayOrList(fulliterty);
         env_1 = Env.openScope(env, false, SOME(Env.forIterScopeName),NONE());
         env_1 = Env.extendFrameForIterator(env_1, iter, iterty, DAE.UNBOUND(), 
           SCode.CONST(), SOME(iterconst));
@@ -1090,11 +1066,13 @@ algorithm
           elabExp(cache, env_1, exp, impl, st, doVect,pre,info);
         (cache,guardExp,DAE.PROP(_, guardconst),st) = elabExpOptAndMatchType(cache, env_1, aguardExp, DAE.T_BOOL_DEFAULT, impl, st, doVect,pre,info); 
         const = Types.constAnd(Types.constAnd(expconst, iterconst), guardconst);
-        (exp_1,expty) = reductionType(fn, exp_1, expty, iterexp_1);
-        prop = DAE.PROP(expty, const);
         fn_1 = Absyn.crefToPath(fn);
+        (cache,exp_1,expty,v) = reductionType(cache,env,fn_1, exp_1, expty, fulliterty, info);
+        prop = DAE.PROP(expty, const);
+        exp_1 = DAE.REDUCTION(fn_1,exp_1,iter,guardExp,iterexp_1,v);
+        exp_1 = ExpressionSimplify.simplify1(exp_1) "only needed because unelabMod is silly"; 
       then
-        (cache,DAE.REDUCTION(fn_1,exp_1,iter,guardExp,iterexp_1),prop,st);
+        (cache,exp_1,prop,st);
 
     case (cache,env,fn,exp,iterators,impl,st,doVect,pre,info)
       equation
@@ -1104,162 +1082,78 @@ algorithm
 end elabCallReduction;
 
 protected function reductionType
-  input Absyn.ComponentRef fn;
-  input DAE.Exp inExp;
-  input DAE.Type inType;
-  input DAE.Exp inRangeExp;
-  output DAE.Exp outExp;
-  output DAE.Type outType;
-algorithm
-  (outExp,outType) := match(fn, inExp, inType, inRangeExp)
-    case (Absyn.CREF_IDENT(name = "array"), _, _, _) 
-      then (inExp, Types.liftArray(inType, DAE.DIM_EXP(inRangeExp)));
-    case (Absyn.CREF_IDENT(name = "list"), inExp, _, _)
-      equation
-        (inExp,inType) = Types.matchType(inExp, inType, DAE.T_BOXED_DEFAULT, true);
-      then (inExp,(DAE.T_LIST(inType), NONE()));
-    case (Absyn.CREF_IDENT(name = "listReverse"), inExp, _, _)
-      equation
-        (inExp,inType) = Types.matchType(inExp, inType, DAE.T_BOXED_DEFAULT, true);
-      then (inExp,(DAE.T_LIST(inType), NONE()));
-    else (inExp,inType);
-  end match;
-end reductionType;
-
-protected function chooseReductionFn
-  input Absyn.ComponentRef fn;
-  output ReductionFn reductionFn;
-  partial function ReductionFn
-    input DAE.Exp lhs;
-    input DAE.Exp rhs;
-    output DAE.Exp result;
-  end ReductionFn;
-algorithm
-  reductionFn := match(fn)
-    //case Absyn.CREF_IDENT("max", {}) then reductionFnMax;
-    //case Absyn.CREF_IDENT("min", {}) then reductionFnMin;
-    case Absyn.CREF_IDENT("sum", {}) then reductionFnSum;
-    case Absyn.CREF_IDENT("product", {}) then reductionFnProduct;
-  end match;
-end chooseReductionFn;
-
-protected function reductionFnSum
-  input DAE.Exp lhs;
-  input DAE.Exp rhs;
-  output DAE.Exp result;
-
-  DAE.ExpType ty;
-algorithm
-  ty := Expression.typeof(lhs);
-  result := DAE.BINARY(lhs, DAE.ADD(ty), rhs);
-end reductionFnSum;
-
-protected function reductionFnProduct
-  input DAE.Exp lhs;
-  input DAE.Exp rhs;
-  output DAE.Exp result;
-
-  DAE.ExpType ty;
-algorithm
-  ty := Expression.typeof(lhs);
-  result := DAE.BINARY(lhs, DAE.MUL(ty), rhs);
-end reductionFnProduct;
-
-protected function updateIteratorConst "updates the const of for iterators from VAR to its elaborated constness, currently at most PARAM, since 
-cevalIfConstant will mess up things for constant expressions.
-TODO: When cevalIfConstant is removed in future this can also be fixed.
-"
-  input Env.Env env;  
-  input list<Ident> iter_names;
-  input list<DAE.Const> iter_const;
-  output Env.Env outEnv;
-algorithm
-  outEnv := match(env,iter_names,iter_const)
-  local Ident name; DAE.Const c;
-    DAE.Type ty; DAE.Binding bind;
-    Option<DAE.Const> forIterConst;
-        
-    case(env,{},{}) then env;
-    case(env,name::iter_names,c::iter_const) equation
-      (_,_,ty,bind,forIterConst,_,_,_,_) = Lookup.lookupVarLocal(Env.emptyCache(),env,ComponentReference.makeCrefIdent(name,DAE.ET_OTHER(),{}));
-      env = Env.extendFrameForIterator(env,name,ty,bind,constToVariability(c),forIterConst);
-      //print("updating "+&name+&" to const:"+&DAEUtil.constStr(c)+&"\n");
-      env = updateIteratorConst(env,iter_names,iter_const);
-    then env;
-  end match;
-end updateIteratorConst;
-
-protected function reductionDefaultValue
-  input String reductionOp;
-  output DAE.Exp defaultValue;
-algorithm
-  defaultValue := match(reductionOp)
-    case "min" then DAE.RCONST(1e60);
-    case "max" then DAE.RCONST(-1e60);
-    case "sum" then DAE.RCONST(0.0);
-    case "product" then DAE.RCONST(1.0);
-  end match;
-end reductionDefaultValue;
-
-protected function elabArrayIterators
-  "Elaborates array constructors such as 'array(i for i in 1:5)'"
   input Env.Cache cache;
   input Env.Env env;
-  input Absyn.ForIterators iterators;
-  input Boolean implicitInstantiation;
-  input Option<Interactive.InteractiveSymbolTable> st;
-  input Boolean performVectorization;
-  input Prefix.Prefix inPrefix;
+  input Absyn.Path fn;
+  input DAE.Exp inExp;
+  input DAE.Type inType;
+  input DAE.Type rangeType;
   input Absyn.Info info;
-  output Env.Cache newCache;
-  output Env.Env newEnv;
-  output list<DAE.Const> consts;
-  output list<list<Values.Value>> iteratorValues;
-  output list<Ident> iteratorNames;
-  output DAE.Type arrayType;
+  output Env.Cache outCache;
+  output DAE.Exp outExp;
+  output DAE.Type outType;
+  output Option<Values.Value> defaultValue;
 algorithm
-  (newCache, newEnv, consts, iteratorValues, iteratorNames, arrayType) :=
-  match(cache, env, iterators, implicitInstantiation, st, performVectorization,inPrefix,info)
+  (outCache,outExp,outType,defaultValue) := match (cache, env, fn, inExp, inType, rangeType, info)
     local
-      Ident iter_name;
-      list<Ident> iter_names;
-      Absyn.Exp iter_aexp;
-      DAE.Exp iter_exp;
-      Absyn.ForIterators rest_iters;
-      Env.Cache new_cache;
-      Env.Env new_env;
-      list<DAE.Const> iters_const;
-      DAE.Const iter_const;
-      DAE.Dimension array_dim;
-      DAE.Type array_type, iter_type;
-      list<Values.Value> iter_values;
-      list<list<Values.Value>> iter_values_list;
-      Prefix.Prefix pre;
-      
-    case (_, _, {}, _, _, _,_,_)
+      Integer i;
+      Real r;
+      String s;
+      DAE.Dimension dim;
+    case (cache,env,Absyn.IDENT(name = "array"), _, _, (DAE.T_ARRAY(arrayDim = dim),_), _)
+      then (cache,inExp, Types.liftArray(inType, dim), SOME(Values.ARRAY({}, {0})));
+    case (cache,env,Absyn.IDENT(name = "list"), inExp, _, _, _)
       equation
-        new_env = Env.openScope(env, false, SOME(Env.forIterScopeName),NONE());
-        // Return the type T_NOTYPE as a placeholder. constructArrayType is
-        // later used by cevalCallReduction to replace it with the correct type.
-      then (cache, new_env, {}, {}, {}, (DAE.T_NOTYPE(),NONE()));
-        
-    case (_, _, Absyn.ITERATOR(iter_name, NONE(), SOME(iter_aexp)) :: rest_iters, _, _, _,pre,info)
+        (inExp,inType) = Types.matchType(inExp, inType, DAE.T_BOXED_DEFAULT, true);
+      then (cache,inExp,(DAE.T_LIST(inType), NONE()),SOME(Values.LIST({})));
+    case (cache,env,Absyn.IDENT(name = "listReverse"), inExp, _, _, _)
       equation
-        (new_cache, new_env, iters_const, iter_values_list, iter_names, array_type)
-          = elabArrayIterators(cache, env, rest_iters, implicitInstantiation, st, performVectorization,pre,info);
-        // Elaborate the iterator expression to get the iterators type and dimension of the generated array.
-        (new_cache, iter_exp, DAE.PROP((DAE.T_ARRAY(arrayDim = array_dim, arrayType = iter_type), _), constFlag = iter_const), _)
-          = elabExp(cache, env, iter_aexp, implicitInstantiation, st, performVectorization,pre,info);
-        // Use ceval to get a list of values generated by the iterator expression.
-        (new_cache, Values.ARRAY(valueLst = iter_values), _)
-          = Ceval.ceval(new_cache, env, iter_exp, implicitInstantiation,NONE(), NONE(), Ceval.NO_MSG());
-        true = Types.isParameterOrConstant(iter_const);
-        // Add the iterator to the environment so that the array constructor
-        // expression can be elaborated later.
-        new_env = Env.extendFrameForIterator(new_env, iter_name, iter_type, DAE.UNBOUND(), SCode.VAR(), SOME(iter_const));
-      then (new_cache, new_env, iter_const::iters_const, iter_values :: iter_values_list, iter_name :: iter_names, (DAE.T_ARRAY(array_dim, array_type),NONE()));
+        (inExp,inType) = Types.matchType(inExp, inType, DAE.T_BOXED_DEFAULT, true);
+      then (cache,inExp,(DAE.T_LIST(inType), NONE()),SOME(Values.LIST({})));
+    case (cache,env,Absyn.IDENT("min"),inExp,(DAE.T_REAL(_),_),_,info)
+      equation
+        r = System.realMaxLit();
+      then (cache,inExp,DAE.T_REAL_DEFAULT,SOME(Values.REAL(r)));
+    case (cache,env,Absyn.IDENT("min"),inExp,(DAE.T_INTEGER(_),_),_,info)
+      equation
+        i = System.intMaxLit();
+      then (cache,inExp,DAE.T_INTEGER_DEFAULT,SOME(Values.INTEGER(i)));
+    case (cache,env,Absyn.IDENT("min"),inExp,(DAE.T_BOOL(_),_),_,info) then (cache,inExp,DAE.T_BOOL_DEFAULT,SOME(Values.BOOL(true)));
+    case (cache,env,Absyn.IDENT("min"),inExp,(DAE.T_STRING(_),_),_,info) then (cache,inExp,DAE.T_STRING_DEFAULT,NONE());
+
+    case (cache,env,Absyn.IDENT("max"),inExp,(DAE.T_REAL(_),_),_,info)
+      equation
+        r = realNeg(System.realMaxLit());
+      then (cache,inExp,DAE.T_REAL_DEFAULT,SOME(Values.REAL(r)));
+    case (cache,env,Absyn.IDENT("max"),inExp,(DAE.T_INTEGER(_),_),_,info)
+      equation
+        i = intNeg(System.intMaxLit());
+      then (cache,inExp,DAE.T_INTEGER_DEFAULT,SOME(Values.INTEGER(i)));
+    case (cache,env,Absyn.IDENT("max"),inExp,(DAE.T_BOOL(_),_),_,info) then (cache,inExp,DAE.T_BOOL_DEFAULT,SOME(Values.BOOL(false)));
+    case (cache,env,Absyn.IDENT("max"),inExp,(DAE.T_STRING(_),_),_,info) then (cache,inExp,DAE.T_STRING_DEFAULT,SOME(Values.STRING("")));
+
+    case (cache,env,Absyn.IDENT("sum"),inExp,(DAE.T_REAL(_),_),_,info) then (cache,inExp,DAE.T_REAL_DEFAULT,SOME(Values.REAL(0.0)));
+    case (cache,env,Absyn.IDENT("sum"),inExp,(DAE.T_INTEGER(_),_),_,info) then (cache,inExp,DAE.T_INTEGER_DEFAULT,SOME(Values.INTEGER(0)));
+    case (cache,env,Absyn.IDENT("sum"),inExp,(DAE.T_BOOL(_),_),_,info) then (cache,inExp,DAE.T_BOOL_DEFAULT,SOME(Values.BOOL(false)));
+    case (cache,env,Absyn.IDENT("sum"),inExp,(DAE.T_STRING(_),_),_,info) then (cache,inExp,DAE.T_STRING_DEFAULT,SOME(Values.STRING("")));
+    case (cache,env,Absyn.IDENT("sum"),inExp,(DAE.T_ARRAY(arrayDim=_),_),_,info) then (cache,inExp,inType,NONE());
+
+    case (cache,env,Absyn.IDENT("product"),inExp,(DAE.T_REAL(_),_),_,info) then (cache,inExp,DAE.T_REAL_DEFAULT,SOME(Values.REAL(1.0)));
+    case (cache,env,Absyn.IDENT("product"),inExp,(DAE.T_INTEGER(_),_),_,info) then (cache,inExp,DAE.T_INTEGER_DEFAULT,SOME(Values.INTEGER(1)));
+    case (cache,env,Absyn.IDENT("product"),inExp,(DAE.T_BOOL(_),_),_,info) then (cache,inExp,DAE.T_BOOL_DEFAULT,SOME(Values.BOOL(true)));
+    case (cache,env,Absyn.IDENT("product"),inExp,(DAE.T_STRING(_),_),_,info)
+      equation
+        Error.addSourceMessage(Error.INTERNAL_ERROR, {"product reduction not defined for String"},info);
+      then fail();
+    case (cache,env,Absyn.IDENT("product"),inExp,(DAE.T_ARRAY(arrayDim=_),_),_,info) then (cache,inExp,inType,NONE());
+
+    else
+      equation
+        s = "Reductions not defined for function " +& Absyn.pathString(fn) +& " of type " +& Types.unparseType(inType);
+        Error.addSourceMessage(Error.INTERNAL_ERROR, {s},info);
+      then fail();
   end match;
-end elabArrayIterators;
+end reductionType;
 
 protected function constToVariability "translates an DAE.Const to a SCode.Variability"
   input DAE.Const const;
@@ -1289,117 +1183,6 @@ algorithm
   end match;
 end variabilityToConst;
   
-protected function expandArray
-  "Symbolically expands an array with the help of elabCallReduction2."
-  input DAE.Exp expr;
-  input list<list<Values.Value>> valLists;
-  input list<Ident> iteratorNames;
-  input DAE.ExpType arrayType;
-  output DAE.Exp expandedExp;
-algorithm
-  expandedExp := match(expr, valLists, iteratorNames, arrayType)
-    local
-      list<Values.Value> values;
-      list<list<Values.Value>> rest_values;
-      Ident iterator_name;
-      list<Ident> rest_iterators;
-      list<DAE.Exp> new_expl, expanded_expl;
-      Boolean is_scalar;
-      DAE.ExpType element_type;
-    case (_, {}, {}, _) then expr;
-    case (_, values :: rest_values, iterator_name :: rest_iterators, _)
-      equation
-        expanded_expl = elabCallReduction2(expr, values, iterator_name);
-        element_type = Expression.unliftArray(arrayType);
-        new_expl = Util.listMap3(expanded_expl, expandArray, rest_values, rest_iterators, element_type);
-        is_scalar = not Expression.isArrayType(element_type);
-      then DAE.ARRAY(arrayType, is_scalar, new_expl);
-    end match;
-end expandArray;
-
-protected function elabCallReduction2 "help function to elabCallReduction. symbolically expands arrays"
-  input DAE.Exp e;
-  input list<Values.Value> valLst;
-  input Ident id;
-  output list<DAE.Exp> expl;
-algorithm
-  expl := match(e, valLst, id)
-    local
-      Integer i;
-      Real r;
-      DAE.Exp e1;
-      Values.Value v;
-      DAE.ComponentRef cref_;
-    
-    case(e, {}, id) then {};
-    
-    case(e, Values.INTEGER(i)::valLst, id)
-      equation
-        cref_ = ComponentReference.makeCrefIdent(id,DAE.ET_OTHER(),{});
-        (e1,_) = Expression.replaceExp(e, Expression.crefExp(cref_), DAE.ICONST(i));
-        expl = elabCallReduction2(e, valLst, id);
-      then e1::expl;
-    
-    case(e, Values.REAL(r) :: valLst, id)
-      equation
-        cref_ = ComponentReference.makeCrefIdent(id,DAE.ET_OTHER(),{});
-        (e1,_) = Expression.replaceExp(e, Expression.crefExp(cref_), DAE.RCONST(r));
-        expl = elabCallReduction2(e, valLst, id);
-      then e1 :: expl;
-    
-    case(e, (v as Values.ENUM_LITERAL(index = _)) :: valLst, id)
-      equation
-        e1 = ValuesUtil.valueExp(v);
-        cref_ = ComponentReference.makeCrefIdent(id,DAE.ET_OTHER(),{});
-        (e1,_) = Expression.replaceExp(e, Expression.crefExp(cref_),e1);
-        expl = elabCallReduction2(e, valLst, id);
-      then e1 :: expl; 
-  end match;
-end elabCallReduction2;
-
-protected function elabCallReduction3
-  "Helper function to elabCallReduction. Expands reduction calls."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input Absyn.Exp reductionExp;
-  input Absyn.ForIterators reductionIters;
-  input Boolean impl;
-  input Option<Interactive.InteractiveSymbolTable> inST;
-  input Boolean doVect;
-  input Prefix.Prefix prefix;
-  input Absyn.Info info;
-  output Env.Cache outCache;
-  output DAE.Exp outExp;
-  output DAE.Properties outProperties;
-  output Option<Interactive.InteractiveSymbolTable> outST;
-
-  Env.Cache cache;
-  Env.Env env;
-  DAE.Const iterconst, exp_const, const;
-  list<DAE.Const> iterconsts;
-  list<list<Values.Value>> vals;
-  list<Ident> iter_names;
-  DAE.Type array_type, exp_type, ty;
-  DAE.ExpType etp;
-  DAE.DAElist dae1, dae2;
-  DAE.Exp exp;
-  Option<Interactive.InteractiveSymbolTable> st;
-algorithm
-  (cache, env, iterconsts, vals, iter_names, array_type) :=
-    elabArrayIterators(inCache, inEnv, reductionIters, impl, inST, doVect, prefix, info);
-  iterconst := Util.listFold(iterconsts, Types.constAnd, DAE.C_CONST());
-  env := updateIteratorConst(env, iter_names, iterconsts);
-  (cache, exp, DAE.PROP(exp_type, exp_const), st) :=
-    elabExp(cache, env, reductionExp, impl, inST, doVect, prefix, info);
-  ty := constructArrayType(array_type, exp_type);
-  etp := Types.elabType(ty);
-  const := Types.constAnd(exp_const, iterconst);
-  outCache := cache;
-  outExp := expandArray(exp, vals, iter_names, etp);
-  outProperties := DAE.PROP(ty, const);
-  outST := st;
-end elabCallReduction3;
-
 protected function constructArrayType
   "Helper function for elabCallReduction. Combines the type of the expression in
     an array constructor with the type of the generated array by replacing the

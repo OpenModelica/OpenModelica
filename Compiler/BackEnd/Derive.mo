@@ -50,6 +50,7 @@ public import DAE;
 public import DAEUtil;
 public import RTOpts;
 public import Types;
+public import Values;
 
 // protected imports
 protected import BackendDAECreate;
@@ -350,6 +351,7 @@ algorithm
       DAE.FunctionTree functions;
       list<list<tuple<DAE.Exp, Boolean>>> explstlst,explstlst1;
       Option<DAE.Exp> guardExp;
+      Option<Values.Value> v;
       list<DAE.ExpVar> varLst;
 
     case (DAE.ICONST(integer = _),_) then DAE.RCONST(0.0);
@@ -714,12 +716,12 @@ algorithm
       then
         Expression.makeASUB(e,sub);
     
-    case (DAE.REDUCTION(path = a,expr = e1,ident = str,guardExp = guardExp,range = e2),(timevars,functions))
+    case (DAE.REDUCTION(path = a,expr = e1,ident = str,guardExp = guardExp,range = e2,defaultValue = v),(timevars,functions))
       equation
         e1_1 = differentiateExpTime(e1, (timevars,functions));
         e2_1 = differentiateExpTime(e2, (timevars,functions));
       then
-        DAE.REDUCTION(a,e1_1,str,guardExp,e2_1);
+        DAE.REDUCTION(a,e1_1,str,guardExp,e2_1,v);
     
     case (e,_)
       equation
@@ -1216,6 +1218,7 @@ algorithm
       list<DAE.Exp> expl_1,expl,sub;
       list<Boolean> bLst;
       Option<DAE.Exp> guardExp;
+      Option<Values.Value> v;
     
     case (DAE.ICONST(integer = _),_,_) then DAE.RCONST(0.0);
 
@@ -1424,12 +1427,12 @@ algorithm
       then
         Expression.makeASUB(e_1,sub);
     
-    case (DAE.REDUCTION(path = a,expr = e1,ident = str,guardExp = guardExp, range = e2),tv,differentiateIfExp)
+    case (DAE.REDUCTION(path = a,expr = e1,ident = str,guardExp = guardExp, range = e2, defaultValue = v),tv,differentiateIfExp)
       equation
         e1_1 = differentiateExp(e1, tv, differentiateIfExp);
         e2_1 = differentiateExp(e2, tv, differentiateIfExp);
       then
-        DAE.REDUCTION(a,e1_1,str,guardExp,e2_1);
+        DAE.REDUCTION(a,e1_1,str,guardExp,e2_1,v);
     
     // derivative of arbitrary function, not dependent of variable, i.e. constant
     /* Caught by rule below...

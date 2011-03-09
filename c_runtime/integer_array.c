@@ -1270,24 +1270,23 @@ modelica_integer max_integer_array(integer_array_t* a)
 
 modelica_integer min_integer_array(integer_array_t* a)
 {
-    size_t i;
-    size_t nr_of_elements;
-    modelica_integer min_element = 0;
+  size_t i;
+  size_t nr_of_elements;
+  modelica_integer min_element = -LONG_MAX;
 
-    assert(base_array_ok(a));
+  assert(base_array_ok(a));
 
-    nr_of_elements = base_array_nr_of_elements(a);
+  nr_of_elements = base_array_nr_of_elements(a);
 
-    if (nr_of_elements > 0) {
-        min_element = integer_get(a, 0);
-        for (i = 1; i < nr_of_elements; ++i) {
-            if (min_element > integer_get(a, i)) {
-                min_element = integer_get(a, i);
+  if (nr_of_elements > 0) {
+    min_element = integer_get(a, 0);
+    for (i = 1; i < nr_of_elements; ++i) {
+      if (min_element > integer_get(a, i)) {
+        min_element = integer_get(a, i);
       }
-  }
     }
-
-    return min_element;
+  }
+  return min_element;
 }
 
 modelica_integer sum_integer_array(integer_array_t* a)

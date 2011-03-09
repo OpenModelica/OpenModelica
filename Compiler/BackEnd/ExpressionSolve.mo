@@ -272,7 +272,7 @@ algorithm
         false = Expression.expContains(lhsder_1, crexp);
         tp = Expression.typeof(crexp);
         (z,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
-        (lhszero,_) = Expression.replaceExp(lhs, crexp, z);
+        ((lhszero,_)) = Expression.replaceExp(lhs, crexp, z);
         lhszero_1 = ExpressionSimplify.simplify(lhszero);
         rhs = Expression.negate(Expression.makeDiv(lhszero_1,lhsder_1));
       then

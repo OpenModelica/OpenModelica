@@ -753,4 +753,14 @@ public function unquoteIdentifier
   external "C" outStr=System_unquoteIdentifier(str);
 end unquoteIdentifier;
 
+public function intMaxLit "Returns the maximum integer that can be represent using this version of the compiler"
+  output Integer outInt;
+  external "builtin" outInt=System_intMaxLit();
+end intMaxLit;
+
+public function realMaxLit "Returns the maximum integer that can be represent using this version of the compiler"
+  output Real outReal;
+  external "C" outReal=System_realMaxLit();
+end realMaxLit;
+
 end System;
