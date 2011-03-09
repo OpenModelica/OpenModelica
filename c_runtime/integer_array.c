@@ -159,6 +159,37 @@ void copy_integer_array(integer_array_t *source, integer_array_t *dest)
     copy_integer_array_data(source, dest);
 }
 
+inline int integer_le(int x, int y)
+{
+  return (x <= y); 
+}
+
+inline int integer_ge(int x, int y)
+{
+  return (x >= y);
+}
+
+/* Creates an integer array from a range with a start, stop and step value.
+ * Ex: 1:2:6 => {1,3,5} */
+void create_integer_range_array(integer_array_t *dest, int start, int step, int stop)
+{
+  size_t elements;
+  size_t i;
+  int (*comp_func)(int, int);
+
+  assert(step != 0);
+
+  comp_func = (step > 0) ? integer_le : integer_ge;
+  elements = comp_func(start, stop) ? ((stop - start) / step) + 1 : 0;
+
+  simple_alloc_1d_integer_array(dest, elements);
+
+  for(i = 0; comp_func(start, stop); start += step, ++i)
+  {
+    integer_set(dest, i, start);
+  }
+}
+
 /*
  a[1:3] := b;
 */
@@ -1127,6 +1158,23 @@ void outer_product_integer_array(integer_array_t* v1,integer_array_t* v2,
             integer_set(dest, i*number_of_elements_b + j,
                         integer_get(v1, i)*integer_get(v2, j));
   }
+    }
+}
+
+/* Fills an array with a value. */
+void fill_alloc_integer_array(integer_array_t* dest, modelica_integer value, int ndims, ...)
+{
+    size_t i;
+    size_t elements = 0;
+    va_list ap;
+    va_start(ap, ndims);
+    elements = alloc_base_array(dest, ndims, ap);
+    va_end(ap);
+    dest->data = integer_alloc(elements);
+    
+    for(i = 0; i < elements; ++i)
+    {
+        integer_set(dest, i, value);
     }
 }
 

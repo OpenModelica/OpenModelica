@@ -1338,11 +1338,18 @@ algorithm
 
     case DAE.FUNCTION(path = fpath,inlineType=inlineType,functions = (DAE.FUNCTION_EXT(body = daeElts, externalDecl = DAE.EXTERNALDECL(language=lang))::_),type_ = t)
       equation
+        Print.printBuf("function ");
         fstr = Absyn.pathString(fpath);
+        Print.printBuf(fstr);
         inlineTypeStr = dumpInlineTypeStr(inlineType);
-        daestr = dumpElementsStr(daeElts);
-        str = stringAppendList({"function ",fstr,inlineTypeStr,"\n",daestr,"\nexternal \"",lang,"\";\nend ",fstr,";\n\n"});
-        Print.printBuf(str);
+        Print.printBuf(inlineTypeStr);
+        Print.printBuf("\n");
+        dumpFunctionElements(daeElts);
+        Print.printBuf("\nexternal \"C\";\n");
+        Print.printBuf("end ");
+        Print.printBuf(fstr);
+        Print.printBuf(";\n\n");
+
       then
         ();
     
@@ -3329,7 +3336,7 @@ algorithm
         str = IOStream.append(str, fstr);
         str = IOStream.append(str, dumpInlineTypeStr(inlineType));
         str = IOStream.append(str, "\n");
-        str = dumpElementsStream(daeElts, str);
+        str = dumpFunctionElementsStream(daeElts, str);
         str = IOStream.appendList(str, {"\nexternal \"",lang,"\";\nend ",fstr,";\n\n"});        
       then
         str;

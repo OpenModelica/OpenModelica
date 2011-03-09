@@ -414,8 +414,60 @@ public
 algorithm
   env := SCodeEnv.getEnvTopScope(inEnv);
   (outItem, outPath, outEnv) := lookupNameInPackage(inName, env);
-  outPath := Absyn.FULLYQUALIFIED(outPath);
+  outPath := removeEnvPrefix(outPath, inEnv);
 end lookupFullyQualified;
+
+protected function removeEnvPrefix
+  input Absyn.Path inPath;
+  input Env inEnv;
+  output Absyn.Path outPath;
+algorithm
+  outPath := matchcontinue(inPath, inEnv)
+    local
+      Absyn.Ident name1, name2;
+      Absyn.Path env_path, path;
+
+    case (Absyn.QUALIFIED(name = name1), _)
+      equation
+        env_path = SCodeEnv.getEnvPath(inEnv);
+        name2 = Absyn.pathFirstIdent(env_path);
+        true = stringEqual(name1, name2);
+        path = removeEnvPrefix2(inPath, env_path);
+      then
+        path;
+
+    else then Absyn.FULLYQUALIFIED(inPath);
+  end matchcontinue;
+end removeEnvPrefix;
+
+protected function removeEnvPrefix2
+  input Absyn.Path inPath;
+  input Absyn.Path inEnvPath;
+  output Absyn.Path outPath;
+algorithm
+  outPath := matchcontinue(inPath, inEnvPath)
+    local
+      Absyn.Ident name1, name2;
+      Absyn.Path rest_path, rest_env_path;
+
+    case (Absyn.QUALIFIED(name = name1, path = rest_path),
+          Absyn.QUALIFIED(name = name2, path = rest_env_path))
+      equation
+        true = stringEqual(name1, name2);
+        rest_path = removeEnvPrefix2(rest_path, rest_env_path);
+      then
+        rest_path;
+
+    case (Absyn.QUALIFIED(name = name1, path = rest_path),
+          Absyn.IDENT(name = name2))
+      equation
+        true = stringEqual(name1, name2);
+      then
+        rest_path;
+
+    else then inPath;
+  end matchcontinue;
+end removeEnvPrefix2;
 
 public function lookupNameInPackage
   "Looks up a name inside the environment of a package, returning the

@@ -3176,20 +3176,31 @@ algorithm
   end matchcontinue;
 end isParameter;
 
+public function isConstant 
+  "Returns true of Const is CONST."
+  input Const c;
+  output Boolean b;
+algorithm
+  b := match(c)
+    case (DAE.C_CONST()) then true;
+    else then false;
+  end match;
+end isConstant;
+
 public function isParameterOrConstant "returns true if Const is PARAM or CONST"
   input Const c;
   output Boolean b;
 algorithm
-  b := matchcontinue(c)
+  b := match(c)
     case(DAE.C_CONST()) then true;
     case(DAE.C_PARAM()) then true;
-    case(_) then false;
-  end matchcontinue;
+    else then false;
+  end match;
 end isParameterOrConstant;
 
 public function containReal "function: containReal
 
-  Returns true if a buitlin type, or array-type is Real.
+  Returns true if a builtin type, or array-type is Real.
 "
   input list<Type> inTypeLst;
   output Boolean outBoolean;

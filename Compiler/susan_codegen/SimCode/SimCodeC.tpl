@@ -3160,7 +3160,23 @@ template extType(ExpType type)
   else "OTHER_EXT_TYPE"
 end extType;
 
-
+template extTypeF77(ExpType type)
+  "Generates type for external function argument or return value for F77."
+::=
+  match type
+  case ET_INT(__)         then "int *"
+  case ET_REAL(__)        then "double *"
+  case ET_STRING(__)      then "const char *"
+  case ET_BOOL(__)        then "int *"
+  case ET_ENUMERATION(__) then "int *"
+  case ET_COMPLEX(complexClassType=EXTERNAL_OBJ(__))
+                      then "void *"
+  case ET_COMPLEX(complexClassType=RECORD(path=rname))
+                      then 'struct <%underscorePath(rname)%>'
+  case ET_METATYPE(__) case ET_BOXED(__)    then "void*"
+  else "OTHER_EXT_TYPE"
+end extTypeF77;
+  
 template extFunDefArg(SimExtArg extArg)
  "Generates the definition of an external function argument.
   Assume that language is C for now."
@@ -3180,7 +3196,7 @@ template extFunDefArg(SimExtArg extArg)
       else
         '<%extType(t)%>*'
     <<
-    <%typeStr%> <%name%>
+    <%typeStr%> /*<%name%>*/
     >>
   case SIMEXTARGEXP(__) then
     let typeStr = extType(type_)
@@ -3199,10 +3215,10 @@ template extFunDefArgF77(SimExtArg extArg)
   case SIMEXTARG(cref=c, isInput = true, type_=t) then
     let name = contextCref(c,contextFunction)
     let typeStr = 'const <%extType(t)%> *'
-    '<%typeStr%> <%name%>'
+    '<%typeStr%> /*<%name%>*/'
   case SIMEXTARG(__) then extFunDefArg(extArg)
 
-  case SIMEXTARGEXP(__) then extFunDefArg(extArg)
+  case SIMEXTARGEXP(__) then '<%extTypeF77(type_)%>'
   case SIMEXTARGSIZE(__) then 'int const *'
 end extFunDefArgF77;
 
@@ -3353,8 +3369,8 @@ case efn as EXTERNAL_FUNCTION(__) then
   {
     <%varDecls%>
     <%if not acceptMetaModelicaGrammar() then '<%stateVar%> = get_memory_state();'%>
-    <%outputAlloc%>
     <%preExp%>
+    <%outputAlloc%>
     <%callPart%>
     <%if not acceptMetaModelicaGrammar() then 'restore_memory_state(<%stateVar%>);'%>
     return <%if outVars then retVar%>;
@@ -3840,7 +3856,9 @@ template extFunCallVardeclF77(SimExtArg arg, Text &varDecls)
     match oi case 0 then "" else
       match ia
         case false then
-          let &varDecls += '<%extType(ty)%> <%extVarName(c)%>;<%\n%>'
+          let default_val = typeDefaultValue(ty)
+          let default_exp = match default_val case "" then "" else ' = <%default_val%>'
+          let &varDecls += '<%extType(ty)%> <%extVarName(c)%><%default_exp%>;<%\n%>'
           ""
         else
           let &varDecls += '<%expTypeArrayIf(ty)%> <%extVarName(c)%>;<%\n%>'
@@ -3849,6 +3867,15 @@ template extFunCallVardeclF77(SimExtArg arg, Text &varDecls)
     let &varDecls += '<%extType(ty)%> <%extVarName(c)%>;<%\n%>'
     ""
 end extFunCallVardeclF77;
+
+template typeDefaultValue(DAE.ExpType ty)
+::=
+  match ty
+  case ty as ET_INT(__) then '0'
+  case ty as ET_REAL(__) then '0.0'
+  case ty as ET_BOOL(__) then '0'
+  else ""
+end typeDefaultValue;
 
 template extFunCallBiVarF77(Variable var, Text &preExp, Text &varDecls)
 ::=
@@ -4690,6 +4717,7 @@ template daeExp(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls 
   case e as CALL(__)            then daeExpCall(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   case e as ARRAY(__)           then daeExpArray(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   case e as MATRIX(__)          then daeExpMatrix(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+  case e as RANGE(__)           then daeExpRange(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   case e as CAST(__)            then daeExpCast(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   case e as ASUB(__)            then daeExpAsub(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   case e as SIZE(__)            then daeExpSize(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
@@ -5294,6 +5322,16 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     '<%tvar%>'
 
   case CALL(tuple_=false, builtin=true,
+            path=IDENT(name="fill"), expLst=val::dims) then
+    let valExp = daeExp(val, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+    let dimsExp = (dims |> dim =>
+      daeExp(dim, context, &preExp /*BUFC*/, &varDecls /*BUFD*/) ;separator=", ")
+    let ty_str = '<%expTypeArray(ty)%>'
+    let tvar = tempDecl(ty_str, &varDecls /*BUFD*/)
+    let &preExp += 'fill_alloc_<%ty_str%>(&<%tvar%>, <%valExp%>, <%listLength(dims)%>, <%dimsExp%>);<%\n%>'
+    '<%tvar%>'
+    
+  case CALL(tuple_=false, builtin=true,
             path=IDENT(name="promote"), expLst={A, n}) then
     let var1 = daeExp(A, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     let var2 = daeExp(n, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
@@ -5528,6 +5566,19 @@ template daeExpMatrixRow(list<tuple<Exp,Boolean>> row, String arrayTypeStr,
   varLstStr
 end daeExpMatrixRow;
 
+template daeExpRange(Exp exp, Context context, Text &preExp /*BUFP*/,
+                      Text &varDecls /*BUFP*/)
+ "Generates code for a range expression."
+::=
+  match exp
+  case RANGE(expOption = NONE()) then
+    let ty_str = expTypeArray(ty)
+    let start_exp = daeExp(exp, context, &preExp, &varDecls)
+    let stop_exp = daeExp(range, context, &preExp, &varDecls)
+    let tmp = tempDecl(ty_str, &varDecls)
+    let &preExp += 'create_integer_range_array(&<%tmp%>, <%start_exp%>, 1, <%stop_exp%>);<%\n%>'
+    '<%tmp%>'
+end daeExpRange;
 
 template daeExpCast(Exp exp, Context context, Text &preExp /*BUFP*/,
                     Text &varDecls /*BUFP*/)

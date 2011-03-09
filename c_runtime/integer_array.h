@@ -83,6 +83,8 @@ void copy_integer_array_data_mem(integer_array_t* source,
 /* Copy integer array*/
 void copy_integer_array(integer_array_t* source, integer_array_t* dest);
 
+void create_integer_range_array(integer_array_t *dest, int start, int step, int stop);
+
 modelica_integer* calc_integer_index(int ndims,_index_t* idx_vec,
                                      integer_array_t* arr);
 modelica_integer* calc_integer_index_va(integer_array_t* source,int ndims,
@@ -232,6 +234,7 @@ void transpose_integer_array(integer_array_t* a, integer_array_t* dest);
 void transpose_alloc_integer_array(integer_array_t* a, integer_array_t* dest);
 void outer_product_integer_array(integer_array_t* v1,integer_array_t* v2,
                                  integer_array_t* dest);
+void fill_alloc_integer_array(integer_array_t* dest, modelica_integer value, int ndims, ...);
 void identity_integer_array(int n, integer_array_t* dest);
 void identity_alloc_integer_array(int n, integer_array_t* dest);
 

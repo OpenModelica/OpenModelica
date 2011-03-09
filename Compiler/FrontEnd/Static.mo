@@ -5455,8 +5455,6 @@ algorithm
         ((DAE.T_ARRAY(DAE.DIM_INTEGER(new_d),tp),p));
 
     case ((DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN()), _), 1, _)
-      equation
-        true = OptManager.getOption("checkModel");
       then
         inType1;
 
