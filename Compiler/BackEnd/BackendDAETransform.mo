@@ -1158,21 +1158,21 @@ algorithm
     case (dae,m,mt,nv,nf,inFunctions,derivedAlgs,derivedMultiEqn)
       equation
         eqns = BackendDAEEXT.getMarkedEqns();
-        //print("marked equations:");print(Util.stringDelimitList(Util.listMap(eqns,intString),","));
-        //print("\n");
+        // print("marked equations:");print(Util.stringDelimitList(Util.listMap(eqns,intString),","));
+        // print("\n");
         diff_eqns = BackendDAEEXT.getDifferentiatedEqns();
         eqns_1 = Util.listSetDifferenceOnTrue(eqns, diff_eqns, intEq);
         // print("differentiating equations:");print(Util.stringDelimitList(Util.listMap(eqns_1,intString),","));
         // print("\n");
-        //  print(BackendDump.dumpMarkedEqns(dae, eqns_1));
+        // print(BackendDump.dumpMarkedEqns(dae, eqns_1));
 
         // Collect the states in the equations that are singular, i.e. composing a constraint between states.
         // Note that states are collected from -all- marked equations, not only the differentiated ones.
         (states,stateindx) = statesInEqns(eqns, dae, m, mt) "" ;
         (dae,m,mt,nv,nf,deqns,derivedAlgs1,derivedMultiEqn1) = differentiateEqns(dae, m, mt, nv, nf, eqns_1,inFunctions,derivedAlgs,derivedMultiEqn);
         (state,stateno) = selectDummyState(states, stateindx, dae, m, mt);
-        //  print("Selected ");print(ComponentReference.printComponentRefStr(state));print(" as dummy state\n");
-        //  print(" From candidates:");print(Util.stringDelimitList(Util.listMap(states,ComponentReference.printComponentRefStr),", "));print("\n");
+        // print("Selected ");print(ComponentReference.printComponentRefStr(state));print(" as dummy state\n");
+        // print(" From candidates:");print(Util.stringDelimitList(Util.listMap(states,ComponentReference.printComponentRefStr),", "));print("\n");
         dae = propagateDummyFixedAttribute(dae, eqns_1, state, stateno);
         (dummy_der,dae) = newDummyVar(state, dae)  ;
         // print("Chosen dummy: ");print(ComponentReference.printComponentRefStr(dummy_der));print("\n");
@@ -2438,7 +2438,7 @@ algorithm
 
         (eqn_1,al1,derivedAlgs,ae1,derivedMultiEqn,true) = Derive.differentiateEquationTime(eqn, v, inFunctions, al,inDerivedAlgs,ae,inDerivedMultiEqn);
         Debug.fprint("bltdump", "High index problem, differentiated equation: ") "update equation row in IncidenceMatrix" ;
-        //str = BackendDump.equationStr(eqn);
+        // str = BackendDump.equationStr(eqn);
         // print( "differentiated equation ") ;
         Debug.fprint("bltdump", BackendDump.equationStr(eqn));
         // print(str); print("\n");
@@ -2446,7 +2446,7 @@ algorithm
         // print(" to ");
         // str = BackendDump.equationStr(eqn_1);
         // print(str);
-        //print("\n");
+        // print("\n");
         Debug.fprint("bltdump", BackendDump.equationStr(eqn_1)) "  print \" to \" & print str &  print \"\\n\" &" ;
         Debug.fprint("bltdump", "\n");
         eqns_1 = BackendEquation.equationAdd(eqns, eqn_1);

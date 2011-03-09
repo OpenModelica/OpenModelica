@@ -53,7 +53,9 @@ public import Types;
 
 // protected imports
 protected import BackendDAECreate;
+protected import BackendDAEUtil;
 protected import BackendVariable;
+protected import ClassInf;
 protected import ComponentReference;
 protected import Debug;
 protected import Error;
@@ -348,6 +350,7 @@ algorithm
       DAE.FunctionTree functions;
       list<list<tuple<DAE.Exp, Boolean>>> explstlst,explstlst1;
       Option<DAE.Exp> guardExp;
+      list<DAE.ExpVar> varLst;
 
     case (DAE.ICONST(integer = _),_) then DAE.RCONST(0.0);
     case (DAE.RCONST(real = _),_) then DAE.RCONST(0.0);
@@ -362,6 +365,19 @@ algorithm
         e = Expression.makeCrefExp(cr, tp);
       then
         e;
+  // case for Records
+    case ((e as DAE.CREF(componentRef = cr,ty = tp as DAE.ET_COMPLEX(name=a,varLst=varLst,complexClassType=ClassInf.RECORD(_)))),(timevars,functions))
+      equation
+        expl = Util.listMap1(varLst,Expression.generateCrefsExpFromExpVar,cr);
+        e1 = DAE.CALL(a,expl,false,false,tp,DAE.NO_INLINE());
+      then
+        differentiateExpTime(e1,(timevars,functions));
+    // case for arrays
+    case ((e as DAE.CREF(componentRef = cr,ty = tp as DAE.ET_ARRAY(arrayDimensions=_))),(timevars,functions))
+      equation
+        ((e1,_)) = BackendDAEUtil.extendArrExp((e,SOME(functions)));
+      then
+        differentiateExpTime(e1,(timevars,functions));
 
     case ((e as DAE.CREF(componentRef = cr,ty = tp)),(timevars,functions))
       equation
