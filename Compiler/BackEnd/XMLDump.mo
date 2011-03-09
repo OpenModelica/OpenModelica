@@ -92,7 +92,9 @@ protected import BackendDAETransform;
 protected import BackendVariable;
 protected import ComponentReference;
 protected import DAEUtil;
+protected import Debug;
 protected import Dump;
+protected import Error;
 protected import Expression;
 protected import ExpressionDump;
 protected import ModUtil;
@@ -406,6 +408,7 @@ Helper function to binopSymbol
 algorithm
   outString:=
   match (inOperator)
+    local String error_msg;
     case (DAE.ADD(ty = _)) then MathMLPlus;
     case (DAE.SUB(ty = _)) then MathMLMinus;
     case (DAE.MUL(ty = _)) then MathMLTimes;
@@ -418,6 +421,13 @@ algorithm
     case (DAE.MUL_SCALAR_PRODUCT(ty = _)) then MathMLScalarproduct;
     case (DAE.MUL_MATRIX_PRODUCT(ty = _)) then MathMLVectorproduct;
     case (DAE.DIV_ARRAY_SCALAR(ty = _)) then MathMLDivide;
+    else
+      equation
+        error_msg = "in XMLDump.binopSymbol2 - Unknown operator: ";
+        error_msg = error_msg +& ExpressionDump.debugBinopSymbol(inOperator);
+        Error.addMessage(Error.INTERNAL_ERROR, {error_msg});
+      then
+        fail();      
   end match;
 end binopSymbol2;
 
@@ -825,7 +835,7 @@ a XML format. See dumpCrefIdxLst for details.
 algorithm
   _:=
   matchcontinue (crefIdxLstArr,Content,inInteger)
-    local
+    local String error_msg;
     case (crefIdxLstArr,Content,inInteger)
       equation
         listLength(crefIdxLstArr[inInteger]) >= 1  = true;
@@ -835,6 +845,13 @@ algorithm
       equation
         listLength(crefIdxLstArr[inInteger]) >= 1  = false;
       then ();
+    case (_,_,inInteger)
+      equation
+        error_msg = "in XMLDump.dumpCrefIdxLstArr - failed for var number:";
+        error_msg = error_msg +& intString(inInteger);
+        Error.addMessage(Error.INTERNAL_ERROR, {error_msg});        
+      then
+        fail();          
   end matchcontinue;
 end dumpCrefIdxLstArr;
 
@@ -1067,17 +1084,13 @@ algorithm
 
         Print.printBuf(HEADER);
         dumpStrOpenTag(DAE_OPEN);
-
         dumpStrOpenTagAttr(VARIABLES, DIMENSION, intString(listLength(vars)+listLength(knvars)+listLength(extvars)));
-
         //Bucket size info is no longer present.
         dumpVars(vars,crefIdxLstArr_orderedVars,strIdxLstArr_orderedVars,stringAppend(ORDERED,VARIABLES_),addMML);
         dumpVars(knvars,crefIdxLstArr_knownVars,strIdxLstArr_knownVars,stringAppend(KNOWN,VARIABLES_),addMML);
         dumpVars(extvars,crefIdxLstArr_externalObject,strIdxLstArr_externalObject,stringAppend(EXTERNAL,VARIABLES_),addMML);
         dumpExtObjCls(extObjCls,stringAppend(EXTERNAL,CLASSES_));
-
         dumpStrCloseTag(VARIABLES);
-
         eqnsl  = BackendDAEUtil.equationList(eqns);
         dumpEqns(eqnsl,EQUATIONS,addMML,dumpRes);
         reqnsl = BackendDAEUtil.equationList(reqns);
@@ -1092,6 +1105,11 @@ algorithm
         dumpSolvingInfo(addOrInMatrix,addSolInfo,inBackendDAE);
         dumpStrCloseTag(DAE_CLOSE);
       then ();
+    case (_,_,_,_,_,_)
+      equation
+        Debug.fprint("failtrace", "XMLDump.dumpBackendDAE failed\n");
+      then
+        fail();        
   end match;
 end dumpBackendDAE;
 
@@ -1211,9 +1229,16 @@ This function dumps the varDirection of a variable:
 algorithm
   outString:=
   match (inVarDirection)
+    local String error_msg;
     case DAE.INPUT()  then VARDIR_INPUT;
     case DAE.OUTPUT() then VARDIR_OUTPUT;
     case DAE.BIDIR()  then VARDIR_NONE;
+    else
+      equation
+        error_msg = "in XMLDump.dumpDirectionStr - Unknown var direction";
+        Error.addMessage(Error.INTERNAL_ERROR, {error_msg});
+      then
+        fail();       
   end match;
 end dumpDirectionStr;
 
@@ -1484,6 +1509,12 @@ algorithm
         //dumpStrCloseTag(ANCHOR);
         dumpStrCloseTag(ALGORITHM);
       then ();
+    else
+      equation
+        res = "in XMLDump.dumpEquation - Unknown equation";
+        Error.addMessage(Error.INTERNAL_ERROR, {res});
+      then
+        fail();         
   end match;
 end dumpEquation;
 
@@ -2219,7 +2250,7 @@ the kind of a variable, that could be:
 algorithm
   outString :=
   match (inVarKind)
-    local Absyn.Path path;
+    local Absyn.Path path; String error_msg;
     case BackendDAE.VARIABLE()     then (VARIABILITY_CONTINUOUS);
     case BackendDAE.STATE()        then (VARIABILITY_CONTINUOUS_STATE);
     case BackendDAE.DUMMY_DER()    then (VARIABILITY_CONTINUOUS_DUMMYDER);
@@ -2229,6 +2260,12 @@ algorithm
     case BackendDAE.CONST()        then (VARIABILITY_CONSTANT);
     case BackendDAE.EXTOBJ(path)
       then (stringAppend(VARIABILITY_EXTERNALOBJECT,stringAppend(":",Absyn.pathString(path))));
+    else
+      equation
+        error_msg = "in XMLDump.dumpKind - Unknown kind";
+        Error.addMessage(Error.INTERNAL_ERROR, {error_msg});
+      then
+        fail();         
   end match;
 end dumpKind;
 
@@ -3182,6 +3219,7 @@ The output is very simple and is like:
   input Integer i;
 algorithm
     _ := matchcontinue (crefIdxLstArr,strIdxLstArr,i)
+    local String error_msg;
     case (crefIdxLstArr,strIdxLstArr,i)
       equation
         listLength(crefIdxLstArr[1]) >= 1  = false;
@@ -3194,6 +3232,12 @@ algorithm
         dumpStringIdxLstArr(strIdxLstArr,HASH_TB_STRING_LIST_OLDVARS,i);
         dumpStrCloseTag(ADDITIONAL_INFO);
       then ();
+    case (_,_,_)
+      equation
+        error_msg = "in XMLDump.dumpVarsAdditionalInfo - Unknown info";
+        Error.addMessage(Error.INTERNAL_ERROR, {error_msg});        
+      then
+        ();        
   end matchcontinue;
 end dumpVarsAdditionalInfo;
 
@@ -3232,7 +3276,10 @@ algorithm
         listLength(crefIdxLstArr[1]) >= 1  = true;
         dumpStrOpenTagAttr(Content,DIMENSION,intString(len));
         dumpStrOpenTag(stringAppend(VARIABLES,LIST_));
-        dumpVarsAdds2(vars,crefIdxLstArr,strIdxLstArr,1,addMMLCode);
+        // uncomment because it is not correct implemented,crefIdxLstArr and strIdxLstArr
+        // are used in a wrong way 
+        //dumpVarsAdds2(vars,crefIdxLstArr,strIdxLstArr,1,addMMLCode);
+        dumpVars2(vars,1,addMMLCode);
         dumpStrCloseTag(stringAppend(VARIABLES,LIST_));
         dumpStrCloseTag(Content);
       then();
@@ -3353,7 +3400,8 @@ algorithm
       Option<Values.Value> b;
       Integer var_1;
       Boolean addMMLCode;
-      DAE.ElementSource source "the origin of the element";
+      DAE.ElementSource source;
+      String error_msg;
 
     case ({},_,_,_,_) then ();
     case (((v as BackendDAE.VAR(varName = cr,
@@ -3385,6 +3433,15 @@ algorithm
         var_1 = varno+1;
         dumpVarsAdds2(xs,crefIdxLstArr,strIdxLstArr,var_1,addMMLCode);
       then ();
+    case (v::xs,crefIdxLstArr,strIdxLstArr,varno,addMMLCode)
+      equation
+        error_msg = "in XMLDump.dumpVarsAdds2 - Unknown var: ";
+        error_msg = error_msg +& intString(varno);
+        Error.addMessage(Error.INTERNAL_ERROR, {error_msg});        
+        var_1 = varno+1;
+        dumpVarsAdds2(xs,crefIdxLstArr,strIdxLstArr,var_1,addMMLCode);
+      then
+        ();
   end match;
 end dumpVarsAdds2;
 
@@ -3479,8 +3536,16 @@ function: lbinopSymbol
 algorithm
   outString:=
   match (inOperator)
+    local String error_msg;
     case (DAE.AND()) then MathMLAnd;
     case (DAE.OR()) then MathMLOr;
+    else
+      equation
+        error_msg = "in XMLDump.lbinopSymbol - Unknown operator";
+        error_msg = error_msg +& ExpressionDump.debugBinopSymbol(inOperator);
+        Error.addMessage(Error.INTERNAL_ERROR, {error_msg});
+      then
+        fail();      
   end match;
 end lbinopSymbol;
 
@@ -3494,7 +3559,15 @@ function: lunaryopSymbol
 algorithm
   outString:=
   match (inOperator)
+    local String error_msg;
     case (DAE.NOT()) then MathMLNot;
+    else
+      equation
+        error_msg = "in XMLDump.lunaryopSymbol - Unknown operator";
+        error_msg = error_msg +& ExpressionDump.debugBinopSymbol(inOperator);
+        Error.addMessage(Error.INTERNAL_ERROR, {error_msg});
+      then
+        fail();      
   end match;
 end lunaryopSymbol;
 
@@ -3521,12 +3594,20 @@ function: relopSymbol
 algorithm
   outString:=
   match (inOperator)
+    local String error_msg;
     case (DAE.LESS(ty = _)) then MathMLLessThan;
     case (DAE.LESSEQ(ty = _)) then MathMLLessEqualThan;
     case (DAE.GREATER(ty = _)) then MathMLGreaterThan;
     case (DAE.GREATEREQ(ty = _)) then MathMLGreaterEqualThan;
     case (DAE.EQUAL(ty = _)) then MathMLEquivalent;
     case (DAE.NEQUAL(ty = _)) then MathMLNotEqual;
+    else
+      equation
+        error_msg = "in XMLDump.relopSymbol - Unknown operator";
+        error_msg = error_msg +& ExpressionDump.debugBinopSymbol(inOperator);
+        Error.addMessage(Error.INTERNAL_ERROR, {error_msg});
+      then
+        fail();      
   end match;
 end relopSymbol;
 

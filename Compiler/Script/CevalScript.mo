@@ -1698,7 +1698,9 @@ algorithm
         (cache,ValuesUtil.makeArray({Values.STRING(xml_filename),Values.STRING(xml_contents)}),st);
         
     case (cache,env,"dumpXMLDAE",_,st,msg)
-      then (cache,ValuesUtil.makeArray({Values.STRING("Xml dump error."),Values.STRING("")}),st);
+      equation
+        str = Error.printMessagesStr();
+      then (cache,ValuesUtil.makeArray({Values.STRING("Xml dump error."),Values.STRING(str)}),st);
 
  end matchcontinue;
 end cevalInteractiveFunctions2;
