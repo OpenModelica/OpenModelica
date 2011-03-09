@@ -858,7 +858,7 @@ for_indices returns [void* ast] :
   ;
 
 for_index returns [void* ast] :
-     (i=IDENT (T_IN e=expression)? {ast = mk_tuple2(token_to_scon(i),mk_some_or_none(e));})
+     (i=IDENT ((GUARD guard=expression)? T_IN e=expression)? {ast = Absyn__ITERATOR(token_to_scon(i),mk_some_or_none(guard),mk_some_or_none(e));})
   ;
 
 simple_expression returns [void* ast] :

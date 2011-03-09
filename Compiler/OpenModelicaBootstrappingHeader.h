@@ -568,6 +568,21 @@ extern struct record_description Interactive_AnnotationType_DIAGRAM__ANNOTATION_
 static const MMC_DEFSTRUCTLIT(Interactive__DIAGRAM_5fANNOTATION__struct,1,4) {&Interactive_AnnotationType_DIAGRAM__ANNOTATION__desc}};
 static void *Interactive__DIAGRAM_5fANNOTATION = MMC_REFSTRUCTLIT(Interactive__DIAGRAM_5fANNOTATION__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
+#ifndef Absyn_ForIterator_ITERATOR__desc_added
+#define Absyn_ForIterator_ITERATOR__desc_added
+const char* Absyn_ForIterator_ITERATOR__desc__fields[3] = {"name","guardExp","range"};
+struct record_description Absyn_ForIterator_ITERATOR__desc = {
+  "Absyn_ForIterator_ITERATOR",
+  "Absyn.ForIterator.ITERATOR",
+  Absyn_ForIterator_ITERATOR__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description Absyn_ForIterator_ITERATOR__desc;
+#endif
+#define Absyn__ITERATOR_3dBOX3 3
+#define Absyn__ITERATOR(name,guardExp,range) (mmc_mk_box4(3,&Absyn_ForIterator_ITERATOR__desc,name,guardExp,range))
+#ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Program_PROGRAM__desc_added
 #define Absyn_Program_PROGRAM__desc_added
 const char* Absyn_Program_PROGRAM__desc__fields[3] = {"classes","within_","globalBuildTimes"};

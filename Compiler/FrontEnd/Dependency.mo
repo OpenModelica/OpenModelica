@@ -626,13 +626,13 @@ algorithm
      d = buildClassDependsInAlgElseifBranch(elsifb,optPath,cname,(d,p,env,ht));
    then d;
 
-   case(Absyn.ALG_FOR({(_,SOME(e1))},body),optPath,cname,(d,p,env,ht)) equation
+   case(Absyn.ALG_FOR({Absyn.ITERATOR(range=SOME(e1))},body),optPath,cname,(d,p,env,ht)) equation
      d = buildClassDependsInExp(e1,optPath,cname,(d,p,env,ht));
      d = buildClassDependsinAlgs(body,optPath,cname,(d,p,env,ht));
     then d;
 
    /* adrpo: TODO! add full support for ForIterators*/
-   case(Absyn.ALG_FOR({(_,NONE())},body),optPath,cname,(d,p,env,ht)) equation
+   case(Absyn.ALG_FOR({Absyn.ITERATOR(range=NONE())},body),optPath,cname,(d,p,env,ht)) equation
      /* d = buildClassDependsInExp(e1,optPath,cname,(d,p,env,ht)); */
      d = buildClassDependsinAlgs(body,optPath,cname,(d,p,env,ht));
     then d;
@@ -731,7 +731,7 @@ algorithm
      then 
        d;
 
-   case(Absyn.EQUATIONITEM(equation_ = Absyn.EQ_FOR({(_,SOME(e))},feqns))::eqns,optPath,cname,(d,p,env,ht)) 
+   case(Absyn.EQUATIONITEM(equation_ = Absyn.EQ_FOR({Absyn.ITERATOR(range=SOME(e))},feqns))::eqns,optPath,cname,(d,p,env,ht)) 
      equation
        d = buildClassDependsInExp(e,optPath,cname,(d,p,env,ht));
        d = buildClassDependsinEqns(feqns,optPath,cname,(d,p,env,ht));
@@ -740,7 +740,7 @@ algorithm
        d;
 
    // adrpo: TODO! FIXME! add the full ForIterators support
-   case(Absyn.EQUATIONITEM(equation_ = Absyn.EQ_FOR({(_,NONE())},feqns))::eqns,optPath,cname,(d,p,env,ht)) 
+   case(Absyn.EQUATIONITEM(equation_ = Absyn.EQ_FOR({Absyn.ITERATOR(range=NONE())},feqns))::eqns,optPath,cname,(d,p,env,ht)) 
      equation
        d = buildClassDependsinEqns(feqns,optPath,cname,(d,p,env,ht));
        d = buildClassDependsinEqns(eqns,optPath,cname,(d,p,env,ht));

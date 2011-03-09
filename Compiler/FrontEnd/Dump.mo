@@ -3993,7 +3993,7 @@ algorithm
     local
       Absyn.Exp exp;
       Absyn.Ident id;
-    case ((id, SOME(exp)))
+    case (Absyn.ITERATOR(id, NONE(), SOME(exp)))
       equation
         Print.printBuf("(");
         Print.printBuf(id);
@@ -4001,7 +4001,7 @@ algorithm
         printExp(exp);
         Print.printBuf(")");
       then ();
-    case ((id,NONE()))
+    case (Absyn.ITERATOR(id, NONE(), NONE()))
       equation
         Print.printBuf("(");
         Print.printBuf(id);
@@ -4063,17 +4063,23 @@ algorithm
   iteratorsStr := matchcontinue(iterators)
     local
       String s, s1, s2;
-      Absyn.Exp exp;
+      Absyn.Exp guardExp,exp;
       Absyn.Ident id;
       Absyn.ForIterators rest;
       Absyn.ForIterator x;
     case ({}) then "";
-    case ({(id, SOME(exp))})
+    case ({Absyn.ITERATOR(id, SOME(guardExp), SOME(exp))})
+      equation
+        s1 = printExpStr(exp);
+        s2 = printExpStr(guardExp);
+        s = stringAppendList({id, " guard ", s2, " in ", s1});
+      then s;
+    case ({Absyn.ITERATOR(id, NONE(), SOME(exp))})
       equation
         s1 = printExpStr(exp);
         s = stringAppendList({id, " in ", s1});
       then s;
-    case ({(id, NONE())}) then id;
+    case ({Absyn.ITERATOR(id, NONE(), NONE())}) then id;
     case (x::rest)
       equation
         s1 = printIteratorsStr({x});
@@ -6509,13 +6515,15 @@ algorithm
   _ := match iter
     local
       String id;
-      Option<Absyn.Exp> optExp;
-    case ((id,optExp))
+      Option<Absyn.Exp> guardExp,range;
+    case (Absyn.ITERATOR(id,guardExp,range))
       equation
-        Print.printBuf("(\"");
+        Print.printBuf("record Absyn.ITERATOR name = \"");
         Print.printBuf(id);
-        Print.printBuf("\",");
-        printOption(optExp,printExpAsCorbaString);
+        Print.printBuf("\", guard = ");
+        printOption(guardExp,printExpAsCorbaString);
+        Print.printBuf(", range = ");
+        printOption(range,printExpAsCorbaString);
         Print.printBuf(")");
       then ();
   end match;

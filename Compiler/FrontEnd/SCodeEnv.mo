@@ -968,14 +968,14 @@ end extendEnvWithIterators;
 
 protected function extendEnvWithIterator
   "Extends the environment with an iterator."
-  input tuple<Absyn.Ident, Option<Absyn.Exp>> inIterator;
+  input Absyn.ForIterator inIterator;
   input Env inEnv;
   output Env outEnv;
 protected
   Absyn.Ident iter_name;
   SCode.Element iter;
 algorithm
-  (iter_name, _) := inIterator;
+  Absyn.ITERATOR(name=iter_name) := inIterator;
   iter := SCode.COMPONENT(iter_name, Absyn.UNSPECIFIED(),
     false, false, false,
     SCode.ATTR({}, false, false, SCode.RO(), SCode.CONST(), Absyn.BIDIR()),

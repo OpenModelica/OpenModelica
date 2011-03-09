@@ -1653,13 +1653,13 @@ algorithm
         print("replace_exp on CODE not impl.\n");
       then
         DAE.CODE(a,tp);
-    case ((e as DAE.REDUCTION(path = p,expr = e1,ident = id,range = r)),repl,cond)
+    case ((e as DAE.REDUCTION(path = p,expr = e1,ident = id,guardExp = NONE(),range = r)),repl,cond)
       equation
         true = replaceExpCond(cond, e);
         e1_1 = replaceExp(e1, repl, cond);
         r_1 = replaceExp(r, repl, cond);
       then
-        DAE.REDUCTION(p,e1_1,id,r_1);
+        DAE.REDUCTION(p,e1_1,id,NONE(),r_1);
     case (e,repl,cond)
       equation
         //Debug.fprintln("failtrace", "- VarTransform.replaceExp failed on: " +& ExpressionDump.printExpStr(e));

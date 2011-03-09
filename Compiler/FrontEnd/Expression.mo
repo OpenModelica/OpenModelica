@@ -163,6 +163,8 @@ algorithm
       Absyn.ComponentRef acref;
       Absyn.Path path;
       Absyn.CodeNode code;
+      Option<DAE.Exp> oe1;
+      Option<Absyn.Exp> oae1;
 
     case (DAE.ICONST(integer = i)) then Absyn.INTEGER(i);
     case (DAE.RCONST(real = r)) then Absyn.REAL(r);
@@ -268,13 +270,14 @@ algorithm
 
     case(DAE.CODE(code,_)) then Absyn.CODE(code);
 
-    case DAE.REDUCTION(path,e1,s,e2) equation
+    case DAE.REDUCTION(path,e1,s,oe1,e2) equation
       //print("unelab of reduction not impl. yet");
       acref = Absyn.pathToCref(path);
       ae1 = unelabExp(e1);
       ae2 = unelabExp(e2);
+      oae1 = Util.applyOption(oe1,unelabExp);
     then 
-      Absyn.CALL(acref, Absyn.FOR_ITER_FARG(ae1, {(s,SOME(ae2))}));
+      Absyn.CALL(acref, Absyn.FOR_ITER_FARG(ae1, {Absyn.ITERATOR(s,oae1,SOME(ae2))}));
 
     case(DAE.END()) then Absyn.END();
   end matchcontinue;
@@ -3176,7 +3179,8 @@ algorithm
       list<DAE.MatchCase> cases;
       DAE.MatchType matchTy;
       Integer index_;
-      Option<tuple<DAE.Exp,Integer,Integer>> isExpisASUB;       
+      Option<tuple<DAE.Exp,Integer,Integer>> isExpisASUB;
+      Option<DAE.Exp> oe1;
     
     case ((e as DAE.ICONST(_)),rel,ext_arg)
       equation
@@ -3343,13 +3347,14 @@ algorithm
       then
         ((e,ext_arg_3));
     
-    case ((e as DAE.REDUCTION(path = path,expr = e1,ident = id,range = e2)),rel,ext_arg)
+    case ((e as DAE.REDUCTION(path = path,expr = e1,ident = id,guardExp = oe1, range = e2)),rel,ext_arg)
       equation
-        ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
-        ((e2_1,ext_arg_2)) = traverseExp(e2, rel, ext_arg_1);
-        ((e,ext_arg_3)) = rel((DAE.REDUCTION(path,e1_1,id,e2_1),ext_arg_2));
+        ((e1,ext_arg)) = traverseExp(e1, rel, ext_arg);
+        ((e2,ext_arg)) = traverseExp(e2, rel, ext_arg);
+        ((oe1,ext_arg)) = traverseExpOpt(oe1, rel, ext_arg);
+        ((e,ext_arg)) = rel((DAE.REDUCTION(path,e1,id,oe1,e2),ext_arg));
       then
-        ((e,ext_arg_3));
+        ((e,ext_arg));
     
     // MetaModelica list
     case ((e as DAE.CONS(e1,e2)),rel,ext_arg)
@@ -3627,7 +3632,8 @@ algorithm
       list<list<tuple<DAE.Exp, Boolean>>> lstexpl_1,lstexpl;
       Integer iscalar;
       Integer index_;
-      Option<tuple<DAE.Exp,Integer,Integer>> isExpisASUB;      
+      Option<tuple<DAE.Exp,Integer,Integer>> isExpisASUB;
+      Option<DAE.Exp> oe1;
       
     
     case (e as DAE.ICONST(_),rel,ext_arg) then ((e,ext_arg));    
@@ -3758,12 +3764,13 @@ algorithm
     
     case ((e as DAE.CODE(ty=_)),rel,ext_arg) then ((e,ext_arg));    
     
-    case ((e as DAE.REDUCTION(path = path,expr = e1,ident = id,range = e2)),rel,ext_arg)
+    case ((e as DAE.REDUCTION(path = path,expr = e1,ident = id,guardExp = oe1, range = e2)),rel,ext_arg)
       equation
-        ((e1_1,ext_arg_1)) = traverseExpTopDown(e1, rel, ext_arg);
-        ((e2_1,ext_arg_2)) = traverseExpTopDown(e2, rel, ext_arg_1);
+        ((e1,ext_arg)) = traverseExpTopDown(e1, rel, ext_arg);
+        ((e2,ext_arg)) = traverseExpTopDown(e2, rel, ext_arg);
+        ((oe1,ext_arg)) = traverseExpOptTopDown(oe1, rel, ext_arg);
       then
-        ((DAE.REDUCTION(path,e1_1,id,e2_1),ext_arg_2));
+        ((DAE.REDUCTION(path,e1,id,oe1,e2),ext_arg));
     
     // MetaModelica list
     case ((e as DAE.CONS(e1,e2)),rel,ext_arg)
@@ -3785,16 +3792,11 @@ algorithm
       then
         ((DAE.META_TUPLE(expl_1),ext_arg_1));
 
-    case ((e as DAE.META_OPTION(NONE())),rel,ext_arg)
-      then
-        ((e,ext_arg));
-
-    case ((e as DAE.META_OPTION(SOME(e1))),rel,ext_arg)
+    case ((e as DAE.META_OPTION(oe1)),rel,ext_arg)
       equation
-        ((e1_1,ext_arg_1)) = traverseExpTopDown(e1, rel, ext_arg);
-      then
-        ((DAE.META_OPTION(SOME(e1_1)),ext_arg_1));
-    
+        ((oe1,ext_arg)) = traverseExpOptTopDown(oe1, rel, ext_arg);
+      then ((e,ext_arg));
+
     case ((e as DAE.METARECORDCALL(fn,expl,fieldNames,i)),rel,ext_arg)
       equation
         ((expl_1,ext_arg_1)) = traverseExpListTopDown(expl, rel, ext_arg);
@@ -3935,6 +3937,28 @@ algorithm
      then ((SOME(e),inTypeA));
   end match;
 end traverseExpOpt;
+
+public function traverseExpOptTopDown "Calls traverseExpTopDown for SOME(exp) and does nothing for NONE"
+  input Option<DAE.Exp> inExp;
+  input FuncExpType func;
+  input Type_a inTypeA;
+  output tuple<Option<DAE.Exp>, Type_a> outTpl;
+  partial function FuncExpType
+    input tuple<DAE.Exp, Type_a> inTpl;
+    output tuple<DAE.Exp, Boolean, Type_a> outTpl;
+    replaceable type Type_a subtypeof Any;
+  end FuncExpType;
+  replaceable type Type_a subtypeof Any;
+algorithm
+  outTpl:= match (inExp,func,inTypeA)
+  local DAE.Exp e;
+    case(NONE(),_,inTypeA) then ((NONE(),inTypeA));
+    case(SOME(e),func,inTypeA)
+      equation
+        ((e,inTypeA)) = traverseExpTopDown(e,func,inTypeA);
+      then ((SOME(e),inTypeA));
+  end match;
+end traverseExpOptTopDown;
 
 public function extractCrefsFromExp "
 Author: BZ 2008-06, Extracts all ComponentRef from an Expression."
@@ -4260,12 +4284,13 @@ algorithm
     case (DAE.CODE(code = _), tup)
       then (inExp, tup);
 
-    case (DAE.REDUCTION(path = path, expr = e1, ident = id, range = e2), tup)
+    case (DAE.REDUCTION(path = path, expr = e1, ident = id, guardExp = oe1, range = e2), tup)
       equation
         (e1, tup) = traverseExpBidir(e1, tup);
         (e2, tup) = traverseExpBidir(e2, tup);
+        (oe1, tup) = traverseExpOptBidir(oe1, tup);
       then
-        (DAE.REDUCTION(path, e1, id, e2), tup);
+        (DAE.REDUCTION(path, e1, id, oe1, e2), tup);
 
     case (DAE.END(), _) then (inExp, inTuple);
 

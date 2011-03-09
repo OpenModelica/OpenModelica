@@ -1334,29 +1334,35 @@ algorithm
     case (Absyn.EQ_EQUALS(leftSide = e1,rightSide = e2),com,info) then SCode.EQ_EQUALS(e1,e2,com,info);
     case (Absyn.EQ_CONNECT(connector1 = c1,connector2 = c2),com,info) then SCode.EQ_CONNECT(c1,c2,com,info);
 
-    case (Absyn.EQ_FOR(iterators = {(i,SOME(e))},forEquations = l),com,info) /* for loop with a single iterator with explicit range */
+    case (Absyn.EQ_FOR(iterators = {Absyn.ITERATOR(i,NONE(),SOME(e))},forEquations = l),com,info) /* for loop with a single iterator with explicit range */
       equation
         l_1 = translateEEquations(l);
       then
         SCode.EQ_FOR(i,e,l_1,com,info);
 
-    case (Absyn.EQ_FOR(iterators = {(i,NONE())},forEquations = l),com,info) /* for loop with a single iterator with implicit range */
+    case (Absyn.EQ_FOR(iterators = {Absyn.ITERATOR(i,NONE(),NONE())},forEquations = l),com,info) /* for loop with a single iterator with implicit range */
       equation
         l_1 = translateEEquations(l);
       then
         SCode.EQ_FOR(i,Absyn.END(),l_1,com,info);
 
-    case (Absyn.EQ_FOR(iterators = (i,SOME(e))::(restIterators as _::_),forEquations = l),com,info) /* for loop with multiple iterators */
+    case (Absyn.EQ_FOR(iterators = Absyn.ITERATOR(i,NONE(),SOME(e))::(restIterators as _::_),forEquations = l),com,info) /* for loop with multiple iterators */
       equation
         eq = translateEquation(Absyn.EQ_FOR(restIterators,l),com,info);
       then
         SCode.EQ_FOR(i,e,{eq},com,info);
 
-    case (Absyn.EQ_FOR(iterators = (i,NONE())::(restIterators as _::_),forEquations = l),com,info) /* for loop with multiple iterators */
+    case (Absyn.EQ_FOR(iterators = Absyn.ITERATOR(i,NONE(),NONE())::(restIterators as _::_),forEquations = l),com,info) /* for loop with multiple iterators */
       equation
         eq = translateEquation(Absyn.EQ_FOR(restIterators,l),com,info);
       then
         SCode.EQ_FOR(i,Absyn.END(),{eq},com,info);
+
+    case (Absyn.EQ_FOR(iterators = Absyn.ITERATOR(guardExp=SOME(_))::_,forEquations = l),_,info)
+      equation
+        Error.addSourceMessage(Error.INTERNAL_ERROR, {"For loops with guards not yet implemented"}, info);
+      then
+        fail();
 
     case (Absyn.EQ_NORETCALL(functionName = Absyn.CREF_IDENT("assert", _),
                             functionArgs = Absyn.FUNCTIONARGS(args = {e1,e2},argNames = {})),com,info)

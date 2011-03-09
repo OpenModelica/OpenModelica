@@ -1126,6 +1126,7 @@ uniontype Exp "Expressions
     Absyn.Path path "array, sum,..";
     Exp expr "expr, e.g i*i+1" ;
     Ident ident "e.g. i";
+    Option<Exp> guardExp "Boolean guard-expression";
     Exp range "range Reduction expression e.g. 1:4" ;
   end REDUCTION;
 

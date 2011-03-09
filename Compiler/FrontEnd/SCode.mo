@@ -3205,15 +3205,31 @@ algorithm
       TraverseFunc traverser;
       Argument arg;
       Absyn.Ident ident;
-      Absyn.Exp exp;
+      Absyn.Exp guardExp,range;
 
-    case ((ident, SOME(exp)), (traverser, arg))
-      equation
-        ((exp, arg)) = traverser((exp, arg));
+    case (Absyn.ITERATOR(ident, NONE(), NONE()), (traverser, arg))
       then
-        ((ident, SOME(exp)), (traverser, arg));
+        (Absyn.ITERATOR(ident, NONE(), NONE()), (traverser, arg));
 
-    case ((_, NONE()), _) then (inIterator, inTuple);
+    case (Absyn.ITERATOR(ident, NONE(), SOME(range)), (traverser, arg))
+      equation
+        ((range, arg)) = traverser((range, arg));
+      then
+        (Absyn.ITERATOR(ident, NONE(), SOME(range)), (traverser, arg));
+
+    case (Absyn.ITERATOR(ident, SOME(guardExp), SOME(range)), (traverser, arg))
+      equation
+        ((guardExp, arg)) = traverser((guardExp, arg));
+        ((range, arg)) = traverser((range, arg));
+      then
+        (Absyn.ITERATOR(ident, SOME(guardExp), SOME(range)), (traverser, arg));
+
+    case (Absyn.ITERATOR(ident, SOME(guardExp), NONE()), (traverser, arg))
+      equation
+        ((guardExp, arg)) = traverser((guardExp, arg));
+      then
+        (Absyn.ITERATOR(ident, SOME(guardExp), NONE()), (traverser, arg));
+
   end match;
 end traverseForIteratorExps;
 

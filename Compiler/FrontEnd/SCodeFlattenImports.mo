@@ -331,7 +331,7 @@ algorithm
 
     case ((equ as SCode.EQ_FOR(index = iter_name, info = info), env))
       equation
-        env = SCodeEnv.extendEnvWithIterators({(iter_name, NONE())}, env);
+        env = SCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(iter_name, NONE(), NONE())}, env);
         (equ, _) = SCode.traverseEEquationExps(equ, (traverseExp, (env, info)));
       then
         ((equ, env));

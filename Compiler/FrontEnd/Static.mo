@@ -1027,7 +1027,7 @@ algorithm
         (cache, exp_1, prop, st);
 
     // reduction with an empty vector as range expression.
-    case (cache, env, Absyn.CREF_IDENT(reduction_op, {}), _, {(_, SOME(iterexp))}, 
+    case (cache, env, Absyn.CREF_IDENT(reduction_op, {}), _, {Absyn.ITERATOR(range=SOME(iterexp))}, 
         impl, st, doVect,pre,info)
       equation
         (cache, DAE.MATRIX(DAE.ET_ARRAY(_,_), 0, {}), _, _) = 
@@ -1047,7 +1047,7 @@ algorithm
         (cache, exp_1, DAE.PROP(expty, const), st);
     
     // Expansion failed in previous case, generate reduction call.
-    case (cache,env,fn,exp,{(iter,SOME(iterexp))},impl,st,doVect,pre,info)
+    case (cache,env,fn,exp,{Absyn.ITERATOR(iter,NONE(),SOME(iterexp))},impl,st,doVect,pre,info)
       equation
         (cache,iterexp_1,DAE.PROP(iterty,iterconst),_)
           = elabExp(cache, env, iterexp, impl, st, doVect,pre,info);
@@ -1062,7 +1062,7 @@ algorithm
         prop = DAE.PROP(expty, const);
         fn_1 = Absyn.crefToPath(fn);
       then
-        (cache,DAE.REDUCTION(fn_1,exp_1,iter,iterexp_1),prop,st);
+        (cache,DAE.REDUCTION(fn_1,exp_1,iter,NONE(),iterexp_1),prop,st);
 
     case (cache,env,fn,exp,iterators,impl,st,doVect,pre,info)
       equation
@@ -1211,7 +1211,7 @@ algorithm
         // later used by cevalCallReduction to replace it with the correct type.
       then (cache, new_env, {}, {}, {}, (DAE.T_NOTYPE(),NONE()));
         
-    case (_, _, (iter_name, SOME(iter_aexp)) :: rest_iters, _, _, _,pre,info)
+    case (_, _, Absyn.ITERATOR(iter_name, NONE(), SOME(iter_aexp)) :: rest_iters, _, _, _,pre,info)
       equation
         (new_cache, new_env, iters_const, iter_values_list, iter_names, array_type)
           = elabArrayIterators(cache, env, rest_iters, implicitInstantiation, st, performVectorization,pre,info);

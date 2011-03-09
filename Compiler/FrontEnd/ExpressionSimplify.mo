@@ -131,6 +131,7 @@ algorithm
       list<list<tuple<DAE.Exp, Boolean>>> matr,matr2;
       Integer index_;
       Option<tuple<DAE.Exp,Integer,Integer>> isExpisASUB;
+      Option<DAE.Exp> oe1;
         
     // noEvent propagated to relations and event triggering functions
     case(DAE.CALL(Absyn.IDENT("noEvent"),{e},tpl,builtin,tp,inline))
@@ -309,12 +310,13 @@ algorithm
       then
         exp1;
 
-    case DAE.REDUCTION(path,e1,idn,e2)
+    case DAE.REDUCTION(path,e1,idn,oe1,e2)
       equation
         e1 = simplify1(e1);
         e2 = simplify1(e2);
+        oe1 = Util.applyOption(oe1,simplify1);
       then
-        DAE.REDUCTION(path,e1,idn,e2);
+        DAE.REDUCTION(path,e1,idn,oe1,e2);
 
     // anything else
     case e
@@ -365,6 +367,7 @@ algorithm
       Integer i;
       Real r;
       String s,idn;
+      Option<DAE.Exp> oe1;
     case DAE.MATCHEXPRESSION(inputs={e}, localDecls={}, cases={
         DAE.CASE(patterns={DAE.PAT_CONSTANT(exp=DAE.BCONST(b1))},localDecls={},body={},result=SOME(e1)),
         DAE.CASE(patterns={DAE.PAT_CONSTANT(exp=DAE.BCONST(b2))},localDecls={},body={},result=SOME(e2))
@@ -425,14 +428,14 @@ algorithm
         e1_1 = DAE.LIST(el);
       then e1_1;
 
-    case DAE.CALL(path=path as Absyn.IDENT("listReverse"),expLst={DAE.REDUCTION(Absyn.IDENT("list"),e1,idn,e2)},ty=tp)
+    case DAE.CALL(path=path as Absyn.IDENT("listReverse"),expLst={DAE.REDUCTION(Absyn.IDENT("list"),e1,idn,oe1,e2)},ty=tp)
       equation
-        e1 = DAE.REDUCTION(Absyn.IDENT("listReverse"),e1,idn,e2);
+        e1 = DAE.REDUCTION(Absyn.IDENT("listReverse"),e1,idn,oe1,e2);
       then simplify(e1);
 
-    case DAE.CALL(path=path as Absyn.IDENT("listReverse"),expLst={DAE.REDUCTION(Absyn.IDENT("listReverse"),e1,idn,e2)},ty=tp)
+    case DAE.CALL(path=path as Absyn.IDENT("listReverse"),expLst={DAE.REDUCTION(Absyn.IDENT("listReverse"),e1,idn,oe1,e2)},ty=tp)
       equation
-        e1 = DAE.REDUCTION(Absyn.IDENT("list"),e1,idn,e2);
+        e1 = DAE.REDUCTION(Absyn.IDENT("list"),e1,idn,oe1,e2);
       then simplify(e1);
 
     case DAE.CALL(path=path as Absyn.IDENT("listLength"),expLst={e1},ty=tp)
@@ -457,6 +460,11 @@ algorithm
         e1_1 = simplify(e1);
         e2_1 = simplify(e2);
       then DAE.CONS(e1_1,e2_1);
+
+    case DAE.META_OPTION(oe1)
+      equation
+        oe1 = Util.applyOption(oe1, simplify);
+      then DAE.META_OPTION(oe1);
 
     case DAE.UNBOX(exp=e1)
       equation

@@ -1420,11 +1420,13 @@ algorithm
     local
       String id;
       Absyn.Exp exp;
-    case (cache,env,(id,SOME(exp)),ht)
+      Option<Absyn.Exp> guardExp;
+    case (cache,env,Absyn.ITERATOR(id,guardExp,SOME(exp)),ht)
       equation
         (cache,exp) = fixExp(cache,env,exp,ht);
-      then (cache,(id,SOME(exp)));
-    case (cache,env,(id,NONE()),ht) then (cache,(id,NONE()));
+        (cache,guardExp) = fixOption(cache,env,guardExp,ht,fixExp);
+      then (cache,Absyn.ITERATOR(id,guardExp,SOME(exp)));
+    case (cache,env,iter,ht) then (cache,iter);
   end match;
 end fixForIterator;
 

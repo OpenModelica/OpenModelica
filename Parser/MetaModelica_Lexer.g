@@ -49,6 +49,7 @@ AS : 'as';
 CASE : 'case';
 EQUALITY : 'equality';
 FAILURE : 'failure';
+GUARD : 'guard';
 LOCAL : 'local';
 MATCH : 'match';
 MATCHCONTINUE : 'matchcontinue';

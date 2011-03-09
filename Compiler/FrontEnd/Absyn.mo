@@ -72,15 +72,22 @@ protected import System;
 public
 type Ident = String "An identifier, for example a variable name" ;
 
-public
-type ForIterator = tuple<Ident, Option<Exp>>
-"For Iterator -
-   these are used in:
+public uniontype ForIterator
+  "For Iterator - these are used in:
    * for loops where the expression part can be NONE() and then the range
      is taken from an array variable that the iterator is used to index,
      see 3.3.3.2 Several Iterators from Modelica Specification.
    * in array iterators where the expression should always be SOME(Exp),
-     see 3.4.4.2 Array constructor with iterators from Specification";
+     see 3.4.4.2 Array constructor with iterators from Specification
+   * the guard is a MetaModelica extension; it's a Boolean expression that
+     filters out items in the range."
+  record ITERATOR
+    String name;
+    Option<Exp> guardExp;
+    Option<Exp> range;
+  end ITERATOR;
+end ForIterator;
+
 public type ForIterators = list<ForIterator>
 "For Iterators -
    these are used in:
@@ -2183,11 +2190,12 @@ public function traverseExpBidirIterator
   replaceable type Argument subtypeof Any;
 
   Ident name;
-  Option<Exp> value;
+  Option<Exp> guardExp,range;
 algorithm
-  (name, value) := inIterator;
-  (value, outTuple) := traverseExpOptBidir(value, inTuple);
-  outIterator := (name, value);
+  ITERATOR(name=name, guardExp=guardExp, range=range) := inIterator;
+  (guardExp, outTuple) := traverseExpOptBidir(guardExp, inTuple);
+  (range, outTuple) := traverseExpOptBidir(range, outTuple);
+  outIterator := ITERATOR(name, guardExp, range);
 end traverseExpBidirIterator;
 
 protected function traverseMatchCase
@@ -3308,7 +3316,7 @@ public function getCrefFromFarg "function: getCrefFromFarg
 algorithm outComponentRefLst := match (inFunctionArgs,checkSubs)
     local
       list<list<ComponentRef>> l1,l2;
-      list<ComponentRef> fl1,fl2,res;
+      list<ComponentRef> fl1,fl2,fl3,res;
       list<ComponentCondition> expl;
       list<NamedArg> nargl;
       ForIterators iterators;
@@ -3324,15 +3332,38 @@ algorithm outComponentRefLst := match (inFunctionArgs,checkSubs)
         res;
     case (FOR_ITER_FARG(exp,iterators),checkSubs)
       equation
-        l1 = Util.listMapOption1(Util.listMap(iterators,Util.tuple22),getCrefFromExp,checkSubs);
+        l1 = Util.listMapOption1(Util.listMap(iterators,iteratorRange),getCrefFromExp,checkSubs);
+        l2 = Util.listMapOption1(Util.listMap(iterators,iteratorGuard),getCrefFromExp,checkSubs);
         fl1 = Util.listFlatten(l1);
-        fl2 = getCrefFromExp(exp,checkSubs);
-        res = listAppend(fl1, fl2);
+        fl2 = Util.listFlatten(l2);
+        fl3 = getCrefFromExp(exp,checkSubs);
+        res = listAppend(fl1,listAppend(fl2, fl3));
       then
         res;
 
   end match;
 end getCrefFromFarg;
+
+public function iteratorName
+  input ForIterator iterator;
+  output String name;
+algorithm
+  ITERATOR(name=name) := iterator;
+end iteratorName;
+
+public function iteratorRange
+  input ForIterator iterator;
+  output Option<Exp> range;
+algorithm
+  ITERATOR(range=range) := iterator;
+end iteratorRange;
+
+public function iteratorGuard
+  input ForIterator iterator;
+  output Option<Exp> guardExp;
+algorithm
+  ITERATOR(guardExp=guardExp) := iterator;
+end iteratorGuard;
 
 // stefan
 public function appendFunctionArgs
@@ -4784,16 +4815,16 @@ algorithm
       list<ForIterator> rest;
       Exp exp;
     case (_,{}) then (false,{});
-    case (id,(id_1,_)::_)
+    case (id,ITERATOR(name=id_1)::_)
       equation
         true = stringEq(id, id_1);
       then
         (true,{});
-    case (id,(_,NONE())::rest)
+    case (id,ITERATOR(range=NONE())::rest)
       equation
         (bool,lst)=findIteratorInForIteratorsBounds2(id,rest);
       then (bool,lst);
-    case (id,(_,SOME(exp))::rest)
+    case (id,ITERATOR(range=SOME(exp))::rest)
       equation
         lst_1=findIteratorInExp(id,exp);
         (bool,lst_2)=findIteratorInForIteratorsBounds2(id,rest);

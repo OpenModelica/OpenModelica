@@ -1814,7 +1814,7 @@ algorithm
       InstanceHierarchy ih;
     
     // only one iterator  
-    case (cache,env,ih,pre,{(i,SOME(e))},sl,info,source,initial_,impl,unrollForLoops)
+    case (cache,env,ih,pre,{Absyn.ITERATOR(i,NONE(),SOME(e))},sl,info,source,initial_,impl,unrollForLoops)
       equation
         (cache,e_1,prop as DAE.PROP((DAE.T_ARRAY(arrayType = id_t),_),cnst),_) = Static.elabExp(cache, env, e, impl,NONE(), true, pre,info);
         (cache, e_1, prop) = Ceval.cevalIfConstant(cache, env, e_1, prop, impl);
@@ -1840,10 +1840,10 @@ algorithm
     //    end for;
     //   end for;
     //  end for;
-    case (cache,env,ih,pre,(i,SOME(e))::(restIterators as _::_),sl,info,source,initial_,impl,unrollForLoops)
+    case (cache,env,ih,pre,Absyn.ITERATOR(i,NONE(),SOME(e))::(restIterators as _::_),sl,info,source,initial_,impl,unrollForLoops)
       equation
         (cache,stmts) = 
-           unrollForLoop(cache, env, ih, pre, {(i, SOME(e))},
+           unrollForLoop(cache, env, ih, pre, {Absyn.ITERATOR(i, NONE(), SOME(e))},
               {SCode.ALG_FOR(restIterators, sl,NONE(),info)},
               info,source,initial_, impl,unrollForLoops);
       then
@@ -1964,7 +1964,7 @@ algorithm
       Absyn.ForIterators rest_iters;
       Boolean res;
     case (_, {}) then false;
-    case (_, (iter_name, _) :: _)
+    case (_, Absyn.ITERATOR(name = iter_name) :: _)
       equation
         cref_ = ComponentReference.makeCrefIdent(iter_name, DAE.ET_INT(), {});
         iter_exp = Expression.makeCrefExp(cref_, DAE.ET_INT()); 
@@ -2041,7 +2041,7 @@ algorithm
       InstanceHierarchy ih;
 
     // one iterator
-    case (cache,env,ih,pre,{(i,SOME(e))},sl,info,source,initial_,impl,unrollForLoops)
+    case (cache,env,ih,pre,{Absyn.ITERATOR(i,NONE(),SOME(e))},sl,info,source,initial_,impl,unrollForLoops)
       equation
         (cache,e_1,(prop as DAE.PROP((DAE.T_ARRAY(_,t),_),cnst)),_) = Static.elabExp(cache, env, e, impl,NONE(), true,pre,info);
         (cache, e_1) = Ceval.cevalRangeIfConstant(cache, env, e_1, prop, impl);
@@ -2054,7 +2054,7 @@ algorithm
         (cache,{stmt});
 
     // multiple iterators
-    case (cache,env,ih,pre,(i,SOME(e))::restIterators,sl,info,source,initial_,impl,unrollForLoops)
+    case (cache,env,ih,pre,Absyn.ITERATOR(i,NONE(),SOME(e))::restIterators,sl,info,source,initial_,impl,unrollForLoops)
       equation        
         (cache,e_1,(prop as DAE.PROP((DAE.T_ARRAY(_,t),_),cnst)),_) = Static.elabExp(cache,env, e, impl,NONE(),true,pre,info);
         (cache, e_1) = Ceval.cevalRangeIfConstant(cache, env, e_1, prop, impl);
@@ -2076,7 +2076,7 @@ algorithm
     //    then
     //     fail();
     
-    case (cache,env,ih,pre,(i,NONE())::restIterators,sl,info,source,initial_,impl,unrollForLoops)
+    case (cache,env,ih,pre,Absyn.ITERATOR(i,NONE(),NONE())::restIterators,sl,info,source,initial_,impl,unrollForLoops)
       equation
         // false = containsWhenStatements(sl); 
         {} = SCode.findIteratorInStatements(i,sl);
@@ -2084,7 +2084,7 @@ algorithm
       then
         fail();
         
-    case (cache,env,ih,pre,{(i,NONE())},sl,info,source,initial_,impl,unrollForLoops) //The verison w/o assertions
+    case (cache,env,ih,pre,{Absyn.ITERATOR(i,NONE(),NONE())},sl,info,source,initial_,impl,unrollForLoops) //The verison w/o assertions
       equation
         // false = containsWhenStatements(sl);
         (lst as _::_) = SCode.findIteratorInStatements(i,sl);
@@ -2100,7 +2100,7 @@ algorithm
         stmt = Algorithm.makeFor(i, e_2, prop, sl_1, source);
       then
         (cache,{stmt});
-    case (cache,env,ih,pre,(i,NONE())::restIterators,sl,info,source,initial_,impl,unrollForLoops) //The verison w/o assertions
+    case (cache,env,ih,pre,Absyn.ITERATOR(i,NONE(),NONE())::restIterators,sl,info,source,initial_,impl,unrollForLoops) //The verison w/o assertions
       equation
         // false = containsWhenStatements(sl); 
         (lst as _::_) = SCode.findIteratorInStatements(i,sl);
@@ -2116,6 +2116,12 @@ algorithm
         stmt = Algorithm.makeFor(i, e_2, prop, sl_1, source);
       then
         (cache,{stmt});
+
+    case (_,_,_,_,Absyn.ITERATOR(guardExp=SOME(_))::_,_,info,_,_,_,_)
+      equation
+        Error.addSourceMessage(Error.INTERNAL_ERROR, {"For loops with guards not yet implemented"}, info);
+      then fail();
+
   end matchcontinue;
 end instForStatement_dispatch;
 
