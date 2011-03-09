@@ -3079,81 +3079,6 @@ algorithm
   end match;
 end concatArrayType;
 
-/***************************************************/
-/* replace DAE.Exp */
-/***************************************************/
-
-public function replaceExpListOpt
-"similar to replaceExpList. But with Option<DAE.Exp> instead of Expression."
-  input Option<DAE.Exp> inExp1;
-  input list<DAE.Exp> s;
-  input list<DAE.Exp> t;
-  output Option<DAE.Exp> outExp;
-  output Integer outInteger;
-algorithm
-  (outExp,outInteger) := matchcontinue (inExp1,s,t)
-    local DAE.Exp e;
-    case (NONE(),_,_) then (NONE(),0);
-    case (SOME(e),s,t) equation
-      (e,outInteger) = replaceExpList(e,s,t);
-     then (SOME(e),outInteger);
-  end matchcontinue;
-end replaceExpListOpt;
-
-public function replaceListExp
-"function: replaceListExpression.
-  Replaces an list of expressions with a expression."
-  input list<DAE.Exp> inExpLst;
-  input DAE.Exp inExp2;
-  input DAE.Exp inExp3;
-  output list<DAE.Exp> outExpLst;
-  output list<Integer> outIntegerLst;
-algorithm
-  (outExpLst,outIntegerLst) := matchcontinue (inExpLst,inExp2,inExp3)
-    local
-      DAE.Exp e,e1,e2,e3;
-      Integer c;
-      list<DAE.Exp> rest,explst;
-      list<Integer> intlst;
-    case ({},_,_) then ({},{});  
-    case (e::rest,e2,e3)
-      equation
-        (e1,c) = replaceExp(e, e2, e3);
-        (explst,intlst) = replaceListExp(rest,e2,e3);
-      then
-        (e1::explst,c::intlst);
-  end matchcontinue;
-end replaceListExp;
-
-public function replaceExpList
-"function: replaceExpList.
-  Replaces an expression with a list of several expressions.
-  NOTE: Not repreteadly applied, so the source and target
-        lists must be disjunct
-  Useful for instance when replacing several
-  variables at once in an expression."
-  input DAE.Exp inExp1;
-  input list<DAE.Exp> inExpLst2;
-  input list<DAE.Exp> inExpLst3;
-  output DAE.Exp outExp;
-  output Integer outInteger;
-algorithm
-  (outExp,outInteger) := matchcontinue (inExp1,inExpLst2,inExpLst3)
-    local
-      DAE.Exp e,e_1,e_2,s1,t1;
-      Integer c1,c2,c;
-      list<DAE.Exp> sr,tr;
-    case (e,{},{}) then (e,0);  /* expr, source list, target list */
-    case (e,(s1 :: sr),(t1 :: tr))
-      equation
-        (e_1,c1) = replaceExp(e, s1, t1);
-        (e_2,c2) = replaceExpList(e_1, sr, tr);
-        c = c1 + c2;
-      then
-        (e_2,c);
-  end matchcontinue;
-end replaceExpList;
-
 public function replaceExp
 "function: replaceExp
   Helper function to replaceExpList."
@@ -3163,339 +3088,36 @@ public function replaceExp
   output DAE.Exp outExp;
   output Integer outInteger;
 algorithm
-  (outExp,outInteger) := matchcontinue (inExp,inSourceExp,inTargetExp)
+  ((outExp,(_,_,outInteger))) := traverseExpTopDown(inExp,replaceExpWork,(inSourceExp,inTargetExp,0));
+end replaceExp;
+
+public function replaceExpWork
+  input tuple<DAE.Exp,tuple<DAE.Exp,DAE.Exp,Integer>> inTpl;
+  output tuple<DAE.Exp,Boolean,tuple<DAE.Exp,DAE.Exp,Integer>> tpl;
+algorithm
+  tpl := matchcontinue inTpl
     local
-      DAE.Exp expr,source,target,e1_1,e2_1,e1,e2,e3_1,e3,e_1,r_1,e,r,s;
-      Integer c1,c2,c,c3,cnt_1,i,cnt;
-      Operator op;
-      list<DAE.Exp> expl_1,expl,ae1;
-      list<Integer> lstcnt;
-      Absyn.Path path,p;
-      Boolean t,built,bln;
-      Type tp,ety,t2;
-      Absyn.CodeNode a;
-      ComponentRef cr1;
-      list<Subscript> ssl;
-      DAE.InlineType inl;      
-      list<list<tuple<DAE.Exp, Boolean>>> lstexpl_1,lstexpl;
-      ComponentRef cr,cr_1;
-      String name,id;
-      Integer index_;
-      Option<tuple<DAE.Exp,Integer,Integer>> isExpisASUB;
-    
-    case (expr,source,target) /* expr source expr target expr */
+      tuple<DAE.Exp,DAE.Exp,Integer> tpl;
+      DAE.Exp expr,source,target;
+      Integer c;
+      DAE.ComponentRef cr;
+      DAE.ExpType ty;
+    case ((expr,(source,target,c)))
       equation
         true = expEqual(expr, source);
       then
-        (target,1);
+        ((target,false,(source,target,c+1)));
     
-    case (DAE.BINARY(exp1 = e1,operator = op,exp2 = e2),source,target)
+    case ((DAE.CREF(cr,ty),tpl))
       equation
-        (e1_1,c1) = replaceExp(e1, source, target);
-        (e2_1,c2) = replaceExp(e2, source, target);
-        c = c1 + c2;
-      then
-        (DAE.BINARY(e1_1,op,e2_1),c);
+        (cr,tpl) = traverseExpTopDownCrefHelper(cr,replaceExpWork,tpl);
+      then ((DAE.CREF(cr,ty),false,tpl));
     
-    case (DAE.LBINARY(exp1 = e1,operator = op,exp2 = e2),source,target)
-      equation
-        (e1_1,c1) = replaceExp(e1, source, target);
-        (e2_1,c2) = replaceExp(e2, source, target);
-        c = c1 + c2;
+    case ((expr,(source,target,c)))
       then
-        (DAE.LBINARY(e1_1,op,e2_1),c);
-    
-    case (DAE.UNARY(operator = op,exp = e1),source,target)
-      equation
-        (e1_1,c) = replaceExp(e1, source, target);
-      then
-        (DAE.UNARY(op,e1_1),c);
-    
-    case (DAE.LUNARY(operator = op,exp = e1),source,target)
-      equation
-        (e1_1,c) = replaceExp(e1, source, target);
-      then
-        (DAE.LUNARY(op,e1_1),c);
-    
-    case (DAE.RELATION(exp1 = e1,operator = op,exp2 = e2, index=index_, optionExpisASUB= isExpisASUB),source,target)
-      equation
-        (e1_1,c1) = replaceExp(e1, source, target);
-        (e2_1,c2) = replaceExp(e2, source, target);
-        c = c1 + c2;
-      then
-        (DAE.RELATION(e1_1,op,e2_1,index_,isExpisASUB),c);
-    
-    case (DAE.IFEXP(expCond = e1,expThen = e2,expElse = e3),source,target)
-      equation
-        (e1_1,c1) = replaceExp(e1, source, target);
-        (e2_1,c2) = replaceExp(e2, source, target);
-        (e3_1,c3) = replaceExp(e3, source, target);
-        c = Util.listReduce({c1,c2,c3}, intAdd);
-      then
-        (DAE.IFEXP(e1_1,e2_1,e3_1),c);
-    
-    case (DAE.CALL(path = path,expLst = expl,tuple_ = t,builtin = built,ty=tp,inlineType=inl),source,target)
-      equation
-        (expl_1,lstcnt) = Util.listMap22(expl, replaceExp, source, target);
-        cnt_1 = Util.listReduce(lstcnt, intAdd);
-      then
-        (DAE.CALL(path,expl_1,t,built,tp,inl),cnt_1);
-    
-    case(DAE.PARTEVALFUNCTION(path = path, expList = expl, ty = tp),source,target)
-      equation
-        (expl_1,lstcnt) = Util.listMap22(expl, replaceExp, source, target);
-        cnt_1 = Util.listReduce(lstcnt, intAdd);
-      then
-        (DAE.PARTEVALFUNCTION(path,expl_1,tp),cnt_1);
-    
-    case (DAE.ARRAY(ty = tp,scalar = bln,array = expl),source,target)
-      equation
-        (expl_1,lstcnt) = Util.listMap22(expl, replaceExp, source, target);
-        cnt_1 = Util.listReduce(lstcnt, intAdd);
-      then
-        (DAE.ARRAY(tp,bln,expl_1),cnt_1);
-    
-    case (DAE.MATRIX(ty = tp,integer = i,scalar = lstexpl),source,target)
-      equation
-        (lstexpl_1,cnt) = replaceExpMatrix(lstexpl, source, target);
-      then
-        (DAE.MATRIX(tp,i,lstexpl_1),cnt);
-    
-    case (DAE.RANGE(ty = tp,exp = e1,expOption = NONE(),range = e2),source,target)
-      equation
-        (e1_1,c1) = replaceExp(e1, source, target);
-        (e2_1,c2) = replaceExp(e2, source, target);
-        c = c1 + c2;
-      then
-        (DAE.RANGE(tp,e1_1,NONE(),e2_1),c);
-    
-    case (DAE.RANGE(ty = tp,exp = e1,expOption = SOME(e3),range = e2),source,target)
-      equation
-        (e1_1,c1) = replaceExp(e1, source, target);
-        (e2_1,c2) = replaceExp(e2, source, target);
-        (e3_1,c3) = replaceExp(e3, source, target);
-        c = Util.listReduce({c1,c2,c3}, intAdd);
-      then
-        (DAE.RANGE(tp,e1_1,SOME(e3_1),e2_1),c);
-    
-    case (DAE.TUPLE(PR = expl),source,target)
-      equation
-        (expl_1,lstcnt) = Util.listMap22(expl, replaceExp, source, target);
-        cnt_1 = Util.listReduce(lstcnt, intAdd);
-      then
-        (DAE.TUPLE(expl_1),cnt_1);
-    
-    case (DAE.CAST(ty = tp,exp = e1),source,target)
-      equation
-        (e1_1,c) = replaceExp(e1, source, target);
-      then
-        (DAE.CAST(tp,e1_1),c);
-
-    case (DAE.ASUB(exp = e1,sub = ae1),source,target)
-      equation
-        (e1_1,c) = replaceExp(e1, source, target);
-        (expl_1,lstcnt) = Util.listMap22(ae1, replaceExp, source, target);
-        cnt_1 = Util.listReduce(lstcnt, intAdd);
-        c = c + cnt_1;
-      then
-        (makeASUB(e1_1,expl_1),c);
-
-    case (DAE.SIZE(exp = e1,sz = NONE()),source,target)
-      equation
-        (e1_1,c) = replaceExp(e1, source, target);
-      then
-        (DAE.SIZE(e1_1,NONE()),c);
-    
-    case (DAE.SIZE(exp = e1,sz = SOME(e2)),source,target)
-      equation
-        (e1_1,c1) = replaceExp(e1, source, target);
-        (e2_1,c2) = replaceExp(e2, source, target);
-        c = c1 + c2;
-      then
-        (DAE.SIZE(e1_1,SOME(e2_1)),c);
-    
-    case (DAE.CODE(code = a,ty = tp),source,target)
-      equation
-        Debug.fprint("failtrace","- Expression.replaceExp on CODE not implemented.\n");
-      then
-        (DAE.CODE(a,tp),0);
-    
-    case (DAE.REDUCTION(path = p,expr = e,ident = id,range = r),source,target)
-      equation
-        (e_1,c1) = replaceExp(e, source, target);
-        (r_1,c2) = replaceExp(r, source, target);
-        c = c1 + c2;
-      then
-        (DAE.REDUCTION(p,e_1,id,r_1),c);
-
-    // componentreference, replace subscripts
-    case(DAE.CREF(componentRef = cr, ty = ety),source,target)
-      equation
-        (cr1,c) = replaceCrefExpSubs(cr,source,target);
-        e = makeCrefExp(cr1,ety);
-      then (e,c);
-
-    case(DAE.CREF(cr as DAE.CREF_IDENT(id,t2,ssl),ety),_,_)
-      equation
-        false = ComponentReference.crefHasScalarSubscripts(cr);
-        name = ComponentReference.printComponentRefStr(cr);
-        false = Util.stringContainsChar(name,"$");
-        id = stringAppendList({"$",id});
-        id = Util.stringReplaceChar(id,".","$p");
-        cr_1 = ComponentReference.makeCrefIdent(id,t2,ssl);
-        e = makeCrefExp(cr_1,ety);
-      then
-        (e,1);
-    
-    // no replacement
-    case (e,s,_) then (e,0);
-
+        ((expr,true,(source,target,c)));
   end matchcontinue;
-end replaceExp;
-
-protected function replaceCrefExpSubs
-"function: replaceCrefExpSubs
- help function to replaceExpression. 
- replaces expressions in subscript list from all Crefs."
-  input ComponentRef inCref;
-  input DAE.Exp inExpSource;
-  input DAE.Exp inExpTarget;
-  output ComponentRef outCref;
-  output Integer outInteger;
-algorithm
-  (outCref,outInteger) := match (inCref,inExpSource,inExpTarget)
-    local
-      DAE.Exp source,target;
-      Integer c1,c2,c;
-      Type tp;
-      Ident id;
-      ComponentRef cr,cr1;
-      list<Subscript> subs;
-    
-    case(DAE.CREF_QUAL(id,tp,subs,cr),source,target) 
-      equation
-        (subs,c1) = replaceExpSubs(subs,source,target);
-        (cr,c2) = replaceCrefExpSubs(cr,source,target);
-        cr1 = ComponentReference.makeCrefQual(id, tp, subs, cr);
-        c = c1+c2;
-      then 
-        (cr1,c);
-
-    // simple componentreference, replace subscripts
-    case(DAE.CREF_IDENT(id,tp,subs),source,target) 
-      equation
-        (subs,c1) = replaceExpSubs(subs,source,target);
-        cr1 = ComponentReference.makeCrefIdent(id, tp, subs);
-      then 
-        (cr1,c1);
-  end match;
-end replaceCrefExpSubs;
-
-protected function replaceExpSubs
-"function: replaceExpSubs
-help function to replaceExpression. replaces expressions in subscript list
-"
-  input list<Subscript> subs;
-  input DAE.Exp source;
-  input DAE.Exp target;
-  output list<Subscript> outSubs;
-  output Integer cnt;
-algorithm
-  (outSubs,cnt) := match(subs,source,target)
-    local DAE.Exp e; Integer cnt1,cnt2;
-    
-    // empty list
-    case({},_,_) then ({},0);
-    
-    // WHOLEDIM == ':' 
-    case(DAE.WHOLEDIM()::subs,source,target) 
-      equation
-        (subs,cnt) = replaceExpSubs(subs,source,target);
-      then 
-        (DAE.WHOLEDIM()::subs,cnt);
-
-    // slices e.g. a[{1,5,7}]
-    case(DAE.SLICE(e)::subs,source,target) 
-      equation
-        (e,cnt1) = replaceExp(e,source,target);
-        (subs,cnt2) = replaceExpSubs(subs,source,target);
-        cnt = cnt1 + cnt2;
-      then 
-        (DAE.SLICE(e)::subs,cnt);
-
-    // index, e.g. a[i+1]
-    case(DAE.INDEX(e)::subs,source,target) 
-      equation
-        (e,cnt1) = replaceExp(e,source,target);
-        (subs,cnt2) = replaceExpSubs(subs,source,target);
-        cnt = cnt1 + cnt2;
-      then 
-        (DAE.INDEX(e)::subs,cnt);
-  end match;
-end replaceExpSubs;
-
-protected function replaceExpMatrix
-"function: replaceExpMatrix
-  author: PA
-  Helper function to replaceExp,
-  traverses Matrix expression list."
-  input list<list<tuple<DAE.Exp, Boolean>>> inTplExpBooleanLstLst1;
-  input DAE.Exp inExp2;
-  input DAE.Exp inExp3;
-  output list<list<tuple<DAE.Exp, Boolean>>> outTplExpBooleanLstLst;
-  output Integer outInteger;
-algorithm
-  (outTplExpBooleanLstLst,outInteger) := matchcontinue (inTplExpBooleanLstLst1,inExp2,inExp3)
-    local
-      DAE.Exp str,dst,src;
-      list<tuple<DAE.Exp, Boolean>> e_1,e;
-      Integer c1,c2,c;
-      list<list<tuple<DAE.Exp, Boolean>>> es_1,es;
-    // empty list
-    case ({},str,dst) then ({},0);
-    // head :: rest
-    case ((e :: es),src,dst)
-      equation
-        (e_1,c1) = replaceExpMatrix2(e, src, dst);
-        (es_1,c2) = replaceExpMatrix(es, src, dst);
-        c = c1 + c2;
-      then
-        ((e_1 :: es_1),c);
-    // failure
-    case (_,_,_)
-      equation
-        Debug.fprint("failtrace", "- Expression.replaceExpMatrix failed\n");
-      then
-        fail();
-  end matchcontinue;
-end replaceExpMatrix;
-
-protected function replaceExpMatrix2
-"function: replaceExpMatrix2
-  author: PA
-  Helper function to replaceExpMatrix"
-  input list<tuple<DAE.Exp, Boolean>> inTplExpBooleanLst1;
-  input DAE.Exp inExp2;
-  input DAE.Exp inExp3;
-  output list<tuple<DAE.Exp, Boolean>> outTplExpBooleanLst;
-  output Integer outInteger;
-algorithm
-  (outTplExpBooleanLst,outInteger) := match (inTplExpBooleanLst1,inExp2,inExp3)
-    local
-      list<tuple<DAE.Exp, Boolean>> es_1,es;
-      Integer c1,c2,c;
-      DAE.Exp e_1,e,src,dst;
-      Boolean b;
-    case ({},_,_) then ({},0);
-    case (((e,b) :: es),src,dst)
-      equation
-        (es_1,c1) = replaceExpMatrix2(es, src, dst);
-        (e_1,c2) = replaceExp(e, src, dst);
-        c = c1 + c2;
-      then
-        (((e_1,b) :: es_1),c);
-  end match;
-end replaceExpMatrix2;
+end replaceExpWork;
 
 public function expressionCollector
    input tuple<DAE.Exp,list<DAE.Exp>> inExps;
@@ -4755,6 +4377,44 @@ algorithm
   end match;
 end traverseExpBidirCref;
 
+public function traverseExpTopDownCrefHelper
+  input ComponentRef inCref;
+  input FuncType rel;
+  input Argument arg;
+  output ComponentRef outCref;
+  output Argument outArg;
+
+  partial function FuncType
+    input tuple<DAE.Exp, Argument> inTuple;
+    output tuple<DAE.Exp, Boolean, Argument> outTuple;
+  end FuncType;
+
+  replaceable type Argument subtypeof Any;
+algorithm
+  (outCref, outArg) := match(inCref, rel, arg)
+    local
+      Ident name;
+      ComponentRef cr;
+      Type ty;
+      list<DAE.Subscript> subs;
+
+    case (DAE.CREF_QUAL(ident = name, identType = ty, subscriptLst = subs, componentRef = cr), rel, arg)
+      equation
+        (subs,arg) = traverseExpTopDownSubs(subs, rel, arg);
+        (cr, arg) = traverseExpTopDownCrefHelper(cr, rel, arg);
+      then
+        (DAE.CREF_QUAL(name, ty, subs, cr), arg);
+
+    case (DAE.CREF_IDENT(ident = name, identType = ty, subscriptLst = subs), rel, arg)
+      equation
+        (subs,arg) = traverseExpTopDownSubs(subs, rel, arg);
+      then
+        (DAE.CREF_IDENT(name, ty, subs), arg);
+
+    case (DAE.WILD(), _, _) then (inCref, arg);
+  end match;
+end traverseExpTopDownCrefHelper;
+
 public function traverseExpBidirSubs
   "Helper function to traverseExpBidirCref. Traverses expressions in a
   subscript."
@@ -4797,6 +4457,55 @@ algorithm
 
   end match;
 end traverseExpBidirSubs;
+
+public function traverseExpTopDownSubs
+  input list<Subscript> inSubscript;
+  input FuncType rel;
+  input Argument arg;
+  output list<Subscript> outSubscript;
+  output Argument outArg;
+
+  partial function FuncType
+    input tuple<DAE.Exp, Argument> inTuple;
+    output tuple<DAE.Exp, Boolean, Argument> outTuple;
+  end FuncType;
+
+  replaceable type Argument subtypeof Any;
+algorithm
+  (outSubscript, outArg) := match(inSubscript, rel, arg)
+    local
+      DAE.Exp sub_exp;
+      list<Subscript> rest;
+
+    case ({}, _, arg) then ({},arg);
+    case (DAE.WHOLEDIM()::rest, _, _)
+      equation
+        (rest,arg) = traverseExpTopDownSubs(rest,rel,arg);
+      then (DAE.WHOLEDIM()::rest, arg);
+
+    case (DAE.SLICE(exp = sub_exp)::rest, rel, arg)
+      equation
+        ((sub_exp,arg)) = traverseExpTopDown(sub_exp, rel, arg);
+        (rest,arg) = traverseExpTopDownSubs(rest,rel,arg);
+      then
+        (DAE.SLICE(sub_exp)::rest, arg);
+
+    case (DAE.INDEX(exp = sub_exp)::rest, rel, arg)
+      equation
+        ((sub_exp,arg)) = traverseExpTopDown(sub_exp, rel, arg);
+        (rest,arg) = traverseExpTopDownSubs(rest,rel,arg);
+      then
+        (DAE.INDEX(sub_exp)::rest, arg);
+
+    case (DAE.WHOLE_NONEXP(exp = sub_exp)::rest, rel, arg)
+      equation
+        ((sub_exp,arg)) = traverseExpTopDown(sub_exp, rel, arg);
+        (rest,arg) = traverseExpTopDownSubs(rest,rel,arg);
+      then
+        (DAE.WHOLE_NONEXP(sub_exp)::rest, arg);
+
+  end match;
+end traverseExpTopDownSubs;
 
 public function traverseExpBidirMatrixElement
   "Helper function to traverseExpBidir. Traverses a matrix element expression."
