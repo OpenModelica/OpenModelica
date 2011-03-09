@@ -12765,6 +12765,7 @@ algorithm
       list<Absyn.ClassPart> rest;
       list<Absyn.EquationItem> eqItems;
       list<Absyn.AlgorithmItem> alItems;
+      list<Absyn.ElementArg> elArgs;
     
     case ({},_,_) then "";
     
@@ -12817,6 +12818,15 @@ algorithm
     case (Absyn.INITIALALGORITHMS(alItems)::rest, id, f)
       equation
         str = getNamedAnnotationInAlgItems(alItems,id,f);
+        // make it sure is not empty!
+        false = stringEqual(str, "");
+      then
+        str;
+    
+    // search in exernal declarations
+    case (Absyn.EXTERNAL(annotation_ = SOME(Absyn.ANNOTATION(elArgs)))::rest, id, f)
+      equation
+        str = getNamedAnnotationStr(elArgs,id,f);
         // make it sure is not empty!
         false = stringEqual(str, "");
       then
