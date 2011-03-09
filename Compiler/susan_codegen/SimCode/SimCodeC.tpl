@@ -5679,11 +5679,13 @@ case REDUCTION(path = IDENT(name = name as "list"), range = range) then
   let &tmpVarDecls = buffer ""
   let &tmpExpPre = buffer ""
   let &bodyExpPre = buffer ""
+  let &guardExpPre = buffer ""
   let acc = tempDecl("modelica_metatype", &tmpVarDecls)
   let resHead = tempDecl("modelica_metatype", &varDecls)
   let resTail = match name case "list" then tempDecl("modelica_metatype*", &tmpVarDecls)
   let lstExp = daeExp(range, context, &tmpExpPre, &tmpVarDecls)
   let bodyExp = daeExp(expr, context, &bodyExpPre, &tmpVarDecls)
+  let guardCond = match guardExp case SOME(grd) then daeExp(grd, context, &guardExpPre, &tmpVarDecls)
   let iteratorName = contextIteratorName(ident, context)
   let &preExp += <<
   { /* "<%name%>" reduction */
@@ -5702,8 +5704,14 @@ case REDUCTION(path = IDENT(name = name as "list"), range = range) then
     %>
     while (!listEmpty(<%acc%>)) {
       <%iteratorName%> = MMC_CAR(<%acc%>);
-      <%bodyExpPre%>
-      <% match name
+      <% if guardExp then
+      <<
+      <%&guardExpPre%>
+      if (<%guardCond%>) {
+      >>
+      else '{' %>
+        <%bodyExpPre%>
+        <% match name
          case "list" then // Let's save some bytes from being garbage by using runtime trickery. We get a little bit of overhead from filling the CDR with 0 and patching it as we go, but lower memory overhead should make up for it.
            <<
            *<%resTail%> = mmc_mk_cons(<%bodyExp%>,0);
@@ -5711,7 +5719,8 @@ case REDUCTION(path = IDENT(name = name as "list"), range = range) then
            >>
          case "listReverse" then // This is too easy; the damn list is already in the correct order
            '<%resHead%> = mmc_mk_cons(<%bodyExp%>,<%resHead%>);'
-      %>
+        %>
+      }
       <%acc%> = MMC_CDR(<%acc%>);
     }
     <% match name case "list" then '*<%resTail%> = mmc_mk_nil();' %>

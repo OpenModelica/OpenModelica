@@ -197,6 +197,35 @@ algorithm
   end match;
 end elabExpListList;
 
+protected function elabExpOptAndMatchType "
+  elabExp, but for Option<Absyn.Exp>,DAE.Type => Option<DAE.Exp>"
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input Option<Absyn.Exp> oExp;
+  input DAE.Type defaultType;
+  input Boolean inBoolean;
+  input Option<Interactive.InteractiveSymbolTable> inSt;
+  input Boolean performVectorization;
+  input Prefix.Prefix inPrefix;
+  input Absyn.Info info;
+  output Env.Cache cache;
+  output Option<DAE.Exp> outExp;
+  output DAE.Properties prop;
+  output Option<Interactive.InteractiveSymbolTable> st;
+algorithm
+  (cache,outExp,prop,st) := match (inCache,inEnv,oExp,defaultType,inBoolean,inSt,performVectorization,inPrefix,info)
+    local
+      Absyn.Exp inExp;
+      DAE.Exp exp;
+    case (_,_,SOME(inExp),_,_,_,_,_,_)
+      equation
+        (cache,exp,prop,st) = elabExp(inCache,inEnv,inExp,inBoolean,inSt,performVectorization,inPrefix,info);
+        (exp,prop) = Types.matchProp(exp,prop,DAE.PROP(defaultType,DAE.C_CONST()),true);
+      then (cache,SOME(exp),prop,st);
+    else (inCache,NONE(),DAE.PROP(defaultType,DAE.C_CONST()),inSt);
+  end match;
+end elabExpOptAndMatchType;
+
 public function elabExp "
 function: elabExp
   Static analysis of expressions means finding out the properties of
@@ -215,9 +244,9 @@ function: elabExp
   output Env.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
-  output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
+  output Option<Interactive.InteractiveSymbolTable> st;
 algorithm
-  (outCache,outExp,outProperties,outInteractiveInteractiveSymbolTableOption) := elabExp2(inCache,inEnv,inExp,inBoolean,inInteractiveInteractiveSymbolTableOption,performVectorization,inPrefix,info,Error.getNumErrorMessages());
+  (outCache,outExp,outProperties,st) := elabExp2(inCache,inEnv,inExp,inBoolean,inInteractiveInteractiveSymbolTableOption,performVectorization,inPrefix,info,Error.getNumErrorMessages());
 end elabExp;
 
 protected function elabExp2 "
@@ -1003,7 +1032,7 @@ algorithm
     local
       DAE.Exp iterexp_1,exp_1;
       DAE.Type iterty,expty;
-      DAE.Const iterconst,expconst,const;
+      DAE.Const iterconst,expconst,const,guardconst;
       list<Env.Frame> env_1,env;
       Option<Interactive.InteractiveSymbolTable> st;
       DAE.Properties prop;
@@ -1017,6 +1046,8 @@ algorithm
       Absyn.ForIterators iterators;
       String reduction_op;
       list<DAE.Exp> expl;
+      Option<Absyn.Exp> aguardExp;
+      Option<DAE.Exp> guardExp;
 
     case (cache, env, fn as Absyn.CREF_IDENT("array", {}), exp, iterators, 
         impl, st, doVect,pre,info)
@@ -1047,7 +1078,7 @@ algorithm
         (cache, exp_1, DAE.PROP(expty, const), st);
     
     // Expansion failed in previous case, generate reduction call.
-    case (cache,env,fn,exp,{Absyn.ITERATOR(iter,NONE(),SOME(iterexp))},impl,st,doVect,pre,info)
+    case (cache,env,fn,exp,{Absyn.ITERATOR(iter,aguardExp,SOME(iterexp))},impl,st,doVect,pre,info)
       equation
         (cache,iterexp_1,DAE.PROP(iterty,iterconst),_)
           = elabExp(cache, env, iterexp, impl, st, doVect,pre,info);
@@ -1057,12 +1088,13 @@ algorithm
           SCode.CONST(), SOME(iterconst));
         (cache,exp_1,DAE.PROP(expty, expconst),st) = 
           elabExp(cache, env_1, exp, impl, st, doVect,pre,info);
-        const = Types.constAnd(expconst, iterconst);
+        (cache,guardExp,DAE.PROP(_, guardconst),st) = elabExpOptAndMatchType(cache, env_1, aguardExp, DAE.T_BOOL_DEFAULT, impl, st, doVect,pre,info); 
+        const = Types.constAnd(Types.constAnd(expconst, iterconst), guardconst);
         (exp_1,expty) = reductionType(fn, exp_1, expty, iterexp_1);
         prop = DAE.PROP(expty, const);
         fn_1 = Absyn.crefToPath(fn);
       then
-        (cache,DAE.REDUCTION(fn_1,exp_1,iter,NONE(),iterexp_1),prop,st);
+        (cache,DAE.REDUCTION(fn_1,exp_1,iter,guardExp,iterexp_1),prop,st);
 
     case (cache,env,fn,exp,iterators,impl,st,doVect,pre,info)
       equation

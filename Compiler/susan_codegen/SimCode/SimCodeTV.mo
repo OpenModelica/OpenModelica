@@ -769,6 +769,7 @@ package DAE
       Absyn.Path path;
       Exp expr;
       Ident ident;
+      Option<Exp> guardExp;
       Exp range;
     end REDUCTION;
     record END end END;
