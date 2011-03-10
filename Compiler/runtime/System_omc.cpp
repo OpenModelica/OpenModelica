@@ -41,6 +41,12 @@ extern void System_writeFile(const char* filename, const char* data)
     MMC_THROW();
 }
 
+extern int System_removeFile(const char* filename)
+{
+  return SystemImpl__removeFile(filename);
+}
+
+
 extern char* System_readFile(const char* filename)
 {
   return SystemImpl__readFile(filename);

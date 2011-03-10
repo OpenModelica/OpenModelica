@@ -311,6 +311,16 @@ static char* SystemImpl__readFile(const char* filename)
 }
 
 /* returns 0 on success */
+int SystemImpl__removeFile(const char* filename)
+{
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  return _unlink(filename);
+#else /* unix */
+  return unlink(filename);
+#endif
+}
+
+/* returns 0 on success */
 int SystemImpl__writeFile(const char* filename, const char* data)
 {
 #if defined(__MINGW32__) || defined(_MSC_VER)
