@@ -97,7 +97,7 @@ case SIMCODE(__) then
   #endif
   <%globalData(modelInfo,fileNamePrefix)%>
   
-  <%equationInfo(appendLists(appendAllequation(JacobianMatrixes),allEquationsPlusWhen))%>
+  <%equationInfo(appendLists(appendAllequation(JacobianMatrixes),allEquations))%>
   
   <%functionGetName(modelInfo)%>
   
@@ -113,40 +113,21 @@ case SIMCODE(__) then
   
   <%functionExtraResiduals(allEquations)%>
   
-  <%functionDaeOutput(nonStateContEquations, removedEquations,
-                     algorithmAndEquationAsserts)%>
-  
-  <%functionDaeOutput2(nonStateDiscEquations, removedEquations)%>
-  
   <%functionInput(modelInfo)%>
   
   <%functionOutput(modelInfo)%>
-  
-  <%functionDaeRes()%>
-  
-  <%functionZeroCrossing(zeroCrossings)%>
-  
-  <%functionHandleZeroCrossing(zeroCrossingsNeedSave)%>
-  
+
   <%functionInitSample(sampleConditions)%>
   
   <%functionSampleEquations(sampleEquations)%>
 
-  <%functionUpdateDependents(allEquations, helpVarInfo)%>
-  
   <%functionStoreDelayed(delayedExps)%>
-  
-  <%functionWhen(whenClauses)%>
-  
-  <%functionOde(stateContEquations)%>
-  
+
   <%functionInitial(initialEquations)%>
   
   <%functionInitialResidual(residualEquations)%>
   
   <%functionBoundParameters(parameterEquations)%>
-  
-  <%functionCheckForDiscreteVarChanges(helpVarInfo, discreteModelVars)%>
   
   <%functionODE(odeEquations)%>
   
@@ -156,11 +137,11 @@ case SIMCODE(__) then
     
   <%functionAliasEquation(removedEquations)%>
                        
-  <%functionDAE(allEquationsPlusWhen, whenClauses, helpVarInfo)%>
+  <%functionDAE(allEquations, whenClauses, helpVarInfo)%>
     
   <%functionOnlyZeroCrossing(zeroCrossings)%>
   
-  <%functionCheckForDiscreteChanges(discreteModelVars2)%>
+  <%functionCheckForDiscreteChanges(discreteModelVars)%>
   
   <%functionAssertsforCheck(algorithmAndEquationAsserts)%>
   
@@ -903,69 +884,6 @@ case EXTOBJINFO(__) then
   >>
 end functionDeInitializeDataStruc;
 
-template functionDaeOutput(list<SimEqSystem> nonStateContEquations,
-                  list<SimEqSystem> removedEquations,
-                  list<DAE.Statement> algorithmAndEquationAsserts)
- "Generates function in simulation file."
-::=
-  let &varDecls = buffer "" /*BUFD*/
-  let nonStateContPart = (nonStateContEquations |> eq =>
-      equation_(eq, contextSimulationNonDiscrete, &varDecls /*BUFD*/)
-    ;separator="\n")
-  let algAndEqAssertsPart = (algorithmAndEquationAsserts |> stmt =>
-      algStatement(stmt, contextSimulationNonDiscrete, &varDecls /*BUFD*/)
-    ;separator="\n")
-  let removedPart = (removedEquations |> eq =>
-      equation_(eq, contextSimulationNonDiscrete, &varDecls /*BUFD*/)
-    ;separator="\n")
-  <<
-  /* for continuous time variables */
-  int functionDAE_output()
-  {
-    state mem_state;
-    <%varDecls%>
-  
-    mem_state = get_memory_state();
-    <%nonStateContPart%>
-    <%algAndEqAssertsPart%>
-    <%removedPart%>
-    restore_memory_state(mem_state);
-  
-    return 0;
-  }
-  >>
-end functionDaeOutput;
-
-
-template functionDaeOutput2(list<SimEqSystem> nonStateDiscEquations,
-                   list<SimEqSystem> removedEquations)
- "Generates function in simulation file."
-::=
-  let &varDecls = buffer "" /*BUFD*/
-  let nonSateDiscPart = (nonStateDiscEquations |> eq =>
-      equation_(eq, contextSimulationDiscrete, &varDecls /*BUFD*/)
-    ;separator="\n")
-  let removedPart = (removedEquations |> eq =>
-      equation_(eq, contextSimulationDiscrete, &varDecls /*BUFD*/)
-    ;separator="\n")
-  <<
-  /* for discrete time variables */
-  int functionDAE_output2()
-  {
-    state mem_state;
-    <%varDecls%>
-  
-    mem_state = get_memory_state();
-    <%nonSateDiscPart%>
-    <%removedPart%>
-    restore_memory_state(mem_state);
-  
-    return 0;
-  }
-  >>
-end functionDaeOutput2;
-
-
 template functionInput(ModelInfo modelInfo)
  "Generates function in simulation file."
 ::=
@@ -998,134 +916,6 @@ case MODELINFO(vars=SIMVARS(__)) then
   }
   >>
 end functionOutput;
-
-
-template functionDaeRes()
-  "Generates function in simulation file."
-::=
-  <<
-  int functionDAE_res(double *t, double *x, double *xd, double *delta,
-                      fortran_integer *ires, double *rpar, fortran_integer *ipar)
-  {
-    int i;
-    double temp_xd[NX];
-  #if NY>0    
-    double temp_alg[NY];
-  #endif
-    double* statesBackup;
-    double* statesDerivativesBackup;
-    double* algebraicsBackup;
-    double timeBackup;
-  
-    statesBackup = localData->states;
-    statesDerivativesBackup = localData->statesDerivatives;
-  #if NY>0 
-      algebraicsBackup = localData->algebraics;
-  #endif
-    timeBackup = localData->timeValue;
-    localData->states = x;
-    
-    localData->statesDerivatives = temp_xd;
-  #if NY>0   
-    localData->algebraics = temp_alg;
-  #endif
-    localData->timeValue = *t;
-  
-    memcpy(localData->statesDerivatives, statesDerivativesBackup, localData->nStates*sizeof(double));
-  #if NY>0     
-    memcpy(localData->algebraics, algebraicsBackup, localData->nAlgebraic*sizeof(double));
-  #endif
-  
-    functionODE();
-  
-    /* get the difference between the temp_xd(=localData->statesDerivatives)
-       and xd(=statesDerivativesBackup) */
-    for (i=0; i < localData->nStates; i++) {
-      delta[i] = localData->statesDerivatives[i] - statesDerivativesBackup[i];
-    }
-  
-    localData->states = statesBackup;
-    localData->statesDerivatives = statesDerivativesBackup;
-  #if NY>0 
-    localData->algebraics = algebraicsBackup;
-  #endif
-    localData->timeValue = timeBackup;
-  
-    if (modelErrorCode) {
-      if (ires) {
-        *ires = -1;
-      }
-      modelErrorCode =0;
-    }
-  
-    return 0;
-  }
-  >>
-end functionDaeRes;
-
-
-template functionZeroCrossing(list<ZeroCrossing> zeroCrossings)
-  "Generates function in simulation file."
-::=
-  let &varDecls = buffer "" /*BUFD*/
-  let zeroCrossingsCode = zeroCrossingsTpl(zeroCrossings, &varDecls /*BUFD*/)
-  <<
-  int function_zeroCrossing(fortran_integer *neqm, double *t, double *x, fortran_integer *ng,
-                            double *gout, double *rpar, fortran_integer* ipar)
-  {
-    double timeBackup;
-    state mem_state;
-  
-    mem_state = get_memory_state();
-  
-    timeBackup = localData->timeValue;
-    localData->timeValue = *t;
-    <%varDecls%>
-  
-    functionODE();
-    functionDAE_output();
-  
-    <%zeroCrossingsCode%>
-  
-    restore_memory_state(mem_state);
-    localData->timeValue = timeBackup;
-  
-    return 0;
-  }
-  >>
-end functionZeroCrossing;
-
-
-template functionHandleZeroCrossing(list<list<SimVar>> zeroCrossingsNeedSave)
-  "Generates function in simulation file."
-::=
-  <<
-  /* This function should only save in cases. The rest is done in
-     function_updateDependents. */
-  int handleZeroCrossing(long index)
-  {
-    state mem_state;
-  
-    mem_state = get_memory_state();
-  
-    switch(index) {
-      <%zeroCrossingsNeedSave |> vars hasindex i0 =>
-        <<
-        case <%i0%>:
-          <%vars |> SIMVAR(__) => 'save(<%cref(name)%>);' ;separator="\n"%>
-          break;
-        >>
-      ;separator="\n"%>
-      default:
-        break;
-    }
-  
-    restore_memory_state(mem_state);
-  
-    return 0;
-  }
-  >>
-end functionHandleZeroCrossing;
 
 template functionInitSample(list<SampleCondition> sampleConditions)
   "Generates function initSample() in simulation file."
@@ -1164,40 +954,6 @@ template functionSampleEquations(list<SimEqSystem> sampleEqns)
   }
 >>
 end functionSampleEquations;
- 
-template functionUpdateDependents(list<SimEqSystem> allEquations,
-                                  list<HelpVarInfo> helpVarInfo)
- "Generates function in simulation file."
-::=
-  let &varDecls = buffer "" /*BUFD*/
-  let eqs = (allEquations |> eq =>
-      equation_(eq, contextSimulationDiscrete, &varDecls /*BUFD*/)
-    ;separator="\n")
-  let hvars = (helpVarInfo |> (hindex, exp, _) =>
-      let &preExp = buffer "" /*BUFD*/
-      let expPart = daeExp(exp, contextSimulationDiscrete, &preExp /*BUFC*/,
-                         &varDecls /*BUFD*/)
-      '<%preExp%>localData->helpVars[<%hindex%>] = <%expPart%>;'
-    ;separator="\n")
-  <<
-  int function_updateDependents()
-  {
-    state mem_state;
-    <%varDecls%>
-  
-    inUpdate=initial()?0:1;
-  
-    mem_state = get_memory_state();
-    <%eqs%>
-    <%hvars%>
-    restore_memory_state(mem_state);
-  
-    inUpdate=0;
-  
-    return 0;
-  }
-  >>
-end functionUpdateDependents;
 
 template functionInitial(list<SimEqSystem> initialEquations)
  "Generates function in simulation file."
@@ -1316,38 +1072,6 @@ template functionBoundParameters(list<SimEqSystem> parameterEquations)
   >>
 end functionBoundParameters;
 
-//TODO: Is the -1 windex check really correct? It seems to work.
-template functionCheckForDiscreteVarChanges(list<HelpVarInfo> helpVarInfo,
-                                            list<ComponentRef> discreteModelVars)
- "Generates function in simulation file."
-::=
-  <<
-  int checkForDiscreteVarChanges()
-  {
-    int needToIterate = 0;
-  
-    <%helpVarInfo |> (hindex, exp, windex) =>
-      match windex //if windex is not -1 then
-      case -1 then ""
-      else
-        'if (edge(localData->helpVars[<%hindex%>])) AddEvent(<%windex%> + localData->nZeroCrossing);'
-    ;separator="\n"%>
-  
-    <%discreteModelVars |> var =>
-      'if (change(<%cref(var)%>)) { needToIterate=1; }'
-    ;separator="\n"%>
-    
-    for (long i = 0; i < localData->nHelpVars; i++) {
-      if (change(localData->helpVars[i])) {
-        needToIterate=1;
-      }
-    }
-  
-    return needToIterate;
-  }
-  >>
-end functionCheckForDiscreteVarChanges;
-
 template functionStoreDelayed(DelayedExpression delayed)
   "Generates function in simulation file."
 ::=
@@ -1376,63 +1100,6 @@ template functionStoreDelayed(DelayedExpression delayed)
   }
   >>
 end functionStoreDelayed;
-
-
-template functionWhen(list<SimWhenClause> whenClauses)
-  "Generates function in simulation file."
-::=
-  let &varDecls = buffer "" /*BUFD*/
-  let cases = (whenClauses |> SIM_WHEN_CLAUSE(__) hasindex i0 =>
-      <<
-      case <%i0%>:
-        <%functionWhenCaseEquation(whenEq, &varDecls /*BUFD*/)%>
-        <%reinits |> reinit =>
-          let body = functionWhenReinitStatement(reinit, &varDecls /*BUFD*/)
-          '<%body%>'
-        ;separator="\n"%>
-        break;<%\n%>
-      >>
-    )
-  <<
-  int function_when(int i)
-  {
-    state mem_state;
-    <%varDecls%>
-  
-    mem_state = get_memory_state();
-  
-    switch(i) {
-
-      <%cases%>
-      default:
-        break;
-    }
-  
-    restore_memory_state(mem_state);
-  
-    return 0;
-  }
-  >>
-end functionWhen;
-
-
-template functionWhenCaseEquation(Option<WhenEquation> when, Text &varDecls /*BUFP*/)
-  "Generates content of case-clause for a when equation in function_when."
-::=
-match when
-case SOME(weq as WHEN_EQ(__)) then
-
-  let &preExp = buffer "" /*BUFD*/
-  let expPart = daeExp(weq.right, contextSimulationDiscrete,
-                     &preExp /*BUFC*/, &varDecls /*BUFD*/)
-  <<
-  save(<%cref(weq.left)%>);
-  
-  <%preExp%>
-  <%cref(weq.left)%> = <%expPart%>;
-  >>
-end functionWhenCaseEquation;
-
 
 template functionWhenReinitStatement(WhenOperator reinit, Text &varDecls /*BUFP*/)
  "Generates re-init statement for when equation."
@@ -1530,17 +1197,17 @@ template functionWhenReinitStatementElse(list<WhenOperator> reinits, Text &preEx
   >>
 end functionWhenReinitStatementElse;
 
-template functionOde(list<SimEqSystem> stateContEquations)
+template functionODE(list<SimEqSystem> derivativEquations)
  "Generates function in simulation file."
 ::=
   let &varDecls = buffer "" /*BUFD*/
-  let stateContPart = (stateContEquations |> eq =>
-      equation_(eq, contextSimulationNonDiscrete, &varDecls /*BUFD*/)
+  let odeEquations = (derivativEquations |> eq =>
+      equation_(eq, contextSimulationNonDiscrete, &varDecls /*BUFC*/)
     ;separator="\n")
   let &varDecls2 = buffer "" /*BUFD*/
-  let stateContPartInline = (stateContEquations |> eq =>
+  let stateContPartInline = (derivativEquations |> eq =>
       equation_(eq, contextInlineSolver, &varDecls2 /*BUFC*/)
-    ;separator="\n")
+    ;separator="\n")    
   <<
   int functionODE()
   {
@@ -1548,12 +1215,11 @@ template functionOde(list<SimEqSystem> stateContEquations)
     <%varDecls%>
   
     mem_state = get_memory_state();
-    <%stateContPart%>
+    <%odeEquations%>
     restore_memory_state(mem_state);
   
     return 0;
   }
-
   #if defined(_OMC_ENABLE_INLINE)
   int functionODE_inline()
   {
@@ -1575,28 +1241,6 @@ template functionOde(list<SimEqSystem> stateContEquations)
   }
   #endif
   >>
-end functionOde;
-
-template functionODE(list<SimEqSystem> derivativEquations)
- "Generates function in simulation file."
-::=
-  let &varDecls = buffer "" /*BUFD*/
-  let odeEquations = (derivativEquations |> eq =>
-      equation_(eq, contextSimulation2NonDiscrete, &varDecls /*BUFC*/)
-    ;separator="\n")
-  <<
-  int functionODE_new()
-  {
-    state mem_state;
-    <%varDecls%>
-  
-    mem_state = get_memory_state();
-    <%odeEquations%>
-    restore_memory_state(mem_state);
-  
-    return 0;
-  }
-  >>
 end functionODE;
 
 template functionAlgebraic(list<SimEqSystem> algebraicEquations)
@@ -1604,7 +1248,7 @@ template functionAlgebraic(list<SimEqSystem> algebraicEquations)
 ::=
   let &varDecls = buffer "" /*BUFD*/
   let algEquations = (algebraicEquations |> eq =>
-      equation_(eq, contextSimulation2NonDiscrete, &varDecls /*BUFC*/)
+      equation_(eq, contextSimulationNonDiscrete, &varDecls /*BUFC*/)
     ;separator="\n")
   <<
   /* for continuous time variables */
@@ -1622,35 +1266,12 @@ template functionAlgebraic(list<SimEqSystem> algebraicEquations)
   >>
 end functionAlgebraic;
 
-template functiondiscreteAlgebraics(list<SimEqSystem> discalgebraicEquations)
- "Generates function in simulation file."
-::=
-  let &varDecls = buffer "" /*BUFD*/
-  let discalgEquations = (discalgebraicEquations |> eq =>
-      equation_(eq, contextSimulation2NonDiscrete, &varDecls /*BUFC*/)
-    ;separator="\n")
-  <<
-  /* for continuous time variables */
-  int functiondiscAlgebraics()
-  {
-    state mem_state;
-    <%varDecls%>
-  
-    mem_state = get_memory_state();
-    <%discalgEquations%>
-    restore_memory_state(mem_state);
-  
-    return 0;
-  }
-  >>
-end functiondiscreteAlgebraics;
-
 template functionAliasEquation(list<SimEqSystem> removedEquations)
  "Generates function in simulation file."
 ::=
   let &varDecls = buffer "" /*BUFD*/
   let removedPart = (removedEquations |> eq =>
-      equation_(eq, contextSimulation2NonDiscrete, &varDecls /*BUFC*/)
+      equation_(eq, contextSimulationNonDiscrete, &varDecls /*BUFC*/)
     ;separator="\n")   
   <<
   /* for continuous time variables */
@@ -1684,7 +1305,7 @@ template functionODE_residual()
 
     localData->timeValue = *t;
     localData->states = x;
-    functionODE_new();
+    functionODE();
   
     /* get the difference between the temp_xd(=localData->statesDerivatives)
        and xd(=statesDerivativesBackup) */
@@ -1707,7 +1328,7 @@ template functionDAE( list<SimEqSystem> allEquationsPlusWhen,
 ::=
   let &varDecls = buffer "" /*BUFD*/
   let eqs = (allEquationsPlusWhen |> eq =>
-      equation_(eq, contextSimulation2Discrete, &varDecls /*BUFD*/)
+      equation_(eq, contextSimulationDiscrete, &varDecls /*BUFD*/)
     ;separator="\n")
     
   let reinit = (whenClauses |> when hasindex i0 =>
@@ -1792,7 +1413,7 @@ template functionAssertsforCheck(list<DAE.Statement> algorithmAndEquationAsserts
 ::=
   let &varDecls = buffer "" /*BUFD*/
   let algAndEqAssertsPart = (algorithmAndEquationAsserts |> stmt =>
-      algStatement(stmt, contextSimulation2Discrete, &varDecls /*BUFD*/)
+      algStatement(stmt, contextSimulationDiscrete, &varDecls /*BUFD*/)
     ;separator="\n")
   <<
   /* for continuous time variables */
@@ -4224,8 +3845,7 @@ case ecr as CREF(componentRef=WILD(__)) then
 case CREF(ty= t as DAE.ET_ARRAY(__)) then
   let lhsStr = scalarLhsCref(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   match context
-  case SIMULATION(__)
-  case SIMULATION2(__) then
+  case SIMULATION(__) then
     <<
     copy_<%expTypeShort(t)%>_array_data_mem(&<%rhsStr%>, &<%lhsStr%>);
     >>
@@ -4234,8 +3854,7 @@ case CREF(ty= t as DAE.ET_ARRAY(__)) then
 case UNARY(exp = e as CREF(ty= t as DAE.ET_ARRAY(__))) then
   let lhsStr = scalarLhsCref(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   match context
-  case SIMULATION(__)
-  case SIMULATION2(__) then
+  case SIMULATION(__) then
     <<
     usub_<%expTypeShort(t)%>_array(&<%rhsStr%>);<%\n%>
     copy_<%expTypeShort(t)%>_array_data_mem(&<%rhsStr%>, &<%lhsStr%>);
@@ -4505,21 +4124,6 @@ case SIMULATION(genDiscrete=true) then
     <%else%>
     >>
   end match
-case SIMULATION2(genDiscrete=true) then
-  match when
-  case STMT_WHEN(__) then
-    let preIf = algStatementWhenPre(when, &varDecls /*BUFD*/)
-    let statements = (statementLst |> stmt =>
-        algStatement(stmt, context, &varDecls /*BUFD*/)
-      ;separator="\n")
-    let else = algStatementWhenElse(elseWhen, &varDecls /*BUFD*/)
-    <<
-    <%preIf%>
-    if (<%helpVarIndices |> idx => 'edge(localData->helpVars[<%idx%>])' ;separator=" || "%>) {
-      <%statements%>
-    }
-    <%else%>
-    >>    
 end algStmtWhen;
 
 
@@ -5060,25 +4664,7 @@ template daeExpRelationSim(Exp exp, Context context, Text &preExp /*BUFP*/,
 match exp
 case rel as RELATION(__) then
   match context
-  case SIMULATION(__) then
-    let e1 = daeExp(rel.exp1, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-    let e2 = daeExp(rel.exp2, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-    let res = tempDecl("modelica_boolean", &varDecls /*BUFD*/)
-    match rel.operator
-    case LESS(__) then
-      let &preExp += 'RELATIONLESS(<%res%>, <%e1%>, <%e2%>);<%\n%>'
-      res
-    case LESSEQ(__) then
-      let &preExp += 'RELATIONLESSEQ(<%res%>, <%e1%>, <%e2%>);<%\n%>'
-      res
-    case GREATER(__) then
-      let &preExp += 'RELATIONGREATER(<%res%>, <%e1%>, <%e2%>);<%\n%>'
-      res
-    case GREATEREQ(__) then
-      let &preExp += 'RELATIONGREATEREQ(<%res%>, <%e1%>, <%e2%>);<%\n%>'
-      res
-    end match
-  case SIMULATION2(genDiscrete=false) then
+  case SIMULATION(genDiscrete=false) then
      match rel.optionExpisASUB
      case NONE() then
         let e1 = daeExp(rel.exp1, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
@@ -5119,7 +4705,7 @@ case rel as RELATION(__) then
 	      res
         end match
       end match
-   case SIMULATION2(genDiscrete=true) then
+   case SIMULATION(genDiscrete=true) then
      match rel.optionExpisASUB
      case NONE() then
         let e1 = daeExp(rel.exp1, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
@@ -5462,14 +5048,14 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let retVar = match exp
       case CALL(ty=ET_NORETCALL(__)) then ""
       else tempDecl(retType, &varDecls)
-    let &preExp += if not builtin then match context case SIMULATION(__) case SIMULATION2(__) then
+    let &preExp += if not builtin then match context case SIMULATION(__) then
       <<
       #ifdef _OMC_MEASURE_TIME
       SIM_PROF_TICK_FN(<%funName%>_index);
       #endif<%\n%>
       >>
     let &preExp += '<%if retVar then '<%retVar%> = '%><%daeExpCallBuiltinPrefix(builtin)%><%funName%>(<%argStr%>);<%\n%>'
-    let &preExp += if not builtin then match context case SIMULATION(__) case SIMULATION2(__) then
+    let &preExp += if not builtin then match context case SIMULATION(__) then
       <<
       #ifdef _OMC_MEASURE_TIME
       SIM_PROF_ACC_FN(<%funName%>_index);

@@ -46,7 +46,6 @@
 #include "integer_array.h"
 #include "boolean_array.h"
 #include "rtclock.h"
-
 #include <stdlib.h>
 
 #ifdef __cplusplus
@@ -285,29 +284,20 @@ void storeExtrapolationData();
 /* function for calculating ouput values */
 /*used in DDASRT fortran function*/
 int
-functionDAE_output();
+functionODE();
 int
 functionAlgebraics();
 int
 functionAliasEquations();
-/* Function for calculating discrete variables, called when event has occured
-to get new values of discrete varibles*/
-int
-functionDAE_output2();
 
 /* function for calculating state values on residual form */
 /*used in DDASRT fortran function*/
-int
-functionDAE_res(double *t, double *x, double *xprime, double *delta, fortran_integer *ires, double *rpar, fortran_integer* ipar);
 int
 functionODE_residual(double *t, double *x, double *xprime, double *delta, fortran_integer *ires, double *rpar, fortran_integer* ipar);
 
 /* Function for calling external object constructors */
 void
 callExternalObjectConstructors(DATA*);
-
-int
-function_updateDependents();
 
 /*   function for calculating all equation sorting order 
   uses in EventHandle  */
@@ -322,9 +312,7 @@ function_storeDelayed();
 
 /* function for calculating states on explicit ODE form */
 /*used in functionDAE_res function*/
-int functionODE();
 int functionODE_inline();
-int functionODE_new();
 
 /* function for calculate initial values from initial equations and fixed start attibutes */
 int initial_function();

@@ -149,255 +149,6 @@ deinitializeEventData()
   delete[] str_saved;
 }
 
-/* \brief
- *
- * Checks for events during initialization.
- *
- * Some solvers(e.g. DASSRT )can not handle events at exaclty the start time.
- * For instance der(x)=1, b = x>0 simulated from 0 .. x will miss the event.
- * The zeroCrossingEnabled vector is used to prevent DASSRT from checking the event above since it occur
- * at start time for the solver.
- *
- * This function checks such initial events and calls the event handling for this. The function is called after the first
- * step is taken by DASSRT (a small tiny step just to check these events)
- * */
-void
-checkForInitialZeroCrossings(fortran_integer* jroot)
-{
-  int i;
-  if (sim_verbose)
-    {
-      cout << "checkForIntialZeroCrossings" << endl;
-    }
-  // enable only those that were disabled at init time.
-  for (i = 0; i < globalData->nZeroCrossing; i++)
-    {
-      if (zeroCrossingEnabled[i] == 0)
-        {
-          zeroCrossingEnabled[i] = 1;
-        }
-      else
-        {
-          zeroCrossingEnabled[i] = 0;
-        }
-    }
-  function_zeroCrossing(&globalData->nStates, &globalData->timeValue,
-      globalData->states, &globalData->nZeroCrossing, gout, 0, 0);
-
-  for (i = 0; i < globalData->nZeroCrossing; i++)
-    {
-      if (zeroCrossingEnabled[i] && gout[i])
-        {
-          handleZeroCrossing(i);
-          function_updateDependents();
-          functionDAE_output();
-        }
-    }
-  sim_result->emit();
-  CheckForNewEvents(&globalData->timeValue);
-  StartEventIteration(&globalData->timeValue);
-
-  saveall();
-  calcEnabledZeroCrossings();
-  if (sim_verbose)
-    {
-      cout << "checkForIntialZeroCrossings done." << endl;
-    }
-}
-
-/* This function is similar to CheckForNewEvents except that is called during initialization.
- *
- */
-
-void
-CheckForInitialEvents(double *t)
-{
-  // Check for changes in discrete variables
-  globalData->timeValue = *t;
-  if (sim_verbose)
-    {
-      cout << "Check for initial events." << endl;
-    }
-  // if discrete variable not in when equation has changed, saveall and  solve equations again.
-  while (checkForDiscreteVarChanges())
-    {
-      saveall();
-      function_updateDependents();
-    }
-  function_zeroCrossing(&globalData->nStates, &globalData->timeValue,
-      globalData->states, &globalData->nZeroCrossing, gout, 0, 0);
-  for (long i = 0; i < globalData->nZeroCrossing; i++)
-    {
-      if (sim_verbose)
-        printf("gout[%ld]=%f\n", i, gout[i]);
-      if (gout[i] < 0 || zeroCrossingEnabled[i] == 0)
-        { // check also zero crossings that are on zero.
-          if (sim_verbose)
-            {
-              cout << "adding event " << i << " at initialization" << endl;
-            }
-          AddEvent(i);
-        }
-    }
-}
-
-void
-CheckForNewEvents(double *t)
-{
-  //  int discVarChange=0;
-  // Check for changes in discrete variables
-  globalData->timeValue = *t;
-  // if discrete variable not in when equation has changed, saveall and solve equations again.
-  /*
- while(checkForDiscreteVarChanges()) {
- discVarChange=1;
- saveall();
- function_updateDependents();
- }
-
- if(!discVarChange) function_updateDependents();
-   */
-
-  if (checkForDiscreteVarChanges())
-    {
-      AddEvent(-1);
-    }
-
-  function_zeroCrossing(&globalData->nStates, &globalData->timeValue,
-      globalData->states, &globalData->nZeroCrossing, gout, 0, 0);
-  for (long i = 0; i < globalData->nZeroCrossing; i++)
-    {
-      if (gout[i] < 0)
-        {
-          AddEvent(i);
-        }
-    }
-}
-
-void
-AddEvent(long index)
-{
-  list<long>::iterator i;
-  for (i = EventQueue.begin(); i != EventQueue.end(); i++)
-    {
-      if (*i == index)
-        return;
-    }
-  EventQueue.push_back(index);
-  //cout << "Adding Event:" << index << " queue length:" << EventQueue.size() << endl;
-}
-
-bool
-ExecuteNextEvent(double *t)
-{
-  if (sim_verbose)
-    {
-      cout << "Events in the queue:";
-      for (list<long>::const_iterator it = EventQueue.begin(); it
-      != EventQueue.end(); ++it)
-        {
-          cout << *it << ", ";
-        }
-      cout << endl;
-    }
-  if (EventQueue.begin() != EventQueue.end())
-    {
-      long nextEvent = EventQueue.front();
-      if (sim_verbose)
-        {
-          printf("Executing event id:%ld\n", nextEvent);
-        }
-      if (nextEvent >= globalData->nZeroCrossing)
-        {
-          globalData->timeValue = *t;
-          function_when(nextEvent - globalData->nZeroCrossing);
-        }
-      else if (nextEvent >= 0)
-        {
-          globalData->timeValue = *t;
-          handleZeroCrossing(nextEvent);
-          function_updateDependents();
-          functionDAE_output();
-        }
-      function_updateDependents();
-      //emit();
-      EventQueue.pop_front();
-      return true;
-    }
-  return false;
-}
-
-void
-StartEventIteration(double *t)
-{
-  while (EventQueue.begin() != EventQueue.end())
-    {
-      calcEnabledZeroCrossings();
-      while (ExecuteNextEvent(t))
-        {
-        }
-      inSample = 0;
-      //  for (long i = 0; i < globalData->nHelpVars; i++) save(globalData->helpVars[i]);
-      saveall();
-      globalData->timeValue = *t;
-      function_updateDependents();
-      CheckForNewEvents(t);
-    }
-  for (long i = 0; i < globalData->nHelpVars; i++)
-    {
-      //  globalData->helpVars[i] = 0;
-      //  save(globalData->helpVars[i]);
-    }
-  //  cout << "EventIteration done" << endl;
-}
-
-void
-StateEventHandler(fortran_integer* jroot, double *t)
-{
-  inSample = 1;
-  for (int i = 0; i < globalData->nZeroCrossing; i++)
-    {
-      if (jroot[i])
-        {
-          handleZeroCrossing(i);
-          function_updateDependents();
-          functionDAE_output();
-        }
-    }
-  //  emit();
-}
-
-#if defined(__GNUC__) // for GNUC
-// adrpo - 2006-12-05
-// for GNUC the inline is a bit more involved
-// read here:
-// http://gcc.gnu.org/onlinedocs/gcc-3.2.3/gcc/Inline.html
-#else /* for other compilers */
-inline
-#endif
-void
-calcEnabledZeroCrossings()
-{
-  int i;
-  for (i = 0; i < globalData->nZeroCrossing; i++)
-    {
-      zeroCrossingEnabled[i] = 1;
-    }
-  function_zeroCrossing(&globalData->nStates, &globalData->timeValue,
-      globalData->states, &globalData->nZeroCrossing, gout, 0, 0);
-  for (i = 0; i < globalData->nZeroCrossing; i++)
-    {
-      if (gout[i] > 0)
-        zeroCrossingEnabled[i] = 1;
-      else if (gout[i] < 0)
-        zeroCrossingEnabled[i] = -1;
-      else
-        zeroCrossingEnabled[i] = 0;
-      // cout << "e[" << i << "]=" << zeroCrossingEnabled[i] << " gout[" << i << "]="<< gout[i]
-      //  << " init =" << globalData->init << endl;
-    }
-}
-
 // relation functions used in zero crossing detection
 double
 Less(double a, double b)
@@ -1086,24 +837,7 @@ CheckForNewEvent(int* sampleactived)
                       << globalData->timeValue << endl;
                 }
               EventList.push_front(i);
-            }/*
-          else if (gout[i] != 0)
-            {
-              if (gout[i] < 0)
-                {
-                  zeroCrossingEnabled[i] = 1;
-                }
-              else
-                {
-                  zeroCrossingEnabled[i] = -1;
-                }
-              if (sim_verbose)
-                {
-                  cout << "adding event " << i << " at time: "
-                       << globalData->timeValue << endl;
-                }
-              EventList.push_front(i);
-            }*/
+            }
         }
       if ((gout[i] < 0 && gout_old[i] > 0) || (gout[i] > 0 && gout_old[i] < 0))
         {
@@ -1425,7 +1159,7 @@ FindRoot(double *EventTime)
       globalData->states[i] = states_left[i];
     }
   //determined continuous system
-  functionODE_new();
+  functionODE();
   functionAlgebraics();
   saveall();
   sim_result->emit();
@@ -1483,7 +1217,7 @@ BiSection(double* a, double* b, double* states_a, double* states_b,
         }
 
       //calculates Values dependents on new states
-      functionODE_new();
+      functionODE();
       functionAlgebraics();
 
       function_onlyZeroCrossings(gout, &globalData->timeValue);

@@ -40,12 +40,8 @@ package SimCode
       list<RecordDeclaration> recordDecls;
       list<String> externalFunctionIncludes;
       list<SimEqSystem> allEquations;
-      list<SimEqSystem> allEquationsPlusWhen;
       list<SimEqSystem> odeEquations;
       list<SimEqSystem> algebraicEquations;
-      list<SimEqSystem> stateContEquations;
-      list<SimEqSystem> nonStateContEquations;
-      list<SimEqSystem> nonStateDiscEquations;
       list<SimEqSystem> residualEquations;
       list<SimEqSystem> initialEquations;
       list<SimEqSystem> parameterEquations;
@@ -58,7 +54,6 @@ package SimCode
       list<HelpVarInfo> helpVarInfo;
       list<SimWhenClause> whenClauses;
       list<DAE.ComponentRef> discreteModelVars;
-      list<DAE.ComponentRef> discreteModelVars2;
       ExtObjInfo extObjInfo;
       MakefileParams makefileParams;
       DelayedExpression delayedExps;
@@ -127,10 +122,6 @@ package SimCode
     end OTHER;
     record INLINE_CONTEXT
     end INLINE_CONTEXT;
-    //Context for dassl2, rungekutta, euler
-    record SIMULATION2
-      Boolean genDiscrete;
-    end SIMULATION2;
   end Context;
   
   uniontype Variable
@@ -375,8 +366,6 @@ package SimCode
   
   constant Context contextSimulationNonDiscrete;
   constant Context contextSimulationDiscrete;
-  constant Context contextSimulation2NonDiscrete;
-  constant Context contextSimulation2Discrete;
   constant Context contextInlineSolver;
   constant Context contextFunction;
   constant Context contextOther;  

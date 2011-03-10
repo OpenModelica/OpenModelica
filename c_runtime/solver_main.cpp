@@ -74,12 +74,14 @@ Jacobian(double *t, double *y, double *yprime, double *pd, double *cj,
 {
   int size_A = globalData->nStates;
   double* matrixA = new double[size_A * size_A];
-  //double* backupStates;
-  //backupStates = globalData->states;
+  double* backupStates;
+  double backupTime;
+  backupStates = globalData->states;
+  backupTime = globalData->timeValue;
 
-  //globalData->states = y;
-  //functionODE_new();
-  //functionAlgebraics();
+  globalData->states = y;
+  functionODE();
+  functionAlgebraics();
   functionJacA(matrixA);
 
   int k = 0;
@@ -98,7 +100,8 @@ Jacobian(double *t, double *y, double *yprime, double *pd, double *cj,
             }
         }
     }
-
+  globalData->states = backupStates;
+  globalData->timeValue = backupTime;
   delete[] matrixA;
 
   return 0;
@@ -109,33 +112,41 @@ Jacobian(double *t, double *y, double *yprime, double *pd, double *cj,
 int
 JacA_num(double *t, double *y, double *matrixA)
 {
-  double delta_h = 1.e-8;
+  double delta_h = 1.e-10;
   double delta_hh;
   double* yprime = new double[globalData->nStates];
   double* yprime_delta_h = new double[globalData->nStates];
 
-  memcpy(globalData->states,y,globalData->nStates*sizeof(double));
-  functionODE_new();
+  double* backupStates;
+  double backupTime;
+  backupStates = globalData->states;
+  backupTime = globalData->timeValue;
+
+  globalData->states = y;
+  globalData->timeValue = *t;
+
+  functionODE();
   memcpy(yprime,globalData->statesDerivatives,globalData->nStates*sizeof(double));
 
   // matrix A, add cj to diagonal elements and store in pd
   int l;
   for (int i = 0; i < globalData->nStates; i++)
     {
-      delta_hh = delta_h*(globalData->states[i]>0?globalData->states[i]:-globalData->states[i]);
-      delta_hh = ((delta_h > delta_hh)?delta_h:delta_hh);
-      globalData->states[i] += delta_hh;
-      functionODE_new();
-      memcpy(yprime_delta_h,globalData->statesDerivatives,globalData->nStates*sizeof(double));
-      globalData->states[i] -= delta_hh;
+          delta_hh = delta_h*(globalData->states[i]>0?globalData->states[i]:-globalData->states[i]);
+          delta_hh = ((delta_h > delta_hh)?delta_h:delta_hh);
+          globalData->states[i] += delta_hh;
+          functionODE();
+          globalData->states[i] -= delta_hh;
 
-      for (int j = 0; j < globalData->nStates; j++)
+          for (int j = 0; j < globalData->nStates; j++)
         {
           l = j + i * globalData->nStates;
-          matrixA[l] = (yprime_delta_h[j] - yprime[j])/delta_hh;
+          matrixA[l] = (globalData->statesDerivatives[j] - yprime[j])/delta_hh;
         }
     }
 
+  globalData->states = backupStates;
+  globalData->timeValue = backupTime;
   delete[] yprime;
   delete[] yprime_delta_h;
 
@@ -215,14 +226,14 @@ solver_main_step(int flag, double &start, double &stop, bool &reset)
   switch (flag)
   {
   case 2:
-    return rungekutta_step(&globalData->current_stepsize, functionODE_new);
+    return rungekutta_step(&globalData->current_stepsize, functionODE);
   case 3:
     return dasrt_step(&globalData->current_stepsize, start, stop, reset);
   case 4:
     return functionODE_inline();
   case 1:
   default:
-    return euler_ex_step(&globalData->current_stepsize, functionODE_new);
+    return euler_ex_step(&globalData->current_stepsize, functionODE);
   }
 }
 
@@ -512,7 +523,7 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
            * one step means:
            * determine all states by Integration-Method
            * update continuous part with
-           * functionODE_new() and functionAlgebraics();
+           * functionODE() and functionAlgebraics();
            */
 
           retValIntegrator = solver_main_step(flag, start, stop, reset);
@@ -837,7 +848,7 @@ dasrt_step(double* step, double &start, double &stop, bool &trigger1)
                 throw TerminateSimulationException(globalData->timeValue);
             }
 
-          functionODE_new();
+          functionODE();
         }
       while (idid == -1 && globalData->timeValue <= stop);
   }

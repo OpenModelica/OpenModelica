@@ -49,23 +49,6 @@ initializeEventData();
 void
 deinitializeEventData();
 
-int
-checkForDiscreteVarChanges();
-void
-calcEnabledZeroCrossings();
-void
-CheckForNewEvents(double *t);
-void
-CheckForInitialEvents(double *t);
-void
-checkForInitialZeroCrossings(fortran_integer* jroot);
-void
-StartEventIteration(double *t);
-void
-StateEventHandler(fortran_integer jroot[], double *t);
-void
-AddEvent(long);
-
 void
 saveall();
 
@@ -153,68 +136,7 @@ extern modelica_boolean* gout_res;
     }\
 }
 
-#define RELATION(res,x,y,op1,op2)  { \
-    if (euler_in_use){ \
-        res = (x) op1 (y); \
-    } \
-    else { \
-        double res1,res2,*statesBackup,*statesDerivativesBackup,*algebraicsBackup,timeBackup;\
-        modelica_integer* algebraicsIntBackup; \
-        modelica_boolean* algebraicsBoolBackup; \
-        if (!inUpdate) { \
-            res = (x) op1 (y); \
-        }\
-        else {\
-            res = (x) op2 (y); \
-            if (!res && ((x) op2##= (y))) { \
-                timeBackup = localData->timeValue;\
-                localData->timeValue = localData->oldTime;\
-                statesBackup = localData->states; \
-                localData->states = localData->states_old; \
-                statesDerivativesBackup = localData->statesDerivatives; \
-                localData->statesDerivatives = localData->statesDerivatives_old; \
-                algebraicsBackup = localData->algebraics; \
-                localData->algebraics = localData->algebraics_old; \
-                algebraicsIntBackup = localData->intVariables.algebraics; \
-                localData->intVariables.algebraics = localData->intVariables.algebraics_old; \
-                algebraicsBoolBackup = localData->boolVariables.algebraics; \
-                localData->boolVariables.algebraics = localData->boolVariables.algebraics_old; \
-                res1 = (x)-(y);\
-                localData->timeValue = localData->oldTime2;\
-                localData->states = localData->states_old2; \
-                localData->statesDerivatives = localData->statesDerivatives_old2; \
-                localData->algebraics = localData->algebraics_old2; \
-                localData->intVariables.algebraics = localData->intVariables.algebraics_old2; \
-                localData->boolVariables.algebraics = localData->boolVariables.algebraics_old2; \
-                res2 = (x)-(y);\
-                localData->timeValue = timeBackup;\
-                localData->states = statesBackup; \
-                localData->statesDerivatives = statesDerivativesBackup; \
-                localData->algebraics = algebraicsBackup; \
-                localData->intVariables.algebraics = algebraicsIntBackup; \
-                localData->boolVariables.algebraics = algebraicsBoolBackup; \
-                res = res1 op2##= res2; \
-            }\
-        }\
-    } \
-}
-
-#define RELATIONGREATER(res,x,y)  RELATION(res,x,y,>,>)
-#define RELATIONLESS(res,x,y)   RELATION(res,x,y,<,<)
-#define RELATIONGREATEREQ(res,x,y)  RELATION(res,x,y,>=,>)
-#define RELATIONLESSEQ(res,x,y)   RELATION(res,x,y,<=,<)
-
 #define initial() localData->init
-
-int
-function_zeroCrossing(fortran_integer *neqm, double *t, double *x,
-    fortran_integer *ng, double *gout, double *rpar, fortran_integer* ipar);
-
-int
-handleZeroCrossing(long index);
-
-int
-function_when(int i);
 
 extern long* zeroCrossingEnabled;
 

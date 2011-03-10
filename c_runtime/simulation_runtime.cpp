@@ -42,7 +42,6 @@
 #endif
 #include "simulation_runtime.h"
 #include "simulation_input.h"
-#include "solver_dasrt.h"
 #include "solver_main.h"
 #include "options.h"
 #include "linearize.h"
@@ -405,7 +404,7 @@ startNonInteractiveSimulation(int argc, char**argv)
  * "" & "dassl" calls a DASSL Solver
  * "euler" calls an Euler solver
  * "rungekutta" calls a fourth-order Runge-Kutta Solver
- * "dassl2" calls a DASSL Solver with synchronous event handling
+ * "dassl" & "dassl2" calls the same DASSL Solver with synchronous event handling
  */
 int
 callSolver(int argc, char**argv, string method, string outputFormat,
@@ -436,6 +435,11 @@ callSolver(int argc, char**argv, string method, string outputFormat,
 
   if (method == std::string("euler")) {
       if (sim_verbose) {
+          cout << "No Recognized solver, using dassl." << endl;
+      }
+      retVal = solver_main(argc,argv,start,stop,stepSize,outputSteps,tolerance,3);
+  } else if (method == std::string("euler")) {
+      if (sim_verbose) {
           cout << "Recognized solver: " << method << "." << endl;
       }
       retVal = solver_main(argc, argv, start, stop, stepSize, outputSteps, tolerance, 1);
@@ -444,16 +448,11 @@ callSolver(int argc, char**argv, string method, string outputFormat,
           cout << "Recognized solver: " << method << "." << endl;
       }
       retVal = solver_main(argc, argv, start, stop, stepSize, outputSteps, tolerance, 2);
-  } else if (method == std::string("dassl2") || method == std::string("dassl")) {
+  } else if (method == std::string("dassl") || method == std::string("dassl2")) {
       if (sim_verbose) {
           cout << "Recognized solver: " << method << "." << endl;
       }
       retVal = solver_main(argc, argv, start, stop, stepSize, outputSteps, tolerance, 3);
-  } else if (method == std::string("dasslold")) {
-      if (sim_verbose) {
-          cout << "Recognized solver: " << method << "." << endl;
-      }
-      retVal = dassl_main(argc, argv, start, stop, stepSize, outputSteps, tolerance);
   } else if (method == std::string("inline-euler")) {
       if (!_omc_force_solver || std::string(_omc_force_solver) != std::string("inline-euler")) {
           cout << "Recognized solver: " << method
@@ -478,11 +477,6 @@ callSolver(int argc, char**argv, string method, string outputFormat,
           }
           retVal = solver_main(argc, argv, start, stop, stepSize, outputSteps, tolerance, 4);
       }
-      /*} else if (method == std::string("dassl")) {
-    if (sim_verbose) {
-      cout << "Recognized solver: " << method << "." << endl;
-    }
-    retVal = dassl_main(argc, argv, start, stop, stepSize, outputSteps, tolerance);*/
   } else {
       cout << "Unrecognized solver: " << method
           << "; valid solvers are dassl,euler,rungekutta,dassl2,inline-euler or inline-rungekutta."

@@ -124,25 +124,19 @@ uniontype SimCode
     list<RecordDeclaration> recordDecls;
     list<String> externalFunctionIncludes;
     list<SimEqSystem> allEquations;
-    list<SimEqSystem> allEquationsPlusWhen;
     list<SimEqSystem> odeEquations;
     list<SimEqSystem> algebraicEquations;
-    list<SimEqSystem> stateContEquations;
-    list<SimEqSystem> nonStateContEquations;
-    list<SimEqSystem> nonStateDiscEquations;
     list<SimEqSystem> residualEquations;
     list<SimEqSystem> initialEquations;
     list<SimEqSystem> parameterEquations;
     list<SimEqSystem> removedEquations;
     list<DAE.Statement> algorithmAndEquationAsserts;
     list<BackendDAE.ZeroCrossing> zeroCrossings;
-    list<list<SimVar>> zeroCrossingsNeedSave;
     list<SampleCondition> sampleConditions;
     list<SimEqSystem> sampleEquations;
     list<HelpVarInfo> helpVarInfo;
     list<SimWhenClause> whenClauses;
     list<DAE.ComponentRef> discreteModelVars;
-    list<DAE.ComponentRef> discreteModelVars2;
     ExtObjInfo extObjInfo;
     MakefileParams makefileParams;
     DelayedExpression delayedExps;
@@ -467,17 +461,11 @@ uniontype Context
   end OTHER;
   record INLINE_CONTEXT
   end INLINE_CONTEXT;
-  //Context for dassl2, rungekutta, euler
-  record SIMULATION2
-  Boolean genDiscrete;
-  end SIMULATION2;  
 end Context;
 
 
 public constant Context contextSimulationNonDiscrete  = SIMULATION(false);
 public constant Context contextSimulationDiscrete     = SIMULATION(true);
-public constant Context contextSimulation2NonDiscrete = SIMULATION2(false);
-public constant Context contextSimulation2Discrete    = SIMULATION2(true);
 public constant Context contextInlineSolver           = INLINE_CONTEXT();
 public constant Context contextFunction               = FUNCTION_CONTEXT();
 public constant Context contextOther                  = OTHER();
@@ -1901,12 +1889,8 @@ algorithm
       // new variables
       ModelInfo modelInfo;
       list<SimEqSystem> allEquations;
-      list<SimEqSystem> allEquationsPlusWhen;
       list<SimEqSystem> odeEquations;
       list<SimEqSystem> algebraicEquations;
-      list<SimEqSystem> stateContEquations;
-      list<SimEqSystem> nonStateContEquations;
-      list<SimEqSystem> nonStateDiscEquations;
       list<SimEqSystem> residualEquations;
       list<SimEqSystem> initialEquations;
       list<SimEqSystem> parameterEquations;
@@ -1914,12 +1898,10 @@ algorithm
       list<SimEqSystem> sampleEquations;
       list<Algorithm.Statement> algorithmAndEquationAsserts;
       list<BackendDAE.ZeroCrossing> zeroCrossings;
-      list<list<SimVar>> zeroCrossingsNeedSave;
       list<SimWhenClause> whenClauses;
       list<SampleCondition> sampleConditions;
       list<BackendDAE.Equation> sampleEqns;
       list<DAE.ComponentRef> discreteModelVars;
-      list<DAE.ComponentRef> discreteModelVars2;
       ExtObjInfo extObjInfo;
       MakefileParams makefileParams;
       list<tuple<Integer, DAE.Exp>> delayedExps;
@@ -1949,7 +1931,6 @@ algorithm
         
         whenClauses = createSimWhenClauses(dlow2, helpVarInfo);
         zeroCrossings = createZeroCrossings(dlow2);
-        zeroCrossingsNeedSave = createZeroCrossingsNeedSave(zeroCrossings, dlow2, ass1, ass2, comps);
         (sampleConditions,helpVarInfo) = createSampleConditions(zeroCrossings,helpVarInfo);
         sampleEquations = createSampleEquations(sampleEqns);
 
@@ -1962,21 +1943,13 @@ algorithm
         (contBlocks, _) = splitOutputBlocks(dlow2, ass1, ass2, m, mt, blt_no_states);  
         odeEquations = createEquations(false, false, false, false, false, dlow2, ass1, ass2, blt_states, helpVarInfo);
         algebraicEquations = createEquations(false, false, false, false, false, dlow2, ass1, ass2, contBlocks, helpVarInfo);
-        allEquationsPlusWhen = createEquations(true, false, true, false, false, dlow2, ass1, ass2, comps, helpVarInfo);
+        allEquations = createEquations(true, false, true, false, false, dlow2, ass1, ass2, comps, helpVarInfo);
         
-        allEquations = createEquations(false, false, true, false, false, dlow2, ass1, ass2, comps, helpVarInfo);
-        stateContEquations = createEquations(false, false, false, false, false, dlow2, ass1, ass2, blt_states, helpVarInfo);
-        (contBlocks, discBlocks) = splitOutputBlocks(dlow2, ass1, ass2, m, mt, blt_no_states);
-        nonStateContEquations = createEquations(false, false, true, false, false, dlow2, ass1, ass2,
-          contBlocks, helpVarInfo);
-        nonStateDiscEquations = createEquations(false, useZerocrossing(), true, false, false, dlow2, ass1, ass2,
-          discBlocks, helpVarInfo);
         initialEquations = createInitialEquations(dlow2);
         parameterEquations = createParameterEquations(dlow2);
         removedEquations = createRemovedEquations(dlow2);
         algorithmAndEquationAsserts = createAlgorithmAndEquationAsserts(dlow2);
         discreteModelVars = extractDiscreteModelVars(dlow2, mt);
-        discreteModelVars2 = extractDiscreteModelVars2(dlow2, mt);
         makefileParams = createMakefileParams(libs);
         (delayedExps,maxDelayedExpIndex) = extractDelayedExpressions(dlow2);
         
@@ -1987,11 +1960,9 @@ algorithm
         varlst1 = BackendDAEUtil.varList(knownVars);
         varlst2 = listAppend(varlst,varlst1);  
         vars = BackendDAEUtil.listVar(varlst2);         
-        (allEquations,divLst) = listMap1_2(allEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ONLY_VARIABLES()));        
-        (allEquationsPlusWhen,_) = listMap1_2(allEquationsPlusWhen,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ONLY_VARIABLES()));        
-        (stateContEquations,_) = listMap1_2(stateContEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ONLY_VARIABLES()));        
-        (nonStateContEquations,_) = listMap1_2(nonStateContEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ONLY_VARIABLES()));        
-        (nonStateDiscEquations,_) = listMap1_2(nonStateDiscEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ONLY_VARIABLES()));        
+        (allEquations,divLst) = listMap1_2(allEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ONLY_VARIABLES()));              
+        (odeEquations,_) = listMap1_2(odeEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ONLY_VARIABLES()));        
+        (algebraicEquations,_) = listMap1_2(algebraicEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ONLY_VARIABLES()));       
         (residualEquations,_) = listMap1_2(residualEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ALL()));        
         (initialEquations,_) = listMap1_2(initialEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ALL()));        
         (parameterEquations,_) = listMap1_2(parameterEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ALL()));        
@@ -2015,25 +1986,19 @@ algorithm
           recordDecls,
           externalFunctionIncludes,
           allEquations,
-          allEquationsPlusWhen,
           odeEquations,
           algebraicEquations,
-          stateContEquations,
-          nonStateContEquations,
-          nonStateDiscEquations,
           residualEquations,
           initialEquations,
           parameterEquations,
           removedEquations,
           algorithmAndEquationAsserts,
           zeroCrossings,
-          zeroCrossingsNeedSave,
           sampleConditions,
           sampleEquations,
           helpVarInfo,
           whenClauses,
           discreteModelVars,
-          discreteModelVars2,
           extObjInfo,
           makefileParams,
           DELAYED_EXPRESSIONS(delayedExps, maxDelayedExpIndex),
@@ -2963,27 +2928,6 @@ algorithm
   end matchcontinue;
 end traversedlowEqToSimEqSystem;
 
-protected function extractDiscreteModelVars
-  input BackendDAE.BackendDAE dlow;
-  input BackendDAE.IncidenceMatrixT mT;
-  output list<DAE.ComponentRef> discreteModelVars;
-algorithm
-  discreteModelVars := match (dlow, mT)
-    local
-      BackendDAE.Variables v;
-      list<DAE.ComponentRef> vLst2;
-      
-    case (BackendDAE.DAE(orderedVars=v), mT)
-      equation
-        // select all discrete vars.
-        // remove those vars that are solved in when equations
-        //vLst = Util.listSelect2(vLst, dlow, mT, varNotSolvedInWhen);
-        // replace var with cref
-        vLst2 = BackendVariable.traverseBackendDAEVars(v,traversingisVarDiscreteCrefFinder,{});
-      then vLst2;
-  end match;
-end extractDiscreteModelVars;
-
 protected function traversingisVarDiscreteCrefFinder
 "autor: Frenkel TUD 2010-11"
   input tuple<BackendDAE.Var, list<DAE.ComponentRef>> inTpl;
@@ -3004,7 +2948,7 @@ algorithm
   end matchcontinue;
 end traversingisVarDiscreteCrefFinder;  
 
-protected function extractDiscreteModelVars2
+protected function extractDiscreteModelVars
   input BackendDAE.BackendDAE dlow;
   input BackendDAE.IncidenceMatrixT mT;
   output list<DAE.ComponentRef> discreteModelVars;
@@ -3026,7 +2970,7 @@ algorithm
         vLst2 = Util.listUnionComp(vLst1, vLst2, ComponentReference.crefEqual);
       then vLst2;
   end match;
-end extractDiscreteModelVars2;
+end extractDiscreteModelVars;
 
 protected function traversingisVarDiscreteCrefFinder2
 "autor: Frenkel TUD 2010-11"

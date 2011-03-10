@@ -43,29 +43,21 @@ namespace Bodylight.Models<%modelNameSpace(modelInfo.name)%>
       else "//** No functions **"
     %>
     
-    <%functionDaeOutput(nonStateContEquations, removedEquations, simCode)%>
+    <%functionDaeOutput(algebraicEquations, simCode)%>
 
-    <%functionDaeOutput2(nonStateDiscEquations, removedEquations, simCode)%>
+    <%functionDaeOutput2(removedEquations, simCode)%>
 
     <%functionInput(modelInfo, simCode)%>
 
     <%functionOutput(modelInfo, simCode)%>
 
-    <%functionZeroCrossing(zeroCrossings, simCode)%>
-
-    <%functionHandleZeroCrossing(simCode)%>
-
-    <%functionUpdateDependents(allEquations, helpVarInfo, simCode)%>
-    
-    <%functionUpdateDepend(allEquationsPlusWhen, simCode)%>
+    <%functionUpdateDepend(allEquations, simCode)%>
 
     <%functionOnlyZeroCrossing(zeroCrossings, simCode)%>
 
     <%functionStoreDelayed(simCode)%>
-    
-    <%functionWhen(simCode)%>
 
-    <%functionOde(stateContEquations, simCode)%>
+    <%functionOde(odeEquations, simCode)%>
 
     <%functionInitial(initialEquations, simCode)%>
 
@@ -361,8 +353,7 @@ template initFixed(list<SimVar> simVarLst, SimCode simCode) ::=
   (simVarLst |> SIMVAR(__) => '<%isFixed%> /* <%crefStr(name, simCode)%> */' ;separator=",\n")
 end initFixed;
 
-template functionDaeOutput(list<SimEqSystem> nonStateContEquations,
-                  list<SimEqSystem> removedEquations, SimCode simCode) ::=
+template functionDaeOutput(list<SimEqSystem> nonStateContEquations, SimCode simCode) ::=
 let()= System.tmpTickReset(1)
 <<
 /* for continuous time variables */
@@ -370,20 +361,17 @@ public override void FunDAEOutput()
 {
   <% localRepresentationArrayDefines %>
   <% nonStateContEquations |> it => equation_(it,contextSimulationNonDiscrete, simCode) ;separator="\n"%>
-  <% removedEquations      |> it => equation_(it,contextSimulationNonDiscrete, simCode) ;separator="\n"%>
 }
 >>
 end functionDaeOutput;
 
-template functionDaeOutput2(list<SimEqSystem> nonStateDiscEquations,
-                   list<SimEqSystem> removedEquations, SimCode simCode) ::=
+template functionDaeOutput2(list<SimEqSystem> removedEquations, SimCode simCode) ::=
 let()= System.tmpTickReset(1)
 <<
 /* for discrete time variables */
 public override void FunDAEOutput2()
 {
   <% localRepresentationArrayDefines %>
-  <% nonStateDiscEquations |> it => equation_(it,contextSimulationDiscrete, simCode) ;separator="\n"%>
   <% removedEquations      |> it => equation_(it,contextSimulationDiscrete, simCode) ;separator="\n"%>
 }
 >>
@@ -419,74 +407,6 @@ public override void OutputFun()
 }
 >>
 end functionOutput;
-
-template functionZeroCrossing(list<ZeroCrossing> zeroCrossingLst, SimCode simCode) ::=
-let()= System.tmpTickReset(1)
-<<
-public override void FunZeroCrossing(double time, double[] x, double[] xd, double[] gout)
-{
-  <% localRepresentationArrayDefines %>
-  var timeBackup = this.time;
-  this.time = time;
-
-  FunODE();
-  FunDAEOutput();
-  
-  <%zeroCrossingLst |> ZERO_CROSSING(__) hasindex i0 => zeroCrossing(relation_, i0, simCode) ;separator="\n"%>  
-
-  this.time = timeBackup;
-}
->>
-end functionZeroCrossing;
-
-
-// This function should only save in cases. The rest is done in
-// function_updateDependents.
-template functionHandleZeroCrossing(SimCode simCode) ::=
-match simCode case SIMCODE(__) then
-<<
-public override void FunHandleZeroCrossing(int index)
-{  
-  <% localRepresentationArrayDefines %>
-  switch(index) {
-    <% zeroCrossingsNeedSave |> toSaveLst hasindex i0 =>
-    <<
-    case <%i0%>:
-      <% toSaveLst |> SIMVAR(__) =>
-         '<%preCref(name, simCode)%> = <%cref(name, simCode)%>; //save()'
-      ;separator="\n" %>
-      break;
-    >> ;separator="\n"%>
-    default:
-       break;
-  }
-}
->>
-end functionHandleZeroCrossing;
-
-template functionUpdateDependents(list<SimEqSystem> allEquations, list<HelpVarInfo> helpVarInfoLst, SimCode simCode) ::=
-let()= System.tmpTickReset(1)
-<<
-public override void FunUpdateDependents()
-{
-  <% localRepresentationArrayDefines %>
-  //inUpdate=initial()?0:1;
-  isInUpdate = ! isInit;
-
-  <%allEquations |> it => equation_(it, contextSimulationDiscrete, simCode) ;separator="\n"%>
-  <%helpVarInfoLst |> (in1, exp, _)  =>
-      let &preExp = buffer ""
-      let expPart = daeExp(exp, contextSimulationDiscrete, &preExp, simCode)
-      <<
-      <%preExp%>
-      helpVars[<%in1%>] = <%expPart%> ? 1.0 : 0.0;<%/*???TODO: ? 1.0 : 0.0;*/%>
-      >>
-  ;separator="\n"%>
-
-  isInUpdate = false;
-}
->>
-end functionUpdateDependents;
 
 // All when equations should go in here too according to Willi
 // And something about if-eqs being sorted ans not just added to end
@@ -570,47 +490,7 @@ public override void FunStoreDelayed()
 }
 >>
 end functionStoreDelayed;
-
-template functionWhen(SimCode simCode) ::=
-let()= System.tmpTickReset(1)
-match simCode case SIMCODE(__) then
-<<
-public override void FunWhen(int i)
-{
-  <% localRepresentationArrayDefines %>
-  switch(i) {
-    <%whenClauses |> SIM_WHEN_CLAUSE(__) hasindex i0 =>
-    <<
-    case <%i0%>:
-      <%functionWhen_caseEquation(whenEq, simCode)%>
-      <%reinits |> REINIT(__)  =>
-        let &preExp = buffer ""
-        let valueExp = daeExp(value, contextSimulationDiscrete, &preExp, simCode)
-      <<
-      <%preExp%>
-      <%cref(stateVar, simCode)%> = <%valueExp%>;
-      >> ;separator="\n"%>
-      break;
-    >> ;separator="\n"%>
-    default:
-      break;
-  }
-}
->>
-end functionWhen;
-
-template functionWhen_caseEquation(Option<WhenEquation> it, SimCode simCode) ::=
-match it
-case SOME(weq as WHEN_EQ(__)) then
-let &preExp = buffer ""
-let expPart = daeExp(weq.right, contextSimulationDiscrete, &preExp, simCode)
-<<
-<%preCref(weq.left, simCode)%> = <%cref(weq.left, simCode)%>; //save()
-<%preExp%>
-<%cref(weq.left, simCode)%> = <%expPart%>;
->>
-end functionWhen_caseEquation;
-
+    
 template functionOde(list<SimEqSystem> stateContEquations, SimCode simCode) ::=
 let()= System.tmpTickReset(1)
 <<

@@ -59,7 +59,7 @@ qtclean: qtclean-common
 	make -C OMShell/OMShellGUI -f Makefile.unix clean
 	make -C OMNotebook/OMPlotWindow -f Makefile.unix clean
 	make -C OMNotebook/OMNotebookGUI -f Makefile.unix clean
-	make -C OMNotebook/OMEditGUI -f Makefile.unix clean
+	make -C OMEdit/OMEditGUI -f Makefile.unix clean
 	make -C OMPlot/OMPlotGUI -f Makefile.unix clean
 endif
 

@@ -22,7 +22,6 @@
 #include "omi_Transfer.h"
 #include "simulation_runtime.h"
 #include "simulation_input.h"
-#include "solver_dasrt.h"
 #include "solver_main.h"
 #include "options.h"
 
