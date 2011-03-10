@@ -4138,6 +4138,7 @@ template algStatementWhenPre(DAE.Statement stmt, Text &varDecls /*BUFP*/)
         ""
     let &preExp = buffer "" /*BUFD*/
 
+
     let assignments = algStatementWhenPreAssigns(el, helpVarIndices,
                                                &preExp /*BUFC*/,
                                                &varDecls /*BUFD*/)
@@ -5309,72 +5310,189 @@ end daeExpSize;
 
 template daeExpReduction(Exp exp, Context context, Text &preExp /*BUFP*/,
                          Text &varDecls /*BUFP*/)
- "Generates code for a reduction expression."
+ "Generates code for a reduction expression. The code is quite messy because it handles all
+  special reduction functions (list, listReverse, array) and handles both list and array as input"
 ::=
-match exp
-case REDUCTION(path = IDENT(name = name as "listReverse"), range = range)
-case REDUCTION(path = IDENT(name = name as "list"), range = range) then
+  match exp
+  case r as REDUCTION(__) then
   let &tmpVarDecls = buffer ""
   let &tmpExpPre = buffer ""
   let &bodyExpPre = buffer ""
   let &guardExpPre = buffer ""
-  let acc = tempDecl("modelica_metatype", &tmpVarDecls)
-  let resHead = tempDecl("modelica_metatype", &varDecls)
-  let resTail = match name case "list" then tempDecl("modelica_metatype*", &tmpVarDecls)
-  let lstExp = daeExp(range, context, &tmpExpPre, &tmpVarDecls)
-  let bodyExp = daeExp(expr, context, &bodyExpPre, &tmpVarDecls)
-  let guardCond = match guardExp case SOME(grd) then daeExp(grd, context, &guardExpPre, &tmpVarDecls)
-  let iteratorName = contextIteratorName(ident, context)
+  let &rangeExpPre = buffer ""
+  let stateVar = if not acceptMetaModelicaGrammar() then tempDecl("state", &varDecls /*BUFD*/)
+  let identType = expTypeFromExpModelica(r.range)
+  let arrayType = expTypeFromExpArray(r.range)
+  let arrayTypeResult = expTypeFromExpArray(r)
+  let loopVar = match identType
+    case "modelica_metatype" then tempDecl(identType,&tmpVarDecls)
+    else tempDecl(arrayType,&tmpVarDecls)
+  let firstIndex = match identType case "modelica_metatype" then "" else tempDecl("int",&tmpVarDecls)
+  let arrIndex = match r.path case IDENT(name="array") then tempDecl("int",&tmpVarDecls)
+  let rangeExp = daeExp(r.range,context,&rangeExpPre,&tmpVarDecls)
+  let resType = expTypeArrayIf(typeof(exp))
+  let res = tempDecl(resType,&varDecls)
+  let &preDefault = buffer ""
+  let resTail = match r.path case IDENT(name="list") then tempDecl("modelica_metatype*",&tmpVarDecls)
+  let defaultValue = match r.path case IDENT(name="array") then "" else match r.defaultValue
+    case SOME(v) then daeExp(valueExp(v),context,&preDefault,&tmpVarDecls)
+    end match
+  let guardCond = match r.guardExp case SOME(grd) then daeExp(grd, context, &guardExpPre, &tmpVarDecls) else "1"
+  let empty = match identType case "modelica_metatype" then 'listEmpty(<%loopVar%>)' else '0 == size_of_dimension_base_array(<%loopVar%>, 1)'
+  let length = match identType case "modelica_metatype" then 'listLength(<%loopVar%>)' else 'size_of_dimension_base_array(<%loopVar%>, 1)'
+  let fnpath = match r.path
+    case IDENT(name="min") then "std::min"
+    case IDENT(name="max") then "std::max"
+    case IDENT(name="sum") then "MACRO_ADD"
+    case IDENT(name="product") then "MACRO_MUL"
+  end match
+  let reductionBodyExpr = daeExp(r.expr, context, &bodyExpPre, &tmpVarDecls)
+  let foldExp = match r.path
+    case IDENT(name="list") then
+    <<
+    *<%resTail%> = mmc_mk_cons(<%reductionBodyExpr%>,0);
+    <%resTail%> = &MMC_CDR(*<%resTail%>);
+    >>
+    case IDENT(name="listReverse") then // This is too easy; the damn list is already in the correct order
+      '<%res%> = mmc_mk_cons(<%reductionBodyExpr%>,<%res%>);'
+    case IDENT(name="array") then
+      '*(<%arrayTypeResult%>_element_addr1(&<%res%>, 1, <%arrIndex%>++)) = <%reductionBodyExpr%>;'
+    else '<%res%> = /* TODO: FIXME - This is wrong on so many levels. We should use daeExp here so we support every kind of reduction there is... */ <%match r.path
+      case IDENT(name=n as "min")
+      case IDENT(name=n as "max") then 'std::<%n%>(<%reductionBodyExpr%>,<%res%>);'
+      case IDENT(name="sum") then '<%reductionBodyExpr%> + <%res%>;'
+      case IDENT(name="product") then '<%reductionBodyExpr%> * <%res%>;'
+      else '_<%underscorePath(r.path)%>(<%reductionBodyExpr%>,<%res%>).targ1;'%>'
+  let firstValue = match r.path
+     case IDENT(name="array") then
+     <<
+     <%arrIndex%> = 1;
+     simple_alloc_1d_<%arrayTypeResult%>(&<%res%>,<%length%>);
+     >>
+     else if r.defaultValue then
+     <<
+     <%&preDefault%>
+     <%res%> = <%defaultValue%>; /* defaultValue */
+     >>
+     else
+     <<
+     if (<%empty%>) MMC_THROW(); /* <%dotPath(r.path)%> does not have a default value for empty ranges */
+     <% match identType
+       case "modelica_metatype" then
+       let &preUnbox = buffer ""
+       let unboxedVar = unboxVariable('MMC_CAR(<%loopVar%>)',typeof(exp),&preUnbox,&tmpVarDecls)
+       <<
+       <%&preUnbox%>
+       <%res%> = <%unboxedVar%>;
+       <%loopVar%> = MMC_CDR(<%loopVar%>);
+       >>
+       else
+       <<
+       <%res%> = *(<%arrayType%>_element_addr1(&<%loopVar%>, 1, <%firstIndex%>++));
+       >>
+     %>
+     >>
+  let iteratorName = contextIteratorName(r.ident, context)
+  let loopHead = match identType
+    case "modelica_metatype" then
+    <<
+    while (!<%empty%>) {
+      <%identType%> <%iteratorName%>;
+      <%iteratorName%> = MMC_CAR(<%loopVar%>);
+      <%loopVar%> = MMC_CDR(<%loopVar%>);
+    >>
+    else
+    <<
+    while (<%firstIndex%> <= size_of_dimension_<%arrayType%>(<%loopVar%>, 1)) {
+      <%identType%> <%iteratorName%>;
+      <%iteratorName%> = *(<%arrayType%>_element_addr1(&<%loopVar%>, 1, <%firstIndex%>++));
+      <%if not acceptMetaModelicaGrammar() then '<%stateVar%> = get_memory_state();'%>
+    >>
+  let loopTail = match identType
+     case "modelica_metatype" then "}"
+     else if not acceptMetaModelicaGrammar() then 'restore_memory_state(<%stateVar%>);<%\n%>}' else "}"
   let &preExp += <<
-  { /* "<%name%>" reduction */
-    <%tmpVarDecls%>
-    modelica_metatype <%iteratorName%>;
-    <%tmpExpPre%>
-    <%acc%> = <%lstExp%>;
-    <% match name
-       case "list" then
-         <<
-         <%resHead%> = 0;
-         <%resTail%> = &<%resHead%>;
-         >>
-       case "listReverse" then
-         '<%resHead%> = mmc_mk_nil();'
-    %>
-    while (!listEmpty(<%acc%>)) {
-      <%iteratorName%> = MMC_CAR(<%acc%>);
-      <% if guardExp then
-      <<
+  {
+    <%&tmpVarDecls%>
+    <%&rangeExpPre%>
+    <%loopVar%> = <%rangeExp%>;
+    <% if firstIndex then '<%firstIndex%> = 1;' %>
+    <%firstValue%>
+    <% if resTail then '<%resTail%> = &<%res%>;' %>
+    <%loopHead%>
       <%&guardExpPre%>
       if (<%guardCond%>) {
-      >>
-      else '{' %>
-        <%bodyExpPre%>
-        <% match name
-         case "list" then // Let's save some bytes from being garbage by using runtime trickery. We get a little bit of overhead from filling the CDR with 0 and patching it as we go, but lower memory overhead should make up for it.
-           <<
-           *<%resTail%> = mmc_mk_cons(<%bodyExp%>,0);
-           <%resTail%> = &MMC_CDR(*<%resTail%>);
-           >>
-         case "listReverse" then // This is too easy; the damn list is already in the correct order
-           '<%resHead%> = mmc_mk_cons(<%bodyExp%>,<%resHead%>);'
-        %>
+        <%&bodyExpPre%>
+        <%foldExp%>
       }
-      <%acc%> = MMC_CDR(<%acc%>);
-    }
-    <% match name case "list" then '*<%resTail%> = mmc_mk_nil();' %>
+    <%loopTail%>
+    <% if resTail then '*<%resTail%> = mmc_mk_nil();' %>
   }<%\n%>
   >>
-  resHead
+  res
+/*
+match exp
+case r as REDUCTION(__) then
+  (match path
+    case IDENT(name = name as "listReverse")
+    case IDENT(name = name as "list") then
+    let acc = tempDecl("modelica_metatype", &tmpVarDecls)
+    let resHead = tempDecl("modelica_metatype", &varDecls)
+    let resTail = match name case "list" then tempDecl("modelica_metatype*", &tmpVarDecls)
+    let lstExp = daeExp(r.range, context, &tmpExpPre, &tmpVarDecls)
+    let bodyExp = daeExp(r.expr, context, &bodyExpPre, &tmpVarDecls)
+    let guardCond = match r.guardExp case SOME(grd) then daeExp(grd, context, &guardExpPre, &tmpVarDecls)
+    let iteratorName = contextIteratorName(r.ident, context)
+    let &preExp += <<
+    { /* "<%name%>" reduction */
+      <%tmpVarDecls%>
+      modelica_metatype <%iteratorName%>;
+      <%tmpExpPre%>
+      <%acc%> = <%lstExp%>;
+      <% match name
+         case "list" then
+           <<
+           <%resHead%> = 0;
+           <%resTail%> = &<%resHead%>;
+           >>
+         case "listReverse" then
+           '<%resHead%> = mmc_mk_nil();'
+      %>
+      while (!listEmpty(<%acc%>)) {
+        <%iteratorName%> = MMC_CAR(<%acc%>);
+        <% if r.guardExp then
+        <<
+        <%&guardExpPre%>
+        if (<%guardCond%>) {
+        >>
+        else '{' %>
+          <%bodyExpPre%>
+          <% match name
+           case "list" then // Let's save some bytes from being garbage by using runtime trickery. We get a little bit of overhead from filling the CDR with 0 and patching it as we go, but lower memory overhead should make up for it.
+             <<
+             *<%resTail%> = mmc_mk_cons(<%bodyExp%>,0);
+             <%resTail%> = &MMC_CDR(*<%resTail%>);
+             >>
+           case "listReverse" then // This is too easy; the damn list is already in the correct order
+             '<%resHead%> = mmc_mk_cons(<%bodyExp%>,<%resHead%>);'
+          %>
+        }
+        <%acc%> = MMC_CDR(<%acc%>);
+      }
+      <% match name case "list" then '*<%resTail%> = mmc_mk_nil();' %>
+    }<%\n%>
+    >>
+    resHead
+  else
 // Array reductions
-case REDUCTION(path = IDENT(name = op)) then
-  let identType = expTypeFromExpModelica(expr)
-  let accFun = daeExpReductionFnName(op, identType)
-  let startValue = match defaultValue
+  let identType = expTypeFromExpModelica(r.expr)
+  let accFun = daeExpReductionFnName(path, identType)
+  let startValue = match r.defaultValue
     case SOME(v) then daeExp(valueExp(v),context,&preExp,&varDecls)
     else 'UNKNOWN_START_VALUE;<%\n%>'
   let res = tempDecl(identType, &varDecls)
   let &tmpExpPre = buffer ""
-  let tmpExpVar = daeExp(expr, context, &tmpExpPre, &varDecls)
+  let tmpExpVar = daeExp(r.expr, context, &tmpExpPre, &varDecls)
   let cast = match accFun case "max" then "(modelica_real)"
                           case "min" then "(modelica_real)"
                           else ""
@@ -5388,7 +5506,8 @@ case REDUCTION(path = IDENT(name = op)) then
     <%res%> = <%startValue%>;
     <%daeExpReductionLoop(exp, body, context, &varDecls)%><%\n%>
     >>
-  res
+  res)
+  */
 end daeExpReduction;
 
 template daeExpReductionLoop(Exp exp, Text &body, Context context, Text &varDecls)
@@ -5408,10 +5527,12 @@ case REDUCTION(range = range) then
 end daeExpReductionLoop;
   
 
-template daeExpReductionFnName(String reduction_op, String type)
+template daeExpReductionFnName(Path path, String type)
  "Helper to daeExpReduction."
 ::=
-  match reduction_op
+  match path
+  case id as IDENT(__) then
+  match id.name
   case "sum" then
     match type
     case "modelica_integer" then "reduction_sum"
@@ -5424,7 +5545,9 @@ template daeExpReductionFnName(String reduction_op, String type)
     case "modelica_real" then "reduction_product"
     else "INVALID_TYPE"
     end match  
-  else reduction_op
+  else id.name
+  end match
+  else '<%\n%>#error "daeExpReductionFnName not implemented for <%dotPath(path)%>"<%\n%>'
 end daeExpReductionFnName;
 
 
@@ -5906,7 +6029,7 @@ template expTypeFromExpFlag(Exp exp, Integer flag)
   case c as CREF(__)
   case c as CODE(__)     then expTypeFlag(c.ty, flag)
   case ASUB(__)          then expTypeFromExpFlag(exp, flag)
-  case REDUCTION(__)     then expTypeFromExpFlag(expr, flag)
+  case REDUCTION(__)     then expTypeFlag(typeof(exp), flag)
   case BOX(__)
   case CONS(__)
   case LIST(__)
@@ -6091,7 +6214,7 @@ template assertCommon(Exp condition, Exp message, Context context, Text &varDecl
   if (!<%condVar%>) {
     <%preExpMsg%>
     omc_fileInfo info = {<%infoArgs(info)%>};
-    MODELICA_ASSERT(info, <%msgVar%>);
+    MODELICA_ASSERT(info, <%if acceptMetaModelicaGrammar() then 'MMC_STRINGDATA(<%msgVar%>)' else msgVar%>);
   }
   >>
 end assertCommon;
@@ -6101,6 +6224,7 @@ template literalExpConst(Exp lit, Integer index) "These should all be declared s
   let name = '_OMC_LIT<%index%>'
   let tmp = '_OMC_LIT_STRUCT<%index%>'
   let meta = 'static modelica_metatype /* const */ <%name%>'
+
   match lit
   case SCONST(__) then
     let escstr = Util.escapeModelicaStringToCString(string)

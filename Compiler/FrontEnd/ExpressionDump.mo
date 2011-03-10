@@ -838,7 +838,7 @@ algorithm
       then
         str;
     
-    case (DAE.REDUCTION(path = fcn,expr = exp,ident = id,range = iterexp), _, _, _)
+    case (DAE.REDUCTION(path = fcn,expr = exp,ident = id,guardExp = NONE(), range = iterexp), _, _, _)
       equation
         fs = Absyn.pathString(fcn);
         expstr = printExp2Str(exp, stringDelimiter, opcreffunc, opcallfunc);
@@ -847,6 +847,16 @@ algorithm
       then
         str;
     
+    case (DAE.REDUCTION(path = fcn,expr = exp,ident = id,guardExp = SOME(e), range = iterexp), _, _, _)
+      equation
+        fs = Absyn.pathString(fcn);
+        expstr = printExp2Str(exp, stringDelimiter, opcreffunc, opcallfunc);
+        iterstr = printExp2Str(iterexp, stringDelimiter, opcreffunc, opcallfunc);
+        str = printExp2Str(e, stringDelimiter, opcreffunc, opcallfunc);
+        str = stringAppendList({"<reduction>",fs,"(",expstr," for ",id," guard ",str," in ",iterstr,")"});
+      then
+        str;
+
     // MetaModelica tuple
     case (DAE.META_TUPLE(es), _, _, _)
       equation

@@ -1528,6 +1528,8 @@ algorithm
       then 
         tp;
     case (DAE.CODE(ty = tp)) then tp;
+    case (DAE.REDUCTION(path = Absyn.IDENT("array"),expr = e))
+      then liftArrayR(typeof(e),DAE.DIM_UNKNOWN());
     case (DAE.REDUCTION(expr = e)) then typeof(e);
     case (DAE.END()) then DAE.ET_OTHER();  /* Can be any type. */
     case (DAE.SIZE(_,NONE())) then DAE.ET_INT();

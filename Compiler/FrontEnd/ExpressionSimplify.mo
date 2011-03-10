@@ -3949,12 +3949,32 @@ protected function simplifyReduction
 algorithm
   outValue := match(inReduction)
     local
-      DAE.Exp expr, value, cref;
+      DAE.Exp expr, value, cref, range;
       DAE.Ident iter_name;
       DAE.ExpType ty;
       list<DAE.Exp> values;
       Option<Values.Value> defaultValue;
       Absyn.Path path;
+      Boolean b;
+      Values.Value v;
+
+    case (DAE.REDUCTION(path = path, expr = expr, ident = iter_name, guardExp = SOME(DAE.BCONST(true)), range = range, defaultValue = defaultValue))
+      equation
+        expr = DAE.REDUCTION(path,expr,iter_name,NONE(),range,defaultValue);
+      then
+        simplifyReduction(expr);
+
+    case (DAE.REDUCTION(path = path, expr = expr, ident = iter_name, guardExp = SOME(DAE.BCONST(false)), defaultValue = SOME(v)))
+      equation
+        expr = ValuesUtil.valueExp(v);
+      then
+        simplify1(expr);
+
+    case (DAE.REDUCTION(path = path, expr = expr, ident = iter_name, guardExp = SOME(DAE.BCONST(false))))
+      equation
+        expr = ValuesUtil.valueExp(Values.META_FAIL());
+      then
+        expr;
 
     case (DAE.REDUCTION(path = path, expr = expr, ident = iter_name, guardExp = NONE(), range = DAE.ARRAY(array = values), defaultValue = defaultValue))
       equation

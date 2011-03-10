@@ -317,6 +317,8 @@ public constant ErrorID META_DEAD_CODE=5026;
 public constant ErrorID META_UNUSED_DECL=5027;
 public constant ErrorID META_UNUSED_AS_BINDING=5028;
 public constant ErrorID MATCH_TO_SWITCH_OPTIMIZATION=5029;
+public constant ErrorID REDUCTION_TYPE_ERROR=5030;
+public constant ErrorID UNSUPPORTED_REDUCTION_TYPE=5031;
 
 public constant ErrorID COMPILER_WARNING = 6000;
 public constant ErrorID COMPILER_NOTIFICATION = 6001;
@@ -723,6 +725,8 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (MATCH_TO_SWITCH_OPTIMIZATION,TRANSLATION(),NOTIFICATION(),"Converted match expression to switch of type %s."),
           (ELAB_CODE_EXP_FAILED,TRANSLATION(),ERROR(),"Failed to elaborate %s as a code expression of type %s."),
           (METARECORD_CONTAINS_METARECORD_MEMBER,TRANSLATION(),ERROR(),"The called uniontype record (%s) contains a member (%s) that has a uniontype record as its type instead of a uniontype."),
+          (REDUCTION_TYPE_ERROR,TRANSLATION(),ERROR(),"Reductions require the types of the %s and %s to be %s, but got: %s and %s."),
+          (UNSUPPORTED_REDUCTION_TYPE,TRANSLATION(),ERROR(),"Expected a reduction function with type signature ('A,'B) => 'B, but got %s."),
 
           (COMPILER_NOTIFICATION,TRANSLATION(),NOTIFICATION(),"%s"),
           (COMPILER_WARNING,TRANSLATION(),WARNING(),"%s")

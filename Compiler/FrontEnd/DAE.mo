@@ -1129,6 +1129,8 @@ uniontype Exp "Expressions
     Option<Exp> guardExp "Boolean guard-expression";
     Exp range "range Reduction expression e.g. 1:4" ;
     Option<Values.Value> defaultValue "if there is no default value, the reduction is not defined for 0-length arrays/lists";
+    /* DAE.Type resultType */
+    /* Option<Exp> foldExp "For example, max(ident,$res) or ident+$res; array() does not use this feature."; */
   end REDUCTION;
 
   record END "array index to last element, e.g. a{end}:=1;" end END;

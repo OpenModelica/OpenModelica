@@ -598,7 +598,7 @@ package Absyn
       Path path;
     end QUALIFIED;
     record IDENT
-      Ident name;
+      String name;
     end IDENT;
     record FULLYQUALIFIED
       Path path;

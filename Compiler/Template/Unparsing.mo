@@ -157,7 +157,8 @@ algorithm
     local
       Tpl.Text txt;
       Absyn.Path i_path;
-      Absyn.Ident i_name;
+      Absyn.Ident i_name_1;
+      String i_name;
 
     case ( txt,
            Absyn.IDENT(name = i_name) )
@@ -166,9 +167,9 @@ algorithm
       then txt;
 
     case ( txt,
-           Absyn.QUALIFIED(name = i_name, path = i_path) )
+           Absyn.QUALIFIED(name = i_name_1, path = i_path) )
       equation
-        txt = Tpl.writeStr(txt, i_name);
+        txt = Tpl.writeStr(txt, i_name_1);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("."));
         txt = pathString(txt, i_path);
       then txt;
