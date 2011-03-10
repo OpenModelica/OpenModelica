@@ -2393,6 +2393,15 @@ algorithm
         true = checkSubscriptsRange(se,sz);
       then
         ((DAE.T_ARRAY(DAE.DIM_INTEGER(dim_int),t_1),p));
+
+    // Unexpanded array means non-constant range, so no range-checking possible.
+    case ((DAE.T_ARRAY(arrayDim = dim, arrayType = t), p), 
+          (DAE.SLICE(exp = DAE.RANGE(ty = _)) :: ys))
+      equation
+        t_1 = checkSubscripts(t, ys);
+      then
+        ((DAE.T_ARRAY(dim, t_1), p));
+
     case ((DAE.T_ARRAY(arrayDim = dim,arrayType = t),_),
           (DAE.INDEX(exp = DAE.ICONST(integer = ind)) :: ys))
       equation
@@ -2422,32 +2431,14 @@ algorithm
         t_1 = checkSubscripts(t, ys);
       then
         t_1;  
-    case ((DAE.T_ARRAY(arrayDim = dim,arrayType = t),_),
-          (DAE.WHOLEDIM() :: ys))
-      equation
-        true = Expression.dimensionKnown(dim);
-        t_1 = checkSubscripts(t, ys);
-      then
-        t_1;
-    case ((DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN(),arrayType = t),_),
+
+    case ((DAE.T_ARRAY(arrayType = t),_),
           (DAE.WHOLEDIM() :: ys))
       equation
         t_1 = checkSubscripts(t, ys);
       then
         t_1;
 
-    // If slicing with integer array of VAR variability, i.e. index changing during runtime.
-    // => resulting ARRAY type has no specified dimension size.
-    case ((DAE.T_ARRAY(arrayDim = dim,arrayType = t),p),
-          (DAE.SLICE(exp = e) :: ys))
-      equation
-        5 = Expression.dimensionSize(dim);
-        false = Expression.isArray(e);
-        // we check so that e is not an array, if so the range check is useless in the function above.
-
-        t_1 = checkSubscripts(t, ys);
-      then
-       ((DAE.T_ARRAY(DAE.DIM_UNKNOWN(),t_1),p));
     case ((DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN(),arrayType = t),p),
           (DAE.SLICE(exp = _) :: ys))
       equation
@@ -2503,7 +2494,7 @@ algorithm
         str1 = Util.stringDelimitList(Util.listMap(expl,ExpressionDump.printExpStr)," and position " );
         Error.addMessage(Error.ARRAY_INDEX_OUT_OF_BOUNDS,{str1,str2});
       then
-        fail();
+        false;
   end matchcontinue;
 end checkSubscriptsRange;
 
