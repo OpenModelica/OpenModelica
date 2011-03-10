@@ -31,6 +31,7 @@
 #include "meta_modelica.h"
 #include "rml_compatibility.h"
 #include "systemimpl.c"
+#include <limits.h>
 
 extern "C" {
 
@@ -515,5 +516,17 @@ extern char* System_unquoteIdentifier(char *str)
   if (res == NULL) return str;
   return res;
 }
+
+extern int System_intMaxLit()
+{
+  return (LONG_MAX / 2);
+}
+
+extern void* System_realMaxLit()
+{
+  return mmc_mk_rcon(DBL_MAX / 2048);
+}
+
+
 
 }

@@ -755,7 +755,7 @@ end unquoteIdentifier;
 
 public function intMaxLit "Returns the maximum integer that can be represent using this version of the compiler"
   output Integer outInt;
-  external "builtin" outInt=System_intMaxLit();
+  external "C" outInt=System_intMaxLit();
 end intMaxLit;
 
 public function realMaxLit "Returns the maximum integer that can be represent using this version of the compiler"
