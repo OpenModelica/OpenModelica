@@ -192,6 +192,9 @@ uniontype VarInfo
     Integer numAlgVars;
     Integer numIntAlgVars;
     Integer numBoolAlgVars;
+    Integer numAliasAlgVars;
+    Integer numAliasIntAlgVars;
+    Integer numAliasBoolAlgVars;
     Integer numParams;
     Integer numIntParams;
     Integer numBoolParams;
@@ -2034,10 +2037,10 @@ algorithm
       VarInfo varinfo;
       list<Function> functions;
       Integer nx, ny, np, ng, ng_sam, ng_sam_1, next, ny_string, np_string, ng_1;
-      Integer nhv,nin, nresi, nout, ny_int, np_int, ny_bool, np_bool;
+      Integer nhv,nin, nresi, nout, ny_int, np_int, ny_bool, np_bool, na, na_int, na_bool;
       Integer njacvars;
        
-      case(inJacs,minfo as (MODELINFO(name,dir,VARINFO(nhv, ng_1, ng_sam_1, nx, ny, ny_int, ny_bool, np, np_int, np_bool, nout, nin,
+      case(inJacs,minfo as (MODELINFO(name,dir,VARINFO(nhv, ng_1, ng_sam_1, nx, ny, ny_int, ny_bool, na, na_int, na_bool, np, np_int, np_bool, nout, nin,
           nresi, next, ny_string, np_string,_),vars,functions)))
         equation
           jacvars = appendAllVars(inJacs);
@@ -2045,7 +2048,7 @@ algorithm
           njacvars = listLength(jacvars);
           linearVars = SIMVARS({}, {}, {}, {}, {}, {}, {}, {}, {},{},{},{},{},jacvars);
           simvarsandlinearvars = mergeVars(vars,linearVars);
-        then MODELINFO(name, dir, VARINFO(nhv, ng_1, ng_sam_1, nx, ny, ny_int, ny_bool, np, np_int, np_bool, nout, nin,
+        then MODELINFO(name, dir, VARINFO(nhv, ng_1, ng_sam_1, nx, ny, ny_int, ny_bool, na, na_int, na_bool, np, np_int, np_bool, nout, nin,
           nresi, next, ny_string, np_string,njacvars), simvarsandlinearvars, functions);
    end match;
 end expandModelInfoVars;
@@ -5576,15 +5579,18 @@ algorithm
   matchcontinue (dlow, numOutVars, numInVars, numHelpVars, numResiduals)
     local
       Integer nx, ny, np, ng, ng_sam, ng_sam_1, next, ny_string, np_string, ng_1;
-      Integer ny_int, np_int, ny_bool, np_bool;
+      Integer ny_int, np_int, ny_bool, np_bool, na, na_int, na_bool;
     case (dlow, numOutVars, numInVars, numHelpVars, numResiduals)
       equation
         (nx, ny, np, ng, ng_sam, next, ny_string, np_string, ny_int, np_int, ny_bool, np_bool) =
         BackendDAEUtil.calculateSizes(dlow);
         ng_1 = filterNg(ng);
         ng_sam_1 = filterNg(ng_sam);
+        na = 0;
+        na_int = 0;
+        na_bool = 0;
       then
-        VARINFO(numHelpVars, ng_1, ng_sam_1, nx, ny, ny_int, ny_bool, np, np_int, np_bool, numOutVars, numInVars,
+        VARINFO(numHelpVars, ng_1, ng_sam_1, nx, ny, ny_int, ny_bool, na, na_int, na_bool, np, np_int, np_bool, numOutVars, numInVars,
           numResiduals, next, ny_string, np_string,0);
     case (_,_,_,_,_)
       equation

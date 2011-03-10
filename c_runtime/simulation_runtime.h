@@ -43,6 +43,7 @@
 #include "compat.h"
 #include "fortran_types.h"
 #include "simulation_varinfo.h"
+#include "real_array.h"
 #include "integer_array.h"
 #include "boolean_array.h"
 #include "rtclock.h"
@@ -119,16 +120,36 @@ typedef struct sim_DATA_STRING {
   long nInputVars,nOutputVars;
 } DATA_STRING;
 
+typedef struct sim_DATA_REAL_ALIAS {
+  modelica_real* alias;
+  modelica_boolean negate;
+  long nVars;
+} DATA_REAL_ALIAS;
+
+typedef struct sim_DATA_INT_ALIAS {
+  modelica_integer* alias;
+  modelica_boolean negate;
+  long nVars;
+} DATA_INT_ALIAS;
+
+typedef struct sim_DATA_BOOL_ALIAS {
+  modelica_boolean* alias;
+  modelica_boolean negate;
+  long nVars;
+} DATA_BOOL_ALIAS;
+
 typedef struct sim_DATA_INT {
   modelica_integer* algebraics;
   modelica_integer* parameters;
   modelica_integer* inputVars;
   modelica_integer* outputVars;
   modelica_integer*  algebraics_old, *algebraics_old2;
+  DATA_INT_ALIAS* alias;
   modelica_boolean* algebraicsFilterOutput; /* True if this variable should be filtered */
 
   long nAlgebraic,nParameters;
   long nInputVars,nOutputVars;
+  long nAlias;
 } DATA_INT;
 
 typedef struct sim_DATA_BOOL {
@@ -137,10 +158,12 @@ typedef struct sim_DATA_BOOL {
   modelica_boolean* inputVars;
   modelica_boolean* outputVars;
   modelica_boolean* algebraics_old, *algebraics_old2;
+  DATA_BOOL_ALIAS* alias;
   modelica_boolean* algebraicsFilterOutput; /* True if this variable should be filtered */
 
   long nAlgebraic,nParameters;
   long nInputVars,nOutputVars;
+  long nAlias;
 } DATA_BOOL;
 
 typedef struct sample_raw_time_st {
@@ -201,6 +224,9 @@ typedef struct sim_DATA {
   DATA_STRING stringVariables;
   DATA_INT intVariables;
   DATA_BOOL boolVariables;
+
+  DATA_REAL_ALIAS* realAlias;
+  long nAlias;
 
   const char* modelName; /* For error messages */
   const char* modelFilePrefix; /* For filenames, input/output */

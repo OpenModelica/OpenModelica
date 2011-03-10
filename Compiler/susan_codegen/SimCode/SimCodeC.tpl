@@ -101,8 +101,6 @@ case SIMCODE(__) then
   
   <%functionGetName(modelInfo)%>
   
-  <%functionDivisionError()%>
-  
   <%functionSetLocalData()%>
   
   <%functionInitializeDataStruc()%>
@@ -183,8 +181,9 @@ case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
   #define NHELP <%varInfo.numHelpVars%>
   #define NG <%varInfo.numZeroCrossings%> // number of zero crossings
   #define NG_SAM <%varInfo.numTimeEvents%> // number of zero crossings that are samples
-  #define NX <%varInfo.numStateVars%>
-  #define NY <%varInfo.numAlgVars%>
+  #define NX <%varInfo.numStateVars%>  // number of states
+  #define NY <%varInfo.numAlgVars%>  // number of real variables
+  #define NA <%varInfo.numAliasAlgVars%>  // number of alias variables
   #define NP <%varInfo.numParams%> // number of parameters
   #define NO <%varInfo.numOutVars%> // number of outputvar on topmodel
   #define NI <%varInfo.numInVars%> // number of inputvar on topmodel
@@ -195,8 +194,10 @@ case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
   #define NYSTR <%varInfo.numStringAlgVars%> // number of alg. string variables
   #define NPSTR <%varInfo.numStringParamVars%> // number of alg. string variables
   #define NYINT <%varInfo.numIntAlgVars%> // number of alg. int variables
+  #define NAINT <%varInfo.numAliasIntAlgVars%> // number of alias int variables
   #define NPINT <%varInfo.numIntParams%> // number of alg. int variables
   #define NYBOOL <%varInfo.numBoolAlgVars%> // number of alg. bool variables
+  #define NABOOL <%varInfo.numAliasBoolAlgVars%> // number of alias bool variables
   #define NPBOOL <%varInfo.numBoolParams%> // number of alg. bool variables
   #define NJACVARS <%varInfo.numJacobianVars%> // number of jacobian variables
   
@@ -480,30 +481,6 @@ case MODELINFO(vars=SIMVARS(__)) then
 end functionGetName;
 
 
-template functionDivisionError()
- "Generates function in simulation file."
-::=
-  <<
-  /* Commented out by Frenkel TUD because there is a new implementation of
-     division by zero problem. */
-  /*
-  #define DIVISION(a,b,c) ((b != 0) ? a / b : a / division_error(b,c))
-  
-  int encounteredDivisionByZero = 0;
-  
-  double division_error(double b, const char* division_str)
-  {
-    if(!encounteredDivisionByZero) {
-      fprintf(stderr, "ERROR: Division by zero in partial equation: %s.\n",division_str);
-      encounteredDivisionByZero = 1;
-    }
-    return b;
-  }
-  */
-  >>
-end functionDivisionError;
-
-
 template functionSetLocalData()
  "Generates function in simulation file."
 ::=
@@ -530,6 +507,7 @@ template functionInitializeDataStruc()
     memset(returnData,0,sizeof(DATA));
     returnData->nStates = NX;
     returnData->nAlgebraic = NY;
+    returnData->nAlias = NA;
     returnData->nParameters = NP;
     returnData->nInputVars = NI;
     returnData->nOutputVars = NO;
@@ -544,8 +522,10 @@ template functionInitializeDataStruc()
     returnData->stringVariables.nAlgebraic = NYSTR;
     returnData->intVariables.nParameters = NPINT;
     returnData->intVariables.nAlgebraic = NYINT;
+    returnData->intVariables.nAlias = NAINT;
     returnData->boolVariables.nParameters = NPBOOL;
     returnData->boolVariables.nAlgebraic = NYBOOL;
+    returnData->boolVariables.nAlias = NABOOL;
     returnData->nJacobianvars = NJACVARS;
   
     if (returnData->nStates) {
@@ -659,7 +639,7 @@ template functionInitializeDataStruc()
     } else {
       returnData->parameters = 0;
     }
-  
+ 
     if (returnData->stringVariables.nParameters) {
       returnData->stringVariables.parameters = (const char**)malloc(sizeof(char*)*returnData->stringVariables.nParameters);
         assert(returnData->stringVariables.parameters);
@@ -700,6 +680,30 @@ template functionInitializeDataStruc()
       returnData->inputVars = 0;
     }
   
+    if (returnData->nAlias) {
+      returnData->realAlias = (DATA_REAL_ALIAS*) malloc(sizeof(DATA_REAL_ALIAS)*returnData->nAlias);
+      assert(returnData->realAlias);
+      memset(returnData->realAlias,0,sizeof(DATA_REAL_ALIAS)*returnData->nAlias);
+    } else {
+      returnData->realAlias = 0;
+    }  
+  
+    if (returnData->intVariables.nAlias) {
+      returnData->intVariables.alias = (DATA_INT_ALIAS*) malloc(sizeof(DATA_INT_ALIAS)*returnData->intVariables.nAlias);
+      assert(returnData->intVariables.alias);
+      memset(returnData->intVariables.alias,0,sizeof(DATA_INT_ALIAS)*returnData->intVariables.nAlias);
+    } else {
+      returnData->intVariables.alias = 0;
+    }   
+    
+    if (returnData->boolVariables.nAlias) {
+      returnData->boolVariables.alias = (DATA_BOOL_ALIAS*) malloc(sizeof(DATA_BOOL_ALIAS)*returnData->boolVariables.nAlias);
+      assert(returnData->boolVariables.alias);
+      memset(returnData->boolVariables.alias,0,sizeof(DATA_BOOL_ALIAS)*returnData->boolVariables.nAlias);
+    } else {
+      returnData->boolVariables.alias = 0;
+    }
+      
    if (returnData->nJacobianvars) {
       returnData->jacobianVars = (double*) malloc(sizeof(double)*returnData->nJacobianvars);
       assert(returnData->jacobianVars);
@@ -855,6 +859,51 @@ case EXTOBJINFO(__) then
       free(data->outputVars);
       data->outputVars = 0;
     }
+    
+    if (data->intVariables.algebraics) {
+      free(data->intVariables.algebraics);
+      data->intVariables.algebraics = 0;
+    }
+  
+    if (data->intVariables.algebraics_old) {
+      free(data->intVariables.algebraics_old);
+      data->intVariables.algebraics_old = 0;
+    }
+
+    if (data->intVariables.algebraics_old2) {
+      free(data->intVariables.algebraics_old2);
+      data->intVariables.algebraics_old2 = 0;
+    }
+
+    if (data->boolVariables.algebraics) {
+      free(data->boolVariables.algebraics);
+      data->boolVariables.algebraics = 0;
+    }
+
+    if (data->boolVariables.algebraics_old) {
+      free(data->boolVariables.algebraics_old);
+      data->boolVariables.algebraics_old = 0;
+    }
+
+    if (data->boolVariables.algebraics_old2) {
+      free(data->boolVariables.algebraics_old2);
+      data->boolVariables.algebraics_old2 = 0;
+    }
+
+    if (data->realAlias) {
+      free(data->realAlias);
+      data->realAlias = 0;
+    }
+
+    if (data->intVariables.alias) {
+      free(data->intVariables.alias);
+      data->intVariables.alias = 0;
+    }
+
+    if (data->boolVariables.alias) {
+      free(data->boolVariables.alias);
+      data->boolVariables.alias = 0;
+    }    
     
     if (data->jacobianVars) {
       free(data->jacobianVars);

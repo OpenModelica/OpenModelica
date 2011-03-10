@@ -225,23 +225,26 @@ package SimCode
 
   uniontype VarInfo
 	  record VARINFO
-	    Integer numHelpVars;
-	    Integer numZeroCrossings;
-	    Integer numTimeEvents;
-	    Integer numStateVars;
-	    Integer numAlgVars;
-	    Integer numIntAlgVars;
-	    Integer numBoolAlgVars;
-	    Integer numParams;
-	    Integer numIntParams;
-	    Integer numBoolParams;
-	    Integer numOutVars;
-	    Integer numInVars;
-	    Integer numResiduals;
-	    Integer numExternalObjects;
-	    Integer numStringAlgVars;
-	    Integer numStringParamVars;
-	    Integer numJacobianVars;
+      Integer numHelpVars;
+      Integer numZeroCrossings;
+      Integer numTimeEvents;
+      Integer numStateVars;
+      Integer numAlgVars;
+      Integer numIntAlgVars;
+      Integer numBoolAlgVars;
+      Integer numAliasAlgVars;
+      Integer numAliasIntAlgVars;
+      Integer numAliasBoolAlgVars;
+      Integer numParams;
+      Integer numIntParams;
+      Integer numBoolParams;
+      Integer numOutVars;
+      Integer numInVars;
+      Integer numResiduals;
+      Integer numExternalObjects;
+      Integer numStringAlgVars;
+      Integer numStringParamVars;
+      Integer numJacobianVars;
 	  end VARINFO;
 	end VarInfo;
 	
