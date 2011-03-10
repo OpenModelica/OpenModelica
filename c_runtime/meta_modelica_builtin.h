@@ -175,6 +175,11 @@ void boxptr_setGlobalRoot(modelica_metatype, modelica_metatype);
 modelica_metatype boxptr_valueConstructor(modelica_metatype);
 #define referenceEq(X,Y) ((X) == (Y))
 
+typedef modelica_real realMaxLit_rettype;
+typedef modelica_integer intMaxLit_rettype;
+realMaxLit_rettype realMaxLit();
+intMaxLit_rettype intMaxLit();
+
 #if defined(__cplusplus)
 }
 #endif

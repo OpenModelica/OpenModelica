@@ -483,13 +483,3 @@ void* boxptr_valueHashMod(void *p, void *mod)
 {
   return mmc_mk_icon(mmc_prim_hash(p) % (unsigned long) mmc_unbox_integer(mod));
 }
-
-double realMaxLit()
-{
-  return DBL_MAX / 2048; /* in case some non-linear or ODE solver tries to add eps to this value */
-}
-
-long intMaxLit()
-{
-  return LONG_MAX / 2;
-}

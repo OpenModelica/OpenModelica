@@ -633,4 +633,14 @@ modelica_metatype boxptr_listRest(modelica_metatype lst)
   return MMC_CDR(lst);
 }
 
+realMaxLit_rettype realMaxLit()
+{
+  return DBL_MAX / 2048; /* in case some non-linear or ODE solver tries to add eps to this value */
+}
+
+intMaxLit_rettype intMaxLit()
+{
+  return LONG_MAX / 2;
+}
+
 }
