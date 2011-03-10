@@ -115,6 +115,47 @@ MACRO(BUILDMODELFMU model dir Flags CSRC)
 #ENDFOREACH(model ${model_sources})
 ENDMACRO(BUILDMODELFMU)
 
+# MACRO BUILDMODEL
+MACRO(BUILDMODELFMUMOS model mos Flags CSRC)
+
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/c_runtime)
+
+  SET(OMC_MODELNAME ${model})  
+  # generate model.mos 
+  
+  # Variablen fuer openmodelica2sarturis
+  SET(OMC_CODE   ${CMAKE_CURRENT_BINARY_DIR}/${model}.cpp
+                 ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.cpp
+                 ${CMAKE_CURRENT_BINARY_DIR}/${model}_init.txt)
+  SET(OMC_OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${model}.cpp
+                  ${CMAKE_CURRENT_BINARY_DIR}/${model}_FMU.cpp
+                  ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.cpp
+				  ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.h
+				  ${CMAKE_CURRENT_BINARY_DIR}/${model}_records.c)
+  # custom command fuer openmodelicacompiler
+  ADD_CUSTOM_COMMAND(OUTPUT ${OMC_OUTPUT}
+                     COMMAND ${OMC_DEBUG} ${Flags} ${mos}
+                     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+                     COMMENT "Erzeuge Code fuer ${model} with ${OMC_DEBUG}")
+  # target fuer OM_OUTPUT
+  ADD_CUSTOM_TARGET(${model}codegen ALL DEPENDS ${OMC_OUTPUT})
+
+  SET(OMC_FMU_CODE ${OMCTRUNCHOME}/c_runtime/fmu_model_interface.h
+                   ${OMCTRUNCHOME}/c_runtime/fmiModelFunctions.h
+				   ${OMCTRUNCHOME}/c_runtime/fmiModelTypes.h)
+  
+  ADD_LIBRARY(${model} SHARED ${OMC_OUTPUT} ${CSRC} ${OMC_FMU_CODE})
+  TARGET_LINK_LIBRARIES(${model} sim c_runtime f2c sendData ModelicaExternalC)
+
+  # Dependencies
+  ADD_DEPENDENCIES(${model} ${model}codegen)
+  
+  IF(MODELS_INSTALL)
+    INSTALL(TARGETS ${model} ARCHIVE DESTINATION ${MODELS_INSTALL_PATH})
+    INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/modelDescription.xml DESTINATION ${MODELS_INSTALL_PATH})
+  ENDIF(MODELS_INSTALL)
+#ENDFOREACH(model ${model_sources})
+ENDMACRO(BUILDMODELFMUMOS)
 
 # Check if example files are to be exported
 SHOW_VARIABLE(MODELS_INSTALL BOOL "Install models" ON)
@@ -164,13 +205,13 @@ SET(c_runtime_headers  blaswrap.h f2c.h integer_array.h memory_pool.h
 					   sendData/sendData.h)				 
 						 
 SET(sim_sources simulation_runtime.cpp simulation_init.cpp simulation_input.cpp 
-                simulation_events.cpp linearize.cpp solver_dasrt.cpp solver_main.cpp
+                simulation_events.cpp linearize.cpp solver_main.cpp
 				simulation_result_plt.cpp simulation_result_csv.cpp 
 				simulation_result_mat.cpp simulation_delay.cpp tables.cpp options.cpp
 				dgesv_aux.c  simulation_modelinfo.c)
 	
 SET(sim_headers simulation_runtime.h simulation_init.h simulation_input.h
-                simulation_events.h linearize.h solver_dasrt.h solver_main.h 
+                simulation_events.h linearize.h solver_main.h 
 				simulation_result.h simulation_result_plt.h simulation_result_mat.h
 				simulation_result_empty.h simulation_result_csv.h 
 				simulation_delay.h tables.h options.h  
