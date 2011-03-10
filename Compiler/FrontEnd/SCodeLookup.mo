@@ -426,9 +426,12 @@ algorithm
     local
       Absyn.Ident name1, name2;
       Absyn.Path env_path, path;
+      FrameType frame_ty;
 
-    case (Absyn.QUALIFIED(name = name1), _)
+    case (Absyn.QUALIFIED(name = name1), 
+          SCodeEnv.FRAME(frameType = frame_ty) :: _)
       equation
+        frameNotEncapsulated(frame_ty);
         env_path = SCodeEnv.getEnvPath(inEnv);
         name2 = Absyn.pathFirstIdent(env_path);
         true = stringEqual(name1, name2);
