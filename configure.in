@@ -10,6 +10,7 @@ AC_SUBST(omc_antlr_jar)
 AC_SUBST(antlrinc)
 AC_SUBST(antlrlib)
 AC_SUBST(with_qwt)
+AC_SUBST(with_qwt_suffix)
 AC_SUBST(LIBSOCKET)
 AC_SUBST(LIBNSL)
 AC_SUBST(LIBLPSOLVE55)
@@ -335,9 +336,11 @@ if test -n "$QMAKE"; then
 
   if test x"$with_qwt" = "xcheck"; then
     with_qwt_checked=""
+    with_qwt_suffix=""
     for f in {/usr,/opt,$PREFIX}/include/{qwt,qwt-qt4}/; do
       test -f "$f/qwt.h" && with_qwt="$f" || with_qwt_checked="$with_qwt_checked $f"
     done
+    echo $with_qwt_checked | grep -q -- -qt4 && with_qwt_suffix="-qt4"
   fi
 
   if test x"$with_qwt" = "xno"; then

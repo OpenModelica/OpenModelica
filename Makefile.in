@@ -47,13 +47,12 @@ omshell: mkbuilddirs
 	make -C OMShell/OMShellGUI -f Makefile.unix
 omplotwindow: mkbuilddirs
 	make -C OMNotebook/OMPlotWindow -f Makefile.unix
-# Does not work using qwt-5.2 yet
 omplot: mkbuilddirs
 	make -C OMPlot/OMPlotGUI -f Makefile.unix
 omedit: mkbuilddirs omnotebook
 	make -C OMEdit/OMEditGUI -f Makefile.unix
 
-qtclients: omnotebook omshell omplotwindow omedit
+qtclients: omnotebook omshell omplotwindow omedit omplot
 
 qtclean: qtclean-common
 	make -C OMShell/OMShellGUI -f Makefile.unix clean
