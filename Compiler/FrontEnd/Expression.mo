@@ -271,7 +271,7 @@ algorithm
 
     case(DAE.CODE(code,_)) then Absyn.CODE(code);
 
-    case DAE.REDUCTION(path,e1,s,oe1,e2,_) equation
+    case DAE.REDUCTION(path,e1,s,oe1,e2,_,_) equation
       //print("unelab of reduction not impl. yet");
       acref = Absyn.pathToCref(path);
       ae1 = unelabExp(e1);
@@ -3186,7 +3186,7 @@ algorithm
       DAE.MatchType matchTy;
       Integer index_;
       Option<tuple<DAE.Exp,Integer,Integer>> isExpisASUB;
-      Option<DAE.Exp> oe1;
+      Option<DAE.Exp> oe1,foldExp;
       Option<Values.Value> v;
     
     case ((e as DAE.ICONST(_)),rel,ext_arg)
@@ -3354,12 +3354,12 @@ algorithm
       then
         ((e,ext_arg_3));
     
-    case ((e as DAE.REDUCTION(path = path,expr = e1,ident = id,guardExp = oe1, range = e2, defaultValue = v)),rel,ext_arg)
+    case ((e as DAE.REDUCTION(path = path,expr = e1,ident = id,guardExp = oe1, range = e2, defaultValue = v, foldExp = foldExp)),rel,ext_arg)
       equation
         ((e1,ext_arg)) = traverseExp(e1, rel, ext_arg);
         ((e2,ext_arg)) = traverseExp(e2, rel, ext_arg);
         ((oe1,ext_arg)) = traverseExpOpt(oe1, rel, ext_arg);
-        ((e,ext_arg)) = rel((DAE.REDUCTION(path,e1,id,oe1,e2,v),ext_arg));
+        ((e,ext_arg)) = rel((DAE.REDUCTION(path,e1,id,oe1,e2,v,foldExp),ext_arg));
       then
         ((e,ext_arg));
     
@@ -3640,7 +3640,7 @@ algorithm
       Integer iscalar;
       Integer index_;
       Option<tuple<DAE.Exp,Integer,Integer>> isExpisASUB;
-      Option<DAE.Exp> oe1;
+      Option<DAE.Exp> oe1,foldExp;
       Option<Values.Value> v;
     
     case (e as DAE.ICONST(_),rel,ext_arg) then ((e,ext_arg));    
@@ -3771,13 +3771,13 @@ algorithm
     
     case ((e as DAE.CODE(ty=_)),rel,ext_arg) then ((e,ext_arg));    
     
-    case ((e as DAE.REDUCTION(path = path,expr = e1,ident = id,guardExp = oe1, range = e2, defaultValue = v)),rel,ext_arg)
+    case ((e as DAE.REDUCTION(path = path,expr = e1,ident = id,guardExp = oe1, range = e2, defaultValue = v, foldExp = foldExp)),rel,ext_arg)
       equation
         ((e1,ext_arg)) = traverseExpTopDown(e1, rel, ext_arg);
         ((e2,ext_arg)) = traverseExpTopDown(e2, rel, ext_arg);
         ((oe1,ext_arg)) = traverseExpOptTopDown(oe1, rel, ext_arg);
       then
-        ((DAE.REDUCTION(path,e1,id,oe1,e2,v),ext_arg));
+        ((DAE.REDUCTION(path,e1,id,oe1,e2,v,foldExp),ext_arg));
     
     // MetaModelica list
     case ((e as DAE.CONS(e1,e2)),rel,ext_arg)
@@ -4154,7 +4154,7 @@ algorithm
   (outExp, outTuple) := match(inExp, inTuple)
     local
       DAE.Exp e1, e2, e3;
-      Option<DAE.Exp> oe1;
+      Option<DAE.Exp> oe1,foldExp;
       tuple<FuncType, FuncType, Argument> tup;
       DAE.Operator op;
       ComponentRef cref;
@@ -4292,13 +4292,13 @@ algorithm
     case (DAE.CODE(code = _), tup)
       then (inExp, tup);
 
-    case (DAE.REDUCTION(path = path, expr = e1, ident = id, guardExp = oe1, range = e2, defaultValue = v), tup)
+    case (DAE.REDUCTION(path = path, expr = e1, ident = id, guardExp = oe1, range = e2, defaultValue = v, foldExp = foldExp), tup)
       equation
         (e1, tup) = traverseExpBidir(e1, tup);
         (e2, tup) = traverseExpBidir(e2, tup);
         (oe1, tup) = traverseExpOptBidir(oe1, tup);
       then
-        (DAE.REDUCTION(path, e1, id, oe1, e2, v), tup);
+        (DAE.REDUCTION(path, e1, id, oe1, e2, v, foldExp), tup);
 
     case (DAE.END(), _) then (inExp, inTuple);
 

@@ -1652,6 +1652,7 @@ case 0 then
   case 0 then
       <<
       string def_vector<%name%>("  Real <%name%>[<%numIn%>];\n");
+
       >>
   case _ then
       <<
@@ -5380,7 +5381,9 @@ template daeExpReduction(Exp exp, Context context, Text &preExp /*BUFP*/,
   let arrIndex = match r.path case IDENT(name="array") then tempDecl("int",&tmpVarDecls)
   let rangeExp = daeExp(r.range,context,&rangeExpPre,&tmpVarDecls)
   let resType = expTypeArrayIf(typeof(exp))
-  let res = tempDecl(resType,&varDecls)
+  let res = "_$reductionFoldTmpB"
+  let &tmpVarDecls += '<%resType%> <%res%>;<%\n%>'
+  let resTmp = tempDecl(resType,&varDecls)
   let &preDefault = buffer ""
   let resTail = match r.path case IDENT(name="list") then tempDecl("modelica_metatype*",&tmpVarDecls)
   let defaultValue = match r.path case IDENT(name="array") then "" else match r.defaultValue
@@ -5389,13 +5392,11 @@ template daeExpReduction(Exp exp, Context context, Text &preExp /*BUFP*/,
   let guardCond = match r.guardExp case SOME(grd) then daeExp(grd, context, &guardExpPre, &tmpVarDecls) else "1"
   let empty = match identType case "modelica_metatype" then 'listEmpty(<%loopVar%>)' else '0 == size_of_dimension_base_array(<%loopVar%>, 1)'
   let length = match identType case "modelica_metatype" then 'listLength(<%loopVar%>)' else 'size_of_dimension_base_array(<%loopVar%>, 1)'
-  let fnpath = match r.path
-    case IDENT(name="min") then "std::min"
-    case IDENT(name="max") then "std::max"
-    case IDENT(name="sum") then "MACRO_ADD"
-    case IDENT(name="product") then "MACRO_MUL"
-  end match
-  let reductionBodyExpr = daeExp(r.expr, context, &bodyExpPre, &tmpVarDecls)
+  let reductionBodyExpr = "_$reductionFoldTmpA"
+  let bodyExprType = expTypeArrayIf(typeof(r.expr))
+  let reductionBodyExprWork = daeExp(r.expr, context, &bodyExpPre, &tmpVarDecls)
+  let &tmpVarDecls += '<%bodyExprType%> <%reductionBodyExpr%>;<%\n%>'
+  let &bodyExpPre += '<%reductionBodyExpr%> = <%reductionBodyExprWork%>;<%\n%>'
   let foldExp = match r.path
     case IDENT(name="list") then
     <<
@@ -5406,12 +5407,10 @@ template daeExpReduction(Exp exp, Context context, Text &preExp /*BUFP*/,
       '<%res%> = mmc_mk_cons(<%reductionBodyExpr%>,<%res%>);'
     case IDENT(name="array") then
       '*(<%arrayTypeResult%>_element_addr1(&<%res%>, 1, <%arrIndex%>++)) = <%reductionBodyExpr%>;'
-    else '<%res%> = /* TODO: FIXME - This is wrong on so many levels. We should use daeExp here so we support every kind of reduction there is... */ <%match r.path
-      case IDENT(name=n as "min")
-      case IDENT(name=n as "max") then 'std::<%n%>(<%reductionBodyExpr%>,<%res%>);'
-      case IDENT(name="sum") then '<%reductionBodyExpr%> + <%res%>;'
-      case IDENT(name="product") then '<%reductionBodyExpr%> * <%res%>;'
-      else '_<%underscorePath(r.path)%>(<%reductionBodyExpr%>,<%res%>).targ1;'%>'
+    else match r.foldExp case SOME(fExp) then
+      <<
+      <%res%> = <%daeExp(fExp, context, &bodyExpPre, &tmpVarDecls)%>;
+      >>
   let firstValue = match r.path
      case IDENT(name="array") then
      <<
@@ -5476,87 +5475,10 @@ template daeExpReduction(Exp exp, Context context, Text &preExp /*BUFP*/,
       }
     <%loopTail%>
     <% if resTail then '*<%resTail%> = mmc_mk_nil();' %>
+    <% resTmp %> = <% res %>;
   }<%\n%>
   >>
-  res
-/*
-match exp
-case r as REDUCTION(__) then
-  (match path
-    case IDENT(name = name as "listReverse")
-    case IDENT(name = name as "list") then
-    let acc = tempDecl("modelica_metatype", &tmpVarDecls)
-    let resHead = tempDecl("modelica_metatype", &varDecls)
-    let resTail = match name case "list" then tempDecl("modelica_metatype*", &tmpVarDecls)
-    let lstExp = daeExp(r.range, context, &tmpExpPre, &tmpVarDecls)
-    let bodyExp = daeExp(r.expr, context, &bodyExpPre, &tmpVarDecls)
-    let guardCond = match r.guardExp case SOME(grd) then daeExp(grd, context, &guardExpPre, &tmpVarDecls)
-    let iteratorName = contextIteratorName(r.ident, context)
-    let &preExp += <<
-    { /* "<%name%>" reduction */
-      <%tmpVarDecls%>
-      modelica_metatype <%iteratorName%>;
-      <%tmpExpPre%>
-      <%acc%> = <%lstExp%>;
-      <% match name
-         case "list" then
-           <<
-           <%resHead%> = 0;
-           <%resTail%> = &<%resHead%>;
-           >>
-         case "listReverse" then
-           '<%resHead%> = mmc_mk_nil();'
-      %>
-      while (!listEmpty(<%acc%>)) {
-        <%iteratorName%> = MMC_CAR(<%acc%>);
-        <% if r.guardExp then
-        <<
-        <%&guardExpPre%>
-        if (<%guardCond%>) {
-        >>
-        else '{' %>
-          <%bodyExpPre%>
-          <% match name
-           case "list" then // Let's save some bytes from being garbage by using runtime trickery. We get a little bit of overhead from filling the CDR with 0 and patching it as we go, but lower memory overhead should make up for it.
-             <<
-             *<%resTail%> = mmc_mk_cons(<%bodyExp%>,0);
-             <%resTail%> = &MMC_CDR(*<%resTail%>);
-             >>
-           case "listReverse" then // This is too easy; the damn list is already in the correct order
-             '<%resHead%> = mmc_mk_cons(<%bodyExp%>,<%resHead%>);'
-          %>
-        }
-        <%acc%> = MMC_CDR(<%acc%>);
-      }
-      <% match name case "list" then '*<%resTail%> = mmc_mk_nil();' %>
-    }<%\n%>
-    >>
-    resHead
-  else
-// Array reductions
-  let identType = expTypeFromExpModelica(r.expr)
-  let accFun = daeExpReductionFnName(path, identType)
-  let startValue = match r.defaultValue
-    case SOME(v) then daeExp(valueExp(v),context,&preExp,&varDecls)
-    else 'UNKNOWN_START_VALUE;<%\n%>'
-  let res = tempDecl(identType, &varDecls)
-  let &tmpExpPre = buffer ""
-  let tmpExpVar = daeExp(r.expr, context, &tmpExpPre, &varDecls)
-  let cast = match accFun case "max" then "(modelica_real)"
-                          case "min" then "(modelica_real)"
-                          else ""
-  let body =
-    <<
-    <%tmpExpPre%>
-    <%res%> = <%accFun%>(<%cast%>(<%res%>), <%cast%>(<%tmpExpVar%>));
-    >>
-  let &preExp +=
-    <<
-    <%res%> = <%startValue%>;
-    <%daeExpReductionLoop(exp, body, context, &varDecls)%><%\n%>
-    >>
-  res)
-  */
+  resTmp
 end daeExpReduction;
 
 template daeExpReductionLoop(Exp exp, Text &body, Context context, Text &varDecls)

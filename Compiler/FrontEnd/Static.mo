@@ -357,7 +357,7 @@ algorithm
         c = Types.constAnd(c1, c2);
 
         (cache,ops) = operators(cache,op, env, t1, t2);
-        (op_1,{e1_2,e2_2},rtype) = deoverload(ops,{(e1_1,t1),(e2_1,t2)},e,pre);
+        (op_1,{e1_2,e2_2},rtype) = deoverload(ops,{(e1_1,t1),(e2_1,t2)},e,pre,info);
         exp_1 = replaceOperatorWithFcall(DAE.BINARY(e1_2,op_1,e2_2), c);
         exp_1 = ExpressionSimplify.simplify(exp_1);
         prop = DAE.PROP(rtype,c);
@@ -368,7 +368,7 @@ algorithm
       equation
         (cache,e_1,DAE.PROP(t,c),st_1) = elabExp(cache,env,e1,impl,st,doVect,pre,info);
         (cache,ops) = operators(cache,op, env, t, (DAE.T_NOTYPE(),NONE()));
-        (op_1,{e_2},rtype) = deoverload(ops,{(e_1,t)},e,pre);
+        (op_1,{e_2},rtype) = deoverload(ops,{(e_1,t)},e,pre,info);
         exp_1 = replaceOperatorWithFcall(DAE.UNARY(op_1,e_2), c);
         exp_1 = ExpressionSimplify.simplify(exp_1);
         prop = DAE.PROP(rtype,c);
@@ -380,7 +380,7 @@ algorithm
         (cache,e2_1,DAE.PROP(t2,c2),st_2) = elabExp(cache,env, e2, impl, st_1,doVect,pre,info);
         c = Types.constAnd(c1, c2);
         (cache,ops) = operators(cache,op, env, t1, t2);
-        (op_1,{e1_2,e2_2},rtype) = deoverload(ops, {(e1_1,t1),(e2_1,t2)},e,pre);
+        (op_1,{e1_2,e2_2},rtype) = deoverload(ops, {(e1_1,t1),(e2_1,t2)},e,pre,info);
         exp_1 = replaceOperatorWithFcall(DAE.LBINARY(e1_2,op_1,e2_2), c);
         exp_1 = ExpressionSimplify.simplify(exp_1);
         prop = DAE.PROP(rtype,c);
@@ -390,7 +390,7 @@ algorithm
       equation
         (cache,e_1,DAE.PROP(t,c),st_1) = elabExp(cache,env,e1,impl,st,doVect,pre,info) "Logical unary expressions" ;
         (cache,ops) = operators(cache,op, env, t, (DAE.T_NOTYPE(),NONE()));
-        (op_1,{e_2},rtype) = deoverload(ops, {(e_1,t)},e,pre);
+        (op_1,{e_2},rtype) = deoverload(ops, {(e_1,t)},e,pre,info);
         exp_1 = replaceOperatorWithFcall(DAE.LUNARY(op_1,e_2), c);
         exp_1 = ExpressionSimplify.simplify(exp_1);
         prop = DAE.PROP(rtype,c);
@@ -402,7 +402,7 @@ algorithm
         (cache,e2_1,DAE.PROP(t2,c2),st_2) = elabExp(cache,env, e2, impl, st_1,doVect,pre,info);
         c = Types.constAnd(c1, c2);
         (cache,ops) = operators(cache,op, env, t1, t2);
-        (op_1,{e1_2,e2_2},rtype) = deoverload(ops,{(e1_1,t1),(e2_1,t2)},e,pre);
+        (op_1,{e1_2,e2_2},rtype) = deoverload(ops,{(e1_1,t1),(e2_1,t2)},e,pre,info);
         exp_1 = replaceOperatorWithFcall(DAE.RELATION(e1_2,op_1,e2_2,-1,NONE()), c);
         exp_1 = ExpressionSimplify.simplify(exp_1);
         prop = DAE.PROP(rtype,c);
@@ -1033,7 +1033,7 @@ algorithm
       DAE.Exp iterexp_1,exp_1;
       DAE.Type fulliterty,iterty,expty;
       DAE.Const iterconst,expconst,const,guardconst;
-      list<Env.Frame> env_1,env;
+      list<Env.Frame> env_foldExp,env_1,env;
       Option<Interactive.InteractiveSymbolTable> st;
       DAE.Properties prop;
       Absyn.Path fn_1;
@@ -1046,8 +1046,8 @@ algorithm
       Absyn.ForIterators iterators;
       String reduction_op;
       list<DAE.Exp> expl;
-      Option<Absyn.Exp> aguardExp;
-      Option<DAE.Exp> guardExp;
+      Option<Absyn.Exp> aguardExp,afoldExp;
+      Option<DAE.Exp> guardExp,foldExp;
       Option<Values.Value> v;
 
     // Expansion failed in previous case, generate reduction call.
@@ -1060,16 +1060,17 @@ algorithm
         
         iterty = Types.unliftArrayOrList(fulliterty);
         env_1 = Env.openScope(env, false, SOME(Env.forIterScopeName),NONE());
-        env_1 = Env.extendFrameForIterator(env_1, iter, iterty, DAE.UNBOUND(), 
-          SCode.CONST(), SOME(iterconst));
+        env_1 = Env.extendFrameForIterator(env_1, iter, iterty, DAE.UNBOUND(), SCode.CONST(), SOME(iterconst));
         (cache,exp_1,DAE.PROP(expty, expconst),st) = 
           elabExp(cache, env_1, exp, impl, st, doVect,pre,info);
         (cache,guardExp,DAE.PROP(_, guardconst),st) = elabExpOptAndMatchType(cache, env_1, aguardExp, DAE.T_BOOL_DEFAULT, impl, st, doVect,pre,info); 
         const = Types.constAnd(Types.constAnd(expconst, iterconst), guardconst);
         fn_1 = Absyn.crefToPath(fn);
-        (cache,exp_1,expty,v,fn_1) = reductionType(cache,env,fn_1, exp_1, expty, fulliterty, info);
+        (cache,exp_1,expty,v,fn_1) = reductionType(cache, env, fn_1, exp_1, expty, fulliterty, info);
         prop = DAE.PROP(expty, const);
-        exp_1 = DAE.REDUCTION(fn_1,exp_1,iter,guardExp,iterexp_1,v);
+        (env_foldExp,afoldExp) = makeReductionFoldExp(env_1,fn_1,expty);
+        (cache,foldExp,_,st) = elabExpOptAndMatchType(cache, env_foldExp, afoldExp, expty, impl, st, doVect,pre,info);
+        exp_1 = DAE.REDUCTION(fn_1,exp_1,iter,guardExp,iterexp_1,v,foldExp);
         exp_1 = ExpressionSimplify.simplify1(exp_1) "only needed because unelabMod is silly"; 
       then
         (cache,exp_1,prop,st);
@@ -1080,6 +1081,51 @@ algorithm
       then fail();
   end matchcontinue;
 end elabCallReduction;
+
+protected function makeReductionFoldExp
+  input Env.Env env;
+  input Absyn.Path path;
+  input DAE.Type expty;
+  output Env.Env outEnv;
+  output Option<Absyn.Exp> afoldExp;
+algorithm
+  (outEnv,afoldExp) := match (env,path,expty)
+    local
+      Absyn.Exp exp;
+      Absyn.ComponentRef cr,cr1,cr2;
+      String iterator;
+    case (_,Absyn.IDENT("array"),_) then (env,NONE());
+    case (_,Absyn.IDENT("list"),_) then (env,NONE());
+    case (_,Absyn.IDENT("listReverse"),_) then (env,NONE());
+    case (_,Absyn.IDENT("sum"),_)
+      equation
+        cr = Absyn.pathToCref(path);
+        env = Env.extendFrameForIterator(env, "$reductionFoldTmpA", expty, DAE.UNBOUND(), SCode.VAR(), SOME(DAE.C_VAR()));
+        env = Env.extendFrameForIterator(env, "$reductionFoldTmpB", expty, DAE.UNBOUND(), SCode.VAR(), SOME(DAE.C_VAR()));
+        cr1 = Absyn.CREF_IDENT("$reductionFoldTmpA",{});
+        cr2 = Absyn.CREF_IDENT("$reductionFoldTmpB",{});
+        exp = Absyn.BINARY(Absyn.CREF(cr1),Absyn.ADD(),Absyn.CREF(cr2));
+      then (env,SOME(exp));
+    case (_,Absyn.IDENT("product"),_)
+      equation
+        cr = Absyn.pathToCref(path);
+        env = Env.extendFrameForIterator(env, "$reductionFoldTmpA", expty, DAE.UNBOUND(), SCode.VAR(), SOME(DAE.C_VAR()));
+        env = Env.extendFrameForIterator(env, "$reductionFoldTmpB", expty, DAE.UNBOUND(), SCode.VAR(), SOME(DAE.C_VAR()));
+        cr1 = Absyn.CREF_IDENT("$reductionFoldTmpA",{});
+        cr2 = Absyn.CREF_IDENT("$reductionFoldTmpB",{});
+        exp = Absyn.BINARY(Absyn.CREF(cr1),Absyn.MUL(),Absyn.CREF(cr2));
+      then (env,SOME(exp));
+    else
+      equation
+        cr = Absyn.pathToCref(path);
+        env = Env.extendFrameForIterator(env, "$reductionFoldTmpA", expty, DAE.UNBOUND(), SCode.VAR(), SOME(DAE.C_VAR()));
+        env = Env.extendFrameForIterator(env, "$reductionFoldTmpB", expty, DAE.UNBOUND(), SCode.VAR(), SOME(DAE.C_VAR()));
+        cr1 = Absyn.CREF_IDENT("$reductionFoldTmpA",{});
+        cr2 = Absyn.CREF_IDENT("$reductionFoldTmpB",{});
+        exp = Absyn.CALL(cr,Absyn.FUNCTIONARGS({Absyn.CREF(cr1),Absyn.CREF(cr2)},{}));
+      then (env,SOME(exp));
+  end match;
+end makeReductionFoldExp;
 
 protected function reductionType
   input Env.Cache cache;
@@ -1104,6 +1150,7 @@ algorithm
       list<DAE.Type> fnTypes;
       DAE.Type typeA,typeB,resType;
       Absyn.Path path;
+      Values.Value v;
     case (cache,env,Absyn.IDENT(name = "array"), _, _, (DAE.T_ARRAY(arrayDim = dim),_), _)
       then (cache,inExp, Types.liftArray(inType, dim), SOME(Values.ARRAY({}, {0})),fn);
     case (cache,env,Absyn.IDENT(name = "array"), _, _, (DAE.T_LIST(_),_), _)
@@ -1119,34 +1166,66 @@ algorithm
     case (cache,env,Absyn.IDENT("min"),inExp,(DAE.T_REAL(_),_),_,info)
       equation
         r = System.realMaxLit();
-      then (cache,inExp,DAE.T_REAL_DEFAULT,SOME(Values.REAL(r)),fn);
+        v = Values.REAL(r);
+      then (cache,inExp,DAE.T_REAL_DEFAULT,SOME(v),fn);
     case (cache,env,Absyn.IDENT("min"),inExp,(DAE.T_INTEGER(_),_),_,info)
       equation
         i = System.intMaxLit();
-      then (cache,inExp,DAE.T_INTEGER_DEFAULT,SOME(Values.INTEGER(i)),fn);
-    case (cache,env,Absyn.IDENT("min"),inExp,(DAE.T_BOOL(_),_),_,info) then (cache,inExp,DAE.T_BOOL_DEFAULT,SOME(Values.BOOL(true)),fn);
-    case (cache,env,Absyn.IDENT("min"),inExp,(DAE.T_STRING(_),_),_,info) then (cache,inExp,DAE.T_STRING_DEFAULT,NONE(),fn);
+        v = Values.INTEGER(i);
+      then (cache,inExp,DAE.T_INTEGER_DEFAULT,SOME(v),fn);
+    case (cache,env,Absyn.IDENT("min"),inExp,(DAE.T_BOOL(_),_),_,info)
+      equation
+        v = Values.BOOL(true);
+      then (cache,inExp,DAE.T_BOOL_DEFAULT,SOME(v),fn);
+    case (cache,env,Absyn.IDENT("min"),inExp,(DAE.T_STRING(_),_),_,info)
+      then (cache,inExp,DAE.T_STRING_DEFAULT,NONE(),fn);
 
     case (cache,env,Absyn.IDENT("max"),inExp,(DAE.T_REAL(_),_),_,info)
       equation
         r = realNeg(System.realMaxLit());
-      then (cache,inExp,DAE.T_REAL_DEFAULT,SOME(Values.REAL(r)),fn);
+        v = Values.REAL(r);
+      then (cache,inExp,DAE.T_REAL_DEFAULT,SOME(v),fn);
     case (cache,env,Absyn.IDENT("max"),inExp,(DAE.T_INTEGER(_),_),_,info)
       equation
         i = intNeg(System.intMaxLit());
-      then (cache,inExp,DAE.T_INTEGER_DEFAULT,SOME(Values.INTEGER(i)),fn);
-    case (cache,env,Absyn.IDENT("max"),inExp,(DAE.T_BOOL(_),_),_,info) then (cache,inExp,DAE.T_BOOL_DEFAULT,SOME(Values.BOOL(false)),fn);
-    case (cache,env,Absyn.IDENT("max"),inExp,(DAE.T_STRING(_),_),_,info) then (cache,inExp,DAE.T_STRING_DEFAULT,SOME(Values.STRING("")),fn);
+        v = Values.INTEGER(i);
+      then (cache,inExp,DAE.T_INTEGER_DEFAULT,SOME(v),fn);
+    case (cache,env,Absyn.IDENT("max"),inExp,(DAE.T_BOOL(_),_),_,info)
+      equation
+        v = Values.BOOL(false);
+      then (cache,inExp,DAE.T_BOOL_DEFAULT,SOME(v),fn);
+    case (cache,env,Absyn.IDENT("max"),inExp,(DAE.T_STRING(_),_),_,info)
+      then (cache,inExp,DAE.T_STRING_DEFAULT,SOME(Values.STRING("")),fn);
 
-    case (cache,env,Absyn.IDENT("sum"),inExp,(DAE.T_REAL(_),_),_,info) then (cache,inExp,DAE.T_REAL_DEFAULT,SOME(Values.REAL(0.0)),fn);
-    case (cache,env,Absyn.IDENT("sum"),inExp,(DAE.T_INTEGER(_),_),_,info) then (cache,inExp,DAE.T_INTEGER_DEFAULT,SOME(Values.INTEGER(0)),fn);
-    case (cache,env,Absyn.IDENT("sum"),inExp,(DAE.T_BOOL(_),_),_,info) then (cache,inExp,DAE.T_BOOL_DEFAULT,SOME(Values.BOOL(false)),fn);
-    case (cache,env,Absyn.IDENT("sum"),inExp,(DAE.T_STRING(_),_),_,info) then (cache,inExp,DAE.T_STRING_DEFAULT,SOME(Values.STRING("")),fn);
-    case (cache,env,Absyn.IDENT("sum"),inExp,(DAE.T_ARRAY(arrayDim=_),_),_,info) then (cache,inExp,inType,NONE(),fn);
+    case (cache,env,Absyn.IDENT("sum"),inExp,(DAE.T_REAL(_),_),_,info)
+      equation
+        v = Values.REAL(0.0);
+      then (cache,inExp,DAE.T_REAL_DEFAULT,SOME(v),fn);
+    case (cache,env,Absyn.IDENT("sum"),inExp,(DAE.T_INTEGER(_),_),_,info)
+      equation
+        v = Values.INTEGER(0);
+      then (cache,inExp,DAE.T_INTEGER_DEFAULT,SOME(v),fn);
+    case (cache,env,Absyn.IDENT("sum"),inExp,(DAE.T_BOOL(_),_),_,info)
+      equation
+        v = Values.BOOL(false);
+      then (cache,inExp,DAE.T_BOOL_DEFAULT,SOME(v),fn);
+    case (cache,env,Absyn.IDENT("sum"),inExp,(DAE.T_STRING(_),_),_,info)
+      then (cache,inExp,DAE.T_STRING_DEFAULT,SOME(Values.STRING("")),fn);
+    case (cache,env,Absyn.IDENT("sum"),inExp,(DAE.T_ARRAY(arrayDim=_),_),_,info)
+      then (cache,inExp,inType,NONE(),fn);
 
-    case (cache,env,Absyn.IDENT("product"),inExp,(DAE.T_REAL(_),_),_,info) then (cache,inExp,DAE.T_REAL_DEFAULT,SOME(Values.REAL(1.0)),fn);
-    case (cache,env,Absyn.IDENT("product"),inExp,(DAE.T_INTEGER(_),_),_,info) then (cache,inExp,DAE.T_INTEGER_DEFAULT,SOME(Values.INTEGER(1)),fn);
-    case (cache,env,Absyn.IDENT("product"),inExp,(DAE.T_BOOL(_),_),_,info) then (cache,inExp,DAE.T_BOOL_DEFAULT,SOME(Values.BOOL(true)),fn);
+    case (cache,env,Absyn.IDENT("product"),inExp,(DAE.T_REAL(_),_),_,info)
+      equation
+        v = Values.REAL(1.0);
+      then (cache,inExp,DAE.T_REAL_DEFAULT,SOME(v),fn);
+    case (cache,env,Absyn.IDENT("product"),inExp,(DAE.T_INTEGER(_),_),_,info)
+      equation
+        v = Values.INTEGER(1);
+      then (cache,inExp,DAE.T_INTEGER_DEFAULT,SOME(v),fn);
+    case (cache,env,Absyn.IDENT("product"),inExp,(DAE.T_BOOL(_),_),_,info)
+      equation
+        v = Values.BOOL(true);
+      then (cache,inExp,DAE.T_BOOL_DEFAULT,SOME(v),fn);
     case (cache,env,Absyn.IDENT("product"),inExp,(DAE.T_STRING(_),_),_,info)
       equation
         Error.addSourceMessage(Error.INTERNAL_ERROR, {"product reduction not defined for String"},info);
@@ -1418,14 +1497,14 @@ algorithm
         (cache,e2_1,DAE.PROP(t2,c2)) = elabGraphicsExp(cache,env, e2, impl,pre,info);
         c = Types.constAnd(c1, c2);
         (cache,ops) = operators(cache,op, env, t1, t2);
-        (op_1,{e1_2,e2_2},rtype) = deoverload(ops, {(e1_1,t1),(e2_1,t2)}, exp,pre);
+        (op_1,{e1_2,e2_2},rtype) = deoverload(ops, {(e1_1,t1),(e2_1,t2)}, exp,pre,info);
       then
         (cache,DAE.BINARY(e1_2,op_1,e2_2),DAE.PROP(rtype,c));
     case (cache,env,(exp as Absyn.UNARY(op = op,exp = e)),impl,pre,info)
       equation
         (cache,e_1,DAE.PROP(t,c)) = elabGraphicsExp(cache,env, e, impl,pre,info);
         (cache,ops) = operators(cache,op, env, t, (DAE.T_NOTYPE(),NONE()));
-        (op_1,{e_2},rtype) = deoverload(ops, {(e_1,t)}, exp,pre);
+        (op_1,{e_2},rtype) = deoverload(ops, {(e_1,t)}, exp,pre,info);
       then
         (cache,DAE.UNARY(op_1,e_2),DAE.PROP(rtype,c));
     case (cache,env,(exp as Absyn.LBINARY(exp1 = e1,op = op,exp2 = e2)),impl,pre,info)
@@ -1434,14 +1513,14 @@ algorithm
         (cache,e2_1,DAE.PROP(t2,c2)) = elabGraphicsExp(cache,env, e2, impl,pre,info);
         c = Types.constAnd(c1, c2);
         (cache,ops) = operators(cache,op, env, t1, t2);
-        (op_1,{e1_2,e2_2},rtype) = deoverload(ops, {(e1_1,t1),(e2_1,t2)}, exp,pre);
+        (op_1,{e1_2,e2_2},rtype) = deoverload(ops, {(e1_1,t1),(e2_1,t2)}, exp,pre,info);
       then
         (cache,DAE.LBINARY(e1_2,op_1,e2_2),DAE.PROP(rtype,c));
     case (cache,env,(exp as Absyn.LUNARY(op = op,exp = e)),impl,pre,info)
       equation
         (cache,e_1,DAE.PROP(t,c)) = elabGraphicsExp(cache,env, e, impl,pre,info) "Logical unary expressions" ;
         (cache,ops) = operators(cache,op, env, t, (DAE.T_NOTYPE(),NONE()));
-        (op_1,{e_2},rtype) = deoverload(ops, {(e_1,t)}, exp,pre);
+        (op_1,{e_2},rtype) = deoverload(ops, {(e_1,t)}, exp,pre,info);
       then
         (cache,DAE.LUNARY(op_1,e_2),DAE.PROP(rtype,c));
     case (cache,env,(exp as Absyn.RELATION(exp1 = e1,op = op,exp2 = e2)),impl,pre,info)
@@ -1450,7 +1529,7 @@ algorithm
         (cache,e2_1,DAE.PROP(t2,c2)) = elabGraphicsExp(cache,env, e2, impl,pre,info);
         c = Types.constAnd(c1, c2);
         (cache,ops) = operators(cache,op, env, t1, t2);
-        (op_1,{e1_2,e2_2},rtype) = deoverload(ops, {(e1_1,t1),(e2_1,t2)}, exp,pre);
+        (op_1,{e1_2,e2_2},rtype) = deoverload(ops, {(e1_1,t1),(e2_1,t2)}, exp,pre,info);
       then
         (cache,DAE.RELATION(e1_2,op_1,e2_2,-1,NONE()),DAE.PROP(rtype,c));
     case (cache,env,e as Absyn.IFEXP(ifExp = _),impl,pre,info) /* Conditional expressions */
@@ -11562,7 +11641,7 @@ algorithm
   end match;
 end elabArglist;
 
-public function deoverload "function: deoverload
+protected function deoverload "function: deoverload
   Given several lists of parameter types and one argument list, 
   this function tries to find one list of parameter types which 
   is compatible with the argument list. It uses elabArglist to 
@@ -11580,11 +11659,12 @@ public function deoverload "function: deoverload
   input list<tuple<DAE.Exp, DAE.Type>> inTplExpExpTypesTypeLst;
   input Absyn.Exp inExp;
   input Prefix.Prefix inPrefix;
+  input Absyn.Info info;
   output DAE.Operator outOperator;
   output list<DAE.Exp> outExpExpLst;
   output DAE.Type outType;
 algorithm
-  (outOperator,outExpExpLst,outType) := matchcontinue (inTplExpOperatorTypesTypeLstTypesTypeLst,inTplExpExpTypesTypeLst,inExp,inPrefix)
+  (outOperator,outExpExpLst,outType) := matchcontinue (inTplExpOperatorTypesTypeLstTypesTypeLst,inTplExpExpTypesTypeLst,inExp,inPrefix,info)
     local
       list<DAE.Exp> args_1,exps;
       list<tuple<DAE.TType, Option<Absyn.Path>>> types_1,params,tps;
@@ -11598,7 +11678,7 @@ algorithm
       Prefix.Prefix pre;
       DAE.ExpType ty;
 
-    case (((op,params,rtype) :: _),args,_,pre)
+    case (((op,params,rtype) :: _),args,_,pre,info)
       equation
         //Debug.fprint("dovl", Util.stringDelimitList(Util.listMap(params, Types.printTypeStr),"\n"));
         //Debug.fprint("dovl", "\n===\n");
@@ -11609,13 +11689,13 @@ algorithm
       then
         (op,args_1,rtype_1);
     
-    case ((_ :: xs),args,exp,pre)
+    case ((_ :: xs),args,exp,pre,info)
       equation
-        (op,args_1,rtype) = deoverload(xs, args, exp,pre);
+        (op,args_1,rtype) = deoverload(xs, args, exp,pre,info);
       then
         (op,args_1,rtype);
     
-    case ({},args,exp,pre)
+    case ({},args,exp,pre,info)
       equation
         s = Dump.printExpStr(exp);
         exps = Util.listMap(args, Util.tuple21);
@@ -11626,7 +11706,7 @@ algorithm
         tpsstr = Util.stringDelimitList(tps_str, ", ");
         pre_str = PrefixUtil.printPrefixStr3(pre);
         s = stringAppendList({s," (expressions :",estr," types: ",tpsstr,")"});
-        Error.addMessage(Error.UNRESOLVABLE_TYPE, {s,pre_str});
+        Error.addSourceMessage(Error.UNRESOLVABLE_TYPE, {s,pre_str}, info);
       then
         fail();
   end matchcontinue;

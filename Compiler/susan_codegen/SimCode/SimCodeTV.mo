@@ -764,6 +764,7 @@ package DAE
       Option<Exp> guardExp;
       Exp range;
       Option<Values.Value> defaultValue;
+      Option<Exp> foldExp;
     end REDUCTION;
     record END end END;
     record LIST

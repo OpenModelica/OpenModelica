@@ -1429,7 +1429,7 @@ algorithm
         platform = System.platform();
         senddata = System.getSendDataLibs();
         gcc = System.getCCompiler();
-        gcc_res = 0 == System.systemCall(gcc +& " -v");
+        gcc_res = 0 == System.systemCall(gcc +& " -v > /dev/null");
         confcmd = System.configureCommandLine();
         vals = {Values.STRING(omhome),Values.STRING(omlib),
                 Values.STRING(omcpath),Values.BOOL(omcfound),
@@ -2157,7 +2157,7 @@ protected function compileModel "function: compileModel
   input String noClean;
   input String solverMethod "inline solvers requires setting environment variables";
 algorithm
-  _:= matchcontinue (inFilePrefix,inLibsList,inFileDir,noClean,solverMethod)
+  _ := matchcontinue (inFilePrefix,inLibsList,inFileDir,noClean,solverMethod)
     local
       String pd,omhome,omhome_1,cd_path,libsfilename,libs_str,s_call,fileprefix,file_dir,command,filename,str,extra_command;
       list<String> libs;
@@ -2166,11 +2166,6 @@ algorithm
     // adrpo 2009-11-29: use ALL THE TIME $OPENMODELICAHOME/bin/Compile
     case (fileprefix,libs,file_dir,noClean,solverMethod)
       equation
-        // if compileCommand is set to g++ use $OPENMODELICAHOME/bin/Compile
-        // MathCore needs compileCommand to be set to g++ in Compiler/runtime/settingsimpl.c
-        // so we test for g++ instead of "" (nothing).
-        command = Settings.getCompileCommand();
-        // Settings.setCompileCommand(""); // set it to nothing so the case below doesn't match.
         pd = System.pathDelimiter();
         omhome = Settings.getInstallationDirectoryPath();
         omhome_1 = System.stringReplace(omhome, "\"", "");
@@ -2185,7 +2180,7 @@ algorithm
         //        OPENMODELICAHOME that we set will contain a SPACE at the end!
         //        set OPENMODELICAHOME=DIR && actually adds the space between the DIR and &&
         //        to the environment variable! Don't ask me why, ask Microsoft.
-        omhome = Util.if_(System.os() ==& "Windows_NT", "set OPENMODELICAHOME=\"" +& omhome_1 +& "\"&& ", "OPENMODELICAHOME=\"$OPENMODELICAHOME\" ");
+        omhome = Util.if_(System.os() ==& "Windows_NT", "set OPENMODELICAHOME=\"" +& omhome_1 +& "\"&& ", "");
         s_call =
         stringAppendList({omhome,
           omhome_1,pd,"share",pd,"omc",pd,"scripts",pd,"Compile"," ",fileprefix," ",noClean});
@@ -2194,25 +2189,7 @@ algorithm
         Debug.fprintln("dynload", "compileModel: successful! ");
       then
         ();
-    /* If compileCommand is set.
-    case (fileprefix,libs,file_dir,noClean)
-      equation
-        command = Settings.getCompileCommand();
-        false = Util.isEmptyString(command);
-        omhome = Settings.getInstallationDirectoryPath();
-        omhome_1 = System.stringReplace(omhome, "\"", "");
-        cd_path = System.pwd() "needed when the above rule does not work" ;
-        libs_str = Util.stringDelimitList(libs, " ");
-        libsfilename = stringAppend(fileprefix, ".libs");
-        System.writeFile(libsfilename, libs_str);
-        s_call = stringAppendList({"set OPENMODELICAHOME=",omhome_1,"&& ",command," ",fileprefix," ",noClean});
-        // print(s_call);
-        Debug.fprintln("dynload", "compileModel: running " +& s_call);
-        0 = System.systemCall(s_call) ;
-        Debug.fprintln("dynload", "compileModel: successful! ");
-      then
-        ();
-    */
+
     case (fileprefix,libs,file_dir,_,_) /* compilation failed */
       equation
         filename = stringAppendList({fileprefix,".log"});
@@ -2222,26 +2199,14 @@ algorithm
         Debug.fprintln("dynload", "compileModel: failed!");
       then
         fail();
-    case (fileprefix,libs,file_dir,_,_)
-      equation
-        command = Settings.getCompileCommand();
-        false = Util.isEmptyString(command);
-        false = System.regularFileExists(command);
-        str=stringAppendList({"command ",command," not found. Check $OPENMODELICAHOME"});
-        Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {str});
-      then 
-        fail();
 
     case (fileprefix,libs,file_dir,_,_) /* compilation failed\\n */
       equation
         omhome = Settings.getInstallationDirectoryPath();
         omhome_1 = System.stringReplace(omhome, "\"", "");
         pd = System.pathDelimiter();
-        /* adrpo - 2006-08-28 ->
-         * please leave Compile instead of Compile.bat
-         * here as it has to work on Linux too
-         */
-        s_call = stringAppendList({"\"",omhome_1,pd,"share",pd,"omc",pd,"scripts",pd,"Compile","\""});
+        command = Util.if_(System.os() ==& "Windows_NT", "Compile.bat", "Compile");
+        s_call = stringAppendList({omhome_1,pd,"share",pd,"omc",pd,"scripts",pd,command});
         false = System.regularFileExists(s_call);
         str=stringAppendList({"command ",s_call," not found. Check $OPENMODELICAHOME"});
         Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {str});
@@ -2249,7 +2214,8 @@ algorithm
         fail();
     case (fileprefix,libs,file_dir,_,_)
       equation
-        Print.printErrorBuf("#- Error building simulation code. Ceval.compileModel failed.\n ");
+        failure(_ = Settings.getInstallationDirectoryPath());
+        Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {"$OPENMODELICAHOME not found."});
       then
         fail();
   end matchcontinue;
