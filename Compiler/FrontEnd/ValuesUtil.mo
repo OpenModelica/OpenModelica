@@ -2471,4 +2471,28 @@ algorithm
   end match;
 end printCodeVariableName;
 
+public function boxIfUnboxedVal
+  input Values.Value v;
+  output Values.Value ov;
+algorithm
+  ov := match v
+    case Values.INTEGER(_) then Values.META_BOX(v);
+    case Values.REAL(_) then Values.META_BOX(v);
+    case Values.BOOL(_) then Values.META_BOX(v);
+    else v;
+  end match;
+end boxIfUnboxedVal;
+
+public function arrayOrListVals
+  input Values.Value v;
+  input Boolean boxIfUnboxed;
+  output list<Values.Value> vals;
+algorithm
+  vals := match (v,boxIfUnboxed)
+    case (Values.ARRAY(valueLst = vals),_) then vals;
+    case (Values.LIST(vals),true) then Util.listMap(vals,boxIfUnboxedVal);
+    case (Values.LIST(vals),_) then vals;
+  end match;
+end arrayOrListVals;
+
 end ValuesUtil;

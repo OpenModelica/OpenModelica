@@ -810,13 +810,15 @@ algorithm
       then
         (cache,v,stOpt);
 
-    // reductions
-    case (cache, env, DAE.REDUCTION(Absyn.IDENT(reductionName), expr = daeExp, ident = iter, range = iterexp, defaultValue = ov), impl, stOpt, dimOpt, msg)
+    // Known reductions, with fast implementation
+    case (cache, env, DAE.REDUCTION(Absyn.IDENT(reductionName), expr = daeExp, ident = iter, guardExp = NONE(), range = iterexp, defaultValue = ov), impl, stOpt, dimOpt, msg)
       equation
-        (cache, Values.ARRAY(valueLst = vals), stOpt) = ceval(cache, env, iterexp, impl, stOpt, dimOpt, msg);
-        env = Env.openScope(env, false, SOME(Env.forScopeName),NONE());
         op = lookupReductionOp(reductionName);
+        (cache, v, stOpt) = ceval(cache, env, iterexp, impl, stOpt, dimOpt, msg);
+        vals = ValuesUtil.arrayOrListVals(v,false /* Do not box the values */);
+        env = Env.openScope(env, false, SOME(Env.forScopeName),NONE());
         (cache, value, stOpt) = cevalReduction(cache, env, reductionName, op, ov, daeExp, iter, vals, impl, stOpt, dimOpt, msg);
+        value = finalReductionOp(reductionName, value);
       then 
         (cache, value, stOpt);
 
@@ -1108,6 +1110,7 @@ algorithm
     case "listReverse" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalListReverse;
     case "listHead" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalListFirst;
     case "listRest" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalListRest;
+    case "anyString" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalAnyString;
 
     //case "semiLinear" then cevalBuiltinSemiLinear;
     //case "delay" then cevalBuiltinDelay;
@@ -2538,9 +2541,11 @@ algorithm
       Env.Cache cache;
       String str;
       Real r;
+      Values.Value v;
     case (cache,env,{exp},impl,st,msg)
       equation
-        (cache,Values.REAL(r),st) = ceval(cache,env, exp, impl, st,NONE(), msg);
+        (cache,v,st) = ceval(cache,env, exp, impl, st, NONE(), msg);
+        Values.REAL(r) = v;
         str = realString(r);
       then
         (cache,Values.STRING(str),st);
@@ -2872,6 +2877,37 @@ algorithm
   end match;
 end cevalListRest;
 
+protected function cevalAnyString
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<DAE.Exp> inExpExpLst;
+  input Boolean inBoolean;
+  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Msg inMsg;
+  output Env.Cache outCache;
+  output Values.Value outValue;
+  output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
+algorithm
+  (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+    local
+      list<Env.Frame> env;
+      DAE.Exp exp1;
+      Boolean impl;
+      Option<Interactive.InteractiveSymbolTable> st;
+      Msg msg;
+      Env.Cache cache;
+      Values.Value v;
+      String s;
+    case (cache,env,{exp1},impl,st,msg)
+      equation
+        (cache,v,st) = ceval(cache,env, exp1, impl, st,NONE(), msg);
+        s = ValuesUtil.valString(v);
+      then
+        (cache,Values.STRING(s),st);
+  end match;
+end cevalAnyString;
+
 protected function cevalListFirst
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -2897,7 +2933,7 @@ algorithm
       equation
         (cache,Values.LIST(v::_),st) = ceval(cache,env, exp1, impl, st,NONE(), msg);
       then
-        (cache,Values.META_BOX(v),st);
+        (cache,ValuesUtil.boxIfUnboxedVal(v),st);
   end match;
 end cevalListFirst;
 
@@ -5008,19 +5044,9 @@ algorithm
         fail();
 
     // REDUCTION bindings  
-    case (cache,env,DAE.CREF_IDENT(ident = id,subscriptLst = subsc),DAE.EQBOUND(exp = exp,constant_ = DAE.C_CONST()),impl,MSG()) 
-      equation 
-        DAE.REDUCTION(path = Absyn.IDENT(name = rfn),expr = elexp,ident = iter,range = iterexp) = exp;
-        true = stringEq(rfn, "array");
-        Debug.fprintln("ceval", "#- Ceval.cevalCrefBinding: Array evaluation");
-      then
-        fail();
-
-    // REDUCTION bindings  
     case (cache,env,cr,DAE.EQBOUND(exp = exp,constant_ = DAE.C_CONST()),impl,msg) 
       equation 
         DAE.REDUCTION(path = Absyn.IDENT(name = rfn),expr = elexp,ident = iter,range = iterexp) = exp;
-        false = stringEq(rfn, "array");
         cr_1 = ComponentReference.crefStripLastSubs(cr) "lookup without subscripts, so dimension sizes can be determined." ;
         (cache,_,tp,_,_,_,_,_,_) = Lookup.lookupVar(cache,env, cr_1);
         sizelst = Types.getDimensionSizes(tp);
@@ -5406,6 +5432,19 @@ algorithm
   end matchcontinue;
 end dimensionSliceInRange;
 
+protected function finalReductionOp
+  input String op;
+  input Values.Value val;
+  output Values.Value outVal;
+algorithm
+  outVal := match (op,val)
+    local
+      list<Values.Value> vals;
+    case ("listReverse",Values.LIST(vals)) equation vals = listReverse(vals); then Values.LIST(vals);
+    else val;
+  end match;
+end finalReductionOp;
+
 protected function cevalReduction
   "Help function to ceval. Evaluates reductions calls, such as
     'sum(i for i in 1:5)'"
@@ -5575,6 +5614,23 @@ algorithm
   end match;
 end valueArrayCons;
 
+protected function valueCons
+  "Returns the cons of two values. Used by cevalReduction for list reductions."
+  input Values.Value v1;
+  input Values.Value v2;
+  output Values.Value res;
+algorithm
+  res := match(v1, v2)
+    local
+      list<Values.Value> vals;
+      Integer dim_size;
+      list<Integer> rest_dims;
+
+    case (Values.META_BOX(v1), Values.LIST(vals)) then Values.LIST(v1::vals);
+    case (v1, Values.LIST(vals)) then Values.LIST(v1::vals);
+  end match;
+end valueCons;
+
 protected function lookupReductionOp
   "Looks up a reduction function based on it's name."
   input DAE.Ident reductionName;
@@ -5592,6 +5648,8 @@ algorithm
     case "product" then valueMul;
     case "sum" then valueAdd;
     case "array" then valueArrayCons;
+    case "list" then valueCons;
+    case "listReverse" then valueCons;
   end match;
 end lookupReductionOp;
 
