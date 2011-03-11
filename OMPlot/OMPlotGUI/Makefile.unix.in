@@ -21,11 +21,11 @@ $(NAME)$(EXE): Makefile
 	make -f Makefile
 ifeq ($(EXE),.app)
 $(NAME): $(NAME)$(EXE) always
-	cp -p $</Contents/MacOS/$(NAME) $@
+	cp -p ../bin/$</Contents/MacOS/$(NAME) ../bin/$@
 endif
 
 build: $(NAME)
-	cp -p $(NAME) $(builddir_bin)
+	cp -p ../bin/$(NAME) $(builddir_bin)
 
 Makefile.unix: Makefile.unix.in
 	cd $(top_builddir); ./config.status

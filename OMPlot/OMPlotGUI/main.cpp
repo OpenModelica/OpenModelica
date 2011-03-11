@@ -35,6 +35,10 @@
 
 int main(int argc, char *argv[])
 {
+    if (argc < 14) {
+      printf("Usage: %s arg1 ... arg13 variables\n", *argv);
+      return 1;
+    }
     QApplication a(argc, argv);
 
     try {
@@ -55,6 +59,6 @@ int main(int argc, char *argv[])
         msgBox->setDefaultButton(QMessageBox::Ok);
         msgBox->exec();
 
-        return -1;
+        return 1;
     }    
 }
