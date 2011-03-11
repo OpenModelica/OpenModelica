@@ -42,14 +42,28 @@ PlotWindow::PlotWindow(QStringList arguments, QWidget *parent)
 
     //Set up arguments
     setTitle(QString(arguments[2]));
-    setLegend(QString(arguments[3]));
+
+    if(QString(arguments[3]) == "true")
+        setLegend(true);
+    else if(QString(arguments[3]) == "false")
+        setLegend(false);
+
     if(QString(arguments[4]) == "true")
         setGrid(true);
     else if(QString(arguments[4]) == "false")
         setGrid(false);
     QString plotType = arguments[5];
-    setLogX(QString(arguments[6]));
-    setLogY(QString(arguments[7]));
+
+    if(QString(arguments[6]) == "true")
+        setLogX(true);
+    else if(QString(arguments[6]) == "false")
+        setLogX(false);
+
+    if(QString(arguments[7]) == "true")
+        setLogY(true);
+    else if(QString(arguments[7]) == "false")
+        setLogY(false);
+
     setXLabel(QString(arguments[8]));
     setYLabel(QString(arguments[9]));
     setXRange(QString(arguments[10]).toDouble(), QString(arguments[11]).toDouble());
@@ -80,15 +94,6 @@ PlotWindow::~PlotWindow()
     delete mpFile;
     delete mpTextStream;
 
-//    delete mpPlotPicker;
-//    delete mpPlotPanner;
-//    delete mpPanButton;
-//    delete mpGridButton;
-//    delete mpPlotZoomer;
-//    delete mpXCheckBox;
-//    delete mpYCheckBox;
-//    delete mpZoomButton;
-//    delete mpGrid;
 
  //   delete mpQwtLegend;
     delete mpQwtPlot;            
@@ -105,9 +110,11 @@ void PlotWindow::openFile(QString file)
 }
 
 void PlotWindow::initializePlot()
-{
+{    
     //Create the Plot window, size and grid, legend
-    mpQwtPlot = new QwtPlot(QwtText(""));
+    //mpQwtPlot = new QwtPlot();
+    //mpQwtPlot = new QwtPlot(QwtText("Title"));
+    mpQwtPlot = new QwtPlot(QwtText("Wazzup"));
     mpQwtPlot->setGeometry(100, 100, 700, 400);
     mpQwtPlot->setCanvasBackground(Qt::GlobalColor(Qt::white));
     mpGrid = new QwtPlotGrid();
@@ -115,14 +122,14 @@ void PlotWindow::initializePlot()
     mpQwtLegend = new QwtLegend();
     mpQwtPlot->insertLegend(mpQwtLegend, QwtPlot::RightLegend);
     mpQwtPlot->setTitle(QwtText("Plot Window"));    
-    mpQwtPlot->replot();
+    mpQwtPlot->replot();       
 
     //plotpicker, Plotpanner, plotzoomer
-    mpPlotPicker = new QwtPlotPicker((int)QwtPlot::xBottom, (int)QwtPlot::yLeft,
-                                     (int)QwtPlotPicker::CrossRubberBand, (int) QwtPicker::AlwaysOn,
+    mpPlotPicker = new QwtPlotPicker(QwtPlot::xBottom, QwtPlot::yLeft, QwtPicker::PointSelection, QwtPlotPicker::CrossRubberBand,QwtPicker::AlwaysOn,
                                      mpQwtPlot->canvas());
-    mpPlotPicker->setStateMachine(new QwtPickerDragPointMachine());
-    mpPlotPicker->setTrackerPen(QColor(Qt::black));    
+    mpPlotPicker->setTrackerPen(QColor(Qt::black));
+    mpPlotPicker->setRubberBandPen(QColor(Qt::black));
+
     mpPlotPanner = new QwtPlotPanner(mpQwtPlot->canvas());
     mpPlotPanner->setEnabled(false);
 
@@ -190,6 +197,15 @@ void PlotWindow::setupToolbar()
     connect(mpYCheckBox, SIGNAL(clicked()), SLOT(setLog()));
     toolBar->addWidget(mpYCheckBox);
 
+    //OPTIONS
+//    QToolButton *pOptions = new QToolButton(toolBar);
+//    pOptions->setText("Options");
+//    pOptions->setCheckable(true);
+//    connect(pOptions, SIGNAL(clicked()), ))
+//    toolBar->addWidget(pOptions);
+
+//    toolBar->addSeparator();
+
     addToolBar(toolBar);
 }
 
@@ -242,7 +258,7 @@ void PlotWindow::plot(QStringList variables)
                 if(variables[i] == currentVariable || plotAll)
                 {
                     variableExists.replace(i , 1);
-                    curveData curve;
+                    CurveData curve;
                     currentLine = mpTextStream->readLine();
                     intervalSize = intervalString.toInt();
                     while(intervalSize != 0)
@@ -294,7 +310,7 @@ void PlotWindow::plot(QStringList variables)
                 variablesToPlotIndex.push_back(i);
         }
 
-        curveData curve[variablesToPlotIndex.size()];
+        CurveData curve[variablesToPlotIndex.size()];
 
         //Assign Values
         while(!mpTextStream->atEnd())
@@ -351,7 +367,7 @@ void PlotWindow::plot(QStringList variables)
             variables.removeFirst();
         }
 
-        curveData curve[variables.length()];
+        CurveData curve[variables.length()];
 
         //Read in values
         for(int i = 0; i < variables.length(); i++)
@@ -410,7 +426,7 @@ void PlotWindow::plotParametric(QString xVariable, QString yVariable)
 
         QStringList variablesList(xVariable);
         variablesList.append(yVariable);
-        curveData curve;                        
+        CurveData curve;
 
         //Collect variables
         while(!mpTextStream->atEnd())
@@ -483,7 +499,7 @@ void PlotWindow::plotParametric(QString xVariable, QString yVariable)
         }
 
         currentLine = mpTextStream->readLine();
-        curveData curve;
+        CurveData curve;
 
         //Collect values
         while(!mpTextStream->atEnd())
@@ -520,7 +536,7 @@ void PlotWindow::plotParametric(QString xVariable, QString yVariable)
         if(yVariable == "time")
             yVariable = "Time";
 
-        curveData curve;
+        CurveData curve;
 
         //Fill variable x with data
         var = omc_matlab4_find_var(&reader, xVariable.toStdString().c_str());
@@ -544,7 +560,7 @@ void PlotWindow::plotParametric(QString xVariable, QString yVariable)
     plotGraph(mCurveDataList);
 }
 
-void PlotWindow::plotGraph(QList<curveData> mCurveDataList)
+void PlotWindow::plotGraph(QList<CurveData> mCurveDataList)
 {    
     QwtPlotCurve *mpPlotCurve[mCurveDataList.length()];
     for(int i = 0; i < mCurveDataList.length(); i++)
@@ -555,7 +571,8 @@ void PlotWindow::plotGraph(QList<curveData> mCurveDataList)
         QPen pen(QColor(Qt::GlobalColor(colorValue + 1)));
         pen.setWidth(2);
         mpPlotCurve[i] = new QwtPlotCurve(mCurveDataList[i].curveName);
-        mpPlotCurve[i]->setSamples(mCurveDataList[i].xAxisVector,mCurveDataList[i].yAxisVector);
+        //mpPlotCurve[i]->setSamples(mCurveDataList[i].xAxisVector,mCurveDataList[i].yAxisVector);
+        mpPlotCurve[i]->setData(mCurveDataList[i].xAxisVector,mCurveDataList[i].yAxisVector);
         mpPlotCurve[i]->setPen(pen);
         mpPlotCurve[i]->attach(mpQwtPlot);
     }
@@ -602,42 +619,15 @@ void PlotWindow::enablePanMode(bool on)
 }
 
 void PlotWindow::exportDocument()
-{
-    const QList<QByteArray> imageFormats = QImageWriter::supportedImageFormats();
-
-    QStringList filter;
-    filter += "PDF Documents (*.pdf)";
-    filter += "SVG Documents (*.svg)";
-    filter += "Postscript Documents (*.ps)";
-
-    if ( imageFormats.size() > 0 )
-    {
-        QString imageFilter("Images (");
-        for ( int i = 0; i < imageFormats.size(); i++ )
-        {
-            if ( i > 0 )
-                imageFilter += " ";
-            imageFilter += "*.";
-            imageFilter += imageFormats[i];
-        }
-        imageFilter += ")";
-
-        filter += imageFilter;
-    }
-
-    QString fileName = "ThisPlot";
-    fileName = QFileDialog::getSaveFileName( this, "Export File Name", fileName, filter.join(";;"), NULL, QFileDialog::DontConfirmOverwrite);
+{    
+    //Include ps ;;Postscript Documents (*.ps)
+    QString fileName = QFileDialog::getSaveFileName(this, tr("Save File As"), QDir::currentPath(), tr("Image Files (*.png *.bmp *.jpg)"));
 
     if ( !fileName.isEmpty() )
-    {
-        QwtPlotRenderer renderer;
-
-        // flags to make the document look like the widget
-        renderer.setDiscardFlag(QwtPlotRenderer::DiscardBackground, false);
-        renderer.setLayoutFlag(QwtPlotRenderer::KeepMargins, true);
-        renderer.setLayoutFlag(QwtPlotRenderer::KeepFrames, true);
-
-        renderer.renderDocument(mpQwtPlot, fileName, QSizeF(300, 200), 85);
+    {        
+        QPixmap pixmap(mpQwtPlot->size());
+        mpQwtPlot->render(&pixmap);
+        pixmap.save(fileName);
     }
 }
 
@@ -688,10 +678,10 @@ void PlotWindow::setTitle(QString title)
     mpQwtPlot->setTitle(QwtText(title));
 }
 
-void PlotWindow::setLegend(QString on)
+void PlotWindow::setLegend(bool on)
 {
-    //Fixa LEGENDEN
-    if(on == "true")
+    //Can be fixed better
+    if(on)
     {        
         //mpQwtPlot->insertLegend(mpQwtLegend, QwtPlot::RightLegend);
     }
@@ -699,18 +689,18 @@ void PlotWindow::setLegend(QString on)
         delete mpQwtLegend;
 }
 
-void PlotWindow::setLogX(QString on)
+void PlotWindow::setLogX(bool on)
 {
-    if(on == "true")
+    if(on)
     {
         mpXCheckBox->setChecked(true);
         setLog();
     }
 }
 
-void PlotWindow::setLogY(QString on)
+void PlotWindow::setLogY(bool on)
 {
-    if(on == "true")
+    if(on)
     {
         mpYCheckBox->setChecked(true);
         setLog();
@@ -750,3 +740,36 @@ void PlotWindow::checkForErrors(QStringList variables, QVector<int> variableExis
     if(nonExistingVariables != "")
         throw NoVariableException(QString("Variable(s) doesnt exist : ").append(nonExistingVariables).toStdString().c_str());
 }
+
+//Options
+//Options::Options(PlotWindow *pPlotWindow)
+//{
+//    setWindowTitle(QString("OMPLOT - Options"));
+//    setAttribute(Qt::WA_DeleteOnClose);
+//    setMaximumSize(175, 150);
+
+//    mpPlotWindow = pPlotWindow;
+
+//    setUpForm();
+//}
+
+//void Options::setUpForm()
+//{
+//    QGridLayout *label = new QGridLayout;
+//    mpLabelGroup = new QGroupBox();
+//    mpTitleLabel = new QLabel(tr("Title:"));
+//    mpTitle = new QLineEdit("");
+//    label->addWidget(mpTitleLabel, 0, 0);
+//    label->addWidget(mpTitle, 0, 1);
+
+//    mpLabelGroup->setLayout(label);
+
+//    QGridLayout *mainLayout = new QGridLayout;
+//    mainLayout->addWidget(mpLabelGroup, 1, 0);
+//    setLayout(mainLayout);
+//}
+
+//void Options::edit()
+//{
+//    qDebug() << "Waxxuup";
+//}

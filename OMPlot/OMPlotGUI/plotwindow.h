@@ -38,6 +38,7 @@
 #include <QTextStream>
 
 #include <qwt_plot.h>
+#include <qwt_text.h>
 #include <qwt_plot_curve.h>
 #include <qwt_plot_picker.h>
 #include <qwt_picker_machine.h>
@@ -46,12 +47,13 @@
 #include <qwt_legend.h>
 #include <qwt_plot_zoomer.h>
 #include <qwt_plot_panner.h>
+//#include <qwt_plot_renderer.h>
 #include <qwt_scale_engine.h>
 #include <stdexcept>
 #include "../../c_runtime/read_matlab4.h"
 
 // Info about a curve
-struct curveData
+struct CurveData
 {
     QVector<double> xAxisVector;
     QVector<double> yAxisVector;
@@ -69,7 +71,7 @@ public:
     void plot(QStringList);
     void plotAll();
     void plotParametric(QString, QString);
-    void plotGraph(QList<curveData>);
+    void plotGraph(QList<CurveData>);
 
     void openFile(QString);
     void initializePlot();
@@ -77,9 +79,9 @@ public:
     void initializeZoom();
 
     void setTitle(QString);
-    void setLegend(QString);
-    void setLogX(QString);
-    void setLogY(QString);
+    void setLegend(bool);
+    void setLogX(bool);
+    void setLogY(bool);
     void setXLabel(QString);
     void setYLabel(QString);
     void setXRange(double min, double max);
@@ -99,7 +101,7 @@ private:
     QToolButton *mpZoomButton;
     QToolButton *mpPanButton;
 
-    QList<curveData> mCurveDataList;
+    QList<CurveData> mCurveDataList;
 
     QTextStream *mpTextStream;
     QFile *mpFile;
@@ -119,14 +121,20 @@ public:
     Zoomer(int xAxis, int yAxis, QwtPlotCanvas *canvas):
         QwtPlotZoomer(xAxis, yAxis, canvas)
     {
+        setSelectionFlags(QwtPicker::DragSelection | QwtPicker::CornerToCorner);
         setTrackerMode(QwtPicker::AlwaysOff);
         setRubberBand(QwtPicker::NoRubberBand);
 
         // RightButton: zoom out by 1
         // Ctrl+RightButton: zoom out to full size
 
+#if QT_VERSION < 0x040000
+        setMousePattern(QwtEventPattern::MouseSelect2,
+            Qt::RightButton, Qt::ControlButton);
+#else
         setMousePattern(QwtEventPattern::MouseSelect2,
             Qt::RightButton, Qt::ControlModifier);
+#endif
         setMousePattern(QwtEventPattern::MouseSelect3,
             Qt::RightButton);
     }
@@ -152,5 +160,38 @@ class NoVariableException : public PlotException
 public:
     NoVariableException(const char * fileName) : PlotException(fileName) {}
 };
+
+//Options Class
+//class Options : public QDialog
+//{
+//    Q_OBJECT
+//public:
+//    Options(PlotWindow *pPlotWindow);
+
+//    void setUpForm();
+//    void show();
+
+//    //MainWindow *mpParentMainWindow;
+//private:
+//   QLineEdit *mpTitle;
+//   QLineEdit *mpXLabel;
+//   QLineEdit *mpYLabel;
+
+//   QLineEdit *mpXRangeMin;
+//   QLineEdit *mpXRangeMax;
+//   QLineEdit *mpYRangeMin;
+//   QLineEdit *mpYRangeMax;
+
+//   QLabel *mpTitleLabel;
+
+//   QGroupBox *mpLabelGroup;
+
+//   QPushButton *mpOkButton;
+//   QPushButton *mpCancelButton;
+
+//   PlotWindow *mpPlotWindow;
+//public slots:
+//    void edit();
+//};
 
 #endif // PLOTWINDOW_H
