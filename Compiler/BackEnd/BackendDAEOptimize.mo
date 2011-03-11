@@ -810,6 +810,9 @@ algorithm
   end matchcontinue;
 end simpleEquation;
 
+/*
+ * remove constant equations
+ */
 
 protected function removeConstantEqns
 "autor: Frenkel TUD 2010-12"
@@ -850,21 +853,6 @@ algorithm
         (vars1,eqns,aliasvars) = removeConstantEqns(vars,rest,inAlias);
       then
         (vars1,eqns,aliasvars);
-    // alias vars
-    case (inVars,(eqn as BackendDAE.SOLVED_EQUATION(componentRef=cr,exp=e))::rest,inAlias)
-      equation
-        // test exp
-        removeConstantEqns1(e);
-        // get var
-        ({var},_) = BackendVariable.getVar(cr,inVars);
-        // add bindExp
-        var2 = BackendVariable.setBindExp(var,e);        
-        // add
-        aliasvars = BackendDAEUtil.addAliasVariables(inAlias,var2,e);
-        // next
-        (vars,eqns,aliasvars1) = removeConstantEqns(inVars,rest,aliasvars);
-      then
-        (vars,eqn::eqns,aliasvars1);        
     case (inVars,eqn::rest,inAlias)
       equation
          (vars,eqns,aliasvars) = removeConstantEqns(inVars,rest,inAlias);
@@ -873,16 +861,207 @@ algorithm
   end matchcontinue;
 end removeConstantEqns;
 
-protected function removeConstantEqns1
+/*
+ * remove alias equations
+ */
+ 
+ public function removeAliasEquationsPast
+"function lateInlineDAE"
+    input BackendDAE.BackendDAE inDAE;
+    input DAE.FunctionTree inFunctionTree;
+    input BackendDAE.IncidenceMatrix inM;
+    input BackendDAE.IncidenceMatrix inMT;
+    input array<Integer> inAss1;  
+    input array<Integer> inAss2;  
+    input list<list<Integer>> inComps;  
+    output BackendDAE.BackendDAE outDAE;
+    output BackendDAE.IncidenceMatrix outM;
+    output BackendDAE.IncidenceMatrix outMT;
+    output array<Integer> outAss1;  
+    output array<Integer> outAss2;  
+    output list<list<Integer>> outComps; 
+    output Boolean outRunMatching;
+protected
+  Option<BackendDAE.IncidenceMatrix> om,omT;
+algorithm
+  (outDAE,om,omT) := removeAliasEquations(inDAE,inFunctionTree,SOME(inM),SOME(inMT));
+  (outM,outMT) := BackendDAEUtil.getIncidenceMatrixfromOption(outDAE,om,omT);
+  outAss1 := inAss1;
+  outAss2 := inAss2;
+  outComps := inComps;   
+  outRunMatching := false;      
+end removeAliasEquationsPast;
+
+public function removeAliasEquations
+"function: removeAliasEquations"
+  input BackendDAE.BackendDAE inDAE;
+  input DAE.FunctionTree inFunctionTree;
+  input Option<BackendDAE.IncidenceMatrix> inM;
+  input Option<BackendDAE.IncidenceMatrix> inMT;
+  output BackendDAE.BackendDAE outDAE;
+  output Option<BackendDAE.IncidenceMatrix> outM;
+  output Option<BackendDAE.IncidenceMatrix> outMT;
+algorithm
+  (outDAE,outM,outMT):=
+  match (inDAE,inFunctionTree,inM,inMT)
+    local
+      DAE.FunctionTree funcs;
+      Option<BackendDAE.IncidenceMatrix> m,mT;
+      BackendDAE.Variables vars,vars_1,knvars,exobj,knvars_1;
+      BackendDAE.AliasVariables av,varsAliases;
+      BackendDAE.EquationArray eqns,eqns1,remeqns,remeqns1,inieqns,inieqns1;
+      array<BackendDAE.MultiDimEquation> arreqns;
+      array<DAE.Algorithm> algorithms;
+      BackendDAE.EventInfo einfo;
+      BackendDAE.ExternalObjectClasses eoc;
+      list<BackendDAE.Equation> reqns,reqns_1;
+      list<DAE.Algorithm> algs;
+      
+    case (BackendDAE.DAE(vars,knvars,exobj,av,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc),funcs,m,mT)
+      equation      
+        reqns = BackendDAEUtil.equationList(remeqns);       
+        (knvars_1,reqns_1,varsAliases,vars_1) = removeAliasEquations1(knvars,reqns,av,vars);
+        Debug.fcall("dumpalias", BackendDump.dumpAliasVariables, varsAliases);
+        remeqns1 = BackendDAEUtil.listEquation(reqns_1);
+      then
+        (BackendDAE.DAE(vars_1,knvars_1,exobj,varsAliases,eqns,remeqns1,inieqns,arreqns,algorithms,einfo,eoc),m,mT);
+  end match;        
+end removeAliasEquations;
+
+protected function removeAliasEquations1
+"autor: Frenkel TUD 2010-12"
+ input BackendDAE.Variables inKnVars;
+ input list<BackendDAE.Equation> inEqns;
+ input BackendDAE.AliasVariables inAlias;
+ input BackendDAE.Variables inVars;
+ output BackendDAE.Variables outKnVars;
+ output list<BackendDAE.Equation> outEqns;
+ output BackendDAE.AliasVariables outAlias;
+ output BackendDAE.Variables outVars;
+algorithm
+  (outKnVars,outEqns,outAlias,outVars) :=
+  matchcontinue (inKnVars,inEqns,inAlias,inVars)
+    local
+      BackendDAE.Variables vars,vars1,knvars,knvars1;
+      BackendDAE.Var var,var2,var3;
+      DAE.ComponentRef cr,vcr;
+      DAE.Exp e;
+      BackendDAE.Equation eqn;
+      list<BackendDAE.Equation> rest,eqns;
+      BackendDAE.AliasVariables aliasvars,aliasvars1;
+      Boolean negate;
+    case (inKnVars,{},inAlias,inVars) then (inKnVars,{},inAlias,inVars);
+    // alias vars
+    case (inKnVars,(eqn as BackendDAE.SOLVED_EQUATION(componentRef=cr,exp=e))::rest,inAlias,inVars)
+      equation
+        // test exp
+        (vcr,negate) = removeAliasEquations2(e);
+        // get var
+        ({var},_) = BackendVariable.getVar(cr,inKnVars);
+        // add bindExp
+        var2 = BackendVariable.setBindExp(var,e); 
+        // add
+        aliasvars = BackendDAEUtil.addAliasVariables(inAlias,var2,e);
+        // set attributes
+        vars = mergeAliasVarAttributes(var,vcr,inVars,negate);
+        // next
+        (knvars,eqns,aliasvars1,vars1) = removeAliasEquations1(inKnVars,rest,aliasvars,vars);
+      then
+        (knvars,eqns,aliasvars1,vars1);        
+    case (inKnVars,eqn::rest,inAlias,inVars)
+      equation
+         (knvars,eqns,aliasvars,vars) = removeAliasEquations1(inKnVars,rest,inAlias,inVars);
+      then
+        (knvars,eqn::eqns,aliasvars,vars);
+  end matchcontinue;
+end removeAliasEquations1;
+
+protected function removeAliasEquations2
 "autor: Frenkel TUD 2010-12"
  input DAE.Exp inExp;
+ output DAE.ComponentRef ouCref;
+ output Boolean negate;
 algorithm
-  _ :=
+  (ouCref,negate) :=
   match (inExp)
-    case (DAE.CREF(componentRef=_)) then ();
-    case (DAE.UNARY(exp = DAE.CREF(componentRef=_))) then ();
+    local DAE.ComponentRef cr;
+    case (DAE.CREF(componentRef=cr)) then (cr,false);
+    case (DAE.UNARY(exp = DAE.CREF(componentRef=cr))) then (cr,true);
   end match;
-end removeConstantEqns1;
+end removeAliasEquations2;
+
+protected function mergeAliasVarAttributes
+  input BackendDAE.Var inAVar;
+  input DAE.ComponentRef inCref;
+  input BackendDAE.Variables inVars;
+  input Boolean negate;
+  output BackendDAE.Variables outVars;
+algorithm
+  outVars :=
+  matchcontinue (inAVar,inCref,inVars,negate)
+    local
+      DAE.ComponentRef name,cr;
+      BackendDAE.Var v,var,var1,var2;
+      BackendDAE.Variables vars;
+      Boolean fixeda, fixedb,starta,startb;
+    case (v as BackendDAE.VAR(varName=name),cr,inVars,negate)
+      equation
+        ((var :: _),_) = BackendVariable.getVar(cr,inVars);
+        // fixed
+        fixeda = BackendVariable.varFixed(v);
+        fixedb = BackendVariable.varFixed(var);
+        var1 = BackendVariable.setVarFixed(var,fixeda or fixedb);
+        // start
+        var2 = mergeStartAttribute(v,var1,negate);
+        // update vars
+        vars = BackendVariable.addVar(var2,inVars);        
+      then vars;
+    case(_,_,inVars,negate) then inVars;
+  end matchcontinue;
+end mergeAliasVarAttributes;
+
+protected function mergeStartAttribute
+  input BackendDAE.Var inAVar;
+  input BackendDAE.Var inVar;
+  input Boolean negate;
+  output BackendDAE.Var outVar;
+algorithm
+  outVar :=
+  matchcontinue (inAVar,inVar,negate)
+    local
+      BackendDAE.Var v,var,var1;
+      Option<DAE.VariableAttributes> attr,attr1;
+      DAE.Exp e,e1;
+    case (v as BackendDAE.VAR(values = attr),var as BackendDAE.VAR(values = attr1),negate)
+      equation 
+        // start
+        e = BackendVariable.varStartValueFail(v);
+        mergeStartAttribute1(attr1);
+        e1 = Util.if_(negate,Expression.negate(e),e);
+        var1 = BackendVariable.setVarStartValue(var,e1);
+      then var1;
+    case(_,inVar,_) then inVar;
+  end matchcontinue;
+end mergeStartAttribute;
+
+protected function mergeStartAttribute1
+  input Option<DAE.VariableAttributes> attr;
+algorithm
+  () :=
+  matchcontinue (attr)
+    local
+      DAE.Exp e;
+    case (attr)
+      equation 
+        false = DAEUtil.hasStartAttr(attr);
+      then ();
+    case (attr)
+      equation 
+        e = DAEUtil.getStartAttr(attr);
+        true = Expression.isZero(e);
+      then ();
+  end matchcontinue;
+end mergeStartAttribute1;
 
 /*
  * remove parameter equations

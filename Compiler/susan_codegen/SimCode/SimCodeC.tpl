@@ -183,7 +183,7 @@ case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
   #define NG_SAM <%varInfo.numTimeEvents%> // number of zero crossings that are samples
   #define NX <%varInfo.numStateVars%>  // number of states
   #define NY <%varInfo.numAlgVars%>  // number of real variables
-  #define NA <%varInfo.numAliasAlgVars%>  // number of alias variables
+  #define NA <%varInfo.numAlgAliasVars%>  // number of alias variables
   #define NP <%varInfo.numParams%> // number of parameters
   #define NO <%varInfo.numOutVars%> // number of outputvar on topmodel
   #define NI <%varInfo.numInVars%> // number of inputvar on topmodel
@@ -192,12 +192,13 @@ case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
   #define NFUNC <%listLength(functions)%> // number of functions used by the simulation
   #define MAXORD 5
   #define NYSTR <%varInfo.numStringAlgVars%> // number of alg. string variables
+  #define NASTR <%varInfo.numStringAliasVars%> // number of alias string variables
   #define NPSTR <%varInfo.numStringParamVars%> // number of alg. string variables
   #define NYINT <%varInfo.numIntAlgVars%> // number of alg. int variables
-  #define NAINT <%varInfo.numAliasIntAlgVars%> // number of alias int variables
+  #define NAINT <%varInfo.numIntAliasVars%> // number of alias int variables
   #define NPINT <%varInfo.numIntParams%> // number of alg. int variables
   #define NYBOOL <%varInfo.numBoolAlgVars%> // number of alg. bool variables
-  #define NABOOL <%varInfo.numAliasBoolAlgVars%> // number of alias bool variables
+  #define NABOOL <%varInfo.numBoolAliasVars%> // number of alias bool variables
   #define NPBOOL <%varInfo.numBoolParams%> // number of alg. bool variables
   #define NJACVARS <%varInfo.numJacobianVars%> // number of jacobian variables
   
@@ -221,12 +222,16 @@ case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
   <%globalDataVarInfoArray("derivative_names", vars.derivativeVars)%>
   <%globalDataVarInfoArray("algvars_names", vars.algVars)%>
   <%globalDataVarInfoArray("param_names", vars.paramVars)%>
+  <%globalDataVarInfoArray("alias_names", vars.aliasVars)%>
   <%globalDataVarInfoArray("int_alg_names", vars.intAlgVars)%>
   <%globalDataVarInfoArray("int_param_names", vars.intParamVars)%>
+  <%globalDataVarInfoArray("int_alias_names", vars.intAliasVars)%>
   <%globalDataVarInfoArray("bool_alg_names", vars.boolAlgVars)%>
   <%globalDataVarInfoArray("bool_param_names", vars.boolParamVars)%>
+  <%globalDataVarInfoArray("bool_alias_names", vars.boolAliasVars)%>
   <%globalDataVarInfoArray("string_alg_names", vars.stringAlgVars)%>
   <%globalDataVarInfoArray("string_param_names", vars.stringParamVars)%>
+  <%globalDataVarInfoArray("string_alias_names", vars.stringAliasVars)%>
   <%globalDataVarInfoArray("jacobian_names", vars.jacobianVars)%>
   <%globalDataFunctionInfoArray("function_names", functions)%>
   
@@ -267,6 +272,14 @@ case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
     globalDataVarDefine(var, "jacobianVars")
   ;separator="\n"%>  
   <%functions |> fn hasindex i0 => '#define <%functionName(fn,false)%>_index <%i0%>'; separator="\n"%>
+  
+  void init_Alias(DATA* data)
+  {
+  <%globalDataAliasVarArray("DATA_REAL_ALIAS","omc__realAlias", vars.aliasVars)%>
+  <%globalDataAliasVarArray("DATA_INT_ALIAS","omc__intAlias", vars.intAliasVars)%>
+  <%globalDataAliasVarArray("DATA_BOOL_ALIAS","omc__boolAlias", vars.boolAliasVars)%>
+  <%globalDataAliasVarArray("DATA_STRING_ALIAS","omc__stringAlias", vars.stringAliasVars)%>  
+  };
   
   static char init_fixed[NX+NX+NY+NYINT+NYBOOL+NYSTR+NP+NPINT+NPBOOL+NPSTR] = {
     <%{(vars.stateVars |> SIMVAR(__) =>
@@ -369,28 +382,61 @@ template globalDataVarDefine(SimVar simVar, String arrayName)
 match arrayName
 case "jacobianVars" then
   match simVar
-  case SIMVAR(__) then
+  case SIMVAR(aliasvar=NOALIAS()) then
     <<
     #define <%cref(name)%> localData-><%arrayName%>[<%index%>]
     >> 
   end match
 case _ then
   match simVar
-  case SIMVAR(arrayCref=SOME(c)) then
+  case SIMVAR(arrayCref=SOME(c),aliasvar=NOALIAS()) then
     <<
     #define <%cref(c)%> localData-><%arrayName%>[<%index%>]
     #define <%cref(name)%> localData-><%arrayName%>[<%index%>]
     #define $P$old<%cref(name)%> localData-><%arrayName%>_old[<%index%>]
     #define $P$old2<%cref(name)%> localData-><%arrayName%>_old2[<%index%>]
     >>
-  case SIMVAR(__) then
+  case SIMVAR(aliasvar=NOALIAS()) then
     <<
     #define <%cref(name)%> localData-><%arrayName%>[<%index%>]
     #define $P$old<%cref(name)%> localData-><%arrayName%>_old[<%index%>]
     #define $P$old2<%cref(name)%> localData-><%arrayName%>_old2[<%index%>]
-    >>
+    >>  
 end globalDataVarDefine;
 
+template globalDataAliasVarArray(String type, String _name, list<SimVar> items)
+ "Generates array with variable names in global data section."
+::=
+  match items
+  case {} then
+    <<
+      <%type%> <%_name%>[1] = {{0,false}};
+    >>
+  case items then
+    <<
+      <%type%> <%_name%>[<%listLength(items)%>] = {
+        <%items |> var as SIMVAR(__) => '{<%aliasVarNameType(aliasvar)%>,<%index%>}'; separator=",\n"%>
+      };
+    >>
+end globalDataAliasVarArray;
+
+template aliasVarNameType(AliasVariable var)
+ "Generates type of alias."
+::=
+  match var
+  case NOALIAS() then
+    <<
+    0,0
+    >>
+  case ALIAS(__) then
+    <<
+    &<%cref(varName)%>,false
+    >>
+  case NEGATEDALIAS(__) then
+    <<
+    &<%cref(varName)%>,true
+    >>    
+end aliasVarNameType;
 
 template globalDataFixedInt(Boolean isFixed)
  "Generates integer for use in arrays in global data section."
@@ -488,6 +534,7 @@ template functionSetLocalData()
   void setLocalData(DATA* data)
   {
     localData = data;
+    init_Alias(data);
   }
   >>
 end functionSetLocalData;
@@ -520,6 +567,7 @@ template functionInitializeDataStruc()
     returnData->nHelpVars = NHELP;
     returnData->stringVariables.nParameters = NPSTR;
     returnData->stringVariables.nAlgebraic = NYSTR;
+    returnData->stringVariables.nAlias = NASTR;
     returnData->intVariables.nParameters = NPINT;
     returnData->intVariables.nAlgebraic = NYINT;
     returnData->intVariables.nAlias = NAINT;
@@ -683,28 +731,48 @@ template functionInitializeDataStruc()
     if (returnData->nAlias) {
       returnData->realAlias = (DATA_REAL_ALIAS*) malloc(sizeof(DATA_REAL_ALIAS)*returnData->nAlias);
       assert(returnData->realAlias);
+      returnData->aliasFilterOutput = (modelica_boolean*) malloc(sizeof(modelica_boolean)*returnData->nAlias);
+      assert(returnData->aliasFilterOutput);
       memset(returnData->realAlias,0,sizeof(DATA_REAL_ALIAS)*returnData->nAlias);
+      memset(returnData->aliasFilterOutput,0,sizeof(modelica_boolean)*returnData->nAlias);
     } else {
       returnData->realAlias = 0;
-    }  
-  
+      returnData->aliasFilterOutput = 0;
+    }
+
     if (returnData->intVariables.nAlias) {
-      returnData->intVariables.alias = (DATA_INT_ALIAS*) malloc(sizeof(DATA_INT_ALIAS)*returnData->intVariables.nAlias);
+      returnData->intVariables.alias = (sim_DATA_INT_ALIAS*) malloc(sizeof(sim_DATA_INT_ALIAS)*returnData->intVariables.nAlias);
       assert(returnData->intVariables.alias);
-      memset(returnData->intVariables.alias,0,sizeof(DATA_INT_ALIAS)*returnData->intVariables.nAlias);
+      returnData->intVariables.aliasFilterOutput = (modelica_boolean*) malloc(sizeof(modelica_boolean)*returnData->intVariables.nAlias);
+      assert(returnData->intVariables.aliasFilterOutput);
+      memset(returnData->intVariables.alias,0,sizeof(sim_DATA_INT_ALIAS)*returnData->intVariables.nAlias);
+      memset(returnData->intVariables.aliasFilterOutput,0,sizeof(modelica_boolean)*returnData->intVariables.nAlias);
     } else {
       returnData->intVariables.alias = 0;
-    }   
-    
+      returnData->intVariables.aliasFilterOutput=0;
+    }
+
     if (returnData->boolVariables.nAlias) {
       returnData->boolVariables.alias = (DATA_BOOL_ALIAS*) malloc(sizeof(DATA_BOOL_ALIAS)*returnData->boolVariables.nAlias);
       assert(returnData->boolVariables.alias);
+      returnData->boolVariables.aliasFilterOutput = (modelica_boolean*) malloc(sizeof(modelica_boolean)*returnData->boolVariables.nAlias);
+      assert(returnData->boolVariables.aliasFilterOutput);
       memset(returnData->boolVariables.alias,0,sizeof(DATA_BOOL_ALIAS)*returnData->boolVariables.nAlias);
+      memset(returnData->boolVariables.aliasFilterOutput,0,sizeof(modelica_boolean)*returnData->boolVariables.nAlias);
     } else {
       returnData->boolVariables.alias = 0;
+      returnData->boolVariables.aliasFilterOutput=0;
+    }
+
+    if (returnData->stringVariables.nAlias) {
+      returnData->stringVariables.alias = (DATA_STRING_ALIAS*) malloc(sizeof(DATA_STRING_ALIAS)*returnData->stringVariables.nAlias);
+      assert(returnData->stringVariables.alias);
+      memset(returnData->stringVariables.alias,0,sizeof(DATA_STRING_ALIAS)*returnData->stringVariables.nAlias);
+    } else {
+      returnData->stringVariables.alias = 0;
     }
       
-   if (returnData->nJacobianvars) {
+    if (returnData->nJacobianvars) {
       returnData->jacobianVars = (double*) malloc(sizeof(double)*returnData->nJacobianvars);
       assert(returnData->jacobianVars);
       memset(returnData->jacobianVars,0,sizeof(double)*returnData->nJacobianvars);
@@ -733,6 +801,10 @@ template functionInitializeDataStruc()
     returnData->int_param_names = int_param_names;
     returnData->bool_param_names = bool_param_names;
     returnData->string_param_names = string_param_names;
+    returnData->alias_names = alias_names;
+    returnData->int_alias_names = int_alias_names;
+    returnData->bool_alias_names = bool_alias_names;
+    returnData->string_alias_names = string_alias_names;
     returnData->jacobian_names = jacobian_names;
     returnData->functionNames = function_names;
     returnData->equationInfo = equation_info;
@@ -903,8 +975,13 @@ case EXTOBJINFO(__) then
     if (data->boolVariables.alias) {
       free(data->boolVariables.alias);
       data->boolVariables.alias = 0;
-    }    
-    
+    }
+
+    if (data->stringVariables.alias) {
+      free(data->stringVariables.alias);
+      data->stringVariables.alias = 0;
+    }
+
     if (data->jacobianVars) {
       free(data->jacobianVars);
       data->jacobianVars = 0;
@@ -1909,7 +1986,7 @@ case eqn as SES_ARRAY_CALL_ASSIGN(__) then
     >>
   case "integer" then
     let tvar = tempDecl("integer_array", &varDecls /*BUFD*/)
-    let &preExp += 'cast_integer_array_to_real(&<%expPart%>, &<%tvar%>);<%\n%>'
+    //let &preExp += 'cast_integer_array_to_real(&<%expPart%>, &<%tvar%>);<%\n%>'
     <<
     <%preExp%>
     copy_integer_array_data_mem(&<%expPart%>, &<%cref(eqn.componentRef)%>);<%inlineArray(context,tvar,eqn.componentRef)%>

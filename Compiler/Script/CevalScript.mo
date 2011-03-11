@@ -825,7 +825,7 @@ algorithm
             lstVarVal = iv,
             compiledFunctions = cf)),msg)
       equation
-        (cache,ret_val,st_1,_,_,_,_) = translateModelFMU(cache,env, className, st, filenameprefix, true, NONE());
+        (cache,ret_val,st_1) = translateModelFMU(cache,env, className, st, filenameprefix, true, NONE());
       then
         (cache,ret_val,st_1);
     
@@ -1864,12 +1864,8 @@ protected function translateModelFMU "function translateModelFMU
   output Env.Cache outCache;
   output Values.Value outValue;
   output Interactive.InteractiveSymbolTable outInteractiveSymbolTable;
-  output BackendDAE.BackendDAE outBackendDAE;
-  output list<String> outStringLst;
-  output String outFileDir;
-  output list<tuple<String,Values.Value>> resultValues;
 algorithm
-  (outCache,outValue,outInteractiveSymbolTable,outBackendDAE,outStringLst,outFileDir,resultValues):=
+  (outCache,outValue,outInteractiveSymbolTable):=
   match (inCache,inEnv,className,inInteractiveSymbolTable,inFileNamePrefix,addDummy,inSimSettingsOpt)
     local
       Env.Cache cache;
@@ -1878,10 +1874,10 @@ algorithm
       Interactive.InteractiveSymbolTable st;
       list<String> libs;
       Values.Value outValMsg;
-      String file_dir, fileNamePrefix;
+      String file_dir, fileNamePrefix, str;
     case (cache,env,className,st,fileNamePrefix,addDummy,inSimSettingsOpt) /* mo file directory */
       equation
-        (cache, outValMsg, st, indexed_dlow, libs, file_dir, resultValues) =
+        (cache, outValMsg, st, indexed_dlow, libs, file_dir, _) =
           SimCode.translateModelFMU(cache,env,className,st,fileNamePrefix,addDummy,inSimSettingsOpt);
           
         // compile
@@ -1889,7 +1885,12 @@ algorithm
         compileModel(fileNamePrefix , libs, file_dir, "", "");
           
       then
-        (cache,outValMsg,st,indexed_dlow,libs,file_dir,resultValues);
+        (cache,outValMsg,st);
+    case (cache,env,className,st,fileNamePrefix,addDummy,inSimSettingsOpt) /* mo file directory */
+      equation
+         str = Error.printMessagesStr(); 
+      then
+        (cache,ValuesUtil.makeArray({Values.STRING("translateModelFMU error."),Values.STRING(str)}),st);
   end match;
 end translateModelFMU;
 

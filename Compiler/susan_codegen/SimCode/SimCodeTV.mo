@@ -232,9 +232,9 @@ package SimCode
       Integer numAlgVars;
       Integer numIntAlgVars;
       Integer numBoolAlgVars;
-      Integer numAliasAlgVars;
-      Integer numAliasIntAlgVars;
-      Integer numAliasBoolAlgVars;
+      Integer numAlgAliasVars;
+      Integer numIntAliasVars;
+      Integer numBoolAliasVars;
       Integer numParams;
       Integer numIntParams;
       Integer numBoolParams;
@@ -244,6 +244,7 @@ package SimCode
       Integer numExternalObjects;
       Integer numStringAlgVars;
       Integer numStringParamVars;
+      Integer numStringAliasVars;
       Integer numJacobianVars;
 	  end VARINFO;
 	end VarInfo;
@@ -257,11 +258,15 @@ package SimCode
 	    list<SimVar> boolAlgVars;
 	    list<SimVar> inputVars;
 	    list<SimVar> outputVars;
+      list<SimVar> aliasVars;
+      list<SimVar> intAliasVars;
+      list<SimVar> boolAliasVars;	    
 	    list<SimVar> paramVars;
 	    list<SimVar> intParamVars;
 	    list<SimVar> boolParamVars;
 	    list<SimVar> stringAlgVars;
 	    list<SimVar> stringParamVars;
+	    list<SimVar> stringAliasVars;
 	    list<SimVar> extObjVars;
 	    list<SimVar> jacobianVars; //all vars for the matrices A,B,C,D
 	  end SIMVARS;

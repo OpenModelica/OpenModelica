@@ -552,6 +552,9 @@ algorithm
         print(")\n");
         print("=============================\n");
         dumpExtObjCls(extObjCls);
+        
+        dumpAliasVariables(av);
+        
         print("\nEquations (");
         eqnsl = BackendDAEUtil.equationList(eqns);
         eqnlen = listLength(eqnsl);

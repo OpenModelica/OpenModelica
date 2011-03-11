@@ -139,18 +139,13 @@ algorithm
       Option<Values.Value> f;
       list<DAE.Subscript> g;
       BackendDAE.Value i;
-      DAE.ElementSource source "the element source";
-      Option<DAE.Exp> l,m,n;
-      tuple<Option<DAE.Exp>, Option<DAE.Exp>> o;
-      Option<DAE.Exp> p,q;
-      Option<DAE.StateSelect> r;
+      DAE.ElementSource source;
+      DAE.VariableAttributes attr;
+      Option<DAE.VariableAttributes> oattr;
       Option<SCode.Comment> s;
       DAE.Flow t;
       DAE.Stream streamPrefix;
       Boolean fixed;
-      Option<DAE.Exp> equationBound;
-      Option<Boolean> isProtected;
-      Option<Boolean> finalPrefix;
 
     case (BackendDAE.VAR(varName = a,
               varKind = b,
@@ -161,67 +156,13 @@ algorithm
               arryDim = g,
               index = i,
               source = source,
-              values = SOME(DAE.VAR_ATTR_REAL(l,m,n,o,p,_,q,r,equationBound,isProtected,finalPrefix)),
+              values = SOME(attr),
               comment = s,
               flowPrefix = t,
               streamPrefix = streamPrefix),fixed)
-    then BackendDAE.VAR(a,b,c,d,e,f,g,i,source,
-             SOME(DAE.VAR_ATTR_REAL(l,m,n,o,p,SOME(DAE.BCONST(fixed)),q,r,equationBound,isProtected,finalPrefix)),
-             s,t,streamPrefix);
-
-    case (BackendDAE.VAR(varName = a,
-              varKind = b,
-              varDirection = c,
-              varType = d,
-              bindExp = e,
-              bindValue = f,
-              arryDim = g,
-              index = i,
-              source = source,
-              values = SOME(DAE.VAR_ATTR_INT(l,o,n,_,equationBound,isProtected,finalPrefix)),
-              comment = s,
-              flowPrefix = t,
-              streamPrefix = streamPrefix),fixed)
-      then
-        BackendDAE.VAR(a,b,c,d,e,f,g,i,source,
-            SOME(DAE.VAR_ATTR_INT(l,o,n,SOME(DAE.BCONST(fixed)),equationBound,isProtected,finalPrefix)),
-            s,t,streamPrefix);
-
-    case (BackendDAE.VAR(varName = a,
-              varKind = b,
-              varDirection = c,
-              varType = d,
-              bindExp = e,
-              bindValue = f,
-              arryDim = g,
-              index = i,
-              source = source,
-              values = SOME(DAE.VAR_ATTR_BOOL(l,m,_,equationBound,isProtected,finalPrefix)),
-              comment = s,
-              flowPrefix = t,
-              streamPrefix = streamPrefix),fixed)
-      then
-        BackendDAE.VAR(a,b,c,d,e,f,g,i,source,
-            SOME(DAE.VAR_ATTR_BOOL(l,m,SOME(DAE.BCONST(fixed)),equationBound,isProtected,finalPrefix)),
-            s,t,streamPrefix);
-
-    case (BackendDAE.VAR(varName = a,
-              varKind = b,
-              varDirection = c,
-              varType = d,
-              bindExp = e,
-              bindValue = f,
-              arryDim = g,
-              index = i,
-              source = source,
-              values = SOME(DAE.VAR_ATTR_ENUMERATION(l,o,n,_,equationBound,isProtected,finalPrefix)),
-              comment = s,
-              flowPrefix = t,
-              streamPrefix = streamPrefix),fixed)
-      then
-        BackendDAE.VAR(a,b,c,d,e,f,g,i,source,
-            SOME(DAE.VAR_ATTR_ENUMERATION(l,o,n,SOME(DAE.BCONST(fixed)),equationBound,isProtected,finalPrefix)),
-            s,t,streamPrefix);
+      equation
+        oattr = DAEUtil.setFixedAttr(SOME(attr),SOME(DAE.BCONST(fixed)));
+    then BackendDAE.VAR(a,b,c,d,e,f,g,i,source,oattr,s,t,streamPrefix);
 
     case (BackendDAE.VAR(varName = a,
               varKind = b,
@@ -333,6 +274,122 @@ algorithm
     case (_) then false;  /* rest defaults to false*/
   end matchcontinue;
 end varFixed;
+
+public function setVarStartValue
+"function: setVarStartValue
+  author: Frenkel TUD
+  Sets the start value attribute of a variable."
+  input BackendDAE.Var inVar;
+  input DAE.Exp inExp;
+  output BackendDAE.Var outVar;
+algorithm
+  outVar := match (inVar,inExp)
+    local
+      DAE.ComponentRef a;
+      BackendDAE.VarKind b;
+      DAE.VarDirection c;
+      BackendDAE.Type d;
+      Option<DAE.Exp> e;
+      Option<Values.Value> f;
+      list<DAE.Subscript> g;
+      BackendDAE.Value i;
+      DAE.ElementSource source;
+      DAE.VariableAttributes attr;
+      Option<DAE.VariableAttributes> oattr,oattr1;
+      Option<SCode.Comment> s;
+      DAE.Flow t;
+      DAE.Stream streamPrefix;      
+
+    case (BackendDAE.VAR(varName = a,
+              varKind = b,
+              varDirection = c,
+              varType = d,
+              bindExp = e,
+              bindValue = f,
+              arryDim = g,
+              index = i,
+              source = source,
+              values = SOME(attr),
+              comment = s,
+              flowPrefix = t,
+              streamPrefix = streamPrefix),inExp)
+      equation
+        oattr1 = DAEUtil.setStartAttr(SOME(attr),inExp);
+    then BackendDAE.VAR(a,b,c,d,e,f,g,i,source,oattr1,s,t,streamPrefix);
+
+    case (BackendDAE.VAR(varName = a,
+              varKind = b,
+              varDirection = c,
+              varType = BackendDAE.REAL(),
+              bindExp = e,
+              bindValue = f,
+              arryDim = g,
+              index = i,
+              source = source,
+              values = NONE(),
+              comment = s,
+              flowPrefix = t,
+              streamPrefix = streamPrefix),inExp)
+      then
+        BackendDAE.VAR(a,b,c,BackendDAE.REAL(),e,f,g,i,source,
+            SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),SOME(inExp),NONE(),NONE(),NONE(),NONE(),NONE(),NONE())),
+            s,t,streamPrefix);
+
+    case (BackendDAE.VAR(varName = a,
+              varKind = b,
+              varDirection = c,
+              varType = BackendDAE.INT(),
+              bindExp = e,
+              bindValue = f,
+              arryDim = g,
+              index = i,
+              source = source,
+              values = NONE(),
+              comment = s,
+              flowPrefix = t,
+              streamPrefix = streamPrefix),inExp)
+      then
+        BackendDAE.VAR(a,b,c,BackendDAE.REAL(),e,f,g,i,source,
+            SOME(DAE.VAR_ATTR_INT(NONE(),(NONE(),NONE()),SOME(inExp),NONE(),NONE(),NONE(),NONE())),
+            s,t,streamPrefix);
+
+    case (BackendDAE.VAR(varName = a,
+              varKind = b,
+              varDirection = c,
+              varType = BackendDAE.BOOL(),
+              bindExp = e,
+              bindValue = f,
+              arryDim = g,
+              index = i,
+              source = source,
+              values = NONE(),
+              comment = s,
+              flowPrefix = t,
+              streamPrefix = streamPrefix),inExp)
+      then
+        BackendDAE.VAR(a,b,c,BackendDAE.REAL(),e,f,g,i,source,
+            SOME(DAE.VAR_ATTR_BOOL(NONE(),SOME(inExp),NONE(),NONE(),NONE(),NONE())),
+            s,t,streamPrefix);
+
+    case (BackendDAE.VAR(varName = a,
+              varKind = b,
+              varDirection = c,
+              varType = BackendDAE.ENUMERATION(_),
+              bindExp = e,
+              bindValue = f,
+              arryDim = g,
+              index = i,
+              source = source,
+              values = NONE(),
+              comment = s,
+              flowPrefix = t,
+              streamPrefix = streamPrefix),inExp)
+      then
+        BackendDAE.VAR(a,b,c,BackendDAE.REAL(),e,f,g,i,source,
+            SOME(DAE.VAR_ATTR_ENUMERATION(NONE(),(NONE(),NONE()),SOME(inExp),NONE(),NONE(),NONE(),NONE())),
+            s,t,streamPrefix);
+  end match;
+end setVarStartValue;
 
 public function varStartValue
 "function varStartValue

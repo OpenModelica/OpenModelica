@@ -204,11 +204,17 @@ case MODELINFO(vars=SIMVARS(__)) then
   <%vars.paramVars |> var =>
     ScalarVariable(var)
   ;separator="\n"%>
+  <%vars.aliasVars |> var =>
+    ScalarVariable(var)
+  ;separator="\n"%>
   <%System.tmpTickReset(0)%>
   <%vars.intAlgVars |> var =>
 	ScalarVariable(var)
   ;separator="\n"%>
   <%vars.intParamVars |> var =>
+    ScalarVariable(var)
+  ;separator="\n"%>
+  <%vars.intAliasVars |> var =>
     ScalarVariable(var)
   ;separator="\n"%>
   <%System.tmpTickReset(0)%>
@@ -218,11 +224,17 @@ case MODELINFO(vars=SIMVARS(__)) then
   <%vars.boolParamVars |> var =>
     ScalarVariable(var)
   ;separator="\n"%>  
+  <%vars.boolAliasVars |> var =>
+    ScalarVariable(var)
+  ;separator="\n"%>  
   <%System.tmpTickReset(0)%>
   <%vars.stringAlgVars |> var =>
     ScalarVariable(var)
   ;separator="\n"%>
   <%vars.stringParamVars |> var =>
+    ScalarVariable(var)
+  ;separator="\n"%> 
+  <%vars.stringAliasVars |> var =>
     ScalarVariable(var)
   ;separator="\n"%> 
   </ModelVariables>  
@@ -377,10 +389,10 @@ template ModelDefineData(ModelInfo modelInfo)
 ::=
 match modelInfo
 case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
-let numberOfReals = intAdd(varInfo.numStateVars,intAdd(varInfo.numAlgVars,varInfo.numParams))
-let numberOfIntegers = intAdd(varInfo.numIntAlgVars,varInfo.numIntParams)
-let numberOfStrings = intAdd(varInfo.numStringAlgVars,varInfo.numStringParamVars)
-let numberOfBooleans = intAdd(varInfo.numBoolAlgVars,varInfo.numBoolParams)
+let numberOfReals = intAdd(varInfo.numStateVars,intAdd(varInfo.numAlgVars,intAdd(varInfo.numParams,varInfo.numAlgAliasVars)))
+let numberOfIntegers = intAdd(varInfo.numIntAlgVars,intAdd(varInfo.numIntParams,varInfo.numIntAliasVars))
+let numberOfStrings = intAdd(varInfo.numStringAlgVars,intAdd(varInfo.numStringParamVars,varInfo.numStringAliasVars))
+let numberOfBooleans = intAdd(varInfo.numBoolAlgVars,intAdd(varInfo.numBoolParams,varInfo.numBoolAliasVars))
   <<
   // define model size
   #define NUMBER_OF_STATES <%varInfo.numStateVars%>
@@ -397,15 +409,20 @@ let numberOfBooleans = intAdd(varInfo.numBoolAlgVars,varInfo.numBoolParams)
   <%vars.derivativeVars |> var => DefineVariables(var) ;separator="\n"%>
   <%vars.algVars |> var => DefineVariables(var) ;separator="\n"%>
   <%vars.paramVars |> var => DefineVariables(var) ;separator="\n"%>
+  <%vars.aliasVars |> var => DefineVariables(var) ;separator="\n"%>
   <%System.tmpTickReset(0)%>
   <%vars.intAlgVars |> var => DefineVariables(var) ;separator="\n"%>
   <%vars.intParamVars |> var => DefineVariables(var) ;separator="\n"%>
+  <%vars.intAliasVars |> var => DefineVariables(var) ;separator="\n"%>
   <%System.tmpTickReset(0)%>
   <%vars.boolAlgVars |> var => DefineVariables(var) ;separator="\n"%>
   <%vars.boolParamVars |> var => DefineVariables(var) ;separator="\n"%>
+  <%vars.boolAliasVars |> var => DefineVariables(var) ;separator="\n"%>
   <%System.tmpTickReset(0)%>
   <%vars.stringAlgVars |> var => DefineVariables(var) ;separator="\n"%>
   <%vars.stringParamVars |> var => DefineVariables(var) ;separator="\n"%>
+  <%vars.stringAliasVars |> var => DefineVariables(var) ;separator="\n"%>
+  
   
   // define initial state vector as vector of value references
   #define STATES { <%vars.stateVars |> SIMVAR(__) => '<%cref(name)%>_'  ;separator=", "%> }
@@ -549,7 +566,6 @@ case SIMCODE(__) then
   fmiReal getEventIndicator(ModelInstance* comp, int i) {
   switch(i)
   {
-  <%zeroCrossingsCode%>
   default:
   	return 0.0;
   }
@@ -616,6 +632,7 @@ case MODELINFO(vars=SIMVARS(__)) then
         <%vars.derivativeVars |> var => SwitchVars(var,"statesDerivatives") ;separator="\n"%>
         <%vars.algVars |> var => SwitchVars(var,"algebraics") ;separator="\n"%>
         <%vars.paramVars |> var => SwitchVars(var,"parameters") ;separator="\n"%>
+        <%vars.aliasVars |> var => SwitchAliasVars(var,"realAlias","-") ;separator="\n"%>
         default: 
         	return 0.0;
     }
@@ -636,6 +653,7 @@ case MODELINFO(vars=SIMVARS(__)) then
         <%vars.derivativeVars |> var => SwitchVarsSet(var,"statesDerivatives") ;separator="\n"%>
         <%vars.algVars |> var => SwitchVarsSet(var,"algebraics") ;separator="\n"%>
         <%vars.paramVars |> var => SwitchVarsSet(var,"parameters") ;separator="\n"%>
+        <%vars.aliasVars |> var => SwitchAliasVarsSet(var,"realAlias") ;separator="\n"%>
         default: 
         	return fmiError;
     }
@@ -655,6 +673,7 @@ case MODELINFO(vars=SIMVARS(__)) then
     switch (vr) {
         <%vars.intAlgVars |> var => SwitchVars(var,"intVariables.algebraics") ;separator="\n"%>
         <%vars.intParamVars |> var => SwitchVars(var,"intVariables.parameters") ;separator="\n"%>
+        <%vars.intAliasVars |> var => SwitchAliasVars(var,"intVariables.alias","-") ;separator="\n"%>
         default: 
         	return 0;
     }
@@ -673,6 +692,7 @@ case MODELINFO(vars=SIMVARS(__)) then
     switch (vr) {
         <%vars.intAlgVars |> var => SwitchVarsSet(var,"intVariables.algebraics") ;separator="\n"%>
         <%vars.intParamVars |> var => SwitchVarsSet(var,"intVariables.parameters") ;separator="\n"%>
+        <%vars.intAliasVars |> var => SwitchAliasVarsSet(var,"intVariables.alias") ;separator="\n"%>
         default: 
         	return fmiError;
     }
@@ -692,6 +712,7 @@ case MODELINFO(vars=SIMVARS(__)) then
     switch (vr) {
         <%vars.boolAlgVars |> var => SwitchVars(var,"boolVariables.algebraics") ;separator="\n"%>
         <%vars.boolParamVars |> var => SwitchVars(var,"boolVariables.parameters") ;separator="\n"%>
+        <%vars.boolAliasVars |> var => SwitchAliasVars(var,"boolVariables.alias","!") ;separator="\n"%>
         default: 
         	return 0;
     }
@@ -710,6 +731,7 @@ case MODELINFO(vars=SIMVARS(__)) then
     switch (vr) {
         <%vars.boolAlgVars |> var => SwitchVarsSet(var,"boolVariables.algebraics") ;separator="\n"%>
         <%vars.boolParamVars |> var => SwitchVarsSet(var,"boolVariables.parameters") ;separator="\n"%>
+        <%vars.boolAliasVars |> var => SwitchAliasVarsSet(var,"boolVariables.alias") ;separator="\n"%>
         default: 
         	return fmiError;
     }
@@ -729,6 +751,7 @@ case MODELINFO(vars=SIMVARS(__)) then
     switch (vr) {
         <%vars.stringAlgVars |> var => SwitchVars(var,"stringVariables.algebraics") ;separator="\n"%>
         <%vars.stringParamVars |> var => SwitchVars(var,"stringVariables.parameters") ;separator="\n"%>
+        <%vars.stringAliasVars |> var => SwitchAliasVars(var,"stringVariables.alias","") ;separator="\n"%>
         default: 
         	return 0;
     }
@@ -747,6 +770,7 @@ case MODELINFO(vars=SIMVARS(__)) then
     switch (vr) {
         <%vars.stringAlgVars |> var => SwitchVarsSet(var,"stringVariables.algebraics") ;separator="\n"%>
         <%vars.stringParamVars |> var => SwitchVarsSet(var,"stringVariables.parameters") ;separator="\n"%>
+        <%vars.stringAliasVars |> var => SwitchAliasVarsSet(var,"stringVariables.alias") ;separator="\n"%>
         default: 
         	return fmiError;
     }
@@ -784,6 +808,17 @@ match simVar
   >>
 end SwitchVars;
 
+template SwitchAliasVars(SimVar simVar, String arrayName, String negator)
+ "Generates code for defining variables in c file for FMU target. "
+::=
+match simVar
+  case SIMVAR(__) then
+  let description = if comment then '// "<%comment%>"'
+  <<
+  case <%cref(name)%>_ : return (globalData-><%arrayName%>[<%index%>].negate?*(globalData-><%arrayName%>[<%index%>].alias):<%negator%>*(globalData-><%arrayName%>[<%index%>].alias)); break;
+  >>
+end SwitchAliasVars;
+
 template SwitchVarsSet(SimVar simVar, String arrayName)
  "Generates code for defining variables in c file for FMU target. "
 ::=
@@ -794,6 +829,17 @@ match simVar
   case <%cref(name)%>_ : globalData-><%arrayName%>[<%index%>]=value; break;
   >>
 end SwitchVarsSet;
+
+template SwitchAliasVarsSet(SimVar simVar, String arrayName)
+ "Generates code for defining variables in c file for FMU target. "
+::=
+match simVar
+  case SIMVAR(__) then
+  let description = if comment then '// "<%comment%>"'
+  <<
+  case <%cref(name)%>_ : *(globalData-><%arrayName%>[<%index%>].alias)=value; break;
+  >>
+end SwitchAliasVarsSet;
 
 template fmuMakefile(SimCode simCode)
  "Generates the contents of the makefile for the simulation case."

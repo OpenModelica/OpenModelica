@@ -772,6 +772,25 @@ algorithm
   end match;
 end calculateSizes;
 
+public function numberOfZeroCrossings "function: numberOfZeroCrossings
+  author: Frenkel TUD"
+  input BackendDAE.BackendDAE inBackendDAE;
+  output Integer outng        "number of zerocrossings";
+  output Integer outng_sample "number of zerocrossings that are samples";
+algorithm
+  (outng,outng_sample):=
+  match (inBackendDAE)
+    local
+      BackendDAE.Value ng,nsam;
+      list<BackendDAE.ZeroCrossing> zc;
+    case (BackendDAE.DAE(eventInfo = BackendDAE.EVENT_INFO(zeroCrossingLst = zc)))
+      equation
+        (ng,nsam) = calculateNumberZeroCrossings(zc, 0, 0);
+      then
+        (ng,nsam);
+  end match;
+end numberOfZeroCrossings;
+
 protected function calculateNumberZeroCrossings
   input list<BackendDAE.ZeroCrossing> zcLst;
   input Integer zc_index;
@@ -5547,6 +5566,7 @@ protected
 algorithm
   allPreOptModules := {(BackendDAEOptimize.removeSimpleEquations,"removeSimpleEquations"),
           (BackendDAEOptimize.removeParameterEqns,"removeParameterEqns"),
+          (BackendDAEOptimize.removeAliasEquations,"removeAliasEquations"),
           (BackendDAECreate.expandDerOperator,"expandDerOperator")};
  preOptModules := selectOptModules(strPreOptModules,allPreOptModules,{});  
  preOptModules := listReverse(preOptModules);     
@@ -5577,6 +5597,7 @@ protected
 algorithm
   allPastOptModules := {(BackendDAEOptimize.lateInline,"lateInline"),
   (BackendDAEOptimize.removeSimpleEquationsPast,"removeSimpleEquations"),
+  (BackendDAEOptimize.removeAliasEquationsPast,"removeAliasEquations"),
   (BackendDump.dumpComponentsGraphStr,"dumpComponentsGraphStr")};
   pastOptModules := selectOptModules(strPastOptModules,allPastOptModules,{}); 
   pastOptModules := listReverse(pastOptModules);     

@@ -779,7 +779,8 @@ algorithm
         dlow = BackendDAECreate.lower(dae,funcs,true);
         preOptModules = {"removeSimpleEquations","removeParameterEqns","expandDerOperator"};
         pastOptModules = Util.listConsOnTrue(RTOpts.debugFlag("dumpcompgraph"),"dumpComponentsGraphStr",{});
-        pastOptModules = "removeSimpleEquations"::("lateInline"::pastOptModules);
+        pastOptModules = Util.listConsOnTrue(RTOpts.debugFlag("removeAliasEquations"),"removeAliasEquations",pastOptModules);
+        pastOptModules = "lateInline"::("removeSimpleEquations"::pastOptModules);
         (dlow_1,m,mT,v1,v2,comps) = BackendDAEUtil.getSolvedSystem(cache,env,dlow,funcs,preOptModules,BackendDAETransform.dummyDerivative,pastOptModules);
         modpar(dlow_1,v1,v2,comps);
         simcodegen(dlow_1,funcs,classname,p,ap,daeimpl,m,mT,v1,v2,comps);

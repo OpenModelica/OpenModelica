@@ -110,33 +110,41 @@ extern const int LOG_DEBUG;
 extern const int ERROR_NONLINSYS;
 extern const int ERROR_LINSYS;
 
-typedef struct sim_DATA_STRING {
-  const char** algebraics;
-  const char** parameters;
-  const char** inputVars;
-  const char** outputVars;
-
-  long nAlgebraic,nParameters;
-  long nInputVars,nOutputVars;
-} DATA_STRING;
-
 typedef struct sim_DATA_REAL_ALIAS {
   modelica_real* alias;
   modelica_boolean negate;
-  long nVars;
+  int nameID;
 } DATA_REAL_ALIAS;
 
 typedef struct sim_DATA_INT_ALIAS {
   modelica_integer* alias;
   modelica_boolean negate;
-  long nVars;
+  int nameID;
 } DATA_INT_ALIAS;
 
 typedef struct sim_DATA_BOOL_ALIAS {
   modelica_boolean* alias;
   modelica_boolean negate;
-  long nVars;
+  int nameID;
 } DATA_BOOL_ALIAS;
+
+typedef struct sim_DATA_STRING_ALIAS {
+  char** alias;
+  modelica_boolean negate;
+  int nameID;
+} DATA_STRING_ALIAS;
+
+typedef struct sim_DATA_STRING {
+  const char** algebraics;
+  const char** parameters;
+  const char** inputVars;
+  const char** outputVars;
+  DATA_STRING_ALIAS* alias;
+
+  long nAlgebraic,nParameters;
+  long nInputVars,nOutputVars;
+  long nAlias;
+} DATA_STRING;
 
 typedef struct sim_DATA_INT {
   modelica_integer* algebraics;
@@ -146,6 +154,7 @@ typedef struct sim_DATA_INT {
   modelica_integer*  algebraics_old, *algebraics_old2;
   DATA_INT_ALIAS* alias;
   modelica_boolean* algebraicsFilterOutput; /* True if this variable should be filtered */
+  modelica_boolean* aliasFilterOutput; /* True if this variable should be filtered */
 
   long nAlgebraic,nParameters;
   long nInputVars,nOutputVars;
@@ -160,6 +169,7 @@ typedef struct sim_DATA_BOOL {
   modelica_boolean* algebraics_old, *algebraics_old2;
   DATA_BOOL_ALIAS* alias;
   modelica_boolean* algebraicsFilterOutput; /* True if this variable should be filtered */
+  modelica_boolean* aliasFilterOutput; /* True if this variable should be filtered */
 
   long nAlgebraic,nParameters;
   long nInputVars,nOutputVars;
@@ -197,6 +207,7 @@ typedef struct sim_DATA {
   modelica_boolean* statesFilterOutput;
   modelica_boolean* statesDerivativesFilterOutput;
   modelica_boolean* algebraicsFilterOutput;
+  modelica_boolean* aliasFilterOutput;
 
   /* Old values used for extrapolation */
   double* states_old,*states_old2;
@@ -234,12 +245,16 @@ typedef struct sim_DATA {
   const struct omc_varInfo* stateDerivativesNames;
   const struct omc_varInfo* algebraicsNames;
   const struct omc_varInfo* parametersNames;
+  const struct omc_varInfo* alias_names;
   const struct omc_varInfo* int_alg_names;
   const struct omc_varInfo* int_param_names;
+  const struct omc_varInfo* int_alias_names;
   const struct omc_varInfo* bool_alg_names;
   const struct omc_varInfo* bool_param_names;
+  const struct omc_varInfo* bool_alias_names;
   const struct omc_varInfo* string_alg_names;
   const struct omc_varInfo* string_param_names;
+  const struct omc_varInfo* string_alias_names;
   const struct omc_varInfo* inputNames;
   const struct omc_varInfo* outputNames;
   const struct omc_varInfo* jacobian_names;

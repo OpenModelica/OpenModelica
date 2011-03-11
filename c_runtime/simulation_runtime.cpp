@@ -296,10 +296,16 @@ void initializeOutputFilter(DATA* data, string variableFilter)
     data->statesDerivativesFilterOutput[i] = regexec(&myregex, data->stateDerivativesNames[i].name, 0, NULL, 0) != 0;
   for (int i = 0; i < data->nAlgebraic; i++) if (!data->algebraicsFilterOutput[i])
     data->algebraicsFilterOutput[i] = regexec(&myregex, data->algebraicsNames[i].name, 0, NULL, 0) != 0;
+  for (int i = 0; i < data->nAlias; i++) if (!data->aliasFilterOutput[i])
+    data->aliasFilterOutput[i] = regexec(&myregex, data->alias_names[i].name, 0, NULL, 0) != 0;
   for (int i = 0; i < data->intVariables.nAlgebraic; i++) if (!data->intVariables.algebraicsFilterOutput[i])
     data->intVariables.algebraicsFilterOutput[i] = regexec(&myregex, data->int_alg_names[i].name, 0, NULL, 0) != 0;
+  for (int i = 0; i < data->intVariables.nAlias; i++) if (!data->intVariables.aliasFilterOutput[i])
+    data->intVariables.aliasFilterOutput[i] = regexec(&myregex, data->int_alias_names[i].name, 0, NULL, 0) != 0;
   for (int i = 0; i < data->boolVariables.nAlgebraic; i++) if (!data->boolVariables.algebraicsFilterOutput[i])
     data->boolVariables.algebraicsFilterOutput[i] = regexec(&myregex, data->bool_alg_names[i].name, 0, NULL, 0) != 0;
+  for (int i = 0; i < data->boolVariables.nAlias; i++) if (!data->boolVariables.aliasFilterOutput[i])
+    data->boolVariables.aliasFilterOutput[i] = regexec(&myregex, data->bool_alias_names[i].name, 0, NULL, 0) != 0;
   regfree(&myregex);
 #endif
   return;
