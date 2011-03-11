@@ -524,10 +524,6 @@ template initVal(Exp initialValue)
   else "*ERROR* initial value of unknown type"
 end initVal;
 
-
-
-
-
 template eventUpdateFunction(SimCode simCode)
  "Generates event update function for c file."
 ::=
@@ -546,14 +542,67 @@ template getEventIndicatorFunction(SimCode simCode)
 ::=
 match simCode
 case SIMCODE(__) then
+  let &varDecls = buffer "" /*BUFD*/
+  let zeroCrossingsCode = zeroCrossingsTpl2_fmu(zeroCrossings, &varDecls /*BUFD*/)
   <<
   // Used to get event indicators
   fmiReal getEventIndicator(ModelInstance* comp, int i) {
-    return 0.0;
+  switch(i)
+  {
+  <%zeroCrossingsCode%>
+  default:
+  	return 0.0;
+  }
   }
   
   >>
 end getEventIndicatorFunction;
+
+
+template zeroCrossingsTpl2_fmu(list<ZeroCrossing> zeroCrossings, Text &varDecls /*BUFP*/)
+ "Generates code for zero crossings."
+::=
+
+  (zeroCrossings |> ZERO_CROSSING(__) hasindex i0 =>
+    zeroCrossingTpl2_fmu(i0, relation_, &varDecls /*BUFD*/)
+  ;separator="\n")
+end zeroCrossingsTpl2_fmu;
+
+template zeroCrossingTpl2_fmu(Integer index1, Exp relation, Text &varDecls /*BUFP*/)
+ "Generates code for a zero crossing."
+::=
+  match relation
+  case RELATION(__) then
+    let &preExp = buffer "" /*BUFD*/
+    let e1 = daeExp(exp1, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+    let op = zeroCrossingOpFunc_fmu(operator)
+    let e2 = daeExp(exp2, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+    <<
+    <%preExp%>
+    //globalData->states[<%e1%>_] <%op%> <%e2%>;
+    case <%e1%>_:
+    	return <%e2%>;
+    >>
+  case CALL(path=IDENT(name="sample"), expLst={start, interval}) then
+  << >>
+  else
+    <<
+    // UNKNOWN ZERO CROSSING for <%index1%>
+    >>
+end zeroCrossingTpl2_fmu;
+
+template zeroCrossingOpFunc_fmu(Operator op)
+ "Generates zero crossing function name for operator."
+::=
+  match op
+  case LESS(__)      then "<"
+  case GREATER(__)   then ">"
+  case LESSEQ(__)    then "<="
+  case GREATEREQ(__) then ">="
+  case EQUAL(__) then "="
+  case NEQUAL(__) then "!="
+  
+end zeroCrossingOpFunc_fmu;
 
 template getRealFunction(ModelInfo modelInfo)
  "Generates getReal function for c file."
