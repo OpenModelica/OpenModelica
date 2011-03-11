@@ -1059,10 +1059,12 @@ algorithm
         (cache,iterexp_1,_) = Ceval.cevalIfConstant(cache,env,iterexp_1,DAE.PROP(fulliterty,DAE.C_CONST()),impl);
         
         iterty = Types.unliftArrayOrList(fulliterty);
+        // print("iterator type: " +& Types.unparseType(iterty) +& "\n");
         env_1 = Env.openScope(env, false, SOME(Env.forIterScopeName),NONE());
         env_1 = Env.extendFrameForIterator(env_1, iter, iterty, DAE.UNBOUND(), SCode.CONST(), SOME(iterconst));
         (cache,exp_1,DAE.PROP(expty, expconst),st) = 
           elabExp(cache, env_1, exp, impl, st, doVect,pre,info);
+        // print("exp_1 has type: " +& Types.unparseType(expty) +& "\n");
         (cache,guardExp,DAE.PROP(_, guardconst),st) = elabExpOptAndMatchType(cache, env_1, aguardExp, DAE.T_BOOL_DEFAULT, impl, st, doVect,pre,info); 
         const = Types.constAnd(Types.constAnd(expconst, iterconst), guardconst);
         fn_1 = Absyn.crefToPath(fn);
@@ -1257,7 +1259,7 @@ algorithm
       equation
       then (cache,inExp,inType,NONE(),fn);
 
-    case (cache,env,path,inExp,_,inType,_,info)
+    case (cache,env,path,inExp,_,_,_,info)
       equation
         (cache,fnTypes) = Lookup.lookupFunctionsInEnv(cache, env, path, info);
         (typeA,typeB,resType,path) = checkReductionType1(env,path,fnTypes,info);
@@ -1325,6 +1327,7 @@ algorithm
       then fail();
     case (exp,expType,typeA,_,_,true,true,info)
       equation
+        // print("Casting " +& ExpressionDump.printExpStr(exp) +& " of " +& Types.unparseType(expType) +& " to " +& Types.unparseType(typeA) +& "\n");
         (exp,_) = Types.matchType(exp,expType,typeA,true);
       then exp;
     case (_,_,_,_,_,true,true,info)
