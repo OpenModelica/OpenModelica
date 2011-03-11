@@ -241,7 +241,7 @@ algorithm
       list<BackendDAE.WhenClause> whenclauses,whenclauses_1,whenclauses_2;
       list<BackendDAE.Equation> eqns,reqns,ieqns,eqns2,re,eqsComplex;
       list<BackendDAE.MultiDimEquation> aeqns,aeqns1,aeqns2,iaeqns,iaeqns1,iaeqns2;
-      list<DAE.Algorithm> algs,ialgs;
+      list<DAE.Algorithm> algs,ialgs,algs1,ialgs1,minmax,nominal;
       BackendDAE.ExternalObjectClasses extObjCls;
       BackendDAE.ExternalObjectClass extObjCl;
       DAE.Element daeEl;
@@ -303,32 +303,38 @@ algorithm
         // adrpo 2009-09-07 - according to MathCore
         // add the binding as an equation and remove the binding from variable!
         true = isStateOrAlgvar(daeEl);
-        (backendVar1,SOME(e1),states) = lowerVar(daeEl, states);
+        (backendVar1,SOME(e1),states,minmax,nominal) = lowerVar(daeEl, states);
         SOME(backendVar2) = Inline.inlineVarOpt(SOME(backendVar1),(SOME(functionTree),{DAE.NORM_INLINE()}));
         e2 = Inline.inlineExp(e1,(SOME(functionTree),{DAE.NORM_INLINE()}));
         vars = BackendVariable.addVar(backendVar2, vars);
         e1 = Expression.crefExp(cr);
+        algs1 = listAppend(algs,minmax);
+        ialgs1 = listAppend(ialgs,nominal);
       then
-        (vars,knvars,extVars,BackendDAE.EQUATION(e1, e2, source)::eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,whenclauses_1,extObjCls,states);
+        (vars,knvars,extVars,BackendDAE.EQUATION(e1, e2, source)::eqns,reqns,ieqns,aeqns,iaeqns,algs1,ialgs1,whenclauses_1,extObjCls,states);
     
     // variables: states and algebraic variables with NO binding equation
     case (daeEl as DAE.VAR(componentRef = cr, source = source),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,whenclauses_1,extObjCls,states)
       equation
         true = isStateOrAlgvar(daeEl);
-        (backendVar1,NONE(),states) = lowerVar(daeEl, states);
+        (backendVar1,NONE(),states,minmax,nominal) = lowerVar(daeEl, states);
         SOME(backendVar2) = Inline.inlineVarOpt(SOME(backendVar1),(SOME(functionTree),{DAE.NORM_INLINE()}));
         vars = BackendVariable.addVar(backendVar2, vars);
+        algs1 = listAppend(algs,minmax);
+        ialgs1 = listAppend(ialgs,nominal);        
       then
-        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,whenclauses_1,extObjCls,states);
+        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs1,ialgs1,whenclauses_1,extObjCls,states);
     
     // known variables: parameters and constants
     case (daeEl as DAE.VAR(componentRef = _),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,whenclauses_1,extObjCls,states)
       equation
-        backendVar1 = lowerKnownVar(daeEl) "in previous rule, lower_var failed." ;
+        (backendVar1,minmax,nominal) = lowerKnownVar(daeEl) "in previous rule, lower_var failed." ;
         SOME(backendVar2) = Inline.inlineVarOpt(SOME(backendVar1),(SOME(functionTree),{DAE.NORM_INLINE()}));
         knvars = BackendVariable.addVar(backendVar2, knvars);
+        ialgs1 = listAppend(ialgs,minmax);
+        ialgs1 = listAppend(ialgs1,nominal);        
       then
-        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,whenclauses_1,extObjCls,states);
+        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs1,whenclauses_1,extObjCls,states);
     
     // tuple equations are rewritten to algorihm tuple assign.
     case (daeEl as DAE.EQUATION(exp = e1,scalar = e2),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,whenclauses_1,extObjCls,states)
@@ -551,8 +557,10 @@ protected function lowerVar
   output BackendDAE.Var outVar;
   output Option<DAE.Exp> outBinding;
   output BackendDAE.BinTree outBinTree;
+  output list<DAE.Algorithm> minmax;
+  output list<DAE.Algorithm> nominal;
 algorithm
-  (outVar,outBinding,outBinTree) := match (inElement,inBinTree)
+  (outVar,outBinding,outBinTree,minmax,nominal) := match (inElement,inBinTree)
     local
       list<DAE.Subscript> dims;
       DAE.ComponentRef name;
@@ -583,8 +591,10 @@ algorithm
       equation
         (kind_1,states) = lowerVarkind(kind, t, name, dir, flowPrefix, streamPrefix, states, dae_var_attr);
         tp = lowerType(t);
+        minmax = lowerMinMax(dae_var_attr,name,source);
+        nominal = lowerNominal(dae_var_attr,name,source);
       then
-        (BackendDAE.VAR(name,kind_1,dir,tp,NONE(),NONE(),dims,-1,source,dae_var_attr,comment,flowPrefix,streamPrefix), bind, states);
+        (BackendDAE.VAR(name,kind_1,dir,tp,NONE(),NONE(),dims,-1,source,dae_var_attr,comment,flowPrefix,streamPrefix), bind, states, minmax, nominal);
   end match;
 end lowerVar;
 
@@ -593,8 +603,10 @@ protected function lowerKnownVar
   Helper function to lower2"
   input DAE.Element inElement;
   output BackendDAE.Var outVar;
+  output list<DAE.Algorithm> minmax;
+  output list<DAE.Algorithm> nominal;  
 algorithm
-  outVar := matchcontinue (inElement)
+  (outVar, minmax, nominal) := matchcontinue (inElement)
     local
       list<DAE.Subscript> dims;
       DAE.ComponentRef name;
@@ -625,8 +637,10 @@ algorithm
         kind_1 = lowerKnownVarkind(kind, name, dir, flowPrefix);
         bind = fixParameterStartBinding(bind,dae_var_attr,kind_1);
         tp = lowerType(t);
+        minmax = lowerMinMax(dae_var_attr,name,source);
+        nominal = lowerNominal(dae_var_attr,name,source);
       then
-        BackendDAE.VAR(name,kind_1,dir,tp,bind,NONE(),dims,-1,source,dae_var_attr,comment,flowPrefix,streamPrefix);
+        (BackendDAE.VAR(name,kind_1,dir,tp,bind,NONE(),dims,-1,source,dae_var_attr,comment,flowPrefix,streamPrefix), minmax, nominal);
 
     case (_)
       equation
@@ -849,6 +863,82 @@ algorithm
   end match;
 end lowerExtObjVarkind;
 
+protected function lowerMinMax
+"Author: Frenkel TUD 2011-03"
+  input Option<DAE.VariableAttributes> attr;
+  input DAE.ComponentRef name;
+  input DAE.ElementSource source; 
+  output list<DAE.Algorithm> minmax;
+algorithm
+  minmax :=
+  matchcontinue (attr,name,source)
+    local
+      DAE.Exp e,cond;
+      list<Option<DAE.Exp>> ominmax;
+      String str;
+      DAE.ExpType tp;
+    case (attr,name,source)
+      equation 
+        ominmax = DAEUtil.getMinMax(attr);
+        str = ComponentReference.crefStr(name);
+        str = stringAppendList({"Variable ",str," out of limit"});
+        e = Expression.crefExp(name);
+        tp = Expression.typeof(e);
+        cond = lowerMinMax1(ominmax,e,tp);
+      then 
+        {DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond,DAE.SCONST(str),source)})};
+    case(_,_,_) then {};
+  end matchcontinue;
+end lowerMinMax;
+
+protected function lowerMinMax1
+"Author: Frenkel TUD 2011-03"
+  input list<Option<DAE.Exp>> ominmax;
+  input DAE.Exp e;
+  input DAE.ExpType tp;
+  output DAE.Exp cond;
+algorithm
+  cond :=
+  match (ominmax,e,tp)
+    local
+      DAE.Exp min,max;
+    case (SOME(min)::(SOME(max)::{}),e,tp)
+      then DAE.LBINARY(DAE.RELATION(e,DAE.GREATEREQ(tp),min,-1,NONE()),
+                            DAE.AND(),
+                            DAE.RELATION(e,DAE.LESSEQ(tp),max,-1,NONE()));
+    case (SOME(min)::(NONE()::{}),e,tp)
+      then DAE.RELATION(e,DAE.GREATEREQ(tp),min,-1,NONE());
+    case (NONE()::(SOME(max)::{}),e,tp)
+      then DAE.RELATION(e,DAE.LESSEQ(tp),max,-1,NONE());
+  end match;
+end lowerMinMax1;
+
+protected function lowerNominal
+"Author: Frenkel TUD 2011-03"
+  input Option<DAE.VariableAttributes> attr;
+  input DAE.ComponentRef name;
+  input DAE.ElementSource source; 
+  output list<DAE.Algorithm> nominal;
+algorithm
+  nominal :=
+  matchcontinue (attr,name,source)
+    local
+      DAE.Exp e,cond;
+      list<Option<DAE.Exp>> ominmax;
+      String str;
+      DAE.ExpType tp;
+    case (attr as SOME(DAE.VAR_ATTR_REAL(nominal=SOME(e))),name,source)
+      equation 
+        ominmax = DAEUtil.getMinMax(attr);
+        str = ComponentReference.crefStr(name);
+        str = stringAppendList({"Nominal ",str," out of limit"});
+        tp = Expression.typeof(e);
+        cond = lowerMinMax1(ominmax,e,tp);
+      then 
+        {DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond,DAE.SCONST(str),source)})};
+    case(_,_,_) then {};
+  end matchcontinue;
+end lowerNominal;
 
 /*
  *  lower all equation types
