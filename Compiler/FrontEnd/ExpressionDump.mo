@@ -838,7 +838,7 @@ algorithm
       then
         str;
     
-    case (DAE.REDUCTION(path = fcn,expr = exp,ident = id,guardExp = NONE(), range = iterexp), _, _, _)
+    case (DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(path = fcn,ident = id),expr = exp,guardExp = NONE(), range = iterexp), _, _, _)
       equation
         fs = Absyn.pathString(fcn);
         expstr = printExp2Str(exp, stringDelimiter, opcreffunc, opcallfunc);
@@ -847,7 +847,7 @@ algorithm
       then
         str;
     
-    case (DAE.REDUCTION(path = fcn,expr = exp,ident = id,guardExp = SOME(e), range = iterexp), _, _, _)
+    case (DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(path = fcn,ident = id),expr = exp,guardExp = SOME(e), range = iterexp), _, _, _)
       equation
         fs = Absyn.pathString(fcn);
         expstr = printExp2Str(exp, stringDelimiter, opcreffunc, opcallfunc);
@@ -1283,7 +1283,7 @@ algorithm
       then
         Graphviz.NODE("SIZE",{},{crt});
     
-    case (DAE.REDUCTION(path = fcn,expr = exp,ident = id,range = iterexp))
+    case (DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(path = fcn,ident = id),expr = exp,range = iterexp))
       equation
         fs = Absyn.pathString(fcn);
         expt = dumpExpGraphviz(exp);
@@ -1570,7 +1570,7 @@ algorithm
       then
         res_str;
     
-    case (DAE.REDUCTION(path = fcn,expr = exp,ident = id,range = iterexp),level) /* Graphviz.LNODE(\"REDUCTION\",{fs},{},{expt,itert}) */
+    case (DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(path = fcn,ident = id),expr = exp,range = iterexp),level) /* Graphviz.LNODE(\"REDUCTION\",{fs},{},{expt,itert}) */
       equation
         gen_str = genStringNTime("   |", level);
         new_level1 = level + 1;
@@ -2092,7 +2092,7 @@ algorithm
       then
         ();
     
-    case ((e as DAE.REDUCTION(path = fcn,expr = exp,ident = s,range = iterexp)),_)
+    case ((e as DAE.REDUCTION(range = _)),_)
       equation
         str = printExpStr(e);
         Print.printBuf(str);

@@ -1808,7 +1808,7 @@ algorithm
 
     // If we encounter a reduction, add the iterator to the iterator list so
     // that we know which iterators shadow function variables.
-    case ((exp as DAE.REDUCTION(ident = iter), (all_el, accum_el, iters)))
+    case ((exp as DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(ident = iter)), (all_el, accum_el, iters)))
       then
         ((exp, (all_el, accum_el, iter :: iters)));
 
@@ -1831,7 +1831,7 @@ algorithm
       
     // If we encounter a reduction, make sure that its iterator matches the
     // first iterator in the iterator list, and if so remove it from the list.
-    case ((exp as DAE.REDUCTION(ident = iter), (all_el, accum_el, iter2 :: iters)))
+    case ((exp as DAE.REDUCTION(reductionInfo = DAE.REDUCTIONINFO(ident = iter)), (all_el, accum_el, iter2 :: iters)))
       equation
         compareIterators(iter, iter2);
       then

@@ -1867,7 +1867,7 @@ algorithm
       equation
         // NOT PART OF THE MODELICA LANGUAGE
       then ();
-    case (DAE.REDUCTION(path = fcn,expr = exp,ident = id,range = iterexp))
+    case (DAE.REDUCTION(expr = _))
       equation
         // NOT PART OF THE MODELICA LANGUAGE
       then  ();

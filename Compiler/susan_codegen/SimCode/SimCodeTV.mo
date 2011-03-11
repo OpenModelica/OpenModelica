@@ -758,13 +758,10 @@ package DAE
       ExpType ty;
     end CODE;
     record REDUCTION
-      Absyn.Path path;
+      ReductionInfo reductionInfo;
       Exp expr;
-      Ident ident;
       Option<Exp> guardExp;
       Exp range;
-      Option<Values.Value> defaultValue;
-      Option<Exp> foldExp;
     end REDUCTION;
     record END end END;
     record LIST
@@ -809,6 +806,16 @@ package DAE
     end PATTERN;
   end Exp;
   
+  uniontype ReductionInfo
+    record REDUCTIONINFO "A separate uniontype containing the information not required by traverseExp, etc"
+      Absyn.Path path "array, sum,..";
+      Type exprType;
+      Ident ident "e.g. i";
+      Option<Values.Value> defaultValue "if there is no default value, the reduction is not defined for 0-length arrays/lists";
+      Option<Exp> foldExp "For example, max(ident,$res) or ident+$res; array() does not use this feature; DO NOT TRAVERSE THIS EXPRESSION!";
+    end REDUCTIONINFO;
+  end ReductionInfo;
+
   uniontype MatchCase
     record CASE
       list<Pattern> patterns "ELSE is handled by not doing pattern-matching";

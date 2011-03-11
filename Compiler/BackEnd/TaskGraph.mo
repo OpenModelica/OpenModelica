@@ -996,7 +996,7 @@ algorithm
         print("TaskGraph.buildExpression(CODE) not impl. yet\n");
       then
         fail();
-    case (DAE.REDUCTION(path = _))
+    case (DAE.REDUCTION(expr = _))
       equation
         print("TaskGraph.buildExpression(REDUCTION) not impl. yet\n");
       then

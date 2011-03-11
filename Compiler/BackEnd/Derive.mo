@@ -353,6 +353,7 @@ algorithm
       Option<DAE.Exp> guardExp,foldExp;
       Option<Values.Value> v;
       list<DAE.ExpVar> varLst;
+      DAE.ReductionInfo reductionInfo;
 
     case (DAE.ICONST(integer = _),_) then DAE.RCONST(0.0);
     case (DAE.RCONST(real = _),_) then DAE.RCONST(0.0);
@@ -716,12 +717,12 @@ algorithm
       then
         Expression.makeASUB(e,sub);
     
-    case (DAE.REDUCTION(path = a,expr = e1,ident = str,guardExp = guardExp,range = e2,defaultValue = v,foldExp = foldExp),(timevars,functions))
+    case (DAE.REDUCTION(reductionInfo = reductionInfo,expr = e1,guardExp = guardExp,range = e2),(timevars,functions))
       equation
         e1_1 = differentiateExpTime(e1, (timevars,functions));
         e2_1 = differentiateExpTime(e2, (timevars,functions));
       then
-        DAE.REDUCTION(a,e1_1,str,guardExp,e2_1,v,foldExp);
+        DAE.REDUCTION(reductionInfo,e1_1,guardExp,e2_1);
     
     case (e,_)
       equation
@@ -1219,6 +1220,7 @@ algorithm
       list<Boolean> bLst;
       Option<DAE.Exp> guardExp,foldExp;
       Option<Values.Value> v;
+      DAE.ReductionInfo reductionInfo;
     
     case (DAE.ICONST(integer = _),_,_) then DAE.RCONST(0.0);
 
@@ -1427,12 +1429,12 @@ algorithm
       then
         Expression.makeASUB(e_1,sub);
     
-    case (DAE.REDUCTION(path = a,expr = e1,ident = str,guardExp = guardExp, range = e2, defaultValue = v, foldExp = foldExp),tv,differentiateIfExp)
+    case (DAE.REDUCTION(reductionInfo=reductionInfo,expr = e1,guardExp = guardExp, range = e2),tv,differentiateIfExp)
       equation
         e1_1 = differentiateExp(e1, tv, differentiateIfExp);
         e2_1 = differentiateExp(e2, tv, differentiateIfExp);
       then
-        DAE.REDUCTION(a,e1_1,str,guardExp,e2_1,v,foldExp);
+        DAE.REDUCTION(reductionInfo,e1_1,guardExp,e2_1);
     
     // derivative of arbitrary function, not dependent of variable, i.e. constant
     /* Caught by rule below...

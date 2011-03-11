@@ -1123,14 +1123,10 @@ uniontype Exp "Expressions
   end CODE;
 
   record REDUCTION "e.g. sum(i*i+1 for i in 1:4)"
-    Absyn.Path path "array, sum,..";
+    ReductionInfo reductionInfo;
     Exp expr "expr, e.g i*i+1" ;
-    Ident ident "e.g. i";
     Option<Exp> guardExp "Boolean guard-expression";
     Exp range "range Reduction expression e.g. 1:4" ;
-    Option<Values.Value> defaultValue "if there is no default value, the reduction is not defined for 0-length arrays/lists";
-    /* DAE.Type resultType */
-    Option<Exp> foldExp "For example, max(ident,$res) or ident+$res; array() does not use this feature; DO NOT TRAVERSE THIS EXPRESSION!";
   end REDUCTION;
 
   record END "array index to last element, e.g. a{end}:=1;" end END;
@@ -1197,6 +1193,16 @@ uniontype Exp "Expressions
   /* --- */
 
 end Exp;
+
+public uniontype ReductionInfo
+  record REDUCTIONINFO "A separate uniontype containing the information not required by traverseExp, etc"
+    Absyn.Path path "array, sum,..";
+    Type exprType;
+    Ident ident "e.g. i";
+    Option<Values.Value> defaultValue "if there is no default value, the reduction is not defined for 0-length arrays/lists";
+    Option<Exp> foldExp "For example, max(ident,$res) or ident+$res; array() does not use this feature; DO NOT TRAVERSE THIS EXPRESSION!";
+  end REDUCTIONINFO;
+end ReductionInfo;
 
 public uniontype MatchCase
   record CASE

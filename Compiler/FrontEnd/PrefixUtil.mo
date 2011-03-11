@@ -653,6 +653,7 @@ algorithm
       Option<tuple<DAE.Exp,Integer,Integer>> isExpisASUB;     
       Option<Values.Value> v;
       Option<DAE.Exp> foldExp;
+      DAE.ReductionInfo reductionInfo;
       
     // no prefix, return the input expression
     case (cache,_,_,e,Prefix.NOPRE()) then (cache,e);
@@ -817,20 +818,20 @@ algorithm
       then
         (cache,DAE.CAST(tp,e_1));
 
-    case (cache,env,ih,DAE.REDUCTION(path = fcn,expr = exp,ident = id,guardExp = NONE(),range = iterexp, defaultValue = v, foldExp = foldExp),p)
+    case (cache,env,ih,DAE.REDUCTION(reductionInfo = reductionInfo,expr = exp,guardExp = NONE(),range = iterexp),p)
       equation
         (cache,exp_1) = prefixExp(cache, env, ih, exp, p);
         (cache,iterexp_1) = prefixExp(cache, env, ih, iterexp, p);
       then
-        (cache,DAE.REDUCTION(fcn,exp_1,id,NONE(),iterexp_1,v,foldExp));
+        (cache,DAE.REDUCTION(reductionInfo,exp_1,NONE(),iterexp_1));
 
-    case (cache,env,ih,DAE.REDUCTION(path = fcn,expr = exp,ident = id,guardExp = SOME(e3),range = iterexp, defaultValue = v, foldExp = foldExp),p)
+    case (cache,env,ih,DAE.REDUCTION(reductionInfo = reductionInfo,expr = exp,guardExp = SOME(e3),range = iterexp),p)
       equation
         (cache,exp_1) = prefixExp(cache, env, ih, exp, p);
         (cache,iterexp_1) = prefixExp(cache, env, ih, iterexp, p);
         (cache,e3) = prefixExp(cache, env, ih, e3, p);
       then
-        (cache,DAE.REDUCTION(fcn,exp_1,id,SOME(e3),iterexp_1,v,foldExp));
+        (cache,DAE.REDUCTION(reductionInfo,exp_1,SOME(e3),iterexp_1));
 
     // MetaModelica extension. KS
     case (cache,env,ih,DAE.LIST(es),p)

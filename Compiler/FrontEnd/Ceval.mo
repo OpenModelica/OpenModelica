@@ -139,7 +139,7 @@ algorithm
       list<Values.Value> es_1,elts,vallst,vlst1,vlst2,reslst,aval,rhvals,lhvals,arr,arr_1,ivals,rvals,vallst_1,vals;
       list<DAE.Exp> es,expl;
       list<list<tuple<DAE.Exp, Boolean>>> expll;
-      Values.Value v,newval,value,sval,elt1,elt2,v_1,lhs_1,rhs_1,resVal,lhvVal,rhvVal;
+      Values.Value v,newval,value,sval,elt1,elt2,v_1,lhs_1,rhs_1,resVal,lhvVal,rhvVal,startValue;
       DAE.Exp lh,rh,e,lhs,rhs,start,stop,step,e1,e2,iterexp,cond;
       Absyn.Path funcpath,name;
       DAE.Operator relop;
@@ -156,7 +156,8 @@ algorithm
       ReductionOperator op;
       Absyn.Path path;
       Option<Values.Value> ov;
-      
+      Option<DAE.Exp> foldExp,guardExp;
+      DAE.Type ty;
 
     // uncomment for debugging 
     // case (cache,env,inExp,_,st,_,_) 
@@ -233,7 +234,7 @@ algorithm
 
     case (cache,env,DAE.UNBOX(exp=e1),impl,stOpt,dimOpt,msg)
       equation
-        (cache,v,stOpt) = ceval(cache,env,e1,impl,stOpt,dimOpt,msg);
+        (cache,Values.META_BOX(v),stOpt) = ceval(cache,env,e1,impl,stOpt,dimOpt,msg);
       then
         (cache,v,stOpt);
 
@@ -810,17 +811,15 @@ algorithm
       then
         (cache,v,stOpt);
 
-    // Known reductions, with fast implementation
-    case (cache, env, DAE.REDUCTION(Absyn.IDENT(reductionName), expr = daeExp, ident = iter, guardExp = NONE(), range = iterexp, defaultValue = ov), impl, stOpt, dimOpt, msg)
+    case (cache, env, DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(path = path, ident = iter, foldExp = foldExp, defaultValue = ov, exprType = ty), expr = daeExp, guardExp = guardExp, range = iterexp), impl, stOpt, dimOpt, msg)
       equation
-        op = lookupReductionOp(reductionName);
         (cache, v, stOpt) = ceval(cache, env, iterexp, impl, stOpt, dimOpt, msg);
-        vals = ValuesUtil.arrayOrListVals(v,false /* Do not box the values */);
+        vals = ValuesUtil.arrayOrListVals(v,true);
         env = Env.openScope(env, false, SOME(Env.forScopeName),NONE());
-        (cache, value, stOpt) = cevalReduction(cache, env, reductionName, op, ov, daeExp, iter, vals, impl, stOpt, dimOpt, msg);
-        value = finalReductionOp(reductionName, value);
-      then 
-        (cache, value, stOpt);
+        (vals,startValue) = cevalReductionStartValue(vals,ov);
+        // print("Start cevalReduction: " +& Absyn.pathString(path) +& " " +& ValuesUtil.valString(startValue) +& " " +& ValuesUtil.valString(Values.TUPLE(vals)) +& " " +& ExpressionDump.printExpStr(daeExp) +& "\n"); 
+        (cache, value, stOpt) = cevalReduction(cache, env, path, startValue, daeExp, ty, foldExp, guardExp, iter, vals, impl, stOpt, dimOpt, msg);
+      then (cache, value, stOpt);
 
     // ceval can fail and that is ok, caught by other rules... 
     case (cache,env,e,_,_,_,_) // MSG())
@@ -3900,6 +3899,13 @@ algorithm
       equation
         b = boolAnd(b1, b2);
       then Values.BOOL(b);
+    else
+      equation
+        s1 = ValuesUtil.valString(v1);
+        s2 = ValuesUtil.valString(v2);
+        s = stringAppendList({"cevalBuiltinMin2 failed: min(", s1, ", ", s2, ")"}); 
+        Error.addMessage(Error.INTERNAL_ERROR, {s});
+      then fail();
   end match;
 end cevalBuiltinMin2;
 
@@ -5046,7 +5052,7 @@ algorithm
     // REDUCTION bindings  
     case (cache,env,cr,DAE.EQBOUND(exp = exp,constant_ = DAE.C_CONST()),impl,msg) 
       equation 
-        DAE.REDUCTION(path = Absyn.IDENT(name = rfn),expr = elexp,ident = iter,range = iterexp) = exp;
+        DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(path = Absyn.IDENT(name = rfn), ident = iter),expr = elexp,range = iterexp) = exp;
         cr_1 = ComponentReference.crefStripLastSubs(cr) "lookup without subscripts, so dimension sizes can be determined." ;
         (cache,_,tp,_,_,_,_,_,_) = Lookup.lookupVar(cache,env, cr_1);
         sizelst = Types.getDimensionSizes(tp);
@@ -5432,165 +5438,175 @@ algorithm
   end matchcontinue;
 end dimensionSliceInRange;
 
-protected function finalReductionOp
-  input String op;
-  input Values.Value val;
-  output Values.Value outVal;
+protected function cevalReductionStartValue
+  input list<Values.Value> vals;
+  input Option<Values.Value> dv;
+  output list<Values.Value> outVals;
+  output Values.Value startValue;
 algorithm
-  outVal := match (op,val)
-    local
-      list<Values.Value> vals;
-    case ("listReverse",Values.LIST(vals)) equation vals = listReverse(vals); then Values.LIST(vals);
-    else val;
+  (outVals,startValue) := match (vals,dv)
+    case (vals,SOME(startValue)) then (vals,startValue); 
+    case (startValue::vals,NONE()) then (vals,startValue); 
   end match;
-end finalReductionOp;
+end cevalReductionStartValue;
 
 protected function cevalReduction
   "Help function to ceval. Evaluates reductions calls, such as
     'sum(i for i in 1:5)'"
   input Env.Cache cache;
   input Env.Env env;
-  input DAE.Ident opName;
-  input ReductionOperator op;
-  input Option<Values.Value> defaultValue;
+  input Absyn.Path opPath;
+  input Values.Value curValue;
   input DAE.Exp exp;
+  input DAE.Type exprType;
+  input Option<DAE.Exp> foldExp;
+  input Option<DAE.Exp> guardExp;
   input DAE.Ident iteratorName;
   input list<Values.Value> values;
-  input Boolean implicitInstantiation;
-  input Option<Interactive.InteractiveSymbolTable> symbolTable;
+  input Boolean impl;
+  input Option<Interactive.InteractiveSymbolTable> st;
   input Option<Integer> dim;
   input Msg msg;
   output Env.Cache newCache;
   output Values.Value result;
   output Option<Interactive.InteractiveSymbolTable> newSymbolTable;
-
-  partial function ReductionOperator
-    input Values.Value v1;
-    input Values.Value v2;
-    output Values.Value res;
-  end ReductionOperator;
 algorithm
-  (newCache, result, newSymbolTable) := matchcontinue(cache, env, opName, op, defaultValue,
-    exp, iteratorName, values, implicitInstantiation, symbolTable, dim, msg)
+  (newCache, result, newSymbolTable) := matchcontinue (cache, env, opPath, curValue, exp, exprType, foldExp, guardExp, iteratorName, values, impl, st, dim, msg)
     local
       Values.Value value, value2, reduced_value;
-      list<Values.Value> rest_values;
+      list<Values.Value> rest_values,vals;
       Env.Env new_env;
       Env.Cache new_cache;
       Option<Interactive.InteractiveSymbolTable> new_st;
       DAE.ExpType exp_type; 
       DAE.Type iter_type;
-    case (_, _, _, _, SOME(value), _, _, {}, _, _, _, _)
-      then
-        (cache, value, symbolTable);
+      list<Integer> dims;
+      Boolean guardFilter;
+    case (_, _, Absyn.IDENT("list"), Values.LIST(vals), _, _, _, _, _, {}, _, _, _, _)
+      equation
+        vals = listReverse(vals);
+      then (cache, Values.LIST(vals), st);
+    case (_, _, Absyn.IDENT("array"), Values.ARRAY(vals,dims), _, _, _, _, _, {}, _, _, _, _)
+      equation
+        vals = listReverse(vals);
+      then (cache, Values.ARRAY(vals,dims), st);
 
-    case (new_cache, new_env, _, _, NONE(), _, _, value :: {}, _, new_st, _, _)
+    case (_, _, _, curValue, _, _, _, _, _, {}, _, _, _, _)
+      then (cache, curValue, st);
+
+    case (cache, env, _, curValue, _, _, _, _, _, value :: rest_values, impl, st, dim, msg)
       equation
-        // range is constant!
-        exp_type = Expression.typeof(exp);
-        iter_type = Types.expTypetoTypesType(exp_type);
-        new_env = Env.extendFrameForIterator(env, iteratorName, iter_type, DAE.VALBOUND(value, DAE.BINDING_FROM_DEFAULT_VALUE()), SCode.VAR(), SOME(DAE.C_CONST()));
-        (new_cache, value, new_st) = ceval(new_cache, new_env, exp,
-          implicitInstantiation, new_st, dim, msg);
-        then (new_cache, value, new_st);
-    case (new_cache, new_env, _, _, _, _, _, value :: rest_values, _, new_st, _, _)
-      equation
-        // range is constant!
-        (new_cache, value2, new_st) = cevalReduction(new_cache, new_env, opName, op, defaultValue, exp, 
-          iteratorName, rest_values, implicitInstantiation, new_st, dim, msg);
-        exp_type = Expression.typeof(exp);
-        iter_type = Types.expTypetoTypesType(exp_type);
-        new_env = Env.extendFrameForIterator(new_env, iteratorName, iter_type, DAE.VALBOUND(value, DAE.BINDING_FROM_DEFAULT_VALUE()), SCode.VAR(), SOME(DAE.C_CONST()));
-        (new_cache, value, new_st) = ceval(new_cache, new_env, exp,
-          implicitInstantiation, new_st, dim, msg);
-        reduced_value = op(value, value2);
-      then (cache, reduced_value, new_st);
+        // Bind the iterator
+        // print("iterator: " +& iteratorName +& " => " +& ValuesUtil.valString(value) +& "\n");
+        new_env = Env.extendFrameForIterator(env, iteratorName, exprType, DAE.VALBOUND(value, DAE.BINDING_FROM_DEFAULT_VALUE()), SCode.VAR(), SOME(DAE.C_CONST()));
+        // See if we should filter out this value
+        (cache, guardFilter, st) = cevalReductionEvalGuard(cache, new_env, guardExp, impl, st, dim, msg);
+        // Calculate var1 of the folding function
+        (cache, curValue, st) = cevalReductionEvalAndFold(cache, new_env, opPath, curValue, exp, exprType, foldExp, guardFilter, impl, st, dim, msg);
+        // Fold the rest of the reduction
+        (cache, curValue, st) = cevalReduction(cache, env, opPath, curValue, exp, exprType, foldExp, guardExp, iteratorName, rest_values, impl, st, dim, msg);
+      then (cache, curValue, st);
   end matchcontinue;
 end cevalReduction;
 
-protected function valueAdd
-  "Adds two Values. Used (indirectly) by cevalReduction."
-  input Values.Value v1;
-  input Values.Value v2;
-  output Values.Value res;
+protected function cevalReductionEvalGuard "Evaluate the guard-expression (if any). Returns false if the value should be filtered out."
+  input Env.Cache cache;
+  input Env.Env env;
+  input Option<DAE.Exp> guardExp;
+  input Boolean impl;
+  input Option<Interactive.InteractiveSymbolTable> st;
+  input Option<Integer> dim;
+  input Msg msg;
+  output Env.Cache newCache;
+  output Boolean guardFilter;
+  output Option<Interactive.InteractiveSymbolTable> newSymbolTable;
 algorithm
-  {res} := ValuesUtil.addElementwiseArrayelt({v1}, {v2});
-end valueAdd;
-
-protected function valueMul
-  "Multiplies two Values. Used (indirectly) by cevalReduction."
-  input Values.Value v1;
-  input Values.Value v2;
-  output Values.Value res;
-algorithm
-  res := match(v1, v2)
-    local 
-      Integer i1, i2, resI;
-      Real r1, r2, resR;
-        
-    case (Values.INTEGER(i1), Values.INTEGER(i2))
-      equation 
-        resI = i1 * i2; 
-      then 
-        Values.INTEGER(resI);
-    
-    case (Values.REAL(r1), Values.REAL(r2))
-      equation 
-        resR = r1 *. r2; 
-      then 
-        Values.REAL(resR);
+  (newCache,guardFilter,newSymbolTable) := match (cache,env,guardExp,impl,st,dim,msg)
+    local
+      DAE.Exp exp;
+    case (cache,_,NONE(),_,_,_,_) then (cache,true,st);
+    case (cache,_,SOME(exp),_,_,_,_)
+      equation
+        // print("guardFilter eval: " +& ExpressionDump.printExpStr(exp) +& "\n");
+        (cache, Values.BOOL(guardFilter), st) = ceval(cache, env, exp, impl, st, dim, msg);
+      then (cache,guardFilter,st);
   end match;
-end valueMul;
+end cevalReductionEvalGuard;
 
-protected function valueMax
-  "Returns the maximum of two Values. Used (indirectly) by cevalReduction."
-  input Values.Value v1;
-  input Values.Value v2;
-  output Values.Value res;
+protected function cevalReductionEvalAndFold "Evaluate the reduction body and fold"
+  input Env.Cache cache;
+  input Env.Env env;
+  input Absyn.Path opPath;
+  input Values.Value curValue;
+  input DAE.Exp exp;
+  input DAE.Type exprType;
+  input Option<DAE.Exp> foldExp;
+  input Boolean guardFilter;
+  input Boolean impl;
+  input Option<Interactive.InteractiveSymbolTable> st;
+  input Option<Integer> dim;
+  input Msg msg;
+  output Env.Cache newCache;
+  output Values.Value result;
+  output Option<Interactive.InteractiveSymbolTable> newSymbolTable;
 algorithm
-  res := match(v1, v2)
-    local 
-      Integer i1, i2, resI;
-      Real r1, r2, resR;
-      
-    case (Values.INTEGER(i1), Values.INTEGER(i2))
-      equation 
-        resI = intMax(i1, i2); 
-      then 
-        Values.INTEGER(resI);
-    
-    case (Values.REAL(r1), Values.REAL(r2))
-      equation 
-        resR = realMax(r1, r2); 
-      then 
-        Values.REAL(resR);
+  (newCache,result,newSymbolTable) := match (cache,env,opPath,curValue,exp,exprType,foldExp,guardFilter,impl,st,dim,msg)
+    local
+      Values.Value value;
+    case (cache,_,_,curValue,_,_,_,false,_,st,_,_) then (cache,curValue,st);
+    case (cache,env,_,curValue,exp,exprType,foldExp,true,impl,st,dim,msg)
+      equation
+        (cache, value, st) = ceval(cache, env, exp, impl, st, dim, msg);
+        // print("cevalReductionEval: " +& ExpressionDump.printExpStr(exp) +& " => " +& ValuesUtil.valString(value) +& "\n");
+        (cache, value, st) = cevalReductionFold(cache, env, opPath, curValue, value, foldExp, exprType, impl, st, dim, msg);
+      then (cache, value, st);
   end match;
-end valueMax;
+end cevalReductionEvalAndFold;
 
-protected function valueMin
-  "Returns the minimum of two Values. Used (indirectly) by cevalReduction."
-  input Values.Value v1;
-  input Values.Value v2;
-  output Values.Value res;
+protected function cevalReductionFold "Fold the reduction body"
+  input Env.Cache cache;
+  input Env.Env env;
+  input Absyn.Path opPath;
+  input Values.Value curValue;
+  input Values.Value inValue;
+  input Option<DAE.Exp> foldExp;
+  input DAE.Type exprType;
+  input Boolean impl;
+  input Option<Interactive.InteractiveSymbolTable> st;
+  input Option<Integer> dim;
+  input Msg msg;
+  output Env.Cache newCache;
+  output Values.Value result;
+  output Option<Interactive.InteractiveSymbolTable> newSymbolTable;
 algorithm
-  res := match(v1, v2)
-    local 
-      Real r1, r2, resR;
-      Integer i1, i2, resI;
-        
-    case (Values.INTEGER(i1), Values.INTEGER(i2))
-      equation 
-        resI = intMin(i1, i2); 
-      then 
-        Values.INTEGER(resI);
-    
-    case (Values.REAL(r1), Values.REAL(r2))
-      equation 
-        resR = realMin(r1, r2); 
-      then 
-        Values.REAL(resR);
+  (newCache,result,newSymbolTable) := match (cache,env,opPath,curValue,inValue,foldExp,exprType,impl,st,dim,msg)
+    local
+      DAE.Exp exp;
+      DAE.ExpType exp_type;
+      DAE.Type iter_type;
+      Values.Value value;
+    case (cache,_,Absyn.IDENT("array"),_,_,_,_,_,st,_,_)
+      equation
+        curValue = valueArrayCons(ValuesUtil.unboxIfBoxedVal(inValue),curValue);
+      then (cache,curValue,st);
+    case (cache,_,Absyn.IDENT("list"),_,_,_,_,_,st,_,_)
+      equation
+        curValue = valueCons(ValuesUtil.unboxIfBoxedVal(inValue),curValue);
+      then (cache,curValue,st);
+    case (cache,_,Absyn.IDENT("listReverse"),_,_,_,_,_,st,_,_)
+      equation
+        curValue = valueCons(ValuesUtil.unboxIfBoxedVal(inValue),curValue);
+      then (cache,curValue,st);
+    case (cache,env,_,curValue,inValue,SOME(exp),exprType,impl,st,dim,msg)
+      equation
+        // print("cevalReductionFold " +& ExpressionDump.printExpStr(exp) +& ", " +& ValuesUtil.valString(inValue) +& "\n");
+        /* TODO: Store the actual types somewhere... */
+        env = Env.extendFrameForIterator(env, "$reductionFoldTmpA", exprType, DAE.VALBOUND(inValue, DAE.BINDING_FROM_DEFAULT_VALUE()), SCode.VAR(), SOME(DAE.C_CONST()));
+        env = Env.extendFrameForIterator(env, "$reductionFoldTmpB", exprType, DAE.VALBOUND(curValue, DAE.BINDING_FROM_DEFAULT_VALUE()), SCode.VAR(), SOME(DAE.C_CONST()));
+        (cache, value, st) = ceval(cache, env, exp, impl, st, dim, msg);
+      then (cache, value, st);
   end match;
-end valueMin;
+end cevalReductionFold;
 
 protected function valueArrayCons
   "Returns the cons of two values. Used by cevalReduction for array reductions."
@@ -5643,10 +5659,6 @@ protected function lookupReductionOp
   end ReductionOperator;
 algorithm
   op := match(reductionName)
-    case "max" then valueMax;
-    case "min" then valueMin;
-    case "product" then valueMul;
-    case "sum" then valueAdd;
     case "array" then valueArrayCons;
     case "list" then valueCons;
     case "listReverse" then valueCons;

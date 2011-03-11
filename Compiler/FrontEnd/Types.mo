@@ -2035,7 +2035,7 @@ algorithm
   outType := match (inType)
     local
       Type ty;
-    case ((DAE.T_LIST(ty),_)) then ty;
+    case ((DAE.T_LIST(ty),_)) then boxIfUnboxedType(ty);
     else unliftArray(inType);
   end match;
 end unliftArrayOrList;

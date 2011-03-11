@@ -222,7 +222,7 @@ algorithm
         ((e, (vars1,crefs1)));  
     
     // case for Reductions    
-    case ((e as DAE.REDUCTION(ident = ident),(vars,crefs)))
+    case ((e as DAE.REDUCTION(reductionInfo = DAE.REDUCTIONINFO(ident = ident)),(vars,crefs)))
       equation
         // add ident to vars
         cr = ComponentReference.makeCrefIdent(ident,DAE.ET_INT(),{});

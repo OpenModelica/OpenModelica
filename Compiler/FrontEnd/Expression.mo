@@ -75,6 +75,7 @@ protected import Patternm;
 protected import Prefix;
 protected import RTOpts;
 protected import Static;
+protected import Types;
 protected import Util;
 
 /***************************************************/
@@ -271,7 +272,7 @@ algorithm
 
     case(DAE.CODE(code,_)) then Absyn.CODE(code);
 
-    case DAE.REDUCTION(path,e1,s,oe1,e2,_,_) equation
+    case DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(path=path,ident=s),expr=e1,guardExp=oe1,range=e2) equation
       //print("unelab of reduction not impl. yet");
       acref = Absyn.pathToCref(path);
       ae1 = unelabExp(e1);
@@ -1503,6 +1504,7 @@ algorithm
       list<DAE.Exp> explist;
       Absyn.Path p;
       String msg;
+      DAE.Type ty;
     
     case (DAE.ICONST(integer = _)) then DAE.ET_INT();
     case (DAE.RCONST(real = _)) then DAE.ET_REAL();
@@ -1528,9 +1530,10 @@ algorithm
       then 
         tp;
     case (DAE.CODE(ty = tp)) then tp;
-    case (DAE.REDUCTION(path = Absyn.IDENT("array"),expr = e))
-      then liftArrayR(typeof(e),DAE.DIM_UNKNOWN());
-    case (DAE.REDUCTION(expr = e)) then typeof(e);
+    case (DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(exprType=ty,path = Absyn.IDENT("array"))))
+      then liftArrayR(Types.elabType(ty),DAE.DIM_UNKNOWN());
+    case (DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(exprType=ty)))
+      then Types.elabType(ty);
     case (DAE.END()) then DAE.ET_OTHER();  /* Can be any type. */
     case (DAE.SIZE(_,NONE())) then DAE.ET_INT();
     case (DAE.SIZE(_,SOME(_))) then DAE.ET_ARRAY(DAE.ET_INT(),{DAE.DIM_UNKNOWN()});
@@ -1848,7 +1851,7 @@ algorithm
     case (e as DAE.CAST(ty = _)) then {e};
     case (e as DAE.ASUB(exp = _)) then {e};
     case (e as DAE.SIZE(exp = _)) then {e};
-    case (e as DAE.REDUCTION(path = _)) then {e};
+    case (e as DAE.REDUCTION(expr = _)) then {e};
     case (_) then {};
   end matchcontinue;
 end allTerms;
@@ -2018,7 +2021,7 @@ algorithm
       equation
         e = Debug.bcallret1(doInverseFactors, inverseFactors, e, e);
       then e::acc;
-    case ((e as DAE.REDUCTION(path = _)),acc,noFactors,doInverseFactors)
+    case ((e as DAE.REDUCTION(expr = _)),acc,noFactors,doInverseFactors)
       equation
         e = Debug.bcallret1(doInverseFactors, inverseFactors, e, e);
       then e::acc;
@@ -3188,6 +3191,7 @@ algorithm
       Option<tuple<DAE.Exp,Integer,Integer>> isExpisASUB;
       Option<DAE.Exp> oe1,foldExp;
       Option<Values.Value> v;
+      DAE.ReductionInfo reductionInfo;
     
     case ((e as DAE.ICONST(_)),rel,ext_arg)
       equation
@@ -3354,12 +3358,12 @@ algorithm
       then
         ((e,ext_arg_3));
     
-    case ((e as DAE.REDUCTION(path = path,expr = e1,ident = id,guardExp = oe1, range = e2, defaultValue = v, foldExp = foldExp)),rel,ext_arg)
+    case ((e as DAE.REDUCTION(reductionInfo=reductionInfo,expr = e1,guardExp = oe1, range = e2)),rel,ext_arg)
       equation
         ((e1,ext_arg)) = traverseExp(e1, rel, ext_arg);
         ((e2,ext_arg)) = traverseExp(e2, rel, ext_arg);
         ((oe1,ext_arg)) = traverseExpOpt(oe1, rel, ext_arg);
-        ((e,ext_arg)) = rel((DAE.REDUCTION(path,e1,id,oe1,e2,v,foldExp),ext_arg));
+        ((e,ext_arg)) = rel((DAE.REDUCTION(reductionInfo,e1,oe1,e2),ext_arg));
       then
         ((e,ext_arg));
     
@@ -3642,6 +3646,7 @@ algorithm
       Option<tuple<DAE.Exp,Integer,Integer>> isExpisASUB;
       Option<DAE.Exp> oe1,foldExp;
       Option<Values.Value> v;
+      DAE.ReductionInfo reductionInfo;
     
     case (e as DAE.ICONST(_),rel,ext_arg) then ((e,ext_arg));    
     case (e as DAE.RCONST(_),rel,ext_arg) then ((e,ext_arg));    
@@ -3771,13 +3776,13 @@ algorithm
     
     case ((e as DAE.CODE(ty=_)),rel,ext_arg) then ((e,ext_arg));    
     
-    case ((e as DAE.REDUCTION(path = path,expr = e1,ident = id,guardExp = oe1, range = e2, defaultValue = v, foldExp = foldExp)),rel,ext_arg)
+    case ((e as DAE.REDUCTION(reductionInfo = reductionInfo, expr = e1, guardExp = oe1, range = e2)),rel,ext_arg)
       equation
         ((e1,ext_arg)) = traverseExpTopDown(e1, rel, ext_arg);
         ((e2,ext_arg)) = traverseExpTopDown(e2, rel, ext_arg);
         ((oe1,ext_arg)) = traverseExpOptTopDown(oe1, rel, ext_arg);
       then
-        ((DAE.REDUCTION(path,e1,id,oe1,e2,v,foldExp),ext_arg));
+        ((DAE.REDUCTION(reductionInfo,e1,oe1,e2),ext_arg));
     
     // MetaModelica list
     case ((e as DAE.CONS(e1,e2)),rel,ext_arg)
@@ -4174,6 +4179,8 @@ algorithm
       DAE.InlineType inl_ty;
       list<String> strl;
       Option<Values.Value> v;
+      DAE.Type dty;
+      DAE.ReductionInfo reductionInfo;
 
     case (DAE.ICONST(integer = _), _) then (inExp, inTuple);
     case (DAE.RCONST(real = _), _) then (inExp, inTuple);
@@ -4292,13 +4299,13 @@ algorithm
     case (DAE.CODE(code = _), tup)
       then (inExp, tup);
 
-    case (DAE.REDUCTION(path = path, expr = e1, ident = id, guardExp = oe1, range = e2, defaultValue = v, foldExp = foldExp), tup)
+    case (DAE.REDUCTION(reductionInfo = reductionInfo, expr = e1, guardExp = oe1, range = e2), tup)
       equation
         (e1, tup) = traverseExpBidir(e1, tup);
         (e2, tup) = traverseExpBidir(e2, tup);
         (oe1, tup) = traverseExpOptBidir(oe1, tup);
       then
-        (DAE.REDUCTION(path, e1, id, oe1, e2, v, foldExp), tup);
+        (DAE.REDUCTION(reductionInfo, e1, oe1, e2), tup);
 
     case (DAE.END(), _) then (inExp, inTuple);
 
@@ -5841,11 +5848,13 @@ algorithm
       then
         false;
     
-    case (DAE.REDUCTION(path = path1,expr = e1,ident = id1,range = er1),DAE.REDUCTION(path = path2,expr = e2,ident = id2,range = er2),_,_)
+    case (DAE.REDUCTION(expr = e1,range = er1),DAE.REDUCTION(expr = e2,range = er2),_,_)
       equation
-        res = stringEq(id1, id2) and ModUtil.pathEqual(path1, path2);
+        // Reductions contain too much information to compare equality in a sane manner
+        res = valueEq(inExp1,inExp2);
+        /* res = stringEq(id1, id2) and ModUtil.pathEqual(path1, path2);
         res = expEqualWork(e1, e2, referenceEq(e1, e2), res);
-        res = expEqualWork(er1, er2, referenceEq(er1, er2), res);
+        res = expEqualWork(er1, er2, referenceEq(er1, er2), res); */
       then
         res;
     

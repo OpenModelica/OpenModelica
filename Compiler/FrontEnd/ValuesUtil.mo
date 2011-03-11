@@ -2483,6 +2483,16 @@ algorithm
   end match;
 end boxIfUnboxedVal;
 
+public function unboxIfBoxedVal
+  input Values.Value v;
+  output Values.Value ov;
+algorithm
+  ov := match v
+    case Values.META_BOX(v) then v;
+    else v;
+  end match;
+end unboxIfBoxedVal;
+
 public function arrayOrListVals
   input Values.Value v;
   input Boolean boxIfUnboxed;

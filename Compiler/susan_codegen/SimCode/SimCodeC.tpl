@@ -1653,6 +1653,7 @@ case 0 then
       <<
       string def_vector<%name%>("  Real <%name%>[<%numIn%>];\n");
 
+
       >>
   case _ then
       <<
@@ -5364,7 +5365,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp /*BUFP*/,
   special reduction functions (list, listReverse, array) and handles both list and array as input"
 ::=
   match exp
-  case r as REDUCTION(__) then
+  case r as REDUCTION(reductionInfo=ri as REDUCTIONINFO(__)) then
   let &tmpVarDecls = buffer ""
   let &tmpExpPre = buffer ""
   let &bodyExpPre = buffer ""
@@ -5378,15 +5379,15 @@ template daeExpReduction(Exp exp, Context context, Text &preExp /*BUFP*/,
     case "modelica_metatype" then tempDecl(identType,&tmpVarDecls)
     else tempDecl(arrayType,&tmpVarDecls)
   let firstIndex = match identType case "modelica_metatype" then "" else tempDecl("int",&tmpVarDecls)
-  let arrIndex = match r.path case IDENT(name="array") then tempDecl("int",&tmpVarDecls)
+  let arrIndex = match ri.path case IDENT(name="array") then tempDecl("int",&tmpVarDecls)
   let rangeExp = daeExp(r.range,context,&rangeExpPre,&tmpVarDecls)
   let resType = expTypeArrayIf(typeof(exp))
   let res = "_$reductionFoldTmpB"
   let &tmpVarDecls += '<%resType%> <%res%>;<%\n%>'
   let resTmp = tempDecl(resType,&varDecls)
   let &preDefault = buffer ""
-  let resTail = match r.path case IDENT(name="list") then tempDecl("modelica_metatype*",&tmpVarDecls)
-  let defaultValue = match r.path case IDENT(name="array") then "" else match r.defaultValue
+  let resTail = match ri.path case IDENT(name="list") then tempDecl("modelica_metatype*",&tmpVarDecls)
+  let defaultValue = match ri.path case IDENT(name="array") then "" else match ri.defaultValue
     case SOME(v) then daeExp(valueExp(v),context,&preDefault,&tmpVarDecls)
     end match
   let guardCond = match r.guardExp case SOME(grd) then daeExp(grd, context, &guardExpPre, &tmpVarDecls) else "1"
@@ -5397,7 +5398,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp /*BUFP*/,
   let reductionBodyExprWork = daeExp(r.expr, context, &bodyExpPre, &tmpVarDecls)
   let &tmpVarDecls += '<%bodyExprType%> <%reductionBodyExpr%>;<%\n%>'
   let &bodyExpPre += '<%reductionBodyExpr%> = <%reductionBodyExprWork%>;<%\n%>'
-  let foldExp = match r.path
+  let foldExp = match ri.path
     case IDENT(name="list") then
     <<
     *<%resTail%> = mmc_mk_cons(<%reductionBodyExpr%>,0);
@@ -5407,24 +5408,24 @@ template daeExpReduction(Exp exp, Context context, Text &preExp /*BUFP*/,
       '<%res%> = mmc_mk_cons(<%reductionBodyExpr%>,<%res%>);'
     case IDENT(name="array") then
       '*(<%arrayTypeResult%>_element_addr1(&<%res%>, 1, <%arrIndex%>++)) = <%reductionBodyExpr%>;'
-    else match r.foldExp case SOME(fExp) then
+    else match ri.foldExp case SOME(fExp) then
       <<
       <%res%> = <%daeExp(fExp, context, &bodyExpPre, &tmpVarDecls)%>;
       >>
-  let firstValue = match r.path
+  let firstValue = match ri.path
      case IDENT(name="array") then
      <<
      <%arrIndex%> = 1;
      simple_alloc_1d_<%arrayTypeResult%>(&<%res%>,<%length%>);
      >>
-     else if r.defaultValue then
+     else if ri.defaultValue then
      <<
      <%&preDefault%>
      <%res%> = <%defaultValue%>; /* defaultValue */
      >>
      else
      <<
-     if (<%empty%>) MMC_THROW(); /* <%dotPath(r.path)%> does not have a default value for empty ranges */
+     if (<%empty%>) MMC_THROW(); /* <%dotPath(ri.path)%> does not have a default value for empty ranges */
      <% match identType
        case "modelica_metatype" then
        let &preUnbox = buffer ""
@@ -5440,7 +5441,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp /*BUFP*/,
        >>
      %>
      >>
-  let iteratorName = contextIteratorName(r.ident, context)
+  let iteratorName = contextIteratorName(ri.ident, context)
   let loopHead = match identType
     case "modelica_metatype" then
     <<
@@ -5480,23 +5481,6 @@ template daeExpReduction(Exp exp, Context context, Text &preExp /*BUFP*/,
   >>
   resTmp
 end daeExpReduction;
-
-template daeExpReductionLoop(Exp exp, Text &body, Context context, Text &varDecls)
- "Generates code for the loop part of a reduction expression by using the
-  appropriate for loop template."
-::=
-match exp
-
-case REDUCTION(range = RANGE(__)) then
-  let identType = expTypeModelica(range.ty)
-  let identTypeShort = expTypeFromExpShort(expr)
-  algStmtForRange_impl(range, ident, identType, identTypeShort, body, context, &varDecls)
-case REDUCTION(range = range) then
-  let identType = expTypeFromExpModelica(expr)
-  let arrayType = expTypeFromExpArray(expr)
-  algStmtForGeneric_impl(range, ident, identType, arrayType, false, body, context, &varDecls)
-end daeExpReductionLoop;
-  
 
 template daeExpReductionFnName(Path path, String type)
  "Helper to daeExpReduction."

@@ -1532,6 +1532,7 @@ algorithm
       Option<tuple<DAE.Exp,Integer,Integer>> isExpisASUB;
       Option<Values.Value> v;
       Option<DAE.Exp> foldExp;
+      DAE.ReductionInfo reductionInfo;
             
     case ((e as DAE.CREF(componentRef = cr,ty = t)),repl,cond)
       equation
@@ -1656,13 +1657,13 @@ algorithm
         print("replace_exp on CODE not impl.\n");
       then
         DAE.CODE(a,tp);
-    case ((e as DAE.REDUCTION(path = p,expr = e1,ident = id,guardExp = NONE(),range = r,defaultValue = v,foldExp = foldExp)),repl,cond)
+    case ((e as DAE.REDUCTION(reductionInfo = reductionInfo,expr = e1,guardExp = NONE(),range = r)),repl,cond)
       equation
         true = replaceExpCond(cond, e);
         e1_1 = replaceExp(e1, repl, cond);
         r_1 = replaceExp(r, repl, cond);
       then
-        DAE.REDUCTION(p,e1_1,id,NONE(),r_1,v,foldExp);
+        DAE.REDUCTION(reductionInfo,e1_1,NONE(),r_1);
     case (e,repl,cond)
       equation
         //Debug.fprintln("failtrace", "- VarTransform.replaceExp failed on: " +& ExpressionDump.printExpStr(e));
