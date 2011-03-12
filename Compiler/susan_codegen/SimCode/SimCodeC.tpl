@@ -5457,6 +5457,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp /*BUFP*/,
     else tempDecl(arrayType,&tmpVarDecls)
   let firstIndex = match identType case "modelica_metatype" then "" else tempDecl("int",&tmpVarDecls)
   let arrIndex = match ri.path case IDENT(name="array") then tempDecl("int",&tmpVarDecls)
+  let foundFirst = if not ri.defaultValue then tempDecl("int",&tmpVarDecls)
   let rangeExp = daeExp(r.range,context,&rangeExpPre,&tmpVarDecls)
   let resType = expTypeArrayIf(typeof(exp))
   let res = "_$reductionFoldTmpB"
@@ -5486,9 +5487,18 @@ template daeExpReduction(Exp exp, Context context, Text &preExp /*BUFP*/,
     case IDENT(name="array") then
       '*(<%arrayTypeResult%>_element_addr1(&<%res%>, 1, <%arrIndex%>++)) = <%reductionBodyExpr%>;'
     else match ri.foldExp case SOME(fExp) then
+      let &foldExpPre = buffer ""
+      let fExpStr = daeExp(fExp, context, &bodyExpPre, &tmpVarDecls)
+      if not ri.defaultValue then
       <<
-      <%res%> = <%daeExp(fExp, context, &bodyExpPre, &tmpVarDecls)%>;
+      if (<%foundFirst%>) {
+        <%res%> = <%fExpStr%>;
+      } else {
+        <%res%> = <%reductionBodyExpr%>;
+        <%foundFirst%> = 1;
+      }
       >>
+      else '<%res%> = <%fExpStr%>;'
   let firstValue = match ri.path
      case IDENT(name="array") then
      <<
@@ -5502,21 +5512,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp /*BUFP*/,
      >>
      else
      <<
-     if (<%empty%>) MMC_THROW(); /* <%dotPath(ri.path)%> does not have a default value for empty ranges */
-     <% match identType
-       case "modelica_metatype" then
-       let &preUnbox = buffer ""
-       let unboxedVar = unboxVariable('MMC_CAR(<%loopVar%>)',typeof(exp),&preUnbox,&tmpVarDecls)
-       <<
-       <%&preUnbox%>
-       <%res%> = <%unboxedVar%>;
-       <%loopVar%> = MMC_CDR(<%loopVar%>);
-       >>
-       else
-       <<
-       <%res%> = *(<%arrayType%>_element_addr1(&<%loopVar%>, 1, <%firstIndex%>++));
-       >>
-     %>
+     <%foundFirst%> = 0; /* <%dotPath(ri.path)%> lacks default-value */
      >>
   let iteratorName = contextIteratorName(ri.ident, context)
   let loopHead = match identType
@@ -5552,6 +5548,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp /*BUFP*/,
         <%foldExp%>
       }
     <%loopTail%>
+    <% if not ri.defaultValue then 'if (!<%foundFirst%>) MMC_THROW();' %>
     <% if resTail then '*<%resTail%> = mmc_mk_nil();' %>
     <% resTmp %> = <% res %>;
   }<%\n%>
