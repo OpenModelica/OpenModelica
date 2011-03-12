@@ -873,7 +873,7 @@ algorithm
   minmax :=
   matchcontinue (attr,name,source)
     local
-      DAE.Exp e,cond;
+      DAE.Exp e,cond,msg;
       list<Option<DAE.Exp>> ominmax;
       String str;
       DAE.ExpType tp;
@@ -882,11 +882,13 @@ algorithm
         ominmax = DAEUtil.getMinMax(attr);
         str = ComponentReference.crefStr(name);
         str = stringAppendList({"Variable ",str," out of limit"});
+        msg = DAE.SCONST(str);
         e = Expression.crefExp(name);
         tp = Expression.typeof(e);
         cond = lowerMinMax1(ominmax,e,tp);
+        checkAssertCondition(cond,msg);
       then 
-        {DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond,DAE.SCONST(str),source)})};
+        {DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond,msg,source)})};
     case(_,_,_) then {};
   end matchcontinue;
 end lowerMinMax;
@@ -923,7 +925,7 @@ algorithm
   nominal :=
   matchcontinue (attr,name,source)
     local
-      DAE.Exp e,cond;
+      DAE.Exp e,cond,msg;
       list<Option<DAE.Exp>> ominmax;
       String str;
       DAE.ExpType tp;
@@ -932,10 +934,12 @@ algorithm
         ominmax = DAEUtil.getMinMax(attr);
         str = ComponentReference.crefStr(name);
         str = stringAppendList({"Nominal ",str," out of limit"});
+        msg = DAE.SCONST(str);
         tp = Expression.typeof(e);
         cond = lowerMinMax1(ominmax,e,tp);
+        checkAssertCondition(cond,msg);
       then 
-        {DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond,DAE.SCONST(str),source)})};
+        {DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond,msg,source)})};
     case(_,_,_) then {};
   end matchcontinue;
 end lowerNominal;
