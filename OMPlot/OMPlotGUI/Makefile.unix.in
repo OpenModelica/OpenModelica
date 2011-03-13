@@ -6,15 +6,21 @@ runtimedir=$(top_builddir)/Compiler/runtime/
 QMAKE=@QMAKE@
 EXE=@EXE@
 NAME=OMPlot
+LIB=libOMPlot
 
-.PHONY: always
+.PHONY: always $(NAME) $(LIB)
 
 all: build
 
-Makefile:
+Makefile: OMPlotGUI.pro
 	$(QMAKE)
 
-clean: Makefile
+Makefile.lib: OMPlotLib.pro
+	$(QMAKE) OMPlotLib.pro -o $@
+
+clean:
+	test ! -f Makefile || make -f Makefile clean
+	test ! -f Makefile.lib || make -f Makefile.lib clean
 	rm -rf $(NAME) $(NAME)$(EXE) Makefile
 
 $(NAME)$(EXE): Makefile
@@ -24,7 +30,10 @@ $(NAME): $(NAME)$(EXE) always
 	cp -p ../bin/$</Contents/MacOS/$(NAME) ../bin/$@
 endif
 
-build: $(NAME)
+$(LIB): Makefile.lib
+	make -f $<
+
+build: $(NAME) $(LIB)
 	cp -p ../bin/$(NAME) $(builddir_bin)
 
 Makefile.unix: Makefile.unix.in

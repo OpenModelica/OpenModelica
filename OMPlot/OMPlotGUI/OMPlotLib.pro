@@ -7,9 +7,9 @@
 QT       += core gui
 
 TARGET = OMPlot
-TEMPLATE = app
+TEMPLATE = lib
 
-CONFIG += release
+CONFIG += release staticlib
 
 SOURCES += main.cpp \
         plotwindow.cpp \
