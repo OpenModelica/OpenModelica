@@ -82,6 +82,9 @@ void DocumentationWidget::show(QString className)
     QString documentation = mpParentMainWindow->mpOMCProxy->getDocumentationAnnotation(className);
     documentation = StringHandler::removeFirstLastCurlBrackets(documentation);
     documentation = StringHandler::removeFirstLastQuotes(documentation);
+    if (!documentation.startsWith("<html>")) {
+      documentation = "<pre>" + documentation.replace("<","&lt;").replace(">","&gt;") + "</pre>";
+    }
     documentation = documentation.replace("\\\"", "\"");
     documentation = documentation.replace("Modelica://", "Modelica:/");
     mpDocumentationViewer->setHtml(documentation, mpDocumentationViewer->getBaseUrl());
