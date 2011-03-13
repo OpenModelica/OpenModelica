@@ -321,15 +321,15 @@ if test -n "$QMAKE"; then
   if test "Darwin" = `uname`; then
     echo "#!/bin/sh -x" > ./qmake.sh
     echo "$QMAKE \$*" >> ./qmake.sh
-    echo -e 'MAKEFILE=`echo -- $* | grep -o "Makefile\x5BA-Z.a-z\x5D*"`' >> ./qmake.sh
+    echo 'MAKEFILE=`echo -- $* | grep -o "Makefile@<:@A-Z.a-z@:>@*"`' >> ./qmake.sh
     echo 'if test -z "$MAKEFILE"; then MAKEFILE=Makefile; fi' >> ./qmake.sh
     # echo 'echo $MAKEFILE' >> ./qmake.sh
     echo 'cat $MAKEFILE | \
       sed "s/-arch i386/OMC_ARCH_i386/g" | \
       sed "s/-arch x86_64/OMC_ARCH_x86_64/g" | \
       sed "s/-arch//g" | \
-      sed "s/OMC_ARCH_/-arch /" > Makefile.fixed && \
-      mv Makefile.fixed $MAKEFILE' >> qmake.sh
+      sed "s/OMC_ARCH_/-arch /" > $MAKEFILE.fixed && \
+      mv $MAKEFILE.fixed $MAKEFILE' >> qmake.sh
     QMAKE="sh `pwd`/qmake.sh"
   fi
   AC_MSG_RESULT([$QMAKE])
