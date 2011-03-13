@@ -1068,7 +1068,7 @@ algorithm
         (cache,guardExp,DAE.PROP(_, guardconst),st) = elabExpOptAndMatchType(cache, env_1, aguardExp, DAE.T_BOOL_DEFAULT, impl, st, doVect,pre,info); 
         const = Types.constAnd(Types.constAnd(expconst, iterconst), guardconst);
         fn_1 = Absyn.crefToPath(fn);
-        (cache,exp_1,expty,v,fn_1) = reductionType(cache, env, fn_1, exp_1, expty, Types.unboxedType(expty), fulliterty, info);
+        (cache,exp_1,expty,v,fn_1) = reductionType(cache, env, fn_1, exp_1, expty, Types.unboxedType(expty), fulliterty, Util.isSome(guardExp), info);
         prop = DAE.PROP(expty, const);
         (env_foldExp,afoldExp) = makeReductionFoldExp(env_1,fn_1,expty);
         (cache,foldExp,_,st) = elabExpOptAndMatchType(cache, env_foldExp, afoldExp, expty, impl, st, doVect,pre,info);
@@ -1139,6 +1139,7 @@ protected function reductionType
   input DAE.Type inType;
   input DAE.Type unboxedType;
   input DAE.Type rangeType;
+  input Boolean hasGuardExp;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
@@ -1146,8 +1147,9 @@ protected function reductionType
   output Option<Values.Value> defaultValue;
   output Absyn.Path outPath;
 algorithm
-  (outCache,outExp,outType,defaultValue,outPath) := match (cache, env, fn, inExp, inType, unboxedType, rangeType, info)
+  (outCache,outExp,outType,defaultValue,outPath) := match (cache, env, fn, inExp, inType, unboxedType, rangeType, hasGuardExp, info)
     local
+      Boolean b;
       Integer i;
       Real r;
       String s;
@@ -1156,110 +1158,112 @@ algorithm
       DAE.Type typeA,typeB,resType;
       Absyn.Path path;
       Values.Value v;
-    case (cache,env,Absyn.IDENT(name = "array"), _, _, _, (DAE.T_ARRAY(arrayDim = dim),_), _)
+    case (cache,env,Absyn.IDENT(name = "array"), _, _, _, (DAE.T_ARRAY(arrayDim = dim),_), b, _)
+      equation
+        dim = Util.if_(b, DAE.DIM_UNKNOWN(), dim);
       then (cache,inExp, Types.liftArray(inType, dim), SOME(Values.ARRAY({}, {0})),fn);
-    case (cache,env,Absyn.IDENT(name = "array"), _, _, _, (DAE.T_LIST(_),_), _)
+    case (cache,env,Absyn.IDENT(name = "array"), _, _, _, (DAE.T_LIST(_),_), _, _)
       then (cache,inExp, Types.liftArray(inType, DAE.DIM_UNKNOWN()), SOME(Values.ARRAY({}, {0})),fn);
-    case (cache,env,Absyn.IDENT(name = "list"), inExp, _, _, _, _)
+    case (cache,env,Absyn.IDENT(name = "list"), inExp, _, _, _, _, _)
       equation
         (inExp,inType) = Types.matchType(inExp, inType, DAE.T_BOXED_DEFAULT, true);
       then (cache,inExp,(DAE.T_LIST(inType), NONE()),SOME(Values.LIST({})),fn);
-    case (cache,env,Absyn.IDENT(name = "listReverse"), inExp, _, _, _, _)
+    case (cache,env,Absyn.IDENT(name = "listReverse"), inExp, _, _, _, _, _)
       equation
         (inExp,inType) = Types.matchType(inExp, inType, DAE.T_BOXED_DEFAULT, true);
       then (cache,inExp,(DAE.T_LIST(inType), NONE()),SOME(Values.LIST({})),fn);
-    case (cache,env,Absyn.IDENT("min"),inExp, _, (DAE.T_REAL(_),_),_,info)
+    case (cache,env,Absyn.IDENT("min"),inExp, _, (DAE.T_REAL(_),_),_,_,info)
       equation
         r = System.realMaxLit();
         v = Values.REAL(r);
         (inExp,inType) = Types.matchType(inExp, inType, DAE.T_REAL_DEFAULT, true);
       then (cache,inExp,inType,SOME(v),fn);
-    case (cache,env,Absyn.IDENT("min"),inExp,_,(DAE.T_INTEGER(_),_),_,info)
+    case (cache,env,Absyn.IDENT("min"),inExp,_,(DAE.T_INTEGER(_),_),_,_,info)
       equation
         i = System.intMaxLit();
         v = Values.INTEGER(i);
         (inExp,inType) = Types.matchType(inExp, inType, DAE.T_INTEGER_DEFAULT, true);
       then (cache,inExp,inType,SOME(v),fn);
-    case (cache,env,Absyn.IDENT("min"),inExp,_,(DAE.T_BOOL(_),_),_,info)
+    case (cache,env,Absyn.IDENT("min"),inExp,_,(DAE.T_BOOL(_),_),_,_,info)
       equation
         v = Values.BOOL(true);
         (inExp,inType) = Types.matchType(inExp, inType, DAE.T_BOOL_DEFAULT, true);
       then (cache,inExp,inType,SOME(v),fn);
-    case (cache,env,Absyn.IDENT("min"),inExp,_,(DAE.T_STRING(_),_),_,info)
+    case (cache,env,Absyn.IDENT("min"),inExp,_,(DAE.T_STRING(_),_),_,_,info)
       equation
         (inExp,inType) = Types.matchType(inExp, inType, DAE.T_STRING_DEFAULT, true);
       then (cache,inExp,inType,NONE(),fn);
 
-    case (cache,env,Absyn.IDENT("max"),inExp,_,(DAE.T_REAL(_),_),_,info)
+    case (cache,env,Absyn.IDENT("max"),inExp,_,(DAE.T_REAL(_),_),_,_,info)
       equation
         r = realNeg(System.realMaxLit());
         v = Values.REAL(r);
         (inExp,inType) = Types.matchType(inExp, inType, DAE.T_REAL_DEFAULT, true);
       then (cache,inExp,inType,SOME(v),fn);
-    case (cache,env,Absyn.IDENT("max"),inExp,_,(DAE.T_INTEGER(_),_),_,info)
+    case (cache,env,Absyn.IDENT("max"),inExp,_,(DAE.T_INTEGER(_),_),_,_,info)
       equation
         i = intNeg(System.intMaxLit());
         v = Values.INTEGER(i);
         (inExp,inType) = Types.matchType(inExp, inType, DAE.T_INTEGER_DEFAULT, true);
       then (cache,inExp,inType,SOME(v),fn);
-    case (cache,env,Absyn.IDENT("max"),inExp,_,(DAE.T_BOOL(_),_),_,info)
+    case (cache,env,Absyn.IDENT("max"),inExp,_,(DAE.T_BOOL(_),_),_,_,info)
       equation
         v = Values.BOOL(false);
         (inExp,inType) = Types.matchType(inExp, inType, DAE.T_BOOL_DEFAULT, true);
       then (cache,inExp,inType,SOME(v),fn);
-    case (cache,env,Absyn.IDENT("max"),inExp,_,(DAE.T_STRING(_),_),_,info)
+    case (cache,env,Absyn.IDENT("max"),inExp,_,(DAE.T_STRING(_),_),_,_,info)
       equation
         v = Values.STRING("");
         (inExp,inType) = Types.matchType(inExp, inType, DAE.T_STRING_DEFAULT, true);
       then (cache,inExp,inType,SOME(v),fn);
 
-    case (cache,env,Absyn.IDENT("sum"),inExp,_,(DAE.T_REAL(_),_),_,info)
+    case (cache,env,Absyn.IDENT("sum"),inExp,_,(DAE.T_REAL(_),_),_,_,info)
       equation
         v = Values.REAL(0.0);
         (inExp,inType) = Types.matchType(inExp, inType, DAE.T_REAL_DEFAULT, true);
       then (cache,inExp,inType,SOME(v),fn);
-    case (cache,env,Absyn.IDENT("sum"),inExp,_,(DAE.T_INTEGER(_),_),_,info)
+    case (cache,env,Absyn.IDENT("sum"),inExp,_,(DAE.T_INTEGER(_),_),_,_,info)
       equation
         v = Values.INTEGER(0);
         (inExp,inType) = Types.matchType(inExp, inType, DAE.T_INTEGER_DEFAULT, true);
       then (cache,inExp,inType,SOME(v),fn);
-    case (cache,env,Absyn.IDENT("sum"),inExp,_,(DAE.T_BOOL(_),_),_,info)
+    case (cache,env,Absyn.IDENT("sum"),inExp,_,(DAE.T_BOOL(_),_),_,_,info)
       equation
         v = Values.BOOL(false);
         (inExp,inType) = Types.matchType(inExp, inType, DAE.T_BOOL_DEFAULT, true);
       then (cache,inExp,inType,SOME(v),fn);
-    case (cache,env,Absyn.IDENT("sum"),inExp,_,(DAE.T_STRING(_),_),_,info)
+    case (cache,env,Absyn.IDENT("sum"),inExp,_,(DAE.T_STRING(_),_),_,_,info)
       equation
         v = Values.STRING("");
         (inExp,inType) = Types.matchType(inExp, inType, DAE.T_STRING_DEFAULT, true);
       then (cache,inExp,inType,SOME(v),fn);
-    case (cache,env,Absyn.IDENT("sum"),inExp,_,(DAE.T_ARRAY(arrayDim=_),_),_,info)
+    case (cache,env,Absyn.IDENT("sum"),inExp,_,(DAE.T_ARRAY(arrayDim=_),_),_,_,info)
       then (cache,inExp,inType,NONE(),fn);
 
-    case (cache,env,Absyn.IDENT("product"),inExp,_,(DAE.T_REAL(_),_),_,info)
+    case (cache,env,Absyn.IDENT("product"),inExp,_,(DAE.T_REAL(_),_),_,_,info)
       equation
         v = Values.REAL(1.0);
         (inExp,inType) = Types.matchType(inExp, inType, DAE.T_REAL_DEFAULT, true);
       then (cache,inExp,inType,SOME(v),fn);
-    case (cache,env,Absyn.IDENT("product"),inExp,_,(DAE.T_INTEGER(_),_),_,info)
+    case (cache,env,Absyn.IDENT("product"),inExp,_,(DAE.T_INTEGER(_),_),_,_,info)
       equation
         v = Values.INTEGER(1);
         (inExp,inType) = Types.matchType(inExp, inType, DAE.T_INTEGER_DEFAULT, true);
       then (cache,inExp,inType,SOME(v),fn);
-    case (cache,env,Absyn.IDENT("product"),inExp,_,(DAE.T_BOOL(_),_),_,info)
+    case (cache,env,Absyn.IDENT("product"),inExp,_,(DAE.T_BOOL(_),_),_,_,info)
       equation
         v = Values.BOOL(true);
         (inExp,inType) = Types.matchType(inExp, inType, DAE.T_BOOL_DEFAULT, true);
       then (cache,inExp,inType,SOME(v),fn);
-    case (cache,env,Absyn.IDENT("product"),inExp,_,(DAE.T_STRING(_),_),_,info)
+    case (cache,env,Absyn.IDENT("product"),inExp,_,(DAE.T_STRING(_),_),_,_,info)
       equation
         Error.addSourceMessage(Error.INTERNAL_ERROR, {"product reduction not defined for String"},info);
       then fail();
-    case (cache,env,Absyn.IDENT("product"),inExp,_,(DAE.T_ARRAY(arrayDim=_),_),_,info)
+    case (cache,env,Absyn.IDENT("product"),inExp,_,(DAE.T_ARRAY(arrayDim=_),_),_,_,info)
       equation
       then (cache,inExp,inType,NONE(),fn);
 
-    case (cache,env,path,inExp,_,_,_,info)
+    case (cache,env,path,inExp,_,_,_,_,info)
       equation
         (cache,fnTypes) = Lookup.lookupFunctionsInEnv(cache, env, path, info);
         (typeA,typeB,resType,path) = checkReductionType1(env,path,fnTypes,info);
