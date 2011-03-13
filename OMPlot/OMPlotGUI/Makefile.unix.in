@@ -13,9 +13,11 @@ LIB=libOMPlot
 all: build
 
 Makefile: OMPlotGUI.pro OMPlotGUI.config
+	@rm -f $@
 	$(QMAKE)
 
 Makefile.lib: Makefile OMPlotLib.pro OMPlotGUI.config
+	@rm -f $@
 	$(QMAKE) OMPlotLib.pro -o $@
 
 clean:
