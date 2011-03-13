@@ -12,10 +12,10 @@ LIB=libOMPlot
 
 all: build
 
-Makefile: OMPlotGUI.pro
+Makefile: OMPlotGUI.pro OMPlotGUI.config
 	$(QMAKE)
 
-Makefile.lib: OMPlotLib.pro
+Makefile.lib: Makefile OMPlotLib.pro OMPlotGUI.config
 	$(QMAKE) OMPlotLib.pro -o $@
 
 clean:
@@ -37,4 +37,7 @@ build: $(NAME) $(LIB)
 	cp -p ../bin/$(NAME) $(builddir_bin)
 
 Makefile.unix: Makefile.unix.in
+	cd $(top_builddir); ./config.status
+
+OMPlotGUI.config: OMPlotGUI.config.in
 	cd $(top_builddir); ./config.status
