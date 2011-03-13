@@ -318,15 +318,15 @@ AC_CHECK_PROGS(QMAKE,qmake-qt4 qmake-mac qmake,"")
 
 if test -n "$QMAKE"; then
   AC_MSG_CHECKING([for qmake arguments])
-  if test "Darwin" = `uname`; then
-    QMAKE="$QMAKE && \
-      cat Makefile | \
-      sed 's/-arch i386/OMC_ARCH_i386/g' | \
-      sed 's/-arch x86_64/OMC_ARCH_x86_64/g' | \
-      sed 's/-arch//g' | \
-      sed 's/OMC_ARCH_/-arch /' > Makefile.fixed && \
-      mv Makefile.fixed Makefile"
-  fi
+  # This workaround should no longer be needed
+  #if test "Darwin" = `uname`; then
+  #  QMAKE_POSTPROCESS="cat Makefile | \
+  #    sed 's/-arch i386/OMC_ARCH_i386/g' | \
+  #    sed 's/-arch x86_64/OMC_ARCH_x86_64/g' | \
+  #    sed 's/-arch//g' | \
+  #    sed 's/OMC_ARCH_/-arch /' > Makefile.fixed && \
+  #    mv Makefile.fixed Makefile"
+  #fi
   AC_MSG_RESULT([$QMAKE])
 fi
 
@@ -340,7 +340,7 @@ if test -n "$QMAKE"; then
     for f in {/usr,/opt,$PREFIX}/include/{qwt,qwt-qt4}/; do
       test -f "$f/qwt.h" && with_qwt="$f" || with_qwt_checked="$with_qwt_checked $f"
     done
-    echo $with_qwt_checked | grep -q -- -qt4 && with_qwt_suffix="-qt4"
+    echo $with_qwt | grep -q -- -qt4 && with_qwt_suffix="-qt4"
   fi
 
   if test x"$with_qwt" = "xno"; then
