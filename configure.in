@@ -318,15 +318,20 @@ AC_CHECK_PROGS(QMAKE,qmake-qt4 qmake-mac qmake,"")
 
 if test -n "$QMAKE"; then
   AC_MSG_CHECKING([for qmake arguments])
-  # This workaround should no longer be needed
-  #if test "Darwin" = `uname`; then
-  #  QMAKE_POSTPROCESS="cat Makefile | \
-  #    sed 's/-arch i386/OMC_ARCH_i386/g' | \
-  #    sed 's/-arch x86_64/OMC_ARCH_x86_64/g' | \
-  #    sed 's/-arch//g' | \
-  #    sed 's/OMC_ARCH_/-arch /' > Makefile.fixed && \
-  #    mv Makefile.fixed Makefile"
-  #fi
+  if test "Darwin" = `uname`; then
+    echo "#!/bin/sh -x" > ./qmake.sh
+    echo "$QMAKE \$*" >> ./qmake.sh
+    echo -e 'MAKEFILE=`echo -- $* | grep -o "Makefile\x5BA-Z.a-z\x5D*"`' >> ./qmake.sh
+    echo 'if test -z "$MAKEFILE"; then MAKEFILE=Makefile; fi' >> ./qmake.sh
+    # echo 'echo $MAKEFILE' >> ./qmake.sh
+    echo 'cat $MAKEFILE | \
+      sed "s/-arch i386/OMC_ARCH_i386/g" | \
+      sed "s/-arch x86_64/OMC_ARCH_x86_64/g" | \
+      sed "s/-arch//g" | \
+      sed "s/OMC_ARCH_/-arch /" > Makefile.fixed && \
+      mv Makefile.fixed $MAKEFILE' >> qmake.sh
+    QMAKE="sh `pwd`/qmake.sh"
+  fi
   AC_MSG_RESULT([$QMAKE])
 fi
 
