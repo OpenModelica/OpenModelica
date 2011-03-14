@@ -609,6 +609,7 @@ CPPFLAGS
 LDFLAGS
 CFLAGS
 CC
+SOURCE_REVISION
 RML_TRACE
 EXE
 QMAKE
@@ -2167,6 +2168,7 @@ ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
 
 
 
@@ -4874,6 +4876,17 @@ else
 $as_echo "Not compiling with BOOST" >&6; }; USE_MODPAR=""; BOOSTHOME=""
 
 fi
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for revision" >&5
+$as_echo_n "checking for revision... " >&6; }
+SOURCE_REVISION=""
+test -f REVISION && SOURCE_REVISION=`head -n1 REVISION | grep -o 0-9*`
+test -z "$SOURCE_REVISION" && SOURCE_REVISION=`svn info 2>&1 | grep ^Revision: | cut -d\  -f2`
+test -z "$SOURCE_REVISION" && SOURCE_REVISION="????"
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $SOURCE_REVISION" >&5
+$as_echo "$SOURCE_REVISION" >&6; }
 
 date=`date "+%Y-%m-%d %H:%M:%S"`
 

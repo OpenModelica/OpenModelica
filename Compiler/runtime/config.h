@@ -31,8 +31,6 @@
 #ifndef OPENMODELICA_CONFIG_H
 #define OPENMODELICA_CONFIG_H
 
-#define CONFIG_VERSION "1.6.0"
-
 #define DEFAULT_CC "g++"
 #define DEFAULT_CXX "g++"
 
@@ -84,5 +82,12 @@
 #include "config.unix.h"
 
 #endif
+
+#ifdef CONFIG_REVISION
+#define CONFIG_VERSION "1.7.0 (r" CONFIG_REVISION ")"
+#else
+#define CONFIG_VERSION "1.7.0"
+#endif
+
 
 #endif

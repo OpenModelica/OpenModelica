@@ -34,6 +34,7 @@ AC_SUBST(WITH_SENDDATA)
 AC_SUBST(QMAKE)
 AC_SUBST(EXE)
 AC_SUBST(RML_TRACE)
+AC_SUBST(SOURCE_REVISION)
 
 if test x"$prefix" = xNONE; then
   PREFIX=`pwd`/build
@@ -442,6 +443,15 @@ AC_ARG_WITH(BOOST, [  --with-BOOST=DIR        With BOOST library in DIR],
 ], [
 AC_MSG_RESULT([Not compiling with BOOST]); USE_MODPAR=""; BOOSTHOME=""
 ])
+
+AC_MSG_CHECKING([for revision])
+SOURCE_REVISION=""
+test -f REVISION && SOURCE_REVISION=`head -n1 REVISION | grep -o [0-9]*`
+test -z "$SOURCE_REVISION" && SOURCE_REVISION=`svn info 2>&1 | grep ^Revision: | cut -d\  -f2`
+test -z "$SOURCE_REVISION" && SOURCE_REVISION="????"
+
+AC_MSG_RESULT([$SOURCE_REVISION])
+
 date=`date "+%Y-%m-%d %H:%M:%S"`
 
 GENERATED_AUTOCONF_FILES="Makefile c_runtime/Makefile mosh/src/Makefile \
