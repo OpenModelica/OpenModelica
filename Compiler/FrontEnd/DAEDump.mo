@@ -495,7 +495,7 @@ algorithm
       DAE.Exp exp,dim;
       DAE.Attributes attr;
     case DAE.NOEXTARG() then "void";
-    case DAE.EXTARG(componentRef = cr,attributes = DAE.ATTR(flowPrefix = fl,streamPrefix=st,accessibility = acc,parameter_ = var,direction = dir),type_ = ty)
+    case DAE.EXTARG(componentRef = cr,attributes = DAE.ATTR(flowPrefix = fl,streamPrefix=st,accessibility = acc,variability = var,direction = dir),type_ = ty)
       equation
         crstr = ComponentReference.printComponentRefStr(cr);
         dirstr = Dump.directionSymbol(dir);
@@ -1400,24 +1400,30 @@ algorithm
     case((DAE.T_COMPLEX(complexVarLst={}),_)) then "";
 
     // protected vars are not input!, see Modelica Spec 3.2, Section 12.6, Record Constructor Functions, page 140
-    case((DAE.T_COMPLEX(cistate,DAE.TYPES_VAR(name=name,protected_=true,type_=tp,binding=binding)::varLst,optTp,ec),optPath)) equation
-      s1 ="protected "+&Types.unparseType(tp)+&" "+&name+&printRecordConstructorBinding(binding)+&";\n";
-      s2 = printRecordConstructorInputsStr((DAE.T_COMPLEX(cistate,varLst,optTp,ec),optPath));
-      str = s1+&s2;
-    then str;
+    case((DAE.T_COMPLEX(cistate,DAE.TYPES_VAR(name=name,protected_=true,type_=tp,binding=binding)::varLst,optTp,ec),optPath)) 
+      equation
+        s1 ="protected "+&Types.unparseType(tp)+&" "+&name+&printRecordConstructorBinding(binding)+&";\n";
+        s2 = printRecordConstructorInputsStr((DAE.T_COMPLEX(cistate,varLst,optTp,ec),optPath));
+        str = s1+&s2;
+      then 
+        str;
 
     // constants are not input! see Modelica Spec 3.2, Section 12.6, Record Constructor Functions, page 140
-    case((DAE.T_COMPLEX(cistate,DAE.TYPES_VAR(name=name,attributes=DAE.ATTR(parameter_=SCode.CONST()),type_=tp,binding=binding)::varLst,optTp,ec),optPath)) equation
-      s1 ="constant "+&Types.unparseType(tp)+&" "+&name+&printRecordConstructorBinding(binding)+&";\n";
-      s2 = printRecordConstructorInputsStr((DAE.T_COMPLEX(cistate,varLst,optTp,ec),optPath));
-      str = s1+&s2;
-    then str;
+    case((DAE.T_COMPLEX(cistate,DAE.TYPES_VAR(name=name,attributes=DAE.ATTR(variability=SCode.CONST()),type_=tp,binding=binding)::varLst,optTp,ec),optPath)) 
+      equation
+        s1 ="constant "+&Types.unparseType(tp)+&" "+&name+&printRecordConstructorBinding(binding)+&";\n";
+        s2 = printRecordConstructorInputsStr((DAE.T_COMPLEX(cistate,varLst,optTp,ec),optPath));
+        str = s1+&s2;
+      then 
+        str;
 
-    case((DAE.T_COMPLEX(cistate,DAE.TYPES_VAR(name=name,type_=tp,binding=binding)::varLst,optTp,ec),optPath)) equation
-      s1 ="input "+&Types.unparseType(tp)+&" "+&name+&printRecordConstructorBinding(binding)+&";\n";
-      s2 = printRecordConstructorInputsStr((DAE.T_COMPLEX(cistate,varLst,optTp,ec),optPath));
-      str = s1+&s2;
-    then str;
+    case((DAE.T_COMPLEX(cistate,DAE.TYPES_VAR(name=name,type_=tp,binding=binding)::varLst,optTp,ec),optPath)) 
+      equation
+        s1 ="input "+&Types.unparseType(tp)+&" "+&name+&printRecordConstructorBinding(binding)+&";\n";
+        s2 = printRecordConstructorInputsStr((DAE.T_COMPLEX(cistate,varLst,optTp,ec),optPath));
+        str = s1+&s2;
+      then 
+        str;
 
     case((DAE.T_FUNCTION(funcResultType=tp),_)) then printRecordConstructorInputsStr(tp);
   end matchcontinue;

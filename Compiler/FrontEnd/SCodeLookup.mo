@@ -282,7 +282,7 @@ algorithm
         info = info) :: _, inEnv)
       equation
         // Find the base class.
-        (item, _, SOME(env)) = lookupBaseClassName(bc, inEnv, info);
+        (item, _, env) = lookupBaseClassName(bc, inEnv, info);
         // Hide the imports to make sure that we don't find the name via them
         // (imports are not inherited).
         item = SCodeEnv.setImportsInItemHidden(item, true);
@@ -692,7 +692,7 @@ public function lookupName
   input Option<Error.ErrorID> inErrorType;
   output Item outItem;
   output Absyn.Path outName;
-  output Option<Env> outEnv;
+  output Env outEnv;
 algorithm
   (outItem, outName, outEnv) := 
   matchcontinue(inName, inEnv, inInfo, inErrorType)
@@ -710,21 +710,21 @@ algorithm
       equation
         item = lookupBuiltinType(id);
       then
-        (item, inName, SOME(SCodeEnv.emptyEnv));
+        (item, inName, SCodeEnv.emptyEnv);
 
     // A builtin type with qualified path, i.e. StateSelect.something.
     case (Absyn.QUALIFIED(name = id), _, _, _)
       equation
         item = lookupBuiltinType(id);
       then
-        (item, inName, SOME(SCodeEnv.emptyEnv));
+        (item, inName, SCodeEnv.emptyEnv);
 
     // Simple name.
     case (Absyn.IDENT(name = id), _, _, _)
       equation
         (item, new_path, env) = lookupSimpleName(id, inEnv);
       then
-        (item, new_path, SOME(env));
+        (item, new_path, env);
         
     // Qualified name.
     case (Absyn.QUALIFIED(name = id, path = path), _, _, _)
@@ -736,7 +736,7 @@ algorithm
         (item, path, env) = lookupNameInItem(path, item, env);
         path = SCodeEnv.joinPaths(new_path, path);
       then
-        (item, path, SOME(env));
+        (item, path, env);
       
     case (_, _, _, SOME(error_id))
       equation
@@ -756,7 +756,7 @@ public function lookupClassName
   input Absyn.Info inInfo;
   output Item outItem;
   output Absyn.Path outName;
-  output Option<Env> outEnv;
+  output Env outEnv;
 algorithm
   (outItem, outName, outEnv) := lookupName(inName, inEnv, inInfo,
     SOME(Error.LOOKUP_ERROR));
@@ -769,7 +769,7 @@ public function lookupBaseClassName
   input Absyn.Info inInfo;
   output Item outItem;
   output Absyn.Path outName;
-  output Option<Env> outEnv;
+  output Env outEnv;
 algorithm
   (outItem, outName, outEnv) := lookupName(inName, inEnv, inInfo,
     SOME(Error.LOOKUP_BASECLASS_ERROR));
@@ -782,7 +782,7 @@ public function lookupVariableName
   input Absyn.Info inInfo;
   output Item outItem;
   output Absyn.Path outName;
-  output Option<Env> outEnv;
+  output Env outEnv;
 algorithm
   (outItem, outName, outEnv) := lookupName(inName, inEnv, inInfo,
     SOME(Error.LOOKUP_VARIABLE_ERROR));
@@ -910,7 +910,7 @@ algorithm
     // A normal type.
     case (Absyn.TPATH(path = path), _, _)
       equation
-        (item, _, SOME(env)) = lookupClassName(path, inEnv, inInfo);
+        (item, _, env) = lookupClassName(path, inEnv, inInfo);
       then
         (item, env);
 

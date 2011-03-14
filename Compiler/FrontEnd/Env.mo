@@ -1128,7 +1128,8 @@ algorithm
       Integer len;
       list<tuple<DAE.TType, Option<Absyn.Path>>> lst;
       Absyn.Import imp;
-    case ((n,VAR(instantiated = (tv as DAE.TYPES_VAR(attributes = DAE.ATTR(parameter_ = var),type_ = tp,binding = bind)),declaration = SOME((elt,_)),instStatus = i,env = (compframe :: _))))
+
+    case ((n,VAR(instantiated = (tv as DAE.TYPES_VAR(attributes = DAE.ATTR(variability = var),type_ = tp,binding = bind)),declaration = SOME((elt,_)),instStatus = i,env = (compframe :: _))))
       equation
         s = SCode.variabilityString(var);
         elt_str = SCode.printElementStr(elt);
@@ -1141,7 +1142,8 @@ algorithm
           "}, binding:",bind_str});
       then
         res;
-    case ((n,VAR(instantiated = (tv as DAE.TYPES_VAR(attributes = DAE.ATTR(parameter_ = var),type_ = tp)),declaration = SOME((elt,_)),instStatus = i,env = {})))
+
+    case ((n,VAR(instantiated = (tv as DAE.TYPES_VAR(attributes = DAE.ATTR(variability = var),type_ = tp)),declaration = SOME((elt,_)),instStatus = i,env = {})))
       equation
         s = SCode.variabilityString(var);
         elt_str = SCode.printElementStr(elt);
@@ -1152,16 +1154,19 @@ algorithm
           "}, compframe: []"});
       then
         res;
+
     case ((n,VAR(instantiated = DAE.TYPES_VAR(binding = bnd),declaration = NONE(),instStatus = i,env = env)))
       equation
         res = stringAppendList({"v:",n,"\n"});
       then
         res;
+
     case ((n,CLASS(class_ = _)))
       equation
         res = stringAppendList({"c:",n,"\n"});
       then
         res;
+        
     case ((n,TYPE(list_ = lst)))
       equation
         len = listLength(lst);
@@ -1169,6 +1174,7 @@ algorithm
         res = stringAppendList({"t:",n," (",lenstr,")\n"});
       then
         res;
+
     case ((n,IMPORT(import_ = imp)))
       equation
         s = Dump.unparseImportStr(imp);
@@ -1618,28 +1624,28 @@ algorithm
       Boolean flowPrefix "flow";
       Boolean streamPrefix "stream";
       SCode.Accessibility accessibility "accessibility";
-      SCode.Variability parameter_ "parameter";
+      SCode.Variability variability "variability";
       Absyn.Direction direction "direction";
       Absyn.InnerOuter innerOuter "inner, outer,  inner outer or unspecified";      
       
-    case(VAR(instantiated=DAE.TYPES_VAR(name=name,attributes=DAE.ATTR(flowPrefix, streamPrefix, accessibility, parameter_, direction, innerOuter),type_=tp))) 
+    case(VAR(instantiated=DAE.TYPES_VAR(name=name,attributes=DAE.ATTR(flowPrefix, streamPrefix, accessibility, variability, direction, innerOuter),type_=tp))) 
       equation
         str = "var:    " +& name +& " " +& Types.unparseType(tp) +& "("
         +& Types.printTypeStr(tp) +& ")" +& " attr: " +& 
         Util.if_(flowPrefix,"flow", "") +& ", " +&
         Util.if_(streamPrefix,"stream", "") +& ", " +&
         SCode.accessibilityString(accessibility) +& ", " +&
-        SCode.variabilityString(parameter_) +& ", " +&
+        SCode.variabilityString(variability) +& ", " +&
         SCode.innerouterString(innerOuter);
       then str;
     
-    case(VAR(declaration = SOME((SCode.COMPONENT(component=name,typeSpec=tsp,innerOuter=innerOuter,attributes=SCode.ATTR(_, flowPrefix, streamPrefix, accessibility, parameter_, direction)), _)))) 
+    case(VAR(declaration = SOME((SCode.COMPONENT(component=name,typeSpec=tsp,innerOuter=innerOuter,attributes=SCode.ATTR(_, flowPrefix, streamPrefix, accessibility, variability, direction)), _)))) 
       equation
         str = "var:    " +& name +& " " +& Dump.unparseTypeSpec(tsp) +& " attr: " +& 
         Util.if_(flowPrefix,"flow", "") +& ", " +&
         Util.if_(streamPrefix,"stream", "") +& ", " +&
         SCode.accessibilityString(accessibility) +& ", " +&
-        SCode.variabilityString(parameter_) +& ", " +&
+        SCode.variabilityString(variability) +& ", " +&
         SCode.innerouterString(innerOuter);            
       then str;
     

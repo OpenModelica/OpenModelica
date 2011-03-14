@@ -2605,7 +2605,7 @@ algorithm
     // A potential variable.
     case ((v as DAE.TYPES_VAR(attributes = DAE.ATTR(
         direction = Absyn.BIDIR(),
-        parameter_ = SCode.VAR()))) :: rest)
+        variability = SCode.VAR()))) :: rest)
       equation
         n = sizeOfVariable(v);
         (p, f, s) = countConnectorVars(rest);

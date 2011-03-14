@@ -2633,7 +2633,7 @@ algorithm
       Type typ;
       Binding bind;
       String s1,s2;
-    case DAE.TYPES_VAR(name = n,attributes = DAE.ATTR(parameter_ = var),protected_ = prot,type_ = typ,binding = bind)
+    case DAE.TYPES_VAR(name = n,attributes = DAE.ATTR(variability = var),protected_ = prot,type_ = typ,binding = bind)
       equation
         s1 = printTypeStr(typ);
         vs = SCode.variabilityString(var);
@@ -2641,9 +2641,9 @@ algorithm
         str = stringAppendList({s1," ",n," ",vs," ",s2});
       then
         str;
-   case DAE.TYPES_VAR(name = n,attributes = DAE.ATTR(parameter_ = var),protected_ = prot,type_ = typ,binding = bind)
+    case DAE.TYPES_VAR(name = n,attributes = DAE.ATTR(variability = var),protected_ = prot,type_ = typ,binding = bind)
       equation
-      str = stringAppendList({n});
+        str = stringAppendList({n});
       then
         str;
   end matchcontinue;
@@ -3160,20 +3160,8 @@ public function isParameter "function: isParameter
 "
   input Var inVar;
 algorithm
-  _:=
-  matchcontinue (inVar)
-    local
-      Ident n;
-      Boolean fl,st;
-      SCode.Accessibility ac;
-      Absyn.Direction dir;
-      Type ty;
-      Binding bnd;
-    case DAE.TYPES_VAR(name = n,
-             attributes = DAE.ATTR(flowPrefix = fl,streamPrefix=st,accessibility = ac,parameter_ = SCode.PARAM(),direction = dir),
-             protected_ = false,type_ = ty,binding = bnd)
-    then ();  /* LS: false means not protected, hence we ignore protected variables */
-  end matchcontinue;
+  DAE.TYPES_VAR(attributes = DAE.ATTR(variability = SCode.PARAM()), 
+    protected_ = false) := inVar;
 end isParameter;
 
 public function isConstant 

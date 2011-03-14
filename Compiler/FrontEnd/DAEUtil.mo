@@ -5284,6 +5284,21 @@ algorithm
   end matchcontinue;
 end addDaeExtFunction;
 
+public function setAttrVariability
+  "Sets the variability attribute in an Attributes record."
+  input DAE.Attributes inAttr;
+  input SCode.Variability inVar;
+  output DAE.Attributes outAttr;
+protected
+  Boolean fp, sp;
+  SCode.Accessibility acc;
+  Absyn.Direction dir;
+  Absyn.InnerOuter io;
+algorithm
+  DAE.ATTR(fp, sp, acc, _, dir, io) := inAttr;
+  outAttr := DAE.ATTR(fp, sp, acc, inVar, dir, io);
+end setAttrVariability;
+
 end DAEUtil;
 
 /* adrpo: 2010-10-04 never used by OpenModelica!

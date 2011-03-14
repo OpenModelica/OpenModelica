@@ -203,7 +203,7 @@ protected
   Absyn.Path path;
   Env env;
 algorithm
-  (_, path, SOME(env)) := SCodeLookup.lookupClassName(inPath, inEnv, inInfo);
+  (_, path, env) := SCodeLookup.lookupClassName(inPath, inEnv, inInfo);
   outPath := mergePathWithEnvPath(path, env);
 end qualifyPath;
 
@@ -1112,7 +1112,7 @@ algorithm
     case (SCode.CLASSDEF(name = name, classDef = 
         cls as SCode.CLASS(info = info)), _)
       equation
-        (_, path, SOME(env)) = 
+        (_, path, env) = 
           SCodeLookup.lookupClassName(Absyn.IDENT(name), inEnv, info);
         path = joinPaths(getEnvPath(env), path);
         env = replaceElementInEnv(path, inRedeclare, inEnv);
@@ -1122,7 +1122,7 @@ algorithm
     // A redeclared component.
     case (SCode.COMPONENT(component = name, info = info), _)
       equation
-        (_, path, SOME(env)) = 
+        (_, path, env) = 
           SCodeLookup.lookupVariableName(Absyn.IDENT(name), inEnv, info);
         path = joinPaths(getEnvPath(env), path);
         env = replaceElementInEnv(path, inRedeclare, inEnv);

@@ -81,7 +81,7 @@ protected function analyseClass
   input Absyn.Info inInfo;
 protected
   Item item;
-  Option<Env> env;
+  Env env;
 algorithm
   (item, env) := lookupClass(inClassName, inEnv, inInfo, true);
   checkItemIsClass(item);
@@ -97,19 +97,19 @@ protected function lookupClass
   input Absyn.Info inInfo;
   input Boolean inPrintError;
   output Item outItem;
-  output Option<Env> outEnv;
+  output Env outEnv;
 algorithm
   (outItem, outEnv) := matchcontinue(inPath, inEnv, inInfo, inPrintError)
     local
       Item item;
-      Option<Env> opt_env;
+      Env env;
       String name_str, env_str;
 
     case (_, _, _, _)
       equation
-        (item, opt_env) = lookupClass2(inPath, inEnv, inInfo, inPrintError);
+        (item, env) = lookupClass2(inPath, inEnv, inInfo, inPrintError);
       then
-        (item, opt_env);
+        (item, env);
 
     case (_, _, _, true)
       equation
@@ -128,32 +128,31 @@ protected function lookupClass2
   input Absyn.Info inInfo;
   input Boolean inPrintError;
   output Item outItem;
-  output Option<Env> outEnv;
+  output Env outEnv;
 algorithm
   (outItem, outEnv) := match(inPath, inEnv, inInfo, inPrintError)
     local
       Item item;
       Env env;
-      Option<Env> opt_env;
       String id;
       Absyn.Path rest_path;
       SCodeEnv.Frame frame;
 
     case (Absyn.IDENT(name = _), _, _, _)
       equation
-        (item, _, opt_env) = 
+        (item, _, env) = 
           SCodeLookup.lookupName(inPath, inEnv, inInfo, NONE());
       then
-        (item, opt_env);
+        (item, env);
 
     case (Absyn.QUALIFIED(name = id, path = rest_path), _, _, _)
       equation
-        (item, _, SOME(env)) = 
+        (item, _, env) = 
           SCodeLookup.lookupName(Absyn.IDENT(id), inEnv, inInfo, NONE());
-        analyseItem(item, SOME(env));
-        (item, opt_env) = lookupNameInItem(rest_path, item, env, inPrintError);
+        analyseItem(item, env);
+        (item, env) = lookupNameInItem(rest_path, item, env, inPrintError);
       then  
-        (item, opt_env);
+        (item, env);
   end match;
 end lookupClass2;
 
@@ -163,40 +162,39 @@ protected function lookupNameInItem
   input Env inEnv;
   input Boolean inPrintError;
   output Item outItem;
-  output Option<Env> outEnv;
+  output Env outEnv;
 algorithm
   (outItem, outEnv) := match(inName, inItem, inEnv, inPrintError)
     local
       Absyn.Path type_path;
       SCode.Mod mods;
       Absyn.Info info;
-      Env type_env;
-      Option<Env> opt_env;
+      Env env, type_env;
       SCodeEnv.Frame class_env;
       list<SCode.Element> redeclares;
       Item item;
 
-    case (_, _, {}, _) then (inItem, SOME(inEnv));
+    case (_, _, {}, _) then (inItem, inEnv);
 
     case (_, SCodeEnv.VAR(var = SCode.COMPONENT(typeSpec = 
       Absyn.TPATH(path = type_path), modifications = mods, info = info)), _, _)
       equation
-        (item, SOME(type_env)) = lookupClass(type_path, inEnv, info,
+        (item, type_env) = lookupClass(type_path, inEnv, info,
           inPrintError);
         redeclares = SCodeEnv.extractRedeclaresFromModifier(mods);
         (item, type_env) =
           SCodeEnv.replaceRedeclaredClassesInEnv(redeclares, item, type_env, inEnv);
-        (item, opt_env) = lookupNameInItem(inName, item, type_env, inPrintError);
+        (item, env) = lookupNameInItem(inName, item, type_env, inPrintError);
       then
-        (item, opt_env);
+        (item, env);
 
     case (_, SCodeEnv.CLASS(cls = SCode.CLASS(info = info), env = {class_env}), 
         _, _)
       equation
-        (item, opt_env) = lookupClass(inName, class_env :: inEnv, info,
+        (item, env) = lookupClass(inName, class_env :: inEnv, info,
           inPrintError);
       then
-        (item, opt_env);
+        (item, env);
 
   end match;
 end lookupNameInItem;
@@ -226,7 +224,7 @@ end checkItemIsClass;
 protected function analyseItem
   "Analyses an item."
   input Item inItem;
-  input Option<Env> inEnv;
+  input Env inEnv;
 algorithm
   _ := matchcontinue(inItem, inEnv)
     local
@@ -245,7 +243,7 @@ algorithm
         ();
 
     // A component, mark it and it's environment as used.
-    case (SCodeEnv.VAR(var = _), SOME(env))
+    case (SCodeEnv.VAR(var = _), env)
       equation
         markItemAsUsed(inItem, env);
       then
@@ -258,7 +256,7 @@ algorithm
     // A normal class, mark it and it's environment as used, and recursively
     // analyse it's contents.
     case (SCodeEnv.CLASS(cls = SCode.CLASS(classDef = cdef, restriction = res,
-        info = info), env = {cls_env}), SOME(env))
+        info = info), env = {cls_env}), env)
       equation
         markItemAsUsed(inItem, env);
         env = cls_env :: env;
@@ -409,7 +407,7 @@ algorithm
         annotationLst = annl, comment = cmt), _, _, _)
       equation
         analyseClass(Absyn.IDENT(bc), inEnv, inInfo);
-        (ty_item, _, SOME(ty_env)) =
+        (ty_item, _, ty_env) =
           SCodeLookup.lookupBaseClassName(Absyn.IDENT(bc), inEnv, inInfo);
         ty_env = SCodeEnv.mergeItemEnv(ty_item, ty_env);
         analyseModifier(mods, inEnv, ty_env, inInfo);
@@ -643,7 +641,7 @@ algorithm
       equation
         true = checkNotExtendsDependent(bc, inEnv, info);
         analyseExtends(bc, inEnv, info);
-        (ty_item, _, SOME(ty_env)) = 
+        (ty_item, _, ty_env) = 
           SCodeLookup.lookupBaseClassName(bc, inEnv, info);
         ty_env = SCodeEnv.mergeItemEnv(ty_item, ty_env);
         analyseModifier(mods, inEnv, ty_env, info);
@@ -753,7 +751,7 @@ protected function analyseExtends
   input Absyn.Info inInfo;
 protected
   Item item;
-  Option<Env> env;
+  Env env;
 algorithm
   (item, _, env) := SCodeLookup.lookupBaseClassName(inClassName, inEnv, inInfo);
   analyseItem(item, env);
@@ -858,15 +856,14 @@ algorithm
       SCode.Ident ident;
       SCode.Mod m;
       list<SCode.Subscript> subs;
-      Env env, ty_env;
+      Env env, env2, ty_env;
       Item item;
-      Option<Env> opt_env;
 
     case (SCode.NAMEMOD(ident = ident, A = m), (env, ty_env), _)
       equation
-        (item, _, opt_env) = SCodeLookup.lookupName(Absyn.IDENT(ident),
+        (item, _, env2) = SCodeLookup.lookupName(Absyn.IDENT(ident),
           ty_env, inInfo, NONE());
-        analyseItem(item, opt_env);
+        analyseItem(item, env2);
         analyseModifier(m, env, ty_env, inInfo);
       then
         ();
@@ -1062,11 +1059,11 @@ protected function analyseAnnotationName
   input Absyn.Info inInfo;
 protected
   Item item;
-  Option<Env> opt_env;
+  Env env;
 algorithm
-  (item, _, opt_env) := 
+  (item, _, env) := 
     SCodeLookup.lookupName(Absyn.IDENT(inName), inEnv, inInfo, NONE());
-  analyseItem(item, opt_env);
+  analyseItem(item, env);
 end analyseAnnotationName;
 
 protected function analyseExp
@@ -1171,7 +1168,7 @@ algorithm
     local
       Absyn.Path path;
       Item item;
-      Option<Env> opt_env;
+      Env env;
 
     case (Absyn.WILD(), _, _) then ();
       
@@ -1180,8 +1177,8 @@ algorithm
         // We want to use lookupName since we need the item and environment, and
         // we don't care about any subscripts, so convert the cref to a path.
         path = Absyn.crefToPathIgnoreSubs(inCref);
-        (item, opt_env) = lookupClass(path, inEnv, inInfo, false);
-        analyseItem(item, opt_env);
+        (item, env) = lookupClass(path, inEnv, inInfo, false);
+        analyseItem(item, env);
       then
         ();
 

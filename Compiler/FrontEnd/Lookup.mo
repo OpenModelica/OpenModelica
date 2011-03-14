@@ -60,6 +60,7 @@ protected import Builtin;
 protected import ComponentReference;
 protected import Connect;
 protected import ConnectionGraph;
+protected import DAEUtil;
 protected import Debug;
 protected import Error;
 protected import Expression;
@@ -1046,7 +1047,7 @@ algorithm
       String s1,s2;
     
     // do not fail if is a constant
-    case (_,DAE.ATTR(parameter_= SCode.CONST()),_,_) then ();
+    case (_,DAE.ATTR(variability= SCode.CONST()),_,_) then ();
     
     // fail if is not a constant
     case (env,attr,tp,cref)
@@ -1167,7 +1168,7 @@ algorithm
       SCode.Restriction r;
       list<Env.Frame> env2,env3,env5,env,fs,p_env,prevFrames, classEnv, componentEnv;
       ClassInf.State ci_state;
-      DAE.Attributes attr;
+      DAE.Attributes attr, attr2;
       DAE.Type ty;
       DAE.Binding bind;
       DAE.ComponentRef cref,cr;
@@ -1180,6 +1181,7 @@ algorithm
       Absyn.Path path,scope;
       Option<DAE.ComponentRef> filterCref;
       Boolean unique;
+      DAE.ExpType ety;
 
       // If we search for A1.A2....An.x while in scope A1.A2...An, just search for x. 
       // Must do like this to ensure finite recursion 
@@ -1233,6 +1235,18 @@ algorithm
       then
         (cache,env,attr,ty,bind,cnstForRange,splicedExpData,componentEnv,name);
 
+    // Lookup where the first identifier is a component.
+    case (cache, env, cr as DAE.CREF_QUAL(ident = id, identType = ety, 
+        subscriptLst = {}, componentRef = cref), _, _)
+      equation
+        (cache, attr, ty, bind, cnstForRange, splicedExpData, classEnv,
+         componentEnv, name) = lookupVarLocal(cache, env, DAE.CREF_IDENT(id, ety, {}));
+        (cache, attr2, ty, bind, cnstForRange, splicedExpData, classEnv,
+         componentEnv, name) = lookupVarLocal(cache, componentEnv, cref);
+        attr = propagateVariability(attr2, attr);
+      then
+        (cache, env, attr, ty, bind, cnstForRange, splicedExpData, componentEnv, name);
+
     // Search among qualified imports, e.g. import A.B; or import D=A.B; 
     case (cache,(env as (Env.FRAME(optName = sid,imports = items) :: _)),DAE.CREF_IDENT(ident = id,subscriptLst = sb),prevFrames,inState)
       equation
@@ -1268,6 +1282,19 @@ algorithm
         fail(); 
   end matchcontinue;
 end lookupVarInPackages;
+
+protected function propagateVariability
+  input DAE.Attributes inComponentAttr;
+  input DAE.Attributes inStructureAttr;
+  output DAE.Attributes outAttr;
+protected
+  SCode.Variability var1, var2; 
+algorithm
+  DAE.ATTR(variability = var1) := inComponentAttr;
+  DAE.ATTR(variability = var2) := inStructureAttr;
+  outAttr := DAEUtil.setAttrVariability(inComponentAttr, 
+    SCode.variabilityOr(var1, var2));
+end propagateVariability;
 
 protected function makeOptIdentOrNone "
 Author: BZ, 2009-04

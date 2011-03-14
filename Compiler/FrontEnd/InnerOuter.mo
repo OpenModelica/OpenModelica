@@ -896,7 +896,7 @@ algorithm
     // if it was not added, add it (first component found: cr1)
     case(cache,env,ih,pre,setLst,false,cr1,io1,f1,cr2,io2,f2,info)
       equation
-        (cache,DAE.ATTR(flowPrefix=flowPrefix,streamPrefix=streamPrefix,parameter_=vt1),t1,_,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr1);
+        (cache,DAE.ATTR(flowPrefix=flowPrefix,streamPrefix=streamPrefix,variability=vt1),t1,_,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr1);
         pre = Prefix.NOPRE();
         t2 = t1;
         vt2 = vt1;
@@ -913,7 +913,7 @@ algorithm
     case(cache,env,ih,pre,setLst,false,cr1,io1,f1,cr2,io2,f2,info)
       equation
         pre = Prefix.NOPRE();
-        (cache,DAE.ATTR(flowPrefix=flowPrefix,streamPrefix=streamPrefix,parameter_=vt2),t2,_,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr2);
+        (cache,DAE.ATTR(flowPrefix=flowPrefix,streamPrefix=streamPrefix,variability=vt2),t2,_,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr2);
         t1 = t2;
         vt1 = vt2;
         io1 = removeOuter(io1);
@@ -1543,23 +1543,23 @@ algorithm
       Boolean flowPrefix "flow" ;
       Boolean streamPrefix "stream" ;
       SCode.Accessibility accessibility "accessibility" ;
-      SCode.Variability parameter_ "parameter" ;
+      SCode.Variability variability "variability" ;
       Absyn.Direction direction "direction" ;
       Option<DAE.Const> cnstForRange;
     
     // inner
     case (Env.VAR(DAE.TYPES_VAR(name, attributes, protected_, type_, binding, cnstForRange), declaration, instStatus, env), cr)
       equation
-        DAE.ATTR(flowPrefix, streamPrefix, accessibility, parameter_, direction, Absyn.INNER()) = attributes;
-        attributes = DAE.ATTR(flowPrefix, streamPrefix, accessibility, parameter_, direction, Absyn.OUTER());
+        DAE.ATTR(flowPrefix, streamPrefix, accessibility, variability, direction, Absyn.INNER()) = attributes;
+        attributes = DAE.ATTR(flowPrefix, streamPrefix, accessibility, variability, direction, Absyn.OUTER());
         // env = switchInnerToOuterInEnv(env, inCr);
       then Env.VAR(DAE.TYPES_VAR(name, attributes, protected_, type_, binding, cnstForRange), declaration, instStatus, env);
     
     // inner outer
     case (Env.VAR(DAE.TYPES_VAR(name, attributes, protected_, type_, binding, cnstForRange), declaration, instStatus, env), cr)
       equation
-        DAE.ATTR(flowPrefix, streamPrefix, accessibility, parameter_, direction, Absyn.INNEROUTER()) = attributes;
-        attributes = DAE.ATTR(flowPrefix, streamPrefix, accessibility, parameter_, direction, Absyn.OUTER());
+        DAE.ATTR(flowPrefix, streamPrefix, accessibility, variability, direction, Absyn.INNEROUTER()) = attributes;
+        attributes = DAE.ATTR(flowPrefix, streamPrefix, accessibility, variability, direction, Absyn.OUTER());
         // env = switchInnerToOuterInEnv(env, inCr);
       then Env.VAR(DAE.TYPES_VAR(name, attributes, protected_, type_, binding, cnstForRange), declaration, instStatus, env);
 

@@ -4228,7 +4228,7 @@ algorithm
       Connect.Face f1,f2;
       String n;
       DAE.Attributes attr1,attr2;
-      Boolean flow1,flow2,stream1,stream2;
+      Boolean flow1,flow2,stream1;
       tuple<DAE.TType, Option<Absyn.Path>> ty1,ty2;
       list<DAE.Var> xs1,xs2;
       SCode.Variability vta,vtb;
@@ -4239,8 +4239,9 @@ algorithm
 
     case (cache,env,ih,sets,_,_,{},vt1,_,_,{},vt2,io1,io2,graph,info)
       then (cache,env,ih,sets,DAEUtil.emptyDae,graph);
-    case (cache,env,ih,sets,c1,f1,(DAE.TYPES_VAR(name = n,attributes = (attr1 as DAE.ATTR(flowPrefix = flow1,streamPrefix = stream1,parameter_ = vta)),type_ = ty1) :: xs1),vt1,
-                         c2,f2,(DAE.TYPES_VAR(attributes = (attr2 as DAE.ATTR(flowPrefix = flow2,streamPrefix=stream2,parameter_ = vtb)),type_ = ty2) :: xs2),vt2,io1,io2,graph,info)
+    case (cache,env,ih,sets,c1,f1,
+        (DAE.TYPES_VAR(name = n,attributes =(attr1 as DAE.ATTR(flowPrefix = flow1, streamPrefix = stream1,variability = vta)),type_ = ty1) :: xs1),vt1,c2,f2,
+        (DAE.TYPES_VAR(attributes = (attr2 as DAE.ATTR(variability = vtb)),type_ = ty2) :: xs2),vt2,io1,io2,graph,info)
       equation
         ty_2 = Types.elabType(ty1);
         c1_1 = ComponentReference.crefPrependIdent(c1, n, {}, ty_2);

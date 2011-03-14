@@ -598,7 +598,7 @@ uniontype Attributes "- Attributes"
     Boolean flowPrefix "flow" ;
     Boolean streamPrefix "stream" ;
     SCode.Accessibility accessibility "accessibility" ;
-    SCode.Variability parameter_ "parameter" ;
+    SCode.Variability variability "variability" ;
     Absyn.Direction direction "direction" ;
     Absyn.InnerOuter innerOuter "inner, outer,  inner outer or unspecified";
   end ATTR;
