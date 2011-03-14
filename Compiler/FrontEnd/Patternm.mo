@@ -358,9 +358,11 @@ algorithm
         fieldTypeList = Util.listMap(fieldVarList, Types.getVarType);
         fieldNameList = Util.listMap(fieldVarList, Types.getVarName);
         
+        (funcArgs,namedArgList) = checkForAllWildCall(funcArgs,namedArgList,listLength(fieldNameList));
+
         numPosArgs = listLength(funcArgs);
         (_,fieldNamesNamed) = Util.listSplit(fieldNameList, numPosArgs);
-
+        
         (funcArgsNamedFixed,invalidArgs) = generatePositionalArgs(fieldNamesNamed,namedArgList,{});
         funcArgs = listAppend(funcArgs,funcArgsNamedFixed);
         Util.SUCCESS() = checkInvalidPatternNamedArgs(invalidArgs,Util.SUCCESS(),info);
@@ -373,6 +375,8 @@ algorithm
 
         fieldTypeList = Util.listMap(fieldVarList, Types.getVarType);
         fieldNameList = Util.listMap(fieldVarList, Types.getVarName);
+        
+        (funcArgs,namedArgList) = checkForAllWildCall(funcArgs,namedArgList,listLength(fieldNameList));
         
         numPosArgs = listLength(funcArgs);
         (_,fieldNamesNamed) = Util.listSplit(fieldNameList, numPosArgs);
@@ -392,6 +396,20 @@ algorithm
       then fail();
   end matchcontinue;
 end elabPatternCall;
+
+protected function checkForAllWildCall "Converts a call REC(__) to REC(_,_,_,_)"
+  input list<Absyn.Exp> args;
+  input list<Absyn.NamedArg> named;
+  input Integer numFields;
+  output list<Absyn.Exp> outArgs;
+  output list<Absyn.NamedArg> outNamed;
+algorithm
+  (outArgs,outNamed) := match (args,named,numFields)
+    case ({Absyn.CREF(Absyn.ALLWILD())},{},numFields)
+      then (Util.listFill(Absyn.CREF(Absyn.WILD()),numFields),{});
+    else (args,named);
+  end match;
+end checkForAllWildCall;
 
 protected function validPatternType
   input DAE.Type ty1;

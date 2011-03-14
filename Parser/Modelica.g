@@ -194,10 +194,19 @@ class_specifier2 returns [void* ast, const char *s2] @init {
   $s2 = 0;
 } :
 ( 
-  cmt=string_comment c=composition T_END id=identifier
+  (lt=LESS ids=ident_list gt=GREATER)? cmt=string_comment c=composition T_END id=identifier
     {
       $s2 = id;
-      $ast = Absyn__PARTS(c, mk_some_or_none(cmt));
+      if (ids != NULL) {
+        modelicaParserAssert(metamodelica_enabled(),"Polymorphic classes are only available in MetaModelica", class_specifier2, $start->line, $start->charPosition+1, $gt->line, $gt->charPosition+2);
+        c_add_source_message(2, "SYNTAX", "Warning", "TODO: Found polymorphic class definition, but it was not added to the AST (because Absyn.mo does not contain this definition yet)",
+          NULL, 0, $start->line, $start->charPosition+1, $gt->line, $gt->charPosition+2,
+          ModelicaParser_readonly, ModelicaParser_filename_C);
+        $ast = Absyn__PARTS(c, mk_some_or_none(cmt)); /* TODO: insert the short-hand stuff here */
+      } else {
+        $s2 = id;
+        $ast = Absyn__PARTS(c, mk_some_or_none(cmt));
+      }
     }
 | EQUALS attr=base_prefix path=type_specifier ( cm=class_modification )? cmt=comment
     {
@@ -1061,6 +1070,7 @@ component_reference returns [void* ast, int isNone] :
       $ast = dot ? Absyn__CREF_5fFULLYQUALIFIED(cr.ast) : cr.ast;
       $isNone = cr.isNone;
     }
+  | ALLWILD {$ast = Absyn__ALLWILD; $isNone = false;}
   | WILD {$ast = Absyn__WILD; $isNone = false;}
   ;
 

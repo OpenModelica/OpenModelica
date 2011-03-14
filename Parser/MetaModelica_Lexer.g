@@ -54,6 +54,7 @@ LOCAL : 'local';
 MATCH : 'match';
 MATCHCONTINUE : 'matchcontinue';
 UNIONTYPE : 'uniontype';
+ALLWILD : '__';
 WILD : '_';
 SUBTYPEOF : 'subtypeof';
 COLONCOLON : '::';

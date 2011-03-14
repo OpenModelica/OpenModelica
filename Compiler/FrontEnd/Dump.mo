@@ -3482,6 +3482,11 @@ algorithm
         Print.printBuf("Absyn.WILD");
       then
         ();
+    case Absyn.ALLWILD()
+      equation
+        Print.printBuf("Absyn.ALLWILD");
+      then
+        ();
 
     case Absyn.CREF_INVALID(componentRef = cr)
       equation
@@ -3552,6 +3557,8 @@ algorithm
       then
         s_3;
     
+    case Absyn.ALLWILD() then "__";
+
     case Absyn.WILD() then "_";
 
     case Absyn.CREF_INVALID(componentRef = cr)
@@ -5294,6 +5301,10 @@ algorithm
         Print.printBuf("\", subscripts = ");
         printListAsCorbaString(subscripts, printSubscriptAsCorbaString, ",");
         Print.printBuf(" end Absyn.CREF_IDENT;");
+      then ();
+    case Absyn.ALLWILD()
+      equation
+        Print.printBuf("record Absyn.ALLWILD end Absyn.ALLWILD;");
       then ();
     case Absyn.WILD()
       equation
