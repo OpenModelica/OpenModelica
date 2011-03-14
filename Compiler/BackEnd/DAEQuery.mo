@@ -723,6 +723,7 @@ algorithm
       list<DAE.Exp> expl;
       DAE.Operator op1;
       list<list<tuple<DAE.Exp, Boolean>>> explTpl;
+      DAE.ReductionIterators iters;
     
     case (DAE.CREF(componentRef = cr),vars)
       equation
@@ -945,16 +946,35 @@ algorithm
       then
         pStr;
     
-    case (DAE.REDUCTION(expr = e1,range = e2),vars)
+    case (DAE.REDUCTION(expr = e1,iterators = iters),vars)
       equation
         s1 = incidenceRowExp(e1, vars);
-        s2 = incidenceRowExp(e2, vars);
-        pStr = listAppend(s1, s2);
+        lst = Util.listMap1(iters, incidenceRowIter, vars);
+        pStr = Util.listFlatten(s1::lst);
       then
         pStr;
     case (_,_) then {};
   end matchcontinue;
 end incidenceRowExp;
+
+protected function incidenceRowIter
+  input DAE.ReductionIterator iter;
+  input BackendDAE.Variables vars; 
+  output list<String> strs;
+algorithm
+  strs := match (iter,vars)
+    local
+      DAE.Exp e1,e2;
+      list<String> s1,s2;
+    case (DAE.REDUCTIONITER(guardExp = SOME(e1), exp = e2),_)
+      equation
+        s1 = incidenceRowExp(e1, vars);
+        s2 = incidenceRowExp(e2, vars);
+      then listAppend(s1,s2);
+    case (DAE.REDUCTIONITER(exp = e1),_)
+      then incidenceRowExp(e1, vars);
+  end match;
+end incidenceRowIter;
 
 protected function incidenceRowMatrixExp "function: incidenceRowMatrixExp
   author: PA

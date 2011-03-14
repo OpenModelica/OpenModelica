@@ -206,8 +206,8 @@ algorithm
       list<DAE.Exp> expl;
       list<DAE.ExpVar> varLst;
       DAE.Ident ident;
-      BackendDAE.Var backendVar;
-
+      list<BackendDAE.Var> backendVars;
+      DAE.ReductionIterators riters;
     
     // special case for time, it is never part of the equation system  
     case ((e as DAE.CREF(componentRef = DAE.CREF_IDENT(ident="time")),(vars,crefs)))
@@ -222,13 +222,11 @@ algorithm
         ((e, (vars1,crefs1)));  
     
     // case for Reductions    
-    case ((e as DAE.REDUCTION(reductionInfo = DAE.REDUCTIONINFO(ident = ident)),(vars,crefs)))
+    case ((e as DAE.REDUCTION(iterators = riters),(vars,crefs)))
       equation
-        // add ident to vars
-        cr = ComponentReference.makeCrefIdent(ident,DAE.ET_INT(),{});
-        backendVar = BackendDAE.VAR(cr,BackendDAE.VARIABLE(),DAE.BIDIR(),BackendDAE.INT(),NONE(),NONE(),{},0,
-                     DAE.emptyElementSource,NONE(),NONE(),DAE.NON_CONNECTOR(),DAE.NON_STREAM_CONNECTOR());
-        vars = BackendVariable.addVar(backendVar,vars);
+        // add idents to vars
+        backendVars = Util.listMap(riters,makeIterVariable);
+        vars = BackendVariable.addVars(backendVars,vars);
       then
         ((e, (vars,crefs)));
     
@@ -252,6 +250,19 @@ algorithm
     case inTuple then inTuple;
   end matchcontinue;
 end traversecheckBackendDAEExp;
+
+protected function makeIterVariable
+  input DAE.ReductionIterator iter;
+  output BackendDAE.Var backendVar;
+protected
+  String name;
+  DAE.ComponentRef cr;
+algorithm
+  name := Expression.reductionIterName(iter);
+  cr := ComponentReference.makeCrefIdent(name,DAE.ET_INT(),{});
+  backendVar := BackendDAE.VAR(cr,BackendDAE.VARIABLE(),DAE.BIDIR(),BackendDAE.INT(),NONE(),NONE(),{},0,
+                     DAE.emptyElementSource,NONE(),NONE(),DAE.NON_CONNECTOR(),DAE.NON_STREAM_CONNECTOR());
+end makeIterVariable;
 
 /*************************************************
  * Initialisation and stuff 

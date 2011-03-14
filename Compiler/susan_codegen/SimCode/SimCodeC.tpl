@@ -5442,15 +5442,15 @@ template daeExpReduction(Exp exp, Context context, Text &preExp /*BUFP*/,
   special reduction functions (list, listReverse, array) and handles both list and array as input"
 ::=
   match exp
-  case r as REDUCTION(reductionInfo=ri as REDUCTIONINFO(__)) then
+  case r as REDUCTION(reductionInfo=ri as REDUCTIONINFO(__),iterators={iter as REDUCTIONITER(__)}) then
   let &tmpVarDecls = buffer ""
   let &tmpExpPre = buffer ""
   let &bodyExpPre = buffer ""
   let &guardExpPre = buffer ""
   let &rangeExpPre = buffer ""
   let stateVar = if not acceptMetaModelicaGrammar() then tempDecl("state", &varDecls /*BUFD*/)
-  let identType = expTypeFromExpModelica(r.range)
-  let arrayType = expTypeFromExpArray(r.range)
+  let identType = expTypeFromExpModelica(iter.exp)
+  let arrayType = expTypeFromExpArray(iter.exp)
   let arrayTypeResult = expTypeFromExpArray(r)
   let loopVar = match identType
     case "modelica_metatype" then tempDecl(identType,&tmpVarDecls)
@@ -5458,7 +5458,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp /*BUFP*/,
   let firstIndex = match identType case "modelica_metatype" then "" else tempDecl("int",&tmpVarDecls)
   let arrIndex = match ri.path case IDENT(name="array") then tempDecl("int",&tmpVarDecls)
   let foundFirst = if not ri.defaultValue then tempDecl("int",&tmpVarDecls)
-  let rangeExp = daeExp(r.range,context,&rangeExpPre,&tmpVarDecls)
+  let rangeExp = daeExp(iter.exp,context,&rangeExpPre,&tmpVarDecls)
   let resType = expTypeArrayIf(typeof(exp))
   let res = "_$reductionFoldTmpB"
   let &tmpVarDecls += '<%resType%> <%res%>;<%\n%>'
@@ -5468,7 +5468,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp /*BUFP*/,
   let defaultValue = match ri.path case IDENT(name="array") then "" else match ri.defaultValue
     case SOME(v) then daeExp(valueExp(v),context,&preDefault,&tmpVarDecls)
     end match
-  let guardCond = match r.guardExp case SOME(grd) then daeExp(grd, context, &guardExpPre, &tmpVarDecls) else "1"
+  let guardCond = match iter.guardExp case SOME(grd) then daeExp(grd, context, &guardExpPre, &tmpVarDecls) else "1"
   let empty = match identType case "modelica_metatype" then 'listEmpty(<%loopVar%>)' else '0 == size_of_dimension_base_array(<%loopVar%>, 1)'
   let length = match identType case "modelica_metatype" then 'listLength(<%loopVar%>)' else 'size_of_dimension_base_array(<%loopVar%>, 1)'
   let reductionBodyExpr = "_$reductionFoldTmpA"
@@ -5514,7 +5514,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp /*BUFP*/,
      <<
      <%foundFirst%> = 0; /* <%dotPath(ri.path)%> lacks default-value */
      >>
-  let iteratorName = contextIteratorName(ri.ident, context)
+  let iteratorName = contextIteratorName(iter.id, context)
   let loopHead = match identType
     case "modelica_metatype" then
     <<

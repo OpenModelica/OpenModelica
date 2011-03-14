@@ -354,6 +354,7 @@ algorithm
       Option<Values.Value> v;
       list<DAE.ExpVar> varLst;
       DAE.ReductionInfo reductionInfo;
+      DAE.ReductionIterators iters;
 
     case (DAE.ICONST(integer = _),_) then DAE.RCONST(0.0);
     case (DAE.RCONST(real = _),_) then DAE.RCONST(0.0);
@@ -717,12 +718,11 @@ algorithm
       then
         Expression.makeASUB(e,sub);
     
-    case (DAE.REDUCTION(reductionInfo = reductionInfo,expr = e1,guardExp = guardExp,range = e2),(timevars,functions))
+    case (DAE.REDUCTION(reductionInfo = reductionInfo,expr = e1,iterators = iters),(timevars,functions))
       equation
         e1_1 = differentiateExpTime(e1, (timevars,functions));
-        e2_1 = differentiateExpTime(e2, (timevars,functions));
       then
-        DAE.REDUCTION(reductionInfo,e1_1,guardExp,e2_1);
+        DAE.REDUCTION(reductionInfo,e1_1,iters);
     
     case (e,_)
       equation
@@ -1221,6 +1221,7 @@ algorithm
       Option<DAE.Exp> guardExp,foldExp;
       Option<Values.Value> v;
       DAE.ReductionInfo reductionInfo;
+      DAE.ReductionIterators riters;
     
     case (DAE.ICONST(integer = _),_,_) then DAE.RCONST(0.0);
 
@@ -1429,12 +1430,12 @@ algorithm
       then
         Expression.makeASUB(e_1,sub);
     
-    case (DAE.REDUCTION(reductionInfo=reductionInfo,expr = e1,guardExp = guardExp, range = e2),tv,differentiateIfExp)
+      // TODO: Check if we are differentiating a local iterator?
+    case (DAE.REDUCTION(reductionInfo=reductionInfo,expr = e1,iterators = riters),tv,differentiateIfExp)
       equation
         e1_1 = differentiateExp(e1, tv, differentiateIfExp);
-        e2_1 = differentiateExp(e2, tv, differentiateIfExp);
       then
-        DAE.REDUCTION(reductionInfo,e1_1,guardExp,e2_1);
+        DAE.REDUCTION(reductionInfo,e1_1,riters);
     
     // derivative of arbitrary function, not dependent of variable, i.e. constant
     /* Caught by rule below...

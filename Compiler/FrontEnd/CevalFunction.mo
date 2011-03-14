@@ -1785,6 +1785,7 @@ algorithm
       FunctionVar e;
       DAE.Ident iter;
       list<DAE.Ident> iters;
+      DAE.ReductionIterators riters;
 
     // Check if the crefs matches any of the iterators that might shadow a
     // function variable, and don't add it as a depency if that's the case.
@@ -1808,11 +1809,13 @@ algorithm
 
     // If we encounter a reduction, add the iterator to the iterator list so
     // that we know which iterators shadow function variables.
-    case ((exp as DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(ident = iter)), (all_el, accum_el, iters)))
+    case ((exp as DAE.REDUCTION(iterators = riters), (all_el, accum_el, iters)))
+      equation
+        iters = listAppend(Util.listMap(riters, Expression.reductionIterName), iters);
       then
-        ((exp, (all_el, accum_el, iter :: iters)));
+        ((exp, (all_el, accum_el, iters)));
 
-    else then inTuple;
+    else inTuple;
   end matchcontinue;
 end getElementDependenciesTraverserEnter;
 
@@ -1828,37 +1831,37 @@ algorithm
       list<FunctionVar> all_el, accum_el;
       DAE.Ident iter, iter2;
       list<DAE.Ident> iters;
+      DAE.ReductionIterators riters;
       
     // If we encounter a reduction, make sure that its iterator matches the
     // first iterator in the iterator list, and if so remove it from the list.
-    case ((exp as DAE.REDUCTION(reductionInfo = DAE.REDUCTIONINFO(ident = iter)), (all_el, accum_el, iter2 :: iters)))
+    case ((exp as DAE.REDUCTION(iterators = riters), (all_el, accum_el, iters)))
       equation
-        compareIterators(iter, iter2);
-      then
-        ((exp, (all_el, accum_el, iters)));
+        iters = compareIterators(listReverse(riters), iters);
+      then getElementDependenciesTraverserExit((exp, (all_el, accum_el, iters)));
 
-    else then inTuple;
+    else inTuple;
   end match;
 end getElementDependenciesTraverserExit;
 
 protected function compareIterators
-  input DAE.Ident inIterator1;
-  input DAE.Ident inIterator2;
+  input DAE.ReductionIterators riters;
+  input list<String> iters;
+  output list<String> outIters;
 algorithm
-  _ := matchcontinue(inIterator1, inIterator2)
-    case (_, _)
+  outIters := matchcontinue(riters,iters)
+    local
+      String id1,id2;
+    case (DAE.REDUCTIONITER(id=id1)::riters, id2::iters)
       equation
-        true = stringEqual(inIterator1, inIterator2);
-      then
-        ();
+        true = stringEqual(id1,id2);
+      then compareIterators(riters,iters);
 
     // This should never happen, print an error if it does.
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR,
-          {"Different iterators in CevalFunction.compareIterators."});
-      then
-        fail();
+        Error.addMessage(Error.INTERNAL_ERROR, {"Different iterators in CevalFunction.compareIterators."});
+      then fail();
   end matchcontinue;
 end compareIterators;
 

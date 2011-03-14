@@ -135,6 +135,7 @@ algorithm
       Option<DAE.Exp> oe1,foldExp;
       Option<Values.Value> v;
       DAE.ReductionInfo reductionInfo;
+      DAE.ReductionIterators riters;
         
     // noEvent propagated to relations and event triggering functions
     case(DAE.CALL(Absyn.IDENT("noEvent"),{e},tpl,builtin,tp,inline))
@@ -307,12 +308,11 @@ algorithm
       then
         exp1;
     
-    case DAE.REDUCTION(reductionInfo,e1,oe1,e2)
+    case DAE.REDUCTION(reductionInfo,e1,riters)
       equation
         e1 = simplify1(e1);
-        e2 = simplify1(e2);
-        oe1 = Util.applyOption(oe1,simplify1);
-        exp1 = DAE.REDUCTION(reductionInfo,e1,oe1,e2);
+        riters = Util.listMap(riters, simplifyReductionIterator);
+        exp1 = DAE.REDUCTION(reductionInfo,e1,riters);
       then simplifyReduction(exp1);
 
     // anything else
@@ -321,6 +321,32 @@ algorithm
         e;
   end matchcontinue;
 end simplify1;
+
+protected function simplifyReductionIterator
+  input DAE.ReductionIterator iter;
+  output DAE.ReductionIterator outIter;
+algorithm
+  outIter := match iter
+    local
+      Boolean b;
+      String id;
+      DAE.Exp exp,gexp;
+      DAE.Type ty;
+      Option<DAE.Exp> ogexp;
+    case DAE.REDUCTIONITER(id,exp,NONE(),ty)
+      equation
+        exp = simplify1(exp);
+      then DAE.REDUCTIONITER(id,exp,NONE(),ty);
+
+    case DAE.REDUCTIONITER(id,exp,SOME(gexp),ty)
+      equation
+        exp = simplify1(exp);
+        gexp = simplify1(gexp);
+        b = Expression.isConstTrue(gexp);
+        ogexp = Util.if_(b,NONE(),SOME(gexp));
+      then DAE.REDUCTIONITER(id,exp,ogexp,ty);
+  end match;
+end simplifyReductionIterator;
 
 protected function simplifyIfExp
   "Handles simplification of if-expressions"
@@ -367,6 +393,7 @@ algorithm
       Option<DAE.Exp> oe1,foldExp;
       Option<Values.Value> v;
       DAE.Type ty;
+      DAE.ReductionIterators riters;
     case DAE.MATCHEXPRESSION(inputs={e}, localDecls={}, cases={
         DAE.CASE(patterns={DAE.PAT_CONSTANT(exp=DAE.BCONST(b1))},localDecls={},body={},result=SOME(e1)),
         DAE.CASE(patterns={DAE.PAT_CONSTANT(exp=DAE.BCONST(b2))},localDecls={},body={},result=SOME(e2))
@@ -427,14 +454,14 @@ algorithm
         e1_1 = DAE.LIST(el);
       then e1_1;
 
-    case DAE.CALL(path=path as Absyn.IDENT("listReverse"),expLst={DAE.REDUCTION(DAE.REDUCTIONINFO(Absyn.IDENT("list"),ty,idn,v,foldExp),e1,oe1,e2)},ty=tp)
+    case DAE.CALL(path=path as Absyn.IDENT("listReverse"),expLst={DAE.REDUCTION(DAE.REDUCTIONINFO(Absyn.IDENT("list"),ty,v,foldExp),e1,riters)},ty=tp)
       equation
-        e1 = DAE.REDUCTION(DAE.REDUCTIONINFO(Absyn.IDENT("listReverse"),ty,idn,v,foldExp),e1,oe1,e2);
+        e1 = DAE.REDUCTION(DAE.REDUCTIONINFO(Absyn.IDENT("listReverse"),ty,v,foldExp),e1,riters);
       then simplify(e1);
 
-    case DAE.CALL(path=path as Absyn.IDENT("listReverse"),expLst={DAE.REDUCTION(DAE.REDUCTIONINFO(Absyn.IDENT("listReverse"),ty,idn,v,foldExp),e1,oe1,e2)},ty=tp)
+    case DAE.CALL(path=path as Absyn.IDENT("listReverse"),expLst={DAE.REDUCTION(DAE.REDUCTIONINFO(Absyn.IDENT("listReverse"),ty,v,foldExp),e1,riters)},ty=tp)
       equation
-        e1 = DAE.REDUCTION(DAE.REDUCTIONINFO(Absyn.IDENT("list"),ty,idn,v,foldExp),e1,oe1,e2);
+        e1 = DAE.REDUCTION(DAE.REDUCTIONINFO(Absyn.IDENT("list"),ty,v,foldExp),e1,riters);
       then simplify(e1);
 
     case DAE.CALL(path=path as Absyn.IDENT("listLength"),expLst={e1},ty=tp)
@@ -3950,7 +3977,7 @@ protected function simplifyReduction
   input DAE.Exp inReduction;
   output DAE.Exp outValue;
 algorithm
-  outValue := match(inReduction)
+  outValue := matchcontinue (inReduction)
     local
       DAE.Exp expr, value, cref, range;
       DAE.Ident iter_name;
@@ -3964,25 +3991,19 @@ algorithm
       DAE.ExpType ety;
       DAE.ReductionInfo reductionInfo;
 
-    case (DAE.REDUCTION(reductionInfo = reductionInfo, expr = expr, guardExp = SOME(DAE.BCONST(true)), range = range))
-      equation
-        expr = DAE.REDUCTION(reductionInfo,expr,NONE(),range);
-      then
-        simplifyReduction(expr);
-
-    case (DAE.REDUCTION(guardExp = SOME(DAE.BCONST(false)), reductionInfo=DAE.REDUCTIONINFO(defaultValue = SOME(v))))
+    case (DAE.REDUCTION(iterators = {DAE.REDUCTIONITER(guardExp = SOME(DAE.BCONST(false)))}, reductionInfo=DAE.REDUCTIONINFO(defaultValue = SOME(v))))
       equation
         expr = ValuesUtil.valueExp(v);
       then
         simplify1(expr);
 
-    case (DAE.REDUCTION(guardExp = SOME(DAE.BCONST(false))))
+    case (DAE.REDUCTION(iterators = {DAE.REDUCTIONITER(guardExp = SOME(DAE.BCONST(false)))}))
       equation
         expr = ValuesUtil.valueExp(Values.META_FAIL());
       then
         expr;
 
-    case (DAE.REDUCTION(reductionInfo = DAE.REDUCTIONINFO(path = path, exprType = ty, ident = iter_name, defaultValue = defaultValue, foldExp = foldExp), expr = expr, guardExp = NONE(), range = DAE.ARRAY(array = values)))
+    case (DAE.REDUCTION(reductionInfo = DAE.REDUCTIONINFO(path = path, exprType = ty, defaultValue = defaultValue, foldExp = foldExp), expr = expr, iterators = {DAE.REDUCTIONITER(id = iter_name, guardExp = NONE(), exp = DAE.ARRAY(array = values))}))
       equation
         // TODO: Use foldExp
         ety = Types.elabType(ty);
@@ -3992,9 +4013,9 @@ algorithm
       then
         simplify1(expr);
     
-    else inReduction;
+    case _ then inReduction;
 
-  end match;
+  end matchcontinue;
 end simplifyReduction;
 
 protected function simplifyReductionFoldPhase

@@ -654,6 +654,7 @@ algorithm
       Option<Values.Value> v;
       Option<DAE.Exp> foldExp;
       DAE.ReductionInfo reductionInfo;
+      DAE.ReductionIterators riters;
       
     // no prefix, return the input expression
     case (cache,_,_,e,Prefix.NOPRE()) then (cache,e);
@@ -818,20 +819,12 @@ algorithm
       then
         (cache,DAE.CAST(tp,e_1));
 
-    case (cache,env,ih,DAE.REDUCTION(reductionInfo = reductionInfo,expr = exp,guardExp = NONE(),range = iterexp),p)
+    case (cache,env,ih,DAE.REDUCTION(reductionInfo = reductionInfo,expr = exp,iterators = riters),p)
       equation
         (cache,exp_1) = prefixExp(cache, env, ih, exp, p);
-        (cache,iterexp_1) = prefixExp(cache, env, ih, iterexp, p);
+        (cache,riters) = prefixIterators(cache, env, ih, riters, p);
       then
-        (cache,DAE.REDUCTION(reductionInfo,exp_1,NONE(),iterexp_1));
-
-    case (cache,env,ih,DAE.REDUCTION(reductionInfo = reductionInfo,expr = exp,guardExp = SOME(e3),range = iterexp),p)
-      equation
-        (cache,exp_1) = prefixExp(cache, env, ih, exp, p);
-        (cache,iterexp_1) = prefixExp(cache, env, ih, iterexp, p);
-        (cache,e3) = prefixExp(cache, env, ih, e3, p);
-      then
-        (cache,DAE.REDUCTION(reductionInfo,exp_1,SOME(e3),iterexp_1));
+        (cache,DAE.REDUCTION(reductionInfo,exp_1,riters));
 
     // MetaModelica extension. KS
     case (cache,env,ih,DAE.LIST(es),p)
@@ -871,6 +864,38 @@ algorithm
         fail();
   end matchcontinue;
 end prefixExp;
+
+protected function prefixIterators
+  input Env.Cache cache;
+  input Env.Env env;
+  input InstanceHierarchy ih;
+  input DAE.ReductionIterators iters;
+  input Prefix.Prefix pre;
+  output Env.Cache outCache;
+  output DAE.ReductionIterators outIters;
+algorithm
+  (outCache,outIters) := match (cache,env,ih,iters,pre)
+    local
+      String id;
+      DAE.Exp exp,gexp;
+      DAE.Type ty;
+      DAE.ReductionIterator iter;
+    case (cache,env,ih,{},pre) then (cache,{});
+    case (cache,env,ih,DAE.REDUCTIONITER(id,exp,SOME(gexp),ty)::iters,pre)
+      equation
+        (cache,exp) = prefixExp(cache,env,ih,exp,pre);
+        (cache,gexp) = prefixExp(cache,env,ih,gexp,pre);
+        iter = DAE.REDUCTIONITER(id,exp,SOME(gexp),ty);
+        (cache,iters) = prefixIterators(cache,env,ih,iters,pre);
+      then (cache,iter::iters);
+    case (cache,env,ih,DAE.REDUCTIONITER(id,exp,NONE(),ty)::iters,pre)
+      equation
+        (cache,exp) = prefixExp(cache,env,ih,exp,pre);
+        iter = DAE.REDUCTIONITER(id,exp,NONE(),ty);
+        (cache,iters) = prefixIterators(cache,env,ih,iters,pre);
+      then (cache,iter::iters);
+  end match;
+end prefixIterators;
 
 public function prefixExpList "function: prefixExpList
   This function prefixes a list of expressions using the prefixExp function."

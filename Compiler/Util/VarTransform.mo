@@ -1533,6 +1533,7 @@ algorithm
       Option<Values.Value> v;
       Option<DAE.Exp> foldExp;
       DAE.ReductionInfo reductionInfo;
+      DAE.ReductionIterators iters;
             
     case ((e as DAE.CREF(componentRef = cr,ty = t)),repl,cond)
       equation
@@ -1657,19 +1658,45 @@ algorithm
         print("replace_exp on CODE not impl.\n");
       then
         DAE.CODE(a,tp);
-    case ((e as DAE.REDUCTION(reductionInfo = reductionInfo,expr = e1,guardExp = NONE(),range = r)),repl,cond)
+    case ((e as DAE.REDUCTION(reductionInfo = reductionInfo,expr = e1,iterators = iters)),repl,cond)
       equation
         true = replaceExpCond(cond, e);
         e1_1 = replaceExp(e1, repl, cond);
-        r_1 = replaceExp(r, repl, cond);
-      then
-        DAE.REDUCTION(reductionInfo,e1_1,NONE(),r_1);
+        iters = Util.listMap2(iters, replaceExpIter, repl, cond);
+      then DAE.REDUCTION(reductionInfo,e1_1,iters);
     case (e,repl,cond)
       equation
         //Debug.fprintln("failtrace", "- VarTransform.replaceExp failed on: " +& ExpressionDump.printExpStr(e));
       then e;
   end matchcontinue;
 end replaceExp;
+
+protected function replaceExpIter
+  input DAE.ReductionIterator iter;
+  input VariableReplacements repl;
+  input Option<FuncTypeExp_ExpToBoolean> cond;
+  output DAE.ReductionIterator outIter;
+  partial function FuncTypeExp_ExpToBoolean
+    input DAE.Exp inExp;
+    output Boolean outBoolean;
+  end FuncTypeExp_ExpToBoolean;
+algorithm
+  outIter := match (iter,repl,cond)
+    local
+      String id;
+      DAE.Exp exp,gexp;
+      DAE.Type ty;
+    case (DAE.REDUCTIONITER(id,exp,NONE(),ty),repl,cond)
+      equation
+        exp = replaceExp(exp, repl, cond);
+      then DAE.REDUCTIONITER(id,exp,NONE(),ty);
+    case (DAE.REDUCTIONITER(id,exp,SOME(gexp),ty),repl,cond)
+      equation
+        exp = replaceExp(exp, repl, cond);
+        gexp = replaceExp(gexp, repl, cond);
+      then DAE.REDUCTIONITER(id,exp,SOME(gexp),ty);
+  end match;
+end replaceExpIter;
 
 protected function replaceExpCond "function replaceExpCond(cond,e) => true &
 

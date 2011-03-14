@@ -1125,8 +1125,7 @@ uniontype Exp "Expressions
   record REDUCTION "e.g. sum(i*i+1 for i in 1:4)"
     ReductionInfo reductionInfo;
     Exp expr "expr, e.g i*i+1" ;
-    Option<Exp> guardExp "Boolean guard-expression";
-    Exp range "range Reduction expression e.g. 1:4" ;
+    ReductionIterators iterators;
   end REDUCTION;
 
   record END "array index to last element, e.g. a{end}:=1;" end END;
@@ -1198,11 +1197,21 @@ public uniontype ReductionInfo
   record REDUCTIONINFO "A separate uniontype containing the information not required by traverseExp, etc"
     Absyn.Path path "array, sum,..";
     Type exprType;
-    Ident ident "e.g. i";
     Option<Values.Value> defaultValue "if there is no default value, the reduction is not defined for 0-length arrays/lists";
     Option<Exp> foldExp "For example, max(ident,$res) or ident+$res; array() does not use this feature; DO NOT TRAVERSE THIS EXPRESSION!";
   end REDUCTIONINFO;
 end ReductionInfo;
+
+public uniontype ReductionIterator
+  record REDUCTIONITER
+    String id;
+    Exp exp;
+    Option<Exp> guardExp;
+    Type ty;
+  end REDUCTIONITER;
+end ReductionIterator;
+
+public type ReductionIterators = list<ReductionIterator> "NOTE: OMC only handles one iterator for now";
 
 public uniontype MatchCase
   record CASE

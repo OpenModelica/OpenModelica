@@ -163,7 +163,6 @@ public constant DAE.Exp defaultNumberOfIntervals = DAE.ICONST(500)     "default 
 public constant DAE.Exp defaultStepSize          = DAE.RCONST(0.002)   "default stepSize";
 public constant DAE.Exp defaultTolerance         = DAE.RCONST(1e-6)    "default tolerance";
 public constant DAE.Exp defaultMethod            = DAE.SCONST("dassl") "default method";
-public constant DAE.Exp dassl2Method             = DAE.SCONST("dasslold")"new method for testing";
 public constant DAE.Exp defaultFileNamePrefix    = DAE.SCONST("")      "default fileNamePrefix";
 public constant DAE.Exp defaultStoreInTemp       = DAE.BCONST(false)   "default storeInTemp";
 public constant DAE.Exp defaultNoClean           = DAE.BCONST(false)   "default noClean";
@@ -189,24 +188,6 @@ public constant SimulationOptions defaultSimulationOptions =
     defaultMeasureTime
     ) "default simulation options";
     
-//For testing with dassl2
-public constant SimulationOptions dassl2SimulationOptions =
-  SIMULATION_OPTIONS(
-    defaultStartTime,
-    defaultStopTime,
-    defaultNumberOfIntervals,
-    defaultStepSize,
-    defaultTolerance,
-    dassl2Method,    
-    defaultFileNamePrefix,
-    defaultStoreInTemp,
-    defaultNoClean,
-    defaultOptions,
-    defaultOutputFormat,
-    defaultVariableFilter,
-    defaultMeasureTime
-    ) "default simulation options";
-
 public constant list<String> simulationOptionsNames =
   {
     "startTime",
@@ -378,9 +359,7 @@ algorithm
     // search inside annotation(experiment(...))
     case (inSymTab, inModelPath, inFileNamePrefix)
       equation
-        methodflag = RTOpts.debugFlag("SetOldDassl");
-        methodbyflag = Util.if_(methodflag,dassl2SimulationOptions,defaultSimulationOptions);
-        defaults = setFileNamePrefixInSimulationOptions(methodbyflag, inFileNamePrefix);
+        defaults = setFileNamePrefixInSimulationOptions(defaultSimulationOptions, inFileNamePrefix);
         
         experimentAnnotationStr = 
           Interactive.getNamedAnnotation(
@@ -408,9 +387,7 @@ algorithm
     // if we fail, just use the defaults
     case (inSymTab, inModelPath, inFileNamePrefix)
       equation
-        methodflag = RTOpts.debugFlag("SetOldDassl");
-        methodbyflag = Util.if_(methodflag,dassl2SimulationOptions,defaultSimulationOptions);    
-        defaults = setFileNamePrefixInSimulationOptions(methodbyflag, inFileNamePrefix);
+        defaults = setFileNamePrefixInSimulationOptions(defaultSimulationOptions, inFileNamePrefix);
       then
         defaults;
   end matchcontinue;

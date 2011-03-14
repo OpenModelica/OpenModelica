@@ -579,6 +579,7 @@ algorithm
       list<DAE.MatchCase> cases;
       DAE.Pattern pat;
       Absyn.CodeNode code;
+      DAE.ReductionIterators riters;
     
     case (DAE.END(), _, _, _) then "end";
     
@@ -838,25 +839,15 @@ algorithm
       then
         str;
     
-    case (DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(path = fcn,ident = id),expr = exp,guardExp = NONE(), range = iterexp), _, _, _)
+    case (DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(path = fcn),expr = exp,iterators = riters), _, _, _)
       equation
         fs = Absyn.pathString(fcn);
         expstr = printExp2Str(exp, stringDelimiter, opcreffunc, opcallfunc);
-        iterstr = printExp2Str(iterexp, stringDelimiter, opcreffunc, opcallfunc);
-        str = stringAppendList({"<reduction>",fs,"(",expstr," for ",id," in ",iterstr,")"});
+        iterstr = Util.stringDelimitList(Util.listMap(riters, reductionIteratorStr),",");
+        str = stringAppendList({"<reduction>",fs,"(",expstr," for ",iterstr,")"});
       then
         str;
     
-    case (DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(path = fcn,ident = id),expr = exp,guardExp = SOME(e), range = iterexp), _, _, _)
-      equation
-        fs = Absyn.pathString(fcn);
-        expstr = printExp2Str(exp, stringDelimiter, opcreffunc, opcallfunc);
-        iterstr = printExp2Str(iterexp, stringDelimiter, opcreffunc, opcallfunc);
-        str = printExp2Str(e, stringDelimiter, opcreffunc, opcallfunc);
-        str = stringAppendList({"<reduction>",fs,"(",expstr," for ",id," guard ",str," in ",iterstr,")"});
-      then
-        str;
-
     // MetaModelica tuple
     case (DAE.META_TUPLE(es), _, _, _)
       equation
@@ -941,6 +932,25 @@ algorithm
         "#UNKNOWN EXPRESSION# ----eee ";
   end matchcontinue;
 end printExp2Str;
+
+protected function reductionIteratorStr
+  input DAE.ReductionIterator riter;
+  output String str;
+algorithm
+  str := match riter
+    local
+      String id,str;
+      DAE.Exp exp,gexp;
+    case (DAE.REDUCTIONITER(id=id,exp=exp,guardExp=NONE()))
+      equation
+        str = id +& " in " +& printExpStr(exp);
+      then str;
+    case (DAE.REDUCTIONITER(id=id,exp=exp,guardExp=SOME(gexp)))
+      equation
+        str = id +& " guard " +& printExpStr(gexp) +& " in " +& printExpStr(exp);
+      then str;
+  end match;
+end reductionIteratorStr;
 
 protected function printMatchType
   input DAE.MatchType ty;
@@ -1283,7 +1293,7 @@ algorithm
       then
         Graphviz.NODE("SIZE",{},{crt});
     
-    case (DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(path = fcn,ident = id),expr = exp,range = iterexp))
+    case (DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(path = fcn),expr = exp,iterators = {DAE.REDUCTIONITER(exp=iterexp)}))
       equation
         fs = Absyn.pathString(fcn);
         expt = dumpExpGraphviz(exp);
@@ -1570,7 +1580,7 @@ algorithm
       then
         res_str;
     
-    case (DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(path = fcn,ident = id),expr = exp,range = iterexp),level) /* Graphviz.LNODE(\"REDUCTION\",{fs},{},{expt,itert}) */
+    case (DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(path = fcn),expr = exp,iterators={DAE.REDUCTIONITER(exp=iterexp)}),level) /* Graphviz.LNODE(\"REDUCTION\",{fs},{},{expt,itert}) */
       equation
         gen_str = genStringNTime("   |", level);
         new_level1 = level + 1;
@@ -2092,7 +2102,7 @@ algorithm
       then
         ();
     
-    case ((e as DAE.REDUCTION(range = _)),_)
+    case ((e as DAE.REDUCTION(reductionInfo = _)),_)
       equation
         str = printExpStr(e);
         Print.printBuf(str);

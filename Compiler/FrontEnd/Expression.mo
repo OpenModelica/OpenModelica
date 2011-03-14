@@ -167,6 +167,8 @@ algorithm
       Absyn.CodeNode code;
       Option<DAE.Exp> oe1;
       Option<Absyn.Exp> oae1;
+      DAE.ReductionIterators riters;
+      Absyn.ForIterators aiters;
 
     case (DAE.ICONST(integer = i)) then Absyn.INTEGER(i);
     case (DAE.RCONST(real = r)) then Absyn.REAL(r);
@@ -272,18 +274,36 @@ algorithm
 
     case(DAE.CODE(code,_)) then Absyn.CODE(code);
 
-    case DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(path=path,ident=s),expr=e1,guardExp=oe1,range=e2) equation
+    case DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(path=path),expr=e1,iterators=riters) equation
       //print("unelab of reduction not impl. yet");
       acref = Absyn.pathToCref(path);
       ae1 = unelabExp(e1);
-      ae2 = unelabExp(e2);
-      oae1 = Util.applyOption(oe1,unelabExp);
+      aiters = Util.listMap(riters, unelabReductionIterator);
     then 
-      Absyn.CALL(acref, Absyn.FOR_ITER_FARG(ae1, {Absyn.ITERATOR(s,oae1,SOME(ae2))}));
+      Absyn.CALL(acref, Absyn.FOR_ITER_FARG(ae1, aiters));
 
     case(DAE.END()) then Absyn.END();
   end matchcontinue;
 end unelabExp;
+
+protected function unelabReductionIterator
+  input DAE.ReductionIterator riter;
+  output Absyn.ForIterator aiter;
+algorithm
+  aiter := match riter
+    local
+      String id;
+      DAE.Exp exp;
+      Option<DAE.Exp> gexp;
+      Absyn.Exp aexp;
+      Option<Absyn.Exp> agexp;
+    case DAE.REDUCTIONITER(id=id,exp=exp,guardExp=gexp)
+      equation
+        aexp = unelabExp(exp);
+        agexp = Util.applyOption(gexp, unelabExp);
+      then Absyn.ITERATOR(id,agexp,SOME(aexp));
+  end match;
+end unelabReductionIterator;
 
 protected function unelabOperator "help function to unelabExpression."
 input Operator op;
@@ -3192,6 +3212,7 @@ algorithm
       Option<DAE.Exp> oe1,foldExp;
       Option<Values.Value> v;
       DAE.ReductionInfo reductionInfo;
+      DAE.ReductionIterators riters;
     
     case ((e as DAE.ICONST(_)),rel,ext_arg)
       equation
@@ -3358,12 +3379,11 @@ algorithm
       then
         ((e,ext_arg_3));
     
-    case ((e as DAE.REDUCTION(reductionInfo=reductionInfo,expr = e1,guardExp = oe1, range = e2)),rel,ext_arg)
+    case ((e as DAE.REDUCTION(reductionInfo=reductionInfo,expr = e1,iterators = riters)),rel,ext_arg)
       equation
         ((e1,ext_arg)) = traverseExp(e1, rel, ext_arg);
-        ((e2,ext_arg)) = traverseExp(e2, rel, ext_arg);
-        ((oe1,ext_arg)) = traverseExpOpt(oe1, rel, ext_arg);
-        ((e,ext_arg)) = rel((DAE.REDUCTION(reductionInfo,e1,oe1,e2),ext_arg));
+        (riters,ext_arg) = traverseReductionIterators(riters, rel, ext_arg);
+        ((e,ext_arg)) = rel((DAE.REDUCTION(reductionInfo,e1,riters),ext_arg));
       then
         ((e,ext_arg));
     
@@ -3647,6 +3667,7 @@ algorithm
       Option<DAE.Exp> oe1,foldExp;
       Option<Values.Value> v;
       DAE.ReductionInfo reductionInfo;
+      DAE.ReductionIterators riters;
     
     case (e as DAE.ICONST(_),rel,ext_arg) then ((e,ext_arg));    
     case (e as DAE.RCONST(_),rel,ext_arg) then ((e,ext_arg));    
@@ -3776,13 +3797,12 @@ algorithm
     
     case ((e as DAE.CODE(ty=_)),rel,ext_arg) then ((e,ext_arg));    
     
-    case ((e as DAE.REDUCTION(reductionInfo = reductionInfo, expr = e1, guardExp = oe1, range = e2)),rel,ext_arg)
+    case ((e as DAE.REDUCTION(reductionInfo = reductionInfo, expr = e1, iterators = riters)),rel,ext_arg)
       equation
         ((e1,ext_arg)) = traverseExpTopDown(e1, rel, ext_arg);
-        ((e2,ext_arg)) = traverseExpTopDown(e2, rel, ext_arg);
-        ((oe1,ext_arg)) = traverseExpOptTopDown(oe1, rel, ext_arg);
+        (riters,ext_arg) = traverseReductionIteratorsTopDown(riters, rel, ext_arg);
       then
-        ((DAE.REDUCTION(reductionInfo,e1,oe1,e2),ext_arg));
+        ((DAE.REDUCTION(reductionInfo,e1,riters),ext_arg));
     
     // MetaModelica list
     case ((e as DAE.CONS(e1,e2)),rel,ext_arg)
@@ -4181,6 +4201,7 @@ algorithm
       Option<Values.Value> v;
       DAE.Type dty;
       DAE.ReductionInfo reductionInfo;
+      DAE.ReductionIterators riters;
 
     case (DAE.ICONST(integer = _), _) then (inExp, inTuple);
     case (DAE.RCONST(real = _), _) then (inExp, inTuple);
@@ -4299,13 +4320,12 @@ algorithm
     case (DAE.CODE(code = _), tup)
       then (inExp, tup);
 
-    case (DAE.REDUCTION(reductionInfo = reductionInfo, expr = e1, guardExp = oe1, range = e2), tup)
+    case (DAE.REDUCTION(reductionInfo = reductionInfo, expr = e1, iterators = riters), tup)
       equation
         (e1, tup) = traverseExpBidir(e1, tup);
-        (e2, tup) = traverseExpBidir(e2, tup);
-        (oe1, tup) = traverseExpOptBidir(oe1, tup);
+        (riters, tup) = Util.listMapAndFold(riters, traverseReductionIteratorBidir, tup);
       then
-        (DAE.REDUCTION(reductionInfo, e1, oe1, e2), tup);
+        (DAE.REDUCTION(reductionInfo, e1, riters), tup);
 
     case (DAE.END(), _) then (inExp, inTuple);
 
@@ -4752,7 +4772,9 @@ algorithm
     
     case (DAE.END(),_) then true;
       
-    case (DAE.REDUCTION(expr=e1,range=e2),_) then isConstWork(e1,isConstWork(e2,true));
+      /*TODO:Make this work for multiple iters, guard exps*/
+    case (DAE.REDUCTION(expr=e1,iterators={DAE.REDUCTIONITER(exp=e2)}),_)
+      then isConstWork(e1,isConstWork(e2,true));
         
     else false;
 
@@ -5848,13 +5870,10 @@ algorithm
       then
         false;
     
-    case (DAE.REDUCTION(expr = e1,range = er1),DAE.REDUCTION(expr = e2,range = er2),_,_)
+    case (DAE.REDUCTION(expr =_),DAE.REDUCTION(expr = _),_,_)
       equation
         // Reductions contain too much information to compare equality in a sane manner
         res = valueEq(inExp1,inExp2);
-        /* res = stringEq(id1, id2) and ModUtil.pathEqual(path1, path2);
-        res = expEqualWork(e1, e2, referenceEq(e1, e2), res);
-        res = expEqualWork(er1, er2, referenceEq(er1, er2), res); */
       then
         res;
     
@@ -6478,6 +6497,153 @@ public function makeBuiltinCall
 algorithm
   call := DAE.CALL(Absyn.IDENT(name),args,false,true,result_type,DAE.NO_INLINE());
 end makeBuiltinCall;
+
+public function reductionIterName
+  input DAE.ReductionIterator iter;
+  output String name;
+algorithm
+  DAE.REDUCTIONITER(id=name) := iter;
+end reductionIterName;
+
+protected function traverseReductionIteratorBidir
+  input DAE.ReductionIterator iter;
+  input tuple<FuncType, FuncType, Argument> inTuple;
+  output DAE.ReductionIterator outIter;
+  output tuple<FuncType, FuncType, Argument> outTuple;
+
+  partial function FuncType
+    input tuple<DAE.Exp, Argument> inTuple;
+    output tuple<DAE.Exp, Argument> outTuple;
+  end FuncType;
+
+  replaceable type Argument subtypeof Any;
+algorithm
+  (outIter,outTuple) := match (iter,inTuple)
+    local
+      String id;
+      DAE.Exp exp;
+      Option<DAE.Exp> gexp;
+      DAE.Type ty;
+      tuple<FuncType, FuncType, Argument> tup;
+    case (DAE.REDUCTIONITER(id,exp,gexp,ty),tup)
+      equation
+        (exp, tup) = traverseExpBidir(exp, tup);
+        (gexp, tup) = traverseExpOptBidir(gexp, tup);
+      then (DAE.REDUCTIONITER(id,exp,gexp,ty),tup);
+  end match;
+end traverseReductionIteratorBidir;
+
+protected function traverseReductionIteratorTopDown
+  input DAE.ReductionIterator iter;
+  input FuncExpType func;
+  input Type_a inArg;
+  output DAE.ReductionIterator outIter;
+  output Type_a outArg;
+
+  partial function FuncExpType
+    input tuple<DAE.Exp, Type_a> inTplExpTypeA;
+    output tuple<DAE.Exp, Boolean, Type_a> outTplExpBoolTypeA;
+  end FuncExpType;
+
+  replaceable type Type_a subtypeof Any;
+algorithm
+  (outIter,outArg) := match (iter,func,inArg)
+    local
+      String id;
+      DAE.Exp exp;
+      Option<DAE.Exp> gexp;
+      DAE.Type ty;
+      Type_a arg;
+    case (DAE.REDUCTIONITER(id,exp,gexp,ty),func,arg)
+      equation
+        ((exp, arg)) = traverseExpTopDown(exp, func, arg);
+        ((gexp, arg)) = traverseExpOptTopDown(gexp, func, arg);
+      then (DAE.REDUCTIONITER(id,exp,gexp,ty),arg);
+  end match;
+end traverseReductionIteratorTopDown;
+
+protected function traverseReductionIteratorsTopDown
+  input DAE.ReductionIterators iters;
+  input FuncExpType func;
+  input Type_a inArg;
+  output DAE.ReductionIterators outIters;
+  output Type_a outArg;
+
+  partial function FuncExpType
+    input tuple<DAE.Exp, Type_a> inTplExpTypeA;
+    output tuple<DAE.Exp, Boolean, Type_a> outTplExpBoolTypeA;
+  end FuncExpType;
+
+  replaceable type Type_a subtypeof Any;
+algorithm
+  (outIters,outArg) := match (iters,func,inArg)
+    local
+      String id;
+      DAE.Exp exp;
+      Option<DAE.Exp> gexp;
+      DAE.Type ty;
+      Type_a arg;
+      DAE.ReductionIterator iter;
+    case ({},_,arg) then ({},arg);
+    case (iter::iters,func,arg)
+      equation
+        (iter, arg) = traverseReductionIteratorTopDown(iter, func, arg);
+        (iters, arg) = traverseReductionIteratorsTopDown(iters, func, arg);
+      then (iter::iters,arg);
+  end match;
+end traverseReductionIteratorsTopDown;
+
+protected function traverseReductionIterator
+  input DAE.ReductionIterator iter;
+  input FuncExpType func;
+  input Type_a arg;
+  output DAE.ReductionIterator outIter;
+  output Type_a outArg;
+
+  partial function FuncExpType
+    input tuple<DAE.Exp, Type_a> inTpl;
+    output tuple<DAE.Exp, Type_a> outTpl;
+  end FuncExpType;
+  replaceable type Type_a subtypeof Any;
+algorithm
+  (outIter,outArg) := match (iter,func,arg)
+    local
+      String id;
+      DAE.Exp exp;
+      Option<DAE.Exp> gexp;
+      DAE.Type ty;
+    case (DAE.REDUCTIONITER(id,exp,gexp,ty),_,_)
+      equation
+        ((exp, arg)) = traverseExp(exp, func, arg);
+        ((gexp, arg)) = traverseExpOpt(gexp, func, arg);
+      then (DAE.REDUCTIONITER(id,exp,gexp,ty), arg);
+  end match;
+end traverseReductionIterator;
+
+protected function traverseReductionIterators
+  input DAE.ReductionIterators iters;
+  input FuncExpType func;
+  input Type_a arg;
+  output DAE.ReductionIterators outIters;
+  output Type_a outArg;
+
+  partial function FuncExpType
+    input tuple<DAE.Exp, Type_a> inTpl;
+    output tuple<DAE.Exp, Type_a> outTpl;
+  end FuncExpType;
+  replaceable type Type_a subtypeof Any;
+algorithm
+  (outIters,outArg) := match (iters,func,arg)
+    local
+      DAE.ReductionIterator iter;
+    case ({},_,arg) then ({},arg);
+    case (iter::iters,_,_)
+      equation
+        (iter, arg) = traverseReductionIterator(iter, func, arg);
+        (iters, arg) = traverseReductionIterators(iters, func, arg);
+      then (iter::iters, arg);
+  end match;
+end traverseReductionIterators;
 
 end Expression;
 

@@ -812,7 +812,7 @@ algorithm
       then
         (cache,v,stOpt);
 
-    case (cache, env, DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(path = path, ident = iter, foldExp = foldExp, defaultValue = ov, exprType = ty), expr = daeExp, guardExp = guardExp, range = iterexp), impl, stOpt, dimOpt, msg)
+    case (cache, env, DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(path = path, foldExp = foldExp, defaultValue = ov, exprType = ty), expr = daeExp, iterators = {DAE.REDUCTIONITER(id=iter,exp=iterexp,guardExp=guardExp)}), impl, stOpt, dimOpt, msg)
       equation
         (cache, v, stOpt) = ceval(cache, env, iterexp, impl, stOpt, dimOpt, msg);
         vals = ValuesUtil.arrayOrListVals(v,true);
@@ -5053,7 +5053,7 @@ algorithm
     // REDUCTION bindings  
     case (cache,env,cr,DAE.EQBOUND(exp = exp,constant_ = DAE.C_CONST()),impl,msg) 
       equation 
-        DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(path = Absyn.IDENT(name = rfn), ident = iter),expr = elexp,range = iterexp) = exp;
+        DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(path = Absyn.IDENT(name = rfn)),expr = elexp, iterators = {DAE.REDUCTIONITER(id=iter,exp=iterexp)}) = exp;
         cr_1 = ComponentReference.crefStripLastSubs(cr) "lookup without subscripts, so dimension sizes can be determined." ;
         (cache,_,tp,_,_,_,_,_,_) = Lookup.lookupVar(cache,env, cr_1);
         sizelst = Types.getDimensionSizes(tp);
