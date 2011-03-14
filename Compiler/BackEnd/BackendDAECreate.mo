@@ -591,8 +591,8 @@ algorithm
       equation
         (kind_1,states) = lowerVarkind(kind, t, name, dir, flowPrefix, streamPrefix, states, dae_var_attr);
         tp = lowerType(t);
-        minmax = lowerMinMax(dae_var_attr,name,source);
-        nominal = lowerNominal(dae_var_attr,name,source);
+        minmax = lowerMinMax(dae_var_attr,name,source,kind_1);
+        nominal = lowerNominal(dae_var_attr,name,source,kind_1);
       then
         (BackendDAE.VAR(name,kind_1,dir,tp,NONE(),NONE(),dims,-1,source,dae_var_attr,comment,flowPrefix,streamPrefix), bind, states, minmax, nominal);
   end match;
@@ -637,8 +637,8 @@ algorithm
         kind_1 = lowerKnownVarkind(kind, name, dir, flowPrefix);
         bind = fixParameterStartBinding(bind,dae_var_attr,kind_1);
         tp = lowerType(t);
-        minmax = lowerMinMax(dae_var_attr,name,source);
-        nominal = lowerNominal(dae_var_attr,name,source);
+        minmax = lowerMinMax(dae_var_attr,name,source,kind_1);
+        nominal = lowerNominal(dae_var_attr,name,source,kind_1);
       then
         (BackendDAE.VAR(name,kind_1,dir,tp,bind,NONE(),dims,-1,source,dae_var_attr,comment,flowPrefix,streamPrefix), minmax, nominal);
 
@@ -868,16 +868,18 @@ protected function lowerMinMax
   input Option<DAE.VariableAttributes> attr;
   input DAE.ComponentRef name;
   input DAE.ElementSource source; 
+  input BackendDAE.VarKind kind;
   output list<DAE.Algorithm> minmax;
 algorithm
   minmax :=
-  matchcontinue (attr,name,source)
+  matchcontinue (attr,name,source,kind)
     local
       DAE.Exp e,cond,msg;
       list<Option<DAE.Exp>> ominmax;
       String str;
       DAE.ExpType tp;
-    case (attr,name,source)
+    case(_,_,_,BackendDAE.CONST()) then {};
+    case (attr,name,source,_)
       equation 
         ominmax = DAEUtil.getMinMax(attr);
         str = ComponentReference.crefStr(name);
@@ -889,7 +891,7 @@ algorithm
         checkAssertCondition(cond,msg);
       then 
         {DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond,msg,source)})};
-    case(_,_,_) then {};
+    case(_,_,_,_) then {};
   end matchcontinue;
 end lowerMinMax;
 
@@ -920,16 +922,18 @@ protected function lowerNominal
   input Option<DAE.VariableAttributes> attr;
   input DAE.ComponentRef name;
   input DAE.ElementSource source; 
+  input BackendDAE.VarKind kind;  
   output list<DAE.Algorithm> nominal;
 algorithm
   nominal :=
-  matchcontinue (attr,name,source)
+  matchcontinue (attr,name,source,kind)
     local
       DAE.Exp e,cond,msg;
       list<Option<DAE.Exp>> ominmax;
       String str;
       DAE.ExpType tp;
-    case (attr as SOME(DAE.VAR_ATTR_REAL(nominal=SOME(e))),name,source)
+    case(_,_,_,BackendDAE.CONST()) then {};      
+    case (attr as SOME(DAE.VAR_ATTR_REAL(nominal=SOME(e))),name,source,_)
       equation 
         ominmax = DAEUtil.getMinMax(attr);
         str = ComponentReference.crefStr(name);
@@ -940,7 +944,7 @@ algorithm
         checkAssertCondition(cond,msg);
       then 
         {DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond,msg,source)})};
-    case(_,_,_) then {};
+    case(_,_,_,_) then {};
   end matchcontinue;
 end lowerNominal;
 

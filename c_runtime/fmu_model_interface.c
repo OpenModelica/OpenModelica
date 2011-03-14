@@ -323,7 +323,7 @@ fmiStatus fmiGetReal(fmiComponent c, const fmiValueReference vr[], size_t nvr, f
   {
     int needToIterate = 0;
     functionDAE(&needToIterate);
-    comp->eventInfo.stateValuesChanged == fmiFalse;
+    comp->eventInfo.stateValuesChanged = fmiFalse;
   }
   if (comp->outputsvalid == fmiFalse)
   {
@@ -358,7 +358,7 @@ fmiStatus fmiGetInteger(fmiComponent c, const fmiValueReference vr[], size_t nvr
   {
     int needToIterate = 0;
     functionDAE(&needToIterate);
-    comp->eventInfo.stateValuesChanged == fmiFalse;
+    comp->eventInfo.stateValuesChanged = fmiFalse;
   }
   if (comp->outputsvalid == fmiFalse)
   {
@@ -393,7 +393,7 @@ fmiStatus fmiGetBoolean(fmiComponent c, const fmiValueReference vr[], size_t nvr
   {
     int needToIterate = 0;
     functionDAE(&needToIterate);
-    comp->eventInfo.stateValuesChanged == fmiFalse;
+    comp->eventInfo.stateValuesChanged = fmiFalse;
   }
   if (comp->outputsvalid == fmiFalse)
   {
