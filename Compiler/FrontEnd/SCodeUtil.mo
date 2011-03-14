@@ -149,7 +149,7 @@ algorithm
       equation
         // Debug.fprint("translate", "Translating class:" +& n +& "\n");
         r_1 = translateRestriction(c, r); // uniontype will not get translated!
-        d_1 = translateClassdef(d);
+        d_1 = translateClassdef(d,file_info);
       then
         SCode.CLASS(n,p,e,r_1,d_1,file_info);
 
@@ -223,7 +223,7 @@ algorithm
     case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
                       body = Absyn.PARTS(classParts = (_ :: rest),comment = cmt),info = file_info))
       equation
-        res = containsExternalFuncDecl(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(rest,cmt),file_info));
+        res = containsExternalFuncDecl(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},rest,cmt),file_info));
       then
         res;
     /* adrpo: handling also the case model extends X external ... end X; */
@@ -233,7 +233,7 @@ algorithm
                       body = Absyn.CLASS_EXTENDS(parts = (_ :: rest),comment = cmt),
                       info = file_info))
       equation
-        res = containsExternalFuncDecl(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(rest,cmt),file_info));
+        res = containsExternalFuncDecl(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},rest,cmt),file_info));
       then
         res;
     else false;
@@ -249,9 +249,10 @@ protected function translateClassdef
    elements, equations and algorithms, which are mixed in the input.
   LS: Divided the translateClassdef into separate functions for collecting the different parts"
   input Absyn.ClassDef inClassDef;
+  input Absyn.Info info;
   output SCode.ClassDef outClassDef;
 algorithm
-  outClassDef := match (inClassDef)
+  outClassDef := match (inClassDef,info)
     local
       SCode.Mod mod;
       Absyn.TypeSpec t;
@@ -259,7 +260,7 @@ algorithm
       list<Absyn.ElementArg> a,cmod;
       Option<Absyn.Comment> cmt;
       Option<String> cmtString;
-      list<SCode.Element> els;
+      list<SCode.Element> els,tvels;
       list<SCode.Annotation> anns;
       list<SCode.Equation> eqs,initeqs;
       list<SCode.AlgorithmSection> als,initals;
@@ -272,8 +273,9 @@ algorithm
       String name;
       Absyn.Path path;
       list<Absyn.Path> pathLst;
+      list<String> typeVars;
 
-    case Absyn.DERIVED(typeSpec = t,attributes = attr,arguments = a,comment = cmt)
+    case (Absyn.DERIVED(typeSpec = t,attributes = attr,arguments = a,comment = cmt),_)
       equation
         // Debug.fprintln("translate", "translating derived class: " +& Dump.unparseTypeSpec(t));
         mod = translateMod(SOME(Absyn.CLASSMOD(a,Absyn.NOMOD())), false, Absyn.NON_EACH()) "TODO: attributes of derived classes" ;
@@ -281,10 +283,12 @@ algorithm
       then
         SCode.DERIVED(t,mod,attr,scodeCmt);
 
-    case Absyn.PARTS(classParts = parts,comment = cmtString)
+    case (Absyn.PARTS(typeVars = typeVars, classParts = parts,comment = cmtString),_)
       equation
         // Debug.fprintln("translate", "translating class parts");
+        tvels = Util.listMap1(typeVars, makeTypeVarElement, info);
         els = translateClassdefElements(parts);
+        els = listAppend(tvels,els);
         anns = translateClassdefAnnotations(parts);
         eqs = translateClassdefEquations(parts);
         initeqs = translateClassdefInitialequations(parts);
@@ -296,7 +300,7 @@ algorithm
       then
         SCode.PARTS(els,eqs,initeqs,als,initals,decl,anns,scodeCmt);
 
-    case Absyn.ENUMERATION(Absyn.ENUMLITERALS(enumLiterals = lst), cmt)
+    case (Absyn.ENUMERATION(Absyn.ENUMLITERALS(enumLiterals = lst), cmt),_)
       equation
         // Debug.fprintln("translate", "translating enumerations");
         lst_1 = translateEnumlist(lst);
@@ -304,21 +308,21 @@ algorithm
       then
         SCode.ENUMERATION(lst_1, scodeCmt);
 
-    case Absyn.ENUMERATION(Absyn.ENUM_COLON(), cmt)
+    case (Absyn.ENUMERATION(Absyn.ENUM_COLON(), cmt),_)
       equation
         // Debug.fprintln("translate", "translating enumeration of ':'");
         scodeCmt = translateComment(cmt);
       then
         SCode.ENUMERATION({},scodeCmt);
 
-    case Absyn.OVERLOAD(pathLst,cmt)
+    case (Absyn.OVERLOAD(pathLst,cmt),_)
       equation
         // Debug.fprintln("translate", "translating overloaded");
         scodeCmt = translateComment(cmt);
       then
         SCode.OVERLOAD(pathLst,scodeCmt);
 
-    case Absyn.CLASS_EXTENDS(baseClassName = name,modifications = cmod,comment = cmtString,parts = parts)
+    case (Absyn.CLASS_EXTENDS(baseClassName = name,modifications = cmod,comment = cmtString,parts = parts),_)
       equation
         // Debug.fprintln("translate", "translating model extends " +& name +& " ... end " +& name +& ";");
         els = translateClassdefElements(parts);
@@ -332,7 +336,7 @@ algorithm
       then
         SCode.CLASS_EXTENDS(name,mod,els,eqs,initeqs,als,initals,anns,scodeCmt);
 
-    case Absyn.PDER(functionName = path,vars = vars, comment=cmt)
+    case (Absyn.PDER(functionName = path,vars = vars, comment=cmt),_)
       equation
         // Debug.fprintln("translate", "translating pder( " +& Absyn.pathString(path) +& ", vars)");
         scodeCmt = translateComment(cmt);
@@ -1055,7 +1059,7 @@ algorithm
       equation
         // Debug.fprintln("translate", "translating local class: " +& n);
         re_1 = translateRestriction(cl, re); // uniontype will not get translated!
-        de_1 = translateClassdef(de);
+        de_1 = translateClassdef(de,i);
       then
         {SCode.CLASSDEF(n,finalPrefix,rp,SCode.CLASS(n,pa,e,re_1,de_1,i),cc)};
 
@@ -1851,5 +1855,18 @@ algorithm
       then fail();
   end match;
 end checkForDuplicateClassesInTopScope;
+
+protected function makeTypeVarElement
+  input String str;
+  input Absyn.Info info;
+  output SCode.Element elt;
+protected
+  SCode.ClassDef cd;
+  Absyn.TypeSpec ts;
+algorithm
+  ts := Absyn.TCOMPLEX(Absyn.IDENT("polymorphic"),{Absyn.TPATH(Absyn.IDENT("Any"),NONE())},NONE());
+  cd := SCode.DERIVED(ts,SCode.NOMOD(),Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),NONE()); 
+  elt := SCode.CLASSDEF(str,true,false,SCode.CLASS(str,false,false,SCode.R_TYPE(),cd,info),NONE());
+end makeTypeVarElement;
 
 end SCodeUtil;

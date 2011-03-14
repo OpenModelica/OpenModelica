@@ -197,15 +197,12 @@ class_specifier2 returns [void* ast, const char *s2] @init {
   (lt=LESS ids=ident_list gt=GREATER)? cmt=string_comment c=composition T_END id=identifier
     {
       $s2 = id;
-      if (ids != NULL) {
+      if (lt != NULL) {
         modelicaParserAssert(metamodelica_enabled(),"Polymorphic classes are only available in MetaModelica", class_specifier2, $start->line, $start->charPosition+1, $gt->line, $gt->charPosition+2);
-        c_add_source_message(2, "SYNTAX", "Warning", "TODO: Found polymorphic class definition, but it was not added to the AST (because Absyn.mo does not contain this definition yet)",
-          NULL, 0, $start->line, $start->charPosition+1, $gt->line, $gt->charPosition+2,
-          ModelicaParser_readonly, ModelicaParser_filename_C);
-        $ast = Absyn__PARTS(c, mk_some_or_none(cmt)); /* TODO: insert the short-hand stuff here */
+        $ast = Absyn__PARTS(ids, c, mk_some_or_none(cmt));
       } else {
         $s2 = id;
-        $ast = Absyn__PARTS(c, mk_some_or_none(cmt));
+        $ast = Absyn__PARTS(mk_nil(), c, mk_some_or_none(cmt));
       }
     }
 | EQUALS attr=base_prefix path=type_specifier ( cm=class_modification )? cmt=comment
@@ -233,7 +230,7 @@ pder returns [void* ast] :
 ident_list returns [void* ast]:
   i=IDENT (COMMA il=ident_list)?
     {
-      ast = mk_cons(i, or_nil(il));
+      ast = mk_cons(token_to_scon(i), or_nil(il));
     }
   ;
 

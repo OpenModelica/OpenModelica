@@ -143,12 +143,13 @@ algorithm
       Absyn.TypeSpec ts;
       Absyn.Path cPath;
       Env.Env env;
+      list<String> typeVars;
 
-    case(Absyn.PARTS(classParts = cp, comment = cmt),p,cPath,env)
+    case(Absyn.PARTS(typeVars = typeVars, classParts = cp, comment = cmt),p,cPath,env)
       equation
         resultPart = refactorGraphAnnInClassParts(cp,p,cPath,env);
       then
-        Absyn.PARTS(resultPart,cmt);
+        Absyn.PARTS(typeVars,resultPart,cmt);
 
     case(Absyn.DERIVED(typeSpec = ts, attributes = attrs,arguments = args, comment = SOME(Absyn.COMMENT(annotation_=SOME(Absyn.ANNOTATION(elementArgs = annList)),comment = cmt))),p,cPath,env)
       equation

@@ -676,7 +676,7 @@ extern struct record_description Absyn_Class_CLASS__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_ClassDef_PARTS__desc_added
 #define Absyn_ClassDef_PARTS__desc_added
-const char* Absyn_ClassDef_PARTS__desc__fields[2] = {"classParts","comment"};
+const char* Absyn_ClassDef_PARTS__desc__fields[3] = {"typeVars","classParts","comment"};
 struct record_description Absyn_ClassDef_PARTS__desc = {
   "Absyn_ClassDef_PARTS",
   "Absyn.ClassDef.PARTS",
@@ -686,8 +686,8 @@ struct record_description Absyn_ClassDef_PARTS__desc = {
 #else /* Only use the file as a header */
 extern struct record_description Absyn_ClassDef_PARTS__desc;
 #endif
-#define Absyn__PARTS_3dBOX2 3
-#define Absyn__PARTS(classParts,comment) (mmc_mk_box3(3,&Absyn_ClassDef_PARTS__desc,classParts,comment))
+#define Absyn__PARTS_3dBOX3 3
+#define Absyn__PARTS(typeVars,classParts,comment) (mmc_mk_box4(3,&Absyn_ClassDef_PARTS__desc,typeVars,classParts,comment))
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_ClassDef_DERIVED__desc_added
 #define Absyn_ClassDef_DERIVED__desc_added

@@ -329,11 +329,12 @@ algorithm
       Absyn.Info        info;
       list<Absyn.ClassPart> classParts;
       Option<String>  comment;
+      list<String> typeVars;
     
-    case (Absyn.CLASS(body=Absyn.PARTS(classParts=classParts,comment=comment),name=name,partialPrefix=partialPrefix,finalPrefix=finalPrefix,encapsulatedPrefix=encapsulatedPrefix,restriction=restriction,info=info))
+    case (Absyn.CLASS(body=Absyn.PARTS(typeVars=typeVars,classParts=classParts,comment=comment),name=name,partialPrefix=partialPrefix,finalPrefix=finalPrefix,encapsulatedPrefix=encapsulatedPrefix,restriction=restriction,info=info))
       equation
         classParts = Util.listMap(classParts,createMetaClassesFromClassParts);
-        body = Absyn.PARTS(classParts,comment);
+        body = Absyn.PARTS(typeVars,classParts,comment);
       then Absyn.CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,restriction,body,info);
     
     case (cl) then cl;
