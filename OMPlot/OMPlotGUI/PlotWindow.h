@@ -22,20 +22,8 @@
 #ifndef PLOTWINDOW_H
 #define PLOTWINDOW_H
 
-#include <QtGui/QMainWindow>
-#include <QtGui/QApplication>
-#include <QFile>
-#include <QCheckBox>
-#include <QToolButton>
-#include <QMessageBox>
-#include <QToolBar>
-#include <QHBoxLayout>
-#include <QLabel>
-#include <QImageWriter>
-#include <QFileDialog>
-#include <QDockWidget>
-#include <QStatusBar>
-#include <QTextStream>
+#include <QtGui>
+#include <QtCore>
 
 #include <qwt_plot.h>
 #include <qwt_text.h>
@@ -47,18 +35,15 @@
 #include <qwt_legend.h>
 #include <qwt_plot_zoomer.h>
 #include <qwt_plot_panner.h>
-//#include <qwt_plot_renderer.h>
 #include <qwt_scale_engine.h>
 #include <stdexcept>
 #include "../../c_runtime/read_matlab4.h"
+#include "Plot.h"
 
-// Info about a curve
-struct CurveData
+namespace OMPlot
 {
-    QVector<double> xAxisVector;
-    QVector<double> yAxisVector;
-    QString curveName;
-};
+class Plot;
+class PlotCurve;
 
 class PlotWindow : public QMainWindow
 {
@@ -66,12 +51,15 @@ class PlotWindow : public QMainWindow
 public:           
     PlotWindow(QStringList arguments, QWidget *parent = 0);    
     PlotWindow(QString fileName, QWidget *parent = 0);
+    // used for interactive simulation
+    PlotWindow(QWidget *parent = 0);
+
     ~PlotWindow();
 
     void plot(QStringList);
     void plotAll();
     void plotParametric(QString, QString);
-    void plotGraph(QList<CurveData>);
+    void plotGraph(QList<PlotCurve*> plotCurvesList);
 
     void openFile(QString);
     void initializePlot();
@@ -87,21 +75,16 @@ public:
     void setXRange(double min, double max);
     void setYRange(double min, double max);
     void checkForErrors(QStringList, QVector<int> );
+    Plot* getPlot();
+    QToolButton* getPanButton();
 private:
-    QwtPlot *mpQwtPlot;
-    QwtLegend *mpQwtLegend;
-    QwtPlotPicker *mpPlotPicker;
-    QwtPlotGrid *mpGrid;
-    QwtPlotZoomer *mpPlotZoomer;
-    QwtPlotPanner *mpPlotPanner;
+    Plot *mpPlot;
 
     QCheckBox *mpXCheckBox;
     QCheckBox *mpYCheckBox;
     QToolButton *mpGridButton;
     QToolButton *mpZoomButton;
     QToolButton *mpPanButton;
-
-    QList<CurveData> mCurveDataList;
 
     QTextStream *mpTextStream;
     QFile *mpFile;
@@ -112,32 +95,6 @@ public Q_SLOTS:
     void setLog();
     void setGrid(bool);
     void setOriginal();
-};
-
-//Class for zooming
-class  Zoomer: public QwtPlotZoomer
-{
-public:
-    Zoomer(int xAxis, int yAxis, QwtPlotCanvas *canvas):
-        QwtPlotZoomer(xAxis, yAxis, canvas)
-    {
-        setSelectionFlags(QwtPicker::DragSelection | QwtPicker::CornerToCorner);
-        setTrackerMode(QwtPicker::AlwaysOff);
-        setRubberBand(QwtPicker::NoRubberBand);
-
-        // RightButton: zoom out by 1
-        // Ctrl+RightButton: zoom out to full size
-
-#if QT_VERSION < 0x040000
-        setMousePattern(QwtEventPattern::MouseSelect2,
-            Qt::RightButton, Qt::ControlButton);
-#else
-        setMousePattern(QwtEventPattern::MouseSelect2,
-            Qt::RightButton, Qt::ControlModifier);
-#endif
-        setMousePattern(QwtEventPattern::MouseSelect3,
-            Qt::RightButton);
-    }
 };
 
 //Exception classes
@@ -193,5 +150,6 @@ public:
 //public slots:
 //    void edit();
 //};
+}
 
 #endif // PLOTWINDOW_H

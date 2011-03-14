@@ -31,43 +31,54 @@
  *
  */
 
-#include "plotwindow.h"
+#include "PlotWindow.h"
+
+using namespace OMPlot;
 
 PlotWindow::PlotWindow(QStringList arguments, QWidget *parent)
     : QMainWindow(parent)
 {
-    initializePlot();
+    // create an instance of qwt plot
+    mpPlot = new Plot(this);
+    // set up the toolbar
     setupToolbar();
-    openFile(QString(arguments[1]));    
+    // open the file
+    openFile(QString(arguments[1]));
 
     //Set up arguments
+    // read the title
     setTitle(QString(arguments[2]));
-
+    // read the legend
     if(QString(arguments[3]) == "true")
         setLegend(true);
     else if(QString(arguments[3]) == "false")
         setLegend(false);
-
+    // read the grid
     if(QString(arguments[4]) == "true")
         setGrid(true);
     else if(QString(arguments[4]) == "false")
         setGrid(false);
+    // read the plot type
     QString plotType = arguments[5];
-
+    // read the logx
     if(QString(arguments[6]) == "true")
         setLogX(true);
     else if(QString(arguments[6]) == "false")
         setLogX(false);
-
+    // read the logy
     if(QString(arguments[7]) == "true")
         setLogY(true);
     else if(QString(arguments[7]) == "false")
         setLogY(false);
-
+    // read the x label value
     setXLabel(QString(arguments[8]));
+    // read the y label value
     setYLabel(QString(arguments[9]));
+    // read the x range
     setXRange(QString(arguments[10]).toDouble(), QString(arguments[11]).toDouble());
+    // read the y range
     setYRange(QString(arguments[12]).toDouble(), QString(arguments[13]).toDouble());
+    // read the variables name
     QStringList variablesToRead;
     for(int i = 14; i < arguments.length(); i++)
         variablesToRead.append(QString(arguments[i]));  
@@ -79,24 +90,44 @@ PlotWindow::PlotWindow(QStringList arguments, QWidget *parent)
         plotAll();
     if(plotType == "plotParametric")
         plotParametric(QString(variablesToRead[0]), QString(variablesToRead[1]));
+
+    setCentralWidget(mpPlot);
 }
 
 PlotWindow::PlotWindow(QString fileName, QWidget *parent)
         : QMainWindow(parent)
 {
-    initializePlot();
+    // create an instance of qwt plot
+    mpPlot = new Plot(this);
+    // set up the toolbar
     setupToolbar();
+    // open the file
     openFile(fileName);
+
+    setCentralWidget(mpPlot);
+}
+
+// used for interactive simulation
+PlotWindow::PlotWindow(QWidget *parent)
+    : QMainWindow(parent)
+{
+    // create an instance of qwt plot
+    mpPlot = new Plot(this);
+    // set up the toolbar
+    setupToolbar();
+    mpFile = 0;
+
+    setCentralWidget(mpPlot);
 }
 
 PlotWindow::~PlotWindow()
 {
-    delete mpFile;
-    delete mpTextStream;
-
-
- //   delete mpQwtLegend;
-    delete mpQwtPlot;            
+    if (mpFile)
+    {
+        delete mpFile;
+        delete mpTextStream;
+    }
+    delete mpPlot;
 }
 
 void PlotWindow::openFile(QString file)
@@ -109,35 +140,6 @@ void PlotWindow::openFile(QString file)
     mpTextStream = new QTextStream(mpFile);
 }
 
-void PlotWindow::initializePlot()
-{    
-    //Create the Plot window, size and grid, legend
-    //mpQwtPlot = new QwtPlot();
-    //mpQwtPlot = new QwtPlot(QwtText("Title"));
-    mpQwtPlot = new QwtPlot(QwtText("Wazzup"));
-    mpQwtPlot->setGeometry(100, 100, 700, 400);
-    mpQwtPlot->setCanvasBackground(Qt::GlobalColor(Qt::white));
-    mpGrid = new QwtPlotGrid();
-    mpGrid->attach(mpQwtPlot);
-    mpQwtLegend = new QwtLegend();
-    mpQwtPlot->insertLegend(mpQwtLegend, QwtPlot::RightLegend);
-    mpQwtPlot->setTitle(QwtText("Plot Window"));    
-    mpQwtPlot->replot();       
-
-    //plotpicker, Plotpanner, plotzoomer
-    mpPlotPicker = new QwtPlotPicker(QwtPlot::xBottom, QwtPlot::yLeft, QwtPicker::PointSelection, QwtPlotPicker::CrossRubberBand,QwtPicker::AlwaysOn,
-                                     mpQwtPlot->canvas());
-    mpPlotPicker->setTrackerPen(QColor(Qt::black));
-    mpPlotPicker->setRubberBandPen(QColor(Qt::black));
-
-    mpPlotPanner = new QwtPlotPanner(mpQwtPlot->canvas());
-    mpPlotPanner->setEnabled(false);
-
-    //Add mpQwtPlot to widget and set size
-    setCentralWidget(mpQwtPlot);
-    setMinimumSize(700,500);
-}
-
 void PlotWindow::setupToolbar()
 {
     QToolBar *toolBar = new QToolBar(this);
@@ -146,6 +148,7 @@ void PlotWindow::setupToolbar()
     mpZoomButton = new QToolButton(toolBar);
     mpZoomButton->setText("Zoom");
     mpZoomButton->setCheckable(true);
+    mpZoomButton->setChecked(true);
     connect(mpZoomButton, SIGNAL(toggled(bool)), SLOT(enableZoomMode(bool)));
     toolBar->addWidget(mpZoomButton);
 
@@ -209,14 +212,6 @@ void PlotWindow::setupToolbar()
     addToolBar(toolBar);
 }
 
-void PlotWindow::initializeZoom()
-{
-    mpPlotZoomer = new Zoomer(QwtPlot::xBottom, QwtPlot::yLeft, mpQwtPlot->canvas());
-    mpPlotZoomer->setRubberBand(QwtPicker::RectRubberBand);
-    mpPlotZoomer->setRubberBandPen(QColor(Qt::black));
-    enableZoomMode(false);
-}
-
 void PlotWindow::plot(QStringList variables)
 {
     QString currentLine;
@@ -258,21 +253,21 @@ void PlotWindow::plot(QStringList variables)
                 if(variables[i] == currentVariable || plotAll)
                 {
                     variableExists.replace(i , 1);
-                    CurveData curve;
+                    PlotCurve *pPlotCurve = new PlotCurve(mpPlot);
                     currentLine = mpTextStream->readLine();
                     intervalSize = intervalString.toInt();
                     while(intervalSize != 0)
                     {
                         QStringList doubleList = currentLine.split(",");
-                        curve.xAxisVector.push_back(QString(doubleList[0]).toDouble());
-                        curve.yAxisVector.push_back(QString(doubleList[1]).toDouble());
+                        pPlotCurve->addXAxisValue(QString(doubleList[0]).toDouble());
+                        pPlotCurve->addYAxisValue(QString(doubleList[1]).toDouble());
                         currentLine = mpTextStream->readLine();
                         intervalSize--;
                     }
-                    curve.curveName = currentVariable;
-                    mCurveDataList.append(curve);
-                }               
-            }            
+                    pPlotCurve->setTitle(currentVariable);
+                    mpPlot->addPlotCurve(pPlotCurve);
+                }
+            }
         }
         //Error handling
         if(!(variables[0] == ""))        
@@ -310,8 +305,6 @@ void PlotWindow::plot(QStringList variables)
                 variablesToPlotIndex.push_back(i);
         }
 
-        CurveData curve[variablesToPlotIndex.size()];
-
         //Assign Values
         while(!mpTextStream->atEnd())
         {
@@ -321,27 +314,23 @@ void PlotWindow::plot(QStringList variables)
 
             for(int i = 0; i < variablesToPlotIndex.size(); i++)
             {
+                PlotCurve *pPlotCurve = new PlotCurve(mpPlot);
                 QString valuesString = values[0];
-                curve[i].xAxisVector.push_back(valuesString.toDouble());
+                pPlotCurve->addXAxisValue(valuesString.toDouble());
                 QString valuesString2 = values[variablesToPlotIndex[i]];
-                curve[i].yAxisVector.push_back(valuesString2.toDouble());
+                pPlotCurve->addYAxisValue(valuesString2.toDouble());
+                if(variables[0] == "")
+                    pPlotCurve->setTitle(allVariablesInFile[i]);
+                else
+                    pPlotCurve->setTitle(variables[i]);
+                mpPlot->addPlotCurve(pPlotCurve);
             }
         }
 
         //Error Handling
         if(!(variables[0] == ""))
             checkForErrors(variables, variableExists);
-
-        //Assign name
-        for(int i = 0; i < variablesToPlotIndex.size(); i++)
-        {
-            if(variables[0] == "")
-                curve[i].curveName = allVariablesInFile[i];
-            else
-                curve[i].curveName = variables[i];
-            mCurveDataList.append(curve[i]);
-        }
-    }    
+    }
     else if(mpFile->fileName().endsWith("mat"))
     {
         //PLOT MAT
@@ -367,8 +356,6 @@ void PlotWindow::plot(QStringList variables)
             variables.removeFirst();
         }
 
-        CurveData curve[variables.length()];
-
         //Read in values
         for(int i = 0; i < variables.length(); i++)
         {
@@ -376,7 +363,8 @@ void PlotWindow::plot(QStringList variables)
             if(currentPlotVariable == "time")
                 currentPlotVariable = "Time";
 
-            curve[i].xAxisVector = timeVector;
+            PlotCurve *pPlotCurve = new PlotCurve(mpPlot);
+            pPlotCurve->setXAxisVector(timeVector);
 
             //Read in y vector variable
             var = omc_matlab4_find_var(&reader, currentPlotVariable.toStdString().c_str());
@@ -384,14 +372,14 @@ void PlotWindow::plot(QStringList variables)
                 throw NoVariableException(QString("Variable doesnt exist : ").append(currentPlotVariable).toStdString().c_str());
             vals = omc_matlab4_read_vals(&reader, var->index);
             for (int j = 0; j < reader.nrows; j++)
-                curve[i].yAxisVector.push_back(vals[j]);
+                pPlotCurve->addYAxisValue(vals[j]);
 
             //Set curvename and push back to list
-            curve[i].curveName = variables[i];
-            mCurveDataList.push_back(curve[i]);
+            pPlotCurve->setTitle(variables[i]);
+            mpPlot->addPlotCurve(pPlotCurve);
         }
     }
-    plotGraph(mCurveDataList);
+    plotGraph(mpPlot->getPlotCurvesList());
 }
 
 void PlotWindow::plotAll()
@@ -426,7 +414,7 @@ void PlotWindow::plotParametric(QString xVariable, QString yVariable)
 
         QStringList variablesList(xVariable);
         variablesList.append(yVariable);
-        CurveData curve;
+        PlotCurve *pPlotCurve = new PlotCurve(mpPlot);
 
         //Collect variables
         while(!mpTextStream->atEnd())
@@ -451,26 +439,25 @@ void PlotWindow::plotParametric(QString xVariable, QString yVariable)
                     while(intervalSize != 0)
                     {                       
                         QStringList doubleList = currentLine.split(",");
-
                         QString vS = doubleList[1];
 
                         if(i == 0)
-                            curve.xAxisVector.push_back(vS.toDouble());
+                            pPlotCurve->addXAxisValue(vS.toDouble());
                         else if(i == 1)
-                            curve.yAxisVector.push_back(vS.toDouble());
+                            pPlotCurve->addYAxisValue(vS.toDouble());
 
                         currentLine = mpTextStream->readLine();
                         intervalSize--;
-                    }                    
+                    }
                 }
             }
-        }        
+        }
 
         //Error handling        
         checkForErrors(variablesList, variableExists);
 
-        curve.curveName = variablesList[1];
-        mCurveDataList.append(curve);
+        pPlotCurve->setTitle(variablesList[1]);
+        mpPlot->addPlotCurve(pPlotCurve);
     }
     else if(mpFile->fileName().endsWith("csv"))
     {
@@ -499,15 +486,15 @@ void PlotWindow::plotParametric(QString xVariable, QString yVariable)
         }
 
         currentLine = mpTextStream->readLine();
-        CurveData curve;
+        PlotCurve *pPlotCurve = new PlotCurve(mpPlot);
 
         //Collect values
         while(!mpTextStream->atEnd())
         {
             QStringList values = currentLine.split(",");
 
-            curve.xAxisVector.push_back(QString(values[xVariableIndex]).toDouble());
-            curve.yAxisVector.push_back(QString(values[yVariableIndex]).toDouble());
+            pPlotCurve->addXAxisValue(QString(values[xVariableIndex]).toDouble());
+            pPlotCurve->addYAxisValue(QString(values[yVariableIndex]).toDouble());
 
             currentLine = mpTextStream->readLine();
         }
@@ -516,8 +503,8 @@ void PlotWindow::plotParametric(QString xVariable, QString yVariable)
         list.append(yVariable);
         checkForErrors(list, variableExists);
 
-        curve.curveName = yVariable;
-        mCurveDataList.append(curve);
+        pPlotCurve->setTitle(yVariable);
+        mpPlot->addPlotCurve(pPlotCurve);
     }
     else if(mpFile->fileName().endsWith("mat"))
     {
@@ -536,7 +523,7 @@ void PlotWindow::plotParametric(QString xVariable, QString yVariable)
         if(yVariable == "time")
             yVariable = "Time";
 
-        CurveData curve;
+        PlotCurve *pPlotCurve = new PlotCurve(mpPlot);
 
         //Fill variable x with data
         var = omc_matlab4_find_var(&reader, xVariable.toStdString().c_str());
@@ -544,7 +531,7 @@ void PlotWindow::plotParametric(QString xVariable, QString yVariable)
             throw NoVariableException(QString("Variable doesn't exist : ").append(xVariable).toStdString().c_str());
         double *vals = omc_matlab4_read_vals(&reader,var->index); //Här sef fault om variabel fel
         for (int j = 0; j<reader.nrows; j++)
-            curve.xAxisVector.push_back(vals[j]);
+            pPlotCurve->addXAxisValue(vals[j]);
 
         //Fill variable y with data
         var = omc_matlab4_find_var(&reader, yVariable.toStdString().c_str());
@@ -552,60 +539,58 @@ void PlotWindow::plotParametric(QString xVariable, QString yVariable)
             throw NoVariableException(QString("Variable doesn't exist : ").append(yVariable).toStdString().c_str());
         vals = omc_matlab4_read_vals(&reader,var->index);
         for (int j = 0; j<reader.nrows; j++)
-            curve.yAxisVector.push_back(vals[j]);
+            pPlotCurve->addYAxisValue(vals[j]);
 
-        curve.curveName = yVariable;
-        mCurveDataList.append(curve);
+        pPlotCurve->setTitle(yVariable);
+        mpPlot->addPlotCurve(pPlotCurve);
     }
-    plotGraph(mCurveDataList);
+    plotGraph(mpPlot->getPlotCurvesList());
 }
 
-void PlotWindow::plotGraph(QList<CurveData> mCurveDataList)
-{    
-    QwtPlotCurve *mpPlotCurve[mCurveDataList.length()];
-    for(int i = 0; i < mCurveDataList.length(); i++)
+void PlotWindow::plotGraph(QList<PlotCurve*> plotCurvesList)
+{
+    for(int i = 0; i < plotCurvesList.length(); i++)
     {
         int colorValue = 7 + i;
         if(colorValue > 19 )
             colorValue = 1 + i % 12;
         QPen pen(QColor(Qt::GlobalColor(colorValue + 1)));
         pen.setWidth(2);
-        mpPlotCurve[i] = new QwtPlotCurve(mCurveDataList[i].curveName);
-        //mpPlotCurve[i]->setSamples(mCurveDataList[i].xAxisVector,mCurveDataList[i].yAxisVector);
-        mpPlotCurve[i]->setData(mCurveDataList[i].xAxisVector,mCurveDataList[i].yAxisVector);
-        mpPlotCurve[i]->setPen(pen);
-        mpPlotCurve[i]->attach(mpQwtPlot);
+        plotCurvesList[i]->setData(plotCurvesList[i]->getXAxisVector(), plotCurvesList[i]->getYAxisVector());
+        plotCurvesList[i]->setPen(pen);
+        plotCurvesList[i]->attach(mpPlot);
     }
-    initializeZoom();
 }
 
 void PlotWindow::enableZoomMode(bool on)
 {
-    mpPlotZoomer->setEnabled(on);
+    mpPlot->getPlotZoomer()->setEnabled(on);
     if(on)
     {
-        mpPlotPicker->setRubberBand(QwtPlotPicker::NoRubberBand);
-        if(mpPlotPanner->isEnabled())
+        mpPlot->getPlotPicker()->setRubberBand(QwtPlotPicker::NoRubberBand);
+        if(mpPlot->getPlotPanner()->isEnabled())
         {
-            mpPlotPanner->setEnabled(false);
+            mpPlot->getPlotPanner()->setEnabled(false);
             mpPanButton->setChecked(false);
         }
+        mpPlot->canvas()->setCursor(Qt::CrossCursor);
     }
     else
     {
-        if(!mpPlotPanner->isEnabled())
-            mpPlotPicker->setRubberBand(QwtPlotPicker::CrossRubberBand);
+        if(!mpPlot->getPlotPanner()->isEnabled())
+            mpPlot->getPlotPicker()->setRubberBand(QwtPlotPicker::CrossRubberBand);
     }
 }
 
 void PlotWindow::enablePanMode(bool on)
 {
-    mpPlotPanner->setEnabled(on);
+    mpPlot->getPlotPanner()->setEnabled(on);
 
     if(on)
     {
-        mpPlotPicker->setRubberBand(QwtPlotPicker::NoRubberBand);
-        if(mpPlotZoomer->isEnabled())
+        mpPlot->getPlotPicker()->setRubberBand(QwtPlotPicker::NoRubberBand);
+        mpPlot->canvas()->setCursor(Qt::OpenHandCursor);
+        if(mpPlot->getPlotZoomer()->isEnabled())
         {
             mpZoomButton->setChecked(false);
             enableZoomMode(false);
@@ -613,8 +598,11 @@ void PlotWindow::enablePanMode(bool on)
     }
     else
     {
-        if(!mpPlotZoomer->isEnabled())
-            mpPlotPicker->setRubberBand(QwtPlotPicker::CrossRubberBand);
+        if(!mpPlot->getPlotZoomer()->isEnabled())
+        {
+            mpPlot->getPlotPicker()->setRubberBand(QwtPlotPicker::CrossRubberBand);
+            mpPlot->canvas()->setCursor(Qt::CrossCursor);
+        }
     }
 }
 
@@ -625,8 +613,8 @@ void PlotWindow::exportDocument()
 
     if ( !fileName.isEmpty() )
     {        
-        QPixmap pixmap(mpQwtPlot->size());
-        mpQwtPlot->render(&pixmap);
+        QPixmap pixmap(mpPlot->size());
+        mpPlot->render(&pixmap);
         pixmap.save(fileName);
     }
 }
@@ -635,58 +623,54 @@ void PlotWindow::setLog()
 {
     if(mpXCheckBox->isChecked())
     {
-        mpQwtPlot->setAxisScaleEngine(QwtPlot::xBottom, new QwtLog10ScaleEngine);        
-        mpQwtPlot->setAxisAutoScale(QwtPlot::xBottom);
+        mpPlot->setAxisScaleEngine(QwtPlot::xBottom, new QwtLog10ScaleEngine);
+        mpPlot->setAxisAutoScale(QwtPlot::xBottom);
     }
     else if(mpYCheckBox->isChecked())
     {
-        mpQwtPlot->setAxisScaleEngine(QwtPlot::yLeft, new QwtLog10ScaleEngine);        
-        mpQwtPlot->setAxisAutoScale(QwtPlot::yLeft);
+        mpPlot->setAxisScaleEngine(QwtPlot::yLeft, new QwtLog10ScaleEngine);
+        mpPlot->setAxisAutoScale(QwtPlot::yLeft);
     }
     else
     {
-        mpQwtPlot->setAxisScaleEngine(QwtPlot::yLeft, new QwtLinearScaleEngine);
-        mpQwtPlot->setAxisScaleEngine(QwtPlot::xBottom, new QwtLinearScaleEngine);
-        mpQwtPlot->setAxisAutoScale(QwtPlot::yLeft);
-        mpQwtPlot->setAxisAutoScale(QwtPlot::xBottom);
+        mpPlot->setAxisScaleEngine(QwtPlot::yLeft, new QwtLinearScaleEngine);
+        mpPlot->setAxisScaleEngine(QwtPlot::xBottom, new QwtLinearScaleEngine);
+        mpPlot->setAxisAutoScale(QwtPlot::yLeft);
+        mpPlot->setAxisAutoScale(QwtPlot::xBottom);
     }
-    mpQwtPlot->replot();
+    mpPlot->replot();
 }
 
 void PlotWindow::setGrid(bool on)
 {
-    if(!on)
+    if (!on)
     {
-        mpGrid->detach();
+        mpPlot->getPlotGrid()->detach();
         mpGridButton->setChecked(false);
     }
     else
-        mpGrid->attach(mpQwtPlot);
-
-    mpQwtPlot->replot();        
+    {
+        mpPlot->getPlotGrid()->attach(mpPlot);
+        mpGridButton->setChecked(true);
+    }
+    mpPlot->replot();
 }
 
 void PlotWindow::setOriginal()
 {
-    mpQwtPlot->setAxisAutoScale(QwtPlot::yLeft);
-    mpQwtPlot->setAxisAutoScale(QwtPlot::xBottom);    
-    mpQwtPlot->replot();
+    mpPlot->setAxisAutoScale(QwtPlot::yLeft);
+    mpPlot->setAxisAutoScale(QwtPlot::xBottom);
+    mpPlot->replot();
 }
 
 void PlotWindow::setTitle(QString title)
 {
-    mpQwtPlot->setTitle(QwtText(title));
+    mpPlot->setTitle(QwtText(title));
 }
 
 void PlotWindow::setLegend(bool on)
 {
-    //Can be fixed better
-    if(on)
-    {        
-        //mpQwtPlot->insertLegend(mpQwtLegend, QwtPlot::RightLegend);
-    }
-    else
-        delete mpQwtLegend;
+    mpPlot->getLegend()->setVisible(on);
 }
 
 void PlotWindow::setLogX(bool on)
@@ -709,24 +693,24 @@ void PlotWindow::setLogY(bool on)
 
 void PlotWindow::setXLabel(QString label)
 {
-    mpQwtPlot->setAxisTitle(QwtPlot::xBottom, label);
+    mpPlot->setAxisTitle(QwtPlot::xBottom, label);
 }
 
 void PlotWindow::setYLabel(QString label)
 {
-    mpQwtPlot->setAxisTitle(QwtPlot::yLeft, label);
+    mpPlot->setAxisTitle(QwtPlot::yLeft, label);
 }
 
 void PlotWindow::setXRange(double min, double max)
 {
     if(!(max == 0 && min == 0))
-        mpQwtPlot->setAxisScale(QwtPlot::xBottom, min, max);
+        mpPlot->setAxisScale(QwtPlot::xBottom, min, max);
 }
 
 void PlotWindow::setYRange(double min, double max)
 {
     if(!(max == 0 && min == 0))
-        mpQwtPlot->setAxisScale(QwtPlot::yLeft, min, max);
+        mpPlot->setAxisScale(QwtPlot::yLeft, min, max);
 }
 
 void PlotWindow::checkForErrors(QStringList variables, QVector<int> variableExists)
@@ -739,6 +723,16 @@ void PlotWindow::checkForErrors(QStringList variables, QVector<int> variableExis
     }
     if(nonExistingVariables != "")
         throw NoVariableException(QString("Variable(s) doesnt exist : ").append(nonExistingVariables).toStdString().c_str());
+}
+
+Plot* PlotWindow::getPlot()
+{
+    return mpPlot;
+}
+
+QToolButton* PlotWindow::getPanButton()
+{
+    return mpPanButton;
 }
 
 //Options

@@ -31,7 +31,10 @@
  *
  */
 
-#include "plotwindow.h"
+#include <QtGui/QApplication>
+#include "PlotWindow.h"
+
+using namespace OMPlot;
 
 int main(int argc, char *argv[])
 {
