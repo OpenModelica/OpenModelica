@@ -1237,10 +1237,10 @@ algorithm
 
     // Lookup where the first identifier is a component.
     case (cache, env, cr as DAE.CREF_QUAL(ident = id, identType = ety, 
-        subscriptLst = {}, componentRef = cref), _, _)
+        subscriptLst = sb, componentRef = cref), _, _)
       equation
         (cache, attr, ty, bind, cnstForRange, splicedExpData, classEnv,
-         componentEnv, name) = lookupVarLocal(cache, env, DAE.CREF_IDENT(id, ety, {}));
+         componentEnv, name) = lookupVarLocal(cache, env, DAE.CREF_IDENT(id, ety, sb));
         (cache, attr2, ty, bind, cnstForRange, splicedExpData, classEnv,
          componentEnv, name) = lookupVarLocal(cache, componentEnv, cref);
         attr = propagateVariability(attr2, attr);
