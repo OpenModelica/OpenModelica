@@ -4954,33 +4954,33 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     '<%retVar%>'
   
   case CALL(tuple_=false, builtin=true,
+            path=IDENT(name="max"), ty = ET_REAL(), expLst={e1,e2}) then
+    let var1 = daeExp(e1, context, &preExp, &varDecls)
+    let var2 = daeExp(e2, context, &preExp, &varDecls)
+    'fmax(<%var1%>,<%var2%>)'
+
+  case CALL(tuple_=false, builtin=true,
             path=IDENT(name="max"), expLst={e1,e2}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls)
     let var2 = daeExp(e2, context, &preExp, &varDecls)
-    'std::max(<%var1%>,<%var2%>)'
-  
-  case CALL(tuple_=false, builtin=true, ty = ET_INT(),
-            path=IDENT(name="min"), expLst={e1,e2}) then
-    let var1 = daeExp(e1, context, &preExp, &varDecls)
-    let var2 = daeExp(e2, context, &preExp, &varDecls)
-    'std::min((modelica_integer)<%var1%>,(modelica_integer)<%var2%>)'
-  
-  case CALL(tuple_=false, builtin=true, ty = ET_ENUMERATION(__),
-            path=IDENT(name="min"), expLst={e1,e2}) then
-    let var1 = daeExp(e1, context, &preExp, &varDecls)
-    let var2 = daeExp(e2, context, &preExp, &varDecls)
-    'std::min((modelica_integer)<%var1%>,(modelica_integer)<%var2%>)'  
+    'modelica_integer_max((modelica_integer)<%var1%>,(modelica_integer)<%var2%>)'
   
   case CALL(tuple_=false, builtin=true, ty = ET_REAL(),
             path=IDENT(name="min"), expLst={e1,e2}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls)
     let var2 = daeExp(e2, context, &preExp, &varDecls)
-    'std::min(<%var1%>,<%var2%>)'
+    'fmin(<%var1%>,<%var2%>)'
+  
+  case CALL(tuple_=false, builtin=true,
+            path=IDENT(name="min"), expLst={e1,e2}) then
+    let var1 = daeExp(e1, context, &preExp, &varDecls)
+    let var2 = daeExp(e2, context, &preExp, &varDecls)
+    'modelica_integer_min((modelica_integer)<%var1%>,(modelica_integer)<%var2%>)'
   
   case CALL(tuple_=false, builtin=true,
             path=IDENT(name="abs"), expLst={e1}, ty = ET_INT()) then
     let var1 = daeExp(e1, context, &preExp, &varDecls)
-    'std::abs(<%var1%>)'
+    'labs(<%var1%>)'
   
   case CALL(tuple_=false, builtin=true,
             path=IDENT(name="abs"), expLst={e1}) then

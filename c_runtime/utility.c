@@ -74,3 +74,14 @@ modelica_integer modelica_rem_integer(modelica_integer x, modelica_integer y)
 {
   return x - y*((x/y));
 }
+
+modelica_integer modelica_integer_min(modelica_integer x,modelica_integer y)
+{
+  return x<y ? x : y;
+}
+
+modelica_integer modelica_integer_max(modelica_integer x,modelica_integer y)
+{
+  return x>y ? x : y;
+}
+
