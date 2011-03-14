@@ -36,10 +36,11 @@ jmp_buf *mmc_jumper;
 
 void* mmc_mk_rcon(double d)
 {
-    struct mmc_real *p = mmc_alloc_words(sizeof(struct mmc_real)/MMC_SIZE_INT);
-    p->header = MMC_REALHDR;
-    p->data = d;
-    return MMC_TAGPTR(p);
+    void *p = mmc_alloc_words(MMC_SIZE_DBL/MMC_SIZE_INT+1);
+    ((mmc_uint_t*)p)[0] = MMC_REALHDR;
+    *((double*)((mmc_uint_t*)p+1)) = d;
+    p = MMC_TAGPTR(p);
+    return p;
 }
 
 void *mmc_mk_box_arr(int slots, unsigned ctor, const void** args)

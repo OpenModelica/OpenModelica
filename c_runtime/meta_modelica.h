@@ -82,7 +82,7 @@ typedef int mmc_sint_t;
 #define MMC_TAGFIXNUM(i)  ((i) << 1)
 #define MMC_UNTAGFIXNUM(X)  (((mmc_sint_t) X) >> 1)
 #define MMC_REALHDR    (((MMC_SIZE_DBL/MMC_SIZE_INT) << 10) + 9)
-#define MMC_REALDATA(x) (((struct mmc_real*)MMC_UNTAGPTR(x))->data)
+#define MMC_REALDATA(x) (*((double*)(((mmc_uint_t*)MMC_UNTAGPTR(x))+1)))
 #define MMC_STRINGHDR(nbytes)  (((nbytes)<<(10-MMC_LOG2_SIZE_INT))+((1<<10)+5))
 #define MMC_HDRSLOTS(hdr)  ((hdr) >> 10)
 #define MMC_GETHDR(x)    (*(mmc_uint_t*)MMC_UNTAGPTR(x))
