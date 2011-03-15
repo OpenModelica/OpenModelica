@@ -1550,6 +1550,7 @@ public function tplString
     replaceable type Type_a subtypeof Any;
   end Tpl_Fun;  
   replaceable type Type_a subtypeof Any;   
+
 protected
   Text txt;
   Integer nErr;
