@@ -3369,7 +3369,7 @@ algorithm
       Boolean prot,impl,enc2;
       InstDims inst_dims,inst_dims_1;
       list<DAE.Subscript> inst_dims2;
-      String id,cn2,cns,scope_str,s;
+      String id,cn2,cns,scope_str,s,str;
       SCode.Class c;
       SCode.ClassDef classDef;
       Option<DAE.EqMod> eq;
@@ -3658,7 +3658,7 @@ algorithm
       then fail();
 
     case (cache,env,ih,store,mods,pre,csets,ci_state,className,
-          SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("list"),{tSpec},_),modifications = mod, attributes=DA),
+          SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("list"),{tSpec},NONE()),modifications = mod, attributes=DA),
           re,prot,inst_dims,impl,_,graph,instSingleCref,info,stopInst)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
@@ -3673,7 +3673,7 @@ algorithm
       then (cache,env,ih,store,DAEUtil.emptyDae,csets,ClassInf.META_LIST(Absyn.IDENT("")),{},bc,oDA,NONE(),graph);
 
     case (cache,env,ih,store,mods,pre,csets,ci_state,className,
-          SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("Option"),{tSpec},_),modifications = mod, attributes=DA),
+          SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("Option"),{tSpec},NONE()),modifications = mod, attributes=DA),
           re,prot,inst_dims,impl,_,graph,instSingleCref,info,stopInst)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
@@ -3687,7 +3687,7 @@ algorithm
       then (cache,env,ih,store,DAEUtil.emptyDae,csets,ClassInf.META_OPTION(Absyn.IDENT("")),{},bc,oDA,NONE(),graph);
 
     case (cache,env,ih,store,mods,pre,csets,ci_state,className,
-          SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("tuple"),tSpecs,_),modifications = mod, attributes=DA),
+          SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("tuple"),tSpecs,NONE()),modifications = mod, attributes=DA),
           re,prot,inst_dims,impl,_,graph,instSingleCref,info,stopInst)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
@@ -3700,7 +3700,7 @@ algorithm
       then (cache,env,ih,store,DAEUtil.emptyDae,csets,ClassInf.META_TUPLE(Absyn.IDENT("")),{},bc,oDA,NONE(),graph);
 
     case (cache,env,ih,store,mods,pre,csets,ci_state,className,
-          SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("array"),{tSpec},_),modifications = mod, attributes=DA),
+          SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("array"),{tSpec},NONE()),modifications = mod, attributes=DA),
           re,prot,inst_dims,impl,_,graph,instSingleCref,info,stopInst)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
@@ -3713,7 +3713,7 @@ algorithm
       then (cache,env,ih,store,DAEUtil.emptyDae,csets,ClassInf.META_ARRAY(Absyn.IDENT(className)),{},bc,oDA,NONE(),graph);
 
     case (cache,env,ih,store,mods,pre,csets,ci_state,className,
-          SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("polymorphic"),{Absyn.TPATH(Absyn.IDENT("Any"),NONE())},_),modifications = mod, attributes=DA),
+          SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("polymorphic"),{Absyn.TPATH(Absyn.IDENT("Any"),NONE())},NONE()),modifications = mod, attributes=DA),
           re,prot,inst_dims,impl,_,graph,instSingleCref,info,stopInst)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
@@ -3732,6 +3732,24 @@ algorithm
         true = Mod.emptyModOrEquality(mods) and SCode.emptyModOrEquality(mod);
         Error.addSourceMessage(Error.META_POLYMORPHIC, {className}, info);
       then fail();
+
+    case (cache,env,ih,store,mods,pre,csets,ci_state,className,
+          SCode.DERIVED(typeSpec=tSpec as Absyn.TCOMPLEX(arrayDim=SOME(_)),modifications=mod),
+          re,prot,inst_dims,impl,_,graph,instSingleCref,info,stopInst)
+      equation
+        true = RTOpts.acceptMetaModelicaGrammar();
+        cns = Dump.unparseTypeSpec(tSpec);
+        Error.addSourceMessage(Error.META_INVALID_COMPLEX_TYPE, {cns}, info);
+      then fail();
+
+    case (cache,env,ih,store,mods,pre,csets,ci_state,className,
+          SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT(str),tSpecs,NONE()),modifications = mod, attributes=DA),
+          re,prot,inst_dims,impl,inCallingScope,graph,instSingleCref,info,stopInst)
+      equation
+        str = Util.assoc(str,{("List","list"),("Tuple","tuple")});
+        (outCache,outEnv,outIH,outStore,outDae,outSets,outState,outTypesVarLst,outTypesTypeOption,optDerAttr,outEqualityConstraint,outGraph)
+        =instClassdef2(cache,env,ih,store,mods,pre,csets,ci_state,className,SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT(str),tSpecs,NONE()),mod,DA,NONE()),re,prot,inst_dims,impl,inCallingScope,graph,instSingleCref,info,stopInst);
+      then (outCache,outEnv,outIH,outStore,outDae,outSets,outState,outTypesVarLst,outTypesTypeOption,optDerAttr,outEqualityConstraint,outGraph);
 
     case (cache,env,ih,store,mods,pre,csets,ci_state,className,
           SCode.DERIVED(typeSpec=tSpec as Absyn.TCOMPLEX(path=cn,typeSpecs=tSpecs),modifications=mod),
