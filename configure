@@ -4881,7 +4881,7 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for revision" >&5
 $as_echo_n "checking for revision... " >&6; }
 SOURCE_REVISION=""
-test -f REVISION && SOURCE_REVISION=`head -n1 REVISION | grep -o 0-9*`
+test -f REVISION && SOURCE_REVISION=`head -n1 REVISION | grep -o [0-9]*`
 test -z "$SOURCE_REVISION" && SOURCE_REVISION=`svn info 2>&1 | grep ^Revision: | cut -d\  -f2`
 test -z "$SOURCE_REVISION" && SOURCE_REVISION="????"
 
