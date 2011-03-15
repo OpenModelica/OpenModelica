@@ -63,6 +63,8 @@ uniontype TypeSignature
   end UNRESOLVED_TYPE;
 end TypeSignature;
 
+type SourceInfo = Tpl.SourceInfo;
+/*
 uniontype SourceInfo 
   record SOURCE_INFO
     String fileName;
@@ -74,6 +76,7 @@ uniontype SourceInfo
     //TimeStamp buildTimes "Build and edit times";   
   end SOURCE_INFO;
 end SourceInfo;
+*/
 
 public
 uniontype Expression

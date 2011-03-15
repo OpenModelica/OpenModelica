@@ -7,7 +7,7 @@ protected import System;
 protected import Util;
 protected import Print;
 protected import CevalScript;
-
+protected import Error;
 
 
 // indentation will be implemented through spaces
@@ -90,6 +90,22 @@ uniontype IterOptions
     StringToken wrapSeparator; 
   end ITER_OPTIONS;
 end IterOptions;
+
+
+uniontype SourceInfo "
+ The _sourceinfo_ type ... source location information.
+ It is copied from Absyn.Info (for now) to prevent direct dependency from Absyn to Tpl and TplAbsyn,
+ perhaps, it will be changed to Absyn.Info in the future (easy to do then)."
+  record SOURCE_INFO
+    String fileName;
+    //Boolean isReadOnly "isReadOnly : (true|false). Should be true for libraries" ;
+    Integer lineNumberStart;
+    Integer columnNumberStart;
+    Integer lineNumberEnd;
+    Integer columnNumberEnd ;
+    //TimeStamp buildTimes "Build and edit times";   
+  end SOURCE_INFO;
+end SourceInfo;
   
 //by default, we will parse new lines in every non-token string
 public function writeStr
@@ -1512,6 +1528,15 @@ algorithm
   outString := textString( MEM_TEXT({inStringToken},{}) );
 end strTokString;
 
+protected function failIfTrue
+  input Boolean istrue;  
+algorithm
+  _ := matchcontinue istrue
+    case ( false ) then ();
+    case ( _ ) then fail();    
+ end matchcontinue;
+end failIfTrue;
+
 
 public function tplString
   input Tpl_Fun inFun;
@@ -1527,8 +1552,11 @@ public function tplString
   replaceable type Type_a subtypeof Any;   
 protected
   Text txt;
+  Integer nErr;
 algorithm
+  nErr := Error.getNumErrorMessages();
   txt := inFun(emptyTxt, inArg);  
+  failIfTrue(Error.getNumErrorMessages() > nErr);  
   outString := textString(txt);
 end tplString;
 
@@ -1550,8 +1578,11 @@ public function tplString2
   replaceable type Type_b subtypeof Any; 
 protected
   Text txt;
+  Integer nErr;
 algorithm
+  nErr := Error.getNumErrorMessages();
   txt := inFun(emptyTxt, inArgA, inArgB);  
+  failIfTrue(Error.getNumErrorMessages() > nErr); 
   outString := textString(txt);
 end tplString2;
 
@@ -1577,10 +1608,15 @@ public function tplString3
   replaceable type Type_c subtypeof Any; 
 protected
   Text txt;
+  Integer nErr;
 algorithm
+  nErr := Error.getNumErrorMessages();
   txt := inFun(emptyTxt, inArgA, inArgB, inArgC);  
+  failIfTrue(Error.getNumErrorMessages() > nErr); 
   outString := textString(txt);
 end tplString3;
+
+
 
 public function tplNoret
   input Tpl_Fun inFun;
@@ -1592,9 +1628,13 @@ public function tplNoret
     output Text out_txt;    
     replaceable type Type_a subtypeof Any;
   end Tpl_Fun;  
-  replaceable type Type_a subtypeof Any;   
+  replaceable type Type_a subtypeof Any;
+protected
+  Integer nErr;
 algorithm
-  _ := inFun(emptyTxt, inArg);  
+  nErr := Error.getNumErrorMessages();
+  _ := inFun(emptyTxt, inArg);
+  failIfTrue(Error.getNumErrorMessages() > nErr);     
 end tplNoret;
 
 
@@ -1640,7 +1680,6 @@ algorithm
     //    fail();
   end matchcontinue;
 end textFile;
-
 
 
 end Tpl;

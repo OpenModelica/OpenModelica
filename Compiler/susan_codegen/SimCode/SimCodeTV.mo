@@ -487,6 +487,13 @@ package SimCode
       input Integer i;
       output String s;
     end twodigit;
+    
+    function templateError 
+    "Reports a template error via the Error module."
+      input String inErrMsg;
+      output String outErrMsg;
+    end templateError;
+
 end SimCode;
 
 

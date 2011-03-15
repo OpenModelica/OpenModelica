@@ -817,6 +817,36 @@ algorithm
   outEqn := listAppend(inEqn1,inEqn2);
 end appendLists;
 
+
+//TODO: ?? should this function be in Tpl.mo ?
+public function templateError 
+ "Reports a template error via the Error module."
+  input String inErrMsg;
+  output String outErrMsg;
+
+algorithm
+  outErrMsg := matchcontinue (inErrMsg)
+    local 
+      String errmsg;   
+    case (inErrMsg)
+      equation
+        errmsg = "TemplateError '" +& inErrMsg +& "'";
+        //TODO: create a special category for this error ... Error.TEMPLATE_ERROR
+        Error.addMessage(Error.INTERNAL_ERROR, {errmsg});
+        errmsg = "###>>> " +& errmsg +& " <<<###"; //to be output in the generated code
+      then
+        errmsg;
+    
+    case (_)
+      equation
+        Debug.fprint("failtrace", "-!!!Tpl.textFile failed - a system error ?\n");
+      then 
+        fail();
+        
+  end matchcontinue;
+end templateError;
+
+
 /** end of TypeView published functions **/
 
 
