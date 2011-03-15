@@ -254,8 +254,8 @@ OMS::OMS( QWidget* parent )
   createMenu();
   createToolbar();
 
-  connect( this, SIGNAL( emitQuit() ),
-    qApp, SLOT( quit() ));
+//  connect( this, SIGNAL( emitQuit() ),
+//    qApp, SLOT( quit() ));
 
   // start server
   startServer();
@@ -451,7 +451,7 @@ void OMS::createAction()
   exit_->setShortcut( tr("Ctrl+D") );
   exit_->setStatusTip( tr("Quit the application") );
   connect( exit_, SIGNAL( triggered() ),
-    this, SLOT( exit() ));
+    this, SLOT( close() ));
 
   cut_ = new QAction( QIcon(":/Resources/cut.bmp"), tr("Cu&t"), this );
   cut_->setShortcut( tr("Ctrl+X") );
@@ -646,7 +646,7 @@ void OMS::returnPressed()
   // if 'quit()' exit WinMosh
   if( commandText == "quit()" )
   {
-    exit();
+    close();
     return;
   }
 
@@ -742,7 +742,7 @@ void OMS::exceptionInEval(exception &e)
         {
           QMessageBox::critical( 0, tr("Communication Error"),
             tr("<B>Unable to communication correctlly with OMC. OMShell will therefore close.</B>") );
-          exit();
+          close();
         }
       }
     }
@@ -969,7 +969,7 @@ void OMS::loadModelicaLibrary()
   returnPressed();
 }
 
-void OMS::exit()
+bool OMS::exit()
 {
   // check if omc is running, if so: ask if it is ok that omc also closes.
   try
@@ -979,23 +979,32 @@ void OMS::exit()
       delegate_->closeConnection();
       delegate_->reconnect();
 
-      int result = QMessageBox::question( 0, tr("Close OMC"),
-        "OK to quit running OpenModelica Compiler process at exit?\n(Answer No if other OMShell/OMNotebook/Graphic editor is still running)",
-        QMessageBox::Yes | QMessageBox::Default,
-        QMessageBox::No );
+      QMessageBox *msgBox = new QMessageBox(0);
+      msgBox->setWindowTitle(tr("Close OMC"));
+      msgBox->setIcon(QMessageBox::Question);
+      msgBox->setText("OK to quit running OpenModelica Compiler process at exit?\n(Answer No if other OMShell/OMNotebook/Graphic editor is still running)");
+      msgBox->setStandardButtons(QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel);
+      msgBox->setDefaultButton(QMessageBox::Yes);
+
+      int result = msgBox->exec();
 
       if( result == QMessageBox::Yes )
       {
         stopServer();
+        return true;
+      }
+      else if (result == QMessageBox::No)
+      {
+          return true;
+      }
+      else if (result == QMessageBox::Cancel)
+      {
+          return false;
       }
     }
   }
   catch(exception e)
   {}
-
-
-
-  emit emitQuit();
 }
 
 void OMS::cut()
@@ -1198,6 +1207,9 @@ void OMS::clear()
 
 void OMS::closeEvent( QCloseEvent *event )
 {
-  exit();
+  if (exit())
+      event->accept();
+  else
+      event->ignore();
 }
 

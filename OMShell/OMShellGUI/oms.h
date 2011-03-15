@@ -72,10 +72,6 @@ class OMS : public QMainWindow
 public:
   OMS( QWidget* parent = 0 );
   ~OMS();
-
-signals:
-  void emitQuit();
-
 public slots:
   void returnPressed();
   void insertNewline();
@@ -87,7 +83,7 @@ public slots:
 
   void loadModel();
   void loadModelicaLibrary();
-  void exit();
+  bool exit();
   void cut();
   void copy();
   void paste();
