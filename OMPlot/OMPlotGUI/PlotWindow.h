@@ -115,7 +115,7 @@ private:
 class NoVariableException : public PlotException
 {
 public:
-    NoVariableException(const char * fileName) : PlotException(fileName) {}
+    NoVariableException(const char * varName) : PlotException(varName) {}
 };
 
 //Options Class

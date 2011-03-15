@@ -53,11 +53,15 @@ PlotWindow::PlotWindow(QStringList arguments, QWidget *parent)
         setLegend(true);
     else if(QString(arguments[3]) == "false")
         setLegend(false);
+    else
+        throw PlotException("Invalid input");
     // read the grid
     if(QString(arguments[4]) == "true")
         setGrid(true);
     else if(QString(arguments[4]) == "false")
         setGrid(false);
+    else
+        throw PlotException("Invalid input");
     // read the plot type
     QString plotType = arguments[5];
     // read the logx
@@ -65,11 +69,15 @@ PlotWindow::PlotWindow(QStringList arguments, QWidget *parent)
         setLogX(true);
     else if(QString(arguments[6]) == "false")
         setLogX(false);
+    else
+        throw PlotException("Invalid input");
     // read the logy
     if(QString(arguments[7]) == "true")
         setLogY(true);
     else if(QString(arguments[7]) == "false")
         setLogY(false);
+    else
+        throw PlotException("Invalid input");
     // read the x label value
     setXLabel(QString(arguments[8]));
     // read the y label value
@@ -344,8 +352,9 @@ void PlotWindow::plot(QStringList variables)
 
         //Read in timevector
         QVector<double> timeVector;
-        var = omc_matlab4_find_var(&reader, "Time");
-        double *vals = omc_matlab4_read_vals(&reader,var->index);
+        if (reader.nvar < 1)
+          throw NoVariableException("Variable doesnt exist: time");
+        double *vals = omc_matlab4_read_vals(&reader,0);
         for (int j = 0; j<reader.nrows; j++)
             timeVector.push_back(vals[j]);
 
@@ -360,8 +369,6 @@ void PlotWindow::plot(QStringList variables)
         for(int i = 0; i < variables.length(); i++)
         {
             QString currentPlotVariable = variables[i];
-            if(currentPlotVariable == "time")
-                currentPlotVariable = "Time";
 
             PlotCurve *pPlotCurve = new PlotCurve(mpPlot);
             pPlotCurve->setXAxisVector(timeVector);
@@ -370,9 +377,17 @@ void PlotWindow::plot(QStringList variables)
             var = omc_matlab4_find_var(&reader, currentPlotVariable.toStdString().c_str());
             if(!var)
                 throw NoVariableException(QString("Variable doesnt exist : ").append(currentPlotVariable).toStdString().c_str());
-            vals = omc_matlab4_read_vals(&reader, var->index);
-            for (int j = 0; j < reader.nrows; j++)
-                pPlotCurve->addYAxisValue(vals[j]);
+            if (!var->isParam) {
+              vals = omc_matlab4_read_vals(&reader, var->index);
+              for (int j = 0; j < reader.nrows; j++)
+                  pPlotCurve->addYAxisValue(vals[j]);
+            } else {
+              double val;
+              if (omc_matlab4_val(&val,&reader,var,0.0))
+                throw NoVariableException(QString("Parameter doesn't have a value : ").append(currentPlotVariable).toStdString().c_str());
+              for (int j = 0; j < reader.nrows; j++)
+                  pPlotCurve->addYAxisValue(val);
+            }
 
             //Set curvename and push back to list
             pPlotCurve->setTitle(variables[i]);
@@ -517,11 +532,6 @@ void PlotWindow::plotParametric(QString xVariable, QString yVariable)
         //Read the .mat file
         if(0 != (msg = omc_new_matlab4_reader(mpFile->fileName().toStdString().c_str(), &reader)))
             return;
-
-        if(xVariable == "time")
-            xVariable = "Time";
-        if(yVariable == "time")
-            yVariable = "Time";
 
         PlotCurve *pPlotCurve = new PlotCurve(mpPlot);
 
