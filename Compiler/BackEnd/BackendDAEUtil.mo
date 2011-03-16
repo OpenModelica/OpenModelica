@@ -1469,11 +1469,10 @@ algorithm
       equation
         ((BackendDAE.VAR(varKind = kind) :: _),_) = BackendVariable.getVar(cr, vars);
         res = isKindDiscrete(kind);
-        b = Util.getOptionOrDefault(blst,res);
       then
-        ((e,false,(vars,knvars,SOME(b))));
+        ((e,false,(vars,knvars,SOME(res))));
     // builtin variable time is not discrete
-    case (((e as DAE.CREF(componentRef = DAE.CREF_IDENT("time",_,_)),(vars,knvars,blst)))) then ((e,false,(vars,knvars,SOME(false))));
+    case (((e as DAE.CREF(componentRef = DAE.CREF_IDENT("time",_,_)),(vars,knvars,blst)))) then ((e,false,(vars,knvars,SOME(false))));      
     // Known variables that are input are continous
     case (((e as DAE.CREF(componentRef = cr),(vars,knvars,blst))))
       equation
@@ -1488,8 +1487,7 @@ algorithm
       equation
         failure((_,_) = BackendVariable.getVar(cr, vars));
         ((BackendDAE.VAR(varKind = kind) :: _),_) = BackendVariable.getVar(cr, knvars);
-        res = isKindDiscrete(kind);
-        b = Util.getOptionOrDefault(blst,res);
+        b = isKindDiscrete(kind);
       then
         ((e,false,(vars,knvars,SOME(b))));
     
@@ -1498,7 +1496,6 @@ algorithm
        b1 = isDiscreteExp(e1,vars,knvars);
        b2 = isDiscreteExp(e2,vars,knvars);
        b = Util.boolOrList({b1,b2});
-       b = Util.getOptionOrDefault(blst,b);
       then ((e,false,(vars,knvars,SOME(b))));           
     case (((e as DAE.CALL(path = Absyn.IDENT(name = "pre")),(vars,knvars,blst)))) 
       equation

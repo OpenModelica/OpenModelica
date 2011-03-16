@@ -2198,6 +2198,117 @@ algorithm
   end matchcontinue;
 end listMap8;
 
+
+/* TODO: listMap9 ... listMapN can also be created upon request... */
+public function listMap7list "function listMap7
+  Takes a list and a function and seven extra arguments passed to the function.
+  The function produces one new value which is used for creating a new list."
+  input list<Type_a> lst;
+  input listMap7Func func;
+  input Type_b a1;
+  input Type_c a2;
+  input Type_d a3;
+  input Type_e a4;
+  input Type_f a5;
+  input Type_g a6;
+  input Type_h a7;
+  output list<list<Type_i>> outLst;
+  replaceable type Type_a subtypeof Any;
+  partial function listMap7Func
+    input Type_a inTypeA;
+    input Type_b inTypeB;
+    input Type_c inTypeC;
+    input Type_d inTypeD;
+    input Type_e inTypeE;
+    input Type_f inTypeF;
+    input Type_g inTypeG;
+    input Type_h inTypeH;
+    output list<Type_i> outTypeI;
+  end listMap7Func;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+  replaceable type Type_d subtypeof Any;
+  replaceable type Type_e subtypeof Any;
+  replaceable type Type_f subtypeof Any;
+  replaceable type Type_g subtypeof Any;
+  replaceable type Type_h subtypeof Any;
+  replaceable type Type_i subtypeof Any;
+algorithm
+  outLst:=
+  matchcontinue (lst,func,a1,a2,a3,a4,a5,a6,a7)
+    local
+      list<Type_i> f_1;
+      list<Type_i> r_1;
+      Type_a f;
+      list<Type_a> r;
+
+    case ({},_,_,_,_,_,_,_,_) then {};
+    case ((f :: r),func,a1,a2,a3,a4,a5,a6,a7)
+      equation
+        f_1 = func(f, a1,a2,a3,a4,a5,a6,a7);
+        r_1 = listMap7list(r, func, a1,a2,a3,a4,a5,a6,a7);
+      then
+        (f_1 :: r_1);
+  end matchcontinue;
+end listMap7list;
+
+/* TODO: listMap9 ... listMapN can also be created upon request... */
+public function listMap8list "function listMap7
+  Takes a list and a function and seven extra arguments passed to the function.
+  The function produces one new value which is used for creating a new list."
+  input list<Type_a> lst;
+  input listMap7Func func;
+  input Type_b a1;
+  input Type_c a2;
+  input Type_d a3;
+  input Type_e a4;
+  input Type_f a5;
+  input Type_g a6;
+  input Type_h a7;
+  input Type_i a8;
+  output list<list<Type_j>> outLst;
+  partial function listMap7Func
+    input Type_a inTypeA;
+    input Type_b inTypeB;
+    input Type_c inTypeC;
+    input Type_d inTypeD;
+    input Type_e inTypeE;
+    input Type_f inTypeF;
+    input Type_g inTypeG;
+    input Type_h inTypeH;
+    input Type_i inTypeI;
+    output list<Type_j> outTypeI;
+  end listMap7Func;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+  replaceable type Type_d subtypeof Any;
+  replaceable type Type_e subtypeof Any;
+  replaceable type Type_f subtypeof Any;
+  replaceable type Type_g subtypeof Any;
+  replaceable type Type_h subtypeof Any;
+  replaceable type Type_i subtypeof Any;
+  replaceable type Type_j subtypeof Any;
+algorithm
+  outLst:=
+  matchcontinue (lst,func,a1,a2,a3,a4,a5,a6,a7,a8)
+    local
+      list<Type_i> f_1;
+      list<Type_i> r_1;
+      Type_a f;
+      list<Type_a> r;
+
+    case ({},_,_,_,_,_,_,_,_,_) then {};
+    case ((f :: r),func,a1,a2,a3,a4,a5,a6,a7,a8)
+      equation
+        f_1 = func(f, a1,a2,a3,a4,a5,a6,a7,a8);
+        r_1 = listMap8list(r, func, a1,a2,a3,a4,a5,a6,a7,a8);
+      then
+        (f_1 :: r_1);
+  end matchcontinue;
+end listMap8list;
+
+
 public function listMap32 "function listMap32
   Takes a list and a function and three extra arguments passed to the function.
   The function produces two values which is used for creating two new lists."
@@ -3271,6 +3382,217 @@ algorithm
         (fr :: res);
   end match;
 end listThreadMap;
+
+public function listThreadMap1 "function: listThreadMap
+  Takes two lists and a function and threads (interleaves) and maps the elements of the two lists
+  creating a new list.
+  the argument 4 is passed to the functioncall
+  Example: listThreadMap({1,2},{3,4},intAdd) => {1+3, 2+4}"
+  input list<Type_a> inTypeALst;
+  input list<Type_b> inTypeBLst;
+  input FuncTypeType_aType_bToType_c inFuncTypeTypeATypeBToTypeC;
+  input Type_d inTypeD;
+  output list<Type_c> outTypeCLst;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_d subtypeof Any;
+  partial function FuncTypeType_aType_bToType_c
+    input Type_a inTypeA;
+    input Type_b inTypeB;
+    input Type_d inTypeD;
+    output Type_c outTypeC;
+    replaceable type Type_c subtypeof Any;
+  end FuncTypeType_aType_bToType_c;
+  replaceable type Type_c subtypeof Any;
+algorithm
+  outTypeCLst:=
+  match (inTypeALst,inTypeBLst,inFuncTypeTypeATypeBToTypeC,inTypeD)
+    local
+      Type_c fr;
+      list<Type_c> res;
+      Type_a fa;
+      list<Type_a> ra;
+      Type_b fb;
+      list<Type_b> rb;
+      FuncTypeType_aType_bToType_c fn;
+      Type_d fd;
+    case ({},{},_,_) then {};
+    case ((fa :: ra),(fb :: rb),fn,fd)
+      equation
+        fr = fn(fa, fb, fd);
+        res = listThreadMap1(ra, rb, fn, fd);
+      then
+        (fr :: res);
+  end match;
+end listThreadMap1;
+
+
+public function listThreadMap3 "function: listThreadMap
+  Takes two lists and a function and threads (interleaves) and maps the elements of the two lists
+  creating a new list.
+  the argument 4 - 6 are passed to the functioncall
+  Example: listThreadMap({1,2},{3,4},intAdd) => {1+3, 2+4}"
+  input list<Type_a> inTypeALst;
+  input list<Type_b> inTypeBLst;
+  input FuncTypeType_aType_bToType_c inFuncTypeTypeATypeBToTypeC;
+  input Type_d inTypeD;
+  input Type_e inTypeE;
+  input Type_f inTypeF;
+  output list<Type_c> outTypeCLst;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_d subtypeof Any;
+  replaceable type Type_e subtypeof Any;
+  replaceable type Type_f subtypeof Any;
+  partial function FuncTypeType_aType_bToType_c
+    input Type_a inTypeA;
+    input Type_b inTypeB;
+    input Type_d inTypeD;
+    input Type_e inTypeE;
+    input Type_f inTypeF;
+    output Type_c outTypeC;
+    replaceable type Type_c subtypeof Any;
+  end FuncTypeType_aType_bToType_c;
+  replaceable type Type_c subtypeof Any;
+algorithm
+  outTypeCLst:=
+  match (inTypeALst,inTypeBLst,inFuncTypeTypeATypeBToTypeC,inTypeD,inTypeE,inTypeF)
+    local
+      Type_c fr;
+      list<Type_c> res;
+      Type_a fa;
+      list<Type_a> ra;
+      Type_b fb;
+      list<Type_b> rb;
+      FuncTypeType_aType_bToType_c fn;
+      Type_d fd;
+      Type_e fe;
+      Type_f ff;
+    case ({},{},_,_,_,_) then {};
+    case ((fa :: ra),(fb :: rb),fn,fd,fe,ff)
+      equation
+        fr = fn(fa, fb, fd, fe, ff);
+        res = listThreadMap3(ra, rb, fn, fd, fe, ff);
+      then
+        (fr :: res);
+  end match;
+end listThreadMap3;
+
+
+public function listThread3Map3 "function: listThreadMap
+  Takes two lists and a function and threads (interleaves) and maps the elements of the two lists
+  creating a new list.
+  the argument 4 - 6 are passed to the functioncall
+  Example: listThreadMap({1,2},{3,4},intAdd) => {1+3, 2+4}"
+  input list<Type_a> inTypeALst;
+  input list<Type_b> inTypeBLst;
+  input list<Type_c> inTypeCLst;
+  input FuncTypeType_aType_bType_cTotypeH inFuncTypeTypeATypeBToTypeH;
+  input Type_d inTypeD;
+  input Type_e inTypeE;
+  input Type_f inTypeF;
+  output list<Type_h> outTypeHLst;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+  replaceable type Type_d subtypeof Any;
+  replaceable type Type_e subtypeof Any;
+  replaceable type Type_f subtypeof Any;
+  replaceable type Type_h subtypeof Any;
+  partial function FuncTypeType_aType_bType_cTotypeH
+    input Type_a inTypeA;
+    input Type_b inTypeB;
+    input Type_c inTypeC;
+    input Type_d inTypeD;
+    input Type_e inTypeE;
+    input Type_f inTypeF;
+    output Type_h outTypeH;
+  end FuncTypeType_aType_bType_cTotypeH;
+algorithm
+  outTypeHLst:=
+  match (inTypeALst,inTypeBLst,inTypeCLst,inFuncTypeTypeATypeBToTypeH,inTypeD,inTypeE,inTypeF)
+    local
+      Type_c fc;
+      list<Type_c> rc;
+      Type_a fa;
+      list<Type_a> ra;
+      Type_b fb;
+      list<Type_b> rb;
+      FuncTypeType_aType_bType_cTotypeH fn;
+      Type_d fd;
+      Type_e fe;
+      Type_f ff;
+      Type_h fr;
+      list<Type_h> res;
+    case ({},{},_,_,_,_,_) then {};
+    case ((fa :: ra),(fb :: rb),(fc :: rc),fn,fd,fe,ff)
+      equation
+        fr = fn(fa, fb, fc, fd, fe, ff);
+        res = listThread3Map3(ra, rb, rc, fn, fd, fe, ff);
+      then
+        (fr :: res);
+  end match;
+end listThread3Map3;
+
+public function listlistThreadMap4 "function: listThreadMap
+  Takes two lists and a function and threads (interleaves) and maps the elements of the two lists
+  creating a new list.
+  the argument 4 - 6 are passed to the functioncall
+  Example: listThreadMap({1,2},{3,4},intAdd) => {1+3, 2+4}"
+  input list<Type_a> inTypeALst;
+  input list<Type_b> inTypeBLst;
+  input list<Type_c> inTypeCLst;
+  input FuncTypeType_aType_bType_cTotypeH inFuncTypeTypeATypeBToTypeH;
+  input Type_d inTypeD;
+  input Type_e inTypeE;
+  input Type_f inTypeF;
+  input Type_g inTypeG;
+  output list<Type_h> outTypeHLst;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+  replaceable type Type_d subtypeof Any;
+  replaceable type Type_e subtypeof Any;
+  replaceable type Type_f subtypeof Any;
+  replaceable type Type_g subtypeof Any;
+  replaceable type Type_h subtypeof Any;
+  partial function FuncTypeType_aType_bType_cTotypeH
+    input Type_a inTypeA;
+    input Type_b inTypeB;
+    input Type_c inTypeB;
+    input Type_d inTypeD;
+    input Type_e inTypeE;
+    input Type_f inTypeF;
+    input Type_g inTypeG;
+    output Type_h outTypeH;
+  end FuncTypeType_aType_bType_cTotypeH;
+algorithm
+  outTypeHLst:=
+  match (inTypeALst,inTypeBLst,inTypeCLst,inFuncTypeTypeATypeBToTypeH,inTypeD,inTypeE,inTypeF,inTypeG)
+    local
+      Type_c fc;
+      list<Type_c> rc;
+      Type_a fa;
+      list<Type_a> ra;
+      Type_b fb;
+      list<Type_b> rb;
+      FuncTypeType_aType_bType_cTotypeH fn;
+      Type_d fd;
+      Type_e fe;
+      Type_f ff;
+      Type_g fg;
+      Type_h fr;
+      list<Type_h> res;
+    case ({},{},_,_,_,_,_,_) then {};
+    case ((fa :: ra),(fb :: rb),(fc :: rc),fn,fd,fe,ff,fg)
+      equation
+        fr = fn(fa, fb, fc, fd, fe, ff,fg);
+        res = listlistThreadMap4(ra, rb, rc, fn, fd, fe, ff,fg);
+      then
+        (fr :: res);
+  end match;
+end listlistThreadMap4;
+
 
 public function listThreadMap32 "function: listThreadMap32
   Takes three lists and a function and threads (interleaves) and maps the elements of the three lists
@@ -6767,7 +7089,6 @@ algorithm
   // C cannot handle newline in string constants
   cString := System.stringReplace(System.escapedString(modelicaString), "\n", "\\n");
 end escapeModelicaStringToCString;
-
 
 public function listlistTranspose "{{1,2,3}{4,5,6}} => {{1,4},{2,5},{3,6}}"
   input list<list<Type_a>> inLst;

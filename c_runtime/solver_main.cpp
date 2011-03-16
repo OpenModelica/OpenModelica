@@ -80,6 +80,7 @@ Jacobian(double *t, double *y, double *yprime, double *pd, double *cj,
   backupTime = globalData->timeValue;
 
   globalData->states = y;
+  globalData->timeValue = *t;
   functionODE();
   functionAlgebraics();
   functionJacA(matrixA);

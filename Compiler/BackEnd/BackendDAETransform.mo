@@ -2449,7 +2449,7 @@ algorithm
         // print("\n");
         Debug.fprint("bltdump", BackendDump.equationStr(eqn_1)) "  print \" to \" & print str &  print \"\\n\" &" ;
         Debug.fprint("bltdump", "\n");
-        eqns_1 = BackendEquation.equationAdd(eqns, eqn_1);
+        eqns_1 = BackendEquation.equationAdd(eqn_1,eqns);
         leneqns = BackendDAEUtil.equationSize(eqns_1);
         BackendDAEEXT.markDifferentiated(e) "length gives index of new equation Mark equation as differentiated so it won\'t be differentiated again" ;
         (dae,m,mt,nv,nf,reqns,derivedAlgs1,derivedMultiEqn1) = differentiateEqns(BackendDAE.DAE(v,kv,ev,av,eqns_1,seqns,ie,ae1,al1,wc,eoc), m, mt, nv, nf, es, inFunctions,derivedAlgs,derivedMultiEqn);

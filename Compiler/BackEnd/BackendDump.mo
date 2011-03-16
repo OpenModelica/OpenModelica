@@ -133,17 +133,17 @@ algorithm
 end printCallFunction2StrDIVISION;
 
 public function printTuple
-  input list<tuple<String,Integer>> outTuple;
+  input list<tuple<DAE.ComponentRef,Integer>> outTuple;
 algorithm
   _ := matchcontinue(outTuple)
     local
-      String currVar;
+      DAE.ComponentRef currVar;
       Integer currInd;
-      list<tuple<String,Integer>> restTuple;
+      list<tuple<DAE.ComponentRef,Integer>> restTuple;
     case ({}) then ();
     case ((currVar,currInd)::restTuple)
       equation
-        Debug.fcall("varIndex",print, currVar);
+        Debug.fcall("varIndex",print, ComponentReference.printComponentRefStr(currVar))  ;
         Debug.fcall("varIndex",print,":   ");
         Debug.fcall("varIndex",print,intString(currInd));
         Debug.fcall("varIndex",print,"\n");

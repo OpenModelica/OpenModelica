@@ -759,30 +759,40 @@ algorithm
   end matchcontinue;
 end equationEqual;
 
+public function addEquations "function: addEquations
+  author: wbraun
+  Adds a list of BackendDAE.Equation to BackendDAE.EquationArray"
+  input list<BackendDAE.Equation> eqnlst;
+  input BackendDAE.EquationArray eqns;
+  output BackendDAE.EquationArray eqns_1;
+algorithm
+  eqns_1 := Util.listFold(eqnlst, equationAdd, eqns);
+end addEquations;
+
 public function equationAdd "function: equationAdd
   author: PA
 
   Adds an equation to an EquationArray.
 "
-  input BackendDAE.EquationArray inEquationArray;
   input BackendDAE.Equation inEquation;
+  input BackendDAE.EquationArray inEquationArray;
   output BackendDAE.EquationArray outEquationArray;
 algorithm
   outEquationArray:=
-  matchcontinue (inEquationArray,inEquation)
+  matchcontinue (inEquation,inEquationArray)
     local
       BackendDAE.Value n_1,n,size,expandsize,expandsize_1,newsize;
       array<Option<BackendDAE.Equation>> arr_1,arr,arr_2;
       BackendDAE.Equation e;
       Real rsize,rexpandsize;
-    case (BackendDAE.EQUATION_ARRAY(numberOfElement = n,arrSize = size,equOptArr = arr),e)
+    case (e,BackendDAE.EQUATION_ARRAY(numberOfElement = n,arrSize = size,equOptArr = arr))
       equation
         (n < size) = true "Have space to add array elt." ;
         n_1 = n + 1;
         arr_1 = arrayUpdate(arr, n + 1, SOME(e));
       then
         BackendDAE.EQUATION_ARRAY(n_1,size,arr_1);
-    case (BackendDAE.EQUATION_ARRAY(numberOfElement = n,arrSize = size,equOptArr = arr),e) /* Do NOT Have space to add array elt. Expand array 1.4 times */
+    case (e,BackendDAE.EQUATION_ARRAY(numberOfElement = n,arrSize = size,equOptArr = arr)) /* Do NOT Have space to add array elt. Expand array 1.4 times */
       equation
         (n < size) = false;
         rsize = intReal(size);
@@ -795,7 +805,7 @@ algorithm
         arr_2 = arrayUpdate(arr_1, n + 1, SOME(e));
       then
         BackendDAE.EQUATION_ARRAY(n_1,newsize,arr_2);
-    case (BackendDAE.EQUATION_ARRAY(numberOfElement = n,arrSize = size,equOptArr = arr),e)
+    case (e,BackendDAE.EQUATION_ARRAY(numberOfElement = n,arrSize = size,equOptArr = arr))
       equation
         print("- BackendEquation.equationAdd failed\n");
       then

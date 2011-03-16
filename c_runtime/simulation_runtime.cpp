@@ -459,6 +459,12 @@ callSolver(int argc, char**argv, string method, string outputFormat,
           cout << "Recognized solver: " << method << "." << endl;
       }
       retVal = solver_main(argc, argv, start, stop, stepSize, outputSteps, tolerance, 3);
+  } else if (method == std::string("dassljac")) {
+      if (sim_verbose) {
+          cout << "Recognized solver: " << method << "." << endl;
+      }
+      jac_flag = 1;
+      retVal = solver_main(argc, argv, start, stop, stepSize, outputSteps, tolerance, 3);
   } else if (method == std::string("inline-euler")) {
       if (!_omc_force_solver || std::string(_omc_force_solver) != std::string("inline-euler")) {
           cout << "Recognized solver: " << method
