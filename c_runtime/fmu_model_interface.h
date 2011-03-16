@@ -47,5 +47,17 @@ fmiStatus setString(fmiComponent comp, fmiValueReference vr, fmiString value){
     return fmiSetString(comp, &vr, 1, &value);
 }
 
+// relation functions used in zero crossing detection
+fmiReal
+FmiLess(fmiReal a, fmiReal b);
+fmiReal
+FmiLessEq(fmiReal a, fmiReal b);
+fmiReal
+FmiGreater(fmiReal a, fmiReal b);
+fmiReal
+FmiGreaterEq(fmiReal a, fmiReal b);
+#define FMIZEROCROSSING(ind,exp) { \
+		eventIndicators[ind] = exp; \
+	}
 
 #endif

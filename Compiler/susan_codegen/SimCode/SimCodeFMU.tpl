@@ -351,7 +351,7 @@ case SIMCODE(__) then
   #include "<%fileNamePrefix%>_functions.h"
 
   void setStartValues(ModelInstance *comp);
-  fmiReal getEventIndicator(ModelInstance* comp, int i);
+  fmiReal getEventIndicator(ModelInstance* comp, fmiReal eventIndicators[]);
   void eventUpdate(ModelInstance* comp, fmiEventInfo* eventInfo);
   fmiReal getReal(ModelInstance* comp, const fmiValueReference vr);  
   fmiStatus setReal(ModelInstance* comp, const fmiValueReference vr, const fmiReal value);  
@@ -563,12 +563,8 @@ case SIMCODE(__) then
   let zeroCrossingsCode = zeroCrossingsTpl2_fmu(zeroCrossings, &varDecls /*BUFD*/)
   <<
   // Used to get event indicators
-  fmiReal getEventIndicator(ModelInstance* comp, int i) {
-  switch(i)
-  {
-  default:
-  	return 0.0;
-  }
+  fmiReal getEventIndicator(ModelInstance* comp, fmiReal eventIndicators[]) {
+  <%zeroCrossingsCode%>
   }
   
   >>
@@ -595,9 +591,7 @@ template zeroCrossingTpl2_fmu(Integer index1, Exp relation, Text &varDecls /*BUF
     let e2 = daeExp(exp2, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     <<
     <%preExp%>
-    //globalData->states[<%e1%>_] <%op%> <%e2%>;
-    case <%e1%>_:
-    	return <%e2%>;
+    FMIZEROCROSSING(<%index1%>, <%op%>(<%e1%>_, <%e2%>));
     >>
   case CALL(path=IDENT(name="sample"), expLst={start, interval}) then
   << >>
@@ -611,12 +605,10 @@ template zeroCrossingOpFunc_fmu(Operator op)
  "Generates zero crossing function name for operator."
 ::=
   match op
-  case LESS(__)      then "<"
-  case GREATER(__)   then ">"
-  case LESSEQ(__)    then "<="
-  case GREATEREQ(__) then ">="
-  case EQUAL(__) then "="
-  case NEQUAL(__) then "!="
+  case LESS(__)      then "FmiLess"
+  case GREATER(__)   then "FmiGreater"
+  case LESSEQ(__)    then "FmiLessEq"
+  case GREATEREQ(__) then "FmiGreaterEq"
   
 end zeroCrossingOpFunc_fmu;
 
