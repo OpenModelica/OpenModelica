@@ -43,6 +43,7 @@ class PlotCurve : public QwtPlotCurve
 private:
     QVector<double> mXAxisVector;
     QVector<double> mYAxisVector;
+    Plot *mpParentPlot;
 public:
     PlotCurve(Plot *pParent);
     ~PlotCurve();
@@ -53,6 +54,7 @@ public:
     void setYAxisVector(QVector<double> vector);
     void addYAxisValue(double value);
     QVector<double> getYAxisVector();
+    QColor getUniqueColor(QColor color = QColor(255, 0, 0));
 
     virtual void updateLegend(QwtLegend *legend) const;
 };

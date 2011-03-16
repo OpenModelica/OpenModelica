@@ -561,14 +561,12 @@ void PlotWindow::plotGraph(QList<PlotCurve*> plotCurvesList)
 {
     for(int i = 0; i < plotCurvesList.length(); i++)
     {
-        int colorValue = 7 + i;
-        if(colorValue > 19 )
-            colorValue = 1 + i % 12;
-        QPen pen(QColor(Qt::GlobalColor(colorValue + 1)));
-        pen.setWidth(2);
         plotCurvesList[i]->setData(plotCurvesList[i]->getXAxisVector(), plotCurvesList[i]->getYAxisVector());
+        QPen pen(plotCurvesList[i]->getUniqueColor());
+        pen.setWidth(2);
         plotCurvesList[i]->setPen(pen);
         plotCurvesList[i]->attach(mpPlot);
+        mpPlot->addPlotCurve(plotCurvesList[i]);
     }
 }
 

@@ -38,7 +38,7 @@ using namespace OMPlot;
 
 PlotCurve::PlotCurve(Plot *pParent)
 {
-
+    mpParentPlot = pParent;
 }
 
 PlotCurve::~PlotCurve()
@@ -88,4 +88,17 @@ void PlotCurve::updateLegend(QwtLegend *legend) const
     }
 
     QwtPlotItem::updateLegend(legend);
+}
+
+QColor PlotCurve::getUniqueColor(QColor color)
+{
+    foreach (PlotCurve *pPlotCurve, mpParentPlot->getPlotCurvesList())
+    {
+        if (pPlotCurve->pen().color() == color)
+        {
+            color = getUniqueColor(QColor(rand()%255, rand()%255, rand()%255));
+            break;
+        }
+    }
+    return color;
 }
