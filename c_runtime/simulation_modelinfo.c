@@ -98,16 +98,37 @@ static void printPlotCommand(FILE *plt, const char *title, const char *prefix, i
   }
 }
 
+static void printStrXML(FILE *fout, const char *str)
+{
+  while (*str) {
+  switch (*str) {
+  case '<': fputs("&lt;",fout);break;
+  case '>': fputs("&gt;",fout);break;
+  case '\'': fputs("&apos;",fout);break;
+  case '"': fputs("\\\"",fout);break;
+  case '\\': fputs("\\\\",fout);break;
+  default: fputc(*str,fout);
+  }
+  str++;
+  }
+}
+
 static void printInfoTag(FILE *fout, int level, const omc_fileInfo info) {
   indent(fout,level);
-  fprintf(fout, "<info filename=\"%s\" startline=\"%d\" startcol=\"%d\" endline=\"%d\" endcol=\"%d\" readonly=\"%s\" />\n", info.filename, info.lineStart, info.colStart, info.lineEnd, info.colEnd, info.readonly ? "readonly" : "writable");
+  fprintf(fout, "<info filename=\"");
+  printStrXML(fout, info.filename);
+  fprintf(fout, "\" startline=\"%d\" startcol=\"%d\" endline=\"%d\" endcol=\"%d\" readonly=\"%s\" />\n", info.lineStart, info.colStart, info.lineEnd, info.colEnd, info.readonly ? "readonly" : "writable");
 }
 
 static void printVars(FILE *fout, int level, int n, const struct omc_varInfo *vars) {
   int i;
   for (i=0; i<n; i++) {
     indent(fout,level);
-    fprintf(fout, "<variable id=\"%d\" name=\"%s\" comment=\"%s\">\n", vars[i].id, vars[i].name, vars[i].comment);
+    fprintf(fout, "<variable id=\"%d\" name=\"", vars[i].id);
+    printStrXML(fout, vars[i].name);
+    fprintf(fout, "\" comment=\"");
+    printStrXML(fout, vars[i].comment);
+    fprintf(fout, "\">\n");
     printInfoTag(fout, level+2, vars[i].info);
     indent(fout,level);
     fprintf(fout, "</variable>\n");
@@ -121,7 +142,7 @@ static void printFunctions(FILE *fout, FILE *plt, const char *modelFilePrefix, D
     rt_clear(i + SIM_TIMER_FIRST_FUNCTION);
     indent(fout,2);
     fprintf(fout, "<function id=\"%d\">\n", funcs[i].id);
-    indent(fout,4);fprintf(fout, "<name>%s</name>\n", funcs[i].name);
+    indent(fout,4);fprintf(fout, "<name>");printStrXML(fout, funcs[i].name);fprintf(fout,"</name>\n");
     indent(fout,4);fprintf(fout, "<ncall>%d</ncall>\n", (int) rt_ncall_total(i + SIM_TIMER_FIRST_FUNCTION));
     indent(fout,4);fprintf(fout, "<time>%.9f</time>\n",rt_total(i + SIM_TIMER_FIRST_FUNCTION));
     indent(fout,4);fprintf(fout, "<maxTime>%.9f</maxTime>\n",rt_max_accumulated(i + SIM_TIMER_FIRST_FUNCTION));
@@ -149,7 +170,7 @@ static void printProfileBlocks(FILE *fout, FILE *plt, DATA *data) {
 static void printEquations(FILE *fout, int n, const struct omc_equationInfo *eqns) {
   int i,j;
   for (i=0; i<n; i++) {
-    indent(fout,2);fprintf(fout, "<equation id=\"%d\" name=\"%s\">\n", eqns[i].id, eqns[i].name);
+    indent(fout,2);fprintf(fout, "<equation id=\"%d\" name=\"", eqns[i].id);printStrXML(fout,eqns[i].name);fprintf(fout,"\">\n");
     indent(fout,4);fprintf(fout, "<refs>\n");
     for (j=0; j<eqns[i].numVar; j++) {
       indent(fout,6);fprintf(fout, "<ref refid=\"%d\" />\n", eqns[i].vars[j].id);
@@ -165,7 +186,7 @@ static void printProfilingDataHeader(FILE *fout, DATA *data) {
   
   filename = malloc(strlen(data->modelFilePrefix) + 15);
   sprintf(filename, "%s_prof.data", data->modelFilePrefix);
-  indent(fout, 2); fprintf(fout, "<filename>%s</filename>\n", filename);
+  indent(fout, 2); fprintf(fout, "<filename>");printStrXML(fout,filename);fprintf(fout,"</filename>\n");
   indent(fout, 2); fprintf(fout, "<filesize>%ld</filesize>\n", (long) fileSize(filename));
   free(filename);
   
@@ -175,19 +196,19 @@ static void printProfilingDataHeader(FILE *fout, DATA *data) {
   indent(fout, 4); fprintf(fout, "<double>cpu time</double>\n");
   for (i = 0; i < data->nFunctions; i++) {
     const char *name = data->functionNames[i].name;
-    indent(fout, 4); fprintf(fout, "<uint32>%s (calls)</uint32>\n", name);
+    indent(fout, 4); fprintf(fout, "<uint32>");printStrXML(fout,name);fprintf(fout, " (calls)</uint32>\n");
   }
   for (i = 0; i < data->nProfileBlocks; i++) {
     const char *name = data->equationInfo[data->equationInfo_reverse_prof_index[i]].name;
-    indent(fout, 4); fprintf(fout, "<uint32>%s (calls)</uint32>\n", name);
+    indent(fout, 4); fprintf(fout, "<uint32>");printStrXML(fout,name);fprintf(fout, " (calls)</uint32>\n");
   }
   for (i = 0; i < data->nFunctions; i++) {
     const char *name = data->functionNames[i].name;
-    indent(fout, 4); fprintf(fout, "<double>%s (cpu time)</double>\n", name);
+    indent(fout, 4); fprintf(fout, "<double>");printStrXML(fout,name);fprintf(fout, " (cpu time)</double>\n");
   }
   for (i = 0; i < data->nProfileBlocks; i++) {
     const char *name = data->equationInfo[data->equationInfo_reverse_prof_index[i]].name;
-    indent(fout, 4); fprintf(fout, "<double>%s (cpu time)</double>\n", name);
+    indent(fout, 4); fprintf(fout, "<double>");printStrXML(fout,name);fprintf(fout, " (cpu time)</double>\n");
   }
   indent(fout, 2); fprintf(fout, "</format>\n");
 }
@@ -239,12 +260,12 @@ int printModelInfo(DATA *data, const char *filename, const char *plotfile, const
 
   fprintf(fout, "<simulation>\n");
   fprintf(fout, "<modelinfo>\n");
-  indent(fout, 2); fprintf(fout, "<name>%s</name>\n", data->modelName);
-  indent(fout, 2); fprintf(fout, "<prefix>%s</prefix>\n", data->modelFilePrefix);
-  indent(fout, 2); fprintf(fout, "<date>%s</date>\n", buf);
-  indent(fout, 2); fprintf(fout, "<method>%s</method>\n", method);
-  indent(fout, 2); fprintf(fout, "<outputFormat>%s</outputFormat>\n", outputFormat);
-  indent(fout, 2); fprintf(fout, "<outputFilename>%s</outputFilename>\n", outputFilename);
+  indent(fout, 2); fprintf(fout, "<name>");printStrXML(fout,data->modelName);fprintf(fout,"</name>\n");
+  indent(fout, 2); fprintf(fout, "<prefix>");printStrXML(fout,data->modelFilePrefix);fprintf(fout,"</prefix>\n");
+  indent(fout, 2); fprintf(fout, "<date>");printStrXML(fout,buf);fprintf(fout,"</date>\n");
+  indent(fout, 2); fprintf(fout, "<method>");printStrXML(fout,method);fprintf(fout,"</method>\n");
+  indent(fout, 2); fprintf(fout, "<outputFormat>");printStrXML(fout,outputFormat);fprintf(fout,"</outputFormat>\n");
+  indent(fout, 2); fprintf(fout, "<outputFilename>");printStrXML(fout,outputFilename);fprintf(fout,"</outputFilename>\n");
   indent(fout, 2); fprintf(fout, "<outputFilesize>%ld</outputFilesize>\n", (long) fileSize(outputFilename));
   indent(fout, 2); fprintf(fout, "<overheadTime>%f</overheadTime>\n", rt_accumulated(SIM_TIMER_OVERHEAD));
   indent(fout, 2); fprintf(fout, "<preinitTime>%f</preinitTime>\n", rt_accumulated(SIM_TIMER_PREINIT));
