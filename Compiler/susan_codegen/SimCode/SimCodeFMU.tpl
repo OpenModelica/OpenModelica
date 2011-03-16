@@ -351,7 +351,7 @@ case SIMCODE(__) then
   #include "<%fileNamePrefix%>_functions.h"
 
   void setStartValues(ModelInstance *comp);
-  fmiReal getEventIndicator(ModelInstance* comp, fmiReal eventIndicators[]);
+  fmiStatus getEventIndicator(ModelInstance* comp, fmiReal eventIndicators[]);
   void eventUpdate(ModelInstance* comp, fmiEventInfo* eventInfo);
   fmiReal getReal(ModelInstance* comp, const fmiValueReference vr);  
   fmiStatus setReal(ModelInstance* comp, const fmiValueReference vr, const fmiReal value);  
@@ -563,9 +563,10 @@ case SIMCODE(__) then
   let zeroCrossingsCode = zeroCrossingsTpl2_fmu(zeroCrossings, &varDecls /*BUFD*/)
   <<
   // Used to get event indicators
-  fmiReal getEventIndicator(ModelInstance* comp, fmiReal eventIndicators[]) {
-  function_onlyZeroCrossings(eventIndicators, &globalData->timeValue);
-  return 0.0;
+  fmiStatus getEventIndicator(ModelInstance* comp, fmiReal eventIndicators[]) {
+  int res = function_onlyZeroCrossings(eventIndicators, &globalData->timeValue);
+  if (res == 0) return fmiOK;
+  return fmiError;
   }
   
   >>
@@ -861,13 +862,13 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
   .PHONY: <%fileNamePrefix%>
   <%fileNamePrefix%>: <%fileNamePrefix%>.conv.cpp <%fileNamePrefix%>_functions.cpp <%fileNamePrefix%>_FMU.cpp <%fileNamePrefix%>_functions.h <%fileNamePrefix%>_records.c 
   <%\t%> $(CXX) -I. -o <%fileNamePrefix%>$(DLLEXT) <%fileNamePrefix%>.conv.cpp <%fileNamePrefix%>_functions.cpp <%fileNamePrefix%>_FMU.cpp <%dirExtra%> <%libsPos1%> <%libsPos2%> -shared -lsim -linteractive $(CFLAGS) $(SENDDATALIBS) $(LDFLAGS) -lf2c <%fileNamePrefix%>_records.c 
+  <%\t%> mkdir -p <%fileNamePrefix%> 
+  <%\t%> mkdir -p <%fileNamePrefix%>/binaries
+  <%\t%> mv modelDescription.xml  <%fileNamePrefix%>/
+  <%\t%> mv <%fileNamePrefix%>$(DLLEXT) <%fileNamePrefix%>/binaries/
   <%fileNamePrefix%>.conv.cpp: <%fileNamePrefix%>.cpp
   <%\t%> $(PERL) <%makefileParams.omhome%>/share/omc/scripts/convert_lines.pl $< $@.tmp
   <%\t%> @mv $@.tmp $@
-  <%\t%> mkdir <%fileNamePrefix%>
-  <%\t%> mkdir <%fileNamePrefix%>/binaries
-  <%\t%> mv modelDescription.xml  <%fileNamePrefix%>/
-  <%\t%> mv <%fileNamePrefix%>$(DLLEXT) <%fileNamePrefix%>/binaries/
   >>
 end fmuMakefile;
 

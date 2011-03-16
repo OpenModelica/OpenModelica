@@ -792,6 +792,27 @@ algorithm
   end match;
 end setStartAttr;
 
+public function setNominalAttr "
+  sets the nominal attribute. If NONE(), assumes Real attributes."
+  input Option<DAE.VariableAttributes> attr;
+  input DAE.Exp nominal;
+  output Option<DAE.VariableAttributes> outAttr;
+algorithm
+  outAttr:=
+  match (attr,nominal)
+    local
+      Option<DAE.Exp> q,u,du,f,s;
+      tuple<Option<DAE.Exp>, Option<DAE.Exp>> minMax;
+      Option<DAE.StateSelect> ss;
+      Option<DAE.Exp> eb;
+      Option<Boolean> ip,fn;
+    case (SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,s,f,_,ss,eb,ip,fn)),nominal)
+    then SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,s,f,SOME(nominal),ss,eb,ip,fn));
+    case (NONE(),nominal)
+      then SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),NONE(),SOME(nominal),NONE(),NONE(),NONE(),NONE()));
+  end match;
+end setNominalAttr;
+
 public function setUnitAttr "
   sets the unit attribute. .
 "

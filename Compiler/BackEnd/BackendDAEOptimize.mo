@@ -1001,7 +1001,7 @@ algorithm
   matchcontinue (inAVar,inCref,inVars,negate)
     local
       DAE.ComponentRef name,cr;
-      BackendDAE.Var v,var,var1,var2;
+      BackendDAE.Var v,var,var1,var2,var3;
       BackendDAE.Variables vars;
       Boolean fixeda, fixedb,starta,startb;
     case (v as BackendDAE.VAR(varName=name),cr,inVars,negate)
@@ -1013,8 +1013,10 @@ algorithm
         var1 = BackendVariable.setVarFixed(var,fixeda or fixedb);
         // start
         var2 = mergeStartAttribute(v,var1,negate);
+        // nominal
+        var3 = mergeNomnialAttribute(v,var2,negate);
         // update vars
-        vars = BackendVariable.addVar(var2,inVars);        
+        vars = BackendVariable.addVar(var3,inVars);        
       then vars;
     case(_,_,inVars,negate) then inVars;
   end matchcontinue;
@@ -1062,6 +1064,40 @@ algorithm
       then ();
   end matchcontinue;
 end mergeStartAttribute1;
+
+protected function mergeNomnialAttribute
+  input BackendDAE.Var inAVar;
+  input BackendDAE.Var inVar;
+  input Boolean negate;
+  output BackendDAE.Var outVar;
+algorithm
+  outVar :=
+  matchcontinue (inAVar,inVar,negate)
+    local
+      BackendDAE.Var v,var,var1;
+      Option<DAE.VariableAttributes> attr,attr1;
+      DAE.Exp e,e_1,e1,esum,eaverage;
+    case (v as BackendDAE.VAR(values = attr),var as BackendDAE.VAR(values = attr1),negate)
+      equation 
+        // nominal
+        e = BackendVariable.varNominalValue(v);
+        e1 = BackendVariable.varNominalValue(var);
+        e_1 = Util.if_(negate,Expression.negate(e),e);
+        esum = Expression.makeSum({e_1,e1});
+        eaverage = Expression.expDiv(esum,DAE.RCONST(2.0)); // Real is lecal because only Reals have nominal attribute 
+        var1 = BackendVariable.setVarNominalValue(var,ExpressionSimplify.simplify(eaverage));
+      then var1;
+    case (v as BackendDAE.VAR(values = attr),var as BackendDAE.VAR(values = attr1),negate)
+      equation 
+        // nominal
+        e = BackendVariable.varNominalValue(v);
+        e_1 = Util.if_(negate,Expression.negate(e),e);
+        var1 = BackendVariable.setVarNominalValue(var,e_1);
+      then var1;
+    case(_,inVar,_) then inVar;
+  end matchcontinue;
+end mergeNomnialAttribute;
+
 
 /*
  * remove parameter equations

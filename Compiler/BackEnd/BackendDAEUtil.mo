@@ -281,18 +281,19 @@ public function checkInitialSystem"function: checkInitialSystem
 algorithm
   outDAE := matchcontinue (inDAE,funcs)
     local
-      BackendDAE.Variables variables,knvars,exObj;
+      BackendDAE.Variables variables,knvars,exObj,aliasVars;
       BackendDAE.EquationArray orderedEqs,removedEqs,initialEqs;
       array<DAE.Algorithm> algs;
       array<BackendDAE.MultiDimEquation> arrayEqs;
       BackendDAE.EventInfo eventInfo;
       BackendDAE.ExternalObjectClasses extObjClasses;      
-      Integer nie,nie1,nie2,unfixed,unfixed1;
+      Integer nie,nie1,nie2,unfixed,unfixed1,unfixed2,sizealias;
       BackendDAE.BackendDAE dae,dae1;
       list<BackendDAE.WhenClause> whenClauseLst;
       list<DAE.ComponentRef> vars,varsws,states,statesws;
+      BackendDAE.AliasVariables av;
    
-    case (dae as BackendDAE.DAE(orderedVars=variables,knownVars=knvars,externalObjects=exObj,orderedEqs=orderedEqs,removedEqs=removedEqs,
+    case (dae as BackendDAE.DAE(orderedVars=variables,knownVars=knvars,externalObjects=exObj,aliasVars=av,orderedEqs=orderedEqs,removedEqs=removedEqs,
            initialEqs=initialEqs,arrayEqs=arrayEqs,algorithms=algs,eventInfo=eventInfo,extObjClasses=extObjClasses),funcs)
       equation
         /* count the unfixed variables */
@@ -300,12 +301,15 @@ algorithm
         ((vars,varsws,states,statesws,unfixed)) = BackendVariable.traverseBackendDAEVars(variables,countInitialVars,({},{},{},{},0));
         // kvars
         ((vars,varsws,states,statesws,unfixed1)) = BackendVariable.traverseBackendDAEVars(knvars,countInitialVars,(vars,varsws,states,statesws,unfixed));
+        BackendDAE.ALIASVARS(_,aliasVars) = av;
+        sizealias = BackendVariable.varsSize(aliasVars);   
+        unfixed2 = unfixed1 - sizealias;     
         /* count the equations */
         nie = equationSize(initialEqs);
         BackendDAE.EVENT_INFO(whenClauseLst=whenClauseLst) = eventInfo;
         ((nie1,_)) = BackendEquation.traverseBackendDAEEqns(orderedEqs,countInitialEqns,(nie,whenClauseLst));
         ((nie2,_)) = BackendEquation.traverseBackendDAEEqns(removedEqs,countInitialEqns,(nie1,whenClauseLst));
-        dae1 = checkInitialSystem1(unfixed1,nie2,dae,funcs,vars,varsws,states,statesws);
+        dae1 = checkInitialSystem1(unfixed2,nie2,dae,funcs,vars,varsws,states,statesws);
       then
         dae;   
     
@@ -726,7 +730,6 @@ algorithm
         extVars = BackendVariable.addVars(extvarlst, extVars);
         trans_dae = BackendDAE.DAE(vars,knvars,extVars,av,eqns,seqns,ieqns,ae,al,
           BackendDAE.EVENT_INFO(wc,zc),extObjCls);
-        Debug.fcall("dumpindxdae", BackendDump.dump, trans_dae);
       then
         trans_dae;
   end match;

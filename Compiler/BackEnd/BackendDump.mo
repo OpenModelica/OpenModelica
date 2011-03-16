@@ -891,7 +891,7 @@ protected function dumpVars2
 algorithm
   _ := matchcontinue (inVarLst,inInteger)
     local
-      String varnostr,dirstr,str,path_str,comment_str,s,indx_str,sstart;
+      String varnostr,dirstr,str,path_str,comment_str,s,indx_str;
       list<String> paths_lst,path_strs;
       BackendDAE.Value varno_1,indx,varno;
       BackendDAE.Var v;
@@ -935,6 +935,7 @@ algorithm
         print(str);
         print(":");
         dumpKind(kind);
+        dumpAttributes(dae_var_attr);
         paths = DAEUtil.getElementSourceTypes(source);
         paths_lst = Util.listMap(paths, Absyn.pathString);
         path_str = Util.stringDelimitList(paths_lst, ", ");
@@ -947,11 +948,11 @@ algorithm
         indx_str = intString(indx) "print \"  \" & print comment_str & print \" former: \" & print old_name &" ;
         str = dumpTypeStr(var_type);print( " type: "); print(str);
         print(ComponentReference.printComponentRef2Str("", arrayDim));
+        dumpAttributes(dae_var_attr);
         print(" indx = ");
         print(indx_str);
-        varno_1 = varno + 1;
-        print(" fixed:");print(boolString(BackendVariable.varFixed(v)));
         print("\n");
+        varno_1 = varno + 1;
         dumpVars2(xs, varno_1) "DAEDump.dump_variable_attributes(dae_var_attr) &" ;
       then
         ();
@@ -983,17 +984,13 @@ algorithm
         print(str);
         print(":");
         dumpKind(kind);
-        b = DAEUtil.hasStartAttr(dae_var_attr);
-        sstart = DAEUtil.getStartAttrString(dae_var_attr);
-        sstart = Util.if_(b,stringAppendList({"(start = ",sstart,") "})," ");
-        print(sstart);
+        dumpAttributes(dae_var_attr);
         print(path_str);
         indx_str = intString(indx) "print \" former: \" & print old_name &" ;
         str = dumpTypeStr(var_type);print( " type: "); print(str);
         print(ComponentReference.printComponentRef2Str("", arrayDim));
         print(" indx = ");
         print(indx_str);
-        print(" fixed:");print(boolString(BackendVariable.varFixed(v)));
         print("\n");
         varno_1 = varno + 1;
         dumpVars2(xs, varno_1);
@@ -1033,6 +1030,83 @@ algorithm
     case BackendDAE.EXTOBJ(path)  equation print("EXTOBJ: ");print(Absyn.pathString(path)); then ();
   end match;
 end dumpKind;
+
+public function dumpAttributes
+"function: dumpAttributes
+  Helper function to dump."
+  input Option<DAE.VariableAttributes> inAttr;
+algorithm
+  _:=
+  match (inAttr)
+    local
+       Option<DAE.Exp> min,max,start,fixed,nominal;
+       String snominal;
+    case NONE() then ();
+    case SOME(DAE.VAR_ATTR_REAL(min=(min,max),initial_=start,fixed=fixed,nominal=nominal))
+      equation
+        print("(");
+        dumpOptExpression(min,"min");
+        dumpOptExpression(max,"max");
+        dumpOptExpression(start,"start");
+        dumpOptExpression(fixed,"fixed");
+        dumpOptExpression(nominal,"nominal");
+        print(") ");
+     then ();
+    case SOME(DAE.VAR_ATTR_INT(min=(min,max),initial_=start,fixed=fixed))
+      equation
+        print("(");
+        dumpOptExpression(min,"min");
+        dumpOptExpression(max,"max");
+        dumpOptExpression(start,"start");
+        dumpOptExpression(fixed,"fixed");
+        print(") ");
+     then ();
+    case SOME(DAE.VAR_ATTR_BOOL(initial_=start,fixed=fixed))
+      equation
+        print("(");
+        dumpOptExpression(start,"start");
+        dumpOptExpression(fixed,"fixed");
+        print(") ");
+     then ();
+    case SOME(DAE.VAR_ATTR_STRING(initial_=start))
+      equation
+        print("(");
+        dumpOptExpression(start,"start");
+        print(") ");
+     then ();
+    case SOME(DAE.VAR_ATTR_ENUMERATION(min=(min,max),start=start,fixed=fixed))
+      equation
+        print("(");
+        dumpOptExpression(min,"min");
+        dumpOptExpression(max,"max");
+        dumpOptExpression(start,"start");
+        dumpOptExpression(fixed,"fixed");
+        print(") ");
+     then ();
+    else ();
+  end match;
+end dumpAttributes;
+
+protected function dumpOptExpression
+"function: dumpOptExpression
+  Helper function to dump."
+  input Option<DAE.Exp> inExp;
+  input String inString;
+algorithm
+  _:=
+  match (inExp,inString)
+    local
+       DAE.Exp e;
+       String s,se,str;
+    case (SOME(e),s)
+      equation
+         se = ExpressionDump.printExpStr(e);
+         str = stringAppendList({s," = ",se," "});
+         print(str);         
+     then ();
+    else ();
+  end match;
+end dumpOptExpression;
 
 public function dumpIncidenceMatrix
 "function: dumpIncidenceMatrix

@@ -888,6 +888,9 @@ algorithm
         e = Expression.crefExp(name);
         tp = Expression.typeof(e);
         cond = lowerMinMax1(ominmax,e,tp);
+        cond = ExpressionSimplify.simplify(cond);
+        // do not add if const true
+        false = Expression.isConstTrue(cond);
         checkAssertCondition(cond,msg);
       then 
         {DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond,msg,source)})};
@@ -941,6 +944,9 @@ algorithm
         msg = DAE.SCONST(str);
         tp = Expression.typeof(e);
         cond = lowerMinMax1(ominmax,e,tp);
+        cond = ExpressionSimplify.simplify(cond);
+        // do not add if const true
+        false = Expression.isConstTrue(cond);
         checkAssertCondition(cond,msg);
       then 
         {DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond,msg,source)})};

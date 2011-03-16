@@ -278,7 +278,15 @@ case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
   <%globalDataAliasVarArray("DATA_REAL_ALIAS","omc__realAlias", vars.aliasVars)%>
   <%globalDataAliasVarArray("DATA_INT_ALIAS","omc__intAlias", vars.intAliasVars)%>
   <%globalDataAliasVarArray("DATA_BOOL_ALIAS","omc__boolAlias", vars.boolAliasVars)%>
-  <%globalDataAliasVarArray("DATA_STRING_ALIAS","omc__stringAlias", vars.stringAliasVars)%>  
+  <%globalDataAliasVarArray("DATA_STRING_ALIAS","omc__stringAlias", vars.stringAliasVars)%>
+  if (data->nAlias)
+    memcpy(data->realAlias,omc__realAlias,sizeof(DATA_REAL_ALIAS)*data->nAlias);
+  if (data->stringVariables.nAlias)
+    memcpy(data->intVariables.nAlias,omc__realAlias,sizeof(DATA_INT_ALIAS)*data->intVariables.nAlias);
+  if (data->stringVariables.nAlias)
+    memcpy(data->boolVariables.nAlias,omc__realAlias,sizeof(DATA_BOOL_ALIAS)*data->boolVariables.nAlias);
+  if (data->stringVariables.nAlias)
+    memcpy(data->stringVariables.alias,omc__realAlias,sizeof(DATA_STRING_ALIAS)*data->stringVariables.nAlias);  
   };
   
   static char init_fixed[NX+NX+NY+NYINT+NYBOOL+NYSTR+NP+NPINT+NPBOOL+NPSTR] = {

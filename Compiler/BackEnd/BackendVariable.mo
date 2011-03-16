@@ -456,6 +456,65 @@ algorithm
   end matchcontinue;
 end varStateSelect;
 
+
+public function varNominalValue
+"function varHasNominal
+  author: Frenkel TUD"
+  input BackendDAE.Var inVar;
+  output DAE.Exp outExp;
+algorithm
+  outExp:=
+  match (inVar)
+    local DAE.Exp e;
+      DAE.StateSelect stateselect;
+    case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_REAL(nominal=SOME(e))))) then e;
+  end match;
+end varNominalValue;
+
+public function setVarNominalValue
+"function: setVarNominalValue
+  author: Frenkel TUD
+  Sets the nominal value attribute of a variable."
+  input BackendDAE.Var inVar;
+  input DAE.Exp inExp;
+  output BackendDAE.Var outVar;
+algorithm
+  outVar := match (inVar,inExp)
+    local
+      DAE.ComponentRef a;
+      BackendDAE.VarKind b;
+      DAE.VarDirection c;
+      BackendDAE.Type d;
+      Option<DAE.Exp> e;
+      Option<Values.Value> f;
+      list<DAE.Subscript> g;
+      BackendDAE.Value i;
+      DAE.ElementSource source;
+      DAE.VariableAttributes attr;
+      Option<DAE.VariableAttributes> oattr,oattr1;
+      Option<SCode.Comment> s;
+      DAE.Flow t;
+      DAE.Stream streamPrefix;      
+
+    case (BackendDAE.VAR(varName = a,
+              varKind = b,
+              varDirection = c,
+              varType = d,
+              bindExp = e,
+              bindValue = f,
+              arryDim = g,
+              index = i,
+              source = source,
+              values = SOME(attr),
+              comment = s,
+              flowPrefix = t,
+              streamPrefix = streamPrefix),inExp)
+      equation
+        oattr1 = DAEUtil.setNominalAttr(SOME(attr),inExp);
+    then BackendDAE.VAR(a,b,c,d,e,f,g,i,source,oattr1,s,t,streamPrefix);
+  end match;
+end setVarNominalValue;
+
 public function varType "function: varType
   author: PA
 
