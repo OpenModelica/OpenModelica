@@ -351,12 +351,11 @@ void PlotWindow::plot(QStringList variables)
             return;
 
         //Read in timevector
-        QVector<double> timeVector;
+        double startTime = omc_matlab4_startTime(&reader);
+        double stopTime =  omc_matlab4_stopTime(&reader);
         if (reader.nvar < 1)
           throw NoVariableException("Variable doesnt exist: time");
-        double *vals = omc_matlab4_read_vals(&reader,0);
-        for (int j = 0; j<reader.nrows; j++)
-            timeVector.push_back(vals[j]);
+        double *timeVals = omc_matlab4_read_vals(&reader,0);
 
         if(variables[0] == "")
         {
@@ -371,22 +370,23 @@ void PlotWindow::plot(QStringList variables)
             QString currentPlotVariable = variables[i];
 
             PlotCurve *pPlotCurve = new PlotCurve(mpPlot);
-            pPlotCurve->setXAxisVector(timeVector);
 
             //Read in y vector variable
             var = omc_matlab4_find_var(&reader, currentPlotVariable.toStdString().c_str());
             if(!var)
                 throw NoVariableException(QString("Variable doesnt exist : ").append(currentPlotVariable).toStdString().c_str());
             if (!var->isParam) {
-              vals = omc_matlab4_read_vals(&reader, var->index);
-              for (int j = 0; j < reader.nrows; j++)
-                  pPlotCurve->addYAxisValue(vals[j]);
+              double *vals = omc_matlab4_read_vals(&reader, var->index);
+              pPlotCurve->setRawData(timeVals,vals,reader.nrows);
             } else {
               double val;
+              double startStop[2] = {startTime,stopTime};
+              double vals[2];
               if (omc_matlab4_val(&val,&reader,var,0.0))
                 throw NoVariableException(QString("Parameter doesn't have a value : ").append(currentPlotVariable).toStdString().c_str());
-              for (int j = 0; j < reader.nrows; j++)
-                  pPlotCurve->addYAxisValue(val);
+              vals[0] = val;
+              vals[1] = val;
+              pPlotCurve->setData(startStop,vals,2);
             }
 
             //Set curvename and push back to list
