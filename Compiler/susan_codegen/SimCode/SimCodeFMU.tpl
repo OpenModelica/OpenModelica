@@ -809,7 +809,7 @@ match simVar
   case SIMVAR(__) then
   let description = if comment then '// "<%comment%>"'
   <<
-  case <%cref(name)%>_ : return (globalData-><%arrayName%>[<%index%>].negate?*(globalData-><%arrayName%>[<%index%>].alias):<%negator%>*(globalData-><%arrayName%>[<%index%>].alias)); break;
+  case <%cref(name)%>_ : return (globalData-><%arrayName%>[<%index%>].negate?<%negator%>*(globalData-><%arrayName%>[<%index%>].alias):*(globalData-><%arrayName%>[<%index%>].alias)); break;
   >>
 end SwitchAliasVars;
 
