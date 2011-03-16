@@ -4,9 +4,12 @@ public import Debug;
 public import Util;
 public import System;
 public import RTOpts;
+public import Absyn;
 
 public import Tpl;
 protected import TplCodegen;
+
+//protected import Error;
 
 /* Input AST */
 public type Ident = String;
@@ -15,6 +18,23 @@ public type EscOption = tuple<Ident, Option<Expression>>;
 public type StringToken = Tpl.StringToken;
 public type Tokens = Tpl.Tokens;
 
+public
+type SourceInfo = Absyn.Info;
+constant SourceInfo dummySourceInfo = Absyn.INFO("*no file name*", false, 0, 0, 0, 0, Absyn.dummyTimeStamp); //Absyn.dummyInfo;
+
+/*
+uniontype SourceInfo 
+  record SOURCE_INFO
+    String fileName;
+    //Boolean isReadOnly "isReadOnly : (true|false). Should be true for libraries" ;
+    Integer lineNumberStart;
+    Integer columnNumberStart;
+    Integer lineNumberEnd;
+    Integer columnNumberEnd ;
+    //TimeStamp buildTimes "Build and edit times";   
+  end SOURCE_INFO;
+end SourceInfo;
+*/
 
 public
 uniontype PathIdent
@@ -63,23 +83,11 @@ uniontype TypeSignature
   end UNRESOLVED_TYPE;
 end TypeSignature;
 
-type SourceInfo = Tpl.SourceInfo;
-/*
-uniontype SourceInfo 
-  record SOURCE_INFO
-    String fileName;
-    //Boolean isReadOnly "isReadOnly : (true|false). Should be true for libraries" ;
-    Integer lineNumberStart;
-    Integer columnNumberStart;
-    Integer lineNumberEnd;
-    Integer columnNumberEnd ;
-    //TimeStamp buildTimes "Build and edit times";   
-  end SOURCE_INFO;
-end SourceInfo;
-*/
-
+public 
+type Expression = tuple<ExpressionBase, SourceInfo>;
+  
 public
-uniontype Expression
+uniontype ExpressionBase
   record TEMPLATE
     list<Expression> items;
     String lquote; // just preserved for effective quoted dump
@@ -172,7 +180,7 @@ uniontype Expression
   record ERROR_EXP "Parse error expression used when parser error occured."    
   end ERROR_EXP;
   
-end Expression;
+end ExpressionBase;
 
 public
 uniontype MatchingExp
@@ -398,7 +406,7 @@ constant tuple<Ident,TypeSignature> imlicitTxtArg = (imlicitTxt, TEXT_TYPE());
 protected
 
 constant MatchingExp imlicitTxtMExp = BIND_MATCH(imlicitTxt);
-constant Expression emptyExpression = STR_TOKEN(Tpl.ST_STRING(""));
+constant Expression emptyExpression = (STR_TOKEN(Tpl.ST_STRING("")), Absyn.dummyInfo) ;
 
 constant Ident emptyTxt = "Tpl.emptyTxt";
 constant Ident errorIdent = "!error!";
@@ -1002,6 +1010,7 @@ algorithm
       Expression exp, tbranch, argexp, mapexp, txtexp;
       list<Expression> explst;
       Option<Expression> ebranch;
+      SourceInfo sinfo;
       list<tuple<MatchingExp,Expression>> mcases;
       MatchingExp ofbind;
       Option<MatchingExp> rhsval;
@@ -1018,7 +1027,7 @@ algorithm
       TemplPackage tplPackage;            
       list<MMDeclaration> accMMDecls;
       
-    case ( TEMPLATE(items = explst), mmopts,
+    case ( (TEMPLATE(items = explst), sinfo), mmopts,
            stmts, intxt, outtxt, locals, scEnv, tplPackage, accMMDecls )
       equation
         warnIfSomeOptions(mmopts);
@@ -1027,14 +1036,14 @@ algorithm
       then ( stmts, locals, scEnv, accMMDecls, intxt);
     
     //inline a literal in its string-token form
-    case ( LITERAL(value = litvalue), mmopts,
+    case ( (LITERAL(value = litvalue), sinfo), mmopts,
            stmts, intxt, outtxt, locals, scEnv, _, accMMDecls )
       equation
         warnIfSomeOptions(mmopts);
         stmt = tplStatement("writeTok", { MM_STR_TOKEN(Tpl.ST_STRING(litvalue)) }, intxt, outtxt);                
       then ( stmt :: stmts, locals, scEnv, accMMDecls, outtxt);    
     
-    case ( SOFT_NEW_LINE(), mmopts,
+    case ( (SOFT_NEW_LINE(), sinfo), mmopts,
            stmts, intxt, outtxt, locals, scEnv, _, accMMDecls )
       equation
         warnIfSomeOptions(mmopts);
@@ -1042,20 +1051,20 @@ algorithm
       then ( stmt :: stmts, locals, scEnv, accMMDecls, outtxt);    
     
     //empty string -> nothing
-    case ( STR_TOKEN(value = Tpl.ST_STRING("")), mmopts,
+    case ( (STR_TOKEN(value = Tpl.ST_STRING("")), sinfo), mmopts,
            stmts, intxt, outtxt, locals, scEnv, _, accMMDecls )
       equation
         warnIfSomeOptions(mmopts);
       then ( stmts, locals, scEnv, accMMDecls, intxt);    
     
-    case ( STR_TOKEN(value = st), mmopts,
+    case ( (STR_TOKEN(value = st), sinfo), mmopts,
            stmts, intxt, outtxt, locals, scEnv, _, accMMDecls )
       equation
         warnIfSomeOptions(mmopts);
         stmt = tplStatement("writeTok", { MM_STR_TOKEN(st) }, intxt, outtxt);        
       then ( stmt :: stmts, locals, scEnv, accMMDecls, outtxt);    
     
-    case ( BOUND_VALUE(boundPath = path), mmopts,
+    case ( (BOUND_VALUE(boundPath = path), sinfo), mmopts,
            stmts, intxt, outtxt, locals, scEnv, tplPackage as TEMPL_PACKAGE(astDefs = astDefs), accMMDecls )
       equation
         //Debug.fprint("failtrace","\n BOUND_VALUE resolving boundPath = " +& pathIdentString(path) +& "\n");
@@ -1074,7 +1083,7 @@ algorithm
       then ( stmts, locals, scEnv, accMMDecls, intxt);
     
     
-    case ( FUN_CALL(name = fname, args = explst), mmopts,
+    case ( (FUN_CALL(name = fname, args = explst), sinfo), mmopts,
            stmts, intxt, outtxt, locals, scEnv, tplPackage as TEMPL_PACKAGE(astDefs = astDefs), accMMDecls )
       equation
         Debug.fprint("failtrace","\n FUN_CALL fname = " +& pathIdentString(fname) +& "\n");
@@ -1096,8 +1105,9 @@ algorithm
         (stmts, locals, scEnv, accMMDecls, intxt) 
           = addWriteCallFromMMExp(hasretval, mmexp, rettype, mmopts, stmt::stmts, intxt, outtxt, locals, scEnv, tplPackage, accMMDecls);
       then ( stmts, locals, scEnv, accMMDecls, intxt);
+        
     
-    case ( MATCH(matchExp = exp, cases = mcases), mmopts,
+    case ( (MATCH(matchExp = exp, cases = mcases), sinfo), mmopts,
            stmts, intxt, outtxt, locals, scEnv, tplPackage, accMMDecls )
       equation
         warnIfSomeOptions(mmopts);
@@ -1111,8 +1121,8 @@ algorithm
           = statementFromFun(argvals, fname, iargs, oargs, {}, intxt, outtxt, locals, tplPackage);
       then ( (stmt :: stmts),  locals, scEnv, accMMDecls, intxt);
     
-    case ( CONDITION( isNot = isnot, lhsExp = exp,
-                      rhsValue = rhsval, trueBranch = tbranch, elseBranch = ebranch), mmopts,
+    case ( (CONDITION( isNot = isnot, lhsExp = exp,
+                      rhsValue = rhsval, trueBranch = tbranch, elseBranch = ebranch), sinfo), mmopts,
            stmts, intxt, outtxt, locals, scEnv, tplPackage as TEMPL_PACKAGE(astDefs = astDefs), accMMDecls )
       equation
         warnIfSomeOptions(mmopts);
@@ -1130,7 +1140,7 @@ algorithm
           = statementFromFun(argvals, fname, iargs, oargs, {}, intxt, outtxt, locals, tplPackage);
       then ( (stmt :: stmts),  locals, scEnv, accMMDecls, intxt);
     
-    case ( MAP(argExp = argexp, ofBinding = ofbind, mapExp = mapexp, hasIndexIdentOpt = idxNmOpt), mmopts,
+    case ( (MAP(argExp = argexp, ofBinding = ofbind, mapExp = mapexp, hasIndexIdentOpt = idxNmOpt), sinfo), mmopts,
            stmts, intxt, outtxt, locals, scEnv, tplPackage, accMMDecls )
       equation
         explst = getExpListForMap(argexp);
@@ -1146,12 +1156,12 @@ algorithm
                stmts, intxt, outtxt, locals, scEnv, tplPackage, accMMDecls);*/
       then ( stmts, locals, scEnv, accMMDecls, intxt);
     
-    case ( MAP_ARG_LIST(parts = explst), mmopts,
+    case ( (MAP_ARG_LIST(parts = explst), sinfo), mmopts,
            stmts, intxt, outtxt, locals, scEnv, tplPackage, accMMDecls )
       equation
         (argvals, stmts, locals, scEnv, accMMDecls) 
           = statementsFromArgList(explst, stmts, locals, scEnv, tplPackage, accMMDecls);        
-        mapctx = MAP_CONTEXT(BIND_MATCH("it"), BOUND_VALUE(IDENT("it")), mmopts, NONE(), false); 
+        mapctx = MAP_CONTEXT(BIND_MATCH("it"), (BOUND_VALUE(IDENT("it")), dummySourceInfo), mmopts, NONE(), false); 
         (stmts, locals, scEnv, accMMDecls, intxt)
           = statementsFromMapExp(true, argvals, mapctx,
                stmts, intxt, outtxt, locals, scEnv, tplPackage, accMMDecls);
@@ -1161,7 +1171,7 @@ algorithm
           = statementsFromExpList(explst, stmts, intxt, outtxt, locals, scEnv, tplPackage, accMMDecls);*/
       then ( stmts, locals, scEnv, accMMDecls, intxt);
     
-    case ( ESCAPED(exp = exp, options = opts), mmopts,
+    case ( (ESCAPED(exp = exp, options = opts), sinfo), mmopts,
            stmts, intxt, outtxt, locals, scEnv, tplPackage, accMMDecls )
       equation
         warnIfSomeOptions(mmopts); // new options will be elaborated
@@ -1184,7 +1194,7 @@ algorithm
          stmts = listAppend(popstmts, stmts);
       then ( stmts, locals, scEnv, accMMDecls, intxt);
     
-    case ( INDENTATION(width = n, items = explst), mmopts,
+    case ( (INDENTATION(width = n, items = explst), sinfo), mmopts,
            stmts, intxt, outtxt, locals, scEnv, tplPackage, accMMDecls )
       equation
          warnIfSomeOptions(mmopts);
@@ -1198,8 +1208,8 @@ algorithm
       then ( (stmt :: stmts), locals, scEnv, accMMDecls, outtxt);
                 
     //TODO: let _ =  .... 
-    case ( LET(letExp = TEXT_CREATE(name = ident, exp = txtexp), 
-               exp = exp), 
+    case ( (LET(letExp = (TEXT_CREATE(name = ident, exp = txtexp), _), 
+               exp = exp), sinfo), 
            mmopts, stmts, intxt, outtxt, locals, scEnv, tplPackage, accMMDecls )
       equation
         warnIfSomeOptions(mmopts);
@@ -1242,8 +1252,8 @@ algorithm
       then fail();
     */
     
-    case ( LET(letExp = TEXT_ADD(name = ident, exp = txtexp), 
-               exp = exp),
+    case ( (LET(letExp = (TEXT_ADD(name = ident, exp = txtexp),_), 
+               exp = exp), sinfo),
            mmopts, stmts, intxt, outtxt, locals, scEnv, tplPackage, accMMDecls )
       equation
         warnIfSomeOptions(mmopts);
@@ -1263,8 +1273,8 @@ algorithm
           = statementsFromExp(exp, {}, stmts, intxt, outtxt, locals, scEnv, tplPackage, accMMDecls); 
       then ( stmts, locals, scEnv, accMMDecls, intxt);
     
-    case ( LET(letExp = TEXT_ADD(name = ident, exp = txtexp), 
-               exp = exp),
+    case ( (LET(letExp = (TEXT_ADD(name = ident, exp = txtexp),_), 
+               exp = exp), sinfo),
            mmopts, stmts, intxt, outtxt, locals, scEnv, tplPackage, accMMDecls )
       equation
         path = IDENT(ident);       
@@ -1274,8 +1284,8 @@ algorithm
         Debug.fprint("failtrace","\nError - TEXT_ADD ident = '" +& ident +& "' is NOT of Text& type but " +& typeSignatureString(idtype) +& ")\n Only Text& typed variables can be appended to.\n");
       then fail();
     
-    case ( LET(letExp = NORET_CALL(name = fname, args = explst), 
-               exp = exp),
+    case ( (LET(letExp = (NORET_CALL(name = fname, args = explst),_), 
+               exp = exp), sinfo),
            mmopts, stmts, intxt, outtxt, locals, scEnv, tplPackage as TEMPL_PACKAGE(astDefs = astDefs), accMMDecls )
       equation
         warnIfSomeOptions(mmopts);
@@ -1301,8 +1311,8 @@ algorithm
                 
       then ( stmts, locals, scEnv, accMMDecls, intxt);
     
-    case ( LET(letExp = NORET_CALL(name = fname, args = explst), 
-               exp = exp),
+    case ( (LET(letExp = (NORET_CALL(name = fname, args = explst),_), 
+               exp = exp), sinfo),
            mmopts, stmts, intxt, outtxt, locals, scEnv, tplPackage as TEMPL_PACKAGE(astDefs = astDefs), accMMDecls )
       equation
         (fname, iargs, oargs, tyVars) = getFunSignature(fname, tplPackage);
@@ -1507,9 +1517,10 @@ algorithm
     local
       Expression exp;
       list<Expression> explst;
+      //SourceInfo sinfo;
       
-    case ( MAP_ARG_LIST(parts = explst) )   then explst;
-    case ( exp )                           then { exp };
+    case ( (MAP_ARG_LIST(parts = explst), _) )  then explst;
+    case ( exp )  then { exp };
 
     //cannot happen            
     case (_)
@@ -1647,23 +1658,25 @@ algorithm
       PathIdent path, fname;
       TypeSignature idtype,  rettype, littype;
       list<Expression> explst;
+      SourceInfo sinfo;
       TypedIdents iargs, oargs;
       Expression exp;
-      String litvalue;
+      String litvalue, fileName, lineStr, colStr;
       StringToken st;
+      Integer lineNumberStart, columnNumberStart;
       
       TemplPackage tplPackage;            
       list<MMDeclaration> accMMDecls;
       
-    case ( LITERAL(value = litvalue, litType = littype),
+    case ( (LITERAL(value = litvalue, litType = littype), sinfo),
            stmts, locals, scEnv, _, accMMDecls )
       then ( (MM_LITERAL(litvalue),littype), stmts, locals, scEnv, accMMDecls);    
     
-    case ( STR_TOKEN(value = st),
+    case ( (STR_TOKEN(value = st), sinfo),
            stmts, locals, scEnv, _, accMMDecls )
       then ( (MM_STR_TOKEN(st),STRING_TOKEN_TYPE()), stmts, locals, scEnv, accMMDecls);    
     
-    case ( BOUND_VALUE(boundPath = path),
+    case ( (BOUND_VALUE(boundPath = path), sinfo),
            stmts, locals, scEnv, tplPackage, accMMDecls )
       equation
         //Debug.fprint("failtrace","\n arg BOUND_VALUE resolving boundPath = " +& pathIdentString(path) +& "\n");        
@@ -1673,7 +1686,7 @@ algorithm
                      +& typeSignatureString(idtype) +& "\n");
       then ( (mmexp,idtype), stmts, locals, scEnv, accMMDecls);
     
-    case ( FUN_CALL(name = fname, args = explst),
+    case ( (FUN_CALL(name = fname, args = explst), sinfo),
            stmts, locals, scEnv, tplPackage, accMMDecls )
       equation
         (fname, iargs, oargs, tyVars) = getFunSignature(fname, tplPackage);
@@ -1688,6 +1701,18 @@ algorithm
         locals = addLocalValue(outtxt, TEXT_TYPE(), locals);
       then ( (mmexp, rettype), stmt :: stmts, locals, scEnv, accMMDecls);
     
+    case ( (FUN_CALL(name = IDENT("sourceInfo"), args = {}), 
+            Absyn.INFO(fileName = fileName, lineNumberStart = lineNumberStart, columnNumberStart = columnNumberStart)),
+           stmts, locals, scEnv, tplPackage, accMMDecls )
+      equation
+        Debug.fprint("failtrace"," arg sourceInfo \n");
+        fname = PATH_IDENT("Tpl", IDENT("sourceInfo"));
+        rettype = NAMED_TYPE(PATH_IDENT("Absyn", IDENT("Info")));
+        lineStr = intString(lineNumberStart);
+        colStr = intString(columnNumberStart);
+        mmexp = MM_FN_CALL(fname, { MM_STRING(fileName), MM_LITERAL(lineStr), MM_LITERAL(colStr) });
+      then ( (mmexp, rettype), stmts, locals, scEnv, accMMDecls);
+        
     // all the other are texts: 
     // TEMPLATE, CONDITION, MATCH, MAP, MAP_ARG_LIST (forced MV separation - cannot construct true lists),
     // ESCAPED and INDENTATION
@@ -1844,7 +1869,7 @@ algorithm
         // /* encode the val as "val." that will be encoded as _val_ that is impossible to create from a source code -> no name collision */
         (argvals, fname, iargs, oargs, scEnv, accMMDecls)
           = makeMatchFun((mmexp, exptype), 
-              {(SOME_MATCH(BIND_MATCH("val")), BOUND_VALUE(IDENT("val"))) },
+              {(SOME_MATCH(BIND_MATCH("val")), (BOUND_VALUE(IDENT("val")),dummySourceInfo) ) },
               emptyExpression, //ignore the argument
               true, scEnv, tplPackage, accMMDecls);          
         (_, stmt, _, _, locals, intxt) 
@@ -1855,7 +1880,7 @@ algorithm
     //a list expression -> concat 
     case (_, mmexp, exptype as LIST_TYPE(_), mmopts, stmts, intxt, outtxt, locals, scEnv, tplPackage,  accMMDecls)
       equation
-        mapctx = MAP_CONTEXT(BIND_MATCH("it"), BOUND_VALUE(IDENT("it")), mmopts, NONE(), false);        
+        mapctx = MAP_CONTEXT(BIND_MATCH("it"), (BOUND_VALUE(IDENT("it")),dummySourceInfo) , mmopts, NONE(), false);        
         (stmts, locals, scEnv, accMMDecls, intxt)
           = statementsFromMapExp(true, {(mmexp, exptype)}, mapctx,
                stmts, intxt, outtxt, locals, scEnv, tplPackage, accMMDecls);
@@ -3068,7 +3093,7 @@ algorithm
    := matchcontinue inArgExp
     local
       PathIdent path;
-    case ( BOUND_VALUE(path) )  
+    case ( (BOUND_VALUE(path), _) )  
       equation
         outInputValueName = pathIdentString(path);
         outMatchArgName = encodeIdent(outInputValueName, funArgNamePrefix);

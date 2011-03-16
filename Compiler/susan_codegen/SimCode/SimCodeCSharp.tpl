@@ -30,9 +30,8 @@ namespace Bodylight.Models<%modelNameSpace(modelInfo.name)%>
 {
   public partial class <%lastIdentOfPath(modelInfo.name)%> : DAESystem
   {
-         
     <%modelDataMembers(modelInfo, simCode)%>
-
+    
     <%let fbody = simulationFunctionsBody(simCode)
       if fbody then 
         <<
@@ -325,7 +324,7 @@ template varInfos(String typeName, list<SimVar> varsLst, Boolean isMInd, SimCode
     #region <%typeName%> variable infos
     <% varsLst |> SIMVAR(__) => 
        <<
-	   new SimVarInfo( "<%crefStr(name, simCode)%>", "<%comment%>", SimVarType.<%typeName%>, <%index%>, <%isMInd%>)
+	   new SimVarInfo( "<%crefStr(name, simCode)%>", "<%Util.escapeModelicaStringToCString(comment)%>", SimVarType.<%typeName%>, <%index%>, <%isMInd%>)
 	   >> ;separator=",\n"
 	%>
     #endregion<%\n%>    
@@ -630,7 +629,10 @@ case SES_SIMPLE_ASSIGN(__) then
   <%cref(cref, simCode)%> = <%expPart%>;
   >>
 case SES_ARRAY_CALL_ASSIGN(__) then "SES_ARRAY_CALL_ASSIGN"
-case SES_ALGORITHM(__) then "SES_ALGORITHM"
+case SES_ALGORITHM(__) then
+  (statements |> stmt =>
+    algStatement(stmt, context, simCode)
+  ;separator="\n")
 
 case SES_LINEAR(__) then
   let uid = System.tmpTick()
@@ -766,12 +768,12 @@ case SES_NONLINEAR(__) then
   let size = listLength(crefs)
   <<
   //start_nonlinear_system(<%size%>);
-  { var oldX = oldStates; var oldXd = oldStatesDerivatives;  var old2X = oldStates2; var old2Xd = oldStatesDerivatives2;
-    var oldY = oldAlgebraics; var old2Y = oldAlgebraics2; var oldTimeDelta = oldTime - oldTime2; 
+  { var oldX = statesOld; var oldXd = statesDerivativesOld;  var old2X = statesOld2; var old2Xd = statesDerivativesOld2;
+    var oldY = algebraicsOld; var old2Y = algebraicsOld2; var oldTimeDelta = timeOld - timeOld2; 
     var nls_x = new double[<%size%>]; var nls_xold = new double[<%size%>];
     <%crefs |> name hasindex i0 =>
       <<
-      nls_x[<%i0%>] = /*extraPolate(<%crefStr(name, simCode)%>)*/ oldTimeDelta == 0.0 ? <%cref(name, simCode)%> : (time * (<%oldCref(name, simCode)%> - <%old2Cref(name, simCode)%>) + (oldTime * <%old2Cref(name, simCode)%> - oldTime2 * <%oldCref(name, simCode)%>)) / oldTimeDelta;          
+      nls_x[<%i0%>] = /*extraPolate(<%crefStr(name, simCode)%>)*/ oldTimeDelta == 0.0 ? <%cref(name, simCode)%> : (time * (<%oldCref(name, simCode)%> - <%old2Cref(name, simCode)%>) + (timeOld * <%old2Cref(name, simCode)%> - timeOld2 * <%oldCref(name, simCode)%>)) / oldTimeDelta;          
       nls_xold[<%i0%>] = <%oldCref(name, simCode)%>;
       >> ;separator="\n"
     %>
@@ -1141,7 +1143,7 @@ template daeExp(Exp inExp, Context context, Text &preExp, SimCode simCode) ::=
   case ICONST(__)     then integer
   case RCONST(__)     then real
   case SCONST(__)     then '"<%Util.escapeModelicaStringToCString(string)%>"'
-  case BCONST(__)     then if bool then "(1)" else "(0)"
+  case BCONST(__)     then if bool then "true" else "false" //"(1)" else "(0)"
   case ENUM_LITERAL(__) then '<%index%>/*ENUM:<%dotPath(name)%>*/'
   case CREF(ty = ET_FUNCTION_REFERENCE_FUNC(__)) then 'FUNC_REF_NOT_SUPPORTED(cr=<%crefStr(componentRef,simCode)%>)'
   case CREF(ty = ET_COMPLEX(complexClassType = RECORD(__))) then
@@ -1201,7 +1203,10 @@ template daeExpCrefRhs(Exp ecr, Context context, Text &preExp, SimCode simCode) 
     else if crefIsScalar(cr, context) then
       match ecr.ty 
       case ET_INT(__)  then '(int)<%contextCref(cr, context, simCode)%>'
-      case ET_BOOL(__) then '(<%contextCref(cr, context, simCode)%> !=0.0)'
+      case ET_BOOL(__) then 
+      	match context
+      	case FUNCTION_CONTEXT(__) then contextCref(cr, context, simCode) //TODO: a hack!
+      	else '(<%contextCref(cr, context, simCode)%> !=0.0)'
       else contextCref(cr, context, simCode)
     else if crefSubIsScalar(cr) then
       // The array subscript results in a scalar
@@ -1527,6 +1532,10 @@ template daeExpCall(Exp it, Context context, Text &preExp, SimCode simCode) ::=
     'Math.Log(<%daeExp(s1, context, &preExp, simCode)%>)'
   
   case CALL(tuple_=false, builtin=true,
+            path=IDENT(name="log10"), expLst={s1}) then
+    'Math.Log10(<%daeExp(s1, context, &preExp, simCode)%>)'
+  
+  case CALL(tuple_=false, builtin=true,
             path=IDENT(name="exp"), expLst={s1}) then
     'Math.Exp(<%daeExp(s1, context, &preExp, simCode)%>)'
   
@@ -1769,6 +1778,30 @@ template dimension(Dimension d)
   case DAE.DIM_UNKNOWN(__) then ":"
   else "INVALID_DIMENSION"
 end dimension;
+
+
+template error(Absyn.Info srcInfo, String errMessage)
+"Example source template error reporting template to be used together with the sourceInfo() magic function.
+Usage: error(sourceInfo(), <<message>>) "
+::=
+let() = Tpl.addSourceTemplateError(errMessage, srcInfo)
+<<
+
+#error <% Error.infoStr(srcInfo) %>  <% errMessage %><%\n%>
+>>
+end error;
+
+//for completeness; although the error() template above is preferable
+template errorMsg(String errMessage)
+"Example template error reporting template
+ that is reporting only the error message without the usage of source infotmation."
+::=
+let() = Tpl.addTemplateError(errMessage)
+<<
+
+#error <% errMessage %><%\n%>
+>>
+end errorMsg;
 
 
 end SimCodeCSharp;

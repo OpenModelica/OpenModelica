@@ -487,12 +487,6 @@ package SimCode
       input Integer i;
       output String s;
     end twodigit;
-    
-    function templateError 
-    "Reports a template error via the Error module."
-      input String inErrMsg;
-      output String outErrMsg;
-    end templateError;
 
 end SimCode;
 
@@ -600,6 +594,20 @@ package Tpl
     input Text inText;
     input String inFileName;
   end textFile;
+  
+  //we do not import Error.addSourceMessage() directly
+  //because of list creation in Susan is not possible (yet by design)  
+  function addSourceTemplateError
+    "Wraps call to Error.addSourceMessage() funtion with Error.TEMPLATE_ERROR and one MessageToken."
+    input String inErrMsg;
+    input Absyn.Info inInfo;
+  end addSourceTemplateError;
+  
+  //for completeness; although the addSourceTemplateError() above is preferable
+  function addTemplateError
+  "Wraps call to Error.addMessage() funtion with Error.TEMPLATE_ERROR and one MessageToken."
+    input String inErrMsg;  
+  end addTemplateError;
 end Tpl;
 
 

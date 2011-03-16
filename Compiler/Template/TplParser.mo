@@ -4,6 +4,7 @@ public import Tpl;
 public import Util;
 public import TplAbsyn;
 public import RTOpts;
+public import Absyn;
 
 protected import System;
 protected import Debug;
@@ -51,6 +52,66 @@ algorithm
       then (lnum, llen - tillEnd);    
   end match;
 end getPosition;
+
+
+type LineColumnNumber = tuple<Integer,Integer>;
+type SourceInfo = TplAbsyn.SourceInfo;
+constant SourceInfo dummySourceInfo = TplAbsyn.dummySourceInfo;// Absyn.INFO("*noname*", false, 0, 0, 0, 0, Absyn.dummyTimeStamp);
+
+public function captureStartPosition
+  input list<String> inChars;
+  input LineInfo inLineInfo;
+  input Integer inColumnOffset;
+  
+  output LineColumnNumber outLineColumnNumber;
+protected
+  Integer line, col;
+algorithm
+  (line, col) := getPosition(inChars, inLineInfo);
+  col := col - inColumnOffset;
+  outLineColumnNumber  := (line, col);
+end captureStartPosition;
+
+
+//TODO: add correct TIME_STAMP
+public function sourceInfo
+  input LineColumnNumber inStartLineColumnNumber;
+  input list<String>     inEndChars;
+  input LineInfo         inEndLineInfo;
+  
+  output SourceInfo outSourceInfo;
+algorithm
+  outSourceInfo  := 
+  match (inStartLineColumnNumber, inEndChars, inEndLineInfo)
+    local
+      list<String> chars;
+      Integer lnum, llen, tillEnd;
+      Integer startL, startC, endL, endC;
+      LineInfo endlinfo;
+      String  fileName;
+            
+    case ( (startL, startC), inEndChars, endlinfo as LINE_INFO(parseInfo = PARSE_INFO(fileName = fileName)) )
+      equation
+        (endL, endC) = getPosition(inEndChars, endlinfo);
+        outSourceInfo = Absyn.INFO(fileName, false, startL, startC, endL, endC, Absyn.dummyTimeStamp);
+      then outSourceInfo;    
+  end match;
+end sourceInfo;
+
+
+public function startPositionFromExp
+  input TplAbsyn.Expression inExpression;  
+  output LineColumnNumber outLineColumnNumber;
+protected
+  Integer line, col;
+algorithm
+  outLineColumnNumber :=  match inExpression
+    local
+      Integer startL, startC;
+   case ((_, Absyn.INFO(lineNumberStart = startL, columnNumberStart = startC)))
+     then ((startL, startC));        
+  end match;
+end startPositionFromExp;
 
 
 public function charsTillEndOfLine
@@ -2380,7 +2441,7 @@ algorithm
       equation
         linfo = parseError(chars, linfo, "Expected a constant definition after the position.", true);
         litType = TplAbsyn.UNRESOLVED_TYPE("#Error#");                      
-      then (chars, linfo, TplAbsyn.TEMPLATE_DEF({},"","",TplAbsyn.ERROR_EXP()), litType);
+      then (chars, linfo, TplAbsyn.TEMPLATE_DEF({},"","",(TplAbsyn.ERROR_EXP(),dummySourceInfo)), litType);
    
             
   end matchcontinue;
@@ -2774,36 +2835,44 @@ algorithm
       String  lesc, resc;
       TplAbsyn.Expression exp;
       list<TplAbsyn.EscOption> opts, indexOffsetOption;
-    
+      //LineColumnNumber startLCN;
+      
     case (chars, linfo, lesc, resc, _)
       equation
+        //startLCN = captureStartPosition(chars, linfo, 0);
         (chars, linfo, exp, indexOffsetOption) = expressionNoOptions(chars, linfo, lesc, resc);
         (chars, linfo, opts) = escapedOptions(chars, linfo, lesc, resc);
         opts = listAppend(indexOffsetOption, opts);
         //exp = makeEscapedExp(exp, listAppend(sopt,opts));
-        exp = makeEscapedExp(exp, opts);
+        exp = makeEscapedExp(chars, linfo, exp, opts);
       then (chars, linfo, exp);
     
     case (chars, linfo, lesc, resc, false)
-      equation
+      equation        
         (linfo) = parseError(chars, linfo, "Expecting an expression - not able to parse from this point.", true);        
-      then (chars, linfo, TplAbsyn.ERROR_EXP());
+      then (chars, linfo, (TplAbsyn.ERROR_EXP(), dummySourceInfo));
                 
   end matchcontinue;
 end expression;
 
 
 public function makeEscapedExp
+  input list<String> inEndChars;
+  input LineInfo inEndLineInfo;
   input TplAbsyn.Expression inExpression;
   input list<TplAbsyn.EscOption> inOptions;
   output TplAbsyn.Expression outExpression;
 algorithm
-  (outExpression) := match (inExpression, inOptions)
+  (outExpression) := match (inEndChars, inEndLineInfo, inExpression, inOptions)
     local
       TplAbsyn.Expression exp;
-      list<TplAbsyn.EscOption> opts;    
-   case (exp, {})  then exp;   
-   case (exp, opts as (_::_)) then TplAbsyn.ESCAPED(exp, opts);        
+      list<TplAbsyn.EscOption> opts;
+      SourceInfo sinfo;  
+   case (_, _, exp, {})  then exp;   
+   case (inEndChars, inEndLineInfo, exp, opts as (_::_)) 
+     equation
+       sinfo = sourceInfo(startPositionFromExp(exp), inEndChars, inEndLineInfo); 
+     then ((TplAbsyn.ESCAPED(exp, opts), sinfo));        
   end match;
 end makeEscapedExp;
 
@@ -2951,6 +3020,7 @@ algorithm
       Option<TplAbsyn.Ident> idxNmOpt;
       TplAbsyn.Expression exp, headExp;
       TplAbsyn.MatchingExp mexp;
+      SourceInfo sinfo;
     
     case ("|"::">":: chars, linfo, headExp, lesc, resc)
       equation
@@ -2963,7 +3033,8 @@ algorithm
         (chars, linfo) = expectChar(chars, linfo, ">");        
         (chars, linfo) = interleave(chars, linfo);
         (chars, linfo, exp) = expressionLet(chars, linfo, lesc, resc);
-      then (chars, linfo, TplAbsyn.MAP(headExp, mexp, exp, idxNmOpt), outIndexOffsetOption);
+        sinfo = sourceInfo(startPositionFromExp(headExp), chars, linfo);
+      then (chars, linfo, (TplAbsyn.MAP(headExp, mexp, exp, idxNmOpt), sinfo), outIndexOffsetOption);
 
     case (chars, linfo, headExp, _, _)
       then (chars, linfo, headExp, {} );
@@ -3070,21 +3141,22 @@ public function expressionLet
 algorithm
   (outChars, outLineInfo, outExpression) := matchcontinue (inChars, inLineInfo, inLeftEsc, inRightEsc)
     local
-      list<String> chars;
-      LineInfo linfo;
+      list<String> chars, startChars;
+      LineInfo linfo, startLInfo;
       String  lesc, resc;
       TplAbsyn.Expression exp,  lexp;
+      SourceInfo sinfo;
     
-    case ("l"::"e"::"t" :: chars, linfo, lesc, resc)
+    case ("l"::"e"::"t" :: startChars, startLInfo, lesc, resc)
       equation
-        afterKeyword(chars);
-        (chars, linfo) = interleave(chars, linfo);
+        afterKeyword(startChars);
+        (chars, linfo) = interleave(startChars, startLInfo);
         (chars, linfo, lexp) = letExp(chars, linfo, lesc, resc);
         (chars, linfo) = interleave(chars, linfo);
         (chars, linfo, exp) = expressionLet(chars, linfo, lesc, resc);
-        
+        sinfo = sourceInfo(captureStartPosition(startChars, startLInfo, 3), chars, linfo); 
         //(chars, linfo, expLst) = concatLetExp_rest(chars, linfo, lesc, resc);        
-      then (chars, linfo, TplAbsyn.LET(lexp, exp)); 
+      then (chars, linfo, (TplAbsyn.LET(lexp, exp), sinfo)); 
   
     case (chars, linfo, lesc, resc)
       equation
@@ -3178,71 +3250,76 @@ public function letExp
 algorithm
   (outChars, outLineInfo, outExpression) := matchcontinue (inChars, inLineInfo, inLeftEsc, inRightEsc)
     local
-      list<String> chars;
-      LineInfo linfo;
+      list<String> chars, startChars;
+      LineInfo linfo, startLInfo;
       String lesc, resc;
       TplAbsyn.PathIdent name;
       TplAbsyn.Expression exp;
       list<TplAbsyn.Expression> args;
       TplAbsyn.Ident id;
-      
+      //LineColumnNumber startLCN;
+      SourceInfo sinfo;
    
-  case ("&":: chars, linfo, lesc, resc)
+  case ("&":: startChars, startLInfo, lesc, resc)
       equation
-        (chars, linfo) = interleave(chars, linfo);
+        (chars, linfo) = interleave(startChars, startLInfo);
         (chars, id) = identifier(chars);
         (chars, linfo) = interleave(chars, linfo);
         ("=":: chars) = chars;
         (chars, linfo) = interleaveExpectKeyWord(chars, linfo, {"b","u","f","f","e","r"}, false);
         (chars, linfo) = interleave(chars, linfo);
         (chars, linfo, exp) = expression(chars, linfo, lesc, resc, false);
-      then (chars, linfo, TplAbsyn.TEXT_CREATE(id, exp));
+        sinfo = sourceInfo(captureStartPosition(startChars, startLInfo, 1), chars, linfo);
+      then (chars, linfo, (TplAbsyn.TEXT_CREATE(id, exp), sinfo));
   
-  case ("&":: chars, linfo, lesc, resc)
+  case ("&":: startChars, startLInfo, lesc, resc)
       equation
-        (chars, linfo) = interleave(chars, linfo);
+        (chars, linfo) = interleave(startChars, startLInfo);
         (chars, id) = identifier(chars);
         (chars, linfo) = interleave(chars, linfo);
         ("+"::"=":: chars) = chars;
         (chars, linfo) = interleave(chars, linfo);
         (chars, linfo, exp) = expression(chars, linfo, lesc, resc, false);
-      then (chars, linfo, TplAbsyn.TEXT_ADD(id, exp));
+        sinfo = sourceInfo(captureStartPosition(startChars, startLInfo, 1), chars, linfo);
+      then (chars, linfo, (TplAbsyn.TEXT_ADD(id, exp), sinfo));
   
-  case ("&":: chars, linfo, lesc, resc)
+  case ("&":: startChars, startLInfo, lesc, resc)
       equation
-        (chars, linfo) = interleave(chars, linfo);
+        (chars, linfo) = interleave(startChars, startLInfo);
         (chars, linfo, id) = identifierNoOpt(chars, linfo);
         linfo = parseError(chars, linfo, "Expecting a '=' or '+=' text variable creation/addition (&var = exp or &var += exp) at the position.", true);
-      then (chars, linfo, TplAbsyn.ERROR_EXP());
+      then (chars, linfo, (TplAbsyn.ERROR_EXP(), dummySourceInfo));
   
   
-  case ("("::")":: chars, linfo, lesc, resc)
+  case ("("::")":: startChars, startLInfo, lesc, resc)
       equation
-        (chars, linfo) = interleaveExpectChar(chars, linfo, "=");
+        (chars, linfo) = interleaveExpectChar(startChars, startLInfo, "=");
         (chars, linfo) = interleave(chars, linfo);
         (chars, linfo, name) = pathIdentNoOpt(chars, linfo);
         (chars, linfo) = interleave(chars, linfo);
         (chars, linfo, TplAbsyn.FUN_CALL(name, args)) = funCall(chars, linfo, name, lesc, resc);
-      then (chars, linfo, TplAbsyn.NORET_CALL(name, args));
+        sinfo = sourceInfo(captureStartPosition(startChars, startLInfo, 2), chars, linfo);
+      then (chars, linfo, (TplAbsyn.NORET_CALL(name, args), sinfo));
   
-  case ("("::")":: chars, linfo, lesc, resc)
+  case ("("::")":: startChars, startLInfo, lesc, resc)
       equation
-        (chars, linfo) = interleaveExpectChar(chars, linfo, "=");
+        (chars, linfo) = interleaveExpectChar(startChars, startLInfo, "=");
         (chars, linfo) = interleave(chars, linfo);
         (chars, linfo, name) = pathIdentNoOpt(chars, linfo);
         //(chars, linfo) = interleaveExpectChar(chars, linfo, "(");
         linfo = parseError(chars, linfo, "Expecting a non-return function call( let () = [package.]funName(args,...) ) at the position.", true);        
-      then (chars, linfo, TplAbsyn.ERROR_EXP());
+      then (chars, linfo, (TplAbsyn.ERROR_EXP(), dummySourceInfo));
   
   //TODO: to be  letBinding:bd '=' expression(lesc,resc):exp	  =>  LET_BINDING(bd, exp)
-  case (chars, linfo, lesc, resc)
+  case (startChars, startLInfo, lesc, resc)
       equation
-        (chars, linfo, id) = identifierNoOpt(chars, linfo);
+        (chars, linfo, id) = identifierNoOpt(startChars, startLInfo);
         (chars, linfo) = interleave(chars, linfo);
         (chars, linfo) = interleaveExpectChar(chars, linfo, "=");
         (chars, linfo) = interleave(chars, linfo);
         (chars, linfo, exp) = expression(chars, linfo, lesc, resc, false);
-      then (chars, linfo, TplAbsyn.TEXT_CREATE(id, exp));
+        sinfo = sourceInfo(captureStartPosition(startChars, startLInfo, 0), chars, linfo);
+      then (chars, linfo, (TplAbsyn.TEXT_CREATE(id, exp), sinfo));
   
   //case (chars, linfo, lesc, resc)
   //    equation
@@ -3392,6 +3469,7 @@ algorithm
       String  lesc, resc;
       TplAbsyn.Expression exp, bexp;
       list<TplAbsyn.Expression> expLst;
+      SourceInfo sinfo;
       
     case ("+" :: chars, linfo, bexp, lesc, resc)
       equation
@@ -3399,7 +3477,8 @@ algorithm
         (chars, linfo, exp) = expression_base(chars, linfo, lesc, resc);
         (chars, linfo) = interleave(chars, linfo);
         (chars, linfo, expLst) = concatExp_rest(chars, linfo, lesc, resc);
-      then (chars, linfo, TplAbsyn.TEMPLATE(bexp::exp::expLst, "+", "") );
+        sinfo = sourceInfo(startPositionFromExp(bexp), chars, linfo);
+      then (chars, linfo, (TplAbsyn.TEMPLATE(bexp::exp::expLst, "+", ""), sinfo) );
 
     case (chars, linfo, bexp, _, _)
       then (chars, linfo, bexp );
@@ -3483,67 +3562,77 @@ public function expression_base
 algorithm
   (outChars, outLineInfo, outExpression) := matchcontinue (inChars, inLineInfo, inLeftEsc, inRightEsc)
     local
-      list<String> chars, strRevList;
-      LineInfo linfo;
+      list<String> chars, startChars, strRevList;
+      LineInfo linfo, startLInfo;
       String  lesc, resc, str;
       TplAbsyn.Ident id;
       TplAbsyn.PathIdent name;
       TplAbsyn.TypeSignature ts;
       Tpl.StringToken st;
       TplAbsyn.Expression exp;
+      TplAbsyn.ExpressionBase expB;
       list<TplAbsyn.Expression> expLst;
+      //LineColumnNumber startLCN;
+      SourceInfo sinfo;
     
-    case (chars, linfo, _, _)
+    case (startChars, startLInfo, _, _)
       equation
-        (chars, linfo, strRevList) = stringConstant(chars, linfo);
+        //startLCN = captureStartPosition(chars, linfo, 0);
+        (chars, linfo, strRevList) = stringConstant(startChars, startLInfo);
         st = makeStrTokFromRevStrList(strRevList);
-      then (chars, linfo, TplAbsyn.STR_TOKEN(st));
+        sinfo = sourceInfo(captureStartPosition(startChars, startLInfo, 0), chars, linfo); 
+      then (chars, linfo, (TplAbsyn.STR_TOKEN(st), sinfo));
      
-    case (chars, linfo, _, _)
+    case (startChars, startLInfo, _, _)
       equation
-        (chars, linfo, str, ts) = literalConstant(chars, linfo);
-      then (chars, linfo, TplAbsyn.LITERAL(str, ts));
+        (chars, linfo, str, ts) = literalConstant(startChars, startLInfo);
+        sinfo = sourceInfo(captureStartPosition(startChars, startLInfo, 0), chars, linfo);
+      then (chars, linfo, (TplAbsyn.LITERAL(str, ts), sinfo));
    
    case (chars, linfo, lesc, resc)
       equation
         (chars, linfo, exp) = templateExp(chars, linfo, lesc, resc);
       then (chars, linfo, exp);
    
-   case ("{" :: chars, linfo, lesc, resc)
+   case ("{" :: startChars, startLInfo, lesc, resc)
       equation
-        (chars, linfo) = interleave(chars, linfo);
+        (chars, linfo) = interleave(startChars, startLInfo);
         ("}" :: chars) = chars;
-      then (chars, linfo, TplAbsyn.MAP_ARG_LIST({}));
+        sinfo = sourceInfo(captureStartPosition(startChars, startLInfo, 1), chars, linfo);
+      then (chars, linfo, (TplAbsyn.MAP_ARG_LIST({}), sinfo));
    
-   case ("{" :: chars, linfo, lesc, resc)
+   case ("{" :: startChars, startLInfo, lesc, resc)
       equation
-        (chars, linfo) = interleave(chars, linfo);
+        (chars, linfo) = interleave(startChars, startLInfo);
         (chars, linfo, exp) = expressionPlus(chars, linfo, lesc, resc);
         (chars, linfo) = interleave(chars, linfo);
         (chars, linfo, expLst) = expressionList_rest(chars, linfo, lesc, resc);
         (chars, linfo) = interleaveExpectChar(chars, linfo, "}");
-      then (chars, linfo, TplAbsyn.MAP_ARG_LIST(exp::expLst));
+        sinfo = sourceInfo(captureStartPosition(startChars, startLInfo, 1), chars, linfo);
+      then (chars, linfo, (TplAbsyn.MAP_ARG_LIST(exp::expLst), sinfo));
    
-   case ("(" :: chars, linfo, lesc, resc)
+   case ("(" :: startChars, startLInfo, lesc, resc)
       equation
-        (chars, linfo) = interleave(chars, linfo);
+        (chars, linfo) = interleave(startChars, startLInfo);
         (chars, linfo, exp) = expression(chars, linfo, lesc, resc, false);
-        (chars, linfo) = interleaveExpectChar(chars, linfo, ")");        
+        (chars, linfo) = interleaveExpectChar(chars, linfo, ")");      
       then (chars, linfo, exp);
    
    //TODO: be a ref Text buffer
-   case ("&" :: chars, linfo, lesc, resc)
+   case ("&" :: startChars, startLInfo, lesc, resc)
       equation
-        (chars, linfo) = interleave(chars, linfo);
-        (chars, linfo, id) = identifierNoOpt(chars, linfo);        
-      then (chars, linfo, TplAbsyn.BOUND_VALUE(TplAbsyn.IDENT(id)));
+        (chars, linfo) = interleave(startChars, startLInfo);
+        (chars, linfo, id) = identifierNoOpt(chars, linfo);
+        sinfo = sourceInfo(captureStartPosition(startChars, startLInfo, 1), chars, linfo);     
+      then (chars, linfo, (TplAbsyn.BOUND_VALUE(TplAbsyn.IDENT(id)), sinfo));
    
-   case (chars, linfo, lesc, resc)
+   case (startChars, startLInfo, lesc, resc)
       equation
-        (chars, linfo, name) = pathIdent(chars, linfo);
+        (chars, linfo, name) = pathIdent(startChars, startLInfo);
         (chars, linfo) = interleave(chars, linfo);
-        (chars, linfo, exp) = boundValueOrFunCall(chars, linfo, name, lesc, resc);
-      then (chars, linfo, exp);
+        (chars, linfo, expB) = boundValueOrFunCall(chars, linfo, name, lesc, resc);
+        sinfo = sourceInfo(captureStartPosition(startChars, startLInfo, 0), chars, linfo);
+      then (chars, linfo, (expB, sinfo));
       
   end matchcontinue;
 end expression_base;
@@ -3564,20 +3653,21 @@ public function boundValueOrFunCall
   
   output list<String> outChars;
   output LineInfo outLineInfo;
-  output TplAbsyn.Expression outExpression;
+  output TplAbsyn.ExpressionBase outExpressionBase;
 algorithm
-  (outChars, outLineInfo, outExpression) := matchcontinue (inChars, inLineInfo, inName, inLeftEsc, inRightEsc)
+  (outChars, outLineInfo, outExpressionBase) := 
+  matchcontinue (inChars, inLineInfo, inName, inLeftEsc, inRightEsc)
     local
       list<String> chars;
       LineInfo linfo;
       String lesc, resc;
       TplAbsyn.PathIdent name;
-      TplAbsyn.Expression exp;
+      TplAbsyn.ExpressionBase expB;
       
     case (chars, linfo, name, lesc, resc)
       equation
-        (chars, linfo,exp) = funCall(chars, linfo, name, lesc, resc);
-      then (chars, linfo, exp);
+        (chars, linfo, expB) = funCall(chars, linfo, name, lesc, resc);
+      then (chars, linfo, expB);
 
     case (chars, linfo, name, _, _)
       then (chars, linfo, TplAbsyn.BOUND_VALUE(name));
@@ -3602,9 +3692,9 @@ public function funCall
   
   output list<String> outChars;
   output LineInfo outLineInfo;
-  output TplAbsyn.Expression outExpression;
+  output TplAbsyn.ExpressionBase outExpressionBase;
 algorithm
-  (outChars, outLineInfo, outExpression) := matchcontinue (inChars, inLineInfo, inName, inLeftEsc, inRightEsc)
+  (outChars, outLineInfo, outExpressionBase) := matchcontinue (inChars, inLineInfo, inName, inLeftEsc, inRightEsc)
     local
       list<String> chars;
       LineInfo linfo;
@@ -4242,41 +4332,45 @@ public function templateExp
 algorithm
   (outChars, outLineInfo, outExpression) := matchcontinue (inChars, inLineInfo, inLeftEsc, inRightEsc)
     local
-      list<String> chars, solChars;
-      LineInfo linfo;
+      list<String> chars, startChars, solChars;
+      LineInfo linfo, startLInfo;
       String  lesc, resc;
-      TplAbsyn.Expression exp;
+      TplAbsyn.ExpressionBase expB;
       Integer baseInd, lineInd;
+      SourceInfo sinfo;
     
-   case ("'" :: chars, linfo, lesc, resc)
+   case ("'" :: startChars, startLInfo, lesc, resc)
       equation
         //single quotes has no special treatment of indent and new lines
         //i.e., it takes O as the base indent, and it counts every new line 
-        (chars, linfo, exp) = templateBody(chars, linfo, lesc, resc, true, {},{},0);
-      then (chars, linfo, exp);
+        (chars, linfo, expB) = templateBody(startChars, startLInfo, lesc, resc, true, {},{},0);
+        sinfo = sourceInfo(captureStartPosition(startChars, startLInfo, 1), chars, linfo);
+      then (chars, linfo, (expB, sinfo));
    
-   case ("<"::"<":: chars, linfo as LINE_INFO(startOfLineChars = solChars), lesc, resc)
+   case ("<"::"<":: startChars, startLInfo as LINE_INFO(startOfLineChars = solChars), lesc, resc)
       equation
         //the base indent is the indent of the line where the << appears
         (_, baseInd) = lineIndent(solChars,0);
         //the case when nothing visible is after <<        
-        (chars, linfo) = takeSpaceAndNewLine(chars, linfo);
+        (chars, linfo) = takeSpaceAndNewLine(startChars, startLInfo);
         //(chars, linfo) = templStripFirstNewLine(chars, linfo);
-        (chars, linfo, exp) = templateBody(chars, linfo, lesc, resc, false, {}, {}, baseInd);
-      then (chars, linfo, exp);
+        (chars, linfo, expB) = templateBody(chars, linfo, lesc, resc, false, {}, {}, baseInd);
+        sinfo = sourceInfo(captureStartPosition(startChars, startLInfo, 2), chars, linfo);
+      then (chars, linfo, (expB, sinfo));
    
    //special treatment when some non-space is right after << 
-   case ("<"::"<":: chars, linfo as LINE_INFO(startOfLineChars = solChars), lesc, resc)
+   case ("<"::"<":: startChars, startLInfo as LINE_INFO(startOfLineChars = solChars), lesc, resc)
       equation
         //the base indent is the indent of the line where the << appears
         (_, baseInd) = lineIndent(solChars,0);
         //some non-space char(s) is after <<        
-        failure( (_,_) = takeSpaceAndNewLine(chars, linfo) );
-        (chars, lineInd) = lineIndent(chars,0);
+        failure( (_,_) = takeSpaceAndNewLine(startChars, startLInfo) );
+        (chars, lineInd) = lineIndent(startChars,0);
         //correct the indent of the line right after << to baseInd
         lineInd = lineInd + baseInd;
-        (chars, linfo, exp) = restOfTemplLine(chars, linfo, lesc, resc, false, {}, {}, baseInd, lineInd, {});
-      then (chars, linfo, exp);     
+        (chars, linfo, expB) = restOfTemplLine(chars, startLInfo, lesc, resc, false, {}, {}, baseInd, lineInd, {});
+        sinfo = sourceInfo(captureStartPosition(startChars, startLInfo, 2), chars, linfo);
+      then (chars, linfo, (expB, sinfo));     
   end matchcontinue;
 end templateExp;
 
@@ -4338,9 +4432,9 @@ public function templateBody
   
   output list<String> outChars;
   output LineInfo outLineInfo;
-  output TplAbsyn.Expression outExpression;
+  output TplAbsyn.ExpressionBase outExpressionBase;
 algorithm
-  (outChars, outLineInfo, outExpression) 
+  (outChars, outLineInfo, outExpressionBase) 
   := match (inChars, inLineInfo, inLeftEsc, inRightEsc, inIsSingleQuote, inExpressionList, inIndentStack, inActualIndent)
     local
       list<String> chars;
@@ -4348,15 +4442,15 @@ algorithm
       String  lesc, resc;
       Boolean isSQ;
       Integer actInd, lineInd;
-      TplAbsyn.Expression exp;
+      TplAbsyn.ExpressionBase expB;
       list<TplAbsyn.Expression> expLst;
       list<tuple<Integer,list<TplAbsyn.Expression>>> indStack;
     
    case (chars, linfo, lesc, resc, isSQ, expLst, indStack, actInd)
       equation
         (chars, lineInd) = lineIndent(chars,0);
-        (chars, linfo, exp) = restOfTemplLine(chars, linfo, lesc, resc, isSQ, expLst, indStack, actInd, lineInd, {});
-      then (chars, linfo, exp);
+        (chars, linfo, expB) = restOfTemplLine(chars, linfo, lesc, resc, isSQ, expLst, indStack, actInd, lineInd, {});
+      then (chars, linfo, expB);
     
   end match;
 end templateBody;
@@ -4454,9 +4548,9 @@ public function restOfTemplLine
   
   output list<String> outChars;
   output LineInfo outLineInfo;
-  output TplAbsyn.Expression outExpression;
+  output TplAbsyn.ExpressionBase outExpressionBase;
 algorithm
-  (outChars, outLineInfo, outExpression) 
+  (outChars, outLineInfo, outExpressionBase) 
   := matchcontinue (inChars, inLineInfo, inLeftEsc, inRightEsc, inIsSingleQuote, inExpressionList, inIndentStack,
                     inActualIndent, inLineIndent, inAccStringChars)
     local
@@ -4467,6 +4561,7 @@ algorithm
       Boolean isSQ;
       Integer actInd, lineInd;
       TplAbsyn.Expression exp,  eexp;
+      TplAbsyn.ExpressionBase expB;
       list<TplAbsyn.Expression> expLst;
       list<tuple<Integer,list<TplAbsyn.Expression>>> indStack;
     
@@ -4497,8 +4592,8 @@ algorithm
         ("%" :: c :: chars) = chars;
         equality( c  = resc );
         (chars, linfo, lineInd) = dropNewLineAfterEmptyExp(chars, linfo, lineInd, accChars);
-        (chars, linfo, exp) = restOfTemplLine(chars, linfo, lesc, resc, isSQ, expLst, indStack, actInd, lineInd, accChars);
-      then (chars, linfo, exp);
+        (chars, linfo, expB) = restOfTemplLine(chars, linfo, lesc, resc, isSQ, expLst, indStack, actInd, lineInd, accChars);
+      then (chars, linfo, expB);
       
    //<% expression %> 
    case (startChars as (c :: "%":: chars), startLinfo, lesc, resc, isSQ, expLst, indStack, actInd, lineInd, accChars)
@@ -4513,8 +4608,8 @@ algorithm
         (expLst, indStack, actInd, errOpt) = onEscapedExp(eexp, expLst, indStack, actInd, lineInd, accChars);
         LINE_INFO(startOfLineChars = solChars) = startLinfo;
         linfo = parseErrorPrevPositionOpt(solChars, startLinfo, linfo, errOpt, false);
-        (chars, linfo, exp) = restOfTemplLine(chars, linfo, lesc, resc, isSQ, expLst, indStack, actInd, actInd, {});
-      then (chars, linfo, exp);
+        (chars, linfo, expB) = restOfTemplLine(chars, linfo, lesc, resc, isSQ, expLst, indStack, actInd, actInd, {});
+      then (chars, linfo, expB);
   
    case (startChars, startLinfo, lesc, resc, isSQ, expLst, indStack, actInd, lineInd, accChars)
       equation
@@ -4522,22 +4617,22 @@ algorithm
         (expLst, indStack, actInd, errOpt) = onNewLine(expLst, indStack, actInd, lineInd, accChars);
         LINE_INFO(startOfLineChars = solChars) = startLinfo;
         linfo = parseErrorPrevPositionOpt(solChars, startLinfo, linfo, errOpt, false);
-        (chars, linfo, exp) = templateBody(chars, linfo, lesc, resc, isSQ, expLst, indStack, actInd);
-      then (chars, linfo, exp);
+        (chars, linfo, expB) = templateBody(chars, linfo, lesc, resc, isSQ, expLst, indStack, actInd);
+      then (chars, linfo, expB);
    
    //isSingleQuote = true
    case ("'" :: chars, linfo, lesc, resc, true, expLst, indStack, actInd, lineInd, accChars)
       equation
         expLst = onTemplEnd(false, expLst, indStack, actInd, lineInd, accChars);
-        exp = makeTemplateFromExpList(expLst, "'","'");
-      then (chars, linfo, exp);
+        expB = makeTemplateFromExpList(expLst, "'","'");
+      then (chars, linfo, expB);
    
    //isDoubleQuote = false =>  << >>
    case (">"::">":: chars, linfo, lesc, resc, false, expLst, indStack, actInd, lineInd, accChars)
       equation
         expLst = onTemplEnd(true, expLst, indStack, actInd, lineInd, accChars);
-        exp = makeTemplateFromExpList(expLst, "<<",">>");
-      then (chars, linfo, exp);
+        expB = makeTemplateFromExpList(expLst, "<<",">>");
+      then (chars, linfo, expB);
    
    //??? should we allow escaping at all ??
    /* experimentally we will disallow it ... use "" constants in like 'hey son<%"'"%>s brother'
@@ -4550,8 +4645,8 @@ algorithm
 	 */
    case (c :: chars, linfo, lesc, resc, isSQ, expLst, indStack, actInd, lineInd, accChars)
       equation
-        (chars, linfo, exp) = restOfTemplLine(chars, linfo, lesc, resc, isSQ, expLst, indStack, actInd, lineInd, c :: accChars);
-      then (chars, linfo, exp);
+        (chars, linfo, expB) = restOfTemplLine(chars, linfo, lesc, resc, isSQ, expLst, indStack, actInd, lineInd, c :: accChars);
+      then (chars, linfo, expB);
    
    case ({}, linfo, lesc, resc, isSQ, expLst, indStack, actInd, lineInd, accChars)
       equation
@@ -4650,20 +4745,21 @@ public function makeTemplateFromExpList
   input String inLeftQuote;
   input String inRightQuote;
   
-  output TplAbsyn.Expression outExpression;
+  output TplAbsyn.ExpressionBase outExpressionBase;
 algorithm
-  (outExpression) 
+  (outExpressionBase) 
   := matchcontinue (inExpressionList, inLeftQuote,inRightQuote)
     local
       String lquote, rquote;
-      TplAbsyn.Expression exp;
+      TplAbsyn.ExpressionBase expB;
       list<TplAbsyn.Expression> expLst;
 
    case ( { } , _ , _)
       then TplAbsyn.STR_TOKEN(Tpl.ST_STRING(""));
-        
-   case ( { exp } , _ , _)
-      then exp;
+   
+   //the outer boundings will be used for the SourceInfo
+   case ( { (expB,_) } , _ , _)
+      then expB;
    
    case (expLst, lquote, rquote)
      equation
@@ -4799,7 +4895,7 @@ algorithm
    //AccStringChars = {}
    // expLst = ST opened :: _ -> a standalone \n on the line - make permanent
    // ignore lineInd  
-   case (expLst as (TplAbsyn.STR_TOKEN(value = Tpl.ST_STRING_LIST(strList = (""::_))) :: _),
+   case (expLst as ( (TplAbsyn.STR_TOKEN(value = Tpl.ST_STRING_LIST(strList = (""::_))),_) :: _),
        indStack, actInd, _, {})
       equation
         expLst = addAccStringChars(expLst, {"\n"} );        
@@ -4809,7 +4905,7 @@ algorithm
    //AccStringChars = {}
    // expLst = <\n> :: _ -> a forced new line - make permanent - replace with \n
    // ignore lineInd - must be lineInd = actInd  (because the <\n> exp made it so) 
-   case (TplAbsyn.STR_TOKEN(value = Tpl.ST_NEW_LINE()) :: expLst,
+   case ( (TplAbsyn.STR_TOKEN(value = Tpl.ST_NEW_LINE()),_) :: expLst,
        indStack, actInd, _, {})
       equation
         expLst = addAccStringChars(expLst, {"\n"} );        
@@ -4818,7 +4914,7 @@ algorithm
    //AccStringChars = {}
    // expLst = SNL :: _ -> a standalone \n on the line - make permanent
    // ignore lineInd  
-   case (expLst as (TplAbsyn.SOFT_NEW_LINE() :: _) , indStack, actInd, _, {})
+   case (expLst as ( (TplAbsyn.SOFT_NEW_LINE(),_) :: _) , indStack, actInd, _, {})
       equation
         expLst = addAccStringChars(expLst, {"\n"} );        
       then (expLst, indStack,  actInd,NONE());
@@ -4828,7 +4924,7 @@ algorithm
    // ignore lineInd - must be lineInd = actInd  (because the exp made it so) 
    case (expLst as (_ :: _) , indStack, actInd, _, {})
       equation
-        expLst = TplAbsyn.SOFT_NEW_LINE() :: expLst;        
+        expLst = (TplAbsyn.SOFT_NEW_LINE(), dummySourceInfo) :: expLst;        
       then (expLst, indStack,  actInd,NONE());
    
    //AccStringChars = (_::_)
@@ -4839,10 +4935,10 @@ algorithm
       equation
         true = ( lineInd >= actInd );
         accChars = listAppend(accChars, Util.listFill(" ",lineInd - actInd));
-        (TplAbsyn.STR_TOKEN(Tpl.ST_STRING_LIST(strLst, false)) :: expLst) 
+        ( (TplAbsyn.STR_TOKEN(Tpl.ST_STRING_LIST(strLst, false)),_) :: expLst) 
          = addAccStringChars(expLst, accChars); //must create the ST becase of accChars as (_::_)
         //make the opened last ST be disposable new line
-        expLst = TplAbsyn.STR_TOKEN(Tpl.ST_STRING_LIST(strLst, true)) :: expLst;        
+        expLst = (TplAbsyn.STR_TOKEN(Tpl.ST_STRING_LIST(strLst, true)), dummySourceInfo) :: expLst;        
       then (expLst, indStack,  actInd,NONE());
    
    //if the indent is under base indent level, warn and make it 0 level
@@ -4928,7 +5024,7 @@ algorithm
    // expLst = SNL :: _ -> dispose the SNL
    // ignore lineInd 
    // pop all indent 
-   case (true, TplAbsyn.SOFT_NEW_LINE() :: expLst, indStack, actInd, _, {})
+   case (true, (TplAbsyn.SOFT_NEW_LINE(),_) :: expLst, indStack, actInd, _, {})
       equation
         (expLst, {}, _) = popIndentStack(expLst, indStack, actInd, 0);
       then expLst;
@@ -4938,10 +5034,10 @@ algorithm
    // expLst = ST opened with disposable new line :: _ -> dispose the \n on the line 
    // ignore lineInd  
    // pop all indent
-   case (true, TplAbsyn.STR_TOKEN(value = Tpl.ST_STRING_LIST(strList = strLst as (""::_), lastHasNewLine = true)) :: expLst,
+   case (true, (TplAbsyn.STR_TOKEN(value = Tpl.ST_STRING_LIST(strList = strLst as (""::_), lastHasNewLine = true)),_) :: expLst,
        indStack, actInd, _, {})
       equation
-        expLst = finalizeLastStringToken(TplAbsyn.STR_TOKEN(Tpl.ST_STRING_LIST(strLst, false)) :: expLst);
+        expLst = finalizeLastStringToken( (TplAbsyn.STR_TOKEN(Tpl.ST_STRING_LIST(strLst, false)), dummySourceInfo) :: expLst);
         (expLst, {},_) = popIndentStack(expLst, indStack, actInd, 0);        
         //TODO: warn when >> is under << determined indent         
       then expLst;
@@ -5024,7 +5120,7 @@ algorithm
         true = (lineInd < actInd); //when actInd > 0 --> something has to be on the stack
         d = actInd - prevInd; //must be positive
         expLst = listReverse(expLst);
-        expLst = TplAbsyn.INDENTATION(d, expLst) :: prevExpLst;
+        expLst = (TplAbsyn.INDENTATION(d, expLst), dummySourceInfo) :: prevExpLst;
         (expLst, indStack,  actInd) = popIndentStack(expLst, indStack, prevInd, lineInd);         
       then (expLst, indStack,  actInd);
    
@@ -5070,35 +5166,35 @@ algorithm
    // add a string
    // expLst = ST opened with new line :: _
    // merge the pushed new line with previous string without new line
-   case (TplAbsyn.STR_TOKEN(value = Tpl.ST_STRING_LIST(strList = ("" :: strNonNl :: strLst), lastHasNewLine = true)) :: expLst,
+   case ( (TplAbsyn.STR_TOKEN(value = Tpl.ST_STRING_LIST(strList = ("" :: strNonNl :: strLst), lastHasNewLine = true)),_) :: expLst,
        accChars as (_::_))
       equation
         failure("\n" = stringGetStringChar(strNonNl, stringLength(strNonNl))); 
         // push the disposable new line
         strNonNl = strNonNl +& "\n";
         str = stringCharListString(listReverse(accChars));
-        expLst = TplAbsyn.STR_TOKEN(Tpl.ST_STRING_LIST("" :: str :: strNonNl :: strLst, false)) :: expLst;
+        expLst = (TplAbsyn.STR_TOKEN(Tpl.ST_STRING_LIST("" :: str :: strNonNl :: strLst, false)), dummySourceInfo) :: expLst;
       then expLst;
    
    // add a string
    // expLst = ST opened with new line :: _
    // push the disposable new line - previous string has new line
-   case (TplAbsyn.STR_TOKEN(value = Tpl.ST_STRING_LIST(strList = ("" :: strLst), lastHasNewLine = true)) :: expLst,
+   case ( (TplAbsyn.STR_TOKEN(value = Tpl.ST_STRING_LIST(strList = ("" :: strLst), lastHasNewLine = true)),_) :: expLst,
        accChars as (_::_))
       equation
         //"\n" = stringGetStringChar(strNonNl, stringLength(strNonNl)); 
         str = stringCharListString(listReverse(accChars));
-        expLst = TplAbsyn.STR_TOKEN(Tpl.ST_STRING_LIST("" :: str :: "\n" :: strLst, false)) :: expLst;
+        expLst = (TplAbsyn.STR_TOKEN(Tpl.ST_STRING_LIST("" :: str :: "\n" :: strLst, false)), dummySourceInfo) :: expLst;
       then expLst;
    
    
    // add a string  
    // expLst = ST opened without new line :: _
-   case (TplAbsyn.STR_TOKEN(value = Tpl.ST_STRING_LIST(strList = ("" :: strLst), lastHasNewLine = false)) :: expLst,
+   case ( (TplAbsyn.STR_TOKEN(value = Tpl.ST_STRING_LIST(strList = ("" :: strLst), lastHasNewLine = false)),_) :: expLst,
        accChars as (_::_))
       equation
         str = stringCharListString(listReverse(accChars));
-        expLst = TplAbsyn.STR_TOKEN(Tpl.ST_STRING_LIST("" :: str :: strLst, false)) :: expLst;
+        expLst = (TplAbsyn.STR_TOKEN(Tpl.ST_STRING_LIST("" :: str :: strLst, false)), dummySourceInfo) :: expLst;
       then expLst;
    
    
@@ -5107,7 +5203,7 @@ algorithm
    case ( expLst, accChars as (_::_))
       equation
         str = stringCharListString(listReverse(accChars));
-        expLst = TplAbsyn.STR_TOKEN(Tpl.ST_STRING_LIST({"", str}, false)) :: expLst;
+        expLst = (TplAbsyn.STR_TOKEN(Tpl.ST_STRING_LIST({"", str}, false)), dummySourceInfo) :: expLst;
       then expLst;
    
    
@@ -5137,61 +5233,61 @@ algorithm
    
    // expLst = ST opened with new line :: _
    // merge the pushed new line with previous string without new line
-   case (TplAbsyn.STR_TOKEN(value = Tpl.ST_STRING_LIST(strList = ("" :: strNonNl :: strLst), lastHasNewLine = true)) :: expLst )
+   case ( (TplAbsyn.STR_TOKEN(value = Tpl.ST_STRING_LIST(strList = ("" :: strNonNl :: strLst), lastHasNewLine = true)),_) :: expLst )
       equation
         failure("\n" = stringGetStringChar(strNonNl, stringLength(strNonNl))); 
         // push the disposable new line
         str = strNonNl +& "\n";
-        expLst = finalizeLastStringToken(TplAbsyn.STR_TOKEN(Tpl.ST_STRING_LIST( ""::str::strLst, false)) :: expLst);
+        expLst = finalizeLastStringToken( (TplAbsyn.STR_TOKEN(Tpl.ST_STRING_LIST( ""::str::strLst, false)), dummySourceInfo) :: expLst);
       then expLst;
    
    // expLst = ST opened with new line :: _
    // the last string has new line (or empty - should not happen)
-   case (TplAbsyn.STR_TOKEN(value = Tpl.ST_STRING_LIST(strList = ("" :: strLst), lastHasNewLine = true)) :: expLst)
+   case ( (TplAbsyn.STR_TOKEN(value = Tpl.ST_STRING_LIST(strList = ("" :: strLst), lastHasNewLine = true)),_) :: expLst)
       equation
         //"\n" = stringGetStringChar(str, stringLength(str));
-        expLst = finalizeLastStringToken(TplAbsyn.STR_TOKEN(Tpl.ST_STRING_LIST( ""::"\n"::strLst, false)) :: expLst);
+        expLst = finalizeLastStringToken( (TplAbsyn.STR_TOKEN(Tpl.ST_STRING_LIST( ""::"\n"::strLst, false)), dummySourceInfo) :: expLst);
       then expLst;
    
    
    // expLst = ST opened with new line :: _
    // empty ST - for sure - should not happen  
-   case (TplAbsyn.STR_TOKEN(value = Tpl.ST_STRING_LIST(strList = { "" }, lastHasNewLine = false)) :: expLst )
+   case ( (TplAbsyn.STR_TOKEN(value = Tpl.ST_STRING_LIST(strList = { "" }, lastHasNewLine = false)),_) :: expLst )
       then expLst;
    
    
    // expLst = ST opened with new line :: _
    // the last and only string has new line 
-   case (TplAbsyn.STR_TOKEN(value = Tpl.ST_STRING_LIST(strList = { "" , "\n" }, lastHasNewLine = false)) :: expLst )
+   case ( (TplAbsyn.STR_TOKEN(value = Tpl.ST_STRING_LIST(strList = { "" , "\n" }, lastHasNewLine = false)),_) :: expLst )
       equation
-        expLst = TplAbsyn.STR_TOKEN(Tpl.ST_NEW_LINE()) :: expLst;        
+        expLst = (TplAbsyn.STR_TOKEN(Tpl.ST_NEW_LINE()), dummySourceInfo) :: expLst;        
       then expLst;
    
    
    // expLst = ST opened with new line :: _
    // the last and only string has new line => ST_LINE
-   case (TplAbsyn.STR_TOKEN(value = Tpl.ST_STRING_LIST(strList = { "" , str }, lastHasNewLine = false)) :: expLst )
+   case ( (TplAbsyn.STR_TOKEN(value = Tpl.ST_STRING_LIST(strList = { "" , str }, lastHasNewLine = false)),_) :: expLst )
       equation
         "\n" = stringGetStringChar(str, stringLength(str));
-        expLst = TplAbsyn.STR_TOKEN(Tpl.ST_LINE(str)) :: expLst;        
+        expLst = (TplAbsyn.STR_TOKEN(Tpl.ST_LINE(str)), dummySourceInfo) :: expLst;        
       then expLst;
    
    // expLst = ST opened with new line :: _
    // the last and only string has NOT a new line  => ST_STRING
-   case (TplAbsyn.STR_TOKEN(value = Tpl.ST_STRING_LIST(strList = { "" , str }, lastHasNewLine = false)) :: expLst )
+   case ( (TplAbsyn.STR_TOKEN(value = Tpl.ST_STRING_LIST(strList = { "" , str }, lastHasNewLine = false)),_) :: expLst )
       equation
         failure("\n" = stringGetStringChar(str, stringLength(str)));
-        expLst = TplAbsyn.STR_TOKEN(Tpl.ST_STRING(str)) :: expLst;        
+        expLst = (TplAbsyn.STR_TOKEN(Tpl.ST_STRING(str)), dummySourceInfo) :: expLst;        
       then expLst;
    
    
    // expLst = ST is string list :: _
    // make it a ST_STRING_LIST with properly set lastHasNewLine
-   case (TplAbsyn.STR_TOKEN(value = Tpl.ST_STRING_LIST( strList = ("" :: (strLst as (str :: _))), lastHasNewLine = false)) :: expLst )
+   case ( (TplAbsyn.STR_TOKEN(value = Tpl.ST_STRING_LIST( strList = ("" :: (strLst as (str :: _))), lastHasNewLine = false)),_) :: expLst )
       equation
         hasNL = ("\n" ==& stringGetStringChar(str, stringLength(str))); 
         strLst = listReverse(strLst);
-        expLst = TplAbsyn.STR_TOKEN(Tpl.ST_STRING_LIST( strLst, hasNL)) :: expLst;
+        expLst = (TplAbsyn.STR_TOKEN(Tpl.ST_STRING_LIST( strLst, hasNL)), dummySourceInfo) :: expLst;
       then expLst;
    
    //nothing to be finalized
@@ -5227,24 +5323,26 @@ public function conditionExp
 algorithm
   (outChars, outLineInfo, outExpression) := match (inChars, inLineInfo, inLeftEsc, inRightEsc)
     local
-      list<String> chars;
-      LineInfo linfo;
+      list<String> chars, startChars;
+      LineInfo linfo, startLInfo;
       String  lesc, resc;
       Boolean  isNot;
       TplAbsyn.Expression   lhsExp, trueBr;
       Option<TplAbsyn.MatchingExp> rhsMExpOpt;
       Option<TplAbsyn.Expression> elseBrOpt;
+      SourceInfo sinfo;
     
-   case ("i"::"f":: chars, linfo, lesc, resc)
+   case ("i"::"f":: startChars, startLInfo, lesc, resc)
       equation
-        afterKeyword(chars);
-        (chars, linfo) = interleave(chars, linfo);
+        afterKeyword(startChars);
+        (chars, linfo) = interleave(startChars, startLInfo);
         (chars, linfo, isNot, lhsExp, rhsMExpOpt) = condArgExp(chars, linfo, lesc, resc);
         (chars, linfo) = interleave(chars, linfo);
         (chars, linfo, trueBr) = thenBranch(chars, linfo, lesc, resc);
         (chars, linfo) = interleave(chars, linfo);
         (chars, linfo, elseBrOpt) = elseBranch(chars, linfo, lesc, resc);
-      then (chars, linfo, TplAbsyn.CONDITION(isNot, lhsExp, rhsMExpOpt, trueBr, elseBrOpt));
+        sinfo = sourceInfo(captureStartPosition(startChars, startLInfo, 2), chars, linfo); 
+      then (chars, linfo, (TplAbsyn.CONDITION(isNot, lhsExp, rhsMExpOpt, trueBr, elseBrOpt), sinfo));
    
   end match;
 end conditionExp;
@@ -5359,7 +5457,9 @@ algorithm
       LineInfo linfo;
       String  lesc, resc;
       TplAbsyn.Expression   lhsExp;
-    
+   
+   //TODO: perhaps, we should record the start of the expression from the 'not'
+   //but for now, we don't have other operators, so it is non an issue here
    case ("n"::"o"::"t":: chars, linfo, lesc, resc)
       equation
         afterKeyword(chars);
@@ -5465,16 +5565,17 @@ public function matchExp
 algorithm
   (outChars, outLineInfo, outExpression) := match (inChars, inLineInfo, inLeftEsc, inRightEsc)
     local
-      list<String> chars;
-      LineInfo linfo;
+      list<String> chars, startChars;
+      LineInfo linfo, startLInfo;
       String  lesc, resc;
       TplAbsyn.Expression exp;
       list<tuple<TplAbsyn.MatchingExp, TplAbsyn.Expression>> mcaseLst, elseLst;
+      SourceInfo sinfo;
     
-   case ("m"::"a"::"t"::"c"::"h":: chars, linfo, lesc, resc)
+   case ("m"::"a"::"t"::"c"::"h":: startChars, startLInfo, lesc, resc)
       equation
-        afterKeyword(chars);
-        (chars, linfo) = interleave(chars, linfo);
+        afterKeyword(startChars);
+        (chars, linfo) = interleave(startChars, startLInfo);
         (chars, linfo, exp) = expressionIf(chars, linfo, lesc, resc);
         (chars, linfo, mcaseLst) = matchCaseListNoOpt(chars, linfo, lesc, resc);
         (chars, linfo) = interleave(chars, linfo);
@@ -5482,7 +5583,8 @@ algorithm
         mcaseLst = listAppend(mcaseLst, elseLst);      
         (chars, linfo) = interleave(chars, linfo);
         (chars, linfo) = matchEndMatch(chars, linfo);
-      then (chars, linfo, TplAbsyn.MATCH(exp, mcaseLst));
+        sinfo = sourceInfo(captureStartPosition(startChars, startLInfo, 5), chars, linfo);
+      then (chars, linfo, (TplAbsyn.MATCH(exp, mcaseLst), sinfo));
    
    //implicit without 'match' keyword -> match it
    //case (chars, linfo, lesc, resc)

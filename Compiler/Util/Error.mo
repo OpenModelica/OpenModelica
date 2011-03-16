@@ -323,6 +323,9 @@ public constant ErrorID UNSUPPORTED_REDUCTION_TYPE=5031;
 public constant ErrorID COMPILER_WARNING = 6000;
 public constant ErrorID COMPILER_NOTIFICATION = 6001;
 
+public constant ErrorID TEMPLATE_ERROR = 7000;
+
+
 protected constant list<tuple<Integer, MessageType, Severity, String>> errorTable=
          {(SYNTAX_ERROR,SYNTAX(),ERROR(),"Syntax error near: %s"),
           (GRAMMATIC_ERROR,GRAMMAR(),ERROR(),"%s"),
@@ -729,7 +732,9 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (UNSUPPORTED_REDUCTION_TYPE,TRANSLATION(),ERROR(),"Expected a reduction function with type signature ('A,'B) => 'B, but got %s."),
 
           (COMPILER_NOTIFICATION,TRANSLATION(),NOTIFICATION(),"%s"),
-          (COMPILER_WARNING,TRANSLATION(),WARNING(),"%s")
+          (COMPILER_WARNING,TRANSLATION(),WARNING(),"%s"),
+          
+          (TEMPLATE_ERROR,TRANSLATION(),ERROR(),"Template error: %s")
           };
 
 protected import ErrorExt;

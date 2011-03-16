@@ -6335,7 +6335,7 @@ template literalExpConstBoxedVal(Exp lit)
     >>
   case BOX(__) then literalExpConstBoxedVal(exp)
   case lit as SHARED_LITERAL(__) then '_OMC_LIT<%lit.index%>'
-  else '<%\n%>#error "literalExpConstBoxedVal failed: <%printExpStr(lit)%>"<%\n%>'
+  else error(sourceInfo(), 'literalExpConstBoxedVal failed: <%printExpStr(lit)%>') 
 end literalExpConstBoxedVal;
 
 template equationInfo(list<SimEqSystem> eqs)
@@ -6398,6 +6398,31 @@ template equationInfo(list<SimEqSystem> eqs)
     %>
     >>
 end equationInfo;
+
+
+template error(Absyn.Info srcInfo, String errMessage)
+"Example source template error reporting template to be used together with the sourceInfo() magic function.
+Usage: error(sourceInfo(), <<message>>) "
+::=
+let() = Tpl.addSourceTemplateError(errMessage, srcInfo)
+<<
+
+#error "<% Error.infoStr(srcInfo) %> <% errMessage %>"<%\n%>
+>>
+end error;
+
+//for completeness; although the error() template above is preferable
+template errorMsg(String errMessage)
+"Example template error reporting template
+ that is reporting only the error message without the usage of source infotmation."
+::=
+let() = Tpl.addTemplateError(errMessage)
+<<
+
+#error "<% errMessage %>"<%\n%>
+>>
+end errorMsg;
+
 
 end SimCodeC;
 

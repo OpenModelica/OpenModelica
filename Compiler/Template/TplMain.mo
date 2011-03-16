@@ -16,6 +16,8 @@ public import TplCodegen;
 
 protected
 constant Tpl.Text emptyTxt = Tpl.MEM_TEXT({}, {}); 
+constant SourceInfo dsi = TplAbsyn.dummySourceInfo;
+
 
 public function main
   input String inFile;
@@ -219,6 +221,7 @@ algorithm
       TplAbsyn.TypeSignature ts;
       list<TplAbsyn.ASTDef> astDefs;
       TplAbsyn.Expression exp;
+      TplAbsyn.ExpressionBase expB;
       Tpl.StringToken tok;
       Real tstart;
       Integer lnum,colnum, llen, notPassedCnt;
@@ -481,35 +484,35 @@ typedIdents(TypedIdents decls) <>=
              } )
            },
            { ("pathIdent", TplAbsyn.TEMPLATE_DEF({("it",TplAbsyn.NAMED_TYPE(TplAbsyn.IDENT("PathIdent")))}, "", "",
-                             TplAbsyn.MATCH(TplAbsyn.BOUND_VALUE(TplAbsyn.IDENT("it")),
-                               { (TplAbsyn.RECORD_MATCH(TplAbsyn.IDENT("IDENT"),{}), TplAbsyn.BOUND_VALUE(TplAbsyn.IDENT("ident"))),
+                             (TplAbsyn.MATCH((TplAbsyn.BOUND_VALUE(TplAbsyn.IDENT("it")),dsi) ,
+                               { (TplAbsyn.RECORD_MATCH(TplAbsyn.IDENT("IDENT"),{}), (TplAbsyn.BOUND_VALUE(TplAbsyn.IDENT("ident")),dsi) ),
                                  (TplAbsyn.RECORD_MATCH(TplAbsyn.IDENT("PATH_IDENT"),{}), 
-                                  TplAbsyn.TEMPLATE({ 
-                                    TplAbsyn.BOUND_VALUE(TplAbsyn.IDENT("ident")),
-                                    TplAbsyn.STR_TOKEN(Tpl.ST_STRING(".")),
-                                    TplAbsyn.FUN_CALL(TplAbsyn.IDENT("pathIdent"), {TplAbsyn.BOUND_VALUE(TplAbsyn.IDENT("path"))})
-                                   },"\"","\"") )
+                                  (TplAbsyn.TEMPLATE({ 
+                                    (TplAbsyn.BOUND_VALUE(TplAbsyn.IDENT("ident")),dsi),
+                                    (TplAbsyn.STR_TOKEN(Tpl.ST_STRING(".")),dsi),
+                                    (TplAbsyn.FUN_CALL(TplAbsyn.IDENT("pathIdent"), {(TplAbsyn.BOUND_VALUE(TplAbsyn.IDENT("path")),dsi)}),dsi)
+                                   },"\"","\""),dsi) )
                                }
-                             ) 
+                             ),dsi) 
                            )
              ),
              ("typedIdents", TplAbsyn.TEMPLATE_DEF({("decls",TplAbsyn.NAMED_TYPE(TplAbsyn.IDENT("TypedIdents")))}, "", "",
-                             TplAbsyn.ESCAPED(
-                               TplAbsyn.MAP(
-                                 TplAbsyn.BOUND_VALUE(TplAbsyn.IDENT("decls")),
+                             (TplAbsyn.ESCAPED(
+                               (TplAbsyn.MAP(
+                                 (TplAbsyn.BOUND_VALUE(TplAbsyn.IDENT("decls")),dsi),
                                  TplAbsyn.TUPLE_MATCH({TplAbsyn.BIND_MATCH("id"), TplAbsyn.BIND_MATCH("pid")}),
-                                 TplAbsyn.TEMPLATE({ 
-                                    TplAbsyn.FUN_CALL(TplAbsyn.IDENT("pathIdent"), {TplAbsyn.BOUND_VALUE(TplAbsyn.IDENT("pid"))}),
-                                    TplAbsyn.STR_TOKEN(Tpl.ST_STRING(" ")),
-                                    TplAbsyn.BOUND_VALUE(TplAbsyn.IDENT("id")),
-                                    TplAbsyn.STR_TOKEN(Tpl.ST_STRING(";"))                                    
+                                 (TplAbsyn.TEMPLATE({ 
+                                    (TplAbsyn.FUN_CALL(TplAbsyn.IDENT("pathIdent"), {(TplAbsyn.BOUND_VALUE(TplAbsyn.IDENT("pid")),dsi)}),dsi),
+                                    (TplAbsyn.STR_TOKEN(Tpl.ST_STRING(" ")),dsi),
+                                    (TplAbsyn.BOUND_VALUE(TplAbsyn.IDENT("id")),dsi),
+                                    (TplAbsyn.STR_TOKEN(Tpl.ST_STRING(";")),dsi)                                    
                                    },"\"","\""
-                                 ),
+                                 ),dsi),
                                  NONE()
-                               ),
-                               { ("separator", SOME(TplAbsyn.STR_TOKEN(Tpl.ST_NEW_LINE())))
+                               ),dsi),
+                               { ("separator", SOME((TplAbsyn.STR_TOKEN(Tpl.ST_NEW_LINE()),dsi) ))
                                }
-                             ) 
+                             ),dsi) 
                            )
              )
              
@@ -1002,14 +1005,14 @@ end Susan;:)";
         str = "\"Susan\"~:)";
         chars = stringListStringChar( str );
         
-        (chars,_, exp) = TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
+        (chars,_, (expB,_)) = TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
         
         tequal = Util.equal(
-          exp,
+          expB,
           TplAbsyn.STR_TOKEN(Tpl.ST_STRING("Susan")) 
         );
         
-        TplAbsyn.STR_TOKEN(tok) = exp;
+        TplAbsyn.STR_TOKEN(tok) = expB;
         txt = emptyTxt;
         txt = Tpl.writeTok(txt, tok);
         strOut = Tpl.textString(txt);
@@ -1021,14 +1024,14 @@ end Susan;:)";
         str = "\"\\n\"~:)";
         chars = stringListStringChar( str );
         
-        (chars,_, exp) = TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
+        (chars,_, (expB,_)) = TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
         
         tequal = Util.equal(
-          exp,
+          expB,
           TplAbsyn.STR_TOKEN(Tpl.ST_NEW_LINE()) 
         );
         
-        TplAbsyn.STR_TOKEN(tok) = exp;
+        TplAbsyn.STR_TOKEN(tok) = expB;
         //Tpl.ST_STRING_LIST({"\n",""},false) = tok;
         txt = emptyTxt;
         txt = Tpl.writeTok(txt, tok);
@@ -1041,14 +1044,14 @@ end Susan;:)";
         str = "\",\\n\"~:)";
         chars = stringListStringChar( str );
         
-        (chars,_, exp) = TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
+        (chars,_, (expB,_)) = TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
         
         tequal = Util.equal(
-          exp,
+          expB,
           TplAbsyn.STR_TOKEN(Tpl.ST_LINE(",\n")) 
         );
         
-        TplAbsyn.STR_TOKEN(tok) = exp;
+        TplAbsyn.STR_TOKEN(tok) = expB;
         //Tpl.ST_STRING_LIST({"\n",""},false) = tok;
         txt = emptyTxt;
         txt = Tpl.writeTok(txt, tok);
@@ -1062,14 +1065,14 @@ end Susan;:)";
 is\\nfantastic!\"~:)";
         chars = stringListStringChar( str );
         
-        (chars,_, exp) = TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
+        (chars,_, (expB,_)) = TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
         
         tequal = Util.equal(
-          exp,
+          expB,
           TplAbsyn.STR_TOKEN(Tpl.ST_STRING_LIST({"Susan\n", "is\n", "fantastic!"}, false)) 
         );
         
-        TplAbsyn.STR_TOKEN(tok) = exp;
+        TplAbsyn.STR_TOKEN(tok) = expB;
         txt = emptyTxt;
         txt = Tpl.writeTok(txt, tok);
         strOut = Tpl.textString(txt);
@@ -1084,14 +1087,14 @@ is\\n new lined!
 \"~:)";
         chars = stringListStringChar( str );
         
-        (chars,_, exp) = TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
+        (chars,_, (expB,_)) = TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
         
         tequal = Util.equal(
-          exp,
+          expB,
           TplAbsyn.STR_TOKEN(Tpl.ST_STRING_LIST({"\n","Susan\n", "is\n", " new lined!\n"}, true)) 
         );
         
-        TplAbsyn.STR_TOKEN(tok) = exp;
+        TplAbsyn.STR_TOKEN(tok) = expB;
         txt = emptyTxt;
         txt = Tpl.writeTok(txt, tok);
         strOut = Tpl.textString(txt);
@@ -1146,14 +1149,14 @@ is\\n verbatim!
         str = "1234567~:)";
         chars = stringListStringChar( str );
         
-        (chars,_, exp) = TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
+        (chars,_, (expB,_)) = TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
         
         tequal = Util.equal(
-          exp,
+          expB,
           TplAbsyn.LITERAL("1234567", TplAbsyn.INTEGER_TYPE()) 
         );
         
-        TplAbsyn.LITERAL(cval,_) = exp;
+        TplAbsyn.LITERAL(cval,_) = expB;
         strOut = Tpl.booleanString(tequal) +& "*" +& cval +& "*" +& stringCharListString(chars);       
         notPassedCnt = testStringEquality(strOut,  
            "true*1234567*~:)", true, true, "TplParser.expression \n\""+& str +&"\"\n", notPassedCnt);   
@@ -1162,14 +1165,14 @@ is\\n verbatim!
         str = "- 1234567~:)";
         chars = stringListStringChar( str );
         
-        (chars,_, exp) = TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
+        (chars,_, (expB,_)) = TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
         
         tequal = Util.equal(
-          exp,
+          expB,
           TplAbsyn.LITERAL("-1234567", TplAbsyn.INTEGER_TYPE()) 
         );
         
-        TplAbsyn.LITERAL(cval,_) = exp;
+        TplAbsyn.LITERAL(cval,_) = expB;
         strOut = Tpl.booleanString(tequal) +& "*" +& cval +& "*" +& stringCharListString(chars);       
         notPassedCnt = testStringEquality(strOut,  
            "true*-1234567*~:)", true, true, "TplParser.expression \n\""+& str +&"\"\n", notPassedCnt);   
@@ -1178,14 +1181,14 @@ is\\n verbatim!
         str = "- 1234567.0123e-12~:)";
         chars = stringListStringChar( str );
         
-        (chars,_, exp) = TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
+        (chars,_, (expB,_)) = TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
         
         tequal = Util.equal(
-          exp,
+          expB,
           TplAbsyn.LITERAL("-1234567.0123e-12", TplAbsyn.REAL_TYPE()) 
         );
         
-        TplAbsyn.LITERAL(cval,_) = exp;
+        TplAbsyn.LITERAL(cval,_) = expB;
         strOut = Tpl.booleanString(tequal) +& "*" +& cval +& "*" +& stringCharListString(chars);       
         notPassedCnt = testStringEquality(strOut,  
            "true*-1234567.0123e-12*~:)", true, true, "TplParser.expression \n\""+& str +&"\"\n", notPassedCnt);   
@@ -1194,14 +1197,14 @@ is\\n verbatim!
         str = ".0123E12~:)";
         chars = stringListStringChar( str );
         
-        (chars,_, exp) = TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
+        (chars,_, (expB,_)) = TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
         
         tequal = Util.equal(
-          exp,
+          expB,
           TplAbsyn.LITERAL(".0123E12", TplAbsyn.REAL_TYPE()) 
         );
         
-        TplAbsyn.LITERAL(cval,_) = exp;
+        TplAbsyn.LITERAL(cval,_) = expB;
         strOut = Tpl.booleanString(tequal) +& "*" +& cval +& "*" +& stringCharListString(chars);       
         notPassedCnt = testStringEquality(strOut,  
            "true*.0123E12*~:)", true, true, "TplParser.expression \n\""+& str +&"\"\n", notPassedCnt);   
@@ -1210,14 +1213,14 @@ is\\n verbatim!
         str = "true~:)";
         chars = stringListStringChar( str );
         
-        (chars,_, exp) = TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
+        (chars,_, (expB,_)) = TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
         
         tequal = Util.equal(
-          exp,
+          expB,
           TplAbsyn.LITERAL("true", TplAbsyn.BOOLEAN_TYPE()) 
         );
         
-        TplAbsyn.LITERAL(cval,_) = exp;
+        TplAbsyn.LITERAL(cval,_) = expB;
         strOut = Tpl.booleanString(tequal) +& "*" +& cval +& "*" +& stringCharListString(chars);       
         notPassedCnt = testStringEquality(strOut,  
            "true*true*~:)", true, true, "TplParser.expression \n\""+& str +&"\"\n", notPassedCnt);   
@@ -1226,14 +1229,14 @@ is\\n verbatim!
         str = "false~:)";
         chars = stringListStringChar( str );
         
-        (chars,_, exp) = TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
+        (chars,_, (expB,_)) = TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
         
         tequal = Util.equal(
-          exp,
+          expB,
           TplAbsyn.LITERAL("false", TplAbsyn.BOOLEAN_TYPE()) 
         );
         
-        TplAbsyn.LITERAL(cval,_) = exp;
+        TplAbsyn.LITERAL(cval,_) = expB;
         strOut = Tpl.booleanString(tequal) +& "*" +& cval +& "*" +& stringCharListString(chars);       
         notPassedCnt = testStringEquality(strOut,  
            "true*false*~:)", true, true, "TplParser.expression \n\""+& str +&"\"\n", notPassedCnt);   
@@ -1242,14 +1245,14 @@ is\\n verbatim!
         str = "\\n~:)";
         chars = stringListStringChar( str );
         
-        (chars,_, exp) = TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
+        (chars,_, (expB,_)) = TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
         
         tequal = Util.equal(
-          exp,
+          expB,
           TplAbsyn.STR_TOKEN(Tpl.ST_NEW_LINE()) 
         );
         
-        TplAbsyn.STR_TOKEN(tok) = exp;
+        TplAbsyn.STR_TOKEN(tok) = expB;
         //Tpl.ST_STRING_LIST({"\n",""},false) = tok;
         txt = emptyTxt;
         txt = Tpl.writeTok(txt, tok);
@@ -1262,14 +1265,14 @@ is\\n verbatim!
         str = "\\\"\\n\\n\\ ~:)";
         chars = stringListStringChar( str );
         
-        (chars,_, exp) = TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
+        (chars,_, (expB,_)) = TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
         
         tequal = Util.equal(
-          exp,
+          expB,
           TplAbsyn.STR_TOKEN(Tpl.ST_STRING_LIST({"\"\n", "\n"," "}, false)) 
         );
         
-        TplAbsyn.STR_TOKEN(tok) = exp;
+        TplAbsyn.STR_TOKEN(tok) = expB;
         txt = emptyTxt;
         txt = Tpl.writeTok(txt, tok);
         strOut = Tpl.textString(txt);
@@ -1281,14 +1284,14 @@ is\\n verbatim!
         str = "'Susan'~:)";
         chars = stringListStringChar( str );
         
-        (chars,_, exp) = TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
+        (chars,_, (expB,_)) = TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
         
         tequal = Util.equal(
-          exp,
+          expB,
           TplAbsyn.STR_TOKEN(Tpl.ST_STRING("Susan")) 
         );
         
-        TplAbsyn.STR_TOKEN(tok) = exp; //dangerous, can fail fatally here
+        TplAbsyn.STR_TOKEN(tok) = expB; //dangerous, can fail fatally here
         txt = emptyTxt;
         txt = Tpl.writeTok(txt, tok);
         strOut = Tpl.textString(txt);

@@ -8,6 +8,7 @@ protected import Util;
 protected import Print;
 protected import CevalScript;
 protected import Error;
+public import Absyn;
 
 
 // indentation will be implemented through spaces
@@ -91,21 +92,6 @@ uniontype IterOptions
   end ITER_OPTIONS;
 end IterOptions;
 
-
-uniontype SourceInfo "
- The _sourceinfo_ type ... source location information.
- It is copied from Absyn.Info (for now) to prevent direct dependency from Absyn to Tpl and TplAbsyn,
- perhaps, it will be changed to Absyn.Info in the future (easy to do then)."
-  record SOURCE_INFO
-    String fileName;
-    //Boolean isReadOnly "isReadOnly : (true|false). Should be true for libraries" ;
-    Integer lineNumberStart;
-    Integer columnNumberStart;
-    Integer lineNumberEnd;
-    Integer columnNumberEnd ;
-    //TimeStamp buildTimes "Build and edit times";   
-  end SOURCE_INFO;
-end SourceInfo;
   
 //by default, we will parse new lines in every non-token string
 public function writeStr
@@ -1681,6 +1667,36 @@ algorithm
     //    fail();
   end matchcontinue;
 end textFile;
+  
+ 
+public function sourceInfo
+"Magic sourceInfo() function implementation"
+  input String  inFileName;
+  input Integer inLineNum;
+  input Integer inColumnNum;
+  
+  output Absyn.Info outSourceInfo;
+algorithm
+  outSourceInfo  := Absyn.INFO(inFileName, false, inLineNum, inColumnNum, inLineNum, inColumnNum, Absyn.dummyTimeStamp);  
+end sourceInfo;
 
+
+//we do not import Error.addSourceMessage() directly
+//because of list creation in Susan is not possible (yet by design)
+public function addSourceTemplateError
+ "Wraps call to Error.addSourceMessage() funtion with Error.TEMPLATE_ERROR and one MessageToken."
+  input String inErrMsg;
+  input Absyn.Info inInfo;  
+algorithm
+  Error.addSourceMessage(Error.TEMPLATE_ERROR, {inErrMsg}, inInfo);
+end addSourceTemplateError;
+
+//for completeness
+public function addTemplateError
+ "Wraps call to Error.addMessage() funtion with Error.TEMPLATE_ERROR and one MessageToken."
+  input String inErrMsg;  
+algorithm
+  Error.addMessage(Error.TEMPLATE_ERROR, {inErrMsg});
+end addTemplateError;
 
 end Tpl;
