@@ -707,7 +707,7 @@ algorithm
                                         InnerOuter.emptyInstHierarchy,
                                         s);
       then
-      (c, Env.emptyEnv, d, s, Absyn.lastClassname(program));
+        (c, Env.emptyEnv, d, s, Absyn.lastClassname(program));
     case (_)
       equation
         // If a class to instantiate was given on the command line, instantiate
@@ -721,7 +721,7 @@ algorithm
                                              InnerOuter.emptyInstHierarchy,
                                              s,
                                              class_path);
-     then
+      then
         (c, e, d, s, class_path);
   end matchcontinue;
 end instantiate;

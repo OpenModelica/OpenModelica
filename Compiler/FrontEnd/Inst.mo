@@ -1206,7 +1206,6 @@ algorithm
       then
         (cache,env,ih,store,dae,csets,ty,ci_state_1,oDA,graph);
        
-
     /* Instantiation of a class. Create new scope and call instClassIn.
      *  Then generate equations from connects.
      */
@@ -7860,52 +7859,64 @@ Unless it is a complex var that not inherites a basic type. In that case DAE.Equ
   input Ident name;
   input DAE.ElementSource source;
   output Option<DAE.Exp> eOpt;
-algorithm eOpt := matchcontinue(tp,mod,const,pre,name,source)
-  local 
-    DAE.Exp e,e1;DAE.Properties p;
-    DAE.Const c,c1;
-    Ident n;
-    Prefix.Prefix pr;
-    DAE.Type bt;
-    String v_str, b_str, et_str, bt_str;
-  case ((DAE.T_COMPLEX(complexClassType=ClassInf.EXTERNAL_OBJ(_)),_),
-    DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,_,_))),_,_,_,_)
-    then SOME(e);
-  case(tp,mod,c,pr,n,_)
-    equation
-      SOME(DAE.TYPED(e,_,p,_)) = Mod.modEquation(mod);
-      (e1,DAE.PROP(_,c1)) = Types.matchProp(e,p,DAE.PROP(tp,c),true);
-      checkHigherVariability(c,c1,pr,n,e,source);
-    then
-      SOME(e1);
-  // An empty array such as x[:] = {} will cause Types.matchProp to fail, but we
-  // shouldn't print an error.
-  case (tp, mod, c, pr, n, _)
-    equation
-      SOME(DAE.TYPED(e,_,p as DAE.PROP(type_ = bt),_)) = Mod.modEquation(mod);
-      true = Types.isEmptyArray(bt);
-    then
-      NONE();
-  // If Types.matchProp fails, print an error.
-  case (tp, mod, c, pr, n, _)
-    equation
-      SOME(DAE.TYPED(e,_,p as DAE.PROP(type_ = bt),_)) = Mod.modEquation(mod);
-      failure((e1,DAE.PROP(_,c1)) = Types.matchProp(e, p, DAE.PROP(tp, c), true));
-      v_str = n;
-      b_str = ExpressionDump.printExpStr(e);
-      et_str = Types.unparseType(tp);
-      bt_str = Types.unparseType(bt);
-      Error.addSourceMessage(Error.VARIABLE_BINDING_TYPE_MISMATCH, 
-        {v_str, b_str, et_str, bt_str}, DAEUtil.getElementSourceFileInfo(source));
-    then
-      fail();
-  case (_,mod,_,_,_,_)
-    equation
-      failure(SOME(DAE.TYPED(_,_,_,_)) = Mod.modEquation(mod));
-    then NONE();
-end matchcontinue;
-end makeVariableBinding;
+algorithm 
+  eOpt := matchcontinue(tp,mod,const,pre,name,source)
+    local 
+      DAE.Exp e,e1;
+      DAE.Properties p;
+      DAE.Const c,c1;
+      Ident n;
+      Prefix.Prefix pr;
+      DAE.Type bt;
+      String v_str, b_str, et_str, bt_str;
+      Absyn.Path tpath;
+      list<DAE.Var> complex_vars;
+      list<DAE.SubMod> sub_mods;
 
+    case ((DAE.T_COMPLEX(complexClassType=ClassInf.EXTERNAL_OBJ(_)),_),
+        DAE.MOD(eqModOption = SOME(DAE.TYPED(modifierAsExp = e))),_,_,_,_)
+      then 
+        SOME(e);
+
+    case(tp,mod,c,pr,n,_)
+      equation
+        SOME(DAE.TYPED(e,_,p,_)) = Mod.modEquation(mod);
+        (e1,DAE.PROP(_,c1)) = Types.matchProp(e,p,DAE.PROP(tp,c),true);
+        checkHigherVariability(c,c1,pr,n,e,source);
+      then
+        SOME(e1);
+
+    // An empty array such as x[:] = {} will cause Types.matchProp to fail, but we
+    // shouldn't print an error.
+    case (tp, mod, c, pr, n, _)
+      equation
+        SOME(DAE.TYPED(e,_,p as DAE.PROP(type_ = bt),_)) = Mod.modEquation(mod);
+        true = Types.isEmptyArray(bt);
+      then
+        NONE();
+
+    // If Types.matchProp fails, print an error.
+    case (tp, mod, c, pr, n, _)
+      equation
+        SOME(DAE.TYPED(e,_,p as DAE.PROP(type_ = bt),_)) = Mod.modEquation(mod);
+        failure((e1,DAE.PROP(_,c1)) = Types.matchProp(e, p, DAE.PROP(tp, c), true));
+        v_str = n;
+        b_str = ExpressionDump.printExpStr(e);
+        et_str = Types.unparseType(tp);
+        bt_str = Types.unparseType(bt);
+        Error.addSourceMessage(Error.VARIABLE_BINDING_TYPE_MISMATCH, 
+        {v_str, b_str, et_str, bt_str}, DAEUtil.getElementSourceFileInfo(source));
+      then
+        fail();
+
+    case (_,mod,_,_,_,_)
+      equation
+        failure(SOME(DAE.TYPED(_,_,_,_)) = Mod.modEquation(mod));
+      then 
+        NONE();
+  end matchcontinue;
+end makeVariableBinding;
+        
 protected function checkHigherVariability 
 "If the binding expression has higher variability that the component, generates an error.
 Helper to makeVariableBinding. Author -- alleb" 
@@ -12678,6 +12689,9 @@ algorithm
       DAE.Properties prop;
       DAE.Binding binding;
       DAE.Mod startValueModification;
+      list<DAE.Var> complex_vars;
+      Absyn.Path tpath;
+      list<DAE.SubMod> sub_mods;
 
     case (cache,_,_,DAE.NOMOD(),tp,_,_,_) then (cache,DAE.UNBOUND());
     case (cache,_,_,DAE.REDECL(finalPrefix = _),tp,_,_,_) then (cache,DAE.UNBOUND());
@@ -12698,6 +12712,17 @@ algorithm
       then 
         (cache,binding);
 
+    // A record might have bindings for each component instead of a single
+    // binding for the whole record, in which case we need to assemble them into
+    // a binding.
+    case (cache, _, _, DAE.MOD(subModLst = sub_mods as _ :: _), _, _, _, _)
+      equation
+        ((DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = tpath),
+           complexVarLst = complex_vars), _)) = Types.arrayElementType(inType);
+        binding = makeRecordBinding(tpath, inType, complex_vars, sub_mods, info);
+      then
+        (cache, binding);
+        
     case (cache,_,_,DAE.MOD(eqModOption = NONE()),tp,_,_,_) then (cache,DAE.UNBOUND());
     /* adrpo: CHECK! do we need this here? numerical values
     case (cache,env,_,DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,DAE.PROP(e_tp,_)))),tp,_,_)
@@ -12742,6 +12767,202 @@ algorithm
         fail();
   end matchcontinue;
 end makeBinding;
+
+protected function makeRecordBinding
+  "Creates a binding for a record given a list of submodifiers. This is the case
+   when a record is given a binding by modifiers, ex:
+    
+     record R
+       Real x; Real y;
+     end R;
+
+     constant R r(x = 2.0, y = 3.0);
+
+  This is translated to:
+     constant R r = R(2.0, 3.0);
+
+  This is needed when we assign a record to another record.
+  "
+  input Absyn.Path inRecordName;
+  input DAE.Type inRecordType;
+  input list<DAE.Var> inRecordVars;
+  input list<DAE.SubMod> inMods;
+  input Absyn.Info inInfo;
+  output DAE.Binding outBinding;
+algorithm
+  outBinding := makeRecordBinding2(inRecordName, inRecordType, inRecordVars,
+    inMods, inInfo, {}, {}, {});
+end makeRecordBinding;
+
+protected function makeRecordBinding2
+  "Helper function to makeRecordBinding. Goes through each record component and
+  finds out it's binding, and at the end it assembles a single binding from
+  these components."
+  input Absyn.Path inRecordName;
+  input DAE.Type inRecordType;
+  input list<DAE.Var> inRecordVars;
+  input list<DAE.SubMod> inMods;
+  input Absyn.Info inInfo;
+  input list<DAE.Exp> inAccumExps;
+  input list<Values.Value> inAccumVals;
+  input list<String> inAccumNames;
+  output DAE.Binding outBinding;
+algorithm
+  outBinding := matchcontinue(inRecordName, inRecordType, inRecordVars, inMods,
+      inInfo, inAccumExps, inAccumVals, inAccumNames)
+    local
+      DAE.ExpType ety;
+      DAE.Exp exp;
+      Values.Value val;
+      list<DAE.Var> rest_vars;
+      list<DAE.SubMod> sub_mods;
+      String name;
+      DAE.Binding binding;
+      Option<DAE.SubMod> opt_mod;
+
+    // No more components, assemble the binding.
+    case (_, _, {}, _, _, _, _, _)
+      equation
+        inAccumExps = listReverse(inAccumExps);
+        inAccumVals = listReverse(inAccumVals);
+        inAccumNames = listReverse(inAccumNames);
+
+        ety = Types.elabType(Types.arrayElementType(inRecordType));
+        exp = DAE.CALL(inRecordName, inAccumExps, false, false, ety, 
+          DAE.NORM_INLINE());
+        val = Values.RECORD(inRecordName, inAccumVals, inAccumNames, -1);
+        (exp, val) = liftRecordBinding(inRecordType, exp, val);
+        binding = DAE.EQBOUND(exp, SOME(val), DAE.C_CONST(), 
+          DAE.BINDING_FROM_DEFAULT_VALUE());
+      then
+        binding;
+
+    // Take the first component and look for a submod that gives it a binding.
+    case (_, _, DAE.TYPES_VAR(name = name) :: rest_vars, sub_mods, _, _, _, _)
+      equation
+        (sub_mods, opt_mod) =
+          Util.listDeleteMemberOnTrue(name, sub_mods, isSubModNamed);
+        (exp, val) = makeRecordBinding3(opt_mod, inRecordType, inInfo);
+        binding = makeRecordBinding2(inRecordName, inRecordType, rest_vars, sub_mods, 
+          inInfo, exp :: inAccumExps, val :: inAccumVals, name :: inAccumNames);
+      then
+        binding; 
+
+    // If the previous case fails, check if the component already has a binding.
+    case (_, _, DAE.TYPES_VAR(name = name, binding = DAE.EQBOUND(exp = exp, 
+        evaluatedExp = SOME(val))) :: rest_vars, sub_mods, _, _, _, _)
+      equation
+        binding = makeRecordBinding2(inRecordName, inRecordType, rest_vars, sub_mods, 
+          inInfo, exp :: inAccumExps, val :: inAccumVals, name :: inAccumNames);
+      then
+        binding;
+
+    case (_, _, DAE.TYPES_VAR(name = name) :: _, _, _, _, _, _)
+      equation
+        true = RTOpts.debugFlag("failtrace");
+        Debug.traceln("- Inst.makeRecordBinding2 failed for " +&
+          Absyn.pathString(inRecordName) +& "." +& name +& "\n");
+      then
+        fail();
+
+  end matchcontinue;
+end makeRecordBinding2;
+
+protected function makeRecordBinding3
+  "Helper function to makeRecordBinding2. Fetches the binding expression and
+  value from an optional submod."
+  input Option<DAE.SubMod> inSubMod;
+  input DAE.Type inType;
+  input Absyn.Info inInfo;
+  output DAE.Exp outExp;
+  output Values.Value outValue;
+algorithm
+  (outExp, outValue) := match(inSubMod, inType, inInfo)
+    local
+      DAE.Exp exp;
+      Values.Value val;
+
+    case (_, _, _) then fail();
+
+    // Array type and each prefix => return the expression and value.
+    case (SOME(DAE.NAMEMOD(mod = DAE.MOD(each_ = Absyn.EACH(), eqModOption = 
+        SOME(DAE.TYPED(modifierAsExp = exp, modifierAsValue = SOME(val)))))),
+        (DAE.T_ARRAY(arrayDim = _), _), _)
+      then (exp, val);
+
+    // Array type and no each prefix => need to split the expression and value.
+    case (SOME(DAE.NAMEMOD(mod = DAE.MOD(each_ = Absyn.NON_EACH()))),
+        (DAE.T_ARRAY(arrayDim = _), _), _)
+      equation
+        Error.addSourceMessage(Error.INTERNAL_ERROR, 
+          {"Inst.makeRecordBinding3: array modifier not yet implemented."}, inInfo);
+      then
+        fail();
+
+    // Scalar type and no each prefix => return the expression and value.
+    case (SOME(DAE.NAMEMOD(mod = DAE.MOD(each_ = Absyn.NON_EACH(), eqModOption = 
+        SOME(DAE.TYPED(modifierAsExp = exp, modifierAsValue = SOME(val)))))), _, _)
+      then (exp, val);
+  end match;
+end makeRecordBinding3;
+    
+protected function isSubModNamed
+  "Returns true if the given submod is a namemod with the same name as the given
+  name, otherwise false."
+  input String inName;
+  input DAE.SubMod inSubMod;
+  output Boolean isNamed;
+algorithm
+  isNamed := matchcontinue(inName, inSubMod)
+    local
+      String submod_name;
+
+    case (_, DAE.NAMEMOD(ident = submod_name))
+      then stringEqual(inName, submod_name);
+
+    else then false;
+  end matchcontinue;
+end isSubModNamed;
+
+protected function liftRecordBinding
+  "If the type is an array type this function creates an array of the given
+  record, otherwise it just returns the input arguments."
+  input DAE.Type inType;
+  input DAE.Exp inExp;
+  input Values.Value inValue;
+  output DAE.Exp outExp;
+  output Values.Value outValue;
+algorithm
+  (outExp, outValue) := matchcontinue(inType, inExp, inValue)
+    local
+      DAE.Dimension dim;
+      DAE.Type ty;
+      DAE.Exp exp;
+      Values.Value val;
+      DAE.ExpType ety;
+      Integer int_dim;
+      list<DAE.Exp> expl;
+      list<Values.Value> vals;
+
+    case ((DAE.T_ARRAY(arrayDim = dim, arrayType = ty), _), _, _)
+      equation
+        int_dim = Expression.dimensionSize(dim);
+        (exp, val) = liftRecordBinding(ty, inExp, inValue);
+        ety = Types.elabType(inType);
+        expl = Util.listFill(exp, int_dim);
+        vals = Util.listFill(val, int_dim);
+        exp = DAE.ARRAY(ety, true, expl);
+        val = Values.ARRAY(vals, {int_dim});
+      then
+        (exp, val);
+
+    else
+      equation
+        false = Types.isArray(inType);
+      then
+        (inExp, inValue);
+  end matchcontinue;
+end liftRecordBinding;
 
 public function instRecordConstructorElt
 "function: instRecordConstructorElt

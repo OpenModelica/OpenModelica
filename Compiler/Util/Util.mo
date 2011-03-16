@@ -6060,33 +6060,99 @@ algorithm inOption := matchcontinue (unOption)
   end matchcontinue;
 end makeOptIfNonEmptyList;
 
-public function listSplitOnTrue "Splits a list into two sublists depending on predicate function"
-  input list<Type_a> lst;
-  input predicateFunc f;
-  output list<Type_a> tlst;
-  output list<Type_a> flst;
+public function listSplitOnTrue
+  "Splits a list into two sublists depending on predicate function."
+  input list<Type_a> inList;
+  input PredicateFunc inFunc;
+  output list<Type_a> outTrueList;
+  output list<Type_a> outFalseList;
 
   replaceable type Type_a subtypeof Any;
-  partial function predicateFunc
-    input Type_a inTypeA1;
-    output Boolean outBoolean;
-  end predicateFunc;
+
+  partial function PredicateFunc
+    input Type_a inElement;
+    output Boolean outResult;
+  end PredicateFunc;
 algorithm
-  (tlst,flst) := matchcontinue(lst,f)
-  local Type_a l;
-    case({},f) then ({},{});
-
-    case(l::lst,f) equation
-      true = f(l);
-      (tlst,flst) = listSplitOnTrue(lst,f);
-    then (l::tlst,flst);
-
-    case(l::lst,f) equation
-      false = f(l);
-      (tlst,flst) = listSplitOnTrue(lst,f);
-    then (tlst,l::flst);
-  end matchcontinue;
+  (outTrueList, outFalseList) := 
+    listSplitOnTrue_tail(inList, inFunc, {}, {});
 end listSplitOnTrue;
+  
+public function listSplitOnTrue_tail
+  "Helper function to listSplitOnTrue."
+  input list<Type_a> inList;
+  input PredicateFunc inFunc;
+  input list<Type_a> inTrueList;
+  input list<Type_a> inFalseList;
+  output list<Type_a> outTrueList;
+  output list<Type_a> outFalseList;
+
+  replaceable type Type_a subtypeof Any;
+
+  partial function PredicateFunc
+    input Type_a inElement;
+    output Boolean outResult;
+  end PredicateFunc;
+algorithm
+  (outTrueList, outFalseList) := 
+  match(inList, inFunc, inTrueList, inFalseList)
+    local
+      Type_a e;
+      list<Type_a> rest_e, tl, fl;
+      Boolean pred;
+
+    case ({}, _, tl, fl) 
+      then (listReverse(tl), listReverse(fl));
+
+    case (e :: rest_e, _, tl, fl)
+      equation
+        pred = inFunc(e);
+        (tl, fl) = listSplitOnTrue_tail2(e, rest_e, pred, inFunc, tl, fl);
+      then
+        (tl, fl);
+  end match;
+end listSplitOnTrue_tail;
+
+public function listSplitOnTrue_tail2
+  "Helper function to listSplitOnTrue."
+  input Type_a inHead;
+  input list<Type_a> inRest;
+  input Boolean inPred;
+  input PredicateFunc inFunc;
+  input list<Type_a> inTrueList;
+  input list<Type_a> inFalseList;
+  output list<Type_a> outTrueList;
+  output list<Type_a> outFalseList;
+
+  replaceable type Type_a subtypeof Any;
+
+  partial function PredicateFunc
+    input Type_a inElement;
+    output Boolean outResult;
+  end PredicateFunc;
+algorithm
+  (outTrueList, outFalseList) := 
+  match(inHead, inRest, inPred, inFunc, inTrueList, inFalseList)
+    local
+      Boolean pred;
+      Type_a e;
+      list<Type_a> rl, tl, fl;
+
+    case (_, _, true, _, tl, fl)
+      equation
+        tl = inHead :: tl;
+        (tl, fl) = listSplitOnTrue_tail(inRest, inFunc, tl, fl);
+      then
+        (tl, fl);
+
+    case (_, _, false, _, tl, fl)
+      equation
+        fl = inHead :: fl;
+        (tl, fl) = listSplitOnTrue_tail(inRest, inFunc, tl, fl);
+      then
+        (tl, fl);
+  end match;
+end listSplitOnTrue_tail2;
 
 public function listSplitOnTrue1 "Splits a list into two sublists depending on predicate function
 which takes one extra argument "
