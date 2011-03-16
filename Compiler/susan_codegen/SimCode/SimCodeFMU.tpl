@@ -564,7 +564,8 @@ case SIMCODE(__) then
   <<
   // Used to get event indicators
   fmiReal getEventIndicator(ModelInstance* comp, fmiReal eventIndicators[]) {
-  <%zeroCrossingsCode%>
+  function_onlyZeroCrossings(eventIndicators, &globalData->timeValue);
+  return 0.0;
   }
   
   >>
@@ -863,6 +864,10 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
   <%fileNamePrefix%>.conv.cpp: <%fileNamePrefix%>.cpp
   <%\t%> $(PERL) <%makefileParams.omhome%>/share/omc/scripts/convert_lines.pl $< $@.tmp
   <%\t%> @mv $@.tmp $@
+  <%\t%> mkdir <%fileNamePrefix%>
+  <%\t%> mkdir <%fileNamePrefix%>/binaries
+  <%\t%> mv modelDescription.xml  <%fileNamePrefix%>/
+  <%\t%> mv <%fileNamePrefix%>$(DLLEXT) <%fileNamePrefix%>/binaries/
   >>
 end fmuMakefile;
 
