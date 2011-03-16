@@ -46,7 +46,7 @@ class ModelCreator : public QDialog
 {
     Q_OBJECT
 public:
-    ModelCreator(MainWindow *parent = 0);
+    ModelCreator(MainWindow *parent);
     ~ModelCreator();
     void show(int type);
 
@@ -64,78 +64,11 @@ public slots:
     void create();
 };
 
-
-/*
-class NewProject : public QDialog
-{
-    Q_OBJECT
-public:
-    NewProject(MainWindow *parent = 0);
-    ~NewProject();
-
-    MainWindow *mpParentMainWindow;
-private:
-    QLabel *mpProjectNameLabel;
-    QLabel *mpProjectPathLabel;
-    QLineEdit *mpNameTextBox;
-    QLineEdit *mpPathTextBox;
-    QPushButton *mpBrowseButton;
-    QPushButton *mpCancelButton;
-    QPushButton *mpOkButton;
-    QDialogButtonBox *mpButtonBox;
-public slots:
-    void createProject();
-    void openFileDialog();
-};
-
-
-class NewPackage : public QDialog
-{
-    Q_OBJECT
-public:
-    NewPackage(MainWindow *parent = 0);
-    ~NewPackage();
-    void show();
-
-    MainWindow *mpParentMainWindow;
-private:
-    QLabel *mpPackageNameLabel;
-    QLabel *mpParentPackageLabel;
-    QLineEdit *mpPackageNameTextBox;
-    QComboBox *mpParentPackageCombo;
-    QPushButton *mpCancelButton;
-    QPushButton *mpOkButton;
-    QDialogButtonBox *mpButtonBox;
-public slots:
-    void createPackage();
-};
-
-class NewModel : public QDialog
-{
-    Q_OBJECT
-public:
-    NewModel(MainWindow *parent = 0);
-    ~NewModel();
-    void show();
-
-    MainWindow *mpParentMainWindow;
-private:
-    QLabel *mpModelNameLabel;
-    QLabel *mpParentPackageLabel;
-    QLineEdit *mpModelNameTextBox;
-    QComboBox *mpParentPackageCombo;
-    QPushButton *mpCancelButton;
-    QPushButton *mpOkButton;
-    QDialogButtonBox *mpButtonBox;
-public slots:
-    void createModel();
-};
-*/
 class RenameClassWidget : public QDialog
 {
     Q_OBJECT
 public:
-    RenameClassWidget(QString name, QString nameStructure, MainWindow *parent = 0);
+    RenameClassWidget(QString name, QString nameStructure, MainWindow *parent);
     ~RenameClassWidget();
 
     MainWindow *mpParentMainWindow;
@@ -155,7 +88,7 @@ class CheckModelWidget : public QDialog
 {
     Q_OBJECT
 public:
-    CheckModelWidget(QString name, QString nameStructure, MainWindow *pParent = 0);
+    CheckModelWidget(QString name, QString nameStructure, MainWindow *pParent);
 
     MainWindow *mpParentMainWindow;
 private:

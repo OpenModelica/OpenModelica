@@ -57,5 +57,10 @@
         <file>Resources/icons/bitmap-shape.png</file>
         <file>Resources/icons/import-omnotebook.png</file>
         <file>Resources/icons/export-omnotebook.png</file>
+        <file>Resources/icons/interactive-simulation.png</file>
+        <file>Resources/icons/pause.png</file>
+        <file>Resources/icons/start.png</file>
+        <file>Resources/icons/shutdown.png</file>
+        <file>Resources/icons/stop.png</file>
     </qresource>
 </RCC>

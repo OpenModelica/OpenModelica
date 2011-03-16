@@ -42,14 +42,11 @@ class PlotWidget : public QWidget
 {
     Q_OBJECT
 public:
-    PlotWidget(MainWindow *pParent = 0);
-    QList<QString> readPltFile(QString filePath);
-    QList<QString> readMatFile(QString filePath);
+    PlotWidget(MainWindow *pParent);
+    QList<QString> readPlotVariables(QString fileName);
+    void addPlotVariablestoTree(QString fileName, QList<QString> plotVariablesList);
 
     MainWindow *mpParentMainWindow;
-
-    void readPlotVariables(QString fileName);
-    void addPlotVariablestoTree(QString fileName, QList<QString> plotVariablesList);
 private:
     QLabel *mpPlotTypesLabel;
     QComboBox *mpPlotTypesCombo;

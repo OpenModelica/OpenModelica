@@ -39,7 +39,6 @@
  */
 
 #include <QtGui>
-#include <QSizePolicy>
 #include <QMap>
 
 #include "ProjectTabWidget.h"
@@ -202,15 +201,15 @@ void GraphicsView::dropEvent(QDropEvent *event)
             pMainWindow->mpOMCProxy->isWhat(StringHandler::RECORD, className))
         {
             QString name = getUniqueComponentName(StringHandler::getLastWordAfterDot(className).toLower());
-            if (pMainWindow->mpOMCProxy->isWhat(StringHandler::CONNECTOR, className))
-            {
-                addComponentoView(name, className, event->pos(), true, false, true);
-                mpParentProjectTab->mpIconGraphicsView->addComponentoView(name, className, event->pos(), true, true);
-            }
-            else
-            {
+//            if (pMainWindow->mpOMCProxy->isWhat(StringHandler::CONNECTOR, className))
+//            {
+//                addComponentoView(name, className, event->pos(), true, false, true);
+//                mpParentProjectTab->mpIconGraphicsView->addComponentoView(name, className, event->pos(), true, true);
+//            }
+//            else
+//            {
                 addComponentoView(name, className, event->pos());
-            }
+            //}
             event->accept();
         }
         else
@@ -219,23 +218,23 @@ void GraphicsView::dropEvent(QDropEvent *event)
         }
     }
     // if dropping an item on the icon layer
-    else if (mIconType == StringHandler::ICON)
-    {
-        QString name = getUniqueComponentName(StringHandler::getLastWordAfterDot(className).toLower());
-        // if item is a connector. then we can drop it to the graphicsview
-        if (pMainWindow->mpOMCProxy->isWhat(StringHandler::CONNECTOR, className))
-        {
-            addComponentoView(name, className, event->pos(), true, false);
-            mpParentProjectTab->mpDiagramGraphicsView->addComponentoView(name, className, event->pos(), true,
-                                                                         true, true);
-            addClassAnnotation();
-            event->accept();
-        }
-        else
-        {
-            event->ignore();
-        }
-    }
+//    else if (mIconType == StringHandler::ICON)
+//    {
+//        QString name = getUniqueComponentName(StringHandler::getLastWordAfterDot(className).toLower());
+//        // if item is a connector. then we can drop it to the graphicsview
+//        if (pMainWindow->mpOMCProxy->isWhat(StringHandler::CONNECTOR, className))
+//        {
+//            addComponentoView(name, className, event->pos(), true, false);
+//            mpParentProjectTab->mpDiagramGraphicsView->addComponentoView(name, className, event->pos(), true,
+//                                                                         true, true);
+//            addClassAnnotation();
+//            event->accept();
+//        }
+//        else
+//        {
+//            event->ignore();
+//        }
+//    }
 }
 
 void GraphicsView::addComponentoView(QString name, QString className, QPoint point, bool isConnector,
@@ -2489,7 +2488,7 @@ void ProjectTabWidget::openFile(QString fileName)
     // if error in loading file
     if (!omc->loadFile(fileName))
     {
-        QString message = QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE))
+        QString message = QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).append(" ").arg(fileName))
                           .append(omc->getErrorString());
         mpParentMainWindow->mpMessageWidget->printGUIErrorMessage(message);
         return;
@@ -2514,7 +2513,7 @@ void ProjectTabWidget::openFile(QString fileName)
         QMessageBox *msgBox = new QMessageBox(mpParentMainWindow);
         msgBox->setWindowTitle(QString(Helper::applicationName).append(" - Information"));
         msgBox->setIcon(QMessageBox::Information);
-        msgBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE)));
+        msgBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg("")));
         msgBox->setInformativeText(QString(GUIMessages::getMessage(GUIMessages::REDEFING_EXISTING_MODELS))
                                    .arg(existingmodelsList.join(",")).append("\n")
                                    .append(GUIMessages::getMessage(GUIMessages::DELETE_AND_LOAD)));
@@ -2539,7 +2538,7 @@ void ProjectTabWidget::openModel(QString modelText)
     // if error in loading file
     if (!omc->saveModifiedModel(modelText))
     {
-        QString message = QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE))
+        QString message = QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_MODEL).arg(modelText))
                           .append(omc->getErrorString());
         mpParentMainWindow->mpMessageWidget->printGUIErrorMessage(message);
         return;

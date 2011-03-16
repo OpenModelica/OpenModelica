@@ -34,7 +34,7 @@
 #include "Helper.h"
 
 QString Helper::applicationName = "OMEdit";
-QString Helper::applicationVersion = "Version: 1.6.0";
+QString Helper::applicationVersion = "Version: 1.7.0";
 QString Helper::applicationIntroText = "OpenModelica Connection Editor";
 // these two variables are set once we are connected to OMC......in OMCProxy::startServer().
 QString Helper::OpenModelicaHome = QString();
@@ -73,8 +73,19 @@ qreal Helper::shapesStrokeWidth = 5.0;
 QString Helper::modelicaLibrarySearchText = QString("Search Modelica Standard Library");
 QString Helper::noItemFound = QString("Sorry, no items found");
 QString Helper::running_Simulation = QString("Running Simulation");
+QString Helper::starting_interactive_simulation_server = QString("Starting Interactive Simulation Server");
+QString Helper::omi_network_address = QString("127.0.0.1");
+quint16 Helper::omi_control_client_port = 10501;
+quint16 Helper::omi_control_server_port = 10500;
+quint16 Helper::omi_transfer_server_port = 10502;
+QString Helper::omi_initialize_button_tooltip = QString("Initializes the interactive simulation.");
+QString Helper::omi_start_button_tooltip = QString("Starts or continues the interactive simulation.");
+QString Helper::omi_pause_button_tooltip = QString("Pauses the running interactive simulation.");
+QString Helper::omi_stop_button_tooltip = QString("Stops the running interactive simulation and resets all values to the beginning.");
+QString Helper::omi_shutdown_button_tooltip = QString("Shut down the running interactive simulation.");
+QString Helper::omi_showlog_button_tooltip = QString("Shows the OMI Log Message Window.");
 
-QString Helper::ModelicaSimulationMethods = "DASSL,DASSL2,Euler,Runge-Kutta";
+QString Helper::ModelicaSimulationMethods = "DASSLOLD,DASSL,DASSL2,Euler,Runge-Kutta";
 QString Helper::ModelicaSimulationOutputFormats = "mat,plt,csv,empty";
 
 QString GUIMessages::getMessage(int type)
@@ -118,7 +129,9 @@ QString GUIMessages::getMessage(int type)
     case ONLY_MODEL_ALLOWED:
         return "This item is not a model.";
     case UNABLE_TO_LOAD_FILE:
-        return "Error has occurred while loading the file. Unable to load the file.";
+        return "Error has occurred while loading the file%1. Unable to load the file.";
+    case UNABLE_TO_LOAD_MODEL:
+        return "Error has occurred while loading the model : \n%1.";
     case DELETE_AND_LOAD:
         return "Delete the existing models before loading the file.";
     case REDEFING_EXISTING_MODELS:
@@ -139,6 +152,14 @@ QString GUIMessages::getMessage(int type)
         return "The file '%1' has been removed outside %2. Do you want to keep it?";
     case FILE_MODIFIED_MSG:
         return "The file '%1' has been modified outside %2. Do you want to reload it?";
+    case CLOSE_INTERACTIVE_SIMULATION_TAB:
+        return "Are you sure you want to close '%1' interactive simulation?";
+    case INFO_CLOSE_INTERACTIVE_SIMULATION_TAB:
+        return "You can not recover this window once its closed.";
+    case INTERACTIVE_SIMULATION_RUNNIG:
+        return "You already have one interactive simulation running. Only one interactive simulaiton session is allowed at a time. \n\n Please shutdown the interactive simulation or close the interactive simulation tab before launching the new one.";
+    case SELECT_VARIABLE_FOR_OMI:
+        return "Please select a variable to plot before starting.";
     default:
         return "";
     }

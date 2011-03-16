@@ -76,6 +76,17 @@ public:
     static QString modelicaLibrarySearchText;
     static QString noItemFound;
     static QString running_Simulation;
+    static QString starting_interactive_simulation_server;
+    static QString omi_network_address;
+    static quint16 omi_control_client_port;
+    static quint16 omi_control_server_port;
+    static quint16 omi_transfer_server_port;
+    static QString omi_initialize_button_tooltip;
+    static QString omi_start_button_tooltip;
+    static QString omi_pause_button_tooltip;
+    static QString omi_stop_button_tooltip;
+    static QString omi_shutdown_button_tooltip;
+    static QString omi_showlog_button_tooltip;
 };
 
 class GUIMessages
@@ -102,6 +113,7 @@ public:
         DELETE_FAIL,
         ONLY_MODEL_ALLOWED,
         UNABLE_TO_LOAD_FILE,
+        UNABLE_TO_LOAD_MODEL,
         DELETE_AND_LOAD,
         REDEFING_EXISTING_MODELS,
         INVALID_COMPONENT_ANNOTATIONS,
@@ -111,7 +123,11 @@ public:
         CHILD_MODEL_SAVE,
         SEARCH_STRING_NOT_FOUND,
         FILE_REMOVED_MSG,
-        FILE_MODIFIED_MSG
+        FILE_MODIFIED_MSG,
+        CLOSE_INTERACTIVE_SIMULATION_TAB,
+        INFO_CLOSE_INTERACTIVE_SIMULATION_TAB,
+        INTERACTIVE_SIMULATION_RUNNIG,
+        SELECT_VARIABLE_FOR_OMI
     };
 
     static QString getMessage(int type);

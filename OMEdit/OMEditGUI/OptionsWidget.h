@@ -75,7 +75,7 @@ class OptionsWidget : public QDialog
 {
     Q_OBJECT
 public:
-    OptionsWidget(MainWindow *pParent = 0);
+    OptionsWidget(MainWindow *pParent);
     void getSettings();
     void readSettings(QString filePath);
     void createSettings(QString filePath);
@@ -103,7 +103,7 @@ class ModelicaTextEditorPage : public QWidget
 {
     Q_OBJECT
 public:
-    ModelicaTextEditorPage(OptionsWidget *pParent = 0);
+    ModelicaTextEditorPage(OptionsWidget *pParent);
     void addListItems();
     QString getPreviewText();
     void createFontSizeComboBox();

@@ -456,7 +456,7 @@ void Component::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
     menu.addAction(pComponent->mpGraphicsView->mpResetRotation);
     menu.addSeparator();
     menu.addAction(pComponent->mpGraphicsView->mpDeleteIconAction);
-    if (pComponent->mType == StringHandler::DIAGRAM)
+    if (pComponent->mType == StringHandler::ICON)
     {
         menu.addSeparator();
         menu.addAction(pComponent->mpIconAttributesAction);

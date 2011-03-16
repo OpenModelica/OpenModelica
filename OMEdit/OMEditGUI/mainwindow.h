@@ -58,6 +58,7 @@
 #include "StringHandler.h"
 #include "Helper.h"
 #include "SimulationWidget.h"
+#include "InteractiveSimulationTabWidget.h"
 #include "PlotWidget.h"
 #include "SplashScreen.h"
 #include "DocumentationWidget.h"
@@ -79,6 +80,7 @@ class SearchMSLWidget;
 class LibraryWidget;
 class ModelCreator;
 class SimulationWidget;
+class InteractiveSimulationTabWidget;
 class PlotWidget;
 class DocumentationWidget;
 class OptionsWidget;
@@ -98,6 +100,7 @@ public:
     SearchMSLWidget *mpSearchMSLWidget;
     LibraryWidget *mpLibrary;
     SimulationWidget *mpSimulationWidget;
+    InteractiveSimulationTabWidget *mpInteractiveSimualtionTabWidget;
     PlotWidget *mpPlotWidget;
     ModelCreator *mpModelCreator;
     OMCProxy *mpOMCProxy;
@@ -146,6 +149,7 @@ public:
     QAction *closeAction;
     QAction *simulationAction;
     QAction *plotAction;
+    QAction *interactiveSimulationAction;
     QAction *documentationAction;
     QAction *userManualAction;
     QAction *aboutAction;
@@ -156,6 +160,9 @@ public:
     QAction *polygonAction;
     QAction *textAction;
     QAction *bitmapAction;
+    QActionGroup *viewActionGroup;
+    QAction *modelingViewAction;
+    QAction *interactiveSimulationViewAction;
 
     QToolBar *fileToolBar;
     QToolBar *editToolBar;
@@ -163,6 +170,7 @@ public:
     QToolBar *shapesToolBar;
     QToolBar *simulationToolBar;
     QToolBar *omnotebookToolbar;
+    QToolBar *perspectiveToolBar;
 
     QDockWidget *plotdock;
     QDockWidget *documentationdock;
@@ -172,7 +180,8 @@ public:
 
     void closeEvent(QCloseEvent *event);
 private slots:
-    void openSimulation(); 
+    void openSimulation();
+    void openInteractiveSimulation();
     void openNewModel();
     void openNewClass();
     void openNewConnector();
@@ -193,6 +202,8 @@ private slots:
     void openAbout();
     void toggleShapesButton();
     void focusMSLSearch(bool visible);
+    void switchToModelingView();
+    void switchToInteractiveSimulationView();
 public slots:
     void showProgressBar();
     void hideProgressBar();

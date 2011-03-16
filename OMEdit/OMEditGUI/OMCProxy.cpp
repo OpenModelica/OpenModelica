@@ -50,10 +50,8 @@
 //! @brief It contains the reference of the CORBA object used to communicate with the OpenModelica Compiler.
 
 //! Constructor
-//! @param mOMC is the CORBA object.
-//! @param mHasInitialized is the boolean variable used for checking server intialization.
-//! @param mIsStandardLibraryLoaded is the boolean variable used for checking OM Standard Library intialization.
-//! @param mResult contains the result obtained from OMC.
+//! @param pParent is the pointer to MainWindow.
+//! @param displayErrors is the boolean variable used for displaying errors.
 OMCProxy::OMCProxy(MainWindow *pParent, bool displayErrors)
     : mOMC(0), mHasInitialized(false), mIsStandardLibraryLoaded(false),
       mName(Helper::omcServerName) ,mResult(""), mDisplayErrors(displayErrors)
@@ -71,6 +69,7 @@ OMCProxy::OMCProxy(MainWindow *pParent, bool displayErrors)
     this->mpTextEdit->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
     this->mpTextEdit->setReadOnly(true);
     this->mpTextEdit->setLineWrapMode(QTextEdit::WidgetWidth);
+    this->mpTextEdit->setAutoFormatting(QTextEdit::AutoNone);
     // Set the Layout
     QHBoxLayout *horizontallayout = new QHBoxLayout;
     horizontallayout->setContentsMargins(0, 0, 0, 0);
@@ -99,6 +98,8 @@ OMCProxy::~OMCProxy()
 
 void OMCProxy::getPreviousCommand()
 {
+    if (mCommandsList.isEmpty())
+        return;
     mpExpressionTextBox->setText(mCommandsList.at(mCommandsList.count() - 1));
     QString tempCommand = mCommandsList.at(mCommandsList.count() - 1);
     mCommandsList.insert(0, tempCommand);
@@ -107,6 +108,8 @@ void OMCProxy::getPreviousCommand()
 
 void OMCProxy::getNextCommand()
 {
+    if (mCommandsList.isEmpty())
+        return;
     mpExpressionTextBox->setText(mCommandsList.at(0));
     QString tempCommand = mCommandsList.at(0);
     mCommandsList.append(tempCommand);
@@ -242,7 +245,7 @@ bool OMCProxy::startServer()
      if (!dir.mkdir(Helper::tmpPath)) {
        QMessageBox::critical(mpParentMainWindow, Helper::applicationName + " - Error",
                               QString("Failed to create temp dir ").append(Helper::tmpPath), "OK");
-       return false;
+       //return false;
      }
     }
     // set the temp directory.
@@ -277,7 +280,7 @@ void OMCProxy::sendCommand(const QString expression)
     try
     {
         setExpression(expression);
-        if (expression.startsWith("simulate"))
+        if (expression.startsWith("simulate") or expression.startsWith("buildModel"))
         {
             QFuture<void> future = QtConcurrent::run(this, &OMCProxy::sendCommand);
             while (future.isRunning())
@@ -332,7 +335,6 @@ void OMCProxy::logOMCMessages(QString expression)
 
     mpTextEdit->setCurrentFont(QFont("Times New Roman", 10, QFont::Normal, false));
     mpTextEdit->insertPlainText("\n>>  " + getResult() + "\n");
-    //mpTextEdit->insertPlainText("\n");
     // scroll the text to end
     QTextCursor textCursor = mpTextEdit->textCursor();
     textCursor.movePosition(QTextCursor::End);
@@ -873,6 +875,8 @@ QList<ComponentsProperties*> OMCProxy::getComponents(QString className)
 
     for (int i = 0 ; i < list.size() ; i++)
     {
+        if (list.at(i) == "Error")
+            continue;
         components.append(new ComponentsProperties(StringHandler::removeFirstLastCurlBrackets(list.at(i))));
     }
 
@@ -1012,7 +1016,10 @@ bool OMCProxy::deleteClass(QString className)
 QString OMCProxy::getSourceFile(QString modelName)
 {
     sendCommand("getSourceFile(" + modelName + ")");
-    return getResult();
+    if (getResult().contains("<interactive>"))
+        return "";
+    else
+        return getResult();
 }
 
 bool OMCProxy::setSourceFile(QString modelName, QString path)
@@ -1174,11 +1181,25 @@ bool OMCProxy::simulate(QString modelName, QString simualtionParameters)
 bool OMCProxy::buildModel(QString modelName, QString simualtionParameters)
 {
     sendCommand("buildModel(" + modelName + "," + simualtionParameters + ")");
-    //! @todo Make it more stable. Checking res. as a string is not good here.
-    if (getResult().contains("res."))
+
+    if (getErrorString().isEmpty())
         return true;
     else
         return false;
+}
+
+QList<QString> OMCProxy::readSimulationResultVars(QString fileName)
+{
+    sendCommand("readSimulationResultVars(\"" + fileName + "\")");
+
+    QList<QString> variablesList;
+    QStringList list = StringHandler::removeFirstLastCurlBrackets(getResult()).split(",", QString::SkipEmptyParts);
+    foreach (QString str, list)
+    {
+        variablesList.append(StringHandler::removeFirstLastQuotes(str));
+    }
+    qSort(variablesList.begin(), variablesList.end());
+    return variablesList;
 }
 
 //bool OMCProxy::plot(QString modelName, QString plotVariables)

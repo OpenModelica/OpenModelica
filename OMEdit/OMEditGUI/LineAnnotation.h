@@ -44,7 +44,7 @@ class LineAnnotation : public ShapeAnnotation
 {
     Q_OBJECT
 public:
-    LineAnnotation(QString shape, Component *pParent = 0);
+    LineAnnotation(QString shape, Component *pParent);
     LineAnnotation(GraphicsView *graphicsView, QGraphicsItem *pParent = 0);
     LineAnnotation(QString shape, GraphicsView *graphicsView, QGraphicsItem *pParent = 0);
     QRectF boundingRect() const;

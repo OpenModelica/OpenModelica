@@ -115,6 +115,9 @@ MainWindow::MainWindow(SplashScreen *splashScreen, QWidget *parent)
     // Create simulation widget.
     mpSimulationWidget = new SimulationWidget(this);
 
+    // create the interactive simulation widget
+    mpInteractiveSimualtionTabWidget = new InteractiveSimulationTabWidget(this);
+
     plotdock = new QDockWidget(tr(" Plot Variables"), this);
     plotdock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
     plotdock->setContentsMargins(0, 1, 1, 1);
@@ -146,6 +149,7 @@ MainWindow::MainWindow(SplashScreen *splashScreen, QWidget *parent)
     mpBackButton = new QPushButton("Back");
     mpCentralgrid->addWidget(mpBackButton,0,0);
     mpCentralgrid->addWidget(mpProjectTabs,1,0);
+    mpCentralgrid->addWidget(mpInteractiveSimualtionTabWidget,1,0);
     mpBackButton->hide();
 
     mpCentralwidget->setLayout(mpCentralgrid);
@@ -322,8 +326,12 @@ void MainWindow::createActions()
     plotAction->setIcon(QIcon(":/Resources/icons/plot.png"));
     plotAction->setText(tr("Plot Variables"));
 
+    interactiveSimulationAction = new QAction(QIcon(":/Resources/icons/interactive-simulation.png"), tr("Interactive Simulation"), this);
+    interactiveSimulationAction->setStatusTip(tr("Simulate the Model"));
+    connect(interactiveSimulationAction, SIGNAL(triggered()), SLOT(openInteractiveSimulation()));
+
     documentationAction = documentationdock->toggleViewAction();
-    documentationAction->setIcon(QIcon(":/Resources/icons/plot.png"));
+    documentationAction->setIcon(QIcon(":/Resources/icons/info-icon.png"));
     documentationAction->setText(tr("View Documentation"));
 
     userManualAction = new QAction(tr("User Manual"), this);
@@ -359,15 +367,30 @@ void MainWindow::createActions()
     connect(ellipseAction, SIGNAL(triggered()), SLOT(toggleShapesButton()));
 
     textAction = new QAction(QIcon(":/Resources/icons/text-shape.png"), tr("Text"), shapesActionGroup);
-    textAction->setStatusTip(tr("Draws a text."));
+    textAction->setStatusTip(tr("Draws a Text."));
     textAction->setCheckable(true);
     connect(textAction, SIGNAL(triggered()), SLOT(toggleShapesButton()));
 
     // Add the bitmap picture
     bitmapAction = new QAction(QIcon(":/Resources/icons/bitmap-shape.png"), tr("Bitmap"), shapesActionGroup);
-    bitmapAction->setStatusTip(tr("Imports a bitmap."));
+    bitmapAction->setStatusTip(tr("Imports a Bitmap."));
     bitmapAction->setCheckable(true);
     connect(bitmapAction, SIGNAL(triggered()), SLOT(toggleShapesButton()));
+
+    viewActionGroup = new QActionGroup(this);
+    viewActionGroup->setExclusive(true);
+
+    modelingViewAction = new QAction(QIcon(":/Resources/icons/omeditor.png"), tr("Modeling"), viewActionGroup);
+    modelingViewAction->setStatusTip(tr("Shows Modeling View"));
+    modelingViewAction->setCheckable(true);
+    modelingViewAction->setChecked(true);
+    connect(modelingViewAction, SIGNAL(triggered()), SLOT(switchToModelingView()));
+
+    interactiveSimulationViewAction = new QAction(QIcon(":/Resources/icons/interactive-simulation.png"),
+                                                  tr("Interactive Simulation"), viewActionGroup);
+    interactiveSimulationViewAction->setStatusTip(tr("Shows Interactive Simulation View"));
+    interactiveSimulationViewAction->setCheckable(true);
+    connect(interactiveSimulationViewAction, SIGNAL(triggered()), SLOT(switchToInteractiveSimulationView()));
 }
 
 //! Creates the menus
@@ -440,7 +463,7 @@ void MainWindow::createMenus()
     menuView->addAction(searchMSLAction);
     menuView->addAction(libAction);
     menuView->addAction(messageAction);
-    menuView->addAction(fileToolBar->toggleViewAction());
+    //menuView->addAction(fileToolBar->toggleViewAction());
     //menuView->addAction(editToolBar->toggleViewAction());
     //menuView->addAction(documentationAction);
     menuView->addSeparator();
@@ -450,11 +473,16 @@ void MainWindow::createMenus()
     menuView->addAction(zoomOutAction);
     menuView->addSeparator();
     menuView->addAction(checkModelAction);
+    menuView->addSeparator();
+    menuView->addAction(modelingViewAction);
+    menuView->addAction(interactiveSimulationViewAction);
 
     menuSimulation->addAction(simulationAction);
+    menuSimulation->addAction(interactiveSimulationAction);
     menuSimulation->addAction(plotAction);
 
     menuTools->addAction(omcLoggerAction);
+    menuTools->addSeparator();
     menuTools->addAction(openOMShellAction);
     menuTools->addSeparator();
     menuTools->addAction(exportToOMNotebookAction);
@@ -531,18 +559,39 @@ void MainWindow::createToolbars()
     simulationToolBar = addToolBar(tr("Simulation"));
     simulationToolBar->setAllowedAreas(Qt::TopToolBarArea);
     simulationToolBar->addAction(simulationAction);
+    simulationToolBar->addAction(interactiveSimulationAction);
     simulationToolBar->addAction(plotAction);
 
     omnotebookToolbar = addToolBar(tr("OMNotebook"));
     omnotebookToolbar->setAllowedAreas(Qt::TopToolBarArea);
     omnotebookToolbar->addAction(exportToOMNotebookAction);
     omnotebookToolbar->addAction(importFromOMNotebookAction);
+
+    perspectiveToolBar = addToolBar(tr("Perspective Toolbar"));
+    perspectiveToolBar->setAllowedAreas(Qt::TopToolBarArea);
+    perspectiveToolBar->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    perspectiveToolBar->setMovable(false);
+
+    // a trick :: just to move the toolbar to the right
+    QWidget *spacerWidget = new QWidget(this);
+    spacerWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    spacerWidget->setVisible(true);
+    perspectiveToolBar->addWidget(spacerWidget);
+
+    perspectiveToolBar->addAction(modelingViewAction);
+    perspectiveToolBar->addAction(interactiveSimulationViewAction);
 }
 
 //! Open Simulation Window
 void MainWindow::openSimulation()
 {
-    this->mpSimulationWidget->show();
+    this->mpSimulationWidget->show(false);
+}
+
+//! Open Interactive Simulation Window
+void MainWindow::openInteractiveSimulation()
+{
+    this->mpSimulationWidget->show(true);
 }
 
 //! Opens the new model widget.
@@ -822,7 +871,7 @@ void MainWindow::importModelfromOMNotebook()
         {
             mpProjectTabs->openModel(nodes.at(i).toElement().text());
         }
-        qDebug() << nodes.at(i).nodeName() << nodes.at(i).toElement().text();
+        //qDebug() << nodes.at(i).nodeName() << nodes.at(i).toElement().text();
         progressBar.setValue(value++);
     }
     progressBar.hide();
@@ -918,6 +967,20 @@ void MainWindow::focusMSLSearch(bool visible)
 {
     if (visible)
         mpSearchMSLWidget->getMSLSearchTextBox()->setFocus();
+}
+
+void MainWindow::switchToModelingView()
+{
+    modelingViewAction->setChecked(true);
+    mpProjectTabs->setVisible(true);
+    mpInteractiveSimualtionTabWidget->setVisible(false);
+}
+
+void MainWindow::switchToInteractiveSimulationView()
+{
+    interactiveSimulationViewAction->setChecked(true);
+    mpProjectTabs->setVisible(false);
+    mpInteractiveSimualtionTabWidget->setVisible(true);
 }
 
 //! shows the progress bar contained inside the status bar

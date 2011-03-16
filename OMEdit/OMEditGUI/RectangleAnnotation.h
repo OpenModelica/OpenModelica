@@ -43,7 +43,7 @@ class RectangleAnnotation : public ShapeAnnotation
 {
     Q_OBJECT
 public:
-    RectangleAnnotation(QString shape, Component *pParent = 0);
+    RectangleAnnotation(QString shape, Component *pParent);
     RectangleAnnotation(GraphicsView *graphicsView, QGraphicsItem *pParent = 0);
     RectangleAnnotation(QString shape, GraphicsView *graphicsView, QGraphicsItem *pParent = 0);
     QRectF boundingRect() const;

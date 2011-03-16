@@ -46,7 +46,7 @@ class DocumentationWidget : public QWidget
 private:
 
 public:
-    DocumentationWidget(MainWindow *pParent = 0);
+    DocumentationWidget(MainWindow *pParent);
     ~DocumentationWidget();
     void show(QString className);
 

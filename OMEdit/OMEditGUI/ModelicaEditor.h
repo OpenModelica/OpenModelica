@@ -42,7 +42,7 @@ class ModelicaEditor : public QTextEdit
 {
     Q_OBJECT
 public:
-    ModelicaEditor(ProjectTab *pParent = 0);
+    ModelicaEditor(ProjectTab *pParent);
     QString getModelName();
     void findText(const QString &text, bool forward);
     bool validateText();

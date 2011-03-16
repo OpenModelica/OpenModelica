@@ -67,7 +67,7 @@ class GraphicsScene : public QGraphicsScene
 {
     Q_OBJECT
 public:
-    GraphicsScene(int iconType, ProjectTab *parent = 0);
+    GraphicsScene(int iconType, ProjectTab *parent);
     ProjectTab *mpParentProjectTab;
     int mIconType;
 };
@@ -86,7 +86,7 @@ private:
     void createTextShape(QPointF point);    
     void createBitmapShape(QPointF point);
 public:
-    GraphicsView(int iconType, ProjectTab *parent = 0);
+    GraphicsView(int iconType, ProjectTab *parent);
     void addComponentoView(QString name, QString className, QPoint point, bool isConnector = false,
                            bool addObject = true, bool diagram = false);
     void addComponentObject(Component *icon);
@@ -228,7 +228,7 @@ class ProjectTabWidget : public QTabWidget
 {
     Q_OBJECT
 public:
-    ProjectTabWidget(MainWindow *parent = 0);
+    ProjectTabWidget(MainWindow *parent);
     ~ProjectTabWidget();
     ProjectTab* getCurrentTab();
     ProjectTab* getTabByName(QString name);

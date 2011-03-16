@@ -55,3 +55,7 @@ QStatusBar#ProjectStatusBar QLabel {
 QPushButton#ModelicaEditorSearchButtons {
 
 }
+
+QToolButton#InteractiveSimulationButtons {
+    padding: 3px;
+}

@@ -32,7 +32,6 @@
  */
 
 #include "PlotWidget.h"
-#include "../../c_runtime/read_matlab4.h"
 
 PlotWidget::PlotWidget(MainWindow *pParent)
     : QWidget(pParent)
@@ -51,7 +50,6 @@ PlotWidget::PlotWidget(MainWindow *pParent)
     mpPlotVariablesTree->setHeaderHidden(true);
     mpPlotVariablesTree->setColumnCount(1);
     mpPlotVariablesTree->setIndentation(Helper::treeIndentation);
-    mpPlotVariablesTree->setColumnCount(1);
 
     mpVerticalLayout = new QVBoxLayout(this);
     mpVerticalLayout->setContentsMargins(0, 0, 0, 0);
@@ -65,66 +63,30 @@ PlotWidget::PlotWidget(MainWindow *pParent)
     connect(mpPlotTypesCombo, SIGNAL(currentIndexChanged(QString)), SLOT(visualize(QString)));
 }
 
-QList<QString> PlotWidget::readPltFile(QString filePath)
+QList<QString> PlotWidget::readPlotVariables(QString fileName)
 {
+    // need to replace \\ to / so that QFile can close the file properly, otherwise we can't open it second time
+    QString filePath = QString(Helper::tmpPath.replace("\\", "/")).append("/").append(fileName);
+
     QFile simulationResultFile(filePath);
     simulationResultFile.open(QIODevice::ReadOnly);
 
     QList<QString> plotVariablesList;
     QTextStream inStream(&simulationResultFile);
+    QTextStream temp(&simulationResultFile);
+
+    inStream.seek(temp.readAll().indexOf("n string variables"));
+    // read this line that says n string variables
+    inStream.readLine();
+    // now read the variables until the end
     while (!inStream.atEnd())
     {
         QString line = inStream.readLine();
-        if (line.contains("DataSet:"))
-        {
-            if (!line.contains("dummy"))
-            {
-                line = line.mid((line.indexOf(':') + 1), (line.length() -1)).trimmed();
-                plotVariablesList.append(line);
-            }
-        }
+        line = line.mid(line.lastIndexOf("//") + 2, (line.length() - 1)).trimmed();
+        plotVariablesList.append(line);
     }
     simulationResultFile.close();
     return plotVariablesList;
-}
-
-QList<QString> PlotWidget::readMatFile(QString filePath)
-{
-    QList<QString> plotVariablesList;
-    ModelicaMatReader reader;
-    // read the mat file structure
-    omc_new_matlab4_reader(filePath.toLatin1(), &reader);
-
-    // read the mat file structure
-    for (int i = 0 ; i < reader.nall ; i++)
-    {
-        QString plotVariable = QString(reader.allInfo[i].name);
-        if (!plotVariable.contains("dummy"))
-            plotVariablesList.append(plotVariable);
-    }
-    // free the mat reader
-    omc_free_matlab4_reader(&reader);
-    return plotVariablesList;
-}
-
-void PlotWidget::readPlotVariables(QString fileName)
-{
-    // need to replace \\ to / so that QFile can close the file properly, otherwise we can't open it second time
-    QString filePath = QString(Helper::tmpPath.replace("\\", "/")).append("/").append(fileName);
-
-    QStringList fileNameList = filePath.split('.');
-    QString fileExtension = fileNameList.last();
-    QList<QString> plotVariablesList;
-
-    if (fileExtension.compare("plt") == 0)
-    {
-        plotVariablesList = readPltFile(filePath);
-    }
-    else if (fileExtension.compare("mat") == 0)
-    {
-        plotVariablesList = readMatFile(filePath);
-    }
-    addPlotVariablestoTree(fileName, plotVariablesList);
 }
 
 void PlotWidget::addPlotVariablestoTree(QString fileName, QList<QString> plotVariablesList)
@@ -139,6 +101,7 @@ void PlotWidget::addPlotVariablestoTree(QString fileName, QList<QString> plotVar
         {
             qDeleteAll(item->takeChildren());
             delete item;
+            break;
         }
     }
 

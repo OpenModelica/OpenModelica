@@ -43,7 +43,7 @@ class EllipseAnnotation : public ShapeAnnotation
 {
     Q_OBJECT
 public:
-    EllipseAnnotation(QString shape, Component *pParent = 0);
+    EllipseAnnotation(QString shape, Component *pParent);
     EllipseAnnotation(GraphicsView *graphicsView, QGraphicsItem *pParent = 0);
     EllipseAnnotation(QString shape, GraphicsView *graphicsView, QGraphicsItem *pParent = 0);
     QRectF boundingRect() const;

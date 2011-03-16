@@ -49,7 +49,7 @@ class  BitmapAnnotation : public ShapeAnnotation
 {
     Q_OBJECT
 public:    
-    BitmapAnnotation(QString shape, Component *pParent = 0);
+    BitmapAnnotation(QString shape, Component *pParent);
     BitmapAnnotation(GraphicsView *graphicsView, QGraphicsItem *pParent = 0);
     BitmapAnnotation(QString shape, GraphicsView *graphicsView, QGraphicsItem *pParent = 0);
     QRectF boundingRect() const;
@@ -79,7 +79,7 @@ class BitmapWidget : public QDialog
 {
     Q_OBJECT
 public:
-    BitmapWidget(BitmapAnnotation *pBitmapShape, MainWindow *parent = 0);
+    BitmapWidget(BitmapAnnotation *pBitmapShape, MainWindow *parent);
 
     void setUpForm();
     void show();

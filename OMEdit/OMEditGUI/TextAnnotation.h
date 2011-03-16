@@ -56,7 +56,7 @@ private:
     Qt::Alignment mHorizontalAlignment;
     QRectF mDrawingRect;
 public:
-    TextAnnotation(QString shape, Component *pParent = 0);
+    TextAnnotation(QString shape, Component *pParent);
     TextAnnotation(GraphicsView *graphicsView, QGraphicsItem *pParent = 0);
     TextAnnotation(QString shape, GraphicsView *graphicsView, QGraphicsItem *pParent = 0);    
 
@@ -95,7 +95,7 @@ class TextWidget : public QDialog
 {
     Q_OBJECT
 public:
-    TextWidget(TextAnnotation *pTextShape, MainWindow *parent = 0);
+    TextWidget(TextAnnotation *pTextShape, MainWindow *parent);
     MainWindow *mpParentMainWindow;
     void setUpForm();
     void show();    

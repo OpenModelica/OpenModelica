@@ -76,7 +76,7 @@ class ModelicaTree : public QTreeWidget
 {
     Q_OBJECT
 public:
-    ModelicaTree(LibraryWidget *parent = 0);
+    ModelicaTree(LibraryWidget *parent);
     ~ModelicaTree();
     void createActions();
     ModelicaTreeNode* getNode(QString name);
@@ -123,7 +123,7 @@ private:
     QAction *mpViewDocumentationAction;
     QAction *mpCheckModelAction;
 public:
-    LibraryTree(LibraryWidget *pParent = 0);
+    LibraryTree(LibraryWidget *pParent);
     ~LibraryTree();
     void createActions();
     void addModelicaStandardLibrary();
@@ -154,7 +154,7 @@ class SearchMSLWidget;
 class MSLSearchBox : public QLineEdit
 {
 public:
-    MSLSearchBox(SearchMSLWidget *pParent = 0);
+    MSLSearchBox(SearchMSLWidget *pParent);
 
     SearchMSLWidget *mpSearchMSLWidget;
     MSLSuggestCompletion *mpMSLSuggestionCompletion;
@@ -168,7 +168,7 @@ class MSLSuggestCompletion : QObject
 {
     Q_OBJECT
 public:
-    MSLSuggestCompletion(MSLSearchBox *pParent = 0);
+    MSLSuggestCompletion(MSLSearchBox *pParent);
     ~MSLSuggestCompletion();
     bool eventFilter(QObject *pObject, QEvent *event);
     void showCompletion(const QStringList &choices);
@@ -187,7 +187,7 @@ class SearchMSLWidget : public QWidget
 {
     Q_OBJECT
 public:
-    SearchMSLWidget(MainWindow *pParent = 0);
+    SearchMSLWidget(MainWindow *pParent);
     QStringList getMSLItemsList();
 
     MSLSearchBox* getMSLSearchTextBox();
@@ -210,7 +210,7 @@ public:
     ModelicaTree *mpModelicaTree;
     QTabWidget *mpLibraryTabs;
     //Member functions
-    LibraryWidget(MainWindow *parent = 0);
+    LibraryWidget(MainWindow *parent);
     ~LibraryWidget();
     void addModelicaNode(QString name, int type, QString parentName=QString(), QString parentStructure=QString());
     void addModelFiles(QString fileName, QString parentFileName=QString(), QString parentStructure=QString());
@@ -250,8 +250,8 @@ class LibraryLoader : public QThread
 {
     Q_OBJECT
 public:
-    LibraryLoader(LibraryTreeNode *treeNode, QString className, LibraryTree *pParent = 0);
-    LibraryLoader(ModelicaTreeNode *treeNode, QString className, ModelicaTree *pParent = 0);
+    LibraryLoader(LibraryTreeNode *treeNode, QString className, LibraryTree *pParent);
+    LibraryLoader(ModelicaTreeNode *treeNode, QString className, ModelicaTree *pParent);
 
     LibraryTree *mpLibraryTree;
     LibraryTreeNode *mpLibraryTreeNode;

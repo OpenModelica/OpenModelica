@@ -54,7 +54,7 @@ class MessageWidget : public QTabWidget
 {
     Q_OBJECT
 public:
-    MessageWidget(MainWindow *pParent = 0);
+    MessageWidget(MainWindow *pParent);
 
     MainWindow *mpParentMainWindow;
     GeneralMessages *mpGeneralMessages;
@@ -72,7 +72,7 @@ class Messages : public QTextEdit
 {
     Q_OBJECT
 public:
-    Messages(MessageWidget *pParent=0);
+    Messages(MessageWidget *pParent);
     QSize sizeHint() const;
     void printGUIMessage(QString message);
 
@@ -85,7 +85,7 @@ class GeneralMessages : public Messages
 {
     Q_OBJECT
 public:
-    GeneralMessages(MessageWidget *pParent=0);
+    GeneralMessages(MessageWidget *pParent);
     void printGUIMessage(QString message);
 };
 
@@ -93,7 +93,7 @@ class InfoMessages : public Messages
 {
     Q_OBJECT
 public:
-    InfoMessages(MessageWidget *pParent=0);
+    InfoMessages(MessageWidget *pParent);
     void printGUIMessage(QString message);
 };
 
@@ -101,7 +101,7 @@ class WarningMessages : public Messages
 {
     Q_OBJECT
 public:
-    WarningMessages(MessageWidget *pParent=0);
+    WarningMessages(MessageWidget *pParent);
     void printGUIMessage(QString message);
 };
 
@@ -109,7 +109,7 @@ class ErrorMessages : public Messages
 {
     Q_OBJECT
 public:
-    ErrorMessages(MessageWidget *pParent=0);
+    ErrorMessages(MessageWidget *pParent);
     void printGUIMessage(QString message);
 };
 

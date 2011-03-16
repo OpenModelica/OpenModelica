@@ -64,7 +64,7 @@ private:
     QList<QString> mCommandsList;
     QMap<QString, QString> mCommandsMap;
 public:
-    OMCProxy(MainWindow *pParent = 0, bool displayErrors = true);
+    OMCProxy(MainWindow *pParent, bool displayErrors = true);
     ~OMCProxy();
     void getPreviousCommand();
     void getNextCommand();
@@ -150,6 +150,7 @@ public:
     bool instantiateModel(QString modelName);
     bool simulate(QString modelName, QString simualtionParameters);
     bool buildModel(QString modelName, QString simualtionParameters);
+    QList<QString> readSimulationResultVars(QString fileName);
     //bool plot(QString modelName, QString plotVariables);
     // modified plot API call
     bool plot(QString plotVariables, QString fileName);

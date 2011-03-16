@@ -40,7 +40,7 @@ SOURCES += main.cpp\
     DocumentationWidget.cpp \
     OptionsWidget.cpp \
     BitmapAnnotation.cpp \
-    ../../c_runtime/read_matlab4.c
+    InetractiveSimulationTabWidget.cpp
 
 HEADERS  += mainwindow.h \
     ProjectTabWidget.h \
@@ -72,7 +72,7 @@ HEADERS  += mainwindow.h \
     DocumentationWidget.h \
     OptionsWidget.h \
     BitmapAnnotation.h \
-    ../../c_runtime/read_matlab4.h
+    InteractiveSimulationTabWidget.h
 
 # -------For OMNIorb
 win32 {
@@ -82,12 +82,20 @@ DEFINES += __x86__ \
     __WIN32__
 LIBS += -L$$(OMDEV)/lib/omniORB-4.1.4-mingw/lib/x86_win32 \
     -lomniORB414_rt \
-    -lomnithread34_rt
-INCLUDEPATH += $$(OMDEV)/lib/omniORB-4.1.4-mingw/include
+    -lomnithread34_rt \
+    -L../../OMPlot/bin \
+    -lOMPlot \
+    -L$$(OMDEV)/lib/qwt-5.2.1-mingw/lib \
+    -lqwt5
+INCLUDEPATH += $$(OMDEV)/lib/omniORB-4.1.4-mingw/include \
+               $$(OMDEV)/lib/qwt-5.2.1-mingw/include \
+               ../../OMPlot/OMPlotGUI
 } else {
     include(OMEdit.config)
 }
 #---------End OMNIorb
+
+INCLUDEPATH += .
 
 OTHER_FILES += \
     Resources/css/stylesheet.qss

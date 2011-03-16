@@ -43,7 +43,7 @@ class PolygonAnnotation : public ShapeAnnotation
 {
     Q_OBJECT
 public:
-    PolygonAnnotation(QString shape, Component *pParent = 0);
+    PolygonAnnotation(QString shape, Component *pParent);
     PolygonAnnotation(GraphicsView *graphicsView, QGraphicsItem *pParent = 0);
     PolygonAnnotation(QString shape, GraphicsView *graphicsView, QGraphicsItem *pParent = 0);
     QRectF boundingRect() const;
