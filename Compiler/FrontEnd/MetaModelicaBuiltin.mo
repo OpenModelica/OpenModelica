@@ -396,12 +396,12 @@ end stringInt;
 
 function stringListStringChar
   input String str;
-  output list<String> chars;
+  output List<String> chars;
 external "builtin";
 end stringListStringChar;
 
 function stringAppendList
-  input list<String> strs;
+  input List<String> strs;
   output String str;
 external "builtin";
 end stringAppendList;
@@ -487,184 +487,162 @@ function stringHashSdbm
 external "builtin";
 end stringHashSdbm;
 
-function listAppend
-  input list<TypeA> lst1;
-  input list<TypeA> lst2;
-  output list<TypeA> lst;
-  replaceable type TypeA subtypeof Any;
+function listAppend<A>
+  input List<A> lst1;
+  input List<A> lst2;
+  output List<A> lst;
 external "builtin";
 end listAppend;
   
-function listReverse
-  input list<TypeA> inLst;
-  output list<TypeA> outLst;
-  replaceable type TypeA subtypeof Any;
+function listReverse<A>
+  input List<A> inLst;
+  output List<A> outLst;
 external "builtin";
 end listReverse;
 
-function listLength
-  input list<TypeA> lst;
+function listLength<A>
+  input List<A> lst;
   output Integer length;
-  replaceable type TypeA subtypeof Any;
 external "builtin";
 end listLength;
 
-function listMember
-  input TypeA element;
-  input list<TypeA> lst;
+function listMember<A>
+  input A element;
+  input List<A> lst;
   output Boolean isMember;
-  replaceable type TypeA subtypeof Any;
 external "builtin";
 end listMember;
 
-function listGet
-  input list<TypeA> lst;
+function listGet<A>
+  input List<A> lst;
   input Integer index;
-  output TypeA element;
-  replaceable type TypeA subtypeof Any;
+  output A element;
 external "builtin";
 end listGet;
 
-function listNth
-  input list<TypeA> lst;
+function listNth<A> "index from 0; this function is deprecated"
+  input List<A> lst;
   input Integer index;
-  output TypeA element;
-  replaceable type TypeA subtypeof Any;
+  output A element;
   annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 algorithm
   element := listGet(lst,index+1);
 end listNth;
 
-function listRest
-  input list<TypeA> lst;
-  output list<TypeA> rest;
-  replaceable type TypeA subtypeof Any;
+function listRest<A>
+  input List<A> lst;
+  output List<A> rest;
 external "builtin";
 end listRest;
 
-function listHead
-  input list<TypeA> lst;
-  output TypeA head;
-  replaceable type TypeA subtypeof Any;
+function listHead<A>
+  input List<A> lst;
+  output A head;
 external "builtin";
 end listHead;
 
-function listDelete
-  input list<TypeA> inLst;
+function listDelete<A>
+  input List<A> inLst;
   input Integer index;
-  output list<TypeA> outLst;
-  replaceable type TypeA subtypeof Any;
+  output List<A> outLst;
 external "builtin";
 end listDelete;
 
-function listEmpty
-  input list<TypeA> lst;
+function listEmpty<A>
+  input List<A> lst;
   output Boolean isEmpty;
-  replaceable type TypeA subtypeof Any;
 external "builtin";
 end listEmpty;
   
-function cons
-  input TypeA element;
-  input list<TypeA> inLst;
-  output list<TypeA> outLst;
-  replaceable type TypeA subtypeof Any;
+function cons<A>
+  input A element;
+  input List<A> inLst;
+  output List<A> outLst;
   annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 algorithm
   outLst := element::inLst;
 end cons;
 
-function arrayLength
-  input array<TypeA> arr;
+function arrayLength<A>
+  input array<A> arr;
   output Integer length;
-  replaceable type TypeA subtypeof Any;
 external "builtin";
 end arrayLength;
 
-function arrayGet
-  input array<TypeA> arr;
+function arrayGet<A>
+  input array<A> arr;
   input Integer index;
-  output TypeA value;
-  replaceable type TypeA subtypeof Any;
+  output A value;
 external "builtin";
 end arrayGet;
 
-function arrayNth
-  input array<TypeA> arr;
+function arrayNth<A> "index from 0 is depreceated; use arrayGet"
+  input array<A> arr;
   input Integer index;
-  output TypeA value;
-  replaceable type TypeA subtypeof Any;
+  output A value;
   annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 algorithm
   value := arrayGet(arr,index+1);
 end arrayNth;
 
-function arrayCreate
+function arrayCreate<A>
   input Integer size;
-  input TypeA initialValue;
-  output array<TypeA> arr;
-  replaceable type TypeA subtypeof Any;
+  input A initialValue;
+  output array<A> arr;
 external "builtin";
 end arrayCreate;
 
-function arrayList
-  input array<TypeA> arr;
-  output list<TypeA> lst;
-  replaceable type TypeA subtypeof Any;
+function arrayList<A>
+  input array<A> arr;
+  output List<A> lst;
 external "builtin";
 end arrayList;
 
-function listArray
-  input list<TypeA> lst;
-  output array<TypeA> arr;
-  replaceable type TypeA subtypeof Any;
+function listArray<A>
+  input List<A> lst;
+  output array<A> arr;
 external "builtin";
 end listArray;
 
-function arrayUpdate
-  input array<TypeA> arr;
+function arrayUpdate<A>
+  input array<A> arr;
   input Integer index;
-  input TypeA newValue;
-  output array<TypeA> newArray "same as the input array; not really needed here";
-  replaceable type TypeA subtypeof Any;
+  input A newValue;
+  output array<A> newArray "same as the input array; not really needed except to chain function calls";
   annotation(__OpenModelica_Impure = true);
 external "builtin";
 end arrayUpdate;
 
-function arrayCopy
-  input array<TypeA> arr;
-  output array<TypeA> copy;
-  replaceable type TypeA subtypeof Any;
+function arrayCopy<A>
+  input array<A> arr;
+  output array<A> copy;
 external "builtin";
 end arrayCopy;
 
-function arrayAdd "An arrayAppend operation would be more useful; this is very slow if used improperly!"
-  input array<TypeA> arr;
-  input TypeA a;
-  output array<TypeA> copy;
-  replaceable type TypeA subtypeof Any;
+function arrayAdd<A> "An arrayAppend operation would be more useful; this is very slow if used improperly!"
+  input array<A> arr;
+  input A a;
+  output array<A> copy;
 external "builtin";
 end arrayAdd;
 
-function anyString
-  "Returns the string representation of any value."
-  input TypeA a;
+function anyString<A>
+  "Returns the string representation of any value.
+  Rather slow; only use this for debugging!"
+  input A a;
   output String str;
-  replaceable type TypeA subtypeof Any;
 external "builtin";
 end anyString;
 
-function printAny
-  input TypeA a;
-  replaceable type TypeA subtypeof Any;
+function printAny<A>
+  input A a;
   annotation(__OpenModelica_Impure = true);
 external "builtin";
 end printAny;
 
-function debug_print
+function debug_print<A>
   input String str;
-  input TypeA a;
-  replaceable type TypeA subtypeof Any;
+  input A a;
   annotation(__OpenModelica_Impure = true);
 external "builtin";
 end debug_print;
@@ -675,61 +653,59 @@ function tick
 external "builtin";
 end tick;
 
-function equality
-  input TypeA a1;
-  input TypeA a2;
-  replaceable type TypeA subtypeof Any;
+function equality<A>
+  input A a1;
+  input A a2;
 external "builtin";
 end equality;
 
-function setGlobalRoot
+function setGlobalRoot<A>
   "Sets the index of the root variable with index 0..1023. This is a global mutable
   value and should be used sparingly.
   "
   input Integer index;
-  input TypeA value;
-  replaceable type TypeA subtypeof Any;
+  input A value;
   annotation(__OpenModelica_Impure = true);
 external "builtin";
 end setGlobalRoot;
 
-function valueConstructor
-  input TypeA value;
+function valueConstructor<A>
+  "The return-value is compiler-dependent on the runtime implementation of
+  boxed values. The number of bits reserved for the constructor is generally
+  between 6 and 8 bits."
+  input A value;
   output Integer ctor;
-  replaceable type TypeA subtypeof Any;
 external "builtin";
 end valueConstructor;
 
-function valueSlots
-  input TypeA value;
+function valueSlots<A>
+  "The number of slots a boxed value has. This is dependent on sizeof(void*)
+  on the architecture in question."
+  input A value;
   output Integer slots;
-  replaceable type TypeA subtypeof Any;
 external "builtin";
 end valueSlots;
 
-function valueEq
-  input TypeA a1;
-  input TypeA a2;
+function valueEq<A>
+  input A a1;
+  input A a2;
   output Boolean b;
-  replaceable type TypeA subtypeof Any;
 external "builtin";
 end valueEq;
 
-function valueHashMod
-  input TypeA value;
+function valueHashMod<A>
+  input A value;
   input Integer mod;
   output Integer hash;
-  replaceable type TypeA subtypeof Any;
 external "builtin";
 end valueHashMod;
 
-function referenceEq
+function referenceEq<A>
   "This is a very fast comparison of two values.
   It only checks if the pointers are equal."
-  input TypeA a1;
-  input TypeA a2;
+  input A a1;
+  input A a2;
   output Boolean b;
-  replaceable type TypeA subtypeof Any;
   annotation(__OpenModelica_Impure = true);
 external "builtin";
 end referenceEq;
@@ -741,24 +717,23 @@ function clock
 external "builtin";
 end clock;
 
-function optionNone "Returns true if the input is NONE()"
-  input Option<TypeA> opt;
-  output Boolean isNone;
-  replaceable type TypeA subtypeof Any;
+function isNone<A> "Returns true if the input is NONE()"
+  input Option<A> opt;
+  output Boolean none;
 external "builtin";
-end optionNone;
+end isNone;
 
 type NONE end NONE;
 type SOME end SOME;
 
 function listStringCharString
-  input list<String> strs;
+  input List<String> strs;
   output String str;
 external "builtin" str=stringAppendList(strs);
 end listStringCharString;
 
 function stringCharListString
-  input list<String> strs;
+  input List<String> strs;
   output String str;
 external "builtin" str=stringAppendList(strs);
 end stringCharListString;
