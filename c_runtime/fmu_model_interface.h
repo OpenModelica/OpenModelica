@@ -57,7 +57,7 @@ FmiGreater(fmiReal a, fmiReal b);
 fmiReal
 FmiGreaterEq(fmiReal a, fmiReal b);
 #define FMIZEROCROSSING(ind,exp) { \
-		eventIndicators[ind] = exp; \
-	}
+  eventIndicators[ind] = exp; \
+}
 
 #endif
