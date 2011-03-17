@@ -458,16 +458,16 @@ case MODELINFO(vars=SIMVARS(__)) then
   // Set values for all variables that define a start value
   void setStartValues(ModelInstance *comp) {
   
-  <%initVals(vars.stateVars,"r","states")%>
-  <%initDerivativeVals(vars.derivativeVars)%>
-  <%initVals(vars.algVars,"r","algebraics")%>
-  <%initVals(vars.paramVars,"r","parameters")%>
-  <%initVals(vars.intParamVars,"i","intVariables.parameters")%>
-  <%initVals(vars.intAlgVars,"i","intVariables.algebraics")%>
-  <%initVals(vars.boolParamVars,"b","boolVariables.parameters")%>
-  <%initVals(vars.boolAlgVars,"b","boolVariables.algebraics")%>
-  <%initVals(vars.stringParamVars,"s","stringVariables.parameters")%>
-  <%initVals(vars.stringAlgVars,"s","stringVariables.algebraics")%>  
+  <%vars.stateVars |> var => initVals(var,"states") ;separator="\n"%>
+  <%vars.derivativeVars |> var => initVals(var,"statesDerivatives") ;separator="\n"%>
+  <%vars.algVars |> var => initVals(var,"algebraics") ;separator="\n"%>
+  <%vars.paramVars |> var => initVals(var,"parameters") ;separator="\n"%>
+  <%vars.intParamVars |> var => initVals(var,"intVariables.parameters") ;separator="\n"%>
+  <%vars.intAlgVars |> var => initVals(var,"intVariables.algebraics") ;separator="\n"%>
+  <%vars.boolParamVars |> var => initVals(var,"boolVariables.parameters") ;separator="\n"%>
+  <%vars.boolAlgVars |> var => initVals(var,"boolVariables.algebraics") ;separator="\n"%>
+  <%vars.stringParamVars |> var => initVals(var,"stringVariables.parameters") ;separator="\n"%>
+  <%vars.stringAlgVars |> var => initVals(var,"stringVariables.algebraics") ;separator="\n"%>
   }
   >>
 end setStartValues;
@@ -495,40 +495,14 @@ template initializeFunction(list<SimEqSystem> allEquations)
 end initializeFunction;
 
 
-template initVals(list<SimVar> varsLst, String prefix, String arrayName) ::=
-  varsLst |> SIMVAR(__) =>
-  <<
-  globalData-><%arrayName%>[<%index%>] = <%match initialValue
-    case SOME(v) then
-     initVal(v)
-    else 
-     setDefaultVal(prefix)
-    %>;
-    >>  
-  ;separator="\n"
+template initVals(SimVar var, String arrayName) ::=
+  match var
+    case SIMVAR(__) then
+    let str = 'globalData-><%arrayName%>[<%index%>]'
+    match initialValue 
+      case SOME(v) then 
+       '<%str%> = <%initVal(v)%>;'
 end initVals;
-
-template setDefaultVal(String prefix) 
-::=
-  match prefix 
-  case "r" then "0.0; //default value for real"
-  case "i" then "0; //default value for integer"
-  case "b" then "false; //default value for bool"
-  case "s" then "\"\"; //default value for string"
-end setDefaultVal;
-
-template initDerivativeVals(list<SimVar> varsLst) ::=
-  varsLst |> SIMVAR(__) =>
-  <<
-  globalData->statesDerivatives[<%index%>] = <%match initialValue
-    case SOME(v) then
-     initVal(v)
-    else 
-     "0.0; //default"
-    %>; 
-    >>
-  ;separator="\n"
-end initDerivativeVals;
 
 template initVal(Exp initialValue) 
 ::=
