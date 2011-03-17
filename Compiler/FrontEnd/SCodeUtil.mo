@@ -1029,7 +1029,7 @@ algorithm
     local
       SCode.ClassDef de_1;
       SCode.Restriction re_1;
-      Boolean prot,rp,pa,fi,e,repl_1,fl,st;
+      Boolean prot,rp,pa,fi,e,repl_1,fl,st,redecl;
       Option<Absyn.RedeclareKeywords> repl;
       Absyn.Class cl;
       String n;
@@ -1060,8 +1060,9 @@ algorithm
         // Debug.fprintln("translate", "translating local class: " +& n);
         re_1 = translateRestriction(cl, re); // uniontype will not get translated!
         de_1 = translateClassdef(de,i);
+        (_, redecl) = translateRedeclarekeywords(repl);
       then
-        {SCode.CLASSDEF(n,finalPrefix,rp,SCode.CLASS(n,pa,e,re_1,de_1,i),cc)};
+        {SCode.CLASSDEF(n,finalPrefix,rp,redecl,SCode.CLASS(n,pa,e,re_1,de_1,i),cc)};
 
     case (cc,finalPrefix,_,repl,prot,Absyn.EXTENDS(path = path,elementArg = args,annotationOpt = NONE()),info)
       equation
@@ -1091,10 +1092,10 @@ algorithm
         mod = translateMod(m, false, Absyn.NON_EACH());
         pa_1 = translateVariability(variability) "PR. This adds the arraydimension that may be specified together with the type of the component." ;
         tot_dim = listAppend(d, ad);
-        repl_1 = translateRedeclarekeywords(repl);
+        (repl_1, redecl) = translateRedeclarekeywords(repl);
         comment_1 = translateComment(comment);
       then
-        (SCode.COMPONENT(n,io,finalPrefix,repl_1,prot,SCode.ATTR(tot_dim,fl,st,SCode.RW(),pa_1,di),t,mod,comment_1,cond,info,cc) :: xs_1);
+        (SCode.COMPONENT(n,io,finalPrefix,repl_1,prot,redecl,SCode.ATTR(tot_dim,fl,st,SCode.RW(),pa_1,di),t,mod,comment_1,cond,info,cc) :: xs_1);
 
     case (cc,finalPrefix,_,repl,prot,Absyn.IMPORT(import_ = imp, info = info),_)
       equation
@@ -1142,13 +1143,15 @@ protected function translateRedeclarekeywords
 "function: translateRedeclarekeywords
   author: PA
   For now, translate to bool, replaceable."
-  input Option<Absyn.RedeclareKeywords> inAbsynRedeclareKeywordsOption;
-  output Boolean outBoolean;
+  input Option<Absyn.RedeclareKeywords> inRedeclKeywords;
+  output Boolean outIsReplaceable;
+  output Boolean outIsRedeclared;
 algorithm
-  outBoolean := match (inAbsynRedeclareKeywordsOption)
-    case (SOME(Absyn.REPLACEABLE())) then true;
-    case (SOME(Absyn.REDECLARE_REPLACEABLE())) then true;
-    else false;
+  (outIsReplaceable, outIsRedeclared) := match (inRedeclKeywords)
+    case (SOME(Absyn.REDECLARE())) then (false, true);
+    case (SOME(Absyn.REPLACEABLE())) then (true, false);
+    case (SOME(Absyn.REDECLARE_REPLACEABLE())) then (true, true);
+    else (false, false);
   end match;
 end translateRedeclarekeywords;
 
@@ -1395,7 +1398,7 @@ algorithm
     local
       SCode.Ident a1;
       Absyn.InnerOuter a2;
-      Boolean a3,a4,a5;
+      Boolean a3,a4,a5,rd;
       SCode.Attributes a6;
       Absyn.TypeSpec a7;
       SCode.Mod a8;
@@ -1403,11 +1406,11 @@ algorithm
       Option<Absyn.Exp> a11;
       Option<Absyn.ConstrainClass> a13;
 
-  case(SCode.COMPONENT(a1,a2,a3,a4,a5,a6,a7,a8,a10,a11,_,a13), nfo)
-    then SCode.COMPONENT(a1,a2,a3,a4,a5,a6,a7,a8,a10,a11,nfo,a13);
+    case(SCode.COMPONENT(a1,a2,a3,a4,a5,rd,a6,a7,a8,a10,a11,_,a13), nfo)
+      then SCode.COMPONENT(a1,a2,a3,a4,a5,rd,a6,a7,a8,a10,a11,nfo,a13);
 
-  case(elem,_) then elem;
-    end matchcontinue;
+    else elem;
+  end matchcontinue;
 end translateElementAddinfo;
 
 /* Modification management */
@@ -1866,7 +1869,7 @@ protected
 algorithm
   ts := Absyn.TCOMPLEX(Absyn.IDENT("polymorphic"),{Absyn.TPATH(Absyn.IDENT("Any"),NONE())},NONE());
   cd := SCode.DERIVED(ts,SCode.NOMOD(),Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),NONE()); 
-  elt := SCode.CLASSDEF(str,true,false,SCode.CLASS(str,false,false,SCode.R_TYPE(),cd,info),NONE());
+  elt := SCode.CLASSDEF(str,true,false,false,SCode.CLASS(str,false,false,SCode.R_TYPE(),cd,info),NONE());
 end makeTypeVarElement;
 
 end SCodeUtil;

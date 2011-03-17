@@ -1712,7 +1712,7 @@ algorithm
       inClassName, inAccumPath, inCollectConstants)
     local
       SCode.Ident name;
-      Boolean fp, rp;
+      Boolean fp, rp, rd;
       SCode.Class cls;
       Option<Absyn.ConstrainClass> cc;
       Env env;
@@ -1720,12 +1720,12 @@ algorithm
       Absyn.Path cls_path;
 
     // A class definition, just use collectUsedClass.
-    case (SCode.CLASSDEF(name, fp, rp, cls, cc), _, env, _, _, _)
+    case (SCode.CLASSDEF(name, fp, rp, rd, cls, cc), _, env, _, _, _)
       equation
         cls_path = Absyn.joinPaths(inAccumPath, Absyn.IDENT(name));
         (cls, env) = collectUsedClass(cls, inClsAndVars, inClassName, env, cls_path);
       then
-        (SCode.CLASSDEF(name, fp, rp, cls, cc), env);
+        (SCode.CLASSDEF(name, fp, rp, rd, cls, cc), env);
   
     // A constant.
     case (SCode.COMPONENT(component = name, 

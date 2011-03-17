@@ -134,7 +134,7 @@ algorithm
     local
       SCode.Ident name, name2;
       Absyn.Ident id;
-      Boolean fp, rp, pp, ep;
+      Boolean fp, rp, pp, ep, rd;
       Option<Absyn.ConstrainClass> cc;
       Option<Absyn.ArrayDim> ad;
       Absyn.Path path;
@@ -153,6 +153,7 @@ algorithm
           name = name, 
           finalPrefix = fp, 
           replaceablePrefix = rp,
+          redeclarePrefix = rd,
           classDef = SCode.CLASS(
             name = name2,
             partialPrefix = pp,
@@ -168,17 +169,17 @@ algorithm
       equation
         path = qualifyPath(path, inEnv, info);
       then
-        SCode.CLASSDEF(name, fp, rp, 
+        SCode.CLASSDEF(name, fp, rp, rd,
           SCode.CLASS(name2, pp, ep, res,
             SCode.DERIVED(Absyn.TPATH(path, ad), mods, eattr, cmt),
             info), cc);
 
-    case (SCode.COMPONENT(name, io, fp, rp, pp, attr, 
+    case (SCode.COMPONENT(name, io, fp, rp, pp, rd, attr, 
         Absyn.TPATH(path, array_dim), mods, cmt, cond, info, cc), _)
       equation
         path = qualifyPath(path, inEnv, info);
       then
-        SCode.COMPONENT(name, io, fp, rp, pp, attr, 
+        SCode.COMPONENT(name, io, fp, rp, pp, rd, attr, 
           Absyn.TPATH(path, array_dim), mods, cmt, cond, info, cc);
 
     else
@@ -948,7 +949,7 @@ protected
 algorithm
   SCode.ENUM(literal = lit_name) := inEnum;
   enum_lit := SCode.COMPONENT(lit_name, Absyn.UNSPECIFIED(), 
-    false, false, false, 
+    false, false, false, false,
     SCode.ATTR({}, false, false, SCode.RO(), SCode.CONST(), Absyn.BIDIR()),
     inEnumType, SCode.NOMOD(), NONE(), NONE(), Absyn.dummyInfo, NONE());
   outEnv := extendEnvWithElement(enum_lit, inEnv);
@@ -977,7 +978,7 @@ protected
 algorithm
   Absyn.ITERATOR(name=iter_name) := inIterator;
   iter := SCode.COMPONENT(iter_name, Absyn.UNSPECIFIED(),
-    false, false, false,
+    false, false, false, false,
     SCode.ATTR({}, false, false, SCode.RO(), SCode.CONST(), Absyn.BIDIR()),
     Absyn.TPATH(Absyn.IDENT(""), NONE()), SCode.NOMOD(),
     NONE(), NONE(), Absyn.dummyInfo, NONE());

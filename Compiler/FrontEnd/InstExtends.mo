@@ -389,7 +389,8 @@ algorithm
       SCode.Element elt,compelt,classExtendsElt;
       SCode.Class cl,classExtendsClass;
       SCode.ClassDef classDef,classExtendsCdef;
-      Boolean partialPrefix2,encapsulatedPrefix2,finalPrefix2,replaceablePrefix2,partialPrefix1,encapsulatedPrefix1,finalPrefix1,replaceablePrefix1;
+      Boolean partialPrefix1,encapsulatedPrefix1,finalPrefix1,replaceablePrefix1,redecl1;
+      Boolean partialPrefix2,encapsulatedPrefix2,finalPrefix2,replaceablePrefix2,redecl2;
       SCode.Restriction restriction1,restriction2;
       String name1,name2,env_path;
       Option<Absyn.ExternalDecl> externalDecl;
@@ -406,7 +407,7 @@ algorithm
       Absyn.Info info1, info2;
       Boolean b;
 
-    case (_,emod,name1,classExtendsElt,(SCode.CLASSDEF(name2,finalPrefix2,replaceablePrefix2,cl,cc2),mod1,b)::rest)
+    case (_,emod,name1,classExtendsElt,(SCode.CLASSDEF(name2,finalPrefix2,replaceablePrefix2,redecl2,cl,cc2),mod1,b)::rest)
       equation
         true = name1 ==& name2; // Compare the name before pattern-matching to speed this up
 
@@ -414,18 +415,18 @@ algorithm
         name2 = env_path +& "." +& name2 +& "$parent";
         SCode.CLASS(_,partialPrefix2,encapsulatedPrefix2,restriction2,SCode.PARTS(els2,nEqn2,inEqn2,nAlg2,inAlg2,externalDecl,annotationLst2,comment2),info2) = cl;
 
-        SCode.CLASSDEF(_, finalPrefix1, replaceablePrefix1, classExtendsClass, cc1) = classExtendsElt;
+        SCode.CLASSDEF(_, finalPrefix1, replaceablePrefix1, redecl1, classExtendsClass, cc1) = classExtendsElt;
         SCode.CLASS(_, partialPrefix1, encapsulatedPrefix1, restriction1, classExtendsCdef, info1) = classExtendsClass;
         SCode.CLASS_EXTENDS(_,mods,els1,nEqn1,inEqn1,nAlg1,inAlg1,annotationLst1,comment1) = classExtendsCdef;
 
         classDef = SCode.PARTS(els2,nEqn2,inEqn2,nAlg2,inAlg2,externalDecl,annotationLst2,comment2);
         cl = SCode.CLASS(name2,partialPrefix2,encapsulatedPrefix2,restriction2,classDef,info2);
-        compelt = SCode.CLASSDEF(name2, finalPrefix2, replaceablePrefix2, cl, cc2);
+        compelt = SCode.CLASSDEF(name2, finalPrefix2, replaceablePrefix2, redecl2, cl, cc2);
 
         elt = SCode.EXTENDS(Absyn.IDENT(name2),mods,NONE(),info1);
         classDef = SCode.PARTS(elt::els1,nEqn1,inEqn1,nAlg1,inAlg1,NONE(),annotationLst1,comment1);
         cl = SCode.CLASS(name1,partialPrefix1,encapsulatedPrefix1,restriction1,classDef, info1);
-        elt = SCode.CLASSDEF(name1, finalPrefix1, replaceablePrefix1, cl, cc1);
+        elt = SCode.CLASSDEF(name1, finalPrefix1, replaceablePrefix1, redecl1, cl, cc1);
         emod = Mod.renameTopLevelNamedSubMod(emod,name1,name2);
         // Debug.traceln("class extends: " +& SCode.printElementStr(compelt) +& "  " +& SCode.printElementStr(elt));
       then (emod,(compelt,mod1,b)::(elt,DAE.NOMOD(),true)::rest);
@@ -759,7 +760,7 @@ algorithm
     local
       String id,name,component;
       Absyn.InnerOuter innerOuter;
-      Boolean finalPrefix,replaceablePrefix,protectedPrefix,partialPrefix;
+      Boolean finalPrefix,replaceablePrefix,protectedPrefix,partialPrefix,redeclarePrefix;
       SCode.Attributes attributes;
       Absyn.TypeSpec typeSpec;
       SCode.Mod modifications;
@@ -772,23 +773,23 @@ algorithm
       Option<SCode.Annotation> optAnnotation;
       Absyn.Path extendsPath;
     
-    case (cache,env,SCode.COMPONENT(component, innerOuter, finalPrefix, replaceablePrefix, protectedPrefix, attributes, typeSpec, modifications, comment, condition, info, cc),ht)
+    case (cache,env,SCode.COMPONENT(component, innerOuter, finalPrefix, replaceablePrefix, protectedPrefix, redeclarePrefix, attributes, typeSpec, modifications, comment, condition, info, cc),ht)
       equation
         //Debug.fprintln("debug","fix comp " +& SCode.printElementStr(elt));
         (cache,modifications) = fixModifications(cache,env,modifications,ht);
         (cache,typeSpec) = fixTypeSpec(cache,env,typeSpec,ht);
-      then (cache,SCode.COMPONENT(component, innerOuter, finalPrefix, replaceablePrefix, protectedPrefix, attributes, typeSpec, modifications, comment, condition, info, cc));
-    case (cache,env,SCode.CLASSDEF(id,finalPrefix,replaceablePrefix,SCode.CLASS(name,partialPrefix,true,restriction,classDef,info),cc),ht)
+      then (cache,SCode.COMPONENT(component, innerOuter, finalPrefix, replaceablePrefix, protectedPrefix, redeclarePrefix, attributes, typeSpec, modifications, comment, condition, info, cc));
+    case (cache,env,SCode.CLASSDEF(id,finalPrefix,replaceablePrefix,redeclarePrefix,SCode.CLASS(name,partialPrefix,true,restriction,classDef,info),cc),ht)
       equation
         //Debug.fprintln("debug","fixClassdef " +& id);
         (cache,env) = Builtin.initialEnv(cache);
         (cache,classDef) = fixClassdef(cache,env,classDef,ht);
-      then (cache,SCode.CLASSDEF(id,finalPrefix,replaceablePrefix,SCode.CLASS(name,partialPrefix,true,restriction,classDef,info),cc));
-    case (cache,env,SCode.CLASSDEF(id,finalPrefix,replaceablePrefix,SCode.CLASS(name,partialPrefix,false,restriction,classDef,info),cc),ht)
+      then (cache,SCode.CLASSDEF(id,finalPrefix,replaceablePrefix,redeclarePrefix,SCode.CLASS(name,partialPrefix,true,restriction,classDef,info),cc));
+    case (cache,env,SCode.CLASSDEF(id,finalPrefix,replaceablePrefix,redeclarePrefix,SCode.CLASS(name,partialPrefix,false,restriction,classDef,info),cc),ht)
       equation
         //Debug.fprintln("debug","fixClassdef " +& id);
         (cache,classDef) = fixClassdef(cache,env,classDef,ht);
-      then (cache,SCode.CLASSDEF(id,finalPrefix,replaceablePrefix,SCode.CLASS(name,partialPrefix,false,restriction,classDef,info),cc));
+      then (cache,SCode.CLASSDEF(id,finalPrefix,replaceablePrefix,redeclarePrefix,SCode.CLASS(name,partialPrefix,false,restriction,classDef,info),cc));
     case (cache,env,SCode.EXTENDS(extendsPath,modifications,optAnnotation,info),ht)
       equation
         //Debug.fprintln("debug","fix extends " +& SCode.printElementStr(elt));

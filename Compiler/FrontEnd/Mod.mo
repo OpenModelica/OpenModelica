@@ -253,7 +253,8 @@ protected function elabModRedeclareElements
 algorithm
   modElts := match(inCache,inEnv,inIH,inPrefix,finalPrefix,elts,impl,info)
     local
-      Env.Cache cache; Env.Env env; Prefix.Prefix pre; Boolean f,fi,repl,p,enc,prot;
+      Env.Cache cache; Env.Env env; Prefix.Prefix pre; 
+      Boolean f,fi,repl,p,enc,prot,redecl;
       Absyn.InnerOuter io;
       SCode.Ident cn,cn2,compname;
       Option<SCode.Comment> cmt;
@@ -270,30 +271,35 @@ algorithm
       list<SCode.Enum> enumLst;
       Option<SCode.Comment> comment;
 
-      /* the empty case */
-      case(cache,env,_,pre,f,{},_,_) then ({});
+    /* the empty case */
+    case(cache,env,_,pre,f,{},_,_) then ({});
 
-         // Only derived classdefinitions supported in redeclares for now. TODO: What is allowed according to spec?
-      case(cache,env,ih,pre,f,SCode.CLASSDEF(cn,fi,repl,SCode.CLASS(cn2,p,enc,restr,SCode.DERIVED(tp,mod,attr1,cmt),i),cc)::elts,impl,info)
-        equation
-         (cache,emod) = elabMod(cache,env,ih,pre,mod,impl,info);
-         (modElts) = elabModRedeclareElements(cache,env,ih,pre,f,elts,impl,info);
-         (cache,tp1) = elabModQualifyTypespec(cache,env,tp);
-        then ((SCode.CLASSDEF(cn,fi,repl,SCode.CLASS(cn,p,enc,restr,SCode.DERIVED(tp1,mod,attr1,cmt),i),cc),emod)::modElts);
+    // Only derived classdefinitions supported in redeclares for now. TODO: What is allowed according to spec?
+    case(cache,env,ih,pre,f,SCode.CLASSDEF(cn,fi,repl,redecl,SCode.CLASS(cn2,p,enc,restr,SCode.DERIVED(tp,mod,attr1,cmt),i),cc)::elts,impl,info)
+      equation
+       (cache,emod) = elabMod(cache,env,ih,pre,mod,impl,info);
+       (modElts) = elabModRedeclareElements(cache,env,ih,pre,f,elts,impl,info);
+       (cache,tp1) = elabModQualifyTypespec(cache,env,tp);
+      then 
+        ((SCode.CLASSDEF(cn,fi,repl,redecl,SCode.CLASS(cn,p,enc,restr,SCode.DERIVED(tp1,mod,attr1,cmt),i),cc),emod)::modElts);
 
-   // replaceable type E=enumeration(e1,...,en), E=enumeration(:)
-      case(cache,env,ih,pre,f,SCode.CLASSDEF(cn,fi,repl,SCode.CLASS(cn2,p,enc,restr,SCode.ENUMERATION(enumLst,comment),i),cc)::elts,impl,info)
-        equation
-         (modElts) = elabModRedeclareElements(cache,env,ih,pre,f,elts,impl,info);
-        then ((SCode.CLASSDEF(cn,fi,repl,SCode.CLASS(cn,p,enc,restr,SCode.ENUMERATION(enumLst,comment),i),cc),DAE.NOMOD())::modElts);
+    // replaceable type E=enumeration(e1,...,en), E=enumeration(:)
+    case(cache,env,ih,pre,f,SCode.CLASSDEF(cn,fi,repl,redecl,SCode.CLASS(cn2,p,enc,restr,SCode.ENUMERATION(enumLst,comment),i),cc)::elts,impl,info)
+      equation
+        (modElts) = elabModRedeclareElements(cache,env,ih,pre,f,elts,impl,info);
+      then 
+        ((SCode.CLASSDEF(cn,fi,repl,redecl,SCode.CLASS(cn,p,enc,restr,SCode.ENUMERATION(enumLst,comment),i),cc),DAE.NOMOD())::modElts);
 
-        // redeclare of component declaration
-      case(cache,env,ih,pre,f,SCode.COMPONENT(compname,io,fi,repl,prot,attr,tp,mod,cmt,cond,i,cc)::elts,impl,info) equation
+    // redeclare of component declaration
+    case(cache,env,ih,pre,f,SCode.COMPONENT(compname,io,fi,repl,prot,redecl,attr,tp,mod,cmt,cond,i,cc)::elts,impl,info) 
+      equation
         (cache,emod) = elabMod(cache,env,ih,pre,mod,impl,info);
         (modElts) = elabModRedeclareElements(cache,env,ih,pre,f,elts,impl,info);
         (cache,tp1) = elabModQualifyTypespec(cache,env,tp);
-      then ((SCode.COMPONENT(compname,io,fi,repl,prot,attr,tp1,mod,cmt,cond,i,cc),emod)::modElts);
-    end match;
+      then 
+        ((SCode.COMPONENT(compname,io,fi,repl,prot,redecl,attr,tp1,mod,cmt,cond,i,cc),emod)::modElts);
+
+  end match;
 end elabModRedeclareElements;
 
 protected function elabModQualifyTypespec
@@ -1736,7 +1742,7 @@ algorithm
   outMod := matchcontinue (inMod1,inMod2,inEnv3,inPrefix4)
     local
       DAE.Mod m,m1_1,m2_1,m_2,mod,mods,outer_,inner_,mm1,mm2,mm3,cm,icm;
-      Boolean f1,f,r,p,f2,finalPrefix;
+      Boolean f1,f,r,p,f2,finalPrefix,redecl;
       Absyn.InnerOuter io;
       Ident id1,id2;
       SCode.Attributes attr;
@@ -1766,6 +1772,7 @@ algorithm
     // redeclaring same component
     case (DAE.REDECL(finalPrefix = f1,tplSCodeElementModLst =
     {(SCode.COMPONENT(component = id1,innerOuter=io,finalPrefix = f,replaceablePrefix = r,protectedPrefix = p,
+      redeclarePrefix = redecl,
       attributes = attr,typeSpec = tp,modifications = m1,comment=comment,condition=cond,info=info),_)}),
       DAE.REDECL(finalPrefix = f2,tplSCodeElementModLst =
       {(SCode.COMPONENT(component = id2,modifications = m2,comment = comment2,cc=cc),_)}),env,pre)
@@ -1775,7 +1782,7 @@ algorithm
         m2_1 = elabUntypedMod(m2, env, pre);
         m_2 = merge(m1_1, m2_1, env, pre);
       then
-        DAE.REDECL(f1,{(SCode.COMPONENT(id1,io,f,r,p,attr,tp,SCode.NOMOD(),comment,cond,info,cc),m_2)});
+        DAE.REDECL(f1,{(SCode.COMPONENT(id1,io,f,r,p,redecl,attr,tp,SCode.NOMOD(),comment,cond,info,cc),m_2)});
 
     // luc_pop : this shoud return the first mod because it have been merged in merge_subs
     case ((mod as DAE.REDECL(finalPrefix = f1,tplSCodeElementModLst = (els as {(SCode.COMPONENT(component = id1),_)}))),(mods as DAE.MOD(subModLst = subs)),env,pre) then mod;

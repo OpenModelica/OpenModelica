@@ -5657,7 +5657,7 @@ algorithm
       ClassInf.State cistate;
       SCode.Element comp;
       String n, ns;
-      Boolean finalPrefix,repl,prot,flowPrefix,streamPrefix,impl;
+      Boolean finalPrefix,repl,prot,flowPrefix,streamPrefix,impl,redecl;
       Absyn.InnerOuter io;
       SCode.Attributes attr;
       list<Absyn.Subscript> ad;
@@ -5702,6 +5702,7 @@ algorithm
                                    finalPrefix = finalPrefix,
                                    replaceablePrefix = repl,
                                    protectedPrefix = prot,
+                                   redeclarePrefix = redecl,
                                    attributes = (attr as SCode.ATTR(arrayDims = ad,flowPrefix = flowPrefix,
                                                                     streamPrefix = streamPrefix,accesibility = acc,
                                                                     variability = param,direction = dir)),
@@ -5718,7 +5719,7 @@ algorithm
         // compModLocal = Mod.lookupCompModification12(mod,n);
         // print(" \t comp: " +& n +& " " +& " compModLocal: " +& Mod.printModStr(compModLocal) +& "\n");
         (cache,env,ih,selem,smod,csets) = redeclareType(cache,env,ih,compModLocal,
-        /*comp,*/ SCode.COMPONENT(n,io,finalPrefix,repl,prot,attr,tss,m,comment,aExp, aInfo,cc),
+        /*comp,*/ SCode.COMPONENT(n,io,finalPrefix,repl,prot,redecl,attr,tss,m,comment,aExp, aInfo,cc),
         pre, cistate, csets, impl,cmod);
         // Debug.traceln(" adding comp: " +& n +& " " +& Mod.printModStr(mod) +& " cmod: " +& Mod.printModStr(cmod) +& " cmL: " +& Mod.printModStr(compModLocal) +& " smod: " +& Mod.printModStr(smod));
         // print(" \t comp: " +& n +& " " +& " smod: " +& Mod.printModStr(smod) +& "\n");
@@ -5734,6 +5735,7 @@ algorithm
                                    finalPrefix = finalPrefix,
                                    replaceablePrefix = repl,
                                    protectedPrefix = prot,
+                                   redeclarePrefix = redecl,
                                    attributes = (attr as SCode.ATTR(arrayDims = ad,flowPrefix = flowPrefix,
                                                                     streamPrefix = streamPrefix,accesibility = acc,
                                                                     variability = param,direction = dir)),
@@ -5745,7 +5747,7 @@ algorithm
         allcomps,eqns,instdims,impl)
       equation
         m = traverseModAddFinal(m, finalPrefix);
-        comp = SCode.COMPONENT(n,io,finalPrefix,repl,prot,attr,t,m,comment,aExp,aInfo,cc);
+        comp = SCode.COMPONENT(n,io,finalPrefix,repl,prot,redecl,attr,t,m,comment,aExp,aInfo,cc);
         (cache,env_1,ih) = addComponentsToEnv2(cache, env, ih, mod, pre, csets, cistate, {(comp,cmod)}, instdims, impl);
         (cache,env_2,ih) = addComponentsToEnv(cache, env_1, ih, mod, pre, csets, cistate, xs, allcomps, eqns, instdims, impl);
       then
@@ -5808,7 +5810,7 @@ algorithm
       ClassInf.State ci_state;
       SCode.Element comp;
       String n;
-      Boolean finalPrefix,repl,prot,flowPrefix,streamPrefix,impl;
+      Boolean finalPrefix,repl,prot,flowPrefix,streamPrefix,impl,redecl;
       Absyn.InnerOuter io;
       SCode.Attributes attr;
       list<Absyn.Subscript> ad;
@@ -5828,7 +5830,7 @@ algorithm
 
     // a component
     case (cache,env,ih,mods,pre,csets,ci_state,
-          ((comp as SCode.COMPONENT(n,io,finalPrefix,repl,prot,
+          ((comp as SCode.COMPONENT(n,io,finalPrefix,repl,prot,redecl,
                                     attr as SCode.ATTR(ad,flowPrefix,streamPrefix,acc,param,dir),
                                     t,m,comment,condition,info,cc),cmod) :: xs),
           inst_dims,impl)
@@ -5973,7 +5975,7 @@ algorithm
       Absyn.Import imp;
       InstDims instdims,inst_dims;
       String n,n2,s,scope_str,ns;
-      Boolean finalPrefix,repl,prot,f2,repl2,impl,flowPrefix,streamPrefix;
+      Boolean finalPrefix,repl,prot,f2,repl2,impl,flowPrefix,streamPrefix,redecl;
       SCode.Class cls2,c,cl;
       DAE.DAElist dae;
       DAE.ComponentRef vn;
@@ -6027,7 +6029,7 @@ algorithm
       equation
 
         //Redeclare of class definition, replaceable is true
-        ((classmod as DAE.REDECL(finalPrefix,{(SCode.CLASSDEF(n2,f2,repl2,cls2,cc),_)}))) = Mod.lookupModificationP(mods, Absyn.IDENT(n));
+        ((classmod as DAE.REDECL(finalPrefix,{(SCode.CLASSDEF(n2,f2,repl2,_,cls2,cc),_)}))) = Mod.lookupModificationP(mods, Absyn.IDENT(n));
         //print(" to strp redecl?\n");
         classmod = Types.removeMod(classmod,n);
         (cache,env_1,ih,dae) = instClassDecl(cache,env,ih, classmod, pre, csets, cls2, inst_dims);
@@ -6043,7 +6045,7 @@ algorithm
     /* non replaceable class definition */
     case (cache,env,ih,store,mods,pre,csets,ci_state,(SCode.CLASSDEF(name = n,replaceablePrefix = false,classDef = SCode.CLASS(info=info)),_),inst_dims,impl,_,_)
       equation
-        ((classmod as DAE.REDECL(finalPrefix,{(SCode.CLASSDEF(n2,f2,repl2,cls2,_),_)}))) = Mod.lookupModificationP(mods, Absyn.IDENT(n))
+        ((classmod as DAE.REDECL(finalPrefix,{(SCode.CLASSDEF(n2,f2,repl2,_,cls2,_),_)}))) = Mod.lookupModificationP(mods, Absyn.IDENT(n))
         "Redeclare of class definition, replaceable is false" ;
         Error.addSourceMessage(Error.REDECLARE_NON_REPLACEABLE, {n}, info);
       then
@@ -6069,6 +6071,7 @@ algorithm
     case (cache,env,ih,store,mods,pre,csets,ci_state,
           ((comp as SCode.COMPONENT(component = n,innerOuter=io,
                                     finalPrefix = finalPrefix,replaceablePrefix = repl,protectedPrefix = prot,
+                                    redeclarePrefix = redecl,
                                     attributes = (attr as SCode.ATTR(arrayDims = ad,flowPrefix = flowPrefix,
                                                                      streamPrefix = streamPrefix, accesibility = acc,
                                                                      variability = param,direction = dir)),
@@ -6083,7 +6086,7 @@ algorithm
         //Debug.fprintln("debug"," instElement " +& n +& " in s:" +& Env.printEnvPathStr(env) +& " m: " +& SCode.printModStr(m) +& " cm : " +& Mod.printModStr(cmod));
         //false = stringEq(n, Absyn.pathLastIdent(t));
         m = traverseModAddFinal(m, finalPrefix);
-        comp = SCode.COMPONENT(n,io,finalPrefix,repl,prot,attr,ts,m,comment,cond,info,cc);
+        comp = SCode.COMPONENT(n,io,finalPrefix,repl,prot,redecl,attr,ts,m,comment,cond,info,cc);
         // Fails if multiple decls not identical
         alreadyDeclared = checkMultiplyDeclared(cache,env,mods,pre,csets,ci_state,(comp,cmod),inst_dims,impl);
         ci_state = ClassInf.trans(ci_state, ClassInf.FOUND_COMPONENT(n));
@@ -6154,7 +6157,7 @@ algorithm
 
         /* Apply redeclaration modifier to component */
         (cache,env2_1,ih,
-         SCode.COMPONENT(n,io,finalPrefix,repl,prot,
+          SCode.COMPONENT(n,io,finalPrefix,repl,prot,redecl,
           (attr as SCode.ATTR(ad,flowPrefix,streamPrefix,acc,param,dir)),
           Absyn.TPATH(t, _),m,comment,cond,_,_),
           mod_1,csets) = redeclareType(cache, env2, ih, mod1_1, comp, pre, ci_state, csets, impl, DAE.NOMOD());
@@ -6226,14 +6229,14 @@ algorithm
     // MetaModelica Complex Types. Part of MetaModelica extension.
     //------------------------------------------------------------------------
     case (cache,env,ih,store,mods,pre,csets,ci_state,
-          ((comp as SCode.COMPONENT(n,io,finalPrefix,repl,prot,attr as SCode.ATTR(ad,flowPrefix,streamPrefix,acc,param,dir),
+          ((comp as SCode.COMPONENT(n,io,finalPrefix,repl,prot,redecl,attr as SCode.ATTR(ad,flowPrefix,streamPrefix,acc,param,dir),
                                     tSpec as Absyn.TCOMPLEX(typeName,_,_),m,comment,cond,info,cc),cmod)),
           inst_dims,impl,_,graph)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         // see if we have a modification on the inner component
         m = traverseModAddFinal(m, finalPrefix);
-        comp = SCode.COMPONENT(n,io,finalPrefix,repl,prot,attr,tSpec,m,comment,cond,info,cc);
+        comp = SCode.COMPONENT(n,io,finalPrefix,repl,prot,redecl,attr,tSpec,m,comment,cond,info,cc);
 
         // Fails if multiple decls not identical
         alreadyDeclared = checkMultiplyDeclared(cache,env,mods,pre,csets,ci_state,(comp,cmod),inst_dims,impl);
@@ -6628,7 +6631,7 @@ algorithm
       SCode.Class c1, c2;
       Absyn.Path tpath1, tpath2;
       Absyn.Info aInfo;
-      Boolean fp1,fp2,rp1,rp2,pp1,pp2;
+      Boolean fp1,fp2,rp1,rp2,pp1,pp2,rd1,rd2;
       Absyn.InnerOuter io1,io2;
       SCode.Attributes attr1,attr2;
       Absyn.TypeSpec tp1,tp2;
@@ -6648,8 +6651,8 @@ algorithm
     // adrpo: see if they are not syntactically equivalent, but semantically equivalent!
     //        see Modelica Spec. 3.1, page 66.
     // COMPONENT
-    case (cache,env,(oldElt as SCode.COMPONENT(n1, io1, fp1, rp1, pp1, attr1, tp1 as Absyn.TPATH(tpath1, ad1), smod1, _, cond1, aInfo, cc1),oldMod),
-                    (newElt as SCode.COMPONENT(n2, io2, fp2, rp2, pp2, attr2, tp2 as Absyn.TPATH(tpath2, ad2), smod2, _, cond2, _, cc2),newMod))
+    case (cache,env,(oldElt as SCode.COMPONENT(n1, io1, fp1, rp1, pp1, rd1, attr1, tp1 as Absyn.TPATH(tpath1, ad1), smod1, _, cond1, aInfo, cc1),oldMod),
+                    (newElt as SCode.COMPONENT(n2, io2, fp2, rp2, pp2, rd2, attr2, tp2 as Absyn.TPATH(tpath2, ad2), smod2, _, cond2, _, cc2),newMod))
       equation
         // see if the most stuff is the same!
         true = stringEq(n1, n2);
@@ -6657,6 +6660,7 @@ algorithm
         true = boolEq(fp1, fp2);
         true = boolEq(rp1, rp2);
         true = boolEq(pp1, pp2);
+        true = boolEq(rd1, rd2);
         true = SCode.attributesEqual(attr1, attr2);
         true = SCode.modEqual(smod1, smod2);
         equality(ad1 = ad2);
@@ -6800,7 +6804,7 @@ algorithm
       DAE.Mod m_1,old_m_1,m_2,m_3,m,rmod,innerCompMod,compMod;
       SCode.Element redecl,newcomp,comp,redComp;
       String n1,n2;
-      Boolean finalPrefix,repl,prot,repl2,prot2,impl,redfin;
+      Boolean finalPrefix,repl,prot,repl2,prot2,impl,redfin,redeclp;
       Absyn.TypeSpec t,t2;
       SCode.Mod mod,old_mod;
       Option<SCode.Comment> comment;
@@ -6822,7 +6826,7 @@ algorithm
     /* Implicit instantation */
     case (cache,env,ih,(m as DAE.REDECL(tplSCodeElementModLst = (((redecl as
           SCode.COMPONENT(component = n1,finalPrefix = finalPrefix,replaceablePrefix = repl,protectedPrefix = prot,
-                          typeSpec = t,modifications = mod,comment = comment,
+                          redeclarePrefix = redeclp, typeSpec = t,modifications = mod,comment = comment,
                           innerOuter = io, attributes = at,condition = cond, info = info
                             )),rmod) :: rest))),
           SCode.COMPONENT(component = n2,finalPrefix = false,replaceablePrefix = repl2,protectedPrefix = prot2,
@@ -6842,7 +6846,7 @@ algorithm
         innerCompMod = Mod.merge(m_1,old_m_1,env_1,pre) "inner comp modifier merg(new_inner, old_inner) ";
         compMod = Mod.merge(rmod,cmod,env_1,pre) "outer comp modifier";
 
-        redComp = SCode.COMPONENT(n1,io,finalPrefix,repl,prot,at,t,mod,comment,cond,info,cc);
+        redComp = SCode.COMPONENT(n1,io,finalPrefix,repl,prot,redeclp,at,t,mod,comment,cond,info,cc);
         m_2 = Mod.merge(compMod, innerCompMod, env_1, pre);
       then
         (cache,env_1,ih,redComp,m_2,csets);
@@ -8413,7 +8417,7 @@ algorithm
     case (cache,env,ih,pre,mods,cref,ci_state,csets,impl,updatedComps)
       equation
         id = Absyn.crefFirstIdent(cref);
-        (cache,tyVar,SOME((SCode.COMPONENT(n,io,finalPrefix,repl,prot,(attr as SCode.ATTR(ad,flowPrefix,streamPrefix,acc,param,dir)),Absyn.TPATH(t, _),m,comment,cond,info,cc),cmod)),_)
+        (cache,tyVar,SOME((SCode.COMPONENT(n,io,finalPrefix,repl,prot,_,(attr as SCode.ATTR(ad,flowPrefix,streamPrefix,acc,param,dir)),Absyn.TPATH(t, _),m,comment,cond,info,cc),cmod)),_)
           = Lookup.lookupIdent(cache, env, id);
         //Debug.traceln("update comp " +& n +& " with mods:" +& Mod.printModStr(mods) +& " m:" +& SCode.printModStr(m) +& " cm:" +& Mod.printModStr(cmod));
         (cache,cl,cenv) = Lookup.lookupClass(cache, env, t, false);
@@ -10716,7 +10720,7 @@ algorithm
     local
       SCode.Ident id;
       Absyn.InnerOuter inOut;
-      Boolean finPre, repPre, proPre;
+      Boolean finPre, repPre, proPre, redecl;
       SCode.Attributes attr;
       Absyn.TypeSpec typeSpc;
       Option<SCode.Comment> comm;
@@ -10729,14 +10733,14 @@ algorithm
       SCode.Element e;
       SCode.Mod modBla;
     case (e as SCode.COMPONENT(component = id, innerOuter = inOut, finalPrefix = finPre, replaceablePrefix = repPre, 
-          protectedPrefix = proPre, attributes = attr as SCode.ATTR(direction = Absyn.OUTPUT()), 
+          protectedPrefix = proPre, redeclarePrefix = redecl, attributes = attr as SCode.ATTR(direction = Absyn.OUTPUT()), 
           typeSpec = typeSpc,
           modifications = SCode.MOD(finalPrefix = modFinPre, eachPrefix = modEachPre, subModLst = modSubML, binding = SOME(_)),
           comment = comm, condition = cond, info = info, cc = cc_))
       equation
         modBla = SCode.MOD(modFinPre,modEachPre,modSubML,NONE());
       then 
-        SCode.COMPONENT(id,inOut,finPre,repPre,proPre,attr,typeSpc,modBla,comm,cond,info,cc_);
+        SCode.COMPONENT(id,inOut,finPre,repPre,proPre,redecl,attr,typeSpc,modBla,comm,cond,info,cc_);
     case (e) then (e);          
   end matchcontinue; 
 end stripFuncOutputsMod;
@@ -13760,7 +13764,7 @@ algorithm oltuple := matchcontinue(ltuple)
     Option<Absyn.ConstrainClass> c13;
     Ident c1;
     Absyn.InnerOuter c2;
-    Boolean c3,c4,c5;
+    Boolean c3,c4,c5,redecl;
     Option<SCode.Comment> c10;
     Option<Absyn.Exp> c11;
     Absyn.Info c12;
@@ -13768,12 +13772,12 @@ algorithm oltuple := matchcontinue(ltuple)
     Option<SCode.Annotation> ann;
     Absyn.Info info;
   case({}) then {};
-  case(SCode.COMPONENT(c1,c2,c3,c4,c5,c6,c7,c8,c10,c11,c12,c13)::rest )
+  case(SCode.COMPONENT(c1,c2,c3,c4,c5,redecl,c6,c7,c8,c10,c11,c12,c13)::rest )
     equation
       rest = traverseModAddFinal3(rest);
       mod = traverseModAddFinal2(c8);
     then
-      SCode.COMPONENT(c1,c2,c3,c4,c5,c6,c7,mod,c10,c11,c12,c13)::rest;
+      SCode.COMPONENT(c1,c2,c3,c4,c5,redecl,c6,c7,mod,c10,c11,c12,c13)::rest;
   case((ele as SCode.IMPORT(imp = _))::rest)
     equation
       rest = traverseModAddFinal3(rest);

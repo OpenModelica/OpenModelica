@@ -199,13 +199,13 @@ protected function flattenClassDefElements
   output SCode.Element outClassDefElement;
 protected
   SCode.Ident name;
-  Boolean fp, rp;
+  Boolean fp, rp, rd;
   SCode.Class cls;
   Option<Absyn.ConstrainClass> cc;
 algorithm
-  SCode.CLASSDEF(name, fp, rp, cls, cc) := inClassDefElement;
+  SCode.CLASSDEF(name, fp, rp, rd, cls, cc) := inClassDefElement;
   cls := flattenClass(cls, inEnv);
-  outClassDefElement := SCode.CLASSDEF(name, fp, rp, cls, cc);
+  outClassDefElement := SCode.CLASSDEF(name, fp, rp, rd, cls, cc);
 end flattenClassDefElements;
 
 protected function flattenComponent
@@ -215,7 +215,7 @@ protected function flattenComponent
 protected
   SCode.Ident name;
   Absyn.InnerOuter io;
-  Boolean fp, rp, pp;
+  Boolean fp, rp, pp, rd;
   SCode.Attributes attr;
   Absyn.TypeSpec type_spec;
   SCode.Mod mod;
@@ -224,14 +224,14 @@ protected
   Option<Absyn.ConstrainClass> cc;
   Absyn.Info info;
 algorithm
-  SCode.COMPONENT(name, io, fp, rp, pp, attr, type_spec, mod, cmt, cond, 
+  SCode.COMPONENT(name, io, fp, rp, pp, rd, attr, type_spec, mod, cmt, cond,
     info, cc) := inComponent;
   attr := flattenAttributes(attr, inEnv, info);
   type_spec := flattenTypeSpec(type_spec, inEnv, info);
   mod := flattenModifier(mod, inEnv, info);
   cond := flattenOptExp(cond, inEnv, info);
-  outComponent := SCode.COMPONENT(name, io, fp, rp, pp, attr, type_spec, mod,
-    cmt, cond, info, cc);
+  outComponent := SCode.COMPONENT(name, io, fp, rp, pp, rd, attr, type_spec,
+    mod, cmt, cond, info, cc);
 end flattenComponent;
 
 protected function flattenAttributes
@@ -525,20 +525,20 @@ algorithm
   outElement := match(inElement, inEnv)
     local
       SCode.Ident name, name2;
-      Boolean fp, rp, pp, ep;
+      Boolean fp, rp, pp, ep, rd;
       Option<Absyn.ConstrainClass> cc;
       SCode.Restriction res;
       Absyn.Info info;
       SCode.Element element;
       SCode.ClassDef cdef;
 
-    case (SCode.CLASSDEF(name, fp, rp, 
+    case (SCode.CLASSDEF(name, fp, rp, rd,
         SCode.CLASS(name2, pp, ep, res, 
           cdef as SCode.DERIVED(typeSpec = _), info), cc), _)
       equation
         cdef = flattenDerivedClassDef(cdef, inEnv, info);
       then
-        SCode.CLASSDEF(name, fp, rp, 
+        SCode.CLASSDEF(name, fp, rp, rd,
           SCode.CLASS(name2, pp, ep, res, cdef, info), cc);
 
     case (SCode.CLASSDEF(classDef = SCode.CLASS(

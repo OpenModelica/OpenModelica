@@ -437,6 +437,7 @@ uniontype Element "- Elements
     Ident   name               "the name of the local class" ;
     Boolean finalPrefix        "final prefix" ;
     Boolean replaceablePrefix  "replaceable prefix" ;
+    Boolean redeclarePrefix    "redeclare prefix";
     Class   classDef           "the class definition" ;
     Option<Absyn.ConstrainClass> cc;
   end CLASSDEF;
@@ -452,6 +453,7 @@ uniontype Element "- Elements
     Boolean finalPrefix           "the final prefix" ;
     Boolean replaceablePrefix     "the replaceable prefix" ;
     Boolean protectedPrefix       "the protected prefix" ;
+    Boolean redeclarePrefix       "redeclare prefix";
     Attributes attributes         "the component attributes";
     Absyn.TypeSpec typeSpec       "the type specification" ;
     Mod modifications             "the modifications to be applied to the component";
@@ -1528,8 +1530,8 @@ public function elementEqual
      local
       Ident name1,name2;
       Class cl1,cl2;
-      Boolean f1,f2,r1,r2,p1,p2;
-      Absyn.InnerOuter io,io2;
+      Boolean f1,f2,r1,r2,p1,p2,rd1,rd2;
+      Absyn.InnerOuter io1,io2;
       Attributes attr1,attr2; Mod mod1,mod2;
       Absyn.TypeSpec tp1,tp2;
       Absyn.Import im1,im2;
@@ -1539,24 +1541,27 @@ public function elementEqual
       Option<Absyn.Exp> cond1, cond2;
       Option<Absyn.ConstrainClass> cc1, cc2;
       
-     case (CLASSDEF(name1,f1,r1,cl1,_),CLASSDEF(name2,f2,r2,cl2,_))
+    case (CLASSDEF(name1,f1,r1,rd1,cl1,_),CLASSDEF(name2,f2,r2,rd2,cl2,_))
        equation
          true = stringEq(name1,name2);
          true = boolEq(f1,f2);
          true = boolEq(r1,r2);
+         true = boolEq(rd1, rd2);
          true = classEqual(cl1,cl2);
        then 
          true;
      
-     case (COMPONENT(name1,io,f1,r1,p1,attr1,tp1,mod1,_,cond1,_,cc1), COMPONENT(name2,io2,f2,r2,p2,attr2,tp2,mod2,_,cond2,_,cc2))
+    case (COMPONENT(name1,io1,f1,r1,p1,rd1,attr1,tp1,mod1,_,cond1,_,cc1), 
+          COMPONENT(name2,io2,f2,r2,p2,rd2,attr2,tp2,mod2,_,cond2,_,cc2))
        equation
          equality(cond1 = cond2);
          equality(cc1 = cc2); // TODO! FIXME! this might fail for different comments!
          true = stringEq(name1,name2);
-         true = ModUtil.innerOuterEqual(io,io2);
+         true = ModUtil.innerOuterEqual(io1,io2);
          true = boolEq(f1,f2);
          true = boolEq(r1,r2);
          true = boolEq(p1,p2);
+         true = boolEq(rd1,rd2);
          true = attributesEqual(attr1,attr2);
          true = modEqual(mod1,mod2);
          true = Absyn.typeSpecEqual(tp1,tp2);
@@ -1585,7 +1590,7 @@ public function elementEqual
          true;
      
      // otherwise false
-     case(_,_) then false;
+     else false;
    end matchcontinue;
  end elementEqual;
 
@@ -2497,7 +2502,7 @@ algorithm
         isValidEnumLiteral(literal);
       then 
         COMPONENT(
-          literal, Absyn.UNSPECIFIED(), true, false, false,
+          literal, Absyn.UNSPECIFIED(), true, false, false,false,
           ATTR({}, false, false, RO(), CONST(), Absyn.BIDIR()),
           Absyn.TPATH(Absyn.IDENT("EnumType"),NONE()), 
           NOMOD(), comment,NONE(), info,NONE());

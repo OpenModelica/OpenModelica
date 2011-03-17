@@ -130,7 +130,7 @@ algorithm
       equation
         path = makePath(scope, n);
         fullCr = Absyn.pathToCref(path);
-        i = createInstanceFromClass(fullCr, ATTRIBUTES(SCode.CLASSDEF("dummy", false, false, c, NONE()), NONE(), NONE()));
+        i = createInstanceFromClass(fullCr, ATTRIBUTES(SCode.CLASSDEF("dummy", false, false, false, c, NONE()), NONE(), NONE()));
         ih = createInstanceHierarchyFromProgram(i::ih, scope, cs);
       then
         ih;
