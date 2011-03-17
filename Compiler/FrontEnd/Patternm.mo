@@ -574,8 +574,8 @@ algorithm
         tys = Util.listMap(elabProps, Types.getPropType);
         (cache,elabCases,resType,st) = elabMatchCases(cache,env,cases,tys,impl,st,performVectorization,pre,info);
         prop = DAE.PROP(resType,DAE.C_VAR());
-        et = Types.elabType(resType);
-        (elabExps,elabCases) = filterUnusedPatterns(elabExps,elabCases) "filterUnusedPatterns() First time to speed up the other optimizations.";
+        et = Types.elabType(resType);        
+        (elabExps,elabCases) = filterUnusedPatterns(elabExps,elabCases) "filterUnusedPatterns() First time to speed up the other optimizations.";        
         elabCases = caseDeadCodeEliminiation(matchTy, elabCases, {}, {}, false);
         // Do DCE before converting mc to m
         matchTy = optimizeContinueToMatch(matchTy,elabCases,info);
@@ -1562,7 +1562,7 @@ algorithm
 
     case (cache,env,body,exp,impl,st,performVectorization,pre,info)
       equation
-        (cache,elabExp,prop,st) = Static.elabExp(cache,env,exp,impl,st,performVectorization,pre,info);
+        (cache,elabExp,prop,st) = Static.elabExp(cache,env,exp,impl,st,performVectorization,pre,info);        
         (body,elabExp,info) = elabResultExp2(RTOpts.debugFlag("patternmSkipMoveLastExp"),body,elabExp,info); 
         ty = Types.getPropType(prop);
       then (cache,body,SOME(elabExp),info,SOME(ty),st);
@@ -1593,19 +1593,23 @@ algorithm
     local
       DAE.Exp elabCr1,elabCr2;
       list<DAE.Exp> elabCrs1,elabCrs2;
-    case (true,body,elabExp,info) then (body,elabExp,info);
-    case (_,body,elabCr2 as DAE.CREF(ty=_),_)
+      list<DAE.Statement> b;
+      DAE.Exp e;
+      Absyn.Info i;
+      
+    case (true,b,e,i) then (b,e,i);
+    case (_,b,elabCr2 as DAE.CREF(ty=_),_)
       equation
-        (DAE.STMT_ASSIGN(exp1=elabCr1,exp=elabExp,source=DAE.SOURCE(info=info)),body) = Util.listSplitLast(body);
+        (DAE.STMT_ASSIGN(exp1=elabCr1,exp=e,source=DAE.SOURCE(info=i)),b) = Util.listSplitLast(b);
         true = Expression.expEqual(elabCr1,elabCr2);
-        (body,elabExp,info) = elabResultExp2(false,body,elabExp,info);
-      then (body,elabExp,info);
-    case (_,body,DAE.TUPLE(elabCrs2),_)
+        (b,e,i) = elabResultExp2(false,b,e,i);
+      then (b,e,i);
+    case (_,b,DAE.TUPLE(elabCrs2),_)
       equation
-        (DAE.STMT_TUPLE_ASSIGN(expExpLst=elabCrs1,exp=elabExp,source=DAE.SOURCE(info=info)),body) = Util.listSplitLast(body);
+        (DAE.STMT_TUPLE_ASSIGN(expExpLst=elabCrs1,exp=e,source=DAE.SOURCE(info=i)),b) = Util.listSplitLast(b);
         Util.listThreadMapAllValue(elabCrs1, elabCrs2, Expression.expEqual, true);
-        (body,elabExp,info) = elabResultExp2(false,body,elabExp,info);
-      then (body,elabExp,info);
+        (b,e,i) = elabResultExp2(false,b,e,i);
+      then (b,e,i);
     else (body,elabExp,info);
   end matchcontinue;
 end elabResultExp2;
