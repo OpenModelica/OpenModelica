@@ -1,4 +1,4 @@
-LIBS += @CORBALIBS@
-INCLUDEPATH += @CORBA_QMAKE_INCLUDES@
+LIBS += @CORBALIBS@ -lqwt@with_qwt_suffix@ -L../../OMPlot/bin/ -lOMPlot
+INCLUDEPATH += @with_qwt@ @CORBA_QMAKE_INCLUDES@ ../../OMPlot/OMPlotGUI
 
 QMAKE_LFLAGS += @LDFLAGS@
