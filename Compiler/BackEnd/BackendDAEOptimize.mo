@@ -1000,9 +1000,9 @@ algorithm
   matchcontinue (inAVar,inCref,inVars,negate)
     local
       DAE.ComponentRef name,cr;
-      BackendDAE.Var v,var,var1,var2,var3;
+      BackendDAE.Var v,var,var1,var2,var3,var4;
       BackendDAE.Variables vars;
-      Boolean fixeda, fixedb,starta,startb;
+      Boolean fixeda, fixedb;
     case (v as BackendDAE.VAR(varName=name),cr,inVars,negate)
       equation
         ((var :: _),_) = BackendVariable.getVar(cr,inVars);
@@ -1014,8 +1014,10 @@ algorithm
         var2 = mergeStartAttribute(v,var1,negate);
         // nominal
         var3 = mergeNomnialAttribute(v,var2,negate);
+        // direction
+        var4 = mergeDirection(v,var3);
         // update vars
-        vars = BackendVariable.addVar(var3,inVars);        
+        vars = BackendVariable.addVar(var4,inVars);        
       then vars;
     case(_,_,inVars,negate) then inVars;
   end matchcontinue;
@@ -1097,6 +1099,32 @@ algorithm
   end matchcontinue;
 end mergeNomnialAttribute;
 
+protected function mergeDirection
+  input BackendDAE.Var inAVar;
+  input BackendDAE.Var inVar;
+  output BackendDAE.Var outVar;
+algorithm
+  outVar :=
+  matchcontinue (inAVar,inVar)
+    local
+      BackendDAE.Var v,var,var1;
+      Option<DAE.VariableAttributes> attr,attr1;
+      DAE.Exp e,e1;
+    case (v as BackendDAE.VAR(varDirection = DAE.INPUT()),var as BackendDAE.VAR(varDirection = DAE.OUTPUT()))
+      equation 
+        var1 = BackendVariable.setVarDirection(var,DAE.INPUT());
+      then var1;
+    case (v as BackendDAE.VAR(varDirection = DAE.INPUT()),var as BackendDAE.VAR(varDirection = DAE.BIDIR()))
+      equation 
+        var1 = BackendVariable.setVarDirection(var,DAE.INPUT());
+      then var1;        
+    case (v as BackendDAE.VAR(varDirection = DAE.OUTPUT()),var as BackendDAE.VAR(varDirection = DAE.BIDIR()))
+      equation 
+        var1 = BackendVariable.setVarDirection(var,DAE.OUTPUT());
+      then var1;
+    case(_,inVar) then inVar;
+  end matchcontinue;
+end mergeDirection;
 
 /*
  * remove parameter equations

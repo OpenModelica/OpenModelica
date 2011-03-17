@@ -1151,6 +1151,45 @@ algorithm
   end match;
 end setBindValue;
 
+public function setVarDirection
+"function setVarDirection
+  author: Frenkel TUD 17-03-11
+  Sets the DAE.VarDirection of a variable"
+  input BackendDAE.Var inVar;
+  input DAE.VarDirection varDirection;
+  output BackendDAE.Var outVar;
+algorithm
+  outVar := match (inVar,varDirection)
+    local
+      DAE.ComponentRef cr;
+      BackendDAE.VarKind kind;
+      BackendDAE.Type tp;
+      Option<DAE.Exp> bind;
+      Option<Values.Value> v;
+      list<DAE.Subscript> dim;
+      BackendDAE.Value i;
+      DAE.ElementSource source;
+      Option<DAE.VariableAttributes> attr;
+      Option<SCode.Comment> comment;
+      DAE.Flow flowPrefix;
+      DAE.Stream streamPrefix;
+
+    case (BackendDAE.VAR(varName = cr,
+              varKind = kind,
+              varType = tp,
+              bindExp = bind,
+              bindValue = v,
+              arryDim = dim,
+              index = i,
+              source = source,
+              values = attr,
+              comment = comment,
+              flowPrefix = flowPrefix,
+              streamPrefix = streamPrefix),varDirection)
+    then BackendDAE.VAR(cr,kind,varDirection,tp,bind,v,dim,i,source,attr,comment,flowPrefix,streamPrefix);
+  end match;
+end setVarDirection;
+
 public function isVarOnTopLevelAndOutput
 "function isVarOnTopLevelAndOutput
   this function checks if the provided cr is from a var that is on top model
