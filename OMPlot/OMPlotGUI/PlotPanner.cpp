@@ -32,6 +32,7 @@
  */
 
 #include "PlotPanner.h"
+#include "iostream"
 
 using namespace OMPlot;
 
@@ -39,6 +40,8 @@ PlotPanner::PlotPanner(QwtPlotCanvas *pParent)
     : QwtPlotPanner(pParent)
 {
     setEnabled(false);
+    connect(this, SIGNAL(moved(int,int)), SLOT(updateView(int, int)));
+    mpPlotCanvas = pParent;
 }
 
 PlotPanner::~PlotPanner()
@@ -46,3 +49,16 @@ PlotPanner::~PlotPanner()
 
 }
 
+void PlotPanner::updateView(int dx, int dy)
+{
+    plot()->updateAxes();
+    //moveCanvas(dx - pos().x(), dy - pos().y());
+//    plot()->setAxisAutoScale(QwtPlot::xBottom);
+//    plot()->setAxisAutoScale(QwtPlot::yLeft);
+//    canvas()->update();
+//    plot()->updateAxes();
+    plot()->updateLayout();
+    canvas()->updateGeometry();
+    canvas()->update();
+    plot()->replot();
+}

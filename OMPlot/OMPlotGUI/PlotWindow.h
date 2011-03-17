@@ -67,9 +67,7 @@ public:
     void initializeZoom();
 
     void setTitle(QString);
-    void setLegend(bool);
-    void setLogX(bool);
-    void setLogY(bool);
+    void setLegend(bool);    
     void setXLabel(QString);
     void setYLabel(QString);
     void setXRange(double min, double max);
@@ -91,10 +89,12 @@ private:
 public Q_SLOTS:
     void enableZoomMode(bool);
     void enablePanMode(bool);
-    void exportDocument();
-    void setLog();
+    void exportDocument();    
     void setGrid(bool);
     void setOriginal();
+    void printPlot();
+    void setLogX(bool);
+    void setLogY(bool);
 };
 
 //Exception classes

@@ -39,10 +39,15 @@
 namespace OMPlot
 {
 class PlotPanner : public QwtPlotPanner
-{
+{    
+    Q_OBJECT
 public:
     PlotPanner(QwtPlotCanvas *pParent);
     ~PlotPanner();
+public Q_SLOTS:
+    void updateView(int, int);
+private:
+    QwtPlotCanvas *mpPlotCanvas;
 };
 }
 

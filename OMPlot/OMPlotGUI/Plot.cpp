@@ -32,6 +32,7 @@
  */
 
 #include "PlotWindow.h"
+#include <qwt_legend_item.h>
 
 using namespace OMPlot;
 
@@ -40,22 +41,24 @@ Plot::Plot(PlotWindow *pParent)
 {
     mpParentPlotWindow = pParent;
 
-    setTitle(tr("Plot by OpenModelica"));
+    setTitle(tr("Plot by OpenModelica"));    
     setCanvasBackground(Qt::white);
     // create an instance of legend
     mpLegend = new Legend(this);
     insertLegend(mpLegend, QwtPlot::RightLegend);
-    // create an instance of picker
+
+    // create an instance opicker
     mpPlotPicker = new PlotPicker(QwtPlot::xBottom, QwtPlot::yLeft, canvas());
     // create an instance of grid
     mpPlotGrid = new PlotGrid(this);
     // create an instance of zoomer
-    mpPlotZoomer = new PlotZoomer(QwtPlot::xBottom, QwtPlot::yLeft, canvas());
+    mpPlotZoomer = new PlotZoomer(QwtPlot::xBottom, QwtPlot::yLeft, canvas());        
     // create an instance of panner
     mpPlotPanner = new PlotPanner(canvas());
     // create an instance of canvas we use it to capture events of canvas()
     mpPlotCanvas = new PlotCanvas(this);
-    canvas()->installEventFilter(mpPlotCanvas);
+    canvas()->setCursor(Qt::ArrowCursor);
+    canvas()->installEventFilter(mpPlotCanvas);    
 }
 
 Plot::~Plot()

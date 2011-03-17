@@ -53,7 +53,7 @@ public:
     QVector<double> getXAxisVector();
     void setYAxisVector(QVector<double> vector);
     void addYAxisValue(double value);
-    QVector<double> getYAxisVector();
+    QVector<double> getYAxisVector();        
     QColor getUniqueColor(QColor color = QColor(255, 0, 0));
 
     virtual void updateLegend(QwtLegend *legend) const;

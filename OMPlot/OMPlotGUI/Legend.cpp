@@ -32,12 +32,16 @@
  */
 
 #include "Legend.h"
+#include "iostream"
+#include "qwt_legend_item.h"
 
 using namespace OMPlot;
 
 Legend::Legend(Plot *pParent)
-{
-
+{        
+    setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(this,SIGNAL(customContextMenuRequested(const QPoint&)),this,SLOT(legendMenu(const QPoint&)));
+    mpPlot = pParent;
 }
 
 Legend::~Legend()
@@ -45,3 +49,73 @@ Legend::~Legend()
 
 }
 
+void Legend::legendMenu(const QPoint& pos)
+{        
+    QwtLegendItem *lgdItem = dynamic_cast<QwtLegendItem*>(childAt(pos));
+
+    QAction *color = new QAction(QString("Change Color"), this);
+    color->setCheckable(false);
+    connect(color, SIGNAL(triggered()), this, SLOT(selectColor()));
+
+    QAction *hide;
+    if(lgdItem->text().color() == Qt::gray)
+        hide = new QAction(QString("Show"), this);
+    else
+        hide = new QAction(QString("Hide"), this);
+    hide->setCheckable(false);
+    connect(hide, SIGNAL(triggered()), this, SLOT(toggleShow()));
+
+    if(lgdItem)
+    {
+        legendItem = lgdItem->text().text();
+
+        QMenu menu(mpPlot);        
+        menu.addAction(color);
+        menu.addSeparator();
+        menu.addAction(hide);
+        menu.exec(mapToGlobal(pos));
+    }
+}
+
+void Legend::selectColor()
+{
+    QColor c = QColorDialog::getColor();
+    QList<PlotCurve*> list = mpPlot->getPlotCurvesList();
+
+    if(c.isValid())
+    {
+        for(int i = 0; i < list.length(); i++)
+        {
+            if(list[i]->title() == legendItem)
+                list[i]->setPen(QPen(c));
+        }
+        mpPlot->replot();
+    }
+}
+
+void Legend::toggleShow()
+{
+    QList<PlotCurve*> list = mpPlot->getPlotCurvesList();
+
+    for(int i = 0; i < list.length(); i++)
+    {
+        if(list[i]->title().text() == legendItem)
+        {
+            if(list[i]->isVisible())
+            {
+                QwtText text = list[i]->title();
+                text.setColor(QColor(Qt::gray));
+                list[i]->setTitle(text);
+                list[i]->setVisible(false);
+            }
+            else if(!list[i]->isVisible())
+            {
+                QwtText text = list[i]->title();
+                text.setColor(QColor(Qt::black));
+                list[i]->setTitle(text.text());
+                list[i]->setVisible(true);
+            }
+        }
+    }
+    mpPlot->replot();
+}

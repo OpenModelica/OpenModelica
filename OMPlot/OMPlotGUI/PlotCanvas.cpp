@@ -39,7 +39,7 @@ PlotCanvas::PlotCanvas(Plot *pParent)
     : QwtPlotCanvas(pParent)
 {
     mpParentPlot = pParent;
-    setVisible(false);
+    setVisible(false);   
 }
 
 PlotCanvas::~PlotCanvas()
@@ -63,7 +63,7 @@ bool PlotCanvas::eventFilter(QObject *pObject, QEvent *event)
         {
             mpParentPlot->canvas()->setCursor(Qt::OpenHandCursor);
             return true;
-        }
+        }        
     }
 
     return false;

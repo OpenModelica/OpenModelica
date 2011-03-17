@@ -39,12 +39,23 @@
 namespace OMPlot
 {
 class Plot;
+class PlotCurve;
 
 class Legend : public QwtLegend
 {
+    Q_OBJECT
 public:
     Legend(Plot *pParent);
     ~Legend();
+public Q_SLOTS:
+    void legendMenu(const QPoint&);
+    void selectColor();
+    void toggleShow();
+
+private:
+    PlotCurve *mpPlotCurve;
+    Plot *mpPlot;
+    QString legendItem;
 };
 }
 
