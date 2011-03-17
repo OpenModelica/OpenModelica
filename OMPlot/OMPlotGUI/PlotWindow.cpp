@@ -51,51 +51,40 @@ PlotWindow::PlotWindow(QStringList arguments, QWidget *parent)
     // open the file
     openFile(QString(arguments[1]));
 
-    //Set up arguments
-    // read the title
+    //Set up arguments        
     setTitle(QString(arguments[2]));
-    // read the legend
     if(QString(arguments[3]) == "true")
         setLegend(true);
     else if(QString(arguments[3]) == "false")
         setLegend(false);
     else
         throw PlotException("Invalid input");
-    // read the grid
     if(QString(arguments[4]) == "true")
         setGrid(true);
     else if(QString(arguments[4]) == "false")
         setGrid(false);
     else
         throw PlotException("Invalid input");
-    // read the plot type
     QString plotType = arguments[5];
-    // read the logx
     if(QString(arguments[6]) == "true")
         setLogX(true);
     else if(QString(arguments[6]) == "false")
         setLogX(false);
     else
         throw PlotException("Invalid input");
-    // read the logy
     if(QString(arguments[7]) == "true")
         setLogY(true);
     else if(QString(arguments[7]) == "false")
         setLogY(false);
     else
         throw PlotException("Invalid input");
-    // read the x label value
     setXLabel(QString(arguments[8]));
-    // read the y label value
     setYLabel(QString(arguments[9]));
-    // read the x range
     setXRange(QString(arguments[10]).toDouble(), QString(arguments[11]).toDouble());
-    // read the y range
     setYRange(QString(arguments[12]).toDouble(), QString(arguments[13]).toDouble());
-    // read the variables name
     QStringList variablesToRead;
     for(int i = 14; i < arguments.length(); i++)
-        variablesToRead.append(QString(arguments[i]));  
+        variablesToRead.append(QString(arguments[i]));
 
     //Plot
     if(plotType == "plot")
@@ -162,19 +151,18 @@ void PlotWindow::openFile(QString file)
 void PlotWindow::setupToolbar()
 {
     QToolBar *toolBar = new QToolBar(this);
-    toolBar->setAutoFillBackground(true);
-    toolBar->setPalette(QPalette(Qt::gray));
+    setContextMenuPolicy(Qt::NoContextMenu);
 
-    //ZOOM
-    mpZoomButton = new QToolButton(toolBar);        
+//    //ZOOM
+    mpZoomButton = new QToolButton(toolBar);
     mpZoomButton->setText("Zoom");
-    mpZoomButton->setCheckable(true);    
+    mpZoomButton->setCheckable(true);
     connect(mpZoomButton, SIGNAL(toggled(bool)), SLOT(enableZoomMode(bool)));
     toolBar->addWidget(mpZoomButton);
 
     toolBar->addSeparator();
 
-    //PAN
+//    //PAN
     mpPanButton = new QToolButton(toolBar);
     mpPanButton->setText("Pan");
     mpPanButton->setCheckable(true);
@@ -392,7 +380,7 @@ void PlotWindow::plot(QStringList variables)
         double stopTime =  omc_matlab4_stopTime(&reader);
         if (reader.nvar < 1)
           throw NoVariableException("Variable doesnt exist: time");
-        double *timeVals = omc_matlab4_read_vals(&reader,0);
+        double *timeVals = omc_matlab4_read_vals(&reader,0);                                       
 
         if(variables[0] == "")
         {

@@ -53,6 +53,9 @@ void Legend::legendMenu(const QPoint& pos)
 {        
     QwtLegendItem *lgdItem = dynamic_cast<QwtLegendItem*>(childAt(pos));
 
+    if(lgdItem)
+    {
+
     QAction *color = new QAction(QString("Change Color"), this);
     color->setCheckable(false);
     connect(color, SIGNAL(triggered()), this, SLOT(selectColor()));
@@ -65,11 +68,10 @@ void Legend::legendMenu(const QPoint& pos)
     hide->setCheckable(false);
     connect(hide, SIGNAL(triggered()), this, SLOT(toggleShow()));
 
-    if(lgdItem)
-    {
+
         legendItem = lgdItem->text().text();
 
-        QMenu menu(mpPlot);        
+        QMenu menu(mpPlot);
         menu.addAction(color);
         menu.addSeparator();
         menu.addAction(hide);

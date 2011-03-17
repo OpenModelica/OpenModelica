@@ -42,8 +42,7 @@ int main(int argc, char *argv[])
       printf("Usage: %s arg1 ... arg13 variables\n", *argv);
       return 1;
     }
-    QApplication a(argc, argv);
-    a.setWindowIcon(QIcon(":/Resources/plotWindow.bmp"));
+    QApplication a(argc, argv);    
 
     try {
         QStringList arguments;
