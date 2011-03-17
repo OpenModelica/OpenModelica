@@ -66,7 +66,7 @@ static void printPlotCommand(FILE *plt, const char *title, const char *prefix, i
   fprintf(plt, format, prefix, numFnsAndBlocks, numFnsAndBlocks, 3+i);
   if (i >= 0) {
     nmin = rt_ncall_min(SIM_TIMER_FIRST_FUNCTION + i);
-    nmax = rt_ncall_min(SIM_TIMER_FIRST_FUNCTION + i);
+    nmax = rt_ncall_max(SIM_TIMER_FIRST_FUNCTION + i);
     ymin = nmin*0.99;
     ymax = nmax*1.01;
 
