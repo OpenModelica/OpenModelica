@@ -897,7 +897,7 @@ void GraphicsView::addConnector(Component *pComponent)
                     this->mConnectorsVector.append(mpConnector);
                     // add the connection annotation to OMC
                     mpConnector->updateConnectionAnnotationString();
-                    pMainWindow->mpMessageWidget->printGUIInfoMessage("Conncted: (" + startIconName + "." + startIconCompName +
+                    pMainWindow->mpMessageWidget->printGUIInfoMessage("Connected: (" + startIconName + "." + startIconCompName +
                                                                       ", " + endIconName + "." + endIconCompName + ")");
                 }
                 else
@@ -975,7 +975,7 @@ void GraphicsView::removeConnector(Connector* pConnector)
                                                        endComponentName + "." + endIconCompName,
                                                        mpParentProjectTab->mModelNameStructure))
         {
-//            pMainWindow->mpMessageWidget->printGUIInfoMessage("Disconncted: (" + startComponentName + "." + startIconCompName +
+//            pMainWindow->mpMessageWidget->printGUIInfoMessage("Disconnected: (" + startComponentName + "." + startIconCompName +
 //                                                              ", " + endComponentName + "." + endIconCompName + ")");
         }
         else

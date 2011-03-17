@@ -881,6 +881,10 @@ void Component::getClassComponents(QString className, int type)
         if (static_cast<QString>(componentsAnnotationsList.at(i)).toLower().contains("error"))
             continue;
 
+        // if component is protected we don't show it in the icon layer.
+        if (componentProperties->getProtected())
+            continue;
+
         if (StringHandler::removeFirstLastCurlBrackets(componentsAnnotationsList.at(i)).length() > 0)
         {
             if (mpOMCProxy->isWhat(StringHandler::CONNECTOR, componentProperties->getClassName()))
