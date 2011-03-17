@@ -752,7 +752,7 @@ dasrt_step(double* step, double &start, double &stop, bool &trigger1)
       for (i = 0; i < lrw; i++)
         rwork[i] = 0.0;
       // dassl stats
-      for (i = 0; i < lrw; i++)
+      for (i = 0; i < 5; i++)
         dasslStats[i] = 0;
       /*********************************************************************/
       //info[2] = 1;  //intermediate-output mode
