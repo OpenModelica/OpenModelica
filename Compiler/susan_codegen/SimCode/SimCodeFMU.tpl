@@ -861,11 +861,16 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
   
   .PHONY: <%fileNamePrefix%>
   <%fileNamePrefix%>: <%fileNamePrefix%>.conv.cpp <%fileNamePrefix%>_functions.cpp <%fileNamePrefix%>_FMU.cpp <%fileNamePrefix%>_functions.h <%fileNamePrefix%>_records.c 
-  <%\t%> $(CXX) -I. -o <%fileNamePrefix%>$(DLLEXT) <%fileNamePrefix%>.conv.cpp <%fileNamePrefix%>_functions.cpp <%fileNamePrefix%>_FMU.cpp <%dirExtra%> <%libsPos1%> <%libsPos2%> -shared -lsim -linteractive $(CFLAGS) $(SENDDATALIBS) $(LDFLAGS) -lf2c <%fileNamePrefix%>_records.c 
-  <%\t%> mkdir -p <%fileNamePrefix%> 
-  <%\t%> mkdir -p <%fileNamePrefix%>/binaries
-  <%\t%> mv modelDescription.xml  <%fileNamePrefix%>/
-  <%\t%> mv <%fileNamePrefix%>$(DLLEXT) <%fileNamePrefix%>/binaries/
+  <%\t%> $(CXX) -I. -o <%fileNamePrefix%>$(DLLEXT) <%fileNamePrefix%>.conv.cpp <%fileNamePrefix%>_functions.cpp <%fileNamePrefix%>_FMU.cpp <%dirExtra%> <%libsPos1%> <%libsPos2%> -shared -lsim -linteractive $(CFLAGS) $(SENDDATALIBS) $(LDFLAGS) -lf2c <%fileNamePrefix%>_records.c -Wl,--out-implib,lib<%fileNamePrefix%>.a
+  <%\t%> mv lib<%fileNamePrefix%>.a <%fileNamePrefix%>.lib 
+  
+  <%\t%> mkdir -p binaries
+  <%\t%> mkdir -p binaries/win32
+  
+  <%\t%> mv <%fileNamePrefix%>$(DLLEXT) binaries/win32/
+  <%\t%> mv <%fileNamePrefix%>.lib binaries/win32/
+  <%\t%> zip -r <%fileNamePrefix%>.fmu binaries modelDescription.xml
+  
   <%fileNamePrefix%>.conv.cpp: <%fileNamePrefix%>.cpp
   <%\t%> $(PERL) <%makefileParams.omhome%>/share/omc/scripts/convert_lines.pl $< $@.tmp
   <%\t%> @mv $@.tmp $@
