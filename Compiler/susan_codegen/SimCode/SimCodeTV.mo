@@ -94,6 +94,7 @@ package SimCode
       String ldflags;
       String senddatalibs;
       list<String> libs;
+      String platform;
     end MAKEFILE_PARAMS;
   end MakefileParams;
   

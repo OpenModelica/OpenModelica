@@ -437,6 +437,7 @@ uniontype MakefileParams
     String ldflags;
     String senddatalibs;
     list<String> libs;
+    String platform;
   end MAKEFILE_PARAMS;
 end MakefileParams;
 
@@ -2360,25 +2361,22 @@ end extractIdAndExpFromDelayExp;
 protected function createMakefileParams
   input list<String> libs;
   output MakefileParams makefileParams;
+protected
+  String omhome,ccompiler,cxxcompiler,linker,exeext,dllext,cflags,ldflags,senddatalibs,platform;
 algorithm
-  makefileParams := match (libs)
-    local
-      String omhome,ccompiler,cxxcompiler,linker,exeext,dllext,cflags,ldflags,senddatalibs;
-    case (libs)
-      equation
-        ccompiler = System.getCCompiler();
-        cxxcompiler = System.getCXXCompiler();
-        linker = System.getLinker();
-        exeext = System.getExeExt();
-        dllext = System.getDllExt();
-        omhome = Settings.getInstallationDirectoryPath();
-        omhome = System.trim(omhome, "\""); // Remove any quotation marks from omhome.
-        cflags = System.getCFlags();
-        ldflags = System.getLDFlags();
-        senddatalibs = System.getSendDataLibs();
-      then MAKEFILE_PARAMS(ccompiler, cxxcompiler, linker, exeext, dllext,
-        omhome, cflags, ldflags, senddatalibs, libs);
-  end match;
+  ccompiler := System.getCCompiler();
+  cxxcompiler := System.getCXXCompiler();
+  linker := System.getLinker();
+  exeext := System.getExeExt();
+  dllext := System.getDllExt();
+  omhome := Settings.getInstallationDirectoryPath();
+  omhome := System.trim(omhome, "\""); // Remove any quotation marks from omhome.
+  cflags := System.getCFlags();
+  ldflags := System.getLDFlags();
+  senddatalibs := System.getSendDataLibs();
+  platform := System.platform();
+  makefileParams := MAKEFILE_PARAMS(ccompiler, cxxcompiler, linker, exeext, dllext,
+        omhome, cflags, ldflags, senddatalibs, libs, platform);
 end createMakefileParams;
 
 protected function generateHelpVarInfo
