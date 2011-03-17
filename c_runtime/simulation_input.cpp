@@ -74,11 +74,11 @@ void read_commented_value(ifstream &f, signed char *str);
   }
   //  cerr << "opened file" << endl;
   read_commented_value(file,start);
-  if (sim_verbose) { cout << "read start = " << *start << " from init file." << endl; }
+  if (sim_verbose >= LOG_SOLVER) { cout << "read start = " << *start << " from init file." << endl; }
   read_commented_value(file,stop);
-  if (sim_verbose) { cout << "read stop = " << *stop << " from init file." << endl; }
+  if (sim_verbose >= LOG_SOLVER) { cout << "read stop = " << *stop << " from init file." << endl; }
   read_commented_value(file,stepSize);
-  if (sim_verbose) { cout << "read stepSize = " << *stepSize << " from init file." << endl; }
+  if (sim_verbose >= LOG_SOLVER) { cout << "read stepSize = " << *stepSize << " from init file." << endl; }
   globalData->current_stepsize = *stepSize;
   if (stepSize < 0) { // stepSize < 0 => Automatic number of outputs
     *outputSteps = -1;
@@ -87,19 +87,19 @@ void read_commented_value(ifstream &f, signed char *str);
     *outputSteps = (long)(int(*stop-*start) /(*stepSize));
   }
   read_commented_value(file,tolerance);
-  if (sim_verbose) { cout << "read tolerance = " << *tolerance << " from init file." << endl; }
+  if (sim_verbose >= LOG_SOLVER) { cout << "read tolerance = " << *tolerance << " from init file." << endl; }
   if (methodc == NULL){
     read_commented_value(file,method);
-    if (sim_verbose) { cout << "read method = " << *method << " from init file." << endl; }
+    if (sim_verbose >= LOG_SOLVER) { cout << "read method = " << *method << " from init file." << endl; }
   }else{
     string tmp;
     read_commented_value(file,&tmp);
-    if (sim_verbose) { cout << "read method  = " << *methodc << " from commandline." << endl;}
+    if (sim_verbose >= LOG_SOLVER) { cout << "read method  = " << *methodc << " from commandline." << endl;}
   }
   read_commented_value(file,outputFormat);
-  if (sim_verbose) { cout << "read outputFormat = " << *outputFormat << " from init file." << endl; }
+  if (sim_verbose >= LOG_SOLVER) { cout << "read outputFormat = " << *outputFormat << " from init file." << endl; }
   read_commented_value(file,variableFilter);
-  if (sim_verbose) { cout << "read variableFilter = " << *variableFilter << " from init file." << endl; }
+  if (sim_verbose >= LOG_SOLVER) { cout << "read variableFilter = " << *variableFilter << " from init file." << endl; }
   modelica_integer nxchk,nychk,npchk;
   modelica_integer nyintchk,npintchk;
   modelica_integer nyboolchk,npboolchk;
@@ -132,71 +132,71 @@ void read_commented_value(ifstream &f, signed char *str);
   }
   for(int i = 0; i < simData->nStates; i++) { // Read x initial values
     read_commented_value(file,&simData->states[i]);
-    if (sim_verbose) {
+    if (sim_verbose >= LOG_SOLVER) {
       cout << "read " << simData->statesNames[i].name << " = " << simData->states[i] << " from init file." << endl;
     }
   }
   for(int i = 0; i < simData->nStates; i++) { // Read der(x) initial values
     read_commented_value(file,&simData->statesDerivatives[i]);
-    if (sim_verbose) {
+    if (sim_verbose >= LOG_SOLVER) {
       cout << "read " << simData->stateDerivativesNames[i].name << " = " << simData->statesDerivatives[i] << " from init file." << endl;
     }
   }
   for(int i = 0; i < simData->nAlgebraic; i++) { // Read y initial values
     read_commented_value(file,&simData->algebraics[i]);
-    if (sim_verbose) {
+    if (sim_verbose >= LOG_SOLVER) {
       cout << "read " << simData->algebraicsNames[i].name << " = " << simData->algebraics[i] << " from init file." << endl;
     }
   }
   for(int i = 0; i < simData->nParameters; i++) { // Read parameter values
     read_commented_value(file,&simData->parameters[i]);
-    if (sim_verbose) {
+    if (sim_verbose >= LOG_SOLVER) {
       cout << "read " << simData->parametersNames[i].name << " = " << simData->parameters[i] << " from init file." << endl;
     }
   }
 
   for(int i = 0; i < simData->intVariables.nParameters; i++) { // Read parameter values
     read_commented_value(file,&simData->intVariables.parameters[i]);
-    if (sim_verbose) {
+    if (sim_verbose >= LOG_SOLVER) {
       cout << "read " << simData->int_param_names[i].name << " = " << simData->intVariables.parameters[i] << " from init file." << endl;
     }
   }
 
   for(int i = 0; i < simData->intVariables.nAlgebraic; i++) { // Read parameter values
     read_commented_value(file,&simData->intVariables.algebraics[i]);
-    if (sim_verbose) {
+    if (sim_verbose >= LOG_SOLVER) {
       cout << "read " << simData->int_alg_names[i].name << " = " << simData->intVariables.algebraics[i] << " from init file." << endl;
     }
   }
 
   for(int i = 0; i < simData->boolVariables.nParameters; i++) { // Read parameter values
     read_commented_value(file,&simData->boolVariables.parameters[i]);
-    if (sim_verbose) {
+    if (sim_verbose >= LOG_SOLVER) {
       cout << "read " << simData->bool_param_names[i].name << " = " << (bool)simData->boolVariables.parameters[i] << " from init file." << endl;
     }
   }
 
   for(int i = 0; i < simData->boolVariables.nAlgebraic; i++) { // Read parameter values
     read_commented_value(file,&simData->boolVariables.algebraics[i]);
-    if (sim_verbose) {
+    if (sim_verbose >= LOG_SOLVER) {
       cout << "read " << simData->bool_alg_names[i].name << " = " << (bool)simData->boolVariables.algebraics[i] << " from init file." << endl;
     }
   }
 
   for(int i=0; i < simData->stringVariables.nParameters; i++) { // Read string parameter values
     read_commented_value(file,&(simData->stringVariables.parameters[i]));
-    if (sim_verbose) {
+    if (sim_verbose >= LOG_SOLVER) {
       cout << "read " << simData->string_param_names[i].name << " = \"" << simData->stringVariables.parameters[i] << "\" from init file." << endl;
     }
   }
   for(int i=0; i < simData->stringVariables.nAlgebraic; i++) { // Read string algebraic values
     read_commented_value(file,&simData->stringVariables.algebraics[i]);
-    if (sim_verbose) {
+    if (sim_verbose >= LOG_SOLVER) {
       cout << "read " << simData->string_alg_names[i].name << " from init file." << endl;
     }
   }
   file.close();
-  if (sim_verbose) {
+  if (sim_verbose >= LOG_SOLVER) {
     cout << "Read parameter data from file " << *filename << endl;
   }
   delete filename;

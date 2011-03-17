@@ -93,7 +93,7 @@ void leastSquare(long *nz, double *z, double *funcValue)
   for (ind=0, *funcValue=0; ind<globalData->nInitialResiduals; ind++)
     *funcValue += globalData->initialResiduals[ind]*globalData->initialResiduals[ind];
 
-  if (sim_verbose) {
+  if (sim_verbose >= LOG_SOLVER) {
     cout << "initial residual: " << *funcValue << endl;
   }
 }
@@ -127,7 +127,7 @@ int reportResidualValue(double funcValue)
 
 int newuoa_initialization(long& nz,double *z)
 {
-  long IPRINT = sim_verbose? 2 : 0;
+  long IPRINT = sim_verbose >= LOG_SOLVER? 2 : 0;
   long MAXFUN=50000;
   double RHOEND=1.0e-6;
   double RHOBEG=10; // This should be about one tenth of the greatest
@@ -171,7 +171,7 @@ int simplex_initialization(long& nz,double *z)
 //C  Set max. no. of function evaluations = 5000, print every 100.
 
       MAXF = 50000;
-      IPRINT = sim_verbose? 100 : -1;
+      IPRINT = sim_verbose >= LOG_SOLVER? 100 : -1;
 
 //C  Set value for stopping criterion.   Stopping occurs when the
 //C  standard deviation of the values of the objective function at
@@ -241,7 +241,7 @@ int initialize(const std::string*method)
       nz++;
   }
 
-  if (sim_verbose) {
+  if (sim_verbose >= LOG_SOLVER) {
     cout << "Initialization by method: " << init_method << endl;
     cout << "fixed attribute for states:" << endl;
     for(int i=0;i<globalData->nStates; i++) {
@@ -253,7 +253,7 @@ int initialize(const std::string*method)
 
   // No initial values to calculate.
   if (nz ==  0) {
-    if (sim_verbose) {
+    if (sim_verbose >= LOG_SOLVER) {
       cout << "No initial values to calculate" << endl;
     }
     return 0;

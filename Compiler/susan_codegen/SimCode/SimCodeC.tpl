@@ -1104,7 +1104,7 @@ template functionInitial(list<SimEqSystem> initialEquations)
     <%eqPart%>
   
     <%initialEquations |> SES_SIMPLE_ASSIGN(__) =>
-      'if (sim_verbose) { printf("Setting variable start value: %s(start=%f)\n", "<%cref(cref)%>", <%cref(cref)%>); }'
+      'if (sim_verbose >= LOG_SOLVER) { printf("Setting variable start value: %s(start=%f)\n", "<%cref(cref)%>", <%cref(cref)%>); }'
     ;separator="\n"%>
   
     return 0;
@@ -1517,7 +1517,7 @@ template functionCheckForDiscreteChanges(list<ComponentRef> discreteModelVars)
 ::=
 
   let changediscreteVars = (discreteModelVars |> var => match var case CREF_QUAL(__) case CREF_IDENT(__) then
-       'if (change(<%cref(var)%>)) { if (sim_verbose) { cout << "Discrete Var <%crefStr(var)%> : " << (<%crefType(var)%>) pre(<%cref(var)%>) << " to " << (<%crefType(var)%>) <%cref(var)%> << endl;}  needToIterate=1; }'
+       'if (change(<%cref(var)%>)) { if (sim_verbose >= LOG_EVENTS) { cout << "Discrete Var <%crefStr(var)%> : " << (<%crefType(var)%>) pre(<%cref(var)%>) << " to " << (<%crefType(var)%>) <%cref(var)%> << endl;}  needToIterate=1; }'
     ;separator="\n")
   <<
   int checkForDiscreteChanges()

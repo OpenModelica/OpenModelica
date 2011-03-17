@@ -73,6 +73,7 @@ string TermMsg;
 omc_fileInfo TermInfo = omc_dummyFileInfo;
 
 int sim_verbose; // Flag for logging
+int sim_verboseLevel; // Flag for logging level
 int sim_noemit; // Flag for not emitting data
 int jac_flag; // Flag usage of jacobian
 int num_jac_flag; // Flag usage of numerical jacobian
@@ -92,9 +93,12 @@ DATA *globalData = 0;
 simulation_result *sim_result;
 
 /* Flags for controlling logging to stdout */
-const int LOG_EVENTS = 1;
-const int LOG_NONLIN_SYS = 2;
-const int LOG_DEBUG = 4;
+const int LOG_STATS = 1;
+const int LOG_SOLVER = 2;
+const int LOG_EVENTS = 4;
+const int LOG_NONLIN_SYS = 8;
+const int LOG_ZEROCROSSINGS = 16;
+const int LOG_DEBUG = 32;
 
 /* Flags for modelErrorCodes */
 extern const int ERROR_NONLINSYS = -1;
@@ -218,14 +222,29 @@ verboseLevel(int argc, char**argv)
   if (!flags)
     return res; // no lv flag given.
 
+  if (flags->find("LOG_STATS", 0) != string::npos)
+    {
+      res |= LOG_STATS;
+    }
+  if (flags->find("LOG_SOLVER", 0) != string::npos)
+    {
+      res |= LOG_SOLVER;
+    }
   if (flags->find("LOG_EVENTS", 0) != string::npos)
     {
       res |= LOG_EVENTS;
     }
-
   if (flags->find("LOG_NONLIN_SYS", 0) != string::npos)
     {
       res |= LOG_NONLIN_SYS;
+    }
+  if (flags->find("LOG_ZEROCROSSINGS", 0) != string::npos)
+    {
+      res |= LOG_ZEROCROSSINGS;
+    }
+  if (flags->find("LOG_DEBUG", 0) != string::npos)
+    {
+      res |= LOG_DEBUG;
     }
   return res;
 }
@@ -433,34 +452,34 @@ callSolver(int argc, char**argv, string method, string outputFormat,
       cerr << "Unknown output format: " << outputFormat << endl;
       return 1;
   }
-  if (sim_verbose) {
+  if (sim_verbose >= LOG_SOLVER) {
       cout << "Allocated simulation result data storage for method '"
           << sim_result->result_type() << "' and file='" << result_file_cstr
           << "'" << endl;
   }
 
   if (method == std::string("euler")) {
-      if (sim_verbose) {
+      if (sim_verbose >= LOG_SOLVER) {
           cout << "No Recognized solver, using dassl." << endl;
       }
       retVal = solver_main(argc,argv,start,stop,stepSize,outputSteps,tolerance,3);
   } else if (method == std::string("euler")) {
-      if (sim_verbose) {
+      if (sim_verbose >= LOG_SOLVER) {
           cout << "Recognized solver: " << method << "." << endl;
       }
       retVal = solver_main(argc, argv, start, stop, stepSize, outputSteps, tolerance, 1);
   } else if (method == std::string("rungekutta")) {
-      if (sim_verbose) {
+      if (sim_verbose >= LOG_SOLVER) {
           cout << "Recognized solver: " << method << "." << endl;
       }
       retVal = solver_main(argc, argv, start, stop, stepSize, outputSteps, tolerance, 2);
   } else if (method == std::string("dassl") || method == std::string("dassl2")) {
-      if (sim_verbose) {
+      if (sim_verbose >= LOG_SOLVER) {
           cout << "Recognized solver: " << method << "." << endl;
       }
       retVal = solver_main(argc, argv, start, stop, stepSize, outputSteps, tolerance, 3);
   } else if (method == std::string("dassljac")) {
-      if (sim_verbose) {
+      if (sim_verbose >= LOG_SOLVER) {
           cout << "Recognized solver: " << method << "." << endl;
       }
       jac_flag = 1;
@@ -472,7 +491,7 @@ callSolver(int argc, char**argv, string method, string outputFormat,
               << endl;
           retVal = 1;
       } else {
-          if (sim_verbose) {
+          if (sim_verbose >= LOG_SOLVER) {
               cout << "Recognized solver: " << method << "." << endl;
           }
           retVal = solver_main(argc, argv, start, stop, stepSize, outputSteps, tolerance, 4);
@@ -484,7 +503,7 @@ callSolver(int argc, char**argv, string method, string outputFormat,
               << endl;
           retVal = 1;
       } else {
-          if (sim_verbose) {
+          if (sim_verbose >= LOG_SOLVER) {
               cout << "Recognized solver: " << method << "." << endl;
           }
           retVal = solver_main(argc, argv, start, stop, stepSize, outputSteps, tolerance, 4);
@@ -546,7 +565,6 @@ initRuntimeAndSimulation(int argc, char**argv)
 #endif
   int verbose_flags = verboseLevel(argc, argv);
   sim_verbose = verbose_flags ? verbose_flags : sim_verbose;
-  //sim_verbose = 1;
 
   return 0;
 }

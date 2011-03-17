@@ -82,7 +82,6 @@ Jacobian(double *t, double *y, double *yprime, double *pd, double *cj,
   globalData->states = y;
   globalData->timeValue = *t;
   functionODE();
-  functionAlgebraics();
   functionJacA(matrixA);
 
   int k = 0;
@@ -206,6 +205,8 @@ double *rwork;
 fortran_integer *iwork;
 fortran_integer NG_var = 0; //->see ddasrt.c LINE 250 (number of constraint functions)
 fortran_integer *jroot;
+// stats array for dassl
+int dasslStats[5];
 
 // work array for inline implementation
 double **work_states;
@@ -312,7 +313,7 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
       printf("Error calculating bound parameters\n");
       return -1;
     }
-  if (sim_verbose)
+  if (sim_verbose >= LOG_SOLVER)
     {
       cout << "Calculated bound parameters" << endl;
     }
@@ -339,7 +340,7 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
   //
   //functionDAE(needToIterate);
   //functionAliasEquations();
-  if (sim_verbose)
+  if (sim_verbose >= LOG_SOLVER)
     {
       sim_result->emit();
     }
@@ -362,7 +363,7 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
     }
   SaveZeroCrossings();
   saveall();
-  if (sim_verbose)
+  if (sim_verbose >= LOG_SOLVER)
     {
       sim_result->emit();
     }
@@ -378,7 +379,7 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
   needToIterate = 0;
   IterationNum = 0;
   functionDAE(&needToIterate);
-  if (sim_verbose)
+  if (sim_verbose >= LOG_SOLVER)
     {
       sim_result->emit();
     }
@@ -411,7 +412,7 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
 
   if (globalData->timeValue >= stop)
     {
-      if (sim_verbose)
+      if (sim_verbose >= LOG_SOLVER)
         {
           cout << "Simulation done!" << endl;
         }
@@ -448,7 +449,7 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
   initializeZeroCrossings();
   reset = true;
   saveall();
-  if (sim_verbose)
+  if (sim_verbose >= LOG_SOLVER)
     {
       sim_result->emit();
     }
@@ -458,7 +459,7 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
 
 
 
-  if (sim_verbose)
+  if (sim_verbose >= LOG_SOLVER)
     {
       cout << "Performed initial value calculation." << endl;
       cout << "Start numerical solver from " << globalData->timeValue << " to "
@@ -513,7 +514,7 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
             {
               sampleEvent_actived = checkForSampleEvent();
             }
-          if (sim_verbose)
+          if (sim_verbose >= LOG_SOLVER)
             {
               cout << "Call Solver from " << globalData->timeValue << " to "
                   << globalData->timeValue + globalData->current_stepsize
@@ -608,7 +609,7 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
               throw TerminateSimulationException(globalData->timeValue, string(
                   "Error in Simulation. Solver exit with error.\n"));
             }
-          if (sim_verbose)
+          if (sim_verbose >= LOG_SOLVER)
             {
               cout << "** Step to " << globalData->timeValue << " Done!"
                   << endl;
@@ -628,12 +629,19 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
         }
   }
 
-  if (sim_verbose)
+  if (sim_verbose >= LOG_STATS)
     {
-      cout << "\t*** Statistics ***" << endl;
-      cout << "Events: " << stateEvents + sampleEvents << endl;
-      cout << "State Events: " << stateEvents << endl;
-      cout << "Sample Events: " << sampleEvents << endl;
+      fprintf(stdout, "##### Statistics #####\n");
+      //fprintf(stdout, "Simulationtime : %f\n", rt_accumulated(SIM_TIMER_TOTAL));
+      fprintf(stdout, "Events: %d\n", stateEvents + sampleEvents);
+      fprintf(stdout, "State Events: %d\n", stateEvents);
+      fprintf(stdout, "Sample Events: %d\n", sampleEvents);
+      fprintf(stdout, "##### Solver Statistics #####\n");
+      fprintf(stdout, "The number of steps taken: %d\n", dasslStats[0]);
+      fprintf(stdout, "The number of calls to functionODE: %d\n", dasslStats[1]);
+      fprintf(stdout, "THe evaluations of Jacobian: %d\n", dasslStats[2]);
+      fprintf(stdout, "The number of error test failures: %d\n", dasslStats[3]);
+      fprintf(stdout, "The number of convergence test failures: %d\n", dasslStats[4]);
     }
 
   deinitializeEventData();
@@ -722,7 +730,7 @@ dasrt_step(double* step, double &start, double &stop, bool &trigger1)
 
   if (globalData->timeValue == start)
     {
-      if (sim_verbose)
+      if (sim_verbose >= LOG_SOLVER)
         {
           cout << "**Calling DDASRT the first time..." << endl;
         }
@@ -743,6 +751,9 @@ dasrt_step(double* step, double &start, double &stop, bool &trigger1)
         iwork[i] = 0;
       for (i = 0; i < lrw; i++)
         rwork[i] = 0.0;
+      // dassl stats
+      for (i = 0; i < lrw; i++)
+        dasslStats[i] = 0;
       /*********************************************************************/
       //info[2] = 1;  //intermediate-output mode
       /*********************************************************************/
@@ -762,7 +773,11 @@ dasrt_step(double* step, double &start, double &stop, bool &trigger1)
   // If an event is triggered and processed restart dassl.
   if (trigger1)
     {
-      if (sim_verbose)
+      // save dassl stats befor reset
+      for (i = 0; i < 5; i++)
+        dasslStats[i] += iwork[10+i];
+
+      if (sim_verbose >= LOG_EVENTS)
         {
           cout << "Event-management forced reset of DDASRT... " << endl;
         }
@@ -781,7 +796,7 @@ dasrt_step(double* step, double &start, double &stop, bool &trigger1)
           // else will dassl get in trouble
           if (globalData->timeValue - tout >= -1e-13)
             {
-              if (sim_verbose)
+              if (sim_verbose >= LOG_SOLVER)
                 {
                   cout << "**Desired step to small try next one. " << endl;
                 }
@@ -789,7 +804,7 @@ dasrt_step(double* step, double &start, double &stop, bool &trigger1)
               return 0;
             }
 
-          if (sim_verbose)
+          if (sim_verbose >= LOG_SOLVER)
             {
               cout << "**Calling DDASRT from " << globalData->timeValue
                   << " to " << tout << "..." << endl;
@@ -824,13 +839,16 @@ dasrt_step(double* step, double &start, double &stop, bool &trigger1)
             }
 
 
-          if (sim_verbose){
+          if (sim_verbose >= LOG_SOLVER){
               cout << " value of idid: " << idid << endl;
               cout << " step size H to be attempted on next step: " << rwork[2] << endl;
               cout << " current value of independent variable: " << rwork[3] << endl;
               cout << " stepsize used on last successful step : " << rwork[6] << endl;
               cout << " number of steps taken so far: " << iwork[10] << endl << endl;
-              cout << " actual time point outputed: " << tout << endl<< endl;
+              cout << " the number of calls to RES: " << iwork[11] << endl << endl;
+              cout << " evaluations of the matrix of partial derivatives: " << iwork[12] << endl << endl;
+              cout << " total number of error test failures: " << iwork[13] << endl << endl;
+              cout << " total number of convergence test failures: " << iwork[14] << endl << endl;
           }
 
           if (idid < 0)
@@ -839,7 +857,7 @@ dasrt_step(double* step, double &start, double &stop, bool &trigger1)
               fflush( stdout);
               if (idid == -1)
                 {
-                  if (sim_verbose)
+                  if (sim_verbose >= LOG_SOLVER)
                     {
                       cout << "DDASRT will try again..." << endl;
                     }
@@ -863,7 +881,7 @@ dasrt_step(double* step, double &start, double &stop, bool &trigger1)
 
   if (tout > stop)
     {
-      if (sim_verbose)
+      if (sim_verbose >= LOG_SOLVER)
         {
           cout << "**Deleting work arrays after last DDASRT call..." << endl;
         }

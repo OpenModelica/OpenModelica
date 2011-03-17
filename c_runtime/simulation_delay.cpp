@@ -66,8 +66,8 @@ void initDelay(double startTime)
   for (int i=0; i<numDelayExpressionIndex; i++)
     delayStructure[i] = new t_buffer(1024);
 
-  if (sim_verbose)
-    fprintf(stderr, "initDelay called with startTime = %f\n", startTime);
+  if (sim_verbose >= LOG_SOLVER)
+    fprintf(stdout, "initDelay called with startTime = %f\n", startTime);
 }
 
 void deinitDelay()

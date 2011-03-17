@@ -100,12 +100,13 @@ extern int terminationAssert; /* Becomes non-zero when model call assert simulat
 extern int warningLevelAssert; /* Becomes non-zero when model call assert with warning level. */
 extern omc_fileInfo TermInfo; /* message for termination. */
 
-
 /* Flags for controlling logging to stdout */
+extern const int LOG_STATS;
+extern const int LOG_SOLVER;
 extern const int LOG_EVENTS;
 extern const int LOG_NONLIN_SYS;
+extern const int LOG_ZEROCROSSINGS;
 extern const int LOG_DEBUG;
-
 /* Flags for modelErrorCodes */
 extern const int ERROR_NONLINSYS;
 extern const int ERROR_LINSYS;
