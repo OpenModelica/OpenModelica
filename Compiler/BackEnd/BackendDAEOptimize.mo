@@ -3537,7 +3537,9 @@ protected function createDiffListMeta
   partial function FuncExpType
     input tuple<DAE.Exp, DAE.ComponentRef, Option<Type_a>> inTplExpTypeA;
     output DAE.Exp outTplExpTypeA;
+    replaceable type Type_a subtypeof Any;
   end FuncExpType;
+  replaceable type Type_a subtypeof Any;
 algorithm 
    outExpList := matchcontinue (inExp, indiffVars, func, inTypeA)  
    local
@@ -3575,6 +3577,7 @@ end createDiffListMeta;
 protected function diffInt
   input tuple<DAE.Exp, DAE.ComponentRef, Option<Type_a>> inTplExpTypeA;
   output DAE.Exp outTplExpTypeA;
+  replaceable type Type_a subtypeof Any;
 algorithm
   outTplExpTypeA := matchcontinue(inTplExpTypeA)
     case(_) then DAE.ICONST(0);
@@ -3584,6 +3587,7 @@ end diffInt;
 protected function diffRealZero
   input tuple<DAE.Exp, DAE.ComponentRef, Option<Type_a>> inTplExpTypeA;
   output DAE.Exp outTplExpTypeA;
+  replaceable type Type_a subtypeof Any;
 algorithm
   outTplExpTypeA := matchcontinue(inTplExpTypeA)
     case(_) then DAE.RCONST(0.0);
@@ -3593,6 +3597,7 @@ end diffRealZero;
 protected function diffCrefVar
   input tuple<DAE.Exp, DAE.ComponentRef, Option<Type_a>> inTplExpTypeA;
   output DAE.Exp outTplExpTypeA;
+  replaceable type Type_a subtypeof Any;
 algorithm
   outTplExpTypeA := matchcontinue(inTplExpTypeA)
   local
@@ -3674,6 +3679,7 @@ end diffCref;
 protected function diffDerCref
   input tuple<DAE.Exp, DAE.ComponentRef, Option<Type_a>> inTplExpTypeA;
   output DAE.Exp outTplExpTypeA;
+  replaceable type Type_a subtypeof Any;
 algorithm
   outTplExpTypeA := matchcontinue(inTplExpTypeA)
   local

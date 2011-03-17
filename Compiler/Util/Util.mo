@@ -2293,15 +2293,15 @@ algorithm
   outLst:=
   matchcontinue (lst,func,a1,a2,a3,a4,a5,a6,a7,a8)
     local
-      list<Type_i> f_1;
-      list<Type_i> r_1;
+      list<Type_j> f_1;
+      list<list<Type_j>> r_1;
       Type_a f;
       list<Type_a> r;
 
     case ({},_,_,_,_,_,_,_,_,_) then {};
     case ((f :: r),func,a1,a2,a3,a4,a5,a6,a7,a8)
       equation
-        f_1 = func(f, a1,a2,a3,a4,a5,a6,a7,a8);
+        f_1 = func(f,a1,a2,a3,a4,a5,a6,a7,a8);
         r_1 = listMap8list(r, func, a1,a2,a3,a4,a5,a6,a7,a8);
       then
         (f_1 :: r_1);
