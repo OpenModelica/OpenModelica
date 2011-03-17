@@ -49,7 +49,7 @@ omplotwindow: mkbuilddirs
 	make -C OMNotebook/OMPlotWindow -f Makefile.unix
 omplot: mkbuilddirs
 	make -C OMPlot/OMPlotGUI -f Makefile.unix
-omedit: mkbuilddirs omnotebook
+omedit: mkbuilddirs omnotebook omplot
 	make -C OMEdit/OMEditGUI -f Makefile.unix
 
 qtclients: omnotebook omshell omplotwindow omedit omplot
