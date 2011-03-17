@@ -33,11 +33,12 @@
 
 #include "PlotCurve.h"
 #include "qwt_legend_item.h"
+#include "qwt_symbol.h"
 
 using namespace OMPlot;
 
 PlotCurve::PlotCurve(Plot *pParent)
-{
+{   
     mpParentPlot = pParent;
 }
 
@@ -82,9 +83,8 @@ void PlotCurve::updateLegend(QwtLegend *legend) const
     QwtLegendItem *lgdItem = dynamic_cast<QwtLegendItem*>(legend->find(this));
     if (lgdItem)
     {
-        lgdItem->setIdentifierMode(QwtLegendItem::ShowSymbol | QwtLegendItem::ShowLine | QwtLegendItem::ShowText);
-        //lgdItem->setSymbol();
-        lgdItem->setIdentifierWidth(10);
+        lgdItem->setIdentifierMode(QwtLegendItem::ShowSymbol | QwtLegendItem::ShowText);
+        lgdItem->setSymbol(QwtSymbol(QwtSymbol::Rect, QBrush(pen().color()), QPen(Qt::black),QSize(20,20)));
     }
 
     QwtPlotItem::updateLegend(legend);

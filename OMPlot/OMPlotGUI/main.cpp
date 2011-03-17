@@ -39,10 +39,11 @@ using namespace OMPlot;
 int main(int argc, char *argv[])
 {
     if (argc < 14) {
-      printf("Usage: %s filename title legend grid plottype logx logy xlabel ylabel xrange1 xrange2 yrange1 yrange2 variables\n", *argv);
+      printf("Usage: %s arg1 ... arg13 variables\n", *argv);
       return 1;
     }
     QApplication a(argc, argv);
+    a.setWindowIcon(QIcon(":/Resources/plotWindow.bmp"));
 
     try {
         QStringList arguments;
