@@ -204,7 +204,6 @@ algorithm
         eqns_3 = Util.listMap1(eqns_3,updateAlgorithmInputsOutputs,inputsoutputs);
         seqns_3 = listAppend(seqns_2, reqns_1) "& print_vars_statistics(vars\',knvars\')" ;
         (knvars_2,seqns_4,varsAliases) = removeConstantEqns(knvars_1,seqns_3,av);
-        Debug.fcall("dumpalias", BackendDump.dumpAliasVariables, varsAliases);
         eqns1 = BackendDAEUtil.listEquation(eqns_3);
         remeqns1 = BackendDAEUtil.listEquation(seqns_4);
         inieqns1 = BackendDAEUtil.listEquation(ieqns_2);
