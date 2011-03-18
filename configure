@@ -4765,7 +4765,7 @@ fi
   if test x"$with_paradiseo" = "xcheck"; then
     with_paradiseo_checked=""
     for f in /{usr,opt,$PREFIX}; do
-      test -d "$f/include/paradiseo/" -a -d "$f/lib/paradiseo/" && with_paradiseo=`ls $f` || with_paradiseo_checked="$with_paradiseo_checked $f"
+      test -d "$f/include/paradiseo/" -a -d "$f/lib/paradiseo/" && with_paradiseo="$f" || with_paradiseo_checked="$with_paradiseo_checked $f"
     done
   fi
 
