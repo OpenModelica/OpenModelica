@@ -51,7 +51,7 @@ static void indent(FILE *fout, int n) {
   while (n--) fputc(' ', fout);
 }
 
-static void printPlotCommand(FILE *plt, const char *title, const char *prefix, int numFnsAndBlocks, int i, int id) {
+static void printPlotCommand(FILE *plt, const char *plotFormat, const char *title, const char *prefix, int numFnsAndBlocks, int i, int id) {
   const char *format = "plot \"%s_prof.data\" binary format=\"%%*uint32%%2double%%*%duint32%%%ddouble\" using 1:%d w l lw 1\n";
   const char *formatCount = "plot \"%s_prof.data\" binary format=\"%%*uint32%%*2double%%%duint32%%*%ddouble\" using %d w l lw 1\n";
   unsigned long nmin,nmax;
@@ -82,17 +82,17 @@ static void printPlotCommand(FILE *plt, const char *title, const char *prefix, i
   }
 
   /* SVG */
-  fputs("set terminal svg\n", plt);
+  fprintf(plt, "set terminal %s\n", plotFormat);
   fprintf(plt, "set title \"%s\"\n", title);
   fprintf(plt, "set xlabel \"Global step at time\"\n");
   fprintf(plt, "set ylabel \"Execution time [s]\"\n");
-  fprintf(plt, "set output \"%s_prof.%d.svg\"\n", prefix, id);
+  fprintf(plt, "set output \"%s_prof.%d.%s\"\n", prefix, id, plotFormat);
   fprintf(plt, format, prefix, numFnsAndBlocks, numFnsAndBlocks, 3+i);
   if (i >= 0) {
     fprintf(plt, "set yrange [%f:%f]\n", ymin, ymax);
     fprintf(plt, "set xlabel \"Global step number\"\n");
     fprintf(plt, "set ylabel \"Execution count\"\n");
-    fprintf(plt, "set output \"%s_prof.%d_count.svg\"\n", prefix, id);
+    fprintf(plt, "set output \"%s_prof.%d_count.%s\"\n", prefix, id, plotFormat);
     fprintf(plt, formatCount, prefix, numFnsAndBlocks, numFnsAndBlocks, i+1);
     fprintf(plt, "set yrange [*:*]\n");
   }
@@ -135,10 +135,10 @@ static void printVars(FILE *fout, int level, int n, const struct omc_varInfo *va
   }
 }
 
-static void printFunctions(FILE *fout, FILE *plt, const char *modelFilePrefix, DATA *data, const struct omc_functionInfo *funcs) {
+static void printFunctions(FILE *fout, FILE *plt, const char *plotFormat, const char *modelFilePrefix, DATA *data, const struct omc_functionInfo *funcs) {
   int i;
   for (i=0; i<data->nFunctions; i++) {
-    printPlotCommand(plt, funcs[i].name, modelFilePrefix, data->nFunctions+data->nProfileBlocks, i, funcs[i].id);
+    printPlotCommand(plt, plotFormat, funcs[i].name, modelFilePrefix, data->nFunctions+data->nProfileBlocks, i, funcs[i].id);
     rt_clear(i + SIM_TIMER_FIRST_FUNCTION);
     indent(fout,2);
     fprintf(fout, "<function id=\"%d\">\n", funcs[i].id);
@@ -152,11 +152,11 @@ static void printFunctions(FILE *fout, FILE *plt, const char *modelFilePrefix, D
   }
 }
 
-static void printProfileBlocks(FILE *fout, FILE *plt, DATA *data) {
+static void printProfileBlocks(FILE *fout, FILE *plt, const char *plotFormat, DATA *data) {
   int i;
   for (i = data->nFunctions; i < data->nFunctions + data->nProfileBlocks; i++) {
     const struct omc_equationInfo *eq = &data->equationInfo[data->equationInfo_reverse_prof_index[i-data->nFunctions]];
-    printPlotCommand(plt, eq->name, data->modelFilePrefix, data->nFunctions+data->nProfileBlocks, i, eq->id);
+    printPlotCommand(plt, plotFormat, eq->name, data->modelFilePrefix, data->nFunctions+data->nProfileBlocks, i, eq->id);
     rt_clear(i + SIM_TIMER_FIRST_FUNCTION);
     indent(fout,2);fprintf(fout, "<profileblock>\n");
     indent(fout,4);fprintf(fout, "<ref refid=\"%d\"/>\n", (int) eq->id);
@@ -213,7 +213,7 @@ static void printProfilingDataHeader(FILE *fout, DATA *data) {
   indent(fout, 2); fprintf(fout, "</format>\n");
 }
 
-int printModelInfo(DATA *data, const char *filename, const char *plotfile, const char *method, const char *outputFormat, const char *outputFilename) {
+int printModelInfo(DATA *data, const char *filename, const char *plotfile, const char *plotFormat, const char *method, const char *outputFormat, const char *outputFilename) {
   static char buf[256];
   FILE *fout = fopen(filename, "w");
   FILE *plotCommands;
@@ -234,7 +234,7 @@ int printModelInfo(DATA *data, const char *filename, const char *plotfile, const
     fputs("set terminal svg\n", plotCommands);
     fputs("set nokey\n", plotCommands);
     /* The column containing the time spent to calculate each step */
-    printPlotCommand(plotCommands, "Execution time of global steps", data->modelFilePrefix, data->nFunctions+data->nProfileBlocks, -1, 999);
+    printPlotCommand(plotCommands, plotFormat, "Execution time of global steps", data->modelFilePrefix, data->nFunctions+data->nProfileBlocks, -1, 999);
   }
   /* The doctype is needed for id() lookup to work properly */
   fprintf(fout, "<!DOCTYPE doc [\
@@ -297,7 +297,7 @@ int printModelInfo(DATA *data, const char *filename, const char *plotfile, const
   fprintf(fout, "</variables>\n");
 
   fprintf(fout, "<functions>\n");
-  printFunctions(fout, plotCommands, data->modelFilePrefix, data, data->functionNames);
+  printFunctions(fout, plotCommands, plotFormat, data->modelFilePrefix, data, data->functionNames);
   fprintf(fout, "</functions>\n");
 
   fprintf(fout, "<equations>\n");
@@ -305,7 +305,7 @@ int printModelInfo(DATA *data, const char *filename, const char *plotfile, const
   fprintf(fout, "</equations>\n");
 
   fprintf(fout, "<profileblocks>\n");
-  printProfileBlocks(fout, plotCommands, data);
+  printProfileBlocks(fout, plotCommands, plotFormat, data);
   fprintf(fout, "</profileblocks>\n");
 
   fprintf(fout, "</simulation>\n");

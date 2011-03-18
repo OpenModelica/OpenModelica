@@ -413,7 +413,8 @@ startNonInteractiveSimulation(int argc, char**argv)
       const string modelInfo = string(globalData->modelFilePrefix) + "_prof.xml";
       const string plotFile = string(globalData->modelFilePrefix) + "_prof.plt";
       rt_accumulate(SIM_TIMER_TOTAL);
-      retVal = printModelInfo(globalData, modelInfo.c_str(), plotFile.c_str(), method.c_str(), outputFormat.c_str(), result_file_cstr.c_str()) && retVal;
+      string* plotFormat = (string*) getFlagValue("measureTimePlotFormat", argc, argv);
+      retVal = printModelInfo(globalData, modelInfo.c_str(), plotFile.c_str(), plotFormat ? plotFormat->c_str() : "svg", method.c_str(), outputFormat.c_str(), result_file_cstr.c_str()) && retVal;
   }
   
   deinitDelay();
