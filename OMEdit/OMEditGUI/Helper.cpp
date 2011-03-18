@@ -85,7 +85,7 @@ QString Helper::omi_stop_button_tooltip = QString("Stops the running interactive
 QString Helper::omi_shutdown_button_tooltip = QString("Shut down the running interactive simulation.");
 QString Helper::omi_showlog_button_tooltip = QString("Shows the OMI Log Message Window.");
 
-QString Helper::ModelicaSimulationMethods = "DASSLOLD,DASSL,DASSL2,Euler,Runge-Kutta";
+QString Helper::ModelicaSimulationMethods = "DASSL,DASSL2,Euler,Runge-Kutta";
 QString Helper::ModelicaSimulationOutputFormats = "mat,plt,csv,empty";
 
 QString GUIMessages::getMessage(int type)

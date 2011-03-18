@@ -150,8 +150,6 @@ void SimulationWidget::initializeFields()
         mpSimulationHeading->setText(tr("Interactive Simulation"));
         mpSimulationIntervalGroup->setDisabled(true);
         mpNumberofIntervalsTextBox->setText(tr("5"));
-        mpMethodComboBox->setCurrentIndex(0);
-        mpMethodComboBox->setDisabled(true);
         return;
     }
     else
@@ -159,7 +157,7 @@ void SimulationWidget::initializeFields()
         setWindowTitle(QString(Helper::applicationName).append(" - Simulation"));
         mpSimulationHeading->setText(tr("Simulation"));
         mpSimulationIntervalGroup->setDisabled(false);
-        mpMethodComboBox->setDisabled(false);
+        mpNumberofIntervalsTextBox->setText(tr("500"));
     }
 
     ProjectTab *projectTab = mpParentMainWindow->mpProjectTabs->getCurrentTab();
