@@ -52,7 +52,7 @@ static void indent(FILE *fout, int n) {
 }
 
 static void printPlotCommand(FILE *plt, const char *title, const char *prefix, int numFnsAndBlocks, int i, int id) {
-  const char *format = "plot \"%s_prof.data\" binary format=\"%%*uint32%%2double%%*%duint32%%%ddouble\" using 0:%d w l lw 1\n";
+  const char *format = "plot \"%s_prof.data\" binary format=\"%%*uint32%%2double%%*%duint32%%%ddouble\" using 1:%d w l lw 1\n";
   const char *formatCount = "plot \"%s_prof.data\" binary format=\"%%*uint32%%*2double%%%duint32%%*%ddouble\" using %d w l lw 1\n";
   unsigned long nmin,nmax;
   double ymin,ymax;
