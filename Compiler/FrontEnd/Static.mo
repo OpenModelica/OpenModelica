@@ -7363,10 +7363,10 @@ algorithm
       equation
         // enableTrace();
         // change the class name from gravityAcceleration to be world.gravityAcceleration
-        name = componentName +& "." +& name;
+        name = componentName +& "__" +& name;
         // remove modifications as they are added via transformModificationsToNamedArguments
         // also change extendsPath to world.gravityAccelerationTypes
-        extendsCn = Absyn.pathString(Absyn.QUALIFIED(componentName, extendsPath));
+        extendsCn = componentName +& "__" +& Absyn.pathString(extendsPath);
         newExtendsPath = Absyn.IDENT(extendsCn);
         sc = SCode.CLASS(name, partialPrefix, encapsulatedPrefix, restriction,
                SCode.DERIVED(Absyn.TPATH(newExtendsPath, arrayDim), SCode.NOMOD(), attributes, comment),info);
@@ -7378,7 +7378,7 @@ algorithm
         // with a different name: world.gravityAccelerationType
         SCode.CLASS(name, partialPrefix, encapsulatedPrefix, restriction, classDef, info) = extendedClass;
         // change the class name from gravityAccelerationTypes to be world.gravityAccelerationTypes
-        name = componentName +& "." +& name;
+        name = componentName +& "__" +& name;
         // construct the extended class world.gravityAccelerationType
         sc = SCode.CLASS(name, partialPrefix, encapsulatedPrefix, restriction, classDef, info);
         // add the extended class function to the environment
@@ -7390,7 +7390,7 @@ algorithm
       equation
         // enableTrace();
         // change the class name from gravityAcceleration to be world.gravityAcceleration
-        name = componentName +& "." +& name;
+        name = componentName +& "__" +& name;
         // remove modifications as they are added via transformModificationsToNamedArguments
         // also change extendsPath to world.gravityAccelerationTypes
         sc = SCode.CLASS(name, partialPrefix, encapsulatedPrefix, restriction, classDef, info);
@@ -7588,7 +7588,7 @@ algorithm
         (cache, env) = addComponentFunctionsToCurrentEnvironment(cache, env, scodeClass, classEnv, componentName);
         // transform Absyn.QUALIFIED("world", Absyn.IDENT("gravityAcceleration")) to
         // Absyn.IDENT("world.gravityAcceleration").
-        stringifiedInstanceFunctionName = Absyn.pathString(fn);
+        stringifiedInstanceFunctionName = componentName +& "__" +& SCode.className(scodeClass);
         correctFunctionPath = Absyn.IDENT(stringifiedInstanceFunctionName);
         // use the extra arguments if any
         nargs = listAppend(nargs, translatedNArgs);
