@@ -9,6 +9,7 @@ AC_SUBST(rmlinc)
 AC_SUBST(omc_antlr_jar)
 AC_SUBST(antlrinc)
 AC_SUBST(antlrlib)
+AC_SUBST(with_paradiseo)
 AC_SUBST(with_qwt)
 AC_SUBST(with_qwt_suffix)
 AC_SUBST(LIBSOCKET)
@@ -359,6 +360,27 @@ if test -n "$QMAKE"; then
   fi
 fi
 
+if test -n "$QMAKE"; then
+  AC_MSG_CHECKING([for paradisEO])
+  AC_ARG_WITH(paradiseo, [  --with-paradiseo        Required for OMOptim. Default searches {PREFIX,/usr,/opt} for {include,lib}/paradiseo], [], [with_paradiseo=check])
+
+  if test x"$with_paradiseo" = "xcheck"; then
+    with_paradiseo_checked=""
+    for f in /{usr,opt,$PREFIX}; do
+      test -d "$f/include/paradiseo/" -a -d "$f/lib/paradiseo/" && with_paradiseo=`readlink -f $f` || with_paradiseo_checked="$with_paradiseo_checked $f"
+    done
+  fi
+
+  if test x"$with_paradiseo" = "xno"; then
+    with_paradiseo=""
+    AC_MSG_RESULT([disabled])
+  elif test x"$with_paradiseo" = "xcheck"; then
+    AC_MSG_ERROR([not found (searched $with_paradiseo_checked)])
+  else
+    AC_MSG_RESULT($with_paradiseo)
+  fi
+fi
+
 if test "Darwin" = `uname`; then
   EXE=".app"
 else
@@ -469,7 +491,10 @@ OMShell/OMShellGUI/Makefile.unix \
 OMEdit/OMEditGUI/Makefile.unix \
 OMEdit/OMEditGUI/OMEdit.config \
 OMPlot/OMPlotGUI/Makefile.unix \
-OMPlot/OMPlotGUI/OMPlotGUI.config"
+OMPlot/OMPlotGUI/OMPlotGUI.config \
+OMOptim/build/Makefile.unix \
+OMOptim/build/OMOptim.config \
+"
 
 AC_CONFIG_COMMANDS([config.unix.h.fix],[./configure-post.sh $ac_cs_config])
 

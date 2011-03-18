@@ -51,8 +51,15 @@ omplot: mkbuilddirs
 	make -C OMPlot/OMPlotGUI -f Makefile.unix
 omedit: mkbuilddirs omnotebook omplot
 	make -C OMEdit/OMEditGUI -f Makefile.unix
+ifeq (@with_paradiseo@,)
+omoptim:
+	@echo "*** OpenModelica configured without support for OMOptim (--without-paradisEO)"
+else
+omoptim: mkbuilddirs
+	make -C OMOptim/build -f Makefile.unix
+endif
 
-qtclients: omnotebook omshell omplotwindow omedit omplot
+qtclients: omnotebook omshell omplotwindow omedit omplot omoptim
 
 qtclean: qtclean-common
 	make -C OMShell/OMShellGUI -f Makefile.unix clean
