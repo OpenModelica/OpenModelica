@@ -4974,4 +4974,19 @@ algorithm
   path := stringListPath(Util.listMap(pathToStringList(inPath), System.unquoteIdentifier));
 end unqotePathIdents;
 
+public function unqualifyCref
+  "If the given component reference is fully qualified this function removes the
+  fully qualified qualifier, otherwise does nothing."
+  input ComponentRef inCref;
+  output ComponentRef outCref;
+algorithm
+  outCref := match(inCref)
+    local
+      ComponentRef cref;
+
+    case CREF_FULLYQUALIFIED(componentRef = cref) then cref;
+    else inCref;
+  end match;
+end unqualifyCref;
+
 end Absyn;

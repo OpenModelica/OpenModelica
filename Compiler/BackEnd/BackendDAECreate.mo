@@ -336,7 +336,7 @@ algorithm
       then
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs1,whenclauses_1,extObjCls,states);
     
-    // tuple equations are rewritten to algorihm tuple assign.
+    // tuple equations are rewritten to algorithm tuple assign.
     case (daeEl as DAE.EQUATION(exp = e1,scalar = e2),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,whenclauses_1,extObjCls,states)
       equation
         a = lowerTupleEquation(daeEl);
@@ -534,7 +534,7 @@ algorithm
       equation
         // show only on failtrace!
         true = RTOpts.debugFlag("failtrace");
-        Debug.fprintln("failtrace", "- BackendDAECreate.lower2 failed on: " +& DAEDump.dumpElementsStr({daeEl}));
+        Debug.fprintln("failtrace", "- BackendDAECreate.lower3 failed on: " +& DAEDump.dumpElementsStr({daeEl}));
       then
         fail();
   end matchcontinue;  

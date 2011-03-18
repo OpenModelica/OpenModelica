@@ -414,63 +414,8 @@ public
 algorithm
   env := SCodeEnv.getEnvTopScope(inEnv);
   (outItem, outPath, outEnv) := lookupNameInPackage(inName, env);
-  outPath := removeEnvPrefix(outPath, inEnv);
+  outPath := Absyn.FULLYQUALIFIED(outPath);
 end lookupFullyQualified;
-
-protected function removeEnvPrefix
-  input Absyn.Path inPath;
-  input Env inEnv;
-  output Absyn.Path outPath;
-algorithm
-  outPath := matchcontinue(inPath, inEnv)
-    local
-      Absyn.Ident name1, name2;
-      Absyn.Path env_path, path;
-      FrameType frame_ty;
-
-    case (Absyn.QUALIFIED(name = name1), 
-          SCodeEnv.FRAME(frameType = frame_ty) :: _)
-      equation
-        frameNotEncapsulated(frame_ty);
-        env_path = SCodeEnv.getEnvPath(inEnv);
-        name2 = Absyn.pathFirstIdent(env_path);
-        true = stringEqual(name1, name2);
-        path = removeEnvPrefix2(inPath, env_path);
-      then
-        path;
-
-    else then Absyn.FULLYQUALIFIED(inPath);
-  end matchcontinue;
-end removeEnvPrefix;
-
-protected function removeEnvPrefix2
-  input Absyn.Path inPath;
-  input Absyn.Path inEnvPath;
-  output Absyn.Path outPath;
-algorithm
-  outPath := matchcontinue(inPath, inEnvPath)
-    local
-      Absyn.Ident name1, name2;
-      Absyn.Path rest_path, rest_env_path;
-
-    case (Absyn.QUALIFIED(name = name1, path = rest_path),
-          Absyn.QUALIFIED(name = name2, path = rest_env_path))
-      equation
-        true = stringEqual(name1, name2);
-        rest_path = removeEnvPrefix2(rest_path, rest_env_path);
-      then
-        rest_path;
-
-    case (Absyn.QUALIFIED(name = name1, path = rest_path),
-          Absyn.IDENT(name = name2))
-      equation
-        true = stringEqual(name1, name2);
-      then
-        rest_path;
-
-    else then inPath;
-  end matchcontinue;
-end removeEnvPrefix2;
 
 public function lookupNameInPackage
   "Looks up a name inside the environment of a package, returning the
@@ -701,7 +646,6 @@ algorithm
       Item item;
       Absyn.Path path, new_path;
       Env env;
-      Option<Env> item_env;
       String name_str, env_str;
       Error.ErrorID error_id;
 
@@ -795,7 +739,6 @@ public function lookupComponentRef
   input Env inEnv;
   input Absyn.Info inInfo;
   output Absyn.ComponentRef outCref;
-
 algorithm
   outCref := matchcontinue(inCref, inEnv, inInfo)
     local
@@ -818,6 +761,7 @@ algorithm
         cref = SCodeFlattenImports.flattenComponentRefSubs(inCref, inEnv, inInfo);
         // Then look up the component reference itself.
         cref = lookupComponentRef2(cref, inEnv);
+        cref = crefStripEnvPrefix(cref, inEnv);
       then
         cref;
 
@@ -827,6 +771,81 @@ algorithm
 
   end matchcontinue;
 end lookupComponentRef;
+
+protected function crefStripEnvPrefix
+  "Removes the entire environment prefix from the given component reference, or
+  returns the unchanged reference. This is done because models might import
+  local packages, for example:
+
+    package P
+      import myP = InsideP;
+
+      package InsideP
+        function f end f;
+      end InsideP;
+
+      constant c = InsideP.f();
+    end P;
+
+    package P2
+      extends P;
+    end P2;
+
+  When P2 is instantiated all elements from P will be brought into P2's scope
+  due to the extends. The binding of c will still point to P.InsideP.f though, so
+  the lookup will try to instantiate P which might fail if P is a partial
+  package or for other reasons. This is really a bug in Lookup (it shouldn't
+  need to instantiate the whole package just to find a function), but to work
+  around this problem for now this function will remove the environment prefix
+  when InsideP.f is looked up in P, so that it resolves to InsideP.f and not
+  P.InsideP.f. This allows P2 to find it in the local scope instead, since the
+  InsideP package has been inherited from P."
+  input Absyn.ComponentRef inCref;
+  input Env inEnv;
+  output Absyn.ComponentRef outCref;
+algorithm
+  outCref := matchcontinue(inCref, inEnv)
+    local
+      Absyn.Path env_path;
+      Absyn.ComponentRef cref;
+
+    case (_, _)
+      equation
+        env_path = SCodeEnv.getEnvPath(inEnv);
+        cref = Absyn.unqualifyCref(inCref);
+      then
+        crefStripEnvPrefix2(cref, env_path);
+
+    else inCref;
+  end matchcontinue;
+end crefStripEnvPrefix;
+  
+protected function crefStripEnvPrefix2
+  input Absyn.ComponentRef inCref;
+  input Absyn.Path inEnvPath;
+  output Absyn.ComponentRef outCref;
+algorithm
+  outCref := matchcontinue(inCref, inEnvPath)
+    local
+      Absyn.Ident id1, id2;
+      Absyn.ComponentRef cref;
+      Absyn.Path env_path;
+
+    case (Absyn.CREF_QUAL(name = id1, subScripts = {}, componentRef = cref), 
+          Absyn.QUALIFIED(name = id2, path = env_path))
+      equation
+        true = stringEqual(id1, id2);
+      then
+        crefStripEnvPrefix2(cref, env_path);
+
+    case (Absyn.CREF_QUAL(name = id1, subScripts = {}, componentRef = cref),
+          Absyn.IDENT(name = id2))
+      equation
+        true = stringEqual(id1, id2);
+      then
+        cref;
+  end matchcontinue;
+end crefStripEnvPrefix2;
 
 public function lookupComponentRef2
   "Helper function to lookupComponentRef. Does the actual look up of the
