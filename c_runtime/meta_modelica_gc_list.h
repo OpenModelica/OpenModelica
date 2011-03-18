@@ -42,7 +42,7 @@ extern "C" {
 struct mmc_GC_free_slot
 {
   modelica_metatype        start; /* the start of the free slot */
-  long                     size;  /* the free slot size */
+  size_t                   size;  /* the free slot size */
 };
 typedef struct mmc_GC_free_slot mmc_GC_free_slot;
 
@@ -64,6 +64,8 @@ int list_length(mmc_List list);
 int list_delete(mmc_List* list, mmc_GC_free_slot slot);
 /* deleting a node from list depending on the location */
 int list_delete_nth(mmc_List* list, int loc);
+/* deleting a node from list depending upon the pointer to an element */
+int list_delete_pointer(mmc_List* list, mmc_List el, mmc_List prev);
 /* delete the entire list */
 int list_clear(mmc_List* list);
 /* adding a mmc_GC_free_slot at the end of the list */

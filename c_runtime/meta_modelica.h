@@ -46,6 +46,13 @@
 extern "C" {
 #endif
 
+/*
+ * 
+ * adrpo: define this to have mmk_mk_* function tracing
+ * #define MMC_MK_DEBUG
+ *
+ */
+
 #if 0 /* Enable if you need to debug some MMC runtime assertions */
 #define MMC_DEBUG_ASSERT(x) assert(x)
 #else
@@ -72,6 +79,7 @@ typedef int mmc_sint_t;
 #define MMC_STRUCTHDR(slots,ctor) (((slots) << 10) + (((ctor) & 255) << 2))
 #define MMC_NILHDR    MMC_STRUCTHDR(0,0)
 #define MMC_CONSHDR    MMC_STRUCTHDR(2,1)
+#define MMC_NONEHDR    MMC_STRUCTHDR(0,1)
 #define MMC_OFFSET(p,i)    ((void*)((void**)(p) + (i)))
 #define MMC_FETCH(p)    (*(void**)(p))
 #define MMC_CAR(X)  MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(X),1))
@@ -106,7 +114,7 @@ typedef int mmc_sint_t;
  */
 #define MMC_HDRISMARKED(hdr)  ((hdr) &  2)
 #define MMC_HDR_MARK(hdr)     ((hdr) |  2)
-#define MMC_HDR_UNMARK(hdr)   ((hdr) & ~2)
+#define MMC_HDR_UNMARK(hdr)   ((hdr) & ~((mmc_uint_t)2))
 
 
 #define MMC_INT_MAX ((1<<30)-1)
@@ -179,6 +187,9 @@ static inline void* mmc_mk_scon(const char *s)
     memcpy(p->data, s, nbytes+1);  /* including terminating '\0' */
     res = MMC_TAGPTR(p);
     MMC_CHECK_STRING(res);
+#ifdef MMC_MK_DEBUG
+    fprintf(stderr, "STRING slots: %u size: %d str: %s\n", MMC_HDRSLOTS(header), strlen(s), s); fflush(NULL);
+#endif
     return res;
 }
 
@@ -186,6 +197,9 @@ static inline void *mmc_mk_box0(unsigned ctor)
 {
     struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(1);
     p->header = MMC_STRUCTHDR(0, ctor);
+#ifdef MMC_MK_DEBUG
+    fprintf(stderr, "BOX0 %u\n", ctor); fflush(NULL);
+#endif
     return MMC_TAGPTR(p);
 }
 
@@ -194,6 +208,9 @@ static inline void *mmc_mk_box1(unsigned ctor, const void *x0)
     struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(2);
     p->header = MMC_STRUCTHDR(1, ctor);
     p->data[0] = (void*) x0;
+#ifdef MMC_MK_DEBUG
+    fprintf(stderr, "BOX1 %u\n", ctor); fflush(NULL);
+#endif
     return MMC_TAGPTR(p);
 }
 
@@ -203,6 +220,9 @@ static inline void *mmc_mk_box2(unsigned ctor, const void *x0, const void *x1)
     p->header = MMC_STRUCTHDR(2, ctor);
     p->data[0] = (void*) x0;
     p->data[1] = (void*) x1;
+#ifdef MMC_MK_DEBUG
+    fprintf(stderr, "BOX2 %u\n", ctor); fflush(NULL);
+#endif
     return MMC_TAGPTR(p);
 }
 
@@ -213,6 +233,9 @@ static inline void *mmc_mk_box3(unsigned ctor, const void *x0, const void *x1, c
     p->data[0] = (void*) x0;
     p->data[1] = (void*) x1;
     p->data[2] = (void*) x2;
+#ifdef MMC_MK_DEBUG
+    fprintf(stderr, "BOX3 %u\n", ctor); fflush(NULL);
+#endif
     return MMC_TAGPTR(p);
 }
 
@@ -224,6 +247,9 @@ static inline void *mmc_mk_box4(unsigned ctor, const void *x0, const void *x1, c
     p->data[1] = (void*) x1;
     p->data[2] = (void*) x2;
     p->data[3] = (void*) x3;
+#ifdef MMC_MK_DEBUG
+    fprintf(stderr, "BOX4 %u\n", ctor); fflush(NULL);
+#endif
     return MMC_TAGPTR(p);
 }
 
@@ -236,6 +262,9 @@ static inline void *mmc_mk_box5(unsigned ctor, const void *x0, const void *x1, c
     p->data[2] = (void*) x2;
     p->data[3] = (void*) x3;
     p->data[4] = (void*) x4;
+#ifdef MMC_MK_DEBUG
+    fprintf(stderr, "BOX5 %u\n", ctor); fflush(NULL);
+#endif
     return MMC_TAGPTR(p);
 }
 
@@ -249,6 +278,9 @@ static inline void *mmc_mk_box6(unsigned ctor, const void *x0, const void *x1, c
     p->data[3] = (void*) x3;
     p->data[4] = (void*) x4;
     p->data[5] = (void*) x5;
+#ifdef MMC_MK_DEBUG
+    fprintf(stderr, "BOX6 %u\n", ctor); fflush(NULL);
+#endif
     return MMC_TAGPTR(p);
 }
 
@@ -264,6 +296,9 @@ static inline void *mmc_mk_box7(unsigned ctor, const void *x0, const void *x1, c
     p->data[4] = (void*) x4;
     p->data[5] = (void*) x5;
     p->data[6] = (void*) x6;
+#ifdef MMC_MK_DEBUG
+    fprintf(stderr, "BOX7 %u\n", ctor); fflush(NULL);
+#endif
     return MMC_TAGPTR(p);
 }
 
@@ -280,6 +315,9 @@ static inline void *mmc_mk_box8(unsigned ctor, const void *x0, const void *x1, c
     p->data[5] = (void*) x5;
     p->data[6] = (void*) x6;
     p->data[7] = (void*) x7;
+#ifdef MMC_MK_DEBUG
+    fprintf(stderr, "BOX8 %u\n", ctor); fflush(NULL);
+#endif
     return MMC_TAGPTR(p);
 }
 
@@ -297,6 +335,9 @@ static inline void *mmc_mk_box9(unsigned ctor, const void *x0, const void *x1, c
     p->data[6] = (void*) x6;
     p->data[7] = (void*) x7;
     p->data[8] = (void*) x8;
+#ifdef MMC_MK_DEBUG
+    fprintf(stderr, "BOX9 %u\n", ctor); fflush(NULL);
+#endif
     return MMC_TAGPTR(p);
 }
 
@@ -311,11 +352,14 @@ static inline void *mmc_mk_box(int slots, unsigned ctor, ...)
       p->data[i] = va_arg(argp, void*);
     }
     va_end(argp);
+#ifdef MMC_MK_DEBUG
+    fprintf(stderr, "BOXNN slots:%d ctor: %u\n", slots, ctor); fflush(NULL);
+#endif
     return MMC_TAGPTR(p);
 }
 
-static /* const */ MMC_DEFSTRUCT0LIT(mmc_nil,0);
-static /* const */ MMC_DEFSTRUCT0LIT(mmc_none,1);
+static const MMC_DEFSTRUCT0LIT(mmc_nil,0);
+static const MMC_DEFSTRUCT0LIT(mmc_none,1);
 
 #define mmc_mk_nil() MMC_REFSTRUCTLIT(mmc_nil)
 #define mmc_mk_none() MMC_REFSTRUCTLIT(mmc_none)
@@ -396,8 +440,8 @@ extern jmp_buf mmc_jumper[MMC_JMP_BUF_SIZE];
 extern int jmp_buf_index;
 */
 extern jmp_buf *mmc_jumper;
-#define MMC_TRY() {jmp_buf new_mmc_jumper, *old_jumper; old_jumper = mmc_jumper; mmc_jumper = &new_mmc_jumper; if (setjmp(new_mmc_jumper) == 0) {
-#define MMC_CATCH() } mmc_jumper = old_jumper; mmc_catch_dummy_fn();}
+#define MMC_TRY() {mmc_GC_local_state_type mmc_GC_local_state = mmc_GC_save_roots_state("TRY"); jmp_buf new_mmc_jumper, *old_jumper; old_jumper = mmc_jumper; mmc_jumper = &new_mmc_jumper; if (setjmp(new_mmc_jumper) == 0) {
+#define MMC_CATCH() } mmc_jumper = old_jumper; mmc_GC_unwind_roots_state(mmc_GC_local_state); mmc_catch_dummy_fn();}
 #define MMC_THROW() longjmp(*mmc_jumper,1)
 
 #define MMC_TRY_TOP() MMC_TRY()

@@ -34,11 +34,35 @@
 
 #if defined(_MSC_VER) || defined(__MINGW32__)
 #define _CRT_SECURE_NO_WARNINGS
-#include <windows.h>
+#include <Windows.h>
 #define sleep Sleep
 #else
 #include <unistd.h>
 #endif
+
+#if defined(_MSC_VER)
+
+#include <QtNetwork/QTcpSocket>
+#include <QByteArray>
+#include <QDataStream>
+#include <QString>
+#include <QTextStream>
+#include <QFile>
+#include <QBuffer>
+//#include <QtNetwork/QTcpServer>
+//#include <QMessageBox>
+#include <QVariant>
+#include <QColor>
+#include <QVector>
+#include <QDir>
+//#include <string>
+//#include <QDateTime>
+#include <QProcess>
+#include <QThread>
+#include <QTemporaryFile>
+#include <QtNetwork/QHostAddress>
+
+#else
 
 //Qt headeers
 //#include <QCoreApplication>
@@ -61,6 +85,9 @@
 #include <QThread>
 #include <QTemporaryFile>
 #include <QtNetwork/QHostAddress>
+
+#endif
+
 //Std headers
 //#include <iostream>
 #include <vector>

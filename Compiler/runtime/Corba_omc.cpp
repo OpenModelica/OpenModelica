@@ -30,9 +30,10 @@
 
 #include <stdio.h>
 #include "corbaimpl.cpp"
-#include "meta_modelica.h"
 
 extern "C" {
+
+#include "meta_modelica.h"
 
 extern const char* Corba_waitForCommand()
 {

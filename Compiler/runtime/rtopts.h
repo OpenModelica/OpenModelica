@@ -31,8 +31,19 @@
 #ifndef __RTOPTS_H
 #define __RTOPTS_H
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
 int check_debug_flag(char const* strdata);
 int RTOptsImpl__acceptMetaModelicaGrammar(void);
 extern int running_testsuite;
 extern int showErrorMessages;
+
+#if defined(__cplusplus)
+}
 #endif
+
+
+#endif
+

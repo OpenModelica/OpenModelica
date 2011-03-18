@@ -74,8 +74,8 @@
 extern "C" {
 #endif
 
-#define MMC_GC_NUMBER_OF_MARK_THREADS  5
-#define MMC_GC_NUMBER_OF_SWEEP_THREADS 5
+#define MMC_GC_NUMBER_OF_MARK_THREADS  6
+#define MMC_GC_NUMBER_OF_SWEEP_THREADS 6
 
 #define MMC_GC_MARK   1
 #define MMC_GC_UNMARK 0
@@ -83,36 +83,48 @@ extern "C" {
 struct mmc_GC_state_type /* the structure of GC state */
 {
   int                     default_number_of_pages; /* the initial number of pages */
-  long                    default_page_size;       /* the default page size */
-  long                    default_roots_size;      /* the default size of the array of roots */
+  size_t                  default_page_size;       /* the default page size */
+  size_t                  default_roots_size;      /* the default size of the array of roots */
+  size_t                  default_roots_marks_size;/* the default size of marks in the array of roots */
   int                     default_number_of_mark_threads;  /* the initial number of mark threads */
   int                     default_number_of_sweep_threads; /* the initial number of sweep threads */
   struct mmc_ListElement* pages; /* the allocated pages is just a list with pointer and size */
   mmc_GC_roots_type       roots; /* the current roots */
   struct mmc_ListElement* free;  /* the free list is a list with pointer and size */
+  modelica_metatype       global_roots[1024]; /* the global roots ! */
+  size_t                  totalPageSize; /* the total size of pages */
+  size_t                  totalFreeSize; /* the total size of free slots */
   mmc_GC_stats_type       stats; /* the statistics */
 };
 typedef struct mmc_GC_state_type mmc_GC_state_type;
 
 extern mmc_GC_state_type* mmc_GC_state;
 
-/* primary allocation routine for MetaModelica */
+/* primary allocation routines for MetaModelica */
 void *mmc_alloc_bytes(unsigned nbytes);
-static void *mmc_alloc_words(unsigned nwords)
-{
-  return mmc_alloc_bytes(nwords * sizeof(void*));
-}
+void *mmc_alloc_words(unsigned nwords);
 
+DLLExport void mmc_GC_set_state(mmc_GC_state_type* state);
 /* initialization of MetaModelica GC */
-int mmc_GC_init(int nr_mark_threads, int nr_sweep_threads, long default_page_size, int default_number_of_pages, long default_roots_size);
+int mmc_GC_init(int nr_mark_threads, int nr_sweep_threads, size_t default_page_size, int default_number_of_pages, size_t default_roots_size, size_t default_roots_marks_size);
+/* initialization with defaults */
+int mmc_GC_init_default(void);
+/* clear of MetaModelica GC */
+int mmc_GC_clear(void);
 /* add pointers to roots */
-int mmc_GC_add_root(modelica_metatype);
+int mmc_GC_add_root(modelica_metatype*, mmc_GC_local_state_type local_GC_state, const char*);
 /* save the current roots mark */
-int mmc_GC_push_roots_mark(void);
+mmc_GC_local_state_type mmc_GC_save_roots_state(const char* name);
 /* remove the current roots mark */
-int mmc_GC_pop_roots_mark(void);
+int mmc_GC_undo_roots_state(mmc_GC_local_state_type local_GC_state);
+/* unwind to current function */
+int mmc_GC_unwind_roots_state(mmc_GC_local_state_type local_GC_state);
 /* do garbage collection */
-int mmc_GC_collect(void);
+int mmc_GC_collect(mmc_GC_local_state_type local_GC_state);
+
+/* tag the free reqion as a free object with 250 ctor*/
+#define MMC_FREE_OBJECT_CTOR           250
+#define MMC_TAG_AS_FREE_OBJECT(p, sz)  (((struct mmc_header*)p)->header = MMC_STRUCTHDR(sz/sizeof(void*), MMC_FREE_OBJECT_CTOR))
 
 #if defined(__cplusplus)
 }

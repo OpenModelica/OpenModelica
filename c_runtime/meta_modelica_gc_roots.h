@@ -50,17 +50,20 @@ extern "C" {
 /* the roots type is an array of void* with a current index and limits */
 struct mmc_GC_roots_type
 {
-    modelica_metatype* start;    /* the start of tha array of roots */
-    modelica_metatype* current;  /* the current limit */
-    modelica_metatype* limit;    /* the limit of roots */
-    struct mmc_StackElement* marks;    /* the marks in the roots, saves current at certain points */
+    modelica_metatype*       start;           /* the start of the array of roots */
+    size_t                   current;         /* the current limit */
+    size_t                   limit;           /* the limit of roots */
+    mmc_Stack_type           *marks;          /* the marks in the roots, saves current at certain points */
+    size_t                   rootsStackIndex; /* the current state of the marks stack, basically number of elements */
 };
 typedef struct mmc_GC_roots_type mmc_GC_roots_type;
 
 /* create the roots structure */
-mmc_GC_roots_type roots_create(long default_roots_size);
-/* realloc the roots structure */
-mmc_GC_roots_type roots_realloc(mmc_GC_roots_type roots, long default_roots_size);
+mmc_GC_roots_type roots_create(size_t default_roots_size, size_t default_roots_mark_size);
+/* realloc and increase the roots structure */
+mmc_GC_roots_type roots_increase(mmc_GC_roots_type roots, size_t default_roots_size);
+/* realloc and decrease the roots structure */
+mmc_GC_roots_type roots_decrease(mmc_GC_roots_type roots, size_t default_roots_size);
 
 #if defined(__cplusplus)
 }

@@ -38,27 +38,40 @@
 extern "C" {
 #endif
 
-/* A stack as a linked list. */
-struct mmc_StackElement
+#define MMC_GC_ROOTS_MARKS_SIZE_INITIAL 8*1024  /* initial size of roots, reallocate on full */
+
+struct mmc_GC_local_state_type /* the structure of local GC state that is saved on stack */
 {
-  long        el;
-  struct mmc_StackElement* next;
+  const char* functionName; /* the function name */
+  size_t rootsMark;         /* the roots mark */
+  size_t rootsStackIndex;   /* the index in the mark stack (basically the depth) */
+};
+typedef struct mmc_GC_local_state_type mmc_GC_local_state_type;
+
+/* A stack as an array. */
+struct mmc_Stack_type
+{
+  mmc_GC_local_state_type  *start; /* the stack array of marks */
+  size_t                   current; /* the current limit */
+  size_t                   limit;   /* the limit of roots */
 };
 
-typedef struct mmc_StackElement* mmc_Stack;
+typedef struct mmc_Stack_type  mmc_Stack_type;
 
 /* make an empty stack */
-mmc_Stack stack_create(void);
+mmc_Stack_type* stack_create(size_t default_stack_size);
 /* check if stack is empty, nonzero */
-int stack_empty(mmc_Stack stack);
+int stack_empty(mmc_Stack_type* stack);
 /* peek stack  */
-long stack_peek(mmc_Stack stack);
+mmc_GC_local_state_type stack_peek(mmc_Stack_type* stack);
 /* pop the stack */
-long stack_pop(mmc_Stack* stack);
+mmc_GC_local_state_type stack_pop(mmc_Stack_type* stack);
 /* push stack */
-void stack_push(mmc_Stack* stack, long el);
+mmc_Stack_type* stack_push(mmc_Stack_type* stack, mmc_GC_local_state_type el);
+/* stack decrease */
+mmc_Stack_type* stack_decrease(mmc_Stack_type* stack, size_t default_stack_size);
 /* delete stack */
-void stack_clear(mmc_Stack* stack);
+mmc_Stack_type* stack_clear(mmc_Stack_type* stack);
 
 #if defined(__cplusplus)
 }

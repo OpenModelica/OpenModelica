@@ -7498,7 +7498,7 @@ algorithm
       list<Absyn.Exp> args,t4;
       list<Absyn.NamedArg> nargs, translatedNArgs;
       Boolean impl,tuple_,builtin,isPure;
-      DAE.InlineType inline;
+      DAE.InlineType inlineType;
       Option<Interactive.InteractiveSymbolTable> st;
       list<DAE.Type> typelist;
       list<DAE.Dimension> vect_dims;
@@ -7678,7 +7678,7 @@ algorithm
          in the function type of the user function and check both the
          function name and the function\'s type." ;
         Util.setStatefulBoolean(stopElab,true);
-        (cache,args_1,constlist,restype,functype as (DAE.T_FUNCTION(functionAttributes = DAE.FUNCTION_ATTRIBUTES(isPure = isPure, inline = inline)),_),vect_dims,slots) =
+        (cache,args_1,constlist,restype,functype as (DAE.T_FUNCTION(functionAttributes = DAE.FUNCTION_ATTRIBUTES(isPure = isPure, inline = inlineType)),_),vect_dims,slots) =
           elabTypes(cache, env, args, nargs, typelist, true/* Check types*/, impl,pre,info)
           "The constness of a function depends on the inputs. If all inputs are constant the call itself is constant." ;
         (fn_1,functype) = deoverloadFuncname(fn, functype);
@@ -7692,7 +7692,7 @@ algorithm
         tp = Types.elabType(restype);
         (cache,args_2,slots2) = addDefaultArgs(cache,env,args_1,fn,slots,impl,pre,info);
         true = Util.listFold(slots2, slotAnd, true);
-        callExp = DAE.CALL(fn_1,args_2,tuple_,builtin,tp,inline);
+        callExp = DAE.CALL(fn_1,args_2,tuple_,builtin,tp,inlineType);
         
         // create a replacement for input variables -> their binding
         //inputVarsRepl = createInputVariableReplacements(slots2, VarTransform.emptyReplacements());
@@ -10847,6 +10847,39 @@ algorithm
   end matchcontinue;
 end createCrefArray2d;
 
+public function absynCrefToComponentReference "function: absynCrefToComponentReference
+  This function converts an absyn cref to a component reference"
+  input Absyn.ComponentRef inComponentRef;
+  output DAE.ComponentRef outComponentRef;
+algorithm
+  outComponentRef := match (inComponentRef)
+    local
+      Ident i;
+      Boolean b;
+      Absyn.ComponentRef c;
+      DAE.ComponentRef cref;
+    
+    case Absyn.CREF_IDENT(name = i,subscripts = {})
+      equation
+        cref = ComponentReference.makeCrefIdent(i, DAE.ET_OTHER(), {}); 
+      then 
+        cref;
+    
+    case Absyn.CREF_QUAL(name = i,subScripts = {},componentRef = c)
+      equation
+        cref = absynCrefToComponentReference(c);
+        cref = ComponentReference.makeCrefQual(i, DAE.ET_OTHER(), {}, cref);
+      then 
+        cref;
+    
+    case Absyn.CREF_FULLYQUALIFIED(componentRef = c)
+      equation
+        cref = absynCrefToComponentReference(c);
+      then
+        cref;
+  end match;
+end absynCrefToComponentReference;
+
 protected function elabCrefSubs
 "function: elabCrefSubs
   This function elaborates on all subscripts in a component reference."
@@ -10879,8 +10912,21 @@ algorithm
       Env.Cache cache;
       SCode.Variability vt;
 
-    // Wildcard
-    case( cache,env, Absyn.WILD(),_,impl,info) then (cache,DAE.WILD(),DAE.C_VAR());
+    /*/ Wildcard
+    case (cache,env, Absyn.WILD(),_,impl,info) then (cache,DAE.WILD(),DAE.C_VAR());
+    
+    // if the cref has no subscripts, just return the same!
+    case( cache,env,acr, _,impl,info)
+      equation
+        // adrpo: to circumvent lookup see if the cref has subscripts or not!
+        false = Absyn.crefHasSubscripts(acr);
+        cr = absynCrefToComponentReference(acr);
+        // prefix it!
+        (cache,cr) = PrefixUtil.prefixCref(cache,env,InnerOuter.emptyInstHierarchy,crefPrefix,cr);
+      then 
+        (cache,cr,DAE.C_CONST());
+    */
+    
     // IDENT
     case (cache,env,Absyn.CREF_IDENT(name = id,subscripts = ss),crefPrefix,impl,info)
       equation
@@ -10895,7 +10941,8 @@ algorithm
         (cache,ss_1,const) = elabSubscriptsDims(cache,env, ss, sl, impl,crefPrefix,info);
       then       
         (cache,ComponentReference.makeCrefIdent(id,ty,ss_1),const);
-    // QUAL,with no subscripts => looking for var
+        
+    // QUAL,with no subscripts => looking for var in the top env!
     case (cache,env,Absyn.CREF_QUAL(name = id,subScripts = {},componentRef = subs),crefPrefix,impl,info)
       equation
         (cache,cr) = PrefixUtil.prefixCref(cache,env,InnerOuter.emptyInstHierarchy,crefPrefix,ComponentReference.makeCrefIdent(id,DAE.ET_OTHER(),{}));
@@ -10903,9 +10950,10 @@ algorithm
         (cache,_,t,_,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr);
         ty = Types.elabType(t);
         crefPrefix = PrefixUtil.prefixAdd(id,{},crefPrefix,SCode.VAR(),ClassInf.UNKNOWN(Absyn.IDENT(""))); // variability doesn't matter
-        (cache,cr,const) = elabCrefSubs(cache,env, subs,crefPrefix,impl,info);
+        (cache,cr,const) = elabCrefSubs(cache,env,subs,crefPrefix,impl,info);
       then
         (cache,ComponentReference.makeCrefQual(id,ty,{},cr),const);
+
     // QUAL,with no subscripts second case => look for class
     case (cache,env,Absyn.CREF_QUAL(name = id,subScripts = {},componentRef = subs),crefPrefix,impl,info)
       equation
@@ -10913,6 +10961,7 @@ algorithm
         (cache,cr,const) = elabCrefSubs(cache,env, subs,crefPrefix,impl,info);
       then
         (cache,ComponentReference.makeCrefQual(id,DAE.ET_COMPLEX(Absyn.IDENT(""),{},ClassInf.UNKNOWN(Absyn.IDENT(""))),{},cr),const);
+    
     // QUAL,with constant subscripts
     case (cache,env,Absyn.CREF_QUAL(name = id,subScripts = ss as _::_,componentRef = subs),crefPrefix,impl,info)
       equation

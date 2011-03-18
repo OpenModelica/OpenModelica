@@ -60,6 +60,42 @@ int list_length(mmc_List list)
   return count;
 }
 
+/* deleting a node from list depending upon the pointer to an element */
+int list_delete_pointer(mmc_List* list, mmc_List pointer, mmc_List prev)
+{
+  /* pointer is at the begining */
+  if (*list == pointer)
+  {
+    *list = pointer->next;
+    free(pointer);
+    return 0;
+  }
+
+  /* NOT at the end of the list! */
+  if (pointer->next != NULL)
+  {
+    mmc_List next = pointer->next;
+    /* copy from next and delete next! */
+    pointer->el = next->el;
+    pointer->next = next->next;
+    free(next);
+    return 0;
+  }
+
+  /* at the end of the list! */
+  if (pointer->next == NULL)
+  {
+    prev->next = NULL;
+    free(pointer);
+    return 0;
+  }
+
+  /* not found */
+  fprintf(stderr, "adrpo did some bad list programming!"); fflush(NULL);
+  return 1;
+}
+
+
 /* deleting a node from list depending upon the data in the node */
 int list_delete(mmc_List* list, mmc_GC_free_slot slot)
 {
@@ -133,7 +169,7 @@ int list_delete_nth(mmc_List* list, int loc)
 /* delete the entire list */
 int list_clear(mmc_List* list)
 {
-  struct mmc_ListElement *prevPtr, *curPtr;
+  struct mmc_ListElement *prevPtr = NULL, *curPtr = NULL;
 
   curPtr = *list;
 
@@ -203,18 +239,8 @@ int list_cons(mmc_List* list, mmc_GC_free_slot slot)
   assert(temp != 0);
 
   temp->el = slot;
-
-  if (*list == NULL)
-  {
-     /* list is empty */
-     *list = temp;
-     (*list)->next = NULL;
-  }
-  else
-  {
-     temp->next = *list;
-     *list = temp;
-  }
+  temp->next = *list;
+  *list = temp;
 
   return 0;
 }

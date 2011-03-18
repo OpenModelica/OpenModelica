@@ -33,6 +33,10 @@
 #include <stdlib.h>
 #include <errno.h>
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
 static int type_info = 0;
 static int split_arrays = 1;
 static int modelica_output = 0;
@@ -87,7 +91,7 @@ int evaluateParametersInAnnotations = 0;
  * This variable is defined in corbaimpl.cpp and set
  * here by function setCorbaSessionName(char* name);
  */
-extern const char* corbaSessionName;
+const char* corbaSessionName = "";
 
 /*
  * adrpo 2008-11-28
@@ -189,7 +193,7 @@ static int set_debug_flag(char const* strdata, long value)
   return 1;
 }
 
-extern int check_debug_flag(char const* strdata)
+int check_debug_flag(char const* strdata)
 {
   int flg=0;
   int i;
@@ -480,7 +484,11 @@ static enum RTOpts__arg__result RTOptsImpl__arg(const char* arg)
   return ARG_CONSUME;
 }
 
-extern int RTOptsImpl__acceptMetaModelicaGrammar()
+int RTOptsImpl__acceptMetaModelicaGrammar()
 {
   return RTOpts_acceptedGrammar == GRAMMAR_METAMODELICA;
 }
+
+#if defined(__cplusplus)
+}
+#endif

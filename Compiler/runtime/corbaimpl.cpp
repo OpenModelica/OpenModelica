@@ -47,7 +47,7 @@ extern "C" {
 #include "settingsimpl.h"
 
 /* This variable is set in rtopts by function setCorbaSessionName(char* name); */
-const char* corbaSessionName=0;
+extern const char* corbaSessionName;
 const char* omc_cmd_message="";
 const char* omc_reply_message="";
 

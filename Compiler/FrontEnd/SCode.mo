@@ -1037,7 +1037,7 @@ public function printElementStr
 algorithm
   outString :=  matchcontinue (inElement)
     local
-      String str,str2,res,n,mod_str,s,vs;
+      String str,str2,res,n,mod_str,s,vs,modStr,strFinalPrefix,strReplaceablePrefix;
       Absyn.Path path;
       Mod mod;
       Boolean finalPrefix,repl,prot;
@@ -1045,8 +1045,7 @@ algorithm
       Class cl;
       Variability var;
       Absyn.TypeSpec tySpec;
-      Option<Comment> comment;
-      String modStr;
+      Option<Comment> comment;      
       Absyn.Import imp;
 
     case EXTENDS(baseClassPath = path,modifications = mod)
@@ -1054,12 +1053,6 @@ algorithm
         str = Absyn.pathString(path);
         modStr = printModStr(mod);
         res = stringAppendList({"EXTENDS(",str,", modification=",modStr,")"});
-      then
-        res;
-    case CLASSDEF(name = n,finalPrefix = finalPrefix,replaceablePrefix = repl,classDef = cl)
-      equation
-        str = printClassStr(cl);
-        res = stringAppendList({"CLASSDEF(",n,",",str,")"});
       then
         res;
     case COMPONENT(component = n,innerOuter=io,finalPrefix = finalPrefix,replaceablePrefix = repl,
@@ -1075,8 +1068,10 @@ algorithm
         res;
     case CLASSDEF(name = n,finalPrefix = finalPrefix,replaceablePrefix = repl,classDef = cl)
       equation
+        strFinalPrefix = Util.if_(finalPrefix, "true", "false");
+        strReplaceablePrefix = Util.if_(repl, "true", "false");
         str = printClassStr(cl);
-        res = stringAppendList({"CLASSDEF(",n,",...,",str,")"});
+        res = stringAppendList({"CLASSDEF(", n, ", final = ", strFinalPrefix, ", replaceable = ", strReplaceablePrefix, ", ", str,")"});
       then
         res;
     case (IMPORT(imp = imp))
@@ -1144,15 +1139,18 @@ public function printClassStr "
 algorithm
   outString := match (inClass)
     local
-      String s,res,id,re;
+      String s,res,id,re,strPartialPrefix,strEncapsulatedPrefix;
       Boolean p,en;
       Restriction rest;
       ClassDef def;
+        
     case (CLASS(name = id,partialPrefix = p,encapsulatedPrefix = en,restriction = rest,classDef = def))
       equation
         s = printClassdefStr(def);
         re = restrString(rest);
-        res = stringAppendList({"CLASS(",id,",_,_,",re,",",s,")\n"});
+        strPartialPrefix = Util.if_(en, "true", "false");
+        strEncapsulatedPrefix = Util.if_(p, "true", "false");
+        res = stringAppendList({"CLASS(",id,", partial = ",strPartialPrefix, ", encapsulated = ", strEncapsulatedPrefix, ", ", re, ", ", s, ")\n"});
       then
         res;
   end match;

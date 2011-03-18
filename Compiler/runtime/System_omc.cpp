@@ -28,12 +28,12 @@
  *
  */
 
-#include "meta_modelica.h"
+extern "C" {
+
+#include "modelica.h"
 #include "rml_compatibility.h"
 #include "systemimpl.c"
-#include <limits.h>
 
-extern "C" {
 
 extern void System_writeFile(const char* filename, const char* data)
 {

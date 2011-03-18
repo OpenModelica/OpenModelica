@@ -425,19 +425,25 @@ algorithm
 
         elt = SCode.EXTENDS(Absyn.IDENT(name2),mods,NONE(),info1);
         classDef = SCode.PARTS(elt::els1,nEqn1,inEqn1,nAlg1,inAlg1,NONE(),annotationLst1,comment1);
-        cl = SCode.CLASS(name1,partialPrefix1,encapsulatedPrefix1,restriction1,classDef, info1);
+        cl = SCode.CLASS(name1, partialPrefix1, encapsulatedPrefix1, restriction1, classDef, info1);
         elt = SCode.CLASSDEF(name1, finalPrefix1, replaceablePrefix1, redecl1, cl, cc1);
         emod = Mod.renameTopLevelNamedSubMod(emod,name1,name2);
         // Debug.traceln("class extends: " +& SCode.printElementStr(compelt) +& "  " +& SCode.printElementStr(elt));
-      then (emod,(compelt,mod1,b)::(elt,DAE.NOMOD(),true)::rest);
+      then 
+        (emod,(compelt,mod1,b)::(elt,DAE.NOMOD(),true)::rest);
+    
     case (_,emod,name1,classExtendsElt,first::rest)
       equation
         (emod,rest) = instClassExtendsList2(inEnv,emod,name1,classExtendsElt,rest);
-      then (emod,first::rest);
+      then 
+        (emod,first::rest);
+    
     case (_,_,_,_,{})
       equation
         Debug.traceln("TODO: Make a proper Error message here - Inst.instClassExtendsList2 couldn't find the class to extend");
-      then fail();
+      then 
+        fail();
+  
   end matchcontinue;
 end instClassExtendsList2;
 
@@ -606,21 +612,37 @@ algorithm
       then
         ((comp, cmod, b), inMod);
 
+    // adrpo: 
+    //  2011-01-19 we can have a modifier in the mods here,
+    //  example in Modelica.Media:
+    //   partial package SingleGasNasa
+    //     extends Interfaces.PartialPureSubstance(
+    //       ThermoStates = Choices.IndependentVariables.pT,
+    //       mediumName=data.name,
+    //       substanceNames={data.name},
+    //       singleState=false,
+    //       Temperature(min=200, max=6000, start=500, nominal=500),
+    //       SpecificEnthalpy(start=if referenceChoice==ReferenceEnthalpy.ZeroAt0K then data.H0 else 
+    //         if referenceChoice==ReferenceEnthalpy.UserDefined then h_offset else 0, nominal=1.0e5),
+    //       Density(start=10, nominal=10),
+    //       AbsolutePressure(start=10e5, nominal=10e5)); <--- AbsolutePressure is a type and can have modifications!
     case ((comp as SCode.CLASSDEF(name = id), _, b), _, _)
       equation
         cmod = Mod.lookupCompModification(inMod, id);
       then
         ((comp, cmod, b), inMod);
 
-    case ((comp, cmod, _), _, _)
+    case ((comp,cmod,b),inMod,inEnv)
       equation
-        true = RTOpts.debugFlag("failtrace");
-        el_str = SCode.printElementStr(comp);
-        mod_str1 = Mod.printModStr(cmod);
-        mod_str2 = Mod.printModStr(inMod);
-        Debug.traceln("- InstExtends.updateComponentsAndClassdefs failed for component " 
-          +& el_str +& ".\n\tOld modifier: " +& mod_str1 +& 
-                        "\n\tNew modifier: " +& mod_str2);
+        Debug.fprintln(
+          "failtrace", 
+          "- InstExtends.updateComponentsAndClassdefs2 failed on:\n" +&
+          "env = " +& Env.printEnvPathStr(inEnv) +&
+          "\nmod = " +& Mod.printModStr(inMod) +&
+          "\ncmod = " +& Mod.printModStr(cmod) +&
+          "\nbool = " +& Util.if_(b, "true", "false") +& "\n" +&
+          SCode.printElementStr(comp)
+          );
       then
         fail();
   end matchcontinue;

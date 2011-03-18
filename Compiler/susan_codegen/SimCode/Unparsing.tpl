@@ -42,11 +42,18 @@ match elt
       let nElts=listLength(p.elementLst)
       let fullname='<%pack%>__<%stringReplace(c.name,"_","_5f")%>'
       let ctor=intAdd(3,r.index)
+      /* adrpo 2011-03-14 make MSVC happy, no arrays of 0 size! */
+      let fieldsDescription = 
+           match nElts 
+           case "0" then
+             'const char* <%omcname%>__desc__fields[1] = {"no fileds"};'
+           case _ then 
+             'const char* <%omcname%>__desc__fields[<%nElts%>] = {<%fieldsStr%>};'
       <<
       #ifdef ADD_METARECORD_DEFINTIONS
       #ifndef <%omcname%>__desc_added
       #define <%omcname%>__desc_added
-      const char* <%omcname%>__desc__fields[<%nElts%>] = {<%fieldsStr%>};
+      <%fieldsDescription%>
       struct record_description <%omcname%>__desc = {
         "<%omcname%>",
         "<%pack%>.<%pathString(r.name)%>.<%c.name%>",

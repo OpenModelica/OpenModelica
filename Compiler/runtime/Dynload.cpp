@@ -28,18 +28,16 @@
  *
  */
 
-#if defined(_MSC_VER)
- #define WIN32_LEAN_AND_MEAN
- #include <Windows.h>
-#endif
-
-#include "errorext.h"
-#include "meta_modelica.h"
 
 extern "C" {
 
+#include <stdio.h>
+#include <stdlib.h>
+#include "modelica.h"
 #include "systemimpl.h"
 #include "rtopts.h"
+#include "errorext.h"
+
 
 static void *type_desc_to_value(type_description *desc);
 static int value_to_type_desc(void *value, type_description *desc);

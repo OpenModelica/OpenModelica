@@ -31,57 +31,95 @@
 
 #include "modelica.h"
 
-/* make an empty stack.  */
-mmc_Stack stack_create(void)
+/* make an empty stack */
+mmc_Stack_type* stack_create(size_t default_stack_size)
 {
-  return NULL;
+  mmc_Stack_type* stack = (mmc_Stack_type*)malloc(sizeof(mmc_Stack_type));
+  stack->start = (mmc_GC_local_state_type*)malloc(sizeof(mmc_GC_local_state_type)*MMC_GC_ROOTS_MARKS_SIZE_INITIAL);
+  assert(stack->start != NULL);
+  stack->current = 0;
+  stack->limit = MMC_GC_ROOTS_MARKS_SIZE_INITIAL;
+  return stack;
 }
 
-/* Return nonzero if the stack is empty.  */
-int stack_empty(mmc_Stack stack)
+/* check if stack is empty, nonzero */
+int stack_empty(mmc_Stack_type* stack)
 {
-  return stack == NULL;
+  return (!stack->current);
 }
 
 /* peek stack  */
-long stack_peek(mmc_Stack stack)
+mmc_GC_local_state_type stack_peek(mmc_Stack_type* stack)
 {
-  assert (!stack_empty(stack));
-  return (stack->el);
+  return stack->start[stack->current];
 }
 
-/* pop the stack  */
-long stack_pop(mmc_Stack* stack)
+/* pop the stack */
+mmc_GC_local_state_type stack_pop(mmc_Stack_type* stack)
 {
-  long top;
-  mmc_Stack rest;
-
-  assert (!stack_empty(*stack));
-  top = (*stack)->el;
-  rest = (*stack)->next;
-  free (*stack);
-  *stack = rest;
-  return top;
+  assert(stack->current > 0);
+  return stack->start[stack->current--];
 }
 
 /* push stack */
-void stack_push(mmc_Stack* stack, long el)
+mmc_Stack_type* stack_push(mmc_Stack_type* stack, mmc_GC_local_state_type el)
 {
-  mmc_Stack newStack = (mmc_Stack) malloc (sizeof (struct mmc_StackElement));
-
-  assert(newStack != NULL);
-
-  newStack->el = el;
-  newStack->next = *stack;
-  *stack = newStack;
+  if ((stack->current + 1) == stack->limit) /* realloc when needed */
+  {
+    size_t sz = stack->limit + MMC_GC_ROOTS_MARKS_SIZE_INITIAL;
+    stack->start = (mmc_GC_local_state_type*)realloc(stack->start, sizeof(mmc_GC_local_state_type)*(sz));
+    assert(stack->start != NULL);
+    stack->limit = sz;
+  }
+  stack->start[++stack->current] = el;
+  return stack;
 }
 
 /* delete stack */
-void stack_clear(mmc_Stack* stack)
+mmc_Stack_type* stack_clear(mmc_Stack_type* stack)
 {
-  while (!stack_empty (*stack)) {
-    stack_pop(stack);
-  }
-  stack = NULL;
+  free(stack->start);
+  stack->start = NULL;
+  stack->limit = 0;
+  stack->current = 0;
+  return stack;
 }
+
+/* realloc and decrease the stack structure */
+mmc_Stack_type* stack_decrease(mmc_Stack_type* stack, size_t default_stack_size)
+{
+  size_t sz = 0;
+  size_t current = stack->current;
+  /*
+   * do not shrink stack if stack->current is less than default_stack_size
+   * and 2 * default_stack_size > stack->limits
+   */
+  if (stack->current < default_stack_size)
+  {
+    return stack;
+  }
+  if (stack->current * 3 < stack->limit)
+  {
+    sz =  stack->current * 2;
+  }
+  else
+  {
+    return stack;
+  }
+
+  /* reallocate! */
+  stack->start = (mmc_GC_local_state_type*)realloc(stack->start, sz * sizeof(mmc_GC_local_state_type));
+  if (!stack->start)
+  {
+    fprintf(stderr, "not enough memory (%lu) to re-allocate the stack array!\n", sz * sizeof(mmc_GC_local_state_type));
+    fflush(NULL);
+    assert(stack->start != 0);
+  }
+  /* the current index now points to start + current size */
+  stack->current = current;
+  /* the limit points to the end of the stack array */
+  stack->limit   = sz;
+  return stack;
+}
+
 

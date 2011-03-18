@@ -31,11 +31,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+
+extern "C" {
+
 #include "meta_modelica.h"
 #include "rml_compatibility.h"
 #include "OpenModelicaBootstrappingHeader.h"
-
-extern "C" {
 
 #include "SimulationResults.c"
 

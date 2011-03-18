@@ -28,10 +28,11 @@
  *
  */
 
-#include "modelica.h"
 #include "errorext.cpp"
 
 extern "C" {
+
+#include "modelica.h"
 
 void Error_addMessage(int errorID, const char* msg_type, const char* severity, const char* message, modelica_metatype tokenlst)
 {

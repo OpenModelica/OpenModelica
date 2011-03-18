@@ -28,10 +28,18 @@
  *
  */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 #include "meta_modelica.h"
 #include "rml_compatibility.h"
-extern "C" {
 #include "OpenModelicaBootstrappingHeader.h"
+
 #include "ModelicaParser.c"
+
+#ifdef __cplusplus
 }
+#endif
+
+
 

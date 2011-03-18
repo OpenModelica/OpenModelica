@@ -6,6 +6,12 @@
 #include <math.h>
 #include "omc_msvc.h" /* For INFINITY and NAN */
 
+#if defined(_MSC_VER)
+#define fmax(x, y) ((x>y)?x:y)
+#define fmin(x, y) ((x<y)?x:y)
+#define snprintf sprintf_s
+#endif
+
 typedef enum {
   UNKNOWN_PLOT=0,
   MATLAB4,

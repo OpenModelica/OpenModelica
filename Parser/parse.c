@@ -28,10 +28,13 @@
  *
  */
 
+#if !defined(_MSC_VER)
 #ifdef __cplusplus
 /* Make sure we don't use any C++ features anywhere */
 #define __cplusplusend
 #undef __cplusplus
+#endif
+
 extern "C" {
 #else
 #define bool int

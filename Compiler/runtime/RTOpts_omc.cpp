@@ -28,14 +28,16 @@
  *
  */
 
-#include "modelica.h"
-
+#if defined(__cplusplus)
 extern "C" {
+#endif
+
+#include "modelica.h"
 #include "rtoptsimpl.c"
 
 extern int showErrorMessages;
-
 extern const char* corbaSessionName;
+
 
 extern int RTOpts_debugFlag(const char* flag) {
   return check_debug_flag(flag)!=0;
@@ -162,4 +164,8 @@ extern void RTOpts_setOrderConnections(int order) {
 extern int RTOpts_orderConnections() {
   return orderConnections;
 }
+
+#if defined(__cplusplus)
 }
+#endif
+

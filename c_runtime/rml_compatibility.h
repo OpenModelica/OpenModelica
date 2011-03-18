@@ -74,9 +74,11 @@
 record_description as index 0 instead of n-1 :) */
 #define UNBOX_OFFSET 1
 
+
 struct rml_struct {
     mmc_uint_t header;  /* MMC_STRUCTHDR(slots,ctor) */
     void *data[1];  /* `slots' elements */
 };
+
 
 #endif

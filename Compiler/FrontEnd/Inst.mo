@@ -1854,7 +1854,7 @@ algorithm
         (cache,env,ih,ci_state) = partialInstClassIn(cache, env, ih, mods, pre, csets, ci_state, c, prot, inst_dims);
       then 
         (cache,env,ih,store,DAEUtil.emptyDae,csets,ci_state,{},NONE(),NONE(),NONE(),graph);
-
+    
     /*  see if we have it in the cache */
     case (cache,env,ih,store,mods,pre,csets,ci_state,c as SCode.CLASS(name = className, restriction=r),prot,inst_dims,impl,_,graph,instSingleCref)
       equation
@@ -3283,10 +3283,10 @@ algorithm
         // oh, the horror of backtracking! we need this to make sure that this case failed BEFORE or AFTER it went into instBasictypeBaseclass         
         (cache,ih,store,dae2,bc,tys)= instBasictypeBaseclass(cache, env3, ih, store, extendselts, compelts, mods, inst_dims, info, stopInst);
         // Search for equalityConstraint
-        eqConstraint = equalityConstraint(env, els, info);
+        eqConstraint = equalityConstraint(env3, els, info);
         dae = DAEUtil.joinDaes(dae1,dae2);
       then
-        (cache,env,ih,store,dae,csets1,ci_state,tys,bc,NONE(),eqConstraint,graph); 
+        (cache,env3,ih,store,dae,csets1,ci_state,tys,bc,NONE(),eqConstraint,graph); 
 
     // VERY COMPLICATED CHECKPOINT! TODO! try to simplify it, maybe by sending Prefix.TYPE and checking in instVar!
     // did the previous 
@@ -3526,7 +3526,7 @@ algorithm
 
         (cache,env5,ih,store,dae1,csets1,ci_state2,vars,graph) = 
           instElementList(cache, env4, ih, store, mods, pre, csets, ci_state1, compelts_2, inst_dims, impl, callscope, graph);
-       
+
         // If we are currently instantiating a connector, add all flow variables
         // in it as inside connectors.
         csets1 = addConnectorVariablesFromDAE(ci_state1, dae1, vars, csets1, info);
@@ -4710,7 +4710,7 @@ algorithm
         partialPrefix = isPartial(partialPrefix, mods);
         ci_state1 = ClassInf.trans(ci_state, ClassInf.NEWDEF());
         (cdefelts,classextendselts,extendselts,_) = splitElts(els);
-        (env1,ih) = addClassdefsToEnv(env, ih, pre, cdefelts, true,NONE()) " CLASSDEF & IMPORT nodes are added to env" ;
+        (env1,ih) = addClassdefsToEnv(env, ih, pre, cdefelts, true, NONE()) " CLASSDEF & IMPORT nodes are added to env" ;
         (cache,env2,ih,emods,extcomps,_,_,_,_) =
         InstExtends.instExtendsAndClassExtendsList(cache, env1, ih, mods, pre, extendselts, classextendselts, ci_state, className, true, true)
         "2. EXTENDS Nodes inst_Extends_List only flatten inhteritance structure. It does not perform component instantiations." ;
@@ -4724,7 +4724,7 @@ algorithm
          to the environment here.
         */
         (cdefelts2,extcomps) = classdefElts2(extcomps, partialPrefix);
-        (env2,ih) = addClassdefsToEnv(env2, ih, pre, cdefelts2, true,NONE()); // Add inherited classes to env
+        (env2,ih) = addClassdefsToEnv(env2, ih, pre, cdefelts2, true, NONE()); // Add inherited classes to env
         (cache,env3,ih) = addComponentsToEnv(cache, env2, ih, mods, pre, csets, ci_state,
                                              lst_constantEls, lst_constantEls, {},
                                              inst_dims, false); // adrpo: here SHOULD BE IMPL=TRUE! not FALSE!
@@ -8442,7 +8442,9 @@ algorithm
         Debug.traceln(" mods: " +& Mod.printModStr(mod));
         Debug.traceln(" scope: " +& Env.printEnvPathStr(env));
         Debug.traceln(" prefix: " +& PrefixUtil.printPrefixStr(pre));
-      then fail();
+      then 
+        fail();
+    
     case (cache,env,ih,pre,mod,cref,ci_state,csets,impl,updatedComps) then (cache,env,ih,csets,updatedComps);
   end matchcontinue;
 end updateComponentInEnv;
@@ -10280,16 +10282,16 @@ algorithm
     DAE.Type tp;
     Absyn.Path p;
     Boolean part;
-    DAE.InlineType inline;
+    DAE.InlineType inlineType;
     DAE.ElementSource source;
 
     case({},path) then {};
 
-    case(DAE.FUNCTION(p,funcs,tp,part,inline,source)::elts,path)
+    case(DAE.FUNCTION(p,funcs,tp,part,inlineType,source)::elts,path)
       equation
         elts = addNameToDerivativeMapping(elts,path);
         funcs = addNameToDerivativeMappingFunctionDefs(funcs,path);
-      then DAE.FUNCTION(p,funcs,tp,part,inline,source)::elts;
+      then DAE.FUNCTION(p,funcs,tp,part,inlineType,source)::elts;
 
     case(elt::elts,path)
       equation
@@ -15081,7 +15083,7 @@ algorithm
       SCode.Restriction restriction;
       Boolean purity;
       DAE.FunctionBuiltin isBuiltin;
-      DAE.InlineType inline;
+      DAE.InlineType inlineType;
       String name;
       list<DAE.Var> inVars,outVars;
     case (SCode.CLASS(restriction=SCode.R_EXT_FUNCTION()),vl)
@@ -15089,15 +15091,15 @@ algorithm
         inVars = Util.listFilter(vl,Types.isInputVar);
         outVars = Util.listFilter(vl,Types.isOutputVar);
         name = SCode.isBuiltinFunction(cl,Util.listMap(inVars,Types.varName),Util.listMap(outVars,Types.varName));
-        inline = isInlineFunc2(cl);
+        inlineType = isInlineFunc2(cl);
         purity = not DAEUtil.hasBooleanNamedAnnotation(cl,"__OpenModelica_Impure");
-      then (DAE.FUNCTION_ATTRIBUTES(inline,purity,DAE.FUNCTION_BUILTIN(SOME(name))));
+      then (DAE.FUNCTION_ATTRIBUTES(inlineType,purity,DAE.FUNCTION_BUILTIN(SOME(name))));
     case (SCode.CLASS(restriction=restriction),_)
       equation
-        inline = isInlineFunc2(cl);
+        inlineType = isInlineFunc2(cl);
         isBuiltin = Util.if_(DAEUtil.hasBooleanNamedAnnotation(cl,"__OpenModelica_BuiltinPtr"), DAE.FUNCTION_BUILTIN_PTR(), DAE.FUNCTION_NOT_BUILTIN());
         purity = not DAEUtil.hasBooleanNamedAnnotation(cl,"__OpenModelica_Impure");
-      then DAE.FUNCTION_ATTRIBUTES(inline,purity,isBuiltin);
+      then DAE.FUNCTION_ATTRIBUTES(inlineType,purity,isBuiltin);
   end matchcontinue;
 end getFunctionAttributes;
 

@@ -35,6 +35,7 @@
 
 extern "C" {
 
+#include "modelica.h"
 #include "rml.h"
 #include "Absyn.h"
 #include "Values.h"

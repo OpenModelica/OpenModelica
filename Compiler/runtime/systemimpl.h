@@ -39,8 +39,6 @@ char* _replace(const char* source_str,
 typedef int (*function_t)(type_description*, type_description*);
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
- #define WIN32_LEAN_AND_MEAN
- #include <Windows.h>
 struct modelica_ptr_s {
   union {
     struct {

@@ -256,6 +256,51 @@ end lm_26;
 
 protected function fun_27
   input Tpl.Text in_txt;
+  input String in_mArg;
+  input Tpl.Text in_a_fieldsStr;
+  input Tpl.Text in_a_nElts;
+  input Tpl.Text in_a_omcname;
+
+  output Tpl.Text out_txt;
+algorithm
+  out_txt :=
+  matchcontinue(in_txt, in_mArg, in_a_fieldsStr, in_a_nElts, in_a_omcname)
+    local
+      Tpl.Text txt;
+      Tpl.Text a_fieldsStr;
+      Tpl.Text a_nElts;
+      Tpl.Text a_omcname;
+
+    case ( txt,
+           "0",
+           _,
+           _,
+           a_omcname )
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("const char* "));
+        txt = Tpl.writeText(txt, a_omcname);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("__desc__fields[1] = {\"no fileds\"};"));
+      then txt;
+
+    case ( txt,
+           _,
+           a_fieldsStr,
+           a_nElts,
+           a_omcname )
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("const char* "));
+        txt = Tpl.writeText(txt, a_omcname);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("__desc__fields["));
+        txt = Tpl.writeText(txt, a_nElts);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("] = {"));
+        txt = Tpl.writeText(txt, a_fieldsStr);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("};"));
+      then txt;
+  end matchcontinue;
+end fun_27;
+
+protected function fun_28
+  input Tpl.Text in_txt;
   input list<SCode.Element> in_a_p_elementLst;
   input Tpl.Text in_a_fields;
   input Tpl.Text in_a_omcname;
@@ -325,7 +370,7 @@ algorithm
         txt = Tpl.writeTok(txt, Tpl.ST_NEW_LINE());
       then txt;
   end matchcontinue;
-end fun_27;
+end fun_28;
 
 public function elementExternalHeader
   input Tpl.Text in_txt;
@@ -344,6 +389,8 @@ algorithm
       SCode.Ident i_c_name;
       Absyn.Path i_r_name;
       list<SCode.Element> i_p_elementLst;
+      String str_11;
+      Tpl.Text l_fieldsDescription;
       Integer ret_9;
       Tpl.Text l_ctor;
       String ret_7;
@@ -379,6 +426,8 @@ algorithm
         l_fullname = Tpl.writeStr(l_fullname, ret_7);
         ret_9 = intAdd(3, i_r_index);
         l_ctor = Tpl.writeStr(Tpl.emptyTxt, intString(ret_9));
+        str_11 = Tpl.textString(l_nElts);
+        l_fieldsDescription = fun_27(Tpl.emptyTxt, str_11, l_fieldsStr, l_nElts, l_omcname);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING_LIST({
                                     "#ifdef ADD_METARECORD_DEFINTIONS\n",
                                     "#ifndef "
@@ -389,19 +438,10 @@ algorithm
                                     "#define "
                                 }, false));
         txt = Tpl.writeText(txt, l_omcname);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING_LIST({
-                                    "__desc_added\n",
-                                    "const char* "
-                                }, false));
-        txt = Tpl.writeText(txt, l_omcname);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("__desc__fields["));
-        txt = Tpl.writeText(txt, l_nElts);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("] = {"));
-        txt = Tpl.writeText(txt, l_fieldsStr);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING_LIST({
-                                    "};\n",
-                                    "struct record_description "
-                                }, false));
+        txt = Tpl.writeTok(txt, Tpl.ST_LINE("__desc_added\n"));
+        txt = Tpl.writeText(txt, l_fieldsDescription);
+        txt = Tpl.softNewLine(txt);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("struct record_description "));
         txt = Tpl.writeText(txt, l_omcname);
         txt = Tpl.writeTok(txt, Tpl.ST_LINE("__desc = {\n"));
         txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));
@@ -438,7 +478,7 @@ algorithm
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(" "));
         txt = Tpl.writeText(txt, l_ctor);
         txt = Tpl.softNewLine(txt);
-        txt = fun_27(txt, i_p_elementLst, l_fields, l_omcname, l_ctor, l_fullname);
+        txt = fun_28(txt, i_p_elementLst, l_fields, l_omcname, l_ctor, l_fullname);
       then txt;
 
     case ( txt,

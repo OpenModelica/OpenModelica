@@ -1,11 +1,11 @@
 /* External interface for UnitParserExt module */
 #include "unitparser.h"
 #include "unitparserext.cpp"
-#include "meta_modelica.h"
 
 extern "C"
 {
 
+#include "meta_modelica.h"
 
 const char* UnitParserExt_unit2str(void *nums, void *denoms, void *tpnoms, void *tpdenoms, void *tpstrs)
 {

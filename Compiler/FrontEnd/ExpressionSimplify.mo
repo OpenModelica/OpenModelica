@@ -127,7 +127,7 @@ algorithm
       list<Subscript> s;
       ComponentRef c_1;
       Operator op;
-      DAE.InlineType inline,b3;
+      DAE.InlineType inlineType,b3;
       Absyn.Path fn, path;
       list<list<tuple<DAE.Exp, Boolean>>> matr,matr2;
       Integer index_;
@@ -138,7 +138,7 @@ algorithm
       DAE.ReductionIterators riters;
         
     // noEvent propagated to relations and event triggering functions
-    case(DAE.CALL(Absyn.IDENT("noEvent"),{e},tpl,builtin,tp,inline))
+    case(DAE.CALL(Absyn.IDENT("noEvent"),{e},tpl,builtin,tp,inlineType))
       equation
         e1 = simplify1(Expression.stripNoEvent(e));
         e2 = Expression.addNoEventToRelations(e1);
@@ -147,18 +147,18 @@ algorithm
         e3;
     
     // normal call 
-    case(DAE.CALL(fn,expl,tpl,builtin,tp,inline))
+    case(DAE.CALL(fn,expl,tpl,builtin,tp,inlineType))
       equation
         true = Util.listFold(Util.listMap(expl,Expression.isConst),boolAnd,true);
         expl = Util.listMap(expl,simplify1);
-        e2 = simplifyBuiltinConstantCalls(DAE.CALL(fn,expl,tpl,builtin,tp,inline));
+        e2 = simplifyBuiltinConstantCalls(DAE.CALL(fn,expl,tpl,builtin,tp,inlineType));
       then 
         e2;
     
     // simplify some builtin calls, like cross, etc
-    case(DAE.CALL(fn,expl,tpl,builtin as true,tp,inline))
+    case(DAE.CALL(fn,expl,tpl,builtin as true,tp,inlineType))
       equation
-        e2 = simplifyBuiltinCalls(DAE.CALL(fn,expl,tpl,builtin,tp,inline));
+        e2 = simplifyBuiltinCalls(DAE.CALL(fn,expl,tpl,builtin,tp,inlineType));
       then 
         e2;
     

@@ -40,45 +40,86 @@
 #include "modelica.h"
 
 /* create the roots structure */
-mmc_GC_roots_type roots_create(long default_roots_size)
+mmc_GC_roots_type roots_create(size_t default_roots_size, size_t default_roots_mark_size)
 {
   mmc_GC_roots_type roots = {0, 0, 0, 0};
-  long sz = sizeof(modelica_metatype) * default_roots_size;
+  size_t sz = sizeof(modelica_metatype) * default_roots_size;
 
   roots.start = (modelica_metatype*)malloc(sz);
   if (!roots.start)
   {
-    fprintf(stderr, "not enough memory to allocate the roots array!\n");
+    fprintf(stderr, "not enough memory (%lu) to allocate the roots array!\n", sz);
     fflush(NULL);
     assert(roots.start != 0);
   }
   /* the current index points to the start at the begining! */
-  roots.current = roots.start;
+  roots.current = 0;
   /* the limit points to the end of the roots array */
-  roots.limit   = roots.start + sz;
+  roots.limit   = default_roots_size;
+
+  roots.marks            = stack_create(default_roots_mark_size); 
+  roots.rootsStackIndex  = 0;  /* set the stack element index to 0 */
 
   return roots;
 }
 
-/* realloc the roots structure */
-mmc_GC_roots_type roots_realloc(mmc_GC_roots_type roots, long default_roots_size)
+/* realloc and increase the roots structure */
+mmc_GC_roots_type roots_increase(mmc_GC_roots_type roots, size_t default_roots_size)
 {
-  long sz = (roots.limit - roots.start) + sizeof(modelica_metatype) * default_roots_size;
-  long current = (roots.current - roots.start);
+  size_t sz = (roots.limit + default_roots_size) * sizeof(modelica_metatype);
+  size_t current = roots.current;
 
   /* reallocate! */
   roots.start = (modelica_metatype*)realloc(roots.start, sz);
   if (!roots.start)
   {
-    fprintf(stderr, "not enough memory to re-allocate the roots array!\n");
+    fprintf(stderr, "not enough memory (%lu) to re-allocate the roots array!\n", sz);
     fflush(NULL);
     assert(roots.start != 0);
   }
 
   /* the current index now points to start + current size */
-  roots.current = roots.start + current;
+  roots.current = current;
   /* the limit points to the end of the roots array */
-  roots.limit   = roots.start + sz;
+  roots.limit   += default_roots_size;
+
+  return roots;
+}
+
+/* realloc and decrease the roots structure */
+mmc_GC_roots_type roots_decrease(mmc_GC_roots_type roots, size_t default_roots_size)
+{
+  size_t sz = 0;
+  size_t current = roots.current;
+  /*
+   * do not shrink roots if roots.current is less than default_roots_size
+   * and 2 * default_roots_size > roots.limits
+   */
+  if (roots.current < default_roots_size)
+  {
+    return roots;
+  }
+  if (roots.current * 3 < roots.limit)
+  {
+    sz =  roots.current * 2;
+  }
+  else
+  {
+    return roots;
+  }
+
+  /* reallocate! */
+  roots.start = (modelica_metatype*)realloc(roots.start, sz * sizeof(void*));
+  if (!roots.start)
+  {
+    fprintf(stderr, "not enough memory (%lu) to re-allocate the roots array!\n", sz * sizeof(void*));
+    fflush(NULL);
+    assert(roots.start != 0);
+  }
+  /* the current index now points to start + current size */
+  roots.current = current;
+  /* the limit points to the end of the roots array */
+  roots.limit   = sz;
 
   return roots;
 }

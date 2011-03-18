@@ -42,6 +42,21 @@
 extern "C" {
 #endif
 
+/* adrpo: extreme windows crap! */
+#if defined(__MINGW32__) || defined(_MSC_VER)
+#define DLLImport   __declspec( dllimport )
+#define DLLExport   __declspec( dllexport )
+#else
+#define DLLImport extern
+#define DLLExport /* nothing */
+#endif
+
+#if defined(IMPORT_INTO)
+#define DLLDirection DLLImport
+#else /* we export from the dll */
+#define DLLDirection DLLExport
+#endif
+
 typedef void* modelica_complex; /* currently only External objects are represented using modelica_complex.*/
 typedef void* modelica_metatype; /* MetaModelica extension, added by sjoelund */
 /* MetaModelica extension.
@@ -49,6 +64,11 @@ We actually store function-pointers in lists, etc...
 So it needs to be void*. If we use a platform with different sizes of function-
 pointers, some changes need to be done to code generation */
 typedef void* modelica_fnptr;
+
+#if defined(__MINGW32__) || defined(_MSC_VER)
+ #define WIN32_LEAN_AND_MEAN
+ #include <Windows.h>
+#endif
 
 #include <stdlib.h>
 #include <limits.h>
@@ -129,6 +149,12 @@ typedef modelica_real    semiLinear_rettype;
 
 /* sign function */
 #define sign(v) (v>0?1:(v<0?-1:0))
+
+#if defined(_MSC_VER)
+#define fmax(x, y) ((x>y)?x:y)
+#define fmin(x, y) ((x<y)?x:y)
+#define snprintf sprintf_s
+#endif
 
 #if defined(__cplusplus)
 }

@@ -32,7 +32,7 @@
 #include "modelica.h"
 
 /* create and allocate a page */
-mmc_GC_free_slot page_create(long page_size)
+mmc_GC_free_slot page_create(size_t page_size)
 {
   mmc_GC_free_slot slot = {0, 0};
 
@@ -47,6 +47,13 @@ mmc_GC_free_slot page_create(long page_size)
 
   slot.size = page_size;
 
+  /*
+  fprintf(stderr, "pages: created page of size: %lu\n", page_size); fflush(NULL);
+  */
+  
+  /* tag the free slot! */
+  MMC_TAG_AS_FREE_OBJECT(slot.start, page_size);
+
   return slot;
 }
 
@@ -55,7 +62,7 @@ mmc_GC_free_slot pages_current(mmc_List list)
 {
   if (list_empty(list))
   {
-      fprintf(stderr, "no current pages are allocated");
+    fprintf(stderr, "no current pages are allocated");
     fflush(NULL);
     assert(list_empty(list) != 0);
   }
@@ -63,7 +70,7 @@ mmc_GC_free_slot pages_current(mmc_List list)
 }
 
 /* create the page list and add the first page */
-mmc_List pages_create(long default_page_size, int default_number_of_pages)
+mmc_List pages_create(size_t default_page_size, int default_number_of_pages)
 {
   mmc_List list = NULL;
   int i = 0;
@@ -77,8 +84,8 @@ mmc_List pages_create(long default_page_size, int default_number_of_pages)
 }
 
 /* add a page */
-mmc_List pages_add(mmc_List list, mmc_GC_free_slot page)
+int pages_add(mmc_List* list, mmc_GC_free_slot page)
 {
-  list_cons(&list, page);
-  return list;
+  list_cons(list, page);
+  return 0;
 }

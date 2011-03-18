@@ -18,7 +18,7 @@ AST = $(top_builddir)/Parser/libomparse_rml.a $(top_builddir)/Parser/libantlr3.a
 RTOBJ   = \
 $(srcdir)/runtime/runtime.a \
 $(srcdir)/../c_runtime/libc_runtime.a \
-$(srcdir)/modpar/libmodpar.a
+$(srcdir)/modpar/libmodpar.a 
 
 FRONTEND_DIR=$(srcdir)/FrontEnd
 BACKEND_DIR=$(srcdir)/BackEnd
@@ -71,6 +71,7 @@ Patternm.mo \
 Prefix.mo \
 PrefixUtil.mo \
 SCode.mo \
+SCodeCheck.mo \
 SCodeDependency.mo \
 SCodeEnv.mo \
 SCodeLookup.mo \

@@ -35,8 +35,11 @@ class Thread
   public:
   	Thread();
   	~Thread();
-  	bool Create(THREAD_RET_TYPE (*func)(THREAD_PARAM_TYPE));
-
+#if defined(_MSC_VER)
+  	bool Create(THREAD_RET_TYPE_NO_API (*func)(THREAD_PARAM_TYPE));
+#else
+        bool Create(THREAD_RET_TYPE (*func)(THREAD_PARAM_TYPE));
+#endif
   	bool Join();
 
   private: // Not copyable

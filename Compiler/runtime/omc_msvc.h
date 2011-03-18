@@ -32,6 +32,13 @@
 
 /* Compatibility header for MSVC compiler */
 #if defined(_MSC_VER)
+#define WIN32
+#if defined(_WIN32) || defined(_WIN64)
+#define fmax(x, y) ((x>y)?x:y)
+#define fmin(x, y) ((x<y)?x:y)
+#define snprintf sprintf_s
+#endif
+
 
 union MSVC_FLOAT_HACK
 {

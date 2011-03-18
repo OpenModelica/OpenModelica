@@ -1226,13 +1226,13 @@ protected function functionReferenceType
   We also return the inline type of the new call."
   input DAE.ExpType ty1;
   output DAE.ExpType ty2;
-  output DAE.InlineType inline;
+  output DAE.InlineType inlineType;
 algorithm
-  (ty2,inline) := match ty1
+  (ty2,inlineType) := match ty1
     local
       DAE.Type ty;
-    case DAE.ET_FUNCTION_REFERENCE_FUNC(functionType=(DAE.T_FUNCTION(functionAttributes=DAE.FUNCTION_ATTRIBUTES(inline=inline),funcResultType=ty),_))
-      then (Types.elabType(ty),inline);
+    case DAE.ET_FUNCTION_REFERENCE_FUNC(functionType=(DAE.T_FUNCTION(functionAttributes=DAE.FUNCTION_ATTRIBUTES(inline=inlineType),funcResultType=ty),_))
+      then (Types.elabType(ty),inlineType);
     else (ty1,DAE.NO_INLINE());
   end match;
 end functionReferenceType;

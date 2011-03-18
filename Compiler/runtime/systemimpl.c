@@ -28,10 +28,23 @@
  *
  */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#include "systemimpl.h"
+
 /*
  * Common includes
  */
+#if !defined(_MSC_VER)
 #include <libgen.h>
+#include <regex.h>
+#endif
+
+#include "meta_modelica.h"
+#include <limits.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -39,10 +52,19 @@
 #include <sys/types.h>
 #include <time.h>
 #include <math.h>
-#include <regex.h>
 
-#ifdef __cplusplus
-extern "C" {
+#include "rtclock.h"
+#include "config.h"
+#include "rtopts.h"
+#include "errorext.h"
+
+#if defined(__MINGW32__) || defined(_MSC_VER)
+#define getFunctionPointerFromDLL  GetProcAddress
+#define FreeLibraryFromHandle !FreeLibrary
+#else
+#define getFunctionPointerFromDLL dlsym
+#define FreeLibraryFromHandle dlclose
+#define GetLastError(X) 1L
 #endif
 
 /*
@@ -56,9 +78,8 @@ extern "C" {
 #define MAXPATHLEN MAX_PATH
 #define S_IFLNK  0120000  /* symbolic link */
 
-#include <rpc.h>
+/*#include <rpc.h>*/
 #else
-
 /* includes/defines specific for LINUX/OS X */
 #include <ctype.h>
 #include <dirent.h>
@@ -84,12 +105,6 @@ extern "C" {
 # endif
 #endif
 #endif
-
-#include "rtclock.h"
-#include "systemimpl.h"
-#include "config.h"
-#include "rtopts.h"
-#include "errorext.h"
 
 #define MAX_PTR_INDEX 10000
 static struct modelica_ptr_s ptr_vector[MAX_PTR_INDEX];
@@ -124,7 +139,7 @@ void emulateStreamData2(const char*, const char*, int);
 
 static int stringContains(char *str,char c)
 {
-  int i;
+  unsigned int i;
   for(i=0;i<strlen(str);++i)
     if(str[i]==c){
       //printf(" (#%d / %d)contained '%c' ('%c', __%s__)\t",i,strlen(str),str[i],c,str);
@@ -282,7 +297,7 @@ static char* SystemImpl__readFile(const char* filename)
 
   /* adrpo: if size is larger than the max string, return a different string */
 #ifndef _LP64
-  if (statstr.st_size > (pow(2, 22) * 4))
+  if (statstr.st_size > (pow((double)2, (double)22) * 4))
   {
     const char *c_tokens[1]={filename};
     c_add_message(85, /* ERROR_OPENING_FILE */
@@ -650,6 +665,8 @@ static const char* SystemImpl__getUUIDStr()
   return uuidStr;
 }
 
+typedef void (*mmc_GC_function_set_gc_state)(mmc_GC_state_type*);
+
 #if defined(__MINGW32__) || defined(_MSC_VER)
 int SystemImpl__loadLibrary(const char *str)
 {
@@ -659,6 +676,7 @@ int SystemImpl__loadLibrary(const char *str)
   modelica_ptr_t lib = NULL;
   modelica_integer libIndex;
   HMODULE h;
+  mmc_GC_function_set_gc_state mmc_GC_set_state_lib_function = NULL;
   /* adrpo: use BACKSLASH here as specified here: http://msdn.microsoft.com/en-us/library/ms684175(VS.85).aspx */
   GetCurrentDirectory(bufLen,currentDirectory);
 #if defined(_MSC_VER)
@@ -669,10 +687,21 @@ int SystemImpl__loadLibrary(const char *str)
 
   h = LoadLibrary(libname);
   if (h == NULL) {
-    //fprintf(stderr, "Unable to load '%s': %lu.\n", libname, GetLastError());
+    fprintf(stderr, "Unable to load '%s': %lu.\n", libname, GetLastError());
     fflush(stderr);
     return -1;
   }
+
+  /* adrpo, pass the mmc_GC_state pointer from the current process!
+  mmc_GC_set_state_lib_function = (mmc_GC_function_set_gc_state)getFunctionPointerFromDLL(h, "mmc_GC_set_state");
+  if (mmc_GC_set_state_lib_function == NULL) {
+    fprintf(stderr, "Unable to get pointer for mmc_GC_set_state in  %s!\n", libname);
+    fflush(stderr);
+    return -1;
+  }
+  mmc_GC_set_state_lib_function(mmc_GC_state);
+  */
+
   libIndex = alloc_ptr();
   if (libIndex < 0) {
     //fprintf(stderr, "Error loading library %s!\n", libname); fflush(stderr);
@@ -692,7 +721,8 @@ int SystemImpl__loadLibrary(const char *str)
   char libname[MAXPATHLEN];
   modelica_ptr_t lib = NULL;
   modelica_integer libIndex;
-  void *h;
+  void *h = NULL;
+  mmc_GC_function_set_gc_state mmc_GC_set_state_lib_function = NULL;
   const char* ctokens[2];
   snprintf(libname, MAXPATHLEN, "./%s.so", str);
   h = dlopen(libname, RTLD_LOCAL | RTLD_NOW);
@@ -702,6 +732,17 @@ int SystemImpl__loadLibrary(const char *str)
     c_add_message(-1, "RUNTIME", "ERROR", "OMC unable to load `%s': %s.\n", ctokens, 2);
     return -1;
   }
+
+  /* adrpo, pass the mmc_GC_state pointer from the current process!
+  mmc_GC_set_state_lib_function = (mmc_GC_function_set_gc_state)getFunctionPointerFromDLL(h, "mmc_GC_set_state");
+  if (mmc_GC_set_state_lib_function == NULL) {
+    fprintf(stderr, "Unable to get pointer for mmc_GC_set_state in  %s!\n", libname);
+    fflush(stderr);
+    return -1;
+  }
+  mmc_GC_set_state_lib_function(mmc_GC_state);
+  */
+
   libIndex = alloc_ptr();
   if (libIndex < 0) {
     fprintf(stderr, "Error loading library %s!\n", libname); fflush(stderr);
@@ -770,15 +811,6 @@ int file_select_directories(direntry entry)
   }
 }
 
-#endif
-
-#if defined(__MINGW32__) || defined(_MSC_VER)
-#define getFunctionPointerFromDLL  GetProcAddress
-#define FreeLibraryFromHandle !FreeLibrary
-#else
-#define getFunctionPointerFromDLL dlsym
-#define FreeLibraryFromHandle dlclose
-#define GetLastError(X) 1L
 #endif
 
 extern int SystemImpl__lookupFunction(int libIndex, const char *str)
@@ -1049,7 +1081,8 @@ extern char* SystemImpl__escapedString(const char* str)
 
 extern void* SystemImpl__regex(const char* str, const char* re, int maxn, int extended, int sensitive, int *nmatch)
 {
-  void *lst;
+  void *lst = mk_nil();
+#if !defined(_MSC_VER) /* crap compiler doesn't have regex */
   char *dup;
   regex_t myregex;
   regmatch_t matches[maxn];
@@ -1092,6 +1125,7 @@ extern void* SystemImpl__regex(const char* str, const char* re, int maxn, int ex
   }
   
   regfree(&myregex);
+#endif /* !defined(_MSC_VER) crap compiler doesn't have regex */
   return lst;
 }
 

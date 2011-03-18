@@ -4,8 +4,8 @@ RMLINC	= -I$(RMLHOME)/include/plain
 
 ANTLRCMD=java -cp ./antlr-3.2/lib/antlr-3.2.jar org.antlr.Tool -report
 CFLAGS=
-CPPFLAGS=-I$(COMPILERHOME) $(RMLINC) -I. -Iantlr-3.2/runtime/C -Iantlr-3.2/runtime/C/include
-CC=cl /O2 $(CPPFLAGS)
+CPPFLAGS=-I$(COMPILERHOME) -I../c_runtime $(RMLINC) -I. -Iantlr-3.2/runtime/C -Iantlr-3.2/runtime/C/include -I../testsuite/bootstrapping/
+CC=cl /O2 $(CPPFLAGS) 
 
 .PHONY: all
 all: libantlr3.lib libomparse.lib
@@ -26,8 +26,7 @@ HFILES = \
 
 OBJS = \
 MetaModelica_Lexer_BaseModelica_Lexer.obj MetaModelica_Lexer.obj \
-Modelica_3_Lexer_BaseModelica_Lexer.obj Modelica_3_Lexer.obj \
-ModelicaParser.obj
+Modelica_3_Lexer_BaseModelica_Lexer.obj Modelica_3_Lexer.obj 
 
 MetaModelica_Lexer.obj: MetaModelica_Lexer.h MetaModelica_Lexer_BaseModelica_Lexer.h
 Modelica_3_Lexer.obj: Modelica_3_Lexer.h Modelica_3_Lexer_BaseModelica_Lexer.h
@@ -35,10 +34,15 @@ MetaModelica_Lexer_BaseModelica_Lexer.obj: MetaModelica_Lexer_BaseModelica_Lexer
 Modelica_3_Lexer_BaseModelica_Lexer.obj: Modelica_3_Lexer_BaseModelica_Lexer.h
 parse.obj: $(HFILES)
 
-libomparse.lib: parse.obj $(OBJS) libantlr3.lib
+ModelicaParser.obj: ModelicaParser_omc.c
+  $(CC) /c /TpModelicaParser_omc.c /FoModelicaParser.obj 
+parse.obj: Parser_omc.cpp
+  $(CC) /c /TpParser_omc.cpp /Foparse.obj 
+
+libomparse.lib: parse.obj $(OBJS) ModelicaParser.obj libantlr3.lib
 	@del /F /S $@
 	REM build the OMC Parser library that includes libantlr3.lib (the ANTLR3 C library) 
-	LINK /LIB /LTCG /OUT:$@ parse.obj $(OBJS) libantlr3.lib 
+	LINK /LIB /LTCG /OUT:$@ parse.obj $(OBJS) ModelicaParser.obj libantlr3.lib 
 
 parsergen = ModelicaParser.c ModelicaParser.h
 modelica3gen = Modelica_3_Lexer_BaseModelica_Lexer.c Modelica_3_Lexer_BaseModelica_Lexer.h Modelica_3_Lexer.c Modelica_3_Lexer.h

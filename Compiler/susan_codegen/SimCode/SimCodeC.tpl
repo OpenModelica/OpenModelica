@@ -2372,13 +2372,7 @@ template commonHeader()
   #include "modelica.h"
   #include <stdio.h>
   #include <stdlib.h>
-  #include <errno.h>
-  
-  #if defined(_MSC_VER)
-    #define DLLExport   __declspec( dllexport )
-  #else
-    #define DLLExport /* nothing */
-  #endif
+  #include <errno.h>  
   >>
 end commonHeader;
 
@@ -2771,9 +2765,16 @@ end recordDeclarationHeader;
 template recordDefinition(String origName, String encName, String fieldNames, Integer numFields)
  "Generates the definition struct for a record declaration."
 ::=
+  /* adrpo 2011-03-14 make MSVC happy, no arrays of 0 size! */
+  let fieldsDescription = 
+      match numFields 
+       case 0 then
+         'const char* <%encName%>__desc__fields[1] = {"no fileds"};'
+       case _ then 
+         'const char* <%encName%>__desc__fields[<%numFields%>] = {<%fieldNames%>};'
   <<
   #define <%encName%>__desc_added 1
-  const char* <%encName%>__desc__fields[<%numFields%>] = {<%fieldNames%>};
+  <%fieldsDescription%>
   struct record_description <%encName%>__desc = {
     "<%encName%>", /* package_record__X */
     "<%origName%>", /* package.record_X */
@@ -2913,7 +2914,7 @@ template extType(ExpType type)
                       then "void *"
   case ET_COMPLEX(complexClassType=RECORD(path=rname))
                       then 'struct <%underscorePath(rname)%>'
-  case ET_METATYPE(__) case ET_BOXED(__)    then "void*"
+  case ET_METATYPE(__) case ET_BOXED(__)    then "modelica_metatype"
   else "OTHER_EXT_TYPE"
 end extType;
 
@@ -3012,7 +3013,12 @@ template addRoots(Variable var)
   case var as VARIABLE(__) then
   match ty 
     case ET_METATYPE(__) 
-    case ET_BOXED(__) then 'mmc_GC_add_root(<%contextCref(var.name,contextFunction)%>);'
+      then 'mmc_GC_add_root(&<%contextCref(var.name,contextFunction)%>, mmc_GC_local_state, "<%contextCref(var.name,contextFunction)%>");'
+    case ET_BOXED(__) then 'mmc_GC_add_root(&<%contextCref(var.name,contextFunction)%>, mmc_GC_local_state, "<%contextCref(var.name,contextFunction)%>");'
+    /*case ET_COMPLEX(__) then 'mmc_GC_add_root(&<%contextCref(var.name,contextFunction)%>, mmc_GC_local_state, "<%contextCref(var.name,contextFunction)%>");'*/
+    case _ then
+      let typ = varType(var)
+      match typ case "modelica_metatype" then 'mmc_GC_add_root(&<%contextCref(var.name,contextFunction)%>, mmc_GC_local_state, "<%contextCref(var.name,contextFunction)%>");'
   end match
 end addRoots;
 
@@ -3046,40 +3052,43 @@ case FUNCTION(__) then
   <<
   <%retType%> _<%fname%>(<%functionArguments |> var => funArgDefinition(var) ;separator=", "%>)
   {
-    /* disable GC for now 
+  
+    /* GC: save roots mark when you enter the function */    
+    <%if acceptMetaModelicaGrammar() 
+      then 'mmc_GC_local_state_type mmc_GC_local_state = mmc_GC_save_roots_state("_<%fname%>");'%>  
+    /* GC: adding inputs as roots! */
     <%if acceptMetaModelicaGrammar() then '<%addRootsInputs%>'%>
-    <%if acceptMetaModelicaGrammar() then if addRootsInputs then 'mmc_GC_push_roots_mark();'%>
-    */
-
+    
+    /* GC: do garbage collection */
+    <%if acceptMetaModelicaGrammar() then 'mmc_GC_collect(mmc_GC_local_state);'%>
+      
+    /* arguments */
     <%funArgs%>
+    /* locals */
     <%varDecls%>
+    /* out inits */
     <%outVarInits%>
+    
     <%if not acceptMetaModelicaGrammar() then '<%stateVar%> = get_memory_state();'%>
-
+    
+    /* var inits */
     <%varInits%>
-
+    /* body */    
     <%bodyPart%>
     
     _return:
-    <%outVarCopy%>
+    /* out var copy */
+    <%outVarCopy%>    
     <%if not acceptMetaModelicaGrammar() then 'restore_memory_state(<%stateVar%>);'%>
-    <%outVarAssign%>
+    /* out var assign */
+    <%outVarAssign%>    
     
-    /* disable GC for now 
-    <%if acceptMetaModelicaGrammar() then '<%addRootsOutputs%>'%>
-    <%if acceptMetaModelicaGrammar() then if addRootsOutputs then 'mmc_GC_push_roots_mark();'%>
-    <%
-    if acceptMetaModelicaGrammar() 
-    then if addRootsInputs 
-         then 'mmc_GC_collect();' 
-         else if addRootsOutputs 
-              then 'mmc_GC_collect();'
-    %>
-    <%if acceptMetaModelicaGrammar() then if addRootsOutputs then 'mmc_GC_pop_roots_mark();'%>
-    <%if acceptMetaModelicaGrammar() then if addRootsInputs then 'mmc_GC_pop_roots_mark();'%>
-    */
-    
-    return<%if outVars then ' <%retVar%>' %>;
+    /* GC: pop the mark! */
+    <%if acceptMetaModelicaGrammar() 
+      then 'mmc_GC_undo_roots_state(mmc_GC_local_state);'%>
+
+    /* return the outs */
+    return <%if outVars then ' <%retVar%>' %>;
   }
   
   <% if inFunc then
@@ -3215,6 +3224,10 @@ template functionBodyBoxedImpl(Absyn.Path name, list<Variable> funargs, list<Var
   <<
   <%retTypeBoxed%> boxptr_<%fname%>(<%funargs |> var => funArgBoxedDefinition(var) ;separator=", "%>)
   {
+    /* GC: save roots mark when you enter the function */    
+    <%if acceptMetaModelicaGrammar() 
+      then 'mmc_GC_local_state_type mmc_GC_local_state = mmc_GC_save_roots_state("boxptr__<%fname%>");'%>
+  
     <%varDecls%>
     <%if not acceptMetaModelicaGrammar() then '<%stateVar%> = get_memory_state();'%>
     <%varBox%>
@@ -3222,6 +3235,11 @@ template functionBodyBoxedImpl(Absyn.Path name, list<Variable> funargs, list<Var
     <%varUnbox%>
     <%retStr%>
     <%if not acceptMetaModelicaGrammar() then 'restore_memory_state(<%stateVar%>);'%>
+    
+    /* GC: pop roots mark when you exit the function */    
+    <%if acceptMetaModelicaGrammar() 
+      then 'mmc_GC_undo_roots_state(mmc_GC_local_state);'%>
+    
     return <%retVar%>;
   }
   >>
@@ -3406,7 +3424,11 @@ template varInit(Variable var, String outStruct, Integer i, Text &varDecls /*BUF
 ::=
 match var
 case var as VARIABLE(__) then
-  let &varDecls += if not outStruct then '<%varType(var)%> <%contextCref(var.name,contextFunction)%>;<%\n%>' //else ""
+  let varName = '<%contextCref(var.name,contextFunction)%>'
+  let typ = '<%varType(var)%>'
+  let initVar = match typ case "modelica_metatype" then ' = NULL' else ''
+  let addRoot = match typ case "modelica_metatype" then ' mmc_GC_add_root(&<%varName%>, mmc_GC_local_state, "<%varName%>");' else ''  
+  let &varDecls += if not outStruct then '<%typ%> <%varName%><%initVar%>;<%addRoot%><%\n%>' //else ""
   let varName = if outStruct then '<%outStruct%>.targ<%i%>' else '<%contextCref(var.name,contextFunction)%>'
   let instDimsInit = (instDims |> exp =>
       daeExp(exp, contextFunction, &varInits /*BUFC*/, &varDecls /*BUFD*/)
@@ -3956,7 +3978,10 @@ case STMT_TUPLE_ASSIGN(exp=MATCHEXPRESSION(__)) then
   <<
   <%expExpLst |> cr hasindex i1 from 1 =>
     let rhsStr = '<%prefix%>_targ<%i1%>'
-    let &varDecls += '<%expTypeFromExpModelica(cr)%> <%rhsStr%>;<%\n%>'
+    let typ = '<%expTypeFromExpModelica(cr)%>'
+    let initVar = match typ case "modelica_metatype" then ' = NULL' else ''
+    let addRoot = match typ case "modelica_metatype" then ' mmc_GC_add_root(&<%rhsStr%>, mmc_GC_local_state, "<%rhsStr%>");' else ''
+    let &varDecls += '<%typ%> <%rhsStr%><%initVar%>;<%addRoot%><%\n%>'
     ""
   ;separator="\n";empty%>
   <%preExp%>
@@ -4619,7 +4644,9 @@ case BINARY(__) then
   let e2 = daeExp(exp2, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   match operator
   case ADD(ty = ET_STRING(__)) then
-    let tmpStr = tempDecl("modelica_string", &varDecls /*BUFD*/)
+    let tmpStr = if acceptMetaModelicaGrammar() 
+                 then tempDecl("modelica_metatype", &varDecls /*BUFD*/)
+                 else tempDecl("modelica_string", &varDecls /*BUFD*/)
     let &preExp += if acceptMetaModelicaGrammar() then
         '<%tmpStr%> = stringAppend(<%e1%>,<%e2%>);<%\n%>'
       else
@@ -4966,7 +4993,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let var1 = daeExp(e1, context, &preExp, &varDecls)
     let var2 = daeExp(e2, context, &preExp, &varDecls)
     'fmax(<%var1%>,<%var2%>)'
-
+  
   case CALL(tuple_=false, builtin=true,
             path=IDENT(name="max"), expLst={e1,e2}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls)
@@ -5615,7 +5642,10 @@ case exp as MATCHEXPRESSION(__) then
   let &expInput = buffer ""
   let ignore3 = (inputs |> exp hasindex i0 =>
     let decl = '<%prefix%>_in<%i0%>'
-    let &varDeclsInput += '<%expTypeFromExpModelica(exp)%> <%decl%>;<%\n%>'
+    let typ = '<%expTypeFromExpModelica(exp)%>'
+    let initVar = match typ case "modelica_metatype" then ' = NULL' else ''
+    let addRoot = match typ case "modelica_metatype" then ' mmc_GC_add_root(&<%decl%>, mmc_GC_local_state, "<%decl%>");' else ''
+    let &varDeclsInput += '<%typ%> <%decl%><%initVar%>;<%addRoot%><%\n%>'
     let &expInput += '<%decl%> = <%daeExp(exp, context, &preExpInput, &varDeclsInput)%>;<%\n%>'
     ""; empty)
   let ix = match exp.matchType
@@ -5632,25 +5662,37 @@ case exp as MATCHEXPRESSION(__) then
   let onPatternFail = match exp.matchType case MATCHCONTINUE(__) then "MMC_THROW()" case MATCH(__) then "break"
   let &preExp +=
       <<
-      { /* <% match exp.matchType case MATCHCONTINUE(__) then "matchcontinue expression" case MATCH(__) then "match expression" %> */
+      { /* <% match exp.matchType case MATCHCONTINUE(__) then "matchcontinue expression" case MATCH(__) then "match expression" %> */        
         <%varDeclsInput%>
         <%preExpInput%>
         <%expInput%>
+        
+        /* GC: push the mark! */
+        <%if acceptMetaModelicaGrammar() 
+          then 'mmc_GC_local_state_type mmc_GC_local_state = mmc_GC_save_roots_state("match");'%>        
+        
         {
           <%varDeclsInner%>
           <%preExpInner%>
           <%match exp.matchType
           case MATCH(switch=SOME(_)) then '<%done%> = 0;<%\n%>{'
-          else 'for (<%ix%> = 0, <%done%> = 0; <%ix%> < <%listLength(exp.cases)%> && !<%done%>; <%ix%>++) {'
+          else 'for (<%ix%> = 0, <%done%> = 0; <%ix%> < <%listLength(exp.cases)%> && !<%done%>; <%ix%>++) {'          
           %>
             <% match exp.matchType case MATCHCONTINUE(__) then "MMC_TRY()" %>
+                        
             switch (<%ix%>) {
             <%daeExpMatchCases(exp.cases,tupleAssignExps,exp.matchType,ix,res,prefix,onPatternFail,done,context,&varDecls)%>
             }
+            
             <% match exp.matchType case MATCHCONTINUE(__) then "MMC_CATCH()" %>
           }
+                    
           if (!<%done%>) MMC_THROW();
         }
+        
+        /* GC: pop the mark! */
+        <%if acceptMetaModelicaGrammar() 
+          then 'mmc_GC_undo_roots_state(mmc_GC_local_state);'%>
       }
       >>
   res
@@ -5675,8 +5717,14 @@ template daeExpMatchCases(list<MatchCase> cases, list<Exp> tupleAssignExps, DAE.
     case SOME(e) then '<%res%> = <%daeExp(e,context,&preRes,&varDeclsCaseInner)%>;<%\n%>')
   let _ = (elementVars(c.localDecls) |> var => varInit(var, "", 0, &varDeclsCaseInner, &preExpCaseInner))
   <<<%match ty case MATCH(switch=SOME((n,_,ea))) then switchIndex(listNth(c.patterns,n),ea) else 'case <%i0%>'%>: {
+  
     <%varDeclsCaseInner%>
     <%preExpCaseInner%>
+    
+     /* GC: push the mark! */
+     <%if acceptMetaModelicaGrammar() 
+       then 'mmc_GC_local_state_type mmc_GC_local_state = mmc_GC_save_roots_state("case");'%>       
+    
     <%patternMatching%> 
     <% match c.jump
        case 0 then "/* Pattern matching succeeded */"
@@ -5688,6 +5736,11 @@ template daeExpMatchCases(list<MatchCase> cases, list<Exp> tupleAssignExps, DAE.
     <% if c.result then '<%preRes%><%caseRes%>' else 'MMC_THROW();<%\n%>' %>
     /*#endModelicaLine*/
     <%done%> = 1;
+    
+    /* GC: pop the mark! */
+    <%if acceptMetaModelicaGrammar()             
+      then 'mmc_GC_undo_roots_state( mmc_GC_local_state);'%>    
+    
     break;
   }<%\n%>
   >>
@@ -5869,7 +5922,31 @@ template tempDecl(String ty, Text &varDecls /*BUFP*/)
  "Declares a temporary variable in varDecls and returns the name."
 ::=
   let newVar = 'tmp<%System.tmpTick()%>'
-  let &varDecls += '<%ty%> <%newVar%>;<%\n%>'
+  let initVarAddRoot 
+         = match ty /* TODO! FIXME! UGLY! UGLY! hack! */ 
+             case "modelica_metatype"
+             case "metamodelica_string"
+             case "metamodelica_string_const"
+             case "stringListStringChar_rettype"
+             case "stringAppendList_rettype"
+             case "stringGetStringChar_rettype"
+             case "stringUpdateStringChar_rettype"
+             case "listReverse_rettype"
+             case "listAppend_rettype"
+             case "listGet_rettype"
+             case "listDelete_rettype"
+             case "listRest_rettype"
+             case "listFirst_rettype"
+             case "arrayGet_rettype"
+             case "arrayCreate_rettype"
+             case "arrayList_rettype"
+             case "listArray_rettype"
+             case "arrayUpdate_rettype"
+             case "arrayCopy_rettype"
+             case "arrayAdd_rettype"
+             case "getGlobalRoot_rettype"
+               then ' = NULL;  mmc_GC_add_root(&<%newVar%>, mmc_GC_local_state, "<%newVar%>");' else ';'
+  let &varDecls += '<%ty%> <%newVar%><%initVarAddRoot%><%\n%>'
   newVar
 end tempDecl;
 
@@ -6260,7 +6337,7 @@ template literalExpConst(Exp lit, Integer index) "These should all be declared s
 ::=
   let name = '_OMC_LIT<%index%>'
   let tmp = '_OMC_LIT_STRUCT<%index%>'
-  let meta = 'static modelica_metatype /* const */ <%name%>'
+  let meta = 'static modelica_metatype const <%name%>'
 
   match lit
   case SCONST(__) then
@@ -6274,7 +6351,7 @@ template literalExpConst(Exp lit, Integer index) "These should all be declared s
       <<
       #define <%name%>_data "<%escstr%>"
       static const size_t <%name%>_strlen = <%unescapedStringLength(escstr)%>;
-      static /* const */ MMC_DEFSTRINGLIT(<%tmp%>,<%name%>_strlen,<%name%>_data);
+      static const MMC_DEFSTRINGLIT(<%tmp%>,<%name%>_strlen,<%name%>_data);
       <%meta%> = MMC_REFSTRINGLIT(<%tmp%>);
       >>
     else
@@ -6293,28 +6370,28 @@ template literalExpConst(Exp lit, Integer index) "These should all be declared s
     >>
   case BOX(exp=exp as RCONST(__)) then
     <<
-    static /* const */ MMC_DEFREALLIT(<%tmp%>,<%exp.real%>);
+    static const MMC_DEFREALLIT(<%tmp%>,<%exp.real%>);
     <%meta%> = MMC_REFREALLIT(<%tmp%>);
     >>
   case CONS(__) then
     <<
-    static /* const */ MMC_DEFSTRUCTLIT(<%tmp%>,2,1) {<%literalExpConstBoxedVal(car)%>,<%literalExpConstBoxedVal(cdr)%>}};
+    static const MMC_DEFSTRUCTLIT(<%tmp%>,2,1) {<%literalExpConstBoxedVal(car)%>,<%literalExpConstBoxedVal(cdr)%>}};
     <%meta%> = MMC_REFSTRUCTLIT(<%tmp%>);
     >>
   case META_TUPLE(__) then
     <<
-    static /* const */ MMC_DEFSTRUCTLIT(<%tmp%>,<%listLength(listExp)%>,0) {<%listExp |> exp => literalExpConstBoxedVal(exp); separator=","%>}};
+    static const MMC_DEFSTRUCTLIT(<%tmp%>,<%listLength(listExp)%>,0) {<%listExp |> exp => literalExpConstBoxedVal(exp); separator=","%>}};
     <%meta%> = MMC_REFSTRUCTLIT(<%tmp%>);
     >>
   case META_OPTION(exp=SOME(exp)) then
     <<
-    static /* const */ MMC_DEFSTRUCTLIT(<%tmp%>,1,1) {<%literalExpConstBoxedVal(exp)%>}};
+    static const MMC_DEFSTRUCTLIT(<%tmp%>,1,1) {<%literalExpConstBoxedVal(exp)%>}};
     <%meta%> = MMC_REFSTRUCTLIT(<%tmp%>);
     >>
   case METARECORDCALL(__) then
     let newIndex = getValueCtor(index)
     <<
-    static /* const */ MMC_DEFSTRUCTLIT(<%tmp%>,<%intAdd(1,listLength(args))%>,<%newIndex%>) {&<%underscorePath(path)%>__desc,<%args |> exp => literalExpConstBoxedVal(exp); separator=","%>}};
+    static const MMC_DEFSTRUCTLIT(<%tmp%>,<%intAdd(1,listLength(args))%>,<%newIndex%>) {&<%underscorePath(path)%>__desc,<%args |> exp => literalExpConstBoxedVal(exp); separator=","%>}};
     <%meta%> = MMC_REFSTRUCTLIT(<%tmp%>);
     >>
   else '<%\n%>#error "literalExpConst failed: <%printExpStr(lit)%>"<%\n%>'

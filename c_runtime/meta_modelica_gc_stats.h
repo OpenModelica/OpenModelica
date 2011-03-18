@@ -49,9 +49,9 @@ extern "C" {
 /* GC statistics, add more here if needed */
 struct mmc_GC_stats_type
 {
-  long allocated;    /* the total allocated memory */
-  long collected;    /* the total collected memory */
-  long collections;  /* the number of performed collections */
+  size_t allocated;    /* the total allocated memory */
+  size_t collected;    /* the total collected memory */
+  size_t collections;  /* the number of performed collections */
 };
 typedef struct mmc_GC_stats_type mmc_GC_stats_type;
 

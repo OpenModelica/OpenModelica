@@ -28,11 +28,11 @@
  *
  */
 
+extern "C" {
+
 #include "meta_modelica.h"
 #include "rml_compatibility.h"
 #include "parse.c"
-
-extern "C" {
 
 void* Parser_parse(const char* filename)
 {

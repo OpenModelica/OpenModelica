@@ -34,6 +34,9 @@
 #include <stack>
 #include "omc_msvc.h" /* For round() */
 #ifndef NO_LPLIB
+#ifndef WIN32
+#define WIN32
+#endif
 #include "lp_lib.h"
 #endif
 

@@ -159,7 +159,7 @@ stringHashDjb2_rettype stringHashDjb2(metamodelica_string_const s)
 stringHashDjb2Mod_rettype stringHashDjb2Mod(metamodelica_string_const s, modelica_integer mod)
 {
   const char* str = MMC_STRINGDATA(s);
-  long res = djb2_hash((const unsigned char*)str) % (unsigned modelica_integer) mod;
+  long res = djb2_hash((const unsigned char*)str) % (unsigned int) mod;
   res = abs(res);
   // fprintf(stderr, "stringHashDjb2Mod %s %ld-> %ld %ld %ld\n", str, mod, res, mmc_mk_icon(res), mmc_unbox_integer(mmc_mk_icon(res)));
   return res;
@@ -311,7 +311,7 @@ metamodelica_string_const stringAppend(metamodelica_string_const s1, metamodelic
 {
   MMC_CHECK_STRING(s1);
   MMC_CHECK_STRING(s2);
-  // fprintf(stderr, "stringAppend(%s,%s)\n", anyString(s1), anyString(s2));
+  //fprintf(stderr, "stringAppend([%p] %s, [%p] %s)->\n", s1, anyString(s1), s2, anyString(s2)); fflush(NULL);
   unsigned len1 = MMC_STRLEN(s1);
   unsigned len2 = MMC_STRLEN(s2);
   unsigned nbytes = len1+len2;
@@ -319,12 +319,14 @@ metamodelica_string_const stringAppend(metamodelica_string_const s1, metamodelic
   unsigned nwords = MMC_HDRSLOTS(header) + 1;
   void *res;
   struct mmc_string *p = (struct mmc_string *) mmc_alloc_words(nwords);
+  //fprintf(stderr, "at address %p\n", MMC_TAGPTR(p)); fflush(NULL);
   p->header = header;
 
   memcpy(p->data, MMC_STRINGDATA(s1), len1);
   memcpy(p->data + len1, MMC_STRINGDATA(s2), len2 + 1);
   res = MMC_TAGPTR(p);
   MMC_CHECK_STRING(res);
+  //fprintf(stderr, "-> %s\n", anyString(res)); fflush(NULL);
   return res;
 }
 
@@ -598,25 +600,22 @@ void equality(modelica_metatype in1, modelica_metatype in2)
   }
 }
 
-/* Weird RML crap */
-static modelica_metatype global_roots[1024] = {0};
-
 getGlobalRoot_rettype getGlobalRoot(int ix) {
-  if (!global_roots[ix])
+  if (!mmc_GC_state->global_roots[ix])
     MMC_THROW();
-  return global_roots[ix];
+  return mmc_GC_state->global_roots[ix];
 }
 
 void setGlobalRoot(int ix, modelica_metatype val) {
-  global_roots[ix] = val;
+  mmc_GC_state->global_roots[ix] = val;
 }
 
 modelica_metatype boxptr_getGlobalRoot(modelica_metatype ix) {
-  return global_roots[MMC_UNTAGFIXNUM(ix)];
+  return mmc_GC_state->global_roots[MMC_UNTAGFIXNUM(ix)];
 }
 
 void boxptr_setGlobalRoot(modelica_metatype ix, modelica_metatype val) {
-  global_roots[MMC_UNTAGFIXNUM(ix)] = val;
+  mmc_GC_state->global_roots[MMC_UNTAGFIXNUM(ix)] = val;
 }
 
 modelica_metatype boxptr_valueConstructor(modelica_metatype val) {

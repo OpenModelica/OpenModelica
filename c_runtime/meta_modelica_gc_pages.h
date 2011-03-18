@@ -38,15 +38,15 @@
 extern "C" {
 #endif
 
-#define MMC_GC_PAGE_SIZE       128*1024*1024  /* default page size 64MB chunks, can be changed */
-#define MMC_GC_NUMBER_OF_PAGES             2  /* default number of pages */
+#define MMC_GC_PAGE_SIZE           16*1024*1024  /* default page size 16MB chunks, can be changed */
+#define MMC_GC_NUMBER_OF_PAGES               10  /* default number of pages at start */
 
 /* create the page list and add the first page */
-mmc_List pages_create(long default_page_size, int default_number_of_pages);
+mmc_List pages_create(size_t default_page_size, int default_number_of_pages);
 /* create and allocate a page */
-mmc_GC_free_slot page_create(long page_size);
+mmc_GC_free_slot page_create(size_t page_size);
 /* add a page */
-mmc_List pages_add(mmc_List list, mmc_GC_free_slot page);
+int pages_add(mmc_List *list, mmc_GC_free_slot page);
 
 #if defined(__cplusplus)
 }

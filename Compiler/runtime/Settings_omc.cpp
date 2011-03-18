@@ -28,11 +28,12 @@
  *
  */
 
-#include "settingsimpl.c"
 #include <string>
 #include "meta_modelica.h"
 
 extern "C" {
+
+#include "settingsimpl.c"
 
 extern const char* Settings_getInstallationDirectoryPath()
 {

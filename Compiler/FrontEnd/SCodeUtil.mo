@@ -60,6 +60,7 @@ protected import MetaUtil;
 protected import System;
 protected import Types;
 protected import Util;
+protected import SCodeCheck;
 
 public function translateAbsyn2SCode
 "function: translateAbsyn2SCode
@@ -78,7 +79,6 @@ algorithm
       InstanceHierarchy.InstanceHierarchy ih;
       Boolean hasExpandableConnectors;
       list<Absyn.Class> inClasses,initialClasses;
-      list<String> names;
 
     case (inProgram)
       equation
@@ -97,18 +97,15 @@ algorithm
         // set the external flag that signals the presence of expandable connectors in the model
         System.setHasStreamConnectors(false);
         sp = Util.listFold(initialClasses, translate2, {});
-        //sp = {};
         sp = Util.listFold(inClasses, translate2, sp);
-        names = Util.listMap(sp, SCode.className);
-        names = Util.sort(names,Util.strcmpBool);
-        (_,names) = Util.splitUniqueOnBool(names,stringEqual);
-        checkForDuplicateClassesInTopScope(names);
         sp = listReverse(sp);
+        SCodeCheck.checkDuplicateClasses(sp);
         
         //print(Util.stringDelimitList(Util.listMap(sp, SCode.printClassStr), "\n"));
         // retrieve the expandable connector presence external flag
-        hasExpandableConnectors = System.getHasExpandableConnectors();
-        (ih, sp) = ExpandableConnectors.elaborateExpandableConnectors(sp, hasExpandableConnectors);
+        // hasExpandableConnectors = System.getHasExpandableConnectors();
+        // (ih, sp) = ExpandableConnectors.elaborateExpandableConnectors(sp, hasExpandableConnectors);
+        // sp = SCodeFlatten.flatten(sp);
       then
         sp;
   end match;
@@ -142,16 +139,17 @@ algorithm
       Absyn.Restriction r;
       Absyn.ClassDef d;
       Absyn.Info file_info;
-
-
+      SCode.Class scodeClass;
 
     case (c as Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,body = d,info = file_info))
       equation
         // Debug.fprint("translate", "Translating class:" +& n +& "\n");
         r_1 = translateRestriction(c, r); // uniontype will not get translated!
         d_1 = translateClassdef(d,file_info);
+        scodeClass = SCode.CLASS(n,p,e,r_1,d_1,file_info);
+        SCodeCheck.checkRecursiveShortDefinition(scodeClass);
       then
-        SCode.CLASS(n,p,e,r_1,d_1,file_info);
+        scodeClass;
 
     case (c as Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,body = d,info = file_info))
       equation
@@ -297,6 +295,7 @@ algorithm
         decl = translateClassdefExternaldecls(parts);
         decl = translateAlternativeExternalAnnotation(decl,parts);
         scodeCmt = translateComment(SOME(Absyn.COMMENT(NONE(), cmtString)));
+        SCodeCheck.checkDuplicateElements(els);
       then
         SCode.PARTS(els,eqs,initeqs,als,initals,decl,anns,scodeCmt);
 
@@ -305,6 +304,7 @@ algorithm
         // Debug.fprintln("translate", "translating enumerations");
         lst_1 = translateEnumlist(lst);
         scodeCmt = translateComment(cmt);
+        SCodeCheck.checkDuplicateEnums(lst_1);
       then
         SCode.ENUMERATION(lst_1, scodeCmt);
 
@@ -333,6 +333,7 @@ algorithm
         initals = translateClassdefInitialalgorithms(parts);
         mod = translateMod(SOME(Absyn.CLASSMOD(cmod,Absyn.NOMOD())), false, Absyn.NON_EACH());
         scodeCmt = translateComment(SOME(Absyn.COMMENT(NONE(), cmtString)));
+        SCodeCheck.checkDuplicateElements(els);
       then
         SCode.CLASS_EXTENDS(name,mod,els,eqs,initeqs,als,initals,anns,scodeCmt);
 
@@ -687,7 +688,8 @@ algorithm
       list<Absyn.AlgorithmItem> body,elseBody;
       
     case (Absyn.ALG_ASSIGN(assignComponent,value),comment,info)
-    then SCode.ALG_ASSIGN(assignComponent,value,comment,info);
+      then 
+        SCode.ALG_ASSIGN(assignComponent,value,comment,info);
     
     case (Absyn.ALG_IF(boolExpr,body,branches,elseBody),comment,info)
       equation
@@ -1054,6 +1056,7 @@ algorithm
       SCode.Annotation ann;
       Absyn.Variability variability;
       Absyn.Info i;
+      String str;
 
     case (cc,finalPrefix,_,repl,prot, Absyn.CLASSDEF(replaceable_ = rp, class_ = (cl as Absyn.CLASS(name = n,partialPrefix = pa,finalPrefix = fi,encapsulatedPrefix = e,restriction = re,body = de,info = i))),_)
       equation
@@ -1842,22 +1845,6 @@ public function getImportFromElement
 algorithm
   SCode.IMPORT(imp = imp) := elt;
 end getImportFromElement;
-
-protected function checkForDuplicateClassesInTopScope
-"Verifies that the input is empty; else an error message is printed"
-  input list<String> duplicateNames;
-algorithm
-  _ := match duplicateNames
-    local
-      String msg;
-    case {} then ();
-    else
-      equation
-        msg = Util.stringDelimitList(duplicateNames, ",");
-        Error.addMessage(Error.DUPLICATE_CLASSES_TOP_LEVEL,{msg});
-      then fail();
-  end match;
-end checkForDuplicateClassesInTopScope;
 
 protected function makeTypeVarElement
   input String str;
