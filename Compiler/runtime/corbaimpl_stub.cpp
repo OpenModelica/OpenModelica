@@ -19,7 +19,7 @@ extern "C" {
  * This variable is set in rtopts by function setCorbaSessionName(char* name);
  * system independent Corba Session Name
  */  
-char* corbaSessionName=0;
+extern char* corbaSessionName;
 
 void Corba_5finit(void)
 {  
