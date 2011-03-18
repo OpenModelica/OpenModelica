@@ -33,11 +33,20 @@
 #include <sstream>
 #include <stack>
 #include "omc_msvc.h" /* For round() */
+
+#if defined(__MINGW32__) || defined(_MSC_VER)
+
 #ifndef NO_LPLIB
 #ifndef WIN32
 #define WIN32
 #endif
 #include "lp_lib.h"
+#endif
+
+#else
+
+#include "lp_lib.h"
+
 #endif
 
 /***************************************************************************************/
