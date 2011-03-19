@@ -323,7 +323,8 @@ public constant ErrorID UNSUPPORTED_REDUCTION_TYPE=5031;
 public constant ErrorID COMPILER_WARNING = 6000;
 public constant ErrorID COMPILER_NOTIFICATION = 6001;
 
-public constant ErrorID TEMPLATE_ERROR = 7000;
+public constant ErrorID SUSAN_ERROR = 7000 "Susan compiler error";
+public constant ErrorID TEMPLATE_ERROR = 7001 "User error from within a template.";
 
 
 protected constant list<tuple<Integer, MessageType, Severity, String>> errorTable=
@@ -734,6 +735,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (COMPILER_NOTIFICATION,TRANSLATION(),NOTIFICATION(),"%s"),
           (COMPILER_WARNING,TRANSLATION(),WARNING(),"%s"),
           
+          (SUSAN_ERROR,TRANSLATION(),ERROR(),"%s"),
           (TEMPLATE_ERROR,TRANSLATION(),ERROR(),"Template error: %s")
           };
 

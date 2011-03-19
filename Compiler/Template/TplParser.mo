@@ -3264,23 +3264,24 @@ algorithm
       equation
         (chars, linfo) = interleave(startChars, startLInfo);
         (chars, id) = identifier(chars);
+        //capture only ident span for the letExp, the exp will have its own span
+        sinfo = sourceInfo(captureStartPosition(startChars, startLInfo, 1), chars, linfo);
         (chars, linfo) = interleave(chars, linfo);
         ("=":: chars) = chars;
         (chars, linfo) = interleaveExpectKeyWord(chars, linfo, {"b","u","f","f","e","r"}, false);
         (chars, linfo) = interleave(chars, linfo);
-        (chars, linfo, exp) = expression(chars, linfo, lesc, resc, false);
-        sinfo = sourceInfo(captureStartPosition(startChars, startLInfo, 1), chars, linfo);
+        (chars, linfo, exp) = expression(chars, linfo, lesc, resc, false);        
       then (chars, linfo, (TplAbsyn.TEXT_CREATE(id, exp), sinfo));
   
   case ("&":: startChars, startLInfo, lesc, resc)
       equation
         (chars, linfo) = interleave(startChars, startLInfo);
         (chars, id) = identifier(chars);
+        sinfo = sourceInfo(captureStartPosition(startChars, startLInfo, 1), chars, linfo);
         (chars, linfo) = interleave(chars, linfo);
         ("+"::"=":: chars) = chars;
         (chars, linfo) = interleave(chars, linfo);
-        (chars, linfo, exp) = expression(chars, linfo, lesc, resc, false);
-        sinfo = sourceInfo(captureStartPosition(startChars, startLInfo, 1), chars, linfo);
+        (chars, linfo, exp) = expression(chars, linfo, lesc, resc, false);        
       then (chars, linfo, (TplAbsyn.TEXT_ADD(id, exp), sinfo));
   
   case ("&":: startChars, startLInfo, lesc, resc)
@@ -3314,11 +3315,11 @@ algorithm
   case (startChars, startLInfo, lesc, resc)
       equation
         (chars, linfo, id) = identifierNoOpt(startChars, startLInfo);
+        sinfo = sourceInfo(captureStartPosition(startChars, startLInfo, 0), chars, linfo);
         (chars, linfo) = interleave(chars, linfo);
         (chars, linfo) = interleaveExpectChar(chars, linfo, "=");
         (chars, linfo) = interleave(chars, linfo);
-        (chars, linfo, exp) = expression(chars, linfo, lesc, resc, false);
-        sinfo = sourceInfo(captureStartPosition(startChars, startLInfo, 0), chars, linfo);
+        (chars, linfo, exp) = expression(chars, linfo, lesc, resc, false);        
       then (chars, linfo, (TplAbsyn.TEXT_CREATE(id, exp), sinfo));
   
   //case (chars, linfo, lesc, resc)

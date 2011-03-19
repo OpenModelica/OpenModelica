@@ -1,15 +1,15 @@
 encapsulated package TplAbsyn
 
-public import Debug;
-public import Util;
-public import System;
-public import RTOpts;
+protected import Debug;
+protected import Util;
+protected import System;
+protected import RTOpts;
+protected import Error;
 public import Absyn;
 
 public import Tpl;
 protected import TplCodegen;
 
-//protected import Error;
 
 /* Input AST */
 public type Ident = String;
@@ -1010,7 +1010,7 @@ algorithm
       Expression exp, tbranch, argexp, mapexp, txtexp;
       list<Expression> explst;
       Option<Expression> ebranch;
-      SourceInfo sinfo;
+      SourceInfo sinfo, sinfo2;
       list<tuple<MatchingExp,Expression>> mcases;
       MatchingExp ofbind;
       Option<MatchingExp> rhsval;
@@ -1067,9 +1067,11 @@ algorithm
     case ( (BOUND_VALUE(boundPath = path), sinfo), mmopts,
            stmts, intxt, outtxt, locals, scEnv, tplPackage as TEMPL_PACKAGE(astDefs = astDefs), accMMDecls )
       equation
-        //Debug.fprint("failtrace","\n BOUND_VALUE resolving boundPath = " +& pathIdentString(path) +& "\n");
+        Debug.fprint("failtrace","\n BOUND_VALUE resolving boundPath = " +& pathIdentString(path) +& "\n");
         (mmexp, idtype, scEnv) = resolveBoundPath(path, scEnv, tplPackage);
-        ensureResolvedType(path, idtype, " BOUND_VALUE");
+        //Debug.fprint("failtrace","\n BEFORE boundPath = " +& pathIdentString(path) +& "\n");
+        checkResolvedType(path, idtype, "bound value", sinfo);
+        //Debug.fprint("failtrace","\n AFTER boundPath = " +& pathIdentString(path) +& "\n");
         //ensure non-recursive Text evaluation - only this level ... 
         //TODO: for indirect reference, too, like <# buf += templ(buf) #>
         //true = ensureNotUsingTheSameText(path, mmexp, idtype, outtxt);        
@@ -1252,16 +1254,17 @@ algorithm
       then fail();
     */
     
-    case ( (LET(letExp = (TEXT_ADD(name = ident, exp = txtexp),_), 
+    case ( (LET(letExp = (TEXT_ADD(name = ident, exp = txtexp),sinfo2), 
                exp = exp), sinfo),
            mmopts, stmts, intxt, outtxt, locals, scEnv, tplPackage, accMMDecls )
       equation
         warnIfSomeOptions(mmopts);
         path = IDENT(ident);       
         (mmexp, idtype, scEnv) = resolveBoundPath(path, scEnv, tplPackage);
-        ensureResolvedType(path, idtype, " let += ");
+        checkResolvedType(path, idtype, "let +=", sinfo2);
+        idtype = checkTextType(idtype, ident, "let +=", sinfo2);
         MM_IDENT(IDENT(encIdent)) = mmexp;
-        TEXT_TYPE() = idtype;
+        //TEXT_TYPE() = idtype;
         //prevent recursive usage of the ident iside of the addition 
         //error will be caught when BOUND_VALUE with the ident occur in the txtexp  
         scEnv = RECURSIVE_SCOPE(ident, encIdent) :: scEnv;
@@ -1273,6 +1276,7 @@ algorithm
           = statementsFromExp(exp, {}, stmts, intxt, outtxt, locals, scEnv, tplPackage, accMMDecls); 
       then ( stmts, locals, scEnv, accMMDecls, intxt);
     
+    /*
     case ( (LET(letExp = (TEXT_ADD(name = ident, exp = txtexp),_), 
                exp = exp), sinfo),
            mmopts, stmts, intxt, outtxt, locals, scEnv, tplPackage, accMMDecls )
@@ -1283,6 +1287,7 @@ algorithm
         failure(TEXT_TYPE() = idtype);
         Debug.fprint("failtrace","\nError - TEXT_ADD ident = '" +& ident +& "' is NOT of Text& type but " +& typeSignatureString(idtype) +& ")\n Only Text& typed variables can be appended to.\n");
       then fail();
+    */
     
     case ( (LET(letExp = (NORET_CALL(name = fname, args = explst),_), 
                exp = exp), sinfo),
@@ -1681,9 +1686,9 @@ algorithm
       equation
         //Debug.fprint("failtrace","\n arg BOUND_VALUE resolving boundPath = " +& pathIdentString(path) +& "\n");        
         (mmexp, idtype, scEnv) = resolveBoundPath(path, scEnv, tplPackage);
-        ensureResolvedType(path, idtype, " arg BOUND_VALUE");
-        Debug.fprint("failtrace"," arg BOUND_VALUE resolved mmexp = " +& mmExpString(mmexp) +& " : "
-                     +& typeSignatureString(idtype) +& "\n");
+        checkResolvedType(path, idtype, "argument", sinfo);
+        //Debug.fprint("failtrace"," arg BOUND_VALUE resolved mmexp = " +& mmExpString(mmexp) +& " : "
+        //             +& typeSignatureString(idtype) +& "\n");
       then ( (mmexp,idtype), stmts, locals, scEnv, accMMDecls);
     
     case ( (FUN_CALL(name = fname, args = explst), sinfo),
@@ -1976,13 +1981,16 @@ algorithm
       then
         MM_FN_CALL(PATH_IDENT("Tpl", IDENT("booleanString")),{ mmexp });
     
+    
     //trying to convert an unresolved value
+    //it is already reported as an error, just embed and continue
     case (mmexp, UNRESOLVED_TYPE(reason = reason))
       equation
-				true = RTOpts.debugFlag("failtrace");
+        reason = "UnresType#" +& reason +& "#";
+        //true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace", "Error - an unresolved value trying to convert to string. Unresolution reason:\n    " +& reason);
       then
-        fail();
+        MM_FN_CALL(IDENT(reason),{ mmexp });
     
     //trying to convert a value when there is no conversion for its type
     case (mmexp, ts)
@@ -2086,8 +2094,8 @@ algorithm
       then
         ( true, MM_ASSIGN({retval}, mmexp), MM_IDENT(IDENT(retval)), outtype, locals, intxt );
 
-    
-    //TODO: move this to be available only for # context 
+    //---no--- TODO: move this to be available only for # context 
+    //TODO: lagalize this to be convertible to string, so that an effective result is ""
     //a non-template function - no implicit text argument 
     //no return value - i.e. an intrinsic call like <# fun(arg) #>
     //- inline it as it is
@@ -2098,6 +2106,7 @@ algorithm
         (mmargs,_) = typeAdaptMMArgsForFun(argvals, iargs, tyVars, {}, astDefs);
         mmexp = MM_FN_CALL(fname, mmargs); 
       then
+        //perhaps, UNIT_TYPE() or VOID_TYPE will fit here better
         ( false, mmexp, mmexp, UNRESOLVED_TYPE("No return value."), locals, intxt );
     
     case (argvals, fname, iargs,  oargs, tyVars, intxt, outtxt, locals, tplPackage)
@@ -2261,7 +2270,7 @@ algorithm
       then
         (mmarg, setTyVars);
     
-    //convert to string  
+    //convert to string when tagettype = STRING_TYPE()
     case ( mmexp, argtype, targettype, tyVars, setTyVars, astdefs)
       equation
         setTyVars = typesEqual(targettype, STRING_TYPE(), tyVars, setTyVars, astdefs);
@@ -4173,7 +4182,7 @@ algorithm
   end matchcontinue;           
 end getElseBranch;
 
-//**********
+//does not fail, when not resolved ... UNRESOLVED_TYPE() is returned
 public function resolveBoundPath
   input PathIdent inPath;
   input ScopeEnv inScopeEnv;
@@ -4278,32 +4287,66 @@ algorithm
 end resolveBoundPath;
 
 
-public function ensureResolvedType
+public function checkResolvedType
   input PathIdent inPath;
   input TypeSignature inType;
   input String inUnresolvedMsg;
+  input SourceInfo inInfo;
 
 algorithm
-  _ := matchcontinue (inPath, inType, inUnresolvedMsg)
+  _ := matchcontinue (inPath, inType, inUnresolvedMsg, inInfo)
     local
       PathIdent path;
       String reason, msg;           
       TypeSignature ts;
       
-    case ( _, ts, _)
+    case ( path, UNRESOLVED_TYPE(reason), msg, inInfo)
       equation
-        failure(UNRESOLVED_TYPE(_) = ts);
+
+				//true = RTOpts.debugFlag("failtrace");
+        //msg = msg +& " unresolved type of '" +& pathIdentString(path) +& "', reason = '" +& reason +& "'.\n"; 
+        msg = "(" +& msg +& ") " +& reason;
+        Debug.fprint("failtrace", "ADD Error: " +& msg +& "\n");  //+& " unresolved path '" +& pathIdentString(path) +& "', reason = '" +& reason +& "'.\n");          
+        addSusanError(msg, inInfo);        
       then
         ();
     
-    case ( path, UNRESOLVED_TYPE(reason), msg)
-      equation
-				true = RTOpts.debugFlag("failtrace");
-        Debug.fprint("failtrace", msg +& " unresolved path '" +& pathIdentString(path) +& "', reason = '" +& reason +& "'.\n");
-      then
-        fail();
+    case ( _, _, _, _)  then ();
+            
       end matchcontinue;           
-end ensureResolvedType;
+end checkResolvedType;
+
+
+public function checkTextType
+  input TypeSignature inType;
+  input Ident inIdent;
+  input String inUnresolvedMsg;
+  input SourceInfo inInfo;
+  output TypeSignature outType;
+algorithm
+  outType := matchcontinue (inType, inIdent, inUnresolvedMsg, inInfo)
+    local
+      PathIdent path;
+      String msg;           
+      TypeSignature ts;
+      
+    //OK
+    case (inType as TEXT_TYPE(),_, _, _) then inType;
+    
+    //already handled by checkResolvedType
+    case (inType as UNRESOLVED_TYPE(_),_ , _, _) then inType;
+      
+    case ( ts, inIdent, msg, inInfo)
+      equation
+        msg = "(" +& msg +& ") identifier '" +& inIdent +& "' was expected to have Text& type but resolved to " +& typeSignatureString(ts) 
+           +& ".\n Only Text& typed variables can be appended to.";        
+				addSusanError(msg, inInfo);        
+      then
+        UNRESOLVED_TYPE(msg);        
+            
+      end matchcontinue;           
+end checkTextType;
+
 
 /*
 public function ensureNotUsingTheSameText
@@ -6493,6 +6536,14 @@ end listMap2Tuple22;
 //**************************************
 // *** debug output functions
 //**************************************
+
+public function addSusanError
+  input String inErrMsg;
+  input Absyn.Info inInfo;  
+algorithm
+  Error.addSourceMessage(Error.SUSAN_ERROR, {inErrMsg}, inInfo);
+end addSusanError;
+
 
 public function canBeEscapedUnquoted
 	  input list<String> inStringList;

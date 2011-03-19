@@ -8,6 +8,7 @@ protected import Debug;
 protected import Util;
 protected import Print;
 protected import System;
+protected import Error;
 
 public import Tpl;
 public import TplParser;
@@ -57,16 +58,18 @@ algorithm
       Tpl.Text txt;
       TplAbsyn.TemplPackage tplPackage;
       TplAbsyn.MMPackage mmPckg;
+      Integer nErrors;
+      Boolean wasError;
     
     case ( file )
       equation
         print("\nProcessing file '" +& file +& "'\n");
+        nErrors = Error.getNumErrorMessages();
         
         destFile = System.stringReplace(file +& "*", ".tpl*", ".mo");
         false = stringEq(file, destFile);
         
         //print(destFile);
-        
         tplPackage = TplParser.templPackageFromFile(file);
         
         mmPckg = TplAbsyn.transformAST(tplPackage);
@@ -74,10 +77,16 @@ algorithm
         txt = TplCodegen.mmPackage(txt, mmPckg);
         //res = "/* generated on " +& System.getCurrentTimeStr() +& "*/\n" +& Tpl.textString(txt);
         res = Tpl.textString(txt);
+        wasError = nErrors < Error.getNumErrorMessages();
+        //prevent overriding the previously generated .mo without errors
+        destFile = destFile +& Util.if_(wasError, ".err.mo", "");
         print("\nWriting result to file '" +& destFile +& "'\n");
         
         System.writeFile(destFile, res);
         //print("\nReamining characters:\n" +& stringCharListString(chars) +& "\n<<"); 
+        //Error.addMessage(Error.INTERNAL_ERROR, {"Pokus"});
+        //fail when a new error
+        false = wasError;
       then ();
    
     case (file)
