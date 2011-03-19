@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2010, Linköpings University,
+ * Copyright (c) 1998-2011, Linköpings University,
  * Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -59,17 +59,46 @@ static int   echo = 1; //true
 extern char* _replace(char* source_str,char* search_str,char* replace_str); //Defined in systemimpl.c
 extern int SystemImpl__directoryExists(const char*);
 
-// Do not free or modift the returned variable. It's part of the environment!
+char* winPath = NULL;
+
+// Do not free or modify the returned variable. It's part of the environment!
 static const char* SettingsImpl__getInstallationDirectoryPath() {
   const char *path = getenv("OPENMODELICAHOME");
+  int i = 0;
   if (path == NULL)
     return CONFIG_DEFAULT_OPENMODELICAHOME; // On Windows, this is NULL; on Unix it is the configured --prefix
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  /* adrpo: translate this to forward slashes! */
+  /* already set, set it only once! */
+  if (winPath != NULL)
+    return (const char*)winPath;
+
+  /* duplicate the path */
+  winPath = strdup(path);
+
+  /* ?? not enough memory for duplication */
+  if (!winPath)
+    return path;
+
+  /* convert \\ to / */
+  while(winPath[i] != '\0')
+  {
+    if (winPath[i] == '\\') winPath[i] = '/';
+    i++;
+  }
+  /* set the termination */
+  winPath[i] = '\0';
+  return (const char*)winPath;
+#endif
   return path;
 }
+
+char* winLibPath = NULL;
 
 // Do not free the returned variable. It's malloc'ed
 char* SettingsImpl__getModelicaPath() {
   const char *path = getenv("OPENMODELICALIBRARY");
+  int i = 0;
   if (path == NULL) {
     // By default, this is <omhome>/lib/omlibrary/mslXX:<omhome>/lib/omlibrary/common
     const int num_msl_version = 4;
@@ -90,6 +119,27 @@ char* SettingsImpl__getModelicaPath() {
     snprintf(buffer,2*lenOmhome+100,"%s/lib/omlibrary/common",omhome);
     return buffer;
   }
+
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  /* adrpo: translate this to forward slashes! */
+  /* duplicate the path */
+  winLibPath = strdup(path);
+
+  /* ?? not enough memory for duplication */
+  if (!winLibPath)
+    return strdup(path);
+
+  /* convert \\ to / */
+  while(winLibPath[i] != '\0')
+  {
+    if (winLibPath[i] == '\\') winLibPath[i] = '/';
+    i++;
+  }
+  /* set the termination */
+  winLibPath[i] = '\0';
+  return winLibPath;
+#endif
+
   return strdup(path);
 }
 
