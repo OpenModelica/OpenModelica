@@ -5344,7 +5344,7 @@ algorithm
       equation
         (cache,v1 as Values.INTEGER(indx),_) = ceval(cache,env, e1, impl,NONE(), SOME(dim), msg);
         e1_1 = ValuesUtil.valueExp(v1);
-        true = indx <= dim;
+        true = (indx <= dim) and (indx > 0);
       then
         (cache,DAE.INDEX(e1_1));
 
@@ -5353,7 +5353,7 @@ algorithm
       equation
         (cache,v1 as Values.ENUM_LITERAL(index = indx),_) = ceval(cache,env, e1, impl,NONE(), SOME(dim), msg);
         e1_1 = ValuesUtil.valueExp(v1);
-        true = indx <= dim;
+        true = (indx <= dim) and (indx > 0);
       then
         (cache,DAE.INDEX(e1_1));
 
