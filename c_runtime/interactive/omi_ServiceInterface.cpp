@@ -300,7 +300,7 @@ double get_timeValue(void){
 void set_lastEmittedTime(double new_lastEmittedTime) {
   gdMutex.Lock();
 
-  globalData->lastEmittedTime = new_lastEmittedTime;
+  globalData->timeValue = new_lastEmittedTime;
 
   gdMutex.Unlock();
 }
@@ -309,7 +309,7 @@ void set_lastEmittedTime(double new_lastEmittedTime) {
 double get_lastEmittedTime(void) {
   gdMutex.Lock();
 
-  double temp_let =  globalData->lastEmittedTime;
+  double temp_let =  globalData->timeValue;
 
   gdMutex.Unlock();
 
@@ -377,7 +377,7 @@ void fillSimulationStepDataWithValuesFromGlobalData(SimStepData* p_SimStepData) 
 
   gdMutex.Lock();
 
-  p_SimStepData->forTimeStep = globalData->lastEmittedTime; //is the lastEmittedTime of this step
+  p_SimStepData->forTimeStep = globalData->timeValue; //is the lastEmittedTime of this step
   for (int i = 0; i < globalData->nStates; i++) {
     p_SimStepData->states[i] = globalData->states[i];
     p_SimStepData->statesDerivatives[i]
