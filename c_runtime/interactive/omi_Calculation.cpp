@@ -26,7 +26,7 @@
 
 using namespace std;
 
-bool debugCalculation = false; //Set true to print out comments which describes the program flow to the console
+bool debugCalculation = true; //Set true to print out comments which describes the program flow to the console
 bool forZero = true; //The first calculation must start from 0 to 0 (in OpenModelica the solver calculates from 0 - 2.220446049250313e-13)
 bool* p_forZero = 0; //The first calculation must start from 0 to 0 (in OpenModelica the solver calculates from 0 - 2.220446049250313e-13)
 
@@ -36,7 +36,7 @@ SimStepData simStepData_from_Calculation; //Simulation Step Data structure used 
 SimStepData* p_SimStepData_from_Calculation = 0;
 
 int calculate();
-void createSSDEntry();
+void createSSDEntry(string);
 void printSSDCalculation(long, long, long);
 
 /**
@@ -60,8 +60,14 @@ int calculate() {
   	cout << "start: " << start << " stop: " << stop << " stepSize: " << stepSizeORG << " outputSteps: " << outputSteps << " method: " << method << " outputFormat: " << outputFormat; fflush(stdout);
   }
 
-  set_lastEmittedTime(start);
-  set_forceEmit(0);
+	if (method == std::string("euler") || method == std::string("rungekutta")
+			|| method == std::string("dassl")) {
+		set_timeValue(start);
+		set_forceEmit(0);
+	} else {
+		set_lastEmittedTime(start);
+		set_forceEmit(0);
+	}
 
   initDelay(start);
 
@@ -90,9 +96,15 @@ int calculate() {
   		forZero = false;
   	} else {
   		//TODO 20100210 pv testing rungekutter...
-  		if (method == std::string("euler") || method == std::string("rungekutta")) {
+  		if (method == std::string("euler") || method == std::string("rungekutta") || method == std::string("dassl")){
   			stop = get_timeValue() + stepSize;
   			start = get_timeValue();
+  			if (debugCalculation){
+  				cout << "calculate ---- p_SimStepData_from_Calculation->forTimeStep: " << p_SimStepData_from_Calculation->forTimeStep << " --------------------" << endl; fflush(stdout);
+  				cout << "calculate: start " << start << " stop: " << stop << endl; fflush(stdout);
+  			}
+
+
   		} else {
   			stop = get_lastEmittedTime() + stepSize;
   			start = get_lastEmittedTime();
@@ -109,7 +121,7 @@ int calculate() {
 
   	stepSize = stepSizeORG;
   	set_stepSize(stepSize);
-  	createSSDEntry();
+  	createSSDEntry(method);
   	calculationInterrupted = false;
   	setResultData(p_SimStepData_from_Calculation); //ssd(tn) as parameter
   }
@@ -122,9 +134,20 @@ int calculate() {
 /**
  * Asks the ServiceInterface for the last simulation results to put into the simulation step data structure
  */
-void createSSDEntry() {
-  fillSimulationStepDataWithValuesFromGlobalData(p_SimStepData_from_Calculation);
-  //printSSDCalculation(1L, 0L, 1L);
+void createSSDEntry(string method) {
+	fillSimulationStepDataWithValuesFromGlobalData(method,
+			p_SimStepData_from_Calculation);
+
+	p_sdnMutex->Lock();
+	long nStates = p_simdatanumbers->nStates;
+	long nAlgebraic = p_simdatanumbers->nAlgebraic;
+	long nParameters = p_simdatanumbers->nParameters;
+	p_sdnMutex->Unlock();
+	if (debugCalculation)
+		//printSSDCalculation(nStates, nAlgebraic, nParameters);
+	if (debugCalculation)
+		cout << "createSSDEntry ---- p_SimStepData_from_Calculation->forTimeStep: " << p_SimStepData_from_Calculation->forTimeStep << " --------------------" << endl; fflush(stdout);
+
 }
 
 /**
@@ -133,7 +156,7 @@ void createSSDEntry() {
  */
 void printSSDCalculation(long nStates, long nAlgebraic, long nParameters) {
   cout << "OutPutSSD-CALCULATION***********" << endl; fflush(stdout);
-  cout << "p_SimStepData_from_Calculation->lastEmittedTime: " << p_SimStepData_from_Calculation->forTimeStep << " --------------------" << endl; fflush(stdout);
+  cout << "p_SimStepData_from_Calculation->forTimeStep: " << p_SimStepData_from_Calculation->forTimeStep << " --------------------" << endl; fflush(stdout);
 
   cout << "---Parmeters--- " << endl; fflush(stdout);
   for (int t = 0; t < nParameters; t++)

@@ -76,6 +76,7 @@ string get_OutputVarName(int);
 //****** END Value, Name Request and Manipulation ******
 
 double get_timeValue(void);
+void set_timeValue(double);
 void set_lastEmittedTime(double);
 double get_lastEmittedTime(void);
 
@@ -86,7 +87,7 @@ void set_forceEmit(int);
 int get_forceEmit(void);
 
 void setGlobalSimulationValuesFromSimulationStepData(SimStepData*);
-void fillSimulationStepDataWithValuesFromGlobalData(SimStepData*);
+void fillSimulationStepDataWithValuesFromGlobalData(string, SimStepData*);
 void fillSimDataNames_AND_SimDataNamesFilter_WithValuesFromGlobalData(
   	SimDataNames*, SimDataNamesFilter*);
 

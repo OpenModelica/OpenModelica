@@ -1,11 +1,11 @@
 /*
- * OpenModelica Interactive (Ver 0.7)
- * Last Modification: 3. October 2009
+ * OpenModelica Interactive (Ver 0.75)
+ * Last Modification: 26. December 2010
  *
  * Developed by:
  * EADS IW Germany
  * Developer: Parham Vasaiely
- * Contact: vasaie_p@informatik.haw-hamburg.de
+ * Contact: Parham.Vasaiely@gmx.de
  *
  * File description: socket.h
  * Standard Socket only for MS-Windows
@@ -19,50 +19,50 @@
 #include <string>
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
-  #include <winsock.h>
+	#include <winsock.h>
 #else
-  #include <sys/socket.h>
-  #include <sys/types.h>
-  #include <netinet/in.h>
-  #include <netdb.h>
+	#include <sys/socket.h>
+	#include <sys/types.h>
+	#include <netinet/in.h>
+	#include <netdb.h>
 #endif
 
-// Max. Anzahl Verbindungen
+// Max. number of connections
 const int MAXCONNECTIONS = 5;
-// Max. Anzahl an Daten die aufeinmal empfangen werden
+// Max. number of data to receive at once
 const int MAXRECV = 1024;
 
-// Die Klasse Socket
+// Socket class
 class Socket {
    private:
-   // Socketnummer (Socket-Deskriptor)
+   // Socket number (Socket-Descriptor)
    int m_sock;
-   int m_socket_type;
-   // Struktur sockaddr_in
+	 int m_socket_type;
+   // struct sockaddr_in
    sockaddr_in m_addr;
-   
+	 
    public:
-   // Konstruktor
+   // Constructor
    Socket();
-   // virtueller Destruktor
+   // virtual destructor
    virtual ~Socket();
 
-   // Socket erstellen - TCP
+   // Create Socket - TCP
    bool create();
-   // Socket erstellen - UDP
+   // Create Socket - UDP
    bool UDP_create();
    bool bind( const int port );
    bool listen() const;
    bool accept( Socket& ) const;
    bool connect ( const std::string &host, const int port );
-   // Datenübertragung - TCP
+   // Data transmission - TCP
    bool send ( const std::string& ) const;
    int recv ( std::string& ) const;
-   // Datenübertragung - UDP
+   // Data transmission - UDP
    bool UDP_send( const std::string&, const std::string&,
                   const int port ) const;
    int UDP_recv( std::string& ) const;
-   // Socket schließen
+   //  Close Socket
    bool close() const;
    // WSAcleanup()
    void cleanup() const;

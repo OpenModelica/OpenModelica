@@ -1,11 +1,11 @@
 /*
- * OpenModelica Interactive (Ver 0.7)
- * Last Modification: 3. October 2009
+ * OpenModelica Interactive (Ver 0.75)
+ * Last Modification: 26. December 2010
  *
  * Developed by:
  * EADS IW Germany
  * Developer: Parham Vasaiely
- * Contact: vasaie_p@informatik.haw-hamburg.de
+ * Contact: Parham.Vasaiely@gmx.de
  *
  * File description: omi_ResultManager.h
  *
@@ -21,29 +21,32 @@ using namespace std;
 #define _MY_SIMULATIONRESULT_H
 
 typedef struct ssd{ //SimulationStepData struct
-  double forTimeStep; //is the lastEmittedTime of this step
-  double *states;//[4];
-  double *statesDerivatives;//[4]; //xd DERIVATIVES
-  double *algebraics;//[17];
-  double *parameters;//[17];
+	double forTimeStep; //is the lastEmittedTime of this step
+	double *states;
+	double *statesDerivatives; //xd DERIVATIVES
+	double *algebraics;
+	double *parameters;
 } SimStepData;
 
+//Property Names of model simulation data (state, algebraic, variables)
 typedef struct sdNames{
-  string *statesNames;//[4];
-  string *stateDerivativesNames;//[4];
-  string *algebraicsNames;//[17];
-  string *parametersNames;//[17];
+	string *statesNames;
+	string *stateDerivativesNames;
+	string *algebraicsNames;
+	string *parametersNames;
 } SimDataNames;
 
+//Model property names used to be transfered to a client
 typedef struct sdNamesForTransfer{
-  string *variablesNames;//[21]; //statesNames + algebraicsNames
-  string *parametersNames;//[17]; //parametersNames
+	string *variablesNames; //statesNames + algebraicsNames
+	string *parametersNames; //parametersNames
 } SimDataNamesFilter;
 
+//Number of property values
 typedef struct nValues{
-  long nStates;
-  long nAlgebraic;
-  long nParameters;
+	long nStates;
+	long nAlgebraic;
+	long nParameters;
 } SimDataNumbers, *P_SimDataNumbers;
 
 extern SimDataNames* p_simDataNames_SimulationResult;
@@ -59,7 +62,8 @@ bool setResultData(SimStepData*);
 SimStepData* getResultDataForTime(double, double);
 SimStepData* getResultDataFirstStart();
 
-void resetSRDFAfterChangetime(void);//Resets the SRDF Array and the producer and consumer semaphores, so the Transfer wont send old results after changing the time
+//Resets the SRDF Array and the producer and consumer semaphores, so the Transfer wont send old results after changing the time
+void resetSRDFAfterChangetime(void);
 void resetSSDArrayWithNullSSD(void);
 void lockMutexSSD(void);
 void releaseMutexSSD(void);

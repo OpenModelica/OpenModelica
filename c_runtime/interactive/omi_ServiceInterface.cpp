@@ -297,10 +297,18 @@ double get_timeValue(void){
     return temp_let;
 }
 
+void set_timeValue(double new_timeValue) {
+	gdMutex.Lock();
+
+	globalData->timeValue = new_timeValue;
+
+	gdMutex.Unlock();
+}
+
 void set_lastEmittedTime(double new_lastEmittedTime) {
   gdMutex.Lock();
 
-  globalData->timeValue = new_lastEmittedTime;
+  globalData->lastEmittedTime = new_lastEmittedTime;
 
   gdMutex.Unlock();
 }
@@ -309,7 +317,7 @@ void set_lastEmittedTime(double new_lastEmittedTime) {
 double get_lastEmittedTime(void) {
   gdMutex.Lock();
 
-  double temp_let =  globalData->timeValue;
+  double temp_let =  globalData->lastEmittedTime;
 
   gdMutex.Unlock();
 
@@ -358,7 +366,15 @@ int get_forceEmit(void){
 void setGlobalSimulationValuesFromSimulationStepData(SimStepData* p_SimStepData){
   gdMutex.Lock();
 
-  globalData->lastEmittedTime = p_SimStepData->forTimeStep; //is the lastEmittedTime of this step
+  //TODO [20110319] pv workaround to fix dassl2 problem using globalData->lastEmittedTime
+//  if (method == std::string("euler") || method == std::string("rungekutta")
+//			|| method == std::string("dassl")) {
+		globalData->timeValue = p_SimStepData->forTimeStep; //is the timeValue of this step
+//	} else {
+//		globalData->lastEmittedTime = p_SimStepData->forTimeStep; //is the lastEmittedTime of this step
+//	}
+
+
   for (int i = 0; i < globalData->nStates; i++) {
     globalData->states[i] = p_SimStepData->states[i];
     globalData->statesDerivatives[i]
@@ -373,11 +389,16 @@ void setGlobalSimulationValuesFromSimulationStepData(SimStepData* p_SimStepData)
   gdMutex.Unlock();
 }
 
-void fillSimulationStepDataWithValuesFromGlobalData(SimStepData* p_SimStepData) {
+void fillSimulationStepDataWithValuesFromGlobalData(string method, SimStepData* p_SimStepData) {
 
   gdMutex.Lock();
 
-  p_SimStepData->forTimeStep = globalData->timeValue; //is the lastEmittedTime of this step
+  if (method == std::string("euler") || method == std::string("rungekutta")	|| method == std::string("dassl")) {
+		p_SimStepData->forTimeStep = globalData->timeValue; //is the lastEmittedTime of this step
+	} else {
+		p_SimStepData->forTimeStep = globalData->lastEmittedTime; //is the lastEmittedTime of this step
+	}
+
   for (int i = 0; i < globalData->nStates; i++) {
     p_SimStepData->states[i] = globalData->states[i];
     p_SimStepData->statesDerivatives[i]
@@ -538,6 +559,7 @@ void printGlobalData(void) {
 
   cout << "OutPutGlobalData***********" << endl; fflush(stdout);
   cout << "lastEmittedTime: " << globalData->lastEmittedTime  << " --------------------" << endl; fflush(stdout);
+  cout << "timeValue: " << globalData->timeValue  << " --------------------" << endl; fflush(stdout);
 
   if (globalData->nStates > 0)
   {

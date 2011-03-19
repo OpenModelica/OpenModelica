@@ -1,11 +1,11 @@
 /*
- * OpenModelica Interactive (Ver 0.7)
- * Last Modification: 3. October 2009
+ * OpenModelica Interactive (Ver 0.75)
+ * Last Modification: 26. December 2010
  *
  * Developed by:
  * EADS IW Germany
  * Developer: Parham Vasaiely
- * Contact: vasaie_p@informatik.haw-hamburg.de
+ * Contact: Parham.Vasaiely@gmx.de
  *
  * File description: socket.cpp
  * Standard Socket only for MS-Windows
@@ -21,9 +21,9 @@
 #include "socket.h"
 using namespace std;
 
-// Konstruktor
+// Constructor
 Socket::Socket() : m_sock(0) {
-   // Winsock.DLL Initialisieren
+   // Winsock.DLL Initialization
    WORD wVersionRequested;
    WSADATA wsaData;
    wVersionRequested = MAKEWORD (1, 1);
@@ -34,13 +34,13 @@ Socket::Socket() : m_sock(0) {
    }
 }
 
-// Destruktor
+// Destructor
 Socket::~Socket() {
    if ( is_valid() )
       ::closesocket ( m_sock );
 }
 
-// Erzeugt das Socket  - TCP
+// Create Socket  - TCP
 bool Socket::create() {
    m_sock = ::socket(AF_INET,SOCK_STREAM,0);
    if (m_sock < 0)
@@ -51,7 +51,7 @@ bool Socket::create() {
    return true;
 }
 
-// Erzeugt das Socket  - UDP
+// Create Socket  - UDP
 bool Socket::UDP_create() {
    m_sock = ::socket(AF_INET,SOCK_DGRAM,0);
    if (m_sock < 0)
@@ -62,8 +62,7 @@ bool Socket::UDP_create() {
    return true;
 }
 
-// Erzeugt die Bindung an die Serveradresse
-// - genauer an einen bestimmten Port
+// Create bind to server address  respectively with its specified port
 bool Socket::bind( const int port )
 {
    if ( ! is_valid() )
@@ -82,8 +81,7 @@ bool Socket::bind( const int port )
    return true;
 }
 
-// Teile dem Socket mit, dass Verbindungswünsche
-// von Clients entgegengenommen werden
+// allow client connections (MAXCONNECTIONS)
 bool Socket::listen() const {
    if ( ! is_valid() ) {
       return false;
@@ -95,9 +93,7 @@ bool Socket::listen() const {
   return true;
 }
 
-// Bearbeite die Verbindungswünsche von Clients
-// Der Aufruf von accept() blockiert solange,
-// bis ein Client Verbindung aufnimmt
+// Processes client connections. accept() will block until a client tries to connect
 bool Socket::accept ( Socket& new_socket ) const {
    int addr_length = sizeof ( m_addr );
    new_socket.m_sock = ::accept( m_sock,
@@ -108,7 +104,7 @@ bool Socket::accept ( Socket& new_socket ) const {
       return true;
 }
 
-// Baut die Verbindung zum Server auf
+// build connection to server
 bool Socket::connect( const string &host, const int port ) {
    if ( ! is_valid() )
       return false;
@@ -116,13 +112,13 @@ bool Socket::connect( const string &host, const int port ) {
    unsigned long addr;
    memset( &m_addr, 0, sizeof (m_addr));
    if ((addr = inet_addr( host.c_str() )) != INADDR_NONE) {
-       /* argv[1] ist eine numerische IP-Adresse */
+       /* argv[1] is a numeric IP-Address */
        memcpy( (char *)&m_addr.sin_addr,
                &addr, sizeof(addr));
    }
    else {
-       /* Für den Fall der Fälle: Wandle den Servernamen  *
-        * bspw. "localhost" in eine IP-Adresse um         */
+       /* If the address is given as a name  *
+        * e.g. "localhost" it should translated to an IP-Address */
        host_info = gethostbyname( host.c_str() );
        if (NULL == host_info)
        {
@@ -144,7 +140,7 @@ bool Socket::connect( const string &host, const int port ) {
     return false;
 }
 
-// Daten versenden via TCP
+// transmit data via TCP
 bool Socket::send( const string &s ) const {
    int status = ::send ( m_sock, s.c_str(), s.size(),  0 );
    if ( status == -1 ) {
@@ -155,7 +151,7 @@ bool Socket::send( const string &s ) const {
    }
 }
 
-// Daten empfangen via TCP
+//receive data via TCP
 int Socket::recv ( string& s ) const {
   char buf [ MAXRECV + 1 ];
   s = "";
@@ -174,7 +170,7 @@ int Socket::recv ( string& s ) const {
   }
 }
 
-// Daten versenden via UDP
+// transmit data via UDP
 bool Socket::UDP_send( const string &addr, const string &s, const int port ) const {
    struct sockaddr_in addr_sento;
    struct hostent *h;
@@ -201,7 +197,7 @@ bool Socket::UDP_send( const string &addr, const string &s, const int port ) con
    return true;
 }
 
-// Daten empfangen vie UDP
+// receive data vie UDP
 int Socket::UDP_recv( string& s ) const {
    struct sockaddr_in addr_recvfrom;
    int len, n;
@@ -224,13 +220,13 @@ int Socket::UDP_recv( string& s ) const {
    }
 }
 
-// Winsock.dll freigeben
+// free Winsock.dll
 void Socket::cleanup() const {
    /* Cleanup Winsock */
    WSACleanup();
 }
 
-// Socket schließen und Winsock.dll freigeben
+// Close Socket and free Winsock.dll
 bool Socket::close() const {
    closesocket(m_sock);
    cleanup();
