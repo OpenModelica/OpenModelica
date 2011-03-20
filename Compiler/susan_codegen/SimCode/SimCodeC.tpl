@@ -3434,10 +3434,19 @@ case var as VARIABLE(__) then
       daeExp(exp, contextFunction, &varInits /*BUFC*/, &varDecls /*BUFD*/)
     ;separator=", ") 
   if instDims then
-    let &varInits += 'alloc_<%expTypeShort(var.ty)%>_array(&<%varName%>, <%listLength(instDims)%>, <%instDimsInit%>);<%\n%>'
-    let defaultValue = varDefaultValue(var, outStruct, i, varName, &varDecls, &varInits)
-    let &varInits += defaultValue
-    " "
+    (match var.value
+    case SOME(exp) then
+      let &varInits += 'alloc_<%expTypeShort(var.ty)%>_array(&<%varName%>, <%listLength(instDims)%>, <%instDimsInit%>);<%\n%>'
+      let defaultValue = varDefaultValue(var, outStruct, i, varName, &varDecls, &varInits)
+      let &varInits += defaultValue
+      let defaultValue1 = '<%contextCref(var.name,contextFunction)%> = <%daeExp(exp, contextFunction, &varInits  /*BUFC*/, &varDecls /*BUFD*/)%>;<%\n%>'
+      let &varInits += defaultValue1
+      " "
+    else
+      let &varInits += 'alloc_<%expTypeShort(var.ty)%>_array(&<%varName%>, <%listLength(instDims)%>, <%instDimsInit%>);<%\n%>'
+      let defaultValue = varDefaultValue(var, outStruct, i, varName, &varDecls, &varInits)
+     let &varInits += defaultValue
+      "")
   else
     (match var.value
     case SOME(exp) then
