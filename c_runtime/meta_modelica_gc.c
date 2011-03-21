@@ -77,7 +77,7 @@ void *mmc_alloc_bytes(unsigned nbytes)
 }
 
 static mmc_GC_state_type x_mmc_GC_state;
-mmc_GC_state_type *mmc_GC_state = &mmc_GC_state;
+mmc_GC_state_type *mmc_GC_state = &x_mmc_GC_state;
 
 int mmc_GC_init(int nr_mark_threads, int nr_sweep_threads, size_t default_page_size, int default_number_of_pages, size_t default_roots_size, size_t default_roots_marks_size)
 {
