@@ -2004,7 +2004,7 @@ case eqn as SES_ARRAY_CALL_ASSIGN(__) then
     <%preExp%>
     copy_real_array_data_mem(&<%expPart%>, &<%cref(eqn.componentRef)%>);<%inlineArray(context,expPart,eqn.componentRef)%>
     >>
-  else "#error \"No runtime support for this sort of array call\""
+  else error(sourceInfo(), 'No runtime support for this sort of array call: <%printExpStr(eqn.exp)%>')
 end equationArrayCallAssign;
 
 
@@ -2880,7 +2880,7 @@ template extFunctionName(String name, String language)
   match language
   case "C" then '<%name%>'
   case "FORTRAN 77" then '<%name%>_'
-  else '<%\n%>#error "UNSUPPORTED_LANGUAGE: <%language%>"<%\n%>'
+  else error(sourceInfo(), 'Unsupport external language: <%language%>')
 end extFunctionName;
 
 template extFunDefArgs(list<SimExtArg> args, String language)
@@ -2888,7 +2888,7 @@ template extFunDefArgs(list<SimExtArg> args, String language)
   match language
   case "C" then (args |> arg => extFunDefArg(arg) ;separator=", ")
   case "FORTRAN 77" then (args |> arg => extFunDefArgF77(arg) ;separator=", ")
-  else '<%\n%>#error "UNSUPPORTED_LANGUAGE: <%language%>"<%\n%>'
+  else error(sourceInfo(), 'Unsupport external language: <%language%>')
 end extFunDefArgs;
 
 template extReturnType(SimExtArg extArg)
@@ -3459,7 +3459,7 @@ case var as FUNCTION_PTR(__) then
   let &ignore = buffer ""
   let &varDecls += functionArg(var,&ignore)
   ""
-else let &varDecls += '#error Unknown local variable type<%\n%>' ""
+else error(sourceInfo(), 'Unknown local variable type')
 end varInit;
 
 template varDefaultValue(Variable var, String outStruct, Integer i, String lhsVarName,  Text &varDecls /*BUFP*/, Text &varInits /*BUFP*/)
@@ -3845,7 +3845,7 @@ template algStatement(DAE.Statement stmt, Context context, Text &varDecls /*BUFP
   case s as STMT_RETURN(__)         then 'goto _return;<%\n%>'
   case s as STMT_NORETCALL(__)      then algStmtNoretcall(s, context, &varDecls /*BUFD*/)
   case s as STMT_REINIT(__)         then algStmtReinit(s, context, &varDecls /*BUFD*/)
-  else "#error NOT_IMPLEMENTED_ALG_STATEMENT"
+  else error(sourceInfo(), 'ALG_STATEMENT NYI')
   <<
   /*#modelicaLine <%statementInfoString(stmt)%>*/
   <%res%>
@@ -3999,10 +3999,7 @@ case STMT_TUPLE_ASSIGN(exp=MATCHEXPRESSION(__)) then
     writeLhsCref(cr, rhsStr, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   ;separator="\n"%>
   >>
-else
-  <<
-  #error "algStmtTupleAssign failed"
-  >>
+else error(sourceInfo(), 'algStmtTupleAssign failed')
 end algStmtTupleAssign;
 
 template writeLhsCref(Exp exp, String rhsStr, Context context, Text &preExp /*BUFP*/,
@@ -4507,7 +4504,7 @@ template daeExp(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls 
   case e as BOX(__)             then daeExpBox(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   case e as UNBOX(__)           then daeExpUnbox(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   case e as SHARED_LITERAL(__)  then daeExpSharedLiteral(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-  else '<%\n%>#error "UNKNOWN_EXP <%ExpressionDump.printExpStr(exp)%>"<%\n%>'
+  else error(sourceInfo(), 'Unknown expression: <%ExpressionDump.printExpStr(exp)%>')
 end daeExp;
 
 
@@ -5598,31 +5595,8 @@ template daeExpReduction(Exp exp, Context context, Text &preExp /*BUFP*/,
   }<%\n%>
   >>
   resTmp
+  else error(sourceInfo(), 'Code generation does not support multiple iterators: <%printExpStr(exp)%>') 
 end daeExpReduction;
-
-template daeExpReductionFnName(Path path, String type)
- "Helper to daeExpReduction."
-::=
-  match path
-  case id as IDENT(__) then
-  match id.name
-  case "sum" then
-    match type
-    case "modelica_integer" then "reduction_sum"
-    case "modelica_real" then "reduction_sum"
-    else "INVALID_TYPE"
-    end match
-  case "product" then
-    match type
-    case "modelica_integer" then "reduction_product"
-    case "modelica_real" then "reduction_product"
-    else "INVALID_TYPE"
-    end match  
-  else id.name
-  end match
-  else '<%\n%>#error "daeExpReductionFnName not implemented for <%dotPath(path)%>"<%\n%>'
-end daeExpReductionFnName;
-
 
 template daeExpMatch(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/)
  "Generates code for a match expression."
@@ -5665,7 +5639,7 @@ case exp as MATCHEXPRESSION(__) then
     case MATCH(switch=SOME((switchIndex,ty as ET_INT(__),_))) then
       '<%prefix%>_in<%switchIndex%>'
     case MATCH(switch=SOME(_)) then
-      '<%\n%>#error "unknown switch"<%\n%>'
+      error(sourceInfo(), 'Unknown switch: <%printExpStr(exp)%>') 
     else tempDecl('int', &varDeclsInner)
   let done = tempDecl('int', &varDeclsInner)
   let onPatternFail = match exp.matchType case MATCHCONTINUE(__) then "MMC_THROW()" case MATCH(__) then "break"
@@ -6164,7 +6138,7 @@ template expTypeFromExpFlag(Exp exp, Integer flag)
   case BOX(__)           then match flag case 1 then "metatype" else "modelica_metatype"
   case c as UNBOX(__)    then expTypeFlag(c.ty, flag)
   case c as SHARED_LITERAL(__) then expTypeFlag(c.ty, flag)
-  else '#error "expTypeFromExpFlag:<%printExpStr(exp)%>"'
+  else error(sourceInfo(), 'expTypeFromExpFlag:<%printExpStr(exp)%>')
 end expTypeFromExpFlag;
 
 
@@ -6403,7 +6377,7 @@ template literalExpConst(Exp lit, Integer index) "These should all be declared s
     static const MMC_DEFSTRUCTLIT(<%tmp%>,<%intAdd(1,listLength(args))%>,<%newIndex%>) {&<%underscorePath(path)%>__desc,<%args |> exp => literalExpConstBoxedVal(exp); separator=","%>}};
     <%meta%> = MMC_REFSTRUCTLIT(<%tmp%>);
     >>
-  else '<%\n%>#error "literalExpConst failed: <%printExpStr(lit)%>"<%\n%>'
+  else error(sourceInfo(), 'literalExpConst failed: <%printExpStr(lit)%>')
 end literalExpConst;
 
 template literalExpConstBoxedVal(Exp lit)
