@@ -539,7 +539,7 @@ mmc_walk_top:
 
   if( MMC_IS_IMMEDIATE(p) )
   {
-    //if (debug) fprintf(stderr, "immediate: %p\n", p); fflush(NULL);
+    /* if (debug) fprintf(stderr, "immediate: %p\n", p); fflush(NULL); */
     return;
   }
   else
