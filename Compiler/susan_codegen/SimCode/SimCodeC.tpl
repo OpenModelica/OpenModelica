@@ -3417,7 +3417,6 @@ case ET_COMPLEX(varLst=vl, name=n) then
   >>
 end writeOutVarRecordMembers;
 
-
 template varInit(Variable var, String outStruct, Integer i, Text &varDecls /*BUFP*/, Text &varInits /*BUFP*/)
  "Generates code to initialize variables.
   Does not return anything: just appends declarations to buffers."
@@ -3439,7 +3438,10 @@ case var as VARIABLE(__) then
       let &varInits += 'alloc_<%expTypeShort(var.ty)%>_array(&<%varName%>, <%listLength(instDims)%>, <%instDimsInit%>);<%\n%>'
       let defaultValue = varDefaultValue(var, outStruct, i, varName, &varDecls, &varInits)
       let &varInits += defaultValue
-      let defaultValue1 = '<%contextCref(var.name,contextFunction)%> = <%daeExp(exp, contextFunction, &varInits  /*BUFC*/, &varDecls /*BUFD*/)%>;<%\n%>'
+      let var_name = if outStruct then 
+        '<%extVarName(var.name)%>' else 
+        '<%contextCref(var.name, contextFunction)%>' 
+      let defaultValue1 = '<%var_name%> = <%daeExp(exp, contextFunction, &varInits  /*BUFC*/, &varDecls /*BUFD*/)%>;<%\n%>'
       let &varInits += defaultValue1
       " "
     else
@@ -3622,9 +3624,9 @@ template extFunCallVardecl(SimExtArg arg, Text &varDecls /*BUFP*/)
     match ty case ET_STRING(__) then
       ""
     else
-      let &varDecls += '<%extType(ty)%> <%contextCref(c,contextFunction)%>_ext;<%\n%>'
+      let &varDecls += '<%extType(ty)%> <%extVarName(c)%>;<%\n%>'
       <<
-      <%contextCref(c,contextFunction)%>_ext = (<%extType(ty)%>)<%contextCref(c,contextFunction)%>;
+      <%extVarName(c)%> = (<%extType(ty)%>)<%contextCref(c,contextFunction)%>;
       >>
   case SIMEXTARG(outputIndex=oi, isArray=false, type_=ty, cref=c) then
     match oi case 0 then
@@ -3696,7 +3698,7 @@ case SIMEXTARG(outputIndex=oi, isArray=false, type_=ty, cref=c) then
   match oi case 0 then
     ""
   else
-    let cr = '<%contextCref(c,contextFunction)%>_ext'
+    let cr = '<%extVarName(c)%>'
     <<
     out.targ<%oi%> = (<%expTypeModelica(ty)%>)<%
       if acceptMetaModelicaGrammar() then
@@ -3717,7 +3719,7 @@ case SIMEXTARG(outputIndex=oi, isArray=ai, type_=ty, cref=c) then
     ""
   else
     let outarg = 'out.targ<%oi%>'
-    let ext_name = '<%contextCref(c,contextFunction)%>_ext'
+    let ext_name = '<%extVarName(c)%>'
     match ai 
     case false then 
       '<%outarg%> = (<%expTypeModelica(ty)%>)<%ext_name%>;<%\n%>'
@@ -3740,7 +3742,7 @@ template extArg(SimExtArg extArg, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/
     else
       '<%cr%><%match t case ET_STRING(__) then "" else "_ext"%>'
   case SIMEXTARG(cref=c, isInput=ii, outputIndex=oi, type_=t) then
-    '&<%contextCref(c,contextFunction)%>_ext'
+    '&<%extVarName(c)%>'
   case SIMEXTARGEXP(__) then
     daeExp(exp, contextFunction, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   case SIMEXTARGSIZE(cref=c) then
@@ -5088,6 +5090,16 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let &preExp += 'fill_alloc_<%ty_str%>(&<%tvar%>, <%valExp%>, <%listLength(dims)%>, <%dimsExp%>);<%\n%>'
     '<%tvar%>'
     
+  case CALL(tuple_=false, builtin=true,
+            path=IDENT(name="cat"), expLst=dim::arrays) then
+    let dim_exp = daeExp(dim, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+    let arrays_exp = (arrays |> array =>
+      daeExp(array, context, &preExp /*BUFC*/, &varDecls /*BUFD*/) ;separator=", &")
+    let ty_str = '<%expTypeArray(ty)%>'
+    let tvar = tempDecl(ty_str, &varDecls /*BUFD*/)
+    let &preExp += 'cat_alloc_<%ty_str%>(<%dim_exp%>, &<%tvar%>, <%listLength(arrays)%>, &<%arrays_exp%>);<%\n%>'
+    '<%tvar%>'
+
   case CALL(tuple_=false, builtin=true,
             path=IDENT(name="promote"), expLst={A, n}) then
     let var1 = daeExp(A, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)

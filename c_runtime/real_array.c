@@ -632,7 +632,7 @@ void cat_real_array(int k, real_array_t* dest, int n, real_array_t* first,...)
 /* function: cat_alloc_real_array
  *
  * Concatenates n real arrays along the k:th dimension.
- * Only works for 2 dimensional arrays.
+ * Only works for 1 and 2 dimensional arrays.
  */
 void cat_alloc_real_array(int k, real_array_t* dest, int n,
                           real_array_t* first,...)
@@ -659,9 +659,23 @@ void cat_alloc_real_array(int k, real_array_t* dest, int n,
     }
     check_base_array_dim_sizes_except(k,elts,n);
 
+    /* 1-dimensional arrays. */
+    if (first->ndims == 1 && k == 1) {
+      int c, j;
+      dest->data = real_alloc(new_k_dim_size);
+      dest->dim_size = size_alloc(1);
+      dest->dim_size[0] = new_k_dim_size;
+      dest->ndims = 2;
+
+      for(i = 0, j = 0; i < n; ++i) {
+        for(c = 0; c < elts[i]->dim_size[0]; ++c) {
+          real_set(dest, j++, real_get(elts[i], c));
+        }
+      }
+    }
     /* concatenation along first dimension */
     /* cat(1,[1,2;3,4],[5,6;7,8]) => [1,2;3,4;5,6;7,8]*/
-    if (k == 1) {
+    else if (first->ndims == 2 && k == 1) {
         int r,c,j;
         int dim_size_2 = elts[0]->dim_size[1];
         dest->data = real_alloc(dim_size_2 * new_k_dim_size);
@@ -680,7 +694,7 @@ void cat_alloc_real_array(int k, real_array_t* dest, int n,
         }
     } /* concatenation along second dimension */
     /* cat(2,[1,2;3,4],[5,6;7,8]) => [1,2,5,6;3,4,7,8]*/
-    else if (k == 2) {
+    else if (first->ndims == 2 && k == 2) {
         int r,c,j;
         int dim_size_1 = elts[0]->dim_size[0];
         dest->data = real_alloc(dim_size_1 * new_k_dim_size);
