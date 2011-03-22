@@ -87,46 +87,88 @@ public function checkBackendDAEWithErrorMsg"function: checkBackendDAEWithErrorMs
   input BackendDAE.BackendDAE inBackendDAE;
 protected
   list<tuple<DAE.Exp,list<DAE.ComponentRef>>> expCrefs;
+  list<BackendDAE.Equation> wrongEqns;
 algorithm  
-  expCrefs := checkBackendDAE(inBackendDAE);
-  printcheckBackendDAEWithErrorMsg(expCrefs);
+  _ := matchcontinue (inBackendDAE)
+    local BackendDAE.BackendDAE bdae;  
+    case (bdae)
+      equation
+        false = RTOpts.debugFlag("checkBackendDAE");
+      then
+        ();  
+    case (bdae)
+      equation
+        true = RTOpts.debugFlag("checkBackendDAE");
+        (expCrefs,wrongEqns) = checkBackendDAE(inBackendDAE);
+        printcheckBackendDAEWithErrorMsg(expCrefs,wrongEqns);
+      then
+        ();  
+     end matchcontinue;
 end checkBackendDAEWithErrorMsg;
  
 public function printcheckBackendDAEWithErrorMsg"function: printcheckBackendDAEWithErrorMsg
   author: Frenkel TUD
   helper for checkDEALowWithErrorMsg"
   input list<tuple<DAE.Exp,list<DAE.ComponentRef>>> inExpCrefs;  
+  input list<BackendDAE.Equation> inWrongEqns;
 algorithm   
-  _ := matchcontinue (inExpCrefs)
+  _ := matchcontinue (inExpCrefs,inWrongEqns)
     local
       DAE.Exp e;
       list<DAE.ComponentRef> crefs;
       list<tuple<DAE.Exp,list<DAE.ComponentRef>>> res;
       list<String> strcrefs;
       String crefstring, expstr,scopestr;
+      BackendDAE.Equation eqn;
+      list<BackendDAE.Equation> wrongEqns;
+      DAE.ElementSource source;
     
-    case ({}) then ();
+    case ({},{})  then ();    
     
-
-    case (((e,crefs))::res)
+    case ({},eqn::wrongEqns)
       equation
-        false = RTOpts.debugFlag("checkBackendDAE");
-      then
-        ();                   
+        printEqnSizeError(eqn);
+        printcheckBackendDAEWithErrorMsg({},wrongEqns);
+      then ();
     
-    case (((e,crefs))::res)
+    case (((e,crefs))::res,wrongEqns)
       equation
-        true = RTOpts.debugFlag("checkBackendDAE");
         strcrefs = Util.listMap(crefs,ComponentReference.crefStr);
         crefstring = Util.stringDelimitList(strcrefs,", ");
         expstr = ExpressionDump.printExpStr(e);
         scopestr = stringAppendList({crefstring," from Expression: ",expstr});
         Error.addMessage(Error.LOOKUP_VARIABLE_ERROR, {scopestr,"BackendDAE object"});
-        printcheckBackendDAEWithErrorMsg(res);
+        printcheckBackendDAEWithErrorMsg(res,wrongEqns);
       then
         ();
   end matchcontinue;
 end printcheckBackendDAEWithErrorMsg;      
+
+protected function printEqnSizeError"function: printEqnSizeError
+  author: Frenkel TUD 2010-12"
+    input BackendDAE.Equation inEqn;
+algorithm
+  _ := matchcontinue(inEqn)
+  local 
+    BackendDAE.Equation eqn;
+    DAE.Exp e1, e2;
+    DAE.ExpType t1,t2;
+    String eqnstr, t1str, t2str, tstr;
+    DAE.ElementSource source;
+    case (eqn as BackendDAE.EQUATION(exp=e1,scalar=e2,source=source))
+      equation
+        eqnstr = BackendDump.equationStr(eqn);
+        t1 = Expression.typeof(e1);
+        t2 = Expression.typeof(e2);   
+        t1str = ExpressionDump.typeString(t1);     
+        t2str = ExpressionDump.typeString(t2);   
+        tstr = stringAppendList({t1str," != ", t2str});  
+        Error.addSourceMessage(Error.EQUATION_TYPE_MISMATCH_ERROR, {eqnstr,tstr}, DAEUtil.getElementSourceFileInfo(source));
+      then ();
+      //
+    case eqn then ();
+  end matchcontinue;
+end printEqnSizeError;
       
 public function checkBackendDAE "function: checkBackendDAE
   author: Frenkel TUD
@@ -137,8 +179,9 @@ public function checkBackendDAE "function: checkBackendDAE
   Returns all component references which not part of the BackendDAE object."
   input BackendDAE.BackendDAE inBackendDAE;
   output list<tuple<DAE.Exp,list<DAE.ComponentRef>>> outExpCrefs;
+  output list<BackendDAE.Equation> outWrongEqns;
 algorithm
-  outExpCrefs := matchcontinue (inBackendDAE)
+  (outExpCrefs,outWrongEqns) := matchcontinue (inBackendDAE)
     local
       BackendDAE.Variables vars1,vars2,allvars;
       BackendDAE.EquationArray eqns,reqns,ieqns;
@@ -146,6 +189,7 @@ algorithm
       array<DAE.Algorithm> algs;
       list<BackendDAE.Var> varlst1,varlst2,allvarslst;
       list<tuple<DAE.Exp,list<DAE.ComponentRef>>> expcrefs,expcrefs1,expcrefs2,expcrefs3,expcrefs4,expcrefs5;
+      list<BackendDAE.Equation> wrongEqns,wrongEqns1,wrongEqns2;
     
     case (BackendDAE.DAE(orderedVars = vars1,knownVars = vars2,orderedEqs = eqns,removedEqs = reqns,
           initialEqs = ieqns,arrayEqs = ae,algorithms = algs))
@@ -161,8 +205,12 @@ algorithm
         ((_,expcrefs4)) = traverseBackendDAEExpsEqns(ieqns,checkBackendDAEExp,(allvars,expcrefs3));
         ((_,expcrefs5)) = traverseBackendDAEArrayNoCopy(ae,checkBackendDAEExp,traverseBackendDAEExpsArrayEqn,1,arrayLength(ae),(allvars,expcrefs4));
         //((_,expcrefs6)) = traverseBackendDAEArrayNoCopy(algs,checkBackendDAEExp,traverseAlgorithmExps,1,arrayLength(algs),(allvars,expcrefs5));
+        
+        wrongEqns = BackendEquation.traverseBackendDAEEqns(eqns,checkEquationSize,{});
+        wrongEqns1 = BackendEquation.traverseBackendDAEEqns(reqns,checkEquationSize,wrongEqns);
+        wrongEqns2 = BackendEquation.traverseBackendDAEEqns(ieqns,checkEquationSize,wrongEqns1);
       then
-        expcrefs5;
+        (expcrefs5,wrongEqns2);
     
     case (_)
       equation
@@ -263,6 +311,34 @@ algorithm
   backendVar := BackendDAE.VAR(cr,BackendDAE.VARIABLE(),DAE.BIDIR(),BackendDAE.INT(),NONE(),NONE(),{},0,
                      DAE.emptyElementSource,NONE(),NONE(),DAE.NON_CONNECTOR(),DAE.NON_STREAM_CONNECTOR());
 end makeIterVariable;
+
+protected function checkEquationSize"function: checkEquationSize
+  author: Frenkel TUD 2010-12
+
+  - check if the left hand site and thr rigth hand site have equal types.
+"
+    input tuple<BackendDAE.Equation, list<BackendDAE.Equation>> inTpl;
+    output tuple<BackendDAE.Equation, list<BackendDAE.Equation>> outTpl;
+algorithm
+  outTpl := matchcontinue(inTpl)
+  local 
+    BackendDAE.Equation e;
+    list<BackendDAE.Equation> wrongEqns,wrongEqns1;
+    DAE.Exp e1, e2;
+    DAE.ExpType t1,t2;
+    Boolean b;
+    case ((e as BackendDAE.EQUATION(exp=e1,scalar=e2),wrongEqns))
+      equation
+        t1 = Expression.typeof(e1);
+        t2 = Expression.typeof(e2);
+        b = Expression.equalTypes(t1,t2);
+        wrongEqns1 = Util.listConsOnTrue(not b,e,wrongEqns);
+      then ((e,wrongEqns1));
+      //
+    case inTpl then inTpl;
+  end matchcontinue;
+end checkEquationSize;
+
 
 /*************************************************
  * Initialisation and stuff 

@@ -135,6 +135,7 @@ algorithm
   einfo := Inline.inlineEventInfo(BackendDAE.EVENT_INFO(whenclauses_1,{}),(SOME(functionTree),{DAE.NORM_INLINE()}));
   aliasVars := BackendDAEUtil.emptyAliasVariables();
   outBackendDAE := BackendDAE.DAE(vars_1,knvars,extVars,aliasVars,eqnarr,reqnarr,ieqnarr,arr_md_eqns,algarr,einfo,extObjCls);
+  BackendDAEUtil.checkBackendDAEWithErrorMsg(outBackendDAE);
 end lower;
 
 protected function lower2
