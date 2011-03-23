@@ -54,7 +54,7 @@ template translateModel(SimCode simCode)
 match simCode
 case SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   let()= textFile(simulationFile(simCode), '<%fileNamePrefix%>.cpp')
-  let()= textFile(simulationFunctionsHeaderFile(fileNamePrefix, modelInfo.functions, externalFunctionIncludes, recordDecls), '<%fileNamePrefix%>_functions.h')
+  let()= textFile(simulationFunctionsHeaderFile(fileNamePrefix, modelInfo.functions, recordDecls), '<%fileNamePrefix%>_functions.h')
   let()= textFile(simulationFunctionsFile(fileNamePrefix, modelInfo.functions, literals), '<%fileNamePrefix%>_functions.cpp')
   let()= textFile(recordsFile(fileNamePrefix, recordDecls), '<%fileNamePrefix%>_records.c')
   let()= textFile(simulationMakefile(simCode), '<%fileNamePrefix%>.makefile')
@@ -90,6 +90,7 @@ match simCode
 case SIMCODE(__) then
   <<
   <%simulationFileHeader(simCode)%>
+  <%externalFunctionIncludes(externalFunctionIncludes)%>
   #ifdef _OMC_MEASURE_TIME
   const int measure_time_flag = 1;
   #else
@@ -2226,7 +2227,6 @@ template simulationFunctionsFile(String filePrefix, list<Function> functions, li
   extern "C" {
   
   <%literals |> literal hasindex i0 from 0 => literalExpConst(literal,i0) ; separator="\n"%>
-
   <%functionBodies(functions)%>
   }
   
@@ -2246,7 +2246,7 @@ template recordsFile(String filePrefix, list<RecordDeclaration> recordDecls)
   /* adpro: leave a newline at the end of file to get rid of warnings! */
 end recordsFile;
 
-template simulationFunctionsHeaderFile(String filePrefix, list<Function> functions, list<String> includes, list<RecordDeclaration> recordDecls)
+template simulationFunctionsHeaderFile(String filePrefix, list<Function> functions, list<RecordDeclaration> recordDecls)
  "Generates the content of the C file for functions in the simulation case."
 ::=
   <<
@@ -2256,7 +2256,6 @@ template simulationFunctionsHeaderFile(String filePrefix, list<Function> functio
   #include "simulation_runtime.h"
   extern "C" {
   <%recordDecls |> rd => recordDeclarationHeader(rd) ;separator="\n"%>
-  <%externalFunctionIncludes(includes)%>
   <%functionHeaders(functions)%>
   }
   #endif
@@ -5649,6 +5648,7 @@ case exp as MATCHEXPRESSION(__) then
     case MATCH(switch=SOME((switchIndex,ET_METATYPE(__),_))) then
       'valueConstructor(<%prefix%>_in<%switchIndex%>)'
     case MATCH(switch=SOME((switchIndex,ty as ET_INT(__),_))) then
+
       '<%prefix%>_in<%switchIndex%>'
     case MATCH(switch=SOME(_)) then
       error(sourceInfo(), 'Unknown switch: <%printExpStr(exp)%>') 
