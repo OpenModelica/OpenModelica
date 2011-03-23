@@ -152,6 +152,7 @@ algorithm
   local 
     BackendDAE.Equation eqn;
     DAE.Exp e1, e2;
+    DAE.ComponentRef cr;
     DAE.ExpType t1,t2;
     String eqnstr, t1str, t2str, tstr;
     DAE.ElementSource source;
@@ -165,6 +166,26 @@ algorithm
         tstr = stringAppendList({t1str," != ", t2str});  
         Error.addSourceMessage(Error.EQUATION_TYPE_MISMATCH_ERROR, {eqnstr,tstr}, DAEUtil.getElementSourceFileInfo(source));
       then ();
+    case (eqn as BackendDAE.SOLVED_EQUATION(componentRef=cr,exp=e1,source=source))
+      equation
+        eqnstr = BackendDump.equationStr(eqn);
+        t1 = Expression.typeof(e1);
+        t2 = ComponentReference.crefLastType(cr);
+        t1str = ExpressionDump.typeString(t1);     
+        t2str = ExpressionDump.typeString(t2);   
+        tstr = stringAppendList({t1str," != ", t2str});  
+        Error.addSourceMessage(Error.EQUATION_TYPE_MISMATCH_ERROR, {eqnstr,tstr}, DAEUtil.getElementSourceFileInfo(source));
+      then ();
+    case (eqn as BackendDAE.COMPLEX_EQUATION(lhs=e1,rhs=e2,source=source))
+      equation
+        eqnstr = BackendDump.equationStr(eqn);
+        t1 = Expression.typeof(e1);
+        t2 = Expression.typeof(e2);   
+        t1str = ExpressionDump.typeString(t1);     
+        t2str = ExpressionDump.typeString(t2);   
+        tstr = stringAppendList({t1str," != ", t2str});  
+        Error.addSourceMessage(Error.EQUATION_TYPE_MISMATCH_ERROR, {eqnstr,tstr}, DAEUtil.getElementSourceFileInfo(source));
+      then ();                
       //
     case eqn then ();
   end matchcontinue;
@@ -247,7 +268,7 @@ protected function traversecheckBackendDAEExp
 algorithm
   outTuple := matchcontinue(inTuple)
     local
-      DAE.Exp e;
+      DAE.Exp e,e1;
       BackendDAE.Variables vars,vars1;
       DAE.ComponentRef cr;
       list<DAE.ComponentRef> crefs,crefs1;
@@ -268,6 +289,14 @@ algorithm
         ((_,(vars1,crefs1))) = Expression.traverseExpList(expl,traversecheckBackendDAEExp,(vars,crefs));
       then
         ((e, (vars1,crefs1)));  
+
+    // Special Case for Arrays
+    case ((e as DAE.CREF(ty = DAE.ET_ARRAY(ty=_)),(vars,crefs)))
+      equation
+        ((e1,_)) = extendArrExp((e,NONE()));
+        ((_,(vars1,crefs1))) = Expression.traverseExp(e1,traversecheckBackendDAEExp,(vars,crefs));
+      then
+        ((e, (vars1,crefs1)));      
     
     // case for Reductions    
     case ((e as DAE.REDUCTION(iterators = riters),(vars,crefs)))
@@ -325,6 +354,7 @@ algorithm
     BackendDAE.Equation e;
     list<BackendDAE.Equation> wrongEqns,wrongEqns1;
     DAE.Exp e1, e2;
+    DAE.ComponentRef cr;
     DAE.ExpType t1,t2;
     Boolean b;
     case ((e as BackendDAE.EQUATION(exp=e1,scalar=e2),wrongEqns))
@@ -334,6 +364,23 @@ algorithm
         b = Expression.equalTypes(t1,t2);
         wrongEqns1 = Util.listConsOnTrue(not b,e,wrongEqns);
       then ((e,wrongEqns1));
+
+    case ((e as BackendDAE.SOLVED_EQUATION(componentRef=cr,exp=e1),wrongEqns))
+      equation
+        t1 = Expression.typeof(e1);
+        t2 = ComponentReference.crefLastType(cr);
+        b = Expression.equalTypes(t1,t2);
+        wrongEqns1 = Util.listConsOnTrue(not b,e,wrongEqns);
+      then ((e,wrongEqns1));
+
+    case ((e as BackendDAE.COMPLEX_EQUATION(lhs=e1,rhs=e2),wrongEqns))
+      equation
+        t1 = Expression.typeof(e1);
+        t2 = Expression.typeof(e2);
+        b = Expression.equalTypes(t1,t2);
+        wrongEqns1 = Util.listConsOnTrue(not b,e,wrongEqns);
+      then ((e,wrongEqns1));        
+        
       //
     case inTpl then inTpl;
   end matchcontinue;
