@@ -1173,7 +1173,7 @@ algorithm
         (state,stateno) = selectDummyState(states, stateindx, dae, m, mt);
         // print("Selected ");print(ComponentReference.printComponentRefStr(state));print(" as dummy state\n");
         // print(" From candidates:");print(Util.stringDelimitList(Util.listMap(states,ComponentReference.printComponentRefStr),", "));print("\n");
-        dae = propagateDummyFixedAttribute(dae, eqns_1, state, stateno);
+        //dae = propagateDummyFixedAttribute(dae, eqns_1, state, stateno);
         (dummy_der,dae) = newDummyVar(state, dae)  ;
         // print("Chosen dummy: ");print(ComponentReference.printComponentRefStr(dummy_der));print("\n");
         reqns = BackendDAEUtil.eqnsForVarWithStates(mt, stateno);

@@ -1538,4 +1538,23 @@ algorithm
   end matchcontinue;
 end dumpStateVariable;
 
+public function bltdump
+"autor: Frenkel TUD 2011-03"
+  input tuple<BackendDAE.BackendDAE,BackendDAE.IncidenceMatrix,BackendDAE.IncidenceMatrix,array<Integer>,list<list<Integer>>> inTpl;
+protected
+  BackendDAE.BackendDAE ode;
+  BackendDAE.IncidenceMatrix m;
+  BackendDAE.IncidenceMatrix mT;
+  array<Integer> v1;  
+  list<list<Integer>> comps;
+algorithm
+  (ode,m,mT,v1,comps) := inTpl;
+  print("bltdump:\n");
+  dump(ode);
+  dumpIncidenceMatrix(m);
+  dumpIncidenceMatrixT(mT);
+  dumpMatching(v1);  
+  dumpComponents(comps);
+end bltdump;
+
 end BackendDump;

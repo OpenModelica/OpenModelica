@@ -77,6 +77,17 @@ protected import Util;
 protected import Values;
 protected import VarTransform;
 
+
+// global root index for preoptimisation 
+public 
+  constant Integer preOptimisationIndex = 10;
+// global root index for postoptimisation 
+public 
+  constant Integer postOptimisationIndex = 11;
+// global root index for indexreduction method 
+public 
+  constant Integer indexReductionMethodIndex = 12;
+
 /*************************************************
  * checkBackendDAE and stuff 
  ************************************************/
@@ -5455,6 +5466,7 @@ algorithm
   preOptModules := getPreOptModules(strPreOptModules);
   pastOptModules := getPastOptModules(strPastOptModules);
   
+  Debug.fcall("dumpdaelow", print, "dumpdaelow:\n");
   Debug.fcall("dumpdaelow", BackendDump.dump, inDAE);        
   // pre optimisation phase
   Debug.fcall("execstat",print, "*** BackendMain -> preoptimiseDAE at time: " +& realString(clock()) +& "\n" );
@@ -5463,11 +5475,7 @@ algorithm
   // transformation phase (matching and sorting using a index reduction method
   Debug.fcall("execstat",print, "*** BackendMain -> transformDAE at time: " +& realString(clock()) +& "\n" );
   (sode,m,mT,v1,v2,comps) := transformDAE(optdae,functionTree,daeHandler,om,omT);
-  Debug.fcall("bltdump", BackendDump.dump, sode);
-  Debug.fcall("bltdump", BackendDump.dumpIncidenceMatrix, m);
-  Debug.fcall("bltdump", BackendDump.dumpIncidenceMatrixT, mT);
-  Debug.fcall("bltdump", BackendDump.dumpMatching, v1);  
-  Debug.fcall("bltdump", BackendDump.dumpComponents, comps);
+  Debug.fcall("bltdump", BackendDump.bltdump, (sode,m,mT,v1,comps));
 
   // past optimisation phase
   Debug.fcall("execstat",print, "*** BackendMain -> pastoptimiseDAE at time: " +& realString(clock()) +& "\n" );
@@ -5477,6 +5485,7 @@ algorithm
   Debug.fcall("execstat",print, "*** BackendMain -> translateDae: " +& realString(clock()) +& "\n" );
   indexed_dlow := translateDae(sode1,NONE());
   outSODE := calculateValues(inCache, inEnv, indexed_dlow);
+  Debug.fcall("dumpindxdae", print, "dumpindxdae:\n");
   Debug.fcall("dumpindxdae", BackendDump.dump, outSODE); 
 end getSolvedSystem;
 
@@ -5665,11 +5674,7 @@ algorithm
     case (true,dae,funcs,m,mT,_,_,_,daeHandler)
       equation
         (sode,m,mT,v1,v2,comps) = transformDAE(dae,funcs,daeHandler,SOME(m),SOME(mT));
-        Debug.fcall("bltdump", BackendDump.dump, sode);
-        Debug.fcall("bltdump", BackendDump.dumpIncidenceMatrix, m);
-        Debug.fcall("bltdump", BackendDump.dumpIncidenceMatrixT, mT);
-        Debug.fcall("bltdump", BackendDump.dumpMatching, v1);  
-        Debug.fcall("bltdump", BackendDump.dumpComponents, comps);        
+        Debug.fcall("bltdump", BackendDump.bltdump, (sode,m,mT,v1,comps));
       then
         (sode,m,mT,v1,v2,comps);
     case (false,dae,funcs,m,mT,v1,v2,comps,_)
@@ -5681,6 +5686,46 @@ end checktransformDAE;
 /*************************************************
  * Optimisation Selection 
  ************************************************/
+
+public function setBackendGlobalRoots
+protected
+  list<String> preOptModules,pastOptModules;
+algorithm
+  // collect all modules
+  preOptModules := {"removeSimpleEquations","removeParameterEqns","expandDerOperator"};
+
+  pastOptModules := Util.listConsOnTrue(RTOpts.debugFlag("dumpcompgraph"),"dumpComponentsGraphStr",{});
+  pastOptModules := Util.listConsOnTrue(RTOpts.debugFlag("removeAliasEquations"),"removeAliasEquations",pastOptModules);
+  pastOptModules := "lateInline"::("removeSimpleEquations"::pastOptModules);
+  // set modules
+  setPreOptimisation(preOptModules);
+  setPostOptimisation(pastOptModules);
+end setBackendGlobalRoots;
+
+public function setPreOptimisation
+  input list<String> modules;
+algorithm
+  setGlobalRoot(preOptimisationIndex,modules);
+end setPreOptimisation;
+
+public function setPostOptimisation
+  input list<String> modules;
+algorithm
+  setGlobalRoot(postOptimisationIndex,modules);
+end setPostOptimisation;
+
+public function getPreOptimisation
+  output list<String> modules;
+algorithm
+  modules := getGlobalRoot(preOptimisationIndex);
+end getPreOptimisation;
+
+public function getPostOptimisation
+  output list<String> modules;
+algorithm
+  modules := getGlobalRoot(postOptimisationIndex);
+end getPostOptimisation;
+
 
 protected function getPreOptModules
 " function: getPreOptModules"
