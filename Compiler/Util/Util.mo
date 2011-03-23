@@ -85,6 +85,7 @@ public uniontype DateTime
   end DATETIME;
 end DateTime;
 
+public import Absyn;
 protected import Debug;
 protected import Error;
 protected import OptManager;
@@ -6663,14 +6664,17 @@ listPartition({1,2,3,4,5},2) => {{1,2},{3,4},{5}}
   output list<list<Type_a>> res;
 algorithm
   res := matchcontinue(lst,n)
-  local list<Type_a> lst1;
-    case(lst,n) equation
-      true = n > listLength(lst);
-    then {lst};
-    case(lst,n) equation
-      (lst1,lst) = listSplit(lst,n);
-      res = listPartition(lst,n);
-    then lst1::res;
+    local list<Type_a> lst1;
+    case({},n) then {};
+    case(lst,n)
+      equation
+        true = n > listLength(lst);
+      then {lst};
+    case(lst,n)
+      equation
+        (lst1,lst) = listSplit(lst,n);
+        res = listPartition(lst,n);
+      then lst1::res;
   end matchcontinue;
 end listPartition;  
 
@@ -7971,5 +7975,96 @@ algorithm
       then transposeList2(lst,a::acc);
   end match;
 end transposeList2;
+
+public function allCombinations
+  "{{1,2,3},{4,5},{6}} => {{1,4,6},{1,5,6},{2,4,6},...}.
+  The output is a 2-dim list with lengths (len1*len2*...*lenN)) and N.
+  
+  This function screams WARNING I USE COMBINATORIAL EXPLOSION.
+  So there are flags that limit the size of the set it works on."
+  input list<list<Type_a>> lst;
+  input Option<Integer> maxTotalSize;
+  input Absyn.Info info;
+  output list<list<Type_a>> out; 
+  replaceable type Type_a subtypeof Any;
+algorithm
+  out := matchcontinue (lst,maxTotalSize,info)
+    local
+      Integer sz,maxSz;
+    case (lst,SOME(maxSz),info)
+      equation
+        sz = intMul(listLength(lst),listFold(listMap(lst,listLength),intMul,1));
+        true = (sz <= maxSz);
+      then allCombinations2(lst);
+
+    case (lst,NONE(),info) then allCombinations2(lst);
+
+    case (_,SOME(_),_)
+      equation
+        Error.addSourceMessage(Error.COMPILER_NOTIFICATION, {"Util.allCombinations failed because the input was too large"}, info);
+      then fail();
+  end matchcontinue;
+end allCombinations;
+
+protected function allCombinations2
+  "{{1,2,3},{4,5},{6}} => {{1,4,6},{1,5,6},{2,4,6},...}.
+  The output is a 2-dim list with lengths (len1*len2*...*lenN)) and N.
+  
+  This function screams WARNING I USE COMBINATORIAL EXPLOSION."
+  input list<list<Type_a>> lst;
+  output list<list<Type_a>> out; 
+  replaceable type Type_a subtypeof Any;
+algorithm
+  out := match (lst)
+    local
+      list<Type_a> x;
+    case {} then {};
+    case (x::lst)
+      equation
+        lst = allCombinations2(lst); 
+        lst = allCombinations3(x, lst, {});
+      then lst;
+  end match;
+end allCombinations2;
+
+protected function allCombinations3
+  input list<Type_a> lst1;
+  input list<list<Type_a>> lst2;
+  input list<list<Type_a>> acc;
+  output list<list<Type_a>> out; 
+  replaceable type Type_a subtypeof Any;
+algorithm
+  out := match (lst1,lst2,acc)
+    local
+      Type_a x;
+      list<list<Type_a>> acc2;
+    case ({},_,acc) then listReverse(acc);
+    case (x::lst1,lst2,acc)
+      equation
+        acc = allCombinations4(x, lst2, acc);
+        acc = allCombinations3(lst1, lst2, acc);
+      then acc;
+  end match;
+end allCombinations3;
+
+protected function allCombinations4
+  input Type_a x;
+  input list<list<Type_a>> lst;
+  input list<list<Type_a>> acc;
+  output list<list<Type_a>> out; 
+  replaceable type Type_a subtypeof Any;
+algorithm
+  out := match (x,lst,acc)
+    local
+      Type_a x;
+      list<Type_a> l;
+    case (x,{},acc) then {x}::acc;
+    case (x,{l},acc) then (x::l)::acc;
+    case (x,l::lst,acc)
+      equation
+        acc = allCombinations4(x, lst, (x::l)::acc);
+      then acc;
+  end match;
+end allCombinations4;
 
 end Util;

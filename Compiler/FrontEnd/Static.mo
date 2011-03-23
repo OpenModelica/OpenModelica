@@ -1015,7 +1015,7 @@ protected function elabCallReduction
   input Env.Env inEnv;
   input Absyn.ComponentRef reductionFn;
   input Absyn.Exp reductionExp;
-  input Absyn.ForIterators reductionIters;
+  input Absyn.ForIterators iterators;
   input Boolean impl;
   input Option<Interactive.InteractiveSymbolTable> inST;
   input Boolean performVectorization;
@@ -1027,7 +1027,7 @@ protected function elabCallReduction
   output Option<Interactive.InteractiveSymbolTable> outST;
 algorithm
   (outCache,outExp,outProperties,outST):=
-  matchcontinue (inCache,inEnv,reductionFn,reductionExp,reductionIters,impl,
+  matchcontinue (inCache,inEnv,reductionFn,reductionExp,iterators,impl,
       inST,performVectorization,inPrefix,info)
     local
       DAE.Exp iterexp_1,exp_1;
@@ -1040,7 +1040,7 @@ algorithm
       Absyn.ComponentRef fn;
       Absyn.Exp exp,iterexp;
       Ident iter;
-      Boolean doVect;
+      Boolean doVect,hasGuardExp;
       Env.Cache cache;
       Prefix.Prefix pre;
       Absyn.ForIterators iterators;
@@ -1049,34 +1049,33 @@ algorithm
       Option<Absyn.Exp> aguardExp,afoldExp;
       Option<DAE.Exp> guardExp,foldExp;
       Option<Values.Value> v;
+      list<DAE.ReductionIterator> reductionIters;
+      list<DAE.Dimension> dims;
 
-    // Expansion failed in previous case, generate reduction call.
-    case (cache,env,fn,exp,{Absyn.ITERATOR(iter,aguardExp,SOME(iterexp))},impl,st,doVect,pre,info)
+    case (cache,env,fn,exp,iterators,impl,st,doVect,pre,info)
       equation
-        (cache,iterexp_1,DAE.PROP(fulliterty,iterconst),_)
-          = elabExp(cache, env, iterexp, impl, st, doVect,pre,info);
-        // We need to evaluate the iterator because the rest of the compiler is stupid
-        (cache,iterexp_1,_) = Ceval.cevalIfConstant(cache,env,iterexp_1,DAE.PROP(fulliterty,DAE.C_CONST()),impl);
-        
-        iterty = Types.unliftArrayOrList(fulliterty);
-        // print("iterator type: " +& Types.unparseType(iterty) +& "\n");
         env_1 = Env.openScope(env, false, SOME(Env.forIterScopeName),NONE());
-        env_1 = Env.extendFrameForIterator(env_1, iter, iterty, DAE.UNBOUND(), SCode.CONST(), SOME(iterconst));
-        (cache,exp_1,DAE.PROP(expty, expconst),st) = 
-          elabExp(cache, env_1, exp, impl, st, doVect,pre,info);
+        (cache,env_1,reductionIters,dims,iterconst,hasGuardExp,st) = elabCallReductionIterators(cache, env_1, iterators, impl, st, doVect, pre, info);
+        dims = listReverse(dims);
+        // print("elabReductionExp: " +& Dump.printExpStr(exp) +& "\n");
+        (cache,exp_1,DAE.PROP(expty, expconst),st) = elabExp(cache, env_1, exp, impl, st, doVect, pre, info);
         // print("exp_1 has type: " +& Types.unparseType(expty) +& "\n");
-        (cache,guardExp,DAE.PROP(_, guardconst),st) = elabExpOptAndMatchType(cache, env_1, aguardExp, DAE.T_BOOL_DEFAULT, impl, st, doVect,pre,info); 
-        const = Types.constAnd(Types.constAnd(expconst, iterconst), guardconst);
+        const = Types.constAnd(expconst, iterconst);
         fn_1 = Absyn.crefToPath(fn);
-        (cache,exp_1,expty,v,fn_1) = reductionType(cache, env, fn_1, exp_1, expty, Types.unboxedType(expty), fulliterty, Util.isSome(guardExp), info);
+        (cache,exp_1,expty,v,fn_1) = reductionType(cache, env, fn_1, exp_1, expty, Types.unboxedType(expty), dims, hasGuardExp, info);
         prop = DAE.PROP(expty, const);
         (env_foldExp,afoldExp) = makeReductionFoldExp(env_1,fn_1,expty);
         (cache,foldExp,_,st) = elabExpOptAndMatchType(cache, env_foldExp, afoldExp, expty, impl, st, doVect,pre,info);
         // print("make reduction: " +& Absyn.pathString(fn_1) +& " exp_1: " +& ExpressionDump.printExpStr(exp_1) +& "\n");
-        exp_1 = DAE.REDUCTION(DAE.REDUCTIONINFO(fn_1,expty,v,foldExp),exp_1,{DAE.REDUCTIONITER(iter,iterexp_1,guardExp,iterty)});
+        exp_1 = DAE.REDUCTION(DAE.REDUCTIONINFO(fn_1,expty,v,foldExp),exp_1,reductionIters);
         exp_1 = ExpressionSimplify.simplify1(exp_1) "only needed because unelabMod is silly"; 
       then
         (cache,exp_1,prop,st);
+
+    case (cache,env,fn,exp,_::_::_,impl,st,doVect,pre,info)
+      equation
+        Error.addSourceMessage(Error.INTERNAL_ERROR, {"Reductions using multiple iterators is not yet implemented. Try rewriting the expression using nested reductions (e.g. array(i+j for i, j) => array(array(i+j for i) for j)."}, info);
+      then fail();
 
     case (cache,env,fn,exp,iterators,impl,st,doVect,pre,info)
       equation
@@ -1084,6 +1083,63 @@ algorithm
       then fail();
   end matchcontinue;
 end elabCallReduction;
+
+protected function elabCallReductionIterators
+  input Env.Cache cache;
+  input Env.Env env;
+  input Absyn.ForIterators iterators;
+  input Boolean impl;
+  input Option<Interactive.InteractiveSymbolTable> st;
+  input Boolean doVect;
+  input Prefix.Prefix pre;
+  input Absyn.Info info;
+  output Env.Cache outCache;
+  output Env.Env envWithIterators;
+  output list<DAE.ReductionIterator> outIterators;
+  output list<DAE.Dimension> outDims;
+  output DAE.Const const;
+  output Boolean hasGuardExp;
+  output Option<Interactive.InteractiveSymbolTable> outST;
+algorithm
+  (outCache,envWithIterators,outIterators,outDims,const,hasGuardExp,outST) := matchcontinue (cache,env,iterators,impl,st,doVect,pre,info)
+    local
+      String iter;
+      Option<Absyn.Exp> aguardExp;
+      Absyn.Exp aiterExp;
+      Option<DAE.Exp> guardExp;
+      DAE.Exp iterExp;
+      DAE.ReductionIterator diter;
+      DAE.Dimension dim;
+      list<DAE.ReductionIterator> diters;
+      list<DAE.Dimension> dims;
+      Boolean hasGuardExp;
+      Env.Env envWithIterators;
+      DAE.Const iterconst,guardconst;
+      DAE.Type fulliterty,iterty;
+    case (_,env,{},_,st,_,_,_) then (cache,env,{},{},DAE.C_CONST(),false,st);
+    case (cache,env,Absyn.ITERATOR(iter,aguardExp,SOME(aiterExp))::iterators,impl,st,doVect,pre,info)
+      equation
+        (cache,iterExp,DAE.PROP(fulliterty,iterconst),st) = elabExp(cache, env, aiterExp, impl, st, doVect,pre,info);
+        // We need to evaluate the iterator because the rest of the compiler is stupid
+        (cache,iterExp,_) = Ceval.cevalIfConstant(cache,env,iterExp,DAE.PROP(fulliterty,DAE.C_CONST()),impl);
+        (iterty,dim) = Types.unliftArrayOrList(fulliterty);
+        
+        // print("iterator type: " +& Types.unparseType(iterty) +& "\n");
+        envWithIterators = Env.extendFrameForIterator(env, iter, iterty, DAE.UNBOUND(), SCode.CONST(), SOME(iterconst));
+        // print("exp_1 has type: " +& Types.unparseType(expty) +& "\n");
+        (cache,guardExp,DAE.PROP(_, guardconst),st) = elabExpOptAndMatchType(cache, envWithIterators, aguardExp, DAE.T_BOOL_DEFAULT, impl, st, doVect,pre,info);
+
+        diter = DAE.REDUCTIONITER(iter,iterExp,guardExp,iterty);
+        
+        (cache,envWithIterators,diters,dims,const,hasGuardExp,st) = elabCallReductionIterators(cache,env,iterators,impl,st,doVect,pre,info);
+        // Yes, we do this twice to hide the iterators from the different guard-expressions...
+        envWithIterators = Env.extendFrameForIterator(envWithIterators, iter, iterty, DAE.UNBOUND(), SCode.CONST(), SOME(iterconst));
+        const = Types.constAnd(guardconst, iterconst);
+        hasGuardExp = hasGuardExp or Util.isSome(guardExp);
+        dim = Util.if_(Util.isSome(guardExp), DAE.DIM_UNKNOWN(), dim);
+      then (cache,envWithIterators,diter::diters,dim::dims,const,hasGuardExp,st);
+  end matchcontinue;
+end elabCallReductionIterators;
 
 protected function makeReductionFoldExp
   input Env.Env env;
@@ -1138,7 +1194,7 @@ protected function reductionType
   input DAE.Exp inExp;
   input DAE.Type inType;
   input DAE.Type unboxedType;
-  input DAE.Type rangeType;
+  input list<DAE.Dimension> dims;
   input Boolean hasGuardExp;
   input Absyn.Info info;
   output Env.Cache outCache;
@@ -1147,7 +1203,7 @@ protected function reductionType
   output Option<Values.Value> defaultValue;
   output Absyn.Path outPath;
 algorithm
-  (outCache,outExp,outType,defaultValue,outPath) := match (cache, env, fn, inExp, inType, unboxedType, rangeType, hasGuardExp, info)
+  (outCache,outExp,outType,defaultValue,outPath) := match (cache, env, fn, inExp, inType, unboxedType, dims, hasGuardExp, info)
     local
       Boolean b;
       Integer i;
@@ -1155,15 +1211,14 @@ algorithm
       String s;
       DAE.Dimension dim;
       list<DAE.Type> fnTypes;
-      DAE.Type typeA,typeB,resType;
+      DAE.Type ty,typeA,typeB,resType;
       Absyn.Path path;
       Values.Value v;
-    case (cache,env,Absyn.IDENT(name = "array"), _, _, _, (DAE.T_ARRAY(arrayDim = dim),_), b, _)
+      list<DAE.Dimension> dims;
+    case (cache,env,Absyn.IDENT(name = "array"), _, ty, _, dims, b, _)
       equation
-        dim = Util.if_(b, DAE.DIM_UNKNOWN(), dim);
-      then (cache,inExp, Types.liftArray(inType, dim), SOME(Values.ARRAY({}, {0})),fn);
-    case (cache,env,Absyn.IDENT(name = "array"), _, _, _, (DAE.T_LIST(_),_), _, _)
-      then (cache,inExp, Types.liftArray(inType, DAE.DIM_UNKNOWN()), SOME(Values.ARRAY({}, {0})),fn);
+        ty = Util.listFoldR(dims,Types.liftArray,ty);
+      then (cache,inExp, ty, SOME(Values.ARRAY({}, {0})),fn);
     case (cache,env,Absyn.IDENT(name = "list"), inExp, _, _, _, _, _)
       equation
         (inExp,inType) = Types.matchType(inExp, inType, DAE.T_BOXED_DEFAULT, true);
@@ -11067,6 +11122,7 @@ algorithm
 
     case (cache,env,subs,dims,impl,pre,info)
       equation
+        // ErrorExt.delCheckpoint("elabSubscriptsDims");
         ErrorExt.rollBack("elabSubscriptsDims");
         s1 = Dump.printSubscriptsStr(subs);
         s2 = Types.printDimensionsStr(dims);

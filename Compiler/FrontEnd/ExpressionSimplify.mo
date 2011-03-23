@@ -3986,30 +3986,37 @@ algorithm
       Absyn.Path path;
       Boolean b;
       Values.Value v;
+      String str;
       Option<DAE.Exp> foldExp;
       DAE.Type ty;
       DAE.ExpType ety;
       DAE.ReductionInfo reductionInfo;
+      list<DAE.ReductionIterator> iterators;
 
-    case (DAE.REDUCTION(iterators = {DAE.REDUCTIONITER(guardExp = SOME(DAE.BCONST(false)))}, reductionInfo=DAE.REDUCTIONINFO(defaultValue = SOME(v))))
+    case (DAE.REDUCTION(iterators = iterators, reductionInfo=DAE.REDUCTIONINFO(defaultValue = SOME(v))))
       equation
+        true = hasZeroLengthIterator(iterators);
         expr = ValuesUtil.valueExp(v);
       then
         simplify1(expr);
 
-    case (DAE.REDUCTION(iterators = {DAE.REDUCTIONITER(guardExp = SOME(DAE.BCONST(false)))}))
+    case (DAE.REDUCTION(iterators = iterators))
       equation
+        true = hasZeroLengthIterator(iterators);
         expr = ValuesUtil.valueExp(Values.META_FAIL());
       then
         expr;
 
-    case (DAE.REDUCTION(reductionInfo = DAE.REDUCTIONINFO(path = path, exprType = ty, defaultValue = defaultValue, foldExp = foldExp), expr = expr, iterators = {DAE.REDUCTIONITER(id = iter_name, guardExp = NONE(), exp = DAE.ARRAY(array = values))}))
+    case (DAE.REDUCTION(reductionInfo = DAE.REDUCTIONINFO(path = Absyn.IDENT(str), exprType = ty, defaultValue = defaultValue, foldExp = foldExp), expr = expr, iterators = iterators))
       equation
+        true = listMember(str,{"array","min","max","sum","product"});
+        {DAE.REDUCTIONITER(id = iter_name, guardExp = NONE(), exp = DAE.ARRAY(array = values))} = iterators;
         // TODO: Use foldExp
         ety = Types.elabType(ty);
         cref = DAE.CREF(DAE.CREF_IDENT(iter_name, ety, {}), ety);
         values = Util.listMap(Util.listMap2r(values, Expression.replaceExp, expr, cref), Util.tuple21);
-        expr = simplifyReductionFoldPhase(path,ety,values,defaultValue);
+        
+        expr = simplifyReductionFoldPhase(str,ety,values,defaultValue);
       then
         simplify1(expr);
     
@@ -4019,34 +4026,58 @@ algorithm
 end simplifyReduction;
 
 protected function simplifyReductionFoldPhase
-  input Absyn.Path path;
+  input String str;
   input DAE.ExpType ty;
   input list<DAE.Exp> exps;
   input Option<Values.Value> defaultValue;
   output DAE.Exp exp;
 algorithm
-  exp := match (path,ty,exps,defaultValue)
+  exp := match (str,ty,exps,defaultValue)
     local
       Integer len;
       Values.Value val;
     case (_,_,{},SOME(val)) then ValuesUtil.valueExp(val);
     case (_,_,{},NONE()) then fail();
-    case (Absyn.IDENT("array"),ty,exps,_)
+    case ("array",ty,exps,_)
       equation
         len = listLength(exps);
       then DAE.ARRAY(DAE.ET_ARRAY(ty, {DAE.DIM_INTEGER(len)}), true, exps);
-    case (Absyn.IDENT("min"),ty,exps,_)
+    case ("min",ty,exps,_)
       equation
         len = listLength(exps);
       then Expression.makeBuiltinCall("min",{DAE.ARRAY(DAE.ET_ARRAY(ty, {DAE.DIM_INTEGER(len)}), true, exps)},ty);
-    case (Absyn.IDENT("max"),ty,exps,_)
+    case ("max",ty,exps,_)
       equation
         len = listLength(exps);
       then Expression.makeBuiltinCall("max",{DAE.ARRAY(DAE.ET_ARRAY(ty, {DAE.DIM_INTEGER(len)}), true, exps)},ty);
-    case (Absyn.IDENT("product"),ty,exps,_) then Expression.makeProductLst(exps); // TODO: Remove listReverse; it's just needed so I don't need to update expected results
-    case (Absyn.IDENT("sum"),ty,exps,_) then Expression.makeSum(exps); // TODO: Remove listReverse; it's just needed so I don't need to update expected results
+    case ("product",ty,exps,_) then Expression.makeProductLst(exps); // TODO: Remove listReverse; it's just needed so I don't need to update expected results
+    case ("sum",ty,exps,_) then Expression.makeSum(exps); // TODO: Remove listReverse; it's just needed so I don't need to update expected results
   end match;
 end simplifyReductionFoldPhase;
+
+protected function hasZeroLengthIterator
+  input list<DAE.ReductionIterator> iters;
+  output Boolean b;
+algorithm
+  b := match iters
+    case {} then false;
+    case DAE.REDUCTIONITER(guardExp=SOME(DAE.BCONST(false)))::_ then true;
+    case DAE.REDUCTIONITER(exp=DAE.LIST({}))::_ then true;
+    case DAE.REDUCTIONITER(exp=DAE.ARRAY(array={}))::_ then true;
+    case _::iters then hasZeroLengthIterator(iters);
+  end match;
+end hasZeroLengthIterator;
+
+protected function hasGuardExp
+  input list<DAE.ReductionIterator> iters;
+  output Boolean b;
+algorithm
+  b := match iters
+    case {} then false;
+    case DAE.REDUCTIONITER(guardExp=SOME(_))::_ then true;
+    case _::iters then hasGuardExp(iters);
+  end match;
+end hasGuardExp;
 
 end ExpressionSimplify;
 

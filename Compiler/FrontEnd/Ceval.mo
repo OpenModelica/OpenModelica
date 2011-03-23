@@ -148,7 +148,7 @@ algorithm
       list<Integer> dims;
       list<DAE.Dimension> arrayDims;
       DAE.ComponentRef cr;
-      list<String> fieldNames, n;
+      list<String> fieldNames, n, names;
       DAE.ExpType ety;
       Interactive.InteractiveSymbolTable st;
       DAE.Ident reductionName;
@@ -159,6 +159,9 @@ algorithm
       Option<DAE.Exp> guardExp;
       Option<DAE.Exp> foldExp;
       DAE.Type ty;
+      list<DAE.Type> tys;
+      DAE.ReductionIterators iterators;
+      list<list<Values.Value>> valMatrix;
 
     // uncomment for debugging 
     // case (cache,env,inExp,_,st,_,_) 
@@ -812,6 +815,7 @@ algorithm
       then
         (cache,v,stOpt);
 
+      /*
     case (cache, env, DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(path = path, foldExp = foldExp, defaultValue = ov, exprType = ty), expr = daeExp, iterators = {DAE.REDUCTIONITER(id=iter,exp=iterexp,guardExp=guardExp)}), impl, stOpt, dimOpt, msg)
       equation
         (cache, v, stOpt) = ceval(cache, env, iterexp, impl, stOpt, dimOpt, msg);
@@ -820,6 +824,20 @@ algorithm
         // print("Start cevalReduction: " +& Absyn.pathString(path) +& " " +& ValuesUtil.valString(startValue) +& " " +& ValuesUtil.valString(Values.TUPLE(vals)) +& " " +& ExpressionDump.printExpStr(daeExp) +& "\n"); 
         (cache, ov, stOpt) = cevalReduction(cache, env, path, ov, daeExp, ty, foldExp, guardExp, iter, vals, impl, stOpt, dimOpt, msg);
         value = Util.getOptionOrDefault(ov, Values.META_FAIL());
+      then (cache, value, stOpt);
+      */
+
+    case (cache, env, DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(path = path, foldExp = foldExp, defaultValue = ov, exprType = ty), expr = daeExp, iterators = iterators), impl, stOpt, dimOpt, msg)
+      equation
+        env = Env.openScope(env, false, SOME(Env.forScopeName),NONE());
+        (cache, valMatrix, names, dims, tys, stOpt) = cevalReductionIterators(cache, env, iterators, impl, stOpt, dimOpt, msg);
+        // print("Before:\n");print(Util.stringDelimitList(Util.listMap1(Util.listListMap(valMatrix, ValuesUtil.valString), Util.stringDelimitList, ","), "\n") +& "\n");
+        valMatrix = Util.allCombinations(valMatrix,SOME(10000),Absyn.dummyInfo);
+        // print("After:\n");print(Util.stringDelimitList(Util.listMap1(Util.listListMap(valMatrix, ValuesUtil.valString), Util.stringDelimitList, ","), "\n") +& "\n");
+        // print("Start cevalReduction: " +& Absyn.pathString(path) +& " " +& ValuesUtil.valString(startValue) +& " " +& ValuesUtil.valString(Values.TUPLE(vals)) +& " " +& ExpressionDump.printExpStr(daeExp) +& "\n"); 
+        (cache, ov, stOpt) = cevalReduction(cache, env, path, ov, daeExp, ty, foldExp, names, listReverse(valMatrix), tys, impl, stOpt, dimOpt, msg);
+        value = Util.getOptionOrDefault(ov, Values.META_FAIL());
+        value = backpatchArrayReduction(path, value, dims);
       then (cache, value, stOpt);
 
     // ceval can fail and that is ok, caught by other rules... 
@@ -5449,9 +5467,9 @@ protected function cevalReduction
   input DAE.Exp exp;
   input DAE.Type exprType;
   input Option<DAE.Exp> foldExp;
-  input Option<DAE.Exp> guardExp;
-  input DAE.Ident iteratorName;
-  input list<Values.Value> values;
+  input list<String> iteratorNames;
+  input list<list<Values.Value>> valueMatrix;
+  input list<DAE.Type> iterTypes;
   input Boolean impl;
   input Option<Interactive.InteractiveSymbolTable> st;
   input Option<Integer> dim;
@@ -5460,7 +5478,7 @@ protected function cevalReduction
   output Option<Values.Value> result;
   output Option<Interactive.InteractiveSymbolTable> newSymbolTable;
 algorithm
-  (newCache, result, newSymbolTable) := matchcontinue (cache, env, opPath, curValue, exp, exprType, foldExp, guardExp, iteratorName, values, impl, st, dim, msg)
+  (newCache, result, newSymbolTable) := matchcontinue (cache, env, opPath, curValue, exp, exprType, foldExp, iteratorNames, valueMatrix, iterTypes, impl, st, dim, msg)
     local
       Values.Value value, value2, reduced_value;
       list<Values.Value> rest_values,vals;
@@ -5471,29 +5489,25 @@ algorithm
       DAE.Type iter_type;
       list<Integer> dims;
       Boolean guardFilter;
-    case (_, _, Absyn.IDENT("list"), SOME(Values.LIST(vals)), _, _, _, _, _, {}, _, _, _, _)
+    case (_, _, Absyn.IDENT("listReverse"), SOME(Values.LIST(vals)), exp, exprType, foldExp, iteratorNames, {}, iterTypes, impl, st, dim, msg)
       equation
         vals = listReverse(vals);
       then (cache, SOME(Values.LIST(vals)), st);
-    case (_, _, Absyn.IDENT("array"), SOME(Values.ARRAY(vals,dims)), _, _, _, _, _, {}, _, _, _, _)
-      equation
-        vals = listReverse(vals);
+    case (_, _, Absyn.IDENT("array"), SOME(Values.ARRAY(vals,dims)), _, _, _, _, {}, iterTypes, impl, st, dim, msg)
       then (cache, SOME(Values.ARRAY(vals,dims)), st);
 
-    case (_, _, _, curValue, _, _, _, _, _, {}, _, _, _, _)
+    case (_, _, _, curValue, _, _, _, _, {}, iterTypes, impl, st, dim, msg)
       then (cache, curValue, st);
 
-    case (cache, env, _, curValue, _, _, _, _, _, value :: rest_values, impl, st, dim, msg)
+    case (cache, env, _, curValue, _, _, _, iteratorNames, vals :: valueMatrix, iterTypes, impl, st, dim, msg)
       equation
         // Bind the iterator
         // print("iterator: " +& iteratorName +& " => " +& ValuesUtil.valString(value) +& "\n");
-        new_env = Env.extendFrameForIterator(env, iteratorName, exprType, DAE.VALBOUND(value, DAE.BINDING_FROM_DEFAULT_VALUE()), SCode.VAR(), SOME(DAE.C_CONST()));
-        // See if we should filter out this value
-        (cache, guardFilter, st) = cevalReductionEvalGuard(cache, new_env, guardExp, impl, st, dim, msg);
+        new_env = extendFrameForIterators(env, iteratorNames, vals, iterTypes);
         // Calculate var1 of the folding function
-        (cache, curValue, st) = cevalReductionEvalAndFold(cache, new_env, opPath, curValue, exp, exprType, foldExp, guardFilter, impl, st, dim, msg);
+        (cache, curValue, st) = cevalReductionEvalAndFold(cache, new_env, opPath, curValue, exp, exprType, foldExp, impl, st, dim, msg);
         // Fold the rest of the reduction
-        (cache, curValue, st) = cevalReduction(cache, env, opPath, curValue, exp, exprType, foldExp, guardExp, iteratorName, rest_values, impl, st, dim, msg);
+        (cache, curValue, st) = cevalReduction(cache, env, opPath, curValue, exp, exprType, foldExp, iteratorNames, valueMatrix, iterTypes, impl, st, dim, msg);
       then (cache, curValue, st);
   end matchcontinue;
 end cevalReduction;
@@ -5530,7 +5544,6 @@ protected function cevalReductionEvalAndFold "Evaluate the reduction body and fo
   input DAE.Exp exp;
   input DAE.Type exprType;
   input Option<DAE.Exp> foldExp;
-  input Boolean guardFilter;
   input Boolean impl;
   input Option<Interactive.InteractiveSymbolTable> st;
   input Option<Integer> dim;
@@ -5539,11 +5552,10 @@ protected function cevalReductionEvalAndFold "Evaluate the reduction body and fo
   output Option<Values.Value> result;
   output Option<Interactive.InteractiveSymbolTable> newSymbolTable;
 algorithm
-  (newCache,result,newSymbolTable) := match (cache,env,opPath,curValue,exp,exprType,foldExp,guardFilter,impl,st,dim,msg)
+  (newCache,result,newSymbolTable) := match (cache,env,opPath,curValue,exp,exprType,foldExp,impl,st,dim,msg)
     local
       Values.Value value;
-    case (cache,_,_,curValue,_,_,_,false,_,st,_,_) then (cache,curValue,st);
-    case (cache,env,_,curValue,exp,exprType,foldExp,true,impl,st,dim,msg)
+    case (cache,env,_,curValue,exp,exprType,foldExp,impl,st,dim,msg)
       equation
         (cache, value, st) = ceval(cache, env, exp, impl, st, dim, msg);
         // print("cevalReductionEval: " +& ExpressionDump.printExpStr(exp) +& " => " +& ValuesUtil.valString(value) +& "\n");
@@ -6177,6 +6189,140 @@ algorithm
         fail();
   end matchcontinue;
 end valueArrayNth;
+
+
+protected function cevalReductionIterators
+  input Env.Cache cache;
+  input Env.Env env;
+  input list<DAE.ReductionIterator> iterators;
+  input Boolean impl;
+  input Option<Interactive.InteractiveSymbolTable> st;
+  input Option<Integer> dimOpt;
+  input Msg msg;
+  output Env.Cache outCache;
+  output list<list<Values.Value>> vals;
+  output list<String> names;
+  output list<Integer> dims;
+  output list<DAE.Type> tys;
+  output Option<Interactive.InteractiveSymbolTable> outSt;
+algorithm
+  (outCache,vals,names,dims,tys,outSt) := match (cache,env,iterators,impl,st,dimOpt,msg)
+    local
+      Values.Value val;
+      list<Values.Value> iterVals;
+      Integer dim;
+      DAE.Type ty;
+      String id;
+      DAE.Exp exp;
+      Option<DAE.Exp> guardExp;
+    case (cache,env,{},_,st,_,_) then (cache,{},{},{},{},st);
+    case (cache,env,DAE.REDUCTIONITER(id,exp,guardExp,ty)::iterators,impl,st,dimOpt,msg)
+      equation
+        (cache,val,st) = ceval(cache,env,exp,impl,st,dimOpt,msg);
+        iterVals = ValuesUtil.arrayOrListVals(val,true);
+        (cache,iterVals,st) = filterReductionIterator(cache,env,id,ty,iterVals,guardExp,impl,st,dimOpt,msg);
+        dim = listLength(iterVals);
+        (cache,vals,names,dims,tys,st) = cevalReductionIterators(cache,env,iterators,impl,st,dimOpt,msg);
+      then (cache,iterVals::vals,id::names,dim::dims,ty::tys,st);
+  end match;
+end cevalReductionIterators;
+
+protected function filterReductionIterator
+  input Env.Cache cache;
+  input Env.Env env;
+  input String id;
+  input DAE.Type ty;
+  input list<Values.Value> vals;
+  input Option<DAE.Exp> guardExp;
+  input Boolean impl;
+  input Option<Interactive.InteractiveSymbolTable> st;
+  input Option<Integer> dimOpt;
+  input Msg msg;
+  output Env.Cache outCache;
+  output list<Values.Value> outVals;
+  output Option<Interactive.InteractiveSymbolTable> outSt;
+algorithm
+  (outCache,outVals,outSt) := match (cache,env,id,ty,vals,guardExp,impl,st,dimOpt,msg)
+    local
+      DAE.Exp exp;
+      Values.Value val;
+      Boolean b;
+      Env.Env new_env;
+    case (cache,env,_,_,{},_,_,st,_,_) then (cache,{},st);
+    case (cache,env,id,ty,val::vals,SOME(exp),impl,st,dimOpt,msg)
+      equation
+        new_env = Env.extendFrameForIterator(env, id, ty, DAE.VALBOUND(val, DAE.BINDING_FROM_DEFAULT_VALUE()), SCode.VAR(), SOME(DAE.C_CONST()));
+        (cache,Values.BOOL(b),st) = ceval(cache,new_env,exp,impl,st,dimOpt,msg);
+        (cache,vals,st) = filterReductionIterator(cache,env,id,ty,vals,guardExp,impl,st,dimOpt,msg);
+        vals = Util.if_(b, val::vals, vals);
+      then (cache,vals,st);
+    case (cache,env,_,_,vals,NONE(),_,st,_,_) then (cache,vals,st);
+  end match;
+end filterReductionIterator;
+
+protected function extendFrameForIterators
+  input Env.Env env;
+  input list<String> names;
+  input list<Values.Value> vals;
+  input list<DAE.Type> tys;
+  output Env.Env outEnv;
+algorithm
+  outEnv := match (env,names,vals,tys)
+    local
+      String name;
+      Values.Value val;
+      DAE.Type ty;
+    case (env,{},{},{}) then env;
+    case (env,name::names,val::vals,ty::tys)
+      equation
+        env = Env.extendFrameForIterator(env, name, ty, DAE.VALBOUND(val, DAE.BINDING_FROM_DEFAULT_VALUE()), SCode.VAR(), SOME(DAE.C_CONST()));
+        env = extendFrameForIterators(env,names,vals,tys);
+      then env;
+  end match;
+end extendFrameForIterators;
+
+protected function backpatchArrayReduction
+  input Absyn.Path path;
+  input Values.Value value;
+  input list<Integer> dims;
+  output Values.Value outValue;
+algorithm
+  outValue := match (path,value,dims)
+    local
+      Integer dim;
+      list<Values.Value> vals;
+    case (_,value,{_}) then value;
+    case (Absyn.IDENT("array"),Values.ARRAY(valueLst=vals),dims)
+      equation
+        value = backpatchArrayReduction3(vals,listReverse(dims));
+        // print(ValuesUtil.valString(value));print("\n"); 
+      then value;
+    else value;
+  end match;
+end backpatchArrayReduction;
+
+protected function backpatchArrayReduction3
+  input list<Values.Value> vals;
+  input list<Integer> dims;
+  output Values.Value outValue;
+algorithm
+  outValue := match (vals,dims)
+    local
+      Integer dim;
+      list<list<Values.Value>> valMatrix;
+      Values.Value value;
+    case (vals,{dim}) then ValuesUtil.makeArray(vals);
+    case (vals,dim::dims)
+      equation
+        // Split into the smallest of the arrays
+        // print("into sublists of length: " +& intString(dim) +& " from length=" +& intString(listLength(vals)) +& "\n");
+        valMatrix = Util.listPartition(vals,dim);
+        // print("output has length=" +& intString(listLength(valMatrix)) +& "\n");
+        vals = Util.listMap(valMatrix,ValuesUtil.makeArray);
+        value = backpatchArrayReduction3(vals,dims);
+      then value;
+  end match;
+end backpatchArrayReduction3;
 
 end Ceval;
 

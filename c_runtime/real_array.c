@@ -35,11 +35,6 @@
 #include "memory_pool.h"
 #include "division.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <assert.h>
-#include <stdarg.h>
-
 /* Indexing 1 dimension */
 modelica_real real_get(real_array_t *a, size_t i)
 {

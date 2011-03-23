@@ -2023,7 +2023,7 @@ algorithm
     local Type ty;
     case ((DAE.T_ARRAY(arrayType = ty),_)) then ty;
     case ((DAE.T_COMPLEX(_,_,SOME(ty),_),_)) then unliftArray(ty);
-    /* adrpo: handle also functions returning arrays! */
+    // adrpo: handle also functions returning arrays!
     case ((DAE.T_FUNCTION(_,ty,_),_)) then unliftArray(ty);
   end match;
 end unliftArray;
@@ -2031,12 +2031,17 @@ end unliftArray;
 public function unliftArrayOrList
   input Type inType;
   output Type outType;
+  output DAE.Dimension dim;
 algorithm
-  outType := match (inType)
+  (outType,dim) := match (inType)
     local
       Type ty;
-    case ((DAE.T_LIST(ty),_)) then boxIfUnboxedType(ty);
-    else unliftArray(inType);
+    case ((DAE.T_LIST(ty),_)) then (boxIfUnboxedType(ty),DAE.DIM_UNKNOWN());
+    case ((DAE.T_ARRAY(dim,ty),_)) then (ty,dim);
+    case ((DAE.T_COMPLEX(_,_,SOME(ty),_),_))
+      equation
+        (ty,dim) = unliftArrayOrList(ty);
+      then (ty,dim);
   end match;
 end unliftArrayOrList;
 
