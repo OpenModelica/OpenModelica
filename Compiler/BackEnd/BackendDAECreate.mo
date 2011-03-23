@@ -111,7 +111,7 @@ algorithm
   shouldAddDummyDerivative :=  boolAnd(addDummyDerivativeIfNeeded, daeContainsNoStates);
   (vars,eqns) := addDummyState(vars, eqns, shouldAddDummyDerivative);
        
-  (aeqns,vars) := addFunctionRetVar(aeqns,vars);
+  //(aeqns,vars) := addFunctionRetVar(aeqns,vars);
   ((aeqns,eqns)) := Util.listFold(aeqns,splitArrayEqn,({},eqns));        
   ((iaeqns,ieqns)) := Util.listFold(iaeqns,splitArrayEqn,({},ieqns));         
   whenclauses_1 := listReverse(whenclauses);
