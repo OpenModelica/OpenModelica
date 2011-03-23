@@ -1582,6 +1582,41 @@ algorithm
   end match;
 end subscriptCref;
 
+public function subscriptCrefWithInt
+  "Subscripts a component reference with a constant integer. It also unlifts the
+  type of the components reference so that the type of the reference is correct
+  with regards to the subscript. If the reference is not of array type this
+  function will fail."
+  input DAE.ComponentRef inComponentRef;
+  input Integer inSubscript;
+  output DAE.ComponentRef outComponentRef;
+algorithm
+  outComponentRef := match(inComponentRef, inSubscript)
+    local
+      list<DAE.Subscript> subs;
+      DAE.Subscript new_sub;
+      DAE.Ident id;
+      DAE.ComponentRef rest_cref;
+      DAE.ExpType ty;
+
+    case (DAE.CREF_IDENT(ident = id, subscriptLst = subs, identType = ty), _)
+      equation
+        new_sub = DAE.INDEX(DAE.ICONST(inSubscript));
+        subs = listAppend(subs, {new_sub});
+        ty = Expression.unliftArray(ty);
+      then
+        makeCrefIdent(id, ty, subs);
+
+    case (DAE.CREF_QUAL(ident = id, subscriptLst = subs, 
+          componentRef = rest_cref, identType = ty), _)
+      equation
+        rest_cref = subscriptCrefWithInt(rest_cref, inSubscript);
+      then
+        makeCrefQual(id, ty, subs, rest_cref);
+
+  end match;
+end subscriptCrefWithInt;
+
 public function crefSetLastSubs "
 function: crefSetLastSubs
   sets the subs of the last componenentref ident"

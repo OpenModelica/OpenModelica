@@ -1551,7 +1551,7 @@ algorithm eqns := matchcontinue(arr,assigned,source,subPos)
   case((v  as Values.ARRAY(valueLst = arrVals))::arr,assigned,source,subPos)
     equation      
       eqns = assignComplexConstantConstructToArray(arr,assigned,source,subPos+1);
-      assigned = ComponentReference.subscriptCref(assigned,{DAE.INDEX(DAE.ICONST(subPos))});
+      assigned = ComponentReference.subscriptCrefWithInt(assigned, subPos);
       eqns2 = assignComplexConstantConstructToArray(arrVals,assigned,source,1);
       eqns = listAppend(eqns,eqns2);
     then 
@@ -1559,7 +1559,7 @@ algorithm eqns := matchcontinue(arr,assigned,source,subPos)
   case(v::arr,assigned,source,subPos)
     equation      
       eqns = assignComplexConstantConstructToArray(arr,assigned,source,subPos+1);
-      assigned = ComponentReference.subscriptCref(assigned,{DAE.INDEX(DAE.ICONST(subPos))});
+      assigned = ComponentReference.subscriptCrefWithInt(assigned, subPos);
       eqns2 = assignComplexConstantConstruct(v,assigned,source);
       eqns = listAppend(eqns,eqns2);
       then 
