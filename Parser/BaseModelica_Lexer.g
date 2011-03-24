@@ -260,7 +260,7 @@ ML_COMMENT
     ;
 
 fragment 
-NL: '\r\n' | '\n';
+NL: '\r\n' | '\n' | '\r';
 
 /* OpenModelica extensions */
 CODE : 'Code' | '$Code';
