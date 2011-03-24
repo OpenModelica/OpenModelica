@@ -7400,8 +7400,6 @@ algorithm
       then  
         (e12,e22);
         
-        
-        
         // Solve simple linear equations.
     case(v,e1,e2)
       equation
@@ -7409,7 +7407,7 @@ algorithm
         res = ExpressionSimplify.simplify(e);
         (f,rhs) = Expression.getTermsContainingX(res,Expression.crefExp(v));
         (vTerm as DAE.CREF(_,_)) = ExpressionSimplify.simplify(f);
-        rhs = ExpressionSimplify.simplify(rhs);
+        rhs = ExpressionSimplify.simplify(Expression.negate(rhs));
       then 
         (vTerm,rhs);
         

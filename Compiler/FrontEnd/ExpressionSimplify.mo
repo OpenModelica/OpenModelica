@@ -1617,11 +1617,17 @@ algorithm
       then 
         a1;
     
-    case(e1,op,e2) 
+    case(e1,DAE.ADD(ty=_),e2) 
       equation
         true = Expression.isZero(e1);
       then 
         e2;
+        
+    case(e1,DAE.SUB(ty=_),e2) 
+      equation
+        true = Expression.isZero(e1);
+      then 
+        Expression.negate(e2);        
     
     case(e1,op,e2) 
       equation
