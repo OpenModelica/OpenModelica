@@ -188,8 +188,8 @@ algorithm
       then
         (item, env);
 
-    case (_, SCodeEnv.CLASS(cls = SCode.CLASS(info = info), env = {class_env}), 
-        _, _)
+    case (_, SCodeEnv.CLASS(cls = SCode.CLASSDEF(classDef = SCode.CLASS(
+        info = info)), env = {class_env}), _, _)
       equation
         (item, env) = lookupClass(inName, class_env :: inEnv, info,
           inPrintError);
@@ -255,8 +255,8 @@ algorithm
 
     // A normal class, mark it and it's environment as used, and recursively
     // analyse it's contents.
-    case (SCodeEnv.CLASS(cls = SCode.CLASS(classDef = cdef, restriction = res,
-        info = info), env = {cls_env}), env)
+    case (SCodeEnv.CLASS(cls = SCode.CLASSDEF(classDef = SCode.CLASS(classDef =
+        cdef, restriction = res, info = info)), env = {cls_env}), env)
       equation
         markItemAsUsed(inItem, env);
         env = cls_env :: env;
@@ -1400,7 +1400,7 @@ algorithm
       String key_str;
       SCodeEnv.Frame cls_env;
       Env env;
-      SCode.Class cls;
+      SCode.Element cls;
       SCodeEnv.ClassType cls_ty;
       Util.StatefulBoolean is_used;
       String cls_name;
@@ -1429,7 +1429,7 @@ end analyseAvlValue;
 
 protected function analyseClassExtendsDef
   "Analyses a class extends definition."
-  input SCode.Class inClass;
+  input SCode.Element inClass;
   input SCodeEnv.ClassType inClassType;
   input Env inEnv;
 algorithm
@@ -1441,9 +1441,9 @@ algorithm
       String cls_name;
       Env env;
 
-    case (SCode.CLASS(name = cls_name, classDef = SCode.PARTS(elementLst = 
-          SCode.EXTENDS(baseClassPath = bc) :: _), info = info), 
-        SCodeEnv.CLASS_EXTENDS(), _)
+    case (SCode.CLASSDEF(classDef = SCode.CLASS(name = cls_name, classDef = 
+          SCode.PARTS(elementLst = SCode.EXTENDS(baseClassPath = bc) :: _), 
+          info = info)), SCodeEnv.CLASS_EXTENDS(), _)
       equation
         // Look up the base class of the class extends, and check if it's used.
         (item, _, _) = SCodeLookup.lookupClassName(bc, inEnv, info);
@@ -1494,6 +1494,7 @@ algorithm
   (outProgram, outAccumEnv) := 
   matchcontinue(clsAndVars, inProgram, inClassName, inAccumEnv)
     local
+      SCode.Element cls_el;
       SCode.Class cls;
       SCode.Program rest_prog;
       String name;
@@ -1506,8 +1507,10 @@ algorithm
     // Try to collect the first class in the list.
     case (_, (cls as SCode.CLASS(name = name)) :: rest_prog, _, env)
       equation
-        (cls, env) = collectUsedClass(cls, clsAndVars, inClassName, env,
+        cls_el = SCodeEnv.wrapClassInDummyDef(cls);
+        (cls_el, env) = collectUsedClass(cls_el, clsAndVars, inClassName, env,
           Absyn.IDENT(name));
+        SCode.CLASSDEF(classDef = cls) = cls_el;
         (rest_prog, env) = 
           collectUsedProgram2(clsAndVars, rest_prog, inClassName, env);
       then
@@ -1525,27 +1528,30 @@ algorithm
 end collectUsedProgram2;
    
 protected function collectUsedClass
-  "Checks if the given class is used in the program, and is that's the case it
+  "Checks if the given class is used in the program, and if that's the case it
   adds the class to the accumulated environment. Otherwise it just fails."
-  input SCode.Class inClass;
+  input SCode.Element inClass;
   input SCodeEnv.AvlTree inClsAndVars;
   input Absyn.Path inClassName;
   input Env inAccumEnv;
   input Absyn.Path inAccumPath;
-  output SCode.Class outClass;
+  output SCode.Element outClass;
   output Env outAccumEnv;
 protected
   SCode.Ident name;
-  Boolean pp, ep;
+  Boolean pp, ep, fp, rpp, rdp;
   SCode.Restriction res;
+  SCode.Class cls;
   SCode.ClassDef cdef;
   Absyn.Info info;
   Item item;
   SCodeEnv.Frame class_frame;
   Env class_env;
   Absyn.Path cls_path;
+  Option<Absyn.ConstrainClass> cc;
 algorithm
-  SCode.CLASS(name, pp, ep, res, cdef, info) := inClass;
+  SCode.CLASSDEF(_, fp, rpp, rdp, cls, cc) := inClass;
+  SCode.CLASS(name, pp, ep, res, cdef, info) := cls;
   // Check if the class is used.
   item := SCodeEnv.avlTreeGet(inClsAndVars, name);
   true := checkClassUsed(item, cdef);
@@ -1554,7 +1560,8 @@ algorithm
   (cdef, class_env) := 
     collectUsedClassDef(cdef, class_frame, inClassName, inAccumPath);
   // Add the class to the new environment.
-  outClass := SCode.CLASS(name, pp, ep, res, cdef, info);
+  cls := SCode.CLASS(name, pp, ep, res, cdef, info);
+  outClass := SCode.CLASSDEF(name, fp, rpp, rdp, cls, cc);
   item := updateItemEnv(item, outClass, class_env);
   outAccumEnv := SCodeEnv.extendEnvWithItem(item, inAccumEnv, name);
 end collectUsedClass;
@@ -1569,8 +1576,8 @@ algorithm
   isUsed := match(inItem, inClassDef)
     // GraphicalAnnotationsProgram____ is a special case, since it's not used by
     // anything, but needed during instantiation.
-    case (SCodeEnv.CLASS(cls = 
-        SCode.CLASS(name = "GraphicalAnnotationsProgram____")), _) 
+    case (SCodeEnv.CLASS(cls = SCode.CLASSDEF(classDef =
+        SCode.CLASS(name = "GraphicalAnnotationsProgram____"))), _) 
       then true;
     // Otherwise, use the environment item to determine if the class is used or
     // not.
@@ -1582,7 +1589,7 @@ protected function updateItemEnv
   "Replaces the class and environment in an environment item, preserving the
   item's type."
   input Item inItem;
-  input SCode.Class inClass;
+  input SCode.Element inClass;
   input Env inEnv;
   output Item outItem;
 algorithm
@@ -1652,6 +1659,7 @@ algorithm
   collect_constants := Absyn.pathEqual(inClassName, inAccumPath);
   (outUsedElements, outNewEnv) := collectUsedElements2(inElements, cls_and_vars,
     {}, {empty_class_env}, inClassName, inAccumPath, collect_constants);
+  outNewEnv := removeUnusedRedeclares(outNewEnv);
 end collectUsedElements;
 
 protected function collectUsedElements2
@@ -1713,19 +1721,20 @@ algorithm
     local
       SCode.Ident name;
       Boolean fp, rp, rd;
-      SCode.Class cls;
+      SCode.Element cls;
       Option<Absyn.ConstrainClass> cc;
       Env env;
       Item item;
       Absyn.Path cls_path;
 
     // A class definition, just use collectUsedClass.
-    case (SCode.CLASSDEF(name, fp, rp, rd, cls, cc), _, env, _, _, _)
+    case (SCode.CLASSDEF(name = name), _, env, _, _, _)
       equation
         cls_path = Absyn.joinPaths(inAccumPath, Absyn.IDENT(name));
-        (cls, env) = collectUsedClass(cls, inClsAndVars, inClassName, env, cls_path);
+        (cls, env) = collectUsedClass(inElement, inClsAndVars, inClassName, 
+          env, cls_path);
       then
-        (SCode.CLASSDEF(name, fp, rp, rd, cls, cc), env);
+        (cls, env);
   
     // A constant.
     case (SCode.COMPONENT(component = name, 
@@ -1751,4 +1760,44 @@ algorithm
   end match;
 end collectUsedElement;
     
+protected function removeUnusedRedeclares
+  input Env inEnv;
+  output Env outEnv;
+protected
+  Option<String> name;
+  SCodeEnv.FrameType ty;
+  SCodeEnv.AvlTree cls_and_vars;
+  list<SCodeEnv.Extends> bcl;
+  list<SCode.Element> ce;
+  SCodeEnv.ImportTable imps;
+  Util.StatefulBoolean is_used;
+algorithm
+  {SCodeEnv.FRAME(name, ty, cls_and_vars, SCodeEnv.EXTENDS_TABLE(bcl, ce), 
+    imps, is_used)} := inEnv;
+  bcl := Util.listMap1(bcl, removeUnusedRedeclares2, cls_and_vars);
+  outEnv := {SCodeEnv.FRAME(name, ty, cls_and_vars, 
+    SCodeEnv.EXTENDS_TABLE(bcl, ce), imps, is_used)};
+end removeUnusedRedeclares;
+
+protected function removeUnusedRedeclares2
+  input SCodeEnv.Extends inExtends;
+  input SCodeEnv.AvlTree inClsAndVars;
+  output SCodeEnv.Extends outExtends;
+protected
+  Absyn.Path bc;
+  list<SCode.Element> redeclares;
+  Absyn.Info info;
+algorithm
+  SCodeEnv.EXTENDS(bc, redeclares, info) := inExtends;
+  redeclares := Util.listFilter1(redeclares, removeUnusedRedeclares3, inClsAndVars);
+  outExtends := SCodeEnv.EXTENDS(bc, redeclares, info);
+end removeUnusedRedeclares2;
+
+protected function removeUnusedRedeclares3
+  input SCode.Element inElement;
+  input SCodeEnv.AvlTree inClsAndVars;
+algorithm
+  _ := SCodeEnv.avlTreeGet(inClsAndVars, SCode.elementName(inElement));
+end removeUnusedRedeclares3;
+
 end SCodeDependency;

@@ -141,7 +141,7 @@ algorithm
 
     else
       equation
-        Debug.fprintln("failtrace", "SCode.flattenClassInProgram failed on " +&
+        Debug.fprintln("failtrace", "SCodeFlatten.flattenClassInProgram failed on " +&
           Absyn.pathString(inClassName));
       then
         fail();

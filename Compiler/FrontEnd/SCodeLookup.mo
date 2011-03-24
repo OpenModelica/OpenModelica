@@ -56,34 +56,40 @@ public type Import = Absyn.Import;
 protected import SCodeFlattenImports;
 
 public constant Item BUILTIN_REAL = SCodeEnv.CLASS(
-  SCode.CLASS("Real", false, false, SCode.R_TYPE(),
-    SCode.PARTS({}, {}, {}, {}, {}, NONE(), {}, NONE()),
-    Absyn.dummyInfo), SCodeEnv.emptyEnv, SCodeEnv.BUILTIN());
+  SCode.CLASSDEF("Real", false, false, false,
+    SCode.CLASS("Real", false, false, SCode.R_TYPE(),
+      SCode.PARTS({}, {}, {}, {}, {}, NONE(), {}, NONE()),
+      Absyn.dummyInfo), NONE()), SCodeEnv.emptyEnv, SCodeEnv.BUILTIN());
   
 public constant Item BUILTIN_INTEGER = SCodeEnv.CLASS(
-  SCode.CLASS("Integer", false, false, SCode.R_TYPE(),
-    SCode.PARTS({}, {}, {}, {}, {}, NONE(), {}, NONE()),
-    Absyn.dummyInfo), SCodeEnv.emptyEnv, SCodeEnv.BUILTIN());
+  SCode.CLASSDEF("Integer", false, false, false,
+    SCode.CLASS("Integer", false, false, SCode.R_TYPE(),
+      SCode.PARTS({}, {}, {}, {}, {}, NONE(), {}, NONE()),
+      Absyn.dummyInfo), NONE()), SCodeEnv.emptyEnv, SCodeEnv.BUILTIN());
 
 public constant Item BUILTIN_BOOLEAN = SCodeEnv.CLASS(
-  SCode.CLASS("Boolean", false, false, SCode.R_TYPE(),
-    SCode.PARTS({}, {}, {}, {}, {}, NONE(), {}, NONE()),
-    Absyn.dummyInfo), SCodeEnv.emptyEnv, SCodeEnv.BUILTIN());
+  SCode.CLASSDEF("Boolean", false, false, false,
+    SCode.CLASS("Boolean", false, false, SCode.R_TYPE(),
+      SCode.PARTS({}, {}, {}, {}, {}, NONE(), {}, NONE()),
+      Absyn.dummyInfo), NONE()), SCodeEnv.emptyEnv, SCodeEnv.BUILTIN());
 
 public constant Item BUILTIN_STRING = SCodeEnv.CLASS(
-  SCode.CLASS("String", false, false, SCode.R_TYPE(),
-    SCode.PARTS({}, {}, {}, {}, {}, NONE(), {}, NONE()),
-    Absyn.dummyInfo), SCodeEnv.emptyEnv, SCodeEnv.BUILTIN());
+  SCode.CLASSDEF("String", false, false, false,
+    SCode.CLASS("String", false, false, SCode.R_TYPE(),
+      SCode.PARTS({}, {}, {}, {}, {}, NONE(), {}, NONE()),
+      Absyn.dummyInfo), NONE()), SCodeEnv.emptyEnv, SCodeEnv.BUILTIN());
 
 public constant Item BUILTIN_STATESELECT = SCodeEnv.CLASS(
-  SCode.CLASS("StateSelect", false, false, SCode.R_ENUMERATION(),
-    SCode.PARTS({}, {}, {}, {}, {}, NONE(), {}, NONE()),
-    Absyn.dummyInfo), SCodeEnv.emptyEnv, SCodeEnv.BUILTIN());
+  SCode.CLASSDEF("StateSelect", false, false, false,
+    SCode.CLASS("StateSelect", false, false, SCode.R_ENUMERATION(),
+      SCode.PARTS({}, {}, {}, {}, {}, NONE(), {}, NONE()),
+      Absyn.dummyInfo), NONE()), SCodeEnv.emptyEnv, SCodeEnv.BUILTIN());
 
 public constant Item BUILTIN_EXTERNALOBJECT = SCodeEnv.CLASS(
-  SCode.CLASS("ExternalObject", true, false, SCode.R_CLASS(),
-    SCode.PARTS({}, {}, {}, {}, {}, NONE(), {}, NONE()),
-    Absyn.dummyInfo), SCodeEnv.emptyEnv, SCodeEnv.BUILTIN());
+  SCode.CLASSDEF("ExternalObject", false, false, false,
+    SCode.CLASS("ExternalObject", true, false, SCode.R_CLASS(),
+      SCode.PARTS({}, {}, {}, {}, {}, NONE(), {}, NONE()),
+      Absyn.dummyInfo), NONE()), SCodeEnv.emptyEnv, SCodeEnv.BUILTIN());
 
 public function lookupSimpleName
   "Looks up a simple identifier in the environment and returns the environment
@@ -681,7 +687,7 @@ algorithm
         path = SCodeEnv.joinPaths(new_path, path);
       then
         (item, path, env);
-      
+             
     case (_, _, _, SOME(error_id))
       equation
         name_str = Absyn.pathString(inName);
@@ -767,7 +773,8 @@ algorithm
 
     // Otherwise, mark the cref as invalid, which is ok as long as it's not
     // actually used anywhere.
-    else then Absyn.CREF_INVALID(inCref);
+    //else then Absyn.CREF_INVALID(inCref);
+    else inCref;
 
   end matchcontinue;
 end lookupComponentRef;
@@ -924,7 +931,7 @@ algorithm
       Absyn.Ident name;
       Item item;
       Env env;
-      SCode.Class cls;
+      SCode.Element cls;
 
     // A normal type.
     case (Absyn.TPATH(path = path), _, _)
@@ -946,10 +953,13 @@ end lookupTypeSpec;
    
 protected function makeDummyMetaType
   input String inTypeName;
-  output SCode.Class outClass;
+  output SCode.Element outClass;
+protected
+  SCode.Class cls;
 algorithm
-  outClass := SCode.CLASS(inTypeName, false, false, SCode.R_TYPE(),
+  cls := SCode.CLASS(inTypeName, false, false, SCode.R_TYPE(),
     SCode.PARTS({}, {}, {}, {}, {}, NONE(), {}, NONE()), Absyn.dummyInfo);
+  outClass := SCodeEnv.wrapClassInDummyDef(cls);
 end makeDummyMetaType;
 
 end SCodeLookup;
