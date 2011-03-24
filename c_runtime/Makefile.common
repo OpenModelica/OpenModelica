@@ -128,11 +128,11 @@ libf2c/libf2c.a :
 meta_modelica_catch.o : meta_modelica_catch.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c -g $<
 
-install: libc_runtime.a libsim.a libf2c/libf2c.a interactive/libinteractive.a $(LIBSENDDATA) omdevinstall ModelicaExternalC/libModelicaExternalC.a
+install: libc_runtime.a libsim.a $(LIBF2C) interactive/libinteractive.a $(LIBSENDDATA) omdevinstall ModelicaExternalC/libModelicaExternalC.a
 	cp $(HFILES) $(builddir_inc)/
 	cp fmu_model_interface.c $(builddir_inc)/
 	cp $(LIBS) $(builddir_lib)/
-	cp libf2c/libf2c.* $(builddir_lib)/
+	test -z "$(LIBF2C)" || cp libf2c/libf2c.* $(builddir_lib)/
 	test -z "$(LIBSENDDATA)" || cp sendData/release/$(LIBSENDDATA) $(builddir_lib)/
 	cp interactive/libinteractive.a $(builddir_lib)/
 	@$(MAKE) -C java_interface -f $(JAVAMAKEFILE) && \
@@ -140,7 +140,7 @@ install: libc_runtime.a libsim.a libf2c/libf2c.a interactive/libinteractive.a $(
 	$(MAKE) -C java_interface -f $(JAVAMAKEFILE) install-nomodelica
 
 clean :
-	$(MAKE) -C libf2c -f $(LIBF2CMAKEFILE) clean
+	test -z "$(LIBF2C)" || $(MAKE) -C libf2c -f $(LIBF2CMAKEFILE) clean
 	$(MAKE) -C java_interface -f $(JAVAMAKEFILE) clean
 	$(MAKE) -C interactive -f $(INTERACTIVEMAKEFILE) clean
 	$(MAKE) -C ModelicaExternalC -f $(EXTERNALCMAKEFILE) clean

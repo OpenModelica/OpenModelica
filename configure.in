@@ -36,6 +36,7 @@ AC_SUBST(QMAKE)
 AC_SUBST(EXE)
 AC_SUBST(RML_TRACE)
 AC_SUBST(SOURCE_REVISION)
+AC_SUBST(LIBF2C)
 
 if test x"$prefix" = xNONE; then
   PREFIX=`pwd`/build
@@ -118,6 +119,7 @@ dnl Checks for libraries.
 dnl Checks for header files.
 AC_HEADER_STDC
 AC_CHECK_HEADERS(sys/time.h sqlite3.h, [], [AC_MSG_ERROR(Missing header files)])
+AC_CHECK_HEADERS(f2c.h, [], [LIBF2C=libf2c/libf2c.a])
 
 AC_MSG_CHECKING([for rml includefiles in $rmlhome])
 rmlinc=`find $rmlhome/include -follow -type d -name plain |grep include/plain`

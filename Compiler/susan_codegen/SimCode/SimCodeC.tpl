@@ -2297,7 +2297,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   
   .PHONY: <%fileNamePrefix%>
   <%fileNamePrefix%>: <%fileNamePrefix%>.conv.cpp <%fileNamePrefix%>_functions.cpp <%fileNamePrefix%>_functions.h <%fileNamePrefix%>_records.c
-  <%\t%> $(CXX) -I. -o <%fileNamePrefix%>$(EXEEXT) <%fileNamePrefix%>.conv.cpp <%fileNamePrefix%>_functions.cpp <%dirExtra%> <%libsPos1%> <%libsPos2%> -lsim -linteractive $(CFLAGS) $(SENDDATALIBS) $(LDFLAGS) -lf2c <%fileNamePrefix%>_records.c 
+  <%\t%> $(CXX) -I. -o <%fileNamePrefix%>$(EXEEXT) <%fileNamePrefix%>.conv.cpp <%fileNamePrefix%>_functions.cpp <%dirExtra%> <%libsPos1%> <%libsPos2%> -lsim -linteractive $(CFLAGS) $(SENDDATALIBS) $(LDFLAGS) -Wl,-Bstatic -lf2c -Wl,-Bdynamic <%fileNamePrefix%>_records.c 
   <%fileNamePrefix%>.conv.cpp: <%fileNamePrefix%>.cpp
   <%\t%> $(PERL) <%makefileParams.omhome%>/share/omc/scripts/convert_lines.pl $< $@.tmp
   <%\t%> @mv $@.tmp $@
@@ -4560,6 +4560,7 @@ template daeExpCrefRhs2(Exp ecr, Context context, Text &preExp /*BUFP*/,
       match arrayType
         case "metatype_array" then
           'arrayGet(<%arrName%>,<%dimsValuesStr%>) /* DAE.CREF */'
+
         else
           <<
           (*<%arrayType%>_element_addr(&<%arrName%>, <%dimsLenStr%>, <%dimsValuesStr%>))
