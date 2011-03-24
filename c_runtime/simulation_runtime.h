@@ -90,7 +90,7 @@ int callSolver(int, char**, string, string, string, double, double, double, long
 
 #endif /* cplusplus */
 
-extern const int measure_time_flag;
+extern int measure_time_flag;
 extern int sim_verbose; /* control debug output during simulation. */
 extern int sim_noemit; /* control emitting result data to file */
 extern int acceptedStep; /* !=0 when accepted step is calculated, 0 otherwise. */

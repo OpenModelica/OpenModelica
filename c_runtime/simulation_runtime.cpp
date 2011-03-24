@@ -409,7 +409,7 @@ startNonInteractiveSimulation(int argc, char**argv)
       cout << "Linear model is created!" << endl;
   }
 
-  if (retVal == 0 && measure_time_flag) {
+  if (retVal == 0 && measure_time_flag && ! sim_verbose) {
       const string modelInfo = string(globalData->modelFilePrefix) + "_prof.xml";
       const string plotFile = string(globalData->modelFilePrefix) + "_prof.plt";
       rt_accumulate(SIM_TIMER_TOTAL);
@@ -459,9 +459,9 @@ callSolver(int argc, char**argv, string method, string outputFormat,
           << "'" << endl;
   }
 
-  if (method == std::string("euler")) {
+  if (method == std::string("")) {
       if (sim_verbose >= LOG_SOLVER) {
-          cout << "No Recognized solver, using dassl." << endl;
+          cout << "No solver is set, using dassl." << endl;
       }
       retVal = solver_main(argc,argv,start,stop,stepSize,outputSteps,tolerance,3);
   } else if (method == std::string("euler")) {
@@ -484,6 +484,12 @@ callSolver(int argc, char**argv, string method, string outputFormat,
           cout << "Recognized solver: " << method << "." << endl;
       }
       jac_flag = 1;
+      retVal = solver_main(argc, argv, start, stop, stepSize, outputSteps, tolerance, 3);
+  } else if (method == std::string("dasslnum")) {
+      if (sim_verbose >= LOG_SOLVER) {
+          cout << "Recognized solver: " << method << "." << endl;
+      }
+      num_jac_flag = 1;
       retVal = solver_main(argc, argv, start, stop, stepSize, outputSteps, tolerance, 3);
   } else if (method == std::string("inline-euler")) {
       if (!_omc_force_solver || std::string(_omc_force_solver) != std::string("inline-euler")) {
@@ -566,6 +572,8 @@ initRuntimeAndSimulation(int argc, char**argv)
 #endif
   int verbose_flags = verboseLevel(argc, argv);
   sim_verbose = verbose_flags ? verbose_flags : sim_verbose;
+  if (sim_verbose)
+    measure_time_flag = 1;
 
   return 0;
 }

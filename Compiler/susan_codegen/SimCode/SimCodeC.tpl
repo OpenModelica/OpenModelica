@@ -92,9 +92,9 @@ case SIMCODE(__) then
   <%simulationFileHeader(simCode)%>
   <%externalFunctionIncludes(externalFunctionIncludes)%>
   #ifdef _OMC_MEASURE_TIME
-  const int measure_time_flag = 1;
+  int measure_time_flag = 1;
   #else
-  const int measure_time_flag = 0;
+  int measure_time_flag = 0;
   #endif
   <%globalData(modelInfo,fileNamePrefix)%>
   

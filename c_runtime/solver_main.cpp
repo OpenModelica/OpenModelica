@@ -55,9 +55,10 @@ int
 rungekutta_step(double* step, int
     (*f)());
 int
-dasrt_step(double* step, double &start, double &stop, bool &trigger);
+dasrt_step(double* step, double &start, double &stop, bool &trigger, int* stats);
 
 #define MAXORD 5
+#define DASSLSTATS 5
 
 //provides a dummy Jacobian to be used with DASSL
 int
@@ -205,8 +206,6 @@ double *rwork;
 fortran_integer *iwork;
 fortran_integer NG_var = 0; //->see ddasrt.c LINE 250 (number of constraint functions)
 fortran_integer *jroot;
-// stats array for dassl
-int dasslStats[5];
 
 // work array for inline implementation
 double **work_states;
@@ -223,14 +222,14 @@ double *dummy_delta;
 int euler_in_use;
 
 int
-solver_main_step(int flag, double &start, double &stop, bool &reset)
+solver_main_step(int flag, double &start, double &stop, bool &reset, int* stats)
 {
   switch (flag)
   {
   case 2:
     return rungekutta_step(&globalData->current_stepsize, functionODE);
   case 3:
-    return dasrt_step(&globalData->current_stepsize, start, stop, reset);
+    return dasrt_step(&globalData->current_stepsize, start, stop, reset, stats);
   case 4:
     return functionODE_inline();
   case 1:
@@ -253,6 +252,13 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
   //Stats
   int stateEvents = 0;
   int sampleEvents = 0;
+
+  int dasslStats[DASSLSTATS];
+  int dasslStatsTmp[DASSLSTATS];
+  for(int i=0;i<DASSLSTATS;i++){
+    dasslStats[i] = 0;
+    dasslStatsTmp[i] = 0;
+  }
 
   //Workaround for Relation in simulation_events
   euler_in_use = 1;
@@ -328,7 +334,6 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
   initial_function();
   saveall();
   storeExtrapolationData();
-  storeExtrapolationData();
   // Calculate initial values from (fixed) start attributes
 
   int needToIterate = 0;
@@ -344,23 +349,23 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
     {
       sim_result->emit();
     }
-  while (checkForDiscreteChanges() || needToIterate)
+   do
     {
-      saveall();
-      functionDAE(&needToIterate);
-      IterationNum++;
       if (IterationNum > IterationMax)
         {
           throw TerminateSimulationException(globalData->timeValue, string(
-              "ERROR: Too many Iteration. System is not consistent!\n"));
+              "ERROR: Too many Iteration while the initialization. System is not consistent!\n"));
         }
-    }
-
-  if (initialize(init_method))
-    {
-      throw TerminateSimulationException(globalData->timeValue, string(
-          "Error in initialization. Storing results and exiting.\n"));
-    }
+      if (initialize(init_method))
+        {
+          throw TerminateSimulationException(globalData->timeValue, string(
+              "Error in initialization. Storing results and exiting.\n"));
+        }
+      saveall();
+      functionDAE(&needToIterate);
+      functionAliasEquations();
+      IterationNum++;
+    }  while (checkForDiscreteChanges() || needToIterate);
   SaveZeroCrossings();
   saveall();
   if (sim_verbose >= LOG_SOLVER)
@@ -418,46 +423,6 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
         }
       return 0;
     }
-
-  /*
-  // Do a tiny step to initialize ZeroCrossing that are fulfilled
-
-  globalData->current_stepsize = calcTinyStep(start,stop);
-  solver_main_step(flag, start, stop, reset);
-  functionAlgebraics();
-
-
-  //evaluate the system for events
-  needToIterate = 0;
-  IterationNum = 0;
-  functionDAE(needToIterate);
-  while (checkForDiscreteChanges() || needToIterate)
-    {
-      saveall();
-      functionDAE(needToIterate);
-      IterationNum++;
-      if (IterationNum > IterationMax)
-        {
-          throw TerminateSimulationException(globalData->timeValue, string(
-              "ERROR: Too many Iteration. System is not consistent!\n"));
-        }
-    }
-  functionAliasEquations();
-  // Put initial values to delayed expression buffers
-  function_storeDelayed();
-  SaveZeroCrossings();
-  initializeZeroCrossings();
-  reset = true;
-  saveall();
-  if (sim_verbose >= LOG_SOLVER)
-    {
-      sim_result->emit();
-    }
-   */
-
-
-
-
 
   if (sim_verbose >= LOG_SOLVER)
     {
@@ -528,7 +493,7 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
            * functionODE() and functionAlgebraics();
            */
 
-          retValIntegrator = solver_main_step(flag, start, stop, reset);
+          retValIntegrator = solver_main_step(flag, start, stop, reset, dasslStatsTmp);
 
           functionAlgebraics();
           functionAliasEquations();
@@ -595,6 +560,12 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
           SaveZeroCrossings();
           sim_result->emit();
 
+          if (reset == true)
+          {
+            // save dassl stats befor reset
+            for (int i = 0; i < DASSLSTATS; i++)
+              dasslStats[i] += dasslStatsTmp[i];
+          }
           //Check for termination of terminate() or assert()
           if (terminationAssert || terminationTerminate)
             {
@@ -631,15 +602,20 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
 
   if (sim_verbose >= LOG_STATS)
     {
+      // save dassl stats befor print
+      for (int i = 0; i < DASSLSTATS; i++)
+        dasslStats[i] += dasslStatsTmp[i];
+
+      rt_accumulate(SIM_TIMER_TOTAL);
       fprintf(stdout, "##### Statistics #####\n");
-      //fprintf(stdout, "Simulationtime : %f\n", rt_accumulated(SIM_TIMER_TOTAL));
+      fprintf(stdout, "Simulationtime : %f\n", rt_accumulated(SIM_TIMER_TOTAL));
       fprintf(stdout, "Events: %d\n", stateEvents + sampleEvents);
       fprintf(stdout, "State Events: %d\n", stateEvents);
       fprintf(stdout, "Sample Events: %d\n", sampleEvents);
       fprintf(stdout, "##### Solver Statistics #####\n");
       fprintf(stdout, "The number of steps taken: %d\n", dasslStats[0]);
       fprintf(stdout, "The number of calls to functionODE: %d\n", dasslStats[1]);
-      fprintf(stdout, "THe evaluations of Jacobian: %d\n", dasslStats[2]);
+      fprintf(stdout, "The evaluations of Jacobian: %d\n", dasslStats[2]);
       fprintf(stdout, "The number of error test failures: %d\n", dasslStats[3]);
       fprintf(stdout, "The number of convergence test failures: %d\n", dasslStats[4]);
     }
@@ -710,7 +686,7 @@ rungekutta_step(double* step, int (*f)())
  *   + if no event occurs outside DASSL perform a warm-start
  */
 int
-dasrt_step(double* step, double &start, double &stop, bool &trigger1)
+dasrt_step(double* step, double &start, double &stop, bool &trigger1, int* tmpStats)
 {
   double tout;
   int i;
@@ -751,9 +727,6 @@ dasrt_step(double* step, double &start, double &stop, bool &trigger1)
         iwork[i] = 0;
       for (i = 0; i < lrw; i++)
         rwork[i] = 0.0;
-      // dassl stats
-      for (i = 0; i < 5; i++)
-        dasslStats[i] = 0;
       /*********************************************************************/
       //info[2] = 1;  //intermediate-output mode
       /*********************************************************************/
@@ -773,10 +746,6 @@ dasrt_step(double* step, double &start, double &stop, bool &trigger1)
   // If an event is triggered and processed restart dassl.
   if (trigger1)
     {
-      // save dassl stats befor reset
-      for (i = 0; i < 5; i++)
-        dasslStats[i] += iwork[10+i];
-
       if (sim_verbose >= LOG_EVENTS)
         {
           cout << "Event-management forced reset of DDASRT... " << endl;
@@ -793,7 +762,7 @@ dasrt_step(double* step, double &start, double &stop, bool &trigger1)
 
           tout = globalData->timeValue + *step;
           // Check that tout is not less than timeValue
-          // else will dassl get in trouble
+          // else will dassl get in trouble. If that is the case we skip the current step.
           if (globalData->timeValue - tout >= -1e-13)
             {
               if (sim_verbose >= LOG_SOLVER)
@@ -844,12 +813,16 @@ dasrt_step(double* step, double &start, double &stop, bool &trigger1)
               cout << " step size H to be attempted on next step: " << rwork[2] << endl;
               cout << " current value of independent variable: " << rwork[3] << endl;
               cout << " stepsize used on last successful step : " << rwork[6] << endl;
-              cout << " number of steps taken so far: " << iwork[10] << endl << endl;
-              cout << " the number of calls to RES: " << iwork[11] << endl << endl;
-              cout << " evaluations of the matrix of partial derivatives: " << iwork[12] << endl << endl;
-              cout << " total number of error test failures: " << iwork[13] << endl << endl;
-              cout << " total number of convergence test failures: " << iwork[14] << endl << endl;
+              cout << " number of steps taken so far: " << iwork[10] << endl;
+              cout << " the number of calls to RES: " << iwork[11] << endl;
+              cout << " evaluations of the matrix of partial derivatives: " << iwork[12] << endl;
+              cout << " total number of error test failures: " << iwork[13] << endl;
+              cout << " total number of convergence test failures: " << iwork[14] << endl;
           }
+
+          // save dassl stats
+          for (i = 0; i < DASSLSTATS; i++)
+            tmpStats[i] = iwork[10+i];
 
           if (idid < 0)
             {
@@ -873,6 +846,7 @@ dasrt_step(double* step, double &start, double &stop, bool &trigger1)
   }
   catch (TerminateSimulationException &e)
   {
+      
       cout << e.getMessage() << endl;
       //free DASSL specific work arrays.
       return 1;
@@ -885,6 +859,7 @@ dasrt_step(double* step, double &start, double &stop, bool &trigger1)
         {
           cout << "**Deleting work arrays after last DDASRT call..." << endl;
         }
+
     }
   return 0;
 }

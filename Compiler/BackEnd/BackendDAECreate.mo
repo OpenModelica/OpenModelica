@@ -309,8 +309,10 @@ algorithm
         e2 = Inline.inlineExp(e1,(SOME(functionTree),{DAE.NORM_INLINE()}));
         vars = BackendVariable.addVar(backendVar2, vars);
         e1 = Expression.crefExp(cr);
-        algs1 = listAppend(algs,minmax);
-        ialgs1 = listAppend(ialgs,nominal);
+        //algs1 = listAppend(algs,minmax);
+        //ialgs1 = listAppend(ialgs,nominal);
+        algs1 = algs; 
+        ialgs1 = ialgs;
       then
         (vars,knvars,extVars,BackendDAE.EQUATION(e1, e2, source)::eqns,reqns,ieqns,aeqns,iaeqns,algs1,ialgs1,whenclauses_1,extObjCls,states);
     
@@ -321,8 +323,10 @@ algorithm
         (backendVar1,NONE(),states,minmax,nominal) = lowerVar(daeEl, states);
         SOME(backendVar2) = Inline.inlineVarOpt(SOME(backendVar1),(SOME(functionTree),{DAE.NORM_INLINE()}));
         vars = BackendVariable.addVar(backendVar2, vars);
-        algs1 = listAppend(algs,minmax);
-        ialgs1 = listAppend(ialgs,nominal);        
+        //algs1 = listAppend(algs,minmax);
+        //ialgs1 = listAppend(ialgs,nominal);
+        algs1 = algs;
+        ialgs1 = ialgs;
       then
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs1,ialgs1,whenclauses_1,extObjCls,states);
     
@@ -332,8 +336,10 @@ algorithm
         (backendVar1,minmax,nominal) = lowerKnownVar(daeEl) "in previous rule, lower_var failed." ;
         SOME(backendVar2) = Inline.inlineVarOpt(SOME(backendVar1),(SOME(functionTree),{DAE.NORM_INLINE()}));
         knvars = BackendVariable.addVar(backendVar2, knvars);
-        ialgs1 = listAppend(ialgs,minmax);
-        ialgs1 = listAppend(ialgs1,nominal);        
+        //ialgs1 = listAppend(ialgs,minmax);
+        //ialgs1 = listAppend(ialgs1,nominal);
+        algs1 = algs;
+        ialgs1 = ialgs;
       then
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs1,whenclauses_1,extObjCls,states);
     

@@ -62,7 +62,7 @@ void leastSquare(long *nz, double *z, double *funcValue)
 
   functionODE();
   functionAlgebraics();
-  functionAliasEquations();
+  //functionAliasEquations();
   /*
   int needToIterate = 0;
   int IterationNum = 0;

@@ -2104,18 +2104,29 @@ algorithm
       BackendDAE.EventInfo ev;
       BackendDAE.ExternalObjectClasses eoc;
       
-      list<JacobianMatrix> LinearMats;   
+      BackendDAE.Variables NewVars;
+      BackendDAE.EquationArray NewEqns;
+      
+      list<JacobianMatrix> LinearMats;
+      Integer nEqns;
       
     case (functions,dlow as BackendDAE.DAE(v,kv,exv,av,e,re,ie,ae,al,ev,eoc),ass1,ass2,comps,m,mt)
       equation
         true = RTOpts.debugFlag("jacobian");
         
+        //TODO: split the equations and vaiables from the rest 
         (blt_states, _) = BackendDAEUtil.generateStatePartition(comps, dlow, ass1, ass2, m, mt);
         
+        NewEqns = BackendDAEUtil.listEquation({});
+        NewVars = BackendDAEUtil.emptyVars();
+        (NewEqns, NewVars) = splitoutEquationAndVars(blt_states,e,v,ass2,NewEqns,NewVars);
+        BackendDAE.EQUATION_ARRAY(numberOfElement = nEqns) = NewEqns;
+        dlow = BackendDAE.DAE(NewVars,kv,exv,av,NewEqns,re,ie,ae,al,ev,eoc);
+         
         // Prepare all needed variables
-        varlst = BackendDAEUtil.varList(v);
+        varlst = BackendDAEUtil.varList(NewVars);
         varlst1 = BackendDAEUtil.varList(kv);
-        states = BackendVariable.getAllStateVarFromVariables(v);
+        states = BackendVariable.getAllStateVarFromVariables(NewVars);
         states = Util.sort(states, BackendVariable.varIndexComparer);
         inputvars = Util.listSelect(varlst1,BackendDAEUtil.isInput);
         inputvars = Util.sort(inputvars, BackendVariable.varIndexComparer);
@@ -2133,7 +2144,7 @@ algorithm
         // Differentiate the ODE system w.r.t states for jacobian
         Debug.fcall("linmodel",print,"Differentiate System w.r.t. states.\n");   
         deriveddlow1 = BackendDAEOptimize.generateSymbolicJacobian(dlow, functions, comref_states, BackendDAEUtil.listVar(states), BackendDAEUtil.listVar(inputvars), BackendDAEUtil.listVar(paramvars)); 
-        Debug.fcall("execJacstat",print, "*** analytical Jacobians -> generated system for ODE-Block : " +& realString(clock()) +& "\n" );
+        Debug.fcall("execJacstat",print, "*** analytical Jacobians -> generated SymbolicJacobian for ODE-Block with "+& intString(nEqns) +& " Equations ->" +& intString(listLength(states)*nEqns) +& " : " +& realString(clock()) +& "\n" );
         
         // create Matrix A and variables
         Debug.fcall("jacdump2", print, "Dump of daelow for Matrix A.\n");
@@ -2162,6 +2173,46 @@ algorithm
         fail();
   end matchcontinue;
 end createJacobianMatrix;
+
+protected function splitoutEquationAndVars
+  input list<list<Integer>> inNeededBlocks;
+  input BackendDAE.EquationArray inEqns;
+  input BackendDAE.Variables inVars;
+  input array<Integer> inIntegerArray3;
+  input BackendDAE.EquationArray inEqnsNew;
+  input BackendDAE.Variables inVarsNew;
+  output BackendDAE.EquationArray outEqns;
+  output BackendDAE.Variables outVars;
+algorithm 
+  (outEqns,outVars) := matchcontinue( inNeededBlocks,inEqns,inVars,inIntegerArray3, inEqnsNew, inVarsNew)
+  local
+    Integer eqNum;
+    list<Integer> eqnNums;
+    list<list<Integer>> rest;
+    BackendDAE.Equation eqn;
+    BackendDAE.Var var;
+    list<BackendDAE.Equation> eqn_lst;
+    list<BackendDAE.Var> var_lst;
+    array<Integer> ass2;
+    BackendDAE.EquationArray eqnsNew;
+    BackendDAE.Variables varsNew;
+    case ({},inEqns,inVars,inIntegerArray3,eqnsNew,varsNew) then (eqnsNew,varsNew); 
+    case ({eqNum}::rest,inEqns,inVars,inIntegerArray3,eqnsNew,varsNew)
+      equation
+      (eqnsNew,varsNew) = splitoutEquationAndVars(rest,inEqns,inVars,inIntegerArray3,eqnsNew,varsNew);
+      (eqn, var) = getEquationAndSolvedVar(eqNum, inEqns, inVars, inIntegerArray3);
+      eqnsNew = BackendEquation.equationAdd(eqn, eqnsNew);
+      varsNew = BackendVariable.addVar(var, varsNew);
+    then (eqnsNew,varsNew);
+    case ((eqnNums as (_ :: (_ :: _))) :: rest,inEqns,inVars,inIntegerArray3,eqnsNew,varsNew)
+      equation
+      (eqnsNew,varsNew) = splitoutEquationAndVars(rest,inEqns,inVars,inIntegerArray3,eqnsNew,varsNew);
+      (eqn_lst,var_lst) = Util.listMap32(eqnNums, getEquationAndSolvedVar, inEqns, inVars, inIntegerArray3);
+      eqnsNew = BackendEquation.addEquations(eqn_lst, eqnsNew);
+      varsNew = BackendVariable.addVars(var_lst, varsNew);
+    then (eqnsNew,varsNew);
+ end matchcontinue;
+end splitoutEquationAndVars;
 
 protected function createLinearModelMatrixes
   input DAE.FunctionTree functions;

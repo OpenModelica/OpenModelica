@@ -2205,7 +2205,7 @@ algorithm
       then (BackendDAE.DAE(v,kv,exv,av,e,re,ie,ae,al,ev,eoc),listArray({}),listArray({}),{});
       case(dlow as BackendDAE.DAE(v,kv,exv,av,e,re,ie,ae,al,ev,eoc),functionTree,eqvars,diffvars,varlst)
         equation
-
+        true = RTOpts.debugFlag("linearization");
         // prepare index for Matrix and variables for simpleEquations
         derivedVariables = BackendDAEUtil.varList(v);
         (varTuple) = determineIndices(eqvars, diffvars, 0, varlst);
@@ -2235,7 +2235,9 @@ algorithm
         Debug.fcall("jacdump2", BackendDump.dumpMatching, v1);
         (comps1) = BackendDAETransform.strongComponents(m, mT, v1, v2);
         Debug.fcall("jacdump2", BackendDump.dumpComponents, comps1);
-
+        Debug.fcall("execJacstat",print, "*** analytical Jacobians -> performed matching and sorting: " +& realString(clock()) +& "\n" );
+       
+         
         // figure out wich comps are needed to evaluate all derivedVariables  
         derivedVariables = BackendDAEUtil.varList(v);
         (derivedVars,_) = Util.listSplitOnTrue(derivedVariables,checkIndex);
@@ -2248,9 +2250,46 @@ algorithm
         v4 = arrayCreate(listLength(comps1),0);
         v4 = markArray(v3,comps1,v4);
         (comps1,_) = splitBlocks2(comps1,v4,1);
+        
+        Debug.fcall("jacdump2", BackendDump.dumpComponents, comps1);
+        //Debug.fcall("execJacstat",print, "*** analytical Jacobians -> performed splitig the system: " +& realString(clock()) +& "\n" );
+        then (dlow,v1,v2,comps1);        
+          
+      case(dlow as BackendDAE.DAE(v,kv,exv,av,e,re,ie,ae,al,ev,eoc),functionTree,eqvars,diffvars,varlst)
+        equation
+        true = RTOpts.debugFlag("jacobian");
+        // prepare index for Matrix and variables for simpleEquations
+        derivedVariables = BackendDAEUtil.varList(v);
+        (varTuple) = determineIndices(eqvars, diffvars, 0, varlst);
+        //BackendDump.printTuple(varTuple);
+        jacElements = BackendDAE.emptyBintree;
+        (derivedVariables,jacElements) = changeIndices(derivedVariables, varTuple, jacElements);
+        v = BackendDAEUtil.listVar(derivedVariables);
+        dlow = BackendDAE.DAE(v,kv,exv,av,e,re,ie,ae,al,ev,eoc);
+        
+        // Remove simple Equtaion and
+        elimLevel = RTOpts.eliminationLevel();
+        RTOpts.setEliminationLevel(2) "Full elimination";
 
+        (dlow, NONE(), NONE()) = removeSimpleEquations(dlow,functionTree,NONE(),NONE());
+        (dlow, NONE(), NONE()) = removeSimpleEquations(dlow,functionTree,NONE(),NONE());
+        (dlow, NONE(), NONE()) = removeSimpleEquations(dlow,functionTree,NONE(),NONE());
+        (dlow, NONE(), NONE()) = removeSimpleEquations(dlow,functionTree,NONE(),NONE());
+
+        Debug.fcall("execJacstat",print, "*** analytical Jacobians -> removed simply equations: " +& realString(clock()) +& "\n" );
+        // figure out new matching and the strong components  
+        m = BackendDAEUtil.incidenceMatrix(dlow, BackendDAE.NORMAL());
+        mT = BackendDAEUtil.transposeMatrix(m);
+        (v1,v2,dlow,m,mT) = BackendDAETransform.matchingAlgorithm(dlow, m, mT, (BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT(), BackendDAE.KEEP_SIMPLE_EQN()),functionTree);
+        Debug.fcall("jacdump2", BackendDump.dumpIncidenceMatrix, m);
+        Debug.fcall("jacdump2", BackendDump.dumpIncidenceMatrixT, mT);
+        Debug.fcall("jacdump2", BackendDump.dump, dlow);
+        Debug.fcall("jacdump2", BackendDump.dumpMatching, v1);
+        (comps1) = BackendDAETransform.strongComponents(m, mT, v1, v2);
         Debug.fcall("jacdump2", BackendDump.dumpComponents, comps1);
         Debug.fcall("execJacstat",print, "*** analytical Jacobians -> performed matching and sorting: " +& realString(clock()) +& "\n" );
+       
+        Debug.fcall("jacdump2", BackendDump.dumpComponents, comps1);
         then (dlow,v1,v2,comps1);
     case(_, _, _, _, _) equation
       Error.addMessage(Error.INTERNAL_ERROR, {"Linearization.generateLinearMatrix failed"});
@@ -2578,11 +2617,11 @@ algorithm
       Debug.fcall("jacdumpeqn", BackendDump.dumpEqns, {currEquation});
       Debug.fcall("jacdumpeqn", print, "\n");
       //dummycref = ComponentReference.makeCrefIdent("$pDERdummy", DAE.ET_REAL(), {});
-      Debug.fcall("execJacstat",print, "*** analytical Jacobians -> derive one equation: " +& realString(clock()) +& "\n" );
+      //Debug.fcall("execJacstat",print, "*** analytical Jacobians -> derive one equation: " +& realString(clock()) +& "\n" );
       currDerivedEquations = derive(currEquation, vars, functions, inputVars, paramVars, stateVars, knownVars, algorithmsLookUp, inorderedVars, inDiffVars);
       Debug.fcall("jacdumpeqn", BackendDump.dumpEqns, currDerivedEquations);
       Debug.fcall("jacdumpeqn", print, "\n");
-      Debug.fcall("execJacstat",print, "*** analytical Jacobians -> created other equations from that: " +& realString(clock()) +& "\n" );
+      //Debug.fcall("execJacstat",print, "*** analytical Jacobians -> created other equations from that: " +& realString(clock()) +& "\n" );
       restDerivedEquations = deriveAll(restEquations, vars, functions, inputVars, paramVars, stateVars, knownVars, algorithmsLookUp, inorderedVars, inDiffVars);
       derivedEquations = listAppend(currDerivedEquations, restDerivedEquations);
     then derivedEquations;
