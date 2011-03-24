@@ -13,6 +13,9 @@ always:
 $(NAME): Makefile OMEdit.config
 	$(MAKE) -f Makefile
 
+clean:
+	test -f Makefile && make -f Makefile clean
+
 build: $(NAME)
 	ln -sf ../OMNotebook/3Dpkg ../
 	ln -sf ../OMNotebook/Pltpkg2 ../
