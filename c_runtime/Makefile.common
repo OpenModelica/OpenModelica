@@ -1,5 +1,3 @@
-CC = gcc
-FC = g77
 AR = ar -ru
 ANSI= #-ansi
 CXXFLAGS := $(CFLAGS) -Wall $(ANSI) $(EXTRA_CFLAGS)
