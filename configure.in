@@ -44,6 +44,7 @@ else
   PREFIX=$prefix
 fi
 AC_PREFIX_DEFAULT($PREFIX)
+prefix=$PREFIX
 
 dnl Disables the default CFLAGS="-g -O2"
 if test -z "$CFLAGS"; then

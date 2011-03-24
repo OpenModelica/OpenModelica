@@ -2216,6 +2216,7 @@ else
   PREFIX=$prefix
 fi
 
+prefix=$PREFIX
 
 if test -z "$CFLAGS"; then
 if  test "Darwin" = `uname`; then
