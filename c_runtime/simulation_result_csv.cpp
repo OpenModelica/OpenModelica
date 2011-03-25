@@ -51,6 +51,8 @@
 void simulation_result_csv::emit()
 {
   const char* format = "%.16g,";
+  const char* formatint = "%i,";
+  const char* formatbool = "%i,";
   storeExtrapolationData();
   rt_tick(SIM_TIMER_OUTPUT);
   fprintf(fout, format, globalData->timeValue);
@@ -61,9 +63,9 @@ void simulation_result_csv::emit()
   for (int i = 0; i < globalData->nAlgebraic; i++) if (!globalData->algebraicsFilterOutput[i])
     fprintf(fout, format, globalData->algebraics[i]);
   for (int i = 0; i < globalData->intVariables.nAlgebraic; i++) if (!globalData->intVariables.algebraicsFilterOutput[i])
-    fprintf(fout, format, globalData->intVariables.algebraics[i]);
+    fprintf(fout, formatint, globalData->intVariables.algebraics[i]);
   for (int i = 0; i < globalData->boolVariables.nAlgebraic; i++) if (!globalData->boolVariables.algebraicsFilterOutput[i])
-    fprintf(fout, format, globalData->boolVariables.algebraics[i]);
+    fprintf(fout, formatbool, globalData->boolVariables.algebraics[i]);
   fprintf(fout, "\n");
   rt_accumulate(SIM_TIMER_OUTPUT);
 }
