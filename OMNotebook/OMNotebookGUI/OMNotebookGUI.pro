@@ -166,7 +166,8 @@ DEFINES += $${HAVE_COIN} $${USE_CORBA}
 LIBS += $${CORBALIBS} $${COIN_LIBS} $${SOQT_LIBS}
 INCLUDEPATH += $${CORBAINC} \
                ../Pltpkg2 \
-               ../3Dpkg
+               ../3Dpkg \
+               .
 
 RESOURCES += res_qt.qrc
 
