@@ -2630,15 +2630,14 @@ public function eqnsForVarWithStates
 algorithm
   outIntegerLst := matchcontinue (inIncidenceMatrixT,inInteger)
     local
-      BackendDAE.Value n_1,n,indx;
+      BackendDAE.Value n,indx;
       list<BackendDAE.Value> res,res_1;
       array<list<BackendDAE.Value>> mt;
       String s;
     
     case (mt,n)
       equation
-        n_1 = n - 1;
-        res = mt[n_1 + 1];
+        res = mt[n];
         res_1 = Util.listMap(res, intAbs);
       then
         res_1;
@@ -5746,6 +5745,7 @@ algorithm
   allPreOptModules := {(BackendDAEOptimize.removeSimpleEquations,"removeSimpleEquations"),
           (BackendDAEOptimize.removeParameterEqns,"removeParameterEqns"),
           (BackendDAEOptimize.removeAliasEquations,"removeAliasEquations"),
+          (BackendDAEOptimize.inlineArrayEqn,"inlineArrayEqn"),
           (BackendDAECreate.expandDerOperator,"expandDerOperator")};
  preOptModules := selectOptModules(strPreOptModules,allPreOptModules,{});  
  preOptModules := listReverse(preOptModules);     
@@ -5777,6 +5777,7 @@ algorithm
   allPastOptModules := {(BackendDAEOptimize.lateInline,"lateInline"),
   (BackendDAEOptimize.removeSimpleEquationsPast,"removeSimpleEquations"),
   (BackendDAEOptimize.removeAliasEquationsPast,"removeAliasEquations"),
+  (BackendDAEOptimize.inlineArrayEqnPast,"inlineArrayEqn"),
   (BackendDump.dumpComponentsGraphStr,"dumpComponentsGraphStr")};
   pastOptModules := selectOptModules(strPastOptModules,allPastOptModules,{}); 
   pastOptModules := listReverse(pastOptModules);     

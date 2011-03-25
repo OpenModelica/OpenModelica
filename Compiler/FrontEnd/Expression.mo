@@ -2314,8 +2314,16 @@ algorithm
   local
     list<DAE.Exp> expl;
     list<list<tuple<DAE.Exp,Boolean>>> mexpl;
+    case(DAE.UNARY(operator=DAE.UMINUS_ARR(ty=_),exp=DAE.ARRAY(array=expl))) equation
+      expl = Util.listFlatten(Util.listMap(expl,flattenArrayExpToList));
+      expLst = Util.listMap(expl,negate);
+    then expLst;    
     case(DAE.ARRAY(array=expl)) equation
       expLst = Util.listFlatten(Util.listMap(expl,flattenArrayExpToList));
+    then expLst;
+    case(DAE.UNARY(operator=DAE.UMINUS_ARR(ty=_),exp=DAE.MATRIX(scalar=mexpl))) equation
+      expl = Util.listFlatten(Util.listMap(Util.listFlatten(Util.listListMap(mexpl,Util.tuple21)),flattenArrayExpToList));
+      expLst = Util.listMap(expl,negate);
     then expLst;
     case(DAE.MATRIX(scalar=mexpl)) equation
       expLst = Util.listFlatten(Util.listMap(Util.listFlatten(Util.listListMap(mexpl,Util.tuple21)),flattenArrayExpToList));
@@ -5484,24 +5492,26 @@ returns true if expression is an array.
 algorithm
   outB := matchcontinue(inExp)
     case(DAE.ARRAY(array = _ )) then true;
+    case(DAE.UNARY(operator=DAE.UMINUS_ARR(ty=_),exp=DAE.ARRAY(array=_))) then true;
     case(_) then false;
   end matchcontinue;
 end isArray;
 
-public function isMatrix " function: isArray
-returns true if expression is an array.
+public function isMatrix " function: isMatrix
+returns true if expression is an matrix.
 "
   input DAE.Exp inExp;
   output Boolean outB;
 algorithm
   outB := matchcontinue(inExp)
     case(DAE.MATRIX(scalar = _ )) then true;
+    case(DAE.UNARY(operator=DAE.UMINUS_ARR(ty=_),exp=DAE.MATRIX(scalar=_))) then true;
     case(_) then false;
   end matchcontinue;
 end isMatrix;
 
-public function isUnary " function: isArray
-returns true if expression is an array.
+public function isUnary " function: isUnary
+returns true if expression is an unary.
 "
   input DAE.Exp inExp;
   output Boolean outB;

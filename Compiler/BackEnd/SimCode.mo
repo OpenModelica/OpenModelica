@@ -948,7 +948,8 @@ algorithm
         funcs = Env.getFunctionTree(cache);
         dlow = BackendDAECreate.lower(dae,funcs,true);
         preOptModules = {"removeSimpleEquations","removeParameterEqns","expandDerOperator"};
-        pastOptModules = Util.listConsOnTrue(RTOpts.debugFlag("removeAliasEquations"),"removeAliasEquations",{});
+        pastOptModules = Util.listConsOnTrue(RTOpts.debugFlag("inlineArrayEqn"),"inlineArrayEqn",{});
+        pastOptModules = Util.listConsOnTrue(RTOpts.debugFlag("removeAliasEquations"),"removeAliasEquations",pastOptModules);
         pastOptModules = "lateInline"::("removeSimpleEquations"::pastOptModules);
         (dlow_1,m,mT,ass1,ass2,comps) = BackendDAEUtil.getSolvedSystem(cache, env, dlow, funcs,
           preOptModules, BackendDAETransform.dummyDerivative, pastOptModules);
@@ -1079,7 +1080,8 @@ algorithm
         funcs = Env.getFunctionTree(cache);
         dlow = BackendDAECreate.lower(dae,funcs,true);
         preOptModules = {"removeSimpleEquations","removeParameterEqns","expandDerOperator"};
-        pastOptModules = Util.listConsOnTrue(RTOpts.debugFlag("removeAliasEquations"),"removeAliasEquations",{});
+        pastOptModules = Util.listConsOnTrue(RTOpts.debugFlag("inlineArrayEqn"),"inlineArrayEqn",{});
+        pastOptModules = Util.listConsOnTrue(RTOpts.debugFlag("removeAliasEquations"),"removeAliasEquations",pastOptModules);
         pastOptModules = "lateInline"::("removeSimpleEquations"::pastOptModules);
         (dlow_1,m,mT,ass1,ass2,comps) = BackendDAEUtil.getSolvedSystem(cache, env, dlow, funcs,
           preOptModules, BackendDAETransform.dummyDerivative, pastOptModules);

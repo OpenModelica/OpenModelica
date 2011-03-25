@@ -73,6 +73,149 @@ protected import VarTransform;
 protected import Values;
 protected import ValuesUtil;
 
+
+/* 
+ * inline arrayeqns stuff
+ */
+
+public function inlineArrayEqnPast
+"function inlineArrayEqnPast
+autor: Frenkel TUD 2011-3"
+    input BackendDAE.BackendDAE inDAE;
+    input DAE.FunctionTree inFunctionTree;
+    input BackendDAE.IncidenceMatrix inM;
+    input BackendDAE.IncidenceMatrix inMT;
+    input array<Integer> inAss1;  
+    input array<Integer> inAss2;  
+    input list<list<Integer>> inComps;  
+    output BackendDAE.BackendDAE outDAE;
+    output BackendDAE.IncidenceMatrix outM;
+    output BackendDAE.IncidenceMatrix outMT;
+    output array<Integer> outAss1;  
+    output array<Integer> outAss2;  
+    output list<list<Integer>> outComps; 
+    output Boolean outRunMatching;
+protected
+  Option<BackendDAE.IncidenceMatrix> om,omT; 
+algorithm
+  (outDAE,om,omT) := inlineArrayEqn(inDAE,inFunctionTree,SOME(inM),SOME(inMT));
+  (outM,outMT) := BackendDAEUtil.getIncidenceMatrixfromOption(outDAE,om,omT);
+  outAss1 := inAss1;
+  outAss2 := inAss2;
+  outComps := inComps;   
+  outRunMatching := true;     
+end inlineArrayEqnPast;
+
+public function inlineArrayEqn
+"function: inlineArrayEqn
+autor: Frenkel TUD 2011-3"
+  input BackendDAE.BackendDAE inDAE;
+  input DAE.FunctionTree inFunctionTree;
+  input Option<BackendDAE.IncidenceMatrix> inM;
+  input Option<BackendDAE.IncidenceMatrix> inMT;
+  output BackendDAE.BackendDAE outDAE;
+  output Option<BackendDAE.IncidenceMatrix> outM;
+  output Option<BackendDAE.IncidenceMatrix> outMT;
+algorithm
+  (outDAE,outM,outMT):=
+  match (inDAE,inFunctionTree,inM,inMT)
+    local
+      DAE.FunctionTree funcs;
+      BackendDAE.IncidenceMatrix m,mT,m1,mT1;
+      BackendDAE.Variables vars,knvars,exobj;
+      BackendDAE.AliasVariables av;
+      BackendDAE.EquationArray eqns,eqns1,remeqns,remeqns1,inieqns,inieqns1;
+      array<BackendDAE.MultiDimEquation> arreqns;
+      array<DAE.Algorithm> algorithms;
+      BackendDAE.EventInfo einfo;
+      BackendDAE.ExternalObjectClasses eoc;
+      list<DAE.Algorithm> algs;
+      array<list<BackendDAE.Equation>> arraylisteqns;
+      list<Integer> updateeqns;
+      BackendDAE.BackendDAE dae;
+      
+    case (BackendDAE.DAE(vars,knvars,exobj,av,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc),funcs,SOME(m),SOME(mT))
+      equation      
+        // get scalar array eqs list
+        arraylisteqns = Util.arrayMap(arreqns,getScalarArrayEqns);
+        // replace them
+        (eqns1,(arraylisteqns,_,updateeqns)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(eqns,replaceScalarArrayEqns,(arraylisteqns,1,{}));
+        (remeqns1,(arraylisteqns,_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(remeqns,replaceScalarArrayEqns,(arraylisteqns,1,{}));
+        (inieqns1,(_,_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(inieqns,replaceScalarArrayEqns,(arraylisteqns,1,{}));
+        // update Incidence matrix
+        dae = BackendDAE.DAE(vars,knvars,exobj,av,eqns1,remeqns1,inieqns1,arreqns,algorithms,einfo,eoc); 
+        (m1,mT1) = BackendDAEUtil.updateIncidenceMatrix(dae,m,mT,updateeqns);
+      then
+        (dae,SOME(m1),SOME(mT1));
+    case (BackendDAE.DAE(vars,knvars,exobj,av,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc),funcs,_,_)
+      equation      
+        // get scalar array eqs list
+        arraylisteqns = Util.arrayMap(arreqns,getScalarArrayEqns);
+        // replace them
+        (eqns1,(arraylisteqns,_,updateeqns)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(eqns,replaceScalarArrayEqns,(arraylisteqns,1,{}));
+        (remeqns1,(arraylisteqns,_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(remeqns,replaceScalarArrayEqns,(arraylisteqns,1,{}));
+        (inieqns1,(_,_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(inieqns,replaceScalarArrayEqns,(arraylisteqns,1,{}));
+        dae = BackendDAE.DAE(vars,knvars,exobj,av,eqns1,remeqns1,inieqns1,arreqns,algorithms,einfo,eoc); 
+      then
+        (dae,NONE(),NONE());        
+  end match;        
+end inlineArrayEqn;
+
+protected function getScalarArrayEqns"
+Author: Frenkel TUD 2011-02"
+  input  BackendDAE.MultiDimEquation inAEqn;
+  output list<BackendDAE.Equation> outEqsLst;
+algorithm
+  outEqsLst := 
+  matchcontinue (inAEqn)
+    local
+      BackendDAE.MultiDimEquation aeqn;
+      list<BackendDAE.Equation> eqns;
+      DAE.ElementSource source; 
+      DAE.Exp e1,e2;
+      list<DAE.Exp> ea1,ea2;
+      list<tuple<DAE.Exp,DAE.Exp>> ealst; 
+    case BackendDAE.MULTIDIM_EQUATION(left=e1,right=e2,source=source)
+      equation
+        true = Expression.isArray(e1) or Expression.isMatrix(e1);
+        true = Expression.isArray(e2) or Expression.isMatrix(e2);
+        ea1 = Expression.flattenArrayExpToList(e1);
+        ea2 = Expression.flattenArrayExpToList(e2);          
+        ealst = Util.listThreadTuple(ea1,ea2);
+        eqns = Util.listMap1(ealst,BackendEquation.generateEQUATION,source);
+      then
+        eqns;
+    case aeqn then {};
+  end matchcontinue;
+end getScalarArrayEqns;
+
+protected function replaceScalarArrayEqns
+  "Help function to e.g. inlineArrayEqn"
+  input tuple<BackendDAE.Equation,tuple<array<list<BackendDAE.Equation>>,Integer,list<Integer>>> tpl;
+  output tuple<BackendDAE.Equation,tuple<array<list<BackendDAE.Equation>>,Integer,list<Integer>>> outTpl;
+protected
+   BackendDAE.Equation e,e1;
+   tuple<BackendDAE.Variables,DAE.FunctionTree> ext_arg, ext_art1;
+algorithm
+  outTpl := 
+  matchcontinue (tpl)
+    local
+      array<list<BackendDAE.Equation>> arraylisteqns,arraylisteqns1; 
+      BackendDAE.Equation eqn,e;
+      list<BackendDAE.Equation> eqns;
+      Integer index,pos,i;
+      list<Integer> updateeqns;
+    case ((e as BackendDAE.ARRAY_EQUATION(index=index),(arraylisteqns,pos,updateeqns)))
+      equation
+        i = index+1;
+        eqn::eqns = arraylisteqns[i];
+        arraylisteqns1 = arrayUpdate(arraylisteqns,i,eqns);
+      then
+        ((eqn,(arraylisteqns1,pos+1,pos::updateeqns)));
+    case ((eqn,(arraylisteqns,pos,updateeqns))) then ((eqn,(arraylisteqns,pos+1,updateeqns)));
+  end matchcontinue;      
+end replaceScalarArrayEqns;
+
 /* 
  * inline functions stuff
  */
