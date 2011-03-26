@@ -2508,8 +2508,9 @@ algorithm
     case (cache,env,ih,pre,(SCode.ALG_NORETCALL(functionCall = callFunc, functionArgs = callArgs, info = info)),source,initial_,impl,unrollForLoops)
       equation
         (cache, DAE.CALL(ap, eexpl, tuple_, builtin, tp, inlineType), varprop, _) = 
-          Static.elabExp(cache, env, Absyn.CALL(callFunc, callArgs), impl,NONE(), true,pre,info); 
-        ap = PrefixUtil.prefixPath(ap,pre);
+          Static.elabExp(cache, env, Absyn.CALL(callFunc, callArgs), impl,NONE(), true,pre,info);
+        // DO NOT PREFIX THIS PATH; THE PREFIX IS ONLY USED FOR COMPONENTS, NOT NAMES OF FUNCTIONS.... 
+        // ap = PrefixUtil.prefixPath(ap,pre);
         (cache,eexpl) = PrefixUtil.prefixExpList(cache, env, ih, eexpl, pre);
         source = DAEUtil.addElementSourceFileInfo(source, info);
         stmt = DAE.STMT_NORETCALL(DAE.CALL(ap,eexpl,tuple_,builtin,tp,inlineType),source);
