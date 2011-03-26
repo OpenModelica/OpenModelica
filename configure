@@ -1317,8 +1317,8 @@ Optional Features:
   --disable-option-checking  ignore unrecognized --enable/--with options
   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
-Enables RML -trace support, default=no
-Enables compilation of OMShell-terminal, default=yes
+--enable-rml-trace[=no]                RML -trace support
+--enable-omshell-terminal[=yes]        Enables compilation of OMShell-terminal
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
