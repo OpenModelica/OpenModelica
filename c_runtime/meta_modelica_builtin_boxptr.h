@@ -59,6 +59,8 @@ boxptr_unOp(boxptr_intStringChar,(void*),mmc_unbox_integer,intStringChar)
 
 boxptr_binFn(boxptr_valueEq,mmc_mk_bcon,(void*),valueEq)
 
+boxptr_unOp(boxptr_listLength,mmc_mk_icon,(void*),listLength)
+
 #undef boxptr_unOp
 #undef boxptr_binOp
 #undef boxptr_binFn

@@ -65,7 +65,6 @@ protected import Debug;
 protected import Error;
 protected import Expression;
 protected import ExpressionDump;
-protected import Print;
 protected import RTOpts;
 protected import Types;
 protected import Util;
@@ -447,9 +446,9 @@ public function makeIf "function: makeIf
   input list<tuple<DAE.Exp, DAE.Properties, list<Statement>>> inTplExpExpTypesPropertiesStatementLstLst4;
   input list<Statement> inStatementLst5;
   input DAE.ElementSource source;
-  output Statement outStatement;
+  output list<Statement> outStatements;
 algorithm
-  outStatement:=
+  outStatements :=
   matchcontinue (inExp1,inProperties2,inStatementLst3,inTplExpExpTypesPropertiesStatementLstLst4,inStatementLst5,source)
     local
       Else else_;
@@ -458,12 +457,19 @@ algorithm
       list<tuple<DAE.Exp, DAE.Properties, list<Statement>>> eib;
       Ident e_str,t_str;
       tuple<DAE.TType, Option<Absyn.Path>> t;
+      DAE.Properties prop;
+    case (DAE.BCONST(true),_,tb,eib,fb,source)
+      then tb;
+    case (DAE.BCONST(false),_,_,{},fb,source)
+      then fb;
+    case (DAE.BCONST(false),_,_,(e,prop,tb)::eib,fb,source)
+      then makeIf(e,prop,tb,eib,fb,source);
     case (e,DAE.PROP(type_ = t),tb,eib,fb,source)
       equation
         (e,_) = Types.matchType(e,t,DAE.T_BOOL_DEFAULT,true);
         else_ = makeElse(eib, fb);
       then
-        DAE.STMT_IF(e,tb,else_,source);
+        {DAE.STMT_IF(e,tb,else_,source)};
     case (e,DAE.PROP(type_ = t),_,_,_,source)
       equation
         e_str = ExpressionDump.printExpStr(e);
@@ -491,6 +497,8 @@ algorithm
       tuple<DAE.TType, Option<Absyn.Path>> t;
     case ({},{}) then DAE.NOELSE();  /* This removes empty else branches */
     case ({},fb) then DAE.ELSE(fb);
+    case (((DAE.BCONST(true),DAE.PROP(type_ = t),b) :: xs),fb) then DAE.ELSE(b);
+    case (((DAE.BCONST(false),DAE.PROP(type_ = t),b) :: xs),fb) then makeElse(xs,fb);
     case (((e,DAE.PROP(type_ = t),b) :: xs),fb)
       equation
         (e,_) = Types.matchType(e,t,DAE.T_BOOL_DEFAULT,true);

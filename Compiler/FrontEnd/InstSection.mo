@@ -2405,9 +2405,9 @@ algorithm
         (cache,eib_1) = instElseIfs(cache,env,ih,pre, eib, source, initial_,impl,unrollForLoops,info);
         (cache,fb_1) = instStatements(cache,env,ih,pre, fb, source, initial_,impl,unrollForLoops);
         source = DAEUtil.addElementSourceFileInfo(source, info);
-        stmt = Algorithm.makeIf(e_2, prop, tb_1, eib_1, fb_1, source);
+        stmts = Algorithm.makeIf(e_2, prop, tb_1, eib_1, fb_1, source);
       then
-        (cache,{stmt});
+        (cache,stmts);
         
     /* For loop */
     case (cache,env,ih,pre,SCode.ALG_FOR(iterators = forIterators,forBody = sl,info = info),source,initial_,impl,unrollForLoops)

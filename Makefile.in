@@ -1,4 +1,4 @@
-all : release qtclients mosh
+all : release qtclients @OMSHELL_TERMINAL@
 
 autoconfGeneratedFiles = @GENERATED_AUTOCONF_FILES@
 

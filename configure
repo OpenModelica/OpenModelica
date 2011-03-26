@@ -609,6 +609,7 @@ CPPFLAGS
 LDFLAGS
 CFLAGS
 CC
+OMSHELL_TERMINAL
 LIBF2C
 SOURCE_REVISION
 RML_TRACE
@@ -686,6 +687,7 @@ ac_subst_files=''
 ac_user_opts='
 enable_option_checking
 enable_rml_trace
+enable_omshell_terminal
 with_static_lpsolve
 with_CORBA
 with_MICO
@@ -1316,6 +1318,7 @@ Optional Features:
   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
 Enables RML -trace support, default=no
+Enables compilation of OMShell-terminal, default=yes
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -2172,6 +2175,7 @@ ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
 
 
 
@@ -3781,6 +3785,20 @@ else
 $as_echo "no" >&6; }
 fi
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if the user wants to compile OMShell-terminal" >&5
+$as_echo_n "checking if the user wants to compile OMShell-terminal... " >&6; }
+OMSHELL_TERMINAL="mosh"
+# Check whether --enable-omshell-terminal was given.
+if test "${enable_omshell_terminal+set}" = set; then :
+  enableval=$enable_omshell_terminal; test "xno" = x"$enableval" && OMSHELL_TERMINAL=""
+fi
+
+if test -z "$OMSHELL_TERMINAL" ; then
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+else
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
 ac_fn_c_check_header_mongrel "$LINENO" "readline/readline.h" "ac_cv_header_readline_readline_h" "$ac_includes_default"
 if test "x$ac_cv_header_readline_readline_h" = x""yes; then :
 
@@ -3855,6 +3873,7 @@ else
   as_fn_error $? "readline missing" "$LINENO" 5
 fi
 
+fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for an ANSI C-conforming const" >&5
 $as_echo_n "checking for an ANSI C-conforming const... " >&6; }
