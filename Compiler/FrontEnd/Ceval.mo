@@ -1404,15 +1404,15 @@ protected function cevalKnownExternalFuncs "function: cevalKnownExternalFuncs
 protected
   SCode.Class cdef;
   list<Env.Frame> env_1;
-  String fid;
+  String fid,id;
   Option<Absyn.ExternalDecl> extdecl;
-  Option<String> id,lan;
+  Option<String> lan;
   Option<Absyn.ComponentRef> out;
   list<Absyn.Exp> args;
 algorithm
   (outCache,cdef,env_1) := Lookup.lookupClass(inCache,env, funcpath, false);
   SCode.CLASS(name=fid,restriction = SCode.R_EXT_FUNCTION(), classDef=SCode.PARTS(externalDecl=extdecl)) := cdef;
-  SOME(Absyn.EXTERNALDECL(id,lan,out,args,_)) := extdecl;
+  SOME(Absyn.EXTERNALDECL(SOME(id),lan,out,args,_)) := extdecl;
   isKnownExternalFunc(fid, id);
   res := cevalKnownExternalFuncs2(fid, id, vals, msg);
 end cevalKnownExternalFuncs;
@@ -1420,111 +1420,111 @@ end cevalKnownExternalFuncs;
 public function isKnownExternalFunc "function isKnownExternalFunc
   Succeds if external function name is
   \"known\", i.e. no compilation required."
-  input String inString;
-  input Option<String> inStringOption;
+  input String fid;
+  input String id;
 algorithm
-  _:=  match (inString,inStringOption)
-    case ("acos",SOME("acos")) then ();
-    case ("asin",SOME("asin")) then ();
-    case ("atan",SOME("atan")) then ();
-    case ("atan2",SOME("atan2")) then ();
-    case ("cos",SOME("cos")) then ();
-    case ("cosh",SOME("cosh")) then ();
-    case ("exp",SOME("exp")) then ();
-    case ("log",SOME("log")) then ();
-    case ("log10",SOME("log10")) then ();
-    case ("sin",SOME("sin")) then ();
-    case ("sinh",SOME("sinh")) then ();
-    case ("tan",SOME("tan")) then ();
-    case ("tanh",SOME("tanh")) then ();
-    case ("substring",SOME("substring")) then ();
+  _:=  match (fid,id)
+    case ("acos","acos") then ();
+    case ("asin","asin") then ();
+    case ("atan","atan") then ();
+    case ("atan2","atan2") then ();
+    case ("cos","cos") then ();
+    case ("cosh","cosh") then ();
+    case ("exp","exp") then ();
+    case ("log","log") then ();
+    case ("log10","log10") then ();
+    case ("sin","sin") then ();
+    case ("sinh","sinh") then ();
+    case ("tan","tan") then ();
+    case ("tanh","tanh") then ();
+    case ("substring","ModelicaStrings_substring") then ();
   end match;
 end isKnownExternalFunc;
 
 protected function cevalKnownExternalFuncs2 "function: cevalKnownExternalFuncs2
   author: PA
   Helper function to cevalKnownExternalFuncs, does the evaluation."
-  input SCode.Ident inIdent;
-  input Option<Absyn.Ident> inAbsynIdentOption;
+  input String fid;
+  input String id;
   input list<Values.Value> inValuesValueLst;
   input Msg inMsg;
   output Values.Value outValue;
 algorithm
-  outValue := match (inIdent,inAbsynIdentOption,inValuesValueLst,inMsg)
+  outValue := match (fid,id,inValuesValueLst,inMsg)
     local 
       Real rv_1,rv,rv1,rv2,sv,cv;
       String str;
       Integer start, stop;
       
-    case ("acos",SOME("acos"),{Values.REAL(real = rv)},_)
+    case ("acos","acos",{Values.REAL(real = rv)},_)
       equation
         rv_1 = realAcos(rv);
       then
         Values.REAL(rv_1);
-    case ("asin",SOME("asin"),{Values.REAL(real = rv)},_)
+    case ("asin","asin",{Values.REAL(real = rv)},_)
       equation
         rv_1 = realAsin(rv);
       then
         Values.REAL(rv_1);
-    case ("atan",SOME("atan"),{Values.REAL(real = rv)},_)
+    case ("atan","atan",{Values.REAL(real = rv)},_)
       equation
         rv_1 = realAtan(rv);
       then
         Values.REAL(rv_1);
-    case ("atan2",SOME("atan2"),{Values.REAL(real = rv1),Values.REAL(real = rv2)},_)
+    case ("atan2","atan2",{Values.REAL(real = rv1),Values.REAL(real = rv2)},_)
       equation
         rv_1 = realAtan2(rv1, rv2);
       then
         Values.REAL(rv_1);
-    case ("cos",SOME("cos"),{Values.REAL(real = rv)},_)
+    case ("cos","cos",{Values.REAL(real = rv)},_)
       equation
         rv_1 = realCos(rv);
       then
         Values.REAL(rv_1);
-    case ("cosh",SOME("cosh"),{Values.REAL(real = rv)},_)
+    case ("cosh","cosh",{Values.REAL(real = rv)},_)
       equation
         rv_1 = realCosh(rv);
       then
         Values.REAL(rv_1);
-    case ("exp",SOME("exp"),{Values.REAL(real = rv)},_)
+    case ("exp","exp",{Values.REAL(real = rv)},_)
       equation
         rv_1 = realExp(rv);
       then
         Values.REAL(rv_1);
-    case ("log",SOME("log"),{Values.REAL(real = rv)},_)
+    case ("log","log",{Values.REAL(real = rv)},_)
       equation
         rv_1 = realLn(rv);
       then
         Values.REAL(rv_1);
-    case ("log10",SOME("log10"),{Values.REAL(real = rv)},_)
+    case ("log10","log10",{Values.REAL(real = rv)},_)
       equation
         rv_1 = realLog10(rv);
       then
         Values.REAL(rv_1);
-    case ("sin",SOME("sin"),{Values.REAL(real = rv)},_)
+    case ("sin","sin",{Values.REAL(real = rv)},_)
       equation
         rv_1 = realSin(rv);
       then
         Values.REAL(rv_1);
-    case ("sinh",SOME("sinh"),{Values.REAL(real = rv)},_)
+    case ("sinh","sinh",{Values.REAL(real = rv)},_)
       equation
         rv_1 = realSinh(rv);
       then
         Values.REAL(rv_1);
-    case ("tan",SOME("tan"),{Values.REAL(real = rv)},_)
+    case ("tan","tan",{Values.REAL(real = rv)},_)
       equation
         sv = realSin(rv);
         cv = realCos(rv);
         rv_1 = sv/. cv;
       then
         Values.REAL(rv_1);
-    case ("tanh",SOME("tanh"),{Values.REAL(real = rv)},_)
+    case ("tanh","tanh",{Values.REAL(real = rv)},_)
       equation
         rv_1 = realTanh(rv);
       then
         Values.REAL(rv_1);
     
-    case ("substring",SOME("substring"),
+    case ("substring","ModelicaStrings_substring",
           {
            Values.STRING(string = str),
            Values.INTEGER(integer = start),

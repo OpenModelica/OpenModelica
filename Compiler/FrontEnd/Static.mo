@@ -5911,50 +5911,6 @@ algorithm
   end matchcontinue;
 end elabBuiltinString;
 
-protected function elabBuiltinSubString "
-  author: PA
-  This function handles the built-in String operator."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input list<Absyn.Exp> inAbsynExpLst;
-  input list<Absyn.NamedArg> inNamedArg;
-  input Boolean inBoolean;
-  input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
-  output Env.Cache outCache;
-  output DAE.Exp outExp;
-  output DAE.Properties outProperties;
-algorithm
-  (outCache,outExp,outProperties):=
-  match (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
-    local
-      DAE.Exp exp, expStart, expStop;
-      tuple<DAE.TType, Option<Absyn.Path>> tp1,tp2,tp3;
-      DAE.Const c1, c2, c3, c;
-      list<Env.Frame> env;
-      Absyn.Exp e, start, stop;
-      Boolean impl;
-      Env.Cache cache;
-      list<Absyn.Exp> args;
-      list<Absyn.NamedArg> nargs;
-      Prefix.Prefix pre;
-    
-    // handle most of the stuff
-    case (cache,env,args as {e,start,stop},nargs,impl,pre,info)
-      equation
-        (cache,exp,DAE.PROP(tp1,c1),_) = elabExp(cache, env, e, impl, NONE(), true, pre, info);
-        true = Types.isString(tp1);
-        (cache,expStart,DAE.PROP(tp2,c2),_) = elabExp(cache, env, start, impl, NONE(), true, pre, info);
-        true = Types.isInteger(tp2);
-        (cache,expStop,DAE.PROP(tp3,c3),_) = elabExp(cache, env, stop, impl, NONE(), true, pre, info);
-        true = Types.isInteger(tp3);        
-        c = Util.listFold({c1, c2, c3}, Types.constAnd, DAE.C_CONST());
-        exp = Expression.makeBuiltinCall("substring", {exp, expStart, expStop}, DAE.ET_STRING());
-      then
-        (cache, exp, DAE.PROP(DAE.T_STRING_DEFAULT,c));
-  end match;
-end elabBuiltinSubString;
-
 protected function elabBuiltinLinspace "
   author: PA
 
@@ -6324,7 +6280,6 @@ algorithm
     case "Integer" then elabBuiltinIntegerEnum;
     case "inStream" then elabBuiltinInStream;
     case "actualStream" then elabBuiltinActualStream;
-    case "substring" then elabBuiltinSubString;
   end match;
 end elabBuiltinHandler;
 
@@ -6396,13 +6351,6 @@ algorithm
     
     case (Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")),_)
       then (DAE.FUNCTION_BUILTIN(NONE()),true,inPath);
-    
-    // elaborate substring (Modelica.Utilities.Strings.substring(string, startIndex, endIndex)
-    case (inPath,_)
-      equation
-        Builtin.isSubstring(inPath);
-        _ = elabBuiltinHandler("substring");
-      then (DAE.FUNCTION_BUILTIN(NONE()),true,inPath);    
     
     case (path,_) then (DAE.FUNCTION_NOT_BUILTIN(),false,path);
   end matchcontinue;
