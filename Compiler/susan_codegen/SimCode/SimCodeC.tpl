@@ -4120,6 +4120,7 @@ match stmt
 case STMT_FOR(__) then
   let iterType = expType(type_, iterIsArray)
   let arrayType = expTypeArray(type_)
+
   let stmtStr = (statementLst |> stmt => 
     algStatement(stmt, context, &varDecls) ;separator="\n")
   algStmtForGeneric_impl(range, iter, iterType, arrayType, iterIsArray, stmtStr, 
@@ -4995,6 +4996,10 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
                             case ET_ENUMERATION(__) then "(modelica_integer)" //else ""
     let &preExp += '<%retVar%> = <%cast%>pre(<%cref(arg.componentRef)%>);<%\n%>'
     '<%retVar%>'
+  
+  case CALL(path=IDENT(name="print"), expLst={e1}) then
+    let var1 = daeExp(e1, context, &preExp, &varDecls)
+    if acceptMetaModelicaGrammar() then 'print(<%var1%>)' else 'puts(<%var1%>)'
   
   case CALL(tuple_=false, builtin=true,
             path=IDENT(name="max"), ty = ET_REAL(), expLst={e1,e2}) then

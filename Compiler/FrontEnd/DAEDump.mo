@@ -1107,6 +1107,8 @@ algorithm
       String s1,s2,s3,s4,s5,str;
       DAE.Exp e1,e2,e;
       DAE.ComponentRef c,cr1,cr2;
+      list<DAE.Exp> es;
+      Absyn.Path path;
 
     case (DAE.EQUATION(exp = e1,scalar = e2))
       equation
@@ -1167,8 +1169,16 @@ algorithm
         str = stringAppendList({"  terminate(",s1,");\n"});
       then
         str;
+
+    case (DAE.NORETCALL(functionName=path,functionArgs=es))
+      equation
+        s1 = Absyn.pathString(path);
+        s2 = ExpressionDump.printExpStr(DAE.TUPLE(es));
+        str = stringAppendList({"  ",s1,s2,";\n"});
+      then
+        str;
     // adrpo: TODO! FIXME! should we say UNKNOWN equation here? we don't handle all cases!
-    case _ then "";
+    case _ then "#UNKNOWN_EQUATION#";
   end matchcontinue;
 end dumpEquationStr;
 

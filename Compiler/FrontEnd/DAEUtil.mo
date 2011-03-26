@@ -2868,6 +2868,9 @@ algorithm
     // ignore terminate!
     case (DAE.TERMINATE(message=_)::rest)
       then countEquations(rest);
+    // ignore noretcall
+    case (DAE.NORETCALL(functionName=_)::rest)
+      then countEquations(rest);
     // For an if-equation, count equations in branches    
     case (DAE.IF_EQUATION(equations2=tb,equations3=fb,source=source)::rest)
       equation
@@ -2878,7 +2881,7 @@ algorithm
       equation
         n = countEquationsInBranches(tb,fb,source);
         nr = countEquations(rest);
-      then nr + n;  
+      then nr + n;
     // any other case, just add 1
     case (elt::rest)
       equation
@@ -3000,7 +3003,7 @@ algorithm
       then
         {exp};
   end matchcontinue;
-end makeEquationToResidualExpLst;             
+end makeEquationToResidualExpLst;
 
 protected function makeEquationToResidualExp ""
   input DAE.Element eq;
@@ -3011,6 +3014,7 @@ algorithm
       DAE.Exp e1,e2;
       DAE.ComponentRef cr1,cr2;
       DAE.ExpType ty,ty1,ty2;
+      String str;
     // normal equation
     case(DAE.EQUATION(e1,e2,_))
       equation
@@ -3082,9 +3086,8 @@ algorithm
     // failure
     case(eq)
       equation
-        true = RTOpts.debugFlag("failtrace");
-        Debug.fprintln("failtrace", "- DAEUtil.makeEquationToResidualExp failed to transform equation: " +&
-          DAEDump.dumpEquationStr(eq) +& " to residual form!");
+        str = "- DAEUtil.makeEquationToResidualExp failed to transform equation: " +& DAEDump.dumpEquationStr(eq) +& " to residual form!";
+        Error.addMessage(Error.INTERNAL_ERROR, {str});
       then fail();
   end matchcontinue;
 end makeEquationToResidualExp;
@@ -3101,13 +3104,6 @@ algorithm
       DAE.ElementSource source;
       String str;
     case ({}) then {};
-    case (eq::rest)
-      equation
-        exps1 = makeEquationToResidualExpLst(eq);
-        exps2 = makeEquationLstToResidualExpLst(rest); 
-        exps = listAppend(exps1,exps2);
-      then 
-        exps;
     case ((eq as DAE.ASSERT(source = source))::rest)
       equation
         str = DAEDump.dumpEquationStr(eq);
@@ -3122,6 +3118,20 @@ algorithm
         Error.addSourceMessage(Error.IF_EQUATION_WARNING,{str},getElementSourceFileInfo(source));
         exps = makeEquationLstToResidualExpLst(rest);
       then exps;
+    case ((eq as DAE.NORETCALL(source = source))::rest)
+      equation
+        str = DAEDump.dumpEquationStr(eq);
+        str = Util.stringReplaceChar(str,"\n","");
+        Error.addSourceMessage(Error.IF_EQUATION_WARNING,{str},getElementSourceFileInfo(source));
+        exps = makeEquationLstToResidualExpLst(rest);
+      then exps;
+    case (eq::rest)
+      equation
+        exps1 = makeEquationToResidualExpLst(eq);
+        exps2 = makeEquationLstToResidualExpLst(rest); 
+        exps = listAppend(exps1,exps2);
+      then 
+        exps;
   end matchcontinue;
 end makeEquationLstToResidualExpLst;         
 
