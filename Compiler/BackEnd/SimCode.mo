@@ -4663,6 +4663,7 @@ algorithm
         block_1 = Util.listSelect1(block_,r,Util.listNotContains);
         // get names from variables
         crefs = BackendVariable.getAllCrefFromVariables(v);
+        crefs = listReverse(crefs);
         // generade replacement from non residual eqns           
         repl = VarTransform.emptyReplacements();
         (repl_1,eqns) = getRelaxationReplacements(block_1,ass2,crefs,eqn_lst,repl);
@@ -4743,6 +4744,7 @@ algorithm
       DAE.Exp exp,e1,e2,sol,zero;
       DAE.ExpType tp;
       list<DAE.Statement> asserts;
+      DAE.ComponentRef cr;
       
     case (BackendDAE.EQUATION(exp = e1,scalar = e2),exp)
       equation
@@ -4756,7 +4758,19 @@ algorithm
         (zero,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
         (sol,asserts) = solve(e1, zero, exp);
       then 
-        (sol,asserts);        
+        (sol,asserts);
+          
+    case (BackendDAE.SOLVED_EQUATION(componentRef= cr, exp = e1),exp)
+      equation
+        e2 = Expression.crefExp(cr);
+        (sol,asserts) = solve(e1, e2, exp);
+      then 
+        (sol,asserts);          
+    case (_,_)
+      equation
+        Debug.fprint("failtrace", "- SimCode.solveEquation failed \n");
+      then
+        fail();              
   end match;
 end solveEquation;
 

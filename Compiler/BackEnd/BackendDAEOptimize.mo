@@ -1924,6 +1924,7 @@ algorithm
       DAE.ElementSource source;
       DAE.ExpType identType;
       list<DAE.Subscript> subscriptLst;
+      BackendDAE.Var var;
     
     case (dlow,dlow1,m,mT,v1,v2,comp,vars,exclude,residualeqn,residualeqns,tearingvars,tearingeqns,crlst)
       equation
@@ -1940,10 +1941,9 @@ algorithm
         dlowc1 = copyDaeLowforTearing(dlow1);
         BackendDAE.DAE(orderedVars = ordvars1,orderedEqs = eqns1) = dlowc1;
         // add Tearing Var
-        BackendDAE.VAR(varName = cr as DAE.CREF_IDENT(ident = ident, identType = identType, subscriptLst = subscriptLst)) = BackendVariable.vararrayNth(varr, tearingvar-1);
-
-        ident_t = stringAppend("tearingresidual_",ident);
-        crt = ComponentReference.makeCrefIdent(ident_t,identType,subscriptLst);
+        var = BackendVariable.vararrayNth(varr, tearingvar-1);
+        cr = BackendVariable.varCref(var);
+        crt = ComponentReference.prependStringCref("tearingresidual_",cr);
         vars_1 = BackendVariable.addVar(BackendDAE.VAR(crt, BackendDAE.VARIABLE(),DAE.BIDIR(),BackendDAE.REAL(),NONE(),NONE(),{},-1,DAE.emptyElementSource,
                             SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),SOME(DAE.BCONST(true)),NONE(),NONE(),NONE(),NONE(),NONE())),
                             NONE(),DAE.NON_CONNECTOR(),DAE.NON_STREAM()), ordvars);
@@ -1952,8 +1952,6 @@ algorithm
         // (eqn_1,replace) =  Expression.replaceExp(eqn,Expression.crefExp(cr),Expression.crefExp(crt));
         // (scalar_1,replace1) =  Expression.replaceExp(scalar,Expression.crefExp(cr),Expression.crefExp(crt));
         // true = replace + replace1 > 0;
-
-
 
         // Add Residual eqn
         rhs = Expression.crefExp(crt);
