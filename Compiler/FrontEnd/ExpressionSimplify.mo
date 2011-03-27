@@ -3314,6 +3314,46 @@ algorithm
         e = simplify1(DAE.BINARY(DAE.RCONST(1.0),DAE.DIV(tp2),e3));
       then
         e;
+  
+    // (a*b)/ a  = b
+    case (_,DAE.DIV(ty = tp),DAE.BINARY(exp1 = e1,operator = DAE.MUL(ty = _),exp2 = e2),e3)
+      equation
+        true = Expression.expEqual(e1,e3);
+        tp2 = Expression.typeof(e2);
+        e = simplify1(e2);
+      then
+        e;    
+
+    // (a*b)/ b  = a
+    /* not yet tested
+    case (_,DAE.DIV(ty = tp),DAE.BINARY(exp1 = e1,operator = DAE.MUL(ty = _),exp2 = e2),e3)
+      equation
+        true = Expression.expEqual(e2,e3);
+        tp2 = Expression.typeof(e1);
+        e = simplify1(e1);
+      then
+        e;
+    */     
+    
+    // (-a*b)/ a  = -b
+    case (_,DAE.DIV(ty = tp),DAE.BINARY(exp1 = DAE.UNARY(operator = DAE.UMINUS(ty = _),exp = e1),operator = DAE.MUL(ty = _),exp2 = e2),e3)
+      equation
+        true = Expression.expEqual(e1,e3);
+        tp2 = Expression.typeof(e2);
+        e = simplify1(DAE.UNARY(DAE.UMINUS(tp2),e2));
+      then
+        e;    
+        
+    // (-a*b)/ b  = -a
+    /* not yet tested
+    case (_,DAE.DIV(ty = tp),DAE.BINARY(exp1 = DAE.UNARY(operator = DAE.UMINUS(ty = _),exp = e1),operator = DAE.MUL(ty = _),exp2 = e2),e3)
+      equation
+        true = Expression.expEqual(e2,e3);
+        tp2 = Expression.typeof(e1);
+        e = simplify1(DAE.UNARY(DAE.UMINUS(tp2),e1));
+      then
+        e;    
+    */       
     
     // add with 0
     case (_,DAE.ADD(ty = ty),e1,e2)
