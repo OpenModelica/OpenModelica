@@ -165,6 +165,91 @@ extern int RTOpts_orderConnections() {
   return orderConnections;
 }
 
+extern modelica_metatype RTOpts_getPreOptModules(modelica_metatype defaultModules) {
+  int i;
+  modelica_metatype res = mmc_mk_nil();
+
+  if (preOptModule_set == 1)
+  {
+    for (i=preOptModulec; i>0; i--) {
+       res = mmc_mk_cons(mmc_mk_scon(preOptModules[i-1]),res);
+    }
+     return res;
+  }
+  else
+    return defaultModules;
+}
+
+extern modelica_metatype RTOpts_getPastOptModules(modelica_metatype defaultModules) {
+  int i;
+  modelica_metatype res = mmc_mk_nil();
+
+  if (pastOptModule_set == 1)
+  {
+    for (i=pastOptModulec; i>0; i--) {
+       res = mmc_mk_cons(mmc_mk_scon(pastOptModules[i-1]),res);
+    }
+     return res;
+  }
+  else
+    return defaultModules;
+}
+
+extern modelica_metatype RTOpts_setPreOptModules(modelica_metatype modules) {
+
+  int i;
+  int len=0;
+  int alllen=0;
+  char *modulestr = 0;
+  char *newmodulestr = 0;
+
+  while (MMC_GETHDR(modules) != MMC_NILHDR)
+  {
+	modelica_metatype head = MMC_CAR(modules);
+	const char *module = MMC_STRINGDATA(head);
+    len=strlen(module);
+    newmodulestr=(char*)malloc((alllen + len + 1)*sizeof(char));
+    if (modulestr) strcpy(newmodulestr,modulestr);
+    for (i=0;i<len;i++)
+    	newmodulestr[alllen + i] = module[i];
+    newmodulestr[alllen + len] = ',';
+    alllen = alllen + len + 1;
+    if (modulestr) free(modulestr);
+    modulestr = newmodulestr;
+	 modules = MMC_CDR(modules);
+  }
+  modulestr[alllen-1] = '\0';
+  set_preOptModules(modulestr);
+  if (modulestr) free(modulestr);
+}
+
+extern modelica_metatype RTOpts_setPastOptModules(modelica_metatype modules) {
+  int i;
+  int len=0;
+  int alllen=0;
+  char *modulestr = 0;
+  char *newmodulestr = 0;
+
+  while (MMC_GETHDR(modules) != MMC_NILHDR)
+  {
+	modelica_metatype head = MMC_CAR(modules);
+	const char *module = MMC_STRINGDATA(head);
+    len=strlen(module);
+    newmodulestr=(char*)malloc((alllen + len + 1)*sizeof(char));
+    if (modulestr) strcpy(newmodulestr,modulestr);
+    for (i=0;i<len;i++)
+    	newmodulestr[alllen + i] = module[i];
+    newmodulestr[alllen + len] = ',';
+    alllen = alllen + len + 1;
+    if (modulestr) free(modulestr);
+    modulestr = newmodulestr;
+    modules = MMC_CDR(modules);
+  }
+  modulestr[alllen-1] = '\0';
+  set_pastOptModules(modulestr);
+  if (modulestr) free(modulestr);
+}
+
 #if defined(__cplusplus)
 }
 #endif

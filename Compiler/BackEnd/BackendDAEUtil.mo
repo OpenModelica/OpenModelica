@@ -77,17 +77,6 @@ protected import Util;
 protected import Values;
 protected import VarTransform;
 
-
-// global root index for preoptimisation 
-public 
-  constant Integer preOptimisationIndex = 10;
-// global root index for postoptimisation 
-public 
-  constant Integer postOptimisationIndex = 11;
-// global root index for indexreduction method 
-public 
-  constant Integer indexReductionMethodIndex = 12;
-
 /*************************************************
  * checkBackendDAE and stuff 
  ************************************************/
@@ -5413,9 +5402,9 @@ public function getSolvedSystem
   input Env.Env inEnv;   
   input BackendDAE.BackendDAE inDAE;
   input DAE.FunctionTree functionTree;
-  input list<String> strPreOptModules;
+  input Option<list<String>> strPreOptModules;
   input daeHandlerFunc daeHandler;
-  input list<String> strPastOptModules;
+  input Option<list<String>> strPastOptModules;
   output BackendDAE.BackendDAE outSODE;
   output BackendDAE.IncidenceMatrix outM;
   output BackendDAE.IncidenceMatrix outMT;
@@ -5493,7 +5482,7 @@ public function preOptimiseBackendDAE
   Run the optimisation modules"
   input BackendDAE.BackendDAE inDAE;
   input DAE.FunctionTree functionTree;
-  input list<String> strPreOptModules;
+  input Option<list<String>> strPreOptModules;
   input Option<BackendDAE.IncidenceMatrix> inM;
   input Option<BackendDAE.IncidenceMatrix> inMT;
   output BackendDAE.BackendDAE outDAE;
@@ -5686,49 +5675,9 @@ end checktransformDAE;
  * Optimisation Selection 
  ************************************************/
 
-public function setBackendGlobalRoots
-protected
-  list<String> preOptModules,pastOptModules;
-algorithm
-  // collect all modules
-  preOptModules := {"removeSimpleEquations","removeParameterEqns","expandDerOperator"};
-
-  pastOptModules := Util.listConsOnTrue(RTOpts.debugFlag("dumpcompgraph"),"dumpComponentsGraphStr",{});
-  pastOptModules := Util.listConsOnTrue(RTOpts.debugFlag("removeAliasEquations"),"removeAliasEquations",pastOptModules);
-  pastOptModules := "lateInline"::("removeSimpleEquations"::pastOptModules);
-  // set modules
-  setPreOptimisation(preOptModules);
-  setPostOptimisation(pastOptModules);
-end setBackendGlobalRoots;
-
-public function setPreOptimisation
-  input list<String> modules;
-algorithm
-  setGlobalRoot(preOptimisationIndex,modules);
-end setPreOptimisation;
-
-public function setPostOptimisation
-  input list<String> modules;
-algorithm
-  setGlobalRoot(postOptimisationIndex,modules);
-end setPostOptimisation;
-
-public function getPreOptimisation
-  output list<String> modules;
-algorithm
-  modules := getGlobalRoot(preOptimisationIndex);
-end getPreOptimisation;
-
-public function getPostOptimisation
-  output list<String> modules;
-algorithm
-  modules := getGlobalRoot(postOptimisationIndex);
-end getPostOptimisation;
-
-
 protected function getPreOptModules
 " function: getPreOptModules"
-  input list<String> strPreOptModules;
+  input Option<list<String>> ostrPreOptModules;
   output list<tuple<preoptimiseDAEModule,String>> preOptModules;
   partial function preoptimiseDAEModule
     input BackendDAE.BackendDAE inDAE;
@@ -5741,19 +5690,22 @@ protected function getPreOptModules
   end preoptimiseDAEModule;   
 protected 
   list<tuple<preoptimiseDAEModule,String>> allPreOptModules; 
+  list<String> strPreOptModules;
 algorithm
   allPreOptModules := {(BackendDAEOptimize.removeSimpleEquations,"removeSimpleEquations"),
           (BackendDAEOptimize.removeParameterEqns,"removeParameterEqns"),
           (BackendDAEOptimize.removeAliasEquations,"removeAliasEquations"),
           (BackendDAEOptimize.inlineArrayEqn,"inlineArrayEqn"),
           (BackendDAECreate.expandDerOperator,"expandDerOperator")};
+ strPreOptModules := RTOpts.getPreOptModules({"removeSimpleEquations","removeParameterEqns","expandDerOperator"});        
+ strPreOptModules := Util.getOptionOrDefault(ostrPreOptModules,strPreOptModules);
  preOptModules := selectOptModules(strPreOptModules,allPreOptModules,{});  
  preOptModules := listReverse(preOptModules);     
 end getPreOptModules;
 
 protected function getPastOptModules
 " function: getPastOptModules"
-  input list<String> strPastOptModules;
+  input Option<list<String>> ostrPastOptModules;
   output list<tuple<pastoptimiseDAEModule,String>> pastOptModules;
   partial function pastoptimiseDAEModule
     input BackendDAE.BackendDAE inDAE;
@@ -5773,12 +5725,15 @@ protected function getPastOptModules
   end pastoptimiseDAEModule;  
 protected 
   list<tuple<pastoptimiseDAEModule,String>> allPastOptModules; 
+  list<String> strPastOptModules;
 algorithm
   allPastOptModules := {(BackendDAEOptimize.lateInline,"lateInline"),
   (BackendDAEOptimize.removeSimpleEquationsPast,"removeSimpleEquations"),
   (BackendDAEOptimize.removeAliasEquationsPast,"removeAliasEquations"),
   (BackendDAEOptimize.inlineArrayEqnPast,"inlineArrayEqn"),
   (BackendDump.dumpComponentsGraphStr,"dumpComponentsGraphStr")};
+  strPastOptModules := RTOpts.getPastOptModules({"lateInline","removeSimpleEquations"});        
+  strPastOptModules := Util.getOptionOrDefault(ostrPastOptModules,strPastOptModules);
   pastOptModules := selectOptModules(strPastOptModules,allPastOptModules,{}); 
   pastOptModules := listReverse(pastOptModules);     
 end getPastOptModules;

@@ -771,8 +771,7 @@ algorithm
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(path,dae,env));
         funcs = Env.getFunctionTree(cache);
         daelow = BackendDAECreate.lower(dae, funcs, false) "no dummy state" ;
-        (optdae,om,omt) = BackendDAEUtil.preOptimiseBackendDAE(daelow,funcs,
-            {"removeSimpleEquations","removeParameterEqns","expandDerOperator"},NONE(),NONE());
+        (optdae,om,omt) = BackendDAEUtil.preOptimiseBackendDAE(daelow,funcs,NONE(),NONE(),NONE());
         (m,mt) = BackendDAEUtil.getIncidenceMatrixfromOption(optdae,om,omt);            
         vars = BackendVariable.daeVars(optdae);
         eqnarr = BackendEquation.daeEqns(optdae);
@@ -2816,7 +2815,7 @@ algorithm
         funcs = Env.getFunctionTree(cache);
         dlow = BackendDAECreate.lower(dae, funcs, false) "no dummy state" ;
         (dlow1,_,_) = BackendDAEUtil.preOptimiseBackendDAE(dlow,funcs,
-            {"removeSimpleEquations","expandDerOperator"},NONE(),NONE());        
+            SOME({"removeSimpleEquations","expandDerOperator"}),NONE(),NONE());        
         Debug.fcall("dumpdaelow", BackendDump.dump, dlow1);
         RTOpts.setEliminationLevel(elimLevel); // reset elimination level.
         eqns = BackendEquation.daeEqns(dlow1);
@@ -2861,7 +2860,7 @@ algorithm
         funcs = Env.getFunctionTree(cache);
         dlow = BackendDAECreate.lower(dae, funcs, false) "no dummy state" ;
         (dlow1,_,_) = BackendDAEUtil.preOptimiseBackendDAE(dlow,funcs,
-            {"removeSimpleEquations","expandDerOperator"},NONE(),NONE());   
+            SOME({"removeSimpleEquations","expandDerOperator"}),NONE(),NONE());   
         Debug.fcall("dumpdaelow", BackendDump.dump, dlow1);
         RTOpts.setEliminationLevel(elimLevel); // reset elimination level.
         eqns = BackendEquation.daeEqns(dlow1);
@@ -3065,7 +3064,6 @@ algorithm
       list<SCode.Class> p_1,sp;
       list<list<Integer>> comps;
       DAE.FunctionTree funcs;
-      list<String> preOptModules,pastOptModules;
     
     case (cache,env,{Values.CODE(Absyn.C_TYPENAME(classname)),Values.STRING(string="flat"),Values.BOOL(addOriginalIncidenceMatrix),Values.BOOL(addSolvingInfo),Values.BOOL(addMathMLCode),Values.BOOL(dumpResiduals),Values.STRING(filenameprefix),Values.BOOL(cdToTemp)},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
       equation
@@ -3080,8 +3078,7 @@ algorithm
         dae = DAEUtil.transformationsBeforeBackend(dae_1);
         funcs = Env.getFunctionTree(cache);
         dlow = BackendDAECreate.lower(dae, funcs, true); //Verificare cosa fa
-        (dlow_1,_,_) = BackendDAEUtil.preOptimiseBackendDAE(dlow,funcs,
-            {"removeSimpleEquations","removeParameterEqns","expandDerOperator"},NONE(),NONE());
+        (dlow_1,_,_) = BackendDAEUtil.preOptimiseBackendDAE(dlow,funcs,NONE(),NONE(),NONE());
         dlow_1 = BackendDAECreate.findZeroCrossings(dlow_1);
         xml_filename = stringAppendList({filenameprefix,".xml"});
         funcelems = DAEUtil.getFunctionList(funcs);
@@ -3106,8 +3103,7 @@ algorithm
         dae = DAEUtil.transformationsBeforeBackend(dae_1);
         funcs = Env.getFunctionTree(cache);
         dlow = BackendDAECreate.lower(dae, funcs, true); //Verificare cosa fa
-        (dlow_1,om,omT) = BackendDAEUtil.preOptimiseBackendDAE(dlow,funcs,
-            {"removeSimpleEquations","removeParameterEqns","expandDerOperator"},NONE(),NONE());
+        (dlow_1,om,omT) = BackendDAEUtil.preOptimiseBackendDAE(dlow,funcs,NONE(),NONE(),NONE());
         (dlow_1,_,_,_,_,_) = BackendDAEUtil.transformDAE(dlow_1,funcs,BackendDAETransform.dummyDerivative,om,omT);
         dlow_1 = BackendDAECreate.findZeroCrossings(dlow_1);    
         xml_filename = stringAppendList({filenameprefix,".xml"});
@@ -3133,10 +3129,8 @@ algorithm
         dae = DAEUtil.transformationsBeforeBackend(dae_1);
         funcs = Env.getFunctionTree(cache);
         dlow = BackendDAECreate.lower(dae, funcs, true);
-        preOptModules = {"removeSimpleEquations","removeParameterEqns","expandDerOperator"};
-        pastOptModules = {"lateInline","removeSimpleEquations"};
         (indexed_dlow,_,_,_,_,_) = BackendDAEUtil.getSolvedSystem(cache, env, dlow, funcs,
-          preOptModules, BackendDAETransform.dummyDerivative, pastOptModules);
+          NONE(), BackendDAETransform.dummyDerivative, NONE());
         xml_filename = stringAppendList({filenameprefix,".xml"});
         funcelems = DAEUtil.getFunctionList(funcs);
         Print.clearBuf();

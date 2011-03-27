@@ -65,6 +65,14 @@ static int silent = 0;
 static const char* simulation_code_target = "gcc";
 static const char* class_to_instantiate = "";
 static long vectorization_limit = 20;
+static char **preOptModules = 0;
+static char *preOptModulestr = 0;
+static int preOptModulec = 0;
+static int preOptModule_set = 0;
+static char **pastOptModules = 0;
+static char *pastOptModulestr = 0;
+static int pastOptModulec = 0;
+static int pastOptModule_set = 0;
 
 /*
  * adrpo 2007-06-11
@@ -231,6 +239,106 @@ int check_debug_flag(char const* strdata)
   return flg;
 }
 
+static int set_preOptModules(const char *flagstr)
+{
+  int i;
+  int len=strlen(flagstr);
+  int flagc=1;
+  int flag;
+
+  if (len==0) {
+	preOptModulec = 0;
+	preOptModulestr = (char*)malloc(sizeof(char));
+    preOptModulestr = '\0';
+    preOptModules = 0;
+    preOptModule_set = 1;
+    return 0;
+  }
+
+  if (preOptModulestr) free(preOptModulestr);
+  preOptModulestr=(char*)malloc((len+1)*sizeof(char));
+  strcpy(preOptModulestr, flagstr);
+
+  for (i=0;i<len;i++)
+    if (preOptModulestr[i]==',')
+      flagc++;
+  if (preOptModules) free(preOptModules);
+  preOptModules = (char**)malloc(flagc * sizeof(char*));
+  preOptModules[0]=preOptModulestr;
+  flag=1;
+  for (i=1; i<len; i++) {
+    if (preOptModulestr[i-1]==',') {
+      preOptModules[flag]=&(preOptModulestr[i]);
+      preOptModulestr[i-1]=0;
+      flag++;
+    }
+  }
+  if (flag!=flagc) {
+    fprintf(stderr, "Error in setting preOptModule flags.\n",flag,flagc);
+    return -1;
+  }
+
+  preOptModulec=flagc;
+  preOptModule_set = 1;
+
+
+  for (i=0; i<preOptModulec; i++) {
+    printf("\n%d=%s\n",i,preOptModules[i]);
+  }
+
+  return 0;
+}
+
+static int set_pastOptModules(const char *flagstr)
+{
+  int i;
+  int len=strlen(flagstr);
+  int flagc=1;
+  int flag;
+
+  if (len==0) {
+	pastOptModulec = 0;
+	pastOptModulestr = (char*)malloc(sizeof(char));
+    pastOptModulestr = '\0';
+    pastOptModules = 0;
+    pastOptModule_set = 1;
+    return 0;
+  }
+
+  if (pastOptModulestr) free(pastOptModulestr);
+  pastOptModulestr=(char*)malloc((len+1)*sizeof(char));
+  strcpy(pastOptModulestr, flagstr);
+
+  for (i=0;i<len;i++)
+    if (pastOptModulestr[i]==',')
+      flagc++;
+  if (pastOptModules) free(pastOptModules);
+  pastOptModules = (char**)malloc(flagc * sizeof(char*));
+  pastOptModules[0]=pastOptModulestr;
+  flag=1;
+  for (i=1; i<len; i++) {
+    if (pastOptModulestr[i-1]==',') {
+      pastOptModules[flag]=&(pastOptModulestr[i]);
+      pastOptModulestr[i-1]=0;
+      flag++;
+    }
+  }
+  if (flag!=flagc) {
+    fprintf(stderr, "Error in setting pastOptModule flags.\n",flag,flagc);
+    return -1;
+  }
+
+  pastOptModulec=flagc;
+  pastOptModule_set = 1;
+
+  /*
+  for (i=0; i<pastOptModulec; i++) {
+    printf("\n%d=%s\n",i,pastOptModules[i]);
+  }
+  */
+  return 0;
+}
+
 static void set_vectorization_limit(long limit)
 {
   if(limit < 0) {
@@ -273,6 +381,8 @@ int setCorbaSessionName(const char *name)
 #define SHOW_ANNOTATIONS    "+showAnnotations"
 #define NO_SIMPLIFY         "+noSimplify"
 #define ORDER_CONNECTIONS   "+orderConnections"
+#define PRE_OPTMODULES      "+preOptModules"
+#define PAST_OPTMODULES     "+pastOptModules"
 
 /* Note: RML runtime eats arguments starting with -:
  * You need to use: omc -- --running-testsuite for it to work */
@@ -293,6 +403,8 @@ static enum RTOpts__arg__result RTOptsImpl__arg(const char* arg)
   int strLen_SHOW_ANNOTATIONS = strlen(SHOW_ANNOTATIONS);
   int strLen_NO_SIMPLIFY = strlen(NO_SIMPLIFY);
   int strLen_ORDER_CONNECTIONS = strlen(ORDER_CONNECTIONS);
+  int strLen_PRE_OPTMODULES = strlen(PRE_OPTMODULES);
+  int strLen_PAST_OPTMODULES = strlen(PAST_OPTMODULES);
 
   char *tmp;
   debug_none = 1;
@@ -352,6 +464,18 @@ static enum RTOpts__arg__result RTOptsImpl__arg(const char* arg)
     else {
       fprintf(stderr, "# Wrong option: usage: omc [+noSimplify], by default is to simplify.\n");
       return ARG_FAILURE;
+    }
+  } else if(strncmp(arg,PRE_OPTMODULES,strLen_PRE_OPTMODULES) == 0) {
+    if (arg[strLen_PRE_OPTMODULES]!='=' ||
+          set_preOptModules(&(arg[strLen_PRE_OPTMODULES+1])) != 0) {
+        fprintf(stderr, "# Flag Usage:  +preOptModules=module1,module2,...\n");
+        return ARG_FAILURE;
+    }
+  } else if(strncmp(arg,PAST_OPTMODULES,strLen_PAST_OPTMODULES) == 0) {
+    if (arg[strLen_PAST_OPTMODULES]!='=' ||
+          set_pastOptModules(&(arg[strLen_PAST_OPTMODULES+1])) != 0) {
+        fprintf(stderr, "# Flag Usage:  +pastOptModules=module1,module2,...\n");
+        return ARG_FAILURE;
     }
   } else if(strncmp(arg,ORDER_CONNECTIONS,strLen_NO_SIMPLIFY) == 0) {
     if (strlen(arg) >= strLen_ORDER_CONNECTIONS && strcmp(&arg[strLen_ORDER_CONNECTIONS], "=false") == 0) {

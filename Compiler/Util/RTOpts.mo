@@ -246,5 +246,31 @@ public function setOrderConnections
   external "C" RTOpts_setOrderConnections(show) annotation(Library = "omcruntime");
 end setOrderConnections;
 
+public function getPreOptModules
+  input list<String> inStringLst;
+  output list<String> outStringLst;
+
+  external "C" outStringLst=RTOpts_getPreOptModules(inStringLst) annotation(Library = "omcruntime");
+end getPreOptModules;
+
+public function getPastOptModules
+  input list<String> inStringLst;
+  output list<String> outStringLst;
+
+  external "C" outStringLst=RTOpts_getPastOptModules(inStringLst) annotation(Library = "omcruntime");
+end getPastOptModules;
+
+public function setPreOptModules
+  input list<String> inStringLst;
+
+  external "C" RTOpts_setPreOptModules(inStringLst) annotation(Library = "omcruntime");
+end setPreOptModules;
+
+public function setPastOptModules
+  input list<String> inStringLst;
+
+  external "C" RTOpts_setPastOptModules(inStringLst) annotation(Library = "omcruntime");
+end setPastOptModules;
+
 end RTOpts;
 

@@ -308,3 +308,99 @@ RML_BEGIN_LABEL(RTOpts__setOrderConnections)
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
+
+RML_BEGIN_LABEL(RTOpts__getPreOptModules)
+{
+  int i;
+  void *defaultModules = rmlA0;
+  void *res = (void*)mk_nil();
+
+  if (preOptModule_set == 1)
+  {
+    for (i=preOptModulec; i>0; i--) {
+      res = (void*)mk_cons(mk_scon(preOptModules[i-1]),res);
+    }
+    rmlA0 = (void*)res;
+  }
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(RTOpts__getPastOptModules)
+{
+  int i;
+  void *defaultModules = rmlA0;
+  void *res = (void*)mk_nil();
+
+  if (pastOptModule_set == 1)
+  {
+    for (i=pastOptModulec; i>0; i--) {
+      res = (void*)mk_cons(mk_scon(pastOptModules[i-1]),res);
+    }
+    rmlA0 = (void*)res;
+  }
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(RTOpts__setPreOptModules)
+{
+  int i;
+  void *modules = rmlA0;
+  int len=0;
+  int alllen=0;
+  char *modulestr = 0;
+  char *newmodulestr = 0;
+
+  while (RML_GETHDR(modules) != RML_NILHDR)
+  {
+    char *module = RML_STRINGDATA(RML_CAR(modules));
+    len=strlen(module);
+    newmodulestr=(char*)malloc((alllen + len + 1)*sizeof(char));
+    if (modulestr) strcpy(newmodulestr,modulestr);
+    for (i=0;i<len;i++)
+    	newmodulestr[alllen + i] = module[i];
+    newmodulestr[alllen + len] = ',';
+    alllen = alllen + len + 1;
+    if (modulestr) free(modulestr);
+    modulestr = newmodulestr;
+
+    modules = RML_CDR(modules);
+  }
+  modulestr[alllen-1] = '\0';
+  set_preOptModules(modulestr);
+  if (modulestr) free(modulestr);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(RTOpts__setPastOptModules)
+{
+  int i;
+  void *modules = rmlA0;
+  int len=0;
+  int alllen=0;
+  char *modulestr = 0;
+  char *newmodulestr = 0;
+
+  while (RML_GETHDR(modules) != RML_NILHDR)
+  {
+    char *module = RML_STRINGDATA(RML_CAR(modules));
+    len=strlen(module);
+    newmodulestr=(char*)malloc((alllen + len + 1)*sizeof(char));
+    if (modulestr) strcpy(newmodulestr,modulestr);
+    for (i=0;i<len;i++)
+    	newmodulestr[alllen + i] = module[i];
+    newmodulestr[alllen + len] = ',';
+    alllen = alllen + len + 1;
+    if (modulestr) free(modulestr);
+    modulestr = newmodulestr;
+
+    modules = RML_CDR(modules);
+  }
+  modulestr[alllen-1] = '\0';
+  set_pastOptModules(modulestr);
+  if (modulestr) free(modulestr);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL

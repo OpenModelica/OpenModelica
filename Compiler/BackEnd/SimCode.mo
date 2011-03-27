@@ -932,7 +932,6 @@ algorithm
       Env.Cache cache;
       DAE.FunctionTree funcs;
       Real timeSimCode, timeTemplates, timeBackend, timeFrontend;
-      list<String> preOptModules,pastOptModules;
     case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p)),filenameprefix,addDummy, inSimSettingsOpt)
       equation
         /* calculate stuff that we need to create SimCode data structure */
@@ -947,12 +946,8 @@ algorithm
         dae = DAEUtil.transformationsBeforeBackend(dae);
         funcs = Env.getFunctionTree(cache);
         dlow = BackendDAECreate.lower(dae,funcs,true);
-        preOptModules = {"removeSimpleEquations","removeParameterEqns","expandDerOperator"};
-        pastOptModules = Util.listConsOnTrue(RTOpts.debugFlag("inlineArrayEqn"),"inlineArrayEqn",{});
-        pastOptModules = Util.listConsOnTrue(RTOpts.debugFlag("removeAliasEquations"),"removeAliasEquations",pastOptModules);
-        pastOptModules = "lateInline"::("removeSimpleEquations"::pastOptModules);
         (dlow_1,m,mT,ass1,ass2,comps) = BackendDAEUtil.getSolvedSystem(cache, env, dlow, funcs,
-          preOptModules, BackendDAETransform.dummyDerivative, pastOptModules);
+          NONE(), BackendDAETransform.dummyDerivative, NONE());
         Debug.fprintln("dynload", "translateModel: Generating simulation code and functions.");
         (indexed_dlow_1,libs,file_dir,timeBackend,timeSimCode,timeTemplates) = 
           generateModelCodeFMU(dlow_1,funcs,p, dae,  className, filenameprefix, inSimSettingsOpt,m,mT,ass1,ass2,comps);        
@@ -1064,7 +1059,6 @@ algorithm
       Env.Cache cache;
       DAE.FunctionTree funcs;
       Real timeSimCode, timeTemplates, timeBackend, timeFrontend;
-      list<String> preOptModules,pastOptModules;
 
     case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p)),filenameprefix,addDummy, inSimSettingsOpt)
       equation
@@ -1079,12 +1073,8 @@ algorithm
         dae = DAEUtil.transformationsBeforeBackend(dae);
         funcs = Env.getFunctionTree(cache);
         dlow = BackendDAECreate.lower(dae,funcs,true);
-        preOptModules = {"removeSimpleEquations","removeParameterEqns","expandDerOperator"};
-        pastOptModules = Util.listConsOnTrue(RTOpts.debugFlag("inlineArrayEqn"),"inlineArrayEqn",{});
-        pastOptModules = Util.listConsOnTrue(RTOpts.debugFlag("removeAliasEquations"),"removeAliasEquations",pastOptModules);
-        pastOptModules = "lateInline"::("removeSimpleEquations"::pastOptModules);
         (dlow_1,m,mT,ass1,ass2,comps) = BackendDAEUtil.getSolvedSystem(cache, env, dlow, funcs,
-          preOptModules, BackendDAETransform.dummyDerivative, pastOptModules);
+          NONE(), BackendDAETransform.dummyDerivative, NONE());
         (indexed_dlow_1,libs,file_dir,timeBackend,timeSimCode,timeTemplates) = 
           generateModelCode(dlow_1,funcs,p, dae,  className, filenameprefix, inSimSettingsOpt,m,mT,ass1,ass2,comps);   
         resultValues = 

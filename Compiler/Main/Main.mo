@@ -769,7 +769,6 @@ algorithm
       Env.Env env;
       DAE.FunctionTree funcs;
       String str;
-      list<String> preOptModules,pastOptModules;
 
     case (cache,env,p,ap,dae,daeimpl,classname)
       equation
@@ -777,11 +776,7 @@ algorithm
         Debug.fcall("execstat",print, "*** Main -> To lower dae at time: " +& realString(clock()) +& "\n" );
         funcs = Env.getFunctionTree(cache);
         dlow = BackendDAECreate.lower(dae,funcs,true);
-        preOptModules = {"removeSimpleEquations","removeParameterEqns","expandDerOperator"};
-        pastOptModules = Util.listConsOnTrue(RTOpts.debugFlag("dumpcompgraph"),"dumpComponentsGraphStr",{});
-        pastOptModules = Util.listConsOnTrue(RTOpts.debugFlag("removeAliasEquations"),"removeAliasEquations",pastOptModules);
-        pastOptModules = "lateInline"::("removeSimpleEquations"::pastOptModules);
-        (dlow_1,m,mT,v1,v2,comps) = BackendDAEUtil.getSolvedSystem(cache,env,dlow,funcs,preOptModules,BackendDAETransform.dummyDerivative,pastOptModules);
+        (dlow_1,m,mT,v1,v2,comps) = BackendDAEUtil.getSolvedSystem(cache,env,dlow,funcs,NONE(),BackendDAETransform.dummyDerivative,NONE());
         modpar(dlow_1,v1,v2,comps);
         simcodegen(dlow_1,funcs,classname,p,ap,daeimpl,m,mT,v1,v2,comps);
       then
@@ -1117,6 +1112,8 @@ algorithm
   print("\t+annotationVersion=1.x     what annotation version should we use\n");
   print("\t                           accept 1.x or 2.x (default) or 3.x\n");
   print("\t+noSimplify                do not simplify expressions (default is to simplify)\n");
+  print("\t+preOptModules=module1,..  pre optimisation modules (default is removeSimpleEquations,removeParameterEqns,expandDerOperator)\n");
+  print("\t+pastOptModules=module1,.. past optimisation modules (default is lateInline,removeSimpleEquations)\n");
   print("\t+q                         run in quiet mode, output nothing\n");
   print("\t+g=MetaModelica            accept MetaModelica grammar and semantics\n");
   print("\t+showErrorMessages         show error messages while they happen; default to no. \n");
@@ -1189,8 +1186,7 @@ algorithm
         // cummulative time of some functions
         // search for System.startTimer/System.stopTimer/System.getTimerIntervalTimer
         // System.resetTimer();
-        
-        
+
         //setGlobalRoot(ComponentReference.crefMemoryIndex,  ComponentReference.createEmptyCrefMemory());
         //Env.globalCache = fill(Env.emptyCache,1);
         symbolTable = readSettings(args);
