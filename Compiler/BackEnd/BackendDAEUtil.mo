@@ -5463,7 +5463,7 @@ algorithm
   // transformation phase (matching and sorting using a index reduction method
   Debug.fcall("execstat",print, "*** BackendMain -> transformDAE at time: " +& realString(clock()) +& "\n" );
   (sode,m,mT,v1,v2,comps) := transformDAE(optdae,functionTree,daeHandler,om,omT);
-  Debug.fcall("bltdump", BackendDump.bltdump, (sode,m,mT,v1,comps));
+  Debug.fcall("bltdump", BackendDump.bltdump, (sode,m,mT,v1,v2,comps));
 
   // past optimisation phase
   Debug.fcall("execstat",print, "*** BackendMain -> pastoptimiseDAE at time: " +& realString(clock()) +& "\n" );
@@ -5472,6 +5472,7 @@ algorithm
   sode1 := BackendDAECreate.findZeroCrossings(sode);
   Debug.fcall("execstat",print, "*** BackendMain -> translateDae: " +& realString(clock()) +& "\n" );
   indexed_dlow := translateDae(sode1,NONE());
+  Debug.fcall("execstat",print, "*** BackendMain -> calculate Values: " +& realString(clock()) +& "\n" );
   outSODE := calculateValues(inCache, inEnv, indexed_dlow);
   Debug.fcall("dumpindxdae", print, "dumpindxdae:\n");
   Debug.fcall("dumpindxdae", BackendDump.dump, outSODE); 
@@ -5662,7 +5663,7 @@ algorithm
     case (true,dae,funcs,m,mT,_,_,_,daeHandler)
       equation
         (sode,m,mT,v1,v2,comps) = transformDAE(dae,funcs,daeHandler,SOME(m),SOME(mT));
-        Debug.fcall("bltdump", BackendDump.bltdump, (sode,m,mT,v1,comps));
+        Debug.fcall("bltdump", BackendDump.bltdump, (sode,m,mT,v1,v2,comps));
       then
         (sode,m,mT,v1,v2,comps);
     case (false,dae,funcs,m,mT,v1,v2,comps,_)

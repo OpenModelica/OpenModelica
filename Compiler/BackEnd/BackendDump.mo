@@ -1422,7 +1422,7 @@ algorithm
   _:=
   match (inIntegerLstLst,inInteger)
     local
-      BackendDAE.Value ni,i_1,i;
+      BackendDAE.Value i_1,i;
       list<String> ls;
       String s;
       list<BackendDAE.Value> l;
@@ -1430,7 +1430,6 @@ algorithm
     case ({},_) then ();
     case ((l :: lst),i)
       equation
-        ni = BackendDAEEXT.getLowLink(i);
         print("{");
         ls = Util.listMap(l, intString);
         s = Util.stringDelimitList(ls, ", ");
@@ -1540,21 +1539,112 @@ end dumpStateVariable;
 
 public function bltdump
 "autor: Frenkel TUD 2011-03"
-  input tuple<BackendDAE.BackendDAE,BackendDAE.IncidenceMatrix,BackendDAE.IncidenceMatrix,array<Integer>,list<list<Integer>>> inTpl;
+  input tuple<BackendDAE.BackendDAE,BackendDAE.IncidenceMatrix,BackendDAE.IncidenceMatrix,array<Integer>,array<Integer>,list<list<Integer>>> inTpl;
 protected
   BackendDAE.BackendDAE ode;
   BackendDAE.IncidenceMatrix m;
   BackendDAE.IncidenceMatrix mT;
-  array<Integer> v1;  
+  array<Integer> v1,v2;  
   list<list<Integer>> comps;
 algorithm
-  (ode,m,mT,v1,comps) := inTpl;
+  (ode,m,mT,v1,v2,comps) := inTpl;
   print("bltdump:\n");
   dump(ode);
   dumpIncidenceMatrix(m);
   dumpIncidenceMatrixT(mT);
   dumpMatching(v1);  
-  dumpComponents(comps);
+  dumpComponentsAddvanced(comps,v2,ode);
 end bltdump;
+
+public function dumpComponentsAddvanced "function: dumpComponents
+  author: Frenkel TUD
+
+  Prints the blocks of the BLT sorting on stdout.
+"
+  input list<list<Integer>> l;
+  input array<Integer> v2;
+  input BackendDAE.BackendDAE ode;
+protected
+  BackendDAE.Variables vars;
+algorithm
+  print("Blocks\n");
+  print("=======\n");
+  vars := BackendVariable.daeVars(ode);
+  dumpComponentsAddvanced2(l, 1,v2,vars);
+end dumpComponentsAddvanced;
+
+protected function dumpComponentsAddvanced2 "function: dumpComponents2
+  author: PA
+
+  Helper function to dump_components.
+"
+  input list<list<Integer>> inIntegerLstLst;
+  input Integer inInteger;
+  input array<Integer> v2;
+  input BackendDAE.Variables vars;
+algorithm
+  _:=
+  match (inIntegerLstLst,inInteger,v2,vars)
+    local
+      BackendDAE.Value ni,i_1,i;
+      list<String> ls;
+      String s;
+      list<BackendDAE.Value> l;
+      list<list<BackendDAE.Value>> lst;
+    case ({},_,_,_) then ();
+    case ((l :: lst),i,v2,vars)
+      equation
+        print("{");
+        ls = Util.listMap(l, intString);
+        s = Util.stringDelimitList(ls, ", ");
+        print(s);
+        print("} ");        
+        dumpComponentsAddvanced3(l,v2,vars);
+        print("\n");        
+        i_1 = i + 1;
+        dumpComponentsAddvanced2(lst, i_1,v2,vars);
+      then
+        ();
+  end match;
+end dumpComponentsAddvanced2;
+
+protected function dumpComponentsAddvanced3 "function: dumpComponents2
+  author: PA
+
+  Helper function to dump_components.
+"
+  input list<Integer> inIntegerLst;
+  input array<Integer> v2;
+  input BackendDAE.Variables vars;
+algorithm
+  _:=
+  match (inIntegerLst,v2,vars)
+    local
+      BackendDAE.Value i,v;
+      list<String> ls;
+      String s;
+      list<BackendDAE.Value> l;
+      DAE.ComponentRef c;
+    case ({},_,_) then ();
+    case (i::{},v2,vars)
+      equation
+        v = v2[i];
+        BackendDAE.VAR(varName=c) = BackendVariable.getVarAt(vars,v);
+        s = ComponentReference.printComponentRefStr(c);
+        print(s);
+      then
+        ();
+    case (i::l,v2,vars)
+      equation
+        v = v2[i];
+        BackendDAE.VAR(varName=c) = BackendVariable.getVarAt(vars,v);
+        s = ComponentReference.printComponentRefStr(c);
+        print(s);
+        print(", ");
+        dumpComponentsAddvanced3(l,v2,vars);
+      then
+        ();
+  end match;
+end dumpComponentsAddvanced3;
 
 end BackendDump;
