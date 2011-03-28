@@ -473,8 +473,7 @@ function stringHashDjb2
 external "builtin";
 end stringHashDjb2;
 
-function stringHashDjb2Mod "Does hashing+modulo without intermediate results.
-If you have intermediate results you need to use absolute values, etc. It's a pain."
+function stringHashDjb2Mod "Does hashing+modulo without intermediate results."
   input String str;
   input Integer mod;
   output Integer hash;
@@ -608,7 +607,7 @@ function arrayUpdate<A>
   input array<A> arr;
   input Integer index;
   input A newValue;
-  output array<A> newArray "same as the input array; not really needed except to chain function calls";
+  output array<A> newArray "same as the input array; used for folding";
   annotation(__OpenModelica_Impure = true);
 external "builtin";
 end arrayUpdate;
@@ -635,12 +634,14 @@ external "builtin";
 end anyString;
 
 function printAny<A>
+  "print(anyString(a)), but to stderr"
   input A a;
   annotation(__OpenModelica_Impure = true);
 external "builtin";
 end printAny;
 
 function debug_print<A>
+  "For RML compatibility"
   input String str;
   input A a;
   annotation(__OpenModelica_Impure = true);
@@ -660,8 +661,8 @@ external "builtin";
 end equality;
 
 function setGlobalRoot<A>
-  "Sets the index of the root variable with index 0..1023. This is a global mutable
-  value and should be used sparingly.
+  "Sets the index of the root variable with index 0..1023.
+  This is a global mutable value and should be used sparingly.
   "
   input Integer index;
   input A value;
@@ -687,6 +688,7 @@ external "builtin";
 end valueSlots;
 
 function valueEq<A>
+  "Structural equality"
   input A a1;
   input A a2;
   output Boolean b;

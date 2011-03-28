@@ -522,4 +522,17 @@ extern char* System_unquoteIdentifier(char *str)
   return res;
 }
 
+extern char* System_getCurrentTimeStr()
+{
+  time_t t;
+  struct tm* localTime;
+  char * dateStr;
+  time( &t );
+  localTime = localtime(&t);
+  dateStr = asctime(localTime);
+  if (dateStr)
+    return dateStr;
+  MMC_THROW();
+}
+
 }
