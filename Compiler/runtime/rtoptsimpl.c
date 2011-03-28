@@ -247,8 +247,8 @@ static int set_preOptModules(const char *flagstr)
   int flag;
 
   if (len==0) {
-	preOptModulec = 0;
-	preOptModulestr = (char*)malloc(sizeof(char));
+    preOptModulec = 0;
+    preOptModulestr = (char*)malloc(sizeof(char));
     preOptModulestr = '\0';
     preOptModules = 0;
     preOptModule_set = 1;
@@ -297,8 +297,8 @@ static int set_pastOptModules(const char *flagstr)
   int flag;
 
   if (len==0) {
-	pastOptModulec = 0;
-	pastOptModulestr = (char*)malloc(sizeof(char));
+    pastOptModulec = 0;
+    pastOptModulestr = (char*)malloc(sizeof(char));
     pastOptModulestr = '\0';
     pastOptModules = 0;
     pastOptModule_set = 1;

@@ -205,18 +205,18 @@ extern modelica_metatype RTOpts_setPreOptModules(modelica_metatype modules) {
 
   while (MMC_GETHDR(modules) != MMC_NILHDR)
   {
-	modelica_metatype head = MMC_CAR(modules);
-	const char *module = MMC_STRINGDATA(head);
+  modelica_metatype head = MMC_CAR(modules);
+  const char *module = MMC_STRINGDATA(head);
     len=strlen(module);
     newmodulestr=(char*)malloc((alllen + len + 1)*sizeof(char));
     if (modulestr) strcpy(newmodulestr,modulestr);
     for (i=0;i<len;i++)
-    	newmodulestr[alllen + i] = module[i];
+      newmodulestr[alllen + i] = module[i];
     newmodulestr[alllen + len] = ',';
     alllen = alllen + len + 1;
     if (modulestr) free(modulestr);
     modulestr = newmodulestr;
-	 modules = MMC_CDR(modules);
+   modules = MMC_CDR(modules);
   }
   modulestr[alllen-1] = '\0';
   set_preOptModules(modulestr);
@@ -232,13 +232,13 @@ extern modelica_metatype RTOpts_setPastOptModules(modelica_metatype modules) {
 
   while (MMC_GETHDR(modules) != MMC_NILHDR)
   {
-	modelica_metatype head = MMC_CAR(modules);
-	const char *module = MMC_STRINGDATA(head);
+    modelica_metatype head = MMC_CAR(modules);
+    const char *module = MMC_STRINGDATA(head);
     len=strlen(module);
     newmodulestr=(char*)malloc((alllen + len + 1)*sizeof(char));
     if (modulestr) strcpy(newmodulestr,modulestr);
     for (i=0;i<len;i++)
-    	newmodulestr[alllen + i] = module[i];
+      newmodulestr[alllen + i] = module[i];
     newmodulestr[alllen + len] = ',';
     alllen = alllen + len + 1;
     if (modulestr) free(modulestr);
