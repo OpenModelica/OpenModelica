@@ -245,10 +245,9 @@ extern void* System_strtok(const char *str0, const char *delimit)
   return listReverse(res);
 }
 
-extern char* System_substring(const char *inStr, int start, int stop)
+extern char* System_substring(const char *str, int start, int stop)
 {
   static char* substring = NULL; // This function is not re-entrant... Note that the result will be overwritten at each call to substring...
-  char* str = strdup(inStr);
   int startIndex = start;
   int stopIndex = stop;
   int len1 = strlen(str);
@@ -258,17 +257,14 @@ extern char* System_substring(const char *inStr, int start, int stop)
   /* Check arguments */
   if ( startIndex < 1 )
   {
-    free(str);
     MMC_THROW();
   }
   if ( stopIndex == -999 )
   {
     stopIndex = startIndex;
   } else if ( stopIndex < startIndex ) {
-    free(str);
     MMC_THROW();
   } else if ( stopIndex > len1 ) {
-    free(str);
     MMC_THROW();
   }
 

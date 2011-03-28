@@ -3151,7 +3151,9 @@ case efn as EXTERNAL_FUNCTION(__) then
     <%funArgs |> VARIABLE(__) => '<%expTypeArrayIf(ty)%> <%contextCref(name,contextFunction)%>;' ;separator="\n"%>
     <%retType%> out;
     <%funArgs |> arg as VARIABLE(__) => readInVar(arg) ;separator="\n"%>
+    MMC_TRY_TOP()
     out = _<%fname%>(<%funArgs |> VARIABLE(__) => contextCref(name,contextFunction) ;separator=", "%>);
+    MMC_CATCH_TOP(return 1)
     <%outVars |> var as VARIABLE(__) hasindex i1 from 1 => writeOutVar(var, i1) ;separator="\n"%>
     return 0;
   }
@@ -4120,6 +4122,7 @@ match stmt
 case STMT_FOR(__) then
   let iterType = expType(type_, iterIsArray)
   let arrayType = expTypeArray(type_)
+
 
   let stmtStr = (statementLst |> stmt => 
     algStatement(stmt, context, &varDecls) ;separator="\n")

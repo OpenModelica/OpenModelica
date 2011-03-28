@@ -445,7 +445,7 @@ extern jmp_buf *mmc_jumper;
 #define MMC_THROW() longjmp(*mmc_jumper,1)
 
 #define MMC_TRY_TOP() MMC_TRY()
-#define MMC_CATCH_TOP(X) mmc_jumper = old_jumper;} else {mmc_jumper = old_jumper;X;}}
+#define MMC_CATCH_TOP(X) mmc_jumper = old_jumper;} else {mmc_jumper = old_jumper;mmc_GC_unwind_roots_state(mmc_GC_local_state);X;}}
 
 #else
 /* Old C++ try/catch/throw implementation */
