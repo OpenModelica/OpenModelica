@@ -1106,7 +1106,7 @@ extern void* SystemImpl__regex(const char* str, const char* re, int maxn, int ex
   lst = mk_nil();
   *nmatch = 0;
   if (!maxn)
-    (*nmatch)+= res == 0;
+    (*nmatch)+= res == 0 ? 1 : 0;
   else {
     if (maxn) {
       dup = strdup(str);

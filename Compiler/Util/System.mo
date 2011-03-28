@@ -113,7 +113,7 @@ public function regex "Fails and sets Error.mo if the regex does not compile.
   output Integer numMatches "0 means no match, else returns a number 1..maxMatches (1 if maxMatches<0)";
   output list<String> strs "This list has length = maxMatches. Substrings that did not match are filled with the empty string";
   
-  external "C" numMatches=System_regex(str,re,maxMatches,extended,sensitive,strs) annotation(Library = "omcruntime");
+  external "C" strs=System_regex(str,re,maxMatches,extended,sensitive,numMatches) annotation(Library = "omcruntime");
 end regex;
 
 public function strncmp

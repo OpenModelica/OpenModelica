@@ -1937,7 +1937,7 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(System__regex)
 {
-  int nmatch;
+  int nmatch = 0;
   rmlA1 = SystemImpl__regex(RML_STRINGDATA(rmlA0),RML_STRINGDATA(rmlA1),RML_UNTAGFIXNUM(rmlA2),RML_UNTAGFIXNUM(rmlA3),RML_UNTAGFIXNUM(rmlA4),&nmatch);
   rmlA0 = mk_icon(nmatch);
   if (rmlA1)

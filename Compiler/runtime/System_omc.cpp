@@ -245,9 +245,9 @@ extern void* System_strtok(const char *str0, const char *delimit)
   return listReverse(res);
 }
 
-extern void* System_substring(const char *inStr, int start, int stop)
+extern char* System_substring(const char *inStr, int start, int stop)
 {
-  char* substring = NULL;
+  static char* substring = NULL; // This function is not re-entrant... Note that the result will be overwritten at each call to substring...
   char* str = strdup(inStr);
   int startIndex = start;
   int stopIndex = stop;
@@ -258,7 +258,7 @@ extern void* System_substring(const char *inStr, int start, int stop)
   /* Check arguments */
   if ( startIndex < 1 )
   {
-  free(str);
+    free(str);
     MMC_THROW();
   }
   if ( stopIndex == -999 )
@@ -273,15 +273,13 @@ extern void* System_substring(const char *inStr, int start, int stop)
   }
 
   /* Allocate memory and copy string */
+  if (substring) free(substring);
   len2 = stopIndex - startIndex + 1;
   substring = (char*)malloc(len2);
   strncpy(substring, &str[startIndex-1], len2);
   substring[len2] = '\0';
 
-  res = mmc_mk_scon(substring);
-
-  free(substring);
-  return res;
+  return substring;
 }
 
 const char* System_getClassnamesForSimulation()
@@ -497,6 +495,7 @@ extern const char* System_getCorbaLibs()
 
 extern void* System_regex(const char* str, const char* re, int maxn, int extended, int sensitive, int *nmatch)
 {
+  *nmatch = 0;
   void *res = SystemImpl__regex(str,re,maxn,extended,sensitive,nmatch);
   if (res==NULL) MMC_THROW();
   return res;
@@ -522,17 +521,5 @@ extern char* System_unquoteIdentifier(char *str)
   if (res == NULL) return str;
   return res;
 }
-
-extern int System_intMaxLit()
-{
-  return (LONG_MAX / 2);
-}
-
-extern void* System_realMaxLit()
-{
-  return mmc_mk_rcon(DBL_MAX / 2048);
-}
-
-
 
 }
