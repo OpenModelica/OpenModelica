@@ -634,6 +634,22 @@ algorithm
   success := setCommandLineOptions("+d=" + debugFlags);
 end setDebugFlags;
 
+function setPreOptModules "example input: removeSimpleEquations,removeParameterEqns,expandDerOperator"
+  input String modules;
+  output Boolean success;
+  annotation(__OpenModelica_EarlyInline = true);
+algorithm
+  success := setCommandLineOptions("+preOptModules=" + modules);
+end setPreOptModules;
+
+function setPastOptModules "example input: lateInline,inlineArrayEqn,removeSimpleEquations,removeAliasEquations"
+  input String modules;
+  output Boolean success;
+  annotation(__OpenModelica_EarlyInline = true);
+algorithm
+  success := setCommandLineOptions("+pastOptModules=" + modules);
+end setPastOptModules;
+
 function setCommandLineOptions
   "The input is a regular command-line flag given to OMC, e.g. +d=failtrace or +g=MetaModelica"
   input String option;

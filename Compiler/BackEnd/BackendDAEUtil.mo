@@ -5675,6 +5675,13 @@ end checktransformDAE;
  * Optimisation Selection 
  ************************************************/
 
+public function getPreOptModulesString
+" function: getPreOptModulesString"
+  output list<String> strPreOptModules;
+algorithm
+ strPreOptModules := RTOpts.getPreOptModules({"removeSimpleEquations","removeParameterEqns","expandDerOperator"});        
+end getPreOptModulesString;
+
 protected function getPreOptModules
 " function: getPreOptModules"
   input Option<list<String>> ostrPreOptModules;
@@ -5697,11 +5704,18 @@ algorithm
           (BackendDAEOptimize.removeAliasEquations,"removeAliasEquations"),
           (BackendDAEOptimize.inlineArrayEqn,"inlineArrayEqn"),
           (BackendDAECreate.expandDerOperator,"expandDerOperator")};
- strPreOptModules := RTOpts.getPreOptModules({"removeSimpleEquations","removeParameterEqns","expandDerOperator"});        
+ strPreOptModules := getPreOptModulesString();        
  strPreOptModules := Util.getOptionOrDefault(ostrPreOptModules,strPreOptModules);
  preOptModules := selectOptModules(strPreOptModules,allPreOptModules,{});  
  preOptModules := listReverse(preOptModules);     
 end getPreOptModules;
+
+public function getPastOptModulesString
+" function: getPreOptModulesString"
+  output list<String> strPastOptModules;
+algorithm
+ strPastOptModules := RTOpts.getPastOptModules({"lateInline","removeSimpleEquations"});           
+end getPastOptModulesString;
 
 protected function getPastOptModules
 " function: getPastOptModules"
@@ -5732,7 +5746,7 @@ algorithm
   (BackendDAEOptimize.removeAliasEquationsPast,"removeAliasEquations"),
   (BackendDAEOptimize.inlineArrayEqnPast,"inlineArrayEqn"),
   (BackendDump.dumpComponentsGraphStr,"dumpComponentsGraphStr")};
-  strPastOptModules := RTOpts.getPastOptModules({"lateInline","removeSimpleEquations"});        
+  strPastOptModules := getPastOptModulesString();        
   strPastOptModules := Util.getOptionOrDefault(ostrPastOptModules,strPastOptModules);
   pastOptModules := selectOptModules(strPastOptModules,allPastOptModules,{}); 
   pastOptModules := listReverse(pastOptModules);     
