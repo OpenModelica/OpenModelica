@@ -1171,7 +1171,7 @@ static void pushTimerStack()
   }
 }
 
-static double popTimerStack()
+static void popTimerStack()
 {
   if (timerStackIdx >= 1)
   {

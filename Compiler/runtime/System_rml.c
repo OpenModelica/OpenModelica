@@ -1787,6 +1787,7 @@ RML_BEGIN_LABEL(System__setDataPort)
 {
   int port = RML_UNTAGFIXNUM(rmlA0);
   SystemImpl__setDataPort(port);
+  RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
