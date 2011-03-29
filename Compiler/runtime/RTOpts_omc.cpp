@@ -36,8 +36,6 @@ extern "C" {
 #include "rtoptsimpl.c"
 
 extern int showErrorMessages;
-extern const char* corbaSessionName;
-
 
 extern int RTOpts_debugFlag(const char* flag) {
   return check_debug_flag(flag)!=0;

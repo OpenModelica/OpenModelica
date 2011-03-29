@@ -98,8 +98,9 @@ int evaluateParametersInAnnotations = 0;
  * @date 2007-02-08
  * This variable is defined in corbaimpl.cpp and set
  * here by function setCorbaSessionName(char* name);
+ * Note: This has to be NULL in order to work properly
  */
-const char* corbaSessionName = "";
+char* corbaSessionName = 0;
 
 /*
  * adrpo 2008-11-28
@@ -368,7 +369,11 @@ int setCorbaSessionName(const char *name)
   if (len==0) return -1;
   if (0 == strcmp("mdt",name)) /* There is no MDT release that enables MetaModelica grammar */
     RTOpts_acceptedGrammar = GRAMMAR_METAMODELICA;
-  corbaSessionName = strdup(name);
+  if (corbaSessionName) free(corbaSessionName);
+  if (*name)
+    corbaSessionName = strdup(name);
+  else
+    corbaSessionName = NULL;
   return 0;
 }
 
