@@ -271,7 +271,7 @@ extern char* System_substring(const char *str, int start, int stop)
   /* Allocate memory and copy string */
   if (substring) free(substring);
   len2 = stopIndex - startIndex + 1;
-  substring = (char*)malloc(len2);
+  substring = (char*)malloc(len2+1);
   strncpy(substring, &str[startIndex-1], len2);
   substring[len2] = '\0';
 

@@ -150,7 +150,7 @@ RML_BEGIN_LABEL(System__substring)
 
   /* Allocate memory and copy string */
   len2 = stopIndex - startIndex + 1;
-  substring = (char*)malloc(len2);
+  substring = (char*)malloc(len2+1);
   strncpy(substring, &str[startIndex-1], len2);
   substring[len2] = '\0';
 
