@@ -276,42 +276,62 @@ void ModelicaTextHighlighter::initializeSettings()
     mHighlightingRules.append(rule);
 
     mQuotationFormat.setForeground(QColor(mpModelicaTextSettings->getQuotesRuleColor()));
-    rule.mPattern = QRegExp("\"([^\"]|\\\\\")*\"");
-    rule.mFormat = mQuotationFormat;
-    mHighlightingRules.append(rule);
 
-    mQuotesExpression = QRegExp("\"");
     mCommentStartExpression = QRegExp("/\\*");
     mCommentEndExpression = QRegExp("\\*/");
 }
 
-void ModelicaTextHighlighter::highlightMultiLine(const QString &text, QRegExp &startExpression, QRegExp &endExpression,
-                                                 QTextCharFormat &format)
+void ModelicaTextHighlighter::highlightMultiLine(const QString &text)
 {
-    int startIndex = 0;
-    if (previousBlockState() != 1)
-        startIndex = startExpression.indexIn(text);
+    /* Hand-written recognizer beats the crap known as QRegEx ;) */
+    int index = 0, startIndex = 0;
+    int blockState = previousBlockState();
+    // fprintf(stderr, "%s with blockState %d\n", text.toStdString().c_str(), blockState);
 
-    while (startIndex >= 0)
+    while (index < text.length())
     {
-        int endIndex = endExpression.indexIn(text, startIndex);
-        int textLength;
-        if (endIndex == -1)
-        {
-            setCurrentBlockState(1);
-            textLength = text.length() - startIndex;
+        switch (blockState) {
+        case 1:
+          if (text[index] == '*' && index+1<text.length() && text[index+1] == '/') {
+            index++;
+            setFormat(startIndex, index-startIndex+1, mMultiLineCommentFormat);
+            blockState = 0;
+          }
+          break;
+        case 2:
+          if (text[index] == '\\') {
+            index++;
+          } else if (text[index] == '"') {
+            setFormat(startIndex, index-startIndex+1, mQuotationFormat);
+            blockState = 0;
+          }
+          break;            
+        default:
+          if (text[index] == '/' && index+1<text.length() && text[index+1] == '*') {
+            startIndex = index++;
+            blockState = 1;
+          } else if (text[index] == '"') {
+            startIndex = index;
+            blockState = 2;
+          }
         }
-        else
-        {
-            textLength = endIndex - startIndex + endExpression.matchedLength();
-        }
-        setFormat(startIndex, textLength, format);
-        startIndex = startExpression.indexIn(text, startIndex + textLength);
+        index++;
+    }
+    switch (blockState) {
+    case 1:
+      setFormat(startIndex, text.length()-startIndex, mMultiLineCommentFormat);
+      setCurrentBlockState(1);
+      break;
+    case 2:
+      setFormat(startIndex, text.length()-startIndex, mQuotationFormat);
+      setCurrentBlockState(2);
+      break;
     }
 }
 
 void ModelicaTextHighlighter::highlightBlock(const QString &text)
 {
+    setCurrentBlockState(0);
     setFormat(0, text.length(), mpModelicaTextSettings->getTextRuleColor());
     foreach (const HighlightingRule &rule, mHighlightingRules)
     {
@@ -324,10 +344,7 @@ void ModelicaTextHighlighter::highlightBlock(const QString &text)
             index = expression.indexIn(text, index + length);
         }
     }
-    setCurrentBlockState(0);
-    highlightMultiLine(text, mCommentStartExpression, mCommentEndExpression, mMultiLineCommentFormat);
-//    setCurrentBlockState(0);
-//    highlightMultiLine(text, mQuotesExpression, mQuotesExpression, mQuotationFormat);
+    highlightMultiLine(text);
 }
 
 void ModelicaTextHighlighter::settingsChanged()

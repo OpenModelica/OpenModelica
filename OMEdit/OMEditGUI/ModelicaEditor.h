@@ -76,8 +76,7 @@ class ModelicaTextHighlighter : public QSyntaxHighlighter
 public:
     ModelicaTextHighlighter(ModelicaTextSettings *pSettings, QTextDocument *pParent = 0);
     void initializeSettings();
-    void highlightMultiLine(const QString &text, QRegExp &startExpression, QRegExp &endExpression,
-                            QTextCharFormat &format);
+    void highlightMultiLine(const QString &text);
 
     ModelicaTextSettings *mpModelicaTextSettings;
 protected:
@@ -90,9 +89,10 @@ private:
     };
     QVector<HighlightingRule> mHighlightingRules;
 
-    QRegExp mQuotesExpression;
     QRegExp mCommentStartExpression;
     QRegExp mCommentEndExpression;
+    QRegExp mStringStartExpression;
+    QRegExp mStringEndExpression;
 
     QTextCharFormat mKeywordFormat;
     QTextCharFormat mTypeFormat;
