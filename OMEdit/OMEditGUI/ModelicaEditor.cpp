@@ -276,7 +276,7 @@ void ModelicaTextHighlighter::initializeSettings()
     mHighlightingRules.append(rule);
 
     mQuotationFormat.setForeground(QColor(mpModelicaTextSettings->getQuotesRuleColor()));
-    rule.mPattern = QRegExp("\".*\"");
+    rule.mPattern = QRegExp("\"([^\"]|\\\\\")*\"");
     rule.mFormat = mQuotationFormat;
     mHighlightingRules.append(rule);
 
