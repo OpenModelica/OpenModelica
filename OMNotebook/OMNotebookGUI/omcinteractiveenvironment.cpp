@@ -227,6 +227,7 @@ namespace IAEX
       // 2006-03-14 AF, create qt process
       QProcess *omcProcess = new QProcess();
 
+      fprintf(stdout, "Starting omc: %s\n", omc.toStdString().c_str());
       // 2006-03-14 AF, start omc
       omcProcess->start( omc, parameters );
 
