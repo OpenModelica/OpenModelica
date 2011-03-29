@@ -40,11 +40,12 @@ ModelicaTextSettings::ModelicaTextSettings()
     //setFontFamily("Courier");
     setFontSize(10);
     setTextRuleColor("0, 0, 0");                // black
-    setKeywordRuleColor("255, 0, 0");           // red
-    setTypeRuleColor("0, 139, 0");              // dark green
+    setKeywordRuleColor("139, 0, 0");           // dark red
+    setTypeRuleColor("255, 10, 10");            // red
     setFunctionRuleColor("0, 0, 255");          // blue
-    setQuotesRuleColor("0, 139, 139");          // dark cyan
-    setCommentRuleColor("139, 0, 0");           // dark red
+    setQuotesRuleColor("0, 139, 0");            // dark green
+    setCommentRuleColor("0, 150, 0");           // dark green
+    setNumberRuleColor("139, 0, 139");          // purple
 }
 
 void ModelicaTextSettings::setFontFamily(QString fontFamily)
@@ -84,6 +85,20 @@ QColor ModelicaTextSettings::getTextRuleColor()
 void ModelicaTextSettings::setKeywordRuleColor(QString color)
 {
     mKeyWordRuleColor = color;
+}
+
+QColor ModelicaTextSettings::getNumberRuleColor()
+{
+    QStringList list = mNumberRuleColor.split(",", QString::SkipEmptyParts);
+    int red = static_cast<QString>(list.at(0)).trimmed().toInt();
+    int green = static_cast<QString>(list.at(1)).trimmed().toInt();
+    int blue = static_cast<QString>(list.at(2)).trimmed().toInt();
+    return QColor(red, green, blue);
+}
+
+void ModelicaTextSettings::setNumberRuleColor(QString color)
+{
+    mNumberRuleColor = color;
 }
 
 QColor ModelicaTextSettings::getKeywordRuleColor()
@@ -221,6 +236,9 @@ void OptionsWidget::readSettings(QString filePath)
         // CommentRule Element
         element = element.nextSiblingElement();
         mpModelicaTextSettings->setCommentRuleColor(element.attribute("value"));
+        // NumbersRule Element
+        element = element.nextSiblingElement();
+        mpModelicaTextSettings->setNumberRuleColor(element.attribute("value"));
     }
 }
 
@@ -293,6 +311,14 @@ void OptionsWidget::createSettings(QString filePath)
                                     .append(", ")
                                     .append(QString::number(mpModelicaTextSettings->getCommentRuleColor().blue())));
     highlightRulesElement.appendChild(commentRuleElement);
+    // create Number Rule Element
+    QDomElement numberRuleElement = xmlDocument.createElement("NumberRule");
+    numberRuleElement.setAttribute("value", QString::number(mpModelicaTextSettings->getNumberRuleColor().red())
+                                    .append(", ")
+                                    .append(QString::number(mpModelicaTextSettings->getNumberRuleColor().green()))
+                                    .append(", ")
+                                    .append(QString::number(mpModelicaTextSettings->getNumberRuleColor().blue())));
+    highlightRulesElement.appendChild(numberRuleElement);
 
     QFile settingsFile(filePath);
     settingsFile.open(QIODevice::WriteOnly);
@@ -462,6 +488,10 @@ void ModelicaTextEditorPage::addListItems()
     mpTextItem->setText(tr("Text"));
     mpTextItem->setForeground(mpParentOptionsWidget->mpModelicaTextSettings->getTextRuleColor());
 
+    mpNumberItem = new QListWidgetItem(mpItemsList);
+    mpNumberItem->setText(tr("Number"));
+    mpNumberItem->setForeground(mpParentOptionsWidget->mpModelicaTextSettings->getNumberRuleColor());
+
     mpKeywordItem = new QListWidgetItem(mpItemsList);
     mpKeywordItem->setText(tr("Keyword"));
     mpKeywordItem->setForeground(mpParentOptionsWidget->mpModelicaTextSettings->getKeywordRuleColor());
@@ -486,12 +516,15 @@ void ModelicaTextEditorPage::addListItems()
 QString ModelicaTextEditorPage::getPreviewText()
 {
     QString previewText;
-    previewText.append("class HelloWorld\n");
-    previewText.append("\tReal x(start = 1);\n");
-    previewText.append("\tparameter Real a = 1;\n");
-    previewText.append("equation\n");
-    previewText.append("\tder(x) = - a * x;\n");
-    previewText.append("end HelloWorld;\n");
+    previewText.append("class HelloWorld /* block\n"
+                       "comment */\n"
+                       "\tReal x(start = 1); // Line comment\n"
+                       "\tparameter Real a = 1.573;\n"
+                       "\tString str = \"a\\\"bc\n"
+                       "123\";\n"
+                       "equation\n"
+                       "\tder(x) = - a * x;\n"
+                       "end HelloWorld;\n");
 
     return previewText;
 }
@@ -522,6 +555,7 @@ void ModelicaTextEditorPage::initializeFields()
     mpPreviewTextBox->setText(getPreviewText());
     // update list items
     mpTextItem->setForeground(mpParentOptionsWidget->mpModelicaTextSettings->getTextRuleColor());
+    mpNumberItem->setForeground(mpParentOptionsWidget->mpModelicaTextSettings->getNumberRuleColor());
     mpKeywordItem->setForeground(mpParentOptionsWidget->mpModelicaTextSettings->getKeywordRuleColor());
     mpTypeItem->setForeground(mpParentOptionsWidget->mpModelicaTextSettings->getTypeRuleColor());
     mpFunctionItem->setForeground(mpParentOptionsWidget->mpModelicaTextSettings->getFunctionRuleColor());
@@ -573,6 +607,10 @@ void ModelicaTextEditorPage::pickColor()
     else if(item->text().toLower().compare("comment") == 0)
     {
         mpParentOptionsWidget->mpModelicaTextSettings->setCommentRuleColor(colorString);
+    }
+    else if(item->text().toLower().compare("number") == 0)
+    {
+        mpParentOptionsWidget->mpModelicaTextSettings->setNumberRuleColor(colorString);
     }
     // change the color of item
     item->setForeground(color);

@@ -225,16 +225,66 @@ void ModelicaTextHighlighter::initializeSettings()
 
     mKeywordFormat.setForeground(mpModelicaTextSettings->getKeywordRuleColor());
     QStringList keywordPatterns;
-    keywordPatterns << "\\balgorithm\\b" << "\\band\\b" << "\\bannotation\\b" << "\\bassert\\b" << "\\bbreak\\b"
-                    << "\\bBoolean\\b" << "\\bconnect\\b" <<"\\bconstant\\b" << "\\bconstrainedby\\b" << "\\bder\\b" << "\\bdiscrete\\b"
-                    << "\\beach\\b" << "\\belse\\b" << "\\belseif\\b" "\\belsewhen\\b" << "\\bencapsulated\\b"
-                    << "\\bend\\b" << "\\benumeration\\b" << "\\bequation\\b" << "\\bexpandable\\b" << "\\bextends\\b"
-                    << "\\bexternal\\b" << "\\bfalse\\b" << "\\bfinal\\b" << "\\bflow\\b" << "\\bfor\\b"
-                    << "\\bif\\b" << "\\bimport\\b" << "\\bin\\b" << "\\binitial\\b" << "\\binner\\b" << "\\binput\\b"
-                    << "\\bloop\\b" << "\\bnot\\b" << "\\boperator\\b" << "\\bor\\b" << "\\bouter\\b"
-                    << "\\boutput\\b" << "\\bpartial\\b" << "\\bpublic\\b" << "\\bReal\\b" << "\\bredeclare\\b"
-                    << "\\breplaceable\\b" << "\\breturn\\b" << "\\bstream\\b" << "\\bthen\\b" << "\\btrue\\b"
-                    << "\\bwhen\\b" << "\\bwhile\\b" << "\\bwithin\\b";
+    keywordPatterns << "\\balgorithm\\b"
+                    << "\\band\\b"
+                    << "\\bannotation\\b"
+                    << "\\bassert\\b"
+                    << "\\bblock\\b"
+                    << "\\bbreak\\b"
+                    << "\\bBoolean\\b"
+                    << "\\bclass\\b"
+                    << "\\bconnect\\b"
+                    << "\\bconnector\\b"
+                    << "\\bconstant\\b"
+                    << "\\bconstrainedby\\b"
+                    << "\\bder\\b"
+                    << "\\bdiscrete\\b"
+                    << "\\beach\\b"
+                    << "\\belse\\b"
+                    << "\\belseif\\b"
+                    << "\\belsewhen\\b"
+                    << "\\bencapsulated\\b"
+                    << "\\bend\\b"
+                    << "\\benumeration\\b"
+                    << "\\bequation\\b"
+                    << "\\bexpandable\\b"
+                    << "\\bextends\\b"
+                    << "\\bexternal\\b"
+                    << "\\bfalse\\b"
+                    << "\\bfinal\\b"
+                    << "\\bflow\\b"
+                    << "\\bfor\\b"
+                    << "\\bfunction\\b"
+                    << "\\bif\\b"
+                    << "\\bimport\\b"
+                    << "\\bin\\b"
+                    << "\\binitial\\b"
+                    << "\\binner\\b"
+                    << "\\binput\\b"
+                    << "\\bloop\\b"
+                    << "\\bmodel\\b"
+                    << "\\bnot\\b"
+                    << "\\boperator\\b"
+                    << "\\bor\\b"
+                    << "\\bouter\\b"
+                    << "\\boutput\\b"
+                    << "\\bpackage\\b"
+                    << "\\bparameter\\b"
+                    << "\\bpartial\\b"
+                    << "\\bprotected\\b"
+                    << "\\bpublic\\b"
+                    << "\\bReal\\b"
+                    << "\\brecord\\b"
+                    << "\\bredeclare\\b"
+                    << "\\breplaceable\\b"
+                    << "\\breturn\\b"
+                    << "\\bstream\\b"
+                    << "\\bthen\\b"
+                    << "\\btrue\\b"
+                    << "\\btype\\b"
+                    << "\\bwhen\\b"
+                    << "\\bwhile\\b"
+                    << "\\bwithin\\b";
     foreach (const QString &pattern, keywordPatterns)
     {
         rule.mPattern = QRegExp(pattern);
@@ -244,18 +294,11 @@ void ModelicaTextHighlighter::initializeSettings()
 
     mTypeFormat.setForeground(mpModelicaTextSettings->getTypeRuleColor());
     QStringList typePatterns;
-    typePatterns << "\\b" + StringHandler::getModelicaClassType(StringHandler::MODEL).toLower() + "\\b"
-                 << "\\b" + StringHandler::getModelicaClassType(StringHandler::CLASS).toLower() + "\\b"
-                 << "\\b" + StringHandler::getModelicaClassType(StringHandler::CONNECTOR).toLower() + "\\b"
-                 << "\\b" + StringHandler::getModelicaClassType(StringHandler::RECORD).toLower() + "\\b"
-                 << "\\b" + StringHandler::getModelicaClassType(StringHandler::BLOCK).toLower() + "\\b"
-                 << "\\b" + StringHandler::getModelicaClassType(StringHandler::FUNCTION).toLower() + "\\b"
-                 << "\\b" + StringHandler::getModelicaClassType(StringHandler::PACKAGE).toLower() + "\\b"
-                 << "\\b" + StringHandler::getModelicaClassType(StringHandler::PRIMITIVE).toLower() + "\\b"
-                 << "\\b" + StringHandler::getModelicaClassType(StringHandler::TYPE).toLower() + "\\b"
-                 << "\\b" + StringHandler::getModelicaClassType(StringHandler::PARAMETER).toLower() + "\\b"
-                 << "\\b" + StringHandler::getModelicaClassType(StringHandler::CONSTANT).toLower() + "\\b"
-                 << "\\b" + StringHandler::getModelicaClassType(StringHandler::PROTECTED).toLower() + "\\b";
+    typePatterns << "\\bString\\b"
+                 << "\\bInteger\\b"
+                 << "\\bBoolean\\b"
+                 << "\\bReal\\b"
+                 ;
     foreach (const QString &pattern, typePatterns)
     {
         rule.mPattern = QRegExp(pattern);
@@ -266,6 +309,11 @@ void ModelicaTextHighlighter::initializeSettings()
     mSingleLineCommentFormat.setForeground(mpModelicaTextSettings->getCommentRuleColor());
     rule.mPattern = QRegExp("//[^\n]*");
     rule.mFormat = mSingleLineCommentFormat;
+    mHighlightingRules.append(rule);
+
+    mNumberFormat.setForeground(mpModelicaTextSettings->getNumberRuleColor());
+    rule.mPattern = QRegExp("[0-9][0-9]*([.][0-9]*)?([eE][+-]?[0-9]*)?");
+    rule.mFormat = mNumberFormat;
     mHighlightingRules.append(rule);
 
     mMultiLineCommentFormat.setForeground(mpModelicaTextSettings->getCommentRuleColor());

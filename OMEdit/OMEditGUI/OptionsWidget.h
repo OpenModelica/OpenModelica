@@ -50,6 +50,8 @@ public:
     int getFontSize();
     void setTextRuleColor(QString color);
     QColor getTextRuleColor();
+    void setNumberRuleColor(QString color);
+    QColor getNumberRuleColor();
     void setKeywordRuleColor(QString color);
     QColor getKeywordRuleColor();
     void setTypeRuleColor(QString color);
@@ -64,6 +66,7 @@ private:
     QString mFontFamily;
     int mFontSize;
     QString mTextRuleColor;
+    QString mNumberRuleColor;
     QString mKeyWordRuleColor;
     QString mTypeRuleColor;
     QString mFunctionRuleColor;
@@ -124,6 +127,7 @@ private:
     QTextEdit *mpPreviewTextBox;
 
     QListWidgetItem *mpTextItem;
+    QListWidgetItem *mpNumberItem;
     QListWidgetItem *mpKeywordItem;
     QListWidgetItem *mpTypeItem;
     QListWidgetItem *mpFunctionItem;

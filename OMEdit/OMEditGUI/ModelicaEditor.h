@@ -100,6 +100,7 @@ private:
     QTextCharFormat mQuotationFormat;
     QTextCharFormat mSingleLineCommentFormat;
     QTextCharFormat mMultiLineCommentFormat;
+    QTextCharFormat mNumberFormat;
 public slots:
     void settingsChanged();
 };
