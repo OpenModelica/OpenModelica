@@ -39,13 +39,13 @@ ModelicaTextSettings::ModelicaTextSettings()
     setFontFamily(qApp->font().family());       // get system font
     //setFontFamily("Courier");
     setFontSize(10);
-    setTextRuleColor("0, 0, 0");                // black
-    setKeywordRuleColor("139, 0, 0");           // dark red
-    setTypeRuleColor("255, 10, 10");            // red
-    setFunctionRuleColor("0, 0, 255");          // blue
-    setQuotesRuleColor("0, 139, 0");            // dark green
-    setCommentRuleColor("0, 150, 0");           // dark green
-    setNumberRuleColor("139, 0, 139");          // purple
+    setTextRuleColor(QColor(0, 0, 0));                // black
+    setKeywordRuleColor(QColor(139, 0, 0));           // dark red
+    setTypeRuleColor(QColor(255, 10, 10));            // red
+    setFunctionRuleColor(QColor(0, 0, 255));          // blue
+    setQuotesRuleColor(QColor(0, 139, 0));            // dark green
+    setCommentRuleColor(QColor(0, 150, 0));           // dark green
+    setNumberRuleColor(QColor(139, 0, 139));          // purple
 }
 
 void ModelicaTextSettings::setFontFamily(QString fontFamily)
@@ -68,106 +68,78 @@ int ModelicaTextSettings::getFontSize()
     return mFontSize;
 }
 
-void ModelicaTextSettings::setTextRuleColor(QString color)
+void ModelicaTextSettings::setTextRuleColor(QColor color)
 {
     mTextRuleColor = color;
 }
 
 QColor ModelicaTextSettings::getTextRuleColor()
 {
-    QStringList list = mTextRuleColor.split(",", QString::SkipEmptyParts);
-    int red = static_cast<QString>(list.at(0)).trimmed().toInt();
-    int green = static_cast<QString>(list.at(1)).trimmed().toInt();
-    int blue = static_cast<QString>(list.at(2)).trimmed().toInt();
-    return QColor(red, green, blue);
+    return mTextRuleColor;
 }
 
-void ModelicaTextSettings::setKeywordRuleColor(QString color)
+void ModelicaTextSettings::setKeywordRuleColor(QColor color)
 {
     mKeyWordRuleColor = color;
 }
 
 QColor ModelicaTextSettings::getNumberRuleColor()
 {
-    QStringList list = mNumberRuleColor.split(",", QString::SkipEmptyParts);
-    int red = static_cast<QString>(list.at(0)).trimmed().toInt();
-    int green = static_cast<QString>(list.at(1)).trimmed().toInt();
-    int blue = static_cast<QString>(list.at(2)).trimmed().toInt();
-    return QColor(red, green, blue);
+    return mNumberRuleColor;
 }
 
-void ModelicaTextSettings::setNumberRuleColor(QString color)
+void ModelicaTextSettings::setNumberRuleColor(QColor color)
 {
     mNumberRuleColor = color;
 }
 
 QColor ModelicaTextSettings::getKeywordRuleColor()
 {
-    QStringList list = mKeyWordRuleColor.split(",", QString::SkipEmptyParts);
-    int red = static_cast<QString>(list.at(0)).trimmed().toInt();
-    int green = static_cast<QString>(list.at(1)).trimmed().toInt();
-    int blue = static_cast<QString>(list.at(2)).trimmed().toInt();
-    return QColor(red, green, blue);
+    return mKeyWordRuleColor;
 }
 
-void ModelicaTextSettings::setTypeRuleColor(QString color)
+void ModelicaTextSettings::setTypeRuleColor(QColor color)
 {
     mTypeRuleColor = color;
 }
 
 QColor ModelicaTextSettings::getTypeRuleColor()
 {
-    QStringList list = mTypeRuleColor.split(",", QString::SkipEmptyParts);
-    int red = static_cast<QString>(list.at(0)).trimmed().toInt();
-    int green = static_cast<QString>(list.at(1)).trimmed().toInt();
-    int blue = static_cast<QString>(list.at(2)).trimmed().toInt();
-    return QColor(red, green, blue);
+    return mTypeRuleColor;
 }
 
-void ModelicaTextSettings::setFunctionRuleColor(QString color)
+void ModelicaTextSettings::setFunctionRuleColor(QColor color)
 {
     mFunctionRuleColor = color;
 }
 
 QColor ModelicaTextSettings::getFunctionRuleColor()
 {
-    QStringList list = mFunctionRuleColor.split(",", QString::SkipEmptyParts);
-    int red = static_cast<QString>(list.at(0)).trimmed().toInt();
-    int green = static_cast<QString>(list.at(1)).trimmed().toInt();
-    int blue = static_cast<QString>(list.at(2)).trimmed().toInt();
-    return QColor(red, green, blue);
+    return mFunctionRuleColor;
 }
 
-void ModelicaTextSettings::setQuotesRuleColor(QString color)
+void ModelicaTextSettings::setQuotesRuleColor(QColor color)
 {
     mQuotesRuleColor = color;
 }
 
 QColor ModelicaTextSettings::getQuotesRuleColor()
 {
-    QStringList list = mQuotesRuleColor.split(",", QString::SkipEmptyParts);
-    int red = static_cast<QString>(list.at(0)).trimmed().toInt();
-    int green = static_cast<QString>(list.at(1)).trimmed().toInt();
-    int blue = static_cast<QString>(list.at(2)).trimmed().toInt();
-    return QColor(red, green, blue);
+    return mQuotesRuleColor;
 }
 
-void ModelicaTextSettings::setCommentRuleColor(QString color)
+void ModelicaTextSettings::setCommentRuleColor(QColor color)
 {
     mCommentRuleColor = color;
 }
 
 QColor ModelicaTextSettings::getCommentRuleColor()
 {
-    QStringList list = mCommentRuleColor.split(",", QString::SkipEmptyParts);
-    int red = static_cast<QString>(list.at(0)).trimmed().toInt();
-    int green = static_cast<QString>(list.at(1)).trimmed().toInt();
-    int blue = static_cast<QString>(list.at(2)).trimmed().toInt();
-    return QColor(red, green, blue);
+    return mCommentRuleColor;
 }
 
 OptionsWidget::OptionsWidget(MainWindow *pParent)
-    : QDialog(pParent, Qt::WindowTitleHint)
+    : QDialog(pParent, Qt::WindowTitleHint), settings(QSettings::IniFormat, QSettings::UserScope, "openmodelica", "editor")
 {
     mpParentMainWindow = pParent;
     mpModelicaTextSettings = new ModelicaTextSettings();
@@ -176,155 +148,32 @@ OptionsWidget::OptionsWidget(MainWindow *pParent)
     setModal(true);
 
     // get the settings from the xml file
-    getSettings();
+    readSettings();
     // set up the Options Dialog
     setUpDialog();
 }
 
-void OptionsWidget::getSettings()
+void OptionsWidget::readSettings()
 {
-    QString filePath = QString(qApp->applicationDirPath()).append("/").append(Helper::settingsFileName);
-    QFile settingsFile(filePath);
-    // check if the file exists, if it exists then get the settings
-    if (!settingsFile.exists())
-        createSettings(filePath);
-
-    readSettings(filePath);
-}
-
-void OptionsWidget::readSettings(QString filePath)
-{
-    QDomDocument xmlDocument;
-    QFile settingsFile(filePath);
-    settingsFile.open(QIODevice::ReadOnly);
-
-    if (!xmlDocument.setContent(&settingsFile))
-    {
-        settingsFile.close();
-        return;
-    }
-    settingsFile.close();
-
-    // parse the xml file
-    QDomNodeList modelicaTextNodes = xmlDocument.elementsByTagName("ModelicaText");
-    for (int i = 0 ; i < modelicaTextNodes.length() ; i++)
-    {
-        QDomElement modelicaTextElement = modelicaTextNodes.item(i).toElement();
-        // font family element
-        QDomElement element = modelicaTextElement.firstChildElement();
-        mpModelicaTextSettings->setFontFamily(element.attribute("value"));
-        // font size element
-        element = element.nextSiblingElement();
-        mpModelicaTextSettings->setFontSize(element.attribute("value").toInt());
-        // highlight rules element
-        element = element.nextSiblingElement();
-        // TextRule Element
-        element = element.firstChildElement();
-        mpModelicaTextSettings->setTextRuleColor(element.attribute("value"));
-        // KeywordRule Element
-        element = element.nextSiblingElement();
-        mpModelicaTextSettings->setKeywordRuleColor(element.attribute("value"));
-        // TypeRule Element
-        element = element.nextSiblingElement();
-        mpModelicaTextSettings->setTypeRuleColor(element.attribute("value"));
-        // FunctionRule Element
-        element = element.nextSiblingElement();
-        mpModelicaTextSettings->setFunctionRuleColor(element.attribute("value"));
-        // QuotesRule Element
-        element = element.nextSiblingElement();
-        mpModelicaTextSettings->setQuotesRuleColor(element.attribute("value"));
-        // CommentRule Element
-        element = element.nextSiblingElement();
-        mpModelicaTextSettings->setCommentRuleColor(element.attribute("value"));
-        // NumbersRule Element
-        element = element.nextSiblingElement();
-        mpModelicaTextSettings->setNumberRuleColor(element.attribute("value"));
-    }
-}
-
-void OptionsWidget::createSettings(QString filePath)
-{
-    //! @todo need to modify it because it can be accessed by to instances at the same time
-    QDomDocument xmlDocument;
-    // create root element
-    QDomElement rootElement = xmlDocument.createElement("root");
-    xmlDocument.appendChild(rootElement);
-    // create Modelica Text element
-    QDomElement modelicaTextElement = xmlDocument.createElement("ModelicaText");
-    rootElement.appendChild(modelicaTextElement);
-    // create Font Family Element
-    QDomElement fontFamilyElement = xmlDocument.createElement("FontFamily");
-    fontFamilyElement.setAttribute("value", mpModelicaTextSettings->getFontFamily());
-    modelicaTextElement.appendChild(fontFamilyElement);
-    // create Font Family Element
-    QDomElement fontSizeElement = xmlDocument.createElement("FontSize");
-    fontSizeElement.setAttribute("value", mpModelicaTextSettings->getFontSize());
-    modelicaTextElement.appendChild(fontSizeElement);
-    // create Highlight Rules Element
-    QDomElement highlightRulesElement = xmlDocument.createElement("HighlightRules");
-    modelicaTextElement.appendChild(highlightRulesElement);
-    // create Text Rule Element
-    QDomElement textRuleElement = xmlDocument.createElement("TextRule");
-    textRuleElement.setAttribute("value", QString::number(mpModelicaTextSettings->getTextRuleColor().red())
-                                 .append(", ")
-                                 .append(QString::number(mpModelicaTextSettings->getTextRuleColor().green()))
-                                 .append(", ")
-                                 .append(QString::number(mpModelicaTextSettings->getTextRuleColor().blue())));
-    highlightRulesElement.appendChild(textRuleElement);
-    // create Keyword Rule Element
-    QDomElement keywordRuleElement = xmlDocument.createElement("KeywordRule");
-    keywordRuleElement.setAttribute("value", QString::number(mpModelicaTextSettings->getKeywordRuleColor().red())
-                                    .append(", ")
-                                    .append(QString::number(mpModelicaTextSettings->getKeywordRuleColor().green()))
-                                    .append(", ")
-                                    .append(QString::number(mpModelicaTextSettings->getKeywordRuleColor().blue())));
-    highlightRulesElement.appendChild(keywordRuleElement);
-    // create Type Rule Element
-    QDomElement typeRuleElement = xmlDocument.createElement("TypeRule");
-    typeRuleElement.setAttribute("value", QString::number(mpModelicaTextSettings->getTypeRuleColor().red())
-                                 .append(", ")
-                                 .append(QString::number(mpModelicaTextSettings->getTypeRuleColor().green()))
-                                 .append(", ")
-                                 .append(QString::number(mpModelicaTextSettings->getTypeRuleColor().blue())));
-    highlightRulesElement.appendChild(typeRuleElement);
-    // create Function Rule Element
-    QDomElement functionRuleElement = xmlDocument.createElement("FunctionRule");
-    functionRuleElement.setAttribute("value", QString::number(mpModelicaTextSettings->getFunctionRuleColor().red())
-                                     .append(", ")
-                                     .append(QString::number(mpModelicaTextSettings->getFunctionRuleColor().green()))
-                                     .append(", ")
-                                     .append(QString::number(mpModelicaTextSettings->getFunctionRuleColor().blue())));
-    highlightRulesElement.appendChild(functionRuleElement);
-    // create Quotes Rule Element
-    QDomElement quotesRuleElement = xmlDocument.createElement("QuotesRule");
-    quotesRuleElement.setAttribute("value", QString::number(mpModelicaTextSettings->getQuotesRuleColor().red())
-                                   .append(", ")
-                                   .append(QString::number(mpModelicaTextSettings->getQuotesRuleColor().green()))
-                                   .append(", ")
-                                   .append(QString::number(mpModelicaTextSettings->getQuotesRuleColor().blue())));
-    highlightRulesElement.appendChild(quotesRuleElement);
-    // create Comment Rule Element
-    QDomElement commentRuleElement = xmlDocument.createElement("CommentRule");
-    commentRuleElement.setAttribute("value", QString::number(mpModelicaTextSettings->getCommentRuleColor().red())
-                                    .append(", ")
-                                    .append(QString::number(mpModelicaTextSettings->getCommentRuleColor().green()))
-                                    .append(", ")
-                                    .append(QString::number(mpModelicaTextSettings->getCommentRuleColor().blue())));
-    highlightRulesElement.appendChild(commentRuleElement);
-    // create Number Rule Element
-    QDomElement numberRuleElement = xmlDocument.createElement("NumberRule");
-    numberRuleElement.setAttribute("value", QString::number(mpModelicaTextSettings->getNumberRuleColor().red())
-                                    .append(", ")
-                                    .append(QString::number(mpModelicaTextSettings->getNumberRuleColor().green()))
-                                    .append(", ")
-                                    .append(QString::number(mpModelicaTextSettings->getNumberRuleColor().blue())));
-    highlightRulesElement.appendChild(numberRuleElement);
-
-    QFile settingsFile(filePath);
-    settingsFile.open(QIODevice::WriteOnly);
-    QTextStream textStream(&settingsFile);
-    textStream << xmlDocument.toString();
-    settingsFile.close();
+    settings.sync();
+    if (settings.contains("fontFamily"))
+      mpModelicaTextSettings->setFontFamily(settings.value("fontFamily").toString());
+    if (settings.contains("fontSize"))
+      mpModelicaTextSettings->setFontSize(settings.value("fontSize").toInt());
+    if (settings.contains("textRule/color"))
+      mpModelicaTextSettings->setTextRuleColor(QColor(settings.value("textRule/color").toUInt()));
+    if (settings.contains("keywordRule/color"))
+      mpModelicaTextSettings->setKeywordRuleColor(QColor(settings.value("keywordRule/color").toUInt()));
+    if (settings.contains("typeRule/color"))
+      mpModelicaTextSettings->setTypeRuleColor(QColor(settings.value("typeRule/color").toUInt()));
+    if (settings.contains("functionRule/color"))
+      mpModelicaTextSettings->setFunctionRuleColor(QColor(settings.value("functionRule/color").toUInt()));
+    if (settings.contains("quotesRule/color"))
+      mpModelicaTextSettings->setQuotesRuleColor(QColor(settings.value("quotesRule/color").toUInt()));
+    if (settings.contains("commentRule/color"))
+      mpModelicaTextSettings->setCommentRuleColor(QColor(settings.value("commentRule/color").toUInt()));
+    if (settings.contains("numberRule/color"))
+      mpModelicaTextSettings->setNumberRuleColor(QColor(settings.value("numberRule/color").toUInt()));
 }
 
 void OptionsWidget::setUpDialog()
@@ -392,8 +241,7 @@ void OptionsWidget::changePage(QListWidgetItem *current, QListWidgetItem *previo
 void OptionsWidget::reject()
 {
     // read the old settings from the file
-    QString filePath = QString(qApp->applicationDirPath()).append("/").append(Helper::settingsFileName);
-    readSettings(filePath);
+    readSettings();
     // set the fields back to default values
     dynamic_cast<ModelicaTextEditorPage*>(mpPagesWidget->widget(0))->initializeFields();
     QDialog::reject();
@@ -401,11 +249,16 @@ void OptionsWidget::reject()
 
 void OptionsWidget::saveSettings()
 {
-    // delete the settings file and create a new one
-    QString filePath = QString(qApp->applicationDirPath()).append("/").append(Helper::settingsFileName);
-    QFile::remove(filePath);
-    // create a new file now
-    createSettings(filePath);
+    settings.setValue("fontFamily",mpModelicaTextSettings->getFontFamily());
+    settings.setValue("fontSize",mpModelicaTextSettings->getFontSize());
+    settings.setValue("textRule/color",mpModelicaTextSettings->getTextRuleColor().rgba());
+    settings.setValue("keywordRule/color",mpModelicaTextSettings->getKeywordRuleColor().rgba());
+    settings.setValue("typeRule/color",mpModelicaTextSettings->getTypeRuleColor().rgba());
+    settings.setValue("functionRule/color",mpModelicaTextSettings->getFunctionRuleColor().rgba());
+    settings.setValue("quotesRule/color",mpModelicaTextSettings->getQuotesRuleColor().rgba());
+    settings.setValue("commentRule/color",mpModelicaTextSettings->getCommentRuleColor().rgba());
+    settings.setValue("numberRule/color",mpModelicaTextSettings->getNumberRuleColor().rgba());
+    settings.sync();
     // emit the signal so that all syntax highlighters are updated
     emit modelicaTextSettingsChanged();
     accept();
@@ -579,38 +432,34 @@ void ModelicaTextEditorPage::pickColor()
 {
     QColor color = QColorDialog::getColor();
     QListWidgetItem *item = mpItemsList->currentItem();
-    // convert color to rgb string
-    QString colorString = QString(QString::number(color.red())).append(", ")
-                                  .append(QString::number(color.green())).append(", ")
-                                  .append(QString::number(color.blue()));
     // if item is text item
     if (item->text().toLower().compare("text") == 0)
     {
-        mpParentOptionsWidget->mpModelicaTextSettings->setTextRuleColor(colorString);
+        mpParentOptionsWidget->mpModelicaTextSettings->setTextRuleColor(color);
     }
     else if (item->text().toLower().compare("keyword") == 0)
     {
-        mpParentOptionsWidget->mpModelicaTextSettings->setKeywordRuleColor(colorString);
+        mpParentOptionsWidget->mpModelicaTextSettings->setKeywordRuleColor(color);
     }
     else if(item->text().toLower().compare("type") == 0)
     {
-        mpParentOptionsWidget->mpModelicaTextSettings->setTypeRuleColor(colorString);
+        mpParentOptionsWidget->mpModelicaTextSettings->setTypeRuleColor(color);
     }
     else if(item->text().toLower().compare("function") == 0)
     {
-        mpParentOptionsWidget->mpModelicaTextSettings->setFunctionRuleColor(colorString);
+        mpParentOptionsWidget->mpModelicaTextSettings->setFunctionRuleColor(color);
     }
     else if(item->text().toLower().compare("quotes") == 0)
     {
-        mpParentOptionsWidget->mpModelicaTextSettings->setQuotesRuleColor(colorString);
+        mpParentOptionsWidget->mpModelicaTextSettings->setQuotesRuleColor(color);
     }
     else if(item->text().toLower().compare("comment") == 0)
     {
-        mpParentOptionsWidget->mpModelicaTextSettings->setCommentRuleColor(colorString);
+        mpParentOptionsWidget->mpModelicaTextSettings->setCommentRuleColor(color);
     }
     else if(item->text().toLower().compare("number") == 0)
     {
-        mpParentOptionsWidget->mpModelicaTextSettings->setNumberRuleColor(colorString);
+        mpParentOptionsWidget->mpModelicaTextSettings->setNumberRuleColor(color);
     }
     // change the color of item
     item->setForeground(color);

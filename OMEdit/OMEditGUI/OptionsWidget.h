@@ -48,30 +48,30 @@ public:
     QString getFontFamily();
     void setFontSize(int fontSize);
     int getFontSize();
-    void setTextRuleColor(QString color);
+    void setTextRuleColor(QColor color);
     QColor getTextRuleColor();
-    void setNumberRuleColor(QString color);
+    void setNumberRuleColor(QColor color);
     QColor getNumberRuleColor();
-    void setKeywordRuleColor(QString color);
+    void setKeywordRuleColor(QColor color);
     QColor getKeywordRuleColor();
-    void setTypeRuleColor(QString color);
+    void setTypeRuleColor(QColor color);
     QColor getTypeRuleColor();
-    void setFunctionRuleColor(QString color);
+    void setFunctionRuleColor(QColor color);
     QColor getFunctionRuleColor();
-    void setQuotesRuleColor(QString color);
+    void setQuotesRuleColor(QColor color);
     QColor getQuotesRuleColor();
-    void setCommentRuleColor(QString color);
+    void setCommentRuleColor(QColor color);
     QColor getCommentRuleColor();
 private:
     QString mFontFamily;
     int mFontSize;
-    QString mTextRuleColor;
-    QString mNumberRuleColor;
-    QString mKeyWordRuleColor;
-    QString mTypeRuleColor;
-    QString mFunctionRuleColor;
-    QString mQuotesRuleColor;
-    QString mCommentRuleColor;
+    QColor mTextRuleColor;
+    QColor mNumberRuleColor;
+    QColor mKeyWordRuleColor;
+    QColor mTypeRuleColor;
+    QColor mFunctionRuleColor;
+    QColor mQuotesRuleColor;
+    QColor mCommentRuleColor;
 };
 
 class OptionsWidget : public QDialog
@@ -79,9 +79,7 @@ class OptionsWidget : public QDialog
     Q_OBJECT
 public:
     OptionsWidget(MainWindow *pParent);
-    void getSettings();
-    void readSettings(QString filePath);
-    void createSettings(QString filePath);
+    void readSettings();
     void setUpDialog();
     void addListItems();
     void createPages();
@@ -95,6 +93,7 @@ public slots:
     void reject();
     void saveSettings();
 private:
+    QSettings settings;
     QListWidget *mpOptionsList;
     QStackedWidget *mpPagesWidget;
     QPushButton *mpCancelButton;
