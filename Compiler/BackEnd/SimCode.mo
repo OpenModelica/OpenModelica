@@ -4012,9 +4012,9 @@ algorithm
     local
       list<BackendDAE.Equation> eqn_lst,cont_eqn,disc_eqn;
       list<BackendDAE.Var> var_lst,cont_var,disc_var,var_lst_1,cont_var1;
-      BackendDAE.Variables vars_1,vars,knvars,exvars;
-      BackendDAE.AliasVariables av;
-      BackendDAE.EquationArray eqns_1,eqns,se,ie;
+      BackendDAE.Variables vars_1,vars,knvars,exvars,evars;
+      BackendDAE.AliasVariables av,ave;
+      BackendDAE.EquationArray eqns_1,eqns,se,ie,eeqns,eieqns;
       BackendDAE.BackendDAE cont_subsystem_dae,daelow,subsystem_dae,dlow; 
       Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac;
       BackendDAE.JacobianType jac_tp;
@@ -4144,7 +4144,11 @@ algorithm
         // is  twisted, simple reverse one list
         eqn_lst = listReverse(eqn_lst);        
         eqns_1 = BackendDAEUtil.listEquation(eqn_lst);
-        subsystem_dae = BackendDAE.DAE(vars_1,knvars,exvars,av,eqns_1,se,ie,ae1,al,ev,eoc) "not used" ;
+        ave = BackendDAEUtil.emptyAliasVariables();
+        evars = BackendDAEUtil.emptyVars();
+        eeqns = BackendDAEUtil.listEquation({});
+        eieqns = BackendDAEUtil.listEquation({});
+        subsystem_dae = BackendDAE.DAE(vars_1,evars,exvars,ave,eqns_1,eeqns,eieqns,ae1,al,ev,eoc);
         m = BackendDAEUtil.incidenceMatrix(subsystem_dae, BackendDAE.ABSOLUTE());
         mt = BackendDAEUtil.transposeMatrix(m);
         (v1,v2,subsystem_dae_1,m_2,mT_2) = BackendDAETransform.matchingAlgorithm(subsystem_dae, m, mt, (BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT(), BackendDAE.KEEP_SIMPLE_EQN()),DAEUtil.avlTreeNew());
@@ -4373,17 +4377,17 @@ algorithm
     (mixedEvent,genDiscrete,skipDiscInAlgorithm,inBackendDAE,inTplIntegerIntegerBackendDAEEquationLstOption,inJacobianType,block_,helpVarInfo)
     local
       Integer eqn_size;
-      BackendDAE.BackendDAE dae,d;
+      BackendDAE.BackendDAE dae,d,subsystem_dae,subsystem_dae_1,subsystem_dae_2;
       Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> optJac;
       BackendDAE.JacobianType jac_tp;
-      BackendDAE.Variables v,kv;
-      BackendDAE.EquationArray eqn;
+      BackendDAE.Variables v,kv,exvars,evars;
+      BackendDAE.EquationArray eqn,eeqns,eieqns;
       list<BackendDAE.Equation> eqn_lst;
       list<DAE.ComponentRef> crefs;
       array<BackendDAE.MultiDimEquation> ae;
+      BackendDAE.EventInfo ev;      
       list<SimEqSystem> resEqs;
       SimEqSystem equation_;
-      BackendDAE.BackendDAE subsystem_dae_1,subsystem_dae_2;
       array<Integer> v1,v2,v1_1,v2_1;
       BackendDAE.IncidenceMatrix m,m_2,m_3;
       BackendDAE.IncidenceMatrixT mt_1,mT_2,mT_3;
@@ -4399,6 +4403,8 @@ algorithm
       array<BackendDAE.MultiDimEquation> arrayEqs;
       Integer index;
       array< .DAE.Algorithm> algorithms;
+      BackendDAE.ExternalObjectClasses eoc;
+      BackendDAE.AliasVariables ave;
       
       // A single array equation
     case (mixedEvent,genDiscrete,skipDiscInAlgorithm,dae,optJac,jac_tp,block_,helpVarInfo)
@@ -4431,13 +4437,18 @@ algorithm
         // constant jacobians. Linear system of equations (A x = b) where
         // A and b are constants. TODO: implement symbolic gaussian elimination
         // here. Currently uses dgesv as for next case
-    case (mixedEvent,genDiscrete,skipDiscInAlgorithm,(d as BackendDAE.DAE(orderedVars = v,knownVars = kv,orderedEqs = eqn)),SOME(jac),BackendDAE.JAC_TIME_VARYING(),block_,helpVarInfo)
+    case (mixedEvent,genDiscrete,skipDiscInAlgorithm,(d as BackendDAE.DAE(orderedVars = v,knownVars = kv,orderedEqs = eqn,externalObjects=exvars,arrayEqs=ae,algorithms=algorithms,eventInfo=ev,extObjClasses=eoc)),SOME(jac),BackendDAE.JAC_TIME_VARYING(),block_,helpVarInfo)
       equation
         // check Relaxation
         true = RTOpts.debugFlag("relaxation");
         m = BackendDAEUtil.incidenceMatrix(d, BackendDAE.ABSOLUTE());
         mt_1 = BackendDAEUtil.transposeMatrix(m);
-        (v1,v2,subsystem_dae_1,m_2,mT_2) = BackendDAETransform.matchingAlgorithm(d, m, mt_1, (BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT(), BackendDAE.KEEP_SIMPLE_EQN()),DAEUtil.avlTreeNew());
+        ave = BackendDAEUtil.emptyAliasVariables();
+        evars = BackendDAEUtil.emptyVars();
+        eeqns = BackendDAEUtil.listEquation({});
+        eieqns = BackendDAEUtil.listEquation({});
+        subsystem_dae = BackendDAE.DAE(v,evars,exvars,ave,eqn,eeqns,eieqns,ae,algorithms,ev,eoc);
+        (v1,v2,subsystem_dae_1,m_2,mT_2) = BackendDAETransform.matchingAlgorithm(subsystem_dae, m, mt_1, (BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT(), BackendDAE.KEEP_SIMPLE_EQN()),DAEUtil.avlTreeNew());
         (comps) = BackendDAETransform.strongComponents(m_2, mT_2, v1,v2);
         (subsystem_dae_2,m_3,mT_3,v1_1,v2_1,comps_1,r,t) = BackendDAEOptimize.tearingSystem(subsystem_dae_1,m_2,mT_2,v1,v2,comps);
         true = listLength(r) > 0;

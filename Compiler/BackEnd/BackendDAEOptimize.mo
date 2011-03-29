@@ -2000,7 +2000,7 @@ algorithm
       DAE.Ident ident,ident_t;
       BackendDAE.VariableArray varr;
       BackendDAE.Value nvars,neqns,memsize;
-      BackendDAE.Variables ordvars,vars_1,knvars,exobj,ordvars1;
+      BackendDAE.Variables ordvars,vars_1,knvars,exobj,ordvars1,vararray;
       BackendDAE.AliasVariables av;
       BackendDAE.Assignments assign1,assign2,ass1,ass2;
       BackendDAE.EquationArray eqns, eqns_1, eqns_2,remeqns,inieqns,eqns1,eqns1_1,eqns1_2;
@@ -2017,7 +2017,8 @@ algorithm
     
     case (dlow,dlow1,m,mT,v1,v2,comp,vars,exclude,residualeqn,residualeqns,tearingvars,tearingeqns,crlst)
       equation
-        (tearingvar,_) = getMaxfromListList(mT,vars,comp,0,0,exclude);
+        vararray = BackendVariable.daeVars(dlow);
+        (tearingvar,_) = getMaxfromListListVar(mT,vars,comp,0,0,exclude,vararray);
         // check if tearing var is found
         true = tearingvar > 0;
         str = intString(tearingvar);
@@ -2250,6 +2251,59 @@ algorithm
         (en_2,v2);
   end matchcontinue;
 end getMaxfromListList;
+
+protected function getMaxfromListListVar
+" function: getMaxfromArrayListVar
+  same as getMaxfromListList but prefers states."
+  input BackendDAE.IncidenceMatrixT inM;
+  input list<BackendDAE.Value> inLst;
+  input list<BackendDAE.Value> inComp;
+  input BackendDAE.Value inMax;
+  input BackendDAE.Value inEqn;
+  input list<BackendDAE.Value> inExclude;
+  input BackendDAE.Variables inVars;
+  output BackendDAE.Value outEqn;
+  output BackendDAE.Value outMax;
+algorithm
+  (outEqn,outMax):=
+  matchcontinue (inM,inLst,inComp,inMax,inEqn,inExclude,inVars)
+    local
+      BackendDAE.IncidenceMatrixT m;
+      list<BackendDAE.Value> rest,eqn,eqn_1,eqn_2,eqn_3,comp,exclude;
+      BackendDAE.Value v,v1,v2,max,max_1,en,en_1,en_2;
+      BackendDAE.Variables vars;
+      BackendDAE.Var var;
+      Boolean b;
+      Integer si;
+    case (m,{},comp,max,en,exclude,_) then (en,max);
+    case (m,v::rest,comp,max,en,exclude,vars)
+      equation
+        (en_1,max_1) = getMaxfromListListVar(m,rest,comp,max,en,exclude,vars);
+        true = v > 0;
+        false = Util.listContains(v,exclude);
+        eqn = m[v];
+        // remove negative
+        eqn_1 = BackendDAEUtil.removeNegative(eqn);
+        // select entries
+        eqn_2 = Util.listSelect1(eqn_1,comp,Util.listContains);
+        // remove multiple entries
+        eqn_3 = removeMultiple(eqn_2);
+        // check if state or state der and prefer them
+        var = BackendVariable.getVarAt(vars,v);
+        b = BackendVariable.isStateorStateDerVar(var);
+        si = Util.if_(b,listLength(comp),0);
+        v1 = listLength(eqn_3)+si;
+        v2 = intMax(v1,max_1);
+        en_2 = Util.if_(v1>max_1,v,en_1);
+      then
+        (en_2,v2);
+    case (m,v::rest,comp,max,en,exclude,vars)
+      equation
+        (en_2,v2) = getMaxfromListListVar(m,rest,comp,max,en,exclude,vars);
+      then
+        (en_2,v2);
+  end matchcontinue;
+end getMaxfromListListVar;
 
 protected function removeMultiple
 " function: removeMultiple

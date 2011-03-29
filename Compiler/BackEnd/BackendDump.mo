@@ -249,6 +249,32 @@ algorithm
   end match;
 end printEquation;
 
+public function dumpEquation "function: dumpEquation
+  author: Frenkel TUD
+
+"
+  input BackendDAE.Equation inEquation;
+algorithm
+  _:=
+  match (inEquation)
+    local
+      String s1,s2,res;
+      DAE.Exp e1,e2;
+      DAE.ComponentRef cr;
+      BackendDAE.WhenEquation w;
+    case (BackendDAE.EQUATION(exp = e1,scalar = e2))
+      equation
+        ExpressionDump.dumpExp(e1);
+        print("=\n");
+        ExpressionDump.dumpExp(e2);
+      then
+        ();
+    case (_)
+      then
+        ();
+  end match;
+end dumpEquation;
+
 protected function printVarsStatistics "function: printVarsStatistics
   author: PA
 
@@ -1625,22 +1651,35 @@ algorithm
       String s;
       list<BackendDAE.Value> l;
       DAE.ComponentRef c;
+      BackendDAE.Var var;
+      Boolean b;
     case ({},_,_) then ();
     case (i::{},v2,vars)
       equation
         v = v2[i];
-        BackendDAE.VAR(varName=c) = BackendVariable.getVarAt(vars,v);
+        var = BackendVariable.getVarAt(vars,v);
+        c = BackendVariable.varCref(var);
+        b = BackendVariable.isStateVar(var);
+        s = Util.if_(b,"der(","");
+        print(s);
         s = ComponentReference.printComponentRefStr(c);
+        print(s);
+        s = Util.if_(b,")","");
         print(s);
       then
         ();
     case (i::l,v2,vars)
       equation
         v = v2[i];
-        BackendDAE.VAR(varName=c) = BackendVariable.getVarAt(vars,v);
+        var = BackendVariable.getVarAt(vars,v);
+        c = BackendVariable.varCref(var);
+        b = BackendVariable.isStateVar(var);
+        s = Util.if_(b,"der(","");
+        print(s);
         s = ComponentReference.printComponentRefStr(c);
         print(s);
-        print(", ");
+        s = Util.if_(b,"der(","");
+        print(s);
         dumpComponentsAddvanced3(l,v2,vars);
       then
         ();

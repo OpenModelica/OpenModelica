@@ -587,8 +587,7 @@ algorithm
   match (inVar)
     local
       DAE.ComponentRef cr;
-      DAE.Flow flowPrefix;
-    case (BackendDAE.VAR(varName = cr,flowPrefix = flowPrefix)) then cr;
+    case (BackendDAE.VAR(varName = cr)) then cr;
   end match;
 end varCref;
 
@@ -662,11 +661,27 @@ public function isDummyStateVar
   output Boolean outBoolean;
 algorithm
   outBoolean:=
-  matchcontinue (inVar)
+  match (inVar)
     case (BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE())) then true;
-    case (_) then false;
-  end matchcontinue;
+  else
+   then false;
+  end match;
 end isDummyStateVar;
+
+public function isStateorStateDerVar
+"function: isStateorStateDerVar
+  Returns true for state and der(state) variables, false otherwise."
+  input BackendDAE.Var inVar;
+  output Boolean outBoolean;
+algorithm
+  outBoolean:=
+  match (inVar)
+    case (BackendDAE.VAR(varKind = BackendDAE.STATE())) then true;
+    case (BackendDAE.VAR(varKind = BackendDAE.STATE_DER())) then true;
+  else
+   then false;
+  end match;
+end isStateorStateDerVar;
 
 public function isVarDiscrete
 " This functions checks if BackendDAE.Var is discrete"
