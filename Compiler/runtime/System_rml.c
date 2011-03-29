@@ -1679,13 +1679,6 @@ RML_BEGIN_LABEL(System__realtimeTock)
 }
 RML_END_LABEL
 
-#define TIMER_MAX_STACK  1000
-double timerIntervalTime = 0;
-double timerCummulatedTime = 0;
-double timerTime = 0;
-long int timerStackIdx = 0;
-double timerStack[TIMER_MAX_STACK] = {0};
-
 RML_BEGIN_LABEL(System__resetTimer)
 {
   /* reset the timer */
@@ -1696,36 +1689,6 @@ RML_BEGIN_LABEL(System__resetTimer)
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
-
-void pushTimerStack()
-{
-  if (timerStackIdx < TIMER_MAX_STACK)
-  {
-    timerStack[timerStackIdx] = rt_tock(RT_CLOCK_SPECIAL_STOPWATCH);
-    /* increase the stack */
-    timerStackIdx++;
-  }
-  else
-  {
-    fprintf(stderr, "System.pushStartTime -> timerStack overflow %ld\n", timerStackIdx);
-  }
-}
-
-double popTimerStack()
-{
-  if (timerStackIdx >= 1)
-  {
-    /* how much time passed since we last called startTime? */
-    timerIntervalTime = rt_tock(RT_CLOCK_SPECIAL_STOPWATCH) - timerStack[timerStackIdx-1];
-    timerCummulatedTime += timerIntervalTime;
-    /* decrease the stack */
-    timerStackIdx--;
-  }
-  else
-  {
-    fprintf(stderr, "System.popStartTime -> timerStack underflow %ld\n", timerStackIdx);
-  }
-}
 
 RML_BEGIN_LABEL(System__startTimer)
 {

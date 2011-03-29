@@ -531,4 +531,38 @@ extern char* System_getCurrentTimeStr()
   MMC_THROW();
 }
 
+void System_resetTimer()
+{
+  /* reset the timer */
+  timerIntervalTime = 0;
+  timerCummulatedTime = 0;
+  timerTime = 0;
+  timerStackIdx = 0;
+}
+
+void System_startTimer()
+{
+  /* start the timer if not already started */
+  if (!timerStackIdx)
+  {
+    rt_tick(RT_CLOCK_SPECIAL_STOPWATCH);
+  }
+  pushTimerStack();
+}
+
+void System_stopTimer()
+{
+  popTimerStack();
+}
+
+double System_getTimerIntervalTime()
+{
+  return timerIntervalTime;
+}
+
+double System_getTimerCummulatedTime()
+{
+  return timerCummulatedTime;
+}
+
 }

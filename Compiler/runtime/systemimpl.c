@@ -1150,6 +1150,43 @@ char* SystemImpl__unquoteIdentifier(const char* str)
   return res;
 }
 
+#define TIMER_MAX_STACK  1000
+static double timerIntervalTime = 0;
+static double timerCummulatedTime = 0;
+static double timerTime = 0;
+static long int timerStackIdx = 0;
+static double timerStack[TIMER_MAX_STACK] = {0};
+
+static void pushTimerStack()
+{
+  if (timerStackIdx < TIMER_MAX_STACK)
+  {
+    timerStack[timerStackIdx] = rt_tock(RT_CLOCK_SPECIAL_STOPWATCH);
+    /* increase the stack */
+    timerStackIdx++;
+  }
+  else
+  {
+    fprintf(stderr, "System.pushStartTime -> timerStack overflow %ld\n", timerStackIdx);
+  }
+}
+
+static double popTimerStack()
+{
+  if (timerStackIdx >= 1)
+  {
+    /* how much time passed since we last called startTime? */
+    timerIntervalTime = rt_tock(RT_CLOCK_SPECIAL_STOPWATCH) - timerStack[timerStackIdx-1];
+    timerCummulatedTime += timerIntervalTime;
+    /* decrease the stack */
+    timerStackIdx--;
+  }
+  else
+  {
+    fprintf(stderr, "System.popStartTime -> timerStack underflow %ld\n", timerStackIdx);
+  }
+}
+
 #ifdef __cplusplus
 }
 #endif
