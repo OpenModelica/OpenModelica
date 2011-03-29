@@ -282,11 +282,11 @@ static int set_preOptModules(const char *flagstr)
   preOptModulec=flagc;
   preOptModule_set = 1;
 
-
+  /*
   for (i=0; i<preOptModulec; i++) {
     printf("\n%d=%s\n",i,preOptModules[i]);
   }
-
+  */
   return 0;
 }
 
