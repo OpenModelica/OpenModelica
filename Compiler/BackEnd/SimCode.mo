@@ -90,6 +90,7 @@ protected import SCodeUtil;
 protected import SimCodeC;
 protected import SimCodeCSharp;
 protected import SimCodeFMU;
+protected import SimCodeQSS;
 protected import Util;
 protected import Debug;
 protected import Error;
@@ -2666,11 +2667,18 @@ algorithm
     case (simCode)
       equation
         true = RTOpts.debugFlag("CSharp");
+        Debug.print("Generating QSS solver codOOe\n");
         Tpl.tplNoret(SimCodeCSharp.translateModel, simCode);
       then ();
     case (simCode)
       equation
-        false = RTOpts.debugFlag("CSharp");
+        true = RTOpts.debugFlag("QSS");
+        Debug.print("Generating QSS solver code\n");
+        Tpl.tplNoret(SimCodeQSS.translateModel, simCode);
+      then ();
+    case (simCode)
+      equation
+        false = RTOpts.debugFlag("CSharp") and RTOpts.debugFlag("QSS");
         Tpl.tplNoret(SimCodeC.translateModel, simCode);
       then ();
   end matchcontinue;

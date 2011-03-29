@@ -96,6 +96,7 @@ BackendDAEOptimize.mo \
 BackendDAETransform.mo \
 BackendDAEUtil.mo \
 BackendDump.mo \
+BackendQSS.mo \
 BackendEquation.mo \
 BackendVarTransform.mo \
 BackendVariable.mo \
@@ -117,6 +118,7 @@ TplCodegen.mo \
 TplMain.mo \
 TplParser.mo \
 Unparsing.mo \
+SimCodeQSS.mo \
 # CompiledTemplates.mo \
 # TemplCG.mo
 
