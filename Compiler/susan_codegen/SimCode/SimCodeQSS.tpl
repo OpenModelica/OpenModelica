@@ -1,3 +1,8 @@
+// This file defines templates for transforming Modelica/MetaModelica code to C++
+// code needed to use the QSS solvers for simulation
+//
+// Authors: Federico Bergero & Xenofon Floros
+// April 2011
 // This file defines templates for transforming Modelica/MetaModelica code to C
 // code. They are used in the code generator phase of the compiler to write
 // target code.
@@ -112,8 +117,7 @@ case SIMCODE(__) then
 end simulationFile;
 
 template functionQssSample2(list<ZeroCrossing> zeroCrossings, Text &varDecls /*BUFP*/)
- "Generates code for zero crossings. 
- Author: fbergero"
+ "Generates code for zero crossings."
 ::=
 
   (zeroCrossings |> ZERO_CROSSING(relation_ = CALL(path=IDENT(name="sample"), expLst={start, interval})) hasindex i0 =>
@@ -122,8 +126,7 @@ template functionQssSample2(list<ZeroCrossing> zeroCrossings, Text &varDecls /*B
 end functionQssSample2;
 
 template functionQssSample3(Integer index1, Exp start, Exp interval, Text &varDecls /*BUFP*/)
- "Generates code for a zero crossing. 
- Author: fbergero"
+ "Generates code for a zero crossing."
 ::=
     let &preExp = buffer "" /*BUFD*/
     let e1 = SimCodeC.daeExp(start, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/)
@@ -138,8 +141,7 @@ template functionQssSample3(Integer index1, Exp start, Exp interval, Text &varDe
 end functionQssSample3;
 
 template functionQssSample(list<ZeroCrossing> zeroCrossings)
-  "Generates function in simulation file. 
-	Author: fbergero"
+  "Generates function in simulation file."
 ::=
   let &varDecls = buffer "" /*BUFD*/
   let sampleCode = functionQssSample2(zeroCrossings, &varDecls /*BUFD*/) 
@@ -159,20 +161,17 @@ template functionQssSample(list<ZeroCrossing> zeroCrossings)
 end functionQssSample;
 
 template functionQssWhen(list<SimWhenClause> whenClauses, list<HelpVarInfo> helpVars)
-  "Generates function in simulation file. 
-	Author: fbergero"
+  "Generates function in simulation file."
 ::=
   let &varDecls = buffer "" /*BUFD*/
-  let whenCode = functionQssWhen2(whenClauses,helpVars, &varDecls /*BUFD*/) 
   <<
-  bool functionQssWhen(unsigned int whenIndex, double *in, double *out)
+  bool functionQssWhen(unsigned int whenIndex, double *out)
   {
     state mem_state;
     <%varDecls%>
     mem_state = get_memory_state();
     switch (whenIndex)
     {
-      <%whenCode%>
     }
     restore_memory_state(mem_state);
   }
@@ -180,46 +179,6 @@ template functionQssWhen(list<SimWhenClause> whenClauses, list<HelpVarInfo> help
 end functionQssWhen;
 
 
-template functionQssWhen2(list<SimWhenClause> whenClauses, list<HelpVarInfo> helpVars, Text &varDecls /*BUFD*/) 
-  "Generate code for each when clause 
-	Author: fbergero"
-::=
-  (whenClauses |> SIM_WHEN_CLAUSE(conditions= conds) hasindex i0 =>
-    functionQssWhen3(i0, conds, &varDecls /*BUFD*/)
-  ;separator="\n")
-end functionQssWhen2;
-
-template functionQssWhen3(Integer index1, list<tuple<DAE.Exp, Integer>> cond, Text &varDecls /*BUFP*/)
- "Generates code for a zero crossing 
- Author: fbergero."
-::=
-    let &preExp = buffer "" /*BUFD*/
-	  let &helpInits = buffer "" /*BUFD*/
-  	let helpIf = (cond |> (e, hidx) =>
-      let helpInit = SimCodeC.daeExp(e, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-      let &helpInits += 'localData->helpVars[<%hidx%>] = <%helpInit%>;'
-      'edge(localData->helpVars[<%hidx%>])'
-    ;separator=" || ")  
- 
-    <<
-    case <% index1 %>:
-      <%preExp%>
-      #ifdef _OMC_OMPD
-      p = in[0];
-      p = in[2];
-      p = in[1];
-      #endif 
-      <%helpInits%>
-      if (<%helpIf%>) {
-      } else {
-      }
-      #ifdef _OMC_OMPD
-      out[0] = 1;;
-      out[0] = 2;;
-      #endif 
-      break;
-    >>
-end functionQssWhen3;
 
 end SimCodeQSS;
 

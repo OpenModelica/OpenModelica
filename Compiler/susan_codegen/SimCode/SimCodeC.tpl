@@ -6,7 +6,7 @@
 // translateModel and translateFunctions. These templates do not return any
 // result but instead write the result to files. All other templates return
 // text and are used by the root templates (most of them indirectly).
-//
+// 
 // To future maintainers of this file:
 //
 // - A line like this

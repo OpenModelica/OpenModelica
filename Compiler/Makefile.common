@@ -111,6 +111,7 @@ XMLDump.mo
 TEMPLATE = \
 SimCodeC.mo \
 SimCodeCSharp.mo \
+SimCodeQSS.mo \
 SimCodeFMU.mo \
 Tpl.mo \
 TplAbsyn.mo \
@@ -118,7 +119,6 @@ TplCodegen.mo \
 TplMain.mo \
 TplParser.mo \
 Unparsing.mo \
-SimCodeQSS.mo \
 # CompiledTemplates.mo \
 # TemplCG.mo
 

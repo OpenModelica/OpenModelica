@@ -2667,7 +2667,6 @@ algorithm
     case (simCode)
       equation
         true = RTOpts.debugFlag("CSharp");
-        Debug.print("Generating QSS solver codOOe\n");
         Tpl.tplNoret(SimCodeCSharp.translateModel, simCode);
       then ();
     case (simCode)
