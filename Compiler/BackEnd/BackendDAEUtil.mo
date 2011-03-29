@@ -5704,6 +5704,7 @@ algorithm
           (BackendDAEOptimize.removeParameterEqns,"removeParameterEqns"),
           (BackendDAEOptimize.removeAliasEquations,"removeAliasEquations"),
           (BackendDAEOptimize.inlineArrayEqn,"inlineArrayEqn"),
+          (BackendDAEOptimize.removeProtectedParameters,"removeProtectedParameters"),
           (BackendDAECreate.expandDerOperator,"expandDerOperator")};
  strPreOptModules := getPreOptModulesString();        
  strPreOptModules := Util.getOptionOrDefault(ostrPreOptModules,strPreOptModules);

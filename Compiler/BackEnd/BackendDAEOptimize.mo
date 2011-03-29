@@ -739,6 +739,12 @@ algorithm
         DAE.Exp e;
         DAE.ExpType t;
         DAE.ElementSource src "the element source";
+      // a = der(b);
+      case (BackendDAE.EQUATION(e1 as DAE.CREF(componentRef = _),e2 as  DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = _)}),src),swap)
+        equation
+          true = RTOpts.eliminationLevel() > 0;
+          true = RTOpts.eliminationLevel() <> 3;
+        then (e1,e2,src);
       // a = b;
       case (BackendDAE.EQUATION(e1 as DAE.CREF(componentRef = _),e2 as  DAE.CREF(componentRef = _),src),swap)
         equation
@@ -1418,6 +1424,7 @@ algorithm
         ((_,(false,_,_))) = Expression.traverseExpTopDown(e2, traversingParameterEqnsFinder, (false,v,kn));
         cre = Expression.crefExp(cr);
         (es,{}) = ExpressionSolve.solve(e1,e2,cre);
+        false = Expression.isConst(es);
         // set kind to PARAM
         // do not set varKind because of simulation results
         //var1 = BackendVariable.setVarKind(var,BackendDAE.PARAM);
@@ -1548,6 +1555,88 @@ algorithm
     then m1;
   end match;
 end removeVarfromIncidenceMatrix;
+
+/*  
+ * remove protected paramters stuff 
+ */ 
+
+public function removeProtectedParameters
+"function: removeProtectedParameters
+  autor Frenkel TUD"
+  input BackendDAE.BackendDAE inDAE;
+  input DAE.FunctionTree inFunctionTree;
+  input Option<BackendDAE.IncidenceMatrix> inM;
+  input Option<BackendDAE.IncidenceMatrix> inMT;
+  output BackendDAE.BackendDAE outDAE;
+  output Option<BackendDAE.IncidenceMatrix> outM;
+  output Option<BackendDAE.IncidenceMatrix> outMT;
+algorithm
+  (outDAE,outM,outMT):=
+  match (inDAE,inFunctionTree,inM,inMT)
+    local
+      DAE.FunctionTree funcs;
+      Option<BackendDAE.IncidenceMatrix> m,mT;
+      BackendDAE.Variables vars,vars_1,knvars,exobj,knvars_1,knvars_2;
+      BackendDAE.AliasVariables av,varsAliases;
+      BackendDAE.EquationArray eqns,eqns1,remeqns,remeqns1,inieqns,inieqns1;
+      array<BackendDAE.MultiDimEquation> arreqns,arreqns1;
+      array<DAE.Algorithm> algorithms,algorithms1;
+      BackendDAE.EventInfo einfo;
+      BackendDAE.ExternalObjectClasses eoc;
+      VarTransform.VariableReplacements repl,repl1;
+      list<BackendDAE.Equation> eqns_1,seqns,lsteqns,reqns,ieqns;
+      list<BackendDAE.MultiDimEquation> lstarreqns,lstarreqns1;
+      list<DAE.Algorithm> algs,algs_1;
+      
+    case (BackendDAE.DAE(vars,knvars,exobj,av,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc),funcs,m,mT)
+      equation      
+        repl = VarTransform.emptyReplacements();
+        lsteqns = BackendDAEUtil.equationList(eqns);       
+        lstarreqns = arrayList(arreqns);       
+        algs = arrayList(algorithms);       
+        repl1 = BackendVariable.traverseBackendDAEVars(knvars,protectedParametersFinder,repl);
+
+        Debug.fcall("dumpPPrepl", VarTransform.dumpReplacements, repl1);
+        eqns_1 = BackendVarTransform.replaceEquations(lsteqns, repl1);
+        lstarreqns1 = BackendVarTransform.replaceMultiDimEquations(lstarreqns, repl1);
+        algs_1 = BackendVarTransform.replaceAlgorithms(algs,repl1);
+        eqns1 = BackendDAEUtil.listEquation(eqns_1);
+        arreqns1 = listArray(lstarreqns1);
+        algorithms1 = listArray(algs_1);
+      then
+        (BackendDAE.DAE(vars,knvars,exobj,av,eqns1,remeqns,inieqns,arreqns1,algorithms1,einfo,eoc),NONE(),NONE());
+  end match;        
+end removeProtectedParameters;
+
+protected function protectedParametersFinder
+"autor: Frenkel TUD 2011-03"
+ input tuple<BackendDAE.Var, VarTransform.VariableReplacements> inTpl;
+ output tuple<BackendDAE.Var, VarTransform.VariableReplacements> outTpl;
+algorithm
+  outTpl:=
+  matchcontinue (inTpl)
+    local
+      BackendDAE.Var v;
+      VarTransform.VariableReplacements repl,repl_1;
+      DAE.ComponentRef varName;
+      Option< .DAE.VariableAttributes> values;
+      DAE.Exp exp;
+      Values.Value bindValue;
+    case ((v as BackendDAE.VAR(varName=varName,varKind=BackendDAE.PARAM(),bindExp=SOME(exp),values=values),repl))
+      equation
+        true = DAEUtil.getProtectedAttr(values);
+        repl_1 = VarTransform.addReplacement(repl, varName, exp);
+      then ((v,repl_1));
+    case ((v as BackendDAE.VAR(varName=varName,varKind=BackendDAE.PARAM(),bindValue=SOME(bindValue),values=values),repl))
+      equation
+        true = DAEUtil.getProtectedAttr(values);
+        true = BackendVariable.varFixed(v);
+        exp = ValuesUtil.valueExp(bindValue);
+        repl_1 = VarTransform.addReplacement(repl, varName, exp);
+      then ((v,repl_1));
+    case inTpl then inTpl; 
+  end matchcontinue;
+end protectedParametersFinder;
 
 /*  
  * tearing system of equations stuff 
