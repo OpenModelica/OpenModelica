@@ -1187,6 +1187,86 @@ static void popTimerStack()
   }
 }
 
+static void decodeUri2(const char *src, char *dest, int breakCh)
+{
+  char *tmp = dest;
+  while (*src) {
+    if (*src == '+') *(tmp++) = ' ';
+    else if (*src == '%' && src[1]) {
+      char buf[3];
+      int i;
+      buf[0] = src[1];
+      buf[1] = src[2];
+      buf[2] = '\0';
+      errno = 0;
+      i = strtol(buf,NULL,16);
+      if (errno) {
+        *(tmp++) = *src;
+        errno = 0;
+      } else {
+        *(tmp++) = i;
+        *tmp = 0;
+        src += 2;
+      }
+    } else if (*src == breakCh) {
+      break;
+    } else *(tmp++) = *src;
+    src++;
+  }
+  *tmp = '\0';
+}
+
+static void decodeUri(const char *src, char **name, char **path)
+{
+  const char *srcPath = strchr(src,'/');
+  const char *srcName = src;
+  int len = strlen(src);
+  int lenPath = srcPath ? strlen(srcPath+1) : 0;
+  *name = (char*) malloc(len - lenPath + 1);
+  decodeUri2(src,*name,'/');
+  *path = (char*) malloc(lenPath+1);
+  **path = '\0';
+  if (srcPath == NULL) {
+    return;
+  }
+  decodeUri2(srcPath,*path,-1);
+}
+
+static int SystemImpl__uriToClassAndPath(const char *uri, const char **scheme, char **name, char **path)
+{
+  const char *modelicaUri = "modelica://";
+  const char *fileUri = "file://";
+  const char *msg[2];
+  *scheme = NULL;
+  *name = NULL;
+  *path = NULL;
+  if (0 == strncasecmp(uri, modelicaUri, strlen(modelicaUri))) {
+    *scheme = modelicaUri;
+    decodeUri(uri+strlen(modelicaUri),name,path);
+    if (!**name) {
+      msg[0] = uri;
+      c_add_message(-1,"SCRIPTING","Error","Modelica URI lacks classname: %s",msg,1);
+      return 1;
+    }
+    return 0;
+  } else if (0 == strncasecmp(uri, fileUri, strlen(fileUri))) {
+    *scheme = fileUri;
+    decodeUri(uri+strlen(fileUri),name,path);
+    if (!**path) {
+      msg[0] = uri;
+      c_add_message(-1,"SCRIPTING","Error","File URI has no path: %s",msg,1);
+      return 1;
+    } else if (**name) {
+      msg[0] = uri;
+      c_add_message(-1,"SCRIPTING","Error","File URI using hostnames is not supported: %s",msg,1);
+      return 1;
+    }
+    return 0;
+  }
+  c_add_message(-1,"SCRIPTING","Error","Unknown uri: %s",&uri,1);
+  return 1;
+}
+
 #ifdef __cplusplus
 }
 #endif

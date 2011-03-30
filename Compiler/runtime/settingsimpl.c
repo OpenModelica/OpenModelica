@@ -184,11 +184,11 @@ static void commonSetEnvVar(const char *var, const char *value)
 {
   int lenVar = strlen(var);
   int lenVal = strlen(value);
-  char* command = (char*) malloc(lenVar+lenVal+1);
+  char* command = (char*) malloc(lenVar+lenVal+2);
   assert(command != NULL);
   /* create a str of the form: <VAR>=<VALUE>*/
-  snprintf(command, lenVar+lenVal+1, "%s=%s", var, value);
-  command[lenVar+lenVal]='\0';
+  snprintf(command, lenVar+lenVal+2, "%s=%s", var, value);
+  command[lenVar+lenVal+1]='\0';
   /* set the env-var to created string this is useful when scripts and clients started by omc wants to use OPENMODELICAHOME*/
   assert(putenv(command) == 0); // adrpo: in Linux there is not _putenv if( _putenv(omhome) != 0)
 #if defined(WIN32)

@@ -1189,5 +1189,12 @@ function plotParametric2 "Plots the y-variables as a function of the x-variable.
 external "builtin";
 end plotParametric2;
 
+function uriToFilename "Handles modelica:// and file:// URI's. The result is an absolute path on the local system.
+  The result depends on the current MODELICAPATH. Returns the empty string on failure."
+  input String uri;
+  output String filename;
+  external "builtin";
+end uriToFilename;
+
 end Scripting;
 end OpenModelica;

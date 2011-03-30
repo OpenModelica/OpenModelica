@@ -750,7 +750,7 @@ public function unquoteIdentifier
   "Quoted identifiers, for example 'xyz' need to be translated into canonical form; for example _omcQuot_0x78797A"
   input String str;
   output String outStr;
-  external "C" outStr=System_unquoteIdentifier(str);
+  external "C" outStr=System_unquoteIdentifier(str) annotation(Library = "omcruntime");
 end unquoteIdentifier;
 
 public function intMaxLit "Returns the maximum integer that can be represent using this version of the compiler"
@@ -762,5 +762,14 @@ public function realMaxLit "Returns the maximum integer that can be represent us
   output Real outReal;
   external "builtin" outReal=realMaxLit();
 end realMaxLit;
+
+public function uriToClassAndPath "Handles modelica:// and file:// URI's. The result is an absolute path on the local system.
+  The result depends on the current MODELICAPATH. Sets the error buffer on failure."
+  input String uri;
+  output String scheme "file:// or modelica://, in lower-case";
+  output String classname "empty if file:// is used";
+  output String pathname;
+  external "C" uriToClassAndPath(uri,scheme,classname,pathname) annotation(Library = "omcruntime");
+end uriToClassAndPath;
 
 end System;

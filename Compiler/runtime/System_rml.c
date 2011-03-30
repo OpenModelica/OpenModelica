@@ -1961,4 +1961,20 @@ RML_BEGIN_LABEL(System__intMaxLit)
   rmlA0 = mk_icon(LONG_MAX / 2);
   RML_TAILCALLK(rmlSC);
 }
+
+RML_BEGIN_LABEL(System__uriToClassAndPath)
+{
+  const char *scheme;
+  char *name,*path;
+  int res = SystemImpl__uriToClassAndPath(RML_STRINGDATA(rmlA0),&scheme,&name,&path);
+  rmlA0 = scheme ? mk_scon((char*)scheme) : 0;
+  rmlA1 = name ? mk_scon(name) : 0;
+  rmlA2 = path ? mk_scon(path) : 0;
+  if (name) free(name);
+  if (path) free(path);
+  if (res)
+    RML_TAILCALLK(rmlFC);
+  RML_TAILCALLK(rmlSC);
+}
+
 RML_END_LABEL

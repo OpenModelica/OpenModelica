@@ -320,6 +320,7 @@ public constant ErrorID MATCH_TO_SWITCH_OPTIMIZATION=5029;
 public constant ErrorID REDUCTION_TYPE_ERROR=5030;
 public constant ErrorID UNSUPPORTED_REDUCTION_TYPE=5031;
 
+public constant ErrorID COMPILER_ERROR = 5999;
 public constant ErrorID COMPILER_WARNING = 6000;
 public constant ErrorID COMPILER_NOTIFICATION = 6001;
 
@@ -734,6 +735,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
 
           (COMPILER_NOTIFICATION,TRANSLATION(),NOTIFICATION(),"%s"),
           (COMPILER_WARNING,TRANSLATION(),WARNING(),"%s"),
+          (COMPILER_ERROR,TRANSLATION(),ERROR(),"%s"),
           
           (SUSAN_ERROR,TRANSLATION(),ERROR(),"%s"),
           (TEMPLATE_ERROR,TRANSLATION(),ERROR(),"Template error: %s")

@@ -386,7 +386,7 @@ explicit_import_name returns [void* ast] :
 implicit_import_name returns [void* ast] :
   np=name_path_star
   {
-    ast = np.unqual ? Absyn__UNQUAL_5fIMPORT(np.ast) : Absyn__QUAL_5fIMPORT(np.ast);
+    ast = np.lst ? Absyn__GROUP_5fIMPORT(np.ast, np.lst) : np.unqual ? Absyn__UNQUAL_5fIMPORT(np.ast) : Absyn__QUAL_5fIMPORT(np.ast);
   }
 ;
 
@@ -1040,24 +1040,41 @@ name_path2 returns [void* ast] :
   | (id=IDENT|id=CODE) DOT p=name_path {ast = Absyn__QUALIFIED(token_to_scon(id),p);}
   ;
 
-name_path_star returns [void* ast, int unqual] :
+name_path_star returns [void* ast, int unqual, void* lst] :
   (dot=DOT)? np=name_path_star2
     {
       $ast = dot ? Absyn__FULLYQUALIFIED(np.ast) : np.ast;
       $unqual = np.unqual;
+      $lst = np.lst;
     }
   ;
 
-name_path_star2 returns [void* ast, int unqual] :
-    { LA(2) != DOT }? (id=IDENT|id=CODE) ( uq=STAR_EW )?
+name_path_star2 returns [void* ast, int unqual, void* lst] :
+    { LA(2) != DOT || LA(3) == LBRACE }? (id=IDENT|id=CODE) ( uq=STAR_EW | DOT LBRACE mlst=name_path_group RBRACE)?
     {
       $ast = Absyn__IDENT(token_to_scon(id));
       $unqual = uq != 0;
+      $lst = mlst;
+      if (mlst != NULL && !metamodelica_enabled()) {
+        c_add_source_message(2, "SYNTAX", "Warning", "Group imports are an OpenModelica extension, not standard Modelica.",
+                             NULL, 0, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition+1,
+                             ModelicaParser_readonly, ModelicaParser_filename_C);
+      }
     }
   | (id=IDENT|id=CODE) DOT p=name_path_star2
     {
       $ast = Absyn__QUALIFIED(token_to_scon(id),p.ast);
       $unqual = p.unqual;
+      $lst = p.lst;
+    }
+  ;
+
+name_path_group returns [void* ast] :
+  (id1=IDENT|id1=CODE) (EQUALS (id2=IDENT|id2=CODE))? (COMMA rest=name_path_group)?
+    {
+      $ast = mk_cons(id2 ? Absyn__GROUP_5fIMPORT_5fRENAME(token_to_scon(id1),token_to_scon(id2)) :
+                           Absyn__GROUP_5fIMPORT_5fNAME(token_to_scon(id1)),
+                     or_nil(rest));
     }
   ;
 

@@ -1219,6 +1219,51 @@ extern struct record_description Absyn_Import_UNQUAL__IMPORT__desc;
 #define Absyn__UNQUAL_5fIMPORT_3dBOX1 5
 #define Absyn__UNQUAL_5fIMPORT(path) (mmc_mk_box2(5,&Absyn_Import_UNQUAL__IMPORT__desc,path))
 #ifdef ADD_METARECORD_DEFINTIONS
+#ifndef Absyn_Import_GROUP__IMPORT__desc_added
+#define Absyn_Import_GROUP__IMPORT__desc_added
+const char* Absyn_Import_GROUP__IMPORT__desc__fields[2] = {"prefix","groups"};
+struct record_description Absyn_Import_GROUP__IMPORT__desc = {
+  "Absyn_Import_GROUP__IMPORT",
+  "Absyn.Import.GROUP_IMPORT",
+  Absyn_Import_GROUP__IMPORT__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description Absyn_Import_GROUP__IMPORT__desc;
+#endif
+#define Absyn__GROUP_5fIMPORT_3dBOX2 6
+#define Absyn__GROUP_5fIMPORT(prefix,groups) (mmc_mk_box3(6,&Absyn_Import_GROUP__IMPORT__desc,prefix,groups))
+#ifdef ADD_METARECORD_DEFINTIONS
+#ifndef Absyn_GroupImport_GROUP__IMPORT__NAME__desc_added
+#define Absyn_GroupImport_GROUP__IMPORT__NAME__desc_added
+const char* Absyn_GroupImport_GROUP__IMPORT__NAME__desc__fields[1] = {"name"};
+struct record_description Absyn_GroupImport_GROUP__IMPORT__NAME__desc = {
+  "Absyn_GroupImport_GROUP__IMPORT__NAME",
+  "Absyn.GroupImport.GROUP_IMPORT_NAME",
+  Absyn_GroupImport_GROUP__IMPORT__NAME__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description Absyn_GroupImport_GROUP__IMPORT__NAME__desc;
+#endif
+#define Absyn__GROUP_5fIMPORT_5fNAME_3dBOX1 3
+#define Absyn__GROUP_5fIMPORT_5fNAME(name) (mmc_mk_box2(3,&Absyn_GroupImport_GROUP__IMPORT__NAME__desc,name))
+#ifdef ADD_METARECORD_DEFINTIONS
+#ifndef Absyn_GroupImport_GROUP__IMPORT__RENAME__desc_added
+#define Absyn_GroupImport_GROUP__IMPORT__RENAME__desc_added
+const char* Absyn_GroupImport_GROUP__IMPORT__RENAME__desc__fields[2] = {"rename","name"};
+struct record_description Absyn_GroupImport_GROUP__IMPORT__RENAME__desc = {
+  "Absyn_GroupImport_GROUP__IMPORT__RENAME",
+  "Absyn.GroupImport.GROUP_IMPORT_RENAME",
+  Absyn_GroupImport_GROUP__IMPORT__RENAME__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description Absyn_GroupImport_GROUP__IMPORT__RENAME__desc;
+#endif
+#define Absyn__GROUP_5fIMPORT_5fRENAME_3dBOX2 4
+#define Absyn__GROUP_5fIMPORT_5fRENAME(rename,name) (mmc_mk_box3(4,&Absyn_GroupImport_GROUP__IMPORT__RENAME__desc,rename,name))
+#ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_ComponentItem_COMPONENTITEM__desc_added
 #define Absyn_ComponentItem_COMPONENTITEM__desc_added
 const char* Absyn_ComponentItem_COMPONENTITEM__desc__fields[3] = {"component","condition","comment"};

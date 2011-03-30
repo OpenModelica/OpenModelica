@@ -431,7 +431,23 @@ uniontype Import "Import statements, different kinds"
     Path path "path" ;
   end UNQUAL_IMPORT;
 
+  record GROUP_IMPORT
+    Path prefix;
+    list<GroupImport> groups;
+  end GROUP_IMPORT;
+
 end Import;
+
+public
+uniontype GroupImport
+  record GROUP_IMPORT_NAME
+    String name;
+  end GROUP_IMPORT_NAME;
+  record GROUP_IMPORT_RENAME
+    String rename;
+    String name;
+  end GROUP_IMPORT_RENAME;
+end GroupImport;
 
 public
 uniontype ComponentItem "Collection of component and an optional comment"

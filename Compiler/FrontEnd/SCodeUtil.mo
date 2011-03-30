@@ -1103,10 +1103,47 @@ algorithm
     case (cc,finalPrefix,_,repl,prot,Absyn.IMPORT(import_ = imp, info = info),_)
       equation
         // Debug.fprintln("translate", "translating import: " +& Dump.unparseImportStr(imp));
+        xs_1 = translateImports(imp,info); 
       then
-        {SCode.IMPORT(imp, info)};
+        xs_1;
   end match;
 end translateElementspec;
+
+protected function translateImports "Used to handle group imports, i.e. A.B.C.{x=a,b}"
+  input Absyn.Import imp;
+  input Absyn.Info info;
+  output list<SCode.Element> elts;
+algorithm
+  elts := match (imp,info)
+    local
+      Absyn.Path p;
+      list<Absyn.GroupImport> groups;
+    case (Absyn.GROUP_IMPORT(prefix=p,groups=groups),info)
+      then Util.listMap2(groups, translateGroupImport, p, info);
+    else {SCode.IMPORT(imp, info)};
+  end match;
+end translateImports;
+
+protected function translateGroupImport "Used to handle group imports, i.e. A.B.C.{x=a,b}"
+  input Absyn.GroupImport gimp;
+  input Absyn.Path prefix;
+  input Absyn.Info info;
+  output SCode.Element elt;
+algorithm
+  elt := match (gimp,prefix,info)
+    local
+      String name,rename;
+      Absyn.Path path;
+    case (Absyn.GROUP_IMPORT_NAME(name=name),prefix,info)
+      equation
+        path = Absyn.joinPaths(prefix,Absyn.IDENT(name));
+      then SCode.IMPORT(Absyn.QUAL_IMPORT(path),info);
+    case (Absyn.GROUP_IMPORT_RENAME(rename=rename,name=name),prefix,info)
+      equation
+        path = Absyn.joinPaths(prefix,Absyn.IDENT(name));
+      then SCode.IMPORT(Absyn.NAMED_IMPORT(rename,path),info);
+  end match;
+end translateGroupImport;
 
 protected function setHasInnerOuterDefinitionsHandler
 "@author: adrpo

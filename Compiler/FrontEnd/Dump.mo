@@ -1921,6 +1921,7 @@ algorithm
     local
       Ident i;
       Absyn.Path p;
+      list<Absyn.GroupImport> groups;
     
     case (Absyn.NAMED_IMPORT(name = i,path = p))
       equation
@@ -1942,8 +1943,34 @@ algorithm
         Print.printBuf(".*");
       then
         ();
+    case (Absyn.GROUP_IMPORT(prefix = p, groups = groups))
+      equation
+        printPath(p);
+        Print.printBuf(".{");
+        Print.printBuf(Util.stringDelimitList(Util.listMap(groups, unparseGroupImport), ","));
+        Print.printBuf("}");
+      then
+        ();
+    else
+      equation
+        Print.printBuf("/* Unknown import */");
+      then
+        ();
   end match;
 end printImport;
+
+protected function unparseGroupImport
+  input Absyn.GroupImport gimp;
+  output String str;
+algorithm
+  str := match gimp
+    local
+      String name,rename;
+    case Absyn.GROUP_IMPORT_NAME(name=name) then name;
+    case Absyn.GROUP_IMPORT_RENAME(rename=rename,name=name)
+      then rename +& " = " +& name;
+  end match;
+end unparseGroupImport;
 
 public function unparseImportStr
 "function: unparseImportStr
@@ -1955,6 +1982,7 @@ algorithm
     local
       Ident s1,s2,str,i;
       Absyn.Path p;
+      list<Absyn.GroupImport> groups;
     
     case (Absyn.NAMED_IMPORT(name = i,path = p))
       equation
@@ -1976,6 +2004,16 @@ algorithm
         str = stringAppend(s1, ".*");
       then
         str;
+
+    case (Absyn.GROUP_IMPORT(prefix = p, groups = groups))
+      equation
+        s1 = Absyn.pathString(p);
+        s2 = Util.stringDelimitList(Util.listMap(groups, unparseGroupImport), ",");
+        str = stringAppendList({s1,".{",s2,"}"}); 
+      then
+        str;
+
+    else "/* Unknown import */";
   end match;
 end unparseImportStr;
 
