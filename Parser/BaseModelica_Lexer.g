@@ -327,7 +327,15 @@ EXPONENT :
 UNSIGNED_INTEGER :
     (DIGIT)+ ('.' (DIGIT)* { $type = UNSIGNED_REAL; } )? (EXPONENT { $type = UNSIGNED_REAL; } )?
   | ('.' { $type = DOT; } )
-      ( (DIGIT)+ { $type = UNSIGNED_REAL; } (EXPONENT { $type = UNSIGNED_REAL; } )?
+      ( (DIGIT)+ EXPONENT?
+          {
+            const char *strs[2] = {(char*)$text->chars,(char*)$text->chars};
+            int len = strlen((char*)$text->chars);
+            $type = UNSIGNED_REAL;
+            c_add_source_message(2, "SYNTAX", "Warning", "Treating \%s as 0\%s. This is not standard Modelica and only done for compatibility with old code. Support for this feature may be removed in the future.",
+               strs, 2, $line, len, $line, len+1,
+               ModelicaParser_readonly, ModelicaParser_filename_C);
+           } 
          | /* Modelica 3.0 element-wise operators! */
          (('+' { $type = PLUS_EW; }) 
           |('-' { $type = MINUS_EW; }) 
