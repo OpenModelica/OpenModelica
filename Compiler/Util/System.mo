@@ -769,7 +769,7 @@ public function uriToClassAndPath "Handles modelica:// and file:// URI's. The re
   output String scheme "file:// or modelica://, in lower-case";
   output String classname "empty if file:// is used";
   output String pathname;
-  external "C" uriToClassAndPath(uri,scheme,classname,pathname) annotation(Library = "omcruntime");
+  external "C" System_uriToClassAndPath(uri,scheme,classname,pathname) annotation(Library = "omcruntime");
 end uriToClassAndPath;
 
 end System;
