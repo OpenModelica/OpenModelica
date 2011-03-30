@@ -71,6 +71,7 @@ GARBAGE;
 IF;
 IMPORT;
 T_IN;
+IMPURE;
 INITIAL;
 INNER;
 T_INPUT;
@@ -80,6 +81,7 @@ T_NOT;
 T_OUTER;
 OPERATOR; 
 OVERLOAD;
+PURE;
 T_OR;
 T_OUTPUT;
 T_PACKAGE;
@@ -268,6 +270,8 @@ CODE_NAME : '$TypeName';
 CODE_EXP : '$Exp';
 CODE_VAR : '$Var';
 
+PURE : 'pure';
+IMPURE : 'impure';
 
 STRING : '"' STRING_GUTS '"'
        {
@@ -294,7 +298,7 @@ SESCAPE : esc='\\' ('\\' | '"' | '\'' | '?' | 'a' | 'b' | 'f' | 'n' | 'r' | 't' 
     const char *str = chars;
     int len = strlen((char*)$text->chars);
     c_add_source_message(2, "SYNTAX", "Warning", "Lexer treating \\ as \\\\, since \\\%s is not a valid Modelica escape sequence.",
-          &str, 1, $line, len, $line, len+1,
+          &str, 1, $line, $pos+1, $line, $pos+len+1,
           ModelicaParser_readonly, ModelicaParser_filename_C);
   });
 
@@ -333,7 +337,7 @@ UNSIGNED_INTEGER :
             int len = strlen((char*)$text->chars);
             $type = UNSIGNED_REAL;
             c_add_source_message(2, "SYNTAX", "Warning", "Treating \%s as 0\%s. This is not standard Modelica and only done for compatibility with old code. Support for this feature may be removed in the future.",
-               strs, 2, $line, len, $line, len+1,
+               strs, 2, $line, $pos+1, $line, $pos+len+1,
                ModelicaParser_readonly, ModelicaParser_filename_C);
            } 
          | /* Modelica 3.0 element-wise operators! */
