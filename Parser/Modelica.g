@@ -531,7 +531,9 @@ argument returns [void* ast] :
   )
   ;
 
-element_modification_or_replaceable returns [void* ast] :
+element_modification_or_replaceable returns [void* ast] @init {
+  ast = NULL;
+} :
     (e=EACH)? (f=FINAL)? (em=element_modification[e ? Absyn__EACH : Absyn__NON_5fEACH, mk_bcon(f)] | er=element_replaceable[e != NULL,f != NULL,false])
       {
         ast = $em.ast ? $em.ast : $er.ast;
@@ -542,7 +544,10 @@ element_modification [void *each, void *final] returns [void* ast] :
   cr=component_reference ( mod=modification )? cmt=string_comment { ast = Absyn__MODIFICATION(final, each, cr.ast, mk_some_or_none(mod), mk_some_or_none(cmt)); }
   ;
 
-element_redeclaration returns [void* ast] :
+element_redeclaration returns [void* ast]  @init {
+  $ast = NULL;
+  er.ast = NULL;
+} :
   REDECLARE (e=EACH)? (f=FINAL)?
   ( (cdef=class_definition[f != NULL] | cc=component_clause1) | er=element_replaceable[e != NULL,f != NULL,true] )
      {
@@ -561,7 +566,7 @@ element_replaceable [int each, int final, int redeclare] returns [void* ast] @in
     {
       $ast = Absyn__REDECLARATION(mk_bcon(final), make_redeclare_keywords(true,redeclare),
                                   each ? Absyn__EACH : Absyn__NON_5fEACH, e_spec ? e_spec : Absyn__CLASSDEF(RML_TRUE, $cd.ast),
-                                  mk_some_or_none($constr.ast), NULL);
+                                  mk_some_or_none($constr.ast), INFO($start));
     }
   ;
   
