@@ -60,6 +60,25 @@ extern "C" {
 #endif
 #define MMC_CHECK_STRING(x) MMC_DEBUG_ASSERT(MMC_STRLEN(x) == strlen(MMC_STRINGDATA(x)))
 
+
+#define MMC_SIZE_META sizeof(modelica_metatype)
+#define MMC_WORDS_TO_BYTES(x) (x * MMC_SIZE_META)
+
+/* 
+ * a slot is a word on any platform!
+ * the maximum slots in a free slot is 
+ * - 2^(32-10) + 1 (header) on 32 bit systems
+ * - 2^(64-10) + 1 (header) on 64 bit systems
+ */
+#ifdef _LP64
+#define MMC_MAX_SLOTS (18014398509481984) /* max words slots header */
+#else
+#define MMC_MAX_SLOTS (4194304)           /* max words slots header */
+#endif 
+
+/* max object size on 32/64 bit systems in bytes */
+#define MMC_MAX_OBJECT_SIZE_BYTES MMC_WORDS_TO_BYTES(MMC_MAX_SLOTS)
+
 #ifdef _LP64
 #define MMC_SIZE_DBL 8
 #define MMC_SIZE_INT 8
@@ -90,7 +109,10 @@ typedef int mmc_sint_t;
 #define MMC_TAGFIXNUM(i)  ((i) << 1)
 #define MMC_UNTAGFIXNUM(X)  (((mmc_sint_t) X) >> 1)
 #define MMC_REALHDR    (((MMC_SIZE_DBL/MMC_SIZE_INT) << 10) + 9)
+/*
 #define MMC_REALDATA(x) (*((double*)(((mmc_uint_t*)MMC_UNTAGPTR(x))+1)))
+*/
+#define MMC_REALDATA(x) (((struct mmc_real*)MMC_UNTAGPTR(x))->data)
 #define MMC_STRINGHDR(nbytes)  (((nbytes)<<(10-MMC_LOG2_SIZE_INT))+((1<<10)+5))
 #define MMC_HDRSLOTS(hdr)  ((hdr) >> 10)
 #define MMC_GETHDR(x)    (*(mmc_uint_t*)MMC_UNTAGPTR(x))
@@ -214,6 +236,8 @@ static inline void *mmc_mk_box1(unsigned ctor, const void *x0)
     return MMC_TAGPTR(p);
 }
 
+void printAny(void* any);
+
 static inline void *mmc_mk_box2(unsigned ctor, const void *x0, const void *x1)
 {
     struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(3);
@@ -222,6 +246,7 @@ static inline void *mmc_mk_box2(unsigned ctor, const void *x0, const void *x1)
     p->data[1] = (void*) x1;
 #ifdef MMC_MK_DEBUG
     fprintf(stderr, "BOX2 %u\n", ctor); fflush(NULL);
+    /* printAny(MMC_TAGPTR(p)); fprintf(stderr, "\n"); fflush(NULL); */
 #endif
     return MMC_TAGPTR(p);
 }

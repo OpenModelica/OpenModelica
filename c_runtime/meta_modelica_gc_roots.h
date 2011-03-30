@@ -46,7 +46,6 @@
 extern "C" {
 #endif
 
-#define MMC_GC_ROOTS_SIZE_INITIAL 8*1024  /* initial size of roots, reallocate on full */
 /* the roots type is an array of void* with a current index and limits */
 struct mmc_GC_roots_type
 {

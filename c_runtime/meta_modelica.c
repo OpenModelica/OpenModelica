@@ -36,7 +36,7 @@
 
 jmp_buf *mmc_jumper;
 
-
+/*
 void* mmc_mk_rcon(double d)
 {
     void *p = mmc_alloc_words(MMC_SIZE_DBL/MMC_SIZE_INT+1);
@@ -47,6 +47,17 @@ void* mmc_mk_rcon(double d)
     fprintf(stderr, "REAL size: %u\n", MMC_SIZE_DBL/MMC_SIZE_INT+1); fflush(NULL);
 #endif
     return p;
+}
+*/
+void* mmc_mk_rcon(double d)
+{
+    struct mmc_real *p = (struct mmc_real*)mmc_alloc_words(sizeof(struct mmc_real)/MMC_SIZE_INT);
+    p->header = MMC_REALHDR;
+    p->data = d;
+#ifdef MMC_MK_DEBUG
+    fprintf(stderr, "REAL size: %u\n", MMC_SIZE_DBL/MMC_SIZE_INT+1); fflush(NULL);
+#endif
+    return MMC_TAGPTR(p);
 }
 
 void *mmc_mk_box_arr(int slots, unsigned ctor, const void** args)
@@ -213,9 +224,9 @@ inline static int anyStringWork(void* any, int ix)
   struct record_description *desc;
   char buf[34] = {0};
 
-  if ((0 == ((mmc_sint_t)any & 1))) {
+  if (MMC_IS_IMMEDIATE(any)) {
     checkAnyStringBufSize(ix,40);
-    ix += sprintf(anyStringBuf+ix, "%ld", (long) ((mmc_sint_t)any)>>1);
+    ix += sprintf(anyStringBuf+ix, "%ld", (long) MMC_UNTAGFIXNUM(any));
     return ix;
   }
   
@@ -242,6 +253,11 @@ inline static int anyStringWork(void* any, int ix)
   numslots = MMC_HDRSLOTS(hdr);
   ctor = MMC_HDRCTOR(hdr);
   
+  if (numslots>0 && ctor == MMC_FREE_OBJECT_CTOR) { /* FREE OBJECT! */
+    checkAnyStringBufSize(ix,100);
+    ix += sprintf(anyStringBuf+ix, "FREE(%u)", numslots);
+    return ix;
+  }
   if (numslots>0 && ctor == MMC_ARRAY_TAG) { /* MetaModelica-style array */
     checkAnyStringBufSize(ix,40);
     ix += sprintf(anyStringBuf+ix, "MetaArray(");
@@ -323,14 +339,14 @@ inline static int anyStringWork(void* any, int ix)
   }
 
   fprintf(stderr, "%s:%d: %d slots; ctor %d - FAILED to detect the type\n", __FILE__, __LINE__, numslots, ctor);
-  //fprintf(stderr, "object: %032s||", ltoa((int)hdr, buf, 2));
+  /* fprintf(stderr, "object: %032s||", ltoa((int)hdr, buf, 2)); */
   checkAnyStringBufSize(ix,5);
   ix += sprintf(anyStringBuf+ix, "UNK(");
   for (i=1; i<=numslots; i++)
   {
     ix = anyStringWork(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),i)),ix);
     data = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),i));
-    //fprintf(stderr, "%032s|", ltoa((int)data, buf, 2));
+    /* fprintf(stderr, "%032s|", ltoa((int)data, buf, 2)); */
   }
   checkAnyStringBufSize(ix,2);
   ix += sprintf(anyStringBuf+ix, ")");

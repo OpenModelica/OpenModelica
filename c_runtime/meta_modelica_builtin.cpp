@@ -216,18 +216,19 @@ stringAppendList_rettype stringAppendList(modelica_metatype lst)
   // fprintf(stderr, "stringAppendList(%s)\n", anyString(lst));
   modelica_integer lstLen, len;
   unsigned nbytes,header,nwords;
-  modelica_metatype car, lstHead;
+  modelica_metatype car, lstHead, lstTmp;
   char *tmp;
   struct mmc_string *res;
   void *p;
   lstLen = 0;
   nbytes = 0;
   lstHead = lst;
-  while (!listEmpty(lst)) {
-    MMC_CHECK_STRING(MMC_CAR(lst));
-    nbytes += MMC_STRLEN(MMC_CAR(lst));
+  lstTmp = lst;
+  while (!listEmpty(lstTmp)) {
+    MMC_CHECK_STRING(MMC_CAR(lstTmp));
+    nbytes += MMC_STRLEN(MMC_CAR(lstTmp));
     // fprintf(stderr, "stringAppendList: Has success reading input %d: %s\n", lstLen, MMC_STRINGDATA(MMC_CAR(lst)));
-    lst = MMC_CDR(lst);
+    lstTmp = MMC_CDR(lstTmp);
     lstLen++;
   }
   if (nbytes == 0) return mmc_emptystring;
@@ -239,16 +240,16 @@ stringAppendList_rettype stringAppendList(modelica_metatype lst)
   res->header = header;
   tmp = (char*) res->data;
   nbytes = 0;
-  lst = lstHead;
-  while (!listEmpty(lst)) {
-    car = MMC_CAR(lst);
+  lstTmp = lstHead;
+  while (!listEmpty(lstTmp)) {
+    car = MMC_CAR(lstTmp);
     len = MMC_STRLEN(car);
     // fprintf(stderr, "stringAppendList: %s %d %d\n", MMC_STRINGDATA(car), len, strlen(MMC_STRINGDATA(car)));
     // Might be useful to check this when debugging. String literals are often done wrong :)
     MMC_DEBUG_ASSERT(len == strlen(MMC_STRINGDATA(car)));
     memcpy(tmp+nbytes,MMC_STRINGDATA(car),len);
     nbytes += len;
-    lst = MMC_CDR(lst);
+    lstTmp = MMC_CDR(lstTmp);
   }
   tmp[nbytes] = '\0';
   // fprintf(stderr, "stringAppendList(%s)=>%s\n", anyString(lstHead), anyString(MMC_TAGPTR(res)));

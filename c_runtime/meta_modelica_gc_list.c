@@ -33,280 +33,184 @@
 
 
 /* make an empty list */
-mmc_List list_create(void)
+mmc_GC_free_list_type* list_create(size_t default_free_slots_size)
 {
-  return NULL;
-}
-
-/* return nonzero if the list is empty */
-int list_empty(mmc_List list)
-{
-  return list == NULL;
-}
-
-/* number of elements */
-int list_length(mmc_List list)
-{
-  struct mmc_ListElement *curPtr;
-  int count = 0;
-
-  curPtr = list;
-
-  while(curPtr != NULL)
+  mmc_GC_free_list_type* list = (mmc_GC_free_list_type*)malloc(sizeof(mmc_GC_free_list_type));
+  size_t i = 0;
+  
+  if (!list)
   {
-     curPtr = curPtr->next;
-     count++;
-  }
-  return count;
-}
-
-/* deleting a node from list depending upon the pointer to an element */
-int list_delete_pointer(mmc_List* list, mmc_List pointer, mmc_List prev)
-{
-  /* pointer is at the begining */
-  if (*list == pointer)
+    fprintf(stderr, "not enough memory (%lu) to allocate the free list!\n", sizeof(mmc_GC_page_type));
+    fflush(NULL);
+    assert(list != 0);
+  }  
+  
+  list->szLarge.start = (mmc_GC_free_slot_type*)malloc(sizeof(mmc_GC_free_slot_type)*default_free_slots_size);
+  
+  if (!list->szLarge.start)
   {
-    *list = pointer->next;
-    free(pointer);
-    return 0;
+    fprintf(stderr, "not enough memory (%lu) to allocate the free list!\n", sizeof(mmc_GC_free_slot_type)*default_free_slots_size);
+    fflush(NULL);
+    assert(list->szLarge.start != 0);
   }
 
-  /* NOT at the end of the list! */
-  if (pointer->next != NULL)
+  list->szLarge.current = 0;
+  list->szLarge.limit = default_free_slots_size;
+  memset(list->szLarge.start, 0, sizeof(mmc_GC_free_slot_type)*default_free_slots_size);
+
+  list->szSmall[0].current = 0;
+  list->szSmall[0].limit = 0;
+
+  for (i = 0; i < MMC_GC_FREE_SIZES; i++)
   {
-    mmc_List next = pointer->next;
-    /* copy from next and delete next! */
-    pointer->el = next->el;
-    pointer->next = next->next;
-    free(next);
-    return 0;
-  }
-
-  /* at the end of the list! */
-  if (pointer->next == NULL)
-  {
-    prev->next = NULL;
-    free(pointer);
-    return 0;
-  }
-
-  /* not found */
-  fprintf(stderr, "adrpo did some bad list programming!"); fflush(NULL);
-  return 1;
-}
-
-
-/* deleting a node from list depending upon the data in the node */
-int list_delete(mmc_List* list, mmc_GC_free_slot slot)
-{
-  struct mmc_ListElement *prevPtr = NULL, *curPtr = NULL;
-
-  curPtr = *list;
-
-  while(curPtr != NULL)
-  {
-     if(curPtr->el.start == slot.start)
-     {
-        if(curPtr == *list)
-        {
-           *list = curPtr->next;
-           free(curPtr);
-           return 0;
-        }
-        else
-        {
-           prevPtr->next = curPtr->next;
-           free(curPtr);
-           return 0;
-        }
-     }
-     else
-     {
-        prevPtr = curPtr;
-        curPtr = curPtr->next;
-     }
-  }
-  /* not found */
-  return 1;
-}
-
-/* deleting a node from list depending on the location */
-int list_delete_nth(mmc_List* list, int loc)
-{
-  struct mmc_ListElement *prevPtr = NULL, *curPtr = NULL;
-  int i;
-
-  curPtr = *list;
-
-  if(loc > (list_length(*list)) || loc <= 0)
-  {
-      printf("\nDeletion of mmc_ListElement at given location is not possible\n ");
-  }
-  else
-  {
-      /* if the location is starting of the list */
-      if (loc == 1)
-      {
-          *list = curPtr->next;
-          free(curPtr);
-          return 0;
-      }
-      else
-      {
-          for(i = 1;i < loc; i++)
-          {
-              prevPtr = curPtr;
-              curPtr = curPtr->next;
-          }
-
-          prevPtr->next = curPtr->next;
-          free(curPtr);
-      }
-  }
-  return 1;
-}
-
-/* delete the entire list */
-int list_clear(mmc_List* list)
-{
-  struct mmc_ListElement *prevPtr = NULL, *curPtr = NULL;
-
-  curPtr = *list;
-
-  while(curPtr != NULL)
-  {
-        if(curPtr == *list)
-        {
-           *list = curPtr->next;
-           free(curPtr);
-           return 0;
-        }
-        else
-        {
-           prevPtr->next = curPtr->next;
-           free(curPtr);
-           return 0;
-        }
-        curPtr = curPtr->next;
-  }
-
-  *list = NULL;
-
-  return 1;
-}
-
-/* adding a mmc_GC_free_slot at the end of the list */
-int list_add(mmc_List* list, mmc_GC_free_slot slot)
-{
-  struct mmc_ListElement *temp1, *temp2;
-
-  temp1 = (struct mmc_ListElement *)malloc(sizeof(struct mmc_ListElement));
-
-  assert(temp1 != 0);
-
-  temp1->el = slot;
-
-  /* copying the *list location into another node */
-  temp2 = *list;
-
-  if(*list == NULL)
-  {
-     /* if list is empty we create first mmc_ListElement. */
-     *list = temp1;
-     (*list)->next = NULL;
-  }
-  else
-  {
-     /* traverse down to end of the list */
-     while(temp2->next != NULL)
-     temp2 = temp2->next;
-
-     /* append at the end of the list */
-     temp1->next = NULL;
-     temp2->next = temp1;
-  }
-
-  return 0;
-}
-
-/* adding a mmc_GC_free_slot at the end of the list */
-int list_cons(mmc_List* list, mmc_GC_free_slot slot)
-{
-  struct mmc_ListElement *temp;
-
-  temp = (struct mmc_ListElement *)malloc(sizeof(struct mmc_ListElement));
-
-  assert(temp != 0);
-
-  temp->el = slot;
-  temp->next = *list;
-  *list = temp;
-
-  return 0;
-}
-
-
-/* displaying list contents */
-void list_dump(mmc_List* list)
-{
-  struct mmc_ListElement *curPtr = NULL;
-  curPtr = *list;
-
-  if(curPtr == NULL)
-  {
-     printf("\nList is Empty");
-  }
-  else
-  {
-      fprintf(stderr, "\nElements in the List: ");
-      /* traverse the entire linked list */
-      while(curPtr != NULL)
-      {
-          fprintf(stderr, "p[%p], size[%ld]\n", curPtr->el.start, curPtr->el.size);
-          curPtr = curPtr->next;
-      }
-      fprintf(stderr, "\n");
-      fflush(NULL);
-  }
-}
-
-/* reversing a list */
-int list_reverse(mmc_List* list)
-{
-  struct mmc_ListElement *prevPtr = NULL, *curPtr = NULL, *temp = NULL;
-
-  curPtr = *list;
-  prevPtr = NULL;
-
-  while(curPtr != NULL)
-  {
-     temp = prevPtr;
-     prevPtr = curPtr;
-
-     curPtr = curPtr->next;
-     prevPtr->next = temp;
-  }
-
-  *list = prevPtr;
-
-  return 0;
-}
-
-/* clone a list in reverse! */
-mmc_List list_clone(mmc_List list)
-{
-  mmc_List lst = NULL, curPtr = list;
-
-  /* if empty return empty */
-  if (!curPtr)
-    return lst;
-
-    while(curPtr != NULL)
+    list->szSmall[i].start = (modelica_metatype*)malloc(sizeof(modelica_metatype)*default_free_slots_size);
+  
+    if (!list->szSmall[i].start)
     {
-      list_cons(&lst, curPtr->el);
-      curPtr = curPtr->next;
+      fprintf(stderr, "not enough memory (%lu) to allocate the free list!\n", sizeof(modelica_metatype)*default_free_slots_size);
+      fflush(NULL);
+      assert(list->szSmall[i].start != 0);
     }
 
-    return lst;
+    list->szSmall[i].current = 0;
+    list->szSmall[i].limit = default_free_slots_size;
+    memset(list->szSmall[i].start, 0, sizeof(modelica_metatype)*default_free_slots_size);
+  }
+
+  return list;
 }
 
+
+mmc_GC_free_list_type* list_add(mmc_GC_free_list_type* free, modelica_metatype p, size_t size)
+{
+  assert(size <= MMC_MAX_SLOTS);
+
+  /* if size is small, add it to the small list! */
+  if (size < MMC_GC_FREE_SIZES)
+  {
+    mmc_GC_free_slots_fixed_type* slot = &free->szSmall[size];
+
+    if (slot->current + 1 == slot->limit) /* increase! */
+    {
+      slot->start = (modelica_metatype*)realloc(slot->start, (slot->limit + 1024) * sizeof(modelica_metatype));
+      if (!slot->start)
+      {
+        fprintf(stderr, "not enough memory (%lu) to allocate the free list!\n", sizeof(modelica_metatype)*(slot->limit + 1024));
+        fflush(NULL);
+        assert(slot->start != 0);
+      }
+      slot->limit += 1024;
+    }
+
+    slot->start[ slot->current++ ] = p;
+    assert(slot->current < slot->limit);
+
+    MMC_TAG_AS_FREE_OBJECT(p, size - 1);
+  }
+  else /* if size is large, add it to the large list! */
+  {
+    mmc_GC_free_slots_type* slot = &free->szLarge;
+
+    if (slot->current + 1 == slot->limit) /* increase! */
+    {
+      slot->start = (mmc_GC_free_slot_type*)realloc(slot->start, (slot->limit + 1024) * sizeof(mmc_GC_free_slot_type));
+      if (!slot->start)
+      {
+        fprintf(stderr, "not enough memory (%lu) to allocate the free list!\n", sizeof(mmc_GC_free_slot_type)*(slot->limit + 1024));
+        fflush(NULL);
+        assert(slot->start != 0);
+      }
+      slot->limit += 1024;
+    }
+
+    slot->start[ slot->current   ].start = p;
+    slot->start[ slot->current++ ].size = size;
+
+    assert(slot->current < slot->limit);
+    
+    MMC_TAG_AS_FREE_OBJECT(p, size - 1);
+  }
+
+  return free;
+}
+
+size_t list_length(mmc_GC_free_list_type* free)
+{
+  size_t i = 0;
+  size_t sz = 0;
+  /* add the fixed size small list */
+  for(i = 0; i < MMC_GC_FREE_SIZES; i++)
+  {
+    sz += free->szSmall[i].current;
+  }
+  /* add the large size list */
+  sz += free->szLarge.current;
+  
+  return sz;
+}
+
+modelica_metatype list_get(mmc_GC_free_list_type* free, size_t size)
+{
+  modelica_metatype p = NULL;
+
+  /* if size is small, add it to the small list! */
+  if (size < MMC_GC_FREE_SIZES)
+  {
+    size_t i = size;
+
+    mmc_GC_free_slots_fixed_type *slot = &free->szSmall[size];
+    if (slot->current > 0)
+    {
+      slot->current--;
+      p = slot->start[slot->current];
+      MMC_TAG_AS_FREE_OBJECT(p, size - 1);
+      return p;
+    }
+
+    for (i = MMC_GC_FREE_SIZES - 1; i > size; i--)
+    {
+      slot = &free->szSmall[i];
+      if (slot->current > 0)
+      {
+        slot->current--;
+        p = slot->start[slot->current];
+        if (i > size)
+        {
+          /* something to return to the list */
+          size_t sz = i - size;
+          free = list_add(free, (char*)p + sz*MMC_SIZE_META, sz);
+        }
+        return p;
+      }
+    }
+  }
+  
+  /* if size is large or we had no free slots above, add it to the large list! */
+  {
+    size_t i = 0;
+    mmc_GC_free_slots_type *slot = &free->szLarge;
+    for (i = 0; i < slot->current; i++)
+    {
+      if (slot->start[i].size >= size)
+      {
+        p = slot->start[i].start;
+        if (slot->start[i].size > size) /* something to return to the list */
+        {
+          slot->start[i].start = (void*)(((char*)slot->start[i].start) + MMC_WORDS_TO_BYTES(size));
+          slot->start[i].size = slot->start[i].size - size;
+
+          MMC_TAG_AS_FREE_OBJECT(slot->start[i].start, slot->start[i].size - 1);
+        }
+        else /* equal, remove slot! */
+        {
+          slot->current--;
+          /* move the last one in its place */
+          slot->start[i] = slot->start[slot->current];
+        }
+        break;
+      }
+    }
+  }
+
+  return p;
+}

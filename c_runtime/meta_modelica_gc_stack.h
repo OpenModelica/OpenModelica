@@ -38,8 +38,6 @@
 extern "C" {
 #endif
 
-#define MMC_GC_ROOTS_MARKS_SIZE_INITIAL 8*1024  /* initial size of roots, reallocate on full */
-
 struct mmc_GC_local_state_type /* the structure of local GC state that is saved on stack */
 {
   const char* functionName; /* the function name */

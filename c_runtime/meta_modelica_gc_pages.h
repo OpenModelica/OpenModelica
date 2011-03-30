@@ -38,15 +38,40 @@
 extern "C" {
 #endif
 
-#define MMC_GC_PAGE_SIZE           16*1024*1024  /* default page size 16MB chunks, can be changed */
-#define MMC_GC_NUMBER_OF_PAGES               10  /* default number of pages at start */
+struct mmc_GC_page_type
+{
+  modelica_metatype       start;           /* the start of the page */
+  size_t                  size;            /* the size of the page in words */
+  mmc_GC_free_list_type  *free;            /* the free list in the page, classified */
+  size_t                  maxFree;         /* the max size of all free slots */
+};
+typedef struct mmc_GC_page_type mmc_GC_page_type;
 
-/* create the page list and add the first page */
-mmc_List pages_create(size_t default_page_size, int default_number_of_pages);
-/* create and allocate a page */
-mmc_GC_free_slot page_create(size_t page_size);
-/* add a page */
-int pages_add(mmc_List *list, mmc_GC_free_slot page);
+
+struct mmc_GC_pages_type
+{
+  mmc_GC_page_type*       start;           /* the start of the array of pages */
+  size_t                  current;         /* the current limit */
+  size_t                  limit;           /* the limit of pages */
+};
+typedef struct mmc_GC_pages_type mmc_GC_pages_type;
+
+/* create the pages structure and allocate the default pages with default size */
+mmc_GC_pages_type pages_create(size_t default_pages_size, size_t default_page_size, size_t default_number_of_pages, size_t default_free_slots_size);
+/* add a new page */
+mmc_GC_pages_type pages_add(mmc_GC_pages_type pages, mmc_GC_page_type page);
+/* create a new page */
+mmc_GC_page_type page_create(size_t default_page_size, size_t default_free_slots_size);
+/* realloc and increase the pages structure */
+mmc_GC_pages_type pages_increase(mmc_GC_pages_type pages, size_t default_pages_size);
+/* realloc and decrease the pages structure */
+mmc_GC_pages_type pages_decrease(mmc_GC_pages_type pages, size_t default_pages_size);
+/* populate the free list with free space */
+mmc_GC_page_type list_populate(mmc_GC_page_type page);
+
+int is_in_free(modelica_metatype p);
+int is_inside_page(modelica_metatype p);
+size_t pages_list_length(mmc_GC_pages_type pages);
 
 #if defined(__cplusplus)
 }

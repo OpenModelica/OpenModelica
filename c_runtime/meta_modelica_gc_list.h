@@ -32,52 +32,49 @@
 #ifndef META_MODELICA_GC_LIST_H_
 #define META_MODELICA_GC_LIST_H_
 
-#include "modelica.h"
-
 #if defined(__cplusplus)
 extern "C" {
 #endif
 
-/* a free slot */
-struct mmc_GC_free_slot
-{
-  modelica_metatype        start; /* the start of the free slot */
-  size_t                   size;  /* the free slot size */
-};
-typedef struct mmc_GC_free_slot mmc_GC_free_slot;
+#include "modelica.h"
 
-/* a linked list */
-struct mmc_ListElement
+/*
+ * 
+ */
+struct mmc_GC_free_slot_type
 {
-  mmc_GC_free_slot el;
-  struct mmc_ListElement *next;
+  modelica_metatype start;
+  size_t            size;
 };
-typedef struct mmc_ListElement* mmc_List;
+typedef struct mmc_GC_free_slot_type mmc_GC_free_slot_type;
 
-/* make an empty list */
-mmc_List list_create(void);
-/* return nonzero if the list is empty */
-int list_empty(mmc_List list);
-/* number of elements */
-int list_length(mmc_List list);
-/* deleting a node from list depending upon the data in the node */
-int list_delete(mmc_List* list, mmc_GC_free_slot slot);
-/* deleting a node from list depending on the location */
-int list_delete_nth(mmc_List* list, int loc);
-/* deleting a node from list depending upon the pointer to an element */
-int list_delete_pointer(mmc_List* list, mmc_List el, mmc_List prev);
-/* delete the entire list */
-int list_clear(mmc_List* list);
-/* adding a mmc_GC_free_slot at the end of the list */
-int list_add(mmc_List* list, mmc_GC_free_slot slot);
-/* adding a mmc_GC_free_slot at the end of the list */
-int list_cons(mmc_List* list, mmc_GC_free_slot slot);
-/* displaying list contents */
-void list_dump(mmc_List* list);
-/* reversing a list */
-int list_reverse(mmc_List* list);
-/* clone a list in reverse! */
-mmc_List list_clone(mmc_List list);
+struct mmc_GC_free_slots_type
+{
+  mmc_GC_free_slot_type*  start;
+  size_t                  current;
+  size_t                  limit;
+};
+typedef struct mmc_GC_free_slots_type mmc_GC_free_slots_type;
+
+struct mmc_GC_free_slots_fixed_type
+{
+  modelica_metatype*  start;
+  size_t              current;
+  size_t              limit;
+};
+typedef struct mmc_GC_free_slots_fixed_type mmc_GC_free_slots_fixed_type;
+
+struct mmc_GC_free_list_type
+{
+   mmc_GC_free_slots_fixed_type szSmall[MMC_GC_FREE_SIZES]; /* the array points to free slots of sizes equal to the index. */
+   mmc_GC_free_slots_type       szLarge; /* for sizes bigger than the index in sizes */
+};
+typedef struct mmc_GC_free_list_type mmc_GC_free_list_type;
+
+mmc_GC_free_list_type* list_create(size_t default_free_slots_size);
+mmc_GC_free_list_type* list_add(mmc_GC_free_list_type* free, modelica_metatype p, size_t size);
+size_t list_length(mmc_GC_free_list_type* free);
+modelica_metatype list_get(mmc_GC_free_list_type* free, size_t size);
 
 #if defined(__cplusplus)
 }

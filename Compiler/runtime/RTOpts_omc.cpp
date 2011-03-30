@@ -219,6 +219,8 @@ extern modelica_metatype RTOpts_setPreOptModules(modelica_metatype modules) {
   modulestr[alllen-1] = '\0';
   set_preOptModules(modulestr);
   if (modulestr) free(modulestr);
+
+  return modulestr;
 }
 
 extern modelica_metatype RTOpts_setPastOptModules(modelica_metatype modules) {
@@ -246,6 +248,7 @@ extern modelica_metatype RTOpts_setPastOptModules(modelica_metatype modules) {
   modulestr[alllen-1] = '\0';
   set_pastOptModules(modulestr);
   if (modulestr) free(modulestr);
+  return modules;
 }
 
 #if defined(__cplusplus)
