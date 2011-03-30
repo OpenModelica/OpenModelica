@@ -565,4 +565,9 @@ double System_getTimerCummulatedTime()
   return timerCummulatedTime;
 }
 
+extern int System_uriToClassAndPath(const char *uri, const char **scheme, char **name, char **path)
+{
+  return SystemImpl__uriToClassAndPath(uri, scheme, name, path);
+}
+
 }
