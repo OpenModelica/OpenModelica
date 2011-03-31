@@ -31,18 +31,34 @@
  *
  */
 
-#include "PlotPicker.h"
+#ifndef PLOTAPPLICATION_H
+#define PLOTAPPLICATION_H
 
-using namespace OMPlot;
+#include <QApplication>
+#include <QSharedMemory>
+#include <QStringList>
+#include <QDebug>
 
-PlotPicker::PlotPicker(int xAxis, int yAxis, QwtPlotCanvas *pParent)
-    : QwtPlotPicker(xAxis, yAxis, pParent)
+class PlotApplication : public QApplication
 {
-    setTrackerPen(QPen(Qt::black));
-    setRubberBandPen(QPen(Qt::black));
-}
+    Q_OBJECT
+public:
+    PlotApplication(int &argc, char *argv[], const QString uniqueKey);
 
-PlotPicker::~PlotPicker()
-{
+    bool isRunning();
+    bool sendMessage(QStringList arguments);
+    void launchNewApplication();
+private:
+    bool mIsRunning;
+    QSharedMemory mSharedMemory;
+    QTimer *mpTimer;
+public slots:
+    void checkForMessage();
+    void startTimer();
+    void stopTimer();
+signals:
+    void messageAvailable(QStringList arguments);
+    void newApplicationLaunched();
+};
 
-}
+#endif // PLOTAPPLICATION_H

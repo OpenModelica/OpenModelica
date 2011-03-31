@@ -57,9 +57,9 @@ void PlotCurve::addXAxisValue(double value)
     mXAxisVector.push_back(value);
 }
 
-QVector<double> PlotCurve::getXAxisVector()
+const double* PlotCurve::getXAxisVector() const
 {
-    return mXAxisVector;
+    return mXAxisVector.data();
 }
 
 void PlotCurve::setYAxisVector(QVector<double> vector)
@@ -72,9 +72,14 @@ void PlotCurve::addYAxisValue(double value)
     mYAxisVector.push_back(value);
 }
 
-QVector<double> PlotCurve::getYAxisVector()
+const double* PlotCurve::getYAxisVector() const
 {
-    return mYAxisVector;
+    return mYAxisVector.data();
+}
+
+int PlotCurve::getSize()
+{
+    return mXAxisVector.size();
 }
 
 void PlotCurve::updateLegend(QwtLegend *legend) const

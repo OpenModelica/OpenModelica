@@ -36,12 +36,12 @@
 
 using namespace OMPlot;
 
-PlotPanner::PlotPanner(QwtPlotCanvas *pParent)
-    : QwtPlotPanner(pParent)
+PlotPanner::PlotPanner(QwtPlotCanvas *pCanvas, Plot *pParent)
+    : QwtPlotPanner(pCanvas)
 {
     setEnabled(false);
     connect(this, SIGNAL(moved(int,int)), SLOT(updateView(int, int)));
-    mpPlotCanvas = pParent;
+    mpParentPlot = pParent;
 }
 
 PlotPanner::~PlotPanner()
@@ -61,4 +61,18 @@ void PlotPanner::updateView(int dx, int dy)
     canvas()->updateGeometry();
     canvas()->update();
     plot()->replot();
+}
+
+void PlotPanner::widgetMousePressEvent(QMouseEvent *event)
+{
+    if (mpParentPlot->getParentPlotWindow()->getPanButton()->isChecked())
+        mpParentPlot->canvas()->setCursor(Qt::ClosedHandCursor);
+    QwtPlotPanner::widgetMousePressEvent(event);
+}
+
+void PlotPanner::widgetMouseReleaseEvent(QMouseEvent *event)
+{
+    if (mpParentPlot->getParentPlotWindow()->getPanButton()->isChecked())
+        mpParentPlot->canvas()->setCursor(Qt::OpenHandCursor);
+    QwtPlotPanner::widgetMouseReleaseEvent(event);
 }

@@ -41,8 +41,8 @@ namespace OMPlot
 class PlotCurve : public QwtPlotCurve
 {
 private:
-    QVector<double> mXAxisVector;
-    QVector<double> mYAxisVector;
+    QwtArray<double> mXAxisVector;
+    QwtArray<double> mYAxisVector;
 
     Plot *mpParentPlot;
 public:
@@ -51,13 +51,12 @@ public:
 
     void setXAxisVector(QVector<double> vector);
     void addXAxisValue(double value);
-    QVector<double> getXAxisVector();
+    const double* getXAxisVector() const;
     void setYAxisVector(QVector<double> vector);
     void addYAxisValue(double value);
-    QVector<double> getYAxisVector();
-
+    const double* getYAxisVector() const;
+    int getSize();
     QColor getUniqueColor(QColor color = QColor(255, 0, 0));
-
     virtual void updateLegend(QwtLegend *legend) const;
 };
 }

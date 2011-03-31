@@ -56,13 +56,13 @@ public:
 
     ~PlotWindow();
 
+    void initializePlot(QStringList arguments);
     void plot(QStringList);
     void plotAll();
     void plotParametric(QString, QString);
     void plotGraph(QList<PlotCurve*> plotCurvesList);
 
     void openFile(QString);
-    void initializePlot();
     void setupToolbar();
     void initializeZoom();
 
@@ -95,6 +95,7 @@ public Q_SLOTS:
     void printPlot();
     void setLogX(bool);
     void setLogY(bool);
+    void receiveMessage(QStringList arguments);
 };
 
 //Exception classes

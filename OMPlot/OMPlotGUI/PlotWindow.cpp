@@ -44,14 +44,54 @@ PlotWindow::PlotWindow(QStringList arguments, QWidget *parent)
     mpPlot = new Plot(this);
     enableZoomMode(false);   
 
-    mpPlot->getPlotPicker()->setTrackerMode(QwtPicker::AlwaysOn);
+    // set up the toolbar
+    setupToolbar();
+    // initialize plot by reading all parameters
+    initializePlot(arguments);
+    setCentralWidget(mpPlot);
+}
 
+PlotWindow::PlotWindow(QString fileName, QWidget *parent)
+        : QMainWindow(parent)
+{
+    // create an instance of qwt plot
+    mpPlot = new Plot(this);    
     // set up the toolbar
     setupToolbar();
     // open the file
+    openFile(fileName);
+    enableZoomMode(false);
+    setCentralWidget(mpPlot);
+}
+
+// used for interactive simulation
+PlotWindow::PlotWindow(QWidget *parent)
+    : QMainWindow(parent)
+{
+    // create an instance of qwt plot
+    mpPlot = new Plot(this);
+    // set up the toolbar
+    setupToolbar();
+    mpFile = 0;
+    setCentralWidget(mpPlot);
+}
+
+PlotWindow::~PlotWindow()
+{
+    if (mpFile)
+    {
+        delete mpFile;
+        delete mpTextStream;
+    }
+    delete mpPlot;
+}
+
+void PlotWindow::initializePlot(QStringList arguments)
+{
+    // open the file
     openFile(QString(arguments[1]));
 
-    //Set up arguments        
+    //Set up arguments
     setTitle(QString(arguments[2]));
     if(QString(arguments[3]) == "true")
         setLegend(true);
@@ -93,49 +133,6 @@ PlotWindow::PlotWindow(QStringList arguments, QWidget *parent)
         plotAll();
     if(plotType == "plotParametric")
         plotParametric(QString(variablesToRead[0]), QString(variablesToRead[1]));
-
-    setCentralWidget(mpPlot);    
-}
-
-PlotWindow::PlotWindow(QString fileName, QWidget *parent)
-        : QMainWindow(parent)
-{
-    // create an instance of qwt plot
-    mpPlot = new Plot(this);    
-    // set up the toolbar    
-
-    setupToolbar();
-    // open the file
-    openFile(fileName);
-
-    mpPlot->getPlotPicker()->setTrackerMode(QwtPicker::AlwaysOn);
-    enableZoomMode(false);
-
-    setCentralWidget(mpPlot);
-}
-
-// used for interactive simulation
-PlotWindow::PlotWindow(QWidget *parent)
-    : QMainWindow(parent)
-{
-    // create an instance of qwt plot
-    mpPlot = new Plot(this);
-    // set up the toolbar
-
-    setupToolbar();
-    mpFile = 0;
-
-    setCentralWidget(mpPlot);
-}
-
-PlotWindow::~PlotWindow()
-{
-    if (mpFile)
-    {
-        delete mpFile;
-        delete mpTextStream;
-    }
-    delete mpPlot;
 }
 
 void PlotWindow::openFile(QString file)
@@ -593,7 +590,8 @@ void PlotWindow::plotGraph(QList<PlotCurve*> plotCurvesList)
 {    
     for(int i = 0; i < plotCurvesList.length(); i++)
     {                   
-        plotCurvesList[i]->setData(plotCurvesList[i]->getXAxisVector(), plotCurvesList[i]->getYAxisVector());
+        plotCurvesList[i]->setRawData(plotCurvesList[i]->getXAxisVector(), plotCurvesList[i]->getYAxisVector(),
+                                      plotCurvesList[i]->getSize());
         //plotCurvesList[i]->setRawData(plotCurvesList[i]->getXAxisPointer(), plotCurvesList[i]->getYAxisPointer(), plotCurvesList[i]->getNumberOfValues());
         QPen pen(plotCurvesList[i]->getUniqueColor());
         pen.setWidth(2);
@@ -627,16 +625,14 @@ void PlotWindow::enableZoomMode(bool on)
 
 void PlotWindow::enablePanMode(bool on)
 {
-
     mpPlot->getPlotPanner()->setEnabled(on);
-
     if(on)
     {
-        mpPlot->getPlotPicker()->setRubberBand(QwtPlotPicker::NoRubberBand);        
+        mpPlot->getPlotPicker()->setRubberBand(QwtPlotPicker::NoRubberBand);
         if(mpPlot->getPlotZoomer()->isEnabled())
         {
             mpZoomButton->setChecked(false);
-            enableZoomMode(false);            
+            enableZoomMode(false);
         }
         mpPlot->canvas()->setCursor(Qt::OpenHandCursor);
     }
@@ -757,6 +753,19 @@ void PlotWindow::setLogY(bool on)
         mpPlot->setAxisAutoScale(QwtPlot::yLeft);
     }
     mpPlot->replot();
+}
+
+void PlotWindow::receiveMessage(QStringList arguments)
+{
+    //activateWindow();
+    //QMessageBox::information(this, "test", arguments.join(";"), "OK");
+    // clear the curves before attaching new ones
+    foreach (PlotCurve *pCurve, mpPlot->getPlotCurvesList())
+    {
+        pCurve->detach();
+        mpPlot->removeCurve(pCurve);
+    }
+    initializePlot(arguments);
 }
 
 void PlotWindow::setXLabel(QString label)

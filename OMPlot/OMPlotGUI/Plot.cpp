@@ -47,18 +47,19 @@ Plot::Plot(PlotWindow *pParent)
     mpLegend = new Legend(this);
     insertLegend(mpLegend, QwtPlot::RightLegend);
 
-    // create an instance opicker
-    mpPlotPicker = new PlotPicker(QwtPlot::xBottom, QwtPlot::yLeft, canvas());
+    // create an instance of picker
+    mpPlotPicker = new QwtPlotPicker(canvas());
+    mpPlotPicker->setTrackerPen(QPen(Qt::black));
+    mpPlotPicker->setRubberBandPen(QPen(Qt::black));
+    mpPlotPicker->setTrackerMode(QwtPicker::AlwaysOn);
     // create an instance of grid
     mpPlotGrid = new PlotGrid(this);
     // create an instance of zoomer
     mpPlotZoomer = new PlotZoomer(QwtPlot::xBottom, QwtPlot::yLeft, canvas());        
     // create an instance of panner
-    mpPlotPanner = new PlotPanner(canvas());
-    // create an instance of canvas we use it to capture events of canvas()
-    mpPlotCanvas = new PlotCanvas(this);
+    mpPlotPanner = new PlotPanner(canvas(), this);
+    // set canvas arrow
     canvas()->setCursor(Qt::ArrowCursor);
-    canvas()->installEventFilter(mpPlotCanvas);    
 }
 
 Plot::~Plot()
@@ -76,7 +77,7 @@ Legend* Plot::getLegend()
     return mpLegend;
 }
 
-PlotPicker* Plot::getPlotPicker()
+QwtPlotPicker* Plot::getPlotPicker()
 {
     return mpPlotPicker;
 }
@@ -99,11 +100,6 @@ PlotPanner* Plot::getPlotPanner()
 QList<PlotCurve*> Plot::getPlotCurvesList()
 {
     return mPlotCurvesList;
-}
-
-PlotCanvas* Plot::getPlotCanvas()
-{
-    return mpPlotCanvas;
 }
 
 void Plot::addPlotCurve(PlotCurve *pCurve)

@@ -36,23 +36,19 @@
 
 #include "PlotWindow.h"
 #include "Legend.h"
-#include "PlotPicker.h"
 #include "PlotGrid.h"
 #include "PlotZoomer.h"
 #include "PlotPanner.h"
 #include "PlotCurve.h"
-#include "PlotCanvas.h"
 
 namespace OMPlot
 {
 class PlotWindow;
 class Legend;
-class PlotPicker;
 class PlotGrid;
 class PlotZoomer;
 class PlotPanner;
 class PlotCurve;
-class PlotCanvas;
 
 class Plot : public QwtPlot
 {
@@ -60,24 +56,22 @@ class Plot : public QwtPlot
 private:
     PlotWindow *mpParentPlotWindow;
     Legend *mpLegend;
-    PlotPicker *mpPlotPicker;
+    QwtPlotPicker *mpPlotPicker;
     PlotGrid *mpPlotGrid;
     PlotZoomer *mpPlotZoomer;
     PlotPanner *mpPlotPanner;
     QList<PlotCurve*> mPlotCurvesList;
-    PlotCanvas *mpPlotCanvas;
 public:
     Plot(PlotWindow *pParent);
     ~Plot();
 
     PlotWindow* getParentPlotWindow();
     Legend* getLegend();
-    PlotPicker* getPlotPicker();
+    QwtPlotPicker* getPlotPicker();
     PlotGrid* getPlotGrid();
     PlotZoomer* getPlotZoomer();
     PlotPanner* getPlotPanner();
     QList<PlotCurve*> getPlotCurvesList();
-    PlotCanvas* getPlotCanvas();
     void addPlotCurve(PlotCurve *pCurve);
     void removeCurve(PlotCurve *pCurve);
 };

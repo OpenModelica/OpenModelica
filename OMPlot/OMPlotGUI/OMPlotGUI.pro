@@ -12,25 +12,23 @@ TEMPLATE = app
 SOURCES += main.cpp \
     ../../c_runtime/read_matlab4.c \
     Plot.cpp \
-    PlotCanvas.cpp \
     PlotZoomer.cpp \
     Legend.cpp \
     PlotPanner.cpp \
     PlotGrid.cpp \
     PlotCurve.cpp \
-    PlotPicker.cpp \
-    PlotWindow.cpp
+    PlotWindow.cpp \
+    PlotApplication.cpp
 
 HEADERS  += ../../c_runtime/read_matlab4.h \
     Plot.h \
-    PlotCanvas.h \
     PlotZoomer.h \
     Legend.h \
     PlotPanner.h \
     PlotGrid.h \
     PlotCurve.h \
-    PlotPicker.h \
-    PlotWindow.h
+    PlotWindow.h \
+    PlotApplication.h
 
 win32 {
 LIBS += -L$$(OMDEV)/lib/qwt-5.2.1-mingw/lib -lqwtd5

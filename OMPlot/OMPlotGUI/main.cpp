@@ -33,25 +33,54 @@
 
 #include <QtGui/QApplication>
 #include "PlotWindow.h"
+#include "PlotApplication.h"
 
 using namespace OMPlot;
 
 int main(int argc, char *argv[])
 {
     if (argc < 14) {
-      printf("Usage: %s arg1 ... arg13 variables\n", *argv);
+      printf("Usage: %s filename title legend grid plottype logx logy xlabel ylabel xrange1 xrange2 yrange1 yrange2 variables -ew true/false\n", *argv);
       return 1;
     }
-    QApplication a(argc, argv);    
+    // read the arguments
+    QStringList arguments;
+    bool newApplication = false;
+    bool skiparguments = false;         // just used to skip 2 arguments(-ew, true/false)
+    for(int i = 0; i < argc; i++)
+    {
+        if (strcmp(argv[i], "-ew") == 0)
+        {
+            skiparguments = true;
+            if (strcmp(argv[i + 1], "true") == 0)
+                newApplication = true;
+            continue;
+        }
+        if (!skiparguments)
+            arguments.append(argv[i]);
+        else
+            skiparguments = false;
+    }
+    // create
+    PlotApplication app(argc, argv, "OMPlot");
 
     try {
-        QStringList arguments;
-        for(int i = 0; i < argc; i++)
-            arguments.append(argv[i]);
-
         PlotWindow w(arguments);
+        QObject::connect(&app, SIGNAL(messageAvailable(QStringList)), &w, SLOT(receiveMessage(QStringList)));
+        if (app.isRunning())
+        {
+            if (newApplication)
+            {
+                app.launchNewApplication();
+            }
+            else
+            {
+                app.sendMessage(arguments);
+                return 0;
+            }
+        }
         w.show();
-        return a.exec();
+        return app.exec();
     } catch (PlotException &e)
     {
         QMessageBox *msgBox = new QMessageBox();

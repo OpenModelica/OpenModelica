@@ -14,25 +14,23 @@ CONFIG += release staticlib
 SOURCES += main.cpp \
     ../../c_runtime/read_matlab4.c \
     Plot.cpp \
-    PlotCanvas.cpp \
     PlotZoomer.cpp \
     Legend.cpp \
     PlotPanner.cpp \
     PlotGrid.cpp \
     PlotCurve.cpp \
-    PlotPicker.cpp \
-    PlotWindow.cpp
+    PlotWindow.cpp \
+    PlotApplication.cpp
 
 HEADERS  += ../../c_runtime/read_matlab4.h \
     Plot.h \
-    PlotCanvas.h \
     PlotZoomer.h \
     Legend.h \
     PlotPanner.h \
     PlotGrid.h \
     PlotCurve.h \
-    PlotPicker.h \
-    PlotWindow.h
+    PlotWindow.h \
+    PlotApplication.h
 
 win32 {
 LIBS += -L$$(OMDEV)/lib/qwt-5.2.1-mingw/lib -lqwt5
@@ -40,6 +38,8 @@ INCLUDEPATH += $$(OMDEV)/lib/qwt-5.2.1-mingw/include
 } else {
   include(OMPlotGUI.config)
 }
+
+INCLUDEPATH += .
 
 CONFIG += warn_off
 
@@ -50,3 +50,6 @@ UI_DIR = ../generatedfiles/ui
 MOC_DIR = ../generatedfiles/moc
 
 RCC_DIR = ../generatedfiles/rcc
+
+RESOURCES += \
+    Resources.qrc

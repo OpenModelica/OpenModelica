@@ -42,12 +42,15 @@ class PlotPanner : public QwtPlotPanner
 {    
     Q_OBJECT
 public:
-    PlotPanner(QwtPlotCanvas *pParent);
+    PlotPanner(QwtPlotCanvas *pCanvas, Plot *pParent);
     ~PlotPanner();
 public Q_SLOTS:
     void updateView(int, int);
 private:
-    QwtPlotCanvas *mpPlotCanvas;
+    Plot *mpParentPlot;
+protected:
+    virtual void widgetMousePressEvent(QMouseEvent *event);
+    virtual void widgetMouseReleaseEvent(QMouseEvent *event);
 };
 }
 
