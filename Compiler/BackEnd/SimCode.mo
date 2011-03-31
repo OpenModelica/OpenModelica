@@ -2350,7 +2350,7 @@ algorithm
           jacvars = appendAllVars(inJacs);
           jacvars = rewriteIndex(jacvars,0);
           njacvars = listLength(jacvars);
-          linearVars = SIMVARS({}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},{},{},{},{},{},{},jacvars);
+          linearVars = SIMVARS({}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},{},{},{},{},{},jacvars,{});
           simvarsandlinearvars = mergeVars(vars,linearVars);
         then MODELINFO(name, dir, VARINFO(nhv, ng_1, ng_sam_1, nx, ny, ny_int, ny_bool, na, na_int, na_bool, np, np_int, np_bool, nout, nin,
           nresi, next, ny_string, np_string, na_string, njacvars,dim1,dim2), simvarsandlinearvars, functions);
