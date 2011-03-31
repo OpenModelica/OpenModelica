@@ -591,6 +591,10 @@ package System
     input String str;
     output String outStr;
   end unquoteIdentifier;
+
+  function os
+    output String str;
+  end os;
 end System;
 
 
