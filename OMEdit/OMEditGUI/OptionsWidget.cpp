@@ -302,7 +302,7 @@ ModelicaTextEditorPage::ModelicaTextEditorPage(OptionsWidget *pParent)
 
     mpPreviewLabel = new QLabel(tr("Preview:"));
     mpPreviewTextBox = new QTextEdit;
-    mpPreviewTextBox->setReadOnly(true);
+    mpPreviewTextBox->setReadOnly(false);
     mpPreviewTextBox->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
     mpPreviewTextBox->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
     mpPreviewTextBox->setTabStopWidth(Helper::tabWidth);
