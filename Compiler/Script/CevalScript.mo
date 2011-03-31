@@ -792,7 +792,19 @@ algorithm
         (cache,ret_val,st_1,_,_,_,_) = translateModel(cache,env, className, st, filenameprefix,true,NONE());
       then
         (cache,ret_val,st_1);
-    
+   
+     case (cache,env,"translateModelCPP",{Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(filenameprefix)},
+          (st as Interactive.SYMBOLTABLE(
+            ast = p,
+            explodedAst = sp,
+            instClsLst = ic,
+            lstVarVal = iv,
+            compiledFunctions = cf)),msg)
+      equation
+        (cache,ret_val,st_1,_,_,_,_) = translateModelCPP(cache,env, className, st, filenameprefix,true,NONE());
+      then
+        (cache,ret_val,st_1);
+        
     case (cache,env,"translateModelFMU",{Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(filenameprefix)},
           (st as Interactive.SYMBOLTABLE(
             ast = p,
@@ -1840,6 +1852,44 @@ algorithm
   end match;
 end translateModel;
 
+protected function translateModelCPP "function translateModel
+ author: x02lucpo
+ translates a model into cpp code and writes also a makefile"
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input Absyn.Path className "path for the model";
+  input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
+  input String inFileNamePrefix;
+  input Boolean addDummy "if true, add a dummy state";
+  input Option<SimCode.SimulationSettings> inSimSettingsOpt;
+  output Env.Cache outCache;
+  output Values.Value outValue;
+  output Interactive.InteractiveSymbolTable outInteractiveSymbolTable;
+  output BackendDAE.BackendDAE outBackendDAE;
+  output list<String> outStringLst;
+  output String outFileDir;
+  output list<tuple<String,Values.Value>> resultValues;
+algorithm
+  (outCache,outValue,outInteractiveSymbolTable,outBackendDAE,outStringLst,outFileDir,resultValues):=
+  match (inCache,inEnv,className,inInteractiveSymbolTable,inFileNamePrefix,addDummy,inSimSettingsOpt)
+    local
+      Env.Cache cache;
+      list<Env.Frame> env;
+      BackendDAE.BackendDAE indexed_dlow;
+      Interactive.InteractiveSymbolTable st;
+      list<String> libs;
+      Values.Value outValMsg;
+      String file_dir, fileNamePrefix;
+    
+    case (cache,env,className,st,fileNamePrefix,addDummy,inSimSettingsOpt)
+      equation
+        (cache, outValMsg, st, indexed_dlow, libs, file_dir, resultValues) =
+          SimCode.translateModelCPP(cache,env,className,st,fileNamePrefix,addDummy,inSimSettingsOpt);
+      then
+        (cache,outValMsg,st,indexed_dlow,libs,file_dir,resultValues);
+  end match;
+end translateModelCPP;
+
 protected function translateModelFMU "function translateModelFMU
  author: Frenkel TUD
  translates a model into cpp code and writes also a makefile"
@@ -1882,6 +1932,7 @@ algorithm
         (cache,ValuesUtil.makeArray({Values.STRING("translateModelFMU error."),Values.STRING(str)}),st);
   end match;
 end translateModelFMU;
+
 
 public function translateGraphics "function: translates the graphical annotations from old to new version"
   input Env.Cache inCache;
@@ -2025,7 +2076,7 @@ algorithm
       // If we already have an up-to-date version of the binary file, we don't need to recompile.
       equation
         //cdef = Interactive.getPathedClassInProgram(classname,p);
-        _ = Error.getMessagesStr() "Clear messages";
+       _ = Error.getMessagesStr() "Clear messages";
         // Only compile if change occured after last build.
         ( Absyn.CLASS(info = Absyn.INFO(buildTimes= Absyn.TIMESTAMP(build,_)))) = Interactive.getPathedClassInProgram(classname,p);
         true = (build >. edit);
@@ -2045,7 +2096,7 @@ algorithm
         (cdef as Absyn.CLASS(info = Absyn.INFO(buildTimes=ts as Absyn.TIMESTAMP(_,globalEdit)))) = Interactive.getPathedClassInProgram(classname,p);
         Absyn.PROGRAM(_,_,Absyn.TIMESTAMP(globalBuild,_)) = p;
 
-        _ = Error.getMessagesStr() "Clear messages";
+       _ = Error.getMessagesStr() "Clear messages";
         oldDir = System.pwd();
         changeToTempDirectory(cdToTemp);
         (cache,simSettings) = calculateSimulationSettings(cache,env,vals,st_1,msg);

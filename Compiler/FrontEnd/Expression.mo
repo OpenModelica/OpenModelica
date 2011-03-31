@@ -54,6 +54,7 @@ public import DAE;
 public import Values;
 
 public type ComponentRef = DAE.ComponentRef;
+public type Exp = DAE.Exp;
 public type Ident = String;
 public type Operator = DAE.Operator;
 public type Type = DAE.ExpType;
@@ -6654,6 +6655,161 @@ algorithm
       then (iter::iters, arg);
   end match;
 end traverseReductionIterators;
+
+
+public function getCrefFromExp 
+"function: getCrefFromExp 
+  Return a list of all component 
+  references occuring in the expression."
+  input Exp inExp;
+  output list<ComponentRef> outComponentRefLst;
+algorithm 
+  outComponentRefLst:=
+  matchcontinue (inExp)
+    local
+      ComponentRef cr;
+      list<ComponentRef> l1,l2,res,res1,l3,res2;
+      Exp e1,e2,e3,e;
+      Operator op;
+      list<Exp> farg,expl,expl_2;
+      list<tuple<Exp, Boolean>> expl_1;
+    case (DAE.ICONST(integer = _)) then {}; 
+    case (DAE.RCONST(real = _)) then {};  
+    case (DAE.SCONST(string = _)) then {}; 
+    case (DAE.BCONST(bool = _)) then {}; 
+    case (DAE.CREF(componentRef = cr)) then {cr}; 
+    case (DAE.BINARY(exp1 = e1,operator = op,exp2 = e2))
+      equation 
+        l1 = getCrefFromExp(e1);
+        l2 = getCrefFromExp(e2);
+        res = listAppend(l1, l2);
+      then
+        res;
+    case (DAE.UNARY(operator = op,exp = e1))
+      equation 
+        res = getCrefFromExp(e1);
+      then
+        res;
+    case (DAE.LBINARY(exp1 = e1,operator = op,exp2 = e2))
+      equation 
+        l1 = getCrefFromExp(e1);
+        l2 = getCrefFromExp(e2);
+        res = listAppend(l1, l2);
+      then
+        res;
+    case (DAE.LUNARY(operator = op,exp = e1))
+      equation 
+        res = getCrefFromExp(e1);
+      then
+        res;
+    case (DAE.RELATION(exp1 = e1,operator = op,exp2 = e2))
+      equation 
+        l1 = getCrefFromExp(e1);
+        l2 = getCrefFromExp(e2);
+        res = listAppend(l1, l2);
+      then
+        res;
+    case (DAE.IFEXP(expCond = e1,expThen = e2,expElse = e3))
+      equation 
+        l1 = getCrefFromExp(e1);
+        l2 = getCrefFromExp(e2);
+        res1 = listAppend(l1, l2);
+        l3 = getCrefFromExp(e3);
+        res = listAppend(res1, l3);
+      then
+        res;
+    case (DAE.CALL(expLst = farg))
+      local list<list<ComponentRef>> res;
+      equation 
+        res = Util.listMap(farg, getCrefFromExp);
+        res2 = Util.listFlatten(res);
+      then
+        res2;
+    case(DAE.PARTEVALFUNCTION(expList = farg))
+      local list<list<ComponentRef>> res;
+      equation
+        res = Util.listMap(farg, getCrefFromExp);
+        res2 = Util.listFlatten(res);
+      then
+        res2;
+    case (DAE.ARRAY(array = expl))
+      local list<list<ComponentRef>> res1;
+      equation 
+        res1 = Util.listMap(expl, getCrefFromExp);
+        res = Util.listFlatten(res1);
+      then
+        res;
+    case (DAE.MATRIX(scalar = expl))
+      local
+        list<list<ComponentRef>> res1;
+        list<list<tuple<Exp, Boolean>>> expl;
+      equation 
+        expl_1 = Util.listFlatten(expl);
+        expl_2 = Util.listMap(expl_1, Util.tuple21);
+        res1 = Util.listMap(expl_2, getCrefFromExp);
+        res = Util.listFlatten(res1);
+      then
+        res;
+    case (DAE.RANGE(exp = e1,expOption = SOME(e3),range = e2))
+      equation 
+        l1 = getCrefFromExp(e1);
+        l2 = getCrefFromExp(e2);
+        res1 = listAppend(l1, l2);
+        l3 = getCrefFromExp(e3);
+        res = listAppend(res1, l3);
+      then
+        res;
+    case (DAE.RANGE(exp = e1,expOption = NONE(),range = e2))
+      equation 
+        l1 = getCrefFromExp(e1);
+        l2 = getCrefFromExp(e2);
+        res = listAppend(l1, l2);
+      then
+        res;
+    case (DAE.TUPLE(PR = expl))
+      equation 
+        //Print.printBuf("Exp.getCrefFromExp(Exp.DAE.TUPLE(...)): Not implemented yet\n");
+      then
+        {};
+    case (DAE.CAST(exp = e))
+      equation 
+        res = getCrefFromExp(e);
+      then
+        res;
+    case (DAE.ASUB(exp = e))
+      equation 
+        res = getCrefFromExp(e);
+      then
+        res;
+
+    /* MetaModelica list */
+    case (DAE.CONS(e1,e2))
+      local list<list<ComponentRef>> res;
+      equation
+        expl = {e1,e2};
+        res = Util.listMap(expl, getCrefFromExp);
+        res2 = Util.listFlatten(res);
+      then res2;
+
+    case  (DAE.LIST(expl))
+      local list<list<ComponentRef>> res;
+      equation
+        res = Util.listMap(expl, getCrefFromExp);
+        res2 = Util.listFlatten(res);
+      then res2;
+
+/*    case  (METADAE.TUPLE(expl))
+      local list<list<ComponentRef>> res;
+      equation
+        res = Util.listMap(expl, getCrefFromExp);
+        res2 = Util.listFlatten(res);
+      then res2; */
+        /* --------------------- */
+
+    case (_) then {}; 
+  end matchcontinue;
+  
+end getCrefFromExp;
 
 end Expression;
 

@@ -67,6 +67,7 @@ SRCMO= Absyn.mo \
 	SimCode.mo \
 	SimCodeC.mo \
 	SimCodeCSharp.mo \
+	SimCodeCpp.mo \
 	SimCodeQSS.mo \
 	CompiledTemplates.mo \
     Tpl.mo \

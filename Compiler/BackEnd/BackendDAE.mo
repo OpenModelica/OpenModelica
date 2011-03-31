@@ -139,6 +139,14 @@ uniontype Equation "- Equation"
     .DAE.Exp rhs "right ; rhs";
     .DAE.ElementSource source "origin of equation";
   end COMPLEX_EQUATION;
+  
+  
+  record IF_EQUATION " an if-equation"
+    Integer indx "" ;
+    Integer eindx "" ;
+    list< .DAE.Exp> expl "" ;
+    .DAE.ElementSource source "origin of equation";
+  end IF_EQUATION;
 
 end Equation;
 

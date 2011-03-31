@@ -90,6 +90,7 @@ protected import HashTable4;
 protected import SCodeUtil;
 protected import SimCodeC;
 protected import SimCodeCSharp;
+protected import SimCodeCpp;
 protected import SimCodeFMU;
 protected import SimCodeQSS;
 protected import Util;
@@ -208,6 +209,8 @@ uniontype VarInfo
     Integer numStringParamVars;
     Integer numStringAliasVars;
     Integer numJacobianVars;
+    Option <Integer> dimODE1stOrder;
+    Option <Integer> dimODE2ndOrder; 
   end VARINFO;
 end VarInfo;
 
@@ -232,6 +235,7 @@ uniontype SimVars
     list<SimVar> stringAliasVars;
     list<SimVar> extObjVars;
     list<SimVar> jacobianVars; //all vars for the matrices A,B,C,D
+    list<SimVar> constVars;
   end SIMVARS;
 end SimVars;
 
@@ -254,6 +258,7 @@ uniontype SimVar
     AliasVariable aliasvar;
     Absyn.Info info; 
     Causality causality;
+    Option<Integer> variable_index;
   end SIMVAR;
 end SimVar;
 
@@ -625,7 +630,7 @@ algorithm
         errstr = "Template did not find the simulation variable for "+& ComponentReference.printComponentRefStr(cref) +& ". "; 
         Error.addMessage(Error.INTERNAL_ERROR, {errstr});
       then
-        SIMVAR(badcref, BackendDAE.STATE(), "", "", "", -1, NONE(), false, DAE.ET_REAL(), false, NONE(), NOALIAS(), Absyn.dummyInfo, INTERNAL());
+        SIMVAR(badcref, BackendDAE.STATE(), "", "", "", -1, NONE(), false, DAE.ET_REAL(), false, NONE(), NOALIAS(), Absyn.dummyInfo, INTERNAL(),NONE());
   end matchcontinue;
 end cref2simvar;
 
@@ -896,6 +901,54 @@ algorithm
   timeTemplates := System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);
 end generateModelCodeFMU;
 
+public function generateModelCodeCPP
+  "Generates code for a model by creating a SimCode structure and calling the
+   template-based code generator on it."
+  input BackendDAE.BackendDAE inBackendDAE;
+  input DAE.FunctionTree functionTree;
+  input Absyn.Program p;
+  input DAE.DAElist dae;
+  input Absyn.Path className;
+  input String filenamePrefix;
+  input Option<SimulationSettings> simSettingsOpt;
+  input BackendDAE.IncidenceMatrix incidenceMatrix;
+  input BackendDAE.IncidenceMatrix incidenceMatrixT;
+  input array<Integer> equationIndices;
+  input array<Integer> variableIndices;
+  input list<list<Integer>> strongComponents;
+  output BackendDAE.BackendDAE outIndexedBackendDAE;
+  output list<String> libs;
+  output String fileDir;
+  output Real timeBackend;
+  output Real timeSimCode;
+  output Real timeTemplates;
+protected 
+  list<String> includes;
+  list<Function> functions;
+  // DAE.DAElist dae2;
+  String filename, funcfilename;
+  SimCode simCode;
+  list<RecordDeclaration> recordDecls;
+  BackendDAE.BackendDAE indexed_dlow,indexed_dlow_1;
+  Absyn.ComponentRef a_cref;
+algorithm
+   timeBackend := System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);
+   a_cref := Absyn.pathToCref(className);
+   fileDir := CevalScript.getFileDir(a_cref, p);
+  System.realtimeTick(CevalScript.RT_CLOCK_BUILD_MODEL);
+  Debug.fcall("execstat",print, "*** SimCode -> generateFunctions: " +& realString(clock()) +& "\n" );
+  (libs, includes, recordDecls, functions, outIndexedBackendDAE, _) :=
+  createFunctions(dae, inBackendDAE, functionTree, className);
+  simCode := createSimCodeCPP(functionTree, outIndexedBackendDAE, equationIndices,
+    variableIndices, incidenceMatrix, incidenceMatrixT, strongComponents,
+    className, filenamePrefix, fileDir, functions, includes, libs, simSettingsOpt, recordDecls);
+  timeSimCode := System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);
+  
+  System.realtimeTick(CevalScript.RT_CLOCK_BUILD_MODEL);
+  Tpl.tplNoret(SimCodeCpp.translateModel, simCode);
+  timeTemplates := System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);
+end generateModelCodeCPP;
+
 public function translateModelFMU
 "Entry point to translate a Modelica model for FMU export.
     
@@ -972,6 +1025,87 @@ algorithm
         fail();        
   end matchcontinue;
 end translateModelFMU;
+
+public function translateModelCPP
+"Entry point to translate a Modelica model for FMU export.
+    
+ Called from other places in the compiler."
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input Absyn.Path className "path for the model";
+  input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
+  input String inFileNamePrefix;
+  input Boolean addDummy "if true, add a dummy state";
+  input Option<SimulationSettings> inSimSettingsOpt;
+  output Env.Cache outCache;
+  output Values.Value outValue;
+  output Interactive.InteractiveSymbolTable outInteractiveSymbolTable;
+  output BackendDAE.BackendDAE outBackendDAE;
+  output list<String> outStringLst;
+  output String outFileDir;
+  output list<tuple<String,Values.Value>> resultValues;
+algorithm
+  (outCache,outValue,outInteractiveSymbolTable,outBackendDAE,outStringLst,outFileDir,resultValues):=
+  matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable,inFileNamePrefix,addDummy, inSimSettingsOpt)
+    local
+      String filenameprefix,file_dir,resstr;
+      list<SCode.Class> p_1;
+      DAE.DAElist dae;
+      list<Env.Frame> env;
+      BackendDAE.BackendDAE dlow,dlow_1,indexed_dlow,indexed_dlow_1;
+      array<list<Integer>> m,mT;
+      array<Integer> ass1,ass2;
+      list<list<Integer>> comps;
+      Absyn.ComponentRef a_cref;
+      list<String> libs;
+      Interactive.InteractiveSymbolTable st;
+      Absyn.Program p,ptot;
+      //DAE.Exp fileprefix;
+      Env.Cache cache;
+      DAE.FunctionTree funcs;
+      Real timeSimCode, timeTemplates, timeBackend, timeFrontend;
+      list<String> preOptModules,pastOptModules;
+    case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p)),filenameprefix,addDummy, inSimSettingsOpt)
+      equation
+        /* calculate stuff that we need to create SimCode data structure */
+        System.realtimeTick(CevalScript.RT_CLOCK_BUILD_MODEL);
+        //(cache,Values.STRING(filenameprefix),SOME(_)) = Ceval.ceval(cache,env, fileprefix, true, SOME(st),NONE(), msg);
+        ptot = Dependency.getTotalProgram(className,p);
+        p_1 = SCodeUtil.translateAbsyn2SCode(ptot);
+        (cache,env,_,dae) = Inst.instantiateClass(cache,InnerOuter.emptyInstHierarchy,p_1,className);
+        timeFrontend = System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);
+        System.realtimeTick(CevalScript.RT_CLOCK_BUILD_MODEL);
+        funcs = Env.getFunctionTree(cache);
+        dae = DAEUtil.transformationsBeforeBackend(dae);
+        funcs = Env.getFunctionTree(cache);
+        dlow = BackendDAECreate.lower(dae,funcs,true);
+        preOptModules = {"removeSimpleEquations","removeParameterEqns","expandDerOperator"};
+        pastOptModules = Util.listConsOnTrue(RTOpts.debugFlag("removeAliasEquations"),"removeAliasEquations",{});
+        pastOptModules = "lateInline"::("removeSimpleEquations"::pastOptModules);
+        (dlow_1,m,mT,ass1,ass2,comps) = BackendDAEUtil.getSolvedSystem(cache, env, dlow, funcs,
+          NONE(), BackendDAETransform.dummyDerivative, NONE());
+        Debug.fprintln("dynload", "translateModel: Generating simulation code and functions.");
+        (indexed_dlow_1,libs,file_dir,timeBackend,timeSimCode,timeTemplates) = 
+          generateModelCodeCPP(dlow_1,funcs,p, dae,  className, filenameprefix, inSimSettingsOpt,m,mT,ass1,ass2,comps);        
+        resultValues = 
+        {("timeTemplates",Values.REAL(timeTemplates)),
+          ("timeSimCode",  Values.REAL(timeSimCode)),
+          ("timeBackend",  Values.REAL(timeBackend)),
+          ("timeFrontend", Values.REAL(timeFrontend))
+          };   
+        resstr = Absyn.pathString(className);
+        resstr = stringAppendList({"SimCode: The model ",resstr," has been translated to cpp"});
+      then
+        (cache,Values.STRING(resstr),st,indexed_dlow_1,libs,file_dir, resultValues);
+    case (_,_,className,_,_,_, _)
+      equation        
+        resstr = Absyn.pathString(className);
+        resstr = stringAppendList({"SimCode: The model ",resstr," could not been translated to cpp"});
+        Error.addMessage(Error.INTERNAL_ERROR, {resstr});
+      then
+        fail();        
+  end matchcontinue;
+end translateModelCPP;
 
 public function generateModelCode
   "Generates code for a model by creating a SimCode structure and calling the
@@ -2027,6 +2161,168 @@ algorithm
   end matchcontinue;
 end createSimCode;
 
+// Copied from SimCodegen.generateSimulationCode.
+protected function createSimCodeCPP
+  input DAE.FunctionTree functionTree;
+  input BackendDAE.BackendDAE inBackendDAE2;
+  input array<Integer> inIntegerArray3;
+  input array<Integer> inIntegerArray4;
+  input BackendDAE.IncidenceMatrix inIncidenceMatrix5;
+  input BackendDAE.IncidenceMatrixT inIncidenceMatrixT6;
+  input list<list<Integer>> inIntegerLstLst7;
+  input Absyn.Path inClassName;
+  input String filenamePrefix;
+  input String inString11;
+  input list<Function> functions;
+  input list<String> externalFunctionIncludes;
+  input list<String> libs;
+  input Option<SimulationSettings> simSettingsOpt;
+  input list<RecordDeclaration> recordDecls;
+  output SimCode simCode;
+algorithm
+  simCode :=
+  matchcontinue (functionTree,inBackendDAE2,inIntegerArray3,inIntegerArray4,inIncidenceMatrix5,inIncidenceMatrixT6,inIntegerLstLst7,inClassName,filenamePrefix,inString11,functions,externalFunctionIncludes,libs,simSettingsOpt,recordDecls)
+    local
+      String cname,   fileDir;
+      list<list<Integer>> blt_states,blt_no_states,comps;
+      list<list<Integer>> contBlocks,discBlocks;
+      Integer n_h,nres,maxDelayedExpIndex;
+      list<HelpVarInfo> helpVarInfo;
+      BackendDAE.BackendDAE dlow,dlow2;
+      array<Integer> ass1,ass2;
+      array<list<Integer>> m,mt;
+      Absyn.Path class_;
+      // new variables
+      ModelInfo modelInfo;
+      list<SimEqSystem> allEquations;
+      list<SimEqSystem> odeEquations;
+      list<SimEqSystem> algebraicEquations;
+      list<SimEqSystem> residualEquations;
+      list<SimEqSystem> initialEquations;
+      list<SimEqSystem> parameterEquations;
+      list<SimEqSystem> removedEquations;
+      list<SimEqSystem> sampleEquations;
+      list<Algorithm.Statement> algorithmAndEquationAsserts;
+      list<BackendDAE.ZeroCrossing> zeroCrossings;
+      list<SimWhenClause> whenClauses;
+      list<SampleCondition> sampleConditions;
+      list<BackendDAE.Equation> sampleEqns;
+      list<DAE.ComponentRef> discreteModelVars;
+      ExtObjInfo extObjInfo;
+      MakefileParams makefileParams;
+      list<tuple<Integer, DAE.Exp>> delayedExps;
+      list<DAE.Exp> divLst;
+      list<DAE.Statement> allDivStmts;
+      BackendDAE.Variables orderedVars,knownVars,vars;
+      list<BackendDAE.Var> varlst,varlst1,varlst2;
+      list<RecordDeclaration> recordDecls;
+      
+      list<JacobianMatrix> LinearMats;
+      HashTableCrefToSimVar crefToSimVarHT;
+      
+    case (functionTree,dlow,ass1,ass2,m,mt,comps,class_,filenamePrefix,fileDir,functions,externalFunctionIncludes,libs,simSettingsOpt,recordDecls)
+      equation
+        cname = Absyn.pathString(class_);
+        
+        (blt_states, blt_no_states) = BackendDAEUtil.generateStatePartition(comps, dlow, ass1, ass2, m, mt);
+        
+        (helpVarInfo, dlow2,sampleEqns) = generateHelpVarInfo(dlow, comps);
+        
+        dlow2 = BackendDAEUtil.checkInitialSystem(dlow2,functionTree);
+        
+        residualEquations = createResidualEquations(dlow2, ass1, ass2);
+        nres = listLength(residualEquations);
+        
+        extObjInfo = createExtObjInfo(dlow2);
+        
+        whenClauses = createSimWhenClauses(dlow2, helpVarInfo);
+        zeroCrossings = createZeroCrossings(dlow2);
+        (sampleConditions,helpVarInfo) = createSampleConditions(zeroCrossings,helpVarInfo);
+        sampleEquations = createSampleEquations(sampleEqns);
+
+        n_h = listLength(helpVarInfo);
+        
+        // Add model info
+        modelInfo = createModelInfoCPP(class_, dlow2, functions, n_h, nres, fileDir);
+        
+        // equation generation for euler, dassl2, rungekutta 
+        (contBlocks, _) = splitOutputBlocks(dlow2, ass1, ass2, m, mt, blt_no_states);  
+        odeEquations = createEquations(false, false, false, false, false, dlow2, ass1, ass2, blt_states, helpVarInfo);
+        algebraicEquations = createEquations(false, false, false, false, false, dlow2, ass1, ass2, contBlocks, helpVarInfo);
+        allEquations = createEquations(true, false, true, false, false, dlow2, ass1, ass2, comps, helpVarInfo);
+        
+        initialEquations = createInitialEquations(dlow2);
+        parameterEquations = createParameterEquations(dlow2);
+        removedEquations = createRemovedEquations(dlow2);
+        algorithmAndEquationAsserts = createAlgorithmAndEquationAsserts(dlow2);
+        discreteModelVars = extractDiscreteModelVars(dlow2, mt);
+        makefileParams = createMakefileParams(libs);
+        (delayedExps,maxDelayedExpIndex) = extractDelayedExpressions(dlow2);
+        
+        // replace div operator with div operator with check of Division by zero
+        orderedVars = BackendVariable.daeVars(dlow);
+        knownVars = BackendVariable.daeKnVars(dlow);
+        varlst = BackendDAEUtil.varList(orderedVars);
+        varlst1 = BackendDAEUtil.varList(knownVars);
+        varlst2 = listAppend(varlst,varlst1);  
+        vars = BackendDAEUtil.listVar(varlst2);         
+        (allEquations,divLst) = listMap1_2(allEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ONLY_VARIABLES()));              
+        (odeEquations,_) = listMap1_2(odeEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ONLY_VARIABLES()));        
+        (algebraicEquations,_) = listMap1_2(algebraicEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ONLY_VARIABLES()));       
+        (residualEquations,_) = listMap1_2(residualEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ALL()));        
+        (initialEquations,_) = listMap1_2(initialEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ALL()));        
+        (parameterEquations,_) = listMap1_2(parameterEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ALL()));        
+        (removedEquations,_) = listMap1_2(removedEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ONLY_VARIABLES()));        
+        // add equations with only parameters as division expression
+        allDivStmts = Util.listMap(divLst,generateParameterDivisionbyZeroTestEqn);
+        parameterEquations = listAppend(parameterEquations,{SES_ALGORITHM(allDivStmts)});
+        
+        // Replace variables in nonlinear equation systems with xloc[index]
+        // variables.
+            allEquations = applyResidualReplacements(allEquations);
+        Debug.fcall("execJacstat",print, "*** SimCode -> generate analytical Jacobians: " +& realString(clock()) +& "\n" );
+        LinearMats = createJacobianMatrix(functionTree,dlow,ass1,ass2,comps,m,mt);
+        LinearMats = createLinearModelMatrixes(functionTree,dlow,ass1,ass2,LinearMats);
+        
+        modelInfo = expandModelInfoVars(LinearMats,modelInfo);
+        Debug.fcall("execJacstat",print, "*** SimCode -> generate analytical Jacobians done!: " +& realString(clock()) +& "\n" );
+        crefToSimVarHT = createCrefToSimVarHT(modelInfo);
+        
+       
+        simCode = SIMCODE(modelInfo,
+          {},
+          recordDecls,
+          externalFunctionIncludes,
+          allEquations,
+          odeEquations,
+          algebraicEquations,
+          residualEquations,
+          initialEquations,
+          parameterEquations,
+          removedEquations,
+          algorithmAndEquationAsserts,
+          zeroCrossings,
+          sampleConditions,
+          sampleEquations,
+          helpVarInfo,
+          whenClauses,
+          discreteModelVars,
+          extObjInfo,
+          makefileParams,
+          DELAYED_EXPRESSIONS(delayedExps, maxDelayedExpIndex),
+          LinearMats,
+          simSettingsOpt,
+          filenamePrefix,
+          crefToSimVarHT);
+      then
+        simCode;
+    case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {"Generation of simulation using code using cpp templates failed"});
+      then
+        fail();
+  end matchcontinue;
+end createSimCodeCPP;
 
 protected function expandModelInfoVars
 "Expand Modelinfo with jacobain Vars"
@@ -2047,17 +2343,17 @@ algorithm
       Integer nx, ny, np, ng, ng_sam, ng_sam_1, next, ny_string, np_string, ng_1;
       Integer nhv,nin, nresi, nout, ny_int, np_int, ny_bool, np_bool, na, na_int, na_bool, na_string;
       Integer njacvars;
-       
+      Option<Integer> dim1,dim2;
       case(inJacs,minfo as (MODELINFO(name,dir,VARINFO(nhv, ng_1, ng_sam_1, nx, ny, ny_int, ny_bool, na, na_int, na_bool, np, np_int, np_bool, nout, nin,
-          nresi, next, ny_string, np_string, na_string,_),vars,functions)))
+          nresi, next, ny_string, np_string, na_string,_,dim1,dim2),vars,functions)))
         equation
           jacvars = appendAllVars(inJacs);
           jacvars = rewriteIndex(jacvars,0);
           njacvars = listLength(jacvars);
-          linearVars = SIMVARS({}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},{},{},{},{},{},jacvars);
+          linearVars = SIMVARS({}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},{},{},{},{},{},{},jacvars);
           simvarsandlinearvars = mergeVars(vars,linearVars);
         then MODELINFO(name, dir, VARINFO(nhv, ng_1, ng_sam_1, nx, ny, ny_int, ny_bool, na, na_int, na_bool, np, np_int, np_bool, nout, nin,
-          nresi, next, ny_string, np_string, na_string, njacvars), simvarsandlinearvars, functions);
+          nresi, next, ny_string, np_string, na_string, njacvars,dim1,dim2), simvarsandlinearvars, functions);
    end match;
 end expandModelInfoVars;
           
@@ -2667,11 +2963,11 @@ protected function callTargetTemplates
 algorithm
   (_) :=
   matchcontinue (simCode)
-    case (simCode)
+     case (simCode)
       equation
         true = RTOpts.debugFlag("CSharp");
         Tpl.tplNoret(SimCodeCSharp.translateModel, simCode);
-      then ();
+     then ();
     case (simCode)
       equation
         true = RTOpts.debugFlag("QSS");
@@ -2681,7 +2977,7 @@ algorithm
     case (simCode)
       equation
         false = RTOpts.debugFlag("CSharp") and RTOpts.debugFlag("QSS");
-        Tpl.tplNoret(SimCodeC.translateModel, simCode);
+      Tpl.tplNoret(SimCodeC.translateModel, simCode);
       then ();
   end matchcontinue;
 end callTargetTemplates;
@@ -5760,6 +6056,7 @@ algorithm
       list<SimVar> stringParamVars;
       list<SimVar> stringAliasVars;
       list<SimVar> extObjVars;   
+      list<SimVar> constVars;
       Integer nx,ny,np,na,next,numOutVars,numInVars,ny_int,np_int,na_int,ny_bool,np_bool;
       Integer na_bool,ny_string,np_string,na_string;         
     case (class_, dlow, functions, numHelpVars, numResiduals, fileDir)
@@ -5770,7 +6067,7 @@ algorithm
         SIMVARS(stateVars=stateVars,algVars=algVars,intAlgVars=intAlgVars,boolAlgVars=boolAlgVars,
                 inputVars=inputVars,outputVars=outputVars,aliasVars=aliasVars,intAliasVars=intAliasVars,boolAliasVars=boolAliasVars,
                 paramVars=paramVars,intParamVars=intParamVars,boolParamVars=boolParamVars,stringAlgVars=stringAlgVars,
-                stringParamVars=stringParamVars,stringAliasVars=stringAliasVars,extObjVars=extObjVars) = vars;
+                stringParamVars=stringParamVars,stringAliasVars=stringAliasVars,extObjVars=extObjVars,constVars=constVars) = vars;
         nx = listLength(stateVars);
         ny = listLength(algVars);
         ny_int = listLength(intAlgVars);
@@ -5798,6 +6095,88 @@ algorithm
         fail();
   end matchcontinue;
 end createModelInfo;
+
+protected function createModelInfoCPP
+  input Absyn.Path class_;
+  input BackendDAE.BackendDAE dlow;
+  input list<Function> functions;
+  input Integer numHelpVars;
+  input Integer numResiduals;
+  input String fileDir;
+  output ModelInfo modelInfo;
+algorithm
+  modelInfo :=
+  matchcontinue (class_, dlow, functions, numHelpVars, numResiduals, fileDir)
+    local
+      String directory;
+      VarInfo varInfo;
+      SimVars vars;
+      list<SimVar> stateVars;
+      list<SimVar> algVars;
+      list<SimVar> intAlgVars;
+      list<SimVar> boolAlgVars;
+      list<SimVar> inputVars;
+      list<SimVar> outputVars;
+      list<SimVar> aliasVars;
+      list<SimVar> intAliasVars;
+      list<SimVar> boolAliasVars;      
+      list<SimVar> paramVars;
+      list<SimVar> intParamVars;
+      list<SimVar> boolParamVars;
+      list<SimVar> stringAlgVars;
+      list<SimVar> stringParamVars;
+      list<SimVar> stringAliasVars;
+      list<SimVar> extObjVars;   
+      list<SimVar> jacobianVars;
+      list<SimVar> constVars;
+      Integer nx,ny,np,na,next,numOutVars,numInVars,ny_int,np_int,na_int,ny_bool,np_bool;
+      Integer na_bool,ny_string,np_string,na_string; 
+      list<SimVar> states1,states_lst,states_lst2,der_states_lst;
+      list<SimVar> states_2,derivatives_2,derivative;
+    case (class_, dlow, functions, numHelpVars, numResiduals, fileDir)
+      equation
+        //name = Absyn.pathString(class_);
+        directory = System.trim(fileDir, "\"");
+        (vars as SIMVARS(stateVars=stateVars,derivativeVars=derivative,algVars=algVars,intAlgVars=intAlgVars,boolAlgVars=boolAlgVars,
+                       inputVars=inputVars,outputVars=outputVars,aliasVars=aliasVars,intAliasVars=intAliasVars,boolAliasVars=boolAliasVars,
+                       paramVars=paramVars,intParamVars=intParamVars,boolParamVars=boolParamVars,stringAlgVars=stringAlgVars,stringParamVars=stringParamVars,
+                       stringAliasVars=stringAliasVars,extObjVars=extObjVars,jacobianVars=jacobianVars,constVars=constVars))=createVars(dlow);
+        nx = listLength(stateVars);
+        ny = listLength(algVars);
+        ny_int = listLength(intAlgVars);
+        ny_bool = listLength(boolAlgVars);
+        numOutVars = listLength(outputVars);
+        numInVars = listLength(inputVars);
+        na = listLength(aliasVars);
+        na_int = listLength(intAliasVars);
+        na_bool = listLength(boolAliasVars);
+        np = listLength(paramVars);
+        np_int = listLength(intParamVars);
+        np_bool = listLength(boolParamVars);
+        ny_string = listLength(stringAlgVars);
+        np_string = listLength(stringParamVars);
+        na_string = listLength(stringAliasVars);
+        next = listLength(extObjVars); 
+        varInfo = createVarInfoCPP(dlow,nx, ny, np, na, next, numOutVars, numInVars, numHelpVars, numResiduals,
+                 ny_int, np_int, na_int, ny_bool, np_bool, na_bool, ny_string, np_string, na_string);
+         states1 = stateindex1(stateVars,dlow);
+         states_lst= setStatesVectorIndex(states1);
+         der_states_lst = generateDerStates(states_lst);
+         states_lst2 =listAppend(states_lst,der_states_lst);
+         states_2 = replaceindex1(stateVars,states_lst);
+          Debug.fcall("cppvar",print," replace der varibales: \n " +&dumpVarinfoList(states_lst2));
+         derivatives_2=replaceindex1(derivative,der_states_lst);
+         Debug.fcall("cppvar",print,"state varibales: \n " +&dumpVarinfoList(states_lst2));
+      then
+        MODELINFO(class_, directory, varInfo,SIMVARS(states_2,derivatives_2,algVars,intAlgVars,boolAlgVars,inputVars,outputVars,aliasVars,
+                  intAliasVars,boolAliasVars,paramVars,intParamVars,boolParamVars,stringAlgVars,stringParamVars,stringAliasVars,extObjVars,jacobianVars,constVars), functions);
+    else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {"SimCode.createModelInfoCPP failed"});
+      then
+        fail();
+  end matchcontinue;
+end createModelInfoCPP;
 
 protected function createVarInfo
   input BackendDAE.BackendDAE dlow;
@@ -5832,9 +6211,10 @@ algorithm
         (ng, ng_sam) = BackendDAEUtil.numberOfZeroCrossings(dlow);
         ng_1 = filterNg(ng);
         ng_sam_1 = filterNg(ng_sam);
+  
       then
         VARINFO(numHelpVars, ng_1, ng_sam_1, nx, ny, ny_int, ny_bool, na, na_int, na_bool, np, np_int, np_bool, numOutVars, numInVars,
-          numResiduals, next, ny_string, np_string, na_string, 0);
+          numResiduals, next, ny_string, np_string, na_string, 0,NONE(),NONE());
     case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"createVarInfo failed"});
@@ -5842,6 +6222,56 @@ algorithm
         fail();
   end matchcontinue;
 end createVarInfo;
+
+protected function createVarInfoCPP
+  input BackendDAE.BackendDAE dlow;
+  input Integer nx;
+  input Integer ny;
+  input Integer np;
+  input Integer na;
+  input Integer next;
+  input Integer numOutVars;
+  input Integer numInVars;
+  input Integer numHelpVars;
+  input Integer numResiduals;
+  input Integer ny_int;
+  input Integer np_int;
+  input Integer na_int;
+  input Integer ny_bool;
+  input Integer np_bool;
+  input Integer na_bool;  
+  input Integer ny_string;
+  input Integer np_string;
+  input Integer na_string;
+  output VarInfo varInfo;
+algorithm
+  varInfo :=
+  matchcontinue (dlow, nx, ny, np, na, next, numOutVars, numInVars, numHelpVars, numResiduals,
+                 ny_int, np_int, na_int, ny_bool, np_bool, na_bool, ny_string, np_string, na_string)
+    local
+      Integer ng, ng_sam, ng_sam_1, ng_1,dim_1,dim_2;
+      String s1,s2;
+    case (dlow, nx, ny, np, na, next, numOutVars, numInVars, numHelpVars, numResiduals,
+                 ny_int, np_int, na_int, ny_bool, np_bool, na_bool, ny_string, np_string, na_string)
+      equation
+        (ng, ng_sam) = BackendDAEUtil.numberOfZeroCrossings(dlow);
+        ng_1 = filterNg(ng);
+        ng_sam_1 = filterNg(ng_sam);
+        (dim_1,dim_2)= dimensions(dlow);
+        
+        s1 = intString(dim_1);
+        s2 = intString(dim_2);
+        Debug.fcall("cppvarindex",print,"dimenstions" +& s2 +& " \n " +&s1 +&"\n");
+      then
+        VARINFO(numHelpVars, ng_1, ng_sam_1, nx, ny, ny_int, ny_bool, na, na_int, na_bool, np, np_int, np_bool, numOutVars, numInVars,
+          numResiduals, next, ny_string, np_string, na_string, 0,SOME(dim_1),SOME(dim_2));
+    case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {"createVarInfoCPP failed"});
+      then
+        fail();
+  end matchcontinue;
+end createVarInfoCPP;
 
 protected function createVars
   input BackendDAE.BackendDAE dlow;
@@ -5864,7 +6294,7 @@ algorithm
       initialEqs=ie))
       equation
         /* Extract from variable list */  
-        ((varsOut,_,_)) = BackendVariable.traverseBackendDAEVars(vars,extractVarsFromList,(SIMVARS({}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},{},{},{},{},{},{}),aliasVars,knvars)); 
+        ((varsOut,_,_)) = BackendVariable.traverseBackendDAEVars(vars,extractVarsFromList,(SIMVARS({}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},{},{},{},{},{},{},{}),aliasVars,knvars)); 
         /* Extract from known variable list */
         ((varsOut,_,_)) = BackendVariable.traverseBackendDAEVars(knvars,extractVarsFromList,(varsOut,aliasVars,knvars));
         /* Extract from removed variable list */
@@ -5932,6 +6362,7 @@ algorithm
       list<SimVar> stringParamVars;
       list<SimVar> stringAliasVars;
       list<SimVar> extObjVars;
+      list<SimVar> constVars;
       SimVar simvar;
       SimVar derivSimvar;
       BackendDAE.Variables v;
@@ -5956,6 +6387,7 @@ algorithm
         stringParamVars = {};
         stringAliasVars = {};
         extObjVars = {};
+        constVars = {};
         /* extract the sim var */
         simvar = dlowvarToSimvar(dlowVar,SOME(inAliasVars),v);
         derivSimvar = derVarFromStateVar(simvar);
@@ -5995,10 +6427,12 @@ algorithm
           BackendVariable.isVarBoolAlg(dlowVar), simvar, boolAliasVars);            
         stringAliasVars = addSimvarIfTrue( isalias and
           BackendVariable.isVarStringAlg(dlowVar), simvar, stringAliasVars);
+        constVars =addSimvarIfTrue(
+          BackendVariable.isVarConst(dlowVar), simvar, constVars);
       then
         SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars, outputVars,
           aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
-          stringAlgVars, stringParamVars, stringAliasVars, extObjVars,{});
+          stringAlgVars, stringParamVars, stringAliasVars, extObjVars,{},constVars);
   end match;
 end extractVarFromVar;
 
@@ -6019,17 +6453,18 @@ algorithm
       Boolean isDiscrete;
       DAE.ComponentRef arrayCref;
       Absyn.Info info;
-    case (SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, isFixed, type_, isDiscrete, NONE(),_, info,_))
+      Option<Integer> variable_index;
+    case (SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, isFixed, type_, isDiscrete, NONE(),_, info,_,NONE()))
       equation
         name = ComponentReference.crefPrefixDer(name);
       then
-        SIMVAR(name, BackendDAE.STATE_DER(), comment, unit, displayUnit, index, NONE(), isFixed, type_, isDiscrete, NONE(), NOALIAS(), info, INTERNAL());
-    case (SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, isFixed, type_, isDiscrete, SOME(arrayCref),_, info,_))
+        SIMVAR(name, BackendDAE.STATE_DER(), comment, unit, displayUnit, index, NONE(), isFixed, type_, isDiscrete, NONE(), NOALIAS(), info, INTERNAL(),NONE());
+    case (SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, isFixed, type_, isDiscrete, SOME(arrayCref),_, info,_,NONE()))
       equation
         name = ComponentReference.crefPrefixDer(name);
         arrayCref = ComponentReference.crefPrefixDer(arrayCref);
       then
-        SIMVAR(name, BackendDAE.STATE_DER(), comment, unit, displayUnit, index, NONE(), isFixed, type_, isDiscrete, SOME(arrayCref), NOALIAS(), info, INTERNAL());
+        SIMVAR(name, BackendDAE.STATE_DER(), comment, unit, displayUnit, index, NONE(), isFixed, type_, isDiscrete, SOME(arrayCref), NOALIAS(), info, INTERNAL(),NONE());
   end match;
 end derVarFromStateVar;
 
@@ -6115,12 +6550,13 @@ algorithm
       list<SimVar> stringParamVars, stringParamVars1, stringParamVars2;
       list<SimVar> extObjVars, extObjVars1, extObjVars2;
       list<SimVar> jacVars, jacVars1, jacVars2;
+      list<SimVar> constVars, constVars1, constVars2;
     case (SIMVARS(stateVars1, derivativeVars1, algVars1, intAlgVars1, boolAlgVars1, inputVars1,
            outputVars1, aliasVars1, intAliasVars1, boolAliasVars1, paramVars1, intParamVars1, boolParamVars1,
-           stringAlgVars1, stringParamVars1, stringAliasVars1, extObjVars1,jacVars1),
+           stringAlgVars1, stringParamVars1, stringAliasVars1, extObjVars1,jacVars1,constVars1),
       SIMVARS(stateVars2, derivativeVars2, algVars2, intAlgVars2, boolAlgVars2, inputVars2,
            outputVars2, aliasVars2, intAliasVars2, boolAliasVars2, paramVars2, intParamVars2, boolParamVars2,
-           stringAlgVars2, stringParamVars2,stringAliasVars2,extObjVars2,jacVars2))
+           stringAlgVars2, stringParamVars2,stringAliasVars2,extObjVars2,jacVars2,constVars2))
       equation
         stateVars = listAppend(stateVars1, stateVars2);
         derivativeVars = listAppend(derivativeVars1, derivativeVars2);
@@ -6140,10 +6576,11 @@ algorithm
         stringAliasVars = listAppend(stringAliasVars1, stringAliasVars2);
         extObjVars = listAppend(extObjVars1, extObjVars2);
         jacVars = listAppend(jacVars1, jacVars2);
+        constVars = listAppend(constVars1, constVars2);
       then
         SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars, outputVars,
           aliasVars,intAliasVars,boolAliasVars,paramVars,intParamVars,boolParamVars,
-          stringAlgVars, stringParamVars, stringAliasVars, extObjVars,jacVars);
+          stringAlgVars, stringParamVars, stringAliasVars, extObjVars,jacVars,constVars);
     case (_,_)
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"mergeVars failed"});
@@ -6177,9 +6614,10 @@ algorithm
       list<SimVar> stringAliasVars;
       list<SimVar> extObjVars;
       list<SimVar> jacVars;
+      list<SimVar> constVars;
     case (SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars,
       outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
-      stringAlgVars, stringParamVars, stringAliasVars, extObjVars,jacVars))
+      stringAlgVars, stringParamVars, stringAliasVars, extObjVars,jacVars,constVars))
       equation
         stateVars = Util.sort(stateVars, varIndexComparer);
         derivativeVars = Util.sort(derivativeVars, varIndexComparer);
@@ -6199,9 +6637,11 @@ algorithm
         stringAliasVars = Util.sort(stringAliasVars, varIndexComparer);
         extObjVars = Util.sort(extObjVars, varIndexComparer);
         jacVars = Util.sort(jacVars, varIndexComparer);
+        constVars = Util.sort(constVars, varIndexComparer);
+        
       then SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars,
         outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
-        stringAlgVars, stringParamVars, stringAliasVars, extObjVars,jacVars);
+        stringAlgVars, stringParamVars, stringAliasVars, extObjVars,jacVars,constVars);
   end match;
 end sortSimvarsOnIndex;
 
@@ -6229,9 +6669,11 @@ algorithm
       list<SimVar> stringAliasVars;
       list<SimVar> extObjVars;
       list<SimVar> jacVars;
+      list<SimVar> constVars;
+      
     case (SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars,
       outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
-      stringAlgVars, stringParamVars, stringAliasVars, extObjVars,jacVars))
+      stringAlgVars, stringParamVars, stringAliasVars, extObjVars,jacVars,constVars))
       equation
         algVars = rewriteIndex(algVars, 0);
         intAlgVars = rewriteIndex(intAlgVars,0);
@@ -6246,9 +6688,10 @@ algorithm
         stringParamVars = rewriteIndex(stringParamVars, 0);
         stringAliasVars = rewriteIndex(stringAliasVars, 0);
         jacVars = rewriteIndex(jacVars, 0);
+        constVars = rewriteIndex(constVars, 0);
       then SIMVARS(stateVars, derivativeVars, algVars,intAlgVars, boolAlgVars, inputVars,
         outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
-        stringAlgVars, stringParamVars, stringAliasVars, extObjVars,jacVars);
+        stringAlgVars, stringParamVars, stringAliasVars, extObjVars,jacVars,constVars);
   end match;
 end fixIndex;
 
@@ -6273,11 +6716,12 @@ algorithm
       list<SimVar> rest,rest2;
       Absyn.Info info;
       Causality causality;
+      Option<Integer> variable_index;
     case ({},_) then {};  
-    case (SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, info, causality)::rest,index_)
+    case (SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, info, causality,NONE())::rest,index_)
       equation
         rest2 = rewriteIndex(rest, index_ + 1);
-      then (SIMVAR(name, kind, comment, unit, displayUnit, index_, initVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, info, causality)::rest2);
+      then (SIMVAR(name, kind, comment, unit, displayUnit, index_, initVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, info, causality,NONE())::rest2);
   end match; 
 end rewriteIndex;
 
@@ -6322,17 +6766,18 @@ algorithm
       list<SimVar> stringAliasVars;
       list<SimVar> extObjVars;
       list<SimVar> jacVars;
+      list<SimVar> constVars;
       /* no initial equations so nothing to do */
     case (_, {}) then simvarsIn;
     case (SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars,
       outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars, 
-      stringAlgVars, stringParamVars, stringAliasVars, extObjVars,jacVars), initCrefs)
+      stringAlgVars, stringParamVars, stringAliasVars, extObjVars,jacVars,constVars), initCrefs)
       equation
         true = Util.listMapAllValue(stateVars, simvarFixed,true);
         stateVars = Util.listMap1(stateVars, nonFixifyIfHasInit, initCrefs);
       then SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars,
         outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars, 
-        stringAlgVars, stringParamVars, stringAliasVars, extObjVars,jacVars);
+        stringAlgVars, stringParamVars, stringAliasVars, extObjVars,jacVars,constVars);
       /* not all were fixed so nothing to do */
     else simvarsIn;
   end matchcontinue;
@@ -6370,12 +6815,14 @@ algorithm
       String varNameStr;
       Absyn.Info info;
       Causality causality;
-    case (SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, info, causality), initCrefs)
+      Option<Integer> variable_index;
+      
+    case (SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, info, causality,NONE()), initCrefs)
       equation
         (_ :: _) = Util.listSelect1(initCrefs, name, ComponentReference.crefEqualNoStringCompare);
         varNameStr = ComponentReference.printComponentRefStr(name);
         Error.addSourceMessage(Error.SETTING_FIXED_ATTRIBUTE, {varNameStr}, info);
-      then SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, false, type_, isDiscrete, arrayCref, aliasvar, info, causality);
+      then SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, false, type_, isDiscrete, arrayCref, aliasvar, info, causality,NONE());
     case (_, _) then simvarIn;
   end matchcontinue;
 end nonFixifyIfHasInit;
@@ -6388,11 +6835,11 @@ algorithm
   outHT :=  matchcontinue (modelInfo)
     local
       HashTableCrefToSimVar ht;
-      list<SimVar> stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, aliasVars, intAliasVars, boolAliasVars, stringAliasVars, paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars, extObjVars;
+      list<SimVar> stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, aliasVars, intAliasVars, boolAliasVars, stringAliasVars, paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars, extObjVars,constVars;
     case (MODELINFO(vars = SIMVARS(
       stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, 
       _/*inputVars*/, _/*outputVars*/, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars, 
-      stringAlgVars, stringParamVars, stringAliasVars, extObjVars,_)))
+      stringAlgVars, stringParamVars, stringAliasVars, extObjVars,constVars,_)))
       equation
         ht = emptyHashTable();
         ht = Util.listFold(stateVars, addSimVarToHashTable, ht);
@@ -6410,6 +6857,7 @@ algorithm
         ht = Util.listFold(stringParamVars, addSimVarToHashTable, ht);
         ht = Util.listFold(stringAliasVars, addSimVarToHashTable, ht);
         ht = Util.listFold(extObjVars, addSimVarToHashTable, ht);
+         ht = Util.listFold(constVars, addSimVarToHashTable, ht);
       then
         ht;
     case (_)
@@ -8435,7 +8883,7 @@ algorithm
         info = DAEUtil.getElementSourceFileInfo(source);
         caus = getCausality(dlowVar,vars);
       then
-        SIMVAR(cr, kind, commentStr, unit, displayUnit, indx, initVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, info, caus);
+        SIMVAR(cr, kind, commentStr, unit, displayUnit, indx, initVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, info, caus,NONE());
   end match;
 end dlowvarToSimvar;
 
@@ -9909,5 +10357,757 @@ algorithm
         intString(i);
   end matchcontinue;  
 end twodigit;
+
+
+
+
+/**************************************/
+/************* for index ***************/
+
+protected function setVariableDerIndex "
+Author bz 2008-06
+This function investigates the system of equations finding an order for derivative variables.
+It only selects variables that have an derivative order, order=0 (no derivative) will not be included.
+"
+  input BackendDAE.BackendDAE inDlow;
+  output list<tuple<DAE.ComponentRef, Integer>> outOrder;
+algorithm outOrder := matchcontinue(inDlow)
+  local
+    BackendDAE.Variables dovars;
+    BackendDAE.EquationArray deqns;
+    list<BackendDAE.Equation> eqns;
+    list<BackendDAE.Var> vars;
+    list<Expression.Exp> derExps;    
+    list<tuple<DAE.ComponentRef, Integer>> variableIndex;
+    list<list<DAE.ComponentRef>> firstOrderVars;
+    list<DAE.ComponentRef> firstOrderVarsFiltered;
+    String eq_str;
+  case(inDlow)
+    equation
+      
+      dovars = BackendVariable.daeVars(inDlow);
+      deqns = BackendDAEUtil.daeEqns(inDlow);
+      vars = BackendDAEUtil.varList(dovars);
+      eqns = BackendDAEUtil.equationList(deqns);
+      derExps = makeCallDerExp(vars);
+      Debug.fcall("cppvar",print, " possible der exp: " +& Util.stringDelimitList(Util.listMap(derExps, ExpressionDump.printExpStr), ", ") +& "\n");
+      eqns = flattenEqns(eqns,inDlow);
+     // eq_str=dumpEqLst(eqns);
+      // Debug.fcall("cppvar",print,"filtered eq's " +& eq_str +& "\n");
+      (variableIndex,firstOrderVars) = Util.listMap22(derExps,locateDerAndSerachOtherSide,eqns,eqns);
+       Debug.fcall("cppvar",print,"united variables \n");
+      firstOrderVarsFiltered = Util.listFold(firstOrderVars,Util.listUnion,{});
+      Debug.fcall("cppvar",print,"list fold variables \n");
+      variableIndex = setFirstOrderInSecondOrderVarIndex(variableIndex,firstOrderVarsFiltered);
+     // Debug.fcall("cppvar",print,"Deriving Variable indexis:\n" +& dumpVariableindex(variableIndex) +& "\n");
+     then
+      variableIndex;
+  case(_)
+      equation
+         print(" Failure in setVariableDerIndex \n"); 
+         then fail();
+ end matchcontinue;
+end setVariableDerIndex;
+
+protected function flattenEqns "
+This function flattens all equations
+"
+input list<BackendDAE.Equation> eqns;
+input BackendDAE.BackendDAE dlow;
+output list<BackendDAE.Equation> oeqns;
+algorithm oeqns := matchcontinue(eqns, dlow)
+  local 
+    BackendDAE.Equation eq;
+    BackendDAE.WhenEquation when_eq;
+    BackendDAE.EquationArray eqns_array;
+    list<BackendDAE.Equation> rest,rec,le;
+    list<list<BackendDAE.Equation>> lle;
+    Integer idx;
+    String str;
+  case({},_) then {};
+    case( (eq as BackendDAE.EQUATION(_,_,_)) ::rest , dlow)
+    equation
+      rec = flattenEqns(rest,dlow);
+      rec = Util.listUnionElt(eq,rec);
+      then
+        rec;
+     case( (eq as BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(_,_,_,_))) ::rest , dlow)
+     equation
+       //str = DAELow.equationStr(when_eq);
+       //Debug.fcall("cppvar",print,"Found When eq " +& str +& "\n");
+       rec = flattenEqns(rest,dlow);
+       rec = Util.listUnionElt(eq,rec);
+      then
+        rec;
+     case( (eq as BackendDAE.ALGORITHM(_,_,_,_)) ::rest , dlow)
+     equation
+       //str = DAELow.equationStr(eq);
+       rec = flattenEqns(rest,dlow);
+       rec = Util.listUnionElt(eq,rec);
+      then
+        rec;
+     case( (eq as BackendDAE.ARRAY_EQUATION(_,_,_)) ::rest , dlow)
+     equation
+       //str = DAELow.equationStr(eq);
+       rec = flattenEqns(rest,dlow);
+       rec = Util.listUnionElt(eq,rec);
+      then
+        rec;
+            
+  case(eq::rest,dlow)
+    local String str;
+    equation 
+     // str = BackendDAE.equationStr(eq);
+      Debug.fcall("cppvar",print," FAILURE IN flattenEqns possible unsupported equation...\n" /*+& str*/);
+    then
+      fail();
+   end matchcontinue;
+end flattenEqns;
+
+protected function makeCallDerExp "
+Author bz 2008-06
+For all state-variables, generate an der(var) expression. 
+"
+  input list<BackendDAE.Var> inVars;
+  output list<Expression.Exp> outDerExps;
+algorithm outDerExps := matchcontinue(inVars)
+  local
+    BackendDAE.Var v;
+    list<BackendDAE.Var> vars;
+    list<Expression.Exp> rec;
+    DAE.ComponentRef cr;
+  case({}) then {};
+  case((v as BackendDAE.VAR(varKind = BackendDAE.STATE(),varName = cr))::vars)
+    equation
+      //true = DAELow.isStateVar(v);
+      rec = makeCallDerExp(vars);
+    then
+      DAE.CALL(Absyn.IDENT("der"),{DAE.CREF(cr,DAE.ET_OTHER())},false,false,DAE.ET_OTHER(),DAE.NO_INLINE())::rec;
+  //case((v as DAELow.VAR(varKind = DAELow.DUMMY_STATE(),varName = cr))::vars)
+   // equation
+      //true = DAELow.isStateVar(v);
+   //   rec = makeCallDerExp(vars);
+   // then
+    //  DAE.CALL(Absyn.IDENT("der"),{DAE.CREF(cr,DAE.ET_OTHER())},false,false,DAE.ET_OTHER(),DAE.NO_INLINE())::rec;
+  case(v::vars)
+    equation
+      rec = makeCallDerExp(vars);
+    then
+      rec;
+end matchcontinue;
+end makeCallDerExp;
+
+protected function locateDerAndSerachOtherSide "
+Author bz 2008-06
+helper function for setVariableDerIndex, locates the equation(/s) containing the current derivate.
+From there search for the variable beeing derived, exclude 'current equation'
+"
+  input Expression.Exp derExp;
+  input list<BackendDAE.Equation> inEqns;
+  input list<BackendDAE.Equation> inEqnsOrg;
+  output tuple<DAE.ComponentRef, Integer> out;
+  output list<DAE.ComponentRef> sysOrdOneVars;
+algorithm (out,sysOrdOneVars) := matchcontinue(derExp,inEqns,inEqnsOrg)
+  local 
+    Expression.Exp e1,e2,deriveVar;
+    list<Boolean> b;
+    list<BackendDAE.Equation> eqs;
+    BackendDAE.Equation eq;
+    list<Expression.Exp> expCref;
+    list<DAE.ComponentRef> crefs;
+    DAE.ComponentRef cr;
+    Integer rec,i1;
+    list<tuple<DAE.ComponentRef, Integer>> multipleHits;
+    tuple<DAE.ComponentRef, Integer> highestIndex; 
+  case( (derExp as DAE.CALL( expLst = {DAE.CREF(cr,_)})), {},_) then ((cr,0),{});
+  case( (derExp as DAE.CALL( expLst = {deriveVar as DAE.CREF(cr,_)})), (eq as BackendDAE.EQUATION(e1,e2,_))::eqs,inEqnsOrg)
+    equation
+      true = Expression.expEqual(e1,derExp);
+      inEqnsOrg = Util.listRemoveOnTrue(eq,Util.isEqual,inEqnsOrg);
+      Debug.fcall("cppvar",print, "\nFound equation containing " +& ExpressionDump.printExpStr(derExp) +& " Other side: " +& ExpressionDump.printExpStr(e2) +& ", extracted crefs: " +& ExpressionDump.printExpStr(deriveVar) +& "\n"); 
+      (rec,crefs) = locateDerAndSerachOtherSide2(DAE.CALL(Absyn.IDENT("der"),{e2},false,false,DAE.ET_OTHER(),DAE.NO_INLINE()),inEqnsOrg);
+      (highestIndex as (_,i1),_) = locateDerAndSerachOtherSide(derExp,eqs,inEqnsOrg);
+      rec = rec+1;
+      highestIndex = Util.if_(i1>rec,highestIndex,(cr,rec-1));      
+      //highestIndex = (cr,1);
+    then
+      (highestIndex,crefs);  
+  case( (derExp as DAE.CALL( expLst = {deriveVar as DAE.CREF(cr,_)})), (eq as BackendDAE.EQUATION(e1,e2,_))::eqs,inEqnsOrg)
+    equation
+      true = Expression.expEqual(e2,derExp);
+      inEqnsOrg = Util.listRemoveOnTrue(eq,Util.isEqual,inEqnsOrg);
+      Debug.fcall("cppvar",print, "\nFound equation containing " +& ExpressionDump.printExpStr(derExp) +& " Other side: " +& ExpressionDump.printExpStr(e1) +& ", extracted crefs: " +& ExpressionDump.printExpStr(deriveVar) +& "\n"); 
+      (rec,crefs) = locateDerAndSerachOtherSide2(DAE.CALL(Absyn.IDENT("der"),{e1},false,false,DAE.ET_OTHER(),DAE.NO_INLINE()),inEqnsOrg);
+      (highestIndex as (_,i1),_) = locateDerAndSerachOtherSide(derExp,eqs,inEqnsOrg);
+      rec = rec+1;
+      highestIndex = Util.if_(i1>rec,highestIndex,(cr,rec-1));
+      //highestIndex = (cr,1); 
+    then
+      (highestIndex,crefs);
+  case(derExp, (eq as BackendDAE.EQUATION(e1,e2,_))::eqs,inEqnsOrg)
+    equation
+      false = Expression.expEqual(e1,derExp);
+      false = Expression.expEqual(e2,derExp);
+      (highestIndex,crefs) = locateDerAndSerachOtherSide(derExp,eqs,inEqnsOrg);
+    then
+      (highestIndex,crefs);
+ case(derExp, (eq as BackendDAE.ARRAY_EQUATION(_,_,_))::eqs,inEqnsOrg)
+    equation
+      Debug.fcall("cppvar",print, "\nFound  array equation is not supported yet  searching for varibale index  \n");
+      (highestIndex,crefs) = locateDerAndSerachOtherSide(derExp,eqs,inEqnsOrg);
+    then
+      (highestIndex,crefs);
+  case(derExp, (eq as BackendDAE.IF_EQUATION(_,_,_,_))::eqs,inEqnsOrg)
+    equation
+      Debug.fcall("cppvar",print, "\nFound  if equation is not supported yet  searching for varibale index  \n");
+      (highestIndex,crefs) = locateDerAndSerachOtherSide(derExp,eqs,inEqnsOrg);
+    then
+      (highestIndex,crefs);
+ case(derExp, (eq as BackendDAE.ALGORITHM(_,_,_,_))::eqs,inEqnsOrg)
+    equation
+      Debug.fcall("cppvar",print, "\nFound  algorithm is not supported yet  searching for varibale index  \n");
+      (highestIndex,crefs) = locateDerAndSerachOtherSide(derExp,eqs,inEqnsOrg);
+    then
+      (highestIndex,crefs);
+ 
+end matchcontinue;
+end locateDerAndSerachOtherSide;
+
+protected function locateDerAndSerachOtherSide2 "
+Author bz 2008-06
+helper function for locateDerAndSerachOtherSide
+"
+  input Expression.Exp inDer;
+  input list<BackendDAE.Equation> inEqns;
+  output Integer oi;
+  output list<DAE.ComponentRef> firstOrderDers; 
+algorithm (oi,firstOrderDers) := matchcontinue(inDer,inEqns)
+  case(DAE.CALL(expLst = {DAE.CREF(_,_)}),inEqns)
+    equation
+      (oi,firstOrderDers) = locateDerAndSerachOtherSide22(inDer,inEqns);
+    then
+      (oi,firstOrderDers);
+  case(_,_) then (0,{});
+end matchcontinue;
+  end locateDerAndSerachOtherSide2;
+  
+protected function locateDerAndSerachOtherSide22 "
+Author bz 2008-06
+recursivly search equations for der(..) expressions.
+When found, return 1... this since we are only interested in second order system, at most.
+If we do not find any more derivative, 0 is returned. 
+"
+  input Expression.Exp inDer;
+  input list<BackendDAE.Equation> inEqns;
+  output Integer oi;
+  output list<DAE.ComponentRef> firstOrderDers; 
+algorithm (oi,firstOrderDers) := matchcontinue(inDer,inEqns)
+  local
+    Expression.Exp e1,e2;
+    DAE.ComponentRef cr;
+    list<Expression.Exp> args;
+    list<BackendDAE.Equation> rest;
+  case(_,{}) then (0,{});
+  case(inDer,(BackendDAE.EQUATION(e1,e2,_)::rest))
+    equation
+      true = Expression.expEqual(inDer,e1);
+      {cr} = Expression.getCrefFromExp(e1);
+      Debug.fcall("cppvar",print, " found derivative for " +& ExpressionDump.printExpStr(inDer) +& " in equation " +& ExpressionDump.printExpStr(e1) +& " = " +& ExpressionDump.printExpStr(e2) +& "\n");
+    then
+      (1,{cr});
+  case(inDer,(BackendDAE.EQUATION(e1,e2,_)::rest))
+    equation
+      true = Expression.expEqual(inDer,e2);
+      {cr} = Expression.getCrefFromExp(e2);
+      Debug.fcall("cppvar",print, " found derivative for " +& ExpressionDump.printExpStr(inDer) +& " in equation " +& ExpressionDump.printExpStr(e1) +& " = " +& ExpressionDump.printExpStr(e2) +& "\n");
+    then
+      (1,{cr});
+  case(inDer,(BackendDAE.EQUATION(e1,e2,_)::rest))
+    equation
+      Debug.fcall("cppvar",print, ExpressionDump.printExpStr(inDer) +& " NOT contained in " +& ExpressionDump.printExpStr(e1) +& " = " +& ExpressionDump.printExpStr(e2) +& "\n");
+      (oi,firstOrderDers) = locateDerAndSerachOtherSide22(inDer,rest);
+    then
+      (oi,firstOrderDers);
+end matchcontinue;  
+end locateDerAndSerachOtherSide22;
+
+protected function setFirstOrderInSecondOrderVarIndex "
+Author bz 2008-06
+"
+  input list<tuple<DAE.ComponentRef, Integer>> inRefs;
+  input list<DAE.ComponentRef> firstOrderInSec;
+  output list<tuple<DAE.ComponentRef, Integer>> outRefs;
+algorithm (outRefs) := matchcontinue(inRefs,firstOrderInSec)
+  local
+    list<tuple<DAE.ComponentRef, Integer>> rest;
+    Integer idx;
+    DAE.ComponentRef cr;
+    list<Boolean> bl;
+    
+  case({},_) then {};
+  case((cr,_)::rest,firstOrderInSec)
+    equation
+      bl = Util.listMap1(firstOrderInSec,ComponentReference.crefEqual,cr);
+      true = Util.boolOrList(bl);
+      rest = setFirstOrderInSecondOrderVarIndex(rest,firstOrderInSec);
+    then
+      (cr,2)::rest;
+  case((cr,1)::rest,firstOrderInSec)
+    equation      
+      rest = setFirstOrderInSecondOrderVarIndex(rest,firstOrderInSec);
+    then
+      (cr,1)::rest;
+  case((cr,idx)::rest,firstOrderInSec)
+    equation      
+      rest = setFirstOrderInSecondOrderVarIndex(rest,firstOrderInSec);
+    then
+      (cr,idx)::rest;
+end matchcontinue;
+end setFirstOrderInSecondOrderVarIndex;
+
+/********* for dimension *******/
+
+protected function calculateVariableDimensions "
+Calcuates the dimesion of the statevaribale with order 0,1,2
+"
+   input list<tuple<DAE.ComponentRef, Integer>> in_vars;
+   output Integer OutInteger1; //number of ordinary differential equations of 1st order
+   output Integer OutInteger2; //number of ordinary differential equations of 2st order
+  
+algorithm (OutInteger1,OutInteger2) := matchcontinue(in_vars)
+  local
+    list<tuple<DAE.ComponentRef, Integer>> rest;
+    DAE.ComponentRef cr;
+    Integer nvar1,nvar2;
+  case({}) then (0,0);
+  case((cr,0)::rest)
+    equation
+     (nvar1,nvar2) = calculateVariableDimensions(rest);
+    then
+      (nvar1+1,nvar2);
+  case((cr,_)::rest)
+    equation      
+      (nvar1,nvar2) = calculateVariableDimensions(rest);
+    then
+      (nvar1,nvar2+1);
+end matchcontinue;
+end calculateVariableDimensions;
+
+/********************/
+protected function dimensions
+
+input BackendDAE.BackendDAE dae_low;
+output Integer OutInteger1; //number of ordinary differential equations of 1st order
+output Integer OutInteger2; //number of ordinary differential equations of 2st order
+algorithm (OutInteger1,OutInteger2):= matchcontinue(dae_low)
+  local 
+    Integer nvar1,nvar2;
+    list<tuple<DAE.ComponentRef, Integer>> ordered_states;
+  case(dae_low)
+    equation
+       ordered_states=setVariableDerIndex(dae_low);
+      (nvar1,nvar2)=calculateVariableDimensions(ordered_states);
+      then
+        (nvar1,nvar2);
+end matchcontinue;
+end dimensions;
+
+/******************/
+/******************/
+protected function stateindex 
+
+  input DAE.ComponentRef var;
+  input list<tuple<DAE.ComponentRef, Integer>> odered_vars;
+  output Integer new_index;
+algorithm (new_index) := matchcontinue(var,odered_vars)
+  local DAE.ComponentRef cr; 
+        list<tuple<DAE.ComponentRef, Integer>> rest; 
+        Integer i;
+  case(_,{}) then (-1);
+  case(var ,((cr,i)::_))    
+    equation
+      true = ComponentReference.crefEqual(var,cr);
+    Debug.fcall("cppvarindex",print, " found state variable " +& ComponentReference.printComponentRefStr(var) +& " with index: " +& intString(i) +& "\n");
+  // Debug.fcall("cppvar",print, +& " with index: " +& intString(i) +& "\n");
+    then 
+      (i);
+  case(var,_::rest)
+    local Integer i;
+    equation
+     
+      (i)=stateindex(var,rest);
+       Debug.fcall("cppvarindex",print, " state variable " +& ComponentReference.printComponentRefStr(var) +& " with index: " +& intString(i) +& "\n");
+  
+   //  Debug.fcall("cppvar",print, +& " with index: " +& intString(i) +& "\n");      
+    then (i);
+end matchcontinue;
+end stateindex;
+
+protected function stateindex1
+
+ 
+ input list<SimVar> stateVars;
+ input BackendDAE.BackendDAE dae_low;
+ output list<SimVar> stateVars1;
+algorithm (stateVars1):= matchcontinue(stateVars,dae_low)
+  local 
+     list<SimVar> new_list;
+     SimVar new_simvar;
+     SimVar v;
+     list<SimVar> rest;
+  case({},dae_low)
+     then 
+       {};
+  case((v as SIMVAR(_,_,_,_,_,_,_,_,_,_,_,_,_,_,_))::rest,dae_low)
+     equation
+      new_list= stateindex1(rest,dae_low);
+      new_simvar =stateindex2(v,dae_low);
+    
+     then
+      (new_simvar::new_list);
+end matchcontinue;
+end stateindex1;
+
+protected function stateindex2
+ input SimVar stateVars;
+ input BackendDAE.BackendDAE dae_low;
+ output SimVar outSimVar;
+algorithm (outSimVar):= matchcontinue(stateVars,dae_low)
+  local 
+     list<tuple<DAE.ComponentRef, Integer>> ordered_states;
+     Integer new_index;
+    DAE.ComponentRef Name;
+    BackendDAE.VarKind VarKind;
+    String Comment;
+    String Unit;
+    String DisplayUnit;
+    Integer Index;
+    Option<DAE.Exp> InitialValue;
+    Boolean IsFixed;
+    DAE.ExpType Type_;
+    Boolean IsDiscrete;
+    // arrayCref is the name of the array if this variable is the first in that
+    // array
+    Option<DAE.ComponentRef> ArrayCref;
+    AliasVariable Aliasvar;
+    Absyn.Info Info; 
+    Causality Causality;
+    Option<Integer> variable_index;
+  case(SIMVAR(name=Name,varKind=VarKind,comment=Comment,unit=Unit,displayUnit=DisplayUnit,index=Index,initialValue=InitialValue,isFixed=IsFixed,type_=Type_,isDiscrete=IsDiscrete,arrayCref=ArrayCref,aliasvar=Aliasvar,info=Info,causality=Causality,variable_index=variable_index),dae_low)
+     equation
+      Debug.fcall("cppvarindex",print, " search index for state variable " +& ComponentReference.printComponentRefStr(Name) +& "\n");
+      ordered_states=setVariableDerIndex(dae_low);
+      new_index=stateindex(Name,ordered_states);
+           
+    then 
+     SIMVAR(Name,VarKind,Comment,Unit,DisplayUnit,new_index,InitialValue,IsFixed,Type_,IsDiscrete,ArrayCref,Aliasvar,Info,Causality,variable_index);      
+end matchcontinue;
+end stateindex2;      
+
+
+protected function setStatesVectorIndex "
+sorts the states in the state vector correponding to the variable index (0,1,2) and
+sets the vectorindex attribute for each state variable in the states vector(z)
+e.g der(x)=y
+		der(y)=a
+		der(z)=a -> z={z,x,y}
+"
+input list<SimVar> in_vars;
+output list<SimVar> out_vars;
+algorithm out_vars := matchcontinue(in_vars)
+  local
+    list<SimVar>  vars1,vars2,vars3,vars4,vars5;
+   Integer i; 
+  case(in_vars)
+    equation
+      (vars1,vars2,vars3) =  partitionStatesVector(in_vars);
+       vars4 = listAppend(vars1,vars2);
+       vars5 = listAppend(vars4,vars3);
+       vars5=setStatesVectorIndex2(vars5,0);
+    then 
+       vars5;
+end matchcontinue;
+end setStatesVectorIndex;
+
+protected function setStatesVectorIndex2"
+Help function for setStatesVectorIndex
+iterates the states vector an increments the vector index of each variable
+"
+input list<SimVar> in_vars;
+input Integer index;
+output list<SimVar> out_vars;
+algorithm out_vars := matchcontinue(in_vars,index)
+  local
+    DAE.ComponentRef Name;
+    BackendDAE.VarKind VarKind;
+    String Comment;
+    String Unit;
+    String DisplayUnit;
+    Integer Index;
+    Option<DAE.Exp> InitialValue;
+    Boolean IsFixed;
+    DAE.ExpType Type_;
+    Boolean IsDiscrete;
+    // arrayCref is the name of the array if this variable is the first in that
+    // array
+    Option<DAE.ComponentRef> ArrayCref;
+    AliasVariable Aliasvar;
+    Absyn.Info Info; 
+    Causality Causality;
+    Option<Integer> variable_index;
+    list<SimVar> rest,indexed_vector;   
+   case({},_) then {};
+   case(SIMVAR(name=Name,varKind=VarKind,comment=Comment,unit=Unit,displayUnit=DisplayUnit,index=Index,initialValue=InitialValue,isFixed=IsFixed,type_=Type_,isDiscrete=IsDiscrete,arrayCref=ArrayCref,aliasvar=Aliasvar,info=Info,causality=Causality,variable_index=variable_index) :: rest,index)
+    equation
+      indexed_vector = setStatesVectorIndex2(rest,index+1);
+     then 
+       SIMVAR(Name,VarKind,Comment,Unit,DisplayUnit,Index,InitialValue,IsFixed,Type_,IsDiscrete,ArrayCref,Aliasvar,Info,Causality,SOME(index))::indexed_vector;
+end matchcontinue;
+end setStatesVectorIndex2;
+
+
+protected function partitionStatesVector "
+partitioning the input vector into 3 state vectors  including   variables with corresponding variable indexes 0,1,2  
+e.g  der(x) = y;
+ 		 der(y)= a;
+ 		 der(z) =a;
+	   z=b -> output:  {z} {x} {y}
+"
+  input list<SimVar> in_vars "list with unsorted state variables";
+  output list<SimVar> oder_0;  
+  output list<SimVar> oder_1;
+  output list<SimVar> oder_2;
+algorithm (oder_0,oder_1,oder_2):= matchcontinue(in_vars)
+  local
+    list<SimVar> rest, vars1,vars2,vars3;
+    SimVar variable;
+    Integer vi;
+  case({}) then ({},{},{});
+  case((variable as SIMVAR(index=vi))::rest)
+    equation
+      (vars1,vars2,vars3)    =    partitionStatesVector(rest);
+      (vars1,vars2,vars3)    =    addVariableToStateVector(vars1,vars2,vars3,variable,vi);
+    then 
+     (vars1,vars2,vars3);
+ 
+end matchcontinue;
+end partitionStatesVector;
+
+protected function addVariableToStateVector "
+Helper function for setVectorIndexes;
+"
+  input list<SimVar> in_0; 
+  input list<SimVar> in_1;
+  input list<SimVar> in_2;
+  input SimVar variable;
+  input Integer variable_index;
+  output list<SimVar>  out_0;
+  output list<SimVar>  out_1;
+  output list<SimVar>  out_2;
+algorithm (out_0,out_1,out_2) := matchcontinue(in_0,in_1,in_2,variable,variable_index)
+  case(in_0,in_1,in_2,variable,0) then (variable::in_0,in_1,in_2);
+  case(in_0,in_1,in_2,variable,1) then (in_0,variable::in_1,in_2);
+  case(in_0,in_1,in_2,variable,2) then (in_0,in_1,variable::in_2);
+  case(_,_,_,_,_) equation print(" failure in addVariableToStateVector  \n"); then fail(); 
+end matchcontinue;
+end addVariableToStateVector;
+
+protected function generateDerStates "
+generates for each state in the states vector a corresponding der state
+"
+  input list<SimVar> in_varinfo_lst;
+  output list<SimVar> out_varinfo_lst;
+algorithm out_varinfo_lst := matchcontinue(in_varinfo_lst)
+  local 
+    list<SimVar> rest,dv_list;
+    SimVar v;
+    SimVar dv;
+  case({}) then {};
+  case( v::rest )
+    local
+       Integer var_index;
+       String s;
+    equation
+      dv = generateDerStates2(v);
+     // s= dumpVarInfo(dv);
+      //Debug.fcall("cppvar",print,"Generate der state" +& s +& "\n" );
+      dv_list = generateDerStates(rest);
+     then
+       dv::dv_list;
+  end matchcontinue; 
+end generateDerStates;
+
+protected function generateDerStates2 "
+Helper function for varsToVarInfo2
+"
+   input SimVar in_vf;
+   output SimVar out_vf;
+ 
+algorithm out_vf := matchcontinue(in_vf)
+  local 
+    DAE.ComponentRef Name;
+    BackendDAE.VarKind VarKind;
+    String Comment;
+    String Unit;
+    String DisplayUnit;
+    Option<DAE.Exp> InitialValue;
+    Boolean IsFixed;
+    DAE.ExpType Type_;
+    Boolean IsDiscrete;
+    // arrayCref is the name of the array if this variable is the first in that
+    // array
+    Option<DAE.ComponentRef> ArrayCref;
+    AliasVariable Aliasvar;
+    Absyn.Info Info; 
+    Causality causality;
+    Option<Integer> variable_index;
+    DAE.ComponentRef cr_1;
+    String name_str,id_str;
+    case(SIMVAR(Name,VarKind,Comment,Unit,DisplayUnit,0,InitialValue,IsFixed,Type_,IsDiscrete,ArrayCref,Aliasvar,Info,causality,variable_index)) 
+    equation
+      name_str = ComponentReference.printComponentRefStr(Name);
+     id_str = stringAppendList({BackendDAE.derivativeNamePrefix,"." ,name_str});
+     cr_1 = DAE.CREF_IDENT(id_str,DAE.ET_REAL(),{});
+    then
+     SIMVAR(cr_1,VarKind,Comment,Unit,DisplayUnit,0,InitialValue,IsFixed,Type_,IsDiscrete,ArrayCref,Aliasvar,Info,causality,variable_index);
+    case(SIMVAR(Name,VarKind,Comment,Unit,DisplayUnit,1,InitialValue,IsFixed,Type_,IsDiscrete,ArrayCref,Aliasvar,Info,causality,variable_index)) 
+    equation
+      name_str = ComponentReference.printComponentRefStr(Name);
+      id_str = stringAppendList({BackendDAE.derivativeNamePrefix,".",name_str});
+      cr_1 = DAE.CREF_IDENT(id_str,DAE.ET_REAL(),{});
+    then
+      SIMVAR(cr_1,VarKind,Comment,Unit,DisplayUnit,1,InitialValue,IsFixed,Type_,IsDiscrete,ArrayCref,Aliasvar,Info,causality,variable_index);
+    
+    case(SIMVAR(Name,VarKind,Comment,Unit,DisplayUnit,2,InitialValue,IsFixed,Type_,IsDiscrete,ArrayCref,Aliasvar,Info,causality,variable_index)) 
+     equation
+      name_str = ComponentReference.printComponentRefStr(Name);
+      id_str = stringAppendList({BackendDAE.derivativeNamePrefix,".",name_str});
+      cr_1 = DAE.CREF_IDENT(id_str,DAE.ET_REAL(),{});
+    then
+      SIMVAR(cr_1,VarKind,Comment,Unit,DisplayUnit,2,InitialValue,IsFixed,Type_,IsDiscrete,ArrayCref,Aliasvar,Info,causality,variable_index);
+       end matchcontinue; 
+ end generateDerStates2;
+
+
+protected function replaceindex 
+
+  input SimVar var;
+  input list<SimVar> statevarlist;
+  output SimVar newvar;
+algorithm (newvar) := matchcontinue(var,statevarlist)
+  local list<SimVar> rest,rest1; 
+           DAE.ComponentRef Name,Name1;
+           BackendDAE.VarKind VarKind;
+           String Comment;
+           String Unit;
+           String DisplayUnit;
+           Integer Index,Index1;
+           Option<DAE.Exp> InitialValue;
+           Boolean IsFixed;
+           DAE.ExpType Type_;
+           Boolean IsDiscrete;
+           Option<DAE.ComponentRef> ArrayCref;
+           AliasVariable Aliasvar;
+           Absyn.Info Info; 
+           Causality causality;
+           Option <Integer> variable_index;
+           Integer variable_index1;
+           SimVar v;
+  
+  case((v as SIMVAR(Name,VarKind,Comment,Unit,DisplayUnit,Index,InitialValue,IsFixed,Type_,IsDiscrete,ArrayCref,Aliasvar,Info,causality,variable_index)),SIMVAR(Name1,_,_,_,_,Index1,_,_,_,_,_,_,_,_,SOME(variable_index1))::_)    
+    equation
+      Debug.fcall("cppvarindex",print, " compare variable " +& ComponentReference.printComponentRefStr(Name) +& "with "  +& ComponentReference.printComponentRefStr(Name1) +& "\n");
+      true = ComponentReference.crefEqual(Name,Name1);
+   
+    then 
+      SIMVAR(Name,VarKind,Comment,Unit,DisplayUnit,variable_index1,InitialValue,IsFixed,Type_,IsDiscrete,ArrayCref,Aliasvar,Info,causality,SOME(Index1));
+  case((v as SIMVAR(Name,VarKind,Comment,Unit,DisplayUnit,Index,InitialValue,IsFixed,Type_,IsDiscrete,ArrayCref,Aliasvar,Info,causality,variable_index)),_::rest1)
+   local SimVar newvar1;   
+    equation
+       newvar1=replaceindex(v,rest1);
+    then newvar1;
+   else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {"Vector index for der variable was not found"});
+      then
+        fail();
+    
+end matchcontinue;
+end replaceindex;
+
+protected function replaceindex1 
+
+ input list<SimVar> Vars;
+ input list<SimVar> stateVars;
+ output list<SimVar> newVars;
+algorithm (newVars):= matchcontinue(Vars,stateVars)
+  local 
+     list<SimVar> new_list;
+     SimVar new_simvar;
+     SimVar v;
+     list<SimVar> rest;
+  case({},stateVars)
+     then 
+       {};
+  case((v as SIMVAR(_,_,_,_,_,_,_,_,_,_,_,_,_,_,_))::rest,stateVars)
+     equation
+      new_list= replaceindex1(rest,stateVars);
+      new_simvar =replaceindex(v,stateVars);
+    
+     then
+      (new_simvar::new_list);
+end matchcontinue;
+
+end replaceindex1;
+
+
+
+protected function dumpVarinfoList ""
+  input list<SimVar> in_list;
+  output String outString;
+algorithm outString := matchcontinue(in_list)
+  local
+    SimVar vf;
+    String s1,s2,s3;
+    list<SimVar> rest;
+  case({}) then "";
+  case( vf::rest )
+    equation
+      s1=  dumpVarInfo(vf);
+      s2= dumpVarinfoList(rest);
+      s3 = stringAppendList({s1,"\n", s2 });
+    then
+      s3;
+end matchcontinue;
+end dumpVarinfoList;
+
+protected function dumpVarInfo ""
+  input SimVar vf;
+  output String str;
+algorithm str := matchcontinue(vf)
+    local  DAE.ComponentRef Name;
+           BackendDAE.VarKind VarKind;
+           String Comment;
+           String Unit;
+           String DisplayUnit;
+           Integer x;
+           Option<DAE.Exp> InitialValue;
+           Boolean IsFixed;
+           DAE.ExpType Type_;
+           Boolean IsDiscrete;
+    // arrayCref is the name of the array if this variable is the first in that
+    // array
+           Option<DAE.ComponentRef> ArrayCref;
+           AliasVariable Aliasvar;
+           Absyn.Info Info; 
+           Causality causality;
+           Integer y;
+  case(SIMVAR(Name,VarKind,Comment,Unit,DisplayUnit,x,InitialValue,IsFixed,Type_,IsDiscrete,ArrayCref,Aliasvar,Info,causality,SOME(y))) then " Var: " +& ComponentReference.printComponentRefStr(Name) +& " varibale index: " +& intString(x) +& " vector index:" +& intString(y) +& " translating to z[" +& intString(y) +& "]";
+end matchcontinue;
+end dumpVarInfo;
+
+
+
+
 
 end SimCode;

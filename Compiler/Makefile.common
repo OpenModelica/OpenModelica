@@ -112,6 +112,7 @@ TEMPLATE = \
 SimCodeC.mo \
 SimCodeCSharp.mo \
 SimCodeQSS.mo \
+SimCodeCpp.mo \
 SimCodeFMU.mo \
 Tpl.mo \
 TplAbsyn.mo \

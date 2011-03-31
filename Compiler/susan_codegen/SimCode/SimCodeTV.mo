@@ -247,6 +247,8 @@ package SimCode
       Integer numStringParamVars;
       Integer numStringAliasVars;
       Integer numJacobianVars;
+      Option <Integer> dimODE1stOrder;
+      Option <Integer> dimODE2ndOrder; 
 	  end VARINFO;
 	end VarInfo;
 	
@@ -270,6 +272,7 @@ package SimCode
 	    list<SimVar> stringAliasVars;
 	    list<SimVar> extObjVars;
 	    list<SimVar> jacobianVars; //all vars for the matrices A,B,C,D
+	    list<SimVar> constVars;
 	  end SIMVARS;
 	end SimVars;
   
@@ -289,6 +292,7 @@ package SimCode
       AliasVariable aliasvar;
       Absyn.Info info;
       Causality causality;
+      Option<Integer> variable_index;
     end SIMVAR;
   end SimVar;
   
