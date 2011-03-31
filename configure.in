@@ -89,6 +89,7 @@ fi # End x86-specific CFLAGS
 
 dnl Checks for programs.
 AC_PROG_CC
+AC_PROG_CXX
 AC_PROG_CPP
 AC_PROG_MAKE_SET
 AC_PROG_LEX

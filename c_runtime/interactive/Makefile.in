@@ -8,7 +8,8 @@ CPPSRC = omi_Calculation.cpp omi_Control.cpp omi_ResultManager.cpp \
 				 omi_ServiceInterface.cpp omi_Transfer.cpp socket.cpp thread.cpp
 
 SHELL	= /bin/sh
-CC	= gcc
+CC = @CC@
+CXX = @CXX@
 CFLAGS	+= -O3 -I.. -I.
 CXXFLAGS = $(CFLAGS)
 CPPFLAGS = -Wall

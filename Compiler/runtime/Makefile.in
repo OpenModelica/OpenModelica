@@ -20,7 +20,8 @@ else
 endif
 
 SHELL	= /bin/sh
-CC	= gcc
+CC	= @CC@
+CXX	= @CXX@
 IDL	= @IDLCMD@
 CFLAGS	+=  @CFLAGS@
 CXXFLAGS = $(CFLAGS)
