@@ -10500,7 +10500,7 @@ algorithm oeqns := matchcontinue(eqns, dlow)
     Integer idx;
     String str;
   case({},_) then {};
-    case( (eq as BackendDAE.EQUATION(_,_,_)) ::rest , dlow)
+    case( (eq as BackendDAE.EQUATION(exp=_)) ::rest , dlow)
     equation
       rec = flattenEqns(rest,dlow);
       rec = Util.listUnionElt(eq,rec);
@@ -10514,14 +10514,14 @@ algorithm oeqns := matchcontinue(eqns, dlow)
        rec = Util.listUnionElt(eq,rec);
       then
         rec;
-     case( (eq as BackendDAE.ALGORITHM(_,_,_,_)) ::rest , dlow)
+     case( (eq as BackendDAE.ALGORITHM(index=_)) ::rest , dlow)
      equation
        //str = DAELow.equationStr(eq);
        rec = flattenEqns(rest,dlow);
        rec = Util.listUnionElt(eq,rec);
       then
         rec;
-     case( (eq as BackendDAE.ARRAY_EQUATION(_,_,_)) ::rest , dlow)
+     case( (eq as BackendDAE.ARRAY_EQUATION(index=_)) ::rest , dlow)
      equation
        //str = DAELow.equationStr(eq);
        rec = flattenEqns(rest,dlow);
@@ -10625,19 +10625,19 @@ algorithm (out,sysOrdOneVars) := matchcontinue(derExp,inEqns,inEqnsOrg)
       (highestIndex,crefs) = locateDerAndSerachOtherSide(derExp,eqs,inEqnsOrg);
     then
       (highestIndex,crefs);
- case(derExp, (eq as BackendDAE.ARRAY_EQUATION(_,_,_))::eqs,inEqnsOrg)
+ case(derExp, (eq as BackendDAE.ARRAY_EQUATION(index=_))::eqs,inEqnsOrg)
     equation
       Debug.fcall("cppvar",print, "\nFound  array equation is not supported yet  searching for varibale index  \n");
       (highestIndex,crefs) = locateDerAndSerachOtherSide(derExp,eqs,inEqnsOrg);
     then
       (highestIndex,crefs);
-  case(derExp, (eq as BackendDAE.IF_EQUATION(_,_,_,_))::eqs,inEqnsOrg)
+  case(derExp, (eq as BackendDAE.IF_EQUATION(indx=_))::eqs,inEqnsOrg)
     equation
       Debug.fcall("cppvar",print, "\nFound  if equation is not supported yet  searching for varibale index  \n");
       (highestIndex,crefs) = locateDerAndSerachOtherSide(derExp,eqs,inEqnsOrg);
     then
       (highestIndex,crefs);
- case(derExp, (eq as BackendDAE.ALGORITHM(_,_,_,_))::eqs,inEqnsOrg)
+ case(derExp, (eq as BackendDAE.ALGORITHM(index=_))::eqs,inEqnsOrg)
     equation
       Debug.fcall("cppvar",print, "\nFound  algorithm is not supported yet  searching for varibale index  \n");
       (highestIndex,crefs) = locateDerAndSerachOtherSide(derExp,eqs,inEqnsOrg);
@@ -10831,7 +10831,7 @@ algorithm (stateVars1):= matchcontinue(stateVars,dae_low)
   case({},dae_low)
      then 
        {};
-  case((v as SIMVAR(_,_,_,_,_,_,_,_,_,_,_,_,_,_,_))::rest,dae_low)
+  case((v as SIMVAR(name=_))::rest,dae_low)
      equation
       new_list= stateindex1(rest,dae_low);
       new_simvar =stateindex2(v,dae_low);
@@ -11039,14 +11039,14 @@ algorithm out_vf := matchcontinue(in_vf)
     equation
       name_str = ComponentReference.printComponentRefStr(Name);
      id_str = stringAppendList({BackendDAE.derivativeNamePrefix,"." ,name_str});
-     cr_1 = DAE.CREF_IDENT(id_str,DAE.ET_REAL(),{});
+     cr_1 = ComponentReference.makeCrefIdent(id_str,DAE.ET_REAL(),{});
     then
      SIMVAR(cr_1,VarKind,Comment,Unit,DisplayUnit,0,InitialValue,IsFixed,Type_,IsDiscrete,ArrayCref,Aliasvar,Info,causality,variable_index);
     case(SIMVAR(Name,VarKind,Comment,Unit,DisplayUnit,1,InitialValue,IsFixed,Type_,IsDiscrete,ArrayCref,Aliasvar,Info,causality,variable_index)) 
     equation
       name_str = ComponentReference.printComponentRefStr(Name);
       id_str = stringAppendList({BackendDAE.derivativeNamePrefix,".",name_str});
-      cr_1 = DAE.CREF_IDENT(id_str,DAE.ET_REAL(),{});
+      cr_1 = ComponentReference.makeCrefIdent(id_str,DAE.ET_REAL(),{});
     then
       SIMVAR(cr_1,VarKind,Comment,Unit,DisplayUnit,1,InitialValue,IsFixed,Type_,IsDiscrete,ArrayCref,Aliasvar,Info,causality,variable_index);
     
@@ -11054,7 +11054,7 @@ algorithm out_vf := matchcontinue(in_vf)
      equation
       name_str = ComponentReference.printComponentRefStr(Name);
       id_str = stringAppendList({BackendDAE.derivativeNamePrefix,".",name_str});
-      cr_1 = DAE.CREF_IDENT(id_str,DAE.ET_REAL(),{});
+      cr_1 = ComponentReference.makeCrefIdent(id_str,DAE.ET_REAL(),{});
     then
       SIMVAR(cr_1,VarKind,Comment,Unit,DisplayUnit,2,InitialValue,IsFixed,Type_,IsDiscrete,ArrayCref,Aliasvar,Info,causality,variable_index);
        end matchcontinue; 
@@ -11084,7 +11084,7 @@ algorithm (newvar) := matchcontinue(var,statevarlist)
            Causality causality;
            Option <Integer> variable_index;
            Integer variable_index1;
-           SimVar v;
+           SimVar v,newvar1;
   
   case((v as SIMVAR(Name,VarKind,Comment,Unit,DisplayUnit,Index,InitialValue,IsFixed,Type_,IsDiscrete,ArrayCref,Aliasvar,Info,causality,variable_index)),SIMVAR(Name1,_,_,_,_,Index1,_,_,_,_,_,_,_,_,SOME(variable_index1))::_)    
     equation
@@ -11094,7 +11094,6 @@ algorithm (newvar) := matchcontinue(var,statevarlist)
     then 
       SIMVAR(Name,VarKind,Comment,Unit,DisplayUnit,variable_index1,InitialValue,IsFixed,Type_,IsDiscrete,ArrayCref,Aliasvar,Info,causality,SOME(Index1));
   case((v as SIMVAR(Name,VarKind,Comment,Unit,DisplayUnit,Index,InitialValue,IsFixed,Type_,IsDiscrete,ArrayCref,Aliasvar,Info,causality,variable_index)),_::rest1)
-   local SimVar newvar1;   
     equation
        newvar1=replaceindex(v,rest1);
     then newvar1;
@@ -11121,7 +11120,7 @@ algorithm (newVars):= matchcontinue(Vars,stateVars)
   case({},stateVars)
      then 
        {};
-  case((v as SIMVAR(_,_,_,_,_,_,_,_,_,_,_,_,_,_,_))::rest,stateVars)
+  case((v as SIMVAR(name=_))::rest,stateVars)
      equation
       new_list= replaceindex1(rest,stateVars);
       new_simvar =replaceindex(v,stateVars);
