@@ -89,7 +89,11 @@ void Legend::selectColor()
         for(int i = 0; i < list.length(); i++)
         {
             if(list[i]->title() == legendItem)
-                list[i]->setPen(QPen(c));
+            {
+                QPen pen = list[i]->pen();
+                pen.setColor(c);
+                list[i]->setPen(pen);
+            }
         }
         mpPlot->replot();
     }

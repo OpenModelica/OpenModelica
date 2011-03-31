@@ -226,9 +226,7 @@ void PlotWindow::plot(QStringList variables)
         throw NoVariableException(QString("No variables specified!").toStdString().c_str());
 
     if(mpFile->fileName().endsWith("plt"))
-    {
-        std::cout << "Time before PLT collect : " << QTime::currentTime().toString().toStdString() << ":" << QTime::currentTime().msec();
-
+    {        
         //PLOT PLT
         //Set intervalSize
         int intervalSize;
@@ -269,15 +267,16 @@ void PlotWindow::plot(QStringList variables)
                     variableExists.replace(i , 1);
                     PlotCurve *pPlotCurve = new PlotCurve(mpPlot);
                     currentLine = mpTextStream->readLine();
-                    intervalSize = intervalString.toInt();
-                    while(intervalSize != 0)
+
+                    for(int j = 0; j < intervalSize; j++)
                     {
                         QStringList doubleList = currentLine.split(",");
                         pPlotCurve->addXAxisValue(QString(doubleList[0]).toDouble());
                         pPlotCurve->addYAxisValue(QString(doubleList[1]).toDouble());
-                        currentLine = mpTextStream->readLine();
-                        intervalSize--;
+
+                        currentLine = mpTextStream->readLine();                        
                     }
+
                     pPlotCurve->setTitle(currentVariable);
                     mpPlot->addPlotCurve(pPlotCurve);
                 }
@@ -287,14 +286,10 @@ void PlotWindow::plot(QStringList variables)
         }
         //Error handling
         if(!(variables[0] == ""))        
-            checkForErrors(variables, variableExists);
-
-        std::cout << "Time after PLT collect : " << QTime::currentTime().toString().toStdString() << ":" << QTime::currentTime().msec();
+            checkForErrors(variables, variableExists);       
     }    
     else if(mpFile->fileName().endsWith("csv"))
-    {
-        std::cout << "Time before CSV collect : " << QTime::currentTime().toString().toStdString() << ":" << QTime::currentTime().msec();
-
+    {       
         //PLOT CSV
         currentLine = mpTextStream->readLine();
         currentLine.remove(QChar('"'));
@@ -364,8 +359,6 @@ void PlotWindow::plot(QStringList variables)
     }
     else if(mpFile->fileName().endsWith("mat"))
     {
-       std::cout << "Time before MAT collect : " << QTime::currentTime().toString().toStdString() << ":" << QTime::currentTime().msec();
-
         //PLOT MAT
         ModelicaMatReader reader;        
         ModelicaMatVariable_t *var;
@@ -380,7 +373,7 @@ void PlotWindow::plot(QStringList variables)
         double stopTime =  omc_matlab4_stopTime(&reader);
         if (reader.nvar < 1)
           throw NoVariableException("Variable doesnt exist: time");
-        double *timeVals = omc_matlab4_read_vals(&reader,0);                                       
+        double *timeVals = omc_matlab4_read_vals(&reader,0);
 
         if(variables[0] == "")
         {
@@ -400,9 +393,20 @@ void PlotWindow::plot(QStringList variables)
             var = omc_matlab4_find_var(&reader, currentPlotVariable.toStdString().c_str());
             if(!var)
                 throw NoVariableException(QString("Variable doesnt exist : ").append(currentPlotVariable).toStdString().c_str());
-            if (!var->isParam) {
-              double *vals = omc_matlab4_read_vals(&reader, var->index);
-              pPlotCurve->setRawData(timeVals,vals,reader.nrows);
+            if (!var->isParam) {              
+                double *vals = omc_matlab4_read_vals(&reader, var->index);
+
+                for (int j = 0; j<reader.nrows; j++)
+                {
+                    pPlotCurve->addXAxisValue(timeVals[j]);
+                    pPlotCurve->addYAxisValue(vals[j]);
+                }
+
+                pPlotCurve->setTitle(variables[i]);
+//                pPlotCurve->setXAxisPointer(timeVals);
+//                pPlotCurve->setYAxisPointer(vals);
+//                pPlotCurve->setNumberOfValues(reader.nrows);
+
             } else {
               double val;
               double startStop[2] = {startTime,stopTime};
@@ -415,10 +419,9 @@ void PlotWindow::plot(QStringList variables)
             }
 
             //Set curvename and push back to list
-            pPlotCurve->setTitle(variables[i]);
+
             mpPlot->addPlotCurve(pPlotCurve);
-        }
-        std::cout << "Time after MAT collect : " << QTime::currentTime().toString().toStdString() << ":" << QTime::currentTime().msec();
+        }       
     }
     plotGraph(mpPlot->getPlotCurvesList());
 }
@@ -500,7 +503,7 @@ void PlotWindow::plotParametric(QString xVariable, QString yVariable)
         //Error handling        
         checkForErrors(variablesList, variableExists);
 
-        pPlotCurve->setTitle(variablesList[1]);
+        pPlotCurve->setTitle(yVariable + "(" + xVariable + ")");
         mpPlot->addPlotCurve(pPlotCurve);
     }
     else if(mpFile->fileName().endsWith("csv"))
@@ -547,7 +550,7 @@ void PlotWindow::plotParametric(QString xVariable, QString yVariable)
         list.append(yVariable);
         checkForErrors(list, variableExists);
 
-        pPlotCurve->setTitle(yVariable);
+        pPlotCurve->setTitle(yVariable + "(" + xVariable + ")");
         mpPlot->addPlotCurve(pPlotCurve);
     }
     else if(mpFile->fileName().endsWith("mat"))
@@ -580,21 +583,22 @@ void PlotWindow::plotParametric(QString xVariable, QString yVariable)
         for (int j = 0; j<reader.nrows; j++)
             pPlotCurve->addYAxisValue(vals[j]);
 
-        pPlotCurve->setTitle(yVariable);
+        pPlotCurve->setTitle(yVariable + "(" + xVariable + ")");
         mpPlot->addPlotCurve(pPlotCurve);
     }
     plotGraph(mpPlot->getPlotCurvesList());
 }
 
 void PlotWindow::plotGraph(QList<PlotCurve*> plotCurvesList)
-{
+{    
     for(int i = 0; i < plotCurvesList.length(); i++)
-    {
+    {                   
         plotCurvesList[i]->setData(plotCurvesList[i]->getXAxisVector(), plotCurvesList[i]->getYAxisVector());
+        //plotCurvesList[i]->setRawData(plotCurvesList[i]->getXAxisPointer(), plotCurvesList[i]->getYAxisPointer(), plotCurvesList[i]->getNumberOfValues());
         QPen pen(plotCurvesList[i]->getUniqueColor());
         pen.setWidth(2);
-        plotCurvesList[i]->setPen(pen);
-        plotCurvesList[i]->attach(mpPlot);
+        plotCurvesList[i]->setPen(pen);        
+        plotCurvesList[i]->attach(mpPlot);        
         //mpPlot->addPlotCurve(plotCurvesList[i]);
     }
     mpPlot->getPlotZoomer()->setZoomBase();
@@ -705,8 +709,9 @@ void PlotWindow::setGrid(bool on)
 
 void PlotWindow::setOriginal()
 {
-    mpPlot->setAxisAutoScale(QwtPlot::yLeft);
-    mpPlot->setAxisAutoScale(QwtPlot::xBottom);
+//    mpPlot->setAxisAutoScale(QwtPlot::yLeft);
+//    mpPlot->setAxisAutoScale(QwtPlot::xBottom);
+    mpPlot->getPlotZoomer()->zoom(0);
     mpPlot->replot();
 }
 
