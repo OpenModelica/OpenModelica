@@ -1696,7 +1696,7 @@ algorithm
         
     case (cache,env,"uriToFilename",{Values.STRING(str)},st,msg)
       equation
-        str = getFullPathFromUri(str);
+        str = getFullPathFromUri(str,true);
       then (cache,Values.STRING(str),st);
 
     case (cache,env,"uriToFilename",_,st,msg)
@@ -3698,21 +3698,22 @@ protected function getBasePathFromUri "Handle modelica:// URIs"
   input String scheme;
   input String name;
   input String modelicaPath;
+  input Boolean printError;
   output String basePath;
 algorithm
-  basePath := matchcontinue (scheme,name,modelicaPath)
+  basePath := matchcontinue (scheme,name,modelicaPath,printError)
     local
       list<String> mps,names;
       String gd,mp,bp,str;
-    case ("modelica://",name,mp)
+    case ("modelica://",name,mp,_)
       equation
         names = System.strtok(name,".");
         gd = System.groupDelimiter();
         mps = System.strtok(mp, gd);
         bp = findModelicaPath(mps,names);
       then bp;
-    case ("file://",_,_) then "";
-    case ("modelica://",name,mp)
+    case ("file://",_,_,_) then "";
+    case ("modelica://",name,mp,true)
       equation
         name::_ = System.strtok(name,".");
         str = "Could not resolve modelica://" +& name +& " with MODELICAPATH: " +& mp;
@@ -3762,12 +3763,13 @@ end findModelicaPath2;
 
 public function getFullPathFromUri
   input String uri;
+  input Boolean printError;
   output String path;
 protected
   String str1,str2,str3;
 algorithm
   (str1,str2,str3) := System.uriToClassAndPath(uri);
-  path := getBasePathFromUri(str1,str2,Settings.getModelicaPath()) +& str3;
+  path := getBasePathFromUri(str1,str2,Settings.getModelicaPath(),printError) +& str3;
 end getFullPathFromUri;
 
 end CevalScript;
