@@ -5997,15 +5997,4 @@ algorithm
   end matchcontinue;
 end selectOptModules1;
 
-public function daeEqns
-  input BackendDAE.BackendDAE inDAELow;
-  output BackendDAE.EquationArray inEquationArray;
-algorithm
-  inEquationArray := matchcontinue (inDAELow)
-    local BackendDAE.EquationArray eq;
-    case (BackendDAE.DAE(orderedEqs=eq))
-      then eq;
-  end matchcontinue;
-end daeEqns;
-
 end BackendDAEUtil;

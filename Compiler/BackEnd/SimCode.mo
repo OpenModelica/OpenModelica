@@ -10461,7 +10461,7 @@ algorithm outOrder := matchcontinue(inDlow)
     equation
       
       dovars = BackendVariable.daeVars(inDlow);
-      deqns = BackendDAEUtil.daeEqns(inDlow);
+      deqns = BackendEquation.daeEqns(inDlow);
       vars = BackendDAEUtil.varList(dovars);
       eqns = BackendDAEUtil.equationList(deqns);
       derExps = makeCallDerExp(vars);
@@ -10530,7 +10530,6 @@ algorithm oeqns := matchcontinue(eqns, dlow)
         rec;
             
   case(eq::rest,dlow)
-    local String str;
     equation 
      // str = BackendDAE.equationStr(eq);
       Debug.fcall("cppvar",print," FAILURE IN flattenEqns possible unsupported equation...\n" /*+& str*/);
@@ -10686,14 +10685,14 @@ algorithm (oi,firstOrderDers) := matchcontinue(inDer,inEqns)
   case(inDer,(BackendDAE.EQUATION(e1,e2,_)::rest))
     equation
       true = Expression.expEqual(inDer,e1);
-      {cr} = Expression.getCrefFromExp(e1);
+      {cr} = Expression.extractCrefsFromExp(e1);
       Debug.fcall("cppvar",print, " found derivative for " +& ExpressionDump.printExpStr(inDer) +& " in equation " +& ExpressionDump.printExpStr(e1) +& " = " +& ExpressionDump.printExpStr(e2) +& "\n");
     then
       (1,{cr});
   case(inDer,(BackendDAE.EQUATION(e1,e2,_)::rest))
     equation
       true = Expression.expEqual(inDer,e2);
-      {cr} = Expression.getCrefFromExp(e2);
+      {cr} = Expression.extractCrefsFromExp(e2);
       Debug.fcall("cppvar",print, " found derivative for " +& ExpressionDump.printExpStr(inDer) +& " in equation " +& ExpressionDump.printExpStr(e1) +& " = " +& ExpressionDump.printExpStr(e2) +& "\n");
     then
       (1,{cr});
@@ -10807,7 +10806,6 @@ algorithm (new_index) := matchcontinue(var,odered_vars)
     then 
       (i);
   case(var,_::rest)
-    local Integer i;
     equation
      
       (i)=stateindex(var,rest);
@@ -10997,11 +10995,10 @@ algorithm out_varinfo_lst := matchcontinue(in_varinfo_lst)
     list<SimVar> rest,dv_list;
     SimVar v;
     SimVar dv;
+    Integer var_index;
+    String s;
   case({}) then {};
   case( v::rest )
-    local
-       Integer var_index;
-       String s;
     equation
       dv = generateDerStates2(v);
      // s= dumpVarInfo(dv);
