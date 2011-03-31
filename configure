@@ -609,6 +609,8 @@ CPPFLAGS
 LDFLAGS
 CFLAGS
 CC
+OPENMODELICA_SPEC_PLATFORM
+MODELICA_SPEC_PLATFORM
 OMSHELL_TERMINAL
 LIBF2C
 SOURCE_REVISION
@@ -2175,6 +2177,8 @@ ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+
 
 
 
@@ -4958,6 +4962,21 @@ test -z "$SOURCE_REVISION" && SOURCE_REVISION="????"
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $SOURCE_REVISION" >&5
 $as_echo "$SOURCE_REVISION" >&6; }
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for OpenModelica platform name" >&5
+$as_echo_n "checking for OpenModelica platform name... " >&6; }
+# I don't really agree with the Modelica specification since "Intel 32-bit" is
+# very unspecific.
+# Also, they forgot about Mac users. We will just default to uname -sm and patch
+# to Modelica Spec standards as well.
+OPENMODELICA_SPEC_PLATFORM=`uname -sm | tr "[:upper:] " "[:lower:]-"`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $OPENMODELICA_SPEC_PLATFORM" >&5
+$as_echo "$OPENMODELICA_SPEC_PLATFORM" >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for Modelica platform name" >&5
+$as_echo_n "checking for Modelica platform name... " >&6; }
+if test "$OPENMODELICA_SPEC_PLATFORM" = "linux-x86_64" -o "$OPENMODELICA_SPEC_PLATFORM" = "linux-i.86"; then MODELICA_SPEC_PLATFORM=`echo $OPENMODELICA_SPEC_PLATFORM | sed "s/linux-x86_64/linux64/" | sed "s/linux-i.86/linux32/"`; fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $MODELICA_SPEC_PLATFORM" >&5
+$as_echo "$MODELICA_SPEC_PLATFORM" >&6; }
 
 date=`date "+%Y-%m-%d %H:%M:%S"`
 

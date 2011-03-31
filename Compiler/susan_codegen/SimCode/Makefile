@@ -7,14 +7,6 @@ all : SimCodeC.mo SimCodeCSharp.mo SimCodeFMU.mo Unparsing.mo SimCodeQSS.mo SimC
 
 
 
-SimCodeQSS.mo : SimCodeQSS.tpl SimCodeTV.mo
-	@echo " ** SimCodeC template compilation ** "
-	$(OMC) $< > $@.log || (cat $@.log && false)
-	cp -pf $@ ../../Template/
-	@echo " "
-
-
-
 SimCodeC.mo : SimCodeC.tpl SimCodeTV.mo
 	@echo " ** SimCodeC template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)

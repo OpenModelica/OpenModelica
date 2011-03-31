@@ -772,4 +772,23 @@ public function uriToClassAndPath "Handles modelica:// and file:// URI's. The re
   external "C" System_uriToClassAndPath(uri,scheme,classname,pathname) annotation(Library = "omcruntime");
 end uriToClassAndPath;
 
+public function modelicaPlatform "Returns the standardized platform name according to the Modelica specification:
+  win32 [Microsoft Windows 32 bit]
+  win64 [Microsoft Windows 64 bit]
+  linux32 [Linux Intel 32 bit]
+  linux64 [Linux Intel 64 bit]
+  Else, the empty string is returned 
+  "
+  output String platform;
+  external "C" System_modelicaPlatform() annotation(Library = "omcruntime");
+end modelicaPlatform;
+
+public function openModelicaPlatform "
+  Returns uname -sm (with spaces replaced by dashes and only lower-case letters) on Unix platforms
+  mingw32 is returned for OMDEV
+  "
+  output String platform;
+  external "C" System_openModelicaPlatform() annotation(Library = "omcruntime");
+end openModelicaPlatform;
+
 end System;

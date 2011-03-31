@@ -1696,8 +1696,7 @@ algorithm
         
     case (cache,env,"uriToFilename",{Values.STRING(str)},st,msg)
       equation
-        (str1,str2,str3) = System.uriToClassAndPath(str);
-        str = getBasePathFromUri(str1,str2,Settings.getModelicaPath()) +& str3;
+        str = getFullPathFromUri(str);
       then (cache,Values.STRING(str),st);
 
     case (cache,env,"uriToFilename",_,st,msg)
@@ -3707,12 +3706,10 @@ algorithm
       String gd,mp,bp,str;
     case ("modelica://",name,mp)
       equation
-        name::names = System.strtok(name,".");
+        names = System.strtok(name,".");
         gd = System.groupDelimiter();
         mps = System.strtok(mp, gd);
-        mps = Util.listMap1(mps,stringAppend,"/" +& name);
-        bp = Util.listSelectFirst(mps,System.directoryExists);
-        bp = stringAppendList(Util.listMap1(bp::names,stringAppend,"/"));
+        bp = findModelicaPath(mps,names);
       then bp;
     case ("file://",_,_) then "";
     case ("modelica://",name,mp)
@@ -3723,5 +3720,54 @@ algorithm
       then fail();
   end matchcontinue;
 end getBasePathFromUri;
+
+protected function findModelicaPath "Handle modelica:// URIs"
+  input list<String> mps;
+  input list<String> names;
+  output String basePath;
+algorithm
+  basePath := matchcontinue (mps,names)
+    local
+      String mp;
+    case (mp::_,names)
+      then findModelicaPath2(mp,names,false);
+    case (_::mps,names)
+      then findModelicaPath(mps,names);
+  end matchcontinue;
+end findModelicaPath;
+
+protected function findModelicaPath2 "Handle modelica:// URIs"
+  input String mp;
+  input list<String> names;
+  input Boolean b;
+  output String basePath;
+algorithm
+  basePath := matchcontinue (mp,names,b)
+    local
+      list<String> mps,names;
+      String gd,mp,bp,str,name;
+    case (mp,name::names,_)
+      equation
+        true = System.directoryExists(mp +& "/" +& name);
+      then findModelicaPath2(mp,names,true);
+    case (mp,name::names,_)
+      equation
+        true = System.regularFileExists(mp +& "/" +& name +& ".mo");
+      then mp;
+      // This class is part of the current package.mo, or whatever... 
+    case (mp,name::names,true)
+      then mp;
+  end matchcontinue;
+end findModelicaPath2;
+
+public function getFullPathFromUri
+  input String uri;
+  output String path;
+protected
+  String str1,str2,str3;
+algorithm
+  (str1,str2,str3) := System.uriToClassAndPath(uri);
+  path := getBasePathFromUri(str1,str2,Settings.getModelicaPath()) +& str3;
+end getFullPathFromUri;
 
 end CevalScript;

@@ -1601,11 +1601,12 @@ algorithm
     local
       Option<Absyn.Annotation> ann1,ann2;
       list<String> includes1,libs1,includes2,libs2;
-    case (BackendDAE.EXTOBJCLASS(constructor=DAE.FUNCTION(functions={DAE.FUNCTION_EXT(externalDecl=DAE.EXTERNALDECL(ann=ann1))}),
+      Absyn.Path fpath;
+    case (BackendDAE.EXTOBJCLASS(path = fpath,constructor=DAE.FUNCTION(functions={DAE.FUNCTION_EXT(externalDecl=DAE.EXTERNALDECL(ann=ann1))}),
       destructor=DAE.FUNCTION(functions={DAE.FUNCTION_EXT(externalDecl=DAE.EXTERNALDECL(ann=ann2))})))
       equation
-        (includes1,libs1) = generateExtFunctionIncludes(ann1);
-        (includes2,libs2) = generateExtFunctionIncludes(ann2);
+        (includes1,libs1) = generateExtFunctionIncludes(fpath,ann1);
+        (includes2,libs2) = generateExtFunctionIncludes(fpath,ann2);
         includes = Util.listListUnion({includes1, includes2});
         libs = Util.listListUnion({libs1, libs2});
       then (includes,libs);
@@ -1751,7 +1752,7 @@ algorithm
         inVars = Util.listMap(DAEUtil.getInputVars(daeElts), daeInOutSimVar);
         biVars = Util.listMap(DAEUtil.getBidirVars(daeElts), daeInOutSimVar);
         (recordDecls,rt_1) = elaborateRecordDeclarations(daeElts, recordDecls, rt);
-        (fn_includes, fn_libs) = generateExtFunctionIncludes(ann);
+        (fn_includes, fn_libs) = generateExtFunctionIncludes(fpath,ann);
         includes = Util.listUnion(fn_includes, includes);
         libs = Util.listUnion(fn_libs, libs);
         simextargs = Util.listMap(extargs, extArgsToSimExtArgs);
@@ -9053,23 +9054,97 @@ protected function generateExtFunctionIncludes
 "function: generateExtFunctionIncludes
   Collects the includes and libs for an external function
   by investigating the annotation of an external function."
+  input Absyn.Path path;
   input Option<Absyn.Annotation> inAbsynAnnotationOption;
   output list<String> includes;
   output list<String> libs;
 algorithm
   (includes,libs):=
-  match (inAbsynAnnotationOption)
+  match (path,inAbsynAnnotationOption)
     local
       list<Absyn.ElementArg> eltarg;
-    case (SOME(Absyn.ANNOTATION(eltarg)))
+    case (path,SOME(Absyn.ANNOTATION(eltarg)))
       equation
         libs = generateExtFunctionIncludesLibstr(eltarg);
         includes = generateExtFunctionIncludesIncludestr(eltarg);
+        libs = generateExtFunctionLibraryDirectoryFlags(path,eltarg,libs);
+        libs = generateExtFunctionIncludeDirectoryFlags(path,eltarg,includes,libs);
       then
         (includes,libs);
-    case (NONE()) then ({},{});
+    case (_,NONE()) then ({},{});
   end match;
 end generateExtFunctionIncludes;
+
+protected function generateExtFunctionIncludeDirectoryFlags
+  "Process LibraryDirectory and IncludeDirectory"
+  input Absyn.Path path;
+  input list<Absyn.ElementArg> eltarg;
+  input list<String> includes;
+  input list<String> libs;
+  output list<String> outLibs;
+algorithm
+  outLibs := matchcontinue (path,eltarg,includes,libs)
+    local
+      String str;
+    case (_,eltarg,{},libs) then libs;
+    case (_,eltarg,_,libs)
+      equation
+        Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=Absyn.STRING(str))) =
+        Interactive.getModificationValue(eltarg, Absyn.CREF_IDENT("IncludeDirectory",{}));
+        str = CevalScript.getFullPathFromUri(str);
+        str = "\"-I"+&str+&"\"";
+        // Yes, we have to append lists here so they appear in the correct order in the Makefile...
+        libs = listAppend(libs,{str});
+      then libs;
+    case (path,_,_,libs)
+      equation
+        str = "modelica://" +& Absyn.pathString(path) +& "/Resources/Include";
+        str = CevalScript.getFullPathFromUri(str);
+        str = "\"-I"+&str+&"\"";
+        // Yes, we have to append lists here so they appear in the correct order in the Makefile...
+        libs = listAppend(libs,{str});
+      then libs;
+    else libs;
+  end matchcontinue;
+end generateExtFunctionIncludeDirectoryFlags;
+
+protected function generateExtFunctionLibraryDirectoryFlags
+  "Process LibraryDirectory and IncludeDirectory"
+  input Absyn.Path path;
+  input list<Absyn.ElementArg> eltarg;
+  input list<String> libs;
+  output list<String> outLibs;
+algorithm
+  outLibs := matchcontinue (path,eltarg,libs)
+    local
+      String str,str1,str2,str3,platform1,platform2;
+    case (_,eltarg,{}) then {};
+    case (_,eltarg,libs)
+      equation
+        Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=Absyn.STRING(str))) =
+        Interactive.getModificationValue(eltarg, Absyn.CREF_IDENT("LibraryDirectory",{}));
+        str = CevalScript.getFullPathFromUri(str);
+        platform1 = System.openModelicaPlatform();
+        platform2 = System.modelicaPlatform();
+        str1 = Util.if_(platform1 ==& "", "", "\"-L" +& str +& "/" +& platform1 +& "\"");
+        str2 = Util.if_(platform2 ==& "", "", "\"-L" +& str +& "/" +& platform2 +& "\"");
+        str3 ="\"-L" +& str +& "\"";
+        libs = str1::str2::str3::libs;
+      then libs;
+    case (path,_,libs)
+      equation
+        str = "modelica://" +& Absyn.pathString(path) +& "/Resources/Library";
+        str = CevalScript.getFullPathFromUri(str);
+        platform1 = System.openModelicaPlatform();
+        platform2 = System.modelicaPlatform();
+        str1 = Util.if_(platform1 ==& "", "", "\"-L" +& str +& "/" +& platform1 +& "\"");
+        str2 = Util.if_(platform2 ==& "", "", "\"-L" +& str +& "/" +& platform2 +& "\"");
+        str3 ="\"-L" +& str +& "\"";
+        libs = str1::str2::str3::libs;
+      then libs;
+    else libs;
+  end matchcontinue;
+end generateExtFunctionLibraryDirectoryFlags;
 
 protected function getLibraryStringInGccFormat
 "Takes an Absyn.STRING describing a library and outputs a list
@@ -10809,8 +10884,8 @@ protected function setStatesVectorIndex "
 sorts the states in the state vector correponding to the variable index (0,1,2) and
 sets the vectorindex attribute for each state variable in the states vector(z)
 e.g der(x)=y
-		der(y)=a
-		der(z)=a -> z={z,x,y}
+    der(y)=a
+    der(z)=a -> z={z,x,y}
 "
 input list<SimVar> in_vars;
 output list<SimVar> out_vars;
@@ -10869,9 +10944,9 @@ end setStatesVectorIndex2;
 protected function partitionStatesVector "
 partitioning the input vector into 3 state vectors  including   variables with corresponding variable indexes 0,1,2  
 e.g  der(x) = y;
- 		 der(y)= a;
- 		 der(z) =a;
-	   z=b -> output:  {z} {x} {y}
+     der(y)= a;
+     der(z) =a;
+     z=b -> output:  {z} {x} {y}
 "
   input list<SimVar> in_vars "list with unsorted state variables";
   output list<SimVar> oder_0;  

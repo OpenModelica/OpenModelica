@@ -1961,6 +1961,7 @@ RML_BEGIN_LABEL(System__intMaxLit)
   rmlA0 = mk_icon(LONG_MAX / 2);
   RML_TAILCALLK(rmlSC);
 }
+RML_END_LABEL
 
 RML_BEGIN_LABEL(System__uriToClassAndPath)
 {
@@ -1976,5 +1977,18 @@ RML_BEGIN_LABEL(System__uriToClassAndPath)
     RML_TAILCALLK(rmlFC);
   RML_TAILCALLK(rmlSC);
 }
+RML_END_LABEL
 
+RML_BEGIN_LABEL(System__modelicaPlatform)
+{
+  rmlA0 = mk_scon(CONFIG_MODELICA_SPEC_PLATFORM);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__openModelicaPlatform)
+{
+  rmlA0 = mk_scon(CONFIG_OPENMODELICA_SPEC_PLATFORM);
+  RML_TAILCALLK(rmlSC);
+}
 RML_END_LABEL

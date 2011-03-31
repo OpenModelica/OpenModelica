@@ -565,9 +565,21 @@ double System_getTimerCummulatedTime()
   return timerCummulatedTime;
 }
 
-extern int System_uriToClassAndPath(const char *uri, const char **scheme, char **name, char **path)
+extern void System_uriToClassAndPath(const char *uri, const char **scheme, char **name, char **path)
 {
-  return SystemImpl__uriToClassAndPath(uri, scheme, name, path);
+  int res = SystemImpl__uriToClassAndPath(uri, scheme, name, path);
+  // TODO: Fix memory leak by using the external interface
+  if (res) MMC_THROW();
+}
+
+extern const char* System_modelicaPlatform()
+{
+  return CONFIG_MODELICA_SPEC_PLATFORM;
+}
+
+extern const char* System_openModelicaPlatform()
+{
+  return CONFIG_OPENMODELICA_SPEC_PLATFORM;
 }
 
 }

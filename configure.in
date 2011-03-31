@@ -38,6 +38,8 @@ AC_SUBST(RML_TRACE)
 AC_SUBST(SOURCE_REVISION)
 AC_SUBST(LIBF2C)
 AC_SUBST(OMSHELL_TERMINAL)
+AC_SUBST(MODELICA_SPEC_PLATFORM)
+AC_SUBST(OPENMODELICA_SPEC_PLATFORM)
 
 if test x"$prefix" = xNONE; then
   PREFIX=`pwd`/build
@@ -485,6 +487,17 @@ test -z "$SOURCE_REVISION" && SOURCE_REVISION=`svn info 2>&1 | grep ^Revision: |
 test -z "$SOURCE_REVISION" && SOURCE_REVISION="????"
 
 AC_MSG_RESULT([$SOURCE_REVISION])
+
+AC_MSG_CHECKING([for OpenModelica platform name])
+# I don't really agree with the Modelica specification since "Intel 32-bit" is
+# very unspecific.
+# Also, they forgot about Mac users. We will just default to uname -sm and patch
+# to Modelica Spec standards as well.
+OPENMODELICA_SPEC_PLATFORM=`uname -sm | tr "@<:@:upper:@:>@ " "@<:@:lower:@:>@-"`
+AC_MSG_RESULT([$OPENMODELICA_SPEC_PLATFORM])
+AC_MSG_CHECKING([for Modelica platform name])
+if test "$OPENMODELICA_SPEC_PLATFORM" = "linux-x86_64" -o "$OPENMODELICA_SPEC_PLATFORM" = "linux-i.86"; then MODELICA_SPEC_PLATFORM=`echo $OPENMODELICA_SPEC_PLATFORM | sed "s/linux-x86_64/linux64/" | sed "s/linux-i.86/linux32/"`; fi
+AC_MSG_RESULT([$MODELICA_SPEC_PLATFORM])
 
 date=`date "+%Y-%m-%d %H:%M:%S"`
 
