@@ -2521,7 +2521,7 @@ algorithm
   end matchcontinue;
 end blockIsDynamic;
 
-protected function markStateEquations "function: markStateEquations
+public function markStateEquations "function: markStateEquations
   This function goes through all equations and marks the ones that
   calculates a state, or is needed in order to calculate a state,
   with a non-zero value in the array passed as argument.
@@ -2695,7 +2695,7 @@ algorithm
   end matchcontinue;
 end markStateEquation2;
 
-protected function invReachableNodes "function: invReachableNodes
+public function invReachableNodes "function: invReachableNodes
   Similar to reachable_nodes, but follows edges in backward direction
   I.e. what equations/variables needs to be solved to solve this one."
   input Integer inInteger1;

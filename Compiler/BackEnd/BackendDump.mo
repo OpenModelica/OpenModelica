@@ -1408,7 +1408,7 @@ algorithm
   end matchcontinue;
 end dumpComponentsGraphStr2;
 
-protected function dumpList "function: dumpList
+public function dumpList "function: dumpList
   author: PA
 
   Helper function to dump.
@@ -1578,10 +1578,10 @@ algorithm
   dumpIncidenceMatrix(m);
   dumpIncidenceMatrixT(mT);
   dumpMatching(v1);  
-  dumpComponentsAddvanced(comps,v2,ode);
+  dumpComponentsAdvanced(comps,v2,ode);
 end bltdump;
 
-public function dumpComponentsAddvanced "function: dumpComponents
+public function dumpComponentsAdvanced "function: dumpComponents
   author: Frenkel TUD
 
   Prints the blocks of the BLT sorting on stdout.
@@ -1595,10 +1595,10 @@ algorithm
   print("Blocks\n");
   print("=======\n");
   vars := BackendVariable.daeVars(ode);
-  dumpComponentsAddvanced2(l, 1,v2,vars);
-end dumpComponentsAddvanced;
+  dumpComponentsAdvanced2(l, 1,v2,vars);
+end dumpComponentsAdvanced;
 
-protected function dumpComponentsAddvanced2 "function: dumpComponents2
+protected function dumpComponentsAdvanced2 "function: dumpComponents2
   author: PA
 
   Helper function to dump_components.
@@ -1624,16 +1624,16 @@ algorithm
         s = Util.stringDelimitList(ls, ", ");
         print(s);
         print("} ");        
-        dumpComponentsAddvanced3(l,v2,vars);
+        dumpComponentsAdvanced3(l,v2,vars);
         print("\n");        
         i_1 = i + 1;
-        dumpComponentsAddvanced2(lst, i_1,v2,vars);
+        dumpComponentsAdvanced2(lst, i_1,v2,vars);
       then
         ();
   end match;
-end dumpComponentsAddvanced2;
+end dumpComponentsAdvanced2;
 
-protected function dumpComponentsAddvanced3 "function: dumpComponents2
+protected function dumpComponentsAdvanced3 "function: dumpComponents2
   author: PA
 
   Helper function to dump_components.
@@ -1679,10 +1679,10 @@ algorithm
         print(s);
         s = Util.if_(b,"der(","");
         print(s);
-        dumpComponentsAddvanced3(l,v2,vars);
+        dumpComponentsAdvanced3(l,v2,vars);
       then
         ();
   end match;
-end dumpComponentsAddvanced3;
+end dumpComponentsAdvanced3;
 
 end BackendDump;

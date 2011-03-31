@@ -70,6 +70,7 @@ public import DAE;
 public import Inline;
 
 // protected imports
+protected import BackendQSS;
 protected import BackendDump;
 protected import BackendDAECreate;
 protected import BackendDAEOptimize;
@@ -1129,6 +1130,7 @@ public function generateModelCode
   output Real timeSimCode;
   output Real timeTemplates;    
 protected 
+  
   list<String> includes;
   list<Function> functions;
   // DAE.DAElist dae2;
@@ -1137,6 +1139,7 @@ protected
   list<RecordDeclaration> recordDecls;
   BackendDAE.BackendDAE indexed_dlow,indexed_dlow_1;
   Absyn.ComponentRef a_cref;
+  BackendQSS.QSSinfo qssInfo;
 algorithm
    timeBackend := System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);   
    a_cref := Absyn.pathToCref(className);
@@ -1149,6 +1152,9 @@ algorithm
   simCode := createSimCode(functionTree, outIndexedBackendDAE, equationIndices, 
     variableIndices, incidenceMatrix, incidenceMatrixT, strongComponents, 
     className, filenamePrefix, fileDir, functions, includes, libs, simSettingsOpt, recordDecls); 
+    
+  qssInfo := BackendQSS.generateStructureCodeQSS(outIndexedBackendDAE, equationIndices, variableIndices, incidenceMatrix, incidenceMatrixT, strongComponents);
+      
   timeSimCode := System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);
   
   System.realtimeTick(CevalScript.RT_CLOCK_BUILD_MODEL);     
