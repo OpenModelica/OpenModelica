@@ -1,3 +1,6 @@
+REAL_CC=@CC@
+CC=@CXX@
+CXX=@CXX@
 RMLHOME=@rmlhome@
 OMC=../build/bin/omc
 

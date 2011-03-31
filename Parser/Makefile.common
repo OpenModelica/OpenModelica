@@ -5,9 +5,9 @@ RMLINC	= -I$(RMLHOME)/include/plain
 ANTLRCMD=java -cp ./antlr-3.2/lib/antlr-3.2.jar org.antlr.Tool -report
 CFLAGS=-O3 
 CPPFLAGS=-I$(COMPILERHOME) $(RMLINC) -I. -Iantlr-3.2/runtime/C -Iantlr-3.2/runtime/C/include $(BUILDINC)
-CC=g++
 
 .PHONY: all
+.SUFFIXES: .c .o
 all: install libomparse_rml.a
 
 install: libantlr3.a libomparse.a
@@ -15,7 +15,7 @@ install: libantlr3.a libomparse.a
 
 libantlr3.a: antlr-3.2/runtime/C/src/* antlr-3.2/runtime/C/include/* 
 	# build the library
-	gcc ${CFLAGS} -c antlr-3.2/runtime/C/src/*.c -Iantlr-3.2/runtime/C/include -Iantlr-3.2/runtime/C
+	$(REAL_CC) ${CFLAGS} -c antlr-3.2/runtime/C/src/*.c -Iantlr-3.2/runtime/C/include -Iantlr-3.2/runtime/C
 	rm -f $@
 	ar -ru libantlr3.a antlr3*.o
 	ranlib libantlr3.a
