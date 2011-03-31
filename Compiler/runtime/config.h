@@ -31,10 +31,10 @@
 #ifndef OPENMODELICA_CONFIG_H
 #define OPENMODELICA_CONFIG_H
 
+#if defined(__MINGW32__) || defined(_MSC_VER) /* Windows */
+
 #define DEFAULT_CC "g++"
 #define DEFAULT_CXX "g++"
-
-#if defined(__MINGW32__) || defined(_MSC_VER) /* Windows */
 
 #define DEFAULT_LDFLAGS "-lc_runtime -lregex"
 

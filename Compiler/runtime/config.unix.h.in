@@ -8,15 +8,18 @@
 #define CONFIG_MODELICA_SPEC_PLATFORM "@MODELICA_SPEC_PLATFORM@"
 #define CONFIG_OPENMODELICA_SPEC_PLATFORM "@OPENMODELICA_SPEC_PLATFORM@"
 
+#define DEFAULT_CC "@CXX@"
+#define DEFAULT_CXX "@CXX@"
+
 #if defined(__sparc__)
-  #define DEFAULT_LINKER "g++ -G"
+  #define DEFAULT_LINKER "@CXX@ -G"
 #elif defined(__APPLE_CC__)
-  #define DEFAULT_LINKER "g++ -single_module -dynamiclib -flat_namespace"
+  #define DEFAULT_LINKER "@CXX@ -single_module -dynamiclib -flat_namespace"
 #elif defined(__x86_64__)
   /* -fPIC needed on x86_64! */
-  #define DEFAULT_LINKER "g++ -shared -export-dynamic -fPIC"
+  #define DEFAULT_LINKER "@CXX@ -shared -export-dynamic -fPIC"
 #else
-  #define DEFAULT_LINKER "g++ -shared -export-dynamic"
+  #define DEFAULT_LINKER "@CXX@ -shared -export-dynamic"
 #endif
 
 #ifdef __APPLE_CC__
