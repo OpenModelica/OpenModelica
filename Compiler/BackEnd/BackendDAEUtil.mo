@@ -1297,7 +1297,7 @@ algorithm
         aliasVariables = BackendVariable.addVar(v,aliasVariables);
         exp = BackendVariable.varBindExp(v);
         cr = BackendVariable.varCref(v);
-        //print("++++ added Alias eqn : " +& ComponentReference.printComponentRefStr(cr) +& " = " +& ExpressionDump.printExpStr(exp) +& "\n");
+        Debug.fcall("debugAlias",print,"++++ added Alias eqn : " +& ComponentReference.printComponentRefStr(cr) +& " = " +& ExpressionDump.printExpStr(exp) +& "\n");
         aliasMappingsCref1 = BaseHashTable.addNoUpdCheck((cr,exp),aliasMappingsCref);
         aliasMappingsExp1 = BaseHashTable.addNoUpdCheck((exp,cr),aliasMappingsExp);
         Aliases =  addAliasVariables(rest,BackendDAE.ALIASVARS(aliasMappingsCref1,aliasMappingsExp1,aliasVariables));
@@ -1338,7 +1338,7 @@ algorithm
       equation
         exp1 = Expression.crefExp(inCref);
         cr1 = BaseHashTable.get(exp1,aliasMappingsExp);
-        //print("update ComponentRef : " +& ComponentReference.printComponentRefStr(inCref) +& " with Exp : " +& ExpressionDump.printExpStr(inExp) +& "\n");
+        Debug.fcall("debugAlias",print,"update ComponentRef : " +& ComponentReference.printComponentRefStr(inCref) +& " with Exp : " +& ExpressionDump.printExpStr(inExp) +& "\n");
         
         tableList = BaseHashTable.hashTableList(aliasMappingsExp);
         Aliases = updateAliasVars(tableList,exp1,inExp,Aliases);
@@ -1355,7 +1355,7 @@ algorithm
         exp1 = Expression.crefExp(inCref);
         ty = Expression.typeof(exp1);
         cr1 = BaseHashTable.get(DAE.UNARY(DAE.UMINUS(ty),exp1),aliasMappingsExp);
-        //print("update ComponentRef : " +& ComponentReference.printComponentRefStr(inCref) +& " with  -" +& ExpressionDump.printExpStr(inExp) +& "\n");
+        Debug.fcall("debugAlias",print,"update ComponentRef : " +& ComponentReference.printComponentRefStr(inCref) +& " with  -" +& ExpressionDump.printExpStr(inExp) +& "\n");
         
         tableList = BaseHashTable.hashTableList(aliasMappingsExp);
         Aliases = updateAliasVars(tableList,exp1,inExp,Aliases);
@@ -1369,7 +1369,7 @@ algorithm
            
     case (Aliases as BackendDAE.ALIASVARS( varMappingsExp = aliasMappingsExp, aliasVars = aliasVariables),inCref,inExp,inVars)
       equation
-        //print(" Search for " +& ComponentReference.printComponentRefStr(inCref) +& " with binding : " +& ExpressionDump.printExpStr(inExp) +& "failed.\n");
+        Debug.fcall("debugAlias",print," Search for " +& ComponentReference.printComponentRefStr(inCref) +& " with binding : " +& ExpressionDump.printExpStr(inExp) +& "failed.\n");
         exp1 = Expression.crefExp(inCref);
         failure(_ = BaseHashTable.get(exp1,aliasMappingsExp));
         ({v},_) = BackendVariable.getVar(inCref,inVars);
@@ -1410,23 +1410,22 @@ algorithm
       case ({},_,_,inAliases) then inAliases;
       case (((exp,cref))::rest,inExp1,inExp2,inAliases as BackendDAE.ALIASVARS(aliasVars=aliasvars))
         equation
-          //print("Exp : " +& ExpressionDump.printExpStr(exp) +& " - " +& ExpressionDump.printExpStr(inExp1) +& "\n");
           ty = Expression.typeof(inExp2);
           (true,b,exp2) = compareExpAlias(exp,inExp1);
-          //print("*** got : " +& ComponentReference.printComponentRefStr(cref) +& " = Exp : " +& ExpressionDump.printExpStr(exp2) +& "\n"  +& "ListLength: " +& intString(listLength(rest)) +& "\n");
+          Debug.fcall("debugAlias",print,"*** got : " +& ComponentReference.printComponentRefStr(cref) +& " = Exp : " +& ExpressionDump.printExpStr(exp2) +& "\n");
           ({v},_) = BackendVariable.getVar(cref,aliasvars);
           exp = BackendVariable.varBindExp(v);
-          //print("*** replace : " +& ExpressionDump.printExpStr(exp) +& " = " +& ExpressionDump.printExpStr(exp2) +& "\n");
           exp2 = Util.if_(b,DAE.UNARY(DAE.UMINUS(ty),inExp2),inExp2);
           exp2 = ExpressionSimplify.simplify1(exp2);
+          Debug.fcall("debugAlias",print,"*** replace : " +& ExpressionDump.printExpStr(exp) +& " = " +& ExpressionDump.printExpStr(exp2) +& "\n");
           v = BackendVariable.setBindExp(v,exp2);
           aliasVariables = addAliasVariables({v},inAliases);
-          //print("RES *** ComponentRef : " +& ComponentReference.printComponentRefStr(cref) +& " = Exp : " +& ExpressionDump.printExpStr(exp2) +& "\n");
+          Debug.fcall("debugAlias",print,"RES *** ComponentRef : " +& ComponentReference.printComponentRefStr(cref) +& " = Exp : " +& ExpressionDump.printExpStr(exp2) +& "\n");
           aliasVariables =  updateAliasVars(rest,inExp1,inExp2,aliasVariables);
         then aliasVariables;   
       case (((exp,cref))::rest,inExp1,inExp2,aliasVariables)
         equation
-          //print("*** let "  +& ExpressionDump.printExpStr(exp) +& " with binding Exp : " +& ComponentReference.printComponentRefStr(cref) +& "\n" +& "ListLength: " +& intString(listLength(rest)) +& "\n");
+          Debug.fcall("debugAlias",print,"*** let "  +& ExpressionDump.printExpStr(exp) +& " with binding Exp : " +& ComponentReference.printComponentRefStr(cref) +& "\n");
           aliasVariables = updateAliasVars(rest,inExp1,inExp2,aliasVariables);
         then aliasVariables;            
    end matchcontinue;

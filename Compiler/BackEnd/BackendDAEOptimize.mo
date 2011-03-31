@@ -420,7 +420,8 @@ algorithm
       ({v},_) = BackendVariable.getVar(cr1,vars);
       false = BackendVariable.isTopLevelInputOrOutput(cr1,vars,knvars);
       failure(_ = BackendDAEUtil.treeGet(outputs, cr1)) "cr1 not output of algorithm";
-      (extlst,_,replc_1) = removeSimpleEquations3(inExtendLst,replc,cr1,NONE(),e2,t); 
+      (extlst,_,replc_1) = removeSimpleEquations3(inExtendLst,replc,cr1,NONE(),e2,t);
+      Debug.fcall("debugAlias",print,"Simple Equation " +& ComponentReference.printComponentRefStr(cr1) +& " = " +& ExpressionDump.printExpStr(e2) +& " found.\n"); 
       repl_1 = VarTransform.addReplacement(repl, cr1, e2);
       mvars_1 = BackendDAEUtil.treeAdd(mvars, cr1, 0);   
       (eqns_1,seqns_1,mvars, mvars1, repl_2,extlst1,replc_2,varsAliases) = removeSimpleEquations2(eqns, funcSimpleEquation, vars, knvars, mvars_1, mvars1, outputs, repl_1, extlst,replc_1,varsAliases);
@@ -439,6 +440,7 @@ algorithm
       false = BackendVariable.isTopLevelInputOrOutput(cr1,vars,knvars);
       failure(_ = BackendDAEUtil.treeGet(outputs, cr1)) "cr1 not output of algorithm";
       (extlst,_,replc_1) = removeSimpleEquations3(inExtendLst,replc,cr1,NONE(),e2,t); 
+      Debug.fcall("debugAlias",print,"Simple Equation " +& ComponentReference.printComponentRefStr(cr1) +& " = " +& ExpressionDump.printExpStr(e2) +& " found.\n");
       repl_1 = VarTransform.addReplacement(repl, cr1, e2);
       mvars_1 = BackendDAEUtil.treeAdd(mvars, cr1, 0);
       (eqns_1,seqns_1,mvars,mvars1,repl_2,extlst1,replc_2,varsAliases) = removeSimpleEquations2(eqns, funcSimpleEquation, vars, knvars, mvars_1, mvars1,outputs, repl_1, extlst,replc_1,varsAliases);
@@ -457,7 +459,8 @@ algorithm
       ({v},_) = BackendVariable.getVar(cr1,vars);
       failure(_ = BackendVariable.varStartValueFail(v));
       failure(_ = BackendDAEUtil.treeGet(outputs, cr1)) "cr1 not output of algorithm";
-      (extlst,_,replc_1) = removeSimpleEquations3(inExtendLst,replc,cr1,NONE(),e2,t); 
+      (extlst,_,replc_1) = removeSimpleEquations3(inExtendLst,replc,cr1,NONE(),e2,t);
+      Debug.fcall("debugAlias",print,"Alias Equation " +& ComponentReference.printComponentRefStr(cr1) +& " = " +& ExpressionDump.printExpStr(e2) +& " found.\n"); 
       repl_1 = VarTransform.addReplacement(repl, cr1, e2);
       mvars_1 = BackendDAEUtil.treeAdd(mvars1, cr1, 0);
       varsAliases = BackendDAEUtil.updateAliasVariables(varsAliases, cr1, e2,vars);
@@ -477,7 +480,8 @@ algorithm
       ({v},_) = BackendVariable.getVar(cr1,vars);
       failure( _ = BackendVariable.varStartValueFail(v));
       failure(_ = BackendDAEUtil.treeGet(outputs, cr1)) "cr1 not output of algorithm";
-      (extlst,_,replc_1) = removeSimpleEquations3(inExtendLst,replc,cr1,NONE(),e2,t); 
+      (extlst,_,replc_1) = removeSimpleEquations3(inExtendLst,replc,cr1,NONE(),e2,t);
+      Debug.fcall("debugAlias",print,"Alias Equation " +& ComponentReference.printComponentRefStr(cr1) +& " = " +& ExpressionDump.printExpStr(e2) +& " found.\n"); 
       repl_1 = VarTransform.addReplacement(repl, cr1, e2);
       mvars_1 = BackendDAEUtil.treeAdd(mvars1, cr1, 0);
       varsAliases = BackendDAEUtil.updateAliasVariables(varsAliases, cr1, e2,vars);

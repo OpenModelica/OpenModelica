@@ -1155,7 +1155,6 @@ algorithm
               varKind = kind,
               varDirection = dir,
               varType = tp,
-              bindExp = NONE(),
               bindValue = v,
               arryDim = dim,
               index = i,
@@ -2406,7 +2405,16 @@ algorithm
   end match;
 end daeKnVars;
 
-
+public function daeAliasVars
+  input BackendDAE.BackendDAE inBackendDAE;
+  output BackendDAE.Variables vars;
+algorithm
+  vars := match (inBackendDAE)
+    local BackendDAE.Variables vars;
+    case (BackendDAE.DAE(aliasVars = BackendDAE.ALIASVARS(aliasVars = vars)))
+      then vars;
+  end match;
+end daeAliasVars;
 
 public function varsSize "function: varsSize
   author: PA
