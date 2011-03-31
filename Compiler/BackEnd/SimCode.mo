@@ -78,6 +78,7 @@ protected import BackendEquation;
 protected import BackendVariable;
 protected import BackendVarTransform;
 protected import BaseHashTable;
+protected import Builtin;
 protected import ClassInf;
 protected import ComponentReference;
 protected import DAEUtil;
@@ -85,7 +86,7 @@ protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSolve;
 protected import ExpressionSimplify;
-protected import HashTable2;
+protected import HashTable4;
 protected import SCodeUtil;
 protected import SimCodeC;
 protected import SimCodeCSharp;
@@ -1890,6 +1891,7 @@ algorithm
       Integer n_h,nres,maxDelayedExpIndex;
       list<HelpVarInfo> helpVarInfo;
       BackendDAE.BackendDAE dlow,dlow2;
+      BackendDAE.AliasVariables av;
       array<Integer> ass1,ass2;
       array<list<Integer>> m,mt;
       Absyn.Path class_;
@@ -1929,7 +1931,7 @@ algorithm
         
         (helpVarInfo, dlow2,sampleEqns) = generateHelpVarInfo(dlow, comps);
         
-        dlow2 = BackendDAEUtil.checkInitialSystem(dlow2,functionTree);
+        (dlow2)= BackendDAEUtil.checkInitialSystem(dlow2,functionTree);
         
         residualEquations = createResidualEquations(dlow2, ass1, ass2);
         nres = listLength(residualEquations);
@@ -1942,6 +1944,7 @@ algorithm
         sampleEquations = createSampleEquations(sampleEqns);
 
         n_h = listLength(helpVarInfo);
+        
         
         // Add model info
         modelInfo = createModelInfo(class_, dlow2, functions, n_h, nres, fileDir);
@@ -5285,9 +5288,10 @@ algorithm
         ((ie2_lst,_)) = BackendVariable.traverseBackendDAEVars(vars,generateInitialEquationsFromStart,({},av));
         ((ie2_lst,_)) = BackendVariable.traverseBackendDAEVars(knvars,generateInitialEquationsFromStart,(ie2_lst,av));
         ie2_lst = listReverse(ie2_lst);
+        /*
         ((_,_,_,eqns_lst)) = BackendEquation.traverseBackendDAEEqns(eqns,selectContinuousEquations,(1, ass2, vars,{}));
         eqns_lst = listReverse(eqns_lst); 
-        
+
         eqns_lst = Util.listMap(eqns_lst, BackendEquation.equationToResidualForm);
         eqns_lst = Util.listFilter(eqns_lst, failUnlessResidual);
         resEqus1 = Util.listMap1(eqns_lst, dlowEqToSimEqSystem,al);        
@@ -5297,20 +5301,21 @@ algorithm
         se_lst = listReverse(se_lst);
         se_lst = Util.listFilter(se_lst, failUnlessResidual);
         resEqus2 = Util.listMap1(se_lst, dlowEqToSimEqSystem,al);
+        */
         
         ie_lst = BackendEquation.traverseBackendDAEEqns(ie,BackendDAEUtil.traverseequationToResidualForm,{});
         ie_lst = replaceDerOpInEquationList(ie_lst);
         ie_lst = listReverse(ie_lst);
         ie_lst = Util.listFilter(ie_lst, failUnlessResidual);
-        resEqus3 = Util.listMap1(ie_lst, dlowEqToSimEqSystem,al);
+        resEqus1 = Util.listMap1(ie_lst, dlowEqToSimEqSystem,al);
         
         ie2_lst = Util.listMap(ie2_lst, BackendEquation.equationToResidualForm);
         ie2_lst = Util.listFilter(ie2_lst, failUnlessResidual);
-        resEqus4 = Util.listMap1(ie2_lst, dlowEqToSimEqSystem,al);
+        resEqus2 = Util.listMap1(ie2_lst, dlowEqToSimEqSystem,al);
         
         residualEquations = listAppend(resEqus1, resEqus2);
-        residualEquations = listAppend(residualEquations, resEqus3);
-        residualEquations = listAppend(residualEquations, resEqus4);
+        //residualEquations = listAppend(resEqus1,resEqus3);
+        //residualEquations = listAppend(residualEquations, resEqus4);
       then
         residualEquations;
         
@@ -5390,9 +5395,9 @@ algorithm
         ((initialEquationsTmp2,_)) = BackendVariable.traverseBackendDAEVars(vars,createInitialAssignmentsFromStart,({},av));
         initialEquationsTmp2 = listReverse(initialEquationsTmp2);
         // kvars
-        ((initialEquationsTmp,_)) = BackendVariable.traverseBackendDAEVars(knvars,createInitialAssignmentsFromStart,({},av));
-        initialEquationsTmp = listReverse(initialEquationsTmp);
-        initialEquationsTmp2 = listAppend(initialEquationsTmp2, initialEquationsTmp);
+        //((initialEquationsTmp,_)) = BackendVariable.traverseBackendDAEVars(knvars,createInitialAssignmentsFromStart,({},av));
+        //initialEquationsTmp = listReverse(initialEquationsTmp);
+        //initialEquationsTmp2 = listAppend(initialEquationsTmp2, initialEquationsTmp);
         
         initialEquations = Util.listMap1(initialEquationsTmp2,
           dlowEqToSimEqSystem,algs);
@@ -5493,15 +5498,15 @@ algorithm
       // expressions, e.g. parameter values, as start.  NOTE: such start
       // attributes can then not be changed in the text file, since the initial
       // calc. will override those entries!    
-    case ((var as BackendDAE.VAR(values=attr, varName=name, source=source),(eqns,av)))
+    case ((var as BackendDAE.VAR(varName=name, source=source),(eqns,av)))
       equation
         NOALIAS() = getAliasVar(var,SOME(av));
-        startv = DAEUtil.getStartAttr(attr);
-        false = Expression.isConst(startv);
+        startv = BackendVariable.varStartValue(var);
+        //false = Expression.isConst(startv);
         initialEquation = BackendDAE.SOLVED_EQUATION(name, startv, source);
       then
         ((var,(initialEquation :: eqns,av)));
-        
+ 
     case (inTpl) then inTpl;
   end matchcontinue;
 end createInitialAssignmentsFromStart;
@@ -5847,6 +5852,7 @@ algorithm
     local
       BackendDAE.Variables vars;
       BackendDAE.Variables knvars;
+      BackendDAE.Variables removedvars;
       BackendDAE.Variables extvars;
       BackendDAE.EquationArray ie;
       BackendDAE.AliasVariables aliasVars;
@@ -5854,13 +5860,15 @@ algorithm
     case (BackendDAE.DAE(orderedVars = vars,
       knownVars = knvars,
       externalObjects = extvars,
-      aliasVars = aliasVars,
+      aliasVars = aliasVars as BackendDAE.ALIASVARS(aliasVars = removedvars),
       initialEqs=ie))
       equation
         /* Extract from variable list */  
         ((varsOut,_,_)) = BackendVariable.traverseBackendDAEVars(vars,extractVarsFromList,(SIMVARS({}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},{},{},{},{},{},{}),aliasVars,knvars)); 
         /* Extract from known variable list */
         ((varsOut,_,_)) = BackendVariable.traverseBackendDAEVars(knvars,extractVarsFromList,(varsOut,aliasVars,knvars));
+        /* Extract from removed variable list */
+        ((varsOut,_,_)) = BackendVariable.traverseBackendDAEVars(removedvars,extractVarsFromList,(varsOut,aliasVars,knvars));
         /* Extract from external object list */
         ((varsOut,_,_)) = BackendVariable.traverseBackendDAEVars(extvars,extractVarsFromList,(varsOut,aliasVars,knvars));
         /* sort variables on index */
@@ -6024,6 +6032,35 @@ algorithm
         SIMVAR(name, BackendDAE.STATE_DER(), comment, unit, displayUnit, index, NONE(), isFixed, type_, isDiscrete, SOME(arrayCref), NOALIAS(), info, INTERNAL());
   end match;
 end derVarFromStateVar;
+
+
+protected function dumpVar
+  input SimVar inVar;
+algorithm
+  _ := matchcontinue(inVar)
+  local
+    DAE.ComponentRef name,name2;
+    AliasVariable aliasvar;
+    String s1,s2;
+    case (SIMVAR(name= name, aliasvar = NOALIAS()))
+    equation
+        s1 = ComponentReference.printComponentRefStr(name);
+        print(" No Alias for var : " +& s1 +& "\n");
+     then ();
+    case (SIMVAR(name= name, aliasvar = ALIAS(varName = name2)))
+    equation
+        s1 = ComponentReference.printComponentRefStr(name);
+        s2 = ComponentReference.printComponentRefStr(name2);
+        print(" Alias for var " +& s1 +& " is " +& s2 +& "\n");
+    then ();
+    case (SIMVAR(name= name, aliasvar = NEGATEDALIAS(varName = name2)))
+    equation
+        s1 = ComponentReference.printComponentRefStr(name);
+        s2 = ComponentReference.printComponentRefStr(name2);
+        print(" Minus Alias for var " +& s1 +& " is " +& s2 +& "\n");
+     then ();       
+   end matchcontinue;        
+end dumpVar;    
 
 protected function addSimvarIfTrue
   input Boolean condition;
@@ -6422,18 +6459,17 @@ algorithm
   matchcontinue (inVar,inAliasVars)
     local
       DAE.ComponentRef name;
-      HashTable2.HashTable varMappings;
       BackendDAE.Variables aliasVars;
       BackendDAE.Var var;
       DAE.Exp e;
       AliasVariable alias;
-    case (BackendDAE.VAR(varName=name),SOME(BackendDAE.ALIASVARS(varMappings,aliasVars)))
+    case (BackendDAE.VAR(varName=name),SOME(BackendDAE.ALIASVARS(aliasVars = aliasVars)))
       equation
         ((var :: _),_) = BackendVariable.getVar(name,aliasVars);
         // does not work
         //e = BaseHashTable.get(name,varMappings);
         e = BackendVariable.varBindExp(var);
-        alias = getAliasVar1(e);        
+        alias = getAliasVar1(e,var);        
       then alias;
     case(_,_) then NOALIAS();
   end matchcontinue;
@@ -6441,16 +6477,45 @@ end getAliasVar;
 
 protected function getAliasVar1
   input DAE.Exp inExp;
+  input BackendDAE.Var inVar;
   output AliasVariable outAlias;
 algorithm
   outAlias :=
-  matchcontinue (inExp)
+  matchcontinue (inExp,inVar)
     local
       DAE.ComponentRef name;
-    case (DAE.CREF(componentRef=name)) then ALIAS(name); 
-    case (DAE.UNARY(operator=DAE.UMINUS(_),exp=DAE.CREF(componentRef=name))) then NEGATEDALIAS(name);
-    case (DAE.UNARY(operator=DAE.UMINUS_ARR(_),exp=DAE.CREF(componentRef=name))) then NEGATEDALIAS(name);
-    case(_) then NOALIAS();
+      Absyn.Path fname;
+    case (DAE.CREF(componentRef=name),inVar) then ALIAS(name); 
+    case (DAE.UNARY(operator=DAE.UMINUS(_),exp=DAE.CREF(componentRef=name)),inVar) then NEGATEDALIAS(name);
+    case (DAE.UNARY(operator=DAE.UMINUS_ARR(_),exp=DAE.CREF(componentRef=name)),inVar) then NEGATEDALIAS(name);
+    case (DAE.CALL(path=fname, expLst={DAE.CREF(componentRef=name)}),inVar)
+      equation
+       true = BackendVariable.isDummyDerVar(inVar);
+    then ALIAS(name); 
+    case (DAE.UNARY(operator=DAE.UMINUS(_),exp=DAE.CALL(path=fname, expLst={DAE.CREF(componentRef=name)})),inVar)
+      equation
+       true = BackendVariable.isDummyDerVar(inVar);
+    then NEGATEDALIAS(name);
+    case (DAE.UNARY(operator=DAE.UMINUS_ARR(_),exp=DAE.CALL(path=fname, expLst={DAE.CREF(componentRef=name)})),inVar)
+      equation
+       true = BackendVariable.isDummyDerVar(inVar);
+    then NEGATEDALIAS(name);       
+    case (DAE.CALL(path=fname, expLst={DAE.CREF(componentRef=name)}),inVar)
+      equation
+      Builtin.isDer(fname);
+       name = ComponentReference.crefPrefixDer(name);
+    then ALIAS(name); 
+    case (DAE.UNARY(operator=DAE.UMINUS(_),exp=DAE.CALL(path=fname, expLst={DAE.CREF(componentRef=name)})),inVar)
+      equation
+       Builtin.isDer(fname); 
+       name = ComponentReference.crefPrefixDer(name);
+    then NEGATEDALIAS(name);
+    case (DAE.UNARY(operator=DAE.UMINUS_ARR(_),exp=DAE.CALL(path=fname, expLst={DAE.CREF(componentRef=name)})),inVar)
+      equation
+       Builtin.isDer(fname); 
+       name = ComponentReference.crefPrefixDer(name);
+    then NEGATEDALIAS(name);      
+    case(_,_) then NOALIAS();
   end matchcontinue;
 end getAliasVar1;
 
@@ -6785,6 +6850,7 @@ algorithm
     case (((v as BackendDAE.VAR(varName = cr,varKind = kind,values = attr,source=source)),(eqns,av))) /* add equations for variables with fixed = true */
       equation
         NOALIAS() = getAliasVar(v,SOME(av));
+        false = BackendVariable.isVarDiscrete(v);
         BackendVariable.isVarKindVariable(kind);
         true = BackendVariable.varFixed(v);
         true = DAEUtil.hasStartAttr(attr);
@@ -6794,9 +6860,22 @@ algorithm
         startv = DAE.CALL(Absyn.IDENT("pre"), {e}, false, true, tp,DAE.NO_INLINE());
       then
         ((v,(BackendDAE.EQUATION(e,startv,source)::eqns,av)));
+    case (((v as BackendDAE.VAR(varName = cr,varKind = BackendDAE.STATE(),values = attr,source=source)),(eqns,av))) /* add equations for variables with fixed = true */
+      equation
+        NOALIAS() = getAliasVar(v,SOME(av));
+        false = BackendVariable.isVarDiscrete(v);
+        true = BackendVariable.varFixed(v);
+        false = DAEUtil.hasStartAttr(attr);
+        //startv = DAEUtil.getStartAttr(attr);
+        e = Expression.crefExp(cr);
+        tp = Expression.typeof(e);
+        startv = DAE.CALL(Absyn.IDENT("pre"), {e}, false, true, tp,DAE.NO_INLINE());
+      then
+        ((v,(BackendDAE.EQUATION(e,startv,source)::eqns,av)));         
     case (((v as BackendDAE.VAR(varName = cr,varKind = BackendDAE.DUMMY_STATE(),values = attr,source=source)),(eqns,av))) /* add equations for variables with fixed = true */
       equation
         NOALIAS() = getAliasVar(v,SOME(av));
+        false = BackendVariable.isVarDiscrete(v);
         true = BackendVariable.varFixed(v);
         true = DAEUtil.hasStartAttr(attr);
         //startv = DAEUtil.getStartAttr(attr);
@@ -6804,7 +6883,7 @@ algorithm
         tp = Expression.typeof(e);
         startv = DAE.CALL(Absyn.IDENT("pre"), {e}, false, true, tp,DAE.NO_INLINE());
       then
-        ((v,(BackendDAE.EQUATION(e,startv,source)::eqns,av)));        
+        ((v,(BackendDAE.EQUATION(e,startv,source)::eqns,av)));             
     case ((inTpl)) then inTpl;
   end matchcontinue;
 end generateInitialEquationsFromStart;

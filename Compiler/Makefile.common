@@ -130,6 +130,7 @@ Graph.mo \
 HashTable.mo \
 HashTable2.mo \
 HashTable3.mo \
+HashTable4.mo \
 HashTable5.mo \
 HashTableCG.mo \
 HashTableStringToPath.mo \

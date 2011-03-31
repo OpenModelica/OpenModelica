@@ -45,41 +45,50 @@ static int calcDataSize()
   for (int i = 0; i < globalData->nStates; i++) if (!globalData->statesFilterOutput[i]) sz++;
   for (int i = 0; i < globalData->nStates; i++) if (!globalData->statesDerivativesFilterOutput[i]) sz++;
   for (int i = 0; i < globalData->nAlgebraic; i++) if (!globalData->algebraicsFilterOutput[i]) sz++;
+  for (int i = 0; i < globalData->nAlias; i++) if (!globalData->aliasFilterOutput[i]) sz++;
   for (int i = 0; i < globalData->intVariables.nAlgebraic; i++) if (!globalData->intVariables.algebraicsFilterOutput[i]) sz++;
+  for (int i = 0; i < globalData->intVariables.nAlias; i++) if (!globalData->intVariables.aliasFilterOutput[i]) sz++;
   for (int i = 0; i < globalData->boolVariables.nAlgebraic; i++) if (!globalData->boolVariables.algebraicsFilterOutput[i]) sz++;
+  for (int i = 0; i < globalData->boolVariables.nAlias; i++) if (!globalData->boolVariables.aliasFilterOutput[i]) sz++;
   return sz;
 }
 
 static const omc_varInfo** calcDataNames(int dataSize)
-{
+    {
   const omc_varInfo** names = (const omc_varInfo**) malloc(dataSize*sizeof(struct omc_varInfo*));
   int curVar = 0;
   names[curVar++] = &timeValName;
   for (int i = 0; i < globalData->nStates; i++) if (!globalData->statesFilterOutput[i])
-      names[curVar++] = &globalData->statesNames[i];
+    names[curVar++] = &globalData->statesNames[i];
   for (int i = 0; i < globalData->nStates; i++) if (!globalData->statesDerivativesFilterOutput[i])
-      names[curVar++] = &globalData->stateDerivativesNames[i];
+    names[curVar++] = &globalData->stateDerivativesNames[i];
   for (int i = 0; i < globalData->nAlgebraic; i++) if (!globalData->algebraicsFilterOutput[i])
-      names[curVar++] = &globalData->algebraicsNames[i];
+    names[curVar++] = &globalData->algebraicsNames[i];
+  for (int i = 0; i < globalData->nAlias; i++) if (!globalData->aliasFilterOutput[i])
+    names[curVar++] = &globalData->alias_names[i];
   for (int i = 0; i < globalData->intVariables.nAlgebraic; i++) if (!globalData->intVariables.algebraicsFilterOutput[i])
-      names[curVar++] = &globalData->int_alg_names[i];
+    names[curVar++] = &globalData->int_alg_names[i];
+  for (int i = 0; i < globalData->intVariables.nAlias; i++) if (!globalData->intVariables.aliasFilterOutput[i])
+    names[curVar++] = &globalData->int_alias_names[i];
   for (int i = 0; i < globalData->boolVariables.nAlgebraic; i++) if (!globalData->boolVariables.algebraicsFilterOutput[i])
-      names[curVar++] = &globalData->bool_alg_names[i];
+    names[curVar++] = &globalData->bool_alg_names[i];
+  for (int i = 0; i < globalData->boolVariables.nAlias; i++) if (!globalData->boolVariables.aliasFilterOutput[i])
+    names[curVar++] = &globalData->bool_alias_names[i];
   for (int i = 0; i < globalData->nParameters; i++)
-      names[curVar++] = &globalData->parametersNames[i];
+    names[curVar++] = &globalData->parametersNames[i];
   for (int i = 0; i < globalData->intVariables.nParameters; i++)
-      names[curVar++] = &globalData->int_param_names[i];
+    names[curVar++] = &globalData->int_param_names[i];
   for (int i = 0; i < globalData->boolVariables.nParameters; i++)
-      names[curVar++] = &globalData->bool_param_names[i];
+    names[curVar++] = &globalData->bool_param_names[i];
   return names;
-}
+    }
 
-simulation_result_mat::simulation_result_mat(const char* filename, 
+simulation_result_mat::simulation_result_mat(const char* filename,
                double tstart, double tstop)
   : simulation_result(filename,numpoints),fp(),data2HdrPos(-1),ntimepoints(0)
 {
   const char Aclass[] = "A1 bt. ir1 na  Tj  re  ac  nt  so   r   y   ";
-  
+
   const struct omc_varInfo** names = NULL;
   const int nParams = globalData->nParameters+globalData->intVariables.nParameters
     +globalData->boolVariables.nParameters;
@@ -90,21 +99,21 @@ simulation_result_mat::simulation_result_mat(const char* filename,
   rt_tick(SIM_TIMER_OUTPUT);
   numVars = calcDataSize();
   names = calcDataNames(numVars+nParams);
-  
+
   try {
     // open file
     fp.open(filename, std::ofstream::binary|std::ofstream::trunc);
     if (!fp) throw SimulationResultFileOpenException();
-    
+
     // write `AClass' matrix
-    writeMatVer4Matrix("Aclass", 4, 11, Aclass, true); 
-    
+    writeMatVer4Matrix("Aclass", 4, 11, Aclass, true);
+
     // flatten variables' names
     flattenStrBuf(numVars+nParams, names, stringMatrix, rows, cols, false /* We cannot plot derivatives if we fix the names ... */, false);
     // write `name' matrix
     writeMatVer4Matrix("name", rows, cols, stringMatrix, true);
     delete[] stringMatrix; stringMatrix = NULL;
-    
+
     // flatten variables' comments
     flattenStrBuf(numVars+nParams, names, stringMatrix, rows, cols, false, true);
     // write `description' matrix
@@ -116,14 +125,13 @@ simulation_result_mat::simulation_result_mat(const char* filename,
     // write `dataInfo' matrix
     writeMatVer4Matrix("dataInfo", cols, rows, doubleMatrix, false);
     delete[] doubleMatrix; doubleMatrix = NULL;
-    
 
     // generate `data_1' matrix (with parameter data)
     generateData_1(doubleMatrix, rows, cols, globalData, tstart, tstop);
     //  write `data_1' matrix
     writeMatVer4Matrix("data_1", cols, rows, doubleMatrix, false);
     delete[] doubleMatrix; doubleMatrix = NULL;
-    
+
     data2HdrPos = fp.tellp();
     // write `data_2' header
     writeMatVer4MatrixHeader("data_2", numVars, 0, false);
@@ -172,14 +180,32 @@ void simulation_result_mat::emit()
   // not for this purpose
   fp.write((char*)&globalData->timeValue,sizeof(double));
   for (int i = 0; i < globalData->nStates; i++) if (!globalData->statesFilterOutput[i])
-      fp.write((char*)&globalData->states[i],sizeof(double));
+    fp.write((char*)&globalData->states[i],sizeof(double));
   for (int i = 0; i < globalData->nStates; i++) if (!globalData->statesDerivativesFilterOutput[i])
-      fp.write((char*)&globalData->statesDerivatives[i],sizeof(double));
+    fp.write((char*)&globalData->statesDerivatives[i],sizeof(double));
   for (int i = 0; i < globalData->nAlgebraic; i++) if (!globalData->algebraicsFilterOutput[i])
-      fp.write((char*)&globalData->algebraics[i],sizeof(double));
+    fp.write((char*)&globalData->algebraics[i],sizeof(double));
+  for (int i = 0; i < globalData->nAlias; i++) if (!globalData->aliasFilterOutput[i])
+    {
+      if (((globalData->realAlias)[i]).negate){
+          datPoint = (-1) * *(((globalData->realAlias)[i].alias));
+      }else{
+          datPoint = *(((globalData->realAlias)[i].alias));
+      }
+      fp.write((char*)&datPoint,sizeof(double));
+    }
   for (int i = 0; i < globalData->intVariables.nAlgebraic; i++) if (!globalData->intVariables.algebraicsFilterOutput[i])
     {
       datPoint = (double) globalData->intVariables.algebraics[i];
+      fp.write((char*)&datPoint,sizeof(double));
+    }
+  for (int i = 0; i < globalData->intVariables.nAlias; i++) if (!globalData->intVariables.aliasFilterOutput[i])
+    {
+      if (((globalData->intVariables.alias)[i]).negate){
+          datPoint = -(double) *(((globalData->intVariables.alias)[i].alias));
+      }else{
+          datPoint = (double) *(((globalData->intVariables.alias)[i].alias));
+      }
       fp.write((char*)&datPoint,sizeof(double));
     }
   for (int i = 0; i < globalData->boolVariables.nAlgebraic; i++) if (!globalData->boolVariables.algebraicsFilterOutput[i])
@@ -187,7 +213,15 @@ void simulation_result_mat::emit()
       datPoint = (double) globalData->boolVariables.algebraics[i];
       fp.write((char*)&datPoint,sizeof(double));
     }
-
+  for (int i = 0; i < globalData->boolVariables.nAlias; i++) if (!globalData->boolVariables.aliasFilterOutput[i])
+    {
+      if (((globalData->boolVariables.alias)[i]).negate){
+          datPoint = - (double) *(((globalData->boolVariables.alias)[i].alias));
+      }else{
+          datPoint = (double) *(((globalData->boolVariables.alias)[i].alias));
+      }
+      fp.write((char*)&datPoint,sizeof(double));
+    }
   if (!fp) throw SimulationResultBaseException();
   ++ntimepoints;
   rt_accumulate(SIM_TIMER_OUTPUT);
@@ -199,7 +233,7 @@ static inline void fixDerInName(char *str, size_t len)
 {
   char* dot;
   if (len < 6) return;
-  
+
   // check if name start with "der(" and includes at least one dot
   while (strncmp(str,"der(",4) == 0 && (dot = strrchr(str,'.')) != NULL) {
     size_t pos = (size_t)(dot-str)+1;
@@ -212,10 +246,10 @@ static inline void fixDerInName(char *str, size_t len)
   }
 }
 
-long simulation_result_mat::flattenStrBuf(int dims, 
-            const struct omc_varInfo** src,
-            char* &dest, int& longest, int& nstrings,
-            bool fixNames, bool useComment)
+long simulation_result_mat::flattenStrBuf(int dims,
+    const struct omc_varInfo** src,
+    char* &dest, int& longest, int& nstrings,
+    bool fixNames, bool useComment)
 {
   int i,len;
   nstrings = dims;
@@ -223,8 +257,8 @@ long simulation_result_mat::flattenStrBuf(int dims,
 
   // calculate required size
   for (i = 0; i < dims; ++i) {
-    len = strlen(useComment ? src[i]->comment : src[i]->name);
-    if (len > longest) longest = len;
+      len = strlen(useComment ? src[i]->comment : src[i]->name);
+      if (len > longest) longest = len;
   }
 
   // allocate memory
@@ -234,9 +268,9 @@ long simulation_result_mat::flattenStrBuf(int dims,
   // copy data
   char *ptr = dest;
   for (i = 0; i < dims; ++i) {
-    strncpy(ptr,useComment ? src[i]->comment : src[i]->name,longest+1 /* ensures that we get \0 after the longest string*/);
-    if (fixNames) fixDerInName(ptr,strlen(useComment ? src[i]->comment : src[i]->name));
-    ptr += longest;
+      strncpy(ptr,useComment ? src[i]->comment : src[i]->name,longest+1 /* ensures that we get \0 after the longest string*/);
+      if (fixNames) fixDerInName(ptr,strlen(useComment ? src[i]->comment : src[i]->name));
+      ptr += longest;
   }
   // return the size of the `dest' buffer
   return (longest*nstrings);
@@ -244,8 +278,8 @@ long simulation_result_mat::flattenStrBuf(int dims,
 
 // writes MAT-file matrix header to file
 void simulation_result_mat::writeMatVer4MatrixHeader(const char *name,
-                 int rows, int cols,
-                 bool is_text)
+    int rows, int cols,
+    bool is_text)
 {
   typedef struct {
     uint32_t type;
@@ -256,7 +290,7 @@ void simulation_result_mat::writeMatVer4MatrixHeader(const char *name,
   } MHeader_t;
   const int endian_test = 1;
   MHeader_t hdr;
-  
+
   // create matrix header structure
   hdr.type = 1000*((*(char*)&endian_test) == 0) + (is_text? 51 : 0);
   hdr.mrows = rows;
@@ -270,9 +304,9 @@ void simulation_result_mat::writeMatVer4MatrixHeader(const char *name,
   if (!fp) throw SimulationResultFileCloseException();
 }
 
-void simulation_result_mat::writeMatVer4Matrix(const char *name, 
-                 int rows, int cols, 
-                 const void *data, bool is_text)
+void simulation_result_mat::writeMatVer4Matrix(const char *name,
+    int rows, int cols,
+    const void *data, bool is_text)
 {
   writeMatVer4MatrixHeader(name,rows,cols,is_text);
 
@@ -282,10 +316,10 @@ void simulation_result_mat::writeMatVer4Matrix(const char *name,
 }
 
 
-void simulation_result_mat::generateDataInfo(double* &dataInfo, 
-               int& rows, int& cols,
-               const sim_DATA *mdl_data,
-               int nVars, int nParams)
+void simulation_result_mat::generateDataInfo(double* &dataInfo,
+    int& rows, int& cols,
+    const sim_DATA *mdl_data,
+    int nVars, int nParams)
 {
   //size_t nVars = mdl_data->nStates*2+mdl_data->nAlgebraic;
   //rows = 1+nVars+mdl_data->nParameters+mdl_data->nVarsAliases;
@@ -294,7 +328,7 @@ void simulation_result_mat::generateDataInfo(double* &dataInfo,
   // assign rows & cols
   rows = 1+ nVars + nParams;
   cols = 4;
-  
+
   dataInfo = new double[rows*cols];
   if (dataInfo == NULL) throw SimulationResultMallocException();
   // time variable
@@ -305,44 +339,44 @@ void simulation_result_mat::generateDataInfo(double* &dataInfo,
   ccol += 4;
   // continuous and discrete variables
   for(size_t i = 0; i < (size_t)nVars; ++i) {
-    // row 1 - which table
-    dataInfo[ccol+4*i] = 2.0;
-    // row 2 - index of var in table (variable 'Time' have index 1)
-    dataInfo[ccol+4*i+1] = i+2.0;
-    // row 3 - linear interpolation == 0
-    dataInfo[ccol+4*i+2] = 0.0;
-    // row 4 - not defined outside of the defined time range == -1
-    dataInfo[ccol+4*i+3] = -1.0;
+      // row 1 - which table
+      dataInfo[ccol+4*i] = 2.0;
+      // row 2 - index of var in table (variable 'Time' have index 1)
+      dataInfo[ccol+4*i+1] = i+2.0;
+      // row 3 - linear interpolation == 0
+      dataInfo[ccol+4*i+2] = 0.0;
+      // row 4 - not defined outside of the defined time range == -1
+      dataInfo[ccol+4*i+3] = -1.0;
   }
   ccol += nVars*4;
   // parameters and constants
   for(size_t i = 0; i < (size_t)nParams; ++i) {
-    // col 1 - which table
-    dataInfo[ccol+4*i] = 1.0;
-    // col 2 - index of var in the table (first parameter has index 2)
-    dataInfo[ccol+4*i+1] = i+2.0;
-    // col 3 (== 0 <- interpolation doesn't matter here)
-    dataInfo[ccol+4*i+2] = 0.0;
-    // col 4 - keep first/last value outside of time range
-    dataInfo[ccol+4*i+3] = 0.0;
+      // col 1 - which table
+      dataInfo[ccol+4*i] = 1.0;
+      // col 2 - index of var in the table (first parameter has index 2)
+      dataInfo[ccol+4*i+1] = i+2.0;
+      // col 3 (== 0 <- interpolation doesn't matter here)
+      dataInfo[ccol+4*i+2] = 0.0;
+      // col 4 - keep first/last value outside of time range
+      dataInfo[ccol+4*i+3] = 0.0;
 
   }
   //ccol += mdl_data->nParameters*4;
 }
 
-void simulation_result_mat::generateData_1(double* &data_1, 
-             int& rows, int& cols,
-             const sim_DATA *mdl_data,
-             double tstart, double tstop)
+void simulation_result_mat::generateData_1(double* &data_1,
+    int& rows, int& cols,
+    const sim_DATA *mdl_data,
+    double tstart, double tstop)
 {
   int offset;
   // calculate number of rows and columns
   rows = 2;
   cols = 1+mdl_data->nParameters+mdl_data->intVariables.nParameters
-    +mdl_data->boolVariables.nParameters;
+      +mdl_data->boolVariables.nParameters;
   // allocate data buffer
   data_1 = new double[rows*cols];
-  if (data_1 == NULL) 
+  if (data_1 == NULL)
     throw SimulationResultMallocException();
   data_1[0] = tstart; // start time
   data_1[cols] = tstop; // stop time
@@ -355,14 +389,14 @@ void simulation_result_mat::generateData_1(double* &data_1,
   offset += mdl_data->nParameters;
   // integer variables
   for(fortran_integer i = 0; i < mdl_data->intVariables.nParameters; ++i) {
-    data_1[offset+i] = (double)mdl_data->intVariables.parameters[i];
-    data_1[offset+i+cols] = (double)mdl_data->intVariables.parameters[i];
+      data_1[offset+i] = (double)mdl_data->intVariables.parameters[i];
+      data_1[offset+i+cols] = (double)mdl_data->intVariables.parameters[i];
   }
   offset += mdl_data->intVariables.nParameters;
   // bool variables
   for(fortran_integer i = 0; i < mdl_data->boolVariables.nParameters; ++i) {
-    data_1[offset+i] = (double)mdl_data->boolVariables.parameters[i];
-    data_1[offset+i+cols] = (double)mdl_data->boolVariables.parameters[i];
+      data_1[offset+i] = (double)mdl_data->boolVariables.parameters[i];
+      data_1[offset+i+cols] = (double)mdl_data->boolVariables.parameters[i];
   }
-   
+
 }

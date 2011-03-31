@@ -276,15 +276,15 @@ case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
   
   void init_Alias(DATA* data)
   {
-  <%globalDataAliasVarArray("DATA_REAL_ALIAS","omc__realAlias", vars.aliasVars)%>
-  <%globalDataAliasVarArray("DATA_INT_ALIAS","omc__intAlias", vars.intAliasVars)%>
-  <%globalDataAliasVarArray("DATA_BOOL_ALIAS","omc__boolAlias", vars.boolAliasVars)%>
-  <%globalDataAliasVarArray("DATA_STRING_ALIAS","omc__stringAlias", vars.stringAliasVars)%>
+  <%globalDataAliasVarArray("sim_DATA_REAL_ALIAS","omc__realAlias", vars.aliasVars)%>
+  <%globalDataAliasVarArray("sim_DATA_INT_ALIAS","omc__intAlias", vars.intAliasVars)%>
+  <%globalDataAliasVarArray("sim_DATA_BOOL_ALIAS","omc__boolAlias", vars.boolAliasVars)%>
+  <%globalDataAliasVarArray("sim_DATA_STRING_ALIAS","omc__stringAlias", vars.stringAliasVars)%>
   if (data->nAlias)
     memcpy(data->realAlias,omc__realAlias,sizeof(DATA_REAL_ALIAS)*data->nAlias);
-  if (data->stringVariables.nAlias)
+  if (data->intVariables.nAlias)
     memcpy(data->intVariables.alias,omc__intAlias,sizeof(DATA_INT_ALIAS)*data->intVariables.nAlias);
-  if (data->stringVariables.nAlias)
+  if (data->boolVariables.nAlias)
     memcpy(data->boolVariables.alias,omc__boolAlias,sizeof(DATA_BOOL_ALIAS)*data->boolVariables.nAlias);
   if (data->stringVariables.nAlias)
     memcpy(data->stringVariables.alias,omc__stringAlias,sizeof(DATA_STRING_ALIAS)*data->stringVariables.nAlias);  
@@ -413,17 +413,17 @@ case _ then
     >>  
 end globalDataVarDefine;
 
-template globalDataAliasVarArray(String type, String _name, list<SimVar> items)
+template globalDataAliasVarArray(String _type, String _name, list<SimVar> items)
  "Generates array with variable names in global data section."
 ::=
   match items
   case {} then
     <<
-      <%type%> <%_name%>[1] = {{0,false}};
+      <%_type%> <%_name%>[1] = {{0,false,-1}};
     >>
   case items then
     <<
-      <%type%> <%_name%>[<%listLength(items)%>] = {
+      <%_type%> <%_name%>[<%listLength(items)%>] = {
         <%items |> var as SIMVAR(__) => '{<%aliasVarNameType(aliasvar)%>,<%index%>}'; separator=",\n"%>
       };
     >>
@@ -1105,12 +1105,13 @@ template functionInitial(list<SimEqSystem> initialEquations)
     <%eqPart%>
   
     <%initialEquations |> SES_SIMPLE_ASSIGN(__) =>
-      'if (sim_verbose >= LOG_SOLVER) { printf("Setting variable start value: %s(start=%f)\n", "<%cref(cref)%>", <%cref(cref)%>); }'
+      'if (sim_verbose >= LOG_INIT) { printf("Setting variable start value: %s(start=%f)\n", "<%cref(cref)%>", (<%crefType(cref)%>) <%cref(cref)%>); }'
     ;separator="\n"%>
   
     return 0;
   }
   >>
+  //(<%crefType(var)%>) pre(<%cref(var)%>)
 end functionInitial;
 
 
@@ -1126,7 +1127,8 @@ template functionInitialResidual(list<SimEqSystem> residualEquations)
         let &preExp = buffer "" /*BUFD*/
         let expPart = daeExp(exp, contextOther, &preExp /*BUFC*/,
                            &varDecls /*BUFD*/)
-        '<%preExp%>localData->initialResiduals[i++] = <%expPart%>;'
+        '<%preExp%>localData->initialResiduals[i++] = <%expPart%>;
+if (sim_verbose >=LOG_INIT) { printf(" Residual[%d] : <%ExpressionDump.printExpStr(exp)%> = %f\n",i,localData->initialResiduals[i-1]); }'
     ;separator="\n")
   <<
   int initial_residual()

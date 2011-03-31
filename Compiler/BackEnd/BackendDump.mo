@@ -54,7 +54,7 @@ protected import Debug;
 protected import Error;
 protected import Expression;
 protected import ExpressionDump;
-protected import HashTable2;
+protected import HashTable4;
 protected import IOStream;
 protected import SCode;
 protected import Util;
@@ -1483,45 +1483,44 @@ public function dumpAliasVariables "function: dumpAliasVariables
 "
   input BackendDAE.AliasVariables inAliasVars;
 protected
-  HashTable2.HashTable varMappings;
   BackendDAE.Variables aliasVars;
+  list<BackendDAE.Var> vars;
   String sl;
   Integer l;
 algorithm
-  BackendDAE.ALIASVARS(varMappings,aliasVars) := inAliasVars;
+  BackendDAE.ALIASVARS(aliasVars=aliasVars) := inAliasVars;
   l := BackendVariable.varsSize(aliasVars);
   sl := intString(l);
+  vars := BackendDAEUtil.varList(aliasVars);
   print("AliasVariables: ");
   print(sl);
   print("\n===============\n");
-  _ := BackendVariable.traverseBackendDAEVars(aliasVars,dumpAliasVariable,varMappings);
+  dumpVars(vars);  
   print("\n");
 end dumpAliasVariables;
 
 protected function dumpAliasVariable
 "autor: Frenkel TUD 2010-11"
- input tuple<BackendDAE.Var, HashTable2.HashTable> inTpl;
- output tuple<BackendDAE.Var, HashTable2.HashTable> outTpl;
+ input tuple<BackendDAE.Var,list<Integer>> inTpl;
+ output tuple<BackendDAE.Var,list<Integer>> outTpl;
 algorithm
   outTpl:=
   matchcontinue (inTpl)
     local
       BackendDAE.Var v;
       DAE.ComponentRef cr;
-      HashTable2.HashTable varMappings;
       DAE.Exp e;
       String s,scr,se;
-    case ((v,varMappings))
+    case ((v,_))
       equation
         cr = BackendVariable.varCref(v);
-        // does not work
-        //e = BaseHashTable.get(cr,varMappings);
         e = BackendVariable.varBindExp(v);
+        //print("### dump var : " +&  ComponentReference.printComponentRefStr(cr) +& "\n");
         scr = ComponentReference.printComponentRefStr(cr);
         se = ExpressionDump.printExpStr(e);
         s = stringAppendList({scr," = ",se,"\n"});
         print(s);
-      then ((v,varMappings));
+      then ((v,{}));
     case inTpl then inTpl; 
   end matchcontinue;
 end dumpAliasVariable;

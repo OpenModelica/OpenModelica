@@ -403,7 +403,7 @@ algorithm
       Option<DAE.VariableAttributes> attr;
     case (BackendDAE.VAR(values = attr))
       equation
-        sv=DAEUtil.getStartAttr(attr);
+        sv=DAEUtil.getStartAttrFail(attr);
       then sv;
    end matchcontinue;
 end varStartValue;
@@ -438,6 +438,7 @@ algorithm
     case (BackendDAE.VAR(bindExp = SOME(e))) then e;
    end match;
 end varBindExp;
+
 
 public function varStateSelect
 "function varStateSelect
@@ -667,6 +668,20 @@ algorithm
    then false;
   end match;
 end isDummyStateVar;
+
+public function isDummyDerVar
+"function isDummyDerVar
+  Returns true for dummy state variables, false otherwise."
+  input BackendDAE.Var inVar;
+  output Boolean outBoolean;
+algorithm
+  outBoolean:=
+  match (inVar)
+    case (BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER())) then true;
+  else
+   then false;
+  end match;
+end isDummyDerVar;
 
 public function isStateorStateDerVar
 "function: isStateorStateDerVar

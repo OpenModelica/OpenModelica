@@ -42,6 +42,7 @@ public import DAE;
 public import SCode;
 public import Values;
 public import HashTable2;
+public import HashTable4;
 
 public constant String derivativeNamePrefix="$DER";
 public constant String partialDerivativeNamePrefix="$pDER";
@@ -264,8 +265,9 @@ data about variables' names, comments, units, etc. is preserved as well as
 pinter to their values (trajectories).
 "
   record ALIASVARS
-    HashTable2.HashTable varMappings "replacements from trivial equations of kind a=b or a=-b";
-    Variables aliasVars              "hash table with (removed) variables metadata";
+    HashTable2.HashTable varMappingsCref "Hashtable cref > exp";
+    HashTable4.HashTable varMappingsExp  "Hashtable exp > cref";
+    Variables aliasVars                  "removed variables";
   end ALIASVARS;
 end AliasVariables;
 

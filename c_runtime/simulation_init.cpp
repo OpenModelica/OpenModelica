@@ -62,24 +62,7 @@ void leastSquare(long *nz, double *z, double *funcValue)
 
   functionODE();
   functionAlgebraics();
-  //functionAliasEquations();
-  /*
-  int needToIterate = 0;
-  int IterationNum = 0;
-  functionDAE(&needToIterate);
-  functionAliasEquations();
-  while (checkForDiscreteChanges() || needToIterate)
-    {
-      saveall();
-      functionDAE(&needToIterate);
-      IterationNum++;
-      if (IterationNum > IterationMax)
-        {
-          throw TerminateSimulationException(globalData->timeValue, string(
-              "ERROR: Too many Iteration. System is not consistent!\n"));
-        }
-    }
-*/
+
 /*  for (ind=0,indy=0,indAct=2*globalData->nStates; ind<globalData->nAlgebraic; ind++)
     if (globalData->initFixed[indAct++]==1)
       globalData->algebraics [ind] = static_y[indy++];
@@ -93,7 +76,7 @@ void leastSquare(long *nz, double *z, double *funcValue)
   for (ind=0, *funcValue=0; ind<globalData->nInitialResiduals; ind++)
     *funcValue += globalData->initialResiduals[ind]*globalData->initialResiduals[ind];
 
-  if (sim_verbose >= LOG_SOLVER) {
+  if (sim_verbose >= LOG_INIT) {
     cout << "initial residual: " << *funcValue << endl;
   }
 }
@@ -127,7 +110,7 @@ int reportResidualValue(double funcValue)
 
 int newuoa_initialization(long& nz,double *z)
 {
-  long IPRINT = sim_verbose >= LOG_SOLVER? 2 : 0;
+  long IPRINT = sim_verbose >= LOG_INIT? 2 : 0;
   long MAXFUN=50000;
   double RHOEND=1.0e-6;
   double RHOBEG=10; // This should be about one tenth of the greatest
@@ -170,15 +153,15 @@ int simplex_initialization(long& nz,double *z)
    long IPRINT, NLOOP,IQUAD,IFAULT,MAXF;
 //C  Set max. no. of function evaluations = 5000, print every 100.
 
-      MAXF = 50000;
-      IPRINT = sim_verbose >= LOG_SOLVER? 100 : -1;
+      MAXF = 20 * nz;
+      IPRINT = sim_verbose >= LOG_INIT ? 100 : -1;
 
 //C  Set value for stopping criterion.   Stopping occurs when the
 //C  standard deviation of the values of the objective function at
 //C  the points of the current simplex < stopcr.
 
       STOPCR = 1.e-3;
-      NLOOP = 6000;//2*nz;
+      NLOOP = 2*MAXF;//2*nz;
 
 //C  Fit a quadratic surface to be sure a minimum has been found.
 
@@ -188,10 +171,20 @@ int simplex_initialization(long& nz,double *z)
 //C  should be accurate to about 15 decimals.   If we set simp = 1.d-6,
 //C  we should get about 9 dec. digits accuracy in fitting the surface.
 
-      SIMP = 1.e-6;
+      SIMP = 1.e-12;
 //C  Now call NELMEAD to do the work.
-  NELMEAD(z,STEP,&nz,&funcValue,&MAXF,&IPRINT,&STOPCR,
+  
+  leastSquare(&nz,z,&funcValue);
+
+  if ( fabs(funcValue) != 0){
+      NELMEAD(z,STEP,&nz,&funcValue,&MAXF,&IPRINT,&STOPCR,
            &NLOOP,&IQUAD,&SIMP,VAR,leastSquare,&IFAULT);
+  }else{
+      if (sim_verbose >= LOG_INIT){
+          printf("Result of leastSquare method = %g. The initial guess fits to the system\n",funcValue);
+      }
+  }
+
   if (IFAULT == 1) {
     printf("Error in initialization. Solver iterated %d times without finding a solution\n",(int)MAXF);
     return -1;
@@ -230,18 +223,27 @@ int initialize(const std::string*method)
   }
 
   for (ind=0, nz=0; ind<globalData->nStates; ind++){
-    if (globalData->initFixed[ind]==0)
-      nz++;
+    if (globalData->initFixed[ind]==0){
+        if (sim_verbose >= LOG_INIT)
+            printf("Variable %s is unfixed.\n",globalData->statesNames[ind].name);
+
+        nz++;
+    }
+
   }
 
   int startIndPar = 2*globalData->nStates+globalData->nAlgebraic+globalData->intVariables.nAlgebraic+globalData->boolVariables.nAlgebraic;
   int endIndPar = startIndPar+globalData->nParameters+globalData->intVariables.nParameters+globalData->boolVariables.nParameters;
   for (ind=startIndPar;ind<endIndPar; ind++){
-    if (globalData->initFixed[ind]==0)
-      nz++;
+    if (globalData->initFixed[ind]==0){
+        if (sim_verbose >= LOG_INIT)
+          printf("Variable %s is unfixed.\n",globalData->statesNames[ind].name);
+
+        nz++;
+    }
   }
 
-  if (sim_verbose >= LOG_SOLVER) {
+  if (sim_verbose >= LOG_INIT) {
     cout << "Initialization by method: " << init_method << endl;
     cout << "fixed attribute for states:" << endl;
     for(int i=0;i<globalData->nStates; i++) {
@@ -253,7 +255,7 @@ int initialize(const std::string*method)
 
   // No initial values to calculate.
   if (nz ==  0) {
-    if (sim_verbose >= LOG_SOLVER) {
+    if (sim_verbose >= LOG_INIT) {
       cout << "No initial values to calculate" << endl;
     }
     return 0;

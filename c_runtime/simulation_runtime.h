@@ -102,6 +102,7 @@ extern omc_fileInfo TermInfo; /* message for termination. */
 
 /* Flags for controlling logging to stdout */
 extern const int LOG_STATS;
+extern const int LOG_INIT;
 extern const int LOG_SOLVER;
 extern const int LOG_EVENTS;
 extern const int LOG_NONLIN_SYS;
@@ -113,25 +114,25 @@ extern const int ERROR_LINSYS;
 
 typedef struct sim_DATA_REAL_ALIAS {
   modelica_real* alias;
-  modelica_boolean negate;
+  int negate;
   int nameID;
 } DATA_REAL_ALIAS;
 
 typedef struct sim_DATA_INT_ALIAS {
   modelica_integer* alias;
-  modelica_boolean negate;
+  int negate;
   int nameID;
 } DATA_INT_ALIAS;
 
 typedef struct sim_DATA_BOOL_ALIAS {
   modelica_boolean* alias;
-  modelica_boolean negate;
+  int negate;
   int nameID;
 } DATA_BOOL_ALIAS;
 
 typedef struct sim_DATA_STRING_ALIAS {
   char** alias;
-  modelica_boolean negate;
+  int negate;
   int nameID;
 } DATA_STRING_ALIAS;
 
@@ -314,6 +315,7 @@ void deInitializeDataStruc(DATA* data);
  *
  */
 void setLocalData(DATA* data);
+void init_Alias(DATA* data);
 
 /* defined in model code. Used to get name of variable by investigating its pointer in the state or alg vectors. */
 const char* getNameReal(double* ptr);

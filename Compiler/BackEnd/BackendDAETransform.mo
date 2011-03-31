@@ -190,7 +190,7 @@ algorithm
     case (BackendDAE.DAE(orderedVars = BackendDAE.VARIABLES(numberOfVars = vars_size),orderedEqs = eqns),_)
       equation
         esize = BackendDAEUtil.equationSize(eqns);
-        (esize == vars_size) = true;
+        ((esize) == vars_size) = true;
       then
         ();
     case (BackendDAE.DAE(orderedVars = BackendDAE.VARIABLES(numberOfVars = vars_size),orderedEqs = eqns),_)
@@ -1413,7 +1413,7 @@ algorithm
       array<list<BackendDAE.Value>> m,mt;
       BackendDAE.Value e_1,e;
       BackendDAE.Equation eqn,eqn_1;
-      BackendDAE.Variables v_1,v,kv,ev;
+      BackendDAE.Variables v_1,v,kv,ev,aliasVars;
       BackendDAE.AliasVariables av;
       BackendDAE.EquationArray eqns_1,eqns,seqns,seqns1,ie,ie1;
       array<BackendDAE.MultiDimEquation> ae,ae1,ae2;
@@ -1424,8 +1424,10 @@ algorithm
       BackendDAE.ExternalObjectClasses eoc;
       DAE.Exp stateexpcall,dummyderexp;
 
-    case (stateexpcall,dummyderexp,BackendDAE.DAE(v,kv,ev,av,eqns,seqns,ie,ae,al,BackendDAE.EVENT_INFO(wclst,zeroCrossingLst),eoc),m,mt,{})
+    case (stateexpcall,dummyderexp,BackendDAE.DAE(v,kv,ev,av as BackendDAE.ALIASVARS(aliasVars = aliasVars),eqns,seqns,ie,ae,al,BackendDAE.EVENT_INFO(wclst,zeroCrossingLst),eoc),m,mt,{})
       equation
+        ((_, _, av)) = BackendVariable.traverseBackendDAEVars(aliasVars,traverereplaceAliasVarsBindExp,(stateexpcall, dummyderexp, av));
+        (ie1,(al1,ae1,wclst1,_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(ie,traversereplaceDummyDer,(al, ae, wclst, replaceDummyDer2Exp,(stateexpcall,dummyderexp)));
         (ie1,(al1,ae1,wclst1,_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(ie,traversereplaceDummyDer,(al, ae, wclst, replaceDummyDer2Exp,(stateexpcall,dummyderexp)));
         (seqns1,(al2,ae2,wclst2,_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(seqns,traversereplaceDummyDer,(al1, ae1, wclst1, replaceDummyDer2Exp,(stateexpcall,dummyderexp)));
        then (BackendDAE.DAE(v,kv,ev,av,eqns,seqns1,ie1,ae2,al2,BackendDAE.EVENT_INFO(wclst2,zeroCrossingLst),eoc),m,mt);
@@ -1792,6 +1794,29 @@ algorithm
   outTpl := Expression.traverseExp(e,replaceDummyDerOthersExpFinder,vars);
 end replaceDummyDerOthersExp;
 
+protected function traverereplaceAliasVarsBindExp
+"function traverereplaceAliasVarsBindExp
+  Helper funciton to replaceDummyDer.
+  Replaces all variable bindings of the alias variables."
+ input tuple<BackendDAE.Var, tuple<DAE.Exp,DAE.Exp,BackendDAE.AliasVariables>> inTpl;
+ output tuple<BackendDAE.Var, tuple<DAE.Exp,DAE.Exp,BackendDAE.AliasVariables>> outTpl;  
+algorithm
+  outTpl := matchcontinue(inTpl)
+    local 
+      DAE.Exp e,e1,e2;
+      BackendDAE.Var v;
+      BackendDAE.AliasVariables av;
+    case((v,(e1,e2,av)))
+      equation
+        e = BackendVariable.varBindExp(v);
+        ((e,_)) = Expression.replaceExp(e, e1,e2);
+        v = BackendVariable.setBindExp(v,e);
+        av = BackendDAEUtil.addAliasVariables({v},av);
+      then ((v,(e1,e2,av)));
+    case inTpl then inTpl;
+  end matchcontinue;
+end traverereplaceAliasVarsBindExp;
+
 protected function replaceDummyDerOthersExpFinder
 "function: replaceDummyDerOthersExpFinder
   author: PA
@@ -2014,8 +2039,11 @@ algorithm
       prios = calculateVarPriorities(varCrefs,varIndices,vars,eqns,m,mt);
       (v::_,_) = BackendVariable.getVar(varCref,vars);
       prio1 = varStateSelectPrio(v);
+      Debug.fcall("dummyselect",print," Prio StateSelect : " +& realString(prio1) +& "\n");
       prio2 = varStateSelectHeuristicPrio(v,vars,eqns,m,mt);
+      Debug.fcall("dummyselect",print," Prio Heuristik : " +& realString(prio2) +& "\n");
       prio = prio1 +. prio2;
+      Debug.fcall("dummyselect",print," ### Prio Result : " +& realString(prio) +& "\n");
     then ((varCref,varIndx,prio)::prios);
   end match;
 end calculateVarPriorities;
@@ -2046,16 +2074,41 @@ protected
   list<Integer> vEqns;
   DAE.ComponentRef vCr;
   Integer vindx;
-  Real prio1,prio2,prio3;
+  Real prio1,prio2,prio3,prio4;
 algorithm
   (_,vindx::_) := BackendVariable.getVar(BackendVariable.varCref(v),vars); // Variable index not stored in var itself => lookup required
   vEqns := BackendDAEUtil.eqnsForVarWithStates(mt,vindx);
   vCr := BackendVariable.varCref(v);
   prio1 := varStateSelectHeuristicPrio1(vCr,vEqns,vars,eqns);
+  Debug.fcall("dummyselect",print," Prio 1 : " +& realString(prio1) +& "\n");
   prio2 := varStateSelectHeuristicPrio2(vCr,vars);
+  Debug.fcall("dummyselect",print," Prio 2 : " +& realString(prio2) +& "\n");
   prio3 := varStateSelectHeuristicPrio3(vCr,vars);
-  prio:= prio1 +. prio2 +. prio3;
+  Debug.fcall("dummyselect",print," Prio 3 : " +& realString(prio3) +& "\n");
+ // prio4 := varStateSelectHeuristicPrio4(v);
+  //Debug.fcall("dummyselect",print," Prio 4 : " +& realString(prio4) +& "\n");
+  prio:= prio1 +. prio2 +. prio3;// +. prio4;
 end varStateSelectHeuristicPrio;
+
+
+protected function varStateSelectHeuristicPrio4
+"function varStateSelectHeuristicPrio4
+  author: wbraun
+  Helper function to varStateSelectHeuristicPrio.
+  added prio for variables with a start value "
+  input BackendDAE.Var v;
+  output Real prio;
+algorithm
+  prio := matchcontinue(v)
+    local Integer i; Real c;
+    case(v)
+      equation
+        _ = BackendVariable.varStartValueFail(v); 
+      then 1.0;
+    case (_) then 0.0;
+  end matchcontinue;
+end varStateSelectHeuristicPrio4;
+
 
 protected function varStateSelectHeuristicPrio3
 "function varStateSelectHeuristicPrio3

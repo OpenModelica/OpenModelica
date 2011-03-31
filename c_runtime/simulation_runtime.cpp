@@ -94,11 +94,12 @@ simulation_result *sim_result;
 
 /* Flags for controlling logging to stdout */
 const int LOG_STATS = 1;
-const int LOG_SOLVER = 2;
-const int LOG_EVENTS = 4;
+const int LOG_INIT = 2;
+const int LOG_SOLVER = 4;
 const int LOG_NONLIN_SYS = 8;
-const int LOG_ZEROCROSSINGS = 16;
-const int LOG_DEBUG = 32;
+const int LOG_EVENTS = 16;
+const int LOG_ZEROCROSSINGS = 32;
+const int LOG_DEBUG = 64;
 
 /* Flags for modelErrorCodes */
 extern const int ERROR_NONLINSYS = -1;
@@ -225,6 +226,10 @@ verboseLevel(int argc, char**argv)
   if (flags->find("LOG_STATS", 0) != string::npos)
     {
       res |= LOG_STATS;
+    }
+if (flags->find("LOG_INIT", 0) != string::npos)
+    {
+      res |= LOG_INIT;
     }
   if (flags->find("LOG_SOLVER", 0) != string::npos)
     {
@@ -541,6 +546,7 @@ initRuntimeAndSimulation(int argc, char**argv)
       EXIT(0);
   }
   globalData = initializeDataStruc();
+ 
   if (!globalData) {
       std::cerr << "Error: Could not initialize the global data structure file" << std::endl;
   }

@@ -70,6 +70,7 @@ protected import Expression;
 protected import ExpressionSimplify;
 protected import ExpressionDump;
 protected import HashTable2;
+protected import HashTable4;
 protected import OptManager;
 protected import RTOpts;
 protected import SCode;
@@ -424,15 +425,15 @@ algorithm
         ((vars,varsws,states,statesws,unfixed)) = BackendVariable.traverseBackendDAEVars(variables,countInitialVars,({},{},{},{},0));
         // kvars
         ((vars,varsws,states,statesws,unfixed1)) = BackendVariable.traverseBackendDAEVars(knvars,countInitialVars,(vars,varsws,states,statesws,unfixed));
-        BackendDAE.ALIASVARS(_,aliasVars) = av;
-        sizealias = BackendVariable.varsSize(aliasVars);   
-        unfixed2 = unfixed1 - sizealias;     
+        //BackendDAE.ALIASVARS(aliasVars = aliasVars) = av;
+        //sizealias = BackendVariable.varsSize(aliasVars);   
+        //unfixed2 = unfixed1 - sizealias;     
         /* count the equations */
         nie = equationSize(initialEqs);
         BackendDAE.EVENT_INFO(whenClauseLst=whenClauseLst) = eventInfo;
         ((nie1,_)) = BackendEquation.traverseBackendDAEEqns(orderedEqs,countInitialEqns,(nie,whenClauseLst));
         ((nie2,_)) = BackendEquation.traverseBackendDAEEqns(removedEqs,countInitialEqns,(nie1,whenClauseLst));
-        dae1 = checkInitialSystem1(unfixed2,nie2,dae,funcs,vars,varsws,states,statesws);
+        dae1 = checkInitialSystem1(unfixed1,nie2,dae,funcs,vars,varsws,states,statesws);
       then
         dae;   
     
@@ -481,7 +482,7 @@ algorithm
       then 
         inDAE;  
    
-    // unfixed grather than equations
+    // unfixed greater than equations
     case (inUnfixed,inInitialEqns,inDAE as BackendDAE.DAE(orderedVars=vars,knownVars=knvars,externalObjects=exObj,aliasVars=alisvars,orderedEqs=orderedEqs,removedEqs=removedEqs,
            initialEqs=initialEqs,arrayEqs=arrayEqs,algorithms=algs,eventInfo=eventInfo,extObjClasses=extObjClasses),funcs,inVars,inVarsWS,inStates,inStatesWS)
       equation
@@ -496,7 +497,7 @@ algorithm
       then 
         dae1;    
    
-    // unfixed grather than equations
+    // unfixed greater than equations
     case (inUnfixed,inInitialEqns,inDAE as BackendDAE.DAE(orderedVars=vars,knownVars=knvars,externalObjects=exObj,aliasVars=alisvars,orderedEqs=orderedEqs,removedEqs=removedEqs,
            initialEqs=initialEqs,arrayEqs=arrayEqs,algorithms=algs,eventInfo=eventInfo,extObjClasses=extObjClasses),funcs,inVars,inVarsWS,inStates,inStatesWS)
       equation
@@ -693,14 +694,30 @@ algorithm
         // get Var 
         ((var :: _),_) = BackendVariable.getVar(cr, inVariables);         
         // add Warning
-        warningInitialSystem(cr);
+        warningInitialSystem(cr,false);
         // set fixed=true        
         var1 = BackendVariable.setVarFixed(var,true);
         // update variables 
         variables = BackendVariable.addVar(var1,inVariables);
         (variables1,knvariables1) = fixInitalVars(inUnfixed-1,inInitialEqns,variables,inKnVariables,vars,varsws,states,statesws);
       then 
-        (variables1,knvariables1); 
+        (variables1,knvariables1);         
+
+    // then states 
+    case (unfixed,ine,inVariables,inKnVariables,vars,varsws,cr::states,statesws)
+      equation
+        // get Var 
+        ((var :: _),_) = BackendVariable.getVar(cr, inVariables);         
+        // add Warning
+        warningInitialSystem(cr,true);
+        // set fixed=true        
+        var1 = BackendVariable.setVarFixed(var,true);
+        var1 = BackendVariable.setVarStartValue(var1,DAE.RCONST(0.0));
+        // update variables 
+        variables = BackendVariable.addVar(var1,inVariables);
+        (variables1,knvariables1) = fixInitalVars(inUnfixed-1,inInitialEqns,variables,inKnVariables,vars,varsws,states,statesws);
+      then 
+        (variables1,knvariables1);  
 
     // then variables with start value
     case (unfixed,ine,inVariables,inKnVariables,vars,cr::varsws,states,statesws)
@@ -708,9 +725,9 @@ algorithm
         // get Var 
         ((var :: _),_) = BackendVariable.getVar(cr, inVariables);         
         // add Warning
-        warningInitialSystem(cr);
+        warningInitialSystem(cr,false);
         // set fixed=true        
-        var1 = BackendVariable.setVarFixed(var,true);
+        var1 = BackendVariable.setVarFixed(var,false);
         // update variables 
         variables = BackendVariable.addVar(var1,inVariables);
         (variables1,knvariables1) = fixInitalVars(inUnfixed-1,inInitialEqns,variables,inKnVariables,vars,varsws,states,statesws);
@@ -721,39 +738,24 @@ algorithm
         // get Var 
         ((var :: _),_) = BackendVariable.getVar(cr, inKnVariables);         
         // add Warning
-        warningInitialSystem(cr);
+        warningInitialSystem(cr,false);
         // set fixed=true        
-        var1 = BackendVariable.setVarFixed(var,true);
+        var1 = BackendVariable.setVarFixed(var,false);
         // update variables 
         variables = BackendVariable.addVar(var1,inKnVariables);
         (variables1,knvariables1) = fixInitalVars(inUnfixed-1,inInitialEqns,inVariables,variables,vars,varsws,states,statesws);
       then 
-        (variables1,knvariables1);         
-
-    // then states 
-    case (unfixed,ine,inVariables,inKnVariables,vars,varsws,cr::states,statesws)
-      equation
-        // get Var 
-        ((var :: _),_) = BackendVariable.getVar(cr, inVariables);         
-        // add Warning
-        warningInitialSystem(cr);
-        // set fixed=true        
-        var1 = BackendVariable.setVarFixed(var,true);
-        // update variables 
-        variables = BackendVariable.addVar(var1,inVariables);
-        (variables1,knvariables1) = fixInitalVars(inUnfixed-1,inInitialEqns,variables,inKnVariables,vars,varsws,states,statesws);
-      then 
-        (variables1,knvariables1);  
-
+        (variables1,knvariables1); 
+        
     // then variables 
     case (unfixed,ine,inVariables,inKnVariables,cr::vars,varsws,states,statesws)
       equation
         // get Var 
         ((var :: _),_) = BackendVariable.getVar(cr, inVariables);         
         // add Warning
-        warningInitialSystem(cr);
+        warningInitialSystem(cr,false);
         // set fixed=true        
-        var1 = BackendVariable.setVarFixed(var,true);
+        var1 = BackendVariable.setVarFixed(var,false);
         // update variables 
         variables = BackendVariable.addVar(var1,inVariables);
         (variables1,knvariables1) = fixInitalVars(inUnfixed-1,inInitialEqns,variables,inKnVariables,vars,varsws,states,statesws);
@@ -764,9 +766,9 @@ algorithm
         // get Var 
         ((var :: _),_) = BackendVariable.getVar(cr, inKnVariables);         
         // add Warning
-        warningInitialSystem(cr);
+        warningInitialSystem(cr,true);
         // set fixed=true        
-        var1 = BackendVariable.setVarFixed(var,true);
+        var1 = BackendVariable.setVarFixed(var,false);
         // update variables 
         variables = BackendVariable.addVar(var1,inKnVariables);
         (variables1,knvariables1) = fixInitalVars(inUnfixed-1,inInitialEqns,inVariables,variables,vars,varsws,states,statesws);
@@ -790,12 +792,13 @@ end fixInitalVars;
 
 protected function warningInitialSystem
   input DAE.ComponentRef cr;
+  input Boolean flag;
 algorithm
   _ :=
-  matchcontinue (cr)
+  matchcontinue (cr,flag)
     local
       String scr,s;
-    case (cr)
+    case (cr,false)
       equation
         true = RTOpts.debugFlag("dumpInit");
         scr = ComponentReference.printComponentRefStr(cr);
@@ -803,7 +806,16 @@ algorithm
         print(s);
       then
         ();
-    case (_) then ();
+    case (cr,true)
+      equation
+        true = RTOpts.debugFlag("dumpInit");
+        scr = ComponentReference.printComponentRefStr(cr);
+        s = stringAppendList({"Set ",scr," fixed=true.\n"});
+        s = stringAppendList({s, "Set default start value = 0.0.\n"});
+        print(s);
+      then
+        ();        
+    case (_,_) then ();
   end matchcontinue;  
 end warningInitialSystem;
 
@@ -1249,45 +1261,209 @@ end emptyVars;
 
 public function emptyAliasVariables
   output BackendDAE.AliasVariables outAliasVariables;
-protected  
-  HashTable2.HashTable aliasMappings;
+protected
+  HashTable2.HashTable aliasMapsCref;  
+  HashTable4.HashTable aliasMapsExp;
   BackendDAE.Variables aliasVariables;
 algorithm
-  aliasMappings := HashTable2.emptyHashTable();
+  aliasMapsCref := HashTable2.emptyHashTable();
+  aliasMapsExp := HashTable4.emptyHashTable();
   aliasVariables := emptyVars();
-  outAliasVariables := BackendDAE.ALIASVARS(aliasMappings,aliasVariables);
+  outAliasVariables := BackendDAE.ALIASVARS(aliasMapsCref,aliasMapsExp,aliasVariables);
 end emptyAliasVariables;
 
 public function addAliasVariables
 "function: addAliasVariables
   author: Frenkel TUD 2010-12
   Add an alias variable to the AliasVariables "
+  input list<BackendDAE.Var> inVars;
   input BackendDAE.AliasVariables inAliasVariables;
-  input BackendDAE.Var inVar;
-  input DAE.Exp inExp;
   output BackendDAE.AliasVariables outAliasVariables;
 algorithm
 algorithm
-  outAliasVariables := matchcontinue (inAliasVariables,inVar,inExp)
+  outAliasVariables := matchcontinue (inVars,inAliasVariables)
     local
-      HashTable2.HashTable aliasMappings,aliasMappings1;
-      BackendDAE.Variables aliasVariables,aliasVariables1;
+      HashTable2.HashTable aliasMappingsCref,aliasMappingsCref1;
+      HashTable4.HashTable aliasMappingsExp,aliasMappingsExp1;
+      BackendDAE.Variables aliasVariables;
+      BackendDAE.AliasVariables Aliases;
       DAE.ComponentRef cr;
-    
-    case (BackendDAE.ALIASVARS(aliasMappings,aliasVariables),inVar,inExp)
+      DAE.Exp exp;
+      BackendDAE.Var v; 
+      list<BackendDAE.Var> rest;
+    case ({},Aliases) then Aliases;
+    case (v::rest,BackendDAE.ALIASVARS(aliasMappingsCref,aliasMappingsExp,aliasVariables))
       equation
-        aliasVariables1 = BackendVariable.addVar(inVar,aliasVariables);
-        cr = BackendVariable.varCref(inVar);
-        aliasMappings1 = BaseHashTable.add((cr,inExp),aliasMappings);
+        aliasVariables = BackendVariable.addVar(v,aliasVariables);
+        exp = BackendVariable.varBindExp(v);
+        cr = BackendVariable.varCref(v);
+        //print("++++ added Alias eqn : " +& ComponentReference.printComponentRefStr(cr) +& " = " +& ExpressionDump.printExpStr(exp) +& "\n");
+        aliasMappingsCref1 = BaseHashTable.addNoUpdCheck((cr,exp),aliasMappingsCref);
+        aliasMappingsExp1 = BaseHashTable.addNoUpdCheck((exp,cr),aliasMappingsExp);
+        Aliases =  addAliasVariables(rest,BackendDAE.ALIASVARS(aliasMappingsCref1,aliasMappingsExp1,aliasVariables));
       then
-        BackendDAE.ALIASVARS(aliasMappings,aliasVariables1);
-    case (_,_,_)
+       Aliases;
+    case (_,_)
       equation
         print("- BackendDAEUtil.addAliasVariables failed\n");
       then
         fail();        
   end matchcontinue;
 end addAliasVariables;
+
+public function updateAliasVariables
+"function: changeAliasVariables
+  author: wbraun
+  replace creaf in AliasVariable  variable to the AliasVariables "
+  input BackendDAE.AliasVariables inAliasVariables;
+  input DAE.ComponentRef inCref;
+  input DAE.Exp inExp;
+  input BackendDAE.Variables inVars;
+  output BackendDAE.AliasVariables outAliasVariables;
+algorithm
+  outAliasVariables := matchcontinue (inAliasVariables,inCref,inExp,inVars)
+    local
+      HashTable4.HashTable aliasMappingsExp; 
+      BackendDAE.Variables aliasVariables;
+      BackendDAE.AliasVariables Aliases;
+      BackendDAE.Var v;
+      list<BackendDAE.Var> vars;
+      DAE.Exp exp,exp1;
+      DAE.ComponentRef cr1;
+      list<tuple<HashTable4.Key,HashTable4.Value>> tableList;
+      list<String> str;
+      DAE.ExpType ty;
+    
+    case (Aliases as BackendDAE.ALIASVARS( varMappingsExp = aliasMappingsExp, aliasVars = aliasVariables),inCref,inExp,inVars)
+      equation
+        exp1 = Expression.crefExp(inCref);
+        cr1 = BaseHashTable.get(exp1,aliasMappingsExp);
+        //print("update ComponentRef : " +& ComponentReference.printComponentRefStr(inCref) +& " with Exp : " +& ExpressionDump.printExpStr(inExp) +& "\n");
+        
+        tableList = BaseHashTable.hashTableList(aliasMappingsExp);
+        Aliases = updateAliasVars(tableList,exp1,inExp,Aliases);
+
+        ({v},_) = BackendVariable.getVar(inCref,inVars);
+        v = BackendVariable.setBindExp(v,inExp);
+
+        Aliases = addAliasVariables({v},Aliases);
+      then
+        Aliases;
+    
+    case (Aliases as BackendDAE.ALIASVARS( varMappingsExp = aliasMappingsExp, aliasVars = aliasVariables),inCref,inExp,inVars)
+      equation
+        exp1 = Expression.crefExp(inCref);
+        ty = Expression.typeof(exp1);
+        cr1 = BaseHashTable.get(DAE.UNARY(DAE.UMINUS(ty),exp1),aliasMappingsExp);
+        //print("update ComponentRef : " +& ComponentReference.printComponentRefStr(inCref) +& " with  -" +& ExpressionDump.printExpStr(inExp) +& "\n");
+        
+        tableList = BaseHashTable.hashTableList(aliasMappingsExp);
+        Aliases = updateAliasVars(tableList,exp1,inExp,Aliases);
+
+        ({v},_) = BackendVariable.getVar(inCref,inVars);
+        v = BackendVariable.setBindExp(v,inExp);
+
+        Aliases = addAliasVariables({v},Aliases);
+      then
+        Aliases; 
+           
+    case (Aliases as BackendDAE.ALIASVARS( varMappingsExp = aliasMappingsExp, aliasVars = aliasVariables),inCref,inExp,inVars)
+      equation
+        //print(" Search for " +& ComponentReference.printComponentRefStr(inCref) +& " with binding : " +& ExpressionDump.printExpStr(inExp) +& "failed.\n");
+        exp1 = Expression.crefExp(inCref);
+        failure(_ = BaseHashTable.get(exp1,aliasMappingsExp));
+        ({v},_) = BackendVariable.getVar(inCref,inVars);
+        v = BackendVariable.setBindExp(v,inExp);
+        Aliases = addAliasVariables({v},Aliases);
+      then
+        Aliases;
+    //case (inAliasVariables,_,_) then inAliasVariables;
+    case (_,_,_,_)
+      equation
+        print("- BackendDAEUtil.changeAliasVariables failed\n");
+      then
+        fail();        
+  end matchcontinue;
+end updateAliasVariables;
+
+protected function updateAliasVars
+" Helper function to changeAliasVariables.
+  Collect all variables and update the alias exp binding.  
+"
+  input list<tuple<HashTable4.Key,HashTable4.Value>> inTableList1;
+  input DAE.Exp inExp1;
+  input DAE.Exp inExp2;
+  input BackendDAE.AliasVariables inAliases;
+  output BackendDAE.AliasVariables outAliases;
+algorithm
+  (outAliases) := matchcontinue(inTableList1,inExp1,inExp2,inAliases)
+    local
+      list<tuple<HashTable4.Key,HashTable4.Value>> rest;
+      DAE.Exp exp,exp2;
+      DAE.ComponentRef cref;
+      BackendDAE.Var v;
+      BackendDAE.Variables aliasvars;
+      BackendDAE.AliasVariables aliasVariables;
+      DAE.ExpType ty;
+      Boolean b;
+      
+      case ({},_,_,inAliases) then inAliases;
+      case (((exp,cref))::rest,inExp1,inExp2,inAliases as BackendDAE.ALIASVARS(aliasVars=aliasvars))
+        equation
+          //print("Exp : " +& ExpressionDump.printExpStr(exp) +& " - " +& ExpressionDump.printExpStr(inExp1) +& "\n");
+          ty = Expression.typeof(inExp2);
+          (true,b,exp2) = compareExpAlias(exp,inExp1);
+          //print("*** got : " +& ComponentReference.printComponentRefStr(cref) +& " = Exp : " +& ExpressionDump.printExpStr(exp2) +& "\n"  +& "ListLength: " +& intString(listLength(rest)) +& "\n");
+          ({v},_) = BackendVariable.getVar(cref,aliasvars);
+          exp = BackendVariable.varBindExp(v);
+          //print("*** replace : " +& ExpressionDump.printExpStr(exp) +& " = " +& ExpressionDump.printExpStr(exp2) +& "\n");
+          exp2 = Util.if_(b,DAE.UNARY(DAE.UMINUS(ty),inExp2),inExp2);
+          exp2 = ExpressionSimplify.simplify1(exp2);
+          v = BackendVariable.setBindExp(v,exp2);
+          aliasVariables = addAliasVariables({v},inAliases);
+          //print("RES *** ComponentRef : " +& ComponentReference.printComponentRefStr(cref) +& " = Exp : " +& ExpressionDump.printExpStr(exp2) +& "\n");
+          aliasVariables =  updateAliasVars(rest,inExp1,inExp2,aliasVariables);
+        then aliasVariables;   
+      case (((exp,cref))::rest,inExp1,inExp2,aliasVariables)
+        equation
+          //print("*** let "  +& ExpressionDump.printExpStr(exp) +& " with binding Exp : " +& ComponentReference.printComponentRefStr(cref) +& "\n" +& "ListLength: " +& intString(listLength(rest)) +& "\n");
+          aliasVariables = updateAliasVars(rest,inExp1,inExp2,aliasVariables);
+        then aliasVariables;            
+   end matchcontinue;
+end updateAliasVars;    
+
+protected function  compareExpAlias
+"function helper function to getAllValues. 
+ it compare both incomming expression for identital and output 
+ that that fits"
+  input DAE.Exp inExp1;
+  input DAE.Exp inExp2;
+  output Boolean outB;
+  output Boolean outB2;
+  output DAE.Exp outExp;
+algorithm
+  (outB, outB2, outExp) := matchcontinue(inExp1,inExp2)
+    local
+      DAE.Exp expNew, exp;
+      DAE.ExpType ty;
+      DAE.ComponentRef cref;
+      Boolean b;
+    // case a=a
+   case (inExp1,inExp2)
+     equation
+       expNew = inExp2;
+       true = Expression.expEqual(inExp1,expNew); 
+     then (true,false, expNew);            
+    // case a=-a
+   case (inExp1,inExp2)
+     equation
+       ty = Expression.typeof(inExp2);
+       expNew = DAE.UNARY(DAE.UMINUS(ty),inExp2);
+       true = Expression.expEqual(inExp1,expNew); 
+     then (true,true, expNew);       
+   case (inExp1,_) then (false,false,inExp1);                    
+   end matchcontinue;
+end compareExpAlias;
 
 public function equationList "function: equationList
   author: PA

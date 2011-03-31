@@ -62,10 +62,31 @@ void simulation_result_csv::emit()
     fprintf(fout, format, globalData->statesDerivatives[i]);
   for (int i = 0; i < globalData->nAlgebraic; i++) if (!globalData->algebraicsFilterOutput[i])
     fprintf(fout, format, globalData->algebraics[i]);
+  for (int i = 0; i < globalData->nAlias; i++) if (!globalData->aliasFilterOutput[i]){
+    if (((globalData->realAlias)[i]).negate){
+        fprintf(fout, format, - *(((globalData->realAlias)[i].alias)));
+      }{
+        fprintf(fout, format, *(((globalData->realAlias)[i].alias)));
+      }
+  }
   for (int i = 0; i < globalData->intVariables.nAlgebraic; i++) if (!globalData->intVariables.algebraicsFilterOutput[i])
     fprintf(fout, formatint, globalData->intVariables.algebraics[i]);
+  for (int i = 0; i < globalData->intVariables.nAlias; i++) if (!globalData->intVariables.aliasFilterOutput[i]){
+    if (((globalData->intVariables.alias)[i]).negate){
+        fprintf(fout, formatint, - *(((globalData->intVariables.alias)[i].alias)));
+      }{
+        fprintf(fout, formatint, *(((globalData->intVariables.alias)[i].alias)));
+      }
+  }
   for (int i = 0; i < globalData->boolVariables.nAlgebraic; i++) if (!globalData->boolVariables.algebraicsFilterOutput[i])
     fprintf(fout, formatbool, globalData->boolVariables.algebraics[i]);
+  for (int i = 0; i < globalData->boolVariables.nAlias; i++) if (!globalData->boolVariables.aliasFilterOutput[i]){
+    if (((globalData->boolVariables.alias)[i]).negate){
+        fprintf(fout, formatbool, - *(((globalData->boolVariables.alias)[i].alias)));
+      }{
+        fprintf(fout, formatbool, *(((globalData->boolVariables.alias)[i].alias)));
+      }
+  }
   fprintf(fout, "\n");
   rt_accumulate(SIM_TIMER_OUTPUT);
 }
@@ -87,10 +108,16 @@ simulation_result_csv::simulation_result_csv(const char* filename, long numpoint
     fprintf(fout, format, globalData->stateDerivativesNames[i].name);
   for (int i = 0; i < globalData->nAlgebraic; i++) if (!globalData->algebraicsFilterOutput[i])
     fprintf(fout, format, globalData->algebraicsNames[i].name);
+  for (int i = 0; i < globalData->nAlias; i++) if (!globalData->aliasFilterOutput[i])
+    fprintf(fout, format, globalData->alias_names[i].name);
   for (int i = 0; i < globalData->intVariables.nAlgebraic; i++) if (!globalData->intVariables.algebraicsFilterOutput[i])
     fprintf(fout, format, globalData->int_alg_names[i].name);
+  for (int i = 0; i < globalData->intVariables.nAlias; i++) if (!globalData->intVariables.aliasFilterOutput[i])
+    fprintf(fout, format, globalData->int_alias_names[i].name);
   for (int i = 0; i < globalData->boolVariables.nAlgebraic; i++) if (!globalData->boolVariables.algebraicsFilterOutput[i])
     fprintf(fout, format, globalData->bool_alg_names[i].name);
+  for (int i = 0; i < globalData->boolVariables.nAlias; i++) if (!globalData->boolVariables.aliasFilterOutput[i])
+    fprintf(fout, format, globalData->bool_alias_names[i].name);
 
   fprintf(fout,"\n");
 }
