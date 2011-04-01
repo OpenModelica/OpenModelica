@@ -29,6 +29,7 @@
  *
  */
 
+
 encapsulated package BackendQSS
 " file:         BackendQSS.mo
   package:     BackendQSS
@@ -36,16 +37,20 @@ encapsulated package BackendQSS
   authors: xfloros, fbergero
 "
 
+public import SimCode;
 public import BackendDAE;
-public import BackendDAEUtil;
 public import DAE;
+public import Absyn;
+public import Util;
+public import ExpressionDump;
+public import Expression;
+public import BackendDAEUtil;
 public import BackendDump;
+
 
 protected import BackendVariable;
 protected import Debug;
-protected import Util;
 protected import ComponentReference;
-
 
 public
 uniontype QSSinfo "- equation indices in static blocks and DEVS structure"
@@ -56,6 +61,225 @@ uniontype QSSinfo "- equation indices in static blocks and DEVS structure"
   end QSSINFO;
 end QSSinfo;
 
+public function replaceCondWhens
+" author: fbergero
+  merge when clauses depending on the same conditions"
+  input list<SimCode.SimWhenClause> whenClauses;
+  input list<SimCode.HelpVarInfo> helpVars;
+	input list<BackendDAE.ZeroCrossing> zeroCrossings;
+	output list<SimCode.SimWhenClause> replacedWhenClauses;
+algorithm
+	replacedWhenClauses := 
+		match (whenClauses,helpVars,zeroCrossings)
+			local
+				list<SimCode.SimWhenClause> rest,r;
+				SimCode.SimWhenClause clause;
+    		list<tuple<DAE.Exp, Integer>> cond; // condition, help var index
+    		list<DAE.ComponentRef> condVars;
+		    list<BackendDAE.WhenOperator> res;
+    		Option<BackendDAE.WhenEquation> whEq;
+			case ({},helpVars,zeroCrossings) then {};
+			case ((SimCode.SIM_WHEN_CLAUSE(conditions=cond, conditionVars=condVars, reinits=res, whenEq=whEq)::rest),helpVars,zeroCrossings)
+			equation
+				r = replaceCondWhens(rest,helpVars,zeroCrossings);
+				cond = replaceConds(cond,zeroCrossings);
+			then (SimCode.SIM_WHEN_CLAUSE(condVars,res,whEq,cond)::r);
+	  end match;
+end replaceCondWhens;
+
+protected function replaceConds
+  input list<tuple<DAE.Exp, Integer>> conditions; // condition, help var index
+	input list<BackendDAE.ZeroCrossing> zeroCrossings;
+  output list<tuple<DAE.Exp, Integer>> conditionsOut; // condition, help var index
+algorithm
+	conditionsOut :=
+	match (conditions,zeroCrossings)
+		local 
+  		list<tuple<DAE.Exp, Integer>> rest; 
+  		tuple<DAE.Exp, Integer> cond; 
+		case ({},_) then {};
+		case (cond::rest,_)
+		equation
+			cond=replaceCond(cond,zeroCrossings);
+			rest = replaceConds(rest,zeroCrossings);
+		then (cond::rest);
+	end match;
+end replaceConds;
+
+protected function replaceCond
+  input tuple<DAE.Exp, Integer> cond; 
+	input list<BackendDAE.ZeroCrossing> zeroCrossings;
+	output tuple<DAE.Exp, Integer> condOut; 
+algorithm
+	condOut :=
+		matchcontinue (cond,zeroCrossings)
+			local
+				Integer i,index;
+			  DAE.Exp e;
+			  tuple<DAE.Exp, Integer> result;  
+				list<DAE.Exp> zce;
+				list<DAE.Exp> expLst,expLst2;
+				Boolean tuple_ "tuple" ;
+	      Boolean builtin "builtin Function call" ;
+        DAE.ExpType ty "The type of the return value, if several return values this is undefined";
+        DAE.InlineType inlineType;
+ 
+			case ((e as (DAE.CALL(path = Absyn.IDENT(name = "sample"), expLst=expLst,tuple_=tuple_,builtin=builtin, ty=ty,inlineType=inlineType)),i),_) 
+			equation
+				zce = Util.listMap(zeroCrossings,extractExpresionFromZeroCrossing);
+				// Remove extra argument to sample since in the zce list there is none
+				expLst2 = Util.listFirst(Util.listPartition(expLst,2));
+				e = DAE.CALL(Absyn.IDENT("sample"), expLst2,tuple_,builtin,ty,inlineType);
+				index = listExpPos(zce,e,0);
+				result = 
+					((DAE.CALL(Absyn.IDENT("samplecondition"), {DAE.ICONST(index)}, false, true, DAE.ET_BOOL(), DAE.NO_INLINE()),i));
+			then result;
+			case ((e as DAE.RELATION(_,_,_,_,_),i),_) 
+			equation
+				zce = Util.listMap(zeroCrossings,extractExpresionFromZeroCrossing);
+				index = listExpPos(zce,e,0);
+			then 
+					((DAE.CALL(Absyn.IDENT("condition"), {DAE.ICONST(index)}, false, true, DAE.ET_BOOL(), DAE.NO_INLINE()),i));
+			case ((e as DAE.CREF(_,_),i),_)
+			then
+				((e,i));
+			case ((e,_),_)
+				equation
+					print("Unhandle match in replaceCond\n");
+					print(ExpressionDump.dumpExpStr(e,0));
+			then
+				((DAE.ICONST(1),1));
+	  end matchcontinue;
+end replaceCond;
+
+protected function listExpPos
+	input list<DAE.Exp> zce;
+	input DAE.Exp e;
+	input Integer i;
+	output Integer o;				
+algorithm
+	o :=
+		matchcontinue (zce,e,i)
+			local list<DAE.Exp> rest;	
+						DAE.Exp e1;	
+			case ((e1::rest),_,i)
+			equation
+				true = Expression.expEqual(e1,e);
+			then i;
+			case ((e1::rest),_,i)
+			then 
+				listExpPos(rest,e,i+1);
+			case ({},_,_) 
+			equation
+				print("Fail in listExpPos\n");
+			then 
+				fail();
+		end matchcontinue;
+end listExpPos;
+	
+protected function extractExpresionFromZeroCrossing
+	"Takes a ZeroCrossing and returns the associated Expression
+	author:  FB"
+	input BackendDAE.ZeroCrossing zc1; 
+	output DAE.Exp o;
+	algorithm
+		o := matchcontinue (zc1)
+		local 
+			DAE.Exp o1;
+			case (BackendDAE.ZERO_CROSSING(relation_= o1)) 
+			then o1;
+		end matchcontinue;
+end extractExpresionFromZeroCrossing;
+
+public function replaceZC
+  input SimCode.SimEqSystem i;
+  input list<BackendDAE.ZeroCrossing> zc;
+  output SimCode.SimEqSystem o;
+algorithm
+	o := 
+		matchcontinue (i,zc)
+			local
+				DAE.ComponentRef cref;
+				DAE.Exp exp;
+				list<DAE.Exp> zce;
+    		DAE.ElementSource source;
+			case (SimCode.SES_SIMPLE_ASSIGN(cref=cref,exp=exp,source=source),_)
+			equation
+				zce = Util.listMap(zc,extractExpresionFromZeroCrossing);
+				exp = replaceCrossingLstOnExp(exp,zce,0);		
+			then (SimCode.SES_SIMPLE_ASSIGN(cref,exp,source));
+	  end matchcontinue;
+end replaceZC;
+
+protected function replaceCrossExpHelper1
+  "Helper function used to traverse  the expression replacing the zero crossings
+  FB"
+  input tuple<DAE.Exp, tuple<DAE.Exp,Integer>> inp;
+  output tuple<DAE.Exp, tuple<DAE.Exp,Integer>> out;
+algorithm
+  out := matchcontinue inp
+         local 
+           DAE.Exp e;
+           DAE.Exp zce;
+           Integer index;
+         case ((e,(zce,index)))
+          equation
+            true = Expression.expEqual(e , zce);
+          then ((DAE.CALL(Absyn.IDENT("condition"), {DAE.ICONST(index)}, false, true, DAE.ET_BOOL(), DAE.NO_INLINE()), (zce,index)));
+         case ((e,(zce,index)))
+          equation
+            then ((e,(zce,index)));
+        end matchcontinue;
+end replaceCrossExpHelper1;
+
+protected function replaceExpOnEq
+  "function replaceExpOnEq takse an Expresion eq and an zero corssing expression and
+  traverses the expresion eq replacing zc for CROSSINGCONDITION(inp)
+  FB"
+  input DAE.Exp eq;
+  input DAE.Exp zc;
+  input Integer inp;
+  output DAE.Exp eqout;
+  DAE.Exp temp;
+algorithm
+  /*
+  print("\nReplacing:\n\t");
+  print(Exp.printExpStr(zc));
+  print("\non:\n\t");
+  print(Exp.printExpStr(eq));
+  print("\nwith result:\n\t");
+  */
+  ((temp,_)) := Expression.traverseExp(eq,replaceCrossExpHelper1,(zc,inp));
+  /*
+  print(Exp.printExpStr(temp));
+  print("\n");
+  */
+  ((eqout,_)) := Expression.traverseExp(eq,replaceCrossExpHelper1,(zc,inp));
+end replaceExpOnEq;
+
+protected function replaceCrossingLstOnExp
+  "Replace all zero crossing conditions zce1 in equation exp1 for CROSSINGCONDITION(index1)
+  FB"
+  input DAE.Exp exp1;
+  input list<DAE.Exp> zce1;
+  input Integer index1;
+  output DAE.Exp expOut;
+  DAE.Exp e1,e2;
+algorithm
+  expOut := matchcontinue (exp1,zce1,index1)
+            local DAE.Exp exp,e1;
+                  list<DAE.Exp> rest,l1,l2;
+                  Integer index;
+             case (exp,{},_) then exp;
+             case (exp,(e1 :: rest),index)
+             equation
+              exp = replaceExpOnEq(exp,e1,index);
+              exp = replaceCrossingLstOnExp(exp,rest,index+1);
+             then 
+              exp;
+  end matchcontinue;
+end replaceCrossingLstOnExp;
+ 
 public function generateStructureCodeQSS 
   input BackendDAE.BackendDAE inBackendDAE;
   input array<Integer> equationIndices;
