@@ -1311,6 +1311,33 @@ algorithm
   end matchcontinue;
 end addAliasVariables;
 
+public function updateAliasVariablesDAE
+"function: updateAliasVariablesDAE
+  author: Frenkel TUD 2011-04
+  update the aliaas variables."
+  input DAE.ComponentRef inCref;
+  input DAE.Exp inExp;
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
+algorithm
+  outDAE:=
+  match (inCref,inExp,inDAE)
+    local
+      BackendDAE.Var var;
+      BackendDAE.Variables ordvars,knvars,exobj,ordvars1;
+      BackendDAE.AliasVariables aliasVars,aliasVars1;
+      BackendDAE.EquationArray eqns,remeqns,inieqns;
+      array<BackendDAE.MultiDimEquation> arreqns;
+      array<DAE.Algorithm> algorithms;
+      BackendDAE.EventInfo einfo;
+      BackendDAE.ExternalObjectClasses eoc;      
+    case (inCref,inExp,BackendDAE.DAE(ordvars,knvars,exobj,aliasVars,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc))
+      equation
+        aliasVars1 = updateAliasVariables(aliasVars,inCref,inExp,ordvars);        
+      then BackendDAE.DAE(ordvars,knvars,exobj,aliasVars1,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc);
+  end match;        
+end updateAliasVariablesDAE;
+
 public function updateAliasVariables
 "function: changeAliasVariables
   author: wbraun
