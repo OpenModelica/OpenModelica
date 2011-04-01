@@ -656,7 +656,9 @@ void PlotWindow::exportDocument()
     {        
         QPixmap pixmap(mpPlot->size());
         mpPlot->render(&pixmap);
-        pixmap.save(fileName);
+        if (!pixmap.save(fileName)) {
+          QMessageBox::critical(this, "Error", "Failed to save image " + fileName);
+        }
     }
 }
 
