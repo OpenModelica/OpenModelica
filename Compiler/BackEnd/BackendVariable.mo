@@ -3244,6 +3244,77 @@ algorithm
   end matchcontinue;
 end traverseBackendDAEVar;
 
+public function traverseBackendDAEVarsWithUpdate "function: traverseBackendDAEVarsWithUpdate
+  author: Frenkel TUD
+
+  traverse all vars of a BackenDAE.Variables array.
+"
+  replaceable type Type_a subtypeof Any;
+  input BackendDAE.Variables inVariables;
+  input FuncExpType func;
+  input Type_a inTypeA;
+  output BackendDAE.Variables outVariables;
+  output Type_a outTypeA;
+  partial function FuncExpType
+    input tuple<BackendDAE.Var, Type_a> inTpl;
+    output tuple<BackendDAE.Var, Type_a> outTpl;
+  end FuncExpType;
+algorithm
+  (outVariables,outTypeA):=
+  matchcontinue (inVariables,func,inTypeA)
+    local
+      array<list<BackendDAE.CrefIndex>> crefIdxLstArr;
+      array<list<BackendDAE.StringIndex>> strIdxLstArr;
+      BackendDAE.VariableArray varArr;
+      Integer bucketSize,numberOfVars,numberOfElements,arrSize;      
+      array<Option<BackendDAE.Var>> varOptArr,varOptArr1;
+      Type_a ext_arg_1;
+    case (BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr,strIdxLstArr=strIdxLstArr,varArr = BackendDAE.VARIABLE_ARRAY(numberOfElements=numberOfElements,arrSize=arrSize,varOptArr=varOptArr),bucketSize=bucketSize,numberOfVars=numberOfVars),func,inTypeA)
+      equation
+        (varOptArr1,ext_arg_1) = BackendDAEUtil.traverseBackendDAEArrayNoCopyWithUpdate(varOptArr,func,traverseBackendDAEVarWithUpdate,1,arrayLength(varOptArr),inTypeA);
+      then
+        (BackendDAE.VARIABLES(crefIdxLstArr,strIdxLstArr,BackendDAE.VARIABLE_ARRAY(numberOfElements,arrSize,varOptArr1),bucketSize,numberOfVars),ext_arg_1);
+    case (_,_,_)
+      equation
+        Debug.fprintln("failtrace", "- BackendVariable.traverseBackendDAEVarsWithUpdate failed");
+      then
+        fail();        
+  end matchcontinue;
+end traverseBackendDAEVarsWithUpdate;
+
+protected function traverseBackendDAEVarWithUpdate "function: traverseBackendDAEVarWithUpdate
+  author: Frenkel TUD
+  Helper traverseBackendDAEVarsWithUpdate."
+  replaceable type Type_a subtypeof Any;  
+  input Option<BackendDAE.Var> inVar;
+  input FuncExpType func;
+  input Type_a inTypeA;
+  output Option<BackendDAE.Var> outVar;
+  output Type_a outTypeA;
+  partial function FuncExpType
+    input tuple<BackendDAE.Var, Type_a> inTpl;
+    output tuple<BackendDAE.Var, Type_a> outTpl;
+  end FuncExpType;
+algorithm
+  (outVar,outTypeA):=
+  matchcontinue (inVar,func,inTypeA)
+    local
+      BackendDAE.Var v,v1;
+      Type_a ext_arg;
+    case (NONE(),func,inTypeA) then (NONE(),inTypeA);
+    case (SOME(v),func,inTypeA)
+      equation
+        ((v1,ext_arg)) = func((v,inTypeA));
+      then
+        (SOME(v1),ext_arg);
+    case (_,_,_)
+      equation
+        Debug.fprintln("failtrace", "- BackendVariable.traverseBackendDAEVar failed");
+      then
+        fail();          
+  end matchcontinue;
+end traverseBackendDAEVarWithUpdate;
+
 public function getAllCrefFromVariables
   input BackendDAE.Variables inVariables;
   output list<DAE.ComponentRef> cr_lst;

@@ -1323,8 +1323,7 @@ algorithm
   outDAE:=
   match (inCref,inExp,inDAE)
     local
-      BackendDAE.Var var;
-      BackendDAE.Variables ordvars,knvars,exobj,ordvars1;
+      BackendDAE.Variables ordvars,knvars,exobj;
       BackendDAE.AliasVariables aliasVars,aliasVars1;
       BackendDAE.EquationArray eqns,remeqns,inieqns;
       array<BackendDAE.MultiDimEquation> arreqns;
