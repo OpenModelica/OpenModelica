@@ -2515,61 +2515,43 @@ algorithm
   (outVariables1,outVariables2):=
   match (inVariables1,inVariables2,inBinTree3)
     local
-      list<BackendDAE.Var> lst1,lst2,lst1_1,lst2_1;
-      BackendDAE.Variables v1,v2,vars,knvars,vars1,vars2;
+      BackendDAE.Variables v1,vars,knvars,vars1,vars2;
       BackendDAE.BinTree mvars;
     case (vars1,vars2,mvars)
       equation
-        lst1 = BackendDAEUtil.varList(vars1);
-        lst2 = BackendDAEUtil.varList(vars2);
-        (lst1_1,lst2_1) = moveVariables2(lst1, lst2, mvars);
         v1 = BackendDAEUtil.emptyVars();
-        v2 = BackendDAEUtil.emptyVars();
-        vars = addVars(lst1_1, v1);
-        knvars = addVars(lst2_1, v2);
+        ((vars,knvars,_)) = traverseBackendDAEVars(vars1,moveVariables2,(v1,vars2,mvars));
       then
         (vars,knvars);
   end match;
 end moveVariables;
 
 protected function moveVariables2
-"function: moveVariables2
-  helper function to move_variables.
-  inputs:  (Var list,  /* alg+state vars as list */
-              BackendDAE.Var list,  /* known vars as list */
-              BinTree)  /* move-variables as BackendDAE.BinTree */
-  outputs: (Var list,  /* updated alg+state vars as list */
-              BackendDAE.Var list)  /* update known vars as list */"
-  input list<BackendDAE.Var> inVarLst1;
-  input list<BackendDAE.Var> inVarLst2;
-  input BackendDAE.BinTree inBinTree3;
-  output list<BackendDAE.Var> outVarLst1;
-  output list<BackendDAE.Var> outVarLst2;
+"autor: Frenkel TUD 2010-11"
+ input tuple<BackendDAE.Var, tuple<BackendDAE.Variables,BackendDAE.Variables,BackendDAE.BinTree>> inTpl;
+ output tuple<BackendDAE.Var, tuple<BackendDAE.Variables,BackendDAE.Variables,BackendDAE.BinTree>> outTpl;
 algorithm
-  (outVarLst1,outVarLst2):=
-  matchcontinue (inVarLst1,inVarLst2,inBinTree3)
+  outTpl:=
+  matchcontinue (inTpl)
     local
-      list<BackendDAE.Var> knvars,vs_1,knvars_1,vs;
       BackendDAE.Var v;
-      DAE.ComponentRef cr;
+      BackendDAE.Variables vars1,vars2,newvars;
       BackendDAE.BinTree mvars;
-    case ({},knvars,_) then ({},knvars);
-    case (((v as BackendDAE.VAR(varName = cr)) :: vs),knvars,mvars)
+      DAE.ComponentRef cr;
+    case ((v as BackendDAE.VAR(varName = cr),(vars1,vars2,mvars)))
       equation
-        _ = BackendDAEUtil.treeGet(mvars, cr) "alg var moved to known vars" ;
-        (vs_1,knvars_1) = moveVariables2(vs, knvars, mvars);
+        _ = BackendDAEUtil.treeGet(mvars, cr) "alg var moved to known vars" ; 
+        newvars = addVar(v,vars2);
       then
-        (vs_1,(v :: knvars_1));
-    case (((v as BackendDAE.VAR(varName = cr)) :: vs),knvars,mvars)
+        ((v,(vars1,newvars,mvars)));        
+    case ((v as BackendDAE.VAR(varName = cr),(vars1,vars2,mvars)))
       equation
         failure(_ = BackendDAEUtil.treeGet(mvars, cr)) "alg var not moved to known vars" ;
-        (vs_1,knvars_1) = moveVariables2(vs, knvars, mvars);
+        newvars = addVar(v,vars1);
       then
-        ((v :: vs_1),knvars_1);
+        ((v,(newvars,vars2,mvars)));        
   end matchcontinue;
 end moveVariables2;
-
-
 
 public function isTopLevelInputOrOutput
 "function isTopLevelInputOrOutput
@@ -2610,67 +2592,99 @@ algorithm
   end matchcontinue;
 end isTopLevelInputOrOutput;
 
+public function deleteVars
+"function: deleteVars
+  author: Frenkel TUD 2011-04
+  Deletes variables from Variables. This is an expensive operation
+  since we need to create a new binary tree with new indexes as well
+  as a new compacted vector of variables."
+  input BackendDAE.BinTree inVars;
+  input BackendDAE.Variables inVariables;
+  output BackendDAE.Variables outVariables;
+algorithm
+  outVariables := matchcontinue (inVars,inVariables)
+    local
+      BackendDAE.Variables v,newvars,newvars_1;
+      BackendDAE.BinTree vars;
+    case (vars,v)
+      equation
+        newvars = BackendDAEUtil.emptyVars();
+        ((_,newvars_1)) = traverseBackendDAEVars(v,deleteVars2,(vars,newvars));
+      then
+        newvars_1;
+  end matchcontinue;
+end deleteVars;
 
+protected function deleteVars2
+"autor: Frenkel TUD 2010-11"
+ input tuple<BackendDAE.Var, tuple<BackendDAE.BinTree,BackendDAE.Variables>> inTpl;
+ output tuple<BackendDAE.Var, tuple<BackendDAE.BinTree,BackendDAE.Variables>> outTpl;
+algorithm
+  outTpl:=
+  matchcontinue (inTpl)
+    local
+      BackendDAE.Var v;
+      BackendDAE.Variables vars,vars1;
+      BackendDAE.BinTree delvars;
+      DAE.ComponentRef cr;
+    case ((v as BackendDAE.VAR(varName = cr),(delvars,vars)))
+      equation
+        _ = BackendDAEUtil.treeGet(delvars, cr) "alg var deleted" ;
+      then
+        ((v,(delvars,vars)));        
+    case ((v as BackendDAE.VAR(varName = cr),(delvars,vars)))
+      equation
+        failure(_ = BackendDAEUtil.treeGet(delvars, cr)) "alg var not deleted" ;
+        vars1 = addVar(v,vars);
+      then
+        ((v,(delvars,vars1)));        
+  end matchcontinue;
+end deleteVars2;
 
 public function deleteVar
 "function: deleteVar
   author: PA
-  Deletes a variable from Variables. This is an expensive operation
-  since we need to create a new binary tree with new indexes as well
-  as a new compacted vector of variables."
+  Deletes a variable from Variables."
   input DAE.ComponentRef inComponentRef;
   input BackendDAE.Variables inVariables;
   output BackendDAE.Variables outVariables;
 algorithm
   outVariables := matchcontinue (inComponentRef,inVariables)
     local
-      list<BackendDAE.Var> varlst,varlst_1;
-      BackendDAE.Variables newvars,newvars_1;
+      BackendDAE.Variables v,newvars,newvars_1;
       DAE.ComponentRef cr;
-      array<list<BackendDAE.CrefIndex>> hashvec;
-      array<list<BackendDAE.StringIndex>> oldhashvec;
-      BackendDAE.VariableArray varr;
-      BackendDAE.Value bsize,n;
-    case (cr,BackendDAE.VARIABLES(crefIdxLstArr = hashvec,strIdxLstArr = oldhashvec,varArr = varr,bucketSize = bsize,numberOfVars = n))
+    case (cr,v)
       equation
-        varlst = BackendDAEUtil.vararrayList(varr);
-        varlst_1 = deleteVar2(cr, varlst);
         newvars = BackendDAEUtil.emptyVars();
-        newvars_1 = addVars(varlst_1, newvars);
+        ((_,newvars_1)) = traverseBackendDAEVars(v,deleteVar2,(cr,newvars));
       then
         newvars_1;
   end matchcontinue;
 end deleteVar;
 
 protected function deleteVar2
-"function: deleteVar2
-  author: PA
-  Helper function to deleteVar.
-  Deletes the var named DAE.ComponentRef from the BackendDAE.Variables list."
-  input DAE.ComponentRef inComponentRef;
-  input list<BackendDAE.Var> inVarLst;
-  output list<BackendDAE.Var> outVarLst;
+"autor: Frenkel TUD 2010-11"
+ input tuple<BackendDAE.Var, tuple<DAE.ComponentRef,BackendDAE.Variables>> inTpl;
+ output tuple<BackendDAE.Var, tuple<DAE.ComponentRef,BackendDAE.Variables>> outTpl;
 algorithm
-  outVarLst := matchcontinue (inComponentRef,inVarLst)
+  outTpl:=
+  matchcontinue (inTpl)
     local
-      DAE.ComponentRef cr1,cr2;
-      list<BackendDAE.Var> vs,vs_1;
       BackendDAE.Var v;
-    case (_,{}) then {};
-    case (cr1,(BackendDAE.VAR(varName = cr2) :: vs))
+      BackendDAE.Variables vars,vars1;
+      DAE.ComponentRef cr,dcr;
+    case ((v as BackendDAE.VAR(varName = cr),(dcr,vars)))
       equation
-        true = ComponentReference.crefEqualNoStringCompare(cr1, cr2);
+        true = ComponentReference.crefEqualNoStringCompare(cr, dcr);
       then
-        vs;
-    case (cr1,(v :: vs))
+        ((v,(dcr,vars)));        
+    case ((v as BackendDAE.VAR(varName = cr),(dcr,vars)))
       equation
-        vs_1 = deleteVar2(cr1, vs);
+        vars1 = addVar(v,vars);
       then
-        (v :: vs_1);
+        ((v,(dcr,vars1)));        
   end matchcontinue;
 end deleteVar2;
-
-
 
 
 public function existsVar
@@ -2716,6 +2730,60 @@ algorithm
     case (_,_) then false;
   end matchcontinue;
 end existsVar;
+
+public function addVarDAE
+"function: addVarDAE
+  author: Frenkel TUD 2011-04
+  Add a variable to Variables of a BackendDAE.
+  If the variable already exists, the function updates the variable."
+  input BackendDAE.Var inVar;
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
+algorithm
+  outDAE:=
+  match (inVar,inDAE)
+    local
+      BackendDAE.Var var;
+      BackendDAE.Variables ordvars,knvars,exobj,ordvars1;
+      BackendDAE.AliasVariables aliasVars;
+      BackendDAE.EquationArray eqns,remeqns,inieqns;
+      array<BackendDAE.MultiDimEquation> arreqns;
+      array<DAE.Algorithm> algorithms;
+      BackendDAE.EventInfo einfo;
+      BackendDAE.ExternalObjectClasses eoc;      
+    case (var,BackendDAE.DAE(ordvars,knvars,exobj,aliasVars,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc))
+      equation
+        ordvars1 = addVar(var,ordvars);        
+      then BackendDAE.DAE(ordvars1,knvars,exobj,aliasVars,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc);
+  end match;        
+end addVarDAE;
+
+public function addKnVarDAE
+"function: addKnVarDAE
+  author: Frenkel TUD 2011-04
+  Add a variable to Variables of a BackendDAE.
+  If the variable already exists, the function updates the variable."
+  input BackendDAE.Var inVar;
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
+algorithm
+  outDAE:=
+  match (inVar,inDAE)
+    local
+      BackendDAE.Var var;
+      BackendDAE.Variables ordvars,knvars,exobj,knvars1;
+      BackendDAE.AliasVariables aliasVars;
+      BackendDAE.EquationArray eqns,remeqns,inieqns;
+      array<BackendDAE.MultiDimEquation> arreqns;
+      array<DAE.Algorithm> algorithms;
+      BackendDAE.EventInfo einfo;
+      BackendDAE.ExternalObjectClasses eoc;      
+    case (var,BackendDAE.DAE(ordvars,knvars,exobj,aliasVars,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc))
+      equation
+        knvars1 = addVar(var,knvars);        
+      then BackendDAE.DAE(ordvars,knvars1,exobj,aliasVars,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc);
+  end match;        
+end addKnVarDAE;
 
 public function addVars "function: addVars
   author: PA
