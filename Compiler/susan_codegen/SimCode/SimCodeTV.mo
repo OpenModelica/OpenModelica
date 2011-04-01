@@ -1800,4 +1800,19 @@ package ValuesUtil
   end valueExp;
 end ValuesUtil;
 
+package BackendQSS
+	function replaceCondWhens
+  	input list<SimCode.SimWhenClause> whenClauses;
+	  input list<SimCode.HelpVarInfo> helpVars;
+		input list<BackendDAE.ZeroCrossing> zeroCrossings;
+		output list<SimCode.SimWhenClause> replacedWhenClauses;
+	end replaceCondWhens;
+
+	function replaceZC
+		input SimCode.SimEqSystem i;
+		input list<BackendDAE.ZeroCrossing> zc;
+		output SimCode.SimEqSystem o;
+	end replaceZC;
+end BackendQSS;
+
 end SimCodeTV;
