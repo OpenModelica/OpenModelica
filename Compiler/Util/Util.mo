@@ -1102,6 +1102,61 @@ algorithm
   end matchcontinue;
 end arrayMapNoCopyHelp1;
 
+public function arrayMapNoCopy_1 "
+same as arrayMapcopy but with additional argument 
+
+See also listMap, arrayMap 
+  "
+  input array<Type_a> array;
+  input FuncType func;
+  input Type_b inArg;
+  output array<Type_a> outArray;
+  output Type_b outArg;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  partial function FuncType
+    input tuple<Type_a,Type_b> inTpl;
+    output tuple<Type_a,Type_b> outTpl;
+  end FuncType;
+algorithm
+  outArray := array;
+  outArg := inArg;
+//  (outArray,outArg) := arrayMapNoCopyHelp1_1(array,func,1,arrayLength(array),inArg);
+end arrayMapNoCopy_1;
+
+protected function arrayMapNoCopyHelp1_1 "help function to arrayMap"
+  input array<Type_a> inArray;
+  input FuncType func;
+  input Integer pos "iterated 1..len";
+  input Integer len "length of array";
+  input Type_b inArg;
+  output array<Type_a> outArray;
+  output Type_b outArg;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  partial function FuncType
+    input tuple<Type_a,Type_b> inTpl;
+    output tuple<Type_a,Type_b> outTpl;
+  end FuncType;
+algorithm
+  (outArray,outArg) := matchcontinue(inArray,func,pos,len,inArg)
+    local 
+      array<Type_a> a,a1;
+      Type_a newElt;
+      Type_b extarg,extarg1;
+    
+    case(inArray,func,pos,len,inArg) equation 
+      true = pos > len;
+    then (inArray,inArg);
+    
+    case(inArray,func,pos,len,inArg) equation
+      ((newElt,extarg)) = func((inArray[pos],inArg));
+      a = arrayUpdate(inArray,pos,newElt);
+      (a1,extarg1) = arrayMapNoCopyHelp1_1(a,func,pos+1,len,extarg);
+    then (a1,extarg);
+  end matchcontinue;
+end arrayMapNoCopyHelp1_1;
+
 public function arraySelect 
 "Takes an array and a list with index and output a new array with the indexed elements. 
  Since it will update the array values the returned array must not have the same type, 

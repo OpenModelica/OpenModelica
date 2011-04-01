@@ -813,6 +813,31 @@ algorithm
   end matchcontinue;
 end equationAdd;
 
+public function equationSetnthDAE
+"function: equationSetnthDAE
+  author: Frenkel TUD 2011-04"
+  input Integer inInteger;
+  input BackendDAE.Equation inEquation;
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
+algorithm
+  outDAE:=
+  match (inInteger,inEquation,inDAE)
+    local
+      BackendDAE.Variables ordvars,knvars,exobj;
+      BackendDAE.AliasVariables aliasVars;
+      BackendDAE.EquationArray eqns,remeqns,inieqns,eqns1;
+      array<BackendDAE.MultiDimEquation> arreqns;
+      array<DAE.Algorithm> algorithms;
+      BackendDAE.EventInfo einfo;
+      BackendDAE.ExternalObjectClasses eoc; 
+    case (inInteger,inEquation,BackendDAE.DAE(ordvars,knvars,exobj,aliasVars,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc))
+      equation
+        eqns1 = equationSetnth(eqns,inInteger,inEquation);
+      then BackendDAE.DAE(ordvars,knvars,exobj,aliasVars,eqns1,remeqns,inieqns,arreqns,algorithms,einfo,eoc);
+  end match;        
+end equationSetnthDAE;
+
 public function equationSetnth "function: equationSetnth
   author: PA
   Sets the nth array element of an EquationArray."
@@ -867,7 +892,7 @@ algorithm
     
     case (BackendDAE.EQUATION(exp = e1,scalar = e2,source = source))
       equation
-         //ExpressionDump.dumpExpWithTitle("equationToResidualForm 1\n",e2);
+        //ExpressionDump.dumpExpWithTitle("equationToResidualForm 1\n",e2);
         tp = Expression.typeof(e2);
         b = DAEUtil.expTypeArray(tp);
         op = Util.if_(b,DAE.SUB_ARR(tp),DAE.SUB(tp));

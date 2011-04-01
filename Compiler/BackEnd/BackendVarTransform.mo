@@ -401,7 +401,7 @@ algorithm
   end match;
 end replaceAlgorithms;
 
-protected function replaceStatementLst "function: replaceStatementLst
+public function replaceStatementLst "function: replaceStatementLst
 
   Helper for replaceMultiDimEquations.
 "
