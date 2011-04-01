@@ -168,7 +168,7 @@ algorithm
       equation
         size = arrayLength(ass1) "equation_size(e) => size &" ;
         arr = arrayCreate(size, 0);
-        arr_1 = fill({}, size);
+        arr_1 = arrayCreate(size, {});
         arr_1 = markStateEquations(dae, arr, arr_1, m, mt, ass1, ass2);
         arrList = arrayList(arr_1); 
         arrList = sortEquationsBLT(arrList,comps,{});        
