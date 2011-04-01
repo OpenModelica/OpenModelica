@@ -373,14 +373,17 @@ end Statement;
 uniontype SimEqSystem
   record SES_RESIDUAL
     DAE.Exp exp;
+    DAE.ElementSource source;
   end SES_RESIDUAL;
   record SES_SIMPLE_ASSIGN
     DAE.ComponentRef cref;
     DAE.Exp exp;
+    DAE.ElementSource source;
   end SES_SIMPLE_ASSIGN;
   record SES_ARRAY_CALL_ASSIGN
     DAE.ComponentRef componentRef;
     DAE.Exp exp;
+    DAE.ElementSource source;
   end SES_ARRAY_CALL_ASSIGN;
   record SES_ALGORITHM
     list<DAE.Statement> statements;
@@ -410,6 +413,7 @@ uniontype SimEqSystem
     DAE.Exp right;
     list<tuple<DAE.Exp, Integer>> conditions; // condition, help var index
     Option<SimEqSystem> elseWhen;
+    DAE.ElementSource source;
   end SES_WHEN;
 end SimEqSystem;
 
@@ -3769,62 +3773,62 @@ algorithm
         dlow as BackendDAE.DAE(orderedVars=vars, orderedEqs=eqns),
         ass1, ass2, helpVarInfo, true, skipDiscInAlgorithm)
       equation
-        (eqn as BackendDAE.EQUATION(e1, e2,_), v as BackendDAE.VAR(varName = cr, varKind = kind))
+        (eqn as BackendDAE.EQUATION(e1, e2, source), v as BackendDAE.VAR(varName = cr, varKind = kind))
         = getEquationAndSolvedVar(eqNum, eqns, vars, ass2);
         varexp = Expression.crefExp(cr);
         (exp_,_) = ExpressionSolve.solveLin(e1, e2, varexp);
       then
-        {SES_SIMPLE_ASSIGN(cr, exp_)};
+        {SES_SIMPLE_ASSIGN(cr, exp_, source)};
     
         // when eq without else
     case (eqNum,
         BackendDAE.DAE(orderedVars=vars, orderedEqs=eqns, eventInfo=BackendDAE.EVENT_INFO(whenClauseLst=wcl)),
         ass1, ass2, helpVarInfo, false, skipDiscInAlgorithm)
       equation
-        (BackendDAE.WHEN_EQUATION(whenEquation,_),_) = getEquationAndSolvedVar(eqNum, eqns, vars, ass2);
+        (BackendDAE.WHEN_EQUATION(whenEquation,source),_) = getEquationAndSolvedVar(eqNum, eqns, vars, ass2);
         BackendDAE.WHEN_EQ(wcIndex, left, right, NONE()) = whenEquation;
         conditions = getConditionList(wcl, wcIndex);
         conditionsWithHindex =  Util.listMap2(conditions, addHelpForCondition, helpVarInfo, helpVarInfo);
       then
-        {SES_WHEN(left, right, conditionsWithHindex,NONE())};
+        {SES_WHEN(left,right,conditionsWithHindex,NONE(),source)};
         
         // when eq with else
     case (eqNum,
         BackendDAE.DAE(orderedVars=vars, orderedEqs=eqns, eventInfo=BackendDAE.EVENT_INFO(whenClauseLst=wcl)),
         ass1, ass2, helpVarInfo, false, skipDiscInAlgorithm)
       equation
-        (BackendDAE.WHEN_EQUATION(whenEquation,_),_) = getEquationAndSolvedVar(eqNum, eqns, vars, ass2);
+        (BackendDAE.WHEN_EQUATION(whenEquation,source),_) = getEquationAndSolvedVar(eqNum, eqns, vars, ass2);
         BackendDAE.WHEN_EQ(wcIndex, left, right, SOME(elseWhen)) = whenEquation;
-        elseWhenEquation = createElseWhenEquation(elseWhen,wcl,helpVarInfo);
+        elseWhenEquation = createElseWhenEquation(elseWhen,wcl,helpVarInfo,source);
         conditions = getConditionList(wcl, wcIndex);
         conditionsWithHindex =  Util.listMap2(conditions, addHelpForCondition, helpVarInfo, helpVarInfo);
       then
-        {SES_WHEN(left, right, conditionsWithHindex,SOME(elseWhenEquation))};
+        {SES_WHEN(left,right,conditionsWithHindex,SOME(elseWhenEquation),source)};
         
         // single equation: non-state
     case (eqNum,
         BackendDAE.DAE(orderedVars=vars, orderedEqs=eqns),
         ass1, ass2, helpVarInfo, false, skipDiscInAlgorithm)
       equation
-        (BackendDAE.EQUATION(e1, e2,_), v as BackendDAE.VAR(varName = cr, varKind = kind))
+        (BackendDAE.EQUATION(e1, e2, source), v as BackendDAE.VAR(varName = cr, varKind = kind))
         = getEquationAndSolvedVar(eqNum, eqns, vars, ass2);
         true = BackendVariable.isNonStateVar(v);
         varexp = Expression.crefExp(cr);
         (exp_,asserts) = solve(e1, e2, varexp);
       then
-        {SES_ALGORITHM(asserts),SES_SIMPLE_ASSIGN(cr, exp_)};
+        {SES_ALGORITHM(asserts),SES_SIMPLE_ASSIGN(cr, exp_, source)};
         
         // single equation: state
     case (eqNum,
         BackendDAE.DAE(orderedVars=vars, orderedEqs=eqns),
         ass1, ass2, helpVarInfo, false, skipDiscInAlgorithm)
       equation
-        (BackendDAE.EQUATION(e1, e2,_), v as BackendDAE.VAR(varName = cr, varKind = BackendDAE.STATE()))
+        (BackendDAE.EQUATION(e1, e2, source), v as BackendDAE.VAR(varName = cr, varKind = BackendDAE.STATE()))
         = getEquationAndSolvedVar(eqNum, eqns, vars, ass2);
         cr = ComponentReference.crefPrefixDer(cr);
         (exp_,asserts) = solve(e1, e2, Expression.crefExp(cr));
       then
-        {SES_ALGORITHM(asserts),SES_SIMPLE_ASSIGN(cr, exp_)};
+        {SES_ALGORITHM(asserts),SES_SIMPLE_ASSIGN(cr, exp_, source)};
         
         // non-state non-linear
     case (eqNum,
@@ -3929,10 +3933,11 @@ protected function createElseWhenEquation
   input BackendDAE.WhenEquation elseWhen;
   input list<BackendDAE.WhenClause> wcl;
   input list<HelpVarInfo> helpVarInfo;
+  input DAE.ElementSource source;
   output SimEqSystem equation_;
 algorithm
   equation_ :=
-  match (elseWhen, wcl, helpVarInfo)
+  match (elseWhen, wcl, helpVarInfo, source)
     local
       Integer wcIndex;
       DAE.ComponentRef left;
@@ -3942,21 +3947,21 @@ algorithm
       list<tuple<DAE.Exp, Integer>> conditionsWithHindex;
       list<DAE.Exp> conditions;
       // when eq without else
-    case (elseWhen as BackendDAE.WHEN_EQ(index=wcIndex, left=left, right=right, elsewhenPart= NONE()), wcl, helpVarInfo)
+    case (elseWhen as BackendDAE.WHEN_EQ(index=wcIndex, left=left, right=right, elsewhenPart= NONE()), wcl, helpVarInfo, source)
       equation
         conditions = getConditionList(wcl, wcIndex);
         conditionsWithHindex = Util.listMap2(conditions, addHelpForCondition, helpVarInfo, helpVarInfo);
       then
-        SES_WHEN(left, right, conditionsWithHindex,NONE());
+        SES_WHEN(left, right, conditionsWithHindex, NONE(), source);
         
         // when eq with else
-    case (elseWhen as BackendDAE.WHEN_EQ(index=wcIndex, left=left,right=right, elsewhenPart = SOME(elseWhenEquation)), wcl, helpVarInfo)
+    case (elseWhen as BackendDAE.WHEN_EQ(index=wcIndex, left=left,right=right, elsewhenPart = SOME(elseWhenEquation)), wcl, helpVarInfo, source)
       equation
-        simElseWhenEq = createElseWhenEquation(elseWhenEquation,wcl,helpVarInfo);
+        simElseWhenEq = createElseWhenEquation(elseWhenEquation,wcl,helpVarInfo,source);
         conditions = getConditionList(wcl, wcIndex);
         conditionsWithHindex = Util.listMap2(conditions, addHelpForCondition, helpVarInfo, helpVarInfo);
       then
-        SES_WHEN(left, right, conditionsWithHindex,SOME(simElseWhenEq));
+        SES_WHEN(left,right,conditionsWithHindex,SOME(simElseWhenEq),source);
   end match;
 end createElseWhenEquation;
 
@@ -3976,17 +3981,18 @@ algorithm
       String eqstr;
       DAE.Exp e2;
       DAE.ComponentRef cr;
+      DAE.ElementSource source;
     case ({}) then {};
-    case (BackendDAE.SOLVED_EQUATION(componentRef = cr, exp = e2)::eqns)
+    case (BackendDAE.SOLVED_EQUATION(componentRef = cr, exp = e2, source = source)::eqns)
       equation
         simeqns = createSampleEquations(eqns);
       then
-        (SES_SIMPLE_ASSIGN(cr, e2)::simeqns);  
-    case(BackendDAE.EQUATION(exp = DAE.CREF(componentRef = cr), scalar = e2)::eqns)
+        (SES_SIMPLE_ASSIGN(cr, e2, source)::simeqns);
+    case(BackendDAE.EQUATION(exp = DAE.CREF(componentRef = cr), scalar = e2, source = source)::eqns)
       equation
         simeqns = createSampleEquations(eqns);
       then
-        (SES_SIMPLE_ASSIGN(cr, e2)::simeqns);  
+        (SES_SIMPLE_ASSIGN(cr, e2, source)::simeqns);  
     case (eq::eqns)
       equation
         eqstr = BackendDump.equationStr(eq); 
@@ -4154,10 +4160,11 @@ algorithm
       String eqstr;   
       DAE.Algorithm alg;
       list<DAE.Statement> algStatements;
+      DAE.ElementSource source;
       
     case ({}, _, _, inEntrylst) then ({},inEntrylst);
       
-    case ((BackendDAE.EQUATION(exp = e1,scalar = e2) :: rest), aeqns, algs, inEntrylst)
+    case ((BackendDAE.EQUATION(exp = e1,scalar = e2,source=source) :: rest), aeqns, algs, inEntrylst)
       equation
         tp = Expression.typeof(e1);
         res_exp = Expression.expSub(e1,e2);
@@ -4165,20 +4172,20 @@ algorithm
         res_exp = replaceDerOpInExp(res_exp);
         (eqSystemsRest,entrylst1) = createNonlinearResidualEquations(rest, aeqns, algs, inEntrylst);
       then
-        (SES_RESIDUAL(res_exp) :: eqSystemsRest,entrylst1);
+        (SES_RESIDUAL(res_exp,source) :: eqSystemsRest,entrylst1);
         
-    case ((BackendDAE.RESIDUAL_EQUATION(exp = e) :: rest), aeqns, algs, inEntrylst)
+    case ((BackendDAE.RESIDUAL_EQUATION(exp = e,source = source) :: rest), aeqns, algs, inEntrylst)
       equation
         res_exp = ExpressionSimplify.simplify(e);
         res_exp = replaceDerOpInExp(res_exp);
         (eqSystemsRest,entrylst1) = createNonlinearResidualEquations(rest, aeqns, algs, inEntrylst);
       then
-        (SES_RESIDUAL(res_exp) :: eqSystemsRest,entrylst1);
+        (SES_RESIDUAL(res_exp,source) :: eqSystemsRest,entrylst1);
         
         // An array equation
     case ((BackendDAE.ARRAY_EQUATION(index=aindx) :: rest), aeqns, algs, inEntrylst)
       equation
-        BackendDAE.MULTIDIM_EQUATION(dimSize=ds,left=e1, right=e2) = aeqns[aindx+1];
+        BackendDAE.MULTIDIM_EQUATION(dimSize=ds,left=e1, right=e2, source=source) = aeqns[aindx+1];
         tp = Expression.typeof(e1);
         res_exp = Expression.expSub(e1,e2);
         ad = Util.listMap(ds,Util.makeOption);
@@ -4188,7 +4195,7 @@ algorithm
         res_exp = replaceDerOpInExp(res_exp);        
         (eqSystemsRest,entrylst2) = createNonlinearResidualEquations(rest, aeqns, algs, entrylst1);
       then 
-        (SES_RESIDUAL(res_exp) :: eqSystemsRest,entrylst2);
+        (SES_RESIDUAL(res_exp,source) :: eqSystemsRest,entrylst2);
         
     case ((eq as BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(left = left, right = e2)))::rest,aeqns,algs,inEntrylst)
       equation
@@ -4208,11 +4215,11 @@ algorithm
       then
         fail();
         
-    case ((BackendDAE.ALGORITHM(index = indx,out=explst) :: rest), aeqns, algs, inEntrylst)
+    case ((BackendDAE.ALGORITHM(index = indx,out=explst,source=source) :: rest), aeqns, algs, inEntrylst)
       equation
         alg = algs[indx + 1];
         explst = Util.listMap(explst,replaceDerOpInExp);
-        eqSystlst = Util.listMap(explst,makeSES_RESIDUAL);
+        eqSystlst = Util.listMap1(explst,makeSES_RESIDUAL,source);
         DAE.ALGORITHM_STMTS(algStatements) = BackendDAEUtil.collateAlgorithm(alg,NONE());
         (eqSystemsRest,entrylst1) = createNonlinearResidualEquations(rest, aeqns, algs, inEntrylst);
         eqSystemsRest = listAppend(eqSystlst,eqSystemsRest);
@@ -4231,10 +4238,11 @@ end createNonlinearResidualEquations;
 
 protected function makeSES_RESIDUAL
   input DAE.Exp inExp;
+  input DAE.ElementSource source;
   output SimEqSystem outSimEqn;
   annotation(__OpenModelica_EarlyInline = true);
 algorithm
-  outSimEqn := SES_RESIDUAL(inExp);
+  outSimEqn := SES_RESIDUAL(inExp,source);
 end makeSES_RESIDUAL;
 
 protected function applyResidualReplacements
@@ -4279,13 +4287,14 @@ algorithm
   outEqn := matchcontinue(inEqn, repl)
     local
       DAE.Exp res_exp;
+      DAE.ElementSource source;
       
-    case (SES_RESIDUAL(res_exp), _)
+    case (SES_RESIDUAL(res_exp,source), _)
       equation
         res_exp = VarTransform.replaceExp(res_exp, repl, SOME(skipPreOperator));
       then
-        SES_RESIDUAL(res_exp);
-    case (_, _) then inEqn;
+        SES_RESIDUAL(res_exp,source);
+    else inEqn;
   end matchcontinue;
 end applyResidualReplacementsEqn;
 
@@ -4625,15 +4634,16 @@ algorithm
       list<BackendDAE.Equation> eqns;
       BackendDAE.Var v;
       list<BackendDAE.Var> vs;
+      DAE.ElementSource source;
     case ({},_) then {};
-    case ((BackendDAE.EQUATION(exp = e1,scalar = e2) :: eqns),(v :: vs))
+    case ((BackendDAE.EQUATION(exp = e1,scalar = e2,source = source) :: eqns),(v :: vs))
       equation
         cr = BackendVariable.varCref(v);
         varexp = Expression.crefExp(cr);
         (expr,_) = solve(e1, e2, varexp);
         restEqs = extractDiscEqs(eqns, vs);
       then
-        SES_SIMPLE_ASSIGN(cr, expr) :: restEqs;
+        SES_SIMPLE_ASSIGN(cr, expr, source) :: restEqs;
   end match;
 end extractDiscEqs;
 
@@ -5026,6 +5036,7 @@ algorithm
       VarTransform.VariableReplacements repl,repl1,repl2;
       DAE.Exp exp,varexp,exps;
       list<SimEqSystem> seqns;
+      DAE.ElementSource source;
       
     case ({},ass2,crefs,eqnLst,repl) then (repl,{});
       
@@ -5038,9 +5049,10 @@ algorithm
         (exp,_) = solveEquation(eqn, varexp);
         exps = VarTransform.replaceExp(exp,repl,NONE());
         repl1 = VarTransform.addReplacement(repl, c, exps);
+        source = BackendEquation.equationSource(eqn);
         (repl2,seqns) = getRelaxationReplacements(block_,ass2,crefs,eqnLst,repl1);  
       then 
-        (repl2,SES_SIMPLE_ASSIGN(c, exp)::seqns);
+        (repl2,SES_SIMPLE_ASSIGN(c, exp, source)::seqns);
   end match;
 end getRelaxationReplacements;
 
@@ -5188,14 +5200,15 @@ algorithm
       Integer row;
       Integer col;
       DAE.Exp e;
+      DAE.ElementSource source;
       
-    case ((row, col, BackendDAE.RESIDUAL_EQUATION(exp=e)), v)
+    case ((row, col, BackendDAE.RESIDUAL_EQUATION(exp=e,source=source)), v)
       equation
         // rhs_exp = BackendDAEUtil.getEqnsysRhsExp(e, v);
         // rhs_exp_1 = ExpressionSimplify.simplify(rhs_exp);
         // then ((row - 1, col - 1, SES_RESIDUAL(rhs_exp_1)));
       then 
-        ((row - 1, col - 1, SES_RESIDUAL(e)));
+        ((row - 1, col - 1, SES_RESIDUAL(e,source)));
   end match;
 end jacToSimjac;
 
@@ -5355,7 +5368,7 @@ algorithm
         ((e1,_)) = BackendDAEUtil.collateArrExp((e1,NONE()));
         ((e2,_)) = BackendDAEUtil.collateArrExp((e2,NONE()));
         (e1,e2) = solveTrivialArrayEquation(cr_1,e1,e2);
-        equation_ = createSingleArrayEqnCode2(cr_1, cr_1, e1, e2);
+        equation_ = createSingleArrayEqnCode2(cr_1, cr_1, e1, e2, source);
       then
         {equation_};
         
@@ -5483,69 +5496,70 @@ protected function createSingleArrayEqnCode2
   input DAE.ComponentRef inComponentRef2;
   input DAE.Exp inExp3;
   input DAE.Exp inExp4;
+  input DAE.ElementSource source;
   output SimEqSystem equation_;
 algorithm
-  equation_ := matchcontinue (inComponentRef1,inComponentRef2,inExp3,inExp4)
+  equation_ := matchcontinue (inComponentRef1,inComponentRef2,inExp3,inExp4,source)
     local
       DAE.ComponentRef cr,eltcr,cr2;
       DAE.Exp e1,e2;
       DAE.ExpType ty;      
       
-    case (cr,eltcr,(e1 as DAE.CREF(componentRef = cr2)),e2)
+    case (cr,eltcr,(e1 as DAE.CREF(componentRef = cr2)),e2,source)
       equation
         true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
       then
-        SES_ARRAY_CALL_ASSIGN(eltcr, e2);
+        SES_ARRAY_CALL_ASSIGN(eltcr, e2, source);
         
-    case (cr,eltcr,e1,(e2 as DAE.CREF(componentRef = cr2)))
+    case (cr,eltcr,e1,(e2 as DAE.CREF(componentRef = cr2)),source)
       equation
         true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
       then
-        SES_ARRAY_CALL_ASSIGN(eltcr, e1);
+        SES_ARRAY_CALL_ASSIGN(eltcr, e1, source);
         
-    case (cr,eltcr,(e1 as DAE.UNARY(exp=DAE.CREF(componentRef = cr2))),e2)
+    case (cr,eltcr,(e1 as DAE.UNARY(exp=DAE.CREF(componentRef = cr2))),e2,source)
       equation
         true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
         ty = Expression.typeof(e2);
         e2 = Expression.negate(e2);
       then
-        SES_ARRAY_CALL_ASSIGN(eltcr, e2);
+        SES_ARRAY_CALL_ASSIGN(eltcr, e2, source);
         
-    case (cr,eltcr,e1,(e2 as DAE.UNARY(exp=DAE.CREF(componentRef = cr2))))
+    case (cr,eltcr,e1,(e2 as DAE.UNARY(exp=DAE.CREF(componentRef = cr2))),source)
       equation
         true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
         e1 = Expression.negate(e1);
       then
-        SES_ARRAY_CALL_ASSIGN(eltcr, e1);       
+        SES_ARRAY_CALL_ASSIGN(eltcr, e1, source);       
         
-    case (cr,eltcr,e1,DAE.UNARY(DAE.UMINUS_ARR(ty),e2))
+    case (cr,eltcr,e1,DAE.UNARY(DAE.UMINUS_ARR(ty),e2),source)
       equation
         cr2 = getVectorizedCrefFromExp(e2);
         e1 = Expression.negate(e1);
       then
-        SES_ARRAY_CALL_ASSIGN(cr2, e1);       
+        SES_ARRAY_CALL_ASSIGN(cr2, e1, source);
         
-    case (cr,eltcr,DAE.UNARY(DAE.UMINUS_ARR(ty),e1),e2) /* e2 is array of crefs, {v{1},v{2},...v{n}} */
+    case (cr,eltcr,DAE.UNARY(DAE.UMINUS_ARR(ty),e1),e2,source) /* e2 is array of crefs, {v{1},v{2},...v{n}} */
       equation
         cr2 = getVectorizedCrefFromExp(e1);
         e2 = Expression.negate(e2);
       then
-        SES_ARRAY_CALL_ASSIGN(cr2, e2);
+        SES_ARRAY_CALL_ASSIGN(cr2, e2, source);
         
-    case (cr,eltcr,e1,e2) /* e2 is array of crefs, {v{1},v{2},...v{n}} */
+    case (cr,eltcr,e1,e2,source) /* e2 is array of crefs, {v{1},v{2},...v{n}} */
       equation
         cr2 = getVectorizedCrefFromExp(e2);
       then
-        SES_ARRAY_CALL_ASSIGN(cr2, e1);
+        SES_ARRAY_CALL_ASSIGN(cr2, e1, source);
         
-    case (cr,eltcr,e1,e2) /* e1 is array of crefs, {v{1},v{2},...v{n}} */
+    case (cr,eltcr,e1,e2,source) /* e1 is array of crefs, {v{1},v{2},...v{n}} */
       equation
         cr2 = getVectorizedCrefFromExp(e1);
       then
-        SES_ARRAY_CALL_ASSIGN(cr2, e2);
+        SES_ARRAY_CALL_ASSIGN(cr2, e2, source);
         
         // failure
-    case (cr,_,e1,e2)
+    case (cr,_,e1,e2,_)
       /*
        equation
        s1 = ExpressionDump.printExpStr(e1);
@@ -5641,10 +5655,11 @@ algorithm
       Algorithm.Algorithm alg;
       Integer indx;
       list<DAE.Statement> algStatements;
+      DAE.ElementSource source;
       
-    case (BackendDAE.SOLVED_EQUATION(cr, exp_, _),_) then SES_SIMPLE_ASSIGN(cr, exp_);
+    case (BackendDAE.SOLVED_EQUATION(cr, exp_, source),_) then SES_SIMPLE_ASSIGN(cr, exp_, source);
       
-    case (BackendDAE.RESIDUAL_EQUATION(exp_, _),_) then SES_RESIDUAL(exp_);
+    case (BackendDAE.RESIDUAL_EQUATION(exp_, source),_) then SES_RESIDUAL(exp_, source);
       
     case (BackendDAE.ALGORITHM(index=indx),algs)
       equation
@@ -9520,22 +9535,23 @@ algorithm
       list<Integer> value_dims;
       list<tuple<DAE.Exp, Integer>> conditions;
       list<DAE.Exp> divLst,divLst1,divLst2;
+      DAE.ElementSource source;
       
-    case (SES_RESIDUAL(exp = e),inDlowMode)
+    case (SES_RESIDUAL(exp = e, source = source),inDlowMode)
       equation
         (e,divLst) = addDivExpErrorMsgtoExp(e,inDlowMode);
       then
-        (SES_RESIDUAL(e),divLst);      
-    case (SES_SIMPLE_ASSIGN(cref = cr, exp = e),inDlowMode)
+        (SES_RESIDUAL(e,source),divLst);
+    case (SES_SIMPLE_ASSIGN(cref = cr, exp = e, source = source),inDlowMode)
       equation
         (e,divLst) = addDivExpErrorMsgtoExp(e,inDlowMode);
       then
-        (SES_SIMPLE_ASSIGN(cr, e),divLst);      
-    case (SES_ARRAY_CALL_ASSIGN(componentRef = cr, exp = e),inDlowMode)
+        (SES_SIMPLE_ASSIGN(cr, e, source),divLst);
+    case (SES_ARRAY_CALL_ASSIGN(componentRef = cr, exp = e, source = source),inDlowMode)
       equation
         (e,divLst) = addDivExpErrorMsgtoExp(e,inDlowMode);
       then
-        (SES_ARRAY_CALL_ASSIGN(cr, e),divLst);      
+        (SES_ARRAY_CALL_ASSIGN(cr, e, source),divLst);      
         /*
          case (SES_ALGORITHM(),inDlowMode)
          equation
@@ -9568,18 +9584,18 @@ algorithm
          then
          (SES_WHEN(cr,e,conditions),divLst);*/
         
-    case (SES_WHEN(left = cr, right = e, conditions = conditions, elseWhen= NONE()),inDlowMode)
+    case (SES_WHEN(left = cr, right = e, conditions = conditions, elseWhen= NONE(), source = source),inDlowMode)
       equation
         (e,divLst) = addDivExpErrorMsgtoExp(e,inDlowMode);
       then
-        (SES_WHEN(cr,e,conditions,NONE()),divLst);
-    case (SES_WHEN(left = cr, right = e, conditions = conditions, elseWhen= SOME(elseWhen)),inDlowMode)
+        (SES_WHEN(cr,e,conditions,NONE(),source),divLst);
+    case (SES_WHEN(left = cr, right = e, conditions = conditions, elseWhen= SOME(elseWhen), source = source),inDlowMode)
       equation
         (e,divLst) = addDivExpErrorMsgtoExp(e,inDlowMode);
         (elseWhenEq,divLst1) = addDivExpErrorMsgtoSimEqSystem(elseWhen, inDlowMode);
         divLst2 = listAppend(divLst,divLst1);
       then
-        (SES_WHEN(cr,e,conditions,SOME(elseWhenEq)),divLst2);        
+        (SES_WHEN(cr,e,conditions,SOME(elseWhenEq),source),divLst2);
     case (inSES,_) then (inSES,{});
   end matchcontinue;
 end addDivExpErrorMsgtoSimEqSystem;

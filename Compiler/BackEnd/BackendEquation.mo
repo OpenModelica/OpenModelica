@@ -952,7 +952,7 @@ algorithm
 end traverseAlgorithmFinder;
 
 
-protected function equationSource "Retrieve the source from a BackendDAE.BackendDAE equation"
+public function equationSource "Retrieve the source from a BackendDAE.BackendDAE equation"
   input BackendDAE.Equation eq;
   output DAE.ElementSource source;
 algorithm
