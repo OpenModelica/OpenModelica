@@ -260,94 +260,13 @@ algorithm
       BackendDAE.Variables vars1;
     case (BackendDAE.DAE(orderedVars = vars1))
       equation
-        vars = varList(vars1);
+        vars = BackendDAEUtil.varList(vars1);
         s = dumpVars(vars);
         s = "VL = {" +& s +& "};";
       then
         s;
   end match;
 end getVariables;
-
-public function varList "function: varList
-  Takes Variables and returns a list of \'BackendDAE.Var\', useful for e.g. dumping.
-"
-  input BackendDAE.Variables inVariables;
-  output list<BackendDAE.Var> outVarLst;
-algorithm
-  outVarLst:=
-  match (inVariables)
-    local
-      list<BackendDAE.Var> varlst;
-      BackendDAE.VariableArray vararr;
-    case (BackendDAE.VARIABLES(varArr = vararr))
-      equation
-        varlst = BackendDAEUtil.vararrayList(vararr);
-      then
-        varlst;
-  end match;
-end varList;
-
-
-public function vararrayList "function: vararrayList
-
-  Transforms a VariableArray to a BackendDAE.Var list
-"
-  input BackendDAE.VariableArray inVariableArray;
-  output list<BackendDAE.Var> outVarLst;
-algorithm
-  outVarLst:=
-  matchcontinue (inVariableArray)
-    local
-      array<Option<BackendDAE.Var>> arr;
-      BackendDAE.Var elt;
-      Integer lastpos,n,size;
-      list<BackendDAE.Var> lst;
-    case (BackendDAE.VARIABLE_ARRAY(numberOfElements = 0,varOptArr = arr)) then {};
-    case (BackendDAE.VARIABLE_ARRAY(numberOfElements = 1,varOptArr = arr))
-      equation
-        SOME(elt) = arr[0 + 1];
-      then
-        {elt};
-    case (BackendDAE.VARIABLE_ARRAY(numberOfElements = n,arrSize = size,varOptArr = arr))
-      equation
-        lastpos = n - 1;
-        lst = vararrayList2(arr, 0, lastpos);
-      then
-        lst;
-  end matchcontinue;
-end vararrayList;
-
-protected function vararrayList2 "function: vararrayList2
-
-  Helper function to vararray_list
-"
-  input array<Option<BackendDAE.Var>> inVarOptionArray1;
-  input Integer inInteger2;
-  input Integer inInteger3;
-  output list<BackendDAE.Var> outVarLst;
-algorithm
-  outVarLst:=
-  matchcontinue (inVarOptionArray1,inInteger2,inInteger3)
-    local
-      BackendDAE.Var v;
-      array<Option<BackendDAE.Var>> arr;
-      Integer pos,lastpos,pos_1;
-      list<BackendDAE.Var> res;
-    case (arr,pos,lastpos)
-      equation
-        (pos == lastpos) = true;
-        SOME(v) = arr[pos + 1];
-      then
-        {v};
-    case (arr,pos,lastpos)
-      equation
-        pos_1 = pos + 1;
-        SOME(v) = arr[pos + 1];
-        res = vararrayList2(arr, pos_1, lastpos);
-      then
-        (v :: res);
-  end matchcontinue;
-end vararrayList2;
 
 public function dumpVars "function: dumpVars
   Helper function to dump.
