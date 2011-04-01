@@ -42,6 +42,7 @@ public import DAE;
 public import BackendDump;
 
 protected import BackendVariable;
+protected import Debug;
 protected import Util;
 protected import ComponentReference;
 
@@ -114,10 +115,10 @@ algorithm
                 
         // PRINT INFO
                 
-        print("---------- State Blocks ----------\n");  
+        Debug.fcall("QSS-stuff",print,"---------- State Blocks ----------\n");
         //Util.listMap0(stateEq_blt, printListOfLists);
-        Util.listMap02(stateEq_blt, BackendDump.dumpComponentsAdvanced, ass2, dlow);        
-        print("---------- State Blocks ----------\n");    
+        //Debug.fcall("QSS-stuff",Util.listMap02, (stateEq_blt, BackendDump.dumpComponentsAdvanced, ass2, dlow));        
+        Debug.fcall("QSS-stuff",print,"---------- State Blocks ----------\n");    
         
        
         outVars_temp = listArray({{{1,2,3},{4,5},{6}}});
