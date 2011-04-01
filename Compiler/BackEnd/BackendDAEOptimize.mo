@@ -1502,7 +1502,7 @@ algorithm
         vareqns1 = Util.listRemoveOnTrue(pos,intEq,vareqns);
         // update Replacements
         repl_1 = VarTransform.addReplacement(repl, cr, exp);
-        //extendrepl1 = addExtendReplacement(extendrepl, cr, exp);
+        extendrepl1 = addExtendReplacement(extendrepl, cr, NONE());
         // replace var=exp in vareqns
         dae2 = replacementsInEqns(vareqns1,repl_1,extendrepl,dae1);
         // set eqn to 0=0 to avoid next call
@@ -1514,6 +1514,74 @@ algorithm
     case ((elem,pos,m,(dae,mT,repl,extendrepl,mvars,mavars,meqns))) then (({},m,(dae,mT,repl,extendrepl,mvars,mavars,meqns))); 
   end matchcontinue;
 end removeSimpleEquationsFinder;
+
+protected function addExtendReplacement
+"function: addExtendReplacement
+  author: Frenkel TUD 2011-04
+  checks if the parents of cref from type array or record
+  and add a rule to extend them."
+  input VarTransform.VariableReplacements extendrepl;
+  input DAE.ComponentRef cr;
+  input Option<DAE.ComponentRef> preCr;
+  output VarTransform.VariableReplacements outExtendrepl;
+algorithm
+  outExtendrepl:=
+  matchcontinue (extendrepl,cr,preCr)
+    local
+      VarTransform.VariableReplacements erepl,erepl1;
+      DAE.ComponentRef cr,subcr,precr,precr1,pcr;
+      DAE.Ident ident;
+      DAE.ExpType ty;
+      list<DAE.Subscript> subscriptLst;
+      DAE.Exp exp,crexp;
+    case (extendrepl,DAE.CREF_IDENT(ident=_),NONE()) then extendrepl;
+    case (extendrepl,cr as DAE.CREF_QUAL(ident=ident,identType=ty as DAE.ET_ARRAY(ty=_),subscriptLst=subscriptLst,componentRef=subcr),NONE())
+      equation
+        precr = ComponentReference.makeCrefIdent(ident,ty,subscriptLst);
+        crexp = Expression.crefExp(precr);
+        ((exp,_)) = BackendDAEUtil.extendArrExp((crexp,NONE()));
+        // update Replacements
+        erepl = VarTransform.addReplacement(extendrepl, precr, exp);        
+        erepl1 = addExtendReplacement(erepl,subcr,SOME(precr));
+      then erepl1;
+    case (extendrepl,cr as DAE.CREF_QUAL(ident=ident,identType=ty as DAE.ET_COMPLEX(complexClassType=ClassInf.RECORD(_)),subscriptLst=subscriptLst,componentRef=subcr),NONE())
+      equation
+        precr = ComponentReference.makeCrefIdent(ident,ty,subscriptLst);
+        crexp = Expression.crefExp(precr);
+        ((exp,_)) = BackendDAEUtil.extendArrExp((crexp,NONE()));
+        // update Replacements
+        erepl = VarTransform.addReplacement(extendrepl, precr, exp);        
+        erepl1 = addExtendReplacement(erepl,subcr,SOME(precr));
+      then erepl1;
+    case (extendrepl,cr as DAE.CREF_QUAL(ident=ident,identType=ty as DAE.ET_ARRAY(ty=_),subscriptLst=subscriptLst,componentRef=subcr),SOME(pcr))
+      equation
+        precr = ComponentReference.makeCrefIdent(ident,ty,subscriptLst);
+        precr1 = ComponentReference.joinCrefs(pcr,precr);
+        crexp = Expression.crefExp(precr1);
+        ((exp,_)) = BackendDAEUtil.extendArrExp((crexp,NONE()));
+        // update Replacements
+        erepl = VarTransform.addReplacement(extendrepl, precr1, exp);        
+        erepl1 = addExtendReplacement(erepl,subcr,SOME(precr));
+      then erepl1;   
+    case (extendrepl,cr as DAE.CREF_QUAL(ident=ident,identType=ty as DAE.ET_COMPLEX(complexClassType=ClassInf.RECORD(_)),subscriptLst=subscriptLst,componentRef=subcr),SOME(pcr))
+      equation
+        precr = ComponentReference.makeCrefIdent(ident,ty,subscriptLst);
+        precr1 = ComponentReference.joinCrefs(pcr,precr);
+        crexp = Expression.crefExp(precr1);
+        ((exp,_)) = BackendDAEUtil.extendArrExp((crexp,NONE()));
+        // update Replacements
+        erepl = VarTransform.addReplacement(extendrepl, precr1, exp);        
+        erepl1 = addExtendReplacement(erepl,subcr,SOME(precr));
+      then erepl1;  
+    // all other
+    case (extendrepl,cr as DAE.CREF_QUAL(ident=ident,identType=ty,subscriptLst=subscriptLst,componentRef=subcr),SOME(pcr))
+      equation
+        precr = ComponentReference.makeCrefIdent(ident,ty,subscriptLst);
+        precr1 = ComponentReference.joinCrefs(pcr,precr);
+        erepl = addExtendReplacement(extendrepl,subcr,SOME(precr1));
+      then erepl;           
+  end matchcontinue;        
+end addExtendReplacement;
 
 protected function replacementsInEqns
 "function: replacementsInEqns
