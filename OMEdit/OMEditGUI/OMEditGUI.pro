@@ -40,7 +40,7 @@ SOURCES += main.cpp\
     DocumentationWidget.cpp \
     OptionsWidget.cpp \
     BitmapAnnotation.cpp \
-    InetractiveSimulationTabWidget.cpp
+    InteractiveSimulationTabWidget.cpp
 
 HEADERS  += mainwindow.h \
     ProjectTabWidget.h \
