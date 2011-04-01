@@ -18,7 +18,9 @@ SOURCES += main.cpp \
     PlotGrid.cpp \
     PlotCurve.cpp \
     PlotWindow.cpp \
-    PlotApplication.cpp
+    PlotApplication.cpp \
+    PlotWindowContainer.cpp \
+    PlotMainWindow.cpp
 
 HEADERS  += ../../c_runtime/read_matlab4.h \
     Plot.h \
@@ -28,10 +30,17 @@ HEADERS  += ../../c_runtime/read_matlab4.h \
     PlotGrid.h \
     PlotCurve.h \
     PlotWindow.h \
-    PlotApplication.h
+    PlotApplication.h \
+    PlotWindowContainer.h \
+    PlotMainWindow.h
 
 win32 {
+CONFIG(debug, debug|release){
 LIBS += -L$$(OMDEV)/lib/qwt-5.2.1-mingw/lib -lqwtd5
+}
+else {
+LIBS += -L$$(OMDEV)/lib/qwt-5.2.1-mingw/lib -lqwt5
+}
 INCLUDEPATH += $$(OMDEV)/lib/qwt-5.2.1-mingw/include
 } else {
   include(OMPlotGUI.config)
@@ -49,5 +58,6 @@ MOC_DIR = ../generatedfiles/moc
 
 RCC_DIR = ../generatedfiles/rcc
 
-RESOURCES += \
-    Resources.qrc
+RESOURCES += resource_omplot.qrc
+
+RC_FILE = rc_omplot.rc

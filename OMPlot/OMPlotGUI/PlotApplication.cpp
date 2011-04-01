@@ -34,6 +34,8 @@
 #include "PlotApplication.h"
 #include <QTimer>
 
+using namespace OMPlot;
+
 PlotApplication::PlotApplication(int &argc, char *argv[], const QString uniqueKey)
     : QApplication(argc, argv)
 {
@@ -58,11 +60,9 @@ PlotApplication::PlotApplication(int &argc, char *argv[], const QString uniqueKe
         mSharedMemory.unlock();
         // start checking for messages of other instances.
         mpTimer = new QTimer(this);
-        startTimer();               // connect the timer to checkForMessage slot
+        connect(mpTimer, SIGNAL(timeout()), SLOT(checkForMessage()));
         mpTimer->start(100);        // after every 0.1 second we check the shared memory
     }
-
-    connect(this, SIGNAL(newApplicationLaunched()), SLOT(stopTimer()));
 }
 
 bool PlotApplication::isRunning()
@@ -70,10 +70,8 @@ bool PlotApplication::isRunning()
     return mIsRunning;
 }
 
-bool PlotApplication::sendMessage(QStringList arguments)
+void PlotApplication::sendMessage(QStringList arguments)
 {
-    if (!mIsRunning)
-        return false;
     QByteArray byteArray("1");
     byteArray.append(arguments.join(";").toUtf8());
     byteArray.append('\0'); // < should be as char here, not a string!
@@ -82,44 +80,36 @@ bool PlotApplication::sendMessage(QStringList arguments)
     const char *from = byteArray.data();
     memcpy(to, from, qMin(mSharedMemory.size(), byteArray.size()));
     mSharedMemory.unlock();
-    return true;
 }
 
-void PlotApplication::launchNewApplication()
+void PlotApplication::launchNewApplication(QStringList arguments)
 {
-    QByteArray byteArray("1");
-    byteArray.append(tr("newomplotwindow").toUtf8());
+    QByteArray byteArray("2");
+    byteArray.append(arguments.join(";").toUtf8());
     byteArray.append('\0'); // < should be as char here, not a string!
     mSharedMemory.lock();
     char *to = (char*)mSharedMemory.data();
     const char *from = byteArray.data();
     memcpy(to, from, qMin(mSharedMemory.size(), byteArray.size()));
     mSharedMemory.unlock();
-    // new create timer for new app
-    mpTimer = new QTimer(this);
-    startTimer();               // connect the timer to checkForMessage slot
-    mpTimer->start(100);        // after every 0.1 second we check the shared memory
 }
 
 void PlotApplication::checkForMessage()
 {
-    qDebug() << "looking for message";
     mSharedMemory.lock();
     QByteArray byteArray = QByteArray((char*)mSharedMemory.constData(), mSharedMemory.size());
     mSharedMemory.unlock();
     if (byteArray.left(1) == "0")
         return;
+    char type = byteArray.at(0);
     byteArray.remove(0, 1);        // remove the one we put at the start of the bytearray while writing to memory
-    // check if new application is launched or not
-    if (QString::fromUtf8(byteArray.constData()).compare("newomplotwindow") == 0)
-    {
-        emit newApplicationLaunched();
-    }
+    QStringList arguments = QString::fromUtf8(byteArray.constData()).split(";");
+    // if type is 1 send message to current tab
+    // if type is 2 launch a new tab
+    if (type == '2')
+        emit newApplicationLaunched(arguments);
     else
-    {
-        QStringList arguments = QString::fromUtf8(byteArray.constData()).split(";");
         emit messageAvailable(arguments);
-    }
     // remove message from shared memory.
     byteArray = "0";
     mSharedMemory.lock();
@@ -128,16 +118,3 @@ void PlotApplication::checkForMessage()
     memcpy(to, from, qMin(mSharedMemory.size(), byteArray.size()));
     mSharedMemory.unlock();
 }
-
-void PlotApplication::startTimer()
-{
-    connect(mpTimer, SIGNAL(timeout()), SLOT(checkForMessage()));
-}
-
-void PlotApplication::stopTimer()
-{
-    mpTimer->stop();
-    qDebug() << "stopping timer";
-}
-
-

@@ -32,7 +32,7 @@
  */
 
 #include <QtGui/QApplication>
-#include "PlotWindow.h"
+#include "PlotMainWindow.h"
 #include "PlotApplication.h"
 
 using namespace OMPlot;
@@ -61,23 +61,24 @@ int main(int argc, char *argv[])
         else
             skiparguments = false;
     }
-    // create
+    // create the plot application object that is used to check that only one instance of application is running
     PlotApplication app(argc, argv, "OMPlot");
-
     try {
-        PlotWindow w(arguments);
-        QObject::connect(&app, SIGNAL(messageAvailable(QStringList)), &w, SLOT(receiveMessage(QStringList)));
+        // create the plot main window
+        PlotMainWindow w;
+        w.addPlotWindow(arguments);
+        QObject::connect(&app, SIGNAL(messageAvailable(QStringList)),
+                         w.getPlotWindowContainer(), SLOT(updateCurrentWindow(QStringList)));
+        QObject::connect(&app, SIGNAL(newApplicationLaunched(QStringList)),
+                         w.getPlotWindowContainer(), SLOT(addPlotWindow(QStringList)));
+        // if there is no exception with plot window then continue
         if (app.isRunning())
         {
             if (newApplication)
-            {
-                app.launchNewApplication();
-            }
+                app.launchNewApplication(arguments);
             else
-            {
                 app.sendMessage(arguments);
-                return 0;
-            }
+            return 0;
         }
         w.show();
         return app.exec();
@@ -90,7 +91,6 @@ int main(int argc, char *argv[])
         msgBox->setStandardButtons(QMessageBox::Ok);
         msgBox->setDefaultButton(QMessageBox::Ok);
         msgBox->exec();
-
         return 1;
-    }    
+    }
 }

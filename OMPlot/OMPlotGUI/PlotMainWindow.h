@@ -31,35 +31,40 @@
  *
  */
 
-#ifndef PLOTAPPLICATION_H
-#define PLOTAPPLICATION_H
+#ifndef PLOTMAINWINDOW_H
+#define PLOTMAINWINDOW_H
 
-#include <QApplication>
-#include <QSharedMemory>
-#include <QStringList>
-#include <QDebug>
+#include <QtCore>
+#include <QtGui>
+
+#include "PlotWindowContainer.h"
 
 namespace OMPlot
 {
-class PlotApplication : public QApplication
+class PlotWindowContainer;
+
+class PlotMainWindow : public QMainWindow
 {
     Q_OBJECT
 public:
-    PlotApplication(int &argc, char *argv[], const QString uniqueKey);
+    PlotMainWindow(QWidget *pParent = 0);
 
-    bool isRunning();
-    void sendMessage(QStringList arguments);
-    void launchNewApplication(QStringList arguments);
+    PlotWindowContainer* getPlotWindowContainer();
+    void addPlotWindow(QStringList arguments);
 private:
-    bool mIsRunning;
-    QSharedMemory mSharedMemory;
-    QTimer *mpTimer;
+    PlotWindowContainer *mpPlotWindowContainer;
+    QStatusBar *mpStatusBar;
+    QMenuBar *mpMenuBar;
+    QMenu *mpMenuFile;
+    QMenu *mpMenuOptions;
+    QAction *mpCloseAction;
+    QAction *mpTabViewAction;
+
+    void createActions();
+    void createMenus();
 public slots:
-    void checkForMessage();
-signals:
-    void messageAvailable(QStringList arguments);
-    void newApplicationLaunched(QStringList arguments);
+    void switchWindowsView(bool mode);
 };
 }
 
-#endif // PLOTAPPLICATION_H
+#endif // PLOTMAINWINDOW_H

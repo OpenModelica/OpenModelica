@@ -33,13 +33,13 @@
 
 #include "PlotWindow.h"
 #include "iostream"
-#include <QGraphicsView>
 
 using namespace OMPlot;
 
 PlotWindow::PlotWindow(QStringList arguments, QWidget *parent)
     : QMainWindow(parent)
 {
+    setWindowIcon(QIcon(":/Resources/icons/omplot.png"));
     // create an instance of qwt plot
     mpPlot = new Plot(this);
     enableZoomMode(false);   
@@ -54,6 +54,7 @@ PlotWindow::PlotWindow(QStringList arguments, QWidget *parent)
 PlotWindow::PlotWindow(QString fileName, QWidget *parent)
         : QMainWindow(parent)
 {
+    setWindowIcon(QIcon(":/Resources/icons/omplot.png"));
     // create an instance of qwt plot
     mpPlot = new Plot(this);    
     // set up the toolbar
@@ -68,6 +69,7 @@ PlotWindow::PlotWindow(QString fileName, QWidget *parent)
 PlotWindow::PlotWindow(QWidget *parent)
     : QMainWindow(parent)
 {
+    setWindowIcon(QIcon(":/Resources/icons/omplot.png"));
     // create an instance of qwt plot
     mpPlot = new Plot(this);
     // set up the toolbar
@@ -283,7 +285,7 @@ void PlotWindow::plot(QStringList variables)
         }
         //Error handling
         if(!(variables[0] == ""))        
-            checkForErrors(variables, variableExists);       
+            checkForErrors(variables, variableExists);
     }    
     else if(mpFile->fileName().endsWith("csv"))
     {       
@@ -757,19 +759,6 @@ void PlotWindow::setLogY(bool on)
     mpPlot->replot();
 }
 
-void PlotWindow::receiveMessage(QStringList arguments)
-{
-    //activateWindow();
-    //QMessageBox::information(this, "test", arguments.join(";"), "OK");
-    // clear the curves before attaching new ones
-    foreach (PlotCurve *pCurve, mpPlot->getPlotCurvesList())
-    {
-        pCurve->detach();
-        mpPlot->removeCurve(pCurve);
-    }
-    initializePlot(arguments);
-}
-
 void PlotWindow::setXLabel(QString label)
 {
     mpPlot->setAxisTitle(QwtPlot::xBottom, label);
@@ -812,4 +801,20 @@ Plot* PlotWindow::getPlot()
 QToolButton* PlotWindow::getPanButton()
 {
     return mpPanButton;
+}
+
+void PlotWindow::receiveMessage(QStringList arguments)
+{
+    foreach (PlotCurve *pCurve, mpPlot->getPlotCurvesList())
+    {
+        pCurve->detach();
+        mpPlot->removeCurve(pCurve);
+    }
+    initializePlot(arguments);
+}
+
+void PlotWindow::closeEvent(QCloseEvent *event)
+{
+    emit closingDown();
+    event->accept();
 }

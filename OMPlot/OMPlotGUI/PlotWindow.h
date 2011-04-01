@@ -75,6 +75,8 @@ public:
     void checkForErrors(QStringList, QVector<int> );
     Plot* getPlot();
     QToolButton* getPanButton();
+    void receiveMessage(QStringList arguments);
+    void closeEvent(QCloseEvent *event);
 private:
     Plot *mpPlot;
 
@@ -86,7 +88,9 @@ private:
 
     QTextStream *mpTextStream;
     QFile *mpFile;
-public Q_SLOTS:
+signals:
+    void closingDown();
+public slots:
     void enableZoomMode(bool);
     void enablePanMode(bool);
     void exportDocument();    
@@ -95,7 +99,6 @@ public Q_SLOTS:
     void printPlot();
     void setLogX(bool);
     void setLogY(bool);
-    void receiveMessage(QStringList arguments);
 };
 
 //Exception classes
