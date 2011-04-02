@@ -376,8 +376,9 @@ void PlotWindow::plot(QStringList variables)
 
         if(variables[0] == "")
         {
-            for (int i = 0; i < reader.nall; i++)
+            for (int i = 0; i < reader.nall; i++) {
                 variables.append(reader.allInfo[i].name);
+            }
             variables.removeFirst();
         }
 
@@ -401,11 +402,6 @@ void PlotWindow::plot(QStringList variables)
                     pPlotCurve->addYAxisValue(vals[j]);
                 }
 
-                pPlotCurve->setTitle(variables[i]);
-//                pPlotCurve->setXAxisPointer(timeVals);
-//                pPlotCurve->setYAxisPointer(vals);
-//                pPlotCurve->setNumberOfValues(reader.nrows);
-
             } else {
               double val;
               double startStop[2] = {startTime,stopTime};
@@ -416,6 +412,7 @@ void PlotWindow::plot(QStringList variables)
               vals[1] = val;
               pPlotCurve->setData(startStop,vals,2);
             }
+            pPlotCurve->setTitle(variables[i]);
 
             //Set curvename and push back to list
 
