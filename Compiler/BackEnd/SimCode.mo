@@ -1157,7 +1157,7 @@ algorithm
     variableIndices, incidenceMatrix, incidenceMatrixT, strongComponents, 
     className, filenamePrefix, fileDir, functions, includes, libs, simSettingsOpt, recordDecls); 
     
-  qssInfo := BackendQSS.generateStructureCodeQSS(outIndexedBackendDAE, equationIndices, variableIndices, incidenceMatrix, incidenceMatrixT, strongComponents);
+  generateqssInfo(outIndexedBackendDAE, equationIndices, variableIndices, incidenceMatrix, incidenceMatrixT, strongComponents);
       
   timeSimCode := System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);
   
@@ -1165,6 +1165,32 @@ algorithm
   callTargetTemplates(simCode);
   timeTemplates := System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);  
 end generateModelCode;
+
+public function generateqssInfo
+  "Generates qssInfo"
+  input BackendDAE.BackendDAE outIndexedBackendDAE;
+  input array<Integer> equationIndices;
+  input array<Integer> variableIndices;  
+  input BackendDAE.IncidenceMatrix incidenceMatrix;
+  input BackendDAE.IncidenceMatrix incidenceMatrixT;
+  input list<list<Integer>> strongComponents;   
+protected 
+  BackendQSS.QSSinfo qssInfo;
+algorithm
+  _ := matchcontinue (outIndexedBackendDAE, equationIndices, variableIndices, incidenceMatrix, incidenceMatrixT, strongComponents)
+    case(outIndexedBackendDAE, equationIndices, variableIndices, incidenceMatrix, incidenceMatrixT, strongComponents)
+      equation
+        false = RTOpts.debugFlag("qssInfo");
+      then
+        ();
+    case(outIndexedBackendDAE, equationIndices, variableIndices, incidenceMatrix, incidenceMatrixT, strongComponents)
+      equation
+        true = RTOpts.debugFlag("qssInfo");
+        qssInfo = BackendQSS.generateStructureCodeQSS(outIndexedBackendDAE, equationIndices, variableIndices, incidenceMatrix, incidenceMatrixT, strongComponents);
+      then
+        ();
+   end matchcontinue;
+end generateqssInfo;
 
 public function translateModel
 "Entry point to translate a Modelica model for simulation.

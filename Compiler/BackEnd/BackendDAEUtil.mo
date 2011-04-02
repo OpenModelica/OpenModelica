@@ -1317,11 +1317,12 @@ public function updateAliasVariablesDAE
   update the aliaas variables."
   input DAE.ComponentRef inCref;
   input DAE.Exp inExp;
+  input BackendDAE.Var inVar;
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
 algorithm
   outDAE:=
-  match (inCref,inExp,inDAE)
+  match (inCref,inExp,inVar,inDAE)
     local
       BackendDAE.Variables ordvars,knvars,exobj;
       BackendDAE.AliasVariables aliasVars,aliasVars1;
@@ -1330,9 +1331,9 @@ algorithm
       array<DAE.Algorithm> algorithms;
       BackendDAE.EventInfo einfo;
       BackendDAE.ExternalObjectClasses eoc;      
-    case (inCref,inExp,BackendDAE.DAE(ordvars,knvars,exobj,aliasVars,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc))
+    case (inCref,inExp,inVar,BackendDAE.DAE(ordvars,knvars,exobj,aliasVars,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc))
       equation
-        aliasVars1 = updateAliasVariables(aliasVars,inCref,inExp,ordvars);        
+        aliasVars1 = updateAliasVariables(aliasVars,inCref,inExp,inVar);        
       then BackendDAE.DAE(ordvars,knvars,exobj,aliasVars1,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc);
   end match;        
 end updateAliasVariablesDAE;
@@ -1344,10 +1345,10 @@ public function updateAliasVariables
   input BackendDAE.AliasVariables inAliasVariables;
   input DAE.ComponentRef inCref;
   input DAE.Exp inExp;
-  input BackendDAE.Variables inVars;
+  input BackendDAE.Var inVar;
   output BackendDAE.AliasVariables outAliasVariables;
 algorithm
-  outAliasVariables := matchcontinue (inAliasVariables,inCref,inExp,inVars)
+  outAliasVariables := matchcontinue (inAliasVariables,inCref,inExp,inVar)
     local
       HashTable4.HashTable aliasMappingsExp; 
       BackendDAE.Variables aliasVariables;
@@ -1359,7 +1360,7 @@ algorithm
       list<tuple<HashTable4.Key,HashTable4.Value>> tableList;
       list<String> str;
     
-    case (Aliases as BackendDAE.ALIASVARS( varMappingsExp = aliasMappingsExp, aliasVars = aliasVariables),inCref,inExp,inVars)
+    case (Aliases as BackendDAE.ALIASVARS( varMappingsExp = aliasMappingsExp, aliasVars = aliasVariables),inCref,inExp,v)
       equation
         exp1 = Expression.crefExp(inCref);
         cr1 = BaseHashTable.get(exp1,aliasMappingsExp);
@@ -1368,14 +1369,13 @@ algorithm
         tableList = BaseHashTable.hashTableList(aliasMappingsExp);
         Aliases = updateAliasVars(tableList,exp1,inExp,Aliases);
 
-        ({v},_) = BackendVariable.getVar(inCref,inVars);
         v = BackendVariable.setBindExp(v,inExp);
 
         Aliases = addAliasVariables({v},Aliases);
       then
         Aliases;
     
-    case (Aliases as BackendDAE.ALIASVARS( varMappingsExp = aliasMappingsExp, aliasVars = aliasVariables),inCref,inExp,inVars)
+    case (Aliases as BackendDAE.ALIASVARS( varMappingsExp = aliasMappingsExp, aliasVars = aliasVariables),inCref,inExp,v)
       equation
         exp1 = Expression.crefExp(inCref);
         exp1 = Expression.negate(exp1);
@@ -1385,19 +1385,17 @@ algorithm
         tableList = BaseHashTable.hashTableList(aliasMappingsExp);
         Aliases = updateAliasVars(tableList,exp1,inExp,Aliases);
 
-        ({v},_) = BackendVariable.getVar(inCref,inVars);
         v = BackendVariable.setBindExp(v,inExp);
 
         Aliases = addAliasVariables({v},Aliases);
       then
         Aliases; 
            
-    case (Aliases as BackendDAE.ALIASVARS( varMappingsExp = aliasMappingsExp, aliasVars = aliasVariables),inCref,inExp,inVars)
+    case (Aliases as BackendDAE.ALIASVARS( varMappingsExp = aliasMappingsExp, aliasVars = aliasVariables),inCref,inExp,v)
       equation
-        Debug.fcall("debugAlias",BackendDump.debugStrCrefStrExpStr,(" Search for ",inCref," with binding : ",inExp,"failed.\n"));
         exp1 = Expression.crefExp(inCref);
         failure(_ = BaseHashTable.get(exp1,aliasMappingsExp));
-        ({v},_) = BackendVariable.getVar(inCref,inVars);
+        Debug.fcall("debugAlias",BackendDump.debugStrCrefStrExpStr,(" Search for ",inCref," with binding : ",inExp,"failed.\n"));
         v = BackendVariable.setBindExp(v,inExp);
         Aliases = addAliasVariables({v},Aliases);
       then

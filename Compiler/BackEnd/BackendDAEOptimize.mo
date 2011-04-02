@@ -463,7 +463,7 @@ algorithm
       Debug.fcall("debugAlias",BackendDump.debugStrCrefStrExpStr,("Alias Equation ",cr1," = ",e2," found.\n")); 
       repl_1 = VarTransform.addReplacement(repl, cr1, e2);
       mvars_1 = BackendDAEUtil.treeAdd(mvars1, cr1, 0);
-      varsAliases = BackendDAEUtil.updateAliasVariables(varsAliases, cr1, e2,vars);
+      varsAliases = BackendDAEUtil.updateAliasVariables(varsAliases, cr1, e2,v);
       (eqns_1,seqns_1,mvars,mvars_1,repl_2,extlst1,replc_2,varsAliases) = removeSimpleEquations2(eqns, funcSimpleEquation, vars, knvars, mvars,mvars_1, outputs, repl_1, extlst,replc_1,varsAliases);
     then
       (eqns_1,seqns_1,mvars,mvars_1,repl_2,extlst1,replc_2,varsAliases);
@@ -484,7 +484,7 @@ algorithm
       Debug.fcall("debugAlias",BackendDump.debugStrCrefStrExpStr,("Alias Equation ",cr1," = ",e2," found.\n")); 
       repl_1 = VarTransform.addReplacement(repl, cr1, e2);
       mvars_1 = BackendDAEUtil.treeAdd(mvars1, cr1, 0);
-      varsAliases = BackendDAEUtil.updateAliasVariables(varsAliases, cr1, e2,vars);
+      varsAliases = BackendDAEUtil.updateAliasVariables(varsAliases, cr1, e2,v);
       (eqns_1,seqns_1,mvars,mvars_1,repl_2,extlst1,replc_2,varsAliases) = removeSimpleEquations2(eqns, funcSimpleEquation, vars, knvars, mvars,mvars_1, outputs, repl_1, extlst,replc_1,varsAliases);
     then
       (eqns_1,seqns_1,mvars,mvars_1,repl_2,extlst1,replc_2,varsAliases);
@@ -1499,14 +1499,14 @@ algorithm
         (cr,i,exp,dae1,mvars_1,mavars_1) = simpleEquationX(elem,l,pos,dae,mvars,mavars);
         // equations of var
         vareqns = mT[i];
-        vareqns1 = Util.listRemoveOnTrue(pos,intEq,vareqns);
+        pos_1 = pos-1;
+        vareqns1 = Util.listRemoveOnTrue(pos_1,intEq,vareqns);
         // update Replacements
         repl_1 = VarTransform.addReplacement(repl, cr, exp);
         extendrepl1 = addExtendReplacement(extendrepl, cr, NONE());
         // replace var=exp in vareqns
         dae2 = replacementsInEqns(vareqns1,repl_1,extendrepl,dae1);
         // set eqn to 0=0 to avoid next call
-        pos_1 = pos-1;
         dae3 =  BackendEquation.equationSetnthDAE(pos_1,BackendDAE.EQUATION(DAE.RCONST(0.0),DAE.RCONST(0.0),DAE.emptyElementSource),dae2);
         // update IncidenceMatrix
         (m1,mT1) = BackendDAEUtil.updateIncidenceMatrix(dae3,m,mT,vareqns1);
@@ -1748,7 +1748,7 @@ algorithm
         Debug.fcall("debugAlias",BackendDump.debugStrCrefStrExpStr,("Alias Equation ",cr1," = ",e2," found.\n")); 
         // store changed var
         newvars = BackendDAEUtil.treeAdd(mavars, cr1, 0);
-        dae1 = BackendDAEUtil.updateAliasVariablesDAE(cr1,e2,dae);
+        dae1 = BackendDAEUtil.updateAliasVariablesDAE(cr1,e2,var,dae);
       then
         (cr1,e2,dae1,newvars);
     case (cr1,i,cr2,j,e1,e2,dae,mavars)
@@ -1766,7 +1766,7 @@ algorithm
         Debug.fcall("debugAlias",BackendDump.debugStrCrefStrExpStr,("Alias Equation ",cr2," = ",e1," found.\n")); 
         // store changed var
         newvars = BackendDAEUtil.treeAdd(mavars, cr2, 0);
-        dae1 = BackendDAEUtil.updateAliasVariablesDAE(cr2,e1,dae);
+        dae1 = BackendDAEUtil.updateAliasVariablesDAE(cr2,e1,var,dae);
       then
         (cr2,e1,dae1,newvars);        
   end matchcontinue;
