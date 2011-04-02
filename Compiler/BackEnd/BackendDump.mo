@@ -47,14 +47,12 @@ protected import BackendDAEUtil;
 protected import BackendVariable;
 protected import BackendEquation;
 protected import ComponentReference;
-protected import BackendDAEEXT;
 protected import DAEDump;
 protected import DAEUtil;
 protected import Debug;
 protected import Error;
 protected import Expression;
 protected import ExpressionDump;
-protected import HashTable4;
 protected import IOStream;
 protected import SCode;
 protected import Util;
@@ -1684,5 +1682,113 @@ algorithm
         ();
   end match;
 end dumpComponentsAdvanced3;
+
+/*******************************************/
+/* Debug dump functions */
+/*******************************************/
+
+public function debugCrefStr
+  input tuple<DAE.ComponentRef,String> inTpl;
+protected
+  DAE.ComponentRef a;
+  String b;
+algorithm
+  (a,b) := inTpl;
+  print(ComponentReference.printComponentRefStr(a) +& b);
+end debugCrefStr;
+
+public function debugCrefStrIntStr
+  input tuple<DAE.ComponentRef,String,Integer,String> inTpl;
+protected
+  DAE.ComponentRef a;
+  String b,d;
+  Integer c;
+algorithm
+  (a,b,c,d) := inTpl;
+  print(ComponentReference.printComponentRefStr(a) +& b +& intString(c) +& d);
+end debugCrefStrIntStr;
+
+public function debugStrCrefStr
+  input tuple<String,DAE.ComponentRef,String> inTpl;
+protected
+  String a,c;
+  DAE.ComponentRef b;
+algorithm
+  (a,b,c) := inTpl;
+  print(a +&ComponentReference.printComponentRefStr(b) +& c);
+end debugStrCrefStr;
+
+public function debugStrCrefStrIntStr
+  input tuple<String,DAE.ComponentRef,String,Integer,String> inTpl;
+protected
+  String a,c,e;
+  DAE.ComponentRef b;
+  Integer d;
+algorithm
+  (a,b,c,d,e) := inTpl;
+  print(a +& ComponentReference.printComponentRefStr(b) +& c +& intString(d) +& e);
+end debugStrCrefStrIntStr;
+
+public function debugStrCrefStrExpStr
+  input tuple<String,DAE.ComponentRef,String,DAE.Exp,String> inTpl;
+protected
+  String a,c,e;
+  DAE.ComponentRef b;
+  DAE.Exp d;
+algorithm
+  (a,b,c,d,e) := inTpl;
+  print(a +& ComponentReference.printComponentRefStr(b) +& c +& ExpressionDump.printExpStr(d) +& e);
+end debugStrCrefStrExpStr;
+
+public function debugStrCrefStrCrefStr
+  input tuple<String,DAE.ComponentRef,String,DAE.ComponentRef,String> inTpl;
+protected
+  String a,c,e;
+  DAE.ComponentRef b,d;
+algorithm
+  (a,b,c,d,e) := inTpl;
+  print(a +& ComponentReference.printComponentRefStr(b) +& c +& ComponentReference.printComponentRefStr(d) +& e);
+end debugStrCrefStrCrefStr;
+
+public function debugStrExpStrCrefStr
+  input tuple<String,DAE.Exp,String,DAE.ComponentRef,String> inTpl;
+protected
+  String a,c,e;
+  DAE.Exp b;
+  DAE.ComponentRef d;
+algorithm
+  (a,b,c,d,e) := inTpl;
+  print(a +& ExpressionDump.printExpStr(b) +& c +& ComponentReference.printComponentRefStr(d) +& e);
+end debugStrExpStrCrefStr;
+
+public function debugStrExpStrExpStr
+  input tuple<String,DAE.Exp,String,DAE.Exp,String> inTpl;
+protected
+  String a,c,e;
+  DAE.Exp b,d;
+algorithm
+  (a,b,c,d,e) := inTpl;
+  print(a +& ExpressionDump.printExpStr(b) +& c +& ExpressionDump.printExpStr(d) +& e);
+end debugStrExpStrExpStr;
+
+public function debugExpStrExpStrExpStr
+  input tuple<DAE.Exp,String,DAE.Exp,String,DAE.Exp,String> inTpl;
+protected
+  DAE.Exp a,c,e;
+  String b,d,f;
+algorithm
+  (a,b,c,d,e,f) := inTpl;
+  print(ExpressionDump.printExpStr(a) +& b +& ExpressionDump.printExpStr(c) +& d +& ExpressionDump.printExpStr(e) +& f);
+end debugExpStrExpStrExpStr;
+
+public function debugStrExpStrExpStrExpStr
+  input tuple<String,DAE.Exp,String,DAE.Exp,String,DAE.Exp,String> inTpl;
+protected
+  String a,c,e,g;
+  DAE.Exp b,d,f;
+algorithm
+  (a,b,c,d,e,f,g) := inTpl;
+  print(a +& ExpressionDump.printExpStr(b) +& c +& ExpressionDump.printExpStr(d) +& e +& ExpressionDump.printExpStr(f) +& g);
+end debugStrExpStrExpStrExpStr;
 
 end BackendDump;

@@ -48,10 +48,10 @@ public import Absyn;
 public import BackendDAE;
 public import DAE;
 
-protected import BackendDump;
 protected import BackendDAECreate;
 protected import BackendDAETransform;
 protected import BackendDAEUtil;
+protected import BackendDump;
 protected import BackendEquation;
 protected import BackendVarTransform;
 protected import BackendVariable;
@@ -421,7 +421,7 @@ algorithm
       false = BackendVariable.isTopLevelInputOrOutput(cr1,vars,knvars);
       failure(_ = BackendDAEUtil.treeGet(outputs, cr1)) "cr1 not output of algorithm";
       (extlst,_,replc_1) = removeSimpleEquations3(inExtendLst,replc,cr1,NONE(),e2,t);
-      Debug.fcall("debugAlias",print,"Simple Equation " +& ComponentReference.printComponentRefStr(cr1) +& " = " +& ExpressionDump.printExpStr(e2) +& " found.\n"); 
+      Debug.fcall("debugAlias",BackendDump.debugStrCrefStrExpStr,("Simple Equation ",cr1," = ",e2," found.\n")); 
       repl_1 = VarTransform.addReplacement(repl, cr1, e2);
       mvars_1 = BackendDAEUtil.treeAdd(mvars, cr1, 0);   
       (eqns_1,seqns_1,mvars, mvars1, repl_2,extlst1,replc_2,varsAliases) = removeSimpleEquations2(eqns, funcSimpleEquation, vars, knvars, mvars_1, mvars1, outputs, repl_1, extlst,replc_1,varsAliases);
@@ -440,7 +440,7 @@ algorithm
       false = BackendVariable.isTopLevelInputOrOutput(cr1,vars,knvars);
       failure(_ = BackendDAEUtil.treeGet(outputs, cr1)) "cr1 not output of algorithm";
       (extlst,_,replc_1) = removeSimpleEquations3(inExtendLst,replc,cr1,NONE(),e2,t); 
-      Debug.fcall("debugAlias",print,"Simple Equation " +& ComponentReference.printComponentRefStr(cr1) +& " = " +& ExpressionDump.printExpStr(e2) +& " found.\n");
+      Debug.fcall("debugAlias",BackendDump.debugStrCrefStrExpStr,("Simple Equation ",cr1," = ",e2," found.\n"));
       repl_1 = VarTransform.addReplacement(repl, cr1, e2);
       mvars_1 = BackendDAEUtil.treeAdd(mvars, cr1, 0);
       (eqns_1,seqns_1,mvars,mvars1,repl_2,extlst1,replc_2,varsAliases) = removeSimpleEquations2(eqns, funcSimpleEquation, vars, knvars, mvars_1, mvars1,outputs, repl_1, extlst,replc_1,varsAliases);
@@ -460,7 +460,7 @@ algorithm
       failure(_ = BackendVariable.varStartValueFail(v));
       failure(_ = BackendDAEUtil.treeGet(outputs, cr1)) "cr1 not output of algorithm";
       (extlst,_,replc_1) = removeSimpleEquations3(inExtendLst,replc,cr1,NONE(),e2,t);
-      Debug.fcall("debugAlias",print,"Alias Equation " +& ComponentReference.printComponentRefStr(cr1) +& " = " +& ExpressionDump.printExpStr(e2) +& " found.\n"); 
+      Debug.fcall("debugAlias",BackendDump.debugStrCrefStrExpStr,("Alias Equation ",cr1," = ",e2," found.\n")); 
       repl_1 = VarTransform.addReplacement(repl, cr1, e2);
       mvars_1 = BackendDAEUtil.treeAdd(mvars1, cr1, 0);
       varsAliases = BackendDAEUtil.updateAliasVariables(varsAliases, cr1, e2,vars);
@@ -481,7 +481,7 @@ algorithm
       failure( _ = BackendVariable.varStartValueFail(v));
       failure(_ = BackendDAEUtil.treeGet(outputs, cr1)) "cr1 not output of algorithm";
       (extlst,_,replc_1) = removeSimpleEquations3(inExtendLst,replc,cr1,NONE(),e2,t);
-      Debug.fcall("debugAlias",print,"Alias Equation " +& ComponentReference.printComponentRefStr(cr1) +& " = " +& ExpressionDump.printExpStr(e2) +& " found.\n"); 
+      Debug.fcall("debugAlias",BackendDump.debugStrCrefStrExpStr,("Alias Equation ",cr1," = ",e2," found.\n")); 
       repl_1 = VarTransform.addReplacement(repl, cr1, e2);
       mvars_1 = BackendDAEUtil.treeAdd(mvars1, cr1, 0);
       varsAliases = BackendDAEUtil.updateAliasVariables(varsAliases, cr1, e2,vars);
@@ -1732,19 +1732,20 @@ algorithm
       BackendDAE.Var var;
       BackendDAE.VarKind kind;
       BackendDAE.BackendDAE dae1;
-      BackendDAE.Variables vars,knvars;
+      BackendDAE.Variables vars;
     case (cr1,i,cr2,j,e1,e2,dae,mavars)
       equation
+        true = intGt(i,0) "cr1 not state";
         vars = BackendVariable.daeVars(dae);
         var = BackendVariable.getVarAt(vars,intAbs(i));
         // no State
-        false = BackendVariable.isState(cr1, vars) "cr1 not state";
+        false = BackendVariable.isStateVar(var) "cr1 not state";
         kind = BackendVariable.varKind(var);
         BackendVariable.isVarKindVariable(kind) "cr1 not constant";
-        knvars = BackendVariable.daeKnVars(dae);        
-        false = BackendVariable.isTopLevelInputOrOutput(cr1,vars,knvars);
+        false = BackendVariable.isVarOnTopLevelAndOutput(var);
+        false = BackendVariable.isVarOnTopLevelAndInput(var);
         failure( _ = BackendVariable.varStartValueFail(var));
-        Debug.fcall("debugAlias",print,"Alias Equation " +& ComponentReference.printComponentRefStr(cr1) +& " = " +& ExpressionDump.printExpStr(e2) +& " found.\n"); 
+        Debug.fcall("debugAlias",BackendDump.debugStrCrefStrExpStr,("Alias Equation ",cr1," = ",e2," found.\n")); 
         // store changed var
         newvars = BackendDAEUtil.treeAdd(mavars, cr1, 0);
         dae1 = BackendDAEUtil.updateAliasVariablesDAE(cr1,e2,dae);
@@ -1752,16 +1753,17 @@ algorithm
         (cr1,e2,dae1,newvars);
     case (cr1,i,cr2,j,e1,e2,dae,mavars)
       equation
+        true = intGt(j,0) "cr1 not state";
         vars = BackendVariable.daeVars(dae);
         var = BackendVariable.getVarAt(vars,intAbs(i));
         // no State
-        false = BackendVariable.isState(cr2, vars) "cr1 not state";
+        false = BackendVariable.isStateVar(var) "cr1 not state";
         kind = BackendVariable.varKind(var);
         BackendVariable.isVarKindVariable(kind) "cr1 not constant";
-        knvars = BackendVariable.daeKnVars(dae);        
-        false = BackendVariable.isTopLevelInputOrOutput(cr2,vars,knvars);
+        false = BackendVariable.isVarOnTopLevelAndOutput(var);
+        false = BackendVariable.isVarOnTopLevelAndInput(var);
         failure( _ = BackendVariable.varStartValueFail(var));
-        Debug.fcall("debugAlias",print,"Alias Equation " +& ComponentReference.printComponentRefStr(cr2) +& " = " +& ExpressionDump.printExpStr(e1) +& " found.\n"); 
+        Debug.fcall("debugAlias",BackendDump.debugStrCrefStrExpStr,("Alias Equation ",cr2," = ",e1," found.\n")); 
         // store changed var
         newvars = BackendDAEUtil.treeAdd(mavars, cr2, 0);
         dae1 = BackendDAEUtil.updateAliasVariablesDAE(cr2,e1,dae);
@@ -4427,16 +4429,16 @@ algorithm
     case (curr  as BackendDAE.VAR(varName=currCREF),(currVar,currInd)::restTuple,bt) equation
       true = ComponentReference.crefEqual(currCREF, currVar) ;
       changedVar = BackendVariable.setVarIndex(curr,currInd);
-      Debug.fcall("varIndex2",print, ComponentReference.printComponentRefStr(currVar) +& " " +& intString(currInd)+&"\n");
+      Debug.fcall("varIndex2",BackendDump.debugCrefStrIntStr,(currVar," ",currInd,"\n"));
       bt = BackendDAEUtil.treeAddList(bt,{currCREF});
     then (changedVar,bt);
     case (curr  as BackendDAE.VAR(varName=currCREF),{},bt) equation
       changedVar = BackendVariable.setVarIndex(curr,-1);
-      Debug.fcall("varIndex2",print, ComponentReference.printComponentRefStr(currCREF) +& " -1\n");
+      Debug.fcall("varIndex2",BackendDump.debugCrefStr, (currCREF," -1\n"));
     then (changedVar,bt);      
     case (curr  as BackendDAE.VAR(varName=currCREF),(currVar,currInd)::restTuple,bt) equation
       changedVar = BackendVariable.setVarIndex(curr,-1);
-      Debug.fcall("varIndex2",print, ComponentReference.printComponentRefStr(currCREF) +& " -1\n");
+      Debug.fcall("varIndex2",BackendDump.debugCrefStr,(currCREF," -1\n"));
       (changedVar,bt) = changeIndices2(changedVar,restTuple,bt);
     then (changedVar,bt);
     case (_,_,_) equation

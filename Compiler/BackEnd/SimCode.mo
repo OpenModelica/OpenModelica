@@ -10707,19 +10707,19 @@ algorithm (oi,firstOrderDers) := matchcontinue(inDer,inEqns)
     equation
       true = Expression.expEqual(inDer,e1);
       {cr} = Expression.extractCrefsFromExp(e1);
-      Debug.fcall("cppvar",print, " found derivative for " +& ExpressionDump.printExpStr(inDer) +& " in equation " +& ExpressionDump.printExpStr(e1) +& " = " +& ExpressionDump.printExpStr(e2) +& "\n");
+      Debug.fcall("cppvar",BackendDump.debugStrExpStrExpStrExpStr,(" found derivative for ",inDer," in equation ",e1," = ",e2, "\n"));
     then
       (1,{cr});
   case(inDer,(BackendDAE.EQUATION(e1,e2,_)::rest))
     equation
       true = Expression.expEqual(inDer,e2);
       {cr} = Expression.extractCrefsFromExp(e2);
-      Debug.fcall("cppvar",print, " found derivative for " +& ExpressionDump.printExpStr(inDer) +& " in equation " +& ExpressionDump.printExpStr(e1) +& " = " +& ExpressionDump.printExpStr(e2) +& "\n");
+      Debug.fcall("cppvar",BackendDump.debugStrExpStrExpStrExpStr,(" found derivative for ",inDer," in equation ",e1," = ",e2,"\n"));
     then
       (1,{cr});
   case(inDer,(BackendDAE.EQUATION(e1,e2,_)::rest))
     equation
-      Debug.fcall("cppvar",print, ExpressionDump.printExpStr(inDer) +& " NOT contained in " +& ExpressionDump.printExpStr(e1) +& " = " +& ExpressionDump.printExpStr(e2) +& "\n");
+      Debug.fcall("cppvar",BackendDump.debugExpStrExpStrExpStr,(inDer," NOT contained in ",e1," = ",e2,"\n"));
       (oi,firstOrderDers) = locateDerAndSerachOtherSide22(inDer,rest);
     then
       (oi,firstOrderDers);
@@ -10822,7 +10822,7 @@ algorithm (new_index) := matchcontinue(var,odered_vars)
   case(var ,((cr,i)::_))    
     equation
       true = ComponentReference.crefEqual(var,cr);
-    Debug.fcall("cppvarindex",print, " found state variable " +& ComponentReference.printComponentRefStr(var) +& " with index: " +& intString(i) +& "\n");
+    Debug.fcall("cppvarindex",BackendDump.debugStrCrefStrIntStr,(" found state variable ",var," with index: ",i,"\n"));
   // Debug.fcall("cppvar",print, +& " with index: " +& intString(i) +& "\n");
     then 
       (i);
@@ -10830,7 +10830,7 @@ algorithm (new_index) := matchcontinue(var,odered_vars)
     equation
      
       (i)=stateindex(var,rest);
-       Debug.fcall("cppvarindex",print, " state variable " +& ComponentReference.printComponentRefStr(var) +& " with index: " +& intString(i) +& "\n");
+       Debug.fcall("cppvarindex",BackendDump.debugStrCrefStrIntStr,(" state variable ",var," with index: ",i,"\n"));
   
    //  Debug.fcall("cppvar",print, +& " with index: " +& intString(i) +& "\n");      
     then (i);
@@ -10886,7 +10886,7 @@ algorithm (outSimVar):= matchcontinue(stateVars,dae_low)
     Option<Integer> variable_index;
   case(SIMVAR(name=name,varKind=varKind,comment=comment,unit=unit,displayUnit=displayUnit,index=index,initialValue=initialValue,isFixed=isFixed,type_=type_,isDiscrete=isDiscrete,arrayCref=arrayCref,aliasvar=aliasvar,info=info,causality=causality,variable_index=variable_index),dae_low)
      equation
-      Debug.fcall("cppvarindex",print, " search index for state variable " +& ComponentReference.printComponentRefStr(name) +& "\n");
+      Debug.fcall("cppvarindex",BackendDump.debugStrCrefStr,(" search index for state variable ",name,"\n"));
       ordered_states=setVariableDerIndex(dae_low);
       new_index=stateindex(name,ordered_states);
            
@@ -11110,7 +11110,7 @@ algorithm
   
   case((v as SIMVAR(name,varKind,comment,unit,displayUnit,index,initialValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,info,causality,variable_index)),SIMVAR(name1,_,_,_,_,index1,_,_,_,_,_,_,_,_,SOME(variable_index1))::_)    
     equation
-      Debug.fcall("cppvarindex",print, " compare variable " +& ComponentReference.printComponentRefStr(name) +& "with "  +& ComponentReference.printComponentRefStr(name1) +& "\n");
+      Debug.fcall("cppvarindex",BackendDump.debugStrCrefStrCrefStr,(" compare variable ",name,"with ",name1,"\n"));
       true = ComponentReference.crefEqual(name,name1);
     then 
       SIMVAR(name,varKind,comment,unit,displayUnit,variable_index1,initialValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,info,causality,SOME(index1));
