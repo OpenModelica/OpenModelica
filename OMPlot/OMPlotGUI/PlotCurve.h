@@ -56,7 +56,6 @@ public:
     void addYAxisValue(double value);
     const double* getYAxisVector() const;
     int getSize();
-    QColor getUniqueColor(QColor color = QColor(255, 0, 0));
     virtual void updateLegend(QwtLegend *legend) const;
 };
 }

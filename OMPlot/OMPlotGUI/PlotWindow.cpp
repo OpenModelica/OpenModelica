@@ -592,7 +592,7 @@ void PlotWindow::plotGraph(QList<PlotCurve*> plotCurvesList)
         plotCurvesList[i]->setRawData(plotCurvesList[i]->getXAxisVector(), plotCurvesList[i]->getYAxisVector(),
                                       plotCurvesList[i]->getSize());
         //plotCurvesList[i]->setRawData(plotCurvesList[i]->getXAxisPointer(), plotCurvesList[i]->getYAxisPointer(), plotCurvesList[i]->getNumberOfValues());
-        QPen pen(plotCurvesList[i]->getUniqueColor());
+        QPen pen(QColor::fromHsvF(i / (plotCurvesList.length()+1.0),1,1));
         pen.setWidth(2);
         plotCurvesList[i]->setPen(pen);        
         plotCurvesList[i]->attach(mpPlot);        
