@@ -4302,7 +4302,7 @@ algorithm
       array<list<BackendDAE.Value>> m,m_1,m_2;
       BackendDAE.Value e_1,e;
       BackendDAE.Equation eqn;
-      list<BackendDAE.Value> row,changedvars1,eqns;
+      list<BackendDAE.Value> row,changedvars1,eqns,oldvars,changedvars3;
       list<list<BackendDAE.Value>> changedvars2;
       BackendDAE.Variables vars,knvars;
       BackendDAE.EquationArray daeeqns,daeseqns;
@@ -4315,8 +4315,10 @@ algorithm
         e_1 = e - 1;
         eqn = equationNth(daeeqns, e_1);
         row = incidenceRow(vars, eqn,wc);
+        //oldvars = m[e];
         m_1 = Util.arrayReplaceAtWithFill(row, e, m, {});
         changedvars1 = varsInEqn(m_1, e);
+        //changedvars3 = Util.listSetDifferenceOnTrue(oldvars, changedvars1, intEq);
         (m_2,changedvars2) = updateIncidenceMatrix2(dae, m_1, eqns);
       then
         (m_2,(changedvars1 :: changedvars2));
@@ -4356,7 +4358,7 @@ algorithm
       equation
         mlst = arrayList(m);
         row_1 = transposeRow(mlst, v, 1);
-        mt_1 = Util.arrayReplaceAtWithFill(row_1, v, mt, {});
+        mt_1 = Util.arrayReplaceAtWithFill(row_1, intAbs(v), mt, {});
         mt_2 = updateTransposedMatrix(vars, m, mt_1);
       then
         mt_2;

@@ -1326,7 +1326,7 @@ algorithm
         (inieqns1,(_,_,_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(inieqns,replaceEquationTraverser,(repl_1,extendrepl1,crefOrDerCrefarray,inouttplarray));
         (remeqns1,(_,_,_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(remeqns,replaceEquationTraverser,(repl_1,extendrepl1,crefOrDerCrefarray,inouttplarray));
         // update array eqn wrapper
-      then (BackendDAE.DAE(ordvars3,knvars1,exobj,aliasVars,eqns2,remeqns1,inieqns1,arreqns1,algorithms1,einfo,eoc),NONE(),NONE());
+      then (BackendDAE.DAE(ordvars3,knvars2,exobj,aliasVars,eqns2,remeqns1,inieqns1,arreqns1,algorithms1,einfo,eoc),NONE(),NONE());
   end match;        
 end removeSimpleEquationsX;
 
@@ -1483,7 +1483,7 @@ algorithm
       BackendDAE.BackendDAE dae,dae1,dae2,dae3;
       VarTransform.VariableReplacements repl,repl_1,extendrepl,extendrepl1;
       BackendDAE.BinTree mvars,mvars_1,mavars,mavars_1;
-      list<Integer> meqns,vareqns,meqns1,vareqns1;
+      list<Integer> meqns,vareqns,meqns1,vareqns1,vareqns2;
       BackendDAE.Variables v,kn,v1,v2;
       BackendDAE.EquationArray eqns,eqns1;
       BackendDAE.Var var;
@@ -1499,18 +1499,19 @@ algorithm
         (cr,i,exp,dae1,mvars_1,mavars_1) = simpleEquationX(elem,l,pos,dae,mvars,mavars);
         // equations of var
         vareqns = mT[i];
-        pos_1 = pos-1;
-        vareqns1 = Util.listRemoveOnTrue(pos_1,intEq,vareqns);
+        vareqns1 = Util.listRemoveOnTrue(pos,intEq,vareqns);
         // update Replacements
         repl_1 = VarTransform.addReplacement(repl, cr, exp);
         extendrepl1 = addExtendReplacement(extendrepl, cr, NONE());
         // replace var=exp in vareqns
         dae2 = replacementsInEqns(vareqns1,repl_1,extendrepl,dae1);
         // set eqn to 0=0 to avoid next call
+        pos_1 = pos-1;
         dae3 =  BackendEquation.equationSetnthDAE(pos_1,BackendDAE.EQUATION(DAE.RCONST(0.0),DAE.RCONST(0.0),DAE.emptyElementSource),dae2);
         // update IncidenceMatrix
-        (m1,mT1) = BackendDAEUtil.updateIncidenceMatrix(dae3,m,mT,vareqns1);
-      then ((vareqns1,m,(dae3,mT1,repl_1,extendrepl,mvars_1,mavars_1,pos_1::meqns)));
+        vareqns2 = Util.listMap1(vareqns,intAdd,1);
+        (m1,mT1) = BackendDAEUtil.updateIncidenceMatrix(dae3,m,mT,vareqns);
+      then ((vareqns1,m1,(dae3,mT1,repl_1,extendrepl1,mvars_1,mavars_1,pos_1::meqns)));
     case ((elem,pos,m,(dae,mT,repl,extendrepl,mvars,mavars,meqns))) then (({},m,(dae,mT,repl,extendrepl,mvars,mavars,meqns))); 
   end matchcontinue;
 end removeSimpleEquationsFinder;
@@ -1660,7 +1661,7 @@ algorithm
   (outCr,outPos,outExp,outDae,outMvars,outMavars) := matchcontinue(elem,length,pos,dae,mvars,mavars)
     local 
       DAE.ComponentRef cr,cr2;
-      Integer i,j,pos_1;
+      Integer i,j,pos_1,k;
       DAE.Exp es,cre,e1,e2;
       BackendDAE.BinTree newvars; 
       BackendDAE.Variables vars,knvars;
@@ -1685,7 +1686,7 @@ algorithm
       ((_,(false,_,_))) = Expression.traverseExpTopDown(e2, traversingParameterEqnsFinder, (false,vars,knvars));
       cr = BackendVariable.varCref(var);
       cre = Expression.crefExp(cr);
-     (es,{}) = ExpressionSolve.solve(e1,e2,cre);      
+     (es,{}) = ExpressionSolve.solve(e1,e2,cre);   
      // add bindExp
      var2 = BackendVariable.setBindExp(var,es);
      // add bindValue if constant
@@ -1702,8 +1703,8 @@ algorithm
      eqn = BackendDAEUtil.equationNth(eqns,pos_1);
      (cr,cr2,e1,e2) = aliasEquation(eqn);
      // select candidate
-     (cr,es,dae1,newvars) = selectAlias(cr,i,cr2,j,e1,e2,dae,mavars);
-   then (cr,pos,es,dae1,mvars,newvars);
+     (cr,es,k,dae1,newvars) = selectAlias(cr,i,cr2,j,e1,e2,dae,mavars);
+   then (cr,k,es,dae1,mvars,newvars);
   end matchcontinue;  
 end simpleEquationX;
 
@@ -1722,10 +1723,11 @@ protected function selectAlias
   input BackendDAE.BinTree mavars;
   output DAE.ComponentRef cr;
   output DAE.Exp exp;
+  output Integer k;
   output BackendDAE.BackendDAE outDae;
   output BackendDAE.BinTree newvars;
 algorithm
-  (cr,exp,outDae,newvars) := matchcontinue (cr1,i,cr2,j,e1,e2,dae,mavars)
+  (cr,exp,k,outDae,newvars) := matchcontinue (cr1,i,cr2,j,e1,e2,dae,mavars)
     local
       DAE.ComponentRef cr;
       BackendDAE.BinTree newvars; 
@@ -1750,7 +1752,7 @@ algorithm
         newvars = BackendDAEUtil.treeAdd(mavars, cr1, 0);
         dae1 = BackendDAEUtil.updateAliasVariablesDAE(cr1,e2,var,dae);
       then
-        (cr1,e2,dae1,newvars);
+        (cr1,e2,i,dae1,newvars);
     case (cr1,i,cr2,j,e1,e2,dae,mavars)
       equation
         true = intGt(j,0) "cr1 not state";
@@ -1768,7 +1770,7 @@ algorithm
         newvars = BackendDAEUtil.treeAdd(mavars, cr2, 0);
         dae1 = BackendDAEUtil.updateAliasVariablesDAE(cr2,e1,var,dae);
       then
-        (cr2,e1,dae1,newvars);        
+        (cr2,e1,j,dae1,newvars);        
   end matchcontinue;
 end selectAlias;
 
@@ -1944,7 +1946,7 @@ algorithm
   (outM,outTypeA) := matchcontinue(inM,func,pos,len,inTypeA)
     local 
       BackendDAE.IncidenceMatrix m,m1,m2;
-      Type_a extArg,extArg1;
+      Type_a extArg,extArg1,extArg2;
       list<Integer> eqns,eqns1;
     
     case(inM,func,pos,len,inTypeA) equation 
@@ -1953,10 +1955,10 @@ algorithm
     
     case(inM,func,pos,len,inTypeA) equation
       ((eqns,m,extArg)) = func((inM[pos],pos,inM,inTypeA));
-      eqns1 = Util.listRemoveOnTrue(pos,intGt,eqns);
-      (m1,extArg) = traverseIncidenceMatrixList(eqns1,m,func,arrayLength(m),pos,inTypeA);
-      (m2,extArg1) = traverseIncidenceMatrix1X(m1,func,pos+1,len,extArg);
-    then (m2,extArg1);
+      eqns1 = Util.listRemoveOnTrue(pos,intLt,eqns);
+      (m1,extArg1) = traverseIncidenceMatrixList(eqns1,m,func,arrayLength(m),pos,extArg);
+      (m2,extArg2) = traverseIncidenceMatrix1X(m1,func,pos+1,len,extArg1);
+    then (m2,extArg2);
   end matchcontinue;
 end traverseIncidenceMatrix1X;
 
@@ -1992,7 +1994,7 @@ algorithm
       // do not more than necesary
       true = intLt(pos,maxpos);
       ((eqns,m,extArg)) = func((inM[pos],pos,inM,inTypeA));
-      eqns1 = Util.listRemoveOnTrue(maxpos,intGt,eqns);
+      eqns1 = Util.listRemoveOnTrue(maxpos,intLt,eqns);
       alleqns = Util.listListUnionOnTrue({rest, eqns1},intEq);
       (m1,extArg1) = traverseIncidenceMatrixList(alleqns,m,func,len,maxpos,extArg);
     then (m1,extArg1);
