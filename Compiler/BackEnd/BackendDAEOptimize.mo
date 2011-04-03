@@ -1725,7 +1725,7 @@ protected function selectAlias
   output BackendDAE.BackendDAE outDae;
   output BackendDAE.BinTree newvars;
 algorithm
-  (cr,exp,outDae,mvars) := matchcontinue (cr1,i,cr2,j,e1,e2,dae,mavars)
+  (cr,exp,outDae,newvars) := matchcontinue (cr1,i,cr2,j,e1,e2,dae,mavars)
     local
       DAE.ComponentRef cr;
       BackendDAE.BinTree newvars; 
