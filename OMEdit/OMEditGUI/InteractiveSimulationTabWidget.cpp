@@ -799,8 +799,10 @@ void InteractiveSimulationTab::initializeInteractivePlotting()
     PlotCurve *pPlotCurve;
     QStringList selectedVariablesList;
     QList<QCheckBox*> variablesList = mpVariablesWidget->getVariablesList();
+    int i = 0;
     foreach(QCheckBox* variable, variablesList)
     {
+        i++;
         attachFlag = true;
         if (variable->checkState() == Qt::Checked)
         {
@@ -816,7 +818,7 @@ void InteractiveSimulationTab::initializeInteractivePlotting()
             if (attachFlag)
             {
                 pPlotCurve = new PlotCurve(mpPlotWindow->getPlot());
-                QPen pen(pPlotCurve->getUniqueColor());
+                QPen pen(QColor::fromHsvF(i/(variablesList.length()+1),1,1));
                 pen.setWidth(2);
                 pPlotCurve->setPen(pen);
                 pPlotCurve->setTitle(variable->text());
