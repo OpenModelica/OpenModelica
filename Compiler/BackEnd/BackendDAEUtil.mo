@@ -1378,9 +1378,10 @@ algorithm
     case (Aliases as BackendDAE.ALIASVARS( varMappingsExp = aliasMappingsExp, aliasVars = aliasVariables),inCref,inExp,v)
       equation
         exp1 = Expression.crefExp(inCref);
-        exp1 = Expression.negate(exp1);
-        cr1 = BaseHashTable.get(exp1,aliasMappingsExp);
-        Debug.fcall("debugAlias",BackendDump.debugStrCrefStrExpStr,("update ComponentRef : ",inCref," with  -",inExp,"\n"));
+        exp = Expression.negate(exp1);
+        exp = ExpressionSimplify.simplify1(exp);
+        cr1 = BaseHashTable.get(exp,aliasMappingsExp);
+        Debug.fcall("debugAlias",BackendDump.debugStrCrefStrExpStr,("update ComponentRef : ",inCref," with  ",inExp,"\n"));
         
         tableList = BaseHashTable.hashTableList(aliasMappingsExp);
         Aliases = updateAliasVars(tableList,exp1,inExp,Aliases);
@@ -1395,7 +1396,7 @@ algorithm
       equation
         exp1 = Expression.crefExp(inCref);
         failure(_ = BaseHashTable.get(exp1,aliasMappingsExp));
-        Debug.fcall("debugAlias",BackendDump.debugStrCrefStrExpStr,(" Search for ",inCref," with binding : ",inExp,"failed.\n"));
+        Debug.fcall("debugAlias",BackendDump.debugStrCrefStrExpStr,(" Search for ",inCref," with binding : ",inExp," failed.\n"));
         v = BackendVariable.setBindExp(v,inExp);
         Aliases = addAliasVariables({v},Aliases);
       then
@@ -1433,6 +1434,7 @@ algorithm
       case ({},_,_,inAliases) then inAliases;
       case (((exp,cref))::rest,inExp1,inExp2,inAliases as BackendDAE.ALIASVARS(aliasVars=aliasvars))
         equation
+          Debug.fcall("debugAlias",BackendDump.debugStrExpStr,("*** search for: ",inExp1,"\n"));
           ty = Expression.typeof(inExp2);
           (true,b,exp2) = compareExpAlias(exp,inExp1);
           Debug.fcall("debugAlias",BackendDump.debugStrCrefStrExpStr,("*** got : ",cref," = Exp : ",exp2,"\n"));
@@ -1448,7 +1450,7 @@ algorithm
         then aliasVariables;   
       case (((exp,cref))::rest,inExp1,inExp2,aliasVariables)
         equation
-          Debug.fcall("debugAlias",BackendDump.debugStrExpStrCrefStr,("*** let ",exp," with binding Exp : ",cref,"\n"));
+          Debug.fcall("debugAlias",BackendDump.debugStrCrefStrExpStr,("*** let ",cref," with binding Exp : ",exp,"\n"));
           aliasVariables = updateAliasVars(rest,inExp1,inExp2,aliasVariables);
         then aliasVariables;            
    end matchcontinue;
@@ -1466,23 +1468,20 @@ protected function  compareExpAlias
 algorithm
   (outB, outB2, outExp) := matchcontinue(inExp1,inExp2)
     local
-      DAE.Exp expNew, exp;
       DAE.ExpType ty;
       DAE.ComponentRef cref;
       Boolean b;
     // case a=a
    case (inExp1,inExp2)
      equation
-       expNew = inExp2;
-       true = Expression.expEqual(inExp1,expNew); 
-     then (true,false, expNew);            
+       true = Expression.expEqual(inExp1,inExp2); 
+     then (true,false, inExp2);            
     // case a=-a
-   case (inExp1,inExp2)
+   case (DAE.UNARY(DAE.UMINUS(ty),inExp1),inExp2)
      equation
        ty = Expression.typeof(inExp2);
-       expNew = DAE.UNARY(DAE.UMINUS(ty),inExp2);
-       true = Expression.expEqual(inExp1,expNew); 
-     then (true,true, expNew);       
+       true = Expression.expEqual(inExp1,inExp2); 
+     then (true,true, DAE.UNARY(DAE.UMINUS(ty),inExp2));       
    case (inExp1,_) then (false,false,inExp1);                    
    end matchcontinue;
 end compareExpAlias;

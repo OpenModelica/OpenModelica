@@ -1750,6 +1750,26 @@ algorithm
   print(a +& ComponentReference.printComponentRefStr(b) +& c +& ComponentReference.printComponentRefStr(d) +& e);
 end debugStrCrefStrCrefStr;
 
+public function debugExpStr
+  input tuple<DAE.Exp,String> inTpl;
+protected
+  String b;
+  DAE.Exp a;
+algorithm
+  (a,b) := inTpl;
+  print(ExpressionDump.printExpStr(a) +& b);
+end debugExpStr;
+
+public function debugStrExpStr
+  input tuple<String,DAE.Exp,String> inTpl;
+protected
+  String a,c;
+  DAE.Exp b;
+algorithm
+  (a,b,c) := inTpl;
+  print(a +& ExpressionDump.printExpStr(b) +& c);
+end debugStrExpStr;
+
 public function debugStrExpStrCrefStr
   input tuple<String,DAE.Exp,String,DAE.ComponentRef,String> inTpl;
 protected
