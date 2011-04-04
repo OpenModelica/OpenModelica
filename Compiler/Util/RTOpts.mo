@@ -272,5 +272,10 @@ public function setPastOptModules
   external "C" RTOpts_setPastOptModules(inStringLst) annotation(Library = "omcruntime");
 end setPastOptModules;
 
+public function simCodeTarget "Default is set by +simCodeTarget=C"
+  output String target;
+  external "C" RTOpts_simCodeTarget() annotation(Library = "omcruntime");
+end simCodeTarget;
+
 end RTOpts;
 

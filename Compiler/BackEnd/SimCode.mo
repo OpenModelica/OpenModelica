@@ -91,6 +91,7 @@ protected import SCodeUtil;
 protected import SimCodeC;
 protected import SimCodeCSharp;
 protected import SimCodeCpp;
+protected import SimCodeDump;
 protected import SimCodeFMU;
 protected import SimCodeQSS;
 protected import Util;
@@ -1162,7 +1163,7 @@ algorithm
   timeSimCode := System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);
   
   System.realtimeTick(CevalScript.RT_CLOCK_BUILD_MODEL);     
-  callTargetTemplates(simCode);
+  callTargetTemplates(simCode,RTOpts.simCodeTarget());
   timeTemplates := System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);  
 end generateModelCode;
 
@@ -2996,26 +2997,33 @@ end crefNotInWhenEquation;
 protected function callTargetTemplates
 "Generate target code by passing the SimCode data structure to templates."
   input SimCode simCode;
+  input String target;
 algorithm
-  (_) :=
-  matchcontinue (simCode)
-     case (simCode)
+  _ := match (simCode,target)
+    case (simCode,"CSharp")
       equation
-        true = RTOpts.debugFlag("CSharp");
         Tpl.tplNoret(SimCodeCSharp.translateModel, simCode);
-     then ();
-    case (simCode)
+      then ();
+    case (simCode,"QSS")
       equation
-        true = RTOpts.debugFlag("QSS");
         Debug.print("Generating QSS solver code\n");
         Tpl.tplNoret(SimCodeQSS.translateModel, simCode);
       then ();
-    case (simCode)
+    case (simCode,"C")
       equation
-        false = RTOpts.debugFlag("CSharp") and RTOpts.debugFlag("QSS");
-      Tpl.tplNoret(SimCodeC.translateModel, simCode);
+        Tpl.tplNoret(SimCodeC.translateModel, simCode);
       then ();
-  end matchcontinue;
+    case (simCode,"SimCodeDump")
+      equation
+        // Yes, do this better later on...
+        print(Tpl.tplString(SimCodeDump.dumpSimCode, simCode));
+      then ();
+    case (_,target)
+      equation
+        target = "Unknown template target: " +& target;
+        Error.addMessage(Error.INTERNAL_ERROR, {target});
+      then fail();
+  end match;
 end callTargetTemplates;
 
 protected function elaborateRecordDeclarationsFromTypes

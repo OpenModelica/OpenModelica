@@ -64,6 +64,7 @@ static int simulation_cg = 0;
 static int silent = 0;
 static const char* simulation_code_target = "gcc";
 static const char* class_to_instantiate = "";
+static char* simCodeTarget = NULL;
 static long vectorization_limit = 20;
 static char **preOptModules = 0;
 static char *preOptModulestr = 0;
@@ -377,6 +378,13 @@ int setCorbaSessionName(const char *name)
   return 0;
 }
 
+int setSimCodeTarget(const char* arg) {
+  if (*arg==0) return 1;
+  if (simCodeTarget) free(simCodeTarget);
+  simCodeTarget = strdup(arg);
+  return 0;
+}
+
 #define VERSION_OPT1        "++v"
 #define VERSION_OPT2        "+version"
 #define ANNOTATION_VERSION  "+annotationVersion"
@@ -388,6 +396,7 @@ int setCorbaSessionName(const char *name)
 #define ORDER_CONNECTIONS   "+orderConnections"
 #define PRE_OPTMODULES      "+preOptModules"
 #define PAST_OPTMODULES     "+pastOptModules"
+#define SIMCODE_TARGET      "+simCodeTarget"
 
 /* Note: RML runtime eats arguments starting with -:
  * You need to use: omc -- --running-testsuite for it to work */
@@ -410,6 +419,7 @@ static enum RTOpts__arg__result RTOptsImpl__arg(const char* arg)
   int strLen_ORDER_CONNECTIONS = strlen(ORDER_CONNECTIONS);
   int strLen_PRE_OPTMODULES = strlen(PRE_OPTMODULES);
   int strLen_PAST_OPTMODULES = strlen(PAST_OPTMODULES);
+  int strLen_SIMCODE_TARGET = strlen(SIMCODE_TARGET);
 
   char *tmp;
   debug_none = 1;
@@ -480,6 +490,11 @@ static enum RTOpts__arg__result RTOptsImpl__arg(const char* arg)
     if (arg[strLen_PAST_OPTMODULES]!='=' ||
           set_pastOptModules(&(arg[strLen_PAST_OPTMODULES+1])) != 0) {
         fprintf(stderr, "# Flag Usage:  +pastOptModules=module1,module2,...\n");
+        return ARG_FAILURE;
+    }
+  } else if (strncmp(arg,SIMCODE_TARGET,strLen_SIMCODE_TARGET) == 0) {
+    if (arg[strLen_SIMCODE_TARGET]!='=' || setSimCodeTarget(arg + strLen_SIMCODE_TARGET + 1) != 0) {
+        fprintf(stderr, "# Flag Usage:  +simCodeTarget=name\n");
         return ARG_FAILURE;
     }
   } else if(strncmp(arg,ORDER_CONNECTIONS,strLen_NO_SIMPLIFY) == 0) {

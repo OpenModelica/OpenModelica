@@ -251,6 +251,10 @@ extern modelica_metatype RTOpts_setPastOptModules(modelica_metatype modules) {
   return modules;
 }
 
+extern char* RTOpts_simCodeTarget() {
+  return simCodeTarget ? simCodeTarget : (char*) "C";
+}
+
 #if defined(__cplusplus)
 }
 #endif

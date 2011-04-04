@@ -1133,6 +1133,7 @@ algorithm
   print("\t+i=classpath               instantiate the class given by the fully qualified path.\n"); 
   print("\t+v=N                       sets the vectorization limit, arrays and matrices with dimensions\n");
   print("\t                           larger than N will not be vectorized (default 20).\n");
+  print("\t+simCodeTarget=name        Default target for code generation is \"C\".");
   print("\n");
   print("* Examples:\n");
   print("\tomc Model.mo               will produce flattened Model on standard output\n");

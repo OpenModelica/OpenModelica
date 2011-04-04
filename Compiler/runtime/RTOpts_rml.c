@@ -404,3 +404,10 @@ RML_BEGIN_LABEL(RTOpts__setPastOptModules)
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
+
+RML_BEGIN_LABEL(RTOpts__simCodeTarget)
+{
+  rmlA0 = simCodeTarget ? mk_scon(simCodeTarget) : mk_scon("C");
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
