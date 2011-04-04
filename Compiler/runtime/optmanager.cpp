@@ -55,7 +55,7 @@ static const optPair pairs[] = {
   optPair("checkModel",false),
   optPair("unitChecking",false),
   optPair("reportMatchingError",false),
-  optPair("envCache",true),
+  optPair("envCache",false),
   optPair("collectZCFromSmooth", true), // If true zero crossings are collected from expr in smooth(N, expr)
   optPair("noVectorization", false)  
 };
