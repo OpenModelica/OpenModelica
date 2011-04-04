@@ -1124,7 +1124,7 @@ public function generateModelCode
   input String filenamePrefix;
   input Option<SimulationSettings> simSettingsOpt;
   input BackendDAE.IncidenceMatrix incidenceMatrix;
-  input BackendDAE.IncidenceMatrix incidenceMatrixT;
+  input BackendDAE.IncidenceMatrixT incidenceMatrixT;
   input array<Integer> equationIndices;  
   input array<Integer> variableIndices;  
   input list<list<Integer>> strongComponents;   
@@ -1145,6 +1145,7 @@ protected
   BackendDAE.BackendDAE indexed_dlow,indexed_dlow_1;
   Absyn.ComponentRef a_cref;
   BackendQSS.QSSinfo qssInfo;
+  tuple<BackendDAE.BackendDAE, array<Integer>, array<Integer>, BackendDAE.IncidenceMatrix, BackendDAE.IncidenceMatrixT, list<list<Integer>> > inQSSrequiredData; 
 algorithm
    timeBackend := System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);   
    a_cref := Absyn.pathToCref(className);
@@ -1157,41 +1158,60 @@ algorithm
   simCode := createSimCode(functionTree, outIndexedBackendDAE, equationIndices, 
     variableIndices, incidenceMatrix, incidenceMatrixT, strongComponents, 
     className, filenamePrefix, fileDir, functions, includes, libs, simSettingsOpt, recordDecls); 
-    
-  generateqssInfo(outIndexedBackendDAE, equationIndices, variableIndices, incidenceMatrix, incidenceMatrixT, strongComponents);
-      
+
   timeSimCode := System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);
-  
   System.realtimeTick(CevalScript.RT_CLOCK_BUILD_MODEL);     
-  callTargetTemplates(simCode,RTOpts.simCodeTarget());
+  
+  inQSSrequiredData := (outIndexedBackendDAE, equationIndices, variableIndices, incidenceMatrix, incidenceMatrixT, strongComponents);
+  callTargetTemplates(simCode,inQSSrequiredData,RTOpts.simCodeTarget());
   timeTemplates := System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);  
 end generateModelCode;
 
-public function generateqssInfo
-  "Generates qssInfo"
-  input BackendDAE.BackendDAE outIndexedBackendDAE;
-  input array<Integer> equationIndices;
-  input array<Integer> variableIndices;  
-  input BackendDAE.IncidenceMatrix incidenceMatrix;
-  input BackendDAE.IncidenceMatrix incidenceMatrixT;
-  input list<list<Integer>> strongComponents;   
-protected 
-  BackendQSS.QSSinfo qssInfo;
+// TODO: use another switch ... later make it first class option like -target or so
+// Update: inQSSrequiredData passed in order to call BackendQSS and generate the extra structures needed for QSS simulation.
+protected function callTargetTemplates
+"Generate target code by passing the SimCode data structure to templates."
+  input SimCode simCode;
+  input tuple<BackendDAE.BackendDAE, array<Integer>, array<Integer>, BackendDAE.IncidenceMatrix, BackendDAE.IncidenceMatrixT, list<list<Integer>> > inQSSrequiredData; 
+  input String target;
 algorithm
-  _ := matchcontinue (outIndexedBackendDAE, equationIndices, variableIndices, incidenceMatrix, incidenceMatrixT, strongComponents)
-    case(outIndexedBackendDAE, equationIndices, variableIndices, incidenceMatrix, incidenceMatrixT, strongComponents)
+  _ := match (simCode,inQSSrequiredData,target)
+    local
+      BackendDAE.BackendDAE outIndexedBackendDAE;
+      array<Integer> equationIndices, variableIndices; 
+      BackendDAE.IncidenceMatrix incidenceMatrix;
+      BackendDAE.IncidenceMatrixT incidenceMatrixT;
+      list<list<Integer>> strongComponents;  
+      BackendQSS.QSSinfo qssInfo;
+      
+    case (simCode,_,"CSharp")
       equation
-        false = RTOpts.debugFlag("qssInfo");
-      then
-        ();
-    case(outIndexedBackendDAE, equationIndices, variableIndices, incidenceMatrix, incidenceMatrixT, strongComponents)
+        Tpl.tplNoret(SimCodeCSharp.translateModel, simCode);
+      then ();
+    case (simCode,(outIndexedBackendDAE, equationIndices, variableIndices, incidenceMatrix, incidenceMatrixT, strongComponents),"QSS")
       equation
-        true = RTOpts.debugFlag("qssInfo");
+        Debug.print("Generating QSS solver code\n");
         qssInfo = BackendQSS.generateStructureCodeQSS(outIndexedBackendDAE, equationIndices, variableIndices, incidenceMatrix, incidenceMatrixT, strongComponents);
-      then
-        ();
-   end matchcontinue;
-end generateqssInfo;
+        Tpl.tplNoret(SimCodeQSS.translateModel, simCode);
+      then ();
+    case (simCode,_,"C")
+      equation
+        Tpl.tplNoret(SimCodeC.translateModel, simCode);
+      then ();
+    case (simCode,_,"SimCodeDump")
+      equation
+        // Yes, do this better later on...
+        print(Tpl.tplString(SimCodeDump.dumpSimCode, simCode));
+      then ();
+    case (_,_,target)
+      equation
+        target = "Unknown template target: " +& target;
+        Error.addMessage(Error.INTERNAL_ERROR, {target});
+      then fail();
+  end match;
+end callTargetTemplates;
+
+
 
 public function translateModel
 "Entry point to translate a Modelica model for simulation.
@@ -2992,40 +3012,6 @@ algorithm
       then res;
   end matchcontinue;
 end crefNotInWhenEquation;
-
-// TODO: use another switch ... later make it first class option like -target or so
-protected function callTargetTemplates
-"Generate target code by passing the SimCode data structure to templates."
-  input SimCode simCode;
-  input String target;
-algorithm
-  _ := match (simCode,target)
-    case (simCode,"CSharp")
-      equation
-        Tpl.tplNoret(SimCodeCSharp.translateModel, simCode);
-      then ();
-    case (simCode,"QSS")
-      equation
-        Debug.print("Generating QSS solver code\n");
-        Tpl.tplNoret(SimCodeQSS.translateModel, simCode);
-      then ();
-    case (simCode,"C")
-      equation
-        Tpl.tplNoret(SimCodeC.translateModel, simCode);
-      then ();
-    case (simCode,"SimCodeDump")
-      equation
-        // Yes, do this better later on...
-        print(Tpl.tplString(SimCodeDump.dumpSimCode, simCode));
-        print("\n");
-      then ();
-    case (_,target)
-      equation
-        target = "Unknown template target: " +& target;
-        Error.addMessage(Error.INTERNAL_ERROR, {target});
-      then fail();
-  end match;
-end callTargetTemplates;
 
 protected function elaborateRecordDeclarationsFromTypes
   input list<DAE.Type> inTypes;
