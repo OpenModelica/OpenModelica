@@ -403,7 +403,7 @@ algorithm
       equation
         //es = ExpressionDump.printExpStr(e);
         subs_1 = unelabSubmods(subs);
-        e_1 = Expression.unelabExp(dexp);
+        e_1 = Expression.unelabExp(ExpressionSimplify.simplify1(dexp));
       then
         SCode.MOD(finalPrefix,each_,subs_1,SOME((e_1,false))); // default typechecking non-delayed
 

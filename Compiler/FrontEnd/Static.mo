@@ -1068,7 +1068,6 @@ algorithm
         (cache,foldExp,_,st) = elabExpOptAndMatchType(cache, env_foldExp, afoldExp, expty, impl, st, doVect,pre,info);
         // print("make reduction: " +& Absyn.pathString(fn_1) +& " exp_1: " +& ExpressionDump.printExpStr(exp_1) +& "\n");
         exp_1 = DAE.REDUCTION(DAE.REDUCTIONINFO(fn_1,expty,v,foldExp),exp_1,reductionIters);
-        exp_1 = ExpressionSimplify.simplify1(exp_1) "only needed because unelabMod is silly"; 
       then
         (cache,exp_1,prop,st);
 
