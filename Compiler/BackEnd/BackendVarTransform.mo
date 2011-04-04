@@ -91,11 +91,15 @@ algorithm
 
     case (((BackendDAE.ALGORITHM(index=indx,in_=expl,out=expl1,source = source)) :: es),repl)
       equation
+        expl = Util.listMap2(expl,VarTransform.replaceExp,repl,NONE());
+        expl = Util.listMap(expl,ExpressionSimplify.simplify);        
+        expl2 = Util.listMap2(expl1,VarTransform.replaceExp,repl,NONE());
+        expl2 = Util.listMap(expl2,ExpressionSimplify.simplify);        
         // original algorithm is done by replaceAlgorithms
         // inputs and ouputs are updated from DEALow.updateAlgorithmInputsOutputs       
         es_1 = replaceEquations(es, repl);
       then
-        (BackendDAE.ALGORITHM(indx,expl,expl1,source) :: es_1);
+        (BackendDAE.ALGORITHM(indx,expl,expl2,source) :: es_1);
 
     case ((BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e,source = source) :: es),repl)
       equation

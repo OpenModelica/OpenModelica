@@ -1065,8 +1065,9 @@ algorithm
     local
        Option<DAE.Exp> min,max,start,fixed,nominal;
        String snominal;
+       Option<Boolean> isProtected;
     case NONE() then ();
-    case SOME(DAE.VAR_ATTR_REAL(min=(min,max),initial_=start,fixed=fixed,nominal=nominal))
+    case SOME(DAE.VAR_ATTR_REAL(min=(min,max),initial_=start,fixed=fixed,nominal=nominal,isProtected=isProtected))
       equation
         print("(");
         dumpOptExpression(min,"min");
@@ -1074,37 +1075,42 @@ algorithm
         dumpOptExpression(start,"start");
         dumpOptExpression(fixed,"fixed");
         dumpOptExpression(nominal,"nominal");
+        dumpOptBoolean(isProtected,"protected");
         print(") ");
      then ();
-    case SOME(DAE.VAR_ATTR_INT(min=(min,max),initial_=start,fixed=fixed))
+    case SOME(DAE.VAR_ATTR_INT(min=(min,max),initial_=start,fixed=fixed,isProtected=isProtected))
       equation
         print("(");
         dumpOptExpression(min,"min");
         dumpOptExpression(max,"max");
         dumpOptExpression(start,"start");
         dumpOptExpression(fixed,"fixed");
+        dumpOptBoolean(isProtected,"protected");
         print(") ");
      then ();
-    case SOME(DAE.VAR_ATTR_BOOL(initial_=start,fixed=fixed))
+    case SOME(DAE.VAR_ATTR_BOOL(initial_=start,fixed=fixed,isProtected=isProtected))
       equation
         print("(");
         dumpOptExpression(start,"start");
         dumpOptExpression(fixed,"fixed");
+        dumpOptBoolean(isProtected,"protected");
         print(") ");
      then ();
-    case SOME(DAE.VAR_ATTR_STRING(initial_=start))
+    case SOME(DAE.VAR_ATTR_STRING(initial_=start,isProtected=isProtected))
       equation
         print("(");
         dumpOptExpression(start,"start");
+        dumpOptBoolean(isProtected,"protected");
         print(") ");
      then ();
-    case SOME(DAE.VAR_ATTR_ENUMERATION(min=(min,max),start=start,fixed=fixed))
+    case SOME(DAE.VAR_ATTR_ENUMERATION(min=(min,max),start=start,fixed=fixed,isProtected=isProtected))
       equation
         print("(");
         dumpOptExpression(min,"min");
         dumpOptExpression(max,"max");
         dumpOptExpression(start,"start");
         dumpOptExpression(fixed,"fixed");
+        dumpOptBoolean(isProtected,"protected");
         print(") ");
      then ();
     else ();
@@ -1131,6 +1137,27 @@ algorithm
     else ();
   end match;
 end dumpOptExpression;
+
+protected function dumpOptBoolean
+"function: dumpOptBoolean
+  Helper function to dump."
+  input Option<Boolean> inExp;
+  input String inString;
+algorithm
+  _:=
+  match (inExp,inString)
+    local
+       Boolean e;
+       String s,se,str;
+    case (SOME(e),s)
+      equation
+         se = boolString(e);
+         str = stringAppendList({s," = ",se," "});
+         print(str);         
+     then ();
+    else ();
+  end match;
+end dumpOptBoolean;
 
 public function dumpIncidenceMatrix
 "function: dumpIncidenceMatrix

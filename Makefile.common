@@ -57,6 +57,9 @@ testlog:
 testmos:
 	(cd testsuite/mosfiles; time $(MAKE) -f Makefile)
 
+testsimulation:
+	(cd testsuite; time $(MAKE) -f Makefile simulation)
+
 testmo:
 	(cd testsuite/mofiles; time $(MAKE) -f Makefile test)
 	

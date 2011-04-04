@@ -1689,7 +1689,7 @@ algorithm
      (es,{}) = ExpressionSolve.solve(e1,e2,cre);   
      // constant or alias
      (dae1,newvars,newvars1) = constOrAlias(var,cr,es,dae,mvars,mavars);
-   then (cr,i,es,dae1,newvars,mavars);
+   then (cr,i,es,dae1,newvars,newvars1);
    // a = b 
    case({i,j},length,pos,dae,mvars,mavars) equation
      pos_1 = pos-1;

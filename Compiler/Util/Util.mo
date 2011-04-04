@@ -1119,9 +1119,7 @@ See also listMap, arrayMap
     output tuple<Type_a,Type_b> outTpl;
   end FuncType;
 algorithm
-  outArray := array;
-  outArg := inArg;
-//  (outArray,outArg) := arrayMapNoCopyHelp1_1(array,func,1,arrayLength(array),inArg);
+  (outArray,outArg) := arrayMapNoCopyHelp1_1(array,func,1,arrayLength(array),inArg);
 end arrayMapNoCopy_1;
 
 protected function arrayMapNoCopyHelp1_1 "help function to arrayMap"
@@ -1153,7 +1151,7 @@ algorithm
       ((newElt,extarg)) = func((inArray[pos],inArg));
       a = arrayUpdate(inArray,pos,newElt);
       (a1,extarg1) = arrayMapNoCopyHelp1_1(a,func,pos+1,len,extarg);
-    then (a1,extarg);
+    then (a1,extarg1);
   end matchcontinue;
 end arrayMapNoCopyHelp1_1;
 
