@@ -5792,30 +5792,32 @@ algorithm
       Prefix.Prefix pre;
 
       //First, try symbolic simplification
-    case (cache,env,{v1,v2},_,impl,pre,info) equation
-      (cache,DAE.ARRAY(etp1,scalar1,expl1),DAE.PROP(tp1,c1),_) = elabExp(cache,env, v1, impl,NONE(),true,pre,info);
-      (cache,DAE.ARRAY(etp2,scalar2,expl2),DAE.PROP(tp2,c2),_) = elabExp(cache,env, v2, impl,NONE(),true,pre,info);
-      // adrpo 2009-05-15: cross can fail if given a function with input Real[:]!
-      //{3} = Types.getDimensionSizes(tp1);
-      //{3} = Types.getDimensionSizes(tp2);
-      expl3 = elabBuiltinCross2(expl1,expl2);
-      c = Types.constAnd(c1,c2);
-      etp3 = Types.elabType(tp1);
+    case (cache,env,{v1,v2},_,impl,pre,info)
+      equation
+        (cache,DAE.ARRAY(etp1,scalar1,expl1),DAE.PROP(tp1,c1),_) = elabExp(cache,env, v1, impl,NONE(),true,pre,info);
+        (cache,DAE.ARRAY(etp2,scalar2,expl2),DAE.PROP(tp2,c2),_) = elabExp(cache,env, v2, impl,NONE(),true,pre,info);
+        // adrpo 2009-05-15: cross can fail if given a function with input Real[:]!
+        //{3} = Types.getDimensionSizes(tp1);
+        //{3} = Types.getDimensionSizes(tp2);
+        expl3 = elabBuiltinCross2(expl1,expl2);
+        c = Types.constAnd(c1,c2);
+        etp3 = Types.elabType(tp1);
       then
         (cache,DAE.ARRAY(etp3,scalar1,expl3),DAE.PROP(tp1,c));
 
     //Fallback, use builtin function cross
-    case (cache,env,{v1,v2},_,impl,pre,info) equation
-      (cache,e1,DAE.PROP(tp1,c1),_) = elabExp(cache,env, v1, impl,NONE(),true,pre,info);
-      (cache,e2,DAE.PROP(tp2,c2),_) = elabExp(cache,env, v2, impl,NONE(),true,pre,info);
-      // adrpo 2009-05-15: cross can fail if given a function with input Real[:]!
-       //{3} = Types.getDimensionSizes(tp1);
-       //{3} = Types.getDimensionSizes(tp2);
-       etp = Expression.typeof(e1);
-       eltTp = Types.arrayElementType(tp1);
-       call = Expression.makeBuiltinCall("cross", {e1, e2}, etp);
-     then 
-      (cache, call, DAE.PROP((DAE.T_ARRAY(DAE.DIM_INTEGER(3),eltTp),NONE()), DAE.C_VAR()));
+    case (cache,env,{v1,v2},_,impl,pre,info)
+      equation
+        (cache,e1,DAE.PROP(tp1,c1),_) = elabExp(cache,env, v1, impl,NONE(),true,pre,info);
+        (cache,e2,DAE.PROP(tp2,c2),_) = elabExp(cache,env, v2, impl,NONE(),true,pre,info);
+        // adrpo 2009-05-15: cross can fail if given a function with input Real[:]!
+        //{3} = Types.getDimensionSizes(tp1);
+        //{3} = Types.getDimensionSizes(tp2);
+        etp = Expression.typeof(e1);
+        eltTp = Types.arrayElementType(tp1);
+        call = Expression.makeBuiltinCall("cross", {e1, e2}, etp);
+      then 
+        (cache, call, DAE.PROP((DAE.T_ARRAY(DAE.DIM_INTEGER(3),eltTp),NONE()), DAE.C_VAR()));
   end matchcontinue;
 end elabBuiltinCross;
 
@@ -5828,11 +5830,12 @@ algorithm
   local DAE.Exp x1,x2,x3,y1,y2,y3,r1,r2,r3;
 
      // {x[2]*y[3]-x[3]*y[2],x[3]*y[1]-x[1]*y[3],x[1]*y[2]-x[2]*y[1]}
-    case({x1,x2,x3},{y1,y2,y3}) equation
+    case({x1,x2,x3},{y1,y2,y3})
+      equation
         r1 = Expression.makeDiff(Expression.makeProductLst({x2,y3}),Expression.makeProductLst({x3,y2}));
         r2 = Expression.makeDiff(Expression.makeProductLst({x3,y1}),Expression.makeProductLst({x1,y3}));
         r3 = Expression.makeDiff(Expression.makeProductLst({x1,y2}),Expression.makeProductLst({x2,y1}));
-    then {r1,r2,r3};
+      then {r1,r2,r3};
   end match;
 end elabBuiltinCross2;
 
