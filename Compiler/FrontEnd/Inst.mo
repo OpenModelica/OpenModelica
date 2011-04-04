@@ -4898,7 +4898,7 @@ algorithm
       then
         (cache,env,ih,elMod::res,csets);
 
-    case (cache,env,ih,pre,((comp,cmod) :: xs),ci_state,csets,impl)
+    case (cache,env,ih,pre,((comp, cmod as DAE.MOD(subModLst = _)) :: xs),ci_state,csets,impl)
       equation
         info = Absyn.dummyInfo; // TODO: Get info from the comp? Is it always a COMPONENT?
         umod = Mod.unelabMod(cmod);
@@ -4911,7 +4911,7 @@ algorithm
         ltmod = Util.listMap1(crefs,getModsForDep,xs);
         cmod2 = Util.listFold_3(ltmod,Mod.merge,DAE.NOMOD(),env,pre);
 
-        //print("("+&intString(listLength(ltmod))+&")UpdateCompeltsMods_(" +& Util.stringDelimitList(Util.listMap(crefs2,Absyn.printComponentRefStr),",") +& ") subs: " +& Util.stringDelimitList(Util.listMap(crefs,Absyn.printComponentRefStr),",")+& "\n");
+        //print("("+&intString(listLength(ltmod))+&")UpdateCompeltsMods_(" +& Util.stringDelimitList(Util.listMap(crefs,Absyn.printComponentRefStr),",") +& ") subs: " +& Util.stringDelimitList(Util.listMap(crefs,Absyn.printComponentRefStr),",")+& "\n");
         //print("     acquired mods: " +& Mod.printModStr(cmod2) +& "\n");
 
         (cache,env2,ih,csets) = updateComponentsInEnv(cache, env, ih, pre, cmod2, crefs, ci_state, csets, impl);
