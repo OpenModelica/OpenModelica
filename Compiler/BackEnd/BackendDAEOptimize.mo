@@ -1504,7 +1504,7 @@ algorithm
         repl_1 = VarTransform.addReplacement(repl, cr, exp);
         extendrepl1 = addExtendReplacement(extendrepl, cr, NONE());
         // replace var=exp in vareqns
-        dae2 = replacementsInEqns(vareqns1,repl_1,extendrepl,dae1);
+        dae2 = replacementsInEqns(vareqns1,repl_1,extendrepl1,dae1);
         // set eqn to 0=0 to avoid next call
         pos_1 = pos-1;
         dae3 =  BackendEquation.equationSetnthDAE(pos_1,BackendDAE.EQUATION(DAE.RCONST(0.0),DAE.RCONST(0.0),DAE.emptyElementSource),dae2);
@@ -1535,7 +1535,7 @@ algorithm
       DAE.ExpType ty;
       list<DAE.Subscript> subscriptLst;
       DAE.Exp exp,crexp;
-    case (extendrepl,DAE.CREF_IDENT(ident=_),NONE()) then extendrepl;
+    case (extendrepl,DAE.CREF_IDENT(ident=_),_) then extendrepl;
     case (extendrepl,cr as DAE.CREF_QUAL(ident=ident,identType=ty as DAE.ET_ARRAY(ty=_),subscriptLst=subscriptLst,componentRef=subcr),NONE())
       equation
         precr = ComponentReference.makeCrefIdent(ident,ty,subscriptLst);
@@ -1580,7 +1580,11 @@ algorithm
         precr = ComponentReference.makeCrefIdent(ident,ty,subscriptLst);
         precr1 = ComponentReference.joinCrefs(pcr,precr);
         erepl = addExtendReplacement(extendrepl,subcr,SOME(precr1));
-      then erepl;           
+      then erepl;   
+    case (extendrepl,cr,_)
+      equation
+        Debug.fprintln("failtrace", "- BackendDAEOptimize.addExtendReplacement failed");
+      then extendrepl;                  
   end matchcontinue;        
 end addExtendReplacement;
 
@@ -1732,7 +1736,7 @@ algorithm
         BackendVariable.isVarKindVariable(kind) "cr1 not constant";
         false = BackendVariable.isVarOnTopLevelAndOutput(var);
         false = BackendVariable.isVarOnTopLevelAndInput(var);
-        failure( _ = BackendVariable.varStartValueFail(var));
+        //failure( _ = BackendVariable.varStartValueFail(var));
         Debug.fcall("debugAlias",BackendDump.debugStrCrefStrExpStr,("Alias Equation ",cr," = ",exp," found (1).\n")); 
         // store changed var
         newvars = BackendDAEUtil.treeAdd(mavars, cr, 0);
@@ -1808,7 +1812,7 @@ algorithm
         BackendVariable.isVarKindVariable(kind) "cr1 not constant";
         false = BackendVariable.isVarOnTopLevelAndOutput(var);
         false = BackendVariable.isVarOnTopLevelAndInput(var);
-        failure( _ = BackendVariable.varStartValueFail(var));
+        //failure( _ = BackendVariable.varStartValueFail(var));
         Debug.fcall("debugAlias",BackendDump.debugStrCrefStrExpStr,("Alias Equation ",cr1," = ",e2," found (2).\n")); 
         // store changed var
         newvars = BackendDAEUtil.treeAdd(mavars, cr1, 0);
@@ -1819,14 +1823,14 @@ algorithm
       equation
         true = intGt(j,0) "cr1 not state";
         vars = BackendVariable.daeVars(dae);
-        var = BackendVariable.getVarAt(vars,intAbs(i));
+        var = BackendVariable.getVarAt(vars,intAbs(j));
         // no State
         false = BackendVariable.isStateVar(var) "cr1 not state";
         kind = BackendVariable.varKind(var);
         BackendVariable.isVarKindVariable(kind) "cr1 not constant";
         false = BackendVariable.isVarOnTopLevelAndOutput(var);
         false = BackendVariable.isVarOnTopLevelAndInput(var);
-        failure( _ = BackendVariable.varStartValueFail(var));
+        //failure( _ = BackendVariable.varStartValueFail(var));
         Debug.fcall("debugAlias",BackendDump.debugStrCrefStrExpStr,("Alias Equation ",cr2," = ",e1," found (3).\n")); 
         // store changed var
         newvars = BackendDAEUtil.treeAdd(mavars, cr2, 0);

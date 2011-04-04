@@ -1190,6 +1190,7 @@ algorithm
         // BackendDump.dump(dae);
         // print("new IM:");
         // BackendDump.dumpIncidenceMatrix(m);
+        // BackendDump.dumpStateVariables(BackendVariable.daeVars(dae));
       then
         (dae,m,mt,derivedAlgs1,derivedMultiEqn1);
 
