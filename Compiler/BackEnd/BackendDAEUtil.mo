@@ -827,12 +827,16 @@ public function translateDae "function: translateDae
   author: PA
 
   Translates the dae so variables are indexed into different arrays:
-  - xd for derivatives
   - x for states
-  - dummy_der for dummy derivatives
-  - dummy for dummy states
-  - y for algebraic variables
-  - p for parameters
+  - xd for derivatives
+  - y_real for algebraic variables
+  - p_real for parameters
+  - y_int for algebraic variables
+  - p_int for parameters
+  - y_bool for algebraic variables
+  - p_bool for parameters
+  - y_str for algebraic variables
+  - p_str for parameters
 "
   input BackendDAE.BackendDAE inBackendDAE;
   input Option<String> dummy;
@@ -4268,7 +4272,7 @@ algorithm
     case (dae,m,mt,eqns)
       equation
         (m_1,changedvars) = updateIncidenceMatrix2(dae, m, eqns);
-        changedvars_1 = Util.listFlatten(changedvars);
+        changedvars_1 = Util.listListUnionOnTrue(changedvars,intEq);
         mt_1 = updateTransposedMatrix(changedvars_1, m_1, mt);
       then
         (m_1,mt_1);
@@ -4302,7 +4306,7 @@ algorithm
       array<list<BackendDAE.Value>> m,m_1,m_2;
       BackendDAE.Value e_1,e;
       BackendDAE.Equation eqn;
-      list<BackendDAE.Value> row,changedvars1,eqns,oldvars,changedvars3;
+      list<BackendDAE.Value> row,changedvars,eqns,oldvars,newvars,diffvars,allvars;
       list<list<BackendDAE.Value>> changedvars2;
       BackendDAE.Variables vars,knvars;
       BackendDAE.EquationArray daeeqns,daeseqns;
@@ -4315,13 +4319,15 @@ algorithm
         e_1 = e - 1;
         eqn = equationNth(daeeqns, e_1);
         row = incidenceRow(vars, eqn,wc);
-        //oldvars = m[e];
+        oldvars = getOldVars(m,e);
         m_1 = Util.arrayReplaceAtWithFill(row, e, m, {});
-        changedvars1 = varsInEqn(m_1, e);
-        //changedvars3 = Util.listSetDifferenceOnTrue(oldvars, changedvars1, intEq);
+        newvars = varsInEqn(m_1, e);
+        diffvars = Util.listSetDifferenceOnTrue(oldvars, newvars, intEq);
+        allvars = Util.listListUnionOnTrue({oldvars,newvars},intEq);
+        changedvars = Util.listSelect1(allvars,diffvars,Util.listNotContains);
         (m_2,changedvars2) = updateIncidenceMatrix2(dae, m_1, eqns);
       then
-        (m_2,(changedvars1 :: changedvars2));
+        (m_2,(changedvars :: changedvars2));
 
     case (_,_,_)
       equation
@@ -4331,6 +4337,25 @@ algorithm
 
   end matchcontinue;
 end updateIncidenceMatrix2;
+
+protected function getOldVars
+  input array<list<BackendDAE.Value>> m;
+  input Integer pos;
+  output  list<BackendDAE.Value> oldvars;
+algorithm
+  oldvars := matchcontinue(m,pos)
+  local
+    Integer alen;
+    case(m,pos)
+      equation
+        alen = arrayLength(m);
+        (pos <= alen) = true;
+        oldvars = m[pos];
+      then
+        oldvars;
+    case(m,pos) then {};
+  end matchcontinue;
+end getOldVars;
 
 protected function updateTransposedMatrix
 "function: updateTransposedMatrix
