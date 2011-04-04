@@ -5853,8 +5853,8 @@ algorithm
     case ((var as BackendDAE.VAR(varName=name, source=source),(eqns,av)))
       equation
         NOALIAS() = getAliasVar(var,SOME(av));
-        startv = BackendVariable.varStartValue(var);
-        //false = Expression.isConst(startv);
+        startv = BackendVariable.varStartValueFail(var);
+        false = Expression.isConst(startv);
         initialEquation = BackendDAE.SOLVED_EQUATION(name, startv, source);
       then
         ((var,(initialEquation :: eqns,av)));
