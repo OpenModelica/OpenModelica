@@ -70,6 +70,84 @@ uniontype QSSinfo "- equation indices in static blocks and DEVS structure"
   end QSSINFO;
 end QSSinfo;
 
+public function generateStructureCodeQSS 
+  input BackendDAE.BackendDAE inBackendDAE;
+  input array<Integer> equationIndices;
+  input array<Integer> variableIndices;
+  input BackendDAE.IncidenceMatrix inIncidenceMatrix;
+  input BackendDAE.IncidenceMatrixT inIncidenceMatrixT;
+  input list<list<Integer>> strongComponents;
+  
+  output QSSinfo QSSinfo_out;
+algorithm
+  QSSinfo_out :=
+  matchcontinue (inBackendDAE, equationIndices, variableIndices, inIncidenceMatrix, inIncidenceMatrixT, strongComponents)
+    local
+       BackendDAE.BackendDAE dlow;
+       array<Integer> ass1, ass2;
+       BackendDAE.IncidenceMatrix m, mt, globalIncidenceMat;
+       
+       list<Integer> variableIndicesList;
+       list<list<Integer>> blt_states,blt_no_states, stateEq_flat, globalIncidenceList, comps;
+       list<list<list<Integer>>> stateEq_blt;
+       
+       Integer nStatic;
+       
+       // structure variables
+       DevsStruct DEVS_structure;
+       array<list<list<Integer>>> DEVS_struct_outLinks, DEVS_struct_outVars, DEVS_struct_inLinks, DEVS_struct_inVars;
+                         
+    case (dlow, ass1, ass2, m, mt, comps)
+      equation
+        
+        (blt_states, blt_no_states) = BackendDAEUtil.generateStatePartition(comps, dlow, ass1, ass2, m, mt);
+        
+        // STEP 1      
+        // EXTRACT THE INDICES OF NEEDED EQUATIONS FOR EACH STATE VARIABLE         
+                
+        stateEq_flat = splitStateEqSet(comps, dlow, ass1, ass2, m, mt) "Extract equations for each state derivative"; 
+        stateEq_blt = mapStateEqInBlocks( stateEq_flat, blt_states, {}) "Map equations back in BLT blocks";
+        
+        nStatic = listLength(stateEq_blt);     
+        
+        // STEP 2      
+        // GENERALISED INCIDENCE MATRICES
+        
+        //globalIncidenceList = arrayList(m);
+        globalIncidenceMat = m;
+        variableIndicesList = arrayList(ass2);
+        globalIncidenceMat = makeIncidenceRightHandNeg(globalIncidenceMat, variableIndicesList, 1); 
+        
+        BackendDump.dumpIncidenceMatrix(globalIncidenceMat);
+        print("TEST");
+        
+        // STEP 3      
+        // GENERATE THE DEVS STRUCTURES        
+        DEVS_structure = incidenceMat2DEVSstruct(stateEq_blt, globalIncidenceMat); 
+        
+        dumpDEVSstructs(DEVS_structure);       
+        
+        
+                
+        // PRINT INFO
+                
+        Debug.fcall("QSS-stuff",print,"---------- State Blocks ----------\n");
+        //Util.listMap0(stateEq_blt, printListOfLists);
+        //Debug.fcall("QSS-stuff",Util.listMap02, (stateEq_blt, BackendDump.dumpComponentsAdvanced, ass2, dlow));        
+        Debug.fcall("QSS-stuff",print,"---------- State Blocks ----------\n");    
+
+        
+      then
+        QSSINFO(stateEq_blt, DEVS_structure);
+  
+  end matchcontinue;
+
+end generateStructureCodeQSS;
+
+
+
+
+
 public function replaceCondWhens
 " author: fbergero
   merge when clauses depending on the same conditions"
@@ -289,81 +367,7 @@ algorithm
   end matchcontinue;
 end replaceCrossingLstOnExp;
  
-public function generateStructureCodeQSS 
-  input BackendDAE.BackendDAE inBackendDAE;
-  input array<Integer> equationIndices;
-  input array<Integer> variableIndices;
-  input BackendDAE.IncidenceMatrix inIncidenceMatrix;
-  input BackendDAE.IncidenceMatrixT inIncidenceMatrixT;
-  input list<list<Integer>> strongComponents;
-  
-  output QSSinfo QSSinfo_out;
-algorithm
-  QSSinfo_out :=
-  matchcontinue (inBackendDAE, equationIndices, variableIndices, inIncidenceMatrix, inIncidenceMatrixT, strongComponents)
-    local
-       BackendDAE.BackendDAE dlow;
-       array<Integer> ass1, ass2;
-       BackendDAE.IncidenceMatrix m, mt, globalIncidenceMat;
-       
-       list<Integer> variableIndicesList;
-       list<list<Integer>> blt_states,blt_no_states, stateEq_flat, globalIncidenceList, comps;
-       list<list<list<Integer>>> stateEq_blt;
-       
-       Integer nStatic;
-       
-       // structure variables
-       DevsStruct DEVS_structure;
-       array<list<list<Integer>>> DEVS_struct_outLinks, DEVS_struct_outVars, DEVS_struct_inLinks, DEVS_struct_inVars;
-                         
-    case (dlow, ass1, ass2, m, mt, comps)
-      equation
-        
-        (blt_states, blt_no_states) = BackendDAEUtil.generateStatePartition(comps, dlow, ass1, ass2, m, mt);
-        
-        // STEP 1      
-        // EXTRACT THE INDICES OF NEEDED EQUATIONS FOR EACH STATE VARIABLE         
-                
-        stateEq_flat = splitStateEqSet(comps, dlow, ass1, ass2, m, mt) "Extract equations for each state derivative"; 
-        stateEq_blt = mapStateEqInBlocks( stateEq_flat, blt_states, {}) "Map equations back in BLT blocks";
-        
-        nStatic = listLength(stateEq_blt);     
-        
-        // STEP 2      
-        // GENERALISED INCIDENCE MATRICES
-        
-        //globalIncidenceList = arrayList(m);
-        globalIncidenceMat = m;
-        variableIndicesList = arrayList(ass2);
-        globalIncidenceMat = makeIncidenceRightHandNeg(globalIncidenceMat, variableIndicesList, 1); 
-        
-        BackendDump.dumpIncidenceMatrix(globalIncidenceMat);
-        
-        
-        //print("Global Incidence List \n");
-        //BackendDump.dumpComponents(globalIncidenceList);
-        
-        
-        DEVS_structure = incidenceMat2DEVSstruct(stateEq_blt, globalIncidenceMat); 
-        
-        dumpDEVSstructs(DEVS_structure);       
-        
-        
-                
-        // PRINT INFO
-                
-        Debug.fcall("QSS-stuff",print,"---------- State Blocks ----------\n");
-        //Util.listMap0(stateEq_blt, printListOfLists);
-        //Debug.fcall("QSS-stuff",Util.listMap02, (stateEq_blt, BackendDump.dumpComponentsAdvanced, ass2, dlow));        
-        Debug.fcall("QSS-stuff",print,"---------- State Blocks ----------\n");    
 
-        
-      then
-        QSSINFO(stateEq_blt, DEVS_structure);
-  
-  end matchcontinue;
-
-end generateStructureCodeQSS;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 /////  PART - INCIDENCE MATRICES
