@@ -462,41 +462,6 @@ algorithm
       then
         (cache,env,ih,dae,csets_1,ci_state_1,graph);
         
-        //------------------------------------------------------
-        // Part of the MetaModelica extension
-        /* equality equations cref = array(...) */
-        // Should be removed??
-        // case (cache,env,ih,mods,pre,csets,ci_state,SCode.EQ_EQUALS(e1 as Absyn.CREF(cr),Absyn.ARRAY(expList)),initial_,impl)
-        //   local Option<Interactive.InteractiveSymbolTable> c1,c2;
-        //     list<Absyn.Exp> expList;
-        //    Absyn.ComponentRef cr;
-        //     DAE.Properties cprop;
-        //   equation
-        //     true = RTOpts.acceptMetaModelicaGrammar();
-        // If this is a list assignment, then the Absyn.ARRAY expression should
-        // be evaluated to DAE.LIST
-        //   (cache,_,cprop,_) = Static.elabCref(cache,env, cr, impl,false);
-        //   true = MetaUtil.isList(cprop);
-        // Do static analysis and constant evaluation of expressions.
-        // Gives expression and properties
-        // (Type  bool | (Type  Const as (bool | Const list))).
-        // For a function, it checks the funtion name.
-        // Also the function call\'s in parameters are type checked with
-        // the functions definition\'s inparameters. This is done with
-        // regard to the position of the input arguments.
-        // Returns the output parameters from the function.
-        // (cache,e1_1,prop1,c1) = Static.elabExp(cache,env, e1, impl,NONE(),true /*do vectorization*/);
-        // (cache,e2_1,prop2,c2) = Static.elabListExp(cache,env, expList, cprop, impl,NONE(),true/* do vectorization*/);
-        // (cache,e1_1,e2_1) = condenseArrayEquation(cache,env,e1,e2,e1_1,e2_1,prop1,impl);
-        //  (cache,e1_2) = PrefixUtil.prefixExp(cache, env, ih, e1_1, pre);
-        //  (cache,e2_2) = PrefixUtil.prefixExp(cache, env, ih, e2_1, pre);
-        // Check that the lefthandside and the righthandside get along.
-        // dae = instEqEquation(e1_2, prop1, e2_2, prop2, initial_, impl);
-        // ci_state_1 = instEquationCommonCiTrans(ci_state, initial_);
-        // then
-        // (cache,env,ih,dae,csets,ci_state_1);
-        //------------------------------------------------------
-
     /* equality equations e1 = e2 */
     case (cache,env,ih,mods,pre,csets,ci_state,SCode.EQ_EQUALS(expLeft = e1,expRight = e2,info = info),initial_,impl,graph)
       equation 
@@ -2473,9 +2438,9 @@ algorithm
         (cache, msg_1, msgprop) = Ceval.cevalIfConstant(cache, env, msg_1, msgprop, impl);
         (cache,msg_2) = PrefixUtil.prefixExp(cache, env, ih, msg_1, pre);
         source = DAEUtil.addElementSourceFileInfo(source, info);
-        stmt = Algorithm.makeAssert(cond_2, msg_2, cprop, msgprop, source);
+        stmts = Algorithm.makeAssert(cond_2, msg_2, cprop, msgprop, source);
       then
-        (cache,{stmt});
+        (cache,stmts);
         
     /* terminate(msg) */
     case (cache,env,ih,pre,SCode.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "terminate"),

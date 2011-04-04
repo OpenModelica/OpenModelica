@@ -643,10 +643,26 @@ public function makeAssert "function: makeAssert
   input DAE.Properties inProperties3;
   input DAE.Properties inProperties4;
   input DAE.ElementSource source;
-  output Statement outStatement;
+  output list<Statement> outStatement;
 algorithm
   outStatement := match (cond,msg,inProperties3,inProperties4,source)
-    case (cond,msg,DAE.PROP(type_ = (DAE.T_BOOL(varLstBool = _),_)),DAE.PROP(type_ = (DAE.T_STRING(varLstString = _),_)),source) then DAE.STMT_ASSERT(cond,msg,source);
+    local
+      String str;
+      Absyn.Info info;
+    case (DAE.BCONST(true),_,_,_,source)
+      then {};
+    /* Do not evaluate all assertions. These may or may not be evaluated during runtime...
+    case (DAE.BCONST(false),DAE.SCONST(str),_,_,DAE.SOURCE(info=info))
+      equation
+        Error.addSourceMessage(Error.ASSERT_CONSTANT_FALSE_ERROR,{str},info);
+      then fail();
+    case (DAE.BCONST(false),_,_,_,DAE.SOURCE(info=info))
+      equation
+        Error.addSourceMessage(Error.ASSERT_CONSTANT_FALSE_ERROR,{"Message was not constant and could not be evaluated"},info);
+      then fail();
+    */
+    case (cond,msg,DAE.PROP(type_ = (DAE.T_BOOL(varLstBool = _),_)),DAE.PROP(type_ = (DAE.T_STRING(varLstString = _),_)),source)
+      then {DAE.STMT_ASSERT(cond,msg,source)};
   end match;
 end makeAssert;
 

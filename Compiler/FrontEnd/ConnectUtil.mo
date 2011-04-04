@@ -1059,7 +1059,8 @@ algorithm
       list<Absyn.Within> partOfLst;
       list<Option<DAE.ComponentRef>> instanceOptLst;
       list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectEquationOptLst;
-      list<Absyn.Path> typeLst;      
+      list<Absyn.Path> typeLst;
+      list<DAE.SymbolicOperation> operations;
 
     case {_} then DAEUtil.emptyDae;
     
@@ -1067,9 +1068,9 @@ algorithm
       equation
         ee1 = Util.if_(RTOpts.orderConnections(), ee1, ee2);
         DAE.DAE(eq) = equEquations(ee1 :: cs);
-        DAE.SOURCE(info, partOfLst, instanceOptLst, connectEquationOptLst, typeLst) = DAEUtil.mergeSources(src1,src2);
+        DAE.SOURCE(info, partOfLst, instanceOptLst, connectEquationOptLst, typeLst, operations) = DAEUtil.mergeSources(src1,src2);
         // do not propagate connects from different sources! use the crefs directly!
-        src = DAE.SOURCE(info, partOfLst, instanceOptLst, {SOME((x,y))}, typeLst);
+        src = DAE.SOURCE(info, partOfLst, instanceOptLst, {SOME((x,y))}, typeLst, operations);
       then
         (DAE.DAE(DAE.EQUEQUATION(x,y,src) :: eq));
     

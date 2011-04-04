@@ -97,10 +97,22 @@ uniontype ElementSource "gives information about the origin of the element"
     list<Option<ComponentRef>> instanceOptLst "the instance(s) this element is part of";
     list<Option<tuple<ComponentRef, ComponentRef>>> connectEquationOptLst "this element came from this connect(s)";
     list<Absyn.Path> typeLst "the classes where the type(s) of the element is defined";
+    list<SymbolicOperation> operations "the symbolic operations used to end up with the final state of the element";
   end SOURCE;
 end ElementSource;
 
-public constant ElementSource emptyElementSource = SOURCE(Absyn.dummyInfo,{},{},{},{});
+public uniontype SymbolicOperation
+  record SIMPLIFY
+    Exp before;
+    Exp after;
+  end SIMPLIFY;
+  record SUBSTITUTION
+    Exp source;
+    Exp target;
+  end SUBSTITUTION;
+end SymbolicOperation;
+
+public constant ElementSource emptyElementSource = SOURCE(Absyn.dummyInfo,{},{},{},{},{});
 
 public uniontype Element
   record VAR

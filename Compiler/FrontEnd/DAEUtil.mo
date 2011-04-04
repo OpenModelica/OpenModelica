@@ -4273,9 +4273,10 @@ algorithm
       list<Absyn.Within> partOfLst "the models this element came from" ;
       list<Option<DAE.ComponentRef>> instanceOptLst "the instance this element is part of" ;
       list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectEquationOptLst "this element came from this connect" ;
+      list<DAE.SymbolicOperation> operations;
 
-    case (DAE.SOURCE(info, partOfLst, instanceOptLst, connectEquationOptLst, typeLst), classPath)
-      then DAE.SOURCE(info, partOfLst, instanceOptLst, connectEquationOptLst, classPath::typeLst);
+    case (DAE.SOURCE(info, partOfLst, instanceOptLst, connectEquationOptLst, typeLst, operations), classPath)
+      then DAE.SOURCE(info, partOfLst, instanceOptLst, connectEquationOptLst, classPath::typeLst, operations);
   end match;
 end addElementSourceType;
 
@@ -4308,9 +4309,10 @@ algorithm
       list<Absyn.Within> partOfLst "the models this element came from" ;
       list<Option<DAE.ComponentRef>> instanceOptLst "the instance this element is part of" ;
       list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectEquationOptLst "this element came from this connect" ;
+      list<DAE.SymbolicOperation> operations;
 
-    case (DAE.SOURCE(info,partOfLst, instanceOptLst, connectEquationOptLst, typeLst), withinPath)
-      then DAE.SOURCE(info,withinPath::partOfLst, instanceOptLst, connectEquationOptLst, typeLst);
+    case (DAE.SOURCE(info,partOfLst, instanceOptLst, connectEquationOptLst, typeLst, operations), withinPath)
+      then DAE.SOURCE(info,withinPath::partOfLst, instanceOptLst, connectEquationOptLst, typeLst, operations);
   end match;
 end addElementSourcePartOf;
 
@@ -4347,8 +4349,9 @@ algorithm
       list<Option<DAE.ComponentRef>> instanceOptLst "the instance this element is part of" ;
       list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectEquationOptLst "this element came from this connect" ;
       Absyn.Info info;
-    case (DAE.SOURCE(_,partOfLst,instanceOptLst,connectEquationOptLst,typeLst), info)
-      then DAE.SOURCE(info,partOfLst,instanceOptLst,connectEquationOptLst,typeLst);
+      list<DAE.SymbolicOperation> operations;
+    case (DAE.SOURCE(_,partOfLst,instanceOptLst,connectEquationOptLst,typeLst,operations), info)
+      then DAE.SOURCE(info,partOfLst,instanceOptLst,connectEquationOptLst,typeLst,operations);
   end match;
 end addElementSourceFileInfo;
 
@@ -4364,10 +4367,11 @@ algorithm
       list<Option<DAE.ComponentRef>> instanceOptLst "the instance this element is part of" ;
       list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectEquationOptLst "this element came from this connect" ;
       list<Absyn.Path> typeLst "the classes where the type of the element is defined" ;
+      list<DAE.SymbolicOperation> operations;
 
     // a NONE() means top level (equivalent to NO_PRE, SOME(cref) means subcomponent
-    case (DAE.SOURCE(info,partOfLst,instanceOptLst,connectEquationOptLst,typeLst), instanceOpt)
-      then DAE.SOURCE(info,partOfLst,instanceOpt::instanceOptLst,connectEquationOptLst,typeLst);
+    case (DAE.SOURCE(info,partOfLst,instanceOptLst,connectEquationOptLst,typeLst,operations), instanceOpt)
+      then DAE.SOURCE(info,partOfLst,instanceOpt::instanceOptLst,connectEquationOptLst,typeLst,operations);
   end match;
 end addElementSourceInstanceOpt;
 
@@ -4383,11 +4387,12 @@ algorithm
       list<Option<DAE.ComponentRef>> instanceOptLst "the instance this element is part of" ;
       list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectEquationOptLst "this element came from this connect" ;
       list<Absyn.Path> typeLst "the classes where the type of the element is defined" ;
+      list<DAE.SymbolicOperation> operations;
 
     // a top level
     case (inSource, NONE()) then inSource;
-    case (inSource as DAE.SOURCE(info,partOfLst,instanceOptLst,connectEquationOptLst,typeLst), connectEquationOpt)
-      then DAE.SOURCE(info,partOfLst,instanceOptLst,connectEquationOpt::connectEquationOptLst,typeLst);
+    case (inSource as DAE.SOURCE(info,partOfLst,instanceOptLst,connectEquationOptLst,typeLst,operations), connectEquationOpt)
+      then DAE.SOURCE(info,partOfLst,instanceOptLst,connectEquationOpt::connectEquationOptLst,typeLst,operations);
   end matchcontinue;
 end addElementSourceConnectOpt;
 
@@ -4424,14 +4429,16 @@ algorithm
       list<Option<DAE.ComponentRef>> instanceOptLst1,instanceOptLst2,i;
       list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectEquationOptLst1,connectEquationOptLst2,c;
       list<Absyn.Path> typeLst1,typeLst2,t;
-    case (DAE.SOURCE(info, partOfLst1, instanceOptLst1, connectEquationOptLst1, typeLst1),
-          DAE.SOURCE(_ /* Discard */, partOfLst2, instanceOptLst2, connectEquationOptLst2, typeLst2))
+      list<DAE.SymbolicOperation> o,operations1,operations2;
+    case (DAE.SOURCE(info, partOfLst1, instanceOptLst1, connectEquationOptLst1, typeLst1, operations1),
+          DAE.SOURCE(_ /* Discard */, partOfLst2, instanceOptLst2, connectEquationOptLst2, typeLst2, operations2))
       equation
         p = listAppend(partOfLst1, partOfLst2);
         i = listAppend(instanceOptLst1, instanceOptLst2);
         c = listAppend(connectEquationOptLst1, connectEquationOptLst1);
         t = listAppend(typeLst1, typeLst2);
-      then DAE.SOURCE(info,p,i,c,t);
+        o = listAppend(operations1, operations2);
+      then DAE.SOURCE(info,p,i,c,t, o);
  end match;
 end mergeSources;
 

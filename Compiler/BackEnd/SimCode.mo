@@ -3017,6 +3017,7 @@ algorithm
       equation
         // Yes, do this better later on...
         print(Tpl.tplString(SimCodeDump.dumpSimCode, simCode));
+        print("\n");
       then ();
     case (_,target)
       equation

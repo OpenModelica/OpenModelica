@@ -158,14 +158,17 @@ package SimCode
   uniontype SimEqSystem
     record SES_RESIDUAL
       DAE.Exp exp;
+      DAE.ElementSource source;
     end SES_RESIDUAL;
     record SES_SIMPLE_ASSIGN
       DAE.ComponentRef cref;
       DAE.Exp exp;
+      DAE.ElementSource source;
     end SES_SIMPLE_ASSIGN;
     record SES_ARRAY_CALL_ASSIGN
       DAE.ComponentRef componentRef;
       DAE.Exp exp;
+      DAE.ElementSource source;
     end SES_ARRAY_CALL_ASSIGN;
     record SES_ALGORITHM
       list<DAE.Statement> statements;
@@ -195,6 +198,7 @@ package SimCode
       DAE.Exp right;
       list<tuple<DAE.Exp, Integer>> conditions;
       Option<SimEqSystem> elseWhen;
+      DAE.ElementSource source;
     end SES_WHEN;
   end SimEqSystem;
 
@@ -648,6 +652,15 @@ package Absyn
     end INFO;
   end Info;
   
+  uniontype Within "Within Clauses"
+    record WITHIN "the within clause"
+      Path path "the path for within";
+    end WITHIN;
+
+    record TOP end TOP;
+
+  end Within;
+
   constant Info dummyInfo;
 end Absyn;
 
@@ -1201,8 +1214,24 @@ package DAE
   uniontype ElementSource
     record SOURCE
       Absyn.Info info;
+      list<Absyn.Within> partOfLst;
+      list<Option<ComponentRef>> instanceOptLst;
+      list<Option<tuple<ComponentRef, ComponentRef>>> connectEquationOptLst;
+      list<Absyn.Path> typeLst;
+      list<SymbolicOperation> operations;
     end SOURCE;
   end ElementSource;
+
+  uniontype SymbolicOperation
+    record SIMPLIFY
+      Exp before;
+      Exp after;
+    end SIMPLIFY;
+    record SUBSTITUTION
+      Exp source;
+      Exp target;
+    end SUBSTITUTION;
+    end SymbolicOperation;
 end DAE;
 
 
@@ -1814,5 +1843,15 @@ package BackendQSS
 		output SimCode.SimEqSystem o;
 	end replaceZC;
 end BackendQSS;
+
+package DAEDump
+
+  function ppStmtStr
+    input DAE.Statement stmt;
+    input Integer inInteger;
+    output String outString;
+  end ppStmtStr;
+
+end DAEDump;
 
 end SimCodeTV;
