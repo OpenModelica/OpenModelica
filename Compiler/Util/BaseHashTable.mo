@@ -306,7 +306,6 @@ algorithm
         indexes = hashvec[hashindx + 1];
         indx = get2(key, indexes, keyEqual);
         (k, v) = valueArrayNth(varr, indx);
-        true = keyEqual(k, key);
       then
         (v,indx);
   end match;
@@ -559,7 +558,7 @@ algorithm
 
     case ((n,size,arr),entry)
       equation
-        (n < size) = false "Do NOT have splace to add array elt. Expand with factor 1.4" ;
+        (n < size) = false "Do NOT have space to add array elt. Expand with factor 1.4" ;
         rsize = intReal(size);
         rexpandsize = rsize *. 0.4;
         expandsize = realInt(rexpandsize);
