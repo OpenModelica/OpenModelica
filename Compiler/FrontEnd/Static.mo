@@ -382,7 +382,6 @@ algorithm
         (cache,ops) = operators(cache,op, env, t1, t2);
         (op_1,{e1_2,e2_2},rtype) = deoverload(ops, {(e1_1,t1),(e2_1,t2)},e,pre,info);
         exp_1 = replaceOperatorWithFcall(DAE.LBINARY(e1_2,op_1,e2_2), c);
-        exp_1 = ExpressionSimplify.simplify(exp_1);
         prop = DAE.PROP(rtype,c);
       then
         (cache,exp_1,prop,st_2);
@@ -392,7 +391,6 @@ algorithm
         (cache,ops) = operators(cache,op, env, t, (DAE.T_NOTYPE(),NONE()));
         (op_1,{e_2},rtype) = deoverload(ops, {(e_1,t)},e,pre,info);
         exp_1 = replaceOperatorWithFcall(DAE.LUNARY(op_1,e_2), c);
-        exp_1 = ExpressionSimplify.simplify(exp_1);
         prop = DAE.PROP(rtype,c);
       then
         (cache,exp_1,prop,st_1);
@@ -404,7 +402,6 @@ algorithm
         (cache,ops) = operators(cache,op, env, t1, t2);
         (op_1,{e1_2,e2_2},rtype) = deoverload(ops,{(e1_1,t1),(e2_1,t2)},e,pre,info);
         exp_1 = replaceOperatorWithFcall(DAE.RELATION(e1_2,op_1,e2_2,-1,NONE()), c);
-        exp_1 = ExpressionSimplify.simplify(exp_1);
         prop = DAE.PROP(rtype,c);
         warnUnsafeRelations(env,c,t1,t2,e1_2,e2_2,op_1,pre);
       then

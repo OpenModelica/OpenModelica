@@ -490,6 +490,8 @@ algorithm
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
         
         //Check that the lefthandside and the righthandside get along.
+        e1_2 = ExpressionSimplify.simplify1(e1_2);
+        e2_2 = ExpressionSimplify.simplify1(e2_2);
         dae = instEqEquation(e1_2, prop1, e2_2, prop2, source, initial_, impl);
                           
         ci_state_1 = instEquationCommonCiTrans(ci_state, initial_);
@@ -743,6 +745,8 @@ algorithm
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
 
+        e1_2 = ExpressionSimplify.simplify1(e1_2);
+        e2_2 = ExpressionSimplify.simplify1(e2_2);
         DAE.DAE(daeElts) = instEqEquation(e1_2, tprop1, e2_2, tprop2, source, initial_, impl);
         daeElts = Util.listMap(daeElts,makeDAEArrayEqToReinitForm);
         dae = DAE.DAE(daeElts);
