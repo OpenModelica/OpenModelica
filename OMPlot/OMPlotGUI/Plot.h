@@ -61,10 +61,12 @@ private:
     PlotZoomer *mpPlotZoomer;
     PlotPanner *mpPlotPanner;
     QList<PlotCurve*> mPlotCurvesList;
+    QList<QColor> mColorsList;
 public:
     Plot(PlotWindow *pParent);
     ~Plot();
 
+    void fillColorsList();
     PlotWindow* getParentPlotWindow();
     Legend* getLegend();
     QwtPlotPicker* getPlotPicker();
@@ -74,6 +76,9 @@ public:
     QList<PlotCurve*> getPlotCurvesList();
     void addPlotCurve(PlotCurve *pCurve);
     void removeCurve(PlotCurve *pCurve);
+    QColor getUniqueColor(int index, int total);
+public slots:
+    virtual void replot();
 };
 }
 

@@ -39,10 +39,10 @@ using namespace OMPlot;
 
 int main(int argc, char *argv[])
 {
-    if (argc < 14) {
-      printf("Usage: %s filename title legend grid plottype logx logy xlabel ylabel xrange1 xrange2 yrange1 yrange2 variables -ew true/false\n", *argv);
-      return 1;
-    }
+//    if (argc < 14) {
+//      printf("Usage: %s filename title legend grid plottype logx logy xlabel ylabel xrange1 xrange2 yrange1 yrange2 variables -ew true/false\n", *argv);
+//      return 1;
+//    }
     // read the arguments
     QStringList arguments;
     bool newApplication = false;

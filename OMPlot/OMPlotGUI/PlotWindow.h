@@ -48,57 +48,54 @@ class PlotCurve;
 class PlotWindow : public QMainWindow
 {
     Q_OBJECT
-public:           
-    PlotWindow(QStringList arguments, QWidget *parent = 0);    
-    PlotWindow(QString fileName, QWidget *parent = 0);
-    // used for interactive simulation
-    PlotWindow(QWidget *parent = 0);
-
-    ~PlotWindow();
-
-    void initializePlot(QStringList arguments);
-    void plot(QStringList);
-    void plotAll();
-    void plotParametric(QString, QString);
-    void plotGraph(QList<PlotCurve*> plotCurvesList);
-
-    void openFile(QString);
-    void setupToolbar();
-    void initializeZoom();
-
-    void setTitle(QString);
-    void setLegend(bool);    
-    void setXLabel(QString);
-    void setYLabel(QString);
-    void setXRange(double min, double max);
-    void setYRange(double min, double max);
-    void checkForErrors(QStringList, QVector<int> );
-    Plot* getPlot();
-    QToolButton* getPanButton();
-    void receiveMessage(QStringList arguments);
-    void closeEvent(QCloseEvent *event);
+public:
+    enum PlotType {PLOT, PLOTALL, PLOTPARAMETRIC};
 private:
     Plot *mpPlot;
-
     QCheckBox *mpXCheckBox;
     QCheckBox *mpYCheckBox;
     QToolButton *mpGridButton;
     QToolButton *mpZoomButton;
     QToolButton *mpPanButton;
-
     QTextStream *mpTextStream;
-    QFile *mpFile;
+    QFile mFile;
+    QStringList mVariablesList;
+    PlotType mPlotType;
+public:
+    PlotWindow(QStringList arguments = QStringList(), QWidget *parent = 0);
+    ~PlotWindow();
+
+    void setUpWidget();
+    void initializePlot(QStringList arguments);
+    void setVariablesList(QStringList variables);
+    void setPlotType(PlotType type);
+    PlotType getPlotType();
+    void openFile(QString file);
+    void setupToolbar();
+    void plot();
+    void plotParametric();
+    void setTitle(QString title);
+    void setLegend(bool on);
+    void setXLabel(QString label);
+    void setYLabel(QString label);
+    void setXRange(double min, double max);
+    void setYRange(double min, double max);
+    void checkForErrors(QStringList variables, QStringList variablesPlotted);
+    Plot* getPlot();
+    QToolButton* getPanButton();
+    void receiveMessage(QStringList arguments);
+    void closeEvent(QCloseEvent *event);
 signals:
     void closingDown();
 public slots:
-    void enableZoomMode(bool);
-    void enablePanMode(bool);
-    void exportDocument();    
-    void setGrid(bool);
-    void setOriginal();
+    void enableZoomMode(bool on);
+    void enablePanMode(bool on);
+    void exportDocument();
     void printPlot();
-    void setLogX(bool);
-    void setLogY(bool);
+    void setGrid(bool on);
+    void setOriginal();
+    void setLogX(bool on);
+    void setLogY(bool on);
 };
 
 //Exception classes
@@ -111,15 +108,15 @@ public:
 class NoFileException : public PlotException
 {
 public:
-    NoFileException(const char * fileName) : PlotException(fileName) {}
+    NoFileException(const char *fileName) : PlotException(fileName) {}
 private:
-    const char * temp;
+    const char *temp;
 };
 
 class NoVariableException : public PlotException
 {
 public:
-    NoVariableException(const char * varName) : PlotException(varName) {}
+    NoVariableException(const char *varName) : PlotException(varName) {}
 };
 
 //Options Class

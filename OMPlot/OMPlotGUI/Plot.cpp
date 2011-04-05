@@ -41,12 +41,9 @@ Plot::Plot(PlotWindow *pParent)
 {
     mpParentPlotWindow = pParent;
 
-    setTitle(tr("Plot by OpenModelica"));    
-    setCanvasBackground(Qt::white);
     // create an instance of legend
     mpLegend = new Legend(this);
     insertLegend(mpLegend, QwtPlot::RightLegend);
-
     // create an instance of picker
     mpPlotPicker = new QwtPlotPicker(canvas());
     mpPlotPicker->setTrackerPen(QPen(Qt::black));
@@ -60,11 +57,31 @@ Plot::Plot(PlotWindow *pParent)
     mpPlotPanner = new PlotPanner(canvas(), this);
     // set canvas arrow
     canvas()->setCursor(Qt::ArrowCursor);
+    setCanvasBackground(Qt::white);
+    setContentsMargins(10, 10, 10, 10);
+    // fill colors list
+    fillColorsList();
 }
 
 Plot::~Plot()
 {
 
+}
+
+void Plot::fillColorsList()
+{
+    mColorsList.append(QColor(Qt::red));
+    mColorsList.append(QColor(Qt::blue));
+    mColorsList.append(QColor(Qt::green));
+    mColorsList.append(QColor(Qt::cyan));
+    mColorsList.append(QColor(Qt::magenta));
+    mColorsList.append(QColor(Qt::yellow));
+    mColorsList.append(QColor(Qt::darkRed));
+    mColorsList.append(QColor(Qt::darkBlue));
+    mColorsList.append(QColor(Qt::darkGreen));
+    mColorsList.append(QColor(Qt::darkCyan));
+    mColorsList.append(QColor(Qt::darkMagenta));
+    mColorsList.append(QColor(Qt::darkYellow));
 }
 
 PlotWindow* Plot::getParentPlotWindow()
@@ -110,4 +127,23 @@ void Plot::addPlotCurve(PlotCurve *pCurve)
 void Plot::removeCurve(PlotCurve *pCurve)
 {
     mPlotCurvesList.removeOne(pCurve);
+}
+
+QColor Plot::getUniqueColor(int index, int total)
+{
+    if (mColorsList.size() < total)
+        return QColor::fromHsvF(index/(total + 1.0), 1, 1);
+    else
+        return mColorsList.at(index);
+}
+
+void Plot::replot()
+{
+    // just overloaded this function to get colors for curves.
+    for (int i = 0 ; i < mPlotCurvesList.length() ; i++)
+    {
+        mPlotCurvesList[i]->setPen(getUniqueColor(i, mPlotCurvesList.length()));
+    }
+
+    QwtPlot::replot();
 }

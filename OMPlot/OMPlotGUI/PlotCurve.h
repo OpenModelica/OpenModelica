@@ -43,6 +43,9 @@ class PlotCurve : public QwtPlotCurve
 private:
     QwtArray<double> mXAxisVector;
     QwtArray<double> mYAxisVector;
+    QString mFileName;
+    QString mXVariable;
+    QString mYVariable;
 
     Plot *mpParentPlot;
 public:
@@ -56,6 +59,12 @@ public:
     void addYAxisValue(double value);
     const double* getYAxisVector() const;
     int getSize();
+    void setFileName(QString fileName);
+    QString getFileName();
+    void setXVariable(QString xVariable);
+    QString getXVariable();
+    void setYVariable(QString yVariable);
+    QString getYVariable();
     virtual void updateLegend(QwtLegend *legend) const;
 };
 }

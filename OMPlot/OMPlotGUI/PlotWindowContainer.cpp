@@ -42,7 +42,7 @@ PlotWindowContainer::PlotWindowContainer(PlotMainWindow *pParent)
     setActivationOrder(QMdiArea::CreationOrder);
     setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-    setViewMode(QMdiArea::TabbedView);
+    setViewMode(QMdiArea::SubWindowView);
 }
 
 PlotMainWindow* PlotWindowContainer::getPlotMainWindow()
@@ -75,7 +75,10 @@ PlotWindow* PlotWindowContainer::getCurrentWindow()
 void PlotWindowContainer::addPlotWindow(QStringList arguments)
 {
     PlotWindow *pPlotWindow = new PlotWindow(arguments, this);
-    pPlotWindow->setWindowTitle(getUniqueName());
+    if (pPlotWindow->getPlotType() == PlotWindow::PLOT or pPlotWindow->getPlotType() == PlotWindow::PLOTALL)
+        pPlotWindow->setWindowTitle(QString(getUniqueName()).append(" - x(t)"));
+    else
+        pPlotWindow->setWindowTitle(QString(getUniqueName()).append(" - x(y)"));
     connect(pPlotWindow, SIGNAL(closingDown()), SLOT(checkSubWindows()));
     setActiveSubWindow(addSubWindow(pPlotWindow));
     if (viewMode() == QMdiArea::TabbedView)

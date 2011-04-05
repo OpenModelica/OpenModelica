@@ -38,6 +38,7 @@ using namespace OMPlot;
 PlotGrid::PlotGrid(Plot *pParent)
 {
     attach(pParent);
+    setPen(QPen(Qt::lightGray));
 }
 
 PlotGrid::~PlotGrid()

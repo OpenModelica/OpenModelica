@@ -82,6 +82,36 @@ int PlotCurve::getSize()
     return mXAxisVector.size();
 }
 
+void PlotCurve::setFileName(QString fileName)
+{
+    mFileName = fileName;
+}
+
+QString PlotCurve::getFileName()
+{
+    return mFileName;
+}
+
+void PlotCurve::setXVariable(QString xVariable)
+{
+    mXVariable = xVariable;
+}
+
+QString PlotCurve::getXVariable()
+{
+    return mXVariable;
+}
+
+void PlotCurve::setYVariable(QString yVariable)
+{
+    mYVariable = yVariable;
+}
+
+QString PlotCurve::getYVariable()
+{
+    return mYVariable;
+}
+
 void PlotCurve::updateLegend(QwtLegend *legend) const
 {
     QwtPlotCurve::updateLegend(legend);
