@@ -1688,7 +1688,7 @@ algorithm
         print(s);
         s = ComponentReference.printComponentRefStr(c);
         print(s);
-        s = Util.if_(b,")","");
+        s = Util.if_(b,") "," ");
         print(s);
       then
         ();
@@ -1702,7 +1702,7 @@ algorithm
         print(s);
         s = ComponentReference.printComponentRefStr(c);
         print(s);
-        s = Util.if_(b,"der(","");
+        s = Util.if_(b,") "," ");
         print(s);
         dumpComponentsAdvanced3(l,v2,vars);
       then
@@ -1723,6 +1723,16 @@ algorithm
   (a,b) := inTpl;
   print(ComponentReference.printComponentRefStr(a) +& b);
 end debugCrefStr;
+
+public function debugStrIntStr
+  input tuple<String,Integer,String> inTpl;
+protected
+  String a,c;
+  Integer b;
+algorithm
+  (a,b,c) := inTpl;
+  print(a +& intString(b) +& c);
+end debugStrIntStr;
 
 public function debugCrefStrIntStr
   input tuple<DAE.ComponentRef,String,Integer,String> inTpl;

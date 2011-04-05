@@ -527,11 +527,26 @@ algorithm
     local 
       Type t;
       Operator op;
-      Boolean b;
+      Boolean b,b_1;
+      Real r,r_1;
+      Integer i,i_1;
     
     // to avoid unnessecary --e
     case(DAE.UNARY(DAE.UMINUS(t),e)) then e;
     case(DAE.UNARY(DAE.UMINUS_ARR(t),e)) then e;
+
+    case(DAE.ICONST(i))
+      equation
+        i_1 = 0 - i;
+      then DAE.ICONST(i_1);
+    case(DAE.RCONST(r))
+      equation
+        r_1 = 0.0 -. r;
+      then DAE.RCONST(r_1);
+    case(DAE.BCONST(b))
+      equation
+        b_1 = not b;
+      then DAE.BCONST(b_1);        
 
     // -0 = 0
     case(e) 

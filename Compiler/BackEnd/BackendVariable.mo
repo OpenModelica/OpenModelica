@@ -426,6 +426,26 @@ algorithm
    end match;
 end varStartValueFail;
 
+public function varStartValueOption
+"function varStartValueOption
+  author: Frenkel TUD
+  Returns the DAE.StartValue of a variable if there is one. 
+  Otherwise fail"
+  input BackendDAE.Var v;
+  output Option<DAE.Exp> sv;
+algorithm
+  sv := matchcontinue(v)
+    local
+      Option<DAE.VariableAttributes> attr;
+      DAE.Exp exp;
+    case (BackendDAE.VAR(values = attr))
+      equation
+        exp=DAEUtil.getStartAttrFail(attr);
+      then SOME(exp);
+    else NONE();
+   end matchcontinue;
+end varStartValueOption;
+
 public function varBindExp
 "function varBindExp
   author: Frenkel TUD 2010-12

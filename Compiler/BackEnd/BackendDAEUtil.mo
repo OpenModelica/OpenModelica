@@ -5840,9 +5840,9 @@ algorithm
     case (dae,funcs,(optModule,moduleStr)::rest,m,mT,v1,v2,comps,daeHandler)
       equation
         (dae1,m1,mT1,v1_1,v2_1,comps1,runMatching) = optModule(dae,funcs,m,mT,v1,v2,comps);
-        (dae1,m1,mT1,v1_1,v2_1,comps1) = checktransformDAE(runMatching,dae1,funcs,m1,mT1,v1_1,v2_1,comps1,daeHandler);
         Debug.fcall("optdaedump", print, stringAppendList({"\nOptimisation Module ",moduleStr,":\n\n"}));
         Debug.fcall("optdaedump", BackendDump.dump, dae1);
+        (dae1,m1,mT1,v1_1,v2_1,comps1) = checktransformDAE(runMatching,dae1,funcs,m1,mT1,v1_1,v2_1,comps1,daeHandler);
         (dae2,m2,mT2,v1_2,v2_2,comps2) = pastoptimiseDAE(dae1,funcs,rest,m1,mT1,v1_1,v2_1,comps1,daeHandler);
       then
         (dae2,m2,mT2,v1_2,v2_2,comps2);
@@ -5941,7 +5941,7 @@ public function getPastOptModulesString
 " function: getPreOptModulesString"
   output list<String> strPastOptModules;
 algorithm
- strPastOptModules := RTOpts.getPastOptModules({"lateInline","removeSimpleEquations"});
+ strPastOptModules := RTOpts.getPastOptModules({"lateInline","removeSimpleEquations"});           
 end getPastOptModulesString;
 
 protected function getPastOptModules
@@ -5970,6 +5970,7 @@ protected
 algorithm
   allPastOptModules := {(BackendDAEOptimize.lateInline,"lateInline"),
   (BackendDAEOptimize.removeSimpleEquationsPast,"removeSimpleEquations"),
+  (BackendDAEOptimize.removeSimpleEquationsXPast,"removeSimpleEquationsX"),
   (BackendDAEOptimize.removeAliasEquationsPast,"removeAliasEquations"),
   (BackendDAEOptimize.inlineArrayEqnPast,"inlineArrayEqn"),
   (BackendDump.dumpComponentsGraphStr,"dumpComponentsGraphStr")};

@@ -1688,6 +1688,46 @@ algorithm
   end matchcontinue;
 end traverseBackendDAEExpsWhenOperator;
 
+public function traverseBackendDAEExpsWhenClauseLst
+"function: traverseBackendDAEExpsWhenClauseLst
+  author: Frenkel TUD 2010-11
+  Traverse all expressions of a when clause list. It is possible to change the expressions"
+  replaceable type Type_a subtypeof Any; 
+  input list<BackendDAE.WhenClause> inWhenClauseLst;
+  input FuncExpType func;
+  input Type_a inTypeA;
+  output list<BackendDAE.WhenClause> outWhenClauseLst;
+  output Type_a outTypeA;
+  partial function FuncExpType
+    input tuple<DAE.Exp, Type_a> inTpl;
+    output tuple<DAE.Exp, Type_a> outTpl;
+  end FuncExpType;  
+algorithm
+  (outWhenClauseLst,outTypeA) := matchcontinue (inWhenClauseLst,func,inTypeA)
+    local
+      Option<Integer> elsindx;
+      list<BackendDAE.WhenOperator> reinitStmtLst,reinitStmtLst1;
+      DAE.Exp cond,cond1;
+      list<BackendDAE.WhenClause> wclst,wclst1;
+      Type_a ext_arg_1,ext_arg_2,ext_arg_3;
+
+    case ({},func,inTypeA) then ({},inTypeA);
+
+    case (BackendDAE.WHEN_CLAUSE(cond,reinitStmtLst,elsindx)::wclst,func,inTypeA)
+      equation
+        ((cond1,ext_arg_1)) = func((cond,inTypeA));
+        (reinitStmtLst1,ext_arg_2) = traverseBackendDAEExpsWhenOperator(reinitStmtLst,func,ext_arg_1);
+        (wclst1,ext_arg_3) = traverseBackendDAEExpsWhenClauseLst(wclst,func,ext_arg_2);
+      then
+        (BackendDAE.WHEN_CLAUSE(cond1,reinitStmtLst1,elsindx)::wclst1,ext_arg_3);
+     case (_,_,_)
+      equation
+        print("-BackendDAETransform.traverseBackendDAEExpsWhenClauseLst failed\n");
+      then
+        fail();
+  end matchcontinue;
+end traverseBackendDAEExpsWhenClauseLst;
+
 protected function traverseBackendDAEExpsEqnAlgs
   replaceable type Type_a subtypeof Any;
   input Integer inIndex;
