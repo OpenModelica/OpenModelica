@@ -180,7 +180,7 @@ fmiStatus fmiSetReal(fmiComponent c, const fmiValueReference vr[], size_t nvr, c
     if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
       "fmiSetReal: #r%d# = %.16g", vr[i], value[i]);
     if (setReal(comp, vr[i],value[i]) != fmiOK) // to be implemented by the includer of this file
-      return fmiError; 
+      return fmiError;
   }
   comp->outputsvalid = fmiFalse;
   comp->eventInfo.stateValuesChanged = fmiTrue;
@@ -204,7 +204,7 @@ fmiStatus fmiSetInteger(fmiComponent c, const fmiValueReference vr[], size_t nvr
     if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
       "fmiSetInteger: #i%d# = %d", vr[i], value[i]);
     if (setInteger(comp, vr[i],value[i]) != fmiOK) // to be implemented by the includer of this file
-      return fmiError; 
+      return fmiError;
   }
   comp->outputsvalid = fmiFalse;
   comp->eventInfo.stateValuesChanged = fmiTrue;
@@ -228,7 +228,7 @@ fmiStatus fmiSetBoolean(fmiComponent c, const fmiValueReference vr[], size_t nvr
     if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
       "fmiSetBoolean: #b%d# = %s", vr[i], value[i] ? "true" : "false");
     if (setBoolean(comp, vr[i],value[i]) != fmiOK) // to be implemented by the includer of this file
-      return fmiError; 
+      return fmiError;
   }
   comp->outputsvalid = fmiFalse;
   comp->eventInfo.stateValuesChanged = fmiTrue;
@@ -298,7 +298,7 @@ fmiStatus fmiSetContinuousStates(fmiComponent c, const fmiReal x[], size_t nx){
       "fmiSetContinuousStates: #r%d#=%.16g", vr, x[i]);
     assert(vr>=0 && vr<NUMBER_OF_REALS);
     if (setReal(comp, vr,x[i]) != fmiOK) // to be implemented by the includer of this file
-      return fmiError; 
+      return fmiError;
   }
 #endif
   return fmiOK;
@@ -705,7 +705,7 @@ fmiStatus fmiSetExternalFunction(fmiComponent c, fmiValueReference vr[], size_t 
     if (vrOutOfRange(comp, "fmiSetExternalFunction", vr[i], NUMBER_OF_EXTERNALFUNCTIONS))
       return fmiError;
     if (setExternalFunction(comp, vr[i],value[i]) != fmiOK) // to be implemented by the includer of this file
-      return fmiError; 
+      return fmiError;
   }
   return fmiOK;
 };

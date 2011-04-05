@@ -161,7 +161,7 @@ void copy_integer_array(integer_array_t *source, integer_array_t *dest)
 
 inline int integer_le(int x, int y)
 {
-  return (x <= y); 
+  return (x <= y);
 }
 
 inline int integer_ge(int x, int y)

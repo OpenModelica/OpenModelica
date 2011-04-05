@@ -189,7 +189,7 @@ int simplex_initialization(long& nz,double *z)
     leastSquare(&nz,z,&funcValue);
     if (funcValue > SIMP) {
       printf("Error in initialization. Solver iterated %d times without finding a solution\n",(int)MAXF);
-      return -1; 
+      return -1;
     }
   } else if(IFAULT == 2 ) {
     printf("Error in initialization. Inconsistent initial conditions.\n");

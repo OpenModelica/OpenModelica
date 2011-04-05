@@ -53,7 +53,7 @@ public:
   virtual ~simulation_result_mat();
   virtual void emit();
   virtual const char* result_type() { 
-    //return "Dymosim's compatible MAT-file"; 
+    //return "Dymosim's compatible MAT-file";
     return "mat";
   }
 private:

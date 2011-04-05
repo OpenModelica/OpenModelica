@@ -382,7 +382,7 @@ private:
     trim(hdr,hLen);
     
     if (strncmp("double",hdr,std::min((size_t)6,hLen)) != 0)
-      return false;    
+      return false;
     trim(hdr += 6, hLen -= 6);
 
     for(size_t len = 1; len < hLen; ++len)
@@ -433,7 +433,7 @@ class MatFile : public FileWrapper {
 public:
   static FileWrapper* create(const std::string& fileName)
   { 
-    return new MatFile(fileName); 
+    return new MatFile(fileName);
   }
   MatFile(const std::string& fileName):filename(fileName)
   {

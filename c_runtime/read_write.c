@@ -666,7 +666,7 @@ int read_modelica_record_helper(type_description **descptr, va_list *arg)
     for (e = 0; e < desc->data.record.elements; ++e) {
       switch (elem->type) {
       case TYPE_DESC_NONE:
-        return -1;      
+        return -1;
       case TYPE_DESC_REAL:
         read_modelica_real(&elem, va_arg(*arg, modelica_real *));
         break;

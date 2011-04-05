@@ -701,7 +701,7 @@ jobject mmc_to_jobject(JNIEnv* env, void* mmc)
 
   if (numslots>0 && ctor > 1) { /* RECORD */
     jobject rec_map;
-    struct record_description* desc = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(mmc),1));    
+    struct record_description* desc = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(mmc),1));
     rec_map = NewJavaMap(env);
     if (numslots == 1 && desc == NULL) {
       return NewJavaRecord(env, "***output record***", -2, rec_map);
@@ -733,7 +733,7 @@ jobject mmc_to_jobject(JNIEnv* env, void* mmc)
   }
 
   if (numslots==2 && ctor==1) { /* CONS-PAIR; Tested, but not in OMC. */
-    jobject arr = NewJavaArray(env);    
+    jobject arr = NewJavaArray(env);
     while (!MMC_NILTEST(mmc)) {
       JavaArrayAdd(env, arr, mmc_to_jobject(env, MMC_CAR(mmc)));
       mmc = MMC_CDR(mmc);
