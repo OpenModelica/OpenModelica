@@ -40,26 +40,17 @@ void leastSquare(long *nz, double *z, double *funcValue)
 {
   int ind, indAct, indz;
   int startIndPar = 2*globalData->nStates+globalData->nAlgebraic+globalData->intVariables.nAlgebraic+globalData->boolVariables.nAlgebraic;
-  for (ind=0, indAct=0, indz=0; ind<globalData->nStates; ind++)
+
+ for (ind=0, indAct=0, indz=0; ind<globalData->nStates; ind++)
     if (globalData->initFixed[indAct++]==0)
           globalData->states[ind] = z[indz++];
+
   // for real parameters 
   for (ind=0,indAct=startIndPar; ind<globalData->nParameters; ind++)
     if (globalData->initFixed[indAct++]==0)
       globalData->parameters[ind] = z[indz++];
 
-  // for int parameters
-  for (ind=0,indAct=startIndPar+globalData->nParameters; ind<globalData->intVariables.nParameters; ind++) {
-    if (globalData->initFixed[indAct++]==0)
-      globalData->intVariables.parameters[ind] = (modelica_integer)z[indz++];
-  }
-
-  // for bool parameters
-  for (ind=0,indAct=startIndPar+globalData->nParameters+globalData->intVariables.nParameters; ind<globalData->boolVariables.nParameters; ind++) {
-    if (globalData->initFixed[indAct++]==0)
-      globalData->boolVariables.parameters[ind] = (modelica_boolean)z[indz++];
-  }
-
+  bound_parameters();
   functionODE();
   functionAlgebraics();
 
@@ -232,16 +223,14 @@ int initialize(const std::string*method)
 
         nz++;
     }
-
   }
 
   int startIndPar = 2*globalData->nStates+globalData->nAlgebraic+globalData->intVariables.nAlgebraic+globalData->boolVariables.nAlgebraic;
-  int endIndPar = startIndPar+globalData->nParameters+globalData->intVariables.nParameters+globalData->boolVariables.nParameters;
+  int endIndPar = startIndPar+globalData->nParameters;
   for (ind=startIndPar;ind<endIndPar; ind++){
     if (globalData->initFixed[ind]==0){
         if (sim_verbose >= LOG_INIT)
-          printf("Variable %s is unfixed.\n",globalData->statesNames[ind].name);
-
+          printf("Variable %s is unfixed.\n",globalData->parametersNames[ind-startIndPar].name);
         nz++;
     }
   }
@@ -275,18 +264,6 @@ int initialize(const std::string*method)
   for (ind=0,indAct=startIndPar; ind<globalData->nParameters; ind++) {
     if (globalData->initFixed[indAct++]==0)
       z[indz++] =  globalData->parameters[ind];
-  }
-
-  // for int parameters
-  for (ind=0,indAct=startIndPar+globalData->nParameters; ind<globalData->intVariables.nParameters; ind++) {
-    if (globalData->initFixed[indAct++]==0)
-      z[indz++] =  globalData->intVariables.parameters[ind];
-  }
-
-  // for bool parameters
-  for (ind=0,indAct=startIndPar+globalData->nParameters+globalData->intVariables.nParameters; ind<globalData->boolVariables.nParameters; ind++) {
-    if (globalData->initFixed[indAct++]==0)
-      z[indz++] =  globalData->boolVariables.parameters[ind];
   }
 
   int retVal=0;

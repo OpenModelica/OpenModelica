@@ -96,36 +96,39 @@ void * hybrj_(void(*) (int *,double*,double*,double *,int*, int*),
           nls_diag,&mode,&factor,&nprint,&info,&nfev,nls_fjac,&ldfjac, \
         nls_r,&lr,nls_qtf,nls_wa1,nls_wa2,nls_wa3,nls_wa4); \
       if (info == 0) { \
-          printf("improper input parameters to nonlinear eq. syst %s:%d.\n", __FILE__, __LINE__); \
+          if (sim_verbose >= LOG_NONLIN_SYS) { \
+            printf("improper input parameters to nonlinear eq. syst %s:%d.\n", __FILE__, __LINE__); \
+          } \
       } \
-        if ((info == 4 || info == 5 )&& retries < 3) { /* first try to decrease factor*/ \
-        retries++; giveUp = 0; \
-        factor = factor / 10.0; \
-           if (sim_verbose & LOG_NONLIN_SYS)  \
+      if ((info == 4 || info == 5 )&& retries < 3) { /* first try to decrease factor*/ \
+      retries++; giveUp = 0; \
+      factor = factor / 10.0; \
+      if (sim_verbose >= LOG_NONLIN_SYS) { \
           printf("Solving nonlinear system: iteration not making progress, trying to decrease factor to %f\n",factor); \
       } else if ((info == 4 || info == 5) && retries < 5) { /* Then, try with different starting point*/  \
         int i; \
         for (i=0; i < n; i++) { nls_x[i]+=0.1; }; \
-        retries++; giveUp=0; \
-        if (sim_verbose & LOG_NONLIN_SYS) \
+          retries++; giveUp=0; \
+          if (sim_verbose >= LOG_NONLIN_SYS) { \
             printf("Solving nonlinear system: iteration not making progress, trying with different starting points (+1e-6)\n"); \
-        } else if ((info == 4 || info == 5) && retries2 < 1) { /*Then try with old values (instead of extrapolating )*/ \
-          retries = 0; retries2++; \
-        int i; \
-        for (i=0; i < n; i++) { nls_x[i] = nls_xold[i]; } \
-      } \
-      else if (info >= 2 && info <= 5) { \
-        int i; \
-        modelErrorCode=ERROR_NONLINSYS; \
-        printf("error solving nonlinear system nr. %d at time %f\n",no,time); \
-          if (sim_verbose & LOG_NONLIN_SYS) { \
-            for (i = 0; i<n; i++) { \
-            printf(" residual[%d] = %f\n",i,nls_fvec[i]); \
-            printf(" x[%d] = %f\n",i,nls_x[i]); \
-            } \
+          } else if ((info == 4 || info == 5) && retries2 < 1) { /*Then try with old values (instead of extrapolating )*/ \
+            retries = 0; retries2++; \
+            int i; \
+            for (i=0; i < n; i++) { nls_x[i] = nls_xold[i]; } \
+          } else if (info >= 2 && info <= 5) { \
+              int i; \
+              modelErrorCode=ERROR_NONLINSYS; \
+              if (sim_verbose >= LOG_NONLIN_SYS) { \
+                  printf("error solving nonlinear system nr. %d at time %f\n",no,time); \
+              } \
+              if (sim_verbose >= LOG_NONLIN_SYS) { \
+                  for (i = 0; i<n; i++) { \
+                     printf(" residual[%d] = %f\n",i,nls_fvec[i]); \
+                     printf(" x[%d] = %f\n",i,nls_x[i]); \
+                  } \
+              } \
           } \
-      } \
-   }\
+      }\
 } while(0) /* (no trailing ;)*/
 
 #define solve_nonlinear_system(residual,no) do { \
@@ -149,10 +152,10 @@ void * hybrj_(void(*) (int *,double*,double*,double *,int*, int*),
         int i; \
         for (i=0; i < n; i++) { nls_x[i]+=0.1; }; \
         retries++; giveUp=0; \
-        if (sim_verbose & LOG_NONLIN_SYS) \
+        if (sim_verbose >= LOG_NONLIN_SYS) \
           printErrorEqSyst(NO_PROGRESS_START_POINT,no,1e-6); \
-        } else if ((info == 4 || info == 5) && retries2 < 1) { /*Then try with old values (instead of extrapolating )*/ \
-          retries = 0; retries2++; \
+      } else if ((info == 4 || info == 5) && retries2 < 1) { /*Then try with old values (instead of extrapolating )*/ \
+        retries = 0; retries2++; \
         int i; \
         for (i=0; i < n; i++) { nls_x[i] = nls_xold[i]; } \
       } \
@@ -160,7 +163,7 @@ void * hybrj_(void(*) (int *,double*,double*,double *,int*, int*),
         int i; \
         modelErrorCode=ERROR_NONLINSYS; \
         printErrorEqSyst(ERROR_AT_TIME,no,time); \
-          if (sim_verbose & LOG_NONLIN_SYS) { \
+        if (sim_verbose >= LOG_NONLIN_SYS) { \
             for (i = 0; i<n; i++) { \
             printf(" residual[%d] = %f\n",i,nls_fvec[i]); \
             printf(" x[%d] = %f\n",i,nls_x[i]); \
@@ -192,12 +195,12 @@ void * hybrj_(void(*) (int *,double*,double*,double *,int*, int*),
         retries++; giveUp=0; \
         if (sim_verbose) \
             printErrorEqSyst(NO_PROGRESS_START_POINT,no,1e-6); \
-      } \
-      else if (info >= 2 && info <= 5) { \
-        modelErrorCode=ERROR_NONLINSYS; \
-        printErrorEqSyst(no,time); \
-      } \
-   }\
+        } \
+        else if (info >= 2 && info <= 5) { \
+          modelErrorCode=ERROR_NONLINSYS; \
+          printErrorEqSyst(no,time); \
+        } \
+     }\
 } while(0) /* (no trailing ;)*/
 
 #define declare_matrix(A,nrows,ncols) double *A = real_alloc(nrows*ncols); \
@@ -225,10 +228,12 @@ for(int i=0; i<n; i++) ipiv[i] = 0; \
 integer info; /* output */ \
 dgesv_(&n,&nrhs,&A[0],&lda,ipiv,&b[0],&ldb,&info); \
  if (info < 0) { \
-   printf("Error solving linear system of equations (no. %d) at time %f. Argument %d illegal.\n",id,localData->timeValue,info); \
+   if (sim_verbose >= LOG_NONLIN_SYS) \
+     printf("Error solving linear system of equations (no. %d) at time %f. Argument %d illegal.\n",id,localData->timeValue,info); \
  } \
  else if (info > 0) { \
-   printf("Error solving linear system of equations (no. %d) at time %f, system is singular.\n",id,localData->timeValue); \
+   if (sim_verbose >= LOG_NONLIN_SYS) \
+     printf("Error solving linear system of equations (no. %d) at time %f, system is singular.\n",id,localData->timeValue); \
  } \
 delete [] ipiv; \
 } while (0) /* (no trailing ; ) */
@@ -242,7 +247,8 @@ for(int i=0; i<n; i++) ipiv[i] = 0; \
 integer info; /* output */ \
 dgesv_(&n,&nrhs,&A[0],&lda,ipiv,&b[0],&ldb,&info); \
  if (info < 0) { \
-   printf("Error solving linear system of equations (no. %d) at time %f. Argument %d illegal.\n",id,localData->timeValue,info); \
+   if (sim_verbose >= LOG_NONLIN_SYS) \
+     printf("Error solving linear system of equations (no. %d) at time %f. Argument %d illegal.\n",id,localData->timeValue,info); \
  } \
  else if (info > 0) { \
      found_solution=-1; \
@@ -302,47 +308,52 @@ int ldfjac = size;
 ((($P$old##v)-($P$old2##v))/(localData->oldTime-localData->oldTime2)*localData->timeValue \
 +(localData->oldTime*($P$old2##v)-localData->oldTime2*($P$old##v))/ \
 (localData->oldTime-localData->oldTime2))
+
 #define mixed_equation_system(size) do { \
-int found_solution = 0; \
-int cur_value_indx=0; \
-do { \
-double discrete_loc[size]; \
-double discrete_loc2[size]
+    int found_solution = 0; \
+    int cur_value_indx=0; \
+    do { \
+        double discrete_loc[size]; \
+        double discrete_loc2[size]
 
 #define mixed_equation_system_end(size) } while (!found_solution); \
  } while(0)
 
-#define check_discrete_values(size,numValues) do {int i; \
-if (found_solution == -1) { /*system of equations failed*/ \
-found_solution=0; \
-} else { \
-found_solution = 1; \
-for (i=0; i < size; i++) { \
-if (fabs((discrete_loc[i] - discrete_loc2[i])) > 1e-12) {\
-found_solution=0;\
-}\
- }\
-}\
-if (!found_solution ) { \
-cur_value_indx++; \
-if (cur_value_indx >= numValues/size) { \
-  found_solution=-1; \
-} else {\
-/* try next set of values*/ \
-for (i=0; i < size; i++) { \
- *loc_ptrs[i]=values[cur_value_indx*size+i];  \
-} \
-} \
-} \
-if (found_solution && sim_verbose) { /* we found a solution*/ \
-  {int i; \
-    printf("Result of mixed system discrete variables:\n"); \
-    for (i=0;i<size;i++) { \
-      printf("%s = %f  pre(%s)= %f\n",getNameReal(loc_ptrs[i]),*loc_ptrs[i], \
-                      getNameReal(loc_ptrs[i]),pre(*loc_ptrs[i])); \
-    } \
+#define check_discrete_values(size,numValues) \
+do { \
+  int i; \
+  if (found_solution == -1) { \
+  /*system of equations failed */ \
+      found_solution=0; \
+  } else { \
+      found_solution = 1; \
+      for (i=0; i < size; i++) { \
+          if (fabs((discrete_loc[i] - discrete_loc2[i])) > 1e-12) {\
+              found_solution=0;\
+          }\
+      }\
+  }\
+  if (!found_solution ) { \
+      cur_value_indx++; \
+      if (cur_value_indx >= numValues/size) { \
+          found_solution=-1; \
+      } else {\
+      /* try next set of values*/ \
+          for (i=0; i < size; i++) { \
+              *loc_ptrs[i]=values[cur_value_indx*size+i];  \
+          } \
+      } \
   } \
-} \
+  /* we found a solution*/ \
+  if (found_solution && (sim_verbose >= LOG_NONLIN_SYS)){ \
+      int i; \
+      printf("Result of mixed system discrete variables:\n"); \
+      for (i=0;i<size;i++) { \
+        printf("%s = %f  pre(%s)= %f\n",getNameReal(loc_ptrs[i]),*loc_ptrs[i], \
+                        getNameReal(loc_ptrs[i]),pre(*loc_ptrs[i])); \
+      } \
+  } \
 } while(0)
+
 
 #endif

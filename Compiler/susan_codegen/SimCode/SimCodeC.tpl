@@ -290,7 +290,7 @@ case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
     memcpy(data->stringVariables.alias,omc__stringAlias,sizeof(DATA_STRING_ALIAS)*data->stringVariables.nAlias);  
   };
   
-  static char init_fixed[NX+NX+NY+NYINT+NYBOOL+NYSTR+NP+NPINT+NPBOOL+NPSTR] = {
+  static char init_fixed[NX+NX+NY+NYINT+NYBOOL+NP+NPINT+NPBOOL] = {
     <%{(vars.stateVars |> SIMVAR(__) =>
         '<%globalDataFixedInt(isFixed)%> /* <%crefStr(name)%> */'
       ;separator=",\n"),
