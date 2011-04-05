@@ -316,8 +316,8 @@ public function lbinopSymbol
 algorithm
   outString:=
   match (inOperator)
-    case (DAE.AND()) then " AND ";
-    case (DAE.OR()) then " OR ";
+    case (DAE.AND()) then " and ";
+    case (DAE.OR()) then " or ";
   end match;
 end lbinopSymbol;
 
@@ -328,7 +328,7 @@ public function lunaryopSymbol
   output String outString;
 algorithm
   outString := match (inOperator)
-    case (DAE.NOT()) then " NOT ";
+    case (DAE.NOT()) then " not ";
   end match;
 end lunaryopSymbol;
 
