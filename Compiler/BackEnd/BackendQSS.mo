@@ -153,113 +153,113 @@ public function replaceCondWhens
   merge when clauses depending on the same conditions"
   input list<SimCode.SimWhenClause> whenClauses;
   input list<SimCode.HelpVarInfo> helpVars;
-	input list<BackendDAE.ZeroCrossing> zeroCrossings;
-	output list<SimCode.SimWhenClause> replacedWhenClauses;
+input list<BackendDAE.ZeroCrossing> zeroCrossings;
+output list<SimCode.SimWhenClause> replacedWhenClauses;
 algorithm
-	replacedWhenClauses := 
-		match (whenClauses,helpVars,zeroCrossings)
-		local
-			list<SimCode.SimWhenClause> rest,r;
-			SimCode.SimWhenClause clause;
-	    list<tuple<DAE.Exp, Integer>> cond; // condition, help var index
-  	  list<DAE.ComponentRef> condVars;
-    	list<BackendDAE.WhenOperator> res;
-	    Option<BackendDAE.WhenEquation> whEq;
-	case ({},helpVars,zeroCrossings) 
-		then {};
-	case ((SimCode.SIM_WHEN_CLAUSE(conditions=cond, conditionVars=condVars, reinits=res, whenEq=whEq)::rest),helpVars,zeroCrossings)
-		equation
-		r = replaceCondWhens(rest,helpVars,zeroCrossings);
-		cond = replaceConds(cond,zeroCrossings);
-		then (SimCode.SIM_WHEN_CLAUSE(condVars,res,whEq,cond)::r);
-	end match;
+replacedWhenClauses := 
+match (whenClauses,helpVars,zeroCrossings)
+local
+list<SimCode.SimWhenClause> rest,r;
+SimCode.SimWhenClause clause;
+    list<tuple<DAE.Exp, Integer>> cond; // condition, help var index
+    list<DAE.ComponentRef> condVars;
+    list<BackendDAE.WhenOperator> res;
+    Option<BackendDAE.WhenEquation> whEq;
+case ({},helpVars,zeroCrossings) 
+then {};
+case ((SimCode.SIM_WHEN_CLAUSE(conditions=cond, conditionVars=condVars, reinits=res, whenEq=whEq)::rest),helpVars,zeroCrossings)
+equation
+r = replaceCondWhens(rest,helpVars,zeroCrossings);
+cond = replaceConds(cond,zeroCrossings);
+then (SimCode.SIM_WHEN_CLAUSE(condVars,res,whEq,cond)::r);
+end match;
 end replaceCondWhens;
 
 protected function replaceConds
   input list<tuple<DAE.Exp, Integer>> conditions; // condition, help var index
-	input list<BackendDAE.ZeroCrossing> zeroCrossings;
+input list<BackendDAE.ZeroCrossing> zeroCrossings;
   output list<tuple<DAE.Exp, Integer>> conditionsOut; // condition, help var index
 algorithm
-	conditionsOut :=
-		match (conditions,zeroCrossings)
-		local 
-		  list<tuple<DAE.Exp, Integer>> rest;
-		  tuple<DAE.Exp, Integer> cond;
-		case ({},_) 
-			then {};
-		case (cond::rest,_)
-		equation
-			cond=replaceCond(cond,zeroCrossings);
-			rest = replaceConds(rest,zeroCrossings);
-			then (cond::rest);
-		end match;
+conditionsOut :=
+match (conditions,zeroCrossings)
+local 
+  list<tuple<DAE.Exp, Integer>> rest;
+  tuple<DAE.Exp, Integer> cond;
+case ({},_) 
+then {};
+case (cond::rest,_)
+equation
+cond=replaceCond(cond,zeroCrossings);
+rest = replaceConds(rest,zeroCrossings);
+then (cond::rest);
+end match;
 end replaceConds;
 
 protected function replaceCond
   input tuple<DAE.Exp, Integer> cond;
-	input list<BackendDAE.ZeroCrossing> zeroCrossings;
-	output tuple<DAE.Exp, Integer> condOut;
+input list<BackendDAE.ZeroCrossing> zeroCrossings;
+output tuple<DAE.Exp, Integer> condOut;
 algorithm
-	condOut :=
-		matchcontinue (cond,zeroCrossings)
-		local
-			Integer i,index;
-		  DAE.Exp e;
-		  tuple<DAE.Exp, Integer> result;
-			list<DAE.Exp> zce;
-			list<DAE.Exp> expLst,expLst2;
-			Boolean tuple_ "tuple" ;
+condOut :=
+matchcontinue (cond,zeroCrossings)
+local
+Integer i,index;
+  DAE.Exp e;
+  tuple<DAE.Exp, Integer> result;
+list<DAE.Exp> zce;
+list<DAE.Exp> expLst,expLst2;
+Boolean tuple_ "tuple" ;
       Boolean builtin "builtin Function call" ;
       DAE.ExpType ty "The type of the return value, if several return values this is undefined";
       DAE.InlineType inlineType;
- 		case ((e as (DAE.CALL(path = Absyn.IDENT(name = "sample"), expLst=expLst,tuple_=tuple_,builtin=builtin, ty=ty,inlineType=inlineType)),i),_) 
-		equation
-			zce = Util.listMap(zeroCrossings,extractExpresionFromZeroCrossing);
-			// Remove extra argument to sample since in the zce list there is none
-			expLst2 = Util.listFirst(Util.listPartition(expLst,2));
-			e = DAE.CALL(Absyn.IDENT("sample"), expLst2,tuple_,builtin,ty,inlineType);
-			index = Util.listPosition(e,zce);
-			result = ((DAE.CALL(Absyn.IDENT("samplecondition"), {DAE.ICONST(index)}, false, true, DAE.ET_BOOL(), DAE.NO_INLINE()),i));
-			then result;
-		case ((e as DAE.RELATION(_,_,_,_,_),i),_) 
-		equation
-			zce = Util.listMap(zeroCrossings,extractExpresionFromZeroCrossing);
-			index = Util.listPosition(e,zce);
-			then ((DAE.CALL(Absyn.IDENT("condition"), {DAE.ICONST(index)}, false, true, DAE.ET_BOOL(), DAE.NO_INLINE()),i));
-		case ((e as DAE.CREF(_,_),i),_)
-			then ((e,i));
-		case ((e,_),_)
-			equation
-			print("Unhandle match in replaceCond\n");
-			print(ExpressionDump.dumpExpStr(e,0));
-			then ((DAE.ICONST(1),1));
+ case ((e as (DAE.CALL(path = Absyn.IDENT(name = "sample"), expLst=expLst,tuple_=tuple_,builtin=builtin, ty=ty,inlineType=inlineType)),i),_) 
+equation
+zce = Util.listMap(zeroCrossings,extractExpresionFromZeroCrossing);
+// Remove extra argument to sample since in the zce list there is none
+expLst2 = Util.listFirst(Util.listPartition(expLst,2));
+e = DAE.CALL(Absyn.IDENT("sample"), expLst2,tuple_,builtin,ty,inlineType);
+index = Util.listPosition(e,zce);
+result = ((DAE.CALL(Absyn.IDENT("samplecondition"), {DAE.ICONST(index)}, false, true, DAE.ET_BOOL(), DAE.NO_INLINE()),i));
+then result;
+case ((e as DAE.RELATION(_,_,_,_,_),i),_) 
+equation
+zce = Util.listMap(zeroCrossings,extractExpresionFromZeroCrossing);
+index = Util.listPosition(e,zce);
+then ((DAE.CALL(Absyn.IDENT("condition"), {DAE.ICONST(index)}, false, true, DAE.ET_BOOL(), DAE.NO_INLINE()),i));
+case ((e as DAE.CREF(_,_),i),_)
+then ((e,i));
+case ((e,_),_)
+equation
+print("Unhandle match in replaceCond\n");
+print(ExpressionDump.dumpExpStr(e,0));
+then ((DAE.ICONST(1),1));
   end matchcontinue;
 end replaceCond;
 
 /*
 protected function listExpPos
-	input list<DAE.Exp> zce;
-	input DAE.Exp e;
-	input Integer i;
-	output Integer o;
+input list<DAE.Exp> zce;
+input DAE.Exp e;
+input Integer i;
+output Integer o;
 algorithm
-	o := 
-		matchcontinue (zce,e,i)
-			local list<DAE.Exp> rest;
-			DAE.Exp e1;
-		case ((e1::rest),_,i)
-		equation
-			true = Expression.expEqual(e1,e);
-			then i;
-		case ((e1::rest),_,i)
-			then 
-			listExpPos(rest,e,i+1);
-		case ({},_,_) 
-			equation
-			print("Fail in listExpPos\n");
-		then 
-			fail();
-	end matchcontinue;
+o := 
+matchcontinue (zce,e,i)
+local list<DAE.Exp> rest;
+DAE.Exp e1;
+case ((e1::rest),_,i)
+equation
+true = Expression.expEqual(e1,e);
+then i;
+case ((e1::rest),_,i)
+then 
+listExpPos(rest,e,i+1);
+case ({},_,_) 
+equation
+print("Fail in listExpPos\n");
+then 
+fail();
+end matchcontinue;
 end listExpPos;
 */
 
@@ -278,35 +278,35 @@ end matchcontinue;
 end extractExpresionFromZeroCrossing;
 
 protected function replaceZCStatement
-	input list<DAE.Statement> inSt;
+input list<DAE.Statement> inSt;
   input list<BackendDAE.ZeroCrossing> zc;
-	output list<DAE.Statement> outSt;
+output list<DAE.Statement> outSt;
 algorithm
-	outSt := 
-		match (inSt,zc)
-		local 
-			DAE.Statement st;
-			list<DAE.Statement> rest;
-   		DAE.ExpType type_;
-	    DAE.Exp exp1;
-	    DAE.Exp exp;
-  		list<DAE.Exp> zce;
-    	DAE.ElementSource source "the origin of the component/equation/algorithm";
-		case ({},_)
-			then {};
-		case ((st as DAE.STMT_ASSIGN(type_=type_,exp1=exp1,exp=exp,source=source))::rest,zc)
-			equation
-				rest = replaceZCStatement(rest,zc);
-				zce = Util.listMap(zc,extractExpresionFromZeroCrossing);
-				exp = replaceCrossingLstOnExp(exp,zce,0);
-				exp1 = replaceCrossingLstOnExp(exp1,zce,0);
-				st = DAE.STMT_ASSIGN(type_,exp1,exp,source);
-		then (st::rest);
-		case ((st::rest),zc)
-			equation
-				rest = replaceZCStatement(rest,zc);
-		then (st::rest);
-		end match;
+outSt := 
+match (inSt,zc)
+local 
+DAE.Statement st;
+list<DAE.Statement> rest;
+   DAE.ExpType type_;
+    DAE.Exp exp1;
+    DAE.Exp exp;
+  list<DAE.Exp> zce;
+    DAE.ElementSource source "the origin of the component/equation/algorithm";
+case ({},_)
+then {};
+case ((st as DAE.STMT_ASSIGN(type_=type_,exp1=exp1,exp=exp,source=source))::rest,zc)
+equation
+rest = replaceZCStatement(rest,zc);
+zce = Util.listMap(zc,extractExpresionFromZeroCrossing);
+exp = replaceCrossingLstOnExp(exp,zce,0);
+exp1 = replaceCrossingLstOnExp(exp1,zce,0);
+st = DAE.STMT_ASSIGN(type_,exp1,exp,source);
+then (st::rest);
+case ((st::rest),zc)
+equation
+rest = replaceZCStatement(rest,zc);
+then (st::rest);
+end match;
 end replaceZCStatement;
 
 
@@ -316,11 +316,11 @@ public function replaceZC
   output SimCode.SimEqSystem o;
 algorithm
 o := matchcontinue (i,zc)
-	local
-		DAE.ComponentRef cref;
-		DAE.Exp exp;
-		list<DAE.Exp> zce;
-		list<DAE.Statement> st;
+local
+DAE.ComponentRef cref;
+DAE.Exp exp;
+list<DAE.Exp> zce;
+list<DAE.Statement> st;
     DAE.ElementSource source;
     Integer index;
     SimCode.SimEqSystem cont;
@@ -329,20 +329,20 @@ o := matchcontinue (i,zc)
     list<Integer> values;
     list<Integer> value_dims;
  
-	case (SimCode.SES_SIMPLE_ASSIGN(cref=cref,exp=exp,source=source),_)
-	equation
-		zce = Util.listMap(zc,extractExpresionFromZeroCrossing);
-		exp = replaceCrossingLstOnExp(exp,zce,0);
-	then (SimCode.SES_SIMPLE_ASSIGN(cref,exp,source));
-	case (SimCode.SES_ALGORITHM(statements=st),_)
-	equation
-		st = replaceZCStatement(st,zc);
-	then (SimCode.SES_ALGORITHM(st));
-	case (SimCode.SES_MIXED(index=index,cont=cont,discVars=discVars,discEqs=discEqs,values=values,value_dims=value_dims),_)
-	equation
-		discEqs = Util.listMap1(discEqs,replaceZC,zc);
-	then (SimCode.SES_MIXED(index,cont,discVars,discEqs,values,value_dims));
-	case (_,_) then i;
+case (SimCode.SES_SIMPLE_ASSIGN(cref=cref,exp=exp,source=source),_)
+equation
+zce = Util.listMap(zc,extractExpresionFromZeroCrossing);
+exp = replaceCrossingLstOnExp(exp,zce,0);
+then (SimCode.SES_SIMPLE_ASSIGN(cref,exp,source));
+case (SimCode.SES_ALGORITHM(statements=st),_)
+equation
+st = replaceZCStatement(st,zc);
+then (SimCode.SES_ALGORITHM(st));
+case (SimCode.SES_MIXED(index=index,cont=cont,discVars=discVars,discEqs=discEqs,values=values,value_dims=value_dims),_)
+equation
+discEqs = Util.listMap1(discEqs,replaceZC,zc);
+then (SimCode.SES_MIXED(index,cont,discVars,discEqs,values,value_dims));
+case (_,_) then i;
   end matchcontinue;
 end replaceZC;
 
