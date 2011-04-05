@@ -52,6 +52,7 @@ package SimCodeQSS
 
 import interface SimCodeTV;
 import SimCodeC;
+import SimCodeDump;
 
 template translateModel(SimCode simCode) 
  "Generates C code and Makefile for compiling and running a simulation of a
@@ -129,14 +130,14 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(varInfo=varInfo as  VARINFO(__))) 
     return abs_accuracy;
   }
 
-
   <%functionQssStaticBlocks(odeEquations,zeroCrossings)%>
 
   <%functionQssWhen(BackendQSS.replaceCondWhens(whenClauses,helpVarInfo,zeroCrossings),helpVarInfo,zeroCrossings)%>
 
   <%functionQssSample(zeroCrossings)%>
 
-  <%functionQssUpdateDiscrete()%>
+  <%functionQssUpdateDiscrete(allEquations,zeroCrossings)%>
+
   #endif
   
   <%SimCodeC.equationInfo(appendLists(appendAllequation(JacobianMatrixes),allEquations))%>
@@ -441,21 +442,52 @@ template generateZeroCrossingsEq(Integer offset,list<ZeroCrossing> zeroCrossings
   ;separator="\n")
 end generateZeroCrossingsEq;
 
-template functionQssUpdateDiscrete()
+template functionQssUpdateDiscrete(list<SimEqSystem> allEquationsPlusWhen,list<ZeroCrossing> zeroCrossings)
   "Generates function in simulation file."
 ::=
   let &varDecls = buffer "" /*BUFD*/
+  let eqs = (allEquationsPlusWhen |> eq => generateDiscUpdate(BackendQSS.replaceZC(eq,zeroCrossings), zeroCrossings, &varDecls); separator="\n")
   <<
   void functionQssUpdateDiscrete(double time)
   {
     state mem_state;
     <%varDecls%>
     mem_state = get_memory_state();
-    // Code
+    <%eqs%>
     restore_memory_state(mem_state);
   }
   >>
 end functionQssUpdateDiscrete;
+
+template generateDiscUpdate(SimEqSystem eq, list<ZeroCrossing> zeroCrossings, Text &varDecls)
+	"Generate the updates of the disc variavbles
+	author: fbergero"
+::=
+	match eq 
+	case SES_MIXED(__) then
+	let disc = (discEqs |> SES_SIMPLE_ASSIGN(__) =>
+  	let &preDisc = buffer "" /*BUFD*/
+		let expPart = SimCodeC.daeExp(exp, contextSimulationDiscrete, &preDisc /* BUFC */, &varDecls /* BUFD */)
+	<<
+    <%preDisc%>
+    <%SimCodeC.cref(cref)%> = <%expPart%>;
+	>>
+    ;separator="\n")
+	<<
+    <%disc%>
+	>>
+
+  /*
+	case SES_SIMPLE_ASSIGN(__) then
+  	let &preDisc = buffer "" /*BUFD*/
+		let expPart = SimCodeC.daeExp(exp, contextSimulationDiscrete, &preDisc /* BUFC */, &varDecls /* BUFD */)
+	<<
+    <%preDisc%>
+    <%SimCodeC.cref(cref)%> = <%expPart%>;
+	>>
+	*/
+	case _ then ''
+end generateDiscUpdate;
 
 
 template generateIntegrators()
