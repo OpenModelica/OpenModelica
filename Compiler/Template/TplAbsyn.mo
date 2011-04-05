@@ -14,7 +14,7 @@ protected import TplCodegen;
 /* Input AST */
 public type Ident = String;
 public type TypedIdents = list<tuple<Ident, TypeSignature>>;
-public type EscOption = tuple<Ident, Option<Expression>>;  
+public type EscOption = tuple<Ident, Option<Expression>>;
 public type StringToken = Tpl.StringToken;
 public type Tokens = Tpl.Tokens;
 
@@ -31,7 +31,7 @@ uniontype SourceInfo
     Integer columnNumberStart;
     Integer lineNumberEnd;
     Integer columnNumberEnd ;
-    //TimeStamp buildTimes "Build and edit times";   
+    //TimeStamp buildTimes "Build and edit times";
   end SOURCE_INFO;
 end SourceInfo;
 */
@@ -39,7 +39,7 @@ end SourceInfo;
 public
 uniontype PathIdent
   record IDENT
-    Ident ident;    
+    Ident ident;
   end IDENT;
   
   record PATH_IDENT
@@ -79,7 +79,7 @@ uniontype TypeSignature
   record BOOLEAN_TYPE end BOOLEAN_TYPE;
 
   record UNRESOLVED_TYPE "Errorneous resolving type. Only used during elaboration phase."
-    String reason; 
+    String reason;
   end UNRESOLVED_TYPE;
 end TypeSignature;
 
@@ -117,7 +117,7 @@ uniontype ExpressionBase
   record CONDITION
     Boolean isNot "Is not or inequal";
     Expression lhsExp;
-    Option<MatchingExp> rhsValue "always NONE() for now; it is a residuum from the form 'if exp is PATTERN then ...'"; 
+    Option<MatchingExp> rhsValue "always NONE() for now; it is a residuum from the form 'if exp is PATTERN then ...'";
     Expression trueBranch;
     Option<Expression> elseBranch;
   end CONDITION;
@@ -223,7 +223,7 @@ uniontype MatchingExp
   
   record LITERAL_MATCH
     String value;
-    TypeSignature litType "only INTEGER_TYPE, REAL_TYPE or BOOLEAN_TYPE"; 
+    TypeSignature litType "only INTEGER_TYPE, REAL_TYPE or BOOLEAN_TYPE";
   end LITERAL_MATCH;
   
   record REST_MATCH end REST_MATCH;
@@ -253,7 +253,7 @@ uniontype TypeInfo
   
   record TI_CONST_TYPE "Imported AST constants."
     TypeSignature constType;
-  end TI_CONST_TYPE;  
+  end TI_CONST_TYPE;
 end TypeInfo;
 
 public
@@ -263,7 +263,7 @@ uniontype ASTDef
     Boolean isDefault;
     list<tuple<Ident, TypeInfo>> types;
   end AST_DEF;
-end ASTDef;    
+end ASTDef;
 
 
 public
@@ -272,7 +272,7 @@ uniontype TemplPackage
     PathIdent name;
     //list<PathIdent> extendsList;
     list<ASTDef> astDefs;
-    list<tuple<Ident,TemplateDef>> templateDefs;     
+    list<tuple<Ident,TemplateDef>> templateDefs;
   end TEMPL_PACKAGE;
 end TemplPackage;
 
@@ -301,7 +301,7 @@ public
 uniontype MMPackage
   record MM_PACKAGE
     PathIdent name;
-    list<MMDeclaration> mmDeclarations;      
+    list<MMDeclaration> mmDeclarations;
   end MM_PACKAGE;
 end MMPackage;
 
@@ -334,8 +334,8 @@ uniontype MMDeclaration
     TypedIdents locals;
     list<MMExp> statements;
     
-    GenInfo genInfoOpt "internal use only - a type of elaboration of the funtion.";       
-  end MM_FUN;    
+    GenInfo genInfoOpt "internal use only - a type of elaboration of the funtion.";
+  end MM_FUN;
 end MMDeclaration;
 
 public
@@ -363,12 +363,12 @@ uniontype MMExp
   end MM_STRING;
   
   record MM_LITERAL "to pass a literal constant as parameter of type Integer, Real or Boolean" 
-    String value;    
+    String value;
   end MM_LITERAL;
   
   record MM_MATCH
     list<MMMatchCase> matchCases;
-  end MM_MATCH;  
+  end MM_MATCH;
 end MMExp;
 
 public type MMMatchCase = tuple<list<MatchingExp>, list<MMExp>>;
@@ -416,7 +416,7 @@ constant Tpl.IterOptions defaultIterOptions
 
 
 public //only achievable by the 'from' clause
-constant Ident indexOffsetOptionId    = "$indexOffset"; 
+constant Ident indexOffsetOptionId    = "$indexOffset";
 
 protected
  
@@ -490,7 +490,7 @@ uniontype Scope
     MatchingExp mExp;
     TypeSignature mType;
     list<tuple<Ident,Ident>> localNames "source name -> local declaration name table";
-    TypedIdents accLocals "accumulated locals used by the cases in this match elaborated level"; 
+    TypedIdents accLocals "accumulated locals used by the cases in this match elaborated level";
     TypedIdents extArgs "local args from the upper scope - all of them are from their upper FUN_SCOPE()";
     Ident matchArgName "local name of the match argument";
     Boolean hasImplicitScope "true for 'match' or 'map', false for 'if' elaborated cases; desides if the implicit record fields' lookup can continue upwards the scope stack.";
@@ -499,15 +499,15 @@ uniontype Scope
   record LET_SCOPE
     Ident ident "original ident";
     TypeSignature idType;
-    Ident freshIdent "encoded ident with prefix and suffix unique for the local scope";    
-    Boolean isUsed "true when found by resolveBoundPath()";    
+    Ident freshIdent "encoded ident with prefix and suffix unique for the local scope";
+    Boolean isUsed "true when found by resolveBoundPath()";
   end LET_SCOPE;
   
   record RECURSIVE_SCOPE 
     "forbidden access - scope of a text add ident; to prevent recursive usage of texts;
      or scope of an elaborated let binding; to force a fresh local ident to be created when the same name is re-bound inside the let expression."
     Ident recIdent;
-    Ident freshIdent "local name";  
+    Ident freshIdent "local name";
   end RECURSIVE_SCOPE;
   
 end Scope;
@@ -520,7 +520,7 @@ uniontype MapContext
     Expression mapExp;
     list<MMEscOption> iterMMExpOptions;
     Option <Ident> hasIndexIdentOpt "used index variable";
-    Boolean useIter "Whether PushIter/NextIter/PopIter is necessary.";   
+    Boolean useIter "Whether PushIter/NextIter/PopIter is necessary.";
   end MAP_CONTEXT;
 end MapContext;
 
@@ -553,13 +553,13 @@ algorithm
       equation
         tp = fullyQualifyTemplatePackage(inTplPackage);
         TEMPL_PACKAGE(name, astDefs, templateDefs) = tp;
-        mmDeclarations = importDeclarations(astDefs, {}); 
+        mmDeclarations = importDeclarations(astDefs, {});
         mmDeclarations 
          = transformTemplateDefs(templateDefs, tp, mmDeclarations);
-        mmDeclarations = listReverse(mmDeclarations); 
+        mmDeclarations = listReverse(mmDeclarations);
       then 
         MM_PACKAGE(name, mmDeclarations);
-  end match;           
+  end match;
 end transformAST;
 
 public function fullyQualifyTemplatePackage
@@ -578,10 +578,10 @@ algorithm
             templateDefs = templateDefs))
       equation
         astDefs = fullyQualifyASTDefs(astDefs);
-        templateDefs = listMap1Tuple22(templateDefs, fullyQualifyTemplateDef, astDefs);        
+        templateDefs = listMap1Tuple22(templateDefs, fullyQualifyTemplateDef, astDefs);
       then 
         TEMPL_PACKAGE(name, astDefs, templateDefs);
-  end match;           
+  end match;
 end fullyQualifyTemplatePackage;
 
 
@@ -606,7 +606,7 @@ algorithm
         importDeclarations(restASTDefs, 
                           (MM_IMPORT(isDefault, importPackage) :: accMMDecls));
     
-  end match;           
+  end match;
 end importDeclarations;
 
 public function transformTemplateDefs
@@ -628,7 +628,7 @@ algorithm
       list<MMExp> stmts;
       MMDeclaration mmFun;
       String svalue;
-      TypeSignature litType; 
+      TypeSignature litType;
       
     case ( {} , _, accMMDecls ) 
       then accMMDecls;
@@ -672,7 +672,7 @@ algorithm
       then 
         transformTemplateDefs(restTDefs, tplPackage, mmFun :: accMMDecls);
     
-  end match;           
+  end match;
 end transformTemplateDefs;
 
 
@@ -709,37 +709,37 @@ algorithm
     // otherwise nothing
     case ( _, _, stmts, locals, accMMDecls)
       then ( stmts, locals, accMMDecls );
-  end matchcontinue;           
+  end matchcontinue;
 end inlineLastFunIfSingleCall;
 
 //prepend "i" in front of the ident to obey the MM rule that no identifier can start with "_"
 public function encodeIdent
   input Ident inIdent;
   input Ident prefix;
-  output Ident outIdent;  
+  output Ident outIdent;
 algorithm
-  outIdent := prefix +& encodeIdentNoPrefix(inIdent);          
+  outIdent := prefix +& encodeIdentNoPrefix(inIdent);
 end encodeIdent;
 
 //every ident to be encoded as ".ident"
 //where "." is encoded as "_" or "_0" in the case it is followed with "_" (idents starting with _)
 protected function encodeIdentNoPrefix
   input Ident inIdent "original ident; it can be sringified dot path, too";
-  output Ident outIdent "unambiguous,ono-one back-convertible legal ident; can start with '_' ";  
+  output Ident outIdent "unambiguous,ono-one back-convertible legal ident; can start with '_' ";
 algorithm
   (outIdent) := matchcontinue (inIdent)
     local
-      Ident ident;                  
+      Ident ident;
 
     //to prevent ambiguity when prefixing the encoded ident, 
     //when the first character is "_", encode it as "_0" (although this is not relevant for MM yet)
     case ( ident  )
       equation
-        true = (stringLength(ident) > 0) and (stringGetStringChar(ident,1) ==& "_"); 
+        true = (stringLength(ident) > 0) and (stringGetStringChar(ident,1) ==& "_");
         ident = System.stringReplace(ident, "_", "__");
         ident = System.stringReplace(ident, "._", "_0");
         ident = System.stringReplace(ident, ".", "_");
-        ident = "0" +& ident;        
+        ident = "0" +& ident;
       then
         ( ident );
         
@@ -758,7 +758,7 @@ algorithm
         Debug.fprint("failtrace", "-!!!encodeIdentNoPrefix failed\n");
       then
         fail();
-  end matchcontinue;           
+  end matchcontinue;
 end encodeIdentNoPrefix;
 
 public function encodePathIdent
@@ -766,14 +766,14 @@ public function encodePathIdent
   input Ident prefix;
   output Ident outEncIdent;
 algorithm
-  outEncIdent := encodeIdent(pathIdentString(inPath), prefix);      
+  outEncIdent := encodeIdent(pathIdentString(inPath), prefix);
 end encodePathIdent;
 
 
 public function encodeTypedIdent
   input tuple<Ident,TypeSignature> inTypedIdent;
   input Ident prefix;
-  output tuple<Ident,TypeSignature> outTypedIdent;  
+  output tuple<Ident,TypeSignature> outTypedIdent;
 algorithm
   (outTypedIdent) := matchcontinue (inTypedIdent, prefix)
     local
@@ -792,7 +792,7 @@ algorithm
         Debug.fprint("failtrace", "-!!!encodeTypedIdent failed\n");
       then
         fail();
-  end matchcontinue;           
+  end matchcontinue;
 end encodeTypedIdent;
 
 
@@ -820,12 +820,12 @@ algorithm
       equation
         rhs = addOutPrefixesRhs(rhs, trIdents);
         (largs, trIdents) = addOutPrefixesLhs(largs, txtargs, trIdents);
-        stmts = addOutPrefixes(stmts, txtargs, trIdents);       
+        stmts = addOutPrefixes(stmts, txtargs, trIdents);
       then ( MM_ASSIGN(largs, rhs) :: stmts );
     
     case ( stmt :: stmts, txtargs, trIdents)
       equation
-        stmts = addOutPrefixes(stmts, txtargs, trIdents);       
+        stmts = addOutPrefixes(stmts, txtargs, trIdents);
       then ( stmt :: stmts );
     
     case (_,_,_)
@@ -833,7 +833,7 @@ algorithm
         Debug.fprint("failtrace", "-!!!addOutPrefixes failed\n");
       then
         fail();
-  end matchcontinue;           
+  end matchcontinue;
 end addOutPrefixes;
 
 public function addOutPrefixesRhs
@@ -848,22 +848,22 @@ algorithm
       MMExp stmt;
       Ident ident, outident;
       PathIdent fpath;
-      list<tuple<Ident,Ident>> trIdents; 
+      list<tuple<Ident,Ident>> trIdents;
       
     case ( MM_IDENT(IDENT(ident = ident)), trIdents)
       equation
-        outident = lookupTupleList(trIdents, ident);               
+        outident = lookupTupleList(trIdents, ident);
       then ( MM_IDENT(IDENT(outident)) );
     
     case ( MM_FN_CALL(fnName = fpath, args = fargs), trIdents)
       equation
-        fargs = Util.listMap1(fargs, addOutPrefixesRhs, trIdents); 
+        fargs = Util.listMap1(fargs, addOutPrefixesRhs, trIdents);
       then ( MM_FN_CALL(fpath, fargs) );
     
     case ( stmt, _)
       then stmt;
     
-  end matchcontinue;           
+  end matchcontinue;
 end addOutPrefixesRhs;
 
 
@@ -881,7 +881,7 @@ algorithm
       TypedIdents txtargs;
       list<Ident> largs;
       String outident;
-      list<tuple<Ident,Ident>> trIdents; 
+      list<tuple<Ident,Ident>> trIdents;
       
     case (  {},_, trIdents)
       then ( {}, trIdents );
@@ -905,7 +905,7 @@ algorithm
         Debug.fprint("failtrace", "-!!!addOutPrefixesLhs failed\n");
       then
         fail();
-  end matchcontinue;           
+  end matchcontinue;
 end addOutPrefixesLhs;
 
 
@@ -929,14 +929,14 @@ algorithm
     case (  (ident, _) :: restArgs , trIdents)
       equation
         _ = lookupTupleList(trIdents, ident);
-        stmts = addOutTextAssigns( restArgs, trIdents);       
+        stmts = addOutTextAssigns( restArgs, trIdents);
       then ( stmts );
     
     case ( (ident, _) :: restArgs , trIdents)
       equation
         //failure(_ = lookupTupleList(trIdents, ident));
-        outident = outPrefix +& ident;         
-        stmts = addOutTextAssigns( restArgs, trIdents);       
+        outident = outPrefix +& ident;
+        stmts = addOutTextAssigns( restArgs, trIdents);
       then ( MM_ASSIGN({outident},MM_IDENT(IDENT(ident))) :: stmts );
     
     case (_,_)
@@ -944,7 +944,7 @@ algorithm
         Debug.fprint("failtrace", "-!!!addOutTextAssigns failed\n");
       then
         fail();
-  end matchcontinue;           
+  end matchcontinue;
 end addOutTextAssigns;
 
 
@@ -952,7 +952,7 @@ public function isAssignedIdent
   input list<MMExp> inStatementList;
   input Ident inIdent;
   
-  output Boolean outIsAssigned;  
+  output Boolean outIsAssigned;
 algorithm
   (outIsAssigned) := matchcontinue (inStatementList, inIdent)
     local
@@ -972,7 +972,7 @@ algorithm
       then
         isAssignedIdent(rest, ident);
         
-  end matchcontinue;           
+  end matchcontinue;
 end isAssignedIdent;
 
 
@@ -984,14 +984,14 @@ public function statementsFromExp
   input Ident inOutText;
   input TypedIdents inLocals;
   input ScopeEnv inScopeEnv;
-  input TemplPackage inTplPackage; 
+  input TemplPackage inTplPackage;
   input list<MMDeclaration> inAccMMDecls;
 
   output list<MMExp> outStmts;
   output TypedIdents outLocals;
   output ScopeEnv outScopeEnv;
   output list<MMDeclaration> outMMDecls;
-  output Ident outInText;    
+  output Ident outInText;
 algorithm
   (outStmts, outLocals, outScopeEnv, outMMDecls, outInText) 
   := matchcontinue (inExp, inMMEscOptions, inStmts, inInText, inOutText, 
@@ -1024,7 +1024,7 @@ algorithm
       MapContext mapctx;
       Option<Ident> idxNmOpt;
       
-      TemplPackage tplPackage;            
+      TemplPackage tplPackage;
       list<MMDeclaration> accMMDecls;
       
     case ( (TEMPLATE(items = explst), sinfo), mmopts,
@@ -1040,29 +1040,29 @@ algorithm
            stmts, intxt, outtxt, locals, scEnv, _, accMMDecls )
       equation
         warnIfSomeOptions(mmopts);
-        stmt = tplStatement("writeTok", { MM_STR_TOKEN(Tpl.ST_STRING(litvalue)) }, intxt, outtxt);                
-      then ( stmt :: stmts, locals, scEnv, accMMDecls, outtxt);    
+        stmt = tplStatement("writeTok", { MM_STR_TOKEN(Tpl.ST_STRING(litvalue)) }, intxt, outtxt);
+      then ( stmt :: stmts, locals, scEnv, accMMDecls, outtxt);
     
     case ( (SOFT_NEW_LINE(), sinfo), mmopts,
            stmts, intxt, outtxt, locals, scEnv, _, accMMDecls )
       equation
         warnIfSomeOptions(mmopts);
-        stmt = tplStatement("softNewLine", { }, intxt, outtxt);                
-      then ( stmt :: stmts, locals, scEnv, accMMDecls, outtxt);    
+        stmt = tplStatement("softNewLine", { }, intxt, outtxt);
+      then ( stmt :: stmts, locals, scEnv, accMMDecls, outtxt);
     
     //empty string -> nothing
     case ( (STR_TOKEN(value = Tpl.ST_STRING("")), sinfo), mmopts,
            stmts, intxt, outtxt, locals, scEnv, _, accMMDecls )
       equation
         warnIfSomeOptions(mmopts);
-      then ( stmts, locals, scEnv, accMMDecls, intxt);    
+      then ( stmts, locals, scEnv, accMMDecls, intxt);
     
     case ( (STR_TOKEN(value = st), sinfo), mmopts,
            stmts, intxt, outtxt, locals, scEnv, _, accMMDecls )
       equation
         warnIfSomeOptions(mmopts);
-        stmt = tplStatement("writeTok", { MM_STR_TOKEN(st) }, intxt, outtxt);        
-      then ( stmt :: stmts, locals, scEnv, accMMDecls, outtxt);    
+        stmt = tplStatement("writeTok", { MM_STR_TOKEN(st) }, intxt, outtxt);
+      then ( stmt :: stmts, locals, scEnv, accMMDecls, outtxt);
     
     case ( (BOUND_VALUE(boundPath = path), sinfo), mmopts,
            stmts, intxt, outtxt, locals, scEnv, tplPackage as TEMPL_PACKAGE(astDefs = astDefs), accMMDecls )
@@ -1074,14 +1074,14 @@ algorithm
         //Debug.fprint("failtrace","\n AFTER boundPath = " +& pathIdentString(path) +& "\n");
         //ensure non-recursive Text evaluation - only this level ... 
         //TODO: for indirect reference, too, like <# buf += templ(buf) #>
-        //true = ensureNotUsingTheSameText(path, mmexp, idtype, outtxt);        
+        //true = ensureNotUsingTheSameText(path, mmexp, idtype, outtxt);
         exptype = deAliasedType(idtype, astDefs);
         Debug.fprint("failtrace","\n BOUND_VALUE resolved mmexp = " +& mmExpString(mmexp) +& " : "
                      +& typeSignatureString(idtype) +& " (dealiased: "
                      +& typeSignatureString(exptype) +& ")\n");
         (stmts, locals, scEnv, accMMDecls, intxt) 
           = addWriteCallFromMMExp(true, mmexp, exptype, mmopts, stmts, intxt, outtxt, locals, scEnv, tplPackage, accMMDecls);
-        //Debug.fprint("failtrace"," BOUND_VALUE after writeCall stmts (in reverse order) =\n" +& stmtsString(stmts) +& "\n");        
+        //Debug.fprint("failtrace"," BOUND_VALUE after writeCall stmts (in reverse order) =\n" +& stmtsString(stmts) +& "\n");
       then ( stmts, locals, scEnv, accMMDecls, intxt);
     
     
@@ -1094,7 +1094,7 @@ algorithm
         
         //explst = addImplicitArgument(explst, iargs, oargs, tplPackage);
         (argvals, stmts, locals, scEnv, accMMDecls) 
-          = statementsFromArgList(explst, stmts, locals, scEnv, tplPackage, accMMDecls);        
+          = statementsFromArgList(explst, stmts, locals, scEnv, tplPackage, accMMDecls);
         
         Debug.fprint("failtrace"," FUN_CALL argList stmts generation passed\n");
         //Debug.fprint("failtrace"," FUN_CALL after argList stmts (in reverse order) =\n" +& stmtsString(stmts) +& "\n");
@@ -1118,7 +1118,7 @@ algorithm
         (argval, exp, stmts, locals) 
           = adaptTextToString(argval, exp, stmts, locals, tplPackage);
         (argvals, fname, iargs, oargs, scEnv, accMMDecls)
-          = makeMatchFun(argval, mcases, exp, true, scEnv, tplPackage, accMMDecls);          
+          = makeMatchFun(argval, mcases, exp, true, scEnv, tplPackage, accMMDecls);
         (_, stmt, _, _, locals, intxt) 
           = statementFromFun(argvals, fname, iargs, oargs, {}, intxt, outtxt, locals, tplPackage);
       then ( (stmt :: stmts),  locals, scEnv, accMMDecls, intxt);
@@ -1135,9 +1135,9 @@ algorithm
         (_,exptype) = argval;
         exptype = deAliasedType(exptype, astDefs);
         mcases 
-          = elabCasesFromCondition(exptype, isnot, rhsval, tbranch, ebranch, tplPackage);  
+          = elabCasesFromCondition(exptype, isnot, rhsval, tbranch, ebranch, tplPackage);
         ( argvals, fname, iargs, oargs, scEnv, accMMDecls)
-          = makeMatchFun(argval, mcases, exp, false, scEnv, tplPackage, accMMDecls);          
+          = makeMatchFun(argval, mcases, exp, false, scEnv, tplPackage, accMMDecls);
         (_, stmt, _, _, locals, intxt) 
           = statementFromFun(argvals, fname, iargs, oargs, {}, intxt, outtxt, locals, tplPackage);
       then ( (stmt :: stmts),  locals, scEnv, accMMDecls, intxt);
@@ -1147,8 +1147,8 @@ algorithm
       equation
         explst = getExpListForMap(argexp);
         (argvals, stmts, locals, scEnv, accMMDecls) 
-          = statementsFromArgList(explst, stmts, locals, scEnv, tplPackage, accMMDecls);        
-        mapctx = MAP_CONTEXT(ofbind, mapexp, mmopts, idxNmOpt, false);        
+          = statementsFromArgList(explst, stmts, locals, scEnv, tplPackage, accMMDecls);
+        mapctx = MAP_CONTEXT(ofbind, mapexp, mmopts, idxNmOpt, false);
         (stmts, locals, scEnv, accMMDecls, intxt)
           = statementsFromMapExp(true, argvals, mapctx,
                stmts, intxt, outtxt, locals, scEnv, tplPackage, accMMDecls);
@@ -1162,8 +1162,8 @@ algorithm
            stmts, intxt, outtxt, locals, scEnv, tplPackage, accMMDecls )
       equation
         (argvals, stmts, locals, scEnv, accMMDecls) 
-          = statementsFromArgList(explst, stmts, locals, scEnv, tplPackage, accMMDecls);        
-        mapctx = MAP_CONTEXT(BIND_MATCH("it"), (BOUND_VALUE(IDENT("it")), dummySourceInfo), mmopts, NONE(), false); 
+          = statementsFromArgList(explst, stmts, locals, scEnv, tplPackage, accMMDecls);
+        mapctx = MAP_CONTEXT(BIND_MATCH("it"), (BOUND_VALUE(IDENT("it")), dummySourceInfo), mmopts, NONE(), false);
         (stmts, locals, scEnv, accMMDecls, intxt)
           = statementsFromMapExp(true, argvals, mapctx,
                stmts, intxt, outtxt, locals, scEnv, tplPackage, accMMDecls);
@@ -1201,12 +1201,12 @@ algorithm
       equation
          warnIfSomeOptions(mmopts);
         istr = intString(n);
-        stmt = pushBlockStatement("BT_INDENT", MM_LITERAL(istr), intxt, outtxt);         
+        stmt = pushBlockStatement("BT_INDENT", MM_LITERAL(istr), intxt, outtxt);
         (stmts, locals, scEnv, accMMDecls, _) 
-          = statementsFromExpList(explst, stmt::stmts, outtxt, outtxt, locals, scEnv, tplPackage, accMMDecls);        
+          = statementsFromExpList(explst, stmt::stmts, outtxt, outtxt, locals, scEnv, tplPackage, accMMDecls);
         //(stmts, locals, scEnv, accMMDecls, _) 
         //  = statementsFromExp(exp, (stmt :: stmts), outtxt, outtxt, locals, scEnv, tplPackage, accMMDecls);
-        stmt = tplStatement("popBlock", {}, outtxt, outtxt);                  
+        stmt = tplStatement("popBlock", {}, outtxt, outtxt);
       then ( (stmt :: stmts), locals, scEnv, accMMDecls, outtxt);
                 
     //TODO: let _ =  .... 
@@ -1259,7 +1259,7 @@ algorithm
            mmopts, stmts, intxt, outtxt, locals, scEnv, tplPackage, accMMDecls )
       equation
         warnIfSomeOptions(mmopts);
-        path = IDENT(ident);       
+        path = IDENT(ident);
         (mmexp, idtype, scEnv) = resolveBoundPath(path, scEnv, tplPackage);
         checkResolvedType(path, idtype, "let +=", sinfo2);
         idtype = checkTextType(idtype, ident, "let +=", sinfo2);
@@ -1273,7 +1273,7 @@ algorithm
         (RECURSIVE_SCOPE(_,_) :: scEnv) = scEnv;
          
         (stmts, locals, scEnv, accMMDecls, intxt) 
-          = statementsFromExp(exp, {}, stmts, intxt, outtxt, locals, scEnv, tplPackage, accMMDecls); 
+          = statementsFromExp(exp, {}, stmts, intxt, outtxt, locals, scEnv, tplPackage, accMMDecls);
       then ( stmts, locals, scEnv, accMMDecls, intxt);
     
     /*
@@ -1281,7 +1281,7 @@ algorithm
                exp = exp), sinfo),
            mmopts, stmts, intxt, outtxt, locals, scEnv, tplPackage, accMMDecls )
       equation
-        path = IDENT(ident);       
+        path = IDENT(ident);
         (_, idtype, _) = resolveBoundPath(path, scEnv, tplPackage);
         failure(UNRESOLVED_TYPE(_) = idtype);
         failure(TEXT_TYPE() = idtype);
@@ -1301,9 +1301,9 @@ algorithm
         {} = oargs;
         //explst = addImplicitArgument(explst, iargs, oargs, tplPackage);
         (argvals, stmts, locals, scEnv, accMMDecls) 
-          = statementsFromArgList(explst, stmts, locals, scEnv, tplPackage, accMMDecls);        
+          = statementsFromArgList(explst, stmts, locals, scEnv, tplPackage, accMMDecls);
         
-        Debug.fprint("failtrace"," NORET_CALL argList stmts generation passed.\n" );        
+        Debug.fprint("failtrace"," NORET_CALL argList stmts generation passed.\n" );
         //Debug.fprint("failtrace"," NORET_CALL after argList stmts (in reverse order) =\n" +& stmtsString(stmts) +& "\n");
         
         (hasretval, stmt, mmexp, rettype, locals, intxt) 
@@ -1333,7 +1333,7 @@ algorithm
         Debug.fprint("failtrace", "-!!!statementsFromExp failed\n");
       then
         fail();
-  end matchcontinue;           
+  end matchcontinue;
 end statementsFromExp;
 
 
@@ -1344,7 +1344,7 @@ public function statementsFromExpList
   input Ident inOutText;
   input TypedIdents inLocals;
   input ScopeEnv inScopeEnv;
-  input TemplPackage inTplPackage; 
+  input TemplPackage inTplPackage;
   input list<MMDeclaration> inAccMMDecls;
 
   output list<MMExp> outStmts;
@@ -1362,7 +1362,7 @@ algorithm
       Ident intxt, outtxt;
       TypedIdents locals;
       list<Expression> explst;
-      TemplPackage tplPackage;            
+      TemplPackage tplPackage;
       list<MMDeclaration> accMMDecls;
       Expression exp;
     
@@ -1383,7 +1383,7 @@ algorithm
         Debug.fprint("failtrace", "-!!!statementsFromExpList failed\n");
       then
         fail();
-  end matchcontinue;           
+  end matchcontinue;
 end statementsFromExpList;
 
 
@@ -1410,7 +1410,7 @@ algorithm
     case (_) equation
         Debug.fprint("failtrace", "- warnIfSomeOptions failed.\n");
       then fail();
-  end matchcontinue;           
+  end matchcontinue;
 end warnIfSomeOptions;
 
 
@@ -1421,7 +1421,7 @@ public function statementsFromEscOptions
   input list<MMExp> inStmts;
   input TypedIdents inLocals;
   input ScopeEnv inScopeEnv;
-  input TemplPackage inTplPackage; 
+  input TemplPackage inTplPackage;
   input list<MMDeclaration> inAccMMDecls;
 
   output list<MMEscOption> outAccMMEscOptions;
@@ -1445,7 +1445,7 @@ algorithm
       list<MMEscOption> accMMEscOpts;
       list<ASTDef> astdefs;
       
-      TemplPackage tplPackage;            
+      TemplPackage tplPackage;
       list<MMDeclaration> accMMDecls;
       
     
@@ -1461,7 +1461,7 @@ algorithm
         failure(_ = lookupTupleList(accMMEscOpts, optid)); //no duplicity
         (accMMEscOpts, stmts, locals, scEnv, accMMDecls)
          = statementsFromEscOptions(opts, (optid, defoptval) :: accMMEscOpts, 
-          stmts, locals, scEnv, tplPackage, accMMDecls); 
+          stmts, locals, scEnv, tplPackage, accMMDecls);
       then
          (accMMEscOpts, stmts, locals, scEnv, accMMDecls);
     
@@ -1473,12 +1473,12 @@ algorithm
         failure(_ = lookupTupleList(accMMEscOpts, optid)); //no duplicity
         ((mmarg,exptype), stmts, locals, scEnv, accMMDecls) 
           = statementsFromArg(optexp, stmts, locals, scEnv, tplPackage, accMMDecls);
-        (mmarg, stmts, locals) = typeAdaptMMOption(mmarg, exptype, opttype, stmts, locals, astdefs);      
+        (mmarg, stmts, locals) = typeAdaptMMOption(mmarg, exptype, opttype, stmts, locals, astdefs);
         (accMMEscOpts, stmts, locals, scEnv, accMMDecls)
          = statementsFromEscOptions(opts, (optid, (mmarg,opttype)) :: accMMEscOpts, 
-          stmts, locals, scEnv, tplPackage, accMMDecls); 
+          stmts, locals, scEnv, tplPackage, accMMDecls);
       then 
-        (accMMEscOpts, stmts, locals, scEnv, accMMDecls); 
+        (accMMEscOpts, stmts, locals, scEnv, accMMDecls);
     
     //warning - unknown option
     case ( (optid, _) :: opts, accMMEscOpts,
@@ -1490,7 +1490,7 @@ algorithm
           = statementsFromEscOptions(opts, accMMEscOpts, stmts, locals, scEnv, tplPackage, accMMDecls);
       then 
         fail();
-        //(accMMEscOpts, stmts, locals, scEnv, accMMDecls); 
+        //(accMMEscOpts, stmts, locals, scEnv, accMMDecls);
     
     //warning - duplicit option    
     case ( (optid, _) :: opts, accMMEscOpts,
@@ -1510,7 +1510,7 @@ algorithm
         Debug.fprint("failtrace", " -statementsFromEscOptions failed\n");
       then
         fail();
-  end matchcontinue;           
+  end matchcontinue;
 end statementsFromEscOptions;
 
 
@@ -1533,7 +1533,7 @@ algorithm
         Debug.fprint("failtrace", "-!!!statementsFromExp failed\n");
       then
         fail();
-  end matchcontinue;           
+  end matchcontinue;
 end getExpListForMap;
 
         
@@ -1549,7 +1549,7 @@ public function pushPopBlock
   output list<MMEscOption> outMMEscOptions;
   output list<MMExp> outStmts;
   output list<MMExp> outPopBlockStmts;
-  output Ident outInText;    
+  output Ident outInText;
 algorithm
   (outMMEscOptions, outStmts, outPopBlockStmts, outInText) 
   := matchcontinue (inMMEscOptions, inOptionIdent, inBlockTypeIdent, inStmts, inPopBlockStmts, inInText, inOutText)
@@ -1563,8 +1563,8 @@ algorithm
       equation
         ((mmexp,_), mmopts) = lookupDeleteTupleList(mmopts, optid);
         stmt = pushBlockStatement(btid, mmexp, intxt, outtxt);
-        pstmt = tplStatement("popBlock", {}, outtxt, outtxt);         
-        popstmts = listAppend(popstmts, {pstmt} );                
+        pstmt = tplStatement("popBlock", {}, outtxt, outtxt);
+        popstmts = listAppend(popstmts, {pstmt} );
       then ( mmopts, (stmt :: stmts), popstmts, outtxt);
     
     case ( mmopts, optid, btid, stmts, popstmts, intxt, _)
@@ -1578,7 +1578,7 @@ algorithm
         Debug.fprint("failtrace", "-!!!pushPopBlock failed\n");
       then
         fail();
-  end matchcontinue;           
+  end matchcontinue;
 end pushPopBlock;
 
 /*
@@ -1588,7 +1588,7 @@ public function addImplicitArgument
   input TypedIdents inOutArgs;
   input TemplPackage inTplPackage;
 
-  output list<Expression> outArgLst;    
+  output list<Expression> outArgLst;
 algorithm
   outArgLst := matchcontinue (inArgLst, inInArgs, inOutArgs, inTplPackage)
     local
@@ -1631,7 +1631,7 @@ algorithm
         Debug.fprint("failtrace", "-!!!addImplicitArgument failed\n");
       then
         fail();
-  end matchcontinue;           
+  end matchcontinue;
 end addImplicitArgument;
 */
 
@@ -1640,7 +1640,7 @@ public function statementsFromArg
   input list<MMExp> inStmts;
   input TypedIdents inLocals;
   input ScopeEnv inScopeEnv;
-  input TemplPackage inTplPackage; 
+  input TemplPackage inTplPackage;
   input list<MMDeclaration> inAccMMDecls;
 
   output tuple<MMExp, TypeSignature> outArgValue;
@@ -1653,7 +1653,7 @@ algorithm
   := matchcontinue (inExp, inStmts, inLocals, inScopeEnv, inTplPackage, inAccMMDecls)
     local
       list<MMExp> stmts;
-      MMExp stmt;    
+      MMExp stmt;
       ScopeEnv scEnv;
       Ident  outtxt;
       list<Ident> tyVars;
@@ -1670,21 +1670,21 @@ algorithm
       StringToken st;
       Integer lineNumberStart, columnNumberStart;
       
-      TemplPackage tplPackage;            
+      TemplPackage tplPackage;
       list<MMDeclaration> accMMDecls;
       
     case ( (LITERAL(value = litvalue, litType = littype), sinfo),
            stmts, locals, scEnv, _, accMMDecls )
-      then ( (MM_LITERAL(litvalue),littype), stmts, locals, scEnv, accMMDecls);    
+      then ( (MM_LITERAL(litvalue),littype), stmts, locals, scEnv, accMMDecls);
     
     case ( (STR_TOKEN(value = st), sinfo),
            stmts, locals, scEnv, _, accMMDecls )
-      then ( (MM_STR_TOKEN(st),STRING_TOKEN_TYPE()), stmts, locals, scEnv, accMMDecls);    
+      then ( (MM_STR_TOKEN(st),STRING_TOKEN_TYPE()), stmts, locals, scEnv, accMMDecls);
     
     case ( (BOUND_VALUE(boundPath = path), sinfo),
            stmts, locals, scEnv, tplPackage, accMMDecls )
       equation
-        //Debug.fprint("failtrace","\n arg BOUND_VALUE resolving boundPath = " +& pathIdentString(path) +& "\n");        
+        //Debug.fprint("failtrace","\n arg BOUND_VALUE resolving boundPath = " +& pathIdentString(path) +& "\n");
         (mmexp, idtype, scEnv) = resolveBoundPath(path, scEnv, tplPackage);
         checkResolvedType(path, idtype, "argument", sinfo);
         //Debug.fprint("failtrace"," arg BOUND_VALUE resolved mmexp = " +& mmExpString(mmexp) +& " : "
@@ -1697,7 +1697,7 @@ algorithm
         (fname, iargs, oargs, tyVars) = getFunSignature(fname, tplPackage);
         //explst = addImplicitArgument(explst, iargs, oargs, tplPackage);
         (argvals, stmts, locals, scEnv, accMMDecls) 
-           = statementsFromArgList(explst, stmts, locals, scEnv, tplPackage, accMMDecls);        
+           = statementsFromArgList(explst, stmts, locals, scEnv, tplPackage, accMMDecls);
         outtxt = textTempVarNamePrefix +& intString(listLength(locals));
         (_, stmt, mmexp, rettype, locals, outtxt) 
            = statementFromFun(argvals, fname, iargs, oargs, tyVars, emptyTxt, outtxt, locals, tplPackage);
@@ -1727,7 +1727,7 @@ algorithm
         (stmts, locals, scEnv, accMMDecls, outtxt) 
           = statementsFromExp(exp, {}, stmts, emptyTxt, outtxt, locals, scEnv, tplPackage, accMMDecls);
         locals = addLocalValue(outtxt, TEXT_TYPE(), locals); //if emptyList, not to be included to locals
-        mmexp = MM_IDENT(IDENT(outtxt));        
+        mmexp = MM_IDENT(IDENT(outtxt));
       then ( (mmexp, TEXT_TYPE()), stmts, locals, scEnv, accMMDecls);
     
     //should not ever happen            
@@ -1736,7 +1736,7 @@ algorithm
         Debug.fprint("failtrace", "-!!!statementsFromArg failed\n");
       then
         fail();
-  end matchcontinue;           
+  end matchcontinue;
 end statementsFromArg;
 
 
@@ -1745,7 +1745,7 @@ public function statementsFromArgList
   input list<MMExp> inStmts;
   input TypedIdents inLocals;
   input ScopeEnv inScopeEnv;
-  input TemplPackage inTplPackage; 
+  input TemplPackage inTplPackage;
   input list<MMDeclaration> inAccMMDecls;
 
   output list<tuple<MMExp, TypeSignature>> outArgValues;
@@ -1762,7 +1762,7 @@ algorithm
       ScopeEnv scEnv;
       TypedIdents locals;
       list<Expression> explst;
-      TemplPackage tplPackage;            
+      TemplPackage tplPackage;
       list<MMDeclaration> accMMDecls;
       tuple<MMExp, TypeSignature> argval;
       list<tuple<MMExp, TypeSignature>> argvals;
@@ -1785,7 +1785,7 @@ algorithm
         Debug.fprint("failtrace", "-!!!statementsFromArgList failed\n");
       then
         fail();
-  end matchcontinue;           
+  end matchcontinue;
 end statementsFromArgList;
 
 
@@ -1800,7 +1800,7 @@ public function tplStatement
 algorithm
   outStmt := MM_ASSIGN( {inOutArg}, 
                 MM_FN_CALL( PATH_IDENT("Tpl",IDENT(inFunName)), 
-                            MM_IDENT(IDENT(inInText)) :: inArgs ));    
+                            MM_IDENT(IDENT(inInText)) :: inArgs ));
 end tplStatement;
 
 public function pushBlockStatement
@@ -1820,7 +1820,7 @@ algorithm
         { MM_IDENT(IDENT(inInText)),  
           MM_FN_CALL(
               PATH_IDENT("Tpl",IDENT(inBlockType)),
-              { inArg }) } ));    
+              { inArg }) } ));
 end pushBlockStatement;
 
 
@@ -1834,14 +1834,14 @@ public function addWriteCallFromMMExp
   input Ident inOutText;
   input TypedIdents inLocals;
   input ScopeEnv inScopeEnv;
-  input TemplPackage inTplPackage; 
+  input TemplPackage inTplPackage;
   input list<MMDeclaration> inAccMMDecls;
 
   output list<MMExp> outStmts;
   output TypedIdents outLocals;
   output ScopeEnv outScopeEnv;
   output list<MMDeclaration> outMMDecls;
-  output Ident outInText;  
+  output Ident outInText;
 algorithm
   (outStmts, outLocals, outScopeEnv, outMMDecls, outInText) 
   := matchcontinue (inHasRetValue, inMMExp, inType, inMMEscOptions, inStmts, inInText, inOutText, inLocals, inScopeEnv, inTplPackage, inAccMMDecls)
@@ -1853,7 +1853,7 @@ algorithm
       list<MMExp> stmts;
       TypedIdents locals, iargs, oargs;
       ScopeEnv scEnv;
-      TemplPackage tplPackage;            
+      TemplPackage tplPackage;
       list<MMDeclaration> accMMDecls;
       list<tuple<MMExp, TypeSignature>> argvals;
       MapContext mapctx;
@@ -1876,7 +1876,7 @@ algorithm
           = makeMatchFun((mmexp, exptype), 
               {(SOME_MATCH(BIND_MATCH("val")), (BOUND_VALUE(IDENT("val")),dummySourceInfo) ) },
               emptyExpression, //ignore the argument
-              true, scEnv, tplPackage, accMMDecls);          
+              true, scEnv, tplPackage, accMMDecls);
         (_, stmt, _, _, locals, intxt) 
           = statementFromFun(argvals, fname, iargs, oargs, {}, intxt, outtxt, locals, tplPackage);
       then
@@ -1885,7 +1885,7 @@ algorithm
     //a list expression -> concat 
     case (_, mmexp, exptype as LIST_TYPE(_), mmopts, stmts, intxt, outtxt, locals, scEnv, tplPackage,  accMMDecls)
       equation
-        mapctx = MAP_CONTEXT(BIND_MATCH("it"), (BOUND_VALUE(IDENT("it")),dummySourceInfo) , mmopts, NONE(), false);        
+        mapctx = MAP_CONTEXT(BIND_MATCH("it"), (BOUND_VALUE(IDENT("it")),dummySourceInfo) , mmopts, NONE(), false);
         (stmts, locals, scEnv, accMMDecls, intxt)
           = statementsFromMapExp(true, {(mmexp, exptype)}, mapctx,
                stmts, intxt, outtxt, locals, scEnv, tplPackage, accMMDecls);
@@ -1923,7 +1923,7 @@ algorithm
         Debug.fprint("failtrace", "-!!!addWriteCallFromMMExp failed\n");
       then
         fail();
-  end matchcontinue;           
+  end matchcontinue;
 end addWriteCallFromMMExp;
 
 
@@ -1938,7 +1938,7 @@ algorithm
       MMExp mmexp;
       String reason, str;
       StringToken st;
-      TypeSignature ts;        
+      TypeSignature ts;
     
     case (mmexp, STRING_TYPE())
       then
@@ -2007,7 +2007,7 @@ algorithm
         Debug.fprint("failtrace", "-!!!mmExpToString failed\n");
       then
         fail();
-  end matchcontinue;           
+  end matchcontinue;
 end mmExpToString;
 
 
@@ -2020,14 +2020,14 @@ public function statementFromFun
   input Ident inInText;
   input Ident inOutText;
   input TypedIdents inLocals;
-  input TemplPackage inTplPackage; 
+  input TemplPackage inTplPackage;
   
-  output Boolean outHasRetValue; 
+  output Boolean outHasRetValue;
   output MMExp outStmt;
   output MMExp outRetMMExp;
   output TypeSignature outRetType;
   output TypedIdents outLocals;
-  output Ident outOutText; 
+  output Ident outOutText;
 algorithm
   (outHasRetValue, outStmt, outRetMMExp, outRetType, outLocals, outOutText) 
     := matchcontinue (inArgValues, inFunName, inInArgs, inOutArgs, inTypeVars, inInText, inOutText, inLocals, inTplPackage)
@@ -2035,7 +2035,7 @@ algorithm
       
       PathIdent fname;
       TypedIdents iargs, oargs, locals, setTyVars;
-      tuple<Ident,TypeSignature> iarg, oarg; 
+      tuple<Ident,TypeSignature> iarg, oarg;
       list<tuple<MMExp, TypeSignature>> argvals;
       list<MMExp> mmargs;
       
@@ -2057,7 +2057,7 @@ algorithm
         //equality(listLength(argvals) = listLength(iargs));
         (mmargs,_) = typeAdaptMMArgsForFun(argvals, iargs, tyVars, {}, astDefs);
         mmtxt = MM_IDENT(IDENT(outtxt));
-        mmexp = MM_FN_CALL(fname, MM_IDENT(IDENT(intxt)) :: mmargs); 
+        mmexp = MM_FN_CALL(fname, MM_IDENT(IDENT(intxt)) :: mmargs);
       then
         (false, MM_ASSIGN({outtxt}, mmexp), mmtxt, TEXT_TYPE(), locals, outtxt );
     
@@ -2069,8 +2069,8 @@ algorithm
            intxt, outtxt, locals, tplPackage as TEMPL_PACKAGE(astDefs = astDefs))
       equation
         areTextInOutArgs(iarg, oarg, tplPackage); //texts and equal or equal without conventional prefixes in/out, i.e. inId = outId
-        //equality(listLength(argvals) = listLength(iargs));        
-        (mmargs,_) = typeAdaptMMArgsForFun(argvals, iargs, tyVars, {}, astDefs); 
+        //equality(listLength(argvals) = listLength(iargs));
+        (mmargs,_) = typeAdaptMMArgsForFun(argvals, iargs, tyVars, {}, astDefs);
         lhsArgs = elabOutTextArgs(mmargs, iargs, oargs, tplPackage); //assuming the same lengths (from above typeAdaptMMArgsForFun)
         lhsArgs = outtxt :: lhsArgs;
         mmtxt = MM_IDENT(IDENT(outtxt));
@@ -2089,8 +2089,8 @@ algorithm
         outtype = specializeType(outtype, tyVars, setTyVars);
         //make a separate locally bound return value
         retval = returnTempVarNamePrefix +& intString(listLength(locals));
-        locals = addLocalValue(retval, outtype, locals);          
-        mmexp = MM_FN_CALL(fname, mmargs); 
+        locals = addLocalValue(retval, outtype, locals);
+        mmexp = MM_FN_CALL(fname, mmargs);
       then
         ( true, MM_ASSIGN({retval}, mmexp), MM_IDENT(IDENT(retval)), outtype, locals, intxt );
 
@@ -2104,7 +2104,7 @@ algorithm
       equation
         //equality(listLength(argvals) = listLength(iargs));
         (mmargs,_) = typeAdaptMMArgsForFun(argvals, iargs, tyVars, {}, astDefs);
-        mmexp = MM_FN_CALL(fname, mmargs); 
+        mmexp = MM_FN_CALL(fname, mmargs);
       then
         //perhaps, UNIT_TYPE() or VOID_TYPE will fit here better
         ( false, mmexp, mmexp, UNRESOLVED_TYPE("No return value."), locals, intxt );
@@ -2116,8 +2116,8 @@ algorithm
           +& Tpl.tplString3(TplCodegen.sFunSignature, fname, iargs, oargs)
           +& "\n  for actual parameters  "
           +& Tpl.tplString(TplCodegen.sActualMMParams, argvals)
-          +& "\n  --> Invalid types (cannot convert) or number of in/out arguments (text in/out arguments must match by order and name equality where prefixes 'in' and 'out' can be used; A function has valid template signature only if all text out params have corresponding in text arguments.).\n";  
-        Debug.fprint("failtrace", str);             
+          +& "\n  --> Invalid types (cannot convert) or number of in/out arguments (text in/out arguments must match by order and name equality where prefixes 'in' and 'out' can be used; A function has valid template signature only if all text out params have corresponding in text arguments.).\n";
+        Debug.fprint("failtrace", str);
       then
         fail();
     
@@ -2127,14 +2127,14 @@ algorithm
         Debug.fprint("failtrace", "-!!!mmExpFromFun failed\n");
       then
         fail();
-  end matchcontinue;           
+  end matchcontinue;
 end statementFromFun;
 
 
 public function areTextInOutArgs
   input tuple<Ident,TypeSignature> inInArg;
   input tuple<Ident,TypeSignature> inOutArg;
-  input TemplPackage inTplPackage;    
+  input TemplPackage inTplPackage;
 algorithm
   _ := matchcontinue (inInArg, inOutArg, inTplPackage)
     local
@@ -2164,7 +2164,7 @@ algorithm
         ();
     
     //otherwise fail
-  end matchcontinue;           
+  end matchcontinue;
 end areTextInOutArgs;
 
 public function typeAdaptMMArgsForFun
@@ -2186,7 +2186,7 @@ algorithm
       list<MMExp> mmargs;
       TypeSignature argtype, sigArgtype;
       list<ASTDef> astdefs;
-      list<Ident> tyVars;      
+      list<Ident> tyVars;
     
     case ( {}, {}, _,setTyVars,  _)
       then
@@ -2217,7 +2217,7 @@ algorithm
         Debug.fprint("failtrace", "!!! - typeAdaptMMArgsForFun failed\n");
       then
         fail();
-  end matchcontinue;           
+  end matchcontinue;
 end typeAdaptMMArgsForFun;
 
 
@@ -2238,8 +2238,8 @@ algorithm
       TypedIdents  setTyVars;
       MMExp mmarg, mmexp;
       TypeSignature argtype, targettype;
-      list<ASTDef> astdefs; 
-      list<Ident> tyVars;     
+      list<ASTDef> astdefs;
+      list<Ident> tyVars;
 
     
     //special case when argtype is STRING_TOKEN_TYPE()
@@ -2317,7 +2317,7 @@ algorithm
         Debug.fprint("failtrace", "Error - typeAdaptMMArg failed\n");
       then
         fail();
-  end matchcontinue;           
+  end matchcontinue;
 end typeAdaptMMArg;
 
 
@@ -2338,9 +2338,9 @@ algorithm
     local
       MMExp mmarg;
       TypeSignature argtype, targettype;
-      list<ASTDef> astdefs; 
+      list<ASTDef> astdefs;
       list<MMExp> stmts;
-      TypedIdents locals;     
+      TypedIdents locals;
 
     case ( mmarg, argtype, targettype, stmts, locals, astdefs)
       equation
@@ -2387,7 +2387,7 @@ algorithm
         Debug.fprint("failtrace", "Error - typeAdaptMMArg failed\n");
       then
         fail();
-  end matchcontinue;           
+  end matchcontinue;
 end typeAdaptMMOption;
 
 
@@ -2408,13 +2408,13 @@ algorithm
       TypeSignature  targettype;
       String  retval;
       list<MMExp> stmts;
-      TypedIdents locals;     
+      TypedIdents locals;
 
     case ( mmarg as MM_FN_CALL(fnName = _), targettype, stmts, locals)
       equation
          //make a separate locally bound return value
         retval = returnTempVarNamePrefix +& intString(listLength(locals));
-        locals = addLocalValue(retval, targettype, locals);          
+        locals = addLocalValue(retval, targettype, locals);
         stmts = MM_ASSIGN({retval}, mmarg) :: stmts;
       then
         (MM_IDENT(IDENT(retval)), stmts, locals);
@@ -2431,7 +2431,7 @@ algorithm
         Debug.fprint("failtrace", "!!!- mmEnsureNonFunctionArg failed\n");
       then
         fail();
-  end matchcontinue;           
+  end matchcontinue;
 end mmEnsureNonFunctionArg;
 
 
@@ -2450,7 +2450,7 @@ algorithm
       tuple<Ident, TypeSignature> iarg, oarg;
       list<MMExp> mmargs;
       list<Ident> lhsArgs;
-      TemplPackage tplPackage;              
+      TemplPackage tplPackage;
 
     case ( _, _, {}, _)
       then
@@ -2498,7 +2498,7 @@ algorithm
         Debug.fprint("failtrace", "!!!- elabOutTextArgs failed\n");
       then
         fail();
-  end matchcontinue;           
+  end matchcontinue;
 end elabOutTextArgs;
 
 
@@ -2511,7 +2511,7 @@ public function statementsFromMapExp
   input Ident inOutText;
   input TypedIdents inLocals;
   input ScopeEnv inScopeEnv;
-  input TemplPackage inTplPackage; 
+  input TemplPackage inTplPackage;
   input list<MMDeclaration> inAccMMDecls;
 
   output list<MMExp> outStmts;
@@ -2525,13 +2525,13 @@ algorithm
   := matchcontinue (inIsFirstArgToMap, inArgValuesToMap, inMapContext, inStmts, inInText, inOutText, inLocals, inScopeEnv, inTplPackage, inAccMMDecls)
     local
       list<MMExp> stmts, mapstmts, rhsMMArgs;
-      MMExp stmt, argmmexp, mmRecCall; 
-      TypeSignature argtype, oftype;   
+      MMExp stmt, argmmexp, mmRecCall;
+      TypeSignature argtype, oftype;
       ScopeEnv scEnv;
       Ident intxt, outtxt, fname,   idxName, freshIdxName;
       TypedIdents locals,  localArgs, encodedExtargs, maplocals, caseLocals,   iargs, oargs;
       MapContext mapctx;
-      TemplPackage tplPackage;            
+      TemplPackage tplPackage;
       list<MMDeclaration> accMMDecls;
       tuple<MMExp, TypeSignature>  argtomap;
       list<tuple<MMExp, TypeSignature>> extargvals, inMapExtargvals, restargs;
@@ -2595,7 +2595,7 @@ algorithm
         maplocals = listAppend(caseLocals, maplocals);
         
         //put nextIter() if needed
-        useiter = shouldUseIterFunctions(isfirst, useiter, true, isUsed, iopts, restargs); 
+        useiter = shouldUseIterFunctions(isfirst, useiter, true, isUsed, iopts, restargs);
         //add nextIter() if needed
         stmt = tplStatement("nextIter", {}, imlicitTxt, imlicitTxt);
         mapstmts = Util.if_(useiter, stmt :: mapstmts, mapstmts);
@@ -2609,7 +2609,7 @@ algorithm
         oargs = imlicitTxtArg :: oargs;
         lhsArgs = Util.listMap(oargs, Util.tuple21);
         inMapExtargvals =  Util.listMap(encodedExtargs, makeMMArgValue);
-        rhsMMArgs = Util.listMap(inMapExtargvals, Util.tuple21); 
+        rhsMMArgs = Util.listMap(inMapExtargvals, Util.tuple21);
         //recursive call
         mmRecCall = MM_ASSIGN(
             lhsArgs, 
@@ -2643,7 +2643,7 @@ algorithm
         
         //add pushIter() if it is the first element of MAP_ARG_LIST (like <[exp1,exp2,...] : mapexp> ) or a simple one (list)exp to be mapped (like <exp of mexp: mapexp>)
         (stmts, intxt) = addPushIter((isfirst and useiter), iopts, stmts, intxt, outtxt);
-        extargvals = Util.listMap(localArgs, makeMMArgValue);        
+        extargvals = Util.listMap(localArgs, makeMMArgValue);
         //call the elaborated function
         (_, stmt, _, _, locals, intxt) 
           = statementFromFun(argtomap :: extargvals, IDENT(fname), iargs, oargs, {}, intxt, outtxt, locals, tplPackage);
@@ -2671,7 +2671,7 @@ algorithm
         
         //i0ti = ("i_i0",INTEGER_TYPE());
         //i1ti = ("i_i1",INTEGER_TYPE());
-        //matchArgName = getMatchArgName(inArgExp);//getItNameFromArg(argmmexp, argtype, ofbindEnc, astDefs); 
+        //matchArgName = getMatchArgName(inArgExp);//getItNameFromArg(argmmexp, argtype, ofbindEnc, astDefs);
         
         //elaborate statemennts and gather extra arguments and usage of i0 and i1        
         (mapstmts, maplocals, scEnv, accMMDecls, _)
@@ -2690,7 +2690,7 @@ algorithm
         maplocals = listAppend(caseLocals, maplocals);
         
         //put nextIter() if needed
-        useiter = shouldUseIterFunctions(isfirst, useiter, false, isUsed, iopts, restargs); 
+        useiter = shouldUseIterFunctions(isfirst, useiter, false, isUsed, iopts, restargs);
         
         //make scalar map
         
@@ -2726,7 +2726,7 @@ algorithm
         
         //add pushIter() if it is the first element of MAP_ARG_LIST (like <[exp1,exp2,...] : mapexp> ) or a simple one (list)exp to be mapped (like <exp of mexp: mapexp>)
         (stmts, intxt) = addPushIter((isfirst and useiter), iopts, stmts, intxt, outtxt);
-        extargvals = Util.listMap(localArgs, makeMMArgValue);        
+        extargvals = Util.listMap(localArgs, makeMMArgValue);
         //call the elaborated function
         (_, stmt, _, _, locals, intxt) 
           = statementFromFun(argtomap :: extargvals, IDENT(fname), iargs, oargs, {}, intxt, outtxt, locals, tplPackage);
@@ -2741,7 +2741,7 @@ algorithm
         Debug.fprint("failtrace", "-!!!statementsFromMapExp failed\n");
       then
         fail();
-  end matchcontinue;           
+  end matchcontinue;
 end statementsFromMapExp;
 
 /*
@@ -2752,8 +2752,8 @@ algorithm
   outIsIndexArg := matchcontinue inArg
     case ( ("i_i0" , _) )  then true;
     case ( ("i_i1" , _) )  then true;
-    case ( _ )            then false;    
-  end matchcontinue;           
+    case ( _ )            then false;
+  end matchcontinue;
 end isIndexArg;
 */
 
@@ -2765,7 +2765,7 @@ public function shouldUseIterFunctions
   input list<MMEscOption> inIterOptions;
   input list<tuple<MMExp, TypeSignature>> inRestArgValsToMap;
   
-  output Boolean outUseIterFuns;    
+  output Boolean outUseIterFuns;
 algorithm
   (outUseIterFuns)
   := matchcontinue (inIsFirstArgToMap, inUseIterLast, inIsListArgToMap, wasIndexVarUsed, inIterOptions, inRestArgValsToMap)
@@ -2775,7 +2775,7 @@ algorithm
     
     //already decided by the first argval to be mapped  
     case (false, useiter, _, _, _, _)
-      then useiter;    
+      then useiter;
   
     //- list argument to be mapped,
     //- no index var was used,
@@ -2783,7 +2783,7 @@ algorithm
     //then there is no usage of the iteration environment from the user expression    
     case (true, _, true, false, iopts, _)
       equation
-        iopts = listAppend(iopts, nonSpecifiedIterOptions); 
+        iopts = listAppend(iopts, nonSpecifiedIterOptions);
         ((MM_LITERAL("NONE()"),_)) = lookupTupleList(iopts, emptyOptionId);
         ((MM_LITERAL("NONE()"),_)) = lookupTupleList(iopts, separatorOptionId);
         ((MM_LITERAL("0"),_))    = lookupTupleList(iopts, alignNumOptionId);
@@ -2797,15 +2797,15 @@ algorithm
     //then there is no usage of the iteration environment from the user expression    
     case (true, _, false, false, iopts, {})
       equation
-        iopts = listAppend(iopts, nonSpecifiedIterOptions); 
-        ((MM_LITERAL("NONE()"),_)) = lookupTupleList(iopts, emptyOptionId);        
+        iopts = listAppend(iopts, nonSpecifiedIterOptions);
+        ((MM_LITERAL("NONE()"),_)) = lookupTupleList(iopts, emptyOptionId);
       then false;
     
     //otherwise use it 
     case (_, _, _, _, _, _)
       then true;
  
-  end matchcontinue;           
+  end matchcontinue;
 end shouldUseIterFunctions;
 
 /*
@@ -2816,13 +2816,13 @@ public function addNextIter
   input Ident inOutText;
   
   output list<MMExp> outStmts;
-  output Ident outInText;   
+  output Ident outInText;
 algorithm
   (outStmts, outInText)
   := matchcontinue (inUseIterFun, inStmts, inInText, inOutText)
     local
       list<MMExp> stmts;
-      MMExp stmt; 
+      MMExp stmt;
       Ident intxt, outtxt;
       
     case ( true, stmts, intxt, outtxt)
@@ -2839,7 +2839,7 @@ algorithm
         Debug.fprint("failtrace", "-!!!addNextIter failed\n");
       then
         fail();
-  end matchcontinue;           
+  end matchcontinue;
 end addNextIter;
 */
 
@@ -2857,7 +2857,7 @@ algorithm
   := matchcontinue (wasIndexUsed, inLocalIdxValIdent, inStmts, inInText, inLocals)
     local
       list<MMExp> stmts;
-      MMExp stmt; 
+      MMExp stmt;
       Ident  localidxid, intxt;
       TypedIdents  locals;
       
@@ -2878,7 +2878,7 @@ algorithm
         Debug.fprint("failtrace", "-!!!addGetIndex failed\n");
       then
         fail();
-  end matchcontinue;           
+  end matchcontinue;
 end addGetIndex;
 
 public function addPushIter
@@ -2889,13 +2889,13 @@ public function addPushIter
   input Ident inOutText;
   
   output list<MMExp> outStmts;
-  output Ident outInText;   
+  output Ident outInText;
 algorithm
   (outStmts, outInText)
   := matchcontinue (inDoAddPushIter, inMMEscOptions, inStmts, inInText, inOutText)
     local
       list<MMExp> stmts, mmopts;
-      MMExp stmt; 
+      MMExp stmt;
       Ident intxt, outtxt;
       list<MMEscOption> opts;
       
@@ -2916,7 +2916,7 @@ algorithm
         Debug.fprint("failtrace", "-!!!addNextIter failed\n");
       then
         fail();
-  end matchcontinue;           
+  end matchcontinue;
 end addPushIter;
 
 
@@ -2958,12 +2958,12 @@ algorithm
         Debug.fprint("failtrace", "-!!!makeMMExpOptions failed\n");
       then
         fail();
-  end matchcontinue;           
+  end matchcontinue;
 end makeMMExpOptions;
 
 /*
 public function mmexpFromStrTokOption
-  input Option<StringToken> inStrTokOption;  
+  input Option<StringToken> inStrTokOption;
   output MMExp outMMExp;
 algorithm
   outMMExp := matchcontinue inStrTokOption
@@ -2982,7 +2982,7 @@ algorithm
         Debug.fprint("failtrace", "-!!!mmexpFromStrTokOption failed\n");
       then
         fail();
-  end matchcontinue;           
+  end matchcontinue;
 end mmexpFromStrTokOption;
 */
 
@@ -2992,7 +2992,7 @@ public function makeMatchFun
   input Expression inArgExp "only to identify the original argument name when argument is a bound value";
   input Boolean hasImplicitLookup;
   input ScopeEnv inScopeEnv;
-  input TemplPackage inTplPackage; 
+  input TemplPackage inTplPackage;
   input list<MMDeclaration> inAccMMDecls;
 
   output list<tuple<MMExp, TypeSignature>> outArgvals;
@@ -3015,7 +3015,7 @@ algorithm
       list<tuple<MatchingExp,Expression>> mcases;
       list<tuple<MatchingExp, TypedIdents, list<MMExp>>> elabcases;
       list<MMMatchCase> mmmcases;
-      TemplPackage tplPackage;            
+      TemplPackage tplPackage;
       list<MMDeclaration> accMMDecls;
       MMDeclaration mmFun;
       Ident fname, matchArgName, implicitValueName;
@@ -3058,7 +3058,7 @@ algorithm
         Debug.fprint("failtrace", "-!!!makeMatchFun failed\n");
       then
         fail();
-  end matchcontinue;           
+  end matchcontinue;
 end makeMatchFun;
 
 
@@ -3089,7 +3089,7 @@ algorithm
       then
         (extargs,encExtargs);
         
-  end matchcontinue;           
+  end matchcontinue;
 end alignExtArgsToScopeEnv;
 
 
@@ -3106,15 +3106,15 @@ algorithm
       equation
         outInputValueName = pathIdentString(path);
         outMatchArgName = encodeIdent(outInputValueName, funArgNamePrefix);
-      then (outInputValueName, outMatchArgName);  
+      then (outInputValueName, outMatchArgName);
     case ( _ )  
       then (impossibleIdent, matchDefaultArgName);
-  end matchcontinue;           
+  end matchcontinue;
 end getMatchArgName;
 
 public function makeMMArgValue
   input tuple<Ident,TypeSignature> inTypedIdent;
-  output tuple<MMExp, TypeSignature> outArgValue;   
+  output tuple<MMExp, TypeSignature> outArgValue;
 algorithm
   outArgValue := match  inTypedIdent
     local
@@ -3123,7 +3123,7 @@ algorithm
     
     case ( (argname, ts) )  then ( (MM_IDENT(IDENT(argname)) , ts) );
 
-  end match;           
+  end match;
 end makeMMArgValue;
 
 
@@ -3133,7 +3133,7 @@ algorithm
   _:= match(inArg)
     case ( (_ , TEXT_TYPE()) )
       then ();
-  end match;           
+  end match;
 end isText;
 
 function isAssignedText
@@ -3146,9 +3146,9 @@ algorithm
       list<Ident> assignedTexts;
     case ( (ident , TEXT_TYPE()), assignedTexts )
       equation
-        true = listMember(ident,assignedTexts); 
+        true = listMember(ident,assignedTexts);
       then ();
-  end match;           
+  end match;
 end isAssignedText;
 
 
@@ -3160,7 +3160,7 @@ public function elabMatchCases
   input TypedIdents inLocals;
   input TypedIdents inAccCaseLocals;
   input ScopeEnv inScopeEnv;
-  input TemplPackage inTplPackage; 
+  input TemplPackage inTplPackage;
   input list<MMDeclaration> inAccMMDecls;
 
   output list<tuple<MatchingExp, TypedIdents, list<MMExp>>> outMMMCases;
@@ -3178,7 +3178,7 @@ algorithm
       TypedIdents extargs;
       list<tuple<MatchingExp,Expression>> mcases;
       MatchingExp mexp;
-      Expression exp;      
+      Expression exp;
       list<tuple<MatchingExp, TypedIdents, list<MMExp>>> elabcases;
       TemplPackage tplPackage;
       list<ASTDef> astdefs;
@@ -3215,7 +3215,7 @@ algorithm
         //(locals, mexp) = localsFromMatchExp(mexp, exptype, locals, astdefs);
         (elabcases, locals, scEnv, accMMDecls, assignedIdents)
           = elabMatchCases(argval, inImplicitValueName, mcases, hasImplicitLookup, locals, accCaseLocals, scEnv, tplPackage, accMMDecls );
-        assignedIdents = getAssignedIdents(stmts, assignedIdents);        
+        assignedIdents = getAssignedIdents(stmts, assignedIdents);
       then 
         ( (mexp, extargs, stmts) :: elabcases, locals, scEnv, accMMDecls, assignedIdents);
     
@@ -3224,7 +3224,7 @@ algorithm
         Debug.fprint("failtrace", "-!!!elabMatchCases failed\n");
       then
         fail();
-  end matchcontinue;           
+  end matchcontinue;
 end elabMatchCases;
 
 
@@ -3246,7 +3246,7 @@ algorithm
         
     case ( MM_ASSIGN(lhsArgs = largs) :: stmts, assignedIdents)
       equation
-        assignedIdents = Util.listFold(largs, Util.listUnionElt, assignedIdents);        
+        assignedIdents = Util.listFold(largs, Util.listUnionElt, assignedIdents);
       then 
         getAssignedIdents(stmts, assignedIdents);
     
@@ -3259,7 +3259,7 @@ algorithm
         Debug.fprint("failtrace", "-!!!getAssignedTexts failed\n");
       then
         fail();
-  end matchcontinue;           
+  end matchcontinue;
 end getAssignedIdents;
 
 /*
@@ -3293,7 +3293,7 @@ algorithm
       then
         "it";
         
-  end matchcontinue;           
+  end matchcontinue;
 end getItNameFromArg;
 */
 
@@ -3423,7 +3423,7 @@ algorithm
     case ( mexp as LITERAL_MATCH(litType = ot), 
            mtype, astDefs )
       equation
-        typesEqualConcrete(deAliasedType(ot, astDefs), deAliasedType(mtype, astDefs), astDefs);         
+        typesEqualConcrete(deAliasedType(ot, astDefs), deAliasedType(mtype, astDefs), astDefs);
       then 
         mexp;
     
@@ -3458,7 +3458,7 @@ public function typeCheckMatchingExpRecord
   input TypedIdents fields;
   input list<ASTDef> inASTDefs;
   
-  output list<tuple<Ident, MatchingExp>> outTransformedMatchingExp;  
+  output list<tuple<Ident, MatchingExp>> outTransformedMatchingExp;
 algorithm 
   (outTransformedMatchingExp) 
     := matchcontinue (inFieldMatchings, fields, inASTDefs)
@@ -3477,7 +3477,7 @@ algorithm
       equation
         mtype = lookupTupleList(fields, ident);
         mexp = typeCheckMatchingExp(mexp, mtype, astDefs);
-        fms  = typeCheckMatchingExpRecord(fms, fields, astDefs);        
+        fms  = typeCheckMatchingExpRecord(fms, fields, astDefs);
       then 
         ((ident, mexp) :: fms);
     
@@ -3487,9 +3487,9 @@ algorithm
         failure( _ = lookupTupleList(fields, ident) );
         //reason = "#Error - unresolved type - cannot find field '" +& ident +& "'#";
         Debug.fprint("failtrace", "Error - typeCheckMatchingExpRecord failed to find field '" +& ident +& "'\n");
-        //(locals, fms) = localsFromMatchExpAndTypeCheckRecord(fms, fields, locals, astDefs);        
+        //(locals, fms) = localsFromMatchExpAndTypeCheckRecord(fms, fields, locals, astDefs);
       then
-        fail(); 
+        fail();
         //(locals, (ident, mexp) :: fms);
     
     // can fail on error
@@ -3519,7 +3519,7 @@ algorithm
       TypeSignature mtype;
       list<TypeSignature> tsLst;
       
-      list<ASTDef> astDefs;      
+      list<ASTDef> astDefs;
     
     case ( {}, {}, _)
       then 
@@ -3528,7 +3528,7 @@ algorithm
     case ( mexp :: mexpLst, mtype :: tsLst, astDefs)
       equation
         mexp  = typeCheckMatchingExp(mexp, mtype, astDefs);
-        mexpLst = typeCheckMatchingExpList(mexpLst, tsLst, astDefs);        
+        mexpLst = typeCheckMatchingExpList(mexpLst, tsLst, astDefs);
       then 
         (mexp :: mexpLst);
     
@@ -3612,7 +3612,7 @@ algorithm
              matchingExp = mexp ), mtype, inLocalNames, usedLocals, astDefs)
       equation
         failure(_ = lookupTupleList(inLocalNames, bid));
-        (mexp, usedLocals) = rewriteMatchExpByLocalNames(mexp, mtype, inLocalNames, usedLocals, astDefs);        
+        (mexp, usedLocals) = rewriteMatchExpByLocalNames(mexp, mtype, inLocalNames, usedLocals, astDefs);
       then 
         (mexp, usedLocals);
     
@@ -3622,14 +3622,14 @@ algorithm
         //TODO: a better error report - non stopping one here
         usedLocals = addLocalValue(bid, mtype, usedLocals);
       then 
-        (BIND_MATCH(localIdent), usedLocals);       
+        (BIND_MATCH(localIdent), usedLocals);
     
     //eliminate the non-used binding
     case ( BIND_MATCH(bindIdent = bid), _, inLocalNames, usedLocals, _)
       equation
         failure(_ = lookupTupleList(inLocalNames, bid));
       then 
-        (REST_MATCH(), usedLocals); 
+        (REST_MATCH(), usedLocals);
     
     // a record with some fields is matched but no fields were used
     //-> adjust it to match the first field with "_" to obey MM semantics
@@ -3716,7 +3716,7 @@ public function rewriteMatchExpByLocalNamesRecord
   input list<ASTDef> inASTDefs;
   
   output list<tuple<Ident, MatchingExp>> outRewrittenMatchingExp;
-  output TypedIdents outUsedLocals;  
+  output TypedIdents outUsedLocals;
 algorithm 
   (outRewrittenMatchingExp, outUsedLocals) 
     := matchcontinue (inFieldMatchings, fields, inLocalNames, inUsedLocals, inASTDefs)
@@ -3727,7 +3727,7 @@ algorithm
       list<tuple<Ident, MatchingExp>> fms;
       TypedIdents usedLocals;
       list<ASTDef> astDefs;
-      String reason;      
+      String reason;
     
     case ( {}, _, _, inUsedLocals, _)
       then 
@@ -3737,7 +3737,7 @@ algorithm
       equation
         mtype = lookupTupleList(fields, ident);
         (mexp, usedLocals) = rewriteMatchExpByLocalNames(mexp, mtype, inLocalNames, usedLocals, astDefs);
-        (fms, usedLocals)  = rewriteMatchExpByLocalNamesRecord(fms, fields, inLocalNames, usedLocals, astDefs);        
+        (fms, usedLocals)  = rewriteMatchExpByLocalNamesRecord(fms, fields, inLocalNames, usedLocals, astDefs);
       then 
         ((ident, mexp) :: fms, usedLocals);
     
@@ -3746,9 +3746,9 @@ algorithm
       equation
         failure( _ = lookupTupleList(fields, ident) );
         reason = "#Error - unresolved type - cannot find field '" +& ident +& "'#";
-        //locals = addLocalValue(ident, UNRESOLVED_TYPE(reason), locals);        
+        //locals = addLocalValue(ident, UNRESOLVED_TYPE(reason), locals);
         Debug.fprint("failtrace", "Error - rewriteMatchExpByLocalNamesRecord failed to find field '" +& ident +& "'\n");
-        (fms, usedLocals) = rewriteMatchExpByLocalNamesRecord(fms, fields, inLocalNames, usedLocals, astDefs);        
+        (fms, usedLocals) = rewriteMatchExpByLocalNamesRecord(fms, fields, inLocalNames, usedLocals, astDefs);
       then 
         ((ident, mexp) :: fms, usedLocals);
     
@@ -3771,7 +3771,7 @@ public function rewriteMatchExpByLocalNamesList
   input list<ASTDef> inASTDefs;
   
   output list<MatchingExp> outRewrittenMatchingExp;
-  output TypedIdents outUsedLocals; 
+  output TypedIdents outUsedLocals;
 algorithm 
   (outRewrittenMatchingExp, outUsedLocals) 
     := matchcontinue (inMatchingExpLst, inTypeLst, inLocalNames, inUsedLocals, inASTDefs)
@@ -3782,7 +3782,7 @@ algorithm
       list<TypeSignature> tsLst;
       
       TypedIdents usedLocals;
-      list<ASTDef> astDefs;      
+      list<ASTDef> astDefs;
     
     case ( {}, {}, _,usedLocals,_)
       then 
@@ -3791,7 +3791,7 @@ algorithm
     case ( mexp :: mexpLst, mtype :: tsLst, inLocalNames, usedLocals, astDefs)
       equation
         (mexp, usedLocals)    = rewriteMatchExpByLocalNames(mexp, mtype, inLocalNames, usedLocals, astDefs);
-        (mexpLst, usedLocals) = rewriteMatchExpByLocalNamesList(mexpLst, tsLst, inLocalNames, usedLocals, astDefs);        
+        (mexpLst, usedLocals) = rewriteMatchExpByLocalNamesList(mexpLst, tsLst, inLocalNames, usedLocals, astDefs);
       then 
         (mexp :: mexpLst, usedLocals);
     
@@ -3863,7 +3863,7 @@ public function makeMMMatchCase
   input TypedIdents inExtraArgs;
   input TypedIdents inOutArgs;
   
-  output MMMatchCase outMMMCase;   
+  output MMMatchCase outMMMCase;
 algorithm
   (outMMMCase) 
   := matchcontinue (inElabCase, inExtraArgs, inOutArgs)
@@ -3885,7 +3885,7 @@ algorithm
         Debug.fprint("failtrace", "-!!!makeMMMatchCase failed\n");
       then
         fail();
-  end matchcontinue;           
+  end matchcontinue;
 end makeMMMatchCase;
 
 
@@ -3894,7 +3894,7 @@ public function makeExtraArgBinding
   input TypedIdents inCaseArgs;
   input TypedIdents inOutArgs;
   
-  output MatchingExp outExtraArgBinding;   
+  output MatchingExp outExtraArgBinding;
 algorithm
   outExtraArgBinding := matchcontinue (inExtraArg, inCaseArgs, inOutArgs)
     local
@@ -3904,19 +3904,19 @@ algorithm
     //out args are always passed through
     case ( (argname, _), _, oargs)
       equation
-        _ = lookupTupleList(oargs, argname);                
+        _ = lookupTupleList(oargs, argname);
       then 
         BIND_MATCH(argname);
     
     case ( (argname, _), caseargs, _)
       equation
-        _ = lookupTupleList(caseargs, argname);                
+        _ = lookupTupleList(caseargs, argname);
       then 
         BIND_MATCH(argname);
     
     case ( _, _, _)
       //equation
-      //  failure(_ = lookupTupleList(inCaseArgs, argname));                
+      //  failure(_ = lookupTupleList(inCaseArgs, argname));
       then 
         REST_MATCH();
         
@@ -3925,7 +3925,7 @@ algorithm
         Debug.fprint("failtrace", "-!!!makeExtraArgBinding failed\n");
       then
         fail();
-  end matchcontinue;           
+  end matchcontinue;
 end makeExtraArgBinding;
 
 
@@ -3953,7 +3953,7 @@ algorithm
     case ( (elabcase as (mexp, _, _)) :: restcases )
       equation
         //failure(isAlwaysMatched(mexp));
-        restcases = addRestElabCase(restcases);      
+        restcases = addRestElabCase(restcases);
       then 
         ( elabcase :: restcases );
             
@@ -3962,7 +3962,7 @@ algorithm
         Debug.fprint("failtrace", "-!!!addRestElabCase failed\n");
       then
         fail();
-  end matchcontinue;           
+  end matchcontinue;
 end addRestElabCase;
 
 
@@ -3992,7 +3992,7 @@ algorithm
         
     case ( REST_MATCH() )
       then ();
-  end match;           
+  end match;
 end isAlwaysMatched;
 
 
@@ -4001,7 +4001,7 @@ public function adaptTextToString
   input Expression inArgExp;
   input list<MMExp> inStmts;
   input TypedIdents inLocals;
-  input TemplPackage inTplPackage; 
+  input TemplPackage inTplPackage;
 
   output tuple<MMExp, TypeSignature> outArgValue;
   output Expression outArgExp;
@@ -4012,12 +4012,12 @@ algorithm
     := matchcontinue (inArgValue, inArgExp, inStmts, inLocals, inTplPackage)
     local
       list<MMExp> stmts;
-      MMExp stmt, mmexp;    
+      MMExp stmt, mmexp;
       Ident strid;
       TypedIdents locals;
       tuple<MMExp, TypeSignature> argval;
       TypeSignature exptype;
-      list<ASTDef> astdefs;           
+      list<ASTDef> astdefs;
     
     //every Text value is converted/rendered to string when it is a matching argument (match and map exps)  
     //if it is needed to match against the Text structure, a simple deconstruction functions can be used,
@@ -4025,9 +4025,9 @@ algorithm
     //but who will need this, anyway ? (maybe for debugging of Susan it can help) 
     case ( (mmexp, exptype), _, stmts, locals,  TEMPL_PACKAGE(astDefs = astdefs))
       equation
-        TEXT_TYPE() = deAliasedType(exptype, astdefs); 
+        TEXT_TYPE() = deAliasedType(exptype, astdefs);
         strid = textToStringNamePrefix +& intString(listLength(locals));
-        locals = addLocalValue(strid, STRING_TYPE(), locals);          
+        locals = addLocalValue(strid, STRING_TYPE(), locals);
         mmexp = mmExpToString(mmexp, TEXT_TYPE());
         stmt = MM_ASSIGN({strid}, mmexp);
       then 
@@ -4044,19 +4044,19 @@ algorithm
         Debug.fprint("failtrace", "-!!!adaptTextToString failed\n");
       then
         fail();
-  end matchcontinue;           
+  end matchcontinue;
 end adaptTextToString;
 
 
 public function elabCasesFromCondition
-  input TypeSignature inArgType "deAliasedType"; 
+  input TypeSignature inArgType "deAliasedType";
   input Boolean inIsNot;
   input Option<MatchingExp> inRhsValue;
   input Expression inTrueBranch;
   input Option<Expression> inElseBranchOpt;
-  input TemplPackage inTplPackage; 
+  input TemplPackage inTplPackage;
   
-  output list<tuple<MatchingExp,Expression>> outMCases;   
+  output list<tuple<MatchingExp,Expression>> outMCases;
 algorithm
   outMCases := matchcontinue (inArgType, inIsNot, inRhsValue, inTrueBranch, inElseBranchOpt, inTplPackage)
     local
@@ -4119,7 +4119,7 @@ algorithm
         Debug.fprint("failtrace", "-!!!elabCasesFromCondition failed\n");
       then
         fail();
-  end matchcontinue;           
+  end matchcontinue;
 end elabCasesFromCondition;
 
 
@@ -4129,7 +4129,7 @@ public function casesForTrueFalseCondition
   input Expression inTrueBranch;
   input Option<Expression> inElseBranchOpt;
   
-  output list<tuple<MatchingExp,Expression>> outMCases;   
+  output list<tuple<MatchingExp,Expression>> outMCases;
 algorithm
   outMCases := matchcontinue (inIsNot, inNotMatchingExp, inTrueBranch, inElseBranchOpt)
     local
@@ -4156,13 +4156,13 @@ algorithm
         Debug.fprint("failtrace", "-!!!casesForTrueFalseCondition failed\n");
       then
         fail();
-  end matchcontinue;           
+  end matchcontinue;
 end casesForTrueFalseCondition;
 
 
 public function getElseBranch
   input Option<Expression> inElseBranchOpt;
-  output Expression outElseBranch;   
+  output Expression outElseBranch;
 algorithm
   outElseBranch := matchcontinue inElseBranchOpt
     local
@@ -4179,14 +4179,14 @@ algorithm
         Debug.fprint("failtrace", "-!!!getElseBranch failed\n");
       then
         fail();
-  end matchcontinue;           
+  end matchcontinue;
 end getElseBranch;
 
 //does not fail, when not resolved ... UNRESOLVED_TYPE() is returned
 public function resolveBoundPath
   input PathIdent inPath;
   input ScopeEnv inScopeEnv;
-  input TemplPackage inTplPackage; 
+  input TemplPackage inTplPackage;
   
   output MMExp outMMExp;
   output TypeSignature outType;
@@ -4204,8 +4204,8 @@ algorithm
       list<tuple<Ident,TemplateDef>> tpldefs;
       Option<PathIdent> typepckgOpt;
       MMExp mmexp;
-      String reason; 
-      //Boolean hasImplicitScope;        
+      String reason;
+      //Boolean hasImplicitScope;
     
     
     // look up the scope 
@@ -4283,7 +4283,7 @@ algorithm
         Debug.fprint("failtrace", "-!!!resolveBoundPath failed\n");
       then
         fail();
-  end matchcontinue;           
+  end matchcontinue;
 end resolveBoundPath;
 
 
@@ -4297,23 +4297,23 @@ algorithm
   _ := matchcontinue (inPath, inType, inUnresolvedMsg, inInfo)
     local
       PathIdent path;
-      String reason, msg;           
+      String reason, msg;
       TypeSignature ts;
       
     case ( path, UNRESOLVED_TYPE(reason), msg, inInfo)
       equation
 
 				//true = RTOpts.debugFlag("failtrace");
-        //msg = msg +& " unresolved type of '" +& pathIdentString(path) +& "', reason = '" +& reason +& "'.\n"; 
+        //msg = msg +& " unresolved type of '" +& pathIdentString(path) +& "', reason = '" +& reason +& "'.\n";
         msg = "(" +& msg +& ") " +& reason;
-        Debug.fprint("failtrace", "ADD Error: " +& msg +& "\n");  //+& " unresolved path '" +& pathIdentString(path) +& "', reason = '" +& reason +& "'.\n");          
-        addSusanError(msg, inInfo);        
+        Debug.fprint("failtrace", "ADD Error: " +& msg +& "\n");  //+& " unresolved path '" +& pathIdentString(path) +& "', reason = '" +& reason +& "'.\n");
+        addSusanError(msg, inInfo);
       then
         ();
     
     case ( _, _, _, _)  then ();
             
-      end matchcontinue;           
+      end matchcontinue;
 end checkResolvedType;
 
 
@@ -4327,7 +4327,7 @@ algorithm
   outType := matchcontinue (inType, inIdent, inUnresolvedMsg, inInfo)
     local
       PathIdent path;
-      String msg;           
+      String msg;
       TypeSignature ts;
       
     //OK
@@ -4339,12 +4339,12 @@ algorithm
     case ( ts, inIdent, msg, inInfo)
       equation
         msg = "(" +& msg +& ") identifier '" +& inIdent +& "' was expected to have Text& type but resolved to " +& typeSignatureString(ts) 
-           +& ".\n Only Text& typed variables can be appended to.";        
-				addSusanError(msg, inInfo);        
+           +& ".\n Only Text& typed variables can be appended to.";
+				addSusanError(msg, inInfo);
       then
-        UNRESOLVED_TYPE(msg);        
+        UNRESOLVED_TYPE(msg);
             
-      end matchcontinue;           
+      end matchcontinue;
 end checkTextType;
 
 
@@ -4370,7 +4370,7 @@ algorithm
         false;
     
     case ( _, _, _, _) then true;
-  end matchcontinue;           
+  end matchcontinue;
 end ensureNotUsingTheSameText;
 */
 
@@ -4379,14 +4379,14 @@ public function makeMMExpFromTemplateConstant
   input Ident inTemplIdent;
   
   output MMExp outMMExp;
-  output TypeSignature outConstType;  
+  output TypeSignature outConstType;
 algorithm
   (outMMExp, outConstType) := matchcontinue (inTplDef, inTemplIdent)
     local
       Ident ident;
       TypeSignature idtype, lt;
       StringToken st;
-      String litstr, reason;           
+      String litstr, reason;
       
     // string constants are of StringToken type and does not involve a type conversion, use them through idents 
     case ( STR_TOKEN_DEF(value = st), ident)
@@ -4416,7 +4416,7 @@ algorithm
         Debug.fprint("failtrace", "-!!!makeMMExpFromTemplateConstant failed\n");
       then
         fail();
-  end matchcontinue;           
+  end matchcontinue;
 end makeMMExpFromTemplateConstant;
 
 public function prepareMatchArgument
@@ -4429,7 +4429,7 @@ algorithm
   (outIdent, outMExp) := matchcontinue (inMExp, inMatchArgName)
     local
       MatchingExp mexp;
-      Ident ident;      
+      Ident ident;
     
     case (mexp as BIND_MATCH(bindIdent = ident), _ ) 
       then
@@ -4448,9 +4448,9 @@ algorithm
     //no need to addToLocals because it is already in the locals
     case (mexp, inMatchArgName)              
       then
-        (inMatchArgName, BIND_AS_MATCH(inMatchArgName, mexp) ); 
+        (inMatchArgName, BIND_AS_MATCH(inMatchArgName, mexp) );
             
-  end matchcontinue;           
+  end matchcontinue;
 end prepareMatchArgument;
 
 
@@ -4459,7 +4459,7 @@ public function resolvePathInScopeEnv
   input PathIdent inPath "path of the looked up ident";
   input Boolean canDoImplicitLookup;
   input ScopeEnv inScopeEnv;
-  input list<ASTDef> inASTDefs; 
+  input list<ASTDef> inASTDefs;
   
   output Ident outLocalIdent "resolved local name";
   output TypeSignature outType;
@@ -4477,7 +4477,7 @@ algorithm
       ScopeEnv scEnv, restEnv;
       list<ASTDef> astdefs;
       Boolean hasImplicitScope;
-      list<tuple<Ident,Ident>> localNames;            
+      list<tuple<Ident,Ident>> localNames;
       
     //Error - test recursive usage of TEXT_ADD ident or an actually elaborated let expression
     case (ident, _, _,
@@ -4485,7 +4485,7 @@ algorithm
       equation
         true = stringEq(ident, letIdent);
         Debug.fprint("failtrace", "Error - trying to use '" +& ident 
-           +& "' recursively inside a let scope or text addition. Use an additional Text variable if a self addition/duplication is needed, like  let b = a  let &a += b ... \n");        
+           +& "' recursively inside a let scope or text addition. Use an additional Text variable if a self addition/duplication is needed, like  let b = a  let &a += b ... \n");
       then
         fail();
     
@@ -4493,9 +4493,9 @@ algorithm
     case (ident, path, canDoImplicitLookup, 
           (scope as RECURSIVE_SCOPE(recIdent = letIdent)) :: restEnv, astdefs)
       equation
-        false = stringEq(ident, letIdent);        
+        false = stringEq(ident, letIdent);
         (ident, idtype, restEnv) 
-         = resolvePathInScopeEnv(ident, path, canDoImplicitLookup, restEnv, astdefs);        
+         = resolvePathInScopeEnv(ident, path, canDoImplicitLookup, restEnv, astdefs);
       then
         (ident, idtype, scope :: restEnv);
     
@@ -4515,7 +4515,7 @@ algorithm
       equation
         // false = stringEq(ident, letIdent);
         (ident, idtype, restEnv) 
-         = resolvePathInScopeEnv(ident, path, canDoImplicitLookup, restEnv, astdefs);        
+         = resolvePathInScopeEnv(ident, path, canDoImplicitLookup, restEnv, astdefs);
       then
         (ident, idtype, scope :: restEnv);
         
@@ -4526,7 +4526,7 @@ algorithm
       equation
         idtype = lookupTupleList(fargs, ident);
         //encode the ident ... a_ident
-        ident = encodePathIdent(path, funArgNamePrefix);        
+        ident = encodePathIdent(path, funArgNamePrefix);
       then
         (ident, idtype, scEnv);
         
@@ -4542,7 +4542,7 @@ algorithm
         fargs = (ident, idtype) :: fargs; //not there yet
         localArgs = (localIdent, idtype) :: localArgs;
         //encode the ident ... a_ident
-        ident = encodeIdent(ident, funArgNamePrefix); 
+        ident = encodeIdent(ident, funArgNamePrefix);
       then
         (ident, idtype, FUN_SCOPE(fargs, localArgs) :: restEnv);
     
@@ -4559,7 +4559,7 @@ algorithm
       equation
         (idtype, mexp) = lookupUpdateMatchingExp(ident, path, mexp, mtype, astdefs);
         encident = encodeIdent(ident, caseBindingNamePrefix);
-        (encident, localNames, accLocals) = updateLocalsForMatchingExp(ident, encident, 0, idtype, localNames, accLocals);        
+        (encident, localNames, accLocals) = updateLocalsForMatchingExp(ident, encident, 0, idtype, localNames, accLocals);
       then
         (encident, idtype,
           CASE_SCOPE(mexp, mtype, localNames, accLocals, extargs, matchArgName, hasImplicitScope) :: restEnv);
@@ -4587,7 +4587,7 @@ algorithm
         
         encident = encodePathIdent(path, caseBindingNamePrefix);
         (encident, localNames, accLocals) 
-         = updateLocalsForMatchingExp(ident, encident, 0, idtype, localNames, accLocals);               
+         = updateLocalsForMatchingExp(ident, encident, 0, idtype, localNames, accLocals);
       then
         (encident, idtype,
            CASE_SCOPE(mexp, mtype, localNames, accLocals, extargs, matchArgName, true) :: restEnv);
@@ -4608,9 +4608,9 @@ algorithm
         true = stringEq(ident, matchArgName);
         (ident, mexp) = prepareMatchArgument(mexp, matchArgName);
         
-        encident = encodeIdent(ident, caseBindingNamePrefix);   
+        encident = encodeIdent(ident, caseBindingNamePrefix);
         (encident, localNames, accLocals) 
-         = updateLocalsForMatchingExp(ident, encident, 0, mtype, localNames, accLocals);        
+         = updateLocalsForMatchingExp(ident, encident, 0, mtype, localNames, accLocals);
       then
         (encident, mtype, 
           CASE_SCOPE(mexp, mtype, localNames, accLocals, extargs, matchArgName, hasImplicitScope) :: restEnv);
@@ -4620,7 +4620,7 @@ algorithm
     case ( ident, _, _, 
            scEnv as (CASE_SCOPE(extArgs = extargs) :: _ ), _  )
       equation
-        idtype = lookupTupleList(extargs, ident);        
+        idtype = lookupTupleList(extargs, ident);
       then
         (ident, idtype, scEnv);
     */
@@ -4640,7 +4640,7 @@ algorithm
         (encident, idtype, restEnv) = resolvePathInScopeEnv(ident, path, 
               (canDoImplicitLookup and not hasImplicitScope), restEnv, astdefs);
         //updating the the extra args with the encoded returned local ident ... it must belong to the immediate upper FUN_SCOPE
-        extargs = updateTupleList(extargs, (encident, idtype));        
+        extargs = updateTupleList(extargs, (encident, idtype));
       then
         (encident, idtype, CASE_SCOPE(mexp, mtype, localNames, accLocals, extargs, matchArgName, hasImplicitScope) :: restEnv);
     
@@ -4650,7 +4650,7 @@ algorithm
     //    Debug.fprint("failtrace", "-resolvePathInScopeEnv failed for ident '" +& ident +& "'.\n");
     //  then
     //    fail();
-  end matchcontinue;           
+  end matchcontinue;
 end resolvePathInScopeEnv;
 
 public function addPostfixToIdent 
@@ -4795,7 +4795,7 @@ algorithm
       then
         false;
    
-  end matchcontinue;           
+  end matchcontinue;
 end usedInImmediateLetScope;
 
 
@@ -4842,7 +4842,7 @@ algorithm
         encIdent = addPostfixToIdent(inEncIdent, inPostfix);
         loctype = lookupTupleList(inLocals, encIdent);
         equality(loctype = inType);
-        false = usedInImmediateLetScope(inIdent, encIdent, inScopeEnv);        
+        false = usedInImmediateLetScope(inIdent, encIdent, inScopeEnv);
       then 
         (encIdent, inLocals);
         
@@ -4854,7 +4854,7 @@ algorithm
         equality(loctype = inType);
         true = usedInImmediateLetScope(inIdent, encIdent, inScopeEnv);
         (encIdent, locals) 
-         = updateLocalsForLetExp(inIdent, inEncIdent, inPostfix + 1, inType, inLocals, inScopeEnv);        
+         = updateLocalsForLetExp(inIdent, inEncIdent, inPostfix + 1, inType, inLocals, inScopeEnv);
       then 
         (encIdent, locals);
     
@@ -4910,7 +4910,7 @@ algorithm
              matchingExp = mexp ), mtype, astDefs )
       equation
         true = stringEq(id, bid);
-        ( valtype, mexp ) = lookupUpdateMExpDotPath(inid, path, mexp, mtype, astDefs); 
+        ( valtype, mexp ) = lookupUpdateMExpDotPath(inid, path, mexp, mtype, astDefs);
       then 
         ( valtype, BIND_AS_MATCH(bid, mexp) );
     
@@ -4931,7 +4931,7 @@ algorithm
       equation
         true = stringEq(id, bid);
       then 
-        ( mtype, inmexp );        
+        ( mtype, inmexp );
     
     case ( inid, PATH_IDENT(ident = id, path = path ),
            inmexp as BIND_MATCH(
@@ -4939,7 +4939,7 @@ algorithm
       equation
         true = stringEq(id, bid);
         reason = "Unresolved path '" +& inid +& "' after first dot - only the first part '" +& id +& "' resolved as a bind match.";
-        valtype = UNRESOLVED_TYPE(reason); 
+        valtype = UNRESOLVED_TYPE(reason);
       then 
         (valtype , inmexp );
     
@@ -5088,7 +5088,7 @@ algorithm
     case ( inid, path, mexp, mtype, astDefs )
       equation
         reason = "Unresolved path (encoded) '" +& inid 
-                 +& "', cannot follow the rest path '" +& pathIdentString(path) +& "', no record match available to look down the path."; 
+                 +& "', cannot follow the rest path '" +& pathIdentString(path) +& "', no record match available to look down the path.";
         valtype = UNRESOLVED_TYPE(reason);
       then 
         ( valtype, mexp );
@@ -5185,7 +5185,7 @@ algorithm
     /* //can be here to "optimize" the "_"
     case ( inid, REST_MATCH())
       then 
-        BIND_MATCH(inid);    
+        BIND_MATCH(inid);
     */
     case ( inid, mexp )
       then 
@@ -5226,7 +5226,7 @@ algorithm
     
     case ( inid, fieldid, path, {}, mtype, astDefs )
       equation
-        reason = "Unresolved path '" +& inid +& "', cannot follow the path after a dot, no record match available to look down the path after '" +& fieldid +& "'.\n"; 
+        reason = "Unresolved path '" +& inid +& "', cannot follow the path after a dot, no record match available to look down the path after '" +& fieldid +& "'.\n";
         valtype = UNRESOLVED_TYPE(reason);
       then 
         ( valtype, {} );
@@ -5234,14 +5234,14 @@ algorithm
     case ( inid, fieldid, path, (ident, mexp) :: fms, mtype, astDefs )
       equation
         true = stringEq(fieldid, ident);
-        ( valtype, mexp ) = lookupUpdateMExpDotPath(inid, path, mexp, mtype, astDefs);        
+        ( valtype, mexp ) = lookupUpdateMExpDotPath(inid, path, mexp, mtype, astDefs);
       then 
         ( valtype, (ident, mexp) :: fms );
     
     case ( inid, fieldid, path, fm :: fms, mtype, astDefs )
       equation
         // false = stringEq(fieldid, ident) );
-        ( valtype, fms ) = lookupUpdateMExpDotPathRecord(inid, fieldid, path, fms, mtype, astDefs);        
+        ( valtype, fms ) = lookupUpdateMExpDotPathRecord(inid, fieldid, path, fms, mtype, astDefs);
       then 
         ( valtype, fm :: fms );
     
@@ -5286,7 +5286,7 @@ algorithm
     case ( inid, path, (ident, mexp) :: fms, fields, astDefs )
       equation
         mtype = lookupTupleList(fields, ident);
-        ( valtype, mexp ) = lookupUpdateMatchingExp(inid, path, mexp, mtype, astDefs);        
+        ( valtype, mexp ) = lookupUpdateMatchingExp(inid, path, mexp, mtype, astDefs);
       then 
         ( valtype, (ident, mexp) :: fms );
     
@@ -5300,7 +5300,7 @@ algorithm
     
     case ( inid, path, fm :: fms, fields, astDefs )
       equation
-        ( valtype, fms ) = lookupUpdateMExpRecord(inid, path, fms, fields, astDefs);        
+        ( valtype, fms ) = lookupUpdateMExpRecord(inid, path, fms, fields, astDefs);
       then 
         ( valtype, fm :: fms );
     
@@ -5335,13 +5335,13 @@ algorithm
     
     case ( inid, path, (mexp :: mexpLst), (mtype :: mtypeLst), astDefs )
       equation
-        ( valtype, mexp ) = lookupUpdateMatchingExp(inid, path, mexp, mtype, astDefs);        
+        ( valtype, mexp ) = lookupUpdateMatchingExp(inid, path, mexp, mtype, astDefs);
       then 
         ( valtype, (mexp :: mexpLst) );
     
     case ( inid, path, (mexp :: mexpLst), (mtype :: mtypeLst), astDefs )
       equation
-        ( valtype, mexpLst ) = lookupUpdateMExpList(inid, path, mexpLst, mtypeLst, astDefs);        
+        ( valtype, mexpLst ) = lookupUpdateMExpList(inid, path, mexpLst, mtypeLst, astDefs);
       then 
         ( valtype, (mexp :: mexpLst) );
     
@@ -5392,7 +5392,7 @@ algorithm
         //failure(NAMED_TYPE(_) = mtype);
         Debug.fprint("failtrace", "Error - for case tag '" +& pathIdentString(tagpath) +& "' the input type is not a NAME_TYPE hence not a union/record type.\n");
       then
-        fail();         
+        fail();
     
     
     
@@ -5560,12 +5560,12 @@ algorithm
     case ( NAMED_TYPE(name = typepath), astDefs )
       equation
         (typepckgOpt, typeident) = splitPackageAndIdent(typepath);
-        (_, TI_ALIAS_TYPE(aliasType = dt)) = getTypeInfo(typepckgOpt, typeident, astDefs);        
+        (_, TI_ALIAS_TYPE(aliasType = dt)) = getTypeInfo(typepckgOpt, typeident, astDefs);
       then 
         deAliasedType(dt, astDefs);
     
     case (dt, _)
-      then dt; 
+      then dt;
         
   end matchcontinue;
 end deAliasedType;
@@ -5581,7 +5581,7 @@ Typed variables and already set type variables can be specified.
   input TypedIdents inSetTypeVars;
   input list<ASTDef> inASTDefs;
   
-  output TypedIdents outSetTypeVars;  
+  output TypedIdents outSetTypeVars;
 algorithm
   outSetTypeVars := matchcontinue(inType, inTypeConcrete, inTypeVars, inSetTypeVars, inASTDefs)
     local
@@ -5614,7 +5614,7 @@ algorithm
       equation
         ty = deAliasedType(ty, astDefs);
         tyConcrete = deAliasedType(tyConcrete, astDefs);
-        typesEqualConcrete(ty, tyConcrete, astDefs);        
+        typesEqualConcrete(ty, tyConcrete, astDefs);
       then 
         setTyVars;
     
@@ -5624,7 +5624,7 @@ algorithm
         false = listMember(tid, tyVars);
         ty = deAliasedType(ty, astDefs);
         tyConcrete = deAliasedType(tyConcrete, astDefs);
-        typesEqualConcrete(ty, tyConcrete, astDefs);        
+        typesEqualConcrete(ty, tyConcrete, astDefs);
       then 
         setTyVars;
     
@@ -5634,7 +5634,7 @@ algorithm
         ty = lookupTupleList(setTyVars, tid);
         //true = listMember(na, tyVars); //must be true
         tyConcreteDA = deAliasedType(tyConcrete, astDefs);
-        typesEqualConcrete(ty, tyConcreteDA, astDefs);                
+        typesEqualConcrete(ty, tyConcreteDA, astDefs);
       then 
         setTyVars;
     
@@ -5650,7 +5650,7 @@ algorithm
            +& "'. Firstly inferred '" +& typeSignatureString(ty)
            +& "', next inferred '" +& typeSignatureString(tyConcrete) 
            +& "'(dealiased '" +& typeSignatureString(tyConcreteDA) +& "').\n" 
-            );        
+            );
       then 
         fail();
     
@@ -5660,7 +5660,7 @@ algorithm
       equation
         failure(_ = lookupTupleList(setTyVars, tid));
         true = listMember(tid, tyVars);
-        tyConcreteDA = deAliasedType(tyConcrete, astDefs);                
+        tyConcreteDA = deAliasedType(tyConcrete, astDefs);
       then 
         (tid, tyConcreteDA) :: setTyVars;
     
@@ -5754,7 +5754,7 @@ This function specializes type with set type variables and checks if all of them
   input list<Ident> inTypeVars;
   input TypedIdents inSetTypeVars;
   
-  output TypeSignature outType;  
+  output TypeSignature outType;
 algorithm
   outType := matchcontinue(inType, inTypeVars, inSetTypeVars)
     local
@@ -5767,25 +5767,25 @@ algorithm
     
     case ( LIST_TYPE(ofType = ota), tyVars, setTyVars)
       equation
-        ota = specializeType(ota, tyVars, setTyVars);               
+        ota = specializeType(ota, tyVars, setTyVars);
       then 
         LIST_TYPE(ota);
     
     case ( ARRAY_TYPE(ofType = ota), tyVars, setTyVars)
       equation
-        ota = specializeType(ota, tyVars, setTyVars);               
+        ota = specializeType(ota, tyVars, setTyVars);
       then 
         ARRAY_TYPE(ota);
     
     case ( OPTION_TYPE(ofType = ota), tyVars, setTyVars)
       equation
-        ota = specializeType(ota, tyVars, setTyVars);               
+        ota = specializeType(ota, tyVars, setTyVars);
       then 
         OPTION_TYPE(ota);
     
     case ( TUPLE_TYPE(ofTypes = otaLst), tyVars, setTyVars)
       equation
-        otaLst = Util.listMap2(otaLst, specializeType, tyVars, setTyVars); 
+        otaLst = Util.listMap2(otaLst, specializeType, tyVars, setTyVars);
       then 
         TUPLE_TYPE(otaLst);
     
@@ -5809,7 +5809,7 @@ algorithm
         true = RTOpts.debugFlag("failtrace");
         true = listMember(tid, tyVars);
         failure(_ = lookupTupleList(setTyVars, tid));
-        Debug.fprint("failtrace", "Error - cannot infer type variable '" +& tid +& "'.\n" );        
+        Debug.fprint("failtrace", "Error - cannot infer type variable '" +& tid +& "'.\n" );
       then 
         fail();
     
@@ -5873,7 +5873,7 @@ algorithm
          = getTypeInfo(funpckgOpt, fident, astDefs);
         fname = Util.if_(Util.equal(IDENT("builtin"), funpckg), 
                      IDENT(fident),
-                     makePathIdent(funpckg, fident)); 
+                     makePathIdent(funpckg, fident));
       then 
         (fname, iargs, oargs, tyVars);
         
@@ -5882,7 +5882,7 @@ algorithm
         Debug.fprint("failtrace", "Error - cannot resolve a function reference '" +& pathIdentString(fname) +& "'.\n");
       then 
         fail();
-  end matchcontinue;           
+  end matchcontinue;
 end getFunSignature;
 
 
@@ -5960,7 +5960,7 @@ algorithm
     case ( _, typeinfo, _ )
       equation
 				true = RTOpts.debugFlag("failtrace");
-        failure(TI_UNION_TYPE(_) = typeinfo); 
+        failure(TI_UNION_TYPE(_) = typeinfo);
         failure(TI_RECORD_TYPE(_) = typeinfo);
         Debug.fprint("failtrace", "- getFields failed - the typeinfo is neither union nor record type.\n");
       then 
@@ -5995,8 +5995,8 @@ algorithm
 end isRecordTag;
 
 public function fullyQualifyASTDefs 
-  input list<ASTDef> inASTDefs;  
-  output list<ASTDef> outFullyQualifiedASTDefs;  
+  input list<ASTDef> inASTDefs;
+  output list<ASTDef> outFullyQualifiedASTDefs;
 algorithm 
   outFullyQualifiedASTDefs := matchcontinue inASTDefs
     local
@@ -6013,7 +6013,7 @@ algorithm
             types         = typeLst) :: restAstDefs)
       equation
         typeLst = listMap1Tuple22(typeLst, fullyQualifyAstTypeInfo, importckg);
-        restAstDefs = fullyQualifyASTDefs(restAstDefs); 
+        restAstDefs = fullyQualifyASTDefs(restAstDefs);
       then 
         (AST_DEF(importckg, isdefault, typeLst) :: restAstDefs);
     
@@ -6024,7 +6024,7 @@ algorithm
       equation
 				true = RTOpts.debugFlag("failtrace");
         failure(typeLst = listMap1Tuple22(typeLst, fullyQualifyAstTypeInfo, importckg));
-        Debug.fprint("failtrace", "-fullyQualifyASTDefs failed for importckg = " +& pathIdentString(importckg) +& " .\n"); 
+        Debug.fprint("failtrace", "-fullyQualifyASTDefs failed for importckg = " +& pathIdentString(importckg) +& " .\n");
       then
         fail();
     
@@ -6042,7 +6042,7 @@ public function fullyQualifyAstTypeInfo
   input TypeInfo inASTTypeInfo;
   input PathIdent inImportPackage;
     
-  output TypeInfo outFullyQualifiedASTTypeInfo;  
+  output TypeInfo outFullyQualifiedASTTypeInfo;
 algorithm 
   outFullyQualifiedASTTypeInfo := matchcontinue (inASTTypeInfo, inImportPackage)
     local
@@ -6099,10 +6099,10 @@ public function fullyQualifyAstTypedIdents
   input PathIdent inImportPackage;
   input list<Ident> inTypeVars;
     
-  output TypedIdents outASTDefTypedIdents;  
+  output TypedIdents outASTDefTypedIdents;
 algorithm 
   outASTDefTypedIdents := 
-  listMap2Tuple22(inASTDefTypedIdents, fullyQualifyAstTypeSignature, inImportPackage, inTypeVars);    
+  listMap2Tuple22(inASTDefTypedIdents, fullyQualifyAstTypeSignature, inImportPackage, inTypeVars);
 end fullyQualifyAstTypedIdents;
 
 
@@ -6111,7 +6111,7 @@ public function fullyQualifyAstTypeSignature
   input PathIdent inImportPackage;
   input list<Ident> inTypeVars;
     
-  output TypeSignature outASTDefTypeSignature;  
+  output TypeSignature outASTDefTypeSignature;
 algorithm 
   outASTDefTypeSignature := matchcontinue (inASTDefTypeSignature, inImportPackage, inTypeVars)
     local
@@ -6123,7 +6123,7 @@ algorithm
       
     case ( LIST_TYPE(ofType = ota), importpckg, tyVars )
       equation
-        ota = fullyQualifyAstTypeSignature(ota, importpckg, tyVars);        
+        ota = fullyQualifyAstTypeSignature(ota, importpckg, tyVars);
       then 
         LIST_TYPE(ota);
     
@@ -6186,7 +6186,7 @@ end fullyQualifyAstTypeSignature;
 
 public function convertNameTypeIfIntrinsic 
   input PathIdent inNameOfType;
-  output TypeSignature outTypeSignature;  
+  output TypeSignature outTypeSignature;
 algorithm 
   outTypeSignature := matchcontinue (inNameOfType)
     local
@@ -6254,7 +6254,7 @@ algorithm
       then 
         fail();
     
-  end matchcontinue;           
+  end matchcontinue;
 end fullyQualifyTemplateDef;
 
 
@@ -6262,7 +6262,7 @@ public function fullyQualifyTemplateTypeSignature
   input TypeSignature inTemplateTypeSignature;
   input list<ASTDef> inASTDefs;
     
-  output TypeSignature outFullyQualifiedTypeSignature;  
+  output TypeSignature outFullyQualifiedTypeSignature;
 algorithm 
   outFullyQualifiedTypeSignature := matchcontinue (inTemplateTypeSignature, inASTDefs)
     local
@@ -6276,7 +6276,7 @@ algorithm
       
     case ( LIST_TYPE(ofType = ota), astDefs )
       equation
-        ota = fullyQualifyTemplateTypeSignature(ota, astDefs);        
+        ota = fullyQualifyTemplateTypeSignature(ota, astDefs);
       then 
         LIST_TYPE(ota);
     
@@ -6346,7 +6346,7 @@ algorithm
         equality(a = itemA);
       then itemB;
     case ( _ :: rest, itemA)
-      then lookupTupleList(rest, itemA);   
+      then lookupTupleList(rest, itemA);
   end matchcontinue;
 end lookupTupleList;
 
@@ -6402,7 +6402,7 @@ algorithm
       equation
         (itemB, rest) = lookupDeleteTupleList(rest, itemA);
       then 
-        (itemB, h :: rest);  
+        (itemB, h :: rest);
   end matchcontinue;
 end lookupDeleteTupleList;
 
@@ -6461,7 +6461,7 @@ protected function listMap1Tuple22
   replaceable type Type_a subtypeof Any;
   replaceable type Type_b subtypeof Any;
   replaceable type Type_c subtypeof Any;
-  replaceable type Type_d subtypeof Any;  
+  replaceable type Type_d subtypeof Any;
 algorithm
   outList := match(inList, inFun_Tbd_to_Tc, inExtraArg)
     local
@@ -6478,7 +6478,7 @@ algorithm
     case ( (a, itemB) :: restB, funBDtoC, extarg )
       equation
         itemC = funBDtoC(itemB, extarg);
-        restC = listMap1Tuple22(restB, funBDtoC, extarg); 
+        restC = listMap1Tuple22(restB, funBDtoC, extarg);
       then 
         ((a, itemC) :: restC);
         
@@ -6506,8 +6506,8 @@ protected function listMap2Tuple22
   replaceable type Type_a subtypeof Any;
   replaceable type Type_b subtypeof Any;
   replaceable type Type_c subtypeof Any;
-  replaceable type Type_d subtypeof Any; 
-  replaceable type Type_e subtypeof Any; 
+  replaceable type Type_d subtypeof Any;
+  replaceable type Type_e subtypeof Any;
 algorithm
   outList := match(inList, inFun_Tbde_to_Tc, inExtraArg, inExtraArg2)
     local
@@ -6525,7 +6525,7 @@ algorithm
     case ( (a, itemB) :: restB, funBDEtoC, extarg, extarg2 )
       equation
         itemC = funBDEtoC(itemB, extarg, extarg2);
-        restC = listMap2Tuple22(restB, funBDEtoC, extarg, extarg2); 
+        restC = listMap2Tuple22(restB, funBDEtoC, extarg, extarg2);
       then 
         ((a, itemC) :: restC);
         
@@ -6539,7 +6539,7 @@ end listMap2Tuple22;
 
 public function addSusanError
   input String inErrMsg;
-  input Absyn.Info inInfo;  
+  input Absyn.Info inInfo;
 algorithm
   Error.addSourceMessage(Error.SUSAN_ERROR, {inErrMsg}, inInfo);
 end addSusanError;
@@ -6588,7 +6588,7 @@ algorithm
       String c;
       list<String> chars;
     
-    case ({}) then true; 
+    case ({}) then true;
     
     case ( c  :: chars) 
       equation
@@ -6650,7 +6650,7 @@ end pathIdentString;
 
 
 protected
-constant Tpl.Text eTxt = Tpl.MEM_TEXT({}, {}); 
+constant Tpl.Text eTxt = Tpl.MEM_TEXT({}, {});
 
 public function typeSignatureString
   input TypeSignature inTS;

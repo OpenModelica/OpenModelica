@@ -92,9 +92,9 @@ algorithm
     case (((BackendDAE.ALGORITHM(index=indx,in_=expl,out=expl1,source = source)) :: es),repl)
       equation
         expl = Util.listMap2(expl,VarTransform.replaceExp,repl,NONE());
-        expl = Util.listMap(expl,ExpressionSimplify.simplify);        
+        expl = Util.listMap(expl,ExpressionSimplify.simplify);
         expl2 = Util.listMap2(expl1,VarTransform.replaceExp,repl,NONE());
-        expl2 = Util.listMap(expl2,ExpressionSimplify.simplify);        
+        expl2 = Util.listMap(expl2,ExpressionSimplify.simplify);
         // original algorithm is done by replaceAlgorithms
         // inputs and ouputs are updated from DEALow.updateAlgorithmInputsOutputs       
         es_1 = replaceEquations(es, repl);
@@ -424,7 +424,7 @@ algorithm
       list<DAE.Exp> expExpLst,expExpLst_1;
       DAE.Else else_,else_1;
       DAE.ElementSource source;
-      DAE.ComponentRef cr; 
+      DAE.ComponentRef cr;
       Boolean iterIsArray;
       DAE.Ident ident;
       list<Integer> helpVarIndices;
@@ -456,7 +456,7 @@ algorithm
         e1_2 = ExpressionSimplify.simplify(e1_1);
         es_1 = replaceStatementLst(es, repl);
       then
-        (DAE.STMT_ASSIGN_ARR(type_,cr,e1_2,source):: es_1);        
+        (DAE.STMT_ASSIGN_ARR(type_,cr,e1_2,source):: es_1);
     
     case ((DAE.STMT_IF(exp=e1,statementLst=statementLst,else_=else_,source=source)::es),repl)
       equation
@@ -475,7 +475,7 @@ algorithm
         e1_2 = ExpressionSimplify.simplify(e1_1);
         es_1 = replaceStatementLst(es, repl);
       then
-        (DAE.STMT_FOR(type_,iterIsArray,ident,e1_2,statementLst_1,source):: es_1);        
+        (DAE.STMT_FOR(type_,iterIsArray,ident,e1_2,statementLst_1,source):: es_1);
     
     case ((DAE.STMT_WHILE(exp=e1,statementLst=statementLst,source=source)::es),repl)
       equation
@@ -545,13 +545,13 @@ algorithm
       equation
         es_1 = replaceStatementLst(es, repl);
       then
-        (DAE.STMT_RETURN(source):: es_1);      
+        (DAE.STMT_RETURN(source):: es_1);
     
     case ((DAE.STMT_BREAK(source=source)::es),repl) 
       equation
         es_1 = replaceStatementLst(es, repl);
       then
-        (DAE.STMT_BREAK(source):: es_1);      
+        (DAE.STMT_BREAK(source):: es_1);
     
     // MetaModelica extension. KS
     case ((DAE.STMT_FAILURE(body=statementLst,source=source)::es),repl)
@@ -579,13 +579,13 @@ algorithm
       equation
         es_1 = replaceStatementLst(es, repl);
       then
-        (DAE.STMT_THROW(source):: es_1); 
+        (DAE.STMT_THROW(source):: es_1);
     
     case ((statement::es),repl) 
       equation
         es_1 = replaceStatementLst(es, repl);
       then
-        (statement:: es_1);        
+        (statement:: es_1);
   end matchcontinue;
 end replaceStatementLst;
 
@@ -617,7 +617,7 @@ algorithm
       equation
         statementLst_1 = replaceStatementLst(statementLst, repl);
       then
-        DAE.ELSE(statementLst_1);      
+        DAE.ELSE(statementLst_1);
   end match;
 end replaceElse;
 

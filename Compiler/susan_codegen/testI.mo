@@ -7,7 +7,7 @@ package builtin
 	end testfn;
 	
 	function listLength "Return the length of the list"
-      replaceable type TypeVar subtypeof Any;    
+      replaceable type TypeVar subtypeof Any;
       input list<TypeVar> lst;
       output Integer result;
     end listLength;
@@ -41,7 +41,7 @@ package builtin
 	
 	  uniontype PathIdent
 	    record IDENT
-	      Ident ident;    
+	      Ident ident;
 	    end IDENT;
 	  
 	    record PATH_IDENT

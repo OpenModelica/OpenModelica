@@ -603,7 +603,7 @@ protected
   String var_name;
   Util.StatefulBoolean is_used;
 algorithm
-  SCode.COMPONENT(component = var_name) := inVar; 
+  SCode.COMPONENT(component = var_name) := inVar;
   is_used := Util.makeStatefulBoolean(false);
   outEnv := extendEnvWithItem(VAR(inVar, is_used), inEnv, var_name);
 end extendEnvWithVar;
@@ -1137,7 +1137,7 @@ algorithm
         right = insertClassExtendsIntoClassEnv(right, inEnv);
         item = CLASS(cls, {class_frame}, cls_ty);
       then
-        SOME(AVLTREENODE(SOME(AVLTREEVALUE(name, item)), h, left, right)); 
+        SOME(AVLTREENODE(SOME(AVLTREEVALUE(name, item)), h, left, right));
 
     case (SOME(AVLTREENODE(value = value, height = h, 
         left = left, right = right)), _)
@@ -1378,7 +1378,7 @@ algorithm
         CLASS(cls = cls, env = class_env, classType = cls_ty) = 
           avlTreeGet(tree, name);
         class_env = replaceElementInClassEnv(path, inElement, class_env);
-        tree = avlTreeReplace(tree, name, CLASS(cls, class_env, cls_ty)); 
+        tree = avlTreeReplace(tree, name, CLASS(cls, class_env, cls_ty));
       then
         FRAME(frame_name, ty, tree, exts, imps, is_used) :: rest_env;
 
@@ -1580,7 +1580,7 @@ algorithm
     case VAR(var = SCode.COMPONENT(component = name)) then name;
     case CLASS(cls = SCode.CLASSDEF(classDef = SCode.CLASS(name = name))) then name;
   end match;
-end getItemName;  
+end getItemName;
 
 public function getItemEnv
   "Returns the environment in an environment item."
@@ -1864,7 +1864,7 @@ algorithm
     // Don't allow replacing of nodes.
     case (_, 0, key, _)
       equation
-        info = getItemInfo(inValue);        
+        info = getItemInfo(inValue);
         Error.addSourceMessage(Error.DOUBLE_DECLARATION_OF_ELEMENTS,
           {inKey}, info);
       then

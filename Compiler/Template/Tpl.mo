@@ -14,7 +14,7 @@ public import Absyn;
 // indentation will be implemented through spaces
 // where tabs will be converted where 1 tab = 4 spaces ??
 public
-type Tokens = list<StringToken>; 
+type Tokens = list<StringToken>;
 
 public
 uniontype Text
@@ -40,12 +40,12 @@ uniontype StringToken
   
   record ST_STRING_LIST "Every string in the list can have a new-line at its end (but does not have to)."
     list<String> strList;
-    Boolean lastHasNewLine "True when the last string in the list has new-line at the end."; 
+    Boolean lastHasNewLine "True when the last string in the list has new-line at the end.";
   end ST_STRING_LIST;
   
   record ST_BLOCK
     Tokens tokens;
-    BlockType blockType;    
+    BlockType blockType;
   end ST_BLOCK;
 end StringToken;
 
@@ -83,12 +83,12 @@ uniontype IterOptions
     Option<StringToken> empty;
     Option<StringToken> separator;
     
-    Integer alignNum "Number of items to be aligned by. When 0, no alignment."; 
+    Integer alignNum "Number of items to be aligned by. When 0, no alignment.";
     Integer alignOfset;
-    StringToken alignSeparator; 
+    StringToken alignSeparator;
     
     Integer wrapWidth "Number of chars on a line, after that the wrapping can occur. When 0, no wrapping.";
-    StringToken wrapSeparator; 
+    StringToken wrapSeparator;
   end ITER_OPTIONS;
 end IterOptions;
 
@@ -125,7 +125,7 @@ algorithm
     // a new-line is inside
     case (txt, str )
       then 
-        writeChars(txt, stringListStringChar(str));            
+        writeChars(txt, stringListStringChar(str));
   end matchcontinue;
 end writeStr;
 
@@ -327,7 +327,7 @@ public function takeLineOrString
   
   output list<String> outTillNewLineChars;
   output list<String> outRestChars;
-  output Boolean outIsLine;  
+  output Boolean outIsLine;
 algorithm
   (outTillNewLineChars, outRestChars, outIsLine) := matchcontinue (inChars)
     local
@@ -462,7 +462,7 @@ end newLine;
 
 public function pushBlock
   input Text inText;
-  input BlockType inBlockType; 
+  input BlockType inBlockType;
   
   output Text outText;
 algorithm
@@ -739,7 +739,7 @@ algorithm
   outString := matchcontinue (inText)
     local
       Text txt;
-      String str;   
+      String str;
     case (txt)
       equation
         Print.clearBuf();
@@ -747,7 +747,7 @@ algorithm
         str = Print.getString();
         Print.clearBuf();
       then
-        str;       
+        str;
     
     //should not ever happen 
     case (_ )
@@ -771,7 +771,7 @@ algorithm
             blocksStack = {}
             ))
       equation
-        (_,_) = tokensString(listReverse(toks), 0, true, 0);         
+        (_,_) = tokensString(listReverse(toks), 0, true, 0);
       then
         ();
     
@@ -1085,7 +1085,7 @@ algorithm
     case (BT_TEXT(), toks, nchars, isstart, aind)
       equation
         (nchars, isstart)
-          = tokensString(toks, nchars, isstart, aind); 
+          = tokensString(toks, nchars, isstart, aind);
       then 
         (nchars, isstart, aind);
     
@@ -1129,7 +1129,7 @@ algorithm
         blen = Print.getBufLength();
         (tsnchars, isstart)
           = tokensString(toks, nchars, true, aind + w);
-        blen = Print.getBufLength() - blen;  
+        blen = Print.getBufLength() - blen;
         nchars = Util.if_(blen == 0, nchars, Util.if_(isstart, aind, tsnchars)); //when no chars -> pop indent; when something written -> aind for the start of a line otherwise actual position
       then 
         (nchars, isstart, aind);
@@ -1155,7 +1155,7 @@ algorithm
     case (BT_ANCHOR(offset = w), toks, nchars, false, aind)
       equation
         (tsnchars, isstart)
-          = tokensString(toks, nchars, false, nchars + w); 
+          = tokensString(toks, nchars, false, nchars + w);
         nchars = Util.if_(isstart, aind, tsnchars); //pop indent when at the start of a line - there were a new line, so use the aind
       then 
         (nchars, isstart, aind);
@@ -1173,7 +1173,7 @@ algorithm
                               wrapWidth = 0)), toks, nchars, isstart, aind)
       equation
         (nchars, isstart)
-          = tokensString(toks, nchars, isstart, aind); 
+          = tokensString(toks, nchars, isstart, aind);
       then 
         (nchars, isstart, aind);
     
@@ -1187,7 +1187,7 @@ algorithm
         // put the first token, all the others with separator
         (nchars, isstart, aind) = tokString(tok, nchars, isstart, aind);
         (nchars, isstart)
-          = iterSeparatorString(toks, septok, nchars, isstart, aind); 
+          = iterSeparatorString(toks, septok, nchars, isstart, aind);
       then 
         (nchars, isstart, aind);
     
@@ -1203,7 +1203,7 @@ algorithm
         // put the first token, all the others with separator
         (nchars, isstart, aind) = tokString(tok, nchars, isstart, aind);
         (nchars, isstart)
-          = iterSeparatorAlignWrapString(toks, septok, 1 + aoffset, anum, asep, wwidth, wsep, nchars, isstart, aind); 
+          = iterSeparatorAlignWrapString(toks, septok, 1 + aoffset, anum, asep, wwidth, wsep, nchars, isstart, aind);
       then 
         (nchars, isstart, aind);
     
@@ -1217,7 +1217,7 @@ algorithm
                               wrapSeparator = wsep)), toks, nchars, isstart, aind)
       equation
         (nchars, isstart)
-          = iterAlignWrapString(toks, aoffset, anum, asep, wwidth, wsep, nchars, isstart, aind); 
+          = iterAlignWrapString(toks, aoffset, anum, asep, wwidth, wsep, nchars, isstart, aind);
       then 
         (nchars, isstart, aind);
     
@@ -1451,7 +1451,7 @@ end tryWrapString;
 
 
 public function booleanString
-  input Boolean inBoolean;  
+  input Boolean inBoolean;
   output String outString;
 algorithm
   outString := match inBoolean
@@ -1470,7 +1470,7 @@ end strTokText;
 
 
 public function textStrTok
-  input Text inText;  
+  input Text inText;
   output StringToken outStringToken;
 algorithm
   outStringToken := matchcontinue inText
@@ -1515,11 +1515,11 @@ algorithm
 end strTokString;
 
 protected function failIfTrue
-  input Boolean istrue;  
+  input Boolean istrue;
 algorithm
   _ := matchcontinue istrue
     case ( false ) then ();
-    case ( _ ) then fail();    
+    case ( _ ) then fail();
  end matchcontinue;
 end failIfTrue;
 
@@ -1531,19 +1531,19 @@ public function tplString
     
   partial function Tpl_Fun
     input Text in_txt;
-    input Type_a inArgA;    
-    output Text out_txt;    
+    input Type_a inArgA;
+    output Text out_txt;
     replaceable type Type_a subtypeof Any;
-  end Tpl_Fun;  
-  replaceable type Type_a subtypeof Any;   
+  end Tpl_Fun;
+  replaceable type Type_a subtypeof Any;
 
 protected
   Text txt;
   Integer nErr;
 algorithm
   nErr := Error.getNumErrorMessages();
-  txt := inFun(emptyTxt, inArg);  
-  failIfTrue(Error.getNumErrorMessages() > nErr);  
+  txt := inFun(emptyTxt, inArg);
+  failIfTrue(Error.getNumErrorMessages() > nErr);
   outString := textString(txt);
 end tplString;
 
@@ -1555,21 +1555,21 @@ public function tplString2
     
   partial function Tpl_Fun
     input Text in_txt;
-    input Type_a inArgA;    
-    input Type_b inArgB;    
-    output Text out_txt;    
+    input Type_a inArgA;
+    input Type_b inArgB;
+    output Text out_txt;
     replaceable type Type_a subtypeof Any;
     replaceable type Type_b subtypeof Any;
-  end Tpl_Fun;  
+  end Tpl_Fun;
   replaceable type Type_a subtypeof Any;
-  replaceable type Type_b subtypeof Any; 
+  replaceable type Type_b subtypeof Any;
 protected
   Text txt;
   Integer nErr;
 algorithm
   nErr := Error.getNumErrorMessages();
-  txt := inFun(emptyTxt, inArgA, inArgB);  
-  failIfTrue(Error.getNumErrorMessages() > nErr); 
+  txt := inFun(emptyTxt, inArgA, inArgB);
+  failIfTrue(Error.getNumErrorMessages() > nErr);
   outString := textString(txt);
 end tplString2;
 
@@ -1582,24 +1582,24 @@ public function tplString3
     
   partial function Tpl_Fun
     input Text in_txt;
-    input Type_a inArgA;    
+    input Type_a inArgA;
     input Type_b inArgB;
-    input Type_c inArgC;    
-    output Text out_txt;    
+    input Type_c inArgC;
+    output Text out_txt;
     replaceable type Type_a subtypeof Any;
     replaceable type Type_b subtypeof Any;
     replaceable type Type_c subtypeof Any;
-  end Tpl_Fun;  
+  end Tpl_Fun;
   replaceable type Type_a subtypeof Any;
   replaceable type Type_b subtypeof Any;
-  replaceable type Type_c subtypeof Any; 
+  replaceable type Type_c subtypeof Any;
 protected
   Text txt;
   Integer nErr;
 algorithm
   nErr := Error.getNumErrorMessages();
-  txt := inFun(emptyTxt, inArgA, inArgB, inArgC);  
-  failIfTrue(Error.getNumErrorMessages() > nErr); 
+  txt := inFun(emptyTxt, inArgA, inArgB, inArgC);
+  failIfTrue(Error.getNumErrorMessages() > nErr);
   outString := textString(txt);
 end tplString3;
 
@@ -1611,17 +1611,17 @@ public function tplNoret
     
   partial function Tpl_Fun
     input Text in_txt;
-    input Type_a inArgA;    
-    output Text out_txt;    
+    input Type_a inArgA;
+    output Text out_txt;
     replaceable type Type_a subtypeof Any;
-  end Tpl_Fun;  
+  end Tpl_Fun;
   replaceable type Type_a subtypeof Any;
 protected
   Integer nErr;
 algorithm
   nErr := Error.getNumErrorMessages();
   _ := inFun(emptyTxt, inArg);
-  failIfTrue(Error.getNumErrorMessages() > nErr);     
+  failIfTrue(Error.getNumErrorMessages() > nErr);
 end tplNoret;
 
 
@@ -1635,13 +1635,13 @@ algorithm
     local
       Text txt;
       String file;
-      Real rtTickTxt, rtTickW;   
+      Real rtTickTxt, rtTickW;
     case (txt, file)
       equation
         rtTickTxt = System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);
         Print.clearBuf();
         textStringBuf(txt);
-        rtTickW = System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL); 
+        rtTickW = System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);
         Print.writeBuf(file);
         Print.clearBuf();
         Debug.fprintln("perfTimes",
@@ -1677,7 +1677,7 @@ public function sourceInfo
   
   output Absyn.Info outSourceInfo;
 algorithm
-  outSourceInfo  := Absyn.INFO(inFileName, false, inLineNum, inColumnNum, inLineNum, inColumnNum, Absyn.dummyTimeStamp);  
+  outSourceInfo  := Absyn.INFO(inFileName, false, inLineNum, inColumnNum, inLineNum, inColumnNum, Absyn.dummyTimeStamp);
 end sourceInfo;
 
 
@@ -1686,7 +1686,7 @@ end sourceInfo;
 public function addSourceTemplateError
  "Wraps call to Error.addSourceMessage() funtion with Error.TEMPLATE_ERROR and one MessageToken."
   input String inErrMsg;
-  input Absyn.Info inInfo;  
+  input Absyn.Info inInfo;
 algorithm
   Error.addSourceMessage(Error.TEMPLATE_ERROR, {inErrMsg}, inInfo);
 end addSourceTemplateError;
@@ -1694,7 +1694,7 @@ end addSourceTemplateError;
 //for completeness
 public function addTemplateError
  "Wraps call to Error.addMessage() funtion with Error.TEMPLATE_ERROR and one MessageToken."
-  input String inErrMsg;  
+  input String inErrMsg;
 algorithm
   Error.addMessage(Error.TEMPLATE_ERROR, {inErrMsg});
 end addTemplateError;

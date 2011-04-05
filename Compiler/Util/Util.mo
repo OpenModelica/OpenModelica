@@ -291,7 +291,7 @@ public function isListEmpty "function: isListEmpty
   replaceable type Type_a subtypeof Any;
 algorithm
   out := matchcontinue(inList)
-  case({}) then true; 
+  case({}) then true;
   case(_) then false;
   end matchcontinue;
 end isListEmpty;
@@ -1182,7 +1182,7 @@ algorithm
     Integer pos,i;
     list<Integer> rest;
     Type_a elmt;
-    case(_,{},inArray,_) then inArray;  
+    case(_,{},inArray,_) then inArray;
     case(array,pos::rest,inArray,i) equation 
       elmt = array[pos];
       inArray = arrayUpdate(inArray,i,elmt);
@@ -1190,7 +1190,7 @@ algorithm
     then inArray;
     case(_,_,_,i) equation
       print("arraySelectHelp failed\n for i : " +& intString(i));
-    then fail();  
+    then fail();
   end matchcontinue;
 end arraySelectHelp;
 
@@ -2565,7 +2565,7 @@ public function listMapMap0 "function: listMapMap0
     listMapMap0({1,2,3},intString,print) 
     is equivalent to print(intString(1)), ..."
   input list<Type_a> inTypeALst;
-  input FuncTypeType_aToType_b inFuncTypeTypeAToTypeB;  
+  input FuncTypeType_aToType_b inFuncTypeTypeAToTypeB;
   input FuncTypeType_bTo inFuncTypeTypeBTo;
 
   partial function FuncTypeType_aToType_b
@@ -3026,7 +3026,7 @@ output list<Type_a> mergedList;
           aRes = func(a1,a2);
           mergedList = listFoldList(lst1,lst2,func);
           then
-            aRes::mergedList; 
+            aRes::mergedList;
       end matchcontinue;
 end listFoldList;
 
@@ -4119,7 +4119,7 @@ algorithm
         i_1 = i + 1;
         n = listlistPos(x, ys, i_1);
       then
-        n;        
+        n;
     case (x,((y1) :: ys),i)
       equation
         //failure(equality(x = y1));
@@ -4133,7 +4133,7 @@ algorithm
         i_1 = i + 1;
         n = listlistPos(x, ys, i_1);
       then
-        n;    
+        n;
   end matchcontinue;
 end listlistPos;
 
@@ -4160,7 +4160,7 @@ algorithm
         a = listPos2(x, ys);
         //print("Found with i " +& intString(i) +& " a n: " +& intString(n) +& "\n");
       then
-        a;        
+        a;
   end matchcontinue;
 end listPos2;
 
@@ -6729,7 +6729,7 @@ algorithm
         res = listPartition(lst,n);
       then lst1::res;
   end matchcontinue;
-end listPartition;  
+end listPartition;
 
 public function listSplit "function: listSplit
   Takes a list of values and an position value.
@@ -7282,7 +7282,7 @@ Takes two options and a function to compare the type."
     input Type_a inType_a1;
     input Type_a inType_a2;
     output Boolean outBool;
-  end CompareFunc;  
+  end CompareFunc;
 algorithm
   outBool := matchcontinue(inOpt1,inOpt2,inFunc)
   local 
@@ -7296,7 +7296,7 @@ algorithm
         b = fn(a1,a2);
       then
         b;
-    case (_,_,_) then false;        
+    case (_,_,_) then false;
   end matchcontinue;
 end optionEqual;
   
@@ -7575,7 +7575,7 @@ public function getCurrentDateTime
   Integer hour;
   Integer mday;
   Integer mon;
-  Integer year;  
+  Integer year;
 algorithm
   (sec,min,hour,mday,mon,year) := System.getCurrentDateTime();
   dt := DATETIME(sec,min,hour,mday,mon,year);
@@ -7907,7 +7907,7 @@ algorithm
     
     case ({fa},{fb}, md, ed)
       equation
-        str = stringAppendList({fa, md, fb}); 
+        str = stringAppendList({fa, md, fb});
       then
         str;
     
@@ -8038,7 +8038,7 @@ public function allCombinations
   input list<list<Type_a>> lst;
   input Option<Integer> maxTotalSize;
   input Absyn.Info info;
-  output list<list<Type_a>> out; 
+  output list<list<Type_a>> out;
   replaceable type Type_a subtypeof Any;
 algorithm
   out := matchcontinue (lst,maxTotalSize,info)
@@ -8065,7 +8065,7 @@ protected function allCombinations2
   
   This function screams WARNING I USE COMBINATORIAL EXPLOSION."
   input list<list<Type_a>> lst;
-  output list<list<Type_a>> out; 
+  output list<list<Type_a>> out;
   replaceable type Type_a subtypeof Any;
 algorithm
   out := match (lst)
@@ -8074,7 +8074,7 @@ algorithm
     case {} then {};
     case (x::lst)
       equation
-        lst = allCombinations2(lst); 
+        lst = allCombinations2(lst);
         lst = allCombinations3(x, lst, {});
       then lst;
   end match;
@@ -8084,7 +8084,7 @@ protected function allCombinations3
   input list<Type_a> lst1;
   input list<list<Type_a>> lst2;
   input list<list<Type_a>> acc;
-  output list<list<Type_a>> out; 
+  output list<list<Type_a>> out;
   replaceable type Type_a subtypeof Any;
 algorithm
   out := match (lst1,lst2,acc)
@@ -8104,7 +8104,7 @@ protected function allCombinations4
   input Type_a x;
   input list<list<Type_a>> lst;
   input list<list<Type_a>> acc;
-  output list<list<Type_a>> out; 
+  output list<list<Type_a>> out;
   replaceable type Type_a subtypeof Any;
 algorithm
   out := match (x,lst,acc)

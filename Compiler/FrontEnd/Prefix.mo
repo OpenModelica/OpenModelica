@@ -58,7 +58,7 @@ The class prefix contains the variability of the class, i.e unspecified, paramet
   record NOPRE "No prefix information" end NOPRE;
 
   record PREFIX
-    ComponentPrefix compPre "component prefixes are stored in inverse order c.b.a";    
+    ComponentPrefix compPre "component prefixes are stored in inverse order c.b.a";
     ClassPrefix classPre "the class prefix, i.e. variability, var, discrete, param, const";
   end PREFIX;
 end Prefix;

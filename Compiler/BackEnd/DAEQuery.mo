@@ -463,7 +463,7 @@ algorithm
       DAE.ComponentRef cr;
       BackendDAE.WhenEquation we;
       BackendDAE.Value indx;
-      list<list<String>> lstlst1,lstlst2,lstres;      
+      list<list<String>> lstlst1,lstlst2,lstres;
     
     // equation
     case (vars,BackendDAE.EQUATION(exp = e1,scalar = e2))
@@ -558,7 +558,7 @@ algorithm
       BackendDAE.Variables vars;
       list<DAE.Exp> expl;
       Algorithm.Else else_;
-      list<list<String>> lstlst;      
+      list<list<String>> lstlst;
     
     case ({},_) then {};
     
@@ -878,7 +878,7 @@ end incidenceRowExp;
 
 protected function incidenceRowIter
   input DAE.ReductionIterator iter;
-  input BackendDAE.Variables vars; 
+  input BackendDAE.Variables vars;
   output list<String> strs;
 algorithm
   strs := match (iter,vars)

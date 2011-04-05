@@ -86,7 +86,7 @@ end InstResult;
 
 uniontype InstInner
   record INST_INNER
-    Prefix.Prefix innerPrefix "the prefix of the inner. we need it to prefix the outer variables with it!";    
+    Prefix.Prefix innerPrefix "the prefix of the inner. we need it to prefix the outer variables with it!";
     SCode.Ident name;
     Absyn.InnerOuter io;
     String fullName "full inner component name";
@@ -1065,7 +1065,7 @@ algorithm
       equation
         crs = Util.listMap(innerVars,DAEUtil.varCref);
         {} = Util.listSelect1(crs, cr, isInnerOuterMatch);
-        str2 = Dump.unparseInnerouterStr(io);        
+        str2 = Dump.unparseInnerouterStr(io);
         str = ComponentReference.printComponentRefStr(cr);
         Error.addMessage(Error.MISSING_INNER_PREFIX,{str,str2});
       then fail();
@@ -1727,7 +1727,7 @@ algorithm
         // Debug.fprintln("innerouter", "InnerOuter.addOuterPrefix adding: outer cref: " +& 
         //   ComponentReference.printComponentRefStr(inOuterComponentRef) +& " refers to inner cref: " +& 
         //   ComponentReference.printComponentRefStr(inInnerComponentRef) +& " to IH");
-        outerPrefixes = Util.listUnionElt(OUTER(inOuterComponentRef,inInnerComponentRef), outerPrefixes); 
+        outerPrefixes = Util.listUnionElt(OUTER(inOuterComponentRef,inInnerComponentRef), outerPrefixes);
       then
         TOP_INSTANCE(pathOpt, ht, outerPrefixes)::restIH;
 
@@ -1737,7 +1737,7 @@ algorithm
         true = RTOpts.debugFlag("failtrace");
         Debug.traceln("InnerOuter.addOuterPrefix failed to add: outer cref: " +& 
           ComponentReference.printComponentRefStr(inOuterComponentRef) +& " refers to inner cref: " +& 
-          ComponentReference.printComponentRefStr(inInnerComponentRef) +& " to IH");        
+          ComponentReference.printComponentRefStr(inInnerComponentRef) +& " to IH");
       then
         fail();
   end matchcontinue;
@@ -1773,7 +1773,7 @@ algorithm
 
         // Debug.fprintln("innerouter", "- InnerOuter.prefixOuterCrefWithTheInnerPrefix replaced cref " +& 
         //  ComponentReference.printComponentRefStr(fullCref) +& " with cref: " +& 
-        //  ComponentReference.printComponentRefStr(innerCref));        
+        //  ComponentReference.printComponentRefStr(innerCref));
       then 
         innerCref;
     
@@ -1784,7 +1784,7 @@ algorithm
         // Debug.traceln("- InnerOuter.prefixOuterCrefWithTheInnerPrefix failed to find prefix of inner for outer: prefix/cref " +& 
         //   PrefixUtil.printPrefixStr(inPrefix) +& "/" +& ComponentReference.printComponentRefStr(inOuterComponentRef));
       then
-        fail();        
+        fail();
   end match;
 end prefixOuterCrefWithTheInnerPrefix;
 
@@ -1816,7 +1816,7 @@ algorithm
         // test cref equality
         true = ComponentReference.crefEqualNoStringCompare(ifull, ocp);
         // the inner cref is the inner prefix!
-        ic = icp;  
+        ic = icp;
       then
         ic;
   end matchcontinue;
@@ -1825,7 +1825,7 @@ end changeOuterReferenceToInnerReference;
 protected function searchForInnerPrefix
 "@author: adrpo
   search in the outer prefixes and retrieve the outer/inner crefs"
-  input DAE.ComponentRef fullCref;  
+  input DAE.ComponentRef fullCref;
   input OuterPrefixes outerPrefixes;
   output DAE.ComponentRef outerCrefPrefix;
   output DAE.ComponentRef innerCrefPrefix;
@@ -1853,7 +1853,7 @@ algorithm
          (crOuter, crInner) = searchForInnerPrefix(fullCref, rest);
       then 
         (crOuter, crInner);
-  end matchcontinue; 
+  end matchcontinue;
 end searchForInnerPrefix;
 
 public function printInnerDefStr
@@ -1868,7 +1868,7 @@ algorithm
       Option<InstResult> instResult;
       String fullName "full inner component name";
       Absyn.Path typePath "the type of the inner";
-      String scope "the scope of the inner";      
+      String scope "the scope of the inner";
       list<DAE.ComponentRef> outers "which outers are referencing this inner";
       String str, strOuters;
 
@@ -1878,7 +1878,7 @@ algorithm
                       "", 
                       " Referenced by 'outer' components: {" +&
                       Util.stringDelimitList(Util.listMap(outers, ComponentReference.printComponentRefStr), ", ") +& "}");
-        str = Absyn.pathString(typePath) +& " " +& fullName +& "; defined in scope: " +& scope +& "." +& strOuters;   
+        str = Absyn.pathString(typePath) +& " " +& fullName +& "; defined in scope: " +& scope +& "." +& strOuters;
       then 
         str;
   end match;
@@ -2079,7 +2079,7 @@ algorithm
         indexes = hashvec[indx + 1];
         hashvec_1 = arrayUpdate(hashvec, indx + 1, ((key,newpos) :: indexes));
         n_1 = valueArrayLength(varr_1);
-        // print("Added NEW to IH: key:" +& ComponentReference.printComponentRefStr(key) +& " value: " +& printInnerDefStr(value) +& "\n"); 
+        // print("Added NEW to IH: key:" +& ComponentReference.printComponentRefStr(key) +& " value: " +& printInnerDefStr(value) +& "\n");
       then HASHTABLE(hashvec_1,varr_1,bsize,n_1);
 
       /* adding when already present => Updating value */
@@ -2089,7 +2089,7 @@ algorithm
         //print("adding when present, indx =" );print(intString(indx));print("\n");
         indx_1 = indx - 1;
         varr_1 = valueArraySetnth(varr, indx, newv);
-        // print("Updated NEW to IH: key:" +& ComponentReference.printComponentRefStr(key) +& " value: " +& printInnerDefStr(value) +& "\n");        
+        // print("Updated NEW to IH: key:" +& ComponentReference.printComponentRefStr(key) +& " value: " +& printInnerDefStr(value) +& "\n");
       then HASHTABLE(hashvec,varr_1,bsize,n);
     case (_,_)
       equation

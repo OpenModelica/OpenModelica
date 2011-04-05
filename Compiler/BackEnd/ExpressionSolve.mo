@@ -62,7 +62,7 @@ public function solve
   input DAE.Exp inExp2;
   input DAE.Exp inExp3;
   output DAE.Exp outExp;
-  output list<DAE.Statement> outAsserts; 
+  output list<DAE.Statement> outAsserts;
 algorithm
   (outExp,outAsserts) := matchcontinue (inExp1,inExp2,inExp3)
     local
@@ -100,7 +100,7 @@ algorithm
         false = Expression.expContains(lhs, crexp);
         res_1 = ExpressionSimplify.simplify1(lhs);
       then
-        (res_1,{});    
+        (res_1,{});
 
     // solving linear equation system using newton iteration ( converges directly )
     case (lhs,rhs,(cr as DAE.CREF(componentRef = _)))
@@ -186,7 +186,7 @@ algorithm
         false = Expression.expContains(lhs, crexp);
         res_1 = ExpressionSimplify.simplify1(lhs);
       then
-        (res_1,{});    
+        (res_1,{});
 
     // solving linear equation system using newton iteration ( converges directly )
     case (lhs,rhs,(cr as DAE.CREF(componentRef = _)))
@@ -194,10 +194,10 @@ algorithm
         true = hasOnlyFactors(lhs,rhs);
         tp = Expression.typeof(lhs);
         e1 = Expression.makeConstOne(tp);
-        lhs = Expression.makeSum({lhs,e1}); 
+        lhs = Expression.makeSum({lhs,e1});
         tp1 = Expression.typeof(rhs);
         e2 = Expression.makeConstOne(tp1);
-        lhs = Expression.makeSum({rhs,e2}); 
+        lhs = Expression.makeSum({rhs,e2});
         (res,asserts) = solve2(lhs, rhs, cr, true);
         res_1 = ExpressionSimplify.simplify1(res);
       then
@@ -299,7 +299,7 @@ algorithm
         sa = ExpressionDump.printExpStr(a);
         estr = stringAppendList({"Singular expression ",se1," = ",se2," because ",sa," is Zero!"});
       then
-        (rhs_1,DAE.STMT_ASSERT(DAE.RELATION(a,DAE.NEQUAL(tp),z,-1,NONE()),DAE.SCONST(estr),DAE.emptyElementSource)::asserts); 
+        (rhs_1,DAE.STMT_ASSERT(DAE.RELATION(a,DAE.NEQUAL(tp),z,-1,NONE()),DAE.SCONST(estr),DAE.emptyElementSource)::asserts);
        
     // swapped args: a*(b-c) = 0  solve for b     
     case (e2,e1,(crexp as DAE.CREF(componentRef = cr)),linExp)
@@ -314,7 +314,7 @@ algorithm
         sa = ExpressionDump.printExpStr(a);
         estr = stringAppendList({"Singular expression ",se1," = ",se2," because ",sa," is Zero!"});
       then
-        (rhs_1,DAE.STMT_ASSERT(DAE.RELATION(a,DAE.NEQUAL(tp),z,-1,NONE()),DAE.SCONST(estr),DAE.emptyElementSource)::asserts); 
+        (rhs_1,DAE.STMT_ASSERT(DAE.RELATION(a,DAE.NEQUAL(tp),z,-1,NONE()),DAE.SCONST(estr),DAE.emptyElementSource)::asserts);
 
     case (e1,e2,(crexp as DAE.CREF(componentRef = cr)), linExp)
       equation
@@ -379,7 +379,7 @@ algorithm
         crefs = Expression.extractCrefsFromExp(e1);
         false = Util.listContainsWithCompareFunc(cr,crefs,ComponentReference.crefEqualNoStringCompare);
       then
-        (e2,e1); 
+        (e2,e1);
     // swapped arguments   
     case (DAE.BINARY(e1,op,e2),(crexp as DAE.CREF(componentRef = cr)))
       equation
@@ -388,7 +388,7 @@ algorithm
         crefs = Expression.extractCrefsFromExp(e2);
         false = Util.listContainsWithCompareFunc(cr,crefs,ComponentReference.crefEqualNoStringCompare);
       then
-        (e1,e2);        
+        (e1,e2);
 
   end matchcontinue;
 end solve3;

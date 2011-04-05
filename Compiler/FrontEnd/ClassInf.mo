@@ -348,9 +348,9 @@ algorithm
     case PACKAGE(path = p) then p;
     case FUNCTION(path = p) then p;
     case ENUMERATION(path = p) then p;
-    case HAS_EQUATIONS(path = p) then p;   
+    case HAS_EQUATIONS(path = p) then p;
     case HAS_CONSTRAINTS(path = p) then p;
-    case IS_NEW(path = p) then p;        
+    case IS_NEW(path = p) then p;
     case TYPE_INTEGER(path = p) then p;
     case TYPE_REAL(path = p) then p;
     case TYPE_STRING(path = p) then p;
@@ -364,7 +364,7 @@ algorithm
     case META_OPTION(p) then p;
     case META_RECORD(p) then p;
     case UNIONTYPE(p) then p;
-    case META_ARRAY(p) then p;      
+    case META_ARRAY(p) then p;
     case META_POLYMORPHIC(p) then p;
       
     case _ then Absyn.IDENT("#getStateName failed#");
@@ -379,7 +379,7 @@ algorithm
     local
       String name;
     case FOUND_EQUATION() then "FOUND_EQUATION";
-    case FOUND_CONSTRAINT() then "FOUND_CONSTRAINT";      
+    case FOUND_CONSTRAINT() then "FOUND_CONSTRAINT";
     case NEWDEF() then "NEWDEF";
     case FOUND_COMPONENT(name) then "FOUND_COMPONENT(" +& name +& ")";
   end match;
@@ -437,7 +437,7 @@ algorithm
       String s;
       list<String> msg;
     case (UNKNOWN(path = p),NEWDEF()) then IS_NEW(p);  /* Event `NEWDEF\' */
-    case (OPTIMIZATION(path = p),NEWDEF()) then OPTIMIZATION(p);      
+    case (OPTIMIZATION(path = p),NEWDEF()) then OPTIMIZATION(p);
     case (MODEL(path = p),NEWDEF()) then MODEL(p);
     case (RECORD(path = p),NEWDEF()) then RECORD(p);
     case (BLOCK(path = p),NEWDEF()) then BLOCK(p);
@@ -457,7 +457,7 @@ algorithm
 
    /* Event 'FOUND_COMPONENT' */
     case (UNKNOWN(path = p),FOUND_COMPONENT(name = _)) then IS_NEW(p);  /* Event `NEWDEF\' */
-    case (OPTIMIZATION(path = p),FOUND_COMPONENT(name = _)) then OPTIMIZATION(p);      
+    case (OPTIMIZATION(path = p),FOUND_COMPONENT(name = _)) then OPTIMIZATION(p);
     case (MODEL(path = p),FOUND_COMPONENT(name = _)) then MODEL(p);
     case (RECORD(path = p),FOUND_COMPONENT(name = _)) then RECORD(p);
     case (BLOCK(path = p),FOUND_COMPONENT(name = _)) then BLOCK(p);
@@ -484,8 +484,8 @@ algorithm
 
    /* Event `FOUND_EQUATION\' */
     case (UNKNOWN(path = p),FOUND_EQUATION()) then HAS_EQUATIONS(p);
-    case (OPTIMIZATION(path = p),FOUND_EQUATION()) then HAS_EQUATIONS(p);    
-    case (OPTIMIZATION(path = p),FOUND_CONSTRAINT()) then HAS_CONSTRAINTS(p);        
+    case (OPTIMIZATION(path = p),FOUND_EQUATION()) then HAS_EQUATIONS(p);
+    case (OPTIMIZATION(path = p),FOUND_CONSTRAINT()) then HAS_CONSTRAINTS(p);
     case (IS_NEW(path = p),FOUND_EQUATION()) then HAS_EQUATIONS(p);
     case (MODEL(path = p),FOUND_EQUATION()) then MODEL(p);
     case (RECORD(path = p),FOUND_EQUATION())
@@ -508,7 +508,7 @@ algorithm
     case (FUNCTION(path = p),FOUND_CONSTRAINT()) then fail();
     case (RECORD(path = p),FOUND_CONSTRAINT()) then fail();
     case (MODEL(path = p),FOUND_CONSTRAINT()) then fail();
-    case (FUNCTION(path = p),FOUND_CONSTRAINT()) then fail();      
+    case (FUNCTION(path = p),FOUND_CONSTRAINT()) then fail();
     case (FUNCTION(path = p),FOUND_EQUATION()) then fail();
     case (HAS_EQUATIONS(path = p),FOUND_EQUATION()) then HAS_EQUATIONS(p);
     case (HAS_CONSTRAINTS(path = p),FOUND_CONSTRAINT()) then HAS_CONSTRAINTS(p);
@@ -554,7 +554,7 @@ algorithm
     case (HAS_EQUATIONS(path = p),SCode.R_BLOCK()) then ();
     
     case (CONNECTOR(path = _,isExpandable=false),SCode.R_CONNECTOR(false)) then ();
-    case (CONNECTOR(path = _,isExpandable=true),SCode.R_CONNECTOR(true)) then ();    
+    case (CONNECTOR(path = _,isExpandable=true),SCode.R_CONNECTOR(true)) then ();
     case (IS_NEW(path = _),SCode.R_CONNECTOR(_)) then ();
     case (TYPE_INTEGER(path = _),SCode.R_CONNECTOR(_)) then ();
     case (TYPE_REAL(path = _),SCode.R_CONNECTOR(_)) then ();
@@ -580,7 +580,7 @@ algorithm
     case (META_OPTION(p),SCode.R_TYPE()) then ();
     case (META_RECORD(p),SCode.R_TYPE()) then ();
     case (META_ARRAY(p),SCode.R_TYPE()) then ();
-    case (UNIONTYPE(p),SCode.R_TYPE()) then ();    
+    case (UNIONTYPE(p),SCode.R_TYPE()) then ();
 
   end match;
 end valid;

@@ -101,9 +101,9 @@ public function valueExpType "creates a DAE.ExpType from a Value"
 algorithm
   tp := matchcontinue(inValue)
   local 
-    Absyn.Path path; 
-    Integer indx; 
-    list<String> nameLst; 
+    Absyn.Path path;
+    Integer indx;
+    list<String> nameLst;
     DAE.ExpType eltTp;
     list<Values.Value> valLst;
     list<DAE.ExpType> eltTps;
@@ -133,7 +133,7 @@ algorithm
       equation
         print("valueExpType on "+&valString(inValue) +& " not implemented yet\n");
       then fail();
-  end matchcontinue;  
+  end matchcontinue;
 end valueExpType;
 
 protected function valueExpTypeExpVar "help function to valueExpType"
@@ -910,7 +910,7 @@ algorithm
       Absyn.Path path;
       Absyn.CodeNode code;
 
-    case (Values.INTEGER(integer = i)) then DAE.ICONST(i); 
+    case (Values.INTEGER(integer = i)) then DAE.ICONST(i);
     case (Values.REAL(real = r))       then DAE.RCONST(r);
     case (Values.STRING(string = s))   then DAE.SCONST(s);
     case (Values.BOOL(boolean = b))    then DAE.BCONST(b);
@@ -919,14 +919,14 @@ algorithm
     case (Values.ARRAY(valueLst = {}, dimLst = {})) then DAE.ARRAY(DAE.ET_OTHER(),false,{});
     case (Values.ARRAY(valueLst = {}, dimLst = int_dims))
       equation
-        dims = Util.listMap(int_dims, Expression.intDimension); 
+        dims = Util.listMap(int_dims, Expression.intDimension);
       then DAE.ARRAY(DAE.ET_ARRAY(DAE.ET_OTHER(), dims),false,{});
 
     /* Matrix */
     case(Values.ARRAY(valueLst = Values.ARRAY(valueLst=v::xs)::xs2, dimLst = dim::int_dims))
       equation
         failure(Values.ARRAY(valueLst = _) = v);
-        explist = Util.listMap((v :: xs), valueExp);      
+        explist = Util.listMap((v :: xs), valueExp);
         DAE.MATRIX(t,i,mexpl) = valueExp(Values.ARRAY(xs2,int_dims));
         mexpl2 = Util.listThreadTuple(explist,Util.listFill(true,i));
         t = Expression.arrayDimensionSetFirst(t, DAE.DIM_INTEGER(dim));

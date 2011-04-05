@@ -694,13 +694,13 @@ protected function buildClassDependsinEqns "Build class dependencies from equati
 algorithm
  outDep := matchcontinue(eqns,optPath,cname,dep)
    local  
-     AbsynDep.Depends d; 
-     Absyn.Program p; 
-     Env.Env env;     
+     AbsynDep.Depends d;
+     Absyn.Program p;
+     Env.Env env;
      Absyn.Exp e,e1,e2;
      list<Absyn.EquationItem> teqns,feqns,whenEqns;
      list<tuple<Absyn.Exp,list<Absyn.EquationItem>>> elseifeqns,elseWhenEqns;
-     Absyn.FunctionArgs fargs; 
+     Absyn.FunctionArgs fargs;
      Absyn.ComponentRef cr;
      Absyn.Path path,usesName,cname2;
      HashTable2.HashTable ht;
@@ -897,9 +897,9 @@ protected function buildClassDependsinArrayDimOpt " help function to e.g buildCl
 algorithm
   outDep := match(adOpt,optPath,cname,dep)
     local 
-      AbsynDep.Depends d; 
-      Absyn.Program p; 
-      Env.Env env; 
+      AbsynDep.Depends d;
+      Absyn.Program p;
+      Env.Env env;
       Absyn.ArrayDim ad;
       HashTable2.HashTable ht;
    
@@ -945,8 +945,8 @@ algorithm
  outDep := matchcontinue(elts,optPath,cname,dep)
    local 
      Absyn.ElementSpec eltSpec;
-     AbsynDep.Depends d; 
-     Absyn.Program p; 
+     AbsynDep.Depends d;
+     Absyn.Program p;
      Env.Env env;
      HashTable2.HashTable ht;
    
@@ -974,9 +974,9 @@ protected function buildClassDependsInExp "build class dependencies from Absyn.E
 algorithm
   outDep := match(e,optPath,cname,dep)
     local 
-      AbsynDep.Depends d; 
-      Absyn.Program p; 
-      Env.Env env; 
+      AbsynDep.Depends d;
+      Absyn.Program p;
+      Env.Env env;
       HashTable2.HashTable ht;
     
     case(e,optPath,cname,(d,p,env,ht)) 
@@ -996,10 +996,10 @@ algorithm
   outDep := match(cdef,optPath,cname,dep)
     local 
       Absyn.TypeSpec typeSpec;
-      Absyn.Program prg; 
-      AbsynDep.Depends d; 
+      Absyn.Program prg;
+      AbsynDep.Depends d;
       Env.Env env;
-      list<Absyn.ClassPart> parts; 
+      list<Absyn.ClassPart> parts;
       Absyn.ElementAttributes attr;
       HashTable2.HashTable ht;
     
@@ -1041,7 +1041,7 @@ algorithm
   outDep := match(typeSpec,optPath,cname,dep)
     local 
       Absyn.Path path,usesName,cname2;
-      AbsynDep.Depends d; Absyn.Program p; Env.Env env; 
+      AbsynDep.Depends d; Absyn.Program p; Env.Env env;
       Option<Absyn.ArrayDim> adOpt;HashTable2.HashTable ht;
     
     case(Absyn.TPATH(path = path,arrayDim=adOpt),optPath as SOME(cname2),cname,(d,p,env,ht)) 
@@ -1372,9 +1372,9 @@ protected function extractProgramVisitor "Visitor function to extractProgram"
 algorithm
   outTpl := match(inTpl)
     local 
-      Absyn.Path path; Absyn.Class cl; 
-      String id; AbsynDep.AvlTree tree; 
-      list<Absyn.Class> cls; 
+      Absyn.Path path; Absyn.Class cl;
+      String id; AbsynDep.AvlTree tree;
+      list<Absyn.Class> cls;
       list<Option<Absyn.Path>> pts;
     
     case((cl as Absyn.CLASS(name=id),NONE(),(tree,cls,pts))) 

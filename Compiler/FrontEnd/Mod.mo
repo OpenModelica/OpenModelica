@@ -81,7 +81,7 @@ protected
 uniontype FullMod "used for error reporting"
   record MOD "the fully qualified cref and the mod, only used for redeclare"
     DAE.ComponentRef cref;
-    DAE.Mod mod; 
+    DAE.Mod mod;
   end MOD;
   
   record SUB_MOD "the fully qualified cref and the sub mod for all other mods"
@@ -243,7 +243,7 @@ end checkIfSubmodsAreBasicTypeMods;
 protected function elabModRedeclareElements
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;  
+  input InstanceHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input Boolean finalPrefix;
   input list<SCode.Element> elts;
@@ -253,7 +253,7 @@ protected function elabModRedeclareElements
 algorithm
   modElts := match(inCache,inEnv,inIH,inPrefix,finalPrefix,elts,impl,info)
     local
-      Env.Cache cache; Env.Env env; Prefix.Prefix pre; 
+      Env.Cache cache; Env.Env env; Prefix.Prefix pre;
       Boolean f,fi,repl,p,enc,prot,redecl;
       Absyn.InnerOuter io;
       SCode.Ident cn,cn2,compname;
@@ -688,7 +688,7 @@ protected function elabSubmods
   This function helps elabMod by recusively elaborating on a list of submodifications."
     input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;  
+  input InstanceHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input list<SCode.SubMod> inSCodeSubModLst;
   input Boolean inBoolean;
@@ -923,7 +923,7 @@ algorithm
                                        eqModOption = SOME(DAE.TYPED(e,SOME(val),DAE.PROP(t,const),_)))))
       equation
         e_2 = DAE.ICONST(n);
-        //print("FULLValue: " +& ValuesUtil.printValStr(val) +& "\n");        
+        //print("FULLValue: " +& ValuesUtil.printValStr(val) +& "\n");
         // get the indexed value
         indexVal = ValuesUtil.nthArrayelt(val, n);
         // transform to exp
@@ -946,13 +946,13 @@ algorithm
                         eqModOption = SOME(DAE.TYPED(e,e_val,DAE.PROP(t,const),_)))))
       equation
         e_2 = DAE.ICONST(n);
-        //print("FULLExpression: " +& ExpressionDump.printExpStr(e) +& "\n");        
+        //print("FULLExpression: " +& ExpressionDump.printExpStr(e) +& "\n");
         e_1 = ExpressionSimplify.simplify(Expression.makeASUB(e,{e_2}));
         t_1 = Types.unliftArray(t);
         unfoldedMod = DAE.MOD(finalPrefix,each_,{},
                               SOME(DAE.TYPED(e_1,NONE(),DAE.PROP(t_1,const),NONE())));
         //print("IDXExpression: " +& ExpressionDump.printExpStr(e_1) +& "\n");
-        //print("Idx: " +& ExpressionDump.printExpStr(x) +& " mod: " +& printModStr(unfoldedMod) +& "\n");        
+        //print("Idx: " +& ExpressionDump.printExpStr(x) +& " mod: " +& printModStr(unfoldedMod) +& "\n");
         mods1 = makeIdxmods((DAE.INDEX(x) :: restSubscripts),unfoldedMod);
         n_1 = n + 1;
         mods2 = expandSlice(xs, restSubscripts, n_1, m);
@@ -1274,7 +1274,7 @@ algorithm
     case(mod1,mod2) 
       equation
         true = modEqual(mod1, mod2);
-      then mod2;    
+      then mod2;
     // print error message
     case(mod1,mod2) equation
       s1 = printModStr(mod1);
@@ -1307,7 +1307,7 @@ algorithm
         true = stringEq(id1, id2);
         lst = lookupNamedModifications(rest, id2);
       then
-        x :: lst;    
+        x :: lst;
     
     // a named modification that doesn't match, skip it 
     case ((x  as DAE.NAMEMOD(ident = id1)) :: rest,id2)
@@ -1359,7 +1359,7 @@ algorithm
       equation
         // make sure x is not present in the rest
         fullMods = getFullModsFromSubMods(ComponentReference.makeCrefIdent("", DAE.ET_OTHER(), {}), inSubModLst);
-        // print("FullModsTry: " +& Util.stringDelimitList(Util.listMap1(fullMods, prettyPrintFullMod, 1), " ||| ") +& "\n");        
+        // print("FullModsTry: " +& Util.stringDelimitList(Util.listMap1(fullMods, prettyPrintFullMod, 1), " ||| ") +& "\n");
         checkDuplicatesInFullMods(fullMods, Prefix.NOPRE(), "", Absyn.dummyInfo, false);
         mod2 = tryMergeSubMods(rest);
         mod = merge(mod1, mod2, {}, Prefix.NOPRE());
@@ -1405,7 +1405,7 @@ algorithm
     // found our modification and is not duplicate, only one 
     case (inSubModLst,id)
       equation
-        {DAE.NAMEMOD(mod=mod)} = lookupNamedModifications(inSubModLst, id); 
+        {DAE.NAMEMOD(mod=mod)} = lookupNamedModifications(inSubModLst, id);
       then
         mod;
 
@@ -1428,7 +1428,7 @@ algorithm
         s = printSubsStr(duplicates, true);
         s1 = prettyPrintSubmod(head);
         s1 = "(" +& s1 +& ")";
-        s2 = printSubsStr(tail, true); 
+        s2 = printSubsStr(tail, true);
         Error.addMessage(Error.DUPLICATE_MODIFICATIONS_WARNING, {id, s, s1, s2});
         */
       then
@@ -1672,7 +1672,7 @@ algorithm
     local
       DAE.Mod m;
       list<DAE.SubMod> submods;
-      String strPrefix, s; 
+      String strPrefix, s;
       Option<Absyn.Path> p;
       
     case (DAE.NOMOD(),DAE.NOMOD(),_,_) then DAE.NOMOD();
@@ -1697,7 +1697,7 @@ algorithm
         s = Absyn.optPathString(p);
         // put both modifiers in one big modifier
         strPrefix = PrefixUtil.printPrefixStrIgnoreNoPre(inPrefix);
-        submods = {DAE.NAMEMOD("", inMod1), DAE.NAMEMOD("", inMod2)}; 
+        submods = {DAE.NAMEMOD("", inMod1), DAE.NAMEMOD("", inMod2)};
         m = DAE.MOD(false, Absyn.NON_EACH(), submods,NONE());
         s = s +& "\n\tby using modifiers: " +&  strPrefix +& printSubsStr(submods, true) +& 
         " that do not agree.";
@@ -1763,7 +1763,7 @@ algorithm
     
     //case (inMod1,inMod2,_,_)
     //  equation
-    //    print("Merging: " +& printModStr(inMod1) +& " with " +& printModStr(inMod2) +& "\n");  
+    //    print("Merging: " +& printModStr(inMod1) +& " with " +& printModStr(inMod2) +& "\n");
     //  then 
     //    fail();
     
@@ -1797,7 +1797,7 @@ algorithm
     case (outer_,inner_,_,_)
       equation                
         // adrpo: TODO! FIXME! why isn't modEqual working here??!! 
-        // true = modEqual(outer_, inner_);        
+        // true = modEqual(outer_, inner_);
         equality(outer_ = inner_);
       then
         outer_;
@@ -1869,7 +1869,7 @@ algorithm
       list<DAE.SubMod> ss,ss_1;
       list<Env.Frame> env;
       Prefix.Prefix pre;
-      list<Integer> i1,i2;      
+      list<Integer> i1,i2;
     
     // empty list  
     case (sm,{},_,_) then (sm,{});
@@ -2041,7 +2041,7 @@ algorithm
         true;
     case(DAE.REDECL(_,_),DAE.REDECL(_,_)) then false;
     case(DAE.NOMOD(),DAE.NOMOD()) then true;
-    case(mod1, mod2) then false;      
+    case(mod1, mod2) then false;
     case(mod1, mod2) 
       equation
         //true = RTOpts.debugFlag("failtrace");
@@ -2449,7 +2449,7 @@ algorithm str := matchcontinue(inSub)
     
   case(DAE.NAMEMOD(id,(m as DAE.REDECL(fp, elist))))
     equation
-      s1 = Util.stringDelimitList(Util.listMap(Util.listMap(elist, Util.tuple21), SCode.printElementStr), ", ");      
+      s1 = Util.stringDelimitList(Util.listMap(Util.listMap(elist, Util.tuple21), SCode.printElementStr), ", ");
       s2 = id +& "(redeclare " +& Util.if_(fp,"final ","") +& s1 +& ")";
     then
       s2;
@@ -2708,10 +2708,10 @@ algorithm
         len1 = stringLength(i);
         len2 = stringLength(idx);
         // either one of them is a substring of the other
-        true = boolOr(0 == System.strncmp(i, idx, len1), 0 == System.strncmp(idx, i, len2));  
+        true = boolOr(0 == System.strncmp(i, idx, len1), 0 == System.strncmp(idx, i, len2));
       then true;
-    case (_, _) then false;        
-  end matchcontinue; 
+    case (_, _) then false;
+  end matchcontinue;
 end isPrefixOf;
 
 protected function getOverlap
@@ -2735,7 +2735,7 @@ algorithm
         lst = listAppend(lst1, lst2);
       then
         lst;
-  end match; 
+  end match;
 end getOverlap;
 
 public function checkIdxModsForNoOverlap
@@ -2756,7 +2756,7 @@ algorithm
       Prefix.Prefix pre;
       String str1, str2, str3;
       DAE.EqMod eqMod;
-      DAE.Properties props; 
+      DAE.Properties props;
     
     // no modifications
     case(DAE.NOMOD(), _, _) then ();
@@ -2922,7 +2922,7 @@ algorithm
       equation
         fullMods = getFullModsFromModRedeclare(inTopCref, rest, finalPrefix);
       then
-        fullMods;  
+        fullMods;
   end matchcontinue;
 end getFullModsFromModRedeclare;
 
@@ -3007,7 +3007,7 @@ algorithm
     case(mod,pre,elementName,info)
       equation
         cref = PrefixUtil.makeCrefFromPrefixNoFail(pre);
-        // print("Prefix:" +& PrefixUtil.printPrefixStr(pre)+& "\n"); 
+        // print("Prefix:" +& PrefixUtil.printPrefixStr(pre)+& "\n");
         // print("Element:" +& elementName +& "\n");
         // print("Prefix + element: " +& ComponentReference.printComponentRefStr(cref) +& "\n");
         // print("Entire Mod: " +& printModStr(mod) +& "\n");
@@ -3033,7 +3033,7 @@ algorithm
     case (MOD(cr1, _), MOD(cr2, _)) then ComponentReference.crefEqualNoStringCompare(cr1, cr2);
     case (SUB_MOD(cr1, _), SUB_MOD(cr2, _)) then ComponentReference.crefEqualNoStringCompare(cr1, cr2);
     case (MOD(cr1, _), SUB_MOD(cr2, _)) then ComponentReference.crefEqualNoStringCompare(cr1, cr2);
-    case (SUB_MOD(cr1, _), MOD(cr2, _)) then ComponentReference.crefEqualNoStringCompare(cr1, cr2);    
+    case (SUB_MOD(cr1, _), MOD(cr2, _)) then ComponentReference.crefEqualNoStringCompare(cr1, cr2);
   end match;
 end fullModCrefsEqual;
 
@@ -3055,11 +3055,11 @@ algorithm
       equation
         str = ComponentReference.printComponentRefStr(cr) +& ": " +& prettyPrintMod(mod, inDepth);
       then
-        str; 
+        str;
     
     case (SUB_MOD(cr, subMod), inDepth)
       equation
-        str = ComponentReference.printComponentRefStr(cr) +& ": " +& prettyPrintSubmod(subMod); 
+        str = ComponentReference.printComponentRefStr(cr) +& ": " +& prettyPrintSubmod(subMod);
       then
         str;
     
@@ -3071,7 +3071,7 @@ protected function checkDuplicatesInFullMods "helper function for verifySingleMo
   input Prefix.Prefix pre;
   input String elementName;
   input Absyn.Info info;
-  input Boolean addErrorMessage;  
+  input Boolean addErrorMessage;
 algorithm 
   _ := matchcontinue(subs,pre,elementName,info,addErrorMessage)
     local 

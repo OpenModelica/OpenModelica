@@ -157,7 +157,7 @@ algorithm
       list<Node> nl;
       list<Absyn.ElementItem> el;
       list<Absyn.EquationItem> eqs;
-      list<Absyn.AlgorithmItem> als;      
+      list<Absyn.AlgorithmItem> als;
     
     case (Absyn.PUBLIC(contents = el))
       equation

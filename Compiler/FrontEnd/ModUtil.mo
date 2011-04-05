@@ -126,7 +126,7 @@ algorithm
       list<list<DAE.Exp>> es,es_1;
       DAE.ExpType tp;
       Integer index_;
-      Option<tuple<DAE.Exp,Integer,Integer>> isExpisASUB;        
+      Option<tuple<DAE.Exp,Integer,Integer>> isExpisASUB;
       
     case (str,r,rarg,DAE.CREF(componentRef = cr,ty = t))
       equation

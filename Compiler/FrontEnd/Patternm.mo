@@ -574,8 +574,8 @@ algorithm
         tys = Util.listMap(elabProps, Types.getPropType);
         (cache,elabCases,resType,st) = elabMatchCases(cache,env,cases,tys,impl,st,performVectorization,pre,info);
         prop = DAE.PROP(resType,DAE.C_VAR());
-        et = Types.elabType(resType);        
-        (elabExps,elabCases) = filterUnusedPatterns(elabExps,elabCases) "filterUnusedPatterns() First time to speed up the other optimizations.";        
+        et = Types.elabType(resType);
+        (elabExps,elabCases) = filterUnusedPatterns(elabExps,elabCases) "filterUnusedPatterns() First time to speed up the other optimizations.";
         elabCases = caseDeadCodeEliminiation(matchTy, elabCases, {}, {}, false);
         // Do DCE before converting mc to m
         matchTy = optimizeContinueToMatch(matchTy,elabCases,info);
@@ -1186,7 +1186,7 @@ algorithm
       equation
         true = patternListsDoOverlap(ps1,ps2); ???
       then info;
-    case (ps1,_::prevCases) then findOverlappingPattern(ps1,prevCases); 
+    case (ps1,_::prevCases) then findOverlappingPattern(ps1,prevCases);
   end matchcontinue;
 end findOverlappingPattern;
 */
@@ -1529,7 +1529,7 @@ algorithm
         len = listLength(tys);
         patterns = Util.listFill(Absyn.CREF(Absyn.WILD()),listLength(tys));
         pattern = Util.if_(len == 1, Absyn.CREF(Absyn.WILD()), Absyn.TUPLE(patterns));
-        (cache,elabCase,elabResult,resType,st) = elabMatchCase(cache,env,Absyn.CASE(pattern,info,decls,eq1,result,resultInfo,NONE(),info),tys,impl,st,performVectorization,pre); 
+        (cache,elabCase,elabResult,resType,st) = elabMatchCase(cache,env,Absyn.CASE(pattern,info,decls,eq1,result,resultInfo,NONE(),info),tys,impl,st,performVectorization,pre);
       then (cache,elabCase,elabResult,resType,st);
         
   end match;
@@ -1562,8 +1562,8 @@ algorithm
 
     case (cache,env,body,exp,impl,st,performVectorization,pre,info)
       equation
-        (cache,elabExp,prop,st) = Static.elabExp(cache,env,exp,impl,st,performVectorization,pre,info);        
-        (body,elabExp,info) = elabResultExp2(RTOpts.debugFlag("patternmSkipMoveLastExp"),body,elabExp,info); 
+        (cache,elabExp,prop,st) = Static.elabExp(cache,env,exp,impl,st,performVectorization,pre,info);
+        (body,elabExp,info) = elabResultExp2(RTOpts.debugFlag("patternmSkipMoveLastExp"),body,elabExp,info);
         ty = Types.getPropType(prop);
       then (cache,body,SOME(elabExp),info,SOME(ty),st);
   end matchcontinue;
@@ -1703,7 +1703,7 @@ algorithm
       equation
         (body,(_,a)) = DAEUtil.traverseDAEEquationsStmts(body,Expression.traverseSubexpressionsHelper,(func,a));
         ((result,a)) = Expression.traverseExpOpt(result,func,a);
-        (cases,a) = traverseCases(cases,func,a); 
+        (cases,a) = traverseCases(cases,func,a);
       then (DAE.CASE(patterns,decls,body,result,resultInfo,jump,info)::cases,a);
   end match;
 end traverseCases;
@@ -1732,7 +1732,7 @@ algorithm
     local
       list<Absyn.ElementItem> ld;
       list<SCode.Element> ld2,ld3,ld4;
-      list<tuple<SCode.Element, DAE.Mod>> ld_mod;      
+      list<tuple<SCode.Element, DAE.Mod>> ld_mod;
       DAE.DAElist dae1;
       Env.Env env2;
       ClassInf.State dummyFunc;

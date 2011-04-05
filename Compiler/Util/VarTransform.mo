@@ -946,7 +946,7 @@ algorithm
   matchcontinue (inRepl)
     local
       HashTable2.HashTable ht;
-      HashTable3.HashTable invHt;      
+      HashTable3.HashTable invHt;
       list<tuple<DAE.ComponentRef,DAE.Exp>> tplLst;
       VariableReplacements repl,repl1;
     case (repl as REPLACEMENTS(ht,invHt))
@@ -960,9 +960,9 @@ end addMultiDimReplacements;
 
 protected function addMultiDimReplacements1
   input VariableReplacements inRepl;
-  input list<tuple<DAE.ComponentRef,DAE.Exp>> inTplLst; 
+  input list<tuple<DAE.ComponentRef,DAE.Exp>> inTplLst;
   output VariableReplacements outRepl;
-  output list<tuple<DAE.ComponentRef,DAE.Exp>> outTplLst;  
+  output list<tuple<DAE.ComponentRef,DAE.Exp>> outTplLst;
 algorithm
   (outRepl,outTplLst):=
   matchcontinue (inRepl,inTplLst)
@@ -982,12 +982,12 @@ end addMultiDimReplacements1;
 protected function addMultiDimReplacements2
   input VariableReplacements inRepl;
   input list<tuple<DAE.ComponentRef,DAE.Exp,Integer>>  inRlst;
-  input list<tuple<DAE.ComponentRef,DAE.Exp>> inTplLst; 
-  input list<tuple<DAE.ComponentRef,DAE.Exp>> inTplLst1; 
+  input list<tuple<DAE.ComponentRef,DAE.Exp>> inTplLst;
+  input list<tuple<DAE.ComponentRef,DAE.Exp>> inTplLst1;
   output VariableReplacements outRepl;
   output list<tuple<DAE.ComponentRef,DAE.Exp,Integer>>  outRlst;
-  output list<tuple<DAE.ComponentRef,DAE.Exp>> outTplLst;  
-  output list<tuple<DAE.ComponentRef,DAE.Exp>> outTplLst1;  
+  output list<tuple<DAE.ComponentRef,DAE.Exp>> outTplLst;
+  output list<tuple<DAE.ComponentRef,DAE.Exp>> outTplLst1;
 algorithm
   (outRepl,outRlst,outTplLst,outTplLst1):=
   matchcontinue (inRepl,inRlst,inTplLst,inTplLst1)
@@ -996,7 +996,7 @@ algorithm
       VariableReplacements repl,repl1,repl2;
       tuple<DAE.ComponentRef,DAE.Exp> key;
       DAE.ComponentRef sc;
-      DAE.Exp ce;      
+      DAE.Exp ce;
       list<tuple<DAE.ComponentRef,DAE.Exp,Integer>> rlst,rlst1,rlst2,rlst3;
       Integer i,ind,ind_1;
     case (repl,rlst,{},tplLst_) then (repl,rlst,{},tplLst_);
@@ -1004,7 +1004,7 @@ algorithm
       equation
         (sc,ce,ind) = getArrayOrRecord(key);
         (repl1,rlst1,tplLst1,tplLst_1) = addMultiDimReplacements2(repl,{(sc,ce,ind)},rest,tplLst_);
-      then (repl1,rlst1,tplLst1,tplLst_1);      
+      then (repl1,rlst1,tplLst1,tplLst_1);
     case (repl,rlst,key::rest,tplLst_)
       equation
         (sc,ce,ind) = getArrayOrRecord(key);
@@ -1024,11 +1024,11 @@ algorithm
         failure(_ = Util.listFindWithCompareFunc(rlst,(sc,ce,0),keyEqual,false));
         rlst1 = listAppend({(sc,ce,ind)},rlst);
         (repl1,rlst2,tplLst1,tplLst_1) = addMultiDimReplacements2(repl,rlst1,rest,tplLst_);
-      then (repl1,rlst2,tplLst1,tplLst_1);        
+      then (repl1,rlst2,tplLst1,tplLst_1);
     case (repl,rlst,key::rest,tplLst_)
       equation
         (repl1,rlst1,tplLst1,tplLst_1) = addMultiDimReplacements2(repl,rlst,rest,tplLst_);
-      then (repl1,rlst1,tplLst1,tplLst_1);        
+      then (repl1,rlst1,tplLst1,tplLst_1);
   end matchcontinue;
 end addMultiDimReplacements2;
 
@@ -1042,8 +1042,8 @@ algorithm
   matchcontinue (inKey)
     local
       DAE.ComponentRef c,sc;
-      DAE.Exp e,ce;      
-      Integer ind;      
+      DAE.Exp e,ce;
+      Integer ind;
       Expression.Type ty;
       list<DAE.ExpVar> varLst;
     // c[?] = e[?]  
@@ -1056,19 +1056,19 @@ algorithm
         ce = Expression.expStripLastSubs(e);
         ty = ComponentReference.crefLastType(c);
         // calc indexes
-        ind = Expression.sizeOf(ty);       
+        ind = Expression.sizeOf(ty);
       then 
-        (sc,ce,ind);      
+        (sc,ce,ind);
     case ((c,e))
       equation
         // is Record
         // stripLastIdent
-        sc = ComponentReference.crefStripLastIdent(c);   
-        ce = Expression.expStripLastIdent(e);     
+        sc = ComponentReference.crefStripLastIdent(c);
+        ce = Expression.expStripLastIdent(e);
         // is Record
         DAE.ET_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_)) = ComponentReference.crefLastType(sc);
         // add
-        ind = listLength(varLst);      
+        ind = listLength(varLst);
       then 
         (sc,ce,ind);
   end matchcontinue;
@@ -1099,7 +1099,7 @@ algorithm
       DAE.Exp e;
       Integer i;
       HashTable2.HashTable ht,ht_1;
-      HashTable3.HashTable invHt,invHt_1;      
+      HashTable3.HashTable invHt,invHt_1;
       list<tuple<DAE.ComponentRef,DAE.Exp,Integer>> alst,alst1;
       list<tuple<DAE.ComponentRef,DAE.Exp>> tplLst,tplLst1,tplLst2,tplLst3;
     // 0 add 
@@ -1109,15 +1109,15 @@ algorithm
         // add to hashtable
         ht_1 = BaseHashTable.add((src, e),ht);
         invHt_1 = addReplacementInv(invHt, src, e);
-        tplLst1 = listAppend({(src, e)},tplLst);       
+        tplLst1 = listAppend({(src, e)},tplLst);
         (repl,alst1,tplLst3,tplLst2) = addMultiDimReplacements2(REPLACEMENTS(ht_1,invHt_1),alst,tplLst1,{});
-      then (repl,alst1,tplLst2); 
+      then (repl,alst1,tplLst2);
     // do nothing       
     case ((src,e,i),repl,alst,tplLst)
       equation
-        false = intEq(i,1);        
+        false = intEq(i,1);
         alst1 = listAppend({(src,e,i)},alst);
-      then (repl,alst1,tplLst);        
+      then (repl,alst1,tplLst);
   end matchcontinue;
 end addTplLst;
 
@@ -1223,7 +1223,7 @@ public function addReplacementIfNot "function: addReplacementIf
   input Boolean condition;
   input VariableReplacements repl;
   input DAE.ComponentRef inSrc;
-  input DAE.Exp inDst;  
+  input DAE.Exp inDst;
   output VariableReplacements outRepl;
 algorithm 
   outRepl:=  matchcontinue (condition,repl,inSrc,inDst)    
@@ -1825,14 +1825,14 @@ algorithm
       list<DAE.Exp> klst,vlst;
       DAE.ComponentRef key;
       DAE.Exp value,crefExp;
-      Option<BinTree> left,right;      
+      Option<BinTree> left,right;
     
     case (TREENODE(value = NONE(),left = NONE(),right = NONE()),klst,vlst) then (klst,vlst);
     case (TREENODE(value = SOME(TREEVALUE(key,value)),left = left,right = right),klst,vlst)
       equation
         (klst,vlst) = bintreeToExplistOpt(left, klst, vlst);
         (klst,vlst) = bintreeToExplistOpt(right, klst, vlst);
-        crefExp = Expression.crefExp(key); 
+        crefExp = Expression.crefExp(key);
       then
         ((crefExp :: klst),(value :: vlst));
     

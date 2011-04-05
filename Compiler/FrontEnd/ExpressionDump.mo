@@ -205,30 +205,30 @@ public function debugBinopSymbol
   output String outString;
 algorithm 
   outString := match (inOperator)
-    case (DAE.ADD(ty = _)) then " + "; 
-    case (DAE.SUB(ty = _)) then " - ";       
-    case (DAE.MUL(ty = _)) then " * "; 
-    case (DAE.DIV(ty = _)) then " / "; 
+    case (DAE.ADD(ty = _)) then " + ";
+    case (DAE.SUB(ty = _)) then " - ";
+    case (DAE.MUL(ty = _)) then " * ";
+    case (DAE.DIV(ty = _)) then " / ";
     case (DAE.POW(ty = _)) then " ^ ";
-    case (DAE.EQUAL(ty = _)) then " = ";  
-    case (DAE.ADD_ARR(ty = _)) then " +ARR "; 
-    case (DAE.SUB_ARR(ty = _)) then " -ARR "; 
-    case (DAE.MUL_ARR(ty = _)) then " *ARR "; 
-    case (DAE.DIV_ARR(ty = _)) then " /ARR "; 
-    case (DAE.POW_ARR(ty = _)) then " ^ARR "; 
-    case (DAE.POW_ARR2(ty = _)) then " ^ARR2 "; 
-    case (DAE.MUL_SCALAR_ARRAY(ty = _)) then " S*ARR "; 
-    case (DAE.MUL_ARRAY_SCALAR(ty = _)) then " ARR*S "; 
-    case (DAE.ADD_SCALAR_ARRAY(ty = _)) then " S+ARR "; 
-    case (DAE.ADD_ARRAY_SCALAR(ty = _)) then " ARR+S "; 
-    case (DAE.SUB_SCALAR_ARRAY(ty = _)) then " - "; 
-    case (DAE.SUB_ARRAY_SCALAR(ty = _)) then " ARR-S "; 
-    case (DAE.POW_SCALAR_ARRAY(ty = _)) then " S^ARR "; 
-    case (DAE.POW_ARRAY_SCALAR(ty = _)) then " ARR^S "; 
-    case (DAE.MUL_SCALAR_PRODUCT(ty = _)) then " Dot "; 
-    case (DAE.MUL_MATRIX_PRODUCT(ty = _)) then " MatrixProd "; 
-    case (DAE.DIV_SCALAR_ARRAY(ty = _)) then " S/ARR "; 
-    case (DAE.DIV_ARRAY_SCALAR(ty = _)) then " ARR/S "; 
+    case (DAE.EQUAL(ty = _)) then " = ";
+    case (DAE.ADD_ARR(ty = _)) then " +ARR ";
+    case (DAE.SUB_ARR(ty = _)) then " -ARR ";
+    case (DAE.MUL_ARR(ty = _)) then " *ARR ";
+    case (DAE.DIV_ARR(ty = _)) then " /ARR ";
+    case (DAE.POW_ARR(ty = _)) then " ^ARR ";
+    case (DAE.POW_ARR2(ty = _)) then " ^ARR2 ";
+    case (DAE.MUL_SCALAR_ARRAY(ty = _)) then " S*ARR ";
+    case (DAE.MUL_ARRAY_SCALAR(ty = _)) then " ARR*S ";
+    case (DAE.ADD_SCALAR_ARRAY(ty = _)) then " S+ARR ";
+    case (DAE.ADD_ARRAY_SCALAR(ty = _)) then " ARR+S ";
+    case (DAE.SUB_SCALAR_ARRAY(ty = _)) then " - ";
+    case (DAE.SUB_ARRAY_SCALAR(ty = _)) then " ARR-S ";
+    case (DAE.POW_SCALAR_ARRAY(ty = _)) then " S^ARR ";
+    case (DAE.POW_ARRAY_SCALAR(ty = _)) then " ARR^S ";
+    case (DAE.MUL_SCALAR_PRODUCT(ty = _)) then " Dot ";
+    case (DAE.MUL_MATRIX_PRODUCT(ty = _)) then " MatrixProd ";
+    case (DAE.DIV_SCALAR_ARRAY(ty = _)) then " S/ARR ";
+    case (DAE.DIV_ARRAY_SCALAR(ty = _)) then " ARR/S ";
   end match;
 end debugBinopSymbol;
 
@@ -516,7 +516,7 @@ Returns a string if SOME otherwise ''"
   output String str;
 algorithm 
   str := matchcontinue(oexp)
-    local DAE.Exp e; 
+    local DAE.Exp e;
     case(NONE()) then "";
     case(SOME(e)) then printExpStr(e);
   end matchcontinue;
@@ -544,7 +544,7 @@ public function printExp2Str
     input ComponentRef inComponentRef;
     input Type_a Param;
     output String outString;
-  end printComponentRefStrFunc;  
+  end printComponentRefStrFunc;
   partial function printCallFunc
     input DAE.Exp inExp;
     input String stringDelimiter;
@@ -554,8 +554,8 @@ public function printExp2Str
       input ComponentRef inComponentRef;
       input Type_a Param;
       output String outString;
-    end printComponentRefStrFunc;    
-  end printCallFunc;  
+    end printComponentRefStrFunc;
+  end printCallFunc;
 algorithm
   outString := matchcontinue (inExp, stringDelimiter, opcreffunc, opcallfunc)
     local
@@ -608,7 +608,7 @@ algorithm
       equation
         s = pcreffunc(c,creffuncparam);
       then
-        s;      
+        s;
     
     case (DAE.CREF(componentRef = c,ty = t), _, _, _)
       equation
@@ -706,7 +706,7 @@ algorithm
       equation
         s_2 = pcallfunc(e,stringDelimiter,opcreffunc);
       then
-        s_2;        
+        s_2;
     
     case (e as DAE.CALL(path = fcn,expLst = args), _, _, _)
       equation
@@ -918,7 +918,7 @@ algorithm
         s1 = intString(i);
         s2 = typeString(et);
         s = stringAppendList({"#SHARED_LITERAL_",s1," (",s2,")#"});
-      then s; 
+      then s;
 
     case (DAE.PATTERN(pattern=pat),_,_,_)
       then Patternm.patternStr(pat);
@@ -1325,7 +1325,7 @@ algorithm
       Type tp,ty;
       Real r;
       list<list<tuple<DAE.Exp,Boolean>>> lstes;
-      Boolean b;      
+      Boolean b;
     
     case (DAE.END(),level)
       equation
@@ -1379,7 +1379,7 @@ algorithm
         istr = intString(i);
         res_str = stringAppendList({gen_str, "ENUM_LITERAL ", s, " [", istr, "]", "\n"});
       then
-        res_str;  
+        res_str;
     
     case (DAE.CREF(componentRef = c,ty=ty),level) /* Graphviz.LNODE(\"CREF\",{s},{},{}) */
       equation
@@ -1736,7 +1736,7 @@ algorithm
       String s;
       Integer x;
       Absyn.Path p;
-      DAE.Exp e;      
+      DAE.Exp e;
     
     case DAE.DIM_UNKNOWN() then ":";
     

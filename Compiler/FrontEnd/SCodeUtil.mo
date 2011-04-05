@@ -83,7 +83,7 @@ algorithm
     case (inProgram)
       equation
         setGlobalRoot(Inst.instHashIndex, Inst.emptyInstHashTable());
-        setGlobalRoot(Types.memoryIndex,  Types.createEmptyTypeMemory());        
+        setGlobalRoot(Types.memoryIndex,  Types.createEmptyTypeMemory());
         // adrpo: TODO! FIXME! disable function caching for now as some tests fail.
         // setGlobalRoot(Ceval.cevalHashIndex, Ceval.emptyCevalHashTable());
         Absyn.PROGRAM(classes=inClasses) = MetaUtil.createMetaClassesInProgram(inProgram);
@@ -176,7 +176,7 @@ algorithm
 
     case (d,Absyn.R_FUNCTION()) then Util.if_(containsExternalFuncDecl(d),SCode.R_EXT_FUNCTION(),SCode.R_FUNCTION());
     case (_,Absyn.R_CLASS()) then SCode.R_CLASS();
-    case (_,Absyn.R_OPTIMIZATION()) then SCode.R_OPTIMIZATION();     
+    case (_,Absyn.R_OPTIMIZATION()) then SCode.R_OPTIMIZATION();
     case (_,Absyn.R_MODEL()) then SCode.R_MODEL();
     case (_,Absyn.R_RECORD()) then SCode.R_RECORD();
     case (_,Absyn.R_BLOCK()) then SCode.R_BLOCK();
@@ -513,7 +513,7 @@ algorithm
         anns1 = translateClassdefAnnotations(cdr);
         anns2 = listAppend(anns,anns1);
       then
-        anns2;        
+        anns2;
     case(_ :: cdr)
       equation
         anns = translateClassdefAnnotations(cdr);
@@ -599,7 +599,7 @@ algorithm
         als_1;
     case (cp :: rest) /* ignore everthing other than algorithms */
       equation
-        failure(Absyn.ALGORITHMS(contents = _) = cp); 
+        failure(Absyn.ALGORITHMS(contents = _) = cp);
         als = translateClassdefAlgorithms(rest);
       then
         als;
@@ -764,7 +764,7 @@ algorithm
     case ((e,al)::branches)
       equation
         stmts = translateClassdefAlgorithmitems(al);
-        sbranches = translateBranches(branches); 
+        sbranches = translateBranches(branches);
       then (e,stmts)::sbranches;
   end match;
 end translateBranches;
@@ -1103,7 +1103,7 @@ algorithm
     case (cc,finalPrefix,_,repl,prot,Absyn.IMPORT(import_ = imp, info = info),_)
       equation
         // Debug.fprintln("translate", "translating import: " +& Dump.unparseImportStr(imp));
-        xs_1 = translateImports(imp,info); 
+        xs_1 = translateImports(imp,info);
       then
         xs_1;
   end match;
@@ -1892,7 +1892,7 @@ protected
   Absyn.TypeSpec ts;
 algorithm
   ts := Absyn.TCOMPLEX(Absyn.IDENT("polymorphic"),{Absyn.TPATH(Absyn.IDENT("Any"),NONE())},NONE());
-  cd := SCode.DERIVED(ts,SCode.NOMOD(),Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),NONE()); 
+  cd := SCode.DERIVED(ts,SCode.NOMOD(),Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),NONE());
   elt := SCode.CLASSDEF(str,true,false,false,SCode.CLASS(str,false,false,SCode.R_TYPE(),cd,info),NONE());
 end makeTypeVarElement;
 

@@ -77,7 +77,7 @@ protected import UnitAbsyn;
 public uniontype SearchStrategy
   record SEARCH_LOCAL_ONLY
     "this one searches only in the local scope, it won't find *time* variable" 
-  end SEARCH_LOCAL_ONLY; 
+  end SEARCH_LOCAL_ONLY;
   record SEARCH_ALSO_BUILTIN
     "this one searches also in the builtin scope, it will find *time* variable" 
   end SEARCH_ALSO_BUILTIN;
@@ -87,7 +87,7 @@ public uniontype SplicedExpData
   record SPLICEDEXPDATA "data for 'spliced expression' (typically a component reference) returned in lookupVar"
     Option<DAE.Exp> splicedExp "the spliced expression";
     Types.Type identType "the type of the variable without subscripts, needed for vectorization";
-  end SPLICEDEXPDATA;  
+  end SPLICEDEXPDATA;
 end SplicedExpData;
 
 /*   - Lookup functions
@@ -520,7 +520,7 @@ algorithm
         Inst.partialInstClassIn(
           cache,env,InnerOuter.emptyInstHierarchy,
           DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
-          ci_state, c, false, {}); 
+          ci_state, c, false, {});
         // Was 2 cases for package/non-package - all they did was fail or succeed on this
         // If we comment it out, we get faster code, and less of it to maintain
         // ClassInf.valid(cistate1, SCode.R_PACKAGE());
@@ -570,7 +570,7 @@ algorithm
         true = id ==& ident;
       then ComponentReference.pathToCref(path);
 
-    // Named imports, e.g. import A = B.C;  
+    // Named imports, e.g. import A = B.C;
     case (Env.IMPORT(import_ = Absyn.NAMED_IMPORT(name = id,path = path)) :: fs,ident)
       equation
         true = id ==& ident;
@@ -598,7 +598,7 @@ algorithm
       Boolean res;
       list<Env.Frame> env,prevFrames;
       list<Env.Item> fs;
-      Env.Cache cache; 
+      Env.Cache cache;
       DAE.ComponentRef cref;
       Absyn.Path path;
 
@@ -619,7 +619,7 @@ algorithm
         (cache,res);
 
     // we reached the end, no more lookup
-    case (cache,{},_,_) then (cache,false); 
+    case (cache,{},_,_) then (cache,false);
   end matchcontinue;
 end moreLookupUnqualifiedImportedVarInFrame;
 
@@ -634,7 +634,7 @@ protected function lookupUnqualifiedImportedVarInFrame "function: lookupUnqualif
   output DAE.Attributes outAttributes;
   output DAE.Type outType;
   output DAE.Binding outBinding;
-  output Option<DAE.Const> constOfForIteratorRange "SOME(constant-ness) of the range if this is a for iterator, NONE() if this is not a for iterator";  
+  output Option<DAE.Const> constOfForIteratorRange "SOME(constant-ness) of the range if this is a for iterator, NONE() if this is not a for iterator";
   output Boolean outBoolean;
   output SplicedExpData splicedExpData;
   output Env.Env outComponentEnv;
@@ -652,7 +652,7 @@ algorithm
       tuple<DAE.TType, Option<Absyn.Path>> ty;
       DAE.Binding bind;
       list<Env.Item> fs;
-      Env.Cache cache; 
+      Env.Cache cache;
       Absyn.Path path;
       Option<DAE.Const> cnstForRange;
 
@@ -876,7 +876,7 @@ algorithm
         Inst.partialInstClassIn(
           cache,env2,InnerOuter.emptyInstHierarchy,
           DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
-          ci_state, c, false, {}); 
+          ci_state, c, false, {});
         // Restrict import to the imported scope only, not its parents, thus {f} below
         (cache,c_1,env2,prevFrames) = lookupClass2(cache,env2,Absyn.IDENT(ident),prevFrames,Util.makeStatefulBoolean(true),false) "Restrict import to the imported scope only, not its parents..." ;
         (cache,more) = moreLookupUnqualifiedImportedClassInFrame(cache,fs, env, ident);
@@ -1008,7 +1008,7 @@ algorithm
           " in env: " +& 
           Env.printEnvPathStr(env) +& "\n");
       then 
-        fail();    
+        fail();
     */
     // try the old lookupVarInternal
     case (cache,env,cref) 
@@ -1029,8 +1029,8 @@ algorithm
     // fail if we couldn't find it
     case (_,env,cref) 
       equation
-        //Debug.fprintln("failtrace",  "- Lookup.lookupVar failed " +& ComponentReference.printComponentRefStr(cref) +& " in " +& Env.printEnvPathStr(env));  
-      then fail(); 
+        //Debug.fprintln("failtrace",  "- Lookup.lookupVar failed " +& ComponentReference.printComponentRefStr(cref) +& " in " +& Env.printEnvPathStr(env));
+      then fail();
   end matchcontinue;
 end lookupVar;
 
@@ -1070,10 +1070,10 @@ public function lookupVarInternal "function: lookupVarInternal
   output DAE.Attributes outAttributes;
   output DAE.Type outType;
   output DAE.Binding outBinding;
-  output Option<DAE.Const> constOfForIteratorRange "SOME(constant-ness) of the range if this is a for iterator, NONE() if this is not a for iterator";  
+  output Option<DAE.Const> constOfForIteratorRange "SOME(constant-ness) of the range if this is a for iterator, NONE() if this is not a for iterator";
   output SplicedExpData splicedExpData;
   output Env.Env outClassEnv "the environment of the variable, typically the same as input, but e.g. for loop scopes can be 'stripped'";
-  output Env.Env outComponentEnv "the component environment of the variable";  
+  output Env.Env outComponentEnv "the component environment of the variable";
   output String name;
 algorithm
   (outCache,outAttributes,outType,outBinding,constOfForIteratorRange,splicedExpData,outClassEnv,outComponentEnv,name) :=
@@ -1085,7 +1085,7 @@ algorithm
       Option<String> sid;
       Env.AvlTree ht;
       list<Env.Item> imps;
-      list<Env.Frame> fs;      
+      list<Env.Frame> fs;
       Env.Frame frame,f;
       DAE.ComponentRef ref;
       Env.Cache cache;
@@ -1247,7 +1247,7 @@ algorithm
       then
         (cache, env, attr, ty, bind, cnstForRange, splicedExpData, componentEnv, name);
 
-    // Search among qualified imports, e.g. import A.B; or import D=A.B; 
+    // Search among qualified imports, e.g. import A.B; or import D=A.B;
     case (cache,(env as (Env.FRAME(optName = sid,imports = items) :: _)),DAE.CREF_IDENT(ident = id,subscriptLst = sb),prevFrames,inState)
       equation
         cr = lookupQualifiedImportedVarInFrame(items, id);
@@ -1279,7 +1279,7 @@ algorithm
         //true = RTOpts.debugFlag("failtrace");
         //Debug.traceln("- Lookup.lookupVarInPackages failed on exp:" +& ComponentReference.printComponentRefStr(cr) +& " in scope: " +& Env.printEnvPathStr(env));
       then 
-        fail(); 
+        fail();
   end matchcontinue;
 end lookupVarInPackages;
 
@@ -1288,7 +1288,7 @@ protected function propagateVariability
   input DAE.Attributes inStructureAttr;
   output DAE.Attributes outAttr;
 protected
-  SCode.Variability var1, var2; 
+  SCode.Variability var1, var2;
 algorithm
   DAE.ATTR(variability = var1) := inComponentAttr;
   DAE.ATTR(variability = var2) := inStructureAttr;
@@ -1332,7 +1332,7 @@ public function lookupVarLocal "function: lookupVarLocal
   output DAE.Attributes outAttributes;
   output DAE.Type outType;
   output DAE.Binding outBinding;
-  output Option<DAE.Const> constOfForIteratorRange "SOME(constant-ness) of the range if this is a for iterator, NONE() if this is not a for iterator";  
+  output Option<DAE.Const> constOfForIteratorRange "SOME(constant-ness) of the range if this is a for iterator, NONE() if this is not a for iterator";
   output SplicedExpData splicedExpData;
   output Env.Env outClassEnv;
   output Env.Env outComponentEnv;
@@ -2380,10 +2380,10 @@ algorithm
         true = RTOpts.debugFlag("lookup");
         false = RTOpts.acceptMetaModelicaGrammar(); // MetaModelica function references generate too much failtrace...
         Env.CLASS(SCode.CLASS(name = name, restriction = r), env) = Env.avlTreeGet(ht, id);
-        name = id +& " = " +& Env.printEnvPathStr(env) +& "." +& name;        
+        name = id +& " = " +& Env.printEnvPathStr(env) +& "." +& name;
         Debug.traceln("- Lookup.lookupVar2 failed because we find a class instead of a variable: " +& name);
       then
-        fail();        
+        fail();
   end matchcontinue;
 end lookupVar2;
 
@@ -2457,7 +2457,7 @@ algorithm
       equation
         t_1 = checkSubscripts(t, ys);
       then
-        t_1;  
+        t_1;
 
     case ((DAE.T_ARRAY(arrayType = t),_),
           (DAE.WHOLEDIM() :: ys))
@@ -2573,7 +2573,7 @@ protected function lookupVarF "function: lookupVarF
   output DAE.Type outType;
   output DAE.Binding outBinding;
   output Option<DAE.Const> constOfForIteratorRange "SOME(constant-ness) of the range if this is a for iterator, NONE() if this is not a for iterator";
-  output SplicedExpData splicedExpData;  
+  output SplicedExpData splicedExpData;
   output Env.Env outComponentEnv;
   output String name;
 algorithm
@@ -2608,7 +2608,7 @@ algorithm
         (cache,DAE.TYPES_VAR(name,DAE.ATTR(f,streamPrefix,acc,vt,di,io),_,ty,bind,cnstForRange),_,_,componentEnv) = lookupVar2(cache,ht, id);
         ty_1 = checkSubscripts(ty, ss);
         ss = addArrayDimensions(ty,ss);
-        tty = Types.elabType(ty);     
+        tty = Types.elabType(ty);
         ty2_2 = Types.elabType(ty);
         cref_ = ComponentReference.makeCrefIdent(id,ty2_2, ss);
         splicedExp = Expression.makeCrefExp(cref_,tty);
@@ -2700,7 +2700,7 @@ algorithm
   outSub := matchcontinue(inDim)
     local
       Integer sz;
-      list<DAE.Exp> expl;  
+      list<DAE.Exp> expl;
       Absyn.Path enum_name;
       list<String> l;
     // Special case when addressing array[0].
@@ -2801,7 +2801,7 @@ algorithm
     case(t, tOrg)
       equation
         dimensions = Types.getDimensionSizes(t);
-        dim2 = Util.listMap(dimensions, Expression.intDimension); 
+        dim2 = Util.listMap(dimensions, Expression.intDimension);
         dim2 = listReverse(dim2);
         t = ((Util.listFoldR(dim2,Types.liftArray, tOrg)));
       then

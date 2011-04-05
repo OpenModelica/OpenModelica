@@ -21,7 +21,7 @@ package Tpl
   
 	  record ST_STRING_LIST "Every string in the list can have a new-line at its end (but does not have to)."
 	    list<String> strList;
-	    Boolean lastHasNewLine "True when the last string in the list has new-line at the end."; 
+	    Boolean lastHasNewLine "True when the last string in the list has new-line at the end.";
 	  end ST_STRING_LIST;
 	end StringToken;
 end Tpl;
@@ -35,7 +35,7 @@ package TplAbsyn
 	
 	uniontype PathIdent
 	  record IDENT
-	    Ident ident;    
+	    Ident ident;
 	  end IDENT;
 	  
 	  record PATH_IDENT
@@ -74,7 +74,7 @@ package TplAbsyn
 	  record BOOLEAN_TYPE end BOOLEAN_TYPE;
 	
 	  record UNRESOLVED_TYPE "Errorneous resolving type. Only used during elaboration phase."
-	    String reason; 
+	    String reason;
 	  end UNRESOLVED_TYPE;
 	end TypeSignature;
 		   
@@ -105,7 +105,7 @@ package TplAbsyn
 	  end TUPLE_MATCH;
 	
 	  record LIST_MATCH //non-empty list
-	    list<MatchingExp> listElts; 
+	    list<MatchingExp> listElts;
 	  end LIST_MATCH;
 	  
 	  record LIST_CONS_MATCH
@@ -131,7 +131,7 @@ package TplAbsyn
 	uniontype MMPackage
 	  record MM_PACKAGE
 	    PathIdent name;
-	    list<MMDeclaration> mmDeclarations;      
+	    list<MMDeclaration> mmDeclarations;
 	  end MM_PACKAGE;
 	end MMPackage;
 	
@@ -163,8 +163,8 @@ package TplAbsyn
 	    TypedIdents inArgs; //inTxt inclusive
 	    TypedIdents outArgs; // outTxt + extra Texts
 	    TypedIdents locals;
-	    list<MMExp> statements;    
-	  end MM_FUN;      
+	    list<MMExp> statements;
+	  end MM_FUN;
 	end MMDeclaration;
 	
 	uniontype MMExp
@@ -191,7 +191,7 @@ package TplAbsyn
 	  end MM_STRING;
 	  
 	  record MM_LITERAL "to pass a literal constant as parameter of type Integer, Real or Boolean" 
-	    String value;    
+	    String value;
 	  end MM_LITERAL;
 	  
 	  record MM_MATCH
@@ -306,7 +306,7 @@ package TplAbsyn
 	  
 	  record TI_CONST_TYPE "Imported AST constants."
 	    TypeSignature constType;
-	  end TI_CONST_TYPE;  
+	  end TI_CONST_TYPE;
 	end TypeInfo;
 	
 	uniontype ASTDef
@@ -315,14 +315,14 @@ package TplAbsyn
 	    Boolean isDefault;
 	    list<tuple<Ident, TypeInfo>> types;
 	  end AST_DEF;
-	end ASTDef;    
+	end ASTDef;
 	
 	uniontype TemplPackage
 	  record TEMPL_PACKAGE
 	    PathIdent name;
 	    //list<PathIdent> extendsList;
 	    list<ASTDef> astDefs;
-	    list<tuple<Ident,TemplateDef>> templateDefs;     
+	    list<tuple<Ident,TemplateDef>> templateDefs;
 	  end TEMPL_PACKAGE;
 	end TemplPackage;
 	

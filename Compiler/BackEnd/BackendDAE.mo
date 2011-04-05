@@ -173,12 +173,12 @@ uniontype WhenOperator "- Reinit Statement"
     .DAE.Exp condition;
     .DAE.Exp message;
     .DAE.ElementSource source "the origin of the component/equation/algorithm";
-  end ASSERT;  
+  end ASSERT;
   
   record TERMINATE " The Modelica builtin terminate(msg)"
     .DAE.Exp message;
     .DAE.ElementSource source "the origin of the component/equation/algorithm";
-  end TERMINATE; 
+  end TERMINATE;
 end WhenOperator;
 
 public
@@ -371,9 +371,9 @@ type Value = Integer "- Value" ;
 
 public
 uniontype IndexType
-  record ABSOLUTE "produce incidence matrix with absolute indexes"          end ABSOLUTE; 
+  record ABSOLUTE "produce incidence matrix with absolute indexes"          end ABSOLUTE;
   record NORMAL   "produce incidence matrix with positive/negative indexes" end NORMAL;
-end IndexType; 
+end IndexType;
 
 public
 type IncidenceMatrixElement = list<Integer>;

@@ -93,7 +93,7 @@ public function printCallFunction2StrDIVISION
     input DAE.ComponentRef inComponentRef;
     input Type_a Param;
     output String outString;
-  end printComponentRefStrFunc;     
+  end printComponentRefStrFunc;
 algorithm
   outString := matchcontinue (inExp,stringDelimiter,opcreffunc)
     local
@@ -127,7 +127,7 @@ algorithm
         s_2 = stringAppend(s_1, ")");
       then
         s_2;
-  end matchcontinue;        
+  end matchcontinue;
 end printCallFunction2StrDIVISION;
 
 public function printTuple
@@ -149,7 +149,7 @@ algorithm
       then ();
     case (_) equation
       Error.addMessage(Error.INTERNAL_ERROR, {"printTuple() failed"});
-    then fail();      
+    then fail();
   end matchcontinue;
 end printTuple;
 
@@ -636,7 +636,7 @@ algorithm
     case(DAE.ALGORITHM_STMTS(stmts)::algs,indx) 
       equation
         is = intString(indx);
-        myStream = IOStream.create("", IOStream.LIST()); 
+        myStream = IOStream.create("", IOStream.LIST());
         myStream = IOStream.append(myStream,stringAppend(is,". "));
         myStream = DAEDump.dumpAlgorithmStream(DAE.ALGORITHM(DAE.ALGORITHM_STMTS(stmts),DAE.emptyElementSource), myStream);
         IOStream.print(myStream, IOStream.stdOutput);
@@ -857,7 +857,7 @@ algorithm
       equation
         is = intString(i);
         intsStr = Util.stringDelimitList(Util.listMap(inps, ExpressionDump.printExpStr), ", ");
-        outsStr = Util.stringDelimitList(Util.listMap(outs, ExpressionDump.printExpStr), ", ");        
+        outsStr = Util.stringDelimitList(Util.listMap(outs, ExpressionDump.printExpStr), ", ");
         res = stringAppendList({"Algorithm no: ", is, " for inputs: (", 
                                       intsStr, ") => outputs: (", 
                                       outsStr, ")" /*,"\n"*/});
@@ -1132,7 +1132,7 @@ algorithm
       equation
          se = ExpressionDump.printExpStr(e);
          str = stringAppendList({s," = ",se," "});
-         print(str);         
+         print(str);
      then ();
     else ();
   end match;
@@ -1153,7 +1153,7 @@ algorithm
       equation
          se = boolString(e);
          str = stringAppendList({s," = ",se," "});
-         print(str);         
+         print(str);
      then ();
     else ();
   end match;
@@ -1373,20 +1373,20 @@ public function dumpComponentsGraphStr
   input DAE.FunctionTree inFunctionTree;
   input BackendDAE.IncidenceMatrix inM;
   input BackendDAE.IncidenceMatrix inMT;
-  input array<Integer> inAss1;  
-  input array<Integer> inAss2;  
-  input list<list<Integer>> inComps;  
+  input array<Integer> inAss1;
+  input array<Integer> inAss2;
+  input list<list<Integer>> inComps;
   output BackendDAE.BackendDAE outDAE;
   output BackendDAE.IncidenceMatrix outM;
   output BackendDAE.IncidenceMatrix outMT;
-  output array<Integer> outAss1;  
-  output array<Integer> outAss2;  
+  output array<Integer> outAss1;
+  output array<Integer> outAss2;
   output list<list<Integer>> outComps;
   output Boolean outRunMatching;
 protected
   Integer n;
-  list<String> lst;  
-  String s; 
+  list<String> lst;
+  String s;
 algorithm
   n :=  BackendDAEUtil.systemSize(inDAE);
   lst := dumpComponentsGraphStr2(1,n,inM,inMT,inAss1,inAss2);
@@ -1520,7 +1520,7 @@ algorithm
   print("AliasVariables: ");
   print(sl);
   print("\n===============\n");
-  dumpVars(vars);  
+  dumpVars(vars);
   print("\n");
 end dumpAliasVariables;
 
@@ -1546,7 +1546,7 @@ algorithm
         s = stringAppendList({scr," = ",se,"\n"});
         print(s);
       then ((v,{}));
-    case inTpl then inTpl; 
+    case inTpl then inTpl;
   end matchcontinue;
 end dumpAliasVariable;
 
@@ -1583,7 +1583,7 @@ algorithm
         print(intString(pos)); print(": ");
         print(scr); print("\n");
       then ((v,pos+1));
-    case inTpl then inTpl; 
+    case inTpl then inTpl;
   end matchcontinue;
 end dumpStateVariable;
 
@@ -1594,7 +1594,7 @@ protected
   BackendDAE.BackendDAE ode;
   BackendDAE.IncidenceMatrix m;
   BackendDAE.IncidenceMatrix mT;
-  array<Integer> v1,v2;  
+  array<Integer> v1,v2;
   list<list<Integer>> comps;
 algorithm
   (ode,m,mT,v1,v2,comps) := inTpl;
@@ -1602,7 +1602,7 @@ algorithm
   dump(ode);
   dumpIncidenceMatrix(m);
   dumpIncidenceMatrixT(mT);
-  dumpMatching(v1);  
+  dumpMatching(v1);
   dumpComponentsAdvanced(comps,v2,ode);
 end bltdump;
 
@@ -1648,9 +1648,9 @@ algorithm
         ls = Util.listMap(l, intString);
         s = Util.stringDelimitList(ls, ", ");
         print(s);
-        print("} ");        
+        print("} ");
         dumpComponentsAdvanced3(l,v2,vars);
-        print("\n");        
+        print("\n");
         i_1 = i + 1;
         dumpComponentsAdvanced2(lst, i_1,v2,vars);
       then

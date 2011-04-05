@@ -43,7 +43,7 @@ encapsulated package IOStreamExt
  The external C implementation is in TOP/Compiler/runtime/IOStreamExt.c"
   
 function createFile
-  input String fileName;  
+  input String fileName;
   output Integer fileID;
 
   external "C" fileID=IOStreamExt_createFile(fileName) annotation(Library = "omcruntime");
@@ -68,14 +68,14 @@ function clearFile
 end clearFile;
 
 function appendFile
-  input Integer fileID;  
+  input Integer fileID;
   input String inString;
 
   external "C" IOStreamExt_appendFile(fileID,inString) annotation(Library = "omcruntime");
 end appendFile;
 
 function readFile
-  input Integer fileID;  
+  input Integer fileID;
   output String outString;
 
   external "C" outString=IOStreamExt_readFile(fileID) annotation(Library = "omcruntime");
@@ -95,7 +95,7 @@ function createBuffer
 end createBuffer;
 
 function appendBuffer
-  input Integer bufferID;  
+  input Integer bufferID;
   input String inString;
 
   external "C" IOStreamExt_appendBuffer(bufferID,inString) annotation(Library = "omcruntime");
@@ -114,7 +114,7 @@ function clearBuffer
 end clearBuffer;
 
 function readBuffer
-  input Integer bufferID;  
+  input Integer bufferID;
   output String outString;
 
   external "C" outString=IOStreamExt_readBuffer(bufferID) annotation(Library = "omcruntime");

@@ -126,7 +126,7 @@ algorithm
         // get from global roots
         crefMem = getGlobalRoot(crefMemoryIndex);
         // select a list based on the constructor of DAE.ComponentRef value
-        indexBasedOnValueConstructor = valueConstructor(inCref); 
+        indexBasedOnValueConstructor = valueConstructor(inCref);
         crefLst = arrayGet(crefMem, indexBasedOnValueConstructor + 1);
         // search in the list for already existing one
         cref = searchInMememoryLst(inCref, crefLst);
@@ -143,7 +143,7 @@ algorithm
         // get from global roots        
         crefMem = getGlobalRoot(crefMemoryIndex);
         // select a list based on the constructor of DAE.ComponentRef value
-        indexBasedOnValueConstructor = valueConstructor(inCref);        
+        indexBasedOnValueConstructor = valueConstructor(inCref);
         crefLst = arrayGet(crefMem, indexBasedOnValueConstructor + 1);
         // add the translation to the list and set the array
         crefMem = arrayUpdate(crefMem, indexBasedOnValueConstructor + 1, inCref::crefLst);
@@ -243,7 +243,7 @@ algorithm
     
     case Absyn.QUALIFIED(name = i,path = p)
       equation
-        c = pathToCref(p);        
+        c = pathToCref(p);
       then
         makeCrefQual(i,DAE.ET_OTHER(),{},c);
   end match;
@@ -484,7 +484,7 @@ algorithm
        DAE.ComponentRef cref;
      
      // none
-     case NONE() then "NONE()"; 
+     case NONE() then "NONE()";
      
      // some 
      case SOME(cref)
@@ -618,7 +618,7 @@ algorithm
         true = RTOpts.modelicaOutput();
         str = printComponentRef2Str(s, subs);
         str2 = ExpressionDump.typeString(ty);
-        strrest = debugPrintComponentRefTypeStr(cr);        
+        strrest = debugPrintComponentRefTypeStr(cr);
         str = stringAppendList({str," [",str2,"] ", "__", strrest});
       then
         str;
@@ -701,7 +701,7 @@ public function crefContainedIn
   Returns true if second arg is a sub component ref of first arg.
   For instance, b.c. is a sub_component of a.b.c."
   input DAE.ComponentRef containerCref "the cref that might contain";
-  input DAE.ComponentRef containedCref "cref that might be contained";  
+  input DAE.ComponentRef containedCref "cref that might be contained";
   output Boolean outBoolean;
 algorithm
   outBoolean := matchcontinue (containerCref, containedCref)
@@ -722,7 +722,7 @@ algorithm
     // dive into 
     case (full as DAE.CREF_QUAL(componentRef = cr2), partOf)
       equation
-        false = crefEqualNoStringCompare(full, partOf);        
+        false = crefEqualNoStringCompare(full, partOf);
         res = crefContainedIn(cr2,partOf);
       then
         res;
@@ -1189,7 +1189,7 @@ algorithm
       Boolean b;
       DAE.ExpType tty;
       list<DAE.Dimension> ad;
-      DAE.Exp es1;      
+      DAE.Exp es1;
     
     case({},_) then false;
     
@@ -1332,7 +1332,7 @@ For instance, for the cref 'a.b' it returns the type in identifier 'b'"
 algorithm
   res := match (inRef)
     local
-      DAE.ExpType t2; 
+      DAE.ExpType t2;
       DAE.ComponentRef cr;
     
     case(inRef as DAE.CREF_IDENT(_,t2,_)) then t2;
@@ -1426,7 +1426,7 @@ algorithm
     local
       DAE.ExpType t2;
       DAE.Ident name;
-      String s;      
+      String s;
     
     case(inRef as DAE.CREF_IDENT(name,t2,_)) then (name,t2);
     
@@ -1463,7 +1463,7 @@ crefPrependIdent(a,c,{1},Integer[1]) => a.c[1] [Integer[1]]
 alternative names: crefAddSuffix, crefAddIdent
 "
   input DAE.ComponentRef cr;
-  input String ident;  
+  input String ident;
   input list<DAE.Subscript> subs;
   input DAE.ExpType tp;
   output DAE.ComponentRef newCr;
@@ -1933,7 +1933,7 @@ i.e the identifier and eventual subscripts"
   output DAE.ComponentRef outCr;
 algorithm
   outCr := matchcontinue(inCr)
-    local DAE.ComponentRef cr;  
+    local DAE.ComponentRef cr;
     case( DAE.CREF_QUAL(componentRef = cr)) then cr;
   end matchcontinue;
 end crefStripFirstIdent;

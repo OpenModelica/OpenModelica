@@ -44,10 +44,10 @@ input Rational r;
 output String str;
 algorithm
   str := matchcontinue(r) 
-  local Integer n,d; 
+  local Integer n,d;
     case(RATIONAL(n,d)) equation
       str = intString(n)+&"/"+&intString(d);
-    then str;    
+    then str;
   end matchcontinue;
 end rationalString;
 

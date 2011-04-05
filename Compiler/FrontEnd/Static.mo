@@ -1416,7 +1416,7 @@ protected function variabilityToConst "translates an SCode.Variability to a DAE.
 algorithm
   const := match(variability)
     case(SCode.VAR())      then DAE.C_VAR();
-    case(SCode.DISCRETE()) then DAE.C_VAR();      
+    case(SCode.DISCRETE()) then DAE.C_VAR();
     case(SCode.PARAM())    then DAE.C_PARAM();
     case(SCode.CONST())    then DAE.C_CONST();
   end match;
@@ -1971,7 +1971,7 @@ algorithm
         (cache,e_1,p,_) = elabExp(cache,env, e, impl,NONE(),doVect,pre,info);
         (e_1,p) = Types.matchProp(e_1,p,DAE.PROP(DAE.T_BOXED_DEFAULT,DAE.C_CONST()),true);
         (cache,exps_1,props) = elabTuple(cache,env, exps, impl,doVect,pre,info);
-      then (cache,(e_1 :: exps_1),(p :: props)); 
+      then (cache,(e_1 :: exps_1),(p :: props));
   end matchcontinue;
 end elabTuple;
 
@@ -2260,7 +2260,7 @@ algorithm
     case (cache,env,expl,impl,st,doVect,pre,info)
       equation
         Debug.fprint("failtrace", "-elab_array_real failed, prefix=");
-        Debug.fprint("failtrace", PrefixUtil.printPrefixStr(pre)); 
+        Debug.fprint("failtrace", PrefixUtil.printPrefixStr(pre));
         Debug.fprint("failtrace", ", expl=");
         Debug.fprint("failtrace", Util.stringDelimitList(Util.listMap(expl,Dump.printExpStr),","));
         Debug.fprint("failtrace", "\n");
@@ -2509,7 +2509,7 @@ algorithm
         str = "Static.elabGraphicsArray failed on expresion: " +& expStr +& " with prefix: " +& preStr +& " in scope: " +& envStr;
         Error.addSourceMessage(Error.INTERNAL_ERROR, {str}, info);
       then
-        fail();        
+        fail();
   end matchcontinue;
 end elabGraphicsArray;
 
@@ -3177,7 +3177,7 @@ algorithm
         exp = Expression.dimensionSizeExp(d);
         prop = DAE.PROP(DAE.T_INTEGER_DEFAULT, DAE.C_CONST());
       then
-        (cache, exp, prop); 
+        (cache, exp, prop);
 
     // The previous case failed, return a call to the size function instead.
     case (cache,env,{arraycr,dim},_,impl,pre,info)
@@ -4658,7 +4658,7 @@ algorithm
         // the value is not a parameter or constant but a variable 
         // that has an equation involving ONLY params/consts. 
         false = Types.isParameterOrConstant(c2);
-        sp = PrefixUtil.printPrefixStr3(pre);        
+        sp = PrefixUtil.printPrefixStr3(pre);
         errorString = "delay(" +& ExpressionDump.printExpStr(s1_1) +& ", " +& ExpressionDump.printExpStr(s2_1) +& 
            ") where argument #2 has to be parameter or constant expression but is a variable";
         Error.addSourceMessage(Error.WARNING_BUILTIN_DELAY, {sp,errorString}, info);
@@ -5932,8 +5932,8 @@ algorithm
   matchcontinue (inCache,inEnv,expl,inNamedArg,impl,inPrefix,info)
     local 
       Absyn.Exp x,y,n;
-      DAE.Exp x1,y1,n1,x2,y2, call; 
-      DAE.Type tp1,tp2,tp3,tp11,tp22; 
+      DAE.Exp x1,y1,n1,x2,y2, call;
+      DAE.Type tp1,tp2,tp3,tp11,tp22;
       DAE.Const c1,c2,c3,c;
       Integer size;
       Env.Cache cache; Env.Env env;
@@ -6382,7 +6382,7 @@ protected function elabCallBuiltin "function: elabCallBuiltin
     output Env.Cache outCache;
     output DAE.Exp outExp;
     output DAE.Properties outProperties;
-  end handlerFunc;      
+  end handlerFunc;
 algorithm
   (outCache,outExp,outProperties):=
   matchcontinue (inCache,inEnv,inComponentRef,inAbsynExpLst,inNamedArgs,inBoolean,inPrefix,info)
@@ -6693,7 +6693,7 @@ algorithm
         defaulSimOpt = CevalScript.buildSimulationOptionsFromModelExperimentAnnotation(st, className, cname_str);
         
         (cache, startTime, stopTime, numberOfIntervals) = 
-          calculateSimulationTimes(inCache, inEnv, inAbsynExpLst, inAbsynNamedArgLst, impl, inInteractiveInteractiveSymbolTableOption, inPrefix, inInfo, defaulSimOpt);        
+          calculateSimulationTimes(inCache, inEnv, inAbsynExpLst, inAbsynNamedArgLst, impl, inInteractiveInteractiveSymbolTableOption, inPrefix, inInfo, defaulSimOpt);
         
         (cache,tolerance) = 
           getOptionalNamedArg(cache, env, SOME(st), impl, "tolerance", DAE.T_REAL_DEFAULT, 
@@ -6723,7 +6723,7 @@ algorithm
         (cache,options) = 
           getOptionalNamedArg(cache, env, SOME(st), impl, "options", DAE.T_STRING_DEFAULT, 
                               args, CevalScript.getSimulationOption(defaulSimOpt, "options"),
-                              pre, info);        
+                              pre, info);
         
         (cache,outputFormat) = 
           getOptionalNamedArg(cache, env, SOME(st), impl, "outputFormat", DAE.T_STRING_DEFAULT, 
@@ -6753,7 +6753,7 @@ algorithm
           options,
           outputFormat,
           variableFilter,
-          measureTime});    
+          measureTime});
   
   end match;
 end getSimulationArguments;
@@ -6896,7 +6896,7 @@ protected function elabCallInteractive "function: elabCallInteractive
 
     case (cache,env,Absyn.CREF_IDENT(name = "simulate"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_) /* Fill in rest of defaults here */
       equation
-        (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, info); 
+        (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, info);
         recordtype = CevalScript.getSimulationResultType();
       then
         (cache,Expression.makeBuiltinCall("simulate",simulationArgs,DAE.ET_OTHER()),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
@@ -7372,7 +7372,7 @@ algorithm
       SCode.Mod modifications ;
       Absyn.ElementAttributes attributes ;
       Option<SCode.Comment> comment "the translated comment from the Absyn" ;
-      Option<Absyn.ArrayDim> arrayDim;           
+      Option<Absyn.ArrayDim> arrayDim;
       Absyn.Info info;
 
     // handle derived component functions i.e. gravityAcceleration = gravityAccelerationTypes
@@ -7560,7 +7560,7 @@ algorithm
         (cache,args_1,newslots,constInputArgs,_) = elabInputArgs(cache, env, args, nargs, slots, false /*checkTypes*/ ,impl,{},pre,info);
         (cache,newslots2,constDefaultArgs,_) = fillDefaultSlots(cache, newslots, cl, env_2, impl, {}, pre, info);
         constlist = listAppend(constInputArgs, constDefaultArgs);
-        const = Util.listFold(constlist, Types.constAnd, DAE.C_CONST());        
+        const = Util.listFold(constlist, Types.constAnd, DAE.C_CONST());
         args_2 = expListFromSlots(newslots2);
         
         tp = complexTypeFromSlots(newslots2,ClassInf.UNKNOWN(Absyn.IDENT("")));
@@ -7643,9 +7643,9 @@ algorithm
         //  *INCLUDING DEFAULT VALUES* not only on the input arguments  
         //  as input arguments might be *EMPTY*, i.e.
         //  parameter Modelica.Magnetic.FluxTubes.Material.HardMagnetic.BaseData
-        //            material = Modelica.Magnetic.FluxTubes.Material.HardMagnetic.BaseData(); 
+        //            material = Modelica.Magnetic.FluxTubes.Material.HardMagnetic.BaseData();
         
-        constlist = listAppend(constInputArgs, constDefaultArgs); 
+        constlist = listAppend(constInputArgs, constDefaultArgs);
         
         const = Util.listFold(constlist, Types.constAnd, DAE.C_CONST());
         tyconst = elabConsts(outtype, const);
@@ -7715,9 +7715,9 @@ algorithm
         
         // create a replacement for input variables -> their binding
         //inputVarsRepl = createInputVariableReplacements(slots2, VarTransform.emptyReplacements());
-        //print("Repls: " +& VarTransform.dumpReplacementsStr(inputVarsRepl) +& "\n");        
+        //print("Repls: " +& VarTransform.dumpReplacementsStr(inputVarsRepl) +& "\n");
         // replace references to inputs in the arguments  
-        //callExp = VarTransform.replaceExp(callExp, inputVarsRepl, NONE());        
+        //callExp = VarTransform.replaceExp(callExp, inputVarsRepl, NONE());
 
         //debugPrintString = Util.if_(Util.isEqual(DAE.NORM_INLINE,inline)," Inline: " +& Absyn.pathString(fn_1) +& "\n", "");print(debugPrintString);
         
@@ -7934,7 +7934,7 @@ algorithm
     case(cache,env,name,_,NONE(),_,_)
       equation
         false = Env.isTopScope(env);
-        true = Absyn.pathSuffixOf(name,Env.getEnvName(env));            
+        true = Absyn.pathSuffixOf(name,Env.getEnvName(env));
       then (cache,Util.SUCCESS());
 
     /* Recursive calls (by looking in cache) skipped */
@@ -9073,16 +9073,16 @@ algorithm
       equation
         //(_, _, NONE(), _, _ ) = Lookup.lookupIdentLocal(cache, env, id);
         //print("here1\n");
-        SCode.COMPONENT(modifications = SCode.MOD(_,_,_,SOME((exp,_)))) = SCode.getElementNamed(id, cls);        
+        SCode.COMPONENT(modifications = SCode.MOD(_,_,_,SOME((exp,_)))) = SCode.getElementNamed(id, cls);
       then
-        exp;    
+        exp;
     
     // no modifier in env
     case (cache, env, id, cls)
       equation
         (_, _, SOME((_,DAE.NOMOD())), _, _ ) = Lookup.lookupIdentLocal(cache, env, id);
-        print("here2");        
-        SCode.COMPONENT(modifications = SCode.MOD(_,_,_,SOME((exp,_)))) = SCode.getElementNamed(id, cls);        
+        print("here2");
+        SCode.COMPONENT(modifications = SCode.MOD(_,_,_,SOME((exp,_)))) = SCode.getElementNamed(id, cls);
       then
         exp;
     
@@ -9090,7 +9090,7 @@ algorithm
     case (cache, env, id, cls)
       equation
         (_, _, SOME((_,extendsMod)), _, _ ) = Lookup.lookupIdentLocal(cache, env, id);
-        print("here3");        
+        print("here3");
         scodeMod = Mod.unelabMod(extendsMod);
         SCode.MOD(_,_,_,SOME((exp,_))) = scodeMod;
       then
@@ -9113,7 +9113,7 @@ protected function fillDefaultSlots
   output Env.Cache outCache;
   output list<Slot> outSlotLst;
   output list<DAE.Const> outTypesConstLst;
-  output Types.PolymorphicBindings outPolymorphicBindings;  
+  output Types.PolymorphicBindings outPolymorphicBindings;
 algorithm
   (outCache,outSlotLst,outTypesConstLst,outPolymorphicBindings) := 
   matchcontinue (inCache,inSlotLst,inClass,inEnv,inBoolean,inPolymorphicBindings,inPrefix,info)
@@ -9145,7 +9145,7 @@ algorithm
       equation
         (cache,res,constLst,polymorphicBindings) = fillDefaultSlots(cache, xs, class_, env, impl, polymorphicBindings, pre, info);
 
-        SCode.COMPONENT(modifications = SCode.MOD(_,_,_,SOME((dexp,_)))) = SCode.getElementNamed(id, class_);        
+        SCode.COMPONENT(modifications = SCode.MOD(_,_,_,SOME((dexp,_)))) = SCode.getElementNamed(id, class_);
         
         (cache,exp,DAE.PROP(t,c1),_) = elabExp(cache, env, dexp, impl, NONE(), true, pre, info);
         // print("Slot: " +& id +& " -> " +& Exp.printExpStr(exp) +& "\n");
@@ -9575,7 +9575,7 @@ algorithm
       equation
         (cache,c_1,const) = elabCrefSubs(cache, env, c, Prefix.NOPRE(), impl, info);
         (cache,DAE.ATTR(_,_,acc,variability,_,io),t,binding,forIteratorConstOpt,splicedExpData,_,_,_) = Lookup.lookupVar(cache, env, c_1);
-        variability = applySubscriptsVariability(variability, const);        
+        variability = applySubscriptsVariability(variability, const);
         (cache,exp,const,acc_1) = elabCref2(cache, env, c_1, acc, variability, forIteratorConstOpt, io, t, binding, doVect, splicedExpData, pre, info);
         exp = makeASUBArrayAdressing(c,cache,env,impl,exp,splicedExpData,doVect,pre,info);
         t = fixEnumerationType(t);
@@ -9968,7 +9968,7 @@ algorithm
       DAE.Binding binding;
       Env.Cache cache;
       Boolean doVect,genWarning;
-      DAE.ExpType expIdTy; 
+      DAE.ExpType expIdTy;
       Prefix.Prefix pre;
       Integer i;
       Absyn.Path p;
@@ -10067,7 +10067,7 @@ algorithm
         expTy = Types.elabType(tt) "Constants with equal bindings should be constant, i.e. true
                                     but const is passed on, allowing constants to have wrong bindings
                                     This must be caught later on.";
-        expIdTy = Types.elabType(idTp);                            
+        expIdTy = Types.elabType(idTp);
         cr_1 = fillCrefSubscripts(cr, tt);
         e_1 = crefVectorize(doVect,Expression.makeCrefExp(cr_1,expTy), tt,NONE(),expIdTy,true);
         (cache,v,_) = Ceval.ceval(cache,env,e_1,false,NONE(),NONE(),Ceval.MSG());
@@ -10093,7 +10093,7 @@ algorithm
         expTy = Types.elabType(tt) "Constants with equal bindings should be constant, i.e. true
                                     but const is passed on, allowing constants to have wrong bindings
                                     This must be caught later on." ;
-        expIdTy = Types.elabType(idTp);                                    
+        expIdTy = Types.elabType(idTp);
         cr_1 = fillCrefSubscripts(cr, tt);
         e_1 = crefVectorize(doVect,Expression.makeCrefExp(cr_1,expTy), tt,NONE(),expIdTy,true);
       then
@@ -10215,7 +10215,7 @@ public function crefVectorize
   input DAE.Type inType;
   input Option<DAE.Exp> splicedExp;
   input DAE.ExpType crefIdType "the type of the last cref ident, without considering subscripts. picked up from splicedExpData and used for crefs in vectorized exp";
-  input Boolean applyLimits "if true, only perform for small sized arrays (dimsize < vectorization limit (default 20))"; 
+  input Boolean applyLimits "if true, only perform for small sized arrays (dimsize < vectorization limit (default 20))";
   output DAE.Exp outExp;
 algorithm
   outExp := matchcontinue (performVectorization,inExp,inType,splicedExp,crefIdType,applyLimits)
@@ -10282,7 +10282,7 @@ algorithm
         e = createCrefArray(cr, 1, ds, exptp, t,crefIdType);
       then
         e;
-    case (_,e,_,_,_,_) then e; 
+    case (_,e,_,_,_,_) then e;
   end matchcontinue;
 end crefVectorize;
 
@@ -10412,7 +10412,7 @@ algorithm
         (iLst, scalar) = extractDimensionOfChild(exp2);
         ety = Expression.arrayEltType(ety);
         exp2 = DAE.ARRAY(DAE.ET_ARRAY( ety, iLst), scalar, expl1);
-    then exp2;      
+    then exp2;
   end match;
 end mergeQualWithRest;
 
@@ -10880,7 +10880,7 @@ algorithm
     
     case Absyn.CREF_IDENT(name = i,subscripts = {})
       equation
-        cref = ComponentReference.makeCrefIdent(i, DAE.ET_OTHER(), {}); 
+        cref = ComponentReference.makeCrefIdent(i, DAE.ET_OTHER(), {});
       then 
         cref;
     
@@ -10952,7 +10952,7 @@ algorithm
         // Debug.traceln("Try elabSucscriptsDims " +& id);
         (cache,cr) = PrefixUtil.prefixCref(cache,env,InnerOuter.emptyInstHierarchy,crefPrefix,ComponentReference.makeCrefIdent(id,DAE.ET_OTHER(),{}));
         (cache,_,t,_,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr);
-        // print("elabCrefSubs type of: " +& id +& " is " +& Types.printTypeStr(t) +& "\n"); 
+        // print("elabCrefSubs type of: " +& id +& " is " +& Types.printTypeStr(t) +& "\n");
         // Debug.traceln("    elabSucscriptsDims " +& id +& " got var");
         ty = Types.elabType(t);
         sl = Types.getDimensions(t);
@@ -11137,7 +11137,7 @@ algorithm
         true = Expression.dimensionKnown(dim);
         (cache,sub_1,const1) = elabSubscript(cache,env,sub,impl,pre,info);
         (cache,subs_1,const2) = elabSubscriptsDims2(cache,env,subs,restdims,impl,pre,info);
-        const = Types.constAnd(const1, const2);        
+        const = Types.constAnd(const1, const2);
       then
         (cache,sub_1::subs_1,const);
 
@@ -11259,7 +11259,7 @@ algorithm
       Absyn.Exp e;
       Prefix.Prefix pre;
 
-    case ((DAE.T_INTEGER(varLstInt = _),_),_,sub,_,_) then DAE.INDEX(sub); 
+    case ((DAE.T_INTEGER(varLstInt = _),_),_,sub,_,_) then DAE.INDEX(sub);
     case ((DAE.T_ENUMERATION(path = _),_),_,sub,_,_) then DAE.INDEX(sub);
     case ((DAE.T_ARRAY(arrayType = (DAE.T_INTEGER(varLstInt = _),_)),_),_,sub,_,_) then DAE.SLICE(sub);
 
@@ -11308,7 +11308,7 @@ algorithm
       then
         t_1;
 
-    case (e,t) then t; 
+    case (e,t) then t;
   end matchcontinue;
 end subscriptCrefType;
 
@@ -11323,7 +11323,7 @@ algorithm
       list<DAE.Subscript> subs;
       DAE.ComponentRef c;
 
-    case (DAE.CREF_IDENT(subscriptLst = {}),t) then t; 
+    case (DAE.CREF_IDENT(subscriptLst = {}),t) then t;
     case (DAE.CREF_IDENT(subscriptLst = subs),t)
       equation
         t_1 = subscriptType(t, subs);
@@ -11353,7 +11353,7 @@ algorithm
       DAE.Dimension dim;
       Option<Absyn.Path> p;
 
-    case (t,{}) then t; 
+    case (t,{}) then t;
     case ((DAE.T_ARRAY(arrayDim = DAE.DIM_INTEGER(integer = _),arrayType = t),_),(DAE.INDEX(exp = _) :: subs))
       equation
         t_1 = subscriptType(t, subs);

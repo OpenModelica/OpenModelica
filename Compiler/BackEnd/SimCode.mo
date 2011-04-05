@@ -211,7 +211,7 @@ uniontype VarInfo
     Integer numStringAliasVars;
     Integer numJacobianVars;
     Option <Integer> dimODE1stOrder;
-    Option <Integer> dimODE2ndOrder; 
+    Option <Integer> dimODE2ndOrder;
   end VARINFO;
 end VarInfo;
 
@@ -257,7 +257,7 @@ uniontype SimVar
     // array
     Option<DAE.ComponentRef> arrayCref;
     AliasVariable aliasvar;
-    Absyn.Info info; 
+    Absyn.Info info;
     Causality causality;
     Option<Integer> variable_index;
   end SIMVAR;
@@ -278,7 +278,7 @@ uniontype Causality
   record INTERNAL end INTERNAL;
   record OUTPUT end OUTPUT;
   record INPUT end INPUT;
-end Causality; 
+end Causality;
 
 // Represents a Modelica or MetaModelica function.
 // TODO: I believe some of these fields can be removed. Check to see what is
@@ -466,7 +466,7 @@ uniontype SimulationSettings
     String options;
     String outputFormat;
     String variableFilter;
-    Boolean measureTime;      
+    Boolean measureTime;
   end SIMULATION_SETTINGS;
 end SimulationSettings;
 
@@ -601,14 +601,14 @@ algorithm
     local
       DAE.ComponentRef cr,cr1;
       String name;
-      DAE.ExpType tp;      
+      DAE.ExpType tp;
     case (cr,DAE.COMPLEX_VAR(name=name,tp=tp))
       equation
         cr1 = ComponentReference.crefPrependIdent(cr,name,{},tp);
         outExp = Expression.makeCrefExp(cr1,tp);
       then
         outExp;
-  end match;  
+  end match;
 end makeCrefRecordExp;
 
 public function cref2simvar
@@ -626,13 +626,13 @@ algorithm
       
     case (cref, SIMCODE(crefToSimVarHT = crefToSimVarHT) )
       equation
-        sv = get(cref, crefToSimVarHT);        
+        sv = get(cref, crefToSimVarHT);
       then sv;
         
     case (cref, _)
       equation
         badcref = ComponentReference.makeCrefIdent("ERROR_cref2simvar_failed", DAE.ET_REAL(), {});
-        errstr = "Template did not find the simulation variable for "+& ComponentReference.printComponentRefStr(cref) +& ". "; 
+        errstr = "Template did not find the simulation variable for "+& ComponentReference.printComponentRefStr(cref) +& ". ";
         Error.addMessage(Error.INTERNAL_ERROR, {errstr});
       then
         SIMVAR(badcref, BackendDAE.STATE(), "", "", "", -1, NONE(), false, DAE.ET_REAL(), false, NONE(), NOALIAS(), Absyn.dummyInfo, INTERNAL(),NONE());
@@ -660,7 +660,7 @@ TODO: This function should not exist!
 Rather the array should not be let expanded when SimCode is entering templates. 
 "
   input DAE.Exp inExp;
-  input Context context; 
+  input Context context;
   output DAE.Exp outExp;
 algorithm
   outExp := matchcontinue (inExp, context)
@@ -682,30 +682,30 @@ algorithm
         
     case(inExp, _) then inExp;
         
-  end matchcontinue; 
+  end matchcontinue;
 end hackArrayReverseToCref;
 
 protected function isArrayExpansion
 "Helper funtion to hackArrayReverseToCref."
   input list<DAE.Exp> inArrayElems;
   input DAE.ComponentRef inCref;
-  input Integer index; 
+  input Integer index;
   output Boolean isExpanded;
 algorithm
   isExpanded := matchcontinue(inArrayElems, inCref, index)
     local
       list<DAE.Exp> aRest;
       Integer i;
-      DAE.ComponentRef cr; 
-    case({}, _,_) then true; 
+      DAE.ComponentRef cr;
+    case({}, _,_) then true;
     case (DAE.CREF(componentRef=cr) :: aRest, inCref, index) 
       equation
         { DAE.INDEX(DAE.ICONST(i)) } = ComponentReference.crefLastSubs(cr);
         true = (i == index);
         cr = ComponentReference.crefStripLastSubs(cr);
-        true = ComponentReference.crefEqualNoStringCompare(inCref,cr);             
-      then isArrayExpansion(aRest, inCref, index+1);    
-    case (_, _,_) then false;       
+        true = ComponentReference.crefEqualNoStringCompare(inCref,cr);
+      then isArrayExpansion(aRest, inCref, index+1);
+    case (_, _,_) then false;
   end matchcontinue;
 end isArrayExpansion;
 
@@ -716,7 +716,7 @@ TODO: This function should not exist!
 Rather the matrix should not be let expanded when SimCode is entering templates 
 "
   input DAE.Exp inExp;
-  input Context context;  
+  input Context context;
   output DAE.Exp outExp;
 algorithm
   outExp := matchcontinue (inExp, context)
@@ -724,7 +724,7 @@ algorithm
       DAE.ComponentRef cr;
       DAE.ExpType aty;
       list<list<tuple<DAE.Exp, Boolean>>> rows;
-      DAE.Exp crefExp;  
+      DAE.Exp crefExp;
       
     case(DAE.MATRIX(ty=aty, scalar = rows as (((DAE.CREF(componentRef=cr),true)::_)::_) ),context)
       equation
@@ -745,8 +745,8 @@ protected function isMatrixExpansion
 "Helper funtion to hackMatrixReverseToCref."
   input list<list<tuple<DAE.Exp, Boolean>>> rows;
   input DAE.ComponentRef inCref;
-  input Integer rowIndex; 
-  input Integer colIndex; 
+  input Integer rowIndex;
+  input Integer colIndex;
   output Boolean isExpanded;
 algorithm
   isExpanded := matchcontinue(rows, inCref, rowIndex, colIndex)
@@ -754,17 +754,17 @@ algorithm
       list<list<tuple<DAE.Exp, Boolean>>> restRows;
       list<tuple<DAE.Exp, Boolean>> restElems;
       Integer r,c;
-      DAE.ComponentRef cr; 
+      DAE.ComponentRef cr;
     case({}, _,_,_) then true;
-    case({} :: restRows, inCref, rowIndex,_) then isMatrixExpansion(restRows, inCref, rowIndex+1, 1);        
+    case({} :: restRows, inCref, rowIndex,_) then isMatrixExpansion(restRows, inCref, rowIndex+1, 1);
     case ( ((DAE.CREF(componentRef=cr),true) :: restElems) :: restRows, inCref, rowIndex, colIndex) 
       equation
         { DAE.INDEX(DAE.ICONST(r)), DAE.INDEX(DAE.ICONST(c)) } = ComponentReference.crefLastSubs(cr);
         true = (r == rowIndex) and (c == colIndex);
         cr = ComponentReference.crefStripLastSubs(cr);
-        true = ComponentReference.crefEqualNoStringCompare(inCref,cr);             
-      then isMatrixExpansion(restElems :: restRows, inCref, rowIndex, colIndex+1);    
-    case (_,_,_,_) then false;       
+        true = ComponentReference.crefEqualNoStringCompare(inCref,cr);
+      then isMatrixExpansion(restElems :: restRows, inCref, rowIndex, colIndex+1);
+    case (_,_,_,_) then false;
   end matchcontinue;
 end isMatrixExpansion;
 
@@ -841,10 +841,10 @@ public function createSimulationSettings
   input Real tolerance;
   input String method;
   input String options;
-  input String outputFormat; 
+  input String outputFormat;
   input String variableFilter;
   input Boolean measureTime;
-  output SimulationSettings simSettings;  
+  output SimulationSettings simSettings;
   protected
   Real stepSize;
 algorithm
@@ -1010,13 +1010,13 @@ algorithm
           NONE(), BackendDAETransform.dummyDerivative, NONE());
         Debug.fprintln("dynload", "translateModel: Generating simulation code and functions.");
         (indexed_dlow_1,libs,file_dir,timeBackend,timeSimCode,timeTemplates) = 
-          generateModelCodeFMU(dlow_1,funcs,p, dae,  className, filenameprefix, inSimSettingsOpt,m,mT,ass1,ass2,comps);        
+          generateModelCodeFMU(dlow_1,funcs,p, dae,  className, filenameprefix, inSimSettingsOpt,m,mT,ass1,ass2,comps);
         resultValues = 
         {("timeTemplates",Values.REAL(timeTemplates)),
           ("timeSimCode",  Values.REAL(timeSimCode)),
           ("timeBackend",  Values.REAL(timeBackend)),
           ("timeFrontend", Values.REAL(timeFrontend))
-          };   
+          };
         resstr = Absyn.pathString(className);
         resstr = stringAppendList({"SimCode: The model ",resstr," has been translated to FMU"});
       then
@@ -1027,7 +1027,7 @@ algorithm
         resstr = stringAppendList({"SimCode: The model ",resstr," could not been translated to FMU"});
         Error.addMessage(Error.INTERNAL_ERROR, {resstr});
       then
-        fail();        
+        fail();
   end matchcontinue;
 end translateModelFMU;
 
@@ -1091,13 +1091,13 @@ algorithm
           NONE(), BackendDAETransform.dummyDerivative, NONE());
         Debug.fprintln("dynload", "translateModel: Generating simulation code and functions.");
         (indexed_dlow_1,libs,file_dir,timeBackend,timeSimCode,timeTemplates) = 
-          generateModelCodeCPP(dlow_1,funcs,p, dae,  className, filenameprefix, inSimSettingsOpt,m,mT,ass1,ass2,comps);        
+          generateModelCodeCPP(dlow_1,funcs,p, dae,  className, filenameprefix, inSimSettingsOpt,m,mT,ass1,ass2,comps);
         resultValues = 
         {("timeTemplates",Values.REAL(timeTemplates)),
           ("timeSimCode",  Values.REAL(timeSimCode)),
           ("timeBackend",  Values.REAL(timeBackend)),
           ("timeFrontend", Values.REAL(timeFrontend))
-          };   
+          };
         resstr = Absyn.pathString(className);
         resstr = stringAppendList({"SimCode: The model ",resstr," has been translated to cpp"});
       then
@@ -1108,7 +1108,7 @@ algorithm
         resstr = stringAppendList({"SimCode: The model ",resstr," could not been translated to cpp"});
         Error.addMessage(Error.INTERNAL_ERROR, {resstr});
       then
-        fail();        
+        fail();
   end matchcontinue;
 end translateModelCPP;
 
@@ -1125,15 +1125,15 @@ public function generateModelCode
   input Option<SimulationSettings> simSettingsOpt;
   input BackendDAE.IncidenceMatrix incidenceMatrix;
   input BackendDAE.IncidenceMatrixT incidenceMatrixT;
-  input array<Integer> equationIndices;  
-  input array<Integer> variableIndices;  
-  input list<list<Integer>> strongComponents;   
+  input array<Integer> equationIndices;
+  input array<Integer> variableIndices;
+  input list<list<Integer>> strongComponents;
   output BackendDAE.BackendDAE outIndexedBackendDAE;
   output list<String> libs;
   output String fileDir;
   output Real timeBackend;
   output Real timeSimCode;
-  output Real timeTemplates;    
+  output Real timeTemplates;
 protected 
   
   list<String> includes;
@@ -1145,11 +1145,11 @@ protected
   BackendDAE.BackendDAE indexed_dlow,indexed_dlow_1;
   Absyn.ComponentRef a_cref;
   BackendQSS.QSSinfo qssInfo;
-  tuple<BackendDAE.BackendDAE, array<Integer>, array<Integer>, BackendDAE.IncidenceMatrix, BackendDAE.IncidenceMatrixT, list<list<Integer>> > inQSSrequiredData; 
+  tuple<BackendDAE.BackendDAE, array<Integer>, array<Integer>, BackendDAE.IncidenceMatrix, BackendDAE.IncidenceMatrixT, list<list<Integer>> > inQSSrequiredData;
 algorithm
-   timeBackend := System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);   
+   timeBackend := System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);
    a_cref := Absyn.pathToCref(className);
-   fileDir := CevalScript.getFileDir(a_cref, p);   
+   fileDir := CevalScript.getFileDir(a_cref, p);
   System.realtimeTick(CevalScript.RT_CLOCK_BUILD_MODEL);
   Debug.fcall("execstat",print, "*** SimCode -> generateFunctions: " +& realString(clock()) +& "\n" );
   (libs, includes, recordDecls, functions, outIndexedBackendDAE, _) :=
@@ -1157,14 +1157,14 @@ algorithm
   Debug.fcall("execstat",print, "*** SimCode -> generateSimCode: " +& realString(clock()) +& "\n" );
   simCode := createSimCode(functionTree, outIndexedBackendDAE, equationIndices, 
     variableIndices, incidenceMatrix, incidenceMatrixT, strongComponents, 
-    className, filenamePrefix, fileDir, functions, includes, libs, simSettingsOpt, recordDecls); 
+    className, filenamePrefix, fileDir, functions, includes, libs, simSettingsOpt, recordDecls);
 
   timeSimCode := System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);
-  System.realtimeTick(CevalScript.RT_CLOCK_BUILD_MODEL);     
+  System.realtimeTick(CevalScript.RT_CLOCK_BUILD_MODEL);
   
   inQSSrequiredData := (outIndexedBackendDAE, equationIndices, variableIndices, incidenceMatrix, incidenceMatrixT, strongComponents);
   callTargetTemplates(simCode,inQSSrequiredData,RTOpts.simCodeTarget());
-  timeTemplates := System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);  
+  timeTemplates := System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);
 end generateModelCode;
 
 // TODO: use another switch ... later make it first class option like -target or so
@@ -1172,16 +1172,16 @@ end generateModelCode;
 protected function callTargetTemplates
 "Generate target code by passing the SimCode data structure to templates."
   input SimCode simCode;
-  input tuple<BackendDAE.BackendDAE, array<Integer>, array<Integer>, BackendDAE.IncidenceMatrix, BackendDAE.IncidenceMatrixT, list<list<Integer>> > inQSSrequiredData; 
+  input tuple<BackendDAE.BackendDAE, array<Integer>, array<Integer>, BackendDAE.IncidenceMatrix, BackendDAE.IncidenceMatrixT, list<list<Integer>> > inQSSrequiredData;
   input String target;
 algorithm
   _ := match (simCode,inQSSrequiredData,target)
     local
       BackendDAE.BackendDAE outIndexedBackendDAE;
-      array<Integer> equationIndices, variableIndices; 
+      array<Integer> equationIndices, variableIndices;
       BackendDAE.IncidenceMatrix incidenceMatrix;
       BackendDAE.IncidenceMatrixT incidenceMatrixT;
-      list<list<Integer>> strongComponents;  
+      list<list<Integer>> strongComponents;
       BackendQSS.QSSinfo qssInfo;
       
     case (simCode,_,"CSharp")
@@ -1268,13 +1268,13 @@ algorithm
         (dlow_1,m,mT,ass1,ass2,comps) = BackendDAEUtil.getSolvedSystem(cache, env, dlow, funcs,
           NONE(), BackendDAETransform.dummyDerivative, NONE());
         (indexed_dlow_1,libs,file_dir,timeBackend,timeSimCode,timeTemplates) = 
-          generateModelCode(dlow_1,funcs,p, dae,  className, filenameprefix, inSimSettingsOpt,m,mT,ass1,ass2,comps);   
+          generateModelCode(dlow_1,funcs,p, dae,  className, filenameprefix, inSimSettingsOpt,m,mT,ass1,ass2,comps);
         resultValues = 
         {("timeTemplates",Values.REAL(timeTemplates)),
           ("timeSimCode",  Values.REAL(timeSimCode)),
           ("timeBackend",  Values.REAL(timeBackend)),
           ("timeFrontend", Values.REAL(timeFrontend))
-          };   
+          };
         resstr = Util.if_(RTOpts.debugFlag("failtrace"),Absyn.pathString(className),"");
         resstr = stringAppendList({"SimCode: The model ",resstr," has been translated"});
         //        resstr = "SimCode: The model has been translated";
@@ -1623,7 +1623,7 @@ algorithm
         calledfuncs = Util.listMap(fcallexps, getCallPath);
         res = removeDuplicatePaths(calledfuncs);
       then res;
-  end matchcontinue;     
+  end matchcontinue;
 end getCalledFunctionReferences;
 
 protected function generateExternalObjectIncludes
@@ -2141,7 +2141,7 @@ algorithm
         modelInfo = createModelInfo(class_, dlow2, functions, n_h, nres, fileDir);
         
         // equation generation for euler, dassl2, rungekutta 
-        (contBlocks, _) = splitOutputBlocks(dlow2, ass1, ass2, m, mt, blt_no_states);  
+        (contBlocks, _) = splitOutputBlocks(dlow2, ass1, ass2, m, mt, blt_no_states);
         odeEquations = createEquations(false, false, false, false, false, dlow2, ass1, ass2, blt_states, helpVarInfo);
         algebraicEquations = createEquations(false, false, false, false, false, dlow2, ass1, ass2, contBlocks, helpVarInfo);
         allEquations = createEquations(true, false, true, false, false, dlow2, ass1, ass2, comps, helpVarInfo);
@@ -2159,15 +2159,15 @@ algorithm
         knownVars = BackendVariable.daeKnVars(dlow);
         varlst = BackendDAEUtil.varList(orderedVars);
         varlst1 = BackendDAEUtil.varList(knownVars);
-        varlst2 = listAppend(varlst,varlst1);  
-        vars = BackendDAEUtil.listVar(varlst2);         
-        (allEquations,divLst) = listMap1_2(allEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ONLY_VARIABLES()));              
-        (odeEquations,_) = listMap1_2(odeEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ONLY_VARIABLES()));        
-        (algebraicEquations,_) = listMap1_2(algebraicEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ONLY_VARIABLES()));       
-        (residualEquations,_) = listMap1_2(residualEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ALL()));        
-        (initialEquations,_) = listMap1_2(initialEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ALL()));        
-        (parameterEquations,_) = listMap1_2(parameterEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ALL()));        
-        (removedEquations,_) = listMap1_2(removedEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ONLY_VARIABLES()));        
+        varlst2 = listAppend(varlst,varlst1);
+        vars = BackendDAEUtil.listVar(varlst2);
+        (allEquations,divLst) = listMap1_2(allEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ONLY_VARIABLES()));
+        (odeEquations,_) = listMap1_2(odeEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ONLY_VARIABLES()));
+        (algebraicEquations,_) = listMap1_2(algebraicEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ONLY_VARIABLES()));
+        (residualEquations,_) = listMap1_2(residualEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ALL()));
+        (initialEquations,_) = listMap1_2(initialEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ALL()));
+        (parameterEquations,_) = listMap1_2(parameterEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ALL()));
+        (removedEquations,_) = listMap1_2(removedEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ONLY_VARIABLES()));
         // add equations with only parameters as division expression
         allDivStmts = Util.listMap(divLst,generateParameterDivisionbyZeroTestEqn);
         parameterEquations = listAppend(parameterEquations,{SES_ALGORITHM(allDivStmts)});
@@ -2303,7 +2303,7 @@ algorithm
         modelInfo = createModelInfoCPP(class_, dlow2, functions, n_h, nres, fileDir);
         
         // equation generation for euler, dassl2, rungekutta 
-        (contBlocks, _) = splitOutputBlocks(dlow2, ass1, ass2, m, mt, blt_no_states);  
+        (contBlocks, _) = splitOutputBlocks(dlow2, ass1, ass2, m, mt, blt_no_states);
         odeEquations = createEquations(false, false, false, false, false, dlow2, ass1, ass2, blt_states, helpVarInfo);
         algebraicEquations = createEquations(false, false, false, false, false, dlow2, ass1, ass2, contBlocks, helpVarInfo);
         allEquations = createEquations(true, false, true, false, false, dlow2, ass1, ass2, comps, helpVarInfo);
@@ -2321,15 +2321,15 @@ algorithm
         knownVars = BackendVariable.daeKnVars(dlow);
         varlst = BackendDAEUtil.varList(orderedVars);
         varlst1 = BackendDAEUtil.varList(knownVars);
-        varlst2 = listAppend(varlst,varlst1);  
-        vars = BackendDAEUtil.listVar(varlst2);         
-        (allEquations,divLst) = listMap1_2(allEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ONLY_VARIABLES()));              
-        (odeEquations,_) = listMap1_2(odeEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ONLY_VARIABLES()));        
-        (algebraicEquations,_) = listMap1_2(algebraicEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ONLY_VARIABLES()));       
-        (residualEquations,_) = listMap1_2(residualEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ALL()));        
-        (initialEquations,_) = listMap1_2(initialEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ALL()));        
-        (parameterEquations,_) = listMap1_2(parameterEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ALL()));        
-        (removedEquations,_) = listMap1_2(removedEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ONLY_VARIABLES()));        
+        varlst2 = listAppend(varlst,varlst1);
+        vars = BackendDAEUtil.listVar(varlst2);
+        (allEquations,divLst) = listMap1_2(allEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ONLY_VARIABLES()));
+        (odeEquations,_) = listMap1_2(odeEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ONLY_VARIABLES()));
+        (algebraicEquations,_) = listMap1_2(algebraicEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ONLY_VARIABLES()));
+        (residualEquations,_) = listMap1_2(residualEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ALL()));
+        (initialEquations,_) = listMap1_2(initialEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ALL()));
+        (parameterEquations,_) = listMap1_2(parameterEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ALL()));
+        (removedEquations,_) = listMap1_2(removedEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ONLY_VARIABLES()));
         // add equations with only parameters as division expression
         allDivStmts = Util.listMap(divLst,generateParameterDivisionbyZeroTestEqn);
         parameterEquations = listAppend(parameterEquations,{SES_ALGORITHM(allDivStmts)});
@@ -2491,8 +2491,8 @@ algorithm
         comref_outputvars = Util.listMap(outputvars,BackendVariable.varCref);
         
         // Differentiate the ODE system w.r.t states for jacobian
-        Debug.fcall("linmodel",print,"Differentiate System w.r.t. states.\n");   
-        deriveddlow1 = BackendDAEOptimize.generateSymbolicJacobian(dlow, functions, comref_states, BackendDAEUtil.listVar(states), BackendDAEUtil.listVar(inputvars), BackendDAEUtil.listVar(paramvars)); 
+        Debug.fcall("linmodel",print,"Differentiate System w.r.t. states.\n");
+        deriveddlow1 = BackendDAEOptimize.generateSymbolicJacobian(dlow, functions, comref_states, BackendDAEUtil.listVar(states), BackendDAEUtil.listVar(inputvars), BackendDAEUtil.listVar(paramvars));
         Debug.fcall("execJacstat",print, "*** analytical Jacobians -> generated SymbolicJacobian for ODE-Block with "+& intString(nEqns) +& " Equations ->" +& intString(listLength(states)*nEqns) +& " : " +& realString(clock()) +& "\n" );
         
         // create Matrix A and variables
@@ -2505,7 +2505,7 @@ algorithm
         JacAVars = listReverse(JacAVars);
         Debug.fcall("execJacstat",print, "*** analytical Jacobians -> created system A: " +& realString(clock()) +& "\n" );
 
-        LinearMats = {(JacAEquations,JacAVars,"A"),({},{},"B"),({},{},"C"),({},{},"D")};  
+        LinearMats = {(JacAEquations,JacAVars,"A"),({},{},"B"),({},{},"C"),({},{},"D")};
         
       then
         LinearMats;
@@ -2514,7 +2514,7 @@ algorithm
         false = RTOpts.debugFlag("jacobian");
         LinearMats = {({},{},"A"),({},{},"B"),({},{},"C"),({},{},"D")};
       then
-        LinearMats;        
+        LinearMats;
     case (_,_,_,_,_,_,_)
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"Generation of Jacobian Matrxi code using templates failed"});
@@ -2545,7 +2545,7 @@ algorithm
     array<Integer> ass2;
     BackendDAE.EquationArray eqnsNew;
     BackendDAE.Variables varsNew;
-    case ({},inEqns,inVars,inIntegerArray3,eqnsNew,varsNew) then (eqnsNew,varsNew); 
+    case ({},inEqns,inVars,inIntegerArray3,eqnsNew,varsNew) then (eqnsNew,varsNew);
     case ({eqNum}::rest,inEqns,inVars,inIntegerArray3,eqnsNew,varsNew)
       equation
       (eqnsNew,varsNew) = splitoutEquationAndVars(rest,inEqns,inVars,inIntegerArray3,eqnsNew,varsNew);
@@ -2597,7 +2597,7 @@ algorithm
       BackendDAE.EventInfo ev;
       BackendDAE.ExternalObjectClasses eoc;
       
-      list<JacobianMatrix> LinearMats;   
+      list<JacobianMatrix> LinearMats;
       
     case (functions,dlow as BackendDAE.DAE(v,kv,exv,av,e,re,ie,ae,al,ev,eoc),ass1,ass2,_)
       equation
@@ -2623,8 +2623,8 @@ algorithm
         comref_outputvars = Util.listMap(outputvars,BackendVariable.varCref);
         
         // Differentiate the System w.r.t states for matrices A and C
-        Debug.fcall("linmodel",print,"Differentiate System w.r.t. states.\n");   
-        deriveddlow1 = BackendDAEOptimize.generateSymbolicJacobian(dlow, functions, comref_states, BackendDAEUtil.listVar(states), BackendDAEUtil.listVar(inputvars), BackendDAEUtil.listVar(paramvars)); 
+        Debug.fcall("linmodel",print,"Differentiate System w.r.t. states.\n");
+        deriveddlow1 = BackendDAEOptimize.generateSymbolicJacobian(dlow, functions, comref_states, BackendDAEUtil.listVar(states), BackendDAEUtil.listVar(inputvars), BackendDAEUtil.listVar(paramvars));
         Debug.fcall("linmodel",print,"Done! Create now Matrixes A and C for linear model.\n");
         Debug.fcall("execJacstat",print, "*** analytical Jacobians -> generated system for A and C : " +& realString(clock()) +& "\n" );
         
@@ -2668,7 +2668,7 @@ algorithm
         ((JacDVars,_)) =  BackendVariable.traverseBackendDAEVars(v,traversingdlowvarToSimvar,({},kv));
         JacDVars = listReverse(JacDVars);
         Debug.fcall("execJacstat",print, "*** analytical Jacobians -> created system D: " +& realString(clock()) +& "\n" );
-        LinearMats = {(JacAEquations,JacAVars,"A"),(JacBEquations,JacBVars,"B"),(JacCEquations,JacCVars,"C"),(JacDEquations,JacDVars,"D")};  
+        LinearMats = {(JacAEquations,JacAVars,"A"),(JacBEquations,JacBVars,"B"),(JacCEquations,JacCVars,"C"),(JacDEquations,JacDVars,"D")};
         
       then
         LinearMats;
@@ -2677,7 +2677,7 @@ algorithm
         false = RTOpts.debugFlag("linearization");
         true = RTOpts.debugFlag("jacobian");
       then
-        JacobianMatrixes;                     
+        JacobianMatrixes;
 
     case (_,dlow,ass1,ass2,_)
       equation
@@ -2740,7 +2740,7 @@ algorithm
       equation
         Debug.fprintln("failtrace", "- SimCode.extractDelayedExpressions failed");
       then
-        fail();        
+        fail();
   end matchcontinue;
 end extractDelayedExpressions;
 
@@ -2886,7 +2886,7 @@ algorithm
         args_ = listAppend(args_,{DAE.ICONST(nhelpvars)});
         e = DAE.CALL(name, args_, tup, builtin_, exty, inty);
         helpvars = listAppend(helpvars,{(nhelpvars,e,-1)});
-      then ((e,(nhelpvars,helpvars)));    
+      then ((e,(nhelpvars,helpvars)));
     case ((e,(nhelpvars,helpvars)))
     then ((e,(nhelpvars,helpvars)));
   end matchcontinue;
@@ -3348,7 +3348,7 @@ algorithm
        then
         ((exp,inasserts));
     case inTpl then inTpl;
-  end matchcontinue;      
+  end matchcontinue;
 end findSqrtCallsforAsserts;
 
 protected function findSqrtCallsforAssertsExps
@@ -3448,9 +3448,9 @@ algorithm
         true = BackendDAEUtil.isVarDiscrete(v);
         cr = BackendVariable.varCref(v);
       then ((v,cr::cr_lst));
-    case inTpl then inTpl; 
+    case inTpl then inTpl;
   end matchcontinue;
-end traversingisVarDiscreteCrefFinder;  
+end traversingisVarDiscreteCrefFinder;
 
 protected function extractDiscreteModelVars
   input BackendDAE.BackendDAE dlow;
@@ -3493,9 +3493,9 @@ algorithm
         cr_lst1 = Util.listMap(expl1,Expression.expCref);
         cr_lst1 = listAppend(cr_lst,cr_lst1);
       then ((e,cr_lst1));
-    case inTpl then inTpl; 
+    case inTpl then inTpl;
   end matchcontinue;
-end traversingisVarDiscreteCrefFinder2;  
+end traversingisVarDiscreteCrefFinder2;
 
 protected function varNotSolvedInWhen
   input BackendDAE.Var var;
@@ -3569,7 +3569,7 @@ end createSimWhenClausesWithEqs;
 
 protected function findWhenEquation
   input tuple<BackendDAE.Equation, tuple<Option<BackendDAE.WhenEquation>,Integer>> inTpl;
-  output tuple<BackendDAE.Equation, Boolean, tuple<Option<BackendDAE.WhenEquation>,Integer>> outTpl;  
+  output tuple<BackendDAE.Equation, Boolean, tuple<Option<BackendDAE.WhenEquation>,Integer>> outTpl;
 algorithm
   outTpl := matchcontinue (inTpl)
     local
@@ -3580,7 +3580,7 @@ algorithm
     case ((eqn as BackendDAE.WHEN_EQUATION(whenEquation = eq), tplowei))
       equation
         ((_,b,tplowei1)) = findWhenEquation1((eq,tplowei));
-      then ((eqn,b,tplowei1));    
+      then ((eqn,b,tplowei1));
     case ((eqn,tplowei)) then ((eqn,true,tplowei));
   end matchcontinue;
 end findWhenEquation;
@@ -3589,7 +3589,7 @@ protected function findWhenEquation1
 "function: findWhenEquation1
 Helper function to findWhenEquation."
   input tuple<BackendDAE.WhenEquation, tuple<Option<BackendDAE.WhenEquation>,Integer>> inTpl;
-  output tuple<BackendDAE.WhenEquation, Boolean, tuple<Option<BackendDAE.WhenEquation>,Integer>> outTpl;  
+  output tuple<BackendDAE.WhenEquation, Boolean, tuple<Option<BackendDAE.WhenEquation>,Integer>> outTpl;
 algorithm
   outTpl := matchcontinue (inTpl)
     local
@@ -3601,14 +3601,14 @@ algorithm
       equation
         true = intEq(index,wc_ind);
       then
-        ((weqn,false,(SOME(weqn),index)));           
+        ((weqn,false,(SOME(weqn),index)));
         
     case((weqn as BackendDAE.WHEN_EQ(index = wc_ind,elsewhenPart = SOME(we)),tplowei))
       equation
         ((weqn,b,tplowei1)) = findWhenEquation1((we,tplowei));
       then
-        ((weqn,b,tplowei1));    
-    case ((weqn,tplowei)) then ((weqn,true,tplowei));          
+        ((weqn,b,tplowei1));
+    case ((weqn,tplowei)) then ((weqn,true,tplowei));
   end matchcontinue;
 end findWhenEquation1;
 
@@ -3635,7 +3635,7 @@ algorithm
         conditionsWithHindex =  Util.listMap2(conditions, addHelpForCondition, helpVarInfo, helpVarInfo);
         conditionVars = Expression.extractCrefsFromExp(cond);
       then
-        SIM_WHEN_CLAUSE(conditionVars, reinits, whenEq, conditionsWithHindex);    
+        SIM_WHEN_CLAUSE(conditionVars, reinits, whenEq, conditionsWithHindex);
   end match;
 end whenClauseToSimWhenClause;
 
@@ -3685,7 +3685,7 @@ algorithm
         true = hasDiscreteVar({v});
         equations = createEquations(includeWhen, skipDiscInZc, false,  skipDiscInAlgorithm, linearSystem, dlow, ass1, ass2, restComps, helpVarInfo);
       then
-        equations;        
+        equations;
         
         // ignore discrete in zero crossing if we should not generate them
     case (includeWhen, true, genDiscrete,  skipDiscInAlgorithm, linearSystem, dlow, ass1, ass2, {index} :: restComps, helpVarInfo)
@@ -3704,7 +3704,7 @@ algorithm
       equation
         equations1 = createEquation(index, dlow, ass1, ass2, helpVarInfo,true, skipDiscInAlgorithm);
         equations = createEquations(includeWhen, skipDiscInZc, genDiscrete,  skipDiscInAlgorithm, true, dlow, ass1, ass2, restComps, helpVarInfo);
-        equations = listAppend(equations1,equations);  
+        equations = listAppend(equations1,equations);
       then
         equations;
        
@@ -3713,7 +3713,7 @@ algorithm
       equation
         equations_ = createOdeSystem(genDiscrete,  skipDiscInAlgorithm, true, dlow, ass1, ass2, comp, helpVarInfo);
         equations = createEquations(includeWhen, skipDiscInZc, genDiscrete,  skipDiscInAlgorithm, true, dlow, ass1, ass2, restComps, helpVarInfo);
-        equations1 = listAppend(equations_,equations); 
+        equations1 = listAppend(equations_,equations);
       then
         equations1;
         
@@ -3731,7 +3731,7 @@ algorithm
       equation
         equations_ = createOdeSystem(genDiscrete, skipDiscInAlgorithm, false, dlow, ass1, ass2, comp, helpVarInfo);
         equations = createEquations(includeWhen, skipDiscInZc, genDiscrete, skipDiscInAlgorithm, false, dlow, ass1, ass2, restComps, helpVarInfo);
-        equations1 = listAppend(equations_,equations); 
+        equations1 = listAppend(equations_,equations);
       then
         equations1;
         
@@ -3750,7 +3750,7 @@ algorithm
         Debug.fprintln("failtrace"," Failed to create Equation with:" +& stringAppendList(str));
         Error.addMessage(Error.INTERNAL_ERROR, {"createEquations failed"});
       then
-        fail();        
+        fail();
   end matchcontinue;
 end createEquations;
 
@@ -3947,7 +3947,7 @@ algorithm
         message = stringAppendList({"Inverse Algorithm needs to be solved for in ",algStr,". This is not implemented yet.\n"});
         Error.addMessage(Error.INTERNAL_ERROR,{message});
       then fail();
-  end matchcontinue;  
+  end matchcontinue;
 end createEquation;
 
 protected function createElseWhenEquation
@@ -4013,13 +4013,13 @@ algorithm
       equation
         simeqns = createSampleEquations(eqns);
       then
-        (SES_SIMPLE_ASSIGN(cr, e2, source)::simeqns);  
+        (SES_SIMPLE_ASSIGN(cr, e2, source)::simeqns);
     case (eq::eqns)
       equation
-        eqstr = BackendDump.equationStr(eq); 
+        eqstr = BackendDump.equationStr(eq);
         Error.addCompilerWarning("sample call in equation: " +& eqstr +& "not supported, yet!");
         simeqns = createSampleEquations(eqns);
-      then (simeqns);  
+      then (simeqns);
   end matchcontinue;
 end createSampleEquations;
 
@@ -4177,8 +4177,8 @@ algorithm
       list<Option<Integer>> ad;
       list<DAE.Subscript> subs;
       list<tuple<Integer,list<list<DAE.Subscript>>>> entrylst1,entrylst2;
-      DAE.ComponentRef left;   
-      String eqstr;   
+      DAE.ComponentRef left;
+      String eqstr;
       DAE.Algorithm alg;
       list<DAE.Statement> algStatements;
       DAE.ElementSource source;
@@ -4211,9 +4211,9 @@ algorithm
         res_exp = Expression.expSub(e1,e2);
         ad = Util.listMap(ds,Util.makeOption);
         (subs,entrylst1) = BackendDAEUtil.getArrayEquationSub(aindx,ad,inEntrylst);
-        res_exp = Expression.applyExpSubscripts(res_exp,subs);        
+        res_exp = Expression.applyExpSubscripts(res_exp,subs);
         res_exp = ExpressionSimplify.simplify(res_exp);
-        res_exp = replaceDerOpInExp(res_exp);        
+        res_exp = replaceDerOpInExp(res_exp);
         (eqSystemsRest,entrylst2) = createNonlinearResidualEquations(rest, aeqns, algs, entrylst1);
       then 
         (SES_RESIDUAL(res_exp,source) :: eqSystemsRest,entrylst2);
@@ -4245,7 +4245,7 @@ algorithm
         (eqSystemsRest,entrylst1) = createNonlinearResidualEquations(rest, aeqns, algs, inEntrylst);
         eqSystemsRest = listAppend(eqSystlst,eqSystemsRest);
       then
-        (SES_ALGORITHM(algStatements)::eqSystemsRest,entrylst1);        
+        (SES_ALGORITHM(algStatements)::eqSystemsRest,entrylst1);
         
     case (eq::_,_,_,_)
       equation
@@ -4253,7 +4253,7 @@ algorithm
         eqstr = stringAppend("SimCode.createNonlinearResidualEquations failed for equation: ",eqstr);
         Error.addSourceMessage(Error.INTERNAL_ERROR, {eqstr},BackendEquation.equationInfo(eq));
       then
-        fail();    
+        fail();
   end matchcontinue;
 end createNonlinearResidualEquations;
 
@@ -4275,7 +4275,7 @@ algorithm
     local
       SimEqSystem eq;
       list<SimEqSystem> rest_eqs,eqs;
-      Integer index; 
+      Integer index;
       list<DAE.ComponentRef> crefs;
       VarTransform.VariableReplacements repl;
       
@@ -4350,7 +4350,7 @@ algorithm
       BackendDAE.Variables vars_1,vars,knvars,exvars,evars;
       BackendDAE.AliasVariables av,ave;
       BackendDAE.EquationArray eqns_1,eqns,se,ie,eeqns,eieqns;
-      BackendDAE.BackendDAE cont_subsystem_dae,daelow,subsystem_dae,dlow; 
+      BackendDAE.BackendDAE cont_subsystem_dae,daelow,subsystem_dae,dlow;
       Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac;
       BackendDAE.JacobianType jac_tp;
       array<BackendDAE.MultiDimEquation> ae,ae1;
@@ -4363,7 +4363,7 @@ algorithm
       list<SimEqSystem> discEqs;
       list<Integer> values;
       list<Integer> value_dims;
-      SimEqSystem equation_;      
+      SimEqSystem equation_;
       BackendDAE.BackendDAE subsystem_dae_1,subsystem_dae_2;
       array<Integer> v1,v2,v1_1,v2_1;
       BackendDAE.IncidenceMatrix m_2,m_3,m;
@@ -4401,7 +4401,7 @@ algorithm
         jac_tp = changeJactype(jac_tp);
         equations_ = createOdeSystem2(false, genDiscrete, skipDiscInAlgorithm, subsystem_dae, jac, jac_tp, block_,helpVarInfo);
       then
-        equations_;   
+        equations_;
         
         // mixed system of equations, continuous part only
     case (false, skipDiscInAlgorithm, false,(daelow as BackendDAE.DAE(vars,knvars,exvars,av,eqns,se,ie,ae,al, ev,eoc)),ass1,ass2,block_,helpVarInfo)
@@ -4411,14 +4411,14 @@ algorithm
         (eqn_lst,var_lst) = Util.listMap32(block_, getEquationAndSolvedVar, eqns, vars, ass2);
         eqn_lst = replaceDerOpInEquationList(eqn_lst);
         true = isMixedSystem(var_lst,eqn_lst);
-        ae1 = Util.arrayMap(ae,replaceDerOpMultiDimEquations);        
+        ae1 = Util.arrayMap(ae,replaceDerOpMultiDimEquations);
         (cont_eqn,cont_var,disc_eqn,disc_var) = splitMixedEquations(eqn_lst, var_lst);
         // States are solved for der(x) not x.
         cont_var1 = Util.listMap(cont_var, transformXToXd);
         vars_1 = BackendDAEUtil.listVar(cont_var1);
         // because listVar orders the elements not like listEquation the pairs of (var is solved in equation)
         // is  twisted, simple reverse one list
-        eqn_lst = listReverse(eqn_lst);        
+        eqn_lst = listReverse(eqn_lst);
         eqns_1 = BackendDAEUtil.listEquation(cont_eqn);
         cont_subsystem_dae = BackendDAE.DAE(vars_1,knvars,exvars,av,eqns_1,se,ie,ae1,al,ev,eoc);
         m = BackendDAEUtil.incidenceMatrix(cont_subsystem_dae, BackendDAE.ABSOLUTE());
@@ -4477,7 +4477,7 @@ algorithm
         vars_1 = BackendDAEUtil.listVar(var_lst_1);
         // because listVar orders the elements not like listEquation the pairs of (var is solved in equation)
         // is  twisted, simple reverse one list
-        eqn_lst = listReverse(eqn_lst);        
+        eqn_lst = listReverse(eqn_lst);
         eqns_1 = BackendDAEUtil.listEquation(eqn_lst);
         ave = BackendDAEUtil.emptyAliasVariables();
         evars = BackendDAEUtil.emptyVars();
@@ -4507,7 +4507,7 @@ algorithm
         // extract the variables and equations of the block.
         (eqn_lst,var_lst) = Util.listMap32(block_, getEquationAndSolvedVar, eqns, vars, ass2);
         eqn_lst = replaceDerOpInEquationList(eqn_lst);
-        ae1 = Util.arrayMap(ae,replaceDerOpMultiDimEquations);      
+        ae1 = Util.arrayMap(ae,replaceDerOpMultiDimEquations);
         // States are solved for der(x) not x.
         var_lst_1 = Util.listMap(var_lst, transformXToXd);
         vars_1 = BackendDAEUtil.listVar(var_lst_1);
@@ -4705,7 +4705,7 @@ protected function createOdeSystem2
   input Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> inTplIntegerIntegerBackendDAEEquationLstOption;
   input BackendDAE.JacobianType inJacobianType;
   input list<Integer> block_;
-  input list<HelpVarInfo> helpVarInfo; 
+  input list<HelpVarInfo> helpVarInfo;
   output list<SimEqSystem> equations_;
 algorithm
   equations_ :=
@@ -4721,7 +4721,7 @@ algorithm
       list<BackendDAE.Equation> eqn_lst;
       list<DAE.ComponentRef> crefs;
       array<BackendDAE.MultiDimEquation> ae;
-      BackendDAE.EventInfo ev;      
+      BackendDAE.EventInfo ev;
       list<SimEqSystem> resEqs;
       SimEqSystem equation_;
       array<Integer> v1,v2,v1_1,v2_1;
@@ -4730,7 +4730,7 @@ algorithm
       list<list<Integer>> comps,comps_1;
       list<Integer> comps_flat;
       list<list<Integer>> r,t;
-      list<Integer> rf,tf;      
+      list<Integer> rf,tf;
       list<SimVar> simVars;
       list<BackendDAE.Equation> dlowEqs;
       list<DAE.Exp> beqs;
@@ -4791,7 +4791,7 @@ algorithm
         true = listLength(t) > 0;
         comps_flat = Util.listFlatten(comps_1);
         rf = Util.listFlatten(r);
-        tf = Util.listFlatten(t);        
+        tf = Util.listFlatten(t);
         equations_ = generateRelaxationSystem(mixedEvent,m_3,mT_3,v1_1,v2_1,comps_flat,rf,tf,subsystem_dae_2,helpVarInfo);
       then
         equations_;
@@ -4799,8 +4799,8 @@ algorithm
         // Time varying jacobian. Linear system of equations that needs to be solved during runtime.
     case (mixedEvent,_,skipDiscInAlgorithm,(d as BackendDAE.DAE(orderedVars = v,knownVars = kv,orderedEqs = eqn, arrayEqs = arrayEqs)),SOME(jac),BackendDAE.JAC_TIME_VARYING(),block_,helpVarInfo)
       equation
-        ((simVars,_)) = BackendVariable.traverseBackendDAEVars(v,traversingdlowvarToSimvar,({},kv));  
-        simVars = listReverse(simVars); 
+        ((simVars,_)) = BackendVariable.traverseBackendDAEVars(v,traversingdlowvarToSimvar,({},kv));
+        simVars = listReverse(simVars);
         dlowEqs = BackendDAEUtil.equationList(eqn);
         (beqs,_) = listMap3passthrough(dlowEqs, dlowEqToExp, v, arrayEqs, {});
         simJac = Util.listMap1(jac, jacToSimjac, v);
@@ -4843,7 +4843,7 @@ protected function replaceDerOpInEquationList
   output list<BackendDAE.Equation> outEqns;
 algorithm
   outEqns := Util.listMap(inEqns, replaceDerOpInEquation);
-end replaceDerOpInEquationList;     
+end replaceDerOpInEquationList;
 
 protected function replaceDerOpMultiDimEquations
 "Replaces all der(cref) with $DER.cref in an multidimequation."
@@ -4862,7 +4862,7 @@ algorithm
         e2_1 = replaceDerOpInExp(e2);
       then
         BackendDAE.MULTIDIM_EQUATION(ilst,e1_1,e2_1,source);
-    case(inMultiDimEquation) then inMultiDimEquation; 
+    case(inMultiDimEquation) then inMultiDimEquation;
   end matchcontinue;
 end replaceDerOpMultiDimEquations;
 
@@ -4888,13 +4888,13 @@ algorithm
       equation
         e1 = replaceDerOpInExp(e1);
       then
-        BackendDAE.RESIDUAL_EQUATION(e1, src);    
+        BackendDAE.RESIDUAL_EQUATION(e1, src);
         
     case (BackendDAE.SOLVED_EQUATION(componentRef=cr,exp = e1, source = src))
       equation
         e1 = replaceDerOpInExp(e1);
       then
-        BackendDAE.SOLVED_EQUATION(cr,e1, src); 
+        BackendDAE.SOLVED_EQUATION(cr,e1, src);
         
     case (_) then inEqn;
         
@@ -4916,7 +4916,7 @@ protected function replaceDerOpInExpCond
   output tuple<DAE.Exp,Option<DAE.ComponentRef>> outTpl;
   protected
   DAE.Exp e;
-  Option<DAE.ComponentRef> cr;  
+  Option<DAE.ComponentRef> cr;
 algorithm
   (e,cr) := inTpl;
   outTpl := Expression.traverseExp(e, replaceDerOpInExpTraverser, cr);
@@ -4939,7 +4939,7 @@ algorithm
     local
       DAE.ComponentRef cr, der_cr;
       DAE.Exp cref_exp;
-      DAE.ComponentRef cref; 
+      DAE.ComponentRef cref;
       
     case ((DAE.CALL(path = Absyn.IDENT("der"),expLst = {DAE.CREF(componentRef = cr)}),
         SOME(cref)))
@@ -5018,7 +5018,7 @@ algorithm
         size = listLength(reqn_lst);
         block_2 = Util.listIntRange(size);
         ass1_1 = listArray(block_2);
-        ass2_1 = listArray(block_2);        
+        ass2_1 = listArray(block_2);
         daelow1=BackendDAE.DAE(v1,kv,exv,av,eqn1,reeqn,ineq,ae,algorithms,eventInfo,extObjClasses);
         // generate code for relaxation equations
         reqns = generateRelaxedResidualEqns(block_2,mixedEvent,daelow1, ass1_1, ass2_1, helpVarInfo);
@@ -5071,7 +5071,7 @@ algorithm
         exps = VarTransform.replaceExp(exp,repl,NONE());
         repl1 = VarTransform.addReplacement(repl, c, exps);
         source = BackendEquation.equationSource(eqn);
-        (repl2,seqns) = getRelaxationReplacements(block_,ass2,crefs,eqnLst,repl1);  
+        (repl2,seqns) = getRelaxationReplacements(block_,ass2,crefs,eqnLst,repl1);
       then 
         (repl2,SES_SIMPLE_ASSIGN(c, exp, source)::seqns);
   end match;
@@ -5111,12 +5111,12 @@ algorithm
         e2 = Expression.crefExp(cr);
         (sol,asserts) = solve(e1, e2, exp);
       then 
-        (sol,asserts);          
+        (sol,asserts);
     case (_,_)
       equation
         Debug.fprint("failtrace", "- SimCode.solveEquation failed \n");
       then
-        fail();              
+        fail();
   end match;
 end solveEquation;
 
@@ -5155,7 +5155,7 @@ algorithm
         var = listNth(varlst,s-1);
         eqn = listNth(eqnLst,e-1);
         {eqn1} = BackendVarTransform.replaceEquations({eqn},repl);
-        (eqnLst1,varlst1) = getRelaxedResidualEqns(block_,ass2,crefs,varlst,eqnLst,repl);  
+        (eqnLst1,varlst1) = getRelaxedResidualEqns(block_,ass2,crefs,varlst,eqnLst,repl);
       then 
         ((eqn1::eqnLst1),(var::varlst1));
   end match;
@@ -5165,11 +5165,11 @@ protected function generateRelaxedResidualEqns"
 Author: Frenkel TUD 2010-09 function generateRelaxedResidualEqns
   generates the equations for the residual eqns"
   input list<Integer> inBlock;
-  input Boolean mixedEvent "true if generating the mixed system event code"; 
+  input Boolean mixedEvent "true if generating the mixed system event code";
   input BackendDAE.BackendDAE daelow;
   input array<Integer> Ass1;
   input array<Integer> Ass2;
-  input list<HelpVarInfo> helpVarInfo;  
+  input list<HelpVarInfo> helpVarInfo;
   output list<SimEqSystem> outEqnLst;
 algorithm
   outEqnLst := match (inBlock,mixedEvent,daelow, Ass1, Ass2, helpVarInfo)
@@ -5187,11 +5187,11 @@ algorithm
       BackendDAE.EquationArray eqn;
       list<BackendDAE.Equation> dlowEqs;
       array<BackendDAE.MultiDimEquation> ae;
-      Integer index;      
+      Integer index;
       
     case ({r},mixedEvent,daelow, Ass1, Ass2, helpVarInfo)
       equation
-        reqns = createEquation(r,daelow, Ass1, Ass2, helpVarInfo, false,false);        
+        reqns = createEquation(r,daelow, Ass1, Ass2, helpVarInfo, false,false);
       then 
         reqns;
         
@@ -5201,7 +5201,7 @@ algorithm
         m = BackendDAEUtil.incidenceMatrix(daelow, BackendDAE.NORMAL());
         mT = BackendDAEUtil.transposeMatrix(m);
         SOME(jac) = BackendDAEUtil.calculateJacobian(v, eqn, ae, m, mT,false);
-        ((simVars,_)) = BackendVariable.traverseBackendDAEVars(v,traversingdlowvarToSimvar,({},kv)); 
+        ((simVars,_)) = BackendVariable.traverseBackendDAEVars(v,traversingdlowvarToSimvar,({},kv));
         simVars = listReverse(simVars);
         (beqs,_) = listMap3passthrough(dlowEqs, dlowEqToExp, v, ae, {});
         simJac = Util.listMap1(jac, jacToSimjac, v);
@@ -5249,7 +5249,7 @@ algorithm
       list<Integer> ds;
       list<Option<Integer>> ad;
       list<DAE.Subscript> subs;
-      list<tuple<Integer,list<list<DAE.Subscript>>>> entrylst1;  
+      list<tuple<Integer,list<list<DAE.Subscript>>>> entrylst1;
       
     case (BackendDAE.RESIDUAL_EQUATION(exp=e), v, arrayEqs,inEntrylst)
       equation
@@ -5275,14 +5275,14 @@ algorithm
         rhs_exp = BackendDAEUtil.getEqnsysRhsExp(new_exp1, v);
         rhs_exp_1 = Expression.negate(rhs_exp);
         rhs_exp_2 = ExpressionSimplify.simplify(rhs_exp_1);
-      then (rhs_exp_2,entrylst1);     
+      then (rhs_exp_2,entrylst1);
         
     case (dlowEq,_,_,_)
       equation
         BackendDump.dumpEqns({dlowEq});
         Error.addSourceMessage(Error.INTERNAL_ERROR,{"dlowEqToExp failed"},BackendEquation.equationInfo(dlowEq));
       then
-        fail();        
+        fail();
   end matchcontinue;
 end dlowEqToExp;
 
@@ -5340,8 +5340,8 @@ protected function createSingleArrayEqnCode
   input Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> inTplIntegerIntegerBackendDAEEquationLstOption;
   input BackendDAE.JacobianType inJacobianType;
   input list<Integer> block_;
-  input list<HelpVarInfo> helpVarInfo; 
-  output list<SimEqSystem> equations_;  
+  input list<HelpVarInfo> helpVarInfo;
+  output list<SimEqSystem> equations_;
 algorithm
   equations_ := matchcontinue(mixedEvent,genDiscrete,inBackendDAE,inTplIntegerIntegerBackendDAEEquationLstOption,inJacobianType,block_,helpVarInfo) 
     local
@@ -5416,19 +5416,19 @@ algorithm
         ea2 = BackendDAEUtil.collateArrExpList(ea2,NONE());
         ealst = Util.listThreadTuple(ea1,ea2);
         re = Util.listMap1(ealst,BackendEquation.generateEQUATION,source);
-        eqns_1 = BackendDAEUtil.listEquation(re); 
+        eqns_1 = BackendDAEUtil.listEquation(re);
         se1 = BackendDAEUtil.listEquation({});
         subsystem_dae = BackendDAE.DAE(vars,knvars,exvars,av,eqns_1,se1,ie,ae,al,ev,eoc);
         m = BackendDAEUtil.incidenceMatrix(subsystem_dae, BackendDAE.ABSOLUTE());
         mt_1 = BackendDAEUtil.transposeMatrix(m);
         (v1,v2,subsystem_dae,m_2,mt_2) = BackendDAETransform.matchingAlgorithm(subsystem_dae, m, mt_1, (BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.ALLOW_UNDERCONSTRAINED(), BackendDAE.KEEP_SIMPLE_EQN()),DAE.AVLTREENODE(NONE(),0,NONE(),NONE()));
-        (comps) = BackendDAETransform.strongComponents(m_2, mt_2, v1,v2);  
+        (comps) = BackendDAETransform.strongComponents(m_2, mt_2, v1,v2);
         // calculate jacobian. If constant, linear system of equations. Otherwise nonlinear
         jac1 = BackendDAEUtil.calculateJacobian(vars, eqns_1, ae, m_2, mt_2,false);
         jac_tp = BackendDAEUtil.analyzeJacobian(subsystem_dae, jac1);
         equations_ = createEquations(false, true, genDiscrete, false, false, subsystem_dae, v1, v2, comps, helpVarInfo);
       then
-        equations_;          
+        equations_;
         
         // failure
     case (_,_,_,_,_,_,_)
@@ -5524,7 +5524,7 @@ algorithm
     local
       DAE.ComponentRef cr,eltcr,cr2;
       DAE.Exp e1,e2;
-      DAE.ExpType ty;      
+      DAE.ExpType ty;
       
     case (cr,eltcr,(e1 as DAE.CREF(componentRef = cr2)),e2,source)
       equation
@@ -5551,7 +5551,7 @@ algorithm
         true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
         e1 = Expression.negate(e1);
       then
-        SES_ARRAY_CALL_ASSIGN(eltcr, e1, source);       
+        SES_ARRAY_CALL_ASSIGN(eltcr, e1, source);
         
     case (cr,eltcr,e1,DAE.UNARY(DAE.UMINUS_ARR(ty),e2),source)
       equation
@@ -5609,7 +5609,7 @@ algorithm
       array<Algorithm.Algorithm> al;
       BackendDAE.EventInfo ev;
       list<SimEqSystem> resEqus1,resEqus2,resEqus3,resEqus4;
-      BackendDAE.AliasVariables av; 
+      BackendDAE.AliasVariables av;
       
     case ((dlow as BackendDAE.DAE(orderedVars=vars,
       knownVars=knvars,
@@ -5627,11 +5627,11 @@ algorithm
         ie2_lst = listReverse(ie2_lst);
         /*
         ((_,_,_,eqns_lst)) = BackendEquation.traverseBackendDAEEqns(eqns,selectContinuousEquations,(1, ass2, vars,{}));
-        eqns_lst = listReverse(eqns_lst); 
+        eqns_lst = listReverse(eqns_lst);
 
         eqns_lst = Util.listMap(eqns_lst, BackendEquation.equationToResidualForm);
         eqns_lst = Util.listFilter(eqns_lst, failUnlessResidual);
-        resEqus1 = Util.listMap1(eqns_lst, dlowEqToSimEqSystem,al);        
+        resEqus1 = Util.listMap1(eqns_lst, dlowEqToSimEqSystem,al);
         
         se_lst = BackendEquation.traverseBackendDAEEqns(se,BackendDAEUtil.traverseequationToResidualForm,{});
         se_lst = replaceDerOpInEquationList(se_lst);
@@ -5687,7 +5687,7 @@ algorithm
         alg = algs[indx + 1];
         DAE.ALGORITHM_STMTS(algStatements) = BackendDAEUtil.collateAlgorithm(alg, NONE());
       then
-        SES_ALGORITHM(algStatements);       
+        SES_ALGORITHM(algStatements);
   end match;
 end dlowEqToSimEqSystem;
 
@@ -5703,7 +5703,7 @@ algorithm
       equation
         DAE.ALGORITHM_STMTS(algStatements) = BackendDAEUtil.collateAlgorithm(alg, NONE());
       then
-        SES_ALGORITHM(algStatements);       
+        SES_ALGORITHM(algStatements);
   end match;
 end dlowAlgToSimEqSystem;
 
@@ -5761,9 +5761,9 @@ algorithm
       array<Algorithm.Algorithm> algs;
       BackendDAE.EquationArray ie,pe,emptyeqns;
       list<SimEqSystem> inalgs;
-      list<DAE.Algorithm> ialgs; 
-      BackendDAE.BackendDAE paramdlow,paramdlow1; 
-      array<BackendDAE.MultiDimEquation> arrayEqs;  
+      list<DAE.Algorithm> ialgs;
+      BackendDAE.BackendDAE paramdlow,paramdlow1;
+      array<BackendDAE.MultiDimEquation> arrayEqs;
       BackendDAE.ExternalObjectClasses extObjClasses;
       BackendDAE.AliasVariables alisvars;
       BackendDAE.IncidenceMatrix m;
@@ -5777,7 +5777,7 @@ algorithm
     case (BackendDAE.DAE(knownVars=knvars,externalObjects=extobj,initialEqs=ie,algorithms=algs,arrayEqs=arrayEqs,extObjClasses=extObjClasses))
       equation
         // kvars params
-        ((parameterEquationsTmp,lv,lkn,lv1,lv2,_)) = BackendVariable.traverseBackendDAEVars(knvars,createInitialParamAssignments,({},{},{},{},{},1)); 
+        ((parameterEquationsTmp,lv,lkn,lv1,lv2,_)) = BackendVariable.traverseBackendDAEVars(knvars,createInitialParamAssignments,({},{},{},{},{},1));
         
         // sort the equations         
         emptyeqns = BackendDAEUtil.listEquation({});
@@ -5785,25 +5785,25 @@ algorithm
         alisvars = BackendDAEUtil.emptyAliasVariables();
         v = BackendDAEUtil.listVar(lv);
         kn = BackendDAEUtil.listVar(lkn);
-        paramdlow = BackendDAE.DAE(v,kn,extobj,alisvars,pe,emptyeqns,emptyeqns,arrayEqs,algs,BackendDAE.EVENT_INFO({},{}),extObjClasses);    
+        paramdlow = BackendDAE.DAE(v,kn,extobj,alisvars,pe,emptyeqns,emptyeqns,arrayEqs,algs,BackendDAE.EVENT_INFO({},{}),extObjClasses);
         m = BackendDAEUtil.incidenceMatrix(paramdlow,BackendDAE.NORMAL());
-        mT = BackendDAEUtil.transposeMatrix(m); 
-        v1 = listArray(lv1);     
-        v2 = listArray(lv2);     
+        mT = BackendDAEUtil.transposeMatrix(m);
+        v1 = listArray(lv1);
+        v2 = listArray(lv2);
         Debug.fcall("paramdlowdump", print,"Param DAE:\n");
         Debug.fcall("paramdlowdump", BackendDump.dump,paramdlow);
         Debug.fcall("paramdlowdump", BackendDump.dumpIncidenceMatrix,m);
         Debug.fcall("paramdlowdump", BackendDump.dumpIncidenceMatrixT,mT);
         Debug.fcall("paramdlowdump", BackendDump.dumpMatching,v1);
         (comps) = BackendDAETransform.strongComponents(m, mT, v1, v2);
-        Debug.fcall("paramdlowdump", BackendDump.dumpComponents,comps);        
+        Debug.fcall("paramdlowdump", BackendDump.dumpComponents,comps);
         
-        (helpVarInfo, paramdlow1,_) = generateHelpVarInfo(paramdlow, comps);        
+        (helpVarInfo, paramdlow1,_) = generateHelpVarInfo(paramdlow, comps);
         parameterEquations = createEquations(false, false, true, false, false, paramdlow1, v1, v2, comps, helpVarInfo);
         
         ialgs = BackendEquation.getUsedAlgorithmsfromEquations(ie,algs);
         inalgs = Util.listMap(ialgs,dlowAlgToSimEqSystem);
-        parameterEquations = listAppend(parameterEquations, inalgs);                                                   
+        parameterEquations = listAppend(parameterEquations, inalgs);
       then
         parameterEquations;
         
@@ -5825,7 +5825,7 @@ algorithm
     local
       BackendDAE.Var var;
       BackendDAE.Equation initialEquation;
-      list<BackendDAE.Equation> eqns;      
+      list<BackendDAE.Equation> eqns;
       Option<DAE.VariableAttributes> attr;
       DAE.ComponentRef name;
       DAE.Exp startv;
@@ -5858,7 +5858,7 @@ algorithm
     local
       BackendDAE.Var var,var1;
       BackendDAE.Equation initialEquation;
-      list<BackendDAE.Equation> eqns; 
+      list<BackendDAE.Equation> eqns;
       DAE.ComponentRef cr;
       DAE.Exp e,cre;
       DAE.ElementSource source;
@@ -5897,7 +5897,7 @@ algorithm
       DAE.Exp e;
       SampleCondition res;
       list<HelpVarInfo> newHelpVars;
-    case ({}, inHelpVarInfo) then ({},inHelpVarInfo) ;      
+    case ({}, inHelpVarInfo) then ({},inHelpVarInfo) ;
     case (BackendDAE.ZERO_CROSSING(relation_ = e as DAE.CALL(path = Absyn.IDENT("sample")))::rest, inHelpVarInfo)
       equation
         (res,newHelpVars) = addHForConditionSample(e,inHelpVarInfo,listLength(inHelpVarInfo));
@@ -5909,7 +5909,7 @@ algorithm
       equation
         (outSample,inHelpVarInfo) = createSampleConditions(rest,inHelpVarInfo);
       then
-        (outSample,inHelpVarInfo);    
+        (outSample,inHelpVarInfo);
     case (_,_)
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"createSampleConditions failed"});
@@ -6063,7 +6063,7 @@ algorithm
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"SimCode.createZeroCrossingNeedSave failed"});
       then
-        fail();        
+        fail();
   end matchcontinue;
 end createZeroCrossingNeedSave;
 
@@ -6090,17 +6090,17 @@ algorithm
       list<SimVar> outputVars;
       list<SimVar> aliasVars;
       list<SimVar> intAliasVars;
-      list<SimVar> boolAliasVars;      
+      list<SimVar> boolAliasVars;
       list<SimVar> paramVars;
       list<SimVar> intParamVars;
       list<SimVar> boolParamVars;
       list<SimVar> stringAlgVars;
       list<SimVar> stringParamVars;
       list<SimVar> stringAliasVars;
-      list<SimVar> extObjVars;   
+      list<SimVar> extObjVars;
       list<SimVar> constVars;
       Integer nx,ny,np,na,next,numOutVars,numInVars,ny_int,np_int,na_int,ny_bool,np_bool;
-      Integer na_bool,ny_string,np_string,na_string;         
+      Integer na_bool,ny_string,np_string,na_string;
     case (class_, dlow, functions, numHelpVars, numResiduals, fileDir)
       equation
         //name = Absyn.pathString(class_);
@@ -6125,7 +6125,7 @@ algorithm
         ny_string = listLength(stringAlgVars);
         np_string = listLength(stringParamVars);
         na_string = listLength(stringAliasVars);
-        next = listLength(extObjVars); 
+        next = listLength(extObjVars);
         varInfo = createVarInfo(dlow,nx, ny, np, na, next, numOutVars, numInVars, numHelpVars, numResiduals,
                  ny_int, np_int, na_int, ny_bool, np_bool, na_bool, ny_string, np_string, na_string);
       then
@@ -6161,18 +6161,18 @@ algorithm
       list<SimVar> outputVars;
       list<SimVar> aliasVars;
       list<SimVar> intAliasVars;
-      list<SimVar> boolAliasVars;      
+      list<SimVar> boolAliasVars;
       list<SimVar> paramVars;
       list<SimVar> intParamVars;
       list<SimVar> boolParamVars;
       list<SimVar> stringAlgVars;
       list<SimVar> stringParamVars;
       list<SimVar> stringAliasVars;
-      list<SimVar> extObjVars;   
+      list<SimVar> extObjVars;
       list<SimVar> jacobianVars;
       list<SimVar> constVars;
       Integer nx,ny,np,na,next,numOutVars,numInVars,ny_int,np_int,na_int,ny_bool,np_bool;
-      Integer na_bool,ny_string,np_string,na_string; 
+      Integer na_bool,ny_string,np_string,na_string;
       list<SimVar> states1,states_lst,states_lst2,der_states_lst;
       list<SimVar> states_2,derivatives_2,derivative;
     case (class_, dlow, functions, numHelpVars, numResiduals, fileDir)
@@ -6198,7 +6198,7 @@ algorithm
         ny_string = listLength(stringAlgVars);
         np_string = listLength(stringParamVars);
         na_string = listLength(stringAliasVars);
-        next = listLength(extObjVars); 
+        next = listLength(extObjVars);
         varInfo = createVarInfoCPP(dlow,nx, ny, np, na, next, numOutVars, numInVars, numHelpVars, numResiduals,
                  ny_int, np_int, na_int, ny_bool, np_bool, na_bool, ny_string, np_string, na_string);
          states1 = stateindex1(stateVars,dlow);
@@ -6236,7 +6236,7 @@ protected function createVarInfo
   input Integer na_int;
   input Integer ny_bool;
   input Integer np_bool;
-  input Integer na_bool;  
+  input Integer na_bool;
   input Integer ny_string;
   input Integer np_string;
   input Integer na_string;
@@ -6281,7 +6281,7 @@ protected function createVarInfoCPP
   input Integer na_int;
   input Integer ny_bool;
   input Integer np_bool;
-  input Integer na_bool;  
+  input Integer na_bool;
   input Integer ny_string;
   input Integer np_string;
   input Integer na_string;
@@ -6336,7 +6336,7 @@ algorithm
       initialEqs=ie))
       equation
         /* Extract from variable list */  
-        ((varsOut,_,_)) = BackendVariable.traverseBackendDAEVars(vars,extractVarsFromList,(SIMVARS({}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},{},{},{},{},{},{},{}),aliasVars,knvars)); 
+        ((varsOut,_,_)) = BackendVariable.traverseBackendDAEVars(vars,extractVarsFromList,(SIMVARS({}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},{},{},{},{},{},{},{}),aliasVars,knvars));
         /* Extract from known variable list */
         ((varsOut,_,_)) = BackendVariable.traverseBackendDAEVars(knvars,extractVarsFromList,(varsOut,aliasVars,knvars));
         /* Extract from removed variable list */
@@ -6396,7 +6396,7 @@ algorithm
       list<SimVar> outputVars;
       list<SimVar> aliasVars;
       list<SimVar> intAliasVars;
-      list<SimVar> boolAliasVars;      
+      list<SimVar> boolAliasVars;
       list<SimVar> paramVars;
       list<SimVar> intParamVars;
       list<SimVar> boolParamVars;
@@ -6421,7 +6421,7 @@ algorithm
         outputVars = {};
         aliasVars = {};
         intAliasVars = {};
-        boolAliasVars = {};        
+        boolAliasVars = {};
         paramVars = {};
         intParamVars = {};
         boolParamVars = {};
@@ -6444,7 +6444,7 @@ algorithm
         intAlgVars = addSimvarIfTrue((not isalias) and
           BackendVariable.isVarIntAlg(dlowVar), simvar, intAlgVars);
         boolAlgVars = addSimvarIfTrue((not isalias) and
-          BackendVariable.isVarBoolAlg(dlowVar), simvar, boolAlgVars);            
+          BackendVariable.isVarBoolAlg(dlowVar), simvar, boolAlgVars);
         inputVars = addSimvarIfTrue((not isalias) and
           BackendVariable.isVarOnTopLevelAndInput(dlowVar), simvar, inputVars);
         outputVars = addSimvarIfTrue((not isalias) and
@@ -6454,7 +6454,7 @@ algorithm
         intParamVars = addSimvarIfTrue((not isalias) and
           BackendVariable.isVarIntParam(dlowVar), simvar, intParamVars);
         boolParamVars = addSimvarIfTrue((not isalias) and
-          BackendVariable.isVarBoolParam(dlowVar), simvar, boolParamVars);            
+          BackendVariable.isVarBoolParam(dlowVar), simvar, boolParamVars);
         stringAlgVars = addSimvarIfTrue((not isalias) and
           BackendVariable.isVarStringAlg(dlowVar), simvar, stringAlgVars);
         stringParamVars = addSimvarIfTrue((not isalias) and
@@ -6466,7 +6466,7 @@ algorithm
         intAliasVars = addSimvarIfTrue( isalias and
           BackendVariable.isVarIntAlg(dlowVar), simvar, intAliasVars);
         boolAliasVars = addSimvarIfTrue( isalias and
-          BackendVariable.isVarBoolAlg(dlowVar), simvar, boolAliasVars);            
+          BackendVariable.isVarBoolAlg(dlowVar), simvar, boolAliasVars);
         stringAliasVars = addSimvarIfTrue( isalias and
           BackendVariable.isVarStringAlg(dlowVar), simvar, stringAliasVars);
         constVars =addSimvarIfTrue(
@@ -6535,9 +6535,9 @@ algorithm
         s1 = ComponentReference.printComponentRefStr(name);
         s2 = ComponentReference.printComponentRefStr(name2);
         print(" Minus Alias for var " +& s1 +& " is " +& s2 +& "\n");
-     then ();       
-   end matchcontinue;        
-end dumpVar;    
+     then ();
+   end matchcontinue;
+end dumpVar;
 
 protected function addSimvarIfTrue
   input Boolean condition;
@@ -6759,12 +6759,12 @@ algorithm
       Absyn.Info info;
       Causality causality;
       Option<Integer> variable_index;
-    case ({},_) then {};  
+    case ({},_) then {};
     case (SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, info, causality,NONE())::rest,index_)
       equation
         rest2 = rewriteIndex(rest, index_ + 1);
       then (SIMVAR(name, kind, comment, unit, displayUnit, index_, initVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, info, causality,NONE())::rest2);
-  end match; 
+  end match;
 end rewriteIndex;
 
 protected function varIndexComparer
@@ -6923,13 +6923,13 @@ algorithm
       
     case (sv as SIMVAR(name = cr, arrayCref = NONE()), inHT)
       equation
-        outHT = add((cr,sv), inHT);        
+        outHT = add((cr,sv), inHT);
       then outHT;
         //add the whole array crefs to the hashtable, too
     case (sv as SIMVAR(name = cr, arrayCref = SOME(acr)), inHT)
       equation
-        outHT = add((acr,sv), inHT);  
-        outHT = add((cr,sv), outHT);        
+        outHT = add((acr,sv), inHT);
+        outHT = add((cr,sv), outHT);
       then outHT;
     case (_,_)
       equation
@@ -6959,7 +6959,7 @@ algorithm
         // does not work
         //e = BaseHashTable.get(name,varMappings);
         e = BackendVariable.varBindExp(var);
-        alias = getAliasVar1(e,var);        
+        alias = getAliasVar1(e,var);
       then alias;
     case(_,_) then NOALIAS();
   end matchcontinue;
@@ -6975,13 +6975,13 @@ algorithm
     local
       DAE.ComponentRef name;
       Absyn.Path fname;
-    case (DAE.CREF(componentRef=name),inVar) then ALIAS(name); 
+    case (DAE.CREF(componentRef=name),inVar) then ALIAS(name);
     case (DAE.UNARY(operator=DAE.UMINUS(_),exp=DAE.CREF(componentRef=name)),inVar) then NEGATEDALIAS(name);
     case (DAE.UNARY(operator=DAE.UMINUS_ARR(_),exp=DAE.CREF(componentRef=name)),inVar) then NEGATEDALIAS(name);
     case (DAE.CALL(path=fname, expLst={DAE.CREF(componentRef=name)}),inVar)
       equation
        true = BackendVariable.isDummyDerVar(inVar);
-    then ALIAS(name); 
+    then ALIAS(name);
     case (DAE.UNARY(operator=DAE.UMINUS(_),exp=DAE.CALL(path=fname, expLst={DAE.CREF(componentRef=name)})),inVar)
       equation
        true = BackendVariable.isDummyDerVar(inVar);
@@ -6989,22 +6989,22 @@ algorithm
     case (DAE.UNARY(operator=DAE.UMINUS_ARR(_),exp=DAE.CALL(path=fname, expLst={DAE.CREF(componentRef=name)})),inVar)
       equation
        true = BackendVariable.isDummyDerVar(inVar);
-    then NEGATEDALIAS(name);       
+    then NEGATEDALIAS(name);
     case (DAE.CALL(path=fname, expLst={DAE.CREF(componentRef=name)}),inVar)
       equation
       Builtin.isDer(fname);
        name = ComponentReference.crefPrefixDer(name);
-    then ALIAS(name); 
+    then ALIAS(name);
     case (DAE.UNARY(operator=DAE.UMINUS(_),exp=DAE.CALL(path=fname, expLst={DAE.CREF(componentRef=name)})),inVar)
       equation
-       Builtin.isDer(fname); 
+       Builtin.isDer(fname);
        name = ComponentReference.crefPrefixDer(name);
     then NEGATEDALIAS(name);
     case (DAE.UNARY(operator=DAE.UMINUS_ARR(_),exp=DAE.CALL(path=fname, expLst={DAE.CREF(componentRef=name)})),inVar)
       equation
-       Builtin.isDer(fname); 
+       Builtin.isDer(fname);
        name = ComponentReference.crefPrefixDer(name);
-    then NEGATEDALIAS(name);      
+    then NEGATEDALIAS(name);
     case(_,_) then NOALIAS();
   end matchcontinue;
 end getAliasVar1;
@@ -7095,7 +7095,7 @@ algorithm
       equation
         false = intLt(i, n);
       then
-        ({}, accAlgArr, nextInd);    
+        ({}, accAlgArr, nextInd);
         
         // loop body
     case (nextInd, inAlgArr, i, n, accAlgArr)
@@ -7104,7 +7104,7 @@ algorithm
         //  get the element
         DAE.ALGORITHM_STMTS(stmts) = arrayGet(inAlgArr, i+1);
         (helpVars1,stmts2,nextInd1) = generateHelpVarsInStatements(nextInd,stmts);
-        accAlgArr = arrayUpdate(accAlgArr, i+1, DAE.ALGORITHM_STMTS(stmts2));        
+        accAlgArr = arrayUpdate(accAlgArr, i+1, DAE.ALGORITHM_STMTS(stmts2));
         (helpVars2,accAlgArr,nextInd2) = generateHelpVarsInAlgorithmsDispatch(nextInd1, inAlgArr, i + 1, n, accAlgArr);
         helpVars = listAppend(helpVars1,helpVars2);
       then 
@@ -7294,7 +7294,7 @@ protected function selectContinuousEquations
 "function selectContinuousEquations
   Returns only the equations that are solved for a continous variable."
   input tuple<BackendDAE.Equation, tuple<Integer,array<Integer>,BackendDAE.Variables,list<BackendDAE.Equation>>> inTpl;
-  output tuple<BackendDAE.Equation, tuple<Integer,array<Integer>,BackendDAE.Variables,list<BackendDAE.Equation>>> outTpl;  
+  output tuple<BackendDAE.Equation, tuple<Integer,array<Integer>,BackendDAE.Variables,list<BackendDAE.Equation>>> outTpl;
 algorithm
   outTpl := matchcontinue (inTpl)
     local  
@@ -7361,7 +7361,7 @@ algorithm
         tp = Expression.typeof(e);
         startv = DAE.CALL(Absyn.IDENT("pre"), {e}, false, true, tp,DAE.NO_INLINE());
       then
-        ((v,(BackendDAE.EQUATION(e,startv,source)::eqns,av)));         
+        ((v,(BackendDAE.EQUATION(e,startv,source)::eqns,av)));
     case (((v as BackendDAE.VAR(varName = cr,varKind = BackendDAE.DUMMY_STATE(),values = attr,source=source)),(eqns,av))) /* add equations for variables with fixed = true */
       equation
         NOALIAS() = getAliasVar(v,SOME(av));
@@ -7373,7 +7373,7 @@ algorithm
         tp = Expression.typeof(e);
         startv = DAE.CALL(Absyn.IDENT("pre"), {e}, false, true, tp,DAE.NO_INLINE());
       then
-        ((v,(BackendDAE.EQUATION(e,startv,source)::eqns,av)));             
+        ((v,(BackendDAE.EQUATION(e,startv,source)::eqns,av)));
     case ((inTpl)) then inTpl;
   end matchcontinue;
 end generateInitialEquationsFromStart;
@@ -8024,7 +8024,7 @@ algorithm
       list<DAE.Exp> exps,exps_1;
       DAE.ExpType tp;
       Boolean b;
-      DAE.ComponentRef c;     
+      DAE.ComponentRef c;
       
     case (v,DAE.ARRAY( tp, b,exps as ((DAE.UNARY(DAE.UMINUS(_),DAE.CREF(componentRef=c)) :: _))),e2)
       equation
@@ -8147,7 +8147,7 @@ protected function singleAlgorithmSectionList
   author: Frenkel TUD 2010-11
   Checks if a list of equations consists of a single algorithm section."
   input list<BackendDAE.Equation> inBackendDAEEquationLst;
-  input Option<Integer> Index;  
+  input Option<Integer> Index;
 algorithm
   _:=
   match (inBackendDAEEquationLst,Index)
@@ -8159,7 +8159,7 @@ algorithm
       equation
         singleAlgorithmSectionList(res,SOME(i));
       then
-        ();      
+        ();
     case ((BackendDAE.ALGORITHM(index = i) :: res),SOME(i1))
       equation
         true = intEq(i,i1);
@@ -8179,13 +8179,13 @@ algorithm
       BackendDAE.Equation e;
       Integer i,i1;
     case ((e as BackendDAE.ALGORITHM(index = i),NONE()))
-    then ((e,true,SOME(i)));     
+    then ((e,true,SOME(i)));
     case ((e as BackendDAE.ALGORITHM(index = i),SOME(i1)))
       equation
         true = intEq(i,i1);
       then
         ((e,true,SOME(i1)));
-    case ((e,_)) then ((e,false,NONE())); 
+    case ((e,_)) then ((e,false,NONE()));
   end matchcontinue;
 end singleAlgorithmSection2;
 
@@ -8224,7 +8224,7 @@ algorithm
         true = intEq(i,i1);
       then
         ((e,true,SOME(i1)));
-    case ((e,_)) then ((e,false,NONE()));        
+    case ((e,_)) then ((e,false,NONE()));
   end matchcontinue;
 end singleArrayEquation2;
 
@@ -8306,7 +8306,7 @@ algorithm
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       DAE.ElementSource source "the origin of the element";
-      BackendDAE.Var backendVar;      
+      BackendDAE.Var backendVar;
       
     case (BackendDAE.VAR(varName = cr,
       varKind = BackendDAE.STATE(),
@@ -8962,7 +8962,7 @@ algorithm
       equation
         sv = dlowvarToSimvar(v,NONE(),vars);
       then ((v,(sv::sv_lst,vars)));
-    case inTpl then inTpl; 
+    case inTpl then inTpl;
   end match;
 end traversingdlowvarToSimvar;
 
@@ -9213,7 +9213,7 @@ algorithm
         
         // The library is not actually named libLapack.so.
         // Which is a problem, since MSL says it does.
-    case Absyn.STRING("Lapack") then {"-llapack"};        
+    case Absyn.STRING("Lapack") then {"-llapack"};
         
         // Wonder if there may be issues if we have duplicates in the Corba libs
         // and the other libs. Some other developer will probably swear over this
@@ -9271,7 +9271,7 @@ algorithm
       equation
         Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=Absyn.ARRAY(arr))) =
         Interactive.getModificationValue(eltarg, Absyn.CREF_IDENT("Library",{}));
-        libsList = Util.listMap(arr, getLibraryStringInGccFormat); 
+        libsList = Util.listMap(arr, getLibraryStringInGccFormat);
       then
         Util.listFlatten(libsList);
     case (eltarg)
@@ -9377,7 +9377,7 @@ public function addDivExpErrorMsgtoExp "
 algorithm 
   (outExp,outDivLst) := match(inExp,inDlowMode)
     local 
-      DAE.Exp exp; 
+      DAE.Exp exp;
       BackendDAE.DivZeroExpReplace dzer;
       list<DAE.Exp> divlst;
       BackendDAE.Variables vars;
@@ -9479,7 +9479,7 @@ algorithm
         // generade modelica strings
         se = generadeDivExpErrorMsg(e,e2,vars);
       then 
-        (se,false);    
+        (se,false);
         
     case( e , e2, (vars,varlst,BackendDAE.ONLY_VARIABLES()) )
       equation
@@ -9527,7 +9527,7 @@ algorithm
       equation
         (ses,divLst) = addDivExpErrorMsgtoSimEqSystem(ses,inDlowMode);
       then
-        ((a,b,ses),divLst);   
+        ((a,b,ses),divLst);
   end match;
 end addDivExpErrorMsgtosimJac;
 
@@ -9572,7 +9572,7 @@ algorithm
       equation
         (e,divLst) = addDivExpErrorMsgtoExp(e,inDlowMode);
       then
-        (SES_ARRAY_CALL_ASSIGN(cr, e, source),divLst);      
+        (SES_ARRAY_CALL_ASSIGN(cr, e, source),divLst);
         /*
          case (SES_ALGORITHM(),inDlowMode)
          equation
@@ -9586,12 +9586,12 @@ algorithm
         (elst1,divLst1) = listMap1_2(elst,addDivExpErrorMsgtoExp,inDlowMode);
         divLst2 = listAppend(divLst,divLst1);
       then
-        (SES_LINEAR(index,partOfMixed,vars,elst1,simJac1),divLst2);      
+        (SES_LINEAR(index,partOfMixed,vars,elst1,simJac1),divLst2);
     case (SES_NONLINEAR(index = index,eqs = discEqs, crefs = crefs),inDlowMode)
       equation
         (discEqs,divLst) =  listMap1_2(discEqs,addDivExpErrorMsgtoSimEqSystem,inDlowMode);
       then
-        (SES_NONLINEAR(index,discEqs,crefs),divLst);      
+        (SES_NONLINEAR(index,discEqs,crefs),divLst);
     case (SES_MIXED(index,cont,vars,discEqs,values,value_dims),inDlowMode)
       equation
         (cont1,divLst) = addDivExpErrorMsgtoSimEqSystem(cont,inDlowMode);
@@ -9692,7 +9692,7 @@ algorithm
         false = crefIsDerivative(cr);
         (solved_exp,asserts) = ExpressionSolve.solve(lhs, rhs, exp);
       then
-        (solved_exp,asserts);    
+        (solved_exp,asserts);
         
     case (_, _, DAE.CREF(componentRef = cr))
       equation
@@ -9739,7 +9739,7 @@ algorithm
         unitStr = System.stringReplace(unitStr,"\"","");
         unitStr = System.stringReplace(unitStr,"\\","\\\\");
         displayUnitStr = ExpressionDump.printExpStr(duexp);
-        displayUnitStr = System.stringReplace(displayUnitStr,"\"","");        
+        displayUnitStr = System.stringReplace(displayUnitStr,"\"","");
         displayUnitStr = System.stringReplace(displayUnitStr,"\\","\\\\");
       then (unitStr, displayUnitStr);
     case ( SOME(DAE.VAR_ATTR_REAL(unit = SOME(uexp), displayUnit = NONE())) )
@@ -9747,7 +9747,7 @@ algorithm
         unitStr = ExpressionDump.printExpStr(uexp);
         unitStr = System.stringReplace(unitStr,"\"","");
         unitStr = System.stringReplace(unitStr,"\\","\\\\");
-      then (unitStr, unitStr);        
+      then (unitStr, unitStr);
     case (_)
     then ("","");
   end matchcontinue;
@@ -9770,7 +9770,7 @@ algorithm
         e = ValuesUtil.valueExp(value);
         true = Expression.isConst(e);
       then
-        SOME(e);        
+        SOME(e);
     case (BackendDAE.VAR(varKind = BackendDAE.VARIABLE(), varType = BackendDAE.STRING(), values = dae_var_attr))
       equation
         e = DAEUtil.getStartAttrFail(dae_var_attr);
@@ -9788,7 +9788,7 @@ algorithm
         e = ValuesUtil.valueExp(value);
         true = Expression.isConst(e);
       then
-        SOME(e);          
+        SOME(e);
     case (BackendDAE.VAR(varKind = BackendDAE.DISCRETE(), values = dae_var_attr))
       equation
         e = DAEUtil.getStartAttrFail(dae_var_attr);
@@ -9806,7 +9806,7 @@ algorithm
         e = ValuesUtil.valueExp(value);
         true = Expression.isConst(e);
       then
-        SOME(e);         
+        SOME(e);
     case (BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER(), values = dae_var_attr))
       equation
         e = DAEUtil.getStartAttrFail(dae_var_attr);
@@ -9818,7 +9818,7 @@ algorithm
         e = ValuesUtil.valueExp(value);
         true = Expression.isConst(e);
       then
-        SOME(e);         
+        SOME(e);
     case (BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE(), values = dae_var_attr))
       equation
         e = DAEUtil.getStartAttrFail(dae_var_attr);
@@ -10472,7 +10472,7 @@ algorithm
     case (i)
       then
         intString(i);
-  end matchcontinue;  
+  end matchcontinue;
 end twodigit;
 
 
@@ -10494,7 +10494,7 @@ algorithm outOrder := matchcontinue(inDlow)
     BackendDAE.EquationArray deqns;
     list<BackendDAE.Equation> eqns;
     list<BackendDAE.Var> vars;
-    list<Expression.Exp> derExps;    
+    list<Expression.Exp> derExps;
     list<tuple<DAE.ComponentRef, Integer>> variableIndex;
     list<list<DAE.ComponentRef>> firstOrderVars;
     list<DAE.ComponentRef> firstOrderVarsFiltered;
@@ -10521,7 +10521,7 @@ algorithm outOrder := matchcontinue(inDlow)
       variableIndex;
   case(_)
       equation
-         print(" Failure in setVariableDerIndex \n"); 
+         print(" Failure in setVariableDerIndex \n");
          then fail();
  end matchcontinue;
 end setVariableDerIndex;
@@ -10634,30 +10634,30 @@ algorithm (out,sysOrdOneVars) := matchcontinue(derExp,inEqns,inEqnsOrg)
     DAE.ComponentRef cr;
     Integer rec,i1;
     list<tuple<DAE.ComponentRef, Integer>> multipleHits;
-    tuple<DAE.ComponentRef, Integer> highestIndex; 
+    tuple<DAE.ComponentRef, Integer> highestIndex;
   case( (derExp as DAE.CALL( expLst = {DAE.CREF(cr,_)})), {},_) then ((cr,0),{});
   case( (derExp as DAE.CALL( expLst = {deriveVar as DAE.CREF(cr,_)})), (eq as BackendDAE.EQUATION(e1,e2,_))::eqs,inEqnsOrg)
     equation
       true = Expression.expEqual(e1,derExp);
       inEqnsOrg = Util.listRemoveOnTrue(eq,Util.isEqual,inEqnsOrg);
-      Debug.fcall("cppvar",print, "\nFound equation containing " +& ExpressionDump.printExpStr(derExp) +& " Other side: " +& ExpressionDump.printExpStr(e2) +& ", extracted crefs: " +& ExpressionDump.printExpStr(deriveVar) +& "\n"); 
+      Debug.fcall("cppvar",print, "\nFound equation containing " +& ExpressionDump.printExpStr(derExp) +& " Other side: " +& ExpressionDump.printExpStr(e2) +& ", extracted crefs: " +& ExpressionDump.printExpStr(deriveVar) +& "\n");
       (rec,crefs) = locateDerAndSerachOtherSide2(DAE.CALL(Absyn.IDENT("der"),{e2},false,false,DAE.ET_OTHER(),DAE.NO_INLINE()),inEqnsOrg);
       (highestIndex as (_,i1),_) = locateDerAndSerachOtherSide(derExp,eqs,inEqnsOrg);
       rec = rec+1;
-      highestIndex = Util.if_(i1>rec,highestIndex,(cr,rec-1));      
+      highestIndex = Util.if_(i1>rec,highestIndex,(cr,rec-1));
       //highestIndex = (cr,1);
     then
-      (highestIndex,crefs);  
+      (highestIndex,crefs);
   case( (derExp as DAE.CALL( expLst = {deriveVar as DAE.CREF(cr,_)})), (eq as BackendDAE.EQUATION(e1,e2,_))::eqs,inEqnsOrg)
     equation
       true = Expression.expEqual(e2,derExp);
       inEqnsOrg = Util.listRemoveOnTrue(eq,Util.isEqual,inEqnsOrg);
-      Debug.fcall("cppvar",print, "\nFound equation containing " +& ExpressionDump.printExpStr(derExp) +& " Other side: " +& ExpressionDump.printExpStr(e1) +& ", extracted crefs: " +& ExpressionDump.printExpStr(deriveVar) +& "\n"); 
+      Debug.fcall("cppvar",print, "\nFound equation containing " +& ExpressionDump.printExpStr(derExp) +& " Other side: " +& ExpressionDump.printExpStr(e1) +& ", extracted crefs: " +& ExpressionDump.printExpStr(deriveVar) +& "\n");
       (rec,crefs) = locateDerAndSerachOtherSide2(DAE.CALL(Absyn.IDENT("der"),{e1},false,false,DAE.ET_OTHER(),DAE.NO_INLINE()),inEqnsOrg);
       (highestIndex as (_,i1),_) = locateDerAndSerachOtherSide(derExp,eqs,inEqnsOrg);
       rec = rec+1;
       highestIndex = Util.if_(i1>rec,highestIndex,(cr,rec-1));
-      //highestIndex = (cr,1); 
+      //highestIndex = (cr,1);
     then
       (highestIndex,crefs);
   case(derExp, (eq as BackendDAE.EQUATION(e1,e2,_))::eqs,inEqnsOrg)
@@ -10696,7 +10696,7 @@ helper function for locateDerAndSerachOtherSide
   input Expression.Exp inDer;
   input list<BackendDAE.Equation> inEqns;
   output Integer oi;
-  output list<DAE.ComponentRef> firstOrderDers; 
+  output list<DAE.ComponentRef> firstOrderDers;
 algorithm (oi,firstOrderDers) := matchcontinue(inDer,inEqns)
   case(DAE.CALL(expLst = {DAE.CREF(_,_)}),inEqns)
     equation
@@ -10716,7 +10716,7 @@ If we do not find any more derivative, 0 is returned.
   input Expression.Exp inDer;
   input list<BackendDAE.Equation> inEqns;
   output Integer oi;
-  output list<DAE.ComponentRef> firstOrderDers; 
+  output list<DAE.ComponentRef> firstOrderDers;
 algorithm (oi,firstOrderDers) := matchcontinue(inDer,inEqns)
   local
     Expression.Exp e1,e2;
@@ -10744,7 +10744,7 @@ algorithm (oi,firstOrderDers) := matchcontinue(inDer,inEqns)
       (oi,firstOrderDers) = locateDerAndSerachOtherSide22(inDer,rest);
     then
       (oi,firstOrderDers);
-end matchcontinue;  
+end matchcontinue;
 end locateDerAndSerachOtherSide22;
 
 protected function setFirstOrderInSecondOrderVarIndex "
@@ -10836,8 +10836,8 @@ protected function stateindex
   input list<tuple<DAE.ComponentRef, Integer>> odered_vars;
   output Integer new_index;
 algorithm (new_index) := matchcontinue(var,odered_vars)
-  local DAE.ComponentRef cr; 
-        list<tuple<DAE.ComponentRef, Integer>> rest; 
+  local DAE.ComponentRef cr;
+        list<tuple<DAE.ComponentRef, Integer>> rest;
         Integer i;
   case(_,{}) then (-1);
   case(var ,((cr,i)::_))    
@@ -10853,7 +10853,7 @@ algorithm (new_index) := matchcontinue(var,odered_vars)
       (i)=stateindex(var,rest);
        Debug.fcall("cppvarindex",BackendDump.debugStrCrefStrIntStr,(" state variable ",var," with index: ",i,"\n"));
   
-   //  Debug.fcall("cppvar",print, +& " with index: " +& intString(i) +& "\n");      
+   //  Debug.fcall("cppvar",print, +& " with index: " +& intString(i) +& "\n");
     then (i);
 end matchcontinue;
 end stateindex;
@@ -10902,7 +10902,7 @@ algorithm (outSimVar):= matchcontinue(stateVars,dae_low)
     // array
     Option<DAE.ComponentRef> arrayCref;
     AliasVariable aliasvar;
-    Absyn.Info info; 
+    Absyn.Info info;
     Causality causality;
     Option<Integer> variable_index;
   case(SIMVAR(name=name,varKind=varKind,comment=comment,unit=unit,displayUnit=displayUnit,index=index,initialValue=initialValue,isFixed=isFixed,type_=type_,isDiscrete=isDiscrete,arrayCref=arrayCref,aliasvar=aliasvar,info=info,causality=causality,variable_index=variable_index),dae_low)
@@ -10912,9 +10912,9 @@ algorithm (outSimVar):= matchcontinue(stateVars,dae_low)
       new_index=stateindex(name,ordered_states);
            
     then 
-     SIMVAR(name,varKind,comment,unit,displayUnit,new_index,initialValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,info,causality,variable_index);      
+     SIMVAR(name,varKind,comment,unit,displayUnit,new_index,initialValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,info,causality,variable_index);
 end matchcontinue;
-end stateindex2;      
+end stateindex2;
 
 
 protected function setStatesVectorIndex "
@@ -10929,7 +10929,7 @@ output list<SimVar> out_vars;
 algorithm out_vars := matchcontinue(in_vars)
   local
     list<SimVar>  vars1,vars2,vars3,vars4,vars5;
-   Integer i; 
+   Integer i;
   case(in_vars)
     equation
       (vars1,vars2,vars3) =  partitionStatesVector(in_vars);
@@ -10965,10 +10965,10 @@ algorithm
       // array
       Option<DAE.ComponentRef> arrayCref;
       AliasVariable aliasvar;
-      Absyn.Info info; 
+      Absyn.Info info;
       Causality causality;
       Option<Integer> variable_index;
-      list<SimVar> rest,indexed_vector;   
+      list<SimVar> rest,indexed_vector;
     case({},_) then {};
     case(SIMVAR(name=name,varKind=varKind,comment=comment,unit=unit,displayUnit=displayUnit,initialValue=initialValue,isFixed=isFixed,type_=type_,isDiscrete=isDiscrete,arrayCref=arrayCref,aliasvar=aliasvar,info=info,causality=causality,variable_index=variable_index) :: rest,index)
       equation
@@ -10987,7 +10987,7 @@ e.g  der(x) = y;
      z=b -> output:  {z} {x} {y}
 "
   input list<SimVar> in_vars "list with unsorted state variables";
-  output list<SimVar> oder_0;  
+  output list<SimVar> oder_0;
   output list<SimVar> oder_1;
   output list<SimVar> oder_2;
 algorithm (oder_0,oder_1,oder_2):= matchcontinue(in_vars)
@@ -11009,7 +11009,7 @@ end partitionStatesVector;
 protected function addVariableToStateVector "
 Helper function for setVectorIndexes;
 "
-  input list<SimVar> in_0; 
+  input list<SimVar> in_0;
   input list<SimVar> in_1;
   input list<SimVar> in_2;
   input SimVar variable;
@@ -11021,7 +11021,7 @@ algorithm (out_0,out_1,out_2) := matchcontinue(in_0,in_1,in_2,variable,variable_
   case(in_0,in_1,in_2,variable,0) then (variable::in_0,in_1,in_2);
   case(in_0,in_1,in_2,variable,1) then (in_0,variable::in_1,in_2);
   case(in_0,in_1,in_2,variable,2) then (in_0,in_1,variable::in_2);
-  case(_,_,_,_,_) equation print(" failure in addVariableToStateVector  \n"); then fail(); 
+  case(_,_,_,_,_) equation print(" failure in addVariableToStateVector  \n"); then fail();
 end matchcontinue;
 end addVariableToStateVector;
 
@@ -11046,7 +11046,7 @@ algorithm out_varinfo_lst := matchcontinue(in_varinfo_lst)
       dv_list = generateDerStates(rest);
      then
        dv::dv_list;
-  end matchcontinue; 
+  end matchcontinue;
 end generateDerStates;
 
 protected function generateDerStates2 "
@@ -11071,7 +11071,7 @@ algorithm
       // array
       Option<DAE.ComponentRef> arrayCref;
       AliasVariable aliasvar;
-      Absyn.Info info; 
+      Absyn.Info info;
       Causality causality;
       Option<Integer> variable_index;
       DAE.ComponentRef cr_1;
@@ -11098,7 +11098,7 @@ algorithm
         cr_1 = ComponentReference.makeCrefIdent(id_str,DAE.ET_REAL(),{});
       then
         SIMVAR(cr_1,varKind,comment,unit,displayUnit,2,initialValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,info,causality,variable_index);
-  end matchcontinue; 
+  end matchcontinue;
 end generateDerStates2;
 
 
@@ -11110,7 +11110,7 @@ protected function replaceindex
 algorithm
   newvar := matchcontinue(var,statevarlist)
     local
-      list<SimVar> rest,rest1; 
+      list<SimVar> rest,rest1;
       DAE.ComponentRef name,name1;
       BackendDAE.VarKind varKind;
       String comment;
@@ -11123,7 +11123,7 @@ algorithm
       Boolean isDiscrete;
       Option<DAE.ComponentRef> arrayCref;
       AliasVariable aliasvar;
-      Absyn.Info info; 
+      Absyn.Info info;
       Causality causality;
       Option <Integer> variable_index;
       Integer variable_index1;
@@ -11213,7 +11213,7 @@ algorithm str := matchcontinue(vf)
     // array
            Option<DAE.ComponentRef> arrayCref;
            AliasVariable aliasvar;
-           Absyn.Info info; 
+           Absyn.Info info;
            Causality causality;
            Integer y;
   case(SIMVAR(name,varKind,comment,unit,displayUnit,x,initialValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,info,causality,SOME(y))) then " Var: " +& ComponentReference.printComponentRefStr(name) +& " varibale index: " +& intString(x) +& " vector index:" +& intString(y) +& " translating to z[" +& intString(y) +& "]";

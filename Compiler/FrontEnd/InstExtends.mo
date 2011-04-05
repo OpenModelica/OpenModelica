@@ -214,7 +214,7 @@ algorithm
         (cache,env_1,ih,mods,compelts2,eq2,initeq2,alg2,ialg2) =
         instExtendsList(cache, env, ih, mod, pre, rest, ci_state, className, impl, isPartialInst);
         // make sure you add final to the modifier!
-        scodeMod = Inst.traverseModAddFinal(scodeMod, finalPrefix); 
+        scodeMod = Inst.traverseModAddFinal(scodeMod, finalPrefix);
         innerMod = Mod.elabUntypedMod(scodeMod, env_1, Prefix.NOPRE());
         // Filter out non-constants if partial inst
         notConst = not SCode.isConstant(var);
@@ -231,7 +231,7 @@ algorithm
         notConst = not SCode.isConstant(var);
         compelts2 = Util.if_(notConst and isPartialInst,compelts2,(elt,DAE.NOMOD(),false)::compelts2);
       then
-        (cache,env_1,ih,mods,compelts2,eq2,initeq2,alg2,ialg2);        
+        (cache,env_1,ih,mods,compelts2,eq2,initeq2,alg2,ialg2);
 
     /* Classdefs */
     case (cache,env,ih,mod,pre,(elt as SCode.CLASSDEF(name = cn)) :: rest,ci_state,className,impl,isPartialInst)
@@ -729,7 +729,7 @@ algorithm
         id = Absyn.pathLastIdent(p);
         failure(_ = BaseHashTable.get(id, ht));
         ht = BaseHashTable.add((id,p), ht);
-      then ht;        
+      then ht;
   end match;
 end getLocalIdentElement;
 
@@ -1179,7 +1179,7 @@ algorithm
     local
       String id;
       Absyn.Path path1,path2;
-    case (cache,env,path1 as Absyn.FULLYQUALIFIED(_),ht) then (cache,path1); 
+    case (cache,env,path1 as Absyn.FULLYQUALIFIED(_),ht) then (cache,path1);
     case (cache,env,path1,ht)
       equation
         id = Absyn.pathFirstIdent(path1);
@@ -1610,7 +1610,7 @@ algorithm
       equation
         (cache,a) = fixA(cache,env,a,ht);
         (cache,b) = fixB(cache,env,b,ht);
-        (cache,rest) = fixListTuple2(cache,env,rest,ht,fixA,fixB); 
+        (cache,rest) = fixListTuple2(cache,env,rest,ht,fixA,fixB);
       then (cache,(a,b)::rest);
   end match;
 end fixListTuple2;

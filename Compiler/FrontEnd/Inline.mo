@@ -135,7 +135,7 @@ algorithm
       equation
         Debug.fprintln("failtrace","Inline.inlineEquationArray failed");
       then
-        fail();        
+        fail();
   end matchcontinue;
 end inlineEquationArray;
 
@@ -200,12 +200,12 @@ algorithm
         e1_1 = inlineExp(e1,fns);
         e2_1 = inlineExp(e2,fns);
       then
-        SOME(BackendDAE.COMPLEX_EQUATION(i,e1_1,e2_1,source));        
+        SOME(BackendDAE.COMPLEX_EQUATION(i,e1_1,e2_1,source));
     case(_,_)
       equation
         Debug.fprintln("failtrace","Inline.inlineEqOpt failed");
       then
-        fail();          
+        fail();
   end matchcontinue;
 end inlineEqOpt;
 
@@ -238,7 +238,7 @@ algorithm
       equation
         Debug.fprintln("failtrace","Inline.inlineWhenEq failed");
       then
-        fail();          
+        fail();
   end matchcontinue;
 end inlineWhenEq;
 
@@ -268,7 +268,7 @@ algorithm
       equation
         Debug.fprintln("failtrace","Inline.inlineVariables failed");
       then
-        fail();          
+        fail();
   end matchcontinue;
 end inlineVariables;
 
@@ -312,7 +312,7 @@ algorithm
         startv_1 = inlineExp(startv,fns);
         values1 = DAEUtil.setStartAttr(values,startv_1);
       then
-        SOME(BackendDAE.VAR(varName,varKind,varDirection,varType,NONE(),bindValue,arrayDim,index,source,values1,comment,flowPrefix,streamPrefix));        
+        SOME(BackendDAE.VAR(varName,varKind,varDirection,varType,NONE(),bindValue,arrayDim,index,source,values1,comment,flowPrefix,streamPrefix));
     case(SOME(BackendDAE.VAR(varName,varKind,varDirection,varType,SOME(e),bindValue,arrayDim,index,source,values,comment,flowPrefix,streamPrefix)),fns)
       equation
         e_1 = inlineExp(e,fns);
@@ -346,7 +346,7 @@ algorithm
       equation
         Debug.fprintln("failtrace","Inline.inlineMultiDimEqs failed");
       then
-        fail();         
+        fail();
   end matchcontinue;
 end inlineMultiDimEqs;
 
@@ -372,7 +372,7 @@ algorithm
       equation
         Debug.fprintln("failtrace","Inline.inlineEventInfo failed");
       then
-        fail();         
+        fail();
   end matchcontinue;
 end inlineEventInfo;
 
@@ -397,7 +397,7 @@ algorithm
       equation
         Debug.fprintln("failtrace","Inline.inlineZeroCrossing failed");
       then
-        fail();         
+        fail();
   end matchcontinue;
 end inlineZeroCrossing;
 
@@ -425,7 +425,7 @@ algorithm
       equation
         Debug.fprintln("failtrace","Inline.inlineWhenClause failed");
       then
-        fail();        
+        fail();
   end matchcontinue;
 end inlineWhenClause;
 
@@ -481,7 +481,7 @@ algorithm
       equation
         Debug.fprintln("failtrace","Inline.inlineExtObjClasses failed");
       then
-        fail();        
+        fail();
   end matchcontinue;
 end inlineExtObjClasses;
 
@@ -778,7 +778,7 @@ algorithm
       equation
         Debug.fprintln("failtrace","Inline.inlineAlgorithm failed");
       then
-        fail();         
+        fail();
   end matchcontinue;
 end inlineAlgorithm;
 
@@ -994,8 +994,8 @@ algorithm
     case (it,(_,itlst))
       equation
        b = Util.listContains(it,itlst);
-      then b; 
-    case (_,_) then false; 
+      then b;
+    case (_,_) then false;
   end matchcontinue;
 end checkInlineType;
 
@@ -1013,35 +1013,35 @@ algorithm
       list<DAE.ExpVar> varLst;
       list<DAE.Exp> expl;
       list<DAE.ComponentRef> crlst;
-    case ({}) then {}; 
+    case ({}) then {};
     case((c,e as (DAE.CREF(componentRef = cref,ty=DAE.ET_COMPLEX(varLst=varLst))))::res)
       equation
-        res1 = extendCrefRecords(res);  
+        res1 = extendCrefRecords(res);
         new = Util.listMap2(varLst,extendCrefRecords1,c,cref);
         new1 = extendCrefRecords(new);
         res2 = listAppend(new1,res1);
-      then ((c,e)::res2); 
+      then ((c,e)::res2);
     /* cause of an error somewhere the type of the expression CREF is not equal to the componentreference type
        this case is needed. */    
     case((c,e as (DAE.CREF(componentRef = cref)))::res)
       equation
-        DAE.ET_COMPLEX(varLst=varLst) = ComponentReference.crefLastType(cref); 
-        res1 = extendCrefRecords(res);  
+        DAE.ET_COMPLEX(varLst=varLst) = ComponentReference.crefLastType(cref);
+        res1 = extendCrefRecords(res);
         new = Util.listMap2(varLst,extendCrefRecords1,c,cref);
         new1 = extendCrefRecords(new);
         res2 = listAppend(new1,res1);
-      then ((c,e)::res2);          
+      then ((c,e)::res2);
     case((c,e as (DAE.CALL(expLst = expl,ty=DAE.ET_COMPLEX(varLst=varLst))))::res)
       equation
-        res1 = extendCrefRecords(res);  
+        res1 = extendCrefRecords(res);
         crlst = Util.listMap1(varLst,extendCrefRecords2,c);
         new = Util.listThreadTuple(crlst,expl);
         new1 = extendCrefRecords(new);
         res2 = listAppend(new1,res1);
-      then ((c,e)::res2);    
+      then ((c,e)::res2);
     case((c,e)::res)
       equation
-        res1 = extendCrefRecords(res);  
+        res1 = extendCrefRecords(res);
       then ((c,e)::res1);
   end matchcontinue;
 end extendCrefRecords;
@@ -1063,15 +1063,15 @@ algorithm
     
     case(DAE.COMPLEX_VAR(name=name,tp=tp),c,e) 
       equation
-        c1 = ComponentReference.crefPrependIdent(c,name,{},tp);  
+        c1 = ComponentReference.crefPrependIdent(c,name,{},tp);
         e1 = ComponentReference.crefPrependIdent(e,name,{},tp);
         exp = Expression.makeCrefExp(e1,tp);
-      then ((c1,exp)); 
+      then ((c1,exp));
     case(_,_,_)
       equation
         Debug.fprintln("failtrace","Inline.extendCrefRecords1 failed");
       then
-        fail();                   
+        fail();
   end matchcontinue;
 end extendCrefRecords1;
 
@@ -1089,13 +1089,13 @@ algorithm
       DAE.ComponentRef c1;
     case(DAE.COMPLEX_VAR(name=name,tp=tp),c) 
       equation
-        c1 = ComponentReference.crefPrependIdent(c,name,{},tp);  
-      then c1; 
+        c1 = ComponentReference.crefPrependIdent(c,name,{},tp);
+      then c1;
     case(_,_)
       equation
         Debug.fprintln("failtrace","Inline.extendCrefRecords2 failed");
       then
-        fail();                   
+        fail();
   end matchcontinue;
 end extendCrefRecords2;
 
@@ -1112,14 +1112,14 @@ algorithm
       DAE.FunctionTree ftree;
     case(p,(SOME(ftree),_))
       equation
-        SOME(DAE.FUNCTION( functions = DAE.FUNCTION_DEF(body = body)::_)) = DAEUtil.avlTreeGet(ftree,p); 
+        SOME(DAE.FUNCTION( functions = DAE.FUNCTION_DEF(body = body)::_)) = DAEUtil.avlTreeGet(ftree,p);
       then body;
     case(_,_)
       equation
         Debug.fprintln("failtrace", "Inline.getFunctionBody failed");
         // Error.addMessage(Error.INTERNAL_ERROR, {"Inline.getFunctionBody failed"});
       then
-        fail();        
+        fail();
   end matchcontinue;
 end getFunctionBody;
 

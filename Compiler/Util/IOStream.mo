@@ -49,7 +49,7 @@ encapsulated package IOStream
   
 uniontype IOStreamType "TODO! change these to X_TYPE" 
    record FILE String name; end FILE;
-   record LIST end LIST; 
+   record LIST end LIST;
    record BUFFER end BUFFER;
 end IOStreamType;
 
@@ -73,7 +73,7 @@ uniontype IOStream
     IOStreamType ty;
     IOStreamData data;
   end IOSTREAM;
-end IOStream; 
+end IOStream;
 
 constant Integer stdInput = 0;
 constant Integer stdOutput = 1;
@@ -87,7 +87,7 @@ protected import Util;
 public
 function create
   input String streamName;
-  input IOStreamType streamType;  
+  input IOStreamType streamType;
   output IOStream outStream;
 algorithm
   outStream := match (streamName, streamType)
@@ -111,7 +111,7 @@ algorithm
       then
         IOSTREAM(streamName, streamType, BUFFER_DATA(bufferID));
   end match;
-end create;        
+end create;
 
 function append
   input IOStream inStream;

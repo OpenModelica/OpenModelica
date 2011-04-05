@@ -47,7 +47,7 @@ public import SCode;
 // protected imports
 protected import ComponentReference;
 protected import DAEUtil;
-protected import Print; 
+protected import Print;
 protected import Util;
 protected import Expression;
 protected import ExpressionDump;
@@ -136,7 +136,7 @@ end functionNameStr;
 
 protected function sortFunctions "sorts the functions and record constructors in alphabetical order"
   input list<DAE.Function> funcs;
-  output list<DAE.Function> sortedFuncs; 
+  output list<DAE.Function> sortedFuncs;
 algorithm
   sortedFuncs := Util.sort(funcs,funcGreaterThan);
 end sortFunctions;
@@ -152,7 +152,7 @@ algorithm
     then res;
     else true;
   end matchcontinue;
-end funcGreaterThan;  
+end funcGreaterThan;
  
 public function dumpOperatorString "
 Author bz  printOperator
@@ -391,7 +391,7 @@ algorithm
         Print.printBuf(")\n");
         dump2(DAE.DAE(xs));
       then
-        ();        
+        ();
     case DAE.DAE((DAE.INITIAL_COMPLEX_EQUATION(lhs = e1,rhs = e2) :: xs))
       equation
         Print.printBuf("INITIAL_COMPLEX_EQUATION(");
@@ -401,7 +401,7 @@ algorithm
         Print.printBuf(")\n");
         dump2(DAE.DAE(xs));
       then
-        ();          
+        ();
     case (DAE.DAE(elementLst = {})) then ();
     
     //BZ Could be nice to know when this failes (when new elements are introduced) 
@@ -410,7 +410,7 @@ algorithm
         Print.printBuf("\n\ndump2 failed to print element\n");
         dump2(DAE.DAE(xs));
       then
-        ();  
+        ();
     case (_)
       equation
         Print.printBuf("dump2 failed\n");
@@ -694,7 +694,7 @@ algorithm
       String quantity,unit_str,displayUnit_str,stateSel_str,min_str,max_str,nominal_str,initial_str,fixed_str,res_1,res1,res;
       Boolean is_empty;
       Option<DAE.Exp> quant,unit,displayUnit,min,max,initialExp,nominal,fixed;
-      Option<DAE.StateSelect> stateSel;      
+      Option<DAE.StateSelect> stateSel;
     
     case (SOME(DAE.VAR_ATTR_REAL(quant,unit,displayUnit,(min,max),initialExp,fixed,nominal,stateSel,_,_,_)))
       equation
@@ -1279,7 +1279,7 @@ public function derivativeCondStr "
   output String str;
 algorithm 
   str := matchcontinue(dc)
-    local DAE.Exp e;  
+    local DAE.Exp e;
     
     case(DAE.NO_DERIVATIVE(e))
       equation
@@ -1323,7 +1323,7 @@ algorithm
       String fstr,inlineTypeStr,daestr,str;
       Absyn.Path fpath;
       list<DAE.Element> daeElts;
-      DAE.Type t;      
+      DAE.Type t;
       DAE.InlineType inlineType;
       String lang;
     
@@ -1333,7 +1333,7 @@ algorithm
         fstr = Absyn.pathString(fpath);
         Print.printBuf(fstr);
         inlineTypeStr = dumpInlineTypeStr(inlineType);
-        Print.printBuf(inlineTypeStr); 
+        Print.printBuf(inlineTypeStr);
         Print.printBuf("\n");
         dumpFunctionElements(daeElts);
         Print.printBuf("end ");
@@ -1569,7 +1569,7 @@ algorithm
         ExpressionDump.printExp(e1);
         Print.printBuf(";\n");
       then
-        ();        
+        ();
     
     case (stmt as DAE.STMT_WHEN(exp = _),i)
       equation
@@ -2217,7 +2217,7 @@ algorithm
         ExpressionDump.printExp(e2);
         Print.printBuf(")");
       then
-        ();   
+        ();
     case DAE.INITIAL_ARRAY_EQUATION(exp = e1,array = e2)
       equation
         Print.printBuf("INITIAL_ARRAY_EQUATION(");
@@ -2226,7 +2226,7 @@ algorithm
         ExpressionDump.printExp(e2);
         Print.printBuf(")");
       then
-        ();            
+        ();
     case DAE.COMPLEX_EQUATION(lhs = e1,rhs = e2)
       equation
         Print.printBuf("COMPLEX_EQUATION(");
@@ -2235,7 +2235,7 @@ algorithm
         ExpressionDump.printExp(e2);
         Print.printBuf(")");
       then
-        ();  
+        ();
     case DAE.INITIAL_COMPLEX_EQUATION(lhs = e1,rhs = e2)
       equation
         Print.printBuf("INITIAL_COMPLEX_EQUATION(");
@@ -2244,27 +2244,27 @@ algorithm
         ExpressionDump.printExp(e2);
         Print.printBuf(")");
       then
-        ();   
+        ();
     case DAE.IF_EQUATION(condition1 = _)
       equation
         Print.printBuf("IF_EQUATION()");
       then
-        ();     
+        ();
     case DAE.INITIAL_IF_EQUATION(condition1 = _)
       equation
         Print.printBuf("INITIAL_IF_EQUATION()");
       then
-        ();  
+        ();
     case DAE.WHEN_EQUATION(condition = _)
       equation
         Print.printBuf("WHEN_EQUATION()");
       then
-        (); 
+        ();
     case DAE.EXTOBJECTCLASS(path = _)
       equation
         Print.printBuf("EXTOBJECTCLASS()");
       then
-        (); 
+        ();
     case DAE.ASSERT(condition = e1,message = e2)
       equation
         Print.printBuf("ASSERT(");
@@ -2273,24 +2273,24 @@ algorithm
         ExpressionDump.printExp(e2);
         Print.printBuf(")");
       then
-        ();  
+        ();
     case DAE.TERMINATE(message = e1)
       equation
         Print.printBuf("TERMINATE(");
         ExpressionDump.printExp(e1);
         Print.printBuf(")");
       then
-        ();  
+        ();
     case DAE.REINIT(exp = e1)
       equation
         Print.printBuf("REINIT()");
       then
-        ();  
+        ();
     case DAE.NORETCALL(functionName = _)
       equation
         Print.printBuf("NORETCALL()");
       then
-        ();         
+        ();
     case _
       equation
         Print.printBuf("UNKNOWN ");
@@ -2712,7 +2712,7 @@ algorithm
         str = IOStream.append(str, n);
         str = IOStream.append(str, dumpCommentOptionStr(c));
         str = IOStream.append(str, "\n");
-        str = dumpElementsStream(l, str);        
+        str = dumpElementsStream(l, str);
         str = IOStream.append(str, "end ");
         str = IOStream.append(str, n);
         str = IOStream.append(str, ";\n");
@@ -2752,7 +2752,7 @@ algorithm
        str = dumpInitialAlgorithmsStream(ia, str);
 
        str = IOStream.append(str, Util.if_(Util.isListEmpty(e), "", "equation\n"));
-       str = dumpEquationsStream(e, str);       
+       str = dumpEquationsStream(e, str);
 
        str = IOStream.append(str, Util.if_(Util.isListEmpty(a), "", "algorithm\n"));
        str = dumpAlgorithmsStream(a, str);
@@ -2897,7 +2897,7 @@ algorithm
         str = IOStream.appendList(str, {"  terminate(",s1,");\n"});
         str = dumpEquationsStream(xs, str);
       then
-        str;        
+        str;
         
     case ((DAE.IF_EQUATION(condition1 = {},equations2 = {},equations3 = {}) :: xs), str) 
       then 
@@ -2954,7 +2954,7 @@ algorithm
     case ((DAE.REINIT(componentRef = cr,exp = e) :: xs), str)
       equation
         s = ComponentReference.printComponentRefStr(cr);
-        s1 = ExpressionDump.printExpStr(e);        
+        s1 = ExpressionDump.printExpStr(e);
         str = IOStream.appendList(str, {"  reinit(",s,",",s1,");\n"});
         str = dumpEquationsStream(xs, str);
       then
@@ -2995,9 +2995,9 @@ algorithm
     equation
       str = IOStream.append(str, "  elseif ");
       str = IOStream.append(str, ExpressionDump.printExpStr(c));
-      str = IOStream.append(str, " then\n");      
+      str = IOStream.append(str, " then\n");
       str = dumpEquationsStream(tb, str);
-      str = dumpIfEquationsStream(conds,tbs, str); 
+      str = dumpIfEquationsStream(conds,tbs, str);
     then
       str;
   end match;
@@ -3006,7 +3006,7 @@ end dumpIfEquationsStream;
 protected function dumpInitialEquationsStream "function: dumpInitialequationsStr
   Dump initial equations to a stream."
   input list<DAE.Element> inElementLst;
-  input IOStream.IOStream inStream;  
+  input IOStream.IOStream inStream;
   output IOStream.IOStream outStream;
 algorithm
   outStream := matchcontinue (inElementLst, inStream)
@@ -3094,7 +3094,7 @@ algorithm
       equation
         myStream = IOStream.create("", IOStream.LIST());
         myStream = dumpElementsStream(l, myStream);
-        str = IOStream.string(myStream); 
+        str = IOStream.string(myStream);
       then str;
   end match;
 end dumpDAEElementsStr;
@@ -3103,7 +3103,7 @@ public function dumpVarsStream "function: dumpVarsStream
   Dump variables to a string."
   input list<DAE.Element> inElementLst;
   input Boolean printTypeDimension "use true here when printing components in functions as these are not vectorized! Otherwise, use false";
-  input IOStream.IOStream inStream;  
+  input IOStream.IOStream inStream;
   output IOStream.IOStream outStream;
 algorithm
   outStream := match (inElementLst, printTypeDimension, inStream)
@@ -3127,7 +3127,7 @@ protected function dumpVarStream "function: dumpVarStream
   Dump var to a stream."
   input DAE.Element inElement;
   input Boolean printTypeDimension "use true here when printing components in functions as these are not vectorized! Otherwise, use false";
-  input IOStream.IOStream inStream;  
+  input IOStream.IOStream inStream;
   output IOStream.IOStream outStream;
 algorithm
   outStream := matchcontinue (inElement, printTypeDimension, inStream)
@@ -3259,7 +3259,7 @@ algorithm
   ppStatement(alg);
   outStream := IOStream.append(inStream, Print.getString());
   Print.clearBuf();
-  Print.printBuf(tmp);  
+  Print.printBuf(tmp);
 end ppStatementStream;
 
 public function dumpFunctionStr "function: dumpFunctionStr
@@ -3332,7 +3332,7 @@ algorithm
         fstr = Absyn.pathString(fpath);
         str = IOStream.append(str, "function ");
         str = IOStream.append(str, fstr);
-        str = IOStream.append(str, dumpInlineTypeStr(inlineType)); 
+        str = IOStream.append(str, dumpInlineTypeStr(inlineType));
         str = IOStream.append(str, "\n");
         str = dumpFunctionElementsStream(daeElts, str);
         str = IOStream.append(str, "end ");
@@ -3353,7 +3353,7 @@ algorithm
         str = IOStream.append(str, dumpInlineTypeStr(inlineType));
         str = IOStream.append(str, "\n");
         str = dumpFunctionElementsStream(daeElts, str);
-        str = IOStream.appendList(str, {"\nexternal \"",lang,"\";\nend ",fstr,";\n\n"});        
+        str = IOStream.appendList(str, {"\nexternal \"",lang,"\";\nend ",fstr,";\n\n"});
       then
         str;
 

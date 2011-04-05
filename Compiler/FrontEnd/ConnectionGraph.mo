@@ -350,7 +350,7 @@ algorithm
         parentCanonical = canonical(partition, parent);
         //Debug.fprintln("cgraph", 
         //  "- ConnectionGraph.canonical_case1(" +& ComponentReference.printComponentRefStr(ref) +& ") = " +&
-        //  ComponentReference.printComponentRefStr(parentCanonical));        
+        //  ComponentReference.printComponentRefStr(parentCanonical));
         //partition2 = BaseHashTable.add((ref, parentCanonical), partition);
       then parentCanonical;
 
@@ -477,7 +477,7 @@ algorithm
         // debug print
         Debug.fprintln("cgraph", "- ConnectionGraph.connectComponents: should remove equations generated from: connect(" +& 
            ComponentReference.printComponentRefStr(ref1) +& ", " +& 
-           ComponentReference.printComponentRefStr(ref2) +& ") and add {0, ..., 0} = equalityConstraint(cr1, cr2) instead.");        
+           ComponentReference.printComponentRefStr(ref2) +& ") and add {0, ..., 0} = equalityConstraint(cr1, cr2) instead.");
         // remove the added equations from the DAE 
         dae = removeEquationsWithOrigin(dae, ref1, ref2);
         // then add the breakDAE which comes from {0} = equalityConstraint(A, B);
@@ -499,7 +499,7 @@ algorithm
     local
       list<DAE.Element> rest, elements;
       DAE.Element el;
-      DAE.ComponentRef cr1, cr2; 
+      DAE.ComponentRef cr1, cr2;
     
     // handle the empty case
     case ({}, cr1, cr2) then {};
@@ -534,7 +534,7 @@ protected function originInConnect
   input DAE.Element inElement;
   input DAE.ComponentRef left;
   input DAE.ComponentRef right;
-  output Boolean hasOriginInConnect;  
+  output Boolean hasOriginInConnect;
 algorithm
   hasOriginInConnect := matchcontinue(inElement, left, right)
     local
@@ -544,7 +544,7 @@ algorithm
      // var
     case (DAE.VAR(source = DAE.SOURCE(connectEquationOptLst = connectOptLst)), left, right)
       equation
-        b = isInConnectionList(connectOptLst, left, right); 
+        b = isInConnectionList(connectOptLst, left, right);
       then
         b;
      // define
@@ -711,7 +711,7 @@ algorithm
         b2 = ComponentReference.crefPrefixOf(left, crRight);
         true = boolAnd(b1, b2);
         // print("connect: " +& ComponentReference.printComponentRefStr(left) +& ", " +& ComponentReference.printComponentRefStr(right) +& "\n");
-        // print("origin: " +& ComponentReference.printComponentRefStr(crRight) +& ", " +& ComponentReference.printComponentRefStr(crLeft) +& "\n");        
+        // print("origin: " +& ComponentReference.printComponentRefStr(crRight) +& ", " +& ComponentReference.printComponentRefStr(crLeft) +& "\n");
       then
         true;
     // try the rest
@@ -885,7 +885,7 @@ algorithm
       DAE.ComponentRef ref1, ref2;
       DaeEdges tail;
       list<DAE.Element> breakDAE, dae;
-      Edges broken1,broken2,broken;      
+      Edges broken1,broken2,broken;
 
     // empty case
     case(table, {}, dae) then (table, dae, {});
@@ -905,7 +905,7 @@ protected function findResultGraph
   input  ConnectionGraph inGraph;
   input  list<DAE.Element> inDAE;
   input  String modelNameQualified;
-  output DefiniteRoots outRoots;  
+  output DefiniteRoots outRoots;
   output list<DAE.Element> outDAE;
   output Edges outBrokenConnections;
 algorithm
@@ -1021,7 +1021,7 @@ algorithm
 end findResultGraph;
 
 protected function orderConnectsGuidedByUser
-  input DaeEdges inConnections; 
+  input DaeEdges inConnections;
   input list<tuple<String,String>> inUserSelectedBreaking;
   output DaeEdges outOrderedConnections;
 algorithm
@@ -1108,7 +1108,7 @@ algorithm
       equation
         lst = makeTuple(rest);
       then
-        lst;        
+        lst;
     // somthing case
     case (bad::rest)
       equation
@@ -1129,7 +1129,7 @@ algorithm
     local
       DAE.ComponentRef cr;
       Real priority;
-      String str;  
+      String str;
     case ((cr, priority))
       equation
         str = ComponentReference.printComponentRefStr(cr) +& "(" +& realString(priority) +& ")";
@@ -1343,7 +1343,7 @@ algorithm
       
     case (Connect.SETS(setLst, connection, deletedComponents, outerConnects, sf), broken)
       equation
-        setLst = removeBrokenConnectionsFromSetLst(setLst, broken);        
+        setLst = removeBrokenConnectionsFromSetLst(setLst, broken);
         outerConnects = Util.listSelect1(outerConnects, broken, outerConenctNOTFromConnect);
       then 
         Connect.SETS(setLst, connection, deletedComponents, outerConnects, sf);
@@ -1478,13 +1478,13 @@ algorithm
       Boolean b;
 
     // empty case
-    case (connectEquationOptLst, {}) then false;      
+    case (connectEquationOptLst, {}) then false;
     
     // current element is in connection list
     case (connectEquationOptLst, (left, right)::rest)
       equation
         true = isInConnectionList(connectEquationOptLst, left, right);
-        // print("Found it!\n"); 
+        // print("Found it!\n");
       then true;
 
     // current element is NOT in connection list
@@ -1492,7 +1492,7 @@ algorithm
       equation
         false = isInConnectionList(connectEquationOptLst, left, right);
         b = elementSourceInBrokenConnects(connectEquationOptLst, rest);
-      then b;        
+      then b;
   end matchcontinue;
 end elementSourceInBrokenConnects;
 
@@ -1549,7 +1549,7 @@ end merge;
 
 protected function graphVizEdge
   input  Edge inEdge;
-  output String out; 
+  output String out;
 algorithm
   out := match(inEdge)
     local DAE.ComponentRef c1, c2; String strEdge;
@@ -1564,7 +1564,7 @@ end graphVizEdge;
 protected function graphVizDaeEdge
   input  DaeEdge inDaeEdge;
   input  Edges inBrokenDaeEdges;
-  output String out; 
+  output String out;
 algorithm
   out := match(inDaeEdge, inBrokenDaeEdges)
     local DAE.ComponentRef c1, c2; String sc1, sc2, strDaeEdge, label, labelFontSize, decorate, color, style, fontColor; Boolean isBroken;
@@ -1596,7 +1596,7 @@ end graphVizDaeEdge;
 protected function graphVizDefiniteRoot
   input  DefiniteRoot  inDefiniteRoot;
   input  DefiniteRoots inFinalRoots;
-  output String out; 
+  output String out;
 algorithm
   out := match(inDefiniteRoot, inFinalRoots)
     local DAE.ComponentRef c; String strDefiniteRoot; Boolean isSelectedRoot;
@@ -1614,7 +1614,7 @@ end graphVizDefiniteRoot;
 protected function graphVizPotentialRoot
   input  PotentialRoot inPotentialRoot;
   input  DefiniteRoots inFinalRoots;
-  output String out; 
+  output String out;
 algorithm
   out := match(inPotentialRoot, inFinalRoots)
     local DAE.ComponentRef c; Real priority; String strPotentialRoot; Boolean isSelectedRoot;
@@ -1646,7 +1646,7 @@ algorithm
       String fileName, i, nrDR, nrPR, nrBR, nrCO, nrFR, nrBC, timeStr,  infoNodeStr, brokenConnects;
       Real tStart, tEnd, t;
       IOStream.IOStream graphVizStream;
-      list<String> infoNode; 
+      list<String> infoNode;
     
     // don't do anything if we don't have +d=cgraphGraphVizFile or +d=cgraphGraphVizShow
     case(modelNameQualified, definiteRoots, potentialRoots, branches, connections, finalRoots, broken)
@@ -1658,7 +1658,7 @@ algorithm
     case(modelNameQualified, definiteRoots, potentialRoots, branches, connections, finalRoots, broken)
       equation
         tStart = clock();
-        i = "\t"; 
+        i = "\t";
         fileName = stringAppend(modelNameQualified, ".gv");
         // create a stream
         graphVizStream = IOStream.create(fileName, IOStream.LIST());
@@ -1697,7 +1697,7 @@ algorithm
          
         // output global settings 
         graphVizStream = IOStream.appendList(graphVizStream, {i, "ovelap=false;\n"});
-        graphVizStream = IOStream.appendList(graphVizStream, {i, "layout=dot;\n\n"});        
+        graphVizStream = IOStream.appendList(graphVizStream, {i, "layout=dot;\n\n"});
          
         // output settings for nodes
         graphVizStream = IOStream.appendList(graphVizStream, {i, "node [\n", i, 
@@ -1713,14 +1713,14 @@ algorithm
            "]\n\n"});
         
         // output summary node
-        graphVizStream = IOStream.appendList(graphVizStream, {i, "graph [fontsize=20, fontname = \"Courier Bold\" label= \"\\n\\n", infoNodeStr, "\", size=\"6,6\"];\n", i});        
+        graphVizStream = IOStream.appendList(graphVizStream, {i, "graph [fontsize=20, fontname = \"Courier Bold\" label= \"\\n\\n", infoNodeStr, "\", size=\"6,6\"];\n", i});
         
         // output definite roots
-        graphVizStream = IOStream.appendList(graphVizStream, {"\n", i, "// Definite Roots (Connections.root)", "\n", i});        
+        graphVizStream = IOStream.appendList(graphVizStream, {"\n", i, "// Definite Roots (Connections.root)", "\n", i});
         graphVizStream = IOStream.appendList(graphVizStream, Util.listMap1(definiteRoots, graphVizDefiniteRoot, finalRoots));
         // output potential roots
-        graphVizStream = IOStream.appendList(graphVizStream, {"\n", i, "// Potential Roots (Connections.potentialRoot)", "\n", i});        
-        graphVizStream = IOStream.appendList(graphVizStream, Util.listMap1(potentialRoots, graphVizPotentialRoot, finalRoots));        
+        graphVizStream = IOStream.appendList(graphVizStream, {"\n", i, "// Potential Roots (Connections.potentialRoot)", "\n", i});
+        graphVizStream = IOStream.appendList(graphVizStream, Util.listMap1(potentialRoots, graphVizPotentialRoot, finalRoots));
 
         // output branches        
         graphVizStream = IOStream.appendList(graphVizStream, {"\n", i, "// Branches (Connections.branch)", "\n", i});
@@ -1763,7 +1763,7 @@ algorithm
         
     case (fileNameGraphViz, modelNameQualified)
       equation
-        fileNameTraceRemovedConnections = modelNameQualified +& "_removed_connections.txt";  
+        fileNameTraceRemovedConnections = modelNameQualified +& "_removed_connections.txt";
         Debug.traceln("Tyring to start GraphViz *lefty* to visualize the graph. You need to have lefty in your PATH variable");
         Debug.traceln("Make sure you quit GraphViz *lefty* via Right Click->quit to be sure the process will be exited.");
         Debug.traceln("If you quit the GraphViz *lefty* window via X, please kill the process in task manager to continue.");

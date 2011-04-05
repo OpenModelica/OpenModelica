@@ -296,7 +296,7 @@ public function externalObjectConstructorType "author: PA
   input Type inType;
 algorithm
   _ := match (inType)
-    local Type tp;  
+    local Type tp;
     case ((DAE.T_FUNCTION(funcResultType = tp),_))
       equation
         externalObjectType(tp);
@@ -616,7 +616,7 @@ algorithm
   b := matchcontinue(t)
     case(_) equation true = isRealOrSubTypeReal(t); then true;
     case(_) equation true = isIntegerOrSubTypeInteger(t); then true;
-    case(_) equation true = isBooleanOrSubTypeBoolean(t); then true;      
+    case(_) equation true = isBooleanOrSubTypeBoolean(t); then true;
     case(_) then false;
   end matchcontinue;
 end isIntegerOrRealOrBooleanOrSubTypeOfEither;
@@ -1198,7 +1198,7 @@ algorithm
       Ident id;
       list<Ident> ids;
 
-    case ({},{}) then {}; 
+    case ({},{}) then {};
     case ((v :: vs),(id :: ids))
       equation
         tp = typeOfValue(v);
@@ -1236,13 +1236,13 @@ algorithm
       list<Ident> ids;
       list<DAE.Exp> explist;
 
-    case (Values.INTEGER(integer = _)) then (DAE.T_INTEGER_DEFAULT); 
-    case (Values.REAL(real = _)) then (DAE.T_REAL_DEFAULT); 
-    case (Values.STRING(string = _)) then (DAE.T_STRING_DEFAULT); 
-    case (Values.BOOL(boolean = _)) then (DAE.T_BOOL_DEFAULT); 
+    case (Values.INTEGER(integer = _)) then (DAE.T_INTEGER_DEFAULT);
+    case (Values.REAL(real = _)) then (DAE.T_REAL_DEFAULT);
+    case (Values.STRING(string = _)) then (DAE.T_STRING_DEFAULT);
+    case (Values.BOOL(boolean = _)) then (DAE.T_BOOL_DEFAULT);
     case (Values.ENUM_LITERAL(name = path, index = index))
       equation
-        path = Absyn.pathPrefix(path); 
+        path = Absyn.pathPrefix(path);
       then
         ((DAE.T_ENUMERATION(SOME(index), path, {}, {}, {}),NONE()));
     case ((w as Values.ARRAY(valueLst = (v :: vs))))
@@ -1543,7 +1543,7 @@ algorithm
         true = OptManager.getOption("checkModel");
         true = subtype(t1, t2);
       then
-        true;    
+        true;
     
     // Array
     case ((DAE.T_ARRAY(arrayDim = dim1,arrayType = t1),_),(DAE.T_ARRAY(arrayDim = dim2,arrayType = t2),_))
@@ -1678,7 +1678,7 @@ algorithm
       list<Var> l,vs;
       Ident n;
     
-    case (_,{}) then true; 
+    case (_,{}) then true;
     
     case (l,(DAE.TYPES_VAR(name = n,type_ = t2) :: vs))
       equation
@@ -1736,7 +1736,7 @@ algorithm
       Boolean prot;
       Binding bnd;
       DAE.Dimension dim;
-      Option<DAE.Const> cnstForRange;      
+      Option<DAE.Const> cnstForRange;
     
     case (t,n)
       equation
@@ -1760,8 +1760,8 @@ algorithm
     
     case (_,id) 
       equation
-        // Print.printBuf("- Looking up " +& id +& " in noncomplex type\n");  
-      then fail(); 
+        // Print.printBuf("- Looking up " +& id +& " in noncomplex type\n");
+      then fail();
   end matchcontinue;
 end lookupComponent;
 
@@ -1812,30 +1812,30 @@ algorithm
    case ((DAE.T_ENUMERATION(index = SOME(_)),_),"quantity") 
      then DAE.TYPES_VAR("quantity",
           DAE.ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-          false,DAE.T_STRING_DEFAULT,DAE.VALBOUND(Values.STRING(""),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());  
+          false,DAE.T_STRING_DEFAULT,DAE.VALBOUND(Values.STRING(""),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());
 
     // Should be bound to the first element of DAE.T_ENUMERATION list higher up in the call chain
     case ((DAE.T_ENUMERATION(index = SOME(_)),_),"min")       
       then DAE.TYPES_VAR("min",DAE.ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-          false,(DAE.T_ENUMERATION(SOME(1),Absyn.IDENT(""),{"min,max"},{},{}),NONE()),DAE.UNBOUND(),NONE());   
+          false,(DAE.T_ENUMERATION(SOME(1),Absyn.IDENT(""),{"min,max"},{},{}),NONE()),DAE.UNBOUND(),NONE());
 
     // Should be bound to the last element of DAE.T_ENUMERATION list higher up in the call chain 
     case ((DAE.T_ENUMERATION(index = SOME(_)),_),"max") 
       then DAE.TYPES_VAR("max",DAE.ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-          false,(DAE.T_ENUMERATION(SOME(2),Absyn.IDENT(""),{"min,max"},{},{}),NONE()),DAE.UNBOUND(),NONE());  
+          false,(DAE.T_ENUMERATION(SOME(2),Absyn.IDENT(""),{"min,max"},{},{}),NONE()),DAE.UNBOUND(),NONE());
 
     // Should be bound to the last element of DAE.T_ENUMERATION list higher up in the call chain 
     case ((DAE.T_ENUMERATION(index = SOME(_)),_),"start") 
       then DAE.TYPES_VAR("start",DAE.ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-          false,DAE.T_BOOL_DEFAULT,DAE.UNBOUND(),NONE());   
+          false,DAE.T_BOOL_DEFAULT,DAE.UNBOUND(),NONE());
 
     // Needs to be set to true/false higher up the call chain depending on variability of instance 
     case ((DAE.T_ENUMERATION(index = SOME(_)),_),"fixed") 
       then DAE.TYPES_VAR("fixed",DAE.ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-          false,DAE.T_BOOL_DEFAULT,DAE.UNBOUND(),NONE());  
+          false,DAE.T_BOOL_DEFAULT,DAE.UNBOUND(),NONE());
     case ((DAE.T_ENUMERATION(index = SOME(_)),_),"enable") then DAE.TYPES_VAR("enable",
           DAE.ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-          false,DAE.T_BOOL_DEFAULT,DAE.VALBOUND(Values.BOOL(true),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE()); 
+          false,DAE.T_BOOL_DEFAULT,DAE.VALBOUND(Values.BOOL(true),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());
         
 //    case ((DAE.T_ENUM(),_),"quantity") then DAE.TYPES_VAR("quantity",
 //          DAE.ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_STRING_DEFAULT,DAE.VALBOUND(Values.STRING("")));
@@ -2407,7 +2407,7 @@ algorithm
     case ((DAE.T_TUPLE(tupleType = tys),_))
       equation
         s1 = Util.stringDelimitList(Util.listMap(tys, printTypeStr),", ");
-         str = stringAppendList({"(",s1,")"});        
+         str = stringAppendList({"(",s1,")"});
       then
         str;
 
@@ -2891,7 +2891,7 @@ algorithm
       equation
         result = getFixedVarAttribute(ty);
       then 
-        result;  
+        result;
   end matchcontinue;
 end getFixedVarAttribute;
 
@@ -3252,7 +3252,7 @@ algorithm
         (ty_1,dimlist_1);
     case ((DAE.T_ARRAY(arrayDim = d,arrayType = ty),_))
       equation
-        dim = Expression.dimensionSize(d); 
+        dim = Expression.dimensionSize(d);
         (ty_1,dimlist) = flattenArrayType(ty);
         dimlist_1 = listAppend(dimlist, {dim});
       then
@@ -3671,7 +3671,7 @@ algorithm
         // get from global roots
         tyMem = getGlobalRoot(memoryIndex);
         // select a list based on the constructor of TType value
-        indexBasedOnValueConstructor = valueConstructor(tt); 
+        indexBasedOnValueConstructor = valueConstructor(tt);
         tyLst = arrayGet(tyMem, indexBasedOnValueConstructor + 1);
         // search in the list for a translation
         expTy = Util.assoc(inType, tyLst);
@@ -3687,7 +3687,7 @@ algorithm
         // get from global roots        
         tyMem = getGlobalRoot(memoryIndex);
         // select a list based on the constructor of TType value
-        indexBasedOnValueConstructor = valueConstructor(tt);        
+        indexBasedOnValueConstructor = valueConstructor(tt);
         tyLst = arrayGet(tyMem, indexBasedOnValueConstructor + 1);
         // add the translation to the list and set the array
         tyMem = arrayUpdate(tyMem, indexBasedOnValueConstructor + 1, (inType, expTy)::tyLst);
@@ -4151,7 +4151,7 @@ algorithm
         name = listNth(l, oi-1); // listNth indexes from 0
         tp = Absyn.joinPaths(tp, Absyn.IDENT(name));
       then 
-        (DAE.ENUM_LITERAL(tp, oi),expected);        
+        (DAE.ENUM_LITERAL(tp, oi),expected);
 
     /* Implicit conversion from Integer to Real */
     case (e,(DAE.T_INTEGER(varLstInt = v),_),(DAE.T_REAL(varLstReal = _),_),printFailtrace)
@@ -4909,7 +4909,7 @@ algorithm
       list<Var> vs;
       DAE.ExpType ty2;
       Type ty;
-      DAE.ComponentRef cref_;      
+      DAE.ComponentRef cref_;
     case ({},_) then {};
     case ((DAE.TYPES_VAR(name = id,attributes = DAE.ATTR(streamPrefix = true),type_ = ty) :: vs),cr)
       equation
@@ -5431,7 +5431,7 @@ algorithm
     case (e::exps,ty::tys,expected,printFailtrace)
       equation
         (e,_) = matchType(e,ty,expected,printFailtrace);
-        exps = matchTypes(exps,tys,expected,printFailtrace); 
+        exps = matchTypes(exps,tys,expected,printFailtrace);
       then
         e::exps;
     case (e::_,ty::_,expected,_)
@@ -5819,7 +5819,7 @@ algorithm
       equation
         dims = getRealOrIntegerDimensions(ty);
       then
-        d::dims;           
+        d::dims;
   end match;
 end getRealOrIntegerDimensions;
 
@@ -6298,17 +6298,17 @@ algorithm
       DAE.Exp e;
     // An array with an explicit dimension  
     case (ty,DAE.WHOLE_NONEXP(exp=DAE.ICONST(i)))   
-      then ((DAE.T_ARRAY(DAE.DIM_INTEGER(i),ty),NONE()));   
+      then ((DAE.T_ARRAY(DAE.DIM_INTEGER(i),ty),NONE()));
     /*case (ty,DAE.INDEX(exp=DAE.ICONST(i)))   
       then ((DAE.T_ARRAY(DAE.DIM_INTEGER(i),ty),NONE()));*/
     // An array with parametric dimension  
     case (ty,DAE.WHOLE_NONEXP(exp = e))   
-      then ((DAE.T_ARRAY(DAE.DIM_EXP(e),ty),NONE()));   
+      then ((DAE.T_ARRAY(DAE.DIM_EXP(e),ty),NONE()));
     /*case (ty,DAE.INDEX(DAE.RANGE(exp=DAE.ICONST(1),expOption=NONE(),range = e)))   
       then ((DAE.T_ARRAY(DAE.DIM_EXP(e),ty),NONE()));*/   
     // All other kinds of subscripts denote an index, so the type stays the same
     case (ty,_)
-      then ty;       
+      then ty;
   end matchcontinue;
 end liftArraySubscript;
 
@@ -6593,7 +6593,7 @@ algorithm
       list<String> names1;
       Type ty1;
       DAE.FunctionAttributes functionAttributes;
-      Option<Absyn.Path> op1;      
+      Option<Absyn.Path> op1;
     case ((DAE.T_FUNCTION(args1,ty1,functionAttributes),op1))
       equation
         names1 = Util.listMap(args1, Util.tuple21);

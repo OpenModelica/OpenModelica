@@ -127,7 +127,7 @@ algorithm
       equation
         func_name = Absyn.pathString(p);
         (cache, result, st) = evaluateFunctionDefinition(inCache, inEnv, func_name,
-          func, ty, inFunctionArguments, st); 
+          func, ty, inFunctionArguments, st);
       then
         (cache, result, st);
 
@@ -336,7 +336,7 @@ algorithm
     case (DAE.STMT_TUPLE_ASSIGN(expExpLst = _), _, _, st)
       equation
         (cache, env, st) = 
-          evaluateTupleAssignStatement(inStatement, inCache, inEnv, st); 
+          evaluateTupleAssignStatement(inStatement, inCache, inEnv, st);
       then
         (cache, env, NEXT(), st);
 
@@ -1196,7 +1196,7 @@ algorithm
     case (cr as DAE.CREF_IDENT(subscriptLst = subs), _, _, _, st)
       equation
         cr = ComponentReference.crefStripSubs(cr);
-        (ty, val) = getVariableTypeAndValue(cr, inEnv); 
+        (ty, val) = getVariableTypeAndValue(cr, inEnv);
         (cache, val, st) = assignVector(inNewValue, val, subs, inCache, inEnv, st);
         env = updateVariableBinding(cr, inEnv, ty, val);
       then
@@ -1964,7 +1964,7 @@ algorithm
       equation
         subs = Util.listMap(sub_exps, Expression.makeIndexSubscript);
         cref = ComponentReference.subscriptCref(cref, subs);
-        exp = Expression.makeCrefExp(cref, ety); 
+        exp = Expression.makeCrefExp(cref, ety);
       then
         ((exp, env));
     else then inTuple;

@@ -298,7 +298,7 @@ algorithm
       Option<DAE.VariableAttributes> oattr,oattr1;
       Option<SCode.Comment> s;
       DAE.Flow t;
-      DAE.Stream streamPrefix;      
+      DAE.Stream streamPrefix;
 
     case (BackendDAE.VAR(varName = a,
               varKind = b,
@@ -495,7 +495,7 @@ algorithm
       Option<DAE.VariableAttributes> oattr,oattr1;
       Option<SCode.Comment> s;
       DAE.Flow t;
-      DAE.Stream streamPrefix;      
+      DAE.Stream streamPrefix;
 
     case (BackendDAE.VAR(varName = a,
               varKind = b,
@@ -614,7 +614,7 @@ algorithm
   matchcontinue(inCref,inVars)
     local
       DAE.ComponentRef cr;
-      BackendDAE.Variables vars;      
+      BackendDAE.Variables vars;
     case(cr,vars)
       equation
         ((BackendDAE.VAR(varKind = BackendDAE.STATE()) :: _),_) = getVar(cr, vars);
@@ -1356,7 +1356,7 @@ algorithm
     case (DAE.CREF_QUAL(ident = name,componentRef = DAE.CREF_IDENT(ident = _)),DAE.OUTPUT(),DAE.FLOW()) then ();
     case ((cr as DAE.CREF_QUAL(ident = name,componentRef = DAE.CREF_IDENT(ident = _))),DAE.OUTPUT(),DAE.NON_FLOW()) then ();
   end matchcontinue;
-end topLevelOutput;  
+end topLevelOutput;
 
 
 
@@ -1791,8 +1791,8 @@ algorithm
       equation
         (var_lst, var_lst1) = getAllElements1((var1, typ1, place1), rest);
         c1 = ComponentReference.crefStripLastSubs(varName1);
-        c2 = ComponentReference.crefStripLastSubs(varName2);        
-        ins = ComponentReference.crefEqualNoStringCompare(c1, c2); 
+        c2 = ComponentReference.crefStripLastSubs(varName2);
+        ins = ComponentReference.crefEqualNoStringCompare(c1, c2);
         var_lst2 = listAppendTyp(ins, (var2, typ2, place2), var_lst);
         var_lst3 = listAppendTyp(boolNot(ins), (var2, typ2, place2), var_lst1);
       then
@@ -1937,12 +1937,12 @@ algorithm
       equation
         c1 = ComponentReference.crefStripLastSubs(varName1);
         c2 = ComponentReference.crefStripLastSubs(varName2);
-        true = ComponentReference.crefEqualNoStringCompare(c1, c2); 
+        true = ComponentReference.crefEqualNoStringCompare(c1, c2);
         subscriptLst = ComponentReference.crefLastSubs(varName1);
         subscriptLst1 = ComponentReference.crefLastSubs(varName2);
         out_val = comparingNonScalars1(subscriptLst,subscriptLst1,arryDim,arryDim1);
       then
-        out_val;        
+        out_val;
     case (_,_) then false;
   end matchcontinue;
 end comparingNonScalars;
@@ -2038,7 +2038,7 @@ algorithm
         dim_lst = getArrayDim(rest);
         dim_lst1 = dim::dim_lst;
       then
-        dim_lst1;       
+        dim_lst1;
   end match;
 end getArrayDim;
 
@@ -2540,16 +2540,16 @@ algorithm
       DAE.ComponentRef cr;
     case ((v as BackendDAE.VAR(varName = cr),(vars1,vars2,mvars)))
       equation
-        _ = BackendDAEUtil.treeGet(mvars, cr) "alg var moved to known vars" ; 
+        _ = BackendDAEUtil.treeGet(mvars, cr) "alg var moved to known vars" ;
         newvars = addVar(v,vars2);
       then
-        ((v,(vars1,newvars,mvars)));        
+        ((v,(vars1,newvars,mvars)));
     case ((v as BackendDAE.VAR(varName = cr),(vars1,vars2,mvars)))
       equation
         failure(_ = BackendDAEUtil.treeGet(mvars, cr)) "alg var not moved to known vars" ;
         newvars = addVar(v,vars1);
       then
-        ((v,(newvars,vars2,mvars)));        
+        ((v,(newvars,vars2,mvars)));
   end matchcontinue;
 end moveVariables2;
 
@@ -2631,13 +2631,13 @@ algorithm
       equation
         _ = BackendDAEUtil.treeGet(delvars, cr) "alg var deleted" ;
       then
-        ((v,(delvars,vars)));        
+        ((v,(delvars,vars)));
     case ((v as BackendDAE.VAR(varName = cr),(delvars,vars)))
       equation
         failure(_ = BackendDAEUtil.treeGet(delvars, cr)) "alg var not deleted" ;
         vars1 = addVar(v,vars);
       then
-        ((v,(delvars,vars1)));        
+        ((v,(delvars,vars1)));
   end matchcontinue;
 end deleteVars2;
 
@@ -2677,12 +2677,12 @@ algorithm
       equation
         true = ComponentReference.crefEqualNoStringCompare(cr, dcr);
       then
-        ((v,(dcr,vars)));        
+        ((v,(dcr,vars)));
     case ((v as BackendDAE.VAR(varName = cr),(dcr,vars)))
       equation
         vars1 = addVar(v,vars);
       then
-        ((v,(dcr,vars1)));        
+        ((v,(dcr,vars1)));
   end matchcontinue;
 end deleteVar2;
 
@@ -2750,12 +2750,12 @@ algorithm
       array<BackendDAE.MultiDimEquation> arreqns;
       array<DAE.Algorithm> algorithms;
       BackendDAE.EventInfo einfo;
-      BackendDAE.ExternalObjectClasses eoc;      
+      BackendDAE.ExternalObjectClasses eoc;
     case (var,BackendDAE.DAE(ordvars,knvars,exobj,aliasVars,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc))
       equation
-        ordvars1 = addVar(var,ordvars);        
+        ordvars1 = addVar(var,ordvars);
       then BackendDAE.DAE(ordvars1,knvars,exobj,aliasVars,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc);
-  end match;        
+  end match;
 end addVarDAE;
 
 public function addKnVarDAE
@@ -2777,12 +2777,12 @@ algorithm
       array<BackendDAE.MultiDimEquation> arreqns;
       array<DAE.Algorithm> algorithms;
       BackendDAE.EventInfo einfo;
-      BackendDAE.ExternalObjectClasses eoc;      
+      BackendDAE.ExternalObjectClasses eoc;
     case (var,BackendDAE.DAE(ordvars,knvars,exobj,aliasVars,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc))
       equation
-        knvars1 = addVar(var,knvars);        
+        knvars1 = addVar(var,knvars);
       then BackendDAE.DAE(ordvars,knvars1,exobj,aliasVars,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc);
-  end match;        
+  end match;
 end addKnVarDAE;
 
 public function addVars "function: addVars
@@ -2925,7 +2925,7 @@ algorithm
       equation
         (vLst,indxs) = getRecordVar(cr, vars);
       then
-        (vLst,indxs);        
+        (vLst,indxs);
     /* failure
     case (cr,vars)
       equation
@@ -3208,14 +3208,14 @@ algorithm
       equation
         Debug.fprintln("failtrace", "- BackendVariable.traverseBackendDAEVars failed");
       then
-        fail();        
+        fail();
   end matchcontinue;
 end traverseBackendDAEVars;
 
 protected function traverseBackendDAEVar "function: traverseBackendDAEVar
   author: Frenkel TUD
   Helper traverseBackendDAEVars."
-  replaceable type Type_a subtypeof Any;  
+  replaceable type Type_a subtypeof Any;
   input Option<BackendDAE.Var> inVar;
   input FuncExpType func;
   input Type_a inTypeA;
@@ -3240,7 +3240,7 @@ algorithm
       equation
         Debug.fprintln("failtrace", "- BackendVariable.traverseBackendDAEVar failed");
       then
-        fail();          
+        fail();
   end matchcontinue;
 end traverseBackendDAEVar;
 
@@ -3266,7 +3266,7 @@ algorithm
       array<list<BackendDAE.CrefIndex>> crefIdxLstArr;
       array<list<BackendDAE.StringIndex>> strIdxLstArr;
       BackendDAE.VariableArray varArr;
-      Integer bucketSize,numberOfVars,numberOfElements,arrSize;      
+      Integer bucketSize,numberOfVars,numberOfElements,arrSize;
       array<Option<BackendDAE.Var>> varOptArr,varOptArr1;
       Type_a ext_arg_1;
     case (BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr,strIdxLstArr=strIdxLstArr,varArr = BackendDAE.VARIABLE_ARRAY(numberOfElements=numberOfElements,arrSize=arrSize,varOptArr=varOptArr),bucketSize=bucketSize,numberOfVars=numberOfVars),func,inTypeA)
@@ -3278,14 +3278,14 @@ algorithm
       equation
         Debug.fprintln("failtrace", "- BackendVariable.traverseBackendDAEVarsWithUpdate failed");
       then
-        fail();        
+        fail();
   end matchcontinue;
 end traverseBackendDAEVarsWithUpdate;
 
 protected function traverseBackendDAEVarWithUpdate "function: traverseBackendDAEVarWithUpdate
   author: Frenkel TUD
   Helper traverseBackendDAEVarsWithUpdate."
-  replaceable type Type_a subtypeof Any;  
+  replaceable type Type_a subtypeof Any;
   input Option<BackendDAE.Var> inVar;
   input FuncExpType func;
   input Type_a inTypeA;
@@ -3311,7 +3311,7 @@ algorithm
       equation
         Debug.fprintln("failtrace", "- BackendVariable.traverseBackendDAEVar failed");
       then
-        fail();          
+        fail();
   end matchcontinue;
 end traverseBackendDAEVarWithUpdate;
 
@@ -3337,7 +3337,7 @@ algorithm
       equation
         cr = varCref(v);
       then ((v,cr::cr_lst));
-    case inTpl then inTpl; 
+    case inTpl then inTpl;
   end matchcontinue;
 end traversingVarCrefFinder;
 
@@ -3362,7 +3362,7 @@ algorithm
       equation
         true = BackendDAEUtil.isVarDiscrete(v);
       then ((v,v::v_lst));
-    case inTpl then inTpl; 
+    case inTpl then inTpl;
   end matchcontinue;
 end traversingisisVarDiscreteFinder;
 
@@ -3387,7 +3387,7 @@ algorithm
       equation
         true = isStateVar(v);
       then ((v,v::v_lst));
-    case inTpl then inTpl; 
+    case inTpl then inTpl;
   end matchcontinue;
 end traversingisStateVarFinder;
 

@@ -821,7 +821,7 @@ algorithm
         (cache, v, stOpt) = ceval(cache, env, iterexp, impl, stOpt, dimOpt, msg);
         vals = ValuesUtil.arrayOrListVals(v,true);
         env = Env.openScope(env, false, SOME(Env.forScopeName),NONE());
-        // print("Start cevalReduction: " +& Absyn.pathString(path) +& " " +& ValuesUtil.valString(startValue) +& " " +& ValuesUtil.valString(Values.TUPLE(vals)) +& " " +& ExpressionDump.printExpStr(daeExp) +& "\n"); 
+        // print("Start cevalReduction: " +& Absyn.pathString(path) +& " " +& ValuesUtil.valString(startValue) +& " " +& ValuesUtil.valString(Values.TUPLE(vals)) +& " " +& ExpressionDump.printExpStr(daeExp) +& "\n");
         (cache, ov, stOpt) = cevalReduction(cache, env, path, ov, daeExp, ty, foldExp, guardExp, iter, vals, impl, stOpt, dimOpt, msg);
         value = Util.getOptionOrDefault(ov, Values.META_FAIL());
       then (cache, value, stOpt);
@@ -834,7 +834,7 @@ algorithm
         // print("Before:\n");print(Util.stringDelimitList(Util.listMap1(Util.listListMap(valMatrix, ValuesUtil.valString), Util.stringDelimitList, ","), "\n") +& "\n");
         valMatrix = Util.allCombinations(valMatrix,SOME(10000),Absyn.dummyInfo);
         // print("After:\n");print(Util.stringDelimitList(Util.listMap1(Util.listListMap(valMatrix, ValuesUtil.valString), Util.stringDelimitList, ","), "\n") +& "\n");
-        // print("Start cevalReduction: " +& Absyn.pathString(path) +& " " +& ValuesUtil.valString(startValue) +& " " +& ValuesUtil.valString(Values.TUPLE(vals)) +& " " +& ExpressionDump.printExpStr(daeExp) +& "\n"); 
+        // print("Start cevalReduction: " +& Absyn.pathString(path) +& " " +& ValuesUtil.valString(startValue) +& " " +& ValuesUtil.valString(Values.TUPLE(vals)) +& " " +& ExpressionDump.printExpStr(daeExp) +& "\n");
         (cache, ov, stOpt) = cevalReduction(cache, env, path, ov, daeExp, ty, foldExp, names, listReverse(valMatrix), tys, impl, stOpt, dimOpt, msg);
         value = Util.getOptionOrDefault(ov, Values.META_FAIL());
         value = backpatchArrayReduction(path, value, dims);
@@ -872,7 +872,7 @@ algorithm
         Values.Value v;
         Env.Cache cache;
         DAE.Properties prop;
-      DAE.Type tp;        
+      DAE.Type tp;
         
     case (_, _, e as DAE.CALL(ty = DAE.ET_ARRAY(arrayDimensions = _)), 
         DAE.PROP(constFlag = DAE.C_PARAM()), _)
@@ -1111,7 +1111,7 @@ algorithm
     case "cross" then cevalBuiltinCross;
     case "fill" then cevalBuiltinFill;
     case "Modelica.Utilities.Strings.substring" then cevalBuiltinSubstring;
-    case "print" then cevalBuiltinPrint;    
+    case "print" then cevalBuiltinPrint;
     // MetaModelica type conversions
     case "intReal" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalIntReal;
     case "intString" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalIntString;
@@ -1732,7 +1732,7 @@ algorithm
     // For crefs with value binding e.g. size(x,1) when Real x[:]=fill(0,1);
     case (cache,env,(exp as DAE.CREF(componentRef = cr,ty = crtp)),dimExp,impl,st,msg)
       equation 
-        (cache,attr,tp,binding,_,_,_,_,_) = Lookup.lookupVar(cache, env, cr)  ;     
+        (cache,attr,tp,binding,_,_,_,_,_) = Lookup.lookupVar(cache, env, cr)  ;
         (cache,Values.INTEGER(dimv),st_1) = ceval(cache,env, dimExp, impl, st,NONE(), msg);
         (cache,val) = cevalCrefBinding(cache,env, cr, binding, impl, msg);
         v2 = cevalBuiltinSize2(val, dimv);
@@ -1804,7 +1804,7 @@ algorithm
       Integer dim,ind_1,ind;
       list<Values.Value> lst;
       Values.Value l;
-      Values.Value dimVal;      
+      Values.Value dimVal;
     
     case (Values.ARRAY(valueLst = lst),1)
       equation
@@ -2240,7 +2240,7 @@ algorithm
       Msg msg;
       Env.Cache cache;
       String str;
-      Integer start, stop; 
+      Integer start, stop;
     
     case (cache,env,{str_exp, start_exp, stop_exp},impl,st,msg)
       equation
@@ -2307,7 +2307,7 @@ algorithm
     case (cache,env,{exp, len_exp, justified_exp},impl,st,msg)
       equation
         (cache,Values.ENUM_LITERAL(name = p),_) = ceval(cache,env, exp, impl, st,NONE(), msg);
-        str = Absyn.pathLastIdent(p); 
+        str = Absyn.pathLastIdent(p);
         (cache, str) = cevalBuiltinStringFormat(cache, env, str, len_exp, justified_exp, impl, st, msg);
       then
         (cache,Values.STRING(str),st);
@@ -3816,7 +3816,7 @@ algorithm
   outValue := matchcontinue (inValue)
     local
       Integer i1,i2,resI,i;
-      Real r,r1,r2,resR;      
+      Real r,r1,r2,resR;
       Values.Value v1,v,vl;
       list<Values.Value> vls;
     
@@ -3922,7 +3922,7 @@ algorithm
       equation
         s1 = ValuesUtil.valString(v1);
         s2 = ValuesUtil.valString(v2);
-        s = stringAppendList({"cevalBuiltinMin2 failed: min(", s1, ", ", s2, ")"}); 
+        s = stringAppendList({"cevalBuiltinMin2 failed: min(", s1, ", ", s2, ")"});
         Error.addMessage(Error.INTERNAL_ERROR, {s});
       then fail();
   end match;
@@ -3938,9 +3938,9 @@ algorithm
       Integer i1,i2,resI,i;
       Values.Value v1,v,vl;
       list<Values.Value> vls;
-      Real r,r1,r2,resR;      
+      Real r,r1,r2,resR;
     
-    case (Values.INTEGER(integer = i)) then Values.INTEGER(i);    
+    case (Values.INTEGER(integer = i)) then Values.INTEGER(i);
     case (Values.REAL(real = r)) then Values.REAL(r);
     
     case (Values.ARRAY(valueLst = (v1 :: (vls as (_ :: _)))))
@@ -4356,7 +4356,7 @@ algorithm
       Option<Interactive.InteractiveSymbolTable> st;
       Msg msg;
       Env.Cache cache;
-      Values.Value v;      
+      Values.Value v;
     
     case (cache,env,s1,impl,st,matrixDimension,row,{},msg)
       equation
@@ -4691,7 +4691,7 @@ protected function cevalRelation_dispatch
 algorithm
   result := matchcontinue(inValue1, inOperator, inValue2)
     local 
-      Values.Value v1, v2; 
+      Values.Value v1, v2;
       DAE.Operator op;
     
     case (v1, DAE.GREATER(ty = _), v2) then cevalRelationLess(v2, v1);
@@ -5124,7 +5124,7 @@ algorithm
                 
         // TODO: Ugly hack to prevent infinite recursion. If we have a binding r = r that
         // can for instance come from a modifier, this can cause an infinite loop here if r has no value.
-        false=isRecursiveBinding(cr,exp); 
+        false=isRecursiveBinding(cr,exp);
         
         (cache,v,_) = ceval(cache, env, exp, impl,NONE(), NONE(), msg);
         subsc = ComponentReference.crefLastSubs(cr);
@@ -5236,7 +5236,7 @@ algorithm
         (cache, res);
        
     // we have no subscripts but we have a value, return it
-    case (cache,env,{},v,_,_,_) then (cache,v); 
+    case (cache,env,{},v,_,_,_) then (cache,v);
 
     // failtrace
     case (cache, env, subs, inValue, dims, _, _)
@@ -5314,7 +5314,7 @@ algorithm
       Env.Cache cache;
 
     // empty case
-    case (cache,_,{},_,_,_) then (cache,{}); 
+    case (cache,_,{},_,_,_) then (cache,{});
 
     // we have subscripts
     case (cache,env,(sub :: subs),(dim :: dims),impl,msg)
@@ -5419,7 +5419,7 @@ protected function crefEqualValue ""
 algorithm 
   outBoolean := match (c,v)
     local 
-      DAE.ComponentRef cr;  
+      DAE.ComponentRef cr;
     
     case(c,(v as DAE.EQBOUND(DAE.CREF(cr,_),NONE(),_,_)))
       then ComponentReference.crefEqual(c,cr);
@@ -5485,7 +5485,7 @@ algorithm
       Env.Env new_env;
       Env.Cache new_cache;
       Option<Interactive.InteractiveSymbolTable> new_st;
-      DAE.ExpType exp_type; 
+      DAE.ExpType exp_type;
       DAE.Type iter_type;
       list<Integer> dims;
       Boolean guardFilter;
@@ -6295,7 +6295,7 @@ algorithm
     case (Absyn.IDENT("array"),Values.ARRAY(valueLst=vals),dims)
       equation
         value = backpatchArrayReduction3(vals,listReverse(dims));
-        // print(ValuesUtil.valString(value));print("\n"); 
+        // print(ValuesUtil.valString(value));print("\n");
       then value;
     else value;
   end match;

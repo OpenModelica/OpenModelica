@@ -799,7 +799,7 @@ output Boolean b;
 algorithm
   b := match (cref)
     case(DAE.CREF_IDENT(ident="time")) then true;
-    else false;  
+    else false;
   end match;
 end variableIsBuiltin;
 
@@ -952,7 +952,7 @@ algorithm
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         // getGlobalRoot can not be represented by a regular function...
-        env = Env.extendFrameT(env, "getGlobalRoot", int2boxed);        
+        env = Env.extendFrameT(env, "getGlobalRoot", int2boxed);
       then env;
     case env then env;
   end matchcontinue;

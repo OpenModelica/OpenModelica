@@ -225,14 +225,14 @@ end getRunningTestsuite;
 public function getEvaluateParametersInAnnotations
 "@author: adrpo
  flag to tell us if we should evaluate parameters in annotations"
- output Boolean shouldEvaluate; 
+ output Boolean shouldEvaluate;
  external "C" shouldEvaluate=RTOpts_getEvaluateParametersInAnnotations() annotation(Library = "omcruntime");
 end getEvaluateParametersInAnnotations;
 
 public function setEvaluateParametersInAnnotations
 "@author: adrpo
  flag to tell us if we should evaluate parameters in annotations"
- input Boolean shouldEvaluate; 
+ input Boolean shouldEvaluate;
  external "C" RTOpts_setEvaluateParametersInAnnotations(shouldEvaluate) annotation(Library = "omcruntime");
 end setEvaluateParametersInAnnotations;
 

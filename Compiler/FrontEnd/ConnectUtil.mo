@@ -506,7 +506,7 @@ algorithm
       equation
         (outerCr,outerCrFlow,_,src)::_ = Util.listSelect1(crs,cr1,streamTuplePrefixOf);
         connectorCr = ComponentReference.crefStripPrefix(outerCr,cr1);
-        newCr = ComponentReference.joinCrefs(cr2,connectorCr);        
+        newCr = ComponentReference.joinCrefs(cr2,connectorCr);
       then ((newCr,outerCrFlow,f2,src)::crs,inCrs,true);
 
     case(cr1,cr2,false,true,f1,f2,crs,inCrs)
@@ -761,7 +761,7 @@ protected function checkSet
 algorithm
   outSet := match(inSet, inComponentRef, inFace)
     local 
-      list<Connect.FlowSetElement> cs;  
+      list<Connect.FlowSetElement> cs;
     
     case (Connect.FLOW(tplExpComponentRefFaceLst = cs), _, _)
       equation
@@ -1146,7 +1146,7 @@ algorithm
     
     case (c,Connect.INSIDE())
       equation
-         exp = Expression.crefExp(c); 
+         exp = Expression.crefExp(c);
       then 
         exp;
     
@@ -1215,7 +1215,7 @@ algorithm
           outside, inside);
       then
         dae;
-  end match;   
+  end match;
 end streamEquations;
 
 protected function isOutsideStream
@@ -1559,7 +1559,7 @@ algorithm
         e = DAE.IFEXP(DAE.RELATION(flow_exp, DAE.GREATER(ety), DAE.RCONST(0.0),-1,NONE()),
             instream_exp, stream_exp);
       then
-        e;  
+        e;
   end match;
 end evaluateActualStream;
         
@@ -1755,7 +1755,7 @@ algorithm
     local
       Connect.Set s;
       list<Connect.Set> sl;
-      list<Connect.StreamSetElement> cs;      
+      list<Connect.StreamSetElement> cs;
 
     case (Connect.SETS(setLst = {}), _, _, _, _)
       equation
@@ -2263,7 +2263,7 @@ algorithm
         s1 = Util.stringDelimitList(strs, ", ");
         res = stringAppendList({"\n\tstream set: {",s1,"}"});
       then
-        res;        
+        res;
   end matchcontinue;
 end printSetStr;
 
@@ -2505,7 +2505,7 @@ protected function checkConnectorBalance2
 algorithm
   _ := matchcontinue(inPotentialVars, inFlowVars, inStreamVars, path, info)
     local
-      String error_str, flow_str, potential_str, class_str; 
+      String error_str, flow_str, potential_str, class_str;
 
     // The connector is balanced.
     case (_, _, _, _, _)
@@ -2545,11 +2545,11 @@ algorithm
         class_str = Absyn.pathString(path);
         error_str = stringAppendList({
           "A stream connector must have exactly one flow variable, this connector has ", 
-          flow_str, " flow variables."}); 
+          flow_str, " flow variables."});
         Error.addSourceMessage(Error.UNBALANCED_CONNECTOR,
           {class_str, error_str}, info);
       then
-        fail(); 
+        fail();
   end matchcontinue;
 end checkConnectorBalance2;
 
@@ -2643,7 +2643,7 @@ algorithm
     local DAE.Type t;
     case DAE.TYPES_VAR(type_ = t) then sizeOfVariable2(t);
   end match;
-end sizeOfVariable; 
+end sizeOfVariable;
 
 protected function sizeOfVariable2
   "Helper function to sizeOfVariable."

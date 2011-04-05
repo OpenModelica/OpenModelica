@@ -432,7 +432,7 @@ algorithm
         analyseModifier(mods, inEnv, ty_env, inInfo);
         analyseComment(cmt, inEnv, inInfo);
       then
-        ();  
+        ();
 
     // Other cases which doesn't need to be analysed.
     case (SCode.ENUMERATION(enumLst = _), _, _, _) then ();
@@ -1387,7 +1387,7 @@ algorithm
       then
         ();
 
-  end match;  
+  end match;
 end analyseAvlTree;
 
 protected function analyseAvlValue
@@ -1451,7 +1451,7 @@ algorithm
         // Ok, the base is used, analyse the class extends to mark it and it's
         // dependencies as used.
         _ :: env = inEnv;
-        analyseClass(Absyn.IDENT(cls_name), env, info);   
+        analyseClass(Absyn.IDENT(cls_name), env, info);
       then
         ();
 
@@ -1702,7 +1702,7 @@ algorithm
       then
         (accum_el, accum_env);
 
-  end matchcontinue;  
+  end matchcontinue;
 end collectUsedElements2;
 
 protected function collectUsedElement

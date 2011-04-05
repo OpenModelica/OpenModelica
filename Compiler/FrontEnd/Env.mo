@@ -125,7 +125,7 @@ public
 uniontype Frame
   record FRAME
     Option<Ident>       optName           "Optional class name";
-    Option<ScopeType>   optType           "Optional scope type"; 
+    Option<ScopeType>   optType           "Optional scope type";
     AvlTree             clsAndVars        "List of uniquely named classes and variables";
     AvlTree             types             "List of types, which DOES NOT need to be uniquely named, eg. size may have several types";
     list<Item>          imports           "list of unnamed items (imports)";
@@ -157,7 +157,7 @@ uniontype Item
     DAE.Var instantiated "instantiated component" ;
     Option<tuple<SCode.Element, DAE.Mod>> declaration "declaration if not fully instantiated.";
     InstStatus instStatus "if it untyped, typed or fully instantiated (dae)";
-    Env env "The environment of the instantiated component. Contains e.g. all sub components";    
+    Env env "The environment of the instantiated component. Contains e.g. all sub components";
   end VAR;
 
   record CLASS
@@ -1626,7 +1626,7 @@ algorithm
       SCode.Accessibility accessibility "accessibility";
       SCode.Variability variability "variability";
       Absyn.Direction direction "direction";
-      Absyn.InnerOuter innerOuter "inner, outer,  inner outer or unspecified";      
+      Absyn.InnerOuter innerOuter "inner, outer,  inner outer or unspecified";
       
     case(VAR(instantiated=DAE.TYPES_VAR(name=name,attributes=DAE.ATTR(flowPrefix, streamPrefix, accessibility, variability, direction, innerOuter),type_=tp))) 
       equation
@@ -1646,7 +1646,7 @@ algorithm
         Util.if_(streamPrefix,"stream", "") +& ", " +&
         SCode.accessibilityString(accessibility) +& ", " +&
         SCode.variabilityString(variability) +& ", " +&
-        SCode.innerouterString(innerOuter);            
+        SCode.innerouterString(innerOuter);
       then str;
     
     case(CLASS(class_=SCode.CLASS(name=name))) 
@@ -1789,7 +1789,7 @@ algorithm
     // anything else is an error!
     case (val1, val2)
       equation
-        (n1, n2, aInfo) = getNamesAndInfoFromVal(val1, val2); 
+        (n1, n2, aInfo) = getNamesAndInfoFromVal(val1, val2);
         Error.addSourceMessage(Error.COMPONENT_NAME_SAME_AS_TYPE_NAME, {n1,n2}, aInfo);
       then 
         ();
@@ -1822,7 +1822,7 @@ algorithm
     case (CLASS(class_ = _), VAR(instantiated = _))
       equation
         // call ourselfs reversed
-        (n1, n2, aInfo) = getNamesAndInfoFromVal(val2, val1); 
+        (n1, n2, aInfo) = getNamesAndInfoFromVal(val2, val1);
       then 
         (n1, n2, aInfo);
     
@@ -2299,7 +2299,7 @@ public function getVariablesFromAvlValue
 algorithm
   variables := matchcontinue(v)
     local 
-      String name; 
+      String name;
     case(VAR(instantiated=DAE.TYPES_VAR(name=name))) then {name};
     case(_) then {};
   end matchcontinue;

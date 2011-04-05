@@ -1135,7 +1135,7 @@ end assertionOrAddSourceMessage;
 
 public function addCompilerWarning
 "Used to make a compiler warning "
-  input String message;  
+  input String message;
 algorithm
   _ := match (message)
     case (message)

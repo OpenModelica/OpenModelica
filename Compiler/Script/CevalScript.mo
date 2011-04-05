@@ -148,7 +148,7 @@ uniontype SimulationOptions "these are the simulation/buildModel* options"
     DAE.Exp tolerance "tolerance, default 1e-6";
     DAE.Exp method "method, default 'dassl'";
     DAE.Exp fileNamePrefix "file name prefix, default ''";
-    DAE.Exp storeInTemp "store in temp, default false";    
+    DAE.Exp storeInTemp "store in temp, default false";
     DAE.Exp noClean "no cleaning, default false";
     DAE.Exp options "options, default ''";
     DAE.Exp outputFormat "output format, default 'plt'";
@@ -212,7 +212,7 @@ end getSimulationResultType;
 
 public function createSimulationResult
   input String resultFile;
-  input String options;  
+  input String options;
   input String message;
   input list<tuple<String,Values.Value>> inAddResultValues "additional values in reversed order; expected values see in CevalScript.simulationResultType_full";
   output Values.Value res;
@@ -227,7 +227,7 @@ algorithm
   fields := Util.if_(RTOpts.getRunningTestsuite(), {},
                      Util.listMap(resultValues, Util.tuple21));
   vals := Util.if_(RTOpts.getRunningTestsuite(), {}, 
-                   Util.listMap(resultValues, Util.tuple22)); 
+                   Util.listMap(resultValues, Util.tuple22));
   res := Values.RECORD(Absyn.IDENT("SimulationResult"),
     Values.STRING(resultFile)::Values.STRING(options)::Values.STRING(message)::vals,
     "resultFile"::"simulationOptions"::"messages"::fields,-1);
@@ -283,7 +283,7 @@ public function buildSimulationOptions
   input DAE.Exp fileNamePrefix "file name prefix, default ''";
   input DAE.Exp storeInTemp "store in temp, default false";
   input DAE.Exp noClean "no cleaning, default false";
-  input DAE.Exp options "options, default ''";  
+  input DAE.Exp options "options, default ''";
   input DAE.Exp outputFormat "output format, default 'plt'";
   input DAE.Exp variableFilter;
   input DAE.Exp measureTime;
@@ -419,12 +419,12 @@ algorithm
     case (Absyn.INTEGER(i), DAE.ET_INT())  then DAE.ICONST(i);
     case (Absyn.REAL(r),    DAE.ET_REAL()) then DAE.RCONST(r);
         
-    case (Absyn.INTEGER(i), DAE.ET_REAL()) equation r = intReal(i); then DAE.RCONST(r);    
+    case (Absyn.INTEGER(i), DAE.ET_REAL()) equation r = intReal(i); then DAE.RCONST(r);
     case (Absyn.REAL(r),    DAE.ET_INT())  equation i = realInt(r); then DAE.ICONST(i);
     
     case (exp,    _)  
       equation 
-        print("CevalScript.getConst: Not handled exp: " +& Dump.printExpStr(exp) +& "\n"); 
+        print("CevalScript.getConst: Not handled exp: " +& Dump.printExpStr(exp) +& "\n");
       then 
         fail();
   end matchcontinue;
@@ -451,7 +451,7 @@ algorithm
       DAE.Exp fileNamePrefix;
       DAE.Exp storeInTemp;
       DAE.Exp noClean;
-      DAE.Exp options;      
+      DAE.Exp options;
       DAE.Exp outputFormat;
       DAE.Exp variableFilter, measureTime;
       Real rStepSize, rStopTime, rStartTime;
@@ -463,13 +463,13 @@ algorithm
     case (SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, fileNamePrefix, storeInTemp, noClean, options, outputFormat, variableFilter, measureTime), 
           Absyn.NAMEDARG(argName = "Tolerance", argValue = exp)::rest)
       equation
-        tolerance = getConst(exp, DAE.ET_REAL()); 
+        tolerance = getConst(exp, DAE.ET_REAL());
         simOpt = populateSimulationOptions(
           SIMULATION_OPTIONS(startTime,stopTime,numberOfIntervals,stepSize,tolerance,method,
                              fileNamePrefix,storeInTemp,noClean,options,outputFormat,variableFilter,measureTime),
              rest);
       then
-        simOpt;    
+        simOpt;
     
     case (SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, fileNamePrefix, storeInTemp, noClean, options, outputFormat, variableFilter, measureTime), 
           Absyn.NAMEDARG(argName = "StartTime", argValue = exp)::rest)
@@ -485,7 +485,7 @@ algorithm
     case (SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, fileNamePrefix, storeInTemp, noClean, options, outputFormat, variableFilter, measureTime), 
           Absyn.NAMEDARG(argName = "StopTime", argValue = exp)::rest)
       equation
-        stopTime = getConst(exp, DAE.ET_REAL()); 
+        stopTime = getConst(exp, DAE.ET_REAL());
         simOpt = populateSimulationOptions(
           SIMULATION_OPTIONS(startTime,stopTime,numberOfIntervals,stepSize,tolerance,method,
                              fileNamePrefix,storeInTemp,noClean,options,outputFormat,variableFilter,measureTime),
@@ -496,7 +496,7 @@ algorithm
     case (SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, fileNamePrefix, storeInTemp, noClean, options, outputFormat, variableFilter, measureTime), 
           Absyn.NAMEDARG(argName = "NumberOfIntervals", argValue = exp)::rest)
       equation
-        numberOfIntervals = getConst(exp, DAE.ET_INT()); 
+        numberOfIntervals = getConst(exp, DAE.ET_INT());
         simOpt = populateSimulationOptions(
           SIMULATION_OPTIONS(startTime,stopTime,numberOfIntervals,stepSize,tolerance,method,
                              fileNamePrefix,storeInTemp,noClean,options,outputFormat,variableFilter,measureTime),
@@ -507,7 +507,7 @@ algorithm
     case (SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, fileNamePrefix, storeInTemp, noClean, options, outputFormat, variableFilter, measureTime), 
           Absyn.NAMEDARG(argName = "Interval", argValue = exp)::rest)
       equation
-        DAE.RCONST(rStepSize) = getConst(exp, DAE.ET_REAL()); 
+        DAE.RCONST(rStepSize) = getConst(exp, DAE.ET_REAL());
         // a bit different for Interval, handle it LAST!!!!
         SIMULATION_OPTIONS(startTime,stopTime,numberOfIntervals,stepSize,tolerance,method,
                            fileNamePrefix,storeInTemp,noClean,options,outputFormat,variableFilter,measureTime) = 
@@ -546,7 +546,7 @@ algorithm
   str := matchcontinue vals
     local 
       list<String> simOptsValues;
-      list<Values.Value> lst;      
+      list<Values.Value> lst;
     
     case _::lst
       equation
@@ -649,7 +649,7 @@ algorithm
       array<BackendDAE.MultiDimEquation> ae;
       list<DAE.Exp> expVars,options;
       array<list<Integer>> m,mt;
-      Option<array<list<Integer>>> om,omt; 
+      Option<array<list<Integer>>> om,omt;
       Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac;
       Values.Value ret_val,simValue,size_value,value,v,cvar,xRange,yRange;
       DAE.Exp exp,size_expression,bool_exp,storeInTemp,translationLevel,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,varName,varTimeStamp;
@@ -772,7 +772,7 @@ algorithm
         funcs = Env.getFunctionTree(cache);
         daelow = BackendDAECreate.lower(dae, funcs, false) "no dummy state" ;
         (optdae,om,omt) = BackendDAEUtil.preOptimiseBackendDAE(daelow,funcs,NONE(),NONE(),NONE());
-        (m,mt) = BackendDAEUtil.getIncidenceMatrixfromOption(optdae,om,omt);            
+        (m,mt) = BackendDAEUtil.getIncidenceMatrixfromOption(optdae,om,omt);
         vars = BackendVariable.daeVars(optdae);
         eqnarr = BackendEquation.daeEqns(optdae);
         ae = BackendEquation.daeArrayEqns(optdae);
@@ -1062,7 +1062,7 @@ algorithm
             loadedFiles = lf)),msg)
       equation
         //System.startTimer();
-        //print("\nExists+Dependency");        
+        //print("\nExists+Dependency");
         
         crefCName = Absyn.pathToCref(className);
         true = Interactive.existClass(crefCName, p);
@@ -1092,7 +1092,7 @@ algorithm
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dae,env));
         
         // System.startTimer();
-        // print("\nFlatModelica");        
+        // print("\nFlatModelica");
         str = DAEDump.dumpStr(dae,Env.getFunctionTree(cache));
         // System.stopTimer();
         // print("\nFlatModelica: " +& realString(System.getTimerIntervalTime()));
@@ -1517,7 +1517,7 @@ algorithm
         (cache,filename) = cevalCurrentSimulationResultExp(cache,env,filename,st,msg);
         
         vars_2 = Util.listSetDifference(SimulationResults.readVariables(filename),{"time"});
-        vars_2 = "time" :: vars_2;        
+        vars_2 = "time" :: vars_2;
         value = ValuesUtil.readDataset(filename, vars_2, 0);
         
         resI = ValuesUtil.sendPtolemyplotDataset(value, vars_2, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, ValuesUtil.valString(xRange), ValuesUtil.valString(yRange));
@@ -1926,7 +1926,7 @@ algorithm
         (cache,outValMsg,st);
     case (cache,env,className,st,fileNamePrefix,addDummy,inSimSettingsOpt) /* mo file directory */
       equation
-         str = Error.printMessagesStr(); 
+         str = Error.printMessagesStr();
       then
         (cache,ValuesUtil.makeArray({Values.STRING("translateModelFMU error."),Values.STRING(str)}),st);
   end match;
@@ -1962,7 +1962,7 @@ algorithm
       Absyn.Class cls, refactoredClass;
       Absyn.Within within_;
       Absyn.Program p1;
-      Boolean strEmpty;      
+      Boolean strEmpty;
 
     case (cache,env,className,(st as Interactive.SYMBOLTABLE(p as Absyn.PROGRAM(globalBuildTimes=ts),aDep,sp,ic,iv,cf,lf)),msg)
       equation
@@ -1995,7 +1995,7 @@ protected function calculateSimulationSettings "function calculateSimulationSett
   input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
   input Ceval.Msg inMsg;
   output Env.Cache outCache;
-  output SimCode.SimulationSettings outSimSettings;  
+  output SimCode.SimulationSettings outSimSettings;
 algorithm
   (outCache,outSimSettings):=
   match (inCache,inEnv,vals,inInteractiveSymbolTable,inMsg)
@@ -2835,7 +2835,7 @@ algorithm
           Interactive.getPathedClassInProgram(className, p);
         // this case should not handle functions so here we check anything but functions!
         false = listMember(restriction, {Absyn.R_FUNCTION()});
-        _ = Error.getMessagesStr() "Clear messages";        
+        _ = Error.getMessagesStr() "Clear messages";
         Print.clearErrorBuf() "Clear error buffer";
         classNameStr = Absyn.pathString(className);
         /* this part is not needed anymore as when checkModel is active you can normally instantiate partial classes
@@ -2850,7 +2850,7 @@ algorithm
                           Absyn.ELEMENT(false, NONE(), Absyn.UNSPECIFIED(), "extends", 
                             Absyn.EXTENDS(className, {}, NONE()), // extend the given-for-check partial class 
                             info, NONE())
-                                   )}); 
+                                   )});
         dummyClass = Absyn.CLASS(classNameStr_dummy, 
                                  false, 
                                  finalPrefix, 
@@ -2878,7 +2878,7 @@ algorithm
         funcs = Env.getFunctionTree(cache);
         dlow = BackendDAECreate.lower(dae, funcs, false) "no dummy state" ;
         (dlow1,_,_) = BackendDAEUtil.preOptimiseBackendDAE(dlow,funcs,
-            SOME({"removeSimpleEquations","expandDerOperator"}),NONE(),NONE());        
+            SOME({"removeSimpleEquations","expandDerOperator"}),NONE(),NONE());
         Debug.fcall("dumpdaelow", BackendDump.dump, dlow1);
         RTOpts.setEliminationLevel(elimLevel); // reset elimination level.
         eqns = BackendEquation.daeEqns(dlow1);
@@ -2923,7 +2923,7 @@ algorithm
         funcs = Env.getFunctionTree(cache);
         dlow = BackendDAECreate.lower(dae, funcs, false) "no dummy state" ;
         (dlow1,_,_) = BackendDAEUtil.preOptimiseBackendDAE(dlow,funcs,
-            SOME({"removeSimpleEquations","expandDerOperator"}),NONE(),NONE());   
+            SOME({"removeSimpleEquations","expandDerOperator"}),NONE(),NONE());
         Debug.fcall("dumpdaelow", BackendDump.dump, dlow1);
         RTOpts.setEliminationLevel(elimLevel); // reset elimination level.
         eqns = BackendEquation.daeEqns(dlow1);
@@ -2989,7 +2989,7 @@ protected function selectIfNotEmpty
 algorithm
   outString := matchcontinue(inString, selector)
     local 
-      String s;  
+      String s;
     
     case (_, "") then "";
     
@@ -3168,7 +3168,7 @@ algorithm
         dlow = BackendDAECreate.lower(dae, funcs, true); //Verificare cosa fa
         (dlow_1,om,omT) = BackendDAEUtil.preOptimiseBackendDAE(dlow,funcs,NONE(),NONE(),NONE());
         (dlow_1,_,_,_,_,_) = BackendDAEUtil.transformDAE(dlow_1,funcs,BackendDAETransform.dummyDerivative,om,omT);
-        dlow_1 = BackendDAECreate.findZeroCrossings(dlow_1);    
+        dlow_1 = BackendDAECreate.findZeroCrossings(dlow_1);
         xml_filename = stringAppendList({filenameprefix,".xml"});
         funcelems = DAEUtil.getFunctionList(Env.getFunctionTree(cache));
         Print.clearBuf();
@@ -3307,7 +3307,7 @@ protected function filterLib
   Boolean b1, b2, b3;
 algorithm
   b1 := not Absyn.pathPrefixOf(Absyn.QUALIFIED("Modelica", Absyn.IDENT("Media")), path);
-  b2 := not Absyn.pathPrefixOf(Absyn.QUALIFIED("Modelica", Absyn.IDENT("Fluid")), path);  
+  b2 := not Absyn.pathPrefixOf(Absyn.QUALIFIED("Modelica", Absyn.IDENT("Fluid")), path);
   b3 := not Absyn.pathPrefixOf(
               Absyn.QUALIFIED("Modelica", 
                 Absyn.QUALIFIED("Mechanics",
@@ -3316,7 +3316,7 @@ algorithm
                       Absyn.QUALIFIED("Loops",
                         Absyn.QUALIFIED("Utilities",
                           Absyn.IDENT("EngineV6_analytic"))))))), path);
-  b  := b1 and b2; // and b3; 
+  b  := b1 and b2; // and b3;
 end filterLib;
 
 public function checkAllModelsRecursive
@@ -3354,7 +3354,7 @@ algorithm
         print("Number of classes to check: " +& intString(listLength(allClassPaths)) +& "\n");
         // print ("All paths: \n" +& Util.stringDelimitList(Util.listMap(allClassPaths, Absyn.pathString), "\n") +& "\n");
         checkAll(cache, env, allClassPaths, st, msg);
-        ret = "Number of classes checked: " +& intString(listLength(allClassPaths)); 
+        ret = "Number of classes checked: " +& intString(listLength(allClassPaths));
       then
         (cache,Values.STRING(ret),st);
     
@@ -3553,7 +3553,7 @@ algorithm
       equation
         false = RTOpts.debugFlag("nogen");
         false = RTOpts.debugFlag("generateCodeCheat");
-        funcs = Env.getFunctionTree(cache); 
+        funcs = Env.getFunctionTree(cache);
         // First check if the main function exists... If it does not it might be an interactive function...
         mainFunction = DAEUtil.getNamedFunction(path, funcs);
         pathstr = generateFunctionName(path);
@@ -3580,7 +3580,7 @@ algorithm
       equation
         false = RTOpts.debugFlag("nogen");
         true = RTOpts.debugFlag("generateCodeCheat");
-        funcs = Env.getFunctionTree(cache); 
+        funcs = Env.getFunctionTree(cache);
         // First check if the main function exists... If it does not it might be an interactive function...
         pathstr = generateFunctionName(path);
         

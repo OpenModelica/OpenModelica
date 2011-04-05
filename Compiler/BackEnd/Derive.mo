@@ -89,7 +89,7 @@ algorithm
       BackendDAE.Equation dae_equation;
       DAE.ElementSource source,source1,sourceStmt;
       Integer index,i_1,index1;
-      list<DAE.Exp> in_,in_1,out,out1,expExpLst,expExpLst1; 
+      list<DAE.Exp> in_,in_1,out,out1,expExpLst,expExpLst1;
       DAE.ExpType exptyp;
       array<DAE.Algorithm> a1;
       list<tuple<Integer,Integer,Integer>> derivedAlgs,derivedMultiEqn;
@@ -247,7 +247,7 @@ algorithm
       equation
         (_,_) = BackendVariable.getVar(cr, timevars);
       then
-        ((e, (e::crefOrDerCref,e1::derCref,timevars) ));      
+        ((e, (e::crefOrDerCref,e1::derCref,timevars) ));
     
     case(inExp) then inExp;
   end matchcontinue;
@@ -259,9 +259,9 @@ Author: Frenkel TUD"
   input array<Type_a> inArray;
   input Type_a inA;
   input Integer inNumber;
-  input list<tuple<Integer,Integer,Integer>> inDerivedArray;   
+  input list<tuple<Integer,Integer,Integer>> inDerivedArray;
   output Integer outIndex;
-  output array<Type_a> outArray; 
+  output array<Type_a> outArray;
   output list<tuple<Integer,Integer,Integer>> outDerivedArray;
   output Boolean outAdd;
   replaceable type Type_a subtypeof Any;
@@ -277,16 +277,16 @@ algorithm
    // no derived functions without outputs
    case (inIndex,inArray,inA,inNumber,derivedArray)
      equation
-       true = intEq(inNumber,0); 
+       true = intEq(inNumber,0);
      then
-       (inIndex,inArray,derivedArray,false);      
+       (inIndex,inArray,derivedArray,false);
    // not derived   
    case (inIndex,inArray,inA,inNumber,{})
      equation
         alst = arrayList(inArray);
         alst1 = listAppend(alst,{inA});
         a1 = listArray(alst1);
-        index = arrayLength(inArray);      
+        index = arrayLength(inArray);
      then
        (index,a1,{(inIndex,index,1)},true);
    // derived    
@@ -297,21 +297,21 @@ algorithm
        true = dnumber < inNumber;
        dnumber_1 = dnumber + 1;
      then
-       (dindex,inArray,(index,dindex,dnumber_1)::rest,true);    
+       (dindex,inArray,(index,dindex,dnumber_1)::rest,true);
    case (inIndex,inArray,inA,inNumber,(dArray as (index,dindex,dnumber))::rest)
      equation
        // search
        true = intEq(inIndex,index);
        false = dnumber < inNumber;
      then
-       (dindex,inArray,(index,dindex,dnumber)::rest,false);        
+       (dindex,inArray,(index,dindex,dnumber)::rest,false);
    case (inIndex,inArray,inA,inNumber,(dArray as (index,dindex,dnumber))::rest)
      equation
        false = intEq(inIndex,index);
        // next
        (index1,a1,derivedArray,add) = addArray(inIndex,inArray,inA,inNumber,rest);
      then   
-       (index1,a1,dArray::derivedArray,add);    
+       (index1,a1,dArray::derivedArray,add);
   end matchcontinue;
 end addArray;
 
@@ -333,7 +333,7 @@ public function differentiateExpTime "function: differentiateExpTime
 algorithm
   outExp := matchcontinue (inExp,inVariables)
     local
-      DAE.ExpType tp;      
+      DAE.ExpType tp;
       DAE.ComponentRef cr;
       list<list<DAE.ComponentRef>> crefslstls;
       list<DAE.ComponentRef> crefs;
@@ -596,7 +596,7 @@ algorithm
         false = Util.boolOrList(blst);
         (e1,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
       then
-        e1;    
+        e1;
     
     case (e as DAE.CALL(path = a,expLst = expl,tuple_ = b,builtin = c),(timevars,functions))
       equation
@@ -604,7 +604,7 @@ algorithm
         e1 = differentiateFunctionTime(e,(timevars,functions));
         e2 = Inline.inlineExp(e1,(SOME(functions),{DAE.NORM_INLINE()}));
       then
-        e2;        
+        e2;
     
     case (e as DAE.CALL(path = a,expLst = expl,tuple_ = b,builtin = c),(timevars,functions))
       equation
@@ -624,14 +624,14 @@ algorithm
         e1_1 = differentiateExpTime(e1, (timevars,functions));
         e2_1 = differentiateExpTime(e2, (timevars,functions));
       then
-        DAE.BINARY(e1_1,DAE.ADD_ARR(tp),e2_1);    
+        DAE.BINARY(e1_1,DAE.ADD_ARR(tp),e2_1);
     
     case (DAE.BINARY(exp1 = e1,operator = DAE.SUB_ARR(ty = tp),exp2 = e2),(timevars,functions))
       equation
         e1_1 = differentiateExpTime(e1, (timevars,functions));
         e2_1 = differentiateExpTime(e2, (timevars,functions));
       then
-        DAE.BINARY(e1_1,DAE.SUB_ARR(tp),e2_1);  
+        DAE.BINARY(e1_1,DAE.SUB_ARR(tp),e2_1);
     
     case (DAE.BINARY(exp1 = e1,operator = DAE.MUL_ARR(ty = tp),exp2 = e2),(timevars,functions)) /* f\'g + fg\' */
       equation
@@ -639,7 +639,7 @@ algorithm
         e2_1 = differentiateExpTime(e2, (timevars,functions));
       then
         DAE.BINARY(DAE.BINARY(e1,DAE.MUL_ARR(tp),e2_1),DAE.ADD_ARR(tp),
-          DAE.BINARY(e1_1,DAE.MUL_ARR(tp),e2));    
+          DAE.BINARY(e1_1,DAE.MUL_ARR(tp),e2));
     
     case (DAE.BINARY(exp1 = e1,operator = DAE.MUL_SCALAR_ARRAY(ty = tp),exp2 = e2),(timevars,functions)) /* f\'g + fg\' */
       equation
@@ -647,7 +647,7 @@ algorithm
         e2_1 = differentiateExpTime(e2, (timevars,functions));
       then
         DAE.BINARY(DAE.BINARY(e1,DAE.MUL_SCALAR_ARRAY(tp),e2_1),DAE.ADD_ARR(tp),
-          DAE.BINARY(e1_1,DAE.MUL_SCALAR_ARRAY(tp),e2));  
+          DAE.BINARY(e1_1,DAE.MUL_SCALAR_ARRAY(tp),e2));
     
     case (DAE.BINARY(exp1 = e1,operator = DAE.MUL_ARRAY_SCALAR(ty = tp),exp2 = e2),(timevars,functions)) /* f\'g + fg\' */
       equation
@@ -655,35 +655,35 @@ algorithm
         e2_1 = differentiateExpTime(e2, (timevars,functions));
       then
         DAE.BINARY(DAE.BINARY(e1,DAE.MUL_ARRAY_SCALAR(tp),e2_1),DAE.ADD_ARR(tp),
-          DAE.BINARY(e1_1,DAE.MUL_ARRAY_SCALAR(tp),e2));     
+          DAE.BINARY(e1_1,DAE.MUL_ARRAY_SCALAR(tp),e2));
     
     case (DAE.BINARY(exp1 = e1,operator = DAE.ADD_SCALAR_ARRAY(ty = tp),exp2 = e2),(timevars,functions))
       equation
         e1_1 = differentiateExpTime(e1, (timevars,functions));
         e2_1 = differentiateExpTime(e2, (timevars,functions));
       then
-        DAE.BINARY(e1_1,DAE.ADD_SCALAR_ARRAY(tp),e2_1); 
+        DAE.BINARY(e1_1,DAE.ADD_SCALAR_ARRAY(tp),e2_1);
     
     case (DAE.BINARY(exp1 = e1,operator = DAE.ADD_ARRAY_SCALAR(ty = tp),exp2 = e2),(timevars,functions))
       equation
         e1_1 = differentiateExpTime(e1, (timevars,functions));
         e2_1 = differentiateExpTime(e2, (timevars,functions));
       then
-        DAE.BINARY(e1_1,DAE.ADD_ARRAY_SCALAR(tp),e2_1);  
+        DAE.BINARY(e1_1,DAE.ADD_ARRAY_SCALAR(tp),e2_1);
     
     case (DAE.BINARY(exp1 = e1,operator = DAE.SUB_SCALAR_ARRAY(ty = tp),exp2 = e2),(timevars,functions))
       equation
         e1_1 = differentiateExpTime(e1, (timevars,functions));
         e2_1 = differentiateExpTime(e2, (timevars,functions));
       then
-        DAE.BINARY(e1_1,DAE.SUB_SCALAR_ARRAY(tp),e2_1);  
+        DAE.BINARY(e1_1,DAE.SUB_SCALAR_ARRAY(tp),e2_1);
     
     case (DAE.BINARY(exp1 = e1,operator = DAE.SUB_ARRAY_SCALAR(ty = tp),exp2 = e2),(timevars,functions))
       equation
         e1_1 = differentiateExpTime(e1, (timevars,functions));
         e2_1 = differentiateExpTime(e2, (timevars,functions));
       then
-        DAE.BINARY(e1_1,DAE.SUB_ARRAY_SCALAR(tp),e2_1);      
+        DAE.BINARY(e1_1,DAE.SUB_ARRAY_SCALAR(tp),e2_1);
     
     case (DAE.BINARY(exp1 = e1,operator = DAE.DIV_ARRAY_SCALAR(ty = tp),exp2 = e2),(timevars,functions)) /* (f\'g - fg\' ) / g^2 */
       equation
@@ -692,7 +692,7 @@ algorithm
       then
         DAE.BINARY(
           DAE.BINARY(DAE.BINARY(e1_1,DAE.MUL_ARRAY_SCALAR(tp),e2),DAE.SUB_ARR(tp),
-          DAE.BINARY(e1,DAE.MUL_ARRAY_SCALAR(tp),e2_1)),DAE.DIV_ARRAY_SCALAR(tp),DAE.BINARY(e2,DAE.MUL(tp),e2));                                                               
+          DAE.BINARY(e1,DAE.MUL_ARRAY_SCALAR(tp),e2_1)),DAE.DIV_ARRAY_SCALAR(tp),DAE.BINARY(e2,DAE.MUL(tp),e2));
     
     case ((e as DAE.MATRIX(ty = tp,integer=i,scalar=explstlst)),(timevars,functions))
       equation
@@ -805,7 +805,7 @@ algorithm
       list<DAE.Exp> dexplst,dexplst1,dexplst_1,dexplst1_1;
       list<Boolean> blst,blst1;
       list<String> typlststring;
-      String typstring,dastring;      
+      String typstring,dastring;
     
     // order=1  
     case (DAE.CALL(path=a),DAE.CALL(path=da),inExpLst,inExpLst1,(timevars,functions))
@@ -815,17 +815,17 @@ algorithm
         tlst = getFunctionResultTypes(tp);
         // remove all outputs not subtyp of real
         blst = Util.listMap(tlst,Types.isRealOrSubTypeReal);
-        blst1 = listReverse(blst);      
+        blst1 = listReverse(blst);
         SOME(DAE.FUNCTION(type_=dtp)) = DAEUtil.avlTreeGet(functions,da);
         // check if derivativ function has all expected outputs
         tlst2 = getFunctionResultTypes(dtp);
         (tlst1,_) = Util.listSplitOnBoolList(tlst,blst);
-        true =  Util.isListEqualWithCompareFunc(tlst1,tlst2,Types.equivtypes); 
+        true =  Util.isListEqualWithCompareFunc(tlst1,tlst2,Types.equivtypes);
         // diff explst
         (dexplst,_) = Util.listSplitOnBoolList(inExpLst,blst);
         (dexplst1,_) = Util.listSplitOnBoolList(inExpLst1,blst1);
-        dexplst_1 = Util.listMap1(dexplst,differentiateExpTime,(timevars,functions));        
-        dexplst1_1 = Util.listMap1(dexplst1,differentiateExpTime,(timevars,functions));        
+        dexplst_1 = Util.listMap1(dexplst,differentiateExpTime,(timevars,functions));
+        dexplst1_1 = Util.listMap1(dexplst1,differentiateExpTime,(timevars,functions));
       then
         (dexplst_1,dexplst1_1);
     
@@ -837,33 +837,33 @@ algorithm
         // remove all outputs not subtyp of real
         blst = Util.listMap(tlst,Types.isRealOrSubTypeReal);
         blst1 = listReverse(blst);
-        SOME(DAE.FUNCTION(type_=dtp)) = DAEUtil.avlTreeGet(functions,da);    
+        SOME(DAE.FUNCTION(type_=dtp)) = DAEUtil.avlTreeGet(functions,da);
         // check if derivativ function has all expected outputs
         tlst2 = getFunctionResultTypes(dtp);
         (tlst1,_) = Util.listSplitOnBoolList(tlst,blst);
-        false = Util.isListEqualWithCompareFunc(tlst1,tlst2,Types.equivtypes); 
+        false = Util.isListEqualWithCompareFunc(tlst1,tlst2,Types.equivtypes);
         // add Warning
         typlststring = Util.listMap(tlst1,Types.unparseType);
         typstring = Util.stringDelimitList(typlststring,";");
         dastring = Absyn.pathString(da);
-        Error.addMessage(Error.UNEXCPECTED_FUNCTION_INPUTS_WARNING, {dastring,typstring});      
+        Error.addMessage(Error.UNEXCPECTED_FUNCTION_INPUTS_WARNING, {dastring,typstring});
       then
-        fail();        
+        fail();
     
     // order>1  
     case (DAE.CALL(path=a),DAE.CALL(path=da),inExpLst,inExpLst1,(timevars,functions))
       equation
         // get function mapper
         (DAE.FUNCTION_DER_MAPPER(derivativeOrder=derivativeOrder),tp) = getFunctionMapper(a,functions);
-        tlst = getFunctionResultTypes(tp);        
-        true = (derivativeOrder > 1);       
-        SOME(DAE.FUNCTION(type_=dtp)) = DAEUtil.avlTreeGet(functions,da);    
+        tlst = getFunctionResultTypes(tp);
+        true = (derivativeOrder > 1);
+        SOME(DAE.FUNCTION(type_=dtp)) = DAEUtil.avlTreeGet(functions,da);
         // check if derivativ function has all expected outputs
         tlst2 = getFunctionResultTypes(dtp);
-        true = Util.isListEqualWithCompareFunc(tlst,tlst2,Types.equivtypes); 
+        true = Util.isListEqualWithCompareFunc(tlst,tlst2,Types.equivtypes);
         // diff explst
-        dexplst_1 = Util.listMap1(inExpLst,differentiateExpTime,(timevars,functions));        
-        dexplst1_1 = Util.listMap1(inExpLst1,differentiateExpTime,(timevars,functions));        
+        dexplst_1 = Util.listMap1(inExpLst,differentiateExpTime,(timevars,functions));
+        dexplst1_1 = Util.listMap1(inExpLst1,differentiateExpTime,(timevars,functions));
       then
         (dexplst_1,dexplst1_1);
     
@@ -871,19 +871,19 @@ algorithm
       equation
         // get function mapper
         (DAE.FUNCTION_DER_MAPPER(derivativeOrder=derivativeOrder),tp) = getFunctionMapper(a,functions);
-        tlst = getFunctionResultTypes(tp);        
-        true = (derivativeOrder > 1);       
-        SOME(DAE.FUNCTION(type_=dtp)) = DAEUtil.avlTreeGet(functions,da);    
+        tlst = getFunctionResultTypes(tp);
+        true = (derivativeOrder > 1);
+        SOME(DAE.FUNCTION(type_=dtp)) = DAEUtil.avlTreeGet(functions,da);
         // check if derivativ function has all expected outputs
         tlst2 = getFunctionResultTypes(dtp);
-        false = Util.isListEqualWithCompareFunc(tlst,tlst2,Types.equivtypes);     
+        false = Util.isListEqualWithCompareFunc(tlst,tlst2,Types.equivtypes);
         // add Warning
         typlststring = Util.listMap(tlst,Types.unparseType);
         typstring = Util.stringDelimitList(typlststring,";");
         dastring = Absyn.pathString(da);
-        Error.addMessage(Error.UNEXCPECTED_FUNCTION_INPUTS_WARNING, {dastring,typstring});        
+        Error.addMessage(Error.UNEXCPECTED_FUNCTION_INPUTS_WARNING, {dastring,typstring});
       then
-        fail();        
+        fail();
   end matchcontinue;
 end differentiateFunctionTimeOutputs;
 
@@ -899,14 +899,14 @@ algorithm
     case ((DAE.T_FUNCTION(funcResultType=(DAE.T_TUPLE(tupleType=tlst),_)),_)) then tlst;
     case ((DAE.T_FUNCTION(funcResultType=t),_)) then {t};
     case (inType) then {inType};
-  end matchcontinue;    
+  end matchcontinue;
 end getFunctionResultTypes;
 
 protected function differentiateFunctionTime"
 Author: Frenkel TUD"
   input DAE.Exp inExp;
   input tuple<BackendDAE.Variables,DAE.FunctionTree> inVarsandFuncs;
-  output DAE.Exp outExp;  
+  output DAE.Exp outExp;
 algorithm    
   (outExp) := matchcontinue (inExp,inVarsandFuncs)
     local 
@@ -950,9 +950,9 @@ algorithm
         typlststring = Util.listMap(tlst,Types.unparseType);
         typstring = Util.stringDelimitList(typlststring,";");
         dastring = Absyn.pathString(da);
-        Error.addMessage(Error.UNEXCPECTED_FUNCTION_INPUTS_WARNING, {dastring,typstring});        
+        Error.addMessage(Error.UNEXCPECTED_FUNCTION_INPUTS_WARNING, {dastring,typstring});
       then
-        fail();        
+        fail();
   end matchcontinue;
 end differentiateFunctionTime;
 
@@ -977,14 +977,14 @@ algorithm
         // compare with derivative function inputs
         tlst = Util.listMap(falst2,Util.tuple22);
         dtlst = Util.listMap(dfalst,Util.tuple22);
-        ret = Util.isListEqualWithCompareFunc(tlst,dtlst,Types.equivtypes);     
+        ret = Util.isListEqualWithCompareFunc(tlst,dtlst,Types.equivtypes);
       then 
         (ret,tlst);
     case (_,_,_)
       equation
         Debug.fprintln("failtrace", "-Derive.checkDerivativeFunctionInputs failed\n");
       then
-        fail();        
+        fail();
     end matchcontinue;
 end checkDerivativeFunctionInputs;
 
@@ -996,7 +996,7 @@ Author: Frenkel TUD"
   input list<DAE.Exp> expl;
   input tuple<BackendDAE.Variables,DAE.FunctionTree> inVarsandFuncs;
   output Absyn.Path outFuncName;
-  output list<Boolean> blst;  
+  output list<Boolean> blst;
 algorithm    
   (outFuncName,blst) := matchcontinue (inFuncName,mapper,tp,expl,inVarsandFuncs)
     local 
@@ -1006,7 +1006,7 @@ algorithm
       list<tuple<Integer,DAE.derivativeCond>> cr;
       Integer derivativeOrder;
       list<DAE.FuncArg> funcArg;
-      list<DAE.Type> tplst; 
+      list<DAE.Type> tplst;
       list<Boolean> bl,bl1,bl2,bl3;
       list<Absyn.Path> lowerOrderDerivatives;
     // check conditions, order=1  
@@ -1031,16 +1031,16 @@ algorithm
          // count true
          (bl1,_) = Util.listSplitOnTrue1(blst,Util.isEqual,true);
          bl2 = Util.listFill(false,listLength(blst));
-         bl = listAppend(bl2,bl1);         
+         bl = listAppend(bl2,bl1);
          bl3 = checkDerFunctionConds(bl,cr,expl,(timevars,functions));
       then
-        (inDFuncName,bl3);        
+        (inDFuncName,bl3);
     // conditions failed use default 
     case (inFuncName,DAE.FUNCTION_DER_MAPPER(derivedFunction=fname,derivativeFunction=inDFuncName,derivativeOrder=derivativeOrder,conditionRefs=cr,defaultDerivative=SOME(default),lowerOrderDerivatives=lowerOrderDerivatives),tp,expl,(timevars,functions))
       equation
           (da,bl) = differentiateFunctionTime1(inFuncName,DAE.FUNCTION_DER_MAPPER(fname,default,derivativeOrder,{},SOME(default),lowerOrderDerivatives),tp,expl,(timevars,functions));
       then
-        (da,bl);    
+        (da,bl);
   end matchcontinue;
 end differentiateFunctionTime1;
 
@@ -1077,7 +1077,7 @@ algorithm
         ba = listArray(inblst);
         ba = arrayUpdate(ba,i,false);
         bl1 = arrayList(ba);
-        bl = checkDerFunctionConds(bl1,crlst,expl,inVarsandFuncs); 
+        bl = checkDerFunctionConds(bl1,crlst,expl,inVarsandFuncs);
       then 
         bl;
     
@@ -1092,8 +1092,8 @@ algorithm
         // remove input from list
         ba = listArray(inblst);
         ba = arrayUpdate(ba,i,false);
-        bl1 = arrayList(ba);      
-        bl = checkDerFunctionConds(bl1,crlst,expl,inVarsandFuncs); 
+        bl1 = arrayList(ba);
+        bl = checkDerFunctionConds(bl1,crlst,expl,inVarsandFuncs);
       then 
         bl;
     
@@ -1103,8 +1103,8 @@ algorithm
         // remove input from list
         ba = listArray(inblst);
         ba = arrayUpdate(ba,i,false);
-        bl1 = arrayList(ba);      
-        bl = checkDerFunctionConds(bl1,crlst,expl,inVarsandFuncs); 
+        bl1 = arrayList(ba);
+        bl = checkDerFunctionConds(bl1,crlst,expl,inVarsandFuncs);
       then 
         bl;
     
@@ -1113,7 +1113,7 @@ algorithm
       equation
         Debug.fprintln("failtrace", "-Derive.checkDerFunctionConds failed\n");
       then
-        fail();       
+        fail();
   end matchcontinue;
 end checkDerFunctionConds;
 
@@ -1184,7 +1184,7 @@ algorithm
       equation
         Debug.fprintln("failtrace", "-Derive.getFunctionMapper1 failed\n");
       then
-        fail();      
+        fail();
   end matchcontinue;
 end getFunctionMapper1;
 
@@ -1210,7 +1210,7 @@ algorithm
       Real rval;
       DAE.ComponentRef cr,crx,tv;
       DAE.Exp e,e1_1,e2_1,e1,e2,const_one,d_e1,d_e2,exp,e_1,exp_1,cond,zero;
-      DAE.ExpType tp, ctp;      
+      DAE.ExpType tp, ctp;
       Absyn.Path a,fname;
       Boolean b,c;
       DAE.InlineType inl;
@@ -1253,7 +1253,7 @@ algorithm
         e1_1 = differentiateExp(e1, tv, differentiateIfExp);
         e2_1 = differentiateExp(e2, tv, differentiateIfExp);
       then
-        DAE.BINARY(e1_1,DAE.ADD_ARR(tp),e2_1);        
+        DAE.BINARY(e1_1,DAE.ADD_ARR(tp),e2_1);
 
     case (DAE.BINARY(exp1 = e1,operator = DAE.SUB(ty = tp),exp2 = e2),tv,differentiateIfExp)
       equation
@@ -1455,7 +1455,7 @@ algorithm
          is last. Otherwise expressions is always traversed twice
          when differentiating.";
         tp = Expression.typeof(e);
-        (zero,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));         
+        (zero,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
       then
         zero;
 

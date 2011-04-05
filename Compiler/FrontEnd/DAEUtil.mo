@@ -384,10 +384,10 @@ algorithm
   // adrpo: TODO! FIXME! rather expensive function! 
   //        implement this by walking dae once and check element with each var in the list
   //        instead of walking the dae once for each var.
-  // outDae := Util.listFold(vars,removeVariable,dae);  
+  // outDae := Util.listFold(vars,removeVariable,dae);
   outDae := matchcontinue(dae, vars)
     local
-      list<DAE.Element> elements;    
+      list<DAE.Element> elements;
     case (DAE.DAE(elements), vars)
       equation
         elements = removeVariablesFromElements(elements, vars);
@@ -2240,7 +2240,7 @@ algorithm
     
     case(el::_,acc)
       equation
-        msg = "- DAEUtil.verifyWhenEquationStatements failed on: " +& DAEDump.dumpElementsStr({el}); 
+        msg = "- DAEUtil.verifyWhenEquationStatements failed on: " +& DAEDump.dumpElementsStr({el});
         Error.addMessage(Error.INTERNAL_ERROR,{msg});
       then
         fail();
@@ -2418,7 +2418,7 @@ algorithm
         ht1 = BaseHashTable.add((cr,e),ht);
         ht2 = getParameterVars(DAE.DAE(rest),ht1);
       then
-        ht2;        
+        ht2;
     case (DAE.DAE(el :: rest),ht)
       equation
         ht1 = getParameterVars(DAE.DAE(rest),ht);
@@ -2471,7 +2471,7 @@ algorithm
         ht1 = BaseHashTable.add((cr,e1),ht);
         (ht2,_) = evaluateAnnotation1(DAE.DAE(rest),pv,ht1);
       then
-        (ht2,true);        
+        (ht2,true);
     case (DAE.DAE(el :: rest),pv,ht)
       equation
         (ht1,b) = evaluateAnnotation1(DAE.DAE(rest),pv,ht);
@@ -2498,7 +2498,7 @@ algorithm
     case (e,_)
       equation
         {} = Expression.extractCrefsFromExp(e);
-      then e;        
+      then e;
     case (e,pv)
       equation
         ((e1,(_,i,_))) = Expression.traverseExp(e,evaluateAnnotationTraverse,(pv,0,0));
@@ -2562,7 +2562,7 @@ algorithm
       Option<DAE.VariableAttributes> variableAttributesOption;
       Option<SCode.Comment> absynCommentOption;
       Absyn.InnerOuter innerOuter;
-      Integer i,j;           
+      Integer i,j;
       
     case ({},ht) then ({},ht);
     case (DAE.COMP(ident=ident,dAElist = sublist,source=source,comment=comment) :: rest,ht)
@@ -2603,18 +2603,18 @@ algorithm
     local
       DAE.ComponentRef cr;
       DAE.Exp e,e1;
-      Integer i,j; 
+      Integer i,j;
       HashTable2.HashTable ht,ht1;
-      //Values.Value value;          
+      //Values.Value value;
     case (cr,e,i,j,ht)
       equation
         // there is a paramter with evaluate=true
         true = intGt(j,0);
         // there are no other crefs
-        true = intEq(i,0);      
+        true = intEq(i,0);
         // evalute expression
         //(cache, value,_) = Ceval.ceval(cache, env, e, impl,NONE(), NONE(), Ceval.MSG());
-        // e1 = ValuesUtil.valueExp(value); 
+        // e1 = ValuesUtil.valueExp(value);
         e1 = e;
         ht1 = BaseHashTable.add((cr,e1),ht);
       then (e1,ht1);
@@ -2674,7 +2674,7 @@ algorithm
   (outB) := match (inMod,annotationName)
     local
       Boolean b;
-      list<SCode.SubMod> subModLst;    
+      list<SCode.SubMod> subModLst;
     case (SCode.MOD(subModLst=subModLst),annotationName)
       equation
         b = hasBooleanNamedAnnotation3(subModLst,annotationName);
@@ -2876,7 +2876,7 @@ algorithm
       equation
         n = countEquationsInBranches(tb,fb,source);
         nr = countEquations(rest);
-      then nr + n;  
+      then nr + n;
     case (DAE.INITIAL_IF_EQUATION(equations2=tb,equations3=fb,source=source)::rest)
       equation
         n = countEquationsInBranches(tb,fb,source);
@@ -2989,14 +2989,14 @@ algorithm
         tbsExp = Util.listMap(tbs, makeEquationLstToResidualExpLst);
         exps = makeResidualIfExpLst(conds,tbsExp,fbsExp);
       then
-        exps;  
+        exps;
     case (DAE.INITIAL_IF_EQUATION(condition1=conds,equations2=tbs,equations3=fbs))
       equation
         fbsExp = makeEquationLstToResidualExpLst(fbs);
         tbsExp = Util.listMap(tbs, makeEquationLstToResidualExpLst);
         exps = makeResidualIfExpLst(conds,tbsExp,fbsExp);
       then
-        exps;  
+        exps;
     case (elt)
       equation
         exp=makeEquationToResidualExp(elt);
@@ -3128,12 +3128,12 @@ algorithm
     case (eq::rest)
       equation
         exps1 = makeEquationToResidualExpLst(eq);
-        exps2 = makeEquationLstToResidualExpLst(rest); 
+        exps2 = makeEquationLstToResidualExpLst(rest);
         exps = listAppend(exps1,exps2);
       then 
         exps;
   end matchcontinue;
-end makeEquationLstToResidualExpLst;         
+end makeEquationLstToResidualExpLst;
 
 protected function makeResidualIfExpLst
   input list<DAE.Exp> inExp1;
@@ -3242,7 +3242,7 @@ algorithm
     case((DAE.CREF(DAE.CREF_IDENT("time",cty,subs),ty),oarg))
       equation
         cref_ = ComponentReference.makeCrefIdent("globalData->timeValue",cty,subs);
-        exp = Expression.makeCrefExp(cref_,ty); 
+        exp = Expression.makeCrefExp(cref_,ty);
       then 
         ((exp,oarg));
     
@@ -3359,8 +3359,8 @@ Traverse an optional expression, helper function for traverseDAE"
   output Option<DAE.Exp> ooexp;
   output Type_a oextraArg;
   partial function FuncExpType 
-    input tuple<DAE.Exp,Type_a> arg; 
-    output tuple<DAE.Exp,Type_a> oarg; 
+    input tuple<DAE.Exp,Type_a> arg;
+    output tuple<DAE.Exp,Type_a> oarg;
   end FuncExpType;
   replaceable type Type_a subtypeof Any;
 algorithm
@@ -3387,8 +3387,8 @@ Traverse an list of expressions, helper function for traverseDAE"
   output list<DAE.Exp> oexps;
   output Type_a oextraArg;
   partial function FuncExpType 
-    input tuple<DAE.Exp,Type_a> arg; 
-    output tuple<DAE.Exp,Type_a> oarg; 
+    input tuple<DAE.Exp,Type_a> arg;
+    output tuple<DAE.Exp,Type_a> oarg;
   end FuncExpType;
   replaceable type Type_a subtypeof Any;
 algorithm
@@ -3416,8 +3416,8 @@ Helper function for traverseDAE, traverses a list of dae element list."
   output list<list<DAE.Element>> traversedDaeList;
   output Type_a oextraArg;
   partial function FuncExpType 
-    input tuple<DAE.Exp,Type_a> arg; 
-    output tuple<DAE.Exp,Type_a> oarg; 
+    input tuple<DAE.Exp,Type_a> arg;
+    output tuple<DAE.Exp,Type_a> oarg;
   end FuncExpType;
   replaceable type Type_a subtypeof Any;
 algorithm 
@@ -3858,7 +3858,7 @@ algorithm
     case(elt,_,_)
       equation
         str = DAEDump.dumpElementsStr({elt});
-        str = "DAEUtil.traverseDAE not implemented correctly for element:" +& str; 
+        str = "DAEUtil.traverseDAE not implemented correctly for element:" +& str;
         Error.addMessage(Error.INTERNAL_ERROR, {str});
         print(str);
       then 
@@ -3921,7 +3921,7 @@ algorithm
         failure(((DAE.CREF(_,_), _)) = func((Expression.crefExp(cr), extraArg)));
         true = RTOpts.debugFlag("failtrace");
         print(DAEDump.ppStatementStr(x));
-        print("Warning, not allowed to set the componentRef to a expression in DAEUtil.traverseDAEEquationsStmts\n");      
+        print("Warning, not allowed to set the componentRef to a expression in DAEUtil.traverseDAEEquationsStmts\n");
         (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
       then (DAE.STMT_ASSIGN_ARR(tp,cr,e_1,source) :: xs_1,extraArg);
         
@@ -4998,7 +4998,7 @@ public function splitElements
   output list<DAE.Element> a;
   output list<DAE.Element> o;
 algorithm
-  (v,ie,ia,e,a,o) := splitElements_dispatch(inElements,{},{},{},{},{},{});  
+  (v,ie,ia,e,a,o) := splitElements_dispatch(inElements,{},{},{},{},{},{});
 end splitElements;
 protected function isIfEquation "function: isIfEquation
   Succeeds if Element is an if-equation.
@@ -5043,107 +5043,107 @@ algorithm
     // variables
     case ((el as DAE.VAR(kind=_))::rest,v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc)
       equation
-        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc);  
+        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc);
       then
         (el::v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc);
   
     // initial equations
     case ((el as DAE.INITIALEQUATION(exp1=_))::rest,v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc)
       equation
-        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc); 
+        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc);
       then
         (v_acc,el::ie_acc,ia_acc,e_acc,a_acc,o_acc);
     case ((el as DAE.INITIAL_ARRAY_EQUATION(exp=_))::rest,v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc)
       equation
-        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc); 
+        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc);
       then
         (v_acc,el::ie_acc,ia_acc,e_acc,a_acc,o_acc);
     case ((el as DAE.INITIAL_COMPLEX_EQUATION(lhs=_))::rest,v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc)
       equation
-        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc); 
+        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc);
       then
         (v_acc,el::ie_acc,ia_acc,e_acc,a_acc,o_acc);
     case ((el as DAE.INITIALDEFINE(exp=_))::rest,v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc)
       equation
-        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc); 
+        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc);
       then
         (v_acc,el::ie_acc,ia_acc,e_acc,a_acc,o_acc);
     case ((el as DAE.INITIAL_IF_EQUATION(condition1=_))::rest,v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc)
       equation
-        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc); 
+        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc);
       then
         (v_acc,el::ie_acc,ia_acc,e_acc,a_acc,o_acc);
 
     // equations
     case ((el as DAE.EQUATION(exp=_))::rest,v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc)
       equation
-        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc); 
+        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc);
       then
         (v_acc,ie_acc,ia_acc,el::e_acc,a_acc,o_acc);
     case ((el as DAE.EQUEQUATION(cr1=_))::rest,v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc)
       equation
-        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc); 
+        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc);
       then
         (v_acc,ie_acc,ia_acc,el::e_acc,a_acc,o_acc);
     case ((el as DAE.ARRAY_EQUATION(exp=_))::rest,v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc)
       equation
-        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc); 
+        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc);
       then
         (v_acc,ie_acc,ia_acc,el::e_acc,a_acc,o_acc);
     case ((el as DAE.COMPLEX_EQUATION(lhs=_))::rest,v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc)
       equation
-        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc); 
+        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc);
       then
         (v_acc,ie_acc,ia_acc,el::e_acc,a_acc,o_acc);
     case ((el as DAE.DEFINE(exp=_))::rest,v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc)
       equation
-        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc); 
+        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc);
       then
         (v_acc,ie_acc,ia_acc,el::e_acc,a_acc,o_acc);
     case ((el as DAE.ASSERT(condition=_))::rest,v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc)
       equation
-        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc); 
+        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc);
       then
-        (v_acc,ie_acc,ia_acc,el::e_acc,a_acc,o_acc);        
+        (v_acc,ie_acc,ia_acc,el::e_acc,a_acc,o_acc);
     case ((el as DAE.IF_EQUATION(condition1=_))::rest,v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc)
       equation
-        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc); 
+        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc);
       then
         (v_acc,ie_acc,ia_acc,el::e_acc,a_acc,o_acc);
     case ((el as DAE.WHEN_EQUATION(condition=_))::rest,v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc)
       equation
-        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc); 
+        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc);
       then
         (v_acc,ie_acc,ia_acc,el::e_acc,a_acc,o_acc);
     case ((el as DAE.REINIT(exp=_))::rest,v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc)
       equation
-        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc); 
+        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc);
       then
         (v_acc,ie_acc,ia_acc,el::e_acc,a_acc,o_acc);
     case ((el as DAE.NORETCALL(functionName=_))::rest,v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc)
       equation
-        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc); 
+        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc);
       then
         (v_acc,ie_acc,ia_acc,el::e_acc,a_acc,o_acc);
         
     // initial algorithms
     case ((el as DAE.INITIALALGORITHM(algorithm_=_))::rest,v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc)
       equation
-        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc); 
+        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc);
       then
-        (v_acc,ie_acc,el::ia_acc,e_acc,a_acc,o_acc);        
+        (v_acc,ie_acc,el::ia_acc,e_acc,a_acc,o_acc);
 
     // algorithms
     case ((el as DAE.ALGORITHM(algorithm_=_))::rest,v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc)
       equation
-        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc); 
+        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc);
       then
         (v_acc,ie_acc,ia_acc,e_acc,el::a_acc,o_acc);
         
     // external objects
     case ((el as DAE.EXTOBJECTCLASS(path=_))::rest,v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc)
       equation
-        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc); 
+        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc);
       then
         (v_acc,ie_acc,ia_acc,e_acc,a_acc,el::o_acc);
   end match;

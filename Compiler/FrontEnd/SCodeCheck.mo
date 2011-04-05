@@ -105,7 +105,7 @@ algorithm
     case (_) then ();
     
   end matchcontinue;
-end checkRecursiveShortDefinition; 
+end checkRecursiveShortDefinition;
 
 public function checkDuplicateElements
   input list<SCode.Element> inElements;
@@ -115,7 +115,7 @@ algorithm
       SCode.Element e;
       list<SCode.Element> rest;
     
-    case ({}) then ();  
+    case ({}) then ();
     
     case (e::rest)
       equation
@@ -132,7 +132,7 @@ algorithm
       SCode.Enum e;
       list<SCode.Enum> rest;
     
-    case ({}) then ();  
+    case ({}) then ();
     
     case (e::rest)
       equation

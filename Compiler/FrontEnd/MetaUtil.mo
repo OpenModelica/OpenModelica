@@ -452,7 +452,7 @@ algorithm
   outcls := match(els)
     local
       list<Absyn.ElementItem> rest;
-      Absyn.Class c;      
+      Absyn.Class c;
       list<Absyn.Class> clst;
     
     case({}) then {};

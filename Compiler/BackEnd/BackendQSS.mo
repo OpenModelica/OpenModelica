@@ -56,16 +56,16 @@ public
 uniontype DevsStruct "DEVS structure"
   record DEVS_STRUCT  
     array<list<list<Integer>>> outLinks "output connections for each DEVS block";
-    array<list<list<Integer>>> outVars "output variables for each DEVS block";  
+    array<list<list<Integer>>> outVars "output variables for each DEVS block";
     array<list<list<Integer>>> inLinks "input connections for each DEVS block";
-    array<list<list<Integer>>> inVars "input variables for each DEVS block";   
+    array<list<list<Integer>>> inVars "input variables for each DEVS block";
   end DEVS_STRUCT;
 end DevsStruct;
 
 public
 uniontype QSSinfo "- equation indices in static blocks and DEVS structure"
   record QSSINFO
-    list<list<list<Integer>>> BLTblocks "BLT blocks in static functions";  
+    list<list<list<Integer>>> BLTblocks "BLT blocks in static functions";
     DevsStruct DEVSstructure "DEVS structure of the model";
   end QSSINFO;
 end QSSinfo;
@@ -105,10 +105,10 @@ algorithm
         // STEP 1      
         // EXTRACT THE INDICES OF NEEDED EQUATIONS FOR EACH STATE VARIABLE         
                 
-        stateEq_flat = splitStateEqSet(comps, dlow, ass1, ass2, m, mt) "Extract equations for each state derivative"; 
+        stateEq_flat = splitStateEqSet(comps, dlow, ass1, ass2, m, mt) "Extract equations for each state derivative";
         stateEq_blt = mapStateEqInBlocks( stateEq_flat, blt_states, {}) "Map equations back in BLT blocks";
         
-        nStatic = listLength(stateEq_blt);     
+        nStatic = listLength(stateEq_blt);
         
         // STEP 2      
         // GENERALISED INCIDENCE MATRICES
@@ -116,16 +116,16 @@ algorithm
         //globalIncidenceList = arrayList(m);
         globalIncidenceMat = m;
         variableIndicesList = arrayList(ass2);
-        globalIncidenceMat = makeIncidenceRightHandNeg(globalIncidenceMat, variableIndicesList, 1); 
+        globalIncidenceMat = makeIncidenceRightHandNeg(globalIncidenceMat, variableIndicesList, 1);
         
         BackendDump.dumpIncidenceMatrix(globalIncidenceMat);
         print("TEST");
         
         // STEP 3      
         // GENERATE THE DEVS STRUCTURES        
-        DEVS_structure = incidenceMat2DEVSstruct(stateEq_blt, globalIncidenceMat); 
+        DEVS_structure = incidenceMat2DEVSstruct(stateEq_blt, globalIncidenceMat);
         
-        dumpDEVSstructs(DEVS_structure);       
+        dumpDEVSstructs(DEVS_structure);
         
         
                 
@@ -133,8 +133,8 @@ algorithm
                 
         Debug.fcall("QSS-stuff",print,"---------- State Blocks ----------\n");
         //Util.listMap0(stateEq_blt, printListOfLists);
-        //Debug.fcall("QSS-stuff",Util.listMap02, (stateEq_blt, BackendDump.dumpComponentsAdvanced, ass2, dlow));        
-        Debug.fcall("QSS-stuff",print,"---------- State Blocks ----------\n");    
+        //Debug.fcall("QSS-stuff",Util.listMap02, (stateEq_blt, BackendDump.dumpComponentsAdvanced, ass2, dlow));
+        Debug.fcall("QSS-stuff",print,"---------- State Blocks ----------\n");
 
         
       then
@@ -182,8 +182,8 @@ algorithm
 conditionsOut :=
 match (conditions,zeroCrossings)
 local 
-  list<tuple<DAE.Exp, Integer>> rest; 
-  tuple<DAE.Exp, Integer> cond; 
+  list<tuple<DAE.Exp, Integer>> rest;
+  tuple<DAE.Exp, Integer> cond;
 case ({},_) then {};
 case (cond::rest,_)
 equation
@@ -194,16 +194,16 @@ end match;
 end replaceConds;
 
 protected function replaceCond
-  input tuple<DAE.Exp, Integer> cond; 
+  input tuple<DAE.Exp, Integer> cond;
 input list<BackendDAE.ZeroCrossing> zeroCrossings;
-output tuple<DAE.Exp, Integer> condOut; 
+output tuple<DAE.Exp, Integer> condOut;
 algorithm
 condOut :=
 matchcontinue (cond,zeroCrossings)
 local
 Integer i,index;
   DAE.Exp e;
-  tuple<DAE.Exp, Integer> result;  
+  tuple<DAE.Exp, Integer> result;
 list<DAE.Exp> zce;
 list<DAE.Exp> expLst,expLst2;
 Boolean tuple_ "tuple" ;
@@ -267,7 +267,7 @@ end listExpPos;
 protected function extractExpresionFromZeroCrossing
 "Takes a ZeroCrossing and returns the associated Expression
 author:  FB"
-input BackendDAE.ZeroCrossing zc1; 
+input BackendDAE.ZeroCrossing zc1;
 output DAE.Exp o;
 algorithm
 o := matchcontinue (zc1)
@@ -386,13 +386,13 @@ algorithm
   (DEVS_structure):=
   matchcontinue (stateEq_blt, globalIncidenceMat)
     local
-      list<list<Integer>> globalIncidenceList;     
+      list<list<Integer>> globalIncidenceList;
       array<list<list<Integer>>> DEVS_struct_outLinks, DEVS_struct_outVars, DEVS_struct_inLinks, DEVS_struct_inVars;
       
     case (stateEq_blt, globalIncidenceMat)
       equation
         DEVS_struct_outLinks = listArray( { {{1,1}, {2,2}}, {{3}, {4}} });
-        DEVS_struct_outVars = listArray( { {{1,1}, {2,2}}, {{3}, {4}} }); 
+        DEVS_struct_outVars = listArray( { {{1,1}, {2,2}}, {{3}, {4}} });
         DEVS_struct_inVars = listArray( { {{1,1}, {2,2}}, {{3}, {4}} });
         DEVS_struct_inLinks = listArray( { {{1,1}, {2,2}}, {{3}, {4}} });
 
@@ -425,7 +425,7 @@ algorithm
       
       Integer cur_var, curInd, tempInd;
       list<Integer> rest_vars, cur_eq;
-      BackendDAE.IncidenceMatrix globalIncidenceMat_temp;       
+      BackendDAE.IncidenceMatrix globalIncidenceMat_temp;
       
     case(globalIncidenceMat_temp, {}, curInd)
       equation
@@ -483,7 +483,7 @@ algorithm
       array<BackendDAE.Value> ass1,ass2;
       BackendDAE.IncidenceMatrix m;
       BackendDAE.IncidenceMatrixT mt;
-      list<list<Integer>> arrList, comps;      
+      list<list<Integer>> arrList, comps;
       
     case (comps,(dae as BackendDAE.DAE(orderedVars = v)),ass1,ass2,m,mt)
       equation
@@ -491,10 +491,10 @@ algorithm
         arr = arrayCreate(size, 0);
         arr_1 = arrayCreate(size, {});
         arr_1 = markStateEquations(dae, arr, arr_1, m, mt, ass1, ass2);
-        arrList = arrayList(arr_1); 
-        arrList = sortEquationsBLT(arrList,comps,{});        
+        arrList = arrayList(arr_1);
+        arrList = sortEquationsBLT(arrList,comps,{});
         //The arrList includes also empty elements for the non-states - remove them
-        arrList = removeEmptyElements(arrList,{});       
+        arrList = removeEmptyElements(arrList,{});
       then
         (arrList);
     case (_,_,_,_,_,_)
@@ -700,8 +700,8 @@ function sortEquationsBLT
 "
   input list<list<Integer>> inList;
   input list<list<Integer>> inComps;
-  input list<list<Integer>> inListAcc;  
-  output list<list<Integer>> outList; 
+  input list<list<Integer>> inListAcc;
+  output list<list<Integer>> outList;
 algorithm
   (outList) :=
   matchcontinue (inList,inComps,inListAcc)
@@ -709,7 +709,7 @@ algorithm
       Integer[:] ass1,ass2;
       list<list<Integer>> localAccList;
       list<list<Integer>> restList;
-      list<list<Integer>> comps;  
+      list<list<Integer>> comps;
       list<Integer> comps2,elem,firstList;
     case ({},_,localAccList) then localAccList;
     case (firstList :: restList,comps,localAccList)      
@@ -717,14 +717,14 @@ algorithm
         comps2 = Util.listFlatten(comps);
         elem = Util.listIntersectionOnTrue(comps2,firstList,intEq);
         localAccList = listAppend(localAccList,{elem});
-        localAccList = sortEquationsBLT(restList,comps,localAccList);  
+        localAccList = sortEquationsBLT(restList,comps,localAccList);
       then localAccList;
     case (_,_,_)
       equation
         print("- BackendQSS.sortEquationsBLT failed\n");
       then
-        fail(); 
-  end matchcontinue; 
+        fail();
+  end matchcontinue;
 end sortEquationsBLT;
 
 public function mapStateEqInBlocks
@@ -752,8 +752,8 @@ algorithm
       then(state_blocks);
     case (cur_state :: rest_states, blt_states, state_blocks)
       equation                     
-        cur_state_blocks = mapStateEqInBlocks2(cur_state, blt_states, {});       
-        current_state_blocks = listAppend(state_blocks, {cur_state_blocks});  
+        cur_state_blocks = mapStateEqInBlocks2(cur_state, blt_states, {});
+        current_state_blocks = listAppend(state_blocks, {cur_state_blocks});
         state_blocks = mapStateEqInBlocks(rest_states, blt_states, current_state_blocks);
      then
        (state_blocks);
@@ -761,7 +761,7 @@ algorithm
       equation
         print("- BackendQSS.mapStateEqInBlocks failed\n");
       then
-        fail();       
+        fail();
   end matchcontinue;
 end mapStateEqInBlocks;
 
@@ -782,9 +782,9 @@ algorithm
       list<list<Integer>> sorted_indices, blt_states;
       
       list<Integer> state_equations, cur_block, remain_state_equations, cur_state_blocks, rest_eq;
-      list<list<Integer>> rest_blocks, state_blocks, current_state_blocks;     
+      list<list<Integer>> rest_blocks, state_blocks, current_state_blocks;
       
-      Integer cur_eq;  
+      Integer cur_eq;
       
    case (_ , {} , state_blocks)
       equation
@@ -812,7 +812,7 @@ algorithm
       equation
         print("- BackendQSS.mapStateEqInBlocks2 failed\n");
       then
-        fail();   
+        fail();
    end matchcontinue;
 end mapStateEqInBlocks2;
 
@@ -820,7 +820,7 @@ public function removeRedundantEquations
 "function: removeRedundantEquations
   author: florosx
 "    
-   input list<Integer> inIntegerLst1, inIntegerLst2, inIntegerLst3;  
+   input list<Integer> inIntegerLst1, inIntegerLst2, inIntegerLst3;
    output list<Integer> remaining_equations;
    
 algorithm 
@@ -831,25 +831,25 @@ algorithm
       Integer cur_eq;
    case ({},_,non_redundant_eq)
       equation
-      then(non_redundant_eq);        
+      then(non_redundant_eq);
     case (cur_eq :: rest_eq , cur_block, non_redundant_eq)
       equation
         true = listMember(cur_eq, cur_block);
-        non_redundant_eq = removeRedundantEquations(rest_eq, cur_block, non_redundant_eq); 
+        non_redundant_eq = removeRedundantEquations(rest_eq, cur_block, non_redundant_eq);
       then
-         (non_redundant_eq); 
+         (non_redundant_eq);
     case (cur_eq :: rest_eq , cur_block, non_redundant_eq)
       equation
         false = listMember(cur_eq, cur_block);
         non_redundant_eq = listAppend(non_redundant_eq, {cur_eq});
-        non_redundant_eq = removeRedundantEquations(rest_eq, cur_block, non_redundant_eq); 
+        non_redundant_eq = removeRedundantEquations(rest_eq, cur_block, non_redundant_eq);
       then
-         (non_redundant_eq); 
+         (non_redundant_eq);
    case (_,_,_)
       equation
         print("- BackendQSS.removeRedundantEquations failed\n");
       then
-        fail();   
+        fail();
      end matchcontinue;
 end removeRedundantEquations;
 
@@ -905,7 +905,7 @@ public function printList
   author: florosx
   Prints the elements of a list of integers
 "   
-   input list<Integer> arrList;  
+   input list<Integer> arrList;
 algorithm 
   _:=
   matchcontinue (arrList)     
@@ -917,12 +917,12 @@ algorithm
       then();
     case (elem::restList)
       equation 
-        print(" ");      
+        print(" ");
         print(intString(elem));
         print(",");
         printList(restList);
      then
-       ();      
+       ();
        end matchcontinue;
 end printList;
 
@@ -949,7 +949,7 @@ algorithm
         print("--");
         printListOfLists(restList);
      then
-       ();      
+       ();
        end matchcontinue;
 end printListOfLists;
 
@@ -972,8 +972,8 @@ algorithm
         dumpDEVSstruct(outLinks1, "OUT LINKS\n");
         dumpDEVSstruct(outVars1, "OUT VARNAMES\n");
         dumpDEVSstruct(inLinks1, "IN LINKS\n");
-        dumpDEVSstruct(inVars1, "IN VARNAMES\n");  
-        print("---------- DEVS STRUCTURE ----------\n");      
+        dumpDEVSstruct(inVars1, "IN VARNAMES\n");
+        print("---------- DEVS STRUCTURE ----------\n");
     then ();
   end matchcontinue;
 end dumpDEVSstructs;
@@ -1059,20 +1059,20 @@ algorithm
     case ({}, curList)
       equation     
       then 
-        (curList);           
+        (curList);
     case (cur_el::rest_list, curList)
       equation
-        true = cur_el > 0; 
+        true = cur_el > 0;
         cur_el = -cur_el;
         curList = listAppend(curList, {cur_el});
-        curList = makeListNegative(rest_list, curList);        
+        curList = makeListNegative(rest_list, curList);
       then
         (curList);
     case (cur_el::rest_list, curList)
       equation
-        true = cur_el < 0; 
+        true = cur_el < 0;
         curList = listAppend(curList, {cur_el});
-        curList = makeListNegative(rest_list, curList);        
+        curList = makeListNegative(rest_list, curList);
       then
         (curList);
    end matchcontinue;
@@ -1087,7 +1087,7 @@ public function findElementInList
   input list<Integer> inList1;
   input Integer element1;
   
-  output Integer indexFound; 
+  output Integer indexFound;
   
 algorithm
   (indexFound):=

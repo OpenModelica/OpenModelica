@@ -145,8 +145,8 @@ algorithm
       
     case(prg) equation
       false = OptManager.getOption("unitChecking");
-    then ();   
-  end matchcontinue; 
+    then ();
+  end matchcontinue;
 end registerUnits;
 
 protected function registerUnitInClass " help function to registerUnits"
@@ -895,7 +895,7 @@ protected function buildTerms "builds the unit terms from DAE elements (equation
 algorithm
   (terms,outStore) := matchcontinue(env,dae,ht,store)
     local 
-      DAE.Exp e1,e2,crefExp1,crefExp2; 
+      DAE.Exp e1,e2,crefExp1,crefExp2;
       UnitAbsyn.UnitTerm ut1,ut2;
       list<UnitAbsyn.UnitTerm> terms1,terms2;
       DAE.ComponentRef cr1,cr2;

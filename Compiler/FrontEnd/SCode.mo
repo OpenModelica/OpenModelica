@@ -526,7 +526,7 @@ algorithm
       list<EEquation> eqn_lst;
       list<tuple<Absyn.Exp, list<EEquation>>> rest;
       String s1, s2, s3, res;
-      list<String> str_lst; 
+      list<String> str_lst;
     
     case ({}) then "";
     
@@ -536,7 +536,7 @@ algorithm
         str_lst = Util.listMap(eqn_lst, equationStr);
         s2 = Util.stringDelimitList(str_lst, "\n");
         s3 = elseWhenEquationStr(tplAbsynExpEEquationLstLst);
-        res = stringAppendList({"\nelsewhen ",s1," then\n",s2,"\n", s3});        
+        res = stringAppendList({"\nelsewhen ",s1," then\n",s2,"\n", s3});
       then 
         res;
   end match;
@@ -1045,7 +1045,7 @@ algorithm
       Class cl;
       Variability var;
       Absyn.TypeSpec tySpec;
-      Option<Comment> comment;      
+      Option<Comment> comment;
       Absyn.Import imp;
 
     case EXTENDS(baseClassPath = path,modifications = mod)
@@ -1234,7 +1234,7 @@ algorithm
       equation
         res = "SCode.printClassdefStr -> UNKNOWN_CLASS(CheckME)";
       then
-        res;        
+        res;
   end matchcontinue;
 end printClassdefStr;
 
@@ -1650,7 +1650,7 @@ public function restrictionEqual "Returns true if two Restriction's are equal."
 algorithm
    equal := matchcontinue(restr1,restr2)
      case (R_CLASS(),R_CLASS()) then true;
-     case (R_OPTIMIZATION(),R_OPTIMIZATION()) then true;       
+     case (R_OPTIMIZATION(),R_OPTIMIZATION()) then true;
      case (R_MODEL(),R_MODEL()) then true;
      case (R_RECORD(),R_RECORD()) then true;
      case (R_BLOCK(),R_BLOCK()) then true;
@@ -1795,7 +1795,7 @@ protected function arraydimOptEqual
       then 
         true;
     // oth. false
-    case(SOME(lst1),SOME(lst2)) then false;        
+    case(SOME(lst1),SOME(lst2)) then false;
   end matchcontinue;
 end arraydimOptEqual;
 
@@ -2132,7 +2132,7 @@ algorithm
       then 
         true;
     
-    case(_, _) then false;        
+    case(_, _) then false;
   end matchcontinue;
 end attributesEqual;
 
@@ -2268,11 +2268,11 @@ public function setClassPartialPrefix "Sets the partial prefix of a SCode Class"
 algorithm
   outCl := match(partialPrefix,cl)
     local 
-      ClassDef parts; 
-      Boolean e; 
-      Ident id; 
-      Absyn.Info info; 
-      Restriction restriction;    
+      ClassDef parts;
+      Boolean e;
+      Ident id;
+      Absyn.Info info;
+      Restriction restriction;
     case(partialPrefix,CLASS(id,_,e,restriction,parts,info)) then CLASS(id,partialPrefix,e,restriction,parts,info);
   end match;
 end setClassPartialPrefix;
@@ -2526,11 +2526,11 @@ public function variabilityOr
   output Variability outConst;
 algorithm
 outConst := matchcontinue(inConst1, inConst2)
-  case (CONST(),_) then CONST();   
-  case (_,CONST()) then CONST();   
-  case (PARAM(),_) then PARAM();   
-  case (_,PARAM()) then PARAM();   
-  case (DISCRETE(),_) then DISCRETE();   
+  case (CONST(),_) then CONST();
+  case (_,CONST()) then CONST();
+  case (PARAM(),_) then PARAM();
+  case (_,PARAM()) then PARAM();
+  case (DISCRETE(),_) then DISCRETE();
   case (_,DISCRETE()) then DISCRETE();
   case (_,_) then VAR();
   end matchcontinue;
@@ -2540,7 +2540,7 @@ public function statementToAlgorithmItem
 "Transforms SCode.Statement back to Absyn.AlgorithmItem. Discards the comment.
 Only to be used to unparse statements again."
   input Statement stmt;
-  output Absyn.AlgorithmItem algi; 
+  output Absyn.AlgorithmItem algi;
 algorithm
   algi := match stmt
     local
@@ -2786,7 +2786,7 @@ algorithm
     local
       Absyn.Direction dir2;
     case (COMPONENT(attributes = ATTR(direction = dir2)),dir1) then directionEqual(dir1,dir2);
-    case (_,_) then false;        
+    case (_,_) then false;
   end matchcontinue;
 end isComponentWithDirection;
 
@@ -2796,7 +2796,7 @@ public function isComponent
 algorithm
   b := matchcontinue (elt)
     case (COMPONENT(attributes = _)) then true;
-    else false;        
+    else false;
   end matchcontinue;
 end isComponent;
 

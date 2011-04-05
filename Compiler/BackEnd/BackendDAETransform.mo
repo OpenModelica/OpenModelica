@@ -165,7 +165,7 @@ algorithm
       equation
         Debug.fprint("failtrace", "- BackendDAE.MatchingAlgorithm failed\n");
       then
-        fail();        
+        fail();
   end matchcontinue;
 end matchingAlgorithm;
 
@@ -399,14 +399,14 @@ public function matchingAlgorithm2
   input BackendDAE.MatchingOptions inMatchingOptions9;
   input DAE.FunctionTree inFunctions;
   input list<tuple<Integer,Integer,Integer>> inDerivedAlgs;
-  input list<tuple<Integer,Integer,Integer>> inDerivedMultiEqn;  
+  input list<tuple<Integer,Integer,Integer>> inDerivedMultiEqn;
   output BackendDAE.Assignments outAssignments1;
   output BackendDAE.Assignments outAssignments2;
   output BackendDAE.BackendDAE outBackendDAE3;
   output BackendDAE.IncidenceMatrix outIncidenceMatrix4;
   output BackendDAE.IncidenceMatrixT outIncidenceMatrixT5;
   output list<tuple<Integer,Integer,Integer>> outDerivedAlgs;
-  output list<tuple<Integer,Integer,Integer>> outDerivedMultiEqn;  
+  output list<tuple<Integer,Integer,Integer>> outDerivedMultiEqn;
 algorithm
   (outAssignments1,outAssignments2,outBackendDAE3,outIncidenceMatrix4,outIncidenceMatrixT5,outDerivedAlgs,outDerivedMultiEqn):=
   matchcontinue (inBackendDAE1,inIncidenceMatrix2,inIncidenceMatrixT3,inInteger4,inInteger5,inInteger6,inAssignments7,inAssignments8,inMatchingOptions9,inFunctions,inDerivedAlgs,inDerivedMultiEqn)
@@ -422,7 +422,7 @@ algorithm
       list<BackendDAE.Value> eqn_lst,var_lst;
       String eqn_str,var_str;
       list<tuple<Integer,Integer,Integer>> derivedAlgs,derivedAlgs1,derivedAlgs2;
-      list<tuple<Integer,Integer,Integer>> derivedMultiEqn,derivedMultiEqn1,derivedMultiEqn2;      
+      list<tuple<Integer,Integer,Integer>> derivedMultiEqn,derivedMultiEqn1,derivedMultiEqn2;
 
     case (dae,m,mt,nv,nf,i,ass1,ass2,_,_,derivedAlgs,derivedMultiEqn)
       equation
@@ -1132,12 +1132,12 @@ protected function reduceIndexDummyDer
   input Integer inInteger5;
   input DAE.FunctionTree inFunctions;
   input list<tuple<Integer,Integer,Integer>> inDerivedAlgs;
-  input list<tuple<Integer,Integer,Integer>> inDerivedMultiEqn;  
+  input list<tuple<Integer,Integer,Integer>> inDerivedMultiEqn;
   output BackendDAE.BackendDAE outBackendDAE;
   output BackendDAE.IncidenceMatrix outIncidenceMatrix;
   output BackendDAE.IncidenceMatrixT outIncidenceMatrixT;
   output list<tuple<Integer,Integer,Integer>> outDerivedAlgs;
-  output list<tuple<Integer,Integer,Integer>> outDerivedMultiEqn;  
+  output list<tuple<Integer,Integer,Integer>> outDerivedMultiEqn;
 algorithm
   (outBackendDAE,outIncidenceMatrix,outIncidenceMatrixT,outDerivedAlgs,outDerivedMultiEqn):=
   matchcontinue (inBackendDAE1,inIncidenceMatrix2,inIncidenceMatrixT3,inInteger4,inInteger5,inFunctions,inDerivedAlgs,inDerivedMultiEqn)
@@ -1151,9 +1151,9 @@ algorithm
       list<String> es;
       String es_1;
       list<tuple<Integer,Integer,Integer>> derivedAlgs,derivedAlgs1;
-      list<tuple<Integer,Integer,Integer>> derivedMultiEqn,derivedMultiEqn1;  
-      DAE.Exp stateexp,stateexpcall,dummyderexp; 
-      DAE.ExpType tp;  
+      list<tuple<Integer,Integer,Integer>> derivedMultiEqn,derivedMultiEqn1;
+      DAE.Exp stateexp,stateexpcall,dummyderexp;
+      DAE.ExpType tp;
 
     case (dae,m,mt,nv,nf,inFunctions,derivedAlgs,derivedMultiEqn)
       equation
@@ -1181,7 +1181,7 @@ algorithm
         stateexp = Expression.crefExp(state);
         tp = Expression.typeof(stateexp);
         stateexpcall = DAE.CALL(Absyn.IDENT("der"),{stateexp},false,true,tp,DAE.NO_INLINE());
-        dummyderexp = Expression.crefExp(dummy_der);        
+        dummyderexp = Expression.crefExp(dummy_der);
         (dae,m,mt) = replaceDummyDer(stateexpcall, dummyderexp, dae, m, mt, changedeqns)
         "We need to change variables in the differentiated equations and in the equations having the dummy derivative" ;
         dae = makeAlgebraic(dae, state);
@@ -1261,7 +1261,7 @@ algorithm
     case (BackendDAE.DAE(vars,kv,ev,av,e,se,ie,ae,al,wc,eoc),cr)
       equation
         ((BackendDAE.VAR(cr,kind,d,t,b,value,dim,idx,source,dae_var_attr,comment,flowPrefix,streamPrefix) :: _),indx) = BackendVariable.getVar(cr, vars);
-        vars_1 = BackendVariable.addVar(BackendDAE.VAR(cr,BackendDAE.DUMMY_STATE(),d,t,b,value,dim,idx,source,dae_var_attr,comment,flowPrefix,streamPrefix), vars);        
+        vars_1 = BackendVariable.addVar(BackendDAE.VAR(cr,BackendDAE.DUMMY_STATE(),d,t,b,value,dim,idx,source,dae_var_attr,comment,flowPrefix,streamPrefix), vars);
       then
         BackendDAE.DAE(vars_1,kv,ev,av,e,se,ie,ae,al,wc,eoc);
 
@@ -1306,7 +1306,7 @@ algorithm
       BackendDAE.Value indx,indx_1,dummy_no;
       Boolean dummy_fixed;
       BackendDAE.Variables vars_1,vars,kv,ev;
-      BackendDAE.AliasVariables av;      
+      BackendDAE.AliasVariables av;
       BackendDAE.BackendDAE dae;
       BackendDAE.EquationArray e,se,ie;
       array<BackendDAE.MultiDimEquation> ae;
@@ -1459,7 +1459,7 @@ end replaceDummyDer;
 protected function traversereplaceDummyDer
 "function traversereplaceDummyDer
   author: Frenkel TUD 2010-11."
-  replaceable type Type_a subtypeof Any; 
+  replaceable type Type_a subtypeof Any;
   input tuple<BackendDAE.Equation,tuple<array<DAE.Algorithm>,array<BackendDAE.MultiDimEquation>,list<BackendDAE.WhenClause>,FuncExpType,Type_a>> inTpl;
   output tuple<BackendDAE.Equation,tuple<array<DAE.Algorithm>,array<BackendDAE.MultiDimEquation>,list<BackendDAE.WhenClause>,FuncExpType,Type_a>> outTpl;
   partial function FuncExpType
@@ -1480,17 +1480,17 @@ algorithm
       equation
          (e1,algs1,ae1,wclst1,ext_arg_1) = traverseBackendDAEExpsEqn(e,algs,ae,wclst,func,ext_arg);
       then
-        ((e1,(algs1,ae1,wclst1,func,ext_arg_1)));      
+        ((e1,(algs1,ae1,wclst1,func,ext_arg_1)));
     case inTpl then inTpl;
-  end matchcontinue;      
-end traversereplaceDummyDer;      
+  end matchcontinue;
+end traversereplaceDummyDer;
 
 protected function traverseBackendDAEExpsEqn
 "function: traverseBackendDAEExpsEqn
   author: Frenkel TUD 2010-11
   Traverse all expressions of a list of Equations. It is possible to change the equations
   and the multidim equations and the algorithms."
-  replaceable type Type_a subtypeof Any; 
+  replaceable type Type_a subtypeof Any;
   input BackendDAE.Equation inEquation;
   input array<DAE.Algorithm> inAlgs;
   input array<BackendDAE.MultiDimEquation> inMultiDimEquationArray;
@@ -1505,7 +1505,7 @@ protected function traverseBackendDAEExpsEqn
   partial function FuncExpType
     input tuple<DAE.Exp, Type_a> inTpl;
     output tuple<DAE.Exp, Type_a> outTpl;
-  end FuncExpType;  
+  end FuncExpType;
 algorithm
   (outEquation,outAlgs,outMultiDimEquationArray,outWhenClauseLst,outTypeA) := matchcontinue (inEquation,inAlgs,inMultiDimEquationArray,inWhenClauseLst,func,inTypeA)
     local
@@ -1534,7 +1534,7 @@ algorithm
         i = ds+1;
         BackendDAE.MULTIDIM_EQUATION(dimSize=dimSize,left=e1,right = e2,source=source1) = ae[i];
         ((e1_1,ext_arg_2)) = func((e1,ext_arg_1));
-        ((e2_1,ext_arg_3)) = func((e2,ext_arg_2));  
+        ((e2_1,ext_arg_3)) = func((e2,ext_arg_2));
         ae1 = arrayUpdate(ae,i,BackendDAE.MULTIDIM_EQUATION(dimSize,e1_1,e2_1,source1));
       then (BackendDAE.ARRAY_EQUATION(ds,expl1,source),inAlgs,ae1,wclst,ext_arg_3);  /* array equation */
     case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2,source=source),inAlgs,ae,wclst,func,inTypeA)
@@ -1548,12 +1548,12 @@ algorithm
       equation
         ((e1_1,ext_arg_1)) = func((e1,inTypeA));
       then
-        (BackendDAE.RESIDUAL_EQUATION(e1_1,source),inAlgs,ae,wclst,ext_arg_1);               
+        (BackendDAE.RESIDUAL_EQUATION(e1_1,source),inAlgs,ae,wclst,ext_arg_1);
     case (BackendDAE.ALGORITHM(index = indx,in_ = in_,out = out,source = source),inAlgs,ae,wclst,func,inTypeA)
       equation
-        (in_1,ext_arg_1) = BackendEquation.traverseBackendDAEExpList(in_,func,inTypeA);        
-        (out1,ext_arg_2) = BackendEquation.traverseBackendDAEExpList(out,func,ext_arg_1);  
-        (algs,ext_arg_3) = traverseBackendDAEExpsEqnAlgs(indx,inAlgs,func,ext_arg_2);     
+        (in_1,ext_arg_1) = BackendEquation.traverseBackendDAEExpList(in_,func,inTypeA);
+        (out1,ext_arg_2) = BackendEquation.traverseBackendDAEExpList(out,func,ext_arg_1);
+        (algs,ext_arg_3) = traverseBackendDAEExpsEqnAlgs(indx,inAlgs,func,ext_arg_2);
       then (BackendDAE.ALGORITHM(indx,in_1,out1,source),algs,ae,wclst,ext_arg_3);  /* Algorithms */
     case (BackendDAE.WHEN_EQUATION(whenEquation =
           BackendDAE.WHEN_EQ(index = i,left = cr,right = e1,elsewhenPart=NONE()),source = source),inAlgs,ae,wclst,func,inTypeA)
@@ -1594,7 +1594,7 @@ protected function traverseBackendDAEExpsWhenClause
   author: Frenkel TUD 2010-11
   Traverse all expressions of a list of Equations. It is possible to change the equations
   and the multidim equations and the algorithms."
-  replaceable type Type_a subtypeof Any; 
+  replaceable type Type_a subtypeof Any;
   input Option<Integer> inInteger;
   input list<BackendDAE.WhenClause> inWhenClauseLst;
   input FuncExpType func;
@@ -1604,7 +1604,7 @@ protected function traverseBackendDAEExpsWhenClause
   partial function FuncExpType
     input tuple<DAE.Exp, Type_a> inTpl;
     output tuple<DAE.Exp, Type_a> outTpl;
-  end FuncExpType;  
+  end FuncExpType;
 algorithm
   (outWhenClauseLst,outTypeA) := matchcontinue (inInteger,inWhenClauseLst,func,inTypeA)
     local
@@ -1639,7 +1639,7 @@ protected function traverseBackendDAEExpsWhenOperator
   author: Frenkel TUD 2010-11
   Traverse all expressions of a list of Equations. It is possible to change the equations
   and the multidim equations and the algorithms."
-  replaceable type Type_a subtypeof Any; 
+  replaceable type Type_a subtypeof Any;
   input list<BackendDAE.WhenOperator> inReinitStmtLst;
   input FuncExpType func;
   input Type_a inTypeA;
@@ -1648,7 +1648,7 @@ protected function traverseBackendDAEExpsWhenOperator
   partial function FuncExpType
     input tuple<DAE.Exp, Type_a> inTpl;
     output tuple<DAE.Exp, Type_a> outTpl;
-  end FuncExpType;  
+  end FuncExpType;
 algorithm
   (outReinitStmtLst,outTypeA) := matchcontinue (inReinitStmtLst,func,inTypeA)
     local
@@ -1689,17 +1689,17 @@ algorithm
 end traverseBackendDAEExpsWhenOperator;
 
 protected function traverseBackendDAEExpsEqnAlgs
-  replaceable type Type_a subtypeof Any; 
+  replaceable type Type_a subtypeof Any;
   input Integer inIndex;
-  input array<DAE.Algorithm> inAlgs;  
+  input array<DAE.Algorithm> inAlgs;
   input FuncExpType func;
-  input Type_a inTypeA;  
-  output array<DAE.Algorithm> outAlgs; 
-  output Type_a outTypeA; 
+  input Type_a inTypeA;
+  output array<DAE.Algorithm> outAlgs;
+  output Type_a outTypeA;
   partial function FuncExpType
     input tuple<DAE.Exp, Type_a> inTpl;
     output tuple<DAE.Exp, Type_a> outTpl;
-  end FuncExpType;   
+  end FuncExpType;
 algorithm
   (outAlgs,outTypeA):=
   match (inIndex,inAlgs,func,inTypeA)
@@ -1712,12 +1712,12 @@ algorithm
     equation
         // get Allgorithm
         i_1 = inIndex+1;
-        DAE.ALGORITHM_STMTS(statementLst= statementLst) = inAlgs[i_1];  
-        (statementLst1,ext_arg_1) = DAEUtil.traverseDAEEquationsStmts(statementLst,func,inTypeA); 
-        algs = arrayUpdate(inAlgs,i_1,DAE.ALGORITHM_STMTS(statementLst1));   
+        DAE.ALGORITHM_STMTS(statementLst= statementLst) = inAlgs[i_1];
+        (statementLst1,ext_arg_1) = DAEUtil.traverseDAEEquationsStmts(statementLst,func,inTypeA);
+        algs = arrayUpdate(inAlgs,i_1,DAE.ALGORITHM_STMTS(statementLst1));
     then
       (algs,ext_arg_1);
-  end match;      
+  end match;
 end traverseBackendDAEExpsEqnAlgs;
 
 protected function traverseBackendDAEExpsEqnList
@@ -1725,7 +1725,7 @@ protected function traverseBackendDAEExpsEqnList
   author: Frenkel TUD 2010-11
   Traverse all expressions of a list of Equations. It is possible to change the equations
   and the multidim equations and the algorithms."
-  replaceable type Type_a subtypeof Any; 
+  replaceable type Type_a subtypeof Any;
   input list<BackendDAE.Equation> inEquations;
   input array<DAE.Algorithm> inAlgs;
   input array<BackendDAE.MultiDimEquation> inMultiDimEquationArray;
@@ -1740,7 +1740,7 @@ protected function traverseBackendDAEExpsEqnList
   partial function FuncExpType
     input tuple<DAE.Exp, Type_a> inTpl;
     output tuple<DAE.Exp, Type_a> outTpl;
-  end FuncExpType;   
+  end FuncExpType;
 algorithm
   (outEquations,outAlgs,outMultiDimEquationArray,outWhenClauseLst,outTypeA):=
   matchcontinue (inEquations,inAlgs,inMultiDimEquationArray,inWhenClauseLst,func,inTypeA)
@@ -1800,7 +1800,7 @@ protected function traverereplaceAliasVarsBindExp
   Helper funciton to replaceDummyDer.
   Replaces all variable bindings of the alias variables."
  input tuple<BackendDAE.Var, tuple<DAE.Exp,DAE.Exp,BackendDAE.AliasVariables>> inTpl;
- output tuple<BackendDAE.Var, tuple<DAE.Exp,DAE.Exp,BackendDAE.AliasVariables>> outTpl;  
+ output tuple<BackendDAE.Var, tuple<DAE.Exp,DAE.Exp,BackendDAE.AliasVariables>> outTpl;
 algorithm
   outTpl := matchcontinue(inTpl)
     local 
@@ -1840,7 +1840,7 @@ algorithm
       Option<SCode.Comment> comment;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
-      list<DAE.Subscript> lstSubs;      
+      list<DAE.Subscript> lstSubs;
 
     case ((DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)})}),vars))
       equation
@@ -1902,7 +1902,7 @@ algorithm
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       BackendDAE.Variables vars_1,vars,kv,ev;
-      BackendDAE.AliasVariables av;      
+      BackendDAE.AliasVariables av;
       BackendDAE.EquationArray eqns,seqns,ie;
       array<BackendDAE.MultiDimEquation> ae;
       array<DAE.Algorithm> al;
@@ -1960,7 +1960,7 @@ algorithm
       BackendDAE.IncidenceMatrixT mt;
       BackendDAE.EquationArray eqns;
       list<tuple<DAE.ComponentRef,Integer,Real>> prioTuples;
-      BackendDAE.BackendDAE dae;      
+      BackendDAE.BackendDAE dae;
 
     case (varCrefs,varIndices,BackendDAE.DAE(orderedVars=vars,orderedEqs = eqns),m,mt)
       equation
@@ -2104,7 +2104,7 @@ algorithm
     local Integer i; Real c;
     case(v)
       equation
-        _ = BackendVariable.varStartValueFail(v); 
+        _ = BackendVariable.varStartValueFail(v);
       then 1.0;
     case (_) then 0.0;
   end matchcontinue;
@@ -2136,7 +2136,7 @@ protected function varHasSameLastIdent
   Returns true if the variable has the same name (the last identifier)
   as the variable name given as second argument."
  input tuple<BackendDAE.Var, tuple<DAE.ComponentRef,Integer>> inTpl;
- output tuple<BackendDAE.Var, tuple<DAE.ComponentRef,Integer>> outTpl;  
+ output tuple<BackendDAE.Var, tuple<DAE.ComponentRef,Integer>> outTpl;
 algorithm
   outTpl := matchcontinue(inTpl)
     local 
@@ -2176,7 +2176,7 @@ protected function varInSameComponent
   Returns true if the variable is defined in the same sub
   component as the variable name given as second argument."
  input tuple<BackendDAE.Var, tuple<DAE.ComponentRef,Boolean>> inTpl;
- output tuple<BackendDAE.Var, tuple<DAE.ComponentRef,Boolean>> outTpl;  
+ output tuple<BackendDAE.Var, tuple<DAE.ComponentRef,Boolean>> outTpl;
 algorithm
   outTpl := matchcontinue(inTpl)
     local 
@@ -2372,7 +2372,7 @@ algorithm
     case ((e :: rest),daelow as BackendDAE.DAE(orderedVars = vars,orderedEqs = eqns),m,mt)
       equation
         (res1,res2) = statesInEqns(rest, daelow, m, mt);
-        vars2 = Util.listSelect(m[e], Util.intNegative);  
+        vars2 = Util.listSelect(m[e], Util.intNegative);
         vars2 = Util.listMap(vars2,intAbs);
         (res11,res22) = statesInVars(vars, vars2);
         res1_1 = listAppend(res11, res1);
@@ -2531,7 +2531,7 @@ algorithm
         BackendDAEEXT.markDifferentiated(e) "length gives index of new equation Mark equation as differentiated so it won\'t be differentiated again" ;
         (dae,m,mt,nv,nf,reqns,derivedAlgs1,derivedMultiEqn1) = differentiateEqns(BackendDAE.DAE(v,kv,ev,av,eqns,seqns,ie,ae1,al1,wc,eoc), m, mt, nv, nf, es, inFunctions,derivedAlgs,derivedMultiEqn);
       then
-        (dae,m,mt,nv,nf,(e :: reqns),derivedAlgs1,derivedMultiEqn1);        
+        (dae,m,mt,nv,nf,(e :: reqns),derivedAlgs1,derivedMultiEqn1);
     case (_,_,_,_,_,_,_,_,_)
       equation
         print("-differentiate_eqns failed\n");
@@ -2546,6 +2546,6 @@ public function dummyDerivative
   output BackendDAE.BackendDAE outDAE;
 algorithm
   outDAE := inDAE;
-end dummyDerivative; 
+end dummyDerivative;
 
 end BackendDAETransform;

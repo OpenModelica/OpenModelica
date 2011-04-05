@@ -225,7 +225,7 @@ algorithm
 
     case(DEPENDS(treeUses,_),cl as Absyn.IDENT(_),uses) equation
       // get the classes used by cl. If no one uses this should anyway succed, hence using avlTreeGetOrEmpty
-      v = avlTreeGetOrEmpty(treeUses,cl);      
+      v = avlTreeGetOrEmpty(treeUses,cl);
       outUses = avlAddUses(uses,{cl});
       outUses = getUsesTransitive2Lst(depends,v,outUses);
     then outUses;
@@ -654,7 +654,7 @@ algorithm
     case(tree,key) equation
       val = avlTreeGet(tree,key);
     then val;
-    case(tree,key) then {};            
+    case(tree,key) then {};
   end matchcontinue;
 end avlTreeGetOrEmpty;
 

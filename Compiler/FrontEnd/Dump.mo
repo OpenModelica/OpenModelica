@@ -1175,7 +1175,7 @@ algorithm
       Absyn.ComponentRef output_;
       list<Absyn.Exp> expl;
       Option<Absyn.Annotation> ann,ann2;
-      list<Absyn.AlgorithmItem> als;      
+      list<Absyn.AlgorithmItem> als;
     
     case (i,Absyn.PUBLIC(contents = {}),_) then "";
     case (i,Absyn.PROTECTED(contents = {}),_) then "";
@@ -1851,7 +1851,7 @@ algorithm
       list<Absyn.ComponentItem> cs;
       String prefixKeywords;
       Option<Absyn.Annotation> annOpt;
-      Absyn.Import imp;      
+      Absyn.Import imp;
 
     case (i,Absyn.CLASSDEF(replaceable_ = repl,class_ = cl),f,r,io) /* indent */
       equation
@@ -2009,7 +2009,7 @@ algorithm
       equation
         s1 = Absyn.pathString(p);
         s2 = Util.stringDelimitList(Util.listMap(groups, unparseGroupImport), ",");
-        str = stringAppendList({s1,".{",s2,"}"}); 
+        str = stringAppendList({s1,".{",s2,"}"});
       then
         str;
 
@@ -2700,7 +2700,7 @@ algorithm
       list<Absyn.EquationItem> tb,fb,el,eql;
       list<tuple<Absyn.Exp, list<Absyn.EquationItem>>> eb,eqlelse;
       Absyn.FunctionArgs fargs;
-      Absyn.EquationItem equItem;      
+      Absyn.EquationItem equItem;
     
     case (i,Absyn.EQ_IF(ifExp = e,equationTrueItems = tb,elseIfBranches = {},equationElseItems = {}))
       equation
@@ -5578,7 +5578,7 @@ algorithm
   _ := match (r)
     local
       Absyn.Path path;
-      Integer i;    
+      Integer i;
     
     case Absyn.R_CLASS()
       equation

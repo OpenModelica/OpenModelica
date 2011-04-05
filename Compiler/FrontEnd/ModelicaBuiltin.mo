@@ -840,7 +840,7 @@ function setAnnotationVersion
   output Boolean success;
   annotation(__OpenModelica_EarlyInline = true);
 algorithm
-  success := setCommandLineOptions("+annotationVersion=" + annotationVersion); 
+  success := setCommandLineOptions("+annotationVersion=" + annotationVersion);
 end setAnnotationVersion;
 
 function getNoSimplify

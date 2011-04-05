@@ -776,9 +776,9 @@ public uniontype CodeType
   end C_VARIABLENAMES;
 end CodeType;
 
-public constant FunctionAttributes FUNCTION_ATTRIBUTES_BUILTIN = FUNCTION_ATTRIBUTES(NO_INLINE(),true,FUNCTION_BUILTIN(NONE())); 
-public constant FunctionAttributes FUNCTION_ATTRIBUTES_DEFAULT = FUNCTION_ATTRIBUTES(NO_INLINE(),true,FUNCTION_NOT_BUILTIN()); 
-public constant FunctionAttributes FUNCTION_ATTRIBUTES_IMPURE = FUNCTION_ATTRIBUTES(NO_INLINE(),false,FUNCTION_NOT_BUILTIN()); 
+public constant FunctionAttributes FUNCTION_ATTRIBUTES_BUILTIN = FUNCTION_ATTRIBUTES(NO_INLINE(),true,FUNCTION_BUILTIN(NONE()));
+public constant FunctionAttributes FUNCTION_ATTRIBUTES_DEFAULT = FUNCTION_ATTRIBUTES(NO_INLINE(),true,FUNCTION_NOT_BUILTIN());
+public constant FunctionAttributes FUNCTION_ATTRIBUTES_IMPURE = FUNCTION_ATTRIBUTES(NO_INLINE(),false,FUNCTION_NOT_BUILTIN());
 
 public
 uniontype FunctionAttributes
@@ -817,7 +817,7 @@ uniontype Dimension
   end DIM_EXP;
 
   record DIM_UNKNOWN "Dimension with unknown size."
-    //DimensionBinding dimensionBinding "unknown dimension can be bound or unbound"; 
+    //DimensionBinding dimensionBinding "unknown dimension can be bound or unbound";
   end DIM_UNKNOWN;
 end Dimension;
 
@@ -904,7 +904,7 @@ uniontype EqMod "To generate the correct set of equations, the translator has to
     Exp modifierAsExp "modifierAsExp ; modifier as expression" ;
     Option<Values.Value> modifierAsValue "modifierAsValue ; modifier as Value option" ;
     Properties properties "properties" ;
-    Option<Absyn.Exp> modifierAsAbsynExp "keep the untyped modifier as an absyn expression for modification comparison"; 
+    Option<Absyn.Exp> modifierAsAbsynExp "keep the untyped modifier as an absyn expression for modification comparison";
   end TYPED;
 
   record UNTYPED
@@ -1471,7 +1471,7 @@ uniontype Subscript "The `Subscript\' and `ComponentRef\' datatypes are simple
   record WHOLE_NONEXP "Used for non-expanded arrays. Should probably be combined with WHOLEDIM
     into one case with Option<Exp> argument."
     Exp exp;
-  end WHOLE_NONEXP;  
+  end WHOLE_NONEXP;
 
 end Subscript;
 /* -- End Expression.mo -- */

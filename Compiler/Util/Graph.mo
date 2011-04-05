@@ -93,7 +93,7 @@ protected
 algorithm
   (rest_nodes, start_nodes) := Util.listSplitOnTrue(inGraph, hasOutgoingEdges);
   (outNodes, outRemainingGraph) := 
-    topologicalSort2(start_nodes, rest_nodes, {}, inEqualFunc); 
+    topologicalSort2(start_nodes, rest_nodes, {}, inEqualFunc);
 end topologicalSort;
 
 protected function topologicalSort2
@@ -300,7 +300,7 @@ algorithm
       equation
         // Check if we have already visited this node.
         true = Util.listContainsWithCompareFunc(node, inVisitedNodes,
-          inEqualFunc); 
+          inEqualFunc);
         // Check if the current node is the start node, in that case we're back
         // where we started and we have a cycle. Otherwise we just encountered a
         // cycle in the graph that the start node is not part of.

@@ -78,7 +78,7 @@ algorithm
       list<DAE.Subscript> ss;
       
     case Prefix.NOPRE() then "<Prefix.NOPRE()>";
-    case Prefix.PREFIX(Prefix.NOCOMPPRE(),_) then "<Prefix.PREFIX(Prefix.NOCOMPPRE())>";      
+    case Prefix.PREFIX(Prefix.NOCOMPPRE(),_) then "<Prefix.PREFIX(Prefix.NOCOMPPRE())>";
     case Prefix.PREFIX(Prefix.PRE(str,{},Prefix.NOCOMPPRE(),_),_) then str;
     case Prefix.PREFIX(Prefix.PRE(str,ss,Prefix.NOCOMPPRE(),_),_)
       equation
@@ -115,7 +115,7 @@ algorithm
     Prefix.Prefix p;
   case Prefix.NOPRE() then "";
   case Prefix.PREFIX(Prefix.NOCOMPPRE(),_) then "";
-  case p then printPrefixStr(p)+&".";        
+  case p then printPrefixStr(p)+&".";
   end matchcontinue;
 end printPrefixStr2;
 
@@ -129,7 +129,7 @@ algorithm
     Prefix.Prefix p;
   case Prefix.NOPRE() then "<NO COMPONENT>";
   case Prefix.PREFIX(Prefix.NOCOMPPRE(),_) then "<NO COMPONENT>";
-  case p then printPrefixStr(p);        
+  case p then printPrefixStr(p);
   end matchcontinue;
 end printPrefixStr3;
 
@@ -143,7 +143,7 @@ algorithm
     Prefix.Prefix p;
   case Prefix.NOPRE() then "";
   case Prefix.PREFIX(Prefix.NOCOMPPRE(),_) then "";
-  case p then printPrefixStr(p);        
+  case p then printPrefixStr(p);
   end matchcontinue;
 end printPrefixStrIgnoreNoPre;
 
@@ -340,7 +340,7 @@ end prefixCrefNoContext;
 public function prefixToCref "function: prefixToCref
   Convert a prefix to a component reference."
   input Prefix.Prefix pre;
-  output DAE.ComponentRef cref_1;  
+  output DAE.ComponentRef cref_1;
 algorithm
   (_,cref_1) := prefixToCref2(Env.emptyCache(),{},InnerOuter.emptyInstHierarchy,pre, NONE());
 end prefixToCref;
@@ -401,7 +401,7 @@ public function prefixToCrefOpt2 "function: prefixToCrefOpt2
   component reference gives a NONE" 
   input Prefix.Prefix inPrefix;
   input Option<DAE.ComponentRef> inExpComponentRefOption;
-  output Option<DAE.ComponentRef> outComponentRefOpt;  
+  output Option<DAE.ComponentRef> outComponentRefOpt;
 algorithm
   outComponentRefOpt := match (inPrefix,inExpComponentRefOption)
     local
@@ -451,7 +451,7 @@ algorithm
       equation
         c = ComponentReference.makeCrefIdent("", DAE.ET_OTHER(), {});
       then
-        c;        
+        c;
     
     case(pre)
       equation
@@ -472,7 +472,7 @@ protected function prefixSubscriptsInCref "help function to prefixToCrefOpt2, de
 algorithm
   (outCache,outCr) := match (cache,env,inIH,pre,cr)
   local 
-    DAE.Ident id; 
+    DAE.Ident id;
     DAE.ExpType tp;
     list<DAE.Subscript> subs;
     
@@ -482,7 +482,7 @@ algorithm
     case(cache,env,inIH,pre,DAE.CREF_QUAL(id,tp,subs,cr)) equation
       (cache,cr) = prefixSubscriptsInCref(cache,env,inIH,pre,cr);
       (cache,subs) = prefixSubscripts(cache,env,inIH,pre,subs);
-    then (cache,ComponentReference.makeCrefQual(id,tp,subs,cr));   
+    then (cache,ComponentReference.makeCrefQual(id,tp,subs,cr));
     case(cache,_,_,_,DAE.WILD()) then (cache,DAE.WILD());
   end match;
 end prefixSubscriptsInCref;
@@ -497,14 +497,14 @@ protected function prefixSubscripts "help function to prefixSubscriptsInCref, ad
   output list<DAE.Subscript> outSubs;
 algorithm
   (outCache,outSubs) := match(cache,env,inIH,pre,subs)
-  local DAE.Subscript sub; 
+  local DAE.Subscript sub;
   
     case(cache,env,inIH,pre,{}) then (cache,{});
   
     case(cache,env,inIH,pre,sub::subs) equation
     (cache,sub) = prefixSubscript(cache,env,inIH,pre,sub);
     (cache,subs) = prefixSubscripts(cache,env,inIH,pre,subs);
-    then (cache,sub::subs);   
+    then (cache,sub::subs);
   end match;
 end prefixSubscripts;
 
@@ -534,7 +534,7 @@ algorithm
       (cache,exp) = prefixExp(cache,env,inIH,exp,pre);
     then (cache,DAE.INDEX(exp));
     
-  end match;  
+  end match;
 end prefixSubscript;
 
 public function prefixCrefInnerOuter "function: prefixCrefInnerOuter
@@ -557,7 +557,7 @@ algorithm
       InstanceHierarchy ih;
       Prefix.Prefix innerPrefix, pre;
       DAE.ComponentRef lastCref, cref, newCref;
-      String n;      
+      String n;
     
 
     case (cache,env,ih,cref,pre)
@@ -650,7 +650,7 @@ algorithm
       Integer b,a;
       DAE.ExpType t,tp;
       Integer index_;
-      Option<tuple<DAE.Exp,Integer,Integer>> isExpisASUB;     
+      Option<tuple<DAE.Exp,Integer,Integer>> isExpisASUB;
       Option<Values.Value> v;
       Option<DAE.Exp> foldExp;
       DAE.ReductionInfo reductionInfo;
@@ -660,9 +660,9 @@ algorithm
     case (cache,_,_,e,Prefix.NOPRE()) then (cache,e);
       
     // handle literal constants       
-    case (cache,_,_,(e as DAE.ICONST(integer = _)),_) then (cache,e); 
-    case (cache,_,_,(e as DAE.RCONST(real = _)),_) then (cache,e); 
-    case (cache,_,_,(e as DAE.SCONST(string = _)),_) then (cache,e); 
+    case (cache,_,_,(e as DAE.ICONST(integer = _)),_) then (cache,e);
+    case (cache,_,_,(e as DAE.RCONST(real = _)),_) then (cache,e);
+    case (cache,_,_,(e as DAE.SCONST(string = _)),_) then (cache,e);
     case (cache,_,_,(e as DAE.BCONST(bool = _)),_) then (cache,e);
     case (cache,_,_,(e as DAE.ENUM_LITERAL(name = _)), _) then (cache, e);
 
@@ -706,7 +706,7 @@ algorithm
         (cache,e1) = prefixExp(cache, env, ih, e1,pre);
         e2 = Expression.makeASUB(e1,es_1);
       then 
-        (cache,e2);    
+        (cache,e2);
     
     case (cache,env,ih,DAE.BINARY(exp1 = e1,operator = o,exp2 = e2),p)
       equation
@@ -917,7 +917,7 @@ algorithm
       InstanceHierarchy ih;
 
     // handle empty case
-    case (cache,_,_,{},_) then (cache,{}); 
+    case (cache,_,_,{},_) then (cache,{});
 
     // yuppie! we have a list of expressions
     case (cache,env,ih,(e :: es),p)
@@ -936,7 +936,7 @@ protected function prefixDecls "function: prefixDecls
   PART OF THE WORKAROUND FOR VALUEBLOCKS"
   input Env.Cache cache;
   input Env.Env env;
-  input InstanceHierarchy inIH;  
+  input InstanceHierarchy inIH;
   input list<DAE.Element> lDecls;
   input list<DAE.Element> accList;
   input Prefix.Prefix p;

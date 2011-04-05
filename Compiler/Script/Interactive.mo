@@ -304,15 +304,15 @@ algorithm
       InteractiveSymbolTable newst,st,newst_1;
       Boolean echo,semicolon,verbose;
       InteractiveStmt x;
-      InteractiveStmts new; 
-      list<InteractiveStmt> xs;      
+      InteractiveStmts new;
+      list<InteractiveStmt> xs;
 
     case (ISTMTS(interactiveStmtLst = {x},semicolon = semicolon),st,verbose)
       equation 
         new = ISTMTS({x},verbose);
         
         //System.startTimer();
-        //str = Dump.printIstmtStr(new);        
+        //str = Dump.printIstmtStr(new);
         //print("\nEvaluate: " +& str);
         (res,newst) = evaluate2(new, st);
         //System.stopTimer();
@@ -335,7 +335,7 @@ algorithm
         //System.stopTimer();
         //print("\nEvaluate: " +& str +& ": " +&  realString(System.getTimerIntervalTime()));
 
-        echo = getEcho();        
+        echo = getEcho();
         res_1 = selectResultstr(res, semicolon, verbose, echo);
         print(res_1);
         newst_1 = evaluateToStdOut(ISTMTS(xs,semicolon), newst, verbose);
@@ -1215,7 +1215,7 @@ algorithm
       InteractiveVariable var;
 
     case (ident,{})
-      then {};    
+      then {};
 
     case (ident,(IVAR(varIdent = id2) :: rest))
       equation
@@ -1861,7 +1861,7 @@ algorithm
         matchApiFunction(istmts, "getNthComponentAnnotation");
         {Absyn.CREF(componentRef = cr),Absyn.INTEGER(value = n)} = getApiFunctionArgs(istmts);
         ErrorExt.setCheckpoint("getNthComponentAnnotation");
-        RTOpts.setEvaluateParametersInAnnotations(true);        
+        RTOpts.setEvaluateParametersInAnnotations(true);
         resstr = getNthComponentAnnotation(cr, p, n);
         RTOpts.setEvaluateParametersInAnnotations(false);
         ErrorExt.rollBack("getNthComponentAnnotation");
@@ -1984,7 +1984,7 @@ algorithm
       equation
         matchApiFunction(istmts, "getNthConnector");
         {Absyn.CREF(componentRef = cr),Absyn.INTEGER(value = n)} = getApiFunctionArgs(istmts);
-        modelpath = Absyn.crefToPath(cr);        
+        modelpath = Absyn.crefToPath(cr);
         resstr = getNthConnector(modelpath, p, n);
       then
         (resstr,st);
@@ -2086,7 +2086,7 @@ algorithm
         modelpath = Absyn.crefToPath(cr);
         ErrorExt.setCheckpoint("getSimulationOptions");
         // ignore the name of the model
-        (_, _::simOptions) = Static.getSimulationArguments(Env.emptyCache(), {},{Absyn.CREF(cr)},{},false,SOME(st),Prefix.NOPRE(),Absyn.dummyInfo);        
+        (_, _::simOptions) = Static.getSimulationArguments(Env.emptyCache(), {},{Absyn.CREF(cr)},{},false,SOME(st),Prefix.NOPRE(),Absyn.dummyInfo);
         resstr = 
           "{" +& 
           ExpressionDump.printExpListStr(simOptions) +& 
@@ -2102,7 +2102,7 @@ algorithm
         getApiFunctionArgs(istmts);
         modelpath = Absyn.crefToPath(cr);
         ErrorExt.setCheckpoint("getNamedAnnotation");
-        RTOpts.setEvaluateParametersInAnnotations(true);        
+        RTOpts.setEvaluateParametersInAnnotations(true);
         resstr = getNamedAnnotation(modelpath, p, str, getAnnotationValue);
         RTOpts.setEvaluateParametersInAnnotations(false);
         ErrorExt.rollBack("getNamedAnnotation");
@@ -2548,7 +2548,7 @@ algorithm
         str = Absyn.pathString(model_path);
         str = "Error: class: " +& str +& " is in a read only file!";
       then
-        (str, p);      
+        (str, p);
             
     case (p,class_,old_comp,new_comp)
       equation
@@ -2596,7 +2596,7 @@ algorithm
         str = Absyn.pathString(model_path);
         str = "Error: class: " +& str +& " is in a read only file!";
       then
-        (str, p);      
+        (str, p);
             
     case (p,class_,old_comp,new_comp)
       equation
@@ -4233,7 +4233,7 @@ algorithm
         p = Dependency.getTotalProgramFromPath(path, p);
         p_1 = SCodeUtil.translateAbsyn2SCode(p);
         (_,env) = Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT(""));
-        ((_,_,(comps,_,_))) = traverseClasses(p, NONE(), extractAllComponentsVisitor,(COMPONENTS({},0),p,env), true) "traverse protected";        
+        ((_,_,(comps,_,_))) = traverseClasses(p, NONE(), extractAllComponentsVisitor,(COMPONENTS({},0),p,env), true) "traverse protected";
       then
         comps;
     */    
@@ -4244,7 +4244,7 @@ algorithm
         (_,env) = Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT(""));
         ((_,_,(comps,_,_))) = traverseClasses(p, NONE(), extractAllComponentsVisitor,(COMPONENTS({},0),p,env), true) "traverse protected";
       then
-        comps;    
+        comps;
   end match;
 end extractAllComponents;
 
@@ -6708,7 +6708,7 @@ algorithm
     local Absyn.ComponentRef cr2;
     case (cr,Absyn.MODIFICATION(componentRef = cr2)::_)
       equation
-        true = Absyn.crefEqual(cr,cr2); 
+        true = Absyn.crefEqual(cr,cr2);
       then true;
     case (cr,_::rest) then findCrefModification(cr,rest);
     case (cr,{}) then false;
@@ -10336,7 +10336,7 @@ protected function getMapAnnotationStr
 "function: getMapAnnotationStr"
   input list<Absyn.ElementArg> inAbsynElementArgLst;
   input String inMapType "IconMap or DiagramMap";
-  input Absyn.Class inClass;  
+  input Absyn.Class inClass;
   input Absyn.Program inFullProgram;
   input Absyn.Path inModelPath;
   output String outString;
@@ -10355,7 +10355,7 @@ algorithm
           inClass, inFullProgram, inModelPath)
       equation
         // make sure is the given type: IconMap or DiagramMap
-        true = stringEqual(mapType, inMapType); 
+        true = stringEqual(mapType, inMapType);
         str = getAnnotationString(Absyn.ANNOTATION({ann}), inClass, inFullProgram, inModelPath);
       then
         str;
@@ -10375,7 +10375,7 @@ protected function getNthInheritedClassMapAnnotation
   input Absyn.Path inModelPath;
   input Integer inInteger;
   input Absyn.Program inProgram;
-  input String inMapType "IconMap or DiagramMap"; 
+  input String inMapType "IconMap or DiagramMap";
   output String outString;
 algorithm
   outString := matchcontinue (inModelPath,inInteger,inProgram,inMapType)
@@ -10397,7 +10397,7 @@ algorithm
         s;
     case (modelpath,n,p,inMapType)
       equation
-        cdef = getPathedClassInProgram(modelpath, p);        
+        cdef = getPathedClassInProgram(modelpath, p);
         (s, NONE()) = getNthInheritedClassAnnotationOpt(modelpath, n, cdef, p);
         s = "{" +& s +& ",{}}";
       then
@@ -12515,7 +12515,7 @@ algorithm
     
     case (Absyn.PROTECTED(contents = elts) :: rest, annotationType) 
       equation 
-        res1 = getAnnotationFromElts(elts, annotationType); 
+        res1 = getAnnotationFromElts(elts, annotationType);
         res2 = getAnnotationFromParts(rest, annotationType);
         res = listAppend(res1, res2);
       then 
@@ -12523,7 +12523,7 @@ algorithm
     
     case (Absyn.EQUATIONS(contents = eqns) :: rest, annotationType) 
       equation 
-        res1 = getAnnotationFromEqns(eqns, annotationType); 
+        res1 = getAnnotationFromEqns(eqns, annotationType);
         res2 = getAnnotationFromParts(rest, annotationType);
         res = listAppend(res1, res2);
       then 
@@ -12533,7 +12533,7 @@ algorithm
       equation 
         res1 = getAnnotationFromEqns(eqns, annotationType);
         res2 = getAnnotationFromParts(rest, annotationType);
-        res = listAppend(res1, res2);        
+        res = listAppend(res1, res2);
       then 
         res;
     
@@ -12541,7 +12541,7 @@ algorithm
       equation 
         res1 = getAnnotationFromAlgs(algs, annotationType);
         res2 = getAnnotationFromParts(rest, annotationType);
-        res = listAppend(res1, res2);        
+        res = listAppend(res1, res2);
       then 
         res;
     
@@ -12555,7 +12555,7 @@ algorithm
     
     case (_ :: rest, _) 
       equation 
-        res = getAnnotationFromParts(rest, annotationType); 
+        res = getAnnotationFromParts(rest, annotationType);
       then 
         res;
   end matchcontinue;
@@ -12578,13 +12578,13 @@ algorithm
     
     case (Absyn.ANNOTATIONITEM(annotation_ = Absyn.ANNOTATION(elementArgs = lst)) :: rest, _)
       equation 
-        containAnnotation(lst, annotationType); 
+        containAnnotation(lst, annotationType);
       then 
         lst;
     
     case (_ :: rest, _)
       equation 
-        res = getAnnotationFromElts(rest, annotationType); 
+        res = getAnnotationFromElts(rest, annotationType);
       then 
         res;
   end matchcontinue;
@@ -12689,7 +12689,7 @@ protected function getAnnotationStr
   input AnnotationType annotationType;
   input Absyn.Class inClass;
   input Absyn.Program inProgram;
-  input Absyn.Path inModelPath;  
+  input Absyn.Path inModelPath;
   output String outString;
 algorithm
   outString := matchcontinue (inAbsynElementArgLst, annotationType, inClass, inProgram, inModelPath)
@@ -12700,7 +12700,7 @@ algorithm
       list<Absyn.ElementArg> xs;
       Absyn.Program fullProgram;
       Absyn.Class c;
-      Absyn.Path p;      
+      Absyn.Path p;
     
     case (((ann as Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = ann_name),modification = mod)) :: _), _, c, fullProgram, p)
       equation
@@ -12725,7 +12725,7 @@ protected function getNamedAnnotationInClass
   input Absyn.Class inClass;
   input Absyn.Ident id;
   input ModFunc f;
-  output String outString;  
+  output String outString;
   partial function ModFunc
     input Option<Absyn.Modification> mod;
     output String docStr;
@@ -12766,7 +12766,7 @@ protected function getNamedAnnotationInParts
   input list<Absyn.ClassPart> inAbsynClassPartsLst;
   input Absyn.Ident id;
   input ModFunc f;
-  output String outString;  
+  output String outString;
   partial function ModFunc
     input Option<Absyn.Modification> mod;
     output String docStr;
@@ -12788,7 +12788,7 @@ algorithm
       equation
         str = getNamedAnnotationInElItems(contents,id,f);
         // make it sure is not empty!
-        false = stringEqual(str, ""); 
+        false = stringEqual(str, "");
       then
         str;
     
@@ -12799,7 +12799,7 @@ algorithm
         // make it sure is not empty!
         false = stringEqual(str, "");
       then
-        str;    
+        str;
 
     // search in equations
     case (Absyn.EQUATIONS(eqItems)::rest, id, f)
@@ -12863,7 +12863,7 @@ protected function getNamedAnnotationInElItems
   input list<Absyn.ElementItem> inAbsynElementItemLst;
   input Absyn.Ident id;
   input ModFunc f;
-  output String outString;  
+  output String outString;
   partial function ModFunc
     input Option<Absyn.Modification> mod;
     output String docStr;
@@ -12898,7 +12898,7 @@ protected function getNamedAnnotationInEquItems
   input list<Absyn.EquationItem> inAbsynEquItemLst;
   input Absyn.Ident id;
   input ModFunc f;
-  output String outString;  
+  output String outString;
   partial function ModFunc
     input Option<Absyn.Modification> mod;
     output String docStr;
@@ -12933,7 +12933,7 @@ protected function getNamedAnnotationInAlgItems
   input list<Absyn.AlgorithmItem> inAbsynAlgItemLst;
   input Absyn.Ident id;
   input ModFunc f;
-  output String outString;  
+  output String outString;
   partial function ModFunc
     input Option<Absyn.Modification> mod;
     output String docStr;
@@ -13024,7 +13024,7 @@ protected function getNamedAnnotationStr
   input list<Absyn.ElementArg> inAbsynElementArgLst;
   input Absyn.Ident id;
   input ModFunc f;
-  output String outString;  
+  output String outString;
   partial function ModFunc
     input Option<Absyn.Modification> mod;
     output String docStr;
@@ -14000,7 +14000,7 @@ protected function getComponentitemsAnnotation
   input list<Absyn.ComponentItem> inAbsynComponentItemLst;
   input Absyn.Class inClass;
   input Absyn.Program inFullProgram;
-  input Absyn.Path inModelPath;  
+  input Absyn.Path inModelPath;
   output String outString;
 algorithm
   outString := match (inAbsynComponentItemLst,inClass,inFullProgram,inModelPath)
@@ -14145,8 +14145,8 @@ algorithm
         graphicProgramSCode = SCodeUtil.translateAbsyn2SCode(graphicProgram);
         
         // debugging
-        // print("Get annotation via full instantiation of: " +& Absyn.pathString(inModelPath) +& "\n"); 
-        // print("Annotation to get: (" +& Util.stringDelimitList(Util.listMap(inAnnotationMod, Dump.unparseElementArgStr), ", ") +& ")\n");        
+        // print("Get annotation via full instantiation of: " +& Absyn.pathString(inModelPath) +& "\n");
+        // print("Annotation to get: (" +& Util.stringDelimitList(Util.listMap(inAnnotationMod, Dump.unparseElementArgStr), ", ") +& ")\n");
         // print("Annotation class: " +& inAnnotationClass +& "\n");
         
         // fully instantiate the class that contains the annotation!
@@ -14157,7 +14157,7 @@ algorithm
         RTOpts.setEvaluateParametersInAnnotations(true); // set to evaluate the parameters!
         (cache,env,_,_) = Inst.instantiateClass(Env.emptyCache(),InnerOuter.emptyInstHierarchy,graphicProgramSCode,inModelPath);
         RTOpts.setEvaluateParametersInAnnotations(b2);
-        OptManager.setOption("checkModel", b1);        
+        OptManager.setOption("checkModel", b1);
       then
         (cache, env, graphicProgram);
     
@@ -14167,9 +14167,9 @@ algorithm
         true = Absyn.onlyLiteralsInAnnotationMod(inAnnotationMod);
 
         // debugging
-        // print("Get annotation via small instantiation of: " +& Absyn.pathString(inModelPath) +& "\n"); 
+        // print("Get annotation via small instantiation of: " +& Absyn.pathString(inModelPath) +& "\n");
         // print("Annotation to get: (" +& Util.stringDelimitList(Util.listMap(inAnnotationMod, Dump.unparseElementArgStr), ", ") +& ")\n");
-        // print("Annotation class: " +& inAnnotationClass +& "\n");        
+        // print("Annotation class: " +& inAnnotationClass +& "\n");
 
         graphicProgram = modelicaAnnotationProgram(RTOpts.getAnnotationVersion());
         graphicProgramSCode = SCodeUtil.translateAbsyn2SCode(graphicProgram);
@@ -14177,7 +14177,7 @@ algorithm
       then
         (cache, env, graphicProgram);
         
-  end matchcontinue;  
+  end matchcontinue;
 end buildEnvForGraphicProgram;
 
 protected function getAnnotationString
@@ -14257,7 +14257,7 @@ algorithm
           inModelPath)
       equation
         // print(Dump.unparseStr(p, false));
-        // print("Annotation(Icon): " +& Dump.unparseMod1Str(mod) +& "\n");      
+        // print("Annotation(Icon): " +& Dump.unparseMod1Str(mod) +& "\n");
         (stripmod,gxmods) = stripGraphicsAndInteractionModification(mod);
         mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(stripmod,Absyn.NOMOD())), false, Absyn.NON_EACH());
         
@@ -14284,7 +14284,7 @@ algorithm
           inModelPath)
       equation
         // print(Dump.unparseStr(p, false));
-        // print("Annotation(Diagram): " +& Dump.unparseMod1Str(mod) +& "\n");        
+        // print("Annotation(Diagram): " +& Dump.unparseMod1Str(mod) +& "\n");
         (stripmod,{Absyn.MODIFICATION(modification=SOME(Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=graphicexp))))}) = stripGraphicsAndInteractionModification(mod);
         mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(stripmod,Absyn.NOMOD())), false, Absyn.NON_EACH());
         
@@ -14317,7 +14317,7 @@ algorithm
           inModelPath)
       equation
         // print(Dump.unparseStr(p, false));
-        // print("Annotation(Icon): " +& Dump.unparseMod1Str(mod) +& "\n");      
+        // print("Annotation(Icon): " +& Dump.unparseMod1Str(mod) +& "\n");
         (stripmod,gxmods) = stripGraphicsAndInteractionModification(mod);
         mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(stripmod,Absyn.NOMOD())), false, Absyn.NON_EACH());
         
@@ -14345,7 +14345,7 @@ algorithm
       equation
         // print(Dump.unparseStr(p, false));
         // print("Annotation(" +& anncname +& "): " +& Dump.unparseMod1Str(mod) +& "\n");
-        (stripmod,gxmods) = stripGraphicsAndInteractionModification(mod);        
+        (stripmod,gxmods) = stripGraphicsAndInteractionModification(mod);
         mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(stripmod,Absyn.NOMOD())), false, Absyn.NON_EACH());
         
         // print("ANY Annotation(" +& anncname +& ") : " +& Dump.unparseMod1Str(mod) +& "\n");

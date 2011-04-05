@@ -169,7 +169,7 @@ algorithm
       equation
         (_,cr_lst1) = traverseBackendDAEExpsEqn(e,extractCrefsFromExp,cr_lst);
       then ((e,cr_lst1));
-    case inTpl then inTpl; 
+    case inTpl then inTpl;
   end matchcontinue;
 end traversingEquationCrefFinder;
 
@@ -177,12 +177,12 @@ protected function extractCrefsFromExp "function: extractCrefsFromExp
   author: Frenkel TUD 2010-11
   helper for equationsCrefs"
  input tuple<DAE.Exp, list<DAE.ComponentRef>> inTpl;
- output tuple<DAE.Exp, list<DAE.ComponentRef>> outTpl;  
+ output tuple<DAE.Exp, list<DAE.ComponentRef>> outTpl;
 algorithm 
   outTpl := match(inTpl)
     local 
-      list<DAE.ComponentRef> crefs,crefs1; 
-      DAE.Exp e,e1; 
+      list<DAE.ComponentRef> crefs,crefs1;
+      DAE.Exp e,e1;
     case((e,crefs))
       equation
         ((e1,crefs1)) = Expression.traverseExp(e, Expression.traversingComponentRefFinder, crefs);
@@ -194,7 +194,7 @@ end extractCrefsFromExp;
 public function traverseBackendDAEExpsEqnList"function: traverseBackendDAEExpsEqnList
   author: Frenkel TUD 2010-11
   traverse all expressions of a list of Equations. It is possible to change the equations"
-  replaceable type Type_a subtypeof Any;  
+  replaceable type Type_a subtypeof Any;
   input list<BackendDAE.Equation> inEquations;
   input FuncExpType func;
   input Type_a inTypeA;
@@ -223,7 +223,7 @@ end traverseBackendDAEExpsEqnList;
 public function traverseBackendDAEExpsEqn "function: traverseBackendDAEExpsEqn
   author: Frenkel TUD 2010-11
   traverse all expressions of a Equation. It is possible to change the equation"
-  replaceable type Type_a subtypeof Any;  
+  replaceable type Type_a subtypeof Any;
   input BackendDAE.Equation inEquation;
   input FuncExpType func;
   input Type_a inTypeA;
@@ -260,12 +260,12 @@ algorithm
         tp = Expression.typeof(e2);
         e1 = Expression.makeCrefExp(cr,tp);
         ((DAE.CREF(cr1,_),ext_arg_1)) = func((e1,inTypeA));
-        ((e_2,ext_arg_2)) = func((e2,ext_arg_1)); 
+        ((e_2,ext_arg_2)) = func((e2,ext_arg_1));
       then
         (BackendDAE.SOLVED_EQUATION(cr1,e_2,source),ext_arg_2);
     case (BackendDAE.RESIDUAL_EQUATION(exp = e1,source=source),func,inTypeA)
       equation
-        ((e_1,ext_arg_1)) = func((e1,inTypeA)); 
+        ((e_1,ext_arg_1)) = func((e1,inTypeA));
       then
         (BackendDAE.RESIDUAL_EQUATION(e_1,source),ext_arg_1);
     case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(index=index,left = cr,right = e2,elsewhenPart=NONE()),source = source),func,inTypeA)
@@ -273,7 +273,7 @@ algorithm
         tp = Expression.typeof(e2);
         e1 = Expression.makeCrefExp(cr,tp);
         ((DAE.CREF(cr1,_),ext_arg_1)) = func((e1,inTypeA));
-        ((e_2,ext_arg_2)) = func((e2,ext_arg_1)); 
+        ((e_2,ext_arg_2)) = func((e2,ext_arg_1));
       then
        (BackendDAE.WHEN_EQUATION(BackendDAE.WHEN_EQ(index,cr1,e_2,NONE()),source),ext_arg_2);
     case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(index=index,left=cr,right=e2,elsewhenPart=SOME(elsePart)),source = source),func,inTypeA)
@@ -281,7 +281,7 @@ algorithm
         tp = Expression.typeof(e2);
         e1 = Expression.makeCrefExp(cr,tp);
         ((DAE.CREF(cr1,_),ext_arg_1)) = func((e1,inTypeA));
-        ((e_2,ext_arg_2)) = func((e2,ext_arg_1));  
+        ((e_2,ext_arg_2)) = func((e2,ext_arg_1));
         (BackendDAE.WHEN_EQUATION(whenEquation=elsePart1),ext_arg_3) = traverseBackendDAEExpsEqn(BackendDAE.WHEN_EQUATION(elsePart,source),func,ext_arg_2);
       then
         (BackendDAE.WHEN_EQUATION(BackendDAE.WHEN_EQ(index,cr1,e_2,SOME(elsePart1)),source),ext_arg_3);
@@ -293,8 +293,8 @@ algorithm
         (BackendDAE.ALGORITHM(index,expl1,exps1,source),ext_arg_2);
     case (BackendDAE.COMPLEX_EQUATION(index = index, lhs = e1, rhs = e2,source=source),func,inTypeA)
       equation
-        ((e_1,ext_arg_1)) = func((e1,inTypeA)); 
-        ((e_2,ext_arg_2)) = func((e2,ext_arg_1)); 
+        ((e_1,ext_arg_1)) = func((e1,inTypeA));
+        ((e_2,ext_arg_2)) = func((e2,ext_arg_1));
       then
         (BackendDAE.COMPLEX_EQUATION(index,e_1,e_2,source),ext_arg_2);
   end match;
@@ -304,7 +304,7 @@ public function traverseBackendDAEExpsEqnListOutEqn
 "function: traverseBackendDAEExpsEqnList
   author: Frenkel TUD 2010-11
   traverse all expressions of a list of Equations. It is possible to change the equations"
-  replaceable type Type_a subtypeof Any;  
+  replaceable type Type_a subtypeof Any;
   input list<BackendDAE.Equation> inEquations;
   input list<BackendDAE.Equation> inlistchangedEquations;
   input FuncExpType func;
@@ -335,7 +335,7 @@ algorithm
       changedeqns = listAppend(changedeqns,{e1});
       (eqns,changedeqns,ext_arg_2)  = traverseBackendDAEExpsEqnListOutEqn(res,changedeqns,func,ext_arg_1);
     then 
-      (e1::eqns,changedeqns,ext_arg_2);      
+      (e1::eqns,changedeqns,ext_arg_2);
     end matchcontinue;
 end traverseBackendDAEExpsEqnListOutEqn;
 
@@ -346,7 +346,7 @@ public function traverseBackendDAEExpsEqnOutEqn
   traverse all expressions of a Equation. It is possible to change the equation.
   additinal the equation is passed to FuncExpTyp.
   "
-  replaceable type Type_a subtypeof Any;  
+  replaceable type Type_a subtypeof Any;
   input BackendDAE.Equation inEquation;
   input FuncExpType func;
   input Type_a inTypeA;
@@ -393,7 +393,7 @@ algorithm
         (BackendDAE.SOLVED_EQUATION(cr1,e_2,source),bres,ext_arg_2);
     case (eq as BackendDAE.RESIDUAL_EQUATION(exp = e1,source=source),func,inTypeA)
       equation
-        ((e_1,b1,ext_arg_1)) = func((e1,inTypeA)); 
+        ((e_1,b1,ext_arg_1)) = func((e1,inTypeA));
       then
         (BackendDAE.RESIDUAL_EQUATION(e_1,source),b1,ext_arg_1);
     case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(index=index,left = cr,right = e2,elsewhenPart=NONE()),source = source),func,inTypeA)
@@ -402,7 +402,7 @@ algorithm
         e1 = Expression.makeCrefExp(cr,tp);
         ((DAE.CREF(cr1,_),b1,ext_arg_1)) = func((e1,inTypeA));
         ((e_2,b2,ext_arg_2)) = func((e2,ext_arg_1));
-        bres = Util.boolOrList({b1,b2}); 
+        bres = Util.boolOrList({b1,b2});
       then
        (BackendDAE.WHEN_EQUATION(BackendDAE.WHEN_EQ(index,cr1,e_2,NONE()),source),bres,ext_arg_2);
     case (eq as BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(index=index,left=cr,right=e2,elsewhenPart=SOME(elsePart)),source = source),func,inTypeA)
@@ -410,7 +410,7 @@ algorithm
         tp = Expression.typeof(e2);
         e1 = Expression.makeCrefExp(cr,tp);
         ((DAE.CREF(cr1,_),b1,ext_arg_1)) = func((e1,inTypeA));
-        ((e_2,b2,ext_arg_2)) = func((e2,ext_arg_1));  
+        ((e_2,b2,ext_arg_2)) = func((e2,ext_arg_1));
         (BackendDAE.WHEN_EQUATION(whenEquation=elsePart1),b3,ext_arg_3) = traverseBackendDAEExpsEqnOutEqn(BackendDAE.WHEN_EQUATION(elsePart,source),func,ext_arg_2);
         bres = Util.boolOrList({b1,b2,b3});
       then
@@ -423,7 +423,7 @@ algorithm
         (BackendDAE.ALGORITHM(index,expl,exps,source),false,inTypeA);
     case (BackendDAE.COMPLEX_EQUATION(index = index, lhs = e1, rhs = e2,source=source),func,inTypeA)
       equation
-        ((e_1,b1,ext_arg_1)) = func((e1,inTypeA)); 
+        ((e_1,b1,ext_arg_1)) = func((e1,inTypeA));
         ((e_2,b2,ext_arg_2)) = func((e2,ext_arg_1));
         bres = Util.boolOrList({b1,b2});
       then
@@ -444,18 +444,18 @@ public function traverseBackendDAEExpList
   partial function FuncExpType
     input tuple<DAE.Exp, Type_a> inTpl;
     output tuple<DAE.Exp, Type_a> outTpl;
-  end FuncExpType;  
+  end FuncExpType;
 algorithm
   (outExpl,outTypeA) := match(inExpl,rel,ext_arg)
   local 
-      DAE.Exp e,e1; 
+      DAE.Exp e,e1;
       list<DAE.Exp> expl1,res;
       Type_a ext_arg_1,ext_arg_2,ext_arg_3;
     case({},_,ext_arg_1) then ({},ext_arg_1);
     case(e::res,rel,ext_arg_1) equation
       ((e1,ext_arg_2)) = rel((e, ext_arg_1));
       (expl1,ext_arg_3) = traverseBackendDAEExpList(res,rel,ext_arg_2);
-    then (e1::expl1,ext_arg_3); 
+    then (e1::expl1,ext_arg_3);
   end match;
 end traverseBackendDAEExpList;
 
@@ -464,7 +464,7 @@ public function traverseBackendDAEEqns "function: traverseBackendDAEEqns
 
   traverses all equations of a BackendDAE.EquationArray.
 "
-  replaceable type Type_a subtypeof Any;  
+  replaceable type Type_a subtypeof Any;
   input BackendDAE.EquationArray inEquationArray;
   input FuncExpType func;
   input Type_a inTypeA;
@@ -484,14 +484,14 @@ algorithm
       equation
         Debug.fprintln("failtrace", "- BackendEquation.traverseBackendDAEEqns failed");
       then
-        fail();          
+        fail();
   end matchcontinue;
 end traverseBackendDAEEqns;
 
 protected function traverseBackendDAEOptEqn "function: traverseBackendDAEOptEqn
   author: Frenkel TUD 2010-11
   Helper for traverseBackendDAEExpsEqns."
-  replaceable type Type_a subtypeof Any;  
+  replaceable type Type_a subtypeof Any;
   input Option<BackendDAE.Equation> inEquation;
   input FuncExpType func;
   input Type_a inTypeA;
@@ -515,7 +515,7 @@ algorithm
       equation
         Debug.fprintln("failtrace", "- BackendEquation.traverseBackendDAEOptEqn failed");
       then
-        fail();   
+        fail();
   end matchcontinue;
 end traverseBackendDAEOptEqn;
 
@@ -524,7 +524,7 @@ public function traverseBackendDAEEqnsWithStop "function: traverseBackendDAEEqns
 
   traverses all equations of a BackendDAE.EquationArray.
 "
-  replaceable type Type_a subtypeof Any;  
+  replaceable type Type_a subtypeof Any;
   input BackendDAE.EquationArray inEquationArray;
   input FuncExpType func;
   input Type_a inTypeA;
@@ -544,14 +544,14 @@ algorithm
       equation
         Debug.fprintln("failtrace", "- BackendEquation.traverseBackendDAEEqnsWithStop failed");
       then
-        fail();          
+        fail();
   end matchcontinue;
 end traverseBackendDAEEqnsWithStop;
 
 protected function traverseBackendDAEOptEqnWithStop "function: traverseBackendDAEOptEqnWithStop
   author: Frenkel TUD 2010-11
   Helper for traverseBackendDAEExpsEqnsWithStop."
-  replaceable type Type_a subtypeof Any;  
+  replaceable type Type_a subtypeof Any;
   input Option<BackendDAE.Equation> inEquation;
   input FuncExpType func;
   input Type_a inTypeA;
@@ -577,7 +577,7 @@ algorithm
       equation
         Debug.fprintln("failtrace", "- BackendEquation.traverseBackendDAEOptEqnWithStop failed");
       then
-        fail();   
+        fail();
   end matchcontinue;
 end traverseBackendDAEOptEqnWithStop;
 
@@ -586,7 +586,7 @@ public function traverseBackendDAEEqnsWithUpdate "function: traverseBackendDAEEq
 
   traverses all equations of a BackendDAE.EquationArray.
 "
-  replaceable type Type_a subtypeof Any;  
+  replaceable type Type_a subtypeof Any;
   input BackendDAE.EquationArray inEquationArray;
   input FuncExpType func;
   input Type_a inTypeA;
@@ -611,14 +611,14 @@ algorithm
       equation
         Debug.fprintln("failtrace", "- BackendEquation.traverseBackendDAEEqnsWithStop failed");
       then
-        fail();          
+        fail();
   end matchcontinue;
 end traverseBackendDAEEqnsWithUpdate;
 
 protected function traverseBackendDAEOptEqnWithUpdate "function: traverseBackendDAEOptEqnWithUpdate
   author: Frenkel TUD 2010-11
   Helper for traverseBackendDAEExpsEqnsWithUpdate."
-  replaceable type Type_a subtypeof Any;  
+  replaceable type Type_a subtypeof Any;
   input Option<BackendDAE.Equation> inEquation;
   input FuncExpType func;
   input Type_a inTypeA;
@@ -643,7 +643,7 @@ algorithm
       equation
         Debug.fprintln("failtrace", "- BackendEquation.traverseBackendDAEOptEqnWithUpdate failed");
       then
-        fail();   
+        fail();
   end matchcontinue;
 end traverseBackendDAEOptEqnWithUpdate;
 
@@ -654,26 +654,26 @@ public function traverseBackendDAEExpsArrayEqnWithUpdate "function: traverseBack
 "
   replaceable type Type_a subtypeof Any;
   input BackendDAE.MultiDimEquation inMultiDimEquation;
-  input FuncExpType func;  
+  input FuncExpType func;
   input Type_a inTypeA;
   output BackendDAE.MultiDimEquation outMultiDimEquation;
   output Type_a outTypeA;
   partial function FuncExpType
     input tuple<DAE.Exp, Type_a> inTpl;
     output tuple<DAE.Exp, Type_a> outTpl;
-  end FuncExpType; 
+  end FuncExpType;
 algorithm
   (outMultiDimEquation,outTypeA):=
   match (inMultiDimEquation,func,inTypeA)
     local 
       DAE.Exp e1,e2,e1_1,e2_1;
       list<Integer> dims;
-      DAE.ElementSource source;      
+      DAE.ElementSource source;
       Type_a ext_arg_1,ext_arg_2;
     case (BackendDAE.MULTIDIM_EQUATION(dims,e1,e2,source),func,inTypeA)
       equation
-        ((e1_1,ext_arg_1)) = func((e1,inTypeA)); 
-        ((e2_1,ext_arg_2)) = func((e2,ext_arg_1)); 
+        ((e1_1,ext_arg_1)) = func((e1,inTypeA));
+        ((e2_1,ext_arg_2)) = func((e2,ext_arg_1));
       then
         (BackendDAE.MULTIDIM_EQUATION(dims,e1_1,e2_1,source),ext_arg_2);
   end match;
@@ -686,14 +686,14 @@ public function traverseBackendDAEExpsAlgortihmWithUpdate "function: traverseBac
 "
   replaceable type Type_a subtypeof Any;
   input DAE.Algorithm inAlg;
-  input FuncExpType func;  
+  input FuncExpType func;
   input Type_a inTypeA;
   output DAE.Algorithm outAlg;
   output Type_a outTypeA;
   partial function FuncExpType
     input tuple<DAE.Exp, Type_a> inTpl;
     output tuple<DAE.Exp, Type_a> outTpl;
-  end FuncExpType; 
+  end FuncExpType;
 algorithm
   (outAlg,outTypeA):=
   match (inAlg,func,inTypeA)
@@ -830,12 +830,12 @@ algorithm
       array<BackendDAE.MultiDimEquation> arreqns;
       array<DAE.Algorithm> algorithms;
       BackendDAE.EventInfo einfo;
-      BackendDAE.ExternalObjectClasses eoc; 
+      BackendDAE.ExternalObjectClasses eoc;
     case (inInteger,inEquation,BackendDAE.DAE(ordvars,knvars,exobj,aliasVars,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc))
       equation
         eqns1 = equationSetnth(eqns,inInteger,inEquation);
       then BackendDAE.DAE(ordvars,knvars,exobj,aliasVars,eqns1,remeqns,inieqns,arreqns,algorithms,einfo,eoc);
-  end match;        
+  end match;
 end equationSetnthDAE;
 
 public function equationSetnth "function: equationSetnth
@@ -869,7 +869,7 @@ protected
   list<BackendDAE.Equation> eqnlst,eqnlst1;
 algorithm
    eqnlst := BackendDAEUtil.equationList(inEquationArray);
-   eqnlst1 := Util.listDeletePositions(eqnlst,inIntLst);  
+   eqnlst1 := Util.listDeletePositions(eqnlst,inIntLst);
    outEquationArray :=  BackendDAEUtil.listEquation(eqnlst1);
 end equationDelete;
 
@@ -956,7 +956,7 @@ public function traverseAlgorithmFinder "function: traverseAlgorithmFinder
   author: Frenkel TUD 2010-12
   collect all used algorithms"
   input tuple<BackendDAE.Equation, tuple<list<Integer>,array<DAE.Algorithm>,list<DAE.Algorithm>>> inTpl;
-  output tuple<BackendDAE.Equation, tuple<list<Integer>,array<DAE.Algorithm>,list<DAE.Algorithm>>> outTpl;  
+  output tuple<BackendDAE.Equation, tuple<list<Integer>,array<DAE.Algorithm>,list<DAE.Algorithm>>> outTpl;
 algorithm
   outTpl := matchcontinue (inTpl)
     local
@@ -965,7 +965,7 @@ algorithm
       DAE.Algorithm alg;
       list<DAE.Algorithm> algs;
       list<Integer> indexes;
-      Integer indx;      
+      Integer indx;
       case ((eqn as BackendDAE.ALGORITHM(index=indx),(indexes,algarr,algs)))
         equation
           false = Util.listContainsWithCompareFunc(indx,indexes,intEq);

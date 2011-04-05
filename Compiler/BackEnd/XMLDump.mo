@@ -427,7 +427,7 @@ algorithm
         error_msg = error_msg +& ExpressionDump.debugBinopSymbol(inOperator);
         Error.addMessage(Error.INTERNAL_ERROR, {error_msg});
       then
-        fail();      
+        fail();
   end match;
 end binopSymbol2;
 
@@ -849,9 +849,9 @@ algorithm
       equation
         error_msg = "in XMLDump.dumpCrefIdxLstArr - failed for var number:";
         error_msg = error_msg +& intString(inInteger);
-        Error.addMessage(Error.INTERNAL_ERROR, {error_msg});        
+        Error.addMessage(Error.INTERNAL_ERROR, {error_msg});
       then
-        fail();          
+        fail();
   end matchcontinue;
 end dumpCrefIdxLstArr;
 
@@ -1109,7 +1109,7 @@ algorithm
       equation
         Debug.fprint("failtrace", "XMLDump.dumpBackendDAE failed\n");
       then
-        fail();        
+        fail();
   end match;
 end dumpBackendDAE;
 
@@ -1238,7 +1238,7 @@ algorithm
         error_msg = "in XMLDump.dumpDirectionStr - Unknown var direction";
         Error.addMessage(Error.INTERNAL_ERROR, {error_msg});
       then
-        fail();       
+        fail();
   end match;
 end dumpDirectionStr;
 
@@ -1514,7 +1514,7 @@ algorithm
         res = "in XMLDump.dumpEquation - Unknown equation";
         Error.addMessage(Error.INTERNAL_ERROR, {res});
       then
-        fail();         
+        fail();
   end match;
 end dumpEquation;
 
@@ -2265,7 +2265,7 @@ algorithm
         error_msg = "in XMLDump.dumpKind - Unknown kind";
         Error.addMessage(Error.INTERNAL_ERROR, {error_msg});
       then
-        fail();         
+        fail();
   end match;
 end dumpKind;
 
@@ -3235,9 +3235,9 @@ algorithm
     case (_,_,_)
       equation
         error_msg = "in XMLDump.dumpVarsAdditionalInfo - Unknown info";
-        Error.addMessage(Error.INTERNAL_ERROR, {error_msg});        
+        Error.addMessage(Error.INTERNAL_ERROR, {error_msg});
       then
-        ();        
+        ();
   end matchcontinue;
 end dumpVarsAdditionalInfo;
 
@@ -3437,7 +3437,7 @@ algorithm
       equation
         error_msg = "in XMLDump.dumpVarsAdds2 - Unknown var: ";
         error_msg = error_msg +& intString(varno);
-        Error.addMessage(Error.INTERNAL_ERROR, {error_msg});        
+        Error.addMessage(Error.INTERNAL_ERROR, {error_msg});
         var_1 = varno+1;
         dumpVarsAdds2(xs,crefIdxLstArr,strIdxLstArr,var_1,addMMLCode);
       then
@@ -3545,7 +3545,7 @@ algorithm
         error_msg = error_msg +& ExpressionDump.debugBinopSymbol(inOperator);
         Error.addMessage(Error.INTERNAL_ERROR, {error_msg});
       then
-        fail();      
+        fail();
   end match;
 end lbinopSymbol;
 
@@ -3567,7 +3567,7 @@ algorithm
         error_msg = error_msg +& ExpressionDump.debugBinopSymbol(inOperator);
         Error.addMessage(Error.INTERNAL_ERROR, {error_msg});
       then
-        fail();      
+        fail();
   end match;
 end lunaryopSymbol;
 
@@ -3607,7 +3607,7 @@ algorithm
         error_msg = error_msg +& ExpressionDump.debugBinopSymbol(inOperator);
         Error.addMessage(Error.INTERNAL_ERROR, {error_msg});
       then
-        fail();      
+        fail();
   end match;
 end relopSymbol;
 

@@ -347,7 +347,7 @@ algorithm
     case (_, Absyn.NAMED_IMPORT(name = name, path = path) :: _, _)
       equation
         true = stringEqual(inName, name);
-        (item, path, env) = lookupFullyQualified(path, inEnv);  
+        (item, path, env) = lookupFullyQualified(path, inEnv);
       then
         (SOME(item), SOME(path), SOME(env));
 
@@ -454,7 +454,7 @@ algorithm
       equation
         // Look up the name in the local scope.
         (SOME(item), SOME(new_path), SOME(env)) = 
-          lookupInLocalScope(name, inEnv); 
+          lookupInLocalScope(name, inEnv);
         env = SCodeEnv.setImportTableHidden(env, false);
         //item = SCodeEnv.setImportsInItemHidden(item, false);
         // Look for the rest of the path in the found item.
@@ -888,7 +888,7 @@ algorithm
         // Lookup the rest of the cref in the enclosing scope of the first
         // identifier.
         (item, rest_cref) = lookupCrefInItem(rest_cref, item, env);
-        cref = joinCrefs(cref, rest_cref); 
+        cref = joinCrefs(cref, rest_cref);
       then
         cref;
 

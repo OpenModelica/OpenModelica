@@ -461,7 +461,7 @@ algorithm
 
     case (SCode.REDECL(fp, el), _, _)
       equation
-        el = Util.listMap1(el, flattenRedeclare, inEnv); 
+        el = Util.listMap1(el, flattenRedeclare, inEnv);
       then
         SCode.REDECL(fp, el);
 

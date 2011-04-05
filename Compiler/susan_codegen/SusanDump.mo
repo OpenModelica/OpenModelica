@@ -18,7 +18,7 @@ algorithm
          imports = __imports,
          templateDefs = __templateDefs) )
       local
-        Integer ind, ap; 
+        Integer ind, ap;
         PathIdent __name;
         list<String> __extendsList;
         list<PathIdent> __imports;
@@ -33,9 +33,9 @@ algorithm
         ts = Tpl.nl(ts);
         //ts = s1_templPackage(ts, __imports);
         ts = Tpl.nl(ts);
-        //ts = s2_templPackage(ts, __templateDefs);        
+        //ts = s2_templPackage(ts, __templateDefs);
       then ts;
-  end matchcontinue;      
+  end matchcontinue;
 end __templPackage;
 
 
@@ -51,9 +51,9 @@ algorithm
         String __it;
       equation
         ts = Tpl.write(ts, "extends \"");
-        ts = Tpl.writeParseNL(ts, __it);              
+        ts = Tpl.writeParseNL(ts, __it);
     then ts;
-  end matchcontinue;      
+  end matchcontinue;
 end s0__templPackage;
 
 // or can be optimized to
@@ -64,7 +64,7 @@ function so0__templPackage
 algorithm
   outText := Tpl.write(inText, "extends \"");
   outText := Tpl.writeParseNL(outText, __it);
-  outText := Tpl.write(outText, "\"");          
+  outText := Tpl.write(outText, "\"");
 end so0__templPackage;
 
 

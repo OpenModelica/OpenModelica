@@ -2191,7 +2191,7 @@ algorithm
   NAMEDARG(name, value) := inArg;
   (value, outTuple) := traverseExpBidir(value, inTuple);
   outArg := NAMEDARG(name, value);
-end traverseExpBidirNamedArg;  
+end traverseExpBidirNamedArg;
 
 public function traverseExpBidirIterator
   "Helper function to traverseExpBidirFunctionArgs. Traverses the expressions in
@@ -4785,7 +4785,7 @@ public function makeFullyQualified
 algorithm
   outPath := matchcontinue path
     case path as FULLYQUALIFIED(path = _) then path;
-    case path then FULLYQUALIFIED(path); 
+    case path then FULLYQUALIFIED(path);
   end matchcontinue;
 end makeFullyQualified;
 
@@ -4796,7 +4796,7 @@ public function makeNotFullyQualified
 algorithm
   outPath := match path
     case FULLYQUALIFIED(path) then path;
-    else path; 
+    else path;
   end match;
 end makeNotFullyQualified;
 
@@ -4838,7 +4838,7 @@ algorithm
     local
       Exp cond,tb,eb,ei_cond,ei_tb;
       list<tuple<Exp,Exp>> eib;
-    case IFEXP(elseIfBranch={}) then e; 
+    case IFEXP(elseIfBranch={}) then e;
     case IFEXP(ifExp=cond,trueBranch=tb,elseBranch=eb,elseIfBranch=(ei_cond,ei_tb)::eib)
       equation
         e = canonIfExp(IFEXP(ei_cond,ei_tb,eb,eib));
@@ -4917,7 +4917,7 @@ algorithm
          // print("Crefs in annotations: (" +& Util.stringDelimitList(Util.listMap(inAnnotationMod, Dump.printExpStr), ", ") +& ")\n");
       then
         b;
-  end match;        
+  end match;
 end onlyLiteralsInEqMod;
 
 protected function onlyLiteralsInExp 
@@ -4980,7 +4980,7 @@ public function crefIdent
   input ComponentRef cr;
   output String str;
 algorithm
-  CREF_IDENT(str,{}) := cr; 
+  CREF_IDENT(str,{}) := cr;
 end crefIdent;
 
 public function unqotePathIdents

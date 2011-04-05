@@ -85,7 +85,7 @@ public function isReinitStatement "returns true if statement is a reinit"
 algorithm
   res := matchcontinue(stmt)
     case(DAE.STMT_REINIT(var = _)) then true;
-    case(_) then false;  
+    case(_) then false;
   end matchcontinue;
 end isReinitStatement;
 
@@ -95,7 +95,7 @@ public function isNotAssertStatement "returns true if statement is NOT an assert
 algorithm
   res := matchcontinue(stmt)
     case(DAE.STMT_ASSERT(cond = _)) then false;
-    case(_) then true;  
+    case(_) then true;
   end matchcontinue;
 end isNotAssertStatement;
 
@@ -305,7 +305,7 @@ algorithm
     case (lhs :: rest_lhs, lhs_prop :: rest_lhs_prop, 
           rhs :: rest_rhs, rhs_prop :: rest_rhs_prop, _, _, _)
       equation
-        ass = makeAssignment(lhs, lhs_prop, rhs, rhs_prop, accessibility, initial_, source); 
+        ass = makeAssignment(lhs, lhs_prop, rhs, rhs_prop, accessibility, initial_, source);
         rest_ass = makeAssignmentsList(rest_lhs, rest_lhs_prop, rest_rhs, rest_rhs_prop, accessibility, initial_, source);
       then
         ass :: rest_ass;
@@ -363,8 +363,8 @@ algorithm
       equation
         bvals = Util.listMap(lhprops, Types.propAnyConst);
         DAE.C_VAR() = Util.listReduce(bvals, Types.constOr);
-        lhrtypes = Util.listMap(lhprops, Types.getPropType);        
-        Types.matchTypeTupleCall(rhs, tpl, lhrtypes);        
+        lhrtypes = Util.listMap(lhprops, Types.getPropType);
+        Types.matchTypeTupleCall(rhs, tpl, lhrtypes);
          /* Don\'t use new rhs\', since type conversions of 
             several output args are not clearly defined. */ 
       then
@@ -374,7 +374,7 @@ algorithm
       equation
         bvals = Util.listMap(lhprops, Types.propAnyConst);
         DAE.C_VAR() = Util.listReduce(bvals, Types.constOr);
-        lhrtypes = Util.listMap(lhprops, Types.getPropType);        
+        lhrtypes = Util.listMap(lhprops, Types.getPropType);
         Types.matchTypeTupleCall(rhs, tpl, lhrtypes);
          /* Don\'t use new rhs\', since type conversions of several output args are not clearly defined. */
       then

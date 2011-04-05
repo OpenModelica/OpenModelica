@@ -551,7 +551,7 @@ algorithm
         showErrors(Print.getErrorString(), ErrorExt.printMessagesStr());
 
         // Merge our program with the possible libs and models from extra .mo-files.
-        p = Interactive.updateProgram(pLibs, p); 
+        p = Interactive.updateProgram(pLibs, p);
 
         Debug.fprint("dump", "\n--------------- Parsed program ---------------\n");
         Debug.fcall("dumpgraphviz", DumpGraphviz.dump, p);
@@ -568,7 +568,7 @@ algorithm
         Debug.fcall("execstat",print, "*** Main -> To instantiate at time: " +& realString(clock()) +& "\n" );
 
         // Instantiate the program.
-        (cache, env, d_1, scode, cname) = instantiate(p); 
+        (cache, env, d_1, scode, cname) = instantiate(p);
 
         Debug.fcall("execstat",print, "*** Main -> done instantiation at time: " +& realString(clock()) +& "\n" );
         Debug.fprint("beforefixmodout", "Explicit part:\n");
@@ -622,7 +622,7 @@ algorithm
         // parse our algorithm given in the script        
         stmts = Parser.parseexp(f);
         //System.stopTimer();
-        //print("\nParseExp: " +& realString(System.getTimerIntervalTime()));        
+        //print("\nParseExp: " +& realString(System.getTimerIntervalTime()));
         
         // are there any errors?
         // show errors if there are any
@@ -858,7 +858,7 @@ protected function simcodegen
   input Absyn.Path inPath;
   input SCode.Program inProgram2;
   input Absyn.Program inProgram3;
-  input DAE.DAElist inDAElist4;  
+  input DAE.DAElist inDAElist4;
   input BackendDAE.IncidenceMatrix inIncidenceMatrix8;
   input BackendDAE.IncidenceMatrixT inIncidenceMatrixT9;
   input array<Integer> inIntegerArray6;
@@ -1130,7 +1130,7 @@ algorithm
   print("\t                           default is to not use the dependency analysis.\n");
   print("\t+d=noevalfunc              do not use the function interpreter, uses dynamic loading instead.\n");
   print("\t                           default is to use the function interpreter.\n");
-  print("\t+i=classpath               instantiate the class given by the fully qualified path.\n"); 
+  print("\t+i=classpath               instantiate the class given by the fully qualified path.\n");
   print("\t+v=N                       sets the vectorization limit, arrays and matrices with dimensions\n");
   print("\t                           larger than N will not be vectorized (default 20).\n");
   print("\t+simCodeTarget=name        Default target for code generation is \"C\".");
@@ -1142,7 +1142,7 @@ algorithm
   print("\tomc Model.mo Modelica      will first load the Modelica library and then produce \n");
   print("\t                           flattened Model on standard output\n");
   print("\tomc Model1.mo Model2.mo    will load both Model1.mo and Model2.mo, and produce \n");
-  print("\t                           flattened Model1 on standard output\n"); 
+  print("\t                           flattened Model1 on standard output\n");
   print("\t*.mo (Modelica files) \n");
   print("\t*.mof (Flat Modelica files) \n");
   print("\t*.mos (Modelica Script files) \n");
@@ -1167,7 +1167,7 @@ algorithm
       equation
         omhome = Settings.getInstallationDirectoryPath();
         _ = System.setEnv("OPENMODELICAHOME",omhome,true) "sendData work-around";
-        // print("OMHOME:" +& omhome +& "|"); 
+        // print("OMHOME:" +& omhome +& "|");
         true = "Windows_NT" ==& System.os();
         oldpath = System.readEnv("PATH");
         newpath = stringAppendList({omhome,"\\mingw\\bin;",omhome,"\\lib;",oldpath});

@@ -22,8 +22,8 @@ package Example
 	  end VARIABLE;
 	
 	  record BINARY  "Binary ops"
-	    Exp lhs; 
-	    Operator op;  
+	    Exp lhs;
+	    Operator op;
 	    Exp rhs;
 	  end BINARY;
 	end Exp;
@@ -32,7 +32,7 @@ package Example
 	  record PLUS end PLUS;
 	  record TIMES end TIMES;
 	  record LESS end LESS;
-	end Operator; 
+	end Operator;
 
 end Example;
 
