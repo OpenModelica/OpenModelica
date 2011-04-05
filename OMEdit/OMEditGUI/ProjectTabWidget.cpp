@@ -186,58 +186,61 @@ void GraphicsView::dropEvent(QDropEvent *event)
     QByteArray itemData = event->mimeData()->data("image/modelica-component");
     QDataStream dataStream(&itemData, QIODevice::ReadOnly);
 
-    QString className;
-    dataStream >> className;
+    QString name, classname;
+    int type;
+    QPointF point (mapToScene(event->pos()));
+    dataStream >> name >> classname >> type;
 
     MainWindow *pMainWindow = mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow;
+    name = getUniqueComponentName(StringHandler::getLastWordAfterDot(name).toLower());
     // if dropping an item on the diagram layer
     if (mIconType == StringHandler::DIAGRAM)
     {
         // if item is a class, model, block, connector or record. then we can drop it to the graphicsview
-        if (pMainWindow->mpOMCProxy->isWhat(StringHandler::CLASS, className) or
-            pMainWindow->mpOMCProxy->isWhat(StringHandler::MODEL, className) or
-            pMainWindow->mpOMCProxy->isWhat(StringHandler::BLOCK, className) or
-            pMainWindow->mpOMCProxy->isWhat(StringHandler::CONNECTOR, className) or
-            pMainWindow->mpOMCProxy->isWhat(StringHandler::RECORD, className))
+        if ((type == StringHandler::CLASS) or (type == StringHandler::MODEL) or (type == StringHandler::BLOCK) or
+            (type == StringHandler::CONNECTOR) or (type == StringHandler::RECORD))
         {
-            QString name = getUniqueComponentName(StringHandler::getLastWordAfterDot(className).toLower());
-//            if (pMainWindow->mpOMCProxy->isWhat(StringHandler::CONNECTOR, className))
-//            {
-//                addComponentoView(name, className, event->pos(), true, false, true);
-//                mpParentProjectTab->mpIconGraphicsView->addComponentoView(name, className, event->pos(), true, true);
-//            }
-//            else
-//            {
-                addComponentoView(name, className, event->pos());
-            //}
+            if (type == StringHandler::CONNECTOR)
+            {
+                addComponentoView(name, classname, point, true, true, true);
+                mpParentProjectTab->mpIconGraphicsView->addComponentoView(name, classname, point, true, false);
+            }
+            else
+            {
+                addComponentoView(name, classname, point);
+            }
             event->accept();
         }
         else
         {
+            pMainWindow->mpMessageWidget->printGUIInfoMessage(GUIMessages::getMessage(GUIMessages::DIAGRAM_VIEW_DROP_MSG)
+                                                              .arg(classname)
+                                                              .arg(StringHandler::getModelicaClassType(type)));
             event->ignore();
         }
     }
     // if dropping an item on the icon layer
-//    else if (mIconType == StringHandler::ICON)
-//    {
-//        QString name = getUniqueComponentName(StringHandler::getLastWordAfterDot(className).toLower());
-//        // if item is a connector. then we can drop it to the graphicsview
-//        if (pMainWindow->mpOMCProxy->isWhat(StringHandler::CONNECTOR, className))
-//        {
-//            addComponentoView(name, className, event->pos(), true, false);
-//            mpParentProjectTab->mpDiagramGraphicsView->addComponentoView(name, className, event->pos(), true,
-//                                                                         true, true);
-//            addClassAnnotation();
-//            event->accept();
-//        }
-//        else
-//        {
-//            event->ignore();
-//        }
-//    }
+    else if (mIconType == StringHandler::ICON)
+    {
+        // if item is a connector. then we can drop it to the graphicsview
+        if (type == StringHandler::CONNECTOR)
+        {
+            addComponentoView(name, classname, point, true, false);
+            mpParentProjectTab->mpDiagramGraphicsView->addComponentoView(name, classname, point, true,
+                                                                         true, true);
+            event->accept();
+        }
+        else
+        {
+            pMainWindow->mpMessageWidget->printGUIInfoMessage(GUIMessages::getMessage(GUIMessages::ICON_VIEW_DROP_MSG)
+                                                              .arg(classname)
+                                                              .arg(StringHandler::getModelicaClassType(type)));
+            event->ignore();
+        }
+    }
 }
 
-void GraphicsView::addComponentoView(QString name, QString className, QPoint point, bool isConnector,
+void GraphicsView::addComponentoView(QString name, QString className, QPointF point, bool isConnector,
                                      bool addObject, bool diagram)
 {
     MainWindow *pMainWindow = mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow;
@@ -249,7 +252,7 @@ void GraphicsView::addComponentoView(QString name, QString className, QPoint poi
     if (diagram)
     {
         QString result = pMainWindow->mpOMCProxy->getDiagramAnnotation(className);
-        newComponent = new Component(result, name, className, mapToScene(point), StringHandler::ICON, isConnector,
+        newComponent = new Component(result, name, className, point, StringHandler::ICON, isConnector,
                                      pMainWindow->mpOMCProxy, this);
     }
     else
@@ -257,13 +260,12 @@ void GraphicsView::addComponentoView(QString name, QString className, QPoint poi
         if (!oldComponent)
         {
             QString result = pMainWindow->mpOMCProxy->getIconAnnotation(className);
-            newComponent = new Component(result, name, className, mapToScene(point), StringHandler::ICON,
-                                         isConnector, pMainWindow->mpOMCProxy, this);
+            newComponent = new Component(result, name, className, point, StringHandler::ICON, isConnector,
+                                         pMainWindow->mpOMCProxy, this);
         }
         else
         {
-            newComponent = new Component(oldComponent, name, mapToScene(point), StringHandler::ICON, isConnector,
-                                         this);
+            newComponent = new Component(oldComponent, name, point, StringHandler::ICON, isConnector, this);
         }
     }
     if (addObject)
@@ -279,7 +281,7 @@ void GraphicsView::addComponentObject(Component *component)
     pMainWindow->mpOMCProxy->addComponent(component->getName(), component->getClassName(),
                                           mpParentProjectTab->mModelNameStructure);
     // add the annotations of icon
-    component->updateAnnotationString();
+    component->updateAnnotationString(false);
     mComponentsList.append(component);
 }
 
@@ -562,6 +564,8 @@ void GraphicsView::keyPressEvent(QKeyEvent *event)
     if (event->key() == Qt::Key_Delete)
     {
         emit keyPressDelete();
+        // once all selected items are deleted simply update the icon/diagram annotations.
+        addClassAnnotation();
     }
     else if(event->key() == Qt::Key_Up)
     {
@@ -579,18 +583,6 @@ void GraphicsView::keyPressEvent(QKeyEvent *event)
     {
         emit keyPressRight();
     }
-//    else if (event->modifiers().testFlag(Qt::ControlModifier) and event->key() == Qt::Key_Plus)
-//    {
-//        this->zoomIn();
-//    }
-//    else if (event->modifiers().testFlag(Qt::ControlModifier) and event->key() == Qt::Key_Minus)
-//    {
-//        this->zoomOut();
-//    }
-//    else if (event->modifiers().testFlag(Qt::ControlModifier) and event->key() == Qt::Key_0)
-//    {
-//        this->resetZoom();
-//    }
     else if (event->modifiers().testFlag(Qt::ControlModifier) and event->key() == Qt::Key_A)
     {
         this->selectAll();
@@ -1482,54 +1474,106 @@ void ProjectTab::getModelComponents()
     int i = 0;
     foreach (ComponentsProperties *componentProperties, components)
     {
-        //! @todo add the code to check if components are of types Real, so that we dont check annotation for them.
-        Component *oldComponent = pMainWindow->mpLibrary->getComponentObject(componentProperties->getClassName());
-        Component *newComponent;
-        // create a component
-        if (!pMainWindow->mpOMCProxy->isWhat(StringHandler::PACKAGE, componentProperties->getClassName()))
-        {
-            // Check if the icon is already loaded.
-            QString iconName;
-            iconName = componentProperties->getName();
+//        //! @todo add the code to check if components are of types Real, so that we dont check annotation for them.
+//        Component *oldComponent = pMainWindow->mpLibrary->getComponentObject(componentProperties->getClassName());
+//        Component *newComponent;
+//        // create a component
+//        if (!pMainWindow->mpOMCProxy->isWhat(StringHandler::PACKAGE, componentProperties->getClassName()))
+//        {
+//            // Check if the icon is already loaded.
+//            QString iconName;
+//            iconName = componentProperties->getName();
 
-            if (!oldComponent)
+//            if (!oldComponent)
+//            {
+//                LibraryComponent *libComponent;
+//                QString result = pMainWindow->mpOMCProxy->getIconAnnotation(componentProperties->getClassName());
+//                libComponent = new LibraryComponent(result, componentProperties->getClassName(),
+//                                                    mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy);
+//                // add the component to library widget components lists
+//                mpParentProjectTabWidget->mpParentMainWindow->mpLibrary->addComponentObject(libComponent);
+//                // create a new copy component here
+//                newComponent = new Component(libComponent->mpComponent, iconName, QPointF(0.0, 0.0),
+//                                             StringHandler::ICON, false, mpDiagramGraphicsView);
+////                newComponent = new Component(result, iconName, componentProperties->getClassName(), QPointF(0.0, 0.0),
+////                                             StringHandler::ICON, false, pMainWindow->mpOMCProxy, mpGraphicsView);
+//            }
+//            else
+//            {
+//                // create a new copy component here
+//                newComponent = new Component(oldComponent, iconName, QPointF(0.0, 0.0), StringHandler::ICON,
+//                                             false, mpDiagramGraphicsView);
+//            }
+//            //mpGraphicsView->addComponentObject(newComponent);
+//            mpDiagramGraphicsView->mComponentsList.append(newComponent);
+//        }
+
+        if (pMainWindow->mpOMCProxy->isWhat(StringHandler::CONNECTOR, componentProperties->getClassName()))
+        {
+            mpDiagramGraphicsView->addComponentoView(componentProperties->getName(),
+                                                     componentProperties->getClassName(), QPointF(0.0, 0.0), true,
+                                                     false, true);
+            mpIconGraphicsView->addComponentoView(componentProperties->getName(),
+                                                  componentProperties->getClassName(), QPointF(0.0, 0.0), true,
+                                                  false);
+
+            if (!static_cast<QString>(componentsAnnotationsList.at(i)).toLower().contains("error"))
             {
-                LibraryComponent *libComponent;
-                QString result = pMainWindow->mpOMCProxy->getIconAnnotation(componentProperties->getClassName());
-                libComponent = new LibraryComponent(result, componentProperties->getClassName(),
-                                                    mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy);
-                // add the component to library widget components lists
-                mpParentProjectTabWidget->mpParentMainWindow->mpLibrary->addComponentObject(libComponent);
-                // create a new copy component here
-                newComponent = new Component(libComponent->mpComponent, iconName, QPointF(0.0, 0.0),
-                                             StringHandler::ICON, false, mpDiagramGraphicsView);
-//                newComponent = new Component(result, iconName, componentProperties->getClassName(), QPointF(0.0, 0.0),
-//                                             StringHandler::ICON, false, pMainWindow->mpOMCProxy, mpGraphicsView);
+                // get the diagram component object we just created
+                Component *pDiagramComponent = mpDiagramGraphicsView->getComponentObject(componentProperties->getName());
+                // get the icon component object we just created
+                Component *pIconComponent = mpIconGraphicsView->getComponentObject(componentProperties->getName());
+                // if component annotation is found then place it according to annotation
+                if (StringHandler::removeFirstLastCurlBrackets(componentsAnnotationsList.at(i)).length() > 0)
+                {
+                    Transformation *transformation;
+                    if (pDiagramComponent)
+                    {
+                        pDiagramComponent->mTransformationString = componentsAnnotationsList.at(i);
+                        transformation = new Transformation(pDiagramComponent);
+                        // We need to reset the matrix before applying tranformations.
+                        pDiagramComponent->resetTransform();
+                        pDiagramComponent->scale(transformation->getScale(), transformation->getScale());
+                        pDiagramComponent->setPos(transformation->getPositionX(), transformation->getPositionY());
+                        pDiagramComponent->setRotation(transformation->getRotateAngle());
+                    }
+                    if (pIconComponent)
+                    {
+                        pIconComponent->mTransformationString = componentsAnnotationsList.at(i);
+                        // We need to reset the matrix before applying tranformations.
+                        pIconComponent->resetTransform();
+                        pIconComponent->scale(transformation->getScaleIcon(), transformation->getScaleIcon());
+                        pIconComponent->setPos(transformation->getPositionXIcon(), transformation->getPositionYIcon());
+                        pIconComponent->setRotation(transformation->getRotateAngleIcon());
+                    }
+                }
             }
-            else
-            {
-                // create a new copy component here
-                newComponent = new Component(oldComponent, iconName, QPointF(0.0, 0.0), StringHandler::ICON,
-                                             false, mpDiagramGraphicsView);
-            }
-            //mpGraphicsView->addComponentObject(newComponent);
-            mpDiagramGraphicsView->mComponentsList.append(newComponent);
         }
-
-        if (static_cast<QString>(componentsAnnotationsList.at(i)).toLower().contains("error"))
-            continue;
-
-        // if component annotation is found then place it according to annotation otherwise go to else block
-        if (StringHandler::removeFirstLastCurlBrackets(componentsAnnotationsList.at(i)).length() > 0)
+        else
         {
-            newComponent->mTransformationString = componentsAnnotationsList.at(i);
-            Transformation *transformation = new Transformation(newComponent);
-            //newComponent->setTransform(transformation->getTransformationMatrix());
-            //! @todo We need to reset the matrix before applying tranformations.
-            newComponent->resetTransform();
-            newComponent->scale(transformation->getScale(), transformation->getScale());
-            newComponent->setPos(transformation->getPositionX(), transformation->getPositionY());
-            newComponent->setRotation(transformation->getRotateAngle());
+            mpDiagramGraphicsView->addComponentoView(componentProperties->getName(),
+                                                     componentProperties->getClassName(), QPointF(0.0, 0.0), true,
+                                                     false, false);
+            if (!static_cast<QString>(componentsAnnotationsList.at(i)).toLower().contains("error"))
+            {
+                // get the diagram component object we just created
+                Component *pDiagramComponent = mpDiagramGraphicsView->getComponentObject(componentProperties->getName());
+                if (pDiagramComponent)
+                {
+                    // if component annotation is found then place it according to annotation
+                    if (StringHandler::removeFirstLastCurlBrackets(componentsAnnotationsList.at(i)).length() > 0)
+                    {
+                        pDiagramComponent->mTransformationString = componentsAnnotationsList.at(i);
+                        Transformation *transformation = new Transformation(pDiagramComponent);
+                        //newComponent->setTransform(transformation->getTransformationMatrix());
+                        //! @todo We need to reset the matrix before applying tranformations.
+                        pDiagramComponent->resetTransform();
+                        pDiagramComponent->scale(transformation->getScale(), transformation->getScale());
+                        pDiagramComponent->setPos(transformation->getPositionX(), transformation->getPositionY());
+                        pDiagramComponent->setRotation(transformation->getRotateAngle());
+                    }
+                }
+            }
         }
         i++;
     }

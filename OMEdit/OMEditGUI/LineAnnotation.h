@@ -47,6 +47,7 @@ public:
     LineAnnotation(QString shape, Component *pParent);
     LineAnnotation(GraphicsView *graphicsView, QGraphicsItem *pParent = 0);
     LineAnnotation(QString shape, GraphicsView *graphicsView, QGraphicsItem *pParent = 0);
+    QPainterPath getShape() const;
     QRectF boundingRect() const;
     QPainterPath shape() const;
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
@@ -56,6 +57,7 @@ public:
     void drawRectangleCornerItems();
     QString getShapeAnnotation();
     void parseShapeAnnotation(QString shape, OMCProxy *omc);
+    QPolygonF drawArrow(QPointF startPos, QPointF endPos, qreal size, int arrowType) const;
 
     Component *mpComponent;
 public slots:

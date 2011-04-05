@@ -44,6 +44,8 @@ SimulationWidget::SimulationWidget(MainWindow *pParent)
     setUpForm();
 
     mpProgressDialog = new ProgressDialog(this);
+
+    connect(this, SIGNAL(showPlottingView()), mpParentMainWindow, SLOT(switchToPlottingView()));
 }
 
 SimulationWidget::~SimulationWidget()
@@ -149,7 +151,6 @@ void SimulationWidget::initializeFields()
         setWindowTitle(QString(Helper::applicationName).append(" - Interactive Simulation"));
         mpSimulationHeading->setText(tr("Interactive Simulation"));
         mpSimulationIntervalGroup->setDisabled(true);
-        mpNumberofIntervalsTextBox->setText(tr("5"));
         return;
     }
     else
@@ -157,7 +158,6 @@ void SimulationWidget::initializeFields()
         setWindowTitle(QString(Helper::applicationName).append(" - Simulation"));
         mpSimulationHeading->setText(tr("Simulation"));
         mpSimulationIntervalGroup->setDisabled(false);
-        mpNumberofIntervalsTextBox->setText(tr("500"));
     }
 
     ProjectTab *projectTab = mpParentMainWindow->mpProjectTabs->getCurrentTab();
@@ -335,6 +335,7 @@ void SimulationWidget::simulateModel(QString simulationParameters)
             pPlotWidget->addPlotVariablestoTree(QString(output_file).append("_res.")
                                                 .append(mpOutputFormatComboBox->currentText()),list);
             mpParentMainWindow->plotdock->show();
+            emit showPlottingView();
             mpParentMainWindow->mpMessageWidget->printGUIInfoMessage(QString("Simulated '").append(projectTab->mModelNameStructure)
                                                                      .append("' successfully!").append(message));
         }

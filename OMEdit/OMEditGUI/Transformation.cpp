@@ -31,18 +31,27 @@
  *
  */
 
+#include <stdexcept>
+
 #include "Transformation.h"
 
 Transformation::Transformation(Component *pComponent)
 {
     mVisible = true;
     mPositionX = 0.0;
+    mPositionXIcon = 0.0;
     mPositionY = 0.0;
+    mPositionYIcon = 0.0;
     mFlipHorizontal = false;
+    mFlipHorizontalIcon = false;
     mFlipVertical = false;
+    mFlipVerticalIcon = false;
     mRotateAngle = 0.0;
+    mRotateAngleIcon = 0.0;
     mScale = 1.0;
+    mScaleIcon = 1.0;
     mAspectRatio = 1.0;
+    mAspectRatioIcon = 1.0;
 
     mpComponent = pComponent;
 
@@ -116,6 +125,7 @@ void Transformation::parseTransformationString3X(QString value)
     if (mHeight < 1)
         mHeight = 200.0;
 
+    // get transformations of diagram
     // get the visible value
     mVisible = static_cast<QString>(list.at(0)).contains("true");
     // origin x position
@@ -153,6 +163,67 @@ void Transformation::parseTransformationString3X(QString value)
 
     // rotate angle
     mRotateAngle = static_cast<QString>(list.at(7)).toFloat();
+
+    try
+    {
+        // get transformations of icon now
+        // origin x position
+        bool ok = true;
+        mOriginIcon.setX(static_cast<QString>(list.at(8)).toFloat(&ok));
+        if (!ok)
+            throw std::runtime_error("Invalid number format exception");
+        // origin y position
+        mOriginIcon.setY(static_cast<QString>(list.at(9)).toFloat(&ok));
+        if (!ok)
+            throw std::runtime_error("Invalid number format exception");
+        // extent1 x
+        mExtent1Icon.setX(static_cast<QString>(list.at(10)).toFloat(&ok));
+        if (!ok)
+            throw std::runtime_error("Invalid number format exception");
+        // extent1 y
+        mExtent1Icon.setY(static_cast<QString>(list.at(11)).toFloat(&ok));
+        if (!ok)
+            throw std::runtime_error("Invalid number format exception");
+        // extent1 x
+        mExtent2Icon.setX(static_cast<QString>(list.at(12)).toFloat(&ok));
+        if (!ok)
+            throw std::runtime_error("Invalid number format exception");
+        // extent1 y
+        mExtent2Icon.setY(static_cast<QString>(list.at(13)).toFloat(&ok));
+        if (!ok)
+            throw std::runtime_error("Invalid number format exception");
+        // rotate angle
+        mRotateAngleIcon = static_cast<QString>(list.at(14)).toFloat(&ok);
+        if (!ok)
+            throw std::runtime_error("Invalid number format exception");
+    }
+    catch(std::exception &exception)
+    {
+        Q_UNUSED(exception);
+        mOriginIcon = mOrigin;
+        mExtent1Icon = mExtent1;
+        mExtent2Icon = mExtent2;
+        mRotateAngleIcon = mRotateAngle;
+    }
+    if ((mExtent1Icon.x() == -mExtent2Icon.x()) and (mExtent1Icon.y() == -mExtent2Icon.y()))
+    {
+        mPositionXIcon = mOriginIcon.x();
+        mPositionYIcon = mOriginIcon.y();
+    }
+    else
+    {
+        mPositionXIcon = (mExtent1Icon.x() + mExtent2Icon.x()) / 2;
+        mPositionYIcon = (mExtent1Icon.y() + mExtent2Icon.y()) / 2;
+    }
+
+    qreal tempwidthIcon = fabs(mExtent1Icon.x() - mExtent2Icon.x());
+    qreal tempHeightIcon = fabs(mExtent1Icon.y() - mExtent2Icon.y());
+
+    mScaleIcon = tempwidthIcon / mWidth;
+    mAspectRatioIcon = tempHeightIcon / (mHeight * mScale);
+
+    mFlipHorizontalIcon = mExtent2Icon.x() < mExtent1Icon.x();
+    mFlipVerticalIcon = mExtent2Icon.y() < mExtent1Icon.y();
 }
 
 QTransform Transformation::getTransformationMatrix()
@@ -243,4 +314,24 @@ qreal Transformation::getPositionX()
 qreal Transformation::getPositionY()
 {
     return mPositionY;
+}
+
+qreal Transformation::getRotateAngleIcon()
+{
+    return mRotateAngleIcon;
+}
+
+qreal Transformation::getScaleIcon()
+{
+    return mScaleIcon;
+}
+
+qreal Transformation::getPositionXIcon()
+{
+    return mPositionXIcon;
+}
+
+qreal Transformation::getPositionYIcon()
+{
+    return mPositionYIcon;
 }

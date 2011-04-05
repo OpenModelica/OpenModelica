@@ -23,7 +23,7 @@ QTreeWidget::item {
 }
 /* End of Library Widget Styles */
 
-QTextEdit, QLineEdit {
+QTextEdit, QLineEdit, QMdiArea {
     border: 1px solid gray;
 }
 QTextEdit#ModelicaEditor {

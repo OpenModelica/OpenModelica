@@ -45,6 +45,7 @@
 #include <QComboBox>
 #include <QSplashScreen>
 #include <QProgressBar>
+#include <QDomDocument>
 
 #if (QT_VERSION < QT_VERSION_CHECK(4, 6, 0))
     #error "OMEdit requires Qt 4.6.0 or newer"
@@ -58,6 +59,7 @@
 #include "StringHandler.h"
 #include "Helper.h"
 #include "SimulationWidget.h"
+#include "PlotWindowContainer.h"
 #include "InteractiveSimulationTabWidget.h"
 #include "PlotWidget.h"
 #include "SplashScreen.h"
@@ -80,6 +82,7 @@ class SearchMSLWidget;
 class LibraryWidget;
 class ModelCreator;
 class SimulationWidget;
+class PlotWindowContainer;
 class InteractiveSimulationTabWidget;
 class PlotWidget;
 class DocumentationWidget;
@@ -100,6 +103,7 @@ public:
     SearchMSLWidget *mpSearchMSLWidget;
     LibraryWidget *mpLibrary;
     SimulationWidget *mpSimulationWidget;
+    PlotWindowContainer *mpPlotWindowContainer;
     InteractiveSimulationTabWidget *mpInteractiveSimualtionTabWidget;
     PlotWidget *mpPlotWidget;
     ModelCreator *mpModelCreator;
@@ -162,7 +166,10 @@ public:
     QAction *bitmapAction;
     QActionGroup *viewActionGroup;
     QAction *modelingViewAction;
+    QAction *plottingViewAction;
     QAction *interactiveSimulationViewAction;
+    QAction *newPlotWindowAction;
+    QAction *newPlotParametricWindowAction;
 
     QToolBar *fileToolBar;
     QToolBar *editToolBar;
@@ -170,6 +177,7 @@ public:
     QToolBar *shapesToolBar;
     QToolBar *simulationToolBar;
     QToolBar *omnotebookToolbar;
+    QToolBar *plotToolBar;
     QToolBar *perspectiveToolBar;
 
     QDockWidget *plotdock;
@@ -203,7 +211,10 @@ private slots:
     void toggleShapesButton();
     void focusMSLSearch(bool visible);
     void switchToModelingView();
+    void switchToPlottingView();
     void switchToInteractiveSimulationView();
+    void addNewPlotWindow();
+    void addNewPlotParametricWindow();
 public slots:
     void showProgressBar();
     void hideProgressBar();

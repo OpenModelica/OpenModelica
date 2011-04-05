@@ -42,6 +42,7 @@ ModelicaEditor::ModelicaEditor(ProjectTab *pParent)
     setTabStopWidth(Helper::tabWidth);
     setObjectName(tr("ModelicaEditor"));
     setAutoFormatting(QTextEdit::AutoNone);
+    setAcceptRichText(false);
     // depending on the project tab readonly state set the text view readonly state
     setReadOnly(mpParentProjectTab->isReadOnly());
     connect(this, SIGNAL(focusOut()), mpParentProjectTab, SLOT(modelicaEditorTextChanged()));

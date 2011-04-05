@@ -139,7 +139,7 @@ QColor ModelicaTextSettings::getCommentRuleColor()
 }
 
 OptionsWidget::OptionsWidget(MainWindow *pParent)
-    : QDialog(pParent, Qt::WindowTitleHint), settings(QSettings::IniFormat, QSettings::UserScope, "openmodelica", "editor")
+    : QDialog(pParent, Qt::WindowTitleHint), mSettings(QSettings::IniFormat, QSettings::UserScope, "openmodelica", "omedit")
 {
     mpParentMainWindow = pParent;
     mpModelicaTextSettings = new ModelicaTextSettings();
@@ -147,7 +147,11 @@ OptionsWidget::OptionsWidget(MainWindow *pParent)
     setWindowTitle(QString(Helper::applicationName).append(" - Options"));
     setModal(true);
 
-    // get the settings from the xml file
+    mpGeneralSettingsPage = new GeneralSettingsPage(this);
+    mpModelicaTextEditorPage = new ModelicaTextEditorPage(this);
+    mpPenStylePage = new PenStylePage(this);
+    mpBrushStylePage = new BrushStylePage(this);
+    // get the settings
     readSettings();
     // set up the Options Dialog
     setUpDialog();
@@ -155,25 +159,113 @@ OptionsWidget::OptionsWidget(MainWindow *pParent)
 
 void OptionsWidget::readSettings()
 {
-    settings.sync();
-    if (settings.contains("fontFamily"))
-      mpModelicaTextSettings->setFontFamily(settings.value("fontFamily").toString());
-    if (settings.contains("fontSize"))
-      mpModelicaTextSettings->setFontSize(settings.value("fontSize").toInt());
-    if (settings.contains("textRule/color"))
-      mpModelicaTextSettings->setTextRuleColor(QColor(settings.value("textRule/color").toUInt()));
-    if (settings.contains("keywordRule/color"))
-      mpModelicaTextSettings->setKeywordRuleColor(QColor(settings.value("keywordRule/color").toUInt()));
-    if (settings.contains("typeRule/color"))
-      mpModelicaTextSettings->setTypeRuleColor(QColor(settings.value("typeRule/color").toUInt()));
-    if (settings.contains("functionRule/color"))
-      mpModelicaTextSettings->setFunctionRuleColor(QColor(settings.value("functionRule/color").toUInt()));
-    if (settings.contains("quotesRule/color"))
-      mpModelicaTextSettings->setQuotesRuleColor(QColor(settings.value("quotesRule/color").toUInt()));
-    if (settings.contains("commentRule/color"))
-      mpModelicaTextSettings->setCommentRuleColor(QColor(settings.value("commentRule/color").toUInt()));
-    if (settings.contains("numberRule/color"))
-      mpModelicaTextSettings->setNumberRuleColor(QColor(settings.value("numberRule/color").toUInt()));
+    mSettings.sync();
+    readGeneralSettings();
+    readModelicaTextSettings();
+    readPenStyleSettings();
+    readBrushStyleSettings();
+}
+
+void OptionsWidget::readGeneralSettings()
+{
+    if (mSettings.contains("plotting/viewmode"))
+        mpGeneralSettingsPage->setViewMode(mSettings.value("plotting/viewmode").toString());
+}
+
+void OptionsWidget::readModelicaTextSettings()
+{
+    if (mSettings.contains("fontFamily"))
+        mpModelicaTextSettings->setFontFamily(mSettings.value("fontFamily").toString());
+    if (mSettings.contains("fontSize"))
+        mpModelicaTextSettings->setFontSize(mSettings.value("fontSize").toInt());
+    if (mSettings.contains("textRule/color"))
+        mpModelicaTextSettings->setTextRuleColor(QColor(mSettings.value("textRule/color").toUInt()));
+    if (mSettings.contains("keywordRule/color"))
+        mpModelicaTextSettings->setKeywordRuleColor(QColor(mSettings.value("keywordRule/color").toUInt()));
+    if (mSettings.contains("typeRule/color"))
+        mpModelicaTextSettings->setTypeRuleColor(QColor(mSettings.value("typeRule/color").toUInt()));
+    if (mSettings.contains("functionRule/color"))
+        mpModelicaTextSettings->setFunctionRuleColor(QColor(mSettings.value("functionRule/color").toUInt()));
+    if (mSettings.contains("quotesRule/color"))
+        mpModelicaTextSettings->setQuotesRuleColor(QColor(mSettings.value("quotesRule/color").toUInt()));
+    if (mSettings.contains("commentRule/color"))
+        mpModelicaTextSettings->setCommentRuleColor(QColor(mSettings.value("commentRule/color").toUInt()));
+    if (mSettings.contains("numberRule/color"))
+        mpModelicaTextSettings->setNumberRuleColor(QColor(mSettings.value("numberRule/color").toUInt()));
+}
+
+void OptionsWidget::readPenStyleSettings()
+{
+    if (mSettings.contains("penstyle/color"))
+    {
+        if (mSettings.value("penstyle/color").toString().isEmpty())
+            mpPenStylePage->setPenColor(Qt::transparent);
+        else
+            mpPenStylePage->setPenColor(QColor(mSettings.value("penstyle/color").toUInt()));
+    }
+    if (mSettings.contains("penstyle/pattern"))
+        mpPenStylePage->setPenPattern(mSettings.value("penstyle/pattern").toString());
+    if (mSettings.contains("penstyle/thickness"))
+        mpPenStylePage->setPenThickness(mSettings.value("penstyle/thickness").toDouble());
+    if (mSettings.contains("penstyle/smooth"))
+        mpPenStylePage->setPenSmooth(mSettings.value("penstyle/smooth").toBool());
+}
+
+void OptionsWidget::readBrushStyleSettings()
+{
+    if (mSettings.contains("brushstyle/color"))
+    {
+        if (mSettings.value("brushstyle/color").toString().isEmpty())
+            mpBrushStylePage->setBrushColor(Qt::transparent);
+        else
+            mpBrushStylePage->setBrushColor(mSettings.value("brushstyle/color").toUInt());
+    }
+    if (mSettings.contains("brushstyle/pattern"))
+        mpBrushStylePage->setBrushPattern(mSettings.value("brushstyle/pattern").toString());
+}
+
+void OptionsWidget::saveGeneralSettings()
+{
+    mSettings.setValue("plotting/viewmode", mpGeneralSettingsPage->getViewMode());
+
+    if (mpGeneralSettingsPage->getViewMode().compare("SubWindow") == 0)
+        mpParentMainWindow->mpPlotWindowContainer->setViewMode(QMdiArea::SubWindowView);
+    else
+        mpParentMainWindow->mpPlotWindowContainer->setViewMode(QMdiArea::TabbedView);
+
+}
+
+void OptionsWidget::saveModelicaTextSettings()
+{
+    mSettings.setValue("fontFamily", mpModelicaTextSettings->getFontFamily());
+    mSettings.setValue("fontSize", mpModelicaTextSettings->getFontSize());
+    mSettings.setValue("textRule/color", mpModelicaTextSettings->getTextRuleColor().rgba());
+    mSettings.setValue("keywordRule/color", mpModelicaTextSettings->getKeywordRuleColor().rgba());
+    mSettings.setValue("typeRule/color", mpModelicaTextSettings->getTypeRuleColor().rgba());
+    mSettings.setValue("functionRule/color", mpModelicaTextSettings->getFunctionRuleColor().rgba());
+    mSettings.setValue("quotesRule/color", mpModelicaTextSettings->getQuotesRuleColor().rgba());
+    mSettings.setValue("commentRule/color", mpModelicaTextSettings->getCommentRuleColor().rgba());
+    mSettings.setValue("numberRule/color", mpModelicaTextSettings->getNumberRuleColor().rgba());
+}
+
+void OptionsWidget::savePenStyleSettings()
+{
+    if (mpPenStylePage->getPenColor() == Qt::transparent)
+        mSettings.setValue("penstyle/color", tr(""));
+    else
+        mSettings.setValue("penstyle/color", mpPenStylePage->getPenColor().rgba());
+    mSettings.setValue("penstyle/pattern", mpPenStylePage->getPenPatternString());
+    mSettings.setValue("penstyle/thickness", mpPenStylePage->getPenThickness());
+    mSettings.setValue("penstyle/smooth", mpPenStylePage->getPenSmooth());
+}
+
+void OptionsWidget::saveBrushStyleSettings()
+{
+    if (mpBrushStylePage->getBrushColor() == Qt::transparent)
+        mSettings.setValue("brushstyle/color", tr(""));
+    else
+        mSettings.setValue("brushstyle/color", mpBrushStylePage->getBrushColor().rgba());
+    mSettings.setValue("brushstyle/pattern", mpBrushStylePage->getBrushPatternString());
 }
 
 void OptionsWidget::setUpDialog()
@@ -219,15 +311,32 @@ void OptionsWidget::setUpDialog()
 
 void OptionsWidget::addListItems()
 {
+    // General Settings Item
+    QListWidgetItem *generalSettingsItem = new QListWidgetItem(mpOptionsList);
+    generalSettingsItem->setIcon(QIcon(":/Resources/icons/preferences.png"));
+    generalSettingsItem->setText(tr("General"));
+    mpOptionsList->item(0)->setSelected(true);
+    // Modelica Text Item
     QListWidgetItem *modelicaTextEditorItem = new QListWidgetItem(mpOptionsList);
     modelicaTextEditorItem->setIcon(QIcon(":/Resources/icons/modeltext.png"));
     modelicaTextEditorItem->setText(tr("Modelica Text Editor"));
+    // Pen Style Item
+    QListWidgetItem *penStyleItem = new QListWidgetItem(mpOptionsList);
+    penStyleItem->setIcon(QIcon(":/Resources/icons/linestyle.png"));
+    penStyleItem->setText(tr("Pen Style"));
+    // Brush Style Item
+    QListWidgetItem *brushStyleItem = new QListWidgetItem(mpOptionsList);
+    brushStyleItem->setIcon(QIcon(":/Resources/icons/brushstyle.png"));
+    brushStyleItem->setText(tr("Brush Style"));
 }
 
 void OptionsWidget::createPages()
 {
     mpPagesWidget = new QStackedWidget;
-    mpPagesWidget->addWidget(new ModelicaTextEditorPage(this));
+    mpPagesWidget->addWidget(mpGeneralSettingsPage);
+    mpPagesWidget->addWidget(mpModelicaTextEditorPage);
+    mpPagesWidget->addWidget(mpPenStylePage);
+    mpPagesWidget->addWidget(mpBrushStylePage);
 }
 
 void OptionsWidget::changePage(QListWidgetItem *current, QListWidgetItem *previous)
@@ -243,25 +352,65 @@ void OptionsWidget::reject()
     // read the old settings from the file
     readSettings();
     // set the fields back to default values
-    dynamic_cast<ModelicaTextEditorPage*>(mpPagesWidget->widget(0))->initializeFields();
+    mpModelicaTextEditorPage->initializeFields();
     QDialog::reject();
 }
 
 void OptionsWidget::saveSettings()
 {
-    settings.setValue("fontFamily",mpModelicaTextSettings->getFontFamily());
-    settings.setValue("fontSize",mpModelicaTextSettings->getFontSize());
-    settings.setValue("textRule/color",mpModelicaTextSettings->getTextRuleColor().rgba());
-    settings.setValue("keywordRule/color",mpModelicaTextSettings->getKeywordRuleColor().rgba());
-    settings.setValue("typeRule/color",mpModelicaTextSettings->getTypeRuleColor().rgba());
-    settings.setValue("functionRule/color",mpModelicaTextSettings->getFunctionRuleColor().rgba());
-    settings.setValue("quotesRule/color",mpModelicaTextSettings->getQuotesRuleColor().rgba());
-    settings.setValue("commentRule/color",mpModelicaTextSettings->getCommentRuleColor().rgba());
-    settings.setValue("numberRule/color",mpModelicaTextSettings->getNumberRuleColor().rgba());
-    settings.sync();
+    saveGeneralSettings();
+    saveModelicaTextSettings();
     // emit the signal so that all syntax highlighters are updated
     emit modelicaTextSettingsChanged();
+    savePenStyleSettings();
+    saveBrushStyleSettings();
+    mSettings.sync();
     accept();
+}
+
+GeneralSettingsPage::GeneralSettingsPage(OptionsWidget *pParent)
+    : QWidget(pParent)
+{
+    mpParentOptionsWidget = pParent;
+
+    mpPlottingGroup = new QGroupBox(tr("Plotting"));
+
+    mpViewModeLabel = new QLabel(tr("View Mode:"));
+    mpTabbedViewRadioButton = new QRadioButton(tr("Tabbed View"));
+    mpTabbedViewRadioButton->setChecked(true);
+    mpSubWindowViewRadioButton = new QRadioButton(tr("SubWindow View"));
+    QButtonGroup *pViewModeGroup = new QButtonGroup;
+    pViewModeGroup->addButton(mpTabbedViewRadioButton);
+    pViewModeGroup->addButton(mpSubWindowViewRadioButton);
+
+    QGridLayout *mainLayout = new QGridLayout;
+    mainLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+    mainLayout->addWidget(mpViewModeLabel, 0, 0);
+    mainLayout->addWidget(mpTabbedViewRadioButton, 1, 0);
+    mainLayout->addWidget(mpSubWindowViewRadioButton, 2, 0);
+    mpPlottingGroup->setLayout(mainLayout);
+
+    QVBoxLayout *layout = new QVBoxLayout;
+    layout->setContentsMargins(0, 0, 0, 0);
+    layout->addWidget(mpPlottingGroup);
+
+    setLayout(layout);
+}
+
+QString GeneralSettingsPage::getViewMode()
+{
+    if (mpSubWindowViewRadioButton->isChecked())
+        return "SubWindow";
+    else
+        return "Tabbed";
+}
+
+void GeneralSettingsPage::setViewMode(QString value)
+{
+    if (value.compare("SubWindow") == 0)
+        mpSubWindowViewRadioButton->setChecked(true);
+    else
+        mpTabbedViewRadioButton->setChecked(true);
 }
 
 ModelicaTextEditorPage::ModelicaTextEditorPage(OptionsWidget *pParent)
@@ -464,4 +613,302 @@ void ModelicaTextEditorPage::pickColor()
     // change the color of item
     item->setForeground(color);
     emit updatePreview();
+}
+
+PenStylePage::PenStylePage(OptionsWidget *pParent)
+    : QWidget(pParent)
+{
+    mpParentOptionsWidget = pParent;
+
+    mpPenStyleGroup = new QGroupBox(tr("Pen Style"));
+
+    mpColorLabel = new QLabel(tr("Color:"));
+    mpColorViewerLabel = new QLabel(tr(""));
+    mpColorPickButton = new QPushButton(tr("Pick Color"));
+    connect(mpColorPickButton, SIGNAL(pressed()), SLOT(pickColor()));
+    mpNoColorCheckBox = new QCheckBox(tr("No Color"));
+    connect(mpNoColorCheckBox, SIGNAL(stateChanged(int)), SLOT(noColorChecked(int)));
+
+    mpPatternLabel = new QLabel(tr("Pattern:"));
+    mpPatternsComboBox = new QComboBox;
+    mpPatternsComboBox->setIconSize(Helper::iconSize);
+    mpPatternsComboBox->addItem(QIcon(Helper::solidPenIcon), Helper::solidPen, Helper::solidPenStyle);
+    mpPatternsComboBox->addItem(QIcon(Helper::dashPenIcon), Helper::dashPen, Helper::dashPenStyle);
+    mpPatternsComboBox->addItem(QIcon(Helper::dotPenIcon), Helper::dotPen, Helper::dotPenStyle);
+    mpPatternsComboBox->addItem(QIcon(Helper::dashDotPenIcon), Helper::dashDotPen, Helper::dashDotPenStyle);
+    mpPatternsComboBox->addItem(QIcon(Helper::dashDotDotPenIcon), Helper::dashDotDotPen, Helper::dashDotDotPenStyle);
+
+    mpThicknessLabel = new QLabel(tr("Thickness:"));
+    mpThicknessSpinBox = new QDoubleSpinBox;
+    // change the locale to C so that decimal char is changed from ',' to '.'
+    mpThicknessSpinBox->setLocale(QLocale("C"));
+    mpThicknessSpinBox->setRange(0.25, 100.0);
+    mpThicknessSpinBox->setSingleStep(0.5);
+
+    mpSmoothLabel = new QLabel(tr("Smooth:"));
+    mpSmoothCheckBox = new QCheckBox(tr("Bezier Curve"));
+
+    // set default values
+    setPenColor(Qt::blue);                     // blue
+    setColorViewerPixmap(getPenColor());
+    setPenPattern(tr("Solid"));                // Qt::SolidLine
+    setPenThickness(0.25);
+    setPenSmooth(false);
+
+    QGridLayout *mainLayout = new QGridLayout;
+    mainLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+    mainLayout->addWidget(mpColorLabel, 0, 0);
+    mainLayout->addWidget(mpColorViewerLabel, 0, 1);
+    mainLayout->addWidget(mpColorPickButton, 1, 0);
+    mainLayout->addWidget(mpNoColorCheckBox, 1, 1);
+    mainLayout->addWidget(mpPatternLabel, 2, 0, 1, 2);
+    mainLayout->addWidget(mpPatternsComboBox, 3, 0);
+    mainLayout->addWidget(mpThicknessLabel, 4, 0, 1, 2);
+    mainLayout->addWidget(mpThicknessSpinBox, 5, 0);
+    mainLayout->addWidget(mpSmoothLabel, 6, 0, 1, 2);
+    mainLayout->addWidget(mpSmoothCheckBox, 7, 0);
+    mpPenStyleGroup->setLayout(mainLayout);
+
+    QVBoxLayout *layout = new QVBoxLayout;
+    layout->setContentsMargins(0, 0, 0, 0);
+    layout->addWidget(mpPenStyleGroup);
+
+    setLayout(layout);
+}
+
+void PenStylePage::setPenColor(QColor color)
+{
+    mPenColor = color;
+}
+
+QColor PenStylePage::getPenColor()
+{
+    // if user selects no pen color and selects a brush color then return pen color as transparent
+    if ((mpNoColorCheckBox->checkState() == Qt::Checked) and
+        (mpParentOptionsWidget->mpBrushStylePage->getBrushColor().spec() != QColor::Invalid))
+        return Qt::transparent;
+    // if user selects no pen color and selects no brush color then return pen color as black(default)
+    else if ((mpNoColorCheckBox->checkState() == Qt::Checked) and
+             (mpParentOptionsWidget->mpBrushStylePage->getBrushColor().spec() == QColor::Invalid))
+        return Qt::black;
+    else
+        return mPenColor;
+}
+
+void PenStylePage::setPenPattern(QString pattern)
+{
+    int index = mpPatternsComboBox->findText(pattern, Qt::MatchExactly);
+    if (index != -1)
+        mpPatternsComboBox->setCurrentIndex(index);
+}
+
+QString PenStylePage::getPenPatternString()
+{
+    return mpPatternsComboBox->currentText();
+}
+
+Qt::PenStyle PenStylePage::getPenPattern()
+{
+    return Qt::PenStyle(mpPatternsComboBox->itemData(mpPatternsComboBox->currentIndex()).toInt());
+}
+
+void PenStylePage::setPenThickness(double thickness)
+{
+    mpThicknessSpinBox->setValue(thickness);
+}
+
+double PenStylePage::getPenThickness()
+{
+    return mpThicknessSpinBox->value();
+}
+
+void PenStylePage::setPenSmooth(bool smooth)
+{
+    mpSmoothCheckBox->setChecked(smooth);
+}
+
+bool PenStylePage::getPenSmooth()
+{
+    return mpSmoothCheckBox->isChecked();
+}
+
+void PenStylePage::setNoColorCheckBox(bool state)
+{
+    mpNoColorCheckBox->setChecked(state);
+}
+
+bool PenStylePage::getNoColorCheckBox()
+{
+    if (mpNoColorCheckBox->checkState() == Qt::Checked)
+        return true;
+    else if (mpNoColorCheckBox->checkState() == Qt::Checked)
+        return false;
+}
+
+void PenStylePage::setColorViewerPixmap(QColor color)
+{
+    QPixmap pixmap(Helper::iconSize);
+    pixmap.fill(color);
+    mpColorViewerLabel->setPixmap(pixmap);
+}
+
+void PenStylePage::pickColor()
+{
+    QColor color = QColorDialog::getColor();
+
+    if (color.spec() == QColor::Invalid)
+        return;
+
+    setPenColor(color);
+    mpNoColorCheckBox->setChecked(false);
+}
+
+void PenStylePage::noColorChecked(int state)
+{
+    if (state == Qt::Checked)
+    {
+        // if user selects no color checkbox and no brush color is specified use black color for pen
+        if (mpParentOptionsWidget->mpBrushStylePage->getBrushColor().spec() != QColor::Invalid)
+        {
+            setColorViewerPixmap(Qt::black);
+        }
+        // if user selects no color checkbox and brush color is specified use transparent color for pen then
+        else
+        {
+            setColorViewerPixmap(Qt::transparent);
+        }
+    }
+    else if (state == Qt::Unchecked)
+    {
+        if (getPenColor().spec() != QColor::Invalid)
+        {
+            setColorViewerPixmap(getPenColor());
+        }
+    }
+}
+
+BrushStylePage::BrushStylePage(OptionsWidget *pParent)
+    : QWidget(pParent)
+{
+    mpParentOptionsWidget = pParent;
+
+    mpBrushStyleGroup = new QGroupBox(tr("Brush Style"));
+
+    mpColorLabel = new QLabel(tr("Color:"));
+    mpColorViewerLabel = new QLabel(tr(""));
+    mpColorPickButton = new QPushButton(tr("Pick Color"));
+    connect(mpColorPickButton, SIGNAL(pressed()), SLOT(pickColor()));
+    mpNoColorCheckBox = new QCheckBox(tr("No Color"));
+    connect(mpNoColorCheckBox, SIGNAL(stateChanged(int)), SLOT(noColorChecked(int)));
+
+    mpPatternLabel = new QLabel(tr("Pattern:"));
+    mpPatternsComboBox = new QComboBox;
+    mpPatternsComboBox->setIconSize(Helper::iconSize);
+    mpPatternsComboBox->addItem(QIcon(Helper::solidBrushIcon), Helper::solidBrush, Helper::solidBrushStyle);
+    mpPatternsComboBox->addItem(QIcon(Helper::horizontalBrushIcon), Helper::horizontalBrush, Helper::horizontalBrushStyle);
+    mpPatternsComboBox->addItem(QIcon(Helper::verticalBrushIcon), Helper::verticalBrush, Helper::verticalBrushStyle);
+    mpPatternsComboBox->addItem(QIcon(Helper::crossBrushIcon), Helper::crossBrush, Helper::crossBrushStyle);
+    mpPatternsComboBox->addItem(QIcon(Helper::forwardBrushIcon), Helper::forwardBrush, Helper::forwardBrushStyle);
+    mpPatternsComboBox->addItem(QIcon(Helper::backwardBrushIcon), Helper::backwardBrush, Helper::backwardBrushStyle);
+    mpPatternsComboBox->addItem(QIcon(Helper::crossDiagBrushIcon), Helper::crossDiagBrush, Helper::crossDiagBrushStyle);
+    mpPatternsComboBox->addItem(QIcon(Helper::horizontalCylinderBrushIcon), Helper::horizontalCylinderBrush, Helper::horizontalCylinderBrushStyle);
+    mpPatternsComboBox->addItem(QIcon(Helper::verticalCylinderBrushIcon), Helper::verticalCylinderBrush, Helper::verticalCylinderBrushStyle);
+    mpPatternsComboBox->addItem(QIcon(Helper::sphereBrushIcon), Helper::sphereBrush, Helper::sphereBrushStyle);
+
+    // set default values
+    setBrushColor(Qt::transparent);            // transparent
+    setColorViewerPixmap(getBrushColor());
+    setBrushPattern(tr("Solid"));              // Qt::SolidPattern
+
+    QGridLayout *mainLayout = new QGridLayout;
+    mainLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+    mainLayout->addWidget(mpColorLabel, 0, 0);
+    mainLayout->addWidget(mpColorViewerLabel, 0, 1);
+    mainLayout->addWidget(mpColorPickButton, 1, 0);
+    mainLayout->addWidget(mpNoColorCheckBox, 1, 1);
+    mainLayout->addWidget(mpPatternLabel, 2, 0, 1, 2);
+    mainLayout->addWidget(mpPatternsComboBox, 3, 0);
+    mpBrushStyleGroup->setLayout(mainLayout);
+
+    QVBoxLayout *layout = new QVBoxLayout;
+    layout->setContentsMargins(0, 0, 0, 0);
+    layout->addWidget(mpBrushStyleGroup);
+
+    setLayout(layout);
+}
+
+void BrushStylePage::pickColor()
+{
+    QColor color = QColorDialog::getColor();
+
+    if (color.spec() == QColor::Invalid)
+        return;
+
+    setBrushColor(color);
+    mpNoColorCheckBox->setChecked(false);
+    // if a brush color is picked up and user has selected no color for pen then make the pen color transparent
+    if (mpParentOptionsWidget->mpPenStylePage->getNoColorCheckBox())
+        setColorViewerPixmap(Qt::transparent);
+}
+
+void BrushStylePage::noColorChecked(int state)
+{
+    if (state == Qt::Checked)
+    {
+        setColorViewerPixmap(Qt::transparent);
+    }
+    else if (state == Qt::Unchecked)
+    {
+        setColorViewerPixmap(getBrushColor());
+    }
+}
+
+void BrushStylePage::setBrushColor(QColor color)
+{
+    mBrushColor = color;
+}
+
+QColor BrushStylePage::getBrushColor()
+{
+    if (mpNoColorCheckBox->checkState() == Qt::Checked)
+        return Qt::transparent;
+    else
+        return mBrushColor;
+}
+
+void BrushStylePage::setBrushPattern(QString pattern)
+{
+    int index = mpPatternsComboBox->findText(pattern, Qt::MatchExactly);
+    if (index != -1)
+        mpPatternsComboBox->setCurrentIndex(index);
+}
+
+QString BrushStylePage::getBrushPatternString()
+{
+    return mpPatternsComboBox->currentText();
+}
+
+Qt::BrushStyle BrushStylePage::getBrushPattern()
+{
+    return Qt::BrushStyle(mpPatternsComboBox->itemData(mpPatternsComboBox->currentIndex()).toInt());
+}
+
+void BrushStylePage::setNoColorCheckBox(bool state)
+{
+    mpNoColorCheckBox->setChecked(state);
+}
+
+bool BrushStylePage::getNoColorCheckBox()
+{
+    if (mpNoColorCheckBox->checkState() == Qt::Checked)
+        return true;
+    else if (mpNoColorCheckBox->checkState() == Qt::Checked)
+        return false;
+}
+
+void BrushStylePage::setColorViewerPixmap(QColor color)
+{
+    QPixmap pixmap(Helper::iconSize);
+    pixmap.fill(color);
+    mpColorViewerLabel->setPixmap(pixmap);
 }

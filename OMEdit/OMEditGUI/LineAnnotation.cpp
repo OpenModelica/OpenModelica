@@ -62,6 +62,59 @@ LineAnnotation::LineAnnotation(QString shape, GraphicsView *graphicsView, QGraph
     connect(this, SIGNAL(updateShapeAnnotation()), mpGraphicsView, SLOT(addClassAnnotation()));
 }
 
+QPainterPath LineAnnotation::getShape() const
+{
+    QPainterPath path;
+
+    if (this->mPoints.size() > 0)
+    {
+        if (mSmooth)
+        {
+            for (int i = 0 ; i < this->mPoints.size() ; i++)
+            {
+                QPointF point3 = this->mPoints.at(i);
+                if (i == 0)
+                    path.moveTo(point3);
+                else
+                {
+                    // if points are only two then spline acts as simple line
+                    if (i < 2)
+                    {
+                        if (mPoints.size() < 3)
+                            path.lineTo(point3);
+                    }
+                    else
+                    {
+                        // calculate middle points for bezier curves
+                        QPointF point2 = this->mPoints.at(i - 1);
+                        QPointF point1 = this->mPoints.at(i - 2);
+                        QPointF point12((point1.x() + point2.x())/2, (point1.y() + point2.y())/2);
+                        QPointF point23((point2.x() + point3.x())/2, (point2.y() + point3.y())/2);
+
+                        path.lineTo(point12);
+                        path.cubicTo(point12, point2, point23);
+                        // if its the last point
+                        if (i == mPoints.size() - 1)
+                            path.lineTo(point3);
+                    }
+                }
+            }
+        }
+        else
+        {
+            for (int i = 0 ; i < this->mPoints.size() ; i++)
+            {
+                QPointF point1 = this->mPoints.at(i);
+                if (i == 0)
+                    path.moveTo(point1);
+                else
+                    path.lineTo(point1);
+            }
+        }
+    }
+    return path;
+}
+
 QRectF LineAnnotation::boundingRect() const
 {
     return shape().boundingRect();
@@ -69,14 +122,7 @@ QRectF LineAnnotation::boundingRect() const
 
 QPainterPath LineAnnotation::shape() const
 {
-    QPainterPath path;
-    for (int i = 0 ; i < this->mPoints.size() ; i++)
-    {
-        QPointF p1 = this->mPoints.at(i);
-        if (i == 0)
-            path.moveTo(p1.x(), p1.y());
-        path.lineTo(p1.x(), p1.y());
-    }
+    QPainterPath path = getShape();
     return addPathStroker(path);
 }
 
@@ -85,49 +131,48 @@ void LineAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
     Q_UNUSED(option);
     Q_UNUSED(widget);
 
+    setTransformOriginPoint(boundingRect().center());
     drawLineAnnotaion(painter);
 }
 
 void LineAnnotation::drawLineAnnotaion(QPainter *painter)
 {
-    QPainterPath path;
-    QPen pen(this->mLineColor, this->mThickness, this->mLinePattern);
+    qreal thickness;
+
+    // make the pen width upper rounded for spline, otherwise spline is distorted
+    if (mSmooth)
+        thickness = ceil(mThickness);
+    else
+        thickness = mThickness;
+
+    QPen pen(this->mLineColor, thickness, this->mLinePattern);
     pen.setCosmetic(true);
     painter->setPen(pen);
-
-    if (this->mPoints.size() > 0)
+    // draw start arrow
+    if (mStartArrow == ShapeAnnotation::Filled)
     {
-        for (int i = 0 ; i < this->mPoints.size() ; i++)
-        {
-            QPointF point1 = this->mPoints.at(i);
-            if (i == 0)
-            {
-                path.moveTo(point1.x(), point1.y());
-                continue;
-            }
-
-            //! @todo add the support for splines..........
-            if (this->mSmooth)
-            {
-                if (i % 3 != 0)
-                {
-                    //path.lineTo(point1.x(), point1.y());
-                    continue;
-                }
-                else
-                {
-                    QPointF point2 = this->mPoints.at(i - 2);
-                    QPointF point3 = this->mPoints.at(i - 1);
-                    path.cubicTo(point2, point3, point1);
-                }
-            }
-            else
-            {
-                path.lineTo(point1.x(), point1.y());
-            }
-        }
-        painter->drawPath(path);
+        painter->save();
+        painter->setBrush(QBrush(mLineColor, Qt::SolidPattern));
+        painter->drawPolygon(drawArrow(mPoints.at(0), mPoints.at(1), mArrowSize * 2, mStartArrow));
+        painter->restore();
     }
+    else
+        painter->drawPolygon(drawArrow(mPoints.at(0), mPoints.at(1), mArrowSize * 2, mStartArrow));
+
+    painter->drawPath(getShape());
+
+    // draw end arrow
+    if (mEndArrow == ShapeAnnotation::Filled)
+    {
+        painter->save();
+        painter->setBrush(QBrush(mLineColor, Qt::SolidPattern));
+        painter->drawPolygon(drawArrow(mPoints.at(mPoints.size() - 1), mPoints.at(mPoints.size() - 2),
+                                       mArrowSize * 2, mEndArrow));
+        painter->restore();
+    }
+    else
+        painter->drawPolygon(drawArrow(mPoints.at(mPoints.size() - 1), mPoints.at(mPoints.size() - 2),
+                                       mArrowSize * 2, mEndArrow));
 }
 
 void LineAnnotation::addPoint(QPointF point)
@@ -281,10 +326,22 @@ void LineAnnotation::parseShapeAnnotation(QString shape, OMCProxy *omc)
 
     // sixth item of list contains the Line Arrows.
     index = index + 1;
-    // Leave it for now.
+    QStringList arrowList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(index)));
+    if (arrowList.size() < 2)
+        return;
+
+    QMap<QString, ArrowType>::iterator arrow_it;
+    for (arrow_it = mArrowsMap.begin(); arrow_it != mArrowsMap.end(); ++arrow_it)
+    {
+        if (arrow_it.key().compare(StringHandler::getLastWordAfterDot(arrowList.at(0))) == 0)
+            mStartArrow = arrow_it.value();
+        if (arrow_it.key().compare(StringHandler::getLastWordAfterDot(arrowList.at(1))) == 0)
+            mEndArrow = arrow_it.value();
+    }
 
     // seventh item of list contains the Line Arrow Size.
     index = index + 1;
+    mArrowSize = static_cast<QString>(list.at(index)).toFloat();
 
     // eighth item of list contains the smooth.
     index = index + 1;
@@ -296,4 +353,69 @@ void LineAnnotation::parseShapeAnnotation(QString shape, OMCProxy *omc)
     {
         this->mSmooth = static_cast<QString>(list.at(index)).toLower().contains("true");
     }
+}
+
+QPolygonF LineAnnotation::drawArrow(QPointF startPos, QPointF endPos, qreal size, int arrowType) const
+{
+    double xA = size / 2;
+    double yA = size * sqrt(3) / 2;
+
+    double xB = -xA;
+    double yB = yA;
+
+    switch (arrowType)
+    {
+        case ShapeAnnotation::Filled:
+            break;
+        case ShapeAnnotation::Half:
+            xB = 0;
+            break;
+        case ShapeAnnotation::None:
+            return QPolygonF();
+        case ShapeAnnotation::Open:
+            break;
+    }
+
+    double angle = 0.0f;
+    if (endPos.x() - startPos.x() == 0)
+    {
+        if (endPos.y() - startPos.y() >= 0)
+            angle = 0;
+        else
+            angle = M_PI;
+    }
+    else
+    {
+        angle = -(M_PI / 2 - (atan((endPos.y() - startPos.y())/(endPos.x() - startPos.x()))));
+        if(startPos.x() > endPos.x())
+            angle += M_PI;
+    }
+
+    qreal m11, m12, m13, m21, m22, m23, m31, m32, m33;
+
+    m11 = cos(angle);
+    m12 = -sin(angle);
+    m13 = startPos.x();
+    m21 = sin(angle);
+    m22 = cos(angle);
+    m23 = startPos.y();
+    m31 = 0;
+    m32 = 0;
+    m33 = 1;
+
+    QTransform t1(m11, m12, m13, m21, m22, m23, m31, m32, m33);
+    QTransform t2(xA, 1, 1, yA, 1, 1, 1, 1, 1);
+    QTransform t3 = t1 * t2;
+
+    QPolygonF polygon;
+    polygon << startPos;
+    polygon << QPointF(t3.m11(), t3.m21());
+
+    t2.setMatrix(xB, 1, 1, yB, 1, 1, 1, 1, 1);
+    t3 = t1 * t2;
+
+    polygon << QPointF(t3.m11(), t3.m21());
+    polygon << startPos;
+
+    return polygon;
 }

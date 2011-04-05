@@ -56,9 +56,16 @@ int main(int argc, char *argv[])
     // if user has requested to open the file by passing it in argument then,
     if (!fileName.isEmpty())
     {
+        // if path is relative make it absolute
+        QFileInfo file (fileName);
+        if (file.isRelative())
+        {
+            fileName.prepend(QString(QDir::currentPath()).append("/"));
+        }
         mainwindow.mpProjectTabs->openFile(fileName);
     }
     mainwindow.showMaximized();
+
     splashScreen.finish(&mainwindow);
     if (mainwindow.mExitApplication)        // if there is some issue in running the application.
         return 1;

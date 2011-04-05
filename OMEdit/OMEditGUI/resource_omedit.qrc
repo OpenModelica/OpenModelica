@@ -62,5 +62,28 @@
         <file>Resources/icons/start.png</file>
         <file>Resources/icons/shutdown.png</file>
         <file>Resources/icons/stop.png</file>
+        <file>Resources/icons/omshell.svg</file>
+        <file>Resources/icons/brushstyle.png</file>
+        <file>Resources/icons/linestyle.png</file>
+        <file>Resources/icons/modeltextoptions.png</file>
+        <file>Resources/icons/dashdotdotline.png</file>
+        <file>Resources/icons/dashdotline.png</file>
+        <file>Resources/icons/dashline.png</file>
+        <file>Resources/icons/dotline.png</file>
+        <file>Resources/icons/solidline.png</file>
+        <file>Resources/icons/backward.png</file>
+        <file>Resources/icons/cross.png</file>
+        <file>Resources/icons/crossdiag.png</file>
+        <file>Resources/icons/forward.png</file>
+        <file>Resources/icons/horizontal.png</file>
+        <file>Resources/icons/horizontalcylinder.png</file>
+        <file>Resources/icons/solid.png</file>
+        <file>Resources/icons/sphere.png</file>
+        <file>Resources/icons/vertical.png</file>
+        <file>Resources/icons/verticalcylinder.png</file>
+        <file>Resources/icons/omplot.png</file>
+        <file>Resources/icons/plotparametricwindow.png</file>
+        <file>Resources/icons/plotwindow.png</file>
+        <file>Resources/icons/preferences.png</file>
     </qresource>
 </RCC>

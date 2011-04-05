@@ -87,7 +87,7 @@ private:
     void createBitmapShape(QPointF point);
 public:
     GraphicsView(int iconType, ProjectTab *parent);
-    void addComponentoView(QString name, QString className, QPoint point, bool isConnector = false,
+    void addComponentoView(QString name, QString className, QPointF point, bool isConnector = false,
                            bool addObject = true, bool diagram = false);
     void addComponentObject(Component *icon);
     void deleteComponentObject(Component *icon);

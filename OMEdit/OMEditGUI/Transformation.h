@@ -46,15 +46,25 @@ class Transformation
 private:
     bool mVisible;
     qreal mPositionX;
+    qreal mPositionXIcon;
     qreal mPositionY;
+    qreal mPositionYIcon;
     qreal mScale;
+    qreal mScaleIcon;
     qreal mAspectRatio;
+    qreal mAspectRatioIcon;
     bool mFlipHorizontal;
+    bool mFlipHorizontalIcon;
     bool mFlipVertical;
+    bool mFlipVerticalIcon;
     qreal mRotateAngle;
+    qreal mRotateAngleIcon;
     QPointF mOrigin;
+    QPointF mOriginIcon;
     QPointF mExtent1;
+    QPointF mExtent1Icon;
     QPointF mExtent2;
+    QPointF mExtent2Icon;
     qreal mWidth;
     qreal mHeight;
 
@@ -69,6 +79,10 @@ public:
     qreal getScale();
     qreal getPositionX();
     qreal getPositionY();
+    qreal getRotateAngleIcon();
+    qreal getScaleIcon();
+    qreal getPositionXIcon();
+    qreal getPositionYIcon();
 };
 
 #endif // TRANSFORMATION_H

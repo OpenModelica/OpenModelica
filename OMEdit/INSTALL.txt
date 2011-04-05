@@ -4,7 +4,7 @@
 Windows
 ------------------------------
 
-OMEdit uses Qt 4.7.0
+OMEdit uses Qt 4.7.0	
 ------------------------------
 - Download the Qt SDK for windows from http://qt.nokia.com/downloads. The SDK also contains the Qt Creator.
 

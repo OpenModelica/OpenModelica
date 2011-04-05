@@ -45,16 +45,20 @@ public:
     PlotWidget(MainWindow *pParent);
     QList<QString> readPlotVariables(QString fileName);
     void addPlotVariablestoTree(QString fileName, QList<QString> plotVariablesList);
+    void addPlotVariableToTree(QString parentStructure, QString childName, QString fullStructure = QString());
+    QTreeWidgetItem* getTreeNode(QString itemName);
+    QTreeWidget* getPlotVariablesTree();
 
     MainWindow *mpParentMainWindow;
 private:
-    QLabel *mpPlotTypesLabel;
-    QComboBox *mpPlotTypesCombo;
     QTreeWidget *mpPlotVariablesTree;
-    QVBoxLayout *mpVerticalLayout;    
+    QVBoxLayout *mpVerticalLayout;
+    QList<QStringList> mPlotParametricVariables;
+signals:
+    void removePlotFile(QTreeWidgetItem *item);
 public slots:
     void plotVariables(QTreeWidgetItem *item, int column);
-    void visualize(QString value);
+    void updatePlotVariablesTree(QMdiSubWindow *window);
 protected:
     void contextMenuEvent(QContextMenuEvent *event);
 };

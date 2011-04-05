@@ -39,6 +39,7 @@
 
 #include "StringHandler.h"
 
+class MainWindow;
 class GraphicsView;
 class RectangleCornerItem;
 
@@ -47,11 +48,14 @@ class ShapeAnnotation : public QObject, public QGraphicsItem
 {
     Q_OBJECT
     Q_INTERFACES(QGraphicsItem)
+private:
+    QAction *mpShapePropertiesAction;
 public:
     ShapeAnnotation(QGraphicsItem *parent = 0);
     ShapeAnnotation(GraphicsView *graphicsView, QGraphicsItem *parent = 0);
     ~ShapeAnnotation();
     void initializeFields();
+    void createActions();
     void setSelectionBoxActive();
     void setSelectionBoxPassive();
     void setSelectionBoxHover();
@@ -73,6 +77,7 @@ public slots:
     void rotateClockwise();
     void rotateAntiClockwise();
     void resetRotation();
+    void openShapeProperties();
 protected:
     bool mVisible;
     QPointF mOrigin;
@@ -90,6 +95,11 @@ protected:
     QList<QPointF> mExtent;
     qreal mCornerRadius;
     bool mSmooth;
+    enum ArrowType {None, Open, Filled, Half};
+    QMap<QString, ArrowType> mArrowsMap;
+    int mStartArrow;
+    int mEndArrow;
+    qreal mArrowSize;
 
     QList<RectangleCornerItem*> mRectangleCornerItemsList;
     bool mIsCustomShape;
@@ -103,6 +113,54 @@ protected:
     virtual void mousePressEvent(QGraphicsSceneMouseEvent *event);
     virtual void mouseReleaseEvent(QGraphicsSceneMouseEvent *event);
     virtual QVariant itemChange(GraphicsItemChange change, const QVariant &value);
+    virtual void contextMenuEvent(QGraphicsSceneContextMenuEvent *event);
+};
+
+class ShapeProperties : public QDialog
+{
+    Q_OBJECT
+private:
+    // Heading controls
+    QLabel *mpHeadingLabel;
+    QFrame *mpHorizontalLine;
+    // Pen style controls
+    QGroupBox *mpPenStyleGroup;
+    QLabel *mpPenColorLabel;
+    QLabel *mpPenColorViewerLabel;
+    QPushButton *mpPenColorPickButton;
+    QColor mPenColor;
+    QCheckBox *mpPenNoColorCheckBox;
+    QLabel *mpPenPatternLabel;
+    QComboBox *mpPenPatternsComboBox;
+    QLabel *mpPenThicknessLabel;
+    QDoubleSpinBox *mpPenThicknessSpinBox;
+    // Brush style controls
+    QGroupBox *mpBrushStyleGroup;
+    QLabel *mpBrushColorLabel;
+    QLabel *mpBrushColorViewerLabel;
+    QPushButton *mpBrushColorPickButton;
+    QColor mBrushColor;
+    QCheckBox *mpBrushNoColorCheckBox;
+    QLabel *mpBrushPatternLabel;
+    QComboBox *mpBrushPatternsComboBox;
+public:
+    ShapeProperties(ShapeAnnotation *pShape, MainWindow *pParent);
+    void setShapeType();
+    void setUpDialog();
+    void setUpLineDialog();
+    QVBoxLayout* createHorizontalLine();
+    QVBoxLayout* createPenControls();
+    QVBoxLayout* createBrushControls();
+
+    MainWindow *mpParentMainWindow;
+    ShapeAnnotation *mpShape;
+    enum ShapeType {Line, Polygon, Rectangle, Ellipse, Text, Bitmap };
+    int mShapeType;
+public slots:
+    void pickPenColor();
+    void penNoColorChecked(int state);
+    void pickBrushColor();
+    void brushNoColorChecked(int state);
 };
 
 #endif // SHAPEANNOTATION_H

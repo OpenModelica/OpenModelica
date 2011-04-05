@@ -87,6 +87,53 @@ public:
     static QString omi_stop_button_tooltip;
     static QString omi_shutdown_button_tooltip;
     static QString omi_showlog_button_tooltip;
+    // pen styles with icons
+    static QString solidPenIcon;
+    static QString solidPen;
+    static Qt::PenStyle solidPenStyle;
+    static QString dashPenIcon;
+    static QString dashPen;
+    static Qt::PenStyle dashPenStyle;
+    static QString dotPenIcon;
+    static QString dotPen;
+    static Qt::PenStyle dotPenStyle;
+    static QString dashDotPenIcon;
+    static QString dashDotPen;
+    static Qt::PenStyle dashDotPenStyle;
+    static QString dashDotDotPenIcon;
+    static QString dashDotDotPen;
+    static Qt::PenStyle dashDotDotPenStyle;
+    // brush styles with icons
+    static QString solidBrushIcon;
+    static QString solidBrush;
+    static Qt::BrushStyle solidBrushStyle;
+    static QString horizontalBrushIcon;
+    static QString horizontalBrush;
+    static Qt::BrushStyle horizontalBrushStyle;
+    static QString verticalBrushIcon;
+    static QString verticalBrush;
+    static Qt::BrushStyle verticalBrushStyle;
+    static QString crossBrushIcon;
+    static QString crossBrush;
+    static Qt::BrushStyle crossBrushStyle;
+    static QString forwardBrushIcon;
+    static QString forwardBrush;
+    static Qt::BrushStyle forwardBrushStyle;
+    static QString backwardBrushIcon;
+    static QString backwardBrush;
+    static Qt::BrushStyle backwardBrushStyle;
+    static QString crossDiagBrushIcon;
+    static QString crossDiagBrush;
+    static Qt::BrushStyle crossDiagBrushStyle;
+    static QString horizontalCylinderBrushIcon;
+    static QString horizontalCylinderBrush;
+    static Qt::BrushStyle horizontalCylinderBrushStyle;
+    static QString verticalCylinderBrushIcon;
+    static QString verticalCylinderBrush;
+    static Qt::BrushStyle verticalCylinderBrushStyle;
+    static QString sphereBrushIcon;
+    static QString sphereBrush;
+    static Qt::BrushStyle sphereBrushStyle;
 };
 
 class GUIMessages
@@ -127,7 +174,9 @@ public:
         CLOSE_INTERACTIVE_SIMULATION_TAB,
         INFO_CLOSE_INTERACTIVE_SIMULATION_TAB,
         INTERACTIVE_SIMULATION_RUNNIG,
-        SELECT_VARIABLE_FOR_OMI
+        SELECT_VARIABLE_FOR_OMI,
+        DIAGRAM_VIEW_DROP_MSG,
+        ICON_VIEW_DROP_MSG
     };
 
     static QString getMessage(int type);

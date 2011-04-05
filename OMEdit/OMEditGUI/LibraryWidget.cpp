@@ -766,9 +766,10 @@ void LibraryTree::treeItemPressed(QTreeWidgetItem *item)
 //  if (mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->isWhat(StringHandler::PACKAGE, item->toolTip(0)))
 //      return;
 
+    LibraryTreeNode *node = dynamic_cast<LibraryTreeNode*>(item);
     QByteArray itemData;
     QDataStream dataStream(&itemData, QIODevice::WriteOnly);
-    dataStream << item->toolTip(0);
+    dataStream << node->mName << node->mNameStructure << node->mType;
 
     QMimeData *mimeData = new QMimeData;
     mimeData->setData("image/modelica-component", itemData);

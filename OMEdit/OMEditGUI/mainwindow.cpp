@@ -42,22 +42,25 @@
 
 #include "mainwindow.h"
 
+using namespace OMPlot;
+
 //! Constructor
 MainWindow::MainWindow(SplashScreen *splashScreen, QWidget *parent)
     : QMainWindow(parent), mExitApplication(false)
 {
     // Create the OMCProxy object.
     splashScreen->showMessage("Connecting to " + Helper::applicationName +" Server", Qt::AlignRight, Qt::white);
-    this->mpOMCProxy = new OMCProxy(this);
-    // If there is some problem connecting to omc server then quit
+    mpOMCProxy = new OMCProxy(this);
+    splashScreen->showMessage("Reading Settings", Qt::AlignRight, Qt::white);
+    mpOptionsWidget = new OptionsWidget(this);
 
     //Set the name and size of the main window
     splashScreen->showMessage("Loading Widgets", Qt::AlignRight, Qt::white);
-    this->setObjectName("MainWindow");
-    this->setWindowTitle(Helper::applicationName + " - "  + Helper::applicationIntroText);
-    this->setWindowIcon(QIcon(":/Resources/icons/omeditor.png"));
-    this->setMinimumSize(400, 300);
-    this->setContentsMargins(1, 1, 1, 1);
+    setObjectName("MainWindow");
+    setWindowTitle(Helper::applicationName + " - "  + Helper::applicationIntroText);
+    setWindowIcon(QIcon(":/Resources/icons/omeditor.png"));
+    setMinimumSize(400, 300);
+    setContentsMargins(1, 1, 1, 1);
 
     //Create a centralwidget for the main window
     mpCentralwidget = new QWidget(this);
@@ -77,6 +80,7 @@ MainWindow::MainWindow(SplashScreen *splashScreen, QWidget *parent)
     messagedock->setWidget(mpMessageWidget);
     addDockWidget(Qt::BottomDockWidgetArea, messagedock);
     mpMessageWidget->printGUIMessage("OMEdit, " + Helper::applicationVersion);
+    // If there is some problem connecting to omc server then quit
     if (!mExitApplication)
         mpMessageWidget->printGUIMessage("OpenModelica, Version: " + mpOMCProxy->getVersion());
 
@@ -115,6 +119,9 @@ MainWindow::MainWindow(SplashScreen *splashScreen, QWidget *parent)
     // Create simulation widget.
     mpSimulationWidget = new SimulationWidget(this);
 
+    // create the plot container widget
+    mpPlotWindowContainer = new PlotWindowContainer(this);
+
     // create the interactive simulation widget
     mpInteractiveSimualtionTabWidget = new InteractiveSimulationTabWidget(this);
 
@@ -134,8 +141,6 @@ MainWindow::MainWindow(SplashScreen *splashScreen, QWidget *parent)
     addDockWidget(Qt::RightDockWidgetArea, documentationdock);
     documentationdock->hide();
 
-    mpOptionsWidget = new OptionsWidget(this);
-
     //Create Actions, Toolbar and Menus
     splashScreen->showMessage("Creating Components", Qt::AlignRight, Qt::white);
     this->createActions();
@@ -149,6 +154,7 @@ MainWindow::MainWindow(SplashScreen *splashScreen, QWidget *parent)
     mpBackButton = new QPushButton("Back");
     mpCentralgrid->addWidget(mpBackButton,0,0);
     mpCentralgrid->addWidget(mpProjectTabs,1,0);
+    mpCentralgrid->addWidget(mpPlotWindowContainer,1,0);
     mpCentralgrid->addWidget(mpInteractiveSimualtionTabWidget,1,0);
     mpBackButton->hide();
 
@@ -158,7 +164,6 @@ MainWindow::MainWindow(SplashScreen *splashScreen, QWidget *parent)
     this->setCentralWidget(mpCentralwidget);
 
     //Create the Statusbar
-
     mpStatusBar = new QStatusBar();
     mpStatusBar->setObjectName("statusBar");
     mpStatusBar->setContentsMargins(0, 0, 1, 0);
@@ -293,7 +298,7 @@ void MainWindow::createActions()
     omcLoggerAction->setStatusTip(tr("Shows OMC Logger Window"));
     connect(omcLoggerAction, SIGNAL(triggered()), this->mpOMCProxy, SLOT(openOMCLogger()));
 
-    openOMShellAction = new QAction(QIcon(":/Resources/icons/OMS.bmp"), tr("OMShell"), this);
+    openOMShellAction = new QAction(QIcon(":/Resources/icons/omshell.svg"), tr("OMShell"), this);
     openOMShellAction->setStatusTip(tr("Opens OpenModelica Shell (OMShell)"));
     connect(openOMShellAction, SIGNAL(triggered()), SLOT(openOMShell()));
 
@@ -327,7 +332,7 @@ void MainWindow::createActions()
     plotAction->setText(tr("Plot Variables"));
 
     interactiveSimulationAction = new QAction(QIcon(":/Resources/icons/interactive-simulation.png"), tr("Interactive Simulation"), this);
-    interactiveSimulationAction->setStatusTip(tr("Simulate the Model"));
+    interactiveSimulationAction->setStatusTip(tr("Interactive Simulate the Model"));
     connect(interactiveSimulationAction, SIGNAL(triggered()), SLOT(openInteractiveSimulation()));
 
     documentationAction = documentationdock->toggleViewAction();
@@ -386,11 +391,24 @@ void MainWindow::createActions()
     modelingViewAction->setChecked(true);
     connect(modelingViewAction, SIGNAL(triggered()), SLOT(switchToModelingView()));
 
+    plottingViewAction = new QAction(QIcon(":/Resources/icons/omplot.png"), tr("Plotting"), viewActionGroup);
+    plottingViewAction->setStatusTip(tr("Shows Plotting View"));
+    plottingViewAction->setCheckable(true);
+    connect(plottingViewAction, SIGNAL(triggered()), SLOT(switchToPlottingView()));
+
     interactiveSimulationViewAction = new QAction(QIcon(":/Resources/icons/interactive-simulation.png"),
                                                   tr("Interactive Simulation"), viewActionGroup);
     interactiveSimulationViewAction->setStatusTip(tr("Shows Interactive Simulation View"));
     interactiveSimulationViewAction->setCheckable(true);
     connect(interactiveSimulationViewAction, SIGNAL(triggered()), SLOT(switchToInteractiveSimulationView()));
+
+    newPlotWindowAction = new QAction(QIcon(":/Resources/icons/plotwindow.png"), tr("New Plot Window"), this);
+    newPlotWindowAction->setStatusTip(tr("Inserts new plot window"));
+    connect(newPlotWindowAction, SIGNAL(triggered()), SLOT(addNewPlotWindow()));
+
+    newPlotParametricWindowAction = new QAction(QIcon(":/Resources/icons/plotparametricwindow.png"), tr("New Plot Parametric Window"), this);
+    newPlotParametricWindowAction->setStatusTip(tr("Inserts new plot parametric window"));
+    connect(newPlotParametricWindowAction, SIGNAL(triggered()), SLOT(addNewPlotParametricWindow()));
 }
 
 //! Creates the menus
@@ -475,6 +493,7 @@ void MainWindow::createMenus()
     menuView->addAction(checkModelAction);
     menuView->addSeparator();
     menuView->addAction(modelingViewAction);
+    menuView->addAction(plottingViewAction);
     menuView->addAction(interactiveSimulationViewAction);
 
     menuSimulation->addAction(simulationAction);
@@ -567,6 +586,12 @@ void MainWindow::createToolbars()
     omnotebookToolbar->addAction(exportToOMNotebookAction);
     omnotebookToolbar->addAction(importFromOMNotebookAction);
 
+    plotToolBar = addToolBar(tr("Plot Toolbar"));
+    plotToolBar->setAllowedAreas(Qt::TopToolBarArea);
+    plotToolBar->setVisible(false);
+    plotToolBar->addAction(newPlotWindowAction);
+    plotToolBar->addAction(newPlotParametricWindowAction);
+
     perspectiveToolBar = addToolBar(tr("Perspective Toolbar"));
     perspectiveToolBar->setAllowedAreas(Qt::TopToolBarArea);
     perspectiveToolBar->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
@@ -579,6 +604,7 @@ void MainWindow::createToolbars()
     perspectiveToolBar->addWidget(spacerWidget);
 
     perspectiveToolBar->addAction(modelingViewAction);
+    perspectiveToolBar->addAction(plottingViewAction);
     perspectiveToolBar->addAction(interactiveSimulationViewAction);
 }
 
@@ -974,6 +1000,17 @@ void MainWindow::switchToModelingView()
     modelingViewAction->setChecked(true);
     mpProjectTabs->setVisible(true);
     mpInteractiveSimualtionTabWidget->setVisible(false);
+    mpPlotWindowContainer->setVisible(false);
+    plotToolBar->setVisible(false);
+}
+
+void MainWindow::switchToPlottingView()
+{
+    plottingViewAction->setChecked(true);
+    mpProjectTabs->setVisible(false);
+    mpInteractiveSimualtionTabWidget->setVisible(false);
+    mpPlotWindowContainer->setVisible(true);
+    plotToolBar->setVisible(true);
 }
 
 void MainWindow::switchToInteractiveSimulationView()
@@ -981,6 +1018,18 @@ void MainWindow::switchToInteractiveSimulationView()
     interactiveSimulationViewAction->setChecked(true);
     mpProjectTabs->setVisible(false);
     mpInteractiveSimualtionTabWidget->setVisible(true);
+    mpPlotWindowContainer->setVisible(false);
+    plotToolBar->setVisible(false);
+}
+
+void MainWindow::addNewPlotWindow()
+{
+    mpPlotWindowContainer->addPlotWindow();
+}
+
+void MainWindow::addNewPlotParametricWindow()
+{
+    mpPlotWindowContainer->addPlotParametricWindow();
 }
 
 //! shows the progress bar contained inside the status bar

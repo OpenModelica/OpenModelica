@@ -78,6 +78,7 @@ void EllipseAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem 
     Q_UNUSED(option);
     Q_UNUSED(widget);
 
+    setTransformOriginPoint(boundingRect().center());
     drawEllipseAnnotaion(painter);
 }
 

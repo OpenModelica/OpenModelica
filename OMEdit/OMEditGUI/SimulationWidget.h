@@ -78,6 +78,8 @@ private:
     QDialogButtonBox *mpButtonBox;
     ProgressDialog *mpProgressDialog;
     bool mIsInteractive;
+signals:
+    void showPlottingView();
 public slots:
     void simulate();
 };

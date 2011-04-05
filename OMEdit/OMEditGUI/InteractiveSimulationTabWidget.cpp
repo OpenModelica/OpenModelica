@@ -538,8 +538,6 @@ InteractiveSimulationTab::InteractiveSimulationTab(QString filePath, Interactive
     // create the plot window
     mpPlotWindow = new PlotWindow();
     mpPlotWindow->setTitle(tr(""));
-    mpPlotWindow->getPlot()->setAutoReplot(true);
-    mpPlotWindow->getPlot()->update();
     // create interactive simulation initialize, start, pause, shut down buttons
     mpInitializeButton = new QToolButton;
     mpInitializeButton->setText(tr("Initialize"));
@@ -792,6 +790,7 @@ void InteractiveSimulationTab::initializeInteractivePlotting()
         {
             pPlotCurve->detach();
             mpPlotWindow->getPlot()->removeCurve(pPlotCurve);
+            mpPlotWindow->getPlot()->replot();
         }
     }
 
@@ -818,12 +817,10 @@ void InteractiveSimulationTab::initializeInteractivePlotting()
             if (attachFlag)
             {
                 pPlotCurve = new PlotCurve(mpPlotWindow->getPlot());
-                QPen pen(QColor::fromHsvF(i/(variablesList.length()+1),1,1));
-                pen.setWidth(2);
-                pPlotCurve->setPen(pen);
                 pPlotCurve->setTitle(variable->text());
                 pPlotCurve->attach(mpPlotWindow->getPlot());
                 mpPlotWindow->getPlot()->addPlotCurve(pPlotCurve);
+                mpPlotWindow->getPlot()->replot();
             }
         }
     }
@@ -890,7 +887,8 @@ void InteractiveSimulationTab::recievedResult(QString message)
         double element = variable.mid(variable.lastIndexOf("=") + 1, (variable.length() - 1)).trimmed().toDouble();
         pPlotCurve->addXAxisValue(time);
         pPlotCurve->addYAxisValue(element);
-        pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->dataSize());
+        pPlotCurve->setRawData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
+        mpPlotWindow->getPlot()->replot();
         count++;
     }
 }

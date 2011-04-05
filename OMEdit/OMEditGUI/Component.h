@@ -148,7 +148,7 @@ signals:
     void componentRotated(bool isRotated);
     void componentScaled();
 public slots:
-    void updateAnnotationString();
+    void updateAnnotationString(bool updateBothViews = true);
     void showSelectionBox();
     void resizeComponent(qreal resizeFactorX, qreal resizeFactorY);
     void deleteMe();

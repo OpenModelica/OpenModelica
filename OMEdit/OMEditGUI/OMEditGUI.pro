@@ -40,7 +40,8 @@ SOURCES += main.cpp\
     DocumentationWidget.cpp \
     OptionsWidget.cpp \
     BitmapAnnotation.cpp \
-    InteractiveSimulationTabWidget.cpp
+    InteractiveSimulationTabWidget.cpp \
+    PlotWindowContainer.cpp
 
 HEADERS  += mainwindow.h \
     ProjectTabWidget.h \
@@ -72,7 +73,8 @@ HEADERS  += mainwindow.h \
     DocumentationWidget.h \
     OptionsWidget.h \
     BitmapAnnotation.h \
-    InteractiveSimulationTabWidget.h
+    InteractiveSimulationTabWidget.h \
+    PlotWindowContainer.h
 
 # -------For OMNIorb
 win32 {
@@ -80,6 +82,15 @@ DEFINES += __x86__ \
     __NT__ \
     __OSVERSION__=4 \
     __WIN32__
+CONFIG(debug, debug|release){
+LIBS += -L$$(OMDEV)/lib/omniORB-4.1.4-mingw/lib/x86_win32 \
+    -lomniORB414_rtd \
+    -lomnithread34_rtd \
+    -L../../OMPlot/bin \
+    -lOMPlot \
+    -L$$(OMDEV)/lib/qwt-5.2.1-mingw/lib \
+    -lqwtd5
+} else {
 LIBS += -L$$(OMDEV)/lib/omniORB-4.1.4-mingw/lib/x86_win32 \
     -lomniORB414_rt \
     -lomnithread34_rt \
@@ -87,6 +98,7 @@ LIBS += -L$$(OMDEV)/lib/omniORB-4.1.4-mingw/lib/x86_win32 \
     -lOMPlot \
     -L$$(OMDEV)/lib/qwt-5.2.1-mingw/lib \
     -lqwt5
+}
 INCLUDEPATH += $$(OMDEV)/lib/omniORB-4.1.4-mingw/include \
                $$(OMDEV)/lib/qwt-5.2.1-mingw/include \
                ../../OMPlot/OMPlotGUI

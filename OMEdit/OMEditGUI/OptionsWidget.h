@@ -34,8 +34,6 @@
 #ifndef OPTIONSWIDGET_H
 #define OPTIONSWIDGET_H
 
-#include <QDomDocument>
-
 #include "mainwindow.h"
 
 class MainWindow;
@@ -74,18 +72,35 @@ private:
     QColor mCommentRuleColor;
 };
 
+class GeneralSettingsPage;
+class ModelicaTextEditorPage;
+class PenStylePage;
+class BrushStylePage;
+
 class OptionsWidget : public QDialog
 {
     Q_OBJECT
 public:
     OptionsWidget(MainWindow *pParent);
     void readSettings();
+    void readGeneralSettings();
+    void readModelicaTextSettings();
+    void readPenStyleSettings();
+    void readBrushStyleSettings();
+    void saveGeneralSettings();
+    void saveModelicaTextSettings();
+    void savePenStyleSettings();
+    void saveBrushStyleSettings();
     void setUpDialog();
     void addListItems();
     void createPages();
 
     MainWindow *mpParentMainWindow;
     ModelicaTextSettings *mpModelicaTextSettings;
+    GeneralSettingsPage *mpGeneralSettingsPage;
+    ModelicaTextEditorPage *mpModelicaTextEditorPage;
+    PenStylePage *mpPenStylePage;
+    BrushStylePage *mpBrushStylePage;
 signals:
     void modelicaTextSettingsChanged();
 public slots:
@@ -93,12 +108,28 @@ public slots:
     void reject();
     void saveSettings();
 private:
-    QSettings settings;
+    QSettings mSettings;
     QListWidget *mpOptionsList;
     QStackedWidget *mpPagesWidget;
     QPushButton *mpCancelButton;
     QPushButton *mpOkButton;
     QDialogButtonBox *mpButtonBox;
+};
+
+class GeneralSettingsPage : public QWidget
+{
+    Q_OBJECT
+public:
+    GeneralSettingsPage(OptionsWidget *pParent);
+    QString getViewMode();
+    void setViewMode(QString value);
+
+    OptionsWidget *mpParentOptionsWidget;
+private:
+    QGroupBox *mpPlottingGroup;
+    QLabel *mpViewModeLabel;
+    QRadioButton *mpTabbedViewRadioButton;
+    QRadioButton *mpSubWindowViewRadioButton;
 };
 
 class ModelicaTextEditorPage : public QWidget
@@ -138,6 +169,76 @@ public slots:
     void fontFamilyChanged(QFont font);
     void fontSizeChanged(int index);
     void pickColor();
+};
+
+class PenStylePage : public QWidget
+{
+    Q_OBJECT
+public:
+    PenStylePage(OptionsWidget *pParent);
+    void setPenColor(QColor color);
+    QColor getPenColor();
+    void setPenPattern(QString pattern);
+    QString getPenPatternString();
+    Qt::PenStyle getPenPattern();
+    void setPenThickness(double thickness);
+    double getPenThickness();
+    void setPenSmooth(bool smooth);
+    bool getPenSmooth();
+    void setNoColorCheckBox(bool state);
+    bool getNoColorCheckBox();
+    void setColorViewerPixmap(QColor color);
+
+    OptionsWidget *mpParentOptionsWidget;
+private:
+    QGroupBox *mpPenStyleGroup;
+    QLabel *mpColorLabel;
+    QLabel *mpColorViewerLabel;
+    QPushButton *mpColorPickButton;
+    QCheckBox *mpNoColorCheckBox;
+    QColor mPenColor;
+    QString mPenColorString;
+    QLabel *mpPatternLabel;
+    QComboBox *mpPatternsComboBox;
+    QLabel *mpThicknessLabel;
+    QDoubleSpinBox *mpThicknessSpinBox;
+    QLabel *mpArrowLabel;
+    QComboBox *mpArrowComboBox;
+    QLabel *mpSmoothLabel;
+    QCheckBox *mpSmoothCheckBox;
+public slots:
+    void pickColor();
+    void noColorChecked(int state);
+};
+
+class BrushStylePage : public QWidget
+{
+    Q_OBJECT
+public:
+    BrushStylePage(OptionsWidget *pParent);
+    void setBrushColor(QColor color);
+    QColor getBrushColor();
+    void setBrushPattern(QString pattern);
+    QString getBrushPatternString();
+    Qt::BrushStyle getBrushPattern();
+    void setNoColorCheckBox(bool state);
+    bool getNoColorCheckBox();
+    void setColorViewerPixmap(QColor color);
+
+    OptionsWidget *mpParentOptionsWidget;
+private:
+    QGroupBox *mpBrushStyleGroup;
+    QLabel *mpColorLabel;
+    QLabel *mpColorViewerLabel;
+    QPushButton *mpColorPickButton;
+    QColor mBrushColor;
+    QString mBrushColorString;
+    QCheckBox *mpNoColorCheckBox;
+    QLabel *mpPatternLabel;
+    QComboBox *mpPatternsComboBox;
+public slots:
+    void pickColor();
+    void noColorChecked(int state);
 };
 
 #endif // OPTIONSWIDGET_H

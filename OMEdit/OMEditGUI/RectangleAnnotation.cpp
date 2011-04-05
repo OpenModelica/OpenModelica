@@ -78,6 +78,7 @@ void RectangleAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsIte
     Q_UNUSED(option);
     Q_UNUSED(widget);
 
+    setTransformOriginPoint(boundingRect().center());
     drawRectangleAnnotaion(painter);
 }
 
@@ -118,17 +119,18 @@ void RectangleAnnotation::drawRectangleAnnotaion(QPainter *painter)
             break;
         }
     default:
-        painter->setBrush(QBrush(this->mFillColor, this->mFillPattern));
+        painter->setBrush(QBrush(this->mFillColor, mFillPattern));
         break;
     }
 
     // make the pen width upper rounded if rectangle is rounded
+    qreal thickness;
     if (mCornerRadius > 0)
-        mThickness = ceil(mThickness);
+        thickness = ceil(mThickness);
 
-    QPen pen(mLineColor, mThickness, mLinePattern);
+    QPen pen(mLineColor, thickness, mLinePattern);
     pen.setCosmetic(true);
-    painter->setPen(pen);    
+    painter->setPen(pen);
 
     path.addRoundedRect(getBoundingRect(), mCornerRadius, mCornerRadius);
     painter->drawPath(path);

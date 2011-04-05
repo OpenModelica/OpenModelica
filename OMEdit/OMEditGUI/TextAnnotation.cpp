@@ -108,6 +108,7 @@ void TextAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
     Q_UNUSED(option);
     Q_UNUSED(widget);
 
+    setTransformOriginPoint(boundingRect().center());
     painter->scale(1.0, -1.0);
     QPen pen(this->mLineColor, this->mThickness, this->mLinePattern);
     pen.setCosmetic(true);

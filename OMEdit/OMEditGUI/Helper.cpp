@@ -84,6 +84,53 @@ QString Helper::omi_pause_button_tooltip = QString("Pauses the running interacti
 QString Helper::omi_stop_button_tooltip = QString("Stops the running interactive simulation and resets all values to the beginning.");
 QString Helper::omi_shutdown_button_tooltip = QString("Shut down the running interactive simulation.");
 QString Helper::omi_showlog_button_tooltip = QString("Shows the OMI Log Message Window.");
+// pen styles with icons
+QString Helper::solidPenIcon = QString(":/Resources/icons/solidline.png");
+QString Helper::solidPen = QString("Solid");
+Qt::PenStyle Helper::solidPenStyle = Qt::SolidLine;
+QString Helper::dashPenIcon = QString(":/Resources/icons/dashline.png");
+QString Helper::dashPen = QString("Dash");
+Qt::PenStyle Helper::dashPenStyle = Qt::DashLine;
+QString Helper::dotPenIcon = QString(":/Resources/icons/dotline.png");
+QString Helper::dotPen = QString("Dot");
+Qt::PenStyle Helper::dotPenStyle = Qt::DotLine;
+QString Helper::dashDotPenIcon = QString(":/Resources/icons/dashdotline.png");
+QString Helper::dashDotPen = QString("Dash Dot");
+Qt::PenStyle Helper::dashDotPenStyle = Qt::DashDotLine;
+QString Helper::dashDotDotPenIcon = QString(":/Resources/icons/dashdotdotline.png");
+QString Helper::dashDotDotPen = QString("Dash Dot Dot");
+Qt::PenStyle Helper::dashDotDotPenStyle = Qt::DashDotDotLine;
+// brush styles with icons
+QString Helper::solidBrushIcon = QString(":/Resources/icons/solid.png");
+QString Helper::solidBrush = QString("Solid");
+Qt::BrushStyle Helper::solidBrushStyle = Qt::SolidPattern;
+QString Helper::horizontalBrushIcon = QString(":/Resources/icons/horizontal.png");
+QString Helper::horizontalBrush = QString("Horizontal");
+Qt::BrushStyle Helper::horizontalBrushStyle = Qt::HorPattern;
+QString Helper::verticalBrushIcon = QString(":/Resources/icons/vertical.png");
+QString Helper::verticalBrush = QString("Vertical");
+Qt::BrushStyle Helper::verticalBrushStyle = Qt::VerPattern;
+QString Helper::crossBrushIcon = QString(":/Resources/icons/cross.png");
+QString Helper::crossBrush = QString("Cross");
+Qt::BrushStyle Helper::crossBrushStyle = Qt::CrossPattern;
+QString Helper::forwardBrushIcon = QString(":/Resources/icons/forward.png");
+QString Helper::forwardBrush = QString("Forward");
+Qt::BrushStyle Helper::forwardBrushStyle = Qt::CrossPattern;
+QString Helper::backwardBrushIcon = QString(":/Resources/icons/backward.png");
+QString Helper::backwardBrush = QString("Backward");
+Qt::BrushStyle Helper::backwardBrushStyle = Qt::CrossPattern;
+QString Helper::crossDiagBrushIcon = QString(":/Resources/icons/crossdiag.png");
+QString Helper::crossDiagBrush = QString("CrossDiag");
+Qt::BrushStyle Helper::crossDiagBrushStyle = Qt::DiagCrossPattern;
+QString Helper::horizontalCylinderBrushIcon = QString(":/Resources/icons/horizontalcylinder.png");
+QString Helper::horizontalCylinderBrush = QString("HorizontalCylinder");
+Qt::BrushStyle Helper::horizontalCylinderBrushStyle = Qt::LinearGradientPattern;
+QString Helper::verticalCylinderBrushIcon = QString(":/Resources/icons/verticalcylinder.png");
+QString Helper::verticalCylinderBrush = QString("VertitalCylinder");
+Qt::BrushStyle Helper::verticalCylinderBrushStyle = Qt::Dense1Pattern;
+QString Helper::sphereBrushIcon = QString(":/Resources/icons/sphere.png");
+QString Helper::sphereBrush = QString("Sphere");
+Qt::BrushStyle Helper::sphereBrushStyle = Qt::RadialGradientPattern;
 
 QString Helper::ModelicaSimulationMethods = "DASSL,DASSL2,Euler,Runge-Kutta";
 QString Helper::ModelicaSimulationOutputFormats = "mat,plt,csv,empty";
@@ -95,7 +142,7 @@ QString GUIMessages::getMessage(int type)
     case SAME_COMPONENT_NAME:
         return "A Component with the same name already exists. Please choose another Name.";
     case SAME_PORT_CONNECT:
-        return "You can not connect a port to itself.";
+        return "You cannot connect a port to itself.";
     case NO_OPEN_MODEL:
         return "There is no open Model to simulate.";
     case NO_SIMULATION_STARTTIME:
@@ -129,7 +176,7 @@ QString GUIMessages::getMessage(int type)
     case ONLY_MODEL_ALLOWED:
         return "This item is not a model.";
     case UNABLE_TO_LOAD_FILE:
-        return "Error has occurred while loading the file%1. Unable to load the file.";
+        return "Error has occurred while loading the file '%1'. Unable to load the file.";
     case UNABLE_TO_LOAD_MODEL:
         return "Error has occurred while loading the model : \n%1.";
     case DELETE_AND_LOAD:
@@ -155,11 +202,15 @@ QString GUIMessages::getMessage(int type)
     case CLOSE_INTERACTIVE_SIMULATION_TAB:
         return "Are you sure you want to close '%1' interactive simulation?";
     case INFO_CLOSE_INTERACTIVE_SIMULATION_TAB:
-        return "You can not recover this window once its closed.";
+        return "You cannot recover this window once its closed.";
     case INTERACTIVE_SIMULATION_RUNNIG:
         return "You already have one interactive simulation running. Only one interactive simulaiton session is allowed at a time. \n\n Please shutdown the interactive simulation or close the interactive simulation tab before launching the new one.";
     case SELECT_VARIABLE_FOR_OMI:
         return "Please select a variable to plot before starting.";
+    case DIAGRAM_VIEW_DROP_MSG:
+        return "You cannot insert %1, it is a %2. Only model, class, connector, record or block are allowed on diagram layer.";
+    case ICON_VIEW_DROP_MSG:
+        return "You cannot insert %1, it is a %2. Only connector is allowed on the icon layer.";
     default:
         return "";
     }

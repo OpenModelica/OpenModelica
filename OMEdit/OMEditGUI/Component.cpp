@@ -70,7 +70,6 @@ Component::Component(QString value, QString name, QString className, QPointF pos
         setPos(position);
         getClassComponents(mClassName, mType, this);
     }
-
     // if everything is fine with icon then add it to scene
     mpGraphicsView->scene()->addItem(this);
 }
@@ -222,7 +221,6 @@ Component::Component(Component *pComponent, QString name, QPointF position, int 
         setPos(position);
         copyClassComponents(pComponent);
     }
-
     // if everything is fine with icon then add it to scene
     mpGraphicsView->scene()->addItem(this);
 }
@@ -673,12 +671,12 @@ QString Component::getTransformationString()
     annotationString.append("{").append(QString::number(extent2.x())).append(",");
     annotationString.append(QString::number(extent2.y())).append("}}, ");
     // add icon rotation
-    annotationString.append("rotation=").append(QString::number(rotation())).append("))");
+    annotationString.append("rotation=").append(QString::number(rotation())).append(")");
 
     return annotationString;
 }
 
-void Component::updateAnnotationString()
+void Component::updateAnnotationString(bool updateBothViews)
 {
     // create the annotation string
     QString annotationString = "annotate=Placement(";
@@ -686,7 +684,7 @@ void Component::updateAnnotationString()
     {
         annotationString.append("visible=true, ");
     }
-    if (mIsConnector)
+    if (mIsConnector and updateBothViews)
     {
         if (mpGraphicsView->mIconType == StringHandler::ICON)
         {
@@ -713,6 +711,7 @@ void Component::updateAnnotationString()
     {
         annotationString.append(getTransformationString());
     }
+    annotationString.append(")");
     // Add component annotation.
     mpOMCProxy->updateComponent(mName, mClassName, mpGraphicsView->mpParentProjectTab->mModelNameStructure,
                                 annotationString);
@@ -734,14 +733,17 @@ void Component::resizeComponent(qreal resizeFactorX, qreal resizeFactorY)
 //! Tells the component to ask its parent to delete it.
 void Component::deleteMe()
 {
+    GraphicsView *pGraphicsView = qobject_cast<GraphicsView*>(const_cast<QObject*>(sender()));
     // delete the component from model
     mpGraphicsView->deleteComponentObject(this);
     // remove the component from the scene
     mpGraphicsView->scene()->removeItem(this);
-    // call the addclassannotation if the graphicsview is diagram, so the icon in the tree is also updated
-    if (mpGraphicsView->mIconType == StringHandler::ICON)
-        mpGraphicsView->addClassAnnotation();
-    // delete the component instance
+    // if the signal is not send by graphicsview then call addclassannotation
+    if (!pGraphicsView)
+    {
+        if (mpGraphicsView->mIconType == StringHandler::ICON)
+            mpGraphicsView->addClassAnnotation();
+    }
     delete(this);
 }
 

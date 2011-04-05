@@ -49,6 +49,8 @@
 //! @class OMCProxy
 //! @brief It contains the reference of the CORBA object used to communicate with the OpenModelica Compiler.
 
+using namespace OMPlot;
+
 //! Constructor
 //! @param pParent is the pointer to MainWindow.
 //! @param displayErrors is the boolean variable used for displaying errors.
