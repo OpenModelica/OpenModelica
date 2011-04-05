@@ -158,9 +158,9 @@ bool OMCProxy::startServer()
         #ifdef WIN32
           if (!omhome)
             throw std::runtime_error(GUIMessages::getMessage(GUIMessages::OPEN_MODELICA_HOME_NOT_FOUND).toStdString());
-          omcPath = QString( omhome ) + "bin/omc.exe";
+          omcPath = QString( omhome ) + "/bin/omc.exe";
         #else /* unix */
-          omcPath = (omhome ? QString(omhome)+"bin/omc" : QString(CONFIG_DEFAULT_OPENMODELICAHOME) + "/bin/omc");
+          omcPath = (omhome ? QString(omhome)+"/bin/omc" : QString(CONFIG_DEFAULT_OPENMODELICAHOME) + "/bin/omc");
         #endif
 
         // Check the IOR file created by omc.exe
