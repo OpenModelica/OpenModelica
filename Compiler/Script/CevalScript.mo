@@ -1601,7 +1601,7 @@ algorithm
         s1 = Util.if_(System.os() ==& "Windows_NT", ".exe", "");
         filename = Util.if_(System.regularFileExists(str1), str1, filename);
         // create the path till OMPlot
-        str2 = stringAppendList({omhome,"..",pd,"OMPlot",pd,"bin",pd,"OMPlot",s1});
+        str2 = stringAppendList({omhome,pd,"bin",pd,"OMPlot",s1});
         // create the list of arguments for OMPlot
         str3 = "\"" +& filename +& "\" \"" +& title +& "\" \"" +& boolString(legend) +& "\" \"" +& boolString(grid) +& "\" \"" +& plotType +& "\" \"" +& boolString(logX) +& "\" \"" +& boolString(logY) +& "\" \"" +& xLabel +& "\" \"" +& yLabel +& "\" \"" +& ValuesUtil.valString(xRange1) +& "\" \"" +& ValuesUtil.valString(xRange2) +& "\" \"" +& ValuesUtil.valString(yRange1) +& "\" \"" +& ValuesUtil.valString(yRange2) +& "\" \"" +& str +& "\" -ew \"" +& boolString(externalWindow) +& "\"";
         call = str2 +& " " +& str3;
