@@ -39,28 +39,30 @@ using namespace OMPlot;
 Plot::Plot(PlotWindow *pParent)
     : QwtPlot(pParent)
 {
+    setAutoReplot(false);
     mpParentPlotWindow = pParent;
 
     // create an instance of legend
     mpLegend = new Legend(this);
     insertLegend(mpLegend, QwtPlot::RightLegend);
+    // create an instance of grid
+    mpPlotGrid = new PlotGrid(this);
+    // create an instance of zoomer
+    mpPlotZoomer = new PlotZoomer(QwtPlot::xBottom, QwtPlot::yLeft, canvas());
+    // create an instance of panner
+    mpPlotPanner = new PlotPanner(canvas(), this);
     // create an instance of picker
     mpPlotPicker = new QwtPlotPicker(canvas());
     mpPlotPicker->setTrackerPen(QPen(Qt::black));
     mpPlotPicker->setRubberBandPen(QPen(Qt::black));
     mpPlotPicker->setTrackerMode(QwtPicker::AlwaysOn);
-    // create an instance of grid
-    mpPlotGrid = new PlotGrid(this);
-    // create an instance of zoomer
-    mpPlotZoomer = new PlotZoomer(QwtPlot::xBottom, QwtPlot::yLeft, canvas());        
-    // create an instance of panner
-    mpPlotPanner = new PlotPanner(canvas(), this);
     // set canvas arrow
     canvas()->setCursor(Qt::ArrowCursor);
     setCanvasBackground(Qt::white);
     setContentsMargins(10, 10, 10, 10);
     // fill colors list
     fillColorsList();
+    setAutoReplot(true);
 }
 
 Plot::~Plot()

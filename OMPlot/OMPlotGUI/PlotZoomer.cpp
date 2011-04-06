@@ -35,30 +35,21 @@
 
 using namespace OMPlot;
 
-PlotZoomer::PlotZoomer(int xAxis, int yAxis, QwtPlotCanvas *pParent, bool doReplot)
-    : QwtPlotZoomer(xAxis, yAxis, pParent, doReplot)
+PlotZoomer::PlotZoomer(int xAxis, int yAxis, QwtPlotCanvas *pParent)
+    : QwtPlotZoomer(xAxis, yAxis, pParent)
 {
     setSelectionFlags(QwtPicker::DragSelection | QwtPicker::CornerToCorner);    
     setTrackerMode(QwtPicker::AlwaysOff);
     setRubberBand(QwtPicker::RectRubberBand);
-    setRubberBandPen(QPen(Qt::black));
+    setRubberBandPen(QPen(Qt::black, 1.0, Qt::DashLine));
 
     // RightButton: zoom out by 1
     // Ctrl+RightButton: zoom out to full size
-
-#if QT_VERSION < 0x040000
-    setMousePattern(QwtEventPattern::MouseSelect2,
-        Qt::RightButton, Qt::ControlButton);
-#else
-    setMousePattern(QwtEventPattern::MouseSelect2,
-        Qt::RightButton, Qt::ControlModifier);
-#endif
-    setMousePattern(QwtEventPattern::MouseSelect3,
-        Qt::RightButton);
+    setMousePattern(QwtEventPattern::MouseSelect2, Qt::RightButton, Qt::ControlModifier);
+    setMousePattern(QwtEventPattern::MouseSelect3, Qt::RightButton);
 }
 
 PlotZoomer::~PlotZoomer()
 {
 
 }
-

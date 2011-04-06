@@ -31,6 +31,7 @@
  *
  */
 
+#include <QtSvg/QSvgGenerator>
 #include "PlotWindow.h"
 #include "iostream"
 
@@ -45,6 +46,7 @@ PlotWindow::PlotWindow(QStringList arguments, QWidget *parent)
     if (arguments.size() > 1)
         initializePlot(arguments);
     // set qwtplot the central widget
+    mpPlot->getPlotZoomer()->setZoomBase(false);
     setCentralWidget(getPlot());
 }
 
@@ -60,7 +62,6 @@ void PlotWindow::setUpWidget()
     // set up the toolbar
     setupToolbar();
     // enable the zoom mode by default
-    enableZoomMode(true);
     mpZoomButton->setChecked(true);
     // set the default values
     // set the plot title
@@ -178,10 +179,20 @@ void PlotWindow::setupToolbar()
     //ORIGINAL SIZE
     QToolButton *originalButton = new QToolButton(toolBar);
     originalButton->setText("Original");
-    //btnExport->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
     connect(originalButton, SIGNAL(clicked()), SLOT(setOriginal()));
     toolBar->addWidget(originalButton);
     toolBar->addSeparator();
+    //Fit in View
+    QToolButton *fitInViewButton = new QToolButton(toolBar);
+    fitInViewButton->setText("Fit in View");
+    connect(fitInViewButton, SIGNAL(clicked()), SLOT(fitInView()));
+    toolBar->addWidget(fitInViewButton);
+    toolBar->addSeparator();
+    // make the buttons exclusive
+    QButtonGroup *pViewsButtonGroup = new QButtonGroup;
+    pViewsButtonGroup->setExclusive(true);
+    pViewsButtonGroup->addButton(mpZoomButton);
+    pViewsButtonGroup->addButton(mpPanButton);
     //EXPORT
     QToolButton *btnExport = new QToolButton(toolBar);
     btnExport->setText("Save");
@@ -406,7 +417,6 @@ void PlotWindow::plot()
 void PlotWindow::plotParametric()
 {
     QString currentLine, xVariable, yVariable;
-    QVector<int> variableExists(2);
     if (mVariablesList.isEmpty())
         throw NoVariableException(QString("No variables specified!").toStdString().c_str());
     else if (mVariablesList.size() != 2)
@@ -414,6 +424,8 @@ void PlotWindow::plotParametric()
 
     xVariable = mVariablesList.at(0);
     yVariable = mVariablesList.at(1);
+    setXLabel(xVariable);
+    setYLabel(yVariable);
 
     //PLOT PLT
     if (mFile.fileName().endsWith("plt"))
@@ -647,20 +659,8 @@ void PlotWindow::enableZoomMode(bool on)
 {
     mpPlot->getPlotZoomer()->setEnabled(on);
     if(on)
-    {        
-        if(mpPlot->getPlotPanner()->isEnabled())
-        {
-            mpPlot->getPlotPanner()->setEnabled(false);
-            mpPanButton->setChecked(false);
-        }
-        mpPlot->canvas()->setCursor(Qt::CrossCursor);        
-    }
-    else
     {
-        if(!mpPlot->getPlotPanner()->isEnabled())
-            mpPlot->getPlotPicker()->setRubberBand(QwtPlotPicker::CrossRubberBand);
-
-        mpPlot->canvas()->setCursor(Qt::ArrowCursor);
+        mpPlot->canvas()->setCursor(Qt::CrossCursor);
     }
 }
 
@@ -669,36 +669,32 @@ void PlotWindow::enablePanMode(bool on)
     mpPlot->getPlotPanner()->setEnabled(on);
     if(on)
     {
-        mpPlot->getPlotPicker()->setRubberBand(QwtPlotPicker::NoRubberBand);
-        if(mpPlot->getPlotZoomer()->isEnabled())
-        {
-            mpZoomButton->setChecked(false);
-            enableZoomMode(false);
-        }
         mpPlot->canvas()->setCursor(Qt::OpenHandCursor);
-    }
-    else
-    {
-        if(!mpPlot->getPlotZoomer()->isEnabled())
-        {
-            mpPlot->getPlotPicker()->setRubberBand(QwtPlotPicker::CrossRubberBand);
-            mpPlot->canvas()->setCursor(Qt::CrossCursor);
-        }
-        mpPlot->canvas()->setCursor(Qt::ArrowCursor);
     }
 }
 
 void PlotWindow::exportDocument()
-{    
-    //Include ps ;;Postscript Documents (*.ps)
-    QString fileName = QFileDialog::getSaveFileName(this, tr("Save File As"), QDir::currentPath(), tr("Image Files (*.png *.bmp *.jpg)"));
+{
+    QString fileName = QFileDialog::getSaveFileName(this, tr("Save File As"), QDir::currentPath(), tr("Image Files (*.png *.svg *.bmp *.jpg)"));
 
     if ( !fileName.isEmpty() )
-    {        
-        QPixmap pixmap(mpPlot->size());
-        mpPlot->render(&pixmap);
-        if (!pixmap.save(fileName)) {
-          QMessageBox::critical(this, "Error", "Failed to save image " + fileName);
+    {
+        // export svg
+        if (fileName.endsWith(".svg"))
+        {
+            QSvgGenerator generator;
+            generator.setFileName(fileName);
+            generator.setSize(getPlot()->rect().size());
+            getPlot()->print(generator);
+        }
+        // export png, bmp, jpg
+        else
+        {
+            QPixmap pixmap(mpPlot->size());
+            mpPlot->render(&pixmap);
+            if (!pixmap.save(fileName)) {
+              QMessageBox::critical(this, "Error", "Failed to save image " + fileName);
+            }
         }
     }
 }
@@ -748,9 +744,15 @@ void PlotWindow::setGrid(bool on)
 
 void PlotWindow::setOriginal()
 {
+    mpPlot->getPlotZoomer()->zoom(0);
+    mpPlot->replot();
+}
+
+void PlotWindow::fitInView()
+{
+    mpPlot->getPlotZoomer()->zoom(0);
     mpPlot->setAxisAutoScale(QwtPlot::yLeft);
     mpPlot->setAxisAutoScale(QwtPlot::xBottom);
-//    mpPlot->getPlotZoomer()->zoom(0);
     mpPlot->replot();
 }
 

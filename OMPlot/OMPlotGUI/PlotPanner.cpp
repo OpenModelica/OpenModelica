@@ -42,6 +42,7 @@ PlotPanner::PlotPanner(QwtPlotCanvas *pCanvas, Plot *pParent)
     setEnabled(false);
     connect(this, SIGNAL(moved(int,int)), SLOT(updateView(int, int)));
     mpParentPlot = pParent;
+
 }
 
 PlotPanner::~PlotPanner()

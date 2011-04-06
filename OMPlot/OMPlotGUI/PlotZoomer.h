@@ -40,8 +40,9 @@ namespace OMPlot
 {
 class PlotZoomer : public QwtPlotZoomer
 {
+    Q_OBJECT
 public:
-    PlotZoomer(int xAxis, int yAxis, QwtPlotCanvas *pParent, bool doReplot = true);
+    PlotZoomer(int xAxis, int yAxis, QwtPlotCanvas *pParent);
     ~PlotZoomer();
 };
 }
