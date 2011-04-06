@@ -656,7 +656,7 @@ algorithm
       Absyn.ComponentRef cr_1;
       Integer size,length,resI,timeStampI,i,n;
       list<String> vars_1,vars_2,args,strings,strVars,strs,visvars;
-      Real t1,t2,time,timeTotal,timeSimulation,timeStamp,val;
+      Real t1,t2,time,timeTotal,timeSimulation,timeStamp,val,x1,x2,y1,y2;
       Interactive.InteractiveStmts istmts;
       Boolean bval, b, externalWindow, legend, grid, logX, logY, points, gcc_res, omcfound, rm_res, touch_res, uname_res, extended, insensitive;
       Env.Cache cache;
@@ -1580,10 +1580,8 @@ algorithm
           Values.BOOL(logY),
           Values.STRING(xLabel),
           Values.STRING(yLabel),
-          xRange1,
-          xRange2,
-          yRange1,
-          yRange2
+          Values.ARRAY(valueLst={Values.REAL(x1),Values.REAL(x2)}),
+          Values.ARRAY(valueLst={Values.REAL(y1),Values.REAL(y2)})
         },
         st,msg)
       equation
@@ -1603,7 +1601,7 @@ algorithm
         // create the path till OMPlot
         str2 = stringAppendList({omhome,pd,"bin",pd,"OMPlot",s1});
         // create the list of arguments for OMPlot
-        str3 = "\"" +& filename +& "\" \"" +& title +& "\" \"" +& boolString(legend) +& "\" \"" +& boolString(grid) +& "\" \"" +& plotType +& "\" \"" +& boolString(logX) +& "\" \"" +& boolString(logY) +& "\" \"" +& xLabel +& "\" \"" +& yLabel +& "\" \"" +& ValuesUtil.valString(xRange1) +& "\" \"" +& ValuesUtil.valString(xRange2) +& "\" \"" +& ValuesUtil.valString(yRange1) +& "\" \"" +& ValuesUtil.valString(yRange2) +& "\" \"" +& str +& "\" -ew \"" +& boolString(externalWindow) +& "\"";
+        str3 = "\"" +& filename +& "\" \"" +& title +& "\" \"" +& boolString(legend) +& "\" \"" +& boolString(grid) +& "\" \"" +& plotType +& "\" \"" +& boolString(logX) +& "\" \"" +& boolString(logY) +& "\" \"" +& xLabel +& "\" \"" +& yLabel +& "\" \"" +& realString(x1) +& "\" \"" +& realString(x2) +& "\" \"" +& realString(y1) +& "\" \"" +& realString(y2) +& "\" \"" +& str +& "\" -ew \"" +& boolString(externalWindow) +& "\"";
         call = str2 +& " " +& str3;
         
         _ = System.spawnCall(str2, call);

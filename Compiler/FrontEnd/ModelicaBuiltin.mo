@@ -1115,10 +1115,8 @@ function plot3 "Launches a plot window using OMPlot. Returns true on success.
   input Boolean logY := false "Determines whether or not the vertical axis is logarithmically scaled.";
   input String xLabel := "time" "This text will be used as the horizontal label in the diagram.";
   input String yLabel := "" "This text will be used as the vertical label in the diagram.";
-  input Real xRange1 := 0.0 "Determines the horizontal interval that is visible in the diagram. {0,0} will select a suitable range.";
-  input Real xRange2 := 0.0 "Determines the horizontal interval that is visible in the diagram. {0,0} will select a suitable range.";
-  input Real yRange1 := 0.0 "Determines the vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
-  input Real yRange2 := 0.0 "Determines the vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
+  input Real xRange[2] := {0.0,0.0} "Determines the horizontal interval that is visible in the diagram. {0,0} will select a suitable range.";
+  input Real yRange[2] := {0.0,0.0} "Determines the vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
   output Boolean success "Returns true on success";
 external "builtin";
 end plot3;
