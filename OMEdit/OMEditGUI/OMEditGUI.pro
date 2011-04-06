@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT += network core gui webkit xml
+QT += network core gui webkit xml svg
 
 TARGET = OMEdit
 TEMPLATE = app

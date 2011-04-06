@@ -387,18 +387,21 @@ void MainWindow::createActions()
 
     modelingViewAction = new QAction(QIcon(":/Resources/icons/omeditor.png"), tr("Modeling"), viewActionGroup);
     modelingViewAction->setStatusTip(tr("Shows Modeling View"));
+    modelingViewAction->setShortcut(QKeySequence("Ctrl+Shift+m"));
     modelingViewAction->setCheckable(true);
     modelingViewAction->setChecked(true);
     connect(modelingViewAction, SIGNAL(triggered()), SLOT(switchToModelingView()));
 
     plottingViewAction = new QAction(QIcon(":/Resources/icons/omplot.png"), tr("Plotting"), viewActionGroup);
     plottingViewAction->setStatusTip(tr("Shows Plotting View"));
+    plottingViewAction->setShortcut(QKeySequence("Ctrl+Shift+p"));
     plottingViewAction->setCheckable(true);
     connect(plottingViewAction, SIGNAL(triggered()), SLOT(switchToPlottingView()));
 
     interactiveSimulationViewAction = new QAction(QIcon(":/Resources/icons/interactive-simulation.png"),
                                                   tr("Interactive Simulation"), viewActionGroup);
     interactiveSimulationViewAction->setStatusTip(tr("Shows Interactive Simulation View"));
+    interactiveSimulationViewAction->setShortcut(QKeySequence("Ctrl+Shift+i"));
     interactiveSimulationViewAction->setCheckable(true);
     connect(interactiveSimulationViewAction, SIGNAL(triggered()), SLOT(switchToInteractiveSimulationView()));
 

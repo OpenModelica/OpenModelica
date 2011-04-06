@@ -247,6 +247,7 @@ void PlotWidget::plotVariables(QTreeWidgetItem *item, int column)
                 pPlotWindow->plot();
                 pPlotWindow->getPlot()->replot();
                 pPlotWindow->getPlot()->updateGeometry();
+                pPlotWindow->getPlot()->getPlotZoomer()->setZoomBase(false);
             }
             // if user unchecks the variable then remove it from the plot
             else if (item->checkState(column) == Qt::Unchecked)
@@ -261,6 +262,7 @@ void PlotWidget::plotVariables(QTreeWidgetItem *item, int column)
                         pPlotCurve->detach();
                         pPlotWindow->getPlot()->replot();
                         pPlotWindow->getPlot()->updateGeometry();
+                        pPlotWindow->getPlot()->getPlotZoomer()->setZoomBase(false);
                         break;
                     }
                 }
@@ -286,7 +288,14 @@ void PlotWidget::plotVariables(QTreeWidgetItem *item, int column)
                         pPlotWindow->openFile(QString(Helper::tmpPath).append("/").append(parentItem->text(0)));
                         pPlotWindow->setVariablesList(mPlotParametricVariables.last());
                         pPlotWindow->plotParametric();
+                        if (mPlotParametricVariables.size() > 1)
+                        {
+                            pPlotWindow->setXLabel(tr(""));
+                            pPlotWindow->setYLabel(tr(""));
+                        }
                         pPlotWindow->getPlot()->replot();
+                        pPlotWindow->getPlot()->updateGeometry();
+                        pPlotWindow->getPlot()->getPlotZoomer()->setZoomBase(false);
                     }
                     else
                     {
@@ -334,10 +343,16 @@ void PlotWidget::plotVariables(QTreeWidgetItem *item, int column)
                                     pPlotCurve->detach();
                                     pPlotWindow->getPlot()->replot();
                                     pPlotWindow->getPlot()->updateGeometry();
+                                    pPlotWindow->getPlot()->getPlotZoomer()->setZoomBase(false);
                                     break;
                                 }
                             }
                             mPlotParametricVariables.removeOne(list);
+                            if (mPlotParametricVariables.size() == 1)
+                            {
+                                pPlotWindow->setXLabel(mPlotParametricVariables.last().at(0));
+                                pPlotWindow->setYLabel(mPlotParametricVariables.last().at(1));
+                            }
                         }
                     }
                 }

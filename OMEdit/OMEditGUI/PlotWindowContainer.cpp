@@ -74,10 +74,10 @@ QString PlotWindowContainer::getUniqueName(QString name, int number)
 
 PlotWindow* PlotWindowContainer::getCurrentWindow()
 {
-    if (currentSubWindow())
-        return qobject_cast<PlotWindow*>(currentSubWindow()->widget());
-    else
+    if (subWindowList(QMdiArea::ActivationHistoryOrder).size() == 0)
         return 0;
+    else
+        return qobject_cast<PlotWindow*>(subWindowList(QMdiArea::ActivationHistoryOrder).last()->widget());
 }
 
 PlotWindow* PlotWindowContainer::addPlotWindow()
