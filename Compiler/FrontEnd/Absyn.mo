@@ -4827,12 +4827,12 @@ end isInner;
 
 public function makeFullyQualified
 "Makes a path fully qualified unless it already is."
-  input Path path;
+  input Path inPath;
   output Path outPath;
 algorithm
-  outPath := match path
-    case FULLYQUALIFIED(path = _) then path;
-    else FULLYQUALIFIED(path);
+  outPath := match(inPath)
+    case FULLYQUALIFIED(path = _) then inPath;
+    else FULLYQUALIFIED(inPath);
   end match;
 end makeFullyQualified;
 
