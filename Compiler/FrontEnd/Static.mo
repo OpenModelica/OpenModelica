@@ -86,7 +86,6 @@ uniontype Slot
   end SLOT;
 end Slot;
 
-protected import Builtin;
 protected import Ceval;
 protected import ClassInf;
 protected import ComponentReference;
@@ -370,7 +369,6 @@ algorithm
         (cache,ops) = operators(cache,op, env, t, (DAE.T_NOTYPE(),NONE()));
         (op_1,{e_2},rtype) = deoverload(ops,{(e_1,t)},e,pre,info);
         exp_1 = replaceOperatorWithFcall(DAE.UNARY(op_1,e_2), c);
-        exp_1 = ExpressionSimplify.simplify(exp_1);
         prop = DAE.PROP(rtype,c);
       then
         (cache,exp_1,prop,st_1);

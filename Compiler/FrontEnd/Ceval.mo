@@ -910,7 +910,11 @@ algorithm
       then
         fail();
     
-    case (_, _, _, _, _) then (inCache, inExp, inProp);
+    case (_, _, _, _, _)
+      equation
+        // If we fail to evaluate, at least we should simplify the expression
+        e = ExpressionSimplify.simplify1(inExp);
+      then (inCache, e, inProp);
   
   end matchcontinue;
 end cevalIfConstant;

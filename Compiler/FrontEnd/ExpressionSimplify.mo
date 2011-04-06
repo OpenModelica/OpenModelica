@@ -109,7 +109,7 @@ algorithm
   print(Util.if_(t2 -. t1 >. 0.01,"simplify1 took "+&realString(t2 -. t1)+&" seconds for exp: "+&ExpressionDump.printExpStr(e)+& " \nsimplified to :"+&ExpressionDump.printExpStr(outE)+&"\n",""));
 end simplify1time;
 
-protected function simplifyWork
+public function simplifyWork
 "This function does some very basic simplification
   on expressions, like 0*a = 0, [1][1] => 1, etc."
   input tuple<DAE.Exp,Boolean> inTpl;

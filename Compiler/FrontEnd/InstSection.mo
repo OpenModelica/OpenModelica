@@ -359,6 +359,7 @@ algorithm
       equation
         inState = ClassInf.trans(inState,ClassInf.FOUND_EQUATION());
         (outCache,outEnv,outIH,outDae,outSets,outState,outGraph) = instEquationCommonWork(inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inEEquation,inInitial,inBoolean,inGraph);
+        (outDae,_,_) = DAEUtil.traverseDAE(outDae,DAEUtil.emptyFuncTree,Expression.traverseSubexpressionsHelper,(ExpressionSimplify.simplifyWork,false));
       then (outCache,outEnv,outIH,outDae,outSets,outState,outGraph);
     case (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inEEquation,inInitial,inBoolean,inGraph,_)
       equation
@@ -490,8 +491,6 @@ algorithm
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
         
         //Check that the lefthandside and the righthandside get along.
-        e1_2 = ExpressionSimplify.simplify1(e1_2);
-        e2_2 = ExpressionSimplify.simplify1(e2_2);
         dae = instEqEquation(e1_2, prop1, e2_2, prop2, source, initial_, impl);
                           
         ci_state_1 = instEquationCommonCiTrans(ci_state, initial_);
