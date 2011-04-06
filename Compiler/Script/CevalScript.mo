@@ -1604,7 +1604,7 @@ algorithm
         str3 = "\"" +& filename +& "\" \"" +& title +& "\" \"" +& boolString(legend) +& "\" \"" +& boolString(grid) +& "\" \"" +& plotType +& "\" \"" +& boolString(logX) +& "\" \"" +& boolString(logY) +& "\" \"" +& xLabel +& "\" \"" +& yLabel +& "\" \"" +& realString(x1) +& "\" \"" +& realString(x2) +& "\" \"" +& realString(y1) +& "\" \"" +& realString(y2) +& "\" \"" +& str +& "\" -ew \"" +& boolString(externalWindow) +& "\"";
         call = str2 +& " " +& str3;
         
-        _ = System.spawnCall(str2, call);
+        0 = System.spawnCall(str2, call);
       then
         (cache,Values.BOOL(true),st);
         
