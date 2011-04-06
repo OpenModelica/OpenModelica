@@ -3353,19 +3353,10 @@ algorithm
     case (DAE.DIV(ty = ty),e1,e2)
       equation
         true = Expression.isZero(e1);
+        false = Expression.isZero(e2);
       then
         DAE.RCONST(0.0);
 
-    /* // a / 0 => division error
-    case (_,DAE.DIV(ty = ty),e1,e2)
-      equation
-        true = Expression.isZero(e2);
-        s1 = printExpStr(e1);
-        s2 = printExpStr(e2);
-        Error.addMessage(Error.DIVISION_BY_ZERO, {s1,s2});
-      then
-        fail();*/
-    
     // a / 1 = a
     case (DAE.DIV(ty = ty),e1,e2)
       equation
@@ -3386,6 +3377,7 @@ algorithm
       equation
         true = Expression.expEqual(e1,e2);
         res = Expression.makeConstOne(ty);
+        false = Expression.isZero(e2);
       then
         res;
     
