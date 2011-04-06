@@ -62,7 +62,7 @@ extern "C" {
 
 
 #define MMC_SIZE_META sizeof(modelica_metatype)
-#define MMC_WORDS_TO_BYTES(x) (x * MMC_SIZE_META)
+#define MMC_WORDS_TO_BYTES(x) ((x) * MMC_SIZE_META)
 
 /* 
  * a slot is a word on any platform!

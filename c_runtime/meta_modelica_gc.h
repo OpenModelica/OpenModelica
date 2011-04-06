@@ -118,7 +118,7 @@ int mmc_GC_collect(mmc_GC_local_state_type local_GC_state);
 int is_in_range(modelica_metatype p, modelica_metatype start, size_t bytes);
 
 /* tag the free reqion as a free object with 250 ctor*/
-#define MMC_FREE_OBJECT_CTOR           250
+#define MMC_FREE_OBJECT_CTOR           200
 #define MMC_TAG_AS_FREE_OBJECT(p, sz)  (((struct mmc_header*)p)->header = MMC_STRUCTHDR(sz, MMC_FREE_OBJECT_CTOR))
 
 #if defined(__cplusplus)

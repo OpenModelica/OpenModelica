@@ -72,6 +72,7 @@ mmc_GC_page_type list_populate(mmc_GC_page_type page);
 int is_in_free(modelica_metatype p);
 int is_inside_page(modelica_metatype p);
 size_t pages_list_length(mmc_GC_pages_type pages);
+size_t pages_list_size(mmc_GC_pages_type pages);
 
 #if defined(__cplusplus)
 }

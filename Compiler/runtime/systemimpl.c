@@ -107,6 +107,10 @@ extern "C" {
 #endif
 #endif
 
+#if defined(_MSC_VER)
+#define strncasecmp strnicmp
+#endif
+
 #define MAX_PTR_INDEX 10000
 static struct modelica_ptr_s ptr_vector[MAX_PTR_INDEX];
 static modelica_integer last_ptr_index = -1;

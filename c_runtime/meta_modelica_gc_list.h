@@ -74,6 +74,7 @@ typedef struct mmc_GC_free_list_type mmc_GC_free_list_type;
 mmc_GC_free_list_type* list_create(size_t default_free_slots_size);
 mmc_GC_free_list_type* list_add(mmc_GC_free_list_type* free, modelica_metatype p, size_t size);
 size_t list_length(mmc_GC_free_list_type* free);
+size_t list_size(mmc_GC_free_list_type* free);
 modelica_metatype list_get(mmc_GC_free_list_type* free, size_t size);
 
 #if defined(__cplusplus)

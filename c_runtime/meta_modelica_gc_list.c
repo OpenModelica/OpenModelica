@@ -149,6 +149,26 @@ size_t list_length(mmc_GC_free_list_type* free)
   return sz;
 }
 
+
+size_t list_size(mmc_GC_free_list_type* free)
+{
+  size_t i = 0;
+  size_t sz = 0;
+  /* add the fixed size small list */
+  for(i = 0; i < MMC_GC_FREE_SIZES; i++)
+  {
+    sz += (free->szSmall[i].current * i) * MMC_SIZE_META;
+  }
+  /* add the large size list */
+  for(i = 0; i < free->szLarge.current; i++)
+  {
+    sz += (free->szLarge.start[i].size) * MMC_SIZE_META;
+  }
+  
+  return sz;
+}
+
+
 modelica_metatype list_get(mmc_GC_free_list_type* free, size_t size)
 {
   modelica_metatype p = NULL;
@@ -166,7 +186,7 @@ modelica_metatype list_get(mmc_GC_free_list_type* free, size_t size)
       MMC_TAG_AS_FREE_OBJECT(p, size - 1);
       return p;
     }
-
+    /*
     for (i = MMC_GC_FREE_SIZES - 1; i > size; i--)
     {
       slot = &free->szSmall[i];
@@ -176,13 +196,13 @@ modelica_metatype list_get(mmc_GC_free_list_type* free, size_t size)
         p = slot->start[slot->current];
         if (i > size)
         {
-          /* something to return to the list */
           size_t sz = i - size;
           free = list_add(free, (char*)p + sz*MMC_SIZE_META, sz);
         }
         return p;
       }
     }
+    */
   }
   
   /* if size is large or we had no free slots above, add it to the large list! */

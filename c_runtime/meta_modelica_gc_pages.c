@@ -207,6 +207,20 @@ size_t pages_list_length(mmc_GC_pages_type pages)
   return sz;
 }
 
+size_t pages_list_size(mmc_GC_pages_type pages)
+{
+  size_t i = 0, sz = 0;
+  mmc_GC_page_type page = {0};
+  
+  for (i = 0; i < mmc_GC_state->pages.current; i++)
+  {
+    page = mmc_GC_state->pages.start[i];
+    sz += list_size(page.free);
+  }
+  
+  return sz;
+}
+
 int is_in_free(modelica_metatype p)
 {
   size_t i = 0, j = 0, k = 0;
