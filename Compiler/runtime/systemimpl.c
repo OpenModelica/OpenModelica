@@ -531,7 +531,7 @@ int SystemImpl__spawnCall(const char* path, const char* str)
 
   fflush(NULL); /* flush output so the testsuite is deterministic */
 #if defined(__MINGW32__) || defined(_MSC_VER)
-  status = spawnl(P_NOWAIT, path, str, "", NULL);
+  status = spawnl(P_DETACH, path, str, "", NULL);
 #else
   pid_t pID = vfork();
   if (pID == 0) { // child

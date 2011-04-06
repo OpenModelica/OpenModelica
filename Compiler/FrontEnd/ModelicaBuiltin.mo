@@ -1101,7 +1101,7 @@ function plot3 "Launches a plot window using OMPlot. Returns true on success.
   
   Example command sequences:
   simulate(A);plot({x,y,z});
-  simulate(A);plot(x);
+  simulate(A);plot(x, externalWindow=true);
   simulate(A,fileNamePrefix=\"B\");simulate(C);plot(z,\"B.mat\",legend=false);
   "
   input VariableNames vars "The variables you want to plot";
@@ -1110,7 +1110,6 @@ function plot3 "Launches a plot window using OMPlot. Returns true on success.
   input String title := "Plot by OpenModelica" "This text will be used as the diagram title.";
   input Boolean legend := true "Determines whether or not the variable legend is shown.";
   input Boolean grid := true "Determines whether or not a grid is shown in the diagram.";
-  input String plotType := "plot" "This text will be used to tell OMPlot what type of plot is requested.";
   input Boolean logX := false "Determines whether or not the horizontal axis is logarithmically scaled.";
   input Boolean logY := false "Determines whether or not the vertical axis is logarithmically scaled.";
   input String xLabel := "time" "This text will be used as the horizontal label in the diagram.";
@@ -1147,6 +1146,29 @@ function plotAll "Works in the same way as plot(), but does not accept any
   output Boolean success "Returns true on success";
 external "builtin";
 end plotAll;
+
+function plotAll3 "Works in the same way as plot(), but does not accept any
+  variable names as input. Instead, all variables are part of the plot window.
+  
+  Example command sequences:
+  simulate(A);plotAll();
+  simulate(A);plotAll(externalWindow=true);
+  simulate(A,fileNamePrefix=\"B\");simulate(C);plotAll(x,\"B.mat\");"
+  
+  input Boolean externalWindow := false "Opens the plot in a new plot window";
+  input String fileName := "<default>" "The filename containing the variables. <default> will read the last simulation result";
+  input String title := "Plot by OpenModelica" "This text will be used as the diagram title.";
+  input Boolean legend := true "Determines whether or not the variable legend is shown.";
+  input Boolean grid := true "Determines whether or not a grid is shown in the diagram.";
+  input Boolean logX := false "Determines whether or not the horizontal axis is logarithmically scaled.";
+  input Boolean logY := false "Determines whether or not the vertical axis is logarithmically scaled.";
+  input String xLabel := "time" "This text will be used as the horizontal label in the diagram.";
+  input String yLabel := "" "This text will be used as the vertical label in the diagram.";
+  input Real xRange[2] := {0.0,0.0} "Determines the horizontal interval that is visible in the diagram. {0,0} will select a suitable range.";
+  input Real yRange[2] := {0.0,0.0} "Determines the vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
+  output Boolean success "Returns true on success";
+external "builtin";
+end plotAll3;
 
 function plot2 "Uses the Java-based plot window (ptplot.jar) to launch a plot,
   similar to the plot() command. This command accepts fewer options, but works
@@ -1213,6 +1235,30 @@ function plotParametric2 "Plots the y-variables as a function of the x-variable.
   output Boolean success "Returns true on success";
 external "builtin";
 end plotParametric2;
+
+function plotParametric3 "Launches a plotParametric window using OMPlot. Returns true on success.
+  Don't require sendData support.
+  
+  Example command sequences:
+  simulate(A);plotParametric2(x,y);
+  simulate(A);plotParametric2(x,y, externalWindow=true);
+  "
+  input VariableName xVariable;
+  input VariableName yVariable;
+  input Boolean externalWindow := false "Opens the plot in a new plot window";
+  input String fileName := "<default>" "The filename containing the variables. <default> will read the last simulation result";
+  input String title := "Plot by OpenModelica" "This text will be used as the diagram title.";
+  input Boolean legend := true "Determines whether or not the variable legend is shown.";
+  input Boolean grid := true "Determines whether or not a grid is shown in the diagram.";
+  input Boolean logX := false "Determines whether or not the horizontal axis is logarithmically scaled.";
+  input Boolean logY := false "Determines whether or not the vertical axis is logarithmically scaled.";
+  input String xLabel := "time" "This text will be used as the horizontal label in the diagram.";
+  input String yLabel := "" "This text will be used as the vertical label in the diagram.";
+  input Real xRange[2] := {0.0,0.0} "Determines the horizontal interval that is visible in the diagram. {0,0} will select a suitable range.";
+  input Real yRange[2] := {0.0,0.0} "Determines the vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
+  output Boolean success "Returns true on success";
+external "builtin";
+end plotParametric3;
 
 function uriToFilename "Handles modelica:// and file:// URI's. The result is an absolute path on the local system.
   The result depends on the current MODELICAPATH. Returns the empty string on failure."

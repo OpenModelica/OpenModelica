@@ -1,6 +1,10 @@
 TEMPLATE = subdirs
 
+CONFIG = release
+
 SUBDIRS += ../OMEdit/OMEditGUI \
     ../OMShell/OMShellGUI \
     ../OMNotebook/OMNotebookGUI \
-    ../OMNotebook/OMPlotWindow
+    ../OMNotebook/OMPlotWindow \
+    ../OMOptim/build/OMOptim.pro \
+    ../OMPlot/OMPlotGUI
