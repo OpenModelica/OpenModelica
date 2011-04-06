@@ -468,7 +468,6 @@ algorithm
       equation
         (cache,e_1,prop,st_1) = elabCallReduction(cache,env, fn, e, iterators, impl, st,doVect,pre,info);
         c = Types.propAllConst(prop);
-        e_1 = ExpressionSimplify.simplify(e_1);
       then
         (cache,e_1,prop,st_1);
 
