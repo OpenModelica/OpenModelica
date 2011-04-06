@@ -2706,6 +2706,111 @@ algorithm
   end matchcontinue;
 end deleteVar2;
 
+public function removeVar
+"function: removeVar
+  author: Frenkel TUD 2011-04
+  Removes a var from the vararray but does not scaling down the array"
+  input Integer inVarPos;
+  input BackendDAE.Variables inVariables;
+  output BackendDAE.Variables outVariables;
+  output BackendDAE.Var outVar;
+algorithm
+  (outVariables,outVar):=
+  matchcontinue (inVarPos,inVariables)
+    local
+      Integer pos,pos_1;
+      BackendDAE.Value hval,hashindx,indx,bsize,n,hvalold,indxold;
+      list<BackendDAE.CrefIndex> indexes,indexes1;
+      list<BackendDAE.StringIndex> indexexold,indexexold1;
+      BackendDAE.Var v;
+      DAE.ComponentRef cr;
+      array<list<BackendDAE.CrefIndex>> hashvec,hashvec_1;
+      array<list<BackendDAE.StringIndex>> oldhashvec,oldhashvec_1;
+      BackendDAE.VariableArray varr,varr1;
+      String name_str;
+    case (pos,BackendDAE.VARIABLES(crefIdxLstArr = hashvec,strIdxLstArr = oldhashvec,varArr = varr,bucketSize = bsize,numberOfVars = n))
+      equation
+        (v as BackendDAE.VAR(varName = cr),varr1) = removeVar1(varr, pos);
+        pos_1 = pos-1;
+        hashindx = HashTable2.hashFunc(cr, bsize);
+        indexes = hashvec[hashindx + 1];
+        (indexes1,_) = Util.listDeleteMemberOnTrue(BackendDAE.CREFINDEX(cr,pos_1),indexes,removeVar2);
+        hashvec_1 = arrayUpdate(hashvec, hashindx + 1, indexes1);
+        name_str = ComponentReference.printComponentRefStr(cr);
+        hvalold = stringHashDjb2(name_str);
+        indxold = intMod(hvalold, bsize);
+        indexexold = oldhashvec[indxold + 1];
+        (indexexold1,_) = Util.listDeleteMemberOnTrue(BackendDAE.STRINGINDEX(name_str,pos_1),indexexold,removeVar3);
+        oldhashvec_1 = arrayUpdate(oldhashvec, indxold + 1,indexexold1);        
+      then
+        (BackendDAE.VARIABLES(hashvec_1,oldhashvec_1,varr1,bsize,n),v);
+    case (pos,_)
+      equation
+        print("- BackendVariable.removeVar failed for var ");
+        print(intString(pos));
+        print("\n");
+      then
+        fail();
+  end matchcontinue;
+end removeVar;
+
+protected function removeVar1
+"function: removeVar1
+  author: Frenkel TUD
+  Helper for removeVar"
+  input BackendDAE.VariableArray inVariableArray;
+  input Integer inInteger;
+  output BackendDAE.Var outVar;
+  output BackendDAE.VariableArray outVariableArray;
+algorithm
+  (outVar,outVariableArray) := matchcontinue (inVariableArray,inInteger)
+    local
+      array<Option<BackendDAE.Var>> arr_1,arr;
+      BackendDAE.Value n,size,pos;
+      BackendDAE.Var v;
+
+    case (BackendDAE.VARIABLE_ARRAY(numberOfElements = n,arrSize = size,varOptArr = arr),pos)
+      equation
+        (pos < size) = true;
+        SOME(v) = arr[pos];
+        arr_1 = arrayUpdate(arr, pos, NONE());
+      then
+        (v,BackendDAE.VARIABLE_ARRAY(n,size,arr_1));
+    case (_,_)
+      equation
+        print("- BackendVariable.removeVar1 failed\n");
+      then
+        fail();
+  end matchcontinue;
+end removeVar1;
+
+protected function removeVar2
+"Helper function to getVar"
+  input BackendDAE.CrefIndex cri1;
+  input BackendDAE.CrefIndex cri2;
+  output Boolean matches;
+algorithm
+  matches := match (cri1,cri2)
+    local
+      Integer i1,i2;
+    case (BackendDAE.CREFINDEX(index = i1),BackendDAE.CREFINDEX(index = i2))
+      then intEq(i1,i2);
+  end match;
+end removeVar2;
+
+protected function removeVar3
+"Helper function to getVar"
+  input BackendDAE.StringIndex cri1;
+  input BackendDAE.StringIndex cri2;
+  output Boolean matches;
+algorithm
+  matches := match (cri1,cri2)
+    local
+      Integer i1,i2;
+    case (BackendDAE.STRINGINDEX(index = i1),BackendDAE.STRINGINDEX(index = i2))
+      then intEq(i1,i2);
+  end match;
+end removeVar3;
 
 public function existsVar
 "function: existsVar

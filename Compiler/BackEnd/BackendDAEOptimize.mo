@@ -1828,7 +1828,7 @@ algorithm
   match (replace,cr,i,exp,pos,repl,extendrepl,inDAE,m,mT)
     local
       BackendDAE.BackendDAE dae;
-      BackendDAE.Variables ordvars,knvars,exobj;
+      BackendDAE.Variables ordvars,knvars,exobj,ordvars1,knvars1;
       BackendDAE.AliasVariables aliasVars;
       BackendDAE.EquationArray eqns,remeqns,inieqns,eqns1,eqns2;
       array<BackendDAE.MultiDimEquation> arreqns;
@@ -1838,10 +1838,21 @@ algorithm
       BackendDAE.IncidenceMatrix m1;
       BackendDAE.IncidenceMatrixT mT1;
       Integer pos_1;
-      list<Integer> vareqns,vareqns1,vareqns2;
+      list<Integer> vareqns,vareqns1;
       VarTransform.VariableReplacements repl_1,extendrepl1;
-    case (false,_,_,_,_,repl,extendrepl,inDAE,m,mT)
-      then ({},inDAE,repl,extendrepl,m,mT);
+      BackendDAE.Var v;
+    case (false,cr,i,exp,pos,repl,extendrepl,BackendDAE.DAE(ordvars,knvars,exobj,aliasVars,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc),m,mT)
+      equation
+        // equations of var
+        vareqns = mT[i];
+        vareqns1 = Util.listRemoveOnTrue(pos,intEq,vareqns);
+        // remove var from vars
+        (ordvars1,v) = BackendVariable.removeVar(i,ordvars);
+        knvars1 = BackendVariable.addVar(v,knvars);
+        // update IncidenceMatrix
+        dae = BackendDAE.DAE(ordvars1,knvars1,exobj,aliasVars,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc);
+        (m1,mT1) = BackendDAEUtil.updateIncidenceMatrix(dae,m,mT,vareqns);
+      then (vareqns1,dae,repl,extendrepl,m1,mT1);
     case (true,cr,i,exp,pos,repl,extendrepl,BackendDAE.DAE(ordvars,knvars,exobj,aliasVars,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc),m,mT)
       equation
         // equations of var
@@ -1856,7 +1867,6 @@ algorithm
         pos_1 = pos-1;
         eqns2 =  BackendEquation.equationSetnth(eqns1,pos_1,BackendDAE.EQUATION(DAE.RCONST(0.0),DAE.RCONST(0.0),DAE.emptyElementSource));
         // update IncidenceMatrix
-        vareqns2 = Util.listMap1(vareqns,intAdd,1);
         dae = BackendDAE.DAE(ordvars,knvars,exobj,aliasVars,eqns1,remeqns,inieqns,arreqns,algorithms,einfo,eoc);
         (m1,mT1) = BackendDAEUtil.updateIncidenceMatrix(dae,m,mT,vareqns);        
       then (vareqns1,dae,repl_1,extendrepl1,m1,mT1);
@@ -1934,23 +1944,23 @@ algorithm
       BackendDAE.EQUATION(exp=e1,scalar=e2) = eqn;
       // variable time not there
       knvars = BackendVariable.daeKnVars(dae);
-      ((_,(false,_,_))) = Expression.traverseExpTopDown(e1, traversingParameterEqnsFinder, (false,vars,knvars));
-      ((_,(false,_,_))) = Expression.traverseExpTopDown(e2, traversingParameterEqnsFinder, (false,vars,knvars));
+      ((_,(false,_,_))) = Expression.traverseExpTopDown(e1, traversingTimeEqnsFinder, (false,vars,knvars));
+      ((_,(false,_,_))) = Expression.traverseExpTopDown(e2, traversingTimeEqnsFinder, (false,vars,knvars));
       cr = BackendVariable.varCref(var);
       cre = Expression.crefExp(cr);
-     (es,{}) = ExpressionSolve.solve(e1,e2,cre);
-     // constant or alias
-     (dae1,newvars,newvars1,b) = constOrAlias(var,cr,es,dae,mvars,mavars);
-   then (cr,i,es,dae1,newvars,newvars1,b);
-   // a = b 
-   case({i,j},length,pos,dae,mvars,mavars) equation
-     pos_1 = pos-1;
-     eqns = BackendEquation.daeEqns(dae);
-     eqn = BackendDAEUtil.equationNth(eqns,pos_1);
-     (cr,cr2,e1,e2,negate) = aliasEquation(eqn);
-     // select candidate
-     (cr,es,k,dae1,newvars) = selectAlias(cr,cr2,e1,e2,dae,mavars,negate);
-   then (cr,k,es,dae1,mvars,newvars,true);
+      (es,{}) = ExpressionSolve.solve(e1,e2,cre);
+      // constant or alias
+      (dae1,newvars,newvars1,b) = constOrAlias(var,cr,es,dae,mvars,mavars);
+    then (cr,i,es,dae1,newvars,newvars1,b);
+    // a = b 
+    case({i,j},length,pos,dae,mvars,mavars) equation
+      pos_1 = pos-1;
+      eqns = BackendEquation.daeEqns(dae);
+      eqn = BackendDAEUtil.equationNth(eqns,pos_1);
+      (cr,cr2,e1,e2,negate) = aliasEquation(eqn);
+      // select candidate
+      (cr,es,k,dae1,newvars) = selectAlias(cr,cr2,e1,e2,dae,mavars,negate);
+    then (cr,k,es,dae1,mvars,newvars,true);
   end matchcontinue;
 end simpleEquationX;
 
@@ -2520,8 +2530,8 @@ algorithm
         eqn = BackendDAEUtil.equationNth(eqns,pos_1);
         BackendDAE.EQUATION(exp=e1,scalar=e2) = eqn;
         // variable time not there
-        ((_,(false,_,_))) = Expression.traverseExpTopDown(e1, traversingParameterEqnsFinder, (false,v,kn));
-        ((_,(false,_,_))) = Expression.traverseExpTopDown(e2, traversingParameterEqnsFinder, (false,v,kn));
+        ((_,(false,_,_))) = Expression.traverseExpTopDown(e1, traversingTimeEqnsFinder, (false,v,kn));
+        ((_,(false,_,_))) = Expression.traverseExpTopDown(e2, traversingTimeEqnsFinder, (false,v,kn));
         cre = Expression.crefExp(cr);
         (es,{}) = ExpressionSolve.solve(e1,e2,cre);
         false = Expression.isConst(es);
@@ -2548,7 +2558,7 @@ algorithm
   end matchcontinue;
 end removeParameterEqnsFinder;
 
-public function traversingParameterEqnsFinder "
+public function traversingTimeEqnsFinder "
 Author: Frenkel 2010-12"
   input tuple<DAE.Exp, tuple<Boolean,BackendDAE.Variables,BackendDAE.Variables> > inExp;
   output tuple<DAE.Exp, Boolean, tuple<Boolean,BackendDAE.Variables,BackendDAE.Variables> > outExp;
@@ -2562,18 +2572,12 @@ algorithm
     
     case((e as DAE.CREF(DAE.CREF_IDENT(ident = "time",subscriptLst = {}),_), (_,vars,knvars)))
       then ((e,false,(true,vars,knvars)));
-    case((e as DAE.CREF(componentRef = cr),(b,vars,knvars)))
-      equation
-        b1 = BackendVariable.isTopLevelInputOrOutput(cr,vars,knvars);
-        b2 = b or b1;
-      then
-        ((e,not b2,(b2,vars,knvars)));
     case((e as DAE.CALL(path = Absyn.IDENT(name = "sample"), expLst = {_,_}), (_,vars,knvars))) then ((e,false,(true,vars,knvars) ));
     case((e as DAE.CALL(path = Absyn.IDENT(name = "pre"), expLst = {_}), (_,vars,knvars))) then ((e,false,(true,vars,knvars) ));
     case((e,(b,vars,knvars))) then ((e,not b,(b,vars,knvars)));
     
   end matchcontinue;
-end traversingParameterEqnsFinder;
+end traversingTimeEqnsFinder;
 
 protected function setbindValue
 " function: setbindValue
