@@ -1840,7 +1840,8 @@ algorithm
       Integer pos_1;
       list<Integer> vareqns,vareqns1,vareqns2;
       VarTransform.VariableReplacements repl_1,extendrepl1;
-    case (false,_,_,_,_,repl,extendrepl,inDAE,m,mT) then ({},inDAE,repl,extendrepl,m,mT);
+    case (false,_,_,_,_,repl,extendrepl,inDAE,m,mT)
+      then ({},inDAE,repl,extendrepl,m,mT);
     case (true,cr,i,exp,pos,repl,extendrepl,BackendDAE.DAE(ordvars,knvars,exobj,aliasVars,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc),m,mT)
       equation
         // equations of var
@@ -1850,7 +1851,7 @@ algorithm
         repl_1 = VarTransform.addReplacement(repl, cr, exp);
         extendrepl1 = addExtendReplacement(extendrepl, cr, NONE());
         // replace var=exp in vareqns
-        eqns1 = replacementsInEqns1(vareqns1,repl,extendrepl,eqns);
+        eqns1 = replacementsInEqns1(vareqns1,repl_1,extendrepl1,eqns);
         // set eqn to 0=0 to avoid next call
         pos_1 = pos-1;
         eqns2 =  BackendEquation.equationSetnth(eqns1,pos_1,BackendDAE.EQUATION(DAE.RCONST(0.0),DAE.RCONST(0.0),DAE.emptyElementSource));
@@ -1886,7 +1887,7 @@ algorithm
         {eqn1} = BackendVarTransform.replaceEquations({eqn},extendrepl);
         {eqn2} = BackendVarTransform.replaceEquations({eqn1},repl);
         eqns1 =  BackendEquation.equationSetnth(eqns,pos_1,eqn2);
-        eqns2 = replacementsInEqns1(rest,repl,extendrepl,eqns);
+        eqns2 = replacementsInEqns1(rest,repl,extendrepl,eqns1);
       then eqns2;
   end match;
 end replacementsInEqns1;
@@ -2229,11 +2230,13 @@ algorithm
       case (BackendDAE.EQUATION(exp=DAE.BINARY(e1 as DAE.UNARY(DAE.UMINUS(_),DAE.CREF(componentRef = cr1)),DAE.SUB(ty=_),e2 as DAE.CREF(componentRef = cr2)),scalar=e))
         equation
           true = Expression.isZero(e);
-        then (cr1,cr2,e1,e2,true);
+          ne = Expression.negate(e2);
+        then (cr1,cr2,e1,ne,true);
       case (BackendDAE.EQUATION(exp=DAE.BINARY(e1 as DAE.UNARY(DAE.UMINUS_ARR(_),DAE.CREF(componentRef = cr1)),DAE.SUB_ARR(ty=_),e2 as DAE.CREF(componentRef = cr2)),scalar=e))
         equation
           true = Expression.isZero(e);
-        then (cr1,cr2,e1,e2,true);
+          ne = Expression.negate(e2);
+        then (cr1,cr2,e1,ne,true);
       // 0 = a + b 
       case (BackendDAE.EQUATION(exp=e,scalar=DAE.BINARY(e1 as DAE.CREF(componentRef = cr1),DAE.ADD(ty=_),e2 as DAE.CREF(componentRef = cr2))))
         equation
