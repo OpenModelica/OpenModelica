@@ -545,12 +545,6 @@ int SystemImpl__spawnCall(const char* path, const char* str)
     const char *tokens[2] = {strerror(errno),str};
     c_add_message(-1,"SCRIPTING","ERROR","system(%s) failed: %s",tokens,2);
     return -1;
-  } else {
-
-    if (waitpid(pID, &status, 0) == -1) {
-      const char *tokens[2] = {strerror(errno),str};
-      c_add_message(-1,"SCRIPTING","ERROR","system(%s) failed: %s",tokens,2);
-    }
   }
 #endif
   fflush(NULL); /* flush output so the testsuite is deterministic */
