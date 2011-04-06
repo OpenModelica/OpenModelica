@@ -191,8 +191,8 @@ algorithm
     case (_, SCodeEnv.CLASS(cls = SCode.CLASSDEF(classDef = SCode.CLASS(
         info = info)), env = {class_env}), _, _)
       equation
-        (item, env) = lookupClass(inName, class_env :: inEnv, info,
-          inPrintError);
+        env = SCodeEnv.enterFrame(class_env, inEnv);
+        (item, env) = lookupClass(inName, env, info, inPrintError);
       then
         (item, env);
 
@@ -259,7 +259,7 @@ algorithm
         cdef, restriction = res, info = info)), env = {cls_env}), env)
       equation
         markItemAsUsed(inItem, env);
-        env = cls_env :: env;
+        env = SCodeEnv.enterFrame(cls_env, env);
         analyseClassDef(cdef, res, env, info);
         analyseMetaType(res, env, info);
       then
@@ -425,7 +425,6 @@ algorithm
     case (SCode.DERIVED(typeSpec = ty, modifications = mods, comment = cmt),
         _, _, _)
       equation
-        checkRecursiveShortDefinition(ty, inEnv, inInfo);
         analyseTypeSpec(ty, inEnv, inInfo);
         (ty_item, ty_env) = SCodeLookup.lookupTypeSpec(ty, inEnv, inInfo);
         ty_env = SCodeEnv.mergeItemEnv(ty_item, ty_env);
@@ -555,40 +554,6 @@ algorithm
         ();
   end match;
 end checkExternalObject2;
-
-protected function checkRecursiveShortDefinition
-  "Checks for recursive short definitions, i.e. class C = C."
-  input Absyn.TypeSpec inTypeSpec;
-  input Env inEnv;
-  input Absyn.Info inInfo;
-algorithm
-  _ := matchcontinue(inTypeSpec, inEnv, inInfo)
-    local
-      Absyn.Path path;
-      String type_name, env_name;
-      
-    // The type does not have the same name as it's environment, probably ok.
-    case (Absyn.TPATH(path = path), 
-          SCodeEnv.FRAME(name = SOME(env_name)) :: _, _)
-      equation
-        type_name = Absyn.pathFirstIdent(path);
-        false = stringEqual(type_name, env_name);
-      then
-        ();
-
-    // The type has the same name as it's environment => recursive definition.
-    case (Absyn.TPATH(path = path), 
-          SCodeEnv.FRAME(name = SOME(env_name)) :: _, _)
-      equation
-        type_name = Absyn.pathString(path);
-        Error.addSourceMessage(Error.RECURSIVE_SHORT_CLASS_DEFINITION, 
-          {env_name, type_name}, inInfo);
-      then
-        fail();
-
-    case (Absyn.TCOMPLEX(path = _), _, _) then ();
-  end matchcontinue;
-end checkRecursiveShortDefinition;
 
 protected function analyseMetaType
   "If a metarecord is analysed we need to also analyse it's parent uniontype."
@@ -1416,7 +1381,7 @@ algorithm
     case (SCodeEnv.AVLTREEVALUE(key = key_str, value = SCodeEnv.CLASS(cls = cls, 
         env = {cls_env}, classType = cls_ty)), _)
       equation
-        env = cls_env :: inEnv;
+        env = SCodeEnv.enterFrame(cls_env, inEnv);
         analyseClassExtendsDef(cls, cls_ty, env);
         // Check all classes inside of this class too.
         analyseClassExtends(env);

@@ -3023,6 +3023,42 @@ algorithm
   end match;
 end removePrefix;
 
+public function removePartialPrefix
+  "Tries to remove a given prefix from a path with removePrefix. If it fails it
+  removes the first identifier in the prefix and tries again, until it either
+  succeeds or reaches the end of the prefix. Ex:
+    removePartialPrefix(A.B.C, B.C.D.E) => D.E
+  "
+  input Path inPrefix;
+  input Path inPath;
+  output Path outPath;
+algorithm
+  outPath := matchcontinue(inPrefix, inPath)
+    local
+      Path p;
+
+    case (_, _)
+      equation
+        p = removePrefix(inPrefix, inPath);
+      then
+        p;
+
+    case (QUALIFIED(path = p), _)
+      equation
+        p = removePrefix(p, inPath);
+      then
+        p;
+
+    case (FULLYQUALIFIED(path = p), _)
+      equation
+        p = removePartialPrefix(p, inPath);
+      then
+        p;
+
+    else inPath;
+  end matchcontinue;
+end removePartialPrefix;
+
 public function crefRemovePrefix
 "
   function: crefRemovePrefix
@@ -3920,12 +3956,23 @@ public function crefStripFirst "function: crefStripFirst
   output ComponentRef outComponentRef;
 algorithm
   outComponentRef:=
-  matchcontinue (inComponentRef)
+  match (inComponentRef)
     local ComponentRef cr;
-    case (CREF_QUAL(componentRef =cr )) then cr;
-    case (CREF_FULLYQUALIFIED(componentRef =cr )) then crefStripFirst(cr);
-  end matchcontinue;
+    case CREF_QUAL(componentRef = cr) then cr;
+    case CREF_FULLYQUALIFIED(componentRef = cr) then crefStripFirst(cr);
+  end match;
 end crefStripFirst;
+
+public function crefMakeFullyQualified
+  "Makes a component reference fully qualified unless it already is."
+  input ComponentRef inComponentRef;
+  output ComponentRef outComponentRef;
+algorithm
+  outComponentRef := match(inComponentRef)
+    case CREF_FULLYQUALIFIED(componentRef = _) then inComponentRef;
+    else CREF_FULLYQUALIFIED(inComponentRef);
+  end match;
+end crefMakeFullyQualified;
 
 public function restrString "function: restrString
   Maps a class restriction to the corresponding string for printing"
@@ -4783,10 +4830,10 @@ public function makeFullyQualified
   input Path path;
   output Path outPath;
 algorithm
-  outPath := matchcontinue path
-    case path as FULLYQUALIFIED(path = _) then path;
-    case path then FULLYQUALIFIED(path);
-  end matchcontinue;
+  outPath := match path
+    case FULLYQUALIFIED(path = _) then path;
+    else FULLYQUALIFIED(path);
+  end match;
 end makeFullyQualified;
 
 public function makeNotFullyQualified

@@ -412,15 +412,12 @@ public function lookupFullyQualified
   output Item outItem;
   output Absyn.Path outPath;
   output Env outEnv;
-public
+protected
   Env env;
-  Frame top_scope;
-  Absyn.Path path, path2;
-  Option<Absyn.Path> opt_path;
 algorithm
   env := SCodeEnv.getEnvTopScope(inEnv);
   (outItem, outPath, outEnv) := lookupNameInPackage(inName, env);
-  outPath := Absyn.FULLYQUALIFIED(outPath);
+  outPath := Absyn.makeFullyQualified(outPath);
 end lookupFullyQualified;
 
 public function lookupNameInPackage
@@ -456,7 +453,6 @@ algorithm
         (SOME(item), SOME(new_path), SOME(env)) = 
           lookupInLocalScope(name, inEnv);
         env = SCodeEnv.setImportTableHidden(env, false);
-        //item = SCodeEnv.setImportsInItemHidden(item, false);
         // Look for the rest of the path in the found item.
         (item, path, env) = lookupNameInItem(path, item, env);
         path = SCodeEnv.joinPaths(new_path, path);
@@ -550,7 +546,7 @@ algorithm
     case (_, SCodeEnv.CLASS(env = {class_env}), _) 
       equation
         // Look in the class's environment.
-        env = class_env :: inEnv;
+        env = SCodeEnv.enterFrame(class_env, inEnv);
         (item, path, env) = lookupNameInPackage(inName, env);
       then
         (item, path, env);
@@ -595,7 +591,7 @@ algorithm
     case (_, SCodeEnv.CLASS(env = {class_env}), _)
       equation
         // Look in the class's environment.
-        env = class_env :: inEnv;
+        env = SCodeEnv.enterFrame(class_env, inEnv);
         (item, cref) = lookupCrefInPackage(inCref, env);
       then
         (item, cref);
@@ -688,6 +684,12 @@ algorithm
       then
         (item, path, env);
              
+    case (Absyn.FULLYQUALIFIED(path = path), _, _, _)
+      equation
+        (item, path, env) = lookupFullyQualified(path, inEnv);
+      then
+        (item, path, env);
+
     case (_, _, _, SOME(error_id))
       equation
         name_str = Absyn.pathString(inName);
@@ -895,13 +897,25 @@ algorithm
     // A fully qualified name.
     case (Absyn.CREF_FULLYQUALIFIED(componentRef = cref), _)
       equation
-        cref = lookupComponentRef2(cref, inEnv);
+        cref = lookupCrefFullyQualified(cref, inEnv);
       then
-        Absyn.CREF_FULLYQUALIFIED(cref);
+        cref;
 
   end match;
 end lookupComponentRef2;
 
+public function lookupCrefFullyQualified
+  input Absyn.ComponentRef inCref;
+  input Env inEnv;
+  output Absyn.ComponentRef outCref;
+protected
+  Env env;
+algorithm
+  env := SCodeEnv.getEnvTopScope(inEnv);
+  (_, outCref) := lookupCrefInPackage(inCref, inEnv);
+  outCref := Absyn.crefMakeFullyQualified(outCref);
+end lookupCrefFullyQualified;
+  
 public function joinCrefs
   "Joins two component references. If the second cref is fully qualified it just
   returns the cref, because then it has been looked up through an import and

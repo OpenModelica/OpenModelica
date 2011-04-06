@@ -3588,9 +3588,6 @@ algorithm
           re,prot,inst_dims,impl,callscope,graph,instSingleCref,info,stopInst)
       equation
         false = Util.getStatefulBoolean(stopInst);
-        // alleb - Unlike in CLASS_EXTENDS, in the case of DERIVED class definition 
-        // cn can not have a reference to className 
-        checkSelfReference(className, cn,info);
 
         (cache,(c as SCode.CLASS(name=cn2,info=info2,encapsulatedPrefix=enc2,restriction=r as SCode.R_ENUMERATION())),cenv) =
           Lookup.lookupClass(cache,env, cn, true);
@@ -3625,9 +3622,6 @@ algorithm
           re,prot,inst_dims,impl,callscope,graph,instSingleCref,info,stopInst)
       equation
         false = Util.getStatefulBoolean(stopInst);
-        // alleb - Unlike in CLASS_EXTENDS, in the case of DERIVED class definition 
-        // cn can not have a reference to className 
-        checkSelfReference(className, cn,info);
 
         (cache,(c as SCode.CLASS(name=cn2,encapsulatedPrefix=enc2,restriction=r,classDef=classDef)),cenv) = Lookup.lookupClass(cache,env, cn, true);
 
@@ -15042,34 +15036,6 @@ algorithm
       then subscript;
   end match;
 end makeNonExpSubscript;
-
-protected function checkSelfReference
-  input String inName;
-  input Absyn.Path inPath;
-  input Absyn.Info inInfo;
-algorithm
-  _ := matchcontinue(inName,inPath,inInfo)
-  local
-    String n,n2,s;
-    Absyn.Path p;
-    Absyn.Info info;
-     
-    case (n, p,info)
-      equation
-        n2 = Absyn.pathFirstIdent(p);
-        true = stringEqual(n,n2);
-        s = Absyn.pathString(p);
-        Error.addSourceMessage(Error.RECURSIVE_SHORT_CLASS_DEFINITION, {n,s},info);
-      then
-        fail();
-    case (n,p,_)
-      equation
-        n2 = Absyn.pathFirstIdent(p);
-        false = stringEqual(n,n2);
-      then
-        ();
-  end matchcontinue;
-end checkSelfReference;
 
 protected function getFunctionAttributes
 "Looks at the annotations of an SCode.Class to create the function attributes,

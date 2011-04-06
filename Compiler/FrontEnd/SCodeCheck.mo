@@ -84,28 +84,51 @@ algorithm
   end match;
 end checkForDuplicateClassesInTopScope;
 
-
 public function checkRecursiveShortDefinition
   input SCode.Class inClass;
 algorithm
-  _ := matchcontinue(inClass)
+  _ := match(inClass)
     local
-      String name, ty;
+      String name;
       Absyn.TypeSpec ts;
       Absyn.Info info;
-      
-    case (SCode.CLASS(name = name,classDef = SCode.DERIVED(typeSpec = ts),info=info))
+
+    case SCode.CLASS(name = name, classDef = SCode.DERIVED(typeSpec = ts), 
+        info = info)
       equation
-        true = isSelfReference(name, ts);
-        ty = Dump.unparseTypeSpec(ts);
-        Error.addSourceMessage(Error.RECURSIVE_SHORT_CLASS_DEFINITION, {name, ty}, info);
+        checkRecursiveShortDefinition2(name, ts, info);
+      then
+        ();
+
+    else ();
+  end match;
+end checkRecursiveShortDefinition;
+
+public function checkRecursiveShortDefinition2
+  input String inName;
+  input Absyn.TypeSpec inTypeSpec;
+  input Absyn.Info inInfo;
+algorithm
+  _ := matchcontinue(inName, inTypeSpec, inInfo)
+    local
+      String ty;
+      
+    case (_ , _, _)
+      equation
+        false = isSelfReference(inName, inTypeSpec);
+      then
+        ();
+
+    else
+      equation
+        ty = Dump.unparseTypeSpec(inTypeSpec);
+        Error.addSourceMessage(Error.RECURSIVE_SHORT_CLASS_DEFINITION, 
+          {inName, ty}, inInfo);
       then
         fail();
     
-    case (_) then ();
-    
   end matchcontinue;
-end checkRecursiveShortDefinition;
+end checkRecursiveShortDefinition2;
 
 public function checkDuplicateElements
   input list<SCode.Element> inElements;
