@@ -263,19 +263,14 @@ void PlotWindow::plot()
                     pPlotCurve->setTitle(currentVariable);
                     pPlotCurve->setRawData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(),
                                            pPlotCurve->getSize());
+                    pPlotCurve->attach(mpPlot);
+                    mpPlot->replot();
                 }
                 // if plottype is PLOT and we have read all the variable we need to plot then simply break the loop
                 if (getPlotType() == PlotWindow::PLOT)
                     if (mVariablesList.size() == variablesPlotted.size())
                         break;
             }
-        }
-        // set the colors of the curves
-        int counter = 0;
-        foreach (PlotCurve *pPlotCurve, mpPlot->getPlotCurvesList())
-        {
-            pPlotCurve->attach(mpPlot);
-            counter++;
         }
         // if plottype is PLOT then check which requested variables are not found in the file
         if (getPlotType() == PlotWindow::PLOT)
@@ -332,6 +327,7 @@ void PlotWindow::plot()
             pPlotCurve[i]->setRawData(pPlotCurve[i]->getXAxisVector(), pPlotCurve[i]->getYAxisVector(),
                                       pPlotCurve[i]->getSize());
             pPlotCurve[i]->attach(mpPlot);
+            mpPlot->replot();
         }
 
         // if plottype is PLOT then check which requested variables are not found in the file
@@ -379,6 +375,7 @@ void PlotWindow::plot()
                     // set plot curve data and attach it to plot
                     pPlotCurve->setRawData(timeVals, vals, reader.nrows);
                     pPlotCurve->attach(mpPlot);
+                    mpPlot->replot();
                 }
                 // if variable is a parameter then
                 else
@@ -394,6 +391,7 @@ void PlotWindow::plot()
                     pPlotCurve->setRawData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(),
                                            pPlotCurve->getSize());
                     pPlotCurve->attach(mpPlot);
+                    mpPlot->replot();
                 }
             }
         }
@@ -472,19 +470,14 @@ void PlotWindow::plotParametric()
                         pPlotCurve->setTitle(yVariable + "(" + xVariable + ")");
                         pPlotCurve->setRawData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(),
                                                pPlotCurve->getSize());
+                        pPlotCurve->attach(mpPlot);
+                        mpPlot->replot();
                     }
                 }
                 // if we have read all the variable we need to plot then simply break the loop
                 if (mVariablesList.size() == variablesPlotted.size())
                     break;
             }
-        }
-        // set the colors of the curves
-        int counter = 0;
-        foreach (PlotCurve *pPlotCurve, mpPlot->getPlotCurvesList())
-        {
-            pPlotCurve->attach(mpPlot);
-            counter++;
         }
         // check which requested variables are not found in the file
         checkForErrors(mVariablesList, variablesPlotted);
@@ -537,6 +530,7 @@ void PlotWindow::plotParametric()
         pPlotCurve->setRawData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(),
                                pPlotCurve->getSize());
         pPlotCurve->attach(mpPlot);
+        mpPlot->replot();
         // check which requested variables are not found in the file
         checkForErrors(mVariablesList, variablesPlotted);
     }
@@ -570,6 +564,7 @@ void PlotWindow::plotParametric()
         pPlotCurve->setRawData(xVals, yVals, reader.nrows);
         pPlotCurve->setTitle(yVariable + "(" + xVariable + ")");
         pPlotCurve->attach(mpPlot);
+        mpPlot->replot();
     }
     // close the file
     mFile.close();
@@ -753,9 +748,9 @@ void PlotWindow::setGrid(bool on)
 
 void PlotWindow::setOriginal()
 {
-//    mpPlot->setAxisAutoScale(QwtPlot::yLeft);
-//    mpPlot->setAxisAutoScale(QwtPlot::xBottom);
-    mpPlot->getPlotZoomer()->zoom(0);
+    mpPlot->setAxisAutoScale(QwtPlot::yLeft);
+    mpPlot->setAxisAutoScale(QwtPlot::xBottom);
+//    mpPlot->getPlotZoomer()->zoom(0);
     mpPlot->replot();
 }
 
