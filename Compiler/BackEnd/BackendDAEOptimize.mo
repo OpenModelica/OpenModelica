@@ -2108,7 +2108,7 @@ protected function derivativeEquation
   output DAE.Exp de "der(cr)";
   output Boolean negate;
 algorithm
-  (cr,dcr,e,de,b) := match (eqn)
+  (cr,dcr,e,de,negate) := match (eqn)
       local
         DAE.Exp e,ne,ne1;
       // a = der(b);
@@ -2168,7 +2168,7 @@ protected function aliasEquation
   output DAE.Exp e2;
   output Boolean negate;
 algorithm
-  (cr1,cr2,e1,e2,b) := match (eqn)
+  (cr1,cr2,e1,e2,negate) := match (eqn)
       local
         DAE.Exp e,ne,ne1;
       // a = b;

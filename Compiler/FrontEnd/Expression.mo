@@ -3489,6 +3489,8 @@ algorithm
       then res;
 
     case (e as DAE.CODE(code = _),rel,ext_arg) then ((e,ext_arg));
+      
+    case (DAE.END(),_,ext_arg) then ((DAE.END(),ext_arg));
 
     case (e,rel,ext_arg)
       equation
@@ -3872,6 +3874,7 @@ algorithm
         ((DAE.BOX(e1_1),ext_arg_1));
     
     // ---------------------
+    case (DAE.END(),_,ext_arg) then ((DAE.END(),ext_arg));
 
     case (e,rel,ext_arg)
       equation
