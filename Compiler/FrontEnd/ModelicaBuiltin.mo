@@ -1096,6 +1096,33 @@ function plot "Launches a plot window using OMPlotWindow. Returns true on succes
 external "builtin";
 end plot;
 
+function plot3 "Launches a plot window using OMPlot. Returns true on success.
+  Don't require sendData support.
+  
+  Example command sequences:
+  simulate(A);plot({x,y,z});
+  simulate(A);plot(x);
+  simulate(A,fileNamePrefix=\"B\");simulate(C);plot(z,\"B.mat\",legend=false);
+  "
+  input VariableNames vars "The variables you want to plot";
+  input Boolean externalWindow := false "Opens the plot in a new plot window";
+  input String fileName := "<default>" "The filename containing the variables. <default> will read the last simulation result";
+  input String title := "Plot by OpenModelica" "This text will be used as the diagram title.";
+  input Boolean legend := true "Determines whether or not the variable legend is shown.";
+  input Boolean grid := true "Determines whether or not a grid is shown in the diagram.";
+  input String plotType := "plot" "This text will be used to tell OMPlot what type of plot is requested.";
+  input Boolean logX := false "Determines whether or not the horizontal axis is logarithmically scaled.";
+  input Boolean logY := false "Determines whether or not the vertical axis is logarithmically scaled.";
+  input String xLabel := "time" "This text will be used as the horizontal label in the diagram.";
+  input String yLabel := "" "This text will be used as the vertical label in the diagram.";
+  input Real xRange1 := 0.0 "Determines the horizontal interval that is visible in the diagram. {0,0} will select a suitable range.";
+  input Real xRange2 := 0.0 "Determines the horizontal interval that is visible in the diagram. {0,0} will select a suitable range.";
+  input Real yRange1 := 0.0 "Determines the vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
+  input Real yRange2 := 0.0 "Determines the vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
+  output Boolean success "Returns true on success";
+external "builtin";
+end plot3;
+
 function plotAll "Works in the same way as plot(), but does not accept any
   variable names as input. Instead, all variables are part of the plot window.
   

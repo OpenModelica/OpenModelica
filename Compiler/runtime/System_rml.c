@@ -799,6 +799,15 @@ RML_BEGIN_LABEL(System__systemCall)
 }
 RML_END_LABEL
 
+RML_BEGIN_LABEL(System__spawnCall)
+{
+  const char* path = RML_STRINGDATA(rmlA0);
+  const char* str = RML_STRINGDATA(rmlA1);
+  rmlA0 = (void*) mk_icon(SystemImpl__spawnCall(path, str));
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
 RML_BEGIN_LABEL(System__windowsNewline)
 {
   rmlA0 = (void*) mk_scon("\r\n");

@@ -633,7 +633,7 @@ algorithm
       list<SCode.Class> scodeP,sp,fp;
       list<Env.Frame> env;
       SCode.Class c;
-      String s1,str,str1,str2,str3,re,token,varid,cmd,executable,method_str,outputFormat_str,initfilename,cit,pd,executableSuffixedExe,sim_call,result_file,filename_1,filename,omhome_1,plotCmd,tmpPlotFile,call,str_1,mp,pathstr,name,cname,fileNamePrefix_s,errMsg,errorStr,uniqueStr,interpolation, title,xLabel,yLabel,filename2,varNameStr,xml_filename,xml_contents,visvar_str,pwd,omhome,omlib,omcpath,os,platform,usercflags,senddata,res,workdir,gcc,confcmd,touch_file,uname,filenameprefix;
+      String s1,str,str1,str2,str3,re,token,varid,cmd,executable,method_str,outputFormat_str,initfilename,cit,pd,executableSuffixedExe,sim_call,result_file,filename_1,filename,omhome_1,plotCmd,tmpPlotFile,call,str_1,mp,pathstr,name,cname,fileNamePrefix_s,errMsg,errorStr,uniqueStr,interpolation,plotType,title,xLabel,yLabel,filename2,varNameStr,xml_filename,xml_contents,visvar_str,pwd,omhome,omlib,omcpath,os,platform,usercflags,senddata,res,workdir,gcc,confcmd,touch_file,uname,filenameprefix;
       DAE.ComponentRef cr,cref,classname;
       Interactive.InteractiveSymbolTable newst,st_1;
       Absyn.Program p,pnew,newp,ptot;
@@ -651,14 +651,14 @@ algorithm
       array<list<Integer>> m,mt;
       Option<array<list<Integer>>> om,omt;
       Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac;
-      Values.Value ret_val,simValue,size_value,value,v,cvar,xRange,yRange;
+      Values.Value ret_val,simValue,size_value,value,v,cvar,xRange,yRange,xRange1,xRange2,yRange1,yRange2;
       DAE.Exp exp,size_expression,bool_exp,storeInTemp,translationLevel,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,varName,varTimeStamp;
       Absyn.ComponentRef cr_1;
       Integer size,length,resI,timeStampI,i,n;
       list<String> vars_1,vars_2,args,strings,strVars,strs,visvars;
       Real t1,t2,time,timeTotal,timeSimulation,timeStamp,val;
       Interactive.InteractiveStmts istmts;
-      Boolean bval, b, legend, grid, logX, logY, points, gcc_res, omcfound, rm_res, touch_res, uname_res, extended, insensitive;
+      Boolean bval, b, externalWindow, legend, grid, logX, logY, points, gcc_res, omcfound, rm_res, touch_res, uname_res, extended, insensitive;
       Env.Cache cache;
       list<Interactive.LoadedFile> lf;
       AbsynDep.Depends aDep;
@@ -1563,6 +1563,54 @@ algorithm
         (cache,Values.BOOL(true),st);
         
     case (cache,env,"plot",_,st,msg)
+      then
+        (cache,Values.BOOL(false),st);
+    
+    // plot3(x, model)
+    case (cache,env,"plot3",
+        {
+          Values.ARRAY(valueLst = cvars),
+          Values.BOOL(externalWindow),
+          Values.STRING(filename),
+          Values.STRING(title),
+          Values.BOOL(legend),
+          Values.BOOL(grid),
+          Values.STRING(plotType),
+          Values.BOOL(logX),
+          Values.BOOL(logY),
+          Values.STRING(xLabel),
+          Values.STRING(yLabel),
+          xRange1,
+          xRange2,
+          yRange1,
+          yRange2
+        },
+        st,msg)
+      equation
+        // get the variables list
+        vars_1 = Util.listMap(cvars, ValuesUtil.printCodeVariableName);
+        // seperate the variables
+        str = Util.stringDelimitList(vars_1,"\" \"");
+        // get OPENMODELICAHOME
+        omhome = Settings.getInstallationDirectoryPath();
+        // get the simulation filename
+        (cache,filename) = cevalCurrentSimulationResultExp(cache,env,filename,st,msg);
+        pd = System.pathDelimiter();
+        // create absolute path of simulation result file
+        str1 = System.pwd() +& pd +& filename;
+        s1 = Util.if_(System.os() ==& "Windows_NT", ".exe", "");
+        filename = Util.if_(System.regularFileExists(str1), str1, filename);
+        // create the path till OMPlot
+        str2 = stringAppendList({omhome,"..",pd,"OMPlot",pd,"bin",pd,"OMPlot",s1});
+        // create the list of arguments for OMPlot
+        str3 = "\"" +& filename +& "\" \"" +& title +& "\" \"" +& boolString(legend) +& "\" \"" +& boolString(grid) +& "\" \"" +& plotType +& "\" \"" +& boolString(logX) +& "\" \"" +& boolString(logY) +& "\" \"" +& xLabel +& "\" \"" +& yLabel +& "\" \"" +& ValuesUtil.valString(xRange1) +& "\" \"" +& ValuesUtil.valString(xRange2) +& "\" \"" +& ValuesUtil.valString(yRange1) +& "\" \"" +& ValuesUtil.valString(yRange2) +& "\" \"" +& str +& "\" -ew \"" +& boolString(externalWindow) +& "\"";
+        call = str2 +& " " +& str3;
+        
+        _ = System.spawnCall(str2, call);
+      then
+        (cache,Values.BOOL(true),st);
+        
+    case (cache,env,"plot3",_,st,msg)
       then
         (cache,Values.BOOL(false),st);
         

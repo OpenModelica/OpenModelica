@@ -74,6 +74,7 @@ extern "C" {
 /* includes/defines specific for Windows*/
 #include <assert.h>
 #include <direct.h>
+#include <process.h>
 
 #define MAXPATHLEN MAX_PATH
 #define S_IFLNK  0120000  /* symbolic link */
@@ -517,6 +518,60 @@ int SystemImpl__systemCall(const char* str)
     fprintf(stderr, "System.systemCall: returned value: %d\n", ret_val); fflush(NULL);
   }
   
+  return ret_val;
+}
+
+int SystemImpl__spawnCall(const char* path, const char* str)
+{
+  int status = -1,ret_val = -1;
+  const int debug = 0;
+  if (debug) {
+    fprintf(stderr, "System.spawnCall: %s\n", str); fflush(NULL);
+  }
+
+  fflush(NULL); /* flush output so the testsuite is deterministic */
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  status = spawnl(P_NOWAIT, path, str, "", NULL);
+#else
+  pid_t pID = vfork();
+  if (pID == 0) { // child
+    execl("/bin/sh", "/bin/sh", "-c", str, NULL);
+    if (debug) {
+      fprintf(stderr, "System.spawnCall: execl failed %s\n", strerror(errno));
+      fflush(NULL);
+    }
+    _exit(1);
+  } else if (pID < 0) {
+    const char *tokens[2] = {strerror(errno),str};
+    c_add_message(-1,"SCRIPTING","ERROR","system(%s) failed: %s",tokens,2);
+    return -1;
+  } else {
+
+    if (waitpid(pID, &status, 0) == -1) {
+      const char *tokens[2] = {strerror(errno),str};
+      c_add_message(-1,"SCRIPTING","ERROR","system(%s) failed: %s",tokens,2);
+    }
+  }
+#endif
+  fflush(NULL); /* flush output so the testsuite is deterministic */
+
+  if (debug) {
+    fprintf(stderr, "System.spawnCall: returned\n"); fflush(NULL);
+  }
+
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  ret_val = status;
+#else
+  if (WIFEXITED(status)) /* Did the process exit normally? */
+    ret_val = WEXITSTATUS(status); /* Fetch the actual exit status */
+  else
+    ret_val = -1;
+#endif
+
+  if (debug) {
+    fprintf(stderr, "System.spawnCall: returned value: %d\n", ret_val); fflush(NULL);
+  }
+
   return ret_val;
 }
 
