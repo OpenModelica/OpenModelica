@@ -7,7 +7,7 @@ QMAKE=@QMAKE@
 install: build
 	if [ "$(EXE)" = ".app" ]; then cp -rp ../bin/OMEdit.app ../../build/Applications/ ; else cp -p ../bin/OMEdit ../../build/bin/OMEdit; fi
 	mkdir -p ../../build/share/doc/omedit/
-	cp -p ../docs/*.pdf ../../build/share/doc/omedit/
+	cp -p ../../doc/OMEdit/*.pdf ../../build/share/doc/omedit/
 always:
 
 $(NAME): Makefile OMEdit.config
