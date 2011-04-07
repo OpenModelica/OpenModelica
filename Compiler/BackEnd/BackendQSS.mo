@@ -84,23 +84,34 @@ algorithm
   matchcontinue (inBackendDAE, equationIndices, variableIndices, inIncidenceMatrix, inIncidenceMatrixT, strongComponents)
     local
        BackendDAE.BackendDAE dlow;
+       
+       list<BackendDAE.Var> allVarsList, stateVarsList;
+       
        array<Integer> ass1, ass2;
        BackendDAE.IncidenceMatrix m, mt, globalIncidenceMat;
        
-       list<Integer> variableIndicesList;
+       list<Integer> variableIndicesList,ass1List, ass2List, stateIndices;
        list<list<Integer>> blt_states,blt_no_states, stateEq_flat, globalIncidenceList, comps;
        list<list<list<Integer>>> stateEq_blt;
        
-       Integer nStatic;
+       Integer nStatic, nIntegr, nBlocks;
        
        // structure variables
        DevsStruct DEVS_structure;
        array<list<list<Integer>>> DEVS_struct_outLinks, DEVS_struct_outVars, DEVS_struct_inLinks, DEVS_struct_inVars;
-                         
+ 
+       list<list<Integer>> DEVS_blocks_outVars, DEVS_blocks_inVars;
+                                    
     case (dlow, ass1, ass2, m, mt, comps)
       equation
         
-        (blt_states, blt_no_states) = BackendDAEUtil.generateStatePartition(comps, dlow, ass1, ass2, m, mt);
+        
+       // BackendDump.bltdump((dlow, m, mt, ass1, ass2, comps));      
+        
+       (blt_states, blt_no_states) = BackendDAEUtil.generateStatePartition(comps, dlow, ass1, ass2, m, mt);
+       
+       (allVarsList, stateVarsList) = getAllVars(dlow);
+       stateIndices = getStateIndices(allVarsList, {}, 1); 
         
         // STEP 1      
         // EXTRACT THE INDICES OF NEEDED EQUATIONS FOR EACH STATE VARIABLE         
@@ -108,29 +119,46 @@ algorithm
         stateEq_flat = splitStateEqSet(comps, dlow, ass1, ass2, m, mt) "Extract equations for each state derivative";
         stateEq_blt = mapStateEqInBlocks( stateEq_flat, blt_states, {}) "Map equations back in BLT blocks";
         
+        print("---------- State equations BLT blocks ----------\n");
+        Util.listMap0(stateEq_blt, printListOfLists);
+        print("---------- State equations BLT blocks ----------\n");
+        
         nStatic = listLength(stateEq_blt);
+        nIntegr = listLength(stateIndices);
+        nBlocks = nStatic+nIntegr;     
         
         // STEP 2      
         // GENERALISED INCIDENCE MATRICES
         
         //globalIncidenceList = arrayList(m);
-        globalIncidenceMat = m;
-        variableIndicesList = arrayList(ass2);
-        globalIncidenceMat = makeIncidenceRightHandNeg(globalIncidenceMat, variableIndicesList, 1);
         
-        BackendDump.dumpIncidenceMatrix(globalIncidenceMat);
-        print("TEST");
+        variableIndicesList = arrayList(ass2);
+        //globalIncidenceMat = makeIncidenceRightHandNeg(m, variableIndicesList, 1); 
+        
+        //BackendDump.dumpIncidenceMatrix(globalIncidenceMat);
         
         // STEP 3      
-        // GENERATE THE DEVS STRUCTURES        
-        DEVS_structure = incidenceMat2DEVSstruct(stateEq_blt, globalIncidenceMat);
+        // GENERATE THE DEVS STRUCTURES    
         
-        dumpDEVSstructs(DEVS_structure);
+        DEVS_structure = generateEmptyDEVSstruct(nBlocks, ({},{},{},{}));    
+        (DEVS_blocks_outVars, DEVS_blocks_inVars) = getBlocksInOutVars(stateEq_blt, stateIndices, m, ass2);
+         
+        //DEVS_blocks_outVars = {{1,2}, {3}, {4,5}};
+        //DEVS_blocks_inVars = {{1,2}, {1,2,4,7}, {3,6}};
+        
+        print("\n OUT VARS \n");
+        printListOfLists(DEVS_blocks_outVars);
+        print("\n IN VARS \n");
+        printListOfLists(DEVS_blocks_inVars);
+        
+        DEVS_structure = generateDEVSstruct(stateIndices, DEVS_blocks_outVars, DEVS_blocks_inVars, DEVS_structure); 
         
         
+        
+        
+        dumpDEVSstructs(DEVS_structure);       
                 
         // PRINT INFO
-                
         Debug.fcall("QSS-stuff",print,"---------- State Blocks ----------\n");
         //Util.listMap0(stateEq_blt, printListOfLists);
         //Debug.fcall("QSS-stuff",Util.listMap02, (stateEq_blt, BackendDump.dumpComponentsAdvanced, ass2, dlow));
@@ -144,7 +172,738 @@ algorithm
 
 end generateStructureCodeQSS;
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+/////  PART - INCIDENCE MATRICES
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
+protected function generateEmptyDEVSstruct
+"function: generateEmptyDEVSstruct
+  author: florosx
+  Generates an empty DEVS struct for the given number of blocks
+"
+  input Integer nBlocks;
+  input tuple< list<list<list<Integer>>>, list<list<list<Integer>>>, list<list<list<Integer>>>, list<list<list<Integer>>> > DEVS_struct_lists_temp;
+  output DevsStruct DEVS_structureOut;
+  
+algorithm
+  (DEVS_structureOut):=
+  matchcontinue (nBlocks, DEVS_struct_lists_temp)
+    local
+      list<list<list<Integer>>> DEVS_struct_outLinksList, DEVS_struct_outVarsList, DEVS_struct_inLinksList, DEVS_struct_inVarsList;
+      array<list<list<Integer>>> DEVS_struct_outLinks, DEVS_struct_outVars, DEVS_struct_inLinks, DEVS_struct_inVars;
+      
+    case (0, (DEVS_struct_outLinksList, DEVS_struct_outVarsList, DEVS_struct_inLinksList, DEVS_struct_inVarsList) )
+      equation      
+        DEVS_struct_outLinks = listArray(DEVS_struct_outLinksList);
+        DEVS_struct_inLinks = listArray(DEVS_struct_inLinksList);
+        DEVS_struct_outVars = listArray(DEVS_struct_outVarsList);
+        DEVS_struct_inVars = listArray(DEVS_struct_inVarsList);       
+      then
+        (DEVS_STRUCT(DEVS_struct_outLinks, DEVS_struct_outVars, DEVS_struct_inLinks, DEVS_struct_inVars));
+      
+    case (nBlocks, (DEVS_struct_outLinksList, DEVS_struct_outVarsList, DEVS_struct_inLinksList, DEVS_struct_inVarsList))
+      equation
+        DEVS_struct_outLinksList = listAppend(DEVS_struct_outLinksList, {{}});
+        DEVS_struct_outVarsList = listAppend(DEVS_struct_outVarsList, {{}});
+        DEVS_struct_inLinksList = listAppend(DEVS_struct_inLinksList, {{}});
+        DEVS_struct_inVarsList = listAppend(DEVS_struct_inVarsList, {{}});
+      then
+        (generateEmptyDEVSstruct(nBlocks-1, (DEVS_struct_outLinksList, DEVS_struct_outVarsList, DEVS_struct_inLinksList, DEVS_struct_inVarsList)) );
+    case (_,_)
+      equation
+        print("- BackendQSS.EmptyDEVSstruct failed\n");
+      then
+        fail();
+  end matchcontinue;
+end generateEmptyDEVSstruct;
+
+protected function getBlocksInOutVars
+"function: getBlocksInOutVars
+  author: florosx
+  
+"
+  input list<list<list<Integer>>> stateEq_blt;
+  input list<Integer> stateIndices;
+  input BackendDAE.IncidenceMatrix incidenceMat;
+  input array<Integer> ass2;
+  output list<list<Integer>> DEVS_blocks_outVarsOut;
+  output list<list<Integer>> DEVS_blocks_inVarsOut;
+ 
+algorithm
+  (DEVS_blocks_outVarsOut, DEVS_blocks_inVarsOut):=
+  matchcontinue (stateEq_blt, stateIndices, incidenceMat, ass2)
+    local
+     
+      list<list<Integer>> DEVS_blocks_outVars, DEVS_blocks_inVars;
+      tuple< list<list<Integer>>, list<list<Integer>> > DEVS_blocks_inOutVars_temp;
+     
+    case (stateEq_blt, stateIndices, incidenceMat, ass2)
+      equation        
+        
+        (DEVS_blocks_inOutVars_temp) = qssIntegratorsInOutVars(stateIndices,({},{}));
+        ((DEVS_blocks_outVars, DEVS_blocks_inVars)) = incidenceMatInOutVars(stateEq_blt, incidenceMat, ass2, DEVS_blocks_inOutVars_temp);
+        
+      then
+        (DEVS_blocks_outVars, DEVS_blocks_inVars);
+    case (_,_,_,_)
+      equation
+        print("- BackendQSS.getBlocksInOutVars failed\n");
+      then
+        fail();
+  end matchcontinue;
+end getBlocksInOutVars;
+
+protected function generateDEVSstruct
+"function: generateDEVSstruct
+  author: florosx
+  Right now it is not needed. But kept like that for future additions.
+"
+  input list<Integer> stateIndices;
+  input list<list<Integer>> DEVS_blocks_outVars;
+  input list<list<Integer>> DEVS_blocks_inVars;
+  input DevsStruct DEVS_structureIn;
+  output DevsStruct DEVS_structureOut;
+ 
+algorithm
+  (DEVS_structureOut):=
+  matchcontinue (stateIndices,DEVS_blocks_outVars, DEVS_blocks_inVars, DEVS_structureIn)
+    local
+       
+      DevsStruct DEVS_structure_temp;
+      
+    case (stateIndices,DEVS_blocks_outVars, DEVS_blocks_inVars, DEVS_structure_temp)
+      equation      
+        (DEVS_structure_temp) = generateStructFromInOutVars(1,stateIndices,DEVS_blocks_outVars, DEVS_blocks_inVars, DEVS_structure_temp);
+      then
+        (DEVS_structure_temp);
+    case (_,_,_,_)
+      equation
+        print("- BackendQSS.generateDEVSstruct failed\n");
+      then
+        fail();
+  end matchcontinue;
+end generateDEVSstruct;
+
+protected function generateStructFromInOutVars
+"function: generateStructFromInOutVars
+  author: florosx
+  Takes as input the generalised incidence matrix and generates the initial overcomplete DEVS structures
+"
+  input Integer curBlockIndex;
+  input list<Integer> stateIndices;
+  input list<list<Integer>> DEVS_blocks_outVars;
+  input list<list<Integer>> DEVS_blocks_inVars;
+  input DevsStruct DEVS_structureIn;
+  output DevsStruct DEVS_structureOut;
+ 
+algorithm
+  (DEVS_structureOut):=
+  matchcontinue (curBlockIndex,stateIndices, DEVS_blocks_outVars, DEVS_blocks_inVars, DEVS_structureIn)
+    local
+      tuple< list<list<list<Integer>>>, list<list<list<Integer>>>, list<list<list<Integer>>>, list<list<list<Integer>>> > DEVS_struct_lists_temp;
+   
+      list<list<list<Integer>>> DEVS_struct_outLinksList, DEVS_struct_outVarsList, DEVS_struct_inLinksList, DEVS_struct_inVarsList;
+      array<list<list<Integer>>> DEVS_struct_outLinks, DEVS_struct_outVars, DEVS_struct_inLinks, DEVS_struct_inVars;
+      
+      list<list<Integer>> DEVS_blocks_outVars, DEVS_blocks_inVars, rest_blocks_outVars;
+      list<Integer> curBlock_outVars;
+      
+      tuple< list<list<Integer>>, list<list<Integer>> > DEVS_blocks_inOutVars_temp;
+      
+      DevsStruct DEVS_structure_temp;
+   
+    case (curBlockIndex, stateIndices, {}, _ , DEVS_structure_temp)
+      equation
+      then
+        (DEVS_structure_temp);
+      
+    case (curBlockIndex, stateIndices, curBlock_outVars::rest_blocks_outVars, DEVS_blocks_inVars, DEVS_structure_temp )
+      equation
+        
+       DEVS_structure_temp = findOutVarsInAllInputs(curBlockIndex, stateIndices, curBlock_outVars, DEVS_blocks_inVars, DEVS_structure_temp);
+       
+      then
+        (generateStructFromInOutVars(curBlockIndex+1, stateIndices, rest_blocks_outVars, DEVS_blocks_inVars, DEVS_structure_temp));
+    case (_,_,_,_,_)
+      equation
+        print("- BackendQSS.generateStructFromInOutVars failed\n");
+      then
+        fail();
+  end matchcontinue;
+end generateStructFromInOutVars;
+
+// NOTE: THIS FUNCTION HAS TO BE REDESIGNED
+protected function findOutVarsInAllInputs
+"function: findOutVarsInAllInputs
+  author: florosx
+  
+"
+  input Integer outBlockIndex;
+  input list<Integer> stateIndices;
+  input list<Integer> curBlock_outVars;
+  input list<list<Integer>> DEVS_blocks_inVars;
+  input DevsStruct DEVS_structureIn;
+  output DevsStruct DEVS_structureOut;
+ 
+algorithm
+  (DEVS_structureOut):=
+  matchcontinue (outBlockIndex, stateIndices, curBlock_outVars, DEVS_blocks_inVars, DEVS_structureIn)
+    local
+      tuple< list<list<list<Integer>>>, list<list<list<Integer>>>, list<list<list<Integer>>>, list<list<list<Integer>>> > DEVS_struct_lists_temp;
+   
+      list<list<list<Integer>>> DEVS_struct_outLinksList, DEVS_struct_outVarsList, DEVS_struct_inLinksList, DEVS_struct_inVarsList;
+      array<list<list<Integer>>> DEVS_struct_outLinks, DEVS_struct_outVars, DEVS_struct_inLinks, DEVS_struct_inVars;
+      
+      list<list<Integer>> DEVS_blocks_outVars, DEVS_blocks_inVars, rest_blocks_outVars, DEVS_blocks_inVars_reduced;
+      list<list<Integer>> restBlocks_inVars, curOutBlock_outLinks, curOutBlock_outVars, curInBlock_inLinks, curInBlock_inVars;
+      
+      tuple< list<list<Integer>>, list<list<Integer>> > DEVS_blocks_inOutVars_temp;
+      
+      Integer curOutVar;
+      list<Integer> restOutVars, curOutVarLinks, blocksToBeChecked, tempOutVars;
+      DevsStruct DEVS_structure_temp;
+    //END OF RECURSION
+    case (outBlockIndex, stateIndices, {}, _ , DEVS_structure_temp)
+      equation
+      then
+        (DEVS_structure_temp);
+
+    case (outBlockIndex, stateIndices, curOutVar::restOutVars, DEVS_blocks_inVars, 
+             DEVS_STRUCT(outLinks=DEVS_struct_outLinks, outVars=DEVS_struct_outVars, inLinks=DEVS_struct_inLinks, inVars=DEVS_struct_inVars) )
+      equation
+        blocksToBeChecked = findOutVarsInAllInputsHelper(curOutVar, stateIndices,DEVS_blocks_inVars,outBlockIndex);          
+        (curOutVarLinks, DEVS_struct_inLinks, DEVS_struct_inVars) = 
+                   findWhereOutVarIsNeeded(curOutVar, outBlockIndex, blocksToBeChecked, DEVS_blocks_inVars, DEVS_struct_inLinks, DEVS_struct_inVars,{});
+        true = Util.isListNotEmpty(curOutVarLinks) "If the current output var is needed somewhere";
+        
+        print("blocks to be checked:\n");
+        printList(blocksToBeChecked, "start");
+        print("\n");
+        print("Cur out Var: ");
+        print(intString(curOutVar));
+        print("\n");
+        print("Cur Out Var Links: \n");
+        printList(curOutVarLinks, "start");
+        print("\n");
+        
+        curOutBlock_outVars = DEVS_struct_outVars[outBlockIndex];
+        curOutBlock_outLinks = DEVS_struct_outLinks[outBlockIndex];
+        curOutBlock_outLinks = listAppend(curOutBlock_outLinks, {curOutVarLinks});
+        curOutBlock_outVars = listAppend(curOutBlock_outVars, {{curOutVar}}); 
+                
+        DEVS_struct_outLinks = arrayUpdate(DEVS_struct_outLinks, outBlockIndex, curOutBlock_outLinks);
+        DEVS_struct_outVars = arrayUpdate(DEVS_struct_outVars, outBlockIndex, curOutBlock_outVars);
+        DEVS_structure_temp = DEVS_STRUCT(DEVS_struct_outLinks, DEVS_struct_outVars, DEVS_struct_inLinks, DEVS_struct_inVars);
+        DEVS_structure_temp = findOutVarsInAllInputs(outBlockIndex, stateIndices, restOutVars, DEVS_blocks_inVars, DEVS_structure_temp); 
+      then
+        (DEVS_structure_temp);
+        
+     // If the current output var is NOT needed somewhere
+     case (outBlockIndex, stateIndices, curOutVar::restOutVars, DEVS_blocks_inVars,  DEVS_structure_temp )
+      equation
+         
+      then
+        (findOutVarsInAllInputs(outBlockIndex, stateIndices, restOutVars, DEVS_blocks_inVars, DEVS_structure_temp));
+    
+    
+    case (_,_,_,_,_)
+      equation
+        print("----- FLAG 3 ---- \n");
+        print("- BackendQSS.findOutVarsInAllInputs failed\n");
+      then
+        fail();
+  end matchcontinue;
+end findOutVarsInAllInputs;
+
+protected function findOutVarsInAllInputsHelper
+"function: findOutVarsInAllInputs
+  author: florosx
+  
+"
+  input Integer curOutVar;
+  input list<Integer> stateIndices;
+  input list<list<Integer>> DEVS_blocks_inVars;
+  input Integer outBlockIndex;
+  output list<Integer> blocksToBeCheckedOut;
+ 
+algorithm
+  (blocksToBeCheckedOut):=
+  matchcontinue (curOutVar, stateIndices,DEVS_blocks_inVars,outBlockIndex)
+    local
+      list<Integer> blocksToBeChecked;      
+    // If CURRENT OUTPUT IS STATE    
+    case (curOutVar, stateIndices,DEVS_blocks_inVars,outBlockIndex)
+      equation
+        true = Util.listContains(curOutVar, stateIndices);
+        blocksToBeChecked = createListIncreasingIndices(1,listLength(DEVS_blocks_inVars),{});          
+      then
+        (blocksToBeChecked);
+    // If CURRENT OUTPUT IS ALGEBRAIC
+    case (curOutVar, stateIndices,DEVS_blocks_inVars,outBlockIndex) 
+      equation
+        false = Util.listContains(curOutVar, stateIndices);
+        blocksToBeChecked = createListIncreasingIndices(1,listLength(DEVS_blocks_inVars),{});  
+        blocksToBeChecked = Util.listRemoveNth(blocksToBeChecked, outBlockIndex); // If algebraic remove the current block from the input search.  
+      then
+        (blocksToBeChecked);
+    case (_,_,_,_)
+      equation
+        print("- BackendQSS.findOutVarsInAllInputsHelper failed\n");
+      then
+        fail();
+  end matchcontinue;
+end findOutVarsInAllInputsHelper;
+
+
+
+
+
+
+
+
+protected function findWhereOutVarIsNeeded
+"function: findWhereOutVarIsNeeded
+  author: florosx
+  
+"
+  input Integer curOutVar;
+  input Integer outBlockIndex;
+  input list<Integer> blocksToBeChecked;
+  input list<list<Integer>> DEVS_blocks_inVars;
+  input array<list<list<Integer>>> DEVS_struct_inLinks;
+  input array<list<list<Integer>>> DEVS_struct_inVars;
+  input list<Integer> curOutVarLinks;
+  
+  output list<Integer> outLinks;
+  output array<list<list<Integer>>> DEVS_struct_inLinksOut;
+  output array<list<list<Integer>>> DEVS_struct_inVarsOut;
+  
+ 
+algorithm
+  (outLinks, DEVS_struct_inLinksOut, DEVS_struct_inVarsOut):=
+  matchcontinue (curOutVar, outBlockIndex, blocksToBeChecked, DEVS_blocks_inVars, DEVS_struct_inLinks, DEVS_struct_inVars,curOutVarLinks)
+    local
+   
+      array<list<list<Integer>>> DEVS_struct_outLinks, DEVS_struct_outVars, DEVS_struct_inLinks, DEVS_struct_inVars;
+      Integer curOutVar, inBlockIndex;
+      list<Integer> restOutVars, curBlock_inVars, restBlocksToBeChecked;
+      list<list<Integer>> restBlocks_inVars, curOutBlock_outLinks, curOutBlock_outVars, curInBlock_inLinks, curInBlock_inVars;
+      DevsStruct DEVS_structure_temp;
+    
+    // END OF RECURSION
+    case (curOutVar, outBlockIndex, {}, DEVS_blocks_inVars, DEVS_struct_inLinks, DEVS_struct_inVars, curOutVarLinks)
+      equation
+      then
+        (curOutVarLinks, DEVS_struct_inLinks, DEVS_struct_inVars);
+     
+    case (curOutVar, outBlockIndex, inBlockIndex::restBlocksToBeChecked, DEVS_blocks_inVars, DEVS_struct_inLinks, DEVS_struct_inVars, curOutVarLinks)
+      equation
+        // If the current outVariable is NOT needed in the current In block
+        curBlock_inVars = listNth(DEVS_blocks_inVars, inBlockIndex-1);
+        false = Util.listContains(curOutVar, curBlock_inVars);
+        (curOutVarLinks, DEVS_struct_inLinks, DEVS_struct_inVars) = 
+           findWhereOutVarIsNeeded(curOutVar, outBlockIndex, restBlocksToBeChecked, DEVS_blocks_inVars,DEVS_struct_inLinks, DEVS_struct_inVars, curOutVarLinks);
+      then
+        (curOutVarLinks, DEVS_struct_inLinks, DEVS_struct_inVars);
+
+    case (curOutVar, outBlockIndex, inBlockIndex::restBlocksToBeChecked, DEVS_blocks_inVars, DEVS_struct_inLinks, DEVS_struct_inVars, curOutVarLinks)
+      equation
+        // If the current outVariable is needed in the current In block
+        curBlock_inVars = listNth(DEVS_blocks_inVars, inBlockIndex-1);
+        true = Util.listContains(curOutVar, curBlock_inVars);
+        
+        curOutVarLinks = listAppend(curOutVarLinks, {inBlockIndex});
+        
+        curInBlock_inLinks = DEVS_struct_inLinks[inBlockIndex];
+        curInBlock_inLinks = listAppend(curInBlock_inLinks, {{outBlockIndex}});        
+        curInBlock_inVars = DEVS_struct_inVars[inBlockIndex];
+        curInBlock_inVars = listAppend(curInBlock_inVars, {{curOutVar}});
+        DEVS_struct_inLinks = arrayUpdate(DEVS_struct_inLinks, inBlockIndex, curInBlock_inLinks);
+        DEVS_struct_inVars = arrayUpdate(DEVS_struct_inVars, inBlockIndex, curInBlock_inVars);
+        
+        
+        (curOutVarLinks, DEVS_struct_inLinks, DEVS_struct_inVars) = 
+           findWhereOutVarIsNeeded(curOutVar, outBlockIndex, restBlocksToBeChecked, DEVS_blocks_inVars,DEVS_struct_inLinks, DEVS_struct_inVars, curOutVarLinks);
+      then
+        (curOutVarLinks, DEVS_struct_inLinks, DEVS_struct_inVars);
+    case (_,_,_,_,_,_,_)
+      equation
+        print("- BackendQSS.findWhereOutVarIsNeeded failed\n");
+      then
+        fail();
+  end matchcontinue;
+end findWhereOutVarIsNeeded;
+
+
+
+
+protected function qssIntegratorsInOutVars
+"function: qssIntegratorsInOutVars
+  author: florosx
+  generates the input/output variable names for the qss integrator blocks. 
+"
+  input list<Integer> stateIndices;
+  input tuple<list<list<Integer>>,list<list<Integer>>> structsIn;
+  output tuple<list<list<Integer>>,list<list<Integer>>> structsOut;
+   
+algorithm
+  (structsOut):=
+  matchcontinue (stateIndices, structsIn)
+    local
+      list<list<list<Integer>>> DEVS_struct_outLinksList, DEVS_struct_outVarsList, DEVS_struct_inLinksList, DEVS_struct_inVarsList;
+      tuple< list<list<list<Integer>>>, list<list<list<Integer>>>, list<list<list<Integer>>>, list<list<list<Integer>>> > DEVS_lists_temp;
+      Integer cur_state_neg, cur_state;
+      
+      list<Integer> rest_states;
+      list<list<Integer>> DEVS_blocks_outVars, DEVS_blocks_inVars;
+      
+    case ({},(DEVS_blocks_outVars, DEVS_blocks_inVars))
+      equation       
+      then
+        ((DEVS_blocks_outVars, DEVS_blocks_inVars));
+    case (cur_state::rest_states, (DEVS_blocks_outVars, DEVS_blocks_inVars))
+      equation
+        cur_state_neg = -cur_state;
+        DEVS_blocks_outVars = listAppend(DEVS_blocks_outVars, {{cur_state_neg}});
+        DEVS_blocks_inVars = listAppend(DEVS_blocks_inVars, {{cur_state}});
+       
+       ((DEVS_blocks_outVars, DEVS_blocks_inVars)) = qssIntegratorsInOutVars(rest_states, (DEVS_blocks_outVars, DEVS_blocks_inVars));
+      then
+        ((DEVS_blocks_outVars, DEVS_blocks_inVars));
+    case (_,_)
+      equation
+        print("- BackendQSS.qssIntegratorsInOutVars failed\n");
+      then
+        fail();
+  end matchcontinue;
+end qssIntegratorsInOutVars;
+
+protected function incidenceMatInOutVars
+"function: incidenceMat2DEVSstruct2
+  author: florosx
+  Helper function to incidenceMat2DEVSstruct
+"
+  input list<list<list<Integer>>> stateEq_blt;
+  input BackendDAE.IncidenceMatrix incidenceMat;
+  input array<Integer> ass2;
+  input tuple<list<list<Integer>>,list<list<Integer>>> structsIn;
+  output tuple<list<list<Integer>>,list<list<Integer>>> structsOut;
+  
+algorithm
+  (structsOut):=
+  matchcontinue (stateEq_blt, incidenceMat, ass2, structsIn)
+    local
+      list<Integer> curBlock_flatEq;
+      list<list<Integer>> curBlock_eq; 
+      list<list<list<Integer>>> restBlocks_eq, DEVS_struct_outLinksList, DEVS_struct_outVarsList, DEVS_struct_inLinksList, DEVS_struct_inVarsList;
+      DevsStruct DEVS_structure_temp;
+      
+      list<list<Integer>> DEVS_blocks_outVars, DEVS_blocks_inVars;
+      list<Integer> varIndicesIn_temp, varIndicesOut_temp; 
+      
+    case ( {}, incidenceMat, ass2, structsIn)
+      equation
+        // end of recursion
+      then
+        (structsIn);
+          
+    case (curBlock_eq::restBlocks_eq, incidenceMat, ass2, (DEVS_blocks_outVars, DEVS_blocks_inVars) )
+      equation
+        curBlock_flatEq = Util.listFlatten(curBlock_eq);        
+        
+        (varIndicesIn_temp, varIndicesOut_temp) = selectVarsInOut(curBlock_flatEq, incidenceMat, ass2, {},{});
+        varIndicesIn_temp = findUniqueVars(varIndicesIn_temp,{});
+        
+        DEVS_blocks_outVars = listAppend(DEVS_blocks_outVars, {varIndicesOut_temp}) "select OUT variables";
+        DEVS_blocks_inVars = listAppend(DEVS_blocks_inVars, {varIndicesIn_temp}) "select IN variables";
+        
+        ((DEVS_blocks_outVars, DEVS_blocks_inVars)) = incidenceMatInOutVars(restBlocks_eq, incidenceMat, ass2, (DEVS_blocks_outVars,DEVS_blocks_inVars));
+
+      then
+        ((DEVS_blocks_outVars, DEVS_blocks_inVars));
+    case (_,_,_,_)
+      equation
+        print("- BackendQSS.incidenceMatInOutVars failed\n");
+      then
+        fail();
+  end matchcontinue;
+end incidenceMatInOutVars;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+
+
+
+
+
+
+
+
+protected function resolveDependencies
+"function: resolveDependencies
+  author: florosx
+  Takes as input the initial DEVS structure and finds the extra dependencies between inputs and outputs.
+"
+  input DevsStruct DEVS_structure_in;
+  input Integer blockIndex;
+  input Integer nBlocks;
+  output DevsStruct DEVS_structure_out;
+ 
+algorithm
+  (DEVS_structure_out):=
+  matchcontinue (DEVS_structure_in, blockIndex, nBlocks )
+    local
+      
+      array<list<list<Integer>>> DEVS_struct_outLinks, DEVS_struct_outVars, DEVS_struct_inLinks, DEVS_struct_inVars;
+      DevsStruct DEVS_structure_temp;
+      
+      tuple< list<list<list<Integer>>>, list<list<list<Integer>>>, list<list<list<Integer>>>, list<list<list<Integer>>> > DEVS_struct_lists_temp;
+      list<list<list<Integer>>> DEVS_struct_outLinksList, DEVS_struct_outVarsList, DEVS_struct_inLinksList, DEVS_struct_inVarsList;
+      list<list<list<Integer>>> restBlocks_OutVars, restBlocks_OutLinks;
+      list<list<Integer>> curBlock_outLinks, curBlock_outVars;
+    
+    case (DEVS_structure_temp, blockIndex, nBlocks)
+      equation
+        true = blockIndex > nBlocks;
+      then
+        (DEVS_structure_temp);
+    
+    case (DEVS_STRUCT(outLinks=DEVS_struct_outLinks, outVars=DEVS_struct_outVars, inLinks=DEVS_struct_inLinks, inVars=DEVS_struct_inVars), blockIndex, nBlocks)
+      equation
+        
+        curBlock_outLinks = DEVS_struct_outLinks[blockIndex];
+        curBlock_outVars = DEVS_struct_outVars[blockIndex];
+        
+         
+        DEVS_struct_outLinks = arrayUpdate(DEVS_struct_outLinks, blockIndex, curBlock_outLinks);
+        DEVS_struct_outVars = arrayUpdate(DEVS_struct_outVars, blockIndex, curBlock_outVars);
+        
+        DEVS_structure_temp = DEVS_STRUCT(DEVS_struct_outLinks, DEVS_struct_outVars, DEVS_struct_inLinks, DEVS_struct_inVars); 
+       (DEVS_structure_temp) = resolveDependencies(DEVS_structure_temp, blockIndex+1, nBlocks); 
+      then
+        (DEVS_structure_temp);
+    case (_,_,_)
+      equation
+        print("- BackendQSS.resolveDependencies failed\n");
+      then
+        fail();
+  end matchcontinue;
+end resolveDependencies;
+
+
+
+protected function incidenceMat2DEVSstruct2
+"function: incidenceMat2DEVSstruct2
+  author: florosx
+  Helper function to incidenceMat2DEVSstruct
+"
+  input list<list<list<Integer>>> stateEq_blt;
+  input BackendDAE.IncidenceMatrix incidenceMat;
+  input array<Integer> ass2;
+  input tuple< list<list<list<Integer>>>, list<list<list<Integer>>>, list<list<list<Integer>>>, list<list<list<Integer>>> > DEVS_lists_in;
+  
+  output tuple< list<list<list<Integer>>>, list<list<list<Integer>>>, list<list<list<Integer>>>, list<list<list<Integer>>> > DEVS_lists_out;
+  
+algorithm
+  (DEVS_lists_out):=
+  matchcontinue (stateEq_blt, incidenceMat, ass2, DEVS_lists_in)
+    local
+      list<Integer> curBlock_flatEq;
+      list<list<Integer>> curBlock_eq, varIndicesIn_temp, varIndicesOut_temp;     
+      list<list<list<Integer>>> restBlocks_eq, DEVS_struct_outLinksList, DEVS_struct_outVarsList, DEVS_struct_inLinksList, DEVS_struct_inVarsList;
+      DevsStruct DEVS_structure_temp;
+      
+    case ( {}, incidenceMat, ass2, DEVS_lists_in)
+      equation
+        // end of recursion
+      then
+        (DEVS_lists_in);
+          
+    case (curBlock_eq::restBlocks_eq, incidenceMat, ass2, (DEVS_struct_outLinksList, DEVS_struct_outVarsList, DEVS_struct_inLinksList, DEVS_struct_inVarsList) )
+      equation
+        curBlock_flatEq = Util.listFlatten(curBlock_eq);        
+        
+        (varIndicesIn_temp, varIndicesOut_temp) = selectVarsInOut(curBlock_flatEq, incidenceMat, ass2, {},{});
+        
+        varIndicesIn_temp = findUniqueVars(varIndicesIn_temp);
+        
+        DEVS_struct_outVarsList = listAppend(DEVS_struct_outVarsList, {varIndicesOut_temp}) "select OUT variables";
+        DEVS_struct_inVarsList = listAppend(DEVS_struct_inVarsList, {varIndicesIn_temp}) "select IN variables";
+                
+        DEVS_struct_outLinksList = DEVS_struct_outVarsList;
+        DEVS_struct_inLinksList = DEVS_struct_inVarsList;
+        
+        ((DEVS_struct_outLinksList, DEVS_struct_outVarsList, DEVS_struct_inLinksList, DEVS_struct_inVarsList)) = 
+          incidenceMat2DEVSstruct2(restBlocks_eq, incidenceMat, ass2, (DEVS_struct_outLinksList, DEVS_struct_outVarsList, DEVS_struct_inLinksList, DEVS_struct_inVarsList));
+
+      then
+        ((DEVS_struct_outLinksList, DEVS_struct_outVarsList, DEVS_struct_inLinksList, DEVS_struct_inVarsList));
+    case (_,_,_,_)
+      equation
+        print("- BackendQSS.incidenceMat2DEVSstruct2 failed\n");
+      then
+        fail();
+  end matchcontinue;
+end incidenceMat2DEVSstruct2;
+
+*/
+
+public function findUniqueVars
+"function: removeRedundantElements removes redundant elements from a list
+  author: XF
+"
+  
+  input list<Integer> inList1;
+  input list<Integer> inList2;
+  
+  output list<Integer> outList; 
+  
+algorithm
+  (outList):=
+  matchcontinue (inList1, inList2)
+    local
+      list<Integer> rest_list, inList_temp;
+      Integer head;
+            
+    case({} , inList_temp)
+      equation
+        // END OF RECURSION
+      then (inList_temp);
+     case(head::rest_list, inList_temp)
+      equation
+        true = Util.listContains(head, rest_list);
+        inList_temp = findUniqueVars(rest_list, inList_temp);
+      then
+         (inList_temp);
+     case(head::rest_list, inList_temp)
+      equation
+        false = Util.listContains(head, rest_list);
+        inList_temp = listAppend(inList_temp, {head});
+        inList_temp = findUniqueVars(rest_list, inList_temp);
+      then
+         (inList_temp); 
+  end matchcontinue;
+end findUniqueVars;
+
+
+
+
+protected function selectVarsInOut
+"function: selectVars
+  author: florosx
+  Function that selects output/input block variables based on the equations in the block
+"
+  input list<Integer> curBlock_flatEq;
+  input BackendDAE.IncidenceMatrix incidenceMat;
+  input array<Integer> ass2;
+  input list<Integer> varIndicesIn_temp;
+  input list<Integer> varIndicesOut_temp;
+  
+  output list<Integer> varIndicesIn;
+  output list<Integer> varIndicesOut;
+  
+algorithm
+  (varIndicesIn, varIndicesOut):=
+  matchcontinue (curBlock_flatEq, incidenceMat, ass2, varIndicesIn_temp, varIndicesOut_temp)
+    local
+      
+      Integer curEq, curOutVar, ind;
+      list<Integer> restEq, curInVars, curRow;
+      
+    case ( {}, incidenceMat, ass2, varIndicesIn_temp, varIndicesOut_temp)
+      equation
+        // end of recursion
+      then
+        (varIndicesIn_temp, varIndicesOut_temp);
+          
+    case (curEq::restEq, incidenceMat, ass2, varIndicesIn_temp, varIndicesOut_temp)
+      equation
+        
+        curRow = incidenceMat[curEq];     
+        curOutVar = ass2[curEq];
+        (ind, curInVars) = findAndRemoveElementInList(0,curRow,curOutVar);
+        
+        varIndicesOut_temp = listAppend(varIndicesOut_temp, {curOutVar});        
+        varIndicesIn_temp = listAppend(varIndicesIn_temp, curInVars);
+        
+        (varIndicesOut_temp, varIndicesIn_temp) = selectVarsInOut(restEq, incidenceMat, ass2, varIndicesIn_temp, varIndicesOut_temp);        
+      then
+        (varIndicesOut_temp, varIndicesIn_temp);
+    case (_,_,_,_,_)
+      equation
+        print("- BackendQSS.selectVarsInOut failed\n");
+      then
+        fail();
+  end matchcontinue;
+end selectVarsInOut;
+
+
+protected function makeIncidenceRightHandNeg
+"function: makeIncidenceRightHandNeg
+  author: florosx
+  Takes the incidence matrix and adds negative signs to the variables that are on the right
+  hand side in each equation and with a positive sign the variable that is solved there.
+"
+  input BackendDAE.IncidenceMatrix globalIncidenceMatIn;
+  input list<Integer> ass2_list;
+  input Integer curInd;
+  
+  output BackendDAE.IncidenceMatrix globalIncidenceMatOut;
+
+algorithm
+  (globalIncidenceMatOut):=
+  matchcontinue (globalIncidenceMatIn, ass2_list, curInd)
+    local
+      
+      Integer cur_var, curInd, tempInd;
+      list<Integer> rest_vars, cur_eq;
+      BackendDAE.IncidenceMatrix globalIncidenceMat_temp;       
+      
+    case(globalIncidenceMat_temp, {}, curInd)
+      equation
+      then (globalIncidenceMat_temp);
+    
+    //cur_var is the variable that current equation solves
+    case (globalIncidenceMat_temp, cur_var::rest_vars, curInd)
+      equation
+        // Make everything negative except from the variable that is solved for.
+        cur_eq = globalIncidenceMat_temp[curInd];
+        tempInd = findElementInList(0, listLength(cur_eq), cur_eq, cur_var);
+        cur_eq = makeListNegative(cur_eq, {});
+        cur_eq = Util.listReplaceAt(cur_var, tempInd, cur_eq);
+        globalIncidenceMat_temp = arrayUpdate(globalIncidenceMat_temp, curInd, cur_eq);
+        globalIncidenceMat_temp = makeIncidenceRightHandNeg(globalIncidenceMat_temp, rest_vars, curInd+1);
+      then
+        (globalIncidenceMat_temp);
+     case (_,_,_)
+      equation
+        print("- BackendQSS.makeIncidenceRightHandNeg failed\n");
+      then
+        fail();
+  end matchcontinue;
+end makeIncidenceRightHandNeg;
+
+
+
+
+
+
+
+/////////////////////////////////
 
 
 
@@ -412,90 +1171,6 @@ algorithm
   end matchcontinue;
 end replaceCrossingLstOnExp;
  
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-/////  PART - INCIDENCE MATRICES
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-protected function incidenceMat2DEVSstruct
-"function: incidenceMat2DEVSstruct
-  author: florosx
-  Takes as input the generalised incidence matrix and generates the initial overcomplete DEVS structures
-"
-  input list<list<list<Integer>>> stateEq_blt;
-  input BackendDAE.IncidenceMatrix globalIncidenceMat;
-  output DevsStruct DEVS_structure;
- 
-algorithm
-  (DEVS_structure):=
-  matchcontinue (stateEq_blt, globalIncidenceMat)
-    local
-      list<list<Integer>> globalIncidenceList;
-      array<list<list<Integer>>> DEVS_struct_outLinks, DEVS_struct_outVars, DEVS_struct_inLinks, DEVS_struct_inVars;
-      
-    case (stateEq_blt, globalIncidenceMat)
-      equation
-        DEVS_struct_outLinks = listArray( { {{1,1}, {2,2}}, {{3}, {4}} });
-        DEVS_struct_outVars = listArray( { {{1,1}, {2,2}}, {{3}, {4}} });
-        DEVS_struct_inVars = listArray( { {{1,1}, {2,2}}, {{3}, {4}} });
-        DEVS_struct_inLinks = listArray( { {{1,1}, {2,2}}, {{3}, {4}} });
-
-      then
-        (DEVS_STRUCT(DEVS_struct_outLinks, DEVS_struct_outVars, DEVS_struct_inVars, DEVS_struct_inVars));
-    case (_,_)
-      equation
-        print("- BackendQSS.incidenceMat2DEVSstruct failed\n");
-      then
-        fail();
-  end matchcontinue;
-end incidenceMat2DEVSstruct;
-
-protected function makeIncidenceRightHandNeg
-"function: makeIncidenceRightHandNeg
-  author: florosx
-  Takes the incidence matrix and adds negative signs to the variables that are on the right
-  hand side in each equation and with a positive sign the variable that is solved there.
-"
-  input BackendDAE.IncidenceMatrix globalIncidenceMat;
-  input list<Integer> ass2_list;
-  input Integer curInd;
-  
-  output BackendDAE.IncidenceMatrix globalIncidenceMatOut;
-
-algorithm
-  (globalIncidenceMatOut):=
-  matchcontinue (globalIncidenceMat, ass2_list, curInd)
-    local
-      
-      Integer cur_var, curInd, tempInd;
-      list<Integer> rest_vars, cur_eq;
-      BackendDAE.IncidenceMatrix globalIncidenceMat_temp;
-      
-    case(globalIncidenceMat_temp, {}, curInd)
-      equation
-      then (globalIncidenceMat_temp);
-    
-    //cur_var is the variable that current equation solves
-    case (globalIncidenceMat_temp, cur_var::rest_vars, curInd)
-      equation
-        // Make everything negative except from the variable that is solved for.
-        cur_eq = globalIncidenceMat_temp[curInd];
-        tempInd = findElementInList(0, listLength(cur_eq), cur_eq, cur_var);
-        cur_eq = makeListNegative(cur_eq, {});
-        cur_eq = Util.listReplaceAt(cur_var, tempInd, cur_eq);
-        globalIncidenceMat_temp = arrayUpdate(globalIncidenceMat_temp, curInd, cur_eq);
-        globalIncidenceMat_temp = makeIncidenceRightHandNeg(globalIncidenceMat_temp, rest_vars, curInd+1);
-      then
-        (globalIncidenceMat_temp);
-     case (_,_,_)
-      equation
-        print("- BackendQSS.makeIncidenceRightHandNeg failed\n");
-      then
-        fail();
-  end matchcontinue;
-end makeIncidenceRightHandNeg;
-
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 /////  PART - SELECTING EQUATIONS FOR EACH STATE VARIABLE (slight modifications from BackendDAEUtil
@@ -951,21 +1626,34 @@ public function printList
   Prints the elements of a list of integers
 "   
    input list<Integer> arrList;
+   input String start;  
 algorithm 
   _:=
-  matchcontinue (arrList)     
+  matchcontinue (arrList,start)     
     local 
       list<Integer> restList;
       Integer elem;
-    case ({})
+    case ({},"start")
       equation
+        print("{ }");
+    
       then();
-    case (elem::restList)
+    case (restList,"start")
+      equation
+        print("{");
+        printList(restList,"continue");
+      then();
+    case ({elem},_)
+      equation
+        print(intString(elem));
+        print("}");
+      then();
+    case (elem::restList,_)
       equation 
-        print(" ");
+        //print(" ");      
         print(intString(elem));
         print(",");
-        printList(restList);
+        printList(restList,"continue");
      then
        ();
        end matchcontinue;
@@ -988,14 +1676,20 @@ algorithm
       equation
           print("\n");
       then();
+    case ({elem})
+      equation    
+        printList(elem,"start");
+        print("\n");
+     then
+       ();
     case (elem::restList)
       equation    
-        printList(elem);
-        print("--");
+        printList(elem,"start");
+        print("__");
         printListOfLists(restList);
      then
        ();
-       end matchcontinue;
+  end matchcontinue;
 end printListOfLists;
 
 
@@ -1055,7 +1749,8 @@ algorithm
       equation
         print("Block #");
         print(intString(rowIndex));print(":");
-        dumpIncidenceRow(row);
+        //dumpIncidenceRow(row);
+        printListOfLists(row);
         dumpDEVSstruct2(rows,rowIndex+1);
       then
         ();
@@ -1081,8 +1776,8 @@ algorithm
         ();
     case ((x :: xs))
       equation
-        printList(x);
-        print("--");
+        printList(x,"start");
+        print("__");
         dumpIncidenceRow(xs);
       then
         ();
@@ -1158,6 +1853,230 @@ algorithm
          (temp);
   end matchcontinue;
 end findElementInList;
+
+public function findAndRemoveElementInList
+"function: 
+  author: XF
+"
+  input Integer loopIndex1;
+  input list<Integer> inList1;
+  input Integer element1;
+  
+  output Integer indexFound;
+  output list<Integer> outList;
+  
+algorithm
+  (indexFound, outList):=
+  matchcontinue (loopIndex1, inList1, element1)
+    local
+      list<Integer> rest_list, tempList;
+      Integer cur_elem, temp, element, loopIndex;
+    
+    case(loopIndex, {}, element)
+      equation
+      then (-1, {});
+          
+    case(loopIndex, cur_elem::rest_list , element)
+      equation
+        true = intEq(cur_elem,element);
+      then (loopIndex, rest_list);
+        
+     case(loopIndex, cur_elem::rest_list , element)
+      equation
+        false = intEq(cur_elem,element);
+        (temp, tempList) = findAndRemoveElementInList(loopIndex+1, rest_list, element);
+      then
+         (temp, cur_elem::tempList);
+  end matchcontinue;
+end findAndRemoveElementInList;
+
+public function getAllVars
+"function: getAllVars 
+ outputs a list with all variables and the subset of state variables contained in DAELow	
+ author: XF
+"
+  input BackendDAE.BackendDAE inDAELow1;
+  output list<BackendDAE.Var> allVarsList; 
+  output list<BackendDAE.Var> stateVarsList; 
+   
+algorithm 
+  (allVarsList, stateVarsList):=
+  matchcontinue (inDAELow1)
+    local
+      list<BackendDAE.Var> orderedVarsList, knownVarsList, allVarsList;
+      BackendDAE.BackendDAE dae;
+      array<BackendDAE.Value> arr_1,arr;
+      array<list<BackendDAE.Value>> m,mt;
+      array<BackendDAE.Value> a1,a2;
+      BackendDAE.Variables v,kn;
+      BackendDAE.EquationArray e,se,ie;
+      array<BackendDAE.MultiDimEquation> ae;
+      array<DAE.Algorithm> alg;
+  case (dae as BackendDAE.DAE(orderedVars = v,knownVars = kn,orderedEqs = e,removedEqs = se,initialEqs = ie,arrayEqs = ae,algorithms = alg))
+    equation
+      orderedVarsList = BackendDAEUtil.varList(v);
+      knownVarsList = BackendDAEUtil.varList(kn);
+      allVarsList = listAppend(orderedVarsList, knownVarsList);
+      stateVarsList = BackendVariable.getAllStateVarFromVariables(v);
+  then
+     (allVarsList, stateVarsList) ;
+  end matchcontinue;     
+end getAllVars;
+
+public function getStateIndices 
+"function: getStateIndices 
+ finds the indices of the state indices inside a list with variables.	
+ author: XF
+"
+
+  input list<BackendDAE.Var> allVars;
+  input list<Integer> stateIndices1;
+  input Integer loopIndex1;
+  
+  output list<Integer> stateIndices;
+
+algorithm
+  stateIndices:=
+  matchcontinue (allVars, stateIndices1, loopIndex1)
+    local
+      
+      list<Integer> stateIndices2;
+      Integer loopIndex;
+      list<BackendDAE.Var> rest;
+      BackendDAE.Var var1; 
+    
+    case ({}, stateIndices2, loopIndex)
+      equation             
+      then
+        stateIndices2;
+        
+    case (var1::rest, stateIndices2, loopIndex)
+      equation     
+        false = BackendVariable.isStateVar(var1);
+        stateIndices = getStateIndices(rest, stateIndices2, loopIndex+1);  
+      then
+        stateIndices;
+    case (var1::rest, stateIndices2, loopIndex)
+      equation     
+        true = BackendVariable.isStateVar(var1);
+        stateIndices2 = listAppend(stateIndices2, {loopIndex});
+        stateIndices2 = getStateIndices(rest, stateIndices2, loopIndex+1);  
+      then
+        stateIndices2;
+  end matchcontinue;
+end getStateIndices;
+
+public function removeRedundantElements
+"function: removeRedundantElements removes redundant elements from a list
+  author: XF
+"
+  
+  input list<Integer> inList1;
+  input list<Integer> inList2;
+  
+  output list<Integer> outList; 
+  
+algorithm
+  (outList):=
+  matchcontinue (inList1, inList2)
+    local
+      list<Integer> inList_temp, rest_list;
+      Integer head;
+      
+    case({} , inList_temp)
+      equation
+        // END OF RECURSION
+      then (inList_temp);
+      
+     case(head::rest_list, inList_temp)
+      equation
+        true = Util.listContains(head, rest_list);
+        inList_temp = removeRedundantElements(rest_list, inList_temp);
+      then
+         (inList_temp);
+     
+     case(head::rest_list, inList_temp)
+      equation
+        false = Util.listContains(head, rest_list);
+        inList_temp = listAppend(inList_temp, {head});
+        inList_temp = removeRedundantElements(rest_list, inList_temp);
+      then
+         (inList_temp);
+  
+  end matchcontinue;
+end removeRedundantElements;
+
+public function createListIncreasingIndices
+"function: removeRedundantElements removes redundant elements from a list
+  author: XF
+"
+  
+  input Integer indexStart;
+  input Integer indexEnd;
+  input list<Integer> inList1;
+  output list<Integer> outList; 
+  
+algorithm
+  (outList):=
+  matchcontinue (indexStart, indexEnd, inList1)
+    local
+      list<Integer> inList_temp, rest_list;
+      Integer head;
+      
+    case(indexStart , indexEnd, inList_temp)
+      equation
+        true = indexStart > indexEnd;
+        // END OF RECURSION
+      then (inList_temp);
+      
+     case(indexStart, indexEnd, inList_temp)
+      equation
+        inList_temp = listAppend(inList_temp, {indexStart});
+        inList_temp = createListIncreasingIndices(indexStart+1, indexEnd, inList_temp);
+      then
+         (inList_temp);
+  end matchcontinue;
+
+end createListIncreasingIndices;
+
+public function constructTrivialList 
+"function: constructTrivialList constructs a list of a given size with repetitions of element
+  author: XF
+"
+  input list<Integer> tempList1;
+  input Integer element1;
+  input Integer nEquations1; 
+  
+  output list<Integer> emptyListofLists; 
+  
+algorithm
+  (emptyListofLists):=
+  matchcontinue(tempList1, element1, nEquations1)
+     local
+       Integer nEquations, element;
+       list<Integer> tempList;
+              
+       case(tempList, element, 0)
+         equation
+           //END OF RECURSION
+       then (tempList);
+        
+       case (tempList, element, nEquations)
+         equation
+
+            tempList = listAppend(tempList, {element});           
+            emptyListofLists = constructTrivialList(tempList, element, nEquations-1);
+         then
+            (emptyListofLists);  
+  end matchcontinue;
+end constructTrivialList;
+
+
+
+
+
+
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 /////  END OF PACKAGE
