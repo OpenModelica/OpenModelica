@@ -1,9 +1,13 @@
-.PHONY : all tplmode csharp cppOrig QHP beatheart csCopy tst
+.PHONY : all tplmode csharp cppOrig QHP beatheart csCopy tst HumMod
 
 OMC = ../../../../build/bin/omc.exe
+#OMC = OPENMODELICAHOME=`pwd`/../../../../../build/ ../../../../../build/bin/omc
+#OMC = OPENMODELICAHOME=D:/Modelica/OpenModelica/OpenModelica_trunk/build/ ../../../../../build/bin/omc
+
 #OMC = /d/Modelica/_modely/MM_for_debug/omc.exe
 #OMC = /c/OpenModelica1.4.5/bin/omc.exe
-ModelsNET = "/d/Modelica/_svn_Solvers/Compiled Solvers/Simulation/ModelsDotNet/"
+HumModDir = "/d/Modelica/_modely/HumModOMC/OMC"
+ModelsNET = "/d/Modelica/Bodylight/Solvers/Compiled Solvers/Simulation/ModelsDotNet/"
 #all :  tplmode  csharp  cppOrig
 all :  QHP csCopy
 #all : csharp csCopy
@@ -41,9 +45,17 @@ QHP:
 	@echo " ** Simulate QHP  original C/C++   ** "
 	#(cd QHP && ../$(OMC) +showErrorMessages +d=perfTimes,failtrace simulate.mos > debug-trace-C.txt 2>&1)
 	#(cd QHP && ../$(OMC) +showErrorMessages +d=perfTimes simulate.mos > debug-trace-C.txt 2>&1)
-	(cd QHP && ../$(OMC) +d=perfTimes simulate.mos > debug-trace-C.txt 2>&1)
+	(cd QHP && ../$(OMC) +d=perfTimes,scodeFlatten simulate.mos > debug-trace-C.txt 2>&1)
 	@echo " ** Generate QHP CSharp target ** "
 	(cd QHP && ../$(OMC) +showErrorMessages +d=perfTimes,CSharp generate.mos > debug-trace-CSharp.txt 2>&1)
+
+HumMod:
+	@echo " ** Simulate HumMod OMC C/C++   ** "
+	#(cd QHP && ../$(OMC) +showErrorMessages +d=perfTimes,failtrace simulate.mos > debug-trace-C.txt 2>&1)
+	#(cd QHP && ../$(OMC) +showErrorMessages +d=perfTimes simulate.mos > debug-trace-C.txt 2>&1)
+	(cd QHP && $(OMC) +d=perfTimes simulate.mos > debug-trace-C.txt 2>&1)
+	#@echo " ** Generate QHP CSharp target ** "
+	#(cd QHP && ../$(OMC) +showErrorMessages +d=perfTimes,CSharp generate.mos > debug-trace-CSharp.txt 2>&1)
 	
 
 csCopy:

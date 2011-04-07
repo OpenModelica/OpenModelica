@@ -3085,7 +3085,7 @@ end indexedByOpt;
 
 /*
 fromOpt:
-	'from' expression_base:expFrom 
+	'fromindex' expression_base:expFrom 
 		=> { ("$indexOffset", SOME(expFrom)) }
 	|
 	_ => {}
@@ -3108,9 +3108,18 @@ algorithm
       String  lesc, resc;
       TplAbsyn.Expression exp;
     
+    case ("f"::"r"::"o"::"m"::"i"::"n"::"d"::"e"::"x":: chars, linfo, lesc, resc)
+      equation
+        afterKeyword(chars);
+        (chars, linfo) = interleave(chars, linfo);
+        (chars, linfo, exp) = expression_base(chars, linfo, lesc, resc);
+      then (chars, linfo, {(TplAbsyn.indexOffsetOptionId, SOME(exp))} );
+        
+    //deprecated keyword, this check will be removed after some time (if needed) 
     case ("f"::"r"::"o"::"m":: chars, linfo, lesc, resc)
       equation
         afterKeyword(chars);
+        linfo = parseError(chars, linfo, "Keyword 'from' was changed to 'fromindex', please update your source code here.", false);
         (chars, linfo) = interleave(chars, linfo);
         (chars, linfo, exp) = expression_base(chars, linfo, lesc, resc);
       then (chars, linfo, {(TplAbsyn.indexOffsetOptionId, SOME(exp))} );

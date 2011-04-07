@@ -153,7 +153,7 @@ fn-call:
 	// path-ident to be able to call an imported function from a package
 
 map-expr:
-	expression '|>'  binding ('hasindex' IDENT)? '=>' expression   // only 1 for the first impl. … left assoc
+	expression '|>'  binding ('hasindex' IDENT ('fromindex' IDENT)? )? '=>' expression   // only 1 for the first impl. … left assoc
 	// expression (',' expression)* '|>'  binding  (','  binding)* ('hasindex' IDENT)? '=>'  expression 
 
 condition:  // we will stick to simple inline only if expression for now ... not <%if cond%> <%endif%> form ... that is ugly looking
@@ -596,7 +596,7 @@ indexedByOpt:
 	_ => NONE, {}
 
 fromOpt:
-	'from' expression_base:expFrom 
+	'fromindex' expression_base:expFrom 
 		=> { ("$indexOffset", SOME(expFrom)) }
 	|
 	_ => {}
