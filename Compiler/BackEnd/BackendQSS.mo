@@ -142,29 +142,10 @@ algorithm
         
         DEVS_structure = generateEmptyDEVSstruct(nBlocks, ({},{},{},{}));    
         (DEVS_blocks_outVars, DEVS_blocks_inVars) = getBlocksInOutVars(stateEq_blt, stateIndices, m, ass2);
-         
-        //DEVS_blocks_outVars = {{1,2}, {3}, {4,5}};
-        //DEVS_blocks_inVars = {{1,2}, {1,2,4,7}, {3,6}};
-        
-        print("\n OUT VARS \n");
-        printListOfLists(DEVS_blocks_outVars);
-        print("\n IN VARS \n");
-        printListOfLists(DEVS_blocks_inVars);
-        
         DEVS_structure = generateDEVSstruct(stateIndices, DEVS_blocks_outVars, DEVS_blocks_inVars, DEVS_structure); 
         
-        
-        
-        
         dumpDEVSstructs(DEVS_structure);       
-                
-        // PRINT INFO
-        Debug.fcall("QSS-stuff",print,"---------- State Blocks ----------\n");
-        //Util.listMap0(stateEq_blt, printListOfLists);
-        //Debug.fcall("QSS-stuff",Util.listMap02, (stateEq_blt, BackendDump.dumpComponentsAdvanced, ass2, dlow));
-        Debug.fcall("QSS-stuff",print,"---------- State Blocks ----------\n");
-
-        
+           
       then
         QSSINFO(stateEq_blt, DEVS_structure);
   
@@ -376,16 +357,6 @@ algorithm
                    findWhereOutVarIsNeeded(curOutVar, outBlockIndex, blocksToBeChecked, DEVS_blocks_inVars, DEVS_struct_inLinks, DEVS_struct_inVars,{});
         true = Util.isListNotEmpty(curOutVarLinks) "If the current output var is needed somewhere";
         
-        print("blocks to be checked:\n");
-        printList(blocksToBeChecked, "start");
-        print("\n");
-        print("Cur out Var: ");
-        print(intString(curOutVar));
-        print("\n");
-        print("Cur Out Var Links: \n");
-        printList(curOutVarLinks, "start");
-        print("\n");
-        
         curOutBlock_outVars = DEVS_struct_outVars[outBlockIndex];
         curOutBlock_outLinks = DEVS_struct_outLinks[outBlockIndex];
         curOutBlock_outLinks = listAppend(curOutBlock_outLinks, {curOutVarLinks});
@@ -401,14 +372,12 @@ algorithm
      // If the current output var is NOT needed somewhere
      case (outBlockIndex, stateIndices, curOutVar::restOutVars, DEVS_blocks_inVars,  DEVS_structure_temp )
       equation
-         
       then
         (findOutVarsInAllInputs(outBlockIndex, stateIndices, restOutVars, DEVS_blocks_inVars, DEVS_structure_temp));
     
-    
     case (_,_,_,_,_)
       equation
-        print("----- FLAG 3 ---- \n");
+        
         print("- BackendQSS.findOutVarsInAllInputs failed\n");
       then
         fail();
