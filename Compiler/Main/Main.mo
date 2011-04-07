@@ -236,7 +236,7 @@ algorithm
         res_1 = makeDebugResult("dump", res_1);
         res = makeDebugResult("dumpgraphviz", res_1);
         isymb = Interactive.SYMBOLTABLE(newprog,aDep,a,b,vars_1,cf_1,lf);
-        Interactive.typeCheckFunction(p, isymb); // You need the new environment before you can check the added functions
+        // Interactive.typeCheckFunction(p, isymb); // You need the new environment before you can check the added functions
       then
         (true,res,isymb);
     case (str,isymb) /* Interactively evaluate an algorithm statement or expression */
