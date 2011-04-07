@@ -5125,7 +5125,7 @@ algorithm
     
     case(e,repl) 
       equation
-        e = VarTransform.replaceExp(e,repl,NONE());
+        (e,_) = VarTransform.replaceExp(e,repl,NONE());
       then e;
   end matchcontinue;
 end ifBranchesFreeFromVar2;

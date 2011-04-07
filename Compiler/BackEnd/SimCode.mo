@@ -4312,7 +4312,8 @@ algorithm
       
     case (SES_RESIDUAL(res_exp,source), _)
       equation
-        res_exp = VarTransform.replaceExp(res_exp, repl, SOME(skipPreOperator));
+        /* TODO: Add symbolic operation to source */
+        (res_exp,true) = VarTransform.replaceExp(res_exp, repl, SOME(skipPreOperator));
       then
         SES_RESIDUAL(res_exp,source);
     else inEqn;
@@ -4628,14 +4629,16 @@ algorithm
     case ((BackendDAE.EQUATION(exp = e1,scalar = e2,source = source) :: rest),repl)
       equation
         rest2 = generateTearingSystem1(rest,repl);
-        e1_1 = VarTransform.replaceExp(e1, repl, SOME(skipPreOperator));
-        e2_1 = VarTransform.replaceExp(e2, repl, SOME(skipPreOperator));
+        /* TODO: Add symbolic operation to source */
+        (e1_1,_) = VarTransform.replaceExp(e1, repl, SOME(skipPreOperator));
+        (e2_1,_) = VarTransform.replaceExp(e2, repl, SOME(skipPreOperator));
       then
         BackendDAE.EQUATION(e1_1,e2_1,source) :: rest2;
     case ((BackendDAE.RESIDUAL_EQUATION(exp = e1,source = source) :: rest),repl)
       equation
         rest2 = generateTearingSystem1(rest,repl);
-        e1_1 = VarTransform.replaceExp(e1, repl, SOME(skipPreOperator));
+        /* TODO: Add symbolic operation to source */
+        (e1_1,_) = VarTransform.replaceExp(e1, repl, SOME(skipPreOperator));
       then
         BackendDAE.RESIDUAL_EQUATION(e1_1,source) :: rest2;
   end match;
@@ -5068,7 +5071,7 @@ algorithm
         eqn = listNth(eqnLst,e-1);
         varexp = Expression.crefExp(c);
         (exp,_) = solveEquation(eqn, varexp);
-        exps = VarTransform.replaceExp(exp,repl,NONE());
+        (exps,_) = VarTransform.replaceExp(exp,repl,NONE());
         repl1 = VarTransform.addReplacement(repl, c, exps);
         source = BackendEquation.equationSource(eqn);
         (repl2,seqns) = getRelaxationReplacements(block_,ass2,crefs,eqnLst,repl1);

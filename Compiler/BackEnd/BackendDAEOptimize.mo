@@ -342,7 +342,7 @@ algorithm
         ieqns_2 = BackendVarTransform.replaceEquations(ieqns_1, vartransf1);
         reqns_1 = BackendVarTransform.replaceEquations(reqns, vartransf1);
         lstarreqns2 = BackendVarTransform.replaceMultiDimEquations(lstarreqns1, vartransf1);
-        algs_1 = BackendVarTransform.replaceAlgorithms(algs,vartransf1);
+        (algs_1,_) = BackendVarTransform.replaceAlgorithms(algs,vartransf1);
         (vars_1,knvars) = BackendVariable.moveVariables(vars, knvars, movedvars_1);
         (vars_1,removedVars) = BackendVariable.moveVariables(vars_1, removedVars, movedvars_2);
         inputsoutputs = Util.listMap1r(algs_1,BackendDAECreate.lowerAlgorithmInputsOutputs,vars_1);
@@ -1543,10 +1543,12 @@ algorithm
       BackendDAE.Var v,v1;
       VarTransform.VariableReplacements repl,extendrepl;
       DAE.Exp e,e1,e2;
+      Boolean b1,b2;
     case ((v as BackendDAE.VAR(bindExp=SOME(e)),(repl,extendrepl)))
       equation
-        e1 = VarTransform.replaceExp(e, extendrepl,NONE());
-        e2 = VarTransform.replaceExp(e1, repl,NONE());
+        (e1,b1) = VarTransform.replaceExp(e, extendrepl, NONE());
+        (e2,b2) = VarTransform.replaceExp(e1, repl, NONE());
+        true = b1 or b2;
         v1 = BackendVariable.setBindExp(v,e2);
       then ((v1,(repl,extendrepl)));
     case inTpl then inTpl;
@@ -1605,10 +1607,10 @@ algorithm
       BackendDAE.Variables vars;
     case ((BackendDAE.MULTIDIM_EQUATION(dims,e1,e2,source),(repl,extendrepl,vars,crefOrDerCreflst)))
       equation
-        e1_1 = VarTransform.replaceExp(e1, extendrepl,NONE());
-        e1_2 = VarTransform.replaceExp(e1_1, repl,NONE());
-        e2_1 = VarTransform.replaceExp(e2, extendrepl,NONE());
-        e2_2 = VarTransform.replaceExp(e2_1, repl,NONE());
+        (e1_1,_) = VarTransform.replaceExp(e1, extendrepl,NONE());
+        (e1_2,_) = VarTransform.replaceExp(e1_1, repl,NONE());
+        (e2_1,_) = VarTransform.replaceExp(e2, extendrepl,NONE());
+        (e2_2,_) = VarTransform.replaceExp(e2_1, repl,NONE());
         expl1 = BackendDAEUtil.statesAndVarsExp(e1_2, vars);
         expl2 = BackendDAEUtil.statesAndVarsExp(e2_2, vars);
         expl = listAppend(expl1, expl2);
@@ -1632,8 +1634,8 @@ algorithm
       VarTransform.VariableReplacements repl,extendrepl;
     case ((e,(repl,extendrepl)))
       equation
-        e1 = VarTransform.replaceExp(e, extendrepl,NONE());
-        e2 = VarTransform.replaceExp(e1, repl,NONE());
+        (e1,_) = VarTransform.replaceExp(e, extendrepl, NONE());
+        (e2,_) = VarTransform.replaceExp(e1, repl, NONE());
       then
         ((e2,(repl,extendrepl)));
     case inTpl then inTpl;
@@ -1658,8 +1660,8 @@ algorithm
       DAE.Algorithm alg;
     case ((DAE.ALGORITHM_STMTS(statementLst=statementLst),(repl,extendrepl,vars,inouttpllst)))
       equation
-        statementLst_1 = BackendVarTransform.replaceStatementLst(statementLst,extendrepl);
-        statementLst_2 = BackendVarTransform.replaceStatementLst(statementLst_1,repl);
+        (statementLst_1,_) = BackendVarTransform.replaceStatementLst(statementLst,extendrepl);
+        (statementLst_2,_) = BackendVarTransform.replaceStatementLst(statementLst_1,repl);
         alg = DAE.ALGORITHM_STMTS(statementLst_2);
         inouttpl = BackendDAECreate.lowerAlgorithmInputsOutputs(vars,alg);
       then
@@ -2704,7 +2706,7 @@ algorithm
         Debug.fcall("dumpPPrepl", VarTransform.dumpReplacements, repl1);
         eqns_1 = BackendVarTransform.replaceEquations(lsteqns, repl1);
         lstarreqns1 = BackendVarTransform.replaceMultiDimEquations(lstarreqns, repl1);
-        algs_1 = BackendVarTransform.replaceAlgorithms(algs,repl1);
+        (algs_1,_) = BackendVarTransform.replaceAlgorithms(algs,repl1);
         eqns1 = BackendDAEUtil.listEquation(eqns_1);
         arreqns1 = listArray(lstarreqns1);
         algorithms1 = listArray(algs_1);

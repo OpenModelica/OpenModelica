@@ -112,6 +112,7 @@ protected import Absyn;
 protected import Algorithm;
 protected import BaseHashTable;
 protected import ComponentReference;
+protected import Debug;
 protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
@@ -207,9 +208,10 @@ algorithm
 
     case (DAE.VAR(cr,kind,dir,prot,tp,SOME(bindExp),dims,fl,st,source,attr,cmt,io)::dae,repl,condExpFunc)
       equation
-        (bindExp2) = replaceExp(bindExp, repl, condExpFunc);
+        (bindExp2,_) = replaceExp(bindExp, repl, condExpFunc);
         dae2 = applyReplacementsDAEElts(dae, repl, condExpFunc);
         attr = applyReplacementsVarAttr(attr, repl, condExpFunc);
+        /* TODO: Add operation to source */
       then DAE.VAR(cr,kind,dir,prot,tp,SOME(bindExp2),dims,fl,st,source,attr,cmt,io)::dae2;
 
     case (DAE.VAR(cr,kind,dir,prot,tp,NONE(),dims,fl,st,source,attr,cmt,io)::dae,repl,condExpFunc)
@@ -220,64 +222,73 @@ algorithm
 
     case (DAE.DEFINE(cr,e,source)::dae,repl,condExpFunc)
       equation
-        (e2) = replaceExp(e, repl, condExpFunc);
-        (DAE.CREF(cr2,_)) = replaceExp(Expression.crefExp(cr), repl, condExpFunc);
+        (e2,_) = replaceExp(e, repl, condExpFunc);
+        (DAE.CREF(cr2,_),_) = replaceExp(Expression.crefExp(cr), repl, condExpFunc);
         dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
+        /* TODO: Add operation to source */
       then DAE.DEFINE(cr2,e2,source)::dae2;
 
     case (DAE.INITIALDEFINE(cr,e,source)::dae,repl,condExpFunc)
       equation
-        (e2) = replaceExp(e, repl, condExpFunc);
-        (DAE.CREF(cr2,_)) = replaceExp(Expression.crefExp(cr), repl, condExpFunc);
+        (e2,_) = replaceExp(e, repl, condExpFunc);
+        (DAE.CREF(cr2,_),_) = replaceExp(Expression.crefExp(cr), repl, condExpFunc);
         dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
+        /* TODO: Add operation to source */
       then DAE.INITIALDEFINE(cr2,e2,source)::dae2;
 
     case (DAE.EQUEQUATION(cr,cr1,source)::dae,repl,condExpFunc)
       equation
-        (DAE.CREF(cr2,_)) = replaceExp(Expression.crefExp(cr), repl, condExpFunc);
-        (DAE.CREF(cr1_2,_)) = replaceExp(Expression.crefExp(cr1), repl, condExpFunc);
+        (DAE.CREF(cr2,_),_) = replaceExp(Expression.crefExp(cr), repl, condExpFunc);
+        (DAE.CREF(cr1_2,_),_) = replaceExp(Expression.crefExp(cr1), repl, condExpFunc);
         dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
+        /* TODO: Add operation to source */
       then DAE.EQUEQUATION(cr2,cr1_2,source)::dae2;
 
     case (DAE.EQUATION(e1,e2,source)::dae,repl,condExpFunc)
       equation
-        (e11) = replaceExp(e1, repl, condExpFunc);
-        (e22) = replaceExp(e2, repl, condExpFunc);
+        (e11,_) = replaceExp(e1, repl, condExpFunc);
+        (e22,_) = replaceExp(e2, repl, condExpFunc);
+        /* TODO: Add operation to source */
         dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
       then DAE.EQUATION(e11,e22,source)::dae2;
 
     case (DAE.ARRAY_EQUATION(idims,e1,e2,source)::dae,repl,condExpFunc)
       equation
-        (e11) = replaceExp(e1, repl, condExpFunc);
-        (e22) = replaceExp(e2, repl, condExpFunc);
+        (e11,_) = replaceExp(e1, repl, condExpFunc);
+        (e22,_) = replaceExp(e2, repl, condExpFunc);
+        /* TODO: Add operation to source */
         dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
       then DAE.ARRAY_EQUATION(idims,e11,e22,source)::dae2;
 
     case (DAE.INITIAL_ARRAY_EQUATION(idims,e1,e2,source)::dae,repl,condExpFunc)
       equation
-        (e11) = replaceExp(e1, repl, condExpFunc);
-        (e22) = replaceExp(e2, repl, condExpFunc);
+        (e11,_) = replaceExp(e1, repl, condExpFunc);
+        (e22,_) = replaceExp(e2, repl, condExpFunc);
+        /* TODO: Add operation to source */
         dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
       then DAE.INITIAL_ARRAY_EQUATION(idims,e11,e22,source)::dae2;
 
     case (DAE.WHEN_EQUATION(e1,elist,SOME(elt),source)::dae,repl,condExpFunc)
       equation
-        (e11) = replaceExp(e1, repl, condExpFunc);
-        {elt2}= applyReplacementsDAEElts({elt},repl,condExpFunc);
+        (e11,_) = replaceExp(e1, repl, condExpFunc);
+        /* TODO: Add operation to source */
+        {elt2} = applyReplacementsDAEElts({elt},repl,condExpFunc);
         elist2 = applyReplacementsDAEElts(elist,repl,condExpFunc);
         dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
       then DAE.WHEN_EQUATION(e11,elist2,SOME(elt2),source)::dae2;
 
     case (DAE.WHEN_EQUATION(e1,elist,NONE(),source)::dae,repl,condExpFunc)
       equation
-        (e11) = replaceExp(e1, repl, condExpFunc);
+        (e11,_) = replaceExp(e1, repl, condExpFunc);
+        /* TODO: Add operation to source */
         elist2 = applyReplacementsDAEElts(elist,repl,condExpFunc);
         dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
       then DAE.WHEN_EQUATION(e11,elist2,NONE(),source)::dae2;
 
     case (DAE.IF_EQUATION(conds,tbs,elist2,source)::dae,repl,condExpFunc)
       equation
-        conds_1 = Util.listMap2(conds,replaceExp, repl, condExpFunc);
+        (conds_1,_) = replaceExpList(conds, repl, condExpFunc, {}, false);
+        /* TODO: Add operation to source */
         tbs_1 = Util.listMap2(tbs,applyReplacementsDAEElts,repl,condExpFunc);
         elist22 = applyReplacementsDAEElts(elist2,repl,condExpFunc);
         dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
@@ -285,7 +296,8 @@ algorithm
 
     case (DAE.INITIAL_IF_EQUATION(conds,tbs,elist2,source)::dae,repl,condExpFunc)
       equation
-        conds_1 = Util.listMap2(conds,replaceExp, repl, condExpFunc);
+        (conds_1,_) = replaceExpList(conds, repl, condExpFunc, {}, false);
+        /* TODO: Add operation to source */
         tbs_1 = Util.listMap2(tbs,applyReplacementsDAEElts,repl,condExpFunc);
         elist22 = applyReplacementsDAEElts(elist2,repl,condExpFunc);
         dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
@@ -293,20 +305,23 @@ algorithm
 
     case (DAE.INITIALEQUATION(e1,e2,source)::dae,repl,condExpFunc)
       equation
-        (e11) = replaceExp(e1, repl, condExpFunc);
-        (e22) = replaceExp(e2, repl, condExpFunc);
+        (e11,_) = replaceExp(e1, repl, condExpFunc);
+        (e22,_) = replaceExp(e2, repl, condExpFunc);
+        /* TODO: Add operation to source */
         dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
       then DAE.INITIALEQUATION(e11,e22,source)::dae2;
 
     case (DAE.ALGORITHM(DAE.ALGORITHM_STMTS(stmts),source)::dae,repl,condExpFunc)
       equation
-        stmts2 = replaceEquationsStmts(stmts,repl,condExpFunc);
+        (stmts2,_) = replaceEquationsStmts(stmts,repl,condExpFunc);
+        /* TODO: Add operation to source */
         dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
       then DAE.ALGORITHM(DAE.ALGORITHM_STMTS(stmts2),source)::dae2;
 
     case (DAE.INITIALALGORITHM(DAE.ALGORITHM_STMTS(stmts),source)::dae,repl,condExpFunc)
       equation
-        stmts2 = replaceEquationsStmts(stmts,repl,condExpFunc);
+        (stmts2,_) = replaceEquationsStmts(stmts,repl,condExpFunc);
+        /* TODO: Add operation to source */
         dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
       then DAE.INITIALALGORITHM(DAE.ALGORITHM_STMTS(stmts2),source)::dae2;
 
@@ -324,35 +339,40 @@ algorithm
 
     case (DAE.ASSERT(e1,e2,source)::dae,repl,condExpFunc)
       equation
-        (e11) = replaceExp(e1, repl, condExpFunc);
-        (e22) = replaceExp(e2, repl, condExpFunc);
+        (e11,_) = replaceExp(e1, repl, condExpFunc);
+        (e22,_) = replaceExp(e2, repl, condExpFunc);
+        /* TODO: Add operation to source */
         dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
       then DAE.ASSERT(e11,e22,source)::dae2;
 
     case (DAE.TERMINATE(e1,source)::dae,repl,condExpFunc)
       equation
-        (e11) = replaceExp(e1, repl, condExpFunc);
+        (e11,_) = replaceExp(e1, repl, condExpFunc);
+        /* TODO: Add operation to source */
         dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
       then DAE.TERMINATE(e11,source)::dae2;
 
     case (DAE.REINIT(cr,e1,source)::dae,repl,condExpFunc)
       equation
-        (e11) = replaceExp(e1, repl, condExpFunc);
-        (DAE.CREF(cr2,_)) = replaceExp(Expression.crefExp(cr), repl, condExpFunc);
+        (e11,_) = replaceExp(e1, repl, condExpFunc);
+        /* TODO: Add operation to source */
+        (DAE.CREF(cr2,_),_) = replaceExp(Expression.crefExp(cr), repl, condExpFunc);
         dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
       then DAE.REINIT(cr2,e11,source)::dae2;
 
     case (DAE.COMPLEX_EQUATION(e1,e2,source)::dae,repl,condExpFunc)
       equation
-        (e11) = replaceExp(e1, repl, condExpFunc);
-        (e22) = replaceExp(e2, repl, condExpFunc);
+        (e11,_) = replaceExp(e1, repl, condExpFunc);
+        (e22,_) = replaceExp(e2, repl, condExpFunc);
+        /* TODO: Add operation to source */
         dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
       then DAE.COMPLEX_EQUATION(e11,e22,source)::dae2;
 
     case (DAE.INITIAL_COMPLEX_EQUATION(e1,e2,source)::dae,repl,condExpFunc)
       equation
-        (e11) = replaceExp(e1, repl, condExpFunc);
-        (e22) = replaceExp(e2, repl, condExpFunc);
+        (e11,_) = replaceExp(e1, repl, condExpFunc);
+        (e22,_) = replaceExp(e2, repl, condExpFunc);
+        /* TODO: Add operation to source */
         dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
       then DAE.INITIAL_COMPLEX_EQUATION(e11,e22,source)::dae2;
 
@@ -418,35 +438,39 @@ algorithm
       Option<DAE.Exp> eb;
       Option<Boolean> ip,fn;
 
-    case(SOME(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,(min,max),initial_,fixed,nominal,stateSelect,eb,ip,fn)),repl,condExpFunc) equation
-      (quantity) = replaceExpOpt(quantity,repl,condExpFunc);
-      (unit) = replaceExpOpt(unit,repl,condExpFunc);
-      (displayUnit) = replaceExpOpt(displayUnit,repl,condExpFunc);
-      (min) = replaceExpOpt(min,repl,condExpFunc);
-      (max) = replaceExpOpt(max,repl,condExpFunc);
-      (initial_) = replaceExpOpt(initial_,repl,condExpFunc);
-      (fixed) = replaceExpOpt(fixed,repl,condExpFunc);
-      (nominal) = replaceExpOpt(nominal,repl,condExpFunc);
+    case(SOME(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,(min,max),initial_,fixed,nominal,stateSelect,eb,ip,fn)),repl,condExpFunc)
+      equation
+        (quantity) = replaceExpOpt(quantity,repl,condExpFunc);
+        (unit) = replaceExpOpt(unit,repl,condExpFunc);
+        (displayUnit) = replaceExpOpt(displayUnit,repl,condExpFunc);
+        (min) = replaceExpOpt(min,repl,condExpFunc);
+        (max) = replaceExpOpt(max,repl,condExpFunc);
+        (initial_) = replaceExpOpt(initial_,repl,condExpFunc);
+        (fixed) = replaceExpOpt(fixed,repl,condExpFunc);
+        (nominal) = replaceExpOpt(nominal,repl,condExpFunc);
       then SOME(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,(min,max),initial_,fixed,nominal,stateSelect,eb,ip,fn));
 
-    case(SOME(DAE.VAR_ATTR_INT(quantity,(min,max),initial_,fixed,eb,ip,fn)),repl,condExpFunc) equation
-      (quantity) = replaceExpOpt(quantity,repl,condExpFunc);
-      (min) = replaceExpOpt(min,repl,condExpFunc);
-      (max) = replaceExpOpt(max,repl,condExpFunc);
-      (initial_) = replaceExpOpt(initial_,repl,condExpFunc);
-      (fixed) = replaceExpOpt(fixed,repl,condExpFunc);
+    case(SOME(DAE.VAR_ATTR_INT(quantity,(min,max),initial_,fixed,eb,ip,fn)),repl,condExpFunc)
+      equation
+        (quantity) = replaceExpOpt(quantity,repl,condExpFunc);
+        (min) = replaceExpOpt(min,repl,condExpFunc);
+        (max) = replaceExpOpt(max,repl,condExpFunc);
+        (initial_) = replaceExpOpt(initial_,repl,condExpFunc);
+        (fixed) = replaceExpOpt(fixed,repl,condExpFunc);
       then SOME(DAE.VAR_ATTR_INT(quantity,(min,max),initial_,fixed,eb,ip,fn));
 
-      case(SOME(DAE.VAR_ATTR_BOOL(quantity,initial_,fixed,eb,ip,fn)),repl,condExpFunc) equation
-      (quantity) = replaceExpOpt(quantity,repl,condExpFunc);
-      (initial_) = replaceExpOpt(initial_,repl,condExpFunc);
-      (fixed) = replaceExpOpt(fixed,repl,condExpFunc);
-      then SOME(DAE.VAR_ATTR_BOOL(quantity,initial_,fixed,eb,ip,fn));
+      case(SOME(DAE.VAR_ATTR_BOOL(quantity,initial_,fixed,eb,ip,fn)),repl,condExpFunc)
+        equation
+          (quantity) = replaceExpOpt(quantity,repl,condExpFunc);
+          (initial_) = replaceExpOpt(initial_,repl,condExpFunc);
+          (fixed) = replaceExpOpt(fixed,repl,condExpFunc);
+        then SOME(DAE.VAR_ATTR_BOOL(quantity,initial_,fixed,eb,ip,fn));
 
-      case(SOME(DAE.VAR_ATTR_STRING(quantity,initial_,eb,ip,fn)),repl,condExpFunc) equation
-      (quantity) = replaceExpOpt(quantity,repl,condExpFunc);
-      (initial_) = replaceExpOpt(initial_,repl,condExpFunc);
-      then SOME(DAE.VAR_ATTR_STRING(quantity,initial_,eb,ip,fn));
+      case(SOME(DAE.VAR_ATTR_STRING(quantity,initial_,eb,ip,fn)),repl,condExpFunc)
+        equation
+          (quantity) = replaceExpOpt(quantity,repl,condExpFunc);
+          (initial_) = replaceExpOpt(initial_,repl,condExpFunc);
+        then SOME(DAE.VAR_ATTR_STRING(quantity,initial_,eb,ip,fn));
 
       case (NONE(),repl,_) then NONE();
   end matchcontinue;
@@ -470,8 +494,8 @@ algorithm
       VariableReplacements repl;
     case (repl,cr1,cr2)
       equation
-        (DAE.CREF(cr1_1,_)) = replaceExp(Expression.crefExp(cr1), repl,NONE());
-        (DAE.CREF(cr2_1,_)) = replaceExp(Expression.crefExp(cr2), repl,NONE());
+        (DAE.CREF(cr1_1,_),_) = replaceExp(Expression.crefExp(cr1), repl,NONE());
+        (DAE.CREF(cr2_1,_),_) = replaceExp(Expression.crefExp(cr2), repl,NONE());
       then
         (cr1_1,cr2_1);
   end matchcontinue;
@@ -493,7 +517,7 @@ algorithm  (ocrefs):= matchcontinue (repl,increfs)
       case(_,{}) then {};
     case (repl,cr1::increfs)
       equation
-        (DAE.CREF(cr1_1,_)) = replaceExp(Expression.crefExp(cr1), repl,NONE());
+        (DAE.CREF(cr1_1,_),_) = replaceExp(Expression.crefExp(cr1), repl,NONE());
         ocrefs = applyReplacementList(repl,increfs);
       then
         cr1_1::ocrefs;
@@ -515,12 +539,13 @@ algorithm
     local
       DAE.Exp e1,e2;
       VariableReplacements repl;
+      Boolean b1,b2;
     case (repl,e1,e2)
       equation
-        (e1) = replaceExp(e1, repl,NONE());
-        (e2) = replaceExp(e2, repl,NONE());
-        e1 = ExpressionSimplify.simplify1(e1);
-        e2 = ExpressionSimplify.simplify1(e2);
+        (e1,b1) = replaceExp(e1, repl, NONE());
+        (e2,b2) = replaceExp(e2, repl, NONE());
+        e1 = Debug.bcallret1(b1,ExpressionSimplify.simplify1,e1,e1);
+        e2 = Debug.bcallret1(b2,ExpressionSimplify.simplify1,e2,e2);
       then
         (e1,e2);
   end matchcontinue;
@@ -600,12 +625,13 @@ public function replaceEquationsStmts "function: replaceEquationsStmts
   input VariableReplacements inVariableReplacements;
   input Option<FuncTypeExp_ExpToBoolean> condExpFunc;
   output list<DAE.Statement> outAlgorithmStatementLst;
+  output Boolean replacementPerformed;
   partial function FuncTypeExp_ExpToBoolean
     input DAE.Exp inExp;
     output Boolean outBoolean;
   end FuncTypeExp_ExpToBoolean;
 algorithm
-  outAlgorithmStatementLst:=
+  (outAlgorithmStatementLst,replacementPerformed) :=
   matchcontinue (inAlgorithmStatementLst,inVariableReplacements,condExpFunc)
     local
       DAE.Exp e_1,e_2,e,e2;
@@ -615,108 +641,126 @@ algorithm
       DAE.ExpType tp,tt;
       VariableReplacements repl;
       DAE.Statement x;
-      Boolean b1;
+      Boolean b1,b2,b3;
       Algorithm.Ident id1;
       DAE.ElementSource source;
       Absyn.Path fnName;
       Option<DAE.Statement> ew,ew_1;
       list<Integer> li;
       Algorithm.Else el,el_1;
-    case ({},_,_) then {};
+    case ({},_,_) then ({},false);
     case ((DAE.STMT_ASSIGN(type_ = tp,exp1 = e2,exp = e,source = source) :: xs),repl,condExpFunc)
       equation
-        e_1 = replaceExp(e, repl, condExpFunc);
-        e_2 = replaceExp(e2, repl, condExpFunc);
-        xs_1 = replaceEquationsStmts(xs, repl,condExpFunc);
+        (e_1,b1) = replaceExp(e, repl, condExpFunc);
+        (e_2,b2) = replaceExp(e2, repl, condExpFunc);
+        true = b1 or b2;
+        /* TODO: Add operation to source; do simplify? */
+        (xs_1,_) = replaceEquationsStmts(xs, repl,condExpFunc);
       then
-        (DAE.STMT_ASSIGN(tp,e_2,e_1,source) :: xs_1);
+        (DAE.STMT_ASSIGN(tp,e_2,e_1,source) :: xs_1,true);
     case ((DAE.STMT_TUPLE_ASSIGN(type_ = tp,expExpLst = expl1, exp = e,source = source) :: xs),repl,condExpFunc)
       equation
-        e_1 = replaceExp(e, repl, condExpFunc);
-        expl2 = Util.listMap2(expl1, replaceExp, repl, condExpFunc);
-        xs_1 = replaceEquationsStmts(xs, repl,condExpFunc);
+        (e_1,b1) = replaceExp(e, repl, condExpFunc);
+        (expl2,b2) = replaceExpList(expl1, repl, condExpFunc, {}, false);
+        true = b1 or b2;
+        /* TODO: Add operation to source; do simplify? */
+        (xs_1,_) = replaceEquationsStmts(xs, repl,condExpFunc);
       then
-        (DAE.STMT_TUPLE_ASSIGN(tp,expl2,e_1,source) :: xs_1);
+        (DAE.STMT_TUPLE_ASSIGN(tp,expl2,e_1,source) :: xs_1,true);
     case ((DAE.STMT_ASSIGN_ARR(type_ = tp,componentRef = cr, exp = e,source = source) :: xs),repl,condExpFunc)
       equation
-        e_1 = replaceExp(e, repl, condExpFunc);
-        (e_2 as DAE.CREF(cr_1,_)) = replaceExp(Expression.crefExp(cr), repl, condExpFunc);
-        xs_1 = replaceEquationsStmts(xs, repl,condExpFunc);
+        (e_1,b1) = replaceExp(e, repl, condExpFunc);
+        (e_2 as DAE.CREF(cr_1,_),b2) = replaceExp(Expression.crefExp(cr), repl, condExpFunc);
+        true = b1 or b2;
+        /* TODO: Add operation to source; do simplify? */
+        (xs_1,_) = replaceEquationsStmts(xs, repl,condExpFunc);
       then
-        (DAE.STMT_ASSIGN_ARR(tp,cr_1,e_1,source) :: xs_1);
-    case (((x as DAE.STMT_IF(exp=e,statementLst=stmts,else_ = el,source = source)) :: xs),repl,condExpFunc)
+        (DAE.STMT_ASSIGN_ARR(tp,cr_1,e_1,source) :: xs_1,true);
+    case ((DAE.STMT_ASSIGN_ARR(type_ = tp,componentRef = cr, exp = e,source = source) :: xs),repl,condExpFunc)
       equation
-        el_1 = replaceEquationsElse(el,repl,condExpFunc);
-        stmts2 = replaceEquationsStmts(stmts,repl,condExpFunc);
-        e_1 = replaceExp(e, repl, condExpFunc);
-        xs_1 = replaceEquationsStmts(xs, repl,condExpFunc);
+        (e_1,true) = replaceExp(e, repl, condExpFunc);
+        /* TODO: Add operation to source; do simplify? */
+        (xs_1,_) = replaceEquationsStmts(xs, repl,condExpFunc);
       then
-        (DAE.STMT_IF(e_1,stmts2,el_1,source) :: xs_1);
+        (DAE.STMT_ASSIGN_ARR(tp,cr,e_1,source) :: xs_1,true);
+    case (((DAE.STMT_IF(exp=e,statementLst=stmts,else_ = el,source = source)) :: xs),repl,condExpFunc)
+      equation
+        (el_1,b1) = replaceEquationsElse(el,repl,condExpFunc);
+        (stmts2,b2) = replaceEquationsStmts(stmts,repl,condExpFunc);
+        (e_1,b3) = replaceExp(e, repl, condExpFunc);
+        true = b1 or b2 or b3;
+        /* TODO: Add operation to source; do simplify? */
+        (xs_1,_) = replaceEquationsStmts(xs, repl,condExpFunc);
+      then
+        (DAE.STMT_IF(e_1,stmts2,el_1,source) :: xs_1,true);
     case (((x as DAE.STMT_FOR(type_=tp,iterIsArray=b1,iter=id1,range=e,statementLst=stmts,source = source)) :: xs),repl,condExpFunc)
       equation
-        stmts2 = replaceEquationsStmts(stmts,repl,condExpFunc);
-        e_1 = replaceExp(e, repl, condExpFunc);
-        xs_1 = replaceEquationsStmts(xs, repl,condExpFunc);
+        (stmts2,b1) = replaceEquationsStmts(stmts,repl,condExpFunc);
+        (e_1,b2) = replaceExp(e, repl, condExpFunc);
+        true = b1 or b2;
+        /* TODO: Add operation to source; do simplify? */
+        (xs_1,_) = replaceEquationsStmts(xs, repl,condExpFunc);
       then
-        (DAE.STMT_FOR(tp,b1,id1,e_1,stmts2,source) :: xs_1);
+        (DAE.STMT_FOR(tp,b1,id1,e_1,stmts2,source) :: xs_1,true);
     case (((x as DAE.STMT_WHILE(exp = e,statementLst=stmts,source = source)) :: xs),repl,condExpFunc)
       equation
-        stmts2 = replaceEquationsStmts(stmts,repl,condExpFunc);
-        e_1 = replaceExp(e, repl, condExpFunc);
-        xs_1 = replaceEquationsStmts(xs, repl,condExpFunc);
+        (stmts2,b1) = replaceEquationsStmts(stmts,repl,condExpFunc);
+        (e_1,b2) = replaceExp(e, repl, condExpFunc);
+        true = b1 or b2;
+        /* TODO: Add operation to source; do simplify? */
+        (xs_1,_) = replaceEquationsStmts(xs, repl,condExpFunc);
       then
-        (DAE.STMT_WHILE(e_1,stmts2,source) :: xs_1);
+        (DAE.STMT_WHILE(e_1,stmts2,source) :: xs_1,true);
     case (((x as DAE.STMT_WHEN(exp = e,statementLst=stmts,elseWhen=ew,helpVarIndices=li,source = source)) :: xs),repl,condExpFunc)
       equation
-        ew_1 = replaceOptEquationsStmts(ew,repl,condExpFunc);
-        stmts2 = replaceEquationsStmts(stmts,repl,condExpFunc);
-        e_1 = replaceExp(e, repl, condExpFunc);
-        xs_1 = replaceEquationsStmts(xs, repl,condExpFunc);
+        (ew_1,b1) = replaceOptEquationsStmts(ew,repl,condExpFunc);
+        (stmts2,b2) = replaceEquationsStmts(stmts,repl,condExpFunc);
+        (e_1,b3) = replaceExp(e, repl, condExpFunc);
+        true = b1 or b2 or b3;
+        /* TODO: Add operation to source; do simplify? */
+        (xs_1,_) = replaceEquationsStmts(xs, repl,condExpFunc);
       then
-        (DAE.STMT_WHEN(e_1,stmts2,ew_1,li,source) :: xs_1);
+        (DAE.STMT_WHEN(e_1,stmts2,ew_1,li,source) :: xs_1, true);
     case (((x as DAE.STMT_ASSERT(cond = e, msg=e2,source = source)) :: xs),repl,condExpFunc)
       equation
-        e_1 = replaceExp(e, repl, condExpFunc);
-        e_2 = replaceExp(e2, repl, condExpFunc);
-        xs_1 = replaceEquationsStmts(xs, repl,condExpFunc);
+        (e_1,b1) = replaceExp(e, repl, condExpFunc);
+        (e_2,b2) = replaceExp(e2, repl, condExpFunc);
+        true = b1 or b2;
+        /* TODO: Add operation to source; do simplify? */
+        (xs_1,_) = replaceEquationsStmts(xs, repl,condExpFunc);
       then
-        (DAE.STMT_ASSERT(e_1,e_2,source) :: xs_1);
+        (DAE.STMT_ASSERT(e_1,e_2,source) :: xs_1, true);
     case (((x as DAE.STMT_TERMINATE(msg = e,source = source)) :: xs),repl,condExpFunc)
       equation
-        e_1 = replaceExp(e, repl, condExpFunc);
-        xs_1 = replaceEquationsStmts(xs, repl,condExpFunc);
+        (e_1,true) = replaceExp(e, repl, condExpFunc);
+        /* TODO: Add operation to source; do simplify? */
+        (xs_1,_) = replaceEquationsStmts(xs, repl,condExpFunc);
       then
-        (DAE.STMT_TERMINATE(e_1,source) :: xs_1);
+        (DAE.STMT_TERMINATE(e_1,source) :: xs_1, true);
+        
     case (((x as DAE.STMT_REINIT(var = e,value=e2,source = source)) :: xs),repl,condExpFunc)
       equation
-        e_1 = replaceExp(e, repl, condExpFunc);
-        e_2 = replaceExp(e2, repl, condExpFunc);
-        xs_1 = replaceEquationsStmts(xs, repl,condExpFunc);
+        (e_1,b1) = replaceExp(e, repl, condExpFunc);
+        (e_2,b2) = replaceExp(e2, repl, condExpFunc);
+        true = b1 or b2;
+        /* TODO: Add operation to source; do simplify? */
+        (xs_1,_) = replaceEquationsStmts(xs, repl,condExpFunc);
       then
-        (DAE.STMT_REINIT(e_1,e_2,source) :: xs_1);
+        (DAE.STMT_REINIT(e_1,e_2,source) :: xs_1, true);
+        
     case ((x as DAE.STMT_NORETCALL(exp = e,source = source)) :: xs,repl,condExpFunc)
       equation
-        e_1 = replaceExp(e, repl, condExpFunc);
-        xs_1 = replaceEquationsStmts(xs, repl,condExpFunc);
+        (e_1,true) = replaceExp(e, repl, condExpFunc);
+        /* TODO: Add operation to source; do simplify? */
+        (xs_1,_) = replaceEquationsStmts(xs, repl,condExpFunc);
       then
-        (DAE.STMT_NORETCALL(e_1,source) :: xs_1);
-    case (((x as DAE.STMT_RETURN(source = source)) :: xs),repl,condExpFunc)
-      equation
-        xs_1 = replaceEquationsStmts(xs, repl,condExpFunc);
-      then
-        (x :: xs_1);
-
-    case (((x as DAE.STMT_BREAK(source = source)) :: xs),repl,condExpFunc)
-      equation
-        xs_1 = replaceEquationsStmts(xs, repl,condExpFunc);
-      then
-        (x :: xs_1);
+        (DAE.STMT_NORETCALL(e_1,source) :: xs_1, true);
+        
     case ((x :: xs),repl,condExpFunc)
       equation
-        print("Warning, not implemented in replace_equations_stmts\n");
-        xs_1 = replaceEquationsStmts(xs, repl,condExpFunc);
+        (xs_1, b1) = replaceEquationsStmts(xs, repl,condExpFunc);
       then
-        (x :: xs_1);
+        (x :: xs_1, b1);
   end matchcontinue;
 
 end replaceEquationsStmts;
@@ -727,27 +771,31 @@ Helper function for replaceEquationsStmts, replaces Algorithm.Else"
   input VariableReplacements repl;
   input Option<FuncTypeExp_ExpToBoolean> condExpFunc;
   output Algorithm.Else outElse;
+  output Boolean replacementPerformed;
   partial function FuncTypeExp_ExpToBoolean
     input DAE.Exp inExp;
     output Boolean outBoolean;
   end FuncTypeExp_ExpToBoolean;
-algorithm outElse := matchcontinue(inElse,repl,condExpFunc)
-  local
-    DAE.Exp e,e_1;
-    list<DAE.Statement> st,st_1;
-    Algorithm.Else el,el_1;
-  case(DAE.NOELSE(),_,_) then DAE.NOELSE();
-  case(DAE.ELSEIF(e,st,el),repl,condExpFunc)
-    equation
-      el_1 = replaceEquationsElse(el,repl,condExpFunc);
-      st_1 = replaceEquationsStmts(st,repl,condExpFunc);
-      e_1 = replaceExp(e, repl, condExpFunc);
-    then DAE.ELSEIF(e_1,st_1,el_1);
-  case(DAE.ELSE(st),repl,condExpFunc)
-    equation
-      st_1 = replaceEquationsStmts(st,repl,condExpFunc);
-    then DAE.ELSE(st_1);
-end matchcontinue;
+algorithm
+  (outElse,replacementPerformed) := matchcontinue(inElse,repl,condExpFunc)
+    local
+      DAE.Exp e,e_1;
+      list<DAE.Statement> st,st_1;
+      Algorithm.Else el,el_1;
+      Boolean b1,b2,b3;
+    case(DAE.ELSEIF(e,st,el),repl,condExpFunc)
+      equation
+        (el_1,b1) = replaceEquationsElse(el,repl,condExpFunc);
+        (st_1,b2) = replaceEquationsStmts(st,repl,condExpFunc);
+        (e_1,b3) = replaceExp(e, repl, condExpFunc);
+        true = b1 or b2 or b3;
+      then (DAE.ELSEIF(e_1,st_1,el_1),true);
+    case(DAE.ELSE(st),repl,condExpFunc)
+      equation
+        (st_1,true) = replaceEquationsStmts(st,repl,condExpFunc);
+      then (DAE.ELSE(st_1),true);
+    else (inElse,false);
+  end matchcontinue;
 end replaceEquationsElse;
 
 protected function replaceOptEquationsStmts "
@@ -756,18 +804,21 @@ Helper function for replaceEquationsStmts, replaces optional statement"
   input VariableReplacements inVariableReplacements;
   input Option<FuncTypeExp_ExpToBoolean> condExpFunc;
   output Option<DAE.Statement> outAlgorithmStatementLst;
+  output Boolean replacementPerformed;
   partial function FuncTypeExp_ExpToBoolean
     input DAE.Exp inExp;
     output Boolean outBoolean;
   end FuncTypeExp_ExpToBoolean;
-algorithm outAlgorithmStatementLst := matchcontinue(optStmt,inVariableReplacements,condExpFunc)
-  local DAE.Statement stmt,stmt2;
-  case(SOME(stmt),inVariableReplacements,condExpFunc)
-    equation
-    ({stmt2}) = replaceEquationsStmts({stmt},inVariableReplacements,condExpFunc);
-    then SOME(stmt2);
-  case(NONE(),_,_) then NONE();
-    end matchcontinue;
+algorithm
+  (outAlgorithmStatementLst,replacementPerformed) := matchcontinue(optStmt,inVariableReplacements,condExpFunc)
+    local
+      DAE.Statement stmt,stmt2;
+    case(SOME(stmt),inVariableReplacements,condExpFunc)
+      equation
+        ({stmt2},true) = replaceEquationsStmts({stmt},inVariableReplacements,condExpFunc);
+      then (SOME(stmt2),true);
+    else (optStmt,false);
+  end matchcontinue;
 end replaceOptEquationsStmts;
 
 public function dumpReplacements
@@ -1324,12 +1375,13 @@ algorithm
       VariableReplacements repl1,repl2;
       HashTable2.HashTable ht;
     case({},repl,_) then repl;
-    case(cr::crs,repl as REPLACEMENTS(hashTable=ht),singleRepl) equation
-      crDst = BaseHashTable.get(cr,ht);
-      crDst = replaceExp(crDst,singleRepl,NONE());
-      repl1=addReplacementNoTransitive(repl,cr,crDst) "add updated old rule";
-      repl2 = makeTransitive12(crs,repl1,singleRepl);
-    then repl2;
+    case(cr::crs,repl as REPLACEMENTS(hashTable=ht),singleRepl)
+      equation
+        crDst = BaseHashTable.get(cr,ht);
+        (crDst,_) = replaceExp(crDst,singleRepl,NONE());
+        repl1 = addReplacementNoTransitive(repl,cr,crDst) "add updated old rule";
+        repl2 = makeTransitive12(crs,repl1,singleRepl);
+      then repl2;
   end match;
 end makeTransitive12;
 
@@ -1351,7 +1403,7 @@ algorithm
       // for rule a->b1+..+bn, replace all b1 to bn's in the expression;
     case (repl ,src,dst)
       equation
-        (dst_1) = replaceExp(dst,repl,NONE());
+        (dst_1,_) = replaceExp(dst,repl,NONE());
       then
         (repl,src,dst_1);
         // replace Exp failed, keep old rule.
@@ -1426,9 +1478,11 @@ algorithm
   outExp := matchcontinue (inExp,repl,funcOpt)
   local DAE.Exp e;
     case(NONE(),_,_) then NONE();
-    case(SOME(e),repl,funcOpt) equation
-      e = replaceExp(e,repl,funcOpt);
-    then SOME(e);
+    case(SOME(e),repl,funcOpt)
+      equation
+        /* TODO: Propagate this boolean? */
+        (e,_) = replaceExp(e,repl,funcOpt);
+      then SOME(e);
   end matchcontinue;
 end replaceExpOpt;
 
@@ -1482,15 +1536,18 @@ public function replaceExpRepeated2 "help function to replaceExpRepeated"
 
 algorithm
   outExp := matchcontinue(e,repl,func,maxIter,i,equal)
-    local DAE.Exp e1,res;
+    local
+      DAE.Exp e1,res;
+      Boolean b;
     case(e,repl,func,maxIter,i,equal) equation
       true = i > maxIter;
     then e;
     case(e,repl,func,maxIter,i,true) then e;
-    case(e,repl,func,maxIter,i,false) equation
-      e1 = replaceExp(e,repl,func);
-      res = replaceExpRepeated2(e1,repl,func,maxIter,i+1,Expression.expEqual(e,e1));
-    then res;
+    case(e,repl,func,maxIter,i,false)
+      equation
+        (e1,b) = replaceExp(e,repl,func);
+        res = replaceExpRepeated2(e1,repl,func,maxIter,i+1,not b /*Expression.expEqual(e,e1)*/);
+      then res;
   end matchcontinue;
 end replaceExpRepeated2;
 
@@ -1506,12 +1563,13 @@ public function replaceExp "function: replaceExp
   input VariableReplacements inVariableReplacements;
   input Option<FuncTypeExp_ExpToBoolean> inFuncTypeExpExpToBooleanOption;
   output DAE.Exp outExp;
+  output Boolean replacementPerformed;
   partial function FuncTypeExp_ExpToBoolean
     input DAE.Exp inExp;
     output Boolean outBoolean;
   end FuncTypeExp_ExpToBoolean;
 algorithm
-  outExp:=
+  (outExp,replacementPerformed) :=
   matchcontinue (inExp,inVariableReplacements,inFuncTypeExpExpToBooleanOption)
     local
       DAE.ComponentRef cr;
@@ -1522,7 +1580,7 @@ algorithm
       DAE.Operator op;
       list<DAE.Exp> expl_1,expl;
       Absyn.Path path,p;
-      Boolean c,isTuple;
+      Boolean c,isTuple,c1,c2,c3;
       Integer b;
       Absyn.CodeNode a;
       String id;
@@ -1534,169 +1592,216 @@ algorithm
       Option<DAE.Exp> foldExp;
       DAE.ReductionInfo reductionInfo;
       DAE.ReductionIterators iters;
+      
+      // Note: Most of these functions check if a subexpression did a replacement.
+      // If it did not, we do not create a new copy of the expression (to save some memory). 
             
     case ((e as DAE.CREF(componentRef = cr,ty = t)),repl,cond)
       equation
         true = replaceExpCond(cond, e);
-        (e1) = getReplacement(repl, cr);
+        e1 = getReplacement(repl, cr);
         e2 = avoidDoubleHashLookup(e1,t);
       then
-        e2;
+        (e2,true);
     case ((e as DAE.BINARY(exp1 = e1,operator = op,exp2 = e2)),repl,cond)
       equation
         true = replaceExpCond(cond, e);
-        e1_1 = replaceExp(e1, repl, cond);
-        e2_1 = replaceExp(e2, repl, cond);
+        (e1_1,c1) = replaceExp(e1, repl, cond);
+        (e2_1,c2) = replaceExp(e2, repl, cond);
+        true = c1 or c2;
       then
-        DAE.BINARY(e1_1,op,e2_1);
+        (DAE.BINARY(e1_1,op,e2_1),true);
     case ((e as DAE.LBINARY(exp1 = e1,operator = op,exp2 = e2)),repl,cond)
       equation
         true = replaceExpCond(cond, e);
-        e1_1 = replaceExp(e1, repl, cond);
-        e2_1 = replaceExp(e2, repl, cond);
+        (e1_1,c1) = replaceExp(e1, repl, cond);
+        (e2_1,c2) = replaceExp(e2, repl, cond);
+        true = c1 or c2;
       then
-        DAE.LBINARY(e1_1,op,e2_1);
+        (DAE.LBINARY(e1_1,op,e2_1),true);
     case ((e as DAE.UNARY(operator = op,exp = e1)),repl,cond)
       equation
         true = replaceExpCond(cond, e);
-        e1_1 = replaceExp(e1, repl, cond);
+        (e1_1,true) = replaceExp(e1, repl, cond);
       then
-        DAE.UNARY(op,e1_1);
+        (DAE.UNARY(op,e1_1),true);
     case ((e as DAE.LUNARY(operator = op,exp = e1)),repl,cond)
       equation
         true = replaceExpCond(cond, e);
-        e1_1 = replaceExp(e1, repl, cond);
+        (e1_1,true) = replaceExp(e1, repl, cond);
       then
-        DAE.LUNARY(op,e1_1);
+        (DAE.LUNARY(op,e1_1),true);
     case (DAE.RELATION(exp1 = e1,operator = op,exp2 = e2, index=index_, optionExpisASUB= isExpisASUB),repl,cond)
       equation
-        e1_1 = replaceExp(e1, repl, cond);
-        e2_1 = replaceExp(e2, repl, cond);
+        (e1_1,c1) = replaceExp(e1, repl, cond);
+        (e2_1,c2) = replaceExp(e2, repl, cond);
+        true = c1 or c2;
       then
-        DAE.RELATION(e1_1,op,e2_1,index_,isExpisASUB);
+        (DAE.RELATION(e1_1,op,e2_1,index_,isExpisASUB),true);
     case ((e as DAE.IFEXP(expCond = e1,expThen = e2,expElse = e3)),repl,cond)
       equation
         true = replaceExpCond(cond, e);
-        e1_1 = replaceExp(e1, repl, cond);
-        e2_1 = replaceExp(e2, repl, cond);
-        e3_1 = replaceExp(e3, repl, cond);
+        (e1_1,c1) = replaceExp(e1, repl, cond);
+        (e2_1,c2) = replaceExp(e2, repl, cond);
+        (e3_1,c3) = replaceExp(e3, repl, cond);
+        true = c1 or c2 or c3;
       then
-        DAE.IFEXP(e1_1,e2_1,e3_1);
+        (DAE.IFEXP(e1_1,e2_1,e3_1),true);
       /* Special case when a variable in pre() is an alias for unary minus of another */
     case (DAE.CALL(path = path as Absyn.IDENT("pre"),expLst = {e as DAE.CREF(componentRef = _)},tuple_ = isTuple,builtin = c,ty=tp,inlineType=inlineType),repl,cond)
       equation
         true = replaceExpCond(cond, e);
-        DAE.UNARY(DAE.UMINUS(ety),e) = replaceExp(e, repl, cond);
+        (DAE.UNARY(DAE.UMINUS(ety),e),true) = replaceExp(e, repl, cond);
       then
-        DAE.UNARY(DAE.UMINUS(ety),DAE.CALL(path,{e},isTuple,c,tp,inlineType));
+        (DAE.UNARY(DAE.UMINUS(ety),DAE.CALL(path,{e},isTuple,c,tp,inlineType)),true);
     case ((e as DAE.CALL(path = path,expLst = expl,tuple_ = isTuple,builtin = c,ty=tp,inlineType=inlineType)),repl,cond)
       equation
         true = replaceExpCond(cond, e);
-        expl_1 = Util.listMap2(expl, replaceExp, repl, cond);
+        (expl_1,true) = replaceExpList(expl, repl, cond, {}, false);
       then
-        DAE.CALL(path,expl_1,isTuple,c,tp,inlineType);
+        (DAE.CALL(path,expl_1,isTuple,c,tp,inlineType),true);
     case ((e as DAE.ARRAY(ty = tp,scalar = c,array = expl)),repl,cond)
       equation
         true = replaceExpCond(cond, e);
-        expl_1 = Util.listMap2(expl, replaceExp, repl, cond);
+        (expl_1,true) = replaceExpList(expl, repl, cond, {}, false);
       then
-        DAE.ARRAY(tp,c,expl_1);
+        (DAE.ARRAY(tp,c,expl_1),true);
     case ((e as DAE.MATRIX(ty = t,integer = b,scalar = bexpl)),repl,cond)
       equation
         true = replaceExpCond(cond, e);
-        bexpl_1 = replaceExpMatrix(bexpl, repl, cond);
+        (bexpl_1,true) = replaceExpMatrix(bexpl, repl, cond, {}, false);
       then
-        DAE.MATRIX(t,b,bexpl_1);
+        (DAE.MATRIX(t,b,bexpl_1),true);
     case ((e as DAE.RANGE(ty = tp,exp = e1,expOption = NONE(),range = e2)),repl,cond)
       equation
         true = replaceExpCond(cond, e);
-        e1_1 = replaceExp(e1, repl, cond);
-        e2_1 = replaceExp(e2, repl, cond);
+        (e1_1,c1) = replaceExp(e1, repl, cond);
+        (e2_1,c2) = replaceExp(e2, repl, cond);
+        true = c1 or c2;
       then
-        DAE.RANGE(tp,e1_1,NONE(),e2_1);
+        (DAE.RANGE(tp,e1_1,NONE(),e2_1),true);
     case ((e as DAE.RANGE(ty = tp,exp = e1,expOption = SOME(e3),range = e2)),repl,cond)
       equation
         true = replaceExpCond(cond, e);
-        e1_1 = replaceExp(e1, repl, cond);
-        e2_1 = replaceExp(e2, repl, cond);
-        e3_1 = replaceExp(e3, repl, cond);
+        (e1_1,c1) = replaceExp(e1, repl, cond);
+        (e2_1,c2) = replaceExp(e2, repl, cond);
+        (e3_1,c3) = replaceExp(e3, repl, cond);
+        true = c1 or c2 or c3;
       then
-        DAE.RANGE(tp,e1_1,SOME(e3_1),e2_1);
+        (DAE.RANGE(tp,e1_1,SOME(e3_1),e2_1),true);
     case ((e as DAE.TUPLE(PR = expl)),repl,cond)
       equation
         true = replaceExpCond(cond, e);
-        expl_1 = Util.listMap2(expl, replaceExp, repl, cond);
+        (expl_1,true) = replaceExpList(expl, repl, cond, {}, false);
       then
-        DAE.TUPLE(expl_1);
+        (DAE.TUPLE(expl_1),true);
     case ((e as DAE.CAST(ty = tp,exp = e1)),repl,cond)
       equation
         true = replaceExpCond(cond, e);
-        e1_1 = replaceExp(e1, repl, cond);
+        (e1_1,true) = replaceExp(e1, repl, cond);
       then
-        DAE.CAST(tp,e1_1);
+        (DAE.CAST(tp,e1_1),true);
     case ((e as DAE.ASUB(exp = e1,sub = expl)),repl,cond)
       equation
         true = replaceExpCond(cond, e);
-        e1_1 = replaceExp(e1, repl, cond);
+        (e1_1,true) = replaceExp(e1, repl, cond);
       then
-        Expression.makeASUB(e1_1,expl);
+        (Expression.makeASUB(e1_1,expl),true);
     case ((e as DAE.SIZE(exp = e1,sz = NONE())),repl,cond)
       equation
         true = replaceExpCond(cond, e);
-        e1_1 = replaceExp(e1, repl, cond);
+        (e1_1,true) = replaceExp(e1, repl, cond);
       then
-        DAE.SIZE(e1_1,NONE());
+        (DAE.SIZE(e1_1,NONE()),true);
     case ((e as DAE.SIZE(exp = e1,sz = SOME(e2))),repl,cond)
       equation
         true = replaceExpCond(cond, e);
-        e1_1 = replaceExp(e1, repl, cond);
-        e2_1 = replaceExp(e2, repl, cond);
+        (e1_1,c1) = replaceExp(e1, repl, cond);
+        (e2_1,c2) = replaceExp(e2, repl, cond);
+        true = c1 or c2;
       then
-        DAE.SIZE(e1_1,SOME(e2_1));
+        (DAE.SIZE(e1_1,SOME(e2_1)),true);
     case (DAE.CODE(code = a,ty = tp),repl,cond)
       equation
         print("replace_exp on CODE not impl.\n");
       then
-        DAE.CODE(a,tp);
+        (DAE.CODE(a,tp),false);
     case ((e as DAE.REDUCTION(reductionInfo = reductionInfo,expr = e1,iterators = iters)),repl,cond)
       equation
         true = replaceExpCond(cond, e);
-        e1_1 = replaceExp(e1, repl, cond);
-        iters = Util.listMap2(iters, replaceExpIter, repl, cond);
-      then DAE.REDUCTION(reductionInfo,e1_1,iters);
+        (e1_1,c1) = replaceExp(e1, repl, cond);
+        (iters,true) = replaceExpIters(iters, repl, cond, {}, false);
+      then (DAE.REDUCTION(reductionInfo,e1_1,iters),true);
     case (e,repl,cond)
-      equation
-        //Debug.fprintln("failtrace", "- VarTransform.replaceExp failed on: " +& ExpressionDump.printExpStr(e));
-      then e;
+      then (e,false);
   end matchcontinue;
 end replaceExp;
 
-protected function replaceExpIter
-  input DAE.ReductionIterator iter;
+public function replaceExpList
+  input list<DAE.Exp> expl;
   input VariableReplacements repl;
   input Option<FuncTypeExp_ExpToBoolean> cond;
-  output DAE.ReductionIterator outIter;
+  input list<DAE.Exp> acc1;
+  input Boolean acc2;
+  output list<DAE.Exp> outExpl;
+  output Boolean replacementPerformed;
   partial function FuncTypeExp_ExpToBoolean
     input DAE.Exp inExp;
     output Boolean outBoolean;
   end FuncTypeExp_ExpToBoolean;
 algorithm
-  outIter := match (iter,repl,cond)
+  (outExpl,replacementPerformed) := match (expl,repl,cond,acc1,acc2)
+    local
+      DAE.Exp exp;
+      Boolean c;
+    case ({},_,_,acc1,acc2) then (listReverse(acc1),acc2);
+    case (exp::expl,repl,cond,acc1,acc2)
+      equation
+        (exp,c) = replaceExp(exp,repl,cond);
+        (acc1,acc2) = replaceExpList(expl,repl,cond,exp::acc1,c or acc2);
+      then (acc1,acc2);
+  end match;
+end replaceExpList;
+
+protected function replaceExpIters
+  input list<DAE.ReductionIterator> iters;
+  input VariableReplacements repl;
+  input Option<FuncTypeExp_ExpToBoolean> cond;
+  input list<DAE.ReductionIterator> acc1;
+  input Boolean acc2;
+  output list<DAE.ReductionIterator> outIter;
+  output Boolean replacementPerformed;
+  partial function FuncTypeExp_ExpToBoolean
+    input DAE.Exp inExp;
+    output Boolean outBoolean;
+  end FuncTypeExp_ExpToBoolean;
+algorithm
+  (outIter,replacementPerformed) := matchcontinue (iters,repl,cond,acc1,acc2)
     local
       String id;
       DAE.Exp exp,gexp;
       DAE.Type ty;
-    case (DAE.REDUCTIONITER(id,exp,NONE(),ty),repl,cond)
+      Boolean b1,b2;
+      DAE.ReductionIterator iter;
+    case ({},_,_,acc1,acc2) then (listReverse(acc1),acc2);
+    case (DAE.REDUCTIONITER(id,exp,NONE(),ty)::iters,repl,cond,acc1,_)
       equation
-        exp = replaceExp(exp, repl, cond);
-      then DAE.REDUCTIONITER(id,exp,NONE(),ty);
-    case (DAE.REDUCTIONITER(id,exp,SOME(gexp),ty),repl,cond)
+        (exp,true) = replaceExp(exp, repl, cond);
+        (iters,_) = replaceExpIters(iters,repl,cond,DAE.REDUCTIONITER(id,exp,NONE(),ty)::acc1,true);
+      then (iters,true);
+    case (DAE.REDUCTIONITER(id,exp,SOME(gexp),ty)::iters,repl,cond,acc1,acc2)
       equation
-        exp = replaceExp(exp, repl, cond);
-        gexp = replaceExp(gexp, repl, cond);
-      then DAE.REDUCTIONITER(id,exp,SOME(gexp),ty);
-  end match;
-end replaceExpIter;
+        (exp,b1) = replaceExp(exp, repl, cond);
+        (gexp,b2) = replaceExp(gexp, repl, cond);
+        true = b1 or b2;
+        (iters,_) = replaceExpIters(iters,repl,cond,DAE.REDUCTIONITER(id,exp,SOME(gexp),ty)::acc1,true);
+      then (iters,true);
+    case (iter::iters,repl,cond,acc1,acc2)
+      equation
+        (iters,acc2) = replaceExpIters(iters,repl,cond,iter::acc1,acc2);
+      then (iters,acc2);
+  end matchcontinue;
+end replaceExpIters;
 
 protected function replaceExpCond "function replaceExpCond(cond,e) => true &
 
@@ -1734,26 +1839,30 @@ protected function replaceExpMatrix "function: replaceExpMatrix
   input list<list<tuple<DAE.Exp, Boolean>>> inTplExpExpBooleanLstLst;
   input VariableReplacements inVariableReplacements;
   input Option<FuncTypeExp_ExpToBoolean> inFuncTypeExpExpToBooleanOption;
+  input list<list<tuple<DAE.Exp, Boolean>>> acc1;
+  input Boolean acc2;
   output list<list<tuple<DAE.Exp, Boolean>>> outTplExpExpBooleanLstLst;
+  output Boolean replacementPerformed;
   partial function FuncTypeExp_ExpToBoolean
     input DAE.Exp inExp;
     output Boolean outBoolean;
   end FuncTypeExp_ExpToBoolean;
 algorithm
-  outTplExpExpBooleanLstLst:=
-  match (inTplExpExpBooleanLstLst,inVariableReplacements,inFuncTypeExpExpToBooleanOption)
+  (outTplExpExpBooleanLstLst,replacementPerformed) :=
+  match (inTplExpExpBooleanLstLst,inVariableReplacements,inFuncTypeExpExpToBooleanOption,acc1,acc2)
     local
       VariableReplacements repl;
       Option<FuncTypeExp_ExpToBoolean> cond;
       list<tuple<DAE.Exp, Boolean>> e_1,e;
       list<list<tuple<DAE.Exp, Boolean>>> es_1,es;
-    case ({},repl,cond) then {};
-    case ((e :: es),repl,cond)
+      Boolean c;
+    case ({},repl,cond,acc1,acc2) then (listReverse(acc1),acc2);
+    case ((e :: es),repl,cond,acc1,acc2)
       equation
-        (e_1) = replaceExpMatrix2(e, repl, cond);
-        (es_1) = replaceExpMatrix(es, repl, cond);
+        (e_1,acc2) = replaceExpMatrix2(e, repl, cond, {}, acc2);
+        (acc1,acc2) = replaceExpMatrix(es, repl, cond, e_1::acc1, acc2);
       then
-        (e_1 :: es_1);
+        (acc1,acc2);
   end match;
 end replaceExpMatrix;
 
@@ -1765,27 +1874,30 @@ protected function replaceExpMatrix2 "function: replaceExpMatrix2
   input list<tuple<DAE.Exp, Boolean>> inTplExpExpBooleanLst;
   input VariableReplacements inVariableReplacements;
   input Option<FuncTypeExp_ExpToBoolean> inFuncTypeExpExpToBooleanOption;
+  input list<tuple<DAE.Exp, Boolean>> acc1;
+  input Boolean acc2;
   output list<tuple<DAE.Exp, Boolean>> outTplExpExpBooleanLst;
+  output Boolean replacementPerformed;
   partial function FuncTypeExp_ExpToBoolean
     input DAE.Exp inExp;
     output Boolean outBoolean;
   end FuncTypeExp_ExpToBoolean;
 algorithm
-  outTplExpExpBooleanLst:=
-  match (inTplExpExpBooleanLst,inVariableReplacements,inFuncTypeExpExpToBooleanOption)
+  (outTplExpExpBooleanLst,replacementPerformed) :=
+  match (inTplExpExpBooleanLst,inVariableReplacements,inFuncTypeExpExpToBooleanOption,acc1,acc2)
     local
       list<tuple<DAE.Exp, Boolean>> es_1,es;
       DAE.Exp e_1,e;
-      Boolean b;
+      Boolean b,c;
       VariableReplacements repl;
       Option<FuncTypeExp_ExpToBoolean> cond;
-    case ({},_,_) then {};
-    case (((e,b) :: es),repl,cond)
+    case ({},_,_,acc1,acc2) then (listReverse(acc1),acc2);
+    case (((e,b) :: es),repl,cond,acc1,acc2)
       equation
-        (es_1) = replaceExpMatrix2(es, repl, cond);
-        (e_1) = replaceExp(e, repl, cond);
+        (e_1,c) = replaceExp(e, repl, cond);
+        (acc1,acc2) = replaceExpMatrix2(es, repl, cond, (e_1,b)::acc1, c or acc2);
       then
-        ((e_1,b) :: es_1);
+        (acc1,acc2);
   end match;
 end replaceExpMatrix2;
 
