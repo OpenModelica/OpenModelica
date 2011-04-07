@@ -1164,16 +1164,15 @@ algorithm
       BackendDAE.Var v,va,v1,v2;
       DAE.ComponentRef cr,cra;
       DAE.Exp sa,sb,e;
+      Boolean b1,b2,b3;
       String s;
     case (v as BackendDAE.VAR(varName=cr),true,SOME(sa),va as BackendDAE.VAR(varName=cra),true,SOME(sb),negate)
       equation
-        e = negateif(negate,sb);
-        true = Expression.expEqual(sa,e);
-      then v;     
+        e = getNonZeroStart(sa,sb,negate);
+        v1 = BackendVariable.setVarStartValue(v,e);
+      then v1;     
     case (v as BackendDAE.VAR(varName=cr),true,SOME(sa),va as BackendDAE.VAR(varName=cra),true,SOME(sb),negate)
       equation
-        e = negateif(negate,sb);
-        false = Expression.expEqual(sa,e);
         print("Warning alias variables ");
         print(ComponentReference.printComponentRefStr(cr));
         s = Util.if_(negate," = -"," = ");
@@ -1188,13 +1187,11 @@ algorithm
       then v;
     case (v,true,SOME(sa),va,false,SOME(sb),negate)
       equation
-        e = Util.if_(negate,Expression.negate(sb),sb);
-        true = Expression.expEqual(sa,e);
-      then v;        
+        e = getNonZeroStart(sa,sb,negate);
+        v1 = BackendVariable.setVarStartValue(v,e);
+      then v1;     
     case (v as BackendDAE.VAR(varName=cr),true,SOME(sa),va as BackendDAE.VAR(varName=cra),false,SOME(sb),negate)
       equation
-        e = negateif(negate,sb);
-        false = Expression.expEqual(sa,e);
         print("Warning alias variables ");
         print(ComponentReference.printComponentRefStr(cr));
         s = Util.if_(negate," = -"," = ");
@@ -1224,7 +1221,7 @@ algorithm
       then v;   
     case (v,false,SOME(sa),va,true,SOME(sb),negate)
       equation
-        e = negateif(negate,sb);
+        e = getNonZeroStart(sa,sb,negate);
         v1 = BackendVariable.setVarStartValue(v,e);
         v2 = BackendVariable.setVarFixed(v1,true);
       then v2;
@@ -1234,14 +1231,11 @@ algorithm
       then v1;
     case (v,false,SOME(sa),va,false,SOME(sb),negate)
       equation
-        e = negateif(negate,sb);
-        true = Expression.expEqual(sa,e);
-      then
-        v;
+        e = getNonZeroStart(sa,sb,negate);
+        v1 = BackendVariable.setVarStartValue(v,e);
+      then v1;     
     case (v as BackendDAE.VAR(varName=cr),false,SOME(sa),va as BackendDAE.VAR(varName=cra),false,SOME(sb),negate)
       equation
-        e = negateif(negate,sb);
-        false = Expression.expEqual(sa,e);
         print("Warning alias variables ");
         print(ComponentReference.printComponentRefStr(cr));
         s = Util.if_(negate," = -"," = ");
@@ -1276,6 +1270,34 @@ algorithm
       then v; 
   end matchcontinue;
 end mergeStartFixed;
+
+protected function getNonZeroStart
+"autor: Frenkel TUD 2011-04"
+  input DAE.Exp exp1;
+  input DAE.Exp exp2;
+  input Boolean negate;
+  output DAE.Exp outExp;
+algorithm
+  outExp :=
+  matchcontinue (exp1,exp2,negate)
+    local
+      DAE.Exp ne;
+    case (exp1,exp2,negate) 
+      equation
+        true = Expression.isZero(exp2);
+      then exp1;
+    case (exp1,exp2,negate) 
+      equation
+        true = Expression.isZero(exp1);
+        ne = negateif(negate,exp2);
+      then ne;      
+    case (exp1,exp2,negate) 
+      equation
+        ne = negateif(negate,exp2);
+        true = Expression.expEqual(exp1,ne);
+      then ne;            
+  end matchcontinue;
+end getNonZeroStart;
 
 protected function negateif
 "autor: Frenkel TUD 2011-04"
