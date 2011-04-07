@@ -975,7 +975,7 @@ algorithm
         (cache, e2, _) = cevalIfConstant(cache, inEnv, e2, inProp, impl);
       then
         (inCache, DAE.RANGE(ty, e1, e3, e2));
-    case (_, _, _, _, _) then (inCache, inExp);
+    else (inCache, inExp);
   end matchcontinue;
 end cevalRangeIfConstant;
 

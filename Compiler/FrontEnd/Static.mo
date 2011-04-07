@@ -1777,7 +1777,6 @@ algorithm
         co = Types.constAnd(start_c, stop_c);
         (cache, ty) = elabRangeType(cache, inEnv, start_exp, NONE(), stop_exp, start_t, ety, inImpl);
         range_exp = DAE.RANGE(ety, start_exp, NONE(), stop_exp);
-        range_exp = ExpressionSimplify.simplify(range_exp);
       then
         (cache, range_exp, DAE.PROP(ty, co), st);
 
@@ -1795,7 +1794,6 @@ algorithm
         co = Types.constAnd(start_c, stop_c);
         (cache, ty) = elabRangeType(cache, inEnv, start_exp, SOME(step_exp), stop_exp, start_t, ety, inImpl);
         range_exp = DAE.RANGE(ety, start_exp, SOME(step_exp), stop_exp);
-        range_exp = ExpressionSimplify.simplify(range_exp);
       then
         (cache, range_exp, DAE.PROP(ty, co), st);
 

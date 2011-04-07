@@ -2201,6 +2201,7 @@ algorithm
         source = DAEUtil.createElementSource(Absyn.dummyInfo, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
 
         (cache,statements_1) = instStatements(cache, env, ih, pre, statements, source, SCode.NON_INITIAL(), impl, unrollForLoops);
+        (statements_1,_) = DAEUtil.traverseDAEEquationsStmts(statements_1,Expression.traverseSubexpressionsHelper,(ExpressionSimplify.simplifyWork,false));
         
         dae = DAE.DAE({DAE.ALGORITHM(DAE.ALGORITHM_STMTS(statements_1),source)});
       then
@@ -2260,6 +2261,7 @@ algorithm
         source = DAEUtil.createElementSource(Absyn.dummyInfo, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
         
         (cache,statements_1) = instStatements(cache, env, ih, pre, statements, source, SCode.INITIAL(), impl, unrollForLoops);
+        (statements_1,_) = DAEUtil.traverseDAEEquationsStmts(statements_1,Expression.traverseSubexpressionsHelper,(ExpressionSimplify.simplifyWork,false));
         
         dae = DAE.DAE({DAE.INITIALALGORITHM(DAE.ALGORITHM_STMTS(statements_1),source)});
       then
@@ -4425,7 +4427,6 @@ algorithm
     case (cache,env,ih,pre,SCode.ALG_ASSIGN(assignComponent=var,value=value,info=info),source,initial_,impl,unrollForLoops,_)
       equation
         (cache,e_1,eprop,_) = Static.elabExp(cache,env,value,impl,NONE(),true,pre,info);
-        e_1 = ExpressionSimplify.simplify(e_1);
         (cache,stmts) = instAssignment2(cache,env,ih,pre,var,e_1,eprop,info,source,initial_,impl,unrollForLoops);
       then (cache,stmts);
         

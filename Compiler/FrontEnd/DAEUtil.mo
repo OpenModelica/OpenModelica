@@ -3919,9 +3919,11 @@ algorithm
       equation
         ((e_1, extraArg)) = func((e, extraArg));
         failure(((DAE.CREF(_,_), _)) = func((Expression.crefExp(cr), extraArg)));
+        /* We need to pass this through because simplify/etc may scalarize the cref...
         true = RTOpts.debugFlag("failtrace");
         print(DAEDump.ppStatementStr(x));
         print("Warning, not allowed to set the componentRef to a expression in DAEUtil.traverseDAEEquationsStmts\n");
+        */
         (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
       then (DAE.STMT_ASSIGN_ARR(tp,cr,e_1,source) :: xs_1,extraArg);
         
