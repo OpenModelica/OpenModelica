@@ -63,29 +63,28 @@ void simulation_result_csv::emit()
   for (int i = 0; i < globalData->nAlgebraic; i++) if (!globalData->algebraicsFilterOutput[i])
     fprintf(fout, format, globalData->algebraics[i]);
   for (int i = 0; i < globalData->nAlias; i++) if (!globalData->aliasFilterOutput[i]){
-    if (((globalData->realAlias)[i]).negate){
+    if (((globalData->realAlias)[i]).negate)
         fprintf(fout, format, - *(((globalData->realAlias)[i].alias)));
-      }{
+    else
         fprintf(fout, format, *(((globalData->realAlias)[i].alias)));
-      }
   }
   for (int i = 0; i < globalData->intVariables.nAlgebraic; i++) if (!globalData->intVariables.algebraicsFilterOutput[i])
     fprintf(fout, formatint, globalData->intVariables.algebraics[i]);
   for (int i = 0; i < globalData->intVariables.nAlias; i++) if (!globalData->intVariables.aliasFilterOutput[i]){
-    if (((globalData->intVariables.alias)[i]).negate){
+    if (((globalData->intVariables.alias)[i]).negate)
         fprintf(fout, formatint, - *(((globalData->intVariables.alias)[i].alias)));
-      }{
+      else
         fprintf(fout, formatint, *(((globalData->intVariables.alias)[i].alias)));
-      }
+
   }
   for (int i = 0; i < globalData->boolVariables.nAlgebraic; i++) if (!globalData->boolVariables.algebraicsFilterOutput[i])
     fprintf(fout, formatbool, globalData->boolVariables.algebraics[i]);
   for (int i = 0; i < globalData->boolVariables.nAlias; i++) if (!globalData->boolVariables.aliasFilterOutput[i]){
-    if (((globalData->boolVariables.alias)[i]).negate){
+    if (((globalData->boolVariables.alias)[i]).negate)
         fprintf(fout, formatbool, - *(((globalData->boolVariables.alias)[i].alias)));
-      }{
+    else
         fprintf(fout, formatbool, *(((globalData->boolVariables.alias)[i].alias)));
-      }
+
   }
   fprintf(fout, "\n");
   rt_accumulate(SIM_TIMER_OUTPUT);
