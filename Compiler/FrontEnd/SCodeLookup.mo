@@ -247,7 +247,7 @@ public function lookupInBaseClasses
   output Absyn.Path outPath;
   output Absyn.Path outBaseClass;
   output Env outEnv;
-
+protected
   Env env;
   list<Extends> bcl;
 algorithm

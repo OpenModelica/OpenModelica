@@ -1755,7 +1755,7 @@ public uniontype AvlTree
   "The binary tree data structure"
   record AVLTREENODE
     Option<AvlTreeValue> value "Value";
-    Integer height "heigth of tree, used for balancing";
+    Integer height "height of tree, used for balancing";
     Option<AvlTree> left "left subtree";
     Option<AvlTree> right "right subtree";
   end AVLTREENODE;
