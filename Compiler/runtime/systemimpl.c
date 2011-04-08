@@ -560,10 +560,7 @@ int SystemImpl__spawnCall(const char* path, const char* str)
 #if defined(__MINGW32__) || defined(_MSC_VER)
   ret_val = status;
 #else
-  if (WIFEXITED(status)) /* Did the process exit normally? */
-    ret_val = WEXITSTATUS(status); /* Fetch the actual exit status */
-  else
-    ret_val = -1;
+  ret_val = 0;
 #endif
 
   if (debug) {
