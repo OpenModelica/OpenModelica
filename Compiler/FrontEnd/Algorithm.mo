@@ -731,4 +731,33 @@ algorithm
   end matchcontinue;
 end getAllExpsStmtsCollector;
 
+public function getStatementSource
+  input Statement stmt;
+  output DAE.ElementSource source;
+algorithm
+  source := match stmt
+    case DAE.STMT_ASSIGN(source=source) then source;
+    case DAE.STMT_TUPLE_ASSIGN(source=source) then source;
+    case DAE.STMT_ASSIGN_ARR(source=source) then source;
+    case DAE.STMT_IF(source=source) then source;
+    case DAE.STMT_FOR(source=source) then source;
+    case DAE.STMT_WHILE(source=source) then source;
+    case DAE.STMT_WHEN(source=source) then source;
+    case DAE.STMT_ASSERT(source=source) then source;
+    case DAE.STMT_TERMINATE(source=source) then source;
+    case DAE.STMT_REINIT(source=source) then source;
+    case DAE.STMT_NORETCALL(source=source) then source;
+    case DAE.STMT_RETURN(source=source) then source;
+    case DAE.STMT_BREAK(source=source) then source;
+    case DAE.STMT_FAILURE(source=source) then source;
+    case DAE.STMT_TRY(source=source) then source;
+    case DAE.STMT_CATCH(source=source) then source;
+    case DAE.STMT_THROW(source=source) then source;
+    else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {"Algorithm.getStatementSource"});
+      then fail();
+  end match;
+end getStatementSource;
+
 end Algorithm;

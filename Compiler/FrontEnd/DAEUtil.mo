@@ -5497,6 +5497,30 @@ algorithm
   end match;
 end addSymbolicTransformationSimplify;
 
+public function addSymbolicTransformationSolve
+  input Boolean add;
+  input DAE.ElementSource source;
+  input DAE.ComponentRef cr;
+  input DAE.Exp exp1;
+  input DAE.Exp exp2;
+  input DAE.Exp exp;
+  output DAE.ElementSource outSource;
+algorithm
+  outSource := match (add,source,cr,exp1,exp2,exp)
+    local
+      Absyn.Info info "the line and column numbers of the equations and algorithms this element came from";
+      list<Absyn.Path> typeLst "the absyn type of the element" ;
+      list<Absyn.Within> partOfLst "the models this element came from" ;
+      list<Option<DAE.ComponentRef>> instanceOptLst "the instance this element is part of" ;
+      list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectEquationOptLst "this element came from this connect" ;
+      list<DAE.SymbolicOperation> operations;
+
+    case (false,source,_,_,_,_) then source;
+    case (_,DAE.SOURCE(info, partOfLst, instanceOptLst, connectEquationOptLst, typeLst, operations),cr,exp1,exp2,exp)
+      then DAE.SOURCE(info, partOfLst, instanceOptLst, connectEquationOptLst, typeLst, DAE.SOLVE(cr,exp1,exp2,exp)::operations);
+  end match;
+end addSymbolicTransformationSolve;
+
 end DAEUtil;
 
 /* adrpo: 2010-10-04 never used by OpenModelica!

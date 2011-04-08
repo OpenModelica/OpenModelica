@@ -1231,6 +1231,12 @@ package DAE
       Exp source;
       Exp target;
     end SUBSTITUTION;
+    record SOLVE
+      ComponentRef cr;
+      Exp exp1;
+      Exp exp2;
+      Exp res;
+    end SOLVE;
     end SymbolicOperation;
 end DAE;
 
@@ -1853,5 +1859,12 @@ package DAEDump
   end ppStmtStr;
 
 end DAEDump;
+
+package Algorithm
+  function getStatementSource
+    input DAE.Statement stmt;
+    output DAE.ElementSource source;
+  end getStatementSource;
+end Algorithm;
 
 end SimCodeTV;

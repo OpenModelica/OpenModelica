@@ -50,7 +50,11 @@ end dumpAlias;
 template dumpEqs(list<SimEqSystem> eqs)
 ::= eqs |> eq =>
   match eq
-    case e as SES_RESIDUAL(__) then "RESIDUAL"
+    case e as SES_RESIDUAL(__) then
+      <<
+      residual: <%printExpStr(e.exp)%>;
+        <%dumpElementSource(e.source)%><%\n%>
+      >>
     case e as SES_SIMPLE_ASSIGN(__) then
       <<
       eq: <%crefStr(e.cref)%> = <%printExpStr(e.exp)%>;
@@ -59,11 +63,25 @@ template dumpEqs(list<SimEqSystem> eqs)
     case e as SES_ARRAY_CALL_ASSIGN(__) then "SES_ARRAY_CALL_ASSIGN"
     case e as SES_ALGORITHM(statements={}) then 'empty algorithm<%\n%>'
     case e as SES_ALGORITHM(__)
-      then (e.statements |> stmt => ppStmtStr(stmt,2))
+      then (e.statements |> stmt =>
+      <<
+      statement: <%ppStmtStr(stmt,2)%>
+        <%dumpElementSource(getStatementSource(stmt))%><%\n%>
+      >>
+      )
     case e as SES_LINEAR(__) then "SES_LINEAR"
-    case e as SES_NONLINEAR(__) then "SES_NONLINEAR"
+    case e as SES_NONLINEAR(__) then
+      <<
+      nonlinear: <%e.crefs |> cr => crefStr(cr)%>
+        <%dumpEqs(e.eqs)%><%\n%>
+      >>
     case e as SES_MIXED(__) then "SES_MIXED"
-    case e as SES_WHEN(__) then "SES_WHEN"
+    case e as SES_WHEN(__) then
+      <<
+      when: conditions
+        <%crefStr(e.left)%> = <%printExpStr(e.right)%>
+        <%dumpElementSource(e.source)%><%\n%>
+      >>
     else "UNKNOWN"
 end dumpEqs;
 
@@ -93,6 +111,13 @@ template dumpOperation(SymbolicOperation op, Info info)
   match op
     case SIMPLIFY(__) then '<%\n%>  simplify: <%printExpStr(before)%> => <%printExpStr(after)%>'
     case SUBSTITUTION(__) then '<%\n%>  subst: <%printExpStr(source)%> => <%printExpStr(target)%>'
+    case op as SOLVE(__) then
+      <<<%\n%>
+        solve:
+          <%printExpStr(op.exp1)%> = <%printExpStr(op.exp2)%>
+          =>
+          <%crefStr(op.cr)%> = <%printExpStr(op.res)%>
+      >>
     else Tpl.addSourceTemplateError("Unknown operation",info)
 end dumpOperation;
 

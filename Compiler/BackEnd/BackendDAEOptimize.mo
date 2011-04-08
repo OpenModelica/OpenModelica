@@ -1957,26 +1957,27 @@ algorithm
       BackendDAE.Equation eqn;
       Boolean b,negate;
     // a = const
-    case({i},length,pos,dae,mvars,mavars) equation 
-      vars = BackendVariable.daeVars(dae);
-      var = BackendVariable.getVarAt(vars,intAbs(i));
-      // no State
-      false = BackendVariable.isStateVar(var);
-      // try to solve the equation
-      pos_1 = pos-1;
-      eqns = BackendEquation.daeEqns(dae);
-      eqn = BackendDAEUtil.equationNth(eqns,pos_1);
-      BackendDAE.EQUATION(exp=e1,scalar=e2) = eqn;
-      // variable time not there
-      knvars = BackendVariable.daeKnVars(dae);
-      ((_,(false,_,_))) = Expression.traverseExpTopDown(e1, traversingTimeEqnsFinder, (false,vars,knvars));
-      ((_,(false,_,_))) = Expression.traverseExpTopDown(e2, traversingTimeEqnsFinder, (false,vars,knvars));
-      cr = BackendVariable.varCref(var);
-      cre = Expression.crefExp(cr);
-      (es,{}) = ExpressionSolve.solve(e1,e2,cre);
-      // constant or alias
-      (dae1,newvars,newvars1,b) = constOrAlias(var,cr,es,dae,mvars,mavars);
-    then (cr,i,es,dae1,newvars,newvars1,b);
+    case({i},length,pos,dae,mvars,mavars)
+      equation 
+        vars = BackendVariable.daeVars(dae);
+        var = BackendVariable.getVarAt(vars,intAbs(i));
+        // no State
+        false = BackendVariable.isStateVar(var);
+        // try to solve the equation
+        pos_1 = pos-1;
+        eqns = BackendEquation.daeEqns(dae);
+        eqn = BackendDAEUtil.equationNth(eqns,pos_1);
+        BackendDAE.EQUATION(exp=e1,scalar=e2) = eqn;
+        // variable time not there
+        knvars = BackendVariable.daeKnVars(dae);
+        ((_,(false,_,_))) = Expression.traverseExpTopDown(e1, traversingTimeEqnsFinder, (false,vars,knvars));
+        ((_,(false,_,_))) = Expression.traverseExpTopDown(e2, traversingTimeEqnsFinder, (false,vars,knvars));
+        cr = BackendVariable.varCref(var);
+        cre = Expression.crefExp(cr);
+        (es,{}) = ExpressionSolve.solve(e1,e2,cre);
+        // constant or alias
+        (dae1,newvars,newvars1,b) = constOrAlias(var,cr,es,dae,mvars,mavars);
+      then (cr,i,es,dae1,newvars,newvars1,b);
     // a = b 
     case({i,j},length,pos,dae,mvars,mavars) equation
       pos_1 = pos-1;
@@ -3532,6 +3533,7 @@ algorithm
         varexp = Expression.crefExp(cr);
 
         (expr,{}) = ExpressionSolve.solve(e1, e2, varexp);
+        source = DAEUtil.addSymbolicTransformationSolve(true, source, cr, e1, e2, expr);
         divexplst = Expression.extractDivExpFromExp(expr);
         (constexplst,nonconstexplst) = Util.listSplitOnTrue(divexplst,Expression.isConst);
         // check constexplst if equal 0

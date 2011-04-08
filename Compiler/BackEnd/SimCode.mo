@@ -4307,13 +4307,13 @@ protected function applyResidualReplacementsEqn
 algorithm
   outEqn := matchcontinue(inEqn, repl)
     local
-      DAE.Exp res_exp;
+      DAE.Exp res_exp,exp;
       DAE.ElementSource source;
       
-    case (SES_RESIDUAL(res_exp,source), _)
+    case (SES_RESIDUAL(exp,source), _)
       equation
-        /* TODO: Add symbolic operation to source */
-        (res_exp,true) = VarTransform.replaceExp(res_exp, repl, SOME(skipPreOperator));
+        (res_exp,true) = VarTransform.replaceExp(exp, repl, SOME(skipPreOperator));
+        source = DAEUtil.addSymbolicTransformationSubstitution(true,source,exp,res_exp);
       then
         SES_RESIDUAL(res_exp,source);
     else inEqn;
@@ -4626,20 +4626,22 @@ algorithm
       list<BackendDAE.Equation> rest,rest2;
       VarTransform.VariableReplacements repl;
       DAE.ElementSource source;
+      Boolean b1,b2;
     case ({},_) then {};
     case ((BackendDAE.EQUATION(exp = e1,scalar = e2,source = source) :: rest),repl)
       equation
         rest2 = generateTearingSystem1(rest,repl);
-        /* TODO: Add symbolic operation to source */
-        (e1_1,_) = VarTransform.replaceExp(e1, repl, SOME(skipPreOperator));
-        (e2_1,_) = VarTransform.replaceExp(e2, repl, SOME(skipPreOperator));
+        (e1_1,b1) = VarTransform.replaceExp(e1, repl, SOME(skipPreOperator));
+        (e2_1,b2) = VarTransform.replaceExp(e2, repl, SOME(skipPreOperator));
+        source = DAEUtil.addSymbolicTransformationSubstitution(b1,source,e1,e1_1);
+        source = DAEUtil.addSymbolicTransformationSubstitution(b2,source,e2,e2_1);
       then
         BackendDAE.EQUATION(e1_1,e2_1,source) :: rest2;
     case ((BackendDAE.RESIDUAL_EQUATION(exp = e1,source = source) :: rest),repl)
       equation
         rest2 = generateTearingSystem1(rest,repl);
-        /* TODO: Add symbolic operation to source */
-        (e1_1,_) = VarTransform.replaceExp(e1, repl, SOME(skipPreOperator));
+        (e1_1,b1) = VarTransform.replaceExp(e1, repl, SOME(skipPreOperator));
+        source = DAEUtil.addSymbolicTransformationSubstitution(b1,source,e1,e1_1);
       then
         BackendDAE.RESIDUAL_EQUATION(e1_1,source) :: rest2;
   end match;
