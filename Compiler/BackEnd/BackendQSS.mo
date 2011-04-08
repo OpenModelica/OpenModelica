@@ -1861,7 +1861,7 @@ end findAndRemoveElementInList;
 
 public function getAllVars
 "function: getAllVars 
- outputs a list with all variables and the subset of state variables contained in DAELow	
+ outputs a list with all variables and the subset of state variables contained in DAELow
  author: XF
 "
   input BackendDAE.BackendDAE inDAELow1;
@@ -1894,7 +1894,7 @@ end getAllVars;
 
 public function getStateIndices 
 "function: getStateIndices 
- finds the indices of the state indices inside a list with variables.	
+ finds the indices of the state indices inside a list with variables.
  author: XF
 "
 

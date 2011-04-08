@@ -1413,8 +1413,9 @@ algorithm
         e1 = BackendVariable.varNominalValue(var);
         e_1 = negateif(negate,e);
         esum = Expression.makeSum({e_1,e1});
-        eaverage = Expression.expDiv(esum,DAE.RCONST(2.0)); // Real is lecal because only Reals have nominal attribute 
-        var1 = BackendVariable.setVarNominalValue(var,ExpressionSimplify.simplify(eaverage));
+        eaverage = Expression.expDiv(esum,DAE.RCONST(2.0)); // Real is legal because only Reals have nominal attribute
+        (eaverage,_) = ExpressionSimplify.simplify(eaverage); 
+        var1 = BackendVariable.setVarNominalValue(var,eaverage);
       then var1;
     case (v as BackendDAE.VAR(values = attr),var as BackendDAE.VAR(values = attr1),negate)
       equation 
@@ -5232,32 +5233,32 @@ algorithm
     case (inExp1,inExp2,inOrgExp1 as DAE.CALL(path=Absyn.IDENT("sin")))
       equation
         e = DAE.BINARY(inExp1, DAE.MUL(DAE.ET_REAL()), DAE.CALL(Absyn.IDENT("cos"),{inExp2},false,true,DAE.ET_REAL(),DAE.NO_INLINE()));
-        e = ExpressionSimplify.simplify(e);
-    then e;
+        (e,_) = ExpressionSimplify.simplify(e);
+      then e;
     // cos(x)
     case (inExp1,inExp2,inOrgExp1 as DAE.CALL(path=Absyn.IDENT("cos")))
       equation
         e = DAE.UNARY(DAE.UMINUS(DAE.ET_REAL()), DAE.BINARY(inExp1,DAE.MUL(DAE.ET_REAL()), DAE.CALL(Absyn.IDENT("sin"),{inExp2},false,true,DAE.ET_REAL(),DAE.NO_INLINE())));
-        e = ExpressionSimplify.simplify(e);
-    then e;
+        (e,_) = ExpressionSimplify.simplify(e);
+      then e;
     // ln(x)
     case (inExp1,inExp2,inOrgExp1 as DAE.CALL(path=Absyn.IDENT("log")))
       equation
         e = DAE.BINARY(inExp1, DAE.DIV(DAE.ET_REAL()), inExp2);
-        e = ExpressionSimplify.simplify(e);
-    then e;
+        (e,_) = ExpressionSimplify.simplify(e);
+      then e;
     // log10(x)
     case (inExp1,inExp2,inOrgExp1 as DAE.CALL(path=Absyn.IDENT("log10")))          
       equation
         e = DAE.BINARY(inExp1, DAE.DIV(DAE.ET_REAL()), DAE.BINARY(inExp2, DAE.MUL(DAE.ET_REAL()), DAE.CALL(Absyn.IDENT("log"),{DAE.RCONST(10.0)},false,true,DAE.ET_REAL(),DAE.NO_INLINE())));
-        e = ExpressionSimplify.simplify(e);
-    then e;
+        (e,_) = ExpressionSimplify.simplify(e);
+      then e;
     // exp(x)
     case (inExp1,inExp2,inOrgExp1 as DAE.CALL(path=Absyn.IDENT("exp")))    
       equation
         e = DAE.BINARY(inExp1,DAE.MUL(DAE.ET_REAL()), DAE.CALL(Absyn.IDENT("exp"),{inExp2},false,true,DAE.ET_REAL(),DAE.NO_INLINE()));
-        e = ExpressionSimplify.simplify(e);
-    then e;
+        (e,_) = ExpressionSimplify.simplify(e);
+      then e;
     // sqrt(x)
     case (inExp1,inExp2,inOrgExp1 as DAE.CALL(path=Absyn.IDENT("sqrt")))    
       equation
@@ -5265,16 +5266,16 @@ algorithm
           DAE.BINARY(DAE.RCONST(1.0),DAE.DIV(DAE.ET_REAL()),
           DAE.BINARY(DAE.RCONST(2.0),DAE.MUL(DAE.ET_REAL()),
           DAE.CALL(Absyn.IDENT("sqrt"),{inExp2},false,true,DAE.ET_REAL(),DAE.NO_INLINE()))),DAE.MUL(DAE.ET_REAL()),inExp1);
-        e = ExpressionSimplify.simplify(e);
-    then e;
+        (e,_) = ExpressionSimplify.simplify(e);
+      then e;
    // abs(x)
     case (inExp1,inExp2,inOrgExp1 as DAE.CALL(path=Absyn.IDENT("abs")))          
       equation
         e = DAE.IFEXP(DAE.RELATION(inExp2,DAE.GREATEREQ(DAE.ET_REAL()),DAE.RCONST(0.0),-1,NONE()), inExp1, DAE.UNARY(DAE.UMINUS(DAE.ET_REAL()),inExp1));
-        e = ExpressionSimplify.simplify(e);
-    then e;
+        (e,_) = ExpressionSimplify.simplify(e);
+      then e;
     
- end match;
+  end match;
 end mergeCall;
 
 protected function mergeBin
@@ -5292,28 +5293,29 @@ algorithm
     case (inExp1,inExp2,inOp as DAE.ADD(_), _, _)
       equation
         e = DAE.BINARY(inExp1,inOp,inExp2);
-        e = ExpressionSimplify.simplify(e);
-    then e;
+        (e,_) = ExpressionSimplify.simplify(e);
+      then e;
     case (inExp1,inExp2,inOp as DAE.SUB(_), _, _)
       equation
         e = DAE.BINARY(inExp1,inOp,inExp2);
-        e = ExpressionSimplify.simplify(e);
-    then e;
+        (e,_) = ExpressionSimplify.simplify(e);
+      then e;
     case (inExp1,inExp2,DAE.MUL(et),inOrgExp1,inOrgExp2)
       equation
         e = DAE.BINARY(DAE.BINARY(inExp1, DAE.MUL(et), inOrgExp2), DAE.ADD(et), DAE.BINARY(inOrgExp1, DAE.MUL(et), inExp2));
-        e = ExpressionSimplify.simplify(e);
-    then e;
+        (e,_) = ExpressionSimplify.simplify(e);
+      then e;
     case (inExp1,inExp2,DAE.DIV(et),inOrgExp1,inOrgExp2)
       equation
         e = DAE.BINARY(DAE.BINARY(DAE.BINARY(inExp1, DAE.MUL(et), inOrgExp2), DAE.SUB(et), DAE.BINARY(inOrgExp1, DAE.MUL(et), inExp2)), DAE.DIV(et), DAE.BINARY(inOrgExp2, DAE.MUL(et), inOrgExp2));
-        e = ExpressionSimplify.simplify(e);
-    then e;
+        (e,_) = ExpressionSimplify.simplify(e);
+      then e;
     case (inExp1,inExp2,inOp as DAE.POW(et),inOrgExp1,inOrgExp2)
       equation
-      true = Expression.isConst(inOrgExp2);
-      e = DAE.BINARY(inExp1, DAE.MUL(et), DAE.BINARY(inOrgExp2, DAE.MUL(et), DAE.BINARY(inOrgExp1, DAE.POW(et), DAE.BINARY(inOrgExp2, DAE.SUB(et), DAE.RCONST(1.0)))));
-    then e;
+        true = Expression.isConst(inOrgExp2);
+        e = DAE.BINARY(inExp1, DAE.MUL(et), DAE.BINARY(inOrgExp2, DAE.MUL(et), DAE.BINARY(inOrgExp1, DAE.POW(et), DAE.BINARY(inOrgExp2, DAE.SUB(et), DAE.RCONST(1.0)))));
+        (e,_) = ExpressionSimplify.simplify(e);
+      then e;
     case (inExp1,inExp2,inOp as DAE.POW(et),inOrgExp1,inOrgExp2)
       equation
         z1 = DAE.BINARY(inExp1, DAE.DIV(et), inOrgExp1);
@@ -5323,8 +5325,8 @@ algorithm
         z1 = DAE.BINARY(z1, DAE.ADD(et), z2);
         z2 = DAE.BINARY(inOrgExp1, DAE.POW(et), inOrgExp2);
         z1 = DAE.BINARY(z1, DAE.MUL(et), z2);
-        e = ExpressionSimplify.simplify(z1);
-    then e;
+        (e,_) = ExpressionSimplify.simplify(z1);
+      then e;
  end matchcontinue;
 end mergeBin;
 
@@ -5350,8 +5352,8 @@ algorithm
     case (inExp1,inOp)
       equation
         e = DAE.UNARY(inOp,inExp1);
-        e = ExpressionSimplify.simplify(e);
-    then e;
+        (e,_) = ExpressionSimplify.simplify(e);
+      then e;
  end matchcontinue;
 end mergeUn;
 
@@ -5366,8 +5368,8 @@ algorithm
     case (inExp1,inType)
       equation
         e = DAE.CAST(inType,inExp1);
-        e = ExpressionSimplify.simplify(e);
-    then e;
+        (e,_) = ExpressionSimplify.simplify(e);
+      then e;
  end matchcontinue;
 end mergeCast;
 

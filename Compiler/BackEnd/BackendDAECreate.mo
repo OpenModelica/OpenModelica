@@ -895,7 +895,7 @@ algorithm
         e = Expression.crefExp(name);
         tp = Expression.typeof(e);
         cond = lowerMinMax1(ominmax,e,tp);
-        cond = ExpressionSimplify.simplify(cond);
+        (cond,_) = ExpressionSimplify.simplify(cond);
         // do not add if const true
         false = Expression.isConstTrue(cond);
         checkAssertCondition(cond,msg);
@@ -942,6 +942,7 @@ algorithm
       list<Option<DAE.Exp>> ominmax;
       String str;
       DAE.ExpType tp;
+      Boolean b;
     case(_,_,_,BackendDAE.CONST()) then {};
     case (attr as SOME(DAE.VAR_ATTR_REAL(nominal=SOME(e))),name,source,_)
       equation 
@@ -951,7 +952,7 @@ algorithm
         msg = DAE.SCONST(str);
         tp = Expression.typeof(e);
         cond = lowerMinMax1(ominmax,e,tp);
-        cond = ExpressionSimplify.simplify(cond);
+        (cond,_) = ExpressionSimplify.simplify(cond);
         // do not add if const true
         false = Expression.isConstTrue(cond);
         checkAssertCondition(cond,msg);
@@ -974,46 +975,59 @@ protected function lowerEqn
 algorithm
   outEquation :=  match (inElement)
     local
-      DAE.Exp e1,e2;
+      DAE.Exp e1,e2,e1_1,e2_1;
       DAE.ComponentRef cr1,cr2;
       DAE.ElementSource source "the element source";
+      Boolean b1,b2;
 
     case (DAE.EQUATION(exp = e1,scalar = e2,source = source))
       equation
-        e1 = ExpressionSimplify.simplify(e1);
-        e2 = ExpressionSimplify.simplify(e2);
+        (e1_1,b1) = ExpressionSimplify.simplify(e1);
+        (e2_1,b2) = ExpressionSimplify.simplify(e2);
+        source = DAEUtil.addSymbolicTransformationSimplify(b1,source,e1,e1_1);
+        source = DAEUtil.addSymbolicTransformationSimplify(b2,source,e2,e2_1);
       then
-        BackendDAE.EQUATION(e1,e2,source);
+        BackendDAE.EQUATION(e1_1,e2_1,source);
 
     case (DAE.INITIALEQUATION(exp1 = e1,exp2 = e2,source = source))
       equation
-        e1 = ExpressionSimplify.simplify(e1);
-        e2 = ExpressionSimplify.simplify(e2);
+        (e1_1,b1) = ExpressionSimplify.simplify(e1);
+        (e2_1,b2) = ExpressionSimplify.simplify(e2);
+        source = DAEUtil.addSymbolicTransformationSimplify(b1,source,e1,e1_1);
+        source = DAEUtil.addSymbolicTransformationSimplify(b2,source,e2,e2_1);
       then
-        BackendDAE.EQUATION(e1,e2,source);
+        BackendDAE.EQUATION(e1_1,e2_1,source);
 
     case (DAE.EQUEQUATION(cr1 = cr1, cr2 = cr2,source = source))
       equation
-        e1 = ExpressionSimplify.simplify(Expression.crefExp(cr1));
-        e2 = ExpressionSimplify.simplify(Expression.crefExp(cr2));
+        e1 = Expression.crefExp(cr1);
+        e2 = Expression.crefExp(cr2);
+        (e1_1,b1) = ExpressionSimplify.simplify(e1);
+        (e2_1,b2) = ExpressionSimplify.simplify(e2);
+        source = DAEUtil.addSymbolicTransformationSimplify(b1,source,e1,e1_1);
+        source = DAEUtil.addSymbolicTransformationSimplify(b2,source,e2,e2_1);
       then
-        BackendDAE.EQUATION(e1,e2,source);
+        BackendDAE.EQUATION(e1_1,e2_1,source);
 
     case (DAE.DEFINE(componentRef = cr1, exp = e2, source = source))
       equation
         e1 = Expression.crefExp(cr1);
-        e1 = ExpressionSimplify.simplify(e1);
-        e2 = ExpressionSimplify.simplify(e2);
+        (e1_1,b1) = ExpressionSimplify.simplify(e1);
+        (e2_1,b2) = ExpressionSimplify.simplify(e2);
+        source = DAEUtil.addSymbolicTransformationSimplify(b1,source,e1,e1_1);
+        source = DAEUtil.addSymbolicTransformationSimplify(b2,source,e2,e2_1);
       then
-        BackendDAE.EQUATION(e1,e2,source);
+        BackendDAE.EQUATION(e1_1,e2_1,source);
 
     case (DAE.INITIALDEFINE(componentRef = cr1, exp = e2, source = source))
       equation
         e1 = Expression.crefExp(cr1);
-        e1 = ExpressionSimplify.simplify(e1);
-        e2 = ExpressionSimplify.simplify(e2);
+        (e1_1,b1) = ExpressionSimplify.simplify(e1);
+        (e2_1,b2) = ExpressionSimplify.simplify(e2);
+        source = DAEUtil.addSymbolicTransformationSimplify(b1,source,e1,e1_1);
+        source = DAEUtil.addSymbolicTransformationSimplify(b2,source,e2,e2_1);
       then
-        BackendDAE.EQUATION(e1,e2,source);
+        BackendDAE.EQUATION(e1_1,e2_1,source);
   end match;
 end lowerEqn;
 
@@ -1031,6 +1045,7 @@ algorithm
       list<BackendDAE.Value> ds;
       list<DAE.Dimension> dims;
       DAE.ElementSource source;
+      Boolean b1,b2;
 
     case (DAE.ARRAY_EQUATION(dimension = dims, exp = e1, array = e2, source = source),funcs)
       equation
@@ -1038,8 +1053,10 @@ algorithm
         e2_1 = Inline.inlineExp(e2,(SOME(funcs),{DAE.NORM_INLINE()}));
         ((e1_2,_)) = extendArrExp((e1_1,SOME(funcs)));
         ((e2_2,_)) = extendArrExp((e2_1,SOME(funcs)));
-        e1_3 = ExpressionSimplify.simplify(e1_2);
-        e2_3 = ExpressionSimplify.simplify(e2_2);
+        (e1_3,b1) = ExpressionSimplify.simplify(e1_2);
+        (e2_3,b2) = ExpressionSimplify.simplify(e2_2);
+        source = DAEUtil.addSymbolicTransformationSimplify(b1,source,e1,e1_3);
+        source = DAEUtil.addSymbolicTransformationSimplify(b2,source,e2,e2_3);
         ds = Expression.dimensionsSizes(dims);
       then
         BackendDAE.MULTIDIM_EQUATION(ds,e1_3,e2_3,source);
@@ -1050,8 +1067,10 @@ algorithm
         e2_1 = Inline.inlineExp(e2,(SOME(funcs),{DAE.NORM_INLINE()}));
         ((e1_2,_)) = extendArrExp((e1_1,SOME(funcs)));
         ((e2_2,_)) = extendArrExp((e2_1,SOME(funcs)));
-        e1_3 = ExpressionSimplify.simplify(e1_2);
-        e2_3 = ExpressionSimplify.simplify(e2_2);
+        (e1_3,b1) = ExpressionSimplify.simplify(e1_2);
+        (e2_3,b2) = ExpressionSimplify.simplify(e2_2);
+        source = DAEUtil.addSymbolicTransformationSimplify(b1,source,e1,e1_3);
+        source = DAEUtil.addSymbolicTransformationSimplify(b2,source,e2,e2_3);
         ds = Expression.dimensionsSizes(dims);
       then
         BackendDAE.MULTIDIM_EQUATION(ds,e1_3,e2_3,source);
@@ -1154,7 +1173,7 @@ algorithm
       BackendDAE.Variables vars;
       Integer i;
       list<Integer> dimSize;
-      DAE.Exp left,right;
+      DAE.Exp left,right,left1,right1;
       DAE.ElementSource source;
       Boolean b1,b2;
     case (BackendDAE.MULTIDIM_EQUATION(dimSize=dimSize,left=left,right=right,source=source), vars, i, l)
@@ -1164,9 +1183,12 @@ algorithm
         true = b1 or b2;
         ((left,(vars,i,l,_))) = Expression.traverseExp(left,addFunctionRetVar3,(vars,i,l,source));
         ((right,(vars,i,l,_))) = Expression.traverseExp(right,addFunctionRetVar3,(vars,i,l,source));
-        left = ExpressionSimplify.simplify(left);
-        right = ExpressionSimplify.simplify(right);
-        result = BackendDAE.MULTIDIM_EQUATION(dimSize,left,right,source)::l;
+        (left1,b1) = ExpressionSimplify.simplify(left);
+        (right1,b2) = ExpressionSimplify.simplify(right);
+        source = DAEUtil.addSymbolicTransformationSimplify(b1,source,left,left1);
+        source = DAEUtil.addSymbolicTransformationSimplify(b2,source,right,right1);
+
+        result = BackendDAE.MULTIDIM_EQUATION(dimSize,left1,right1,source)::l;
     then
         (result,vars,i);
     case (hd, vars, i, l) then (hd::l, vars, i);
@@ -1277,53 +1299,62 @@ algorithm
       list<BackendDAE.Equation> complexEqs;
       list<BackendDAE.MultiDimEquation> arreqns;
       DAE.ElementSource source;
+      Boolean b1,b2;
 
     // normal first try to inline function calls and extend the equations
     case (DAE.COMPLEX_EQUATION(lhs = e1, rhs = e2,source = source),funcs)
       equation
-        e1 = ExpressionSimplify.simplify(e1);
-        e2 = ExpressionSimplify.simplify(e2);
-        ty = Expression.typeof(e1);
+        (e1_1,b1) = ExpressionSimplify.simplify(e1);
+        (e2_1,b2) = ExpressionSimplify.simplify(e2);
+        source = DAEUtil.addSymbolicTransformationSimplify(b1,source,e1,e1_1);
+        source = DAEUtil.addSymbolicTransformationSimplify(b2,source,e2,e2_1);
+        ty = Expression.typeof(e1_1);
         i = Expression.sizeOf(ty);
         // inline 
-        e1_1 = Inline.inlineExp(e1,(SOME(funcs),{DAE.NORM_INLINE()}));
-        e2_1 = Inline.inlineExp(e2,(SOME(funcs),{DAE.NORM_INLINE()}));
+        e1_1 = Inline.inlineExp(e1_1,(SOME(funcs),{DAE.NORM_INLINE()}));
+        e2_1 = Inline.inlineExp(e2_1,(SOME(funcs),{DAE.NORM_INLINE()}));
         // extend      
         ((complexEqs,arreqns)) = extendRecordEqns(BackendDAE.COMPLEX_EQUATION(-1,e1_1,e2_1,source),funcs);
       then
         (complexEqs,arreqns);
     case (DAE.COMPLEX_EQUATION(lhs = e1, rhs = e2,source = source),funcs)
       equation
-        e1 = ExpressionSimplify.simplify(e1);
-        e2 = ExpressionSimplify.simplify(e2);
+        (e1_1,b1) = ExpressionSimplify.simplify(e1);
+        (e2_1,b2) = ExpressionSimplify.simplify(e2);
+        source = DAEUtil.addSymbolicTransformationSimplify(b1,source,e1,e1_1);
+        source = DAEUtil.addSymbolicTransformationSimplify(b2,source,e2,e2_1);
         // create as many equations as the dimension of the record
-        ty = Expression.typeof(e1);
+        ty = Expression.typeof(e1_1);
         i = Expression.sizeOf(ty);
-        complexEqs = Util.listFill(BackendDAE.COMPLEX_EQUATION(-1,e1,e2,source), i);
+        complexEqs = Util.listFill(BackendDAE.COMPLEX_EQUATION(-1,e1_1,e2_1,source), i);
       then
         (complexEqs,{});
     // initial first try to inline function calls and extend the equations
     case (DAE.INITIAL_COMPLEX_EQUATION(lhs = e1, rhs = e2,source = source),funcs)
       equation
-        e1 = ExpressionSimplify.simplify(e1);
-        e2 = ExpressionSimplify.simplify(e2);
-        ty = Expression.typeof(e1);
+        (e1_1,b1) = ExpressionSimplify.simplify(e1);
+        (e2_1,b2) = ExpressionSimplify.simplify(e2);
+        source = DAEUtil.addSymbolicTransformationSimplify(b1,source,e1,e1_1);
+        source = DAEUtil.addSymbolicTransformationSimplify(b2,source,e2,e2_1);
+        ty = Expression.typeof(e1_1);
         i = Expression.sizeOf(ty);
         // inline 
-        e1_1 = Inline.inlineExp(e1,(SOME(funcs),{DAE.NORM_INLINE()}));
-        e2_1 = Inline.inlineExp(e2,(SOME(funcs),{DAE.NORM_INLINE()}));
+        e1_1 = Inline.inlineExp(e1_1,(SOME(funcs),{DAE.NORM_INLINE()}));
+        e2_1 = Inline.inlineExp(e2_1,(SOME(funcs),{DAE.NORM_INLINE()}));
         // extend      
         ((complexEqs,arreqns)) = extendRecordEqns(BackendDAE.COMPLEX_EQUATION(-1,e1_1,e2_1,source),funcs);
       then
         (complexEqs,arreqns);
     case (DAE.INITIAL_COMPLEX_EQUATION(lhs = e1, rhs = e2,source = source),funcs)
       equation
-        e1 = ExpressionSimplify.simplify(e1);
-        e2 = ExpressionSimplify.simplify(e2);
+        (e1_1,b1) = ExpressionSimplify.simplify(e1);
+        (e2_1,b2) = ExpressionSimplify.simplify(e2);
+        source = DAEUtil.addSymbolicTransformationSimplify(b1,source,e1,e1_1);
+        source = DAEUtil.addSymbolicTransformationSimplify(b2,source,e2,e2_1);
         // create as many equations as the dimension of the record
-        ty = Expression.typeof(e1);
+        ty = Expression.typeof(e1_1);
         i = Expression.sizeOf(ty);
-        complexEqs = Util.listFill(BackendDAE.COMPLEX_EQUATION(-1,e1,e2,source), i);
+        complexEqs = Util.listFill(BackendDAE.COMPLEX_EQUATION(-1,e1_1,e2_1,source), i);
       then
         (complexEqs,{});
     case (_,_)
@@ -2748,13 +2779,14 @@ algorithm
       DAE.FunctionTree funcs;
       DAE.Exp e1;
       list<DAE.ComponentRef> newStates;
-    case((DAE.CALL(Absyn.IDENT(name = "der"),{e1},tuple_ = false,builtin = true),(vars,funcs))) equation
-      e1 = Derive.differentiateExpTime(e1,(vars,funcs));
-      e1 = ExpressionSimplify.simplify(e1);
-      ((_,bt)) = statesExp((e1,BackendDAE.emptyBintree));
-      (newStates,_) = BackendDAEUtil.bintreeToList(bt);
-      vars = updateStatesVars(vars,newStates);
-    then ((e1,(vars,funcs)));
+    case((DAE.CALL(Absyn.IDENT(name = "der"),{e1},tuple_ = false,builtin = true),(vars,funcs)))
+      equation
+        e1 = Derive.differentiateExpTime(e1,(vars,funcs));
+        (e1,_) = ExpressionSimplify.simplify(e1);
+        ((_,bt)) = statesExp((e1,BackendDAE.emptyBintree));
+        (newStates,_) = BackendDAEUtil.bintreeToList(bt);
+        vars = updateStatesVars(vars,newStates);
+      then ((e1,(vars,funcs)));
     case tpl then tpl;
   end matchcontinue;
 end expandDerExp;
@@ -3816,7 +3848,7 @@ algorithm
     equation 
       ((e1_1,_)) = extendArrExp((e1,SOME(inFuncs)));
       ((e2_1,_)) = extendArrExp((e2,SOME(inFuncs)));
-      e2_2 = ExpressionSimplify.simplify(e2_1);
+      (e2_2,_) = ExpressionSimplify.simplify(e2_1);
       ds = Util.listMap(ad, Expression.dimensionSize);
     then
       (({},{BackendDAE.MULTIDIM_EQUATION(ds,e1_1,e2_2,source)}));
@@ -3827,7 +3859,7 @@ algorithm
       false = DAEUtil.expTypeComplex(tp);
       ((e1_1,_)) = extendArrExp((e1,SOME(inFuncs)));
       ((e2_1,_)) = extendArrExp((e2,SOME(inFuncs)));
-      e2_2 = ExpressionSimplify.simplify(e2_1);
+      (e2_2,_) = ExpressionSimplify.simplify(e2_1);
       eqn = BackendEquation.generateEQUATION((e1_1,e2_2),source);
     then
       (({eqn},{}));

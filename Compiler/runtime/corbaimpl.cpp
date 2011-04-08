@@ -134,11 +134,12 @@ int CorbaImpl__initialize()
 {
 #ifndef NOMICO
 #if defined(USE_OMNIORB)
-  char *dummyArgv[] = { "omc", "-NoResolve", "-IIOPAddr", "inet:127.0.0.1:0" /*,  "-ORBDebugLevel", "10", "-ORBIIOPBlocking" */ };
+  int argc=6;
+  char *dummyArgv[] = { "omc", "-NoResolve", "-IIOPAddr", "inet:127.0.0.1:0", "-ORBgiopMaxMsgSize", "10485760" /*,  "-ORBDebugLevel", "10", "-ORBIIOPBlocking" */ };
 #else
+  int argc=4;
   char *dummyArgv[] = { "omc", "-ORBNoResolve", "-ORBIIOPAddr", "inet:127.0.0.1:0" /*,  "-ORBDebugLevel", "10", "-ORBIIOPBlocking" */ };
 #endif
-  int argc=4;
   string omc_client_request_event_name   = "omc_client_request_event";
   string omc_return_value_ready_name     = "omc_return_value_ready";
   DWORD lastError = 0;

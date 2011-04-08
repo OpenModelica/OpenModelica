@@ -544,8 +544,8 @@ algorithm
       equation
         (e1,b1) = replaceExp(e1, repl, NONE());
         (e2,b2) = replaceExp(e2, repl, NONE());
-        e1 = Debug.bcallret1(b1,ExpressionSimplify.simplify1,e1,e1);
-        e2 = Debug.bcallret1(b2,ExpressionSimplify.simplify1,e2,e2);
+        (e1,_) = ExpressionSimplify.simplify1(e1);
+        (e2,_) = ExpressionSimplify.simplify1(e2);
       then
         (e1,e2);
   end matchcontinue;
@@ -1322,7 +1322,7 @@ algorithm
       equation
         (repl_1,src_1,dst_1) = makeTransitive1(repl, src, dst);
         (repl_2,src_2,dst_2) = makeTransitive2(repl_1, src_1, dst_1);
-        dst_3 = ExpressionSimplify.simplify1(dst_2) "to remove e.g. --a";
+        (dst_3,_) = ExpressionSimplify.simplify1(dst_2) "to remove e.g. --a";
       then
         (repl_2,src_2,dst_3);
   end match;

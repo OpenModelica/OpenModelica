@@ -358,7 +358,7 @@ algorithm
         (cache,ops) = operators(cache,op, env, t1, t2);
         (op_1,{e1_2,e2_2},rtype) = deoverload(ops,{(e1_1,t1),(e2_1,t2)},e,pre,info);
         exp_1 = replaceOperatorWithFcall(DAE.BINARY(e1_2,op_1,e2_2), c);
-        exp_1 = ExpressionSimplify.simplify(exp_1);
+        (exp_1,_) = ExpressionSimplify.simplify(exp_1);
         prop = DAE.PROP(rtype,c);
       then
         (cache,exp_1,prop,st_2);
@@ -446,7 +446,7 @@ algorithm
         Debug.fprintln("sei", "elab_exp CALL...") "Function calls PA. Only positional arguments are elaborated for now. TODO: Implement elaboration of named arguments." ;
         (cache,e_1,prop,st_1) = elabCall(cache,env, fn, args, nargs, impl, st,pre,info,Error.getNumErrorMessages());
         c = Types.propAllConst(prop);
-        e_1 = ExpressionSimplify.simplify(e_1);
+        (e_1,_) = ExpressionSimplify.simplify(e_1);
         Debug.fprintln("sei", "elab_exp CALL done");
       then
         (cache,e_1,prop,st_1);
@@ -508,7 +508,7 @@ algorithm
         (cache,mexp,DAE.PROP(t,c),dim1,dim2)
         = elabMatrixSemi(cache,env, ess, impl, st, havereal, nmax,doVect,pre,info);
         mexp = Util.if_(havereal,DAE.CAST(DAE.ET_ARRAY(DAE.ET_REAL(),{dim1,dim2}),mexp),mexp);
-        mexp=ExpressionSimplify.simplify(mexp); // to propagate cast down to scalar elts
+        (mexp,_) = ExpressionSimplify.simplify1(mexp); // to propagate cast down to scalar elts
         mexp_1 = elabMatrixToMatrixExp(mexp);
         t_1 = Types.unliftArray(t);
         t_2 = Types.unliftArray(t_1) "All elts promoted to matrix, therefore unlifting" ;
@@ -4494,7 +4494,7 @@ algorithm
 
         // Use the first of the returned values from the function.
         DAE.PROP(ty, c) :: _ = Types.propTuplePropList(p);
-        arrexp_1 = ExpressionSimplify.simplify(Expression.makeAsubAddIndex(arrexp_1, 1));
+        (arrexp_1,_) = ExpressionSimplify.simplify(Expression.makeAsubAddIndex(arrexp_1, 1));
         elt_ty = Types.arrayElementType(ty);
         tp = Types.elabType(ty);
         call = Expression.makeBuiltinCall(inFnName, {arrexp_1}, tp);
@@ -8381,7 +8381,7 @@ algorithm
       equation
         res = vectorizeCallScalar3(es, ss, dim_indx);
         asub_exp = DAE.ICONST(dim_indx);
-        asub_exp = ExpressionSimplify.simplify(Expression.makeASUB(e,{asub_exp}));
+        (asub_exp,_) = ExpressionSimplify.simplify1(Expression.makeASUB(e,{asub_exp}));
       then
         (asub_exp :: res);
   end match;

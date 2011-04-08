@@ -87,7 +87,7 @@ algorithm
         cr2 = crOrDerCr(crexp2);
         true = ComponentReference.crefEqual(cr1, cr2);
         false = Expression.expContains(rhs, crexp);
-        res_1 = ExpressionSimplify.simplify1(rhs);
+        (res_1,_) = ExpressionSimplify.simplify1(rhs);
       then
         (res_1,{});
 
@@ -98,7 +98,7 @@ algorithm
         cr2 = crOrDerCr(crexp2);
         true = ComponentReference.crefEqual(cr1, cr2);
         false = Expression.expContains(lhs, crexp);
-        res_1 = ExpressionSimplify.simplify1(lhs);
+        (res_1,_) = ExpressionSimplify.simplify1(lhs);
       then
         (res_1,{});
 
@@ -106,7 +106,7 @@ algorithm
     case (lhs,rhs,(cr as DAE.CREF(componentRef = _)))
       equation
         (res,asserts) = solve2(lhs, rhs, cr, false);
-        res_1 = ExpressionSimplify.simplify1(res);
+        (res_1,_) = ExpressionSimplify.simplify1(res);
       then
         (res_1,asserts);
     
@@ -114,7 +114,7 @@ algorithm
       equation
         (rhs,asserts) = solve(lhs,e2,cr);
         (res,asserts1) = solve(lhs,e3,cr);
-        res_1 = ExpressionSimplify.simplify1(DAE.IFEXP(e1,rhs,res));
+        (res_1,_) = ExpressionSimplify.simplify1(DAE.IFEXP(e1,rhs,res));
         asserts2 = listAppend(asserts,asserts1);
       then
         (res_1,asserts2);
@@ -123,7 +123,7 @@ algorithm
       equation
         (lhs,asserts) = solve(rhs,e2,cr);
         (res,asserts1) = solve(rhs,e3,cr);
-        res_1 = ExpressionSimplify.simplify1(DAE.IFEXP(e1,lhs,res));
+        (res_1,_) = ExpressionSimplify.simplify1(DAE.IFEXP(e1,lhs,res));
         asserts2 = listAppend(asserts,asserts1);
       then
         (res_1,asserts2);
@@ -173,7 +173,7 @@ algorithm
         cr2 = crOrDerCr(crexp2);
         true = ComponentReference.crefEqual(cr1, cr2);
         false = Expression.expContains(rhs, crexp);
-        res_1 = ExpressionSimplify.simplify1(rhs);
+        (res_1,_) = ExpressionSimplify.simplify1(rhs);
       then
         (res_1,{});
 
@@ -184,7 +184,7 @@ algorithm
         cr2 = crOrDerCr(crexp2);
         true = ComponentReference.crefEqual(cr1, cr2);
         false = Expression.expContains(lhs, crexp);
-        res_1 = ExpressionSimplify.simplify1(lhs);
+        (res_1,_) = ExpressionSimplify.simplify1(lhs);
       then
         (res_1,{});
 
@@ -199,7 +199,7 @@ algorithm
         e2 = Expression.makeConstOne(tp1);
         lhs = Expression.makeSum({rhs,e2});
         (res,asserts) = solve2(lhs, rhs, cr, true);
-        res_1 = ExpressionSimplify.simplify1(res);
+        (res_1,_) = ExpressionSimplify.simplify1(res);
       then
         (res_1,asserts);
 
@@ -207,7 +207,7 @@ algorithm
     case (lhs,rhs,(cr as DAE.CREF(componentRef = _)))
       equation
         (res,asserts) = solve2(lhs, rhs, cr, true);
-        res_1 = ExpressionSimplify.simplify1(res);
+        (res_1,_) = ExpressionSimplify.simplify1(res);
       then
         (res_1,asserts);
     
@@ -215,7 +215,7 @@ algorithm
       equation
         (rhs,asserts) = solveLin(lhs,e2,cr);
         (res,asserts1) = solveLin(lhs,e3,cr);
-        res_1 = ExpressionSimplify.simplify1(DAE.IFEXP(e1,rhs,res));
+        (res_1,_) = ExpressionSimplify.simplify1(DAE.IFEXP(e1,rhs,res));
         asserts2 = listAppend(asserts,asserts1);
       then
         (res_1,asserts2);
@@ -224,7 +224,7 @@ algorithm
       equation
         (rhs,asserts) = solveLin(rhs,e2,cr);
         (res,asserts1) = solveLin(rhs,e3,cr);
-        res_1 = ExpressionSimplify.simplify1(DAE.IFEXP(e1,rhs,res));
+        (res_1,_) = ExpressionSimplify.simplify1(DAE.IFEXP(e1,rhs,res));
         asserts2 = listAppend(asserts,asserts1);
       then
         (res_1,asserts2);
@@ -267,13 +267,13 @@ algorithm
         false = hasOnlyFactors(e1,e2);
         lhs = Expression.makeDiff(e1,e2);
         lhsder = Derive.differentiateExp(lhs, cr, linExp);
-        lhsder_1 = ExpressionSimplify.simplify(lhsder);
+        (lhsder_1,_) = ExpressionSimplify.simplify(lhsder);
         false = Expression.isZero(lhsder_1);
         false = Expression.expContains(lhsder_1, crexp);
         tp = Expression.typeof(crexp);
         (z,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
         ((lhszero,_)) = Expression.replaceExp(lhs, crexp, z);
-        lhszero_1 = ExpressionSimplify.simplify(lhszero);
+        (lhszero_1,_) = ExpressionSimplify.simplify(lhszero);
         rhs = Expression.negate(Expression.makeDiv(lhszero_1,lhsder_1));
       then
         (rhs,{});
@@ -320,7 +320,7 @@ algorithm
       equation
         lhs = Expression.makeDiff(e1,e2);
         lhsder = Derive.differentiateExp(lhs, cr, linExp);
-        lhsder_1 = ExpressionSimplify.simplify(lhsder);
+        (lhsder_1,_) = ExpressionSimplify.simplify(lhsder);
         true = Expression.expContains(lhsder_1, crexp);
         /*print("solve2 failed: Not linear: ");
         print(printExpStr(e1));
@@ -335,12 +335,13 @@ algorithm
       then
         fail();
     
+    /*
     case (e1,e2,(crexp as DAE.CREF(componentRef = cr)), linExp)
       equation
         lhs = Expression.makeDiff(e1,e2);
         lhsder = Derive.differentiateExp(lhs, cr, linExp);
-        lhsder_1 = ExpressionSimplify.simplify(lhsder);
-        /*print("solve2 failed: ");
+        (lhsder_1,_) = ExpressionSimplify.simplify(lhsder);
+        print("solve2 failed: ");
         print(printExpStr(e1));
         print(" = ");
         print(printExpStr(e2));
@@ -349,9 +350,10 @@ algorithm
         print("\n");
         print("derivative: ");
         print(printExpStr(lhsder_1));
-        print("\n");*/
+        print("\n");
       then
         fail();
+     */
   end matchcontinue;
 end solve2;
 

@@ -104,8 +104,8 @@ algorithm
       equation
         e1_1 = differentiateExpTime(e1, (timevars,inFunctions));
         e2_1 = differentiateExpTime(e2, (timevars,inFunctions));
-        e1_2 = ExpressionSimplify.simplify(e1_1);
-        e2_2 = ExpressionSimplify.simplify(e2_1);
+        (e1_2,_) = ExpressionSimplify.simplify(e1_1);
+        (e2_2,_) = ExpressionSimplify.simplify(e2_1);
       then
         (BackendDAE.EQUATION(e1_2,e2_2,source),al,inDerivedAlgs,ae,inDerivedMultiEqn,true);
     
@@ -130,8 +130,8 @@ algorithm
         BackendDAE.MULTIDIM_EQUATION(dimSize=dimSize,left=e1,right = e2,source=source1) = ae[i_1];
         e1_1 = differentiateExpTime(e1, (timevars,inFunctions));
         e2_1 = differentiateExpTime(e2, (timevars,inFunctions));
-        e1_2 = ExpressionSimplify.simplify(e1_1);
-        e2_2 = ExpressionSimplify.simplify(e2_1);
+        (e1_2,_) = ExpressionSimplify.simplify(e1_1);
+        (e2_2,_) = ExpressionSimplify.simplify(e2_1);
         ((_,(crefOrDerCref1,derCref1,_))) = Expression.traverseExp(e1_2,traversingcrefOrDerCrefFinder,({},{},timevars));
         ((_,(crefOrDerCref2,derCref2,_))) = Expression.traverseExp(e2_2,traversingcrefOrDerCrefFinder,({},{},timevars));
         crefOrDerCref11 = removeCrefFromDerCref(crefOrDerCref1,derCref1);
@@ -151,7 +151,7 @@ algorithm
         DAE.ALGORITHM_STMTS(statementLst= {DAE.STMT_TUPLE_ASSIGN(type_=exptyp,expExpLst=expExpLst,exp = e1,source=sourceStmt)}) = al[index+1];
         e1_1 = differentiateFunctionTime(e1,(timevars,inFunctions));
         e1_2 = Inline.inlineExp(e1_1,(SOME(inFunctions),{DAE.NORM_INLINE()}));
-        e2 = ExpressionSimplify.simplify(e1_2);
+        (e2,_) = ExpressionSimplify.simplify(e1_2);
         // outputs
         (expExpLst1,out1) = differentiateFunctionTimeOutputs(e1,e2,expExpLst,out,(timevars,inFunctions));
         // inputs

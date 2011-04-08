@@ -896,7 +896,7 @@ algorithm
         tp = Expression.typeof(e2);
         b = DAEUtil.expTypeArray(tp);
         op = Util.if_(b,DAE.SUB_ARR(tp),DAE.SUB(tp));
-        e = ExpressionSimplify.simplify(DAE.BINARY(e1,op,e2));
+        (e,_) = ExpressionSimplify.simplify(DAE.BINARY(e1,op,e2));
       then
         BackendDAE.RESIDUAL_EQUATION(e,source);
     
@@ -907,7 +907,7 @@ algorithm
         b = DAEUtil.expTypeArray(tp);
         op = Util.if_(b,DAE.SUB_ARR(tp),DAE.SUB(tp));
         lhs = Expression.makeCrefExp(cr,tp);
-        e = ExpressionSimplify.simplify(DAE.BINARY(lhs,op,exp));
+        (e,_) = ExpressionSimplify.simplify(DAE.BINARY(lhs,op,exp));
       then
         BackendDAE.RESIDUAL_EQUATION(e,source);
     

@@ -4189,7 +4189,7 @@ algorithm
       equation
         tp = Expression.typeof(e1);
         res_exp = Expression.expSub(e1,e2);
-        res_exp = ExpressionSimplify.simplify(res_exp);
+        (res_exp,_) = ExpressionSimplify.simplify(res_exp);
         res_exp = replaceDerOpInExp(res_exp);
         (eqSystemsRest,entrylst1) = createNonlinearResidualEquations(rest, aeqns, algs, inEntrylst);
       then
@@ -4197,7 +4197,7 @@ algorithm
         
     case ((BackendDAE.RESIDUAL_EQUATION(exp = e,source = source) :: rest), aeqns, algs, inEntrylst)
       equation
-        res_exp = ExpressionSimplify.simplify(e);
+        (res_exp,_) = ExpressionSimplify.simplify(e);
         res_exp = replaceDerOpInExp(res_exp);
         (eqSystemsRest,entrylst1) = createNonlinearResidualEquations(rest, aeqns, algs, inEntrylst);
       then
@@ -4212,7 +4212,7 @@ algorithm
         ad = Util.listMap(ds,Util.makeOption);
         (subs,entrylst1) = BackendDAEUtil.getArrayEquationSub(aindx,ad,inEntrylst);
         res_exp = Expression.applyExpSubscripts(res_exp,subs);
-        res_exp = ExpressionSimplify.simplify(res_exp);
+        (res_exp,_) = ExpressionSimplify.simplify(res_exp);
         res_exp = replaceDerOpInExp(res_exp);
         (eqSystemsRest,entrylst2) = createNonlinearResidualEquations(rest, aeqns, algs, entrylst1);
       then 
@@ -5258,7 +5258,7 @@ algorithm
     case (BackendDAE.RESIDUAL_EQUATION(exp=e), v, arrayEqs,inEntrylst)
       equation
         rhs_exp = BackendDAEUtil.getEqnsysRhsExp(e, v);
-        rhs_exp_1 = ExpressionSimplify.simplify(rhs_exp);
+        (rhs_exp_1,_) = ExpressionSimplify.simplify(rhs_exp);
       then (rhs_exp_1,inEntrylst);
         
     case (BackendDAE.EQUATION(exp=e1, scalar=e2), v, arrayEqs,inEntrylst)
@@ -5266,7 +5266,7 @@ algorithm
         new_exp = Expression.expSub(e1,e2);
         rhs_exp = BackendDAEUtil.getEqnsysRhsExp(new_exp, v);
         rhs_exp_1 = Expression.negate(rhs_exp);
-        rhs_exp_2 = ExpressionSimplify.simplify(rhs_exp_1);
+        (rhs_exp_2,_) = ExpressionSimplify.simplify(rhs_exp_1);
       then (rhs_exp_2,inEntrylst);
         
     case (BackendDAE.ARRAY_EQUATION(index=index), v, arrayEqs,inEntrylst)
@@ -5278,7 +5278,7 @@ algorithm
         new_exp1 = Expression.applyExpSubscripts(new_exp,subs);
         rhs_exp = BackendDAEUtil.getEqnsysRhsExp(new_exp1, v);
         rhs_exp_1 = Expression.negate(rhs_exp);
-        rhs_exp_2 = ExpressionSimplify.simplify(rhs_exp_1);
+        (rhs_exp_2,_) = ExpressionSimplify.simplify(rhs_exp_1);
       then (rhs_exp_2,entrylst1);
         
     case (dlowEq,_,_,_)
@@ -8052,10 +8052,10 @@ algorithm
     case(v,e1,e2)
       equation
         e = Expression.expSub(e1,e2);
-        res = ExpressionSimplify.simplify(e);
+        (res,_) = ExpressionSimplify.simplify(e);
         (f,rhs) = Expression.getTermsContainingX(res,Expression.crefExp(v));
-        (vTerm as DAE.CREF(_,_)) = ExpressionSimplify.simplify(f);
-        rhs = ExpressionSimplify.simplify(Expression.negate(rhs));
+        (vTerm as DAE.CREF(_,_),_) = ExpressionSimplify.simplify(f);
+        (rhs,_) = ExpressionSimplify.simplify(Expression.negate(rhs));
       then 
         (vTerm,rhs);
         

@@ -44,6 +44,7 @@ public import DAE;
 public import VarTransform;
 
 protected import Absyn;
+protected import DAEUtil;
 protected import Debug;
 protected import Expression;
 protected import ExpressionSimplify;
@@ -77,7 +78,7 @@ algorithm
       equation
         (expl1,true) = VarTransform.replaceExpList(expl,repl,NONE(),{},false);
         /* TODO: Add symbolic operation to source */
-        expl2 = Util.listMap(expl1,ExpressionSimplify.simplify);
+        expl2 = ExpressionSimplify.simplifyList(expl1,{});
         es_1 = replaceEquations(es,repl);
       then
          (BackendDAE.ARRAY_EQUATION(indx,expl2,source)::es_1);
@@ -87,9 +88,12 @@ algorithm
         (e1_1,b1) = VarTransform.replaceExp(e1, repl,NONE());
         (e2_1,b2) = VarTransform.replaceExp(e2, repl,NONE());
         true = b1 or b2;
-        /* TODO: Add symbolic operation to source */
-        e1_2 = ExpressionSimplify.simplify(e1_1);
-        e2_2 = ExpressionSimplify.simplify(e2_1);
+        source = DAEUtil.addSymbolicTransformationSubstitution(b1,source,e1,e1_1);
+        source = DAEUtil.addSymbolicTransformationSubstitution(b2,source,e2,e2_1);
+        (e1_2,b1) = ExpressionSimplify.simplify(e1_1);
+        (e2_2,b2) = ExpressionSimplify.simplify(e2_1);
+        source = DAEUtil.addSymbolicTransformationSimplify(b1,source,e1_1,e1_2);
+        source = DAEUtil.addSymbolicTransformationSimplify(b2,source,e2_1,e2_2);
         es_1 = replaceEquations(es, repl);
       then
         (BackendDAE.EQUATION(e1_2,e2_2,source) :: es_1);
@@ -99,8 +103,8 @@ algorithm
         (expl,b1) = VarTransform.replaceExpList(expl,repl,NONE(),{},false);
         (expl1,true) = VarTransform.replaceExpList(expl1,repl,NONE(),{},b1);
         /* TODO: Add symbolic operation to source */
-        expl = Util.listMap(expl,ExpressionSimplify.simplify);
-        expl1 = Util.listMap(expl1,ExpressionSimplify.simplify);
+        expl = ExpressionSimplify.simplifyList(expl,{});
+        expl1 = ExpressionSimplify.simplifyList(expl1,{}) "who decided to do this crap twice?";
         // original algorithm is done by replaceAlgorithms
         // inputs and ouputs are updated from DAELow.updateAlgorithmInputsOutputs       
         es_1 = replaceEquations(es, repl);
@@ -110,7 +114,8 @@ algorithm
     case ((BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e,source = source) :: es),repl)
       equation
         (e_1,true) = VarTransform.replaceExp(e, repl,NONE());
-        e_2 = ExpressionSimplify.simplify(e_1);
+        (e_2,_) = ExpressionSimplify.simplify(e_1);
+        source = DAEUtil.addSymbolicTransformationSubstitution(true,source,e,e_2);
         es_1 = replaceEquations(es, repl);
       then
         (BackendDAE.SOLVED_EQUATION(cr,e_2,source) :: es_1);
@@ -118,7 +123,8 @@ algorithm
     case ((BackendDAE.RESIDUAL_EQUATION(exp = e,source = source) :: es),repl)
       equation
         (e_1,true) = VarTransform.replaceExp(e, repl,NONE());
-        e_2 = ExpressionSimplify.simplify(e_1);
+        (e_2,_) = ExpressionSimplify.simplify(e_1);
+        source = DAEUtil.addSymbolicTransformationSubstitution(true,source,e,e_2);
         es_1 = replaceEquations(es, repl);
       then
         (BackendDAE.RESIDUAL_EQUATION(e_2,source) :: es_1);
@@ -155,7 +161,7 @@ algorithm
       equation
         (e1,b1) = VarTransform.replaceExp(e, repl,NONE());
         /* TODO: Add symbolic operation to source */
-        e2 = Debug.bcallret1(b1,ExpressionSimplify.simplify,e1,e1);
+        (e2,_) = ExpressionSimplify.simplify(e1);
         (DAE.CREF(cr1,_),_) = VarTransform.replaceExp(Expression.crefExp(cr),repl,NONE());
       then 
         BackendDAE.WHEN_EQ(i,cr1,e2,NONE());
@@ -167,7 +173,7 @@ algorithm
         /* TODO: Add symbolic operation to source */
         (e1,b1) = VarTransform.replaceExp(e, repl,NONE());
         e1 = DAE.UNARY(DAE.UMINUS(tp),e1);
-        e2 = Debug.bcallret1(b1,ExpressionSimplify.simplify,e1,e1);
+        (e2,_) = ExpressionSimplify.simplify(e1);
       then 
         BackendDAE.WHEN_EQ(i,cr1,e2,NONE());
 
@@ -176,7 +182,7 @@ algorithm
         elsePart2 = replaceWhenEquation(elsePart,repl);
         /* TODO: Add symbolic operation to source */
         (e1,b1) = VarTransform.replaceExp(e, repl,NONE());
-        e2 = Debug.bcallret1(b1,ExpressionSimplify.simplify,e1,e1);
+        (e2,_) = ExpressionSimplify.simplify(e1);
         (DAE.CREF(cr1,_),_) = VarTransform.replaceExp(Expression.crefExp(cr),repl,NONE());
       then BackendDAE.WHEN_EQ(i,cr1,e2,SOME(elsePart2));
 
@@ -188,7 +194,7 @@ algorithm
         (DAE.UNARY(DAE.UMINUS(tp),DAE.CREF(cr1,_)),_) = VarTransform.replaceExp(Expression.crefExp(cr),repl,NONE());
         (e1,b1) = VarTransform.replaceExp(e, repl,NONE());
         e1 = DAE.UNARY(DAE.UMINUS(tp),e1);
-        e2 = Debug.bcallret1(b1,ExpressionSimplify.simplify,e1,e1);
+        (e2,_) = ExpressionSimplify.simplify(e1);
       then BackendDAE.WHEN_EQ(i,cr1,e2,SOME(elsePart2));
 
   end matchcontinue;
@@ -321,17 +327,18 @@ Helper function for replaceWhenEquation, moves possible unary minus from lefthan
   input DAE.Exp lhs;
   input DAE.Exp rhs;
   output DAE.Exp lhsFixed,rhsFixed;
-algorithm (lhsFixed,rhsFixed) := matchcontinue(lhs,rhs)
+algorithm
+  (lhsFixed,rhsFixed) := matchcontinue(lhs,rhs)
   local
     DAE.ExpType tp;
     DAE.Exp e1,e2;
   case((e1 as DAE.CREF(_,_)),e2) then (e1,e2);
   case(DAE.UNARY(DAE.UMINUS(tp),e1),e2)
     equation
-      e2 = ExpressionSimplify.simplify(DAE.UNARY(DAE.UMINUS(tp),e2));
+      (e2,_) = ExpressionSimplify.simplify(DAE.UNARY(DAE.UMINUS(tp),e2));
     then
       (e1,e2);
-end matchcontinue;
+  end matchcontinue;
 end shiftUnaryMinusToRHS;
 
 /*
@@ -390,8 +397,8 @@ algorithm
         (e1_1,b1) = VarTransform.replaceExp(e1, repl,NONE());
         (e2_1,b2) = VarTransform.replaceExp(e2, repl,NONE());
         /* TODO: Add symbolic operation to source */
-        e1_2 = ExpressionSimplify.simplify(e1_1);
-        e2_2 = ExpressionSimplify.simplify(e2_1);
+        (e1_2,_) = ExpressionSimplify.simplify(e1_1);
+        (e2_2,_) = ExpressionSimplify.simplify(e2_1);
         es_1 = replaceMultiDimEquations(es, repl);
       then
         (BackendDAE.MULTIDIM_EQUATION(dims,e1_2,e2_2,source) :: es_1);
@@ -458,9 +465,9 @@ algorithm
       equation
         (e1_1,b1) = VarTransform.replaceExp(e1, repl,NONE());
         (e2_1,b2) = VarTransform.replaceExp(e2, repl,NONE());
-        e1_2 = Debug.bcallret1(b1,ExpressionSimplify.simplify,e1_1,e1_1);
-        e2_2 = Debug.bcallret1(b2,ExpressionSimplify.simplify,e2_1,e2_1);
         true = b1 or b2;
+        (e1_2,_) = ExpressionSimplify.simplify(e1_1);
+        (e2_2,_) = ExpressionSimplify.simplify(e2_1);
         /* TODO: Add symbolic operation to source */
         (es_1,_) = replaceStatementLst(es, repl);
       then
@@ -472,7 +479,7 @@ algorithm
         (e2_1,b2) = VarTransform.replaceExp(e2, repl,NONE());
         true = b1 or b2;
         /* TODO: Add symbolic operation to source */
-        e2_2 = Debug.bcallret1(b2,ExpressionSimplify.simplify,e2_1,e2_1);
+        (e2_2,_) = ExpressionSimplify.simplify(e2_1);
         (es_1,_) = replaceStatementLst(es, repl);
       then
         (DAE.STMT_TUPLE_ASSIGN(type_,expExpLst_1,e2_2,source):: es,true);
@@ -481,7 +488,7 @@ algorithm
       equation
         (e1_1,true) = VarTransform.replaceExp(e1, repl,NONE());
         /* TODO: Add symbolic operation to source */
-        e1_2 = ExpressionSimplify.simplify(e1_1);
+        (e1_2,_) = ExpressionSimplify.simplify(e1_1);
         (es_1,_) = replaceStatementLst(es, repl);
       then
         (DAE.STMT_ASSIGN_ARR(type_,cr,e1_2,source):: es_1,true);
@@ -490,9 +497,9 @@ algorithm
       equation
         (statementLst_1,b1) = replaceStatementLst(statementLst, repl);
         (e1_1,b2) = VarTransform.replaceExp(e1, repl,NONE());
-        e1_2 = Debug.bcallret1(b2,ExpressionSimplify.simplify,e1_1,e1_1);
         (else_1,b3) = replaceElse(else_,repl);
         true = b1 or b2 or b3;
+        (e1_2,_) = ExpressionSimplify.simplify(e1_1);
         /* TODO: Add symbolic operation to source */
         (es_1,_) = replaceStatementLst(es, repl);
       then
@@ -502,8 +509,8 @@ algorithm
       equation
         (statementLst_1,b1) = replaceStatementLst(statementLst, repl);
         (e1_1,b2) = VarTransform.replaceExp(e1, repl,NONE());
-        e1_2 = Debug.bcallret1(b2,ExpressionSimplify.simplify,e1_1,e1_1);
         true = b1 or b2;
+        (e1_2,_) = ExpressionSimplify.simplify(e1_1);
         /* TODO: Add symbolic operation to source */
         (es_1,_) = replaceStatementLst(es, repl);
       then
@@ -513,8 +520,8 @@ algorithm
       equation
         (statementLst_1,b1) = replaceStatementLst(statementLst, repl);
         (e1_1,b2) = VarTransform.replaceExp(e1, repl,NONE());
-        e1_2 = Debug.bcallret1(b2,ExpressionSimplify.simplify,e1_1,e1_1);
         true = b1 or b2;
+        (e1_2,_) = ExpressionSimplify.simplify(e1_1);
         /* TODO: Add symbolic operation to source */
         (es_1,_) = replaceStatementLst(es, repl);
       then
@@ -524,8 +531,8 @@ algorithm
       equation
         (statementLst_1,b1) = replaceStatementLst(statementLst, repl);
         (e1_1,b2) = VarTransform.replaceExp(e1, repl,NONE());
-        e1_2 = Debug.bcallret1(b2,ExpressionSimplify.simplify,e1_1,e1_1);
         true = b1 or b2;
+        (e1_2,_) = ExpressionSimplify.simplify(e1_1);
         /* TODO: Add symbolic operation to source */
         (es_1,_) = replaceStatementLst(es, repl);
       then
@@ -536,8 +543,8 @@ algorithm
         (statementLst_1,b1) = replaceStatementLst(statementLst, repl);
         (statement_1::{},b2) = replaceStatementLst({statement}, repl);
         (e1_1,b3) = VarTransform.replaceExp(e1, repl,NONE());
-        e1_2 = Debug.bcallret1(b3,ExpressionSimplify.simplify,e1_1,e1_1);
         true = b1 or b2 or b3;
+        (e1_2,_) = ExpressionSimplify.simplify(e1_1);
         /* TODO: Add symbolic operation to source */
         (es_1,_) = replaceStatementLst(es, repl);
       then
@@ -549,8 +556,8 @@ algorithm
         (e2_1,b2) = VarTransform.replaceExp(e2, repl,NONE());
         true = b1 or b2;
         /* TODO: Add symbolic operation to source */
-        e1_2 = Debug.bcallret1(b1,ExpressionSimplify.simplify,e1_1,e1_1);
-        e2_2 = Debug.bcallret1(b2,ExpressionSimplify.simplify,e2_1,e2_1);
+        (e1_2,_) = ExpressionSimplify.simplify(e1_1);
+        (e2_2,_) = ExpressionSimplify.simplify(e2_1);
         (es_1,_) = replaceStatementLst(es, repl);
       then
         (DAE.STMT_ASSERT(e1_2,e2_2,source):: es_1,true);
@@ -559,7 +566,7 @@ algorithm
       equation
         (e1_1,true) = VarTransform.replaceExp(e1, repl,NONE());
         /* TODO: Add symbolic operation to source */
-        e1_2 = ExpressionSimplify.simplify(e1_1);
+        (e1_2,_) = ExpressionSimplify.simplify(e1_1);
         (es_1,_) = replaceStatementLst(es, repl);
       then
         (DAE.STMT_TERMINATE(e1_2,source):: es_1,true);
@@ -570,8 +577,8 @@ algorithm
         (e2_1,b2) = VarTransform.replaceExp(e2, repl,NONE());
         true = b1 or b2;
         /* TODO: Add symbolic operation to source */
-        e1_2 = Debug.bcallret1(b1,ExpressionSimplify.simplify,e1_1,e1_1);
-        e2_2 = Debug.bcallret1(b2,ExpressionSimplify.simplify,e2_1,e2_1);
+        (e1_2,_) = ExpressionSimplify.simplify(e1_1);
+        (e2_2,_) = ExpressionSimplify.simplify(e2_1);
         (es_1,_) = replaceStatementLst(es, repl);
       then
         (DAE.STMT_REINIT(e1_2,e2_2,source):: es_1,true);
@@ -580,7 +587,7 @@ algorithm
       equation
         (e1_1,true) = VarTransform.replaceExp(e1, repl,NONE());
         /* TODO: Add symbolic operation to source */
-        e1_2 = ExpressionSimplify.simplify(e1_1);
+        (e1_2,_) = ExpressionSimplify.simplify(e1_1);
         (es_1,_) = replaceStatementLst(es, repl);
       then
         (DAE.STMT_NORETCALL(e1_2,source):: es_1,true);
@@ -638,9 +645,9 @@ algorithm
       equation
         (statementLst_1,b1) = replaceStatementLst(statementLst, repl);
         (e1_1,b2) = VarTransform.replaceExp(e1, repl,NONE());
-        e1_2 = Debug.bcallret1(b2,ExpressionSimplify.simplify,e1_1,e1_1);
         (else_1,b3) = replaceElse(else_,repl);
         true = b1 or b2 or b3;
+        (e1_2,_) = ExpressionSimplify.simplify(e1_1);
       then
         (DAE.ELSEIF(e1_2,statementLst_1,else_1),true);
     case (DAE.ELSE(statementLst=statementLst),repl) 

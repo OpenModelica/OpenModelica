@@ -91,7 +91,8 @@ end dumpElementSource;
 template dumpOperation(SymbolicOperation op, Info info)
 ::=
   match op
-    case SIMPLIFY(__) then "SIMPLIFY!"
+    case SIMPLIFY(__) then '<%\n%>  simplify: <%printExpStr(before)%> => <%printExpStr(after)%>'
+    case SUBSTITUTION(__) then '<%\n%>  subst: <%printExpStr(source)%> => <%printExpStr(target)%>'
     else Tpl.addSourceTemplateError("Unknown operation",info)
 end dumpOperation;
 

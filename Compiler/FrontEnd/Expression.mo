@@ -808,7 +808,8 @@ algorithm
       equation
         // Apply one subscript at a time, so simplify works fine on it.
         s = subscriptIndexExp(sub);
-        res = applyExpSubscripts(ExpressionSimplify.simplify(makeASUB(e,{s})),subs);
+        (e,_) = ExpressionSimplify.simplify(makeASUB(e,{s}));
+        res = applyExpSubscripts(e,subs);
       then 
         res;
   end match;
@@ -993,7 +994,7 @@ algorithm
     
     case ({DAE.SLICE(exp = e)},_)
       equation
-        e_1 = ExpressionSimplify.simplify1(makeASUB(e,{inSubscript}));
+        (e_1,_) = ExpressionSimplify.simplify1(makeASUB(e,{inSubscript}));
       then
         {DAE.INDEX(e_1)};
     

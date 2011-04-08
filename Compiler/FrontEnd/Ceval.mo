@@ -913,7 +913,7 @@ algorithm
     case (_, _, _, _, _)
       equation
         // If we fail to evaluate, at least we should simplify the expression
-        e = ExpressionSimplify.simplify1(inExp);
+        (e,_) = ExpressionSimplify.simplify1(inExp);
       then (inCache, e, inProp);
   
   end matchcontinue;
@@ -3999,7 +3999,7 @@ algorithm
     case (cache,env,{exp1,DAE.CREF(componentRef = cr)},impl,st,msg)
       equation
         differentiated_exp = Derive.differentiateExpCont(exp1, cr);
-        differentiated_exp_1 = ExpressionSimplify.simplify(differentiated_exp);
+        (differentiated_exp_1,_) = ExpressionSimplify.simplify(differentiated_exp);
         /*
          this is wrong... this should be used instead but unelabExp must be able to unelaborate a complete exp
          now it doesn't so the expression is returned as string Expression.unelabExp(differentiated_exp') => absyn_exp
@@ -4040,7 +4040,7 @@ algorithm
       Env.Cache cache;
     case (cache,env,{exp1},impl,st,msg)
       equation
-        exp1_1 = ExpressionSimplify.simplify(exp1);
+        (exp1_1,_) = ExpressionSimplify.simplify(exp1);
         ret_val = ExpressionDump.printExpStr(exp1_1) "this should be used instead but unelab_exp must be able to unelaborate a complete exp Expression.unelab_exp(simplifyd_exp\') => absyn_exp" ;
       then
         (cache,Values.STRING(ret_val),st);

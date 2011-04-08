@@ -1383,7 +1383,7 @@ algorithm
       equation
         exp1 = Expression.crefExp(inCref);
         exp = Expression.negate(exp1);
-        exp = ExpressionSimplify.simplify1(exp);
+        (exp,_) = ExpressionSimplify.simplify1(exp);
         cr1 = BaseHashTable.get(exp,aliasMappingsExp);
         Debug.fcall("debugAlias",BackendDump.debugStrCrefStrExpStr,("update ComponentRef : ",inCref," with  ",inExp,"\n"));
         
@@ -1445,7 +1445,7 @@ algorithm
           ({v},_) = BackendVariable.getVar(cref,aliasvars);
           exp = BackendVariable.varBindExp(v);
           exp2 = Util.if_(b,DAE.UNARY(DAE.UMINUS(ty),inExp2),inExp2);
-          exp2 = ExpressionSimplify.simplify1(exp2);
+          (exp2,_) = ExpressionSimplify.simplify1(exp2);
           Debug.fcall("debugAlias",BackendDump.debugStrExpStrExpStr,("*** replace : ",exp," = ",exp2,"\n"));
           v = BackendVariable.setBindExp(v,exp2);
           aliasVariables = addAliasVariables({v},inAliases);
@@ -2374,7 +2374,7 @@ algorithm
         // simplified, e.g. cref[3+4] => cref[7], otherwise some subscripts
         // might be counted twice, such as cref[3+4] and cref[2+5], even though
         // they reference the same element.
-        subExprsSimplified = Util.listMap(subExprs, ExpressionSimplify.simplify);
+        subExprsSimplified = ExpressionSimplify.simplifyList(subExprs, {});
         subscripts = Util.listMap(subExprsSimplified, Expression.makeIndexSubscript);
         cref_ = ComponentReference.makeCrefIdent(varIdent, arrayType, subscripts);
         newCrefExp = Expression.makeCrefExp(cref_, varType);
@@ -2395,7 +2395,7 @@ algorithm
     
     case (DAE.INDEX(exp = e))
       equation
-        e = ExpressionSimplify.simplify(e);
+        (e,_) = ExpressionSimplify.simplify(e);
       then 
         DAE.INDEX(e);
     
@@ -4722,7 +4722,7 @@ algorithm
         v = BackendVariable.getVarAt(vars, vindx);
         cr = BackendVariable.varCref(v);
         e_1 = Derive.differentiateExp(e, cr, differentiateIfExp);
-        e_2 = ExpressionSimplify.simplify(e_1);
+        (e_2,_) = ExpressionSimplify.simplify(e_1);
         SOME(es) = calculateJacobianRow2(e, vars, eqn_indx, vindxs, differentiateIfExp);
       then
         SOME(((eqn_indx,vindx,BackendDAE.RESIDUAL_EQUATION(e_2,DAE.emptyElementSource)) :: es));
@@ -5032,7 +5032,7 @@ algorithm
         are on lhs*/
         rhs_lst2 = ifBranchesFreeFromVar(term_lst,vars);
         new_exp = Expression.makeSum(listAppend(rhs_lst,rhs_lst2));
-        res = ExpressionSimplify.simplify(new_exp);
+        (res,_) = ExpressionSimplify.simplify(new_exp);
       then
         res;
     case (_,_)

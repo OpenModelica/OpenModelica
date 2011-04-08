@@ -936,7 +936,7 @@ algorithm
     case(e,fns)
       equation
         ((e_1,fns)) = Expression.traverseExp(e,inlineCall,fns);
-        e_2 = ExpressionSimplify.simplify(e_1);
+        (e_2,_) = ExpressionSimplify.simplify(e_1);
       then
         e_2;
     case(e,_) then e;
@@ -1165,13 +1165,13 @@ algorithm
       Boolean tuple_,b;
       DAE.ExpType ty,ty2;
       DAE.InlineType inlineType;
-    case((DAE.CREF(componentRef = cref),argmap))
+    case ((DAE.CREF(componentRef = cref),argmap))
       equation
         e = getExpFromArgMap(argmap,cref);
-        e = ExpressionSimplify.simplify(e);
+        (e,_) = ExpressionSimplify.simplify(e);
       then
         ((e,argmap));
-    case((DAE.UNBOX(DAE.CALL(path,expLst,tuple_,false,_,inlineType),ty),argmap))
+    case ((DAE.UNBOX(DAE.CALL(path,expLst,tuple_,false,_,inlineType),ty),argmap))
       equation
         cref = ComponentReference.pathToCref(path);
         (e as DAE.CREF(componentRef=cref)) = getExpFromArgMap(argmap,cref);
@@ -1179,7 +1179,7 @@ algorithm
         expLst = Util.listMap(expLst,Expression.unboxExp);
         b = Expression.isBuiltinFunctionReference(e);
         e = DAE.CALL(path,expLst,tuple_,b,ty,inlineType);
-        e = ExpressionSimplify.simplify(e);
+        (e,_) = ExpressionSimplify.simplify(e);
       then
         ((e,argmap));
         /* TODO: Use the inlineType of the function reference! */
@@ -1193,7 +1193,7 @@ algorithm
         (ty2,inlineType) = functionReferenceType(ty);
         e = DAE.CALL(path,expLst,tuple_,b,ty2,inlineType);
         e = boxIfUnboxedFunRef(e,ty);
-        e = ExpressionSimplify.simplify(e);
+        (e,_) = ExpressionSimplify.simplify(e);
       then ((e,argmap));
     case((e,argmap)) then ((e,argmap));
   end matchcontinue;
