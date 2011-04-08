@@ -12900,26 +12900,35 @@ algorithm
       list<Absyn.Exp> es;
       DAE.ExpType et;
       Integer i;
+      DAE.Exp dexp;
+      /* Type Name */
     case (Absyn.CREF(componentRef=cr),DAE.C_TYPENAME(),_)
       equation
         path = Absyn.crefToPath(cr);
       then DAE.CODE(Absyn.C_TYPENAME(path),DAE.ET_OTHER());
-    case (Absyn.CREF(componentRef=cr),DAE.C_VARIABLENAME(),_)
-      then DAE.CODE(Absyn.C_VARIABLENAME(cr),DAE.ET_OTHER());
-    case (Absyn.CREF(componentRef=cr),DAE.C_VARIABLENAMES(),info)
-      equation
-        et = DAE.ET_ARRAY(DAE.ET_OTHER(),{DAE.DIM_INTEGER(1)});
-      then DAE.ARRAY(et,false,{DAE.CODE(Absyn.C_VARIABLENAME(cr),DAE.ET_OTHER())});
+
+      /* Variable Names */
     case (Absyn.ARRAY(es),DAE.C_VARIABLENAMES(),info)
       equation
         es_1 = Util.listMap2(es,elabCodeExp,DAE.C_VARIABLENAME(),info);
         i = listLength(es);
         et = DAE.ET_ARRAY(DAE.ET_OTHER(),{DAE.DIM_INTEGER(i)});
       then DAE.ARRAY(et,false,es_1);
+    case (exp,DAE.C_VARIABLENAMES(),info)
+      equation
+        et = DAE.ET_ARRAY(DAE.ET_OTHER(),{DAE.DIM_INTEGER(1)});
+        dexp = elabCodeExp(exp,DAE.C_VARIABLENAME(),info);
+      then DAE.ARRAY(et,false,{dexp});
+
+        /* Variable Name */
+    case (Absyn.CREF(componentRef=cr),DAE.C_VARIABLENAME(),_)
+      then DAE.CODE(Absyn.C_VARIABLENAME(cr),DAE.ET_OTHER());
     case (Absyn.CALL(Absyn.CREF_IDENT("der",{}),Absyn.FUNCTIONARGS(args={Absyn.CREF(componentRef=cr)},argNames={})),DAE.C_VARIABLENAME(),_)
       then DAE.CODE(Absyn.C_EXPRESSION(exp),DAE.ET_OTHER());
+
     case (exp,ct,info)
       equation
+        failure(DAE.C_VARIABLENAMES() = ct);
         s1 = Dump.printExpStr(exp);
         s2 = Types.printCodeTypeStr(ct);
         Error.addSourceMessage(Error.ELAB_CODE_EXP_FAILED, {s1,s2}, info);
