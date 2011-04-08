@@ -88,11 +88,13 @@ void PlotWindowContainer::addPlotWindow(QStringList arguments)
         pPlotWindow->showMaximized();
     else
         pPlotWindow->show();
+    getPlotMainWindow()->activateWindow();
 }
 
 void PlotWindowContainer::updateCurrentWindow(QStringList arguments)
 {
     getCurrentWindow()->receiveMessage(arguments);
+    getPlotMainWindow()->activateWindow();
 }
 
 void PlotWindowContainer::checkSubWindows()

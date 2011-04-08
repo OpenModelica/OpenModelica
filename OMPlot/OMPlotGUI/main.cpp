@@ -63,14 +63,15 @@ int main(int argc, char *argv[])
     }
     // create the plot application object that is used to check that only one instance of application is running
     PlotApplication app(argc, argv, "OMPlot");
+    // create the plot main window
+    PlotMainWindow w;
+    QObject::connect(&app, SIGNAL(messageAvailable(QStringList)),
+                     w.getPlotWindowContainer(), SLOT(updateCurrentWindow(QStringList)));
+    QObject::connect(&app, SIGNAL(newApplicationLaunched(QStringList)),
+                     w.getPlotWindowContainer(), SLOT(addPlotWindow(QStringList)));
     try {
-        // create the plot main window
-        PlotMainWindow w;
-        w.addPlotWindow(arguments);
-        QObject::connect(&app, SIGNAL(messageAvailable(QStringList)),
-                         w.getPlotWindowContainer(), SLOT(updateCurrentWindow(QStringList)));
-        QObject::connect(&app, SIGNAL(newApplicationLaunched(QStringList)),
-                         w.getPlotWindowContainer(), SLOT(addPlotWindow(QStringList)));
+        if (!app.isRunning())
+            w.addPlotWindow(arguments);
         // if there is no exception with plot window then continue
         if (app.isRunning())
         {
@@ -85,7 +86,7 @@ int main(int argc, char *argv[])
     } catch (PlotException &e)
     {
         QMessageBox *msgBox = new QMessageBox();
-        msgBox->setWindowTitle(QString("PlotWidgetGUI"));
+        msgBox->setWindowTitle(QString("OMPlot - Error"));
         msgBox->setIcon(QMessageBox::Warning);
         msgBox->setText(QString(e.what()));
         msgBox->setStandardButtons(QMessageBox::Ok);

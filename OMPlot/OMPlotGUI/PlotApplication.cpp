@@ -32,6 +32,7 @@
  */
 
 #include "PlotApplication.h"
+#include "PlotWindow.h"
 #include <QTimer>
 
 using namespace OMPlot;
@@ -48,7 +49,7 @@ PlotApplication::PlotApplication(int &argc, char *argv[], const QString uniqueKe
         mIsRunning = false;
         // attach data to shared memory.
         QByteArray byteArray("0"); // default value to note that no message is available.
-        if (!mSharedMemory.create(byteArray.size()))
+        if (!mSharedMemory.create(4096))
         {
             printf("Unable to create shared memory for OMPlot.");
             return;
@@ -94,6 +95,25 @@ void PlotApplication::launchNewApplication(QStringList arguments)
     mSharedMemory.unlock();
 }
 
+bool PlotApplication::notify(QObject *receiver, QEvent *event)
+{
+    try
+    {
+        return QApplication::notify(receiver, event);
+    }
+    catch (PlotException &e)
+    {
+        QMessageBox *msgBox = new QMessageBox();
+        msgBox->setWindowTitle(QString("OMPlot - Error"));
+        msgBox->setIcon(QMessageBox::Warning);
+        msgBox->setText(QString(e.what()));
+        msgBox->setStandardButtons(QMessageBox::Ok);
+        msgBox->setDefaultButton(QMessageBox::Ok);
+        msgBox->exec();
+        return true;
+    }
+}
+
 void PlotApplication::checkForMessage()
 {
     mSharedMemory.lock();
@@ -104,12 +124,6 @@ void PlotApplication::checkForMessage()
     char type = byteArray.at(0);
     byteArray.remove(0, 1);        // remove the one we put at the start of the bytearray while writing to memory
     QStringList arguments = QString::fromUtf8(byteArray.constData()).split(";");
-    // if type is 1 send message to current tab
-    // if type is 2 launch a new tab
-    if (type == '2')
-        emit newApplicationLaunched(arguments);
-    else
-        emit messageAvailable(arguments);
     // remove message from shared memory.
     byteArray = "0";
     mSharedMemory.lock();
@@ -117,4 +131,10 @@ void PlotApplication::checkForMessage()
     const char *from = byteArray.data();
     memcpy(to, from, qMin(mSharedMemory.size(), byteArray.size()));
     mSharedMemory.unlock();
+    // if type is 1 send message to current tab
+    // if type is 2 launch a new tab
+    if (type == '2')
+        emit newApplicationLaunched(arguments);
+    else
+        emit messageAvailable(arguments);
 }

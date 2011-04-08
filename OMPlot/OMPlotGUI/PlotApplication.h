@@ -50,6 +50,7 @@ public:
     bool isRunning();
     void sendMessage(QStringList arguments);
     void launchNewApplication(QStringList arguments);
+    virtual bool notify(QObject *receiver, QEvent *event);
 private:
     bool mIsRunning;
     QSharedMemory mSharedMemory;
