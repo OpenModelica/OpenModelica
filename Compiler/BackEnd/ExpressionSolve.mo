@@ -278,13 +278,23 @@ algorithm
       then
         (rhs,{});
 
+      // a*(1/b)*c*...*n = rhs
     case(e1,e2,(crexp as DAE.CREF(componentRef = cr)),_)
       equation
-        ({invCr},factors) = Util.listSplitOnTrue1(listAppend(Expression.factors(e1),Expression.factors(e2)),isInverseCref,cr);
-        rhs_1 = Expression.makeProductLst(Util.listMap(factors, Expression.inverseFactors));
+        ({invCr},factors) = Util.listSplitOnTrue1(Expression.factors(e1),isInverseCref,cr);
+        e2 = Expression.inverseFactors(e2);
+        rhs_1 = Expression.makeProductLst(e2::factors);
         false = Expression.expContains(rhs_1, crexp);
-      then
-        (rhs_1,{});
+      then (rhs_1,{});
+
+      // lhs = a*(1/b)*c*...*n
+    case(e1,e2,(crexp as DAE.CREF(componentRef = cr)),_)
+      equation
+        ({invCr},factors) = Util.listSplitOnTrue1(Expression.factors(e2),isInverseCref,cr);
+        e1 = Expression.inverseFactors(e1);
+        rhs_1 = Expression.makeProductLst(e1::factors);
+        false = Expression.expContains(rhs_1, crexp);
+      then (rhs_1,{});
 
     // 0 = a*(b-c)  solve for b    
     case (e1,e2,(crexp as DAE.CREF(componentRef = cr)),linExp)
@@ -360,7 +370,7 @@ end solve2;
 protected function solve3
 "function: solve3
   helper for solve2
-  This function chechs if one parte of a product expression
+  This function checks if one part of a product expression
   does not contain inExp2"
   input DAE.Exp inExp1;
   input DAE.Exp inExp2;
@@ -398,7 +408,7 @@ end solve3;
 protected function solve4
 "function: solve4
   helper for solve3
-  This function chechs the operator"
+  This function checks the operator"
   input DAE.Operator inOp;
   output Boolean outBool;
 algorithm

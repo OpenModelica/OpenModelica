@@ -115,6 +115,7 @@ public uniontype SymbolicOperation
     Exp exp1;
     Exp exp2;
     Exp res;
+    list<Exp> assertConds;
   end SOLVE;
 end SymbolicOperation;
 

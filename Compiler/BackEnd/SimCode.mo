@@ -3797,7 +3797,9 @@ algorithm
         (eqn as BackendDAE.EQUATION(e1, e2, source), v as BackendDAE.VAR(varName = cr, varKind = kind))
         = getEquationAndSolvedVar(eqNum, eqns, vars, ass2);
         varexp = Expression.crefExp(cr);
-        (exp_,_) = ExpressionSolve.solveLin(e1, e2, varexp);
+        (exp_,asserts) = ExpressionSolve.solveLin(e1, e2, varexp);
+        source = DAEUtil.addSymbolicTransformationSolve(true, source, cr, e1, e2, exp_, asserts);
+        // TODO: Add SES_ALGORITHM(asserts) here? Why not?
       then
         {SES_SIMPLE_ASSIGN(cr, exp_, source)};
     
@@ -3836,6 +3838,7 @@ algorithm
         true = BackendVariable.isNonStateVar(v);
         varexp = Expression.crefExp(cr);
         (exp_,asserts) = solve(e1, e2, varexp);
+        source = DAEUtil.addSymbolicTransformationSolve(true, source, cr, e1, e2, exp_, asserts);
       then
         {SES_ALGORITHM(asserts),SES_SIMPLE_ASSIGN(cr, exp_, source)};
         
@@ -3848,6 +3851,7 @@ algorithm
         = getEquationAndSolvedVar(eqNum, eqns, vars, ass2);
         cr = ComponentReference.crefPrefixDer(cr);
         (exp_,asserts) = solve(e1, e2, Expression.crefExp(cr));
+        source = DAEUtil.addSymbolicTransformationSolve(true, source, cr, e1, e2, exp_, asserts);
       then
         {SES_ALGORITHM(asserts),SES_SIMPLE_ASSIGN(cr, exp_, source)};
         

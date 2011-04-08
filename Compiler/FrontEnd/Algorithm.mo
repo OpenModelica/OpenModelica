@@ -760,4 +760,11 @@ algorithm
   end match;
 end getStatementSource;
 
+public function getAssertCond
+  input Statement stmt;
+  output DAE.Exp cond;
+algorithm
+  DAE.STMT_ASSERT(cond=cond) := stmt;
+end getAssertCond;
+
 end Algorithm;

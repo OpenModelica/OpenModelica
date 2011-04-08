@@ -3533,7 +3533,7 @@ algorithm
         varexp = Expression.crefExp(cr);
 
         (expr,{}) = ExpressionSolve.solve(e1, e2, varexp);
-        source = DAEUtil.addSymbolicTransformationSolve(true, source, cr, e1, e2, expr);
+        source = DAEUtil.addSymbolicTransformationSolve(true, source, cr, e1, e2, expr, {});
         divexplst = Expression.extractDivExpFromExp(expr);
         (constexplst,nonconstexplst) = Util.listSplitOnTrue(divexplst,Expression.isConst);
         // check constexplst if equal 0

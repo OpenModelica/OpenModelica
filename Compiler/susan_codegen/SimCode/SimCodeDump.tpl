@@ -117,6 +117,8 @@ template dumpOperation(SymbolicOperation op, Info info)
           <%printExpStr(op.exp1)%> = <%printExpStr(op.exp2)%>
           =>
           <%crefStr(op.cr)%> = <%printExpStr(op.res)%>
+        added assertions:
+          <%op.assertConds |> cond => printExpStr(cond); separator="\n"%>
       >>
     else Tpl.addSourceTemplateError("Unknown operation",info)
 end dumpOperation;
