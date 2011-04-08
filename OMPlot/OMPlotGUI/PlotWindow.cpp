@@ -71,6 +71,8 @@ void PlotWindow::setUpWidget()
     // set the plot grid
     setGrid(true);
     setXLabel(tr("time"));
+    setMinimumHeight(250);
+    setMinimumWidth(250);
 }
 
 void PlotWindow::initializePlot(QStringList arguments)
@@ -668,6 +670,7 @@ void PlotWindow::enablePanMode(bool on)
 {
     mpPlot->getPlotPanner()->setEnabled(on);
     if(on)
+
     {
         mpPlot->canvas()->setCursor(Qt::OpenHandCursor);
     }
