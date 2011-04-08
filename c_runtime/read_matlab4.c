@@ -38,16 +38,16 @@ int mat_element_length(int type)
 /* Do not double-free this :) */
 void omc_free_matlab4_reader(ModelicaMatReader *reader)
 {
-  int i;
+  unsigned int i;
   fclose(reader->file);
-  free(reader->fileName);
+  free(reader->fileName); reader->fileName=NULL;
   for (i=0; i<reader->nall; i++)
     free(reader->allInfo[i].name);
-  free(reader->allInfo);
-  free(reader->params);
+  free(reader->allInfo); reader->allInfo=NULL;
+  free(reader->params); reader->params=NULL;
   for (i=0; i<reader->nvar; i++)
     if (reader->vars[i]) free(reader->vars[i]);
-  free(reader->vars);
+  free(reader->vars); reader->vars=NULL;
 }
 
 /* Returns 0 on success; the error message on error */
@@ -78,7 +78,7 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
     /* fprintf(stderr, "  Name of matrix: %s\n", name); */
     matrix_length = hdr.mrows*hdr.ncols*(1+hdr.imagf)*element_length;
     if (0 != strcmp(name,matrixNames[i])) return "Matrix name mismatch";
-    free(name);
+    free(name); name=NULL;
     switch (i) {
     case 0: {
       char tmp[size_omc_mat_Aclass];
@@ -88,7 +88,7 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
       break;
     }
     case 1: { /* "names" */
-      int i;
+      unsigned int i;
       reader->nall = hdr.ncols;
       reader->allInfo = (ModelicaMatVariable_t*) malloc(sizeof(ModelicaMatVariable_t)*reader->nall);
       for (i=0; i<hdr.ncols; i++) {
@@ -106,24 +106,24 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
       break;
     }
     case 3: { /* "dataInfo" */
-      int i;
+      unsigned int i;
       double *tmp = (double*) malloc(sizeof(double)*hdr.ncols*hdr.mrows);
       if (1 != fread(tmp,sizeof(double)*hdr.ncols*hdr.mrows,1,reader->file)) {
-        free(tmp);
+        free(tmp); tmp=NULL;
         return "Corrupt header: dataInfo matrix";
       }
       for (i=0; i<hdr.ncols; i++) {
         reader->allInfo[i].isParam = tmp[i*hdr.mrows] == 1.0;
-        reader->allInfo[i].index = (int) tmp[i*hdr.mrows+1] - 1;
+        reader->allInfo[i].index = (int) tmp[i*hdr.mrows+1];
         /* fprintf(stderr, "    Variable %s isParam=%d index=%d\n", reader->allInfo[i].name, reader->allInfo[i].isParam, reader->allInfo[i].index); */
       }
-      free(tmp);
+      free(tmp); tmp=NULL;
       /* Sort the variables so we can do faster lookup */
       qsort(reader->allInfo,reader->nall,sizeof(ModelicaMatVariable_t),omc_matlab4_comp_var);
       break;
     }
     case 4: { /* "data_1" */
-      int i;
+      unsigned int i;
       if (hdr.mrows == 0) return "data_1 matrix does not contain at least 1 variable";
       if (hdr.ncols != 2) return "data_1 matrix does not have 2 rows";
       reader->nparam = hdr.mrows;
@@ -163,31 +163,39 @@ ModelicaMatVariable_t *omc_matlab4_find_var(ModelicaMatReader *reader, const cha
 /* Writes the number of values in the returned array if nvals is non-NULL */
 double* omc_matlab4_read_vals(ModelicaMatReader *reader, int varIndex)
 {
-  if (!reader->vars[varIndex]) {
-    int i;
+  if (!reader->vars[abs(varIndex)-1]) {
+    unsigned int i;
     double *tmp = (double*) malloc(reader->nrows*sizeof(double));
     for (i=0; i<reader->nrows; i++) {
-      fseek(reader->file,reader->var_offset + sizeof(double)*(i*reader->nvar + varIndex), SEEK_SET);
+      fseek(reader->file,reader->var_offset + sizeof(double)*(i*reader->nvar + abs(varIndex)-1), SEEK_SET);
       if (1 != fread(&tmp[i], sizeof(double), 1, reader->file)) {
-        free(tmp);
+        free(tmp); tmp=NULL;
         return NULL;
       }
       /* fprintf(stderr, "tmp[%d]=%g\n", i, tmp[i]); */
     }
-    reader->vars[varIndex] = tmp;
+    reader->vars[abs(varIndex)-1] = tmp;
   }
-  return reader->vars[varIndex];
+  return reader->vars[abs(varIndex)-1];
 }
 
 double omc_matlab4_read_single_val(double *res, ModelicaMatReader *reader, int varIndex, int timeIndex)
 {
-  if (reader->vars[varIndex]) {
-    *res = reader->vars[varIndex][timeIndex];
-    return 0;
+  if (reader->vars[abs(varIndex)-1]) {
+    if (varIndex < 0) {
+      *res = -reader->vars[abs(varIndex)-1][timeIndex];
+      return 0;
+    }
+    else {
+      *res = reader->vars[varIndex-1][timeIndex];
+      return 0;
+    }
   }
-  fseek(reader->file,reader->var_offset + sizeof(double)*(timeIndex*reader->nvar + varIndex), SEEK_SET);
+  fseek(reader->file,reader->var_offset + sizeof(double)*(timeIndex*reader->nvar + abs(varIndex)-1), SEEK_SET);
   if (1 != fread(res, sizeof(double), 1, reader->file))
     return 1;
+  if (varIndex < 0)
+	  *res = -(*res);
   return 0;
 }
 
@@ -240,13 +248,16 @@ double omc_matlab4_stopTime(ModelicaMatReader *reader)
 int omc_matlab4_val(double *res, ModelicaMatReader *reader, ModelicaMatVariable_t *var, double time)
 {
   if (var->isParam) {
-    *res = reader->params[var->index];
+	if (var->index < 0)
+      *res = -reader->params[abs(var->index)-1];
+	else
+      *res = reader->params[var->index-1];
   } else {
     double w1,w2,y1,y2;
     int i1,i2;
     if (time > omc_matlab4_stopTime(reader)) return 1;
     if (time < omc_matlab4_startTime(reader)) return 1;
-    if (!omc_matlab4_read_vals(reader,0)) return 1;
+    if (!omc_matlab4_read_vals(reader,1)) return 1;
     find_closest_points(time, reader->vars[0], reader->nrows, &i1, &w1, &i2, &w2);
     if (i2 == -1) {
       return omc_matlab4_read_single_val(res,reader,var->index,i1);
@@ -264,7 +275,7 @@ int omc_matlab4_val(double *res, ModelicaMatReader *reader, ModelicaMatVariable_
 
 void omc_matlab4_print_all_vars(FILE *stream, ModelicaMatReader *reader)
 {
-  int i;
+  unsigned int i;
   fprintf(stream, "allSortedVars(\"%s\") => {", reader->fileName);
   for (i=0; i<reader->nall; i++)
     fprintf(stream, "\"%s\",", reader->allInfo[i].name);

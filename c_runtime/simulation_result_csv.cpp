@@ -75,7 +75,6 @@ void simulation_result_csv::emit()
         fprintf(fout, formatint, - *(((globalData->intVariables.alias)[i].alias)));
       else
         fprintf(fout, formatint, *(((globalData->intVariables.alias)[i].alias)));
-
   }
   for (int i = 0; i < globalData->boolVariables.nAlgebraic; i++) if (!globalData->boolVariables.algebraicsFilterOutput[i])
     fprintf(fout, formatbool, globalData->boolVariables.algebraics[i]);
@@ -84,7 +83,6 @@ void simulation_result_csv::emit()
         fprintf(fout, formatbool, - *(((globalData->boolVariables.alias)[i].alias)));
     else
         fprintf(fout, formatbool, *(((globalData->boolVariables.alias)[i].alias)));
-
   }
   fprintf(fout, "\n");
   rt_accumulate(SIM_TIMER_OUTPUT);

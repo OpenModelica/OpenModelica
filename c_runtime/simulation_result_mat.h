@@ -43,9 +43,11 @@
 #define _SIMULATION_RESULT_MAT_H_
 
 #include <fstream>
-
+#include <map>
 #include "simulation_result.h"
 #include "simulation_runtime.h"
+
+
 
 class simulation_result_mat : public simulation_result {
 public:
@@ -56,10 +58,17 @@ public:
     //return "Dymosim's compatible MAT-file";
     return "mat";
   }
+
+  typedef pair<void*,int> indx_type;
+
 private:
   std::ofstream fp;
   std::ofstream::pos_type data2HdrPos; // position of data_2 matrix's header in a file
   unsigned long ntimepoints; // count of how many time emits() was called
+
+  map<void*,int> indx_map;
+  map<void*,int> indx_parammap;
+  int numVars;
 
   // helper functions  
   long flattenStrBuf(int dims, const struct omc_varInfo** src,
@@ -70,7 +79,7 @@ private:
   void writeMatVer4Matrix(const char *name, int rows, int cols, 
         const void *data, bool is_text);
   static void generateDataInfo(double* &dataInfo, int& rows, int& cols,
-             const sim_DATA *mdl_data, int nVars, int nParams);
+             const sim_DATA *mdl_data, int nVars, int nParams, map<void*,int> &indx_map, map<void*,int> &indx_parammap);
   static void generateData_1(double* &data_1, int& rows, int& cols,
            const sim_DATA *mdl_data, double tstart, double tstop);
 };

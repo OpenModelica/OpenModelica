@@ -231,7 +231,7 @@ static void* SimulationResultsImpl__readDataset(const char *filename, void *vars
         return NULL;
       } else if (mat_var->isParam) {
         col=mk_nil();
-        for (i=0;i<dimsize;i++) col=mk_cons(mk_rcon(matReader.params[mat_var->index]),col);
+        for (i=0;i<dimsize;i++) col=mk_cons(mk_rcon((mat_var->index<0)?-matReader.params[abs(mat_var->index)-1]:matReader.params[abs(mat_var->index)-1]),col);
         res = mk_cons(col,res);
       } else {
         vals = omc_matlab4_read_vals(&matReader,mat_var->index);
