@@ -44,28 +44,28 @@ static int calcDataSize(map<void*,int> &indx_map)
   int sz = 1; // time
   for (int i = 0; i < globalData->nStates; i++) 
     if (!globalData->statesFilterOutput[i]) {
-	   indx_map.insert(simulation_result_mat::indx_type((void*)(&globalData->states[i]),sz)); 
+       indx_map.insert(simulation_result_mat::indx_type((void*)(&globalData->states[i]),sz)); 
        sz++;
     }
   for (int i = 0; i < globalData->nStates; i++)
     if (!globalData->statesDerivativesFilterOutput[i]) {
-	   indx_map.insert(simulation_result_mat::indx_type((void*)(&globalData->statesDerivatives[i]),sz)); 
-       sz++;
+      indx_map.insert(simulation_result_mat::indx_type((void*)(&globalData->statesDerivatives[i]),sz)); 
+      sz++;
     }
   for (int i = 0; i < globalData->nAlgebraic; i++)
     if (!globalData->algebraicsFilterOutput[i]) {
-	   indx_map.insert(simulation_result_mat::indx_type((void*)(&globalData->algebraics[i]),sz)); 
-       sz++;
+      indx_map.insert(simulation_result_mat::indx_type((void*)(&globalData->algebraics[i]),sz)); 
+      sz++;
     }
   for (int i = 0; i < globalData->intVariables.nAlgebraic; i++)
     if (!globalData->intVariables.algebraicsFilterOutput[i]){
-	   indx_map.insert(simulation_result_mat::indx_type((void*)(&globalData->intVariables.algebraics[i]),sz)); 
-       sz++;
+      indx_map.insert(simulation_result_mat::indx_type((void*)(&globalData->intVariables.algebraics[i]),sz)); 
+      sz++;
     }
   for (int i = 0; i < globalData->boolVariables.nAlgebraic; i++)
     if (!globalData->boolVariables.algebraicsFilterOutput[i]) {
-	   indx_map.insert(simulation_result_mat::indx_type((void*)(&globalData->boolVariables.algebraics[i]),sz)); 
-       sz++;
+      indx_map.insert(simulation_result_mat::indx_type((void*)(&globalData->boolVariables.algebraics[i]),sz)); 
+      sz++;
     }
   for (int i = 0; i < globalData->nAlias; i++)
     if (!globalData->aliasFilterOutput[i]) sz++;
@@ -154,7 +154,7 @@ simulation_result_mat::simulation_result_mat(const char* filename,
     delete[] stringMatrix; stringMatrix = NULL;
 
     // generate dataInfo table
-	generateDataInfo(doubleMatrix, rows, cols, globalData, numVars, nParams,indx_map,indx_parammap);
+    generateDataInfo(doubleMatrix, rows, cols, globalData, numVars, nParams,indx_map,indx_parammap);
     // write `dataInfo' matrix
     writeMatVer4Matrix("dataInfo", cols, rows, doubleMatrix, false);
     delete[] doubleMatrix; doubleMatrix = NULL;
@@ -356,79 +356,80 @@ void simulation_result_mat::generateDataInfo(double* &dataInfo,
   ccol = ccol+4*indx_map.size();
   // alias variables
   for (int i = 0; i < globalData->nAlias; i++) if (!globalData->aliasFilterOutput[i]) {
-	  double table = 0;
-	  map<void*,int>::iterator it = indx_map.find((void*)globalData->realAlias[i].alias);
-	  if (it == indx_map.end()) {
-		  it = indx_parammap.find((void*)globalData->realAlias[i].alias);
-		  if (it == indx_parammap.end())
-            continue;
-		  else
-			  table = 1.0;
-      }
-	  else
-        table = 2.0;
-      // row 1 - which table
-      dataInfo[ccol] = table;
-      // row 2 - index of var in table (variable 'Time' have index 1)
-	  if (((globalData->realAlias)[i]).negate)
-		  dataInfo[ccol+1] = -(it->second+1.0);
-	  else
-		  dataInfo[ccol+1] = it->second+1.0;
-      // row 3 - linear interpolation == 0
-      dataInfo[ccol+2] = 0.0;
-      // row 4 - not defined outside of the defined time range == -1
-      dataInfo[ccol+3] = -1.0;
-	  ccol += 4;
+    double table = 0;
+    map<void*,int>::iterator it = indx_map.find((void*)globalData->realAlias[i].alias);
+    if (it == indx_map.end()) {
+      it = indx_parammap.find((void*)globalData->realAlias[i].alias);
+      if (it == indx_parammap.end())
+        continue;
+      else
+        table = 1.0;
+    } else {
+      table = 2.0;
+    }
+    // row 1 - which table
+    dataInfo[ccol] = table;
+    // row 2 - index of var in table (variable 'Time' have index 1)
+    if (((globalData->realAlias)[i]).negate)
+      dataInfo[ccol+1] = -(it->second+1.0);
+    else
+      dataInfo[ccol+1] = it->second+1.0;
+    // row 3 - linear interpolation == 0
+    dataInfo[ccol+2] = 0.0;
+    // row 4 - not defined outside of the defined time range == -1
+    dataInfo[ccol+3] = -1.0;
+    ccol += 4;
   }
   for (int i = 0; i < globalData->intVariables.nAlias; i++) if (!globalData->intVariables.aliasFilterOutput[i]) {
-	  double table = 0;
-	  map<void*,int>::iterator it = indx_map.find((void*)globalData->intVariables.alias[i].alias);
-	  if (it == indx_map.end()) {
-		  it = indx_parammap.find((void*)globalData->intVariables.alias[i].alias);
-		  if (it == indx_parammap.end())
-            continue;
-		  else
-			  table = 1.0;
-      }
-	  else
-        table = 2.0;
-      // row 1 - which table
-      dataInfo[ccol] = table;
-      // row 2 - index of var in table (variable 'Time' have index 1)
-	  if (globalData->intVariables.alias[i].negate)
-		  dataInfo[ccol+1] = -(it->second+1.0);
-	  else
-		  dataInfo[ccol+1] = it->second+1.0;
-      // row 3 - linear interpolation == 0
-      dataInfo[ccol+2] = 0.0;
-      // row 4 - not defined outside of the defined time range == -1
-      dataInfo[ccol+3] = -1.0;
-	  ccol += 4;
+    double table = 0;
+    map<void*,int>::iterator it = indx_map.find((void*)globalData->intVariables.alias[i].alias);
+    if (it == indx_map.end()) {
+      it = indx_parammap.find((void*)globalData->intVariables.alias[i].alias);
+      if (it == indx_parammap.end())
+        continue;
+      else
+        table = 1.0;
+    } else {
+      table = 2.0;
+    }
+    // row 1 - which table
+    dataInfo[ccol] = table;
+    // row 2 - index of var in table (variable 'Time' have index 1)
+    if (globalData->intVariables.alias[i].negate)
+      dataInfo[ccol+1] = -(it->second+1.0);
+    else
+      dataInfo[ccol+1] = it->second+1.0;
+    // row 3 - linear interpolation == 0
+    dataInfo[ccol+2] = 0.0;
+    // row 4 - not defined outside of the defined time range == -1
+    dataInfo[ccol+3] = -1.0;
+    ccol += 4;
   }
   for (int i = 0; i < globalData->boolVariables.nAlias; i++) if (!globalData->boolVariables.aliasFilterOutput[i]) {
-	  double table = 0;
-	  map<void*,int>::iterator it = indx_map.find((void*)globalData->boolVariables.alias[i].alias);
-	  if (it == indx_map.end()) {
-		  it = indx_parammap.find((void*)globalData->boolVariables.alias[i].alias);
-		  if (it == indx_parammap.end())
-            continue;
-		  else
-			  table = 1.0;
+    double table = 0;
+    map<void*,int>::iterator it = indx_map.find((void*)globalData->boolVariables.alias[i].alias);
+    if (it == indx_map.end()) {
+      it = indx_parammap.find((void*)globalData->boolVariables.alias[i].alias);
+      if (it == indx_parammap.end())
+        continue;
+      else
+        table = 1.0;
       }
-	  else
-        table = 2.0;
-      // row 1 - which table
-      dataInfo[ccol] = table;
-      // row 2 - index of var in table (variable 'Time' have index 1)
-	  if (globalData->boolVariables.alias[i].negate)
-		  dataInfo[ccol+1] = -(it->second+1.0);
-	  else
-		  dataInfo[ccol+1] = it->second+1.0;
-      // row 3 - linear interpolation == 0
-      dataInfo[ccol+2] = 0.0;
-      // row 4 - not defined outside of the defined time range == -1
-      dataInfo[ccol+3] = -1.0;
-	  ccol += 4;
+    else {
+      table = 2.0;
+    }
+    // row 1 - which table
+    dataInfo[ccol] = table;
+    // row 2 - index of var in table (variable 'Time' have index 1)
+    if (globalData->boolVariables.alias[i].negate)
+      dataInfo[ccol+1] = -(it->second+1.0);
+    else
+      dataInfo[ccol+1] = it->second+1.0;
+    // row 3 - linear interpolation == 0
+    dataInfo[ccol+2] = 0.0;
+    // row 4 - not defined outside of the defined time range == -1
+    dataInfo[ccol+3] = -1.0;
+    ccol += 4;
   }
   // parameters and constants
   for(size_t i = 0; i < (size_t)nParams; ++i) {

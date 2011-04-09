@@ -195,7 +195,7 @@ double omc_matlab4_read_single_val(double *res, ModelicaMatReader *reader, int v
   if (1 != fread(res, sizeof(double), 1, reader->file))
     return 1;
   if (varIndex < 0)
-	  *res = -(*res);
+    *res = -(*res);
   return 0;
 }
 
@@ -248,10 +248,10 @@ double omc_matlab4_stopTime(ModelicaMatReader *reader)
 int omc_matlab4_val(double *res, ModelicaMatReader *reader, ModelicaMatVariable_t *var, double time)
 {
   if (var->isParam) {
-	if (var->index < 0)
-      *res = -reader->params[abs(var->index)-1];
-	else
-      *res = reader->params[var->index-1];
+  if (var->index < 0)
+    *res = -reader->params[abs(var->index)-1];
+  else
+    *res = reader->params[var->index-1];
   } else {
     double w1,w2,y1,y2;
     int i1,i2;
