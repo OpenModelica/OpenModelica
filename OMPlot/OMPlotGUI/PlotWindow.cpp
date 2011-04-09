@@ -366,7 +366,7 @@ void PlotWindow::plot()
         double stopTime =  omc_matlab4_stopTime(&reader);
         if (reader.nvar < 1)
           throw NoVariableException("Variable doesnt exist: time");
-        double *timeVals = omc_matlab4_read_vals(&reader,0);
+        double *timeVals = omc_matlab4_read_vals(&reader,1);
 
         // read in all values
         int counter = 0;
