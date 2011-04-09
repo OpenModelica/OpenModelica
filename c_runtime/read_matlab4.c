@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <errno.h>
 #include <string.h>
+#include <assert.h>
 #include "read_matlab4.h"
 
 #define size_omc_mat_Aclass 45
@@ -164,7 +165,8 @@ ModelicaMatVariable_t *omc_matlab4_find_var(ModelicaMatReader *reader, const cha
 double* omc_matlab4_read_vals(ModelicaMatReader *reader, int varIndex)
 {
   size_t absVarIndex = abs(varIndex);
-  size_t ix = varIndex < 0 ? absVarIndex + reader->nvar : absVarIndex;
+  size_t ix = (varIndex < 0 ? absVarIndex + reader->nvar : absVarIndex) -1;
+  assert(absVarIndex > 0 && absVarIndex <= reader->nvar);
   if (!reader->vars[ix]) {
     unsigned int i;
     double *tmp = (double*) malloc(reader->nrows*sizeof(double));
@@ -176,7 +178,7 @@ double* omc_matlab4_read_vals(ModelicaMatReader *reader, int varIndex)
         tmp=NULL;
         return NULL;
       }
-      tmp[i] = tmp[i] * (varIndex < 0 ? -1 : 1);
+      if (varIndex < 0) tmp[i] = -tmp[i];
       /* fprintf(stderr, "tmp[%d]=%g\n", i, tmp[i]); */
     }
     reader->vars[ix] = tmp;
@@ -187,7 +189,8 @@ double* omc_matlab4_read_vals(ModelicaMatReader *reader, int varIndex)
 double omc_matlab4_read_single_val(double *res, ModelicaMatReader *reader, int varIndex, int timeIndex)
 {
   size_t absVarIndex = abs(varIndex);
-  size_t ix = varIndex < 0 ? absVarIndex + reader->nvar : absVarIndex;
+  size_t ix = (varIndex < 0 ? absVarIndex + reader->nvar : absVarIndex) -1;
+  assert(absVarIndex > 0 && absVarIndex <= reader->nvar);
   if (reader->vars[ix]) {
     *res = reader->vars[ix][timeIndex];
     return 0;
