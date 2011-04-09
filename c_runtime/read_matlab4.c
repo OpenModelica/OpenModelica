@@ -45,7 +45,7 @@ void omc_free_matlab4_reader(ModelicaMatReader *reader)
     free(reader->allInfo[i].name);
   free(reader->allInfo); reader->allInfo=NULL;
   free(reader->params); reader->params=NULL;
-  for (i=0; i<reader->nvar; i++)
+  for (i=0; i<reader->nvar*2; i++)
     if (reader->vars[i]) free(reader->vars[i]);
   free(reader->vars); reader->vars=NULL;
 }
@@ -142,7 +142,7 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
       reader->nvar = hdr.mrows;
       if (reader->nrows < 2) return "Too few rows in data_2 matrix";
       reader->var_offset = ftell(reader->file);
-      reader->vars = (double**) calloc(reader->nvar,sizeof(double*));
+      reader->vars = (double**) calloc(reader->nvar*2,sizeof(double*));
       if (-1==fseek(reader->file,matrix_length,SEEK_CUR)) return "Corrupt header: data_2 matrix";
       break;
     }
@@ -163,37 +163,36 @@ ModelicaMatVariable_t *omc_matlab4_find_var(ModelicaMatReader *reader, const cha
 /* Writes the number of values in the returned array if nvals is non-NULL */
 double* omc_matlab4_read_vals(ModelicaMatReader *reader, int varIndex)
 {
-  if (!reader->vars[abs(varIndex)-1]) {
+  size_t absVarIndex = abs(varIndex);
+  size_t ix = varIndex < 0 ? absVarIndex + reader->nvar : absVarIndex;
+  if (!reader->vars[ix]) {
     unsigned int i;
     double *tmp = (double*) malloc(reader->nrows*sizeof(double));
     for (i=0; i<reader->nrows; i++) {
-      fseek(reader->file,reader->var_offset + sizeof(double)*(i*reader->nvar + abs(varIndex)-1), SEEK_SET);
+      fseek(reader->file,reader->var_offset + sizeof(double)*(i*reader->nvar + absVarIndex-1), SEEK_SET);
       if (1 != fread(&tmp[i], sizeof(double), 1, reader->file)) {
         /* fprintf(stderr, "Corrupt file at %d of %d? nvar %d\n", i, reader->nrows, reader->nvar); */
         free(tmp);
         tmp=NULL;
         return NULL;
       }
+      tmp[i] = tmp[i] * (varIndex < 0 ? -1 : 1);
       /* fprintf(stderr, "tmp[%d]=%g\n", i, tmp[i]); */
     }
-    reader->vars[abs(varIndex)-1] = tmp;
+    reader->vars[ix] = tmp;
   }
-  return reader->vars[abs(varIndex)-1];
+  return reader->vars[ix];
 }
 
 double omc_matlab4_read_single_val(double *res, ModelicaMatReader *reader, int varIndex, int timeIndex)
 {
-  if (reader->vars[abs(varIndex)-1]) {
-    if (varIndex < 0) {
-      *res = -reader->vars[abs(varIndex)-1][timeIndex];
-      return 0;
-    }
-    else {
-      *res = reader->vars[varIndex-1][timeIndex];
-      return 0;
-    }
+  size_t absVarIndex = abs(varIndex);
+  size_t ix = varIndex < 0 ? absVarIndex + reader->nvar : absVarIndex;
+  if (reader->vars[ix]) {
+    *res = reader->vars[ix][timeIndex];
+    return 0;
   }
-  fseek(reader->file,reader->var_offset + sizeof(double)*(timeIndex*reader->nvar + abs(varIndex)-1), SEEK_SET);
+  fseek(reader->file,reader->var_offset + sizeof(double)*(timeIndex*reader->nvar + absVarIndex-1), SEEK_SET);
   if (1 != fread(res, sizeof(double), 1, reader->file))
     return 1;
   if (varIndex < 0)
