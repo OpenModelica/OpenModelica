@@ -169,7 +169,9 @@ double* omc_matlab4_read_vals(ModelicaMatReader *reader, int varIndex)
     for (i=0; i<reader->nrows; i++) {
       fseek(reader->file,reader->var_offset + sizeof(double)*(i*reader->nvar + abs(varIndex)-1), SEEK_SET);
       if (1 != fread(&tmp[i], sizeof(double), 1, reader->file)) {
-        free(tmp); tmp=NULL;
+        /* fprintf(stderr, "Corrupt file at %d of %d? nvar %d\n", i, reader->nrows, reader->nvar); */
+        free(tmp);
+        tmp=NULL;
         return NULL;
       }
       /* fprintf(stderr, "tmp[%d]=%g\n", i, tmp[i]); */
@@ -248,10 +250,10 @@ double omc_matlab4_stopTime(ModelicaMatReader *reader)
 int omc_matlab4_val(double *res, ModelicaMatReader *reader, ModelicaMatVariable_t *var, double time)
 {
   if (var->isParam) {
-  if (var->index < 0)
-    *res = -reader->params[abs(var->index)-1];
-  else
-    *res = reader->params[var->index-1];
+    if (var->index < 0)
+      *res = -reader->params[abs(var->index)-1];
+    else
+      *res = reader->params[var->index-1];
   } else {
     double w1,w2,y1,y2;
     int i1,i2;
