@@ -245,8 +245,8 @@ void PlotWidget::plotVariables(QTreeWidgetItem *item, int column)
                 pPlotWindow->openFile(QString(Helper::tmpPath).append("/").append(parentItem->text(0)));
                 pPlotWindow->setVariablesList(QStringList(item->toolTip(column).remove(0, (parentItem->text(column).length()+1))));
                 pPlotWindow->plot();
-                pPlotWindow->getPlot()->replot();
-                pPlotWindow->getPlot()->updateGeometry();
+                pPlotWindow->fitInView();
+                pPlotWindow->getPlot()->updateLayout();
                 pPlotWindow->getPlot()->getPlotZoomer()->setZoomBase(false);
             }
             // if user unchecks the variable then remove it from the plot
@@ -260,8 +260,8 @@ void PlotWidget::plotVariables(QTreeWidgetItem *item, int column)
                     {
                         pPlotWindow->getPlot()->removeCurve(pPlotCurve);
                         pPlotCurve->detach();
-                        pPlotWindow->getPlot()->replot();
-                        pPlotWindow->getPlot()->updateGeometry();
+                        pPlotWindow->fitInView();
+                        pPlotWindow->getPlot()->updateLayout();
                         pPlotWindow->getPlot()->getPlotZoomer()->setZoomBase(false);
                         break;
                     }
@@ -293,8 +293,8 @@ void PlotWidget::plotVariables(QTreeWidgetItem *item, int column)
                             pPlotWindow->setXLabel(tr(""));
                             pPlotWindow->setYLabel(tr(""));
                         }
-                        pPlotWindow->getPlot()->replot();
-                        pPlotWindow->getPlot()->updateGeometry();
+                        pPlotWindow->fitInView();
+                        pPlotWindow->getPlot()->updateLayout();
                         pPlotWindow->getPlot()->getPlotZoomer()->setZoomBase(false);
                     }
                     else
@@ -341,8 +341,8 @@ void PlotWidget::plotVariables(QTreeWidgetItem *item, int column)
                                     mpPlotVariablesTree->blockSignals(false);
                                     pPlotWindow->getPlot()->removeCurve(pPlotCurve);
                                     pPlotCurve->detach();
-                                    pPlotWindow->getPlot()->replot();
-                                    pPlotWindow->getPlot()->updateGeometry();
+                                    pPlotWindow->fitInView();
+                                    pPlotWindow->getPlot()->updateLayout();
                                     pPlotWindow->getPlot()->getPlotZoomer()->setZoomBase(false);
                                     break;
                                 }

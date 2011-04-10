@@ -1194,12 +1194,7 @@ QList<QString> OMCProxy::readSimulationResultVars(QString fileName)
 {
     sendCommand("readSimulationResultVars(\"" + fileName + "\")");
 
-    QList<QString> variablesList;
-    QStringList list = StringHandler::removeFirstLastCurlBrackets(getResult()).split(",", QString::SkipEmptyParts);
-    foreach (QString str, list)
-    {
-        variablesList.append(StringHandler::removeFirstLastQuotes(str));
-    }
+    QList<QString> variablesList = StringHandler::getSimulationResultVars(getResult());
     qSort(variablesList.begin(), variablesList.end());
     return variablesList;
 }

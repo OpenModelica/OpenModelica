@@ -300,6 +300,32 @@ QString StringHandler::removeComment(QString value)
     return value.remove(startPos, (endPos - startPos) + 2);
 }
 
+QList<QString> StringHandler::getSimulationResultVars(QString value)
+{
+    QList<QString> list;
+    QString str;
+    bool startReading = false;
+
+    foreach (QChar ch, value)
+    {
+        if(startReading)
+            str.append(ch);
+
+        if (ch == '"')
+        {
+            if (startReading)
+            {
+                startReading = false;
+                list.append(str.remove((str.length() - 1), 1));
+                str.clear();
+            }
+            else
+                startReading = true;
+        }
+    }
+    return list;
+}
+
 QString StringHandler::getModifierValue(QString value)
 {
     int element = 0;

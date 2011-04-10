@@ -48,7 +48,6 @@ PlotWindowContainer::PlotWindowContainer(MainWindow *pParent)
         setViewMode(QMdiArea::TabbedView);
     // dont show this widget at startup
     setVisible(false);
-    addPlotWindow();
 }
 
 MainWindow* PlotWindowContainer::getMainWindow()
@@ -80,6 +79,26 @@ PlotWindow* PlotWindowContainer::getCurrentWindow()
         return qobject_cast<PlotWindow*>(subWindowList(QMdiArea::ActivationHistoryOrder).last()->widget());
 }
 
+bool PlotWindowContainer::eventFilter(QObject *pObject, QEvent *event)
+{
+    PlotWindow *pPlotWindow = qobject_cast<PlotWindow*>(pObject);
+    if (!pPlotWindow)
+        return false;
+
+    if (event->type() == QEvent::Paint)
+    {
+        QPainter painter (pPlotWindow);
+        painter.setPen(Qt::gray);
+        QRect rectangle = pPlotWindow->rect();
+        rectangle.setWidth(pPlotWindow->rect().width() - 1);
+        rectangle.setHeight(pPlotWindow->rect().height() - 2);
+        painter.drawRect(rectangle);
+        return true;
+    }
+
+    return false;
+}
+
 PlotWindow* PlotWindowContainer::addPlotWindow()
 {
     try
@@ -88,6 +107,7 @@ PlotWindow* PlotWindowContainer::addPlotWindow()
         pPlotWindow->setPlotType(PlotWindow::PLOT);
         pPlotWindow->setWindowTitle(getUniqueName(tr("Plot : ")));
         pPlotWindow->setTitle(tr(""));
+        pPlotWindow->installEventFilter(this);
         QMdiSubWindow *pSubWindow = addSubWindow(pPlotWindow);
         pSubWindow->setWindowIcon(QIcon(":/Resources/icons/plotwindow.png"));
         setActiveSubWindow(pSubWindow);
@@ -111,6 +131,7 @@ PlotWindow* PlotWindowContainer::addPlotParametricWindow()
         pPlotWindow->setPlotType(PlotWindow::PLOTPARAMETRIC);
         pPlotWindow->setWindowTitle(getUniqueName(tr("Plot Parametric : ")));
         pPlotWindow->setTitle(tr(""));
+        pPlotWindow->installEventFilter(this);
         QMdiSubWindow *pSubWindow = addSubWindow(pPlotWindow);
         pSubWindow->setWindowIcon(QIcon(":/Resources/icons/plotparametricwindow.png"));
         setActiveSubWindow(pSubWindow);
@@ -137,7 +158,7 @@ void PlotWindowContainer::updatePlotWindows(QTreeWidgetItem *item)
             {
                 pPlotWindow->getPlot()->removeCurve(pPlotCurve);
                 pPlotCurve->detach();
-                pPlotWindow->getPlot()->replot();
+                pPlotWindow->fitInView();
                 pPlotWindow->getPlot()->updateGeometry();
             }
         }

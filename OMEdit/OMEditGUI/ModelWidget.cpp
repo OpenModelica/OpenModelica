@@ -267,7 +267,6 @@ CheckModelWidget::CheckModelWidget(QString name, QString nameStructure, MainWind
     setLayout(mainLayout);
 }
 
-
 FlatModelWidget::FlatModelWidget(QString name, QString nameStructure, MainWindow *pParent)
     : QDialog(pParent, Qt::WindowTitleHint), mName(name), mNameStructure(nameStructure)
 {

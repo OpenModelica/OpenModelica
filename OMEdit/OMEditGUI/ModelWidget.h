@@ -98,7 +98,6 @@ private:
     QPushButton *mpOkButton;
 };
 
-
 class FlatModelWidget : public QDialog
 {
     Q_OBJECT

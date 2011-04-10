@@ -1029,6 +1029,10 @@ void MainWindow::switchToModelingView()
 
 void MainWindow::switchToPlottingView()
 {
+    // if not plotwindow is opened then open one for user
+    if (mpPlotWindowContainer->subWindowList().size() == 0)
+        mpPlotWindowContainer->addPlotWindow();
+
     plottingViewAction->setChecked(true);
     mpProjectTabs->setVisible(false);
     mpInteractiveSimualtionTabWidget->setVisible(false);

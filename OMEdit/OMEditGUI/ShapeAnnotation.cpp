@@ -374,21 +374,21 @@ QVariant ShapeAnnotation::itemChange(GraphicsItemChange change, const QVariant &
 
 void ShapeAnnotation::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
 {
-    if (!mpGraphicsView)
-    {
-        QGraphicsItem::contextMenuEvent(event);
-        return;
-    }
+//    if (!mpGraphicsView)
+//    {
+//        QGraphicsItem::contextMenuEvent(event);
+//        return;
+//    }
 
-    setSelected(true);
-    QMenu menu(mpGraphicsView->mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow);
-    menu.addAction(mpGraphicsView->mpRotateIconAction);
-    menu.addAction(mpGraphicsView->mpRotateAntiIconAction);
-    menu.addAction(mpGraphicsView->mpResetRotation);
-    menu.addSeparator();
-    menu.addAction(mpGraphicsView->mpDeleteIconAction);
-    menu.addAction(mpShapePropertiesAction);
-    menu.exec(event->screenPos());
+//    setSelected(true);
+//    QMenu menu(mpGraphicsView->mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow);
+//    menu.addAction(mpGraphicsView->mpRotateIconAction);
+//    menu.addAction(mpGraphicsView->mpRotateAntiIconAction);
+//    menu.addAction(mpGraphicsView->mpResetRotation);
+//    menu.addSeparator();
+//    menu.addAction(mpGraphicsView->mpDeleteIconAction);
+//    menu.addAction(mpShapePropertiesAction);
+//    menu.exec(event->screenPos());
 }
 
 ShapeProperties::ShapeProperties(ShapeAnnotation *pShape, MainWindow *pParent)

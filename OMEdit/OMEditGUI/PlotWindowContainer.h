@@ -48,6 +48,7 @@ public:
     MainWindow* getMainWindow();
     QString getUniqueName(QString name = QString("Plot"), int number = 1);
     OMPlot::PlotWindow* getCurrentWindow();
+    bool eventFilter(QObject *pObject, QEvent *event);
 private:
     MainWindow *mpParentMainWindow;
 public slots:
