@@ -148,30 +148,30 @@ void LineAnnotation::drawLineAnnotaion(QPainter *painter)
     pen.setCosmetic(true);
     painter->setPen(pen);
     // draw start arrow
-    if (mStartArrow == ShapeAnnotation::Filled)
-    {
-        painter->save();
-        painter->setBrush(QBrush(mLineColor, Qt::SolidPattern));
-        painter->drawPolygon(drawArrow(mPoints.at(0), mPoints.at(1), mArrowSize * 2, mStartArrow));
-        painter->restore();
-    }
-    else
-        painter->drawPolygon(drawArrow(mPoints.at(0), mPoints.at(1), mArrowSize * 2, mStartArrow));
+//    if (mStartArrow == ShapeAnnotation::Filled)
+//    {
+//        painter->save();
+//        painter->setBrush(QBrush(mLineColor, Qt::SolidPattern));
+//        painter->drawPolygon(drawArrow(mPoints.at(0), mPoints.at(1), mArrowSize * 2, mStartArrow));
+//        painter->restore();
+//    }
+//    else
+//        painter->drawPolygon(drawArrow(mPoints.at(0), mPoints.at(1), mArrowSize * 2, mStartArrow));
 
     painter->drawPath(getShape());
 
     // draw end arrow
-    if (mEndArrow == ShapeAnnotation::Filled)
-    {
-        painter->save();
-        painter->setBrush(QBrush(mLineColor, Qt::SolidPattern));
-        painter->drawPolygon(drawArrow(mPoints.at(mPoints.size() - 1), mPoints.at(mPoints.size() - 2),
-                                       mArrowSize * 2, mEndArrow));
-        painter->restore();
-    }
-    else
-        painter->drawPolygon(drawArrow(mPoints.at(mPoints.size() - 1), mPoints.at(mPoints.size() - 2),
-                                       mArrowSize * 2, mEndArrow));
+//    if (mEndArrow == ShapeAnnotation::Filled)
+//    {
+//        painter->save();
+//        painter->setBrush(QBrush(mLineColor, Qt::SolidPattern));
+//        painter->drawPolygon(drawArrow(mPoints.at(mPoints.size() - 1), mPoints.at(mPoints.size() - 2),
+//                                       mArrowSize * 2, mEndArrow));
+//        painter->restore();
+//    }
+//    else
+//        painter->drawPolygon(drawArrow(mPoints.at(mPoints.size() - 1), mPoints.at(mPoints.size() - 2),
+//                                       mArrowSize * 2, mEndArrow));
 }
 
 void LineAnnotation::addPoint(QPointF point)
