@@ -38,7 +38,6 @@ BitmapAnnotation::BitmapAnnotation(QString shape, Component *pParent)
 {
     initializeFields();
     parseShapeAnnotation(shape, mpComponent->mpOMCProxy);
-    setTransformOriginPoint(boundingRect().center());
 }
 
 BitmapAnnotation::BitmapAnnotation(GraphicsView *graphicsView, QGraphicsItem *pParent)
@@ -108,7 +107,6 @@ void BitmapAnnotation::addPoint(QPointF point)
 void BitmapAnnotation::updatePoint(int index, QPointF point)
 {
     mExtent.replace(index, point);
-    setTransformOriginPoint(boundingRect().center());
 }
 
 void BitmapAnnotation::updateEndPoint(QPointF point)
@@ -125,7 +123,6 @@ void BitmapAnnotation::drawRectangleCornerItems()
         RectangleCornerItem *rectangleCornerItem = new RectangleCornerItem(point.x(), point.y(), i, this);
         mRectangleCornerItemsList.append(rectangleCornerItem);
     }
-    setTransformOriginPoint(boundingRect().center());
     emit updateShapeAnnotation();
 }
 

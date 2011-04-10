@@ -47,7 +47,6 @@ TextAnnotation::TextAnnotation(QString shape, Component *pParent)
 
     connect(this, SIGNAL(extentChanged()), SLOT(calculateFontSize()));
     parseShapeAnnotation(shape, mpComponent->mpOMCProxy);
-    setTransformOriginPoint(boundingRect().center());
     emit extentChanged();
 }
 
@@ -108,6 +107,11 @@ void TextAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
 {    
     Q_UNUSED(option);
     Q_UNUSED(widget);
+
+    if (transformOriginPoint() != boundingRect().center())
+    {
+        setTransformOriginPoint(boundingRect().center());
+    }
 
     painter->scale(1.0, -1.0);
     QPen pen(this->mLineColor, this->mThickness, this->mLinePattern);
@@ -233,7 +237,6 @@ void TextAnnotation::drawRectangleCornerItems()
         RectangleCornerItem *rectangleCornerItem = new RectangleCornerItem(point.x(), point.y(), i, this);
         mRectangleCornerItemsList.append(rectangleCornerItem);
     }
-    setTransformOriginPoint(boundingRect().center());
     emit updateShapeAnnotation();
 }
 
@@ -248,7 +251,6 @@ void TextAnnotation::addPoint(QPointF point)
 void TextAnnotation::updatePoint(int index, QPointF point)
 {
     mExtent.replace(index, point);
-    setTransformOriginPoint(boundingRect().center());
     emit extentChanged();
 }
 

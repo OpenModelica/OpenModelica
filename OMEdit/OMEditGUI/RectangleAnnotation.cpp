@@ -38,7 +38,6 @@ RectangleAnnotation::RectangleAnnotation(QString shape, Component *pParent)
 {
     initializeFields();
     parseShapeAnnotation(shape, mpCompnent->mpOMCProxy);
-    setTransformOriginPoint(boundingRect().center());
 }
 
 RectangleAnnotation::RectangleAnnotation(GraphicsView *graphicsView, QGraphicsItem *pParent)
@@ -79,6 +78,10 @@ void RectangleAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsIte
     Q_UNUSED(option);
     Q_UNUSED(widget);
 
+    if (transformOriginPoint() != boundingRect().center())
+    {
+        setTransformOriginPoint(boundingRect().center());
+    }
     drawRectangleAnnotaion(painter);
 }
 
@@ -155,7 +158,6 @@ void RectangleAnnotation::drawRectangleCornerItems()
         RectangleCornerItem *rectangleCornerItem = new RectangleCornerItem(point.x(), point.y(), i, this);
         mRectangleCornerItemsList.append(rectangleCornerItem);
     }
-    setTransformOriginPoint(boundingRect().center());
     emit updateShapeAnnotation();
 }
 
@@ -218,7 +220,6 @@ QString RectangleAnnotation::getShapeAnnotation()
 void RectangleAnnotation::updatePoint(int index, QPointF point)
 {
     mExtent.replace(index, point);
-    setTransformOriginPoint(boundingRect().center());
 }
 
 void RectangleAnnotation::parseShapeAnnotation(QString shape, OMCProxy *omc)

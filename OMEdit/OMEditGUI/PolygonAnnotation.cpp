@@ -38,7 +38,6 @@ PolygonAnnotation::PolygonAnnotation(QString shape, Component *pParent)
 {
     initializeFields();
     parseShapeAnnotation(shape, mpComponent->mpOMCProxy);
-    setTransformOriginPoint(boundingRect().center());
 }
 
 PolygonAnnotation::PolygonAnnotation(GraphicsView *graphicsView, QGraphicsItem *pParent)
@@ -129,7 +128,6 @@ void PolygonAnnotation::drawRectangleCornerItems()
         RectangleCornerItem *rectangleCornerItem = new RectangleCornerItem(point.x(), point.y(), i, this);
         mRectangleCornerItemsList.append(rectangleCornerItem);
     }
-    setTransformOriginPoint(boundingRect().center());
     emit updateShapeAnnotation();
 }
 
@@ -209,7 +207,6 @@ void PolygonAnnotation::updatePoint(int index, QPointF point)
     {
         mPoints.replace(index, point);
     }
-    setTransformOriginPoint(boundingRect().center());
 }
 
 void PolygonAnnotation::parseShapeAnnotation(QString shape, OMCProxy *omc)

@@ -38,7 +38,6 @@ EllipseAnnotation::EllipseAnnotation(QString shape, Component *pParent)
 {
     initializeFields();
     parseShapeAnnotation(shape, mpComponent->mpOMCProxy);
-    setTransformOriginPoint(boundingRect().center());
 }
 
 EllipseAnnotation::EllipseAnnotation(GraphicsView *graphicsView, QGraphicsItem *pParent)
@@ -79,6 +78,10 @@ void EllipseAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem 
     Q_UNUSED(option);
     Q_UNUSED(widget);
 
+    if (transformOriginPoint() != boundingRect().center())
+    {
+        setTransformOriginPoint(boundingRect().center());
+    }
     drawEllipseAnnotaion(painter);
 }
 
@@ -150,7 +153,6 @@ void EllipseAnnotation::drawRectangleCornerItems()
         RectangleCornerItem *rectangleCornerItem = new RectangleCornerItem(point.x(), point.y(), i, this);
         mRectangleCornerItemsList.append(rectangleCornerItem);
     }
-    setTransformOriginPoint(boundingRect().center());
     emit updateShapeAnnotation();
 }
 
@@ -213,7 +215,6 @@ QString EllipseAnnotation::getShapeAnnotation()
 void EllipseAnnotation::updatePoint(int index, QPointF point)
 {
     mExtent.replace(index, point);
-    setTransformOriginPoint(boundingRect().center());
 }
 
 void EllipseAnnotation::parseShapeAnnotation(QString shape, OMCProxy *omc)
