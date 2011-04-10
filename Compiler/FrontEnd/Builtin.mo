@@ -969,6 +969,7 @@ algorithm
       Boolean b;
       String msg,fileModelica,fileMetaModelica,initialFunctionStr,initialFunctionStrMM;
       list<tuple<Boolean,Absyn.Program>> assocLst;
+      Option<Absyn.Program> optProgram;
     case ()
       equation
         failure(_ = getGlobalRoot(memoryIndex));
@@ -985,8 +986,7 @@ algorithm
         fileMetaModelica = Settings.getInstallationDirectoryPath() +& "/lib/omc/MetaModelicaBuiltin.mo";
         initialFunctionStr = System.readFile(fileModelica);
         initialFunctionStrMM = Debug.bcallret1(b, System.readFile, fileMetaModelica, "");
-        (initialProgram,msg) = Parser.parsestring(initialFunctionStr +& initialFunctionStrMM);
-        Error.assertion(msg ==& "Ok", msg, Absyn.dummyInfo);
+        initialProgram = Parser.parsestring(initialFunctionStr +& initialFunctionStrMM, fileModelica);
         assocLst = getGlobalRoot(memoryIndex);
         setGlobalRoot(memoryIndex, (b,initialProgram)::assocLst);
       then initialProgram;

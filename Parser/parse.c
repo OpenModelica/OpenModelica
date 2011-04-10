@@ -361,7 +361,7 @@ static void* parseFile(const char* fileName, int flags)
   return parseStream(input);
 }
 
-static void* parseString(const char* data, int flags)
+static void* parseString(const char* data, const char* interactiveFilename, int flags)
 {
   bool debug         = check_debug_flag("parsedebug");
   bool parsedump     = check_debug_flag("parsedump");
@@ -370,7 +370,7 @@ static void* parseString(const char* data, int flags)
   pANTLR3_UINT8               fName;
   pANTLR3_INPUT_STREAM        input;
 
-  ModelicaParser_filename_C = "<interactive>";
+  ModelicaParser_filename_C = interactiveFilename;
   ModelicaParser_filename_RML = mk_scon((char*)ModelicaParser_filename_C);
   ModelicaParser_flags = flags;
   isReadOnly = 0;

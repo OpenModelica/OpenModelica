@@ -46,34 +46,32 @@ encapsulated package Parser
 public import Absyn;
 public import Interactive;
 
-public function parse
-  input String inString;
+public function parse "Parse a mo-file"
+  input String filename;
   output Absyn.Program outProgram;
 
-  external "C" outProgram=Parser_parse(inString) annotation(Library = {"omcruntime","omparse","antlr3"});
+  external "C" outProgram=Parser_parse(filename) annotation(Library = {"omcruntime","omparse","antlr3"});
 end parse;
 
-public function parseexp
-  input String inString;
+public function parseexp "Parse a mos-file"
+  input String filename;
   output Interactive.InteractiveStmts outInteractiveStmts;
 
-  external "C" outInteractiveStmts=Parser_parseexp(inString) annotation(Library = {"omcruntime","omparse","antlr3"});
+  external "C" outInteractiveStmts=Parser_parseexp(filename) annotation(Library = {"omcruntime","omparse","antlr3"});
 end parseexp;
 
-public function parsestring
-  input String inString;
+public function parsestring "Parse a string as if it were a stored definition"
+  input String str;
+  input String infoFilename := "<interactive>";
   output Absyn.Program outProgram;
-  output String outString;
-
-  external "C" outProgram=Parser_parsestring(inString,outString) annotation(Library = {"omcruntime","omparse","antlr3"});
+  external "C" outProgram=Parser_parsestring(str) annotation(Library = {"omcruntime","omparse","antlr3"});
 end parsestring;
 
-public function parsestringexp
-  input String inString;
+public function parsestringexp "Parse a string as if it was a sequence of statements"
+  input String str;
+  input String infoFilename := "<interactive>";
   output Interactive.InteractiveStmts outInteractiveStmts;
-  output String outString;
-
-  external "C" outInteractiveStmts=Parser_parsestringexp(inString,outString) annotation(Library = {"omcruntime","omparse","antlr3"});
+  external "C" outInteractiveStmts=Parser_parsestringexp(str) annotation(Library = {"omcruntime","omparse","antlr3"});
 end parsestringexp;
 end Parser;
 

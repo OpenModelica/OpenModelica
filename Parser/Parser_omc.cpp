@@ -51,31 +51,23 @@ void* Parser_parseexp(const char* filename)
   return res;
 }
 
-void* Parser_parsestring(const char* data, const char** msg)
+void* Parser_parsestring(const char* data, const char* filename)
 {
-  ErrorImpl__setCheckpoint("parsestring");
-  void *res = parseString(data,PARSE_MODELICA);
+  void *res = parseString(data,filename,PARSE_MODELICA);
   if (res != NULL) {
-    *msg = "Ok";
-    ErrorImpl__rollBack("parsestring");
     return res;
   } else {
-    *msg = ErrorImpl__rollBackAndPrint("parsestring");
-    return NULL; // FIXME?!
+    MMC_THROW();
   }
 }
 
-void* Parser_parsestringexp(const char* data, const char** msg)
+void* Parser_parsestringexp(const char* data, const char* filename)
 {
-  ErrorImpl__setCheckpoint("parsestringexp");
-  void *res = parseString(data,PARSE_EXPRESSION);
+  void *res = parseString(data,filename,PARSE_EXPRESSION);
   if (res != NULL) {
-    *msg = "Ok";
-    ErrorImpl__rollBack("parsestringexp");
     return res;
   } else {
-    *msg = ErrorImpl__rollBackAndPrint("parsestringexp");
-    return NULL; // FIXME?!
+    MMC_THROW();
   }
 }
 

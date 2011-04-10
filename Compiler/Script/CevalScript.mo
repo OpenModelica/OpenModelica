@@ -376,9 +376,8 @@ algorithm
         experimentAnnotationStr = System.stringReplace(experimentAnnotationStr, "{", "");
         experimentAnnotationStr = System.stringReplace(experimentAnnotationStr, "}", "");
         
-        (Interactive.ISTMTS({Interactive.IEXP(exp = Absyn.CALL(functionArgs = Absyn.FUNCTIONARGS(_, named)))}, _),
-         msg) = Parser.parsestringexp("experiment(" +& experimentAnnotationStr +& ");\n");
-        true = stringEq(msg, "Ok");
+        Interactive.ISTMTS({Interactive.IEXP(exp = Absyn.CALL(functionArgs = Absyn.FUNCTIONARGS(_, named)))}, _)
+        = Parser.parsestringexp("experiment(" +& experimentAnnotationStr +& ");\n", "<experiment>");
         
         simOpt = populateSimulationOptions(defaults, named);
       then

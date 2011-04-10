@@ -208,6 +208,23 @@ algorithm
         true = Util.strncmp("quit()", str, 6);
       then
         (false,"Ok\n",isymb);
+    case (str,isymb) /* Interactively evaluate an algorithm statement or expression */
+      equation
+        ErrorExt.setCheckpoint("parsestring");
+        //debug_print("Command: don't typeCheck", str);
+        Debug.fcall0("dump", Print.clearBuf);
+        Debug.fcall0("dumpgraphviz", Print.clearBuf);
+        Debug.fprint("dump",
+          "\nNot a class definition, trying expresion parser\n");
+        exp = Parser.parsestringexp(str,"<interactive>");
+        (evalstr,newisymb) = Interactive.evaluate(exp, isymb, false);
+        Debug.fprint("dump", "\n--------------- Parsed expression ---------------\n");
+        Debug.fcall("dump", Dump.dumpIstmt, exp);
+        res_1 = makeDebugResult("dump", evalstr);
+        res = makeDebugResult("dumpgraphviz", res_1);
+        ErrorExt.delCheckpoint("parsestring");
+      then
+        (true,res,newisymb);
     /* Add a class or function to the interactive symbol table.
      * If it is a function, type check it.
      */
@@ -217,12 +234,12 @@ algorithm
       lstVarVal = vars,compiledFunctions = cf,
       loadedFiles = lf)))
       equation
+        ErrorExt.rollBack("parsestring");
         //debug_print("Command: typeCheck", str);
         Debug.fcall0("dump", Print.clearBuf);
         Debug.fcall0("dumpgraphviz", Print.clearBuf);
         Debug.fprint("dump", "\nTrying to parse class definition...\n");
-        (p,msg) = Parser.parsestring(str);
-        true = stringEq(msg, "Ok") "Always succeeds, check msg for errors" ;
+        p = Parser.parsestring(str,"<interactive>");
         p_1 = Interactive.addScope(p, vars);
         vars_1 = Interactive.updateScope(p, vars);
         newprog = Interactive.updateProgram(p_1, iprog);
@@ -239,41 +256,12 @@ algorithm
         // Interactive.typeCheckFunction(p, isymb); // You need the new environment before you can check the added functions
       then
         (true,res,isymb);
-    case (str,isymb) /* Interactively evaluate an algorithm statement or expression */
-      equation
-        //debug_print("Command: don't typeCheck", str);
-        Debug.fcall0("dump", Print.clearBuf);
-        Debug.fcall0("dumpgraphviz", Print.clearBuf);
-        Debug.fprint("dump",
-          "\nNot a class definition, trying expresion parser\n");
-        (exp,msg) = Parser.parsestringexp(str);
-        true = stringEq(msg, "Ok") "always succeeds, check msg for errors" ;
-        (evalstr,newisymb) = Interactive.evaluate(exp, isymb, false);
-        Debug.fprint("dump", "\n--------------- Parsed expression ---------------\n");
-        Debug.fcall("dump", Dump.dumpIstmt, exp);
-        res_1 = makeDebugResult("dump", evalstr);
-        res = makeDebugResult("dumpgraphviz", res_1);
-      then
-        (true,res,newisymb);
-    case (str,isymb)
-      equation
-        //debug_print("Command: fail", str);
-        Debug.fcall0("failtrace", Print.clearBuf);
-        (_,msg) = Parser.parsestring(str);
-        (_,expmsg) = Parser.parsestringexp(str);
-        false = stringEq(msg, "Ok");
-        false = stringEq(expmsg, "Ok");
-        Debug.fprint("failtrace", "\nBoth parser and expression parser failed: \n");
-        Debug.fprintl("failtrace", {"parser: \n",msg,"\n"});
-        Debug.fprintl("failtrace", {"expparser: \n",expmsg,"\n"});
-        res = makeDebugResult("failtrace", msg);
-      then
-        (true,res,isymb);
     case (_,isymb)
       equation
         Print.printBuf("Error occured building AST\n");
         debugstr = Print.getString();
         str = stringAppend(debugstr, "Syntax Error\n");
+        str = stringAppend(str, Error.printMessagesStr());
       then
         (true,str,isymb);
   end matchcontinue;

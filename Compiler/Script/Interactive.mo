@@ -13979,17 +13979,17 @@ algorithm
     
     case ("1.x")
       equation
-        (annProg, resultParse) = Parser.parsestring(Constants.annotationsModelica_1_x);
+        annProg = Parser.parsestring(Constants.annotationsModelica_1_x, "<1.x annotations>");
       then annProg;
 
     case ("2.x")
       equation
-        (annProg, resultParse) = Parser.parsestring(Constants.annotationsModelica_2_x);
-        then annProg;
+        annProg = Parser.parsestring(Constants.annotationsModelica_2_x, "<2.x annotations>");
+      then annProg;
 
     case ("3.x")
       equation
-        (annProg, resultParse) = Parser.parsestring(Constants.annotationsModelica_3_x);
+        annProg = Parser.parsestring(Constants.annotationsModelica_3_x, "<3.x annotations>");
       then annProg;
   end match;
 end modelicaAnnotationProgram;
