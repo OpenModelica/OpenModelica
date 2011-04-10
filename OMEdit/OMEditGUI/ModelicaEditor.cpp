@@ -224,6 +224,8 @@ void ModelicaTextHighlighter::initializeSettings()
     mHighlightingRules.clear();
     HighlightingRule rule;
 
+    mTextFormat.setForeground(mpModelicaTextSettings->getTextRuleColor());
+    mKeywordFormat.setForeground(mpModelicaTextSettings->getKeywordRuleColor());
     mTypeFormat.setForeground(mpModelicaTextSettings->getTypeRuleColor());
     mSingleLineCommentFormat.setForeground(mpModelicaTextSettings->getCommentRuleColor());
     mMultiLineCommentFormat.setForeground(mpModelicaTextSettings->getCommentRuleColor());
@@ -234,9 +236,6 @@ void ModelicaTextHighlighter::initializeSettings()
     rule.mPattern = QRegExp("[0-9][0-9]*([.][0-9]*)?([eE][+-]?[0-9]*)?");
     rule.mFormat = mNumberFormat;
     mHighlightingRules.append(rule);
-
-    mTextFormat.setForeground(mpModelicaTextSettings->getTextRuleColor());
-    mKeywordFormat.setForeground(mpModelicaTextSettings->getKeywordRuleColor());
 
     rule.mPattern = QRegExp("\\b[A-Za-z_][A-Za-z0-9_]*");
     rule.mFormat = mTextFormat;
