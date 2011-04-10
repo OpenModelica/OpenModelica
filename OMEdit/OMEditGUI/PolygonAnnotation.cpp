@@ -38,6 +38,7 @@ PolygonAnnotation::PolygonAnnotation(QString shape, Component *pParent)
 {
     initializeFields();
     parseShapeAnnotation(shape, mpComponent->mpOMCProxy);
+    setTransformOriginPoint(boundingRect().center());
 }
 
 PolygonAnnotation::PolygonAnnotation(GraphicsView *graphicsView, QGraphicsItem *pParent)

@@ -38,6 +38,7 @@ RectangleAnnotation::RectangleAnnotation(QString shape, Component *pParent)
 {
     initializeFields();
     parseShapeAnnotation(shape, mpCompnent->mpOMCProxy);
+    setTransformOriginPoint(boundingRect().center());
 }
 
 RectangleAnnotation::RectangleAnnotation(GraphicsView *graphicsView, QGraphicsItem *pParent)

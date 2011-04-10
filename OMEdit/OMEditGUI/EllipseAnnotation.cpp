@@ -38,6 +38,7 @@ EllipseAnnotation::EllipseAnnotation(QString shape, Component *pParent)
 {
     initializeFields();
     parseShapeAnnotation(shape, mpComponent->mpOMCProxy);
+    setTransformOriginPoint(boundingRect().center());
 }
 
 EllipseAnnotation::EllipseAnnotation(GraphicsView *graphicsView, QGraphicsItem *pParent)

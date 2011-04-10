@@ -38,6 +38,7 @@ BitmapAnnotation::BitmapAnnotation(QString shape, Component *pParent)
 {
     initializeFields();
     parseShapeAnnotation(shape, mpComponent->mpOMCProxy);
+    setTransformOriginPoint(boundingRect().center());
 }
 
 BitmapAnnotation::BitmapAnnotation(GraphicsView *graphicsView, QGraphicsItem *pParent)

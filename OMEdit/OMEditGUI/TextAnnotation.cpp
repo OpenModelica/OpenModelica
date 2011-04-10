@@ -47,6 +47,7 @@ TextAnnotation::TextAnnotation(QString shape, Component *pParent)
 
     connect(this, SIGNAL(extentChanged()), SLOT(calculateFontSize()));
     parseShapeAnnotation(shape, mpComponent->mpOMCProxy);
+    setTransformOriginPoint(boundingRect().center());
     emit extentChanged();
 }
 
