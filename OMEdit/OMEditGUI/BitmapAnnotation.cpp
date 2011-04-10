@@ -84,7 +84,6 @@ void BitmapAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *
     Q_UNUSED(option);
     Q_UNUSED(widget);
 
-    setTransformOriginPoint(boundingRect().center());
     if(!mImageSource.isEmpty())
     {
         //open file from image source
@@ -108,6 +107,7 @@ void BitmapAnnotation::addPoint(QPointF point)
 void BitmapAnnotation::updatePoint(int index, QPointF point)
 {
     mExtent.replace(index, point);
+    setTransformOriginPoint(boundingRect().center());
 }
 
 void BitmapAnnotation::updateEndPoint(QPointF point)
@@ -124,6 +124,7 @@ void BitmapAnnotation::drawRectangleCornerItems()
         RectangleCornerItem *rectangleCornerItem = new RectangleCornerItem(point.x(), point.y(), i, this);
         mRectangleCornerItemsList.append(rectangleCornerItem);
     }
+    setTransformOriginPoint(boundingRect().center());
     emit updateShapeAnnotation();
 }
 

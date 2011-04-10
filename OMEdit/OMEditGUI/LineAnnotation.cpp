@@ -131,7 +131,6 @@ void LineAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
     Q_UNUSED(option);
     Q_UNUSED(widget);
 
-    setTransformOriginPoint(boundingRect().center());
     drawLineAnnotaion(painter);
 }
 
@@ -196,6 +195,7 @@ void LineAnnotation::drawRectangleCornerItems()
         RectangleCornerItem *rectangleCornerItem = new RectangleCornerItem(point.x(), point.y(), i, this);
         mRectangleCornerItemsList.append(rectangleCornerItem);
     }
+    setTransformOriginPoint(boundingRect().center());
     emit updateShapeAnnotation();
 }
 
@@ -250,6 +250,7 @@ QString LineAnnotation::getShapeAnnotation()
 void LineAnnotation::updatePoint(int index, QPointF point)
 {
     mPoints.replace(index, point);
+    setTransformOriginPoint(boundingRect().center());
 }
 
 void LineAnnotation::parseShapeAnnotation(QString shape, OMCProxy *omc)
