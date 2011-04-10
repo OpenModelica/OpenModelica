@@ -291,8 +291,11 @@ void MainWindow::createActions()
     zoomOutAction = new QAction(QIcon(":/Resources/icons/zoomOut.png"), tr("Zoom Out"), this);
     zoomOutAction->setShortcut(QKeySequence("Ctrl+-"));
 
-    checkModelAction = new QAction(QIcon(":/Resources/icons/check.png"), tr("Check"), this);
+    checkModelAction = new QAction(QIcon(":/Resources/icons/check.png"), tr("Check Model"), this);
     connect(checkModelAction, SIGNAL(triggered()), SLOT(checkModel()));
+
+    flatModelAction = new QAction(QIcon(":/Resources/icons/flatmodel.png"), tr("Instantiate Model"), this);
+    connect(flatModelAction, SIGNAL(triggered()), SLOT(flatModel()));
 
     omcLoggerAction = new QAction(QIcon(":/Resources/icons/console.png"), tr("OMC Logger"), this);
     omcLoggerAction->setStatusTip(tr("Shows OMC Logger Window"));
@@ -493,6 +496,7 @@ void MainWindow::createMenus()
     menuView->addAction(zoomInAction);
     menuView->addAction(zoomOutAction);
     menuView->addSeparator();
+    menuView->addAction(flatModelAction);
     menuView->addAction(checkModelAction);
     menuView->addSeparator();
     menuView->addAction(modelingViewAction);
@@ -566,6 +570,7 @@ void MainWindow::createToolbars()
     viewToolBar->addAction(zoomInAction);
     viewToolBar->addAction(zoomOutAction);
     viewToolBar->addSeparator();
+    viewToolBar->addAction(flatModelAction);
     viewToolBar->addAction(checkModelAction);
 
     shapesToolBar = addToolBar(tr("Shapes Toolbar"));
@@ -949,6 +954,21 @@ void MainWindow::checkModel()
         {
             CheckModelWidget *widget = new CheckModelWidget(pCurrentTab->mModelName, pCurrentTab->mModelNameStructure,
                                                             this);
+            widget->show();
+        }
+    }
+}
+
+void MainWindow::flatModel()
+{
+    ProjectTab *pCurrentTab = mpProjectTabs->getCurrentTab();
+    if (pCurrentTab)
+    {
+        // validate the modelica text before instantiating the model
+        if (pCurrentTab->mpModelicaEditor->validateText())
+        {
+            FlatModelWidget *widget = new FlatModelWidget(pCurrentTab->mModelName, pCurrentTab->mModelNameStructure,
+                                                          this);
             widget->show();
         }
     }

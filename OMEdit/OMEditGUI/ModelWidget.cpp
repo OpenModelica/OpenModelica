@@ -266,3 +266,38 @@ CheckModelWidget::CheckModelWidget(QString name, QString nameStructure, MainWind
 
     setLayout(mainLayout);
 }
+
+
+FlatModelWidget::FlatModelWidget(QString name, QString nameStructure, MainWindow *pParent)
+    : QDialog(pParent, Qt::WindowTitleHint), mName(name), mNameStructure(nameStructure)
+{
+    setAttribute(Qt::WA_DeleteOnClose);
+    mpParentMainWindow = pParent;
+
+    setWindowTitle(QString(Helper::applicationName).append(" - Instantiate Model - ").append(name));
+    setMinimumSize(300, 100);
+    setModal(true);
+
+    mpText = new QTextEdit(tr(""));
+    QString str = mpParentMainWindow->mpOMCProxy->instantiateModel(mNameStructure);
+    ModelicaTextHighlighter *highlighter = new ModelicaTextHighlighter(pParent->mpOptionsWidget->mpModelicaTextSettings,mpText->document());
+    mpText->setPlainText(str.length() ? str : "Instantiation of " + name + " failed");
+    QString err = mpParentMainWindow->mpOMCProxy->getErrorString();
+    if (err.length())
+      mpParentMainWindow->mpMessageWidget->printGUIErrorMessage(err);
+
+    // Create the button
+    mpOkButton = new QPushButton(tr("OK"));
+    connect(mpOkButton, SIGNAL(pressed()), SLOT(close()));
+
+    // Create a layout
+    QHBoxLayout *buttonLayout = new QHBoxLayout;
+    buttonLayout->setAlignment(Qt::AlignCenter);
+    buttonLayout->addWidget(mpOkButton);
+
+    QVBoxLayout *mainLayout = new QVBoxLayout;
+    mainLayout->addWidget(mpText);
+    mainLayout->addLayout(buttonLayout);
+
+    setLayout(mainLayout);
+}

@@ -134,6 +134,7 @@ public:
     bool save(QString modelName);
     bool saveModifiedModel(QString modelText);
     QString list(QString className);
+    QString instantiateModel(QString className);
     bool addClassAnnotation(QString className, QString annotation);
     bool addComponent(QString name, QString className, QString modelName);
     bool deleteComponent(QString name, QString modelName);
@@ -147,7 +148,7 @@ public:
     bool setComponentComment(QString modelName, QString componentName, QString comment);
     bool addConnection(QString from, QString to, QString className);
     bool deleteConnection(QString from, QString to, QString className);
-    bool instantiateModel(QString modelName);
+    bool instantiateModelSucceeds(QString modelName);
     bool simulate(QString modelName, QString simualtionParameters);
     bool buildModel(QString modelName, QString simualtionParameters);
     QList<QString> readSimulationResultVars(QString fileName);

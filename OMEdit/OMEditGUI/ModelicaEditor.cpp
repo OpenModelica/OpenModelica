@@ -224,7 +224,24 @@ void ModelicaTextHighlighter::initializeSettings()
     mHighlightingRules.clear();
     HighlightingRule rule;
 
+    mTypeFormat.setForeground(mpModelicaTextSettings->getTypeRuleColor());
+    mSingleLineCommentFormat.setForeground(mpModelicaTextSettings->getCommentRuleColor());
+    mMultiLineCommentFormat.setForeground(mpModelicaTextSettings->getCommentRuleColor());
+    mFunctionFormat.setForeground(mpModelicaTextSettings->getFunctionRuleColor());    mQuotationFormat.setForeground(QColor(mpModelicaTextSettings->getQuotesRuleColor()));
+
+    // Priority: keyword > func() > ident > number. Yes, the order matters :)
+    mNumberFormat.setForeground(mpModelicaTextSettings->getNumberRuleColor());
+    rule.mPattern = QRegExp("[0-9][0-9]*([.][0-9]*)?([eE][+-]?[0-9]*)?");
+    rule.mFormat = mNumberFormat;
+    mHighlightingRules.append(rule);
+
+    mTextFormat.setForeground(mpModelicaTextSettings->getTextRuleColor());
     mKeywordFormat.setForeground(mpModelicaTextSettings->getKeywordRuleColor());
+
+    rule.mPattern = QRegExp("\\b[A-Za-z_][A-Za-z0-9_]*");
+    rule.mFormat = mTextFormat;
+    mHighlightingRules.append(rule);
+
     QStringList keywordPatterns;
     keywordPatterns << "\\balgorithm\\b"
                     << "\\band\\b"
@@ -293,7 +310,6 @@ void ModelicaTextHighlighter::initializeSettings()
         mHighlightingRules.append(rule);
     }
 
-    mTypeFormat.setForeground(mpModelicaTextSettings->getTypeRuleColor());
     QStringList typePatterns;
     typePatterns << "\\bString\\b"
                  << "\\bInteger\\b"
@@ -307,24 +323,13 @@ void ModelicaTextHighlighter::initializeSettings()
         mHighlightingRules.append(rule);
     }
 
-    mSingleLineCommentFormat.setForeground(mpModelicaTextSettings->getCommentRuleColor());
-    rule.mPattern = QRegExp("//[^\n]*");
-    rule.mFormat = mSingleLineCommentFormat;
-    mHighlightingRules.append(rule);
-
-    mNumberFormat.setForeground(mpModelicaTextSettings->getNumberRuleColor());
-    rule.mPattern = QRegExp("[0-9][0-9]*([.][0-9]*)?([eE][+-]?[0-9]*)?");
-    rule.mFormat = mNumberFormat;
-    mHighlightingRules.append(rule);
-
-    mMultiLineCommentFormat.setForeground(mpModelicaTextSettings->getCommentRuleColor());
-
-    mFunctionFormat.setForeground(mpModelicaTextSettings->getFunctionRuleColor());
     rule.mPattern = QRegExp("\\b[A-Za-z0-9_]+(?=\\()");
     rule.mFormat = mFunctionFormat;
     mHighlightingRules.append(rule);
 
-    mQuotationFormat.setForeground(QColor(mpModelicaTextSettings->getQuotesRuleColor()));
+    rule.mPattern = QRegExp("//[^\n]*");
+    rule.mFormat = mSingleLineCommentFormat;
+    mHighlightingRules.append(rule);
 
     mCommentStartExpression = QRegExp("/\\*");
     mCommentEndExpression = QRegExp("\\*/");

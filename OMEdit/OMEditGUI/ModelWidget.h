@@ -98,4 +98,19 @@ private:
     QPushButton *mpOkButton;
 };
 
+
+class FlatModelWidget : public QDialog
+{
+    Q_OBJECT
+public:
+    FlatModelWidget(QString name, QString nameStructure, MainWindow *pParent);
+
+    MainWindow *mpParentMainWindow;
+private:
+    QString mName;
+    QString mNameStructure;
+    QTextEdit *mpText;
+    QPushButton *mpOkButton;
+};
+
 #endif // MODELWIDGET_H

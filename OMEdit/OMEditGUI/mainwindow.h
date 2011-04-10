@@ -150,6 +150,7 @@ public:
     QAction *zoomInAction;
     QAction *zoomOutAction;
     QAction *checkModelAction;
+    QAction *flatModelAction;
     QAction *closeAction;
     QAction *simulationAction;
     QAction *plotAction;
@@ -205,6 +206,7 @@ private slots:
     void importModelfromOMNotebook();
     void exportModelAsImage();
     void openConfigurationOptions();
+    void flatModel();
     void checkModel();
     void openUserManual();
     void openAbout();

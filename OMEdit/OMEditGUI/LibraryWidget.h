@@ -89,6 +89,7 @@ private:
     QAction *mpRenameAction;
     QAction *mpDeleteAction;
     QAction *mpCheckModelAction;
+    QAction *mpFlatModelAction;
 signals:
     void nodeDeleted();
 public slots:
@@ -97,6 +98,7 @@ public slots:
     void showContextMenu(QPoint point);
     void renameClass();
     void checkModelicaModel();
+    void flatModel();
     bool deleteNodeTriggered(ModelicaTreeNode *node = 0, bool askQuestion = true);
     void saveChildModels(QString modelName, QString filePath);
     void loadingLibraryComponent(ModelicaTreeNode *treeNode, QString className);
@@ -122,6 +124,7 @@ private:
     QAction *mpShowComponentAction;
     QAction *mpViewDocumentationAction;
     QAction *mpCheckModelAction;
+    QAction *mpFlatModelAction;
 public:
     LibraryTree(LibraryWidget *pParent);
     ~LibraryTree();
@@ -142,6 +145,7 @@ private slots:
     void showComponent(QTreeWidgetItem *item, int column);
     void showComponent();
     void viewDocumentation();
+    void flatModel();
     void checkLibraryModel();
     void treeItemPressed(QTreeWidgetItem *item);
 public slots:

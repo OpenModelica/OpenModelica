@@ -94,6 +94,7 @@ private:
     QRegExp mStringStartExpression;
     QRegExp mStringEndExpression;
 
+    QTextCharFormat mTextFormat;
     QTextCharFormat mKeywordFormat;
     QTextCharFormat mTypeFormat;
     QTextCharFormat mFunctionFormat;

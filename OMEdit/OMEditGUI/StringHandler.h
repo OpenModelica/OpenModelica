@@ -46,6 +46,8 @@ public:
     enum ModelicaClasses {MODEL, CLASS, CONNECTOR, RECORD, BLOCK, FUNCTION, PACKAGE, PRIMITIVE, TYPE, PARAMETER,
                           CONSTANT, PROTECTED};
     static QString getModelicaClassType(int type);
+    // Returns "" if the string is not a standard Modelica string. Else it unparses it into normal form.
+    static QString unparse(QString value);
     static QString getViewType(int type);
     static QString removeFirstLastCurlBrackets(QString value);
     static QString removeFirstLastBrackets(QString value);

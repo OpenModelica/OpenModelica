@@ -879,7 +879,7 @@ void GraphicsView::addConnector(Component *pComponent)
                                                        mpParentProjectTab->mModelNameStructure))
             {
                 // Check if both ports connected are compatible or not.
-                if (pMainWindow->mpOMCProxy->instantiateModel(mpParentProjectTab->mModelNameStructure))
+                if (pMainWindow->mpOMCProxy->instantiateModelSucceeds(mpParentProjectTab->mModelNameStructure))
                 {
                     this->mIsCreatingConnector = false;
                     QPointF newPos = pComponent->mapToScene(pComponent->boundingRect().center());
@@ -2684,6 +2684,7 @@ void ProjectTabWidget::enableProjectToolbar()
         mpParentMainWindow->resetZoomAction->setEnabled(true);
         mpParentMainWindow->zoomInAction->setEnabled(true);
         mpParentMainWindow->zoomOutAction->setEnabled(true);
+        mpParentMainWindow->flatModelAction->setEnabled(true);
         mpParentMainWindow->checkModelAction->setEnabled(true);
         // enable the shapes tool bar
         mpParentMainWindow->shapesToolBar->setEnabled(true);
@@ -2703,6 +2704,7 @@ void ProjectTabWidget::disableProjectToolbar()
         mpParentMainWindow->resetZoomAction->setEnabled(false);
         mpParentMainWindow->zoomInAction->setEnabled(false);
         mpParentMainWindow->zoomOutAction->setEnabled(false);
+        mpParentMainWindow->flatModelAction->setEnabled(false);
         mpParentMainWindow->checkModelAction->setEnabled(false);
         // disable the shapes tool bar
         mpParentMainWindow->shapesToolBar->setEnabled(false);

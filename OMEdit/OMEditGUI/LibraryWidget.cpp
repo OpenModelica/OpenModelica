@@ -116,6 +116,9 @@ void ModelicaTree::createActions()
     mpCheckModelAction = new QAction(QIcon(":/Resources/icons/check.png"), tr("Check"), this);
     connect(mpCheckModelAction, SIGNAL(triggered()), SLOT(checkModelicaModel()));
 
+    mpFlatModelAction = new QAction(QIcon(":/Resources/icons/flatmodel.png"), tr("Instantiate Model"), this);
+    connect(mpFlatModelAction, SIGNAL(triggered()), SLOT(flatModel()));
+
     mpDeleteAction = new QAction(QIcon(":/Resources/icons/delete.png"), tr("Delete"), this);
     connect(mpDeleteAction, SIGNAL(triggered()), SLOT(deleteNodeTriggered()));
 }
@@ -262,6 +265,7 @@ void ModelicaTree::showContextMenu(QPoint point)
         QMenu menu(mpParentLibraryWidget);
         menu.addAction(mpRenameAction);
         menu.addAction(mpDeleteAction);
+        menu.addAction(mpFlatModelAction);
         menu.addAction(mpCheckModelAction);
         point.setY(point.y() + adjust);
         menu.exec(mapToGlobal(point));
@@ -273,6 +277,22 @@ void ModelicaTree::renameClass()
     RenameClassWidget *widget = new RenameClassWidget(mpParentLibraryWidget->mSelectedModelicaNode->mName,
                                                       mpParentLibraryWidget->mSelectedModelicaNode->mNameStructure,
                                                       mpParentLibraryWidget->mpParentMainWindow);
+    widget->show();
+}
+
+void ModelicaTree::flatModel()
+{
+    // validate the modelica text before checking the model
+    ProjectTab *pCurrentTab = mpParentLibraryWidget->mpParentMainWindow->mpProjectTabs->getCurrentTab();
+    if (pCurrentTab)
+    {
+        if (!pCurrentTab->mpModelicaEditor->validateText())
+            return;
+    }
+
+    FlatModelWidget *widget = new FlatModelWidget(mpParentLibraryWidget->mSelectedModelicaNode->mName,
+                                                  mpParentLibraryWidget->mSelectedModelicaNode->mNameStructure,
+                                                  mpParentLibraryWidget->mpParentMainWindow);
     widget->show();
 }
 
@@ -468,6 +488,9 @@ void LibraryTree::createActions()
 
     mpCheckModelAction = new QAction(QIcon(":/Resources/icons/check.png"), tr("Check"), this);
     connect(mpCheckModelAction, SIGNAL(triggered()), SLOT(checkLibraryModel()));
+
+    mpFlatModelAction = new QAction(QIcon(":/Resources/icons/check.png"), tr("Instantiate"), this);
+    connect(mpFlatModelAction, SIGNAL(triggered()), SLOT(flatModel()));
 }
 
 //! Let the user add the OM Standard Library to library widget.
@@ -697,6 +720,7 @@ void LibraryTree::showContextMenu(QPoint point)
         menu.addAction(mpShowComponentAction);
         menu.addAction(mpViewDocumentationAction);
         menu.addAction(mpCheckModelAction);
+        menu.addAction(mpFlatModelAction);
         point.setY(point.y() + adjust);
         menu.exec(mapToGlobal(point));
     }
@@ -722,6 +746,14 @@ void LibraryTree::viewDocumentation()
     MainWindow *pMainWindow = mpParentLibraryWidget->mpParentMainWindow;
     pMainWindow->documentationdock->show();
     pMainWindow->mpDocumentationWidget->show(mpParentLibraryWidget->mSelectedLibraryNode->toolTip(0));
+}
+
+void LibraryTree::flatModel()
+{
+    FlatModelWidget *widget = new FlatModelWidget(mpParentLibraryWidget->mSelectedLibraryNode->text(0),
+                                                  mpParentLibraryWidget->mSelectedLibraryNode->toolTip(0),
+                                                  mpParentLibraryWidget->mpParentMainWindow);
+    widget->show();
 }
 
 void LibraryTree::checkLibraryModel()

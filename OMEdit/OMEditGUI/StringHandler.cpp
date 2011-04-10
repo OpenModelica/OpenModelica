@@ -317,3 +317,46 @@ QString StringHandler::getModifierValue(QString value)
     }
     return "";
 }
+
+QString StringHandler::unparse(QString value)
+{
+  value = value.trimmed();
+  if (value.length() > 1 && value.at(0) == '\"' && value.at(value.length() - 1) == '\"') {
+    value = value.mid(1, (value.length() - 2));
+    int j=0;
+    for (int i=0; i < value.length(); i++) {
+      if (value.at(i) == '\\') {
+        i++;
+        switch (value[i].toAscii()) {
+        case '\'':
+          value[j++] = '\''; break;
+        case '"':
+          value[j++] = '\"'; break;
+        case '?':
+          value[j++] = '\?'; break;
+        case '\\':
+          value[j++] = '\\'; break;
+        case 'a':
+          value[j++] = '\a'; break;
+        case 'b':
+          value[j++] = '\b'; break;
+        case 'f':
+          value[j++] = '\f'; break;
+        case 'n':
+          value[j++] = '\n'; break;
+        case 'r':
+          value[j++] = '\r'; break;
+        case 't':
+          value[j++] = '\t'; break;
+        case 'v':
+          value[j++] = '\v'; break;
+        }
+      } else {
+        value[j++] = value[i];
+      }
+    }
+    return value;
+  } else {
+    return "";
+  }
+}

@@ -1161,7 +1161,7 @@ bool OMCProxy::deleteConnection(QString from, QString to, QString className)
         return false;
 }
 
-bool OMCProxy::instantiateModel(QString modelName)
+bool OMCProxy::instantiateModelSucceeds(QString modelName)
 {
     sendCommand("instantiateModel(" + modelName + ")");
     if (getResult().size() < 3)
@@ -1245,6 +1245,13 @@ QString OMCProxy::checkModel(QString modelName)
 {
     sendCommand("checkModel(" + modelName + ")");
     return getResult();
+}
+
+
+QString OMCProxy::instantiateModel(QString modelName)
+{
+    sendCommand("instantiateModel(" + modelName + ")");
+    return StringHandler::unparse(getResult());
 }
 
 QString OMCProxy::getSimulationOptions(QString modelName)
