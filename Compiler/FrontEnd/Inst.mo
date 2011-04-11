@@ -10690,19 +10690,26 @@ algorithm
   res := matchcontinue(inSubModList)
     local
       list<SCode.SubMod> cdr;
-    case({}) then DAE.NO_INLINE();
+    case ({}) then DAE.NO_INLINE();
 
-    case(SCode.NAMEMOD("Inline",SCode.MOD(_,_,_,SOME((Absyn.BOOL(true),_)))) :: _)
-    then DAE.NORM_INLINE();
+    case (SCode.NAMEMOD("Inline",SCode.MOD(_,_,_,SOME((Absyn.BOOL(true),_)))) :: cdr)
+      equation
+        failure(DAE.AFTER_INDEX_RED_INLINE() = isInlineFunc4(cdr));
+      then DAE.NORM_INLINE();
 
-    case(SCode.NAMEMOD("__OpenModelica_EarlyInline",SCode.MOD(_,_,_,SOME((Absyn.BOOL(true),_)))) :: _)
-    then DAE.EARLY_INLINE();
+    case(SCode.NAMEMOD("LateInline",SCode.MOD(_,_,_,SOME((Absyn.BOOL(true),_)))) :: _)
+      then DAE.AFTER_INDEX_RED_INLINE();
 
     case(SCode.NAMEMOD("__MathCore_InlineAfterIndexReduction",SCode.MOD(_,_,_,SOME((Absyn.BOOL(true),_)))) :: _)
-    then DAE.AFTER_INDEX_RED_INLINE();
+      then DAE.AFTER_INDEX_RED_INLINE();
 
-    case(SCode.NAMEMOD("__Dymola_InlineAfterIndexReduction",SCode.MOD(_,_,_,SOME((Absyn.BOOL(true),_)))) :: _)
-    then DAE.AFTER_INDEX_RED_INLINE();
+    case (SCode.NAMEMOD("__Dymola_InlineAfterIndexReduction",SCode.MOD(_,_,_,SOME((Absyn.BOOL(true),_)))) :: _)
+      then DAE.AFTER_INDEX_RED_INLINE();
+
+    case (SCode.NAMEMOD("__OpenModelica_EarlyInline",SCode.MOD(_,_,_,SOME((Absyn.BOOL(true),_)))) :: cdr)
+      equation
+        DAE.NO_INLINE() = isInlineFunc4(cdr);
+      then DAE.EARLY_INLINE();
 
     case(_ :: cdr) then isInlineFunc4(cdr);
   end matchcontinue;
