@@ -1612,6 +1612,31 @@ end tplString3;
 
 
 
+public function tplNoret2
+  input Tpl_Fun inFun;
+  input Type_a inArg;
+  input Type_b inArg2;
+    
+  partial function Tpl_Fun
+    input Text in_txt;
+    input Type_a inArgA;
+    input Type_b inArgB;
+    output Text out_txt;
+    replaceable type Type_a subtypeof Any;
+    replaceable type Type_b subtypeof Any;
+  end Tpl_Fun;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+protected
+  Integer nErr;
+algorithm
+  nErr := Error.getNumErrorMessages();
+  _ := inFun(emptyTxt, inArg, inArg2);
+  failIfTrue(Error.getNumErrorMessages() > nErr);
+end tplNoret2;
+
+
+
 public function tplNoret
   input Tpl_Fun inFun;
   input Type_a inArg;
