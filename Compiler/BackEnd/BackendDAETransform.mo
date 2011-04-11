@@ -1485,7 +1485,7 @@ algorithm
   end matchcontinue;
 end traversereplaceDummyDer;
 
-protected function traverseBackendDAEExpsEqn
+public function traverseBackendDAEExpsEqn
 "function: traverseBackendDAEExpsEqn
   author: Frenkel TUD 2010-11
   Traverse all expressions of a list of Equations. It is possible to change the equations

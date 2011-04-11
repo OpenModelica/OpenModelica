@@ -944,6 +944,24 @@ algorithm
   end match;
 end setFinalAttr;
 
+public function getFinalAttr "
+  returns true if have final attr.
+"
+  input Option<DAE.VariableAttributes> attr;
+  output Boolean finalPrefix;
+algorithm
+  finalPrefix:=
+  match (attr)
+    local Boolean b;
+    case (SOME(DAE.VAR_ATTR_REAL(finalPrefix=SOME(b)))) then b;
+    case (SOME(DAE.VAR_ATTR_INT(finalPrefix=SOME(b)))) then b;
+    case (SOME(DAE.VAR_ATTR_BOOL(finalPrefix=SOME(b)))) then b;
+    case (SOME(DAE.VAR_ATTR_STRING(finalPrefix=SOME(b)))) then b;
+    case (SOME(DAE.VAR_ATTR_ENUMERATION(finalPrefix=SOME(b)))) then b;
+  else false;
+  end match;
+end getFinalAttr;
+
 public function boolVarProtection "Function: boolVarProtection
 Takes a DAE.varprotection and returns true/false (is_protected / not)
 "

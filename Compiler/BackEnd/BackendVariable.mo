@@ -1379,6 +1379,23 @@ algorithm
 end topLevelOutput;
 
 
+public function isFinalVar
+"function isFinalVar
+  author: Frenkel TUD
+  Returns true if var is final."
+  input BackendDAE.Var v;
+  output Boolean b;
+algorithm
+  b := match(v)
+    local
+      Option<DAE.VariableAttributes> attr;
+    case (BackendDAE.VAR(values = attr))
+      equation
+        b=DAEUtil.getFinalAttr(attr);
+      then b;
+   end match;
+end isFinalVar;
+
 
 /* =======================================================
  *

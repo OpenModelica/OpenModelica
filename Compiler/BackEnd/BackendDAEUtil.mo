@@ -1162,7 +1162,7 @@ algorithm
   end matchcontinue;
 end calculateValue;
 
-protected function replaceCrefsWithValues
+public function replaceCrefsWithValues
   input tuple<DAE.Exp, BackendDAE.Variables> inTuple;
   output tuple<DAE.Exp, BackendDAE.Variables> outTuple;
 algorithm
@@ -4305,7 +4305,7 @@ algorithm
     local
       BackendDAE.BackendDAE dae;
       array<list<BackendDAE.Value>> m,m_1,m_2;
-      BackendDAE.Value e_1,e;
+      BackendDAE.Value e_1,e,abse;
       BackendDAE.Equation eqn;
       list<BackendDAE.Value> row,changedvars,eqns,oldvars,newvars,diffvars,allvars;
       list<list<BackendDAE.Value>> changedvars2;
@@ -4317,12 +4317,13 @@ algorithm
 
     case ((dae as BackendDAE.DAE(orderedVars = vars,knownVars = knvars,orderedEqs = daeeqns,removedEqs = daeseqns,eventInfo = BackendDAE.EVENT_INFO(whenClauseLst = wc))),m,(e :: eqns))
       equation
-        e_1 = e - 1;
+        abse = intAbs(e);
+        e_1 = abse - 1;
         eqn = equationNth(daeeqns, e_1);
         row = incidenceRow(vars, eqn,wc);
-        oldvars = getOldVars(m,e);
-        m_1 = Util.arrayReplaceAtWithFill(row, e, m, {});
-        newvars = varsInEqn(m_1, e);
+        oldvars = getOldVars(m,abse);
+        m_1 = Util.arrayReplaceAtWithFill(row, abse, m, {});
+        newvars = varsInEqn(m_1, abse);
         diffvars = Util.listSetDifferenceOnTrue(oldvars, newvars, intEq);
         allvars = Util.listListUnionOnTrue({oldvars,newvars},intEq);
         changedvars = Util.listSelect1(allvars,diffvars,Util.listNotContains);
@@ -5905,7 +5906,8 @@ public function getPreOptModulesString
 " function: getPreOptModulesString"
   output list<String> strPreOptModules;
 algorithm
- strPreOptModules := RTOpts.getPreOptModules({"removeSimpleEquations","removeParameterEqns","expandDerOperator"});
+ strPreOptModules := RTOpts.getPreOptModules({"removeSimpleEquations","expandDerOperator"});
+// strPreOptModules := RTOpts.getPreOptModules({"removeFinalParameters","removeSimpleEquationsX","expandDerOperator"});
 end getPreOptModulesString;
 
 protected function getPreOptModules
@@ -5929,7 +5931,8 @@ algorithm
           (BackendDAEOptimize.removeSimpleEquationsX,"removeSimpleEquationsX"),
           (BackendDAEOptimize.removeParameterEqns,"removeParameterEqns"),
           (BackendDAEOptimize.removeAliasEquations,"removeAliasEquations"),
-          (BackendDAEOptimize.inlineArrayEqn,"inlineArrayEqn"),
+          (BackendDAEOptimize.inlineArrayEqn,"inlineArrayEqn"), 
+          (BackendDAEOptimize.removeFinalParameters,"removeFinalParameters"),
           (BackendDAEOptimize.removeProtectedParameters,"removeProtectedParameters"),
           (BackendDAECreate.expandDerOperator,"expandDerOperator")};
  strPreOptModules := getPreOptModulesString();
@@ -5943,6 +5946,7 @@ public function getPastOptModulesString
   output list<String> strPastOptModules;
 algorithm
  strPastOptModules := RTOpts.getPastOptModules({"lateInline","removeSimpleEquations"});           
+// strPastOptModules := RTOpts.getPastOptModules({"lateInline","inlineArrayEqn","removeSimpleEquationsX"});           
 end getPastOptModulesString;
 
 protected function getPastOptModules
