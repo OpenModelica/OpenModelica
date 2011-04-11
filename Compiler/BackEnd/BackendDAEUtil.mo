@@ -1318,7 +1318,7 @@ end addAliasVariables;
 public function updateAliasVariablesDAE
 "function: updateAliasVariablesDAE
   author: Frenkel TUD 2011-04
-  update the aliaas variables."
+  update the alias variables."
   input DAE.ComponentRef inCref;
   input DAE.Exp inExp;
   input BackendDAE.Var inVar;
@@ -1345,7 +1345,7 @@ end updateAliasVariablesDAE;
 public function updateAliasVariables
 "function: changeAliasVariables
   author: wbraun
-  replace creaf in AliasVariable  variable to the AliasVariables "
+  replace cref in AliasVariable variable to the AliasVariables "
   input BackendDAE.AliasVariables inAliasVariables;
   input DAE.ComponentRef inCref;
   input DAE.Exp inExp;

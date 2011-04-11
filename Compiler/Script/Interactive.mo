@@ -8449,6 +8449,7 @@ protected function getClassComment
   String s;
 algorithm
   s := getClassComment2(cdef);
+  s := System.unescapedString(s);
   res := stringAppendList({"\"",s,"\""});
 end getClassComment;
 

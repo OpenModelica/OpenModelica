@@ -162,7 +162,7 @@ algorithm
               streamPrefix = streamPrefix),fixed)
       equation
         oattr = DAEUtil.setFixedAttr(SOME(attr),SOME(DAE.BCONST(fixed)));
-    then BackendDAE.VAR(a,b,c,d,e,f,g,i,source,oattr,s,t,streamPrefix);
+      then BackendDAE.VAR(a,b,c,d,e,f,g,i,source,oattr,s,t,streamPrefix);
 
     case (BackendDAE.VAR(varName = a,
               varKind = b,

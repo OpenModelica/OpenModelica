@@ -448,46 +448,48 @@ algorithm
       (eqns_1,(BackendDAE.SOLVED_EQUATION(cr1,e2,source) :: seqns_1),mvars,mvars1,repl_2,extlst1,replc_2,varsAliases);
 
     // alias equation like a=b
-    case (e::eqns,funcSimpleEquation,vars,knvars,mvars,mvars1,outputs,repl,inExtendLst,replc,varsAliases) equation
-      {e} = BackendVarTransform.replaceEquations({e},replc);
-      {e} = BackendVarTransform.replaceEquations({e},repl);
-      (e1 as DAE.CREF(cr1,t),e2,source) = funcSimpleEquation(e,false);
-      false = Expression.isConst(e2);
-      false = BackendVariable.isState(cr1, vars) "cr1 not state";
-      BackendVariable.isVariable(cr1, vars, knvars) "cr1 not constant";
-      false = BackendVariable.isTopLevelInputOrOutput(cr1,vars,knvars);
-      ({v},_) = BackendVariable.getVar(cr1,vars);
-      failure(_ = BackendVariable.varStartValueFail(v));
-      failure(_ = BackendDAEUtil.treeGet(outputs, cr1)) "cr1 not output of algorithm";
-      (extlst,_,replc_1) = removeSimpleEquations3(inExtendLst,replc,cr1,NONE(),e2,t);
-      Debug.fcall("debugAlias",BackendDump.debugStrCrefStrExpStr,("Alias Equation ",cr1," = ",e2," found.\n"));
-      repl_1 = VarTransform.addReplacement(repl, cr1, e2);
-      mvars_1 = BackendDAEUtil.treeAdd(mvars1, cr1, 0);
-      varsAliases = BackendDAEUtil.updateAliasVariables(varsAliases, cr1, e2,v);
-      (eqns_1,seqns_1,mvars,mvars_1,repl_2,extlst1,replc_2,varsAliases) = removeSimpleEquations2(eqns, funcSimpleEquation, vars, knvars, mvars,mvars_1, outputs, repl_1, extlst,replc_1,varsAliases);
-    then
-      (eqns_1,seqns_1,mvars,mvars_1,repl_2,extlst1,replc_2,varsAliases);
+    case (e::eqns,funcSimpleEquation,vars,knvars,mvars,mvars1,outputs,repl,inExtendLst,replc,varsAliases)
+      equation
+        {e} = BackendVarTransform.replaceEquations({e},replc);
+        {e} = BackendVarTransform.replaceEquations({e},repl);
+        (e1 as DAE.CREF(cr1,t),e2,source) = funcSimpleEquation(e,false);
+        false = Expression.isConst(e2);
+        false = BackendVariable.isState(cr1, vars) "cr1 not state";
+        BackendVariable.isVariable(cr1, vars, knvars) "cr1 not constant";
+        false = BackendVariable.isTopLevelInputOrOutput(cr1,vars,knvars);
+        ({v},_) = BackendVariable.getVar(cr1,vars);
+        failure(_ = BackendVariable.varStartValueFail(v));
+        failure(_ = BackendDAEUtil.treeGet(outputs, cr1)) "cr1 not output of algorithm";
+        (extlst,_,replc_1) = removeSimpleEquations3(inExtendLst,replc,cr1,NONE(),e2,t);
+        Debug.fcall("debugAlias",BackendDump.debugStrCrefStrExpStr,("Alias Equation ",cr1," = ",e2," found.\n"));
+        repl_1 = VarTransform.addReplacement(repl, cr1, e2);
+        mvars_1 = BackendDAEUtil.treeAdd(mvars1, cr1, 0);
+        varsAliases = BackendDAEUtil.updateAliasVariables(varsAliases, cr1, e2,v);
+        (eqns_1,seqns_1,mvars,mvars_1,repl_2,extlst1,replc_2,varsAliases) = removeSimpleEquations2(eqns, funcSimpleEquation, vars, knvars, mvars,mvars_1, outputs, repl_1, extlst,replc_1,varsAliases);
+      then
+        (eqns_1,seqns_1,mvars,mvars_1,repl_2,extlst1,replc_2,varsAliases);
 
     // alias equation like a=b (Swappend args)
-    case (e::eqns,funcSimpleEquation,vars,knvars,mvars,mvars1,outputs,repl,inExtendLst,replc,varsAliases) equation
-      {e} = BackendVarTransform.replaceEquations({e},replc);
-      {BackendDAE.EQUATION(e1,e2,source)} = BackendVarTransform.replaceEquations({e},repl);
-      (e1 as DAE.CREF(cr1,t),e2,source) = simpleEquation(BackendDAE.EQUATION(e2,e1,source),true);
-      false = Expression.isConst(e2);
-      false = BackendVariable.isState(cr1, vars) "cr1 not state";
-      BackendVariable.isVariable(cr1, vars, knvars) "cr1 not constant";
-      false = BackendVariable.isTopLevelInputOrOutput(cr1,vars,knvars);
-      ({v},_) = BackendVariable.getVar(cr1,vars);
-      failure( _ = BackendVariable.varStartValueFail(v));
-      failure(_ = BackendDAEUtil.treeGet(outputs, cr1)) "cr1 not output of algorithm";
-      (extlst,_,replc_1) = removeSimpleEquations3(inExtendLst,replc,cr1,NONE(),e2,t);
-      Debug.fcall("debugAlias",BackendDump.debugStrCrefStrExpStr,("Alias Equation ",cr1," = ",e2," found.\n"));
-      repl_1 = VarTransform.addReplacement(repl, cr1, e2);
-      mvars_1 = BackendDAEUtil.treeAdd(mvars1, cr1, 0);
-      varsAliases = BackendDAEUtil.updateAliasVariables(varsAliases, cr1, e2,v);
-      (eqns_1,seqns_1,mvars,mvars_1,repl_2,extlst1,replc_2,varsAliases) = removeSimpleEquations2(eqns, funcSimpleEquation, vars, knvars, mvars,mvars_1, outputs, repl_1, extlst,replc_1,varsAliases);
-    then
-      (eqns_1,seqns_1,mvars,mvars_1,repl_2,extlst1,replc_2,varsAliases);
+    case (e::eqns,funcSimpleEquation,vars,knvars,mvars,mvars1,outputs,repl,inExtendLst,replc,varsAliases)
+      equation
+        {e} = BackendVarTransform.replaceEquations({e},replc);
+        {BackendDAE.EQUATION(e1,e2,source)} = BackendVarTransform.replaceEquations({e},repl);
+        (e1 as DAE.CREF(cr1,t),e2,source) = simpleEquation(BackendDAE.EQUATION(e2,e1,source),true);
+        false = Expression.isConst(e2);
+        false = BackendVariable.isState(cr1, vars) "cr1 not state";
+        BackendVariable.isVariable(cr1, vars, knvars) "cr1 not constant";
+        false = BackendVariable.isTopLevelInputOrOutput(cr1,vars,knvars);
+        ({v},_) = BackendVariable.getVar(cr1,vars);
+        failure( _ = BackendVariable.varStartValueFail(v));
+        failure(_ = BackendDAEUtil.treeGet(outputs, cr1)) "cr1 not output of algorithm";
+        (extlst,_,replc_1) = removeSimpleEquations3(inExtendLst,replc,cr1,NONE(),e2,t);
+        Debug.fcall("debugAlias",BackendDump.debugStrCrefStrExpStr,("Alias Equation ",cr1," = ",e2," found.\n"));
+        repl_1 = VarTransform.addReplacement(repl, cr1, e2);
+        mvars_1 = BackendDAEUtil.treeAdd(mvars1, cr1, 0);
+        varsAliases = BackendDAEUtil.updateAliasVariables(varsAliases, cr1, e2,v);
+        (eqns_1,seqns_1,mvars,mvars_1,repl_2,extlst1,replc_2,varsAliases) = removeSimpleEquations2(eqns, funcSimpleEquation, vars, knvars, mvars,mvars_1, outputs, repl_1, extlst,replc_1,varsAliases);
+      then
+        (eqns_1,seqns_1,mvars,mvars_1,repl_2,extlst1,replc_2,varsAliases);
 
       // try next equation.
     case ((e :: eqns),funcSimpleEquation,vars,knvars,mvars,mvars1,outputs,repl,extlst,replc,varsAliases)
