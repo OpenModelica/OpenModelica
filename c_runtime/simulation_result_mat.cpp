@@ -279,7 +279,7 @@ long simulation_result_mat::flattenStrBuf(int dims,
 //    len = strlen(useComment ? src[i]->comment : src[i]->name);
 //    for (j = 0; j < len; ++j) {
 //       strncpy(ptr + i + j*dims,useComment ? &src[i]->comment[j] : &src[i]->name[j],1);
-//	}
+//  }
 //  }
   for (i = 0; i < dims; ++i) {
       strncpy(ptr,useComment ? src[i]->comment : src[i]->name,longest+1 /* ensures that we get \0 after the longest string*/);

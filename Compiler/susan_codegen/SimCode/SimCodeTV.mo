@@ -1249,7 +1249,11 @@ package DAE
       ComponentRef cr;
       Exp exp;
     end SOLVED;
-    end SymbolicOperation;
+    record OP_INLINE
+      Exp before;
+      Exp after;
+    end OP_INLINE;
+  end SymbolicOperation;
 end DAE;
 
 

@@ -1964,7 +1964,7 @@ protected function replacementsInEqns2
   output array<DAE.Algorithm> outAlgs;
   output  BackendDAE.EventInfo outEinfo;
 algorithm
-  (outEqns,outArreqns,outAlgs,inAlgs,outEinfo):=
+  (outEqns,outArreqns,outAlgs,outEinfo):=
   match (inEqsLst,derExp,inCr,inEqns,inArreqns,inAlgs,inEinfo)
     local
       BackendDAE.EquationArray eqns,eqns1,eqns2;

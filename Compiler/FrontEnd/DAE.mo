@@ -121,6 +121,10 @@ public uniontype SymbolicOperation
     ComponentRef cr;
     Exp exp;
   end SOLVED;
+  record OP_INLINE
+    Exp before;
+    Exp after;
+  end OP_INLINE;
 end SymbolicOperation;
 
 public constant ElementSource emptyElementSource = SOURCE(Absyn.dummyInfo,{},{},{},{},{});

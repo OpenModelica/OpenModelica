@@ -115,6 +115,7 @@ template dumpOperation(SymbolicOperation op, Info info)
   match op
     case SIMPLIFY(__) then '<%\n%>  simplify: <%printExpStr(before)%> => <%printExpStr(after)%>'
     case SUBSTITUTION(__) then '<%\n%>  subst: <%printExpStr(source)%> => <%printExpStr(target)%>'
+    case op as OP_INLINE(__) then '<%\n%>  inline: <%printExpStr(op.before)%> = <%printExpStr(op.after)%>'
     case op as SOLVED(__) then '<%\n%>  simple equation: <%crefStr(op.cr)%> = <%printExpStr(op.exp)%>'
     case op as SOLVE(__) then
       <<<%\n%>
