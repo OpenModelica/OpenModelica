@@ -5,6 +5,10 @@ encapsulated package HashTable "
 
   All rights reserved.
 
+  file:        HashTable.mo
+  package:     HashTable
+  description: DAE.CR to Integer
+
   RCS: $Id$
 
   "

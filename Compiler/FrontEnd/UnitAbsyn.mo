@@ -1,7 +1,13 @@
 encapsulated package UnitAbsyn " Copyright MathCore 2008-2009.
-author Peter Aronsson (peter.aronsson@mathcore.com)
+  author Peter Aronsson (peter.aronsson@mathcore.com)
 
-This module contains the datatypes for representing unit terms.
+  file:        UnitAbsyn.mo
+  package:     UnitAbsyn
+  description: Physical unit checking.
+
+  RCS: $Id$
+
+  This module contains the datatypes for representing unit terms.
 "
 
 public import DAE;

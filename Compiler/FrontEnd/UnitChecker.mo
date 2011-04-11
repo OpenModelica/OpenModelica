@@ -35,7 +35,8 @@ encapsulated package UnitChecker
   package:     UnitChecker
   description: Physical unit checking.
 
-This package is used for checking if an equation system is consistent, inconsistent or unknown (not enough information to determine).
+  RCS: $Id$
+  This package is used for checking if an equation system is consistent, inconsistent or unknown (not enough information to determine).
 "
 
 public import UnitAbsyn;

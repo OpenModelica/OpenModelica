@@ -5,7 +5,11 @@ encapsulated package HashTableExpType "
 
   All rights reserved.
 
-  RCS: $Id: HashTable.mo 7667 2011-01-09 17:37:10Z sjoelund.se $
+  file:        HashTableExpType.mo
+  package:     HashTableExpType
+  description: DAE.Exp to DAE.ExpType
+
+  RCS: $Id: Util.mo 8498 2011-04-05 12:17:00Z sjoelund.se $
 
   "
   

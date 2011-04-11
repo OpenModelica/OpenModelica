@@ -5,6 +5,10 @@ encapsulated package HashTable5 "
 
   All rights reserved.
 
+  file:        HashTable5.mo
+  package:     HashTable5
+  description: Absyn.CR to Integer
+
   RCS: $Id$
 
   "

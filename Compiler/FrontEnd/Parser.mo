@@ -30,18 +30,14 @@
  */
 
 encapsulated package Parser
-" file:         Parser.mo
+" file:        Parser.mo
   package:     Parser
   description: Interface to external code for parsing
 
   $Id$
 
   The parser module is used for both parsing of files and statements in
-  interactive mode. Some functions never fails, even if parsing fails. Instead,
-  they return an error message other than \"Ok\".
-
-  Input: String to parse
-  Output: Absyn.Program or InteractiveStmts"
+  interactive mode."
 
 public import Absyn;
 public import Interactive;

@@ -30,11 +30,11 @@
  */
 
 encapsulated package OptManager
-" file:         OptManager.mo
-  Author:      BZ
-  module:      OptManager
+" file:        OptManager.mo
+  package:     OptManager
   description: Runtime options
 
+  $Id$
 
   This module takes care of command line options. It is possible to
   ask it what flags are set, what arguments were given etc.

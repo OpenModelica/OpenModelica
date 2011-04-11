@@ -5,6 +5,10 @@ encapsulated package HashTableCG "
 
   All rights reserved.
 
+  file:        HashTableCG.mo
+  package:     HashTableCG
+  description: DAE.CR to DAE.CR
+
   RCS: $Id$
 
   "

@@ -5,6 +5,10 @@ encapsulated package HashTableStringToPath "
 
   All rights reserved.
 
+  file:        HashTableStringToPath.mo
+  package:     HashTableStringToPath
+  description: String to Path
+
   RCS: $Id$
 
   "

@@ -5,6 +5,10 @@ encapsulated package HashTable4 "
 
   All rights reserved.
 
+  file:        HashTable4.mo
+  package:     HashTable4
+  description: DAE.Exp to DAE.CR
+
   RCS: $Id$
 
   "

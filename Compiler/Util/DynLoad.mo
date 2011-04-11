@@ -30,11 +30,12 @@
  */
 
 encapsulated package DynLoad
-" file:         DynLoad.mo
+" file:        DynLoad.mo
   package:     DynLoad
   description: Contains functions that executes dynamically loaded functions.
 
-  RCS: $Id$"
+  RCS: $Id$
+  "
 
 public import Values;
 

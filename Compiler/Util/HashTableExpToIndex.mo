@@ -5,6 +5,10 @@ encapsulated package HashTableExpToIndex "
 
   All rights reserved.
 
+  file:        HashTableExpToIndex.mo
+  package:     HashTableExpToIndex
+  description: DAE.Exp to Integer
+
   RCS: $Id$
 
   "
