@@ -154,6 +154,7 @@ uniontype SimulationOptions "these are the simulation/buildModel* options"
     DAE.Exp outputFormat "output format, default 'plt'";
     DAE.Exp variableFilter "variable filter, regex does whole string matching, i.e. it becomes ^.*$ in the runtime";
     DAE.Exp measureTime "Enables time measurements, default false";
+    DAE.Exp cflags "Compiler flags, in addition to MODELICAUSERCFLAGS";
   end SIMULATION_OPTIONS;
 end SimulationOptions;
 
@@ -170,6 +171,7 @@ public constant DAE.Exp defaultOptions           = DAE.SCONST("")      "default 
 public constant DAE.Exp defaultOutputFormat      = DAE.SCONST("mat")   "default outputFormat";
 public constant DAE.Exp defaultVariableFilter    = DAE.SCONST(".*")    "default variableFilter; does whole string matching, i.e. it becomes ^.*$ in the runtime";
 public constant DAE.Exp defaultMeasureTime       = DAE.BCONST(false)   "time measurement disabled by default";
+public constant DAE.Exp defaultCflags            = DAE.SCONST("")      "default compiler flags";
 
 public constant SimulationOptions defaultSimulationOptions =
   SIMULATION_OPTIONS(
@@ -185,7 +187,8 @@ public constant SimulationOptions defaultSimulationOptions =
     defaultOptions,
     defaultOutputFormat,
     defaultVariableFilter,
-    defaultMeasureTime
+    defaultMeasureTime,
+    defaultCflags
     ) "default simulation options";
     
 public constant list<String> simulationOptionsNames =
@@ -201,7 +204,8 @@ public constant list<String> simulationOptionsNames =
     "options",
     "outputFormat",
     "variableFilter",
-    "measureTime"
+    "measureTime",
+    "cflags"
   } "names of simulation options";
 
 public function getSimulationResultType
@@ -287,6 +291,7 @@ public function buildSimulationOptions
   input DAE.Exp outputFormat "output format, default 'plt'";
   input DAE.Exp variableFilter;
   input DAE.Exp measureTime;
+  input DAE.Exp cflags;
   output SimulationOptions outSimulationOptions;
 algorithm
   outSimulationOptions := 
@@ -303,7 +308,8 @@ algorithm
     options,    
     outputFormat,
     variableFilter,
-    measureTime
+    measureTime,
+    cflags
   );
 end buildSimulationOptions;
 
@@ -331,6 +337,7 @@ algorithm
     case (SIMULATION_OPTIONS(outputFormat = e),      "outputFormat")      then e;
     case (SIMULATION_OPTIONS(variableFilter = e),    "variableFilter")    then e;
     case (SIMULATION_OPTIONS(measureTime = e),       "measureTime")       then e;
+    case (SIMULATION_OPTIONS(cflags = e),            "cflags")            then e;
     case (_,                                         name)
       equation
         msg = "Unknown simulation option: " +& name;
@@ -397,10 +404,10 @@ protected function setFileNamePrefixInSimulationOptions
   input  String inFileNamePrefix;
   output SimulationOptions outSimOpt;
 protected
-  DAE.Exp startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, fileNamePrefix, storeInTemp, noClean, options, outputFormat, variableFilter, measureTime;
+  DAE.Exp startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, fileNamePrefix, storeInTemp, noClean, options, outputFormat, variableFilter, measureTime, cflags;
 algorithm
-  SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, _, storeInTemp, noClean, options, outputFormat, variableFilter, measureTime) := inSimOpt;
-  outSimOpt := SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, DAE.SCONST(inFileNamePrefix), storeInTemp, noClean, options, outputFormat, variableFilter, measureTime);
+  SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, _, storeInTemp, noClean, options, outputFormat, variableFilter, measureTime, cflags) := inSimOpt;
+  outSimOpt := SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, DAE.SCONST(inFileNamePrefix), storeInTemp, noClean, options, outputFormat, variableFilter, measureTime, cflags);
 end setFileNamePrefixInSimulationOptions;
 
 protected function getConst
@@ -452,64 +459,64 @@ algorithm
       DAE.Exp noClean;
       DAE.Exp options;
       DAE.Exp outputFormat;
-      DAE.Exp variableFilter, measureTime;
+      DAE.Exp variableFilter, measureTime, cflags;
       Real rStepSize, rStopTime, rStartTime;
       Integer iNumberOfIntervals;
       String name,msg;
       
     case (inSimOpt, {}) then inSimOpt;
     
-    case (SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, fileNamePrefix, storeInTemp, noClean, options, outputFormat, variableFilter, measureTime), 
+    case (SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, fileNamePrefix, storeInTemp, noClean, options, outputFormat, variableFilter, measureTime, cflags), 
           Absyn.NAMEDARG(argName = "Tolerance", argValue = exp)::rest)
       equation
         tolerance = getConst(exp, DAE.ET_REAL());
         simOpt = populateSimulationOptions(
           SIMULATION_OPTIONS(startTime,stopTime,numberOfIntervals,stepSize,tolerance,method,
-                             fileNamePrefix,storeInTemp,noClean,options,outputFormat,variableFilter,measureTime),
+                             fileNamePrefix,storeInTemp,noClean,options,outputFormat,variableFilter,measureTime,cflags),
              rest);
       then
         simOpt;
     
-    case (SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, fileNamePrefix, storeInTemp, noClean, options, outputFormat, variableFilter, measureTime), 
+    case (SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, fileNamePrefix, storeInTemp, noClean, options, outputFormat, variableFilter, measureTime, cflags), 
           Absyn.NAMEDARG(argName = "StartTime", argValue = exp)::rest)
       equation
         startTime = getConst(exp, DAE.ET_REAL());
         simOpt = populateSimulationOptions(
           SIMULATION_OPTIONS(startTime,stopTime,numberOfIntervals,stepSize,tolerance,method,
-                             fileNamePrefix,storeInTemp,noClean,options,outputFormat,variableFilter,measureTime),
+                             fileNamePrefix,storeInTemp,noClean,options,outputFormat,variableFilter,measureTime,cflags),
              rest);
       then
         simOpt;
 
-    case (SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, fileNamePrefix, storeInTemp, noClean, options, outputFormat, variableFilter, measureTime), 
+    case (SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, fileNamePrefix, storeInTemp, noClean, options, outputFormat, variableFilter, measureTime, cflags), 
           Absyn.NAMEDARG(argName = "StopTime", argValue = exp)::rest)
       equation
         stopTime = getConst(exp, DAE.ET_REAL());
         simOpt = populateSimulationOptions(
           SIMULATION_OPTIONS(startTime,stopTime,numberOfIntervals,stepSize,tolerance,method,
-                             fileNamePrefix,storeInTemp,noClean,options,outputFormat,variableFilter,measureTime),
+                             fileNamePrefix,storeInTemp,noClean,options,outputFormat,variableFilter,measureTime,cflags),
              rest);
       then
         simOpt;
 
-    case (SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, fileNamePrefix, storeInTemp, noClean, options, outputFormat, variableFilter, measureTime), 
+    case (SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, fileNamePrefix, storeInTemp, noClean, options, outputFormat, variableFilter, measureTime, cflags), 
           Absyn.NAMEDARG(argName = "NumberOfIntervals", argValue = exp)::rest)
       equation
         numberOfIntervals = getConst(exp, DAE.ET_INT());
         simOpt = populateSimulationOptions(
           SIMULATION_OPTIONS(startTime,stopTime,numberOfIntervals,stepSize,tolerance,method,
-                             fileNamePrefix,storeInTemp,noClean,options,outputFormat,variableFilter,measureTime),
+                             fileNamePrefix,storeInTemp,noClean,options,outputFormat,variableFilter,measureTime,cflags),
              rest);
       then
         simOpt;
 
-    case (SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, fileNamePrefix, storeInTemp, noClean, options, outputFormat, variableFilter, measureTime), 
+    case (SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, fileNamePrefix, storeInTemp, noClean, options, outputFormat, variableFilter, measureTime, cflags), 
           Absyn.NAMEDARG(argName = "Interval", argValue = exp)::rest)
       equation
         DAE.RCONST(rStepSize) = getConst(exp, DAE.ET_REAL());
         // a bit different for Interval, handle it LAST!!!!
         SIMULATION_OPTIONS(startTime,stopTime,numberOfIntervals,stepSize,tolerance,method,
-                           fileNamePrefix,storeInTemp,noClean,options,outputFormat,variableFilter,measureTime) = 
+                           fileNamePrefix,storeInTemp,noClean,options,outputFormat,variableFilter,measureTime,cflags) = 
           populateSimulationOptions(inSimOpt, rest);
        
        DAE.RCONST(rStartTime) = startTime;
@@ -521,11 +528,11 @@ algorithm
        stepSize = DAE.RCONST(rStepSize);
        
        simOpt = SIMULATION_OPTIONS(startTime,stopTime,numberOfIntervals,stepSize,tolerance,method,
-                                   fileNamePrefix,storeInTemp,noClean,options,outputFormat,variableFilter,measureTime);
+                                   fileNamePrefix,storeInTemp,noClean,options,outputFormat,variableFilter,measureTime,cflags);
       then
         simOpt;
 
-    case (SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, fileNamePrefix, storeInTemp, noClean, options, outputFormat, variableFilter, measureTime), 
+    case (SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, fileNamePrefix, storeInTemp, noClean, options, outputFormat, variableFilter, measureTime, cflags), 
           Absyn.NAMEDARG(argName = name, argValue = exp)::rest)
       equation
         msg = "Ignoring unknown experiment annotation option: " +& name +& " = " +& Dump.printExpStr(exp);
@@ -2147,13 +2154,14 @@ algorithm
       Ceval.Msg msg;
       Env.Cache cache;
       Boolean measureTime;
-    case (cache,env,{Values.CODE(Absyn.C_TYPENAME(_)),starttime_v,stoptime_v,Values.INTEGER(interval_i),tolerance_v,Values.STRING(method_str),_,_,_,Values.STRING(options_str),Values.STRING(outputFormat_str),Values.STRING(variableFilter_str),Values.BOOL(measureTime)},
+      String cflags;
+    case (cache,env,{Values.CODE(Absyn.C_TYPENAME(_)),starttime_v,stoptime_v,Values.INTEGER(interval_i),tolerance_v,Values.STRING(method_str),_,_,_,Values.STRING(options_str),Values.STRING(outputFormat_str),Values.STRING(variableFilter_str),Values.BOOL(measureTime),Values.STRING(cflags)},
          (st as Interactive.SYMBOLTABLE(ast = _)),msg)
       equation
         starttime_r = ValuesUtil.valueReal(starttime_v);
         stoptime_r = ValuesUtil.valueReal(stoptime_v);
         tolerance_r = ValuesUtil.valueReal(tolerance_v);
-        outSimSettings = SimCode.createSimulationSettings(starttime_r,stoptime_r,interval_i,tolerance_r,method_str,options_str,outputFormat_str,variableFilter_str,measureTime);
+        outSimSettings = SimCode.createSimulationSettings(starttime_r,stoptime_r,interval_i,tolerance_r,method_str,options_str,outputFormat_str,variableFilter_str,measureTime,cflags);
       then
         (cache, outSimSettings);
     else
@@ -2207,7 +2215,7 @@ algorithm
       Absyn.TimeStamp ts;
       
     // do not recompile.
-    case (cache,env,{Values.CODE(Absyn.C_TYPENAME(classname)),starttime,stoptime,interval,tolerance,Values.STRING(method_str),Values.STRING(filenameprefix),Values.BOOL(cdToTemp),_,options,Values.STRING(outputFormat_str),_},
+    case (cache,env,{Values.CODE(Absyn.C_TYPENAME(classname)),starttime,stoptime,interval,tolerance,Values.STRING(method_str),Values.STRING(filenameprefix),Values.BOOL(cdToTemp),_,options,Values.STRING(outputFormat_str),_,_},
           (st as Interactive.SYMBOLTABLE(ast = p as Absyn.PROGRAM(globalBuildTimes=Absyn.TIMESTAMP(_,edit)),explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       // If we already have an up-to-date version of the binary file, we don't need to recompile.
       equation
@@ -2227,7 +2235,7 @@ algorithm
       (cache,filenameprefix,method_str,outputFormat_str,st,init_filename,zeroAdditionalSimulationResultValues);
     
     // compile the model
-    case (cache,env,vals as {Values.CODE(Absyn.C_TYPENAME(classname)),starttime,stoptime,interval,tolerance,method,Values.STRING(filenameprefix),Values.BOOL(cdToTemp),noClean,options,outputFormat,variableFilter,_},(st_1 as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+    case (cache,env,vals as {Values.CODE(Absyn.C_TYPENAME(classname)),starttime,stoptime,interval,tolerance,method,Values.STRING(filenameprefix),Values.BOOL(cdToTemp),noClean,options,outputFormat,variableFilter,_,_},(st_1 as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       equation
         (cdef as Absyn.CLASS(info = Absyn.INFO(buildTimes=ts as Absyn.TIMESTAMP(_,globalEdit)))) = Interactive.getPathedClassInProgram(classname,p);
         Absyn.PROGRAM(_,_,Absyn.TIMESTAMP(globalBuild,_)) = p;
@@ -2261,7 +2269,9 @@ algorithm
         (cache,filenameprefix,method_str,outputFormat_str,st2,init_filename,resultValues);
     
     // failure
-    case (_,_,_,_,_)
+    case (_,_,vals,_,_)
+      equation
+        Error.assertion(listLength(vals) == 14, "buildModel failure, length = " +& intString(listLength(vals)), Absyn.dummyInfo);
       then
         fail();
   end matchcontinue;
