@@ -37,7 +37,7 @@ encapsulated package IOStream
  @author:     Adrian Pop [adrpo@ida.liu.se]
  @date:       2010-05-19
  
- RCS: $Id$
+ RCS: $Id: IOStream.mo 8498 2011-04-05 12:17:00Z sjoelund.se $
 
  This package implement these stream types:
  - file streams   (stream as file)

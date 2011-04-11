@@ -35,7 +35,7 @@ encapsulated package ExpressionSimplify
   package:     ExpressionSimplify
   description: ExpressionSimplify
 
-  RCS: $Id$
+  RCS: $Id: ExpressionSimplify.mo 8577 2011-04-11 09:12:40Z sjoelund.se $
 
   This file contains the module ExpressionSimplify, which contains
   functions to simplify a DAE.Expression."

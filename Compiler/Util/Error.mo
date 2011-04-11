@@ -35,7 +35,7 @@ encapsulated package Error
   package:     Error
   description: Error handling
 
-  RCS: $Id$
+  RCS: $Id: Error.mo 8498 2011-04-05 12:17:00Z sjoelund.se $
 
   This file contains the Error handling for the Compiler."
 

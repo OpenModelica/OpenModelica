@@ -33,7 +33,7 @@ encapsulated package TaskGraphExt
   package:     TaskGraphExt
   description: The external representation of a task graph, using Boost Graph Library in C++.
 
-  RCS: $Id$
+  RCS: $Id: TaskGraphExt.mo 7671 2011-01-10 11:19:36Z sjoelund.se $
 
   This module is the interface to the externally implemented task graph using Boost
   Graph Library in C++"

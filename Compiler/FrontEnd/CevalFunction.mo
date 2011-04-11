@@ -35,7 +35,7 @@ encapsulated package CevalFunction
   description:  This module constant evaluates DAE.Function objects, i.e.
                 modelica functions defined by the user.
 
-  RCS: $Id$
+  RCS: $Id: CevalFunction.mo 8577 2011-04-11 09:12:40Z sjoelund.se $
 
   TODO:
     * Implement evaluation of MetaModelica statements.

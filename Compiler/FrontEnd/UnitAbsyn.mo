@@ -5,7 +5,7 @@ encapsulated package UnitAbsyn " Copyright MathCore 2008-2009.
   package:     UnitAbsyn
   description: Physical unit checking.
 
-  RCS: $Id$
+  RCS: $Id: UnitAbsyn.mo 8577 2011-04-11 09:12:40Z sjoelund.se $
 
   This module contains the datatypes for representing unit terms.
 "

@@ -34,7 +34,7 @@ encapsulated package ExpandableConnectors
   package:     ExpandableConnectors
   description: ExpandableConnectors translates Absyn to SCode intermediate form
 
-  RCS: $Id$
+  RCS: $Id: ExpandableConnectors.mo 8577 2011-04-11 09:12:40Z sjoelund.se $
 
   This module contains functions to handle expandable connectors:
 

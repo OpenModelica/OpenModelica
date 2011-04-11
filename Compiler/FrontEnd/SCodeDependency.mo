@@ -34,7 +34,7 @@ encapsulated package SCodeDependency
   package:     SCodeDependency
   description: SCode dependency analysis.
 
-  RCS: $Id$
+  RCS: $Id: SCodeDependency.mo 8577 2011-04-11 09:12:40Z sjoelund.se $
 
   Dependency analysis for SCode.
 "

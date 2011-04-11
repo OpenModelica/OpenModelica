@@ -34,7 +34,7 @@ encapsulated package MetaUtil
   package:     MetaUtil
   description: Different MetaModelica extension functions.
 
-  RCS: $Id$
+  RCS: $Id: MetaUtil.mo 8577 2011-04-11 09:12:40Z sjoelund.se $
 
   "
 

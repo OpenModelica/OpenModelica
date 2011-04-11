@@ -34,7 +34,7 @@ encapsulated package BackendDAE
   package:     BackendDAE
   description: BackendDAE contains the datatypes used by the backend.
 
-  RCS: $Id$
+  RCS: $Id: BackendDAE.mo 8498 2011-04-05 12:17:00Z sjoelund.se $
 "
 
 public import Absyn;

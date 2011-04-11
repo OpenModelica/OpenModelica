@@ -36,7 +36,7 @@ encapsulated package AbsynDep
   description: AbsynDep builds dependencies based on a start class (program slicing)
   author:      Peter Aronsson
 
-  RCS: $Id$
+  RCS: $Id: AbsynDep.mo 8498 2011-04-05 12:17:00Z sjoelund.se $
 
   This package contains a data structure and functions for maintaining dependency information between
   Absyn classes.

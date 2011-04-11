@@ -35,7 +35,7 @@ encapsulated package UnitChecker
   package:     UnitChecker
   description: Physical unit checking.
 
-  RCS: $Id$
+  RCS: $Id: UnitChecker.mo 8577 2011-04-11 09:12:40Z sjoelund.se $
   This package is used for checking if an equation system is consistent, inconsistent or unknown (not enough information to determine).
 "
 

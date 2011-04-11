@@ -34,7 +34,7 @@ encapsulated package Constants
   package:     Constants
   description: definition of a set of constants
 
-  RCS: $Id$
+  RCS: $Id: Constants.mo 8577 2011-04-11 09:12:40Z sjoelund.se $
 
   Constants defined in here (Constants.mo) are used in Interactive.mo"
 

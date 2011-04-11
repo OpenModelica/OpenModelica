@@ -34,7 +34,7 @@ encapsulated package Graph
   package:     Graph
   description: Contains various graph algorithms.
 
-  RCS: $Id$
+  RCS: $Id: Graph.mo 8498 2011-04-05 12:17:00Z sjoelund.se $
 
   This package contains various graph algorithms such as topological sorting. It
   should also contain a graph type, but such a type would need polymorphic

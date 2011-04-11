@@ -34,7 +34,7 @@ encapsulated package BackendVarTransform
   package:     BackendVarTransform
   description: BackendVarTransform contains a Binary Tree representation of variable replacements.
 
-  RCS: $Id$
+  RCS: $Id: BackendVarTransform.mo 8547 2011-04-08 10:13:43Z sjoelund.se $
 
   This module contain a Binary tree representation of variable replacements
   along with some functions for performing replacements of variables in equations"

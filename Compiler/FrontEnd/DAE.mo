@@ -34,7 +34,7 @@ encapsulated package DAE
   package:     DAE
   description: DAE management and output
 
-  RCS: $Id$
+  RCS: $Id: DAE.mo 8577 2011-04-11 09:12:40Z sjoelund.se $
 
   This module defines data structures for DAE equations and declarations of
   variables and functions. The DAE data structure is the result of flattening,

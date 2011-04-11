@@ -35,7 +35,7 @@ encapsulated package Interactive
   description: This module contain functionality for model management,
                expression evaluation, etc. in the interactive environment.
 
-  $Id$
+  $Id: Interactive.mo 8575 2011-04-11 08:52:18Z sjoelund.se $
   
   This module contain functionality for model management, expression evaluation, etc.
   in the interactive environment.

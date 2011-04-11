@@ -76,7 +76,7 @@ encapsulated package XMLDump
   package:     XMLDump
   description: Dumping of DAE as XML
 
-  RCS: $Id$"
+  RCS: $Id: XMLDump.mo 8498 2011-04-05 12:17:00Z sjoelund.se $"
 
 public import Absyn;
 public import BackendDAE;

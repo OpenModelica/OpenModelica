@@ -34,7 +34,7 @@ encapsulated package Util
   package:     Util
   description: Miscellanous MetaModelica Compiler (MMC) utilities
 
-  RCS: $Id$
+  RCS: $Id: Util.mo 8498 2011-04-05 12:17:00Z sjoelund.se $
 
   This package contains various MetaModelica Compiler (MMC) utilities sigh, mostly
   related to lists.

@@ -35,7 +35,7 @@ encapsulated package Dependency
   description: This module contains functionality for dependency
                analysis of models used for saveTotalProgram.
 
-  $Id$
+  $Id: Dependency.mo 8577 2011-04-11 09:12:40Z sjoelund.se $
 
   This package builds a dependency list starting from a class."
 

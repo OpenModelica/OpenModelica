@@ -35,7 +35,7 @@ encapsulated package Algorithm
   package:     Algorithm
   description: Algorithm datatypes
 
-  RCS: $Id$
+  RCS: $Id: Algorithm.mo 8577 2011-04-11 09:12:40Z sjoelund.se $
 
   This file contains data types and functions for managing
   algorithm sections. The algorithms in the AST are analyzed by the `Inst\'

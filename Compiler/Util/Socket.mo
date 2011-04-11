@@ -34,7 +34,7 @@ encapsulated package Socket
   package:     Socket
   description: Modelica socket communication module
 
-  RCS: $Id$
+  RCS: $Id: Socket.mo 7671 2011-01-10 11:19:36Z sjoelund.se $
 
   This is the socket connection module of the compiler
   Used in interactive mode if omc is started with +d=interactive
