@@ -130,6 +130,7 @@ simulation_result_mat::simulation_result_mat(const char* filename,
 
   char *stringMatrix = NULL;
   int rows, cols;
+  int *intMatrix = NULL;
   double *doubleMatrix = NULL;
   rt_tick(SIM_TIMER_OUTPUT);
   numVars = calcDataSize(indx_map);
@@ -141,35 +142,35 @@ simulation_result_mat::simulation_result_mat(const char* filename,
     if (!fp) throw SimulationResultFileOpenException();
 
     // write `AClass' matrix
-    writeMatVer4Matrix("Aclass", 4, 11, Aclass, true);
+    writeMatVer4Matrix("Aclass", 4, 11, Aclass, sizeof(char));
 
     // flatten variables' names
     flattenStrBuf(numVars+nParams, names, stringMatrix, rows, cols, false /* We cannot plot derivatives if we fix the names ... */, false);
     // write `name' matrix
-    writeMatVer4Matrix("name", rows, cols, stringMatrix, true);
+    writeMatVer4Matrix("name", rows, cols, stringMatrix, sizeof(char));
     delete[] stringMatrix; stringMatrix = NULL;
 
     // flatten variables' comments
     flattenStrBuf(numVars+nParams, names, stringMatrix, rows, cols, false, true);
     // write `description' matrix
-    writeMatVer4Matrix("description", rows, cols, stringMatrix, true);
+    writeMatVer4Matrix("description", rows, cols, stringMatrix, sizeof(char));
     delete[] stringMatrix; stringMatrix = NULL;
 
     // generate dataInfo table
-    generateDataInfo(doubleMatrix, rows, cols, globalData, numVars, nParams,indx_map,indx_parammap);
+    generateDataInfo(intMatrix, rows, cols, globalData, numVars, nParams,indx_map,indx_parammap);
     // write `dataInfo' matrix
-    writeMatVer4Matrix("dataInfo", cols, rows, doubleMatrix, false);
+    writeMatVer4Matrix("dataInfo", cols, rows, intMatrix, sizeof(int));
     delete[] doubleMatrix; doubleMatrix = NULL;
 
     // generate `data_1' matrix (with parameter data)
     generateData_1(doubleMatrix, rows, cols, globalData, tstart, tstop);
     //  write `data_1' matrix
-    writeMatVer4Matrix("data_1", cols, rows, doubleMatrix, false);
+    writeMatVer4Matrix("data_1", cols, rows, doubleMatrix, sizeof(double));
     delete[] doubleMatrix; doubleMatrix = NULL;
 
     data2HdrPos = fp.tellp();
     // write `data_2' header
-    writeMatVer4MatrixHeader("data_2", indx_map.size(), 0, false);
+    writeMatVer4MatrixHeader("data_2", indx_map.size(), 0, sizeof(double));
 
     fp.flush();
 
@@ -192,7 +193,7 @@ simulation_result_mat::~simulation_result_mat()
   if (fp) {
     try {
       fp.seekp(data2HdrPos);
-      writeMatVer4MatrixHeader("data_2", indx_map.size(), ntimepoints, false);
+      writeMatVer4MatrixHeader("data_2", indx_map.size(), ntimepoints, sizeof(double));
       fp.close();
     } catch (...) {
       // just ignore, we are in destructor
@@ -258,7 +259,7 @@ long simulation_result_mat::flattenStrBuf(int dims,
     char* &dest, int& longest, int& nstrings,
     bool fixNames, bool useComment)
 {
-  int i,len;
+  int i,j,len;
   nstrings = dims;
   longest = 0; // the longest-string length
 
@@ -274,6 +275,12 @@ long simulation_result_mat::flattenStrBuf(int dims,
   if (!dest) throw SimulationResultMallocException();
   // copy data
   char *ptr = dest;
+//  for (i=0;i<dims;i++) {
+//    len = strlen(useComment ? src[i]->comment : src[i]->name);
+//    for (j = 0; j < len; ++j) {
+//       strncpy(ptr + i + j*dims,useComment ? &src[i]->comment[j] : &src[i]->name[j],1);
+//	}
+//  }
   for (i = 0; i < dims; ++i) {
       strncpy(ptr,useComment ? src[i]->comment : src[i]->name,longest+1 /* ensures that we get \0 after the longest string*/);
       if (fixNames) fixDerInName(ptr,strlen(useComment ? src[i]->comment : src[i]->name));
@@ -286,7 +293,7 @@ long simulation_result_mat::flattenStrBuf(int dims,
 // writes MAT-file matrix header to file
 void simulation_result_mat::writeMatVer4MatrixHeader(const char *name,
     int rows, int cols,
-    bool is_text)
+    unsigned int size)
 {
   typedef struct {
     uint32_t type;
@@ -298,8 +305,14 @@ void simulation_result_mat::writeMatVer4MatrixHeader(const char *name,
   const int endian_test = 1;
   MHeader_t hdr;
 
+  int type = 0;
+  if (size == sizeof(char))
+    type = 51;
+  if (size == sizeof(int))
+    type = 20;
+
   // create matrix header structure
-  hdr.type = 1000*((*(char*)&endian_test) == 0) + (is_text? 51 : 0);
+  hdr.type = 1000*((*(char*)&endian_test) == 0) + type;
   hdr.mrows = rows;
   hdr.ncols = cols;
   hdr.imagf = 0;
@@ -313,17 +326,17 @@ void simulation_result_mat::writeMatVer4MatrixHeader(const char *name,
 
 void simulation_result_mat::writeMatVer4Matrix(const char *name,
     int rows, int cols,
-    const void *data, bool is_text)
+    const void *data, unsigned int size)
 {
-  writeMatVer4MatrixHeader(name,rows,cols,is_text);
+  writeMatVer4MatrixHeader(name,rows,cols,size);
 
   // write data
-  fp.write((const char*)data, (is_text ? sizeof(char) : sizeof(double))*rows*cols);
+  fp.write((const char*)data, (size)*rows*cols);
   if (!fp) throw SimulationResultFileCloseException();
 }
 
 
-void simulation_result_mat::generateDataInfo(double* &dataInfo,
+void simulation_result_mat::generateDataInfo(int* &dataInfo,
     int& rows, int& cols,
     const sim_DATA *mdl_data,
     int nVars, int nParams, map<void*,int> &indx_map, map<void*,int> &indx_parammap)
@@ -336,101 +349,101 @@ void simulation_result_mat::generateDataInfo(double* &dataInfo,
   rows = nVars + nParams;
   cols = 4;
 
-  dataInfo = new double[rows*cols];
+  dataInfo = new int[rows*cols];
   if (dataInfo == NULL) throw SimulationResultMallocException();
   // continuous and discrete variables, including time
   for(size_t i = 0; i < (size_t)indx_map.size(); ++i) {
       // row 1 - which table
-      dataInfo[ccol++] = 2.0;
+      dataInfo[ccol++] = 2;
       // row 2 - index of var in table (variable 'Time' have index 1)
-      dataInfo[ccol++] = i+1.0;
+      dataInfo[ccol++] = i+1;
       // row 3 - linear interpolation == 0
-      dataInfo[ccol++] = 0.0;
+      dataInfo[ccol++] = 0;
       // row 4 - not defined outside of the defined time range == -1
-      dataInfo[ccol++] = -1.0;
+      dataInfo[ccol++] = -1;
   }
   // alias variables
   for (int i = 0; i < globalData->nAlias; i++) {
     if (!globalData->aliasFilterOutput[i]) {
-      double table = 0;
+      int table = 0;
       map<void*,int>::iterator it = indx_map.find((void*)globalData->realAlias[i].alias);
       if (it == indx_map.end()) {
         it = indx_parammap.find((void*)globalData->realAlias[i].alias);
         assert(it != indx_parammap.end());
-        table = 1.0;
+        table = 1;
       } else {
-        table = 2.0;
+        table = 2;
       }
       // row 1 - which table
       dataInfo[ccol] = table;
       // row 2 - index of var in table (variable 'Time' have index 1)
       if (((globalData->realAlias)[i]).negate)
-        dataInfo[ccol+1] = -(it->second+1.0);
+        dataInfo[ccol+1] = -(it->second+1);
       else
-        dataInfo[ccol+1] = it->second+1.0;
+        dataInfo[ccol+1] = it->second+1;
       // row 3 - linear interpolation == 0
-      dataInfo[ccol+2] = 0.0;
+      dataInfo[ccol+2] = 0;
       // row 4 - not defined outside of the defined time range == -1
-      dataInfo[ccol+3] = -1.0;
+      dataInfo[ccol+3] = -1;
       ccol += 4;
     }
   }
   for (int i = 0; i < globalData->intVariables.nAlias; i++) if (!globalData->intVariables.aliasFilterOutput[i]) {
-    double table = 0;
+    int table = 0;
     map<void*,int>::iterator it = indx_map.find((void*)globalData->intVariables.alias[i].alias);
     if (it == indx_map.end()) {
       it = indx_parammap.find((void*)globalData->intVariables.alias[i].alias);
       assert(it != indx_parammap.end());
-      table = 1.0;
+      table = 1;
     } else {
-      table = 2.0;
+      table = 2;
     }
     // row 1 - which table
     dataInfo[ccol] = table;
     // row 2 - index of var in table (variable 'Time' have index 1)
     if (globalData->intVariables.alias[i].negate)
-      dataInfo[ccol+1] = -(it->second+1.0);
+      dataInfo[ccol+1] = -(it->second+1);
     else
-      dataInfo[ccol+1] = it->second+1.0;
+      dataInfo[ccol+1] = it->second+1;
     // row 3 - linear interpolation == 0
-    dataInfo[ccol+2] = 0.0;
+    dataInfo[ccol+2] = 0;
     // row 4 - not defined outside of the defined time range == -1
-    dataInfo[ccol+3] = -1.0;
+    dataInfo[ccol+3] = -1;
     ccol += 4;
   }
   for (int i = 0; i < globalData->boolVariables.nAlias; i++) if (!globalData->boolVariables.aliasFilterOutput[i]) {
-    double table = 0;
+    int table = 0;
     map<void*,int>::iterator it = indx_map.find((void*)globalData->boolVariables.alias[i].alias);
     if (it == indx_map.end()) {
       it = indx_parammap.find((void*)globalData->boolVariables.alias[i].alias);
       assert(it == indx_parammap.end());
-      table = 1.0;
+      table = 1;
     } else {
-      table = 2.0;
+      table = 2;
     }
     // row 1 - which table
     dataInfo[ccol] = table;
     // row 2 - index of var in table (variable 'Time' have index 1)
     if (globalData->boolVariables.alias[i].negate)
-      dataInfo[ccol+1] = -(it->second+1.0);
+      dataInfo[ccol+1] = -(it->second+1);
     else
-      dataInfo[ccol+1] = it->second+1.0;
+      dataInfo[ccol+1] = it->second+1;
     // row 3 - linear interpolation == 0
-    dataInfo[ccol+2] = 0.0;
+    dataInfo[ccol+2] = 0;
     // row 4 - not defined outside of the defined time range == -1
-    dataInfo[ccol+3] = -1.0;
+    dataInfo[ccol+3] = -1;
     ccol += 4;
   }
   // parameters and constants
   for(size_t i = 0; i < (size_t)nParams; ++i) {
       // col 1 - which table
-      dataInfo[ccol+4*i] = 1.0;
+      dataInfo[ccol+4*i] = 1;
       // col 2 - index of var in the table (first parameter has index 2)
-      dataInfo[ccol+4*i+1] = i+2.0;
+      dataInfo[ccol+4*i+1] = i+2;
       // col 3 (== 0 <- interpolation doesn't matter here)
-      dataInfo[ccol+4*i+2] = 0.0;
+      dataInfo[ccol+4*i+2] = 0;
       // col 4 - keep first/last value outside of time range
-      dataInfo[ccol+4*i+3] = 0.0;
+      dataInfo[ccol+4*i+3] = 0;
 
   }
   //ccol += mdl_data->nParameters*4;

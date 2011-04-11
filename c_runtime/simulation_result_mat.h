@@ -75,10 +75,10 @@ private:
           char* &dest, int& longest, int& nstrings, 
           bool fixNames, bool useComment);
   void writeMatVer4MatrixHeader(const char *name, int rows, int cols,
-        bool is_text);
+        unsigned int size);
   void writeMatVer4Matrix(const char *name, int rows, int cols, 
-        const void *data, bool is_text);
-  static void generateDataInfo(double* &dataInfo, int& rows, int& cols,
+        const void *data, unsigned int size);
+  static void generateDataInfo(int* &dataInfo, int& rows, int& cols,
              const sim_DATA *mdl_data, int nVars, int nParams, map<void*,int> &indx_map, map<void*,int> &indx_parammap);
   static void generateData_1(double* &data_1, int& rows, int& cols,
            const sim_DATA *mdl_data, double tstart, double tstop);
