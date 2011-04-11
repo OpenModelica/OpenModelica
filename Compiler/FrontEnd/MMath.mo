@@ -1,8 +1,11 @@
 encapsulated package MMath "copyright MathCore Engineering AB 2008-2009
+  author Peter Aronsson (peter.aronsson@mathcore.com)
 
-author Peter Aronsson (peter.aronsson@mathcore.com)
+  file:        MMath.mo
+  package:     MMath
+  description: Rational numbers and operations
 
-This package contains a datatype for rational numbers and operations on rational numbers
+  $Id$
 "
 public
 uniontype Rational

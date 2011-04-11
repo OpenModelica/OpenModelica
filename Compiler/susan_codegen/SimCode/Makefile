@@ -31,7 +31,7 @@ Unparsing.mo : Unparsing.tpl SimCodeTV.mo
 	cp -pf $@ ../../Template/
 	@echo " "	
 
-SimCodeDump.mo : SimCodeDump.tpl SimCodeDump.mo
+SimCodeDump.mo : SimCodeDump.tpl SimCodeTV.mo
 	@echo " ** SimCodeDump template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	cp -pf $@ ../../Template/
