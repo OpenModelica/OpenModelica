@@ -34,7 +34,7 @@ encapsulated package Debug
   package:     Debug
   description: Debug printing
 
-  RCS: $Id: Debug.mo 7735 2011-01-21 05:12:54Z sjoelund.se $
+  RCS: $Id$
 
   Printing routines for debug output of strings. Also flag controlled
   printing. When flag controlled printing functions are called, printing is

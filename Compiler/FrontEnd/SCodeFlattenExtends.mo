@@ -36,7 +36,7 @@ encapsulated package SCodeFlattenExtends
                from base classes in the current class, fully qualifying all paths and 
                applying the outer modifications.
 
-  RCS: $Id: SCodeFlattenExtends.mo 7671 2011-01-10 11:19:36Z sjoelund.se $
+  RCS: $Id$
 
   This module is responsible for flattening of extends (and class extends) 
   clauses by copying all components from base classes in the current class, 

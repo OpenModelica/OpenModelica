@@ -35,7 +35,7 @@ encapsulated package BackendEquation
   description: BackendEquation contains functions that do something with
                BackendDAEEquation datatype.
 
-  RCS: $Id: BackendEquation.mo 8545 2011-04-08 07:45:52Z sjoelund.se $  
+  RCS: $Id$  
 "
 
 public import Absyn;

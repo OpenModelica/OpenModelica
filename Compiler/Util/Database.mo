@@ -34,7 +34,7 @@ encapsulated package Database
   package:     Database
   description: This module contains functionality for creating and using SQlite databases.
 
-  $Id: Database.mo 8077 2011-03-04 08:22:35Z sjoelund.se $
+  $Id$
 
   This package provides functionality for creating and using databases.
   It is a wrapper to SQlite."

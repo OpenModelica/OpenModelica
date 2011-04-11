@@ -34,7 +34,7 @@ encapsulated package Builtin
   package:     Builtin
   description: Builting tyepes and variables
 
-  RCS: $Id: Builtin.mo 8577 2011-04-11 09:12:40Z sjoelund.se $
+  RCS: $Id$
 
   This module defines the builtin types, variables and functions in
   Modelica.  The only exported functions are Builtin.initialEnv and

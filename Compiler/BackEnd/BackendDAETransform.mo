@@ -39,7 +39,7 @@ encapsulated package BackendDAETransform
                - reduceIndexDummyDer
 
   
-  RCS: $Id: BackendDAETransform.mo 8510 2011-04-05 19:49:51Z Frenkel TUD $
+  RCS: $Id$
 "
 
 public import Absyn;

@@ -39,7 +39,7 @@ encapsulated package BackendDAEEXT
                using std::vector<bool> since such functionality is not available in 
                MetaModelica Compiler (MMC).
   
-  RCS: $Id: BackendDAEEXT.mo 7671 2011-01-10 11:19:36Z sjoelund.se $
+  RCS: $Id$
 "
 
 public function initMarks

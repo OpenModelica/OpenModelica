@@ -9,7 +9,7 @@ encapsulated package HashTable4 "
   package:     HashTable4
   description: DAE.Exp to DAE.CR
 
-  RCS: $Id: HashTable4.mo 8576 2011-04-11 09:09:30Z sjoelund.se $
+  RCS: $Id$
 
   "
   

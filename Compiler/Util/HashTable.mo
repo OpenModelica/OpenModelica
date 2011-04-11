@@ -9,7 +9,7 @@ encapsulated package HashTable "
   package:     HashTable
   description: DAE.CR to Integer
 
-  RCS: $Id: HashTable.mo 8576 2011-04-11 09:09:30Z sjoelund.se $
+  RCS: $Id$
 
   "
   

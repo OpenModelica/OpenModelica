@@ -34,7 +34,7 @@ encapsulated package PartFn
   package:     PartFn
   description: partially evaluated functions
 
-  RCS: $Id: PartFn.mo 7671 2011-01-10 11:19:36Z sjoelund.se $
+  RCS: $Id$
 
   This module contains data structures and functions for partially evaulated functions.
   entry point: createPartEvalFunctions, partEvalBackendDAE, partEvalDAE

@@ -34,7 +34,7 @@ encapsulated package VarTransform
   package:     VarTransform
   description: VarTransform contains a Binary Tree representation of variable replacements.
 
-  RCS: $Id: VarTransform.mo 8545 2011-04-08 07:45:52Z sjoelund.se $
+  RCS: $Id$
 
   This module contain a Binary tree representation of variable replacements
   along with some functions for performing replacements of variables in equations"

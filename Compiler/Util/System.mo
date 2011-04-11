@@ -34,7 +34,7 @@ encapsulated package System
   package:     System
   description: This file contains runtime system specific function, which are implemented in C.
 
-  RCS: $Id: System.mo 8511 2011-04-06 00:40:27Z adeas31 $
+  RCS: $Id$
 
   This module contain a set of system calls, for e.g. compiling and
   executing stuff, reading and writing files and so on."

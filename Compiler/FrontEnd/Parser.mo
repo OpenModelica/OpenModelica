@@ -34,7 +34,7 @@ encapsulated package Parser
   package:     Parser
   description: Interface to external code for parsing
 
-  $Id: Parser.mo 8577 2011-04-11 09:12:40Z sjoelund.se $
+  $Id$
 
   The parser module is used for both parsing of files and statements in
   interactive mode."

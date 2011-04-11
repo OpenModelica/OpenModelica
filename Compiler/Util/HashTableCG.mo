@@ -9,7 +9,7 @@ encapsulated package HashTableCG "
   package:     HashTableCG
   description: DAE.CR to DAE.CR
 
-  RCS: $Id: HashTableCG.mo 8576 2011-04-11 09:09:30Z sjoelund.se $
+  RCS: $Id$
 
   "
   

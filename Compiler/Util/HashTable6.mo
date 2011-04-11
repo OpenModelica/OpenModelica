@@ -9,7 +9,7 @@ encapsulated package HashTable6 "
   package:     HashTable6
   description: (DAE.CR,DAE.CR) to DAE.Exp
 
-  RCS: $Id: HashTable6.mo 8576 2011-04-11 09:09:30Z sjoelund.se $
+  RCS: $Id$
 
   "
   

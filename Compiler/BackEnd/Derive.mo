@@ -34,7 +34,7 @@ encapsulated package Derive
   package:     Derive
   description: Differentiation of equations from BackendDAE.BackendDAE
 
-  RCS: $Id: Derive.mo 8545 2011-04-08 07:45:52Z sjoelund.se $
+  RCS: $Id$
 
   This module is responsible for symbolic differentiation of equations and
   expressions. Is is currently (2004-09-28) only used by the solve function in

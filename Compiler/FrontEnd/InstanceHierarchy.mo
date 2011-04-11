@@ -35,7 +35,7 @@ encapsulated package InstanceHierarchy
   package:     InstanceHierarchy
   description: Data structure for representing the instance hierarchy
 
-  RCS: $Id: InstanceHierarchy.mo 8577 2011-04-11 09:12:40Z sjoelund.se $"
+  RCS: $Id$"
 
 public
 import Absyn;

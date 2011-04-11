@@ -34,7 +34,7 @@ encapsulated package CevalScript
   package:     CevalScript
   description: Constant propagation of expressions
 
-  RCS: $Id: CevalScript.mo 8575 2011-04-11 08:52:18Z sjoelund.se $
+  RCS: $Id$
 
   This module handles scripting.
 

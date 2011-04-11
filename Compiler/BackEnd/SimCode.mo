@@ -34,7 +34,7 @@ encapsulated package SimCode
   package:     SimCode
   description: Code generation using Susan templates
 
-  RCS: $Id: SimCode.mo 8575 2011-04-11 08:52:18Z sjoelund.se $
+  RCS: $Id$
 
   The entry points to this module are the translateModel function and the
   translateFunctions fuction.

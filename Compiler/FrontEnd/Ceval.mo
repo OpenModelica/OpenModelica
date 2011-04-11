@@ -34,7 +34,7 @@ encapsulated package Ceval
   package:     Ceval
   description: Constant propagation of expressions
 
-  RCS: $Id: Ceval.mo 8577 2011-04-11 09:12:40Z sjoelund.se $
+  RCS: $Id$
 
   This module handles constant propagation (or evaluation)
   When elaborating expressions, in the Static module, expressions are checked to

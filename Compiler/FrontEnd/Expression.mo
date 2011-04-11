@@ -35,7 +35,7 @@ encapsulated package Expression
   package:     Expression
   description: Expressions
 
-  RCS: $Id: Expression.mo 8577 2011-04-11 09:12:40Z sjoelund.se $
+  RCS: $Id$
 
   This file contains the module `Expression\', which contains data types for
   describing expressions, after they have been examined by the

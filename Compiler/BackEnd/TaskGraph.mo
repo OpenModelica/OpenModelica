@@ -34,7 +34,7 @@ encapsulated package TaskGraph
   package:     TaskGraph
   description: Building of task graphs from expressions, and equation systems.
 
-  RCS: $Id: TaskGraph.mo 8533 2011-04-07 12:11:55Z sjoelund.se $
+  RCS: $Id$
 
   This module is used in the modpar part of OpenModelica for bulding task graphs
   from the BLT decomposition for automatic parallelization.

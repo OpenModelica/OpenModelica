@@ -34,7 +34,7 @@ encapsulated package DynLoad
   package:     DynLoad
   description: Contains functions that executes dynamically loaded functions.
 
-  RCS: $Id: DynLoad.mo 8576 2011-04-11 09:09:30Z sjoelund.se $
+  RCS: $Id$
   "
 
 public import Values;

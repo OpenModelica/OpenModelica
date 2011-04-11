@@ -34,7 +34,7 @@ encapsulated package Print
   package:     Print
   description: Printing to buffers
 
-  RCS: $Id: Print.mo 7671 2011-01-10 11:19:36Z sjoelund.se $
+  RCS: $Id$
 
   This module contains a buffered print function to be used instead of
   the built in print function, when the output should be redirected to

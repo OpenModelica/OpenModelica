@@ -9,7 +9,7 @@ encapsulated package HashTableExpType "
   package:     HashTableExpType
   description: DAE.Exp to DAE.ExpType
 
-  RCS: $Id: Util.mo 8498 2011-04-05 12:17:00Z sjoelund.se $
+  RCS: $Id$
 
   "
   

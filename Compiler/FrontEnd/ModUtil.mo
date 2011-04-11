@@ -34,7 +34,7 @@ encapsulated package ModUtil
   package:     ModUtil
   description: Miscellanous modelica related utilities (The horror, THE HORROR)
 
-  RCS: $Id: ModUtil.mo 8577 2011-04-11 09:12:40Z sjoelund.se $
+  RCS: $Id$
 
   This module contains various utilities. For example
   converting a path to a string and comparing two paths.

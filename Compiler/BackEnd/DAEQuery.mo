@@ -34,7 +34,7 @@ encapsulated package DAEQuery
   package:     DAEQuery
   description: DAEQuery contains functionality for query of Incidence Matrix.
 
-  RCS: $Id: DAEQuery.mo 8498 2011-04-05 12:17:00Z sjoelund.se $"
+  RCS: $Id$"
 
 // public imports
 public

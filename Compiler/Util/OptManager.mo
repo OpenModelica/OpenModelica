@@ -34,7 +34,7 @@ encapsulated package OptManager
   package:     OptManager
   description: Runtime options
 
-  $Id: OptManager.mo 8576 2011-04-11 09:09:30Z sjoelund.se $
+  $Id$
 
   This module takes care of command line options. It is possible to
   ask it what flags are set, what arguments were given etc.

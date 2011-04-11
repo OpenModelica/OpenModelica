@@ -34,7 +34,7 @@ encapsulated package Main
   package:     Main
   description: Modelica main program
 
-  RCS: $Id: Main.mo 8566 2011-04-10 07:24:38Z sjoelund.se $
+  RCS: $Id$
 
   This is the main program in the Modelica specification.
   It either translates a file given as a command line argument

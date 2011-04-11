@@ -35,7 +35,7 @@ encapsulated package Env
   package:     Env
   description: Environmane management
 
-  RCS: $Id: Env.mo 8577 2011-04-11 09:12:40Z sjoelund.se $
+  RCS: $Id$
 
   An environment is a stack of frames, where each frame contains a
   number of class and variable bindings.

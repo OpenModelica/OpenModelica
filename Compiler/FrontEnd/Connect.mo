@@ -34,7 +34,7 @@ encapsulated package Connect
   package:     Connect
   description: Connection set management
 
-  RCS: $Id: Connect.mo 8577 2011-04-11 09:12:40Z sjoelund.se $
+  RCS: $Id$
 
   Connections generate connection sets (datatype SET is described below)
   which are constructed during instantiation.  When a connection

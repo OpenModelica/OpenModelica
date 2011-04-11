@@ -35,7 +35,7 @@ encapsulated package BackendVariable
   description: BackendVariables contains the function that deals with the datytypes
                BackendDAE.VAR BackendDAE.Variables and BackendVariablesArray.
   
-  RCS: $Id: BackendVariable.mo 8526 2011-04-06 22:27:06Z Frenkel TUD $
+  RCS: $Id$
 "
 
 public import BackendDAE;

@@ -37,7 +37,7 @@ encapsulated package BaseHashTable
   description: BaseHashTable is a generic implementation of hashtables.
                See HashTable*.mo to see how to use it.
   
-  RCS: $Id: BaseHashTable.mo 8499 2011-04-05 12:45:34Z perost $
+  RCS: $Id$
 
   This file is an extension to OpenModelica.
 

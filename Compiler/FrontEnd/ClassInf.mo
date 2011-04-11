@@ -34,7 +34,7 @@ encapsulated package ClassInf
   package:      ClassInf
   description: Class restrictions
 
-  RCS:   $Id: ClassInf.mo 8577 2011-04-11 09:12:40Z sjoelund.se $
+  RCS:   $Id$
 
   This module deals with class inference, i.e. determining if a
   class definition adhers to one of the class restrictions, and, if

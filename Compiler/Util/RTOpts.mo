@@ -34,7 +34,7 @@ encapsulated package RTOpts
   package:     RTOpts
   description: Runtime options
 
-  RCS: $Id: RTOpts.mo 8498 2011-04-05 12:17:00Z sjoelund.se $
+  RCS: $Id$
 
   This module takes care of command line options. It is possible to
   ask it what flags are set, what arguments were given etc.

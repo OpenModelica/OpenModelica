@@ -40,7 +40,7 @@ encapsulated package BackendDAEOptimize
                - Inline Integration
                - and so on ... 
                
-  RCS: $Id: BackendDAEOptimize.mo 8551 2011-04-08 12:01:49Z sjoelund.se $
+  RCS: $Id$
 
 "
 

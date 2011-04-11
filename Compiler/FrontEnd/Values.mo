@@ -34,7 +34,7 @@ encapsulated package Values
   package:     Values
   description: Evaluated expression values
 
-  RCS: $Id: Values.mo 8577 2011-04-11 09:12:40Z sjoelund.se $
+  RCS: $Id$
 
   The package Values contains data structures for representing
   constant Modelica values.  These include integer, real, string and

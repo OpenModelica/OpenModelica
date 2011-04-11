@@ -35,7 +35,7 @@ encapsulated package ComponentReference
   package:     ComponentReference
   description: All stuff for ComponentRef datatypes
 
-  RCS: $Id: ComponentReference.mo 8577 2011-04-11 09:12:40Z sjoelund.se $
+  RCS: $Id$
 
   This file contains the module ComponentReference, 
   which contains functions for ComponentRef."

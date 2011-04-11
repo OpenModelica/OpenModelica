@@ -9,7 +9,7 @@ encapsulated package HashTable5 "
   package:     HashTable5
   description: Absyn.CR to Integer
 
-  RCS: $Id: HashTable5.mo 8576 2011-04-11 09:09:30Z sjoelund.se $
+  RCS: $Id$
 
   "
   

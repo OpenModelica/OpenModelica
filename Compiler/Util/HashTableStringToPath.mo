@@ -9,7 +9,7 @@ encapsulated package HashTableStringToPath "
   package:     HashTableStringToPath
   description: String to Path
 
-  RCS: $Id: HashTableStringToPath.mo 8576 2011-04-11 09:09:30Z sjoelund.se $
+  RCS: $Id$
 
   "
   
