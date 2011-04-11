@@ -52,20 +52,19 @@ package SimCodeQSS
 
 import interface SimCodeTV;
 import SimCodeC;
-import SimCodeDump;
 
-template translateModel(SimCode simCode) 
+template translateModel(SimCode simCode,QSSinfo qssInfo) 
  "Generates C code and Makefile for compiling and running a simulation of a
   Modelica model."
 ::=
 match simCode
 case SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
-  let()= textFile(simulationFile(simCode), '<%fileNamePrefix%>.cpp')
+  let()= textFile(simulationFile(simCode,qssInfo), '<%fileNamePrefix%>.cpp')
   let()= textFile(SimCodeC.simulationFunctionsHeaderFile(fileNamePrefix, modelInfo.functions, recordDecls), '<%fileNamePrefix%>_functions.h')
   let()= textFile(SimCodeC.simulationFunctionsFile(fileNamePrefix, modelInfo.functions, literals), '<%fileNamePrefix%>_functions.cpp')
   let()= textFile(SimCodeC.recordsFile(fileNamePrefix, recordDecls), '<%fileNamePrefix%>_records.c')
-  let()= textFile(SimCodeC.simulationMakefile(simCode), '<%fileNamePrefix%>.makefile')
-  let()= textFile(structureFile(simCode), 'modelica_struct.pds')
+  let()= textFile(simulationMakefile(simCode), '<%fileNamePrefix%>.makefile')
+  let()= textFile(structureFile(simCode,qssInfo), 'modelica_struct.pds')
   if simulationSettingsOpt then //tests the Option<> for SOME()
      let()= textFile(SimCodeC.simulationInitFile(simCode), '<%fileNamePrefix%>_init.txt')
      "" //empty result for true case 
@@ -74,7 +73,7 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   //since generated texts are written to files directly
 end translateModel;
 
-template simulationFile(SimCode simCode)
+template simulationFile(SimCode simCode, QSSinfo qssInfo)
  "Generates code for main C file for simulation target."
 ::=
 match simCode
@@ -130,7 +129,7 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(varInfo=varInfo as  VARINFO(__))) 
     return abs_accuracy;
   }
 
-  <%functionQssStaticBlocks(odeEquations,zeroCrossings)%>
+  <%functionQssStaticBlocks(odeEquations,zeroCrossings,qssInfo,modelInfo.varInfo.numStateVars)%>
 
   <%functionQssWhen(BackendQSS.replaceCondWhens(whenClauses,helpVarInfo,zeroCrossings),helpVarInfo,zeroCrossings)%>
 
@@ -195,26 +194,22 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(varInfo=varInfo as  VARINFO(__))) 
   /* adrpo: leave a newline at the end of file to get rid of the warning */
 end simulationFile;
 
-template structureFile(SimCode simCode)
+template structureFile(SimCode simCode, QSSinfo qssInfo)
  "Generates structure for main C file for simulation target."
 ::=
   let &models = buffer "" /*BUFD*/
-  let connections = generateConnections()
+  let connections = generateConnections(qssInfo)
 match simCode
 case SIMCODE(modelInfo=modelInfo as MODELINFO(varInfo=varInfo as  VARINFO(__))) then
   <<
   Root-Coordinator
   {
-    <%generateIntegrators()%>
-    <%generateStaticBlocks()%>
-    <%generateZeroCrossingFunctions(zeroCrossings)%>
-    <%generateCrossingDetectors(zeroCrossings)%>
-    <%generateWhenBlocks(whenClauses,helpVarInfo)%>
-    <%generateSampleBlocks(zeroCrossings)%>
+    <%generateIntegrators(varInfo.numStateVars)%>
+    <%generateStaticBlocks(qssInfo,varInfo.numStateVars)%>
     Simulator
       {
         Path = modelica/outvars.h
-        Parameters = 1.0
+        Parameters = 0.0
       }
     EIC
       {
@@ -280,9 +275,10 @@ template functionQssWhen(list<SimWhenClause> whenClauses, list<HelpVarInfo> help
   let &varDecls = buffer "" /*BUFD*/
 	let whenCases = functionQssWhen2(whenClauses,helpVars,varDecls,zeroCrossings)
   <<
-  bool functionQssWhen(unsigned int whenIndex, double *out, double *in)
+  bool functionQssWhen(unsigned int whenIndex, double t,double *out, double *in)
   {
     state mem_state;
+    time = t;
     <%varDecls%>
     mem_state = get_memory_state();
     switch (whenIndex)
@@ -300,19 +296,23 @@ template functionQssWhen2(list<SimWhenClause> whenClauses, list<HelpVarInfo> hel
 ::= 
 	(whenClauses |> SIM_WHEN_CLAUSE (__) hasindex i0 =>
   	let &preExp = buffer "" /*BUFD*/
+  	let &saves = buffer "" /*BUFD*/
 		let cond = functionPreWhenCondition(conditions,varDecls,preExp, zeroCrossings) 
 		let equations = generateWhenEquations(reinits,whenEq,varDecls)
   <<
   case <% i0 %>:
     #ifdef _OMC_OMPD
+    // Read inputs from in[]
     #endif
     <% preExp %>
     if (<% cond %>) {
       <% equations %>
+			<%saves%>
+      return true;
     } else {
+			<%saves%>
+      return false;
     }
-    #ifdef _OMC_OMPD
-    #endif
     break;
   >>
  	;separator="\n")
@@ -362,21 +362,28 @@ template functionPreWhenCondition (list<tuple<DAE.Exp, Integer>> conditions, Tex
 	;separator=" || ")
 end functionPreWhenCondition;
 
-template functionQssStaticBlocks(list<SimEqSystem> derivativEquations,list<ZeroCrossing> zeroCrossings)
+template functionQssStaticBlocks(list<SimEqSystem> derivativEquations,list<ZeroCrossing> zeroCrossings, QSSinfo qssInfo, Integer nStates)
   "Generates function in simulation file."
 ::=
-  let &varDecls = buffer "" /*BUFD*/
-	let zeroCross = generateZeroCrossingsEq(listLength(derivativEquations),zeroCrossings,varDecls)
-	let staticFun = generateStaticFunc(derivativEquations,zeroCrossings,varDecls)
+	match qssInfo
+	case BackendQSS.QSSINFO(__) then
+  	let &varDecls = buffer "" /*BUFD*/
+		let numStatic = listLength(eqs)
+		let zeroCross = generateZeroCrossingsEq(listLength(eqs),zeroCrossings,varDecls)
+		let staticFun = generateStaticFunc(derivativEquations,zeroCrossings,varDecls,DEVSstructure,eqs,outVarLst,nStates)
+
   <<
   void functionQssStaticBlocks(int staticFunctionIndex, double t, double *in, double *out)
   {
     state mem_state;
     <%varDecls%>
+    // Number of Static blocks: <% numStatic %>
+    time = t;
     mem_state = get_memory_state();
     switch (staticFunctionIndex)
     {
       <% staticFun %>
+      // Start of zero crossings functions
       <% zeroCross %>
     }
     restore_memory_state(mem_state);
@@ -384,30 +391,51 @@ template functionQssStaticBlocks(list<SimEqSystem> derivativEquations,list<ZeroC
   >>
 end functionQssStaticBlocks;
 
-template generateStaticFunc(list<SimEqSystem> odeEq,list<ZeroCrossing> zeroCrossings, Text &varDecls /*BUFP*/)
+template generateOutputs(BackendQSS.DevsStruct devsst, Integer index, list<BackendDAE.Var> varLst, Integer nStates)
+"Generate outputs for static blocks"
+::= 
+	(BackendQSS.getOutputs(devsst,intAdd(index,intAdd(1,nStates))) |> i hasindex i0 =>
+	<<
+	// Output <% i0 %> is var <% i %>
+	out[<% i0 %>] =  <% BackendQSS.derPrefix(listNth(varLst,intAdd(i,-1)))%><% SimCodeC.cref(BackendVariable.varCref(listNth(varLst,intAdd(i,-1)))) %>;
+	>>
+	; separator="\n")
+end generateOutputs;
+
+
+template generateInputs(BackendQSS.DevsStruct devsst, Integer index, list<BackendDAE.Var> varLst, Integer nStates)
+"Generate inputs for static blocks"
+::= 
+	(BackendQSS.getInputs(devsst,intAdd(index,intAdd(1,nStates))) |> i hasindex i0 =>
+	<<
+	// Input <% i0 %> is var <% i %>
+	<% SimCodeC.cref(BackendVariable.varCref(listNth(varLst,intAdd(i,-1)))) %> = in[<% i0 %>];
+	>>
+	; separator="\n")
+end generateInputs;
+
+template generateStaticFunc(list<SimEqSystem> odeEq,list<ZeroCrossing> zeroCrossings, 
+	Text &varDecls /*BUFP*/, BackendQSS.DevsStruct devsst,list<list<SimCode.SimEqSystem>> BLTblocks, list<BackendDAE.Var> varLst, Integer nStates)
 "Generate the cases for the static function "
 ::= 
-  (odeEq |> eq hasindex i0 =>
-		match eq
-		case SES_SIMPLE_ASSIGN(__) then
+  (BLTblocks |> eqs hasindex i0 =>
     <<
 
     case <% i0 %>:
       // Read inputs from in[]
       #ifdef _OMC_OMPD
+      <% generateInputs(devsst,i0,varLst,nStates) %>
       #endif
 
       // Evalute the static function
-      <% SimCodeC.equation_(BackendQSS.replaceZC(eq,zeroCrossings), contextSimulationNonDiscrete, &varDecls /*BUFC*/) %>
+      <% (eqs |> eq => SimCodeC.equation_(eq, contextSimulationNonDiscrete, &varDecls /*BUFC*/); separator="\n") %>
 
       // Write outputs to out[]
       #ifdef _OMC_OMPD
+      <% generateOutputs(devsst,i0,varLst,nStates) %>
       #endif
       break;
     >>
-		case _ then 
-		<<
-		>>
   ;separator="\n")
 end generateStaticFunc;
 
@@ -448,9 +476,10 @@ template functionQssUpdateDiscrete(list<SimEqSystem> allEquationsPlusWhen,list<Z
   let &varDecls = buffer "" /*BUFD*/
   let eqs = (allEquationsPlusWhen |> eq => generateDiscUpdate(BackendQSS.replaceZC(eq,zeroCrossings), zeroCrossings, &varDecls); separator="\n")
   <<
-  void functionQssUpdateDiscrete(double time)
+  void functionQssUpdateDiscrete(double t)
   {
     state mem_state;
+    time = t;
     <%varDecls%>
     mem_state = get_memory_state();
     <%eqs%>
@@ -490,26 +519,35 @@ template generateDiscUpdate(SimEqSystem eq, list<ZeroCrossing> zeroCrossings, Te
 end generateDiscUpdate;
 
 
-template generateIntegrators()
+template generateIntegrators(Integer nStates)
 "Function to generate the integrator atomics for the DEVS structure"
 ::= 
+	(Util.listFill(0,nStates) |> i hasindex i0 =>
   <<Simulator
     {
       Path = modelica/modelica_integrator.h
-      Parameters = 1.0
+      Parameters = 0.0, <% i0 %>.0 // 0, Index
     }
   >>
+	;separator="\n")
 end generateIntegrators;
 
-template generateStaticBlocks()
+template generateStaticBlocks(QSSinfo qssInfo, Integer nStates)
 "Function to generate the static functions atomics for the DEVS structure"
 ::= 
+	match qssInfo
+	case QSSINFO(DEVSstructure = BackendQSS.DEVS_STRUCT(__)) then
+	(eqs |> eq hasindex i0 =>
   <<Simulator
     {
       Path = modelica/modelica_qss_static.h
-      Parameters = 1.0,2.0,3.0
+      Parameters = 0.0, <% 
+				BackendQSS.numInputs(qssInfo,intAdd(i0,intAdd(1,nStates)))
+				%>.0, <%
+				BackendQSS.numOutputs(qssInfo,intAdd(i0,intAdd(1,nStates))) %>.0, <% i0 %>.0 // 0, Inputs, Outputs, Index
     }
   >>
+	;separator="\n")
 end generateStaticBlocks;
 
 template generateZeroCrossingFunctions(list<ZeroCrossing> zeroCrossings)
@@ -572,7 +610,7 @@ template generateSampleBlocks(list<ZeroCrossing> zeroCrossings)
   ;separator="\n")
 end generateSampleBlocks;
 
-template generateConnections()
+template generateConnections(QSSinfo qssInfo)
 "Function to generate the connections between atomics for the DEVS structure"
 ::= 
   <<(0,0) ; (12,45) // Connection between 
@@ -582,6 +620,45 @@ template generateConnections()
   (0,0) ; (12,45) // Connection between 
   >>
 end generateConnections;
+
+template simulationMakefile(SimCode simCode)
+ "Generates the contents of the makefile for the simulation case."
+::=
+match simCode
+case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simulationSettingsOpt = sopt) then
+  let dirExtra = if modelInfo.directory then '-L"<%modelInfo.directory%>"' //else ""
+  let libsStr = (makefileParams.libs |> lib => lib ;separator=" ")
+  let libsPos1 = if not dirExtra then libsStr //else ""
+  let libsPos2 = if dirExtra then libsStr // else ""
+  let extraCflags = match sopt case SOME(s as SIMULATION_SETTINGS(__)) then
+    '<%if s.measureTime then "-D_OMC_MEASURE_TIME "%> <%match s.method
+       case "inline-euler" then "-D_OMC_INLINE_EULER"
+       case "inline-rungekutta" then "-D_OMC_INLINE_RK"%>'
+  <<
+  # Makefile generated by OpenModelica
+  
+  # Simulations use -O3 by default
+  SIM_OR_DYNLOAD_OPT_LEVEL=-O3
+  CC=<%makefileParams.ccompiler%>
+  CXX=<%makefileParams.cxxcompiler%>
+  LINK=<%makefileParams.linker%>
+  EXEEXT=<%makefileParams.exeext%>
+  DLLEXT=<%makefileParams.dllext%>
+  CFLAGS_BASED_ON_INIT_FILE=<%extraCflags%>
+  CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -I"<%makefileParams.omhome%>/include/omc" <%makefileParams.cflags%> -D_OMC_QSS -D_OMC_OMPD
+  LDFLAGS=-L"<%makefileParams.omhome%>/lib/omc" <%makefileParams.ldflags%>
+  SENDDATALIBS=<%makefileParams.senddatalibs%>
+  PERL=perl
+  
+  .PHONY: <%fileNamePrefix%>
+  <%fileNamePrefix%>: <%fileNamePrefix%>.conv.cpp <%fileNamePrefix%>_functions.cpp <%fileNamePrefix%>_functions.h <%fileNamePrefix%>_records.c
+  <%\t%> $(CXX) -I. -o <%fileNamePrefix%>$(EXEEXT) <%fileNamePrefix%>.conv.cpp <%fileNamePrefix%>_functions.cpp <%dirExtra%> <%libsPos1%> <%libsPos2%> -lsim -linteractive $(CFLAGS) $(SENDDATALIBS) $(LDFLAGS) <%match System.os() case "OSX" then "-lf2c" else "-Wl,-Bstatic -lf2c -Wl,-Bdynamic"%> <%fileNamePrefix%>_records.c 
+  <%fileNamePrefix%>.conv.cpp: <%fileNamePrefix%>.cpp
+  <%\t%> $(PERL) <%makefileParams.omhome%>/share/omc/scripts/convert_lines.pl $< $@.tmp
+  <%\t%> @mv $@.tmp $@
+  >>
+end simulationMakefile;
+
 
 end SimCodeQSS;
 

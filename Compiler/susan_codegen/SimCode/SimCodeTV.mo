@@ -20,7 +20,13 @@ package builtin
     input Integer b;
     output Integer c;
   end intAdd;
-  
+
+  function arrayList 
+    replaceable type TypeVar subtypeof Any;    
+    input TypeVar[:] arr;
+    output list<TypeVar> lst;
+  end arrayList;
+ 
 end builtin;
 
 
@@ -1767,6 +1773,12 @@ package Util
 	  output DateTime dt;
 	end getCurrentDateTime;
 
+	function listFill 
+  	input Type_a inTypeA;
+	  input Integer inInteger;
+  	output list<Type_a> outTypeALst;
+	  replaceable type Type_a subtypeof Any;
+	end listFill;
 end Util;
 
 
@@ -1854,7 +1866,64 @@ package BackendQSS
 		input list<BackendDAE.ZeroCrossing> zc;
 		output SimCode.SimEqSystem o;
 	end replaceZC;
+
+	uniontype DevsStruct "DEVS structure"
+  	record DEVS_STRUCT  
+    	list<list<Integer>>[:] outLinks "output connections for each DEVS block";
+    	list<list<Integer>>[:] outVars "output variables for each DEVS block";
+    	list<list<Integer>>[:] inLinks "input connections for each DEVS block";
+    	list<list<Integer>>[:] inVars "input variables for each DEVS block";
+  	end DEVS_STRUCT;
+	end DevsStruct;
+
+	uniontype QSSinfo "- equation indices in static blocks and DEVS structure"
+  	record QSSINFO
+    	list<list<list<Integer>>> BLTblocks "BLT blocks in static functions";
+	    DevsStruct DEVSstructure "DEVS structure of the model";
+			list<list<SimCode.SimEqSystem>> eqs;
+  		list<BackendDAE.Var> outVarLst;
+  	end QSSINFO;
+	end QSSinfo;
+
+	function getInputs
+		input DevsStruct st;
+		input Integer index;
+		output list<Integer> vars;
+	end getInputs;
+
+	function getOutputs
+		input DevsStruct st;
+		input Integer index;
+		output list<Integer> vars;
+	end getOutputs;
+
+
+	function derPrefix
+ 		input BackendDAE.Var var;
+		output String prefix;
+	end derPrefix;
+
+	function numInputs
+		input QSSinfo qssInfo;
+		input Integer numBlock;
+		output Integer inputs;
+	end numInputs;
+
+	function numOutputs
+		input QSSinfo qssInfo;
+		input Integer numBlock;
+		output Integer outputs;
+	end numOutputs;
+
 end BackendQSS;
+
+package BackendVariable
+	function varCref
+  	input BackendDAE.Var inVar;
+	  output DAE.ComponentRef outComponentRef;
+	end varCref;
+
+end BackendVariable;
 
 package DAEDump
 
