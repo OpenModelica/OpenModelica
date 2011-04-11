@@ -97,6 +97,8 @@ void SimulationWidget::setUpForm()
     mpOutputFormatComboBox->addItems(Helper::ModelicaSimulationOutputFormats.toLower().split(","));
     mpFileNameLabel = new QLabel(tr("File Name (Optional):"));
     mpFileNameTextBox = new QLineEdit(tr(""));
+    mpCflagsLabel = new QLabel(tr("Compiler flags:"));
+    mpCflagsTextBox = new QLineEdit(tr(""));
 
     gridIntegrationLayout->addWidget(mpMethodLabel, 0, 0);
     gridIntegrationLayout->addWidget(mpMethodComboBox, 0, 1);
@@ -106,6 +108,8 @@ void SimulationWidget::setUpForm()
     gridIntegrationLayout->addWidget(mpOutputFormatComboBox, 2, 1);
     gridIntegrationLayout->addWidget(mpFileNameLabel, 3, 0);
     gridIntegrationLayout->addWidget(mpFileNameTextBox, 3, 1);
+    gridIntegrationLayout->addWidget(mpCflagsLabel, 4, 0);
+    gridIntegrationLayout->addWidget(mpCflagsTextBox, 4, 1);
     mpIntegrationGroup->setLayout(gridIntegrationLayout);
 
     // Add the validators
@@ -180,6 +184,7 @@ void SimulationWidget::initializeFields()
     mpMethodComboBox->setCurrentIndex(mpMethodComboBox->findText(StringHandler::removeFirstLastQuotes(
                                                                  simulationOptionsList.at(4))));
     mpFileNameTextBox->setText(tr(""));
+    mpCflagsTextBox->setText(tr(""));
 }
 
 void SimulationWidget::show(bool isInteractive)
@@ -238,6 +243,9 @@ void SimulationWidget::simulate()
         if (!mpFileNameTextBox->text().isEmpty())
             simualtionParameters.append(tr(", fileNamePrefix=")).append("\"")
                             .append(mpFileNameTextBox->text()).append("\"");
+        if (!mpCflagsTextBox->text().isEmpty())
+            simualtionParameters.append(tr(", cflags=")).append("\"")
+                            .append(mpCflagsTextBox->text()).append("\"");
 
         ProjectTab *projectTab = mpParentMainWindow->mpProjectTabs->getCurrentTab();
 

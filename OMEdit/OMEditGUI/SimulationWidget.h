@@ -73,6 +73,8 @@ private:
     QComboBox *mpOutputFormatComboBox;
     QLabel *mpFileNameLabel;
     QLineEdit *mpFileNameTextBox;
+    QLabel *mpCflagsLabel;
+    QLineEdit *mpCflagsTextBox;
     QPushButton *mpCancelButton;
     QPushButton *mpSimulateButton;
     QDialogButtonBox *mpButtonBox;
