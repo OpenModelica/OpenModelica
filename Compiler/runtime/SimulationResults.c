@@ -3,6 +3,7 @@
 #include <string.h>
 #include "errorext.h"
 #include "ptolemyio.h"
+#include "read_csv.h"
 #include <math.h>
 #include "omc_msvc.h" /* For INFINITY and NAN */
 
@@ -24,12 +25,14 @@ static PlotFormat curFormat = UNKNOWN_PLOT;
 static char *curFileName = NULL;
 static ModelicaMatReader matReader;
 static FILE *pltReader;
+static FILE *csvReader;
 
 void SimulationResultsImpl__close()
 {
   switch (curFormat) {
   case MATLAB4: omc_free_matlab4_reader(&matReader); break;
   case PLT: fclose(pltReader); break;
+  case CSV: fclose(csvReader); break;
   }
   curFormat = UNKNOWN_PLOT;
   if (curFileName) free(curFileName);
@@ -66,6 +69,14 @@ static PlotFormat SimulationResultsImpl__openFile(const char *filename)
       return UNKNOWN_PLOT;
     }
     break;
+  case CSV:
+	csvReader = fopen(filename, "r");
+	if (csvReader==NULL) {
+	  msg[1] = filename;
+	  c_add_message(-1, "SCRIPT", "Error", "Failed to open simulation result %s: %s\n", msg, 2);
+	  return UNKNOWN_PLOT;
+	}
+	break;
   default:
     msg[0] = filename;
     c_add_message(-1, "SCRIPT", "Error", "Failed to open simulation result %s\n", msg, 1);
@@ -191,6 +202,15 @@ static void* SimulationResultsImpl__readVars(const char *filename)
   }
   case PLT: {
     return read_ptolemy_variables(filename);
+  }
+  case CSV: {
+    char **variables = read_csv_variables(filename);
+    while (*variables)
+    {
+      res = mk_cons(mk_scon(*variables),res);
+      variables++;
+    }
+    return res;
   }
   default:
     msg[0] = PlotFormatStr[curFormat];

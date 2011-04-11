@@ -14,7 +14,7 @@ biglag.o  ddassl.o  dogleg.o  fdjac1.o  hybrj.o   newuoa.o   qrfac.o   trsapp.o 
 daux.o    dlamch.o  dpmpar.o  hybrd.o   lsame.o   newuob.o   r1mpyq.o  update.o division.o\
 java_interface.o meta_modelica.o meta_modelica_builtin.o meta_modelica_real.o \
 meta_modelica_string_lit.o meta_modelica_catch.o rtclock.o ModelicaUtilities.o \
-simulation_varinfo.o read_matlab4.o \
+simulation_varinfo.o read_matlab4.o read_csv.o \
 meta_modelica_gc.o meta_modelica_gc_list.o meta_modelica_gc_stack.o \
 meta_modelica_gc_roots.o meta_modelica_gc_pages.o meta_modelica_gc_stats.o meta_modelica_gc_settings.o \
 $(EXTRA_OBJS)
@@ -53,6 +53,7 @@ modelica.h \
 modelica_string.h \
 ModelicaUtilities.h \
 read_matlab4.h \
+read_csv.h \
 read_write.h \
 real_array.h \
 ringbuffer.h \
