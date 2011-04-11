@@ -1,4 +1,11 @@
 encapsulated package TplAbsyn
+"
+  file:        TplAbsyn.mo
+  package:     TplAbsyn
+  description: Susan abstract syntax
+
+  $Id$
+"
 
 protected import Debug;
 protected import Util;

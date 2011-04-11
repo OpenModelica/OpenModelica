@@ -1,4 +1,11 @@
 encapsulated package TplParser
+"
+  file:        TplParser.mo
+  package:     TplParser
+  description: Susan Parser
+
+  $Id$
+"
 
 public import Tpl;
 public import Util;

@@ -1,4 +1,11 @@
-encapsulated package TplMain "
+encapsulated package TplMain
+"
+  file:        TplMain.mo
+  package:     TplMain
+  description: Susan Main Module
+
+  $Id$
+
 This is the main module of Susan language.
 It only calls the other parts of the compiler
 and contains some tests for basic parts of Susan. 

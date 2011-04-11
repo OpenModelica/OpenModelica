@@ -1,5 +1,12 @@
 
 encapsulated package Tpl
+"
+  file:        Tpl.mo
+  package:     Tpl
+  description: Susan
+
+  $Id$
+"
 
 //import Util;
 protected import Debug;

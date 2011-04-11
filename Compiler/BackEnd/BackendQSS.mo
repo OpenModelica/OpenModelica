@@ -31,10 +31,12 @@
 
 
 encapsulated package BackendQSS
-" file:         BackendQSS.mo
+" file:        BackendQSS.mo
   package:     BackendQSS
   description: BackendQSS contains the datatypes used by the backend for QSS solver.
   authors: xfloros, fbergero
+
+  $Id$
 "
 
 public import SimCode;
