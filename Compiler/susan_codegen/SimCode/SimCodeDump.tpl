@@ -36,7 +36,9 @@ template dumpVars(list<SimVar> vars)
 ::=
   vars |> v as SIMVAR(__) =>
   <<
-  <%crefStr(v.name)%> <%v.comment%> <%dumpAlias(v.aliasvar)%><%\n%>
+  <%crefStr(v.name)%> <%v.comment%> <%dumpAlias(v.aliasvar)%>
+    <%dumpElementSource(v.source)%>
+  <%\n%>
   >>
 end dumpVars;
 

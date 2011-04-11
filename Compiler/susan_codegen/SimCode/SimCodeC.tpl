@@ -363,9 +363,9 @@ template globalDataVarInfoArray(String _name, list<SimVar> items)
   case items then
     <<
     const struct omc_varInfo <%_name%>[<%listLength(items)%>] = {
-      <%items |> var as SIMVAR(info=info as INFO(__)) => '{<%System.tmpTick()%>,"<%escapedString(crefStr(var.name))%>","<%escapedString(var.comment)%>",{<%infoArgs(info)%>}}'; separator=",\n"%>
+      <%items |> var as SIMVAR(source=SOURCE(info=info as INFO(__))) => '{<%System.tmpTick()%>,"<%escapedString(crefStr(var.name))%>","<%escapedString(var.comment)%>",{<%infoArgs(info)%>}}'; separator=",\n"%>
     };
-    <%items |> var as SIMVAR(info=info as INFO(__)) hasindex i0 => '#define <%cref(var.name)%>__varInfo <%_name%>[<%i0%>]'; separator="\n"%>
+    <%items |> var as SIMVAR(source=SOURCE(info=info as INFO(__))) hasindex i0 => '#define <%cref(var.name)%>__varInfo <%_name%>[<%i0%>]'; separator="\n"%>
     >>
 end globalDataVarInfoArray;
 
@@ -4373,6 +4373,7 @@ template algStatementWhenPreAssigns(list<Exp> exps, list<Integer> ints,
     match ints
     case (firstInt :: restInts) then
       let rest = algStatementWhenPreAssigns(restExps, restInts,
+
                                           &preExp /*BUFC*/, &varDecls /*BUFD*/)
       let firstExpPart = daeExp(firstExp, contextSimulationDiscrete,
                               &preExp /*BUFC*/, &varDecls /*BUFD*/)

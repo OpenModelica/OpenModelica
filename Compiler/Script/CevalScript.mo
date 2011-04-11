@@ -1210,6 +1210,16 @@ algorithm
       then
         (cache,Values.STRING(str_1),st);
         
+    case (cache,env,"writeFile",{Values.STRING(str),Values.STRING(str1)},st,msg)
+      equation
+        System.writeFile(str,str1);
+      then
+        (cache,Values.BOOL(true),st);
+        
+    case (cache,env,"writeFile",_,st,msg)
+      then
+        (cache,Values.BOOL(false),st);
+
     case (cache,env,"readFileNoNumeric",{Values.STRING(str)},st,msg)
       equation
         str_1 = System.readFileNoNumeric(str);

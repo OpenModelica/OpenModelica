@@ -541,6 +541,7 @@ algorithm
       Absyn.ComponentRef cr;
       Env.Cache cache;
       Absyn.Info info;
+      Absyn.FunctionArgs fargs;
 
     case (Absyn.ALGORITHMITEM(info=info,
           algorithm_ = Absyn.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "assert"),
@@ -562,6 +563,15 @@ algorithm
         (_,Values.STRING(str),SOME(st_2)) = Ceval.ceval(cache,env, msg_1, true, SOME(st_1),NONE(), Ceval.MSG());
       then
         (str,st_2);
+
+    case (Absyn.ALGORITHMITEM(info=info,algorithm_ = Absyn.ALG_NORETCALL(functionCall = cr,functionArgs = fargs)),st)
+      equation
+        env = buildEnvFromSymboltable(st);
+        exp = Absyn.CALL(cr,fargs);
+        (cache,sexp,prop,SOME(st_1)) = Static.elabExp(Env.emptyCache(), env, exp, true, SOME(st),true,Prefix.NOPRE(),info);
+        (_,_,SOME(st_2)) = Ceval.ceval(cache, env, sexp, true, SOME(st_1),NONE(), Ceval.MSG());
+      then
+        ("",st_2);
 
     case /* Special case to lookup fields of records.
           * SimulationResult, etc are not in the environment, but it's nice to be able to script them anyway */
@@ -686,9 +696,11 @@ algorithm
       list<Values.Value> vallst;
       list<Absyn.AlgorithmItem> algItems;
       InteractiveSymbolTable st1,st2,st3,st4,st5;
+      String str;
     case (iter, val::vallst, algItems, st1)
     equation
       st2 = appendVarToSymboltable(iter, val, Types.typeOfValue(val), st1);
+      str = Dump.unparseAlgorithmStrLst(2,algItems,"\n");
       st3 = evaluateAlgStmtLst(algItems, st2);
       st4 = deleteVarFromSymboltable(iter, st3);
       st5 = evaluateForStmt(iter, vallst, algItems, st4);

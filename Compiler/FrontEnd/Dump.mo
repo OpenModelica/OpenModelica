@@ -3072,7 +3072,7 @@ algorithm
   end matchcontinue;
 end printAlgorithm;
 
-protected function unparseAlgorithmStrLst "function: unparseAlgorithmStrLst
+public function unparseAlgorithmStrLst "function: unparseAlgorithmStrLst
   Prettyprints an AlgorithmItem list to a string."
   input Integer inInteger;
   input list<Absyn.AlgorithmItem> inAbsynAlgorithmItemLst;

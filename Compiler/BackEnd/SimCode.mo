@@ -257,7 +257,7 @@ uniontype SimVar
     // array
     Option<DAE.ComponentRef> arrayCref;
     AliasVariable aliasvar;
-    Absyn.Info info;
+    DAE.ElementSource source;
     Causality causality;
     Option<Integer> variable_index;
   end SIMVAR;
@@ -635,7 +635,7 @@ algorithm
         errstr = "Template did not find the simulation variable for "+& ComponentReference.printComponentRefStr(cref) +& ". ";
         Error.addMessage(Error.INTERNAL_ERROR, {errstr});
       then
-        SIMVAR(badcref, BackendDAE.STATE(), "", "", "", -1, NONE(), false, DAE.ET_REAL(), false, NONE(), NOALIAS(), Absyn.dummyInfo, INTERNAL(),NONE());
+        SIMVAR(badcref, BackendDAE.STATE(), "", "", "", -1, NONE(), false, DAE.ET_REAL(), false, NONE(), NOALIAS(), DAE.emptyElementSource, INTERNAL(),NONE());
   end matchcontinue;
 end cref2simvar;
 
@@ -6504,19 +6504,19 @@ algorithm
       DAE.ExpType type_;
       Boolean isDiscrete;
       DAE.ComponentRef arrayCref;
-      Absyn.Info info;
+      DAE.ElementSource source;
       Option<Integer> variable_index;
-    case (SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, isFixed, type_, isDiscrete, NONE(),_, info,_,NONE()))
+    case (SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, isFixed, type_, isDiscrete, NONE(),_, source,_,NONE()))
       equation
         name = ComponentReference.crefPrefixDer(name);
       then
-        SIMVAR(name, BackendDAE.STATE_DER(), comment, unit, displayUnit, index, NONE(), isFixed, type_, isDiscrete, NONE(), NOALIAS(), info, INTERNAL(),NONE());
-    case (SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, isFixed, type_, isDiscrete, SOME(arrayCref),_, info,_,NONE()))
+        SIMVAR(name, BackendDAE.STATE_DER(), comment, unit, displayUnit, index, NONE(), isFixed, type_, isDiscrete, NONE(), NOALIAS(), source, INTERNAL(),NONE());
+    case (SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, isFixed, type_, isDiscrete, SOME(arrayCref),_, source,_,NONE()))
       equation
         name = ComponentReference.crefPrefixDer(name);
         arrayCref = ComponentReference.crefPrefixDer(arrayCref);
       then
-        SIMVAR(name, BackendDAE.STATE_DER(), comment, unit, displayUnit, index, NONE(), isFixed, type_, isDiscrete, SOME(arrayCref), NOALIAS(), info, INTERNAL(),NONE());
+        SIMVAR(name, BackendDAE.STATE_DER(), comment, unit, displayUnit, index, NONE(), isFixed, type_, isDiscrete, SOME(arrayCref), NOALIAS(), source, INTERNAL(),NONE());
   end match;
 end derVarFromStateVar;
 
@@ -6766,14 +6766,14 @@ algorithm
       Integer index_;
       AliasVariable aliasvar;
       list<SimVar> rest,rest2;
-      Absyn.Info info;
+      DAE.ElementSource source;
       Causality causality;
       Option<Integer> variable_index;
     case ({},_) then {};
-    case (SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, info, causality,NONE())::rest,index_)
+    case (SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality,NONE())::rest,index_)
       equation
         rest2 = rewriteIndex(rest, index_ + 1);
-      then (SIMVAR(name, kind, comment, unit, displayUnit, index_, initVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, info, causality,NONE())::rest2);
+      then (SIMVAR(name, kind, comment, unit, displayUnit, index_, initVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality,NONE())::rest2);
   end match;
 end rewriteIndex;
 
@@ -6865,16 +6865,18 @@ algorithm
       Option<DAE.ComponentRef> arrayCref;
       AliasVariable aliasvar;
       String varNameStr;
+      DAE.ElementSource source;
       Absyn.Info info;
       Causality causality;
       Option<Integer> variable_index;
       
-    case (SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, info, causality,NONE()), initCrefs)
+    case (SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality,NONE()), initCrefs)
       equation
         (_ :: _) = Util.listSelect1(initCrefs, name, ComponentReference.crefEqualNoStringCompare);
         varNameStr = ComponentReference.printComponentRefStr(name);
+        info = DAEUtil.getElementSourceFileInfo(source);
         Error.addSourceMessage(Error.SETTING_FIXED_ATTRIBUTE, {varNameStr}, info);
-      then SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, false, type_, isDiscrete, arrayCref, aliasvar, info, causality,NONE());
+      then SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, false, type_, isDiscrete, arrayCref, aliasvar, source, causality,NONE());
     case (_, _) then simvarIn;
   end matchcontinue;
 end nonFixifyIfHasInit;
@@ -8932,10 +8934,9 @@ algorithm
         isDiscrete = BackendVariable.isVarDiscrete(dlowVar);
         arrayCref = getArrayCref(dlowVar);
         aliasvar = getAliasVar(dlowVar,optAliasVars);
-        info = DAEUtil.getElementSourceFileInfo(source);
         caus = getCausality(dlowVar,vars);
       then
-        SIMVAR(cr, kind, commentStr, unit, displayUnit, indx, initVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, info, caus,NONE());
+        SIMVAR(cr, kind, commentStr, unit, displayUnit, indx, initVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, caus,NONE());
   end match;
 end dlowvarToSimvar;
 
@@ -10912,17 +10913,17 @@ algorithm (outSimVar):= matchcontinue(stateVars,dae_low)
     // array
     Option<DAE.ComponentRef> arrayCref;
     AliasVariable aliasvar;
-    Absyn.Info info;
+    DAE.ElementSource source;
     Causality causality;
     Option<Integer> variable_index;
-  case(SIMVAR(name=name,varKind=varKind,comment=comment,unit=unit,displayUnit=displayUnit,index=index,initialValue=initialValue,isFixed=isFixed,type_=type_,isDiscrete=isDiscrete,arrayCref=arrayCref,aliasvar=aliasvar,info=info,causality=causality,variable_index=variable_index),dae_low)
+  case(SIMVAR(name=name,varKind=varKind,comment=comment,unit=unit,displayUnit=displayUnit,index=index,initialValue=initialValue,isFixed=isFixed,type_=type_,isDiscrete=isDiscrete,arrayCref=arrayCref,aliasvar=aliasvar,source=source,causality=causality,variable_index=variable_index),dae_low)
      equation
       Debug.fcall("cppvarindex",BackendDump.debugStrCrefStr,(" search index for state variable ",name,"\n"));
       ordered_states=setVariableDerIndex(dae_low);
       new_index=stateindex(name,ordered_states);
            
     then 
-     SIMVAR(name,varKind,comment,unit,displayUnit,new_index,initialValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,info,causality,variable_index);
+     SIMVAR(name,varKind,comment,unit,displayUnit,new_index,initialValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,variable_index);
 end matchcontinue;
 end stateindex2;
 
@@ -10975,16 +10976,16 @@ algorithm
       // array
       Option<DAE.ComponentRef> arrayCref;
       AliasVariable aliasvar;
-      Absyn.Info info;
+      DAE.ElementSource source;
       Causality causality;
       Option<Integer> variable_index;
       list<SimVar> rest,indexed_vector;
     case({},_) then {};
-    case(SIMVAR(name=name,varKind=varKind,comment=comment,unit=unit,displayUnit=displayUnit,initialValue=initialValue,isFixed=isFixed,type_=type_,isDiscrete=isDiscrete,arrayCref=arrayCref,aliasvar=aliasvar,info=info,causality=causality,variable_index=variable_index) :: rest,index)
+    case(SIMVAR(name=name,varKind=varKind,comment=comment,unit=unit,displayUnit=displayUnit,initialValue=initialValue,isFixed=isFixed,type_=type_,isDiscrete=isDiscrete,arrayCref=arrayCref,aliasvar=aliasvar,source=source,causality=causality,variable_index=variable_index) :: rest,index)
       equation
         indexed_vector = setStatesVectorIndex2(rest,index+1);
       then 
-        SIMVAR(name,varKind,comment,unit,displayUnit,index,initialValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,info,causality,SOME(index))::indexed_vector;
+        SIMVAR(name,varKind,comment,unit,displayUnit,index,initialValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,SOME(index))::indexed_vector;
   end matchcontinue;
 end setStatesVectorIndex2;
 
@@ -11081,33 +11082,33 @@ algorithm
       // array
       Option<DAE.ComponentRef> arrayCref;
       AliasVariable aliasvar;
-      Absyn.Info info;
+      DAE.ElementSource source;
       Causality causality;
       Option<Integer> variable_index;
       DAE.ComponentRef cr_1;
       String name_str,id_str;
-    case(SIMVAR(name,varKind,comment,unit,displayUnit,0,initialValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,info,causality,variable_index)) 
+    case(SIMVAR(name,varKind,comment,unit,displayUnit,0,initialValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,variable_index)) 
       equation
         name_str = ComponentReference.printComponentRefStr(name);
         id_str = stringAppendList({BackendDAE.derivativeNamePrefix,"." ,name_str});
         cr_1 = ComponentReference.makeCrefIdent(id_str,DAE.ET_REAL(),{});
       then
-        SIMVAR(cr_1,varKind,comment,unit,displayUnit,0,initialValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,info,causality,variable_index);
-    case(SIMVAR(name,varKind,comment,unit,displayUnit,1,initialValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,info,causality,variable_index)) 
+        SIMVAR(cr_1,varKind,comment,unit,displayUnit,0,initialValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,variable_index);
+    case(SIMVAR(name,varKind,comment,unit,displayUnit,1,initialValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,variable_index)) 
       equation
         name_str = ComponentReference.printComponentRefStr(name);
         id_str = stringAppendList({BackendDAE.derivativeNamePrefix,".",name_str});
         cr_1 = ComponentReference.makeCrefIdent(id_str,DAE.ET_REAL(),{});
       then
-        SIMVAR(cr_1,varKind,comment,unit,displayUnit,1,initialValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,info,causality,variable_index);
+        SIMVAR(cr_1,varKind,comment,unit,displayUnit,1,initialValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,variable_index);
     
-    case(SIMVAR(name,varKind,comment,unit,displayUnit,2,initialValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,info,causality,variable_index)) 
+    case(SIMVAR(name,varKind,comment,unit,displayUnit,2,initialValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,variable_index)) 
       equation
         name_str = ComponentReference.printComponentRefStr(name);
         id_str = stringAppendList({BackendDAE.derivativeNamePrefix,".",name_str});
         cr_1 = ComponentReference.makeCrefIdent(id_str,DAE.ET_REAL(),{});
       then
-        SIMVAR(cr_1,varKind,comment,unit,displayUnit,2,initialValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,info,causality,variable_index);
+        SIMVAR(cr_1,varKind,comment,unit,displayUnit,2,initialValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,variable_index);
   end matchcontinue;
 end generateDerStates2;
 
@@ -11133,19 +11134,19 @@ algorithm
       Boolean isDiscrete;
       Option<DAE.ComponentRef> arrayCref;
       AliasVariable aliasvar;
-      Absyn.Info info;
+      DAE.ElementSource source;
       Causality causality;
       Option <Integer> variable_index;
       Integer variable_index1;
       SimVar v,newvar1;
   
-  case((v as SIMVAR(name,varKind,comment,unit,displayUnit,index,initialValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,info,causality,variable_index)),SIMVAR(name1,_,_,_,_,index1,_,_,_,_,_,_,_,_,SOME(variable_index1))::_)    
+  case((v as SIMVAR(name,varKind,comment,unit,displayUnit,index,initialValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,variable_index)),SIMVAR(name1,_,_,_,_,index1,_,_,_,_,_,_,_,_,SOME(variable_index1))::_)    
     equation
       Debug.fcall("cppvarindex",BackendDump.debugStrCrefStrCrefStr,(" compare variable ",name,"with ",name1,"\n"));
       true = ComponentReference.crefEqual(name,name1);
     then 
-      SIMVAR(name,varKind,comment,unit,displayUnit,variable_index1,initialValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,info,causality,SOME(index1));
-  case((v as SIMVAR(name,varKind,comment,unit,displayUnit,index,initialValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,info,causality,variable_index)),_::rest1)
+      SIMVAR(name,varKind,comment,unit,displayUnit,variable_index1,initialValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,SOME(index1));
+  case((v as SIMVAR(name,varKind,comment,unit,displayUnit,index,initialValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,variable_index)),_::rest1)
     equation
        newvar1=replaceindex(v,rest1);
     then newvar1;
@@ -11223,10 +11224,10 @@ algorithm str := matchcontinue(vf)
     // array
            Option<DAE.ComponentRef> arrayCref;
            AliasVariable aliasvar;
-           Absyn.Info info;
            Causality causality;
            Integer y;
-  case(SIMVAR(name,varKind,comment,unit,displayUnit,x,initialValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,info,causality,SOME(y))) then " Var: " +& ComponentReference.printComponentRefStr(name) +& " varibale index: " +& intString(x) +& " vector index:" +& intString(y) +& " translating to z[" +& intString(y) +& "]";
+  case(SIMVAR(name,varKind,comment,unit,displayUnit,x,initialValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,_,causality,SOME(y)))
+    then " Var: " +& ComponentReference.printComponentRefStr(name) +& " varibale index: " +& intString(x) +& " vector index:" +& intString(y) +& " translating to z[" +& intString(y) +& "]";
 end matchcontinue;
 end dumpVarInfo;
 

@@ -671,7 +671,17 @@ function readFile
 external "builtin";
 end readFile;
 
-function readFileShowLineNumbers "Prefixes each line in the file with <n>:, where n is the line number"
+function writeFile
+  "Write the data to file. Returns true on success."
+  input String fileName;
+  input String data;
+  output Boolean success;
+external "builtin";
+end writeFile;
+
+function readFileShowLineNumbers "
+  Prefixes each line in the file with <n>:, where n is the line number.
+  Note: Scales O(n^2)"
   input String fileName;
   output String out;
 protected

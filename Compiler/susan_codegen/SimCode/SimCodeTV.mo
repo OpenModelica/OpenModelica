@@ -294,7 +294,7 @@ package SimCode
       Boolean isDiscrete;
       Option<DAE.ComponentRef> arrayCref;
       AliasVariable aliasvar;
-      Absyn.Info info;
+      DAE.ElementSource source;
       Causality causality;
       Option<Integer> variable_index;
     end SIMVAR;
