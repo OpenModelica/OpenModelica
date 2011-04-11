@@ -1194,7 +1194,7 @@ algorithm
       equation
         Debug.print("Generating QSS solver code\n");
         qssInfo = BackendQSS.generateStructureCodeQSS(outIndexedBackendDAE, equationIndices, variableIndices, incidenceMatrix, incidenceMatrixT, strongComponents);
-        Tpl.tplNoret(SimCodeQSS.translateModel, simCode);
+        Tpl.tplNoret2(SimCodeQSS.translateModel, simCode, qssInfo);
       then ();
     case (simCode,_,"C")
       equation
@@ -3641,7 +3641,7 @@ algorithm
   end match;
 end whenClauseToSimWhenClause;
 
-protected function createEquations
+public function createEquations
   input Boolean includeWhen;
   input Boolean skipDiscInZc;
   input Boolean genDiscrete;

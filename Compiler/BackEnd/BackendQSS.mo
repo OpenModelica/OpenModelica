@@ -69,6 +69,8 @@ uniontype QSSinfo "- equation indices in static blocks and DEVS structure"
   record QSSINFO
     list<list<list<Integer>>> BLTblocks "BLT blocks in static functions";
     DevsStruct DEVSstructure "DEVS structure of the model";
+		list<list<SimCode.SimEqSystem>> eqs;
+  	list<BackendDAE.Var> outVarLst;
   end QSSINFO;
 end QSSinfo;
 
@@ -86,10 +88,10 @@ algorithm
   matchcontinue (inBackendDAE, equationIndices, variableIndices, inIncidenceMatrix, inIncidenceMatrixT, strongComponents)
     local
        BackendDAE.BackendDAE dlow;
+       array<Integer> ass1, ass2;
        
        list<BackendDAE.Var> allVarsList, stateVarsList;
        
-       array<Integer> ass1, ass2;
        BackendDAE.IncidenceMatrix m, mt, globalIncidenceMat;
        
        list<Integer> variableIndicesList,ass1List, ass2List, stateIndices;
@@ -103,12 +105,14 @@ algorithm
        array<list<list<Integer>>> DEVS_struct_outLinks, DEVS_struct_outVars, DEVS_struct_inLinks, DEVS_struct_inVars;
  
        list<list<Integer>> DEVS_blocks_outVars, DEVS_blocks_inVars;
-                                    
+			 list<list<SimCode.SimEqSystem>> eqs;
+       BackendDAE.Variables orderedVars;
+  		 list<BackendDAE.Var> varlst;
     case (dlow, ass1, ass2, m, mt, comps)
       equation
         
         
-       // BackendDump.bltdump((dlow, m, mt, ass1, ass2, comps));      
+       BackendDump.bltdump((dlow, m, mt, ass1, ass2, comps));      
         
        (blt_states, blt_no_states) = BackendDAEUtil.generateStatePartition(comps, dlow, ass1, ass2, m, mt);
        
@@ -147,9 +151,13 @@ algorithm
         DEVS_structure = generateDEVSstruct(stateIndices, DEVS_blocks_outVars, DEVS_blocks_inVars, DEVS_structure); 
         
         dumpDEVSstructs(DEVS_structure);       
-           
+
+				eqs = Util.listMap3(stateEq_blt, generateEqFromBlt,dlow,ass1,ass2);
+        orderedVars = BackendVariable.daeVars(dlow);
+        varlst = BackendDAEUtil.varList(orderedVars);
+
       then
-        QSSINFO(stateEq_blt, DEVS_structure);
+        QSSINFO(stateEq_blt, DEVS_structure,eqs,varlst);
   
   end matchcontinue;
 
@@ -2043,9 +2051,106 @@ algorithm
 end constructTrivialList;
 
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+/////  EQUATION GENERATION 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+protected function generateEqFromBlt
+	input list<list<Integer>> blt;
+	input BackendDAE.BackendDAE dlow;
+ 	input array<Integer> ass1, ass2;
+	output list<SimCode.SimEqSystem> out;
+algorithm
+	out := 
+		match (blt,dlow,ass1,ass2)
+			local
+				list<SimCode.SimEqSystem> out2;
+			case (_,_,_,_)
+			equation
+				out2 = SimCode.createEquations(false, false, false, false, false, dlow, ass1, ass2, blt, {});
+				then out2;
+		end match;
+end generateEqFromBlt;
+
+
+public function getInputs
+	input DevsStruct st;
+	input Integer index;
+	output list<Integer> vars;
+algorithm
+	vars := match (st,index)
+					local
+    				array<list<list<Integer>>> inVars "input variables for each DEVS block";
+    				list<Integer> vars; 
+					case (DEVS_STRUCT(inVars=inVars),_)
+					equation
+						vars = Util.listMap(Util.listFlatten(inVars[index]),intAbs);
+					then vars;
+					end match;
+end getInputs;
+
+public function getOutputs
+	input DevsStruct st;
+	input Integer index;
+	output list<Integer> vars;
+algorithm
+	vars := match (st,index)
+					local
+    				array<list<list<Integer>>> outVars "output variables for each DEVS block";
+    				list<Integer> vars; 
+					case (DEVS_STRUCT(outVars=outVars),_)
+					equation
+						vars = Util.listMap(Util.listFlatten(outVars[index]),intAbs);
+					then vars;
+					end match;
+end getOutputs;
+
+public function derPrefix
+ 	input BackendDAE.Var var;
+	output String prefix;
+algorithm
+	prefix :=	
+		matchcontinue (var)
+		case (_)
+		equation
+			true = BackendVariable.isStateVar(var);
+			then "$P$DER";
+		case (_)
+			then "";
+		end matchcontinue;
+end derPrefix;
+
+public function numInputs
+	input QSSinfo qssInfo;
+	input Integer numBlock;
+	output Integer inputs;
+algorithm
+	inputs := 
+		match (qssInfo,numBlock)
+		local
+    	array<list<list<Integer>>> inLinks "input connections for each DEVS block";
+		case (QSSINFO(DEVSstructure=DEVS_STRUCT(inLinks=inLinks)),_)
+			then listLength(inLinks[numBlock]);
+		end match;
+end numInputs;
+
+public function numOutputs
+	input QSSinfo qssInfo;
+	input Integer numBlock;
+	output Integer outputs;
+algorithm
+	inputs := 
+		match (qssInfo,numBlock)
+		local
+    	array<list<list<Integer>>> outLinks "output connections for each DEVS block";
+		case (QSSINFO(DEVSstructure=DEVS_STRUCT(outLinks=outLinks)),_)
+			then listLength(outLinks[numBlock]);
+		end match;
+end numOutputs;
 
 
 
+		
 
 
 
