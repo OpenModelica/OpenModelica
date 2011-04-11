@@ -117,6 +117,10 @@ public uniontype SymbolicOperation
     Exp res;
     list<Exp> assertConds;
   end SOLVE;
+  record SOLVED
+    ComponentRef cr;
+    Exp exp;
+  end SOLVED;
 end SymbolicOperation;
 
 public constant ElementSource emptyElementSource = SOURCE(Absyn.dummyInfo,{},{},{},{},{});

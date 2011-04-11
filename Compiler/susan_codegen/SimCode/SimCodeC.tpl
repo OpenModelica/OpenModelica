@@ -2296,10 +2296,11 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   LDFLAGS=-L"<%makefileParams.omhome%>/lib/omc" <%makefileParams.ldflags%>
   SENDDATALIBS=<%makefileParams.senddatalibs%>
   PERL=perl
+  MAINFILE=<%fileNamePrefix%><% if acceptMetaModelicaGrammar() then ".conv"%>.cpp
   
   .PHONY: <%fileNamePrefix%>
-  <%fileNamePrefix%>: <%fileNamePrefix%>.conv.cpp <%fileNamePrefix%>_functions.cpp <%fileNamePrefix%>_functions.h <%fileNamePrefix%>_records.c
-  <%\t%> $(CXX) -I. -o <%fileNamePrefix%>$(EXEEXT) <%fileNamePrefix%>.conv.cpp <%fileNamePrefix%>_functions.cpp <%dirExtra%> <%libsPos1%> <%libsPos2%> -lsim -linteractive $(CFLAGS) $(SENDDATALIBS) $(LDFLAGS) <%match System.os() case "OSX" then "-lf2c" else "-Wl,-Bstatic -lf2c -Wl,-Bdynamic"%> <%fileNamePrefix%>_records.c 
+  <%fileNamePrefix%>: $(MAINFILE) <%fileNamePrefix%>_functions.cpp <%fileNamePrefix%>_functions.h <%fileNamePrefix%>_records.c
+  <%\t%> $(CXX) -I. -o <%fileNamePrefix%>$(EXEEXT) $(MAINFILE) <%fileNamePrefix%>_functions.cpp <%dirExtra%> <%libsPos1%> <%libsPos2%> -lsim -linteractive $(CFLAGS) $(SENDDATALIBS) $(LDFLAGS) <%match System.os() case "OSX" then "-lf2c" else "-Wl,-Bstatic -lf2c -Wl,-Bdynamic"%> <%fileNamePrefix%>_records.c 
   <%fileNamePrefix%>.conv.cpp: <%fileNamePrefix%>.cpp
   <%\t%> $(PERL) <%makefileParams.omhome%>/share/omc/scripts/convert_lines.pl $< $@.tmp
   <%\t%> @mv $@.tmp $@
@@ -2449,10 +2450,11 @@ case FUNCTIONCODE(makefileParams=MAKEFILE_PARAMS(__)) then
   LDFLAGS= -L"<%makefileParams.omhome%>/lib/omc" <%makefileParams.ldflags%>
   SENDDATALIBS=<%makefileParams.senddatalibs%>
   PERL=perl
+  MAINFILE=<%name%><% if acceptMetaModelicaGrammar() then ".conv"%>.c
   
   .PHONY: <%name%>
-  <%name%>: <%name%>.conv.c <%name%>.h <%name%>_records.c
-  <%\t%> $(LINK) -o <%name%>$(DLLEXT) <%name%>.conv.c <%libsStr%> $(CFLAGS) $(LDFLAGS) $(SENDDATALIBS) -lm <%name%>_records.c 
+  <%name%>: $(MAINFILE) <%name%>.h <%name%>_records.c
+  <%\t%> $(LINK) -o <%name%>$(DLLEXT) $(MAINFILE) <%libsStr%> $(CFLAGS) $(LDFLAGS) $(SENDDATALIBS) -lm <%name%>_records.c 
   <%name%>.conv.c: <%name%>.c
   <%\t%> $(PERL) <%makefileParams.omhome%>/share/omc/scripts/convert_lines.pl $< $@.tmp
   <%\t%> @mv $@.tmp $@

@@ -424,6 +424,7 @@ algorithm
       Debug.fcall("debugAlias",BackendDump.debugStrCrefStrExpStr,("Simple Equation ",cr1," = ",e2," found.\n"));
       repl_1 = VarTransform.addReplacement(repl, cr1, e2);
       mvars_1 = BackendDAEUtil.treeAdd(mvars, cr1, 0);
+      source = DAEUtil.addSymbolicTransformation(source, DAE.SOLVED(cr1, e2));
       (eqns_1,seqns_1,mvars, mvars1, repl_2,extlst1,replc_2,varsAliases) = removeSimpleEquations2(eqns, funcSimpleEquation, vars, knvars, mvars_1, mvars1, outputs, repl_1, extlst,replc_1,varsAliases);
     then
       (eqns_1,(BackendDAE.SOLVED_EQUATION(cr1,e2,source) :: seqns_1),mvars,mvars1,repl_2,extlst1,replc_2,varsAliases);
@@ -443,6 +444,7 @@ algorithm
       Debug.fcall("debugAlias",BackendDump.debugStrCrefStrExpStr,("Simple Equation ",cr1," = ",e2," found.\n"));
       repl_1 = VarTransform.addReplacement(repl, cr1, e2);
       mvars_1 = BackendDAEUtil.treeAdd(mvars, cr1, 0);
+      source = DAEUtil.addSymbolicTransformation(source, DAE.SOLVED(cr1, e2));
       (eqns_1,seqns_1,mvars,mvars1,repl_2,extlst1,replc_2,varsAliases) = removeSimpleEquations2(eqns, funcSimpleEquation, vars, knvars, mvars_1, mvars1,outputs, repl_1, extlst,replc_1,varsAliases);
     then
       (eqns_1,(BackendDAE.SOLVED_EQUATION(cr1,e2,source) :: seqns_1),mvars,mvars1,repl_2,extlst1,replc_2,varsAliases);
@@ -464,6 +466,8 @@ algorithm
         Debug.fcall("debugAlias",BackendDump.debugStrCrefStrExpStr,("Alias Equation ",cr1," = ",e2," found.\n"));
         repl_1 = VarTransform.addReplacement(repl, cr1, e2);
         mvars_1 = BackendDAEUtil.treeAdd(mvars1, cr1, 0);
+        source = DAEUtil.addSymbolicTransformationSubstitution(true, source, e1, e2);
+        v = BackendVariable.mergeVariableOperations(v,DAEUtil.getSymbolicTransformations(source));
         varsAliases = BackendDAEUtil.updateAliasVariables(varsAliases, cr1, e2,v);
         (eqns_1,seqns_1,mvars,mvars_1,repl_2,extlst1,replc_2,varsAliases) = removeSimpleEquations2(eqns, funcSimpleEquation, vars, knvars, mvars,mvars_1, outputs, repl_1, extlst,replc_1,varsAliases);
       then
@@ -486,6 +490,8 @@ algorithm
         Debug.fcall("debugAlias",BackendDump.debugStrCrefStrExpStr,("Alias Equation ",cr1," = ",e2," found.\n"));
         repl_1 = VarTransform.addReplacement(repl, cr1, e2);
         mvars_1 = BackendDAEUtil.treeAdd(mvars1, cr1, 0);
+        source = DAEUtil.addSymbolicTransformationSubstitution(true, source, e1, e2);
+        v = BackendVariable.mergeVariableOperations(v,DAEUtil.getSymbolicTransformations(source));
         varsAliases = BackendDAEUtil.updateAliasVariables(varsAliases, cr1, e2,v);
         (eqns_1,seqns_1,mvars,mvars_1,repl_2,extlst1,replc_2,varsAliases) = removeSimpleEquations2(eqns, funcSimpleEquation, vars, knvars, mvars,mvars_1, outputs, repl_1, extlst,replc_1,varsAliases);
       then

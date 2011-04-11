@@ -3516,4 +3516,47 @@ algorithm
   end matchcontinue;
 end traversingisStateVarFinder;
 
+public function mergeVariableOperations
+  input BackendDAE.Var var;
+  input list<DAE.SymbolicOperation> ops;
+  output BackendDAE.Var outVar;
+algorithm
+  outVar := match (var,ops)
+    local
+      DAE.ComponentRef a;
+      BackendDAE.VarKind b;
+      DAE.VarDirection c;
+      BackendDAE.Type d;
+      Option<DAE.Exp> e;
+      Option<Values.Value> f;
+      list<DAE.Subscript> g;
+      BackendDAE.Value i;
+      DAE.ElementSource source;
+      DAE.VariableAttributes attr;
+      Option<DAE.VariableAttributes> oattr;
+      Option<SCode.Comment> s;
+      DAE.Flow t;
+      DAE.Stream streamPrefix;
+      Boolean fixed;
+
+    case (BackendDAE.VAR(varName = a,
+              varKind = b,
+              varDirection = c,
+              varType = d,
+              bindExp = e,
+              bindValue = f,
+              arryDim = g,
+              index = i,
+              source = source,
+              values = oattr,
+              comment = s,
+              flowPrefix = t,
+              streamPrefix = streamPrefix),ops)
+      equation
+        ops = listReverse(ops);
+        source = Util.listFoldR(ops,DAEUtil.addSymbolicTransformation,source);
+      then BackendDAE.VAR(a,b,c,d,e,f,g,i,source,oattr,s,t,streamPrefix);
+  end match;
+end mergeVariableOperations;
+
 end BackendVariable;

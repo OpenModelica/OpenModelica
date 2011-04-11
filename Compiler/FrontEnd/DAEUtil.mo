@@ -5453,6 +5453,25 @@ algorithm
   outAttr := DAE.ATTR(fp, sp, acc, inVar, dir, io);
 end setAttrVariability;
 
+public function addSymbolicTransformation
+  input DAE.ElementSource source;
+  input DAE.SymbolicOperation op;
+  output DAE.ElementSource outSource;
+algorithm
+  outSource := match (source,op)
+    local
+      Absyn.Info info "the line and column numbers of the equations and algorithms this element came from";
+      list<Absyn.Path> typeLst "the absyn type of the element" ;
+      list<Absyn.Within> partOfLst "the models this element came from" ;
+      list<Option<DAE.ComponentRef>> instanceOptLst "the instance this element is part of" ;
+      list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectEquationOptLst "this element came from this connect" ;
+      list<DAE.SymbolicOperation> operations;
+
+    case (DAE.SOURCE(info, partOfLst, instanceOptLst, connectEquationOptLst, typeLst, operations),op)
+      then DAE.SOURCE(info, partOfLst, instanceOptLst, connectEquationOptLst, typeLst, op::operations);
+  end match;
+end addSymbolicTransformation;
+
 public function addSymbolicTransformationSubstitution
   input Boolean add;
   input DAE.ElementSource source;
@@ -5524,6 +5543,13 @@ algorithm
       then DAE.SOURCE(info, partOfLst, instanceOptLst, connectEquationOptLst, typeLst, DAE.SOLVE(cr,exp1,exp2,exp,assertExps)::operations);
   end match;
 end addSymbolicTransformationSolve;
+
+public function getSymbolicTransformations
+  input DAE.ElementSource source;
+  output list<DAE.SymbolicOperation> ops;
+algorithm
+  DAE.SOURCE(operations=ops) := source;
+end getSymbolicTransformations;
 
 end DAEUtil;
 

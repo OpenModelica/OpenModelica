@@ -29,6 +29,8 @@ template dumpSimCode(SimCode code)
   <%dumpVars(vars.jacobianVars)%>
   <%dumpVars(vars.constVars)%>
   <%dumpEqs(sc.allEquations)%>
+  /* Removed Equations */
+  <%dumpEqs(sc.removedEquations)%>
   >>
 end dumpSimCode;
 
@@ -113,6 +115,7 @@ template dumpOperation(SymbolicOperation op, Info info)
   match op
     case SIMPLIFY(__) then '<%\n%>  simplify: <%printExpStr(before)%> => <%printExpStr(after)%>'
     case SUBSTITUTION(__) then '<%\n%>  subst: <%printExpStr(source)%> => <%printExpStr(target)%>'
+    case op as SOLVED(__) then '<%\n%>  simple equation: <%crefStr(op.cr)%> = <%printExpStr(op.exp)%>'
     case op as SOLVE(__) then
       <<<%\n%>
         solve:
