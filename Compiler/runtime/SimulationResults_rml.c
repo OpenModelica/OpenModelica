@@ -35,6 +35,8 @@
 
 #include "SimulationResults.c"
 
+static SimulationResult_Globals simresglob = {UNKNOWN_PLOT,NULL,{NULL,NULL,0,NULL,0,NULL,0,0,0,NULL},NULL,NULL};
+
 void SimulationResults_5finit(void)
 {
 }
@@ -44,14 +46,14 @@ RML_BEGIN_LABEL(SimulationResults__readVariables)
   rml_sint_t i,size;
   char* filename = RML_STRINGDATA(rmlA0);
 
-  rmlA0 = SimulationResultsImpl__readVars(filename);
+  rmlA0 = SimulationResultsImpl__readVars(filename,&simresglob);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
 RML_BEGIN_LABEL(SimulationResults__readDataset)
 {
-  rmlA0 = (void*)SimulationResultsImpl__readDataset(RML_STRINGDATA(rmlA0),rmlA1,RML_UNTAGFIXNUM(rmlA2));
+  rmlA0 = (void*)SimulationResultsImpl__readDataset(RML_STRINGDATA(rmlA0),rmlA1,RML_UNTAGFIXNUM(rmlA2),&simresglob);
   
   if (rmlA0 == NULL) {
     RML_TAILCALLK(rmlFC);
@@ -64,21 +66,21 @@ RML_END_LABEL
 RML_BEGIN_LABEL(SimulationResults__readSimulationResultSize)
 {
   char* filename = RML_STRINGDATA(rmlA0);
-  rmlA0 = mk_icon(SimulationResultsImpl__readSimulationResultSize(filename));
+  rmlA0 = mk_icon(SimulationResultsImpl__readSimulationResultSize(filename,&simresglob));
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
 RML_BEGIN_LABEL(SimulationResults__val)
 {
-  rmlA0 = mk_rcon(SimulationResultsImpl__val(RML_STRINGDATA(rmlA0),RML_STRINGDATA(rmlA1),rml_prim_get_real(rmlA2)));
+  rmlA0 = mk_rcon(SimulationResultsImpl__val(RML_STRINGDATA(rmlA0),RML_STRINGDATA(rmlA1),rml_prim_get_real(rmlA2),&simresglob));
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
 RML_BEGIN_LABEL(SimulationResults__close)
 {
-  SimulationResultsImpl__close();
+  SimulationResultsImpl__close(&simresglob);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL

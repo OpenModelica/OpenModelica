@@ -40,27 +40,29 @@ extern "C" {
 
 #include "SimulationResults.c"
 
+static SimulationResult_Globals simresglob = {UNKNOWN_PLOT,NULL,{NULL,NULL,0,NULL,0,NULL,0,0,0,NULL},NULL,NULL};
+
 void* SimulationResults_readVariables(const char *filename, const char *visvars)
 {
-  return SimulationResultsImpl__readVars(filename);
+  return SimulationResultsImpl__readVars(filename,&simresglob);
 }
 
 extern void* _ValuesUtil_reverseMatrix(void*);
 void* SimulationResults_readDataset(const char *filename, void *vars, int datasize)
 {
-  void *res = SimulationResultsImpl__readDataset(filename,vars,datasize);
+  void *res = SimulationResultsImpl__readDataset(filename,vars,datasize,&simresglob);
   if (res == NULL) MMC_THROW();
   return res;
 }
 
 int SimulationResults_readSimulationResultSize(const char *filename)
 {
-  return SimulationResultsImpl__readSimulationResultSize(filename);
+  return SimulationResultsImpl__readSimulationResultSize(filename,&simresglob);
 }
 
 double SimulationResults_val(const char *filename, const char *varname, double timeStamp)
 {
-  return SimulationResultsImpl__val(filename,varname,timeStamp);
+  return SimulationResultsImpl__val(filename,varname,timeStamp,&simresglob);
 }
 
 }
