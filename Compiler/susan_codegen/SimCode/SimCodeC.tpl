@@ -2364,7 +2364,7 @@ template initVal(Exp initialValue)
   case SCONST(__) then '"<%Util.escapeModelicaStringToCString(string)%>"'
   case BCONST(__) then if bool then "true" else "false"
   case ENUM_LITERAL(__) then '<%index%>/*ENUM:<%dotPath(name)%>*/'
-  else "*ERROR* initial value of unknown type"
+  else error(sourceInfo(), 'initial value of unknown type: <%printExpStr(initialValue)%>')
 end initVal;
 
 template commonHeader()
@@ -2820,6 +2820,7 @@ template functionHeaderImpl(String fname, list<Variable> fargs, list<Variable> o
     DLLExport 
     int in_<%fname%>(type_description * inArgs, type_description * outVar);
     >>
+
   if outVars then <<
   <%outVars |> _ hasindex i1 fromindex 1 => '#define <%fname%>_rettype<%boxStr%>_<%i1%> targ<%i1%>' ;separator="\n"%>
   typedef struct <%fname%>_rettype<%boxStr%>_s 
@@ -5850,6 +5851,7 @@ match exp
 case CONS(__) then
   let tmp = tempDecl("modelica_metatype", &varDecls /*BUFD*/)
   let carExp = daeExp(car, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+
   let cdrExp = daeExp(cdr, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   let &preExp += '<%tmp%> = mmc_mk_cons(<%carExp%>, <%cdrExp%>);<%\n%>'
   tmp
