@@ -306,7 +306,7 @@ algorithm
         true = isStateOrAlgvar(daeEl);
         (backendVar1,SOME(e1),states,minmax,nominal) = lowerVar(daeEl, states);
         SOME(backendVar2) = Inline.inlineVarOpt(SOME(backendVar1),(SOME(functionTree),{DAE.NORM_INLINE()}));
-        e2 = Inline.inlineExp(e1,(SOME(functionTree),{DAE.NORM_INLINE()}));
+        (e2,source) = Inline.inlineExp(e1,(SOME(functionTree),{DAE.NORM_INLINE()}),source);
         vars = BackendVariable.addVar(backendVar2, vars);
         e1 = Expression.crefExp(cr);
         //algs1 = listAppend(algs,minmax);
@@ -1049,8 +1049,8 @@ algorithm
 
     case (DAE.ARRAY_EQUATION(dimension = dims, exp = e1, array = e2, source = source),funcs)
       equation
-        e1_1 = Inline.inlineExp(e1,(SOME(funcs),{DAE.NORM_INLINE()}));
-        e2_1 = Inline.inlineExp(e2,(SOME(funcs),{DAE.NORM_INLINE()}));
+        (e1_1,source) = Inline.inlineExp(e1,(SOME(funcs),{DAE.NORM_INLINE()}),source);
+        (e2_1,source) = Inline.inlineExp(e2,(SOME(funcs),{DAE.NORM_INLINE()}),source);
         ((e1_2,_)) = extendArrExp((e1_1,SOME(funcs)));
         ((e2_2,_)) = extendArrExp((e2_1,SOME(funcs)));
         (e1_3,b1) = ExpressionSimplify.simplify(e1_2);
@@ -1063,8 +1063,8 @@ algorithm
 
     case (DAE.INITIAL_ARRAY_EQUATION(dimension = dims, exp = e1, array = e2, source = source),funcs)
       equation
-        e1_1 = Inline.inlineExp(e1,(SOME(funcs),{DAE.NORM_INLINE()}));
-        e2_1 = Inline.inlineExp(e2,(SOME(funcs),{DAE.NORM_INLINE()}));
+        (e1_1,source) = Inline.inlineExp(e1,(SOME(funcs),{DAE.NORM_INLINE()}),source);
+        (e2_1,source) = Inline.inlineExp(e2,(SOME(funcs),{DAE.NORM_INLINE()}),source);
         ((e1_2,_)) = extendArrExp((e1_1,SOME(funcs)));
         ((e2_2,_)) = extendArrExp((e2_1,SOME(funcs)));
         (e1_3,b1) = ExpressionSimplify.simplify(e1_2);
@@ -1311,8 +1311,8 @@ algorithm
         ty = Expression.typeof(e1_1);
         i = Expression.sizeOf(ty);
         // inline 
-        e1_1 = Inline.inlineExp(e1_1,(SOME(funcs),{DAE.NORM_INLINE()}));
-        e2_1 = Inline.inlineExp(e2_1,(SOME(funcs),{DAE.NORM_INLINE()}));
+        (e1_1,source) = Inline.inlineExp(e1_1,(SOME(funcs),{DAE.NORM_INLINE()}),source);
+        (e2_1,source) = Inline.inlineExp(e2_1,(SOME(funcs),{DAE.NORM_INLINE()}),source);
         // extend      
         ((complexEqs,arreqns)) = extendRecordEqns(BackendDAE.COMPLEX_EQUATION(-1,e1_1,e2_1,source),funcs);
       then
@@ -1339,8 +1339,8 @@ algorithm
         ty = Expression.typeof(e1_1);
         i = Expression.sizeOf(ty);
         // inline 
-        e1_1 = Inline.inlineExp(e1_1,(SOME(funcs),{DAE.NORM_INLINE()}));
-        e2_1 = Inline.inlineExp(e2_1,(SOME(funcs),{DAE.NORM_INLINE()}));
+        (e1_1,source) = Inline.inlineExp(e1_1,(SOME(funcs),{DAE.NORM_INLINE()}),source);
+        (e2_1,source) = Inline.inlineExp(e2_1,(SOME(funcs),{DAE.NORM_INLINE()}),source);
         // extend      
         ((complexEqs,arreqns)) = extendRecordEqns(BackendDAE.COMPLEX_EQUATION(-1,e1_1,e2_1,source),funcs);
       then

@@ -72,13 +72,13 @@ static PlotFormat SimulationResultsImpl__openFile(const char *filename, Simulati
     }
     break;
   case CSV:
-	simresglob->csvReader = fopen(filename, "r");
-	if (simresglob->csvReader==NULL) {
-	  msg[1] = filename;
-	  c_add_message(-1, "SCRIPT", "Error", "Failed to open simulation result %s: %s\n", msg, 2);
-	  return UNKNOWN_PLOT;
-	}
-	break;
+    simresglob->csvReader = fopen(filename, "r");
+    if (simresglob->csvReader==NULL) {
+      msg[1] = filename;
+      c_add_message(-1, "SCRIPT", "Error", "Failed to open simulation result %s: %s\n", msg, 2);
+      return UNKNOWN_PLOT;
+    }
+    break;
   default:
     msg[0] = filename;
     c_add_message(-1, "SCRIPT", "Error", "Failed to open simulation result %s\n", msg, 1);
@@ -207,11 +207,14 @@ static void* SimulationResultsImpl__readVars(const char *filename, SimulationRes
   }
   case CSV: {
     char **variables = read_csv_variables(filename);
+    char **toFree = variables;
     while (*variables)
     {
       res = mk_cons(mk_scon(*variables),res);
+      free(*variables);
       variables++;
     }
+    free(toFree);
     return res;
   }
   default:

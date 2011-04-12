@@ -7729,7 +7729,7 @@ algorithm
         /* Instantiate any implicit record constructors needed and add them to the dae function tree */
         cache = instantiateImplicitRecordConstructors(cache, env, args_1, st);
         functionTree = Env.getFunctionTree(cache);
-        ((call_exp,_)) = Inline.inlineCall((call_exp,(SOME(functionTree),{DAE.EARLY_INLINE()})));
+        ((call_exp,_)) = Inline.inlineCall((call_exp,((SOME(functionTree),{DAE.EARLY_INLINE()}),false)));
         expProps = Util.if_(Util.isSuccess(status),SOME((call_exp,prop_1)),NONE());
       then
         (cache,expProps);

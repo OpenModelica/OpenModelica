@@ -5490,6 +5490,27 @@ algorithm
   end match;
 end addSymbolicTransformation;
 
+public function condAddSymbolicTransformation
+  input Boolean cond;
+  input DAE.ElementSource source;
+  input DAE.SymbolicOperation op;
+  output DAE.ElementSource outSource;
+algorithm
+  outSource := match (cond,source,op)
+    local
+      Absyn.Info info "the line and column numbers of the equations and algorithms this element came from";
+      list<Absyn.Path> typeLst "the absyn type of the element" ;
+      list<Absyn.Within> partOfLst "the models this element came from" ;
+      list<Option<DAE.ComponentRef>> instanceOptLst "the instance this element is part of" ;
+      list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectEquationOptLst "this element came from this connect" ;
+      list<DAE.SymbolicOperation> operations;
+
+    case (true,DAE.SOURCE(info, partOfLst, instanceOptLst, connectEquationOptLst, typeLst, operations),op)
+      then DAE.SOURCE(info, partOfLst, instanceOptLst, connectEquationOptLst, typeLst, op::operations);
+    else source;
+  end match;
+end condAddSymbolicTransformation;
+
 public function addSymbolicTransformationSubstitution
   input Boolean add;
   input DAE.ElementSource source;
@@ -5570,18 +5591,3 @@ algorithm
 end getSymbolicTransformations;
 
 end DAEUtil;
-
-/* adrpo: 2010-10-04 never used by OpenModelica!
-public function varHasName "returns true if variable equals name passed as argument"
-  input DAE.Element var;
-  input DAE.ComponentRef cr;
-  output Boolean res;
-algorithm
-  res := matchcontinue(var,cr)
-  local DAE.ComponentRef cr2;
-    case(DAE.VAR(componentRef=cr2),cr) equation
-      res = ComponentReference.crefEqualNoStringCompare(cr2,cr);
-    then res;
-  end matchcontinue;
-end varHasName;
-*/

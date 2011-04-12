@@ -58,27 +58,28 @@ char** read_csv_variables(const char* filename)
 
   for (int i = 0 ; i < length ; i++)
   {
-	  if (startReading)
-	    variable.append(1,header[i]);
+    if (startReading)
+      variable.append(1,header[i]);
 
-	  if (header[i] == '"') {
-	    if (startReading) {
+    if (header[i] == '"') {
+      if (startReading) {
         if (header[i+1] == ',') {
           startReading = false;
           variablesList.push_back(variable.erase((strlen(variable.c_str()) - 1), 1));
           variable.clear();
         }
-	    } else {
-	      startReading = true;
-	    }
-	  }
+      } else {
+        startReading = true;
+      }
+    }
   }
 
-  char **res = new char*[variablesList.size()];
+  char **res = (char**)malloc((1+variablesList.size())*sizeof(char));
   for (int k = 0 ; k < variablesList.size(); k++)
   {
-    res[k] = (char*)variablesList.at(k).c_str();
+    res[k] = strdup(variablesList.at(k).c_str());
   }
+  res[variablesList.size()] = NULL;
   return res;
 }
 

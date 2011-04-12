@@ -8931,6 +8931,7 @@ algorithm
         commentStr = unparseCommentOptionNoAnnotationNoQuote(comment);
         (unit, displayUnit) = extractVarUnit(dae_var_attr);
         initVal = getInitialValue(dlowVar);
+        checkInitVal(initVal,source);
         isFixed = BackendVariable.varFixed(dlowVar);
         type_ = BackendDAEUtil.makeExpType(tp);
         isDiscrete = BackendVariable.isVarDiscrete(dlowVar);
@@ -8941,6 +8942,28 @@ algorithm
         SIMVAR(cr, kind, commentStr, unit, displayUnit, indx, initVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, caus,NONE());
   end match;
 end dlowvarToSimvar;
+
+protected function checkInitVal
+  input Option<DAE.Exp> oexp;
+  input DAE.ElementSource source;
+algorithm
+  _ := match (oexp,source)
+    local
+      Absyn.Info info;
+      String str;
+      DAE.Exp exp;
+    case (NONE(),_) then ();
+    case (SOME(DAE.RCONST(_)),_) then ();
+    case (SOME(DAE.ICONST(_)),_) then ();
+    case (SOME(DAE.SCONST(_)),_) then ();
+    case (SOME(DAE.BCONST(_)),_) then ();
+    case (SOME(exp),DAE.SOURCE(info=info))
+      equation
+        str = "Initial value of unknown type: " +& ExpressionDump.printExpStr(exp);
+        Error.addSourceMessage(Error.INTERNAL_ERROR, {str}, info);
+      then ();
+  end match;
+end checkInitVal;
 
 protected function getCausality
   input BackendDAE.Var dlowVar;
