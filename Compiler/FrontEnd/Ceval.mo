@@ -756,30 +756,6 @@ algorithm
       then
         (cache,Values.ARRAY(rvals,dims),stOpt);
 
-    // cast integer array to real array
-    case (cache,env,DAE.CAST(ty = DAE.ET_REAL(),exp = (e as DAE.ARRAY(ty = DAE.ET_INT(),array = expl))),impl,stOpt,dimOpt,msg)
-      equation
-        (cache,Values.ARRAY(vallst,dims),stOpt) = ceval(cache,env, e, impl, stOpt, dimOpt, msg);
-        vallst_1 = ValuesUtil.typeConvert(DAE.ET_INT(), DAE.ET_REAL(), vallst);
-      then
-        (cache,Values.ARRAY(vallst_1,dims),stOpt);
-
-    // cast integer range to real range
-    case (cache,env,DAE.CAST(ty = DAE.ET_REAL(),exp = (e as DAE.RANGE(ty = DAE.ET_INT()))),impl,stOpt,dimOpt,msg)
-      equation
-        (cache,Values.ARRAY(vallst,dims),stOpt) = ceval(cache,env, e, impl, stOpt, dimOpt, msg);
-        vallst_1 = ValuesUtil.typeConvert(DAE.ET_INT(), DAE.ET_REAL(), vallst);
-      then
-        (cache,Values.ARRAY(vallst_1,dims),stOpt);
-
-    // cast integer matrix to real matrix
-    case (cache,env,DAE.CAST(ty = DAE.ET_REAL(),exp = (e as DAE.MATRIX(ty = DAE.ET_INT()))),impl,stOpt,dimOpt,msg)
-      equation
-        (cache,Values.ARRAY(vallst,dims),stOpt) = ceval(cache,env, e, impl, stOpt, dimOpt, msg);
-        vallst_1 = ValuesUtil.typeConvert(DAE.ET_INT(), DAE.ET_REAL(), vallst);
-      then
-        (cache,Values.ARRAY(vallst_1,dims),stOpt);
-
     // if expressions, select then branch if condition is true
     case (cache,env,DAE.IFEXP(expCond = cond,expThen = e1,expElse = e2),impl,stOpt,dimOpt,msg)
       equation

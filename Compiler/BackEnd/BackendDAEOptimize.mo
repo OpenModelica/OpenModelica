@@ -2051,8 +2051,9 @@ algorithm
       BackendDAE.EquationArray eqns;
       BackendDAE.Equation eqn;
       Boolean negate;
+      DAE.ElementSource source;
     // a = const
-    case({i},length,pos,dae,mvars,mavars)
+    case ({i},length,pos,dae,mvars,mavars)
       equation 
         vars = BackendVariable.daeVars(dae);
         var = BackendVariable.getVarAt(vars,intAbs(i));
@@ -2062,7 +2063,7 @@ algorithm
         pos_1 = pos-1;
         eqns = BackendEquation.daeEqns(dae);
         eqn = BackendDAEUtil.equationNth(eqns,pos_1);
-        BackendDAE.EQUATION(exp=e1,scalar=e2) = eqn;
+        BackendDAE.EQUATION(exp=e1,scalar=e2,source=source) = eqn;
         // variable time not there
         knvars = BackendVariable.daeKnVars(dae);
         ((_,(false,_,_))) = Expression.traverseExpTopDown(e1, traversingTimeEqnsFinder, (false,vars,knvars));
@@ -2070,28 +2071,31 @@ algorithm
         cr = BackendVariable.varCref(var);
         cre = Expression.crefExp(cr);
         (es,{}) = ExpressionSolve.solve(e1,e2,cre);
+        source = DAEUtil.addSymbolicTransformation(source,DAE.SOLVE(cr,e1,e2,es,{}));
         // constant or alias
-        (dae1,newvars,newvars1,eqTy) = constOrAlias(var,cr,es,dae,mvars,mavars);
+        (dae1,newvars,newvars1,eqTy) = constOrAlias(var,cr,es,dae,mvars,mavars,DAEUtil.getSymbolicTransformations(source));
       then (cr,i,es,dae1,newvars,newvars1,eqTy);
     // a = der(b) 
-    case({i,j},length,pos,dae,mvars,mavars) equation
-      pos_1 = pos-1;
-      eqns = BackendEquation.daeEqns(dae);
-      eqn = BackendDAEUtil.equationNth(eqns,pos_1);
-      (cr,_,es,_,negate) = derivativeEquation(eqn);
-      // select candidate
-      vars = BackendVariable.daeVars(dae);
-      ((_::_),(k::_)) = BackendVariable.getVar(cr,vars);
-    then (cr,k,es,dae,mvars,mavars,2);
+    case ({i,j},length,pos,dae,mvars,mavars)
+      equation
+        pos_1 = pos-1;
+        eqns = BackendEquation.daeEqns(dae);
+        eqn = BackendDAEUtil.equationNth(eqns,pos_1);
+        (cr,_,es,_,negate) = derivativeEquation(eqn);
+        // select candidate
+        vars = BackendVariable.daeVars(dae);
+        ((_::_),(k::_)) = BackendVariable.getVar(cr,vars);
+      then (cr,k,es,dae,mvars,mavars,2);
     // a = b 
-    case({i,j},length,pos,dae,mvars,mavars) equation
-      pos_1 = pos-1;
-      eqns = BackendEquation.daeEqns(dae);
-      eqn = BackendDAEUtil.equationNth(eqns,pos_1);
-      (cr,cr2,e1,e2,negate) = aliasEquation(eqn);
-      // select candidate
-      (cr,es,k,dae1,newvars) = selectAlias(cr,cr2,e1,e2,dae,mavars,negate);
-    then (cr,k,es,dae1,mvars,newvars,1);
+    case ({i,j},length,pos,dae,mvars,mavars)
+      equation
+        pos_1 = pos-1;
+        eqns = BackendEquation.daeEqns(dae);
+        (eqn as BackendDAE.EQUATION(source=source)) = BackendDAEUtil.equationNth(eqns,pos_1);
+        (cr,cr2,e1,e2,negate) = aliasEquation(eqn);
+        // select candidate
+        (cr,es,k,dae1,newvars) = selectAlias(cr,cr2,e1,e2,dae,mavars,negate,source);
+      then (cr,k,es,dae1,mvars,newvars,1);
   end matchcontinue;
 end simpleEquationX;
 
@@ -2104,12 +2108,13 @@ protected function constOrAlias
   input BackendDAE.BackendDAE dae;
   input BackendDAE.BinTree mvars;
   input BackendDAE.BinTree mavars;
+  input list<DAE.SymbolicOperation> ops;
   output BackendDAE.BackendDAE outDae;
   output BackendDAE.BinTree outMvars;
   output BackendDAE.BinTree outMavars;
   output Integer eqnType;
 algorithm
-  (outDae,outMvars,outMavars,eqnType) := matchcontinue (var,cr,exp,dae,mvars,mavars)
+  (outDae,outMvars,outMavars,eqnType) := matchcontinue (var,cr,exp,dae,mvars,mavars,ops)
     local
       DAE.ComponentRef cr,cra;
       BackendDAE.BinTree newvars;
@@ -2120,7 +2125,7 @@ algorithm
       BackendDAE.Variables knvars;
       Integer eqTy;
     // alias a
-    case (var,cr,exp,dae,mvars,mavars)
+    case (var,cr,exp,dae,mvars,mavars,ops)
       equation
         (negate,cra) = aliasExp(exp);
         // no State
@@ -2134,20 +2139,22 @@ algorithm
         knvars = BackendVariable.daeKnVars(dae);
         ((v::_),_) = BackendVariable.getVar(cra,knvars);
         // merge fixed,start,nominal
-        v1 = mergeAliasVars(v,var,negate);     
+        v1 = mergeAliasVars(v,var,negate);
         dae1 = BackendVariable.addKnVarDAE(v1,dae);   
         // store changed var
+        var = BackendVariable.mergeVariableOperations(var,DAE.SOLVED(cr,exp)::ops);
         newvars = BackendDAEUtil.treeAdd(mavars, cr, 0);
         dae2 = BackendDAEUtil.updateAliasVariablesDAE(cr,exp,var,dae1);
       then
         (dae2,mvars,newvars,1);     
     // const
-    case (var,cr,exp,dae,mvars,mavars)
+    case (var,cr,exp,dae,mvars,mavars,ops)
       equation
         // add bindExp
         var2 = BackendVariable.setBindExp(var,exp);
         // add bindValue if constant
         (var3,constExp) = setbindValue(exp,var2);
+        var3 = BackendVariable.mergeVariableOperations(var3,DAE.SOLVED(cr,exp)::ops);
         // update vars
         dae1 = BackendVariable.addVarDAE(var3,dae);
         // store changed var
@@ -2179,7 +2186,7 @@ end aliasExp;
 protected function selectAlias
 "function selectAlias
   autor Frenkel TUD 2011-04
-  select the alis variable. Prefer scalars
+  select the alias variable. Prefer scalars
   or elements of already replaced arrays or records."
   input DAE.ComponentRef cr1;
   input DAE.ComponentRef cr2;
@@ -2188,13 +2195,14 @@ protected function selectAlias
   input BackendDAE.BackendDAE dae;
   input BackendDAE.BinTree mavars;
   input Boolean negate;
+  input DAE.ElementSource source;
   output DAE.ComponentRef cr;
   output DAE.Exp exp;
   output Integer k;
   output BackendDAE.BackendDAE outDae;
   output BackendDAE.BinTree newvars;
 algorithm
-  (cr,exp,k,outDae,newvars) := matchcontinue (cr1,cr2,e1,e2,dae,mavars,negate)
+  (cr,exp,k,outDae,newvars) := matchcontinue (cr1,cr2,e1,e2,dae,mavars,negate,source)
     local
       DAE.ComponentRef cr;
       BackendDAE.BinTree newvars;
@@ -2203,7 +2211,8 @@ algorithm
       BackendDAE.BackendDAE dae1,dae2;
       BackendDAE.Variables vars;
       Integer ipos;
-    case (cr1,cr2,e1,e2,dae,mavars,negate)
+      list<DAE.SymbolicOperation> ops;
+    case (cr1,cr2,e1,e2,dae,mavars,negate,source)
       equation
         vars = BackendVariable.daeVars(dae);
         ((var::_),(ipos::_)) = BackendVariable.getVar(cr1,vars);
@@ -2221,10 +2230,12 @@ algorithm
         dae1 = BackendVariable.addVarDAE(v1,dae);
         // store changed var
         newvars = BackendDAEUtil.treeAdd(mavars, cr1, 0);
+        ops = DAEUtil.getSymbolicTransformations(source);
+        var = BackendVariable.mergeVariableOperations(var,DAE.SOLVED(cr1,e2)::ops);
         dae2 = BackendDAEUtil.updateAliasVariablesDAE(cr1,e2,var,dae1);
       then
         (cr1,e2,ipos,dae2,newvars);
-    case (cr1,cr2,e1,e2,dae,mavars,negate)
+    case (cr1,cr2,e1,e2,dae,mavars,negate,source)
       equation
         vars = BackendVariable.daeVars(dae);
         ((var::_),(ipos::_)) = BackendVariable.getVar(cr2,vars);
@@ -2239,9 +2250,12 @@ algorithm
         // merge fixed,start,nominal
         ((v::_),_) = BackendVariable.getVar(cr1,vars);
         v1 = mergeAliasVars(v,var,negate);
+        ops = DAEUtil.getSymbolicTransformations(source);
         dae1 = BackendVariable.addVarDAE(v1,dae);
         // store changed var
         newvars = BackendDAEUtil.treeAdd(mavars, cr2, 0);
+        ops = DAEUtil.getSymbolicTransformations(source);
+        var = BackendVariable.mergeVariableOperations(var,DAE.SOLVED(cr2,e1)::ops);
         dae2 = BackendDAEUtil.updateAliasVariablesDAE(cr2,e1,var,dae1);
       then
         (cr2,e1,ipos,dae2,newvars);        
