@@ -81,6 +81,7 @@ protected import Debug;
 protected import Error;
 protected import Expression;
 protected import ExpressionDump;
+protected import ExpressionSimplify;
 protected import Patternm;
 protected import Print;
 protected import Util;
@@ -5406,6 +5407,7 @@ algorithm
       equation
         false = subtype(e_type, expected_type);
         (e_1,e_type_1) = typeConvert(e,e_type,expected_type,printFailtrace);
+        (e_1,_) = ExpressionSimplify.simplify1(e_1);
       then
         (e_1,e_type_1);
     case (e,e_type,expected_type,true)

@@ -1130,7 +1130,7 @@ uniontype Exp "Expressions
   end TUPLE;
 
   record CAST "Cast operator"
-    ExpType ty;
+    ExpType ty "This is the full type of this expression, i.e. ET_ARRAY(...) for arrays and matrices";
     Exp exp;
   end CAST;
 

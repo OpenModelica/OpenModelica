@@ -780,23 +780,6 @@ algorithm
       then
         s;
     
-    case (DAE.CAST(ty = DAE.ET_REAL(),exp = DAE.ICONST(integer = ival)), _, _, _)
-      equation
-        false = RTOpts.modelicaOutput();
-        rval = intReal(ival);
-        res = realString(rval);
-      then
-        res;
-    
-    case (DAE.CAST(ty = DAE.ET_REAL(),exp = DAE.UNARY(operator = DAE.UMINUS(ty = _),exp = DAE.ICONST(integer = ival))), _, _, _)
-      equation
-        false = RTOpts.modelicaOutput();
-        rval = intReal(ival);
-        res = realString(rval);
-        res2 = stringAppend("-", res);
-      then
-        res2;
-    
     case (DAE.CAST(ty = DAE.ET_REAL(),exp = e), _, _, _)
       equation
         s = printExp2Str(e, stringDelimiter, opcreffunc, opcallfunc);
@@ -2033,15 +2016,6 @@ algorithm
         Print.printBuf(":");
         printExp2(stop, pri3);
         printRightpar(pri1, pri2);
-      then
-        ();
-    
-    case (DAE.CAST(ty = DAE.ET_REAL(),exp = DAE.ICONST(integer = i)),_)
-      equation
-        false = RTOpts.modelicaOutput();
-        r = intReal(i);
-        rstr = realString(r);
-        Print.printBuf(rstr);
       then
         ();
     
