@@ -2056,103 +2056,106 @@ end constructTrivialList;
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 protected function generateEqFromBlt
-                    input list<list<Integer>> blt;
-                    input BackendDAE.BackendDAE dlow;
-                     input array<Integer> ass1, ass2;
-                    output list<SimCode.SimEqSystem> out;
+  input list<list<Integer>> blt;
+  input BackendDAE.BackendDAE dlow;
+  input array<Integer> ass1, ass2;
+  output list<SimCode.SimEqSystem> out;
 algorithm
-                    out := 
-                                        match (blt,dlow,ass1,ass2)
-                                                            local
-                                                                                list<SimCode.SimEqSystem> out2;
-                                                            case (_,_,_,_)
-                                                            equation
-                                                                                out2 = SimCode.createEquations(false, false, false, false, false, dlow, ass1, ass2, blt, {});
-                                                                                then out2;
-                                        end match;
+  out := 
+    match (blt,dlow,ass1,ass2)
+      local
+        list<SimCode.SimEqSystem> out2;
+      case (_,_,_,_)
+      equation
+        out2 = SimCode.createEquations(false, false, false, false, false, dlow, ass1, ass2, blt, {});
+        then out2;
+    end match;
 end generateEqFromBlt;
 
 
 public function getInputs
-                    input DevsStruct st;
-                    input Integer index;
-                    output list<Integer> vars;
+  input DevsStruct st;
+  input Integer index;
+  output list<Integer> vars;
 algorithm
-                    vars := match (st,index)
-                                                                                                    local
-                                                                                    array<list<list<Integer>>> inVars "input variables for each DEVS block";
-                                                                                    list<Integer> vars; 
-                                                                                                    case (DEVS_STRUCT(inVars=inVars),_)
-                                                                                                    equation
-                                                                                                                        vars = Util.listMap(Util.listFlatten(inVars[index]),intAbs);
-                                                                                                    then vars;
-                                                                                                    end match;
+  vars :=
+    match (st,index)
+      local
+        array<list<list<Integer>>> inVars "input variables for each DEVS block";
+        list<Integer> vars; 
+      case (DEVS_STRUCT(inVars=inVars),_)
+      equation
+        vars = Util.listMap(Util.listFlatten(inVars[index]),intAbs);
+        then vars;
+    end match;
 end getInputs;
 
 public function getOutputs
-                    input DevsStruct st;
-                    input Integer index;
-                    output list<Integer> vars;
+  input DevsStruct st;
+  input Integer index;
+  output list<Integer> vars;
 algorithm
-                    vars := match (st,index)
-                                                                                                    local
-                                                                                    array<list<list<Integer>>> outVars "output variables for each DEVS block";
-                                                                                    list<Integer> vars; 
-                                                                                                    case (DEVS_STRUCT(outVars=outVars),_)
-                                                                                                    equation
-                                                                                                                        vars = Util.listMap(Util.listFlatten(outVars[index]),intAbs);
-                                                                                                    then vars;
-                                                                                                    end match;
+  vars := 
+    match (st,index)
+     local
+       array<list<list<Integer>>> outVars "output variables for each DEVS block";
+       list<Integer> vars; 
+     case (DEVS_STRUCT(outVars=outVars),_)
+     equation
+        vars = Util.listMap(Util.listFlatten(outVars[index]),intAbs);
+        then vars;
+    end match;
 end getOutputs;
 
 public function derPrefix
-                     input BackendDAE.Var var;
-                    output String prefix;
+  input BackendDAE.Var var;
+  output String prefix;
 algorithm
-                    prefix :=                    
-                                        matchcontinue (var)
-                                        case (_)
-                                        equation
-                                                            true = BackendVariable.isStateVar(var);
-                                                            then "$P$DER";
-                                        case (_)
-                                                            then "";
-                                        end matchcontinue;
+  prefix :=
+    matchcontinue (var)
+      case (_)
+      equation
+        true = BackendVariable.isStateVar(var);
+        then "$P$DER";
+      case (_)
+        then "";
+  end matchcontinue;
 end derPrefix;
 
 public function numInputs
-                    input QSSinfo qssInfo;
-                    input Integer numBlock;
-                    output Integer inputs;
+  input QSSinfo qssInfo;
+  input Integer numBlock;
+  output Integer inputs;
 algorithm
-                    inputs := 
-                                        match (qssInfo,numBlock)
-                                        local
-                        array<list<list<Integer>>> inLinks "input connections for each DEVS block";
-                                        case (QSSINFO(DEVSstructure=DEVS_STRUCT(inLinks=inLinks)),_)
-                                                            then listLength(inLinks[numBlock]);
-                                        end match;
+  inputs := 
+    match (qssInfo,numBlock)
+    local
+      array<list<list<Integer>>> inLinks "input connections for each DEVS block";
+    case (QSSINFO(DEVSstructure=DEVS_STRUCT(inLinks=inLinks)),_)
+      then listLength(inLinks[numBlock]);
+    end match;
 end numInputs;
 
 public function numOutputs
-                    input QSSinfo qssInfo;
-                    input Integer numBlock;
-                    output Integer outputs;
+  input QSSinfo qssInfo;
+  input Integer numBlock;
+  output Integer outputs;
 algorithm
-                    outputs := 
-                                        match (qssInfo,numBlock)
-                                        local
-                        array<list<list<Integer>>> outLinks "output connections for each DEVS block";
-                                        case (QSSINFO(DEVSstructure=DEVS_STRUCT(outLinks=outLinks)),_)
-                                                            then listLength(outLinks[numBlock]);
-                                        end match;
+  outputs := 
+    match (qssInfo,numBlock)
+      local
+        array<list<list<Integer>>> outLinks "output connections for each DEVS block";
+      case (QSSINFO(DEVSstructure=DEVS_STRUCT(outLinks=outLinks)),_)
+        then listLength(outLinks[numBlock]);
+    end match;
 end numOutputs;
 
-
-
-                                        
-
-
+public  function generateConnections
+  input QSSinfo qssInfo;
+  output list<list<Integer>> conns;
+algorithm
+  conns := {{0,0,1,0},{1,0,0,0}};
+end generateConnections;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 /////  END OF PACKAGE
