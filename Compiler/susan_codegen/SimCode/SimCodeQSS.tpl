@@ -95,6 +95,10 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(varInfo=varInfo as  VARINFO(__))) 
   // fbergero, xfloros: Code for QSS methods
   #ifdef _OMC_QSS
 
+  int startNonInteractiveSimulation(int, char**);
+  int initRuntimeAndSimulation(int, char**);
+
+
   bool cond[<%modelInfo.varInfo.numZeroCrossings%>];
 
   void set_condition_to(unsigned int c, bool b) { cond[c]=b; }
@@ -129,6 +133,24 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(varInfo=varInfo as  VARINFO(__))) 
     return abs_accuracy;
   }
 
+  int init_runtime()
+  {
+    int retVal = -1;
+    static bool init=false;
+    if (init)
+      return 0;
+  
+    if (initRuntimeAndSimulation(0,NULL)) //initRuntimeAndSimulation returns 1 if an error occurs
+      return 1;
+    init=true;
+    return startNonInteractiveSimulation(0,NULL);
+  }
+
+  void clean_runtime()
+  {
+    deInitializeDataStruc(globalData);
+    free(globalData);
+  }
   <%functionQssStaticBlocks(odeEquations,zeroCrossings,qssInfo,modelInfo.varInfo.numStateVars)%>
 
   <%functionQssWhen(BackendQSS.replaceCondWhens(whenClauses,helpVarInfo,zeroCrossings),helpVarInfo,zeroCrossings)%>
@@ -198,7 +220,7 @@ template structureFile(SimCode simCode, QSSinfo qssInfo)
  "Generates structure for main C file for simulation target."
 ::=
   let &models = buffer "" /*BUFD*/
-  let connections = generateConnections(qssInfo)
+  let connections = generateConnections(BackendQSS.generateConnections(qssInfo))
 match simCode
 case SIMCODE(modelInfo=modelInfo as MODELINFO(varInfo=varInfo as  VARINFO(__))) then
   <<
@@ -373,7 +395,7 @@ template functionQssStaticBlocks(list<SimEqSystem> derivativEquations,list<ZeroC
 		let staticFun = generateStaticFunc(derivativEquations,zeroCrossings,varDecls,DEVSstructure,eqs,outVarLst,nStates)
 
   <<
-  void functionQssStaticBlocks(int staticFunctionIndex, double t, double *in, double *out)
+  void function_staticBlocks(int staticFunctionIndex, double t, double *in, double *out)
   {
     state mem_state;
     <%varDecls%>
@@ -526,7 +548,7 @@ template generateIntegrators(Integer nStates)
   <<Simulator
     {
       Path = modelica/modelica_integrator.h
-      Parameters = 0.0, <% i0 %>.0 // 0, Index
+      Parameters = <% i0 %>.0 // Index
     }
   >>
 	;separator="\n")
@@ -541,10 +563,9 @@ template generateStaticBlocks(QSSinfo qssInfo, Integer nStates)
   <<Simulator
     {
       Path = modelica/modelica_qss_static.h
-      Parameters = 0.0, <% 
-				BackendQSS.numInputs(qssInfo,intAdd(i0,intAdd(1,nStates)))
+      Parameters = <% BackendQSS.numInputs(qssInfo,intAdd(i0,intAdd(1,nStates)))
 				%>.0, <%
-				BackendQSS.numOutputs(qssInfo,intAdd(i0,intAdd(1,nStates))) %>.0, <% i0 %>.0 // 0, Inputs, Outputs, Index
+				BackendQSS.numOutputs(qssInfo,intAdd(i0,intAdd(1,nStates))) %>.0, <% i0 %>.0 // Inputs, Outputs, Index
     }
   >>
 	;separator="\n")
@@ -610,15 +631,13 @@ template generateSampleBlocks(list<ZeroCrossing> zeroCrossings)
   ;separator="\n")
 end generateSampleBlocks;
 
-template generateConnections(QSSinfo qssInfo)
+template generateConnections(list<list<Integer>> conns)
 "Function to generate the connections between atomics for the DEVS structure"
 ::= 
-  <<(0,0) ; (12,45) // Connection between 
-  (0,0) ; (12,45) // Connection between 
-  (0,0) ; (12,45) // Connection between 
-  (0,0) ; (12,45) // Connection between 
-  (0,0) ; (12,45) // Connection between 
+  ( conns |> c =>
+  << (<%listNth(c,0)%>,<%listNth(c,1)%>) ; (<%listNth(c,2)%>,<%listNth(c,3)%>) 
   >>
+  ;separator="\n")
 end generateConnections;
 
 template simulationMakefile(SimCode simCode)

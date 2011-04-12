@@ -1919,6 +1919,11 @@ package BackendQSS
 		output Integer outputs;
 	end numOutputs;
 
+  function generateConnections
+    input QSSinfo qssInfo;
+    output list<list<Integer>> conns;
+  end generateConnections;
+
 end BackendQSS;
 
 package BackendVariable
