@@ -39,6 +39,7 @@ extern "C" {
 #include "OpenModelicaBootstrappingHeader.h"
 
 #include "SimulationResults.c"
+#include "SimulationResultsCmp.c"
 
 static SimulationResult_Globals simresglob = {UNKNOWN_PLOT,NULL,{NULL,NULL,0,NULL,0,NULL,0,0,0,NULL},NULL,NULL};
 
@@ -63,6 +64,11 @@ int SimulationResults_readSimulationResultSize(const char *filename)
 double SimulationResults_val(const char *filename, const char *varname, double timeStamp)
 {
   return SimulationResultsImpl__val(filename,varname,timeStamp,&simresglob);
+}
+
+void* SimulationResults_cmpSimulationResults(const char *filename,const char *reffilename,const char *logfilename, double refTol, void *vars)
+{
+  return SimulationResultsCmp_compareResults(filename,reffilename,logfilename,refTol,vars);
 }
 
 }

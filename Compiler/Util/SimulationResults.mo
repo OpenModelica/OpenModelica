@@ -75,5 +75,17 @@ public function close
   external "C" SimulationResultsImpl__close() annotation(Library = "omcruntime");
 end close;
 
+
+public function cmpSimulationResults
+  input String filename;
+  input String reffilename;
+  input String logfilename;
+  input Real refTol;
+  input list<String> vars;
+  output String res;
+  external "C" res=SimulationResults_cmpSimulationResults(filename,reffilename,logfilename,refTol,vars) annotation(Library = "omcruntime");
+end cmpSimulationResults;
+
+
 end SimulationResults;
 

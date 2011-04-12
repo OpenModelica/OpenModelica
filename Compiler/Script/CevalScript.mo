@@ -1487,6 +1487,19 @@ algorithm
         v = ValuesUtil.makeArray(vals);
       then
         (cache,v,st);
+
+    case (cache,env,"compareSimulationResults",{Values.STRING(filename),Values.STRING(filename_1),Values.STRING(filename2),Values.REAL(val),Values.ARRAY(valueLst=cvars)},st,msg)
+      equation
+        pwd = System.pwd();
+        pd = System.pathDelimiter();
+        filename = stringAppendList({pwd,pd,filename});
+        filename_1 = stringAppendList({pwd,pd,filename_1});
+        filename2 = stringAppendList({pwd,pd,filename2});
+        vars_1 = Util.listMap(cvars, ValuesUtil.valString);
+        str = SimulationResults.cmpSimulationResults(filename,filename_1,filename2,val,vars_1);
+        v = Values.STRING(str);
+      then
+        (cache,v,st);
         
     case (cache,env,"plot2",{Values.ARRAY(valueLst = cvars),Values.STRING(filename)},st,msg)
       equation

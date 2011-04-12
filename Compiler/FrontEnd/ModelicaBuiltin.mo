@@ -1009,6 +1009,17 @@ function readSimulationResultVars "Returns the variables in the simulation file;
 external "builtin";
 end readSimulationResultVars;
 
+
+public function compareSimulationResults "compare simulation results"
+  input String filename;
+  input String reffilename;
+  input String logfilename;
+  input Real refTol;
+  input String[:] vars;
+  output String result;
+external "builtin";
+end compareSimulationResults;
+
 function codeToString
   input Code className;
   output String string;

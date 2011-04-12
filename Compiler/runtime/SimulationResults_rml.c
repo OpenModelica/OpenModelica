@@ -34,6 +34,7 @@
 #include "ValuesUtil.h"
 
 #include "SimulationResults.c"
+#include "SimulationResultsCmp.c"
 
 static SimulationResult_Globals simresglob = {UNKNOWN_PLOT,NULL,{NULL,NULL,0,NULL,0,NULL,0,0,0,NULL},NULL,NULL};
 
@@ -81,6 +82,13 @@ RML_END_LABEL
 RML_BEGIN_LABEL(SimulationResults__close)
 {
   SimulationResultsImpl__close(&simresglob);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(SimulationResults__cmpSimulationResults)
+{
+  rmlA0 = SimulationResultsCmp_compareResults(RML_STRINGDATA(rmlA0),RML_STRINGDATA(rmlA1),RML_STRINGDATA(rmlA2),RML_UNTAGFIXNUM(rmlA3),rmlA4);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
