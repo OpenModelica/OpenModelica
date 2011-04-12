@@ -2579,7 +2579,7 @@ template arrayCrefCStr2(ComponentRef cr)
 ::=
   match cr
   case CREF_IDENT(__) then '<%unquoteIdentifier(ident)%>'
-  case CREF_QUAL(__) then '<%unquoteIdentifier(ident)%>$P<%arrayCrefCStr2(componentRef)%>'
+  case CREF_QUAL(__) then '<%unquoteIdentifier(ident)%><%subscriptsToCStr(subscriptLst)%>$P<%arrayCrefCStr2(componentRef)%>'
   else "CREF_NOT_IDENT_OR_QUAL"
 end arrayCrefCStr2;
 
