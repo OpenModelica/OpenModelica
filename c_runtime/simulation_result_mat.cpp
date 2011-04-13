@@ -130,8 +130,9 @@ simulation_result_mat::simulation_result_mat(const char* filename,
 
   char *stringMatrix = NULL;
   int rows, cols;
-  int *intMatrix = NULL;
+  int32_t *intMatrix = NULL;
   double *doubleMatrix = NULL;
+  assert(sizeof(char) == 1);
   rt_tick(SIM_TIMER_OUTPUT);
   numVars = calcDataSize(indx_map);
   names = calcDataNames(numVars+nParams,indx_parammap);
@@ -142,24 +143,24 @@ simulation_result_mat::simulation_result_mat(const char* filename,
     if (!fp) throw SimulationResultFileOpenException();
 
     // write `AClass' matrix
-    writeMatVer4Matrix("Aclass", 4, 11, Aclass, sizeof(char));
+    writeMatVer4Matrix("Aclass", 4, 11, Aclass, sizeof(int8_t));
 
     // flatten variables' names
     flattenStrBuf(numVars+nParams, names, stringMatrix, rows, cols, false /* We cannot plot derivatives if we fix the names ... */, false);
     // write `name' matrix
-    writeMatVer4Matrix("name", rows, cols, stringMatrix, sizeof(char));
-    delete[] stringMatrix; stringMatrix = NULL;
+    writeMatVer4Matrix("name", rows, cols, stringMatrix, sizeof(int8_t));
+    free(stringMatrix); stringMatrix = NULL;
 
     // flatten variables' comments
     flattenStrBuf(numVars+nParams, names, stringMatrix, rows, cols, false, true);
     // write `description' matrix
-    writeMatVer4Matrix("description", rows, cols, stringMatrix, sizeof(char));
-    delete[] stringMatrix; stringMatrix = NULL;
+    writeMatVer4Matrix("description", rows, cols, stringMatrix, sizeof(int8_t));
+    free(stringMatrix); stringMatrix = NULL;
 
     // generate dataInfo table
     generateDataInfo(intMatrix, rows, cols, globalData, numVars, nParams,indx_map,indx_parammap);
     // write `dataInfo' matrix
-    writeMatVer4Matrix("dataInfo", cols, rows, intMatrix, sizeof(int));
+    writeMatVer4Matrix("dataInfo", cols, rows, intMatrix, sizeof(int32_t));
     delete[] doubleMatrix; doubleMatrix = NULL;
 
     // generate `data_1' matrix (with parameter data)
@@ -259,7 +260,7 @@ long simulation_result_mat::flattenStrBuf(int dims,
     char* &dest, int& longest, int& nstrings,
     bool fixNames, bool useComment)
 {
-  int i,j,len;
+  int i,len;
   nstrings = dims;
   longest = 0; // the longest-string length
 
@@ -270,8 +271,7 @@ long simulation_result_mat::flattenStrBuf(int dims,
   }
 
   // allocate memory
-  dest = new char[longest*nstrings+1];
-  memset(dest,0,(longest*nstrings+1)*sizeof(char));
+  dest = (char*) calloc(longest*nstrings+1, sizeof(char));
   if (!dest) throw SimulationResultMallocException();
   // copy data
   char *ptr = dest;
@@ -306,9 +306,9 @@ void simulation_result_mat::writeMatVer4MatrixHeader(const char *name,
   MHeader_t hdr;
 
   int type = 0;
-  if (size == sizeof(char))
+  if (size == 1 /* char */)
     type = 51;
-  if (size == sizeof(int))
+  if (size == 4 /* int32 */)
     type = 20;
 
   // create matrix header structure
@@ -336,7 +336,7 @@ void simulation_result_mat::writeMatVer4Matrix(const char *name,
 }
 
 
-void simulation_result_mat::generateDataInfo(int* &dataInfo,
+void simulation_result_mat::generateDataInfo(int32_t* &dataInfo,
     int& rows, int& cols,
     const sim_DATA *mdl_data,
     int nVars, int nParams, map<void*,int> &indx_map, map<void*,int> &indx_parammap)

@@ -87,13 +87,12 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
       char tmp[size_omc_mat_Aclass];
       if (fread(tmp,size_omc_mat_Aclass-1,1,reader->file) != 1) return "Corrupt header: Aclass matrix";
       tmp[size_omc_mat_Aclass-1] = '\0';
-     // binTrans
+     /* binTrans */
      if (0 == strncmp(tmp,omc_mat_Aclass,size_omc_mat_Aclass))  {
         /* fprintf(stderr, "use binTrans format\n"); */
         binTrans = 1;
-      }
-      // binNormal
-      else if (0 == strncmp(tmp,dymola_mat_Aclass,size_omc_mat_Aclass))  {
+      } else if (0 == strncmp(tmp,dymola_mat_Aclass,size_omc_mat_Aclass))  {
+        /* binNormal */
         /* fprintf(stderr, "use binNormal format\n"); */
         binTrans = 0;
       } 
@@ -144,8 +143,8 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
     }
     case 3: { /* "dataInfo" */
       unsigned int i;
-      int *tmp = (int*) malloc(sizeof(int)*hdr.ncols*hdr.mrows);
-      if (1 != fread(tmp,sizeof(int)*hdr.ncols*hdr.mrows,1,reader->file)) {
+      int32_t *tmp = (int32_t*) malloc(sizeof(int32_t)*hdr.ncols*hdr.mrows);
+      if (1 != fread(tmp,sizeof(int32_t)*hdr.ncols*hdr.mrows,1,reader->file)) {
         free(tmp); tmp=NULL;
         return "Corrupt header: dataInfo matrix";
       }
