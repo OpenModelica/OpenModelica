@@ -1,0 +1,217 @@
+.\" --------------------------------------------------------------------
+.\" Title 
+.\" --------------------------------------------------------------------
+.
+.TH OMShell-terminal 1 "The Open Source Modelica Consortium" "1.5.0" "The OpenModelica Project" -*- nroff -*-
+.
+.
+.\" --------------------------------------------------------------------
+.SH NAME
+.\" --------------------------------------------------------------------
+.
+OMShell\-terminal \- Start script, set environment variables and invoke the
+console based client application OMShell-terminal
+.
+.
+.\" --------------------------------------------------------------------
+.SH SYNOPSIS
+.\" --------------------------------------------------------------------
+.
+.BR "OMShell-terminal" " [" "-corba" "] " "" "[" "-noserv" "]"
+.BR "" "[" "-verbose" "]"
+.
+.
+.\" --------------------------------------------------------------------
+.SH DESCRIPTION
+.\" --------------------------------------------------------------------
+.
+.B OMShell\-terminal
+is a script that starts the console based client application
+\fBOMShell\-terminal\fP of the \%OpenModelica Project. The client application
+\fBOMShell\-terminal\fP is a front end between the user and the OpenModelica
+Compiler/Interpreter \fBomc\fP. The script \fBOMShell-terminal\fP knows two
+starting modes and the two communication interfaces CORBA and BSD socket:
+.
+.IP \(bu 3
+In the first mode the script \fBOMShell\-terminal\fP  will be launched from
+a menu like GNOME menu or Debian menu. In this mode the communication between
+the client application \fBOMShell\-terminal\fP and the server \fBomc\fP is
+limited to the CORBA interface. The script options \fB-corba\fP, \fB-noserv\fP
+and \fB-verbose\fP can't be used.
+.
+.P
+.RS 3
+During the startup sequence the script sets the required environment variables,
+creates a sub directory with the name OMWorkspace in user's home directory
+and change to it. After the change, the client application
+\fBOMShell\-terminal\fP will be launched. If the starting script
+\fBOMShell\-terminal\fP finds a directory OMWorkspace in the user's home
+directory, the script doesn't create the directory OMWorkspace again.
+.
+.P
+The start of the client application \fBOMShell\-terminal\fP triggers the
+execution of the Compiler/Interpreter \fBomc\fP. The Compiler/Interpreter will
+run in server mode. The communication will be based on the CORBA interface.
+.
+.P
+Runs the compiler \fBomc\fP in an independent started server process prior to
+the start of the \fBOMShell\-terminal\fP script, the starting client
+application \fBOMShell\-terminal\fP will use the running \fBomc\fP as server.
+But the communication between the client and the server is limited to the
+CORBA interface. Consequently the independent server process \fBomc\fP must be
+started with the CORBA interface enabled.
+.
+.RE
+.
+.IP \(bu 3
+In the second mode the script \fBOMShell\-terminal\fP will be launched from
+a console in a X-Window environment. In this mode the communication between
+the client application \fBOMShell\-terminal\fP and the server \fBomc\fP can
+use the CORBA interface or the BSD socket interface. The script option
+\fB-corba\fP selects the wanted communication interface.
+.
+.P
+.RS 3
+Starting the script \fBOMShell\-terminal\fP from user's home directory, it
+will print a usage hint and returns to the console prompt. Launching the
+script from another directory then the user's home directory, the script will
+set the required environment variables and will run the client application
+\fBOMShell\-terminal\fP.
+.
+.P
+The start of the client application \fBOMShell\-terminal\fP triggers the
+execution of the Compiler/Interpreter \fBomc\fP. The Compiler/Interpreter will
+run in server mode. The communication interface depends on the script option
+\fB-corba\fP. With the script option \fB-corba\fP the client
+\fBOMShell\-terminal\fP application will use the CORBA communication interface.
+Without the option \fB-corba\fP the communication is based on the BSD socket
+interface.
+.
+.P
+With the option \fB-noserv\fP the client application \fBOMShell\-terminal\fP
+can use a running \fBomc\fP server process. In this case the communication
+interfaces of the client and the server must match. The script option
+\fB-noserv\fP prevents the client \fBOMShell\-terminal\fP starting his own
+instance of the compiler server \fBomc\fP.
+.
+.RE
+.P
+The special treatment of the user's home directory is necessary, because the
+compiler \fBomc\fP produce during his run C++ source code and some auxiliary
+files. These files will be stored in the current working directory. The
+behavior of the script \fBOMShell\-terminal\fP avoids the clutter of the
+user's home directory.
+.
+.P
+The console based client application \fBOMShell\-terminal\fP is an interactive
+session handler or in other words a command shell for Modelica. In the shell
+the user can run OpenModelica control commands. These commands supports the
+import of Modelica classes, the loading of Modelica source code, the flatten of
+\%Modelica source code, the simulation of models, the plotting of simulation
+results and many more. In separate graphical viewers the user can further
+investigate and manipulate the results of the simulation. These viewers can be
+called from the running client application \fBOMShell\-terminal\fP.
+.
+.
+.\" --------------------------------------------------------------------
+.SH OPTIONS
+.\" --------------------------------------------------------------------
+.
+.TP
+.B -corba
+use CORBA communication interface between the client application
+\fBOMShell\-terminal\fP and the Compiler/Interpreter server \fBomc\fP.
+If not set, the communication will be based on BSD socket interface.
+.
+.TP
+.B -noserv
+the client application \fBOMShell-terminal\fP shall not create his own
+instance of the Compiler/Interpreter \fBomc\fP. This option shall be used,
+if an independent \fBomc\fP server process is running prior to the start
+of the \fBOMShell-terminal\fP script.
+.
+.TP
+.B -verbose
+shows what is going on under the hood between the client application
+\fBOMShell\-terminal\fP and the compiler server \fBomc\fP.
+.
+.
+.\" --------------------------------------------------------------------
+.SH ENVIRONMENT
+.\" --------------------------------------------------------------------
+.
+.TP
+.B OPENMODELICAHOME
+This variable contains the absolute path towards the \%OpenModelica
+Compiler/Interpreter executable \fBomc\fP.
+.RS
+.IP "Default directory:" 19
+.I /usr/
+.RE
+.TP
+.B OPENMODELICALIBRARY
+Absolute path towards the \%OpenModelica library \fBModelica\fP.
+.RS
+.IP "Default directory:" 19
+.I /usr/share/omlibrary/modelicalib/
+.RE
+.TP
+.B QTHOME
+Absolute path towards the directory with Qt libraries. The Compiler/Interpreter
+\fBomc\fP use these libraries to build the simulation executable. Setting the
+environment variable is only necessary, if \fBomc\fP is compiled with Qt
+support. The Compiler/Interpreter \fBomc\fP of the Debian package is compiled
+with Ot support by default.
+.RS
+.IP "Default directory:" 19
+${\fBOPENMODELICAHOME\fP}\fI/lib/\fP
+.RE
+.
+.
+.\" --------------------------------------------------------------------
+.SH FILES
+.\" --------------------------------------------------------------------
+.
+The start script \fBOMShell-terminal\fP launches the console based client
+application \%\fBOMShell-terminal\fP. Some supplementary informations about
+the application will be found in the following sub section.
+.
+.
+.\" --------------------------------------------------------------------
+.SS Executables:
+.\" --------------------------------------------------------------------
+.
+.IP \(bu 3
+\fBOMShell\-terminal\fP \- OpenModelica Shell a console based command shell
+for Modelica
+.
+.RS
+.IP "File:" 7
+.I OMShell-terminal
+.PD 0
+.IP "Path:" 7
+.I /usr/bin/
+.PD
+.RE
+.
+.
+.\" --------------------------------------------------------------------
+.SH "SEE ALSO"
+.\" --------------------------------------------------------------------
+.
+.BR omc (1),
+.BR OMNotebook (1),
+.BR OMShell (1),
+.
+.
+.\" --------------------------------------------------------------------
+.SH AUTHOR
+.\" --------------------------------------------------------------------
+.
+The original author was William Spinelli. Changes and improvements were made
+by Robert Wotzlaw \%<Robert.Wotzlaw at web.de>.
+.P
+The current author isn't a member of the Open Source Modelica Consortium (OSMC)
+nor a collaborator at the Programming Environment Laboratory (PELAB),
+Department of Computer and Information Science (IDA) of the Linkoeping
+University (LiU). He supports the OpenModelica Project as volunteer.

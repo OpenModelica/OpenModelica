@@ -1,0 +1,183 @@
+.\" --------------------------------------------------------------------
+.\" Title 
+.\" --------------------------------------------------------------------
+.
+.TH OMNotebook 1 "The Open Source Modelica Consortium" "1.5.0" "The OpenModelica Project" -*- nroff -*-
+.
+.
+.\" -------------------------------------------------------------------- 
+.SH NAME
+.\" --------------------------------------------------------------------
+.
+OMNotebook \- Start script, set environment variables and invoke the Qt
+based client application OMNotebook
+.
+.
+.\" --------------------------------------------------------------------
+.SH "SYNOPSIS"
+.\" --------------------------------------------------------------------
+.
+.B OMNotebook
+.
+.
+.\" --------------------------------------------------------------------
+.SH DESCRIPTION
+.\" --------------------------------------------------------------------
+.
+.B OMNotebook
+is a script that starts the Qt based client application \fBOMNotebook\fP of
+the \%OpenModelica Project. The client application \%\fBOMNotebook\fP is a
+front end between the user and the OpenModelica Compiler/Interpreter
+\fBomc\fP. The script \fBOMNotebook\fP knows two starting modes:
+.
+.IP \(bu 3
+In the first mode it will be launched from a menu like GNOME menu or Debian
+menu. In this case the script will set the required environment variables,
+will create a sub directory with the name OMWorkspace in user's home directory
+and will changed into it. After the change, the application \fBOMNotebook\fP
+will be launched. If the starting script \fBOMNotebook\fP found a directory
+OMWorkspace in the user's home directory, it will switch into the directory
+OMWorkspace and then it will start the application \fBOMNotebook\fP.
+.
+.P
+.RS 3
+The start of the client application \fBOMNotebook\fP will trigger the start of
+the Compiler/Interpreter \fBomc\fP. The Compiler/Interpreter \fBomc\fP will run
+in server mode and will communicate over CORBA with the client application
+\fBOMNotebook\fP.
+.
+.P
+Runs the compiler \fBomc\fP in an independent started server process prior to
+the start of the \fBOMNotebook\fP script, the starting client application
+\fBOMNotebook\fP will use the running \fBomc\fP as server. The client
+application \fBOMNotebook\fP will not launch its own \fBomc\fP server.
+.
+.RE
+.
+.IP \(bu 3
+In the second mode the script \fBOMNotebook\fP will be launched from a console.
+When the user starts the script \fBOMNotebook\fP from his or her home
+directory, the script gives a usage hint and will return to the console prompt.
+Starting the script from another directory then the user's home directory, the
+script will set the required environment variables and will run the application
+\fBOMNotebook\fP. The directory OMWorkspace will not be created like in the
+above case. The current directory will be the working directory for the client
+application \fBOMNotebook\fP and the indirect started Compiler/Interpreter
+server \fBomc\fP.
+.
+.P
+.RS 3
+Runs the compiler \fBomc\fP in an independent started server process like in
+the first case, the client application \fBOMNotebook\fP will use \fBomc\fP as
+server. The client \fBOMNotebook\fP will not start its own \fBomc\fP server.
+The communication between the client and the server will use the CORBA
+interface.
+.
+.P
+.RE
+The special treatment of the user's home directory is necessary, because the
+compiler \fBomc\fP produce during his run C++ source code and some auxiliary
+files. These files will be stored in the current working directory. The
+behavior of the script \fBOMNotebook\fP avoids the clutter of the user's
+home directory.
+.
+.P
+The Qt based client application \fBOMNotebook\fP is a Mathematica style
+Notebook for Modelica. In separate graphical viewers the user can further
+investigate and manipulate the results of the simulation. These viewers are
+the JAVA based application Ptolemy and the Qt based application graphWindow.
+The purpose of \fBOMNotebook\fP is to provide an advanced \%Modelica teaching
+tool. This release of \fBOMNotebook\fP includes DrModelica. A package which
+provides all the examples from Peter Fritzson's book the \*[lq]Principles of
+Object-Oriented Modeling and Simulation with Modelica 2.1\*[rq].
+.
+.
+.\" --------------------------------------------------------------------
+.SH ENVIRONMENT
+.\" --------------------------------------------------------------------
+.
+.TP
+.B DRMODELICAHOME
+This variable contains the absolute path towards the \%DrModelica
+package which provides all the examples from Peter Fritzson's book the
+\*[lq]Principles of Object-Oriented Modeling and Simulation with
+Modelica 2.1\*[rq].
+.RS
+.IP "Default directory:" 19
+.I /usr/share/omnotebook/drmodelica/
+.RE
+.TP
+.B OPENMODELICAHOME
+This variable contains the absolute path towards the \%OpenModelica
+Compiler/Interpreter executable \fBomc\fP.
+.RS
+.IP "Default directory:" 19
+.I /usr/
+.RE
+.TP
+.B OPENMODELICALIBRARY
+Absolute path towards the \%OpenModelica library \fBModelica\fP.
+.RS
+.IP "Default directory:" 19
+.I /usr/share/omlibrary/modelicalib/
+.RE
+.TP
+.B QTHOME
+Absolute path towards the directory with Qt libraries. The Compiler/Interpreter
+\fBomc\fP use these libraries to build the simulation executable. Setting the
+environment variable is only necessary, if \fBomc\fP is compiled with Qt
+support. The Compiler/Interpreter \fBomc\fP of the Debian package is compiled
+with Ot support by default.
+.RS
+.IP "Default directory:" 19
+${\fBOPENMODELICAHOME\fP}\fI/lib/\fP
+.RE
+.
+.
+.\" --------------------------------------------------------------------
+.SH FILES
+.\" --------------------------------------------------------------------
+.
+The start script \fBOMNotebook\fP launches the Qt based client application
+\%\fBOMNotebook\fP. Some supplementary informations about the application will
+be found in the following sub section.
+.
+.
+.\" --------------------------------------------------------------------
+.SS Executables:
+.\" --------------------------------------------------------------------
+.
+.IP \(bu 3
+\fBOMNotebook\fP \- OpenModelica Notebook a Mathematica style Notebook for
+Modelica
+.
+.RS
+.IP "File:" 7
+.I OMNotebook
+.PD 0
+.IP "Path:" 7
+.I /usr/bin/
+.PD
+.RE
+.
+.
+.\" --------------------------------------------------------------------
+.SH "SEE ALSO"
+.\" --------------------------------------------------------------------
+.
+.BR omc (1),
+.BR OMShell (1),
+.BR OMShell\-terminal (1)
+.
+.
+.\" --------------------------------------------------------------------
+.SH AUTHOR
+.\" --------------------------------------------------------------------
+.
+The original author was William Spinelli. Changes and improvements were made
+by Robert Wotzlaw \%<Robert.Wotzlaw at web.de>.
+.P
+The current author isn't a member of the Open Source Modelica Consortium (OSMC)
+nor a collaborator at the Programming Environment Laboratory (PELAB),
+Department of Computer and Information Science (IDA) of the Linkoeping
+University (LiU). He supports the OpenModelica Project as volunteer.
