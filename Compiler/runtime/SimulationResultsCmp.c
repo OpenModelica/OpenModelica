@@ -97,7 +97,7 @@ char ** getVars(void *vars, unsigned int* nvars)
   return cmpvars;
 }
 
-DataField getData(char *varname,const char *filename, unsigned int size, SimulationResult_Globals* srg)
+DataField getData(const char *varname,const char *filename, unsigned int size, SimulationResult_Globals* srg)
 {
   DataField res;
   void *cmpvar,*dataset,*lst;
