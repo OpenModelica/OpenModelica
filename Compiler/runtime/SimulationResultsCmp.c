@@ -78,21 +78,33 @@ static inline void fixDerInName(char *str, size_t len)
   }
 }
 
-static inline void fixCommaInName(char *str, size_t len)
+static inline void fixCommaInName(char **str, size_t len)
 {
-  size_t i;
-  char* dot;
+  size_t i,nc;
+  unsigned int j,k;
+  char* newvar;
   if (len < 2) return;
 
-  // check if name start with "der(" and includes at least one dot
-  while (strncmp(str,",",4) == 0 && (dot = strrchr(str,'.')) != NULL) {
-    size_t pos = (size_t)(dot-str)+1;
-    // move prefix to the begining of string :"der(a.b.c.d)" -> "a.b.c.b.c.d)"
-    for(i = 4; i < pos; ++i)
-      str[i-4] = str[i];
-    // move "der(" to the end of prefix
-    // "a.b.c.b.c.d)" -> "a.b.c.der(d)"
-    strncpy(&str[pos-4],"der(",4);
+  nc = 0;
+  for (j=0;j<len;j++) 
+      if ((*str)[j] ==',' ) 
+        nc +=1;
+
+  if (nc > 0) {
+
+    newvar = (char*) malloc(len+nc+1);
+    memset(newvar,0,len+nc+1);
+    k = 0;
+    for (j=0;j<len+nc+1;j++) {
+      newvar[k] = (*str)[j];
+      k +=1;
+      if ((*str)[j] ==',' ) {
+        newvar[k] = ' ';
+        k +=1;
+      }
+    }
+    free(str);
+    *str = newvar;
   }
 }
 
@@ -145,7 +157,7 @@ DataField getData(const char *varname,const char *filename, unsigned int size, S
   res.n = 0;
   res.data = NULL;
 
-  //fprintf(stderr, "getData of Var: %s from file %s\n", varname,filename);
+  // fprintf(stderr, "getData of Var: %s from file %s\n", varname,filename);
   cmpvar = mk_nil();
   cmpvar =  mk_cons(mk_scon(varname),cmpvar); 
   dataset = SimulationResultsImpl__readDataset(filename,cmpvar,size,srg);
@@ -366,6 +378,7 @@ void* SimulationResultsCmp_compareResults(const char *filename, const char *reff
       var2 = (char*) malloc(len);
       strncpy(var2,var1,len+1);
       fixDerInName(var2,len);
+      fixCommaInName(&var2,len);
       dataref = getData(var2,reffilename,size_ref,&simresglob_ref);
       if (dataref.n==0) {
         fprintf(stderr, "Get Data of Var %s from file %s failed\n",var,reffilename);
@@ -377,6 +390,7 @@ void* SimulationResultsCmp_compareResults(const char *filename, const char *reff
     data = getData(var1,filename,size,&simresglob_c);
     if (data.n==0)  {
       fixDerInName(var1,len);
+      fixCommaInName(&var1,len);
       data = getData(var1,filename,size,&simresglob_c);
       if (data.n==0)  {
         if (data.data) free(data.data);
