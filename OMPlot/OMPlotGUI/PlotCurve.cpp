@@ -38,6 +38,7 @@
 using namespace OMPlot;
 
 PlotCurve::PlotCurve(Plot *pParent)
+    : mCustomColor(false)
 {   
     mpParentPlot = pParent;
 }
@@ -110,6 +111,16 @@ void PlotCurve::setYVariable(QString yVariable)
 QString PlotCurve::getYVariable()
 {
     return mYVariable;
+}
+
+void PlotCurve::setCustomColor(bool value)
+{
+    mCustomColor = value;
+}
+
+bool PlotCurve::hasCustomColor()
+{
+    return mCustomColor;
 }
 
 void PlotCurve::updateLegend(QwtLegend *legend) const

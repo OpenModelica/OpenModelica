@@ -139,12 +139,14 @@ QColor Plot::getUniqueColor(int index, int total)
         return mColorsList.at(index);
 }
 
+// just overloaded this function to get colors for curves.
 void Plot::replot()
 {
-    // just overloaded this function to get colors for curves.
     for (int i = 0 ; i < mPlotCurvesList.length() ; i++)
     {
-        mPlotCurvesList[i]->setPen(getUniqueColor(i, mPlotCurvesList.length()));
+        // if user has set the custom color for the curve then dont get automatic color for it
+        if (!mPlotCurvesList[i]->hasCustomColor())
+            mPlotCurvesList[i]->setPen(getUniqueColor(i, mPlotCurvesList.length()));
     }
 
     QwtPlot::replot();

@@ -47,15 +47,18 @@ class Legend : public QwtLegend
 public:
     Legend(Plot *pParent);
     ~Legend();
-public Q_SLOTS:
+public slots:
     void legendMenu(const QPoint&);
     void selectColor();
-    void toggleShow();
-
+    void toggleHide(bool hide);
+    void automaticColor(bool automatic);
 private:
     PlotCurve *mpPlotCurve;
     Plot *mpPlot;
     QString legendItem;
+    QAction *mpChangeColorAction;
+    QAction *mpAutomaticColorAction;
+    QAction *mpHideAction;
 };
 }
 

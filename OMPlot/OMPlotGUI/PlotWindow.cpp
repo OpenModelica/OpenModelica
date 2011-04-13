@@ -155,6 +155,10 @@ PlotWindow::PlotType PlotWindow::getPlotType()
 void PlotWindow::openFile(QString file)
 {    
     //Open file to a textstream
+    // close the file if it is already opened
+    if (mFile.isOpen())
+        mFile.close();
+
     mFile.setFileName(file);
     if(!mFile.exists())
         throw NoFileException(QString("File not found : ").append(file).toStdString().c_str());
@@ -179,12 +183,6 @@ void PlotWindow::setupToolbar()
     mpPanButton->setCheckable(true);
     connect(mpPanButton, SIGNAL(toggled(bool)), SLOT(enablePanMode(bool)));
     toolBar->addWidget(mpPanButton);
-    toolBar->addSeparator();
-    //ORIGINAL SIZE
-    QToolButton *originalButton = new QToolButton(toolBar);
-    originalButton->setText("Original");
-    connect(originalButton, SIGNAL(clicked()), SLOT(setOriginal()));
-    toolBar->addWidget(originalButton);
     toolBar->addSeparator();
     //Fit in View
     QToolButton *fitInViewButton = new QToolButton(toolBar);
@@ -359,7 +357,7 @@ void PlotWindow::plot()
 
         //Read in mat file
         if(0 != (msg = omc_new_matlab4_reader(mFile.fileName().toStdString().c_str(), &reader)))
-            return;
+            throw PlotException(msg);
 
         //Read in timevector
         double startTime = omc_matlab4_startTime(&reader);
@@ -414,8 +412,6 @@ void PlotWindow::plot()
         if (getPlotType() == PlotWindow::PLOT)
             checkForErrors(mVariablesList, variablesPlotted);
     }
-    // close the file
-    mFile.close();
 }
 
 void PlotWindow::plotParametric()
@@ -582,8 +578,6 @@ void PlotWindow::plotParametric()
         pPlotCurve->attach(mpPlot);
         mpPlot->replot();
     }
-    // close the file
-    mFile.close();
 }
 
 void PlotWindow::setTitle(QString title)
@@ -746,12 +740,6 @@ void PlotWindow::setGrid(bool on)
         mpPlot->getPlotGrid()->attach(mpPlot);
         mpGridButton->setChecked(true);
     }
-    mpPlot->replot();
-}
-
-void PlotWindow::setOriginal()
-{
-    mpPlot->getPlotZoomer()->zoom(0);
     mpPlot->replot();
 }
 

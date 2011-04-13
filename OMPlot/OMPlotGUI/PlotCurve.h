@@ -46,6 +46,7 @@ private:
     QString mFileName;
     QString mXVariable;
     QString mYVariable;
+    bool mCustomColor;
 
     Plot *mpParentPlot;
 public:
@@ -65,6 +66,8 @@ public:
     QString getXVariable();
     void setYVariable(QString yVariable);
     QString getYVariable();
+    void setCustomColor(bool value);
+    bool hasCustomColor();
     virtual void updateLegend(QwtLegend *legend) const;
 };
 }

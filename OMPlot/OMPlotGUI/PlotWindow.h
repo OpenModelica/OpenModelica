@@ -93,7 +93,6 @@ public slots:
     void exportDocument();
     void printPlot();
     void setGrid(bool on);
-    void setOriginal();
     void fitInView();
     void setLogX(bool on);
     void setLogY(bool on);

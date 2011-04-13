@@ -42,6 +42,19 @@ Legend::Legend(Plot *pParent)
     setContextMenuPolicy(Qt::CustomContextMenu);
     connect(this,SIGNAL(customContextMenuRequested(const QPoint&)),this,SLOT(legendMenu(const QPoint&)));
     mpPlot = pParent;
+
+    // create actions for context menu
+    mpChangeColorAction = new QAction(QString("Change Color"), this);
+    connect(mpChangeColorAction, SIGNAL(triggered()), this, SLOT(selectColor()));
+
+    mpAutomaticColorAction = new QAction(QString("Automatic Color"), this);
+    mpAutomaticColorAction->setCheckable(true);
+    mpAutomaticColorAction->setChecked(true);
+    connect(mpAutomaticColorAction, SIGNAL(triggered(bool)), this, SLOT(automaticColor(bool)));
+
+    mpHideAction = new QAction(QString("Hide"), this);
+    mpHideAction->setCheckable(true);
+    connect(mpHideAction, SIGNAL(triggered(bool)), this, SLOT(toggleHide(bool)));
 }
 
 Legend::~Legend()
@@ -55,26 +68,13 @@ void Legend::legendMenu(const QPoint& pos)
 
     if(lgdItem)
     {
-
-    QAction *color = new QAction(QString("Change Color"), this);
-    color->setCheckable(false);
-    connect(color, SIGNAL(triggered()), this, SLOT(selectColor()));
-
-    QAction *hide;
-    if(lgdItem->text().color() == Qt::gray)
-        hide = new QAction(QString("Show"), this);
-    else
-        hide = new QAction(QString("Hide"), this);
-    hide->setCheckable(false);
-    connect(hide, SIGNAL(triggered()), this, SLOT(toggleShow()));
-
-
         legendItem = lgdItem->text().text();
 
         QMenu menu(mpPlot);
-        menu.addAction(color);
+        menu.addAction(mpChangeColorAction);
+        menu.addAction(mpAutomaticColorAction);
         menu.addSeparator();
-        menu.addAction(hide);
+        menu.addAction(mpHideAction);
         menu.exec(mapToGlobal(pos));
     }
 }
@@ -90,16 +90,18 @@ void Legend::selectColor()
         {
             if(list[i]->title() == legendItem)
             {
+                list[i]->setCustomColor(true);
                 QPen pen = list[i]->pen();
                 pen.setColor(c);
                 list[i]->setPen(pen);
+                mpAutomaticColorAction->setChecked(false);
             }
         }
         mpPlot->replot();
     }
 }
 
-void Legend::toggleShow()
+void Legend::toggleHide(bool hide)
 {
     QList<PlotCurve*> list = mpPlot->getPlotCurvesList();
 
@@ -107,19 +109,49 @@ void Legend::toggleShow()
     {
         if(list[i]->title().text() == legendItem)
         {
-            if(list[i]->isVisible())
+            if (hide)
             {
                 QwtText text = list[i]->title();
                 text.setColor(QColor(Qt::gray));
                 list[i]->setTitle(text);
                 list[i]->setVisible(false);
             }
-            else if(!list[i]->isVisible())
+            else
             {
                 QwtText text = list[i]->title();
                 text.setColor(QColor(Qt::black));
                 list[i]->setTitle(text.text());
                 list[i]->setVisible(true);
+            }
+        }
+    }
+    mpPlot->replot();
+}
+
+void Legend::automaticColor(bool automatic)
+{
+    QList<PlotCurve*> list = mpPlot->getPlotCurvesList();
+
+    for(int i = 0; i < list.length(); i++)
+    {
+        if(list[i]->title().text() == legendItem)
+        {
+            if (automatic)
+            {
+                list[i]->setCustomColor(false);
+            }
+            else
+            {
+                if (list[i]->hasCustomColor())
+                {
+                    list[i]->setCustomColor(true);
+                }
+                else
+                {
+                    mpAutomaticColorAction->blockSignals(true);
+                    mpAutomaticColorAction->setChecked(true);
+                    mpAutomaticColorAction->blockSignals(false);
+                }
             }
         }
     }
