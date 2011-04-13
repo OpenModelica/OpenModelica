@@ -43,6 +43,11 @@
 #include "simulation_runtime.h"
 #include "simulation_input.h"
 #include "solver_main.h"
+
+#ifdef _OMC_QSS_LIB
+#include "solver_qss/solver_qss.h"
+#endif
+
 #include "options.h"
 #include "linearize.h"
 // ppriv - NO_INTERACTIVE_DEPENDENCY - for simpler debugging in Visual Studio
@@ -520,7 +525,14 @@ callSolver(int argc, char**argv, string method, string outputFormat,
           }
           retVal = solver_main(argc, argv, start, stop, stepSize, outputSteps, tolerance, 4);
       }
-  } else {
+#ifdef _OMC_QSS_LIB
+      } else if (method == std::string("qss")) {
+        if (sim_verbose >= LOG_SOLVER) {
+          cout << "Recognized solver: " << method << "." << endl;
+        }
+        retVal = qss_main(argc, argv, start, stop, stepSize, outputSteps, tolerance, 3);
+#endif
+    } else {
       cout << "Unrecognized solver: " << method
           << "; valid solvers are dassl,euler,rungekutta,dassl2,inline-euler or inline-rungekutta."
           << endl;
@@ -593,6 +605,7 @@ initRuntimeAndSimulation(int argc, char**argv)
  * -r res.plt write result to file.
  */
 
+#ifndef _OMC_QSS_LIB
 int
 main(int argc, char**argv)
 {
@@ -614,3 +627,4 @@ main(int argc, char**argv)
   fflush(NULL);
   EXIT(retVal);
 }
+#endif 

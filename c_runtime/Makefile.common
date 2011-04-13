@@ -25,6 +25,14 @@ simulation_result_plt.o simulation_result_csv.o \
 simulation_result_mat.o simulation_delay.o tables.o options.o dgesv_aux.o \
 simulation_modelinfo.o $(EXTRA_SIMOBJS)
 
+SIMOBJSOMPD = $(FOBJS) simulation_runtime_ompd.o simulation_init.o simulation_input.o \
+simulation_events.o linearize.o solver_main.o \
+simulation_result_plt.o simulation_result_csv.o \
+simulation_result_mat.o simulation_delay.o tables.o options.o dgesv_aux.o \
+simulation_modelinfo.o $(EXTRA_SIMOBJS) \
+solver_qss/solver_qss.o solver_qss/sampler.o solver_qss/integrator.o solver_qss/qss_signal.o solver_qss/static_function.o
+
+
 HFILES = \
 base_array.h \
 blaswrap.h \
@@ -86,10 +94,11 @@ linearize.h \
 fmu_model_interface.h \
 fmiModelFunctions.h \
 fmiModelTypes.h \
+solver_qss/solver_qss.h \
 
 
 LIBS = libc_runtime.a libsim.a interactive/libinteractive.a \
-  ModelicaExternalC/libModelicaExternalC.a
+  ModelicaExternalC/libModelicaExternalC.a libsim_ompd.a
 
 .PHONY : libsendData.a interactive/libinteractive.a ModelicaExternalC/libModelicaExternalC.a
 
@@ -117,6 +126,15 @@ libsim.a : $(SIMOBJS) $(HFILES)
 	$(AR) $@ $(SIMOBJS)
 	ranlib $@
 
+
+libsim_ompd.a : $(SIMOBJSOMPD) $(HFILES)
+	$(AR) $@ $(SIMOBJSOMPD)
+	ranlib $@
+
+simulation_runtime_ompd.o: simulation_runtime.cpp
+	$(CXX) $(CPPFLAGS) -c -o $@ simulation_runtime.cpp -D_OMC_QSS_LIB
+  
+
 ModelicaExternalC/libModelicaExternalC.a: $(addprefix ModelicaExternalC/,ModelicaInternal.c ModelicaStrings.c ModelicaTablesImpl.c) $(HFILES)
 	$(MAKE) -C ModelicaExternalC -f $(EXTERNALCMAKEFILE)
 
@@ -130,7 +148,7 @@ libf2c/libf2c.a :
 meta_modelica_catch.o : meta_modelica_catch.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c -g $<
 
-install: libc_runtime.a libsim.a $(LIBF2C) interactive/libinteractive.a $(LIBSENDDATA) omdevinstall ModelicaExternalC/libModelicaExternalC.a
+install: libc_runtime.a libsim.a libsim_ompd.a $(LIBF2C) interactive/libinteractive.a $(LIBSENDDATA) omdevinstall ModelicaExternalC/libModelicaExternalC.a
 	cp $(HFILES) $(builddir_inc)/
 	cp fmu_model_interface.c $(builddir_inc)/
 	cp $(LIBS) $(builddir_lib)/
@@ -148,9 +166,11 @@ clean :
 	$(MAKE) -C ModelicaExternalC -f $(EXTERNALCMAKEFILE) clean
 	rm -f libc_runtime.a
 	rm -f libsim.a
+	rm -f libsim_ompd.a
 	rm -f $(OBJS)
 	rm -f $(SIMOBJS)
 	cd sendData && rm -fr release debug *sendData*.o *sendData*.a
 	rm -rf sendData/release sendData/debug
 	rm -f sendData.o sendData.a sendData/sendDataHumbug.o sendData/releasesendData.o sendData/Makefile
+
 
