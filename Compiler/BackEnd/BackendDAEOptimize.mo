@@ -1002,467 +1002,6 @@ algorithm
   end matchcontinue;
 end removeConstantEqns;
 
-/*
- * remove alias equations
- */
- 
- public function removeAliasEquationsPast
-"function lateInlineDAE"
-    input BackendDAE.BackendDAE inDAE;
-    input DAE.FunctionTree inFunctionTree;
-    input BackendDAE.IncidenceMatrix inM;
-    input BackendDAE.IncidenceMatrix inMT;
-    input array<Integer> inAss1;
-    input array<Integer> inAss2;
-    input list<list<Integer>> inComps;
-    output BackendDAE.BackendDAE outDAE;
-    output BackendDAE.IncidenceMatrix outM;
-    output BackendDAE.IncidenceMatrix outMT;
-    output array<Integer> outAss1;
-    output array<Integer> outAss2;
-    output list<list<Integer>> outComps;
-    output Boolean outRunMatching;
-protected
-  Option<BackendDAE.IncidenceMatrix> om,omT;
-algorithm
-  (outDAE,om,omT) := removeAliasEquations(inDAE,inFunctionTree,SOME(inM),SOME(inMT));
-  (outM,outMT) := BackendDAEUtil.getIncidenceMatrixfromOption(outDAE,om,omT);
-  outAss1 := inAss1;
-  outAss2 := inAss2;
-  outComps := inComps;
-  outRunMatching := false;
-end removeAliasEquationsPast;
-
-public function removeAliasEquations
-"function: removeAliasEquations"
-  input BackendDAE.BackendDAE inDAE;
-  input DAE.FunctionTree inFunctionTree;
-  input Option<BackendDAE.IncidenceMatrix> inM;
-  input Option<BackendDAE.IncidenceMatrix> inMT;
-  output BackendDAE.BackendDAE outDAE;
-  output Option<BackendDAE.IncidenceMatrix> outM;
-  output Option<BackendDAE.IncidenceMatrix> outMT;
-algorithm
-  (outDAE,outM,outMT):=
-  match (inDAE,inFunctionTree,inM,inMT)
-    local
-      DAE.FunctionTree funcs;
-      Option<BackendDAE.IncidenceMatrix> m,mT;
-      BackendDAE.Variables vars,vars_1,knvars,exobj,knvars_1;
-      BackendDAE.AliasVariables av,varsAliases;
-      BackendDAE.EquationArray eqns,eqns1,remeqns,remeqns1,inieqns,inieqns1;
-      array<BackendDAE.MultiDimEquation> arreqns;
-      array<DAE.Algorithm> algorithms;
-      BackendDAE.EventInfo einfo;
-      BackendDAE.ExternalObjectClasses eoc;
-      list<BackendDAE.Equation> reqns,reqns_1;
-      list<DAE.Algorithm> algs;
-      
-    case (BackendDAE.DAE(vars,knvars,exobj,av,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc),funcs,m,mT)
-      equation      
-        reqns = BackendDAEUtil.equationList(remeqns);
-        (knvars_1,reqns_1,varsAliases,vars_1) = removeAliasEquations1(knvars,reqns,av,vars);
-        Debug.fcall("dumpalias", BackendDump.dumpAliasVariables, varsAliases);
-        remeqns1 = BackendDAEUtil.listEquation(reqns_1);
-      then
-        (BackendDAE.DAE(vars_1,knvars_1,exobj,varsAliases,eqns,remeqns1,inieqns,arreqns,algorithms,einfo,eoc),m,mT);
-  end match;
-end removeAliasEquations;
-
-protected function removeAliasEquations1
-"autor: Frenkel TUD 2010-12"
- input BackendDAE.Variables inKnVars;
- input list<BackendDAE.Equation> inEqns;
- input BackendDAE.AliasVariables inAlias;
- input BackendDAE.Variables inVars;
- output BackendDAE.Variables outKnVars;
- output list<BackendDAE.Equation> outEqns;
- output BackendDAE.AliasVariables outAlias;
- output BackendDAE.Variables outVars;
-algorithm
-  (outKnVars,outEqns,outAlias,outVars) :=
-  matchcontinue (inKnVars,inEqns,inAlias,inVars)
-    local
-      BackendDAE.Variables vars,vars1,knvars,knvars1;
-      BackendDAE.Var var,var2,var3;
-      DAE.ComponentRef cr,vcr;
-      DAE.Exp e;
-      BackendDAE.Equation eqn;
-      list<BackendDAE.Equation> rest,eqns;
-      BackendDAE.AliasVariables aliasvars,aliasvars1;
-      Boolean negate;
-    case (inKnVars,{},inAlias,inVars) then (inKnVars,{},inAlias,inVars);
-    // alias vars
-    case (inKnVars,(eqn as BackendDAE.SOLVED_EQUATION(componentRef=cr,exp=e))::rest,inAlias,inVars)
-      equation
-        // test exp
-        (vcr,negate) = removeAliasEquations2(e);
-        // get var
-        ({var},_) = BackendVariable.getVar(cr,inKnVars);
-        // add bindExp
-        var2 = BackendVariable.setBindExp(var,e);
-        // add
-        //aliasvars = BackendDAEUtil.addAliasVariables(inAlias,var2,e);
-        // set attributes
-        vars = mergeAliasVarAttributes(var,vcr,inVars,negate);
-        // next
-        (knvars,eqns,aliasvars1,vars1) = removeAliasEquations1(inKnVars,rest,inAlias,vars);
-      then
-        (knvars,eqns,aliasvars1,vars1);
-    case (inKnVars,eqn::rest,inAlias,inVars)
-      equation
-         (knvars,eqns,aliasvars,vars) = removeAliasEquations1(inKnVars,rest,inAlias,inVars);
-      then
-        (knvars,eqn::eqns,aliasvars,vars);
-  end matchcontinue;
-end removeAliasEquations1;
-
-protected function removeAliasEquations2
-"autor: Frenkel TUD 2010-12"
- input DAE.Exp inExp;
- output DAE.ComponentRef ouCref;
- output Boolean negate;
-algorithm
-  (ouCref,negate) :=
-  match (inExp)
-    local DAE.ComponentRef cr;
-    case (DAE.CREF(componentRef=cr)) then (cr,false);
-    case (DAE.UNARY(exp = DAE.CREF(componentRef=cr))) then (cr,true);
-  end match;
-end removeAliasEquations2;
-
-protected function mergeAliasVars
-"autor: Frenkel TUD 2011-04"
-  input BackendDAE.Var inVar;
-  input BackendDAE.Var inAVar "the alias var";
-  input Boolean negate;
-  output BackendDAE.Var outVar;
-protected
-  BackendDAE.Var v,va,v1,v2,v3;
-  Boolean fixeda, fixed,fixeda,f;
-  Option<DAE.Exp> sv,sva;
-  DAE.Exp start;
-algorithm
-  // get attributes
-  // fixed
-  fixed := BackendVariable.varFixed(inVar);
-  fixeda := BackendVariable.varFixed(inAVar);
-  // start
-  sv := BackendVariable.varStartValueOption(inVar);
-  sva := BackendVariable.varStartValueOption(inAVar);
-  (v1) := mergeStartFixed(inVar,fixed,sv,inAVar,fixeda,sva,negate);
-  // nominal
-  outVar := mergeNomnialAttribute(inAVar,v1,negate);
-end mergeAliasVars;
-
-protected function mergeStartFixed
-"autor: Frenkel TUD 2011-04"
-  input BackendDAE.Var inVar;
-  input Boolean fixed;
-  input Option<DAE.Exp> sv;
-  input BackendDAE.Var inAVar;
-  input Boolean fixeda;
-  input Option<DAE.Exp> sva;
-  input Boolean negate;
-  output BackendDAE.Var outVar;
-algorithm
-  outVar :=
-  matchcontinue (inVar,fixed,sv,inAVar,fixeda,sva,negate)
-    local
-      BackendDAE.Var v,va,v1,v2;
-      DAE.ComponentRef cr,cra;
-      DAE.Exp sa,sb,e;
-      Boolean b1,b2,b3;
-      String s;
-    case (v as BackendDAE.VAR(varName=cr),true,SOME(sa),va as BackendDAE.VAR(varName=cra),true,SOME(sb),negate)
-      equation
-        e = getNonZeroStart(sa,sb,negate);
-        v1 = BackendVariable.setVarStartValue(v,e);
-      then v1;     
-    case (v as BackendDAE.VAR(varName=cr),true,SOME(sa),va as BackendDAE.VAR(varName=cra),true,SOME(sb),negate)
-      equation
-        print("Warning alias variables ");
-        print(ComponentReference.printComponentRefStr(cr));
-        s = Util.if_(negate," = -"," = ");
-        print(s);
-        print(ComponentReference.printComponentRefStr(cra));
-        print(" both fixed and have start values ");
-        print(ExpressionDump.printExpStr(sa));
-        print(" != ");
-        print(ExpressionDump.printExpStr(sb)); print(" !\n");
-      then v;
-    case (v,true,SOME(sa),va,true,NONE(),negate)
-      then v;
-    case (v,true,SOME(sa),va,false,SOME(sb),negate)
-      equation
-        e = getNonZeroStart(sa,sb,negate);
-        v1 = BackendVariable.setVarStartValue(v,e);
-      then v1;     
-    case (v as BackendDAE.VAR(varName=cr),true,SOME(sa),va as BackendDAE.VAR(varName=cra),false,SOME(sb),negate)
-      equation
-        print("Warning alias variables ");
-        print(ComponentReference.printComponentRefStr(cr));
-        s = Util.if_(negate," = -"," = ");
-        print(s);
-        print(ComponentReference.printComponentRefStr(cra));
-        print(" have start values ");
-        print(ExpressionDump.printExpStr(sa));
-        print(" != ");
-        print(ExpressionDump.printExpStr(sb)); 
-        print(". Use value from ");
-        print(ComponentReference.printComponentRefStr(cr));
-        print(" because this is fixed.\n");
-      then v;
-    case (v,true,SOME(sa),va,false,NONE(),negate)
-      then v;
-    case (v,true,NONE(),va,true,SOME(sb),negate)
-      equation
-        v1 = BackendVariable.setVarStartValue(v,sb); 
-      then v1;
-    case (v,true,NONE(),va,true,NONE(),negate)
-      then v;
-    case (v,true,NONE(),va,false,SOME(sb),negate)
-      equation
-        v1 = BackendVariable.setVarStartValue(v,sb); 
-      then v1;
-    case (v,true,NONE(),va,false,NONE(),negate)
-      then v;   
-    case (v,false,SOME(sa),va,true,SOME(sb),negate)
-      equation
-        e = getNonZeroStart(sa,sb,negate);
-        v1 = BackendVariable.setVarStartValue(v,e);
-        v2 = BackendVariable.setVarFixed(v1,true);
-      then v2;
-    case (v,false,SOME(sa),va,true,NONE(),negate)
-      equation
-        v1 = BackendVariable.setVarFixed(v,true);
-      then v1;
-    case (v,false,SOME(sa),va,false,SOME(sb),negate)
-      equation
-        e = getNonZeroStart(sa,sb,negate);
-        v1 = BackendVariable.setVarStartValue(v,e);
-      then v1;     
-    case (v as BackendDAE.VAR(varName=cr),false,SOME(sa),va as BackendDAE.VAR(varName=cra),false,SOME(sb),negate)
-      equation
-        print("Warning alias variables ");
-        print(ComponentReference.printComponentRefStr(cr));
-        s = Util.if_(negate," = -"," = ");
-        print(s);
-        print(ComponentReference.printComponentRefStr(cra));
-        print(" have start values ");
-        print(ExpressionDump.printExpStr(sa));
-        print(" != ");
-        print(ExpressionDump.printExpStr(sb)); 
-        print(". Use value from ");
-        print(ComponentReference.printComponentRefStr(cr));
-        print(".\n");        
-      then v;
-    case (v,false,SOME(sa),va,false,NONE(),negate)
-      then v;
-    case (v,false,NONE(),va,true,SOME(sb),negate)
-      equation
-        e = negateif(negate,sb);
-        v1 = BackendVariable.setVarStartValue(v,e);
-        v2 = BackendVariable.setVarFixed(v1,true);
-      then v2;
-    case (v,false,NONE(),va,true,NONE(),negate)
-      equation
-        v1 = BackendVariable.setVarFixed(v,true);
-      then v1;
-    case (v,false,NONE(),va,false,SOME(sb),negate)
-      equation
-        e = negateif(negate,sb);
-        v1 = BackendVariable.setVarStartValue(v,e);
-      then v1;
-    case (v,false,NONE(),va,false,NONE(),negate)
-      then v; 
-  end matchcontinue;
-end mergeStartFixed;
-
-protected function getNonZeroStart
-"autor: Frenkel TUD 2011-04"
-  input DAE.Exp exp1;
-  input DAE.Exp exp2;
-  input Boolean negate;
-  output DAE.Exp outExp;
-algorithm
-  outExp :=
-  matchcontinue (exp1,exp2,negate)
-    local
-      DAE.Exp ne;
-    case (exp1,exp2,negate) 
-      equation
-        true = Expression.isZero(exp2);
-      then exp1;
-    case (exp1,exp2,negate) 
-      equation
-        true = Expression.isZero(exp1);
-        ne = negateif(negate,exp2);
-      then ne;      
-    case (exp1,exp2,negate) 
-      equation
-        ne = negateif(negate,exp2);
-        true = Expression.expEqual(exp1,ne);
-      then ne;            
-  end matchcontinue;
-end getNonZeroStart;
-
-protected function negateif
-"autor: Frenkel TUD 2011-04"
-  input Boolean negate;
-  input DAE.Exp exp;
-  output DAE.Exp outExp;
-algorithm
-  outExp :=
-  match (negate,exp)
-    local
-      DAE.Exp ne;
-    case (true,exp) 
-      equation
-        ne = Expression.negate(exp);
-      then ne;
-    else exp;
-  end match;
-end negateif;
-
-protected function mergeAliasVarAttributes
-  input BackendDAE.Var inAVar;
-  input DAE.ComponentRef inCref;
-  input BackendDAE.Variables inVars;
-  input Boolean negate;
-  output BackendDAE.Variables outVars;
-algorithm
-  outVars :=
-  matchcontinue (inAVar,inCref,inVars,negate)
-    local
-      DAE.ComponentRef name,cr;
-      BackendDAE.Var v,var,var1,var2,var3,var4;
-      BackendDAE.Variables vars;
-      Boolean fixeda, fixedb;
-    case (v as BackendDAE.VAR(varName=name),cr,inVars,negate)
-      equation
-        ((var :: _),_) = BackendVariable.getVar(cr,inVars);
-        // fixed
-        fixeda = BackendVariable.varFixed(v);
-        fixedb = BackendVariable.varFixed(var);
-        var1 = BackendVariable.setVarFixed(var,fixeda or fixedb);
-        // start
-        var2 = mergeStartAttribute(v,var1,negate);
-        // nominal
-        var3 = mergeNomnialAttribute(v,var2,negate);
-        // direction
-        var4 = mergeDirection(v,var3);
-        // update vars
-        vars = BackendVariable.addVar(var4,inVars);
-      then vars;
-    case(_,_,inVars,negate) then inVars;
-  end matchcontinue;
-end mergeAliasVarAttributes;
-
-protected function mergeStartAttribute
-  input BackendDAE.Var inAVar;
-  input BackendDAE.Var inVar;
-  input Boolean negate;
-  output BackendDAE.Var outVar;
-algorithm
-  outVar :=
-  matchcontinue (inAVar,inVar,negate)
-    local
-      BackendDAE.Var v,var,var1;
-      Option<DAE.VariableAttributes> attr,attr1;
-      DAE.Exp e,e1;
-    case (v as BackendDAE.VAR(values = attr),var as BackendDAE.VAR(values = attr1),negate)
-      equation 
-        // start
-        e = BackendVariable.varStartValueFail(v);
-        mergeStartAttribute1(attr1);
-        e1 = Util.if_(negate,Expression.negate(e),e);
-        var1 = BackendVariable.setVarStartValue(var,e1);
-      then var1;
-    case(_,inVar,_) then inVar;
-  end matchcontinue;
-end mergeStartAttribute;
-
-protected function mergeStartAttribute1
-  input Option<DAE.VariableAttributes> attr;
-algorithm
-  () :=
-  matchcontinue (attr)
-    local
-      DAE.Exp e;
-    case (attr)
-      equation 
-        false = DAEUtil.hasStartAttr(attr);
-      then ();
-    case (attr)
-      equation 
-        e = DAEUtil.getStartAttr(attr);
-        true = Expression.isZero(e);
-      then ();
-  end matchcontinue;
-end mergeStartAttribute1;
-
-protected function mergeNomnialAttribute
-  input BackendDAE.Var inAVar;
-  input BackendDAE.Var inVar;
-  input Boolean negate;
-  output BackendDAE.Var outVar;
-algorithm
-  outVar :=
-  matchcontinue (inAVar,inVar,negate)
-    local
-      BackendDAE.Var v,var,var1;
-      Option<DAE.VariableAttributes> attr,attr1;
-      DAE.Exp e,e_1,e1,esum,eaverage;
-    case (v as BackendDAE.VAR(values = attr),var as BackendDAE.VAR(values = attr1),negate)
-      equation 
-        // nominal
-        e = BackendVariable.varNominalValue(v);
-        e1 = BackendVariable.varNominalValue(var);
-        e_1 = negateif(negate,e);
-        esum = Expression.makeSum({e_1,e1});
-        eaverage = Expression.expDiv(esum,DAE.RCONST(2.0)); // Real is legal because only Reals have nominal attribute
-        (eaverage,_) = ExpressionSimplify.simplify(eaverage); 
-        var1 = BackendVariable.setVarNominalValue(var,eaverage);
-      then var1;
-    case (v as BackendDAE.VAR(values = attr),var as BackendDAE.VAR(values = attr1),negate)
-      equation 
-        // nominal
-        e = BackendVariable.varNominalValue(v);
-        e_1 = negateif(negate,e);
-        var1 = BackendVariable.setVarNominalValue(var,e_1);
-      then var1;
-    case(_,inVar,_) then inVar;
-  end matchcontinue;
-end mergeNomnialAttribute;
-
-protected function mergeDirection
-  input BackendDAE.Var inAVar;
-  input BackendDAE.Var inVar;
-  output BackendDAE.Var outVar;
-algorithm
-  outVar :=
-  matchcontinue (inAVar,inVar)
-    local
-      BackendDAE.Var v,var,var1;
-      Option<DAE.VariableAttributes> attr,attr1;
-      DAE.Exp e,e1;
-    case (v as BackendDAE.VAR(varDirection = DAE.INPUT()),var as BackendDAE.VAR(varDirection = DAE.OUTPUT()))
-      equation 
-        var1 = BackendVariable.setVarDirection(var,DAE.INPUT());
-      then var1;
-    case (v as BackendDAE.VAR(varDirection = DAE.INPUT()),var as BackendDAE.VAR(varDirection = DAE.BIDIR()))
-      equation 
-        var1 = BackendVariable.setVarDirection(var,DAE.INPUT());
-      then var1;
-    case (v as BackendDAE.VAR(varDirection = DAE.OUTPUT()),var as BackendDAE.VAR(varDirection = DAE.BIDIR()))
-      equation 
-        var1 = BackendVariable.setVarDirection(var,DAE.OUTPUT());
-      then var1;
-    case(_,inVar) then inVar;
-  end matchcontinue;
-end mergeDirection;
-
 /* 
  * remove new simply equations stuff
  */
@@ -2448,6 +1987,250 @@ algorithm
         then (cr1,cr2,e1,ne,true);
   end match;
 end aliasEquation;
+
+protected function mergeAliasVars
+"autor: Frenkel TUD 2011-04"
+  input BackendDAE.Var inVar;
+  input BackendDAE.Var inAVar "the alias var";
+  input Boolean negate;
+  output BackendDAE.Var outVar;
+protected
+  BackendDAE.Var v,va,v1,v2,v3;
+  Boolean fixeda, fixed,fixeda,f;
+  Option<DAE.Exp> sv,sva;
+  DAE.Exp start;
+algorithm
+  // get attributes
+  // fixed
+  fixed := BackendVariable.varFixed(inVar);
+  fixeda := BackendVariable.varFixed(inAVar);
+  // start
+  sv := BackendVariable.varStartValueOption(inVar);
+  sva := BackendVariable.varStartValueOption(inAVar);
+  (v1) := mergeStartFixed(inVar,fixed,sv,inAVar,fixeda,sva,negate);
+  // nominal
+  outVar := mergeNomnialAttribute(inAVar,v1,negate);
+end mergeAliasVars;
+
+protected function mergeStartFixed
+"autor: Frenkel TUD 2011-04"
+  input BackendDAE.Var inVar;
+  input Boolean fixed;
+  input Option<DAE.Exp> sv;
+  input BackendDAE.Var inAVar;
+  input Boolean fixeda;
+  input Option<DAE.Exp> sva;
+  input Boolean negate;
+  output BackendDAE.Var outVar;
+algorithm
+  outVar :=
+  matchcontinue (inVar,fixed,sv,inAVar,fixeda,sva,negate)
+    local
+      BackendDAE.Var v,va,v1,v2;
+      DAE.ComponentRef cr,cra;
+      DAE.Exp sa,sb,e;
+      Boolean b1,b2,b3;
+      String s,s1,s2,s3,s4,s5;
+    case (v as BackendDAE.VAR(varName=cr),true,SOME(sa),va as BackendDAE.VAR(varName=cra),true,SOME(sb),negate)
+      equation
+        e = getNonZeroStart(sa,sb,negate);
+        v1 = BackendVariable.setVarStartValue(v,e);
+      then v1;     
+    case (v as BackendDAE.VAR(varName=cr),true,SOME(sa),va as BackendDAE.VAR(varName=cra),true,SOME(sb),negate)
+      equation
+        s1 = ComponentReference.printComponentRefStr(cr);
+        s2 = Util.if_(negate," = -"," = ");
+        s3 = ComponentReference.printComponentRefStr(cra);
+        s4 = ExpressionDump.printExpStr(sa);
+        s5 = ExpressionDump.printExpStr(sb);
+        s = stringAppendList({"Alias variables ",s1,s2,s3," both fixed and have start values ",s4," != ",s5,". Use value from ",s1,".\n"});
+        Error.addMessage(Error.COMPILER_WARNING,{s});
+      then v;
+    case (v,true,SOME(sa),va,true,NONE(),negate)
+      then v;
+    case (v,true,SOME(sa),va,false,SOME(sb),negate)
+      equation
+        e = getNonZeroStart(sa,sb,negate);
+        v1 = BackendVariable.setVarStartValue(v,e);
+      then v1;     
+    case (v as BackendDAE.VAR(varName=cr),true,SOME(sa),va as BackendDAE.VAR(varName=cra),false,SOME(sb),negate)
+      equation
+        s1 = ComponentReference.printComponentRefStr(cr);
+        s2 = Util.if_(negate," = -"," = ");
+        s3 = ComponentReference.printComponentRefStr(cra);
+        s4 = ExpressionDump.printExpStr(sa);
+        s5 = ExpressionDump.printExpStr(sb);
+        s = stringAppendList({"Alias variables ",s1,s2,s3," have start values ",s4," != ",s5,". Use value from ",s1," because this is fixed.\n"});
+        Error.addMessage(Error.COMPILER_WARNING,{s});        
+      then v;
+    case (v,true,SOME(sa),va,false,NONE(),negate)
+      then v;
+    case (v,true,NONE(),va,true,SOME(sb),negate)
+      equation
+        v1 = BackendVariable.setVarStartValue(v,sb); 
+      then v1;
+    case (v,true,NONE(),va,true,NONE(),negate)
+      then v;
+    case (v,true,NONE(),va,false,SOME(sb),negate)
+      equation
+        v1 = BackendVariable.setVarStartValue(v,sb); 
+      then v1;
+    case (v,true,NONE(),va,false,NONE(),negate)
+      then v;   
+    case (v,false,SOME(sa),va,true,SOME(sb),negate)
+      equation
+        e = getNonZeroStart(sa,sb,negate);
+        v1 = BackendVariable.setVarStartValue(v,e);
+        v2 = BackendVariable.setVarFixed(v1,true);
+      then v2;
+    case (v,false,SOME(sa),va,true,NONE(),negate)
+      equation
+        v1 = BackendVariable.setVarFixed(v,true);
+      then v1;
+    case (v,false,SOME(sa),va,false,SOME(sb),negate)
+      equation
+        e = getNonZeroStart(sa,sb,negate);
+        v1 = BackendVariable.setVarStartValue(v,e);
+      then v1;     
+    case (v as BackendDAE.VAR(varName=cr),false,SOME(sa),va as BackendDAE.VAR(varName=cra),false,SOME(sb),negate)
+      equation
+        s1 = ComponentReference.printComponentRefStr(cr);
+        s2 = Util.if_(negate," = -"," = ");
+        s3 = ComponentReference.printComponentRefStr(cra);
+        s4 = ExpressionDump.printExpStr(sa);
+        s5 = ExpressionDump.printExpStr(sb);
+        s = stringAppendList({"Alias variables ",s1,s2,s3," have start values ",s4," != ",s5,". Use value from ",s1,".\n"});
+        Error.addMessage(Error.COMPILER_WARNING,{s});        
+      then v;
+    case (v,false,SOME(sa),va,false,NONE(),negate)
+      then v;
+    case (v,false,NONE(),va,true,SOME(sb),negate)
+      equation
+        e = negateif(negate,sb);
+        v1 = BackendVariable.setVarStartValue(v,e);
+        v2 = BackendVariable.setVarFixed(v1,true);
+      then v2;
+    case (v,false,NONE(),va,true,NONE(),negate)
+      equation
+        v1 = BackendVariable.setVarFixed(v,true);
+      then v1;
+    case (v,false,NONE(),va,false,SOME(sb),negate)
+      equation
+        e = negateif(negate,sb);
+        v1 = BackendVariable.setVarStartValue(v,e);
+      then v1;
+    case (v,false,NONE(),va,false,NONE(),negate)
+      then v; 
+  end matchcontinue;
+end mergeStartFixed;
+
+protected function getNonZeroStart
+"autor: Frenkel TUD 2011-04"
+  input DAE.Exp exp1;
+  input DAE.Exp exp2;
+  input Boolean negate;
+  output DAE.Exp outExp;
+algorithm
+  outExp :=
+  matchcontinue (exp1,exp2,negate)
+    local
+      DAE.Exp ne;
+    case (exp1,exp2,negate) 
+      equation
+        true = Expression.isZero(exp2);
+      then exp1;
+    case (exp1,exp2,negate) 
+      equation
+        true = Expression.isZero(exp1);
+        ne = negateif(negate,exp2);
+      then ne;      
+    case (exp1,exp2,negate) 
+      equation
+        ne = negateif(negate,exp2);
+        true = Expression.expEqual(exp1,ne);
+      then ne;            
+  end matchcontinue;
+end getNonZeroStart;
+
+protected function negateif
+"autor: Frenkel TUD 2011-04"
+  input Boolean negate;
+  input DAE.Exp exp;
+  output DAE.Exp outExp;
+algorithm
+  outExp :=
+  match (negate,exp)
+    local
+      DAE.Exp ne;
+    case (true,exp) 
+      equation
+        ne = Expression.negate(exp);
+      then ne;
+    else exp;
+  end match;
+end negateif;
+
+protected function mergeNomnialAttribute
+  input BackendDAE.Var inAVar;
+  input BackendDAE.Var inVar;
+  input Boolean negate;
+  output BackendDAE.Var outVar;
+algorithm
+  outVar :=
+  matchcontinue (inAVar,inVar,negate)
+    local
+      BackendDAE.Var v,var,var1;
+      Option<DAE.VariableAttributes> attr,attr1;
+      DAE.Exp e,e_1,e1,esum,eaverage;
+    case (v as BackendDAE.VAR(values = attr),var as BackendDAE.VAR(values = attr1),negate)
+      equation 
+        // nominal
+        e = BackendVariable.varNominalValue(v);
+        e1 = BackendVariable.varNominalValue(var);
+        e_1 = negateif(negate,e);
+        esum = Expression.makeSum({e_1,e1});
+        eaverage = Expression.expDiv(esum,DAE.RCONST(2.0)); // Real is legal because only Reals have nominal attribute
+        (eaverage,_) = ExpressionSimplify.simplify(eaverage); 
+        var1 = BackendVariable.setVarNominalValue(var,eaverage);
+      then var1;
+    case (v as BackendDAE.VAR(values = attr),var as BackendDAE.VAR(values = attr1),negate)
+      equation 
+        // nominal
+        e = BackendVariable.varNominalValue(v);
+        e_1 = negateif(negate,e);
+        var1 = BackendVariable.setVarNominalValue(var,e_1);
+      then var1;
+    case(_,inVar,_) then inVar;
+  end matchcontinue;
+end mergeNomnialAttribute;
+
+protected function mergeDirection
+  input BackendDAE.Var inAVar;
+  input BackendDAE.Var inVar;
+  output BackendDAE.Var outVar;
+algorithm
+  outVar :=
+  matchcontinue (inAVar,inVar)
+    local
+      BackendDAE.Var v,var,var1;
+      Option<DAE.VariableAttributes> attr,attr1;
+      DAE.Exp e,e1;
+    case (v as BackendDAE.VAR(varDirection = DAE.INPUT()),var as BackendDAE.VAR(varDirection = DAE.OUTPUT()))
+      equation 
+        var1 = BackendVariable.setVarDirection(var,DAE.INPUT());
+      then var1;
+    case (v as BackendDAE.VAR(varDirection = DAE.INPUT()),var as BackendDAE.VAR(varDirection = DAE.BIDIR()))
+      equation 
+        var1 = BackendVariable.setVarDirection(var,DAE.INPUT());
+      then var1;
+    case (v as BackendDAE.VAR(varDirection = DAE.OUTPUT()),var as BackendDAE.VAR(varDirection = DAE.BIDIR()))
+      equation 
+        var1 = BackendVariable.setVarDirection(var,DAE.OUTPUT());
+      then var1;
+    case(_,inVar) then inVar;
+  end matchcontinue;
+end mergeDirection;
+
 
 protected function traverseIncidenceMatrixX 
 " function: traverseIncidenceMatrix

@@ -5929,7 +5929,6 @@ algorithm
   allPreOptModules := {(BackendDAEOptimize.removeSimpleEquations,"removeSimpleEquations"),
           (BackendDAEOptimize.removeSimpleEquationsX,"removeSimpleEquationsX"),
           (BackendDAEOptimize.removeParameterEqns,"removeParameterEqns"),
-          (BackendDAEOptimize.removeAliasEquations,"removeAliasEquations"),
           (BackendDAEOptimize.inlineArrayEqn,"inlineArrayEqn"), 
           (BackendDAEOptimize.removeFinalParameters,"removeFinalParameters"),
           (BackendDAEOptimize.removeProtectedParameters,"removeProtectedParameters"),
@@ -5974,7 +5973,6 @@ algorithm
   allPastOptModules := {(BackendDAEOptimize.lateInline,"lateInline"),
   (BackendDAEOptimize.removeSimpleEquationsPast,"removeSimpleEquations"),
   (BackendDAEOptimize.removeSimpleEquationsXPast,"removeSimpleEquationsX"),
-  (BackendDAEOptimize.removeAliasEquationsPast,"removeAliasEquations"),
   (BackendDAEOptimize.inlineArrayEqnPast,"inlineArrayEqn"),
   (BackendDump.dumpComponentsGraphStr,"dumpComponentsGraphStr")};
   strPastOptModules := getPastOptModulesString();
