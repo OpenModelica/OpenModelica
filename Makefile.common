@@ -7,6 +7,7 @@ builddir_lib=$(top_builddir)/build/lib
 builddir_inc=$(top_builddir)/build/include/omc
 builddir_doc=$(top_builddir)/build/share/doc
 builddir_share=$(top_builddir)/build/share/
+builddir_man=$(top_builddir)/build/share/man/
 builddir_java=$(top_builddir)/build/share/omc/java/
 
 INSTALL_APPDIR     = ${DESTDIR}/Applications/MacPorts/
@@ -16,6 +17,7 @@ INSTALL_INCLUDEDIR = ${DESTDIR}${includedir}/omc
 INSTALL_DATADIR    = ${DESTDIR}${datadir}
 INSTALL_DOCDIR     = ${DESTDIR}${docdir}
 INSTALL_SHAREDIR   = ${DESTDIR}${datadir}/
+INSTALL_MANDIR     = ${DESTDIR}${datadir}/man/
 INSTALL_JAVADIR    = ${DESTDIR}${datadir}/omc/java
 
 .PHONY : c_runtime omc omcd release debug qtclient mosh all mkbuilddirs test install-dirs susan susan_all susgen sustst
@@ -30,6 +32,7 @@ mkbuilddirs:
 	mkdir -p $(builddir_share)/omc/scripts
 	mkdir -p $(builddir_share)/omnotebook
 	mkdir -p $(builddir_doc)/omc/testmodels
+	mkdir -p $(builddir_man)/man1/
 
 debug: .testvariables mkbuilddirs settings omcd
 profiler: .testvariables mkbuilddirs settings omc_profiler
@@ -43,6 +46,8 @@ docs: mkbuilddirs
 	rm -f build/doc/omc/CMakeLists.txt
 	(cp -p Examples/*.* $(builddir_doc)/omc/testmodels/)
 	cp -p ./c_runtime/interactive/README.txt $(builddir_doc)/omc/OpenModelica-InteractiveSimulation-Reamde.txt
+	# man pages
+	(cd doc/manpages/; for f in *.1; do gzip $$f -c > ../../$(builddir_man)/man1/$$f.gz && touch -r $$f ../../$(builddir_man)/man1/$$f.gz; done)
 
 testfast: test
 
@@ -123,8 +128,8 @@ install-dirs:
 	mkdir -p ${INSTALL_BINDIR}
 	mkdir -p ${INSTALL_LIBDIR}
 	mkdir -p ${INSTALL_INCLUDEDIR}
-	mkdir -p ${INSTALL_DOCDIR}/omc
 	mkdir -p ${INSTALL_DOCDIR}/omc/testmodels
+	mkdir -p ${INSTALL_MANDIR}/man1/
 	test ! -d ${builddir_doc}/omedit/ || mkdir -p ${INSTALL_DOCDIR}/omedit/
 	test ! -d ${builddir_share}/omnotebook/ || mkdir -p ${INSTALL_SHAREDIR}/omnotebook/
 	test ! -d ${builddir_share}/omshell/ || mkdir -p ${INSTALL_SHAREDIR}/omshell/
@@ -146,6 +151,8 @@ install: install-dirs
 	cp -p ${builddir_doc}/omc/*.txt ${INSTALL_DOCDIR}/omc/
 	cp -p ${builddir_doc}/omc/testmodels/* ${INSTALL_DOCDIR}/omc/testmodels/
 	test ! -d ${builddir_doc}/omedit/ || cp -p ${builddir_doc}/omedit/* ${INSTALL_DOCDIR}/omedit/
+	# man pages
+	cp -p ${builddir_man}/man1/*.gz ${INSTALL_MANDIR}/man1/
 	# Shared data
 	test ! -d ${builddir_share}/omnotebook/ || cp -rp ${builddir_share}/omnotebook/* ${INSTALL_SHAREDIR}/omnotebook/
 	test ! -d ${builddir_share}/omshell/ || cp -p ${builddir_share}/omshell/* ${INSTALL_SHAREDIR}/omshell/
