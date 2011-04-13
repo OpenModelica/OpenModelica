@@ -2,7 +2,7 @@
 .\" Title 
 .\" --------------------------------------------------------------------
 .
-.TH omc 1 "The Open Source Modelica Consortium" "1.5.0" "The OpenModelica Project" -*- nroff -*-
+.TH omc 1 "The Open Source Modelica Consortium" "1.7.0" "The OpenModelica Project" -*- nroff -*-
 .
 .
 .\" --------------------------------------------------------------------
@@ -69,15 +69,13 @@ In server mode \fBomc\fP runs in the background and waits for inputs from a
 client. The Debian package of the \%OpenModelica Project includes the clients
 \fBOMNotebook\fP, \fBOMShell\fP and \fBOMShell\-terminal\fP. The clients
 \%\fBOMNotebook\fP and \fBOMShell\fP are Qt\-Windows applications. The client
-\%\fBOMShell-terminal\fP is a console application and runs in a X\-Windows based
-terminal emulation like gnome\-terminal. The communication between the clients
-and the server can be based on \fBMICO\fP or on \fBBSD\-sockets\fP. \fBMICO\fP
-is an open source implementation of \fBCORBA 2.3\fP.
+\%\fBOMShell-terminal\fP is a console application and runs in most terminal 
+like gnome\-terminal. The communication between the clients
+and the server can be based on \fBCORBA\fP or on \fBBSD\-sockets\fP.
 .P
 More documentation will be found in the enclosed \%OpenModelica System
 Documentation or the \%OpenModelica Users Guide. The documentation
-\%OpenModelica System Documentation, Version 2009-11-09 for
-\%OpenModelica 1.5 shows in chapter 2 on page 15 how to run \fBomc\fP in
+\%OpenModelica System Documentation shows how to run \fBomc\fP in
 stand alone mode. Section \fBDOCUMENTATION\fP of this manual page shows
 where the above mentioned documentations are stored on this computer system.
 The section \fBUSING OMC\fP shows how to run the compiler \fBomc\fP.
@@ -154,8 +152,8 @@ Default is to simplify.
 .B +q
 Run in quiet mode, output nothing.
 .TP
-.B +metaModelica
-Accept MetaModelica grammar and semantics.
+.B +g=[Modelica|MetaModelica]
+Accept Modelica or MetaModelica grammar and semantics.
 .TP
 .BI +d=< "flags">
 Set debug flags.
@@ -164,8 +162,8 @@ Set debug flags.
 .RS
 .IP "NOTE:" 7
 Read more about debug flags in the OpenModelica System Documentation, 
-chapter 2, section 2.1.2 \*[lq]Compiler Debug Flags\*[rq] on page 16. See section
-\fBDOCUMENTATIONS\fP in this manual page, for more informations about
+\*[lq]Compiler Debug Flags\*[rq]. See section
+\fBDOCUMENTATION\fP in this manual page, for more informations about
 the above mentioned document.
 .RE
 .PD
@@ -193,7 +191,7 @@ Display debug information about dynamic loading of compiled functions.
 .
 .TP
 .B \-help
-Prints the runtime options and exits.
+Prints the RML runtime options and exits.
 .P
 .
 .
@@ -319,32 +317,7 @@ Compiler/Interpreter executable \fBomc\fP.
 Absolute path towards the \%OpenModelica library \fBModelica\fP.
 .RS
 .IP "Default directory:" 19
-.I /usr/share/omlibrary/modelicalib/
-.RE
-.TP
-.B QTHOME
-Absolute path towards the directory with Qt libraries. The Compiler/Interpreter
-\fBomc\fP use these libraries to build the simulation executable. Setting the
-environment variable is only necessary, if \fBomc\fP is compiled with Qt
-support. The Compiler/Interpreter \fBomc\fP of the Debian package is compiled
-with Ot support by default.
-.RS
-.IP "Default directory:" 19
-${\fBOPENMODELICAHOME\fP}\fI/lib/\fP
-.RE
-.TP
-.B SENDDATALIBS
-This variable includes various libraries into the make control file
-\fIModel.makefile\fP. The variable \fBSENDDATALIBS\fP mustn't be set manual,
-only if the model will be compiled by hand. How to use the environment variable
-in the case of a manual compilation, is shown in the 2nd example of section
-\fBUSING OMC\fP. Usually the environment variable will be set during the run
-of the compiler \fBomc\fP, if the environment variable \fBQTHOME\fP is set.
-Should the model be compiled by hand, then the environment variable
-\fB\%SENDDATALIBS\fP must get the following values:
-.P
-.RS
-\fBSENDDATALIBS\fP="-lsendData -lQtCore -lQtGui \%-lQtNetwork"
+.I /usr/share/omlibrary/msl31/:/usr/share/omlibrary/common/
 .RE
 .TP
 .B MODELICAUSERCFLAGS
@@ -373,26 +346,12 @@ How to use these applications is shown in the 4th example in section
 \fBUSING OMC\fP.
 .
 .IP \(bu 3
-Ptolemy is a JAVA based application that plots a graphical view of the
-simulation results. The \%OpenModelica command plot2() and his variants use
-Ptolemy.
-.
-.RS
-.IP "File:" 7
-.I ptplot\-linux.jar
-.PD 0
-.IP "Path:" 7
-.I /usr/bin/
-.PD
-.RE
-.
-.IP \(bu 3
 The Qt based graphWindow application is a advanced variant of Ptolemy. The
 \%OpenModelica command plot() and his variants use graphWindow.
 .
 .RS
 .IP "File:" 7
-.I ext
+.I OMPlotWindow
 .PD 0
 .IP "Path:" 7
 .I /usr/bin/
@@ -418,24 +377,9 @@ the simulation model. The \%OpenModelica command simulate() triggers via
 .I Compile
 .PD 0
 .IP "Path:" 7
-.I /usr/bin/
+.I /usr/share/omc/scripts/
 .PD
 .RE
-.
-.IP \(bu 3
-The script doPlot's duty is the launch of Ptolemy, the JAVA based graphical
-viewer. The script uses the environment variable \fBOPENMODELICAHOME\fP to
-localize Ptolemy in the directory tree.
-.
-.RS
-.IP "File:" 7
-.I doPlot
-.PD 0
-.IP "Path:" 7
-.I /usr/bin/
-.PD
-.RE
-.
 .
 .\" --------------------------------------------------------------------
 .SS Includes:
@@ -447,7 +391,7 @@ directory.
 .
 .RS 3
 .IP "Path:" 7
-.I /usr/include/
+.I /usr/include/omc/
 .RE
 .
 .
@@ -461,16 +405,8 @@ libraries and other libraries are stored under the following directory.
 .
 .RS 3
 .IP "Path:" 7
-.I /usr/lib/
+.I /usr/lib/omc/
 .RE
-.
-.IP "NOTE:" 7
-The Qt libraries \fIlibQtCore.so\fP, \fIlibQtGui.so\fP and \fIlibQtNetwork.so\fP
-in the above directory are symlinks to the original Qt libraries in \fI/usr/lib/\fP.
-If this symlinks are broken, the C++ compiler can't compile a simulation file.
-This could happen, when a Debian package with new Qt libraries will be
-installed.
-.
 .
 .\" --------------------------------------------------------------------
 .SS JAVA interface:
@@ -537,9 +473,6 @@ source code:
 .
 .RS
 .IP "\fBuser\fP@\fBhost\fP$>" 13
-export SENDDATALIBS="-lsendData -lQtCore -lQtGui \%-lQtNetwork"
-.PD 0
-.IP "\fBuser\fP@\fBhost\fP$>" 13
 make -f Circle.makefile
 .PD
 .RE
@@ -556,40 +489,33 @@ will spite out the numerical solution of its simulation:
 .
 .IP "" 3
 The numerical values of the simulation are stored in the plot file
-\fICircle_res.plt\fP. The plot file includes all values of all
+\fICircle_res.mat\fP. The plot file includes all values of all
 variables that describe the model. A plot of all these values can be
-displayed with the JAVA based graphical viewer Ptolemy. The following
-commands will present the simulation data on the screen:
-.
-.RS
-.IP "\fBuser\fP@\fBhost\fP$>" 13
-export OPENMODELICAHOME=/usr/
-.PD 0
-.IP "\fBuser\fP@\fBhost\fP$>" 13
-/usr/bin/doPlot Circle_res.plt
-.PD
-.RE
-.
-.IP "" 3
-During the execution Ptolemy prints a pixel image of the displayed graph.
-The image is stored under the file name \fIomc_tmp_plot.png\fP in the current
-working directory. This isn't the usual behavior of the original Ptolemy.
-This version of Ptolemy is adapted for the special requirements of the
-\%OpenModelica Project.
+displayed by using a tool such as
+.BR octave (1)
+or
+.BR OMPlot (1).
 .
 .IP "" 3
 The above command sequence isn't the usual way, how a simulation is realized.
-Usually a client like \fBOMNotebook\fP triggers the above sequence. The above
+Usually a client like 
+.BR OMEdit (1)
+or
+.BR OMNotebook (1)
+triggers the above sequence. The above
 example is a visualization of the work flow and should make the whole process
 a little more transparent.
 .
 .IP "3." 3
-This example will demonstrate the scripting capabilities of \fBomc\fP. The
-following script flat_dcmotor.mos will instruct \fBomc\fP to load the
-standard Modelica library, load the Modelica source code of the dcmotor
-model and flatten the loaded source code. The source code of the dcmotor
-model is stored in the file \fIdcmotor.mo\fP. The result will be printed on
-the standard output. The following rows shows the contents of the script
+This example will demonstrate the scripting capabilities of
+.BR omc (1).
+The following script flat_dcmotor.mos will instruct
+.BR omc (1)
+to load the standard Modelica library, load the Modelica source code of the
+dcmotor model and flatten the loaded source code.
+The source code of the dcmotor model is stored in the file \fIdcmotor.mo\fP.
+The result will be printed on the standard output. The following rows shows
+the contents of the script
 \fIflat_dcmotor.mos\fP:
 .
 .RS
@@ -775,7 +701,7 @@ Modelica source code examples, Modelica scripts and OMNotebook files
 are stored under the following directory.
 .
 .IP "Path:" 7
-.I /usr/share/omc/doc/testmodels/
+.I /usr/share/doc/omc/testmodels/
 .P
 .
 Files with the extention .mo are Modelica source code files. Scripts
@@ -784,7 +710,7 @@ OMNotebook files.
 .
 .
 .\" --------------------------------------------------------------------
-.SH "DOCUMENTATIONS"
+.SH "DOCUMENTATION"
 .\" --------------------------------------------------------------------
 .
 This section lists all available documents of The \%OpenModelica Project.
@@ -794,10 +720,8 @@ Programming Environment Laboratory (PELAB).
 .IP "Title:" 12
 OpenModelica Users Guide
 .PD 0
-.IP "Issue:" 12
-Version 2009\-11\-09 for OpenModelica 1.5
 .IP "Author(s):" 12
-Peter Fritzon, Adrian Pop, Peter Aronsson and other
+Peter Fritzon, Adrian Pop, Peter Aronsson and others
 .IP "File:" 12
 .I OpenModelicaUsersGuide.pdf
 .IP "Path:" 12
@@ -808,10 +732,8 @@ Peter Fritzon, Adrian Pop, Peter Aronsson and other
 .IP "Title:" 12
 OpenModelica System Documentation
 .PD 0
-.IP "Issue:" 12
-Version 2009\-11\-09 for OpenModelica 1.5
 .IP "Author(s):" 12
-Peter Fritzon, Adrian Pop, Peter Aronsson and other
+Peter Fritzon, Adrian Pop, Peter Aronsson and others
 .IP "File:" 12
 .I OpenModelicaSystem.pdf
 .IP "Path:" 12
@@ -823,8 +745,6 @@ Peter Fritzon, Adrian Pop, Peter Aronsson and other
 TUTORIAL \- Introduction to Object\-Oriented Modeling and Simulation with
 \%OpenModelica
 .PD 0
-.IP "Issue:" 12
-Version 2006
 .IP "Author(s):" 12
 Peter Fritzon
 .IP "File:" 12
@@ -838,8 +758,6 @@ Peter Fritzon
 Modelica Meta\-Programming and Symbolic Transformations \- MetaModelica
 Programming Guide
 .PD 0
-.IP "Issue:" 12
-Preliminary Incomplete Draft, 2007\-06\-20
 .IP "Author(s):" 12
 Peter Fritzon
 .IP "File:" 12
@@ -852,8 +770,6 @@ Peter Fritzon
 .IP "Title:" 12
 OpenModelicaAPI\-Howto
 .PD 0
-.IP "Issue:" 12
-unknown
 .IP "Author(s):" 12
 unknown
 .IP "File:" 12
@@ -885,23 +801,37 @@ corrected.
 .
 .
 .\" --------------------------------------------------------------------
-.SH "SEE ALSO"
-.\" --------------------------------------------------------------------
-.
-.BR omc (1),
-.BR OMNotebook (1),
-.BR OMShell (1),
-.BR OMShell\-terminal (1)
-.
-.
-.\" --------------------------------------------------------------------
 .SH AUTHOR
 .\" --------------------------------------------------------------------
 .
-The original author was William Spinelli. Changes and improvements were made
-by Robert Wotzlaw <Robert.Wotzlaw at web.de>.
+See OpenModelicaUsersGuide.pdf for a list of contributors to the \%OpenModelica
+project.
+.PP
+The original author of these man-pages was William Spinelli. Changes and
+improvements were made by Robert Wotzlaw <Robert.Wotzlaw at web.de>.
 .PP
 The current author isn't a member of the Open Source Modelica Consortium (OSMC)
 nor a collaborator at the Programming Environment Laboratory (PELAB),
 Department of Computer and Information Science (IDA) of the Linkoeping
 University (LiU). He supports the OpenModelica Project as volunteer.
+.
+.
+.
+.\" --------------------------------------------------------------------
+.SH BUGS
+.\" --------------------------------------------------------------------
+.
+<\fBhttp://openmodelica.org:8080/cb/project/1\fR>
+.
+.\" --------------------------------------------------------------------
+.SH "SEE ALSO"
+.\" --------------------------------------------------------------------
+.
+.BR omc (1),
+.BR OMEdit (1),
+.BR OMNotebook (1),
+.BR OMShell (1),
+.BR OMShell\-terminal (1)
+.BR octave (1)
+.
+.
