@@ -1783,6 +1783,7 @@ package Util
   	output list<Type_a> outTypeALst;
 	  replaceable type Type_a subtypeof Any;
 	end listFill;
+
 end Util;
 
 
@@ -1924,6 +1925,12 @@ package BackendQSS
     output list<list<Integer>> conns;
   end generateConnections;
 
+  function getStates
+    input QSSinfo qssInfo;
+    output list<BackendDAE.Var> states;
+  end getStates;
+
+
 end BackendQSS;
 
 package BackendVariable
@@ -1931,6 +1938,11 @@ package BackendVariable
   	input BackendDAE.Var inVar;
 	  output DAE.ComponentRef outComponentRef;
 	end varCref;
+
+  function isStateVar
+    input BackendDAE.Var inVar;
+    output Boolean outBoolean;
+  end isStateVar;
 
 end BackendVariable;
 

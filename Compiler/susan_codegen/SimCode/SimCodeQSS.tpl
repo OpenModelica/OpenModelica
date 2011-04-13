@@ -95,9 +95,8 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(varInfo=varInfo as  VARINFO(__))) 
   // fbergero, xfloros: Code for QSS methods
   #ifdef _OMC_QSS
 
-  int startNonInteractiveSimulation(int, char**);
-  int initRuntimeAndSimulation(int, char**);
-
+  void init_ompd();
+  void clean_ompd();
 
   bool cond[<%modelInfo.varInfo.numZeroCrossings%>];
 
@@ -111,7 +110,10 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(varInfo=varInfo as  VARINFO(__))) 
 
   double state_values(int state) 
   {
-    return 0.0;
+    switch (state)
+    {
+      <% generateStateValues(qssInfo) %>
+    }
   }
 	
   double quantum_values(int state)
@@ -135,21 +137,22 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(varInfo=varInfo as  VARINFO(__))) 
 
   int init_runtime()
   {
-    int retVal = -1;
     static bool init=false;
-    if (init)
-      return 0;
-  
-    if (initRuntimeAndSimulation(0,NULL)) //initRuntimeAndSimulation returns 1 if an error occurs
-      return 1;
-    init=true;
-    return startNonInteractiveSimulation(0,NULL);
+    if (!init)
+    {
+      init=true;
+      init_ompd();
+    }
   }
 
   void clean_runtime()
   {
-    deInitializeDataStruc(globalData);
-    free(globalData);
+    static bool clean=false;
+    if (!clean)
+    {
+      clean=true;
+      clean_ompd();
+    }
   }
   <%functionQssStaticBlocks(odeEquations,zeroCrossings,qssInfo,modelInfo.varInfo.numStateVars)%>
 
@@ -639,6 +642,17 @@ template generateConnections(list<list<Integer>> conns)
   >>
   ;separator="\n")
 end generateConnections;
+
+template generateStateValues(BackendQSS.QSSinfo qssInfo) 
+"Generate the intial state values"
+::= 
+  ( BackendQSS.getStates(qssInfo) |> var hasindex i0 =>
+  <<
+  case <% i0 %>:
+    return  <% SimCodeC.cref(BackendVariable.varCref(var)) %>;
+  >>
+  ;separator="\n")
+end generateStateValues;
 
 template simulationMakefile(SimCode simCode)
  "Generates the contents of the makefile for the simulation case."

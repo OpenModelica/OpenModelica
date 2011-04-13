@@ -69,8 +69,8 @@ uniontype QSSinfo "- equation indices in static blocks and DEVS structure"
   record QSSINFO
     list<list<list<Integer>>> BLTblocks "BLT blocks in static functions";
     DevsStruct DEVSstructure "DEVS structure of the model";
-                                        list<list<SimCode.SimEqSystem>> eqs;
-                      list<BackendDAE.Var> outVarLst;
+    list<list<SimCode.SimEqSystem>> eqs;
+    list<BackendDAE.Var> outVarLst;
   end QSSINFO;
 end QSSinfo;
 
@@ -2149,6 +2149,19 @@ algorithm
         then listLength(outLinks[numBlock]);
     end match;
 end numOutputs;
+
+public  function getStates
+  input QSSinfo qssInfo;
+  output list<BackendDAE.Var> states;
+algorithm
+  states := 
+    match qssInfo
+      local
+        list<BackendDAE.Var> outVarLst;
+      case QSSINFO(outVarLst=outVarLst)
+      then Util.listFilterBoolean(outVarLst,BackendVariable.isStateVar);
+    end match;
+end getStates;
 
 public  function generateConnections
   input QSSinfo qssInfo;
