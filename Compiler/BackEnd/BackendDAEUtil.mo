@@ -5906,8 +5906,7 @@ public function getPreOptModulesString
 " function: getPreOptModulesString"
   output list<String> strPreOptModules;
 algorithm
- strPreOptModules := RTOpts.getPreOptModules({"removeSimpleEquations","expandDerOperator"});
-// strPreOptModules := RTOpts.getPreOptModules({"removeFinalParameters","removeSimpleEquationsX","expandDerOperator"});
+ strPreOptModules := RTOpts.getPreOptModules({"removeFinalParameters","removeSimpleEquationsX","expandDerOperator"});
 end getPreOptModulesString;
 
 protected function getPreOptModules
@@ -5945,8 +5944,7 @@ public function getPastOptModulesString
 " function: getPreOptModulesString"
   output list<String> strPastOptModules;
 algorithm
- strPastOptModules := RTOpts.getPastOptModules({"lateInline","removeSimpleEquations"});           
-// strPastOptModules := RTOpts.getPastOptModules({"lateInline","inlineArrayEqn","removeSimpleEquationsX"});           
+ strPastOptModules := RTOpts.getPastOptModules({"lateInline","inlineArrayEqn","removeSimpleEquationsX"});           
 end getPastOptModulesString;
 
 protected function getPastOptModules
