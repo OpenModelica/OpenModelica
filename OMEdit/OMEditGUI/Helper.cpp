@@ -44,7 +44,7 @@ QString Helper::omFileTypes = "Modelica Files (*.mo)";
 QString Helper::omnotebookFileTypes = "OMNotebook Files (*.onb *.onbz *.nb)";
 QString Helper::imageFileTypes = "Image Files (*.png)";
 #ifdef WIN32
-QString Helper::tmpPath = QString(getenv("OPENMODELICAHOME")).append(QString("/tmp/OMEdit"));
+QString Helper::tmpPath = QString(getenv("OPENMODELICAHOME")).replace("\\", "/").append(QString("/tmp/OMEdit"));
 #else
 // Linux users don't have write access to /usr/tmp/OMEdit
 // Don't randomize the path as then it becomes annoying to remove all dirs
@@ -211,6 +211,8 @@ QString GUIMessages::getMessage(int type)
         return "You cannot insert %1, it is a %2. Only model, class, connector, record or block are allowed on diagram layer.";
     case ICON_VIEW_DROP_MSG:
         return "You cannot insert %1, it is a %2. Only connector is allowed on the icon layer.";
+    case PLOT_PARAMETRIC_DIFF_FILES:
+        return "You cannot do a plot parametric between two different simulation result files. Make sure you select two variables from the same simulation result file.";
     default:
         return "";
     }

@@ -97,7 +97,7 @@ void SimulationWidget::setUpForm()
     mpOutputFormatComboBox->addItems(Helper::ModelicaSimulationOutputFormats.toLower().split(","));
     mpFileNameLabel = new QLabel(tr("File Name (Optional):"));
     mpFileNameTextBox = new QLineEdit(tr(""));
-    mpCflagsLabel = new QLabel(tr("Compiler flags:"));
+    mpCflagsLabel = new QLabel(tr("Compiler Flags:"));
     mpCflagsTextBox = new QLineEdit(tr(""));
 
     gridIntegrationLayout->addWidget(mpMethodLabel, 0, 0);
@@ -333,27 +333,24 @@ void SimulationWidget::simulateModel(QString simulationParameters)
             output_file = mpFileNameTextBox->text().trimmed();
         // if simualtion output format is not plt and mat then dont show plot window.
         // only show user the message that result file is created.
-        QRegExp regExp("\\b(mat|plt)\\b");
+        QRegExp regExp("\\b(mat|plt|csv)\\b");
         if (regExp.indexIn(mpOutputFormatComboBox->currentText()) != -1)
         {
             PlotWidget *pPlotWidget = mpParentMainWindow->mpPlotWidget;
             OMCProxy *pOMCProxy = mpParentMainWindow->mpOMCProxy;
             QList<QString> list = pOMCProxy->readSimulationResultVars(QString(output_file).append("_res.")
                                                                      .append(mpOutputFormatComboBox->currentText()));
+            emit showPlottingView();
             pPlotWidget->addPlotVariablestoTree(QString(output_file).append("_res.")
                                                 .append(mpOutputFormatComboBox->currentText()),list);
             mpParentMainWindow->plotdock->show();
-            emit showPlottingView();
             mpParentMainWindow->mpMessageWidget->printGUIInfoMessage(QString("Simulated '").append(projectTab->mModelNameStructure)
                                                                      .append("' successfully!").append(message));
         }
-        else if (mpOutputFormatComboBox->currentText().compare("empty") != 0)
+        else
         {
-            mpParentMainWindow->mpMessageWidget->printGUIInfoMessage(QString("Simulation result file is created at ")
-                                                                     .append(StringHandler::removeFirstLastQuotes(mpParentMainWindow->mpOMCProxy->changeDirectory()))
-                                                                     .append("/").append(output_file).append("_res.")
-                                                                     .append(mpOutputFormatComboBox->currentText())
-                                                                     .append(message));
+            mpParentMainWindow->mpMessageWidget->printGUIInfoMessage(QString("Simulated '").append(projectTab->mModelNameStructure)
+                                                                     .append("' successfully!").append(message));
         }
     }
 }

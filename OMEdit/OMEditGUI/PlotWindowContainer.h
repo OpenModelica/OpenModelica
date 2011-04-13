@@ -38,6 +38,7 @@
 #include "PlotWindow.h"
 
 class MainWindow;
+class PlotTreeItem;
 
 class PlotWindowContainer : public QMdiArea
 {
@@ -54,7 +55,7 @@ private:
 public slots:
     OMPlot::PlotWindow* addPlotWindow();
     OMPlot::PlotWindow* addPlotParametricWindow();
-    void updatePlotWindows(QTreeWidgetItem *item);
+    void updatePlotWindows(PlotTreeItem *item);
 };
 
 #endif // PLOTWINDOWCONTAINER_H

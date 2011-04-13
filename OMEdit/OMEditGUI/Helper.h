@@ -176,7 +176,8 @@ public:
         INTERACTIVE_SIMULATION_RUNNIG,
         SELECT_VARIABLE_FOR_OMI,
         DIAGRAM_VIEW_DROP_MSG,
-        ICON_VIEW_DROP_MSG
+        ICON_VIEW_DROP_MSG,
+        PLOT_PARAMETRIC_DIFF_FILES
     };
 
     static QString getMessage(int type);

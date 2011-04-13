@@ -35,28 +35,112 @@
 
 using namespace OMPlot;
 
+PlotTreeItem::PlotTreeItem(QString text, QString parentName, QString nameStructure, QString fileName, QString tooltip, QTreeWidget *parent)
+    : QTreeWidgetItem(parent)
+{
+    setName(text);
+    setParentName(parentName);
+    setNameStructure(nameStructure);
+    setFileName(fileName);
+
+    setText(0, mName);
+    setToolTip(0, tooltip);
+}
+
+void PlotTreeItem::setName(QString name)
+{
+    mName = name;
+}
+
+QString PlotTreeItem::getName()
+{
+    return mName;
+}
+
+void PlotTreeItem::setParentName(QString parentName)
+{
+    mParentName = parentName;
+}
+
+QString PlotTreeItem::getParentName()
+{
+    return mParentName;
+}
+
+void PlotTreeItem::setNameStructure(QString nameStructure)
+{
+    mNameStructure = nameStructure;
+}
+
+QString PlotTreeItem::getNameStructure()
+{
+    return mNameStructure;
+}
+
+void PlotTreeItem::setFileName(QString fileName)
+{
+    mFileName = fileName;
+}
+
+QString PlotTreeItem::getFileName()
+{
+    return mFileName;
+}
+
+QString PlotTreeItem::getPlotVariable()
+{
+    return QString(mNameStructure).remove(0, mFileName.length() + 1);
+}
+
+PlotTree::PlotTree(PlotWidget *pParent)
+    : QTreeWidget(pParent)
+{
+    mpParentPlotWidget = pParent;
+
+    setContextMenuPolicy(Qt::DefaultContextMenu);
+    setHeaderHidden(true);
+    setColumnCount(1);
+    setIndentation(Helper::treeIndentation);
+}
+
+PlotTreeItem* PlotTree::getTreeItem(QString name)
+{
+    QTreeWidgetItemIterator it(this);
+    while (*it)
+    {
+        PlotTreeItem *pItem = dynamic_cast<PlotTreeItem*>((*it));
+        if (pItem->getNameStructure() == name)
+        {
+            return pItem;
+        }
+        ++it;
+    }
+    return 0;
+}
+
+PlotWidget* PlotTree::getPlotWidget()
+{
+    return mpParentPlotWidget;
+}
+
 PlotWidget::PlotWidget(MainWindow *pParent)
     : QWidget(pParent)
 {
     mpParentMainWindow = pParent;
 
-    mpPlotVariablesTree = new QTreeWidget(this);
-    mpPlotVariablesTree->setContextMenuPolicy(Qt::DefaultContextMenu);
-    mpPlotVariablesTree->setHeaderHidden(true);
-    mpPlotVariablesTree->setColumnCount(1);
-    mpPlotVariablesTree->setIndentation(Helper::treeIndentation);
+    mpPlotTree = new PlotTree(this);
 
     mpVerticalLayout = new QVBoxLayout(this);
     mpVerticalLayout->setContentsMargins(0, 0, 0, 0);
-    mpVerticalLayout->addWidget(mpPlotVariablesTree);
+    mpVerticalLayout->addWidget(mpPlotTree);
 
     setLayout(mpVerticalLayout);
 
-    connect(mpPlotVariablesTree, SIGNAL(itemChanged(QTreeWidgetItem*,int)), SLOT(plotVariables(QTreeWidgetItem*,int)));
+    connect(mpPlotTree, SIGNAL(itemChanged(QTreeWidgetItem*,int)), SLOT(plotVariables(QTreeWidgetItem*,int)));
     connect(pParent->mpPlotWindowContainer, SIGNAL(subWindowActivated(QMdiSubWindow*)),
             this, SLOT(updatePlotVariablesTree(QMdiSubWindow*)));
-    connect(this, SIGNAL(removePlotFile(QTreeWidgetItem*)), pParent->mpPlotWindowContainer,
-            SLOT(updatePlotWindows(QTreeWidgetItem*)));
+    connect(this, SIGNAL(removePlotFile(PlotTreeItem*)), pParent->mpPlotWindowContainer,
+            SLOT(updatePlotWindows(PlotTreeItem*)));
 }
 
 QList<QString> PlotWidget::readPlotVariables(QString fileName)
@@ -87,36 +171,39 @@ QList<QString> PlotWidget::readPlotVariables(QString fileName)
 
 void PlotWidget::addPlotVariablestoTree(QString fileName, QList<QString> plotVariablesList)
 {
-    mpPlotVariablesTree->blockSignals(false);
+    mpPlotTree->blockSignals(false);
     // Remove the simulation result if we already had it in tree
-    int count = mpPlotVariablesTree->topLevelItemCount();
+    int count = mpPlotTree->topLevelItemCount();
 
     for (int i = 0 ; i < count ; i++)
     {
-        QTreeWidgetItem *item = mpPlotVariablesTree->topLevelItem(i);
-        if (item->toolTip(0) == fileName)
+        PlotTreeItem *pItem = dynamic_cast<PlotTreeItem*>(mpPlotTree->topLevelItem(i));
+        if (pItem->getNameStructure() == fileName)
         {
-            emit removePlotFile(item);
-            qDeleteAll(item->takeChildren());
-            delete item;
+            emit removePlotFile(pItem);
+            qDeleteAll(pItem->takeChildren());
+            delete pItem;
             break;
         }
     }
 
     // insert the top level item in tree
-    QTreeWidgetItem *newTreePost = new QTreeWidgetItem((QTreeWidget*)0);
-    newTreePost->setText(0, QString(fileName));
-    newTreePost->setToolTip(0, QString(fileName));
-    mpPlotVariablesTree->insertTopLevelItem(0, newTreePost);
+    QString toolTip = QString("Simulation Result File: ").append(fileName).append("\nLocation: ").append(Helper::tmpPath).append("/").append(fileName);
+    PlotTreeItem *newTreePost = new PlotTreeItem(fileName, tr(""), fileName, fileName, toolTip, (QTreeWidget*)0);
+    mpPlotTree->insertTopLevelItem(0, newTreePost);
 
     // create two lists from plotVariablesList one contains der's
     QStringList derPlotVariables;
+    QStringList derContainer;
     QStringList plotVariables;
     foreach (QString plotVariable, plotVariablesList)
     {
         if (plotVariable.startsWith("der("))
         {
-            derPlotVariables.append(plotVariable.mid(4, (plotVariable.size() - 5)));
+            QString str = plotVariable;
+            str.chop((str.lastIndexOf("der(")/4)+1);
+            derPlotVariables.append(str.mid(str.lastIndexOf("der(") + 4));
+            derContainer.append(plotVariable.left(plotVariable.lastIndexOf("der(") + 4));
         }
         else
             plotVariables.append(plotVariable);
@@ -124,93 +211,82 @@ void PlotWidget::addPlotVariablestoTree(QString fileName, QList<QString> plotVar
 
     QString parentStructure;
     // add derPlotVariables to tree
+    int j = 0;
     foreach(QString plotVariable, derPlotVariables)
     {
         QStringList variables = plotVariable.split(".");
-        parentStructure = newTreePost->toolTip(0);
+        parentStructure = newTreePost->getNameStructure();
         for (int i = 0 ; i < variables.size() ; i++)
         {
             // if its the last variable in the list make it der
             if (i == variables.size() - 1)
             {
-                QString structure = QString(newTreePost->toolTip(0)).append(".")
-                                    .append("der(").append(variables.join(".")).append(")");
-                variables[i].prepend("der(").append(")");
+                QString derPrependString = derContainer.at(j);
+                int size = derPrependString.count("der(");
+                QString derAppendString;
+                derAppendString = QString(derAppendString.toStdString().append(size, ')').c_str());
+                QString structure = QString(newTreePost->getNameStructure()).append(".")
+                                    .append(derPrependString).append(variables.join(".")).append(derAppendString);
+                variables[i].prepend(derPrependString).append(derAppendString);
                 // make sure you dont add any node twice
-                if (!getTreeNode(structure))
-                    addPlotVariableToTree(parentStructure, variables[i], structure);
+                if (!mpPlotTree->getTreeItem(structure))
+                    addPlotVariableToTree(fileName, parentStructure, variables[i], structure, true);
             }
             else
             {
                 // make sure you dont add any node twice
-                if (!getTreeNode(QString(parentStructure).append(".").append(variables[i])))
-                    addPlotVariableToTree(parentStructure, variables[i]);
+                if (!mpPlotTree->getTreeItem(QString(parentStructure).append(".").append(variables[i])))
+                    addPlotVariableToTree(fileName, parentStructure, variables[i]);
                 parentStructure.append(".").append(variables[i]);
             }
         }
+        j++;
     }
     // add plotVariables to tree
     foreach(QString plotVariable, plotVariables)
     {
         QStringList variables = plotVariable.split(".");
-        parentStructure = newTreePost->toolTip(0);
+        parentStructure = newTreePost->getNameStructure();
         for (int i = 0 ; i < variables.size() ; i++)
         {
             // make sure you dont add any node twice
-            if (!getTreeNode(QString(parentStructure).append(".").append(variables[i])))
-                addPlotVariableToTree(parentStructure, variables[i]);
+            if (!mpPlotTree->getTreeItem(QString(parentStructure).append(".").append(variables[i])))
+                addPlotVariableToTree(fileName, parentStructure, variables[i]);
             parentStructure.append(".").append(variables[i]);
         }
     }
     // sort items and expand the current plot variables node and collapse all others
-    mpPlotVariablesTree->setSortingEnabled(true);
-    mpPlotVariablesTree->sortItems(0, Qt::AscendingOrder);
+    mpPlotTree->setSortingEnabled(true);
+    mpPlotTree->sortItems(0, Qt::AscendingOrder);
     // collapse all tree items
-    count = mpPlotVariablesTree->topLevelItemCount();
+    count = mpPlotTree->topLevelItemCount();
     for (int i = 0 ; i < count ; i++)
     {
-        mpPlotVariablesTree->topLevelItem(i)->setExpanded(false);
+        mpPlotTree->topLevelItem(i)->setExpanded(false);
     }
     newTreePost->setExpanded(true);
-    mpPlotVariablesTree->blockSignals(false);
+    mpPlotTree->blockSignals(false);
 }
 
-void PlotWidget::addPlotVariableToTree(QString parentStructure, QString childName, QString fullStructure)
+void PlotWidget::addPlotVariableToTree(QString fileName, QString parentStructure, QString childName, QString fullStructure, bool derivative)
 {
-    QTreeWidgetItem *parentItem = getTreeNode(parentStructure);
-    QTreeWidgetItem *plotTreePost = new QTreeWidgetItem((QTreeWidget*)0);
-    plotTreePost->setFlags(Qt::ItemIsUserCheckable | Qt::ItemIsEnabled);
-    plotTreePost->setCheckState(0, Qt::Unchecked);
-    plotTreePost->setText(0, childName);
-    if (childName.startsWith("der("))
-        plotTreePost->setToolTip(0, fullStructure);
+    QString nameStructure;
+    if (derivative)
+        nameStructure = fullStructure;
     else
-        plotTreePost->setToolTip(0, parentStructure.append(".").append(childName));
+        nameStructure = QString(parentStructure).append(".").append(childName);
+
+    PlotTreeItem *parentItem = mpPlotTree->getTreeItem(parentStructure);
+    QString toolTip = QString("File: ").append(fileName).append("\nVariable: ").append(childName);
+    PlotTreeItem *newTreePost = new PlotTreeItem(childName, parentItem->getName(), nameStructure, fileName, toolTip, (QTreeWidget*)0);
+    newTreePost->setFlags(Qt::ItemIsUserCheckable | Qt::ItemIsEnabled);
+    newTreePost->setCheckState(0, Qt::Unchecked);
     if (parentItem)
     {
-        parentItem->addChild(plotTreePost);
+        parentItem->addChild(newTreePost);
         if (parentItem->childCount() > 0)
             parentItem->setData(0, Qt::CheckStateRole, QVariant());
     }
-}
-
-QTreeWidgetItem* PlotWidget::getTreeNode(QString itemName)
-{
-    QTreeWidgetItemIterator it(mpPlotVariablesTree);
-    while (*it)
-    {
-        if ((*it)->toolTip(0) == itemName)
-        {
-            return (*it);
-        }
-        ++it;
-    }
-    return 0;
-}
-
-QTreeWidget* PlotWidget::getPlotVariablesTree()
-{
-    return mpPlotVariablesTree;
 }
 
 void PlotWidget::plotVariables(QTreeWidgetItem *item, int column)
@@ -218,21 +294,17 @@ void PlotWidget::plotVariables(QTreeWidgetItem *item, int column)
     if (!item->parent())
         return;
 
-    QTreeWidgetItem *parentItem = item->parent();
-    while (parentItem->parent())
-    {
-        parentItem = parentItem->parent();
-    }
+    PlotTreeItem *pItem = dynamic_cast<PlotTreeItem*>(item);
 
     try
     {
-        // get the current window, if not window found simply return
+        // get the current window, if no window found simply return
         PlotWindow *pPlotWindow = mpParentMainWindow->mpPlotWindowContainer->getCurrentWindow();
         if (!pPlotWindow)
         {
-            mpPlotVariablesTree->blockSignals(true);
-            item->setCheckState(column, Qt::Unchecked);
-            mpPlotVariablesTree->blockSignals(false);
+            mpPlotTree->blockSignals(true);
+            pItem->setCheckState(column, Qt::Unchecked);
+            mpPlotTree->blockSignals(false);
             mpParentMainWindow->mpMessageWidget->printGUIInfoMessage(tr("No plot window is active for plotting. Please select a plot window or open a new."));
             return;
         }
@@ -240,23 +312,22 @@ void PlotWidget::plotVariables(QTreeWidgetItem *item, int column)
         if (pPlotWindow->getPlotType() == PlotWindow::PLOT)
         {
             // check the item checkstate
-            if (item->checkState(column) == Qt::Checked)
+            if (pItem->checkState(column) == Qt::Checked)
             {
-                pPlotWindow->openFile(QString(Helper::tmpPath).append("/").append(parentItem->text(0)));
-                pPlotWindow->setVariablesList(QStringList(item->toolTip(column).remove(0, (parentItem->text(column).length()+1))));
+                pPlotWindow->openFile(QString(Helper::tmpPath).append("/").append(pItem->getFileName()));
+                pPlotWindow->setVariablesList(QStringList(pItem->getPlotVariable()));
                 pPlotWindow->plot();
                 pPlotWindow->fitInView();
                 pPlotWindow->getPlot()->updateLayout();
                 pPlotWindow->getPlot()->getPlotZoomer()->setZoomBase(false);
             }
             // if user unchecks the variable then remove it from the plot
-            else if (item->checkState(column) == Qt::Unchecked)
+            else if (pItem->checkState(column) == Qt::Unchecked)
             {
                 foreach (PlotCurve *pPlotCurve, pPlotWindow->getPlot()->getPlotCurvesList())
                 {
                     QString curveTitle = QString(pPlotCurve->getFileName()).append(".").append(pPlotCurve->title().text());
-                    QString itemTitle = item->toolTip(column);
-                    if (curveTitle.compare(itemTitle) == 0)
+                    if (curveTitle.compare(pItem->getNameStructure()) == 0)
                     {
                         pPlotWindow->getPlot()->removeCurve(pPlotCurve);
                         pPlotCurve->detach();
@@ -272,20 +343,29 @@ void PlotWidget::plotVariables(QTreeWidgetItem *item, int column)
         else
         {
             // check the item checkstate
-            if (item->checkState(column) == Qt::Checked)
+            if (pItem->checkState(column) == Qt::Checked)
             {
                 // if mPlotParametricVariables is empty just add one QStringlist with 1 varibale to it
                 if (mPlotParametricVariables.isEmpty())
                 {
-                    mPlotParametricVariables.append(QStringList(item->toolTip(column).remove(0, (parentItem->text(column).length()+1))));
+                    mPlotParametricVariables.append(QStringList(pItem->getPlotVariable()));
+                    mFileName = pItem->getFileName();
                 }
                 // if mPlotParametricVariables is not empty then add one string to its last element
                 else
                 {
                     if (mPlotParametricVariables.last().size() < 2)
                     {
-                        mPlotParametricVariables.last().append(QString(item->toolTip(column).remove(0, (parentItem->text(column).length()+1))));
-                        pPlotWindow->openFile(QString(Helper::tmpPath).append("/").append(parentItem->text(0)));
+                        if (mFileName.compare(pItem->getFileName()) != 0)
+                        {
+                            mpPlotTree->blockSignals(true);
+                            pItem->setCheckState(0, Qt::Unchecked);
+                            mpParentMainWindow->mpMessageWidget->printGUIInfoMessage(GUIMessages::getMessage(GUIMessages::PLOT_PARAMETRIC_DIFF_FILES));
+                            mpPlotTree->blockSignals(false);
+                            return;
+                        }
+                        mPlotParametricVariables.last().append(QStringList(pItem->getPlotVariable()));
+                        pPlotWindow->openFile(QString(Helper::tmpPath).append("/").append(pItem->getFileName()));
                         pPlotWindow->setVariablesList(mPlotParametricVariables.last());
                         pPlotWindow->plotParametric();
                         if (mPlotParametricVariables.size() > 1)
@@ -299,17 +379,18 @@ void PlotWidget::plotVariables(QTreeWidgetItem *item, int column)
                     }
                     else
                     {
-                        mPlotParametricVariables.append(QStringList(item->toolTip(column).remove(0, (parentItem->text(column).length()+1))));
+                        mPlotParametricVariables.append(QStringList(pItem->getPlotVariable()));
+                        mFileName = pItem->getFileName();
                     }
                 }
             }
             // if user unchecks the variable then remove it from the plot
-            else if (item->checkState(column) == Qt::Unchecked)
+            else if (pItem->checkState(column) == Qt::Unchecked)
             {
                 // remove the variable from mPlotParametricVariables list
                 foreach (QStringList list, mPlotParametricVariables)
                 {
-                    if (list.contains(item->toolTip(column).remove(0, (parentItem->text(column).length()+1))))
+                    if (list.contains(pItem->getPlotVariable()))
                     {
                         // if list has only one variable then clear the list and return;
                         if (list.size() < 2)
@@ -324,21 +405,21 @@ void PlotWidget::plotVariables(QTreeWidgetItem *item, int column)
                             foreach (PlotCurve *pPlotCurve, pPlotWindow->getPlot()->getPlotCurvesList())
                             {
                                 QString curveTitle = pPlotCurve->title().text();
-                                if (curveTitle.compare(itemTitle) == 0)
+                                if ((curveTitle.compare(itemTitle) == 0) and (pItem->getFileName().compare(pPlotCurve->getFileName()) == 0))
                                 {
-                                    mpPlotVariablesTree->blockSignals(true);
+                                    mpPlotTree->blockSignals(true);
                                     // uncheck the x variable
                                     QString xVariable = QString(pPlotCurve->getFileName()).append(".").append(pPlotCurve->getXVariable());
-                                    QTreeWidgetItem *treeItem;
-                                    treeItem = getTreeNode(xVariable);
-                                    if (treeItem)
-                                        treeItem->setCheckState(0, Qt::Unchecked);
+                                    PlotTreeItem *pTreeItem;
+                                    pTreeItem = mpPlotTree->getTreeItem(xVariable);
+                                    if (pTreeItem)
+                                        pTreeItem->setCheckState(0, Qt::Unchecked);
                                     // uncheck the y variable
                                     QString yVariable = QString(pPlotCurve->getFileName()).append(".").append(pPlotCurve->getYVariable());
-                                    treeItem = getTreeNode(yVariable);
-                                    if (treeItem)
-                                        treeItem->setCheckState(0, Qt::Unchecked);
-                                    mpPlotVariablesTree->blockSignals(false);
+                                    pTreeItem = mpPlotTree->getTreeItem(yVariable);
+                                    if (pTreeItem)
+                                        pTreeItem->setCheckState(0, Qt::Unchecked);
+                                    mpPlotTree->blockSignals(false);
                                     pPlotWindow->getPlot()->removeCurve(pPlotCurve);
                                     pPlotCurve->detach();
                                     pPlotWindow->fitInView();
@@ -350,8 +431,21 @@ void PlotWidget::plotVariables(QTreeWidgetItem *item, int column)
                             mPlotParametricVariables.removeOne(list);
                             if (mPlotParametricVariables.size() == 1)
                             {
-                                pPlotWindow->setXLabel(mPlotParametricVariables.last().at(0));
-                                pPlotWindow->setYLabel(mPlotParametricVariables.last().at(1));
+                                if (mPlotParametricVariables.last().size() > 1)
+                                {
+                                    pPlotWindow->setXLabel(mPlotParametricVariables.last().at(0));
+                                    pPlotWindow->setYLabel(mPlotParametricVariables.last().at(1));
+                                }
+                                else
+                                {
+                                    pPlotWindow->setXLabel(tr(""));
+                                    pPlotWindow->setYLabel(tr(""));
+                                }
+                            }
+                            else
+                            {
+                                pPlotWindow->setXLabel(tr(""));
+                                pPlotWindow->setYLabel(tr(""));
                             }
                         }
                     }
@@ -371,15 +465,15 @@ void PlotWidget::updatePlotVariablesTree(QMdiSubWindow *window)
         return;
 
     // first clear all the check boxes in the tree
-    mpPlotVariablesTree->blockSignals(true);
-    QTreeWidgetItemIterator it(mpPlotVariablesTree);
+    mpPlotTree->blockSignals(true);
+    QTreeWidgetItemIterator it(mpPlotTree);
     while (*it)
     {
         if ((*it)->childCount() == 0)
             (*it)->setCheckState(0, Qt::Unchecked);
         ++it;
     }
-    mpPlotVariablesTree->blockSignals(false);
+    mpPlotTree->blockSignals(false);
     // all plotwindows are closed down then simply return
     if (mpParentMainWindow->mpPlotWindowContainer->subWindowList().size() == 0)
         return;
@@ -387,31 +481,31 @@ void PlotWidget::updatePlotVariablesTree(QMdiSubWindow *window)
     PlotWindow *pPlotWindow = qobject_cast<PlotWindow*>(window->widget());
 
     // now loop through the curves and tick variables in the tree whose curves are on the plot
-    mpPlotVariablesTree->blockSignals(true);
+    mpPlotTree->blockSignals(true);
     foreach (PlotCurve *pPlotCurve, pPlotWindow->getPlot()->getPlotCurvesList())
     {
-        QTreeWidgetItem *treeItem;
+        PlotTreeItem *pTreeItem;
         if (pPlotWindow->getPlotType() == PlotWindow::PLOT)
         {
-            treeItem = getTreeNode(QString(pPlotCurve->getFileName()).append(".").append(pPlotCurve->title().text()));
-            if (treeItem)
-                treeItem->setCheckState(0, Qt::Checked);
+            pTreeItem = mpPlotTree->getTreeItem(QString(pPlotCurve->getFileName()).append(".").append(pPlotCurve->title().text()));
+            if (pTreeItem)
+                pTreeItem->setCheckState(0, Qt::Checked);
         }
         else if (pPlotWindow->getPlotType() == PlotWindow::PLOTPARAMETRIC)
         {
             // check the xvariable
             QString xVariable = QString(pPlotCurve->getFileName()).append(".").append(pPlotCurve->getXVariable());
-            treeItem = getTreeNode(xVariable);
-            if (treeItem)
-                treeItem->setCheckState(0, Qt::Checked);
+            pTreeItem = mpPlotTree->getTreeItem(xVariable);
+            if (pTreeItem)
+                pTreeItem->setCheckState(0, Qt::Checked);
             // check the y variable
             QString yVariable = QString(pPlotCurve->getFileName()).append(".").append(pPlotCurve->getYVariable());
-            treeItem = getTreeNode(yVariable);
-            if (treeItem)
-                treeItem->setCheckState(0, Qt::Checked);
+            pTreeItem = mpPlotTree->getTreeItem(yVariable);
+            if (pTreeItem)
+                pTreeItem->setCheckState(0, Qt::Checked);
         }
     }
-    mpPlotVariablesTree->blockSignals(false);
+    mpPlotTree->blockSignals(false);
 }
 
 void PlotWidget::contextMenuEvent(QContextMenuEvent *event)

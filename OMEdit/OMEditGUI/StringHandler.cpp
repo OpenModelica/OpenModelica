@@ -306,18 +306,21 @@ QList<QString> StringHandler::getSimulationResultVars(QString value)
     QString str;
     bool startReading = false;
 
-    foreach (QChar ch, value)
+    for (int i=0; i < value.length(); i++)
     {
         if(startReading)
-            str.append(ch);
+            str.append(value.at(i));
 
-        if (ch == '"')
+        if (value.at(i) == '"')
         {
             if (startReading)
             {
-                startReading = false;
-                list.append(str.remove((str.length() - 1), 1));
-                str.clear();
+                if (value.at(i+1) == ',')
+                {
+                    startReading = false;
+                    list.append(str.remove((str.length() - 1), 1));
+                    str.clear();
+                }
             }
             else
                 startReading = true;

@@ -147,14 +147,14 @@ PlotWindow* PlotWindowContainer::addPlotParametricWindow()
     }
 }
 
-void PlotWindowContainer::updatePlotWindows(QTreeWidgetItem *item)
+void PlotWindowContainer::updatePlotWindows(PlotTreeItem *item)
 {
     foreach (QMdiSubWindow *pSubWindow, subWindowList())
     {
         PlotWindow *pPlotWindow = qobject_cast<PlotWindow*>(pSubWindow->widget());
         foreach (PlotCurve *pPlotCurve, pPlotWindow->getPlot()->getPlotCurvesList())
         {
-            if (item->toolTip(0).compare(pPlotCurve->getFileName()) == 0)
+            if (item->getNameStructure().compare(pPlotCurve->getFileName()) == 0)
             {
                 pPlotWindow->getPlot()->removeCurve(pPlotCurve);
                 pPlotCurve->detach();

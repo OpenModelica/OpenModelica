@@ -38,6 +38,38 @@
 
 class MainWindow;
 
+class PlotTreeItem : public QTreeWidgetItem
+{
+public:
+    PlotTreeItem(QString text, QString parentName, QString nameStructure, QString fileName, QString tooltip, QTreeWidget *parent = 0);
+    void setName(QString name);
+    QString getName();
+    void setParentName(QString parentName);
+    QString getParentName();
+    void setNameStructure(QString nameStructure);
+    QString getNameStructure();
+    void setFileName(QString fileName);
+    QString getFileName();
+    QString getPlotVariable();
+private:
+    QString mName;
+    QString mParentName;
+    QString mNameStructure;
+    QString mFileName;
+};
+
+class PlotWidget;
+
+class PlotTree : public QTreeWidget
+{
+public:
+    PlotTree(PlotWidget *pParent);
+    PlotTreeItem* getTreeItem(QString name);
+    PlotWidget* getPlotWidget();
+private:
+    PlotWidget *mpParentPlotWidget;
+};
+
 class PlotWidget : public QWidget
 {
     Q_OBJECT
@@ -45,17 +77,16 @@ public:
     PlotWidget(MainWindow *pParent);
     QList<QString> readPlotVariables(QString fileName);
     void addPlotVariablestoTree(QString fileName, QList<QString> plotVariablesList);
-    void addPlotVariableToTree(QString parentStructure, QString childName, QString fullStructure = QString());
-    QTreeWidgetItem* getTreeNode(QString itemName);
-    QTreeWidget* getPlotVariablesTree();
+    void addPlotVariableToTree(QString fileName, QString parentStructure, QString childName, QString fullStructure = QString(), bool derivative = false);
 
     MainWindow *mpParentMainWindow;
 private:
-    QTreeWidget *mpPlotVariablesTree;
+    PlotTree *mpPlotTree;
     QVBoxLayout *mpVerticalLayout;
     QList<QStringList> mPlotParametricVariables;
+    QString mFileName;
 signals:
-    void removePlotFile(QTreeWidgetItem *item);
+    void removePlotFile(PlotTreeItem *item);
 public slots:
     void plotVariables(QTreeWidgetItem *item, int column);
     void updatePlotVariablesTree(QMdiSubWindow *window);
