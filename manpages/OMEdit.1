@@ -2,32 +2,31 @@
 .\" Title 
 .\" --------------------------------------------------------------------
 .
-.TH OMShell 1 "The Open Source Modelica Consortium" "1.7.0" "The OpenModelica Project" -*- nroff -*-
+.TH OMEdit 1 "The Open Source Modelica Consortium" "1.7.0" "The OpenModelica Project" -*- nroff -*-
 .
 .
 .\" -------------------------------------------------------------------- 
 .SH NAME
 .\" --------------------------------------------------------------------
 .
-OMShell \- A command-line shell for OpenModelica
+OMEdit \- A Modelica connection editor for OpenModelica
 .
 .
 .\" --------------------------------------------------------------------
 .SH "SYNOPSIS"
 .\" --------------------------------------------------------------------
 .
-.B OMShell
+.B OMEdit
+[\fIFILE\fR]...
+.
 .
 .\" --------------------------------------------------------------------
 .SH DESCRIPTION
 .\" --------------------------------------------------------------------
 .
-.B OMShell
-is a command-line interface to communicate with \fBomc\fP using CORBA.
-.P
-The default working directory is /tmp/OpenModelica/.
-This is to avoid \fBomc\fP producing its C++ source code and auxiliary
-files in the working directory.
+.B OMEdit
+is a graphical connection editor for Modelica 3.1 libraries. It uses the
+OpenModelica Compiler, \fBomc\fP, for communication.
 .
 .\" --------------------------------------------------------------------
 .SH AUTHOR
@@ -49,6 +48,5 @@ If you find a bug, please report it at:
 .\" --------------------------------------------------------------------
 .
 .BR omc (1),
-.BR OMShell (1),
-.BR OMShell\-terminal (1)
+.BR omlibrary-msl31 (1)
 .

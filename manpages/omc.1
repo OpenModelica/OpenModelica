@@ -697,7 +697,7 @@ OMNotebook
 .SH "EXAMPLES"
 .\" --------------------------------------------------------------------
 .
-Modelica source code examples, Modelica scripts and OMNotebook files
+Modelica source code examples, Modelica scripts and \fBOMNotebook\fP files
 are stored under the following directory.
 .
 .IP "Path:" 7
@@ -706,99 +706,7 @@ are stored under the following directory.
 .
 Files with the extention .mo are Modelica source code files. Scripts
 are extended with the short .mos and the .onb extention is used for
-OMNotebook files.
-.
-.
-.\" --------------------------------------------------------------------
-.SH "DOCUMENTATION"
-.\" --------------------------------------------------------------------
-.
-This section lists all available documents of The \%OpenModelica Project.
-The most of the following documents are from the collaborator of the 
-Programming Environment Laboratory (PELAB).
-.
-.IP "Title:" 12
-OpenModelica Users Guide
-.PD 0
-.IP "Author(s):" 12
-Peter Fritzon, Adrian Pop, Peter Aronsson and others
-.IP "File:" 12
-.I OpenModelicaUsersGuide.pdf
-.IP "Path:" 12
-.I /usr/share/omc/doc/
-.PD
-.RE
-.
-.IP "Title:" 12
-OpenModelica System Documentation
-.PD 0
-.IP "Author(s):" 12
-Peter Fritzon, Adrian Pop, Peter Aronsson and others
-.IP "File:" 12
-.I OpenModelicaSystem.pdf
-.IP "Path:" 12
-.I /usr/share/omc/doc/
-.PD
-.RE
-.
-.IP "Title:" 12
-TUTORIAL \- Introduction to Object\-Oriented Modeling and Simulation with
-\%OpenModelica
-.PD 0
-.IP "Author(s):" 12
-Peter Fritzon
-.IP "File:" 12
-.I ModelicaTutorialFritzson.pdf
-.IP "Path:" 12
-.I /usr/share/omc/doc/
-.PD
-.RE
-.
-.IP "Title:" 12
-Modelica Meta\-Programming and Symbolic Transformations \- MetaModelica
-Programming Guide
-.PD 0
-.IP "Author(s):" 12
-Peter Fritzon
-.IP "File:" 12
-.I OpenModelicaMetaProgramming.pdf
-.IP "Path:" 12
-.I /usr/share/omc/doc/
-.PD
-.RE
-.
-.IP "Title:" 12
-OpenModelicaAPI\-Howto
-.PD 0
-.IP "Author(s):" 12
-unknown
-.IP "File:" 12
-.I OMC_API-HowTo.pdf
-.IP "Path:" 12
-.I /usr/share/omc/doc/
-.PD
-.RE
-.
-.
-.\" --------------------------------------------------------------------
-.SH "DIAGNOSTICS"
-.\" --------------------------------------------------------------------
-.
-The following subsections give some hints, how to cure simple failures.
-.
-.
-.\" --------------------------------------------------------------------
-.SS Libraries:
-.\" --------------------------------------------------------------------
-.
-The Qt libraries \fIlibQtCore.so\fP, \fIlibQtGui.so\fP and \fIlibQtNetwork.so\fP
-under the directory \fI/usr/lib/\fP are symlinks to the original Qt
-libraries in \fI/usr/lib/\fP. If this symlinks are broken, the C++ compiler
-can't compile a simulation file. This could happen, when a Debian package with
-new Qt libraries will be installed. If this happens, the symlinks must be
-corrected.
-.
-.
+\fBOMNotebook\fP files.
 .
 .\" --------------------------------------------------------------------
 .SH AUTHOR
@@ -811,6 +719,8 @@ See OpenModelicaUsersGuide.pdf for a full list of contributors to the
 .SH BUGS
 .\" --------------------------------------------------------------------
 .
+If you find a bug, please report it at:
+.P
 <\fBhttp://openmodelica.org:8080/cb/project/1\fR>
 .
 .\" --------------------------------------------------------------------
@@ -820,6 +730,7 @@ See OpenModelicaUsersGuide.pdf for a full list of contributors to the
 .BR omc (1),
 .BR OMEdit (1),
 .BR OMNotebook (1),
+.BR OMPlot (1),
 .BR OMShell (1),
 .BR OMShell\-terminal (1)
 .BR octave (1)

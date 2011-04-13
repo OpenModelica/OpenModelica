@@ -16,7 +16,8 @@ OMNotebook \- A Mathematica-style Notebook for OpenModelica
 .SH "SYNOPSIS"
 .\" --------------------------------------------------------------------
 .
-.B OMNotebook "[" "onb-files" "]"
+.B OMNotebook
+[\fIFILE\fR]...
 .
 .
 .\" --------------------------------------------------------------------
@@ -42,17 +43,9 @@ is a course in Modelica 2.1 that uses all examples from Peter Fritzson's book
 is a course in basic control theory using Modelica 3.1.
 .
 .P
-The start of the client application \fBOMNotebook\fP will trigger the start of
-the Compiler/Interpreter \fBomc\fP. The Compiler/Interpreter \fBomc\fP will run
-in server mode and will communicate over CORBA with the client application
-\fBOMNotebook\fP.
-.
-.P
-\fBOMNotebook\fP runs the compiler \fBomc\fP in a process independent from
-\fBOMNotebook\fP, with a default working directory of /tmp/OpenModelica/.
+The default working directory is /tmp/OpenModelica/.
 This is to avoid \fBomc\fP producing its C++ source code and auxiliary
 files in the working directory.
-.
 .P
 The files recognized by \fBOMNotebook\fP have the extension \fB.onb\fP.
 .
@@ -76,6 +69,14 @@ Modelica 2.1\*[rq].
 .
 See OpenModelicaUsersGuide.pdf for a full list of contributors to the
 \%OpenModelica project.
+.
+.\" --------------------------------------------------------------------
+.SH BUGS
+.\" --------------------------------------------------------------------
+.
+If you find a bug, please report it at:
+.P
+<\fBhttp://openmodelica.org:8080/cb/project/1\fR>
 .
 .\" --------------------------------------------------------------------
 .SH "SEE ALSO"
