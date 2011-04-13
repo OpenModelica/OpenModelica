@@ -50,6 +50,8 @@
 #include <string>
 #include <iostream>
 #include <math.h>
+
+double dlamch_(char*,int);
 using namespace std;
 
 
