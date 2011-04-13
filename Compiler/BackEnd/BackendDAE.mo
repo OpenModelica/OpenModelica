@@ -279,6 +279,12 @@ pinter to their values (trajectories).
   end ALIASVARS;
 end AliasVariables;
 
+uniontype AliasVariableType
+  record NOALIAS end NOALIAS;
+  record ALIAS end ALIAS;
+  record NEGATEDALIAS end NEGATEDALIAS;
+end AliasVariableType;
+
 public
 uniontype MultiDimEquation "- Multi Dimensional Equation"
   record MULTIDIM_EQUATION

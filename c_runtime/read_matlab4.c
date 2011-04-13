@@ -228,6 +228,12 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
             reader->vars[i][j] = tmp[j+i*hdr.mrows];
           }
         }
+        for (i=reader->nvar; i<reader->nvar*2; i++) {
+          reader->vars[i] = (double*) malloc(hdr.mrows*sizeof(double));
+          for (j=0; j<hdr.mrows; j++) {
+            reader->vars[i][j] = -reader->vars[i-reader->nvar][j];
+          }
+        }
         free(tmp);
         if (-1==fseek(reader->file,matrix_length,SEEK_CUR)) return "Corrupt header: data_2 matrix";
       }

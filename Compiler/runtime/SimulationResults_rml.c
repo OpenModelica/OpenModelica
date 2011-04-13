@@ -88,7 +88,7 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(SimulationResults__cmpSimulationResults)
 {
-  rmlA0 = SimulationResultsCmp_compareResults(RML_STRINGDATA(rmlA0),RML_STRINGDATA(rmlA1),RML_STRINGDATA(rmlA2),RML_UNTAGFIXNUM(rmlA3),rmlA4);
+  rmlA0 = SimulationResultsCmp_compareResults(RML_STRINGDATA(rmlA0),RML_STRINGDATA(rmlA1),RML_STRINGDATA(rmlA2),rml_prim_get_real(rmlA3),rmlA4);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
