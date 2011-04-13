@@ -1100,8 +1100,8 @@ algorithm
   print("\t+annotationVersion=1.x     what annotation version should we use\n");
   print("\t                           accept 1.x or 2.x (default) or 3.x\n");
   print("\t+noSimplify                do not simplify expressions (default is to simplify)\n");
-  print("\t+preOptModules=module1,..  pre optimisation modules (default is removeSimpleEquations,removeParameterEqns,expandDerOperator)\n");
-  print("\t+pastOptModules=module1,.. past optimisation modules (default is lateInline,removeSimpleEquations)\n");
+  print("\t+preOptModules=module1,..  pre optimisation modules (default is removeFinalParameters,removeSimpleEquationsX,expandDerOperator\n");
+  print("\t+pastOptModules=module1,.. past optimisation modules (default is lateInline,inlineArrayEqn,removeSimpleEquationsX\n");
   print("\t+q                         run in quiet mode, output nothing\n");
   print("\t+g=MetaModelica            accept MetaModelica grammar and semantics\n");
   print("\t+showErrorMessages         show error messages while they happen; default to no. \n");

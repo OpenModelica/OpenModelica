@@ -348,7 +348,6 @@ algorithm
         inputsoutputs = Util.listMap1r(algs_1,BackendDAECreate.lowerAlgorithmInputsOutputs,vars_1);
         eqns_3 = Util.listMap1(eqns_3,updateAlgorithmInputsOutputs,inputsoutputs);
         seqns_3 = listAppend(seqns_2, reqns_1) "& print_vars_statistics(vars\',knvars\')" ;
-        //(knvars_2,seqns_4,varsAliases) = removeConstantEqns(knvars,seqns_3,av);
         eqns1 = BackendDAEUtil.listEquation(eqns_3);
         remeqns1 = BackendDAEUtil.listEquation(seqns_3);
         inieqns1 = BackendDAEUtil.listEquation(ieqns_2);
@@ -950,57 +949,6 @@ algorithm
       then (e1,DAE.UNARY(DAE.UMINUS_ARR(t),e),src);
   end matchcontinue;
 end simpleEquation;
-
-/*
- * remove constant equations
- */
-
-protected function removeConstantEqns
-"autor: Frenkel TUD 2010-12"
- input BackendDAE.Variables inVars;
- input list<BackendDAE.Equation> inEqns;
- input BackendDAE.AliasVariables inAlias;
- output BackendDAE.Variables outVars;
- output list<BackendDAE.Equation> outEqns;
- output BackendDAE.AliasVariables outAlias;
-algorithm
-  (outVars,outEqns,outAlias) :=
-  matchcontinue (inVars,inEqns,inAlias)
-    local
-      BackendDAE.Variables vars,vars1;
-      BackendDAE.Var var,var2,var3;
-      DAE.ComponentRef cr;
-      DAE.Exp e;
-      BackendDAE.Equation eqn;
-      list<BackendDAE.Equation> rest,eqns;
-      BackendDAE.AliasVariables aliasvars,aliasvars1;
-    case (inVars,{},inAlias) then (inVars,{},inAlias);
-    // constant equations
-    case (inVars,BackendDAE.SOLVED_EQUATION(componentRef=cr,exp=e)::rest,inAlias)
-      equation
-        // check exp is const
-        true = Expression.isConst(e);
-        ({var},_) = BackendVariable.getVar(cr,inVars);
-        // set kind to PARAM
-        // do not set varKind because of simulation results
-        //var1 = BackendVariable.setVarKind(var,BackendDAE.PARAM);
-        // add bindExp
-        var2 = BackendVariable.setBindExp(var,e);
-        // add bindValue if constant
-        (var3,_) = setbindValue(e,var2);
-        // update vars
-        vars = BackendVariable.addVar(var3,inVars);
-        // next
-        (vars1,eqns,aliasvars) = removeConstantEqns(vars,rest,inAlias);
-      then
-        (vars1,eqns,aliasvars);
-    case (inVars,eqn::rest,inAlias)
-      equation
-         (vars,eqns,aliasvars) = removeConstantEqns(inVars,rest,inAlias);
-      then
-        (vars,eqn::eqns,aliasvars);
-  end matchcontinue;
-end removeConstantEqns;
 
 /* 
  * remove new simply equations stuff
@@ -2740,7 +2688,7 @@ algorithm
 end replaceFinalVarTraverser;
 
 /*  
- * remove protected paramters stuff 
+ * remove protected parameters stuff 
  */ 
 
 public function removeProtectedParameters
