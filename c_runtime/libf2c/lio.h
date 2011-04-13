@@ -27,30 +27,30 @@
 #define TYQUAD 14
 #endif
 
-#define  LINTW	24
-#define  LINE	80
-#define  LLOGW	2
+#define  LINTW       24
+#define  LINE       80
+#define  LLOGW       2
 #ifdef Old_list_output
-#define  LLOW	1.0
-#define  LHIGH	1.e9
-#define  LEFMT	" %# .8E"
-#define  LFFMT	" %# .9g"
+#define  LLOW       1.0
+#define  LHIGH       1.e9
+#define  LEFMT       " %# .8E"
+#define  LFFMT       " %# .9g"
 #else
-#define  LGFMT	"%.9G"
+#define  LGFMT       "%.9G"
 #endif
 /* LEFBL 20 should suffice; 24 overcomes a NeXT bug. */
-#define  LEFBL	24
+#define  LEFBL       24
 
 typedef union
 {
-  char	flchar;
-  short	flshort;
-  ftnint	flint;
+  char       flchar;
+  short       flshort;
+  ftnint       flint;
 #ifdef Allow_TYQUAD
   longint fllongint;
 #endif
-  real	flreal;
-  doublereal	fldouble;
+  real       flreal;
+  doublereal       fldouble;
 } flex;
 extern int f__scale;
 #ifdef KR_headers

@@ -13,11 +13,11 @@ signbit_f2c(double *x)
 {
 #ifdef IEEE_MC68k
   if (*(Long*)x & 0x80000000)
-  	return 1;
+         return 1;
 #else
 #ifdef IEEE_8087
   if (((Long*)x)[1] & 0x80000000)
-  	return 1;
+         return 1;
 #endif /*IEEE_8087*/
 #endif /*IEEE_MC68k*/
   return 0;

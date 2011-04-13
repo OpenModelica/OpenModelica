@@ -140,7 +140,7 @@ f_exit();
 #endif
 exit(0);  /* exit(0) rather than return(0) to bypass Cray bug */
 return 0;  /* For compilers that complain of missing return values; */
-  	/* others will complain that this is unreachable code. */
+         /* others will complain that this is unreachable code. */
 }
 #ifdef __cplusplus
 }

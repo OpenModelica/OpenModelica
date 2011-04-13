@@ -30,13 +30,13 @@ F77_aloc(integer Len, char *whence)
 #endif
 {
   char *rv;
-  unsigned int uLen = (unsigned int) Len;	/* for K&R C */
+  unsigned int uLen = (unsigned int) Len;       /* for K&R C */
 
   if (!(rv = (char*)malloc(uLen))) {
-  	fprintf(stderr, "malloc(%u) failure in %s\n",
-  		uLen, whence);
-  	exit_(&memfailure);
-  	}
+         fprintf(stderr, "malloc(%u) failure in %s\n",
+                uLen, whence);
+         exit_(&memfailure);
+         }
   return rv;
   }
 #ifdef __cplusplus

@@ -20,28 +20,28 @@ bend = b + lb;
 if(la <= lb)
   {
   while(a < aend)
-  	if(*a != *b)
-  		return( *a - *b );
-  	else
-  		{ ++a; ++b; }
+         if(*a != *b)
+                return( *a - *b );
+         else
+                { ++a; ++b; }
 
   while(b < bend)
-  	if(*b != ' ')
-  		return( ' ' - *b );
-  	else	++b;
+         if(*b != ' ')
+                return( ' ' - *b );
+         else       ++b;
   }
 
 else
   {
   while(b < bend)
-  	if(*a == *b)
-  		{ ++a; ++b; }
-  	else
-  		return( *a - *b );
+         if(*a == *b)
+                { ++a; ++b; }
+         else
+                return( *a - *b );
   while(a < aend)
-  	if(*a != ' ')
-  		return(*a - ' ');
-  	else	++a;
+         if(*a != ' ')
+                return(*a - ' ');
+         else       ++a;
   }
 return(0);
 }

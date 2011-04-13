@@ -60,19 +60,19 @@ typedef long uiolen;
 
 /*units*/
 typedef struct
-{  FILE *ufd;	/*0=unconnected*/
+{  FILE *ufd;       /*0=unconnected*/
   char *ufnm;
 #ifndef MSDOS
   long uinode;
   int udev;
 #endif
-  int url;	/*0=sequential*/
-  flag useek;	/*true=can backspace, use dir, ...*/
+  int url;       /*0=sequential*/
+  flag useek;       /*true=can backspace, use dir, ...*/
   flag ufmt;
-  flag urw;	/* (1 for can read) | (2 for can write) */
+  flag urw;       /* (1 for can read) | (2 for can write) */
   flag ublnk;
   flag uend;
-  flag uwrt;	/*last io was write*/
+  flag uwrt;       /*last io was write*/
   flag uscrtch;
 } unit;
 

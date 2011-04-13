@@ -298,11 +298,11 @@ double get_timeValue(void){
 }
 
 void set_timeValue(double new_timeValue) {
-	gdMutex.Lock();
+       gdMutex.Lock();
 
-	globalData->timeValue = new_timeValue;
+       globalData->timeValue = new_timeValue;
 
-	gdMutex.Unlock();
+       gdMutex.Unlock();
 }
 
 void set_lastEmittedTime(double new_lastEmittedTime) {
@@ -368,11 +368,11 @@ void setGlobalSimulationValuesFromSimulationStepData(SimStepData* p_SimStepData)
 
   //TODO [20110319] pv workaround to fix dassl2 problem using globalData->lastEmittedTime
 //  if (method == std::string("euler") || method == std::string("rungekutta")
-//			|| method == std::string("dassl")) {
-		globalData->timeValue = p_SimStepData->forTimeStep; //is the timeValue of this step
-//	} else {
-//		globalData->lastEmittedTime = p_SimStepData->forTimeStep; //is the lastEmittedTime of this step
-//	}
+//                     || method == std::string("dassl")) {
+              globalData->timeValue = p_SimStepData->forTimeStep; //is the timeValue of this step
+//       } else {
+//              globalData->lastEmittedTime = p_SimStepData->forTimeStep; //is the lastEmittedTime of this step
+//       }
 
 
   for (int i = 0; i < globalData->nStates; i++) {
@@ -393,11 +393,11 @@ void fillSimulationStepDataWithValuesFromGlobalData(string method, SimStepData* 
 
   gdMutex.Lock();
 
-  if (method == std::string("euler") || method == std::string("rungekutta")	|| method == std::string("dassl")) {
-		p_SimStepData->forTimeStep = globalData->timeValue; //is the lastEmittedTime of this step
-	} else {
-		p_SimStepData->forTimeStep = globalData->lastEmittedTime; //is the lastEmittedTime of this step
-	}
+  if (method == std::string("euler") || method == std::string("rungekutta")       || method == std::string("dassl")) {
+              p_SimStepData->forTimeStep = globalData->timeValue; //is the lastEmittedTime of this step
+       } else {
+              p_SimStepData->forTimeStep = globalData->lastEmittedTime; //is the lastEmittedTime of this step
+       }
 
   for (int i = 0; i < globalData->nStates; i++) {
     p_SimStepData->states[i] = globalData->states[i];

@@ -69,69 +69,69 @@ _uninit_f2c(void *x, int type, long len)
   unsigned Long *lx, *lxe;
 
   if (first) {
-  	first = 0;
-  	ieee0();
-  	}
+         first = 0;
+         ieee0();
+         }
   if (len == 1)
    switch(type) {
     case TYINT1:
-  	*(char*)x = 'Z';
-  	return;
+         *(char*)x = 'Z';
+         return;
     case TYSHORT:
-  	*(short*)x = 0xfa7a;
-  	break;
+         *(short*)x = 0xfa7a;
+         break;
     case TYLONG:
-  	*(unsigned Long*)x = FA7UL;
-  	return;
+         *(unsigned Long*)x = FA7UL;
+         return;
     case TYQUAD:
     case TYCOMPLEX:
     case TYDCOMPLEX:
-  	break;
+         break;
     case TYREAL:
-  	*(unsigned Long*)x = rnan;
-  	return;
+         *(unsigned Long*)x = rnan;
+         return;
     case TYDREAL:
-  	lx = (unsigned Long*)x;
-  	lx[0] = dnan0;
-  	lx[1] = dnan1;
-  	return;
+         lx = (unsigned Long*)x;
+         lx[0] = dnan0;
+         lx[1] = dnan1;
+         return;
     default:
-  	printf("Surprise type %d in _uninit_f2c\n", type);
+         printf("Surprise type %d in _uninit_f2c\n", type);
     }
   switch(type) {
     case TYINT1:
-  	memset(x, 'Z', len);
-  	break;
+         memset(x, 'Z', len);
+         break;
     case TYSHORT:
-  	*(short*)x = 0xfa7a;
-  	break;
+         *(short*)x = 0xfa7a;
+         break;
     case TYQUAD:
-  	len *= 2;
-  	/* no break */
+         len *= 2;
+         /* no break */
     case TYLONG:
-  	lx = (unsigned Long*)x;
-  	lxe = lx + len;
-  	while(lx < lxe)
-  		*lx++ = FA7UL;
-  	break;
+         lx = (unsigned Long*)x;
+         lxe = lx + len;
+         while(lx < lxe)
+                *lx++ = FA7UL;
+         break;
     case TYCOMPLEX:
-  	len *= 2;
-  	/* no break */
+         len *= 2;
+         /* no break */
     case TYREAL:
-  	lx = (unsigned Long*)x;
-  	lxe = lx + len;
-  	while(lx < lxe)
-  		*lx++ = rnan;
-  	break;
+         lx = (unsigned Long*)x;
+         lxe = lx + len;
+         while(lx < lxe)
+                *lx++ = rnan;
+         break;
     case TYDCOMPLEX:
-  	len *= 2;
-  	/* no break */
+         len *= 2;
+         /* no break */
     case TYDREAL:
-  	lx = (unsigned Long*)x;
-  	for(lxe = lx + 2*len; lx < lxe; lx += 2) {
-  		lx[0] = dnan0;
-  		lx[1] = dnan1;
-  		}
+         lx = (unsigned Long*)x;
+         for(lxe = lx + 2*len; lx < lxe; lx += 2) {
+                lx[0] = dnan0;
+                lx[1] = dnan1;
+                }
     }
   }
 #ifdef __cplusplus
@@ -220,14 +220,14 @@ ieee0(Void)
 {
   int i;
   for(i=1; i<=4; i++){
-  	sigfpe_[i].count = 1000;
-  	sigfpe_[i].trace = 1;
-  	sigfpe_[i].repls = _USER_DETERMINED;
-  	}
-  sigfpe_[1].repls = _ZERO;	/* underflow */
+         sigfpe_[i].count = 1000;
+         sigfpe_[i].trace = 1;
+         sigfpe_[i].repls = _USER_DETERMINED;
+         }
+  sigfpe_[1].repls = _ZERO;       /* underflow */
   handle_sigfpes( _ON,
-  	_EN_UNDERFL|_EN_OVERFL|_EN_DIVZERO|_EN_INVALID,
-  	ieeeuserhand,_ABORT_ON_ERROR,ieeeuserhand2);
+         _EN_UNDERFL|_EN_OVERFL|_EN_DIVZERO|_EN_INVALID,
+         ieeeuserhand,_ABORT_ON_ERROR,ieeeuserhand2);
   }
 #endif /* mips */
 
@@ -298,10 +298,10 @@ which we want*/
 #else /* !_FPU_IEEE */
 
   fprintf(stderr, "\n%s\n%s\n%s\n%s\n",
-  	"WARNING:  _uninit_f2c in libf2c does not know how",
-  	"to enable trapping on this system, so f2c's -trapuv",
-  	"option will not detect uninitialized variables unless",
-  	"you can enable trapping manually.");
+         "WARNING:  _uninit_f2c in libf2c does not know how",
+         "to enable trapping on this system, so f2c's -trapuv",
+         "option will not detect uninitialized variables unless",
+         "you can enable trapping manually.");
   fflush(stderr);
 
 #endif /* _FPU_IEEE */

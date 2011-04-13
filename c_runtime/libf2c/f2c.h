@@ -30,7 +30,7 @@ typedef char logical1;
 typedef char integer1;
 #ifdef INTEGER_STAR_8  /* Adjust for integer*8. */
 #if defined(__alpha__) || defined(__sparc64__) || defined(__x86_64__) || defined(__ia64__)
-typedef long longint;  	/* system-dependent */
+typedef long longint;         /* system-dependent */
 typedef unsigned long ulongint;  /* system-dependent */
 #else
 typedef long long longint;              /* system-dependent - oh yeah*/
@@ -118,28 +118,28 @@ typedef struct
   ftnint inunit;
   char *infile;
   ftnlen infilen;
-  ftnint	*inex;	/*parameters in standard's order*/
-  ftnint	*inopen;
-  ftnint	*innum;
-  ftnint	*innamed;
-  char	*inname;
-  ftnlen	innamlen;
-  char	*inacc;
-  ftnlen	inacclen;
-  char	*inseq;
-  ftnlen	inseqlen;
-  char 	*indir;
-  ftnlen	indirlen;
-  char	*infmt;
-  ftnlen	infmtlen;
-  char	*inform;
-  ftnint	informlen;
-  char	*inunf;
-  ftnlen	inunflen;
-  ftnint	*inrecl;
-  ftnint	*innrec;
-  char	*inblank;
-  ftnlen	inblanklen;
+  ftnint       *inex;       /*parameters in standard's order*/
+  ftnint       *inopen;
+  ftnint       *innum;
+  ftnint       *innamed;
+  char       *inname;
+  ftnlen       innamlen;
+  char       *inacc;
+  ftnlen       inacclen;
+  char       *inseq;
+  ftnlen       inseqlen;
+  char        *indir;
+  ftnlen       indirlen;
+  char       *infmt;
+  ftnlen       infmtlen;
+  char       *inform;
+  ftnint       informlen;
+  char       *inunf;
+  ftnlen       inunflen;
+  ftnint       *inrecl;
+  ftnint       *innrec;
+  char       *inblank;
+  ftnlen       inblanklen;
 } inlist;
 
 #define VOID void

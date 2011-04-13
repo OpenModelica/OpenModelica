@@ -18,7 +18,7 @@ extern void z_putc(int);
 z_wSL(Void)
 {
   while(f__recpos < f__svic->icirlen)
-  	z_putc(' ');
+         z_putc(' ');
   return z_rnew();
   }
 

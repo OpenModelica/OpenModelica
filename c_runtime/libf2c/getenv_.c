@@ -19,8 +19,8 @@ extern char *F77_aloc(ftnlen, char*);
  * where:
  *  ENV_NAME is the name of an environment variable
  *  char_var is a character variable which will receive
- *  	the current value of ENV_NAME, or all blanks
- *  	if ENV_NAME is not defined
+ *         the current value of ENV_NAME, or all blanks
+ *         if ENV_NAME is not defined
  */
 
 #ifdef KR_headers
@@ -35,27 +35,27 @@ getenv_(char *fname, char *value, ftnlen flen, ftnlen vlen)
   integer i;
 
   if (flen <= 0)
-  	goto add_blanks;
+         goto add_blanks;
   for(i = 0; i < sizeof(buf); i++) {
-  	if (i == flen || (buf[i] = fname[i]) == ' ') {
-  		buf[i] = 0;
-  		ep = getenv(buf);
-  		goto have_ep;
-  		}
-  	}
+         if (i == flen || (buf[i] = fname[i]) == ' ') {
+                buf[i] = 0;
+                ep = getenv(buf);
+                goto have_ep;
+                }
+         }
   while(i < flen && fname[i] != ' ')
-  	i++;
+         i++;
   strncpy(fp = F77_aloc(i+1, "getenv_"), fname, (int)i);
   fp[i] = 0;
   ep = getenv(fp);
   free(fp);
  have_ep:
   if (ep)
-  	while(*ep && vlen-- > 0)
-  		*value++ = *ep++;
+         while(*ep && vlen-- > 0)
+                *value++ = *ep++;
  add_blanks:
   while(vlen-- > 0)
-  	*value++ = ' ';
+         *value++ = ' ';
   }
 #ifdef __cplusplus
 }

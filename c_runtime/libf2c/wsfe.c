@@ -20,11 +20,11 @@ xw_end(Void)
   int n;
 
   if(f__nonl) {
-  	f__putbuf(n = 0);
-  	fflush(f__cf);
-  	}
+         f__putbuf(n = 0);
+         fflush(f__cf);
+         }
   else
-  	n = f__putbuf('\n');
+         n = f__putbuf('\n');
   f__hiwater = f__recpos = f__cursor = 0;
   return n;
 }
@@ -34,9 +34,9 @@ xw_rev(Void)
 {
   int n = 0;
   if(f__workdone) {
-  	n = f__putbuf('\n');
-  	f__workdone = 0;
-  	}
+         n = f__putbuf('\n');
+         f__workdone = 0;
+         }
   f__hiwater = f__recpos = f__cursor = 0;
   return n;
 }
@@ -70,7 +70,7 @@ integer s_wsfe(cilist *a)  /*start*/
   f__cplus=0;
   f__cblank=f__curunit->ublnk;
   if(f__curunit->uwrt != 1 && f__nowwriting(f__curunit))
-  	err(a->cierr,errno,"write start");
+         err(a->cierr,errno,"write start");
   return(0);
 }
 #ifdef __cplusplus

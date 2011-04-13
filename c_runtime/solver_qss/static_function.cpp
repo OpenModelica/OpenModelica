@@ -25,24 +25,24 @@ void StaticFunction::init(Time t, unsigned int i)
   index=i;
   sigma=1e-12;
   outVars=1;
-	out = new double[outVars];
-	outdt = new double[outVars];
- 	out_dt = new double[outVars];
- 	if (order>1) {
- 		out_2dt = new double[outVars]; 
+       out = new double[outVars];
+       outdt = new double[outVars];
+        out_dt = new double[outVars];
+        if (order>1) {
+               out_2dt = new double[outVars]; 
     out2dt = new double[outVars]; 
   }
 }
  
 void StaticFunction::makeStep(Time t)
 {
-	function_staticBlocks(index,t,NULL,out);
-	derX[0].setCoeff(0,out[0]);
-	derX[0].sampledAt(t);
-	sigma=INF;
+       function_staticBlocks(index,t,NULL,out);
+       derX[0].setCoeff(0,out[0]);
+       derX[0].sampledAt(t);
+       sigma=INF;
 }
 
 void StaticFunction::update(Time t) 
 {
-	sigma=0;
+       sigma=0;
 }

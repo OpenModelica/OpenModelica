@@ -10,11 +10,11 @@ extern "C" {
 xrd_SL(Void)
 {  int ch;
   if(!f__curunit->uend)
-  	while((ch=getc(f__cf))!='\n')
-  		if (ch == EOF) {
-  			f__curunit->uend = 1;
-  			break;
-  			}
+         while((ch=getc(f__cf))!='\n')
+                if (ch == EOF) {
+                       f__curunit->uend = 1;
+                       break;
+                       }
   f__cursor=f__recpos=0;
   return(1);
 }
@@ -25,17 +25,17 @@ x_getc(Void)
   if(f__curunit->uend) return(EOF);
   ch = getc(f__cf);
   if(ch!=EOF && ch!='\n')
-  {	f__recpos++;
-  	return(ch);
+  {       f__recpos++;
+         return(ch);
   }
   if(ch=='\n')
-  {	(void) ungetc(ch,f__cf);
-  	return(ch);
+  {       (void) ungetc(ch,f__cf);
+         return(ch);
   }
   if(f__curunit->uend || feof(f__cf))
-  {	errno=0;
-  	f__curunit->uend=1;
-  	return(-1);
+  {       errno=0;
+         f__curunit->uend=1;
+         return(-1);
   }
   return(-1);
 }
@@ -81,9 +81,9 @@ integer s_rsfe(cilist *a) /* start */
   f__cblank=f__curunit->ublnk;
   f__cplus=0;
   if(f__curunit->uwrt && f__nowreading(f__curunit))
-  	err(a->cierr,errno,"read start");
+         err(a->cierr,errno,"read start");
   if(f__curunit->uend)
-  	err(f__elist->ciend,(EOF),"read start");
+         err(f__elist->ciend,(EOF),"read start");
   return(0);
 }
 #ifdef __cplusplus

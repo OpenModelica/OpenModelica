@@ -48,8 +48,8 @@ etime_(float *tarray)
   struct tms t;
 
   times(&t);
-  return	  (tarray[0] = (double)t.tms_utime/Hz)
-  	+ (tarray[1] = (double)t.tms_stime/Hz);
+  return         (tarray[0] = (double)t.tms_utime/Hz)
+         + (tarray[1] = (double)t.tms_stime/Hz);
 #endif
   }
 #ifdef __cplusplus

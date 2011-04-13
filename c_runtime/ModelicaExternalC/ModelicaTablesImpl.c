@@ -20,7 +20,7 @@ int ModelicaTables_CombiTimeTable_init(const char* tableName, const char* fileNa
                                         int extrapolation) 
 {
   return omcTableTimeIni(startTime, startTime, smoothness, extrapolation, 
-  		 tableName, fileName, table, nRow, nColumn, 0);
+                         tableName, fileName, table, nRow, nColumn, 0);
 }
 
 void ModelicaTables_CombiTimeTable_close(int tableID)
@@ -52,8 +52,7 @@ int ModelicaTables_CombiTable1D_init(const char* tableName, const char* fileName
                                        double const *table, int nRow, int nColumn,
                                        int smoothness)
 {
-  return omcTableTimeIni(0.0, 0.0, smoothness, 0, tableName, fileName,
-  		 table, nRow, nColumn, 0);
+  return omcTableTimeIni(0.0, 0.0, smoothness, 0, tableName, fileName, table, nRow, nColumn, 0);
 }
 
 void ModelicaTables_CombiTable1D_close(int tableID) 

@@ -40,29 +40,29 @@ qbit_cshift(longint a, integer b, integer len)
 
   x = (ulongint)a;
   if (len <= 0) {
-  	if (len == 0)
-  		return 0;
-  	goto full_len;
-  	}
+         if (len == 0)
+                return 0;
+         goto full_len;
+         }
   if (len >= LONG8BITS) {
  full_len:
-  	if (b >= 0) {
-  		b %= LONG8BITS;
-  		return (longint)(x << b | x >> LONG8BITS - b );
-  		}
-  	b = -b;
-  	b %= LONG8BITS;
-  	return (longint)(x << LONG8BITS - b | x >> b);
-  	}
+         if (b >= 0) {
+                b %= LONG8BITS;
+                return (longint)(x << b | x >> LONG8BITS - b );
+                }
+         b = -b;
+         b %= LONG8BITS;
+         return (longint)(x << LONG8BITS - b | x >> b);
+         }
   y = z = (unsigned long)-1;
   y <<= len;
   z &= ~y;
   y &= x;
   x &= z;
   if (b >= 0) {
-  	b %= len;
-  	return (longint)(y | z & (x << b | x >> len - b));
-  	}
+         b %= len;
+         return (longint)(y | z & (x << b | x >> len - b));
+         }
   b = -b;
   b %= len;
   return (longint)(y | z & (x >> b | x << len - b));

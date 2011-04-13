@@ -26,22 +26,22 @@ void sig_die(register char *s, int kill)
   fprintf(stderr, "%s\n", s);
 
   if(kill)
-  	{
-  	fflush(stderr);
-  	f_exit();
-  	fflush(stderr);
-  	/* now get a core */
+         {
+         fflush(stderr);
+         f_exit();
+         fflush(stderr);
+         /* now get a core */
 #ifdef SIGIOT
-  	signal(SIGIOT, SIG_DFL);
+         signal(SIGIOT, SIG_DFL);
 #endif
-  	abort();
-  	}
+         abort();
+         }
   else {
 #ifdef NO_ONEXIT
-  	f_exit();
+         f_exit();
 #endif
-  	exit(1);
-  	}
+         exit(1);
+         }
   }
 #ifdef __cplusplus
 }

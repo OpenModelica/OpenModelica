@@ -263,10 +263,10 @@ bool Static::connect(bool graphics)
     //  ofs << 2 << endl;
     if(socket2.state() != QAbstractSocket::UnconnectedState)
     {
-      //  	ofs << 3 << endl;
+      //         ofs << 3 << endl;
       return true;
-      //  		socket2.disconnectFromHost();
-      //  		socket2.waitForDisconnected(1000);
+      //                socket2.disconnectFromHost();
+      //                socket2.waitForDisconnected(1000);
     }
 
     socket2.connectToHost(QHostAddress::LocalHost, Static::port2);
@@ -299,8 +299,8 @@ bool Static::connect(bool graphics)
     if(socket1.state() != QAbstractSocket::UnconnectedState)
     {
       return true;
-      //  		socket1.disconnectFromHost();
-      //  		socket1.waitForDisconnected(1000);
+      //                socket1.disconnectFromHost();
+      //                socket1.waitForDisconnected(1000);
     }
 
     socket1.connectToHost(QHostAddress::LocalHost, Static::port1);
@@ -413,9 +413,9 @@ bool ellipse(double x0, double y0, double x1, double y1, const char* color, int 
 
     out.device()->seek(0);
     out << (quint32)(block.size() - sizeof(quint32));
-    //  	socket->write(block);
-    //  	socket->flush();
-    //  	socket->waitForBytesWritten(5000);
+    //         socket->write(block);
+    //         socket->flush();
+    //         socket->waitForBytesWritten(5000);
     Static::socket2.write(block);
     Static::socket2.flush();
     Static::socket2.waitForBytesWritten(-1);
@@ -457,9 +457,9 @@ bool rect(double x0, double y0, double x1, double y1, const char* color, int col
     Static::socket2.flush();
     Static::socket2.waitForBytesWritten(-1);
 
-    //  	socket->write(block);
-    //  	socket->flush();
-    //  	socket->waitForBytesWritten(-1);
+    //         socket->write(block);
+    //         socket->flush();
+    //         socket->waitForBytesWritten(-1);
     /*
     socket->disconnectFromHost();
     if(socket->state() == QAbstractSocket::ConnectedState)
@@ -571,7 +571,7 @@ bool pltTable(double* table, size_t r, size_t c) //, const char* legend, int siz
   //  Connection C;
   //  QTcpSocket* socket = C.newConnection();
   //  if(!socket)
-  //  	return false;
+  //         return false;
 
   if(Static::connect(false))
   {
@@ -670,7 +670,7 @@ bool pltTable(double* table, size_t r, size_t c) //, const char* legend, int siz
     if(Static::socket1.state() == QAbstractSocket::ConnectedState)
       Static::socket1.waitForDisconnected(-1);
     //  if(socket)
-    //  	delete socket;
+    //         delete socket;
 
     return true;
   }
@@ -773,7 +773,7 @@ void initSendData(int variableCount, const struct omc_varInfo** names)
   {
     // cout << names[i]->name << endl;
     *Static::out << QString(names[i]->name);
-    //  	*Static::out << QColor(Qt::color0);
+    //         *Static::out << QColor(Qt::color0);
     ++N;
   }
 
@@ -1245,7 +1245,7 @@ void emulateStreamData2(const char *info, const char* data, int port)
 
   for(unsigned int i = 0; i < variableNames.size(); ++i)
   {
-    //  	cout << "name: " << variableNames[i].toStdString() << endl;
+    //         cout << "name: " << variableNames[i].toStdString() << endl;
     out << variableNames[i];
   }
 
@@ -1280,7 +1280,7 @@ void emulateStreamData2(const char *info, const char* data, int port)
     socket->waitForBytesWritten(-1);
 
     block.clear();
-    //  	cout << "i: " << i << endl;
+    //         cout << "i: " << i << endl;
     //_sleep(500);
     if(!(i%100))
       socket->flush();
@@ -1320,7 +1320,7 @@ void emulateStreamData2(const char *info, const char* data, int port)
 
   for(quint32 j = 0; j < variableNames.size(); ++j)
   {
-  //  		cout << variableNames[j].toStdString() << ": " << (*variableValues[j])[i] << endl;
+  //                cout << variableNames[j].toStdString() << ": " << (*variableValues[j])[i] << endl;
   out << variableNames[j];
   out << (*variableValues[j])[i];
   cout << ".";

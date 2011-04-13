@@ -6,14 +6,14 @@ typedef double Time;
 class Simulator  
 {
 public:
-	Time e;
-	Time tl;
-	Time tn;
+       Time e;
+       Time tl;
+       Time tn;
   double sigma;
-	virtual void makeStep(Time)=0;
-	virtual void update(Time)=0;
-	virtual void init(Time, unsigned int i)=0;
-	double ta(){return sigma;};
+       virtual void makeStep(Time)=0;
+       virtual void update(Time)=0;
+       virtual void init(Time, unsigned int i)=0;
+       double ta(){return sigma;};
 };
 
 #endif

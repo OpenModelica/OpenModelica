@@ -4,8 +4,8 @@ double minposroot(double *coeff, int order) {
   double mpr;
   switch (order) {
   case 0:
-	  mpr=INF;
-	break;
+         mpr=INF;
+       break;
   case 1:
     if (coeff[1]==0) { 
       mpr=INF;
@@ -16,30 +16,30 @@ double minposroot(double *coeff, int order) {
     break;
   case 2:
   if (coeff[2]==0 || (1000*fabs(coeff[2]))<fabs(coeff[1])){
-	if (coeff[1]==0) { 
-	  mpr=INF;
-	} else {
-	  mpr=-coeff[0]/coeff[1];
-	};
-	if (mpr<0) mpr=INF;
+       if (coeff[1]==0) { 
+         mpr=INF;
+       } else {
+         mpr=-coeff[0]/coeff[1];
+       };
+       if (mpr<0) mpr=INF;
       } else {
-	double disc;
-	disc=coeff[1]*coeff[1]-4*coeff[2]*coeff[0];
-	if (disc<0) {
-	  //no real roots
-	  mpr=INF;
-	} else {
-	  double sd,r1;
-	  sd=sqrt(disc);
-	  r1=(-coeff[1]+sd)/2/coeff[2];
-	  if (r1>0) {
-	    mpr=r1;
-	  } else {
-	    mpr=INF;
-	  };
-	  r1=(-coeff[1]-sd)/2/coeff[2];
-	  if ((r1>0)&&(r1<mpr)) mpr=r1;
-	};
+       double disc;
+       disc=coeff[1]*coeff[1]-4*coeff[2]*coeff[0];
+       if (disc<0) {
+         //no real roots
+         mpr=INF;
+       } else {
+         double sd,r1;
+         sd=sqrt(disc);
+         r1=(-coeff[1]+sd)/2/coeff[2];
+         if (r1>0) {
+           mpr=r1;
+         } else {
+           mpr=INF;
+         };
+         r1=(-coeff[1]-sd)/2/coeff[2];
+         if ((r1>0)&&(r1<mpr)) mpr=r1;
+       };
       };
       break;
 
@@ -53,37 +53,37 @@ double minposroot(double *coeff, int order) {
       disc=q*q*q+r*r;
       mpr=INF;
       if (disc>=0) {
-	//only one real root
-	double sd,s,t,r1;
-	sd=sqrt(disc);
-	if (r+sd>0) {  
-	  s=pow(r+sd,1.0/3);
-	} else {
-	  s=-pow(fabs(r+sd),1.0/3);
-	};  
-	if (r-sd>0) {  
-	  t=pow(r-sd,1.0/3);
-	} else {
-	  t=-pow(fabs(r-sd),1.0/3);
-	};  
-	r1=s+t-coeff[2]/3/coeff[3];
-	if (r1>0) mpr=r1;
+       //only one real root
+       double sd,s,t,r1;
+       sd=sqrt(disc);
+       if (r+sd>0) {  
+         s=pow(r+sd,1.0/3);
+       } else {
+         s=-pow(fabs(r+sd),1.0/3);
+       };  
+       if (r-sd>0) {  
+         t=pow(r-sd,1.0/3);
+       } else {
+         t=-pow(fabs(r-sd),1.0/3);
+       };  
+       r1=s+t-coeff[2]/3/coeff[3];
+       if (r1>0) mpr=r1;
       }  else {
-	//three real roots
-	double rho,th,rho13,costh3,sinth3,spt,smti32,r1;
+       //three real roots
+       double rho,th,rho13,costh3,sinth3,spt,smti32,r1;
         rho=sqrt(-q*q*q);
-	th=acos(r/rho);
-	rho13=pow(rho,1.0/3);
-	costh3=cos(th/3);
-	sinth3=sin(th/3);
-	spt=rho13*2*costh3;
-	smti32=-rho13*sinth3*sqrt(3);
-	r1=spt-coeff[2]/3/coeff[3];
-	if (r1>0) mpr=r1;
-	r1=-spt/2-coeff[2]/3/coeff[3]+smti32;
-	if ((r1>0)&&(r1<mpr)) mpr=r1;
-	r1=r1-2*smti32;
-	if ((r1>0)&&(r1<mpr)) mpr=r1;
+       th=acos(r/rho);
+       rho13=pow(rho,1.0/3);
+       costh3=cos(th/3);
+       sinth3=sin(th/3);
+       spt=rho13*2*costh3;
+       smti32=-rho13*sinth3*sqrt(3);
+       r1=spt-coeff[2]/3/coeff[3];
+       if (r1>0) mpr=r1;
+       r1=-spt/2-coeff[2]/3/coeff[3]+smti32;
+       if ((r1>0)&&(r1<mpr)) mpr=r1;
+       r1=r1-2*smti32;
+       if ((r1>0)&&(r1<mpr)) mpr=r1;
       };
   
     };

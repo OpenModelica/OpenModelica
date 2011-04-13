@@ -34,32 +34,32 @@ integer f_clos(cllist *a)
   if(a->cunit >= MXUNIT) return(0);
   b= &f__units[a->cunit];
   if(b->ufd==NULL)
-  	goto done;
+         goto done;
   if (b->uscrtch == 1)
-  	goto Delete;
+         goto Delete;
   if (!a->csta)
-  	goto Keep;
+         goto Keep;
   switch(*a->csta) {
-  	default:
-   	Keep:
-  	case 'k':
-  	case 'K':
-  		if(b->uwrt == 1)
-  			t_runc((alist *)a);
-  		if(b->ufnm) {
-  			fclose(b->ufd);
-  			free(b->ufnm);
-  			}
-  		break;
-  	case 'd':
-  	case 'D':
-  	Delete:
-  		fclose(b->ufd);
-  		if(b->ufnm) {
-  			unlink(b->ufnm); /*SYSDEP*/
-  			free(b->ufnm);
-  			}
-  	}
+         default:
+          Keep:
+         case 'k':
+         case 'K':
+                if(b->uwrt == 1)
+                       t_runc((alist *)a);
+                if(b->ufnm) {
+                       fclose(b->ufd);
+                       free(b->ufnm);
+                       }
+                break;
+         case 'd':
+         case 'D':
+         Delete:
+                fclose(b->ufd);
+                if(b->ufnm) {
+                       unlink(b->ufnm); /*SYSDEP*/
+                       free(b->ufnm);
+                       }
+         }
   b->ufd=NULL;
  done:
   b->uend=0;
@@ -75,13 +75,13 @@ f_exit(void)
 {  int i;
   static cllist xx;
   if (!xx.cerr) {
-  	xx.cerr=1;
-  	xx.csta=NULL;
-  	for(i=0;i<MXUNIT;i++)
-  	{
-  		xx.cunit=i;
-  		(void) f_clos(&xx);
-  	}
+         xx.cerr=1;
+         xx.csta=NULL;
+         for(i=0;i<MXUNIT;i++)
+         {
+                xx.cunit=i;
+                (void) f_clos(&xx);
+         }
   }
 }
  int
@@ -92,8 +92,8 @@ flush_(void)
 #endif
 {  int i;
   for(i=0;i<MXUNIT;i++)
-  	if(f__units[i].ufd != NULL && f__units[i].uwrt)
-  		fflush(f__units[i].ufd);
+         if(f__units[i].ufd != NULL && f__units[i].uwrt)
+                fflush(f__units[i].ufd);
 return 0;
 }
 #ifdef __cplusplus

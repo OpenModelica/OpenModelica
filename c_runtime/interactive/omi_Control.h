@@ -23,9 +23,9 @@ struct SimulationStatus
 {
   enum type
   {
-  	RUNNING,
-  	PAUSED,
-  	STOPPED
+         RUNNING,
+         PAUSED,
+         STOPPED
   };
 };
 

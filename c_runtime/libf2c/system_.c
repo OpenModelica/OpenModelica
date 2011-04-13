@@ -26,15 +26,15 @@ system_(register char *s, ftnlen n)
   integer rv;
 
   buff = bp = n < sizeof(buff0)
-  		? buff0 : F77_aloc(n+1, "system_");
+                ? buff0 : F77_aloc(n+1, "system_");
   blast = bp + n;
 
   while(bp < blast && *s)
-  	*bp++ = *s++;
+         *bp++ = *s++;
   *bp = 0;
   rv = system(buff);
   if (buff != buff0)
-  	free(buff);
+         free(buff);
   return rv;
   }
 #ifdef __cplusplus

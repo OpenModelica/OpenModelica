@@ -49,7 +49,7 @@ typedef union
 #ifndef KR_headers
   signed
 #endif
-  	char ic;
+         char ic;
   integer il;
 #ifdef Allow_TYQUAD
   longint ili;

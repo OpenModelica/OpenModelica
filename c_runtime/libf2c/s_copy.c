@@ -23,34 +23,34 @@ void s_copy(register char *a, register char *b, ftnlen la, ftnlen lb)
 
   if(la <= lb)
 #ifndef NO_OVERWRITE
-  	if (a <= b || a >= b + la)
+         if (a <= b || a >= b + la)
 #endif
-  		while(a < aend)
-  			*a++ = *b++;
+                while(a < aend)
+                       *a++ = *b++;
 #ifndef NO_OVERWRITE
-  	else
-  		for(b += la; a < aend; )
-  			*--aend = *--b;
+         else
+                for(b += la; a < aend; )
+                       *--aend = *--b;
 #endif
 
   else {
-  	bend = b + lb;
+         bend = b + lb;
 #ifndef NO_OVERWRITE
-  	if (a <= b || a >= bend)
+         if (a <= b || a >= bend)
 #endif
-  		while(b < bend)
-  			*a++ = *b++;
+                while(b < bend)
+                       *a++ = *b++;
 #ifndef NO_OVERWRITE
-  	else {
-  		a += lb;
-  		while(b < bend)
-  			*--a = *--bend;
-  		a += lb;
-  		}
+         else {
+                a += lb;
+                while(b < bend)
+                       *--a = *--bend;
+                a += lb;
+                }
 #endif
-  	while(a < aend)
-  		*a++ = ' ';
-  	}
+         while(a < aend)
+                *a++ = ' ';
+         }
   }
 #ifdef __cplusplus
 }

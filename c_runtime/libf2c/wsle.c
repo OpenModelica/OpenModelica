@@ -23,7 +23,7 @@ integer s_wsle(cilist *a)
   L_len = LINE;
   f__donewrec = x_wSL;
   if(f__curunit->uwrt != 1 && f__nowwriting(f__curunit))
-  	err(a->cierr, errno, "list output start");
+         err(a->cierr, errno, "list output start");
   return(0);
   }
 
@@ -33,7 +33,7 @@ integer e_wsle(Void)
   f__recpos=0;
 #ifdef ALWAYS_FLUSH
   if (!n && fflush(f__cf))
-  	err(f__elist->cierr, errno, "write end");
+         err(f__elist->cierr, errno, "write end");
 #endif
   return(n);
   }

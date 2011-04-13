@@ -15,16 +15,16 @@ g_char(char *a, ftnlen alen, char *b)
   char *x = a + alen, *y = b + alen;
 
   for(;; y--) {
-  	if (x <= a) {
-  		*b = 0;
-  		return;
-  		}
-  	if (*--x != ' ')
-  		break;
-  	}
+         if (x <= a) {
+                *b = 0;
+                return;
+                }
+         if (*--x != ' ')
+                break;
+         }
   *y-- = 0;
   do *y-- = *x;
-  	while(x-- > a);
+         while(x-- > a);
   }
 
  VOID

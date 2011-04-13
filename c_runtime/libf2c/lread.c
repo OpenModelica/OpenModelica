@@ -85,7 +85,7 @@ t_getc(Void)
   if(f__curunit->uend) return(EOF);
   if((ch=getc(f__cf))!=EOF) return(ch);
   if(feof(f__cf))
-  	f__curunit->uend = l_eof = 1;
+         f__curunit->uend = l_eof = 1;
   return(EOF);
 }
 integer e_rsle(Void)
@@ -93,11 +93,11 @@ integer e_rsle(Void)
   int ch;
   if(f__curunit->uend) return(0);
   while((ch=t_getc())!='\n')
-  	if (ch == EOF) {
-  		if(feof(f__cf))
-  			f__curunit->uend = l_eof = 1;
-  		return EOF;
-  		}
+         if (ch == EOF) {
+                if(feof(f__cf))
+                       f__curunit->uend = l_eof = 1;
+                return EOF;
+                }
   return(0);
 }
 
@@ -123,10 +123,10 @@ l_R(int poststar, int reqint)
   int havenum, havestar, se;
 
   if (!poststar) {
-  	if (f__lcount > 0)
-  		return(0);
-  	f__lcount = 1;
-  	}
+         if (f__lcount > 0)
+                return(0);
+         f__lcount = 1;
+         }
 #ifdef Allow_TYQUAD
   f__llx = 0;
 #endif
@@ -139,124 +139,124 @@ retry:
   havenum = 0;
 
   switch(GETC(ch)) {
-  	case '-': *sp++ = ch; sp1++; spe++;
-  	case '+':
-  		GETC(ch);
-  	}
+         case '-': *sp++ = ch; sp1++; spe++;
+         case '+':
+                GETC(ch);
+         }
   while(ch == '0') {
-  	++havenum;
-  	GETC(ch);
-  	}
+         ++havenum;
+         GETC(ch);
+         }
   while(isdigit(ch)) {
-  	if (sp < spe) *sp++ = ch;
-  	else ++exp;
-  	GETC(ch);
-  	}
+         if (sp < spe) *sp++ = ch;
+         else ++exp;
+         GETC(ch);
+         }
   if (ch == '*' && !poststar) {
-  	if (sp == sp1 || exp || *s == '-') {
-  		errfl(f__elist->cierr,112,"bad repetition count");
-  		}
-  	poststar = havestar = 1;
-  	*sp = 0;
-  	f__lcount = atoi(s);
-  	goto retry;
-  	}
+         if (sp == sp1 || exp || *s == '-') {
+                errfl(f__elist->cierr,112,"bad repetition count");
+                }
+         poststar = havestar = 1;
+         *sp = 0;
+         f__lcount = atoi(s);
+         goto retry;
+         }
   if (ch == '.') {
 #ifndef ALLOW_FLOAT_IN_INTEGER_LIST_INPUT
-  	if (reqint)
-  		errfl(f__elist->cierr,115,"invalid integer");
+         if (reqint)
+                errfl(f__elist->cierr,115,"invalid integer");
 #endif
-  	GETC(ch);
-  	if (sp == sp1)
-  		while(ch == '0') {
-  			++havenum;
-  			--exp;
-  			GETC(ch);
-  			}
-  	while(isdigit(ch)) {
-  		if (sp < spe)
-  			{ *sp++ = ch; --exp; }
-  		GETC(ch);
-  		}
-  	}
+         GETC(ch);
+         if (sp == sp1)
+                while(ch == '0') {
+                       ++havenum;
+                       --exp;
+                       GETC(ch);
+                       }
+         while(isdigit(ch)) {
+                if (sp < spe)
+                       { *sp++ = ch; --exp; }
+                GETC(ch);
+                }
+         }
   havenum += sp - sp1;
   se = 0;
   if (issign(ch))
-  	goto signonly;
+         goto signonly;
   if (havenum && isexp(ch)) {
 #ifndef ALLOW_FLOAT_IN_INTEGER_LIST_INPUT
-  	if (reqint)
-  		errfl(f__elist->cierr,115,"invalid integer");
+         if (reqint)
+                errfl(f__elist->cierr,115,"invalid integer");
 #endif
-  	GETC(ch);
-  	if (issign(ch)) {
+         GETC(ch);
+         if (issign(ch)) {
 signonly:
-  		if (ch == '-') se = 1;
-  		GETC(ch);
-  		}
-  	if (!isdigit(ch)) {
+                if (ch == '-') se = 1;
+                GETC(ch);
+                }
+         if (!isdigit(ch)) {
 bad:
-  		errfl(f__elist->cierr,112,"exponent field");
-  		}
+                errfl(f__elist->cierr,112,"exponent field");
+                }
 
-  	e = ch - '0';
-  	while(isdigit(GETC(ch))) {
-  		e = 10*e + ch - '0';
-  		if (e > EXPMAX)
-  			goto bad;
-  		}
-  	if (se)
-  		exp -= e;
-  	else
-  		exp += e;
-  	}
+         e = ch - '0';
+         while(isdigit(GETC(ch))) {
+                e = 10*e + ch - '0';
+                if (e > EXPMAX)
+                       goto bad;
+                }
+         if (se)
+                exp -= e;
+         else
+                exp += e;
+         }
   (void) Ungetc(ch, f__cf);
   if (sp > sp1) {
-  	++havenum;
-  	while(*--sp == '0')
-  		++exp;
-  	if (exp)
-  		sprintf(sp+1, "e%ld", exp);
-  	else
-  		sp[1] = 0;
-  	f__lx = atof(s);
+         ++havenum;
+         while(*--sp == '0')
+                ++exp;
+         if (exp)
+                sprintf(sp+1, "e%ld", exp);
+         else
+                sp[1] = 0;
+         f__lx = atof(s);
 #ifdef Allow_TYQUAD
-  	if (reqint&2 && (se = sp - sp1 + exp) > 14 && se < 20) {
-  		/* Assuming 64-bit longint and 32-bit long. */
-  		if (exp < 0)
-  			sp += exp;
-  		if (sp1 <= sp) {
-  			f__llx = *sp1 - '0';
-  			while(++sp1 <= sp)
-  				f__llx = 10*f__llx + (*sp1 - '0');
-  			}
-  		while(--exp >= 0)
-  			f__llx *= 10;
-  		if (*s == '-')
-  			f__llx = -f__llx;
-  		}
+         if (reqint&2 && (se = sp - sp1 + exp) > 14 && se < 20) {
+                /* Assuming 64-bit longint and 32-bit long. */
+                if (exp < 0)
+                       sp += exp;
+                if (sp1 <= sp) {
+                       f__llx = *sp1 - '0';
+                       while(++sp1 <= sp)
+                              f__llx = 10*f__llx + (*sp1 - '0');
+                       }
+                while(--exp >= 0)
+                       f__llx *= 10;
+                if (*s == '-')
+                       f__llx = -f__llx;
+                }
 #endif
-  	}
+         }
   else
-  	f__lx = 0.;
+         f__lx = 0.;
   if (havenum)
-  	f__ltype = TYLONG;
+         f__ltype = TYLONG;
   else
-  	switch(ch) {
-  		case ',':
-  		case '/':
-  			break;
-  		default:
-  			if (havestar && ( ch == ' '
-  					||ch == '\t'
-  					||ch == '\n'))
-  				break;
-  			if (nml_read > 1) {
-  				f__lquit = 2;
-  				return 0;
-  				}
-  			errfl(f__elist->cierr,112,"invalid number");
-  		}
+         switch(ch) {
+                case ',':
+                case '/':
+                       break;
+                default:
+                       if (havestar && ( ch == ' '
+                                     ||ch == '\t'
+                                     ||ch == '\n'))
+                              break;
+                       if (nml_read > 1) {
+                              f__lquit = 2;
+                              return 0;
+                              }
+                       errfl(f__elist->cierr,112,"invalid number");
+                }
   return 0;
   }
 
@@ -268,10 +268,10 @@ rd_count(register int ch)
 #endif
 {
   if (ch < '0' || ch > '9')
-  	return 1;
+         return 1;
   f__lcount = ch - '0';
   while(GETC(ch) >= '0' && ch <= '9')
-  	f__lcount = 10*f__lcount + ch - '0';
+         f__lcount = 10*f__lcount + ch - '0';
   Ungetc(ch,f__cf);
   return f__lcount <= 0;
   }
@@ -285,50 +285,50 @@ l_C(Void)
   GETC(ch);
   if(ch!='(')
   {
-  	if (nml_read > 1 && (ch < '0' || ch > '9')) {
-  		Ungetc(ch,f__cf);
-  		f__lquit = 2;
-  		return 0;
-  		}
-  	if (rd_count(ch))
-  		if(!f__cf || !feof(f__cf))
-  			errfl(f__elist->cierr,112,"complex format");
-  		else
-  			err(f__elist->cierr,(EOF),"lread");
-  	if(GETC(ch)!='*')
-  	{
-  		if(!f__cf || !feof(f__cf))
-  			errfl(f__elist->cierr,112,"no star");
-  		else
-  			err(f__elist->cierr,(EOF),"lread");
-  	}
-  	if(GETC(ch)!='(')
-  	{	Ungetc(ch,f__cf);
-  		return(0);
-  	}
+         if (nml_read > 1 && (ch < '0' || ch > '9')) {
+                Ungetc(ch,f__cf);
+                f__lquit = 2;
+                return 0;
+                }
+         if (rd_count(ch))
+                if(!f__cf || !feof(f__cf))
+                       errfl(f__elist->cierr,112,"complex format");
+                else
+                       err(f__elist->cierr,(EOF),"lread");
+         if(GETC(ch)!='*')
+         {
+                if(!f__cf || !feof(f__cf))
+                       errfl(f__elist->cierr,112,"no star");
+                else
+                       err(f__elist->cierr,(EOF),"lread");
+         }
+         if(GETC(ch)!='(')
+         {       Ungetc(ch,f__cf);
+                return(0);
+         }
   }
   else
-  	f__lcount = 1;
+         f__lcount = 1;
   while(iswhit(GETC(ch)));
   Ungetc(ch,f__cf);
   nml_save = nml_read;
   nml_read = 0;
   if (ch = l_R(1,0))
-  	return ch;
+         return ch;
   if (!f__ltype)
-  	errfl(f__elist->cierr,112,"no real part");
+         errfl(f__elist->cierr,112,"no real part");
   lz = f__lx;
   while(iswhit(GETC(ch)));
   if(ch!=',')
-  {	(void) Ungetc(ch,f__cf);
-  	errfl(f__elist->cierr,112,"no comma");
+  {       (void) Ungetc(ch,f__cf);
+         errfl(f__elist->cierr,112,"no comma");
   }
   while(iswhit(GETC(ch)));
   (void) Ungetc(ch,f__cf);
   if (ch = l_R(1,0))
-  	return ch;
+         return ch;
   if (!f__ltype)
-  	errfl(f__elist->cierr,112,"no imaginary part");
+         errfl(f__elist->cierr,112,"no imaginary part");
   while(iswhit(GETC(ch)));
   if(ch!=')') errfl(f__elist->cierr,112,"no )");
   f__ly = f__lx;
@@ -353,7 +353,7 @@ nmL_getc(Void)
 {
   int rv;
   if (rv = *nmL_next++)
-  	return rv;
+         return rv;
   l_getc = nmL_getc_save;
   l_ungetc = nmL_ungetc_save;
   return (*l_getc)();
@@ -366,7 +366,7 @@ nmL_ungetc(x, f) int x; FILE *f;
 nmL_ungetc(int x, FILE *f)
 #endif
 {
-  f = f;	/* banish non-use warning */
+  f = f;       /* banish non-use warning */
   return *--nmL_next = x;
   }
 
@@ -384,38 +384,38 @@ Lfinish(int ch, int dot, int *rvp)
   se = nmLbuf + sizeof(nmLbuf) - 1;
   *s++ = ch;
   while(!issep(GETC(ch)) && ch!=EOF) {
-  	if (s >= se) {
+         if (s >= se) {
  nmLbuf_ovfl:
-  		return *rvp = err__fl(f__elist->cierr,131,what);
-  		}
-  	*s++ = ch;
-  	if (ch != '=')
-  		continue;
-  	if (dot)
-  		return *rvp = err__fl(f__elist->cierr,112,what);
+                return *rvp = err__fl(f__elist->cierr,131,what);
+                }
+         *s++ = ch;
+         if (ch != '=')
+                continue;
+         if (dot)
+                return *rvp = err__fl(f__elist->cierr,112,what);
  got_eq:
-  	*s = 0;
-  	nmL_getc_save = l_getc;
-  	l_getc = nmL_getc;
-  	nmL_ungetc_save = l_ungetc;
-  	l_ungetc = nmL_ungetc;
-  	nmLbuf[1] = *(nmL_next = nmLbuf) = ',';
-  	*rvp = f__lcount = 0;
-  	return 1;
-  	}
+         *s = 0;
+         nmL_getc_save = l_getc;
+         l_getc = nmL_getc;
+         nmL_ungetc_save = l_ungetc;
+         l_ungetc = nmL_ungetc;
+         nmLbuf[1] = *(nmL_next = nmLbuf) = ',';
+         *rvp = f__lcount = 0;
+         return 1;
+         }
   if (dot)
-  	goto done;
+         goto done;
   for(;;) {
-  	if (s >= se)
-  		goto nmLbuf_ovfl;
-  	*s++ = ch;
-  	if (!isblnk(ch))
-  		break;
-  	if (GETC(ch) == EOF)
-  		goto done;
-  	}
+         if (s >= se)
+                goto nmLbuf_ovfl;
+         *s++ = ch;
+         if (!isblnk(ch))
+                break;
+         if (GETC(ch) == EOF)
+                goto done;
+         }
   if (ch == '=')
-  	goto got_eq;
+         goto got_eq;
  done:
   Ungetc(ch, f__cf);
   return 0;
@@ -427,50 +427,50 @@ l_L(Void)
   int ch, rv, sawdot;
 
   if(f__lcount>0)
-  	return(0);
+         return(0);
   f__lcount = 1;
   f__ltype=0;
   GETC(ch);
   if(isdigit(ch))
   {
-  	rd_count(ch);
-  	if(GETC(ch)!='*')
-  		if(!f__cf || !feof(f__cf))
-  			errfl(f__elist->cierr,112,"no star");
-  		else
-  			err(f__elist->cierr,(EOF),"lread");
-  	GETC(ch);
+         rd_count(ch);
+         if(GETC(ch)!='*')
+                if(!f__cf || !feof(f__cf))
+                       errfl(f__elist->cierr,112,"no star");
+                else
+                       err(f__elist->cierr,(EOF),"lread");
+         GETC(ch);
   }
   sawdot = 0;
   if(ch == '.') {
-  	sawdot = 1;
-  	GETC(ch);
-  	}
+         sawdot = 1;
+         GETC(ch);
+         }
   switch(ch)
   {
   case 't':
   case 'T':
-  	if (nml_read && Lfinish(ch, sawdot, &rv))
-  		return rv;
-  	f__lx=1;
-  	break;
+         if (nml_read && Lfinish(ch, sawdot, &rv))
+                return rv;
+         f__lx=1;
+         break;
   case 'f':
   case 'F':
-  	if (nml_read && Lfinish(ch, sawdot, &rv))
-  		return rv;
-  	f__lx=0;
-  	break;
+         if (nml_read && Lfinish(ch, sawdot, &rv))
+                return rv;
+         f__lx=0;
+         break;
   default:
-  	if(isblnk(ch) || issep(ch) || ch==EOF)
-  	{	(void) Ungetc(ch,f__cf);
-  		return(0);
-  	}
-  	if (nml_read > 1) {
-  		Ungetc(ch,f__cf);
-  		f__lquit = 2;
-  		return 0;
-  		}
-  	errfl(f__elist->cierr,112,"logical");
+         if(isblnk(ch) || issep(ch) || ch==EOF)
+         {       (void) Ungetc(ch,f__cf);
+                return(0);
+         }
+         if (nml_read > 1) {
+                Ungetc(ch,f__cf);
+                f__lquit = 2;
+                return 0;
+                }
+         errfl(f__elist->cierr,112,"logical");
   }
   f__ltype=TYLONG;
   while(!issep(GETC(ch)) && ch!=EOF);
@@ -491,133 +491,133 @@ l_CHAR(Void)
   size=BUFSIZE;
   p=f__lchar = (char *)malloc((unsigned int)size);
   if(f__lchar == NULL)
-  	errfl(f__elist->cierr,113,"no space");
+         errfl(f__elist->cierr,113,"no space");
 
   GETC(ch);
   if(isdigit(ch)) {
-  	/* allow Fortran 8x-style unquoted string...	*/
-  	/* either find a repetition count or the string	*/
-  	f__lcount = ch - '0';
-  	*p++ = ch;
-  	for(i = 1;;) {
-  		switch(GETC(ch)) {
-  			case '*':
-  				if (f__lcount == 0) {
-  					f__lcount = 1;
+         /* allow Fortran 8x-style unquoted string...       */
+         /* either find a repetition count or the string       */
+         f__lcount = ch - '0';
+         *p++ = ch;
+         for(i = 1;;) {
+                switch(GETC(ch)) {
+                       case '*':
+                              if (f__lcount == 0) {
+                                     f__lcount = 1;
 #ifndef F8X_NML_ELIDE_QUOTES
-  					if (nml_read)
-  						goto no_quote;
+                                     if (nml_read)
+                                            goto no_quote;
 #endif
-  					goto noquote;
-  					}
-  				p = f__lchar;
-  				goto have_lcount;
-  			case ',':
-  			case ' ':
-  			case '\t':
-  			case '\n':
-  			case '/':
-  				Ungetc(ch,f__cf);
-  				/* no break */
-  			case EOF:
-  				f__lcount = 1;
-  				f__ltype = TYCHAR;
-  				return *p = 0;
-  			}
-  		if (!isdigit(ch)) {
-  			f__lcount = 1;
+                                     goto noquote;
+                                     }
+                              p = f__lchar;
+                              goto have_lcount;
+                       case ',':
+                       case ' ':
+                       case '\t':
+                       case '\n':
+                       case '/':
+                              Ungetc(ch,f__cf);
+                              /* no break */
+                       case EOF:
+                              f__lcount = 1;
+                              f__ltype = TYCHAR;
+                              return *p = 0;
+                       }
+                if (!isdigit(ch)) {
+                       f__lcount = 1;
 #ifndef F8X_NML_ELIDE_QUOTES
-  			if (nml_read) {
+                       if (nml_read) {
  no_quote:
-  				errfl(f__elist->cierr,112,
-  					"undelimited character string");
-  				}
+                              errfl(f__elist->cierr,112,
+                                     "undelimited character string");
+                              }
 #endif
-  			goto noquote;
-  			}
-  		*p++ = ch;
-  		f__lcount = 10*f__lcount + ch - '0';
-  		if (++i == size) {
-  			f__lchar = (char *)realloc(f__lchar,
-  				(unsigned int)(size += BUFSIZE));
-  			if(f__lchar == NULL)
-  				errfl(f__elist->cierr,113,rafail);
-  			p = f__lchar + i;
-  			}
-  		}
-  	}
-  else	(void) Ungetc(ch,f__cf);
+                       goto noquote;
+                       }
+                *p++ = ch;
+                f__lcount = 10*f__lcount + ch - '0';
+                if (++i == size) {
+                       f__lchar = (char *)realloc(f__lchar,
+                              (unsigned int)(size += BUFSIZE));
+                       if(f__lchar == NULL)
+                              errfl(f__elist->cierr,113,rafail);
+                       p = f__lchar + i;
+                       }
+                }
+         }
+  else       (void) Ungetc(ch,f__cf);
  have_lcount:
   if(GETC(ch)=='\'' || ch=='"') quote=ch;
   else if(isblnk(ch) || (issep(ch) && ch != '\n') || ch==EOF) {
-  	Ungetc(ch,f__cf);
-  	return 0;
-  	}
+         Ungetc(ch,f__cf);
+         return 0;
+         }
 #ifndef F8X_NML_ELIDE_QUOTES
   else if (nml_read > 1) {
-  	Ungetc(ch,f__cf);
-  	f__lquit = 2;
-  	return 0;
-  	}
+         Ungetc(ch,f__cf);
+         f__lquit = 2;
+         return 0;
+         }
 #endif
   else {
-  	/* Fortran 8x-style unquoted string */
-  	*p++ = ch;
-  	for(i = 1;;) {
-  		switch(GETC(ch)) {
-  			case ',':
-  			case ' ':
-  			case '\t':
-  			case '\n':
-  			case '/':
-  				Ungetc(ch,f__cf);
-  				/* no break */
-  			case EOF:
-  				f__ltype = TYCHAR;
-  				return *p = 0;
-  			}
+         /* Fortran 8x-style unquoted string */
+         *p++ = ch;
+         for(i = 1;;) {
+                switch(GETC(ch)) {
+                       case ',':
+                       case ' ':
+                       case '\t':
+                       case '\n':
+                       case '/':
+                              Ungetc(ch,f__cf);
+                              /* no break */
+                       case EOF:
+                              f__ltype = TYCHAR;
+                              return *p = 0;
+                       }
  noquote:
-  		*p++ = ch;
-  		if (++i == size) {
-  			f__lchar = (char *)realloc(f__lchar,
-  				(unsigned int)(size += BUFSIZE));
-  			if(f__lchar == NULL)
-  				errfl(f__elist->cierr,113,rafail);
-  			p = f__lchar + i;
-  			}
-  		}
-  	}
+                *p++ = ch;
+                if (++i == size) {
+                       f__lchar = (char *)realloc(f__lchar,
+                              (unsigned int)(size += BUFSIZE));
+                       if(f__lchar == NULL)
+                              errfl(f__elist->cierr,113,rafail);
+                       p = f__lchar + i;
+                       }
+                }
+         }
   f__ltype=TYCHAR;
   for(i=0;;)
-  {	while(GETC(ch)!=quote && ch!='\n'
-  		&& ch!=EOF && ++i<size) *p++ = ch;
-  	if(i==size)
-  	{
-  	newone:
-  		f__lchar= (char *)realloc(f__lchar,
-  				(unsigned int)(size += BUFSIZE));
-  		if(f__lchar == NULL)
-  			errfl(f__elist->cierr,113,rafail);
-  		p=f__lchar+i-1;
-  		*p++ = ch;
-  	}
-  	else if(ch==EOF) return(EOF);
-  	else if(ch=='\n')
-  	{	if(*(p-1) != '\\') continue;
-  		i--;
-  		p--;
-  		if(++i<size) *p++ = ch;
-  		else goto newone;
-  	}
-  	else if(GETC(ch)==quote)
-  	{	if(++i<size) *p++ = ch;
-  		else goto newone;
-  	}
-  	else
-  	{	(void) Ungetc(ch,f__cf);
-  		*p = 0;
-  		return(0);
-  	}
+  {       while(GETC(ch)!=quote && ch!='\n'
+                && ch!=EOF && ++i<size) *p++ = ch;
+         if(i==size)
+         {
+         newone:
+                f__lchar= (char *)realloc(f__lchar,
+                              (unsigned int)(size += BUFSIZE));
+                if(f__lchar == NULL)
+                       errfl(f__elist->cierr,113,rafail);
+                p=f__lchar+i-1;
+                *p++ = ch;
+         }
+         else if(ch==EOF) return(EOF);
+         else if(ch=='\n')
+         {       if(*(p-1) != '\\') continue;
+                i--;
+                p--;
+                if(++i<size) *p++ = ch;
+                else goto newone;
+         }
+         else if(GETC(ch)==quote)
+         {       if(++i<size) *p++ = ch;
+                else goto newone;
+         }
+         else
+         {       (void) Ungetc(ch,f__cf);
+                *p = 0;
+                return(0);
+         }
   }
 }
 
@@ -629,15 +629,15 @@ c_le(cilist *a)
 #endif
 {
   if(!f__init)
-  	f_init();
+         f_init();
   f__fmtbuf="list io";
   f__curunit = &f__units[a->ciunit];
   if(a->ciunit>=MXUNIT || a->ciunit<0)
-  	err(a->cierr,101,"stler");
+         err(a->cierr,101,"stler");
   f__scale=f__recpos=0;
   f__elist=a;
   if(f__curunit->ufd==NULL && fk_open(SEQ,FMT,a->ciunit))
-  	err(a->cierr,102,"lio");
+         err(a->cierr,102,"lio");
   f__cf=f__curunit->ufd;
   if(!f__curunit->ufmt) err(a->cierr,103,"lio")
   return(0);
@@ -656,121 +656,121 @@ l_read(ftnint *number, char *ptr, ftnlen len, ftnint type)
   real *xx;
   for(i=0;i<*number;i++)
   {
-  	if(f__lquit) return(0);
-  	if(l_eof)
-  		err(f__elist->ciend, EOF, "list in")
-  	if(f__lcount == 0) {
-  		f__ltype = 0;
-  		for(;;)  {
-  			GETC(ch);
-  			switch(ch) {
-  			case EOF:
-  				err(f__elist->ciend,(EOF),"list in")
-  			case ' ':
-  			case '\t':
-  			case '\n':
-  				continue;
-  			case '/':
-  				f__lquit = 1;
-  				goto loopend;
-  			case ',':
-  				f__lcount = 1;
-  				goto loopend;
-  			default:
-  				(void) Ungetc(ch, f__cf);
-  				goto rddata;
-  			}
-  		}
-  	}
+         if(f__lquit) return(0);
+         if(l_eof)
+                err(f__elist->ciend, EOF, "list in")
+         if(f__lcount == 0) {
+                f__ltype = 0;
+                for(;;)  {
+                       GETC(ch);
+                       switch(ch) {
+                       case EOF:
+                              err(f__elist->ciend,(EOF),"list in")
+                       case ' ':
+                       case '\t':
+                       case '\n':
+                              continue;
+                       case '/':
+                              f__lquit = 1;
+                              goto loopend;
+                       case ',':
+                              f__lcount = 1;
+                              goto loopend;
+                       default:
+                              (void) Ungetc(ch, f__cf);
+                              goto rddata;
+                       }
+                }
+         }
   rddata:
-  	switch((int)type)
-  	{
-  	case TYINT1:
-  	case TYSHORT:
-  	case TYLONG:
+         switch((int)type)
+         {
+         case TYINT1:
+         case TYSHORT:
+         case TYLONG:
 #ifndef ALLOW_FLOAT_IN_INTEGER_LIST_INPUT
-  		ERR(l_R(0,1));
-  		break;
+                ERR(l_R(0,1));
+                break;
 #endif
-  	case TYREAL:
-  	case TYDREAL:
-  		ERR(l_R(0,0));
-  		break;
+         case TYREAL:
+         case TYDREAL:
+                ERR(l_R(0,0));
+                break;
 #ifdef TYQUAD
-  	case TYQUAD:
-  		n = l_R(0,2);
-  		if (n)
-  			return n;
-  		break;
+         case TYQUAD:
+                n = l_R(0,2);
+                if (n)
+                       return n;
+                break;
 #endif
-  	case TYCOMPLEX:
-  	case TYDCOMPLEX:
-  		ERR(l_C());
-  		break;
-  	case TYLOGICAL1:
-  	case TYLOGICAL2:
-  	case TYLOGICAL:
-  		ERR(l_L());
-  		break;
-  	case TYCHAR:
-  		ERR(l_CHAR());
-  		break;
-  	}
+         case TYCOMPLEX:
+         case TYDCOMPLEX:
+                ERR(l_C());
+                break;
+         case TYLOGICAL1:
+         case TYLOGICAL2:
+         case TYLOGICAL:
+                ERR(l_L());
+                break;
+         case TYCHAR:
+                ERR(l_CHAR());
+                break;
+         }
   while (GETC(ch) == ' ' || ch == '\t');
   if (ch != ',' || f__lcount > 1)
-  	Ungetc(ch,f__cf);
+         Ungetc(ch,f__cf);
   loopend:
-  	if(f__lquit) return(0);
-  	if(f__cf && ferror(f__cf)) {
-  		clearerr(f__cf);
-  		errfl(f__elist->cierr,errno,"list in");
-  		}
-  	if(f__ltype==0) goto bump;
-  	switch((int)type)
-  	{
-  	case TYINT1:
-  	case TYLOGICAL1:
-  		Ptr->flchar = (char)f__lx;
-  		break;
-  	case TYLOGICAL2:
-  	case TYSHORT:
-  		Ptr->flshort = (short)f__lx;
-  		break;
-  	case TYLOGICAL:
-  	case TYLONG:
-  		Ptr->flint = (ftnint)f__lx;
-  		break;
+         if(f__lquit) return(0);
+         if(f__cf && ferror(f__cf)) {
+                clearerr(f__cf);
+                errfl(f__elist->cierr,errno,"list in");
+                }
+         if(f__ltype==0) goto bump;
+         switch((int)type)
+         {
+         case TYINT1:
+         case TYLOGICAL1:
+                Ptr->flchar = (char)f__lx;
+                break;
+         case TYLOGICAL2:
+         case TYSHORT:
+                Ptr->flshort = (short)f__lx;
+                break;
+         case TYLOGICAL:
+         case TYLONG:
+                Ptr->flint = (ftnint)f__lx;
+                break;
 #ifdef Allow_TYQUAD
-  	case TYQUAD:
-  		if (!(Ptr->fllongint = f__llx))
-  			Ptr->fllongint = f__lx;
-  		break;
+         case TYQUAD:
+                if (!(Ptr->fllongint = f__llx))
+                       Ptr->fllongint = f__lx;
+                break;
 #endif
-  	case TYREAL:
-  		Ptr->flreal=f__lx;
-  		break;
-  	case TYDREAL:
-  		Ptr->fldouble=f__lx;
-  		break;
-  	case TYCOMPLEX:
-  		xx=(real *)ptr;
-  		*xx++ = f__lx;
-  		*xx = f__ly;
-  		break;
-  	case TYDCOMPLEX:
-  		yy=(doublereal *)ptr;
-  		*yy++ = f__lx;
-  		*yy = f__ly;
-  		break;
-  	case TYCHAR:
-  		b_char(f__lchar,ptr,len);
-  		break;
-  	}
+         case TYREAL:
+                Ptr->flreal=f__lx;
+                break;
+         case TYDREAL:
+                Ptr->fldouble=f__lx;
+                break;
+         case TYCOMPLEX:
+                xx=(real *)ptr;
+                *xx++ = f__lx;
+                *xx = f__ly;
+                break;
+         case TYDCOMPLEX:
+                yy=(doublereal *)ptr;
+                *yy++ = f__lx;
+                *yy = f__ly;
+                break;
+         case TYCHAR:
+                b_char(f__lchar,ptr,len);
+                break;
+         }
   bump:
-  	if(f__lcount>0) f__lcount--;
-  	ptr += len;
-  	if (nml_read)
-  		nml_read++;
+         if(f__lcount>0) f__lcount--;
+         ptr += len;
+         if (nml_read)
+                nml_read++;
   }
   return(0);
 #undef Ptr
@@ -792,9 +792,9 @@ integer s_rsle(cilist *a)
   f__lcount = 0;
   l_eof = 0;
   if(f__curunit->uwrt && f__nowreading(f__curunit))
-  	err(a->cierr,errno,"read start");
+         err(a->cierr,errno,"read start");
   if(f__curunit->uend)
-  	err(f__elist->ciend,(EOF),"read start");
+         err(f__elist->ciend,(EOF),"read start");
   l_getc = t_getc;
   l_ungetc = un_getc;
   f__doend = xrd_SL;

@@ -20,8 +20,8 @@ for(i = 0 ; i < n ; ++i)
   s = a + i;
   t = b;
   while(t < bend)
-  	if(*s++ != *t++)
-  		goto no;
+         if(*s++ != *t++)
+                goto no;
   return(i+1);
   no: ;
   }

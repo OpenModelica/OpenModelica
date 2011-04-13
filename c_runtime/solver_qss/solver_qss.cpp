@@ -57,9 +57,9 @@ using namespace std;
 
 const int staticBlocks=1;
 double *tn;
-QssSignal *derX; 	// Derivates of states
-QssSignal *X; 		// States
-QssSignal *q;;		// Quantized versions of states
+QssSignal *derX;        // Derivates of states
+QssSignal *X;               // States
+QssSignal *q;;              // Quantized versions of states
 Simulator **childs;
 
 extern char *incidenceMatrix;
@@ -74,13 +74,13 @@ int initRuntimeAndSimulation(int, char**);
 /* The main function for the explicit euler solver */
 int qss_main( int argc, char** argv,double &start,  double &stop, double &step, long &outputSteps, double &tolerance,int flag)
 {
-	cout << "Running QSS methods" << endl;
+       cout << "Running QSS methods" << endl;
 
-	globalData->oldTime = start;
+       globalData->oldTime = start;
 
-	q = new QssSignal[globalData->nStates];
-	X = new QssSignal[globalData->nStates];
-	derX = new QssSignal[globalData->nStates];
+       q = new QssSignal[globalData->nStates];
+       X = new QssSignal[globalData->nStates];
+       derX = new QssSignal[globalData->nStates];
 
 #ifdef SAMPLER
   const unsigned int size=globalData->nStates + staticBlocks + 1 /*Sampler */;
@@ -90,7 +90,7 @@ int qss_main( int argc, char** argv,double &start,  double &stop, double &step, 
 
   childs = new Simulator *[size];
   tn = new double [size];
-	const double dQmin=1e-6,dQrel=1e-2;
+       const double dQmin=1e-6,dQrel=1e-2;
   for (int i=0;i<globalData->nStates;i++)
   {
     childs[i] = new IntegratorQSS(dQmin,dQrel);
@@ -114,7 +114,7 @@ int qss_main( int argc, char** argv,double &start,  double &stop, double &step, 
   double next_tn;
   int index=0;
   unsigned long int steps=0;
-	while(globalData->timeValue <= stop)
+       while(globalData->timeValue <= stop)
   {
     // Find minimum
     next_tn=INF;
@@ -147,17 +147,17 @@ int qss_main( int argc, char** argv,double &start,  double &stop, double &step, 
     // Update corresponding childs
     if (index==1)
     {
-			childs[0]->update(globalData->timeValue);
-     	tn[0]=globalData->timeValue+childs[0]->ta();
+                     childs[0]->update(globalData->timeValue);
+            tn[0]=globalData->timeValue+childs[0]->ta();
     } else if (index==0) {
-			globalData->states[0]=q[0].valueAt(next_tn);
-			childs[1]->update(globalData->timeValue);
-     	tn[1]=globalData->timeValue+childs[1]->ta();
-		}
-	}
+                     globalData->states[0]=q[0].valueAt(next_tn);
+                     childs[1]->update(globalData->timeValue);
+            tn[1]=globalData->timeValue+childs[1]->ta();
+              }
+       }
 
 
-	return 0;
+       return 0;
 }
 string *result_file_cstr;
 

@@ -13,9 +13,9 @@ int f__icnum;
 z_getc(Void)
 {
   if(f__recpos++ < f__svic->icirlen) {
-  	if(f__icptr >= f__icend) err(f__svic->iciend,(EOF),"endfile");
-  	return(*(unsigned char *)f__icptr++);
-  	}
+         if(f__icptr >= f__icend) err(f__svic->iciend,(EOF),"endfile");
+         return(*(unsigned char *)f__icptr++);
+         }
   return '\n';
 }
 
@@ -27,7 +27,7 @@ z_putc(int c)
 #endif
 {
   if (f__icptr < f__icend && f__recpos++ < f__svic->icirlen)
-  	*f__icptr++ = c;
+         *f__icptr++ = c;
 }
 
  int
@@ -60,7 +60,7 @@ c_si(icilist *a)
   f__sequential=f__formatted=1;
   f__external=0;
   if(pars_f(f__fmtbuf)<0)
-  	err(a->icierr,100,"startint");
+         err(a->icierr,100,"startint");
   fmt_bg();
   f__cblank=f__cplus=f__scale=0;
   f__svic=a;
@@ -77,7 +77,7 @@ c_si(icilist *a)
 iw_rev(Void)
 {
   if(f__workdone)
-  	z_endp();
+         z_endp();
   f__hiwater = f__recpos = f__cursor = 0;
   return(f__workdone=0);
   }
@@ -103,11 +103,11 @@ integer s_rsfi(icilist *a)
 z_wnew(Void)
 {
   if (f__recpos < f__hiwater) {
-  	f__icptr += f__hiwater - f__recpos;
-  	f__recpos = f__hiwater;
-  	}
+         f__icptr += f__hiwater - f__recpos;
+         f__recpos = f__hiwater;
+         }
   while(f__recpos++ < f__svic->icirlen)
-  	*f__icptr++ = ' ';
+         *f__icptr++ = ' ';
   f__recpos = 0;
   f__cursor = 0;
   f__hiwater = 0;
@@ -143,15 +143,15 @@ integer e_wsfi(Void)
   if(f__svic->icirnum != 1
    && (f__icnum >  f__svic->icirnum
    || (f__icnum == f__svic->icirnum && (f__recpos | f__hiwater))))
-  	err(f__svic->icierr,110,"inwrite");
+         err(f__svic->icierr,110,"inwrite");
   if (f__recpos < f__hiwater)
-  	f__recpos = f__hiwater;
+         f__recpos = f__hiwater;
   if (f__recpos >= f__svic->icirlen)
-  	err(f__svic->icierr,110,"recend");
+         err(f__svic->icierr,110,"recend");
   if (!f__recpos && f__icnum)
-  	return n;
+         return n;
   while(f__recpos++ < f__svic->icirlen)
-  	*f__icptr++ = ' ';
+         *f__icptr++ = ' ';
   return n;
 }
 #ifdef __cplusplus
