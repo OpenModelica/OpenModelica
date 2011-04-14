@@ -6215,7 +6215,7 @@ algorithm
         //If the type is one of the simple, predifined types a simple variable
         //declaration is added to the DAE.
         env_1 = Env.updateFrameV(env2_1, new_var, Env.VAR_DAE(), compenv);
-        vars = Util.if_(alreadyDeclared,{},{DAE.TYPES_VAR(n,DAE.ATTR(flowPrefix,streamPrefix,acc,param,dir,io),prot,ty,binding,NONE())});
+        vars = Util.if_(alreadyDeclared,{},{new_var});
         dae = Util.if_(alreadyDeclared,DAEUtil.emptyDae /*DAEUtil.extractFunctions(dae)*/,dae);
         (/*dae*/_,ih,graphNew) = InnerOuter.handleInnerOuterEquations(io,/*dae*/DAEUtil.emptyDae,ih,graphNew,graph);
 
@@ -6326,7 +6326,7 @@ algorithm
         // If the type is one of the simple, predifined types a simple variable
         // declaration is added to the DAE.
         env_1 = Env.updateFrameV(env, new_var, Env.VAR_DAE(), compenv)  ;
-        vars = Util.if_(alreadyDeclared,{},{DAE.TYPES_VAR(n,DAE.ATTR(flowPrefix,streamPrefix,acc,param,dir,io),prot,ty,binding,NONE())});
+        vars = Util.if_(alreadyDeclared,{},{new_var});
         dae = Util.if_(alreadyDeclared,DAEUtil.emptyDae /*DAEUtil.extractFunctions(dae)*/,dae);
         (/*dae*/_,ih,graph) = InnerOuter.handleInnerOuterEquations(io,/*dae*/DAEUtil.emptyDae,ih,graphNew,graph);
         // If an outer element, remove this variable from the DAE. Variable references will be bound to
