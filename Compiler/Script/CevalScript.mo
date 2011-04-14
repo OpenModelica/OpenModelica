@@ -1589,7 +1589,7 @@ algorithm
         // create the path till OMPlot
         str2 = stringAppendList({omhome,pd,"bin",pd,"OMPlot",s1});
         // create the list of arguments for OMPlot
-        str3 = "\"" +& filename +& "\" \"" +& title +& "\" \"" +& boolString(legend) +& "\" \"" +& boolString(grid) +& "\" \"plotall\" \"" +& boolString(logX) +& "\" \"" +& boolString(logY) +& "\" \"" +& xLabel +& "\" \"" +& yLabel +& "\" \"" +& realString(x1) +& "\" \"" +& realString(x2) +& "\" \"" +& realString(y1) +& "\" \"" +& realString(y2) +& "\" -ew \"" +& boolString(externalWindow) +& "\"";
+        str3 = "--filename=\"" +& filename +& "\" --title=\"" +& title +& "\" --legend=" +& boolString(legend) +& " --grid=" +& boolString(grid) +& " --plotAll --logx=" +& boolString(logX) +& " --logy=" +& boolString(logY) +& " --xlabel=\"" +& xLabel +& "\" --ylabel=\"" +& yLabel +& "\" --xrange=" +& realString(x1) +& ":" +& realString(x2) +& " --yrange=" +& realString(y1) +& ":" +& realString(y2) +& " --new-window=" +& boolString(externalWindow);
         call = str2 +& " " +& str3;
         
         0 = System.spawnCall(str2, call);
@@ -1672,7 +1672,7 @@ algorithm
         // create the path till OMPlot
         str2 = stringAppendList({omhome,pd,"bin",pd,"OMPlot",s1});
         // create the list of arguments for OMPlot
-        str3 = "\"" +& filename +& "\" \"" +& title +& "\" \"" +& boolString(legend) +& "\" \"" +& boolString(grid) +& "\" \"plot\" \"" +& boolString(logX) +& "\" \"" +& boolString(logY) +& "\" \"" +& xLabel +& "\" \"" +& yLabel +& "\" \"" +& realString(x1) +& "\" \"" +& realString(x2) +& "\" \"" +& realString(y1) +& "\" \"" +& realString(y2) +& "\" \"" +& str +& "\" -ew \"" +& boolString(externalWindow) +& "\"";
+        str3 = "--filename=\"" +& filename +& "\" --title=\"" +& title +& "\" --legend=" +& boolString(legend) +& " --grid=" +& boolString(grid) +& " --plot --logx=" +& boolString(logX) +& " --logy=" +& boolString(logY) +& " --xlabel=\"" +& xLabel +& "\" --ylabel=\"" +& yLabel +& "\" --xrange=" +& realString(x1) +& ":" +& realString(x2) +& " --yrange=" +& realString(y1) +& ":" +& realString(y2) +& " --new-window=" +& boolString(externalWindow) +& " \"" +& str +& "\"";
         call = str2 +& " " +& str3;
         
         0 = System.spawnCall(str2, call);
@@ -1815,7 +1815,7 @@ algorithm
         // create the path till OMPlot
         str2 = stringAppendList({omhome,pd,"bin",pd,"OMPlot",s1});
         // create the list of arguments for OMPlot
-        str3 = "\"" +& filename +& "\" \"" +& title +& "\" \"" +& boolString(legend) +& "\" \"" +& boolString(grid) +& "\" \"plotparametric\" \"" +& boolString(logX) +& "\" \"" +& boolString(logY) +& "\" \"" +& xLabel +& "\" \"" +& yLabel +& "\" \"" +& realString(x1) +& "\" \"" +& realString(x2) +& "\" \"" +& realString(y1) +& "\" \"" +& realString(y2) +& "\" \"" +& str +& "\" -ew \"" +& boolString(externalWindow) +& "\"";
+        str3 = "--filename=\"" +& filename +& "\" --title=\"" +& title +& "\" --legend=" +& boolString(legend) +& " --grid=" +& boolString(grid) +& " --plotParametric --logx=" +& boolString(logX) +& " --logy=" +& boolString(logY) +& " --xlabel=\"" +& xLabel +& "\" --ylabel=\"" +& yLabel +& "\" --xrange=" +& realString(x1) +& ":" +& realString(x2) +& " --yrange=" +& realString(y1) +& ":" +& realString(y2) +& " --new-window=" +& boolString(externalWindow) +& " \"" +& str +& "\"";
         call = str2 +& " " +& str3;
         
         0 = System.spawnCall(str2, call);
