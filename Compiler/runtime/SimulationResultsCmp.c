@@ -103,7 +103,7 @@ static inline void fixCommaInName(char **str, size_t len)
         k +=1;
       }
     }
-    free(str);
+    free(*str);
     *str = newvar;
   }
 }
