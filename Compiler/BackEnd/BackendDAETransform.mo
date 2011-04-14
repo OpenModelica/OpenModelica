@@ -1560,7 +1560,7 @@ algorithm
       equation
         e2 = Expression.crefExp(cr);
         ((e1_1,ext_arg_1)) = func((e1,inTypeA));
-        ((DAE.CREF(cr1,_),ext_arg_2)) = func((e1,ext_arg_1));
+        ((DAE.CREF(cr1,_),ext_arg_2)) = func((e2,ext_arg_1));
         res = BackendDAE.WHEN_EQUATION(BackendDAE.WHEN_EQ(i,cr1,e1_1,NONE()),source);
         (wclst1,ext_arg_3) = traverseBackendDAEExpsWhenClause(SOME(i),wclst,func,ext_arg_2);
       then
@@ -1619,11 +1619,11 @@ algorithm
 
     case (SOME(indx),wclst,func,inTypeA)
       equation
-        BackendDAE.WHEN_CLAUSE(cond,reinitStmtLst,elsindx) = listNth(wclst,indx-1);
+        BackendDAE.WHEN_CLAUSE(cond,reinitStmtLst,elsindx) = listNth(wclst,indx);
         (wclst1,ext_arg_1) =  traverseBackendDAEExpsWhenClause(elsindx,wclst,func,inTypeA);
         ((cond1,ext_arg_2)) = func((cond,ext_arg_1));
         (reinitStmtLst1,ext_arg_3) = traverseBackendDAEExpsWhenOperator(reinitStmtLst,func,ext_arg_2);
-        wclst2 = Util.listReplaceAt(BackendDAE.WHEN_CLAUSE(cond,reinitStmtLst1,elsindx),indx-1,wclst1);
+        wclst2 = Util.listReplaceAt(BackendDAE.WHEN_CLAUSE(cond,reinitStmtLst1,elsindx),indx,wclst1);
       then
         (wclst2,ext_arg_3);
      case (_,_,_,_)
