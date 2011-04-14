@@ -4395,8 +4395,8 @@ algorithm
         eqn_lst = listReverse(eqn_lst);
         eqns_1 = BackendDAEUtil.listEquation(eqn_lst);
         subsystem_dae = BackendDAE.DAE(vars_1,knvars,exvars,av,eqns_1,se,ie,ae1,al,ev,eoc);
-        m = BackendDAEUtil.incidenceMatrix(subsystem_dae, BackendDAE.ABSOLUTE());
-        mt = BackendDAEUtil.transposeMatrix(m);
+        (m,mt) = BackendDAEUtil.incidenceMatrix(subsystem_dae, BackendDAE.ABSOLUTE());
+        //mt = BackendDAEUtil.transposeMatrix(m);
         // calculate jacobian. If constant, linear system of equations. Otherwise nonlinear
         jac = BackendDAEUtil.calculateJacobian(vars_1, eqns_1, ae1, m, mt,true);
         // Jacobian of a Linear System is always linear 
@@ -4425,8 +4425,8 @@ algorithm
         eqn_lst = listReverse(eqn_lst);
         eqns_1 = BackendDAEUtil.listEquation(cont_eqn);
         cont_subsystem_dae = BackendDAE.DAE(vars_1,knvars,exvars,av,eqns_1,se,ie,ae1,al,ev,eoc);
-        m = BackendDAEUtil.incidenceMatrix(cont_subsystem_dae, BackendDAE.ABSOLUTE());
-        mt = BackendDAEUtil.transposeMatrix(m);
+        (m,mt) = BackendDAEUtil.incidenceMatrix(cont_subsystem_dae, BackendDAE.ABSOLUTE());
+        //mt = BackendDAEUtil.transposeMatrix(m);
         // calculate jacobian. If constant, linear system of equations. Otherwise nonlinear
         jac = BackendDAEUtil.calculateJacobian(vars_1, eqns_1, ae1, m, mt,true);
         jac_tp = BackendDAEUtil.analyzeJacobian(cont_subsystem_dae, jac);
@@ -4452,8 +4452,8 @@ algorithm
         eqn_lst = listReverse(eqn_lst);
         eqns_1 = BackendDAEUtil.listEquation(cont_eqn);
         cont_subsystem_dae = BackendDAE.DAE(vars_1,knvars,exvars,av,eqns_1,se,ie,ae1,al,ev,eoc);
-        m = BackendDAEUtil.incidenceMatrix(cont_subsystem_dae, BackendDAE.ABSOLUTE());
-        mt = BackendDAEUtil.transposeMatrix(m);
+        (m,mt) = BackendDAEUtil.incidenceMatrix(cont_subsystem_dae, BackendDAE.ABSOLUTE());
+        //mt = BackendDAEUtil.transposeMatrix(m);
         // calculate jacobian. If constant, linear system of equations.
         // Otherwise nonlinear
         jac = BackendDAEUtil.calculateJacobian(vars_1, eqns_1, ae1, m, mt, true);
@@ -4489,8 +4489,8 @@ algorithm
         eeqns = BackendDAEUtil.listEquation({});
         eieqns = BackendDAEUtil.listEquation({});
         subsystem_dae = BackendDAE.DAE(vars_1,evars,exvars,ave,eqns_1,eeqns,eieqns,ae1,al,ev,eoc);
-        m = BackendDAEUtil.incidenceMatrix(subsystem_dae, BackendDAE.ABSOLUTE());
-        mt = BackendDAEUtil.transposeMatrix(m);
+        (m,mt) = BackendDAEUtil.incidenceMatrix(subsystem_dae, BackendDAE.ABSOLUTE());
+        //mt = BackendDAEUtil.transposeMatrix(m);
         (v1,v2,subsystem_dae_1,m_2,mT_2) = BackendDAETransform.matchingAlgorithm(subsystem_dae, m, mt, (BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT(), BackendDAE.KEEP_SIMPLE_EQN()),DAEUtil.avlTreeNew());
         (comps) = BackendDAETransform.strongComponents(m_2, mT_2, v1,v2);
         (subsystem_dae_2,m_3,mT_3,v1_1,v2_1,comps_1,r,t) = BackendDAEOptimize.tearingSystem(subsystem_dae_1,m_2,mT_2,v1,v2,comps);
@@ -4521,8 +4521,8 @@ algorithm
         eqn_lst = listReverse(eqn_lst);
         eqns_1 = BackendDAEUtil.listEquation(eqn_lst);
         subsystem_dae = BackendDAE.DAE(vars_1,knvars,exvars,av,eqns_1,se,ie,ae1,al,ev,eoc);
-        m = BackendDAEUtil.incidenceMatrix(subsystem_dae, BackendDAE.ABSOLUTE());
-        mt = BackendDAEUtil.transposeMatrix(m);
+        (m,mt) = BackendDAEUtil.incidenceMatrix(subsystem_dae, BackendDAE.ABSOLUTE());
+        //mt = BackendDAEUtil.transposeMatrix(m);
         // calculate jacobian. If constant, linear system of equations. Otherwise nonlinear
         jac = BackendDAEUtil.calculateJacobian(vars_1, eqns_1, ae1, m, mt,true);
         jac_tp = BackendDAEUtil.analyzeJacobian(subsystem_dae, jac);
@@ -4786,8 +4786,8 @@ algorithm
       equation
         // check Relaxation
         true = RTOpts.debugFlag("relaxation");
-        m = BackendDAEUtil.incidenceMatrix(d, BackendDAE.ABSOLUTE());
-        mt_1 = BackendDAEUtil.transposeMatrix(m);
+        (m,mt_1) = BackendDAEUtil.incidenceMatrix(d, BackendDAE.ABSOLUTE());
+        //mt_1 = BackendDAEUtil.transposeMatrix(m);
         ave = BackendDAEUtil.emptyAliasVariables();
         evars = BackendDAEUtil.emptyVars();
         eeqns = BackendDAEUtil.listEquation({});
@@ -5207,8 +5207,8 @@ algorithm
     case (block_ as _::_::_,mixedEvent,daelow as BackendDAE.DAE(orderedVars=v,knownVars=kv,orderedEqs=eqn,arrayEqs=ae), Ass1, Ass2, helpVarInfo)
       equation
         dlowEqs = BackendDAEUtil.equationList(eqn);
-        m = BackendDAEUtil.incidenceMatrix(daelow, BackendDAE.NORMAL());
-        mT = BackendDAEUtil.transposeMatrix(m);
+        (m,mT) = BackendDAEUtil.incidenceMatrix(daelow, BackendDAE.NORMAL());
+        //mT = BackendDAEUtil.transposeMatrix(m);
         SOME(jac) = BackendDAEUtil.calculateJacobian(v, eqn, ae, m, mT,false);
         ((simVars,_)) = BackendVariable.traverseBackendDAEVars(v,traversingdlowvarToSimvar,({},kv));
         simVars = listReverse(simVars);
@@ -5428,8 +5428,8 @@ algorithm
         eqns_1 = BackendDAEUtil.listEquation(re);
         se1 = BackendDAEUtil.listEquation({});
         subsystem_dae = BackendDAE.DAE(vars,knvars,exvars,av,eqns_1,se1,ie,ae,al,ev,eoc);
-        m = BackendDAEUtil.incidenceMatrix(subsystem_dae, BackendDAE.ABSOLUTE());
-        mt_1 = BackendDAEUtil.transposeMatrix(m);
+        (m,mt_1) = BackendDAEUtil.incidenceMatrix(subsystem_dae, BackendDAE.ABSOLUTE());
+        //mt_1 = BackendDAEUtil.transposeMatrix(m);
         (v1,v2,subsystem_dae,m_2,mt_2) = BackendDAETransform.matchingAlgorithm(subsystem_dae, m, mt_1, (BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.ALLOW_UNDERCONSTRAINED(), BackendDAE.KEEP_SIMPLE_EQN()),DAE.AVLTREENODE(NONE(),0,NONE(),NONE()));
         (comps) = BackendDAETransform.strongComponents(m_2, mt_2, v1,v2);
         // calculate jacobian. If constant, linear system of equations. Otherwise nonlinear
@@ -5795,8 +5795,8 @@ algorithm
         v = BackendDAEUtil.listVar(lv);
         kn = BackendDAEUtil.listVar(lkn);
         paramdlow = BackendDAE.DAE(v,kn,extobj,alisvars,pe,emptyeqns,emptyeqns,arrayEqs,algs,BackendDAE.EVENT_INFO({},{}),extObjClasses);
-        m = BackendDAEUtil.incidenceMatrix(paramdlow,BackendDAE.NORMAL());
-        mT = BackendDAEUtil.transposeMatrix(m);
+        (m,mT) = BackendDAEUtil.incidenceMatrix(paramdlow,BackendDAE.NORMAL());
+        //mT = BackendDAEUtil.transposeMatrix(m);
         v1 = listArray(lv1);
         v2 = listArray(lv2);
         Debug.fcall("paramdlowdump", print,"Param DAE:\n");

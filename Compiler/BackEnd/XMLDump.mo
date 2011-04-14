@@ -2709,8 +2709,8 @@ algorithm
   case (false,false,_) then ();
   case (true,true,dlow)
     equation
-      m = BackendDAEUtil.incidenceMatrix(dlow, BackendDAE.NORMAL());
-      mT = BackendDAEUtil.transposeMatrix(m);
+      (m,mT) = BackendDAEUtil.incidenceMatrix(dlow, BackendDAE.NORMAL());
+      //mT = BackendDAEUtil.transposeMatrix(m);
       (v1,v2,_,m,mT) = BackendDAETransform.matchingAlgorithm(dlow, m, mT,(BackendDAE.INDEX_REDUCTION(),BackendDAE.EXACT(),BackendDAE.REMOVE_SIMPLE_EQN()),DAEUtil.avlTreeNew());
       (comps) = BackendDAETransform.strongComponents(m, mT, v1, v2);
       //(blt_states,blt_no_states) = BackendDAE.generateStatePartition(comps, dlow, v1, v2, m, mt);
@@ -2726,8 +2726,8 @@ algorithm
     then ();
   case (true,false,dlow)
     equation
-      m = BackendDAEUtil.incidenceMatrix(dlow, BackendDAE.NORMAL());
-      mT = BackendDAEUtil.transposeMatrix(m);
+      (m,mT) = BackendDAEUtil.incidenceMatrix(dlow, BackendDAE.NORMAL());
+      //mT = BackendDAEUtil.transposeMatrix(m);
       dumpStrOpenTag(ADDITIONAL_INFO);
       dumpStrOpenTag(ORIGINAL_INCIDENCE_MATRIX);
       dumpIncidenceMatrix(m);
@@ -2736,8 +2736,8 @@ algorithm
     then ();
   case (false,true,dlow)
     equation
-      m = BackendDAEUtil.incidenceMatrix(dlow, BackendDAE.NORMAL());
-      mT = BackendDAEUtil.transposeMatrix(m);
+      (m,mT) = BackendDAEUtil.incidenceMatrix(dlow, BackendDAE.NORMAL());
+      //mT = BackendDAEUtil.transposeMatrix(m);
       (v1,v2,_,m,mT) = BackendDAETransform.matchingAlgorithm(dlow, m, mT,(BackendDAE.INDEX_REDUCTION(),BackendDAE.EXACT(),BackendDAE.REMOVE_SIMPLE_EQN()),DAEUtil.avlTreeNew());
       (comps) = BackendDAETransform.strongComponents(m, mT, v1, v2);
       //(blt_states,blt_no_states) = BackendDAE.generateStatePartition(comps, dlow, v1, v2, m, mt);

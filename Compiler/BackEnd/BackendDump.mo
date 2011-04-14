@@ -1848,4 +1848,28 @@ algorithm
   print(a +& ExpressionDump.printExpStr(b) +& c +& ExpressionDump.printExpStr(d) +& e +& ExpressionDump.printExpStr(f) +& g);
 end debugStrExpStrExpStrExpStr;
 
+public function debuglst
+  input tuple<list<Type_a>,FuncTypeType_aToStr> inTpl;
+  partial function FuncTypeType_aToStr
+    input Type_a inTypeA;
+    output String outTypeA;
+  end FuncTypeType_aToStr;
+  replaceable type Type_a subtypeof Any;
+algorithm
+   _ := matchcontinue(inTpl)
+    local  
+      Type_a a;
+      list<Type_a> rest;
+      FuncTypeType_aToStr f;
+      String s;
+    case (({},_)) then ();
+    case ((a::rest,f))
+      equation 
+       s = f(a);
+       print(s); print(" ");
+       debuglst((rest,f));
+    then ();  
+  end matchcontinue;  
+end debuglst;
+
 end BackendDump;

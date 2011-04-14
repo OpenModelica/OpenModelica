@@ -3779,24 +3779,30 @@ public function incidenceMatrix
   input BackendDAE.BackendDAE inBackendDAE;
   input BackendDAE.IndexType inIndexType;
   output BackendDAE.IncidenceMatrix outIncidenceMatrix;
+  output BackendDAE.IncidenceMatrixT outIncidenceMatrixT;
 algorithm
-  outIncidenceMatrix := matchcontinue (inBackendDAE, inIndexType)
+  (outIncidenceMatrix,outIncidenceMatrixT) := matchcontinue (inBackendDAE, inIndexType)
     local
-      array<list<BackendDAE.Value>> arr;
+      BackendDAE.IncidenceMatrix arr;
+      BackendDAE.IncidenceMatrixT arrT;
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns;
       list<BackendDAE.WhenClause> wc;
-      Integer numberOfEqs;
+      Integer numberOfEqs,numberofVars;
+      list<BackendDAE.IncidenceMatrixElement> lstT;
     
     case (BackendDAE.DAE(orderedVars = vars,orderedEqs = eqns, eventInfo = BackendDAE.EVENT_INFO(whenClauseLst = wc)), inIndexType)
       equation
         // get the size
         numberOfEqs = getNumberOfEquationArray(eqns);
+        numberofVars = BackendVariable.varsSize(vars);
         // create the array to hold the incidence matrix
         arr = arrayCreate(numberOfEqs, {});
-        arr = incidenceMatrixDispatch(vars, eqns, wc, arr, 0, numberOfEqs, inIndexType);
+        lstT = Util.listFill({},numberofVars);
+        arrT = listArray(lstT);
+        (arr,arrT) = incidenceMatrixDispatch(vars, eqns, wc, arr,arrT, 0, numberOfEqs, inIndexType);
       then
-        arr;
+        (arr,arrT);
     
     case (_, inIndexType)
       equation
@@ -3830,31 +3836,34 @@ protected function incidenceMatrixDispatch
   input BackendDAE.Variables inVariables;
   input BackendDAE.EquationArray inEqsArr;
   input list<BackendDAE.WhenClause> inWhenClause;
-  input array<list<Integer>> inIncidenceArray;
+  input BackendDAE.IncidenceMatrix inIncidenceArray;
+  input BackendDAE.IncidenceMatrixT inIncidenceArrayT;
   input Integer index;
   input Integer numberOfEqs;
   input BackendDAE.IndexType inIndexType;
-  output array<list<Integer>> outIncidenceArray;
+  output BackendDAE.IncidenceMatrix outIncidenceArray;
+  output BackendDAE.IncidenceMatrixT outIncidenceArrayT;
 algorithm
-  outIncidenceArray := matchcontinue (inVariables, inEqsArr, inWhenClause, inIncidenceArray, index, numberOfEqs, inIndexType)
+  (outIncidenceArray,outIncidenceArrayT) := matchcontinue (inVariables, inEqsArr, inWhenClause, inIncidenceArray, inIncidenceArrayT, index, numberOfEqs, inIndexType)
     local
       list<BackendDAE.Value> row;
       BackendDAE.Variables vars;
       BackendDAE.Equation e;
       BackendDAE.EquationArray eqArr;
       list<BackendDAE.WhenClause> wc;
-      array<list<Integer>> iArr;
+      BackendDAE.IncidenceMatrix iArr;
+      BackendDAE.IncidenceMatrix iArrT;
       Integer i,n;
     
     // i = n (we reach the end)
-    case (vars, eqArr, wc, iArr, i, n, inIndexType)
+    case (vars, eqArr, wc, iArr, iArrT, i, n, inIndexType)
       equation
         false = intLt(i, n);
       then 
-        iArr;
+        (iArr,iArrT);
     
     // i < n 
-    case (vars, eqArr, wc, iArr, i, n, inIndexType)
+    case (vars, eqArr, wc, iArr, iArrT, i, n, inIndexType)
       equation
         true = intLt(i, n);
         // get the equation
@@ -3863,19 +3872,66 @@ algorithm
         row = incidenceRow(vars, e, wc);
         // only absolute indexes?
         row = applyIndexType(row, inIndexType);
-        // put it in the array
+        // put it in the arrays
         iArr = arrayUpdate(iArr, i+1, row);
-        iArr = incidenceMatrixDispatch(vars, eqArr, wc, iArr, i + 1, n, inIndexType);
+        iArrT = fillincidenceMatrixT(row,i+1,iArrT);
+        (iArr,iArrT) = incidenceMatrixDispatch(vars, eqArr, wc, iArr, iArrT, i + 1, n, inIndexType);
       then
-        iArr;
+        (iArr,iArrT);
     
-    case (vars, eqArr, wc, iArr, i, n, inIndexType)
+    case (vars, eqArr, wc, iArr, iArrT, i, n, inIndexType)
       equation
         print("- BackendDAEUtil.incidenceMatrixDispatch failed\n");
       then
         fail();
   end matchcontinue;
 end incidenceMatrixDispatch;
+
+protected function fillincidenceMatrixT
+"@author: Frenkel TUD 2011-04
+  inserts the equation numbers"
+  input BackendDAE.IncidenceMatrixElement eqns;
+  input BackendDAE.Value e;
+  input BackendDAE.IncidenceMatrixT inIncidenceArrayT;
+  output BackendDAE.IncidenceMatrixT outIncidenceArrayT;
+algorithm
+  outIncidenceArrayT := matchcontinue (eqns, e, inIncidenceArrayT)
+    local
+      BackendDAE.IncidenceMatrixElement row,rest,newrow;
+      BackendDAE.Value v,vabs,en;
+      BackendDAE.IncidenceMatrixT mT,mT1;
+    
+    case ({},e,inIncidenceArrayT) then inIncidenceArrayT;
+    
+    case (v::rest,e,inIncidenceArrayT)
+      equation
+        true = intLt(0, v);
+        row = inIncidenceArrayT[v];
+        // put it in the array
+        mT = arrayUpdate(inIncidenceArrayT, v, e::row);
+        mT1 = fillincidenceMatrixT(rest, e, mT);
+      then
+        mT1;
+        
+    case (v::rest,e,inIncidenceArrayT)
+      equation
+        false = intLt(0, v);
+        vabs = intAbs(v);
+        row = inIncidenceArrayT[vabs];
+        en = 0 - e;
+        // put it in the array
+        mT = arrayUpdate(inIncidenceArrayT, vabs, en::row);
+        mT1 = fillincidenceMatrixT(rest, e, mT);
+      then
+        mT1;        
+    
+    case (v::rest,e,inIncidenceArrayT)
+      equation
+        print("- BackendDAEUtil.fillincidenceMatrixT failed\n");
+      then
+        fail();
+  end matchcontinue;
+end fillincidenceMatrixT;
 
 public function incidenceRow
 "function: incidenceRow
@@ -3983,7 +4039,7 @@ algorithm
   end matchcontinue;
 end incidenceRow;
 
-protected function incidenceRowExp
+public function incidenceRowExp
 "function: incidenceRowExp
   author: PA
   Helper function to incidenceRow, investigates expressions for
@@ -4411,8 +4467,8 @@ algorithm
       BackendDAE.IncidenceMatrix m,mT;
     case(dae,NONE(),_)
       equation  
-        m = incidenceMatrix(dae, BackendDAE.NORMAL());
-        mT = transposeMatrix(m);
+        (m,mT) = incidenceMatrix(dae, BackendDAE.NORMAL());
+        //mT = transposeMatrix(m);
       then
         (m,mT);
     case(_,SOME(m),NONE())
@@ -5906,7 +5962,7 @@ public function getPreOptModulesString
 " function: getPreOptModulesString"
   output list<String> strPreOptModules;
 algorithm
- strPreOptModules := RTOpts.getPreOptModules({"removeFinalParameters","removeSimpleEquationsX","expandDerOperator"});
+ strPreOptModules := RTOpts.getPreOptModules({"removeFinalParameters","removeEqualFunctionCalls","removeSimpleEquations","expandDerOperator"});
 end getPreOptModulesString;
 
 protected function getPreOptModules
@@ -5927,10 +5983,9 @@ protected
   list<String> strPreOptModules;
 algorithm
   allPreOptModules := {(BackendDAEOptimize.removeSimpleEquations,"removeSimpleEquations"),
-          (BackendDAEOptimize.removeSimpleEquationsX,"removeSimpleEquationsX"),
-          (BackendDAEOptimize.removeParameterEqns,"removeParameterEqns"),
           (BackendDAEOptimize.inlineArrayEqn,"inlineArrayEqn"), 
           (BackendDAEOptimize.removeFinalParameters,"removeFinalParameters"),
+          (BackendDAEOptimize.removeEqualFunctionCalls,"removeEqualFunctionCalls"),
           (BackendDAEOptimize.removeProtectedParameters,"removeProtectedParameters"),
           (BackendDAECreate.expandDerOperator,"expandDerOperator")};
  strPreOptModules := getPreOptModulesString();
@@ -5943,7 +5998,7 @@ public function getPastOptModulesString
 " function: getPreOptModulesString"
   output list<String> strPastOptModules;
 algorithm
- strPastOptModules := RTOpts.getPastOptModules({"lateInline","inlineArrayEqn","removeSimpleEquationsX"});           
+ strPastOptModules := RTOpts.getPastOptModules({"lateInline","inlineArrayEqn","removeSimpleEquations"});           
 end getPastOptModulesString;
 
 protected function getPastOptModules
@@ -5972,7 +6027,7 @@ protected
 algorithm
   allPastOptModules := {(BackendDAEOptimize.lateInline,"lateInline"),
   (BackendDAEOptimize.removeSimpleEquationsPast,"removeSimpleEquations"),
-  (BackendDAEOptimize.removeSimpleEquationsXPast,"removeSimpleEquationsX"),
+  (BackendDAEOptimize.removeEqualFunctionCallsPast,"removeEqualFunctionCalls"),
   (BackendDAEOptimize.inlineArrayEqnPast,"inlineArrayEqn"),
   (BackendDump.dumpComponentsGraphStr,"dumpComponentsGraphStr")};
   strPastOptModules := getPastOptModulesString();

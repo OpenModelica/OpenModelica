@@ -64,7 +64,6 @@ protected import AbsynDep;
 protected import BackendDump;
 protected import BackendDAEUtil;
 protected import BackendDAECreate;
-protected import BackendDAEOptimize;
 protected import BackendDAETransform;
 protected import BackendEquation;
 protected import BackendVariable;
@@ -2980,9 +2979,9 @@ algorithm
       list<Interactive.CompiledCFunction> cf;
       Ceval.Msg msg;
       Env.Cache cache;
-      Integer eqnSize,varSize,simpleEqnSize,elimLevel;
+      Integer eqnSize,varSize,simpleEqnSize,elimLevel,eqnSize1;
       String errorMsg,warnings,eqnSizeStr,varSizeStr,retStr,classNameStr,simpleEqnSizeStr;
-      BackendDAE.EquationArray eqns;
+      BackendDAE.EquationArray eqns,eqns1;
       Boolean partialPrefix,finalPrefix,encapsulatedPrefix,strEmpty;
       Absyn.Restriction restriction;
       Absyn.Info info;
@@ -3037,19 +3036,19 @@ algorithm
         // adrpo: do not store instantiated class as we don't use it later!
         // ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dae,env));
         elimLevel = RTOpts.eliminationLevel();
-        RTOpts.setEliminationLevel(0); // No variable elimination
         funcs = Env.getFunctionTree(cache);
         dlow = BackendDAECreate.lower(dae, funcs, false) "no dummy state" ;
+        eqns = BackendEquation.daeEqns(dlow);
+        eqnSize = BackendDAEUtil.equationSize(eqns);
+        vars = BackendVariable.daeVars(dlow);
+        varSize = BackendVariable.varsSize(vars);
         (dlow1,_,_) = BackendDAEUtil.preOptimiseBackendDAE(dlow,funcs,
             SOME({"removeSimpleEquations","expandDerOperator"}),NONE(),NONE());
         Debug.fcall("dumpdaelow", BackendDump.dump, dlow1);
-        RTOpts.setEliminationLevel(elimLevel); // reset elimination level.
-        eqns = BackendEquation.daeEqns(dlow1);
-        eqnSize = BackendDAEUtil.equationSize(eqns);
-        vars = BackendVariable.daeVars(dlow1);
-        varSize = BackendVariable.varsSize(vars);
+        eqns1 = BackendEquation.daeEqns(dlow1);
+        eqnSize1 = BackendDAEUtil.equationSize(eqns1);
         (eqnSize,varSize) = subtractDummy(vars,eqnSize,varSize);
-        simpleEqnSize = BackendDAEOptimize.countSimpleEquations(eqns);
+        simpleEqnSize = eqnSize-eqnSize1;
         eqnSizeStr = intString(eqnSize);
         varSizeStr = intString(varSize);
         simpleEqnSizeStr = intString(simpleEqnSize);
@@ -3082,19 +3081,19 @@ algorithm
         // adrpo: do not store instantiated class as we don't use it later!
         // ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dae,env));
         elimLevel = RTOpts.eliminationLevel();
-        RTOpts.setEliminationLevel(0); // No variable elimination
         funcs = Env.getFunctionTree(cache);
         dlow = BackendDAECreate.lower(dae, funcs, false) "no dummy state" ;
+        eqns = BackendEquation.daeEqns(dlow);
+        eqnSize = BackendDAEUtil.equationSize(eqns);
+        vars = BackendVariable.daeVars(dlow);
+        varSize = BackendVariable.varsSize(vars);
         (dlow1,_,_) = BackendDAEUtil.preOptimiseBackendDAE(dlow,funcs,
             SOME({"removeSimpleEquations","expandDerOperator"}),NONE(),NONE());
         Debug.fcall("dumpdaelow", BackendDump.dump, dlow1);
-        RTOpts.setEliminationLevel(elimLevel); // reset elimination level.
-        eqns = BackendEquation.daeEqns(dlow1);
-        eqnSize = BackendDAEUtil.equationSize(eqns);
-        vars = BackendVariable.daeVars(dlow1);
-        varSize = BackendVariable.varsSize(vars);
+        eqns1 = BackendEquation.daeEqns(dlow1);
+        eqnSize1 = BackendDAEUtil.equationSize(eqns1);
         (eqnSize,varSize) = subtractDummy(vars,eqnSize,varSize);
-        simpleEqnSize = BackendDAEOptimize.countSimpleEquations(eqns);
+        simpleEqnSize = eqnSize-eqnSize1;
         eqnSizeStr = intString(eqnSize);
         varSizeStr = intString(varSize);
         simpleEqnSizeStr = intString(simpleEqnSize);

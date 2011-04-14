@@ -634,7 +634,7 @@ algorithm
   success := setCommandLineOptions("+d=" + debugFlags);
 end setDebugFlags;
 
-function setPreOptModules "example input: removeSimpleEquations,removeParameterEqns,expandDerOperator"
+function setPreOptModules "example input: removeFinalParameters,removeSimpleEquations,expandDerOperator"
   input String modules;
   output Boolean success;
   annotation(__OpenModelica_EarlyInline = true);
@@ -642,7 +642,7 @@ algorithm
   success := setCommandLineOptions("+preOptModules=" + modules);
 end setPreOptModules;
 
-function setPastOptModules "example input: lateInline,inlineArrayEqn,removeSimpleEquations,removeAliasEquations"
+function setPastOptModules "example input: lateInline,inlineArrayEqn,removeSimpleEquations"
   input String modules;
   output Boolean success;
   annotation(__OpenModelica_EarlyInline = true);
