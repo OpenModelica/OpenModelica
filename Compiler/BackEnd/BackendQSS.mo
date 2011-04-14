@@ -1992,12 +1992,20 @@ public function numInputs
   output Integer inputs;
 algorithm
   inputs := 
-    match (qssInfo,numBlock)
+    matchcontinue (qssInfo,numBlock)
     local
       array<list<list<Integer>>> inLinks "input connections for each DEVS block";
+      list<Integer> l;
     case (QSSINFO(DEVSstructure=DEVS_STRUCT(inLinks=inLinks)),_)
-      then listLength(inLinks[numBlock]);
-    end match;
+    equation 
+      l = (Util.listFlatten(inLinks[numBlock]));
+      _ = Util.listGetMember(0,l);
+      then listLength(l);
+    case (QSSINFO(DEVSstructure=DEVS_STRUCT(inLinks=inLinks)),_)
+    equation 
+      l = (Util.listFlatten(inLinks[numBlock]));
+      then listLength(l)+1;
+    end matchcontinue;
 end numInputs;
 
 public function numOutputs

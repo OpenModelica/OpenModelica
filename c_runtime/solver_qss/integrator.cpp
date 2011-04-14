@@ -1,7 +1,5 @@
 #include "integrator.h"
 #include "qss_signal.h"
-#include "simulation_runtime.h"
-
 
 IntegratorQSS::IntegratorQSS(double dqm, double dqr)
 {
@@ -12,7 +10,7 @@ IntegratorQSS::IntegratorQSS(double dqm, double dqr)
 
 void IntegratorQSS::init(Time t, unsigned int i)
 {
-       index=i;
+  index=i;
   sigma=0;
   X[index].setCoeff(0,globalData->states[index]);
   q[index].setOrder(order-1);
@@ -50,11 +48,11 @@ void IntegratorQSS::update(Time t) {
       sigma=INF;
       return;
     }
-         const double sigmaUpper = diff.offsetBy(dQ).minPosRoot();
-         const double sigmaLower = diff.offsetBy(-dQ).minPosRoot();
-         sigma=std::min(sigmaUpper,sigmaLower);
-         if (fabs(X[index].value()-q[index].value())>dQ)
-           sigma=0.0;
+    const double sigmaUpper = diff.offsetBy(dQ).minPosRoot();
+    const double sigmaLower = diff.offsetBy(-dQ).minPosRoot();
+    sigma=std::min(sigmaUpper,sigmaLower);
+    if (fabs(X[index].value()-q[index].value())>dQ)
+      sigma=0.0;
   }
-       X[index].sampledAt(t);
+  X[index].sampledAt(t);
 }

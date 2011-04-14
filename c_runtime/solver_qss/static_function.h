@@ -13,6 +13,9 @@ public:
   virtual void update(Time t);
 
 private:
+  void advanceInputs(Time t);
+  void writeOutputs(Time t);
+
   double dQmin,dQrel,dQ;
   double *out,*outdt,*out_dt,*out2dt,*out_2dt;
   unsigned int index;

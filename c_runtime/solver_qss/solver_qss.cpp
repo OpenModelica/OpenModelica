@@ -29,16 +29,6 @@
  */
 
 #include <string.h>
-#include "simulation_input.h"
-#include "simulation_init.h"
-#include "simulation_events.h"
-#include "simulation_result.h"
-#include "simulation_result_empty.h"
-#include "simulation_result_plt.h"
-#include "simulation_result_csv.h"
-#include "simulation_result_mat.h"
-#include "simulation_runtime.h"
-
 #include "solver_qss/qss_signal.h"
 #include "solver_qss/simulator.h" 
 #include "solver_qss/sampler.h"
@@ -54,43 +44,31 @@
 double dlamch_(char*,int);
 using namespace std;
 
-
-const int staticBlocks=1;
 double *tn;
-QssSignal *derX;        // Derivates of states
-QssSignal *X;               // States
-QssSignal *q;;              // Quantized versions of states
+QssSignal *derX;  // Derivates of states
+QssSignal *X;     // States
+QssSignal *q;     // Quantized versions of states
 Simulator **childs;
 
-extern char *incidenceMatrix;
-extern int numStaticFunctions;
-extern char *inputMatrix;
-extern char *outputMatrix;
+string *result_file_cstr;
 
-void initializeOutputFilter(DATA* data, string variableFilter);
-int initRuntimeAndSimulation(int, char**);
-
-#define SAMPLER 
-/* The main function for the explicit euler solver */
+/* The main function for the QSS solver */
 int qss_main( int argc, char** argv,double &start,  double &stop, double &step, long &outputSteps, double &tolerance,int flag)
 {
-       cout << "Running QSS methods" << endl;
+  cout << "Running QSS methods" << endl;
 
-       globalData->oldTime = start;
+  globalData->oldTime = start;
 
-       q = new QssSignal[globalData->nStates];
-       X = new QssSignal[globalData->nStates];
-       derX = new QssSignal[globalData->nStates];
+  q = new QssSignal[globalData->nStates];
+  X = new QssSignal[globalData->nStates];
+  derX = new QssSignal[globalData->nStates];
 
-#ifdef SAMPLER
   const unsigned int size=globalData->nStates + staticBlocks + 1 /*Sampler */;
-#else
-  const unsigned int size=globalData->nStates + staticBlocks;
-#endif
 
   childs = new Simulator *[size];
   tn = new double [size];
-       const double dQmin=1e-6,dQrel=1e-2;
+  const double dQmin=tolerance/100,dQrel=tolerance;
+  // Create one integrator for each state
   for (int i=0;i<globalData->nStates;i++)
   {
     childs[i] = new IntegratorQSS(dQmin,dQrel);
@@ -105,22 +83,21 @@ int qss_main( int argc, char** argv,double &start,  double &stop, double &step, 
     tn[i+globalData->nStates] = globalData->timeValue+childs[i+globalData->nStates]->ta();
   }
  
-#ifdef SAMPLER
+  // Periodic sampler for outputs
   childs[size-1] = new Sampler(outputSteps,start,stop);
   childs[size-1]->init(globalData->timeValue,0);
   tn[size-1] = globalData->timeValue+childs[size-1]->ta();
-#endif
 
   double next_tn;
   int index=0;
   unsigned long int steps=0;
-       while(globalData->timeValue <= stop)
+  while(globalData->timeValue <= stop)
   {
     // Find minimum
     next_tn=INF;
     for (unsigned int i=0;i<size;++i)
     {
-      cout << "Child " << i << " has tn " << tn[i]<< endl;
+      //cout << "Child " << i << " has tn " << tn[i]<< endl;
       if (tn[i]<next_tn) {
         index=i;
         next_tn=tn[i];
@@ -136,30 +113,32 @@ int qss_main( int argc, char** argv,double &start,  double &stop, double &step, 
       cout << "Simulation finished after " << steps << " integration steps\n";
       break;
     }
+
     // Advance time
     globalData->timeValue=next_tn;
+
     // Take step and update tn of transition child
     childs[index]->makeStep(globalData->timeValue);
     tn[index]=globalData->timeValue+childs[index]->ta();
-    cout << "Step from " << index << " at " << globalData->timeValue << endl<<endl;
+    //cout << "Step from " << index << " at " << globalData->timeValue << endl<<endl;
+
+    // Count integration steps
     if (index<globalData->nStates)
       steps++;
+
     // Update corresponding childs
-    if (index==1)
+    for (int i=0;i<size;i++)
     {
-                     childs[0]->update(globalData->timeValue);
-            tn[0]=globalData->timeValue+childs[0]->ta();
-    } else if (index==0) {
-                     globalData->states[0]=q[0].valueAt(next_tn);
-                     childs[1]->update(globalData->timeValue);
-            tn[1]=globalData->timeValue+childs[1]->ta();
-              }
-       }
-
-
-       return 0;
+      if (incidenceMatrix[index*size+i])
+      {
+        childs[i]->update(globalData->timeValue);
+        tn[i]=globalData->timeValue+childs[i]->ta();
+      }
+    }
+  }
+  return 0;
 }
-string *result_file_cstr;
+
 
 void init_ompd()
 {
@@ -299,101 +278,23 @@ void clean_ompd()
 }
 
 int
-solver_main_qss(int argc, char** argv, double &start, double &stop, double &step,
-    long &outputSteps, double &tolerance, int flag)
+main_qss(int argc, char**argv)
 {
+  int retVal = -1;
+  
+  if (initRuntimeAndSimulation(argc, argv)) //initRuntimeAndSimulation returns 1 if an error occurs
+    return 1;
 
-  //Stats
-  int stateEvents = 0;
-  int sampleEvents = 0;
+  if (interactiveSimuation) {
+    //cout << "startInteractiveSimulation: " << version << endl;
+    retVal = startInteractiveSimulation(argc, argv);
+  } else {
+    //cout << "startNonInteractiveSimulation: " << version << endl;
+    retVal = startNonInteractiveSimulation(argc, argv);
+  }
 
-  //Workaround for Relation in simulation_events
-  euler_in_use = 1;
-
-  //Flags for event handling
-  int dideventstep = 0;
-  bool reset = false;
-
-  double laststep = 0;
-  double offset = 0;
-  globalData->oldTime = start;
-  globalData->timeValue = start;
-
-  double uround = dlamch_((char*) "P", 1);
-
-  const string *init_method = getFlagValue("im", argc, argv);
-
-  int retValIntegrator;
-
-  if (initializeEventData())
-    {
-      cout << "Internal error, allocating event data structures" << endl;
-      return -1;
-    }
-
-  if (bound_parameters())
-    {
-      printf("Error calculating bound parameters\n");
-      return -1;
-    }
-  globalData->init = 1;
-  initial_function();
-  saveall();
-  storeExtrapolationData();
-  // Calculate initial values from (fixed) start attributes
-
-  int needToIterate = 0;
-  int IterationNum = 0;
-  functionDAE(&needToIterate);
-  functionAliasEquations();
-
-  //work-around problem with discrete algorithm vars
-  //
-  //functionDAE(needToIterate);
-  //functionAliasEquations();
-   do
-    {
-      if (IterationNum > IterationMax)
-        {
-          throw TerminateSimulationException(globalData->timeValue, string(
-              "ERROR: Too many Iteration while the initialization. System is not consistent!\n"));
-        }
-      if (initialize(init_method))
-        {
-          throw TerminateSimulationException(globalData->timeValue, string(
-              "Error in initialization. Storing results and exiting.\n"));
-        }
-      saveall();
-      functionDAE(&needToIterate);
-      functionAliasEquations();
-      IterationNum++;
-    }  while (checkForDiscreteChanges() || needToIterate);
-      sim_result->emit();
-
-  //Activate sample and evaluate again
-  needToIterate = 0;
-  IterationNum = 0;
-  functionDAE(&needToIterate);
-  while (checkForDiscreteChanges() || needToIterate)
-    {
-      saveall();
-      functionDAE(&needToIterate);
-      IterationNum++;
-      if (IterationNum > IterationMax)
-        {
-          throw TerminateSimulationException(globalData->timeValue, string(
-              "ERROR: Too many Iteration. System is not consistent!\n"));
-        }
-    }
-  functionAliasEquations();
-  SaveZeroCrossings();
-  saveall();
-  sim_result->emit();
-
-  // Initialization complete
-  if (measure_time_flag)
-    rt_accumulate( SIM_TIMER_INIT);
-  globalData->init = 0;
-
-  return 0;
+  deInitializeDataStruc(globalData);
+  free(globalData);
+  fflush(NULL);
+  EXIT(retVal);
 }

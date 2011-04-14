@@ -25,24 +25,47 @@ void StaticFunction::init(Time t, unsigned int i)
   index=i;
   sigma=1e-12;
   outVars=1;
-       out = new double[outVars];
-       outdt = new double[outVars];
-        out_dt = new double[outVars];
-        if (order>1) {
-               out_2dt = new double[outVars]; 
+  out = new double[outVars];
+  outdt = new double[outVars];
+  out_dt = new double[outVars];
+  if (order>1) {
+    out_2dt = new double[outVars]; 
     out2dt = new double[outVars]; 
   }
 }
  
 void StaticFunction::makeStep(Time t)
 {
-       function_staticBlocks(index,t,NULL,out);
-       derX[0].setCoeff(0,out[0]);
-       derX[0].sampledAt(t);
-       sigma=INF;
+  advanceInputs(t);
+  function_staticBlocks(index,t,NULL,out);
+  writeOutputs(t);
+  sigma=INF;
 }
 
 void StaticFunction::update(Time t) 
 {
-       sigma=0;
+  sigma=0;
+}
+
+void StaticFunction::writeOutputs(Time t)
+{
+  for (int i=0; i<globalData->nStates;i++)
+  {
+    if (outputMatrix[(globalData->nStates+index)*globalData->nStates +i])
+    {
+      derX[i].setCoeff(0,globalData->statesDerivatives[i]);
+      derX[i].sampledAt(t);
+    }
+  }
+}
+
+void StaticFunction::advanceInputs(Time t)
+{
+  for (int i=0; i<globalData->nStates;i++)
+  {
+    if (inputMatrix[(globalData->nStates+index)*globalData->nStates +i])
+    {
+      globalData->states[i] = q[i].valueAt(t);
+    }
+  }
 }
