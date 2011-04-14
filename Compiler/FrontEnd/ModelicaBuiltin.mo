@@ -456,6 +456,20 @@ function loadFile "load file (*.mo) and merge it with the loaded AST"
 external "builtin";
 end loadFile;
  
+function loadString
+  input String data;
+  input String filename := "<interactive>";
+  output Boolean success;
+external "builtin";
+end loadString;
+
+function parseString
+  input String data;
+  input String filename := "<interactive>";
+  output TypeName names[:];
+external "builtin";
+end parseString;
+
 function system "Similar to system(3). Executes the given command in the system shell."
   input String callStr "String to call: bash -c $callStr";
   output Integer retval "Return value of the system call; usually 0 on success";
@@ -1285,7 +1299,7 @@ function uriToFilename "Handles modelica:// and file:// URI's. The result is an 
   The result depends on the current MODELICAPATH. Returns the empty string on failure."
   input String uri;
   output String filename;
-  external "builtin";
+external "builtin";
 end uriToFilename;
 
 end Scripting;

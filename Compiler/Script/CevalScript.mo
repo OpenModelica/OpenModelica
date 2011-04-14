@@ -675,7 +675,21 @@ algorithm
       Absyn.CodeNode codeNode;
       list<Values.Value> cvars;
       DAE.FunctionTree funcs;
+      list<Absyn.Path> paths;
+      list<Absyn.Class> classes;
+      Absyn.Within within_;
     
+    case (cache,env,"parseString",{Values.STRING(str1),Values.STRING(str2)},st,msg)
+      equation
+        Absyn.PROGRAM(classes=classes,within_=within_) = Parser.parsestring(str1,str2);
+        paths = Util.listMap(classes,Absyn.className);
+        paths = Util.listMap1r(paths,Absyn.joinWithinPath,within_);
+        vals = Util.listMap(paths,ValuesUtil.makeCodeTypeName);
+      then (cache,ValuesUtil.makeArray(vals),st);
+
+    case (cache,env,"parseString",_,st,msg)
+      then (cache,ValuesUtil.makeArray({}),st);
+
     /* Does not exist in the env...
     case (cache,env,"lookupClass",{Values.CODE(Absyn.C_TYPENAME(path))},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
       equation
@@ -1323,18 +1337,26 @@ algorithm
             lstVarVal = iv,compiledFunctions = cf,
             loadedFiles = lf)),msg)
       equation
-        newp = ClassLoader.loadFile(name) "System.regularFileExists(name) => 0 & Parser.parse(name) => p1 &" ;
+        newp = ClassLoader.loadFile(name);
         newp = Interactive.updateProgram(newp, p);
       then
         (Env.emptyCache(),Values.BOOL(true),Interactive.SYMBOLTABLE(newp,aDep,sp,ic,iv,cf,lf));
         
     case (cache,env,"loadFile",{Values.STRING(name)},st,msg)
-      equation
-        false = System.regularFileExists(name);
-      then
-        (cache,Values.BOOL(false),st);
+    then (cache,Values.BOOL(false),st);
         
-    case (cache,env,"loadFile",{Values.STRING(name)},st,msg)
+    case (cache,env,"loadString",{Values.STRING(str),Values.STRING(name)},
+          (st as Interactive.SYMBOLTABLE(
+            ast = p,depends=aDep,explodedAst = sp,instClsLst = ic,
+            lstVarVal = iv,compiledFunctions = cf,
+            loadedFiles = lf)),msg)
+      equation
+        newp = Parser.parsestring(str,name);
+        newp = Interactive.updateProgram(newp, p);
+      then
+        (Env.emptyCache(),Values.BOOL(true),Interactive.SYMBOLTABLE(newp,aDep,sp,ic,iv,cf,lf));
+        
+    case (cache,env,"loadString",_,st,msg)
     then (cache,Values.BOOL(false),st);
         
     case (cache,env,"saveModel",{Values.STRING(filename),Values.CODE(Absyn.C_TYPENAME(classpath))},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
@@ -1863,7 +1885,7 @@ algorithm
 
  end matchcontinue;
 end cevalInteractiveFunctions2;
-        
+
 protected function visualizationVarShouldBeAdded
   input String var;
   input list<String> ids;

@@ -2432,6 +2432,13 @@ algorithm
   Values.STRING(str) := val;
 end extractValueString;
 
+public function makeCodeTypeName
+  input Absyn.Path path;
+  output Values.Value val;
+algorithm
+  val := Values.CODE(Absyn.C_TYPENAME(path));
+end makeCodeTypeName;
+
 public function getCode
   input Values.Value val;
   output Absyn.CodeNode code;

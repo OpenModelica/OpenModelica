@@ -5052,4 +5052,17 @@ algorithm
   end match;
 end unqualifyCref;
 
+public function joinWithinPath
+  input Within within_;
+  input Path path;
+  output Path outPath;
+algorithm
+  outPath := match (within_,path)
+    local
+      Path path1;
+    case (TOP(),path) then path;
+    case (WITHIN(path1),path) then joinPaths(path1,path);
+  end match;
+end joinWithinPath;
+
 end Absyn;
