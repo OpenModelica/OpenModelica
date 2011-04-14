@@ -5019,7 +5019,22 @@ algorithm
       list<tuple<SCode.Element, DAE.Mod>> deps;
 
     // For constants and parameters we check the binding modification.
-    case ((SCode.COMPONENT(attributes = SCode.ATTR(variability = var),
+    case ((SCode.COMPONENT(condition = SOME(cond_exp), attributes = SCode.ATTR(variability = var),
+        modifications = SCode.MOD(binding = SOME((bind_exp, _)))), _), _)
+      equation
+        true = SCode.isParameterOrConst(var);
+        (_, (_, _, (_, deps))) = Absyn.traverseExpBidir(bind_exp,
+          (getElementDependenciesTraverserEnter,
+           getElementDependenciesTraverserExit,
+           (inAllElements, {})));
+        (_, (_, _, (_, deps))) = Absyn.traverseExpBidir(cond_exp,
+          (getElementDependenciesTraverserEnter,
+           getElementDependenciesTraverserExit,
+           (inAllElements, deps)));
+      then
+        deps;
+
+    case ((SCode.COMPONENT(condition = NONE(), attributes = SCode.ATTR(variability = var),
         modifications = SCode.MOD(binding = SOME((bind_exp, _)))), _), _)
       equation
         true = SCode.isParameterOrConst(var);
