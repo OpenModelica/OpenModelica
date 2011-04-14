@@ -331,6 +331,31 @@ static void* parseStream(pANTLR3_INPUT_STREAM input)
   return res;
 }
 
+static void* parseString(const char* data, const char* interactiveFilename, int flags)
+{
+  bool debug         = check_debug_flag("parsedebug");
+  bool parsedump     = check_debug_flag("parsedump");
+  bool parseonly     = check_debug_flag("parseonly");
+
+  pANTLR3_UINT8               fName;
+  pANTLR3_INPUT_STREAM        input;
+
+  ModelicaParser_filename_C = interactiveFilename;
+  ModelicaParser_filename_RML = mk_scon((char*)ModelicaParser_filename_C);
+  ModelicaParser_flags = flags;
+  isReadOnly = 0;
+
+  if (debug) { fprintf(stderr, "Starting parsing of file: %s\n", ModelicaParser_filename_C); }
+
+  fName  = (pANTLR3_UINT8)ModelicaParser_filename_C;
+  input  = antlr3NewAsciiStringInPlaceStream((pANTLR3_UINT8)data,strlen(data),fName);
+  if ( input == NULL ) {
+    fprintf(stderr, "Unable to open file %s\n", ModelicaParser_filename_C);
+    return NULL;
+  }
+  return parseStream(input);
+}
+
 static void* parseFile(const char* fileName, int flags)
 {
   bool debug         = check_debug_flag("parsedebug");
@@ -353,34 +378,17 @@ static void* parseFile(const char* fileName, int flags)
   if (len > 3 && 0==strcmp(ModelicaParser_filename_C+len-4,".mof"))
     ModelicaParser_flags |= PARSE_FLAT;
 
+  /*
+   * Workaround: ANTLR3 does not like 0-length files on Windows!
+   * So we pass an empty string instead :)
+   */
+  struct stat st;
+  stat(ModelicaParser_filename_C, &st);
+  if (0 == st.st_size) return parseString("",ModelicaParser_filename_C,ModelicaParser_flags);
+
   fName  = (pANTLR3_UINT8)ModelicaParser_filename_C;
   input  = antlr3AsciiFileStreamNew(fName);
   if ( input == NULL ) {
-    return NULL;
-  }
-  return parseStream(input);
-}
-
-static void* parseString(const char* data, const char* interactiveFilename, int flags)
-{
-  bool debug         = check_debug_flag("parsedebug");
-  bool parsedump     = check_debug_flag("parsedump");
-  bool parseonly     = check_debug_flag("parseonly");
-
-  pANTLR3_UINT8               fName;
-  pANTLR3_INPUT_STREAM        input;
-
-  ModelicaParser_filename_C = interactiveFilename;
-  ModelicaParser_filename_RML = mk_scon((char*)ModelicaParser_filename_C);
-  ModelicaParser_flags = flags;
-  isReadOnly = 0;
-
-  if (debug) { fprintf(stderr, "Starting parsing of file: %s\n", ModelicaParser_filename_C); }
-
-  fName  = (pANTLR3_UINT8)ModelicaParser_filename_C;
-  input  = antlr3NewAsciiStringInPlaceStream((pANTLR3_UINT8)data,strlen(data),fName);
-  if ( input == NULL ) {
-    fprintf(stderr, "Unable to open file %s\n", ModelicaParser_filename_C);
     return NULL;
   }
   return parseStream(input);
