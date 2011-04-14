@@ -103,6 +103,7 @@ class PlotException : public std::runtime_error
 {
 public:
     PlotException(const char *e) : std::runtime_error(e) {}
+    PlotException(const QString str) : std::runtime_error(str.toStdString().c_str()) {}
 };
 
 class NoFileException : public PlotException

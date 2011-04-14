@@ -89,26 +89,26 @@ void PlotWindow::initializePlot(QStringList arguments)
     else if(QString(arguments[3]) == "false")
         setLegend(false);
     else
-        throw PlotException("Invalid input");
+        throw PlotException("Invalid input " + arguments[3]);
     if(QString(arguments[4]) == "true")
         setGrid(true);
     else if(QString(arguments[4]) == "false")
         setGrid(false);
     else
-        throw PlotException("Invalid input");
+        throw PlotException("Invalid input" + arguments[4]);
     QString plotType = arguments[5];
     if(QString(arguments[6]) == "true")
         setLogX(true);
     else if(QString(arguments[6]) == "false")
         setLogX(false);
     else
-        throw PlotException("Invalid input");
+        throw PlotException("Invalid input" + arguments[6]);
     if(QString(arguments[7]) == "true")
         setLogY(true);
     else if(QString(arguments[7]) == "false")
         setLogY(false);
     else
-        throw PlotException("Invalid input");
+        throw PlotException("Invalid input" + arguments[7]);
     setXLabel(QString(arguments[8]));
     setYLabel(QString(arguments[9]));
     setXRange(QString(arguments[10]).toDouble(), QString(arguments[11]).toDouble());
