@@ -416,7 +416,7 @@ void simulation_result_mat::generateDataInfo(int32_t* &dataInfo,
     map<void*,int>::iterator it = indx_map.find((void*)globalData->boolVariables.alias[i].alias);
     if (it == indx_map.end()) {
       it = indx_parammap.find((void*)globalData->boolVariables.alias[i].alias);
-      assert(it == indx_parammap.end());
+      assert(it != indx_parammap.end());
       table = 1;
     } else {
       table = 2;
