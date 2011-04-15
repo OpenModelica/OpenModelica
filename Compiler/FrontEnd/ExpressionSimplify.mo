@@ -248,12 +248,11 @@ algorithm
       then
         ((exp1,true));
     
-    case ((DAE.REDUCTION(reductionInfo,e1,riters),b))
-      // TODO: Make sure this knows when it is simplified...
+    case ((DAE.REDUCTION(reductionInfo,e1,riters),_))
       equation
-        riters = Util.listMap(riters, simplifyReductionIterator);
+        (riters,b2) = simplifyReductionIterators(riters, {}, false);
         exp1 = DAE.REDUCTION(reductionInfo,e1,riters);
-      then ((simplifyReduction(exp1),b));
+      then ((simplifyReduction(exp1,b2),true));
 
     // anything else
     else inTpl;
@@ -268,37 +267,70 @@ public function simplify1
   output DAE.Exp outExp;
   output Boolean hasChanged;
 algorithm
-  (outExp,hasChanged) := match inExp
+  (outExp,hasChanged) := simplify1FixP(inExp,100,true);
+end simplify1;
+
+protected function simplify1FixP
+"Does fixpoint simplify1 max n times"
+  input DAE.Exp inExp;
+  input Integer n;
+  input Boolean cont;
+  output DAE.Exp outExp;
+  output Boolean hasChanged;
+algorithm
+  (outExp,hasChanged) := match (inExp,n,cont)
     local
       DAE.Exp exp;
       Boolean b;
-    case inExp
+      String str;
+    case (exp,_,false)
       equation
-        ((exp,b)) = Expression.traverseExp(inExp,simplifyWork,false);
+        //print("End fixp: " +& ExpressionDump.printExpStr(exp) +& "\n");
+      then (exp,false);
+    case (exp,0,_)
+      equation
+        str = "ExpressionSimplify iterated to the fixpoint maximum for expression: " +& ExpressionDump.printExpStr(exp);
+        Error.addMessage(Error.COMPILER_WARNING, {str});
+      then (exp,false); 
+    case (exp,n,_)
+      equation
+        ((exp,b)) = Expression.traverseExp(exp,simplifyWork,false);
+        (exp,_) = simplify1FixP(exp,n-1,b);
       then (exp,b);
   end match;
-end simplify1;
+end simplify1FixP;
 
-protected function simplifyReductionIterator
-  input DAE.ReductionIterator iter;
-  output DAE.ReductionIterator outIter;
+protected function simplifyReductionIterators
+  input list<DAE.ReductionIterator> iters;
+  input list<DAE.ReductionIterator> acc;
+  input Boolean change;
+  output list<DAE.ReductionIterator> outIters;
+  output Boolean outChange;
 algorithm
-  outIter := match iter
+  (outIters,outChange) := match (iters,acc,change)
     local
       Boolean b;
       String id;
       DAE.Exp exp,gexp;
       DAE.Type ty;
       Option<DAE.Exp> ogexp;
-    case DAE.REDUCTIONITER(id,exp,NONE(),ty) then iter;
+      DAE.ReductionIterator iter;
+    case ({},acc,change) then (listReverse(acc),change);
 
-    case DAE.REDUCTIONITER(id,exp,SOME(DAE.BCONST(true)),ty)
-      then DAE.REDUCTIONITER(id,exp,NONE(),ty);
+    case (DAE.REDUCTIONITER(id,exp,SOME(DAE.BCONST(true)),ty)::iters,acc,_)
+      equation
+        (iters,change) = simplifyReductionIterators(iters,DAE.REDUCTIONITER(id,exp,NONE(),ty)::acc,true);
+      then (iters,change);
 
-    case DAE.REDUCTIONITER(id,_,SOME(DAE.BCONST(false)),ty)
-      then DAE.REDUCTIONITER(id,DAE.LIST({}),NONE(),ty);
+    case (DAE.REDUCTIONITER(id,_,SOME(DAE.BCONST(false)),ty)::_,_,_)
+      then ({DAE.REDUCTIONITER(id,DAE.LIST({}),NONE(),ty)},true);
+
+    case (iter::iters,acc,change)
+      equation
+        (iters,change) = simplifyReductionIterators(iters,iter::acc,change);
+      then (iters,change);
   end match;
-end simplifyReductionIterator;
+end simplifyReductionIterators;
 
 protected function simplifyIfExp
   "Handles simplification of if-expressions"
@@ -318,7 +350,6 @@ algorithm
     case (exp,DAE.BCONST(false),DAE.BCONST(true))
       equation
         exp = DAE.LUNARY(DAE.NOT(), exp);
-        (exp,_) = simplify1(exp);
       then exp;
       // Are the branches equal?
     case (cond,tb,fb)
@@ -355,7 +386,6 @@ algorithm
         e1_1 = Util.if_(b1,e1,e2);
         e2_1 = Util.if_(b1,e2,e1);
         e = DAE.IFEXP(e, e1_1, e2_1);
-        (e,_) = simplify1(e);
       then e;
 
     case DAE.MATCHEXPRESSION(matchType=DAE.MATCH(switch=_), inputs={e}, localDecls={}, cases={
@@ -366,13 +396,11 @@ algorithm
         e1_1 = Util.if_(b1,e1,e2);
         e2_1 = Util.if_(b1,e2,e1);
         e = DAE.IFEXP(e, e1_1, e2_1);
-        (e,_) = simplify1(e);
       then e;
 
     case DAE.CALL(path=Absyn.IDENT("listAppend"),expLst={DAE.LIST(el),e2})
       equation
         e = Util.listFold(listReverse(el), Expression.makeCons, e2);
-        (e,_) = simplify1(e);
       then e;
 
     case DAE.CALL(path=Absyn.IDENT("listAppend"),expLst={e1,DAE.LIST(valList={})},ty=tp)
@@ -402,13 +430,11 @@ algorithm
     case DAE.CALL(path=path as Absyn.IDENT("listReverse"),expLst={DAE.REDUCTION(DAE.REDUCTIONINFO(Absyn.IDENT("list"),ty,v,foldExp),e1,riters)},ty=tp)
       equation
         e1 = DAE.REDUCTION(DAE.REDUCTIONINFO(Absyn.IDENT("listReverse"),ty,v,foldExp),e1,riters);
-        (e1,_) = simplify1(e1);
       then e1;
 
     case DAE.CALL(path=path as Absyn.IDENT("listReverse"),expLst={DAE.REDUCTION(DAE.REDUCTIONINFO(Absyn.IDENT("listReverse"),ty,v,foldExp),e1,riters)},ty=tp)
       equation
         e1 = DAE.REDUCTION(DAE.REDUCTIONINFO(Absyn.IDENT("list"),ty,v,foldExp),e1,riters);
-        (e1,_) = simplify1(e1);
       then e1;
 
     case DAE.CALL(path=path as Absyn.IDENT("listLength"),expLst={DAE.LIST(el)},ty=tp)
@@ -417,7 +443,6 @@ algorithm
       then DAE.ICONST(i);
 
     case DAE.CONS(e1,DAE.LIST(el))
-      equation
       then DAE.LIST(e1::el);
 
     case DAE.UNBOX(exp=DAE.BOX(e)) then e;
@@ -425,7 +450,7 @@ algorithm
 
     case DAE.IFEXP(e,DAE.BOX(e1),DAE.BOX(e2))
       equation
-        (e,_) = simplify1(DAE.IFEXP(e,e1,e2));
+        e = DAE.IFEXP(e,e1,e2);
       then DAE.BOX(e);
   end matchcontinue;
 end simplifyMetaModelica;
@@ -460,17 +485,15 @@ algorithm
       equation
         tp_1 = Expression.unliftArray(tp);
         exps_1 = Util.listMap1(exps, addCast, tp_1);
-        (res,_) = simplify1(DAE.ARRAY(tp,b,exps_1));
-      then 
-        res;
+      then
+        DAE.ARRAY(tp,b,exps_1);
     
     // simplify cast in an if expression
     case(DAE.IFEXP(cond,e1,e2),tp) 
       equation
         e1_1 = DAE.CAST(tp,e1);
         e2_1 = DAE.CAST(tp,e2);
-        (res,_) = simplify1(DAE.IFEXP(cond,e1_1,e2_1));
-      then res;
+      then DAE.IFEXP(cond,e1_1,e2_1);
     
     // simplify cast of matrix expressions
     case(DAE.MATRIX(t,n,mexps),tp) 
@@ -478,9 +501,7 @@ algorithm
         tp1 = Expression.unliftArray(tp);
         tp2 = Expression.unliftArray(tp1);
         mexps_1 = matrixExpMap1(mexps, addCast, tp2);
-        (res,_) = simplify1(DAE.MATRIX(tp,n,mexps_1));
-      then 
-        res;
+      then DAE.MATRIX(tp,n,mexps_1);
     
     // expression already has a specified cast type.
     case(e,tp) 
@@ -524,32 +545,26 @@ algorithm
     case (DAE.CALL(path=Absyn.IDENT("min"),ty=DAE.ET_ARRAY(tp,{_}),expLst={DAE.ARRAY(array={e1,e2})}))
       equation
         e = Expression.makeBuiltinCall("min",{e1,e2},tp);
-        (e,_) = simplify1(e);
       then e;
     case (DAE.CALL(path=Absyn.IDENT("max"),ty=DAE.ET_ARRAY(tp,{_}),expLst={DAE.ARRAY(array={e1,e2})}))
       equation
         e = Expression.makeBuiltinCall("max",{e1,e2},tp);
-        (e,_) = simplify1(e);
       then e;
     case (DAE.CALL(path=Absyn.IDENT("min"),ty=DAE.ET_BOOL(),expLst={e1,e2}))
       equation
         e = DAE.LBINARY(e1,DAE.AND(),e2);
-        (e,_) = simplify1(e);
       then e;
     case (DAE.CALL(path=Absyn.IDENT("max"),ty=DAE.ET_BOOL(),expLst={e1,e2}))
       equation
         e = DAE.LBINARY(e1,DAE.OR(),e2);
-        (e,_) = simplify1(e);
       then e;
     case (DAE.CALL(path=Absyn.IDENT("min"),ty=DAE.ET_ARRAY(DAE.ET_BOOL(),_),expLst={DAE.ARRAY(array=expl)}))
       equation
         e = Expression.makeLBinary(expl,DAE.AND());
-        (e,_) = simplify1(e);
       then e;
     case (DAE.CALL(path=Absyn.IDENT("max"),ty=DAE.ET_ARRAY(DAE.ET_BOOL(),_),expLst={DAE.ARRAY(array=expl)}))
       equation
         e = Expression.makeLBinary(expl,DAE.OR());
-        (e,_) = simplify1(e);
       then e;
 
     // cross
@@ -560,8 +575,8 @@ algorithm
         tp = Expression.typeof(e);
         // Since there is a bug somewhere in simplify that gives wrong types for arrays we take the type from cross.
         scalar = not Expression.isArrayType(Expression.unliftArray(tp));
-        (outExp,_) = simplify1(DAE.ARRAY(tp, scalar,expl));
-      then outExp;
+      then
+        DAE.ARRAY(tp, scalar,expl);
     
     // Simplify built-in function fill. MathCore depends on this being done here, do not remove!
     case (DAE.CALL(path = Absyn.IDENT("fill"), builtin = true, expLst = e::expl))
@@ -575,7 +590,7 @@ algorithm
       then simplifyBuiltinStringFormat(e,len_exp,just_exp);
 
     case (DAE.CALL(path = Absyn.IDENT("stringAppendList"), builtin = true, expLst = {DAE.LIST(expl)}))
-      then simplifyStringAppendList(expl,{});
+      then simplifyStringAppendList(expl,{},false);
   end match;
 end simplifyBuiltinCalls;
 
@@ -612,7 +627,6 @@ algorithm
         str = Absyn.pathLastIdent(name);
         str = cevalBuiltinStringFormat(str,stringLength(str),len,just);
       then DAE.SCONST(str);
-    else Expression.makeBuiltinCall("String",{exp,len_exp,just_exp},DAE.ET_STRING());
   end match;
 end simplifyBuiltinStringFormat;
 
@@ -659,27 +673,28 @@ stringAppendList({}) => abcdefghijkl
 "
   input list<DAE.Exp> expl;
   input list<DAE.Exp> acc;
+  input Boolean change;
   output DAE.Exp exp;
 algorithm
-  exp := match (expl,acc)
+  exp := match (expl,acc,change)
     local
       String s1,s2,s;
       DAE.Exp exp,exp1,exp2;
       list<DAE.Exp> rest;
-    case ({},{}) then DAE.SCONST("");
-    case ({},{exp}) then exp;
-    case ({},{exp1,exp2})
+    case ({},{},_) then DAE.SCONST("");
+    case ({},{exp},_) then exp;
+    case ({},{exp1,exp2},_)
       then DAE.BINARY(exp2,DAE.ADD(DAE.ET_STRING()),exp1);
-    case ({},acc)
+    case ({},acc,true)
       equation
         acc = listReverse(acc);
         exp = DAE.LIST(acc);
       then Expression.makeBuiltinCall("stringAppendList",{exp},DAE.ET_STRING());
-    case (DAE.SCONST(s1)::rest,DAE.SCONST(s2)::acc)
+    case (DAE.SCONST(s1)::rest,DAE.SCONST(s2)::acc,_)
       equation
         s = s2 +& s1;
-      then simplifyStringAppendList(rest,DAE.SCONST(s)::acc);
-    case (exp::rest,acc) then simplifyStringAppendList(rest,exp::acc);
+      then simplifyStringAppendList(rest,DAE.SCONST(s)::acc,true);
+    case (exp::rest,acc,change) then simplifyStringAppendList(rest,exp::acc,change);
   end match;
 end simplifyStringAppendList;
 
@@ -992,33 +1007,25 @@ algorithm
       equation
         tp = Expression.typeof(e1);
         a1 = simplifyVectorBinary(e1, DAE.MUL(tp), e2);
-        (res,_) = simplify1(a1);
-      then
-        res;
+      then a1;
 
     case (e1,DAE.DIV_ARR(ty = _),e2)
       equation
         tp = Expression.typeof(e1);
         a1 = simplifyVectorBinary(e1, DAE.DIV(tp), e2);
-        (res,_) = simplify1(a1);
-      then
-        res;
+      then a1;
 
     case (e1,DAE.POW_ARR(ty = _),e2)
       equation
         tp = Expression.typeof(e1);
         a1 = simplifyMatrixPow(e1, tp, e2);
-        (res,_) = simplify1(a1);
-      then
-        res;
+      then a1;
 
     case (e1,DAE.POW_ARR2(ty = _),e2)
       equation
         tp = Expression.typeof(e1);
         a1 = simplifyVectorBinary(e1, DAE.POW(tp), e2);
-        (res,_) = simplify1(a1);
-      then
-        res;
+      then a1;
 
     // v1 - -v2 => v1 + v2
     case (e1,DAE.SUB_ARR(ty=tp),DAE.UNARY(_,e2))
@@ -1043,7 +1050,7 @@ algorithm
         res;
 
     // scalar * array
-    case (s1,DAE.MUL_SCALAR_ARRAY(ty = tp),a1)
+    case (s1,DAE.MUL_SCALAR_ARRAY(ty = tp),a1 as DAE.ARRAY(array=_))
       equation
         tp = Expression.typeof(s1);
         atp = Expression.typeof(a1);
@@ -1202,17 +1209,13 @@ algorithm
       equation
         tp = Expression.typeof(e1);
         a1 = simplifyMatrixBinary(e1, DAE.ADD(tp), e2);
-        (res,_) = simplify1(a1);
-      then
-        res;
+      then a1;
 
     case (e1,DAE.SUB_ARR(ty = _),e2)
       equation
         tp = Expression.typeof(e1);
         a1 = simplifyMatrixBinary(e1, DAE.SUB(tp), e2);
-        (res,_) = simplify1(a1);
-      then
-        res;
+      then a1;
   end matchcontinue;
 end simplifyBinaryArray;
 
@@ -1239,7 +1242,7 @@ algorithm
     case (DAE.ARRAY(ty = tp1,scalar = sc1,array = expl1),DAE.ARRAY(ty = tp2,scalar = sc2,array = expl2)) /* v1  v2 */
       equation
         expl = Util.listThreadMap(expl1, expl2, Expression.expMul);
-        (exp,_) = simplify1(Util.listReduce(expl, Expression.expAdd));
+        exp = Util.listReduce(expl, Expression.expAdd);
       then
         exp;
     
@@ -1297,7 +1300,7 @@ algorithm
       equation
         row_1 = Util.listMap(row, Util.tuple21);
         expl = Util.listThreadMap(row_1, v1, Expression.expMul);
-        (exp,_) = simplify1(Util.listReduce(expl, Expression.expAdd));
+        exp = Util.listReduce(expl, Expression.expAdd);
         res = simplifyScalarProductMatrixVector(rows, v1);
       then
         (exp :: res);
@@ -1321,7 +1324,7 @@ algorithm
     case ((DAE.ARRAY(array=row) :: rows),v1)
       equation
         expl = Util.listThreadMap(row, v1, Expression.expMul);
-        (exp,_) = simplify1(Util.listReduce(expl, Expression.expAdd));
+        exp = Util.listReduce(expl, Expression.expAdd);
         res = simplifyScalarProductMatrixVector1(rows, v1);
       then
         (exp :: res);
@@ -1348,7 +1351,7 @@ algorithm
         heads = Util.listMap(((texp :: {}) :: rows),Util.listFirst);
         row_1 = Util.listMap(heads, Util.tuple21);
         expl = Util.listThreadMap(v1, row_1, Expression.expMul);
-        (exp,_) = simplify1(Util.listReduce(expl, Expression.expAdd));
+        exp = Util.listReduce(expl, Expression.expAdd);
       then
         (exp :: {});
     
@@ -1358,7 +1361,7 @@ algorithm
         tails = Util.listMap((rows),Util.listRest);
         row_1 = Util.listMap(heads, Util.tuple21);
         expl = Util.listThreadMap(v1, row_1, Expression.expMul);
-        (exp,_) = simplify1(Util.listReduce(expl, Expression.expAdd));
+        exp = Util.listReduce(expl, Expression.expAdd);
         res = simplifyScalarProductVectorMatrix(v1, tails);
       then
         (exp :: res);
@@ -1403,14 +1406,14 @@ algorithm
     case (DAE.ARRAY(ty = tp,scalar = sc,array = {}),op,s1) then DAE.ARRAY(tp,sc,{/*DAE.BINARY(DAE.ICONST(0),op,s1)*/});
     case (DAE.ARRAY(ty = tp,scalar = sc,array = {e1}),op,s1) 
       equation
-        (e,_) = simplify1(DAE.BINARY(e1,op,s1));
+        e = DAE.BINARY(e1,op,s1);
       then 
         DAE.ARRAY(tp,sc,{e});
     
     case (DAE.ARRAY(ty = tp,scalar = sc,array = (e1 :: es)),op,s1)
       equation
         DAE.ARRAY(_,_,es_1) = simplifyVectorScalar(DAE.ARRAY(tp,sc,es),op,s1);
-        (e,_) = simplify1(DAE.BINARY(e1,op,s1));
+        e = DAE.BINARY(e1,op,s1);
       then
         DAE.ARRAY(tp,sc,(e :: es_1));
 
@@ -1435,9 +1438,7 @@ algorithm
     case(e1,op,e2) 
       equation
         a1 = simplifyVectorBinary(e1,op,e2);
-        (a1,_) = simplify1(a1);
-      then 
-        a1;
+      then a1;
     
     case(e1,DAE.ADD(ty=_),e2) 
       equation
@@ -1599,13 +1600,13 @@ algorithm
       equation
         op2 = removeOperatorDimension(op);
         b = b1 or b2;
-        (e,_) = simplify1(DAE.BINARY(e1,op2,e2));
+        e = DAE.BINARY(e1,op2,e2);
       then {(e,b)};  // resulting operator 
     case ((e1,b1)::es1,op,(e2,b2)::es2)
       equation
         op2 = removeOperatorDimension(op);
         b = b1 or b2;
-        (e,_) = simplify1(DAE.BINARY(e1,op2,e2));
+        e = DAE.BINARY(e1,op2,e2);
         es_1 = simplifyMatrixBinary1(es1, op, es2);
       then
         (e,b) :: es_1;
@@ -1801,7 +1802,7 @@ algorithm
         e = simplifyMatrixProduct4(es1, es2);
         tp = Expression.typeof(e);
         tp_1 = Expression.arrayEltType(tp);
-        (res,_) = simplify1(DAE.BINARY(DAE.BINARY(e1,DAE.MUL(tp_1),e2),DAE.ADD(tp_1),e));
+        res = DAE.BINARY(DAE.BINARY(e1,DAE.MUL(tp_1),e2),DAE.ADD(tp_1),e);
       then
         res;
   end matchcontinue;
@@ -1845,7 +1846,7 @@ algorithm
         (const_es1, notconst_es1) = 
           Util.listSplitOnTrue(e_lst, Expression.isConst);
         const_es1_1 = simplifyBinaryAddConstants(const_es1);
-        (res1,_) = simplify1(Expression.makeSum(const_es1_1));
+        res1 = Expression.makeSum(const_es1_1);
         res2 = Expression.makeSum(notconst_es1); // Cannot simplify this, if const_es1_1 empty => infinite recursion.
         res = Expression.makeSum({res1,res2});
       then
@@ -2434,31 +2435,61 @@ algorithm
       equation
         e1 = Expression.makeASUB(e1,{DAE.ICONST(sub)});
         e2 = Expression.makeASUB(e2,{DAE.ICONST(sub)});
-        (e,_) = simplify1(DAE.IFEXP(cond,e1,e2)); 
+        e = DAE.IFEXP(cond,e1,e2); 
       then 
         e;
     
-    // simple name subscript
-    case(DAE.CREF(DAE.CREF_IDENT(idn,t2,s),t),sub) 
+    // name subscript
+    case(DAE.CREF(c,t),sub) 
       equation
         t = Expression.unliftArray(t);
-        s_1 = Expression.subscriptsAppend(s, DAE.ICONST(sub));
-        c_1 = ComponentReference.makeCrefIdent(idn,t2,s_1);
+        c_1 = simplifyAsubCref(c,sub);
         exp = Expression.makeCrefExp(c_1, t);
       then 
         exp;
     
-    //  qualified name subscript
-    case(DAE.CREF(DAE.CREF_QUAL(idn,t2,s,c),t),sub) 
-      equation
-        (DAE.CREF(c_1,t),_) = simplify1(Expression.makeASUB(DAE.CREF(c,t),{DAE.ICONST(sub)}));
-        c_1 = ComponentReference.makeCrefQual(idn,t2,s,c_1);
-        exp = Expression.makeCrefExp(c_1, t);
-      then 
-        exp;
-
   end match;
 end simplifyAsub0;
+
+protected function simplifyAsubCref
+  input DAE.ComponentRef cr;
+  input Integer sub;
+  output DAE.ComponentRef res;
+algorithm
+  res := match(cr,sub)
+    local 
+      Type t,t1,t2;
+      Boolean b;
+      list<DAE.Exp> exps,expl_1;
+      list<Boolean> bls;
+      list<list<tuple<DAE.Exp, Boolean>>> mexps;
+      list<tuple<DAE.Exp, Boolean>> mexpl;
+      DAE.Exp e1,e2,cond,exp,start,stop,step;
+      Integer istart,istop,istep,ival;
+      Real rstart,rstop,rstep,rval;
+      DAE.ComponentRef c,c_1;
+      list<Subscript> s,s_1;
+      Integer n;
+      String idn;
+    
+    // simple name subscript
+    case (DAE.CREF_IDENT(idn,t2,s),sub) 
+      equation
+        s_1 = Expression.subscriptsAppend(s, DAE.ICONST(sub));
+        c_1 = ComponentReference.makeCrefIdent(idn,t2,s_1);
+      then 
+        c_1;
+    
+    //  qualified name subscript
+    case (DAE.CREF_QUAL(idn,t2,s,c),sub)
+      equation
+        c_1 = simplifyAsubCref(c,sub);
+        c_1 = ComponentReference.makeCrefQual(idn,t2,s,c_1);
+      then 
+        c_1;
+
+  end match;
+end simplifyAsubCref;
 
 protected function simplifyAsub
 "function: simplifyAsub
@@ -2492,7 +2523,7 @@ algorithm
         t2 = Expression.typeof(e_1);
         b = DAEUtil.expTypeArray(t2);
         op2 = Util.if_(b,DAE.UMINUS_ARR(t2),DAE.UMINUS(t2));
-        (exp,_) = simplify1(DAE.UNARY(op2,e_1));
+        exp = DAE.UNARY(op2,e_1);
       then
         exp;
     
@@ -2502,7 +2533,7 @@ algorithm
         t2 = Expression.typeof(e_1);
         b = DAEUtil.expTypeArray(t2);
         op2 = Util.if_(b,DAE.UPLUS_ARR(t2),DAE.UPLUS(t2));
-        (exp,_) = simplify1(DAE.UNARY(op2,e_1));
+        exp = DAE.UNARY(op2,e_1);
       then
         exp;
     
@@ -2513,7 +2544,7 @@ algorithm
         t2 = Expression.typeof(e1_1);
         b = DAEUtil.expTypeArray(t2);
         op2 = Util.if_(b,DAE.SUB_ARR(t2),DAE.SUB(t2));
-        (exp,_) = simplify1(DAE.BINARY(e1_1,op2,e2_1));
+        exp = DAE.BINARY(e1_1,op2,e2_1);
       then
         exp;
     
@@ -2523,7 +2554,7 @@ algorithm
         t2 = Expression.typeof(e2_1);
         b = DAEUtil.expTypeArray(t2);
         op = Util.if_(b,DAE.MUL_SCALAR_ARRAY(t2),DAE.MUL(t2));
-        (exp,_) = simplify1(DAE.BINARY(e1,op,e2_1));
+        exp = DAE.BINARY(e1,op,e2_1);
       then
         exp;
     
@@ -2533,7 +2564,7 @@ algorithm
         t2 = Expression.typeof(e1_1);
         b = DAEUtil.expTypeArray(t2);
         op = Util.if_(b,DAE.MUL_ARRAY_SCALAR(t2),DAE.MUL(t2));
-        (exp,_) = simplify1(DAE.BINARY(e1_1,op,e2));
+        exp = DAE.BINARY(e1_1,op,e2);
       then
         exp;
     
@@ -2543,7 +2574,7 @@ algorithm
         t2 = Expression.typeof(e2_1);
         b = DAEUtil.expTypeArray(t2);
         op = Util.if_(b,DAE.ADD_SCALAR_ARRAY(t2),DAE.ADD(t2));
-        (exp,_) = simplify1(DAE.BINARY(e1,op,e2_1));
+        exp = DAE.BINARY(e1,op,e2_1);
       then
         exp;
     
@@ -2553,7 +2584,7 @@ algorithm
         t2 = Expression.typeof(e1_1);
         b = DAEUtil.expTypeArray(t2);
         op = Util.if_(b,DAE.ADD_ARRAY_SCALAR(t2),DAE.ADD(t2));
-        (exp,_) = simplify1(DAE.BINARY(e1_1,op,e2));
+        exp = DAE.BINARY(e1_1,op,e2);
       then
         exp;
     
@@ -2563,7 +2594,7 @@ algorithm
         t2 = Expression.typeof(e2_1);
         b = DAEUtil.expTypeArray(t2);
         op = Util.if_(b,DAE.SUB_SCALAR_ARRAY(t2),DAE.SUB(t2));
-        (exp,_) = simplify1(DAE.BINARY(e1,op,e2_1));
+        exp = DAE.BINARY(e1,op,e2_1);
       then
         exp;
     
@@ -2573,7 +2604,7 @@ algorithm
         t2 = Expression.typeof(e1_1);
         b = DAEUtil.expTypeArray(t2);
         op = Util.if_(b,DAE.SUB_ARRAY_SCALAR(t2),DAE.SUB(t2));
-        (exp,_) = simplify1(DAE.BINARY(e1_1,op,e2));
+        exp = DAE.BINARY(e1_1,op,e2);
       then
         exp;
     
@@ -2599,7 +2630,7 @@ algorithm
         t2 = Expression.typeof(e2_1);
         b = DAEUtil.expTypeArray(t2);
         op = Util.if_(b,DAE.DIV_SCALAR_ARRAY(t2),DAE.DIV(t2));
-        (exp,_) = simplify1(DAE.BINARY(e1,op,e2_1));
+        exp = DAE.BINARY(e1,op,e2_1);
       then
         exp;
     
@@ -2609,7 +2640,7 @@ algorithm
         t2 = Expression.typeof(e1_1);
         b = DAEUtil.expTypeArray(t2);
         op = Util.if_(b,DAE.DIV_ARRAY_SCALAR(t2),DAE.DIV(t2));
-        (exp,_) = simplify1(DAE.BINARY(e1_1,op,e2));
+        exp = DAE.BINARY(e1_1,op,e2);
       then
         exp;
     
@@ -2619,7 +2650,7 @@ algorithm
         t2 = Expression.typeof(e2_1);
         b = DAEUtil.expTypeArray(t2);
         op = Util.if_(b,DAE.POW_SCALAR_ARRAY(t2),DAE.POW(t2));
-        (exp,_) = simplify1(DAE.BINARY(e1,op,e2_1));
+        exp = DAE.BINARY(e1,op,e2_1);
       then
         exp;
     
@@ -2629,7 +2660,7 @@ algorithm
         t2 = Expression.typeof(e1_1);
         b = DAEUtil.expTypeArray(t2);
         op = Util.if_(b,DAE.POW_ARRAY_SCALAR(t2),DAE.POW(t2));
-        (exp,_) = simplify1(DAE.BINARY(e1_1,op,e2));
+        exp = DAE.BINARY(e1_1,op,e2);
       then
         exp;
     
@@ -2640,7 +2671,7 @@ algorithm
         t2 = Expression.typeof(e1_1);
         b = DAEUtil.expTypeArray(t2);
         op2 = Util.if_(b,DAE.ADD_ARR(t2),DAE.ADD(t2));
-        (exp,_) = simplify1(DAE.BINARY(e1_1,op2,e2_1));
+        exp = DAE.BINARY(e1_1,op2,e2_1);
       then
         exp;
     
@@ -2651,7 +2682,7 @@ algorithm
         t2 = Expression.typeof(e1_1);
         b = DAEUtil.expTypeArray(t2);
         op2 = Util.if_(b,DAE.MUL_ARR(t2),DAE.MUL(t2));
-        (exp,_) = simplify1(DAE.BINARY(e1_1,op2,e2_1));
+        exp = DAE.BINARY(e1_1,op2,e2_1);
       then
         exp;
     
@@ -2662,7 +2693,7 @@ algorithm
         t2 = Expression.typeof(e1_1);
         b = DAEUtil.expTypeArray(t2);
         op2 = Util.if_(b,DAE.DIV_ARR(t2),DAE.DIV(t2));
-        (exp,_) = simplify1(DAE.BINARY(e1_1,op2,e2_1));
+        exp = DAE.BINARY(e1_1,op2,e2_1);
       then
         exp;
     
@@ -2673,7 +2704,7 @@ algorithm
         t2 = Expression.typeof(e1_1);
         b = DAEUtil.expTypeArray(t2);
         op2 = Util.if_(b,DAE.POW_ARR2(t2),DAE.POW(t2));
-        (exp,_) = simplify1(DAE.BINARY(e1_1,op2,e2_1));
+        exp = DAE.BINARY(e1_1,op2,e2_1);
       then
         exp;
 
@@ -2698,7 +2729,7 @@ algorithm
     
     case ((e as DAE.CREF(componentRef = cr,ty = t)),sub)
       equation
-        (e_1,_) = simplify1(Expression.makeASUB(e,{sub}));
+        e_1 = Expression.makeASUB(e,{sub});
       then
         e_1;
     
@@ -3034,7 +3065,9 @@ algorithm
       equation
         true = Expression.isConst(e1);
         true = Expression.isConst(e2);
+        //print("simplifyBinaryConst " +& ExpressionDump.printExpStr(e1) +& ExpressionDump.binopSymbol1(oper) +& ExpressionDump.printExpStr(e2) +& "\n");
         e3 = simplifyBinaryConst(oper, e1, e2);
+        //print("simplifyBinaryConst " +& ExpressionDump.printExpStr(e1) +& "," +& ExpressionDump.printExpStr(e2) +& " => " +& ExpressionDump.printExpStr(e3) +& "\n");
       then
         e3;
     
@@ -3042,7 +3075,7 @@ algorithm
     case (DAE.DIV(ty = ty),DAE.BINARY(exp1 = e1,operator = DAE.ADD(ty = ty2),exp2 = e2),e3)
       equation
         true = Expression.isConst(e3);
-        (res,_) = simplify1(DAE.BINARY(DAE.BINARY(e1,DAE.DIV(ty),e3),DAE.ADD(ty2),DAE.BINARY(e2,DAE.DIV(ty),e3)));
+        res = DAE.BINARY(DAE.BINARY(e1,DAE.DIV(ty),e3),DAE.ADD(ty2),DAE.BINARY(e2,DAE.DIV(ty),e3));
       then
         res;
     
@@ -3050,7 +3083,7 @@ algorithm
     case (DAE.DIV(ty = ty),DAE.BINARY(exp1 = e1,operator = DAE.SUB(ty = ty2),exp2 = e2),e3)
       equation
         true = Expression.isConst(e3);
-        (res,_) = simplify1(DAE.BINARY(DAE.BINARY(e1,DAE.DIV(ty),e3),DAE.SUB(ty2),DAE.BINARY(e2,DAE.DIV(ty),e3)));
+        res = DAE.BINARY(DAE.BINARY(e1,DAE.DIV(ty),e3),DAE.SUB(ty2),DAE.BINARY(e2,DAE.DIV(ty),e3));
       then
         res;
     
@@ -3058,7 +3091,7 @@ algorithm
     case (DAE.MUL(ty = ty),DAE.BINARY(exp1 = e1,operator = DAE.ADD(ty = ty2),exp2 = e2),e3)
       equation
         true = Expression.isConst(e3);
-        (res,_) = simplify1(DAE.BINARY(DAE.BINARY(e1,DAE.MUL(ty),e3),DAE.ADD(ty2),DAE.BINARY(e2,DAE.MUL(ty),e3)));
+        res = DAE.BINARY(DAE.BINARY(e1,DAE.MUL(ty),e3),DAE.ADD(ty2),DAE.BINARY(e2,DAE.MUL(ty),e3));
       then
         res;
     
@@ -3066,35 +3099,35 @@ algorithm
     case (DAE.MUL(ty = ty),DAE.BINARY(exp1 = e1,operator = DAE.SUB(ty = ty2),exp2 = e2),e3)
       equation
         true = Expression.isConst(e3);
-        (res,_) = simplify1(DAE.BINARY(DAE.BINARY(e1,DAE.MUL(ty),e3),DAE.SUB(ty2),DAE.BINARY(e2,DAE.MUL(ty),e3)));
+        res = DAE.BINARY(DAE.BINARY(e1,DAE.MUL(ty),e3),DAE.SUB(ty2),DAE.BINARY(e2,DAE.MUL(ty),e3));
       then
         res;
     
     // a+(-b)
     case (DAE.ADD(ty = tp),e1,DAE.UNARY(operator = DAE.UMINUS(ty = tp2),exp = e2))
       equation
-        (e,_) = simplify1(DAE.BINARY(e1,DAE.SUB(tp),e2));
+        e = DAE.BINARY(e1,DAE.SUB(tp),e2);
       then
         e;
             
     // (-b)+a
     case (DAE.ADD(ty = tp),DAE.UNARY(operator = DAE.UMINUS(ty = tp2),exp = e2), e1)
       equation
-        (e1,_) = simplify1(DAE.BINARY(e1,DAE.SUB(tp),e2));
+        e1 = DAE.BINARY(e1,DAE.SUB(tp),e2);
       then
         e1;
     
     // a/b/c => (ac)/b)
     case (DAE.DIV(ty = tp),e1,DAE.BINARY(exp1 = e2,operator = DAE.DIV(ty = tp2),exp2 = e3))
       equation
-        (e,_) = simplify1(DAE.BINARY(DAE.BINARY(e1,DAE.MUL(tp),e3),DAE.DIV(tp2),e2))  ;
+        e = DAE.BINARY(DAE.BINARY(e1,DAE.MUL(tp),e3),DAE.DIV(tp2),e2);
       then
         e;
     
     // (a/b)/c => a/(bc))
     case (DAE.DIV(ty = tp),DAE.BINARY(exp1 = e1,operator = DAE.DIV(ty = tp2),exp2 = e2),e3)
       equation
-        (e,_) = simplify1(DAE.BINARY(e1,DAE.DIV(tp2),DAE.BINARY(e2,DAE.MUL(tp),e3)));
+        e = DAE.BINARY(e1,DAE.DIV(tp2),DAE.BINARY(e2,DAE.MUL(tp),e3));
       then
         e;
     
@@ -3102,7 +3135,7 @@ algorithm
     case (DAE.DIV(ty = tp),e1,DAE.BINARY(exp1 = e2,operator = DAE.MUL(ty = tp2),exp2 = e3))
       equation
         true = Expression.expEqual(e1,e3);
-        (e,_) = simplify1(DAE.BINARY(DAE.RCONST(1.0),DAE.DIV(tp2),e2));
+        e = DAE.BINARY(DAE.RCONST(1.0),DAE.DIV(tp2),e2);
       then
         e;
     
@@ -3110,7 +3143,7 @@ algorithm
     case (DAE.DIV(ty = tp),e1,DAE.BINARY(exp1 = e2,operator = DAE.MUL(ty = tp2),exp2 = e3))
       equation
         true = Expression.expEqual(e1,e2);
-        (e,_) = simplify1(DAE.BINARY(DAE.RCONST(1.0),DAE.DIV(tp2),e3));
+        e = DAE.BINARY(DAE.RCONST(1.0),DAE.DIV(tp2),e3);
       then
         e;
   
@@ -3118,24 +3151,20 @@ algorithm
     case (DAE.DIV(ty = tp),DAE.BINARY(exp1 = e1,operator = DAE.MUL(ty = _),exp2 = e2),e3)
       equation
         true = Expression.expEqual(e1,e3);
-        (e,_) = simplify1(e2);
-      then
-        e;
+      then e2;
 
     // (a*b)/ b  = a
     case (DAE.DIV(ty = tp),DAE.BINARY(exp1 = e1,operator = DAE.MUL(ty = _),exp2 = e2),e3)
       equation
         true = Expression.expEqual(e2,e3);
-        (e,_) = simplify1(e1);
-      then
-        e;
+      then e1;
     
     // (-a*b)/ a  = -b
     case (DAE.DIV(ty = tp),DAE.BINARY(exp1 = DAE.UNARY(operator = DAE.UMINUS(ty = _),exp = e1),operator = DAE.MUL(ty = _),exp2 = e2),e3)
       equation
         true = Expression.expEqual(e1,e3);
         tp2 = Expression.typeof(e2);
-        (e,_) = simplify1(DAE.UNARY(DAE.UMINUS(tp2),e2));
+        e = DAE.UNARY(DAE.UMINUS(tp2),e2);
       then
         e;
         
@@ -3144,7 +3173,7 @@ algorithm
       equation
         true = Expression.expEqual(e2,e3);
         tp2 = Expression.typeof(e1);
-        (e,_) = simplify1(DAE.UNARY(DAE.UMINUS(tp2),e1));
+        e = DAE.UNARY(DAE.UMINUS(tp2),e1);
       then
         e;
 
@@ -3153,7 +3182,7 @@ algorithm
       equation
         true = Expression.expEqual(e2,e3);
         tp2 = Expression.typeof(e1);
-        (e,_) = simplify1(DAE.UNARY(DAE.UMINUS(tp2),e1));
+        e = DAE.UNARY(DAE.UMINUS(tp2),e1);
       then
         e;
 
@@ -3162,7 +3191,7 @@ algorithm
       equation
         true = Expression.expEqual(e1,e3);
         tp2 = Expression.typeof(e2);
-        (e,_) = simplify1(DAE.UNARY(DAE.UMINUS(tp2),e2));
+        e = DAE.UNARY(DAE.UMINUS(tp2),e2);
       then
         e;
     
@@ -3185,9 +3214,8 @@ algorithm
       equation
         true = Expression.isZero(e1);
         e = DAE.UNARY(DAE.UMINUS(ty),e2);
-        (e_1,_) = simplify1(e);
       then
-        e_1;
+        e;
     
     // subtract zero
     case (DAE.SUB(ty = ty),e1,e2)
@@ -3207,21 +3235,21 @@ algorithm
     // a-(-b) = a+b
     case (DAE.SUB(ty = ty),e1,DAE.UNARY(operator = DAE.UMINUS(ty = ty2),exp = e2))
       equation
-        (e,_) = simplify1(DAE.BINARY(e1,DAE.ADD(ty),e2));
+        e = DAE.BINARY(e1,DAE.ADD(ty),e2);
       then
         e;
     
     // (e1/e2)e3 => (e1e3)/e2
     case (DAE.MUL(ty = tp),DAE.BINARY(exp1 = e1,operator = DAE.DIV(ty = tp2),exp2 = e2),e3)
       equation
-        (res,_) = simplify1(DAE.BINARY(DAE.BINARY(e1,DAE.MUL(tp),e3),DAE.DIV(tp2),e2));
+        res = DAE.BINARY(DAE.BINARY(e1,DAE.MUL(tp),e3),DAE.DIV(tp2),e2);
       then
         res;
     
     // e1(e2/e3) => (e1e2)/e3
     case (DAE.MUL(ty = tp),e1,DAE.BINARY(exp1 = e2,operator = DAE.DIV(ty = tp2),exp2 = e3))
       equation
-        (res,_) = simplify1(DAE.BINARY(DAE.BINARY(e1,DAE.MUL(tp),e2),DAE.DIV(tp2),e3));
+        res = DAE.BINARY(DAE.BINARY(e1,DAE.MUL(tp),e2),DAE.DIV(tp2),e3);
       then
         res;
     
@@ -3257,7 +3285,7 @@ algorithm
     case (DAE.MUL(ty = ty),e1,e2)
       equation
         true = Expression.isConstMinusOne(e1);
-        (e,_) = simplify1(DAE.UNARY(DAE.UMINUS(ty),e2));
+        e = DAE.UNARY(DAE.UMINUS(ty),e2);
       then
         e;
     
@@ -3265,21 +3293,21 @@ algorithm
     case (DAE.MUL(ty = ty),e1,e2)
       equation
         true = Expression.isConstMinusOne(e2);
-        (e,_) = simplify1(DAE.UNARY(DAE.UMINUS(ty),e1));
+        e = DAE.UNARY(DAE.UMINUS(ty),e1);
       then 
         e;
     
     // -a * -b = a * b
     case (DAE.MUL(ty = ty),DAE.UNARY(operator = DAE.UMINUS(ty = ty1),exp = e1),DAE.UNARY(operator = DAE.UMINUS(ty = ty2),exp = e2))
       equation
-        (e,_) = simplify1(DAE.BINARY(e1,DAE.MUL(ty),e2));
+        e = DAE.BINARY(e1,DAE.MUL(ty),e2);
       then
         e;
     
     // e1  -e2 => -e1  e2 
     case (DAE.MUL(ty = ty),e1,DAE.UNARY(operator = DAE.UMINUS(ty = ty2),exp = e2))
       equation
-        (e1_1,_) = simplify1(DAE.UNARY(DAE.UMINUS(ty),e1));
+        e1_1 = DAE.UNARY(DAE.UMINUS(ty),e1);
       then
         DAE.BINARY(e1_1,DAE.MUL(ty),e2);
     
@@ -3302,7 +3330,7 @@ algorithm
     case (DAE.DIV(ty = ty),e1,e2)
       equation
         true = Expression.isConstMinusOne(e2);
-        (e,_) = simplify1(DAE.UNARY(DAE.UMINUS(ty),e1));
+        e = DAE.UNARY(DAE.UMINUS(ty),e1);
       then
         e;
     
@@ -3323,7 +3351,7 @@ algorithm
     // e1 / -e2  => -e1 / e2 
     case (DAE.DIV(ty = ty),e1,DAE.UNARY(operator = DAE.UMINUS(ty = ty2),exp = e2))
       equation
-        (e1_1,_) = simplify1(DAE.UNARY(DAE.UMINUS(ty),e1));
+        e1_1 = DAE.UNARY(DAE.UMINUS(ty),e1);
       then
         DAE.BINARY(e1_1,DAE.DIV(ty),e2);
     
@@ -3332,7 +3360,7 @@ algorithm
       equation
         true = Expression.isConst(e3) "(c1x)/c2" ;
         true = Expression.isConst(e1);
-        (e,_) = simplify1(DAE.BINARY(e3,DAE.DIV(tp2),e1));
+        e = DAE.BINARY(e3,DAE.DIV(tp2),e1);
       then
         DAE.BINARY(e,DAE.MUL(tp),e2);
     
@@ -3341,7 +3369,7 @@ algorithm
       equation
         true = Expression.isConst(e2) ;
         true = Expression.isConst(e1);
-        (e,_) = simplify1(DAE.BINARY(e2,DAE.DIV(tp2),e1));
+        e = DAE.BINARY(e2,DAE.DIV(tp2),e1);
       then
         DAE.BINARY(e,DAE.MUL(tp),e3);
     
@@ -3489,82 +3517,75 @@ algorithm
     // -(a * b) => (-a) * b
     case (DAE.UMINUS(ty = ty),DAE.BINARY(exp1 = e1,operator = DAE.MUL(ty = ty1),exp2 = e2))
       equation
-         (e_1,_) = simplify1(DAE.BINARY(DAE.UNARY(DAE.UMINUS(ty),e1),DAE.MUL(ty1),e2));
+         e_1 = DAE.BINARY(DAE.UNARY(DAE.UMINUS(ty),e1),DAE.MUL(ty1),e2);
       then
         e_1;
+    // -(a*b) => (-a)*b
     case (DAE.UMINUS_ARR(ty = ty),DAE.BINARY(exp1 = e1,operator = DAE.MUL_ARR(ty = ty1),exp2 = e2))
       equation
-         (e_1,_) = simplify1(DAE.BINARY(DAE.UNARY(DAE.UMINUS_ARR(ty),e1),DAE.MUL_ARR(ty1),e2)) "-(a*b) => (-a)*b" ;
+        e_1 = DAE.BINARY(DAE.UNARY(DAE.UMINUS_ARR(ty),e1),DAE.MUL_ARR(ty1),e2);
       then
         e_1;
     // -0 => 0
     case (DAE.UMINUS(ty = ty),e1)
       equation
-        (e1_1,_) = simplify1(e1);
-        true = Expression.isZero(e1_1);
+        true = Expression.isZero(e1);
       then
-        e1_1;
+        e1;
     case (DAE.UMINUS_ARR(ty = ty),e1)
       equation
-        (e1_1,_) = simplify1(e1);
-        true = Expression.isZero(e1_1);
+        true = Expression.isZero(e1);
       then
-        e1_1;
+        e1;
     //  -(a-b) => b - a        
     case (DAE.UMINUS(ty = ty),DAE.BINARY(exp1 = e1,operator = DAE.SUB(ty = ty1),exp2 = e2))
       equation
-        (e_1,_) = simplify1(DAE.BINARY(e2,DAE.SUB(ty1),e1)) "-(a-b) => b-a" ;
+        e_1 = DAE.BINARY(e2,DAE.SUB(ty1),e1);
       then
         e_1;
     case (DAE.UMINUS_ARR(ty = ty),DAE.BINARY(exp1 = e1,operator = DAE.SUB_ARR(ty = ty1),exp2 = e2))
       equation
-        (e_1,_) = simplify1(DAE.BINARY(e2,DAE.SUB_ARR(ty1),e1)) "-(a-b) => b-a" ;
+        e_1 = DAE.BINARY(e2,DAE.SUB_ARR(ty1),e1);
       then
         e_1;
     // -(a + b) => -b - a    
     case (DAE.UMINUS(ty = ty),DAE.BINARY(exp1 = e1,operator = DAE.ADD(ty = ty1),exp2 = e2))
       equation
-        (e_1,_) = simplify1(DAE.BINARY(DAE.UNARY(DAE.UMINUS(ty),e1),DAE.ADD(ty1),DAE.UNARY(DAE.UMINUS(ty),e2))) "-(a+b) => -b-a" ;
+        e_1 = DAE.BINARY(DAE.UNARY(DAE.UMINUS(ty),e1),DAE.ADD(ty1),DAE.UNARY(DAE.UMINUS(ty),e2));
       then
         e_1;
     case (DAE.UMINUS_ARR(ty = ty),DAE.BINARY(exp1 = e1,operator = DAE.ADD_ARR(ty = ty1),exp2 = e2))
       equation
-        (e_1,_) = simplify1(DAE.BINARY(DAE.UNARY(DAE.UMINUS_ARR(ty),e1),DAE.ADD_ARR(ty1),DAE.UNARY(DAE.UMINUS_ARR(ty),e2))) "-(a+b) => -b-a" ;
+        e_1 = DAE.BINARY(DAE.UNARY(DAE.UMINUS_ARR(ty),e1),DAE.ADD_ARR(ty1),DAE.UNARY(DAE.UMINUS_ARR(ty),e2));
       then
         e_1;
     // -( a / b) => -a / b
     case (DAE.UMINUS(ty = ty),DAE.BINARY(exp1 = e1,operator = DAE.DIV(ty = ty1),exp2 = e2))
       equation
-        (e_1,_) = simplify1(DAE.BINARY(DAE.UNARY(DAE.UMINUS(ty),e1),DAE.DIV(ty1),e2)) "-(a/b) => -a/b" ;
+        e_1 = DAE.BINARY(DAE.UNARY(DAE.UMINUS(ty),e1),DAE.DIV(ty1),e2);
       then
         e_1;
     case (DAE.UMINUS_ARR(ty = ty),DAE.BINARY(exp1 = e1,operator = DAE.DIV_ARR(ty = ty1),exp2 = e2))
       equation
-        (e_1,_) = simplify1(DAE.BINARY(DAE.UNARY(DAE.UMINUS_ARR(ty),e1),DAE.DIV_ARR(ty1),e2)) "-(a/b) => -a/b" ;
+        e_1 = DAE.BINARY(DAE.UNARY(DAE.UMINUS_ARR(ty),e1),DAE.DIV_ARR(ty1),e2);
       then
         e_1;
     // -(a * b) => -a * b    
     case (DAE.UMINUS(ty = ty),DAE.BINARY(exp1 = e1,operator = DAE.MUL(ty = ty1),exp2 = e2))
       equation
-        (e_1,_) = simplify1(DAE.BINARY(DAE.UNARY(DAE.UMINUS(ty),e1),DAE.MUL(ty1),e2)) "-(ab) => -ab" ;
+        e_1 = DAE.BINARY(DAE.UNARY(DAE.UMINUS(ty),e1),DAE.MUL(ty1),e2);
       then
         e_1;
     case (DAE.UMINUS_ARR(ty = ty),DAE.BINARY(exp1 = e1,operator = DAE.MUL_ARR(ty = ty1),exp2 = e2))
       equation
-        (e_1,_) = simplify1(DAE.BINARY(DAE.UNARY(DAE.UMINUS_ARR(ty),e1),DAE.MUL_ARR(ty1),e2)) "-(ab) => -ab" ;
+        e_1 = DAE.BINARY(DAE.UNARY(DAE.UMINUS_ARR(ty),e1),DAE.MUL_ARR(ty1),e2);
       then
         e_1;
      // --a => a   
      case (DAE.UMINUS(ty = _),DAE.UNARY(operator = DAE.UMINUS(ty = _),exp = e1)) /* --a => a */
-      equation
-        (e1_1,_) = simplify1(e1);
-      then
-        e1_1;
-    case (DAE.UMINUS_ARR(ty = _),DAE.UNARY(operator = DAE.UMINUS_ARR(ty = _),exp = e1)) /* --a => a */
-      equation
-        (e1_1,_) = simplify1(e1);
-      then
-        e1_1;
+       then e1;
+     case (DAE.UMINUS_ARR(ty = _),DAE.UNARY(operator = DAE.UMINUS_ARR(ty = _),exp = e1)) /* --a => a */
+       then e1;
   end matchcontinue;
 end simplifyUnary;
 
@@ -3815,9 +3836,10 @@ end simplifyRangeReal2;
         
 protected function simplifyReduction
   input DAE.Exp inReduction;
+  input Boolean b;
   output DAE.Exp outValue;
 algorithm
-  outValue := matchcontinue (inReduction)
+  outValue := matchcontinue (inReduction,b)
     local
       DAE.Exp expr, value, cref, range;
       DAE.Ident iter_name;
@@ -3833,21 +3855,19 @@ algorithm
       DAE.ReductionInfo reductionInfo;
       list<DAE.ReductionIterator> iterators;
 
-    case (DAE.REDUCTION(iterators = iterators, reductionInfo=DAE.REDUCTIONINFO(defaultValue = SOME(v))))
+    case (DAE.REDUCTION(iterators = iterators, reductionInfo=DAE.REDUCTIONINFO(defaultValue = SOME(v))),_)
       equation
         true = hasZeroLengthIterator(iterators);
         expr = ValuesUtil.valueExp(v);
-        (expr,_) = simplify1(expr); 
       then expr;
 
-    case (DAE.REDUCTION(iterators = iterators))
+    case (DAE.REDUCTION(iterators = iterators),_)
       equation
         true = hasZeroLengthIterator(iterators);
         expr = ValuesUtil.valueExp(Values.META_FAIL());
-      then
-        expr;
+      then expr;
 
-    case (DAE.REDUCTION(reductionInfo = DAE.REDUCTIONINFO(path = Absyn.IDENT(str), exprType = ty, defaultValue = defaultValue, foldExp = foldExp), expr = expr, iterators = iterators))
+    case (DAE.REDUCTION(reductionInfo = DAE.REDUCTIONINFO(path = Absyn.IDENT(str), exprType = ty, defaultValue = defaultValue, foldExp = foldExp), expr = expr, iterators = iterators),_)
       equation
         true = listMember(str,{"array","min","max","sum","product"});
         {DAE.REDUCTIONITER(id = iter_name, guardExp = NONE(), exp = DAE.ARRAY(array = values))} = iterators;
@@ -3857,12 +3877,10 @@ algorithm
         values = Util.listMap(Util.listMap2r(values, Expression.replaceExp, expr, cref), Util.tuple21);
         
         expr = simplifyReductionFoldPhase(str,ety,values,defaultValue);
-        (expr,_) = simplify1(expr);
-      then
-        expr;
+      then expr;
+        
+    case (inReduction,true) then inReduction;
     
-    case _ then inReduction;
-
   end matchcontinue;
 end simplifyReduction;
 
@@ -3880,9 +3898,7 @@ algorithm
     case (_,_,{},SOME(val)) then ValuesUtil.valueExp(val);
     case (_,_,{},NONE()) then fail();
     case ("array",ty,exps,_)
-      equation
-        len = listLength(exps);
-      then DAE.ARRAY(DAE.ET_ARRAY(ty, {DAE.DIM_INTEGER(len)}), true, exps);
+      then DAE.ARRAY(ty, true, exps);
     case ("min",ty,exps,_)
       equation
         len = listLength(exps);

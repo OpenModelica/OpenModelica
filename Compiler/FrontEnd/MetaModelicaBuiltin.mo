@@ -394,32 +394,32 @@ function stringInt
 external "builtin";
 end stringInt;
 
-function stringListStringChar
+function stringListStringChar "O(str)"
   input String str;
   output List<String> chars;
 external "builtin";
 end stringListStringChar;
 
-function stringAppendList
+function stringAppendList "O(str)"
   input List<String> strs;
   output String str;
 external "builtin";
 end stringAppendList;
 
-function stringLength
+function stringLength "O(1)"
   input String str;
   output Integer i;
 external "builtin";
 end stringLength;
 
-function stringGetStringChar
+function stringGetStringChar "O(1)"
   input String str;
   input Integer index;
   output String ch;
 external "builtin";
 end stringGetStringChar;
 
-function stringUpdateStringChar
+function stringUpdateStringChar "O(n)"
   input String str;
   input String newch;
   input Integer index;
@@ -427,7 +427,7 @@ function stringUpdateStringChar
 external "builtin";
 end stringUpdateStringChar;
 
-function stringAppend
+function stringAppend "O(s1+s2)"
   input String s1;
   input String s2;
   output String s;
@@ -486,33 +486,33 @@ function stringHashSdbm
 external "builtin";
 end stringHashSdbm;
 
-function listAppend<A>
+function listAppend<A> "O(length(lst1)), O(1) if either list is empty"
   input List<A> lst1;
   input List<A> lst2;
   output List<A> lst;
 external "builtin";
 end listAppend;
   
-function listReverse<A>
+function listReverse<A> "O(n)"
   input List<A> inLst;
   output List<A> outLst;
 external "builtin";
 end listReverse;
 
-function listLength<A>
+function listLength<A> "O(n)"
   input List<A> lst;
   output Integer length;
 external "builtin";
 end listLength;
 
-function listMember<A>
+function listMember<A> "O(n)"
   input A element;
   input List<A> lst;
   output Boolean isMember;
 external "builtin";
 end listMember;
 
-function listGet<A>
+function listGet<A> "O(index)"
   input List<A> lst;
   input Integer index;
   output A element;
@@ -528,32 +528,32 @@ algorithm
   element := listGet(lst,index+1);
 end listNth;
 
-function listRest<A>
+function listRest<A> "O(1)"
   input List<A> lst;
   output List<A> rest;
 external "builtin";
 end listRest;
 
-function listHead<A>
+function listHead<A> "O(1)"
   input List<A> lst;
   output A head;
 external "builtin";
 end listHead;
 
-function listDelete<A>
+function listDelete<A> "O(index)"
   input List<A> inLst;
   input Integer index;
   output List<A> outLst;
 external "builtin";
 end listDelete;
 
-function listEmpty<A>
+function listEmpty<A> "O(1)"
   input List<A> lst;
   output Boolean isEmpty;
 external "builtin";
 end listEmpty;
   
-function cons<A>
+function cons<A> "O(1)"
   input A element;
   input List<A> inLst;
   output List<A> outLst;
@@ -562,13 +562,13 @@ algorithm
   outLst := element::inLst;
 end cons;
 
-function arrayLength<A>
+function arrayLength<A> "O(1)"
   input array<A> arr;
   output Integer length;
 external "builtin";
 end arrayLength;
 
-function arrayGet<A>
+function arrayGet<A> "O(1)"
   input array<A> arr;
   input Integer index;
   output A value;
@@ -585,6 +585,7 @@ algorithm
 end arrayNth;
 
 function arrayCreate<A>
+  "O(size)"
   input Integer size;
   input A initialValue;
   output array<A> arr;
@@ -592,18 +593,21 @@ external "builtin";
 end arrayCreate;
 
 function arrayList<A>
+  "O(n)"
   input array<A> arr;
   output List<A> lst;
 external "builtin";
 end arrayList;
 
 function listArray<A>
+  "O(n)"
   input List<A> lst;
   output array<A> arr;
 external "builtin";
 end listArray;
 
 function arrayUpdate<A>
+  "O(1)"
   input array<A> arr;
   input Integer index;
   input A newValue;
@@ -613,12 +617,13 @@ external "builtin";
 end arrayUpdate;
 
 function arrayCopy<A>
+  "O(n)"
   input array<A> arr;
   output array<A> copy;
 external "builtin";
 end arrayCopy;
 
-function arrayAdd<A> "An arrayAppend operation would be more useful; this is very slow if used improperly!"
+function arrayAdd<A> "An arrayAppend operation would be more useful; O(n) per addition."
   input array<A> arr;
   input A a;
   output array<A> copy;

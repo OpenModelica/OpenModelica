@@ -49,7 +49,7 @@ public function args
   external "C" outStringLst=RTOpts_args(inStringLst) annotation(Library = "omcruntime");
 end args;
 
-public function typeinfo
+public function typeinfo "+t"
   output Boolean outBoolean;
 
   external "C" outBoolean = RTOpts_typeinfo() annotation(Library = "omcruntime");

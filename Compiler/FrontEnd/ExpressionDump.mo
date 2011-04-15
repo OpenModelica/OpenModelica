@@ -274,12 +274,16 @@ algorithm
     case (DAE.POW(ty = t)) then " ^ ";
     case (DAE.ADD_ARR(ty = _)) then " + ";
     case (DAE.SUB_ARR(ty = _)) then " - ";
-    case (DAE.MUL_ARR(ty = _)) then " * ";
+    case (DAE.MUL_ARR(ty = _)) then " *<MUL_ARRAY> ";
     case (DAE.DIV_ARR(ty = _)) then " / ";
     case (DAE.POW_ARR(ty = _)) then " ^ ";
     case (DAE.POW_ARR2(ty = _)) then " ^ ";
-    case (DAE.MUL_SCALAR_ARRAY(ty = _)) then " * ";
-    case (DAE.MUL_ARRAY_SCALAR(ty = _)) then " * ";
+    case (DAE.MUL_SCALAR_ARRAY(ty = t))
+      equation
+        ts = typeString(t);
+        s = stringAppendList({" *<", ts, "> "});
+      then s;
+    case (DAE.MUL_ARRAY_SCALAR(ty = _)) then " *<MUL_ARRAY_SCALAR> ";
     case (DAE.ADD_SCALAR_ARRAY(ty = _)) then " + ";
     case (DAE.ADD_ARRAY_SCALAR(ty = _)) then " + ";
     case (DAE.SUB_SCALAR_ARRAY(ty = _)) then " - ";
