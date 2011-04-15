@@ -138,7 +138,7 @@ inline int solveLGS(long int* dim, double* A, double* b)
 		double* p = new double[(int)*dim];		// Pivot elements
 
 		// Solution is written to b
-		DGESV(dim,&dimRHS,A,dim,p,b,dim,&irtrn);
+		dgesv_/*DGESV*/(dim,&dimRHS,A,dim,p,b,dim,&irtrn);
 
 		delete [] p;
 

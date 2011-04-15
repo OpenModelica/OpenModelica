@@ -4,8 +4,7 @@
 #include "Factory.h"
 #include "GlobalSettings.h"
 #include "../../Solver/Interfaces/ISolverSettings.h"
-
-
+#include "LibrariesConfig.h"
 
 SettingsFactory::SettingsFactory(void)
 {
@@ -25,13 +24,19 @@ tuple<boost::shared_ptr<IGlobalSettings>,boost::shared_ptr<ISolverSettings> > Se
 	//load global settings or use default settings
 	_global_settings =  boost::shared_ptr<IGlobalSettings>(new GlobalSettings());
 	_global_settings->load("config//GlobalSettings.xml");
+	std::string solver_dll;
 	//Load solver dll
-	string solver_dll = _global_settings->getSelectedSolver().append(".dll");
+	if(_global_settings->getSelectedSolver().compare("Euler")==0)
+		solver_dll.assign(EULER_LIB);
+	else
+		throw std::invalid_argument("Selected Solver is not available");
+	
 	string settings = _global_settings->getSelectedSolver().append("Settings");
 	string settings_file ="config//";
 	settings_file.append(
 			_global_settings->getSelectedSolver().append("Settings.xml"));
 	type_map types;
+	
 	if(!load_single_library(types,solver_dll))
 		throw std::invalid_argument(solver_dll + " library could not be loaded");
 	//get solver factory

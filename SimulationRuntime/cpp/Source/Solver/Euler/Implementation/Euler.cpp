@@ -2,7 +2,7 @@
 
 #include "Euler.h"
 #include "EulerSettings.h"
-#include "../../Math/Implementation/Functions.h"
+#include "../../../Math/Implementation/Functions.h"
 #include "../../../System/Interfaces/ISystemProperties.h"
 Euler::Euler(IDAESystem* system, ISolverSettings* settings)
 : SolverDefaultImplementation(system, settings)
@@ -344,8 +344,8 @@ void Euler::doLinearEuler()
 			}
 		}
 
-
-		DGESV(&_dimSys,&dimRHS,jacHelp,&_dimSys,fHelp,k1,&_dimSys,&_idid);
+		//TODO find solution for cmake and lapack,blas,fortran libs
+		/*DGESV*/dgesv_(&_dimSys,&dimRHS,jacHelp,&_dimSys,fHelp,k1,&_dimSys,&_idid);
 
 		// Berechnung des neuen y
 		for(int i = 0; i < _dimSys; ++i) 

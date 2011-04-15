@@ -1,11 +1,12 @@
 #include "StdAfx.h"
 #include "Configuration.h"
 #include <boost/algorithm/string.hpp>
-
+#include "LibrariesConfig.h"
 Configuration::Configuration(void)
 {
 	type_map types;
-	if(!load_single_library(types, "SettingsFactory.dll"))
+	std::string settings_name(SETTINGSFACTORY_LIB);
+	if(!load_single_library(types, settings_name))
 		throw std::invalid_argument("Settings factory library could not be loaded");
 	std::map<std::string, factory<ISettingsFactory> >::iterator iter;
 	std::map<std::string, factory<ISettingsFactory> >& factories(types.get());
@@ -13,7 +14,7 @@ Configuration::Configuration(void)
 	iter = factories.find("SettingsFactory");
 	if (iter ==factories.end()) 
 	{
-		throw std::invalid_argument("No such Solver");
+		throw std::invalid_argument("No such settings library");
 	}
 	_settings_factory = boost::shared_ptr<ISettingsFactory>(iter->second.create());
 	tie(_global_settings,_solver_settings) =_settings_factory->create();
@@ -37,8 +38,14 @@ Configuration::~Configuration(void)
 IDAESolver* Configuration::createSolver(IDAESystem* system)
 {
 	type_map types;
-	string solver_dll = _global_settings->getSelectedSolver().append(".dll");
+	
+	string solver_dll;
 	string solver = _global_settings->getSelectedSolver().append("Solver");
+	if(_global_settings->getSelectedSolver().compare("Euler")==0)
+		solver_dll.assign(EULER_LIB);
+	else
+		throw std::invalid_argument("Selected Solver is not available");
+		
 	if(!load_single_library(types, solver_dll))
 		throw std::invalid_argument(solver_dll + "library could not be loaded");
 	std::map<std::string, factory<IDAESolver,IDAESystem*, ISolverSettings*> >::iterator iter;
