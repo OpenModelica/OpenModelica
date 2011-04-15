@@ -830,6 +830,8 @@ algorithm
       then ((DAE.CALL(Absyn.IDENT("condition"), {DAE.ICONST(index)}, false, true, DAE.ET_BOOL(), DAE.NO_INLINE()),i));
     case ((e as DAE.CREF(_,_),i),_)
       then ((e,i));
+    case ((e as DAE.BCONST(_),i),_)
+      then ((e,i));
     case ((e,_),_)
     equation
       print("Unhandle match in replaceCond\n");

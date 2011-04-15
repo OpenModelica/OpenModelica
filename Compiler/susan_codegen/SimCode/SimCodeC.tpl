@@ -208,11 +208,13 @@ case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
   #define $P$old$Ptime localData->oldTime
   #define $P$current_step_size globalData->current_stepsize
 
+  #ifndef _OMC_QSS
   extern "C" { // adrpo: this is needed for Visual C++ compilation to work!
     const char *model_name="<%dotPath(name)%>";
     const char *model_fileprefix="<%fileNamePrefix%>";
     const char *model_dir="<%directory%>";
   }
+  #endif
   
   // we need to access the inline define that we compiled the simulation with
   // from the simulation runtime.

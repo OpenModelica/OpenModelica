@@ -59,14 +59,14 @@ template translateModel(SimCode simCode,QSSinfo qssInfo)
 ::=
 match simCode
 case SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
-  let()= textFile(simulationFile(simCode,qssInfo), '<%fileNamePrefix%>.cpp')
-  let()= textFile(SimCodeC.simulationFunctionsHeaderFile(fileNamePrefix, modelInfo.functions, recordDecls), '<%fileNamePrefix%>_functions.h')
-  let()= textFile(SimCodeC.simulationFunctionsFile(fileNamePrefix, modelInfo.functions, literals), '<%fileNamePrefix%>_functions.cpp')
-  let()= textFile(SimCodeC.recordsFile(fileNamePrefix, recordDecls), '<%fileNamePrefix%>_records.c')
+  let()= textFile(simulationFile(simCode,qssInfo), 'modelica_funcs.cpp')
+  let()= textFile(SimCodeC.simulationFunctionsHeaderFile(fileNamePrefix, modelInfo.functions, recordDecls), 'model_functions.h')
+  let()= textFile(simulationFunctionsFile(fileNamePrefix, modelInfo.functions, literals), 'model_functions.cpp')
+  let()= textFile(SimCodeC.recordsFile(fileNamePrefix, recordDecls), 'model_records.c')
   let()= textFile(simulationMakefile(simCode), '<%fileNamePrefix%>.makefile')
-  let()= textFile(structureFile(simCode,qssInfo), 'modelica_struct.pds')
+  let()= textFile(structureFile(simCode,qssInfo), 'modelica_structure.pds')
   if simulationSettingsOpt then //tests the Option<> for SOME()
-     let()= textFile(SimCodeC.simulationInitFile(simCode), '<%fileNamePrefix%>_init.txt')
+     let()= textFile(SimCodeC.simulationInitFile(simCode), 'model_init.txt')
      "" //empty result for true case 
   //else "" //the else is automatically empty, too
   //this top-level template always returns an empty result 
@@ -80,7 +80,16 @@ match simCode
 case SIMCODE(modelInfo=modelInfo as MODELINFO(varInfo=varInfo as  VARINFO(__))) then
   <<
 
-  <%SimCodeC.simulationFileHeader(simCode)%>
+  <%simulationFileHeader(simCode)%>
+
+  #ifdef _OMC_QSS
+  extern "C" { // adrpo: this is needed for Visual C++ compilation to work!
+    const char *model_name="<%SimCodeC.dotPath(modelInfo.name)%>";
+    const char *model_fileprefix="model";
+    const char *model_dir="<%modelInfo.directory%>";
+  }
+  #endif
+ 
 
   <%SimCodeC.globalData(modelInfo,fileNamePrefix)%>
 
@@ -265,6 +274,9 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(varInfo=varInfo as  VARINFO(__))) 
   {
     <%generateIntegrators(varInfo.numStateVars)%>
     <%generateStaticBlocks(qssInfo,varInfo.numStateVars)%>
+    <%generateZeroCrossingFunctions(zeroCrossings,qssInfo)%>
+    <%generateCrossingDetector(zeroCrossings,qssInfo)%>
+    <%generateWhenBlocks(whenClauses,helpVarInfo)%>
     Simulator
       {
         Path = modelica/outvars.h
@@ -489,7 +501,7 @@ template generateStaticFunc(list<SimEqSystem> odeEq,list<ZeroCrossing> zeroCross
       #endif
 
       // Evalute the static function
-      <% (eqs |> eq => SimCodeC.equation_(eq, contextSimulationNonDiscrete, &varDecls /*BUFC*/); separator="\n") %>
+      <% (eqs |> eq => SimCodeC.equation_(BackendQSS.replaceZC(eq,zeroCrossings), contextSimulationNonDiscrete, &varDecls /*BUFC*/); separator="\n") %>
 
       // Write outputs to out[]
       #ifdef _OMC_OMPD
@@ -610,35 +622,41 @@ template generateStaticBlocks(QSSinfo qssInfo, Integer nStates)
 	;separator="\n")
 end generateStaticBlocks;
 
-template generateZeroCrossingFunctions(list<ZeroCrossing> zeroCrossings)
+template generateZeroCrossingFunctions(list<ZeroCrossing> zeroCrossings,QSSinfo qssInfo)
 "Function to generate the crossing functions atomics for the DEVS structure"
 ::= 
+  match qssInfo
+  case QSSINFO(__) then
   let &varDecls = buffer "" /*BUFD*/
+  let numStatic = listLength(eqs)
   let &preExp = buffer "" /*BUFD*/
   (zeroCrossings |> ZERO_CROSSING(relation_ = DAE.RELATION()) hasindex i0 =>
   <<Simulator
     {
       Path = modelica/modelica_qss_static.h // Crossing function <%i0%> for <% SimCodeC.daeExp(relation_, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/) %>
-      Parameters = (double)(<% i0 %>),2.0,1.0
+      Parameters = 2.0, 1.0, <% intAdd(i0,listLength(eqs))%>.0 // Inputs, Outputs, Index
     }
   >>
   ;separator="\n")
 end generateZeroCrossingFunctions;
 
-template generateCrossingDetectors(list<ZeroCrossing> zeroCrossings)
-"Function to generate the crossing detector atomics for the DEVS structure"
+template generateCrossingDetector(list<ZeroCrossing> zeroCrossings,QSSinfo qssInfo)
+"Function to generate the crossing detectors atomics for the DEVS structure"
 ::= 
+  match qssInfo
+  case QSSINFO(__) then
   let &varDecls = buffer "" /*BUFD*/
+  let numStatic = listLength(eqs)
   let &preExp = buffer "" /*BUFD*/
   (zeroCrossings |> ZERO_CROSSING(relation_ = DAE.RELATION()) hasindex i0 =>
   <<Simulator
     {
       Path = modelica/modelica_qss_crossdetect.h // Crossing detector <%i0%> for <% SimCodeC.daeExp(relation_, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/) %>
-      Parameters = (double)(<% i0 %>),2.0,3.0
+      Parameters = <% i0 %>.0
     }
   >>
   ;separator="\n")
-end generateCrossingDetectors;
+end generateCrossingDetector;
 
 template generateWhenBlocks(list<SimWhenClause> whenClauses, list<HelpVarInfo> helpVars)
 "Function to generate the when blocks atomics for the DEVS structure"
@@ -727,6 +745,40 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   <%\t%> @mv $@.tmp $@
   >>
 end simulationMakefile;
+
+
+template simulationFileHeader(SimCode simCode)
+ "Generates header part of simulation file."
+::=
+match simCode
+case SIMCODE(modelInfo=MODELINFO(__), extObjInfo=EXTOBJINFO(__)) then
+  <<
+  // Simulation code for <%SimCodeC.dotPath(modelInfo.name)%> generated by the OpenModelica Compiler <%getVersionNr()%>.
+  
+  #include "modelica.h"
+  #include "assert.h"
+  #include "string.h"
+  #include "simulation_runtime.h"
+  
+  #include "model_functions.h"
+  
+  >>
+end simulationFileHeader;
+
+template simulationFunctionsFile(String filePrefix, list<Function> functions, list<Exp> literals)
+ "Generates the content of the C file for functions in the simulation case."
+::=
+  <<
+  #include "model_functions.h"
+  extern "C" {
+  
+  <%literals |> literal hasindex i0 fromindex 0 => SimCodeC.literalExpConst(literal,i0) ; separator="\n"%>
+  <%SimCodeC.functionBodies(functions)%>
+  }
+  
+  >>
+  /* adpro: leave a newline at the end of file to get rid of warnings! */
+end simulationFunctionsFile;
 
 
 end SimCodeQSS;
