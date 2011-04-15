@@ -1065,9 +1065,9 @@ algorithm
     local
        Option<DAE.Exp> min,max,start,fixed,nominal;
        String snominal;
-       Option<Boolean> isProtected;
+       Option<Boolean> isProtected,finalPrefix;
     case NONE() then ();
-    case SOME(DAE.VAR_ATTR_REAL(min=(min,max),initial_=start,fixed=fixed,nominal=nominal,isProtected=isProtected))
+    case SOME(DAE.VAR_ATTR_REAL(min=(min,max),initial_=start,fixed=fixed,nominal=nominal,isProtected=isProtected,finalPrefix=finalPrefix))
       equation
         print("(");
         dumpOptExpression(min,"min");
@@ -1076,9 +1076,10 @@ algorithm
         dumpOptExpression(fixed,"fixed");
         dumpOptExpression(nominal,"nominal");
         dumpOptBoolean(isProtected,"protected");
+        dumpOptBoolean(finalPrefix,"final");
         print(") ");
      then ();
-    case SOME(DAE.VAR_ATTR_INT(min=(min,max),initial_=start,fixed=fixed,isProtected=isProtected))
+    case SOME(DAE.VAR_ATTR_INT(min=(min,max),initial_=start,fixed=fixed,isProtected=isProtected,finalPrefix=finalPrefix))
       equation
         print("(");
         dumpOptExpression(min,"min");
@@ -1086,24 +1087,27 @@ algorithm
         dumpOptExpression(start,"start");
         dumpOptExpression(fixed,"fixed");
         dumpOptBoolean(isProtected,"protected");
+        dumpOptBoolean(finalPrefix,"final");
         print(") ");
      then ();
-    case SOME(DAE.VAR_ATTR_BOOL(initial_=start,fixed=fixed,isProtected=isProtected))
+    case SOME(DAE.VAR_ATTR_BOOL(initial_=start,fixed=fixed,isProtected=isProtected,finalPrefix=finalPrefix))
       equation
         print("(");
         dumpOptExpression(start,"start");
         dumpOptExpression(fixed,"fixed");
         dumpOptBoolean(isProtected,"protected");
+        dumpOptBoolean(finalPrefix,"final");
         print(") ");
      then ();
-    case SOME(DAE.VAR_ATTR_STRING(initial_=start,isProtected=isProtected))
+    case SOME(DAE.VAR_ATTR_STRING(initial_=start,isProtected=isProtected,finalPrefix=finalPrefix))
       equation
         print("(");
         dumpOptExpression(start,"start");
         dumpOptBoolean(isProtected,"protected");
+        dumpOptBoolean(finalPrefix,"final");
         print(") ");
      then ();
-    case SOME(DAE.VAR_ATTR_ENUMERATION(min=(min,max),start=start,fixed=fixed,isProtected=isProtected))
+    case SOME(DAE.VAR_ATTR_ENUMERATION(min=(min,max),start=start,fixed=fixed,isProtected=isProtected,finalPrefix=finalPrefix))
       equation
         print("(");
         dumpOptExpression(min,"min");
@@ -1111,6 +1115,7 @@ algorithm
         dumpOptExpression(start,"start");
         dumpOptExpression(fixed,"fixed");
         dumpOptBoolean(isProtected,"protected");
+        dumpOptBoolean(finalPrefix,"final");
         print(") ");
      then ();
     else ();
