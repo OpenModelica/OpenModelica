@@ -91,53 +91,68 @@ algorithm
        array<Integer> ass1, ass2;
        
        list<BackendDAE.Var> allVarsList, stateVarsList;
-       
+       BackendDAE.Variables orderedVars;
+       list<BackendDAE.Var> varlst;
        BackendDAE.IncidenceMatrix m, mt, globalIncidenceMat;
-       
-       list<Integer> variableIndicesList,ass1List, ass2List, stateIndices;
-       list<list<Integer>> blt_states,blt_no_states, stateEq_flat, globalIncidenceList, comps;
+       list<BackendDAE.ZeroCrossing> zeroCrossList, samplesList; 
+              
+       Integer nStatic, nIntegr, nBlocks, nZeroCross, nCrossDetect, nEquations;
+       list<Integer> variableIndicesList,ass1List, ass2List, stateIndices, zcSamplesInd;
+       list<list<Integer>> blt_states,blt_no_states, stateEq_flat, globalIncidenceList, comps, mappedEquations;
        list<list<list<Integer>>> stateEq_blt;
-       
-       Integer nStatic, nIntegr, nBlocks;
-       
+       array<list<Integer>> mappedEquationsMat, mappedEquationsMatT;
+       list<String> ss;
+       String s;
+              
        // structure variables
        DevsStruct DEVS_structure;
        array<list<list<Integer>>> DEVS_struct_outLinks, DEVS_struct_outVars, DEVS_struct_inLinks, DEVS_struct_inVars;
  
-       list<list<Integer>> DEVS_blocks_outVars, DEVS_blocks_inVars;
+       list<list<Integer>> DEVS_blocks_outVars, DEVS_blocks_inVars, zc_inVars;
        list<list<SimCode.SimEqSystem>> eqs;
-       BackendDAE.Variables orderedVars;
-       list<BackendDAE.Var> varlst;
        list<list<Integer>> conns;
        
     case (dlow, ass1, ass2, m, mt, comps)
       equation
+        //BackendDump.bltdump((dlow, m, mt, ass1, ass2, comps));
         
-        // STEP 0      
-        // Generate various Info and Structures needed in the following steps     
-        BackendDump.bltdump((dlow, m, mt, ass1, ass2, comps));      
+        print("\n ----------------------------\n");
+        print("BackEndQSS analysis initialized");
+        print("\n ----------------------------\n");
         
-        (blt_states, blt_no_states) = BackendDAEUtil.generateStatePartition(comps, dlow, ass1, ass2, m, mt);
-        
-        (allVarsList, stateVarsList) = getAllVars(dlow);
-        stateIndices = getStateIndices(allVarsList, {}, 1); 
-        variableIndicesList = arrayList(ass2);
-                        
         // STEP 1      
         // EXTRACT THE INDICES OF NEEDED EQUATIONS FOR EACH STATE VARIABLE         
-                
+        
+        (blt_states, blt_no_states) = BackendDAEUtil.generateStatePartition(comps, dlow, ass1, ass2, m, mt);
+                 
         stateEq_flat = splitStateEqSet(comps, dlow, ass1, ass2, m, mt) "Extract equations for each state derivative";
         stateEq_blt = mapStateEqInBlocks( stateEq_flat, blt_states, {}) "Map equations back in BLT blocks";
         
+        // STEP 2      
+        // Generate various Info and Structures needed in the following steps     
+         
+        (allVarsList, stateVarsList) = getAllVars(dlow);
+        stateIndices = getStateIndices(allVarsList, {}, 1); 
+        variableIndicesList = arrayList(ass2);
+        
+        (zeroCrossList, zc_inVars, samplesList, zcSamplesInd) = getListofZeroCrossings(dlow);
         eqs = Util.listMap3(stateEq_blt, generateEqFromBlt,dlow,ass1,ass2);
         orderedVars = BackendVariable.daeVars(dlow);
         varlst = BackendDAEUtil.varList(orderedVars);
         
+        nEquations = arrayLength(m);
         nStatic = listLength(stateEq_blt);
         nIntegr = listLength(stateIndices);
-        nBlocks = nStatic+nIntegr;     
+        nZeroCross = listLength(zeroCrossList);
+        nCrossDetect = nZeroCross;
+        nBlocks = nStatic+nIntegr+nZeroCross+nCrossDetect;     
         
-        // STEP 2      
+        // Map equations to DEVS blocks
+        mappedEquations = constructEmptyList({}, nEquations);
+        mappedEquations = mapStateEquationsInDEVSblocks(stateEq_blt, mappedEquations, nIntegr+1);
+        mappedEquationsMat = listArray(mappedEquations);
+        
+        // STEP 3      
         // GENERALISED INCIDENCE MATRICES
         
         //globalIncidenceList = arrayList(m);
@@ -149,7 +164,16 @@ algorithm
         
         DEVS_structure = generateEmptyDEVSstruct(nBlocks, ({},{},{},{}));    
         (DEVS_blocks_outVars, DEVS_blocks_inVars) = getBlocksInOutVars(stateEq_blt, stateIndices, m, ass2);
-        DEVS_structure = generateDEVSstruct(stateIndices, DEVS_blocks_outVars, DEVS_blocks_inVars, DEVS_structure); 
+        DEVS_blocks_inVars = listAppend(DEVS_blocks_inVars, zc_inVars);
+        
+        print("DEVS_blocks_outVars :\n");
+        printListOfLists(DEVS_blocks_outVars);
+        print("DEVS_blocks_inVars :\n");
+        printListOfLists(DEVS_blocks_inVars);
+        
+        
+        DEVS_structure = generateDEVSstruct(stateIndices, zeroCrossList, nStatic, 
+                           DEVS_blocks_outVars, DEVS_blocks_inVars, mappedEquationsMat, DEVS_structure); 
         
         
         // PRINT VARIOUS INFO
@@ -157,6 +181,14 @@ algorithm
         print("---------- State equations BLT blocks ----------\n");
         Util.listMap0(stateEq_blt, printListOfLists);
         print("---------- State equations BLT blocks ----------\n");
+        
+        print("Zero Crossings :\n");
+        print("===============\n");
+        ss = Util.listMap(zeroCrossList, BackendDump.dumpZcStr);
+        s = Util.stringDelimitList(ss, ",\n");
+        print(s);
+        print("\n");
+        
                 
         dumpDEVSstructs(DEVS_structure);       
         
@@ -166,10 +198,139 @@ algorithm
         
       then
         QSSINFO(stateEq_blt, DEVS_structure,eqs,varlst);
-  
+        
+   case (_,_,_,_,_,_)
+      equation
+        print("- Main function BackendQSS.generateStructureCodeQSS failed\n");
+      then
+        fail();          
   end matchcontinue;
-
 end generateStructureCodeQSS;
+
+
+
+
+
+public function getListofZeroCrossings 
+"function: getListofZeroCrossings
+  Takes as input the DAE and extracts the zero-crossings as well as the zero crosses that are 
+  connected to sample statements.
+  author: florosx
+"
+  input BackendDAE.BackendDAE dae;
+  output list<BackendDAE.ZeroCrossing> zcOnly;
+  output list<list<Integer>> zc_inVars;
+  output list<BackendDAE.ZeroCrossing> zcSamples;
+  output list<Integer> zcSamplesInd;
+
+algorithm
+  (zcOnly, zc_inVars, zcSamples, zcSamplesInd):=
+  matchcontinue (dae)
+    local
+      list<BackendDAE.ZeroCrossing> zc;
+      BackendDAE.Variables vars;
+    case (BackendDAE.DAE(orderedVars=vars, eventInfo = BackendDAE.EVENT_INFO(zeroCrossingLst = zc)))
+      equation
+        (zcOnly, zc_inVars, zcSamples, zcSamplesInd) = getListofZeroCrossings2(1, zc, vars, {}, {}, {}, {});
+      then
+        (zcOnly, zc_inVars, zcSamples, zcSamplesInd);
+    case (_)
+      equation
+        print("- BackendQSS.getListofZeroCrossings failed\n");
+      then
+        fail();        
+  end matchcontinue;
+end getListofZeroCrossings;
+
+public function getListofZeroCrossings2 
+"function: getListofZeroCrossings
+  Helper function for getListofZeroCrossings
+  author: florosx
+"
+  input Integer loopIndex;
+  input list<BackendDAE.ZeroCrossing> zc;
+  input BackendDAE.Variables vars;
+  input list<list<Integer>> zc_inVarsTemp;
+  input list<BackendDAE.ZeroCrossing> zcOnlyTemp;
+  input list<BackendDAE.ZeroCrossing> zcSamplesTemp;
+  input list<Integer> zcSamplesIndTemp;
+  
+  output list<BackendDAE.ZeroCrossing> zcOnly;
+  output list<list<Integer>> zc_inVars;
+  output list<BackendDAE.ZeroCrossing> zcSamples;
+  output list<Integer> zcSamplesInd;
+  
+algorithm
+  (zcOnly, zc_inVars, zcSamples, zcSamplesInd):=
+  matchcontinue (loopIndex, zc, vars, zc_inVarsTemp, zcOnlyTemp, zcSamplesTemp, zcSamplesIndTemp)
+    local
+      list<BackendDAE.Value> tempInVars;
+      BackendDAE.ZeroCrossing cur_zc;
+      list<BackendDAE.ZeroCrossing> rest_zeroCrossings;
+      DAE.Exp e;
+    
+    case (loopIndex, {}, vars, zc_inVarsTemp, zcOnlyTemp, zcSamplesTemp,zcSamplesIndTemp)
+      equation
+      then
+        (zcOnlyTemp, zc_inVarsTemp, zcSamplesTemp,zcSamplesIndTemp);  
+      
+    case (loopIndex, (cur_zc as BackendDAE.ZERO_CROSSING(relation_ = e))::rest_zeroCrossings, vars, zc_inVarsTemp, zcOnlyTemp, zcSamplesTemp, zcSamplesIndTemp)
+      equation
+        true = checkIfExpressionIsSample(e);
+        zcSamplesTemp = listAppend(zcSamplesTemp, {cur_zc});
+        zcSamplesIndTemp = listAppend(zcSamplesIndTemp, {loopIndex});
+        (zcOnlyTemp, zc_inVarsTemp, zcSamplesTemp, zcSamplesIndTemp) = getListofZeroCrossings2(loopIndex+1, rest_zeroCrossings, vars, zc_inVarsTemp, zcOnlyTemp, zcSamplesTemp,zcSamplesIndTemp);
+      then
+        (zcOnlyTemp, zc_inVarsTemp, zcSamplesTemp,zcSamplesIndTemp);
+    case (loopIndex, (cur_zc as BackendDAE.ZERO_CROSSING(relation_ = e))::rest_zeroCrossings, vars, zc_inVarsTemp, zcOnlyTemp, zcSamplesTemp, zcSamplesIndTemp)
+      equation
+        false = checkIfExpressionIsSample(e);
+        tempInVars = BackendDAEUtil.incidenceRowExp(e, vars);
+        zc_inVarsTemp = listAppend(zc_inVarsTemp, {tempInVars});
+        zcOnlyTemp = listAppend(zcOnlyTemp, {cur_zc});
+        (zcOnlyTemp, zc_inVarsTemp, zcSamplesTemp, zcSamplesIndTemp) = getListofZeroCrossings2(loopIndex+1, rest_zeroCrossings, vars, zc_inVarsTemp, zcOnlyTemp, zcSamplesTemp,zcSamplesIndTemp);
+      then
+        (zcOnlyTemp, zc_inVarsTemp, zcSamplesTemp,zcSamplesIndTemp);
+    case (_,_,_,_,_,_,_)
+      equation
+        print("- BackendQSS.getListofZeroCrossings2 failed\n");
+      then
+        fail();  
+  end matchcontinue;
+end getListofZeroCrossings2;
+
+public function checkIfExpressionIsSample
+"function: getListofZeroCrossings
+  Checks if a given expression is a sample
+  author: florosx
+"
+  input DAE.Exp e;
+  output Boolean isSample;
+algorithm
+  (isSample):=
+  matchcontinue (e)
+    local
+      DAE.Exp e;
+    case (DAE.CALL(path = Absyn.IDENT(name = "sample")))
+      equation
+        // It's a sample
+      then
+        (true);
+    case (_)
+      equation
+      then
+        (false);
+  end matchcontinue;
+end checkIfExpressionIsSample;
+
+
+
+
+
+
+
+
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 /////  PART - INCIDENCE MATRICES
@@ -308,30 +469,195 @@ protected function generateDEVSstruct
   Right now it is not needed. But kept like that for future additions.
 "
   input list<Integer> stateIndices;
+  input list<BackendDAE.ZeroCrossing> zeroCrossList;
+  input Integer nStatic;
   input list<list<Integer>> DEVS_blocks_outVars;
   input list<list<Integer>> DEVS_blocks_inVars;
+  input array<list<Integer>> mappedEquationsMat;
   input DevsStruct DEVS_structureIn;
   output DevsStruct DEVS_structureOut;
  
 algorithm
   (DEVS_structureOut):=
-  matchcontinue (stateIndices,DEVS_blocks_outVars, DEVS_blocks_inVars, DEVS_structureIn)
+  matchcontinue (stateIndices, zeroCrossList, nStatic, DEVS_blocks_outVars, DEVS_blocks_inVars, mappedEquationsMat, DEVS_structureIn)
     local
-       
+      Integer nStatic, nIntegr, nBlocks, nZeroCross, nCrossDetect, startCrossDetectInd, startZeroCrossInd; 
       DevsStruct DEVS_structure_temp;
       
-    case (stateIndices,DEVS_blocks_outVars, DEVS_blocks_inVars, DEVS_structure_temp)
-      equation      
+    case (stateIndices, zeroCrossList, nStatic, DEVS_blocks_outVars, DEVS_blocks_inVars, mappedEquationsMat, DEVS_structure_temp)
+      equation
+        nIntegr = listLength(stateIndices);
+        nZeroCross = listLength(zeroCrossList);
+        startZeroCrossInd = nStatic + nIntegr + 1;
+        startCrossDetectInd = nStatic + nIntegr + nZeroCross + 1;
+        //Resolve dependencies between inputs/outputs excluding events      
         (DEVS_structure_temp) = generateStructFromInOutVars(1,stateIndices,DEVS_blocks_outVars, DEVS_blocks_inVars, DEVS_structure_temp);
+        //Add the connections between zero-crossings and cross-detectors
+        (DEVS_structure_temp) = addZeroCrossOut_CrossDetectIn(startZeroCrossInd, startCrossDetectInd, zeroCrossList, DEVS_structure_temp);
+        //Add the cross-detector blocks outputs
+        (DEVS_structure_temp) = addCrossDetectBlocksOut(startCrossDetectInd, zeroCrossList, mappedEquationsMat, DEVS_structure_temp);
+        
       then
         (DEVS_structure_temp);
-    case (_,_,_,_)
+    case (_,_,_,_,_,_,_)
       equation
         print("- BackendQSS.generateDEVSstruct failed\n");
       then
         fail();
   end matchcontinue;
 end generateDEVSstruct;
+
+protected function addZeroCrossOut_CrossDetectIn
+"function: addZeroCrossOut_CrossDetectIn
+  Adds the Outputs of the Zero-Crossing Blocks (to the cross-detectors) and the respective inputs to the cross-detectors.
+  author: florosx
+" 
+  input Integer zeroCrossBlockInd;
+  input Integer crossDetectBlockInd;
+  input list<BackendDAE.ZeroCrossing> zeroCrossList;
+  input DevsStruct DEVS_structureIn;
+  output DevsStruct DEVS_structureOut;
+ 
+algorithm
+  (DEVS_structureOut):=
+  matchcontinue (zeroCrossBlockInd, crossDetectBlockInd, zeroCrossList, DEVS_structureIn)
+    local
+      list<list<Integer>> curBlock_outLinks, curBlock_outVars, curBlock_inLinks, curBlock_inVars;
+      array<list<list<Integer>>> DEVS_struct_outLinks, DEVS_struct_outVars, DEVS_struct_inLinks, DEVS_struct_inVars;
+      DevsStruct DEVS_structure_temp;
+      list<BackendDAE.ZeroCrossing> restZC;
+      BackendDAE.ZeroCrossing curZC;
+      
+    case (zeroCrossBlockInd, crossDetectBlockInd, {}, DEVS_structure_temp)
+      equation
+      then
+        (DEVS_structure_temp);
+      
+    case (zeroCrossBlockInd, crossDetectBlockInd, curZC::restZC, DEVS_STRUCT(outLinks=DEVS_struct_outLinks, outVars=DEVS_struct_outVars, inLinks=DEVS_struct_inLinks, inVars=DEVS_struct_inVars))
+      equation
+       DEVS_struct_outLinks = arrayUpdate(DEVS_struct_outLinks, zeroCrossBlockInd, {{crossDetectBlockInd}});
+       DEVS_struct_outVars = arrayUpdate(DEVS_struct_outVars, zeroCrossBlockInd, {{0}});
+       DEVS_struct_inLinks = arrayUpdate(DEVS_struct_inLinks, crossDetectBlockInd, {{zeroCrossBlockInd}});
+       DEVS_struct_inVars = arrayUpdate(DEVS_struct_inVars, crossDetectBlockInd, {{0}});
+       DEVS_structure_temp = DEVS_STRUCT(DEVS_struct_outLinks, DEVS_struct_outVars, DEVS_struct_inLinks, DEVS_struct_inVars);      
+       DEVS_structure_temp = addZeroCrossOut_CrossDetectIn(zeroCrossBlockInd+1, crossDetectBlockInd+1, restZC, DEVS_structure_temp);
+      then
+        (DEVS_structure_temp);
+    case (_,_,_,_)
+      equation
+        print("- BackendQSS.addZeroCrossBlocksOut failed\n");
+      then
+        fail();
+  end matchcontinue;
+end addZeroCrossOut_CrossDetectIn;
+
+protected function addCrossDetectBlocksOut
+"function: addCrossDetectBlocks
+  Adds the cross-detector blocks in the DEVS structure.
+  author: florosx
+" 
+  input Integer startBlockInd;
+  input list<BackendDAE.ZeroCrossing> zeroCrossList;
+  input array<list<Integer>> mappedEquationsMat;
+  input DevsStruct DEVS_structureIn;
+  output DevsStruct DEVS_structureOut;
+ 
+algorithm
+  (DEVS_structureOut):=
+  matchcontinue (startBlockInd, zeroCrossList, mappedEquationsMat, DEVS_structureIn)
+    local
+      list<list<Integer>> curBlock_outLinks, curBlock_outVars, curBlock_inLinks, curBlock_inVars;
+      array<list<list<Integer>>> DEVS_struct_outLinks, DEVS_struct_outVars, DEVS_struct_inLinks, DEVS_struct_inVars;
+      DevsStruct DEVS_structure_temp;
+      list<BackendDAE.ZeroCrossing> restZC;
+      BackendDAE.ZeroCrossing curZC;
+      list<Integer> eq,wc, curDevsBlocks;
+      DAE.Exp e;
+      
+    case (startBlockInd, {}, mappedEquationsMat, DEVS_structure_temp)
+      equation
+      then
+        (DEVS_structure_temp);
+      
+    case (startBlockInd, BackendDAE.ZERO_CROSSING(relation_ = e,occurEquLst = eq,occurWhenLst = wc)::restZC, mappedEquationsMat, 
+                   DEVS_STRUCT(outLinks=DEVS_struct_outLinks, outVars=DEVS_struct_outVars, inLinks=DEVS_struct_inLinks, inVars=DEVS_struct_inVars))
+      equation
+       
+       curDevsBlocks = findEqInBlocks(eq, mappedEquationsMat,{});
+       curBlock_outVars = {{0}};
+       curBlock_outLinks = {curDevsBlocks};
+       
+       /*
+       eq = SimCodegenQSS_Utils.makeListNegative(eq, {});
+       cur_state_DEVS_blocks = get_curState_DEVS_blocks(eq, mappedEquationsMat, {});
+       cur_state_DEVS_blocks = SimCodegenQSS_Utils.removeRedundantElements(cur_state_DEVS_blocks, {});
+       
+        wc = Util.listMap1(wc,intAdd,ind_whenBlocks_start);
+        cur_state_DEVS_blocks = listAppend(cur_state_DEVS_blocks, wc);
+        */
+        
+       DEVS_struct_outLinks = arrayUpdate(DEVS_struct_outLinks, startBlockInd, curBlock_outLinks);
+       DEVS_struct_outVars = arrayUpdate(DEVS_struct_outVars, startBlockInd, curBlock_outVars);
+       
+       DEVS_structure_temp = DEVS_STRUCT(DEVS_struct_outLinks, DEVS_struct_outVars, DEVS_struct_inLinks, DEVS_struct_inVars);
+       
+       DEVS_structure_temp = addCrossDetectBlocksOut(startBlockInd+1, restZC, mappedEquationsMat, DEVS_structure_temp);
+      then
+        (DEVS_structure_temp);
+    case (_,_,_,_)
+      equation
+        print("- BackendQSS.addCrossDetectBlocksOut failed\n");
+      then
+        fail();
+  end matchcontinue;
+end addCrossDetectBlocksOut;
+
+protected function findEqInBlocks
+"function: findEqInBlocks
+  Adds the cross-detector blocks in the DEVS structure.
+  author: florosx
+" 
+  input list<Integer> eqInd;
+  input array<list<Integer>> mappedEquationsMat;
+  input list<Integer> blocksInd_temp;
+  output list<Integer> blocksInd_out;
+ 
+algorithm
+  (blocksInd_out):=
+  matchcontinue (eqInd, mappedEquationsMat, blocksInd_temp)
+    local
+      Integer curEq;
+      list<Integer> restEq, curBlocks;
+      
+    case ({}, mappedEquationsMat, blocksInd_temp)
+      equation
+      then
+        (blocksInd_temp);
+      
+    case (curEq::restEq, mappedEquationsMat, blocksInd_temp)
+      equation
+       curBlocks = mappedEquationsMat[curEq];
+       blocksInd_temp = listAppend(blocksInd_temp, curBlocks);
+       blocksInd_temp = findEqInBlocks(restEq, mappedEquationsMat, blocksInd_temp);
+      then
+        (blocksInd_temp);
+    case (_,_,_)
+      equation
+        print("- BackendQSS.findEqInBlocks failed\n");
+      then
+        fail();
+  end matchcontinue;
+end findEqInBlocks;
+
+
+
+
+
+
+
+
+
+
 
 protected function generateStructFromInOutVars
 "function: generateStructFromInOutVars
@@ -421,6 +747,13 @@ algorithm
              DEVS_STRUCT(outLinks=DEVS_struct_outLinks, outVars=DEVS_struct_outVars, inLinks=DEVS_struct_inLinks, inVars=DEVS_struct_inVars) )
       equation
         blocksToBeChecked = findOutVarsInAllInputsHelper(curOutVar, stateIndices,DEVS_blocks_inVars,outBlockIndex);          
+        /*print("\nCur out var ");
+        print(intString(curOutVar));
+        print("\noutBlockIndex ");
+        print(intString(outBlockIndex));
+        print("\n Blocks to be checked: \n");
+        printList(blocksToBeChecked, "start"); 
+        */
         (curOutVarLinks, DEVS_struct_inLinks, DEVS_struct_inVars) = 
                    findWhereOutVarIsNeeded(curOutVar, outBlockIndex, blocksToBeChecked, DEVS_blocks_inVars, DEVS_struct_inLinks, DEVS_struct_inVars,{});
         true = Util.isListNotEmpty(curOutVarLinks) "If the current output var is needed somewhere";
@@ -468,7 +801,8 @@ algorithm
   (blocksToBeCheckedOut):=
   matchcontinue (curOutVar, stateIndices,DEVS_blocks_inVars,outBlockIndex)
     local
-      list<Integer> blocksToBeChecked;      
+      list<Integer> blocksToBeChecked;
+   
     // If CURRENT OUTPUT IS STATE    
     case (curOutVar, stateIndices,DEVS_blocks_inVars,outBlockIndex)
       equation
@@ -482,7 +816,6 @@ algorithm
     case (curOutVar, stateIndices,DEVS_blocks_inVars,outBlockIndex) 
       equation
         true = Util.listContains(curOutVar, stateIndices);
-        print("TEST");
         blocksToBeChecked = createListIncreasingIndices(1,listLength(DEVS_blocks_inVars),{});  
         blocksToBeChecked = Util.listRemoveNth(blocksToBeChecked, outBlockIndex); // If state derivative remove the current block from the input search.  
       then
@@ -541,6 +874,15 @@ algorithm
         // If the current outVariable is NOT needed in the current In block
         curBlock_inVars = listNth(DEVS_blocks_inVars, inBlockIndex-1);
         false = Util.listContains(curOutVar, curBlock_inVars);
+        /*print("\nCurBlock InVars : ");
+        printList(curBlock_inVars, "start"); 
+        print("\nNOT Found as input in block: ");
+        print(intString(inBlockIndex));
+        print("\n");
+        print("restBlocksToBeChecked : ");
+        printList(restBlocksToBeChecked, "start");
+        print("\n");       
+        */
         (curOutVarLinks, DEVS_struct_inLinks, DEVS_struct_inVars) = 
            findWhereOutVarIsNeeded(curOutVar, outBlockIndex, restBlocksToBeChecked, DEVS_blocks_inVars,DEVS_struct_inLinks, DEVS_struct_inVars, curOutVarLinks);
       then
@@ -552,6 +894,15 @@ algorithm
         curBlock_inVars = listNth(DEVS_blocks_inVars, inBlockIndex-1);
         true = Util.listContains(curOutVar, curBlock_inVars);
         
+        /*print("\nCurBlock InVars : ");
+        printList(curBlock_inVars, "start");
+        print("\nFound as input in block: ");
+        print(intString(inBlockIndex));
+        print("\n");
+        print("restBlocksToBeChecked : ");
+        printList(restBlocksToBeChecked, "start");
+        print("\n");
+        */
         curOutVarLinks = listAppend(curOutVarLinks, {inBlockIndex});
         
         curInBlock_inLinks = DEVS_struct_inLinks[inBlockIndex];
@@ -561,14 +912,12 @@ algorithm
         DEVS_struct_inLinks = arrayUpdate(DEVS_struct_inLinks, inBlockIndex, curInBlock_inLinks);
         DEVS_struct_inVars = arrayUpdate(DEVS_struct_inVars, inBlockIndex, curInBlock_inVars);
         
-        
         (curOutVarLinks, DEVS_struct_inLinks, DEVS_struct_inVars) = 
            findWhereOutVarIsNeeded(curOutVar, outBlockIndex, restBlocksToBeChecked, DEVS_blocks_inVars,DEVS_struct_inLinks, DEVS_struct_inVars, curOutVarLinks);
       then
         (curOutVarLinks, DEVS_struct_inLinks, DEVS_struct_inVars);
     case (_,_,_,_,_,_,_)
       equation
-        print("- BackendQSS.findWhereOutVarIsNeeded failed\n");
       then
         fail();
   end matchcontinue;
@@ -2202,20 +2551,112 @@ algorithm
   end matchcontinue;
 end findInputPort;
 
+protected function mapStateEquationsInDEVSblocks
+"function: mapEquationInDEVSblocks is the function that maps the equation indices in dlow into the corresponding
+ 	         DEVS blocks that contain them.
+  author: XF
+  date: 25-6-2010 
+" 
+  input list<list<list<Integer>>> state_DEVSblocks1;
+  input list<list<Integer>> mappedEquations1;
+  input Integer blockIndex1;
+  
+  output list<list<Integer>> mappedEquations; 
+  
+algorithm
+  (mappedEquations):=
+  matchcontinue(state_DEVSblocks1, mappedEquations1, blockIndex1)
+     local
+       
+       list<list<Integer>> cur_state_blocks;
+       list<list<list<Integer>>> rest_blocks;
+       list<Integer> cur_state_flat;
+       list<list<Integer>> mappedEquations_intermed;
+       Integer blockIndex;
+       
+       case({}, mappedEquations_intermed, blockIndex)
+         equation
+           //END OF RECURSION
+       then (mappedEquations_intermed);
+        
+       case (cur_state_blocks :: rest_blocks, mappedEquations_intermed, blockIndex)
+         equation
+            cur_state_flat = Util.listFlatten(cur_state_blocks);
+            mappedEquations_intermed = mapEquationInDEVSblocks1(mappedEquations_intermed, cur_state_flat, blockIndex);
+            mappedEquations = mapStateEquationsInDEVSblocks(rest_blocks, mappedEquations_intermed, blockIndex+1);
+         then
+            (mappedEquations);  
+  end matchcontinue;
+end mapStateEquationsInDEVSblocks;
 
 
+protected function mapEquationInDEVSblocks1 
+"function: Helper function for mapEquationInDEVSblocks
+  author: XF
+  date: 25-6-2010
+"
+  input  list<list<Integer>> mappedEquations1;
+  input list<Integer> cur_state_flat1;
+  input Integer blockIndex1;
+  
+  output  list<list<Integer>> mappedEquations; 
+  
+algorithm
+  (mappedEquations):=
+  matchcontinue(mappedEquations1, cur_state_flat1, blockIndex1)
+     local
+       
+       
+       list<list<Integer>> mappedEquations_intermed;
+       Integer cur_eq, blockIndex;
+       list<Integer> rest_eq, temp_list;      
+       
+       case(mappedEquations_intermed, {}, blockIndex)
+         equation
+           //END OF RECURSION
+       then (mappedEquations_intermed);
+        
+       case (mappedEquations_intermed, cur_eq :: rest_eq , blockIndex)
+         equation
+            temp_list = listNth(mappedEquations_intermed, cur_eq-1);
+            temp_list = listAppend(temp_list,{blockIndex});
+            mappedEquations_intermed = Util.listReplaceAt(temp_list, cur_eq-1, mappedEquations_intermed); 
+            mappedEquations = mapEquationInDEVSblocks1(mappedEquations_intermed, rest_eq, blockIndex);
+         then
+            (mappedEquations);  
+  end matchcontinue;
+end mapEquationInDEVSblocks1;
 
+public function constructEmptyList 
+"function: generateSwitchBlocks for the quantum_values function
+  author: XF
+"
+  input list<list<Integer>> tempList1;
+  input Integer nEquations1; 
+  
+  output list<list<Integer>> emptyListofLists; 
+  
+algorithm
+  (emptyListofLists):=
+  matchcontinue(tempList1, nEquations1)
+     local
+       Integer nEquations;
+       list<list<Integer>> tempList;
+              
+       case(tempList, 0)
+         equation
+           //END OF RECURSION
+       then (tempList);
+        
+       case (tempList, nEquations)
+         equation
 
-
-
-
-
-
-
-
-
-
-
+            tempList = listAppend(tempList, {{}});           
+            emptyListofLists = constructEmptyList(tempList, nEquations-1);
+         then
+            (emptyListofLists);  
+  end matchcontinue;
+end constructEmptyList;
 
 
 
