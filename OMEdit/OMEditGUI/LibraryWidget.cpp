@@ -1170,8 +1170,14 @@ void LibraryWidget::addModelFiles(QString fileName, QString parentFileName, QStr
 void LibraryWidget::loadFile(QString path, QStringList modelsList)
 {
     // load the file in OMC
-    mpParentMainWindow->mpOMCProxy->loadFile(path);
-
+    if (!mpParentMainWindow->mpOMCProxy->loadFile(path))
+    {
+        QString message = QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).append(" ").arg(path))
+                          .append("\n").append(mpParentMainWindow->mpOMCProxy->getErrorString());
+        mpParentMainWindow->mpMessageWidget->printGUIErrorMessage(message);
+        return;
+    }
+    // if file loading is fine add the models
     foreach (QString model, modelsList)
     {
         addModelFiles(model, tr(""), tr(""));
@@ -1183,7 +1189,14 @@ void LibraryWidget::loadFile(QString path, QStringList modelsList)
 void LibraryWidget::loadModel(QString modelText, QStringList modelsList)
 {
     // load the file in OMC
-    mpParentMainWindow->mpOMCProxy->saveModifiedModel(modelText);
+    //mpParentMainWindow->mpOMCProxy->saveModifiedModel(modelText);
+    if (!mpParentMainWindow->mpOMCProxy->loadString(modelText))
+    {
+        QString message = QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_MODEL).append(" ").arg(modelText))
+                          .append("\n").append(mpParentMainWindow->mpOMCProxy->getResult());
+        mpParentMainWindow->mpMessageWidget->printGUIErrorMessage(message);
+        return;
+    }
 
     foreach (QString model, modelsList)
     {

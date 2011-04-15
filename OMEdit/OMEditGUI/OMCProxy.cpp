@@ -480,9 +480,8 @@ void OMCProxy::loadStandardLibrary()
     sendCommand("loadModel(Modelica)");
     sendCommand("loadModel(ModelicaServices)");
 
-    //! @todo Remove it once we have removed Media and Fluid from MSL.
+    //! @todo Remove it once we have support for Media and Fluid.
     // just added to remove Fluid and Media Library...
-
     deleteClass("Modelica.Media");
     deleteClass("Modelica.Fluid");
 
@@ -941,6 +940,37 @@ bool OMCProxy::loadFile(QString fileName)
         return true;
     else
         return false;
+}
+
+bool OMCProxy::loadString(QString value)
+{
+    sendCommand("loadString(\"" + value.replace("\"", "\\\"") + "\")");
+    if (getResult().toLower().contains("true"))
+        return true;
+    else
+        return false;
+}
+
+bool OMCProxy::parseFile(QString fileName)
+{
+    fileName = fileName.replace('\\', '/');
+    sendCommand("parseFile(\"" + fileName + "\")");
+    if (getResult().toLower().compare("error") == 0)
+        return false;
+    else
+        return true;
+}
+
+QStringList OMCProxy::parseString(QString value)
+{
+    sendCommand("parseString(\"" + value.replace("\"", "\\\"") + "\")");
+    QString result = StringHandler::removeFirstLastCurlBrackets(getResult());
+    QStringList list = result.split(",", QString::SkipEmptyParts);
+
+    for (int i = 0 ; i < list.size(); i++)
+        list[i] = list[i].mid(5, list[i].length() - 6);
+
+    return list;
 }
 
 bool OMCProxy::createClass(QString type, QString className)

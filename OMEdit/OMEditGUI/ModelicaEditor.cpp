@@ -94,6 +94,24 @@ QString ModelicaEditor::getModelName()
     else
         mErrorString = omc->getResult();
     omc->stopServer();
+//    OMCProxy *pOMCProxy = mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy;
+//    if (toPlainText().isEmpty())
+//        mErrorString = tr("Start and End modifiers are different");
+//    else
+//    {
+//        QStringList list = pOMCProxy->parseString(toPlainText());
+//        if (list.size() == 0)
+//        {
+//            mErrorString = pOMCProxy->getErrorString();
+//        }
+//        else if (list.size() > 1)
+//        {
+//            mErrorString = QString("Two many models... complex system");
+//        }
+//        else
+//            modelName = list.last();
+//    }
+
     return modelName;
 }
 

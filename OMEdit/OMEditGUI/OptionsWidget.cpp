@@ -36,8 +36,7 @@
 ModelicaTextSettings::ModelicaTextSettings()
 {
     // set default values, will be handy if we are unable to create the xml file
-    setFontFamily(qApp->font().family());       // get system font
-    //setFontFamily("Courier");
+    setFontFamily(qApp->font().family());             // get system font
     setFontSize(10);
     setTextRuleColor(QColor(0, 0, 0));                // black
     setKeywordRuleColor(QColor(139, 0, 0));           // dark red
@@ -274,7 +273,7 @@ void OptionsWidget::setUpDialog()
     mpOptionsList->setViewMode(QListView::ListMode);
     mpOptionsList->setMovement(QListView::Static);
     mpOptionsList->setIconSize(Helper::iconSize);
-    mpOptionsList->setMaximumWidth(150);
+    mpOptionsList->setMaximumWidth(175);
     mpOptionsList->setCurrentRow(0, QItemSelectionModel::Select);
     connect(mpOptionsList, SIGNAL(currentItemChanged(QListWidgetItem*,QListWidgetItem*)),
             SLOT(changePage(QListWidgetItem*,QListWidgetItem*)));

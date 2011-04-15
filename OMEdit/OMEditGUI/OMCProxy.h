@@ -121,6 +121,9 @@ public:
     QString getDocumentationAnnotation(QString className);
     QString changeDirectory(QString directory = QString());
     bool loadFile(QString fileName);
+    bool loadString(QString value);
+    bool parseFile(QString fileName);
+    QStringList parseString(QString value);
     bool createClass(QString type, QString className);
     bool createSubClass(QString type, QString className, QString parentClassName);
     bool updateSubClass(QString parentClassName, QString modelText);

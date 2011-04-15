@@ -2527,21 +2527,19 @@ void ProjectTabWidget::openFile(QString fileName)
         else
             fileName = name;
     }
-    // create new OMC instance and load the file in it
-    OMCProxy *omc = new OMCProxy(mpParentMainWindow, false);
-    // if error in loading file
-    if (!omc->loadFile(fileName))
+    // get the class names now to check if they are already loaded or not
+    QStringList existingmodelsList;
+    if (!mpParentMainWindow->mpOMCProxy->parseFile(fileName))
     {
         QString message = QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).append(" ").arg(fileName))
-                          .append(omc->getErrorString());
+                          .append("\n").append(mpParentMainWindow->mpOMCProxy->getErrorString());
         mpParentMainWindow->mpMessageWidget->printGUIErrorMessage(message);
         return;
     }
-    // get the class names now to check if they are already loaded or not
-    QStringList existingmodelsList;
-    QStringList modelsList = omc->getClassNames();
+    QString result = StringHandler::removeFirstLastCurlBrackets(mpParentMainWindow->mpOMCProxy->getResult());
+    QStringList modelsList = result.split(",", QString::SkipEmptyParts);
     bool existModel = false;
-    // check if the model already exists in OMEdit OMC instance
+    // check if the model already exists
     foreach(QString model, modelsList)
     {
         if (mpParentMainWindow->mpOMCProxy->existClass(model))
@@ -2569,29 +2567,24 @@ void ProjectTabWidget::openFile(QString fileName)
     {
         mpParentMainWindow->mpLibrary->loadFile(fileName, modelsList);
     }
-    // quit the temporary OMC
-    omc->stopServer();
 }
 
 //! Loads a model and opens it in a new project tab.
 //! @see saveModel(bool saveAs)
 void ProjectTabWidget::openModel(QString modelText)
 {
-    // create new OMC instance and load the file in it
-    OMCProxy *omc = new OMCProxy(mpParentMainWindow, false);
-    // if error in loading file
-    if (!omc->saveModifiedModel(modelText))
+    QStringList modelsList = mpParentMainWindow->mpOMCProxy->parseString(modelText);
+    if (modelsList.size() == 0)
     {
-        QString message = QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_MODEL).arg(modelText))
-                          .append(omc->getErrorString());
+        QString message = QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_MODEL).append(" ").arg(modelText))
+                          .append("\n").append(mpParentMainWindow->mpOMCProxy->getErrorString());
         mpParentMainWindow->mpMessageWidget->printGUIErrorMessage(message);
         return;
     }
-    // get the class names now to check if they are already loaded or not
+
     QStringList existingmodelsList;
-    QStringList modelsList = omc->getClassNames();
     bool existModel = false;
-    // check if the model already exists in OMEdit OMC instance
+    // check if the model already exists
     foreach(QString model, modelsList)
     {
         if (mpParentMainWindow->mpOMCProxy->existClass(model))
@@ -2607,7 +2600,7 @@ void ProjectTabWidget::openModel(QString modelText)
         QMessageBox *msgBox = new QMessageBox(mpParentMainWindow);
         msgBox->setWindowTitle(QString(Helper::applicationName).append(" - Information"));
         msgBox->setIcon(QMessageBox::Information);
-        msgBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE)));
+        msgBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_MODEL).arg("")));
         msgBox->setInformativeText(QString(GUIMessages::getMessage(GUIMessages::REDEFING_EXISTING_MODELS))
                                    .arg(existingmodelsList.join(",")).append("\n")
                                    .append(GUIMessages::getMessage(GUIMessages::DELETE_AND_LOAD)));
@@ -2619,8 +2612,6 @@ void ProjectTabWidget::openModel(QString modelText)
     {
         mpParentMainWindow->mpLibrary->loadModel(modelText, modelsList);
     }
-    // quit the temporary OMC
-    omc->stopServer();
 }
 
 //! Tells the current tab to reset zoom to 100%.
