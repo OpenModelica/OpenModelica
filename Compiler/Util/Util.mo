@@ -5013,7 +5013,7 @@ protected function listIntersectionOnTrue1_help "function: listIntersectionOnTru
     output Boolean outBoolean;
   end FuncTypeType_aType_aToBoolean;
 algorithm
-  (outTypeALst,outTypeALst1):=
+  (outTypeALst,outTypeA1Lst):=
   matchcontinue (inTypeALst1,inTypeALst2,inFuncTypeTypeATypeAToBoolean3)
     local
       list<Type_a> res,res1,xs1,xs2;

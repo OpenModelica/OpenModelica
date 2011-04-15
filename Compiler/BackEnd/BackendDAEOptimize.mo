@@ -1951,25 +1951,23 @@ algorithm
     case ((elem,pos,m,(mT,vars,eqns,arreqns,algorithms,einfo,changed)))
       equation
         // check number of vars in eqns
-        l = listLength(elem);
-        true = intGt(l,0);        
+        _::_ = elem;
         pos_1 = pos-1;
         BackendDAE.EQUATION(exp=e1,scalar=e2) = BackendDAEUtil.equationNth(eqns,pos_1);
-        //BackendDump.debugStrExpStrExpStr(("Test ",e1," = ",e2,"\n"));
+        // BackendDump.debugStrExpStrExpStr(("Test ",e1," = ",e2,"\n"));
         (ecr,exp) = functionCallEqn(e1,e2,vars);
-        //BackendDump.debugStrExpStrExpStr(("Found ",ecr," = ",exp,"\n"));
+        // BackendDump.debugStrExpStrExpStr(("Found ",ecr," = ",exp,"\n"));
         expvars = BackendDAEUtil.incidenceRowExp(exp,vars);
-        //print("expvars "); BackendDump.debuglst((expvars,intString)); print("\n");
+        // print("expvars "); BackendDump.debuglst((expvars,intString)); print("\n");
         (expvars1::expvarseqns) = Util.listMap1(expvars,varEqns,(pos,mT));
-        //print("expvars1 "); BackendDump.debuglst((expvars1,intString)); print("\n");
+        // print("expvars1 "); BackendDump.debuglst((expvars1,intString)); print("\n");
         controleqns = getControlEqns(expvars1,expvarseqns);
-        //print("controleqns "); BackendDump.debuglst((controleqns,intString)); print("\n");
-        (eqns1,arreqns1,algorithms1,einfo1,changed1) = removeEqualFunctionCall(controleqns,ecr,exp,eqns,arreqns,algorithms,einfo);
+        // print("controleqns "); BackendDump.debuglst((controleqns,intString)); print("\n");
+        (eqns1,arreqns1,algorithms1,einfo1,changed) = removeEqualFunctionCall(controleqns,ecr,exp,eqns,arreqns,algorithms,einfo,changed);
         //print("changed1 "); BackendDump.debuglst((changed1,intString)); print("\n");
-        changed2 = Util.listListUnionOnTrue({changed,changed1},intEq);
         //print("changed2 "); BackendDump.debuglst((changed2,intString)); print("\n");
-        //print("Next\n");
-      then (({},m,(mT,vars,eqns1,arreqns1,algorithms1,einfo1,changed2)));
+        // print("Next\n");
+      then (({},m,(mT,vars,eqns1,arreqns1,algorithms1,einfo1,changed)));
     case ((elem,pos,m,(mT,vars,eqns,arreqns,algorithms,einfo,changed)))
       then (({},m,(mT,vars,eqns,arreqns,algorithms,einfo,changed))); 
   end matchcontinue;
@@ -1989,23 +1987,23 @@ algorithm
         DAE.ComponentRef cr;
         DAE.Exp e;
         Integer k;
+      // a = -f(...);
+      case (e1 as DAE.CREF(componentRef = cr),e2 as DAE.UNARY(operator=DAE.UMINUS(ty=_)),inVars)
+        equation
+          ((_::_),(_::_)) = BackendVariable.getVar(cr,inVars);
+        then (e1,e2);
       // a = f(...);
-      case (e1 as DAE.CREF(componentRef = cr),e2 as  DAE.CALL(expLst = _),inVars)
+      case (e1 as DAE.CREF(componentRef = cr),e2,inVars)
         equation
           ((_::_),(_::_)) = BackendVariable.getVar(cr,inVars);
         then (e1,e2);
       // a = -f(...);
-      case (e1 as DAE.CREF(componentRef = cr),e2 as  DAE.UNARY(operator=DAE.UMINUS(ty=_),exp=DAE.CALL(expLst = _)),inVars)
-        equation
-          ((_::_),(_::_)) = BackendVariable.getVar(cr,inVars);
-        then (e1,e2);
-      // f(...)=a;
-      case (e1 as  DAE.CALL(expLst = _),e2 as DAE.CREF(componentRef = cr),inVars)
+      case (e1 as DAE.UNARY(operator=DAE.UMINUS(ty=_)),e2 as DAE.CREF(componentRef = cr),inVars)
         equation
           ((_::_),(_::_)) = BackendVariable.getVar(cr,inVars);
         then (e2,e1);
-      // a = -f(...);
-      case (e as  DAE.UNARY(operator=DAE.UMINUS(ty=_),exp=DAE.CALL(expLst = _)),DAE.CREF(componentRef = cr),inVars)
+      // f(...)=a;
+      case (e1,e2 as DAE.CREF(componentRef = cr),inVars)
         equation
           ((_::_),(_::_)) = BackendVariable.getVar(cr,inVars);
         then (e2,e1);
@@ -2060,6 +2058,7 @@ protected function removeEqualFunctionCall
   input array<BackendDAE.MultiDimEquation> inArreqns;
   input array<DAE.Algorithm> inAlgs;
   input  BackendDAE.EventInfo inEinfo;
+  input list<Integer> changed;
   output BackendDAE.EquationArray outEqns;
   output array<BackendDAE.MultiDimEquation> outArreqns;
   output array<DAE.Algorithm> outAlgs;
@@ -2067,7 +2066,7 @@ protected function removeEqualFunctionCall
   output list<Integer> outEqsLst;
 algorithm
   (outEqns,outArreqns,outAlgs,outEinfo,outEqsLst):=
-  matchcontinue (inEqsLst,inExp,inECr,inEqns,inArreqns,inAlgs,inEinfo)
+  matchcontinue (inEqsLst,inExp,inECr,inEqns,inArreqns,inAlgs,inEinfo,changed)
     local
       BackendDAE.EquationArray eqns,eqns1,eqns2;
       array<BackendDAE.MultiDimEquation> ae,ae1,ae2;
@@ -2079,8 +2078,8 @@ algorithm
       Integer pos,pos_1,i;
       list<Integer> rest,changed;
       BackendDAE.EventInfo eifo;
-    case ({},_,_,eqns,inArreqns,inAlgs,inEinfo) then (eqns,inArreqns,inAlgs,inEinfo,{});
-    case (pos::rest,inExp,inECr,eqns,inArreqns,inAlgs,BackendDAE.EVENT_INFO(whenClauseLst=wclst,zeroCrossingLst=zcl))
+    case ({},_,_,eqns,inArreqns,inAlgs,inEinfo,changed) then (eqns,inArreqns,inAlgs,inEinfo,changed);
+    case (pos::rest,inExp,inECr,eqns,inArreqns,inAlgs,BackendDAE.EVENT_INFO(whenClauseLst=wclst,zeroCrossingLst=zcl),changed)
       equation
         pos_1 = pos-1;
         eqn = BackendDAEUtil.equationNth(eqns,pos_1);
@@ -2091,12 +2090,13 @@ algorithm
         //print("i="); print(intString(i)); print("\n");
         true = intGt(i,0);
         eqns1 =  BackendEquation.equationSetnth(eqns,pos_1,eqn1);
-        (eqns2,ae2,al2,einfo,changed) = removeEqualFunctionCall(rest,inExp,inECr,eqns1,ae1,al1,BackendDAE.EVENT_INFO(wclst1,zcl));
-      then (eqns2,ae2,al2,einfo,pos::changed);
-    case (pos::rest,inExp,inECr,eqns,inArreqns,inAlgs,eifo)
+        changed = Util.if_(listMember(pos,changed),changed,pos::changed);
+        (eqns2,ae2,al2,einfo,changed) = removeEqualFunctionCall(rest,inExp,inECr,eqns1,ae1,al1,BackendDAE.EVENT_INFO(wclst1,zcl),changed);
+      then (eqns2,ae2,al2,einfo,changed);
+    case (pos::rest,inExp,inECr,eqns,inArreqns,inAlgs,eifo,changed)
       equation
-        (eqns2,ae2,al2,einfo,changed) = removeEqualFunctionCall(rest,inExp,inECr,eqns,inArreqns,inAlgs,eifo);
-      then (eqns2,ae2,al2,einfo,changed);        
+        (eqns2,ae2,al2,einfo,changed) = removeEqualFunctionCall(rest,inExp,inECr,eqns,inArreqns,inAlgs,eifo,changed);
+      then (eqns2,ae2,al2,einfo,changed);
   end matchcontinue;      
 end removeEqualFunctionCall;
 
