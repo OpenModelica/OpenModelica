@@ -239,33 +239,47 @@ void cmpData(char* varname, DataField *time, DataField *reftime, DataField *data
         // fprintf(stderr, "event: %.6g  %d  %.6g\n",t,i,d);
         // goto the last 
         char te = 0;
-        if (i+1<data->n)
-          if (time->data[i+1] < t+abstol) te = 1;
+        if (i+1<data->n) {
+          if (time->data[i+1] < t+0.00000065) {
+        	  te = 1;
+          }
+        }
         while(te==1){
           i +=1;
           te = 0;
-          if (i+1<data->n)
-            if (time->data[i+1] < t+abstol) te = 1;
+          if (i+1<data->n) {
+            if (time->data[i+1] < t+0.00000065) {
+            	te = 1;
+            }
+          }
         }
         t = time->data[i];
         d = data->data[i];
         // fprintf(stderr, "movet to: %.6g  %d  %.6g\n",t,i,d);
         // fprintf(stderr, "1event: %.6g  %d\n",tr,j);
-        if (j+1<reftime->n)
-          if (reftime->data[j+1] < tr+abstol) te = 1;
+        te == 0;
+        if (j+1<reftime->n) {
+          if (reftime->data[j+1] < tr+0.00000065) {
+        	  te = 1;
+          }
+        }
         while(te==1){
           j +=1;
           te = 0;
-          if (j+1<reftime->n)
-            if (reftime->data[j+1] < tr+abstol) te = 1;
+          if (j+1<reftime->n) {
+            if (reftime->data[j+1] < tr+0.00000065) {
+            	te = 1;
+            }
+          }
         }
         tr = reftime->data[j];
         // fprintf(stderr, "1movet to: %.6g  %d\n",tr,j);
       }
     }
     interpolate = 0;
-    if (absdouble((t-tr)/tr) > reltol)
+    if (absdouble((t-tr)/tr) > reltol) {
       interpolate = 1;
+    }
 
     dr = refdata->data[j]; 
     if (interpolate==1){
@@ -273,7 +287,7 @@ void cmpData(char* varname, DataField *time, DataField *reftime, DataField *data
       dr = dr + ((refdata->data[j+1]-dr)/(reftime->data[j+1]-tr))*(t-tr);
       //fprintf(stderr, "-> dr:%.6g\n",dr);
     }
-    //fprintf(stderr, "tr: %.6g  dr:%.6g\n",tr,dr);
+    //fprintf(stderr, "j: %d tr: %.6g  dr:%.6g\n",j,tr,dr);
 
     if (dr != 0){
       delta = absdouble(d-dr)/dr;
