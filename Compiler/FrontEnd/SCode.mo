@@ -30,7 +30,7 @@
  */
 
 encapsulated package SCode
-" file:         SCode.mo
+" file:        SCode.mo
   package:     SCode
   description: SCode intermediate form
 
@@ -93,8 +93,8 @@ public
 uniontype Mod "- Modifications"
 
   record MOD
-    Boolean finalPrefix "final" ;
-    Absyn.Each eachPrefix;
+    Final finalPrefix "final prefix";    
+    Each  eachPrefix "each prefix";    
     list<SubMod> subModLst;
     Option<tuple<Absyn.Exp,Boolean>> binding "The binding expression of a modification
     has an expression and a Boolean delayElaboration which is true if elaboration(type checking)
@@ -103,8 +103,9 @@ uniontype Mod "- Modifications"
   end MOD;
 
   record REDECL
-    Boolean finalPrefix       "final" ;
-    list<Element> elementLst  "elements" ;
+    Final         finalPrefix "final prefix";    
+    Each          eachPrefix "each prefix";    
+    list<Element> elementLst  "elements";
   end REDECL;
 
   record NOMOD end NOMOD;
@@ -130,20 +131,8 @@ uniontype SubMod "Modifications are represented in an more structured way than i
 end SubMod;
 
 public
-type Program = list<Class> "- Programs
-As in the AST, a program is simply a list of class definitions." ;
-
-public
-uniontype Class "- Classes"
-  record CLASS "the simplified SCode class"
-    Ident name "the name of the class" ;
-    Boolean partialPrefix "the partial prefix" ;
-    Boolean encapsulatedPrefix "the encapsulated prefix" ;
-    Restriction restriction "the restriction of the class" ;
-    ClassDef classDef "the class specification" ;
-    Absyn.Info info "the class information";
-  end CLASS;
-end Class;
+type Program = list<Element> "- Programs
+As in the AST, a program is simply a list of class definitions.";
 
 public
 uniontype Enum "Enum, which is a name in an enumeration and an optional Comment."
@@ -171,50 +160,45 @@ uniontype ClassDef
   class extends A (modifier)
     new elements;
   end A;"
+  
   record PARTS "a class made of parts"
     list<Element>              elementLst          "the list of elements";
     list<Equation>             normalEquationLst   "the list of equations";
     list<Equation>             initialEquationLst  "the list of initial equations";
     list<AlgorithmSection>     normalAlgorithmLst  "the list of algorithms";
     list<AlgorithmSection>     initialAlgorithmLst "the list of initial algorithms";
-    Option<Absyn.ExternalDecl> externalDecl        "used by external functions" ;
+    Option<Absyn.ExternalDecl> externalDecl        "used by external functions";
     list<Annotation>           annotationLst       "the list of annotations found in between class elements, equations and algorithms";
     Option<Comment>            comment             "the class comment";
   end PARTS;
 
   record CLASS_EXTENDS "an extended class definition plus the additional parts"
-    Ident            baseClassName       "the name of the base class we have to extend";
-    Mod              modifications       "the modifications that need to be applied to the base class";
-    list<Element>    elementLst          "the list of elements";
-    list<Equation>   normalEquationLst   "the list of equations";
-    list<Equation>   initialEquationLst  "the list of initial equations";
-    list<AlgorithmSection>  normalAlgorithmLst  "the list of algorithms";
-    list<AlgorithmSection>  initialAlgorithmLst "the list of initial algorithms";
-    list<Annotation> annotationLst       "the list of annotations found in between class elements, equations and algorithms";
-    Option<Comment>  comment             "the class comment";
+    Ident                      baseClassName       "the name of the base class we have to extend";
+    Mod                        modifications       "the modifications that need to be applied to the base class";
+    ClassDef                   composition         "the new composition";
   end CLASS_EXTENDS;
 
   record DERIVED "a derived class"
     Absyn.TypeSpec typeSpec "typeSpec: type specification" ;
-    Mod modifications;
-    Absyn.ElementAttributes attributes;
+    Mod modifications       "the modifications";
+    Attributes attributes   "the element attributes";
     Option<Comment> comment "the translated comment from the Absyn";
   end DERIVED;
 
   record ENUMERATION "an enumeration"
-    list<Enum> enumLst "if the list is empty it means :, the supertype of all enumerations";
+    list<Enum> enumLst      "if the list is empty it means :, the supertype of all enumerations";
     Option<Comment> comment "the translated comment from the Absyn";
   end ENUMERATION;
 
   record OVERLOAD "an overloaded function"
-    list<Absyn.Path> pathLst;
-    Option<Comment> comment "the translated comment from the Absyn";
+    list<Absyn.Path> pathLst "the path lists";
+    Option<Comment> comment  "the translated comment from the Absyn";
   end OVERLOAD;
 
   record PDER "the partial derivative"
-    Absyn.Path  functionPath "function name" ;
+    Absyn.Path  functionPath     "function name" ;
     list<Ident> derivedVariables "derived variables" ;
-    Option<Comment> comment "the Absyn comment";
+    Option<Comment> comment      "the Absyn comment";
   end PDER;
 
 end ClassDef;
@@ -416,66 +400,133 @@ public uniontype Statement "The Statement type describes one algorithm statement
 
 end Statement;
 
+// common prefixes to elements 
+public
+uniontype Visibility "the visibility prefix"
+  record PUBLIC    "a public element"    end PUBLIC;
+  record PROTECTED "a protected element" end PROTECTED;
+end Visibility;
+
+public
+uniontype Redeclare "the redeclare prefix"
+  record REDECLARE     "a redeclare prefix"     end REDECLARE;
+  record NOT_REDECLARE "a non redeclare prefix" end NOT_REDECLARE;
+end Redeclare;
+
+public
+uniontype Replaceable "the replaceable prefix"
+  record REPLACEABLE "a replaceable prefix containing an optional constraint"
+    Option<Absyn.ConstrainClass> cc  "the constraint class"; 
+  end REPLACEABLE;
+  record NOT_REPLACEABLE "a non replaceable prefix" end NOT_REPLACEABLE;
+end Replaceable;
+
+public
+uniontype Final "the final prefix"
+  record FINAL    "a final prefix"      end FINAL;
+  record NOT_FINAL "a non final prefix" end NOT_FINAL;
+end Final;
+
+public
+uniontype Each "the each prefix"
+  record EACH     "a each prefix"     end EACH;
+  record NOT_EACH "a non each prefix" end NOT_EACH;
+end Each;
+
+public
+uniontype Encapsulated "the encapsulated prefix"
+  record ENCAPSULATED     "a encapsulated prefix"     end ENCAPSULATED;
+  record NOT_ENCAPSULATED "a non encapsulated prefix" end NOT_ENCAPSULATED;
+end Encapsulated;
+
+public
+uniontype Partial "the partial prefix"
+  record PARTIAL     "a partial prefix"     end PARTIAL;
+  record NOT_PARTIAL "a non partial prefix" end NOT_PARTIAL;
+end Partial;
+
+public
+uniontype Stream "the stream prefix"
+  record STREAM     "a stream prefix"     end STREAM;
+  record NOT_STREAM "a non stream prefix" end NOT_STREAM;
+end Stream;
+
+public
+uniontype Flow "the flore prefix"
+  record FLOW     "a flow prefix"     end FLOW;
+  record NOT_FLOW "a non flow prefix" end NOT_FLOW;
+end Flow;
+
+public 
+uniontype Prefixes "the common class or component prefixes"
+  record PREFIXES "the common class or component prefixes"
+    Visibility       visibility           "the protected/public prefix";
+    Redeclare        redeclarePrefix      "redeclare prefix";    
+    Final            finalPrefix          "final prefix, be it at the element or top level";
+    Absyn.InnerOuter innerOuter           "the inner/outer/innerouter prefix";
+    Replaceable      replaceablePrefix    "replaceable prefix";
+  end PREFIXES;      
+end Prefixes;
+
 public
 uniontype Element "- Elements
   There are four types of elements in a declaration, represented by the constructors:
-  EXTENDS   (for extends clauses),
-  CLASSDEF  (for local class definitions)
-  COMPONENT (for local variables). and
-  IMPORT    (for import clauses)
-  The baseclass name is initially NONE() in the translation,
-  and if an element is inherited from a base class it is
-  filled in during the instantiation process."
+  IMPORT     (for import clauses)
+  EXTENDS    (for extends clauses),
+  CLASS      (for top/local class definitions)
+  COMPONENT  (for local variables)
+  DEFINEUNIT (for units)"
+  
+  record IMPORT "an import element"
+    Absyn.Import imp                 "the import definition";
+    Visibility   visibility          "the protected/public prefix";    
+    Absyn.Info   info                "the import information";
+  end IMPORT;  
+  
   record EXTENDS "the extends element"
-    Path baseClassPath "the extends path";
-    Mod modifications  "the modifications applied to the base class";
-    Option<Annotation> annotation_;
-    Absyn.Info info;
+    Path baseClassPath               "the extends path";
+    Visibility visibility            "the protected/public prefix";
+    Mod modifications                "the modifications applied to the base class";
+    Option<Annotation> ann           "the extends annotation";
+    Absyn.Info info                  "the extends info";
   end EXTENDS;
 
-  record CLASSDEF "a local class definition"
-    Ident   name               "the name of the local class" ;
-    Boolean finalPrefix        "final prefix" ;
-    Boolean replaceablePrefix  "replaceable prefix" ;
-    Boolean redeclarePrefix    "redeclare prefix";
-    Class   classDef           "the class definition" ;
-    Option<Absyn.ConstrainClass> cc;
-  end CLASSDEF;
-
-  record IMPORT "an import element"
-    Absyn.Import imp "the import definition";
-    Absyn.Info info;
-  end IMPORT;
-
+  record CLASS "a class definition"
+    Ident   name                     "the name of the class";
+    Prefixes prefixes                "the common class or component prefixes";
+    Encapsulated encapsulatedPrefix  "the encapsulated prefix";
+    Partial partialPrefix            "the partial prefix";    
+    Restriction restriction          "the restriction of the class";
+    ClassDef classDef                "the class specification";
+    Absyn.Info info                  "the class information";
+  end CLASS;
+  
   record COMPONENT "a component"
-    Ident component               "the component name" ;
-    Absyn.InnerOuter innerOuter   "the inner/outer/innerouter prefix";
-    Boolean finalPrefix           "the final prefix" ;
-    Boolean replaceablePrefix     "the replaceable prefix" ;
-    Boolean protectedPrefix       "the protected prefix" ;
-    Boolean redeclarePrefix       "redeclare prefix";
-    Attributes attributes         "the component attributes";
-    Absyn.TypeSpec typeSpec       "the type specification" ;
-    Mod modifications             "the modifications to be applied to the component";
-    Option<Comment> comment       "this if for extraction of comments and annotations from Absyn";
-    Option<Absyn.Exp> condition   "the conditional declaration of a component";
-    Absyn.Info info       "this is for line and column numbers, also file name.";
-    Option<Absyn.ConstrainClass> cc "The constraining class for the component";
+    Ident name                      "the component name";
+    Prefixes prefixes               "the common class or component prefixes";    
+    Attributes attributes           "the component attributes";
+    Absyn.TypeSpec typeSpec         "the type specification";
+    Mod modifications               "the modifications to be applied to the component";
+    Option<Comment> comment         "this if for extraction of comments and annotations from Absyn";
+    Option<Absyn.Exp> condition     "the conditional declaration of a component";
+    Absyn.Info info                 "this is for line and column numbers, also file name.";
   end COMPONENT;
 
   record DEFINEUNIT "a unit defintion has a name and the two optional parameters exp, and weight"
     Ident name;
-    Option<String> exp;
-    Option<Real> weight;
+    Visibility visibility            "the protected/public prefix";
+    Option<String> exp               "the unit expression";
+    Option<Real> weight              "the weight";
   end DEFINEUNIT;
+  
 end Element;
 
 public
 uniontype Attributes "- Attributes"
   record ATTR "the attributes of the component"
     Absyn.ArrayDim arrayDims "the array dimensions of the component";
-    Boolean flowPrefix "the flow prefix" ;
-    Boolean streamPrefix "the stream prefix" ;
+    Flow   flowPrefix   "the flow prefix";
+    Stream streamPrefix "the stream prefix";
     Accessibility accesibility "the accesibility of the component: RW (read/write), RO (read only), WO (write only)" ;
     Variability variability " the variability: parameter, discrete, variable, constant" ;
     Absyn.Direction direction "the direction: input, output or bidirectional" ;
@@ -492,8 +543,8 @@ end Variability;
 
 public
 uniontype Accessibility "These are attributes that apply to a declared component."
-  record RW "read/write" end RW;
-  record RO "read-only" end RO;
+  record RW "read/write"            end RW;
+  record RO "read-only"             end RO;
   record WO "write-only (not used)" end WO;
 end Accessibility;
 
@@ -502,10 +553,18 @@ public /* adrpo: previously present in Inst.mo */
 uniontype Initial "the initial attribute of an algorithm or equation
  Intial is used as argument to instantiation-function for
  specifying if equations or algorithms are initial or not."
-  record INITIAL "an initial equation or algorithm" end INITIAL;
-  record NON_INITIAL "a normal equation or algorithm" end NON_INITIAL;
+  record INITIAL     "an initial equation or algorithm" end INITIAL;
+  record NON_INITIAL "a normal equation or algorithm"   end NON_INITIAL;
 end Initial;
 
+
+public constant Prefixes defaultPrefixes = 
+  PREFIXES(
+    PUBLIC(), 
+    NOT_REDECLARE(), 
+    NOT_FINAL(), 
+    Absyn.NOT_INNER_OUTER(), 
+    NOT_REPLACEABLE()); 
 
 // .......... functionality .........
 protected import Util;
@@ -626,10 +685,9 @@ algorithm
   end match;
 end equationStr;
 
-protected function prettyPrintOptModifier "
-Author BZ, 2008-07
-Pretty print SCode.Mod
-"
+protected function prettyPrintOptModifier 
+"Author BZ, 2008-07
+ Pretty print SCode.Mod"
 input Option<Absyn.Modification> oam;
 input String comp;
 output String str;
@@ -647,11 +705,10 @@ end prettyPrintOptModifier;
 
 protected function prettyPrintModifier "
 Author BZ, 2008-07
-Helper function for prettyPrintOptModifier
-"
-input Absyn.Modification oam;
-input String comp;
-output String str;
+Helper function for prettyPrintOptModifier"
+  input Absyn.Modification oam;
+  input String comp;
+  output String str;
 algorithm str := matchcontinue(oam,comp)
   local
     Absyn.Modification m;
@@ -676,12 +733,10 @@ algorithm str := matchcontinue(oam,comp)
   end matchcontinue;
 end prettyPrintModifier;
 
-protected function prettyPrintElementModifier "
-Author BZ, 2008-07
-Helper function for prettyPrintOptModifier
-
-TODO: implement type of new redeclare component
-"
+protected function prettyPrintElementModifier 
+"Author BZ, 2008-07
+ Helper function for prettyPrintOptModifier
+ TODO: implement type of new redeclare component"
   input Absyn.ElementArg aea;
   output String str;
 algorithm str := matchcontinue(aea)
@@ -711,8 +766,8 @@ public function stripSubmod
 algorithm
   outMod := matchcontinue (inMod)
     local
-      Boolean f;
-      Absyn.Each each_;
+      Final f;
+      Each each_;
       list<SubMod> subs;
       Option<tuple<Absyn.Exp,Boolean>> e;
       Mod m;
@@ -725,7 +780,7 @@ public function getElementNamed
 "function: getElementNamed
   Return the Element with the name given as first argument from the Class."
   input Ident inIdent;
-  input Class inClass;
+  input Element inClass;
   output Element outElement;
 algorithm
   outElement := match (inIdent,inClass)
@@ -733,13 +788,15 @@ algorithm
       Element elt;
       String id;
       list<Element> elts;
+    
     case (id,CLASS(classDef = PARTS(elementLst = elts)))
       equation
         elt = getElementNamedFromElts(id, elts);
       then
         elt;
+    
     /* adrpo: handle also the case model extends X then X; */
-    case (id,CLASS(classDef = CLASS_EXTENDS(elementLst = elts)))
+    case (id,CLASS(classDef = CLASS_EXTENDS(composition = PARTS(elementLst = elts))))
       equation
         elt = getElementNamedFromElts(id, elts);
       then
@@ -760,20 +817,20 @@ algorithm
       String id2,id1;
       list<Element> xs;
     
-    case (id2,((comp as COMPONENT(component = id1)) :: _))
+    case (id2,((comp as COMPONENT(name = id1)) :: _))
       equation
         true = stringEq(id1, id2);
       then
         comp;
     
-    case (id2,(COMPONENT(component = id1) :: xs))
+    case (id2,(COMPONENT(name = id1) :: xs))
       equation
         false = stringEq(id1, id2);
         elt = getElementNamedFromElts(id2, xs);
       then
         elt;
     
-    case (id2,(CLASSDEF(name = id1) :: xs))
+    case (id2,(CLASS(name = id1) :: xs))
       equation
         false = stringEq(id1, id2);
         elt = getElementNamedFromElts(id2, xs);
@@ -786,7 +843,7 @@ algorithm
       then
         elt;
     
-    case (id2,((cdef as CLASSDEF(name = id1)) :: _))
+    case (id2,((cdef as CLASS(name = id1)) :: _))
       equation
         true = stringEq(id1, id2);
       then
@@ -818,30 +875,32 @@ public function printModStr
   input Mod inMod;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inMod)
+  outString := matchcontinue (inMod)
     local
       String finalPrefixstr,str,res,each_str,subs_str,ass_str;
       list<String> strs;
-      Boolean b,finalPrefix;
+      Final finalPrefix;
       list<Element> elist;
-      Absyn.Each each_;
+      Each each_;
       list<SubMod> subs;
       Option<tuple<Absyn.Exp,Boolean>> ass;
+    
     case (NOMOD()) then "";
-    case REDECL(finalPrefix = b,elementLst = elist)
+    
+    case REDECL(finalPrefix = finalPrefix,elementLst = elist)
       equation
         Print.printBuf("redeclare(");
-        finalPrefixstr = Util.if_(b, "final", "");
+        finalPrefixstr = finalStr(finalPrefix);
         strs = Util.listMap(elist, printElementStr);
         str = Util.stringDelimitList(strs, ",");
         res = stringAppendList({"redeclare(",finalPrefixstr,str,")"});
       then
         res;
+    
     case MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,binding = ass)
       equation
-        finalPrefixstr = Util.if_(finalPrefix, "final", "");
-        each_str = Dump.unparseEachStr(each_);
+        finalPrefixstr = finalStr(finalPrefix);
+        each_str = eachStr(each_);
         subs_str = printSubs1Str(subs);
         ass_str = printEqmodStr(ass);
         res = stringAppendList({finalPrefixstr,each_str,subs_str,ass_str});
@@ -984,8 +1043,7 @@ protected function printEqmodStr
   input Option<tuple<Absyn.Exp,Boolean>> inAbsynExpOption;
   output String outString;
 algorithm
-  outString:=
-  match (inAbsynExpOption)
+  outString := match (inAbsynExpOption)
     local
       String str,res;
       Absyn.Exp e;
@@ -1040,9 +1098,12 @@ algorithm
       String str,str2,res,n,mod_str,s,vs,modStr,strFinalPrefix,strReplaceablePrefix;
       Absyn.Path path;
       Mod mod;
-      Boolean finalPrefix,repl,prot;
+      Final finalPrefix;
+      Replaceable repl;
+      Visibility vis;
+      Redeclare red;
       Absyn.InnerOuter io;
-      Class cl;
+      Element cl;
       Variability var;
       Absyn.TypeSpec tySpec;
       Option<Comment> comment;
@@ -1055,8 +1116,14 @@ algorithm
         res = stringAppendList({"EXTENDS(",str,", modification=",modStr,")"});
       then
         res;
-    case COMPONENT(component = n,innerOuter=io,finalPrefix = finalPrefix,replaceablePrefix = repl,
-                   protectedPrefix = prot, attributes = ATTR(variability = var),typeSpec = tySpec,
+    case COMPONENT(name = n,
+                   prefixes = PREFIXES(
+                     innerOuter=io,
+                     finalPrefix = finalPrefix,
+                     replaceablePrefix = repl,
+                     visibility = vis,
+                     redeclarePrefix = red),
+                     attributes = ATTR(variability = var),typeSpec = tySpec,
                    modifications = mod,comment = comment)
       equation
         mod_str = printModStr(mod);
@@ -1066,12 +1133,9 @@ algorithm
         res = stringAppendList({"COMPONENT(",n, " in/out: ", str2, " mod: ",mod_str, " tp: ", s," var :",vs,")"});
       then
         res;
-    case CLASSDEF(name = n,finalPrefix = finalPrefix,replaceablePrefix = repl,classDef = cl)
+    case inElement
       equation
-        strFinalPrefix = Util.if_(finalPrefix, "true", "false");
-        strReplaceablePrefix = Util.if_(repl, "true", "false");
-        str = printClassStr(cl);
-        res = stringAppendList({"CLASSDEF(", n, ", final = ", strFinalPrefix, ", replaceable = ", strReplaceablePrefix, ", ", str,")"});
+        res = printClassStr(inElement);
       then
         res;
     case (IMPORT(imp = imp))
@@ -1092,7 +1156,7 @@ algorithm
       String str,res,n,mod_str,s,vs,ioStr;
       Absyn.TypeSpec typath;
       Mod mod;
-      Class cl;
+      Element cl;
       Variability var;
       Option<Comment> comment;
       Absyn.Path path;
@@ -1106,7 +1170,8 @@ algorithm
       then
         res;
 
-    case COMPONENT(component = n,innerOuter = io,attributes = ATTR(variability = var),
+    case COMPONENT(name = n,prefixes = PREFIXES(innerOuter = io),
+                   attributes = ATTR(variability = var),
                    typeSpec = typath,modifications = mod,comment = comment)
       equation
         ioStr = Dump.unparseInnerouterStr(io);
@@ -1118,10 +1183,10 @@ algorithm
       then
         res;
 
-    case CLASSDEF(name = n,classDef = cl)
+    case inElement
       equation
-        str = printClassStr(cl);
-        res = stringAppendList({"class ",n,"\n",str,"end ",n,";\n"});
+        str = printClassStr(inElement);
+        res = stringAppendList({"class ",str,";\n"});
       then
         res;
 
@@ -1132,24 +1197,82 @@ algorithm
   end match;
 end unparseElementStr;
 
+public function shortElementStr
+"function: shortElementStr
+  Print Element to a string."
+  input Element inElement;
+  output String outString;
+algorithm
+  outString := match (inElement)
+    local
+      String str,res,n,mod_str,s,vs,ioStr;
+      Absyn.TypeSpec typath;
+      Mod mod;
+      Element cl;
+      Variability var;
+      Option<Comment> comment;
+      Absyn.Path path;
+      Absyn.Import imp;
+      Absyn.InnerOuter io;
+
+    case EXTENDS(baseClassPath = path,modifications = mod)
+      equation
+        str = Absyn.pathString(path);
+        str = str +& printModStr(mod);        
+        res = stringAppendList({"extends ",str,";"});
+      then
+        res;
+
+    case COMPONENT(name = n,prefixes = PREFIXES(innerOuter = io),attributes = ATTR(variability = var),
+                   typeSpec = typath,modifications = mod,comment = comment)
+      equation
+        ioStr = Dump.unparseInnerouterStr(io);
+        mod_str = printModStr(mod);
+        s = Dump.unparseTypeSpec(typath);
+        vs = unparseVariability(var);
+        vs = Util.if_(stringEq(vs, ""), "", vs +& " ");
+        mod_str = Util.if_(stringEq(mod_str, ""),"", " " +& mod_str); 
+        res = stringAppendList({ioStr,vs,s," ",n,mod_str,";"});
+      then
+        res;
+
+    case CLASS(name = n)
+      equation
+        res = stringAppendList({"class ",n,";"});
+      then
+        res;
+
+    case (IMPORT(imp = imp))
+      equation
+         str = "import "+& Absyn.printImportString(imp) +& ";";
+      then str;
+  end match;
+end shortElementStr;
+
 public function printClassStr "
   prints a class to a string"
-  input Class inClass;
+  input Element inClass;
   output String outString;
 algorithm
   outString := match (inClass)
     local
       String s,res,id,re,strPartialPrefix,strEncapsulatedPrefix;
-      Boolean p,en;
+      Partial p;
+      Encapsulated en;
       Restriction rest;
       ClassDef def;
+      Visibility vis;
+      Redeclare red;
+      Final fin;
+      Absyn.InnerOuter io;
+      Replaceable rep;      
         
-    case (CLASS(name = id,partialPrefix = p,encapsulatedPrefix = en,restriction = rest,classDef = def))
+    case (CLASS(name = id,prefixes = PREFIXES(vis,red,fin,io,rep),partialPrefix = p,encapsulatedPrefix = en,restriction = rest,classDef = def))
       equation
         s = printClassdefStr(def);
         re = restrString(rest);
-        strPartialPrefix = Util.if_(en, "true", "false");
-        strEncapsulatedPrefix = Util.if_(p, "true", "false");
+        strPartialPrefix = Util.if_(partialBool(p), "true", "false");
+        strEncapsulatedPrefix = Util.if_(encapsulatedBool(en), "true", "false");
         res = stringAppendList({"CLASS(",id,", partial = ",strPartialPrefix, ", encapsulated = ", strEncapsulatedPrefix, ", ", re, ", ", s, ")\n"});
       then
         res;
@@ -1193,11 +1316,13 @@ algorithm
     case (CLASS_EXTENDS(
               baseClassName = baseClassName,
               modifications = mod,
+              composition = PARTS(
               elementLst = elts,
               normalEquationLst = eqns,
               initialEquationLst = ieqns,
               normalAlgorithmLst = alg,
-              initialAlgorithmLst = ial))
+              initialAlgorithmLst = ial,
+              externalDecl = ext)))
       equation
         elts_str = Util.listMap(elts, printElementStr);
         s1 = Util.stringDelimitList(elts_str, ",\n");
@@ -1295,10 +1420,10 @@ public function innerouterString
   output String outString;
 algorithm
   outString := match (innerOuter)
-    case (Absyn.INNEROUTER()) then "INNER/OUTER";
+    case (Absyn.INNER_OUTER()) then "INNER/OUTER";
     case (Absyn.INNER()) then "INNER";
     case (Absyn.OUTER()) then "OUTER";
-    case (Absyn.UNSPECIFIED()) then "";
+    case (Absyn.NOT_INNER_OUTER()) then "";
   end match;
 end innerouterString;
 
@@ -1333,7 +1458,7 @@ check if an element is not of type CLASS_EXTENDS."
   output Boolean isExtend;
 algorithm
   isExtend := matchcontinue(ele)
-    case(CLASSDEF(classDef = CLASS(classDef = CLASS_EXTENDS(baseClassName = _)))) then false;
+    case(CLASS(classDef = CLASS_EXTENDS(baseClassName = _))) then false;
     case(_) then true;
   end matchcontinue;
 end isNotElementClassExtends;
@@ -1369,58 +1494,66 @@ end isConstant;
 public function countParts
 "function: countParts
   Counts the number of ClassParts of a Class."
-  input Class inClass;
+  input Element inClass;
   output Integer outInteger;
 algorithm
   outInteger := matchcontinue (inClass)
     local
       Integer res;
       list<Element> elts;
+    
     case CLASS(classDef = PARTS(elementLst = elts))
       equation
         res = listLength(elts);
       then
         res;
+    
     /* adrpo: handle also model extends X ... parts ... end X; */
-    case CLASS(classDef = CLASS_EXTENDS(elementLst = elts))
+    case CLASS(classDef = CLASS_EXTENDS(composition = PARTS(elementLst = elts)))
       equation
         res = listLength(elts);
       then
         res;
+    
     case _ then 0;
+    
   end matchcontinue;
 end countParts;
 
 public function componentNames
 "function: componentNames
   Return a string list of all component names of a class."
-  input Class inClass;
+  input Element inClass;
   output list<String> outStringLst;
 algorithm
   outStringLst := matchcontinue (inClass)
     local list<String> res; list<Element> elts;
+    
     case (CLASS(classDef = PARTS(elementLst = elts)))
       equation
         res = componentNamesFromElts(elts);
       then
         res;
+    
     /* adrpo: handle also the case model extends X end X;*/
-    case (CLASS(classDef = CLASS_EXTENDS(elementLst = elts)))
+    case (CLASS(classDef = CLASS_EXTENDS(composition = PARTS(elementLst = elts))))
       equation
         res = componentNamesFromElts(elts);
       then
         res;
+    
     case (_) then {};
+    
   end matchcontinue;
 end componentNames;
 
 public function elementName ""
-input Element e;
-output String s;
+  input Element e;
+  output String s;
 algorithm
   s := match(e)
-    case(COMPONENT(component = s)) then s;
-    case(CLASSDEF(name = s)) then s;
+    case(COMPONENT(name = s)) then s;
+    case(CLASS(name = s)) then s;
   end match;
 end elementName;
 
@@ -1442,7 +1575,7 @@ algorithm
   outStringLst := matchcontinue (inElementLst)
     local list<String> res; String id; list<Element> rest;
     case ({}) then {};
-    case ((COMPONENT(component = id) :: rest))
+    case ((COMPONENT(name = id) :: rest))
       equation
         res = componentNamesFromElts(rest);
       then
@@ -1455,7 +1588,7 @@ end componentNamesFromElts;
 public function isFunction
 "function: isFunction
   Return true if Class is a function."
-  input Class inClass;
+  input Element inClass;
   output Boolean outBoolean;
 algorithm
   outBoolean := matchcontinue (inClass)
@@ -1469,7 +1602,7 @@ end isFunction;
 public function className
 "function: className
   Returns the class name of a Class."
-  input Class inClass;
+  input Element inClass;
   output String outString;
 algorithm
   outString := matchcontinue (inClass)
@@ -1483,20 +1616,27 @@ public function classSetPartial
 "function: classSetPartial
   author: PA
   Sets the partial attribute of a Class"
-  input Class inClass;
-  input Boolean inBoolean;
-  output Class outClass;
+  input Element inClass;
+  input Partial inPartial;
+  output Element outClass;
 algorithm
-  outClass := match (inClass,inBoolean)
+  outClass := match (inClass,inPartial)
     local
       String id;
-      Boolean enc,partialPrefix;
+      Encapsulated enc;
+      Partial partialPrefix;
       Restriction restr;
       ClassDef def;
       Absyn.Info info;
+      Prefixes prefixes;
 
-    case (CLASS(name = id,encapsulatedPrefix = enc,restriction = restr,classDef = def, info = info),partialPrefix)
-      then CLASS(id,partialPrefix,enc,restr,def,info);
+    case (CLASS(name = id,
+                prefixes = prefixes,
+                encapsulatedPrefix = enc,
+                restriction = restr,
+                classDef = def, 
+                info = info),partialPrefix)
+      then CLASS(id,prefixes,enc,partialPrefix,restr,def,info);
   end match;
 end classSetPartial;
 
@@ -1527,46 +1667,47 @@ public function elementEqual
    equal := matchcontinue(element1,element2)
      local
       Ident name1,name2;
-      Class cl1,cl2;
-      Boolean f1,f2,r1,r2,p1,p2,rd1,rd2;
+      Element cl1,cl2;
+      Prefixes prefixes1, prefixes2;
+      Encapsulated en1, en2;
+      Partial p1,p2;
       Absyn.InnerOuter io1,io2;
-      Attributes attr1,attr2; Mod mod1,mod2;
+      Restriction restr1, restr2;
+      Attributes attr1,attr2; 
+      Mod mod1,mod2;
       Absyn.TypeSpec tp1,tp2;
       Absyn.Import im1,im2;
-      Absyn.Path path1, path2;
+      Absyn.Path path1,path2;
       Option<String> os1,os2;
       Option<Real> or1,or2;
       Option<Absyn.Exp> cond1, cond2;
       Option<Absyn.ConstrainClass> cc1, cc2;
+      ClassDef cd1,cd2;
       
-    case (CLASSDEF(name1,f1,r1,rd1,cl1,_),CLASSDEF(name2,f2,r2,rd2,cl2,_))
+    case (CLASS(name1,prefixes1,en1,p1,restr1,cd1,_),CLASS(name2,prefixes2,en2,p2,restr2,cd2,_))
        equation
          true = stringEq(name1,name2);
-         true = boolEq(f1,f2);
-         true = boolEq(r1,r2);
-         true = boolEq(rd1, rd2);
-         true = classEqual(cl1,cl2);
+         true = prefixesEqual(prefixes1,prefixes2);
+         true = valueEq(en1,en2);
+         true = valueEq(p1,p2);
+         true = restrictionEqual(restr1,restr2);
+         true = classDefEqual(cd1,cd2);
        then 
          true;
      
-    case (COMPONENT(name1,io1,f1,r1,p1,rd1,attr1,tp1,mod1,_,cond1,_,cc1), 
-          COMPONENT(name2,io2,f2,r2,p2,rd2,attr2,tp2,mod2,_,cond2,_,cc2))
+    case (COMPONENT(name1,prefixes1,attr1,tp1,mod1,_,cond1,_), 
+          COMPONENT(name2,prefixes2,attr2,tp2,mod2,_,cond2,_))
        equation
          equality(cond1 = cond2);
-         equality(cc1 = cc2); // TODO! FIXME! this might fail for different comments!
          true = stringEq(name1,name2);
-         true = ModUtil.innerOuterEqual(io1,io2);
-         true = boolEq(f1,f2);
-         true = boolEq(r1,r2);
-         true = boolEq(p1,p2);
-         true = boolEq(rd1,rd2);
+         true = prefixesEqual(prefixes1,prefixes2);
          true = attributesEqual(attr1,attr2);
          true = modEqual(mod1,mod2);
          true = Absyn.typeSpecEqual(tp1,tp2);
        then 
          true;
      
-     case (EXTENDS(path1,mod1,_,_), EXTENDS(path2,mod2,_,_))      
+     case (EXTENDS(path1,_,mod1,_,_), EXTENDS(path2,_,mod2,_,_))      
        equation
          true = ModUtil.pathEqual(path1,path2);
          true = modEqual(mod1,mod2);
@@ -1579,7 +1720,7 @@ public function elementEqual
        then 
          true;
      
-     case (DEFINEUNIT(name1,os1,or1), DEFINEUNIT(name2,os2,or2))      
+     case (DEFINEUNIT(name1,_,os1,or1), DEFINEUNIT(name2,_,os2,or2))      
        equation
          true = stringEq(name1,name2);
          equality(os1 = os2);
@@ -1612,36 +1753,6 @@ algorithm
     case(_,_) then false;
   end matchcontinue;
 end annotationEqual;
-
-public function classEqual
-"function classEqual
-  returns true if two classes are equal"
-  input Class class1;
-  input Class class2;
-  output Boolean equal;
-algorithm
-  equal := matchcontinue(class1,class2)
-    local
-      Ident name1,name2;
-      Boolean p1,e1,p2,e2;
-      Restriction restr1,restr2;
-      ClassDef parts1,parts2;
-      Absyn.Info info1,info2;
-    
-    case (CLASS(name1,p1,e1,restr1,parts1,info1), CLASS(name2,p2,e2,restr2,parts2,info2))
-        equation
-          true = stringEq(name1,name2);
-          true = boolEq(p1,p2);
-          true = boolEq(e1,e2);
-          true = restrictionEqual(restr1,restr2);
-          true = classDefEqual(parts1,parts2);
-        then 
-          true;
-    
-    // otherwise return false
-    case (_,_) then false;
-  end matchcontinue;
-end classEqual;
 
 public function restrictionEqual "Returns true if two Restriction's are equal."
   input Restriction restr1;
@@ -1705,7 +1816,7 @@ protected function classDefEqual
        list<Equation> ieqns1,ieqns2;
        list<AlgorithmSection> algs1,algs2;
        list<AlgorithmSection> ialgs1,ialgs2;
-       Absyn.ElementAttributes attr1,attr2;
+       Attributes attr1,attr2;
        Absyn.TypeSpec tySpec1, tySpec2;
        Absyn.Path p1, p2;
        Mod mod1,mod2;
@@ -1714,7 +1825,7 @@ protected function classDefEqual
        String bcName1, bcName2;
        
      case(PARTS(elts1,eqns1,ieqns1,algs1,ialgs1,_,anns1,_),
-         PARTS(elts2,eqns2,ieqns2,algs2,ialgs2,_,anns2,_))
+          PARTS(elts2,eqns2,ieqns2,algs2,ialgs2,_,anns2,_))
        equation
          Util.listThreadMapAllValue(elts1,elts2,elementEqual,true);
          Util.listThreadMapAllValue(eqns1,eqns2,equationEqual,true);
@@ -1727,11 +1838,11 @@ protected function classDefEqual
          true;
          
      case (DERIVED(tySpec1,mod1,attr1,_),
-         DERIVED(tySpec2,mod2,attr2,_))
+           DERIVED(tySpec2,mod2,attr2,_))
        equation
          true = ModUtil.typeSpecEqual(tySpec1, tySpec2);
          true = modEqual(mod1,mod2);
-         equality(attr1 = attr2);
+         true = attributesEqual(attr1, attr2);
        then 
          true;
          
@@ -1741,8 +1852,8 @@ protected function classDefEqual
        then 
          true;
          
-     case (cdef1 as CLASS_EXTENDS(bcName1,mod1,elts1,eqns1,ieqns1,algs1,ialgs1,anns1,_),
-           cdef2 as CLASS_EXTENDS(bcName2,mod2,elts2,eqns2,ieqns2,algs2,ialgs2,anns2,_))
+     case (cdef1 as CLASS_EXTENDS(bcName1,mod1,PARTS(elts1,eqns1,ieqns1,algs1,ialgs1,_,anns1,_)),
+           cdef2 as CLASS_EXTENDS(bcName2,mod2,PARTS(elts2,eqns2,ieqns2,algs2,ialgs2,_,anns2,_)))
        equation
          Util.listThreadMapAllValue(elts1,elts2,elementEqual,true);
          Util.listThreadMapAllValue(eqns1,eqns2,equationEqual,true);
@@ -1761,9 +1872,8 @@ protected function classDefEqual
          Util.listThreadMapAllValue(ilst1,ilst2,stringEq,true);
        then 
          true;
-         
     
-    // adrpo: TODO! FIXME! are these below really needed??!!
+    /* adrpo: TODO! FIXME! are these below really needed??!!
     // as far as I can tell we handle all the cases.
     case(cdef1, cdef2)
       equation
@@ -1773,8 +1883,10 @@ protected function classDefEqual
     case(cdef1, cdef2)
       equation
         failure(equality(cdef1=cdef2));
-      then false;
-   end matchcontinue;
+      then false;*/
+    
+    case(cdef1, cdef2) then fail();   
+  end matchcontinue;
 end classDefEqual;
 
 protected function arraydimOptEqual
@@ -2009,16 +2121,16 @@ public function modEqual
 algorithm
   equal := matchcontinue(mod1,mod2)
     local
-      Boolean f1,f2;
-      Absyn.Each each1,each2;
+      Final f1,f2;
+      Each each1,each2;
       list<SubMod> submodlst1,submodlst2;
       Absyn.Exp e1,e2;
       list<Element> elts1,elts2;
 
     case (MOD(f1,each1,submodlst1,SOME((e1,_))),MOD(f2,each2,submodlst2,SOME((e2,_))))
       equation
-        true = boolEq(f1,f2);
-        true = Absyn.eachEqual(each1,each2);
+        true = valueEq(f1,f2);
+        true = eachEqual(each1,each2);
         true = subModsEqual(submodlst1,submodlst2);
         true = Absyn.expEqual(e1,e2);
       then 
@@ -2026,22 +2138,24 @@ algorithm
     
     case (MOD(f1,each1,submodlst1,NONE()),MOD(f2,each2,submodlst2,NONE()))
       equation
-        true = boolEq(f1,f2);
-        true = Absyn.eachEqual(each1,each2);
+        true = valueEq(f1,f2);
+        true = eachEqual(each1,each2);
         true = subModsEqual(submodlst1,submodlst2);
       then 
         true;
     
     case (NOMOD(),NOMOD()) then true;
     
-    case (REDECL(f1,elts1),REDECL(f2,elts2))
+    case (REDECL(f1,each1,elts1),REDECL(f2,each2,elts2))
       equation
-        true = boolEq(f1,f2);
+        true = valueEq(f1,f2);
+        true = eachEqual(each1,each2);
         Util.listThreadMapAllValue(elts1,elts2,elementEqual,true);
       then 
         true;
     
     case(_,_) then false;
+    
   end matchcontinue;
 end modEqual;
 
@@ -2118,21 +2232,24 @@ algorithm
     local
       Accessibility acc1,acc2;
       Variability var1,var2;
-      Boolean fl1,fl2,st1,st2;
+      Flow fl1,fl2;
+      Stream st1,st2;
       Absyn.ArrayDim ad1,ad2;
       Absyn.Direction dir1,dir2;
+      
     case(ATTR(ad1,fl1,st1,acc1,var1,dir1),ATTR(ad2,fl2,st2,acc2,var2,dir2))
       equation
         true = arrayDimEqual(ad1,ad2);
-        true = boolEq(fl1,fl2);
+        true = valueEq(fl1,fl2);
         true = accessibilityEqual(acc1,acc2);
         true = variabilityEqual(var1,var2);
         true = directionEqual(dir1,dir2);
-        true = boolEq(st1,st2);  // added Modelica 3.1 stream connectors
+        true = valueEq(st1,st2);  // added Modelica 3.1 stream connectors
       then 
         true;
     
     case(_, _) then false;
+    
   end matchcontinue;
 end attributesEqual;
 
@@ -2252,28 +2369,39 @@ end elseIfEquationStr;
 
 public function setClassRestriction "Sets the restriction of a SCode Class"
   input Restriction r;
-  input Class cl;
-  output Class outCl;
+  input Element cl;
+  output Element outCl;
 algorithm
   outCl := matchcontinue(r,cl)
-  local ClassDef parts; Boolean p,e; Ident id; Absyn.Info info;
-    case(r,CLASS(id,p,e,_,parts,info)) then CLASS(id,p,e,r,parts,info);
+    local 
+      ClassDef parts; 
+      Partial p;
+      Encapsulated e; 
+      Ident id; 
+      Absyn.Info info;
+      Prefixes prefixes;
+      
+    case(r,CLASS(id,prefixes,e,p,_,parts,info)) 
+      then CLASS(id,prefixes,e,p,r,parts,info);
   end matchcontinue;
 end setClassRestriction;
 
 public function setClassPartialPrefix "Sets the partial prefix of a SCode Class"
-  input Boolean partialPrefix;
-  input Class cl;
-  output Class outCl;
+  input Partial partialPrefix;
+  input Element cl;
+  output Element outCl;
 algorithm
   outCl := match(partialPrefix,cl)
     local 
       ClassDef parts;
-      Boolean e;
+      Encapsulated e;
       Ident id;
       Absyn.Info info;
       Restriction restriction;
-    case(partialPrefix,CLASS(id,_,e,restriction,parts,info)) then CLASS(id,partialPrefix,e,restriction,parts,info);
+      Prefixes prefixes;
+    
+    case(partialPrefix,CLASS(id,prefixes,e,_,restriction,parts,info)) 
+      then CLASS(id,prefixes,e,partialPrefix,restriction,parts,info);
   end match;
 end setClassPartialPrefix;
 
@@ -2439,7 +2567,7 @@ algorithm
     // handle the empty things
     case ({}) then ({},{});
     // collect components
-    case (( comp as COMPONENT(component=name)) :: rest)
+    case (( comp as COMPONENT(name=name)) :: rest)
       equation
         (comps, names) = filterComponents(rest);
       then (comp::comps,name::names);
@@ -2453,7 +2581,7 @@ end filterComponents;
 
 public function getClassComponents
 "This function returns the components from a class"
-  input Class cl;
+  input Element cl;
   output list<Element> compElts;
   output list<String> compNames;
 algorithm
@@ -2466,7 +2594,7 @@ algorithm
       equation
         (comps, names) = filterComponents(elts);
       then (comps,names);
-    case (CLASS(classDef = CLASS_EXTENDS(elementLst = elts)))
+    case (CLASS(classDef = CLASS_EXTENDS(composition = PARTS(elementLst = elts))))
       equation
         (comps, names) = filterComponents(elts);
       then (comps,names);
@@ -2500,10 +2628,11 @@ algorithm
         isValidEnumLiteral(literal);
       then 
         COMPONENT(
-          literal, Absyn.UNSPECIFIED(), true, false, false,false,
-          ATTR({}, false, false, RO(), CONST(), Absyn.BIDIR()),
+          literal, 
+          PREFIXES(PUBLIC(), NOT_REDECLARE(), FINAL(), Absyn.NOT_INNER_OUTER(), NOT_REPLACEABLE()),
+          ATTR({}, NOT_FLOW(), NOT_STREAM(), RO(), CONST(), Absyn.BIDIR()),
           Absyn.TPATH(Absyn.IDENT("EnumType"),NONE()), 
-          NOMOD(), comment,NONE(), info,NONE());
+          NOMOD(), comment, NONE(), info);
     case (ENUM(literal = literal), _)
       equation
         info_str = Error.infoStr(info);
@@ -3515,22 +3644,25 @@ public function elementIsClass
   output Boolean b;
 algorithm
   b := match el
-    case CLASSDEF(classDef=_) then true;
+    case CLASS(classDef=_) then true;
     else false;
   end match;
 end elementIsClass;
 
 public function getElementClass
   input Element el;
-  output Class cl;
+  output Element cl;
 algorithm
-  CLASSDEF(classDef=cl) := el;
+  cl := matchcontinue(el)
+    case CLASS(name=_) then el;
+    case _ then fail();
+  end matchcontinue;
 end getElementClass;
 
 protected constant list<String> knownExternalCFunctions = {"acos"};
 
 public function isBuiltinFunction
-  input Class cl;
+  input Element cl;
   input list<String> inVars;
   input list<String> outVars;
   output String name;
@@ -3606,6 +3738,416 @@ algorithm
     case ALG_FAILURE(info = info) then info;
   end match;
 end getStatementInfo;
+
+public function flowStr
+  input Flow inFlow;
+  output String str;
+algorithm
+  str := match(inFlow)
+    case (FLOW()) then "flow ";
+    case (NOT_FLOW()) then "";
+  end match;
+end flowStr;
+
+public function streamStr
+  input Stream inStream;
+  output String str;
+algorithm
+  str := match(inStream)
+    case (STREAM()) then "stream ";
+    case (NOT_STREAM()) then "";
+  end match;
+end streamStr;
+
+public function encapsulatedStr
+  input Encapsulated inEncapsulated;
+  output String str;
+algorithm
+  str := match(inEncapsulated)
+    case (ENCAPSULATED()) then "encapsulated ";
+    case (NOT_ENCAPSULATED()) then "";
+  end match;
+end encapsulatedStr;
+
+public function finalStr
+  input Final inFinal;
+  output String str;
+algorithm
+  str := match(inFinal)
+    case (FINAL()) then "final ";
+    case (NOT_FINAL()) then "";
+  end match;
+end finalStr;
+
+public function eachStr
+  input Each inEach;
+  output String str;
+algorithm
+  str := match(inEach)
+    case (EACH()) then "each ";
+    case (NOT_EACH()) then "";
+  end match;
+end eachStr;
+
+public function eachBool
+  input Each inEach;
+  output Boolean bEach;
+algorithm
+  bEach := match(inEach)
+    case (EACH()) then true;
+    case (NOT_EACH()) then false;
+  end match;
+end eachBool;
+
+public function boolEach
+  input Boolean inBoolEach;
+  output Each outEach;
+algorithm
+  outEach := match(inBoolEach)
+    case (true) then EACH();
+    case (false) then NOT_EACH();
+  end match;
+end boolEach;
+
+
+public function redeclareStr
+  input Redeclare inRedeclare;
+  output String str;
+algorithm
+  str := match(inRedeclare)
+    case (REDECLARE()) then "redeclare ";
+    case (NOT_REDECLARE()) then "";
+  end match;
+end redeclareStr;
+
+public function redeclareBool
+  input Redeclare inRedeclare;
+  output Boolean bRedeclare;
+algorithm
+  bRedeclare := match(inRedeclare)
+    case (REDECLARE()) then true;
+    case (NOT_REDECLARE()) then false;
+  end match;
+end redeclareBool;
+
+public function boolRedeclare
+  input Boolean inBoolRedeclare;
+  output Redeclare outRedeclare;
+algorithm
+  outRedeclare := match(inBoolRedeclare)
+    case (true) then REDECLARE();
+    case (false) then NOT_REDECLARE();
+  end match;
+end boolRedeclare;
+
+public function replaceableStr
+  input Replaceable inReplaceable;
+  output String strReplaceable;
+  output String strConstraint;
+algorithm
+  (strReplaceable, strConstraint) := match(inReplaceable)
+    local Absyn.ConstrainClass cc;
+    case (REPLACEABLE(SOME(cc))) then ("replaceable", Dump.unparseConstrainclassStr(cc));
+    case (REPLACEABLE(NONE())) then ("replaceable", "");
+    case (NOT_REPLACEABLE()) then ("replaceable", "");
+  end match;
+end replaceableStr;
+
+public function replaceableBool
+  input Replaceable inReplaceable;
+  output Boolean bReplaceable;
+algorithm
+  bReplaceable := match(inReplaceable)
+    case (REPLACEABLE(_)) then true;
+    case (NOT_REPLACEABLE()) then false;
+  end match;
+end replaceableBool;
+
+public function replaceableOptConstraint
+  input Replaceable inReplaceable;
+  output Option<Absyn.ConstrainClass> outOptConstrainClass;
+algorithm
+  outOptConstrainClass := match(inReplaceable)
+    local Option<Absyn.ConstrainClass> cc;
+    case (REPLACEABLE(cc)) then cc;
+    case (NOT_REPLACEABLE()) then NONE();
+  end match;
+end replaceableOptConstraint;
+
+public function boolReplaceable
+  input Boolean inBoolReplaceable;
+  input Option<Absyn.ConstrainClass> inOptConstrainClass;
+  output Replaceable outReplaceable;
+algorithm
+  outReplaceable := matchcontinue(inBoolReplaceable, inOptConstrainClass)
+    case (true, inOptConstrainClass) then REPLACEABLE(inOptConstrainClass);
+    case (false, SOME(_))
+      equation
+        print("Ignoring constraint class because replaceable prefix is not present!\n");  
+      then NOT_REPLACEABLE();
+    case (false, _) then NOT_REPLACEABLE();
+  end matchcontinue;
+end boolReplaceable;
+
+public function encapsulatedBool
+  input Encapsulated inEncapsulated;
+  output Boolean bEncapsulated;
+algorithm
+  bEncapsulated := match(inEncapsulated)
+    case (ENCAPSULATED()) then true;
+    case (NOT_ENCAPSULATED()) then false;
+  end match;
+end encapsulatedBool;
+
+public function boolEncapsulated
+  input Boolean inBoolEncapsulated;
+  output Encapsulated outEncapsulated;
+algorithm
+  outEncapsulated := match(inBoolEncapsulated)
+    case (true) then ENCAPSULATED();
+    case (false) then NOT_ENCAPSULATED();
+  end match;
+end boolEncapsulated;
+
+public function partialBool
+  input Partial inPartial;
+  output Boolean bPartial;
+algorithm
+  bPartial := match(inPartial)
+    case (PARTIAL()) then true;
+    case (NOT_PARTIAL()) then false;
+  end match;
+end partialBool;
+
+public function boolPartial
+  input Boolean inBoolPartial;
+  output Partial outPartial;
+algorithm
+  outPartial := match(inBoolPartial)
+    case (true) then PARTIAL();
+    case (false) then NOT_PARTIAL();
+  end match;
+end boolPartial;
+
+public function finalBool
+  input Final inFinal;
+  output Boolean bFinal;
+algorithm
+  bFinal := match(inFinal)
+    case (FINAL()) then true;
+    case (NOT_FINAL()) then false;
+  end match;
+end finalBool;
+
+public function boolFinal
+  input Boolean inBoolFinal;
+  output Final outFinal;
+algorithm
+  outFinal := match(inBoolFinal)
+    case (true) then FINAL();
+    case (false) then NOT_FINAL();
+  end match;
+end boolFinal;
+
+public function flowBool
+  input Flow inFlow;
+  output Boolean bFlow;
+algorithm
+  bFlow := match(inFlow)
+    case (FLOW()) then true;
+    case (NOT_FLOW()) then false;
+  end match;
+end flowBool;
+
+public function boolFlow
+  input Boolean inBoolFlow;
+  output Flow outFlow;
+algorithm
+  outFlow := match(inBoolFlow)
+    case (true) then FLOW();
+    case (false) then NOT_FLOW();
+  end match;
+end boolFlow;
+
+public function streamBool
+  input Stream inStream;
+  output Boolean bStream;
+algorithm
+  bStream := match(inStream)
+    case (STREAM()) then true;
+    case (NOT_STREAM()) then false;
+  end match;
+end streamBool;
+
+public function boolStream
+  input Boolean inBoolStream;
+  output Stream outStream;
+algorithm
+  outStream := match(inBoolStream)
+    case (true) then STREAM();
+    case (false) then NOT_STREAM();
+  end match;
+end boolStream;
+
+public function mergeAttributes 
+"@author: adrpo
+ Function that is used with Derived classes,
+ merge the derived Attributes with the optional Attributes returned from ~instClass~."
+  input Attributes ele;
+  input Option<Attributes> oEle;
+  output Option<Attributes> outoEle;
+algorithm 
+  outoEle := match(ele, oEle)
+    local
+      Variability v1,v2,v;
+      Absyn.Direction d1,d2,d;
+      Absyn.ArrayDim ad1,ad2,ad;
+      Flow f1,f2,f;
+      Stream s1,s2,s;
+      Accessibility a1,a2,a;
+    
+    case(ele,NONE()) then SOME(ele);
+    case(ATTR(ad1,f1,s1,a1,v1,d1), SOME(ATTR(ad2,f2,s2,a2,v2,d2)))
+      equation
+        f = boolFlow(boolOr(flowBool(f1),flowBool(f2)));
+        s = boolStream(boolOr(streamBool(s1),streamBool(s2)));
+        v = propagateVariability(v1,v2);
+        d = propagateDirection(d1,d2);
+        a = propagateAccessibility(a1,a2);
+        ad = ad1; // TODO! CHECK if ad1 == ad2!
+      then
+        SOME(ATTR(ad,f,s,a,v,d));
+  end match;
+end mergeAttributes;
+
+protected function propagateVariability 
+"Helper function for mergeAttributes"
+  input Variability v1;
+  input Variability v2;
+  output Variability v;
+algorithm 
+  v := matchcontinue(v1,v2)
+    case(v1,VAR()) then v1;
+    case(v1,_) then v1;
+  end matchcontinue;
+end propagateVariability;
+
+protected function propagateAccessibility 
+"Helper function for mergeAttributes"
+  input Accessibility a1;
+  input Accessibility a2;
+  output Accessibility a;
+algorithm 
+  a := matchcontinue(a1,a2)
+    case(a1,RW()) then a1;
+    case(a1,_) then a1;
+  end matchcontinue;
+end propagateAccessibility;
+
+protected function propagateDirection 
+"Helper function for mergeAttributes"
+  input Absyn.Direction d1;
+  input Absyn.Direction d2;
+  output Absyn.Direction d;
+algorithm 
+  d := matchcontinue(d1,d2)
+    case(Absyn.BIDIR(),d2) then d2;
+    case(d1,Absyn.BIDIR()) then d1;
+    case(d1,d2)
+      equation
+        equality(d1 = d2);
+      then d1;
+    case(_,_)
+      equation
+        print(" failure in propagateAbsynDirection, inner outer mismatch");
+      then
+        fail();
+  end matchcontinue;
+end propagateDirection;
+
+public function prefixesVisibility
+  input Prefixes inPrefixes;
+  output Visibility outVisibility;
+algorithm
+  PREFIXES(visibility = outVisibility) := inPrefixes;
+end prefixesVisibility;
+
+public function eachEqual "Returns true if two each attributes are equal"
+  input Each each1;
+  input Each each2;
+  output Boolean equal;
+algorithm
+  equal := matchcontinue(each1,each2)
+    case(NOT_EACH(),NOT_EACH()) then true;
+    case(EACH(),EACH()) then true;
+    case(_,_) then false;
+  end matchcontinue;
+end eachEqual;
+
+public function replaceableEqual "Returns true if two replaceable attributes are equal"
+  input Replaceable r1;
+  input Replaceable r2;
+  output Boolean equal;
+algorithm
+  equal := matchcontinue(r1,r2)
+    local
+      Absyn.ElementSpec e1, e2;
+    
+    case(NOT_REPLACEABLE(),NOT_REPLACEABLE()) then true;  
+    
+    case(REPLACEABLE(SOME(Absyn.CONSTRAINCLASS(elementSpec=e1))),REPLACEABLE(SOME(Absyn.CONSTRAINCLASS(elementSpec=e2))))
+      equation
+        true = valueEq(e1, e2);         
+      then 
+        true;
+    
+    case(REPLACEABLE(NONE()),REPLACEABLE(NONE())) then true;
+    
+    case(_,_) then false;
+    
+  end matchcontinue;
+end replaceableEqual;
+
+public function prefixesEqual "Returns true if two prefixes are equal"
+  input Prefixes prefixes1;
+  input Prefixes prefixes2;
+  output Boolean equal;
+algorithm
+  equal := matchcontinue(prefixes1,prefixes2)
+    local
+      Visibility v1,v2;
+      Redeclare rd1,rd2;
+      Final f1,f2;
+      Absyn.InnerOuter io1,io2;
+      Replaceable rpl1,rpl2;
+        
+    case(PREFIXES(v1,rd1,f1,io1,rpl1),PREFIXES(v2,rd2,f2,io2,rpl2))
+      equation
+        true = valueEq(v1, v2);
+        true = valueEq(rd1, rd2);
+        true = valueEq(f1, f2);
+        true = ModUtil.innerOuterEqual(io1, io2);
+        true = replaceableEqual(rpl1, rpl2); 
+      then 
+        true;
+    
+    case(_,_) then false;
+    
+  end matchcontinue;
+end prefixesEqual;
+
+public function prefixesReplaceable "Returns the replaceable part"
+  input Prefixes prefixes;
+  output Replaceable repl;
+algorithm
+  repl := matchcontinue(prefixes)
+    local
+      Replaceable rpl;
+        
+    case(PREFIXES(replaceablePrefix = rpl)) then rpl;
+    
+  end matchcontinue;
+end prefixesReplaceable;
 
 end SCode;
 

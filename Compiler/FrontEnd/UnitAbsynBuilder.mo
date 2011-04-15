@@ -82,34 +82,34 @@ algorithm
      SI system ,with lower cost on Hz and Bq */
      case({}) equation
        registerUnitWeightDefineunits2({
-       SCode.DEFINEUNIT("m",NONE(),NONE()),
-       SCode.DEFINEUNIT("kg",NONE(),NONE()),
-       SCode.DEFINEUNIT("s",NONE(),NONE()),
-       SCode.DEFINEUNIT("A",NONE(),NONE()),
-       SCode.DEFINEUNIT("k",NONE(),NONE()),
-       SCode.DEFINEUNIT("mol",NONE(),NONE()),
-       SCode.DEFINEUNIT("cd",NONE(),NONE()),
-       SCode.DEFINEUNIT("rad",SOME("m/m"),NONE()),
-       SCode.DEFINEUNIT("sr",SOME("m2/m2"),NONE()),
-       SCode.DEFINEUNIT("Hz",SOME("s-1"),SOME(0.8)),
-       SCode.DEFINEUNIT("N",SOME("m.kg.s-2"),NONE()),
-       SCode.DEFINEUNIT("Pa",SOME("N/m2"),NONE()),
-       SCode.DEFINEUNIT("W",SOME("J/s"),NONE()),
-       SCode.DEFINEUNIT("J",SOME("N.m"),NONE()),
-       SCode.DEFINEUNIT("C",SOME("s.A"),NONE()),
-       SCode.DEFINEUNIT("V",SOME("W/A"),NONE()),
-       SCode.DEFINEUNIT("F",SOME("C/V"),NONE()),
-       SCode.DEFINEUNIT("Ohm",SOME("V/A"),NONE()),
-       SCode.DEFINEUNIT("S",SOME("A/V"),NONE()),
-       SCode.DEFINEUNIT("Wb",SOME("V.s"),NONE()),
-       SCode.DEFINEUNIT("T",SOME("Wb/m2"),NONE()),
-       SCode.DEFINEUNIT("H",SOME("Wb/A"),NONE()),
-       SCode.DEFINEUNIT("lm",SOME("cd.sr"),NONE()),
-       SCode.DEFINEUNIT("lx",SOME("lm/m2"),NONE()),
-       SCode.DEFINEUNIT("Bq",SOME("s-1"),SOME(0.8)),
-       SCode.DEFINEUNIT("Gy",SOME("J/kg"),NONE()),
-       SCode.DEFINEUNIT("Sv",SOME("cd.sr"),NONE()),
-       SCode.DEFINEUNIT("kat",SOME("s-1.mol"),NONE())
+       SCode.DEFINEUNIT("m",SCode.PUBLIC(),NONE(),NONE()),
+       SCode.DEFINEUNIT("kg",SCode.PUBLIC(),NONE(),NONE()),
+       SCode.DEFINEUNIT("s",SCode.PUBLIC(),NONE(),NONE()),
+       SCode.DEFINEUNIT("A",SCode.PUBLIC(),NONE(),NONE()),
+       SCode.DEFINEUNIT("k",SCode.PUBLIC(),NONE(),NONE()),
+       SCode.DEFINEUNIT("mol",SCode.PUBLIC(),NONE(),NONE()),
+       SCode.DEFINEUNIT("cd",SCode.PUBLIC(),NONE(),NONE()),
+       SCode.DEFINEUNIT("rad",SCode.PUBLIC(),SOME("m/m"),NONE()),
+       SCode.DEFINEUNIT("sr",SCode.PUBLIC(),SOME("m2/m2"),NONE()),
+       SCode.DEFINEUNIT("Hz",SCode.PUBLIC(),SOME("s-1"),SOME(0.8)),
+       SCode.DEFINEUNIT("N",SCode.PUBLIC(),SOME("m.kg.s-2"),NONE()),
+       SCode.DEFINEUNIT("Pa",SCode.PUBLIC(),SOME("N/m2"),NONE()),
+       SCode.DEFINEUNIT("W",SCode.PUBLIC(),SOME("J/s"),NONE()),
+       SCode.DEFINEUNIT("J",SCode.PUBLIC(),SOME("N.m"),NONE()),
+       SCode.DEFINEUNIT("C",SCode.PUBLIC(),SOME("s.A"),NONE()),
+       SCode.DEFINEUNIT("V",SCode.PUBLIC(),SOME("W/A"),NONE()),
+       SCode.DEFINEUNIT("F",SCode.PUBLIC(),SOME("C/V"),NONE()),
+       SCode.DEFINEUNIT("Ohm",SCode.PUBLIC(),SOME("V/A"),NONE()),
+       SCode.DEFINEUNIT("S",SCode.PUBLIC(),SOME("A/V"),NONE()),
+       SCode.DEFINEUNIT("Wb",SCode.PUBLIC(),SOME("V.s"),NONE()),
+       SCode.DEFINEUNIT("T",SCode.PUBLIC(),SOME("Wb/m2"),NONE()),
+       SCode.DEFINEUNIT("H",SCode.PUBLIC(),SOME("Wb/A"),NONE()),
+       SCode.DEFINEUNIT("lm",SCode.PUBLIC(),SOME("cd.sr"),NONE()),
+       SCode.DEFINEUNIT("lx",SCode.PUBLIC(),SOME("lm/m2"),NONE()),
+       SCode.DEFINEUNIT("Bq",SCode.PUBLIC(),SOME("s-1"),SOME(0.8)),
+       SCode.DEFINEUNIT("Gy",SCode.PUBLIC(),SOME("J/kg"),NONE()),
+       SCode.DEFINEUNIT("Sv",SCode.PUBLIC(),SOME("cd.sr"),NONE()),
+       SCode.DEFINEUNIT("kat",SCode.PUBLIC(),SOME("s-1.mol"),NONE())
        });   then ();
      case(du) equation registerUnitWeightDefineunits2(du); then ();
   end matchcontinue;
@@ -224,8 +224,10 @@ protected function registerDefineunits2 "help function to registerUnitInClass"
   input list<Absyn.Element> elts;
 algorithm
    _ := matchcontinue(elts)
-   local String name; list<Absyn.NamedArg> args; Absyn.Element du;
-     String exp; Real weight;
+     local 
+       String name; list<Absyn.NamedArg> args; Absyn.Element du;
+       String exp; Real weight;
+     
      case({}) then ();
      /* Derived unit with weigth */
      /*case((du as Absyn.DEFINEUNIT(name=_))::elts) equation
@@ -236,14 +238,15 @@ algorithm
 
      /* Derived unit without weigth */
      case((du as Absyn.DEFINEUNIT(name=_))::elts) equation
-       {SCode.DEFINEUNIT(name,SOME(exp),_)} = SCodeUtil.translateElement(du,false);
+       {SCode.DEFINEUNIT(name,_,SOME(exp),_)} = SCodeUtil.translateElement(du,SCode.PUBLIC());
        UnitParserExt.addDerived(name,exp);
        registerDefineunits2(elts);
      then ();
 
        /* base unit does not not have weight*/
-     case((du as Absyn.DEFINEUNIT(name=_))::elts) equation
-       {SCode.DEFINEUNIT(name,NONE(),_)} = SCodeUtil.translateElement(du,false);
+     case((du as Absyn.DEFINEUNIT(name=_))::elts) 
+       equation
+       {SCode.DEFINEUNIT(name,_,NONE(),_)} = SCodeUtil.translateElement(du,SCode.PUBLIC());
        UnitParserExt.addBase(name);
        registerDefineunits2(elts);
      then ();
@@ -251,6 +254,7 @@ algorithm
      case(_) equation
        print("registerDefineunits failed\n");
      then fail();
+     
   end matchcontinue;
 end registerDefineunits2;
 

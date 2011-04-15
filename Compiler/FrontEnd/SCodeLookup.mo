@@ -56,40 +56,40 @@ public type Import = Absyn.Import;
 protected import SCodeFlattenImports;
 
 public constant Item BUILTIN_REAL = SCodeEnv.CLASS(
-  SCode.CLASSDEF("Real", false, false, false,
-    SCode.CLASS("Real", false, false, SCode.R_TYPE(),
+  SCode.CLASS("Real", SCode.defaultPrefixes, 
+      SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
       SCode.PARTS({}, {}, {}, {}, {}, NONE(), {}, NONE()),
-      Absyn.dummyInfo), NONE()), SCodeEnv.emptyEnv, SCodeEnv.BUILTIN());
+      Absyn.dummyInfo), SCodeEnv.emptyEnv, SCodeEnv.BUILTIN());
   
 public constant Item BUILTIN_INTEGER = SCodeEnv.CLASS(
-  SCode.CLASSDEF("Integer", false, false, false,
-    SCode.CLASS("Integer", false, false, SCode.R_TYPE(),
+  SCode.CLASS("Integer", SCode.defaultPrefixes,
+      SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
       SCode.PARTS({}, {}, {}, {}, {}, NONE(), {}, NONE()),
-      Absyn.dummyInfo), NONE()), SCodeEnv.emptyEnv, SCodeEnv.BUILTIN());
+      Absyn.dummyInfo), SCodeEnv.emptyEnv, SCodeEnv.BUILTIN());
 
 public constant Item BUILTIN_BOOLEAN = SCodeEnv.CLASS(
-  SCode.CLASSDEF("Boolean", false, false, false,
-    SCode.CLASS("Boolean", false, false, SCode.R_TYPE(),
+  SCode.CLASS("Boolean", SCode.defaultPrefixes,
+      SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
       SCode.PARTS({}, {}, {}, {}, {}, NONE(), {}, NONE()),
-      Absyn.dummyInfo), NONE()), SCodeEnv.emptyEnv, SCodeEnv.BUILTIN());
+      Absyn.dummyInfo), SCodeEnv.emptyEnv, SCodeEnv.BUILTIN());
 
 public constant Item BUILTIN_STRING = SCodeEnv.CLASS(
-  SCode.CLASSDEF("String", false, false, false,
-    SCode.CLASS("String", false, false, SCode.R_TYPE(),
+  SCode.CLASS("String", SCode.defaultPrefixes,
+      SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
       SCode.PARTS({}, {}, {}, {}, {}, NONE(), {}, NONE()),
-      Absyn.dummyInfo), NONE()), SCodeEnv.emptyEnv, SCodeEnv.BUILTIN());
+      Absyn.dummyInfo), SCodeEnv.emptyEnv, SCodeEnv.BUILTIN());
 
 public constant Item BUILTIN_STATESELECT = SCodeEnv.CLASS(
-  SCode.CLASSDEF("StateSelect", false, false, false,
-    SCode.CLASS("StateSelect", false, false, SCode.R_ENUMERATION(),
+  SCode.CLASS("StateSelect",  SCode.defaultPrefixes,
+      SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_CLASS(),
       SCode.PARTS({}, {}, {}, {}, {}, NONE(), {}, NONE()),
-      Absyn.dummyInfo), NONE()), SCodeEnv.emptyEnv, SCodeEnv.BUILTIN());
+      Absyn.dummyInfo), SCodeEnv.emptyEnv, SCodeEnv.BUILTIN());
 
 public constant Item BUILTIN_EXTERNALOBJECT = SCodeEnv.CLASS(
-  SCode.CLASSDEF("ExternalObject", false, false, false,
-    SCode.CLASS("ExternalObject", true, false, SCode.R_CLASS(),
+  SCode.CLASS("ExternalObject", SCode.defaultPrefixes,
+      SCode.NOT_ENCAPSULATED(), SCode.PARTIAL(), SCode.R_CLASS(),
       SCode.PARTS({}, {}, {}, {}, {}, NONE(), {}, NONE()),
-      Absyn.dummyInfo), NONE()), SCodeEnv.emptyEnv, SCodeEnv.BUILTIN());
+      Absyn.dummyInfo), SCodeEnv.emptyEnv, SCodeEnv.BUILTIN());
 
 public function lookupSimpleName
   "Looks up a simple identifier in the environment and returns the environment
@@ -968,12 +968,13 @@ end lookupTypeSpec;
 protected function makeDummyMetaType
   input String inTypeName;
   output SCode.Element outClass;
-protected
-  SCode.Class cls;
 algorithm
-  cls := SCode.CLASS(inTypeName, false, false, SCode.R_TYPE(),
+  outClass := 
+  SCode.CLASS(
+    inTypeName, 
+    SCode.defaultPrefixes, 
+    SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
     SCode.PARTS({}, {}, {}, {}, {}, NONE(), {}, NONE()), Absyn.dummyInfo);
-  outClass := SCodeEnv.wrapClassInDummyDef(cls);
 end makeDummyMetaType;
 
 end SCodeLookup;

@@ -118,7 +118,7 @@ algorithm
       DAE.Type t;
       list<Env.Frame> env_1,env,env_2;
       Absyn.Path path;
-      SCode.Class c;
+      SCode.Element c;
       String classname,scope;
       Env.Cache cache;
       Absyn.Info info;
@@ -171,7 +171,7 @@ check if it is function, record, metarecord, etc.
   input Env.Cache inCache;
   input Env.Env inEnv "environment to search in";
   input Absyn.Path inPath "type to look for";
-  input SCode.Class inClass "the class lookupType found";
+  input SCode.Element inClass "the class lookupType found";
   output Env.Cache outCache;
   output DAE.Type outType "the found type";
   output Env.Env outEnv "The environment the type was found in";
@@ -181,7 +181,7 @@ algorithm
       DAE.Type t;
       list<Env.Frame> env_1,env_2,env_3;
       Absyn.Path path;
-      SCode.Class c;
+      SCode.Element c;
       String id;
       SCode.Restriction restr;
       Env.Cache cache;
@@ -189,7 +189,7 @@ algorithm
       list<Types.Var> types;
       list<String> names;
       ClassInf.State ci_state;
-      Boolean encflag;
+      SCode.Encapsulated encflag;
 
     // Record constructors
     case (cache,env_1,path,c as SCode.CLASS(name=id,restriction=SCode.R_RECORD()))
@@ -207,7 +207,7 @@ algorithm
         Inst.instClassIn(
           cache,env_2,InnerOuter.emptyInstHierarchy,UnitAbsyn.noStore,
           DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
-          ci_state, c, false, {}, false, Inst.INNER_CALL(), ConnectionGraph.EMPTY,NONE());
+          ci_state, c, SCode.PUBLIC(), {}, false, Inst.INNER_CALL(), ConnectionGraph.EMPTY,NONE());
         // build names
         (_,names) = SCode.getClassComponents(c);
         // generate the enumeration type
@@ -355,7 +355,7 @@ public function lookupClass "Tries to find a specified class in an environment"
   input Absyn.Path inPath "Path of the class to look for";
   input Boolean msg "Controls error messages";
   output Env.Cache outCache;
-  output SCode.Class outClass;
+  output SCode.Element outClass;
   output Env.Env outEnv;
 algorithm
   (outCache,outClass,outEnv,_) := lookupClass2(inCache,inEnv, inPath, {}, Util.makeStatefulBoolean(false), msg);
@@ -369,7 +369,7 @@ protected function lookupClass2 "help function to lookupClass, does all the work
   input Util.StatefulBoolean inState "If true, we have found a class. If the path was qualified, we should no longer look in previous frames of the environment";
   input Boolean msg "Print error messages";
   output Env.Cache outCache;
-  output SCode.Class outClass;
+  output SCode.Element outClass;
   output Env.Env outEnv "The environment in which the class was found (not the environment inside the class)";
   output list<Env.Frame> outPrevFrames;
 algorithm
@@ -377,7 +377,7 @@ algorithm
     local
       Env.Frame f;
       Env.Cache cache;
-      SCode.Class c;
+      SCode.Element c;
       list<Env.Frame> env,env_1,env_2,fs,prevFrames;
       Absyn.Path path,p,scope;
       String id,pack;
@@ -440,13 +440,13 @@ protected function lookupClassQualified
   input Util.StatefulBoolean inState "If true, we have found a class. If the path was qualified, we should no longer look in previous frames of the environment";
   input Boolean msg "Print error messages";
   output Env.Cache outCache;
-  output SCode.Class outClass;
+  output SCode.Element outClass;
   output Env.Env outEnv "The environment in which the class was found (not the environment inside the class)";
   output list<Env.Frame> outPrevFrames;
 algorithm
   (outCache,outClass,outEnv,outPrevFrames) := matchcontinue (inCache,inEnv,id,path,optFrame,inPrevFrames,inState,msg)
     local
-      SCode.Class c;
+      SCode.Element c;
       Absyn.Path scope;
       Env.Cache cache;
       Env.Env env,prevFrames;
@@ -488,13 +488,13 @@ protected function lookupClassQualified2
   input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.Path path;
-  input SCode.Class c;
+  input SCode.Element c;
   input Option<Env.Frame> optFrame;
   input list<Env.Frame> inPrevFrames "Environment in reverse order. Contains frames we previously had in the scope. Will be looked up instead of the environment in order to avoid infinite recursion.";
   input Util.StatefulBoolean inState "If true, we have found a class. If the path was qualified, we should no longer look in previous frames of the environment";
   input Boolean msg "Print error messages";
   output Env.Cache outCache;
-  output SCode.Class outClass;
+  output SCode.Element outClass;
   output Env.Env outEnv "The environment in which the class was found (not the environment inside the class)";
   output list<Env.Frame> outPrevFrames;
 algorithm
@@ -505,13 +505,15 @@ algorithm
       Env.Frame frame;
       SCode.Restriction restr;
       ClassInf.State ci_state;
-      Boolean encflag;
+      SCode.Encapsulated encflag;
       String id;
+    
     case (cache,env,path,_,SOME(frame),prevFrames,inState,msg)
       equation 
         env = frame::env;
         (cache,c,env,prevFrames) = lookupClass2(cache,env,path,prevFrames,inState,msg);
       then (cache,c,env,prevFrames);
+    
     case (cache,env,path,SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr),NONE(),_,inState,msg)
       equation 
         env = Env.openScope(env, encflag, SOME(id), Env.restrictionToScopeType(restr));
@@ -520,7 +522,7 @@ algorithm
         Inst.partialInstClassIn(
           cache,env,InnerOuter.emptyInstHierarchy,
           DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
-          ci_state, c, false, {});
+          ci_state, c, SCode.PUBLIC(), {});
         // Was 2 cases for package/non-package - all they did was fail or succeed on this
         // If we comment it out, we get faster code, and less of it to maintain
         // ClassInf.valid(cistate1, SCode.R_PACKAGE());
@@ -564,14 +566,14 @@ algorithm
       Absyn.Path path;
       
       // For imported simple name, e.g. A, not possible to assert sub-path package 
-    case (Env.IMPORT(import_ = Absyn.QUAL_IMPORT(path = path)) :: fs,ident) 
+    case (Env.IMPORT(imp = Absyn.QUAL_IMPORT(path = path)) :: fs,ident) 
       equation 
         id = Absyn.pathLastIdent(path);
         true = id ==& ident;
       then ComponentReference.pathToCref(path);
 
     // Named imports, e.g. import A = B.C;
-    case (Env.IMPORT(import_ = Absyn.NAMED_IMPORT(name = id,path = path)) :: fs,ident)
+    case (Env.IMPORT(imp = Absyn.NAMED_IMPORT(name = id,path = path)) :: fs,ident)
       equation
         true = id ==& ident;
       then ComponentReference.pathToCref(path);
@@ -602,7 +604,7 @@ algorithm
       DAE.ComponentRef cref;
       Absyn.Path path;
 
-    case (cache,(Env.IMPORT(import_ = Absyn.UNQUAL_IMPORT(path = path)) :: fs),env,ident)
+    case (cache,(Env.IMPORT(imp = Absyn.UNQUAL_IMPORT(path = path)) :: fs),env,ident)
       equation
         f::prevFrames = listReverse(env);
         cref = ComponentReference.pathToCref(path);
@@ -656,7 +658,7 @@ algorithm
       Absyn.Path path;
       Option<DAE.Const> cnstForRange;
 
-    case (cache,(Env.IMPORT(import_ = Absyn.UNQUAL_IMPORT(path = path)) :: fs),env,ident) /* unique */ 
+    case (cache,(Env.IMPORT(imp = Absyn.UNQUAL_IMPORT(path = path)) :: fs),env,ident) /* unique */ 
       equation 
         f::prevFrames = listReverse(env);
         cref = ComponentReference.pathToCref(path);
@@ -685,20 +687,20 @@ protected function lookupQualifiedImportedClassInFrame
   input SCode.Ident inIdent;
   input Util.StatefulBoolean inState;
   output Env.Cache outCache;
-  output SCode.Class outClass;
+  output SCode.Element outClass;
   output Env.Env outEnv;
   output Env.Env outPrevFrames;
 algorithm
   (outCache,outClass,outEnv,outPrevFrames) := matchcontinue (inCache,inEnvItemLst,inEnv,inIdent,inState)
     local
       Env.Frame fr;
-      SCode.Class c;
+      SCode.Element c;
       list<Env.Frame> env_1,env,prevFrames;
       String id,ident;
       list<Env.Item> fs;
       Absyn.Path path;
       Env.Cache cache;
-    case (cache,(Env.IMPORT(import_ = Absyn.QUAL_IMPORT(path = Absyn.IDENT(name = id))) :: _),env,ident,inState)
+    case (cache,(Env.IMPORT(imp = Absyn.QUAL_IMPORT(path = Absyn.IDENT(name = id))) :: _),env,ident,inState)
       equation
         true = id ==& ident "For imported paths A, not possible to assert sub-path package";
         Util.setStatefulBoolean(inState,true);
@@ -706,7 +708,7 @@ algorithm
         (cache,c,env_1,prevFrames) = lookupClass2(cache,{fr},Absyn.IDENT(id),prevFrames,Util.makeStatefulBoolean(false),true);
       then
         (cache,c,env_1,prevFrames);
-    case (cache,(Env.IMPORT(import_ = Absyn.QUAL_IMPORT(path = path)) :: fs),env,ident,inState)
+    case (cache,(Env.IMPORT(imp = Absyn.QUAL_IMPORT(path = path)) :: fs),env,ident,inState)
       equation
         id = Absyn.pathLastIdent(path) "For imported path A.B.C, assert A.B is package" ;
         true = id ==& ident;
@@ -721,7 +723,7 @@ algorithm
         (cache,c,env_1,prevFrames);
 
     /* commented since MSL does not follow this rule, instead assertPackage gives warning */
-    /*case (cache,(Env.IMPORT(import_ = Absyn.QUAL_IMPORT(path = path)) :: fs),env,ident)
+    /*case (cache,(Env.IMPORT(imp = Absyn.QUAL_IMPORT(path = path)) :: fs),env,ident)
       equation
         id = Absyn.pathLastIdent(path) "If not package, error" ;
         true = stringEq(id, ident);
@@ -734,7 +736,7 @@ algorithm
         Error.addMessage(Error.IMPORT_PACKAGES_ONLY, {str});
       then
         fail();*/
-    case (cache,(Env.IMPORT(import_ = Absyn.NAMED_IMPORT(name = id,path = path)) :: fs),env,ident,inState)
+    case (cache,(Env.IMPORT(imp = Absyn.NAMED_IMPORT(name = id,path = path)) :: fs),env,ident,inState)
       equation
         true = id ==& ident "Named imports";
         Util.setStatefulBoolean(inState,true);
@@ -749,7 +751,7 @@ algorithm
 
     /* Error message if named import is not package */
     /* commented since MSL does not follow this rule, instead assertPackage gives warning */
-    /*case (cache,(Env.IMPORT(import_ = Absyn.NAMED_IMPORT(name = id,path = path)) :: fs),env,ident)
+    /*case (cache,(Env.IMPORT(imp = Absyn.NAMED_IMPORT(name = id,path = path)) :: fs),env,ident)
       equation
         true = stringEq(id, ident) "Assert package for Named imports" ;
         fr = Env.topFrame(env);
@@ -782,9 +784,10 @@ algorithm
   (outCache,outBoolean) := matchcontinue (inCache,inEnvItemLst,inEnv,inIdent)
     local
       Env.Frame fr,f;
-      SCode.Class c;
+      SCode.Element c;
       String id,ident;
-      Boolean encflag,res;
+      SCode.Encapsulated encflag;
+      Boolean res;
       SCode.Restriction restr;
       list<Env.Frame> env_1,env2,env;
       ClassInf.State ci_state;
@@ -794,7 +797,7 @@ algorithm
       Env.Cache cache;
 
     // Look in cache
-    case (cache,(Env.IMPORT(import_ = Absyn.UNQUAL_IMPORT(path = path)) :: fs),env,ident)
+    case (cache,(Env.IMPORT(imp = Absyn.UNQUAL_IMPORT(path = path)) :: fs),env,ident)
       equation
         firstIdent = Absyn.pathFirstIdent(path);
           f::_= Env.cacheGet(Absyn.IDENT(firstIdent),path,cache);
@@ -803,7 +806,7 @@ algorithm
         (cache,true);
 
     // Not found, instantiate
-    case (cache,(Env.IMPORT(import_ = Absyn.UNQUAL_IMPORT(path = path)) :: fs),env,ident)
+    case (cache,(Env.IMPORT(imp = Absyn.UNQUAL_IMPORT(path = path)) :: fs),env,ident)
       equation
         fr = Env.topFrame(env);
         (cache,(c as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1) = lookupClass(cache,{fr}, path, false);
@@ -813,7 +816,7 @@ algorithm
        Inst.partialInstClassIn(
           cache,env2,InnerOuter.emptyInstHierarchy,
           DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
-          ci_state, c, false, {});
+          ci_state, c, SCode.PUBLIC(), {});
         (cache,_,_) = lookupClass(cache,{f}, Absyn.IDENT(ident), false);
       then
         (cache,true);
@@ -835,7 +838,7 @@ protected function lookupUnqualifiedImportedClassInFrame "function: lookupUnqual
   input Env.Env inEnv;
   input SCode.Ident inIdent;
   output Env.Cache outCache;
-  output SCode.Class outClass;
+  output SCode.Element outClass;
   output Env.Env outEnv;
   output Env.Env outPrevFrames;
   output Boolean outBoolean;
@@ -843,9 +846,10 @@ algorithm
   (outCache,outClass,outEnv,outPrevFrames,outBoolean) := matchcontinue (inCache,inEnvItemLst,inEnv,inIdent)
     local
       Env.Frame fr;
-      SCode.Class c,c_1;
+      SCode.Element c,c_1;
       String id,ident;
-      Boolean encflag,more,unique;
+      SCode.Encapsulated encflag;
+      Boolean more,unique;
       SCode.Restriction restr;
       list<Env.Frame> env_1,env2,env,prevFrames;
       ClassInf.State ci_state,cistate1;
@@ -855,7 +859,7 @@ algorithm
       Absyn.Ident firstIdent;
 
     // Look in cache
-    case (cache,(Env.IMPORT(import_ = Absyn.UNQUAL_IMPORT(path = path)) :: fs),env,ident) /* unique */
+    case (cache,(Env.IMPORT(imp = Absyn.UNQUAL_IMPORT(path = path)) :: fs),env,ident) /* unique */
       equation
         firstIdent = Absyn.pathFirstIdent(path);
         env2 = Env.cacheGet(Absyn.IDENT(firstIdent),path,cache);
@@ -866,7 +870,7 @@ algorithm
         (cache,c_1,env2,prevFrames,unique);
 
     // Not in cache, instantiate.
-    case (cache,(Env.IMPORT(import_ = Absyn.UNQUAL_IMPORT(path = path)) :: fs),env,ident) /* unique */
+    case (cache,(Env.IMPORT(imp = Absyn.UNQUAL_IMPORT(path = path)) :: fs),env,ident) /* unique */
       equation
         fr::prevFrames = listReverse(env);
         (cache,(c as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1,prevFrames) = lookupClass2(cache,{fr},path,prevFrames,Util.makeStatefulBoolean(false),false);
@@ -876,7 +880,7 @@ algorithm
         Inst.partialInstClassIn(
           cache,env2,InnerOuter.emptyInstHierarchy,
           DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
-          ci_state, c, false, {});
+          ci_state, c, SCode.PUBLIC(), {});
         // Restrict import to the imported scope only, not its parents, thus {f} below
         (cache,c_1,env2,prevFrames) = lookupClass2(cache,env2,Absyn.IDENT(ident),prevFrames,Util.makeStatefulBoolean(true),false) "Restrict import to the imported scope only, not its parents..." ;
         (cache,more) = moreLookupUnqualifiedImportedClassInFrame(cache,fs, env, ident);
@@ -899,12 +903,12 @@ public function lookupRecordConstructorClass "function: lookupRecordConstructorC
   input Env.Env inEnv;
   input Absyn.Path inPath;
   output Env.Cache outCache;
-  output SCode.Class outClass;
+  output SCode.Element outClass;
   output Env.Env outEnv;
 algorithm
   (outCache,outClass,outEnv) := match (cache,inEnv,inPath)
     local
-      SCode.Class c;
+      SCode.Element c;
       list<Env.Frame> env,env_1;
       Absyn.Path path;
       String name;
@@ -930,50 +934,58 @@ algorithm
   (outCache,attr,tp) := match(cache,env,cr)
     local 
       DAE.ComponentRef cr1;
-      Boolean f,streamPrefix;
-      SCode.Variability var; SCode.Accessibility acc;
+      SCode.Flow f;
+      SCode.Stream streamPrefix;
+      SCode.Variability var; 
+      SCode.Accessibility acc;
       Absyn.Direction dir;
       Absyn.InnerOuter io;
       DAE.Type ty1;
       DAE.Attributes attr1;
+    
     // unqualified component reference
-    case(cache,env,cr as DAE.CREF_IDENT(ident=_)) equation
-      (cache,attr1,ty1,_,_,_,_,_,_) = lookupVarLocal(cache,env,cr);
-    then (cache,attr1,ty1);
+    case(cache,env,cr as DAE.CREF_IDENT(ident=_)) 
+      equation
+        (cache,attr1,ty1,_,_,_,_,_,_) = lookupVarLocal(cache,env,cr);
+      then 
+        (cache,attr1,ty1);
 
     // qualified component reference
-    case(cache,env,cr as DAE.CREF_QUAL(ident=_)) equation
-       (cache,attr1 as DAE.ATTR(f,streamPrefix,acc,var,dir,_),ty1,_,_,_,_,_,_) = lookupVarLocal(cache,env,cr);
-      cr1 = ComponentReference.crefStripLastIdent(cr);
-      /* Find innerOuter attribute from "parent" */
-      (cache,DAE.ATTR(innerOuter=io),_,_,_,_,_,_,_) = lookupVarLocal(cache,env,cr1);
-    then (cache,DAE.ATTR(f,streamPrefix,acc,var,dir,io),ty1);
+    case(cache,env,cr as DAE.CREF_QUAL(ident=_)) 
+      equation
+        (cache,attr1 as DAE.ATTR(f,streamPrefix,acc,var,dir,_),ty1,_,_,_,_,_,_) = lookupVarLocal(cache,env,cr);
+        cr1 = ComponentReference.crefStripLastIdent(cr);
+        // Find innerOuter attribute from "parent"
+        (cache,DAE.ATTR(innerOuter=io),_,_,_,_,_,_,_) = lookupVarLocal(cache,env,cr1);
+      then 
+        (cache,DAE.ATTR(f,streamPrefix,acc,var,dir,io),ty1);
   end match;
 end lookupConnectorVar;
 
-public function lookupVar "LS: when looking up qualified component reference, lookupVar only
-checks variables when looking for the prefix, i.e. for Constants.PI
-where Constants is a package and is implicitly instantiated, PI is not
-found since Constants is not a variable (it is a type and/or class).
+public function lookupVar 
+  "LS: when looking up qualified component reference, lookupVar only
+   checks variables when looking for the prefix, i.e. for Constants.PI
+   where Constants is a package and is implicitly instantiated, PI is not
+   found since Constants is not a variable (it is a type and/or class).
 
-1) One option is to make it a variable and put it in the global frame.
-2) Another option is to add a lookup rule that also looks in types.
+   1) One option is to make it a variable and put it in the global frame.
+   2) Another option is to add a lookup rule that also looks in types.
 
-Now implicitly instantiated packages exists both as a class and as a
-type (see implicit_instantiation in Inst.mo). Is this correct?
+   Now implicitly instantiated packages exists both as a class and as a
+   type (see implicit_instantiation in Inst.mo). Is this correct?
 
-lookupVar is modified to implement 2. Is this correct?
+   lookupVar is modified to implement 2. Is this correct?
 
-old lookupVar is changed to lookupVarInternal and a new lookupVar
-is written, that first tests the old lookupVar, and if not found
-looks in the types
+   old lookupVar is changed to lookupVarInternal and a new lookupVar
+   is written, that first tests the old lookupVar, and if not found
+   looks in the types
 
-  function: lookupVar
+   function: lookupVar
 
-  This function tries to finds a variable in the environment
+   This function tries to finds a variable in the environment
 
-  Arg1: The environment to search in
-  Arg2: The variable to search for."
+   Arg1: The environment to search in
+   Arg2: The variable to search for."
   input Env.Cache inCache;
   input Env.Env inEnv;
   input DAE.ComponentRef inComponentRef;
@@ -1162,9 +1174,9 @@ algorithm
   (outCache,outClassEnv,outAttributes,outType,outBinding,constOfForIteratorRange,splicedExpData,outComponentEnv,name) :=
   matchcontinue (inCache,inEnv,inComponentRef,inPrevFrames,inState)
     local
-      SCode.Class c;
+      SCode.Element c;
       String n,id;
-      Boolean encflag;
+      SCode.Encapsulated encflag;
       SCode.Restriction r;
       list<Env.Frame> env2,env3,env5,env,fs,p_env,prevFrames, classEnv, componentEnv;
       ClassInf.State ci_state;
@@ -1221,7 +1233,7 @@ algorithm
         Inst.instClassIn(
           cache,env3,InnerOuter.emptyInstHierarchy,UnitAbsyn.noStore,
           DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
-          ci_state, c, false, {}, /*true*/false, Inst.INNER_CALL(), ConnectionGraph.EMPTY, filterCref);
+          ci_state, c, SCode.PUBLIC(), {}, /*true*/false, Inst.INNER_CALL(), ConnectionGraph.EMPTY, filterCref);
         (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData,componentEnv,name) = lookupVarInPackages(cache,env5,cref,prevFrames,inState);
       then
         (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData,componentEnv,name);
@@ -1418,12 +1430,12 @@ public function lookupClassLocal "function: lookupClassLocal
   Searches for a class definition in the local scope."
   input Env.Env inEnv;
   input SCode.Ident inIdent;
-  output SCode.Class outClass;
+  output SCode.Element outClass;
   output Env.Env outEnv;
 algorithm
   (outClass,outEnv) := match (inEnv,inIdent)
     local
-      SCode.Class cl;
+      SCode.Element cl;
       list<Env.Frame> env;
       Option<String> sid;
       Env.AvlTree ht;
@@ -1436,8 +1448,9 @@ algorithm
   end match;
 end lookupClassLocal;
 
-public function lookupAndInstantiate "performs a lookup of a class and then instantiate that class to
-return its environment. Helper function used e.g by Inst.mo"
+public function lookupAndInstantiate 
+ "performs a lookup of a class and then instantiate that class 
+  to return its environment. Helper function used e.g by Inst.mo"
   input Env.Cache inCache;
   input Env.Env env;
   input Absyn.Path path;
@@ -1449,25 +1462,26 @@ algorithm
   (outCache,classEnv) := matchcontinue(inCache,env,path,mod,msg)
     local  Env.Cache cache;
       String cn2;
-      Boolean enc2,enc;
+      SCode.Encapsulated enc,enc2;
       SCode.Restriction r;
       ClassInf.State new_ci_state;
       Env.Env cenv,cenv_2;
       Absyn.Path scope;
-      SCode.Class c;
+      SCode.Element c;
       Absyn.Ident ident;
       DAE.Mod dmod;
 
-      // Try to find in cache.
+    // Try to find in cache.
     case(cache,env,path,mod,msg) /* Should we only lookup if it is SCode.NOMOD? */
       equation
         (cache,(c as SCode.CLASS(name=cn2,encapsulatedPrefix=enc2,restriction=r)),cenv) = lookupClass(cache,env,path,msg);
         SOME(scope) = Env.getEnvPath(cenv);
         ident = Absyn.pathLastIdent(path);
        classEnv = Env.cacheGet(scope,Absyn.IDENT(ident),cache);
-      then (cache,classEnv);
+      then 
+        (cache,classEnv);
 
-      // Not found in cache, lookup and instantiate.
+    // Not found in cache, lookup and instantiate.
     case(cache,env,path,mod,msg)
       equation
         // Debug.traceln("lookupAndInstantiate " +& Absyn.pathString(path) +& ", s:" +& Env.printEnvPathStr(env) +& "m:" +& SCode.printModStr(mod));
@@ -1482,13 +1496,16 @@ algorithm
           cache,cenv_2,InnerOuter.emptyInstHierarchy,
           dmod, Prefix.NOPRE(), Connect.emptySet,
           new_ci_state, c,
-          false, {});
-      then (cache,classEnv);
+          SCode.PUBLIC(), {});
+      then 
+        (cache,classEnv);
+    
     case(cache,env,path,mod,msg)
       equation
         true = RTOpts.debugFlag("failtrace");
         Debug.traceln( "- Lookup.lookupAndInstantiate failed " +&  Absyn.pathString(path) +& " with mod: " +& SCode.printModStr(mod) +& " in scope " +& Env.printEnvPathStr(env));
-     then fail();
+     then 
+       fail();
   end matchcontinue;
 end lookupAndInstantiate;
 
@@ -1607,21 +1624,21 @@ algorithm
       list<tuple<DAE.TType, Option<Absyn.Path>>> res;
       list<Env.Frame> env,fs,env_1,env2,env_2;
       String pack,str;
-      SCode.Class c;
-      Boolean encflag;
+      SCode.Element c;
+      SCode.Encapsulated encflag;
       SCode.Restriction restr;
       ClassInf.State ci_state,cistate1;
       Env.Frame f;
       Env.Cache cache;
       
-    /* Simple name, search frame */
+    // Simple name, search frame
     case (cache,(env as (Env.FRAME(optName = sid,clsAndVars = ht,types = httypes) :: fs)),id as Absyn.IDENT(name = str),followedQual,info)
       equation
         (cache,res as _::_)= lookupFunctionsInFrame(cache, ht, httypes, env, str, info);
       then
         (cache,res);
 
-    /* Simple name, if class with restriction function found in frame instantiate to get type. */
+    // Simple name, if class with restriction function found in frame instantiate to get type.
     case (cache, f::fs, id as Absyn.IDENT(name = str),followedQual,info)
       equation
         // adrpo: do not search in the entire environment as we anyway recurse with the fs argument!
@@ -1638,7 +1655,7 @@ algorithm
       then
         (cache,res);
 
-    /* For qualified function names, e.g. Modelica.Math.sin */
+    // For qualified function names, e.g. Modelica.Math.sin
     case (cache,(env as (Env.FRAME(optName = sid,clsAndVars = ht,types = httypes) :: fs)),id as Absyn.QUALIFIED(name = pack,path = path),followedQual,info)
       equation
         (cache,(c as SCode.CLASS(name=str,encapsulatedPrefix=encflag,restriction=restr)),env_1) = lookupClass(cache, env, Absyn.IDENT(pack), false) ;
@@ -1646,24 +1663,24 @@ algorithm
         ci_state = ClassInf.start(restr, Env.getEnvName(env2));
 
         //(cache,_,env_2,_,_,_,_,_,_) = Inst.instClassIn(cache,env2, DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
-        //   ci_state, c, false/*FIXME:prot*/, {}, false, ConnectionGraph.EMPTY);
+        //   ci_state, c, SCode.PUBLIC()/*FIXME:prot*/, {}, false, ConnectionGraph.EMPTY);
         (cache,env_2,_,cistate1) =
         Inst.partialInstClassIn(
           cache, env2, InnerOuter.emptyInstHierarchy,
           DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
-          ci_state, c, false, {});
+          ci_state, c, SCode.PUBLIC(), {});
         (cache,res) = lookupFunctionsInEnv2(cache, env_2, path, true, info);
       then
         (cache,res);
 
-    /* Did not match. Search next frame. */
-    case (cache,Env.FRAME(isEncapsulated = false)::fs,id,false,info)
+    // Did not match. Search next frame. 
+    case (cache,Env.FRAME(encapsulatedPrefix = SCode.NOT_ENCAPSULATED())::fs,id,false,info)
       equation
         (cache,res) = lookupFunctionsInEnv2(cache, fs, id, false, info);
       then
         (cache,res);
     
-    case (cache,Env.FRAME(isEncapsulated = true)::env,id as Absyn.IDENT(name = str),false,info)
+    case (cache,Env.FRAME(encapsulatedPrefix = SCode.ENCAPSULATED())::env,id as Absyn.IDENT(name = str),false,info)
       equation
         (cache,env) = Builtin.initialEnv(cache);
         (cache,res) = lookupFunctionsInEnv2(cache, env, id, true, info);
@@ -1678,14 +1695,12 @@ protected function createGenericBuiltinFunctions "function: createGenericBuiltin
 
   This function creates function types on-the-fly for special builtin
   operators/functions which can not be represented in the builtin
-  environment.
-"
+  environment."
   input Env.Env inEnv;
   input String inString;
   output list<DAE.Type> outTypesTypeLst;
 algorithm
-  outTypesTypeLst:=
-  match (inEnv,inString)
+  outTypesTypeLst := match (inEnv,inString)
     local list<Env.Frame> env;
     /* function_name cardinality */
     case (env,"cardinality")
@@ -1784,7 +1799,7 @@ algorithm
       tuple<DAE.TType, Option<Absyn.Path>> t,ty;
       list<Env.Frame> env,cenv,env_1,env_3;
       String id,n;
-      SCode.Class cdef;
+      SCode.Element cdef;
       Env.Cache cache;
       SCode.Restriction restr;
 
@@ -1833,29 +1848,30 @@ protected function lookupFunctionsInFrame
   output Env.Cache outCache;
   output list<DAE.Type> outTypesTypeLst;
 algorithm
-  (outCache,outTypesTypeLst):=
-  matchcontinue (inCache,inBinTree1,inBinTree2,inEnv3,inIdent4,info)
+  (outCache,outTypesTypeLst) := matchcontinue (inCache,inBinTree1,inBinTree2,inEnv3,inIdent4,info)
     local
       list<tuple<DAE.TType, Option<Absyn.Path>>> tps;
       Env.AvlTree httypes;
       Env.AvlTree ht;
       list<Env.Frame> env,cenv,env_1;
       String id,n;
-      SCode.Class cdef;
+      SCode.Element cdef;
       tuple<DAE.TType, Option<Absyn.Path>> ftype,t;
       DAE.TType tty;
       Env.Cache cache;
       SCode.Restriction restr;
 
-    case (cache,ht,httypes,env,id,_) /* Classes and vars Types */
+    // Classes and vars Types 
+    case (cache,ht,httypes,env,id,_)
       equation
         Env.TYPE(tps) = Env.avlTreeGet(httypes, id);
       then
         (cache,tps);
 
-    case (cache,ht,httypes,env,id,_) /* MetaModelica Partial Function. sjoelund */
+    // MetaModelica Partial Function. sjoelund
+    case (cache,ht,httypes,env,id,_)
       equation
-        Env.VAR(instantiated = DAE.TYPES_VAR(type_ = (tty as DAE.T_FUNCTION(_,_,_),_))) = Env.avlTreeGet(ht, id);
+        Env.VAR(instantiated = DAE.TYPES_VAR(ty = (tty as DAE.T_FUNCTION(_,_,_),_))) = Env.avlTreeGet(ht, id);
       then
         (cache,{(tty, SOME(Absyn.IDENT(id)))});
 
@@ -1866,7 +1882,7 @@ algorithm
       then
         fail();
 
-    /* Records, create record constructor function*/
+    // Records, create record constructor function
     case (cache,ht,httypes,env,id,_)
       equation
         Env.CLASS((cdef as SCode.CLASS(name=n,restriction=SCode.R_RECORD())),cenv) = Env.avlTreeGet(ht, id);
@@ -1874,7 +1890,7 @@ algorithm
       then
         (cache,{ftype});
 
-    /* Found class that is function, instantiate to get type*/
+    // Found class that is function, instantiate to get type
     case (cache,ht,httypes,env,id,info)
       equation
         Env.CLASS((cdef as SCode.CLASS(restriction=restr)),cenv) = Env.avlTreeGet(ht, id);
@@ -1887,7 +1903,7 @@ algorithm
       then
         (cache,tps);
 
-     /* Found class that is is external object*/
+     // Found class that is is external object
      case (cache,ht,httypes,env,id,info)
         equation
           Env.CLASS(cdef,cenv) = Env.avlTreeGet(ht, id);
@@ -1908,7 +1924,7 @@ end lookupFunctionsInFrame;
 protected function buildRecordType ""
   input Env.Cache cache;
   input Env.Env env;
-  input SCode.Class cdef;
+  input SCode.Element cdef;
   output Env.Cache outCache;
   output Env.Env outEnv;
   output Types.Type ftype;
@@ -1930,17 +1946,17 @@ public function buildRecordConstructorClass
   class given as argument."
   input Env.Cache cache;
   input Env.Env inEnv;
-  input SCode.Class inClass;
+  input SCode.Element inClass;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output SCode.Class outClass;
+  output SCode.Element outClass;
 algorithm
   (outCache,outEnv,outClass) :=
   matchcontinue (cache,inEnv,inClass)
     local
       list<SCode.Element> funcelts,elts;
       SCode.Element reselt;
-      SCode.Class cl;
+      SCode.Element cl;
       String id;
       list<Env.Frame> env;
       Absyn.Info info;
@@ -1949,7 +1965,7 @@ algorithm
       equation
         (cache,env,funcelts,elts) = buildRecordConstructorClass2(cache,env,cl,DAE.NOMOD());
         reselt = buildRecordConstructorResultElt(funcelts,id,env);
-        cl = SCode.CLASS(id,false,false,SCode.R_FUNCTION(),SCode.PARTS((reselt :: funcelts),{},{},{},{},NONE(),{},NONE()),info);
+        cl = SCode.CLASS(id,SCode.defaultPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_FUNCTION(),SCode.PARTS((reselt :: funcelts),{},{},{},{},NONE(),{},NONE()),info);
       then
         (cache,env,cl);
     case (cache,env,cl)
@@ -1962,7 +1978,7 @@ end buildRecordConstructorClass;
 protected function buildRecordConstructorClass2
   input Env.Cache cache;
   input Env.Env env;
-  input SCode.Class cl;
+  input SCode.Element cl;
   input DAE.Mod mods;
   output Env.Cache outCache;
   output Env.Env outEnv;
@@ -1982,7 +1998,7 @@ algorithm
     case (cache,env,cl as SCode.CLASS(name = name,info = info),mods)
       equation
         (cache,env,_,elts,_,_,_,_) = InstExtends.instDerivedClasses(cache,env,InnerOuter.emptyInstHierarchy,DAE.NOMOD(),cl,true,info);
-        env = Env.openScope(env, false, SOME(name), SOME(Env.CLASS_SCOPE()));
+        env = Env.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(name), SOME(Env.CLASS_SCOPE()));
         fpath = Env.getEnvName(env);
         (cdefelts,classExtendsElts,extendsElts,compElts) = Inst.splitElts(elts);
         (_,env,_,_,eltsMods,_,_,_,_) = InstExtends.instExtendsAndClassExtendsList(Env.emptyCache(), env, InnerOuter.emptyInstHierarchy, DAE.NOMOD(), Prefix.NOPRE(), extendsElts, classExtendsElts, ClassInf.RECORD(fpath), name, true, false);
@@ -2039,7 +2055,12 @@ algorithm
       list<SCode.Element> res;
       SCode.Element comp;
       String id;
-      Boolean fl,repl,prot,f,st,redecl;
+      SCode.Flow fl;
+      SCode.Replaceable repl;
+      SCode.Visibility vis;
+      SCode.Final f;
+      SCode.Stream st;
+      SCode.Redeclare redecl;
       Absyn.InnerOuter io;
       list<Absyn.Subscript> d;
       SCode.Accessibility ac;
@@ -2056,7 +2077,11 @@ algorithm
     case ({},_,_) then {};
     
     // final becomes protected, Modelica Spec 3.2, Section 12.6, Record Constructor Functions, page 140
-    case ((((comp as SCode.COMPONENT(id,io,fl as true,repl,prot,redecl,SCode.ATTR(d,f,st,ac,var,dir),tp,mod,comment,cond,info,cc)),cmod) :: rest),mods,env)
+    case ((((comp as 
+      SCode.COMPONENT(
+        id,
+        SCode.PREFIXES(vis, redecl, f as SCode.FINAL(), io, repl),
+        SCode.ATTR(d,fl,st,ac,var,dir),tp,mod,comment,cond,info)),cmod) :: rest),mods,env)
       equation
         (_,mod_1) = Mod.elabMod(Env.emptyCache(), env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod, false, info);
         mod_1 = Mod.merge(mods,mod_1,env,Prefix.NOPRE());
@@ -2075,10 +2100,14 @@ algorithm
         // var = SCode.VAR();
         // dir = Absyn.INPUT();
       then
-        (SCode.COMPONENT(id,io,fl,repl,prot,redecl,SCode.ATTR(d,f,st,ac,var,dir),tp,umod,comment,cond,info,cc) :: res);
+        (SCode.COMPONENT(id,SCode.PREFIXES(vis,redecl,f,io,repl),SCode.ATTR(d,fl,st,ac,var,dir),tp,umod,comment,cond,info) :: res);
     
     // constants become protected, Modelica Spec 3.2, Section 12.6, Record Constructor Functions, page 140
-    case ((((comp as SCode.COMPONENT(id,io,fl,repl,prot,redecl,SCode.ATTR(d,f,st,ac,var as SCode.CONST(),dir),tp,mod,comment,cond,info,cc)),cmod) :: rest),mods,env)
+    case ((((comp as 
+      SCode.COMPONENT(
+        id,
+        SCode.PREFIXES(vis, redecl, f, io, repl),
+        SCode.ATTR(d,fl,st,ac,var as SCode.CONST(),dir),tp,mod,comment,cond,info)),cmod) :: rest),mods,env)
       equation
         (_,mod_1) = Mod.elabMod(Env.emptyCache(), env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod, false, info);
         mod_1 = Mod.merge(mods,mod_1,env,Prefix.NOPRE());
@@ -2097,10 +2126,14 @@ algorithm
         // var = SCode.VAR();
         dir = Absyn.INPUT();
       then
-        (SCode.COMPONENT(id,io,fl,repl,prot,redecl,SCode.ATTR(d,f,st,ac,var,dir),tp,umod,comment,cond,info,cc) :: res);
+        (SCode.COMPONENT(id,SCode.PREFIXES(vis,redecl,f,io,repl),SCode.ATTR(d,fl,st,ac,var,dir),tp,umod,comment,cond,info) :: res);
     
     // all others, add input see Modelica Spec 3.2, Section 12.6, Record Constructor Functions, page 140
-    case ((((comp as SCode.COMPONENT(id,io,fl,repl,prot,redecl,SCode.ATTR(d,f,st,ac,var,dir),tp,mod,comment,cond,info,cc)),cmod) :: rest),mods,env)
+    case ((((comp as 
+      SCode.COMPONENT(
+        id,
+        SCode.PREFIXES(vis, redecl, f, io, repl),
+        SCode.ATTR(d,fl,st,ac,var,dir),tp,mod,comment,cond,info)),cmod) :: rest),mods,env)
       equation
         (_,mod_1) = Mod.elabMod(Env.emptyCache(), env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod, false, info);
         mod_1 = Mod.merge(mods,mod_1,env,Prefix.NOPRE());
@@ -2119,7 +2152,7 @@ algorithm
         // var = SCode.VAR();
         dir = Absyn.INPUT();
       then
-        (SCode.COMPONENT(id,io,fl,repl,prot,redecl,SCode.ATTR(d,f,st,ac,var,dir),tp,umod,comment,cond,info,cc) :: res);
+        (SCode.COMPONENT(id,SCode.PREFIXES(vis, redecl, f, io, repl),SCode.ATTR(d,fl,st,ac,var,dir),tp,umod,comment,cond,info) :: res);
 
     case ((comp,cmod)::_,mods,_)
       equation
@@ -2143,10 +2176,10 @@ algorithm
   //print(" with generated mods:" +& SCode.printSubs1Str(submodlst) +& "\n");
   //print(" creating element of type: " +& id +& "\n");
   //print(" with generated mods:" +& SCode.printSubs1Str(submodlst) +& "\n");
-  outElement := SCode.COMPONENT("result",Absyn.UNSPECIFIED(),false,false,false,false,
-          SCode.ATTR({},false,false,SCode.RW(),SCode.VAR(),Absyn.OUTPUT()),
+  outElement := SCode.COMPONENT("result",SCode.defaultPrefixes,
+          SCode.ATTR({},SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RW(),SCode.VAR(),Absyn.OUTPUT()),
           Absyn.TPATH(Absyn.IDENT(id),NONE()),
-          SCode.NOMOD(),NONE(),NONE(),Absyn.dummyInfo,NONE());
+          SCode.NOMOD(),NONE(),NONE(),Absyn.dummyInfo);
 end buildRecordConstructorResultElt;
 
 public function isInBuiltinEnv
@@ -2158,8 +2191,7 @@ public function isInBuiltinEnv
   output Env.Cache outCache;
   output Boolean outBoolean;
 algorithm
-  (outCache,outBoolean):=
-  matchcontinue (inCache,inPath)
+  (outCache,outBoolean) := matchcontinue (inCache,inPath)
     local
       list<Env.Frame> i_env;
       Absyn.Path path;
@@ -2193,27 +2225,27 @@ protected function lookupClassInEnv "
   input Util.StatefulBoolean inState;
   input Boolean inMsg;
   output Env.Cache outCache;
-  output SCode.Class outClass;
+  output SCode.Element outClass;
   output Env.Env outEnv;
   output list<Env.Frame> outPrevFrames;
 algorithm
   (outCache,outClass,outEnv,outPrevFrames) := matchcontinue (inCache,inEnv,id,inPrevFrames,inState,inMsg)
     local
-      SCode.Class c;
+      SCode.Element c;
       list<Env.Frame> env_1,env,fs,i_env,prevFrames;
       Env.Frame frame;
       String sid,scope;
       Boolean msg,msgflag;
       Env.Cache cache;
             
-    case (cache,env as (frame::_),id,prevFrames,inState,msg) /* msg */ 
+    case (cache,env as (frame::_),id,prevFrames,inState,msg) 
       equation 
         (cache,c,env_1,prevFrames) = lookupClassInFrame(cache,frame,env,id,prevFrames,inState,msg);
         Util.setStatefulBoolean(inState,true);
       then
         (cache,c,env_1,prevFrames);
     
-    case (cache,(env as ((frame as Env.FRAME(optName = SOME(sid),isEncapsulated = true)) :: fs)),id,prevFrames,inState,_)
+    case (cache,(env as ((frame as Env.FRAME(optName = SOME(sid),encapsulatedPrefix = SCode.ENCAPSULATED())) :: fs)),id,prevFrames,inState,_)
       equation
         true = stringEq(id, sid) "Special case if looking up the class that -is- encapsulated. That must be allowed." ;
         (cache,c,env,prevFrames) = lookupClassInEnv(cache, fs, id, frame::prevFrames, inState, true);
@@ -2221,9 +2253,9 @@ algorithm
       then
         (cache,c,env,prevFrames);
 
-      /* lookup stops at encapsulated classes except for builtin
-         scope, if not found in builtin scope, error */
-    case (cache,(env as (Env.FRAME(optName = SOME(sid),isEncapsulated = true) :: fs)),id,prevFrames,inState,true)
+    // lookup stops at encapsulated classes except for builtin
+    // scope, if not found in builtin scope, error 
+    case (cache,(env as (Env.FRAME(optName = SOME(sid),encapsulatedPrefix = SCode.ENCAPSULATED()) :: fs)),id,prevFrames,inState,true)
       equation
         (cache,i_env) = Builtin.initialEnv(cache);
         failure((_,_,_,_) = lookupClassInEnv(cache,i_env, id, {}, inState, false));
@@ -2231,8 +2263,9 @@ algorithm
         Error.addMessage(Error.LOOKUP_ERROR, {id,scope});
       then
         fail();
-
-    case (cache,(Env.FRAME(isEncapsulated = true) :: fs),id,prevFrames,inState,msgflag) /* lookup stops at encapsulated classes, except for builtin scope */
+    
+    // lookup stops at encapsulated classes, except for builtin scope
+    case (cache,(Env.FRAME(encapsulatedPrefix = SCode.ENCAPSULATED()) :: fs),id,prevFrames,inState,msgflag) 
       equation
         (cache,i_env) = Builtin.initialEnv(cache);
         (cache,c,env_1,prevFrames) = lookupClassInEnv(cache,i_env, id, {}, inState, msgflag);
@@ -2240,7 +2273,8 @@ algorithm
       then
         (cache,c,env_1,prevFrames);
 
-    case (cache,(frame as Env.FRAME(optName = SOME(_), isEncapsulated = false)) :: fs,id,prevFrames,inState,msgflag) /* if not found and not encapsulated, and no ident has been previously found, look in next enclosing scope */
+    // if not found and not encapsulated, and no ident has been previously found, look in next enclosing scope
+    case (cache,(frame as Env.FRAME(optName = SOME(_), encapsulatedPrefix = SCode.NOT_ENCAPSULATED())) :: fs,id,prevFrames,inState,msgflag) 
       equation
         false = Util.getStatefulBoolean(inState);
         (cache,c,env_1,prevFrames) = lookupClassInEnv(cache,fs, id, frame::prevFrames, inState, msgflag);
@@ -2252,9 +2286,7 @@ algorithm
 end lookupClassInEnv;
 
 protected function lookupClassInFrame "function: lookupClassInFrame
-
-  Search for a class within one frame.
-"
+  Search for a class within one frame."
   input Env.Cache inCache;
   input Env.Frame inFrame;
   input Env.Env inEnv;
@@ -2263,13 +2295,13 @@ protected function lookupClassInFrame "function: lookupClassInFrame
   input Util.StatefulBoolean inState;
   input Boolean inBoolean;
   output Env.Cache outCache;
-  output SCode.Class outClass;
+  output SCode.Element outClass;
   output Env.Env outEnv;
   output list<Env.Frame> outPrevFrames;
 algorithm
   (outCache,outClass,outEnv,outPrevFrames) := matchcontinue (inCache,inFrame,inEnv,inIdent,inPrevFrames,inState,inBoolean)
     local
-      SCode.Class c;
+      SCode.Element c;
       list<Env.Frame> totenv,env_1,prevFrames;
       Option<String> sid;
       Env.AvlTree ht;
@@ -2306,11 +2338,11 @@ end lookupClassInFrame;
 protected function lookupClassAssertClass "Asserts that item is Class (which is returned.
 If component is found, this is reported as an error"
   input Env.Item item;
-  output SCode.Class c;
+  output SCode.Element c;
 algorithm
   c := matchcontinue(item)
  local String id;
-    case(Env.CLASS(class_=c)) then c;
+    case(Env.CLASS(cl = c)) then c;
   /* Searching for class, found component*/
     case(Env.VAR(DAE.TYPES_VAR(name=id),_,_,_)) equation
       Error.addMessage(Error.LOOKUP_TYPE_FOUND_COMP, {id});
@@ -2581,7 +2613,8 @@ algorithm
   matchcontinue (inCache,inBinTree,inComponentRef)
     local
       String id;
-      Boolean f,streamPrefix;
+      SCode.Flow f;
+      SCode.Stream streamPrefix;
       SCode.Accessibility acc;
       SCode.Variability vt,vt2;
       Absyn.Direction di;
@@ -2816,7 +2849,7 @@ protected function assertPackage "function: assertPackage
   breaks the everything-can-be-generalized-to-class principle, since
   it requires that the keyword `package\' is used in the package file.
 "
-  input SCode.Class inClass;
+  input SCode.Element inClass;
   input String className;
 algorithm
   _:=
@@ -2831,7 +2864,7 @@ end assertPackage;
 protected function buildMetaRecordType "common function when looking up the type of a metarecord"
   input Env.Cache cache;
   input Env.Env env;
-  input SCode.Class cdef;
+  input SCode.Element cdef;
   output Env.Cache outCache;
   output Env.Env outEnv;
   output Types.Type ftype;

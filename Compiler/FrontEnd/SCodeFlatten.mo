@@ -81,7 +81,7 @@ end getLastClassNameInProgram;
 
 protected function isClass
   "Checks if the given SCode.Class is a class, i.e. not a function."
-  input SCode.Class inClass;
+  input SCode.Element inClass;
   output Boolean outIsClass;
 algorithm
   outIsClass := match(inClass)
@@ -93,8 +93,8 @@ end isClass;
 
 public function flattenClass
   "Flattens a single class."
-  input SCode.Class inClass;
-  output SCode.Class outClass;
+  input SCode.Element inClass;
+  output SCode.Element outClass;
 algorithm
   {outClass} := flattenProgram({inClass});
 end flattenClass;
@@ -122,20 +122,21 @@ algorithm
     case (_, prog)
       equation
         true = RTOpts.debugFlag("scodeFlatten");
-        //System.startTimer();
+        
+        System.startTimer();
 
         env = SCodeEnv.buildInitialEnv();
         env = SCodeEnv.extendEnvWithClasses(prog, env);
         env = SCodeEnv.updateExtendsInEnv(env);
-
         (prog, env) = SCodeDependency.analyse(inClassName, env, prog);
         prog = SCodeFlattenImports.flattenProgram(prog, env);
         prog = SCodeFlattenExtends.flattenProgram(prog, env);
         prog = SCodeFlattenRedeclare.flattenProgram(prog, env);
-
-        //System.stopTimer();
-        //Debug.traceln("SCodeFlatten.flattenClassInProgram took " +& 
-        //  realString(System.getTimerIntervalTime()) +& " seconds");
+        
+        System.stopTimer();
+        Debug.traceln("SCodeFlatten.flattenClassInProgram took " +& 
+          realString(System.getTimerIntervalTime()) +& " seconds");
+        
       then
         prog;
 

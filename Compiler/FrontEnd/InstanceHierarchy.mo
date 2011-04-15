@@ -68,8 +68,7 @@ constant InstanceHierarchy emptyInstanceHierarchy={} "An empty instance hierarch
 public
 uniontype InstanceAttributes "attributes of an instance"
   record ATTRIBUTES "the attributes for an instance"
-    SCode.Element element "the actual element, being it a class or a component;
-                           for a top class we wrap it into a SCode.CLASSDEF()";
+    SCode.Element element "the actual element, being it a class or a component";
     Option<Types.Type> ty "the instantiated type";
     Option<Face> attrInsideOutside "whether this is an inside or outside component";
   end ATTRIBUTES;
@@ -116,8 +115,8 @@ algorithm
   outIH := matchcontinue(inIH, inScope, inProgram)
     local
       InstanceHierarchy ih;
-      SCode.Class c;
-      list<SCode.Class> cs;
+      SCode.Element c;
+      list<SCode.Element> cs;
       String n;
       Instance i;
       SCode.Path path;
@@ -130,7 +129,7 @@ algorithm
       equation
         path = makePath(scope, n);
         fullCr = Absyn.pathToCref(path);
-        i = createInstanceFromClass(fullCr, ATTRIBUTES(SCode.CLASSDEF("dummy", false, false, false, c, NONE()), NONE(), NONE()));
+        i = createInstanceFromClass(fullCr, ATTRIBUTES(c, NONE(), NONE()));
         ih = createInstanceHierarchyFromProgram(i::ih, scope, cs);
       then
         ih;
@@ -167,7 +166,7 @@ function getClassDefinition
   output SCode.ClassDef cd;
 algorithm
   cd := matchcontinue(ia)
-    case ATTRIBUTES(element=SCode.CLASSDEF(classDef=SCode.CLASS(classDef = cd))) then cd;
+    case ATTRIBUTES(element=SCode.CLASS(classDef = cd)) then cd;
     case _
       equation
         Debug.fprintln("instance", "InstanceHierarchy.getClassDefinition failed");
@@ -226,7 +225,7 @@ algorithm
       then
         (ihrest, icrest);
 
-    case (scope, SCode.CLASS_EXTENDS(elementLst = elements, normalEquationLst = equations))
+    case (scope, SCode.CLASS_EXTENDS(composition = SCode.PARTS(elementLst = elements, normalEquationLst = equations)))
       equation
         ihrest = createInstanceHierarchyFromElements(scope, elements);
         icrest = addConnects(scope, equations, emptyConnects);
@@ -240,7 +239,7 @@ algorithm
         fpath = makePath(scope, "$extends$");
         fpath = Absyn.joinPaths(fpath, path);
         fullCref = Absyn.pathToCref(fpath);
-        i = createInstance(fullCref, ATTRIBUTES(SCode.EXTENDS(path, SCode.NOMOD(), NONE(), Absyn.dummyInfo), NONE(), NONE()), {}, emptyConnects, NONE(), NONE());
+        i = createInstance(fullCref, ATTRIBUTES(SCode.EXTENDS(path, SCode.PUBLIC(), SCode.NOMOD(), NONE(), Absyn.dummyInfo), NONE(), NONE()), {}, emptyConnects, NONE(), NONE());
       then
         ({i}, emptyConnects);
 
@@ -266,11 +265,10 @@ algorithm
       InstanceHierarchy ihrest;
       list<SCode.Element> rest;
       SCode.Element el;
-      SCode.Class cl;
       Absyn.TypeSpec t;
       Absyn.ComponentRef fullCref;
 
-    case (scope, (el as SCode.COMPONENT(component=name, typeSpec=t as Absyn.TPATH(path,_)))::rest)
+    case (scope, (el as SCode.COMPONENT(name=name, typeSpec=t as Absyn.TPATH(path,_)))::rest)
       equation
         fpath = makePath(scope, name);
         fullCref = Absyn.pathToCref(fpath);
@@ -289,7 +287,7 @@ algorithm
       then
         i::ihrest;
 
-    case (scope, (el as SCode.CLASSDEF(classDef = cl as SCode.CLASS(name = name)))::rest)
+    case (scope, (el as SCode.CLASS(name = name))::rest)
       equation
         fpath = makePath(scope, name);
         fullCref = Absyn.pathToCref(fpath);
@@ -307,7 +305,7 @@ algorithm
       then
         ihrest;
 
-    case (scope, (el as SCode.DEFINEUNIT(name, _, _))::rest)
+    case (scope, (el as SCode.DEFINEUNIT(name = name))::rest)
       equation
         fpath = makePath(scope, name);
         fullCref = Absyn.pathToCref(fpath);
@@ -633,8 +631,7 @@ algorithm
       String str,res,n,mod_str,s,vs;
       Absyn.TypeSpec typath;
       SCode.Mod mod;
-      Boolean finalPrefix,repl,prot;
-      SCode.Class cl;
+      SCode.ClassDef cdef;
       SCode.Variability var;
       Option<SCode.Comment> comment;
       Absyn.Path path;
@@ -647,8 +644,9 @@ algorithm
       then
         res;
 
-    case SCode.COMPONENT(component = n,finalPrefix = finalPrefix,replaceablePrefix = repl,protectedPrefix = prot,
-                   attributes = SCode.ATTR(variability = var),typeSpec = typath,modifications = mod,comment = comment)
+    case SCode.COMPONENT(name = n,
+                         attributes = SCode.ATTR(variability = var),
+                         typeSpec = typath,modifications = mod,comment = comment)
       equation
         mod_str = SCode.printModStr(mod);
         s = Dump.unparseTypeSpec(typath);
@@ -657,9 +655,8 @@ algorithm
       then
         res;
 
-    case SCode.CLASSDEF(name = n,finalPrefix = finalPrefix,replaceablePrefix = repl,classDef = cl)
+    case SCode.CLASS(name = n,classDef = cdef)
       equation
-        //str = printClassStr(cl);
         res = stringAppendList({"class ",n," ... end ",n,";"});
       then
         res;
@@ -669,7 +666,7 @@ algorithm
          str = "import "+& Absyn.printImportString(imp) +& ";";
       then str;
 
-    case SCode.DEFINEUNIT(n, _, _)
+    case SCode.DEFINEUNIT(name = n)
       equation
          str = "defineunit "+& n +& ";";
       then str;

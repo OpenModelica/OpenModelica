@@ -64,21 +64,23 @@ algorithm
 end flattenProgram;
 
 public function flattenClass
-  input SCode.Class inClass;
+  input SCode.Element inClass;
   input Env inEnv;
-  output SCode.Class outClass;
+  output SCode.Element outClass;
 protected
   SCode.Ident name;
-  Boolean part_pre, encap_pre;
+  SCode.Partial part_pre;
+  SCode.Encapsulated encap_pre;
+  SCode.Prefixes prefixes;
   SCode.Restriction restriction;
   SCode.ClassDef cdef;
   Absyn.Info info;
   Env env;
 algorithm
-  SCode.CLASS(name, part_pre, encap_pre, restriction, cdef, info) := inClass;
+  SCode.CLASS(name, prefixes, encap_pre, part_pre, restriction, cdef, info) := inClass;
   env := SCodeEnv.enterScope(inEnv, name);
   cdef := flattenClassDef(cdef, env, info);
-  outClass := SCode.CLASS(name, part_pre, encap_pre, restriction, cdef, info);
+  outClass := SCode.CLASS(name, prefixes, encap_pre, part_pre, restriction, cdef, info);
 end flattenClass;
 
 protected function flattenClassDef
@@ -97,7 +99,7 @@ algorithm
       Option<SCode.Comment> cmt;
       Absyn.TypeSpec ty;
       SCode.Mod mods;
-      Absyn.ElementAttributes attr;
+      SCode.Attributes attr;
       Env env;
       SCode.Ident bc;
 
@@ -115,7 +117,7 @@ algorithm
       then
         SCode.PARTS(el, neql, ieql, nal, ial, extdecl, annl, cmt);
 
-    case (SCode.CLASS_EXTENDS(bc, mods, el, neql, ieql, nal, ial, annl, cmt), _, _)
+    case (SCode.CLASS_EXTENDS(bc, mods, SCode.PARTS(el, neql, ieql, nal, ial, extdecl, annl, cmt)), _, _)
       equation
         // Lookup elements.
         el = Util.listMap1(el, flattenElement, inEnv);
@@ -129,7 +131,7 @@ algorithm
 
         mods = flattenModifier(mods, inEnv, inInfo);
       then
-        SCode.CLASS_EXTENDS(bc, mods, el, neql, ieql, nal, ial, annl, cmt);
+        SCode.CLASS_EXTENDS(bc, mods, SCode.PARTS(el, neql, ieql, nal, ial, extdecl, annl, cmt));
         
     case (SCode.DERIVED(ty, mods, attr, cmt), env, _)
       equation
@@ -153,7 +155,7 @@ protected function flattenDerivedClassDef
 protected
   Absyn.TypeSpec ty;
   SCode.Mod mods;
-  Absyn.ElementAttributes attr;
+  SCode.Attributes attr;
   Option<SCode.Comment> cmt;
 algorithm
   SCode.DERIVED(ty, mods, attr, cmt) := inClassDef;
@@ -178,11 +180,11 @@ protected function flattenElement
 algorithm
   outElement := match(inElement, inEnv)
     // Lookup component types, modifications and conditions.
-    case (SCode.COMPONENT(component = _), _)
+    case (SCode.COMPONENT(name = _), _)
       then flattenComponent(inElement, inEnv);
 
     // Lookup class definitions.
-    case (SCode.CLASSDEF(name = _), _)
+    case (SCode.CLASS(name = _), _)
       then flattenClassDefElements(inElement, inEnv);
 
     // Lookup base class and modifications in extends clauses.
@@ -199,13 +201,11 @@ protected function flattenClassDefElements
   output SCode.Element outClassDefElement;
 protected
   SCode.Ident name;
-  Boolean fp, rp, rd;
-  SCode.Class cls;
-  Option<Absyn.ConstrainClass> cc;
+  SCode.Element cls;
 algorithm
-  SCode.CLASSDEF(name, fp, rp, rd, cls, cc) := inClassDefElement;
-  cls := flattenClass(cls, inEnv);
-  outClassDefElement := SCode.CLASSDEF(name, fp, rp, rd, cls, cc);
+  SCode.CLASS(name = _) := inClassDefElement;
+  cls := flattenClass(inClassDefElement, inEnv);
+  outClassDefElement := cls;
 end flattenClassDefElements;
 
 protected function flattenComponent
@@ -215,7 +215,7 @@ protected function flattenComponent
 protected
   SCode.Ident name;
   Absyn.InnerOuter io;
-  Boolean fp, rp, pp, rd;
+  SCode.Prefixes prefixes;
   SCode.Attributes attr;
   Absyn.TypeSpec type_spec;
   SCode.Mod mod;
@@ -224,14 +224,12 @@ protected
   Option<Absyn.ConstrainClass> cc;
   Absyn.Info info;
 algorithm
-  SCode.COMPONENT(name, io, fp, rp, pp, rd, attr, type_spec, mod, cmt, cond,
-    info, cc) := inComponent;
+  SCode.COMPONENT(name, prefixes, attr, type_spec, mod, cmt, cond, info) := inComponent;
   attr := flattenAttributes(attr, inEnv, info);
   type_spec := flattenTypeSpec(type_spec, inEnv, info);
   mod := flattenModifier(mod, inEnv, info);
   cond := flattenOptExp(cond, inEnv, info);
-  outComponent := SCode.COMPONENT(name, io, fp, rp, pp, rd, attr, type_spec,
-    mod, cmt, cond, info, cc);
+  outComponent := SCode.COMPONENT(name, prefixes, attr, type_spec, mod, cmt, cond, info);
 end flattenComponent;
 
 protected function flattenAttributes
@@ -241,7 +239,8 @@ protected function flattenAttributes
   output SCode.Attributes outAttributes;
 protected
   Absyn.ArrayDim ad;
-  Boolean fp, sp;
+  SCode.Flow fp;
+  SCode.Stream sp;
   SCode.Accessibility acc;
   SCode.Variability var;
   Absyn.Direction dir;
@@ -294,12 +293,13 @@ protected
   Option<SCode.Annotation> ann;
   Absyn.Info info;
   Env env;
+  SCode.Visibility vis;
 algorithm
-  SCode.EXTENDS(path, mod, ann, info) := inExtends;
+  SCode.EXTENDS(path, vis, mod, ann, info) := inExtends;
   env := SCodeEnv.removeExtendsFromLocalScope(inEnv);
   (_, path, _) := SCodeLookup.lookupBaseClassName(path, env, info);
   mod := flattenModifier(mod, inEnv, info);
-  outExtends := SCode.EXTENDS(path, mod, ann, info);
+  outExtends := SCode.EXTENDS(path, vis, mod, ann, info);
 end flattenExtends;
 
 protected function flattenEquation
@@ -446,8 +446,8 @@ protected function flattenModifier
 algorithm
   outMod := match(inMod, inEnv, inInfo)
     local
-      Boolean fp;
-      Absyn.Each ep;
+      SCode.Final fp;
+      SCode.Each ep;
       list<SCode.SubMod> sub_mods;
       Option<tuple<Absyn.Exp, Boolean>> opt_exp;
       list<SCode.Element> el;
@@ -459,11 +459,11 @@ algorithm
       then
         SCode.MOD(fp, ep, sub_mods, opt_exp);
 
-    case (SCode.REDECL(fp, el), _, _)
+    case (SCode.REDECL(fp, ep, el), _, _)
       equation
         el = Util.listMap1(el, flattenRedeclare, inEnv);
       then
-        SCode.REDECL(fp, el);
+        SCode.REDECL(fp, ep, el);
 
     case (SCode.NOMOD(), _, _) then inMod;
   end match;
@@ -525,28 +525,27 @@ algorithm
   outElement := match(inElement, inEnv)
     local
       SCode.Ident name, name2;
-      Boolean fp, rp, pp, ep, rd;
+      SCode.Prefixes prefixes;
+      SCode.Partial pp;
+      SCode.Encapsulated ep;
       Option<Absyn.ConstrainClass> cc;
       SCode.Restriction res;
       Absyn.Info info;
       SCode.Element element;
       SCode.ClassDef cdef;
 
-    case (SCode.CLASSDEF(name, fp, rp, rd,
-        SCode.CLASS(name2, pp, ep, res, 
-          cdef as SCode.DERIVED(typeSpec = _), info), cc), _)
+    case (SCode.CLASS(name, prefixes, ep, pp, res, 
+          cdef as SCode.DERIVED(typeSpec = _), info), _)
       equation
         cdef = flattenDerivedClassDef(cdef, inEnv, info);
       then
-        SCode.CLASSDEF(name, fp, rp, rd,
-          SCode.CLASS(name2, pp, ep, res, cdef, info), cc);
+        SCode.CLASS(name, prefixes, ep, pp, res, cdef, info);
 
-    case (SCode.CLASSDEF(classDef = SCode.CLASS(
-        classDef = SCode.ENUMERATION(enumLst = _))), _)
+    case (SCode.CLASS(classDef = SCode.ENUMERATION(enumLst = _)), _)
       then
         inElement;
               
-    case (SCode.COMPONENT(component = _), _)
+    case (SCode.COMPONENT(name = _), _)
       equation
         element = flattenComponent(inElement, inEnv);
       then

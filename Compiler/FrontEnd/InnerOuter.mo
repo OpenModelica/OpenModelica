@@ -161,7 +161,7 @@ algorithm
     // is both an inner and an outer,
     // rename inner vars in the equations to unique names
     // innerouter component change the connection graph
-    case (Absyn.INNEROUTER(),dae,ih,graphNew,graph)
+    case (Absyn.INNER_OUTER(),dae,ih,graphNew,graph)
       equation
         (dae1,dae2) = DAEUtil.splitDAEIntoVarsAndEquations(dae);
         // rename variables in the equations and algs.
@@ -176,7 +176,7 @@ algorithm
     // is an inner do nothing
     case (Absyn.INNER(),dae,ih,graphNew,graph) then (dae,ih,graphNew);
     // is not an inner nor an outer
-    case (Absyn.UNSPECIFIED (),dae,ih,graphNew,graph) then (dae,ih,graphNew);
+    case (Absyn.NOT_INNER_OUTER (),dae,ih,graphNew,graph) then (dae,ih,graphNew);
     // something went totally wrong!
     case (_,dae,ih,graphNew,graph)
       equation
@@ -188,7 +188,7 @@ end handleInnerOuterEquations;
 public function changeOuterReferences "
 Changes the outer references in a dae to the corresponding
 inner reference, given that an inner reference exist in the DAE.
-Update connection sets incase of Absyn.INNEROUTER()"
+Update connection sets incase of Absyn.INNER_OUTER()"
   input DAE.DAElist inDae;
   input Connect.Sets csets;
   input InstHierarchy inIH;
@@ -478,7 +478,7 @@ algorithm
     local
         list<DAE.ComponentRef> outerCrs,ourOuterCrs;
       DAE.ComponentRef cr; VarTransform.VariableReplacements repl;
-    case(DAE.VAR(componentRef = cr, innerOuter = Absyn.INNEROUTER()),outerVars,repl)
+    case(DAE.VAR(componentRef = cr, innerOuter = Absyn.INNER_OUTER()),outerVars,repl)
       equation
         outerCrs = Util.listMap(outerVars,DAEUtil.varCref);
         ourOuterCrs = Util.listSelect1(outerCrs,cr,isInnerOuterMatch);
@@ -820,7 +820,8 @@ algorithm
   outSetLst := match(cache,env,inIH,pre,setLst,added,cr1,io1,f1,cr2,io2,f2,info)
      local SCode.Variability vt1,vt2;
        DAE.Type t1,t2;
-       Boolean flowPrefix,streamPrefix;
+       SCode.Flow flowPrefix;
+       SCode.Stream streamPrefix;
        DAE.DAElist dae;
        list<Connect.Set> setLst2;
        Connect.Sets csets;
@@ -884,7 +885,8 @@ algorithm
      local
        SCode.Variability vt1,vt2;
        DAE.Type t1,t2;
-       Boolean flowPrefix,streamPrefix;
+       SCode.Flow flowPrefix;
+       SCode.Stream streamPrefix;
        DAE.DAElist dae;
        list<Connect.Set> setLst2;
        Connect.Sets csets;
@@ -903,7 +905,11 @@ algorithm
         io1 = removeOuter(io1);
         io2 = removeOuter(io2);
         (cache,env,ih,csets as Connect.SETS(setLst=setLst2),dae,_) =
-        InstSection.connectComponents(cache,env,ih,Connect.SETS(setLst,{},{},{},{}),pre,cr1,f1,t1,vt1,cr2,f2,t2,vt2,flowPrefix,streamPrefix,io1,io2,ConnectionGraph.EMPTY,info);
+        InstSection.connectComponents(
+          cache,env,ih,
+          Connect.SETS(setLst,{},{},{},{}),
+          pre,cr1,f1,t1,vt1,cr2,f2,t2,vt2,flowPrefix,streamPrefix,
+          io1,io2,ConnectionGraph.EMPTY,info);
         /* TODO: take care of dae, can contain asserts from connections */
         setLst = setLst2; // listAppend(setLst,setLst2);
     then
@@ -919,7 +925,11 @@ algorithm
         io1 = removeOuter(io1);
         io2 = removeOuter(io2);
         (cache,env,ih,csets as Connect.SETS(setLst=setLst2),dae,_) =
-        InstSection.connectComponents(cache,env,ih,Connect.SETS(setLst,{},{},{},{}),pre,cr1,f1,t1,vt1,cr2,f2,t2,vt2,flowPrefix,streamPrefix,io1,io2,ConnectionGraph.EMPTY,info);
+        InstSection.connectComponents(
+          cache,env,ih,
+          Connect.SETS(setLst,{},{},{},{}),
+          pre,cr1,f1,t1,vt1,cr2,f2,t2,vt2,flowPrefix,streamPrefix,
+          io1,io2,ConnectionGraph.EMPTY,info);
         /* TODO: take care of dae, can contain asserts from connections */
         setLst = setLst2; // listAppend(setLst,setLst2);
       then setLst;
@@ -937,10 +947,10 @@ protected function removeOuter
   output Absyn.InnerOuter outIo;
 algorithm
   outIo := match(io)
-    case(Absyn.OUTER()) then Absyn.UNSPECIFIED();
-    case(Absyn.INNER()) then Absyn.INNER();
-    case(Absyn.INNEROUTER()) then Absyn.INNER();
-    case(Absyn.UNSPECIFIED()) then Absyn.UNSPECIFIED();
+    case(Absyn.OUTER())           then Absyn.NOT_INNER_OUTER();
+    case(Absyn.INNER())           then Absyn.INNER();
+    case(Absyn.INNER_OUTER())     then Absyn.INNER();
+    case(Absyn.NOT_INNER_OUTER()) then Absyn.NOT_INNER_OUTER();
   end match;
 end removeOuter;
 
@@ -1092,8 +1102,8 @@ algorithm
   (inner1,outer1) := match(io)
     case(Absyn.INNER()) then (true,false);
     case(Absyn.OUTER()) then (false,true);
-    case(Absyn.INNEROUTER()) then (true,true);
-    case(Absyn.UNSPECIFIED()) then (false,false);
+    case(Absyn.INNER_OUTER()) then (true,true);
+    case(Absyn.NOT_INNER_OUTER()) then (false,false);
   end match;
 end innerOuterBooleans;
 
@@ -1106,19 +1116,21 @@ Special cases:
   else
     use normal function( innerOuterBooleans)
 "
-input Absyn.InnerOuter io1;
-input Absyn.InnerOuter io2;
-output Boolean prefix1;
-output Boolean prefix2;
-algorithm (prefix1,prefix2) := matchcontinue(io1,io2)
-  local Boolean b1,b2;
-  case(Absyn.INNEROUTER(),Absyn.UNSPECIFIED()) then (true,false);
-  case(Absyn.INNEROUTER(),Absyn.OUTER()) then (false,true);
-  case(io1,io2)
+  input Absyn.InnerOuter io1;
+  input Absyn.InnerOuter io2;
+  output Boolean prefix1;
+  output Boolean prefix2;
+algorithm 
+  (prefix1,prefix2) := matchcontinue(io1,io2)
+    local Boolean b1,b2;
+    case(Absyn.INNER_OUTER(),Absyn.NOT_INNER_OUTER()) then (true,false);
+    case(Absyn.INNER_OUTER(),Absyn.OUTER()) then (false,true);
+    case(io1,io2)
       equation
         (_,b1) = innerOuterBooleans(io1);
         (_,b2) = innerOuterBooleans(io2);
-        then (b1,b2);
+      then 
+        (b1,b2);
   end matchcontinue;
 end referOuter;
 
@@ -1130,8 +1142,8 @@ algorithm
   isOuter := matchcontinue(io1,io2)
     case(Absyn.OUTER(),_) then true;
     case(_,Absyn.OUTER()) then true;
-    case(Absyn.INNEROUTER(),_) then true;
-    case(_,Absyn.INNEROUTER()) then true;
+    case(Absyn.INNER_OUTER(),_) then true;
+    case(_,Absyn.INNER_OUTER()) then true;
     case(_,_) then false;
   end matchcontinue;
 end outerConnection;
@@ -1310,12 +1322,12 @@ public function switchInnerToOuterAndPrefix
       String s1,s2;
       DAE.Element x;
       Absyn.InnerOuter io;
-      DAE.VarProtection prot;
+      DAE.VarVisibility prot;
       String idName;
       DAE.ElementSource source "the origin of the element";
 
       /* Component that is unspecified does not change inner/outer on subcomponents */
-    case (lst,Absyn.UNSPECIFIED(),_) then lst;
+    case (lst,Absyn.NOT_INNER_OUTER(),_) then lst;
 
     case ({},_,_) then {};
 
@@ -1387,7 +1399,7 @@ public function prefixOuterDaeVars
       String s1,s2;
       DAE.Element x;
       Absyn.InnerOuter io;
-      DAE.VarProtection prot;
+      DAE.VarVisibility prot;
       String idName;
       DAE.ElementSource source "the origin of the element";
 
@@ -1469,20 +1481,20 @@ algorithm
       AvlTree types "List of types, which DOES NOT need to be uniquely named, eg. size may have several types" ;
       list<Item> imports "list of unnamed items (imports)" ;
       CSetsType connectionSet "current connection set crefs" ;
-      Boolean isEncapsulated "encapsulated bool=true means that FRAME is created due to encapsulated class" ;
+      SCode.Encapsulated encapsulatedPrefix "encapsulated means that FRAME is created due to encapsulated class" ;
       list<SCode.Element> defineUnits "list of units defined in the frame" ;
 
-    case (f as Env.FRAME(optName, st, clsAndVars, types, imports, connectionSet, isEncapsulated, defineUnits), cr)
+    case (f as Env.FRAME(optName, st, clsAndVars, types, imports, connectionSet, encapsulatedPrefix, defineUnits), cr)
       equation
         SOME(clsAndVars) = switchInnerToOuterInAvlTree(SOME(clsAndVars), cr);
       then
-        Env.FRAME(optName, st, clsAndVars, types, imports, connectionSet, isEncapsulated, defineUnits);
+        Env.FRAME(optName, st, clsAndVars, types, imports, connectionSet, encapsulatedPrefix, defineUnits);
 
-    case (f as Env.FRAME(optName, st, clsAndVars, types, imports, connectionSet, isEncapsulated, defineUnits), cr)
+    case (f as Env.FRAME(optName, st, clsAndVars, types, imports, connectionSet, encapsulatedPrefix, defineUnits), cr)
       equation
         // when above fails leave unchanged
       then
-        Env.FRAME(optName, st, clsAndVars, types, imports, connectionSet, isEncapsulated, defineUnits);
+        Env.FRAME(optName, st, clsAndVars, types, imports, connectionSet, encapsulatedPrefix, defineUnits);
 
   end matchcontinue;
 end switchInnerToOuterInFrame;
@@ -1533,35 +1545,35 @@ algorithm
       DAE.ComponentRef cr;
       DAE.Ident name "name";
       DAE.Attributes attributes "attributes";
-      Boolean protected_ "protected";
+      SCode.Visibility visibility "protected/public";
       DAE.Type type_ "type";
       DAE.Binding binding "binding ; equation modification";
       Option<tuple<SCode.Element, DAE.Mod>> declaration "declaration if not fully instantiated.";
       Env.InstStatus instStatus "if it untyped, typed or fully instantiated (dae)";
       Env.Env env "The environment of the instantiated component. Contains e.g. all sub components";
 
-      Boolean flowPrefix "flow" ;
-      Boolean streamPrefix "stream" ;
+      SCode.Flow flowPrefix "flow" ;
+      SCode.Stream streamPrefix "stream" ;
       SCode.Accessibility accessibility "accessibility" ;
       SCode.Variability variability "variability" ;
       Absyn.Direction direction "direction" ;
       Option<DAE.Const> cnstForRange;
     
     // inner
-    case (Env.VAR(DAE.TYPES_VAR(name, attributes, protected_, type_, binding, cnstForRange), declaration, instStatus, env), cr)
+    case (Env.VAR(DAE.TYPES_VAR(name, attributes, visibility, type_, binding, cnstForRange), declaration, instStatus, env), cr)
       equation
         DAE.ATTR(flowPrefix, streamPrefix, accessibility, variability, direction, Absyn.INNER()) = attributes;
         attributes = DAE.ATTR(flowPrefix, streamPrefix, accessibility, variability, direction, Absyn.OUTER());
         // env = switchInnerToOuterInEnv(env, inCr);
-      then Env.VAR(DAE.TYPES_VAR(name, attributes, protected_, type_, binding, cnstForRange), declaration, instStatus, env);
+      then Env.VAR(DAE.TYPES_VAR(name, attributes, visibility, type_, binding, cnstForRange), declaration, instStatus, env);
     
     // inner outer
-    case (Env.VAR(DAE.TYPES_VAR(name, attributes, protected_, type_, binding, cnstForRange), declaration, instStatus, env), cr)
+    case (Env.VAR(DAE.TYPES_VAR(name, attributes, visibility, type_, binding, cnstForRange), declaration, instStatus, env), cr)
       equation
-        DAE.ATTR(flowPrefix, streamPrefix, accessibility, variability, direction, Absyn.INNEROUTER()) = attributes;
+        DAE.ATTR(flowPrefix, streamPrefix, accessibility, variability, direction, Absyn.INNER_OUTER()) = attributes;
         attributes = DAE.ATTR(flowPrefix, streamPrefix, accessibility, variability, direction, Absyn.OUTER());
         // env = switchInnerToOuterInEnv(env, inCr);
-      then Env.VAR(DAE.TYPES_VAR(name, attributes, protected_, type_, binding, cnstForRange), declaration, instStatus, env);
+      then Env.VAR(DAE.TYPES_VAR(name, attributes, visibility, type_, binding, cnstForRange), declaration, instStatus, env);
 
     // leave unchanged
     case (inItem, _) then inItem;
@@ -1581,7 +1593,7 @@ public function emptyInstInner
   output InstInner outInstInner;
   annotation(__OpenModelica_EarlyInline = true);
 algorithm
-  outInstInner := INST_INNER(innerPrefix, name, Absyn.UNSPECIFIED(), "", Absyn.IDENT(""), "", NONE(), {});
+  outInstInner := INST_INNER(innerPrefix, name, Absyn.NOT_INNER_OUTER(), "", Absyn.IDENT(""), "", NONE(), {});
 end emptyInstInner;
 
 public function lookupInnerVar

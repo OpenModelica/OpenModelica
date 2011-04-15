@@ -796,7 +796,7 @@ algorithm
       equation
         (cache, v, stOpt) = ceval(cache, env, iterexp, impl, stOpt, dimOpt, msg);
         vals = ValuesUtil.arrayOrListVals(v,true);
-        env = Env.openScope(env, false, SOME(Env.forScopeName),NONE());
+        env = Env.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(Env.forScopeName),NONE());
         // print("Start cevalReduction: " +& Absyn.pathString(path) +& " " +& ValuesUtil.valString(startValue) +& " " +& ValuesUtil.valString(Values.TUPLE(vals)) +& " " +& ExpressionDump.printExpStr(daeExp) +& "\n");
         (cache, ov, stOpt) = cevalReduction(cache, env, path, ov, daeExp, ty, foldExp, guardExp, iter, vals, impl, stOpt, dimOpt, msg);
         value = Util.getOptionOrDefault(ov, Values.META_FAIL());
@@ -805,7 +805,7 @@ algorithm
 
     case (cache, env, DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(path = path, foldExp = foldExp, defaultValue = ov, exprType = ty), expr = daeExp, iterators = iterators), impl, stOpt, dimOpt, msg)
       equation
-        env = Env.openScope(env, false, SOME(Env.forScopeName),NONE());
+        env = Env.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(Env.forScopeName), NONE());
         (cache, valMatrix, names, dims, tys, stOpt) = cevalReductionIterators(cache, env, iterators, impl, stOpt, dimOpt, msg);
         // print("Before:\n");print(Util.stringDelimitList(Util.listMap1(Util.listListMap(valMatrix, ValuesUtil.valString), Util.stringDelimitList, ","), "\n") +& "\n");
         valMatrix = Util.allCombinations(valMatrix,SOME(10000),Absyn.dummyInfo);
@@ -1155,7 +1155,7 @@ algorithm
       String fNew,fOld;
       Real buildTime, edit, build;
       AbsynDep.Depends aDep;
-      list<SCode.Class> a;
+      list<SCode.Element> a;
       list<Interactive.InstantiatedClass> b;
       list<Interactive.InteractiveVariable> c;
       list<Interactive.CompiledCFunction> cf;
@@ -1171,7 +1171,7 @@ algorithm
       Absyn.Path complexName;
       list<Expression.Var> varLst;
       list<String> varNames;
-      SCode.Class sc;
+      SCode.Element sc;
       SCode.ClassDef cdef;
       String error_Str;
       DAE.Function func;
@@ -1196,7 +1196,7 @@ algorithm
         failure(cevalIsExternalObjectConstructor(cache, funcpath, env));
         (cache, 
          sc as SCode.CLASS(
-          partialPrefix = false, 
+          partialPrefix = SCode.NOT_PARTIAL(), 
           restriction = SCode.R_FUNCTION(), 
           classDef = cdef),
          env) = Lookup.lookupClass(cache, env, funcpath, true);
@@ -1382,7 +1382,7 @@ protected function cevalKnownExternalFuncs "function: cevalKnownExternalFuncs
   output Env.Cache outCache;
   output Values.Value res;
 protected
-  SCode.Class cdef;
+  SCode.Element cdef;
   list<Env.Frame> env_1;
   String fid,id;
   Option<Absyn.ExternalDecl> extdecl;

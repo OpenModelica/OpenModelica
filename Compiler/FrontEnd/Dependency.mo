@@ -1304,7 +1304,6 @@ algorithm
 end getClassEnvNoElaborationScope;
 
 public function getClassEnvNoElaboration "function: getClassEnvNoElaboration
-
    Retrieves the environment of the class, including the frame of the class
    itself by partially instantiating it.
 
@@ -1318,16 +1317,15 @@ public function getClassEnvNoElaboration "function: getClassEnvNoElaboration
     equation connect(p,n);
    end A;
 
-   where partial instantiation fails since cardinality(p) can not be determined.
-"
+   where partial instantiation fails since cardinality(p) can not be determined."
   input Absyn.Program p;
   input Absyn.Path p_class;
   input Env.Env env;
   output Env.Env env_2;
 protected
-  SCode.Class cl;
+  SCode.Element cl;
   String id;
-  Boolean encflag;
+  SCode.Encapsulated encflag;
   SCode.Restriction restr;
   list<Env.Frame> env_1,env2;
   ClassInf.State ci_state;
@@ -1335,24 +1333,30 @@ protected
   Env.Cache cache;
 algorithm
   env_2 := matchcontinue(p,p_class,env)
-/* First try partial instantiation */
-    case(p,p_class,env) equation
-      (cache,(cl as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1) = Lookup.lookupClass(Env.emptyCache(),env, p_class, false);
-      env2 = Env.openScope(env_1, encflag, SOME(id), Env.restrictionToScopeType(restr));
-      ci_state = ClassInf.start(restr, Env.getEnvName(env2));
-      (cache,env_2,_,_) = Inst.partialInstClassIn(cache, env2, InnerOuter.emptyInstHierarchy,
-                                                  DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
-                                                  ci_state, cl, false, {});
-    then env_2;
-    case(p,p_class,env) equation
-      (cache,(cl as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1) = Lookup.lookupClass(Env.emptyCache(),env, p_class, false);
-      env2 = Env.openScope(env_1, encflag, SOME(id), Env.restrictionToScopeType(restr));
-      ci_state = ClassInf.start(restr, Env.getEnvName(env2));
-      (cache,env_2,_,_,_,_,_,_,_,_,_,_) = Inst.instClassIn(cache,env2, InnerOuter.emptyInstHierarchy,
-        UnitAbsyn.noStore,DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
-        ci_state, cl, false, {},false, Inst.INNER_CALL(), ConnectionGraph.EMPTY,NONE());
-    then env_2;
-    end matchcontinue;
+    // First try partial instantiation
+    case(p,p_class,env) 
+      equation
+        (cache,(cl as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1) = Lookup.lookupClass(Env.emptyCache(),env, p_class, false);
+        env2 = Env.openScope(env_1, encflag, SOME(id), Env.restrictionToScopeType(restr));
+        ci_state = ClassInf.start(restr, Env.getEnvName(env2));
+        (cache,env_2,_,_) = Inst.partialInstClassIn(cache, env2, InnerOuter.emptyInstHierarchy,
+                                                    DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
+                                                    ci_state, cl, SCode.PUBLIC(), {});
+      then 
+        env_2;
+    
+    case(p,p_class,env) 
+      equation
+        (cache,(cl as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1) = Lookup.lookupClass(Env.emptyCache(),env, p_class, false);
+        env2 = Env.openScope(env_1, encflag, SOME(id), Env.restrictionToScopeType(restr));
+        ci_state = ClassInf.start(restr, Env.getEnvName(env2));
+        (cache,env_2,_,_,_,_,_,_,_,_,_,_) = Inst.instClassIn(cache,env2, InnerOuter.emptyInstHierarchy,
+          UnitAbsyn.noStore,DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
+          ci_state, cl, SCode.PUBLIC(), {},false, Inst.INNER_CALL(), ConnectionGraph.EMPTY,NONE());
+    then 
+      env_2;
+  end matchcontinue;
+
 end getClassEnvNoElaboration;
 
 public function extractProgram2 "
@@ -1403,7 +1407,7 @@ algorithm
   elementspec := Absyn.EXTENDS(modelName,{},NONE());
   cl := Absyn.CLASS(classStr2,false,false,false,Absyn.R_MODEL(),
     Absyn.PARTS({},{Absyn.PUBLIC({Absyn.ELEMENTITEM(
-      Absyn.ELEMENT(false,NONE(),Absyn.UNSPECIFIED(),"",elementspec,info,NONE())
+      Absyn.ELEMENT(false,NONE(),Absyn.NOT_INNER_OUTER(),"",elementspec,info,NONE())
     )})},NONE()),info);
 end createTopLevelTotalClass;
 

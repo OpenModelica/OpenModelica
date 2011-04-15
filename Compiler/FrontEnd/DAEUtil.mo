@@ -506,7 +506,7 @@ algorithm
       DAE.Flow flow_; list<Absyn.Path> cls;
       Option<DAE.VariableAttributes> attr;
       Option<SCode.Comment> cmt; Absyn.InnerOuter io,io2;
-      DAE.VarProtection prot; DAE.Stream st;
+      DAE.VarVisibility prot; DAE.Stream st;
       DAE.ElementSource source "the origin of the element";
 
     case(var,DAE.DAE({})) then DAE.DAE({});
@@ -514,12 +514,12 @@ algorithm
         Since we can not handle this with current instantiation procedure, we create temporary variables in the dae.
         These are named uniqly and renamed later in "instClass"
      */
-    case(var,DAE.DAE(DAE.VAR(oldVar,kind,dir,prot,tp,bind,dim,flow_,st,source,attr,cmt,(io as Absyn.INNEROUTER()))::elist))
+    case(var,DAE.DAE(DAE.VAR(oldVar,kind,dir,prot,tp,bind,dim,flow_,st,source,attr,cmt,(io as Absyn.INNER_OUTER()))::elist))
       equation
         true = compareUniquedVarWithNonUnique(var,oldVar);
         newVar = nameInnerouterUniqueCref(oldVar);
         o = DAE.VAR(oldVar,kind,dir,prot,tp,NONE(),dim,flow_,st,source,attr,cmt,Absyn.OUTER()) "intact";
-        u = DAE.VAR(newVar,kind,dir,prot,tp,bind,dim,flow_,st,source,attr,cmt,Absyn.UNSPECIFIED()) " unique'ified";
+        u = DAE.VAR(newVar,kind,dir,prot,tp,bind,dim,flow_,st,source,attr,cmt,Absyn.NOT_INNER_OUTER()) " unique'ified";
         elist3 = u::{o};
         elist= listAppend(elist3,elist);
       then
@@ -642,8 +642,8 @@ protected function removeInnerAttribute "Help function to removeInnerAttr"
    output Absyn.InnerOuter ioOut;
 algorithm
   ioOut := matchcontinue(io)
-    case(Absyn.INNER()) then Absyn.UNSPECIFIED();
-    case(Absyn.INNEROUTER()) then Absyn.OUTER();
+    case(Absyn.INNER()) then Absyn.NOT_INNER_OUTER();
+    case(Absyn.INNER_OUTER()) then Absyn.OUTER();
     case(io) then io;
   end matchcontinue;
 end removeInnerAttribute;
@@ -752,7 +752,7 @@ algorithm
   outVar := match(var,varOpt)
     local
       DAE.ComponentRef cr; DAE.VarKind k;
-      DAE.VarDirection d ; DAE.VarProtection p;
+      DAE.VarDirection d ; DAE.VarVisibility p;
       DAE.Type ty; Option<DAE.Exp> b;
       DAE.InstDims  dims; DAE.Flow fl; DAE.Stream st;
       DAE.ElementSource source "the origin of the element";
@@ -913,20 +913,19 @@ algorithm
 end setFixedAttr;
 
 public function setFinalAttr "
-  sets the start attribute. If NONE(), assumes Real attributes.
-"
+  sets the start attribute. If NONE(), assumes Real attributes."
   input Option<DAE.VariableAttributes> attr;
   input Boolean finalPrefix;
   output Option<DAE.VariableAttributes> outAttr;
 algorithm
-  outAttr:=
-  match (attr,finalPrefix)
+  outAttr := match (attr,finalPrefix)
     local
       Option<DAE.Exp> q,u,du,i,f,n;
       tuple<Option<DAE.Exp>, Option<DAE.Exp>> minMax;
       Option<DAE.StateSelect> ss;
       Option<DAE.Exp> eb;
       Option<Boolean> ip;
+    
     case (SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,i,f,n,ss,eb,ip,_)),finalPrefix)
     then SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,i,f,n,ss,eb,ip,SOME(finalPrefix)));
     case (SOME(DAE.VAR_ATTR_INT(q,minMax,i,f,eb,ip,_)),finalPrefix)
@@ -962,10 +961,10 @@ algorithm
   end match;
 end getFinalAttr;
 
-public function boolVarProtection "Function: boolVarProtection
+public function boolVarVisibility "Function: boolVarVisibility
 Takes a DAE.varprotection and returns true/false (is_protected / not)
 "
-  input DAE.VarProtection vp;
+  input DAE.VarVisibility vp;
   output Boolean prot;
 algorithm
   prot := matchcontinue(vp)
@@ -973,7 +972,7 @@ algorithm
     case(DAE.PROTECTED()) then true;
     case(_) equation print("- DAEUtil.boolVa_Protection failed\n"); then fail();
   end matchcontinue;
-end boolVarProtection;
+end boolVarVisibility;
 
 public function hasStartAttr "
   Returns true if variable attributes defines a start value."
@@ -1171,7 +1170,7 @@ algorithm
   _:=
   matchcontinue (inElement)
     case DAE.VAR(innerOuter = Absyn.INNER()) then ();
-    case DAE.VAR(innerOuter = Absyn.INNEROUTER())then ();
+    case DAE.VAR(innerOuter = Absyn.INNER_OUTER())then ();
   end matchcontinue;
 end isInnerVar;
 
@@ -1183,7 +1182,7 @@ public function isOuterVar "function isOuterVar
 algorithm _:= matchcontinue (inElement)
     case DAE.VAR(innerOuter = Absyn.OUTER()) then ();
     // FIXME? adrpo: do we need this?
-    // case DAE.VAR(innerOuter = Absyn.INNEROUTER()) then ();
+    // case DAE.VAR(innerOuter = Absyn.INNER_OUTER()) then ();
   end matchcontinue;
 end isOuterVar;
 
@@ -1513,16 +1512,13 @@ algorithm (outc,oute) := matchcontinue (inElementLst)
 end getBindings;
 
 public function toFlow "function: toFlow
-
-  Create a Flow, given a ClassInf.State and a boolean flow value.
-"
-  input Boolean inBoolean;
+  Create a Flow, given a ClassInf.State and a SCode flow value."
+  input SCode.Flow inFlow;
   input ClassInf.State inState;
   output DAE.Flow outFlow;
 algorithm
-  outFlow:=
-  matchcontinue (inBoolean,inState)
-    case (true,_) then DAE.FLOW();
+  outFlow := matchcontinue (inFlow,inState)
+    case (SCode.FLOW(),_) then DAE.FLOW();
     case (_,ClassInf.CONNECTOR(path = _)) then DAE.NON_FLOW();
     case (_,_) then DAE.NON_CONNECTOR();
   end matchcontinue;
@@ -1530,26 +1526,23 @@ end toFlow;
 
 public function toStream "function: toStram
   Create a Stream, given a ClassInf.State and a boolean stream value."
-  input Boolean inBoolean;
+  input SCode.Stream inStream;
   input ClassInf.State inState;
   output DAE.Stream outStream;
 algorithm
-  outStream := matchcontinue (inBoolean,inState)
-    case (true,_) then DAE.STREAM();
+  outStream := matchcontinue (inStream,inState)
+    case (SCode.STREAM(),_) then DAE.STREAM();
     case (_,ClassInf.CONNECTOR(path = _)) then DAE.NON_STREAM();
     case (_,_) then DAE.NON_STREAM_CONNECTOR();
   end matchcontinue;
 end toStream;
 
 public function getFlowVariables "function: getFlowVariables
-
-  Retrive the flow variables of an Element list.
-"
+  Retrive the flow variables of an Element list."
   input list<DAE.Element> inElementLst;
   output list<DAE.ComponentRef> outExpComponentRefLst;
 algorithm
-  outExpComponentRefLst:=
-  matchcontinue (inElementLst)
+  outExpComponentRefLst := matchcontinue (inElementLst)
     local
       list<DAE.ComponentRef> res,res1,res1_1,res2;
       DAE.ComponentRef cr;
@@ -1755,7 +1748,7 @@ algorithm
       DAE.Stream s;
       DAE.Element elt_1,elt;
       DAE.DAElist dae_1,dae;
-      DAE.VarProtection prot;
+      DAE.VarVisibility prot;
       list<Absyn.Path> h;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
@@ -1932,7 +1925,7 @@ algorithm
   outelem := match(newCr, inelem)
     local
       DAE.ComponentRef a1; DAE.VarKind a2;
-      DAE.VarDirection a3; DAE.VarProtection a4;
+      DAE.VarDirection a3; DAE.VarVisibility a4;
       DAE.Type a5; DAE.InstDims a7; DAE.Flow a8;
       DAE.Stream a9; Option<DAE.Exp> a6;
       DAE.ElementSource source;
@@ -2571,7 +2564,7 @@ algorithm
       Option<SCode.Comment> comment;
       DAE.VarKind kind,kind1;
       DAE.VarDirection direction;
-      DAE.VarProtection protection;
+      DAE.VarVisibility protection;
       DAE.Type ty;
       Option<DAE.Exp> binding;
       DAE.InstDims  dims;
@@ -2641,7 +2634,7 @@ algorithm
 end evaluateAnnotation4;
 
 public function hasBooleanNamedAnnotation
-  input SCode.Class inClass;
+  input SCode.Element inClass;
   input String namedAnnotation;
   output Boolean hasAnn;
 algorithm
@@ -2652,7 +2645,7 @@ algorithm
     case(SCode.CLASS(classDef = SCode.PARTS(annotationLst = anns)),namedAnnotation)
       then hasBooleanNamedAnnotation1(anns,namedAnnotation);
 
-    case(SCode.CLASS(classDef = SCode.CLASS_EXTENDS(annotationLst = anns)),namedAnnotation)
+    case(SCode.CLASS(classDef = SCode.CLASS_EXTENDS(composition = SCode.PARTS(annotationLst = anns))),namedAnnotation)
       then hasBooleanNamedAnnotation1(anns,namedAnnotation);
     else false;
   end matchcontinue;
@@ -3673,7 +3666,7 @@ algorithm
       DAE.InstDims dims;
       DAE.Flow fl;
       DAE.Stream st;
-      DAE.VarProtection prot;
+      DAE.VarVisibility prot;
       DAE.Exp e,e2,e22,e1,e11,maybeCrExp;
       Option<DAE.VariableAttributes> attr;
       Option<SCode.Comment> cmt;
@@ -4252,7 +4245,7 @@ algorithm
       DAE.InstDims dim;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
-      DAE.VarProtection prot;
+      DAE.VarVisibility prot;
       Option<DAE.Exp> bind;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
@@ -5462,7 +5455,8 @@ public function setAttrVariability
   input SCode.Variability inVar;
   output DAE.Attributes outAttr;
 protected
-  Boolean fp, sp;
+  SCode.Flow fp;
+  SCode.Stream sp;
   SCode.Accessibility acc;
   Absyn.Direction dir;
   Absyn.InnerOuter io;

@@ -389,7 +389,7 @@ algorithm
       Absyn.Restriction restriction;
       InteractiveSymbolTable st;
       list<Env.Frame> env,env_1;
-      SCode.Class scode_class;
+      SCode.Element scode_class;
       Absyn.Class absyn_class,cls;
       Integer len;
       list<Absyn.Class> class_list,morecls;
@@ -1117,7 +1117,7 @@ algorithm
       Values.Value v;
       DAE.Type t;
       Absyn.Program p;
-      list<SCode.Class> sp;
+      list<SCode.Element> sp;
       list<InstantiatedClass> id;
       list<CompiledCFunction> cf;
       list<LoadedFile> lf;
@@ -1159,7 +1159,7 @@ algorithm
       Values.Value v;
       DAE.Type t;
       Absyn.Program p;
-      list<SCode.Class> sp;
+      list<SCode.Element> sp;
       list<InstantiatedClass> id;
       list<CompiledCFunction> cf;
       list<LoadedFile> lf;
@@ -1192,7 +1192,7 @@ algorithm
       list<InteractiveVariable> vars_1,vars;
       String ident;
       Absyn.Program p;
-      list<SCode.Class> sp;
+      list<SCode.Element> sp;
       list<InstantiatedClass> id;
       list<CompiledCFunction> cf;
       list<LoadedFile> lf;
@@ -1282,7 +1282,7 @@ public function buildEnvFromSymboltable
 algorithm
   outEnv := match (inInteractiveSymbolTable)
     local
-      list<SCode.Class> p_1,sp;
+      list<SCode.Element> p_1,sp;
       list<Env.Frame> env,env_1;
       Absyn.Program p;
       list<InstantiatedClass> ic;
@@ -1317,8 +1317,8 @@ algorithm
       equation
         (_,_,_,_,_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(),env, ComponentReference.makeCrefIdent(id,DAE.ET_OTHER(),{}));
         env_1 = Env.updateFrameV(env,
-          DAE.TYPES_VAR(id,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-          false,tp,DAE.VALBOUND(v,DAE.BINDING_FROM_DEFAULT_VALUE()),NONE()), Env.VAR_TYPED(), {});
+          DAE.TYPES_VAR(id,DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
+          SCode.PUBLIC(),tp,DAE.VALBOUND(v,DAE.BINDING_FROM_DEFAULT_VALUE()),NONE()), Env.VAR_TYPED(), {});
         env_2 = addVarsToEnv(rest, env_1);
       then
         env_2;
@@ -1326,8 +1326,8 @@ algorithm
       equation
         failure((_,_,_,_,_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(),env, ComponentReference.makeCrefIdent(id,DAE.ET_OTHER(),{})));
         env_1 = Env.extendFrameV(env,
-          DAE.TYPES_VAR(id,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-          false,tp,DAE.VALBOUND(v,DAE.BINDING_FROM_DEFAULT_VALUE()),NONE()),NONE(), Env.VAR_UNTYPED(), {});
+          DAE.TYPES_VAR(id,DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
+          SCode.PUBLIC(),tp,DAE.VALBOUND(v,DAE.BINDING_FROM_DEFAULT_VALUE()),NONE()),NONE(), Env.VAR_UNTYPED(), {});
         env_2 = addVarsToEnv(rest, env_1);
       then
         env_2;
@@ -1622,7 +1622,7 @@ algorithm
       Absyn.ComponentRef class_,ident,subident,cr,tp,model_,cr1,cr2,c1,c2,old_cname,new_cname,cname,from_ident,to_ident;
       Absyn.Exp exp;
       InteractiveSymbolTable st,newst;
-      list<SCode.Class> s,s_1;
+      list<SCode.Element> s,s_1;
       Absyn.Modification mod;
       Absyn.Path path_1,path,wpath;
       Integer count,n;
@@ -3225,7 +3225,7 @@ algorithm
       Option<Absyn.Comment> c;
       Absyn.Info info;
     /* the old name for the component */
-    case (Absyn.MODIFICATION(finalItem = b,each_ = each_,componentRef = cr,modification = SOME(Absyn.CLASSMOD(element_args,Absyn.EQMOD(exp,info))),comment = str),old_comp,new_comp)
+    case (Absyn.MODIFICATION(finalPrefix = b,eachPrefix = each_,componentRef = cr,modification = SOME(Absyn.CLASSMOD(element_args,Absyn.EQMOD(exp,info))),comment = str),old_comp,new_comp)
       equation
         cr_1 = replaceStartInComponentRef(cr, old_comp, new_comp);
         exp_1 = renameComponentInExp(exp, old_comp, new_comp);
@@ -3233,25 +3233,25 @@ algorithm
       then
         Absyn.MODIFICATION(b,each_,cr_1,
           SOME(Absyn.CLASSMOD(element_args_1,Absyn.EQMOD(exp_1,info))),str);
-    case (Absyn.MODIFICATION(finalItem = b,each_ = each_,componentRef = cr,modification = SOME(Absyn.CLASSMOD(element_args,Absyn.NOMOD())),comment = str),old_comp,new_comp)
+    case (Absyn.MODIFICATION(finalPrefix = b,eachPrefix = each_,componentRef = cr,modification = SOME(Absyn.CLASSMOD(element_args,Absyn.NOMOD())),comment = str),old_comp,new_comp)
       equation
         cr_1 = replaceStartInComponentRef(cr, old_comp, new_comp);
         element_args_1 = renameComponentInElementArgList(element_args, old_comp, new_comp);
       then
         Absyn.MODIFICATION(b,each_,cr_1,SOME(Absyn.CLASSMOD(element_args_1,Absyn.NOMOD())),str);
-    case (Absyn.MODIFICATION(finalItem = b,each_ = each_,componentRef = cr,modification = NONE(),comment = str),old_comp,new_comp)
+    case (Absyn.MODIFICATION(finalPrefix = b,eachPrefix = each_,componentRef = cr,modification = NONE(),comment = str),old_comp,new_comp)
       equation
         cr_1 = replaceStartInComponentRef(cr, old_comp, new_comp);
       then
         Absyn.MODIFICATION(b,each_,cr_1,NONE(),str);
-    case (Absyn.REDECLARATION(finalItem = b,redeclareKeywords = redecl,each_ = each_,elementSpec = element_spec,constrainClass = SOME(Absyn.CONSTRAINCLASS(element_spec2,c)),info = info),old_comp,new_comp)
+    case (Absyn.REDECLARATION(finalPrefix = b,redeclareKeywords = redecl,eachPrefix = each_,elementSpec = element_spec,constrainClass = SOME(Absyn.CONSTRAINCLASS(element_spec2,c)),info = info),old_comp,new_comp)
       equation
         element_spec_1 = renameComponentInElementSpec(element_spec, old_comp, new_comp);
         element_spec2_1 = renameComponentInElementSpec(element_spec2, old_comp, new_comp);
       then
         Absyn.REDECLARATION(b,redecl,each_,element_spec_1,
           SOME(Absyn.CONSTRAINCLASS(element_spec2_1,c)),info);
-    case (Absyn.REDECLARATION(finalItem = b,redeclareKeywords = redecl,each_ = each_,elementSpec = element_spec,constrainClass = NONE(),info=info),old_comp,new_comp)
+    case (Absyn.REDECLARATION(finalPrefix = b,redeclareKeywords = redecl,eachPrefix = each_,elementSpec = element_spec,constrainClass = NONE(),info=info),old_comp,new_comp)
       equation
         element_spec_1 = renameComponentInElementSpec(element_spec, old_comp, new_comp);
       then
@@ -4846,11 +4846,11 @@ public function getClassEnv
   input Absyn.Program p;
   input Absyn.Path p_class;
   output Env.Env env_2;
-  list<SCode.Class> p_1;
+  list<SCode.Element> p_1;
   list<Env.Frame> env,env_1,env2;
-  SCode.Class cl;
+  SCode.Element cl;
   String id;
-  Boolean encflag;
+  SCode.Encapsulated encflag;
   SCode.Restriction restr;
   ClassInf.State ci_state;
   Env.Cache cache;
@@ -4876,7 +4876,7 @@ algorithm
         ci_state = ClassInf.start(restr, Env.getEnvName(env2));
         (_,env_2,_,_) =
           Inst.partialInstClassIn(cache,env2,InnerOuter.emptyInstHierarchy,
-                                  DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, ci_state, cl, false, {});
+                                  DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, ci_state, cl, SCode.PUBLIC(), {});
       then env_2;
     case (p,p_class) then {};
   end matchcontinue;
@@ -5230,10 +5230,10 @@ protected function setInnerOuterAttributes
 algorithm
   outInnerOuter:=
   match (inBooleanLst)
-    case ({false,false}) then Absyn.UNSPECIFIED();
+    case ({false,false}) then Absyn.NOT_INNER_OUTER();
     case ({true,false}) then Absyn.INNER();
     case ({false,true}) then Absyn.OUTER();
-    case ({true,true}) then Absyn.INNEROUTER();
+    case ({true,true}) then Absyn.INNER_OUTER();
   end match;
 end setInnerOuterAttributes;
 
@@ -6623,42 +6623,42 @@ algorithm
     case ({},cref,mod) then {Absyn.MODIFICATION(false,Absyn.NON_EACH(),cref,SOME(mod),NONE())};
     
     // Clear modification m(...)
-    case ((Absyn.MODIFICATION(finalItem = f,each_ = each_,componentRef = (cr as Absyn.CREF_IDENT(name = name,subscripts = idx)),comment = cmt,modification=SOME(Absyn.CLASSMOD((submods as _::_),_))) :: rest),Absyn.CREF_IDENT(name = submodident),(mod as Absyn.CLASSMOD( {},Absyn.NOMOD())))
+    case ((Absyn.MODIFICATION(finalPrefix = f,eachPrefix = each_,componentRef = (cr as Absyn.CREF_IDENT(name = name,subscripts = idx)),comment = cmt,modification=SOME(Absyn.CLASSMOD((submods as _::_),_))) :: rest),Absyn.CREF_IDENT(name = submodident),(mod as Absyn.CLASSMOD( {},Absyn.NOMOD())))
       equation
         true = stringEq(name, submodident);
       then
         Absyn.MODIFICATION(f,each_,cr,SOME(Absyn.CLASSMOD(submods,Absyn.NOMOD())),cmt)::rest;
     
     // Clear modification, m with no submodifiers
-    case ((Absyn.MODIFICATION(finalItem = f,each_ = each_,componentRef = Absyn.CREF_IDENT(name = name,subscripts = idx),comment = cmt,modification=SOME(Absyn.CLASSMOD({},_))) :: rest),Absyn.CREF_IDENT(name = submodident),(mod as Absyn.CLASSMOD( {},Absyn.NOMOD())))
+    case ((Absyn.MODIFICATION(finalPrefix = f,eachPrefix = each_,componentRef = Absyn.CREF_IDENT(name = name,subscripts = idx),comment = cmt,modification=SOME(Absyn.CLASSMOD({},_))) :: rest),Absyn.CREF_IDENT(name = submodident),(mod as Absyn.CLASSMOD( {},Absyn.NOMOD())))
       equation
         true = stringEq(name, submodident);
       then
         rest;
     
     // modfication, m=e
-    case ((Absyn.MODIFICATION(finalItem = f,each_ = each_,componentRef = Absyn.CREF_IDENT(name = name,subscripts = idx),modification=SOME(Absyn.CLASSMOD(submods,_)),comment = cmt) :: rest),Absyn.CREF_IDENT(name = submodident),(mod as Absyn.CLASSMOD({},eqMod as Absyn.EQMOD(exp=_)))) /* update modification */
+    case ((Absyn.MODIFICATION(finalPrefix = f,eachPrefix = each_,componentRef = Absyn.CREF_IDENT(name = name,subscripts = idx),modification=SOME(Absyn.CLASSMOD(submods,_)),comment = cmt) :: rest),Absyn.CREF_IDENT(name = submodident),(mod as Absyn.CLASSMOD({},eqMod as Absyn.EQMOD(exp=_)))) /* update modification */
       equation
         true = stringEq(name, submodident);
       then
         (Absyn.MODIFICATION(f,each_,Absyn.CREF_IDENT(name,idx),SOME(Absyn.CLASSMOD(submods,eqMod)),cmt) :: rest);
     
     // modfication, m(...)=e
-    case ((Absyn.MODIFICATION(finalItem = f,each_ = each_,componentRef = Absyn.CREF_IDENT(name = name,subscripts = idx),modification=mod2,comment = cmt) :: rest),Absyn.CREF_IDENT(name = submodident),mod) /* update modification */
+    case ((Absyn.MODIFICATION(finalPrefix = f,eachPrefix = each_,componentRef = Absyn.CREF_IDENT(name = name,subscripts = idx),modification=mod2,comment = cmt) :: rest),Absyn.CREF_IDENT(name = submodident),mod) /* update modification */
       equation
         true = stringEq(name, submodident);
       then
         (Absyn.MODIFICATION(f,each_,Absyn.CREF_IDENT(name,idx),SOME(mod),cmt) :: rest);
     
     // Clear modification, m.n
-     case ((Absyn.MODIFICATION(finalItem = f,each_ = each_,componentRef = (cr1 as Absyn.CREF_QUAL(name = _)),comment = cmt) :: rest),cr2,Absyn.CLASSMOD({},Absyn.NOMOD()))
+     case ((Absyn.MODIFICATION(finalPrefix = f,eachPrefix = each_,componentRef = (cr1 as Absyn.CREF_QUAL(name = _)),comment = cmt) :: rest),cr2,Absyn.CLASSMOD({},Absyn.NOMOD()))
       equation
         true = Absyn.crefEqual(cr1, cr2);
       then
         (rest);
     
     // Clear modification m.n first part matches. Check that m is not present in rest of list.
-    case ((Absyn.MODIFICATION(finalItem = f,each_ = each_,componentRef = Absyn.CREF_QUAL(name = name1),comment = cmt) :: rest),cr as Absyn.CREF_IDENT(name = name2,subscripts = idx),Absyn.CLASSMOD({},Absyn.NOMOD()))
+    case ((Absyn.MODIFICATION(finalPrefix = f,eachPrefix = each_,componentRef = Absyn.CREF_QUAL(name = name1),comment = cmt) :: rest),cr as Absyn.CREF_IDENT(name = name2,subscripts = idx),Absyn.CLASSMOD({},Absyn.NOMOD()))
       equation
         true = stringEq(name1, name2);
         false = findCrefModification(cr,rest);
@@ -6666,7 +6666,7 @@ algorithm
         (rest);
    
     // Clear modification m(...)
-    case ((Absyn.MODIFICATION(finalItem = f,each_ = each_,componentRef = (cr as Absyn.CREF_IDENT(name = name2)),modification = SOME(Absyn.CLASSMOD(args,Absyn.NOMOD())),comment = cmt) :: rest),Absyn.CREF_QUAL(name = name1,componentRef = cr1),Absyn.CLASSMOD({},Absyn.NOMOD()))
+    case ((Absyn.MODIFICATION(finalPrefix = f,eachPrefix = each_,componentRef = (cr as Absyn.CREF_IDENT(name = name2)),modification = SOME(Absyn.CLASSMOD(args,Absyn.NOMOD())),comment = cmt) :: rest),Absyn.CREF_QUAL(name = name1,componentRef = cr1),Absyn.CLASSMOD({},Absyn.NOMOD()))
       equation
         true = stringEq(name1, name2);
         {} = setSubmodifierInElementargs(args, cr1, Absyn.CLASSMOD({},Absyn.NOMOD()));
@@ -6674,7 +6674,7 @@ algorithm
         (Absyn.MODIFICATION(f,each_,cr,NONE(),cmt) :: rest);
 
    // Clear modification m(...)=expr
-   case ((Absyn.MODIFICATION(finalItem = f,each_ = each_,componentRef = (cr as Absyn.CREF_IDENT(name = name2)),modification = SOME(Absyn.CLASSMOD(args,eqMod as Absyn.EQMOD(exp=_))),comment = cmt) :: rest),Absyn.CREF_QUAL(name = name1,componentRef = cr1),Absyn.CLASSMOD({},Absyn.NOMOD()))
+   case ((Absyn.MODIFICATION(finalPrefix = f,eachPrefix = each_,componentRef = (cr as Absyn.CREF_IDENT(name = name2)),modification = SOME(Absyn.CLASSMOD(args,eqMod as Absyn.EQMOD(exp=_))),comment = cmt) :: rest),Absyn.CREF_QUAL(name = name1,componentRef = cr1),Absyn.CLASSMOD({},Absyn.NOMOD()))
       equation
         true = stringEq(name1, name2);
         {} = setSubmodifierInElementargs(args, cr1, Absyn.CLASSMOD({},Absyn.NOMOD()));
@@ -6682,7 +6682,7 @@ algorithm
         (Absyn.MODIFICATION(f,each_,cr,SOME(Absyn.CLASSMOD({},eqMod)),cmt) :: rest);
 
    // modification, m for m.n
-   case ((Absyn.MODIFICATION(finalItem = f,each_ = each_,componentRef = (cr as Absyn.CREF_IDENT(name = name2)),modification = SOME(Absyn.CLASSMOD(args,eqMod)),comment = cmt) :: rest),Absyn.CREF_QUAL(name = name1,componentRef = cr1),mod)
+   case ((Absyn.MODIFICATION(finalPrefix = f,eachPrefix = each_,componentRef = (cr as Absyn.CREF_IDENT(name = name2)),modification = SOME(Absyn.CLASSMOD(args,eqMod)),comment = cmt) :: rest),Absyn.CREF_QUAL(name = name1,componentRef = cr1),mod)
       equation
         true = stringEq(name1, name2);
         args_1 = setSubmodifierInElementargs(args, cr1, mod);
@@ -6690,7 +6690,7 @@ algorithm
         (Absyn.MODIFICATION(f,each_,cr,SOME(Absyn.CLASSMOD(args_1,eqMod)),cmt) :: rest);
    
    // modification, m.n for m.n
-   case ((Absyn.MODIFICATION(finalItem = f,each_ = each_,componentRef = cr1,modification = SOME(Absyn.CLASSMOD(eqMod=_)),comment = cmt) :: rest),cr2,mod)
+   case ((Absyn.MODIFICATION(finalPrefix = f,eachPrefix = each_,componentRef = cr1,modification = SOME(Absyn.CLASSMOD(eqMod=_)),comment = cmt) :: rest),cr2,mod)
       equation
         true = Absyn.crefEqual(cr1,cr2);
       then
@@ -6795,12 +6795,12 @@ algorithm
       list<Absyn.ElementArg> rest,args;
       String name1,name2;
       Option<Absyn.Exp> exp;
-    case ((Absyn.MODIFICATION(finalItem = f,each_ = each_,componentRef = cr1,modification = SOME(mod),comment = cmt) :: rest),cr2)
+    case ((Absyn.MODIFICATION(finalPrefix = f,eachPrefix = each_,componentRef = cr1,modification = SOME(mod),comment = cmt) :: rest),cr2)
       equation
         true = Absyn.crefEqual(cr1, cr2);
       then
         mod;
-    case ((Absyn.MODIFICATION(finalItem = f,each_ = each_,componentRef = Absyn.CREF_IDENT(name = name1),modification = SOME(Absyn.CLASSMOD(elementArgLst=args)),comment = cmt) :: rest),Absyn.CREF_QUAL(name = name2,componentRef = cr2))
+    case ((Absyn.MODIFICATION(finalPrefix = f,eachPrefix = each_,componentRef = Absyn.CREF_IDENT(name = name1),modification = SOME(Absyn.CLASSMOD(elementArgLst=args)),comment = cmt) :: rest),Absyn.CREF_QUAL(name = name2,componentRef = cr2))
       equation
         true = stringEq(name1, name2);
         res = getModificationValue(args, cr2);
@@ -6874,19 +6874,19 @@ algorithm
       list<Absyn.ElementArg> rest,args;
       Absyn.ComponentRef cr;
     case ({}) then {};
-    case ((Absyn.MODIFICATION(finalItem = f,each_ = each_,componentRef = Absyn.CREF_IDENT(name = name),modification = NONE(),comment = cmt) :: rest))
+    case ((Absyn.MODIFICATION(finalPrefix = f,eachPrefix = each_,componentRef = Absyn.CREF_IDENT(name = name),modification = NONE(),comment = cmt) :: rest))
       equation
         names = getModificationNames(rest);
       then
         (name :: names);
-    case ((Absyn.MODIFICATION(finalItem = f,each_ = each_,componentRef = cr,modification = SOME(Absyn.CLASSMOD({},_)),comment = cmt) :: rest))
+    case ((Absyn.MODIFICATION(finalPrefix = f,eachPrefix = each_,componentRef = cr,modification = SOME(Absyn.CLASSMOD({},_)),comment = cmt) :: rest))
       equation
         name = Dump.printComponentRefStr(cr);
         names = getModificationNames(rest);
       then
         (name :: names);
         // modifier with submodifiers -and- binding, e.g. m(...)=2, add also m to list
-    case ((Absyn.MODIFICATION(finalItem = f,each_ = each_,componentRef = cr,modification = SOME(Absyn.CLASSMOD(args,Absyn.EQMOD(exp=_))),comment = cmt) :: rest))
+    case ((Absyn.MODIFICATION(finalPrefix = f,eachPrefix = each_,componentRef = cr,modification = SOME(Absyn.CLASSMOD(args,Absyn.EQMOD(exp=_))),comment = cmt) :: rest))
       equation
         name = Dump.printComponentRefStr(cr);
         names2 = getModificationNames(args);
@@ -6897,7 +6897,7 @@ algorithm
       then
         name::res;
       // modifier with submodifiers, e.g. m(...)
-    case ((Absyn.MODIFICATION(finalItem = f,each_ = each_,componentRef = cr,modification = SOME(Absyn.CLASSMOD(args,_)),comment = cmt) :: rest))
+    case ((Absyn.MODIFICATION(finalPrefix = f,eachPrefix = each_,componentRef = cr,modification = SOME(Absyn.CLASSMOD(args,_)),comment = cmt) :: rest))
       equation
         name = Dump.printComponentRefStr(cr);
         names2 = getModificationNames(args);
@@ -7302,7 +7302,7 @@ algorithm
       String tmp_str,path_str_lst_no_empty,res;
       Absyn.Program p,p_1;
       Absyn.ComponentRef old_class,new_name;
-      list<SCode.Class> pa_1;
+      list<SCode.Element> pa_1;
       list<Env.Frame> env;
       list<String> path_str_lst;
     case (p,old_class,(new_name as Absyn.CREF_QUAL(name = _)))
@@ -9794,7 +9794,7 @@ algorithm
       case(str) equation
         -1 = System.stringFind(str,"inner");
        -1 = System.stringFind(str,"outer");
-      then Absyn.UNSPECIFIED();
+      then Absyn.NOT_INNER_OUTER();
 
       case(str) equation
        -1 = System.stringFind(str,"outer");
@@ -10262,11 +10262,11 @@ algorithm
     local
       Absyn.Path modelpath,path;
       Absyn.Class cdef;
-      list<SCode.Class> p_1;
+      list<SCode.Element> p_1;
       list<Env.Frame> env,env_1;
-      SCode.Class c;
+      SCode.Element c;
       String id,str,s;
-      Boolean encflag;
+      SCode.Encapsulated encflag;
       SCode.Restriction restr;
       Absyn.ComponentRef model_;
       Integer n,n_1;
@@ -10516,7 +10516,7 @@ end getExtendsInElementitems;
 protected function getNthInheritedClass2
 "function: getNthInheritedClass2
   Helper function to getNthInheritedClass."
-  input SCode.Class inClass1;
+  input SCode.Element inClass1;
   input Absyn.Class inClass2;
   input Integer inInteger3;
   input Env.Env inEnv4;
@@ -10529,11 +10529,11 @@ algorithm
       Absyn.ComponentRef cref;
       Absyn.Path path;
       String str,id;
-      SCode.Class c;
+      SCode.Element c;
       Absyn.Class cdef;
       list<Env.Frame> env,env2,env_2;
       ClassInf.State ci_state;
-      Boolean encflag;
+      SCode.Encapsulated encflag;
       SCode.Restriction restr;
     /* First try without instantiating, if class is in parents */
     case ((c as SCode.CLASS(name = _)),cdef,n,env)
@@ -10552,7 +10552,7 @@ algorithm
         ci_state = ClassInf.start(restr, Env.getEnvName(env2));
         (_,env_2,_,_) =
           Inst.partialInstClassIn(Env.emptyCache(),env2,InnerOuter.emptyInstHierarchy,
-                                  DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, ci_state, c, false, {});
+                                  DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, ci_state, c, SCode.PUBLIC(), {});
         lst = getBaseClasses(cdef, env_2);
         n_1 = n - 1;
         cref = listNth(lst, n_1);
@@ -10693,11 +10693,11 @@ algorithm
   matchcontinue (inComponentRef,inProgram,inInteger)
     local
       Absyn.Path modelpath;
-      list<SCode.Class> p_1;
+      list<SCode.Element> p_1;
       list<Env.Frame> env,env_1;
-      SCode.Class c;
+      SCode.Element c;
       String id,str;
-      Boolean encflag;
+      SCode.Encapsulated encflag;
       SCode.Restriction restr;
       Absyn.Class cdef;
       Absyn.ComponentRef model_;
@@ -10722,7 +10722,7 @@ end getNthComponent;
 protected function getNthComponent2
 "function: getNthComponent2
   Helper function to get_nth_component."
-  input SCode.Class inClass1;
+  input SCode.Element inClass1;
   input Absyn.Class inClass2;
   input Integer inInteger3;
   input Env.Env inEnv4;
@@ -10735,11 +10735,12 @@ algorithm
       ClassInf.State ci_state;
       Absyn.Element comp;
       String s1,str,id;
-      SCode.Class c;
-      Boolean encflag;
+      SCode.Element c;
+      SCode.Encapsulated encflag;
       SCode.Restriction restr;
       Absyn.Class cdef;
       Integer n;
+      
     case ((c as SCode.CLASS(name = id,encapsulatedPrefix = encflag,restriction = restr)),cdef,n,env)
       equation
         env2 = Env.openScope(env, encflag, SOME(id), Env.restrictionToScopeType(restr));
@@ -10747,7 +10748,7 @@ algorithm
         (_,env_2,_,_) =
           Inst.partialInstClassIn(Env.emptyCache(),env2,InnerOuter.emptyInstHierarchy,
                                   DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
-                                  ci_state, c, false, {});
+                                  ci_state, c, SCode.PUBLIC(), {});
         comp = getNthComponentInClass(cdef, n);
         {s1} = getComponentInfoOld(comp, env_2);
         str = stringAppendList({"{", s1, "}"});
@@ -10769,16 +10770,15 @@ public function getComponents
   input Absyn.Program inProgram;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inComponentRef,inProgram)
+  outString := matchcontinue (inComponentRef,inProgram)
     local
       Absyn.Path modelpath;
       Absyn.Class cdef;
-      list<SCode.Class> p_1;
+      list<SCode.Element> p_1;
       list<Env.Frame> env,env_1,env2,env_2;
-      SCode.Class c;
+      SCode.Element c;
       String id,s1,s2,str,res;
-      Boolean encflag;
+      SCode.Encapsulated encflag;
       SCode.Restriction restr;
       ClassInf.State ci_state;
       list<Absyn.Element> comps1,comps2;
@@ -10797,7 +10797,7 @@ algorithm
         ci_state = ClassInf.start(restr, Env.getEnvName(env2));
         (_,env_2,_,_) =
           Inst.partialInstClassIn(cache, env2, InnerOuter.emptyInstHierarchy, DAE.NOMOD(),
-                                  Prefix.NOPRE(), Connect.emptySet, ci_state, c, false, {});
+                                  Prefix.NOPRE(), Connect.emptySet, ci_state, c, SCode.PUBLIC(), {});
         comps1 = getPublicComponentsInClass(cdef);
         s1 = getComponentsInfo(comps1, "\"public\"", env_2);
         comps2 = getProtectedComponentsInClass(cdef);
@@ -12244,7 +12244,7 @@ algorithm
       Absyn.Path envpath,p1;
       String tpname,str;
       Absyn.ComponentRef cref;
-      SCode.Class c;
+      SCode.Element c;
       Env.Cache cache;
 
     case (Absyn.CLASS(body = Absyn.PARTS(classParts = parts)),env)
@@ -12330,7 +12330,7 @@ algorithm
     local
       list<Env.Frame> env,env_1;
       list<Absyn.ComponentRef> cl;
-      SCode.Class c;
+      SCode.Element c;
       Absyn.Path envpath,p_1,path;
       String tpname;
       Absyn.ComponentRef cref;
@@ -13549,7 +13549,7 @@ algorithm
   outString := match (inEquationItem, inClass, inFullProgram, inModelPath)
     local
       Absyn.FunctionArgs fargs;
-      list<SCode.Class> p_1;
+      list<SCode.Element> p_1;
       list<Env.Frame> env;
       DAE.Exp newexp;
       String gexpstr;
@@ -13838,7 +13838,7 @@ protected function getComponentAnnotationsFromElts
   input Absyn.Path inModelPath;
   output String resStr;
 protected
-  list<SCode.Class> graphicProgramSCode;
+  list<SCode.Element> graphicProgramSCode;
   list<Env.Frame> env;
   list<String> res;
   Absyn.Program placementProgram;
@@ -13905,7 +13905,7 @@ algorithm
   outStringLst := match (inAbsynComponentItemLst,inEnv,inClass,inFullProgram,inModelPath)
     local
       list<Env.Frame> env,env_1;
-      SCode.Class c,c_1;
+      SCode.Element c,c_1;
       SCode.Mod mod_1;
       DAE.Mod mod_2;
       DAE.DAElist dae;
@@ -13927,9 +13927,9 @@ algorithm
             _))) :: rest),env,inClass,inFullProgram,inModelPath)
       equation
         (cache,c,env_1) = Lookup.lookupClass(Env.emptyCache(),env, Absyn.IDENT("Placement"), false);
-        mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(mod,Absyn.NOMOD())), false, Absyn.NON_EACH());
+        mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(mod,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH());
         (cache,mod_2) = Mod.elabMod(cache, env_1, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod_1, false, Absyn.dummyInfo);
-        c_1 = SCode.classSetPartial(c, false);
+        c_1 = SCode.classSetPartial(c, SCode.NOT_PARTIAL());
         (_,_,_,_,dae,cs,t,state,_,_) =
           Inst.instClass(cache, env_1,InnerOuter.emptyInstHierarchy,
                          UnitAbsyn.noStore, mod_2, Prefix.NOPRE(), Connect.emptySet,
@@ -14145,7 +14145,7 @@ algorithm
     local
       Env.Cache cache;
       Env.Env env;
-      list<SCode.Class> graphicProgramSCode;
+      list<SCode.Element> graphicProgramSCode;
       Absyn.Program graphicProgram;
       Boolean b1, b2;
       
@@ -14215,7 +14215,7 @@ algorithm
       SCode.Mod mod_1;
       list<Env.Frame> env;
       Absyn.Class placementc;
-      SCode.Class placementclass;
+      SCode.Element placementclass;
       DAE.Mod mod_2;
       DAE.DAElist dae;
       Connect.Sets cs;
@@ -14238,7 +14238,7 @@ algorithm
         
         // print("Annotation(Icon) 1: " +& Dump.unparseMod1Str(stripmod) +& "\n");
         
-        mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(stripmod,Absyn.NOMOD())), false, Absyn.NON_EACH());
+        mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(stripmod,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH());
         
         (cache, env, graphicProgram) = buildEnvForGraphicProgram(inFullProgram, inModelPath, mod, "Icon");
         
@@ -14272,7 +14272,7 @@ algorithm
         // print(Dump.unparseStr(p, false));
         // print("Annotation(Icon): " +& Dump.unparseMod1Str(mod) +& "\n");
         (stripmod,gxmods) = stripGraphicsAndInteractionModification(mod);
-        mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(stripmod,Absyn.NOMOD())), false, Absyn.NON_EACH());
+        mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(stripmod,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH());
         
         // print("Annotation(Icon) 2: " +& Dump.unparseMod1Str(stripmod) +& "\n");
         
@@ -14299,7 +14299,7 @@ algorithm
         // print(Dump.unparseStr(p, false));
         // print("Annotation(Diagram): " +& Dump.unparseMod1Str(mod) +& "\n");
         (stripmod,{Absyn.MODIFICATION(modification=SOME(Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=graphicexp))))}) = stripGraphicsAndInteractionModification(mod);
-        mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(stripmod,Absyn.NOMOD())), false, Absyn.NON_EACH());
+        mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(stripmod,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH());
         
         // print("Annotation(Diagram) 1: " +& Dump.unparseMod1Str(stripmod) +& "\n");
 
@@ -14332,7 +14332,7 @@ algorithm
         // print(Dump.unparseStr(p, false));
         // print("Annotation(Icon): " +& Dump.unparseMod1Str(mod) +& "\n");
         (stripmod,gxmods) = stripGraphicsAndInteractionModification(mod);
-        mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(stripmod,Absyn.NOMOD())), false, Absyn.NON_EACH());
+        mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(stripmod,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH());
         
         // print("Annotation(Diagram) 2: " +& Dump.unparseMod1Str(stripmod) +& "\n");
         
@@ -14359,7 +14359,7 @@ algorithm
         // print(Dump.unparseStr(p, false));
         // print("Annotation(" +& anncname +& "): " +& Dump.unparseMod1Str(mod) +& "\n");
         (stripmod,gxmods) = stripGraphicsAndInteractionModification(mod);
-        mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(stripmod,Absyn.NOMOD())), false, Absyn.NON_EACH());
+        mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(stripmod,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH());
         
         // print("ANY Annotation(" +& anncname +& ") : " +& Dump.unparseMod1Str(mod) +& "\n");
 
@@ -14435,7 +14435,7 @@ algorithm
         (l1,mod::l2);
     
     // collect in the first tuple
-    case (((mod as Absyn.MODIFICATION(finalItem = _)) :: rest))
+    case (((mod as Absyn.MODIFICATION(finalPrefix = _)) :: rest))
       equation
         (l1,l2) = stripGraphicsAndInteractionModification(rest);
       then
@@ -14956,7 +14956,7 @@ algorithm
   outStringLst:=
   matchcontinue (inElement,inString,inEnv)
     local
-      SCode.Class c;
+      SCode.Element c;
       list<Env.Frame> env_1,env;
       Absyn.Path envpath,p_1,p;
       String tpname,typename,finalPrefix,repl,inout_str,flowPrefixstr,streamPrefixstr,variability_str,dir_str,str,access;
@@ -15140,7 +15140,7 @@ algorithm
   outStringLst:=
   matchcontinue (inElement,inEnv)
     local
-      SCode.Class c;
+      SCode.Element c;
       list<Env.Frame> env_1,env;
       Absyn.Path envpath,p_1,p;
       String tpname,typename;
@@ -15195,8 +15195,8 @@ algorithm
   match (inInnerOuter)
     case (Absyn.INNER()) then "\"inner\"";
     case (Absyn.OUTER()) then "\"outer\"";
-    case (Absyn.UNSPECIFIED()) then "\"none\"";
-    case (Absyn.INNEROUTER()) then "\"innerouter\"";
+    case (Absyn.NOT_INNER_OUTER()) then "\"none\"";
+    case (Absyn.INNER_OUTER()) then "\"innerouter\"";
   end match;
 end innerOuterStr;
 
@@ -15867,7 +15867,7 @@ algorithm
         (a1 :: res);
     case ({},c) then {
           Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE(),Absyn.UNSPECIFIED(),"",Absyn.CLASSDEF(false,c),
+          Absyn.ELEMENT(false,NONE(),Absyn.NOT_INNER_OUTER(),"",Absyn.CLASSDEF(false,c),
           Absyn.INFO("",false,0,0,0,0,Absyn.dummyTimeStamp),NONE()))};
   end matchcontinue;
 end removeClassInElementitemlist;
@@ -15961,7 +15961,7 @@ algorithm
         (e1 :: res);
     case ({},c) then {
           Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE(),Absyn.UNSPECIFIED(),"",Absyn.CLASSDEF(false,c),
+          Absyn.ELEMENT(false,NONE(),Absyn.NOT_INNER_OUTER(),"",Absyn.CLASSDEF(false,c),
           Absyn.dummyInfo,NONE()))};
   end matchcontinue;
 end replaceClassInElementitemlist;
@@ -17312,7 +17312,7 @@ algorithm
       then
         Absyn.MODIFICATION(f,e,cr1,mod1,cmt);
     // redeclarations not in flat Modelica
-    case(eltArg as Absyn.REDECLARATION(finalItem = _))
+    case(eltArg as Absyn.REDECLARATION(finalPrefix = _))
       then eltArg;
   end match;
 end transformFlatElementArg;
@@ -17939,7 +17939,7 @@ algorithm
       InteractiveSymbolTable s  "The symboltable where to load the file";
       String topNamesStr;
       Absyn.Program pAst,newP;
-      list<SCode.Class> eAst;
+      list<SCode.Element> eAst;
       list<InstantiatedClass> ic;
       list<InteractiveVariable> iv;
       list<LoadedFile> lf, newLF;
@@ -18268,7 +18268,7 @@ algorithm
       InteractiveSymbolTable s  "The symboltable where to load the file";
       String topNamesStr;
       Absyn.Program pAst,newP;
-      list<SCode.Class> eAst;
+      list<SCode.Element> eAst;
       list<InstantiatedClass> ic;
       list<InteractiveVariable> iv;
       list<LoadedFile> lf, newLF;

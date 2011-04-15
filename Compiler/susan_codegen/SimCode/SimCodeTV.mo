@@ -1362,8 +1362,8 @@ end Restriction;
 uniontype Mod "- Modifications"
 
   record MOD
-    Boolean finalPrefix "final" ;
-    Absyn.Each eachPrefix;
+    Final finalPrefix "final prefix";    
+    Each  eachPrefix "each prefix";    
     list<SubMod> subModLst;
     Option<tuple<Absyn.Exp,Boolean>> binding "The binding expression of a modification
     has an expression and a Boolean delayElaboration which is true if elaboration(type checking)
@@ -1372,8 +1372,9 @@ uniontype Mod "- Modifications"
   end MOD;
 
   record REDECL
-    Boolean finalPrefix       "final" ;
-    list<Element> elementLst  "elements" ;
+    Final         finalPrefix "final prefix";    
+    Each          eachPrefix "each prefix";    
+    list<Element> elementLst  "elements";
   end REDECL;
 
   record NOMOD end NOMOD;
@@ -1397,18 +1398,8 @@ uniontype SubMod "Modifications are represented in an more structured way than i
 
 end SubMod;
 
-type Program = list<Class>;
-
-uniontype Class "- Classes"
-  record CLASS "the simplified SCode class"
-    Ident name "the name of the class" ;
-    Boolean partialPrefix "the partial prefix" ;
-    Boolean encapsulatedPrefix "the encapsulated prefix" ;
-    Restriction restriction "the restriction of the class" ;
-    ClassDef classDef "the class specification" ;
-    Absyn.Info info "the class information";
-  end CLASS;
-end Class;
+type Program = list<Element> "- Programs
+As in the AST, a program is simply a list of class definitions.";
 
 uniontype Enum "Enum, which is a name in an enumeration and an optional Comment."
   record ENUM
@@ -1434,50 +1425,45 @@ uniontype ClassDef
   class extends A (modifier)
     new elements;
   end A;"
+  
   record PARTS "a class made of parts"
     list<Element>              elementLst          "the list of elements";
     list<Equation>             normalEquationLst   "the list of equations";
     list<Equation>             initialEquationLst  "the list of initial equations";
     list<AlgorithmSection>     normalAlgorithmLst  "the list of algorithms";
     list<AlgorithmSection>     initialAlgorithmLst "the list of initial algorithms";
-    Option<Absyn.ExternalDecl> externalDecl        "used by external functions" ;
+    Option<Absyn.ExternalDecl> externalDecl        "used by external functions";
     list<Annotation>           annotationLst       "the list of annotations found in between class elements, equations and algorithms";
     Option<Comment>            comment             "the class comment";
   end PARTS;
 
   record CLASS_EXTENDS "an extended class definition plus the additional parts"
-    Ident            baseClassName       "the name of the base class we have to extend";
-    Mod              modifications       "the modifications that need to be applied to the base class";
-    list<Element>    elementLst          "the list of elements";
-    list<Equation>   normalEquationLst   "the list of equations";
-    list<Equation>   initialEquationLst  "the list of initial equations";
-    list<AlgorithmSection>  normalAlgorithmLst  "the list of algorithms";
-    list<AlgorithmSection>  initialAlgorithmLst "the list of initial algorithms";
-    list<Annotation> annotationLst       "the list of annotations found in between class elements, equations and algorithms";
-    Option<Comment>  comment             "the class comment";
+    Ident                      baseClassName       "the name of the base class we have to extend";
+    Mod                        modifications       "the modifications that need to be applied to the base class";
+    ClassDef                   composition         "the new composition";
   end CLASS_EXTENDS;
 
   record DERIVED "a derived class"
     Absyn.TypeSpec typeSpec "typeSpec: type specification" ;
-    Mod modifications;
-    Absyn.ElementAttributes attributes;
+    Mod modifications       "the modifications";
+    Attributes attributes   "the element attributes";
     Option<Comment> comment "the translated comment from the Absyn";
   end DERIVED;
 
   record ENUMERATION "an enumeration"
-    list<Enum> enumLst "if the list is empty it means :, the supertype of all enumerations";
+    list<Enum> enumLst      "if the list is empty it means :, the supertype of all enumerations";
     Option<Comment> comment "the translated comment from the Absyn";
   end ENUMERATION;
 
   record OVERLOAD "an overloaded function"
-    list<Absyn.Path> pathLst;
-    Option<Comment> comment "the translated comment from the Absyn";
+    list<Absyn.Path> pathLst "the path lists";
+    Option<Comment> comment  "the translated comment from the Absyn";
   end OVERLOAD;
 
   record PDER "the partial derivative"
-    Absyn.Path  functionPath "function name" ;
+    Absyn.Path  functionPath     "function name" ;
     list<Ident> derivedVariables "derived variables" ;
-    Option<Comment> comment "the Absyn comment";
+    Option<Comment> comment      "the Absyn comment";
   end PDER;
 
 end ClassDef;
@@ -1673,60 +1659,121 @@ uniontype Statement "The Statement type describes one algorithm statement in an 
 
 end Statement;
 
+// common prefixes to elements 
+uniontype Visibility "the visibility prefix"
+  record PUBLIC    "a public element"    end PUBLIC;
+  record PROTECTED "a protected element" end PROTECTED;
+end Visibility;
+
+uniontype Redeclare "the redeclare prefix"
+  record REDECLARE     "a redeclare prefix"     end REDECLARE;
+  record NOT_REDECLARE "a non redeclare prefix" end NOT_REDECLARE;
+end Redeclare;
+
+uniontype Replaceable "the replaceable prefix"
+  record REPLACEABLE "a replaceable prefix containing an optional constraint"
+    Option<Absyn.ConstrainClass> cc  "the constraint class"; 
+  end REPLACEABLE;
+  record NOT_REPLACEABLE "a non replaceable prefix" end NOT_REPLACEABLE;
+end Replaceable;
+
+uniontype Final "the final prefix"
+  record FINAL    "a final prefix"      end FINAL;
+  record NOT_FINAL "a non final prefix" end NOT_FINAL;
+end Final;
+
+uniontype Each "the each prefix"
+  record EACH     "a each prefix"     end EACH;
+  record NOT_EACH "a non each prefix" end NOT_EACH;
+end Each;
+
+uniontype Encapsulated "the encapsulated prefix"
+  record ENCAPSULATED     "a encapsulated prefix"     end ENCAPSULATED;
+  record NOT_ENCAPSULATED "a non encapsulated prefix" end NOT_ENCAPSULATED;
+end Encapsulated;
+
+uniontype Partial "the partial prefix"
+  record PARTIAL     "a partial prefix"     end PARTIAL;
+  record NOT_PARTIAL "a non partial prefix" end NOT_PARTIAL;
+end Partial;
+
+uniontype Stream "the stream prefix"
+  record STREAM     "a stream prefix"     end STREAM;
+  record NOT_STREAM "a non stream prefix" end NOT_STREAM;
+end Stream;
+
+uniontype Flow "the flore prefix"
+  record FLOW     "a flow prefix"     end FLOW;
+  record NOT_FLOW "a non flow prefix" end NOT_FLOW;
+end Flow;
+
+uniontype Prefixes "the common class or component prefixes"
+  record PREFIXES "the common class or component prefixes"
+    Visibility       visibility           "the protected/public prefix";
+    Redeclare        redeclarePrefix      "redeclare prefix";    
+    Final            finalPrefix          "final prefix, be it at the element or top level";
+    Absyn.InnerOuter innerOuter           "the inner/outer/innerouter prefix";
+    Replaceable      replaceablePrefix    "replaceable prefix";
+  end PREFIXES;      
+end Prefixes;
+
 uniontype Element "- Elements
   There are four types of elements in a declaration, represented by the constructors:
-  EXTENDS   (for extends clauses),
-  CLASSDEF  (for local class definitions)
-  COMPONENT (for local variables). and
-  IMPORT    (for import clauses)
-  The baseclass name is initially NONE() in the translation,
-  and if an element is inherited from a base class it is
-  filled in during the instantiation process."
+  IMPORT     (for import clauses)
+  EXTENDS    (for extends clauses),
+  CLASS      (for top/local class definitions)
+  COMPONENT  (for local variables)
+  DEFINEUNIT (for units)"
+  
+  record IMPORT "an import element"
+    Absyn.Import imp                 "the import definition";
+    Visibility   visibility          "the protected/public prefix";    
+    Absyn.Info   info                "the import information";
+  end IMPORT;  
+  
   record EXTENDS "the extends element"
-    Path baseClassPath "the extends path";
-    Mod modifications  "the modifications applied to the base class";
-    Option<Annotation> annotation_;
+    Path baseClassPath               "the extends path";
+    Visibility visibility            "the protected/public prefix";
+    Mod modifications                "the modifications applied to the base class";
+    Option<Annotation> ann           "the extends annotation";
+    Absyn.Info info                  "the extends info";
   end EXTENDS;
 
-  record CLASSDEF "a local class definition"
-    Ident   name               "the name of the local class" ;
-    Boolean finalPrefix        "final prefix" ;
-    Boolean replaceablePrefix  "replaceable prefix" ;
-    Class   classDef           "the class definition" ;
-    Option<Absyn.ConstrainClass> cc;
-  end CLASSDEF;
-
-  record IMPORT "an import element"
-    Absyn.Import imp "the import definition";
-  end IMPORT;
-
+  record CLASS "a class definition"
+    Ident   name                     "the name of the class";
+    Prefixes prefixes                "the common class or component prefixes";
+    Encapsulated encapsulatedPrefix  "the encapsulated prefix";
+    Partial partialPrefix            "the partial prefix";    
+    Restriction restriction          "the restriction of the class";
+    ClassDef classDef                "the class specification";
+    Absyn.Info info                  "the class information";
+  end CLASS;
+  
   record COMPONENT "a component"
-    Ident component               "the component name" ;
-    Absyn.InnerOuter innerOuter   "the inner/outer/innerouter prefix";
-    Boolean finalPrefix           "the final prefix" ;
-    Boolean replaceablePrefix     "the replaceable prefix" ;
-    Boolean protectedPrefix       "the protected prefix" ;
-    Attributes attributes         "the component attributes";
-    Absyn.TypeSpec typeSpec       "the type specification" ;
-    Mod modifications             "the modifications to be applied to the component";
-    Option<Comment> comment       "this if for extraction of comments and annotations from Absyn";
-    Option<Absyn.Exp> condition   "the conditional declaration of a component";
-    Option<Absyn.Info> info       "this is for line and column numbers, also file name.";
-    Option<Absyn.ConstrainClass> cc "The constraining class for the component";
+    Ident name                      "the component name";
+    Prefixes prefixes               "the common class or component prefixes";    
+    Attributes attributes           "the component attributes";
+    Absyn.TypeSpec typeSpec         "the type specification";
+    Mod modifications               "the modifications to be applied to the component";
+    Option<Comment> comment         "this if for extraction of comments and annotations from Absyn";
+    Option<Absyn.Exp> condition     "the conditional declaration of a component";
+    Absyn.Info info                 "this is for line and column numbers, also file name.";
   end COMPONENT;
 
   record DEFINEUNIT "a unit defintion has a name and the two optional parameters exp, and weight"
     Ident name;
-    Option<String> exp;
-    Option<Real> weight;
+    Visibility visibility            "the protected/public prefix";
+    Option<String> exp               "the unit expression";
+    Option<Real> weight              "the weight";
   end DEFINEUNIT;
+  
 end Element;
 
 uniontype Attributes "- Attributes"
   record ATTR "the attributes of the component"
     Absyn.ArrayDim arrayDims "the array dimensions of the component";
-    Boolean flowPrefix "the flow prefix" ;
-    Boolean streamPrefix "the stream prefix" ;
+    Flow   flowPrefix   "the flow prefix";
+    Stream streamPrefix "the stream prefix";
     Accessibility accesibility "the accesibility of the component: RW (read/write), RO (read only), WO (write only)" ;
     Variability variability " the variability: parameter, discrete, variable, constant" ;
     Absyn.Direction direction "the direction: input, output or bidirectional" ;
@@ -1741,16 +1788,16 @@ uniontype Variability "the variability of a component"
 end Variability;
 
 uniontype Accessibility "These are attributes that apply to a declared component."
-  record RW "read/write" end RW;
-  record RO "read-only" end RO;
+  record RW "read/write"            end RW;
+  record RO "read-only"             end RO;
   record WO "write-only (not used)" end WO;
 end Accessibility;
 
 uniontype Initial "the initial attribute of an algorithm or equation
  Intial is used as argument to instantiation-function for
  specifying if equations or algorithms are initial or not."
-  record INITIAL "an initial equation or algorithm" end INITIAL;
-  record NON_INITIAL "a normal equation or algorithm" end NON_INITIAL;
+  record INITIAL     "an initial equation or algorithm" end INITIAL;
+  record NON_INITIAL "a normal equation or algorithm"   end NON_INITIAL;
 end Initial;
 
 end SCode;

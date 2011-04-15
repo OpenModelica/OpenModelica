@@ -921,7 +921,7 @@ algorithm
       Option<Ident> optcmt;
       Absyn.RedeclareKeywords keywords;
       Absyn.ElementSpec spec;
-    case (Absyn.MODIFICATION(finalItem = f,each_ = each_,componentRef = r,modification = optm,comment = optcmt))
+    case (Absyn.MODIFICATION(finalPrefix = f,eachPrefix = each_,componentRef = r,modification = optm,comment = optcmt))
       equation
         Print.printBuf("Absyn.MODIFICATION(");
         printBool(f);
@@ -936,7 +936,7 @@ algorithm
         Print.printBuf(")");
       then
         ();
-    case (Absyn.REDECLARATION(finalItem = f,redeclareKeywords = keywords,each_ = each_,elementSpec = spec))
+    case (Absyn.REDECLARATION(finalPrefix = f,redeclareKeywords = keywords,eachPrefix = each_,elementSpec = spec))
       equation
         Print.printBuf("Absyn.REDECLARATION(");
         printBool(f);
@@ -966,7 +966,7 @@ algorithm
       Option<Absyn.ConstrainClass> constr;
       String redeclareStr, replaceableStr;
 
-    case (Absyn.MODIFICATION(finalItem = f,each_ = each_,componentRef = r,modification = optm,comment = optstr))
+    case (Absyn.MODIFICATION(finalPrefix = f,eachPrefix = each_,componentRef = r,modification = optm,comment = optstr))
       equation
         s1 = unparseEachStr(each_);
         s2 = selectString(f, "final ", "");
@@ -976,7 +976,7 @@ algorithm
         str = stringAppendList({s1,s2,s3,s4,s5});
       then
         str;
-    case (Absyn.REDECLARATION(finalItem = f,redeclareKeywords = keywords,each_ = each_,elementSpec = spec,constrainClass = constr))
+    case (Absyn.REDECLARATION(finalPrefix = f,redeclareKeywords = keywords,eachPrefix = each_,elementSpec = spec,constrainClass = constr))
       equation
         s1 = unparseEachStr(each_);
         s2 = selectString(f, "final ", "");
@@ -1663,7 +1663,7 @@ algorithm
   end match;
 end unparseConstrainclassOptStr;
 
-protected function unparseConstrainclassStr
+public function unparseConstrainclassStr
 "function: unparseConstrainclassStr
   author: PA
   This function prettyprints a ConstrainClass to a string."
@@ -1703,14 +1703,14 @@ algorithm
         Print.printBuf("Absyn.OUTER");
       then
         ();
-    case (Absyn.INNEROUTER())
+    case (Absyn.INNER_OUTER())
       equation
-        Print.printBuf("Absyn.INNEROUTER ");
+        Print.printBuf("Absyn.INNER_OUTER ");
       then
         ();
-    case (Absyn.UNSPECIFIED())
+    case (Absyn.NOT_INNER_OUTER())
       equation
-        Print.printBuf("Absyn.UNSPECIFIED ");
+        Print.printBuf("Absyn.NOT_INNER_OUTER ");
       then
         ();
   end match;
@@ -1727,8 +1727,8 @@ algorithm
   match (inInnerOuter)
     case (Absyn.INNER()) then "inner ";
     case (Absyn.OUTER()) then "outer ";
-    case (Absyn.INNEROUTER()) then "inner outer ";
-    case (Absyn.UNSPECIFIED()) then "";
+    case (Absyn.INNER_OUTER()) then "inner outer ";
+    case (Absyn.NOT_INNER_OUTER()) then "";
   end match;
 end unparseInnerouterStr;
 
@@ -5861,13 +5861,13 @@ algorithm
       equation
         Print.printBuf("record Absyn.OUTER end Absyn.OUTER;");
       then ();
-    case Absyn.INNEROUTER()
+    case Absyn.INNER_OUTER()
       equation
-        Print.printBuf("record Absyn.INNEROUTER end Absyn.INNEROUTER;");
+        Print.printBuf("record Absyn.INNER_OUTER end Absyn.INNER_OUTER;");
       then ();
-    case Absyn.UNSPECIFIED()
+    case Absyn.NOT_INNER_OUTER()
       equation
-        Print.printBuf("record Absyn.UNSPECIFIED end Absyn.UNSPECIFIED;");
+        Print.printBuf("record Absyn.NOT_INNER_OUTER end Absyn.NOT_INNER_OUTER;");
       then ();
   end match;
 end printInnerOuterAsCorbaString;
@@ -6491,8 +6491,8 @@ protected function printElementArgAsCorbaString
 algorithm
   _ := match arg
     local
-      Boolean finalItem;
-      Absyn.Each each_;
+      Boolean finalPrefix;
+      Absyn.Each eachPrefix;
       Absyn.ComponentRef componentRef;
       Option<Absyn.Modification> modification;
       Option<String> comment;
@@ -6500,12 +6500,12 @@ algorithm
       Absyn.ElementSpec elementSpec;
       Option<Absyn.ConstrainClass> constrainClass;
       Absyn.Info info;
-    case Absyn.MODIFICATION(finalItem,each_,componentRef,modification,comment)
+    case Absyn.MODIFICATION(finalPrefix,eachPrefix,componentRef,modification,comment)
       equation
-        Print.printBuf("record Absyn.MODIFICATION finalItem = ");
-        Print.printBuf(Util.if_(finalItem,"true","false"));
-        Print.printBuf(", each_ = ");
-        printEachAsCorbaString(each_);
+        Print.printBuf("record Absyn.MODIFICATION finalPrefix = ");
+        Print.printBuf(Util.if_(finalPrefix,"true","false"));
+        Print.printBuf(", eachPrefix = ");
+        printEachAsCorbaString(eachPrefix);
         Print.printBuf(", componentRef = ");
         printComponentRefAsCorbaString(componentRef);
         Print.printBuf(", modification = ");
@@ -6514,14 +6514,14 @@ algorithm
         printStringCommentOption(comment);
         Print.printBuf(" end Absyn.MODIFICATION;");
       then ();
-    case Absyn.REDECLARATION(finalItem,redeclareKeywords,each_,elementSpec,constrainClass,info)
+    case Absyn.REDECLARATION(finalPrefix,redeclareKeywords,eachPrefix,elementSpec,constrainClass,info)
       equation
-        Print.printBuf("record Absyn.REDECLARATION finalItem = ");
-        Print.printBuf(Util.if_(finalItem,"true","false"));
+        Print.printBuf("record Absyn.REDECLARATION finalPrefix = ");
+        Print.printBuf(Util.if_(finalPrefix,"true","false"));
         Print.printBuf(", redeclareKeywords = ");
         printRedeclareKeywordsAsCorbaString(redeclareKeywords);
-        Print.printBuf(", each_ = ");
-        printEachAsCorbaString(each_);
+        Print.printBuf(", eachPrefix = ");
+        printEachAsCorbaString(eachPrefix);
         Print.printBuf(", elementSpec = ");
         printElementSpecAsCorbaString(elementSpec);
         Print.printBuf(", constrainClass = ");

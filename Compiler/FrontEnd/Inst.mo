@@ -112,7 +112,7 @@ type InstanceHierarchy = InnerOuter.InstHierarchy "an instance hierarchy";
 
 public uniontype CallingScope "
 Calling scope is used to determine when unconnected flow variables should be set to zero."
-  record TOP_CALL "this is a top call" end TOP_CALL;
+  record TOP_CALL   "this is a top call"    end TOP_CALL;
   record INNER_CALL "this is an inner call" end INNER_CALL;
 end CallingScope;
 
@@ -176,7 +176,7 @@ end newIdent;
 protected function isNotFunction
 "function: isNotFunction
   This function returns true if the Class is not a function."
-  input SCode.Class cls;
+  input SCode.Element cls;
   output Boolean res;
 algorithm
   res := SCode.isFunction(cls);
@@ -198,7 +198,7 @@ public function instantiate
 algorithm
   (outCache,outIH,outDAElist,outProgram) := match (inCache,inIH,inProgram)
     local
-      list<SCode.Class> pnofunc,pfunc,p;
+      list<SCode.Element> pnofunc,pfunc,p;
       list<Env.Frame> env,envimpl,envimpl_1;
       DAE.DAElist lfunc,lnofunc,l;
       Env.Cache cache;
@@ -250,7 +250,7 @@ algorithm
     local
       list<Env.Frame> env,env_1;
       DAE.DAElist l;
-      list<SCode.Class> p;
+      list<SCode.Element> p;
       Env.Cache cache;
     case (cache,inIH,p)
       equation
@@ -291,9 +291,9 @@ algorithm
       Absyn.Path cr,path;
       list<Env.Frame> env,env_1,env_2;
       DAE.DAElist dae1,dae,dae2;
-      list<SCode.Class> cdecls;
+      list<SCode.Element> cdecls;
       String name2,n,pathstr,name,cname_str;
-      SCode.Class cdef;
+      SCode.Element cdef;
       Env.Cache cache;
       InstanceHierarchy ih;
       ConnectionGraph.ConnectionGraph graph;
@@ -465,52 +465,60 @@ Helper function for reEvaluateInitialIfEqns, makes the contenst of an initial if
   output list<DAE.Element> outElems;
 algorithm 
   outElems := matchcontinue(inElems)
-  local
-    DAE.Element elem;
-    DAE.ComponentRef cr;
-    DAE.Exp e1,e2;
-    DAE.ElementSource s;
-    list<DAE.Exp> expl;
-    list<list<DAE.Element>> tbs ;
-    list<DAE.Element> fb;
-    DAE.Algorithm al;
-    list<DAE.Dimension> dims;
+    local
+      DAE.Element elem;
+      DAE.ComponentRef cr;
+      DAE.Exp e1,e2;
+      DAE.ElementSource s;
+      list<DAE.Exp> expl;
+      list<list<DAE.Element>> tbs ;
+      list<DAE.Element> fb;
+      DAE.Algorithm al;
+      list<DAE.Dimension> dims;
+    
     case({}) then {};
+    
     case(DAE.DEFINE(cr,e1,s)::inElems)
       equation
         outElems = makeDAEElementInitial(inElems);
-        then
-          DAE.INITIALDEFINE(cr,e1,s)::outElems;
+      then
+        DAE.INITIALDEFINE(cr,e1,s)::outElems;
+    
     case(DAE.ARRAY_EQUATION(dims,e1,e2,s)::_)
       equation
         outElems = makeDAEElementInitial(inElems);
-        then
-          DAE.INITIAL_ARRAY_EQUATION(dims,e1,e2,s)::outElems;
+      then
+        DAE.INITIAL_ARRAY_EQUATION(dims,e1,e2,s)::outElems;
+    
     case(DAE.EQUATION(e1,e2,s)::inElems)
       equation
         outElems = makeDAEElementInitial(inElems);
-        then
-          DAE.INITIALEQUATION(e1,e2,s)::outElems;
+      then
+        DAE.INITIALEQUATION(e1,e2,s)::outElems;
+    
     case(DAE.IF_EQUATION(expl,tbs,fb,s)::inElems)
       equation
         outElems = makeDAEElementInitial(inElems);
-        then
-          DAE.INITIAL_IF_EQUATION(expl,tbs,fb,s)::outElems;
+      then
+        DAE.INITIAL_IF_EQUATION(expl,tbs,fb,s)::outElems;
+    
     case(DAE.ALGORITHM(al,s)::inElems)
       equation
         outElems = makeDAEElementInitial(inElems);
-        then
-          DAE.INITIALALGORITHM(al,s)::outElems;
+      then
+        DAE.INITIALALGORITHM(al,s)::outElems;
+    
     case(DAE.COMPLEX_EQUATION(e1,e2,s)::inElems)
       equation
         outElems = makeDAEElementInitial(inElems);
-        then
-          DAE.INITIAL_COMPLEX_EQUATION(e1,e2,s)::outElems;
+      then
+        DAE.INITIAL_COMPLEX_EQUATION(e1,e2,s)::outElems;
+    
     case(elem::inElems) // safe "last case" since we can not fail in cases above.
       equation
         outElems = makeDAEElementInitial(inElems);
-        then
-          elem::outElems;
+      then
+        elem::outElems;
   end matchcontinue;
 end makeDAEElementInitial;
 
@@ -533,9 +541,9 @@ algorithm
       Absyn.Path cr,path;
       list<Env.Frame> env,env_1,env_2;
       DAE.DAElist dae1,dae;
-      list<SCode.Class> cdecls;
+      list<SCode.Element> cdecls;
       String name2,n,pathstr,name,cname_str;
-      SCode.Class cdef;
+      SCode.Element cdef;
       Env.Cache cache;
       InstanceHierarchy ih;
       DAE.ElementSource source "the origin of the element";
@@ -551,7 +559,7 @@ algorithm
       equation
         (cache,env) = Builtin.initialEnv(cache);
         (cache,env_1,ih,dae1) = instClassDecls(cache, env, ih, cdecls, path);
-        cdecls = Util.listMap1(cdecls,SCode.classSetPartial,false);
+        cdecls = Util.listMap1(cdecls,SCode.classSetPartial,SCode.NOT_PARTIAL());
         (cache,env_2,ih,dae) = instClassInProgram(cache, env_1, ih, cdecls, path);
 
         // set the source of this element
@@ -566,7 +574,7 @@ algorithm
         (cache,env) = Builtin.initialEnv(cache);
         (cache,env_1,ih,_) = instClassDecls(cache, env, ih, cdecls, path);
         (cache,(cdef as SCode.CLASS(name = n)),env_2) = Lookup.lookupClass(cache,env_1, path, true);
-        cdef = SCode.classSetPartial(cdef, false);
+        cdef = SCode.classSetPartial(cdef, SCode.NOT_PARTIAL());
         (cache,env_2,ih,_,dae,_,_,_,_,_) =
           instClass(cache, env_2, ih, UnitAbsynBuilder.emptyInstStore(),DAE.NOMOD(), Prefix.NOPRE(),
             Connect.emptySet, cdef, {}, false, TOP_CALL(), ConnectionGraph.EMPTY) "impl" ;
@@ -608,9 +616,9 @@ algorithm
       Absyn.Path cr,path;
       list<Env.Frame> env,env_1,env_2;
       DAE.DAElist dae1,dae;
-      list<SCode.Class> cdecls;
+      list<SCode.Element> cdecls;
       String name2,n,name;
-      SCode.Class cdef;
+      SCode.Element cdef;
       Env.Cache cache;
       InstanceHierarchy ih;
 
@@ -663,9 +671,9 @@ algorithm
     local
       Absyn.Path cr,path;
       list<Env.Frame> env,env_1,env_2;
-      list<SCode.Class> cdecls;
+      list<SCode.Element> cdecls;
       String name2,n,name;
-      SCode.Class cdef;
+      SCode.Element cdef;
       Env.Cache cache;
       InstanceHierarchy ih;
 
@@ -728,9 +736,9 @@ algorithm
     local
       DAE.DAElist dae;
       list<Env.Frame> env_1,env;
-      SCode.Class c;
+      SCode.Element c;
       String name,name2;
-      list<SCode.Class> cs;
+      list<SCode.Element> cs;
       Absyn.Path path;
       Env.Cache cache;
       InstanceHierarchy ih;
@@ -800,9 +808,9 @@ algorithm
     local
       list<Env.Frame> env_1,env;
       DAE.DAElist dae;
-      SCode.Class c;
+      SCode.Element c;
       String name,name2;
-      list<SCode.Class> cs;
+      list<SCode.Element> cs;
       Absyn.Path path;
       Env.Cache cache;
       InstanceHierarchy ih;
@@ -848,9 +856,9 @@ algorithm
   (outCache,outEnv,outIH) := matchcontinue (inCache,inEnv,inIH,inProgram,inPath)
     local
       list<Env.Frame> env_1,env;
-      SCode.Class c;
+      SCode.Element c;
       String name1,name2;
-      list<SCode.Class> cs;
+      list<SCode.Element> cs;
       Absyn.Path path;
       Env.Cache cache;
       InstanceHierarchy ih;
@@ -894,9 +902,9 @@ algorithm
     local
       list<Env.Frame> env_1,env_2,env;
       DAE.DAElist dae1,dae2,dae;
-      SCode.Class c;
+      SCode.Element c;
       String name1,name2;
-      list<SCode.Class> cs;
+      list<SCode.Element> cs;
       Absyn.Path ref;
       Env.Cache cache;
       InstanceHierarchy ih;
@@ -1014,9 +1022,9 @@ algorithm
       list<Env.Frame> env,env_1;
       DAE.DAElist dae,dae1,dae2;
       Connect.Sets csets;
-      SCode.Class c;
+      SCode.Element c;
       String n;
-      list<SCode.Class> cs;
+      list<SCode.Element> cs;
       Env.Cache cache;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
@@ -1106,10 +1114,10 @@ algorithm
     local
       list<Env.Frame> env_1,env_2,env;
       DAE.DAElist dae1,dae2,dae;
-      SCode.Class c;
+      SCode.Element c;
       String n;
       SCode.Restriction restr;
-      list<SCode.Class> cs;
+      list<SCode.Element> cs;
       Env.Cache cache;
       InstanceHierarchy ih;
 
@@ -1150,7 +1158,7 @@ public function instClass " function: instClass
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
-  input SCode.Class inClass;
+  input SCode.Element inClass;
   input InstDims inInstDims;
   input Boolean inBoolean;
   input CallingScope inCallingScope;
@@ -1163,7 +1171,7 @@ public function instClass " function: instClass
   output Connect.Sets outSets;
   output DAE.Type outType;
   output ClassInf.State outState;
-  output Option<Absyn.ElementAttributes> optDerAttr;
+  output Option<SCode.Attributes> optDerAttr;
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm
   (cache,outEnv,outIH,outStore,outDae,outSets,outType,outState,optDerAttr,outGraph):=
@@ -1174,18 +1182,20 @@ algorithm
       Prefix.Prefix pre;
       Connect.Sets csets,csets_1;
       String n;
-      Boolean partialPrefix,impl,callscope_1,encflag,isFn,notIsPartial,isPartialFn;
+      Boolean impl,callscope_1,isFn,notIsPartial,isPartialFn;
+      SCode.Partial partialPrefix;
+      SCode.Encapsulated encflag;
       ClassInf.State ci_state,ci_state_1;
       DAE.DAElist dae1,dae1_1,dae2,dae;
       list<DAE.Var> tys;
       Option<tuple<DAE.TType, Option<Absyn.Path>>> bc_ty;
       Absyn.Path fq_class;
       tuple<DAE.TType, Option<Absyn.Path>> ty;
-      SCode.Class c;
+      SCode.Element c;
       SCode.Restriction r;
       InstDims inst_dims;
       CallingScope callscope;
-      Option<Absyn.ElementAttributes> oDA;
+      Option<SCode.Attributes> oDA;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
       DAE.EqualityConstraint equalityConstraint;
@@ -1193,11 +1203,11 @@ algorithm
 
     // adrpo: ONLY when running checkModel we should be able to instantiate partial classes
     case (cache,env,ih,store,mod,pre,csets,
-          (c as SCode.CLASS(name=n, partialPrefix = true, info = info)),
+          (c as SCode.CLASS(name=n, partialPrefix = SCode.PARTIAL(), info = info)),
           inst_dims,impl,callscope,graph)
       equation
         true = OptManager.getOption("checkModel");
-        c = SCode.setClassPartialPrefix(false, c);
+        c = SCode.setClassPartialPrefix(SCode.NOT_PARTIAL(), c);
         // add a warning
         Error.addSourceMessage(Error.INST_PARTIAL_CLASS_CHECK_MODEL_WARNING, {n}, info);
         // call normal instantiation        
@@ -1218,15 +1228,15 @@ algorithm
 
         // First check if the class is non-partial or a partial function
         isFn = SCode.isFunctionOrExtFunction(r);
-        notIsPartial = not partialPrefix;
-        isPartialFn = isFn and partialPrefix;
+        notIsPartial = not SCode.partialBool(partialPrefix);
+        isPartialFn = isFn and SCode.partialBool(partialPrefix);
         true = notIsPartial or isPartialFn;
 
         env_1 = Env.openScope(env, encflag, SOME(n), Env.restrictionToScopeType(r));
 
         ci_state = ClassInf.start(r,Env.getEnvName(env_1));
         (cache,env_3,ih,store,dae1,csets_1,ci_state_1,tys,bc_ty,oDA,equalityConstraint, graph)
-          = instClassIn(cache, env_1, ih, store, mod, pre, csets, ci_state, c, false, inst_dims, impl, callscope, graph,NONE());
+          = instClassIn(cache, env_1, ih, store, mod, pre, csets, ci_state, c, SCode.PUBLIC(), inst_dims, impl, callscope, graph, NONE());
         (cache,fq_class) = makeFullyQualified(cache,env, Absyn.IDENT(n));
         //str = Absyn.pathString(fq_class); print("------------------- CLASS makeFullyQualified instClass-----------------\n");print(n); print("  ");print(str);print("\n===============================================\n");
         
@@ -1262,7 +1272,7 @@ algorithm
         (cache,env_3,ih,store,dae,csets_1,ty,ci_state_1,oDA,graph);
 
       /*  Classes with the keyword partial can not be instantiated. They can only be inherited */
-    case (cache,env,ih,store,mod,pre,csets,SCode.CLASS(name = n,partialPrefix = true, info = info),_,(impl as false),_,graph)
+    case (cache,env,ih,store,mod,pre,csets,SCode.CLASS(name = n,partialPrefix = SCode.PARTIAL(), info = info),_,(impl as false),_,graph)
       equation
         Error.addSourceMessage(Error.INST_PARTIAL_CLASS, {n}, info);
       then
@@ -1301,26 +1311,29 @@ protected function updateEnumerationEnvironment
   input Env.Cache inCache;
   input Env.Env inEnv;
   input tuple<DAE.TType, Option<Absyn.Path>> inType;
-  input SCode.Class inClass;
+  input SCode.Element inClass;
   input ClassInf.State inCi_State;
   output Env.Cache outCache;
   output Env.Env outEnv;
 algorithm
   (outCache,outEnv) := matchcontinue(inCache,inEnv,inType,inClass,inCi_State)
-  local
-    Env.Cache cache;
-    Env.Env env,env_1;
-    tuple<DAE.TType, Option<Absyn.Path>> ty;
-    SCode.Class c;
-    list<String> names;
-    list<DAE.Var> vars;
-    Absyn.Path p,pname;
+    local
+      Env.Cache cache;
+      Env.Env env,env_1;
+      tuple<DAE.TType, Option<Absyn.Path>> ty;
+      SCode.Element c;
+      list<String> names;
+      list<DAE.Var> vars;
+      Absyn.Path p,pname;
+    
     case (cache,env,ty as ((DAE.T_ENUMERATION(names = names, literalVarLst = vars)),SOME(p)),c,ClassInf.ENUMERATION(pname))
       equation
         (cache,env_1) = updateEnumerationEnvironment1(cache,env,Absyn.pathString(pname),names,vars,p);
       then
        (cache,env_1);
+    
     case (cache,env,ty,c,_) then (cache,env);
+  
   end matchcontinue;
 end updateEnumerationEnvironment;
 
@@ -1348,17 +1361,17 @@ algorithm
       Env.InstStatus instStatus;
       Absyn.Path p;
       DAE.Attributes attributes;
-      Boolean protected_;
+      SCode.Visibility visibility;
       DAE.Binding binding;
       Option<DAE.Const> cnstOpt;
     
     case (cache,env,name,nn::names,(var as DAE.TYPES_VAR(_,_,_,ty,_,_))::vars,p) 
       equation
         // get Var
-        (cache,DAE.TYPES_VAR(name,attributes,protected_,_,binding,cnstOpt),outTplSCodeElementTypesModOption,instStatus,compenv) = Lookup.lookupIdentLocal(cache, env, nn);
+        (cache,DAE.TYPES_VAR(name,attributes,visibility,_,binding,cnstOpt),outTplSCodeElementTypesModOption,instStatus,compenv) = Lookup.lookupIdentLocal(cache, env, nn);
         // print("updateEnumerationEnvironment1 -> component: " +& name +& " ty: " +& Types.printTypeStr(ty) +& "\n");
         // change type
-        new_var = DAE.TYPES_VAR(name,attributes,protected_,ty,binding,cnstOpt);
+        new_var = DAE.TYPES_VAR(name,attributes,visibility,ty,binding,cnstOpt);
         // update
          env_1 = Env.updateFrameV(env, new_var, Env.VAR_DAE(), compenv)  ;
         // next
@@ -1593,9 +1606,9 @@ protected function instClassBasictype
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
-  input SCode.Class inClass;
+  input SCode.Element inClass;
   input InstDims inInstDims;
-  input Boolean inBoolean;
+  input Boolean inImplicit;
   input CallingScope inCallingScope;
   output Env.Cache outCache;
   output Env.Env outEnv;
@@ -1608,17 +1621,18 @@ protected function instClassBasictype
   output ClassInf.State outState;
 algorithm
   (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outTypeVars,outState):=
-  match (inCache,inEnv,inIH,store,inMod,inPrefix,inSets,inClass,inInstDims,inBoolean,inCallingScope)
+  match (inCache,inEnv,inIH,store,inMod,inPrefix,inSets,inClass,inInstDims,inImplicit,inCallingScope)
     local
       list<Env.Frame> env_1,env_3,env;
       ClassInf.State ci_state,ci_state_1;
-      SCode.Class c_1,c;
+      SCode.Element c_1,c;
       DAE.DAElist dae1,dae1_1,dae;
       Connect.Sets csets_1,csets;
       list<DAE.Var> tys;
       Option<DAE.Type> bc_ty;
       Absyn.Path fq_class;
-      Boolean encflag,impl;
+      SCode.Encapsulated encflag;
+      Boolean impl;
       tuple<DAE.TType, Option<Absyn.Path>> ty;
       DAE.Mod mod;
       Prefix.Prefix pre;
@@ -1628,13 +1642,14 @@ algorithm
       CallingScope callscope;
       Env.Cache cache;
       InstanceHierarchy ih;
+    
     case (cache,env,ih,store,mod,pre,csets,(c as SCode.CLASS(name = n,encapsulatedPrefix = encflag,restriction = r)),inst_dims,impl,callscope) /* impl */
       equation
         env_1 = Env.openScope(env, encflag, SOME(n), Env.restrictionToScopeType(r));
         ci_state = ClassInf.start(r, Env.getEnvName(env_1));
-        c_1 = SCode.classSetPartial(c, false);
+        c_1 = SCode.classSetPartial(c, SCode.NOT_PARTIAL());
         (cache,env_3,ih,store,dae1,csets_1,ci_state_1,tys,bc_ty,_,_,_)
-        = instClassIn(cache,env_1,ih,store, mod, pre, csets, ci_state, c_1, false, inst_dims, impl, INNER_CALL(), ConnectionGraph.EMPTY,NONE());
+        = instClassIn(cache, env_1, ih, store, mod, pre, csets, ci_state, c_1, SCode.PUBLIC(), inst_dims, impl, INNER_CALL(), ConnectionGraph.EMPTY, NONE());
         (cache,fq_class) = makeFullyQualified(cache,env_3, Absyn.IDENT(n));
         dae1_1 = DAEUtil.addComponentType(dae1, fq_class);
         dae = dae1_1;
@@ -1647,6 +1662,7 @@ algorithm
         //Debug.fprintln("failtrace", "- Inst.instClassBasictype: " +& n +& " failed");
       then
         fail();
+    
   end match;
 end instClassBasictype;
 
@@ -1669,8 +1685,8 @@ public function instClassIn "
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
-  input SCode.Class inClass;
-  input Boolean isProtected;
+  input SCode.Element inClass;
+  input SCode.Visbibility inVisiblity;
   input InstDims inInstDims;
   input Boolean implicitInstantiation;
   input ConnectionGraph.ConnectionGraph inGraph;
@@ -1684,12 +1700,12 @@ public function instClassIn "
   output ClassInf.State outState;
   output list<DAE.Var> outTypesVarLst;
   output Option<DAE.Type> outTypesTypeOption;
-  output Option<Absyn.ElementAttributes> optDerAttr;
+  output Option<SCode.Attributes> optDerAttr;
   output DAE.EqualityConstraint outEqualityConstraint;
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm
   (outCache,outEnv,outIH,outStore,outDae,outSets,outState,outTypesVarLst,outTypesTypeOption,optDerAttr,outEqualityConstraint,outGraph):=
-  matchcontinue (inCache,inEnv,inIH,store,inMod,inPrefix,inSets,inState,inClass,isProtected,inInstDims,implicitInstantiation,inGraph,instSingleCref)
+  matchcontinue (inCache,inEnv,inIH,store,inMod,inPrefix,inSets,inState,inClass,inVisiblity,inInstDims,implicitInstantiation,inGraph,instSingleCref)
     local
       Option<tuple<DAE.TType, Option<Absyn.Path>>> bc;
       list<Env.Frame> env,env_1;
@@ -1697,9 +1713,10 @@ algorithm
       Prefix.Prefix pre;
       list<DAE.ComponentRef> crs;
       ClassInf.State ci_state,ci_state_1;
-      SCode.Class c,cls;
+      SCode.Element c,cls;
       InstDims inst_dims;
-      Boolean impl,prot;
+      Boolean impl;
+      SCode.Visibility vis;
       String clsname,implstr,n;
       DAE.DAElist dae;
       Connect.Sets csets_1,csets;
@@ -1710,16 +1727,16 @@ algorithm
       list<DAE.ComponentRef> dc;
       Real t1,t2,time; Boolean b;
       list<Connect.OuterConnect> oc;
-      Option<Absyn.ElementAttributes> oDA;
+      Option<SCode.Attributes> oDA;
       DAE.EqualityConstraint equalityConstraint;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
       InstHashTable instHash;
       tuple<Env.Cache, Env, InstanceHierarchy, UnitAbsyn.InstStore, DAE.Mod, Prefix.Prefix,
-            Connect.Sets, ClassInf.State, SCode.Class, Boolean, InstDims, Boolean,
+            Connect.Sets, ClassInf.State, SCode.Element, Boolean, InstDims, Boolean,
             ConnectionGraph.ConnectionGraph, Option<DAE.ComponentRef>> inputs;
       tuple<Env, DAE.DAElist, Connect.Sets, ClassInf.State, list<DAE.Var>, Option<DAE.Type>,
-            Option<Absyn.ElementAttributes>, DAE.EqualityConstraint> outputs;
+            Option<SCode.Attributes>, DAE.EqualityConstraint> outputs;
       Absyn.Path fullEnvPathPlusClass;
       Option<Absyn.Path> envPathOpt;
       String className, str1, str2;
@@ -1728,7 +1745,7 @@ algorithm
       Prefix.Prefix aa_2;
       Connect.Sets aa_3;
       ClassInf.State aa_4;
-      SCode.Class aa_5;
+      SCode.Element aa_5;
       Boolean aa_6;
       InstDims aa_7;
       Boolean aa_8;
@@ -1738,22 +1755,22 @@ algorithm
       CachedInstItem partialFunc;
       Real t1, t2, t;
 
-    //case (cache,env,ih,store,mods,pre,csets,ci_state,c as SCode.CLASS(name=className),prot,inst_dims,impl,graph,instSingleCref)
+    //case (cache,env,ih,store,mods,pre,csets,ci_state,c as SCode.CLASS(name=className),vis,inst_dims,impl,graph,instSingleCref)
     //  equation
     //    print("\n" +& Dump.indentStr(System.getTimerStackIndex()) +& "(" +& className);
     //    System.startTimer();
     //  then
     //  fail();
 
-    case (cache,env,ih,store,mods,pre,csets,ci_state,c as SCode.CLASS(name=className),prot,inst_dims,impl,graph,instSingleCref)
+    case (cache,env,ih,store,mods,pre,csets,ci_state,c as SCode.CLASS(name=className),vis,inst_dims,impl,graph,instSingleCref)
       equation        
-        (cache,env,ih,store,dae,csets,ci_state,tys,bc,oDA,equalityConstraint,graph) = instClassIn2(cache,env,ih,store,mods,pre,csets,ci_state,c,prot,inst_dims,impl,graph,instSingleCref);
+        (cache,env,ih,store,dae,csets,ci_state,tys,bc,oDA,equalityConstraint,graph) = instClassIn2(cache,env,ih,store,mods,pre,csets,ci_state,c,vis,inst_dims,impl,graph,instSingleCref);
         //System.stopTimer();
         //print("\n" +& Dump.indentStr(System.getTimerStackIndex()) +& " " +& className +& ": " +& realString(System.getTimerIntervalTime()) +& ")");
       then 
         (cache,env,ih,store,dae,csets,ci_state,tys,bc,oDA,equalityConstraint,graph);
     
-    case (cache,env,ih,store,mods,pre,csets,ci_state,c as SCode.CLASS(name=className),prot,inst_dims,impl,graph,instSingleCref)
+    case (cache,env,ih,store,mods,pre,csets,ci_state,c as SCode.CLASS(name=className),vis,inst_dims,impl,graph,instSingleCref)
       equation
         //System.stopTimer();
         //print("\n" +& Dump.indentStr(System.getTimerStackIndex()) +& " FAILED: " +& className +& ": " +& realString(System.getTimerIntervalTime()) +& ")");
@@ -1781,8 +1798,8 @@ public function instClassIn "
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
-  input SCode.Class inClass;
-  input Boolean isProtected;
+  input SCode.Element inClass;
+  input SCode.Visibility inVisibility;
   input InstDims inInstDims;
   input Boolean implicitInstantiation;
   input CallingScope inCallingScope;
@@ -1797,21 +1814,22 @@ public function instClassIn "
   output ClassInf.State outState;
   output list<DAE.Var> outTypesVarLst;
   output Option<DAE.Type> outTypesTypeOption;
-  output Option<Absyn.ElementAttributes> optDerAttr;
+  output Option<SCode.Attributes> optDerAttr;
   output DAE.EqualityConstraint outEqualityConstraint;
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm
   (outCache,outEnv,outIH,outStore,outDae,outSets,outState,outTypesVarLst,outTypesTypeOption,optDerAttr,outEqualityConstraint,outGraph):=
-  matchcontinue (inCache,inEnv,inIH,store,inMod,inPrefix,inSets,inState,inClass,isProtected,inInstDims,implicitInstantiation,inCallingScope,inGraph,instSingleCref)
+  matchcontinue (inCache,inEnv,inIH,store,inMod,inPrefix,inSets,inState,inClass,inVisibility,inInstDims,implicitInstantiation,inCallingScope,inGraph,instSingleCref)
     local
       Option<tuple<DAE.TType, Option<Absyn.Path>>> bc;
       list<Env.Frame> env;
       DAE.Mod mods;
       Prefix.Prefix pre;
       ClassInf.State ci_state;
-      SCode.Class c;
+      SCode.Element c;
       InstDims inst_dims;
-      Boolean impl,prot;
+      Boolean impl;
+      SCode.Visibility vis;
       String n;
       DAE.DAElist dae;
       Connect.Sets csets_1,csets;
@@ -1819,18 +1837,18 @@ algorithm
       SCode.Restriction r,rCached;
       SCode.ClassDef d;
       Env.Cache cache;
-      Option<Absyn.ElementAttributes> oDA;
+      Option<SCode.Attributes> oDA;
       DAE.EqualityConstraint equalityConstraint;
       CallingScope callscope;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
       InstHashTable instHash;
       tuple<Env.Cache, Env.Env, InstanceHierarchy, UnitAbsyn.InstStore, DAE.Mod, Prefix.Prefix,
-            Connect.Sets, ClassInf.State, SCode.Class, Boolean, InstDims, Boolean,
+            Connect.Sets, ClassInf.State, SCode.Element, SCode.Visibility, InstDims, Boolean,
             ConnectionGraph.ConnectionGraph, Option<DAE.ComponentRef>> inputs;
       tuple<Env.Env, DAE.DAElist,
             Connect.Sets, ClassInf.State, list<DAE.Var>, Option<DAE.Type>,
-            Option<Absyn.ElementAttributes>, DAE.EqualityConstraint, ConnectionGraph.ConnectionGraph 
+            Option<SCode.Attributes>, DAE.EqualityConstraint, ConnectionGraph.ConnectionGraph 
             > outputs;
       Absyn.Path fullEnvPathPlusClass;
       Option<Absyn.Path> envPathOpt;
@@ -1840,23 +1858,27 @@ algorithm
       Prefix.Prefix aa_2;
       Connect.Sets aa_3;
       ClassInf.State aa_4;
-      SCode.Class aa_5;
+      SCode.Element aa_5;
       InstDims aa_7;
       Boolean aa_8;
       Option<DAE.ComponentRef> aa_9;
-      tuple<InstDims,Boolean,DAE.Mod,Connect.Sets,ClassInf.State,SCode.Class,Option<DAE.ComponentRef>> bbx, bby;
+      tuple<InstDims,Boolean,DAE.Mod,Connect.Sets,ClassInf.State,SCode.Element,Option<DAE.ComponentRef>> bbx, bby;
       ConnectionGraph.ConnectionGraph graphCached;
 
     /* Partial packages can sometimes be instantiated here, but should really be done in partialInstClass, since
      * it filters out a lot of things. */
-    case (cache,env,ih,store,mods,pre,csets,ci_state,c as SCode.CLASS(restriction = SCode.R_PACKAGE(), partialPrefix = true),prot,inst_dims,impl,_,graph,instSingleCref)
+    case (cache,env,ih,store,mods,pre,csets,ci_state,
+      c as SCode.CLASS(restriction = SCode.R_PACKAGE(), partialPrefix = SCode.PARTIAL()),
+      vis,inst_dims,impl,_,graph,instSingleCref)
       equation
-        (cache,env,ih,ci_state) = partialInstClassIn(cache, env, ih, mods, pre, csets, ci_state, c, prot, inst_dims);
+        (cache,env,ih,ci_state) = partialInstClassIn(cache, env, ih, mods, pre, csets, ci_state, c, vis, inst_dims);
       then 
         (cache,env,ih,store,DAEUtil.emptyDae,csets,ci_state,{},NONE(),NONE(),NONE(),graph);
     
     /*  see if we have it in the cache */
-    case (cache,env,ih,store,mods,pre,csets,ci_state,c as SCode.CLASS(name = className, restriction=r),prot,inst_dims,impl,_,graph,instSingleCref)
+    case (cache,env,ih,store,mods,pre,csets,ci_state,
+      c as SCode.CLASS(name = className, restriction=r),
+      vis,inst_dims,impl,_,graph,instSingleCref)
       equation
         false = RTOpts.debugFlag("noCache");
         instHash = getGlobalRoot(instHashIndex);
@@ -1884,15 +1906,17 @@ algorithm
         (inCache,env,ih,store,dae,csets_1,ci_state,tys,bc,oDA,equalityConstraint,graph);
     
     /* call the function and then add it in the cache */
-    case (cache,env,ih,store,mods,pre,csets,ci_state,c as SCode.CLASS(restriction=r, name=className),prot,inst_dims,impl,callscope,graph,instSingleCref)
+    case (cache,env,ih,store,mods,pre,csets,ci_state,
+      c as SCode.CLASS(restriction=r, name=className),
+      vis,inst_dims,impl,callscope,graph,instSingleCref)
       equation
         (cache,env,ih,store,dae,csets,ci_state,tys,bc,oDA,equalityConstraint,graph) =
-           instClassIn_dispatch(inCache,inEnv,inIH,store,inMod,inPrefix,inSets,inState,inClass,isProtected,inInstDims,implicitInstantiation,callscope,inGraph,instSingleCref);
+           instClassIn_dispatch(inCache,inEnv,inIH,store,inMod,inPrefix,inSets,inState,inClass,inVisibility,inInstDims,implicitInstantiation,callscope,inGraph,instSingleCref);
         
         envPathOpt = Env.getEnvPath(inEnv);
         fullEnvPathPlusClass = Absyn.selectPathsOpt(envPathOpt, Absyn.IDENT(className));
         
-        inputs = (inCache,inEnv,inIH,store,inMod,inPrefix,inSets,inState,inClass,isProtected,inInstDims,implicitInstantiation,inGraph,instSingleCref);
+        inputs = (inCache,inEnv,inIH,store,inMod,inPrefix,inSets,inState,inClass,inVisibility,inInstDims,implicitInstantiation,inGraph,instSingleCref);
         outputs = (env,dae,csets,ci_state,tys,bc,oDA,equalityConstraint,graph);
 
         addToInstCache(fullEnvPathPlusClass,
@@ -1900,7 +1924,7 @@ algorithm
              inputs,
              outputs)),
            /*SOME(FUNC_partialInstClassIn( // result for partial instantiation
-             (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inClass,isProtected,inInstDims),
+             (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inClass,inVisibility,inInstDims),
              (env,ci_state)))*/ NONE());
         /*
         Debug.fprintln("cache", "IIII->added to instCache: " +& Absyn.pathString(fullEnvPathPlusClass) +&
@@ -1916,7 +1940,9 @@ algorithm
         (cache,env,ih,store,dae,csets,ci_state,tys,bc,oDA,equalityConstraint,graph);
 
     // failure
-    case (cache,env,ih,store,mods,pre,csets,ci_state,(c as SCode.CLASS(name = n,restriction = r,classDef = d)),prot,inst_dims,impl,_,graph,_)
+    case (cache,env,ih,store,mods,pre,csets,ci_state,
+      c as SCode.CLASS(name = n,restriction = r,classDef = d),
+      vis,inst_dims,impl,_,graph,_)
       equation
         //print("instClassIn(");print(n);print(") failed\n");
         true = RTOpts.debugFlag("failtrace");
@@ -1928,8 +1954,8 @@ algorithm
 end instClassIn;
 
 protected function checkClassEqual
-  input SCode.Class c1;
-  input SCode.Class c2;
+  input SCode.Element c1;
+  input SCode.Element c2;
   output Boolean areEqual;
 algorithm
   areEqual := matchcontinue(c1, c2)
@@ -1989,7 +2015,7 @@ protected function prefixEqualUnlessBasicType
  the same name, etc. are equal."  
   input Prefix.Prefix pre1;
   input Prefix.Prefix pre2;
-  input SCode.Class cls;
+  input SCode.Element cls;
 algorithm
   _ := match (pre1, pre2, cls)
     local
@@ -2041,8 +2067,8 @@ public function instClassIn_dispatch
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
-  input SCode.Class inClass;
-  input Boolean isProtected;
+  input SCode.Element inClass;
+  input SCode.Visibility inVisibility;
   input InstDims inInstDims;
   input Boolean implicitInstantiation;
   input CallingScope inCallingScope;
@@ -2057,28 +2083,29 @@ public function instClassIn_dispatch
   output ClassInf.State outState;
   output list<DAE.Var> outTypesVarLst;
   output Option<DAE.Type> outTypesTypeOption;
-  output Option<Absyn.ElementAttributes> optDerAttr;
+  output Option<SCode.Attributes> optDerAttr;
   output DAE.EqualityConstraint outEqualityConstraint;
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm
   (outCache,outEnv,outIH,outStore,outDae,outSets,outState,outTypesVarLst,outTypesTypeOption,optDerAttr,outEqualityConstraint,outGraph):=
-  matchcontinue (inCache,inEnv,inIH,store,inMod,inPrefix,inSets,inState,inClass,isProtected,inInstDims,implicitInstantiation,inCallingScope,inGraph,instSingleCref)
+  matchcontinue (inCache,inEnv,inIH,store,inMod,inPrefix,inSets,inState,inClass,inVisibility,inInstDims,implicitInstantiation,inCallingScope,inGraph,instSingleCref)
     local
       Option<tuple<DAE.TType, Option<Absyn.Path>>> bc;
       list<Env.Frame> env,env_1;
       DAE.Mod mods;
       Prefix.Prefix pre;
       ClassInf.State ci_state,ci_state_1;
-      SCode.Class c,cls;
+      SCode.Element c,cls;
       InstDims inst_dims;
-      Boolean impl,prot;
+      Boolean impl;
+      SCode.Visibility vis;
       String clsname,implstr,n;
       Connect.Sets csets_1,csets;
       list<DAE.Var> tys;
       SCode.Restriction r;
       SCode.ClassDef d;
       Env.Cache cache;
-      Option<Absyn.ElementAttributes> oDA;
+      Option<SCode.Attributes> oDA;
       CallingScope callscope;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
@@ -2096,7 +2123,7 @@ algorithm
 
     /*  Real class */
     case (cache,env,ih,store,mods,pre,csets, ci_state, 
-        (c as SCode.CLASS(name = "Real",restriction = r,classDef = d)),prot,inst_dims,impl,_,graph,_)
+        (c as SCode.CLASS(name = "Real",restriction = r,classDef = d)),vis,inst_dims,impl,_,graph,_)
       equation
         true = RTOpts.splitArrays();
         tys = instRealClass(cache,env,mods,pre,DAE.T_REAL_DEFAULT);
@@ -2107,7 +2134,7 @@ algorithm
     /*  Real class, non-expanded arrays. Similar cases are needed for other built-in classes as well,
         I just want to make Reals work first */
     case (cache,env,ih,store,mods,pre,csets, ci_state, 
-        (c as SCode.CLASS(name = "Real",restriction = r,classDef = d)),prot,inst_dims,impl,_,graph,_)
+        (c as SCode.CLASS(name = "Real",restriction = r,classDef = d)),vis,inst_dims,impl,_,graph,_)
       equation
         false = RTOpts.splitArrays();
         typ = Types.liftArraySubscriptList(DAE.T_REAL_DEFAULT, Util.listFirst(inst_dims));
@@ -2118,7 +2145,7 @@ algorithm
 
     /* Integer class */
     case (cache,env,ih,store,mods,pre,csets,ci_state,
-      (c as SCode.CLASS(name = "Integer",restriction = r,classDef = d)),prot,inst_dims,impl,_,graph,_)
+      (c as SCode.CLASS(name = "Integer",restriction = r,classDef = d)),vis,inst_dims,impl,_,graph,_)
       equation
         tys =  instIntegerClass(cache,env,mods,pre);
         bc = arrayBasictypeBaseclass(inst_dims, (DAE.T_INTEGER(tys),NONE()));
@@ -2126,7 +2153,7 @@ algorithm
 
     /* String class */
     case (cache,env,ih,store,mods,pre,csets, ci_state,
-      (c as SCode.CLASS(name = "String",restriction = r,classDef = d)),prot,inst_dims,impl,_,graph,_)
+      (c as SCode.CLASS(name = "String",restriction = r,classDef = d)),vis,inst_dims,impl,_,graph,_)
       equation
         tys =  instStringClass(cache,env,mods,pre);
         bc = arrayBasictypeBaseclass(inst_dims, (DAE.T_STRING(tys),NONE()));
@@ -2134,7 +2161,7 @@ algorithm
 
     /* Boolean class */
     case (cache,env,ih,store,mods,pre,csets,ci_state,
-      (c as SCode.CLASS(name = "Boolean",restriction = r,classDef = d)),prot,inst_dims,impl,_,graph,_)
+      (c as SCode.CLASS(name = "Boolean",restriction = r,classDef = d)),vis,inst_dims,impl,_,graph,_)
       equation
         tys =  instBooleanClass(cache,env,mods,pre);
         bc = arrayBasictypeBaseclass(inst_dims, (DAE.T_BOOL(tys),NONE()));
@@ -2152,7 +2179,7 @@ algorithm
     //   T c(start = T.x) should generate an enumeration variable with and the type should contain the
     //                    start value, but we have no place to put it as the var list in the T_ENUMERATION is for names!
     case (cache,env,ih,store,mods,pre,csets, ci_state,
-      (c as SCode.CLASS(name = n,restriction = SCode.R_ENUMERATION(),classDef = SCode.PARTS(elementLst = els),info = info)),prot,inst_dims,impl,callscope,graph,_)
+      (c as SCode.CLASS(name = n,restriction = SCode.R_ENUMERATION(),classDef = SCode.PARTS(elementLst = els),info = info)),vis,inst_dims,impl,callscope,graph,_)
       equation
         tys = instEnumerationClass(cache, env, mods, pre);
         /* uncomment this and see how checkAllModelsRecursive(Modelica.Electrical.Digital) looks like
@@ -2195,7 +2222,7 @@ algorithm
         (cache,env,ih,store,DAEUtil.emptyDae,csets,ci_state,{},NONE(),NONE(),NONE(),graph);
 
     /* Instantiate a class definition made of parts */
-    case (cache,env,ih,store,mods,pre,csets,ci_state,(c as SCode.CLASS(name = n,restriction = r,classDef = d,info=info)),prot,inst_dims,impl,callscope,graph,instSingleCref)
+    case (cache,env,ih,store,mods,pre,csets,ci_state,(c as SCode.CLASS(name = n,restriction = r,classDef = d,info=info)),vis,inst_dims,impl,callscope,graph,instSingleCref)
       equation
         false = isBuiltInClass(n) "If failed above, no need to try again";
         // Debug.fprint("insttr", "ICLASS [");
@@ -2204,7 +2231,7 @@ algorithm
         // Debug.fprintln("insttr", Env.printEnvPathStr(env) +& "." +& n +& " mods: " +& Mod.printModStr(mods));
         // t1 = clock();
         (cache,env_1,ih,store,dae,csets_1,ci_state_1,tys,bc,oDA,eqConstraint,graph)
-          = instClassdef(cache,env,ih,store, mods, pre, csets, ci_state, n,d, r, prot, inst_dims, impl, callscope, graph,instSingleCref,info);
+          = instClassdef(cache,env,ih,store, mods, pre, csets, ci_state, n,d, r, vis, inst_dims, impl, callscope, graph,instSingleCref,info);
         // t2 = clock();
         // time = t2 -. t1;
         // b=realGt(time,0.05);
@@ -2215,7 +2242,7 @@ algorithm
         (cache,env_1,ih,store,dae,csets_1,ci_state_1,tys,bc,oDA,eqConstraint,graph);
 
     // failure
-    case (cache,env,ih,store,mods,pre,csets,ci_state,(c as SCode.CLASS(name = n,restriction = r,classDef = d)),prot,inst_dims,impl,_,graph,_)
+    case (cache,env,ih,store,mods,pre,csets,ci_state,(c as SCode.CLASS(name = n,restriction = r,classDef = d)),vis,inst_dims,impl,_,graph,_)
       equation
         //print("instClassIn(");print(n);print(") failed\n");
         //Debug.fprintln("failtrace", "- Inst.instClassIn failed" +& n);
@@ -2228,26 +2255,27 @@ public function isBuiltInClass "
 Author: BZ, this function identifies built in classes."
   input String className;
   output Boolean b;
-algorithm b := matchcontinue(className)
-  case("Real") then true;
-  case("Integer") then true;
-  case("String") then true;
-  case("Boolean") then true;
-  case(_) then false;
-end matchcontinue;
+algorithm 
+  b := matchcontinue(className)
+    case("Real") then true;
+    case("Integer") then true;
+    case("String") then true;
+    case("Boolean") then true;
+    case(_) then false;
+  end matchcontinue;
 end isBuiltInClass;
 
 protected constant DAE.Type stateSelectType = (DAE.T_ENUMERATION(NONE(),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},
           {
-          DAE.TYPES_VAR("never",DAE.ATTR(false,false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,
+          DAE.TYPES_VAR("never",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),
              (DAE.T_ENUMERATION(SOME(1),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{},{}),NONE()),DAE.UNBOUND(),NONE()),
-          DAE.TYPES_VAR("avoid",DAE.ATTR(false,false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,
+          DAE.TYPES_VAR("avoid",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),
              (DAE.T_ENUMERATION(SOME(2),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{},{}),NONE()),DAE.UNBOUND(),NONE()),
-          DAE.TYPES_VAR("default",DAE.ATTR(false,false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,
+          DAE.TYPES_VAR("default",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),
              (DAE.T_ENUMERATION(SOME(3),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{},{}),NONE()),DAE.UNBOUND(),NONE()),
-          DAE.TYPES_VAR("prefer",DAE.ATTR(false,false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,
+          DAE.TYPES_VAR("prefer",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),
              (DAE.T_ENUMERATION(SOME(4),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{},{}),NONE()),DAE.UNBOUND(),NONE()),
-          DAE.TYPES_VAR("always",DAE.ATTR(false,false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,
+          DAE.TYPES_VAR("always",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),
              (DAE.T_ENUMERATION(SOME(5),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{},{}),NONE()),DAE.UNBOUND(),NONE())
           },{}),NONE());
 
@@ -2263,13 +2291,19 @@ protected function instRealClass
 algorithm
   varLst := matchcontinue(cache,env,mods,pre,inType)
     local
-      Boolean f; Absyn.Each e; list<DAE.SubMod> submods; Option<DAE.EqMod> eqmod; DAE.Exp exp;
-      DAE.Var v; DAE.Properties p;
+      SCode.Final f; 
+      SCode.Each e; 
+      list<DAE.SubMod> submods; 
+      Option<DAE.EqMod> eqmod; 
+      DAE.Exp exp;
+      DAE.Var v; 
+      DAE.Properties p;
       Option<Values.Value> optVal;
       DAE.Type ty;
       String s1;
       DAE.SubMod smod;
       DAE.Mod mym;
+    
     case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("quantity",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre,ty)
       equation
         varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre,ty);
@@ -2346,7 +2380,7 @@ algorithm
       then fail();
     case(cache,env,DAE.MOD(f,e,{},eqmod),pre,ty) then {};
     case(cache,env,DAE.NOMOD(),pre,ty) then {};
-    case(cache,env,DAE.REDECL(_,_),pre,ty) then fail(); /*TODO, report error when redeclaring in Real*/
+    case(cache,env,DAE.REDECL(_,_,_),pre,ty) then fail(); /*TODO, report error when redeclaring in Real*/
   end matchcontinue;
 end instRealClass;
 
@@ -2361,11 +2395,17 @@ protected function instIntegerClass
 algorithm
   varLst := matchcontinue(cache,env,mods,pre)
     local
-      Boolean f; Absyn.Each e; list<DAE.SubMod> submods; Option<DAE.EqMod> eqmod; DAE.Exp exp;
-      DAE.Var v; DAE.Properties p;
+      SCode.Final f; 
+      SCode.Each e; 
+      list<DAE.SubMod> submods; 
+      Option<DAE.EqMod> eqmod; 
+      DAE.Exp exp;
+      DAE.Var v; 
+      DAE.Properties p;
       Option<Values.Value> optVal;
       String s1;
       DAE.SubMod smod;
+    
     case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("quantity",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre)
       equation
         varLst = instIntegerClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
@@ -2404,7 +2444,7 @@ algorithm
       then fail();
     case(cache,env,DAE.MOD(f,e,{},eqmod),pre) then {};
     case(cache,env,DAE.NOMOD(),pre) then {};
-    case(cache,env,DAE.REDECL(_,_),pre) then fail(); /*TODO, report error when redeclaring in Real*/
+    case(cache,env,DAE.REDECL(_,_,_),pre) then fail(); /*TODO, report error when redeclaring in Real*/
   end matchcontinue;
 end instIntegerClass;
 
@@ -2418,12 +2458,16 @@ protected function instStringClass
   output list<DAE.Var> varLst;
 algorithm
   varLst := matchcontinue(cache,env,mods,pre)
-    local Boolean f; Absyn.Each e; list<DAE.SubMod> submods; Option<DAE.EqMod> eqmod; DAE.Exp exp;
+    local 
+      SCode.Final f; 
+      SCode.Each e; 
+      list<DAE.SubMod> submods; Option<DAE.EqMod> eqmod; DAE.Exp exp;
       DAE.Var v;
       DAE.Properties p;
       Option<Values.Value> optVal;
       String s1;
       DAE.SubMod smod;
+    
     case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("quantity",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre)
       equation
         varLst = instStringClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
@@ -2441,7 +2485,7 @@ algorithm
       then fail();
     case(cache,env,DAE.MOD(f,e,{},eqmod),pre) then {};
     case(cache,env,DAE.NOMOD(),pre) then {};
-    case(cache,env,DAE.REDECL(_,_),pre) then fail(); /*TODO, report error when redeclaring in Real*/
+    case(cache,env,DAE.REDECL(_,_,_),pre) then fail(); /*TODO, report error when redeclaring in Real*/
   end matchcontinue;
 end instStringClass;
 
@@ -2456,10 +2500,17 @@ protected function instBooleanClass
 algorithm
   varLst := matchcontinue(cache,env,mods,pre)
     local
-      Boolean f; Absyn.Each e; list<DAE.SubMod> submods; Option<DAE.EqMod> eqmod; DAE.Exp exp;
+      SCode.Final f; 
+      SCode.Each e; 
+      list<DAE.SubMod> submods; 
+      Option<DAE.EqMod> eqmod; 
+      DAE.Exp exp;
       Option<Values.Value> optVal;
-      DAE.Var v; DAE.Properties p;
-      String s1; DAE.SubMod smod;
+      DAE.Var v; 
+      DAE.Properties p;
+      String s1; 
+      DAE.SubMod smod;
+    
     case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("quantity",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre)
       equation
         varLst = instBooleanClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
@@ -2482,7 +2533,7 @@ algorithm
       then fail();
     case(cache,env,DAE.MOD(f,e,{},eqmod),pre) then {};
     case(cache,env,DAE.NOMOD(),pre) then {};
-    case(cache,env,DAE.REDECL(_,_),pre) then fail(); /*TODO, report error when redeclaring in Real*/
+    case(cache,env,DAE.REDECL(_,_,_),pre) then fail(); /*TODO, report error when redeclaring in Real*/
   end matchcontinue;
 end instBooleanClass;
 
@@ -2497,8 +2548,8 @@ protected function instEnumerationClass
 algorithm
   varLst := matchcontinue(cache,env,mods,pre)
     local
-      Boolean f;
-      Absyn.Each e;
+      SCode.Final f;
+      SCode.Each e;
       list<DAE.SubMod> submods;
       Option<DAE.EqMod> eqmod;
       DAE.Exp exp;
@@ -2507,6 +2558,7 @@ algorithm
       DAE.Properties p;
       String s1;
       DAE.SubMod smod;
+    
     case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("quantity",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre)
       equation
         varLst = instEnumerationClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
@@ -2539,7 +2591,7 @@ algorithm
       then fail();
     case(cache,env,DAE.MOD(f,e,{},eqmod),pre) then {};
     case(cache,env,DAE.NOMOD(),pre) then {};
-    case(cache,env,DAE.REDECL(_,_),pre) then fail(); /*TODO, report error when redeclaring in Real*/
+    case(cache,env,DAE.REDECL(_,_,_),pre) then fail(); /*TODO, report error when redeclaring in Real*/
   end matchcontinue;
 end instEnumerationClass;
 
@@ -2567,8 +2619,8 @@ algorithm
       equation
         failure(equality(c=DAE.C_VAR()));
         (bind1,t_1) = Types.matchType(bind,bindTp,expectedTp,true);
-      then DAE.TYPES_VAR(id,DAE.ATTR(false,false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-        false,t_1,DAE.EQBOUND(bind1,SOME(v),DAE.C_PARAM(),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());
+      then DAE.TYPES_VAR(id,DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
+        SCode.PUBLIC(),t_1,DAE.EQBOUND(bind1,SOME(v),DAE.C_PARAM(),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());
         
     case(cache,env,id,SOME(v),bind,expectedTp,DAE.PROP(bindTp as (DAE.T_ARRAY(arrayDim = d),_),c))
       equation
@@ -2576,16 +2628,16 @@ algorithm
         true = OptManager.getOption("checkModel");
         expectedTp = Types.liftArray(expectedTp, d);
         (bind1,t_1) = Types.matchType(bind,bindTp,expectedTp,true);
-      then DAE.TYPES_VAR(id,DAE.ATTR(false,false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-        false,t_1,DAE.EQBOUND(bind1,SOME(v),DAE.C_PARAM(),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());
+      then DAE.TYPES_VAR(id,DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
+        SCode.PUBLIC(),t_1,DAE.EQBOUND(bind1,SOME(v),DAE.C_PARAM(),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());
         
     case(cache,env,id,_,bind,expectedTp,DAE.PROP(bindTp,c))
       equation
         failure(equality(c=DAE.C_VAR()));
         (bind1,t_1) = Types.matchType(bind,bindTp,expectedTp,true);
         (cache,v,_) = Ceval.ceval(cache,env, bind1, false,NONE(), NONE(), Ceval.NO_MSG());
-      then DAE.TYPES_VAR(id,DAE.ATTR(false,false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-      false,t_1,DAE.EQBOUND(bind1,SOME(v),DAE.C_PARAM(),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());
+      then DAE.TYPES_VAR(id,DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
+      SCode.PUBLIC(),t_1,DAE.EQBOUND(bind1,SOME(v),DAE.C_PARAM(),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());
 
     case(cache,env,id,_,bind,expectedTp,DAE.PROP(bindTp as (DAE.T_ARRAY(arrayDim = d),_),c))
       equation
@@ -2594,15 +2646,15 @@ algorithm
         expectedTp = Types.liftArray(expectedTp, d);
         (bind1,t_1) = Types.matchType(bind,bindTp,expectedTp,true);
         (cache,v,_) = Ceval.ceval(cache,env, bind1, false,NONE(), NONE(), Ceval.NO_MSG());
-      then DAE.TYPES_VAR(id,DAE.ATTR(false,false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-      false,t_1,DAE.EQBOUND(bind1,SOME(v),DAE.C_PARAM(),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());
+      then DAE.TYPES_VAR(id,DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
+      SCode.PUBLIC(),t_1,DAE.EQBOUND(bind1,SOME(v),DAE.C_PARAM(),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());
       
     case(cache,env,id,_,bind,expectedTp,DAE.PROP(bindTp,c))
       equation
         failure(equality(c=DAE.C_VAR()));
         (bind1,t_1) = Types.matchType(bind,bindTp,expectedTp,true);
-      then DAE.TYPES_VAR(id,DAE.ATTR(false,false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-      false,t_1,DAE.EQBOUND(bind1,NONE(),DAE.C_PARAM(),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());
+      then DAE.TYPES_VAR(id,DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
+      SCode.PUBLIC(),t_1,DAE.EQBOUND(bind1,NONE(),DAE.C_PARAM(),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());
 
     case(cache,env,id,_,bind,expectedTp,DAE.PROP(bindTp,c))
       equation
@@ -2734,32 +2786,32 @@ public function partialInstClassIn
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
-  input SCode.Class inClass;
-  input Boolean inBoolean;
+  input SCode.Element inClass;
+  input SCode.Visibility inVisibility;
   input InstDims inInstDims;
   output Env.Cache outCache;
   output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output ClassInf.State outState;
 algorithm
-  (outCache,outEnv,outIH,outState) := matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inClass,inBoolean,inInstDims)
+  (outCache,outEnv,outIH,outState) := matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inClass,inVisibility,inInstDims)
     local
       list<Env.Frame> env;
       DAE.Mod mods;
       Prefix.Prefix pre;
       Connect.Sets csets;
       ClassInf.State ci_state,ci_state_1;
-      SCode.Class c;
+      SCode.Element c;
       String n;
       SCode.Restriction r, rCached;
       SCode.ClassDef d;
-      Boolean prot;
+      SCode.Visibility vis;
       InstDims inst_dims;
       Env.Cache cache;
       InstanceHierarchy ih;
       InstHashTable instHash;
       tuple<Env.Cache, Env.Env, InstanceHierarchy, DAE.Mod, Prefix.Prefix, Connect.Sets,
-            ClassInf.State, SCode.Class, Boolean, InstDims> inputs;
+            ClassInf.State, SCode.Element, SCode.Visibility, InstDims> inputs;
       tuple<Env.Env, ClassInf.State> outputs;
       Absyn.Path fullEnvPathPlusClass;
       Option<Absyn.Path> envPathOpt;
@@ -2769,12 +2821,12 @@ algorithm
       Prefix.Prefix aa_2;
       Connect.Sets aa_3;
       ClassInf.State aa_4;
-      SCode.Class aa_5;
+      SCode.Element aa_5;
       InstDims aa_7;
-      tuple<InstDims,DAE.Mod,Connect.Sets,ClassInf.State,SCode.Class> bbx,bby;
+      tuple<InstDims,DAE.Mod,Connect.Sets,ClassInf.State,SCode.Element> bbx,bby;
 
     // see if we find a partial class inst
-    case (cache,env,ih,mods,pre,csets,ci_state,c as SCode.CLASS(name = className, restriction=r),prot,inst_dims)
+    case (cache,env,ih,mods,pre,csets,ci_state,c as SCode.CLASS(name = className, restriction=r),vis,inst_dims)
       equation
         false = RTOpts.debugFlag("noCache");
         instHash = getGlobalRoot(instHashIndex);
@@ -2795,14 +2847,14 @@ algorithm
 
     /*/ adrpo: TODO! FIXME! see if we find a full instantiation!
     // this fails for 2-3 examples, so disable it for now and check it later
-    case (cache,env,ih,mods,pre,csets,ci_state,c as SCode.CLASS(name = className, restriction=r),prot,inst_dims)
+    case (cache,env,ih,mods,pre,csets,ci_state,c as SCode.CLASS(name = className, restriction=r),vis,inst_dims)
       local
       tuple<Env.Cache, Env, InstanceHierarchy, UnitAbsyn.InstStore, DAE.Mod, Prefix.Prefix,
-            Connect.Sets, ClassInf.State, SCode.Class, Boolean, InstDims, Boolean,
+            Connect.Sets, ClassInf.State, SCode.Element, Boolean, InstDims, Boolean,
             ConnectionGraph.ConnectionGraph, Option<DAE.ComponentRef>> inputs;
       tuple<Env.Cache, Env, InstanceHierarchy, UnitAbsyn.InstStore, DAE.DAElist,
             Connect.Sets, ClassInf.State, list<DAE.Var>, Option<DAE.Type>,
-            Option<Absyn.ElementAttributes>, DAE.EqualityConstraint,
+            Option<SCode.Attributes>, DAE.EqualityConstraint,
             ConnectionGraph.ConnectionGraph> outputs;
       equation
         false = RTOpts.debugFlag("noCache");
@@ -2824,16 +2876,16 @@ algorithm
         (inCache,env,ih,ci_state_1);*/
 
     /* call the function and then add it in the cache */
-    case (cache,env,ih,mods,pre,csets,ci_state,c,prot,inst_dims)
+    case (cache,env,ih,mods,pre,csets,ci_state,c,vis,inst_dims)
       equation
         (cache,env,ih,ci_state) =
-           partialInstClassIn_dispatch(inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inClass,inBoolean,inInstDims);
+           partialInstClassIn_dispatch(inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inClass,vis,inInstDims);
 
         envPathOpt = Env.getEnvPath(inEnv);
         className = SCode.className(c);
         fullEnvPathPlusClass = Absyn.selectPathsOpt(envPathOpt, Absyn.IDENT(className));
 
-        inputs = (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inClass,inBoolean,inInstDims);
+        inputs = (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inClass,vis,inInstDims);
         outputs = (env,ci_state);
 
         addToInstCache(fullEnvPathPlusClass,
@@ -2844,7 +2896,7 @@ algorithm
       then
         (cache,env,ih,ci_state);
 
-    case (cache,env,ih,mods,pre,csets,ci_state,(c as SCode.CLASS(name = n,restriction = r,classDef = d)),prot,inst_dims)
+    case (cache,env,ih,mods,pre,csets,ci_state,(c as SCode.CLASS(name = n,restriction = r,classDef = d)),vis,inst_dims)
       equation
         true = RTOpts.debugFlag("failtrace");
         Debug.traceln("- Inst.partialInstClassIn failed on class:" +&
@@ -2866,26 +2918,27 @@ public function partialInstClassIn_dispatch
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
-  input SCode.Class inClass;
-  input Boolean inBoolean;
+  input SCode.Element inClass;
+  input SCode.Visibility inVisibility;
   input InstDims inInstDims;
   output Env.Cache outCache;
   output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output ClassInf.State outState;
 algorithm
-  (outCache,outEnv,outIH,outState) := matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inClass,inBoolean,inInstDims)
+  (outCache,outEnv,outIH,outState) := matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inClass,inVisibility,inInstDims)
     local
       list<Env.Frame> env,env_1;
       DAE.Mod mods;
       Prefix.Prefix pre;
       Connect.Sets csets;
       ClassInf.State ci_state,ci_state_1;
-      SCode.Class c;
+      SCode.Element c;
       String n;
       SCode.Restriction r;
       SCode.ClassDef d;
-      Boolean prot,partialPrefix;
+      SCode.Visibility vis;
+      SCode.Partial partialPrefix;
       InstDims inst_dims;
       Env.Cache cache;
       InstanceHierarchy ih;
@@ -2903,10 +2956,10 @@ algorithm
     case (cache,env,ih,mods,pre,csets,ci_state,(c as SCode.CLASS(name = "Boolean")),_,_)
       then (cache,env,ih,ci_state);
 
-    case (cache,env,ih,mods,pre,csets,ci_state,(c as SCode.CLASS(name = n,restriction = r,partialPrefix=partialPrefix,classDef = d, info = info)),prot,inst_dims)
+    case (cache,env,ih,mods,pre,csets,ci_state,(c as SCode.CLASS(name = n,restriction = r,partialPrefix=partialPrefix,classDef = d, info = info)),vis,inst_dims)
       equation
         // t1 = clock();
-        (cache,env_1,ih,ci_state_1) = partialInstClassdef(cache,env,ih, mods, pre, csets, ci_state, d, r, partialPrefix, prot, inst_dims, n, info);
+        (cache,env_1,ih,ci_state_1) = partialInstClassdef(cache,env,ih, mods, pre, csets, ci_state, d, r, partialPrefix, vis, inst_dims, n, info);
         // t2 = clock();
         // time = t2 -. t1;
         //b=realGt(time,0.05);
@@ -2960,10 +3013,11 @@ algorithm
       Absyn.Path path;
       Integer dimension;
       DAE.InlineType inlineType;
-      SCode.Class classDef;
+      SCode.Element el;
       
     case(env,{},_) then NONE();
-    case(env, SCode.CLASSDEF(classDef = classDef as SCode.CLASS(name = "equalityConstraint", restriction = SCode.R_FUNCTION(),
+    
+    case(env, (el as SCode.CLASS(name = "equalityConstraint", restriction = SCode.R_FUNCTION(),
          classDef = SCode.PARTS(elementLst = els))) :: _, info)
       equation
         SOME(path) = Env.getEnvPath(env);
@@ -2979,10 +3033,14 @@ algorithm
         print(intString(dimension));
         print("\n");*/
         // adrpo: get the inline type of the function
-        inlineType = isInlineFunc2(classDef);
-      then SOME((path, dimension, inlineType));
+        inlineType = isInlineFunc2(el);
+      then 
+        SOME((path, dimension, inlineType));
+    
     case(env, _ :: tail, info)
-      then equalityConstraint(env, tail, info);
+      then 
+        equalityConstraint(env, tail, info);
+    
   end matchcontinue;
 end equalityConstraint;
 
@@ -3065,7 +3123,7 @@ protected function instClassdef "
   input String className;
   input SCode.ClassDef inClassDef6;
   input SCode.Restriction inRestriction7;
-  input Boolean inProtected;
+  input SCode.Visibility inVisibility;
   input InstDims inInstDims9;
   input Boolean inBoolean10;
   input CallingScope inCallingScope;
@@ -3081,12 +3139,12 @@ protected function instClassdef "
   output ClassInf.State outState;
   output list<DAE.Var> outTypesVarLst;
   output Option<DAE.Type> outTypesTypeOption;
-  output Option<Absyn.ElementAttributes> optDerAttr;
+  output Option<SCode.Attributes> optDerAttr;
   output DAE.EqualityConstraint outEqualityConstraint;
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm
   (outCache,outEnv,outIH,outStore,outDae,outSets,outState,outTypesVarLst,outTypesTypeOption,optDerAttr,outEqualityConstraint,outGraph):=
-  instClassdef2(inCache,inEnv,inIH,store,inMod2,inPrefix3,inSets4,inState5,className,inClassDef6,inRestriction7,inProtected,inInstDims9,inBoolean10,inCallingScope,inGraph,instSingleCref,info,Util.makeStatefulBoolean(false));
+  instClassdef2(inCache,inEnv,inIH,store,inMod2,inPrefix3,inSets4,inState5,className,inClassDef6,inRestriction7,inVisibility,inInstDims9,inBoolean10,inCallingScope,inGraph,instSingleCref,info,Util.makeStatefulBoolean(false));
 end instClassdef;
 
 
@@ -3205,7 +3263,7 @@ type"
   input String className;
   input SCode.ClassDef inClassDef6;
   input SCode.Restriction inRestriction7;
-  input Boolean inBoolean8;
+  input SCode.Visibility inVisibility;
   input InstDims inInstDims9;
   input Boolean inBoolean10;
   input ConnectionGraph.ConnectionGraph inGraph;
@@ -3221,12 +3279,12 @@ type"
   output ClassInf.State outState;
   output list<DAE.Var> outTypesVarLst;
   output Option<DAE.Type> outTypesTypeOption;
-  output Option<Absyn.ElementAttributes> optDerAttr;
+  output Option<SCode.Attributes> optDerAttr;
   output DAE.EqualityConstraint outEqualityConstraint;
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm
   (outCache,outEnv,outIH,outStore,outDae,outSets,outState,outTypesVarLst,outTypesTypeOption,optDerAttr,outEqualityConstraint,outGraph):=
-  matchcontinue (inCache,inEnv,inIH,store,inMod2,inPrefix3,inSets4,inState5,className,inClassDef6,inRestriction7,inBoolean8,inInstDims9,inBoolean10,inGraph,instSingleCref,info,stopInst)
+  matchcontinue (inCache,inEnv,inIH,store,inMod2,inPrefix3,inSets4,inState5,className,inClassDef6,inRestriction7,inVisibility,inInstDims9,inBoolean10,inGraph,instSingleCref,info,stopInst)
     local
       list<SCode.Element> cdefelts,compelts,extendselts,els;
       list<Env.Frame> env1,env2,env3,env;
@@ -3239,7 +3297,8 @@ algorithm
       DAE.Mod mods;
       Prefix.Prefix pre;
       SCode.Restriction re;
-      Boolean prot,impl;
+      Boolean impl;
+      SCode.Visibility vis;
       InstDims inst_dims;
       Env.Cache cache;
       DAE.EqualityConstraint eqConstraint;
@@ -3252,7 +3311,7 @@ algorithm
           SCode.PARTS(elementLst = els,
                       normalEquationLst = {}, initialEquationLst = {},
                       normalAlgorithmLst = {}, initialAlgorithmLst = {}),
-          re,prot,inst_dims,impl,graph,instSingleCref,info,stopInst)
+          re,vis,inst_dims,impl,graph,instSingleCref,info,stopInst)
       equation
         // set this to get rid of the error messages that might happen and WE FAIL BEFORE we actually call instBasictypeBaseclass  
         ErrorExt.setCheckpoint("instClassdefBasicType1");
@@ -3269,7 +3328,7 @@ algorithm
         
         // checkExtendsForTypeRestiction(cache, env, ih, re, extendselts);
         
-        (env1,ih) = addClassdefsToEnv(env, ih, pre, cdefelts, impl, SOME(mods)) "1. CLASSDEF & IMPORT nodes and COMPONENT nodes(add to env)" ;
+        (env1,ih) = addClassdefsToEnv(env, ih, pre, cdefelts, impl, SOME(mods)) "1. CLASS & IMPORT nodes and COMPONENT nodes(add to env)" ;
         cdefelts_1 = addNomod(cdefelts) "instantiate CDEFS so redeclares are carried out" ;
         (cache,env2,ih,cdefelts_2,csets) = updateCompeltsMods(cache,env1,ih, pre, cdefelts_1, ci_state, csets, impl);
 
@@ -3294,7 +3353,7 @@ algorithm
           SCode.PARTS(elementLst = els,
                       normalEquationLst = {}, initialEquationLst = {},
                       normalAlgorithmLst = {}, initialAlgorithmLst = {}),
-          re,prot,inst_dims,impl,graph,instSingleCref,info,stopInst)
+          re,vis,inst_dims,impl,graph,instSingleCref,info,stopInst)
       equation
         true = ErrorExt.isTopCheckpoint("instClassdefBasicType1");
         ErrorExt.rollBack("instClassdefBasicType1");
@@ -3327,7 +3386,7 @@ protected function instClassdef2 "
   input String className;
   input SCode.ClassDef inClassDef6;
   input SCode.Restriction inRestriction7;
-  input Boolean inProtected;
+  input SCode.Visibility inVisibility;
   input InstDims inInstDims9;
   input Boolean inBoolean10;
   input CallingScope inCallingScope;
@@ -3344,12 +3403,12 @@ protected function instClassdef2 "
   output ClassInf.State outState;
   output list<DAE.Var> outTypesVarLst;
   output Option<DAE.Type> outTypesTypeOption;
-  output Option<Absyn.ElementAttributes> optDerAttr;
+  output Option<SCode.Attributes> optDerAttr;
   output DAE.EqualityConstraint outEqualityConstraint;
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm
   (outCache,outEnv,outIH,outStore,outDae,outSets,outState,outTypesVarLst,outTypesTypeOption,optDerAttr,outEqualityConstraint,outGraph):=
-  matchcontinue (inCache,inEnv,inIH,store,inMod2,inPrefix3,inSets4,inState5,className,inClassDef6,inRestriction7,inProtected,inInstDims9,inBoolean10,inCallingScope,inGraph,instSingleCref,info,stopInst)
+  matchcontinue (inCache,inEnv,inIH,store,inMod2,inPrefix3,inSets4,inState5,className,inClassDef6,inRestriction7,inVisibility,inInstDims9,inBoolean10,inCallingScope,inGraph,instSingleCref,info,stopInst)
     local
       list<SCode.Element> cdefelts,compelts,extendselts,els,extendsclasselts;
       list<Env.Frame> env1,env2,env3,env,env4,env5,cenv,cenv_2,env_2;
@@ -3365,11 +3424,13 @@ algorithm
       list<SCode.Equation> eqs,initeqs,eqs2,initeqs2,eqs_1,initeqs_1;
       list<SCode.AlgorithmSection> alg,initalg,alg2,initalg2,alg_1,initalg_1;
       SCode.Restriction re,r;
-      Boolean prot,impl,enc2;
+      Boolean impl;
+      SCode.Visibility vis;
+      SCode.Encapsulated enc2;
       InstDims inst_dims,inst_dims_1;
       list<DAE.Subscript> inst_dims2;
       String id,cn2,cns,scope_str,s,str;
-      SCode.Class c;
+      SCode.Element c;
       SCode.ClassDef classDef;
       Option<DAE.EqMod> eq;
       list<DAE.Dimension> dims;
@@ -3377,7 +3438,7 @@ algorithm
       Option<list<Absyn.Subscript>> ad;
       SCode.Mod mod;
       Env.Cache cache;
-      Option<Absyn.ElementAttributes> oDA;
+      Option<SCode.Attributes> oDA;
       DAE.EqualityConstraint eqConstraint;
       CallingScope callscope;
       ConnectionGraph.ConnectionGraph graph;
@@ -3387,7 +3448,7 @@ algorithm
       Absyn.Info info2;
       list<Absyn.TypeSpec> tSpecs;
       list<DAE.Type> tys;
-      Absyn.ElementAttributes DA;
+      SCode.Attributes DA;
       DAE.Type ty;
       Absyn.TypeSpec tSpec;
       
@@ -3397,11 +3458,11 @@ algorithm
           inClassDef6 as SCode.PARTS(elementLst = els,
                       normalEquationLst = {}, initialEquationLst = {},
                       normalAlgorithmLst = {}, initialAlgorithmLst = {}),
-          re,prot,inst_dims,impl,_,graph,instSingleCref,info,stopInst)
+          re,vis,inst_dims,impl,_,graph,instSingleCref,info,stopInst)
       equation
         false = Util.getStatefulBoolean(stopInst);
         (cache,env,ih,store,fdae,csets,ci_state,vars,bc,oDA,eqConstraint,graph) = 
-            instClassdefBasicType(cache,env,ih,store,mods,pre,csets,ci_state,className,inClassDef6,re,prot,inst_dims,impl,graph,instSingleCref,info,stopInst);
+            instClassdefBasicType(cache,env,ih,store,mods,pre,csets,ci_state,className,inClassDef6,re,vis,inst_dims,impl,graph,instSingleCref,info,stopInst);
       then
         (cache,env,ih,store,fdae,csets,ci_state,vars,bc,oDA,eqConstraint,graph);
 
@@ -3411,7 +3472,7 @@ algorithm
           SCode.PARTS(elementLst = els,
                       normalEquationLst = eqs, initialEquationLst = initeqs,
                       normalAlgorithmLst = alg, initialAlgorithmLst = initalg),
-          re,prot,inst_dims,impl,_,graph,instSingleCref,info,stopInst)
+          re,vis,inst_dims,impl,_,graph,instSingleCref,info,stopInst)
       equation
         false = Util.getStatefulBoolean(stopInst);
          true = isExternalObject(els);
@@ -3424,7 +3485,7 @@ algorithm
           SCode.PARTS(elementLst = els,
                       normalEquationLst = eqs, initialEquationLst = initeqs,
                       normalAlgorithmLst = alg, initialAlgorithmLst = initalg),
-          re,prot,inst_dims,impl,callscope,graph,instSingleCref,info,stopInst)
+          re,vis,inst_dims,impl,callscope,graph,instSingleCref,info,stopInst)
       equation
         false = Util.getStatefulBoolean(stopInst);
         UnitParserExt.checkpoint();
@@ -3436,7 +3497,7 @@ algorithm
         (cdefelts,extendsclasselts,extendselts,compelts) = splitElts(els);
 
         (env1,ih) = addClassdefsToEnv(env, ih, pre, cdefelts, impl, SOME(mods))
-        "1. CLASSDEF & IMPORT nodes and COMPONENT nodes(add to env)" ;
+        "1. CLASS & IMPORT nodes and COMPONENT nodes(add to env)" ;
 
         // adrpo: TODO! DO SOME CHECKS HERE!
         // restriction on what can inherit what, see 7.1.3 Restrictions on the Kind of Base Class
@@ -3585,7 +3646,7 @@ algorithm
     // This rule describes how to instantiate class definition derived from an enumeration 
     case (cache,env,ih,store,mods,pre,csets,ci_state,className,
           SCode.DERIVED(Absyn.TPATH(path = cn,arrayDim = ad),modifications = mod,attributes=DA),
-          re,prot,inst_dims,impl,callscope,graph,instSingleCref,info,stopInst)
+          re,vis,inst_dims,impl,callscope,graph,instSingleCref,info,stopInst)
       equation
         false = Util.getStatefulBoolean(stopInst);
 
@@ -3599,7 +3660,7 @@ algorithm
         instClassIn(
           cache,env3,InnerOuter.emptyInstHierarchy,UnitAbsyn.noStore,
           DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
-          ci_state2, c, false, {}, false, callscope, ConnectionGraph.EMPTY,NONE());
+          ci_state2, c, SCode.PUBLIC(), {}, false, callscope, ConnectionGraph.EMPTY,NONE());
 
 
         (cache,mod_1) = Mod.elabMod(cache, cenv_2, ih, pre, mod, impl, info);
@@ -3609,17 +3670,17 @@ algorithm
         (cache,dims) = elabArraydimOpt(cache,cenv_2, Absyn.CREF_IDENT("",{}),cn, ad, eq, impl,NONE(),true,pre,info,inst_dims) "owncref not valid here" ;
         inst_dims2 = instDimExpLst(dims, impl);
         inst_dims_1 = Util.listListAppendLast(inst_dims, inst_dims2);
-        (cache,env_2,ih,store,dae,csets_1,ci_state_1,vars,bc,oDA,eqConstraint,graph) = instClassIn(cache,cenv_2,ih,store,mods_1, pre, csets, new_ci_state, c, prot,
+        (cache,env_2,ih,store,dae,csets_1,ci_state_1,vars,bc,oDA,eqConstraint,graph) = instClassIn(cache,cenv_2,ih,store,mods_1, pre, csets, new_ci_state, c, vis,
                     inst_dims_1, impl, callscope, graph, instSingleCref) "instantiate class in opened scope. " ;
         ClassInf.assertValid(ci_state_1, re, info) "Check for restriction violations" ;
-        oDA = Absyn.mergeElementAttributes(DA,oDA);
+        oDA = SCode.mergeAttributes(DA,oDA);
       then
         (cache,env_2,ih,store,dae,csets_1,ci_state_1,vars,bc,oDA,eqConstraint,graph);
 
     // This rule describes how to instantiate a derived class definition 
     case (cache,env,ih,store,mods,pre,csets,ci_state,className,
           SCode.DERIVED(Absyn.TPATH(path = cn,arrayDim = ad),modifications = mod,attributes=DA),
-          re,prot,inst_dims,impl,callscope,graph,instSingleCref,info,stopInst)
+          re,vis,inst_dims,impl,callscope,graph,instSingleCref,info,stopInst)
       equation
         false = Util.getStatefulBoolean(stopInst);
 
@@ -3633,17 +3694,17 @@ algorithm
         (cache,dims) = elabArraydimOpt(cache,cenv_2, Absyn.CREF_IDENT("",{}),cn, ad, eq, impl,NONE(),true,pre,info,inst_dims) "owncref not valid here" ;
         inst_dims2 = instDimExpLst(dims, impl);
         inst_dims_1 = Util.listListAppendLast(inst_dims, inst_dims2);
-        (cache,env_2,ih,store,dae,csets_1,ci_state_1,vars,bc,oDA,eqConstraint,graph) = instClassIn(cache,cenv_2,ih,store,mods_1, pre, csets, new_ci_state, c, prot,
+        (cache,env_2,ih,store,dae,csets_1,ci_state_1,vars,bc,oDA,eqConstraint,graph) = instClassIn(cache,cenv_2,ih,store,mods_1, pre, csets, new_ci_state, c, vis,
                     inst_dims_1, impl, callscope, graph, instSingleCref) "instantiate class in opened scope. " ;
         ClassInf.assertValid(ci_state_1, re, info) "Check for restriction violations" ;
-        oDA = Absyn.mergeElementAttributes(DA,oDA);
+        oDA = SCode.mergeAttributes(DA,oDA);
       then
         (cache,env_2,ih,store,dae,csets_1,ci_state_1,vars,bc,oDA,eqConstraint,graph);
 
     // MetaModelica extension
     case (cache,env,ih,store,mods,pre,csets,ci_state,className,
           SCode.DERIVED(Absyn.TCOMPLEX(path=_),modifications = mod),
-          re,prot,inst_dims,impl,_,graph,instSingleCref,info,stopInst)
+          re,vis,inst_dims,impl,_,graph,instSingleCref,info,stopInst)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         false = Mod.emptyModOrEquality(mods) and SCode.emptyModOrEquality(mod);
@@ -3652,7 +3713,7 @@ algorithm
 
     case (cache,env,ih,store,mods,pre,csets,ci_state,className,
           SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("list"),{tSpec},NONE()),modifications = mod, attributes=DA),
-          re,prot,inst_dims,impl,_,graph,instSingleCref,info,stopInst)
+          re,vis,inst_dims,impl,_,graph,instSingleCref,info,stopInst)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         false = Util.getStatefulBoolean(stopInst);
@@ -3662,12 +3723,12 @@ algorithm
         ty = Util.listFirst(tys);
         ty = Types.boxIfUnboxedType(ty);
         bc = SOME((DAE.T_LIST(ty),NONE()));
-        oDA = Absyn.mergeElementAttributes(DA,oDA);
+        oDA = SCode.mergeAttributes(DA,oDA);
       then (cache,env,ih,store,DAEUtil.emptyDae,csets,ClassInf.META_LIST(Absyn.IDENT("")),{},bc,oDA,NONE(),graph);
 
     case (cache,env,ih,store,mods,pre,csets,ci_state,className,
           SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("Option"),{tSpec},NONE()),modifications = mod, attributes=DA),
-          re,prot,inst_dims,impl,_,graph,instSingleCref,info,stopInst)
+          re,vis,inst_dims,impl,_,graph,instSingleCref,info,stopInst)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         false = Util.getStatefulBoolean(stopInst);
@@ -3676,12 +3737,12 @@ algorithm
         instClassDefHelper(cache,env,ih,{tSpec},pre,inst_dims,impl,{},csets);
         ty = Types.boxIfUnboxedType(ty);
         bc = SOME((DAE.T_METAOPTION(ty),NONE()));
-        oDA = Absyn.mergeElementAttributes(DA,oDA);
+        oDA = SCode.mergeAttributes(DA,oDA);
       then (cache,env,ih,store,DAEUtil.emptyDae,csets,ClassInf.META_OPTION(Absyn.IDENT("")),{},bc,oDA,NONE(),graph);
 
     case (cache,env,ih,store,mods,pre,csets,ci_state,className,
           SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("tuple"),tSpecs,NONE()),modifications = mod, attributes=DA),
-          re,prot,inst_dims,impl,_,graph,instSingleCref,info,stopInst)
+          re,vis,inst_dims,impl,_,graph,instSingleCref,info,stopInst)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         false = Util.getStatefulBoolean(stopInst);
@@ -3689,12 +3750,12 @@ algorithm
         (cache,cenv,ih,tys,csets,oDA) = instClassDefHelper(cache,env,ih,tSpecs,pre,inst_dims,impl,{},csets);
         tys = Util.listMap(tys, Types.boxIfUnboxedType);
         bc = SOME((DAE.T_METATUPLE(tys),NONE()));
-        oDA = Absyn.mergeElementAttributes(DA,oDA);
+        oDA = SCode.mergeAttributes(DA,oDA);
       then (cache,env,ih,store,DAEUtil.emptyDae,csets,ClassInf.META_TUPLE(Absyn.IDENT("")),{},bc,oDA,NONE(),graph);
 
     case (cache,env,ih,store,mods,pre,csets,ci_state,className,
           SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("array"),{tSpec},NONE()),modifications = mod, attributes=DA),
-          re,prot,inst_dims,impl,_,graph,instSingleCref,info,stopInst)
+          re,vis,inst_dims,impl,_,graph,instSingleCref,info,stopInst)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         false = Util.getStatefulBoolean(stopInst);
@@ -3702,24 +3763,24 @@ algorithm
         (cache,cenv,ih,{ty},csets,oDA) = instClassDefHelper(cache,env,ih,{tSpec},pre,inst_dims,impl,{},csets);
         ty = Types.boxIfUnboxedType(ty);
         bc = SOME((DAE.T_META_ARRAY(ty),NONE()));
-        oDA = Absyn.mergeElementAttributes(DA,oDA);
+        oDA = SCode.mergeAttributes(DA,oDA);
       then (cache,env,ih,store,DAEUtil.emptyDae,csets,ClassInf.META_ARRAY(Absyn.IDENT(className)),{},bc,oDA,NONE(),graph);
 
     case (cache,env,ih,store,mods,pre,csets,ci_state,className,
           SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("polymorphic"),{Absyn.TPATH(Absyn.IDENT("Any"),NONE())},NONE()),modifications = mod, attributes=DA),
-          re,prot,inst_dims,impl,_,graph,instSingleCref,info,stopInst)
+          re,vis,inst_dims,impl,_,graph,instSingleCref,info,stopInst)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         false = Util.getStatefulBoolean(stopInst);
         true = Mod.emptyModOrEquality(mods) and SCode.emptyModOrEquality(mod);
         (cache,cenv,ih,tys,csets,oDA) = instClassDefHelper(cache,env,ih,{},pre,inst_dims,impl,{},csets);
         bc = SOME((DAE.T_POLYMORPHIC(className),NONE()));
-        oDA = Absyn.mergeElementAttributes(DA,oDA);
+        oDA = SCode.mergeAttributes(DA,oDA);
       then (cache,env,ih,store,DAEUtil.emptyDae,csets,ClassInf.META_POLYMORPHIC(Absyn.IDENT(className)),{},bc,oDA,NONE(),graph);
 
     case (cache,env,ih,store,mods,pre,csets,ci_state,className,
           SCode.DERIVED(typeSpec=Absyn.TCOMPLEX(path=Absyn.IDENT("polymorphic")),modifications=mod),
-          re,prot,inst_dims,impl,_,graph,instSingleCref,info,stopInst)
+          re,vis,inst_dims,impl,_,graph,instSingleCref,info,stopInst)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         true = Mod.emptyModOrEquality(mods) and SCode.emptyModOrEquality(mod);
@@ -3728,7 +3789,7 @@ algorithm
 
     case (cache,env,ih,store,mods,pre,csets,ci_state,className,
           SCode.DERIVED(typeSpec=tSpec as Absyn.TCOMPLEX(arrayDim=SOME(_)),modifications=mod),
-          re,prot,inst_dims,impl,_,graph,instSingleCref,info,stopInst)
+          re,vis,inst_dims,impl,_,graph,instSingleCref,info,stopInst)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         cns = Dump.unparseTypeSpec(tSpec);
@@ -3737,16 +3798,16 @@ algorithm
 
     case (cache,env,ih,store,mods,pre,csets,ci_state,className,
           SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT(str),tSpecs,NONE()),modifications = mod, attributes=DA),
-          re,prot,inst_dims,impl,inCallingScope,graph,instSingleCref,info,stopInst)
+          re,vis,inst_dims,impl,inCallingScope,graph,instSingleCref,info,stopInst)
       equation
         str = Util.assoc(str,{("List","list"),("Tuple","tuple"),("Array","array")});
         (outCache,outEnv,outIH,outStore,outDae,outSets,outState,outTypesVarLst,outTypesTypeOption,optDerAttr,outEqualityConstraint,outGraph)
-        =instClassdef2(cache,env,ih,store,mods,pre,csets,ci_state,className,SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT(str),tSpecs,NONE()),mod,DA,NONE()),re,prot,inst_dims,impl,inCallingScope,graph,instSingleCref,info,stopInst);
+        =instClassdef2(cache,env,ih,store,mods,pre,csets,ci_state,className,SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT(str),tSpecs,NONE()),mod,DA,NONE()),re,vis,inst_dims,impl,inCallingScope,graph,instSingleCref,info,stopInst);
       then (outCache,outEnv,outIH,outStore,outDae,outSets,outState,outTypesVarLst,outTypesTypeOption,optDerAttr,outEqualityConstraint,outGraph);
 
     case (cache,env,ih,store,mods,pre,csets,ci_state,className,
           SCode.DERIVED(typeSpec=tSpec as Absyn.TCOMPLEX(path=cn,typeSpecs=tSpecs),modifications=mod),
-          re,prot,inst_dims,impl,_,graph,instSingleCref,info,stopInst)
+          re,vis,inst_dims,impl,_,graph,instSingleCref,info,stopInst)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         false = listMember((Absyn.pathString(cn),listLength(tSpecs)==1), {("tuple",false),("array",true),("Option",true),("list",true)});
@@ -3759,7 +3820,7 @@ algorithm
     /* If the class is derived from a class that can not be found in the environment, this rule prints an error message. */
     case (cache,env,ih,store,mods,pre,csets,ci_state,className,
           SCode.DERIVED(Absyn.TPATH(path = cn, arrayDim = ad),modifications = mod),
-          re,prot,inst_dims,impl,_,graph,instSingleCref,info,stopInst)
+          re,vis,inst_dims,impl,_,graph,instSingleCref,info,stopInst)
       equation
         false = Util.getStatefulBoolean(stopInst);
         failure((_,_,_) = Lookup.lookupClass(cache,env, cn, false));
@@ -3771,7 +3832,7 @@ algorithm
 
     case (cache,env,ih,store,mods,pre,csets,ci_state,className,
           SCode.DERIVED(Absyn.TPATH(path = cn, arrayDim = ad),modifications = mod),
-          re,prot,inst_dims,impl,_,graph,instSingleCref,info,stopInst)
+          re,vis,inst_dims,impl,_,graph,instSingleCref,info,stopInst)
       equation
         true = RTOpts.debugFlag("failtrace");
         failure((_,_,_) = Lookup.lookupClass(cache,env, cn, false));
@@ -3797,48 +3858,55 @@ end instClassdef2;
 protected function matchModificationToComponents "
 Author: BZ, 2009-05
 This function is called from instClassDef, recursivly remove modifers on each component.
-What ever is left in modifier is printed as a warning. That means that we have modifiers on a component that does not exist.
-
-"
+What ever is left in modifier is printed as a warning. That means that we have modifiers on a component that does not exist."
   input list<SCode.Element> elems;
   input DAE.Mod inmod;
   input String callingScope;
-algorithm _ := matchcontinue(elems, inmod,callingScope)
-  local
-    SCode.Element elem;
-    String cn,s1,s2;
-  case({},DAE.NOMOD(),_) then ();
-  case({},DAE.MOD(subModLst={}),_) then ();
-  case({},inmod,callingScope)
-    equation
-      s1 = Mod.prettyPrintMod(inmod,0);
-      s2 = s1 +& " not found in <" +& callingScope +& ">";
-      // Line below can be used for testing test-suite for dangeling modifiers when getErrorString() is not called.
-      //print(" *** ERROR Unused modifer...: " +& s2 +& "\n");
-      Error.addMessage(Error.UNUSED_MODIFIER,{s2});
-    then fail();
-
-  case((elem as SCode.COMPONENT(component=cn))::elems,inmod,callingScope)
-    equation
-      inmod = Types.removeMod(inmod,cn);
-      matchModificationToComponents(elems,inmod,callingScope);
-    then
-      ();
-  case((elem as SCode.EXTENDS(modifications=_))::elems,inmod,callingScope)
-    equation matchModificationToComponents(elems,inmod,callingScope); then ();
-      //TODO: only remove modifiers on replaceable classes, make special case for redeclaration of local classes
-  case((elem as SCode.CLASSDEF(name=cn,replaceablePrefix=_/*true*/))::elems,inmod,callingScope)
-    equation
-      inmod = Types.removeMod(inmod,cn);
-      matchModificationToComponents(elems,inmod,callingScope);
-    then ();
-  case((elem as SCode.IMPORT(imp=_))::elems,inmod,callingScope)
-    equation matchModificationToComponents(elems,inmod,callingScope); then ();
-  case( (elem as SCode.CLASSDEF(replaceablePrefix=false))::elems,inmod,callingScope)
-    equation
-      matchModificationToComponents(elems,inmod,callingScope);
-    then ();
-end matchcontinue;
+algorithm 
+  _ := matchcontinue(elems, inmod,callingScope)
+    local
+      SCode.Element elem;
+      String cn,s1,s2;
+    
+    case({},DAE.NOMOD(),_) then ();
+    case({},DAE.MOD(subModLst={}),_) then ();
+    
+    case({},inmod,callingScope)
+      equation
+        s1 = Mod.prettyPrintMod(inmod,0);
+        s2 = s1 +& " not found in <" +& callingScope +& ">";
+        // Line below can be used for testing test-suite for dangeling modifiers when getErrorString() is not called.
+        //print(" *** ERROR Unused modifer...: " +& s2 +& "\n");
+        Error.addMessage(Error.UNUSED_MODIFIER,{s2});
+      then fail();
+    
+    case((elem as SCode.COMPONENT(name=cn))::elems,inmod,callingScope)
+      equation
+        inmod = Types.removeMod(inmod,cn);
+        matchModificationToComponents(elems,inmod,callingScope);
+      then
+        ();
+    
+    case((elem as SCode.EXTENDS(modifications=_))::elems,inmod,callingScope)
+      equation matchModificationToComponents(elems,inmod,callingScope); then ();
+        //TODO: only remove modifiers on replaceable classes, make special case for redeclaration of local classes
+    
+    case((elem as SCode.CLASS(name=cn,prefixes=SCode.PREFIXES(replaceablePrefix=_/*SCode.REPLACEABLE(_)*/)))::elems,inmod,callingScope)
+      equation
+        inmod = Types.removeMod(inmod,cn);
+        matchModificationToComponents(elems,inmod,callingScope);
+      then ();
+    
+    case((elem as SCode.IMPORT(imp=_))::elems,inmod,callingScope)
+      equation 
+        matchModificationToComponents(elems,inmod,callingScope); 
+      then ();
+        
+    case( (elem as SCode.CLASS(prefixes=SCode.PREFIXES(replaceablePrefix=SCode.NOT_REPLACEABLE())))::elems,inmod,callingScope)
+      equation
+        matchModificationToComponents(elems,inmod,callingScope);
+      then ();
+  end matchcontinue;
 end matchModificationToComponents;
 
 protected function extractConstantPlusDeps "
@@ -3894,8 +3962,7 @@ end extractConstantPlusDeps;
 
 protected function extractConstantPlusDeps2 "
 Author: BZ, 2009-04
-Helper function for extractConstantPlusDeps
-"
+Helper function for extractConstantPlusDeps"
   input list<SCode.Element> inComps;
   input Option<DAE.ComponentRef> ocr;
   input list<SCode.Element> allComps;
@@ -3913,6 +3980,7 @@ algorithm
       DAE.ComponentRef cr;
       list<Absyn.ComponentRef> crefs;
       Absyn.Path p;
+
     case({},SOME(cr),_,_,_)
       equation
         //print(" failure to find: " +& ComponentReference.printComponentRefStr(cr) +& " in scope: " +& className +& "\n");
@@ -3920,14 +3988,14 @@ algorithm
     case({},_,_,_,_) then fail();
     case(inComps,NONE(),_,_,_) then inComps;
       /*
-    case( (selem as SCode.CLASSDEF(name=name2))::inComps,SOME(DAE.CREF_IDENT(ident=name)),allComps,className,existing)
+    case( (selem as SCode.CLASS(name=name2))::inComps,SOME(DAE.CREF_IDENT(ident=name)),allComps,className,existing)
       equation
         true = stringEq(name,name2);
         outComps = extractConstantPlusDeps2(inComps,ocr,allComps,className,existing);
       then
         selem::outComps;
         */
-    case( ((selem as SCode.CLASSDEF(name=name2)))::inComps,SOME(DAE.CREF_IDENT(ident=name)),allComps,className,existing)
+    case( ((selem as SCode.CLASS(name=name2)))::inComps,SOME(DAE.CREF_IDENT(ident=name)),allComps,className,existing)
       equation
         //false = stringEq(name,name2);
         allComps = selem::allComps;
@@ -3936,7 +4004,7 @@ algorithm
       then //extractConstantPlusDeps2(inComps,ocr,allComps,className,existing);
          selem::outComps;
 
-    case((selem as SCode.COMPONENT(component=name2,modifications=scmod))::inComps,SOME(DAE.CREF_IDENT(ident=name)),allComps,className,existing)
+    case((selem as SCode.COMPONENT(name=name2,modifications=scmod))::inComps,SOME(DAE.CREF_IDENT(ident=name)),allComps,className,existing)
       equation
         true = stringEq(name,name2);
         crefs = getCrefFromMod(scmod);
@@ -3946,7 +4014,7 @@ algorithm
       then
         selem::recDeps;
 
-    case( ( (selem as SCode.COMPONENT(component=name2)))::inComps,SOME(DAE.CREF_IDENT(ident=name)),allComps,className,existing)
+    case( ( (selem as SCode.COMPONENT(name=name2)))::inComps,SOME(DAE.CREF_IDENT(ident=name)),allComps,className,existing)
       equation
         false = stringEq(name,name2);
         allComps = selem::allComps;
@@ -4075,7 +4143,7 @@ protected function instClassDefHelper
   output InstanceHierarchy outIH;
   output list<DAE.Type> outType;
   output Connect.Sets outSets;
-  output Option<Absyn.ElementAttributes> outAttr;
+  output Option<SCode.Attributes> outAttr;
 algorithm
   (outCache,outEnv,outIH,outType,outSets,outAttr) :=
   matchcontinue (inCache,inEnv,inIH,inSpecs,inPre,inDims,inImpl,accTypes,inCSets)
@@ -4091,10 +4159,10 @@ algorithm
       Absyn.Path cn;
       DAE.Type ty;
       Absyn.Path p;
-      SCode.Class c;
+      SCode.Element c;
       Absyn.Ident id;
       Absyn.TypeSpec tSpec;
-      Option<Absyn.ElementAttributes> oDA;
+      Option<SCode.Attributes> oDA;
       InstanceHierarchy ih;
 
     case (cache,env,ih,{},_,_,_,localAccTypes,csets)
@@ -4121,10 +4189,15 @@ algorithm
     case (cache,env,ih, (tSpec as Absyn.TCOMPLEX(p,_,_)) :: restTypeSpecs,pre,dims,impl,localAccTypes,csets)
       equation
         id=Absyn.pathString(p);
-        c = SCode.CLASS(id,false,false,SCode.R_TYPE(),
-                        SCode.DERIVED(tSpec,SCode.NOMOD(),
-                        Absyn.ATTR(false, false, Absyn.VAR(), Absyn.BIDIR(), {}),
-                        NONE()),Absyn.dummyInfo);
+        c = SCode.CLASS(id,SCode.defaultPrefixes,
+                        SCode.NOT_ENCAPSULATED(),
+                        SCode.NOT_PARTIAL(),
+                        SCode.R_TYPE(),
+                        SCode.DERIVED(
+                          tSpec,SCode.NOMOD(),
+                          SCode.ATTR({}, SCode.NOT_FLOW(), SCode.NOT_STREAM(), SCode.RW(), SCode.VAR(), Absyn.BIDIR()),
+                          NONE()),
+                        Absyn.dummyInfo);
         (cache,cenv,ih,_,_,csets,ty,_,oDA,_)=instClass(cache,env,ih,UnitAbsyn.noStore,DAE.NOMOD(),pre,csets,c,dims,impl,INNER_CALL(), ConnectionGraph.EMPTY);
         localAccTypes = ty::localAccTypes;
         (cache,env,ih,localAccTypes,csets,_) = instClassDefHelper(cache,env,ih,restTypeSpecs,pre,dims,impl,localAccTypes,csets);
@@ -4149,7 +4222,7 @@ protected function instantiateExternalObject
 algorithm
   (outCache,outEnv,outIH,dae,ciState) := matchcontinue(inCache,env,inIH,els,impl)
     local
-      SCode.Class destr,constr;
+      SCode.Element destr,constr;
       DAE.Function destr_dae,constr_dae;
       Env.Env env1;
       Env.Cache cache;
@@ -4199,7 +4272,7 @@ protected function instantiateExternalObjectDestructor
   input Env.Cache inCache;
   input Env.Env env;
   input InstanceHierarchy inIH;
-  input SCode.Class cl;
+  input SCode.Element cl;
   output Env.Cache outCache;
   output InstanceHierarchy outIH;
   output DAE.Function fn;
@@ -4228,7 +4301,7 @@ protected function instantiateExternalObjectConstructor
   input Env.Cache inCache;
   input Env.Env env;
   input InstanceHierarchy inIH;
-  input SCode.Class cl;
+  input SCode.Element cl;
   output Env.Cache outCache;
   output InstanceHierarchy outIH;
   output DAE.Function fn;
@@ -4256,7 +4329,7 @@ end instantiateExternalObjectConstructor;
 
 public function classIsExternalObject
 "returns true if a Class fulfills the requirements of an external object"
-  input SCode.Class cl;
+  input SCode.Element cl;
   output Boolean res;
 algorithm
   res := matchcontinue (cl)
@@ -4290,8 +4363,8 @@ end isExternalObject;
 
 protected function hasExtendsOfExternalObject
 "returns true if element list contains 'extends ExternalObject;'"
-input list<SCode.Element> els;
-output Boolean res;
+  input list<SCode.Element> els;
+  output Boolean res;
 algorithm
   res:= matchcontinue(els)
     case SCode.EXTENDS(baseClassPath = Absyn.IDENT("ExternalObject"))::_ then true;
@@ -4306,7 +4379,7 @@ protected function hasExternalObjectDestructor
   output Boolean res;
 algorithm
   res:= matchcontinue(els)
-    case SCode.CLASSDEF(classDef = SCode.CLASS(name="destructor"))::_ then true;
+    case SCode.CLASS(name="destructor")::_ then true;
     case _::els then hasExternalObjectDestructor(els);
     case _ then false;
   end matchcontinue;
@@ -4314,11 +4387,11 @@ end hasExternalObjectDestructor;
 
 protected function hasExternalObjectConstructor
 "returns true if element list contains 'function constructor ... end constructor'"
-input list<SCode.Element> els;
-output Boolean res;
+  input list<SCode.Element> els;
+  output Boolean res;
 algorithm
   res:= matchcontinue(els)
-    case SCode.CLASSDEF(classDef = SCode.CLASS(name="constructor"))::_ then true;
+    case SCode.CLASS(name="constructor")::_ then true;
     case _::els then hasExternalObjectConstructor(els);
     case _ then false;
   end matchcontinue;
@@ -4326,23 +4399,23 @@ end hasExternalObjectConstructor;
 
 protected function getExternalObjectDestructor
 "returns the class 'function destructor .. end destructor' from element list"
-input list<SCode.Element> els;
-output SCode.Class cl;
+  input list<SCode.Element> els;
+  output SCode.Element cl;
 algorithm
   cl:= matchcontinue(els)
-    case SCode.CLASSDEF(classDef = cl as SCode.CLASS(name="destructor"))::_ then cl;
-    case _::els then getExternalObjectDestructor(els);
+    case ((cl as SCode.CLASS(name="destructor"))::_) then cl;
+    case (_::els) then getExternalObjectDestructor(els);
   end matchcontinue;
 end getExternalObjectDestructor;
 
 protected function getExternalObjectConstructor
 "returns the class 'function constructor ... end constructor' from element list"
 input list<SCode.Element> els;
-output SCode.Class cl;
+output SCode.Element cl;
 algorithm
   cl:= matchcontinue(els)
-    case SCode.CLASSDEF(classDef = cl as SCode.CLASS(name="constructor"))::_ then cl;
-    case _::els then getExternalObjectConstructor(els);
+    case ((cl as SCode.CLASS(name="constructor"))::_) then cl;
+    case (_::els) then getExternalObjectConstructor(els);
   end matchcontinue;
 end getExternalObjectConstructor;
 
@@ -4361,7 +4434,8 @@ algorithm
       equation
         s = SCode.printElementStr(el);
         print(s);
-        print(", ");print(Mod.printModStr(mod));
+        print(", "); 
+        print(Mod.printModStr(mod));
         print("\n");
         printExtcomps(els);
       then
@@ -4400,7 +4474,7 @@ algorithm
   matchcontinue (inCache,inEnv,inIH,store,inSCodeElementLst2,inSCodeElementLst3,inMod4,inInstDims5,info,stopInst)
     local
       DAE.Mod m_1,m_2,mods;
-      SCode.Class cdef;
+      SCode.Element cdef;
       list<Env.Frame> cenv,env_1,env;
       DAE.DAElist dae;
       DAE.Type ty;
@@ -4484,7 +4558,7 @@ Handles the fail case rollbacks/deleteCheckpoint of errors."
 algorithm _ := matchcontinue(inCache,inEnv1,inIH,store,inSCodeElementLst2,inSCodeElementLst3,inMod4,inInstDims5,info,stopInst)
   local
       DAE.Mod m_1,mods;
-      SCode.Class cdef,cdef_1;
+      SCode.Element cdef,cdef_1;
       list<Env.Frame> cenv,env_1,env;
       DAE.DAElist dae;
       tuple<DAE.TType, Option<Absyn.Path>> ty;
@@ -4496,11 +4570,12 @@ algorithm _ := matchcontinue(inCache,inEnv1,inIH,store,inSCodeElementLst2,inSCod
       String classname;
       Env.Cache cache;
       InstanceHierarchy ih;
+    
     case (cache,env,ih,store,{SCode.EXTENDS(baseClassPath = path,modifications = mod)},(_ :: _),mods,inst_dims,info,stopInst) /* Inherits baseclass -and- has components */
       equation
         (cache,m_1) = Mod.elabModForBasicType(cache, env, ih, Prefix.NOPRE(), mod, true, info);
         (cache,cdef,cenv) = Lookup.lookupClass(cache,env, path, true);
-        cdef_1 = SCode.classSetPartial(cdef, false);
+        cdef_1 = SCode.classSetPartial(cdef, SCode.NOT_PARTIAL());
         (cache,env_1,ih,_,dae,_,ty,st,_,_) = instClass(cache,cenv,ih,store, m_1, Prefix.NOPRE(), Connect.emptySet, cdef_1, inst_dims, false, INNER_CALL(), ConnectionGraph.EMPTY) "impl" ;
         b1 = Types.basicType(ty);
         b2 = Types.arrayType(ty);
@@ -4511,6 +4586,7 @@ algorithm _ := matchcontinue(inCache,inEnv1,inIH,store,inSCodeElementLst2,inSCod
         Util.setStatefulBoolean(stopInst,true);
       then
         ();
+    
     // if not error above, then do not report error at all, try another case in instClassdef.
     case (_,_,_,_,_,_,_,_,_,_)
       equation
@@ -4540,7 +4616,7 @@ algorithm
       list<Env.Item> imp;
       DAE.ComponentRef prefix_cr,cref_;
       list<Env.Frame> fs;
-      Boolean enc;
+      SCode.Encapsulated enc;
       InstanceHierarchy ih;
       list<SCode.Element> defineUnits;
 
@@ -4549,6 +4625,7 @@ algorithm
       equation
         prefix_cr = PrefixUtil.prefixToCref(prefix);
       then (Env.FRAME(n,st,bt1,bt2,imp,(crs,prefix_cr),enc,defineUnits) :: fs,ih);
+    
     case (Connect.SETS(connection = crs),prefix,
         (Env.FRAME(n,st,bt1,bt2,imp,_,enc,defineUnits) :: fs),ih)
       equation
@@ -4631,8 +4708,8 @@ protected function partialInstClassdef
   input ClassInf.State inState;
   input SCode.ClassDef inClassDef;
   input SCode.Restriction inRestriction;
-  input Boolean inPartialPrefix;
-  input Boolean inProt;
+  input SCode.Partial inPartialPrefix;
+  input SCode.Visibility inVisibility;
   input InstDims inInstDims;
   input String inClassName "the class name that contains the elements we are instanting";
   input Absyn.Info info;
@@ -4642,7 +4719,7 @@ protected function partialInstClassdef
   output ClassInf.State outState;
 algorithm
   (outCache,outEnv,outIH,outState):=
-  matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inClassDef,inRestriction,inPartialPrefix,inProt,inInstDims,inClassName,info)
+  matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inClassDef,inRestriction,inPartialPrefix,inVisibility,inInstDims,inClassName,info)
     local
       ClassInf.State ci_state1,ci_state,new_ci_state,new_ci_state_1,ci_state2;
       list<SCode.Element> cdefelts,extendselts,els,cdefelts2,classextendselts;
@@ -4654,9 +4731,11 @@ algorithm
       Prefix.Prefix pre;
       Connect.Sets csets;
       SCode.Restriction re,r;
-      Boolean prot,enc2,partialPrefix;
+      SCode.Visibility vis;
+      SCode.Encapsulated enc2;
+      SCode.Partial partialPrefix;
       InstDims inst_dims;
-      SCode.Class c;
+      SCode.Element c;
       String cn2,cns,scope_str,className;
       Absyn.Path cn;
       Option<list<Absyn.Subscript>> ad;
@@ -4670,11 +4749,11 @@ algorithm
           SCode.PARTS(elementLst = els,
                       normalEquationLst = eqs, initialEquationLst = initeqs,
                       normalAlgorithmLst = alg, initialAlgorithmLst = initalg),
-          re,prot,inst_dims,className)
+          re,vis,inst_dims,className)
       equation
         ci_state1 = ClassInf.trans(ci_state, ClassInf.NEWDEF());
         (cdefelts,classextendselts,extendselts,_) = splitElts(els);
-        (env1,ih) = addClassdefsToEnv(env, ih, pre, cdefelts, true,NONE()) " CLASSDEF & IMPORT nodes are added to env" ;
+        (env1,ih) = addClassdefsToEnv(env, ih, pre, cdefelts, true,NONE()) " CLASS & IMPORT nodes are added to env" ;
         (cache,env2,ih,emods,extcomps,eqs2,initeqs2,alg2,initalg2) =
         partialInstExtendsAndClassExtendsList(cache,env1,ih, mods, extendselts, classextendselts, ci_state, className, true)
         "2. EXTENDS Nodes inst_Extends_List only flatten inhteritance structure. It does not perform component instantiations." ;
@@ -4698,17 +4777,17 @@ algorithm
           SCode.PARTS(elementLst = els,
             normalEquationLst = eqs, initialEquationLst = initeqs,
             normalAlgorithmLst = alg, initialAlgorithmLst = initalg),
-            re,partialPrefix,prot,inst_dims,className,info)
+            re,partialPrefix,vis,inst_dims,className,info)
       equation
         // Debug.traceln(" Partialinstclassdef for: " +& PrefixUtil.printPrefixStr(pre) +& "." +&  className +& " mods: " +& Mod.printModStr(mods));
         partialPrefix = isPartial(partialPrefix, mods);
         ci_state1 = ClassInf.trans(ci_state, ClassInf.NEWDEF());
         (cdefelts,classextendselts,extendselts,_) = splitElts(els);
-        (env1,ih) = addClassdefsToEnv(env, ih, pre, cdefelts, true, NONE()) " CLASSDEF & IMPORT nodes are added to env" ;
+        (env1,ih) = addClassdefsToEnv(env, ih, pre, cdefelts, true, NONE()) " CLASS & IMPORT nodes are added to env" ;
         (cache,env2,ih,emods,extcomps,_,_,_,_) =
         InstExtends.instExtendsAndClassExtendsList(cache, env1, ih, mods, pre, extendselts, classextendselts, ci_state, className, true, true)
         "2. EXTENDS Nodes inst_Extends_List only flatten inhteritance structure. It does not perform component instantiations." ;
-        els = Util.if_(partialPrefix, {}, els);
+        els = Util.if_(SCode.partialBool(partialPrefix), {}, els);
         // If we partially instantiate a partial package, we filter out constants (maybe we should also filter out functions) /sjoelund
         lst_constantEls = listAppend(extcomps,addNomod(constantEls(els))) " Retrieve all constants";
         /*
@@ -4735,14 +4814,14 @@ algorithm
     /* This rule describes how to instantiate a derived class definition */
     case (cache,env,ih,mods,pre,csets,ci_state,
           SCode.DERIVED(Absyn.TPATH(path = cn, arrayDim = ad),modifications = mod),
-          re,partialPrefix,prot,inst_dims,className,info)
+          re,partialPrefix,vis,inst_dims,className,info)
       equation
         (cache,(c as SCode.CLASS(name=cn2,encapsulatedPrefix=enc2,restriction=r)),cenv) = Lookup.lookupClass(cache, env, cn, true);
         cenv_2 = Env.openScope(cenv, enc2, SOME(cn2), Env.restrictionToScopeType(r));
         (cache,mod_1) = Mod.elabMod(cache, env, ih, pre, mod, false, info);
         new_ci_state = ClassInf.start(r, Env.getEnvName(cenv_2));
         mods_1 = Mod.merge(mods, mod_1, cenv_2, pre);
-        (cache,env_2,ih,new_ci_state_1) = partialInstClassIn(cache, cenv_2, ih, mods_1, pre, csets, new_ci_state, c, prot, inst_dims);
+        (cache,env_2,ih,new_ci_state_1) = partialInstClassIn(cache, cenv_2, ih, mods_1, pre, csets, new_ci_state, c, vis, inst_dims);
       then
         (cache,env_2,ih,new_ci_state_1);
 
@@ -4751,7 +4830,7 @@ algorithm
      */
     case (cache,env,ih,mods,pre,csets,ci_state,
           SCode.DERIVED(Absyn.TPATH(path = cn, arrayDim = ad),modifications = mod),
-          re,partialPrefix,prot,inst_dims,className,info)
+          re,partialPrefix,vis,inst_dims,className,info)
       equation
         failure((_,_,_) = Lookup.lookupClass(cache,env, cn, false));
         cns = Absyn.pathString(cn);
@@ -4766,14 +4845,15 @@ protected function constantEls
 "Returns only elements that are constants.
 author: PA
 Used buy partialInstClassdef to instantiate constants in packages."
-input list<SCode.Element> elements;
-output list<SCode.Element> outElements;
+  input list<SCode.Element> elements;
+  output list<SCode.Element> outElements;
 algorithm
   outElements := matchcontinue (elements)
     local
       SCode.Attributes attr;
       SCode.Element el;
       list<SCode.Element> els,els1;
+    
     case ({}) then {};
 
     case ((el as SCode.COMPONENT(attributes=attr))::els)
@@ -4791,29 +4871,30 @@ end constantEls;
 
 protected function getModsForDep "
 Author: BZ, 2009-08
-Extract modifer for dependent variables(dep).
-"
-input Absyn.ComponentRef dep;
-input list<tuple<SCode.Element, DAE.Mod>> elems;
-output DAE.Mod omods;
-algorithm omods := matchcontinue(dep,elems)
-  local
-    String name1,name2;
-    DAE.Mod cmod;
-    tuple<SCode.Element, DAE.Mod> tpl;
-  case(_,{}) then DAE.NOMOD();
-  case(dep,( tpl as (SCode.COMPONENT(component=name1),DAE.NOMOD()))::elems)
+Extract modifer for dependent variables(dep)."
+  input Absyn.ComponentRef dep;
+  input list<tuple<SCode.Element, DAE.Mod>> elems;
+  output DAE.Mod omods;
+algorithm 
+  omods := matchcontinue(dep,elems)
+    local
+      String name1,name2;
+      DAE.Mod cmod;
+      tuple<SCode.Element, DAE.Mod> tpl;
+  
+    case(_,{}) then DAE.NOMOD();
+    case(dep,( tpl as (SCode.COMPONENT(name=name1),DAE.NOMOD()))::elems)
       then getModsForDep(dep,elems);
-  case(dep,( tpl as (SCode.COMPONENT(component=name1),cmod))::elems)
-    equation
-      name2 = Absyn.printComponentRefStr(dep);
-      true = stringEq(name2,name1);
-      cmod = DAE.MOD(false,Absyn.NON_EACH(),{DAE.NAMEMOD(name2,cmod)},NONE());
+    case(dep,( tpl as (SCode.COMPONENT(name=name1),cmod))::elems)
+      equation
+        name2 = Absyn.printComponentRefStr(dep);
+        true = stringEq(name2,name1);
+        cmod = DAE.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{DAE.NAMEMOD(name2,cmod)},NONE());
       then
         cmod;
-  case(dep,tpl::elems)
-    equation
-      cmod = getModsForDep(dep,elems);
+    case(dep,tpl::elems)
+      equation
+        cmod = getModsForDep(dep,elems);
       then
         cmod;
   end matchcontinue;
@@ -4862,7 +4943,7 @@ algorithm
 
     case (cache,env,ih,pre,{},_,csets,_) then (cache,env,ih,{},csets);
       // Special case for components beeing redeclared, we might instantiate partial classes when instantiating var(-> instVar2->instClass) to update component in env.
-    case (cache,env,ih,pre,((comp,(cmod as DAE.REDECL(_,{(redComp,redMod)}))) :: xs),ci_state,csets,impl)
+    case (cache,env,ih,pre,((comp,(cmod as DAE.REDECL(_,_,{(redComp,redMod)}))) :: xs),ci_state,csets,impl)
       equation
         info = Absyn.dummyInfo; // TODO: Get info from the comp? Is it always a COMPONENT?
         umod = Mod.unelabMod(cmod);
@@ -4878,7 +4959,7 @@ algorithm
         //print("REDECL     acquired mods: " +& Mod.printModStr(cmod2) +& "\n");
         (cache,env2,ih,csets) = updateComponentsInEnv(cache, env, ih, pre, cmod2, crefs, ci_state, csets, impl);
         ErrorExt.setCheckpoint("updateCompeltsMods");
-        (cache,env2,ih,csets) = updateComponentsInEnv(cache, env2, ih, pre, DAE.MOD(false,Absyn.NON_EACH(),{DAE.NAMEMOD(name, cmod)},NONE()), {cref}, ci_state, csets, impl);
+        (cache,env2,ih,csets) = updateComponentsInEnv(cache, env2, ih, pre, DAE.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{DAE.NAMEMOD(name, cmod)},NONE()), {cref}, ci_state, csets, impl);
         ErrorExt.rollBack("updateCompeltsMods") "roll back any errors";
         (cache,cmod_1) = Mod.updateMod(cache, env2, ih, pre, cmod, impl, info);
         (cache,env3,ih,res,csets) = updateCompeltsMods(cache, env2, ih, pre, xs, ci_state, csets, impl);
@@ -4909,7 +4990,7 @@ algorithm
         //print("     acquired mods: " +& Mod.printModStr(cmod2) +& "\n");
 
         (cache,env2,ih,csets) = updateComponentsInEnv(cache, env, ih, pre, cmod2, crefs, ci_state, csets, impl);
-        (cache,env2,ih,csets) = updateComponentsInEnv(cache, env2, ih, pre, DAE.MOD(false,Absyn.NON_EACH(),{DAE.NAMEMOD(name, cmod)},NONE()), {cref}, ci_state, csets, impl);
+        (cache,env2,ih,csets) = updateComponentsInEnv(cache, env2, ih, pre, DAE.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{DAE.NAMEMOD(name, cmod)},NONE()), {cref}, ci_state, csets, impl);
 
         (cache,cmod_1) = Mod.updateMod(cache, env2, ih, pre, cmod, impl, info);
         (cache,env3,ih,res,csets) = updateCompeltsMods(cache, env2, ih, pre, xs, ci_state, csets, impl);
@@ -4926,8 +5007,7 @@ protected function getOptionArraydim
   input Option<Absyn.ArrayDim> inAbsynArrayDimOption;
   output Absyn.ArrayDim outArrayDim;
 algorithm
-  outArrayDim:=
-  match (inAbsynArrayDimOption)
+  outArrayDim := match (inAbsynArrayDimOption)
     local list<Absyn.Subscript> dim;
     case (SOME(dim)) then dim;
     case (NONE()) then {};
@@ -5110,7 +5190,7 @@ algorithm
     local
       String name;
 
-    case (_, (SCode.COMPONENT(component = name), _))
+    case (_, (SCode.COMPONENT(name = name), _))
       equation
         true = stringEqual(name, inName);
       then
@@ -5130,8 +5210,8 @@ algorithm
     local
       String id1, id2;
 
-    case ((SCode.COMPONENT(component = id1), _), 
-          (SCode.COMPONENT(component = id2), _))
+    case ((SCode.COMPONENT(name = id1), _), 
+          (SCode.COMPONENT(name = id2), _))
       then stringEqual(id1, id2);
 
     else then false;
@@ -5188,7 +5268,7 @@ public function instElementList2
   P.A, Modelica1.4: (allows declare before use)
   1. 'First names of declared local classes (and components) are found.
       Redeclarations are performed.'
-      This means that we first handle all CLASSDEF nodes and apply modifiers and
+      This means that we first handle all CLASS nodes and apply modifiers and
       declarations to them and also COMPONENT nodes to add the variables to the
       environment.
   2.  Second, 'base-classes are looked up, flattened and inserted into the class.'
@@ -5205,7 +5285,7 @@ public function instElementList2
   input ClassInf.State inState5;
   input list<tuple<SCode.Element, DAE.Mod>> inTplSCodeElementModLst6;
   input InstDims inInstDims7;
-  input Boolean inBoolean8;
+  input Boolean inImplicit;
   input CallingScope inCallingScope;
   input ConnectionGraph.ConnectionGraph inGraph;
   output Env.Cache outCache;
@@ -5219,7 +5299,7 @@ public function instElementList2
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm
   (outCache,outEnv,outIH,outStore,outDae,outSets,outState,outTypesVarLst,outGraph):=
-  matchcontinue (inCache,inEnv,inIH,store,inMod2,inPrefix3,inSets4,inState5,inTplSCodeElementModLst6,inInstDims7,inBoolean8,inCallingScope,inGraph)
+  matchcontinue (inCache,inEnv,inIH,store,inMod2,inPrefix3,inSets4,inState5,inTplSCodeElementModLst6,inInstDims7,inImplicit,inCallingScope,inGraph)
     local
       list<Env.Frame> env,env_1,env_2;
       Connect.Sets csets,csets_1,csets_2;
@@ -5247,7 +5327,7 @@ algorithm
 
     // Don't instantiate conditional components with condition = false.
     case (cache, env, ih, store, mod, pre, csets, ci_state, 
-        (el as (SCode.COMPONENT(component = comp_name, info = info, condition=SOME(_)), _)) :: els, inst_dims,
+        (el as (SCode.COMPONENT(name = comp_name, info = info, condition=SOME(_)), _)) :: els, inst_dims,
         impl, callscope, graph)
       equation
         // check for duplicate modifications
@@ -5313,7 +5393,7 @@ protected function classdefElts2
   author: PA
   This function filters out the class definitions (ElementMod) list."
   input list<tuple<SCode.Element, DAE.Mod>> inTplSCodeElementModLst;
-  input Boolean partialPrefix;
+  input SCode.Partial partialPrefix;
   output list<SCode.Element> outSCodeElementLst;
   output list<tuple<SCode.Element, DAE.Mod>> outConstEls;
 algorithm
@@ -5325,17 +5405,17 @@ algorithm
       list<tuple<SCode.Element, DAE.Mod>> xs, els;
       SCode.Attributes attr;
     case ({},_) then ({},{});
-    case ((cdef as SCode.CLASSDEF(classDef = SCode.CLASS(restriction = SCode.R_PACKAGE())),_) :: xs,true)
+    case ((cdef as SCode.CLASS(restriction = SCode.R_PACKAGE()),_) :: xs,SCode.PARTIAL())
       equation
         (cdefs,els) = classdefElts2(xs,partialPrefix);
       then
         (cdef::cdefs,els);
-    case (((cdef as SCode.CLASSDEF(name = _),_)) :: xs,false)
+    case (((cdef as SCode.CLASS(name = _),_)) :: xs,SCode.NOT_PARTIAL())
       equation
         (cdefs,els) = classdefElts2(xs,partialPrefix);
       then
         (cdef::cdefs,els);
-    case((el as (SCode.COMPONENT(attributes=attr),_))::xs,false)
+    case((el as (SCode.COMPONENT(attributes=attr),_))::xs,SCode.NOT_PARTIAL())
        equation
         SCode.CONST() = SCode.attrVariability(attr);
          (cdefs,els) = classdefElts2(xs,partialPrefix);
@@ -5361,17 +5441,21 @@ algorithm
     local
       list<SCode.Element> res,xs;
       SCode.Element cdef,imp,e;
+    
     case ({}) then ({},{});
-    case (((cdef as SCode.CLASSDEF(name = _)) :: xs))
+    
+    case (((cdef as SCode.CLASS(name = _)) :: xs))
       equation
         (cdefElts,restElts) = classdefAndImpElts(xs);
       then
         (cdef :: restElts,restElts);
+    
     case (((imp as SCode.IMPORT(imp = _)) :: xs))
       equation
         (cdefElts,restElts) = classdefAndImpElts(xs);
       then
         (imp :: cdefElts,restElts);
+    
     case ((e :: xs))
       equation
         (cdefElts,restElts) = classdefAndImpElts(xs);
@@ -5419,7 +5503,7 @@ algorithm
       list<SCode.Element> res,xs;
       SCode.Element cdef;
     case ({}) then {};
-    case (((cdef as SCode.COMPONENT(component = _)) :: xs))
+    case (((cdef as SCode.COMPONENT(name = _)) :: xs))
       equation
         res = componentElts(xs);
       then
@@ -5486,7 +5570,7 @@ algorithm
   (outEnv,outIH) := matchcontinue (inEnv,inIH,inPrefix,inSCodeElementLst,inBoolean,redeclareMod)
     local
       list<Env.Frame> env,env_1,env_2,env1;
-      SCode.Class cl,cl2,enumclass;
+      SCode.Element cl,cl2,enumclass;
       SCode.Element sel1,elt;
       list<SCode.Element> xs;
       list<SCode.Enum> enumLst;
@@ -5499,8 +5583,9 @@ algorithm
       Option<SCode.Comment> cmt;
 
     case (env,ih,pre,{},_,_) then (env,ih);
+    
     // we do have a redeclaration of class.
-    case (env,ih,pre,( (sel1 as SCode.CLASSDEF(name = s, classDef = cl)) :: xs),impl,redeclareMod)
+    case (env,ih,pre,( (sel1 as SCode.CLASS(name = s)) :: xs),impl,redeclareMod)
       equation
         (env1,ih,cl2) = addClassdefsToEnv3(env, ih, pre, redeclareMod, sel1);
         env_1 = Env.extendFrameC(env1, cl2);
@@ -5509,7 +5594,7 @@ algorithm
         (env_2,ih);
 
     // adrpo: see if is an enumeration! then extend frame with in class.
-    case (env,ih,pre,( (sel1 as SCode.CLASSDEF(name = s, classDef = SCode.CLASS(classDef=SCode.ENUMERATION(enumLst,cmt),info=info))) :: xs),impl,redeclareMod)
+    case (env,ih,pre,( (sel1 as SCode.CLASS(name = s, classDef=SCode.ENUMERATION(enumLst,cmt),info=info)) :: xs),impl,redeclareMod)
       equation
         enumclass = instEnumeration(s, enumLst, cmt, info);
         env_1 = Env.extendFrameC(env, enumclass);
@@ -5518,10 +5603,10 @@ algorithm
         (env_2,ih);
 
     // otherwise, extend frame with in class.
-    case (env,ih,pre,( (sel1 as SCode.CLASSDEF(classDef = cl)) :: xs),impl,redeclareMod)
+    case (env,ih,pre,( (sel1 as SCode.CLASS(classDef = _)) :: xs),impl,redeclareMod)
       equation
         // Debug.traceln("Extend frame " +& Env.printEnvPathStr(env) +& " with " +& SCode.className(cl));
-        env_1 = Env.extendFrameC(env, cl);
+        env_1 = Env.extendFrameC(env, sel1);
         (env_2, ih) = addClassdefsToEnv2(env_1, ih, pre, xs, impl, redeclareMod);
       then
         (env_2,ih);
@@ -5666,7 +5751,13 @@ algorithm
       ClassInf.State cistate;
       SCode.Element comp;
       String n, ns;
-      Boolean finalPrefix,repl,prot,flowPrefix,streamPrefix,impl,redecl;
+      SCode.Final finalPrefix;
+      SCode.Replaceable repl;
+      SCode.Visibility vis;
+      SCode.Flow flowPrefix;
+      SCode.Stream streamPrefix;
+      Boolean impl;
+      SCode.Redeclare redecl;
       Absyn.InnerOuter io;
       SCode.Attributes attr;
       list<Absyn.Subscript> ad;
@@ -5696,7 +5787,7 @@ algorithm
     // adrpo: moved this check from instElement here as we should check this as early as possible!
     // Check if component's name is the same as its type's name
     case (cache,env,ih,mod,pre,csets,cistate,
-          ((comp as SCode.COMPONENT(component = n,typeSpec = (tss as Absyn.TPATH(tpp, _)), info = aInfo)),cmod)::xs, _, _, instdims,impl)
+          ((comp as SCode.COMPONENT(name = n,typeSpec = (tss as Absyn.TPATH(tpp, _)), info = aInfo)),cmod)::xs, _, _, instdims,impl)
       equation
         true = stringEq(n, Absyn.pathLastIdent(tpp));
         ns = Absyn.pathString(tpp);
@@ -5706,12 +5797,14 @@ algorithm
 
     /* A TPATH component */
     case (cache,env,ih,mod,pre,csets,cistate,
-        (((comp as SCode.COMPONENT(component = n,
-                                   innerOuter=io,
-                                   finalPrefix = finalPrefix,
-                                   replaceablePrefix = repl,
-                                   protectedPrefix = prot,
-                                   redeclarePrefix = redecl,
+        (((comp as SCode.COMPONENT(name = n,
+                                   prefixes = SCode.PREFIXES(
+                                     visibility = vis,
+                                     redeclarePrefix = redecl,
+                                     finalPrefix = finalPrefix,
+                                     innerOuter=io,
+                                     replaceablePrefix = repl
+                                   ),
                                    attributes = (attr as SCode.ATTR(arrayDims = ad,flowPrefix = flowPrefix,
                                                                     streamPrefix = streamPrefix,accesibility = acc,
                                                                     variability = param,direction = dir)),
@@ -5719,7 +5812,7 @@ algorithm
                                    modifications = m,
                                    comment = comment,
                                    condition = aExp,
-                                   info = aInfo,cc=cc)),cmod) :: xs),
+                                   info = aInfo)),cmod) :: xs),
         allcomps,eqns,instdims,impl)
       equation
         compModLocal = Mod.lookupModificationP(mod, tpp);
@@ -5728,10 +5821,10 @@ algorithm
         // compModLocal = Mod.lookupCompModification12(mod,n);
         // print(" \t comp: " +& n +& " " +& " compModLocal: " +& Mod.printModStr(compModLocal) +& "\n");
         (cache,env,ih,selem,smod,csets) = redeclareType(cache,env,ih,compModLocal,
-        /*comp,*/ SCode.COMPONENT(n,io,finalPrefix,repl,prot,redecl,attr,tss,m,comment,aExp, aInfo,cc),
+        /*comp,*/ SCode.COMPONENT(n,SCode.PREFIXES(vis,redecl,finalPrefix,io,repl),attr,tss,m,comment,aExp, aInfo),
         pre, cistate, csets, impl,cmod);
         // Debug.traceln(" adding comp: " +& n +& " " +& Mod.printModStr(mod) +& " cmod: " +& Mod.printModStr(cmod) +& " cmL: " +& Mod.printModStr(compModLocal) +& " smod: " +& Mod.printModStr(smod));
-        // print(" \t comp: " +& n +& " " +& " smod: " +& Mod.printModStr(smod) +& "\n");
+        // print(" \t comp: " +& n +& " " +& "selem: " +& SCode.printElementStr(selem) +& " smod: " +& Mod.printModStr(smod) +& "\n");
         (cache,env_1,ih) = addComponentsToEnv2(cache, env, ih, mod, pre, csets, cistate, {(selem,smod)}, instdims, impl);
         (cache,env_2,ih) = addComponentsToEnv(cache, env_1, ih, mod, pre, csets, cistate, xs, allcomps, eqns, instdims, impl);
       then
@@ -5739,12 +5832,14 @@ algorithm
 
     /* A TCOMPLEX component */
     case (cache,env,ih,mod,pre,csets,cistate,
-        (((comp as SCode.COMPONENT(component = n,
-                                   innerOuter=io,
-                                   finalPrefix = finalPrefix,
-                                   replaceablePrefix = repl,
-                                   protectedPrefix = prot,
-                                   redeclarePrefix = redecl,
+        (((comp as SCode.COMPONENT(name = n,
+                                   prefixes = SCode.PREFIXES(
+                                     visibility = vis,
+                                     redeclarePrefix = redecl,
+                                     finalPrefix = finalPrefix,
+                                     innerOuter=io,
+                                     replaceablePrefix = repl
+                                   ),
                                    attributes = (attr as SCode.ATTR(arrayDims = ad,flowPrefix = flowPrefix,
                                                                     streamPrefix = streamPrefix,accesibility = acc,
                                                                     variability = param,direction = dir)),
@@ -5752,11 +5847,11 @@ algorithm
                                    modifications = m,
                                    comment = comment,
                                    condition = aExp,
-                                   info = aInfo,cc=cc)),cmod as DAE.NOMOD()) :: xs),
+                                   info = aInfo)),cmod as DAE.NOMOD()) :: xs),
         allcomps,eqns,instdims,impl)
       equation
         m = traverseModAddFinal(m, finalPrefix);
-        comp = SCode.COMPONENT(n,io,finalPrefix,repl,prot,redecl,attr,t,m,comment,aExp,aInfo,cc);
+        comp = SCode.COMPONENT(n,SCode.PREFIXES(vis,redecl,finalPrefix,io,repl),attr,t,m,comment,aExp,aInfo);
         (cache,env_1,ih) = addComponentsToEnv2(cache, env, ih, mod, pre, csets, cistate, {(comp,cmod)}, instdims, impl);
         (cache,env_2,ih) = addComponentsToEnv(cache, env_1, ih, mod, pre, csets, cistate, xs, allcomps, eqns, instdims, impl);
       then
@@ -5777,7 +5872,7 @@ algorithm
         (cache,env_2,ih);
         
     /* Class definitions */
-    case (cache,env,ih,mod,pre,csets,cistate,((SCode.CLASSDEF(name = _),_) :: xs),allcomps,eqns,instdims,impl)
+    case (cache,env,ih,mod,pre,csets,cistate,((SCode.CLASS(name = _),_) :: xs),allcomps,eqns,instdims,impl)
       equation
         (cache,env_2,ih) = addComponentsToEnv(cache, env, ih, mod, pre, csets, cistate, xs, allcomps, eqns, instdims, impl);
       then
@@ -5819,7 +5914,13 @@ algorithm
       ClassInf.State ci_state;
       SCode.Element comp;
       String n;
-      Boolean finalPrefix,repl,prot,flowPrefix,streamPrefix,impl,redecl;
+      SCode.Final finalPrefix;
+      SCode.Replaceable repl;
+      SCode.Visibility vis;
+      SCode.Flow flowPrefix;
+      SCode.Stream streamPrefix;
+      Boolean impl;
+      SCode.Redeclare redecl;
       Absyn.InnerOuter io;
       SCode.Attributes attr;
       list<Absyn.Subscript> ad;
@@ -5839,9 +5940,9 @@ algorithm
 
     // a component
     case (cache,env,ih,mods,pre,csets,ci_state,
-          ((comp as SCode.COMPONENT(n,io,finalPrefix,repl,prot,redecl,
+          ((comp as SCode.COMPONENT(n,SCode.PREFIXES(vis,redecl,finalPrefix,io,repl),
                                     attr as SCode.ATTR(ad,flowPrefix,streamPrefix,acc,param,dir),
-                                    t,m,comment,condition,info,cc),cmod) :: xs),
+                                    t,m,comment,condition,info),cmod) :: xs),
           inst_dims,impl)
       equation
         compmod = Mod.lookupCompModification(mods, n)
@@ -5867,7 +5968,7 @@ algorithm
 
         // Debug.traceln("  extendFrameV comp " +& n +& " m:" +& Mod.printModStr(cmod_1) +& " compm: " +& Mod.printModStr(compmod) +& " cm: " +& Mod.printModStr(cmod));
         env_1 = Env.extendFrameV(env,
-          DAE.TYPES_VAR(n,DAE.ATTR(flowPrefix,streamPrefix,acc,param,dir,io),prot,
+          DAE.TYPES_VAR(n,DAE.ATTR(flowPrefix,streamPrefix,acc,param,dir,io),vis,
           (DAE.T_NOTYPE(),NONE()),DAE.UNBOUND(),NONE()), SOME((comp,cmod_1)), Env.VAR_UNTYPED(), {});
         (cache,env_2,ih) = addComponentsToEnv2(cache, env_1, ih, mods, pre, csets, ci_state, xs, inst_dims, impl);
         // adpro: this was twice!
@@ -5960,7 +6061,7 @@ public function instElement "
   input ClassInf.State inState5;
   input tuple<SCode.Element, DAE.Mod> inTplSCodeElementMod6;
   input InstDims inInstDims7;
-  input Boolean inBoolean8;
+  input Boolean inImplicit;
   input CallingScope inCallingScope;
   input ConnectionGraph.ConnectionGraph inGraph;
   output Env.Cache outCache;
@@ -5974,7 +6075,7 @@ public function instElement "
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm
   (outCache,outEnv,outIH,outStore,outDae,outSets,outState,outTypesVarLst,outGraph):=
-  matchcontinue (inCache,inEnv,inIH,store,inMod2,inPrefix3,inSets4,inState5,inTplSCodeElementMod6,inInstDims7,inBoolean8,inCallingScope,inGraph)
+  matchcontinue (inCache,inEnv,inIH,store,inMod2,inPrefix3,inSets4,inState5,inTplSCodeElementMod6,inInstDims7,inImplicit,inCallingScope,inGraph)
     local
       list<Env.Frame> env,env_1,env2,env2_1,cenv,compenv;
       DAE.Mod mod,mods,classmod,mm,classmod_1,mm_1,m_1,mod1,mod1_1,mod_1,cmod,omod,variableClassMod;
@@ -5984,8 +6085,15 @@ algorithm
       Absyn.Import imp;
       InstDims instdims,inst_dims;
       String n,n2,s,scope_str,ns;
-      Boolean finalPrefix,repl,prot,f2,repl2,impl,flowPrefix,streamPrefix,redecl;
-      SCode.Class cls2,c,cl;
+      SCode.Final f2,finalPrefix;
+      SCode.Replaceable repl;
+      SCode.Visibility vis;
+      Boolean impl;
+      SCode.Replaceable repl2;
+      SCode.Flow flowPrefix;
+      SCode.Stream streamPrefix;
+      SCode.Redeclare redecl;
+      SCode.Element cls2,c,cl;
       DAE.DAElist dae;
       DAE.ComponentRef vn;
       Absyn.ComponentRef owncref;
@@ -6026,7 +6134,7 @@ algorithm
       then (cache,env,ih,store,DAEUtil.emptyDae,csets,ci_state,{},graph);
 
     // Illegal redeclarations
-    case (cache,env,ih,store,mods,pre,csets,ci_state,(SCode.CLASSDEF(name = n, classDef = SCode.CLASS(info=info)),_),_,_,_,_)
+    case (cache,env,ih,store,mods,pre,csets,ci_state,(SCode.CLASS(name = n, info=info),_),_,_,_,_)
       equation
         (_,_,_,_,_) = Lookup.lookupIdentLocal(cache, env, n);
         Error.addSourceMessage(Error.REDECLARE_CLASS_AS_VAR, {n}, info);
@@ -6034,14 +6142,13 @@ algorithm
         fail();
 
     // A new class definition. Put it in the current frame in the environment
-    case (cache,env,ih,store,mods,pre,csets,ci_state,(SCode.CLASSDEF(name = n,replaceablePrefix = true,classDef = c, cc=cc2),_),inst_dims,impl,_,graph)
+    case (cache,env,ih,store,mods,pre,csets,ci_state,(SCode.CLASS(name = n,prefixes=SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(_))),_),inst_dims,impl,_,graph)
       equation
-
         //Redeclare of class definition, replaceable is true
-        ((classmod as DAE.REDECL(finalPrefix,{(SCode.CLASSDEF(n2,f2,repl2,_,cls2,cc),_)}))) = Mod.lookupModificationP(mods, Absyn.IDENT(n));
+        ((classmod as DAE.REDECL(finalPrefix,_,{(cls2,_)}))) = Mod.lookupModificationP(mods, Absyn.IDENT(n));
         //print(" to strp redecl?\n");
         classmod = Types.removeMod(classmod,n);
-        (cache,env_1,ih,dae) = instClassDecl(cache,env,ih, classmod, pre, csets, cls2, inst_dims);
+        (cache,env_1,ih,dae) = instClassDecl(cache, env, ih, classmod, pre, csets, cls2, inst_dims);
 
         //print(" instClassDecl Call finished \n");
         // Debug.fprintln("insttr", "--Classdef mods");
@@ -6052,22 +6159,21 @@ algorithm
         (cache,env_1,ih,store,dae,csets,ci_state,{},graph);
 
     /* non replaceable class definition */
-    case (cache,env,ih,store,mods,pre,csets,ci_state,(SCode.CLASSDEF(name = n,replaceablePrefix = false,classDef = SCode.CLASS(info=info)),_),inst_dims,impl,_,_)
+    case (cache,env,ih,store,mods,pre,csets,ci_state,(SCode.CLASS(name = n,prefixes=SCode.PREFIXES(replaceablePrefix = SCode.NOT_REPLACEABLE()),info=info),_),inst_dims,impl,_,_)
       equation
-        ((classmod as DAE.REDECL(finalPrefix,{(SCode.CLASSDEF(n2,f2,repl2,_,cls2,_),_)}))) = Mod.lookupModificationP(mods, Absyn.IDENT(n))
+        ((classmod as DAE.REDECL(finalPrefix,_,{(_,_)}))) = Mod.lookupModificationP(mods, Absyn.IDENT(n))
         "Redeclare of class definition, replaceable is false" ;
         Error.addSourceMessage(Error.REDECLARE_NON_REPLACEABLE, {n}, info);
       then
         fail();
 
     // Classdefinition without redeclaration
-    case (cache,env,ih,store,mods,pre,csets,ci_state,(comp as SCode.CLASSDEF(name = n,classDef = c),cmod),inst_dims,impl,_,graph)
+    case (cache,env,ih,store,mods,pre,csets,ci_state,(comp as SCode.CLASS(name = n),cmod),inst_dims,impl,_,graph)
       equation
         classmod = Mod.lookupModificationP(mods, Absyn.IDENT(n));
-    //  This was an attempt to fix multiple class definition bug. Unfortunately, it breaks some tests. -- alleb       
-    //    _ = checkMultiplyDeclared(cache,env,mods,pre,csets,ci_state,(comp,cmod),inst_dims,impl);
-        (cache,env_1,ih,dae) =
-        instClassDecl(cache,env,ih, classmod, pre, csets, c, inst_dims);
+        // This was an attempt to fix multiple class definition bug. Unfortunately, it breaks some tests. -- alleb       
+        // _ = checkMultiplyDeclared(cache,env,mods,pre,csets,ci_state,(comp,cmod),inst_dims,impl);
+        (cache,env_1,ih,dae) = instClassDecl(cache, env, ih, classmod, pre, csets, comp, inst_dims);
       then
         (cache,env_1,ih,store,dae,csets,ci_state,{},graph);
 
@@ -6078,24 +6184,29 @@ algorithm
     // variable to the current frame in the environment. Then instantiate the class with 
     // an extended prefix.
     case (cache,env,ih,store,mods,pre,csets,ci_state,
-          ((comp as SCode.COMPONENT(component = n,innerOuter=io,
-                                    finalPrefix = finalPrefix,replaceablePrefix = repl,protectedPrefix = prot,
-                                    redeclarePrefix = redecl,
+          ((comp as SCode.COMPONENT(name = n,
+                                    prefixes = SCode.PREFIXES(
+                                      visibility = vis,
+                                      redeclarePrefix = redecl,
+                                      finalPrefix = finalPrefix,
+                                      innerOuter=io,
+                                      replaceablePrefix = repl
+                                    ),
                                     attributes = (attr as SCode.ATTR(arrayDims = ad,flowPrefix = flowPrefix,
                                                                      streamPrefix = streamPrefix, accesibility = acc,
                                                                      variability = param,direction = dir)),
-                                    typeSpec = ( ts as Absyn.TPATH(t, _)),
+                                    typeSpec = (ts as Absyn.TPATH(t, _)),
                                     modifications = m,
                                     comment = comment,
                                     condition=cond,
-                                    info = info,cc=cc)),cmod),
+                                    info = info)),cmod),
           inst_dims,impl,callscope,graph)
       equation
         //print("  instElement: A component: " +& n +& "\n");
         //Debug.fprintln("debug"," instElement " +& n +& " in s:" +& Env.printEnvPathStr(env) +& " m: " +& SCode.printModStr(m) +& " cm : " +& Mod.printModStr(cmod));
         //false = stringEq(n, Absyn.pathLastIdent(t));
         m = traverseModAddFinal(m, finalPrefix);
-        comp = SCode.COMPONENT(n,io,finalPrefix,repl,prot,redecl,attr,ts,m,comment,cond,info,cc);
+        comp = SCode.COMPONENT(n,SCode.PREFIXES(vis,redecl,finalPrefix,io,repl),attr,ts,m,comment,cond,info);
         // Fails if multiple decls not identical
         alreadyDeclared = checkMultiplyDeclared(cache,env,mods,pre,csets,ci_state,(comp,cmod),inst_dims,impl);
         ci_state = ClassInf.trans(ci_state, ClassInf.FOUND_COMPONENT(n));
@@ -6122,7 +6233,7 @@ algorithm
         crefs3 = getCrefFromCond(cond);
         crefs_1 = Util.listFlatten({crefs,crefs2,crefs3});
         // can call instVar
-        (cache,env,ih,store,crefs_2) = removeSelfReferenceAndUpdate(cache,env,ih,store,crefs_1,owncref,t,ci_state,csets,prot,attr,impl,io,inst_dims,pre,mods,finalPrefix,info);
+        (cache,env,ih,store,crefs_2) = removeSelfReferenceAndUpdate(cache,env,ih,store,crefs_1,owncref,t,ci_state,csets,vis,attr,impl,io,inst_dims,pre,mods,finalPrefix,info);
         //(cache,env,ih) = getDerivedEnv(cache,env,ih, bc);
         // can call instVar
         (cache,env2,ih,csets) = updateComponentsInEnv(cache, env, ih, pre, mods, crefs_2, ci_state, csets, impl);
@@ -6166,9 +6277,10 @@ algorithm
 
         /* Apply redeclaration modifier to component */
         (cache,env2_1,ih,
-          SCode.COMPONENT(n,io,finalPrefix,repl,prot,redecl,
+          SCode.COMPONENT(n,
+          SCode.PREFIXES(vis,redecl,finalPrefix,io,repl),
           (attr as SCode.ATTR(ad,flowPrefix,streamPrefix,acc,param,dir)),
-          Absyn.TPATH(t, _),m,comment,cond,_,_),
+          Absyn.TPATH(t, _),m,comment,cond,_),
           mod_1,csets) = redeclareType(cache, env2, ih, mod1_1, comp, pre, ci_state, csets, impl, DAE.NOMOD());
         env_1 = env;
         (cache,cl,cenv) = Lookup.lookupClass(cache, env_1, t, true);
@@ -6177,7 +6289,7 @@ algorithm
         
         //If the element is `protected\', and an external modification 
         //is applied, it is an error. 
-        checkProt(prot, mm_1, vn) ;
+        checkProt(vis, mm_1, vn) ;
         //Debug.traceln("modEq: " +& Mod.printModStr(mod_1));
         eq = Mod.modEquation(mod_1);
         
@@ -6193,7 +6305,7 @@ algorithm
         Mod.checkIdxModsForNoOverlap(mod_1, PrefixUtil.prefixAdd(n, {}, pre, param, ci_state), info);
         
         (cache,compenv,ih,store,dae,csets_1,ty,graphNew) = 
-          instVar(cache,cenv,ih,store, ci_state, mod_1, pre, csets, n, cl, attr, prot, dims, {}, inst_dims, impl, comment,io,finalPrefix,info,graph,env2_1);
+          instVar(cache,cenv,ih,store, ci_state, mod_1, pre, csets, n, cl, attr, vis, dims, {}, inst_dims, impl, comment,io,finalPrefix,info,graph,env2_1);
         
         // print("instElement -> component: " +& n +& " ty: " +& Types.printTypeStr(ty) +& "\n");
         
@@ -6209,7 +6321,7 @@ algorithm
         */
         
         //true in update_frame means the variable is now instantiated.
-        new_var = DAE.TYPES_VAR(n,DAE.ATTR(flowPrefix,streamPrefix,acc,param,dir,io),prot,ty,binding,NONE());
+        new_var = DAE.TYPES_VAR(n,DAE.ATTR(flowPrefix,streamPrefix,acc,param,dir,io),vis,ty,binding,NONE());
 
         //type info present Now we can also put the binding into the dae.
         //If the type is one of the simple, predifined types a simple variable
@@ -6223,7 +6335,7 @@ algorithm
         (cache,env_1,ih,store,dae,csets_1,ci_state,vars,graphNew);
 
 /* INACTIVE FOR NOW, check for variable with class names.
-    case (_,_,_,_,_,_,((comp as SCode.COMPONENT(component = n, typeSpec = Absyn.TPATH(t, _))),_),_,_)
+    case (_,_,_,_,_,_,((comp as SCode.COMPONENT(name = n, typeSpec = Absyn.TPATH(t, _))),_),_,_)
       equation
         owncref = Absyn.CREF_IDENT(n,{})  ;
         tref = Absyn.pathToCref(t);
@@ -6238,14 +6350,22 @@ algorithm
     // MetaModelica Complex Types. Part of MetaModelica extension.
     //------------------------------------------------------------------------
     case (cache,env,ih,store,mods,pre,csets,ci_state,
-          ((comp as SCode.COMPONENT(n,io,finalPrefix,repl,prot,redecl,attr as SCode.ATTR(ad,flowPrefix,streamPrefix,acc,param,dir),
-                                    tSpec as Absyn.TCOMPLEX(typeName,_,_),m,comment,cond,info,cc),cmod)),
+          ((comp as SCode.COMPONENT(n,
+                                    SCode.PREFIXES(
+                                      visibility = vis,
+                                      redeclarePrefix = redecl,
+                                      finalPrefix = finalPrefix,
+                                      innerOuter=io,
+                                      replaceablePrefix = repl
+                                    ),
+                                    attr as SCode.ATTR(ad,flowPrefix,streamPrefix,acc,param,dir),
+                                    tSpec as Absyn.TCOMPLEX(typeName,_,_),m,comment,cond,info),cmod)),
           inst_dims,impl,_,graph)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         // see if we have a modification on the inner component
         m = traverseModAddFinal(m, finalPrefix);
-        comp = SCode.COMPONENT(n,io,finalPrefix,repl,prot,redecl,attr,tSpec,m,comment,cond,info,cc);
+        comp = SCode.COMPONENT(n,SCode.PREFIXES(vis,redecl,finalPrefix,io,repl),attr,tSpec,m,comment,cond,info);
 
         // Fails if multiple decls not identical
         alreadyDeclared = checkMultiplyDeclared(cache,env,mods,pre,csets,ci_state,(comp,cmod),inst_dims,impl);
@@ -6288,31 +6408,35 @@ algorithm
         // mod1_1 = Mod.merge(cmod, mod1, env2, pre);
 
         /* Apply redeclaration modifier to component */
-        // (cache,env2,ih,SCode.COMPONENT(n,io,finalPrefix,repl,prot,(attr as SCode.ATTR(ad,flowPrefix,streamPrefix,acc,param,dir)),_,m,bc,comment),mod_1,env2_1,csets)
+        // (cache,env2,ih,SCode.COMPONENT(n,io,finalPrefix,repl,vis,(attr as SCode.ATTR(ad,flowPrefix,streamPrefix,acc,param,dir)),_,m,bc,comment),mod_1,env2_1,csets)
         // = redeclareType(cache,env,ih,mod1_1, comp, env2, pre, ci_state, csets, impl);
         env_1 = env;
         //---------
         // We build up a class structure for the complex type
         id=Absyn.pathString(typeName);
-        cl = SCode.CLASS(id,false,false,SCode.R_TYPE(),
-                         SCode.DERIVED(tSpec,SCode.NOMOD(),
-                            Absyn.ATTR(flowPrefix, streamPrefix,Absyn.VAR(),Absyn.BIDIR(),ad),
-                            NONE()),info);
+        
+        cl = SCode.CLASS(id,SCode.defaultPrefixes,
+                         SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_TYPE(),
+                         SCode.DERIVED(
+                            tSpec,SCode.NOMOD(),
+                            SCode.ATTR(ad, flowPrefix, streamPrefix, SCode.RW(), SCode.VAR(), Absyn.BIDIR()),
+                            NONE()),
+                            info);
         // (cache,cl,cenv) = Lookup.lookupClass(cache,env_1, Absyn.IDENT("Integer"), true);
 
         // If the element is protected, and an external modification
         // is applied, it is an error.
-        // checkProt(prot, mm_1, vn) ;
+        // checkProt(vis, mm_1, vn) ;
         // eq = Mod.modEquation(mod);
 
         // The variable declaration and the (optional) equation modification are inspected for array dimensions.
         // Gather all the dimensions
         // (Absyn.IDENT("Integer") is used as a dummie)
-        (cache,dims) = elabArraydim(cache,env, owncref, Absyn.IDENT("Integer"),ad,NONE(), impl,NONE(),true, false,pre,info,inst_dims);
+        (cache,dims) = elabArraydim(cache, env, owncref, Absyn.IDENT("Integer"),ad,NONE(), impl,NONE(),true, false,pre,info,inst_dims);
 
         // Instantiate the component
         (cache,compenv,ih,store,dae,csets_1,ty,graphNew) = 
-          instVar(cache,env, ih, store,ci_state, m_1, pre, csets, n, cl, attr, prot, dims, {}, inst_dims, impl, comment,io,finalPrefix,info,graph,env);
+          instVar(cache,env, ih, store,ci_state, m_1, pre, csets, n, cl, attr, vis, dims, {}, inst_dims, impl, comment,io,finalPrefix,info,graph,env);
         
         // print("instElement -> component: " +& n +& " ty: " +& Types.printTypeStr(ty) +& "\n");
         
@@ -6320,7 +6444,7 @@ algorithm
         (cache,binding) = makeBinding(cache,env, attr, m_1, ty, pre, n, info);
 
         // true in update_frame means the variable is now instantiated.
-        new_var = DAE.TYPES_VAR(n,DAE.ATTR(flowPrefix,streamPrefix,acc,param,dir,io),prot,ty,binding,NONE()) ;
+        new_var = DAE.TYPES_VAR(n,DAE.ATTR(flowPrefix,streamPrefix,acc,param,dir,io),vis,ty,binding,NONE()) ;
 
         // type info present Now we can also put the binding into the dae.
         // If the type is one of the simple, predifined types a simple variable
@@ -6340,13 +6464,20 @@ algorithm
     // and prints an error message about the unknown class.
     // Failure => ({},env,csets,ci_state,{})
     case (cache,env,ih,store,_,pre,csets,ci_state,
-          (SCode.COMPONENT(component = n, innerOuter=io,finalPrefix = finalPrefix,replaceablePrefix = repl,
-                           protectedPrefix = prot,
+          (SCode.COMPONENT(name = n, 
+                           prefixes = 
+                             SCode.PREFIXES(
+                               visibility = vis,
+                               redeclarePrefix = redecl,
+                               finalPrefix = finalPrefix,
+                               innerOuter=io,
+                               replaceablePrefix = repl
+                           ),
                            attributes=SCode.ATTR(variability=vt),typeSpec =
-                           Absyn.TPATH(t,_),cc=cc, info = info),_),_,_,_,_)
+                           Absyn.TPATH(t,_),info = info),_),_,_,_,_)
       equation
         //false = stringEq(n, Absyn.pathLastIdent(t));
-        failure((_,cl,cenv) = Lookup.lookupClass(cache,env, t, false));
+        failure((_,cl,cenv) = Lookup.lookupClass(cache, env, t, false));
         s = Absyn.pathString(t);
         scope_str = Env.printEnvPathStr(env);
         pre_1 = PrefixUtil.prefixAdd(n, {}, pre,vt,ci_state);
@@ -6381,25 +6512,30 @@ algorithm
   (outCache,outMod) := matchcontinue(inCache,preId,inMod)
     local
       Absyn.Exp e,e1; String id;
-      Absyn.Each ea;
-      Boolean fi;
+      SCode.Each ea;
+      SCode.Final fi;
       list<SCode.SubMod> subs;
       Env.Cache cache;
       Integer cnt;
       Boolean delayTpCheck;
 
+    // true to delay type checking/elabExp
     case(cache,id,SCode.MOD(fi,ea,subs,SOME((e,_))))
       equation
         ((e1,(_,cnt))) = Absyn.traverseExp(e,removeSelfModReferenceExp,(id,0));
         (cache,subs) = removeSelfModReferenceSubs(cache,id,subs);
-        delayTpCheck = cnt > 0 ;
-    then (cache,SCode.MOD(fi,ea,subs,SOME((e1,delayTpCheck)))); // true to delay type checking/elabExp
+        delayTpCheck = cnt > 0;
+      then 
+        (cache,SCode.MOD(fi,ea,subs,SOME((e1,delayTpCheck))));
 
     case(cache,id,SCode.MOD(fi,ea,subs,NONE()))
       equation
-      (cache,subs) = removeSelfModReferenceSubs(cache,id,subs);
-    then (cache,SCode.MOD(fi,ea,subs,NONE()));
+        (cache,subs) = removeSelfModReferenceSubs(cache,id,subs);
+      then 
+        (cache,SCode.MOD(fi,ea,subs,NONE()));
+    
     case(cache,id,inMod) then (cache,inMod);
+    
   end matchcontinue;
 end removeSelfModReference;
 
@@ -6470,7 +6606,7 @@ protected function checkRecursiveDefinition
   input Env.Env env;
   input Env.Env cenv;
   input ClassInf.State ci_state;
-  input SCode.Class cl;
+  input SCode.Element cl;
 algorithm
   _ := matchcontinue(env,cenv,ci_state,cl)
     local
@@ -6485,7 +6621,7 @@ algorithm
     case(env,cenv,ci_state,SCode.CLASS(name=name))
       equation
         envPath = Env.getEnvName(env);
-        cenvPath = Env.getEnvName(Env.openScope(cenv,false,SOME(name),NONE()));
+        cenvPath = Env.getEnvName(Env.openScope(cenv,SCode.NOT_ENCAPSULATED(),SOME(name),NONE()));
         false = Absyn.pathEqual(envPath,cenvPath);
       then ();
     // No recursive definition, succeed.
@@ -6496,7 +6632,7 @@ algorithm
     // report error: recursive definition
     case(env,cenv,ci_state,SCode.CLASS(name=name))
       equation
-        cenvPath = Env.getEnvName(Env.openScope(cenv,false,SOME(name),NONE()));
+        cenvPath = Env.getEnvName(Env.openScope(cenv,SCode.NOT_ENCAPSULATED(),SOME(name),NONE()));
         s = Absyn.pathString(cenvPath);
         Error.addMessage(Error.RECURSIVE_DEFINITION,{s});
       then fail();
@@ -6531,7 +6667,7 @@ algorithm
       DAE.Mod oldMod;
       tuple<SCode.Element,DAE.Mod> newComp;
       Env.InstStatus instStatus;
-      SCode.Class oldClass,newClass;
+      SCode.Element oldClass,newClass;
 
     case (_,_,_,_,_,_,_,_,_) equation /*print(" dupe check setting ");*/ ErrorExt.setCheckpoint("checkMultiplyDeclared"); then fail();
 
@@ -6540,7 +6676,7 @@ algorithm
      */
 
     case (cache,env,mod,prefix,csets,ciState,
-          (newComp as (SCode.COMPONENT(component = n,finalPrefix = finalPrefix,replaceablePrefix = repl,protectedPrefix = prot),_)),_,_)
+          (newComp as (SCode.COMPONENT(name = n),_)),_,_)
       equation
         (_,_,SOME((oldElt,oldMod)),instStatus,_) = Lookup.lookupIdentLocal(cache, env, n);
         checkMultipleElementsIdentical(cache,env,(oldElt,oldMod),newComp);
@@ -6550,7 +6686,7 @@ algorithm
 
     // If not multiply declared, return.
     case (cache,env,mod,prefix,csets,ciState,
-          (newComp as (SCode.COMPONENT(component = n,finalPrefix = finalPrefix,replaceablePrefix = repl,protectedPrefix = prot),_)),_,_)
+          (newComp as (SCode.COMPONENT(name = n),_)),_,_)
       equation
         failure((_,_,SOME((oldElt,oldMod)),_,_) = Lookup.lookupIdentLocal(cache, env, n));
         ErrorExt.rollBack("checkMultiplyDeclared");
@@ -6559,21 +6695,21 @@ algorithm
 
     // If a class definition is replaceable, skip check
     case (cache,env,mod,prefix,csets,ciState,
-          (newComp as (SCode.CLASSDEF(replaceablePrefix=true),_)),_,_)
+          (newComp as (SCode.CLASS(prefixes = SCode.PREFIXES(replaceablePrefix=SCode.REPLACEABLE(_))),_)),_,_)
       equation
         ErrorExt.rollBack("checkMultiplyDeclared");
       then false;
 
     // If a class definition is redeclaration, skip check
     case (cache,env,mod,prefix,csets,ciState,
-          (newComp as (SCode.CLASSDEF(replaceablePrefix=_),DAE.REDECL(_,_))),_,_)
+          (newComp as (SCode.CLASS(prefixes = _),DAE.REDECL(_,_,_))),_,_)
       equation
         ErrorExt.rollBack("checkMultiplyDeclared");
       then false;
 
     // If a class definition is a product of InstExtends.instClassExtendsList2, skip check
     case (cache,env,mod,prefix,csets,ciState,
-          (newComp as (SCode.CLASSDEF(name=n,classDef=SCode.CLASS(classDef=SCode.PARTS(elementLst=SCode.EXTENDS(baseClassPath=Absyn.IDENT(n2))::_ ))),_)),_,_)
+          (newComp as (SCode.CLASS(name=n,classDef=SCode.PARTS(elementLst=SCode.EXTENDS(baseClassPath=Absyn.IDENT(n2))::_ )),_)),_,_)
       equation
         n=n+&"$parent";
         true = stringEq(n, n2);
@@ -6582,10 +6718,8 @@ algorithm
 
     // If a class is defined multiple times, the first is used.
     // If the two class definitions are not equivalent, an error is given.
-    // 
-
     case (cache,env,mod,prefix,csets,ciState,
-          (newComp as (SCode.CLASSDEF(name=n, classDef=newClass),_)),_,_)
+          (newComp as (newClass as SCode.CLASS(name=n),_)),_,_)
       equation
         (oldClass,_) = Lookup.lookupClassLocal(env, n);
         checkMultipleClassesEquivalent(oldClass,newClass);
@@ -6594,7 +6728,7 @@ algorithm
 
     // If a class not multiply defined, return.
     case (cache,env,mod,prefix,csets,ciState,
-          (newComp as (SCode.CLASSDEF(name=n, classDef=newClass),_)),_,_)
+          (newComp as (newClass as SCode.CLASS(name=n),_)),_,_)
       equation
         failure((oldClass,_) = Lookup.lookupClassLocal(env, n));
         ErrorExt.rollBack("checkMultiplyDeclared");
@@ -6637,11 +6771,10 @@ algorithm
       SCode.Mod smod1, smod2;
       Env.Env env, env1, env2;
       Env.Cache cache;
-      SCode.Class c1, c2;
+      SCode.Element c1, c2;
       Absyn.Path tpath1, tpath2;
       Absyn.Info aInfo;
-      Boolean fp1,fp2,rp1,rp2,pp1,pp2,rd1,rd2;
-      Absyn.InnerOuter io1,io2;
+      SCode.Prefixes prefixes1, prefixes2;
       SCode.Attributes attr1,attr2;
       Absyn.TypeSpec tp1,tp2;
       String n1, n2;
@@ -6660,28 +6793,23 @@ algorithm
     // adrpo: see if they are not syntactically equivalent, but semantically equivalent!
     //        see Modelica Spec. 3.1, page 66.
     // COMPONENT
-    case (cache,env,(oldElt as SCode.COMPONENT(n1, io1, fp1, rp1, pp1, rd1, attr1, tp1 as Absyn.TPATH(tpath1, ad1), smod1, _, cond1, aInfo, cc1),oldMod),
-                    (newElt as SCode.COMPONENT(n2, io2, fp2, rp2, pp2, rd2, attr2, tp2 as Absyn.TPATH(tpath2, ad2), smod2, _, cond2, _, cc2),newMod))
+    case (cache,env,(oldElt as SCode.COMPONENT(n1, prefixes1, attr1, tp1 as Absyn.TPATH(tpath1, ad1), smod1, _, cond1, aInfo),oldMod),
+                    (newElt as SCode.COMPONENT(n2, prefixes2, attr2, tp2 as Absyn.TPATH(tpath2, ad2), smod2, _, cond2, _),newMod))
       equation
         // see if the most stuff is the same!
         true = stringEq(n1, n2);
-        true = ModUtil.innerOuterEqual(io1, io2);
-        true = boolEq(fp1, fp2);
-        true = boolEq(rp1, rp2);
-        true = boolEq(pp1, pp2);
-        true = boolEq(rd1, rd2);
+        true = SCode.prefixesEqual(prefixes1, prefixes2);
         true = SCode.attributesEqual(attr1, attr2);
         true = SCode.modEqual(smod1, smod2);
         equality(ad1 = ad2);
         equality(cond1 = cond2);
-        equality(cc1 = cc2); // TODO! FIXME! this might fail because of different comments??!!
         // if we lookup tpath1 and tpath2 and reach the same class, we're fine!
         (_, c1, env1) = Lookup.lookupClass(cache, env, tpath1, false);
         (_, c2, env2) = Lookup.lookupClass(cache, env, tpath2, false);
         // the class has the same environment
         true = stringEq(Env.printEnvPathStr(env1), Env.printEnvPathStr(env2));
         // the classes are the same!
-        true = SCode.classEqual(c1, c2);
+        true = SCode.elementEqual(c1, c2);
         // add a warning and let it continue!
         s1 = SCode.unparseElementStr(oldElt);
         s2 = SCode.unparseElementStr(newElt);
@@ -6702,12 +6830,12 @@ end checkMultipleElementsIdentical;
 protected function checkMultipleClassesEquivalent
 "Checks that the old class definition is equivalent
  to the new one. If not, give error message"
-  input SCode.Class oldClass;
-  input SCode.Class newClass;
+  input SCode.Element oldClass;
+  input SCode.Element newClass;
 algorithm
   _ := matchcontinue(oldClass,newClass)
     local
-      SCode.Class oldCl,newCl;
+      SCode.Element oldCl,newCl;
       String s1,s2;
       list<String> sl1,sl2;
       list<SCode.Enum> enumLst;
@@ -6733,7 +6861,7 @@ algorithm
     // try equality first!
     case(oldCl,newCl)
       equation
-        true = SCode.classEqual(oldCl,newCl);
+        true = SCode.elementEqual(oldCl,newCl);
       then ();
 
     case (oldCl,newCl)
@@ -6796,7 +6924,7 @@ protected function redeclareType
   input Prefix.Prefix inPrefix;
   input ClassInf.State inState;
   input Connect.Sets inSets;
-  input Boolean inBoolean;
+  input Boolean inImplicit;
   input DAE.Mod cmod;
   output Env.Cache outCache;
   output Env.Env outEnv;
@@ -6805,7 +6933,7 @@ protected function redeclareType
   output DAE.Mod outMod;
   output Connect.Sets outSets;
 algorithm
-  (outCache,outEnv,outIH,outElement,outMod,outSets) := matchcontinue (inCache,inEnv,inIH,inMod,inElement,inPrefix,inState,inSets,inBoolean,cmod)
+  (outCache,outEnv,outIH,outElement,outMod,outSets) := matchcontinue (inCache,inEnv,inIH,inMod,inElement,inPrefix,inState,inSets,inImplicit,cmod)
     local
       list<Absyn.ComponentRef> crefs;
       list<Env.Frame> env_1,env;
@@ -6813,7 +6941,12 @@ algorithm
       DAE.Mod m_1,old_m_1,m_2,m_3,m,rmod,innerCompMod,compMod;
       SCode.Element redecl,newcomp,comp,redComp;
       String n1,n2;
-      Boolean finalPrefix,repl,prot,repl2,prot2,impl,redfin,redeclp;
+      SCode.Final finalPrefix,redfin;
+      SCode.Each each_;
+      SCode.Replaceable repl,repl2;
+      SCode.Visibility vis, vis2;
+      SCode.Redeclare redeclp;
+      Boolean impl;
       Absyn.TypeSpec t,t2;
       SCode.Mod mod,old_mod;
       Option<SCode.Comment> comment;
@@ -6832,14 +6965,34 @@ algorithm
       Absyn.Info info;
       Absyn.TypeSpec apt;
 
+    /* uncomment for debugging!
+    case (cache,env,ih,inMod,inElement,
+          pre,ci_state,csets,impl,cmod)
+      equation
+        print("redeclareType\nmodifier: " +& Mod.printModStr(inMod) +& "\nelement:" +& SCode.printElementStr(inElement) +& "\n");
+      then
+        fail();
+    */
+
     /* Implicit instantation */
     case (cache,env,ih,(m as DAE.REDECL(tplSCodeElementModLst = (((redecl as
-          SCode.COMPONENT(component = n1,finalPrefix = finalPrefix,replaceablePrefix = repl,protectedPrefix = prot,
-                          redeclarePrefix = redeclp, typeSpec = t,modifications = mod,comment = comment,
-                          innerOuter = io, attributes = at,condition = cond, info = info
+          SCode.COMPONENT(name = n1,
+                          prefixes = SCode.PREFIXES(
+                            finalPrefix = finalPrefix,
+                            replaceablePrefix = repl,
+                            visibility = vis,
+                            redeclarePrefix = redeclp,
+                            innerOuter = io), 
+                            typeSpec = t,modifications = mod,comment = comment,
+                            attributes = at,condition = cond, info = info
                             )),rmod) :: rest))),
-          SCode.COMPONENT(component = n2,finalPrefix = false,replaceablePrefix = repl2,protectedPrefix = prot2,
-                          typeSpec = t2,modifications = old_mod,cc=(cc as SOME(Absyn.CONSTRAINCLASS(elementSpec=_)))),
+          SCode.COMPONENT(name = n2,
+                          prefixes = SCode.PREFIXES(
+                            finalPrefix = SCode.NOT_FINAL(),
+                            replaceablePrefix = repl2 as SCode.REPLACEABLE((cc as SOME(Absyn.CONSTRAINCLASS(elementSpec=_)))),
+                            visibility = vis2),
+                          typeSpec = t2,
+                          modifications = old_mod),
           pre,ci_state,csets,impl,cmod)
       equation
         true = stringEq(n1, n2);
@@ -6855,16 +7008,23 @@ algorithm
         innerCompMod = Mod.merge(m_1,old_m_1,env_1,pre) "inner comp modifier merg(new_inner, old_inner) ";
         compMod = Mod.merge(rmod,cmod,env_1,pre) "outer comp modifier";
 
-        redComp = SCode.COMPONENT(n1,io,finalPrefix,repl,prot,redeclp,at,t,mod,comment,cond,info,cc);
+        redComp = SCode.COMPONENT(n1,
+                    SCode.PREFIXES(vis, redeclp, finalPrefix, io, repl2),
+                    at,t,mod,comment,cond,info);
         m_2 = Mod.merge(compMod, innerCompMod, env_1, pre);
       then
         (cache,env_1,ih,redComp,m_2,csets);
 
 // no constraining type on comp, throw away modifiers prior to redeclaration
     case (cache,env,ih,(m as DAE.REDECL(tplSCodeElementModLst = (((redecl as
-          SCode.COMPONENT(component = n1,typeSpec = t,modifications = mod,comment = comment, info = info)),rmod) :: rest))),
-          SCode.COMPONENT(component = n2,finalPrefix = false,replaceablePrefix = repl2,protectedPrefix = prot2,
-                          typeSpec = t2,modifications = old_mod,cc=(cc as NONE())),
+          SCode.COMPONENT(name = n1,typeSpec = t,modifications = mod,comment = comment, info = info)),rmod) :: rest))),
+          SCode.COMPONENT(name = n2,
+                          prefixes = SCode.PREFIXES(
+                            finalPrefix = SCode.NOT_FINAL(),
+                            replaceablePrefix = repl2 as SCode.REPLACEABLE(cc as NONE()),
+                            visibility = vis2
+                          ),
+                          typeSpec = t2,modifications = old_mod),
           pre,ci_state,csets,impl,cmod)
       equation
         true = stringEq(n1, n2);
@@ -6878,8 +7038,9 @@ algorithm
         (cache,env_1,ih,redecl,m_3,csets);
 
     // redeclaration of classes:
-    case (cache,env,ih,(m as DAE.REDECL(tplSCodeElementModLst = (((redecl as SCode.CLASSDEF(name = n1) ),rmod) :: rest))),
-          SCode.CLASSDEF(name = n2),pre,ci_state,csets,impl,cmod)
+    case (cache,env,ih,
+          (m as DAE.REDECL(tplSCodeElementModLst = (((redecl as SCode.CLASS(name = n1) ),rmod) :: rest))),
+          SCode.CLASS(name = n2),pre,ci_state,csets,impl,cmod)
       equation
         true = stringEq(n1, n2);
         //crefs = getCrefFromMod(mod);
@@ -6891,8 +7052,8 @@ algorithm
       then
         (cache,env_1,ih,redecl,rmod,csets);
 
-        // local redeclaration of class
-    case (cache,env,ih,(m as DAE.REDECL(tplSCodeElementModLst = (((SCode.CLASSDEF(name = n1) ),rmod) :: rest))),
+    // local redeclaration of class
+    case (cache,env,ih,(m as DAE.REDECL(tplSCodeElementModLst = (((SCode.CLASS(name = n1) ),rmod) :: rest))),
         redecl as SCode.COMPONENT(typeSpec = apt),pre,ci_state,csets,impl,cmod)
       equation
         n2 = Absyn.typeSpecPathString(apt);
@@ -6901,24 +7062,25 @@ algorithm
       then
         (cache,env_1,ih,redecl,rmod,csets);
 
-    case (cache,env,ih,(DAE.REDECL(finalPrefix = redfin,tplSCodeElementModLst = (((redecl as
-          SCode.COMPONENT(component = n1)),rmod) :: rest))),(comp as SCode.COMPONENT(component = n2,finalPrefix = false)),
+    case (cache,env,ih,(DAE.REDECL(finalPrefix = redfin, eachPrefix = each_, tplSCodeElementModLst = (((redecl as
+          SCode.COMPONENT(name = n1)),rmod) :: rest))),
+          (comp as SCode.COMPONENT(name = n2,prefixes = SCode.PREFIXES(finalPrefix = SCode.NOT_FINAL()))),
           pre,ci_state,csets,impl,cmod)
       equation
         false = stringEq(n1, n2);
         (cache,env_1,ih,newcomp,m,csets) =
-          redeclareType(cache, env, ih, DAE.REDECL(redfin,rest), comp, pre, ci_state, csets, impl, cmod);
+          redeclareType(cache, env, ih, DAE.REDECL(redfin,each_,rest), comp, pre, ci_state, csets, impl, cmod);
       then
         (cache,env_1,ih,newcomp,m,csets);
 
-    case (cache,env,ih,DAE.REDECL(finalPrefix = redfin,tplSCodeElementModLst = (_ :: rest)),comp,pre,ci_state,csets,impl,cmod)
+    case (cache,env,ih,DAE.REDECL(finalPrefix = redfin,eachPrefix = each_,tplSCodeElementModLst = (_ :: rest)),comp,pre,ci_state,csets,impl,cmod)
       equation
         (cache,env_1,ih,newcomp,m,csets) =
-          redeclareType(cache, env, ih, DAE.REDECL(redfin,rest), comp, pre, ci_state, csets, impl,cmod);
+          redeclareType(cache, env, ih, DAE.REDECL(redfin,each_,rest), comp, pre, ci_state, csets, impl,cmod);
       then
         (cache,env_1,ih,newcomp,m,csets);
 
-    case (cache,env,ih,DAE.REDECL(finalPrefix = redfin,tplSCodeElementModLst = {}),comp,pre,ci_state,csets,impl,cmod)
+    case (cache,env,ih,DAE.REDECL(finalPrefix = redfin,eachPrefix = each_,tplSCodeElementModLst = {}),comp,pre,ci_state,csets,impl,cmod)
       then (cache,env,ih,comp,DAE.NOMOD(),csets);
 
     case (cache,env,ih,m,comp,pre,ci_state,csets,impl,cmod)
@@ -6938,54 +7100,57 @@ end redeclareType;
 protected function keepConstrainingTypeModifersOnly
 "Author: BZ, 2009-07
  A function for filtering out the modifications on the constraining type class."
-input DAE.Mod inMod;
-input list<SCode.Element> elems;
-output DAE.Mod filteredMod;
+  input DAE.Mod inMod;
+  input list<SCode.Element> elems;
+  output DAE.Mod filteredMod;
 algorithm
   filteredMod := matchcontinue(inMod,elems)
     local
-      Boolean b;
-      Absyn.Each e;
+      SCode.Final f;
+      SCode.Each e;
       Option<DAE.EqMod> oe;
       list<DAE.SubMod> subs;
       list<String> compNames;
+    
     case(inMod,{}) then inMod;
     case(DAE.NOMOD(),_ ) then DAE.NOMOD();
-    case(DAE.REDECL(_,_),_) then inMod;
-    case(DAE.MOD(b,e,subs,oe),elems)
+    case(DAE.REDECL(_,_,_),_) then inMod;
+    case(DAE.MOD(f,e,subs,oe),elems)
       equation
         compNames = Util.listMap(elems,SCode.elementName);
         subs = keepConstrainingTypeModifersOnly2(subs,compNames);
       then
-        DAE.MOD(b,e,subs,oe);
+        DAE.MOD(f,e,subs,oe);
   end matchcontinue;
 end keepConstrainingTypeModifersOnly;
 
 protected function keepConstrainingTypeModifersOnly2 "
 Author BZ
-Helper function for keepConstrainingTypeModifersOnly
-"
-input list<DAE.SubMod> subs;
-input list<String> elems;
-output list<DAE.SubMod> osubs;
-algorithm osubs := matchcontinue(subs,elems)
-  local
-    DAE.SubMod sub;
-    DAE.Mod mod;
-    String n;
-    list<DAE.SubMod> osubs2;
-    Boolean b;
-  case({},_) then {};
-  case(subs,{}) then subs;
-  case((sub as DAE.NAMEMOD(ident=n,mod=mod))::subs,elems)
-    equation
-      osubs = keepConstrainingTypeModifersOnly2(subs,elems);
-      b = Util.listContainsWithCompareFunc(n,elems,stringEq);
-      osubs2 = Util.if_(b, {sub},{});
-      osubs = listAppend(osubs2,osubs);
+Helper function for keepConstrainingTypeModifersOnly"
+  input list<DAE.SubMod> subs;
+  input list<String> elems;
+  output list<DAE.SubMod> osubs;
+algorithm 
+  osubs := matchcontinue(subs,elems)
+    local
+      DAE.SubMod sub;
+      DAE.Mod mod;
+      String n;
+      list<DAE.SubMod> osubs2;
+      Boolean b;
+    
+    case({},_) then {};
+    case(subs,{}) then subs;
+    case((sub as DAE.NAMEMOD(ident=n,mod=mod))::subs,elems)
+      equation
+        osubs = keepConstrainingTypeModifersOnly2(subs,elems);
+        b = Util.listContainsWithCompareFunc(n,elems,stringEq);
+        osubs2 = Util.if_(b, {sub},{});
+        osubs = listAppend(osubs2,osubs);
       then
         osubs;
-  case(sub::subs,elems) then keepConstrainingTypeModifersOnly2(subs,elems) ;
+    case(sub::subs,elems) then keepConstrainingTypeModifersOnly2(subs,elems);
+    
   end matchcontinue;
 end keepConstrainingTypeModifersOnly2;
 
@@ -6999,32 +7164,33 @@ protected function extractConstrainingComps
   output list<SCode.Element> elems;
 algorithm
   elems := matchcontinue(cc,env,pre)
-  local
-    Absyn.Path path,derP;
-    list<Absyn.ElementArg> args;
-    Env.Env clenv;
-    SCode.Class cl;
-    String name;
-    list<SCode.Element> selems,extendselts,compelts,extcompelts,classextendselts;
-    list<tuple<SCode.Element, DAE.Mod>> extcomps;
-    Option<Absyn.Annotation> annOpt;
-  case(NONE(),_,_) then {};
-  case(SOME(Absyn.CONSTRAINCLASS(elementSpec = Absyn.EXTENDS(path,args,annOpt))),env,pre)
-    equation
-      (_,(cl as SCode.CLASS(name = name, classDef = SCode.PARTS(elementLst=selems))) ,clenv) = Lookup.lookupClass(Env.emptyCache(),env,path,false);
-      (_,classextendselts,extendselts,compelts) = splitElts(selems);
-      (_,_,_,_,extcomps,_,_,_,_) = InstExtends.instExtendsAndClassExtendsList(Env.emptyCache(), env, InnerOuter.emptyInstHierarchy, DAE.NOMOD(),  pre, extendselts, classextendselts, ClassInf.UNKNOWN(Absyn.IDENT("")), name, true, false);
-      extcompelts = Util.listMap(extcomps,Util.tuple21);
-      compelts = listAppend(compelts,extcompelts);
-    then
-      compelts;
-  case(SOME(Absyn.CONSTRAINCLASS(elementSpec = Absyn.EXTENDS(path,args,annOpt))),env,pre)
-    equation
-      (_,(cl as SCode.CLASS(classDef = SCode.DERIVED(typeSpec = Absyn.TPATH(path = derP)))) ,clenv) = Lookup.lookupClass(Env.emptyCache(),env,path,false);
-      compelts = extractConstrainingComps(SOME(Absyn.CONSTRAINCLASS(Absyn.EXTENDS(derP,{},annOpt),NONE())),env,pre);
-    then
-      compelts;
-end matchcontinue;
+    local
+      Absyn.Path path,derP;
+      list<Absyn.ElementArg> args;
+      Env.Env clenv;
+      SCode.Element cl;
+      String name;
+      list<SCode.Element> selems,extendselts,compelts,extcompelts,classextendselts;
+      list<tuple<SCode.Element, DAE.Mod>> extcomps;
+      Option<Absyn.Annotation> annOpt;
+    
+    case(NONE(),_,_) then {};
+    case(SOME(Absyn.CONSTRAINCLASS(elementSpec = Absyn.EXTENDS(path,args,annOpt))),env,pre)
+      equation
+        (_,(cl as SCode.CLASS(name = name, classDef = SCode.PARTS(elementLst=selems))) ,clenv) = Lookup.lookupClass(Env.emptyCache(),env,path,false);
+        (_,classextendselts,extendselts,compelts) = splitElts(selems);
+        (_,_,_,_,extcomps,_,_,_,_) = InstExtends.instExtendsAndClassExtendsList(Env.emptyCache(), env, InnerOuter.emptyInstHierarchy, DAE.NOMOD(),  pre, extendselts, classextendselts, ClassInf.UNKNOWN(Absyn.IDENT("")), name, true, false);
+        extcompelts = Util.listMap(extcomps,Util.tuple21);
+        compelts = listAppend(compelts,extcompelts);
+      then
+        compelts;
+    case(SOME(Absyn.CONSTRAINCLASS(elementSpec = Absyn.EXTENDS(path,args,annOpt))),env,pre)
+      equation
+        (_,(cl as SCode.CLASS(classDef = SCode.DERIVED(typeSpec = Absyn.TPATH(path = derP)))) ,clenv) = Lookup.lookupClass(Env.emptyCache(),env,path,false);
+        compelts = extractConstrainingComps(SOME(Absyn.CONSTRAINCLASS(Absyn.EXTENDS(derP,{},annOpt),NONE())),env,pre);
+      then
+        compelts;
+  end matchcontinue;
 end extractConstrainingComps;
 
 protected function instVar
@@ -7042,16 +7208,16 @@ protected function instVar
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input Ident inIdent;
-  input SCode.Class inClass;
+  input SCode.Element inClass;
   input SCode.Attributes inAttributes;
-  input Boolean protection;
+  input SCode.Visibility visibility;
   input list<DAE.Dimension> inDimensionLst;
   input list<DAE.Subscript> inIntegerLst;
   input InstDims inInstDims;
   input Boolean inBoolean;
   input Option<SCode.Comment> inSCodeCommentOption;
   input Absyn.InnerOuter io;
-  input Boolean finalPrefix;
+  input SCode.Final finalPrefix;
   input Absyn.Info info;
   input ConnectionGraph.ConnectionGraph inGraph;
   input Env.Env componentDefinitionParentEnv;
@@ -7063,8 +7229,9 @@ protected function instVar
   output Connect.Sets outSets;
   output DAE.Type outType;
   output ConnectionGraph.ConnectionGraph outGraph;
-algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
-  matchcontinue (inCache,inEnv,inIH,store,inState,inMod,inPrefix,inSets,inIdent,inClass,inAttributes,protection,inDimensionLst,inIntegerLst,
+algorithm 
+    (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
+    matchcontinue (inCache,inEnv,inIH,store,inState,inMod,inPrefix,inSets,inIdent,inClass,inAttributes,visibility,inDimensionLst,inIntegerLst,
                  inInstDims,inBoolean,inSCodeCommentOption,io,finalPrefix,info,inGraph,componentDefinitionParentEnv)
     local
       list<DAE.Dimension> dims;
@@ -7076,14 +7243,14 @@ algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
       DAE.Mod mod;
       Prefix.Prefix pre, innerPrefix;
       String n,s1,s2,s3,s;
-      SCode.Class cl;
+      SCode.Element cl;
       SCode.Attributes attr;
       list<DAE.Subscript> idxs;
       InstDims inst_dims;
       Boolean impl;
       Option<SCode.Comment> comment;
       Env.Cache cache;
-      Boolean prot;
+      SCode.Visibility vis;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
       DAE.ComponentRef cref, crefOuter, crefInner;
@@ -7095,7 +7262,7 @@ algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
       Option<InnerOuter.InstResult> instResult;
 
     // is ONLY inner
-    case (cache,env,ih,store,ci_state,mod,pre,csets,n,cl as SCode.CLASS(name=typeName),attr,prot,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph,componentDefinitionParentEnv)
+    case (cache,env,ih,store,ci_state,mod,pre,csets,n,cl as SCode.CLASS(name=typeName),attr,vis,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph,componentDefinitionParentEnv)
       equation
         // only inner!
         false = Absyn.isOuter(io);
@@ -7105,7 +7272,7 @@ algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
         
         // instantiate as inner
         (cache,innerCompEnv,ih,store,dae,csets,ty,graph) =
-           instVar_dispatch(cache,env,ih,store,ci_state,mod,pre,csets,n,cl,attr,prot,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph);
+           instVar_dispatch(cache,env,ih,store,ci_state,mod,pre,csets,n,cl,attr,vis,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph);
         
         (cache,cref) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n, DAE.ET_OTHER(), {}));
         fullName = ComponentReference.printComponentRefStr(cref);
@@ -7137,7 +7304,7 @@ algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
         (cache,innerCompEnv,ih,store,dae,csets,ty,graph);
 
     // is ONLY outer and it has modifications on it!
-    case (cache,env,ih,store,ci_state,mod,pre,csets,n,cl,attr,prot,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph,componentDefinitionParentEnv)
+    case (cache,env,ih,store,ci_state,mod,pre,csets,n,cl,attr,vis,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph,componentDefinitionParentEnv)
       equation
         // only outer!
         true = Absyn.isOuter(io);
@@ -7153,12 +7320,12 @@ algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
 
         // call myself without any modification!
         (cache,compenv,ih,store,dae,csets,ty,graph) = 
-           instVar(cache,env,ih,store,ci_state,DAE.NOMOD(),pre,csets,n,cl,attr,prot,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph,componentDefinitionParentEnv);
+           instVar(cache,env,ih,store,ci_state,DAE.NOMOD(),pre,csets,n,cl,attr,vis,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph,componentDefinitionParentEnv);
      then
         (cache,compenv,ih,store,dae,csets,ty,graph);
         
     // is ONLY outer
-    case (cache,env,ih,store,ci_state,mod,pre,csets,n,cl,attr,prot,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph,componentDefinitionParentEnv)
+    case (cache,env,ih,store,ci_state,mod,pre,csets,n,cl,attr,vis,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph,componentDefinitionParentEnv)
       equation
         // only outer!
         true = Absyn.isOuter(io);
@@ -7204,7 +7371,7 @@ algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
         (cache,compenv,ih,store,outerDAE,csets,ty,graph);
 
     // is ONLY outer and the inner was not yet set in the IH or we have no inner declaration!
-    case (cache,env,ih,store,ci_state,mod,pre,csets,n,cl,attr,prot,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph,componentDefinitionParentEnv)
+    case (cache,env,ih,store,ci_state,mod,pre,csets,n,cl,attr,vis,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph,componentDefinitionParentEnv)
       equation 
         // only outer!
         true = Absyn.isOuter(io);
@@ -7240,12 +7407,12 @@ algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
         
         // call it normaly
         (cache,compenv,ih,store,dae,_,ty,graph) =
-           instVar_dispatch(cache,env,ih,store,ci_state,mod,pre,csets,n,cl,attr,prot,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph);
+           instVar_dispatch(cache,env,ih,store,ci_state,mod,pre,csets,n,cl,attr,vis,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph);
       then
         (cache,compenv,ih,store,dae,csets,ty,graph);
 
     // is ONLY outer and the inner was not yet set in the IH or we have no inner declaration!
-    case (cache,env,ih,store,ci_state,mod,pre,csets,n,cl,attr,prot,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph,componentDefinitionParentEnv)
+    case (cache,env,ih,store,ci_state,mod,pre,csets,n,cl,attr,vis,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph,componentDefinitionParentEnv)
       equation
         // only outer!
         true = Absyn.isOuter(io);
@@ -7272,12 +7439,12 @@ algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
         
         // call it normaly
         (cache,compenv,ih,store,dae,_,ty,graph) =
-           instVar_dispatch(cache,env,ih,store,ci_state,mod,pre,csets,n,cl,attr,prot,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph);
+           instVar_dispatch(cache,env,ih,store,ci_state,mod,pre,csets,n,cl,attr,vis,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph);
       then
         (cache,compenv,ih,store,dae,csets,ty,graph);
 
     // is inner outer!
-    case (cache,env,ih,store,ci_state,mod,pre,csets,n,cl as SCode.CLASS(name=typeName),attr,prot,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph,componentDefinitionParentEnv)
+    case (cache,env,ih,store,ci_state,mod,pre,csets,n,cl as SCode.CLASS(name=typeName),attr,vis,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph,componentDefinitionParentEnv)
       equation
         // both inner and outer
         true = Absyn.isOuter(io);
@@ -7286,7 +7453,7 @@ algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
         // Debug.fprintln("innerouter", "- Inst.instVar inner outer: " +& PrefixUtil.printPrefixStr(pre) +& "/" +& n +& " in env: " +& Env.printEnvPathStr(env));
         
         (cache,innerCompEnv,ih,store,dae,csetsInner,ty,graph) =
-           instVar_dispatch(cache,env,ih,store,ci_state,mod,pre,csets,n,cl,attr,prot,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph);
+           instVar_dispatch(cache,env,ih,store,ci_state,mod,pre,csets,n,cl,attr,vis,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph);
         
         // add it to the instance hierarchy
         (cache,cref) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n, DAE.ET_OTHER(), {}));
@@ -7315,7 +7482,7 @@ algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
         
         // now instantiate it as an outer with no modifications
         (cache,compenv,ih,store,dae,csetsOuter,ty,graph) =
-           instVar(cache,env,ih,store,ci_state,DAE.NOMOD(),pre,csets,n,cl,attr,prot,dims,idxs,inst_dims,impl,comment,Absyn.OUTER(),finalPrefix,info,graph,componentDefinitionParentEnv);
+           instVar(cache,env,ih,store,ci_state,DAE.NOMOD(),pre,csets,n,cl,attr,vis,dims,idxs,inst_dims,impl,comment,Absyn.OUTER(),finalPrefix,info,graph,componentDefinitionParentEnv);
         
         // keep the dae we get from the instantiation of the outer
         outerDAE = dae;
@@ -7326,7 +7493,7 @@ algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
         (cache,compenv,ih,store,dae,csetsInner,ty,graph);
 
     // is NO INNER NOR OUTER or it failed before!
-    case (cache,env,ih,store,ci_state,mod,pre,csets,n,cl,attr,prot,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph,componentDefinitionParentEnv)
+    case (cache,env,ih,store,ci_state,mod,pre,csets,n,cl,attr,vis,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph,componentDefinitionParentEnv)
       equation
         // no inner no outer
         false = Absyn.isOuter(io);
@@ -7335,12 +7502,12 @@ algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
         // Debug.fprintln("innerouter", "- Inst.instVar NO inner NO outer: " +& PrefixUtil.printPrefixStr(pre) +& "/" +& n +& " in env: " +& Env.printEnvPathStr(env));
         
         (cache,compenv,ih,store,dae,csets,ty,graph) =
-           instVar_dispatch(cache,env,ih,store,ci_state,mod,pre,csets,n,cl,attr,prot,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph);
+           instVar_dispatch(cache,env,ih,store,ci_state,mod,pre,csets,n,cl,attr,vis,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph);
       then
         (cache,compenv,ih,store,dae,csets,ty,graph);
 
     // failtrace
-    case (cache,env,ih,store,ci_state,mod,pre,csets,n,cl,attr,prot,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph,componentDefinitionParentEnv)
+    case (cache,env,ih,store,ci_state,mod,pre,csets,n,cl,attr,vis,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph,componentDefinitionParentEnv)
       equation
         true = RTOpts.debugFlag("failtrace");
         (cache,cref) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n, DAE.ET_OTHER(), {}));
@@ -7369,16 +7536,16 @@ protected function instVar_dispatch "function: instVar_dispatch
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input Ident inIdent;
-  input SCode.Class inClass;
+  input SCode.Element inClass;
   input SCode.Attributes inAttributes;
-  input Boolean protection;
+  input SCode.Visibility visibility;
   input list<DAE.Dimension> inDimensionLst;
   input list<DAE.Subscript> inIntegerLst;
   input InstDims inInstDims;
   input Boolean inBoolean;
   input Option<SCode.Comment> inSCodeCommentOption;
   input Absyn.InnerOuter io;
-  input Boolean finalPrefix;
+  input SCode.Final finalPrefix;
   input Absyn.Info info;
   input ConnectionGraph.ConnectionGraph inGraph;
   output Env.Cache outCache;
@@ -7389,8 +7556,9 @@ protected function instVar_dispatch "function: instVar_dispatch
   output Connect.Sets outSets;
   output DAE.Type outType;
   output ConnectionGraph.ConnectionGraph outGraph;
-algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
-  matchcontinue (inCache,inEnv,inIH,store,inState,inMod,inPrefix,inSets,inIdent,inClass,inAttributes,protection,inDimensionLst,inIntegerLst,inInstDims,inBoolean,inSCodeCommentOption,io,finalPrefix,info,inGraph)
+algorithm 
+  (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
+  matchcontinue (inCache,inEnv,inIH,store,inState,inMod,inPrefix,inSets,inIdent,inClass,inAttributes,visibility,inDimensionLst,inIntegerLst,inInstDims,inBoolean,inSCodeCommentOption,io,finalPrefix,info,inGraph)
     local
       list<DAE.Dimension> dims_1,dims;
       list<Env.Frame> compenv,env;
@@ -7401,14 +7569,14 @@ algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
       DAE.Mod mod;
       Prefix.Prefix pre;
       String n,id;
-      SCode.Class cl;
+      SCode.Element cl;
       SCode.Attributes attr;
       list<DAE.Subscript> idxs;
       InstDims inst_dims;
       Boolean impl;
       Option<SCode.Comment> comment;
       Env.Cache cache;
-      Boolean prot;
+      SCode.Visibility vis;
       Absyn.Path p1;
       String str;
       ConnectionGraph.ConnectionGraph graph;
@@ -7419,8 +7587,8 @@ algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
      // e.g. Point p => Real p[3]; These must be handled separately since even if they do not
      // appear to be an array, they can. Therefore we need to collect
       // the full dimensionality and call instVar2
-    //case (cache,env,ih,store,ci_state,mod,pre,csets,n,(cl as SCode.CLASS(name = id, classDef = SCode.DERIVED(modifications = mods))),attr,prot,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
-    case (cache,env,ih,store,ci_state,mod,pre,csets,n,(cl as SCode.CLASS(name = id)),attr,prot,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
+    //case (cache,env,ih,store,ci_state,mod,pre,csets,n,(cl as SCode.CLASS(name = id, classDef = SCode.DERIVED(modifications = mods))),attr,vis,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
+    case (cache,env,ih,store,ci_state,mod,pre,csets,n,(cl as SCode.CLASS(name = id)),attr,vis,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
       equation
         // Collect dimensions
         p1 = Absyn.IDENT(n);
@@ -7430,14 +7598,14 @@ algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
         (cache,(dims_1 as (_ :: _)),cl,type_mods) = getUsertypeDimensions(cache, env, ih, mod, pre, cl, inst_dims, impl);
         mod = Mod.merge(mod, type_mods, env, pre);
         attr = propagateClassPrefix(attr,pre);
-        (cache,compenv,ih,store,dae,csets_1,ty_1,graph) = instVar2(cache,env,ih,store, ci_state, mod, pre, csets, n, cl, attr, prot, dims_1, idxs, inst_dims, impl, comment,io,finalPrefix, info, graph);
+        (cache,compenv,ih,store,dae,csets_1,ty_1,graph) = instVar2(cache,env,ih,store, ci_state, mod, pre, csets, n, cl, attr, vis, dims_1, idxs, inst_dims, impl, comment,io,finalPrefix, info, graph);
         ty = ty_1; // adrpo: this doubles the dimension! ty = makeArrayType(dims_1, ty_1);
         Error.updateCurrentComponent("",Absyn.dummyInfo);
       then
         (cache,compenv,ih,store,dae,csets_1,ty,graph);
 
     // Generic case: fall trough
-    case (cache,env,ih,store,ci_state,mod,pre,csets,n,(cl as SCode.CLASS(name = id)),attr,prot,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
+    case (cache,env,ih,store,ci_state,mod,pre,csets,n,(cl as SCode.CLASS(name = id)),attr,vis,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
       equation
         p1 = Absyn.IDENT(n);
         p1 = PrefixUtil.prefixPath(p1,pre);
@@ -7447,7 +7615,7 @@ algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
         attr = propagateClassPrefix(attr,pre);
         (cache,compenv,ih,store,dae,csets_1,ty_1,graph) =
         instVar2(cache,env,ih,store, ci_state, mod, pre, csets, n,
-                 cl, attr, prot, dims, idxs, inst_dims, impl,
+                 cl, attr, vis, dims, idxs, inst_dims, impl,
                  comment,io,finalPrefix,info, graph);
         Error.updateCurrentComponent("",Absyn.dummyInfo);
       then
@@ -7472,16 +7640,16 @@ protected function instVar2
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input Ident inIdent;
-  input SCode.Class inClass;
+  input SCode.Element inClass;
   input SCode.Attributes inAttributes;
-  input Boolean protection;
+  input SCode.Visibility visibility;
   input list<DAE.Dimension> inDimensionLst;
   input list<DAE.Subscript> inIntegerLst;
   input InstDims inInstDims;
   input Boolean inBoolean;
   input Option<SCode.Comment> inSCodeCommentOption;
   input Absyn.InnerOuter io;
-  input Boolean finalPrefix;
+  input SCode.Final finalPrefix;
   input Absyn.Info info;
   input ConnectionGraph.ConnectionGraph inGraph;
   output Env.Cache outCache;
@@ -7494,7 +7662,7 @@ protected function instVar2
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm
   (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
-  matchcontinue (inCache,inEnv,inIH,store,inState,inMod,inPrefix,inSets,inIdent,inClass,inAttributes,protection,inDimensionLst,inIntegerLst,inInstDims,inBoolean,inSCodeCommentOption,io,finalPrefix,info,inGraph)
+  matchcontinue (inCache,inEnv,inIH,store,inState,inMod,inPrefix,inSets,inIdent,inClass,inAttributes,visibility,inDimensionLst,inIntegerLst,inInstDims,inBoolean,inSCodeCommentOption,io,finalPrefix,info,inGraph)
     local
       InstDims inst_dims,inst_dims_1;
       list<DAE.Subscript> dims_1;
@@ -7510,11 +7678,13 @@ algorithm
       DAE.Mod mod,mod2;
       Prefix.Prefix pre,pre_1;
       String n;
-      SCode.Class cl;
+      SCode.Element cl;
       SCode.Attributes attr;
       list<DAE.Dimension> dims;
       list<DAE.Subscript> idxs,idxs_1;
-      Boolean impl,flowPrefix,streamPrefix;
+      Boolean impl;
+      SCode.Flow flowPrefix;
+      SCode.Stream streamPrefix;
       Option<SCode.Comment> comment;
       Option<DAE.VariableAttributes> dae_var_attr;
       SCode.Accessibility acc;
@@ -7524,10 +7694,10 @@ algorithm
       DAE.Subscript dime;
       DAE.Dimension dim;
       Env.Cache cache;
-      Boolean prot;
+      SCode.Visibility vis;
       Option<DAE.Exp> eOpt "for external objects";
       DAE.ExpType identType;
-      Option<Absyn.ElementAttributes> oDA;
+      Option<SCode.Attributes> oDA;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
       DAE.ElementSource source "the origin of the element";
@@ -7543,7 +7713,7 @@ algorithm
     // input Real x[:]; component environement The class is instantiated 
     // with the calculated modification, and an extended prefix. 
     //     
-    case (cache,env,ih,store,ci_state,mod,pre,csets,n,cl,attr,prot,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
+    case (cache,env,ih,store,ci_state,mod,pre,csets,n,cl,attr,vis,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
       equation
         ClassInf.isFunction(ci_state);
 
@@ -7573,14 +7743,14 @@ algorithm
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
 
-        dae = daeDeclare(cr, ci_state, ty, attr, prot, SOME(e_1), {dims_1},NONE(), dae_var_attr, comment,io,finalPrefix,source,true);
+        dae = daeDeclare(cr, ci_state, ty, attr, vis, SOME(e_1), {dims_1}, NONE(), dae_var_attr, comment, io, finalPrefix, source, true);
         store = UnitAbsynBuilder.instAddStore(store,ty,cr);
         // dae = DAEUtil.joinDaes(dae,DAEUtil.extractFunctions(dae1));
       then
         (cache,env_1,ih,store,dae,csets_1,ty_1,graph);
 
     // Function variables without binding
-    case (cache,env,ih,store,ci_state,mod,pre,csets,n,(cl as SCode.CLASS(name=n2)),attr,prot,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
+    case (cache,env,ih,store,ci_state,mod,pre,csets,n,(cl as SCode.CLASS(name=n2)),attr,vis,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
        equation
         ClassInf.isFunction(ci_state);
          //Instantiate type of the component, skip dae/not flattening
@@ -7594,7 +7764,7 @@ algorithm
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
 
-        dae = daeDeclare(cr, ci_state, ty, attr,prot,NONE(), {dims_1},NONE(), dae_var_attr, comment,io,finalPrefix,source,true);
+        dae = daeDeclare(cr, ci_state, ty, attr,vis,NONE(), {dims_1},NONE(), dae_var_attr, comment,io,finalPrefix,source,true);
         arrty = makeArrayType(dims, ty);
         store = UnitAbsynBuilder.instAddStore(store,ty,cr);
         // dae = DAEUtil.joinDaes(dae,DAEUtil.extractFunctions(dae1));
@@ -7605,7 +7775,7 @@ algorithm
     case (cache,env,ih,store,ci_state,(mod as DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,_,_)))),pre,csets,n,cl as SCode.CLASS(name=ss1,restriction=r),
           SCode.ATTR(flowPrefix = flowPrefix,streamPrefix=streamPrefix,
                      accesibility = acc,variability = (vt as SCode.CONST()),direction = dir),
-          prot,{},idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
+          vis,{},idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
       equation
         idxs_1 = listReverse(idxs);
         pre_1 = PrefixUtil.prefixAdd(n, idxs_1, pre,vt,ClassInf.start(r,Absyn.IDENT(ss1)));
@@ -7619,7 +7789,7 @@ algorithm
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
         eOpt = makeVariableBinding(ty,mod,DAE.C_CONST(),pre,n,source);
-        dae3 = daeDeclare(cr, ci_state, ty, SCode.ATTR({},flowPrefix,streamPrefix,acc,vt,dir),prot, eOpt, inst_dims,NONE(), dae_var_attr, comment,io,finalPrefix,source,false);
+        dae3 = daeDeclare(cr, ci_state, ty, SCode.ATTR({},flowPrefix,streamPrefix,acc,vt,dir),vis, eOpt, inst_dims,NONE(), dae_var_attr, comment,io,finalPrefix,source,false);
         dae = DAEUtil.joinDaes(dae1_1, dae3);
         store = UnitAbsynBuilder.instAddStore(store,ty,cr);
       then
@@ -7629,7 +7799,7 @@ algorithm
     case (cache,env,ih,store,ci_state,(mod as DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,_,_)))),pre,csets,n,cl as SCode.CLASS(name=ss1,restriction=r),
           SCode.ATTR(flowPrefix = flowPrefix,streamPrefix = streamPrefix,
                      accesibility = acc,variability = (vt as SCode.PARAM()),direction = dir),
-          prot,{},idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
+          vis,{},idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
       equation
         idxs_1 = listReverse(idxs);
         pre_1 = PrefixUtil.prefixAdd(n, idxs_1, pre,vt,ClassInf.start(r,Absyn.IDENT(ss1)));
@@ -7645,7 +7815,7 @@ algorithm
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
         eOpt = makeVariableBinding(ty,mod,DAE.C_PARAM(),pre,n,source);
-        dae3 = daeDeclare(cr, ci_state, ty, SCode.ATTR({},flowPrefix,streamPrefix,acc,vt,dir),prot, eOpt, inst_dims, start, dae_var_attr, comment,io,finalPrefix, source, false);
+        dae3 = daeDeclare(cr, ci_state, ty, SCode.ATTR({},flowPrefix,streamPrefix,acc,vt,dir),vis, eOpt, inst_dims, start, dae_var_attr, comment,io,finalPrefix, source, false);
 
         dae2 = instModEquation(cr, ty, mod, source, impl);
         daex= propagateBinding(dae1_1, dae2) "The equations generated by instModEquation are used only to modify
@@ -7660,7 +7830,7 @@ algorithm
     case (cache,env,ih,store,ci_state,mod,pre,csets,n,(cl as SCode.CLASS(name=ss1,restriction=r)),
           SCode.ATTR(flowPrefix = flowPrefix, streamPrefix = streamPrefix,
                      accesibility = acc,variability = vt,direction = dir),
-          prot,{},idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
+          vis,{},idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
       equation
         true = RTOpts.splitArrays();
         idxs_1 = listReverse(idxs);
@@ -7692,7 +7862,7 @@ algorithm
         //        as the one on inner
         false = InnerOuter.modificationOnOuter(cache,env,ih,pre,n,cr,mod,io,impl);
 
-        dae3 = daeDeclare(cr, ci_state, ty, SCode.ATTR({},flowPrefix,streamPrefix,acc,vt,dir),prot, eOpt,
+        dae3 = daeDeclare(cr, ci_state, ty, SCode.ATTR({},flowPrefix,streamPrefix,acc,vt,dir),vis, eOpt,
                           inst_dims, start, dae_var_attr, comment,io,finalPrefix,source,false);
         dae3 = DAEUtil.addComponentTypeOpt(dae3, Types.getClassnameOpt(ty));
         dae2 = Util.if_(Types.isComplexType(ty), dae2, DAEUtil.emptyDae /*DAEUtil.extractFunctions(dae2)*/);
@@ -7707,7 +7877,7 @@ algorithm
     case (cache,env,ih,store,ci_state,mod,pre,csets,n,(cl as SCode.CLASS(name=ss1,restriction=r)),
           SCode.ATTR(flowPrefix = flowPrefix, streamPrefix = streamPrefix,
                      accesibility = acc,variability = vt,direction = dir),
-          prot,{},idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
+          vis,{},idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
       equation
         false = RTOpts.splitArrays();
         idxs_1 = listReverse(idxs);
@@ -7741,7 +7911,7 @@ algorithm
         //        as the one on inner
         false = InnerOuter.modificationOnOuter(cache,env,ih,pre,n,cr,mod,io,impl);
 
-        dae3 = daeDeclare(cr, ci_state, ty, SCode.ATTR({},flowPrefix,streamPrefix,acc,vt,dir),prot, eOpt,
+        dae3 = daeDeclare(cr, ci_state, ty, SCode.ATTR({},flowPrefix,streamPrefix,acc,vt,dir),vis, eOpt,
                           inst_dims, start, dae_var_attr, comment,io,finalPrefix,source,false);
         dae3 = DAEUtil.addComponentTypeOpt(dae3, Types.getClassnameOpt(ty));
         dae2 = Util.if_(Types.isComplexType(ty), dae2, DAEUtil.emptyDae /*DAEUtil.extractFunctions(dae2)*/);
@@ -7753,7 +7923,7 @@ algorithm
         (cache,env_1,ih,store,dae,csets_1,ty,graph);
             
     // Array variables with unknown dimensions, e.g. Real x[:] = [some expression that can be used to determine dimension]. 
-    case (cache,env,ih,store,ci_state,(mod as DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,_,_)))),pre,csets,n,cl,attr,prot,
+    case (cache,env,ih,store,ci_state,(mod as DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,_,_)))),pre,csets,n,cl,attr,vis,
       ((dim as DAE.DIM_UNKNOWN()) :: dims),idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
       equation
         true = RTOpts.splitArrays();
@@ -7763,13 +7933,13 @@ algorithm
         dim = DAE.DIM_INTEGER(deduced_dim);
         inst_dims_1 = Util.listListAppendLast(inst_dims, {dime});
         (cache,compenv,ih,store,dae,csets,ty,graph) =
-          instArray(cache,env,ih,store, ci_state, mod, pre, csets, n, (cl,attr),prot, 1, dim, dims, idxs, inst_dims_1, impl, comment,io,finalPrefix,info,graph);
+          instArray(cache,env,ih,store, ci_state, mod, pre, csets, n, (cl,attr),vis, 1, dim, dims, idxs, inst_dims_1, impl, comment,io,finalPrefix,info,graph);
         ty_1 = liftNonBasicTypes(ty,dim); // Do not lift types extending basic type, they are already array types.
       then
         (cache,compenv,ih,store,dae,csets,ty_1,graph);
 
     // Array variables with unknown dimensions, non-expanding case 
-    case (cache,env,ih,store,ci_state,(mod as DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,_,_)))),pre,csets,n,cl,attr,prot,
+    case (cache,env,ih,store,ci_state,(mod as DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,_,_)))),pre,csets,n,cl,attr,vis,
       ((dim as DAE.DIM_UNKNOWN()) :: dims),idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
       equation
         false = RTOpts.splitArrays();
@@ -7779,31 +7949,31 @@ algorithm
         dim = Expression.subscriptDimension(dime);
         inst_dims_1 = Util.listListAppendLast(inst_dims, {dime2});
         (cache,compenv,ih,store,dae,csets,ty,graph) =
-          instVar2(cache,env,ih,store,ci_state,mod,pre,csets,n,cl,attr,prot,dims,dime2::idxs,inst_dims_1,impl,comment,io,finalPrefix,info,graph);
+          instVar2(cache,env,ih,store,ci_state,mod,pre,csets,n,cl,attr,vis,dims,dime2::idxs,inst_dims_1,impl,comment,io,finalPrefix,info,graph);
         ty_1 = liftNonBasicTypes(ty,dim); // Do not lift types extending basic type, they are already array types.
       then
         (cache,compenv,ih,store,dae,csets,ty_1,graph);
 
     // Array variables , e.g. Real x[3]
-    case (cache,env,ih,store,ci_state,mod,pre,csets,n,cl,attr,prot,(dim :: dims),idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
+    case (cache,env,ih,store,ci_state,mod,pre,csets,n,cl,attr,vis,(dim :: dims),idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
       equation
         true = RTOpts.splitArrays();
         dime = instDimExp(dim, impl);
         inst_dims_1 = Util.listListAppendLast(inst_dims, {dime});
         (cache,compenv,ih,store,dae,csets,ty,graph) =
-          instArray(cache,env,ih,store, ci_state, mod, pre, csets, n, (cl,attr),prot, 1, dim, dims, idxs, inst_dims_1, impl, comment,io,finalPrefix,info,graph);
+          instArray(cache,env,ih,store, ci_state, mod, pre, csets, n, (cl,attr),vis, 1, dim, dims, idxs, inst_dims_1, impl, comment,io,finalPrefix,info,graph);
         ty_1 = liftNonBasicTypes(ty,dim); // Do not lift types extending basic type, they are already array types.
       then
         (cache,compenv,ih,store,dae,csets,ty_1,graph);
 
     // Array variables , non-expanding case
-    case (cache,env,ih,store,ci_state,mod,pre,csets,n,cl,attr,prot,(dim :: dims),idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
+    case (cache,env,ih,store,ci_state,mod,pre,csets,n,cl,attr,vis,(dim :: dims),idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
       equation
         false = RTOpts.splitArrays();
         dime = instDimExpNonSplit(dim, impl);
         inst_dims_1 = Util.listListAppendLast(inst_dims, {dime});
         (cache,compenv,ih,store,dae,csets,ty,graph) =
-          instVar2(cache,env,ih,store,ci_state,mod,pre,csets,n,cl,attr,prot,dims,dime::idxs,inst_dims_1,impl,comment,io,finalPrefix,info,graph);
+          instVar2(cache,env,ih,store,ci_state,mod,pre,csets,n,cl,attr,vis,dims,dime::idxs,inst_dims_1,impl,comment,io,finalPrefix,info,graph);
         // Type lifting is done in the "scalar" case  
         //ty_1 = liftNonBasicTypes(ty,dim); // Do not lift types extending basic type, they are already array types.
       then
@@ -7826,7 +7996,7 @@ protected function extractEnumerationClassModifier "
 Author: BZ, 2008-07
 remove builtin attributes from modifier for Enumeration class."
   input DAE.Mod inMod;
-  input SCode.Class cl;
+  input SCode.Element cl;
   output DAE.Mod outMod2;
 algorithm (outMod2) := matchcontinue(inMod,cl)
   local
@@ -8033,17 +8203,17 @@ public function getUsertypeDimensions
   input InstanceHierarchy inIH;
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
-  input SCode.Class inClass;
+  input SCode.Element inClass;
   input InstDims inInstDims;
   input Boolean inBoolean;
   output Env.Cache outCache;
   output list<DAE.Dimension> outDimensionLst;
-  output SCode.Class classToInstantiate;
+  output SCode.Element classToInstantiate;
   output DAE.Mod outMods "modifications from base classes";
 algorithm
   (outCache,outDimensionLst,classToInstantiate,outMods) := matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inClass,inInstDims,inBoolean)
     local
-      SCode.Class cl;
+      SCode.Element cl;
       list<Env.Frame> cenv,env;
       Absyn.ComponentRef owncref;
       list<Absyn.Subscript> ad_1;
@@ -8083,24 +8253,33 @@ algorithm
         ad_1 = getOptionArraydim(ad);
         // Absyn.IDENT("Integer") used as a dummie
         (cache,dim1) = elabArraydim(cache,env, owncref, Absyn.IDENT("Integer"), ad_1,NONE(), impl,NONE(),true, false,pre,info,dims);
-      then (cache,dim1,cl,DAE.NOMOD());
+      then 
+        (cache,dim1,cl,DAE.NOMOD());
 
     // Partial function definitions with no output - stefan
-    case (cache,env,ih,_,_,cl as SCode.CLASS(name = id,restriction = SCode.R_FUNCTION(),partialPrefix = true),_,_) 
-      then (cache,{},cl,DAE.NOMOD());
+    case (cache,env,ih,_,_,
+      cl as SCode.CLASS(name = id,restriction = SCode.R_FUNCTION(),
+                        partialPrefix = SCode.PARTIAL()),_,_) 
+      then 
+        (cache,{},cl,DAE.NOMOD());
 
-    case (cache,env,ih,_,_,SCode.CLASS(name = id,info=info,restriction = SCode.R_FUNCTION(),partialPrefix = false),_,_)
+    case (cache,env,ih,_,_,
+      SCode.CLASS(name = id,info=info,restriction = SCode.R_FUNCTION(),
+                  partialPrefix = SCode.NOT_PARTIAL()),_,_)
       equation
         Error.addSourceMessage(Error.META_FUNCTION_TYPE_NO_PARTIAL_PREFIX, {id}, info);
       then fail();
 
       // MetaModelica Uniontype. Added 2009-05-11 sjoelund
-    case (cache,env,ih,_,_,cl as SCode.CLASS(name = id,restriction = SCode.R_UNIONTYPE()),_,_) then (cache,{},cl,DAE.NOMOD());
+    case (cache,env,ih,_,_,
+      cl as SCode.CLASS(name = id,restriction = SCode.R_UNIONTYPE()),_,_) 
+      then (cache,{},cl,DAE.NOMOD());
       /*----------------------*/
           
     /* Derived classes with restriction type, e.g. type Point = Real[3]; */
-    case (cache,env,ih,mods,pre,inClass as SCode.CLASS(name = id,restriction = SCode.R_TYPE(),info=info,
-                                         classDef = SCode.DERIVED(Absyn.TPATH(path = cn, arrayDim = ad),modifications = mod)),
+    case (cache,env,ih,mods,pre,
+      inClass as SCode.CLASS(name = id,restriction = SCode.R_TYPE(),info=info,
+                             classDef = SCode.DERIVED(Absyn.TPATH(path = cn, arrayDim = ad),modifications = mod)),
           dims,impl)
       equation
         (cache,cl,cenv) = Lookup.lookupClass(cache,env, cn, true);
@@ -8119,16 +8298,17 @@ algorithm
         (cache,res,cl,type_mods);
 
     /* extended classes type Y = Real[3]; class X extends Y; */
-    case (cache,env,ih,mods,pre,SCode.CLASS(name = id,restriction = _,
-                                         classDef = SCode.PARTS(elementLst=els,
-                                                                normalEquationLst={},
-                                                                initialEquationLst={},
-                                                                normalAlgorithmLst={},
-                                                                initialAlgorithmLst={},
-                                                                externalDecl=_)),
+    case (cache,env,ih,mods,pre,
+      SCode.CLASS(name = id,restriction = _,
+                  classDef = SCode.PARTS(elementLst=els,
+                  normalEquationLst={},
+                  initialEquationLst={},
+                  normalAlgorithmLst={},
+                  initialAlgorithmLst={},
+                  externalDecl=_)),
           dims,impl)
       equation
-        (_,_,{SCode.EXTENDS(path, mod,_, info)},{}) = splitElts(els); // ONLY ONE extends!
+        (_,_,{SCode.EXTENDS(path, _, mod,_, info)},{}) = splitElts(els); // ONLY ONE extends!
         (cache,mod_1) = Mod.elabModForBasicType(cache, env, ih, pre, mod, impl, info);
         mods_2 = Mod.merge(mods, mod_1, env, pre);
         (cache,cl,cenv) = Lookup.lookupClass(cache,env, path, true);
@@ -8150,14 +8330,14 @@ algorithm
 end getUsertypeDimensions;
 
 protected function addEnumerationLiteralsToEnv
-  "If the input SCode.Class is an enumeration, this function adds all of it's 
+  "If the input SCode.Element is an enumeration, this function adds all of it's 
    enumeration literals to the environment. This is used in getUsertypeDimensions 
    so that the modifiers on an enumeration can be elaborated when the literals
    are used, for example like this:
      type enum1 = enumeration(val1, val2);
      type enum2 = enum1(start = val1); // val1 needs to be in the environment here." 
   input Env.Env inEnv;
-  input SCode.Class inClass;
+  input SCode.Element inClass;
   output Env.Env outEnv;
 algorithm
   outEnv := matchcontinue(inEnv, inClass)
@@ -8181,18 +8361,20 @@ algorithm
     local
       SCode.Ident lit;
       Env.Env env;
-    case (SCode.COMPONENT(component = lit), _)
+    
+    case (SCode.COMPONENT(name = lit), _)
       equation
         env = Env.extendFrameV(inEnv,
           DAE.TYPES_VAR(
             lit,
-            DAE.ATTR(false, false, SCode.RO(), SCode.VAR(), Absyn.BIDIR(), Absyn.UNSPECIFIED()),
-            false,
+            DAE.ATTR(SCode.NOT_FLOW(), SCode.NOT_STREAM(), SCode.RO(), SCode.VAR(), Absyn.BIDIR(), Absyn.NOT_INNER_OUTER()),
+            SCode.PUBLIC(),
             (DAE.T_NOTYPE(),NONE()),
             DAE.UNBOUND(),
             NONE()),
           NONE(), Env.VAR_UNTYPED(), {});
       then env;
+    
     case (_, _)
       equation
         print("Inst.addEnumerationLiteralToEnv: Unknown enumeration type!\n");
@@ -8218,29 +8400,31 @@ algorithm
   outAbsynComponentRefLst := matchcontinue (inMod)
     local
       list<Absyn.ComponentRef> res1,res2,res,l1,l2;
-      Boolean b;
+      SCode.Final fin;
+      SCode.Each each_;
       String n;
       SCode.Mod m,mod;
       list<SCode.Element> xs;
       list<SCode.SubMod> submods;
       Absyn.Exp e;
 
-    /* For redeclarations e.g \"redeclare B2 b(cref=<expr>)\", find cref */
-    case (SCode.REDECL(finalPrefix = b,elementLst = (SCode.COMPONENT(component = n,modifications = m) :: xs)))
+    // For redeclarations e.g redeclare B2 b(cref=<expr>), find cref 
+    case (SCode.REDECL(finalPrefix = fin,eachPrefix = each_,elementLst = (SCode.COMPONENT(name = n,modifications = m) :: xs)))
       equation
-        res1 = getCrefFromMod(SCode.REDECL(b,xs));
+        res1 = getCrefFromMod(SCode.REDECL(fin,each_,xs));
         res2 = getCrefFromMod(m);
         res = listAppend(res1, res2);
       then
         res;
 
-    /* For redeclarations e.g \"redeclare B2 b(cref=<expr>)\", find cref */
-    case (SCode.REDECL(finalPrefix = b,elementLst = (_ :: xs)))
+    // For redeclarations e.g redeclare B2 b(cref=<expr>), find cref
+    case (SCode.REDECL(finalPrefix = fin,eachPrefix = each_,elementLst = (_ :: xs)))
       equation
-        res = getCrefFromMod(SCode.REDECL(b,xs));
+        res = getCrefFromMod(SCode.REDECL(fin,each_,xs));
       then
         res;
-    case (SCode.REDECL(finalPrefix = b,elementLst = {})) then {};
+    
+    case (SCode.REDECL(finalPrefix = fin,eachPrefix = each_,elementLst = {})) then {};
 
     /* Find in sub modifications e.g A(B=3) find B */
     case ((mod as SCode.MOD(subModLst = submods,binding = SOME((e,_)))))
@@ -8378,7 +8562,11 @@ algorithm
   matchcontinue (cache,env,inIH,pre,mod,cref,ci_state,csets,impl,updatedComps)
     local
       String n,id;
-      Boolean finalPrefix,repl,prot,flowPrefix,streamPrefix;
+      SCode.Final finalPrefix;
+      SCode.Replaceable repl;
+      SCode.Visibility vis;
+      SCode.Flow flowPrefix;
+      SCode.Stream streamPrefix;
       Absyn.InnerOuter io;
       SCode.Attributes attr;
       list<Absyn.Subscript> ad;
@@ -8389,7 +8577,7 @@ algorithm
       SCode.Mod m;
       Option<SCode.Comment> comment;
       DAE.Mod cmod,mods;
-      SCode.Class cl;
+      SCode.Element cl;
       list<Env.Frame> cenv,env2,env_1;
       list<Absyn.ComponentRef> crefs,crefs2,crefs3,crefs_1,crefs_2;
       Connect.Sets csets_1;
@@ -8426,7 +8614,7 @@ algorithm
     case (cache,env,ih,pre,mods,cref,ci_state,csets,impl,updatedComps)
       equation
         id = Absyn.crefFirstIdent(cref);
-        (cache,tyVar,SOME((SCode.COMPONENT(n,io,finalPrefix,repl,prot,_,(attr as SCode.ATTR(ad,flowPrefix,streamPrefix,acc,param,dir)),Absyn.TPATH(t, _),m,comment,cond,info,cc),cmod)),_)
+        (cache,tyVar,SOME((SCode.COMPONENT(n,SCode.PREFIXES(vis,_,finalPrefix,io,repl),(attr as SCode.ATTR(ad,flowPrefix,streamPrefix,acc,param,dir)),Absyn.TPATH(t, _),m,comment,cond,info),cmod)),_)
           = Lookup.lookupIdent(cache, env, id);
         //Debug.traceln("update comp " +& n +& " with mods:" +& Mod.printModStr(mods) +& " m:" +& SCode.printModStr(m) +& " cm:" +& Mod.printModStr(cmod));
         (cache,cl,cenv) = Lookup.lookupClass(cache, env, t, false);
@@ -8439,7 +8627,7 @@ algorithm
         crefs_2 = removeCrefFromCrefs(crefs_1, cref);
         updatedComps = BaseHashTable.add((cref,0),updatedComps);
         (cache,env2,ih,csets,updatedComps) = updateComponentsInEnv2(cache, env, ih, pre, mods, crefs_2, ci_state, csets, impl, updatedComps);
-        (cache,env_1,ih,csets_1,updatedComps) = updateComponentInEnv2(cache,env2,cenv,ih,pre,t,n,ad,cl,attr,DAE.ATTR(flowPrefix,streamPrefix,acc,param,dir,io),prot,finalPrefix,io,info,m,cmod,mods,cref,ci_state,csets,impl,updatedComps);
+        (cache,env_1,ih,csets_1,updatedComps) = updateComponentInEnv2(cache,env2,cenv,ih,pre,t,n,ad,cl,attr,DAE.ATTR(flowPrefix,streamPrefix,acc,param,dir,io),vis,finalPrefix,io,info,m,cmod,mods,cref,ci_state,csets,impl,updatedComps);
       then
         (cache,env_1,ih,csets_1,updatedComps);
 
@@ -8469,11 +8657,11 @@ protected function updateComponentInEnv2
   input Absyn.Path path;
   input String name;
   input list<Absyn.Subscript> ad;
-  input SCode.Class cl;
+  input SCode.Element cl;
   input SCode.Attributes attr;
   input DAE.Attributes dattr;
-  input Boolean prot;
-  input Boolean finalPrefix;
+  input SCode.Visibility vis;
+  input SCode.Final finalPrefix;
   input Absyn.InnerOuter io;
   input Absyn.Info info;
   input SCode.Mod m;
@@ -8490,7 +8678,7 @@ protected function updateComponentInEnv2
   output Connect.Sets outSets;
   output HashTable5.HashTable outUpdatedComps;
 algorithm
-  (outCache,outEnv,outIH,outSets,outUpdatedComps) := matchcontinue (cache,env,cenv,inIH,pre,path,name,ad,cl,attr,dattr,prot,finalPrefix,io,info,m,cmod,mod,cref,ci_state,csets,impl,updatedComps)
+  (outCache,outEnv,outIH,outSets,outUpdatedComps) := matchcontinue (cache,env,cenv,inIH,pre,path,name,ad,cl,attr,dattr,vis,finalPrefix,io,info,m,cmod,mod,cref,ci_state,csets,impl,updatedComps)
     local
       tuple<DAE.TType, Option<Absyn.Path>> ty;
       DAE.Mod m_1,classmod,mm,mod_1,mod_2,mod_3;
@@ -8501,11 +8689,11 @@ algorithm
       Absyn.ComponentRef owncref;
       InstanceHierarchy ih;
 
-    case (cache,env,cenv,ih,pre,path,name,ad,cl,attr,dattr,prot,finalPrefix,io,info,m,cmod,mod,cref,ci_state,csets,impl,updatedComps)
+    case (cache,env,cenv,ih,pre,path,name,ad,cl,attr,dattr,vis,finalPrefix,io,info,m,cmod,mod,cref,ci_state,csets,impl,updatedComps)
       equation
         1 = BaseHashTable.get(cref, updatedComps);
       then (cache,env,ih,csets,updatedComps);
-    case (cache,env,cenv,ih,pre,path,name,ad,cl,attr,dattr,prot,finalPrefix,io,info,m,cmod,mod,cref,ci_state,csets,impl,updatedComps)
+    case (cache,env,cenv,ih,pre,path,name,ad,cl,attr,dattr,vis,finalPrefix,io,info,m,cmod,mod,cref,ci_state,csets,impl,updatedComps)
       equation        
         ErrorExt.setCheckpoint("updateComponentInEnv2");
         (cache,m_1) = Mod.elabMod(cache, env, ih, Prefix.NOPRE(), m, impl, info)
@@ -8527,7 +8715,7 @@ algorithm
         "The variable declaration and the (optional) equation modification are inspected for array dimensions." ;
         /* Instantiate the component */
         (cache,compenv,ih,_,_,_,ty,_) = 
-          instVar(cache, cenv, ih, UnitAbsyn.noStore, ci_state, mod_3, pre, csets, name, cl, attr, prot, dims, {}, {}, impl, NONE(), io, finalPrefix, info, ConnectionGraph.EMPTY, env);
+          instVar(cache, cenv, ih, UnitAbsyn.noStore, ci_state, mod_3, pre, csets, name, cl, attr, vis, dims, {}, {}, impl, NONE(), io, finalPrefix, info, ConnectionGraph.EMPTY, env);
         
         // print("updateComponentInEnv -> 1 component: " +& n +& " ty: " +& Types.printTypeStr(ty) +& "\n");
         
@@ -8535,12 +8723,12 @@ algorithm
         (cache,binding) = makeBinding(cache, env, attr, mod_3, ty, pre, name, info);
         /* type info present */
         //Debug.fprintln("debug","VAR " +& name +& " has new type " +& Types.unparseType(ty) +& ", " +& Types.printBindingStr(binding) +& "m:" +& SCode.printModStr(m));
-        env = Env.updateFrameV(env, DAE.TYPES_VAR(name,dattr,prot,ty,binding,NONE()), Env.VAR_TYPED(), compenv);
+        env = Env.updateFrameV(env, DAE.TYPES_VAR(name,dattr,vis,ty,binding,NONE()), Env.VAR_TYPED(), compenv);
         //updatedComps = BaseHashTable.delete(cref,updatedComps);
         
         updatedComps = BaseHashTable.add((cref,1),updatedComps);
       then (cache,env,ih,csets,updatedComps);
-    case (cache,env,cenv,ih,pre,path,name,ad,cl,attr,dattr,prot,finalPrefix,io,info,m,cmod,mod,cref,ci_state,csets,impl,updatedComps)
+    case (cache,env,cenv,ih,pre,path,name,ad,cl,attr,dattr,vis,finalPrefix,io,info,m,cmod,mod,cref,ci_state,csets,impl,updatedComps)
       equation
         //Debug.traceln("- Inst.updateComponentInEnv2 failed");
       then fail();
@@ -8747,7 +8935,7 @@ algorithm
       String s1,s2;
       DAE.Element x;
       Absyn.InnerOuter io;
-      DAE.VarProtection prot;
+      DAE.VarVisibility prot;
       String idName;
       DAE.ElementSource source "the origin of the element";
 
@@ -8851,7 +9039,7 @@ protected function propagateVariability " help function to propagateAttributes, 
       DAE.VarDirection dir;
       String s1;
       Absyn.InnerOuter io;
-      DAE.VarProtection prot;
+      DAE.VarVisibility prot;
       DAE.ElementSource source "the origin of the element";
 
       /* Component that is VAR does not change variablity of subcomponents */
@@ -8920,12 +9108,12 @@ protected function propagateInnerOuter
       Option<SCode.Comment> comment;
       DAE.VarDirection dir;
       DAE.Element x;
-      DAE.VarProtection prot;
+      DAE.VarVisibility prot;
       String idName;
       DAE.ElementSource source "the origin of the element";
 
       /* Component that is unspecified does not change inner/outer on subcomponents */
-    case (lst,Absyn.UNSPECIFIED()) then lst;
+    case (lst,Absyn.NOT_INNER_OUTER()) then lst;
 
     case ({},_) then {};
 
@@ -8942,7 +9130,7 @@ protected function propagateInnerOuter
                    source = source,
                    variableAttributesOption = dae_var_attr,
                    absynCommentOption = comment,
-                   innerOuter=Absyn.UNSPECIFIED()) :: r),io)
+                   innerOuter=Absyn.NOT_INNER_OUTER()) :: r),io)
       equation
         false = ModUtil.isUnspecified(io);
         r_1 = propagateInnerOuter(r, io);
@@ -9001,8 +9189,8 @@ protected function instArray
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input Ident inIdent;
-  input tuple<SCode.Class, SCode.Attributes> inTplSCodeClassSCodeAttributes;
-  input Boolean protection;
+  input tuple<SCode.Element, SCode.Attributes> inTplSCodeClassSCodeAttributes;
+  input SCode.Visibility visibility;
   input Integer inInteger;
   input DAE.Dimension inDimension;
   input list<DAE.Dimension> inDimensionLst;
@@ -9011,7 +9199,7 @@ protected function instArray
   input Boolean inBoolean;
   input Option<SCode.Comment> inAbsynCommentOption;
   input Absyn.InnerOuter io;
-  input Boolean finalPrefix;
+  input SCode.Final finalPrefix;
   input Absyn.Info info;
   input ConnectionGraph.ConnectionGraph inGraph;
   output Env.Cache outCache;
@@ -9023,8 +9211,8 @@ protected function instArray
   output DAE.Type outType;
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm
-  (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
-  matchcontinue (cache,inEnv,inIH,store,inState,inMod,inPrefix,inSets,inIdent,inTplSCodeClassSCodeAttributes,protection,inInteger,inDimension,inDimensionLst,inIntegerLst,inInstDims,inBoolean,inAbsynCommentOption,io,finalPrefix,info,inGraph)
+  (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph) :=
+  matchcontinue (cache,inEnv,inIH,store,inState,inMod,inPrefix,inSets,inIdent,inTplSCodeClassSCodeAttributes,visibility,inInteger,inDimension,inDimensionLst,inIntegerLst,inInstDims,inBoolean,inAbsynCommentOption,io,finalPrefix,info,inGraph)
     local
       DAE.Exp e,lhs,rhs;
       DAE.Properties p;
@@ -9037,7 +9225,7 @@ algorithm
       DAE.Mod mod,mod_1;
       Prefix.Prefix pre;
       String n, str1, str2, str3, str4;
-      SCode.Class cl;
+      SCode.Element cl;
       SCode.Attributes attr;
       Integer i,stop,i_1;
       list<DAE.Dimension> dims;
@@ -9046,14 +9234,14 @@ algorithm
       Boolean impl;
       Option<SCode.Comment> comment;
       DAE.DAElist dae,dae1,dae2,daeLst;
-      Boolean prot;
+      SCode.Visibility vis;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
       DAE.ElementSource source "the origin of the element";
       DAE.Subscript s;
-      SCode.Class clBase;
+      SCode.Element clBase;
       Absyn.Path path;
-      Absyn.ElementAttributes absynAttr;
+      SCode.Attributes absynAttr;
       SCode.Mod scodeMod;
       DAE.Mod mod2, mod3;
       String lit;
@@ -9062,7 +9250,7 @@ algorithm
       Absyn.Path enum_type, enum_lit;
 
     /* component environment If is a function var. */
-    case (cache,env,ih,store,(ci_state as ClassInf.FUNCTION(path = _)),mod,pre,csets,n,(cl,attr),prot,i,DAE.DIM_UNKNOWN(),dims,idxs,inst_dims,impl,comment,io,_,info,graph)
+    case (cache,env,ih,store,(ci_state as ClassInf.FUNCTION(path = _)),mod,pre,csets,n,(cl,attr),vis,i,DAE.DIM_UNKNOWN(),dims,idxs,inst_dims,impl,comment,io,_,info,graph)
       equation
         SOME(DAE.TYPED(e,_,p,_)) = Mod.modEquation(mod);
         (cache,env_1,ih,store,dae1,csets,ty,st,_,graph) =
@@ -9081,18 +9269,18 @@ algorithm
       then
         (cache,env_1,ih,store,dae,csets,ty,graph);
 
-    case (cache,env,ih,store,ci_state,mod,pre,csets,n,(cl,attr),prot,i,_,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
+    case (cache,env,ih,store,ci_state,mod,pre,csets,n,(cl,attr),vis,i,_,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
       equation
         false = Expression.dimensionKnown(inDimension);
         s = DAE.INDEX(DAE.ICONST(i));
         mod = Mod.lookupIdxModification(mod, i);
         (cache,compenv,ih,store,daeLst,csets,ty,graph) =
-          instVar2(cache, env, ih, store, ci_state, mod, pre, csets, n, cl, attr, prot, dims, (s :: idxs), inst_dims, impl, comment,io,finalPrefix,info,graph);
+          instVar2(cache, env, ih, store, ci_state, mod, pre, csets, n, cl, attr, vis, dims, (s :: idxs), inst_dims, impl, comment,io,finalPrefix,info,graph);
       then
         (cache,compenv,ih,store,daeLst,csets,ty,graph);
 
     /*
-    case (cache,env,ih,store,ci_state,mod,pre,csets,n,(cl,attr),prot,i,_,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
+    case (cache,env,ih,store,ci_state,mod,pre,csets,n,(cl,attr),vis,i,_,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
       equation
         false = Expression.dimensionKnown(inDimension);
         s = DAE.INDEX(DAE.ICONST(i));
@@ -9105,33 +9293,33 @@ algorithm
         fail();
     */
     
-    /*case (cache,env,ih,store,ci_state,mod,pre,csets,n,(cl,attr),prot,i,DAE.DIM_UNKNOWN(),dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
+    /*case (cache,env,ih,store,ci_state,mod,pre,csets,n,(cl,attr),vis,i,DAE.DIM_UNKNOWN(),dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
       equation
         s = DAE.INDEX(DAE.ICONST(i));
         (cache,compenv,ih,store,daeLst,csets,ty,graph) =
-          instVar2(cache, env, ih, store, ci_state, mod, pre, csets, n, cl, attr, prot, dims, (s :: idxs), inst_dims, impl, comment,io,finalPrefix,info,graph);
+          instVar2(cache, env, ih, store, ci_state, mod, pre, csets, n, cl, attr, vis, dims, (s :: idxs), inst_dims, impl, comment,io,finalPrefix,info,graph);
       then
         (cache,compenv,ih,store,daeLst,csets,ty,graph);*/
 
     /* Special case when instantiating Real[0]. We need to know the type */
-    case (cache,env,ih,store,ci_state,mod,pre,csets,n,(cl,attr),prot,i,DAE.DIM_INTEGER(0),dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
+    case (cache,env,ih,store,ci_state,mod,pre,csets,n,(cl,attr),vis,i,DAE.DIM_INTEGER(0),dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
       equation
         ErrorExt.setCheckpoint("instArray Real[0]");
         s = DAE.INDEX(DAE.ICONST(0));
         (cache,compenv,ih,store,daeLst,csets,ty,graph) =
-           instVar2(cache,env,ih,store, ci_state, mod, pre, csets, n, cl, attr,prot, dims, (s :: idxs), inst_dims, impl, comment,io,finalPrefix,info,graph);
+           instVar2(cache,env,ih,store, ci_state, mod, pre, csets, n, cl, attr,vis, dims, (s :: idxs), inst_dims, impl, comment,io,finalPrefix,info,graph);
         ErrorExt.rollBack("instArray Real[0]");
       then
         (cache,compenv,ih,store,DAEUtil.emptyDae,csets,ty,graph);
 
     /* Keep the errors if we somehow fail */
-    case (cache,env,ih,store,ci_state,mod,pre,csets,n,(cl,attr),prot,i,DAE.DIM_INTEGER(0),dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
+    case (cache,env,ih,store,ci_state,mod,pre,csets,n,(cl,attr),vis,i,DAE.DIM_INTEGER(0),dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
       equation
         ErrorExt.delCheckpoint("instArray Real[0]");
       then
         fail();
 
-    case (cache,env,ih,store,ci_state,mod,pre,csets,n,(cl,attr),prot,i,DAE.DIM_INTEGER(integer = stop),dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
+    case (cache,env,ih,store,ci_state,mod,pre,csets,n,(cl,attr),vis,i,DAE.DIM_INTEGER(integer = stop),dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
       equation
         (i > stop) = true;
       then
@@ -9142,42 +9330,42 @@ algorithm
           (cl as SCode.CLASS(classDef=SCode.DERIVED(typeSpec=Absyn.TPATH(path,SOME(_)),
                                                     modifications=scodeMod,attributes=absynAttr)),
                                                     attr),
-          prot,i,DAE.DIM_INTEGER(integer = stop),dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
+          vis,i,DAE.DIM_INTEGER(integer = stop),dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
       equation
         (_,clBase,_) = Lookup.lookupClass(cache, env, path, true);
         /* adrpo: TODO: merge also the attributes, i.e.:
            type A = input discrete flow Integer[3];
            A x; <-- input discrete flow IS NOT propagated even if it should. FIXME!
          */
-        //SOME(attr3) = Absyn.mergeElementAttributes(attr,SOME(absynAttr));
+        //SOME(attr3) = SCode.mergeAttributes(attr,SOME(absynAttr));
         (_,mod2) = Mod.elabMod(cache, env, ih, pre, scodeMod, impl,info);
         mod3 = Mod.merge(mod, mod2, env, pre);
         mod_1 = Mod.lookupIdxModification(mod3, i);
         s = DAE.INDEX(DAE.ICONST(i));
         (cache,env_1,ih,store,dae1,csets_1,ty,graph) =
-           instVar2(cache,env,ih, store,ci_state, mod_1, pre, csets, n, clBase, attr, prot,dims, (s :: idxs), {} /* inst_dims */, impl, comment,io,finalPrefix,info,graph);
+           instVar2(cache,env,ih, store,ci_state, mod_1, pre, csets, n, clBase, attr, vis,dims, (s :: idxs), {} /* inst_dims */, impl, comment,io,finalPrefix,info,graph);
         i_1 = i + 1;
         (cache,_,ih,store,dae2,csets_2,_,graph) =
-          instArray(cache,env,ih,store, ci_state, mod, pre, csets_1, n, (cl,attr), prot, i_1, DAE.DIM_INTEGER(stop), dims, idxs, {} /* inst_dims */, impl, comment,io,finalPrefix,info,graph);
+          instArray(cache,env,ih,store, ci_state, mod, pre, csets_1, n, (cl,attr), vis, i_1, DAE.DIM_INTEGER(stop), dims, idxs, {} /* inst_dims */, impl, comment,io,finalPrefix,info,graph);
         daeLst = DAEUtil.joinDaeLst({dae1, dae2});
       then
         (cache,env_1,ih,store,daeLst,csets_2,ty,graph);
 
-    case (cache,env,ih,store,ci_state,mod,pre,csets,n,(cl,attr),prot,i,DAE.DIM_INTEGER(integer = stop),dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
+    case (cache,env,ih,store,ci_state,mod,pre,csets,n,(cl,attr),vis,i,DAE.DIM_INTEGER(integer = stop),dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
       equation
         mod_1 = Mod.lookupIdxModification(mod, i);
         s = DAE.INDEX(DAE.ICONST(i));
         (cache,env_1,ih,store,dae1,csets_1,ty,graph) =
-           instVar2(cache,env,ih, store,ci_state, mod_1, pre, csets, n, cl, attr, prot,dims, (s :: idxs), inst_dims, impl, comment,io,finalPrefix,info,graph);
+           instVar2(cache,env,ih, store,ci_state, mod_1, pre, csets, n, cl, attr, vis,dims, (s :: idxs), inst_dims, impl, comment,io,finalPrefix,info,graph);
         i_1 = i + 1;
         (cache,_,ih,store,dae2,csets_2,_,graph) =
-          instArray(cache,env,ih,store, ci_state, mod, pre, csets_1, n, (cl,attr), prot, i_1, DAE.DIM_INTEGER(stop), dims, idxs, inst_dims, impl, comment,io,finalPrefix,info,graph);
+          instArray(cache,env,ih,store, ci_state, mod, pre, csets_1, n, (cl,attr), vis, i_1, DAE.DIM_INTEGER(stop), dims, idxs, inst_dims, impl, comment,io,finalPrefix,info,graph);
         daeLst = DAEUtil.joinDaes(dae1, dae2);
       then
         (cache,env_1,ih,store,daeLst,csets_2,ty,graph);
 
     // Instantiate an array whose dimension is determined by an enumeration.
-    case (cache, env, ih, store, ci_state, mod, pre, csets, n, (cl, attr), prot,
+    case (cache, env, ih, store, ci_state, mod, pre, csets, n, (cl, attr), vis,
         i, DAE.DIM_ENUM(enumTypeName = enum_type, literals = lit :: l), dims, 
         idxs, inst_dims, impl, comment, io, finalPrefix, info, graph)
       equation
@@ -9187,24 +9375,24 @@ algorithm
         enum_size = listLength(l);
         (cache, env_1, ih, store, dae1, csets_1, ty, graph) =
           instVar2(cache, env, ih, store, ci_state, mod_1, pre, csets, n, cl,
-          attr, prot, dims, (s :: idxs), inst_dims, impl, comment, io,
+          attr, vis, dims, (s :: idxs), inst_dims, impl, comment, io,
           finalPrefix, info, graph);
         i_1 = i + 1;
         (cache, _, ih, store, dae2, csets_2, _, graph) =
           instArray(cache, env, ih, store, ci_state, mod, pre, csets_1, n, (cl,
-          attr), prot, i_1, DAE.DIM_ENUM(enum_type, l, enum_size), dims, idxs, 
+          attr), vis, i_1, DAE.DIM_ENUM(enum_type, l, enum_size), dims, idxs, 
           inst_dims, impl, comment, io, finalPrefix, info, graph);
         daeLst = DAEUtil.joinDaes(dae1, dae2);
       then
         (cache, env_1, ih, store, daeLst, csets_2, ty, graph);
 
-    case (cache,env,ih,store,ci_state,mod,pre,csets,n,(cl,attr),prot,i,
+    case (cache,env,ih,store,ci_state,mod,pre,csets,n,(cl,attr),vis,i,
       DAE.DIM_ENUM(literals = {}),dims,idxs,inst_dims,impl,comment,io,finalPrefix,
       info,graph)
       then
         (cache,env,ih,store,DAEUtil.emptyDae,csets,(DAE.T_NOTYPE(),NONE()),graph);
 
-    case (cache,env,ih,store,ci_state,mod,pre,csets,n,(cl,attr),prot,i,_,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
+    case (cache,env,ih,store,ci_state,mod,pre,csets,n,(cl,attr),vis,i,_,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
       equation
         failure(_ = Mod.lookupIdxModification(mod, i));
         str1 = PrefixUtil.printPrefixStrIgnoreNoPre(PrefixUtil.prefixAdd(n, {}, pre, SCode.VAR(), ci_state));
@@ -9529,7 +9717,7 @@ algorithm
       DAE.Properties prop;
       Absyn.Path typePath, enumTypeName;
       list<SCode.Element> elementLst;
-      SCode.Class cls;
+      SCode.Element cls;
       list<String> enum_literals;
       Env.Env cenv;
       String n;
@@ -9868,7 +10056,7 @@ public function instClassDecl
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
-  input SCode.Class inClass;
+  input SCode.Element inClass;
   input InstDims inInstDims;
   output Env.Cache outCache;
   output Env.Env outEnv;
@@ -9882,7 +10070,7 @@ algorithm
       DAE.Mod mod;
       Prefix.Prefix pre;
       Connect.Sets csets;
-      SCode.Class c;
+      SCode.Element c;
       String n;
       SCode.Restriction restr;
       InstDims inst_dims;
@@ -9917,7 +10105,7 @@ public function implicitInstantiation
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
-  input SCode.Class inClass;
+  input SCode.Element inClass;
   input InstDims inInstDims;
   output Env.Cache outCache;
   output Env.Env outEnv;
@@ -9930,7 +10118,7 @@ algorithm
       list<Env.Frame> env,env_2;
       DAE.Mod mod;
       Prefix.Prefix pre;
-      SCode.Class c,enumclass;
+      SCode.Element c,enumclass;
       String n;
       InstDims inst_dims;
       list<SCode.Enum> l;
@@ -9972,7 +10160,7 @@ algorithm
       Absyn.Path path,path_2,path3;
       String s;
       Env.Cache cache;
-      SCode.Class cl;
+      SCode.Element cl;
       DAE.ComponentRef crPath;
       Env.Frame f;
       Env.Env fs;
@@ -10052,7 +10240,7 @@ public function implicitFunctionInstantiation
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
-  input SCode.Class inClass;
+  input SCode.Element inClass;
   input InstDims inInstDims;
   output Env.Cache outCache;
   output Env.Env outEnv;
@@ -10066,7 +10254,7 @@ algorithm
       Absyn.Path fpath;
       DAE.Mod mod;
       Prefix.Prefix pre;
-      SCode.Class c;
+      SCode.Element c;
       String n;
       InstDims inst_dims;
       Env.Cache cache;
@@ -10113,7 +10301,7 @@ protected function implicitFunctionInstantiation2
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
-  input SCode.Class inClass;
+  input SCode.Element inClass;
   input InstDims inInstDims;
   output Env.Cache outCache;
   output Env.Env outEnv;
@@ -10129,10 +10317,11 @@ algorithm
       Absyn.Path fpath;
       DAE.Mod mod;
       Prefix.Prefix pre;
-      SCode.Class c;
+      SCode.Element c;
       String n;
       InstDims inst_dims;
-      Boolean prot,partialPrefix;
+      SCode.Visibility vis;
+      SCode.Partial partialPrefix;
       DAE.ExternalDecl extdecl;
       SCode.Restriction restr;
       SCode.ClassDef parts;
@@ -10147,6 +10336,7 @@ algorithm
       Absyn.Info info;
       DAE.InlineType inlineType;
       SCode.ClassDef cd;
+      Boolean partialPrefixBool;
     
     /* normal functions */
     case (cache,env,ih,mod,pre,csets,(c as SCode.CLASS(classDef=cd,partialPrefix = partialPrefix, name = n,restriction = SCode.R_FUNCTION(),info = info)),inst_dims)
@@ -10166,8 +10356,9 @@ algorithm
         env_1 = Env.extendFrameT(env_1, n, ty1);
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
+        partialPrefixBool = SCode.partialBool(partialPrefix);
       then
-        (cache,env_1,ih,{DAE.FUNCTION(fpath,DAE.FUNCTION_DEF(daeElts)::derFuncs,ty1,partialPrefix,inlineType,source)});
+        (cache,env_1,ih,{DAE.FUNCTION(fpath,DAE.FUNCTION_DEF(daeElts)::derFuncs,ty1,partialPrefixBool,inlineType,source)});
 
     /* External functions should also have their type in env, but no dae. */
     case (cache,env,ih,mod,pre,csets,(c as SCode.CLASS(partialPrefix=partialPrefix,name = n,restriction = (restr as SCode.R_EXT_FUNCTION()),
@@ -10186,16 +10377,17 @@ algorithm
 
         ty1 = setFullyQualifiedTypename(ty,fpath);
         env_1 = Env.extendFrameT(cenv, n, ty1);
-        prot = false;
+        vis = SCode.PUBLIC();
         (cache,tempenv,ih,_,_,_,_,_,_,_,_,_) =
-          instClassdef(cache,env_1,ih, UnitAbsyn.noStore,mod, pre, csets_1,
-              ClassInf.FUNCTION(fpath), n,parts, restr, prot, inst_dims, true,INNER_CALL(), ConnectionGraph.EMPTY,NONE(),info) "how to get this? impl" ;
-        (cache,ih,extdecl) = instExtDecl(cache,tempenv,ih, n, parts, true,pre,info) "impl" ;
+          instClassdef(cache, env_1, ih, UnitAbsyn.noStore, mod, pre, csets_1,
+              ClassInf.FUNCTION(fpath), n,parts, restr, vis, inst_dims, true, INNER_CALL(), ConnectionGraph.EMPTY,NONE(),info) "how to get this? impl" ;
+        (cache,ih,extdecl) = instExtDecl(cache, tempenv,ih, n, parts, true, pre,info) "impl" ;
 
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
+        partialPrefixBool = SCode.partialBool(partialPrefix);
       then
-        (cache,env_1,ih,{DAE.FUNCTION(fpath,DAE.FUNCTION_EXT(daeElts,extdecl)::derFuncs,ty1,partialPrefix,DAE.NO_INLINE(),source)});
+        (cache,env_1,ih,{DAE.FUNCTION(fpath,DAE.FUNCTION_EXT(daeElts,extdecl)::derFuncs,ty1,partialPrefixBool,DAE.NO_INLINE(),source)});
 
     /* Instantiate overloaded functions */
     case (cache,env,ih,mod,pre,csets,(c as SCode.CLASS(name = n,restriction = (restr as SCode.R_FUNCTION()),
@@ -10241,7 +10433,7 @@ algorithm
       list<DAE.Function> funcs;
       Absyn.Path p;
       Env.Env cenv;
-      SCode.Class cdef;
+      SCode.Element cdef;
 
     case(cache,env,ih,{},path) then (cache);
       
@@ -10350,11 +10542,11 @@ helper function for implicitFunctionInstantiation, returns derivative of functio
   output list<DAE.FunctionDefinition> element;
 algorithm
   element := matchcontinue(cd,baseFunc,inCache,inEnv,inIH,inPrefix,info)
-  local
-    list<SCode.Annotation> anns;
-    list<SCode.Element> elemDecl;
-    Absyn.Annotation absynann;
-    SCode.Annotation ann;
+    local
+      list<SCode.Annotation> anns;
+      list<SCode.Element> elemDecl;
+      Absyn.Annotation absynann;
+      SCode.Annotation ann;
     
     case(SCode.PARTS(annotationLst = anns, elementLst = elemDecl, externalDecl=NONE()),baseFunc,inCache,inEnv,inIH,inPrefix,info)
     then getDeriveAnnotation2(anns,elemDecl,baseFunc,inCache,inEnv,inIH,inPrefix,info);
@@ -10364,11 +10556,12 @@ algorithm
       ann = SCodeUtil.translateAnnotation(absynann);
     then getDeriveAnnotation2(ann::anns,elemDecl,baseFunc,inCache,inEnv,inIH,inPrefix,info);
 
-    case(SCode.CLASS_EXTENDS(annotationLst = anns, elementLst = elemDecl),baseFunc,inCache,inEnv,inIH,inPrefix,info)
+    case(SCode.CLASS_EXTENDS(composition=SCode.PARTS(annotationLst = anns, elementLst = elemDecl)),baseFunc,inCache,inEnv,inIH,inPrefix,info)
     then getDeriveAnnotation2(anns,elemDecl,baseFunc,inCache,inEnv,inIH,inPrefix,info);
 
     case(_,_,_,_,_,_,_) then {};
-end matchcontinue;
+    
+  end matchcontinue;
 end getDeriveAnnotation;
 
 protected function getDeriveAnnotation2 "
@@ -10528,14 +10721,14 @@ algorithm
       then fail();
 
         /* found matching input*/
-      case(SCode.COMPONENT(component=str2,attributes =SCode.ATTR(direction=Absyn.INPUT()))::elemDecl,str,currPos)
+      case(SCode.COMPONENT(name=str2,attributes =SCode.ATTR(direction=Absyn.INPUT()))::elemDecl,str,currPos)
         equation
           true = stringEq(str2, str);
           then
             currPos;
 
        /* Non-matching input, increase inputarg pos*/
-    case(SCode.COMPONENT(component=_,attributes =SCode.ATTR(direction=Absyn.INPUT()))::elemDecl,str,currPos) 
+    case(SCode.COMPONENT(name=_,attributes =SCode.ATTR(direction=Absyn.INPUT()))::elemDecl,str,currPos) 
       then setFunctionInputIndex(elemDecl,str,currPos+1);
 
        /* Other element, do not increaese inputarg pos*/
@@ -10640,7 +10833,7 @@ algorithm
       Absyn.Path p;
       Env.Cache c;
       Env.Env env;
-      SCode.Class cl;
+      SCode.Element cl;
     case(p,c,env)
       equation
         (c,cl,env) = Lookup.lookupClass(c,env,p,true);
@@ -10653,7 +10846,7 @@ end isInlineFunc;
 public function isInlineFunc2 "
 Author: bjozac 2009-12
   helper function to isInlineFunc"
-  input SCode.Class inClass;
+  input SCode.Element inClass;
   output DAE.InlineType outInlineType;
 algorithm
   outInlineType := matchcontinue(inClass)
@@ -10663,8 +10856,9 @@ algorithm
     case(SCode.CLASS(classDef = SCode.PARTS(annotationLst = anns)))
       then isInlineFunc3(anns);
 
-    case(SCode.CLASS(classDef = SCode.CLASS_EXTENDS(annotationLst = anns)))
+    case(SCode.CLASS(classDef = SCode.CLASS_EXTENDS(composition = SCode.PARTS(annotationLst = anns))))
       then isInlineFunc3(anns);
+    
     case(_) then DAE.NO_INLINE();
   end matchcontinue;
 end isInlineFunc2;
@@ -10680,18 +10874,22 @@ algorithm
       list<SCode.Annotation> cdr;
       list<SCode.SubMod> smlst;
       DAE.InlineType res;
+    
     case({}) then DAE.NO_INLINE();
+
     case(SCode.ANNOTATION(SCode.MOD(_,_,smlst,_)) :: cdr)
       equation
         res = isInlineFunc4(smlst);
         true = DAEUtil.convertInlineTypeToBool(res);
       then
         res;
+
     case(_ :: cdr)
       equation
         res = isInlineFunc3(cdr);
       then
         res;
+
   end matchcontinue;
 end isInlineFunc3;
 
@@ -10738,28 +10936,44 @@ algorithm
     local
       SCode.Ident id;
       Absyn.InnerOuter inOut;
-      Boolean finPre, repPre, proPre, redecl;
+      SCode.Final finPre;
+      SCode.Replaceable repPre;
+      SCode.Visibility vis;
+      SCode.Redeclare redecl;
       SCode.Attributes attr;
       Absyn.TypeSpec typeSpc;
       Option<SCode.Comment> comm;
       Option<Absyn.Exp> cond;
       Absyn.Info info;
-      Option<Absyn.ConstrainClass> cc_;
-      Boolean modFinPre;
-      Absyn.Each modEachPre;
+      SCode.Final modFinPre;
+      SCode.Each modEachPre;
       list<SCode.SubMod> modSubML;
       SCode.Element e;
       SCode.Mod modBla;
-    case (e as SCode.COMPONENT(component = id, innerOuter = inOut, finalPrefix = finPre, replaceablePrefix = repPre, 
-          protectedPrefix = proPre, redeclarePrefix = redecl, attributes = attr as SCode.ATTR(direction = Absyn.OUTPUT()), 
+      
+    case (e as 
+      SCode.COMPONENT(
+          name = id,
+          prefixes = SCode.PREFIXES(
+            visibility = vis, 
+            redeclarePrefix = redecl, 
+            finalPrefix = finPre, 
+            innerOuter = inOut, 
+            replaceablePrefix = repPre),
+          attributes = attr as SCode.ATTR(direction = Absyn.OUTPUT()), 
           typeSpec = typeSpc,
           modifications = SCode.MOD(finalPrefix = modFinPre, eachPrefix = modEachPre, subModLst = modSubML, binding = SOME(_)),
-          comment = comm, condition = cond, info = info, cc = cc_))
+          comment = comm, condition = cond, info = info))
       equation
         modBla = SCode.MOD(modFinPre,modEachPre,modSubML,NONE());
       then 
-        SCode.COMPONENT(id,inOut,finPre,repPre,proPre,redecl,attr,typeSpc,modBla,comm,cond,info,cc_);
+        SCode.COMPONENT(
+          id, 
+          SCode.PREFIXES(vis,redecl,finPre,inOut,repPre),
+          attr,typeSpc,modBla,comm,cond,info);
+
     case (e) then (e);
+    
   end matchcontinue;
 end stripFuncOutputsMod;
 
@@ -10776,17 +10990,18 @@ public function implicitFunctionTypeInstantiation
   input Env.Cache inCache;
   input Env.Env inEnv;
   input InstanceHierarchy inIH;
-  input SCode.Class inClass;
+  input SCode.Element inClass;
   output Env.Cache outCache;
   output Env.Env outEnv;
   output InstanceHierarchy outIH;
 algorithm
   (outCache,outEnv,outIH) := matchcontinue (inCache,inEnv,inIH,inClass)
     local
-      SCode.Class stripped_class;
+      SCode.Element stripped_class;
       list<Env.Frame> env_1,env;
       String id,cn2;
-      Boolean p,e;
+      SCode.Partial p;
+      SCode.Encapsulated e;
       SCode.Restriction r;
       Option<Absyn.ExternalDecl> extDecl;
       list<SCode.Element> elts, stripped_elts;
@@ -10801,15 +11016,17 @@ algorithm
       SCode.Mod mod1;
       DAE.Mod mod2;
       Env.Env cenv;
-      SCode.Class c;
+      SCode.Element c;
       tuple<DAE.TType, Option<Absyn.Path>> ty1,ty;
+      SCode.Prefixes prefixes;
 
-    /* The function type can be determined without the body. Annotations need to be preserved though. */
-    case (cache,env,ih,SCode.CLASS(name = id,partialPrefix = p,encapsulatedPrefix = e,restriction = r,
+    // The function type can be determined without the body. Annotations need to be preserved though.
+    case (cache,env,ih,SCode.CLASS(name = id,prefixes = prefixes,
+                                   encapsulatedPrefix = e,partialPrefix = p,restriction = r,
                                    classDef = SCode.PARTS(elementLst = elts,annotationLst=annotationLst,externalDecl=extDecl),info = info)) 
       equation
         stripped_elts = Util.listMap(elts,stripFuncOutputsMod);
-        stripped_class = SCode.CLASS(id,p,e,r,SCode.PARTS(elts,{},{},{},{},extDecl,annotationLst,NONE()),info);
+        stripped_class = SCode.CLASS(id,prefixes,e,p,r,SCode.PARTS(elts,{},{},{},{},extDecl,annotationLst,NONE()),info);
         (cache,env_1,ih,funs) = implicitFunctionInstantiation2(cache,env,ih, DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, stripped_class, {});
         /* Only external functions are valid without an algorithm section... */
         cache = Env.addDaeExtFunction(cache, funs);
@@ -10821,8 +11038,8 @@ algorithm
                                    classDef = SCode.DERIVED(typeSpec = Absyn.TPATH(path = cn,arrayDim = ad), 
                                                             modifications = mod1),info = info))  
       equation 
-        (cache,(c as SCode.CLASS(name = cn2, restriction = r)),cenv) = Lookup.lookupClass(cache,env, cn, true);
-        (cache,mod2) = Mod.elabMod(cache, env, ih, Prefix.NOPRE(), mod1, false,info);
+        (cache,(c as SCode.CLASS(name = cn2, restriction = r)),cenv) = Lookup.lookupClass(cache, env, cn, true);
+        (cache,mod2) = Mod.elabMod(cache, env, ih, Prefix.NOPRE(), mod1, false, info);
         (cache,_,ih,_,dae,_,ty,_,_,_) =
           instClass(cache,cenv,ih,UnitAbsynBuilder.emptyInstStore(), mod2,
             Prefix.NOPRE(), Connect.emptySet, c, {}, true, INNER_CALL(), ConnectionGraph.EMPTY);
@@ -10858,9 +11075,9 @@ algorithm
   (outCache,outEnv,outIH,outFns) := matchcontinue (inCache,inEnv,inIH,inIdent,inAbsynPathLst)
     local
       list<Env.Frame> env,cenv,env_1,env_2;
-      SCode.Class c;
+      SCode.Element c;
       String id,overloadname;
-      Boolean encflag;
+      SCode.Encapsulated encflag;
       list<DAE.Element> daeElts;
       list<tuple<String, tuple<DAE.TType, Option<Absyn.Path>>>> args;
       tuple<DAE.TType, Option<Absyn.Path>> tp,ty;
@@ -10869,12 +11086,13 @@ algorithm
       list<Absyn.Path> fns;
       Env.Cache cache;
       InstanceHierarchy ih;
-      Boolean partialPrefix;
+      SCode.Partial partialPrefix;
       DAE.FunctionAttributes functionAttributes;
       DAE.ElementSource source "the origin of the element";
       Absyn.Info info;
       list<DAE.Function> resfns;
       DAE.Function resfn;
+      Boolean partialPrefixBool;
       
     case (cache,env,ih,_,{}) then (cache,env,ih,{});
 
@@ -10894,13 +11112,15 @@ algorithm
         print(" DAE.InlineType FIX HERE \n");
         // set the  of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), NONE(), NONE(), NONE());
-        resfn = DAE.FUNCTION(fpath,{DAE.FUNCTION_DEF(daeElts)},ty,partialPrefix,DAE.NO_INLINE(),source);
+        partialPrefixBool = SCode.partialBool(partialPrefix);
+        resfn = DAE.FUNCTION(fpath,{DAE.FUNCTION_DEF(daeElts)},ty,partialPrefixBool,DAE.NO_INLINE(),source);
       then
         (cache,env_2,ih,resfn::resfns);
+    
     // failure
     case (_,env,ih,_,_)
       equation 
-        Debug.fprint("failtrace", "-Inst.instOverloaded_functions failed\n");
+        Debug.fprint("failtrace", "- Inst.instOverloaded_functions failed\n");
       then
         fail();
   end matchcontinue;
@@ -11090,15 +11310,24 @@ algorithm
     local
       list<Absyn.Exp> sizelist,crlist;
       String id;
-      Boolean fi,re,pr;
+      SCode.Final fi;
+      SCode.Replaceable re;
+      SCode.Visibility pr;
       list<Absyn.Subscript> dims;
       Absyn.TypeSpec path;
       SCode.Mod mod;
       Option<SCode.Comment> comment;
 
-    case SCode.COMPONENT(component = id,finalPrefix = fi,replaceablePrefix = re,protectedPrefix = pr,
-                         attributes = SCode.ATTR(arrayDims = dims),typeSpec = path,
-                         modifications = mod,comment = comment)
+    case SCode.COMPONENT(
+           name = id,
+           prefixes = SCode.PREFIXES(
+                        finalPrefix = fi,
+                        replaceablePrefix = re,
+                        visibility = pr),
+           attributes = SCode.ATTR(arrayDims = dims),
+           typeSpec = path,
+           modifications = mod,
+           comment = comment)
       equation 
         sizelist = instExtMakeCrefs2(id, dims, 1);
         crlist = (Absyn.CREF(Absyn.CREF_IDENT(id,{})) :: sizelist);
@@ -11122,7 +11351,9 @@ algorithm
       list<Absyn.Exp> restlist,exps;
       Absyn.Subscript dim;
       list<Absyn.Subscript> restdim;
+    
     case (id,{},_) then {};
+    
     case (id,(dim :: restdim),dimno)
       equation 
         nextdimno = dimno + 1;
@@ -11132,6 +11363,7 @@ algorithm
           Absyn.INTEGER(dimno)},{})) :: restlist);
       then
         exps;
+
   end match;
 end instExtMakeCrefs2;
 
@@ -11459,12 +11691,20 @@ public function instEnumeration
   input list<SCode.Enum> l;
   input Option<SCode.Comment> cmt;
   input Absyn.Info info;
-  output SCode.Class outClass;
+  output SCode.Element outClass;
 protected
   list<SCode.Element> comp;
 algorithm 
   comp := makeEnumComponents(l, info);
-  outClass := SCode.CLASS(n,false,false,SCode.R_ENUMERATION(),SCode.PARTS(comp,{},{},{},{},NONE(),{},cmt),info);
+  outClass := 
+    SCode.CLASS(
+     n,
+     SCode.defaultPrefixes,
+     SCode.NOT_ENCAPSULATED(),
+     SCode.NOT_PARTIAL(),
+     SCode.R_ENUMERATION(),
+     SCode.PARTS(comp,{},{},{},{},NONE(),{},cmt),
+     info);
 end instEnumeration;
 
 protected function makeEnumComponents
@@ -11488,19 +11728,19 @@ public function daeDeclare
   input ClassInf.State inState;
   input DAE.Type inType;
   input SCode.Attributes inAttributes;
-  input Boolean protection;
+  input SCode.Visibility visibility;
   input Option<DAE.Exp> inExpExpOption;
   input InstDims inInstDims;
   input DAE.StartValue inStartValue;
   input Option<DAE.VariableAttributes> inDAEVariableAttributesOption;
   input Option<SCode.Comment> inAbsynCommentOption;
   input Absyn.InnerOuter io;
-  input Boolean finalPrefix;
+  input SCode.Final finalPrefix;
   input DAE.ElementSource source "the origin of the element";
   input Boolean declareComplexVars "if true, declare variables for complex variables, e.g. record vars in functions";
   output DAE.DAElist outDae;
 algorithm 
-  outDae := matchcontinue (inComponentRef,inState,inType,inAttributes,protection,inExpExpOption,
+  outDae := matchcontinue (inComponentRef,inState,inType,inAttributes,visibility,inExpExpOption,
                                      inInstDims,inStartValue,inDAEVariableAttributesOption,inAbsynCommentOption,
                                      io,finalPrefix,source,declareComplexVars )
     local
@@ -11510,22 +11750,25 @@ algorithm
       DAE.ComponentRef vn;
       ClassInf.State ci_state;
       tuple<DAE.TType, Option<Absyn.Path>> ty;
-      Boolean flowPrefix,streamPrefix,prot;
+      SCode.Flow flowPrefix;
+      SCode.Stream streamPrefix;
+      SCode.Visibility vis;
       SCode.Variability par;
       Absyn.Direction dir;
       Option<DAE.Exp> e,start;
       InstDims inst_dims;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
+    
     case (vn,ci_state,ty,
           SCode.ATTR(flowPrefix = flowPrefix,
                      streamPrefix = streamPrefix,
                      variability = par,direction = dir),
-          prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars )
+          vis,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars )
       equation 
         flowPrefix1 = DAEUtil.toFlow(flowPrefix, ci_state);
         streamPrefix1 = DAEUtil.toStream(streamPrefix, ci_state);
-        dae = daeDeclare2(vn, ty, flowPrefix1, streamPrefix1, par, dir,prot, e, inst_dims, start, dae_var_attr, comment,io,finalPrefix,source,declareComplexVars );
+        dae = daeDeclare2(vn, ty, flowPrefix1, streamPrefix1, par, dir, vis, e, inst_dims, start, dae_var_attr, comment,io,finalPrefix,source,declareComplexVars );
       then
         dae;
     case (_,_,_,_,_,_,_,_,_,_,_,_,source,_)
@@ -11545,21 +11788,21 @@ protected function daeDeclare2
   input DAE.Stream inStream;
   input SCode.Variability inVariability;
   input Absyn.Direction inDirection;
-  input Boolean protection;
+  input SCode.Visibility visibility;
   input Option<DAE.Exp> inExpExpOption;
   input InstDims inInstDims;
   input DAE.StartValue inStartValue;
   input Option<DAE.VariableAttributes> inDAEVariableAttributesOption;
   input Option<SCode.Comment> inAbsynCommentOption;
   input Absyn.InnerOuter io;
-  input Boolean finalPrefix;
+  input SCode.Final finalPrefix;
   input DAE.ElementSource source "the origin of the element";
   input Boolean declareComplexVars;
   output DAE.DAElist outDae;
 algorithm 
-  outDae := matchcontinue (inComponentRef,inType,inFlow,inStream,inVariability,inDirection,protection,inExpExpOption,
-                                     inInstDims,inStartValue,inDAEVariableAttributesOption,inAbsynCommentOption,io,finalPrefix,
-                                     source,declareComplexVars)
+  outDae := matchcontinue (inComponentRef,inType,inFlow,inStream,inVariability,inDirection,visibility,inExpExpOption,
+                           inInstDims,inStartValue,inDAEVariableAttributesOption,inAbsynCommentOption,io,finalPrefix,
+                           source,declareComplexVars)
     local
       DAE.DAElist dae;
       DAE.ComponentRef vn;
@@ -11571,26 +11814,26 @@ algorithm
       InstDims inst_dims;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
-      Boolean prot;
+      SCode.Visibility vis;
       
-    case (vn,ty,flowPrefix,streamPrefix,SCode.VAR(),dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars)
+    case (vn,ty,flowPrefix,streamPrefix,SCode.VAR(),dir,vis,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars)
       equation 
-        dae = daeDeclare3(vn, ty, flowPrefix, streamPrefix, DAE.VARIABLE(), dir,prot, e, inst_dims, start, dae_var_attr, comment,io,finalPrefix,source,declareComplexVars);
+        dae = daeDeclare3(vn, ty, flowPrefix, streamPrefix, DAE.VARIABLE(), dir, vis, e, inst_dims, start, dae_var_attr, comment,io,finalPrefix,source,declareComplexVars);
       then
         dae;
-    case (vn,ty,flowPrefix,streamPrefix,SCode.DISCRETE(),dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars )
+    case (vn,ty,flowPrefix,streamPrefix,SCode.DISCRETE(),dir,vis,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars )
       equation 
-        dae = daeDeclare3(vn, ty, flowPrefix, streamPrefix, DAE.DISCRETE(), dir,prot, e, inst_dims, start, dae_var_attr, comment,io,finalPrefix,source,declareComplexVars );
+        dae = daeDeclare3(vn, ty, flowPrefix, streamPrefix, DAE.DISCRETE(), dir, vis, e, inst_dims, start, dae_var_attr, comment,io,finalPrefix,source,declareComplexVars );
       then
         dae;
-    case (vn,ty,flowPrefix,streamPrefix,SCode.PARAM(),dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars )
+    case (vn,ty,flowPrefix,streamPrefix,SCode.PARAM(),dir,vis,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars )
       equation 
-        dae = daeDeclare3(vn, ty, flowPrefix, streamPrefix, DAE.PARAM(), dir,prot, e, inst_dims, start, dae_var_attr, comment,io,finalPrefix,source,declareComplexVars );
+        dae = daeDeclare3(vn, ty, flowPrefix, streamPrefix, DAE.PARAM(), dir, vis, e, inst_dims, start, dae_var_attr, comment,io,finalPrefix,source,declareComplexVars );
       then
         dae;
-    case (vn,ty,flowPrefix,streamPrefix,SCode.CONST(),dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars )
+    case (vn,ty,flowPrefix,streamPrefix,SCode.CONST(),dir,vis,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars )
       equation 
-        dae = daeDeclare3(vn, ty, flowPrefix, streamPrefix,DAE.CONST(), dir,prot, e, inst_dims, start, dae_var_attr, comment,io,finalPrefix,source,declareComplexVars );
+        dae = daeDeclare3(vn, ty, flowPrefix, streamPrefix,DAE.CONST(), dir, vis, e, inst_dims, start, dae_var_attr, comment,io,finalPrefix,source,declareComplexVars );
       then
         dae;
     case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,source,_)
@@ -11610,20 +11853,20 @@ protected function daeDeclare3
   input DAE.Stream inStream;
   input DAE.VarKind inVarKind;
   input Absyn.Direction inDirection;
-  input Boolean protection;
+  input SCode.Visibility visibility;
   input Option<DAE.Exp> inExpExpOption;
   input InstDims inInstDims;
   input DAE.StartValue inStartValue;
   input Option<DAE.VariableAttributes> inDAEVariableAttributesOption;
   input Option<SCode.Comment> inAbsynCommentOption;
   input Absyn.InnerOuter io;
-  input Boolean finalPrefix;
+  input SCode.Final finalPrefix;
   input DAE.ElementSource source "the origin of the element";
   input Boolean declareComplexVars;
   output DAE.DAElist outDae;
 algorithm 
-  outDae := match (inComponentRef,inType,inFlow,inStream,inVarKind,inDirection,protection,inExpExpOption,inInstDims,
-                                     inStartValue,inDAEVariableAttributesOption,inAbsynCommentOption,io,finalPrefix,source,declareComplexVars)
+  outDae := match (inComponentRef,inType,inFlow,inStream,inVarKind,inDirection,visibility,inExpExpOption,inInstDims,
+                   inStartValue,inDAEVariableAttributesOption,inAbsynCommentOption,io,finalPrefix,source,declareComplexVars)
     local
       DAE.DAElist dae;
       DAE.ComponentRef vn;
@@ -11635,23 +11878,24 @@ algorithm
       InstDims inst_dims;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
-      Boolean prot;
-      DAE.VarProtection prot1;
-    case (vn,ty,fl,st,vk,Absyn.INPUT(),prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars)
+      SCode.Visibility vis;
+      DAE.VarVisibility prot1;
+      
+    case (vn,ty,fl,st,vk,Absyn.INPUT(),vis,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars)
       equation 
-        prot1 = makeDaeProt(prot);
+        prot1 = makeDaeProt(vis);
         dae = daeDeclare4(vn, ty, fl, st, vk, DAE.INPUT(),prot1, e, inst_dims, start, dae_var_attr, comment,io,finalPrefix,source,declareComplexVars);
       then
         dae;
-    case (vn,ty,fl,st,vk,Absyn.OUTPUT(),prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars)
+    case (vn,ty,fl,st,vk,Absyn.OUTPUT(),vis,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars)
       equation 
-        prot1 = makeDaeProt(prot);
+        prot1 = makeDaeProt(vis);
         dae = daeDeclare4(vn, ty, fl, st, vk, DAE.OUTPUT(),prot1, e, inst_dims, start, dae_var_attr, comment,io,finalPrefix,source,declareComplexVars);
       then
         dae;
-    case (vn,ty,fl,st,vk,Absyn.BIDIR(),prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars)
+    case (vn,ty,fl,st,vk,Absyn.BIDIR(),vis,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars)
       equation 
-        prot1 = makeDaeProt(prot);
+        prot1 = makeDaeProt(vis);
         dae = daeDeclare4(vn, ty, fl, st, vk, DAE.BIDIR(),prot1, e, inst_dims, start, dae_var_attr, comment,io,finalPrefix,source,declareComplexVars);
       then
         dae;
@@ -11664,11 +11908,14 @@ algorithm
 end daeDeclare3;
 
 protected function makeDaeProt 
-"Creates a DAE.VarProtection from a Boolean"
- input Boolean prot;
- output DAE.VarProtection res;
+"Creates a DAE.VarVisibility from a SCode.Visibility"
+ input SCode.Visibility visibility;
+ output DAE.VarVisibility res;
 algorithm
-  res := Util.if_(prot,DAE.PROTECTED(),DAE.PUBLIC());
+  res := matchcontinue(visibility)
+    case (SCode.PROTECTED()) then DAE.PROTECTED();
+    case (SCode.PUBLIC()) then DAE.PUBLIC();
+  end matchcontinue;
 end makeDaeProt;
 
 protected function daeDeclare4 
@@ -11680,14 +11927,14 @@ protected function daeDeclare4
   input DAE.Stream inStream;
   input DAE.VarKind inVarKind;
   input DAE.VarDirection inVarDirection;
-  input DAE.VarProtection protection;
+  input DAE.VarVisibility protection;
   input Option<DAE.Exp> inExpExpOption;
   input InstDims inInstDims;
   input DAE.StartValue inStartValue;
   input Option<DAE.VariableAttributes> inDAEVariableAttributesOption;
   input Option<SCode.Comment> inAbsynCommentOption;
   input Absyn.InnerOuter io;
-  input Boolean finalPrefix;
+  input SCode.Final finalPrefix;
   input DAE.ElementSource source "the origin of the element";
   input Boolean declareComplexVars;
   output DAE.DAElist outDAe;
@@ -11711,7 +11958,7 @@ algorithm
       Integer dim;
       String s;
       DAE.Type ty,tp;
-      DAE.VarProtection prot;
+      DAE.VarVisibility prot;
       list<DAE.Subscript> finst_dims;
       Absyn.Path path;
       DAE.TType tty;
@@ -11719,25 +11966,25 @@ algorithm
     case (vn,ty as(DAE.T_INTEGER(varLstInt = _),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars) 
       equation 
         finst_dims = Util.listFlatten(inst_dims);
-        dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,finalPrefix);
+        dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,SCode.finalBool(finalPrefix));
       then DAE.DAE({DAE.VAR(vn,kind,dir,prot,DAE.T_INTEGER_DEFAULT,e,finst_dims,fl,st,source,dae_var_attr,comment,io)});
          
     case (vn,ty as(DAE.T_REAL(varLstReal = _),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars)
       equation 
         finst_dims = Util.listFlatten(inst_dims);
-        dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,finalPrefix);
+        dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,SCode.finalBool(finalPrefix));
       then DAE.DAE({DAE.VAR(vn,kind,dir,prot,DAE.T_REAL_DEFAULT,e,finst_dims,fl,st,source,dae_var_attr,comment,io)});
          
     case (vn,ty as(DAE.T_BOOL(varLstBool = _),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars) 
       equation 
         finst_dims = Util.listFlatten(inst_dims);
-        dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,finalPrefix);
+        dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,SCode.finalBool(finalPrefix));
       then DAE.DAE({DAE.VAR(vn,kind,dir,prot,DAE.T_BOOL_DEFAULT,e,finst_dims,fl,st,source,dae_var_attr,comment,io)});
          
     case (vn,ty as(DAE.T_STRING(varLstString = _),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars) 
       equation 
         finst_dims = Util.listFlatten(inst_dims);
-        dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,finalPrefix);
+        dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,SCode.finalBool(finalPrefix));
       then DAE.DAE({DAE.VAR(vn,kind,dir,prot,DAE.T_STRING_DEFAULT,e,finst_dims,fl,st,source,dae_var_attr,comment,io)});
          
     case (vn,ty as(DAE.T_ENUMERATION(index = SOME(_)),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars) 
@@ -11751,21 +11998,21 @@ algorithm
     case (vn,ty as(DAE.T_ENUMERATION(names = l),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars)
       equation 
         finst_dims = Util.listFlatten(inst_dims);
-        dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,finalPrefix);
+        dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,SCode.finalBool(finalPrefix));
       then DAE.DAE({DAE.VAR(vn,kind,dir,prot,ty,e,finst_dims,fl,st,source,dae_var_attr,comment,io)});
 
           /* Complex type that is ExternalObject*/
      case (vn, ty as (DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(path)),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars)
        equation 
          finst_dims = Util.listFlatten(inst_dims);
-         dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,finalPrefix);
+         dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,SCode.finalBool(finalPrefix));
        then DAE.DAE({DAE.VAR(vn,kind,dir,prot,ty,e,finst_dims,fl,st,source,dae_var_attr,comment,io)});
             
       /* instantiation of complex type extending from basic type */ 
     case (vn,(DAE.T_COMPLEX(complexClassType = ci,complexTypeOption = SOME(tp)),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars)
       equation
         (_,dae_var_attr) = instDaeVariableAttributes(Env.emptyCache(),Env.emptyEnv, DAE.NOMOD(), tp, {});
-        dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,finalPrefix);
+        dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,SCode.finalBool(finalPrefix));
         dae = daeDeclare4(vn,tp,fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars);
     then dae;
     
@@ -11801,7 +12048,7 @@ algorithm
     case (vn,(tty as DAE.T_FUNCTION(_,_,_),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars)
       equation
         finst_dims = Util.listFlatten(inst_dims);
-        dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,finalPrefix);
+        dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,SCode.finalBool(finalPrefix));
         path = ComponentReference.crefToPath(vn);
         ty = (tty,SOME(path));
       then DAE.DAE({DAE.VAR(vn,kind,dir,prot,ty,e,finst_dims,fl,st,source,dae_var_attr,comment,io)});
@@ -11812,7 +12059,7 @@ algorithm
         true = RTOpts.acceptMetaModelicaGrammar();
         true = Types.isBoxedType(ty);
         finst_dims = Util.listFlatten(inst_dims);
-        dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,finalPrefix);
+        dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,SCode.finalBool(finalPrefix));
       then DAE.DAE({DAE.VAR(vn,kind,dir,prot,ty,e,finst_dims,fl,st,source,dae_var_attr,comment,io)});
     /*----------------------------*/
     
@@ -11838,7 +12085,7 @@ protected function mktype
   input list<DAE.Var> inTypesVarLst;
   input Option<DAE.Type> inTypesTypeOption;
   input DAE.EqualityConstraint inEqualityConstraint;
-  input SCode.Class inClass;
+  input SCode.Element inClass;
   output DAE.Type outType;
 algorithm
   outType := matchcontinue (inPath,inState,inTypesVarLst,inTypesTypeOption,inEqualityConstraint,inClass)
@@ -11849,12 +12096,13 @@ algorithm
       DAE.Type bc2,functype,enumtype;
       ClassInf.State st;
       Option<DAE.Type> bc;
-      SCode.Class cl;
+      SCode.Element cl;
       DAE.TType arrayType;
       DAE.Type resType;
       ClassInf.State classState;
       DAE.EqualityConstraint equalityConstraint;
       DAE.FunctionAttributes funcattr;
+    
     case (p,ClassInf.TYPE_INTEGER(path = _),v,_,_,_)
       equation
         somep = getOptPath(p);
@@ -11951,7 +12199,7 @@ protected function mktypeWithArrays
   input ClassInf.State inState;
   input list<DAE.Var> inTypesVarLst;
   input Option<DAE.Type> inTypesTypeOption;
-  input SCode.Class inClass;
+  input SCode.Element inClass;
   output DAE.Type outType;
 algorithm
   outType := matchcontinue (inPath,inState,inTypesVarLst,inTypesTypeOption,inClass)
@@ -11961,9 +12209,10 @@ algorithm
       list<DAE.Var> vs,v,vl,l;
       DAE.Type tp,functype,enumtype;
       Option<Absyn.Path> somep;
-      SCode.Class cl;
+      SCode.Element cl;
       Option<tuple<DAE.TType, Option<Absyn.Path>>> bc;
       DAE.FunctionAttributes funcattr;
+    
     case (p,ci,vs,SOME(tp),_)
       equation
         true = Types.isArray(tp);
@@ -12665,18 +12914,17 @@ protected function checkProt
 "function: checkProt
   This function is used to check that a
   protected element is not modified."
-  input Boolean inBoolean;
+  input SCode.Visibility inVisibility;
   input DAE.Mod inMod;
   input DAE.ComponentRef inComponentRef;
 algorithm
-  _:=
-  matchcontinue (inBoolean,inMod,inComponentRef)
+  _ := matchcontinue (inVisibility,inMod,inComponentRef)
     local
       DAE.ComponentRef cref;
       String str;
-    case (false,_,cref) then ();
+    case (SCode.PUBLIC(),_,cref) then ();
     case (_,DAE.NOMOD(),_) then ();
-    case (true,_,cref)
+    case (SCode.PROTECTED(),_,cref)
       equation
         str = ComponentReference.printComponentRefStr(cref);
         Error.addMessage(Error.MODIFY_PROTECTED, {str});
@@ -12907,13 +13155,13 @@ algorithm
     case (_, _, _) then fail();
 
     // Array type and each prefix => return the expression and value.
-    case (SOME(DAE.NAMEMOD(mod = DAE.MOD(each_ = Absyn.EACH(), eqModOption = 
+    case (SOME(DAE.NAMEMOD(mod = DAE.MOD(eachPrefix = SCode.EACH(), eqModOption = 
         SOME(DAE.TYPED(modifierAsExp = exp, modifierAsValue = SOME(val)))))),
         (DAE.T_ARRAY(arrayDim = _), _), _)
       then (exp, val);
 
     // Array type and no each prefix => need to split the expression and value.
-    case (SOME(DAE.NAMEMOD(mod = DAE.MOD(each_ = Absyn.NON_EACH()))),
+    case (SOME(DAE.NAMEMOD(mod = DAE.MOD(eachPrefix = SCode.NOT_EACH()))),
         (DAE.T_ARRAY(arrayDim = _), _), _)
       equation
         Error.addSourceMessage(Error.INTERNAL_ERROR, 
@@ -12922,7 +13170,7 @@ algorithm
         fail();
 
     // Scalar type and no each prefix => return the expression and value.
-    case (SOME(DAE.NAMEMOD(mod = DAE.MOD(each_ = Absyn.NON_EACH(), eqModOption = 
+    case (SOME(DAE.NAMEMOD(mod = DAE.MOD(eachPrefix = SCode.NOT_EACH(), eqModOption = 
         SOME(DAE.TYPED(modifierAsExp = exp, modifierAsValue = SOME(val)))))), _, _)
       then (exp, val);
   end match;
@@ -12997,15 +13245,15 @@ public function instRecordConstructorElt
   input InstanceHierarchy inIH;
   input SCode.Element inElement;
   input DAE.Mod outerMod;
-  input Boolean inBoolean;
+  input Boolean inImplicit;
   output Env.Cache outCache;
   output InstanceHierarchy outIH;
   output DAE.Var outVar;
 algorithm
-  (outCache,outIH,outVar):=
-  matchcontinue (inCache,inEnv,inIH,inElement,outerMod,inBoolean)
+  (outCache,outIH,outVar) := 
+  matchcontinue (inCache,inEnv,inIH,inElement,outerMod,inImplicit)
     local
-      SCode.Class cl;
+      SCode.Element cl;
       list<Env.Frame> cenv,env;
       DAE.Mod mod_1;
       Absyn.ComponentRef owncref;
@@ -13013,7 +13261,11 @@ algorithm
       tuple<DAE.TType, Option<Absyn.Path>> tp_1;
       DAE.Binding bind;
       String id,str;
-      Boolean repl,prot,f,impl,s;
+      SCode.Replaceable repl;
+      SCode.Visibility vis;
+      SCode.Flow f;
+      SCode.Stream s;
+      Boolean impl;
       SCode.Attributes attr;
       list<Absyn.Subscript> dim;
       SCode.Accessibility acc;
@@ -13025,18 +13277,26 @@ algorithm
       SCode.Element elt;
       Env.Cache cache;
       Absyn.InnerOuter io;
-      Boolean finalPrefix;
+      SCode.Final finalPrefix;
       Absyn.Info info;
       InstanceHierarchy ih;
       Option<Absyn.ConstrainClass> cc;
 
     case (cache,env,ih,
-          SCode.COMPONENT(info = info, component = id,replaceablePrefix = repl,protectedPrefix = prot,
-                          attributes = (attr as SCode.ATTR(arrayDims = dim,flowPrefix = f,streamPrefix=s,
-                          accesibility = acc, variability = var,direction = dir)),
+          SCode.COMPONENT(name = id,
+                          prefixes = SCode.PREFIXES(
+                            replaceablePrefix = repl,
+                            visibility = vis,
+                            finalPrefix = finalPrefix,
+                            innerOuter = io
+                          ),
+                          attributes = (attr as 
+                          SCode.ATTR(arrayDims = dim,flowPrefix = f,streamPrefix=s,
+                                     accesibility = acc, variability = var,direction = dir)),
                           typeSpec = Absyn.TPATH(t, _),modifications = mod,
-                          comment = comment,innerOuter=io,
-                          finalPrefix = finalPrefix,cc=cc),outerMod,impl)
+                          comment = comment,
+                          info = info),
+          outerMod,impl)
       equation
         // - Prefixes (constant, parameter, final, discrete, input, output, ...) of the remaining record components are removed.
         var = SCode.VAR();
@@ -13049,17 +13309,17 @@ algorithm
         (cache,mod_1) = Mod.elabMod(cache, env, ih, Prefix.NOPRE(), mod, impl, info);
         mod_1 = Mod.merge(outerMod,mod_1,cenv,Prefix.NOPRE());
         owncref = Absyn.CREF_IDENT(id,{});
-        (cache,dimexp) = elabArraydim(cache,env, owncref,t, dim,NONE(), false,NONE(),true, false,Prefix.NOPRE(),info,{});
+        (cache,dimexp) = elabArraydim(cache, env, owncref, t, dim, NONE(), false, NONE(), true, false, Prefix.NOPRE(), info, {});
         //Debug.fprint("recconst", "calling inst_var\n");
-        (cache,_,ih,_,_,_,tp_1,_) = instVar(cache,cenv, ih, UnitAbsyn.noStore,ClassInf.FUNCTION(Absyn.IDENT("")), mod_1, Prefix.NOPRE(),
-          Connect.emptySet, id, cl, attr, prot,dimexp, {}, {}, impl, comment,io,finalPrefix,info,ConnectionGraph.EMPTY, env);
+        (cache,_,ih,_,_,_,tp_1,_) = instVar(cache, cenv, ih, UnitAbsyn.noStore, ClassInf.FUNCTION(Absyn.IDENT("")), mod_1, Prefix.NOPRE(),
+          Connect.emptySet, id, cl, attr, vis, dimexp, {}, {}, impl, comment, io, finalPrefix, info, ConnectionGraph.EMPTY, env);
         //Debug.fprint("recconst", "Type of argument:");
         Debug.fprint("recconst", Types.printTypeStr(tp_1));
         //Debug.fprint("recconst", "\nMod=");
         Debug.fcall("recconst", Mod.printMod, mod_1);
         (cache,bind) = makeBinding(cache,env, attr, mod_1, tp_1, Prefix.NOPRE(), id, info);
       then
-        (cache,ih,DAE.TYPES_VAR(id,DAE.ATTR(f,s,acc,var,dir,Absyn.UNSPECIFIED()),prot,tp_1,bind,NONE()));
+        (cache,ih,DAE.TYPES_VAR(id,DAE.ATTR(f,s,acc,var,dir,Absyn.NOT_INNER_OUTER()),vis,tp_1,bind,NONE()));
 
     case (cache,env,ih,elt,outerMod,impl)
       equation
@@ -13108,9 +13368,9 @@ algorithm
       Absyn.Path cr,path;
       list<Env.Frame> env,env_1,env_2;
       DAE.DAElist dae1,dae;
-      list<SCode.Class> cdecls;
+      list<SCode.Element> cdecls;
       String name2,n,pathstr,name,cname_str;
-      SCode.Class cdef;
+      SCode.Element cdef;
       Env.Cache cache;
       InstanceHierarchy ih;
 
@@ -13166,9 +13426,9 @@ algorithm
     local
       DAE.DAElist dae;
       list<Env.Frame> env_1,env;
-      SCode.Class c;
+      SCode.Element c;
       String name1,name2;
-      list<SCode.Class> cs;
+      list<SCode.Element> cs;
       Absyn.Path path;
       Env.Cache cache;
       InstanceHierarchy ih;
@@ -13207,22 +13467,23 @@ algorithm
   (ostring ,oinfo) := match(sele)
     local
       Absyn.Path path;
-      String name_,ret;
+      String name,ret;
       Absyn.Import imp;
       Absyn.Info info;
 
-  case(SCode.EXTENDS(baseClassPath=path))
-    equation
-      ret = Absyn.pathString(path);
-    then (ret,Absyn.dummyInfo);
-  case(SCode.CLASSDEF(name = name_, classDef=SCode.CLASS(info = info)))
-    then (name_,info);
-  case(SCode.COMPONENT(component = name_, info=info))
-    then (name_,info);
-  case(SCode.IMPORT(imp = imp, info = info))
-    equation name_ = Absyn.printImportString(imp);
-  then (name_,info);
-end match;
+    case(SCode.CLASS(name = name, info = info)) then (name, info);
+    case(SCode.COMPONENT(name = name, info=info)) then (name, info);      
+    case(SCode.EXTENDS(baseClassPath=path))
+      equation
+        ret = Absyn.pathString(path);
+      then 
+        (ret, Absyn.dummyInfo);
+    case(SCode.IMPORT(imp = imp, info = info))
+      equation 
+        name = Absyn.printImportString(imp);
+      then 
+        (name, info);
+  end match;
 end extractCurrentName;
 
 protected function orderConnectEquationsPutNonExpandableFirst
@@ -13333,7 +13594,7 @@ algorithm
     case ({}) then ({},{},{});
 
     // inner components
-    case ( ( comp as (SCode.COMPONENT(component=_,innerOuter = io), _) ) :: rest)
+    case ( ( comp as (SCode.COMPONENT(name=_,prefixes=SCode.PREFIXES(innerOuter = io)), _) ) :: rest)
       equation
         true = Absyn.isInner(io);
         false = Absyn.isOuter(io);
@@ -13342,7 +13603,7 @@ algorithm
         (comp::innerComps,innerouterComps,otherComps);
         
     // inner outer components
-    case ( ( comp as (SCode.COMPONENT(component=_,innerOuter = io), _) ) :: rest)
+    case ( ( comp as (SCode.COMPONENT(name=_,prefixes=SCode.PREFIXES(innerOuter = io)), _) ) :: rest)
       equation
         true = Absyn.isInner(io);
         true = Absyn.isOuter(io);
@@ -13409,14 +13670,14 @@ algorithm
     case ({}) then ({},{},{},{});
 
     // class definitions with class extends
-    case ((cdef as SCode.CLASSDEF(classDef = SCode.CLASS(classDef = SCode.CLASS_EXTENDS(baseClassName = _))))::xs)
+    case ((cdef as SCode.CLASS(classDef = SCode.CLASS_EXTENDS(baseClassName = _)))::xs)
       equation
         (cdefImpElts,classextendsElts,extElts,comps) = splitElts(xs);
       then
         (cdefImpElts,cdef :: classextendsElts,extElts,comps);
 
     // class definitions without class extends
-    case (((cdef as SCode.CLASSDEF(name = _)) :: xs))
+    case (((cdef as SCode.CLASS(name = _)) :: xs))
       equation
         (cdefImpElts,classextendsElts,extElts,comps) = splitElts(xs);
       then
@@ -13444,7 +13705,7 @@ algorithm
         (cdefImpElts,classextendsElts,ext::extElts,comps);
 
     // components
-    case ((comp as SCode.COMPONENT(component=_)) :: xs)
+    case ((comp as SCode.COMPONENT(name=_)) :: xs)
       equation
         (cdefImpElts,classextendsElts,extElts,comps) = splitElts(xs);
       then
@@ -13473,14 +13734,14 @@ algorithm
     case ({}) then ({},{},{},{});
 
     // class definitions with class extends
-    case ((elt as SCode.CLASSDEF(classDef = SCode.CLASS(classDef = SCode.CLASS_EXTENDS(baseClassName = _))))::xs)
+    case ((elt as SCode.CLASS(classDef = SCode.CLASS_EXTENDS(baseClassName = _)))::xs)
       equation
         (impElts,defElts,classextendsElts,filtered) = splitEltsNoComponents(xs);
       then
         (impElts,defElts,elt::classextendsElts,filtered);
 
     // class definitions without class extends
-    case (((elt as SCode.CLASSDEF(name = _)) :: xs))
+    case (((elt as SCode.CLASS(name = _)) :: xs))
       equation
         (impElts,defElts,classextendsElts,filtered) = splitEltsNoComponents(xs);
       then
@@ -13535,14 +13796,14 @@ algorithm
     case ({}) then ({},{},{},{},{});
 
     // class definitions with class extends
-    case ((cdef as SCode.CLASSDEF(classDef = SCode.CLASS(classDef = SCode.CLASS_EXTENDS(baseClassName = _))))::xs)
+    case ((cdef as SCode.CLASS(classDef = SCode.CLASS_EXTENDS(baseClassName = _)))::xs)
       equation
         (cdefImpElts,classextendsElts,extElts,innerComps,otherComps) = splitEltsInnerAndOther(xs);
       then
         (cdefImpElts,cdef :: classextendsElts,extElts,innerComps,otherComps);
 
     // class definitions without class extends
-    case (((cdef as SCode.CLASSDEF(name = _)) :: xs))
+    case (((cdef as SCode.CLASS(name = _)) :: xs))
       equation
         (cdefImpElts,classextendsElts,extElts,innerComps,otherComps) = splitEltsInnerAndOther(xs);
       then
@@ -13570,7 +13831,7 @@ algorithm
         (cdefImpElts,classextendsElts,ext::extElts,innerComps,otherComps);
 
     // inner components
-    case ((comp as SCode.COMPONENT(component=_,innerOuter = io) ) :: xs)
+    case ((comp as SCode.COMPONENT(name=_,prefixes = SCode.PREFIXES(innerOuter = io))) :: xs)
       equation
         true = Absyn.isInner(io);
         (cdefImpElts,classextendsElts,extElts,innerComps,otherComps) = splitEltsInnerAndOther(xs);
@@ -13578,7 +13839,7 @@ algorithm
         (cdefImpElts,classextendsElts,extElts,comp::innerComps,otherComps);
 
     // any other components
-    case ((comp as SCode.COMPONENT(component=_) ):: xs)
+    case ((comp as SCode.COMPONENT(name=_) ):: xs)
       equation
         (cdefImpElts,classextendsElts,extElts,innerComps,otherComps) = splitEltsInnerAndOther(xs);
       then
@@ -13599,23 +13860,23 @@ algorithm
       list<SCode.Element> compElts;
 
     // input/output come first!
-    case (SCode.COMPONENT(component=_,attributes = SCode.ATTR(direction = Absyn.INPUT())), inCompElts)
+    case (SCode.COMPONENT(name=_,attributes = SCode.ATTR(direction = Absyn.INPUT())), inCompElts)
       then inComp::inCompElts;
-    case (SCode.COMPONENT(component=_,attributes = SCode.ATTR(direction = Absyn.OUTPUT())), inCompElts)
+    case (SCode.COMPONENT(name=_,attributes = SCode.ATTR(direction = Absyn.OUTPUT())), inCompElts)
       then inComp::inCompElts;
     // put inner/outer in front.
-    case (SCode.COMPONENT(component=_,innerOuter = Absyn.INNER()), inCompElts)
+    case (SCode.COMPONENT(name=_,prefixes = SCode.PREFIXES(innerOuter = Absyn.INNER())), inCompElts)
       then inComp::inCompElts;
-    case (SCode.COMPONENT(component=_,innerOuter = Absyn.INNEROUTER()), inCompElts)
+    case (SCode.COMPONENT(name=_,prefixes = SCode.PREFIXES(innerOuter = Absyn.INNER_OUTER())), inCompElts)
       then inComp::inCompElts;
     // put constants in front
-    case (SCode.COMPONENT(component=_,attributes = SCode.ATTR(variability = SCode.CONST())), inCompElts)
+    case (SCode.COMPONENT(name=_,attributes = SCode.ATTR(variability = SCode.CONST())), inCompElts)
       then inComp::inCompElts;
     // put parameters in front
-    case (SCode.COMPONENT(component=_,attributes = SCode.ATTR(variability = SCode.PARAM())), inCompElts)
+    case (SCode.COMPONENT(name=_,attributes = SCode.ATTR(variability = SCode.PARAM())), inCompElts)
       then inComp::inCompElts;
     // all other append to the end.
-    case (SCode.COMPONENT(component=_), inCompElts)
+    case (SCode.COMPONENT(name=_), inCompElts)
       equation
         compElts = listAppend(inCompElts, {inComp});
       then compElts;
@@ -13636,15 +13897,17 @@ algorithm
       SCode.Element cdef;
     case ({}) then ({},{});
 
-    case ((cdef as SCode.CLASSDEF(classDef = SCode.CLASS(classDef = SCode.CLASS_EXTENDS(baseClassName = _))))::xs)
+    case ((cdef as SCode.CLASS(classDef = SCode.CLASS_EXTENDS(baseClassName = _)))::xs)
       equation
         (classextendsElts,res) = splitClassExtendsElts(xs);
-      then (cdef :: classextendsElts, res);
+      then 
+        (cdef :: classextendsElts, res);
 
     case cdef::xs
       equation
         (classextendsElts,res) = splitClassExtendsElts(xs);
-      then (classextendsElts, cdef :: res);
+      then 
+        (classextendsElts, cdef :: res);
 
   end matchcontinue;
 end splitClassExtendsElts;
@@ -13658,7 +13921,7 @@ protected function addClassdefsToEnv3
   input SCode.Element sele;
   output Env.Env oenv;
   output InstanceHierarchy outIH;
-  output SCode.Class osele;
+  output SCode.Element osele;
 algorithm
   (oenv,outIH,osele) := match(env,inIH,inPrefix,inMod,sele)
     local
@@ -13666,21 +13929,22 @@ algorithm
       SCode.Element sele2;
       Env.Env env2;
       String str;
-      SCode.Class retcl;
+      SCode.Element retcl;
       InstanceHierarchy ih;
       list<DAE.SubMod> lsm,lsm2;
       Prefix.Prefix pre;
 
     case(_,ih,pre,NONE(),_) then fail();
 
-    case(env,ih,pre, SOME(mo as DAE.MOD(_,_, lsm ,_)), sele as SCode.CLASSDEF(name=str))
+    case(env,ih,pre, SOME(mo as DAE.MOD(_,_, lsm ,_)), sele as SCode.CLASS(name=str))
       equation
-        (mo2,lsm2) =  extractCorrectClassMod2(lsm,str,{});
+        (mo2,lsm2) = extractCorrectClassMod2(lsm,str,{});
         // TODO: classinf below should be FQ
-      (_,env2,ih, sele2 as SCode.CLASSDEF(classDef = retcl) , _, _) =
-      redeclareType(Env.emptyCache(),env,ih, mo2,sele, pre, ClassInf.MODEL(Absyn.IDENT(str)),Connect.emptySet, true,DAE.NOMOD());
+        (_,env2,ih, sele2 as SCode.CLASS(name = _) , _, _) =
+        redeclareType(Env.emptyCache(), env, ih, mo2, sele, pre, ClassInf.MODEL(Absyn.IDENT(str)), Connect.emptySet, true, DAE.NOMOD());
       then
-        (env2,ih,retcl);
+        (env2,ih,sele2);
+    
   end match;
 end addClassdefsToEnv3;
 
@@ -13729,87 +13993,110 @@ public function traverseModAddFinal
  If it is final, traverses down in the
  modifier setting all final elements to true."
   input SCode.Mod mod;
-  input Boolean finalPrefix;
+  input SCode.Final finalPrefix;
   output SCode.Mod mod2;
-algorithm mod2 := matchcontinue(mod,finalPrefix)
-  case(mod, false) then mod;
-  case(mod, true)
-    equation mod = traverseModAddFinal2(mod);
-    then
-      mod;
-  case(_,_)
-    equation print(" we failed with traverseModAddFinal\n");
-      then fail();
-end matchcontinue;
+algorithm 
+  mod2 := matchcontinue(mod,finalPrefix)
+    case(mod, SCode.NOT_FINAL()) then mod;
+    case(mod, SCode.FINAL())
+      equation 
+        mod = traverseModAddFinal2(mod);
+      then
+        mod;
+    case(_,_)
+      equation 
+        print(" we failed with traverseModAddFinal\n");
+      then 
+        fail();
+  end matchcontinue;
 end traverseModAddFinal;
 
 protected function traverseModAddFinal2
 "Helper function for traverseModAddFinal"
   input SCode.Mod mod;
   output SCode.Mod mod2;
-algorithm mod2 := matchcontinue(mod)
-  local
-    list<SCode.Element> lelement;
-    Absyn.Each each_;
-    list<SCode.SubMod> subs;
-    Option<tuple<Absyn.Exp,Boolean>> eq;
-  case(SCode.NOMOD()) then SCode.NOMOD();
-  case(SCode.REDECL(_,lelement))
-    equation
-      lelement = traverseModAddFinal3(lelement);
-    then
-      SCode.REDECL(true,lelement);
-  case(SCode.MOD(_,each_,subs,eq))
-    equation
-      subs = traverseModAddFinal4(subs);
-    then
-      SCode.MOD(true,each_,subs,eq);
-  case(_) equation print(" we failed with traverseModAddFinal2\n"); then fail();
-end matchcontinue;
+algorithm 
+  mod2 := matchcontinue(mod)
+    local
+      list<SCode.Element> lelement;
+      SCode.Each each_;
+      list<SCode.SubMod> subs;
+      Option<tuple<Absyn.Exp,Boolean>> eq;
+  
+    case(SCode.NOMOD()) then SCode.NOMOD();
+  
+    case(SCode.REDECL(_,each_,lelement))
+      equation
+        lelement = traverseModAddFinal3(lelement);
+      then
+        SCode.REDECL(SCode.FINAL(),each_,lelement);
+  
+    case(SCode.MOD(_,each_,subs,eq))
+      equation
+        subs = traverseModAddFinal4(subs);
+      then
+        SCode.MOD(SCode.FINAL(),each_,subs,eq);
+  
+    case(_) equation print(" we failed with traverseModAddFinal2\n"); then fail();
+    
+  end matchcontinue;
 end traverseModAddFinal2;
 
 protected function traverseModAddFinal3
 "Helper function for traverseModAddFinal2"
   input list<SCode.Element> ltuple;
   output list<SCode.Element> oltuple;
-algorithm oltuple := matchcontinue(ltuple)
-  local
-    list<SCode.Element> rest;
-    SCode.Element ele;
-    SCode.Attributes c6;
-    Absyn.TypeSpec c7;
-    SCode.Mod c8,mod;
-    Option<Absyn.ConstrainClass> c13;
-    Ident c1;
-    Absyn.InnerOuter c2;
-    Boolean c3,c4,c5,redecl;
-    Option<SCode.Comment> c10;
-    Option<Absyn.Exp> c11;
-    Absyn.Info c12;
-    Absyn.Path p;
-    Option<SCode.Annotation> ann;
-    Absyn.Info info;
-  case({}) then {};
-  case(SCode.COMPONENT(c1,c2,c3,c4,c5,redecl,c6,c7,c8,c10,c11,c12,c13)::rest )
-    equation
-      rest = traverseModAddFinal3(rest);
-      mod = traverseModAddFinal2(c8);
-    then
-      SCode.COMPONENT(c1,c2,c3,c4,c5,redecl,c6,c7,mod,c10,c11,c12,c13)::rest;
-  case((ele as SCode.IMPORT(imp = _))::rest)
-    equation
-      rest = traverseModAddFinal3(rest);
-    then ele::rest;
-  case((ele as SCode.CLASSDEF(name = _))::rest)
-    equation
-      rest = traverseModAddFinal3(rest);
-    then ele::rest;
-  case(SCode.EXTENDS(p,mod,ann,info)::rest)
-    equation
-       mod = traverseModAddFinal2(mod);
-    then SCode.EXTENDS(p,mod,ann,info)::rest;
-  case(_) equation print(" we failed with traverseModAddFinal3\n"); then fail();
-end matchcontinue;
+algorithm 
+  oltuple := matchcontinue(ltuple)
+    local
+      list<SCode.Element> rest;
+      SCode.Element ele;
+      SCode.Attributes attr;
+      Absyn.TypeSpec tySpec;
+      SCode.Mod mod, oldmod;
+      Ident name;
+      SCode.Visibility vis;
+      SCode.Prefixes prefixes;
+      Option<SCode.Comment> cmt;
+      Option<Absyn.Exp> cond;
+      Absyn.Path p;
+      Option<SCode.Annotation> ann;
+      Absyn.Info info;
+      
+    case({}) then {};
+      
+    case( SCode.COMPONENT(name,prefixes,attr,tySpec,oldmod,cmt,cond,info)::rest )
+      equation
+        rest = traverseModAddFinal3(rest);
+        mod = traverseModAddFinal2(oldmod);
+      then
+        SCode.COMPONENT(name,prefixes,attr,tySpec,mod,cmt,cond,info)::rest;
+        
+    case((ele as SCode.IMPORT(imp = _))::rest)
+      equation
+        rest = traverseModAddFinal3(rest);
+      then 
+        ele::rest;
+        
+    case((ele as SCode.CLASS(name = _))::rest)
+      equation
+        rest = traverseModAddFinal3(rest);
+      then 
+        ele::rest;
+        
+    case(SCode.EXTENDS(p,vis,mod,ann,info)::rest)
+      equation
+        mod = traverseModAddFinal2(mod);
+      then 
+        SCode.EXTENDS(p,vis,mod,ann,info)::rest;
+        
+    case(_) 
+      equation 
+        print(" we failed with traverseModAddFinal3\n"); 
+      then 
+        fail();
+    
+  end matchcontinue;
 end traverseModAddFinal3;
 
 protected function traverseModAddFinal4
@@ -13858,20 +14145,24 @@ protected function modifyInstantiateClass
 algorithm
   (omod1,omod2) := matchcontinue(inMod,path)
     local
-      Boolean fn;
+      SCode.Final f;
+      SCode.Each e;
       list<tuple<SCode.Element, DAE.Mod>> redecls,p1,p2;
       Integer i1;
-    case(DAE.REDECL(fn,redecls), path)
+      
+    case(DAE.REDECL(f,e,redecls), path)
       equation
         (p1,p2) = modifyInstantiateClass2(redecls,path);
         i1 = listLength(p1);
-        omod1 = Util.if_(i1==0,DAE.NOMOD(), DAE.REDECL(fn,p1));
+        omod1 = Util.if_(i1==0,DAE.NOMOD(), DAE.REDECL(f,e,p1));
         i1 = listLength(p2);
-        omod2 = Util.if_(i1==0,DAE.NOMOD(), DAE.REDECL(fn,p2));
+        omod2 = Util.if_(i1==0,DAE.NOMOD(), DAE.REDECL(f,e,p2));
       then
         (omod1,omod2);
+    
     case(inMod,_)
       then (DAE.NOMOD(), inMod);
+
   end matchcontinue;
 end modifyInstantiateClass;
 
@@ -13889,7 +14180,7 @@ algorithm
       DAE.Mod m;
       String id1,id2;
     case({},_) then ({},{});
-    case( (head as  (SCode.CLASSDEF(name = id1),m))::rest, path)
+    case( (head as  (SCode.CLASS(name = id1),m))::rest, path)
       equation
         id2 = Absyn.pathString(path);
         true = stringEq(id1,id2);
@@ -13921,14 +14212,14 @@ protected function removeSelfReferenceAndUpdate
   input Absyn.Path inPath;
   input ClassInf.State inState;
   input Connect.Sets icsets;
-  input Boolean p;
+  input SCode.Visibility visibility;
   input SCode.Attributes iattr;
   input Boolean impl;
   input Absyn.InnerOuter io;
   input InstDims inst_dims;
   input Prefix.Prefix pre;
   input DAE.Mod mods;
-  input Boolean finalPrefix;
+  input SCode.Final finalPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output Env.Env outEnv;
@@ -13937,7 +14228,7 @@ protected function removeSelfReferenceAndUpdate
   output list<Absyn.ComponentRef> o1;
 algorithm
   (outCache,outEnv,outIH,outStore,o1) :=
-  matchcontinue(cache,inEnv,inIH,store,inRefs,inRef,inPath,inState,icsets,p,iattr,impl,io,inst_dims,pre,mods,finalPrefix,info)
+  matchcontinue(cache,inEnv,inIH,store,inRefs,inRef,inPath,inState,icsets,visibility,iattr,impl,io,inst_dims,pre,mods,finalPrefix,info)
     local
       Absyn.Path sty;
       Absyn.ComponentRef c1;
@@ -13949,10 +14240,12 @@ algorithm
       SCode.Variability param;
       Absyn.Direction dir;
       Ident n;
-      SCode.Class c;
+      SCode.Element c;
       DAE.Type ty;
       ClassInf.State state;
-      Boolean prot,flowPrefix,streamPrefix;
+      SCode.Visibility vis;
+      SCode.Flow flowPrefix;
+      SCode.Stream streamPrefix;
       Connect.Sets csets;
       SCode.Attributes attr;
       list<DAE.Dimension> dims;
@@ -13968,7 +14261,7 @@ algorithm
       then
         (cache,env,ih,store,cl2);
 
-    case(cache,env,ih,store,cl1,c1 as Absyn.CREF_IDENT(name = n) ,sty,state,csets,prot,
+    case(cache,env,ih,store,cl1,c1 as Absyn.CREF_IDENT(name = n) ,sty,state,csets,vis,
          (attr as SCode.ATTR(arrayDims = ad, flowPrefix = flowPrefix, streamPrefix = streamPrefix,
                              accesibility = acc, variability = param, direction = dir)),
          impl,io,inst_dims,pre,mods,finalPrefix,info)
@@ -13978,11 +14271,11 @@ algorithm
         (cache,c,cenv) = Lookup.lookupClass(cache,env, sty, true);
         (cache,dims) = elabArraydim(cache,cenv, c1, sty, ad,NONE(), impl,NONE(),true, false,pre,info,inst_dims);
         (cache,compenv,ih,store,_,_,ty,_) = 
-          instVar(cache,cenv,ih, store,state, DAE.NOMOD(), pre, csets, n, c, attr, prot, dims, {}, inst_dims, true,NONE(),io,finalPrefix,info,ConnectionGraph.EMPTY,env);
+          instVar(cache,cenv,ih, store,state, DAE.NOMOD(), pre, csets, n, c, attr, vis, dims, {}, inst_dims, true,NONE(),io,finalPrefix,info,ConnectionGraph.EMPTY,env);
 
         // print("component: " +& n +& " ty: " +& Types.printTypeStr(ty) +& "\n");
 
-        new_var = DAE.TYPES_VAR(n,DAE.ATTR(flowPrefix,streamPrefix,acc,param,dir,io),prot,ty,DAE.UNBOUND(),NONE());
+        new_var = DAE.TYPES_VAR(n,DAE.ATTR(flowPrefix,streamPrefix,acc,param,dir,io),vis,ty,DAE.UNBOUND(),NONE());
         env = Env.updateFrameV(env, new_var, Env.VAR_TYPED(), compenv);
       then
         (cache,env,ih,store,cl2);
@@ -13998,21 +14291,23 @@ end removeSelfReferenceAndUpdate;
 
 protected function replaceClassname
 "function to replace the class name"
-  input SCode.Class isc;
+  input SCode.Element isc;
   input Ident name;
-  output SCode.Class osc;
+  output SCode.Element osc;
 algorithm
   (osc) := matchcontinue(isc,name)
     local
-      SCode.Class sc1;
-      Boolean b2,b3;
+      SCode.Element sc1;
+      SCode.Encapsulated e;
+      SCode.Partial p;
+      SCode.Prefixes prefixes;
       SCode.Restriction r;
-      SCode.ClassDef p;
+      SCode.ClassDef cd;
       Absyn.Info i;
 
-    case( sc1 as SCode.CLASS(_,b2,b3,r,p,i),name)
+    case( sc1 as SCode.CLASS(_,prefixes,e,p,r,cd,i),name)
       then
-        SCode.CLASS(name,b2,b3,r,p,i);
+        SCode.CLASS(name,prefixes,e,p,r,cd,i);
   end matchcontinue;
 end replaceClassname;
 
@@ -14040,7 +14335,7 @@ algorithm
       String name;
       Absyn.Exp cond_exp;
       Boolean is_cond;
-    case (_, _, SCode.COMPONENT(component = name, condition = SOME(cond_exp)), _, info)
+    case (_, _, SCode.COMPONENT(name = name, condition = SOME(cond_exp)), _, info)
       equation
         (is_cond, cache) = instConditionalDeclaration(cache, env, cond_exp, name, prefix, info);
       then
@@ -14069,16 +14364,16 @@ algorithm
     case (_, _, _, _, _, info)
       equation
         (cache, e, DAE.PROP(type_ = t, constFlag = c), _) = 
-          Static.elabExp(cache, env, cond, false,NONE(), false, pre, info);
+          Static.elabExp(cache, env, cond, false, NONE(), false, pre, info);
         true = Types.isBoolean(t);
         true = Types.isParameterOrConstant(c);
-        (cache, Values.BOOL(b), _) = Ceval.ceval(cache, env, e, false,NONE(), NONE(), Ceval.MSG());
+        (cache, Values.BOOL(b), _) = Ceval.ceval(cache, env, e, false, NONE(), NONE(), Ceval.MSG());
       then
         (b, cache);
     case (_, _, _, _, _, info)
       equation
         (cache, e, DAE.PROP(type_ = t), _) = 
-          Static.elabExp(cache, env, cond, false,NONE(), false, pre, info);
+          Static.elabExp(cache, env, cond, false, NONE(), false, pre, info);
         false = Types.isBoolean(t);
         exp_str = ExpressionDump.printExpStr(e);
         type_str = Types.unparseType(t);
@@ -14088,7 +14383,7 @@ algorithm
     case (_, _, _, _, _, info)
       equation
         (cache, e, DAE.PROP(type_ = t, constFlag = c), _) = 
-          Static.elabExp(cache, env, cond, false,NONE(), false, pre, info);
+          Static.elabExp(cache, env, cond, false, NONE(), false, pre, info);
         true = Types.isBoolean(t);
         false = Types.isParameterOrConstant(c);
         exp_str = ExpressionDump.printExpStr(e);
@@ -14115,7 +14410,7 @@ protected function checkRecursiveDefinitionRecConst
  restriction is record and ci_state
  is function"
   input ClassInf.State ci_state;
-  input SCode.Class cl;
+  input SCode.Element cl;
   output Boolean res;
 algorithm
   res := matchcontinue(ci_state,cl)
@@ -14135,7 +14430,8 @@ algorithm
   outAttr := matchcontinue(attr,pre)
     local
       Absyn.ArrayDim ad;
-      Boolean fl,st;
+      SCode.Flow fl;
+      SCode.Stream st;
       SCode.Accessibility acc;
       Absyn.Direction dir;
       SCode.Variability vt;
@@ -14174,27 +14470,27 @@ end checkUseConstValue;
 
 public function propagateAbSCDirection "
 Author BZ 2008-05
-This function merged derived Absyn.ElementAttributes with the current input SCode.ElementAttributes."
+This function merged derived SCode.Attributes with the current input SCode.Attributes."
   input Absyn.Direction v1;
-  input Option<Absyn.ElementAttributes> optDerAttr;
+  input Option<SCode.Attributes> optDerAttr;
   output Absyn.Direction v3;
-algorithm v3 := matchcontinue(v1,optDerAttr)
-  local Absyn.Direction v2;
-    
-  case(v1,NONE()) then v1;
-  case(Absyn.BIDIR(),SOME(Absyn.ATTR(direction=v2))) then v2;
-  case(v1,SOME(Absyn.ATTR(direction=Absyn.BIDIR()))) then v1;
-  case(v1,SOME(Absyn.ATTR(direction=v2)))
-    equation
-      equality(v1 = v2);
-    then v1;
-  case(_,_)
-    equation
-      print(" failure in propagateAbSCDirection, Absyn.DIRECTION mismatch");
-      Error.addMessage(Error.COMPONENT_INPUT_OUTPUT_MISMATCH, {"",""});
-    then
-      fail();
-end matchcontinue;
+algorithm 
+  v3 := matchcontinue(v1,optDerAttr)
+    local Absyn.Direction v2;
+    case(v1,NONE()) then v1;
+    case(Absyn.BIDIR(),SOME(SCode.ATTR(direction=v2))) then v2;
+    case(v1,SOME(SCode.ATTR(direction=Absyn.BIDIR()))) then v1;
+    case(v1,SOME(SCode.ATTR(direction=v2)))
+      equation
+        equality(v1 = v2);
+      then v1;
+    case(_,_)
+      equation
+        print(" failure in propagateAbSCDirection, Absyn.DIRECTION mismatch");
+        Error.addMessage(Error.COMPONENT_INPUT_OUTPUT_MISMATCH, {"",""});
+      then
+        fail();
+  end matchcontinue;
 end propagateAbSCDirection;
 
 protected function makeCrefBaseType "Function: makeCrefBaseType"
@@ -14431,7 +14727,7 @@ algorithm
     DAE.ComponentRef componentRef;
     DAE.VarKind kind;
     DAE.VarDirection direction;
-    DAE.VarProtection protection;
+    DAE.VarVisibility protection;
     DAE.Type ty;
     DAE.InstDims  dims;
     DAE.Flow flowPrefix;
@@ -14596,8 +14892,8 @@ uniontype CachedInstItem
   // *important* inputs/outputs for instClassIn
   record FUNC_instClassIn
     tuple<Env.Cache, Env.Env, InstanceHierarchy, UnitAbsyn.InstStore,
-          DAE.Mod, Prefix.Prefix, Connect.Sets, ClassInf.State, SCode.Class,
-          Boolean, InstDims, Boolean,ConnectionGraph.ConnectionGraph,
+          DAE.Mod, Prefix.Prefix, Connect.Sets, ClassInf.State, SCode.Element,
+          SCode.Visibility, InstDims, Boolean, ConnectionGraph.ConnectionGraph,
           Option<DAE.ComponentRef>> inputs;
     tuple</*Env.Cache, */
           Env.Env, 
@@ -14608,7 +14904,7 @@ uniontype CachedInstItem
           ClassInf.State, 
           list<DAE.Var>,
           Option<DAE.Type>, 
-          Option<Absyn.ElementAttributes>, 
+          Option<SCode.Attributes>, 
           DAE.EqualityConstraint,
           ConnectionGraph.ConnectionGraph
          > outputs;
@@ -14617,7 +14913,7 @@ uniontype CachedInstItem
   // *important* inputs/outputs for partialInstClassIn
   record FUNC_partialInstClassIn
     tuple<Env.Cache, Env.Env, InstanceHierarchy, DAE.Mod, Prefix.Prefix,
-          Connect.Sets, ClassInf.State, SCode.Class, Boolean,
+          Connect.Sets, ClassInf.State, SCode.Element, SCode.Visibility,
           InstDims> inputs;
     tuple</*Env.Cache,*/ 
           Env.Env, 
@@ -14787,13 +15083,13 @@ end checkModelBalancingFilterByRestriction;
 */
 
 protected function isPartial
-  input Boolean partialPrefix;
+  input SCode.Partial partialPrefix;
   input DAE.Mod mods;
-  output Boolean outPartial;
+  output SCode.Partial outPartial;
 algorithm
   outPartial := matchcontinue (partialPrefix,mods)
-    case (true,DAE.NOMOD()) then true;
-    case (_,_) then false;
+    case (SCode.PARTIAL(),DAE.NOMOD()) then SCode.PARTIAL();
+    case (_,_) then SCode.NOT_PARTIAL();
   end matchcontinue;
 end isPartial;
 
@@ -14822,10 +15118,15 @@ algorithm
       Absyn.Path p;
       SCode.ClassDef cd;
       Option<SCode.Comment> cmt;
+
     case (_, _, SCode.PARTS(annotationLst = al, comment = c))
-      then SOME(SCode.CLASS_COMMENT(al, c));
-    case (_, _, SCode.CLASS_EXTENDS(annotationLst = al, comment = c))
-      then SOME(SCode.CLASS_COMMENT(al, c));
+      then 
+        SOME(SCode.CLASS_COMMENT(al, c));
+
+    case (_, _, SCode.CLASS_EXTENDS(composition = SCode.PARTS(annotationLst = al, comment = c)))
+      then 
+        SOME(SCode.CLASS_COMMENT(al, c));
+
     case (_, _, SCode.DERIVED(typeSpec = Absyn.TPATH(path = p), comment = c))
       equation
         (_, SCode.CLASS(classDef = cd), _) = Lookup.lookupClass(cache, env, p, true);
@@ -14833,6 +15134,7 @@ algorithm
         cmt = mergeClassComments(c, cmt);
       then
         cmt;
+
     case (_, _, SCode.DERIVED(comment = c)) then c;
     case (_, _, SCode.ENUMERATION(comment = c)) then c;
     case (_, _, SCode.OVERLOAD(comment = c)) then c;
@@ -15060,9 +15362,9 @@ algorithm
 end makeNonExpSubscript;
 
 protected function getFunctionAttributes
-"Looks at the annotations of an SCode.Class to create the function attributes,
+"Looks at the annotations of an SCode.Element to create the function attributes,
 i.e. Inline and Purity"
-  input SCode.Class cl;
+  input SCode.Element cl;
   input list<DAE.Var> vl;
   output DAE.FunctionAttributes attr;
 algorithm

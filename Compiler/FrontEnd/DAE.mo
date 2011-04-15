@@ -85,10 +85,10 @@ public uniontype VarDirection
   record BIDIR  "neither input or output" end BIDIR;
 end VarDirection;
 
-public uniontype VarProtection
+public uniontype VarVisibility
   record PUBLIC "public variables"       end PUBLIC;
   record PROTECTED "protected variables" end PROTECTED;
-end VarProtection;
+end VarVisibility;
 
 uniontype ElementSource "gives information about the origin of the element"
   record SOURCE
@@ -134,7 +134,7 @@ public uniontype Element
     ComponentRef componentRef " The variable name";
     VarKind kind "varible kind: variable, constant, parameter, discrete etc." ;
     VarDirection direction "input, output or bidir" ;
-    VarProtection protection "if protected or public";
+    VarVisibility protection "if protected or public";
     Type ty "Full type information required";
     Option<Exp> binding "Binding expression e.g. for parameters ; value of start attribute" ;
     InstDims  dims "dimensions";
@@ -609,25 +609,24 @@ end Else;
 public
 uniontype Var "- Variables"
   record TYPES_VAR
-    Ident name "name" ;
-    Attributes attributes "attributes" ;
-    Boolean protected_ "protected" ;
-    Type type_ "type" ;
-    Binding binding "binding ; equation modification" ;
+    Ident name "name";
+    Attributes attributes "attributes";
+    SCode.Visibility visibility "protected/public";
+    Type ty "type" ;
+    Binding binding "binding ; equation modification";
     Option<Const> constOfForIteratorRange "the constant-ness of the range if this is a for iterator, NONE() if is NOT a for iterator";
   end TYPES_VAR;
-
 end Var;
 
 public
 uniontype Attributes "- Attributes"
   record ATTR
-    Boolean flowPrefix "flow" ;
-    Boolean streamPrefix "stream" ;
+    SCode.Flow          flowPrefix "flow" ;
+    SCode.Stream        streamPrefix "stream" ;
     SCode.Accessibility accessibility "accessibility" ;
-    SCode.Variability variability "variability" ;
-    Absyn.Direction direction "direction" ;
-    Absyn.InnerOuter innerOuter "inner, outer,  inner outer or unspecified";
+    SCode.Variability   variability "variability" ;
+    Absyn.Direction     direction "direction" ;
+    Absyn.InnerOuter    innerOuter "inner, outer,  inner outer or unspecified";
   end ATTR;
 
 end Attributes;
@@ -666,21 +665,20 @@ type EqualityConstraint = Option<tuple<Absyn.Path, Integer, InlineType>>
   "contains the path to the equalityConstraint function, 
    the dimension of the output and the inline type of the function";
 
-public constant Type T_REAL_DEFAULT    = (T_REAL({}),NONE());
-public constant Type T_INTEGER_DEFAULT = (T_INTEGER({}),NONE());
-public constant Type T_STRING_DEFAULT  = (T_STRING({}),NONE());
-public constant Type T_BOOL_DEFAULT    = (T_BOOL({}),NONE());
-public constant Type T_ENUMERATION_DEFAULT = 
-  (T_ENUMERATION(NONE(), Absyn.IDENT(""), {}, {}, {}), NONE());
-public constant Type T_REAL_BOXED    = (T_BOXED((T_REAL({}),NONE())),NONE());
-public constant Type T_INTEGER_BOXED = (T_BOXED((T_INTEGER({}),NONE())),NONE());
-public constant Type T_STRING_BOXED  = (T_BOXED((T_STRING({}),NONE())),NONE());
-public constant Type T_BOOL_BOXED    = (T_BOXED((T_BOOL({}),NONE())),NONE());
-public constant Type T_BOXED_DEFAULT = (T_BOXED((T_NOTYPE(),NONE())),NONE());
-public constant Type T_LIST_DEFAULT = (T_LIST((T_NOTYPE(),NONE())),NONE());
-public constant Type T_NONE_DEFAULT = (T_METAOPTION((T_NOTYPE(),NONE())),NONE());
-public constant Type T_NOTYPE_DEFAULT = (T_NOTYPE(),NONE());
-public constant Type T_NORETCALL_DEFAULT = (T_NORETCALL(),NONE());
+public constant Type T_REAL_DEFAULT        = (T_REAL({}),NONE());
+public constant Type T_INTEGER_DEFAULT     = (T_INTEGER({}),NONE());
+public constant Type T_STRING_DEFAULT      = (T_STRING({}),NONE());
+public constant Type T_BOOL_DEFAULT        = (T_BOOL({}),NONE());
+public constant Type T_ENUMERATION_DEFAULT = (T_ENUMERATION(NONE(), Absyn.IDENT(""), {}, {}, {}), NONE());
+public constant Type T_REAL_BOXED          = (T_BOXED((T_REAL({}),NONE())),NONE());
+public constant Type T_INTEGER_BOXED       = (T_BOXED((T_INTEGER({}),NONE())),NONE());
+public constant Type T_STRING_BOXED        = (T_BOXED((T_STRING({}),NONE())),NONE());
+public constant Type T_BOOL_BOXED          = (T_BOXED((T_BOOL({}),NONE())),NONE());
+public constant Type T_BOXED_DEFAULT       = (T_BOXED((T_NOTYPE(),NONE())),NONE());
+public constant Type T_LIST_DEFAULT        = (T_LIST((T_NOTYPE(),NONE())),NONE());
+public constant Type T_NONE_DEFAULT        = (T_METAOPTION((T_NOTYPE(),NONE())),NONE());
+public constant Type T_NOTYPE_DEFAULT      = (T_NOTYPE(),NONE());
+public constant Type T_NORETCALL_DEFAULT   = (T_NORETCALL(),NONE());
 
 public uniontype TType "-TType contains the actual type"
   record T_INTEGER
@@ -945,14 +943,15 @@ end SubMod;
 public
 uniontype Mod "Modification"
   record MOD
-    Boolean finalPrefix "final" ;
-    Absyn.Each each_;
-    list<SubMod> subModLst;
+    SCode.Final   finalPrefix "final prefix";
+    SCode.Each    eachPrefix "each prefix";
+    list<SubMod>  subModLst;
     Option<EqMod> eqModOption;
   end MOD;
 
   record REDECL
-    Boolean finalPrefix "final" ;
+    SCode.Final finalPrefix "final prefix";
+    SCode.Each  eachPrefix "each prefix";
     list<tuple<SCode.Element, Mod>> tplSCodeElementModLst;
   end REDECL;
 

@@ -272,7 +272,7 @@ algorithm
 
     case (cache,env,Absyn.AS(id,exp),ty2,info)
       equation
-        (cache,DAE.TYPES_VAR(type_ = ty1),_,_) = Lookup.lookupIdent(cache,env,id);
+        (cache,DAE.TYPES_VAR(ty = ty1),_,_) = Lookup.lookupIdent(cache,env,id);
         et = validPatternType(ty1,ty2,lhs,info);
         (cache,pattern) = elabPattern2(cache,env,exp,ty2,info);
         pattern = Util.if_(Types.isFunctionType(ty2), DAE.PAT_AS_FUNC_PTR(id,pattern), DAE.PAT_AS(id,et,pattern));
@@ -280,7 +280,7 @@ algorithm
 
     case (cache,env,Absyn.CREF(Absyn.CREF_IDENT(id,{})),ty2,info)
       equation
-        (cache,DAE.TYPES_VAR(type_ = ty1),_,_) = Lookup.lookupIdent(cache,env,id);
+        (cache,DAE.TYPES_VAR(ty = ty1),_,_) = Lookup.lookupIdent(cache,env,id);
         et = validPatternType(ty1,ty2,lhs,info);
         pattern = Util.if_(Types.isFunctionType(ty2), DAE.PAT_AS_FUNC_PTR(id,DAE.PAT_WILD()), DAE.PAT_AS(id,et,DAE.PAT_WILD()));
       then (cache,pattern);
@@ -1741,10 +1741,10 @@ algorithm
     case (cache,env,{},scopeName,impl,info) then (cache,SOME((env,DAEUtil.emptyDae)));
     case (cache,env,ld,scopeName,impl,info)
       equation
-        env2 = Env.openScope(env, false, SOME(scopeName),NONE());
+        env2 = Env.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(scopeName),NONE());
 
         // Tranform declarations such as Real x,y; to Real x; Real y;
-        ld2 = SCodeUtil.translateEitemlist(ld,false);
+        ld2 = SCodeUtil.translateEitemlist(ld, SCode.PUBLIC());
 
         // Filter out the components (just to be sure)
         true = Util.listFold(Util.listMap1(ld2, SCode.isComponentWithDirection, Absyn.BIDIR()), boolAnd, true);
@@ -1764,7 +1764,7 @@ algorithm
       
     case (cache,env,ld,scopeName,impl,info)
       equation
-        ld2 = SCodeUtil.translateEitemlist(ld,false);
+        ld2 = SCodeUtil.translateEitemlist(ld, SCode.PUBLIC());
         (ld2 as _::_) = Util.listFilterBoolean(ld2, SCode.isNotComponent);
         str = Util.stringDelimitList(Util.listMap(ld2, SCode.unparseElementStr),", ");
         Error.addSourceMessage(Error.META_INVALID_LOCAL_ELEMENT,{str},info);
@@ -1772,10 +1772,10 @@ algorithm
       
     case (cache,env,ld,scopeName,impl,info)
       equation
-        env2 = Env.openScope(env, false, SOME(scopeName),NONE());
+        env2 = Env.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(scopeName),NONE());
 
         // Tranform declarations such as Real x,y; to Real x; Real y;
-        ld2 = SCodeUtil.translateEitemlist(ld,false);
+        ld2 = SCodeUtil.translateEitemlist(ld, SCode.PUBLIC());
 
         // Filter out the components (just to be sure)
         ld3 = Util.listSelect1(ld2, Absyn.INPUT(), SCode.isComponentWithDirection);

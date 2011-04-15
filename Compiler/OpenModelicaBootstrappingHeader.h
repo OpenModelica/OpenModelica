@@ -1142,37 +1142,37 @@ extern struct record_description Absyn_InnerOuter_OUTER__desc;
 static const MMC_DEFSTRUCTLIT(Absyn__OUTER__struct,1,4) {&Absyn_InnerOuter_OUTER__desc}};
 static void *Absyn__OUTER = MMC_REFSTRUCTLIT(Absyn__OUTER__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
-#ifndef Absyn_InnerOuter_INNEROUTER__desc_added
-#define Absyn_InnerOuter_INNEROUTER__desc_added
-const char* Absyn_InnerOuter_INNEROUTER__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_InnerOuter_INNEROUTER__desc = {
-  "Absyn_InnerOuter_INNEROUTER",
-  "Absyn.InnerOuter.INNEROUTER",
-  Absyn_InnerOuter_INNEROUTER__desc__fields
+#ifndef Absyn_InnerOuter_INNER__OUTER__desc_added
+#define Absyn_InnerOuter_INNER__OUTER__desc_added
+const char* Absyn_InnerOuter_INNER__OUTER__desc__fields[1] = {"no fileds"};
+struct record_description Absyn_InnerOuter_INNER__OUTER__desc = {
+  "Absyn_InnerOuter_INNER__OUTER",
+  "Absyn.InnerOuter.INNER_OUTER",
+  Absyn_InnerOuter_INNER__OUTER__desc__fields
 };
 #endif
 #else /* Only use the file as a header */
-extern struct record_description Absyn_InnerOuter_INNEROUTER__desc;
+extern struct record_description Absyn_InnerOuter_INNER__OUTER__desc;
 #endif
-#define Absyn__INNEROUTER_3dBOX0 5
-static const MMC_DEFSTRUCTLIT(Absyn__INNEROUTER__struct,1,5) {&Absyn_InnerOuter_INNEROUTER__desc}};
-static void *Absyn__INNEROUTER = MMC_REFSTRUCTLIT(Absyn__INNEROUTER__struct);
+#define Absyn__INNER_5fOUTER_3dBOX0 5
+static const MMC_DEFSTRUCTLIT(Absyn__INNER_5fOUTER__struct,1,5) {&Absyn_InnerOuter_INNER__OUTER__desc}};
+static void *Absyn__INNER_5fOUTER = MMC_REFSTRUCTLIT(Absyn__INNER_5fOUTER__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
-#ifndef Absyn_InnerOuter_UNSPECIFIED__desc_added
-#define Absyn_InnerOuter_UNSPECIFIED__desc_added
-const char* Absyn_InnerOuter_UNSPECIFIED__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_InnerOuter_UNSPECIFIED__desc = {
-  "Absyn_InnerOuter_UNSPECIFIED",
-  "Absyn.InnerOuter.UNSPECIFIED",
-  Absyn_InnerOuter_UNSPECIFIED__desc__fields
+#ifndef Absyn_InnerOuter_NOT__INNER__OUTER__desc_added
+#define Absyn_InnerOuter_NOT__INNER__OUTER__desc_added
+const char* Absyn_InnerOuter_NOT__INNER__OUTER__desc__fields[1] = {"no fileds"};
+struct record_description Absyn_InnerOuter_NOT__INNER__OUTER__desc = {
+  "Absyn_InnerOuter_NOT__INNER__OUTER",
+  "Absyn.InnerOuter.NOT_INNER_OUTER",
+  Absyn_InnerOuter_NOT__INNER__OUTER__desc__fields
 };
 #endif
 #else /* Only use the file as a header */
-extern struct record_description Absyn_InnerOuter_UNSPECIFIED__desc;
+extern struct record_description Absyn_InnerOuter_NOT__INNER__OUTER__desc;
 #endif
-#define Absyn__UNSPECIFIED_3dBOX0 6
-static const MMC_DEFSTRUCTLIT(Absyn__UNSPECIFIED__struct,1,6) {&Absyn_InnerOuter_UNSPECIFIED__desc}};
-static void *Absyn__UNSPECIFIED = MMC_REFSTRUCTLIT(Absyn__UNSPECIFIED__struct);
+#define Absyn__NOT_5fINNER_5fOUTER_3dBOX0 6
+static const MMC_DEFSTRUCTLIT(Absyn__NOT_5fINNER_5fOUTER__struct,1,6) {&Absyn_InnerOuter_NOT__INNER__OUTER__desc}};
+static void *Absyn__NOT_5fINNER_5fOUTER = MMC_REFSTRUCTLIT(Absyn__NOT_5fINNER_5fOUTER__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Import_NAMED__IMPORT__desc_added
 #define Absyn_Import_NAMED__IMPORT__desc_added
@@ -1690,7 +1690,7 @@ extern struct record_description Absyn_EqMod_EQMOD__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_ElementArg_MODIFICATION__desc_added
 #define Absyn_ElementArg_MODIFICATION__desc_added
-const char* Absyn_ElementArg_MODIFICATION__desc__fields[5] = {"finalItem","each_","componentRef","modification","comment"};
+const char* Absyn_ElementArg_MODIFICATION__desc__fields[5] = {"finalPrefix","eachPrefix","componentRef","modification","comment"};
 struct record_description Absyn_ElementArg_MODIFICATION__desc = {
   "Absyn_ElementArg_MODIFICATION",
   "Absyn.ElementArg.MODIFICATION",
@@ -1701,11 +1701,11 @@ struct record_description Absyn_ElementArg_MODIFICATION__desc = {
 extern struct record_description Absyn_ElementArg_MODIFICATION__desc;
 #endif
 #define Absyn__MODIFICATION_3dBOX5 3
-#define Absyn__MODIFICATION(finalItem,each_,componentRef,modification,comment) (mmc_mk_box6(3,&Absyn_ElementArg_MODIFICATION__desc,finalItem,each_,componentRef,modification,comment))
+#define Absyn__MODIFICATION(finalPrefix,eachPrefix,componentRef,modification,comment) (mmc_mk_box6(3,&Absyn_ElementArg_MODIFICATION__desc,finalPrefix,eachPrefix,componentRef,modification,comment))
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_ElementArg_REDECLARATION__desc_added
 #define Absyn_ElementArg_REDECLARATION__desc_added
-const char* Absyn_ElementArg_REDECLARATION__desc__fields[6] = {"finalItem","redeclareKeywords","each_","elementSpec","constrainClass","info"};
+const char* Absyn_ElementArg_REDECLARATION__desc__fields[6] = {"finalPrefix","redeclareKeywords","eachPrefix","elementSpec","constrainClass","info"};
 struct record_description Absyn_ElementArg_REDECLARATION__desc = {
   "Absyn_ElementArg_REDECLARATION",
   "Absyn.ElementArg.REDECLARATION",
@@ -1716,7 +1716,7 @@ struct record_description Absyn_ElementArg_REDECLARATION__desc = {
 extern struct record_description Absyn_ElementArg_REDECLARATION__desc;
 #endif
 #define Absyn__REDECLARATION_3dBOX6 4
-#define Absyn__REDECLARATION(finalItem,redeclareKeywords,each_,elementSpec,constrainClass,info) (mmc_mk_box7(4,&Absyn_ElementArg_REDECLARATION__desc,finalItem,redeclareKeywords,each_,elementSpec,constrainClass,info))
+#define Absyn__REDECLARATION(finalPrefix,redeclareKeywords,eachPrefix,elementSpec,constrainClass,info) (mmc_mk_box7(4,&Absyn_ElementArg_REDECLARATION__desc,finalPrefix,redeclareKeywords,eachPrefix,elementSpec,constrainClass,info))
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_RedeclareKeywords_REDECLARE__desc_added
 #define Absyn_RedeclareKeywords_REDECLARE__desc_added

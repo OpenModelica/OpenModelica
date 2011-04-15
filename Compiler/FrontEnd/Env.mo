@@ -124,14 +124,14 @@ end ScopeType;
 public
 uniontype Frame
   record FRAME
-    Option<Ident>       optName           "Optional class name";
-    Option<ScopeType>   optType           "Optional scope type";
-    AvlTree             clsAndVars        "List of uniquely named classes and variables";
-    AvlTree             types             "List of types, which DOES NOT need to be uniquely named, eg. size may have several types";
-    list<Item>          imports           "list of unnamed items (imports)";
-    CSetsType           connectionSet     "current connection set crefs";
-    Boolean             isEncapsulated    "encapsulated bool=true means that FRAME is created due to encapsulated class";
-    list<SCode.Element> defineUnits "list of units defined in the frame";
+    Option<Ident>       optName            "Optional class name";
+    Option<ScopeType>   optType            "Optional scope type";
+    AvlTree             clsAndVars         "List of uniquely named classes and variables";
+    AvlTree             types              "List of types, which DOES NOT need to be uniquely named, eg. size may have several types";
+    list<Item>          imports            "list of unnamed items (imports)";
+    CSetsType           connectionSet      "current connection set crefs";
+    SCode.Encapsulated  encapsulatedPrefix "encapsulated prefix means that FRAME is created due to encapsulated class";
+    list<SCode.Element> defineUnits        "list of units defined in the frame";
   end FRAME;
 end Frame;
 
@@ -161,16 +161,16 @@ uniontype Item
   end VAR;
 
   record CLASS
-    SCode.Class class_;
+    SCode.Element cl;
     Env env;
   end CLASS;
 
   record TYPE
-    list<DAE.Type> list_ "list since several types with the same name can exist in the same scope (overloading)" ;
+    list<DAE.Type> tys "list since several types with the same name can exist in the same scope (overloading)" ;
   end TYPE;
 
   record IMPORT
-    Absyn.Import import_;
+    Absyn.Import imp;
   end IMPORT;
 
 end Item;
@@ -219,13 +219,13 @@ public function newEnvironment
   "Creates a new empty environment."
   output Env newEnv;
 algorithm
-  newEnv := Util.listCreate(newFrame(false,NONE(),NONE()));
+  newEnv := Util.listCreate(newFrame(SCode.NOT_ENCAPSULATED(),NONE(),NONE()));
 end newEnvironment;
 
 protected function newFrame "function: newFrame
   This function creates a new frame, which includes setting up the
   hashtable for the frame."
-  input Boolean enc;
+  input SCode.Encapsulated encapsulatedPrefix;
   input Option<Ident> inName;
   input Option<ScopeType> inType;
   output Frame outFrame;
@@ -237,7 +237,7 @@ algorithm
   ht := avlTreeNew();
   httypes := avlTreeNew();
   cref_ := ComponentReference.makeCrefIdent("",DAE.ET_OTHER(),{});
-  outFrame := FRAME(inName,inType,ht,httypes,{},({},cref_),enc,{});
+  outFrame := FRAME(inName,inType,ht,httypes,{},({},cref_),encapsulatedPrefix,{});
 end newFrame;
 
 public function isTyped "
@@ -259,14 +259,14 @@ public function openScope "function: openScope
   of the scope should be provided such that a name for the scope can be
   derived, see nameScope."
   input Env inEnv;
-  input Boolean inBoolean;
+  input SCode.Encapsulated encapsulatedPrefix;
   input Option<Ident> inIdentOption;
   input Option<ScopeType> inTypeOption;
   output Env outEnv;
 protected
   Frame f;
 algorithm
-  f := newFrame(inBoolean, inIdentOption, inTypeOption);
+  f := newFrame(encapsulatedPrefix, inIdentOption, inTypeOption);
   outEnv := f :: inEnv;
 end openScope;
 
@@ -366,7 +366,7 @@ algorithm
       list<Item> imports;
       list<Frame> fs;
       tuple<list<DAE.ComponentRef>,DAE.ComponentRef> crefs;
-      Boolean enc;
+      SCode.Encapsulated enc;
       list<SCode.Element> defineUnits;
 
     case(FRAME(optName,st,clsAndVars,types,imports,crefs,enc,defineUnits)::fs,classEnv)
@@ -384,7 +384,7 @@ protected function updateEnvClassesInTree "Help function to updateEnvClasses"
 algorithm
   outTree := matchcontinue(tree,classEnv)
     local
-      SCode.Class cl;
+      SCode.Element cl;
       Option<AvlTree> l,r;
       AvlKey k;
       Env env;
@@ -416,18 +416,20 @@ protected function updateEnvClassesInTreeOpt "Help function to updateEnvClassesI
   output Option<AvlTree> outTree;
 algorithm
   outTree := match(tree,classEnv)
-  local AvlTree t;
+    local AvlTree t;
     case(NONE(),classEnv) then NONE();
-    case(SOME(t),classEnv) equation
-      t = updateEnvClassesInTree(t,classEnv);
-    then SOME(t);
+    case(SOME(t),classEnv) 
+      equation
+        t = updateEnvClassesInTree(t,classEnv);
+      then 
+        SOME(t);
   end match;
 end updateEnvClassesInTreeOpt;
 
 public function extendFrameC "function: extendFrameC
   This function adds a class definition to the environment."
   input Env inEnv;
-  input SCode.Class inClass;
+  input SCode.Element inClass;
   output Env outEnv;
 algorithm
   outEnv := matchcontinue (inEnv,inClass)
@@ -439,8 +441,8 @@ algorithm
       Option<ScopeType> st;
       list<AvlValue> imps;
       tuple<list<DAE.ComponentRef>,DAE.ComponentRef> crs;
-      Boolean encflag;
-      SCode.Class c;
+      SCode.Encapsulated encflag;
+      SCode.Element c;
       Ident n;
       list<SCode.Element> defineUnits;
 
@@ -467,9 +469,11 @@ algorithm
   outEnv := match (inEnv,inProgram)
     local
       Env env,env_1,env_2;
-      SCode.Class c;
-      list<SCode.Class> cs;
+      SCode.Element c;
+      list<SCode.Element> cs;
+
     case (env,{}) then env;
+
     case (env,(c :: cs))
       equation
         env_1 = extendFrameC(env, c);
@@ -493,7 +497,7 @@ algorithm
       list<AvlValue> imps;
       Env fs;
       tuple<list<DAE.ComponentRef>,DAE.ComponentRef> crs;
-      Boolean encflag;
+      SCode.Encapsulated encflag;
       list<SCode.Element> defineUnits;
 
     case ((FRAME(id,st,_,httypes,imps,crs,encflag,defineUnits) :: fs))
@@ -523,14 +527,15 @@ algorithm
       list<AvlValue> imps;
       Env fs,env,remember;
       tuple<list<DAE.ComponentRef>,DAE.ComponentRef> crs;
-      Boolean encflag;
+      SCode.Encapsulated encflag;
       InstStatus i;
       DAE.Var v;
       Ident n;
       Option<tuple<SCode.Element, DAE.Mod>> c;
       list<SCode.Element> defineUnits;
 
-    case ((FRAME(id,st,ht,httypes,imps,crs,encflag,defineUnits) :: fs),(v as DAE.TYPES_VAR(name = n)),c,i,env) /* environment of component */
+    // Environment of component
+    case ((FRAME(id,st,ht,httypes,imps,crs,encflag,defineUnits) :: fs),(v as DAE.TYPES_VAR(name = n)),c,i,env)
       equation
         //failure((_)= avlTreeGet(ht, n));
         (ht_1) = avlTreeAdd(ht, n, VAR(v,c,i,env));
@@ -559,7 +564,7 @@ public function updateFrameV "function: updateFrameV
 algorithm
   outEnv := matchcontinue (inEnv1,inVar2,instStatus,inEnv4)
     local
-      Boolean encflag;
+      SCode.Encapsulated encflag;
       InstStatus i;
       Option<tuple<SCode.Element, DAE.Mod>> c;
       AvlTree httypes;
@@ -626,7 +631,7 @@ algorithm
       list<AvlValue> imps;
       Env fs;
       tuple<list<DAE.ComponentRef>,DAE.ComponentRef> crs;
-      Boolean encflag;
+      SCode.Encapsulated encflag;
       Ident n;
       tuple<DAE.TType, Option<Absyn.Path>> t;
       list<SCode.Element> defineUnits;
@@ -660,7 +665,7 @@ algorithm
       AvlTree ht;
       list<AvlValue> imps;
       tuple<list<DAE.ComponentRef>,DAE.ComponentRef> crs;
-      Boolean encflag;
+      SCode.Encapsulated encflag;
       Absyn.Import imp;
       Env fs,env;
       list<SCode.Element> defineUnits;
@@ -688,7 +693,7 @@ algorithm
       AvlTree ht;
       list<AvlValue> imps;
       tuple<list<DAE.ComponentRef>,DAE.ComponentRef> crs;
-      Boolean encflag;
+      SCode.Encapsulated encflag;
       Env fs;
       list<SCode.Element> defineUnits;
 
@@ -715,8 +720,8 @@ algorithm
         new_env_1 = extendFrameV(env,
           DAE.TYPES_VAR(
             name,
-            DAE.ATTR(false, false, SCode.RW(), variability, Absyn.BIDIR(), Absyn.UNSPECIFIED()),
-            false,
+            DAE.ATTR(SCode.NOT_FLOW(), SCode.NOT_STREAM(), SCode.RW(), variability, Absyn.BIDIR(), Absyn.NOT_INNER_OUTER()),
+            SCode.PUBLIC(),
             type_,
             binding,
             constOfForIteratorRange),
@@ -1023,14 +1028,14 @@ algorithm
       AvlTree ht;
       list<AvlValue> imps;
       tuple<list<DAE.ComponentRef>,DAE.ComponentRef> crs;
-      Boolean encflag;
-    case FRAME(optName = optName,clsAndVars = ht,types = httypes,imports = imps,connectionSet = crs,isEncapsulated = encflag)
+      SCode.Encapsulated encflag;
+    case FRAME(optName = optName,clsAndVars = ht,types = httypes,imports = imps,connectionSet = crs,encapsulatedPrefix = encflag)
       equation
         sid = Util.getOptionOrDefault(optName, "unnamed");
         s1 = printAvlTreeStr(ht);
         s2 = printAvlTreeStr(httypes);
         s3 = printImportsStr(imps);
-        encflag_str = boolString(encflag);
+        encflag_str = SCode.encapsulatedStr(encflag);
         res = stringAppendList(
           "FRAME: " :: sid :: " (enc=" :: encflag_str ::
           ") \nclasses and vars:\n=============\n" :: s1 :: "   Types:\n======\n" :: s2 :: "   Imports:\n=======\n" :: s3 :: {});
@@ -1054,26 +1059,30 @@ algorithm
       AvlTree ht;
       list<AvlValue> imps;
       tuple<list<DAE.ComponentRef>,DAE.ComponentRef> crs;
-      Boolean encflag;
-    case FRAME(optName = SOME(sid),clsAndVars = ht,types = httypes,imports = imps,connectionSet = crs,isEncapsulated = encflag)
+      SCode.Encapsulated encflag;
+
+    case FRAME(optName = SOME(sid),clsAndVars = ht,types = httypes,imports = imps,connectionSet = crs,encapsulatedPrefix = encflag)
       equation
         s1 = printAvlTreeStr(ht);
-        encflag_str = boolString(encflag);
+        encflag_str = SCode.encapsulatedStr(encflag);
         res = stringAppendList(
           {"FRAME: ",sid," (enc=",encflag_str,
           ") \nclasses and vars:\n=============\n",s1,"\n\n\n"});
       then
         res;
-    case FRAME(optName = NONE(),clsAndVars = ht,types = httypes,imports = imps,connectionSet = crs,isEncapsulated = encflag)
+
+    case FRAME(optName = NONE(),clsAndVars = ht,types = httypes,imports = imps,connectionSet = crs,encapsulatedPrefix = encflag)
       equation
         s1 = printAvlTreeStr(ht);
-        encflag_str = boolString(encflag);
+        encflag_str = SCode.encapsulatedStr(encflag);
         res = stringAppendList(
           {"FRAME: unnamed (enc=",encflag_str,
           ") \nclasses and vars:\n=============\n",s1,"\n\n\n"});
       then
         res;
+
     case _ then "";
+    
   end matchcontinue;
 end printFrameVarsStr;
 
@@ -1129,7 +1138,7 @@ algorithm
       list<tuple<DAE.TType, Option<Absyn.Path>>> lst;
       Absyn.Import imp;
 
-    case ((n,VAR(instantiated = (tv as DAE.TYPES_VAR(attributes = DAE.ATTR(variability = var),type_ = tp,binding = bind)),declaration = SOME((elt,_)),instStatus = i,env = (compframe :: _))))
+    case ((n,VAR(instantiated = (tv as DAE.TYPES_VAR(attributes = DAE.ATTR(variability = var),ty = tp,binding = bind)),declaration = SOME((elt,_)),instStatus = i,env = (compframe :: _))))
       equation
         s = SCode.variabilityString(var);
         elt_str = SCode.printElementStr(elt);
@@ -1143,7 +1152,7 @@ algorithm
       then
         res;
 
-    case ((n,VAR(instantiated = (tv as DAE.TYPES_VAR(attributes = DAE.ATTR(variability = var),type_ = tp)),declaration = SOME((elt,_)),instStatus = i,env = {})))
+    case ((n,VAR(instantiated = (tv as DAE.TYPES_VAR(attributes = DAE.ATTR(variability = var),ty = tp)),declaration = SOME((elt,_)),instStatus = i,env = {})))
       equation
         s = SCode.variabilityString(var);
         elt_str = SCode.printElementStr(elt);
@@ -1161,13 +1170,13 @@ algorithm
       then
         res;
 
-    case ((n,CLASS(class_ = _)))
+    case ((n,CLASS(cl = _)))
       equation
         res = stringAppendList({"c:",n,"\n"});
       then
         res;
         
-    case ((n,TYPE(list_ = lst)))
+    case ((n,TYPE(tys = lst)))
       equation
         len = listLength(lst);
         lenstr = intString(len);
@@ -1175,7 +1184,7 @@ algorithm
       then
         res;
 
-    case ((n,IMPORT(import_ = imp)))
+    case ((n,IMPORT(imp = imp)))
       equation
         s = Dump.unparseImportStr(imp);
         res = stringAppendList({"imp:",s,"\n"});
@@ -1198,28 +1207,23 @@ algorithm
 end isVarItem;
 
 protected function isClassItem "function: isClassItem
-
-  Succeeds if item is a CLASS.
-"
+  Succeeds if item is a CLASS."
   input tuple<Type_a, Item> inTplTypeAItem;
   replaceable type Type_a subtypeof Any;
 algorithm
-  _:=
-  matchcontinue (inTplTypeAItem)
-    case ((_,CLASS(class_ = _))) then ();
+  _ := matchcontinue (inTplTypeAItem)
+    case ((_,CLASS(cl = _))) then ();
   end matchcontinue;
 end isClassItem;
 
 protected function isTypeItem "function: isTypeItem
-
-  Succeds if item is a TYPE.
-"
+  Succeds if item is a TYPE."
   input tuple<Type_a, Item> inTplTypeAItem;
   replaceable type Type_a subtypeof Any;
 algorithm
   _:=
   matchcontinue (inTplTypeAItem)
-    case ((_,TYPE(list_ = _))) then ();
+    case ((_,TYPE(tys = _))) then ();
   end matchcontinue;
 end isTypeItem;
 
@@ -1614,42 +1618,42 @@ algorithm
 end keyStr;
 
 public function valueStr "prints a Value to a string"
-input AvlValue v;
-output String str;
+  input AvlValue v;
+  output String str;
 algorithm
   str := matchcontinue(v)
     local 
       String name; DAE.Type tp; Absyn.Import imp;
       Absyn.TypeSpec tsp;
-      Boolean flowPrefix "flow";
-      Boolean streamPrefix "stream";
+      SCode.Flow flowPrefix "flow";
+      SCode.Stream streamPrefix "stream";
       SCode.Accessibility accessibility "accessibility";
       SCode.Variability variability "variability";
       Absyn.Direction direction "direction";
       Absyn.InnerOuter innerOuter "inner, outer,  inner outer or unspecified";
       
-    case(VAR(instantiated=DAE.TYPES_VAR(name=name,attributes=DAE.ATTR(flowPrefix, streamPrefix, accessibility, variability, direction, innerOuter),type_=tp))) 
+    case(VAR(instantiated=DAE.TYPES_VAR(name=name,attributes=DAE.ATTR(flowPrefix, streamPrefix, accessibility, variability, direction, innerOuter),ty=tp))) 
       equation
         str = "var:    " +& name +& " " +& Types.unparseType(tp) +& "("
         +& Types.printTypeStr(tp) +& ")" +& " attr: " +& 
-        Util.if_(flowPrefix,"flow", "") +& ", " +&
-        Util.if_(streamPrefix,"stream", "") +& ", " +&
+        SCode.flowStr(flowPrefix) +& ", " +&
+        SCode.streamStr(streamPrefix) +& ", " +&
         SCode.accessibilityString(accessibility) +& ", " +&
         SCode.variabilityString(variability) +& ", " +&
         SCode.innerouterString(innerOuter);
       then str;
     
-    case(VAR(declaration = SOME((SCode.COMPONENT(component=name,typeSpec=tsp,innerOuter=innerOuter,attributes=SCode.ATTR(_, flowPrefix, streamPrefix, accessibility, variability, direction)), _)))) 
+    case(VAR(declaration = SOME((SCode.COMPONENT(name=name,typeSpec=tsp,prefixes=SCode.PREFIXES(innerOuter=innerOuter),attributes=SCode.ATTR(_, flowPrefix, streamPrefix, accessibility, variability, direction)), _)))) 
       equation
         str = "var:    " +& name +& " " +& Dump.unparseTypeSpec(tsp) +& " attr: " +& 
-        Util.if_(flowPrefix,"flow", "") +& ", " +&
-        Util.if_(streamPrefix,"stream", "") +& ", " +&
+        SCode.flowStr(flowPrefix) +& ", " +&
+        SCode.streamStr(streamPrefix) +& ", " +&
         SCode.accessibilityString(accessibility) +& ", " +&
         SCode.variabilityString(variability) +& ", " +&
         SCode.innerouterString(innerOuter);
       then str;
     
-    case(CLASS(class_=SCode.CLASS(name=name))) 
+    case(CLASS(cl=SCode.CLASS(name=name))) 
       equation
         str = "class:  " +& name;
       then str;
@@ -1781,11 +1785,11 @@ algorithm
     // var can replace var
     case (VAR(instantiated = _), VAR(instantiated = _)) then ();
     // class can replace class
-    case (CLASS(class_ = _),     CLASS(class_ = _)) then ();
+    case (CLASS(cl = _),     CLASS(cl = _)) then ();
     // type can replace type
-    case (TYPE(list_ = _),       TYPE(list_ = _)) then ();
+    case (TYPE(tys = _),       TYPE(tys = _)) then ();
     // import can replace import
-    case (IMPORT(import_ = _),   IMPORT(import_ = _)) then ();
+    case (IMPORT(imp = _),   IMPORT(imp = _)) then ();
     // anything else is an error!
     case (val1, val2)
       equation
@@ -1810,8 +1814,8 @@ algorithm
       Env env;
     
     // var should not be replaced by class!
-    case (VAR(declaration = SOME((SCode.COMPONENT(component = n1, info = aInfo), _))), 
-          CLASS(class_ = SCode.CLASS(name = n2, info = _), env = env))
+    case (VAR(declaration = SOME((SCode.COMPONENT(name = n1, info = aInfo), _))), 
+          CLASS(cl = SCode.CLASS(name = n2, info = _), env = env))
       equation
          n = printEnvPathStr(env);
          n2 = n +& "." +& n2;
@@ -1819,7 +1823,7 @@ algorithm
         (n1, n2, aInfo);
     
     // class should not be replaced by var!
-    case (CLASS(class_ = _), VAR(instantiated = _))
+    case (CLASS(cl = _), VAR(instantiated = _))
       equation
         // call ourselfs reversed
         (n1, n2, aInfo) = getNamesAndInfoFromVal(val2, val1);

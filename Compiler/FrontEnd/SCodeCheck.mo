@@ -53,7 +53,7 @@ public function checkDuplicateClasses
 algorithm
   _ := matchcontinue(inProgram)
     local
-      SCode.Class c;
+      SCode.Element c;
       SCode.Program sp;
       list<String> names;
       
@@ -85,7 +85,7 @@ algorithm
 end checkForDuplicateClassesInTopScope;
 
 public function checkRecursiveShortDefinition
-  input SCode.Class inClass;
+  input SCode.Element inClass;
 algorithm
   _ := match(inClass)
     local

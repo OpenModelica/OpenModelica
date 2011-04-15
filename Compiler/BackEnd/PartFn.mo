@@ -521,7 +521,7 @@ algorithm
       DAE.ComponentRef cref;
       DAE.VarKind kind;
       DAE.VarDirection direction;
-      DAE.VarProtection protection;
+      DAE.VarVisibility protection;
       DAE.Type ty;
       Option<DAE.Exp> binding;
       DAE.InstDims dims;
@@ -1244,7 +1244,8 @@ algorithm
     case(DAE.VAR(componentRef = cref,ty = ty))
       equation
         i = ComponentReference.printComponentRefStr(cref);
-        res = DAE.TYPES_VAR(i,DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.INPUT(),Absyn.UNSPECIFIED()),false,ty,DAE.UNBOUND(),NONE()); // TODO: FIXME: binding?
+        // TODO: FIXME: binding?
+        res = DAE.TYPES_VAR(i,DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RO(),SCode.VAR(),Absyn.INPUT(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),ty,DAE.UNBOUND(),NONE()); 
       then
         res;
     case(_)
@@ -1388,7 +1389,7 @@ algorithm
       DAE.ComponentRef componentRef " The variable name";
       DAE.VarKind kind "varible kind: variable, constant, parameter, discrete etc." ;
       DAE.VarDirection direction "input, output or bidir" ;
-      DAE.VarProtection protection "if protected or public";
+      DAE.VarVisibility protection "if protected or public";
       DAE.Type ty "Full type information required";
       DAE.Exp binding "Binding expression e.g. for parameters ; value of start attribute" ;
       DAE.InstDims  dims "dimensions";

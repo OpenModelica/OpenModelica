@@ -188,8 +188,7 @@ algorithm
       then
         (item, env);
 
-    case (_, SCodeEnv.CLASS(cls = SCode.CLASSDEF(classDef = SCode.CLASS(
-        info = info)), env = {class_env}), _, _)
+    case (_, SCodeEnv.CLASS(cls = SCode.CLASS(info = info), env = {class_env}), _, _)
       equation
         env = SCodeEnv.enterFrame(class_env, inEnv);
         (item, env) = lookupClass(inName, env, info, inPrintError);
@@ -213,7 +212,7 @@ algorithm
 
     // We found a component instead, which might happen if the user tries to use
     // a variable name as a type.
-    case SCodeEnv.VAR(var = SCode.COMPONENT(component = name, info = info))
+    case SCodeEnv.VAR(var = SCode.COMPONENT(name = name, info = info))
       equation
         Error.addSourceMessage(Error.LOOKUP_TYPE_FOUND_COMP, {name}, info);
       then
@@ -255,8 +254,8 @@ algorithm
 
     // A normal class, mark it and it's environment as used, and recursively
     // analyse it's contents.
-    case (SCodeEnv.CLASS(cls = SCode.CLASSDEF(classDef = SCode.CLASS(classDef =
-        cdef, restriction = res, info = info)), env = {cls_env}), env)
+    case (SCodeEnv.CLASS(cls = SCode.CLASS(classDef =
+        cdef, restriction = res, info = info), env = {cls_env}), env)
       equation
         markItemAsUsed(inItem, env);
         env = SCodeEnv.enterFrame(cls_env, env);
@@ -371,6 +370,7 @@ algorithm
       Boolean is_ext_obj;
       Env ty_env;
       Item ty_item;
+      SCode.Attributes attr;
 
     // A class made of parts, analyse elements, equation, algorithms, etc.
     case (SCode.PARTS(elementLst = el, normalEquationLst = nel, 
@@ -402,9 +402,9 @@ algorithm
 
     // A class extends.
     case (SCode.CLASS_EXTENDS(baseClassName = bc, modifications = mods,
-        elementLst = el, normalEquationLst = nel, initialEquationLst = iel,
+        composition = SCode.PARTS(elementLst = el, normalEquationLst = nel, initialEquationLst = iel,
         normalAlgorithmLst = nal, initialAlgorithmLst = ial, 
-        annotationLst = annl, comment = cmt), _, _, _)
+        externalDecl = ext_decl, annotationLst = annl, comment = cmt)), _, _, _)
       equation
         analyseClass(Absyn.IDENT(bc), inEnv, inInfo);
         (ty_item, _, ty_env) =
@@ -416,18 +416,20 @@ algorithm
         Util.listMap01(iel, inEnv, analyseEquation);
         Util.listMap01(nal, inEnv, analyseAlgorithm);
         Util.listMap01(ial, inEnv, analyseAlgorithm);
+        analyseExternalDecl(ext_decl, inEnv, inInfo);
         Util.listMap02(annl, analyseAnnotation, inEnv, inInfo);
         analyseComment(cmt, inEnv, inInfo);
       then
         ();
 
     // A derived class definition.
-    case (SCode.DERIVED(typeSpec = ty, modifications = mods, comment = cmt),
+    case (SCode.DERIVED(typeSpec = ty, modifications = mods, attributes = attr, comment = cmt),
         _, _, _)
       equation
         analyseTypeSpec(ty, inEnv, inInfo);
         (ty_item, ty_env) = SCodeLookup.lookupTypeSpec(ty, inEnv, inInfo);
         ty_env = SCodeEnv.mergeItemEnv(ty_item, ty_env);
+        // TODO! Analyse array dimenstion from attributes! 
         analyseModifier(mods, inEnv, ty_env, inInfo);
         analyseComment(cmt, inEnv, inInfo);
       then
@@ -590,10 +592,11 @@ algorithm
       SCode.Attributes attr;
       Option<Absyn.Exp> cond_exp;
       Option<Absyn.ConstrainClass> cc;
-      SCode.Class cls;
+      SCode.Element cls;
       Item ty_item;
       Env ty_env;
       SCode.Ident name;
+      SCode.Prefixes prefixes;
 
     // Fail on 'extends ExternalObject' so we can handle it as a special case in
     // analyseClassDef.
@@ -614,8 +617,8 @@ algorithm
         ();
         
     // A component.
-    case (SCode.COMPONENT(component = name, attributes = attr, typeSpec = ty,
-        modifications = mods, condition = cond_exp, cc = cc, info = info), _, _)
+    case (SCode.COMPONENT(name = name, attributes = attr, typeSpec = ty,
+        modifications = mods, condition = cond_exp, prefixes = prefixes, info = info), _, _)
       equation
         markAsUsedOnRestriction(name, inClassRestriction, inEnv, info);
         analyseAttributes(attr, inEnv, info);
@@ -624,14 +627,13 @@ algorithm
         ty_env = SCodeEnv.mergeItemEnv(ty_item, ty_env);
         analyseModifier(mods, inEnv, ty_env, info);
         analyseOptExp(cond_exp, inEnv, info);
-        analyseConstrainClass(cc, inEnv, info);
+        analyseConstrainClass(SCode.replaceableOptConstraint(SCode.prefixesReplaceable(prefixes)), inEnv, info);
       then
         ();
 
     // equalityConstraints may not be explicitly used but might be needed anyway
     // (if the record is used in a connect for example), so always mark it as used.
-    case (SCode.CLASSDEF(name = "equalityConstraint", 
-       classDef = cls as SCode.CLASS(info = info)), _, _)
+    case (SCode.CLASS(name = "equalityConstraint", info = info), _, _)
       equation
         analyseClass(Absyn.IDENT("equalityConstraint"), inEnv, info);
       then
@@ -778,14 +780,14 @@ algorithm
       Option<Absyn.ConstrainClass> cc;
       Absyn.Info info;
       SCode.Restriction restr;
+      SCode.Prefixes prefixes;
 
     // Class definitions are not analysed in analyseElement but are needed here
     // in case a class is redeclared.
-    case (SCode.CLASSDEF(classDef = SCode.CLASS(classDef = cdef, 
-        restriction = restr, info = info), cc = cc), _)
+    case (SCode.CLASS(prefixes = prefixes, classDef = cdef,restriction = restr, info = info), _)
       equation
         analyseClassDef(cdef, restr, inEnv, info);
-        analyseConstrainClass(cc, inEnv, info);
+        analyseConstrainClass(SCode.replaceableOptConstraint(SCode.prefixesReplaceable(prefixes)), inEnv, info);
       then
         ();
 
@@ -1406,9 +1408,11 @@ algorithm
       String cls_name;
       Env env;
 
-    case (SCode.CLASSDEF(classDef = SCode.CLASS(name = cls_name, classDef = 
+    // TODO! analyse ALL extends not just the first one (which might not be the case)
+    //       as it could be the second or third, etc.
+    case (SCode.CLASS(name = cls_name, classDef = 
           SCode.PARTS(elementLst = SCode.EXTENDS(baseClassPath = bc) :: _), 
-          info = info)), SCodeEnv.CLASS_EXTENDS(), _)
+          info = info), SCodeEnv.CLASS_EXTENDS(), _)
       equation
         // Look up the base class of the class extends, and check if it's used.
         (item, _, _) = SCodeLookup.lookupClassName(bc, inEnv, info);
@@ -1460,7 +1464,7 @@ algorithm
   matchcontinue(clsAndVars, inProgram, inClassName, inAccumEnv)
     local
       SCode.Element cls_el;
-      SCode.Class cls;
+      SCode.Element cls;
       SCode.Program rest_prog;
       String name;
       Item item;
@@ -1472,10 +1476,11 @@ algorithm
     // Try to collect the first class in the list.
     case (_, (cls as SCode.CLASS(name = name)) :: rest_prog, _, env)
       equation
-        cls_el = SCodeEnv.wrapClassInDummyDef(cls);
+        cls_el = cls;
         (cls_el, env) = collectUsedClass(cls_el, clsAndVars, inClassName, env,
           Absyn.IDENT(name));
-        SCode.CLASSDEF(classDef = cls) = cls_el;
+        SCode.CLASS(name = _) = cls_el;
+        cls = cls_el;
         (rest_prog, env) = 
           collectUsedProgram2(clsAndVars, rest_prog, inClassName, env);
       then
@@ -1504,10 +1509,11 @@ protected function collectUsedClass
   output Env outAccumEnv;
 protected
   SCode.Ident name;
-  Boolean pp, ep, fp, rpp, rdp;
+  SCode.Prefixes prefixes;
   SCode.Restriction res;
-  SCode.Class cls;
   SCode.ClassDef cdef;
+  SCode.Encapsulated ep;
+  SCode.Partial pp;
   Absyn.Info info;
   Item item;
   SCodeEnv.Frame class_frame;
@@ -1515,8 +1521,9 @@ protected
   Absyn.Path cls_path;
   Option<Absyn.ConstrainClass> cc;
 algorithm
-  SCode.CLASSDEF(_, fp, rpp, rdp, cls, cc) := inClass;
-  SCode.CLASS(name, pp, ep, res, cdef, info) := cls;
+  SCode.CLASS(name, prefixes, ep, pp, res, cdef, info) := inClass;
+  // TODO! FIXME! add cc to the used classes!
+  cc := SCode.replaceableOptConstraint(SCode.prefixesReplaceable(prefixes));
   // Check if the class is used.
   item := SCodeEnv.avlTreeGet(inClsAndVars, name);
   true := checkClassUsed(item, cdef);
@@ -1525,12 +1532,11 @@ algorithm
   (cdef, class_env) := 
     collectUsedClassDef(cdef, class_frame, inClassName, inAccumPath);
   // Add the class to the new environment.
-  cls := SCode.CLASS(name, pp, ep, res, cdef, info);
-  outClass := SCode.CLASSDEF(name, fp, rpp, rdp, cls, cc);
+  outClass := SCode.CLASS(name, prefixes, ep, pp, res, cdef, info);
   item := updateItemEnv(item, outClass, class_env);
   outAccumEnv := SCodeEnv.extendEnvWithItem(item, inAccumEnv, name);
 end collectUsedClass;
-     
+
 protected function checkClassUsed
   "Given the environment item and definition for a class, returns whether the
   class is used or not."
@@ -1541,8 +1547,7 @@ algorithm
   isUsed := match(inItem, inClassDef)
     // GraphicalAnnotationsProgram____ is a special case, since it's not used by
     // anything, but needed during instantiation.
-    case (SCodeEnv.CLASS(cls = SCode.CLASSDEF(classDef =
-        SCode.CLASS(name = "GraphicalAnnotationsProgram____"))), _) 
+    case (SCodeEnv.CLASS(cls = SCode.CLASS(name = "GraphicalAnnotationsProgram____")), _) 
       then true;
     // Otherwise, use the environment item to determine if the class is used or
     // not.
@@ -1595,11 +1600,11 @@ algorithm
       then
         (SCode.PARTS(el, neq, ieq, nal, ial, ext_decl, annl, cmt), env);
 
-    case (SCode.CLASS_EXTENDS(bc, mods, el, neq, ieq, nal, ial, annl, cmt), _, _, _)
+    case (SCode.CLASS_EXTENDS(bc, mods, SCode.PARTS(el, neq, ieq, nal, ial, ext_decl, annl, cmt)), _, _, _)
       equation
         (el, env) = collectUsedElements(el, inClassEnv, inClassName, inAccumPath);
       then
-        (SCode.CLASS_EXTENDS(bc, mods, el, neq, ieq, nal, ial, annl, cmt), env);
+        (SCode.CLASS_EXTENDS(bc, mods, SCode.PARTS(el, neq, ieq, nal, ial, ext_decl, annl, cmt)), env);
 
     else then (inClassDef, {inClassEnv});
   end match;
@@ -1693,16 +1698,15 @@ algorithm
       Absyn.Path cls_path;
 
     // A class definition, just use collectUsedClass.
-    case (SCode.CLASSDEF(name = name), _, env, _, _, _)
+    case (SCode.CLASS(name = name), _, env, _, _, _)
       equation
         cls_path = Absyn.joinPaths(inAccumPath, Absyn.IDENT(name));
-        (cls, env) = collectUsedClass(inElement, inClsAndVars, inClassName, 
-          env, cls_path);
+        (cls, env) = collectUsedClass(inElement, inClsAndVars, inClassName,env, cls_path);
       then
         (cls, env);
   
     // A constant.
-    case (SCode.COMPONENT(component = name, 
+    case (SCode.COMPONENT(name = name, 
       attributes = SCode.ATTR(variability = SCode.CONST())), _, _, _, _, false)
       equation
         item = SCodeEnv.avlTreeGet(inClsAndVars, name);
@@ -1713,7 +1717,7 @@ algorithm
         
     // Class components are always collected, regardless of whether they are
     // used or not.
-    case (SCode.COMPONENT(component = name), _, _, _, _, _)
+    case (SCode.COMPONENT(name = name), _, _, _, _, _)
       equation
         item = SCodeEnv.newVarItem(inElement, true);
         env = SCodeEnv.extendEnvWithItem(item, inAccumEnv, name);

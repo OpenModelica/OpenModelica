@@ -760,7 +760,7 @@ protected function setupFunctionEnvironment
   output Env.Env outEnv;
   output SymbolTable outST;
 algorithm
-  outEnv := Env.openScope(inEnv, false, SOME(inFuncName), SOME(Env.FUNCTION_SCOPE()));
+  outEnv := Env.openScope(inEnv, SCode.NOT_ENCAPSULATED(), SOME(inFuncName), SOME(Env.FUNCTION_SCOPE()));
   (outCache, outEnv, outST) := 
     extendEnvWithFunctionVars(inCache, outEnv, inFuncParams, inST);
 end setupFunctionEnvironment;
@@ -923,8 +923,8 @@ protected function makeFunctionVariable
 algorithm
   outVar := DAE.TYPES_VAR(
     inName,
-    DAE.ATTR(false, false, SCode.RW(), SCode.VAR(), Absyn.BIDIR(), Absyn.UNSPECIFIED()),
-    false, inType, inBinding, NONE());
+    DAE.ATTR(SCode.NOT_FLOW(), SCode.NOT_STREAM(), SCode.RW(), SCode.VAR(), Absyn.BIDIR(), Absyn.NOT_INNER_OUTER()),
+    SCode.PUBLIC(), inType, inBinding, NONE());
 end makeFunctionVariable;
 
 protected function getBinding
@@ -1018,7 +1018,7 @@ algorithm
       Env.Env env;
       SymbolTable st;
 
-    case (DAE.TYPES_VAR(name = name, type_ = ty), _, (cache, env, st))
+    case (DAE.TYPES_VAR(name = name, ty = ty), _, (cache, env, st))
       equation
         (cache, env, st) = 
           extendEnvWithVar(name, ty, inOptValue, {}, cache, env, st);
@@ -1651,8 +1651,7 @@ algorithm
     // The component is a record itself.
     case (DAE.TYPES_VAR(
         name = id, 
-        type_ = ty as (DAE.T_COMPLEX(
-          complexClassType = ClassInf.RECORD(path = _)), _)), _)
+        ty   = ty as (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = _)), _)), _)
       equation
         val = getRecordValue(Absyn.IDENT(id), ty, inEnv);
       then

@@ -67,7 +67,7 @@ goto rule ## func ## Ex; }}
   #define mk_some_or_none(x) (x ? mk_some(x) : mk_none())
   #define mk_tuple2(x1,x2) mk_box2(0,x1,x2)
   #define make_redeclare_keywords(replaceable,redeclare) (((replaceable) && (redeclare)) ? Absyn__REDECLARE_5fREPLACEABLE : ((replaceable) ? Absyn__REPLACEABLE : ((redeclare) ? Absyn__REDECLARE : NULL)))
-  #define make_inner_outer(i,o) (i && o ? Absyn__INNEROUTER : i ? Absyn__INNER : o ? Absyn__OUTER : Absyn__UNSPECIFIED)
+  #define make_inner_outer(i,o) (i && o ? Absyn__INNER_5fOUTER : i ? Absyn__INNER : o ? Absyn__OUTER : Absyn__NOT_5fINNER_5fOUTER)
 #if 0
   /* Enable if you don't want to generate the tree */
   void* mk_box_eat_all(int ix, ...);
@@ -339,8 +339,8 @@ element returns [void* ast] @declarations {
   void *innerouter;
   void *redecl;
 } :
-    ic=import_clause { $ast = Absyn__ELEMENT(RML_FALSE,mk_none(),Absyn__UNSPECIFIED,mk_scon("import"), ic, INFO($start), mk_none());}
-  | ec=extends_clause { $ast = Absyn__ELEMENT(RML_FALSE,mk_none(),Absyn__UNSPECIFIED,mk_scon("extends"), ec, INFO($start),mk_none());}
+    ic=import_clause { $ast = Absyn__ELEMENT(RML_FALSE,mk_none(),Absyn__NOT_5fINNER_5fOUTER,mk_scon("import"), ic, INFO($start), mk_none());}
+  | ec=extends_clause { $ast = Absyn__ELEMENT(RML_FALSE,mk_none(),Absyn__NOT_5fINNER_5fOUTER,mk_scon("extends"), ec, INFO($start),mk_none());}
   | du=defineunit_clause { $ast = du;}
   | (r=REDECLARE)? (f=FINAL)? (i=INNER)? (o=T_OUTER)? { final = mk_bcon(f); innerouter = make_inner_outer(i,o); }
     ( ( cdef=class_definition[f != NULL] | cc=component_clause )
@@ -1041,7 +1041,7 @@ name_path returns [void* ast] :
   ;
 
 name_path2 returns [void* ast] :
-  { LA(2)!=DOT }? (id=IDENT|id=CODE) {ast = Absyn__IDENT(token_to_scon(id));}
+  { LA(2) != DOT }? (id=IDENT|id=CODE) {ast = Absyn__IDENT(token_to_scon(id));}
   | (id=IDENT|id=CODE) DOT p=name_path {ast = Absyn__QUALIFIED(token_to_scon(id),p);}
   ;
 

@@ -487,13 +487,15 @@ algorithm
     local
       String crstr,dirstr,tystr,str,dimstr;
       DAE.ComponentRef cr;
-      Boolean fl,st;
+      SCode.Flow fl;
+      SCode.Stream st;
       SCode.Accessibility acc;
       SCode.Variability var;
       Absyn.Direction dir;
       tuple<DAE.TType, Option<Absyn.Path>> ty;
       DAE.Exp exp,dim;
       DAE.Attributes attr;
+      
     case DAE.NOEXTARG() then "void";
     case DAE.EXTARG(componentRef = cr,attributes = DAE.ATTR(flowPrefix = fl,streamPrefix=st,accessibility = acc,variability = var,direction = dir),type_ = ty)
       equation
@@ -840,15 +842,15 @@ algorithm
   end matchcontinue;
 end dumpVar;
 
-protected function dumpVarProtectionStr "Prints 'protected' to a string for protected variables"
-  input DAE.VarProtection prot;
+protected function dumpVarVisibilityStr "Prints 'protected' to a string for protected variables"
+  input DAE.VarVisibility prot;
   output String str;
 algorithm
   str := match(prot)
     case DAE.PUBLIC() then "";
     case DAE.PROTECTED() then "protected ";
   end match;
-end dumpVarProtectionStr;
+end dumpVarVisibilityStr;
 
 public function dumpCommentOptionStr "function: dumpCommentOptionStr
   Dump Comment option to a string."
@@ -1410,7 +1412,7 @@ algorithm
     case((DAE.T_COMPLEX(complexVarLst={}),_)) then "";
 
     // protected vars are not input!, see Modelica Spec 3.2, Section 12.6, Record Constructor Functions, page 140
-    case((DAE.T_COMPLEX(cistate,DAE.TYPES_VAR(name=name,protected_=true,type_=tp,binding=binding)::varLst,optTp,ec),optPath)) 
+    case((DAE.T_COMPLEX(cistate,DAE.TYPES_VAR(name=name,visibility=SCode.PROTECTED(),ty=tp,binding=binding)::varLst,optTp,ec),optPath)) 
       equation
         s1 ="protected "+&Types.unparseType(tp)+&" "+&name+&printRecordConstructorBinding(binding)+&";\n";
         s2 = printRecordConstructorInputsStr((DAE.T_COMPLEX(cistate,varLst,optTp,ec),optPath));
@@ -1419,7 +1421,7 @@ algorithm
         str;
 
     // constants are not input! see Modelica Spec 3.2, Section 12.6, Record Constructor Functions, page 140
-    case((DAE.T_COMPLEX(cistate,DAE.TYPES_VAR(name=name,attributes=DAE.ATTR(variability=SCode.CONST()),type_=tp,binding=binding)::varLst,optTp,ec),optPath)) 
+    case((DAE.T_COMPLEX(cistate,DAE.TYPES_VAR(name=name,attributes=DAE.ATTR(variability=SCode.CONST()),ty=tp,binding=binding)::varLst,optTp,ec),optPath)) 
       equation
         s1 ="constant "+&Types.unparseType(tp)+&" "+&name+&printRecordConstructorBinding(binding)+&";\n";
         s2 = printRecordConstructorInputsStr((DAE.T_COMPLEX(cistate,varLst,optTp,ec),optPath));
@@ -1427,7 +1429,7 @@ algorithm
       then 
         str;
 
-    case((DAE.T_COMPLEX(cistate,DAE.TYPES_VAR(name=name,type_=tp,binding=binding)::varLst,optTp,ec),optPath)) 
+    case((DAE.T_COMPLEX(cistate,DAE.TYPES_VAR(name=name,ty=tp,binding=binding)::varLst,optTp,ec),optPath)) 
       equation
         s1 ="input "+&Types.unparseType(tp)+&" "+&name+&printRecordConstructorBinding(binding)+&";\n";
         s2 = printRecordConstructorInputsStr((DAE.T_COMPLEX(cistate,varLst,optTp,ec),optPath));
@@ -1436,6 +1438,7 @@ algorithm
         str;
 
     case((DAE.T_FUNCTION(funcResultType=tp),_)) then printRecordConstructorInputsStr(tp);
+    
   end matchcontinue;
 end printRecordConstructorInputsStr;
 
@@ -3143,7 +3146,7 @@ algorithm
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
       DAE.Exp e;
-      DAE.VarProtection prot;
+      DAE.VarVisibility prot;
       DAE.InstDims dims;
       IOStream.IOStream str;
     // no binding
@@ -3165,7 +3168,7 @@ algorithm
         s3 = unparseType(typ);
         s3_subs = unparseDimensions(dims, printTypeDimension);
         s4 = ComponentReference.printComponentRefStr(id);
-        s7 = dumpVarProtectionStr(prot);
+        s7 = dumpVarVisibilityStr(prot);
         comment_str = dumpCommentOptionStr(comment);
         s5 = dumpVariableAttributesStr(dae_var_attr);
         str = IOStream.appendList(str, {"  ",s7,s1,s2,s3,s3_subs," ",s4,s5,comment_str,";\n"});
@@ -3193,7 +3196,7 @@ algorithm
         s5 = ExpressionDump.printExpStr(e);
         comment_str = dumpCommentOptionStr(comment);
         s6 = dumpVariableAttributesStr(dae_var_attr);
-        s7 = dumpVarProtectionStr(prot);
+        s7 = dumpVarVisibilityStr(prot);
         str = IOStream.appendList(str, {"  ",s7,s1,s2,s3,s3_subs," ",s4,s6," = ",s5,comment_str,";\n"});
       then
         str;

@@ -332,7 +332,7 @@ algorithm
       list<Absyn.Path> cl; Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment; Algorithm.Algorithm alg;
       DAE.ExternalDecl decl; DAE.Element e; Absyn.InnerOuter io;
-      DAE.Type ftp; DAE.VarProtection prot; list<DAE.FunctionDefinition> funcDer;
+      DAE.Type ftp; DAE.VarVisibility prot; list<DAE.FunctionDefinition> funcDer;
       Boolean partialPrefix; DAE.ElementSource source "the origin of the element";
       list<DAE.Element> daeLst;
     // variables with binding
@@ -450,7 +450,7 @@ public function isOuter "Returns true if InnerOuter specification is outer or in
   algorithm
     res := matchcontinue(io)
       case(Absyn.OUTER()) then true;
-      case(Absyn.INNEROUTER()) then true;
+      case(Absyn.INNER_OUTER()) then true;
       case(_) then false;
     end matchcontinue;
 end isOuter;
@@ -472,7 +472,7 @@ public function isInner "Returns true if InnerOuter specification is inner or in
   algorithm
     res := matchcontinue(io)
       case(Absyn.INNER()) then true;
-       case(Absyn.INNEROUTER()) then true;
+       case(Absyn.INNER_OUTER()) then true;
       case(_) then false;
     end matchcontinue;
 end isInner;
@@ -483,7 +483,7 @@ i.e. neither inner, outer or inner outer"
   output Boolean res;
   algorithm
     res := matchcontinue(io)
-      case(Absyn.UNSPECIFIED()) then true;
+      case(Absyn.NOT_INNER_OUTER()) then true;
       case(_) then false;
     end matchcontinue;
 end isUnspecified;
@@ -496,8 +496,8 @@ algorithm
   res := matchcontinue(io1,io2)
     case(Absyn.INNER(),Absyn.INNER()) then true;
     case(Absyn.OUTER(),Absyn.OUTER()) then true;
-    case(Absyn.INNEROUTER(),Absyn.INNEROUTER()) then true;
-    case(Absyn.UNSPECIFIED(),Absyn.UNSPECIFIED()) then true;
+    case(Absyn.INNER_OUTER(),Absyn.INNER_OUTER()) then true;
+    case(Absyn.NOT_INNER_OUTER(),Absyn.NOT_INNER_OUTER()) then true;
     case(_,_) then false;
   end matchcontinue;
 end innerOuterEqual;

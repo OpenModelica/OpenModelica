@@ -979,7 +979,7 @@ algorithm
   matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable,inFileNamePrefix,addDummy, inSimSettingsOpt)
     local
       String filenameprefix,file_dir,resstr;
-      list<SCode.Class> p_1;
+      list<SCode.Element> p_1;
       DAE.DAElist dae;
       list<Env.Frame> env;
       BackendDAE.BackendDAE dlow,dlow_1,indexed_dlow,indexed_dlow_1;
@@ -1056,7 +1056,7 @@ algorithm
   matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable,inFileNamePrefix,addDummy, inSimSettingsOpt)
     local
       String filenameprefix,file_dir,resstr;
-      list<SCode.Class> p_1;
+      list<SCode.Element> p_1;
       DAE.DAElist dae;
       list<Env.Frame> env;
       BackendDAE.BackendDAE dlow,dlow_1,indexed_dlow,indexed_dlow_1;
@@ -1235,7 +1235,7 @@ algorithm
   matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable,inFileNamePrefix,addDummy, inSimSettingsOpt)
     local
       String filenameprefix,file_dir,resstr;
-      list<SCode.Class> p_1;
+      list<SCode.Element> p_1;
       DAE.DAElist dae;
       list<Env.Frame> env;
       BackendDAE.BackendDAE dlow,dlow_1,indexed_dlow,indexed_dlow_1;
@@ -3162,8 +3162,7 @@ Helper function to elaborateRecordDeclarations."
   output list<RecordDeclaration> outRecordDecls;
   output list<String> outReturnTypes;
 algorithm
-  (outRecordDecls,outReturnTypes) :=
-  matchcontinue (inRecordTypes,inAccRecordDecls,inReturnTypes)
+  (outRecordDecls,outReturnTypes) := matchcontinue (inRecordTypes,inAccRecordDecls,inReturnTypes)
     local
       Types.Type ty;
       list<Types.Var> rest;
@@ -3171,7 +3170,7 @@ algorithm
       list<RecordDeclaration> accRecDecls;
     case ({},accRecDecls,rt)
     then (accRecDecls,rt);
-    case (DAE.TYPES_VAR(type_ = (ty as (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)),_)))::rest,accRecDecls,rt)
+    case (DAE.TYPES_VAR(ty = (ty as (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)),_)))::rest,accRecDecls,rt)
       equation
         (accRecDecls,rt_1) = elaborateRecordDeclarationsForRecord(ty,accRecDecls,rt);
         (accRecDecls,rt_2) = elaborateNestedRecordDeclarations(rest,accRecDecls,rt_1);
@@ -8876,7 +8875,7 @@ algorithm
       Types.Type typesType;
       DAE.ExpType expType;
       DAE.ComponentRef cref_;
-    case (DAE.TYPES_VAR(name=name, type_=typesType))
+    case (DAE.TYPES_VAR(name=name, ty=typesType))
       equation
         expType = Types.elabType(typesType);
         cref_ = ComponentReference.makeCrefIdent(name, expType, {});

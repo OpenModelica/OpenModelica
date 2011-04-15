@@ -215,7 +215,7 @@ algorithm
         varName = stringAppend("RES__",intString(n));
 
         varList = Util.listCreate(Absyn.ELEMENTITEM(Absyn.ELEMENT(
-          false,NONE(),Absyn.UNSPECIFIED(),"component",
+          false,NONE(),Absyn.NOT_INNER_OUTER(),"component",
           Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
             t2,
             {Absyn.COMPONENTITEM(Absyn.COMPONENT(varName,{},NONE()),NONE(),NONE())}),
@@ -232,28 +232,31 @@ end createMatchcontinueResultVars;
 */
 
 public function getListOfStrings
-input list<SCode.Element> els;
-output list<String> outStrings;
-
+  input list<SCode.Element> els;
+  output list<String> outStrings;
 algorithm
   outStrings := match(els)
-  local
-    list<SCode.Element> rest;
-    list<String> slst;
-    String n;
-    case({})
-      then {};
-    case(SCode.CLASSDEF(name = n)::rest)
+    local
+      list<SCode.Element> rest;
+      list<String> slst;
+      String n;
+    
+    case({}) then {};
+    
+    case(SCode.CLASS(name = n)::rest)
       equation
         slst = getListOfStrings(rest);
-        then n::slst;
+      then 
+        n::slst;
+    
     case(_) then fail();
+    
   end match;
 end getListOfStrings;
 
 //Check if a class has a certain restriction, added by simbj
 public function classHasMetaRestriction
-  input SCode.Class cl;
+  input SCode.Element cl;
   output Boolean outBoolean;
 algorithm
   outBoolean := matchcontinue(cl)
@@ -267,7 +270,7 @@ end classHasMetaRestriction;
 
 //Check if a class has a certain restriction, added by simbj
 public function classHasRestriction
-  input SCode.Class cl;
+  input SCode.Element cl;
   input SCode.Restriction re;
   output Boolean outBoolean;
 algorithm
@@ -761,7 +764,7 @@ that is a match expression must be on the form (outputs) := matchcontinue (input
 RML does not check this even though it's translated to this internally, so we
 must check for it to warn the user."
   input Boolean b;
-  input SCode.Class c;
+  input SCode.Element c;
   output Boolean isOK;
 algorithm
   isOK := matchcontinue (b,c)

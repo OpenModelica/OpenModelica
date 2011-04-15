@@ -192,7 +192,7 @@ algorithm
       DAE.Ident id;
       Absyn.Path path;
       list<DAE.Statement> stmts,stmts2;
-      DAE.VarProtection prot;
+      DAE.VarVisibility prot;
       DAE.Stream st;
       Boolean partialPrefix;
       DAE.ExternalDecl extdecl;

@@ -42,7 +42,7 @@ algorithm
     local
       Tpl.Text txt;
       SCode.Program rest;
-      SCode.Class i_cl;
+      SCode.Element i_cl;
 
     case ( txt,
            {} )
@@ -124,7 +124,7 @@ end lm_25;
 
 protected function fun_26
   input Tpl.Text in_txt;
-  input SCode.Class in_a_cl;
+  input SCode.Element in_a_cl;
 
   output Tpl.Text out_txt;
 algorithm
@@ -149,7 +149,7 @@ end fun_26;
 
 public function classExternalHeader
   input Tpl.Text txt;
-  input SCode.Class a_cl;
+  input SCode.Element a_cl;
   input String a_pack;
 
   output Tpl.Text out_txt;
@@ -208,16 +208,16 @@ algorithm
     local
       Tpl.Text txt;
       list<SCode.Element> rest;
-      SCode.Ident i_component;
+      SCode.Ident i_name;
 
     case ( txt,
            {} )
       then txt;
 
     case ( txt,
-           SCode.COMPONENT(component = i_component) :: rest )
+           SCode.COMPONENT(name = i_name) :: rest )
       equation
-        txt = Tpl.writeStr(txt, i_component);
+        txt = Tpl.writeStr(txt, i_name);
         txt = Tpl.nextIter(txt);
         txt = lm_29(txt, rest);
       then txt;
@@ -241,17 +241,17 @@ algorithm
     local
       Tpl.Text txt;
       list<SCode.Element> rest;
-      SCode.Ident i_component;
+      SCode.Ident i_name;
 
     case ( txt,
            {} )
       then txt;
 
     case ( txt,
-           SCode.COMPONENT(component = i_component) :: rest )
+           SCode.COMPONENT(name = i_name) :: rest )
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
-        txt = Tpl.writeStr(txt, i_component);
+        txt = Tpl.writeStr(txt, i_name);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
         txt = Tpl.nextIter(txt);
         txt = lm_30(txt, rest);
@@ -395,7 +395,7 @@ algorithm
     local
       Tpl.Text txt;
       String a_pack;
-      SCode.Class i_classDef;
+      SCode.Element i_elt;
       Integer i_r_index;
       SCode.Ident i_c_name;
       Absyn.Path i_r_name;
@@ -414,7 +414,7 @@ algorithm
       Tpl.Text l_fields;
 
     case ( txt,
-           SCode.CLASSDEF(classDef = SCode.CLASS(restriction = SCode.R_METARECORD(name = i_r_name, index = i_r_index), classDef = SCode.PARTS(elementLst = i_p_elementLst), name = i_c_name)),
+           SCode.CLASS(restriction = SCode.R_METARECORD(name = i_r_name, index = i_r_index), classDef = SCode.PARTS(elementLst = i_p_elementLst), name = i_c_name),
            a_pack )
       equation
         l_fields = Tpl.pushIter(Tpl.emptyTxt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_STRING(",")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
@@ -493,10 +493,10 @@ algorithm
       then txt;
 
     case ( txt,
-           SCode.CLASSDEF(classDef = i_classDef),
+           (i_elt as SCode.CLASS(name = _)),
            a_pack )
       equation
-        txt = classExternalHeader(txt, i_classDef, a_pack);
+        txt = classExternalHeader(txt, i_elt, a_pack);
       then txt;
 
     case ( txt,

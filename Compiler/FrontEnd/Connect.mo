@@ -60,8 +60,8 @@ uniontype Face"This type indicates whether a connector is an inside or an outsid
   record OUTSIDE "This is an outside connection" end OUTSIDE;
 end Face;
 
-type EquSetElement = tuple<DAE.ComponentRef, Face, DAE.ElementSource>;
-type FlowSetElement = tuple<DAE.ComponentRef, Face, DAE.ElementSource>;
+type EquSetElement    = tuple<DAE.ComponentRef, Face, DAE.ElementSource>;
+type FlowSetElement   = tuple<DAE.ComponentRef, Face, DAE.ElementSource>;
 type StreamSetElement = tuple<DAE.ComponentRef, DAE.ComponentRef, Face, DAE.ElementSource>;
 
 // FlowStreamConnect models an association between a stream variable and a flow

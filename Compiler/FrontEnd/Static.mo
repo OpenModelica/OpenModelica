@@ -1048,7 +1048,7 @@ algorithm
 
     case (cache,env,fn,exp,iterators,impl,st,doVect,pre,info)
       equation
-        env_1 = Env.openScope(env, false, SOME(Env.forIterScopeName),NONE());
+        env_1 = Env.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(Env.forIterScopeName), NONE());
         (cache,env_1,reductionIters,dims,iterconst,hasGuardExp,st) = elabCallReductionIterators(cache, env_1, iterators, impl, st, doVect, pre, info);
         dims = listReverse(dims);
         // print("elabReductionExp: " +& Dump.printExpStr(exp) +& "\n");
@@ -4026,14 +4026,14 @@ algorithm
     // Operand is a stream variable, ok!
     case (_, _, DAE.CREF(componentRef = cr), _, _, _)
       equation
-        (_, DAE.ATTR(streamPrefix = true), _, _, _, _, _, _, _) =
+        (_, DAE.ATTR(streamPrefix = SCode.STREAM()), _, _, _, _, _, _, _) =
           Lookup.lookupVar(inCache, inEnv, cr);
       then
         ();
     // Operand is not a stream variable, error!
     case (_, _, DAE.CREF(componentRef = cr), _, _, _)
       equation
-        (_, DAE.ATTR(streamPrefix = false), _, _, _, _, _, _, _) =
+        (_, DAE.ATTR(streamPrefix = SCode.NOT_STREAM()), _, _, _, _, _, _, _) =
           Lookup.lookupVar(inCache, inEnv, cr);
         op_str = ComponentReference.printComponentRefStr(cr);
         Error.addSourceMessage(Error.NON_STREAM_OPERAND_IN_STREAM_OPERATOR, 
@@ -6824,9 +6824,9 @@ protected function elabCallInteractive "function: elabCallInteractive
           DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("SimulationObject")),
           {
           DAE.TYPES_VAR("flatClass",
-          DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
+          DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
           DAE.TYPES_VAR("exeFile",
-          DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE())},NONE(),NONE()),NONE());
+          DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE())},NONE(),NONE()),NONE());
       then
         (cache,Expression.makeBuiltinCall("translateModel",
           {DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER()),filenameprefix},DAE.ET_STRING()),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
@@ -6841,9 +6841,9 @@ protected function elabCallInteractive "function: elabCallInteractive
         DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("SimulationObject")),
          {
           DAE.TYPES_VAR("flatClass",
-          DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
+          DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
           DAE.TYPES_VAR("exeFile",
-          DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE())},NONE(),NONE()),NONE());
+          DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE())},NONE(),NONE()),NONE());
       then
         (cache,Expression.makeBuiltinCall("translateModelCPP",
           {DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER()),filenameprefix},DAE.ET_STRING()),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
@@ -6858,9 +6858,9 @@ protected function elabCallInteractive "function: elabCallInteractive
           DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("SimulationObject")),
           {
           DAE.TYPES_VAR("flatClass",
-          DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
+          DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
           DAE.TYPES_VAR("exeFile",
-          DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE())},NONE(),NONE()),NONE());
+          DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE())},NONE(),NONE()),NONE());
       then
         (cache,Expression.makeBuiltinCall("translateModelFMU",
           {DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER()),filenameprefix},DAE.ET_STRING()),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
@@ -6876,9 +6876,9 @@ protected function elabCallInteractive "function: elabCallInteractive
           DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("SimulationObject")),
           {
           DAE.TYPES_VAR("flatClass",
-          DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
+          DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
           DAE.TYPES_VAR("exeFile",
-          DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE())},NONE(),NONE()),NONE());
+          DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE())},NONE(),NONE()),NONE());
       then
         (cache,Expression.makeBuiltinCall("exportDAEtoMatlab",
           {DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER()),filenameprefix},DAE.ET_STRING()),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
@@ -7229,7 +7229,7 @@ end isFunctionInCflist;
 public function getComponentsWithUnkownArraySizes
 "This function returns true if a class
  has unknown array sizes for a component"
-  input SCode.Class cl;
+  input SCode.Element cl;
   output list<SCode.Element> compElts;
 algorithm
   compElts := matchcontinue (cl)
@@ -7253,7 +7253,7 @@ protected function transformFunctionArgumentsIntoModifications
   input Env.Env env;
   input Boolean impl;
   input Option<Interactive.InteractiveSymbolTable> inSymTab;
-  input SCode.Class inClass;
+  input SCode.Element inClass;
   input list<Absyn.Exp> inPositionalArguments;
   input list<Absyn.NamedArg> inNamedArguments;
   output Option<Absyn.Modification> absynOptMod;
@@ -7285,7 +7285,7 @@ protected function transformFunctionArgumentsIntoModifications
   input Env.Env env;
   input Boolean impl;
   input Option<Interactive.InteractiveSymbolTable> inSymTab;
-  input SCode.Class inClass;
+  input SCode.Element inClass;
   input list<Absyn.Exp> inPositionalArguments;
   input list<Absyn.NamedArg> inNamedArguments;
   output Option<Absyn.Modification> absynOptMod;
@@ -7310,7 +7310,7 @@ algorithm
 end createDummyFarg;
 
 protected function transformModificationsToNamedArguments
-  input SCode.Class c;
+  input SCode.Element c;
   input String prefix;
   output list<Absyn.NamedArg> namedArguments;
 algorithm
@@ -7347,11 +7347,11 @@ end transformModificationsToNamedArguments;
 
 protected function addComponentFunctionsToCurrentEnvironment
 "author: adrpo
-  This function will copy the SCode.Class N given as input and the
+  This function will copy the SCode.Element N given as input and the
   derived dependency into the current scope with name componentName.N"
  input Env.Cache inCache;
  input Env.Env inEnv;
- input SCode.Class scodeClass;
+ input SCode.Element scodeClass;
  input Env.Env inClassEnv;
  input String componentName;
  output Env.Cache outCache;
@@ -7361,23 +7361,25 @@ algorithm
     local
       Env.Cache cache;
       Env.Env env, classEnv;
-      SCode.Class sc, extendedClass;
+      SCode.Element sc, extendedClass;
       String cn, extendsCn;
       SCode.Ident name "the name of the class" ;
-      Boolean partialPrefix "the partial prefix" ;
-      Boolean encapsulatedPrefix "the encapsulated prefix" ;
+      SCode.Partial partialPrefix "the partial prefix" ;
+      SCode.Encapsulated encapsulatedPrefix "the encapsulated prefix" ;
       SCode.Restriction restriction "the restriction of the class" ;
       SCode.ClassDef classDef "the class specification" ;
       Absyn.TypeSpec typeSpec "typeSpec: type specification" ;
       Absyn.Path extendsPath, newExtendsPath;
       SCode.Mod modifications ;
-      Absyn.ElementAttributes attributes ;
+      SCode.Attributes attributes ;
       Option<SCode.Comment> comment "the translated comment from the Absyn" ;
       Option<Absyn.ArrayDim> arrayDim;
       Absyn.Info info;
+      SCode.Prefixes prefixes;
 
     // handle derived component functions i.e. gravityAcceleration = gravityAccelerationTypes
-    case(cache, env, sc as SCode.CLASS(name, partialPrefix, encapsulatedPrefix, restriction, classDef as
+    case(cache, env, 
+         sc as SCode.CLASS(name, prefixes, encapsulatedPrefix, partialPrefix, restriction, classDef as
          SCode.DERIVED(typeSpec as Absyn.TPATH(extendsPath, arrayDim), modifications, attributes, comment),info),
          classEnv, cn)
       equation
@@ -7388,7 +7390,7 @@ algorithm
         // also change extendsPath to world.gravityAccelerationTypes
         extendsCn = componentName +& "__" +& Absyn.pathString(extendsPath);
         newExtendsPath = Absyn.IDENT(extendsCn);
-        sc = SCode.CLASS(name, partialPrefix, encapsulatedPrefix, restriction,
+        sc = SCode.CLASS(name, prefixes, encapsulatedPrefix, partialPrefix, restriction,
                SCode.DERIVED(Absyn.TPATH(newExtendsPath, arrayDim), SCode.NOMOD(), attributes, comment),info);
         // add the class function to the environment
         env = Env.extendFrameC(env, sc);
@@ -7396,16 +7398,16 @@ algorithm
         (_, extendedClass, _) = Lookup.lookupClass(cache, classEnv, extendsPath, true);
         // construct the extended class gravityAccelerationType
         // with a different name: world.gravityAccelerationType
-        SCode.CLASS(name, partialPrefix, encapsulatedPrefix, restriction, classDef, info) = extendedClass;
+        SCode.CLASS(name, prefixes, encapsulatedPrefix, partialPrefix, restriction, classDef, info) = extendedClass;
         // change the class name from gravityAccelerationTypes to be world.gravityAccelerationTypes
         name = componentName +& "__" +& name;
         // construct the extended class world.gravityAccelerationType
-        sc = SCode.CLASS(name, partialPrefix, encapsulatedPrefix, restriction, classDef, info);
+        sc = SCode.CLASS(name, prefixes, encapsulatedPrefix, partialPrefix, restriction, classDef, info);
         // add the extended class function to the environment
         env = Env.extendFrameC(env, sc);
       then (cache, env);
     // handle component functions made of parts
-    case(cache, env, sc as SCode.CLASS(name, partialPrefix, encapsulatedPrefix, restriction, classDef as _, info),
+    case(cache, env, sc as SCode.CLASS(name, prefixes, encapsulatedPrefix, partialPrefix, restriction, classDef as _, info),
          classEnv, cn)
       equation
         // enableTrace();
@@ -7413,7 +7415,7 @@ algorithm
         name = componentName +& "__" +& name;
         // remove modifications as they are added via transformModificationsToNamedArguments
         // also change extendsPath to world.gravityAccelerationTypes
-        sc = SCode.CLASS(name, partialPrefix, encapsulatedPrefix, restriction, classDef, info);
+        sc = SCode.CLASS(name, prefixes, encapsulatedPrefix, partialPrefix, restriction, classDef, info);
         // add the class function to the environment
         env = Env.extendFrameC(env, sc);
       then (cache, env);
@@ -7513,7 +7515,7 @@ algorithm
       DAE.Const const;
       DAE.TupleConst tyconst;
       DAE.Properties prop,prop_1;
-      SCode.Class cl,scodeClass,recordCl;
+      SCode.Element cl,scodeClass,recordCl;
       Absyn.Path fn,fn_1,fqPath,utPath,fnPrefix,componentType,correctFunctionPath,functionClassPath;
       list<Absyn.Exp> args,t4;
       list<Absyn.NamedArg> nargs, translatedNArgs;
@@ -7576,7 +7578,9 @@ algorithm
         fnPrefix = Absyn.stripLast(fn); // take the prefix: word
         fnIdent = Absyn.pathLastIdent(fn); // take the suffix: gravityAcceleration
         Absyn.IDENT(componentName) = fnPrefix; // see that is just a name TODO! this might be a path
-        (_, _, SOME((SCode.COMPONENT(innerOuter=innerOuter, typeSpec = Absyn.TPATH(componentType, _)),_)), _) =
+        (_, _, SOME((SCode.COMPONENT(
+          prefixes = SCode.PREFIXES(innerOuter=innerOuter), 
+          typeSpec = Absyn.TPATH(componentType, _)),_)), _) =
           Lookup.lookupIdent(cache, env, componentName); // search for the component
         // join the type with the function name: Modelica.Mechanics.MultiBody.World.gravityAcceleration
         functionClassPath = Absyn.joinPaths(componentType, Absyn.IDENT(fnIdent));
@@ -7896,7 +7900,7 @@ functiontree of a newly created dae"
   input Env.Env env;
   input Absyn.Path name;
   input Boolean builtin "builtin functions create empty dae";
-  input Option<SCode.Class> clOpt "if not present, looked up by name in environment";
+  input Option<SCode.Element> clOpt "if not present, looked up by name in environment";
   input Boolean printErrorMsg "if true, prints an error message if the function could not be instantiated";
   output Env.Cache outCache;
   output Util.Status status;
@@ -7910,7 +7914,7 @@ functiontree of a newly created dae"
   input Env.Env env;
   input Absyn.Path name;
   input Boolean builtin "builtin functions create empty dae";
-  input Option<SCode.Class> clOpt "if not present, looked up by name in environment";
+  input Option<SCode.Element> clOpt "if not present, looked up by name in environment";
   input Integer numError "if errors were added, do not add a generic error message";
   input Boolean printErrorMsg "if true, prints an error message if the function could not be instantiated";
   output Env.Cache outCache;
@@ -7919,7 +7923,7 @@ algorithm
   (outCache,status) := matchcontinue(inCache,env,name,builtin,clOpt,numError,printErrorMsg)
     local
       Env.Cache cache;
-      SCode.Class cl;
+      SCode.Element cl;
       String pathStr,envStr;
       DAE.ComponentRef cref;
     /* Builtin functions skipped*/
@@ -8033,7 +8037,7 @@ if we also enforce all input args immutable.
 algorithm
   (outCache,outArgs,outSlots) := matchcontinue(inCache,env,inArgs,fn,slots,impl,inPrefix,info)
     local Env.Cache cache;
-      SCode.Class cl;
+      SCode.Element cl;
       Env.Env env_2;
       list<DAE.Exp> args_2;
       list<Slot> slots2;
@@ -8848,26 +8852,33 @@ algorithm
       DAE.Var v;
 
     case {} then ({},{});
-    case ((DAE.TYPES_VAR(protected_ = true) :: vs)) /* Ignore protected components */
+    
+    case ((DAE.TYPES_VAR(visibility = SCode.PROTECTED()) :: vs)) /* Ignore protected components */
       equation
         (in_,out) = functionParams(vs);
       then
         (in_,out);
-    case ((DAE.TYPES_VAR(name = n,attributes = DAE.ATTR(direction = Absyn.INPUT()),protected_ = false,type_ = t,binding = DAE.UNBOUND()) :: vs))
+    
+    case ((DAE.TYPES_VAR(name = n,attributes = DAE.ATTR(direction = Absyn.INPUT()),
+           visibility = SCode.PUBLIC(),ty = t,binding = DAE.UNBOUND()) :: vs))
       equation
         (in_,out) = functionParams(vs);
       then
         (((n,t) :: in_),out);
-    case ((DAE.TYPES_VAR(name = n,attributes = DAE.ATTR(direction = Absyn.OUTPUT()),protected_ = false,type_ = t,binding = DAE.UNBOUND()) :: vs))
+    
+    case ((DAE.TYPES_VAR(name = n,attributes = DAE.ATTR(direction = Absyn.OUTPUT()),
+           visibility = SCode.PUBLIC(),ty = t,binding = DAE.UNBOUND()) :: vs))
       equation
         (in_,out) = functionParams(vs);
       then
         (in_,((n,t) :: out));
+    
     case (((v as DAE.TYPES_VAR(name = n,attributes = DAE.ATTR(direction = Absyn.BIDIR()))) :: vs))
       equation
         Error.addMessage(Error.FUNCTION_COMPS_MUST_HAVE_DIRECTION, {n});
       then
         fail();
+    
     case (vs)
       equation
         // enabled only by +d=failtrace
@@ -9056,7 +9067,7 @@ protected function getExpInModifierFomEnvOrClass
   input Env.Cache inCache;
   input Env.Env inEnv;
   input SCode.Ident inComponentName;
-  input SCode.Class inClass;
+  input SCode.Element inClass;
   output Absyn.Exp outExp;
 algorithm
   outExp := matchcontinue(inCache,inEnv,inComponentName,inClass)
@@ -9064,7 +9075,7 @@ algorithm
       Env.Cache cache;
       Env.Env env;
       SCode.Ident id;
-      SCode.Class cls;
+      SCode.Element cls;
       Absyn.Exp exp;
       DAE.Mod extendsMod;
       SCode.Mod scodeMod;
@@ -9105,7 +9116,7 @@ protected function fillDefaultSlots
   and fills  default values into slots which have not been filled."
   input Env.Cache inCache;
   input list<Slot> inSlotLst;
-  input SCode.Class inClass;
+  input SCode.Element inClass;
   input Env.Env inEnv;
   input Boolean inBoolean;
   input Types.PolymorphicBindings inPolymorphicBindings;
@@ -9123,7 +9134,7 @@ algorithm
       tuple<Ident, tuple<DAE.TType, Option<Absyn.Path>>> fa;
       Option<DAE.Exp> e;
       list<DAE.Dimension> ds;
-      SCode.Class class_;
+      SCode.Element class_;
       list<Env.Frame> env;
       Boolean impl;
       Absyn.Exp dexp;
@@ -9547,7 +9558,7 @@ algorithm
       Option<DAE.Const> forIteratorConstOpt;
       Prefix.Prefix pre;
       Absyn.Exp e;
-      SCode.Class cl;
+      SCode.Element cl;
       DAE.FunctionBuiltin isBuiltin;
 
     // wildcard

@@ -74,6 +74,7 @@ SCode.mo \
 SCodeCheck.mo \
 SCodeDependency.mo \
 SCodeEnv.mo \
+SCodeHashTable.mo \
 SCodeLookup.mo \
 SCodeFlattenImports.mo \
 SCodeFlattenExtends.mo \

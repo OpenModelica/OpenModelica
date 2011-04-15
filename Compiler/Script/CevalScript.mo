@@ -107,22 +107,22 @@ public constant Integer RT_CLOCK_SIMULATE_SIMULATION = 9;
 public constant Integer RT_CLOCK_BUILD_MODEL = 10;
 
 protected constant DAE.Type simulationResultType_rtest = (DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("SimulationResult")),{
-  DAE.TYPES_VAR("resultFile",DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
-  DAE.TYPES_VAR("simulationOptions",DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
-  DAE.TYPES_VAR("messages",DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE())
+  DAE.TYPES_VAR("resultFile",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
+  DAE.TYPES_VAR("simulationOptions",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
+  DAE.TYPES_VAR("messages",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE())
   },NONE(),NONE()),NONE());
 
 protected constant DAE.Type simulationResultType_full = (DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("SimulationResult")),{
-  DAE.TYPES_VAR("resultFile",DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
-  DAE.TYPES_VAR("simulationOptions",DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
-  DAE.TYPES_VAR("messages",DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
-  DAE.TYPES_VAR("timeFrontend",DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE()),
-  DAE.TYPES_VAR("timeBackend",DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE()),
-  DAE.TYPES_VAR("timeSimCode",DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE()),
-  DAE.TYPES_VAR("timeTemplates",DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE()),
-  DAE.TYPES_VAR("timeCompile",DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE()),
-  DAE.TYPES_VAR("timeSimulation",DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE()),
-  DAE.TYPES_VAR("timeTotal",DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE())
+  DAE.TYPES_VAR("resultFile",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
+  DAE.TYPES_VAR("simulationOptions",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
+  DAE.TYPES_VAR("messages",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
+  DAE.TYPES_VAR("timeFrontend",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE()),
+  DAE.TYPES_VAR("timeBackend",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE()),
+  DAE.TYPES_VAR("timeSimCode",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE()),
+  DAE.TYPES_VAR("timeTemplates",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE()),
+  DAE.TYPES_VAR("timeCompile",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE()),
+  DAE.TYPES_VAR("timeSimulation",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE()),
+  DAE.TYPES_VAR("timeTotal",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE())
   },NONE(),NONE()),NONE());
 
 //these are in reversed order than above
@@ -635,9 +635,9 @@ algorithm
   matchcontinue (inCache,inEnv,functionName,vals,st,msg)
     local
       Absyn.Path path,p1,classpath,className;
-      list<SCode.Class> scodeP,sp,fp;
+      list<SCode.Element> scodeP,sp,fp;
       list<Env.Frame> env;
-      SCode.Class c;
+      SCode.Element c;
       String s1,str,str1,str2,str3,re,token,varid,cmd,executable,method_str,outputFormat_str,initfilename,cit,pd,executableSuffixedExe,sim_call,result_file,filename_1,filename,omhome_1,plotCmd,tmpPlotFile,call,str_1,mp,pathstr,name,cname,fileNamePrefix_s,errMsg,errorStr,uniqueStr,interpolation,title,xLabel,yLabel,filename2,varNameStr,xml_filename,xml_contents,visvar_str,pwd,omhome,omlib,omcpath,os,platform,usercflags,senddata,res,workdir,gcc,confcmd,touch_file,uname,filenameprefix;
       DAE.ComponentRef cr,cref,classname;
       Interactive.InteractiveSymbolTable newst,st_1;
@@ -1951,7 +1951,7 @@ algorithm
   match (inCache,inEnv,className,inInteractiveSymbolTable,inMsg,filenameprefix)
     local
       String filenameprefix,filename,file_dir, str;
-      list<SCode.Class> p_1,sp;
+      list<SCode.Element> p_1,sp;
       DAE.DAElist dae_1,dae;
       list<Env.Frame> env;
       list<Interactive.InstantiatedClass> ic_1,ic;
@@ -2127,7 +2127,7 @@ algorithm
   (outCache,outValue,outInteractiveSymbolTable) :=
   matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable,inMsg)
     local
-      list<SCode.Class> sp;
+      list<SCode.Element> sp;
       list<Env.Frame> env;
       list<Interactive.InstantiatedClass> ic;
       Interactive.InteractiveSymbolTable st;
@@ -2242,7 +2242,7 @@ algorithm
       list<Env.Frame> env;
       SimCode.SimulationSettings simSettings;
       Values.Value starttime,stoptime,interval,tolerance,method,fileprefix,storeInTemp,noClean,options,outputFormat,variableFilter;
-      list<SCode.Class> sp;
+      list<SCode.Element> sp;
       list<Values.Value> vals;
       list<Interactive.InstantiatedClass> ic;
       list<Interactive.InteractiveVariable> iv;
@@ -2498,7 +2498,7 @@ algorithm
       list<Env.Frame> env;
       DAE.Exp filenameprefix;
       Absyn.Program p;
-      list<SCode.Class> sp;
+      list<SCode.Element> sp;
       list<Interactive.InstantiatedClass> ic;
       list<Interactive.InteractiveVariable> iv;
       list<Interactive.CompiledCFunction> cf;
@@ -2925,7 +2925,7 @@ algorithm
       Env.Cache cache;
     case (cache,env,{},_,_,msg,info) then (cache,{});
     /* TODO: look through redeclarations for Eval(var) as well */
-    case (cache,env,(Absyn.MODIFICATION(finalItem = b,each_ = e,componentRef = cr,modification = SOME(mod),comment = stropt) :: args),impl,st,msg,info)
+    case (cache,env,(Absyn.MODIFICATION(finalPrefix = b,eachPrefix = e,componentRef = cr,modification = SOME(mod),comment = stropt) :: args),impl,st,msg,info)
       equation
         (cache,mod_1) = cevalAstModification(cache,env, mod, impl, st, msg, info);
         (cache,res) = cevalAstEltargs(cache,env, args, impl, st, msg, info);
@@ -2990,7 +2990,7 @@ algorithm
   (outCache,outValue,outInteractiveSymbolTable) :=
   matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable,inMsg)
     local
-      list<SCode.Class> p_1,sp;
+      list<SCode.Element> p_1,sp;
       DAE.DAElist dae;
       list<Env.Frame> env;
       list<Interactive.InstantiatedClass> ic;
@@ -3031,7 +3031,7 @@ algorithm
         dummyClassPart = 
                      Absyn.PUBLIC({
                        Absyn.ELEMENTITEM(
-                          Absyn.ELEMENT(false, NONE(), Absyn.UNSPECIFIED(), "extends", 
+                          Absyn.ELEMENT(false, NONE(), Absyn.NOT_INNER_OUTER(), "extends", 
                             Absyn.EXTENDS(className, {}, NONE()), // extend the given-for-check partial class 
                             info, NONE())
                                    )});
@@ -3308,7 +3308,7 @@ algorithm
       DAE.DAElist dae_1,dae;
       BackendDAE.IncidenceMatrix m,mT;
       Option<BackendDAE.IncidenceMatrix> om,omT;
-      list<SCode.Class> p_1,sp;
+      list<SCode.Element> p_1,sp;
       list<list<Integer>> comps;
       DAE.FunctionTree funcs;
     
@@ -3519,7 +3519,7 @@ algorithm
   matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable,inMsg)
     local
       list<Absyn.Path> allClassPaths;
-      list<SCode.Class> sp;
+      list<SCode.Element> sp;
       list<Interactive.InstantiatedClass> ic;
       Interactive.InteractiveSymbolTable st;
       Absyn.Program p;
@@ -3579,7 +3579,7 @@ algorithm
     local
       list<Absyn.Path> rest;
       Absyn.Path className;
-      list<SCode.Class> sp;
+      list<SCode.Element> sp;
       list<Interactive.InstantiatedClass> ic;
       Interactive.InteractiveSymbolTable st;
       Absyn.Program p;
@@ -3657,7 +3657,7 @@ algorithm
       list<Interactive.CompiledCFunction> cf;
       list<Env.Frame> env;
       Values.Value starttime,stoptime,interval,method,tolerance,fileprefix,storeInTemp,noClean,options;
-      list<SCode.Class> sp;
+      list<SCode.Element> sp;
       list<Interactive.InstantiatedClass> ic;
       list<Interactive.InteractiveVariable> iv;
       Ceval.Msg msg;
@@ -3791,7 +3791,7 @@ end cevalGenerateFunction;
 protected function generateFunctions
   input Env.Cache cache;
   input Env.Env env;
-  input list<SCode.Class> sp;
+  input list<SCode.Element> sp;
   input list<tuple<String,list<String>>> acc;
   output list<tuple<String,list<String>>> deps;
 algorithm
@@ -3808,7 +3808,7 @@ algorithm
       equation
         acc = generateFunctions(cache,env,sp,acc);
       then acc;
-    case (cache,env,SCode.CLASS(name=name,encapsulatedPrefix=true,restriction=SCode.R_PACKAGE(),classDef=SCode.PARTS(elementLst=elementLst))::sp,acc)
+    case (cache,env,SCode.CLASS(name=name,encapsulatedPrefix=SCode.ENCAPSULATED(),restriction=SCode.R_PACKAGE(),classDef=SCode.PARTS(elementLst=elementLst))::sp,acc)
       equation
         names = Util.listMap(Util.listFilterBoolean(Util.listMap(Util.listFilterBoolean(elementLst, SCode.elementIsClass), SCode.getElementClass), SCode.isFunction), SCode.className);
         paths = Util.listMap1r(names,Absyn.makeQualifiedPathFromStrings,name);

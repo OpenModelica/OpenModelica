@@ -18,7 +18,7 @@ template programExternalHeader(SCode.Program program)
   /* adrpo: leave a newline at the end of file to get rid of the C warnings */
 end programExternalHeader;
 
-template classExternalHeader(SCode.Class cl, String pack)
+template classExternalHeader(SCode.Element cl, String pack)
 ::=
 match cl case c as SCode.CLASS(classDef=p as SCode.PARTS(__)) then (p.elementLst |> elt => elementExternalHeader(elt,c.name))
 end classExternalHeader;
@@ -34,10 +34,10 @@ end pathString;
 template elementExternalHeader(SCode.Element elt, String pack)
 ::=
 match elt
-  case SCode.CLASSDEF(classDef=c as SCode.CLASS(restriction=r as SCode.R_METARECORD(__),classDef=p as SCode.PARTS(__)))
+  case c as SCode.CLASS(restriction=r as SCode.R_METARECORD(__),classDef=p as SCode.PARTS(__))
     then
-      let fields=(p.elementLst |> SCode.COMPONENT(__) => component; separator=",")
-      let fieldsStr=(p.elementLst |> SCode.COMPONENT(__) => '"<%component%>"'; separator=",")
+      let fields=(p.elementLst |> SCode.COMPONENT(__) => name; separator=",")
+      let fieldsStr=(p.elementLst |> SCode.COMPONENT(__) => '"<%name%>"'; separator=",")
       let omcname='<%pack%>_<%pathString(r.name)%>_<%stringReplace(c.name,"_","__")%>'
       let nElts=listLength(p.elementLst)
       let fullname='<%pack%>__<%stringReplace(c.name,"_","_5f")%>'
@@ -75,7 +75,7 @@ match elt
         >>
       %>
       >>
-  case SCode.CLASSDEF(__) then classExternalHeader(classDef,pack)
+  case SCode.CLASS(__) then classExternalHeader(elt,pack)
 end elementExternalHeader;
 
 end Unparsing;

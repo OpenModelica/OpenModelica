@@ -954,7 +954,7 @@ algorithm
       DAE.ComponentRef cRef;
       DAE.VarKind v1 "varible kind variable, constant, parameter, etc." ;
       DAE.VarDirection v2 "input, output or bidir" ;
-      DAE.VarProtection prot "if protected or public";
+      DAE.VarVisibility prot "if protected or public";
       DAE.Type ty "the type" ;
       Option<DAE.Exp> binding "binding" ;
       DAE.InstDims dims "Binding expression e.g. for parameters" ;

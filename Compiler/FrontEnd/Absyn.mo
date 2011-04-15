@@ -406,14 +406,14 @@ uniontype ElementSpec "An element is something that occurs in a public or protec
 end ElementSpec;
 
 public
-uniontype InnerOuter "One of the keyword inner and outer CAN be given to reference an inner or
-      outer component. Thus there are three disjoint possibilities."
-  record INNER "an inner component"                    end INNER;
-  record OUTER "an outer component"                    end OUTER;
-  record INNEROUTER "an inner/outer component"         end INNEROUTER;
-  record UNSPECIFIED "a component without inner/outer" end UNSPECIFIED;
+uniontype InnerOuter 
+  "One of the keyword inner and outer CAN be given to reference an 
+   inner or outer element. Thus there are three disjoint possibilities."
+  record INNER           "an inner prefix"       end INNER;
+  record OUTER           "an outer prefix"       end OUTER;
+  record INNER_OUTER     "an inner outer prefix" end INNER_OUTER;
+  record NOT_INNER_OUTER "no inner outer prefix" end NOT_INNER_OUTER;    
 end InnerOuter;
-
 public
 uniontype Import "Import statements, different kinds"
   // A named import is a import statement to a variable ex;
@@ -634,19 +634,19 @@ end EqMod;
 public
 uniontype ElementArg "Wrapper for things that modify elements, modifications and redeclarations"
   record MODIFICATION
-    Boolean finalItem "finalItem" ;
-    Each each_ "each" ;
-    ComponentRef componentRef "componentRef" ;
-    Option<Modification> modification "modification" ;
-    Option<String> comment "comment" ;
+    Boolean finalPrefix "final prefix";
+    Each eachPrefix "each";
+    ComponentRef componentRef "componentRef";
+    Option<Modification> modification "modification";
+    Option<String> comment "comment";
   end MODIFICATION;
 
   record REDECLARATION
-    Boolean finalItem "finalItem" ;
-    RedeclareKeywords redeclareKeywords "redeclare  or replaceable " ;
-    Each each_ "each" ;
-    ElementSpec elementSpec "elementSpec" ;
-    Option<ConstrainClass> constrainClass "class definition or declaration" ;
+    Boolean finalPrefix "final prefix";
+    RedeclareKeywords redeclareKeywords "redeclare  or replaceable ";
+    Each eachPrefix "each prefix";
+    ElementSpec elementSpec "elementSpec";
+    Option<ConstrainClass> constrainClass "class definition or declaration";
     Info info "needed because ElementSpec does not contain this info; Element does";
   end REDECLARATION;
 
@@ -4800,12 +4800,12 @@ end getFileNameFromInfo;
 public function isOuter
 "@author: adrpo
  this function returns true if the given Absyn.InnerOuter
- is one of Absyn.INNEROUTER() or Absyn.OUTER()"
+ is one of Absyn.INNER_OUTER() or Absyn.OUTER()"
  input InnerOuter io;
  output Boolean isItAnOuter;
 algorithm
   isItAnOuter := matchcontinue(io)
-    case (INNEROUTER()) then true;
+    case (INNER_OUTER()) then true;
     case (OUTER()) then true;
     case (_) then false;
   end matchcontinue;
@@ -4814,12 +4814,12 @@ end isOuter;
 public function isInner
 "@author: adrpo
  this function returns true if the given Absyn.InnerOuter
- is one of Absyn.INNEROUTER() or Absyn.INNER()"
+ is one of Absyn.INNER_OUTER() or Absyn.INNER()"
  input InnerOuter io;
  output Boolean isItAnInner;
 algorithm
   isItAnInner := matchcontinue(io)
-    case (INNEROUTER()) then true;
+    case (INNER_OUTER()) then true;
     case (INNER()) then true;
     case (_) then false;
   end matchcontinue;

@@ -550,7 +550,7 @@ algorithm
       DAE.ComponentRef componentRef;
       DAE.VarKind kind;
       DAE.VarDirection direction;
-      DAE.VarProtection protection;
+      DAE.VarVisibility protection;
       DAE.Type ty;
       DAE.Exp binding,binding_1,exp,exp_1,exp1,exp1_1,exp2,exp2_1;
       DAE.InstDims dims;

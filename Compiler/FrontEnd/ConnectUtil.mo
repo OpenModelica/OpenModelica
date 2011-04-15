@@ -47,6 +47,7 @@ encapsulated package ConnectUtil
 
 // public imports
 public import Absyn;
+public import SCode;
 public import ClassInf;
 public import Connect;
 public import DAE;
@@ -65,7 +66,6 @@ protected import Lookup;
 protected import PrefixUtil;
 protected import Print;
 protected import RTOpts;
-protected import SCode;
 protected import Static;
 protected import Types;
 protected import Util;
@@ -594,21 +594,17 @@ public function addArray
   input Connect.Face inFace2;
   input list<DAE.Dimension> inDims2;
   input DAE.ElementSource source;
-  input Boolean flowPrefix;
-  input Boolean streamPrefix;
+  input SCode.Flow flowPrefix;
+  input SCode.Stream streamPrefix;
   output Connect.Sets outSets;
 algorithm
-  outSets := match(inSets, inCref1, inFace1, inDims1, 
-      inCref2, inFace2, inDims2, source, flowPrefix, streamPrefix)
-    case (_, _, _, _, _, _, _, _, false, false)
-      then addArrayEqu(inSets, inCref1, inFace1, inDims1, 
-        inCref2, inFace2, inDims2, source);
-    case (_, _, _, _, _, _, _, _, true, false)
-      then addArrayFlow(inSets, inCref1, inFace1, inDims1,
-        inCref2, inFace2, inDims2, source);
-    case (_, _, _, _, _, _, _, _, false, true)
-      then addArrayStream(inSets, inCref1, inFace1, inDims1,
-        inCref2, inFace2, inDims2, source);
+  outSets := match(inSets, inCref1, inFace1, inDims1, inCref2, inFace2, inDims2, source, flowPrefix, streamPrefix)
+    case (_, _, _, _, _, _, _, _, SCode.NOT_FLOW(), SCode.NOT_STREAM())
+      then addArrayEqu(inSets, inCref1, inFace1, inDims1, inCref2, inFace2, inDims2, source);
+    case (_, _, _, _, _, _, _, _, SCode.FLOW(), SCode.NOT_STREAM())
+      then addArrayFlow(inSets, inCref1, inFace1, inDims1, inCref2, inFace2, inDims2, source);
+    case (_, _, _, _, _, _, _, _, SCode.FLOW(), SCode.STREAM())
+      then addArrayStream(inSets, inCref1, inFace1, inDims1, inCref2, inFace2, inDims2, source);
   end match;
 end addArray;
 
@@ -2572,7 +2568,7 @@ algorithm
     case ({}) then (0, 0, 0);
 
     // A connector inside a connector.
-    case ((v as DAE.TYPES_VAR(name = name, type_ = ty)) :: rest)
+    case ((v as DAE.TYPES_VAR(name = name, ty = ty)) :: rest)
       equation
         // Check that it's a connector.
         ty2 = Types.arrayElementType(ty);
@@ -2588,7 +2584,7 @@ algorithm
         (p + n * p2, f + n * f2, s + n * s2);
 
     // A flow variable.
-    case ((v as DAE.TYPES_VAR(attributes = DAE.ATTR(flowPrefix = true))) :: rest)
+    case ((v as DAE.TYPES_VAR(attributes = DAE.ATTR(flowPrefix = SCode.FLOW()))) :: rest)
       equation
         n = sizeOfVariable(v);
         (p, f, s) = countConnectorVars(rest);
@@ -2596,7 +2592,7 @@ algorithm
         (p, f + n, s);
 
     // A stream variable.
-    case ((v as DAE.TYPES_VAR(attributes = DAE.ATTR(streamPrefix = true))) :: rest)
+    case ((v as DAE.TYPES_VAR(attributes = DAE.ATTR(streamPrefix = SCode.STREAM()))) :: rest)
       equation
         n = sizeOfVariable(v);
         (p, f, s) = countConnectorVars(rest);
@@ -2641,7 +2637,7 @@ protected function sizeOfVariable
 algorithm
   outSize := match(inVar)
     local DAE.Type t;
-    case DAE.TYPES_VAR(type_ = t) then sizeOfVariable2(t);
+    case DAE.TYPES_VAR(ty = t) then sizeOfVariable2(t);
   end match;
 end sizeOfVariable;
 

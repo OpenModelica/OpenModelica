@@ -199,7 +199,7 @@ algorithm
       AbsynDep.Depends aDep;
       list<Interactive.InteractiveVariable> vars_1,vars;
       list<Interactive.CompiledCFunction> cf_1,cf;
-      list<SCode.Class> a;
+      list<SCode.Element> a;
       list<Interactive.InstantiatedClass> b;
       Interactive.InteractiveStmts exp;
       list<Interactive.LoadedFile> lf;
@@ -451,7 +451,7 @@ algorithm
      list<Interactive.InstantiatedClass> ic;
      list<Interactive.InteractiveVariable> iv;
      list<Interactive.CompiledCFunction> cf;
-     list<SCode.Class> sp;
+     list<SCode.Element> sp;
      list<Interactive.LoadedFile> lf;
      AbsynDep.Depends aDep;
      Interactive.InteractiveSymbolTable st, newst;
@@ -502,7 +502,7 @@ algorithm
   _ := matchcontinue (inStringLst)
     local
       Absyn.Program p, pLibs;
-      list<SCode.Class> scode;
+      list<SCode.Element> scode;
       DAE.DAElist d_1,d;
       String s,str,f;
       list<String>  libs;
@@ -671,7 +671,7 @@ protected function instantiate
   output Env.Cache cache;
   output Env.Env env;
   output DAE.DAElist dae;
-  output list<SCode.Class> scode;
+  output list<SCode.Element> scode;
   output Absyn.Path cname;
 algorithm
   (cache, env, dae, scode, cname) := matchcontinue(program)
@@ -680,7 +680,7 @@ algorithm
       Env.Env e;
       DAE.DAElist d;
       Absyn.Program p;
-      list<SCode.Class> s;
+      list<SCode.Element> s;
       Absyn.Path class_path;
       String class_to_instantiate;
     case (_)
@@ -749,7 +749,7 @@ algorithm
       array<list<Integer>> m,mT;
       array<Integer> v1,v2;
       list<list<Integer>> comps;
-      list<SCode.Class> p;
+      list<SCode.Element> p;
       Absyn.Program ap;
       DAE.DAElist dae,daeimpl;
       Absyn.Path classname;
@@ -861,7 +861,7 @@ algorithm
       String cname_str,file_dir;
       Absyn.ComponentRef a_cref;
       Absyn.Path classname;
-      list<SCode.Class> p;
+      list<SCode.Element> p;
       Absyn.Program ap;
       DAE.DAElist dae;
       array<Integer> ass1,ass2;

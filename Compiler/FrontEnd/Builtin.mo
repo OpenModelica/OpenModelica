@@ -153,112 +153,126 @@ protected constant DAE.Type T_STRING_ARRAY_9_DEFAULT =
 protected constant DAE.Type T_NOTYPE_ARRAY_1_DEFAULT =
   (DAE.T_ARRAY(DAE.DIM_INTEGER(1), (DAE.T_NOTYPE(),NONE())),NONE());
 
+
+public constant SCode.Prefixes commonPrefixes = 
+  SCode.PREFIXES(
+    SCode.PUBLIC(), 
+    SCode.NOT_REDECLARE(), 
+    SCode.FINAL(), /* make everything here final! */
+    Absyn.NOT_INNER_OUTER(), 
+    SCode.NOT_REPLACEABLE()); 
+
+protected
+constant SCode.Attributes attrConst = SCode.ATTR({},SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RO(),SCode.CONST(),Absyn.BIDIR()); 
+constant SCode.Attributes attrParam = SCode.ATTR({},SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RW(),SCode.PARAM(),Absyn.BIDIR());
+
 /*
 - The primitive types
   These are the primitive types that are used to build the types
   `Real\', `Integer\' etc.
 */
-public constant SCode.Class rlType=SCode.CLASS("RealType",false,false,SCode.R_PREDEFINED_REAL(),
+public constant SCode.Element rlType=SCode.CLASS("RealType",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_PREDEFINED_REAL(),
           SCode.PARTS({},{},{},{},{},NONE(),{},NONE()),Absyn.dummyInfo) " real type ";
 
-public constant SCode.Class intType=SCode.CLASS("IntegerType",false,false,SCode.R_PREDEFINED_INTEGER(),
+public constant SCode.Element intType=SCode.CLASS("IntegerType",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_PREDEFINED_INTEGER(),
           SCode.PARTS({},{},{},{},{},NONE(),{},NONE()),Absyn.dummyInfo);
 
-public constant SCode.Class strType=SCode.CLASS("StringType",false,false,SCode.R_PREDEFINED_STRING(),
+public constant SCode.Element strType=SCode.CLASS("StringType",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_PREDEFINED_STRING(),
           SCode.PARTS({},{},{},{},{},NONE(),{},NONE()),Absyn.dummyInfo);
 
-public constant SCode.Class boolType=SCode.CLASS("BooleanType",false,false,SCode.R_PREDEFINED_BOOLEAN(),
+public constant SCode.Element boolType=SCode.CLASS("BooleanType",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_PREDEFINED_BOOLEAN(),
           SCode.PARTS({},{},{},{},{},NONE(),{},NONE()),Absyn.dummyInfo);
 
-protected constant SCode.Class enumType=SCode.CLASS("EnumType",false,false,SCode.R_PREDEFINED_ENUMERATION(),
+protected constant SCode.Element enumType=SCode.CLASS("EnumType",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_PREDEFINED_ENUMERATION(),
           SCode.PARTS({},{},{},{},{},NONE(),{},NONE()),Absyn.dummyInfo);
 
-protected constant SCode.Element unit=SCode.COMPONENT("unit",Absyn.UNSPECIFIED(),true,false,false,false,
-          SCode.ATTR({},false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("StringType"),NONE()),
-          SCode.MOD(false,Absyn.NON_EACH(),{},SOME((Absyn.STRING(""),false))),NONE(),NONE(),Absyn.dummyInfo,NONE()) "This `unit\' component is used in several places below, and it is
+protected constant SCode.Element unit=SCode.COMPONENT("unit",commonPrefixes,
+          attrParam,Absyn.TPATH(Absyn.IDENT("StringType"),NONE()),
+          SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},SOME((Absyn.STRING(""),false))),NONE(),NONE(),Absyn.dummyInfo) "This `unit\' component is used in several places below, and it is
   declared once here to make the definitions below easier to read." ;
 
-protected constant SCode.Element quantity=SCode.COMPONENT("quantity",Absyn.UNSPECIFIED(),true,false,false,false,
-          SCode.ATTR({},false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("StringType"),NONE()),
-          SCode.MOD(false,Absyn.NON_EACH(),{},SOME((Absyn.STRING(""),false))),NONE(),NONE(),Absyn.dummyInfo,NONE());
+protected constant SCode.Element quantity=SCode.COMPONENT("quantity",commonPrefixes,
+          attrParam,Absyn.TPATH(Absyn.IDENT("StringType"),NONE()),
+          SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},SOME((Absyn.STRING(""),false))),NONE(),NONE(),Absyn.dummyInfo);
 
-protected constant SCode.Element displayUnit=SCode.COMPONENT("displayUnit",Absyn.UNSPECIFIED(),true,false,false,false,
-          SCode.ATTR({},false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("StringType"),NONE()),
-          SCode.MOD(false,Absyn.NON_EACH(),{},SOME((Absyn.STRING(""),false))),NONE(),NONE(),Absyn.dummyInfo,NONE());
+protected constant SCode.Element displayUnit=SCode.COMPONENT("displayUnit",commonPrefixes,
+          attrParam,Absyn.TPATH(Absyn.IDENT("StringType"),NONE()),
+          SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},SOME((Absyn.STRING(""),false))),NONE(),NONE(),Absyn.dummyInfo);
 
-protected constant SCode.Element min=SCode.COMPONENT("min",Absyn.UNSPECIFIED(),true,false,false,false,
-          SCode.ATTR({},false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("RealType"),NONE()),
-          SCode.MOD(false,Absyn.NON_EACH(),{},SOME((Absyn.REAL(-1e+099),false))),NONE(),NONE(),Absyn.dummyInfo,NONE());
+protected constant SCode.Element min=SCode.COMPONENT("min",commonPrefixes,
+          attrParam,Absyn.TPATH(Absyn.IDENT("RealType"),NONE()),
+          SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},SOME((Absyn.REAL(-1e+099),false))),NONE(),NONE(),Absyn.dummyInfo);
 
-protected constant SCode.Element max=SCode.COMPONENT("max",Absyn.UNSPECIFIED(),true,false,false,false,
-          SCode.ATTR({},false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("RealType"),NONE()),
-          SCode.MOD(false,Absyn.NON_EACH(),{},SOME((Absyn.REAL(1e+099),false))),NONE(),NONE(),Absyn.dummyInfo,NONE());
+protected constant SCode.Element max=SCode.COMPONENT("max",commonPrefixes,
+          attrParam,Absyn.TPATH(Absyn.IDENT("RealType"),NONE()),
+          SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},SOME((Absyn.REAL(1e+099),false))),NONE(),NONE(),Absyn.dummyInfo);
 
-protected constant SCode.Element realStart=SCode.COMPONENT("start",Absyn.UNSPECIFIED(),true,false,false,false,
-          SCode.ATTR({},false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("RealType"),NONE()),
-          SCode.MOD(false,Absyn.NON_EACH(),{},SOME((Absyn.REAL(0.0),false))),NONE(),NONE(),Absyn.dummyInfo,NONE());
+protected constant SCode.Element realStart=SCode.COMPONENT("start",commonPrefixes,
+          attrParam,Absyn.TPATH(Absyn.IDENT("RealType"),NONE()),
+          SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},SOME((Absyn.REAL(0.0),false))),NONE(),NONE(),Absyn.dummyInfo);
 
-protected constant SCode.Element integerStart=SCode.COMPONENT("start",Absyn.UNSPECIFIED(),true,false,false,false,
-          SCode.ATTR({},false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("IntegerType"),NONE()),
-          SCode.MOD(false,Absyn.NON_EACH(),{},SOME((Absyn.INTEGER(0),false))),NONE(),NONE(),Absyn.dummyInfo,NONE());
+protected constant SCode.Element integerStart=SCode.COMPONENT("start",commonPrefixes,
+          attrParam,Absyn.TPATH(Absyn.IDENT("IntegerType"),NONE()),
+          SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},SOME((Absyn.INTEGER(0),false))),NONE(),NONE(),Absyn.dummyInfo);
 
-protected constant SCode.Element stringStart=SCode.COMPONENT("start",Absyn.UNSPECIFIED(),true,false,false,false,
-          SCode.ATTR({},false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("StringType"),NONE()),
-          SCode.MOD(false,Absyn.NON_EACH(),{},SOME((Absyn.STRING(""),false))),NONE(),NONE(),Absyn.dummyInfo,NONE());
+protected constant SCode.Element stringStart=SCode.COMPONENT("start",commonPrefixes,
+          attrParam,Absyn.TPATH(Absyn.IDENT("StringType"),NONE()),
+          SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},SOME((Absyn.STRING(""),false))),NONE(),NONE(),Absyn.dummyInfo);
 
-protected constant SCode.Element booleanStart=SCode.COMPONENT("start",Absyn.UNSPECIFIED(),true,false,false,false,
-          SCode.ATTR({},false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("BooleanType"),NONE()),
-          SCode.MOD(false,Absyn.NON_EACH(),{},SOME((Absyn.BOOL(false),false))),NONE(),NONE(),Absyn.dummyInfo,NONE());
+protected constant SCode.Element booleanStart=SCode.COMPONENT("start",commonPrefixes,
+          attrParam,Absyn.TPATH(Absyn.IDENT("BooleanType"),NONE()),
+          SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},SOME((Absyn.BOOL(false),false))),NONE(),NONE(),Absyn.dummyInfo);
 
-protected constant SCode.Element fixed=SCode.COMPONENT("fixed",Absyn.UNSPECIFIED(),true,false,false,false,
-          SCode.ATTR({},false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("BooleanType"),NONE()),
-          SCode.MOD(false,Absyn.NON_EACH(),{},SOME((Absyn.BOOL(false),false))),NONE(),NONE(),Absyn.dummyInfo,NONE()) "Should be true for variables" ;
+protected constant SCode.Element fixed=SCode.COMPONENT("fixed",commonPrefixes,
+          attrParam,Absyn.TPATH(Absyn.IDENT("BooleanType"),NONE()),
+          SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},SOME((Absyn.BOOL(false),false))),NONE(),NONE(),Absyn.dummyInfo) "Should be true for variables" ;
 
-protected constant SCode.Element nominal=SCode.COMPONENT("nominal",Absyn.UNSPECIFIED(),true,false,false,false,
-          SCode.ATTR({},false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("RealType"),NONE()),
-          SCode.MOD(false,Absyn.NON_EACH(),{},NONE()),NONE(),NONE(),Absyn.dummyInfo,NONE());
+protected constant SCode.Element nominal=SCode.COMPONENT("nominal",commonPrefixes,
+          attrParam,Absyn.TPATH(Absyn.IDENT("RealType"),NONE()),
+          SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},NONE()),NONE(),NONE(),Absyn.dummyInfo);
 
-protected constant SCode.Element stateSelect=SCode.COMPONENT("stateSelect",Absyn.UNSPECIFIED(),true,false,false,false,
-          SCode.ATTR({},false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("StateSelect"),NONE()),
-          SCode.MOD(false,Absyn.NON_EACH(),{},
+protected constant SCode.Element stateSelect=SCode.COMPONENT("stateSelect",commonPrefixes,
+          attrParam,Absyn.TPATH(Absyn.IDENT("StateSelect"),NONE()),
+          SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},
           SOME((
           Absyn.CREF(
-          Absyn.CREF_QUAL("StateSelect",{},Absyn.CREF_IDENT("default",{}))),false))),NONE(),NONE(),Absyn.dummyInfo,NONE());
+          Absyn.CREF_QUAL("StateSelect",{},Absyn.CREF_IDENT("default",{}))),false))),NONE(),NONE(),Absyn.dummyInfo);
 
 protected constant list<SCode.Element> stateSelectComps={
-          SCode.COMPONENT("never",Absyn.UNSPECIFIED(),true,false,false,false,
-          SCode.ATTR({},false,false,SCode.RO(),SCode.CONST(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("EnumType"),NONE()),SCode.NOMOD(),NONE(),NONE(),Absyn.dummyInfo,NONE()),
-          SCode.COMPONENT("avoid",Absyn.UNSPECIFIED(),true,false,false,false,
-          SCode.ATTR({},false,false,SCode.RO(),SCode.CONST(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("EnumType"),NONE()),SCode.NOMOD(),NONE(),NONE(),Absyn.dummyInfo,NONE()),
-          SCode.COMPONENT("default",Absyn.UNSPECIFIED(),true,false,false,false,
-          SCode.ATTR({},false,false,SCode.RO(),SCode.CONST(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("EnumType"),NONE()),SCode.NOMOD(),NONE(),NONE(),Absyn.dummyInfo,NONE()),
-          SCode.COMPONENT("prefer",Absyn.UNSPECIFIED(),true,false,false,false,
-          SCode.ATTR({},false,false,SCode.RO(),SCode.CONST(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("EnumType"),NONE()),SCode.NOMOD(),NONE(),NONE(),Absyn.dummyInfo,NONE()),
-          SCode.COMPONENT("always",Absyn.UNSPECIFIED(),true,false,false,false,
-          SCode.ATTR({},false,false,SCode.RO(),SCode.CONST(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("EnumType"),NONE()),SCode.NOMOD(),NONE(),NONE(),Absyn.dummyInfo,NONE())} "The StateSelect enumeration" ;
+          SCode.COMPONENT("never",commonPrefixes,
+          attrConst,Absyn.TPATH(Absyn.IDENT("EnumType"),NONE()),SCode.NOMOD(),NONE(),NONE(),Absyn.dummyInfo),
+          SCode.COMPONENT("avoid",commonPrefixes,
+          attrConst,Absyn.TPATH(Absyn.IDENT("EnumType"),NONE()),SCode.NOMOD(),NONE(),NONE(),Absyn.dummyInfo),
+          SCode.COMPONENT("default",commonPrefixes,
+          attrConst,Absyn.TPATH(Absyn.IDENT("EnumType"),NONE()),SCode.NOMOD(),NONE(),NONE(),Absyn.dummyInfo),
+          SCode.COMPONENT("prefer",commonPrefixes,
+          attrConst,Absyn.TPATH(Absyn.IDENT("EnumType"),NONE()),SCode.NOMOD(),NONE(),NONE(),Absyn.dummyInfo),
+          SCode.COMPONENT("always",commonPrefixes,
+          attrConst,Absyn.TPATH(Absyn.IDENT("EnumType"),NONE()),SCode.NOMOD(),NONE(),NONE(),Absyn.dummyInfo)} "The StateSelect enumeration" ;
 
-protected constant SCode.Class stateSelectType=SCode.CLASS("StateSelect",false,false,SCode.R_ENUMERATION(),
+protected constant SCode.Element stateSelectType=SCode.CLASS("StateSelect",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_ENUMERATION(),
           SCode.PARTS(stateSelectComps,{},{},{},{},NONE(),{},NONE()),Absyn.dummyInfo) "The State Select Type";
 
-public constant SCode.Class ExternalObjectType=SCode.CLASS("ExternalObject",false,false,SCode.R_CLASS(),
+public constant SCode.Element ExternalObjectType=SCode.CLASS("ExternalObject",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_CLASS(),
           SCode.PARTS({},{},{},{},{},NONE(),{},NONE()),Absyn.dummyInfo) "ExternalObject type" ;
 
-public constant SCode.Class realType=SCode.CLASS("Real",false,false,SCode.R_PREDEFINED_REAL(),
+public constant SCode.Element realType=SCode.CLASS("Real",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_PREDEFINED_REAL(),
           SCode.PARTS({unit,quantity,displayUnit,min,max,realStart,fixed,nominal,
           stateSelect},{},{},{},{},NONE(),{},NONE()),Absyn.dummyInfo) "- The `Real\' type" ;
 
-protected constant SCode.Class integerType=SCode.CLASS("Integer",false,false,SCode.R_PREDEFINED_INTEGER(),
+protected constant SCode.Element integerType=SCode.CLASS("Integer",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_PREDEFINED_INTEGER(),
           SCode.PARTS({quantity,min,max,integerStart,fixed},{},{},{},{},NONE(),{},NONE()),Absyn.dummyInfo) "- The `Integer\' type" ;
 
-protected constant SCode.Class stringType=SCode.CLASS("String",false,false,SCode.R_PREDEFINED_STRING(),
+protected constant SCode.Element stringType=SCode.CLASS("String",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_PREDEFINED_STRING(),
           SCode.PARTS({quantity,stringStart},{},{},{},{},NONE(),{},NONE()),Absyn.dummyInfo) "- The `String\' type" ;
 
-protected constant SCode.Class booleanType=SCode.CLASS("Boolean",false,false,SCode.R_PREDEFINED_BOOLEAN(),
+protected constant SCode.Element booleanType=SCode.CLASS("Boolean",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_PREDEFINED_BOOLEAN(),
           SCode.PARTS({quantity,booleanStart,fixed},{},{},{},{},NONE(),{},NONE()),Absyn.dummyInfo) "- The `Boolean\' type" ;
 
 /* The builtin variable time. See also variableIsBuiltin */
 protected constant DAE.Var timeVar=DAE.TYPES_VAR("time",
-          DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE()) "- The `time\' variable" ;
+          DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
+          SCode.PUBLIC(),DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE()) "- The `time\' variable" ;
 
 protected constant DAE.Type stringIntInt2string=(
           DAE.T_FUNCTION(
@@ -892,7 +906,7 @@ algorithm
     then (cache,env);
     // if no cached version found create initial env.
     case (cache) equation
-      env = Env.openScope(Env.emptyEnv, false,NONE(),NONE());
+      env = Env.openScope(Env.emptyEnv, SCode.NOT_ENCAPSULATED(), NONE(), NONE());
       env = Env.extendFrameC(env, rlType);
       env = Env.extendFrameC(env, intType);
       env = Env.extendFrameC(env, strType);
@@ -904,7 +918,7 @@ algorithm
       env = Env.extendFrameC(env, stringType);
       env = Env.extendFrameC(env, booleanType);
       env = Env.extendFrameC(env, stateSelectType);
-      env = Env.extendFrameV(env, timeVar,NONE(), Env.VAR_UNTYPED(), {}) "see also variableIsBuiltin";
+      env = Env.extendFrameV(env, timeVar, NONE(), Env.VAR_UNTYPED(), {}) "see also variableIsBuiltin";
 
       env = Env.extendFrameT(env, "change", real2bool);
       env = Env.extendFrameT(env, "cardinality", anyNonExpandableConnector2int);
