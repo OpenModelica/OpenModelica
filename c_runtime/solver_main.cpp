@@ -349,23 +349,36 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
     {
       sim_result->emit();
     }
-   do
-    {
-      if (IterationNum > IterationMax)
-        {
-          throw TerminateSimulationException(globalData->timeValue, string(
-              "ERROR: Too many Iteration while the initialization. System is not consistent!\n"));
+  try
+  {
+     do
+      {
+        if (IterationNum > IterationMax)
+          {
+            throw TerminateSimulationException(globalData->timeValue, string(
+                "ERROR: Too many Iteration while the initialization. System is not consistent!\n"));
+          }
+        if (initialize(init_method))
+          {
+            throw TerminateSimulationException(globalData->timeValue, string(
+                "Error in initialization. Storing results and exiting.\n"));
+          }
+        saveall();
+        functionDAE(&needToIterate);
+        functionAliasEquations();
+        IterationNum++;
+      }  while (checkForDiscreteChanges() || needToIterate);
+  }
+  catch (TerminateSimulationException &e)
+  {
+      cout << e.getMessage() << endl;
+      if (modelTermination)
+        { // terminated from assert, etc.
+          cout << "Simulation terminated at time " << globalData->timeValue
+              << endl;
+          return -1;
         }
-      if (initialize(init_method))
-        {
-          throw TerminateSimulationException(globalData->timeValue, string(
-              "Error in initialization. Storing results and exiting.\n"));
-        }
-      saveall();
-      functionDAE(&needToIterate);
-      functionAliasEquations();
-      IterationNum++;
-    }  while (checkForDiscreteChanges() || needToIterate);
+  }
   SaveZeroCrossings();
   saveall();
   if (sim_verbose >= LOG_SOLVER)
@@ -388,17 +401,30 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
     {
       sim_result->emit();
     }
-  while (checkForDiscreteChanges() || needToIterate)
-    {
-      saveall();
-      functionDAE(&needToIterate);
-      IterationNum++;
-      if (IterationNum > IterationMax)
-        {
-          throw TerminateSimulationException(globalData->timeValue, string(
-              "ERROR: Too many Iteration. System is not consistent!\n"));
+  try
+  {
+    while (checkForDiscreteChanges() || needToIterate)
+      {
+        saveall();
+        functionDAE(&needToIterate);
+        IterationNum++;
+        if (IterationNum > IterationMax)
+          {
+            throw TerminateSimulationException(globalData->timeValue, string(
+                "ERROR: Too many Iteration. System is not consistent!\n"));
+          }
+      }
+  }
+  catch (TerminateSimulationException &e)
+  {
+      cout << e.getMessage() << endl;
+      if (modelTermination)
+        { // terminated from assert, etc.
+          cout << "Simulation terminated at time " << globalData->timeValue
+              << endl;
+          return -1;
         }
-    }
+  }
   functionAliasEquations();
   SaveZeroCrossings();
   if (sampleEvent_actived)
