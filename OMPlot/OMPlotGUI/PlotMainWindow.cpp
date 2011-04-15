@@ -72,6 +72,7 @@ void PlotMainWindow::createActions()
 
     mpTabViewAction = new QAction(tr("Tab View"), this);
     mpTabViewAction->setCheckable(true);
+    mpTabViewAction->setChecked(true);
     connect(mpTabViewAction, SIGNAL(triggered(bool)), SLOT(switchWindowsView(bool)));
 }
 

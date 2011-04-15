@@ -42,7 +42,7 @@ PlotWindowContainer::PlotWindowContainer(PlotMainWindow *pParent)
     setActivationOrder(QMdiArea::CreationOrder);
     setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-    setViewMode(QMdiArea::SubWindowView);
+    setViewMode(QMdiArea::TabbedView);
 }
 
 PlotMainWindow* PlotWindowContainer::getPlotMainWindow()
