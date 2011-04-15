@@ -4328,9 +4328,9 @@ algorithm
 
     case (dae,m,mt,eqns)
       equation
-        (m_1,changedvars) = updateIncidenceMatrix2(dae, m, eqns);
-        changedvars_1 = Util.listListUnionOnTrue(changedvars,intEq);
-        mt_1 = updateTransposedMatrix(changedvars_1, m_1, mt);
+        (m_1,mt_1) = updateIncidenceMatrix2(dae, m, eqns, mt);
+        //changedvars_1 = Util.listListUnionOnTrue(changedvars,intEq);
+        //mt_1 = updateTransposedMatrix(changedvars_1, m_1, mt);
       then
         (m_1,mt_1);
 
@@ -4353,25 +4353,27 @@ protected function updateIncidenceMatrix2
   input BackendDAE.BackendDAE inBackendDAE;
   input BackendDAE.IncidenceMatrix inIncidenceMatrix;
   input list<Integer> inIntegerLst;
+  input BackendDAE.IncidenceMatrixT inIncidenceMatrixT;
   output BackendDAE.IncidenceMatrix outIncidenceMatrix;
-  output list<list<Integer>> outIntegerLstLst;
+  output BackendDAE.IncidenceMatrixT outIncidenceMatrixT;
 algorithm
-  (outIncidenceMatrix,outIntegerLstLst):=
-  matchcontinue (inBackendDAE,inIncidenceMatrix,inIntegerLst)
+  (outIncidenceMatrix,outIncidenceMatrixT):=
+  matchcontinue (inBackendDAE,inIncidenceMatrix,inIntegerLst,inIncidenceMatrixT)
     local
       BackendDAE.BackendDAE dae;
-      array<list<BackendDAE.Value>> m,m_1,m_2;
+      BackendDAE.IncidenceMatrix m,m_1,m_2;
+      BackendDAE.IncidenceMatrixT mt,mt_1,mt_2,mt_3;
       BackendDAE.Value e_1,e,abse;
       BackendDAE.Equation eqn;
-      list<BackendDAE.Value> row,changedvars,eqns,oldvars,newvars,diffvars,allvars;
+      list<BackendDAE.Value> row,invars,outvars,changedvars,eqns,oldvars,diffvars,allvars;
       list<list<BackendDAE.Value>> changedvars2;
       BackendDAE.Variables vars,knvars;
       BackendDAE.EquationArray daeeqns,daeseqns;
       list<BackendDAE.WhenClause> wc;
 
-    case (dae,m,{}) then (m,{{}});
+    case (dae,m,{},mt) then (m,mt);
 
-    case ((dae as BackendDAE.DAE(orderedVars = vars,knownVars = knvars,orderedEqs = daeeqns,removedEqs = daeseqns,eventInfo = BackendDAE.EVENT_INFO(whenClauseLst = wc))),m,(e :: eqns))
+    case ((dae as BackendDAE.DAE(orderedVars = vars,knownVars = knvars,orderedEqs = daeeqns,removedEqs = daeseqns,eventInfo = BackendDAE.EVENT_INFO(whenClauseLst = wc))),m,(e :: eqns),mt)
       equation
         abse = intAbs(e);
         e_1 = abse - 1;
@@ -4379,15 +4381,14 @@ algorithm
         row = incidenceRow(vars, eqn,wc);
         oldvars = getOldVars(m,abse);
         m_1 = Util.arrayReplaceAtWithFill(row, abse, m, {});
-        newvars = varsInEqn(m_1, abse);
-        diffvars = Util.listSetDifferenceOnTrue(oldvars, newvars, intEq);
-        allvars = Util.listListUnionOnTrue({oldvars,newvars},intEq);
-        changedvars = Util.listSelect1(allvars,diffvars,Util.listNotContains);
-        (m_2,changedvars2) = updateIncidenceMatrix2(dae, m_1, eqns);
+        (_,outvars,invars) = Util.listIntersectionOnTrue1(oldvars,row,intEq);
+        mt_1 = removeValuefromMatrix(outvars,abse,mt);
+        mt_2 = addValuetoMatrix(invars,abse,mt_1);
+        (m_2,mt_3) = updateIncidenceMatrix2(dae, m_1, eqns,mt_2);
       then
-        (m_2,(changedvars :: changedvars2));
+        (m_2,mt_3);
 
-    case (_,_,_)
+    case (_,_,_,_)
       equation
         print("- BackendDAEUtil.updateIncididenceMatrix2 failed\n");
       then
@@ -4414,6 +4415,86 @@ algorithm
     case(m,pos) then {};
   end matchcontinue;
 end getOldVars;
+
+protected function removeValuefromMatrix
+"function: removeValuefromMatrix
+  author: Frenkel TUD 2011-04"
+  input list<Integer> inIntegerLst;
+  input Integer inValue;
+  input BackendDAE.IncidenceMatrixT inIncidenceMatrixT;
+  output BackendDAE.IncidenceMatrixT outIncidenceMatrixT;
+algorithm
+  outIncidenceMatrixT:=
+  matchcontinue (inIntegerLst,inValue,inIncidenceMatrixT)
+    local
+      BackendDAE.IncidenceMatrixT mt,mt_1,mt_2;
+      BackendDAE.IncidenceMatrixElement mlst,mlst1;
+      list<BackendDAE.Value> keys;
+      BackendDAE.Value k,kabs;
+      Integer v,v_1;
+    case ({},_,mt) then mt;
+    case ((k :: keys),v,mt)
+      equation
+        kabs = intAbs(k);
+        mlst = mt[kabs];
+        v_1 = Util.if_(intGt(k,0),v,-v);
+        mlst1 = Util.listRemoveOnTrue(v_1,intEq,mlst);
+        mt_1 = arrayUpdate(mt, kabs , mlst1);
+        mt_2 = removeValuefromMatrix(keys,v,mt_1);
+      then
+        mt_2;
+    case ((k :: keys),v,mt)
+      equation
+        mt_2 = removeValuefromMatrix(keys,v,mt);
+      then
+        mt_2;        
+    case (_,_,_)
+      equation
+        print("- BackendDAE.removeValuefromMatrix failed\n");
+      then
+        fail();
+  end matchcontinue;
+end removeValuefromMatrix;
+
+protected function addValuetoMatrix
+"function: removeValuefromMatrix
+  author: Frenkel TUD 2011-04"
+  input list<Integer> inIntegerLst;
+  input Integer inValue;
+  input BackendDAE.IncidenceMatrixT inIncidenceMatrixT;
+  output BackendDAE.IncidenceMatrixT outIncidenceMatrixT;
+algorithm
+  outIncidenceMatrixT:=
+  matchcontinue (inIntegerLst,inValue,inIncidenceMatrixT)
+    local
+      BackendDAE.IncidenceMatrixT mt,mt_1,mt_2;
+      BackendDAE.IncidenceMatrixElement mlst;
+      list<BackendDAE.Value> keys;
+      BackendDAE.Value k,kabs;
+      Integer v,v_1;
+    case ({},_,mt) then mt;
+    case ((k :: keys),v,mt)
+      equation
+        kabs = intAbs(k);
+        mlst = getOldVars(mt,kabs);
+        v_1 = Util.if_(intGt(k,0),v,-v);
+        false = listMember(v_1, mlst);
+        mt_1 = Util.arrayReplaceAtWithFill(v_1::mlst, kabs, mt, {});
+        mt_2 = addValuetoMatrix(keys,v,mt_1);
+      then
+        mt_2;
+    case ((k :: keys),v,mt)
+      equation
+        mt_2 = addValuetoMatrix(keys,v,mt);
+      then
+        mt_2;        
+    case (_,_,_)
+      equation
+        print("- BackendDAE.addValuetoMatrix failed\n");
+      then
+        fail();
+  end matchcontinue;
+end addValuetoMatrix;
 
 protected function updateTransposedMatrix
 "function: updateTransposedMatrix
@@ -5739,16 +5820,13 @@ algorithm
   Debug.fcall("dumpdaelow", print, "dumpdaelow:\n");
   Debug.fcall("dumpdaelow", BackendDump.dump, inDAE);
   // pre optimisation phase
-  Debug.fcall("execstat",print, "*** BackendMain -> preoptimiseDAE at time: " +& realString(clock()) +& "\n" );
   (optdae,om,omT) := preoptimiseDAE(inDAE,functionTree,preOptModules,NONE(),NONE());
 
   // transformation phase (matching and sorting using a index reduction method
-  Debug.fcall("execstat",print, "*** BackendMain -> transformDAE at time: " +& realString(clock()) +& "\n" );
   (sode,m,mT,v1,v2,comps) := transformDAE(optdae,functionTree,daeHandler,om,omT);
   Debug.fcall("bltdump", BackendDump.bltdump, (sode,m,mT,v1,v2,comps));
 
   // past optimisation phase
-  Debug.fcall("execstat",print, "*** BackendMain -> pastoptimiseDAE at time: " +& realString(clock()) +& "\n" );
   (sode,outM,outMT,outAss1,outAss2,outComps) := pastoptimiseDAE(sode,functionTree,pastOptModules,m,mT,v1,v2,comps,daeHandler);
   
   sode1 := BackendDAECreate.findZeroCrossings(sode);
@@ -5802,6 +5880,7 @@ algorithm
     case (dae,funcs,{},m,mT) then (dae,m,mT);
     case (dae,funcs,(optModule,moduleStr)::rest,m,mT)
       equation
+        Debug.fcall("execstat",print, "*** BackendMain -> preoptimiseDAE Module " +& moduleStr +& " at time: " +& realString(clock()) +& "\n" );
         (dae1,m1,mT1) = optModule(dae,funcs,m,mT);
         Debug.fcall("optdaedump", print, stringAppendList({"\nOptimisation Module ",moduleStr,":\n\n"}));
         Debug.fcall("optdaedump", BackendDump.dump, dae1);
@@ -5849,8 +5928,10 @@ algorithm
       equation
         (m,mT) = getIncidenceMatrixfromOption(dae,om,omT);
         // matching algorithm
+        Debug.fcall("execstat",print, "*** BackendMain -> transformDAE get matching at time: " +& realString(clock()) +& "\n" );
         (v1,v2,ode,m1,mT1) = BackendDAETransform.matchingAlgorithm(dae, m, mT, (BackendDAE.INDEX_REDUCTION(), BackendDAE.EXACT(), BackendDAE.REMOVE_SIMPLE_EQN()),funcs);
         // sorting algorithm
+        Debug.fcall("execstat",print, "*** BackendMain -> transformDAE sort components at time: " +& realString(clock()) +& "\n" );
         (comps) = BackendDAETransform.strongComponents(m1, mT1, v1, v2);
       then
         (ode,m1,mT1,v1,v2,comps);
@@ -5897,6 +5978,7 @@ algorithm
     case (dae,funcs,{},m,mT,v1,v2,comps,_) then (dae,m,mT,v1,v2,comps);
     case (dae,funcs,(optModule,moduleStr)::rest,m,mT,v1,v2,comps,daeHandler)
       equation
+        Debug.fcall("execstat",print, "*** BackendMain -> pastoptimiseDAE " +& moduleStr +& " at time: " +& realString(clock()) +& "\n" );
         (dae1,m1,mT1,v1_1,v2_1,comps1,runMatching) = optModule(dae,funcs,m,mT,v1,v2,comps);
         Debug.fcall("optdaedump", print, stringAppendList({"\nOptimisation Module ",moduleStr,":\n\n"}));
         Debug.fcall("optdaedump", BackendDump.dump, dae1);

@@ -697,7 +697,6 @@ algorithm
         // update IncidenceMatrix
         dae = BackendDAE.DAE(ordvars,knvars,exobj,aliasVars,eqns2,remeqns,inieqns,arreqns,algorithms,einfo,eoc);
         (m1,mT1) = BackendDAEUtil.updateIncidenceMatrix(dae,m,mT,vareqns);    
-        pos_1 = pos - 1;
       then (vareqns1,dae,repl_1,extendrepl1,m1,mT1,pos_1::meqns);
     case (2,cr,i,exp,pos,repl,extendrepl,BackendDAE.DAE(ordvars,knvars,exobj,aliasVars,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc),m,mT,meqns)
       equation
