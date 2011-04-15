@@ -133,13 +133,13 @@ JacA_num(double *t, double *y, double *matrixA)
   int l;
   for (int i = 0; i < globalData->nStates; i++)
     {
-          delta_hh = delta_h*(globalData->states[i]>0?globalData->states[i]:-globalData->states[i]);
-          delta_hh = ((delta_h > delta_hh)?delta_h:delta_hh);
-          globalData->states[i] += delta_hh;
-          functionODE();
-          globalData->states[i] -= delta_hh;
+      delta_hh = delta_h*(globalData->states[i]>0?globalData->states[i]:-globalData->states[i]);
+      delta_hh = ((delta_h > delta_hh)?delta_h:delta_hh);
+      globalData->states[i] += delta_hh;
+      functionODE();
+      globalData->states[i] -= delta_hh;
 
-          for (int j = 0; j < globalData->nStates; j++)
+      for (int j = 0; j < globalData->nStates; j++)
         {
           l = j + i * globalData->nStates;
           matrixA[l] = (globalData->statesDerivatives[j] - yprime[j])/delta_hh;
@@ -238,6 +238,31 @@ solver_main_step(int flag, double &start, double &stop, bool &reset, int* stats)
   }
 }
 
+/* ! Function to update the whole system with EventIteration.
+ *	 Evaluate the functionDAE()
+ */
+void update_DAEsystem(){
+  int needToIterate = 0;
+  int IterationNum = 0;
+
+  functionDAE(&needToIterate);
+  if (sim_verbose >= LOG_SOLVER)
+    {
+      sim_result->emit();
+    }
+  while (checkForDiscreteChanges() || needToIterate)
+    {
+      saveall();
+      functionDAE(&needToIterate);
+      IterationNum++;
+      if (IterationNum > IterationMax)
+        {
+          throw TerminateSimulationException(globalData->timeValue, string(
+              "ERROR: Too many Iteration. System is not consistent!\n"));
+        }
+    }
+}
+
 /* The main function for a solver with synchronous event handling
  flag 1=explicit euler
  2=rungekutta
@@ -256,8 +281,8 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
   int dasslStats[DASSLSTATS];
   int dasslStatsTmp[DASSLSTATS];
   for(int i=0;i<DASSLSTATS;i++){
-    dasslStats[i] = 0;
-    dasslStatsTmp[i] = 0;
+      dasslStats[i] = 0;
+      dasslStatsTmp[i] = 0;
   }
 
   //Workaround for Relation in simulation_events
@@ -271,6 +296,9 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
   double offset = 0;
   globalData->oldTime = start;
   globalData->timeValue = start;
+
+  int needToIterate = 0;
+  int IterationNum = 0;
 
   if (outputSteps > 0)
     { // Use outputSteps if set, otherwise use step size.
@@ -323,123 +351,57 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
     {
       cout << "Calculated bound parameters" << endl;
     }
+  // Evaluate all constant equations
+  functionAliasEquations();
 
   // Calculate initial values from initial_function()
   // saveall() value as pre values
   if (measure_time_flag) {
-    rt_accumulate(SIM_TIMER_PREINIT);
-    rt_tick(SIM_TIMER_INIT);
+      rt_accumulate(SIM_TIMER_PREINIT);
+      rt_tick(SIM_TIMER_INIT);
   }
-  globalData->init = 1;
-  initial_function();
-  saveall();
-  storeExtrapolationData();
-  // Calculate initial values from (fixed) start attributes
+  try{
+      if (main_initialize(init_method))
+        {
+          throw TerminateSimulationException(globalData->timeValue, string(
+              "Error in initialization. Storing results and exiting.\n"));
+        }
 
-  int needToIterate = 0;
-  int IterationNum = 0;
-  functionDAE(&needToIterate);
-  functionAliasEquations();
+      SaveZeroCrossings();
+      saveall();
+      if (sim_verbose >= LOG_SOLVER)
+        {
+          sim_result->emit();
+        }
 
-  //work-around problem with discrete algorithm vars
-  //
-  //functionDAE(needToIterate);
-  //functionAliasEquations();
-  if (sim_verbose >= LOG_SOLVER)
-    {
+      //Activate sample and evaluate again
+      if (globalData->curSampleTimeIx < globalData->nSampleTimes)
+        {
+          sampleEvent_actived = checkForSampleEvent();
+          activateSampleEvents();
+        }
+      update_DAEsystem();
+      SaveZeroCrossings();
+      if (sampleEvent_actived)
+        {
+          deactivateSampleEventsandEquations();
+          sampleEvent_actived = 0;
+        }
+      saveall();
       sim_result->emit();
-    }
-  try
-  {
-     do
-      {
-        if (IterationNum > IterationMax)
-          {
-            throw TerminateSimulationException(globalData->timeValue, string(
-                "ERROR: Too many Iteration while the initialization. System is not consistent!\n"));
-          }
-        if (initialize(init_method))
-          {
-            throw TerminateSimulationException(globalData->timeValue, string(
-                "Error in initialization. Storing results and exiting.\n"));
-          }
-        saveall();
-        functionDAE(&needToIterate);
-        functionAliasEquations();
-        IterationNum++;
-      }  while (checkForDiscreteChanges() || needToIterate);
+      storeExtrapolationData();
+      storeExtrapolationData();
   }
   catch (TerminateSimulationException &e)
   {
       cout << e.getMessage() << endl;
-      if (modelTermination)
-        { // terminated from assert, etc.
-          cout << "Simulation terminated at time " << globalData->timeValue
-              << endl;
-          return -1;
-        }
+      printf("Simulation terminated while the initialization. Could not find suitable initial values.");
+      return -1;
   }
-  SaveZeroCrossings();
-  saveall();
-  if (sim_verbose >= LOG_SOLVER)
-    {
-      sim_result->emit();
-    }
-
-  // Calculate stable discrete state
-  // and initial ZeroCrossings
-  if (globalData->curSampleTimeIx < globalData->nSampleTimes)
-    {
-      sampleEvent_actived = checkForSampleEvent();
-      activateSampleEvents();
-    }
-  //Activate sample and evaluate again
-  needToIterate = 0;
-  IterationNum = 0;
-  functionDAE(&needToIterate);
-  if (sim_verbose >= LOG_SOLVER)
-    {
-      sim_result->emit();
-    }
-  try
-  {
-    while (checkForDiscreteChanges() || needToIterate)
-      {
-        saveall();
-        functionDAE(&needToIterate);
-        IterationNum++;
-        if (IterationNum > IterationMax)
-          {
-            throw TerminateSimulationException(globalData->timeValue, string(
-                "ERROR: Too many Iteration. System is not consistent!\n"));
-          }
-      }
-  }
-  catch (TerminateSimulationException &e)
-  {
-      cout << e.getMessage() << endl;
-      if (modelTermination)
-        { // terminated from assert, etc.
-          cout << "Simulation terminated at time " << globalData->timeValue
-              << endl;
-          return -1;
-        }
-  }
-  functionAliasEquations();
-  SaveZeroCrossings();
-  if (sampleEvent_actived)
-    {
-      deactivateSampleEventsandEquations();
-      sampleEvent_actived = 0;
-    }
-
-  saveall();
-  sim_result->emit();
 
   // Initialization complete
   if (measure_time_flag)
     rt_accumulate( SIM_TIMER_INIT);
-  globalData->init = 0;
 
   if (globalData->timeValue >= stop)
     {
@@ -459,13 +421,13 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
   FILE *fmt = NULL;
   uint32_t stepNo = 0;
   if (measure_time_flag) {
-    const string filename = string(globalData->modelFilePrefix) + "_prof.data";
-    fmt = fopen(filename.c_str(), "wb");
-    if (!fmt) {
-      fprintf(stderr, "Warning: Time measurements output file %s could not be opened: %s\n", filename.c_str(), strerror(errno));
-      fclose(fmt);
-      fmt = NULL;
-    }
+      const string filename = string(globalData->modelFilePrefix) + "_prof.data";
+      fmt = fopen(filename.c_str(), "wb");
+      if (!fmt) {
+          fprintf(stderr, "Warning: Time measurements output file %s could not be opened: %s\n", filename.c_str(), strerror(errno));
+          fclose(fmt);
+          fmt = NULL;
+      }
   }
 
   try
@@ -569,29 +531,29 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
               tmpdbl = rt_accumulated(SIM_TIMER_STEP);
               flag = flag && 1 == fwrite(&tmpdbl, sizeof(double), 1, fmt);
               for (int i = 0; i < globalData->nFunctions + globalData->nProfileBlocks; i++) {
-                tmpint = rt_ncall(i + SIM_TIMER_FIRST_FUNCTION);
-                flag = flag && 1 == fwrite(&tmpint, sizeof(uint32_t), 1, fmt);
+                  tmpint = rt_ncall(i + SIM_TIMER_FIRST_FUNCTION);
+                  flag = flag && 1 == fwrite(&tmpint, sizeof(uint32_t), 1, fmt);
               }
               for (int i = 0; i < globalData->nFunctions + globalData->nProfileBlocks; i++) {
-                tmpdbl = rt_accumulated(i + SIM_TIMER_FIRST_FUNCTION);
-                flag = flag && 1 == fwrite(&tmpdbl, sizeof(double), 1, fmt);
+                  tmpdbl = rt_accumulated(i + SIM_TIMER_FIRST_FUNCTION);
+                  flag = flag && 1 == fwrite(&tmpdbl, sizeof(double), 1, fmt);
               }
               rt_accumulate(SIM_TIMER_OVERHEAD);
               if (!flag) {
-                fprintf(stderr, "Warning: Disabled time measurements because the output file could not be generated: %s\n", strerror(errno));
-                fclose(fmt);
-                fmt = NULL;
+                  fprintf(stderr, "Warning: Disabled time measurements because the output file could not be generated: %s\n", strerror(errno));
+                  fclose(fmt);
+                  fmt = NULL;
               }
             }
           SaveZeroCrossings();
           sim_result->emit();
 
           if (reset == true)
-          {
-            // save dassl stats befor reset
-            for (int i = 0; i < DASSLSTATS; i++)
-              dasslStats[i] += dasslStatsTmp[i];
-          }
+            {
+              // save dassl stats befor reset
+              for (int i = 0; i < DASSLSTATS; i++)
+                dasslStats[i] += dasslStatsTmp[i];
+            }
           //Check for termination of terminate() or assert()
           if (terminationAssert || terminationTerminate)
             {
@@ -657,7 +619,7 @@ euler_ex_step(double* step, int (*f)())
 {
   globalData->timeValue += *step;
   for (int i = 0; i < globalData->nStates; i++) {
-    globalData->states[i] += globalData->statesDerivatives[i] * (*step);
+      globalData->states[i] += globalData->statesDerivatives[i] * (*step);
   }
   f();
   return 0;
@@ -872,7 +834,7 @@ dasrt_step(double* step, double &start, double &stop, bool &trigger1, int* tmpSt
   }
   catch (TerminateSimulationException &e)
   {
-      
+
       cout << e.getMessage() << endl;
       //free DASSL specific work arrays.
       return 1;

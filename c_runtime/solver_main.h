@@ -73,5 +73,6 @@ extern "C" {
 int solver_main( int argc, char** argv,double &start,  double &stop, double &step, long &outputSteps,
     double &tolerance, int flag);
 
+void update_DAEsystem();
 
 #endif

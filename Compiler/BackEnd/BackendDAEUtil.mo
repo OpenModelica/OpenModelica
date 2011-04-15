@@ -435,7 +435,7 @@ algorithm
         ((nie2,_)) = BackendEquation.traverseBackendDAEEqns(removedEqs,countInitialEqns,(nie1,whenClauseLst));
         dae1 = checkInitialSystem1(unfixed1,nie2,dae,funcs,vars,varsws,states,statesws);
       then
-        dae;
+        dae1;
     
     case (dae,_)
       equation

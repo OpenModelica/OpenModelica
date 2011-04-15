@@ -30,6 +30,7 @@
 
 #include "simulation_init.h"
 #include "simulation_runtime.h"
+#include "solver_main.h"
 #include <math.h>
 
 /*
@@ -42,26 +43,18 @@ void leastSquare(long *nz, double *z, double *funcValue)
   int startIndPar = 2*globalData->nStates+globalData->nAlgebraic+globalData->intVariables.nAlgebraic+globalData->boolVariables.nAlgebraic;
 
  for (ind=0, indAct=0, indz=0; ind<globalData->nStates; ind++)
-    if (globalData->initFixed[indAct++]==0)
+    if (globalData->initFixed[indAct++]==0 )
           globalData->states[ind] = z[indz++];
 
   // for real parameters 
-  for (ind=0,indAct=startIndPar; ind<globalData->nParameters; ind++)
-    if (globalData->initFixed[indAct++]==0)
+  for (ind=0,indAct=startIndPar; ind<globalData->nParameters; ind++, indAct++)
+    if (globalData->initFixed[indAct]==0 and globalData->var_attr[indAct-globalData->nStates]==1)
       globalData->parameters[ind] = z[indz++];
 
   bound_parameters();
   functionODE();
   functionAlgebraics();
 
-/*  for (ind=0,indy=0,indAct=2*globalData->nStates; ind<globalData->nAlgebraic; ind++)
-    if (globalData->initFixed[indAct++]==1)
-      globalData->algebraics [ind] = static_y[indy++];
-
-      Comment from Bernhard: Even though algebraic variables are "fixed", they are calculated from
-      the states, so they should be allowed to change when states vary,
-      and NOT be replaced by their initial values as above.
-*/
   initial_residual();
 
   for (ind=0, *funcValue=0; ind<globalData->nInitialResiduals; ind++)
@@ -88,7 +81,7 @@ int reportResidualValue(double funcValue)
         cout << "residual[" << i << "] = " << globalData->initialResiduals[i] << endl;
       }
     }
-    return 0 /*-1*/;
+    return 1;
   }
   return 0;
 }
@@ -136,7 +129,7 @@ int simplex_initialization(long& nz,double *z)
   /* Start with stepping .5 in each direction. */
   for (ind=0;ind<nz;ind++)
   {
-    STEP[ind] = 0.5;
+    STEP[ind] = 1.0;
     VAR[ind]  = 0.0;
   }
 
@@ -144,7 +137,7 @@ int simplex_initialization(long& nz,double *z)
    long IPRINT, NLOOP,IQUAD,IFAULT,MAXF;
 //C  Set max. no. of function evaluations = 5000, print every 100.
 
-      MAXF = 20 * nz;
+      MAXF = 50 * nz;
       IPRINT = sim_verbose >= LOG_INIT ? 100 : -1;
 
 //C  Set value for stopping criterion.   Stopping occurs when the
@@ -152,7 +145,7 @@ int simplex_initialization(long& nz,double *z)
 //C  the points of the current simplex < stopcr.
 
       STOPCR = 1.e-3;
-      NLOOP = 2*MAXF;//2*nz;
+      NLOOP = 2*MAXF;
 
 //C  Fit a quadratic surface to be sure a minimum has been found.
 
@@ -203,23 +196,15 @@ int simplex_initialization(long& nz,double *z)
  * residual of all equations (both continuous time eqns and initial eqns).
  */
 
-int initialize(const std::string*method)
+int initialize(const std::string init_method)
 {
   long nz;
   int ind, indAct, indz;
-  std::string init_method;
-
-  if (method == NULL) {
-   // init_method = std::string("newuoa");
-    init_method = std::string("simplex");
-  } else {
-    init_method = *method;
-  }
 
   for (ind=0, nz=0; ind<globalData->nStates; ind++){
     if (globalData->initFixed[ind]==0){
         if (sim_verbose >= LOG_INIT)
-            printf("Variable %s is unfixed.\n",globalData->statesNames[ind].name);
+            printf("State %s is unfixed.\n",globalData->statesNames[ind].name);
 
         nz++;
     }
@@ -228,9 +213,9 @@ int initialize(const std::string*method)
   int startIndPar = 2*globalData->nStates+globalData->nAlgebraic+globalData->intVariables.nAlgebraic+globalData->boolVariables.nAlgebraic;
   int endIndPar = startIndPar+globalData->nParameters;
   for (ind=startIndPar;ind<endIndPar; ind++){
-    if (globalData->initFixed[ind]==0){
+    if (globalData->initFixed[ind]==0 and globalData->var_attr[ind-globalData->nStates]==1){
         if (sim_verbose >= LOG_INIT)
-          printf("Variable %s is unfixed.\n",globalData->parametersNames[ind-startIndPar].name);
+          printf("Parameter %s is unfixed.\n",globalData->parametersNames[ind-startIndPar].name);
         nz++;
     }
   }
@@ -262,7 +247,7 @@ int initialize(const std::string*method)
   }
   // for real parameters
   for (ind=0,indAct=startIndPar; ind<globalData->nParameters; ind++) {
-    if (globalData->initFixed[indAct++]==0)
+    if (globalData->initFixed[indAct++]==0 and globalData->var_attr[indAct-globalData->nStates]==1)
       z[indz++] =  globalData->parameters[ind];
   }
 
@@ -277,6 +262,92 @@ int initialize(const std::string*method)
     retVal= -1;
   }
   delete [] z;
+  return retVal;
+}
+
+int
+main_initialize(const std::string* method)
+{
+
+  std::string init_method;
+
+  if (method == NULL)
+    {
+      init_method = std::string("simplex");
+    }
+  else
+    {
+      init_method = *method;
+    }
+
+  saveall();
+  initial_function();
+  update_DAEsystem();
+  if (sim_verbose >= LOG_SOLVER)
+    {
+      sim_result->emit();
+    }
+  // do some initial stuff
+  globalData->init = 1;
+  initial_function();
+  if (sim_verbose >= LOG_SOLVER)
+    {
+      sim_result->emit();
+    }
+  //saveall();
+  //update_DAEsystem();
+
+  storeExtrapolationData();
+  storeExtrapolationData();
+
+  if (sim_verbose >= LOG_SOLVER)
+    {
+      sim_result->emit();
+    }
+
+  //first try with the given method as default simplex and
+  //then try with the other one
+  int retVal = 0;
+  retVal = initialize(init_method);
+  if (retVal != 0)
+    {
+      if (init_method == std::string("simplex"))
+        {
+          init_method = std::string("newuoa");
+          retVal = initialize(init_method);
+        }
+      else if (init_method == std::string("newuoa"))
+        {
+          init_method = std::string("simplex");
+          retVal = initialize(init_method);
+        }
+      if (retVal != 0)
+        {
+          printf("Initialization of the current initial set of equations and initial guesses fails!\n");
+          printf("Try with better Initial guesses for the states.\n");
+          retVal = 1;
+        }
+    }
+
+  saveall();
+  storeExtrapolationData();
+  storeExtrapolationData();
+
+  if (sim_verbose >= LOG_SOLVER)
+    {
+      sim_result->emit();
+    }
+
+  update_DAEsystem();
+  SaveZeroCrossings();
+  saveall();
+  if (sim_verbose >= LOG_SOLVER)
+    {
+      sim_result->emit();
+    }
+  storeExtrapolationData();
+  storeExtrapolationData();
+  globalData->init = 0;
   return retVal;
 }
 

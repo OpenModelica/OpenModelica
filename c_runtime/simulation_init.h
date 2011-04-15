@@ -39,7 +39,7 @@
 #ifndef _SIMULATION_INIT_H
 #define _SIMULATION_INIT_H
 
-int initialize(const std::string*method);
+int main_initialize(const std::string*method);
 
 #ifndef NEWUOA
 #define NEWUOA newuoa_

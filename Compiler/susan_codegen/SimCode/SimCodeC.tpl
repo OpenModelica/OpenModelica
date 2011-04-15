@@ -800,6 +800,7 @@ template functionInitializeDataStruc()
     }
 
     returnData->initFixed = init_fixed;
+    returnData->var_attr = var_attr;
     returnData->modelName = model_name;
     returnData->modelFilePrefix = model_fileprefix;
     returnData->statesNames = state_names;
@@ -1130,7 +1131,7 @@ template functionInitialResidual(list<SimEqSystem> residualEquations)
         let expPart = daeExp(exp, contextOther, &preExp /*BUFC*/,
                            &varDecls /*BUFD*/)
         '<%preExp%>localData->initialResiduals[i++] = <%expPart%>;
-if (sim_verbose >=LOG_INIT) { printf(" Residual[%d] : <%ExpressionDump.printExpStr(exp)%> = %f\n",i,localData->initialResiduals[i-1]); }'
+if (sim_verbose == LOG_RES_INIT) { printf(" Residual[%d] : <%ExpressionDump.printExpStr(exp)%> = %f\n",i,localData->initialResiduals[i-1]); }'
     ;separator="\n")
   <<
   int initial_residual()

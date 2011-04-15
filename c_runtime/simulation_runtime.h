@@ -103,6 +103,7 @@ extern omc_fileInfo TermInfo; /* message for termination. */
 /* Flags for controlling logging to stdout */
 extern const int LOG_STATS;
 extern const int LOG_INIT;
+extern const int LOG_RES_INIT;
 extern const int LOG_SOLVER;
 extern const int LOG_EVENTS;
 extern const int LOG_NONLIN_SYS;
@@ -223,6 +224,7 @@ typedef struct sim_DATA {
   double* statesBackup;
 
   char* initFixed; /* Fixed attribute for all variables and parameters */
+  char* var_attr; /* Type attribute for all variables and parameters */
   int init; /* =1 during initialization, 0 otherwise. */
   void** extObjs; /* External objects */
   /* nStatesDerivatives == states */

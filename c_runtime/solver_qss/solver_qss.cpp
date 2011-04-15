@@ -218,7 +218,7 @@ void init_ompd()
           throw TerminateSimulationException(globalData->timeValue, string(
               "ERROR: Too many Iteration while the initialization. System is not consistent!\n"));
         }
-      if (initialize(init_method))
+      if (main_initialize(init_method))
         {
           throw TerminateSimulationException(globalData->timeValue, string(
               "Error in initialization. Storing results and exiting.\n"));

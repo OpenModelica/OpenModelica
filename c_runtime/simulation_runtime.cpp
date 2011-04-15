@@ -100,6 +100,7 @@ simulation_result *sim_result;
 /* Flags for controlling logging to stdout */
 const int LOG_STATS = 1;
 const int LOG_INIT = 2;
+const int LOG_RES_INIT = 3;
 const int LOG_SOLVER = 4;
 const int LOG_NONLIN_SYS = 8;
 const int LOG_EVENTS = 16;
@@ -232,9 +233,13 @@ verboseLevel(int argc, char**argv)
     {
       res |= LOG_STATS;
     }
-if (flags->find("LOG_INIT", 0) != string::npos)
+  if (flags->find("LOG_INIT", 0) != string::npos)
     {
       res |= LOG_INIT;
+    }
+  if (flags->find("LOG_RES_INIT", 0) != string::npos)
+    {
+      res |= LOG_RES_INIT;
     }
   if (flags->find("LOG_SOLVER", 0) != string::npos)
     {

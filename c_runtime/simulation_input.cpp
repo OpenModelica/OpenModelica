@@ -132,66 +132,66 @@ void read_commented_value(ifstream &f, signed char *str);
   }
   for(int i = 0; i < simData->nStates; i++) { // Read x initial values
     read_commented_value(file,&simData->states[i]);
-    if (sim_verbose >= LOG_SOLVER) {
+    if (sim_verbose >= LOG_INIT) {
       cout << "read " << simData->statesNames[i].name << " = " << simData->states[i] << " from init file." << endl;
     }
   }
   for(int i = 0; i < simData->nStates; i++) { // Read der(x) initial values
     read_commented_value(file,&simData->statesDerivatives[i]);
-    if (sim_verbose >= LOG_SOLVER) {
+    if (sim_verbose >= LOG_INIT) {
       cout << "read " << simData->stateDerivativesNames[i].name << " = " << simData->statesDerivatives[i] << " from init file." << endl;
     }
   }
   for(int i = 0; i < simData->nAlgebraic; i++) { // Read y initial values
     read_commented_value(file,&simData->algebraics[i]);
-    if (sim_verbose >= LOG_SOLVER) {
+    if (sim_verbose >= LOG_INIT) {
       cout << "read " << simData->algebraicsNames[i].name << " = " << simData->algebraics[i] << " from init file." << endl;
     }
   }
   for(int i = 0; i < simData->nParameters; i++) { // Read parameter values
     read_commented_value(file,&simData->parameters[i]);
-    if (sim_verbose >= LOG_SOLVER) {
+    if (sim_verbose >= LOG_INIT) {
       cout << "read " << simData->parametersNames[i].name << " = " << simData->parameters[i] << " from init file." << endl;
     }
   }
 
   for(int i = 0; i < simData->intVariables.nParameters; i++) { // Read parameter values
     read_commented_value(file,&simData->intVariables.parameters[i]);
-    if (sim_verbose >= LOG_SOLVER) {
+    if (sim_verbose >= LOG_INIT) {
       cout << "read " << simData->int_param_names[i].name << " = " << simData->intVariables.parameters[i] << " from init file." << endl;
     }
   }
 
   for(int i = 0; i < simData->intVariables.nAlgebraic; i++) { // Read parameter values
     read_commented_value(file,&simData->intVariables.algebraics[i]);
-    if (sim_verbose >= LOG_SOLVER) {
+    if (sim_verbose >= LOG_INIT) {
       cout << "read " << simData->int_alg_names[i].name << " = " << simData->intVariables.algebraics[i] << " from init file." << endl;
     }
   }
 
   for(int i = 0; i < simData->boolVariables.nParameters; i++) { // Read parameter values
     read_commented_value(file,&simData->boolVariables.parameters[i]);
-    if (sim_verbose >= LOG_SOLVER) {
+    if (sim_verbose >= LOG_INIT) {
       cout << "read " << simData->bool_param_names[i].name << " = " << (bool)simData->boolVariables.parameters[i] << " from init file." << endl;
     }
   }
 
   for(int i = 0; i < simData->boolVariables.nAlgebraic; i++) { // Read parameter values
     read_commented_value(file,&simData->boolVariables.algebraics[i]);
-    if (sim_verbose >= LOG_SOLVER) {
+    if (sim_verbose >= LOG_INIT) {
       cout << "read " << simData->bool_alg_names[i].name << " = " << (bool)simData->boolVariables.algebraics[i] << " from init file." << endl;
     }
   }
 
   for(int i=0; i < simData->stringVariables.nParameters; i++) { // Read string parameter values
     read_commented_value(file,&(simData->stringVariables.parameters[i]));
-    if (sim_verbose >= LOG_SOLVER) {
+    if (sim_verbose >= LOG_INIT) {
       cout << "read " << simData->string_param_names[i].name << " = \"" << simData->stringVariables.parameters[i] << "\" from init file." << endl;
     }
   }
   for(int i=0; i < simData->stringVariables.nAlgebraic; i++) { // Read string algebraic values
     read_commented_value(file,&simData->stringVariables.algebraics[i]);
-    if (sim_verbose >= LOG_SOLVER) {
+    if (sim_verbose >= LOG_INIT) {
       cout << "read " << simData->string_alg_names[i].name << " from init file." << endl;
     }
   }
