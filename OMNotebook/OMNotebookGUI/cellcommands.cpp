@@ -40,6 +40,7 @@
 // QT Headers
 #include <QtGui/QTextCursor>
 #include <QtGui/QTextDocumentFragment>
+#include <QDebug>
 
 //STD Headers
 #include <exception>
@@ -48,6 +49,7 @@
 
 //IAEX Headers
 #include "cellcommands.h"
+#include "graphcell.h"
 #include "inputcell.h"
 #include "textcell.h"
 #include "cellgroup.h"
@@ -348,6 +350,7 @@ namespace IAEX
     // create the new cell, if there exists a groupcell add the new cell to
     // that groupcell.
     Cell* newCell = factory->createCell( style.name() );
+
 //    if( groupcell )
 //      groupcell->addChild( newCell );
 
@@ -406,6 +409,28 @@ namespace IAEX
         newInputCell->setEvaluated( false );
 
       newInputCell->setClosed( oldInputCell->isClosed() );
+    }
+    else if( typeid(GraphCell) == typeid( *newCell ))
+    {
+      GraphCell *newGraphCell = dynamic_cast<GraphCell *>( newCell );
+      GraphCell *oldGraphCell = dynamic_cast<GraphCell *>( cell );
+
+      newGraphCell->setStyle( style );
+      newGraphCell->setText( oldGraphCell->text() );
+
+      if( oldGraphCell->isEvaluated() )
+      {
+        newGraphCell->setEvaluated( true );
+
+        if( oldGraphCell->isJavaPlot() )
+          newGraphCell->setTextOutputHtml( oldGraphCell->textOutputHtml() );
+        else
+          newGraphCell->setTextOutput( oldGraphCell->textOutput() );
+      }
+      else
+        newGraphCell->setEvaluated( false );
+
+      newGraphCell->setClosed( oldGraphCell->isClosed() );
     }
     else if( typeid(TextCell) == typeid( *newCell ))
     {
