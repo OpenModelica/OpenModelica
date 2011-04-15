@@ -66,9 +66,9 @@ double SimulationResults_val(const char *filename, const char *varname, double t
   return SimulationResultsImpl__val(filename,varname,timeStamp,&simresglob);
 }
 
-void* SimulationResults_cmpSimulationResults(const char *filename,const char *reffilename,const char *logfilename, double refTol, void *vars)
+void* SimulationResults_cmpSimulationResults(const char *filename,const char *reffilename,const char *logfilename, double refTol, double absTol, void *vars)
 {
-  return SimulationResultsCmp_compareResults(filename,reffilename,logfilename,refTol,vars);
+  return SimulationResultsCmp_compareResults(filename,reffilename,logfilename,refTol,absTol,vars);
 }
 
 }

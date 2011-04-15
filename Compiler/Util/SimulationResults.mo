@@ -81,9 +81,10 @@ public function cmpSimulationResults
   input String reffilename;
   input String logfilename;
   input Real refTol;
+  input Real absTol;
   input list<String> vars;
   output list<String> res;
-  external "C" res=SimulationResults_cmpSimulationResults(filename,reffilename,logfilename,refTol,vars) annotation(Library = "omcruntime");
+  external "C" res=SimulationResults_cmpSimulationResults(filename,reffilename,logfilename,refTol,absTol,vars) annotation(Library = "omcruntime");
 end cmpSimulationResults;
 
 

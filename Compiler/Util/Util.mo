@@ -4975,6 +4975,65 @@ algorithm
   end matchcontinue;
 end listIntersectionOnTrue;
 
+public function listIntersectionOnTrue1 "function: listIntersectionOnTrue1
+  Takes two lists and a comparison function over two elements of the list.
+  It returns the intersection of the two lists, using the comparison function passed as
+  argument to determine identity between two elements. A list of the elements from
+  list a which not in list b and a list of the elements from list b which not in list a;
+  Example:
+    given the function stringEq(string,string) returning true if the strings are equal
+    listIntersectionOnTrue({\"a\",\"aa\"},{\"b\",\"aa\"},stringEq) => ({\"aa\"},{\"a\"},{\"b\"})"
+  input list<Type_a> inTypeALst1;
+  input list<Type_a> inTypeALst2;
+  input FuncTypeType_aType_aToBoolean inFuncTypeTypeATypeAToBoolean3;
+  output list<Type_a> outTypeALst;
+  output list<Type_a> outTypeA1Lst;
+  output list<Type_a> outTypeA2Lst;
+  replaceable type Type_a subtypeof Any;
+  partial function FuncTypeType_aType_aToBoolean
+    input Type_a inTypeA1;
+    input Type_a inTypeA2;
+    output Boolean outBoolean;
+  end FuncTypeType_aType_aToBoolean;
+algorithm
+  (outTypeALst,outTypeA1Lst):=listIntersectionOnTrue1_help(inTypeALst1,inTypeALst2,inFuncTypeTypeATypeAToBoolean3);
+  outTypeA2Lst := listSetDifferenceOnTrue(inTypeALst2,outTypeALst,inFuncTypeTypeATypeAToBoolean3);
+end listIntersectionOnTrue1;
+
+protected function listIntersectionOnTrue1_help "function: listIntersectionOnTrue1_help"
+  input list<Type_a> inTypeALst1;
+  input list<Type_a> inTypeALst2;
+  input FuncTypeType_aType_aToBoolean inFuncTypeTypeATypeAToBoolean3;
+  output list<Type_a> outTypeALst;
+  output list<Type_a> outTypeA1Lst;
+  replaceable type Type_a subtypeof Any;
+  partial function FuncTypeType_aType_aToBoolean
+    input Type_a inTypeA1;
+    input Type_a inTypeA2;
+    output Boolean outBoolean;
+  end FuncTypeType_aType_aToBoolean;
+algorithm
+  (outTypeALst,outTypeALst1):=
+  matchcontinue (inTypeALst1,inTypeALst2,inFuncTypeTypeATypeAToBoolean3)
+    local
+      list<Type_a> res,res1,xs1,xs2;
+      Type_a x1;
+      FuncTypeType_aType_aToBoolean cond;
+    case ({},_,_) then ({},{});
+    case ((x1 :: xs1),xs2,cond)
+      equation
+        _ = listGetMemberOnTrue(x1, xs2, cond);
+        (res,res1) = listIntersectionOnTrue1_help(xs1, xs2, cond);
+      then
+        (x1 :: res,res1);
+    case ((x1 :: xs1),xs2,cond)
+      equation
+        (res,res1) = listIntersectionOnTrue1_help(xs1, xs2, cond) "not list_getmember_p(x1,xs2,cond) => _" ;
+      then
+        (res,x1::res1);
+  end matchcontinue;
+end listIntersectionOnTrue1_help;
+
 public function listSetEqualOnTrue "function: listSetEqualOnTrue
   Takes two lists and a comparison function over two elements of the list.
   It returns true if the two sets are equal, false otherwise."

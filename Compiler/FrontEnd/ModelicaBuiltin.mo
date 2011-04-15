@@ -1029,6 +1029,7 @@ public function compareSimulationResults "compare simulation results"
   input String reffilename;
   input String logfilename;
   input Real refTol;
+  input Real absTol;
   input String[:] vars;
   output String result;
 external "builtin";
