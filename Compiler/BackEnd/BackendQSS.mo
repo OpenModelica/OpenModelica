@@ -1269,7 +1269,7 @@ algorithm
   (outList) :=
   matchcontinue (inList,inComps,inListAcc)
     local
-      Integer[:] ass1,ass2;
+      array<Integer> ass1,ass2;
       list<list<Integer>> localAccList;
       list<list<Integer>> restList;
       list<list<Integer>> comps;
@@ -2091,7 +2091,7 @@ protected function getDEVSblock_conns
   input Integer blockIndex; 
   input list<list<Integer>> curBlock_outEdges;
   input list<list<Integer>> curBlock_outVars;
-  input list<list<Integer>>[:] inVars;
+  input array<list<list<Integer>>> inVars;
   input Integer loopIndex;
   input list<list<Integer>> curBlock_conns_temp;
   output list<list<Integer>> curBlock_conns_out;
@@ -2134,7 +2134,7 @@ protected function getDEVSblock_connections2
   input Integer blockOut; 
   input Integer portOut;
   input list<Integer> blocksIn;
-  input list<list<Integer>>[:] inVars;
+  input array<list<list<Integer>>> inVars;
   input list<list<Integer>> curOutVar_conns_temp;
   output list<list<Integer>> curOutVar_conns_out; 
   
@@ -2145,7 +2145,7 @@ algorithm
       
       Integer portIn, curBlockIn;
        
-      Integer[:] row;
+      array<Integer> row;
       list<Integer> out_edges, out_edges_names, restOutVars,restBlocksIn, unique_inputNames, inNames;
       Integer curOutVar, nInputs;
       
