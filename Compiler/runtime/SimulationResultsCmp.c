@@ -194,7 +194,7 @@ DataField getData(const char *varname,const char *filename, unsigned int size, S
     res.data = newvars;
 
   //for (i=0;i<res.n;i++)
-  // fprintf(stderr, "%.6g\n",  res.data[i]);
+  // fprintf(stderr, "%d: %.6g\n",  i, res.data[i]);
 
 
   return res;
@@ -211,14 +211,14 @@ void cmpData(char* varname, DataField *time, DataField *reftime, DataField *data
   tr = reftime->data[j];
   dr = refdata->data[j];
 
-  //fprintf(stderr, "compare: %s\n",varname);
+  // fprintf(stderr, "compare: %s\n",varname);
   for (i=0;i<data->n;i++){
     t = time->data[i];
     d = data->data[i];
-    // fprintf(stderr, " t: %.6g   d:%.6g\n",t,d);
     increased = 0;
+    // fprintf(stderr, "i: %d t: %.6g   d:%.6g\n",i,t,d);
     while(tr < t){
-      if (j < reftime->n) {
+      if (j +1< reftime->n) {
         j += 1;
         tr = reftime->data[j];
         increased = 1;
@@ -227,11 +227,10 @@ void cmpData(char* varname, DataField *time, DataField *reftime, DataField *data
         break;
     }
     if (increased==1){
-      if ((t - reftime->data[j-1]) < (tr-t)) {
-        j -= 1;
-        tr = reftime->data[j];
-      }
+      j -= 1;
+      tr = reftime->data[j];
     }
+    // fprintf(stderr, "i: %d t: %.6g   d:%.6g  j: %d tr:%.6g\n",i,t,d,j,tr);
     // events
     if(i>0) {
       // an event
@@ -241,7 +240,7 @@ void cmpData(char* varname, DataField *time, DataField *reftime, DataField *data
         char te = 0;
         if (i+1<data->n) {
           if (time->data[i+1] < t+0.00000065) {
-        	  te = 1;
+            te = 1;
           }
         }
         while(te==1){
@@ -249,7 +248,7 @@ void cmpData(char* varname, DataField *time, DataField *reftime, DataField *data
           te = 0;
           if (i+1<data->n) {
             if (time->data[i+1] < t+0.00000065) {
-            	te = 1;
+              te = 1;
             }
           }
         }
@@ -260,7 +259,7 @@ void cmpData(char* varname, DataField *time, DataField *reftime, DataField *data
         te == 0;
         if (j+1<reftime->n) {
           if (reftime->data[j+1] < tr+0.00000065) {
-        	  te = 1;
+            te = 1;
           }
         }
         while(te==1){
@@ -268,7 +267,7 @@ void cmpData(char* varname, DataField *time, DataField *reftime, DataField *data
           te = 0;
           if (j+1<reftime->n) {
             if (reftime->data[j+1] < tr+0.00000065) {
-            	te = 1;
+              te = 1;
             }
           }
         }
@@ -283,18 +282,43 @@ void cmpData(char* varname, DataField *time, DataField *reftime, DataField *data
 
     dr = refdata->data[j]; 
     if (interpolate==1){
-      //fprintf(stderr, "interpolate d:%.6g ",t,dr);
-      dr = dr + ((refdata->data[j+1]-dr)/(reftime->data[j+1]-tr))*(t-tr);
-      //fprintf(stderr, "-> dr:%.6g\n",dr);
+      // fprintf(stderr, "interpolate %.6g:%.6g ",t,dr);
+      // look for interpolation partner
+      if (j+1<reftime->n) {
+          unsigned int jj = j+1;
+          char te=0;
+          increased = 0;
+        if (reftime->data[j+1] == tr){
+          te = 1;
+          increased = 1;
+        }
+        while(te==1){
+          jj += 1;
+          te = 0;
+            if (jj<reftime->n) {
+              if (reftime->data[jj] == tr){
+                te = 1;
+              }
+            }
+        }
+        if (increased == 1){
+            jj -= 1;
+        }
+        //fprintf(stderr, "-> %d %.6g %.6g\n",jj,reftime->data[jj],tr);
+        if (reftime->data[jj] != tr){
+          dr = dr + ((refdata->data[jj] - dr)/(reftime->data[jj] - tr))*absdouble(t-tr);
+        }
+      }
+      // fprintf(stderr, "-> dr:%.6g\n",dr);
     }
-    //fprintf(stderr, "j: %d tr: %.6g  dr:%.6g\n",j,tr,dr);
+    // fprintf(stderr, "j: %d tr: %.6g  dr:%.6g\n",j,tr,dr);
 
     if (dr != 0){
       delta = absdouble(d-dr)/dr;
     }
     else
       delta = d;
-    //fprintf(stderr, "delta:%.6g  reltol:%.6g\n",absdouble(delta),reltol);
+    // fprintf(stderr, "delta:%.6g  reltol:%.6g\n",absdouble(delta),reltol);
 
     if ((absdouble(delta) > reltol) && (absdouble(d-dr) > abstol)){
 

@@ -48,7 +48,7 @@ void leastSquare(long *nz, double *z, double *funcValue)
 
   // for real parameters 
   for (ind=0,indAct=startIndPar; ind<globalData->nParameters; ind++, indAct++)
-    if (globalData->initFixed[indAct]==0 and globalData->var_attr[indAct-globalData->nStates]==1)
+    if (globalData->initFixed[indAct]==0 && globalData->var_attr[indAct-globalData->nStates]==1)
       globalData->parameters[ind] = z[indz++];
 
   bound_parameters();
@@ -219,7 +219,7 @@ int initialize(const std::string init_method)
   int startIndPar = 2*globalData->nStates+globalData->nAlgebraic+globalData->intVariables.nAlgebraic+globalData->boolVariables.nAlgebraic;
   int endIndPar = startIndPar+globalData->nParameters;
   for (ind = startIndPar; ind < endIndPar; ind++){
-    if (globalData->initFixed[ind]==0 and globalData->var_attr[ind-globalData->nStates]==1){
+    if (globalData->initFixed[ind]==0 && globalData->var_attr[ind-globalData->nStates]==1){
       if (sim_verbose >= LOG_INIT)
         printf("Parameter %s is unfixed.\n",globalData->parametersNames[ind-startIndPar].name);
       nz++;
@@ -253,7 +253,7 @@ int initialize(const std::string init_method)
   }
   // for real parameters
   for (ind=0,indAct=startIndPar; ind<globalData->nParameters; ind++) {
-    if (globalData->initFixed[indAct++]==0 and globalData->var_attr[indAct-globalData->nStates]==1)
+    if (globalData->initFixed[indAct++]==0 && globalData->var_attr[indAct-globalData->nStates]==1)
       z[indz++] = globalData->parameters[ind];
   }
 

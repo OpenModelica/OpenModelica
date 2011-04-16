@@ -519,8 +519,7 @@ algorithm
           populateSimulationOptions(inSimOpt, rest);
        
        DAE.RCONST(rStartTime) = startTime;
-       DAE.RCONST(rStopTime) = startTime;
-       
+       DAE.RCONST(rStopTime) = stopTime;
        iNumberOfIntervals = realInt(realDiv(realSub(rStopTime, rStartTime), rStepSize));
        
        numberOfIntervals = DAE.ICONST(iNumberOfIntervals);
