@@ -193,22 +193,22 @@ continue_MINE(fortran_integer* idid, double* atol, double *rtol);
 double
 calcTinyStep(double start, double stop);
 
-fortran_integer info[15];
+fortran_integer info[15] = {0};
 double reltol = 1.0e-5;
 double abstol = 1.0e-5;
 fortran_integer idid = 0;
 fortran_integer ipar = 0;
 
 // work arrays for DASSL
-fortran_integer liw;
-fortran_integer lrw;
-double *rwork;
-fortran_integer *iwork;
+fortran_integer liw = 0;
+fortran_integer lrw = 0;
+double *rwork = NULL;
+fortran_integer *iwork = 0;
 fortran_integer NG_var = 0; //->see ddasrt.c LINE 250 (number of constraint functions)
-fortran_integer *jroot;
+fortran_integer *jroot = NULL;
 
 // work array for inline implementation
-double **work_states;
+double **work_states = NULL;
 
 const int rungekutta_s = 4;
 const double rungekutta_b[rungekutta_s] =
@@ -217,9 +217,9 @@ const double rungekutta_c[rungekutta_s] =
     { 0, 0.5, 0.5, 1 };
 
 // Used when calculating residual for its side effects. (alg. var calc)
-double *dummy_delta;
+double *dummy_delta = NULL;
 
-int euler_in_use;
+int euler_in_use = 0;
 
 int
 solver_main_step(int flag, double &start, double &stop, bool &reset, int* stats)
@@ -318,7 +318,7 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
 
   const string *init_method = getFlagValue("im", argc, argv);
 
-  int retValIntegrator;
+  int retValIntegrator = 0;
 
   switch (flag)
   {
@@ -676,8 +676,10 @@ rungekutta_step(double* step, int (*f)())
 int
 dasrt_step(double* step, double &start, double &stop, bool &trigger1, int* tmpStats)
 {
-  double tout;
-  int i;
+  double tout = 0;
+  int i = 0;
+  double *rpar = NULL;
+  // extern variables??
   extern fortran_integer info[15];
   extern double reltol;
   extern double abstol;
@@ -687,11 +689,10 @@ dasrt_step(double* step, double &start, double &stop, bool &trigger1, int* tmpSt
   extern fortran_integer lrw;
   extern double *rwork;
   extern fortran_integer *iwork;
-  double *rpar;
   extern fortran_integer NG_var; //->see ddasrt.c LINE 250 (number of constraint functions)
   extern fortran_integer *jroot;
   extern double *dummy_delta;
-
+  // end extern
   if (globalData->timeValue == start)
     {
       if (sim_verbose >= LOG_SOLVER)
@@ -810,7 +811,10 @@ dasrt_step(double* step, double &start, double &stop, bool &trigger1, int* tmpSt
 
           // save dassl stats
           for (i = 0; i < DASSLSTATS; i++)
+          {
+            assert(10+i < liw);
             tmpStats[i] = iwork[10+i];
+          }
 
           if (idid < 0)
             {

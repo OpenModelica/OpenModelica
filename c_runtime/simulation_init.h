@@ -45,8 +45,16 @@ int main_initialize(const std::string*method);
 #define NEWUOA newuoa_
 #endif
 
+#ifndef NELMEAD
+#define NELMEAD nelmead_
+#endif
+
 #ifdef __cplusplus
+
 extern "C" {
+
+  extern void leastSquare(long *nz, double *z, double *funcValue);
+
   void  NEWUOA(
   long *nz,
   long *NPT,
@@ -58,15 +66,7 @@ extern "C" {
   double *W,
   void (*leastSquare) (long *nz, double *z, double *funcValue)
   );
-} // extern C
-#endif
 
-#ifndef NELMEAD
-#define NELMEAD nelmead_
-#endif
-
-#ifdef __cplusplus
-extern "C" {
   void  NELMEAD(
      double *z,
      double *STEP,
@@ -81,6 +81,7 @@ extern "C" {
      double *VAR,
      void (*leastSquare) (long *nz, double *z, double *funcValue),
      long *IFAULT);
+
 } // extern "C"
 #endif
 

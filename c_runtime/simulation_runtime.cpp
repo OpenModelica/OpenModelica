@@ -63,7 +63,7 @@
 
 using namespace std;
 
-bool interactiveSimuation = false; //This variable signals if an simulation session is interactive or non-interactive (by default)
+int interactiveSimulation = 0; //This variable signals if an simulation session is interactive or non-interactive (by default)
 
 /* Global Data */
 /***************/
@@ -74,14 +74,14 @@ int terminationTerminate = 0;
 int terminationAssert = 0;
 char* terminateMessage = 0;
 int warningLevelAssert = 0;
-string TermMsg;
+string TermMsg = string("");
 omc_fileInfo TermInfo = omc_dummyFileInfo;
 
-int sim_verbose; // Flag for logging
-int sim_verboseLevel; // Flag for logging level
-int sim_noemit; // Flag for not emitting data
-int jac_flag; // Flag usage of jacobian
-int num_jac_flag; // Flag usage of numerical jacobian
+int sim_verbose = 0; // Flag for logging
+int sim_verboseLevel = 0; // Flag for logging level
+int sim_noemit = 0; // Flag for not emitting data
+int jac_flag = 0; // Flag usage of jacobian
+int num_jac_flag = 0; // Flag usage of numerical jacobian
 
 int acceptedStep = 0; /* Flag for knowning when step is accepted and when solver searches for solution.
  If solver is only searching for a solution, asserts, etc. should not be triggered, causing faulty error messages to be printed
@@ -89,13 +89,13 @@ int acceptedStep = 0; /* Flag for knowning when step is accepted and when solver
 
 int modelErrorCode = 0; // set by model calculations. Can be transferred to num. solver.
 
-const std::string *init_method; // method for  initialization.
+const std::string *init_method = NULL; // method for  initialization.
 
 // this is the globalData that is used in all the functions
 DATA *globalData = 0;
 
 // The simulation result
-simulation_result *sim_result;
+simulation_result *sim_result = NULL;
 
 /* Flags for controlling logging to stdout */
 const int LOG_STATS = 1;
@@ -270,7 +270,7 @@ verboseLevel(int argc, char**argv)
  */
 int isInteractiveSimulation()
 {
-  return interactiveSimuation;
+  return interactiveSimulation;
 }
 
 /**
@@ -354,7 +354,7 @@ startNonInteractiveSimulation(int argc, char**argv)
   int retVal = -1;
 
   /* linear model option is set : -l <lintime> */
-  int create_linearmodel = (int) flagSet("l", argc, argv);
+  int create_linearmodel = flagSet("l", argc, argv);
   string* lintime = (string*) getFlagValue("l", argc, argv);
 
   /* mesure time option is set : -mt */
@@ -398,7 +398,7 @@ startNonInteractiveSimulation(int argc, char**argv)
       method = "dassl";
   }
 
-  int methodflag = (int) flagSet("s", argc, argv);
+  int methodflag = flagSet("s", argc, argv);
   if (methodflag) {
     string* solvermethod = (string*) getFlagValue("s", argc, argv);
     if (!(solvermethod == NULL))
@@ -555,11 +555,11 @@ callSolver(int argc, char**argv, string method, string outputFormat,
 int
 initRuntimeAndSimulation(int argc, char**argv)
 {
-  if (argc == 2 && flagSet("?", argc, argv)) {
-      //cout << "usage: " << argv[0]  << " <-f initfile> <-r result file> -m solver:{dassl, euler} -v" << endl;
+  if (flagSet("?", argc, argv) || flagSet("help", argc, argv)) {
       cout << "usage: " << argv[0]
-                                << " <-f initfile> <-r result file> -m solver:{dassl, dassl2, rungekutta, euler} -v <-interactive> <-port value>"
-                                << endl;
+           << " <-f initfile> <-r result file> -m solver:{dassl, dassl2, rungekutta, euler} <-interactive> <-port value> "
+           << "-lv [LOG_STATS] [LOG_INIT] [LOG_RES_INIT] [LOG_SOLVER] [LOG_EVENTS] [LOG_NONLIN_SYS] [LOG_ZEROCROSSINGS] [LOG_DEBUG]"
+           << endl;
       EXIT(0);
   }
   globalData = initializeDataStruc();
@@ -574,17 +574,17 @@ initRuntimeAndSimulation(int argc, char**argv)
       return 1;
   }
   /* verbose flag is set : -v */
-  sim_verbose = (int) flagSet("v", argc, argv);
-  sim_noemit = (int) flagSet("noemit", argc, argv);
-  jac_flag = (int) flagSet("jac", argc, argv);
-  num_jac_flag = (int) flagSet("numjac", argc, argv);
+  sim_verbose = flagSet("v", argc, argv);
+  sim_noemit = flagSet("noemit", argc, argv);
+  jac_flag = flagSet("jac", argc, argv);
+  num_jac_flag = flagSet("numjac", argc, argv);
 
 
   // ppriv - NO_INTERACTIVE_DEPENDENCY - for simpler debugging in Visual Studio
 #ifndef NO_INTERACTIVE_DEPENDENCY
-  interactiveSimuation = flagSet("interactive", argc, argv);
+  interactiveSimulation = flagSet("interactive", argc, argv);
 
-  if (interactiveSimuation && flagSet("port", argc, argv)) {
+  if (interactiveSimulation && flagSet("port", argc, argv)) {
       cout << "userPort" << endl;
       string *portvalue = (string*) getFlagValue("port", argc, argv);
       std::istringstream stream(*portvalue);
@@ -619,7 +619,7 @@ main(int argc, char**argv)
   if (initRuntimeAndSimulation(argc, argv)) //initRuntimeAndSimulation returns 1 if an error occurs
     return 1;
 
-  if (interactiveSimuation) {
+  if (interactiveSimulation) {
     //cout << "startInteractiveSimulation: " << version << endl;
     retVal = startInteractiveSimulation(argc, argv);
   } else {

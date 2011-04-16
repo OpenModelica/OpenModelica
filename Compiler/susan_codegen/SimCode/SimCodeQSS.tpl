@@ -118,7 +118,7 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(varInfo=varInfo as  VARINFO(__))) 
   startNonInteractiveSimulation(int, char**);
   int
   initRuntimeAndSimulation(int, char**);
-  extern bool interactiveSimuation;
+  extern int interactiveSimulation;
   char incidenceMatrix[0];
   char inputMatrix[0];
   char outputMatrix[0];

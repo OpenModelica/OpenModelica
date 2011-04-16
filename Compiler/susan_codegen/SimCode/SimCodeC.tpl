@@ -2087,7 +2087,7 @@ case SES_MIXED(__) then
   SIM_PROF_TICK_EQ(SIM_PROF_EQ_<%index%>);
   #endif
   mixed_equation_system(<%numDiscVarsStr%>);
-  double values[<%valuesLenStr%>] = {<%values ;separator=", "%>};
+  modelica_boolean values[<%valuesLenStr%>] = {<%values ;separator=", "%>};
   int value_dims[<%numDiscVarsStr%>] = {<%value_dims ;separator=", "%>};
   <%discVars |> SIMVAR(__) hasindex i0 => 'discrete_loc[<%i0%>] = <%cref(name)%>;' ;separator="\n"%>
   {
@@ -2096,7 +2096,7 @@ case SES_MIXED(__) then
   <%preDisc%>
   <%discLoc2%>
   {
-    double *loc_ptrs[<%numDiscVarsStr%>] = {<%discVars |> SIMVAR(__) => '(double*)&<%cref(name)%>' ;separator=", "%>};
+    modelica_boolean *loc_ptrs[<%numDiscVarsStr%>] = {<%discVars |> SIMVAR(__) => '(modelica_boolean*)&<%cref(name)%>' ;separator=", "%>};
     check_discrete_values(<%numDiscVarsStr%>, <%valuesLenStr%>);
   }
   mixed_equation_system_end(<%numDiscVarsStr%>);

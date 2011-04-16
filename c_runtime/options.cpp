@@ -34,12 +34,12 @@
 
 using namespace std;
 
-bool flagSet(const char *option, int argc, char** argv)
+int flagSet(const char *option, int argc, char** argv)
 {
   for (int i=0; i<argc;i++) {
-    if (("-"+string(option))==string(argv[i])) return true;
+    if (("-"+string(option))==string(argv[i])) return 1;
   }
-  return false;
+  return 0;
 }
 /* returns the value of a flag on the form -flagname=value
  */

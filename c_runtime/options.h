@@ -36,7 +36,7 @@
 #include <algorithm>
 
 /* -f */
-bool flagSet(const char*, int, char**);
+int flagSet(const char*, int, char**);
 
 /* -f=value; returns NULL if not found */
 const std::string * getOption(const char*, int, char **);
