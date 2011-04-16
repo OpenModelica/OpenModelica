@@ -1357,7 +1357,7 @@ algorithm
         Print.printBuf(inlineTypeStr);
         Print.printBuf("\n");
         dumpFunctionElements(daeElts);
-        Print.printBuf("\nexternal \"C\";\n");
+        Print.printBuf("\n  external \"C\";\n");
         Print.printBuf("end ");
         Print.printBuf(fstr);
         Print.printBuf(";\n\n");
@@ -1372,7 +1372,7 @@ algorithm
         Print.printBuf(fstr);
         Print.printBuf(" \"Automatically generated record constructor for "+&fstr+&"\"\n");
         Print.printBuf(printRecordConstructorInputsStr(t));
-        Print.printBuf("output "+&Absyn.pathLastIdent(fpath)+& " res;\n");
+        Print.printBuf("  output "+&Absyn.pathLastIdent(fpath)+& " res;\n");
         Print.printBuf("end ");
         Print.printBuf(fstr);
         Print.printBuf(";\n\n");
@@ -1414,26 +1414,26 @@ algorithm
     // protected vars are not input!, see Modelica Spec 3.2, Section 12.6, Record Constructor Functions, page 140
     case((DAE.T_COMPLEX(cistate,DAE.TYPES_VAR(name=name,visibility=SCode.PROTECTED(),ty=tp,binding=binding)::varLst,optTp,ec),optPath)) 
       equation
-        s1 ="protected "+&Types.unparseType(tp)+&" "+&name+&printRecordConstructorBinding(binding)+&";\n";
+        s1 ="  protected "+&Types.unparseType(tp)+&" "+&name+&printRecordConstructorBinding(binding)+&";\n";
         s2 = printRecordConstructorInputsStr((DAE.T_COMPLEX(cistate,varLst,optTp,ec),optPath));
-        str = s1+&s2;
+        str = s1 +&s2;
       then 
         str;
 
     // constants are not input! see Modelica Spec 3.2, Section 12.6, Record Constructor Functions, page 140
     case((DAE.T_COMPLEX(cistate,DAE.TYPES_VAR(name=name,attributes=DAE.ATTR(variability=SCode.CONST()),ty=tp,binding=binding)::varLst,optTp,ec),optPath)) 
       equation
-        s1 ="constant "+&Types.unparseType(tp)+&" "+&name+&printRecordConstructorBinding(binding)+&";\n";
+        s1 ="  constant "+&Types.unparseType(tp)+&" "+&name+&printRecordConstructorBinding(binding)+&";\n";
         s2 = printRecordConstructorInputsStr((DAE.T_COMPLEX(cistate,varLst,optTp,ec),optPath));
-        str = s1+&s2;
+        str = s1 +& s2;
       then 
         str;
 
     case((DAE.T_COMPLEX(cistate,DAE.TYPES_VAR(name=name,ty=tp,binding=binding)::varLst,optTp,ec),optPath)) 
       equation
-        s1 ="input "+&Types.unparseType(tp)+&" "+&name+&printRecordConstructorBinding(binding)+&";\n";
+        s1 ="  input "+&Types.unparseType(tp)+&" "+&name+&printRecordConstructorBinding(binding)+&";\n";
         s2 = printRecordConstructorInputsStr((DAE.T_COMPLEX(cistate,varLst,optTp,ec),optPath));
-        str = s1+&s2;
+        str = s1 +& s2;
       then 
         str;
 
@@ -3135,7 +3135,7 @@ protected function dumpVarStream "function: dumpVarStream
 algorithm
   outStream := matchcontinue (inElement, printTypeDimension, inStream)
     local
-      String s1,s2,s3,s4,comment_str,s5,s6,s7,s3_subs;
+      String s1,s2,s3,s4,comment_str,s5,s6,s7,s3_subs,sFinal;
       DAE.ComponentRef id;
       DAE.VarKind kind;
       DAE.VarDirection dir;
@@ -3163,6 +3163,7 @@ algorithm
              variableAttributesOption = dae_var_attr,
              absynCommentOption = comment), printTypeDimension, str)
       equation
+        sFinal = Util.if_(DAEUtil.getFinalAttr(dae_var_attr),"final ", "");
         s1 = dumpKindStr(kind);
         s2 = dumpDirectionStr(dir);
         s3 = unparseType(typ);
@@ -3171,7 +3172,7 @@ algorithm
         s7 = dumpVarVisibilityStr(prot);
         comment_str = dumpCommentOptionStr(comment);
         s5 = dumpVariableAttributesStr(dae_var_attr);
-        str = IOStream.appendList(str, {"  ",s7,s1,s2,s3,s3_subs," ",s4,s5,comment_str,";\n"});
+        str = IOStream.appendList(str, {"  ",s7,sFinal,s1,s2,s3,s3_subs," ",s4,s5,comment_str,";\n"});
       then
         str;
     // we have a binding
@@ -3188,6 +3189,7 @@ algorithm
              variableAttributesOption = dae_var_attr,
              absynCommentOption = comment), printTypeDimension, str)
       equation
+        sFinal = Util.if_(DAEUtil.getFinalAttr(dae_var_attr),"final ", "");
         s1 = dumpKindStr(kind);
         s2 = dumpDirectionStr(dir);
         s3 = unparseType(typ);
@@ -3197,7 +3199,7 @@ algorithm
         comment_str = dumpCommentOptionStr(comment);
         s6 = dumpVariableAttributesStr(dae_var_attr);
         s7 = dumpVarVisibilityStr(prot);
-        str = IOStream.appendList(str, {"  ",s7,s1,s2,s3,s3_subs," ",s4,s6," = ",s5,comment_str,";\n"});
+        str = IOStream.appendList(str, {"  ",s7,sFinal,s1,s2,s3,s3_subs," ",s4,s6," = ",s5,comment_str,";\n"});
       then
         str;
     case (_,_,str) then str;
@@ -3356,7 +3358,7 @@ algorithm
         str = IOStream.append(str, dumpInlineTypeStr(inlineType));
         str = IOStream.append(str, "\n");
         str = dumpFunctionElementsStream(daeElts, str);
-        str = IOStream.appendList(str, {"\nexternal \"",lang,"\";\nend ",fstr,";\n\n"});
+        str = IOStream.appendList(str, {"\n  external \"",lang,"\";\nend ",fstr,";\n\n"});
       then
         str;
 

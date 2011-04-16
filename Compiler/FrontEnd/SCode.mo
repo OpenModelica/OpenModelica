@@ -1095,7 +1095,7 @@ public function printElementStr
 algorithm
   outString :=  matchcontinue (inElement)
     local
-      String str,str2,res,n,mod_str,s,vs,modStr,strFinalPrefix,strReplaceablePrefix;
+      String str,str2,res,n,mod_str,s,vs,modStr,strFinalPrefix,strReplaceablePrefix,prefStr;
       Absyn.Path path;
       Mod mod;
       Final finalPrefix;
@@ -1108,6 +1108,7 @@ algorithm
       Absyn.TypeSpec tySpec;
       Option<Comment> comment;
       Absyn.Import imp;
+      Prefixes pref;
 
     case EXTENDS(baseClassPath = path,modifications = mod)
       equation
@@ -1117,7 +1118,7 @@ algorithm
       then
         res;
     case COMPONENT(name = n,
-                   prefixes = PREFIXES(
+                   prefixes = pref as PREFIXES(
                      innerOuter=io,
                      finalPrefix = finalPrefix,
                      replaceablePrefix = repl,
@@ -1130,7 +1131,8 @@ algorithm
         s = Dump.unparseTypeSpec(tySpec);
         vs = variabilityString(var);
         str2 = innerouterString(io);
-        res = stringAppendList({"COMPONENT(",n, " in/out: ", str2, " mod: ",mod_str, " tp: ", s," var :",vs,")"});
+        prefStr = prefixesStr(pref);
+        res = stringAppendList({"COMPONENT(",n, " in/out: ", str2, " mod: ",mod_str, " tp: ", s," var :",vs," prefixes: ",prefStr,")"});
       then
         res;
     case inElement
@@ -1256,7 +1258,7 @@ public function printClassStr "
 algorithm
   outString := match (inClass)
     local
-      String s,res,id,re,strPartialPrefix,strEncapsulatedPrefix;
+      String s,res,id,re,strPartialPrefix,strEncapsulatedPrefix,prefStr;
       Partial p;
       Encapsulated en;
       Restriction rest;
@@ -1265,15 +1267,17 @@ algorithm
       Redeclare red;
       Final fin;
       Absyn.InnerOuter io;
-      Replaceable rep;      
+      Replaceable rep;
+      Prefixes pref;
         
-    case (CLASS(name = id,prefixes = PREFIXES(vis,red,fin,io,rep),partialPrefix = p,encapsulatedPrefix = en,restriction = rest,classDef = def))
+    case (CLASS(name = id,prefixes = pref as PREFIXES(vis,red,fin,io,rep),partialPrefix = p,encapsulatedPrefix = en,restriction = rest,classDef = def))
       equation
         s = printClassdefStr(def);
         re = restrString(rest);
         strPartialPrefix = Util.if_(partialBool(p), "true", "false");
         strEncapsulatedPrefix = Util.if_(encapsulatedBool(en), "true", "false");
-        res = stringAppendList({"CLASS(",id,", partial = ",strPartialPrefix, ", encapsulated = ", strEncapsulatedPrefix, ", ", re, ", ", s, ")\n"});
+        prefStr = prefixesStr(pref);
+        res = stringAppendList({"CLASS(",id,", partial = ",strPartialPrefix, ", encapsulated = ", strEncapsulatedPrefix, ", prefixes: ",prefStr, ", ", re, ", ", s, ")\n"});
       then
         res;
   end match;
@@ -3769,6 +3773,38 @@ algorithm
   end match;
 end encapsulatedStr;
 
+public function visibilityStr
+  input Visibility inVisibility;
+  output String str;
+algorithm
+  str := match(inVisibility)
+    case (PUBLIC()) then "public ";
+    case (PROTECTED()) then "protected ";
+  end match;
+end visibilityStr;
+
+public function visibilityBool
+  "returns true for PUBLIC and false for PROTECTED"
+  input Visibility inVisibility;
+  output Boolean bVisibility;
+algorithm
+  bVisibility := match(inVisibility)
+    case (PUBLIC()) then true;
+    case (PROTECTED()) then false;
+  end match;
+end visibilityBool;
+
+public function boolVisibility
+  "returns for PUBLIC true and for PROTECTED false"
+  input Boolean inBoolVisibility;
+  output Visibility outVisibility;
+algorithm
+  outVisibility := match(inBoolVisibility)
+    case (true) then PUBLIC();
+    case (false) then PROTECTED();
+  end match;
+end boolVisibility;
+
 public function finalStr
   input Final inFinal;
   output String str;
@@ -3847,11 +3883,36 @@ public function replaceableStr
 algorithm
   (strReplaceable, strConstraint) := match(inReplaceable)
     local Absyn.ConstrainClass cc;
-    case (REPLACEABLE(SOME(cc))) then ("replaceable", Dump.unparseConstrainclassStr(cc));
-    case (REPLACEABLE(NONE())) then ("replaceable", "");
-    case (NOT_REPLACEABLE()) then ("replaceable", "");
+    case (REPLACEABLE(SOME(cc))) then ("replaceable ", Dump.unparseConstrainclassStr(cc));
+    case (REPLACEABLE(NONE())) then ("replaceable ", "");
+    case (NOT_REPLACEABLE()) then ("", "");
   end match;
 end replaceableStr;
+
+public function replaceablePrefixStr
+  input Replaceable inReplaceable;
+  output String strReplaceable;
+algorithm
+  (strReplaceable) := match(inReplaceable)
+    local Absyn.ConstrainClass cc;
+    case (REPLACEABLE(_)) then "replaceable ";
+    case (NOT_REPLACEABLE()) then "";
+  end match;
+end replaceablePrefixStr;
+
+public function replaceableConstrainClassStr
+  input Replaceable inReplaceable;
+  output String strReplaceable;
+algorithm
+  (strReplaceable) := match(inReplaceable)
+    local String str;
+    case (inReplaceable)
+      equation
+         (_, str) = replaceableStr(inReplaceable);
+      then 
+        str;
+  end match;
+end replaceableConstrainClassStr;
 
 public function replaceableBool
   input Replaceable inReplaceable;
@@ -4148,6 +4209,32 @@ algorithm
     
   end matchcontinue;
 end prefixesReplaceable;
+
+public function prefixesStr "Returns prefixes as string"
+  input Prefixes prefixes;
+  output String str;
+algorithm
+  str := matchcontinue(prefixes)
+    local
+      Visibility v;
+      Redeclare rd;
+      Final f;
+      Absyn.InnerOuter io;
+      Replaceable rpl;
+      String s;
+        
+    case(PREFIXES(v,rd,f,io,rpl))
+      equation
+        s = visibilityStr(v) +& 
+            redeclareStr(rd) +& 
+            finalStr(f) +& 
+            Absyn.innerOuterStr(io) +& 
+            replaceablePrefixStr(rpl);
+      then 
+        s;
+    
+  end matchcontinue;
+end prefixesStr;
 
 end SCode;
 

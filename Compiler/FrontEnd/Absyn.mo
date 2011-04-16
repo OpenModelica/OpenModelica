@@ -5065,4 +5065,16 @@ algorithm
   end match;
 end joinWithinPath;
 
+public function innerOuterStr
+  input InnerOuter io;
+  output String str;
+algorithm
+  str := matchcontinue(io)
+    case (INNER_OUTER()) then "inner outer ";
+    case (INNER()) then "inner ";
+    case (OUTER()) then "outer ";
+    case (NOT_INNER_OUTER()) then "";
+  end matchcontinue;
+end innerOuterStr;
+
 end Absyn;

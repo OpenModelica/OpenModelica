@@ -119,6 +119,7 @@ protected
   SCode.Element cl;
 algorithm
   cl := translateClass(inClass);
+  // print("\n" +& SCode.printElementStr(cl) +& "\n");
   outAcc := cl :: acc;
 end translate2;
 
@@ -1165,7 +1166,7 @@ algorithm
       (attr as Absyn.ATTR(flowPrefix = fl,streamPrefix=st,variability = variability,direction = di,arrayDim = ad)),typeSpec = t,
       components = (Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = n,arrayDim = d,modification = m),comment = comment,condition=cond) :: xs)),_,info)
       equation
-        // Debug.fprintln("translate", "translating component: " +& n);
+        // Debug.fprintln("translate", "translating component: " +& n +& " final: " +& SCode.finalStr(SCode.boolFinal(finalPrefix)));
         setHasInnerOuterDefinitionsHandler(io); // signal the external flag that we have inner/outer definitions
         setHasStreamConnectorsHandler(st);      // signal the external flag that we have stream connectors
         xs_1 = translateElementspec(cc, finalPrefix, io, repl, vis,

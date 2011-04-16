@@ -6202,9 +6202,9 @@ algorithm
                                     info = info)),cmod),
           inst_dims,impl,callscope,graph)
       equation
-        //print("  instElement: A component: " +& n +& "\n");
-        //Debug.fprintln("debug"," instElement " +& n +& " in s:" +& Env.printEnvPathStr(env) +& " m: " +& SCode.printModStr(m) +& " cm : " +& Mod.printModStr(cmod));
-        //false = stringEq(n, Absyn.pathLastIdent(t));
+        // print("  instElement: A component: " +& n +& " " +& SCode.finalStr(finalPrefix) +& "\n");
+        // Debug.fprintln("debug"," instElement " +& n +& " in s:" +& Env.printEnvPathStr(env) +& " m: " +& SCode.printModStr(m) +& " cm : " +& Mod.printModStr(cmod));
+        // false = stringEq(n, Absyn.pathLastIdent(t));
         m = traverseModAddFinal(m, finalPrefix);
         comp = SCode.COMPONENT(n,SCode.PREFIXES(vis,redecl,finalPrefix,io,repl),attr,ts,m,comment,cond,info);
         // Fails if multiple decls not identical
@@ -7718,7 +7718,7 @@ algorithm
         ClassInf.isFunction(ci_state);
 
         //Do not flatten because it is a function
-        dims_1 = instDimExpLst(dims, impl) ;
+        dims_1 = instDimExpLst(dims, impl);
                 
         //get the equation modification 
         SOME(DAE.TYPED(e,_,p,_)) = Mod.modEquation(mod);
@@ -7728,7 +7728,7 @@ algorithm
         //        input Integer sequence[3](min = {1,1,1}, max = {3,3,3}) = {1,2,3}; // this will fail if we send in the mod.
         //        see testsuite/mofiles/Sequence.mo
         (cache,env_1,ih,store,dae1,csets_1,ty,st,_,graph) = 
-          instClass(cache,env,ih,store, /* mod */ DAE.NOMOD(), pre, csets, cl, inst_dims, impl, INNER_CALL(), graph);
+          instClass(cache, env, ih, store, /* mod */ DAE.NOMOD(), pre, csets, cl, inst_dims, impl, INNER_CALL(), graph);
         //Make it an array type since we are not flattening
         ty_1 = makeArrayType(dims, ty);
 
@@ -7781,7 +7781,7 @@ algorithm
         pre_1 = PrefixUtil.prefixAdd(n, idxs_1, pre,vt,ClassInf.start(r,Absyn.IDENT(ss1)));
         (cache,env_1,ih,store,dae1,csets_1,ty,st,oDA,graph) =
           instClass(cache,env,ih,store, mod, pre_1, csets, cl, inst_dims, impl, INNER_CALL(), graph);
-        dae1_1 = propagateAttributes(dae1, dir, io, SCode.CONST());
+        dae1_1 = propagateAttributes(dae1, dir, io, SCode.CONST(), finalPrefix);
         identType = makeCrefBaseType(ty,inst_dims);
         (cache,cr) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n,identType,idxs_1));
         (cache,dae_var_attr) = instDaeVariableAttributes(cache,env, mod, ty, {});
@@ -7806,7 +7806,7 @@ algorithm
         //print(" instantiateVarparam: " +& PrefixUtil.printPrefixStr(pre) +& " . " +& n +& " mod: " +&  Mod.printModStr(mod) +& "\n");
         (cache,env_1,ih,store,dae1,csets_1,ty,st,_,graph) =
           instClass(cache,env,ih,store, mod, pre_1, csets, cl, inst_dims, impl, INNER_CALL(), graph);
-        dae1_1 = propagateAttributes(dae1, dir,io,SCode.PARAM());
+        dae1_1 = propagateAttributes(dae1, dir, io, SCode.PARAM(), finalPrefix);
         identType = makeCrefBaseType(ty,inst_dims);
         (cache,cr) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n,identType,idxs_1));
         start = instStartBindingExp(mod, ty);
@@ -7843,7 +7843,7 @@ algorithm
         //print("\n Inst class: " +& ss1 +& " for var : " +& n +& ", mods: " +& Mod.printModStr(mod2)+& "\n");
         (cache,env_1,ih,store,dae1,csets_1,ty,st,oDA,graph) =
           instClass(cache,env,ih,store, mod2, pre_1, csets, cl, inst_dims, impl, INNER_CALL(), graph);
-        dae1_1 = propagateAttributes(dae1, dir,io,vt);
+        dae1_1 = propagateAttributes(dae1, dir, io, vt, finalPrefix);
         identType = makeCrefBaseType(ty,inst_dims);
         (cache,cr) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n,identType,idxs_1));
 
@@ -7890,7 +7890,7 @@ algorithm
         //print("\n Inst class: " +& ss1 +& " for var : " +& n +& ", mods: " +& Mod.printModStr(mod2)+& "\n");
         (cache,env_1,ih,store,dae1,csets_1,ty,st,oDA,graph) =
           instClass(cache,env,ih,store, mod2, pre_1, csets, cl, inst_dims, impl, INNER_CALL(), graph);
-        dae1_1 = propagateAttributes(dae1, dir,io,vt);
+        dae1_1 = propagateAttributes(dae1, dir, io, vt, finalPrefix);
         identType = makeCrefBaseType(ty,inst_dims);
         (cache,cr) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n,identType,idxs_1));
 
@@ -8862,10 +8862,11 @@ protected function propagateAttributes
   input Absyn.Direction inDirection;
   input Absyn.InnerOuter io;
   input SCode.Variability vt;
+  input SCode.Final finalPrefix;
   output DAE.DAElist outDae;
   protected DAE.DAElist dae;
 algorithm
-  outDae := propagateAllAttributes(inDae, inDirection, io, vt);
+  outDae := propagateAllAttributes(inDae, inDirection, io, vt, finalPrefix);
 end propagateAttributes;
 
 protected function propagateAllAttributes "Propagages ALL Attributes, to variables of a component."
@@ -8873,15 +8874,17 @@ protected function propagateAllAttributes "Propagages ALL Attributes, to variabl
   input Absyn.Direction dir;
   input Absyn.InnerOuter io;
   input SCode.Variability vt;
+  input SCode.Final finalPrefix;
   output DAE.DAElist outDae;
 algorithm
-  outDae := match(inDae,dir,io,vt)
+  outDae := match(inDae,dir,io,vt,finalPrefix)
     local
       list<DAE.Element> elts;
-    case(DAE.DAE(elts),dir,io,vt)
+    case(DAE.DAE(elts),dir,io,vt,finalPrefix)
       equation
-        elts = propagateAllAttributes2(elts,dir,io,vt);
-      then DAE.DAE(elts);
+        elts = propagateAllAttributes2(elts,dir,io,vt,finalPrefix);
+      then 
+        DAE.DAE(elts);
   end match;
 end propagateAllAttributes;
 
@@ -8891,21 +8894,26 @@ protected function propagateAllAttributes2
   input Absyn.Direction dir;
   input Absyn.InnerOuter io;
   input SCode.Variability vt;
+  input SCode.Final finalPrefix;
   output list<DAE.Element> outDae;
 algorithm
-  outDae := match (inDae,dir,io,vt)
+  outDae := match (inDae,dir,io,vt,finalPrefix)
     local
       DAE.Element e;
       list<DAE.Element> rest, propagated;
     // empty case
-    case ({},_,_,_) then {};
+    case ({},_,_,_,_) then {};
     // normal case
-    case (e::rest,dir,io,vt)
+    case (e::rest,dir,io,vt,finalPrefix)
       equation
+        // adrpo: 2011-04-16 TODO! FIXME! HACK!
+        //  this generates A LOT OF GARBAGE, please rewrite
+        //  so the propagation of all these happens in 1 step
         {e} = propagateDirection({e},dir);
         {e} = propagateVariability({e},vt);
         {e} = propagateInnerOuter({e},io);
-        propagated = propagateAllAttributes2(rest, dir, io, vt);
+        {e} = propagateFinal({e},finalPrefix);
+        propagated = propagateAllAttributes2(rest, dir, io, vt, finalPrefix);
       then
         e::propagated;
   end match;
@@ -9084,6 +9092,57 @@ protected function propagateVariability " help function to propagateAttributes, 
         (x :: r_1);
   end matchcontinue;
 end propagateVariability;
+
+protected function propagateFinal " help function to propagateAttributes, propagtes
+ the variability attribute (parameter or constant) to variables of a component."
+  input list<DAE.Element> inDae;
+  input SCode.Final finalPrefix;
+  output list<DAE.Element> outDae;
+ algorithm
+  outDae := matchcontinue (inDae,finalPrefix)
+    local
+      list<DAE.Element> lst,r_1,r,lst_1;
+      DAE.Element x;
+      DAE.ComponentRef cr;
+      DAE.VarKind vk;
+      DAE.Type t;
+      Option<DAE.Exp> e;
+      list<DAE.Subscript> id;
+      DAE.Flow flowPrefix;
+      DAE.Stream streamPrefix;
+      Option<DAE.VariableAttributes> dae_var_attr;
+      Option<SCode.Comment> comment;
+      DAE.VarDirection dir;
+      String s1;
+      Absyn.InnerOuter io;
+      DAE.VarVisibility prot;
+      DAE.ElementSource source "the origin of the element";
+
+    case ({},_) then {};
+
+    // propagate final
+    case (DAE.VAR(cr,vk,dir,prot,t,e,id,flowPrefix,streamPrefix,source,dae_var_attr,comment,io):: r, finalPrefix)
+      equation
+        dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,SCode.finalBool(finalPrefix));
+        r_1 = propagateFinal(r, finalPrefix);
+      then
+        DAE.VAR(cr,vk,dir,prot,t,e,id,flowPrefix,streamPrefix,source,dae_var_attr,comment,io) :: r_1;
+
+      /* Traverse components */
+    case ((DAE.COMP(ident = s1,dAElist = lst,source = source,comment = comment) :: r),finalPrefix)
+      equation
+        lst_1 = propagateFinal(lst, finalPrefix);
+        r_1 = propagateFinal(r, finalPrefix);
+      then
+        (DAE.COMP(s1,lst_1,source,comment) :: r_1);
+
+    case ((x :: r),finalPrefix)
+      equation
+        r_1 = propagateFinal(r, finalPrefix);
+      then
+        (x :: r_1);
+  end matchcontinue;
+end propagateFinal;
 
 protected function propagateInnerOuter
 "function propagateInnerOuter
@@ -11962,6 +12021,13 @@ algorithm
       list<DAE.Subscript> finst_dims;
       Absyn.Path path;
       DAE.TType tty;
+
+    case (vn,ty,fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars) 
+      equation 
+        // print("daeDeclare4: " +& ComponentReference.printComponentRefStr(vn) +& " " +& SCode.finalStr(finalPrefix) +& "\n");
+        dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,SCode.finalBool(finalPrefix));
+      then 
+        fail();
 
     case (vn,ty as(DAE.T_INTEGER(varLstInt = _),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars) 
       equation 
