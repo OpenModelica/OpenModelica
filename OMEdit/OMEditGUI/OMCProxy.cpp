@@ -909,13 +909,38 @@ QString OMCProxy::getDocumentationAnnotation(QString className)
     if (expressionResult.isEmpty())
     {
         sendCommand(expression);
-        addExpressionInCommandMap(expression, getResult());
-        return getResult();
+        expressionResult = getResult();
+        QStringList lst = StringHandler::unparseStrings(expressionResult);
+        QString doc;
+        foreach (QString expressionResult, lst) {
+          expressionResult = expressionResult.replace("Modelica://", "Modelica:/");
+          int i,j;
+          /*
+           * Documentation may have the form
+           * text <HTML>...</html> text <html>...</HTML> [...]
+           * Nothing is standardized, but we will treat non-html tags as <pre>-formatted text
+           */
+          while (1) {
+            expressionResult = expressionResult.trimmed();
+            i = expressionResult.indexOf("<html>", 0, Qt::CaseInsensitive);
+            if (i == -1) break;
+            if (i != 0) {
+              doc += "<pre>" + expressionResult.left(i).replace("<","&lt;").replace(">","&gt;") + "</pre>";
+              expressionResult = expressionResult.remove(i);
+            }
+            j = expressionResult.indexOf("</html>", 0, Qt::CaseInsensitive);
+            if (j == -1) break;
+            doc += expressionResult.leftRef(j+7);
+            expressionResult = expressionResult.mid(j+7,-1);
+          }
+          if (expressionResult.length()) {
+            doc += "<pre>" + expressionResult.replace("<","&lt;").replace(">","&gt;") + "</pre>";
+          }
+        }
+        addExpressionInCommandMap(expression, doc);
+        return doc;
     }
-    else
-    {
-        return expressionResult;
-    }
+    return expressionResult;
 }
 
 QString OMCProxy::changeDirectory(QString directory)
