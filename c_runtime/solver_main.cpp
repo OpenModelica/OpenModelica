@@ -44,16 +44,15 @@
 #include <stdint.h>
 #include <errno.h>
 #include "rtclock.h"
+#include <assert.h>
 
 using namespace std;
 
 // Internal definitions; do not expose
 int
-euler_ex_step(double* step, int
-    (*f)());
+euler_ex_step(double* step, int (*f)());
 int
-rungekutta_step(double* step, int
-    (*f)());
+rungekutta_step(double* step, int (*f)());
 int
 dasrt_step(double* step, double &start, double &stop, bool &trigger, int* stats);
 

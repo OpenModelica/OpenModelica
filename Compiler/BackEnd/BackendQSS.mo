@@ -2553,7 +2553,7 @@ end findInputPort;
 
 protected function mapStateEquationsInDEVSblocks
 "function: mapEquationInDEVSblocks is the function that maps the equation indices in dlow into the corresponding
- 	         DEVS blocks that contain them.
+           DEVS blocks that contain them.
   author: XF
   date: 25-6-2010 
 " 
