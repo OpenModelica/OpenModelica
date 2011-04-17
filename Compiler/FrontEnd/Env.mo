@@ -74,7 +74,7 @@ encapsulated package Env
    FRAME(\"A\", {Class:B},{},{},false) ,
    FRAME(\"B\", {Class:M1, Class:M2, Variable:V}, {Type:foo},
      {Import Modelica.SIunits.},false),
-   FRAME(\"M1, {Variable:x, Variable:y},{},{},false)
+   FRAME(\"M1\", {Variable:x, Variable:y},{},{},false)
    }
 
   NOTE: The instance hierachy (components and variables) and the class hierachy

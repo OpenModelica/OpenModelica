@@ -478,8 +478,8 @@ algorithm
         checkTupleCallEquationMessage(e1,e2,info);
 
         //  Returns the output parameters from the function.
-        (cache,e1_1,prop1,_) = Static.elabExp(cache,env, e1, impl,NONE(),true /*do vectorization*/,pre,info);
-        (cache,e2_1,prop2,_) = Static.elabExp(cache,env, e2, impl,NONE(),true/* do vectorization*/,pre,info);
+        (cache,e1_1,prop1,_) = Static.elabExp(cache, env, e1, impl, NONE(), true /*do vectorization*/, pre, info);
+        (cache,e2_1,prop2,_) = Static.elabExp(cache, env, e2, impl, NONE(), true /*do vectorization*/, pre, info);
         (cache, e1_1, prop1) = Ceval.cevalIfConstant(cache, env, e1_1, prop1, impl);
         (cache, e2_1, prop2) = Ceval.cevalIfConstant(cache, env, e2_1, prop2, impl);
          

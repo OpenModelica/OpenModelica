@@ -3561,26 +3561,27 @@ end stripLast;
 public function crefStripLast "function: stripLast
   Returns the path given as argument to
   the function minus the last ident."
-  input ComponentRef inPath;
-  output ComponentRef outPath;
+  input ComponentRef inCref;
+  output ComponentRef outCref;
 algorithm
-  outPath := match (inPath)
+  outCref := match (inCref)
     local
       Ident str;
-      ComponentRef p_1,p;
+      ComponentRef c_1, c;
       list<Subscript> subs;
+    
     case (CREF_IDENT(name = _)) then fail();
     case (CREF_QUAL(name = str,subScripts = subs, componentRef = CREF_IDENT(name = _))) then CREF_IDENT(str,subs);
-    case (CREF_QUAL(name = str,subScripts = subs,componentRef = p))
+    case (CREF_QUAL(name = str,subScripts = subs,componentRef = c))
       equation
-        p_1 = crefStripLast(p);
+        c_1 = crefStripLast(c);
       then
-        CREF_QUAL(str,subs,p_1);
-    case (CREF_FULLYQUALIFIED(componentRef = p))
+        CREF_QUAL(str,subs,c_1);
+    case (CREF_FULLYQUALIFIED(componentRef = c))
       equation
-        p_1 = crefStripLast(p);
+        c_1 = crefStripLast(c);
       then
-        CREF_FULLYQUALIFIED(p_1);
+        CREF_FULLYQUALIFIED(c_1);
   end match;
 end crefStripLast;
 

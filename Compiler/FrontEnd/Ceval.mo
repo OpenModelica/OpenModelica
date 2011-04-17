@@ -865,7 +865,7 @@ algorithm
     
     case (_, _, e, DAE.PROP(constFlag = DAE.C_CONST()), _)
       equation
-        (cache, v, _) = ceval(inCache, inEnv, e, impl,NONE(), NONE(), NO_MSG());
+        (cache, v, _) = ceval(inCache, inEnv, e, impl, NONE(), NONE(), NO_MSG());
         e = ValuesUtil.valueExp(v);
       then
         (cache, e, inProp);
@@ -873,7 +873,7 @@ algorithm
     case (_, _, e, DAE.PROP_TUPLE(tupleConst = _), _)
       equation
         DAE.C_CONST() = Types.propAllConst(inProp);
-        (cache, v, _) = ceval(inCache, inEnv, e, impl,NONE(), NONE(), NO_MSG());
+        (cache, v, _) = ceval(inCache, inEnv, e, impl, NONE(), NONE(), NO_MSG());
         e = ValuesUtil.valueExp(v);
       then
         (cache, e, inProp);

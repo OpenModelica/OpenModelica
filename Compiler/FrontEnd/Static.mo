@@ -118,7 +118,7 @@ public function elabExpList "Expression elaboration of Absyn.Exp list, i.e. list
   input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
-  input Boolean inBoolean;
+  input Boolean inImplicit;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Boolean performVectorization;
   input Prefix.Prefix inPrefix;
@@ -129,7 +129,7 @@ public function elabExpList "Expression elaboration of Absyn.Exp list, i.e. list
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outExpExpLst,outTypesPropertiesLst,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inAbsynExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,performVectorization,inPrefix,info)
+  match (inCache,inEnv,inAbsynExpLst,inImplicit,inInteractiveInteractiveSymbolTableOption,performVectorization,inPrefix,info)
     local
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st,st_1,st_2;
@@ -235,7 +235,7 @@ function: elabExp
   input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.Exp inExp;
-  input Boolean inBoolean;
+  input Boolean inImplicit;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Boolean performVectorization;
   input Prefix.Prefix inPrefix;
@@ -245,7 +245,7 @@ function: elabExp
   output DAE.Properties outProperties;
   output Option<Interactive.InteractiveSymbolTable> st;
 algorithm
-  (outCache,outExp,outProperties,st) := elabExp2(inCache,inEnv,inExp,inBoolean,inInteractiveInteractiveSymbolTableOption,performVectorization,inPrefix,info,Error.getNumErrorMessages());
+  (outCache,outExp,outProperties,st) := elabExp2(inCache,inEnv,inExp,inImplicit,inInteractiveInteractiveSymbolTableOption,performVectorization,inPrefix,info,Error.getNumErrorMessages());
 end elabExp;
 
 protected function elabExp2 "
@@ -258,7 +258,7 @@ function: elabExp
   input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.Exp inExp;
-  input Boolean inBoolean;
+  input Boolean inImplicit;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Boolean performVectorization;
   input Prefix.Prefix inPrefix;
@@ -270,7 +270,7 @@ function: elabExp
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outExp,outProperties,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExp,inBoolean,inInteractiveInteractiveSymbolTableOption,performVectorization,inPrefix,info,numErrorMessages)
+  matchcontinue (inCache,inEnv,inExp,inImplicit,inInteractiveInteractiveSymbolTableOption,performVectorization,inPrefix,info,numErrorMessages)
     local
       Boolean impl,a,b,havereal,doVect;
       Integer l,i,nmax;
@@ -339,7 +339,7 @@ algorithm
     case (cache,env,Absyn.CREF(componentRef = cr),impl,st,doVect,pre,info,_) // BoschRexroth specifics
       equation
         false = OptManager.getOption("cevalEquation");
-        (cache,SOME((exp,prop as DAE.PROP(ty,DAE.C_PARAM()),_))) = elabCref(cache,env, cr, impl,doVect,pre,info);
+        (cache,SOME((exp,prop as DAE.PROP(ty,DAE.C_PARAM()),_))) = elabCref(cache,env, cr, impl, doVect, pre, info);
       then
         (cache,exp,DAE.PROP(ty,DAE.C_VAR()),st);
 
@@ -9524,7 +9524,7 @@ function: elabCref
   input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.ComponentRef inComponentRef;
-  input Boolean inBoolean "implicit instantiation";
+  input Boolean inImplict "implicit instantiation";
   input Boolean performVectorization "true => generates vectorized expressions, {v[1],v[2],...}";
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
@@ -9532,7 +9532,7 @@ function: elabCref
   output Option<tuple<DAE.Exp,DAE.Properties,SCode.Accessibility>> res;
 algorithm
   (outCache,res) :=
-  matchcontinue (inCache,inEnv,inComponentRef,inBoolean,performVectorization,inPrefix,info)
+  matchcontinue (inCache,inEnv,inComponentRef,inImplict,performVectorization,inPrefix,info)
     local
       DAE.ComponentRef c_1;
       DAE.Const const,const1,const2;
@@ -9543,6 +9543,7 @@ algorithm
       DAE.TType tt;
       DAE.Binding binding;
       DAE.Exp exp,exp1,exp2,crefExp,expASUB;
+      DAE.Properties prop;
       list<Env.Frame> env;
       Absyn.ComponentRef c;
       Env.Cache cache;
@@ -9560,6 +9561,9 @@ algorithm
       Absyn.Exp e;
       SCode.Element cl;
       DAE.FunctionBuiltin isBuiltin;
+      Env.Env packageEnv;
+      Absyn.ComponentRef cPackage;
+      list<DAE.Exp> indexes;
 
     // wildcard
     case (cache,env,c as Absyn.WILD(),impl,doVect,_,info)
