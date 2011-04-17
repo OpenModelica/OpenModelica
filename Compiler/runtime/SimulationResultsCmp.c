@@ -202,7 +202,7 @@ DataField getData(const char *varname,const char *filename, unsigned int size, S
 
 void cmpData(char* varname, DataField *time, DataField *reftime, DataField *data, DataField *refdata, double reltol, double abstol, DiffDataField *ddf)
 {
-  unsigned int i,j;
+  unsigned int i,j,k;
   double t,tr,d,dr,delta;
   DiffData *diffdatafild; 
   char increased = 0;
@@ -217,18 +217,21 @@ void cmpData(char* varname, DataField *time, DataField *reftime, DataField *data
     d = data->data[i];
     increased = 0;
     // fprintf(stderr, "i: %d t: %.6g   d:%.6g\n",i,t,d);
-    while(tr < t){
+    while(tr <= t){
       if (j +1< reftime->n) {
         j += 1;
         tr = reftime->data[j];
         increased = 1;
+        // fprintf(stderr, "j: %d tr:%.6g\n",j,tr);
       }
       else
         break;
     }
-    if (increased==1){
-      j -= 1;
-      tr = reftime->data[j];
+    if (increased==1) {
+      if ( (absdouble((t-tr)/tr) > reltol) || (absdouble(t-tr) > absdouble(t-reftime->data[j-1]))) {
+        j = j- 1;
+        tr = reftime->data[j];
+      }
     }
     // fprintf(stderr, "i: %d t: %.6g   d:%.6g  j: %d tr:%.6g\n",i,t,d,j,tr);
     // events
@@ -323,8 +326,8 @@ void cmpData(char* varname, DataField *time, DataField *reftime, DataField *data
     if ((absdouble(delta) > reltol) && (absdouble(d-dr) > abstol)){
 
       diffdatafild = (DiffData*) malloc(sizeof(DiffData)*(ddf->n+1));
-      for (j=0;j<ddf->n;j++)
-        diffdatafild[j] = ddf->data[j];
+      for (k=0;k<ddf->n;k++)
+        diffdatafild[k] = ddf->data[k];
       diffdatafild[ddf->n].name = varname;
       diffdatafild[ddf->n].data = d;
       diffdatafild[ddf->n].dataref = dr;
