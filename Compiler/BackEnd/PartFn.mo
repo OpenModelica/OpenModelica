@@ -48,7 +48,6 @@ public import SCode;
 public import Values;
 
 protected import ComponentReference;
-protected import DAEDump;
 protected import DAEUtil;
 protected import Expression;
 protected import Types;

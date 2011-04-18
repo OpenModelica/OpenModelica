@@ -882,32 +882,25 @@ public function equationToResidualForm "function: equationToResidualForm
 algorithm
   outEquation := matchcontinue (inEquation)
     local
-      DAE.Exp e,e1,e2,exp,lhs;
+      DAE.Exp e,e1,e2,exp;
       DAE.ComponentRef cr;
-      DAE.ExpType tp;
-      DAE.ElementSource source "origin of the element";
-      DAE.Operator op;
-      Boolean b;
+      DAE.ElementSource source;
       BackendDAE.Equation backendEq;
     
     case (BackendDAE.EQUATION(exp = e1,scalar = e2,source = source))
       equation
         //ExpressionDump.dumpExpWithTitle("equationToResidualForm 1\n",e2);
-        tp = Expression.typeof(e2);
-        b = DAEUtil.expTypeArray(tp);
-        op = Util.if_(b,DAE.SUB_ARR(tp),DAE.SUB(tp));
-        (e,_) = ExpressionSimplify.simplify(DAE.BINARY(e1,op,e2));
+        exp = Expression.expSub(e1,e2);
+        (e,_) = ExpressionSimplify.simplify(exp);
       then
         BackendDAE.RESIDUAL_EQUATION(e,source);
     
-    case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = exp,source = source))
+    case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2,source = source))
       equation
         //ExpressionDump.dumpExpWithTitle("equationToResidualForm 2\n",exp);
-        tp = Expression.typeof(exp);
-        b = DAEUtil.expTypeArray(tp);
-        op = Util.if_(b,DAE.SUB_ARR(tp),DAE.SUB(tp));
-        lhs = Expression.makeCrefExp(cr,tp);
-        (e,_) = ExpressionSimplify.simplify(DAE.BINARY(lhs,op,exp));
+        e1 = Expression.crefExp(cr);
+        exp = Expression.expSub(e1,e2);
+        (e,_) = ExpressionSimplify.simplify(exp);
       then
         BackendDAE.RESIDUAL_EQUATION(e,source);
     

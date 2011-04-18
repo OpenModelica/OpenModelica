@@ -4808,8 +4808,8 @@ algorithm
       equation
         ((simVars,_)) = BackendVariable.traverseBackendDAEVars(v,traversingdlowvarToSimvar,({},kv));
         simVars = listReverse(simVars);
-        dlowEqs = BackendDAEUtil.equationList(eqn);
-        (beqs,_) = listMap3passthrough(dlowEqs, dlowEqToExp, v, arrayEqs, {});
+        ((_,_,_,beqs)) = BackendEquation.traverseBackendDAEEqns(eqn,dlowEqToExp,(v,arrayEqs,{},{}));
+        beqs = listReverse(beqs);
         simJac = Util.listMap1(jac, jacToSimjac, v);
         index = Util.listFirst(block_); // use first equation nr as index
       then
@@ -5204,13 +5204,13 @@ algorithm
         
     case (block_ as _::_::_,mixedEvent,daelow as BackendDAE.DAE(orderedVars=v,knownVars=kv,orderedEqs=eqn,arrayEqs=ae), Ass1, Ass2, helpVarInfo)
       equation
-        dlowEqs = BackendDAEUtil.equationList(eqn);
         (m,mT) = BackendDAEUtil.incidenceMatrix(daelow, BackendDAE.NORMAL());
         //mT = BackendDAEUtil.transposeMatrix(m);
         SOME(jac) = BackendDAEUtil.calculateJacobian(v, eqn, ae, m, mT,false);
         ((simVars,_)) = BackendVariable.traverseBackendDAEVars(v,traversingdlowvarToSimvar,({},kv));
         simVars = listReverse(simVars);
-        (beqs,_) = listMap3passthrough(dlowEqs, dlowEqToExp, v, ae, {});
+        ((_,_,_,beqs)) = BackendEquation.traverseBackendDAEEqns(eqn,dlowEqToExp,(v,ae,{},{}));
+        beqs = listReverse(beqs);
         simJac = Util.listMap1(jac, jacToSimjac, v);
         index = Util.listFirst(block_); // use first equation nr as index
       then
@@ -5241,14 +5241,10 @@ algorithm
 end jacToSimjac;
 
 protected function dlowEqToExp
-  input BackendDAE.Equation dlowEq;
-  input BackendDAE.Variables v;
-  input array<BackendDAE.MultiDimEquation> arrayEqs;
-  input list<tuple<Integer,list<list<DAE.Subscript>>>> inEntrylst;
-  output DAE.Exp exp_;
-  output list<tuple<Integer,list<list<DAE.Subscript>>>> outEntrylst;
+  input tuple<BackendDAE.Equation, tuple<BackendDAE.Variables,array<BackendDAE.MultiDimEquation>,list<tuple<Integer,list<list<DAE.Subscript>>>>,list<DAE.Exp>>> inTpl;
+  output tuple<BackendDAE.Equation, tuple<BackendDAE.Variables,array<BackendDAE.MultiDimEquation>,list<tuple<Integer,list<list<DAE.Subscript>>>>,list<DAE.Exp>>> outTpl;  
 algorithm
-  (exp_,outEntrylst) := matchcontinue (dlowEq, v, arrayEqs, inEntrylst)
+  outTpl := matchcontinue inTpl
     local
       Integer   index;
       DAE.Exp e;
@@ -5256,38 +5252,42 @@ algorithm
       list<Integer> ds;
       list<Option<Integer>> ad;
       list<DAE.Subscript> subs;
-      list<tuple<Integer,list<list<DAE.Subscript>>>> entrylst1;
+      BackendDAE.Equation eqn;
+      BackendDAE.Variables v;
+      array<BackendDAE.MultiDimEquation> arrayEqs;
+      list<tuple<Integer,list<list<DAE.Subscript>>>> entrylst,entrylst1;
+      list<DAE.Exp> explst;
       
-    case (BackendDAE.RESIDUAL_EQUATION(exp=e), v, arrayEqs,inEntrylst)
+    case ((eqn as BackendDAE.RESIDUAL_EQUATION(exp=e),(v, arrayEqs,entrylst,explst)))
       equation
         rhs_exp = BackendDAEUtil.getEqnsysRhsExp(e, v);
         (rhs_exp_1,_) = ExpressionSimplify.simplify(rhs_exp);
-      then (rhs_exp_1,inEntrylst);
+      then ((eqn,(v, arrayEqs,entrylst,rhs_exp_1::explst)));
         
-    case (BackendDAE.EQUATION(exp=e1, scalar=e2), v, arrayEqs,inEntrylst)
+    case ((eqn as BackendDAE.EQUATION(exp=e1, scalar=e2),(v, arrayEqs,entrylst,explst)))
       equation
         new_exp = Expression.expSub(e1,e2);
         rhs_exp = BackendDAEUtil.getEqnsysRhsExp(new_exp, v);
         rhs_exp_1 = Expression.negate(rhs_exp);
         (rhs_exp_2,_) = ExpressionSimplify.simplify(rhs_exp_1);
-      then (rhs_exp_2,inEntrylst);
+      then ((eqn,(v, arrayEqs,entrylst,rhs_exp_2::explst)));
         
-    case (BackendDAE.ARRAY_EQUATION(index=index), v, arrayEqs,inEntrylst)
+    case ((eqn as BackendDAE.ARRAY_EQUATION(index=index),(v, arrayEqs,entrylst,explst)))
       equation
         BackendDAE.MULTIDIM_EQUATION(dimSize=ds,left=e1, right=e2) = arrayEqs[index+1];
         new_exp = Expression.expSub(e1,e2);
         ad = Util.listMap(ds,Util.makeOption);
-        (subs,entrylst1) = BackendDAEUtil.getArrayEquationSub(index,ad,inEntrylst);
+        (subs,entrylst1) = BackendDAEUtil.getArrayEquationSub(index,ad,entrylst);
         new_exp1 = Expression.applyExpSubscripts(new_exp,subs);
         rhs_exp = BackendDAEUtil.getEqnsysRhsExp(new_exp1, v);
         rhs_exp_1 = Expression.negate(rhs_exp);
         (rhs_exp_2,_) = ExpressionSimplify.simplify(rhs_exp_1);
-      then (rhs_exp_2,entrylst1);
+      then ((eqn,(v, arrayEqs,entrylst1,rhs_exp_2::explst)));
         
-    case (dlowEq,_,_,_)
+    case ((eqn,_))
       equation
-        BackendDump.dumpEqns({dlowEq});
-        Error.addSourceMessage(Error.INTERNAL_ERROR,{"dlowEqToExp failed"},BackendEquation.equationInfo(dlowEq));
+        BackendDump.dumpEqns({eqn});
+        Error.addSourceMessage(Error.INTERNAL_ERROR,{"dlowEqToExp failed"},BackendEquation.equationInfo(eqn));
       then
         fail();
   end matchcontinue;
