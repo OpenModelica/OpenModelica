@@ -1272,9 +1272,9 @@ static void decodeUri(const char *src, char **name, char **path)
   const char *srcName = src;
   int len = strlen(src);
   int lenPath = srcPath ? strlen(srcPath+1) : 0;
-  *name = (char*) malloc(len - lenPath + 1);
+  *name = (char*) malloc(len - lenPath + 2);
   decodeUri2(src,*name,'/');
-  *path = (char*) malloc(lenPath+1);
+  *path = (char*) malloc(lenPath+2);
   **path = '\0';
   if (srcPath == NULL) {
     return;

@@ -149,7 +149,7 @@ char ** getVars(void *vars, unsigned int* nvars)
 DataField getData(const char *varname,const char *filename, unsigned int size, SimulationResult_Globals* srg)
 {
   DataField res;
-  void *cmpvar,*dataset,*lst;
+  void *cmpvar,*dataset,*lst,*datasetBackup;
   double *newvars; 
   double d;
   unsigned int i;
@@ -161,41 +161,40 @@ DataField getData(const char *varname,const char *filename, unsigned int size, S
   cmpvar = mk_nil();
   cmpvar =  mk_cons(mk_scon(varname),cmpvar); 
   dataset = SimulationResultsImpl__readDataset(filename,cmpvar,size,srg);
-  if (dataset==NULL){
+  if (dataset==NULL) {
     //fprintf(stderr, "getData of Var: failed\n");
     return res;
   }
 
   //fprintf(stderr, "Data of Var: %s\n", varname);
-  // this should walk a list of lists  
+  // First calculate the length of the matrix
+  datasetBackup = dataset;
   while (RML_NILHDR != RML_GETHDR(dataset)) {
     lst = RML_CAR(dataset);
     while (RML_NILHDR != RML_GETHDR(lst)) {
-      d = rml_prim_get_real(RML_CAR(lst));
-
-      newvars = (double*) malloc(sizeof(double)*(res.n+1));
-      for (i=0;i<res.n;i++)
-        newvars[i] = res.data[i];
-      newvars[res.n] = d;
-      res.n +=1;
-        if(res.data) free(res.data);
-      res.data = newvars;
-
+      res.n++;
       lst = RML_CDR(lst);
     }
     dataset = RML_CDR(dataset);
   }
+  if (res.n == 0) return res;
 
-  // reverse lst
-  newvars = (double*) malloc(sizeof(double)*(res.n));
-  for (i=0;i<res.n;i++)
-    newvars[i] = res.data[res.n-i-1];
-  if(res.data) free(res.data);
-    res.data = newvars;
+  // The allocate and read the values
+  dataset = datasetBackup;
+  i = res.n;
+  res.data = (double*) malloc(sizeof(double)*res.n);
+  while (RML_NILHDR != RML_GETHDR(dataset)) {
+    lst = RML_CAR(dataset);
+    while (RML_NILHDR != RML_GETHDR(lst)) {
+      res.data[--i] = rml_prim_get_real(RML_CAR(lst));
+      lst = RML_CDR(lst);
+    }
+    dataset = RML_CDR(dataset);
+  }
+  assert(i == 0);
 
   //for (i=0;i<res.n;i++)
   // fprintf(stderr, "%d: %.6g\n",  i, res.data[i]);
-
 
   return res;
 }
@@ -449,7 +448,7 @@ void* SimulationResultsCmp_compareResults(const char *filename, const char *reff
     dataref = getData(var1,reffilename,size_ref,&simresglob_ref);
     if (dataref.n==0) {
       if (var2) free(var2);
-      var2 = (char*) malloc(len);
+      var2 = (char*) malloc(len+1);
       strncpy(var2,var1,len+1);
       fixDerInName(var2,len);
       fixCommaInName(&var2,len);
