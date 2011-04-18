@@ -91,6 +91,7 @@ case SIMCODE(__) then
   <<
   <%simulationFileHeader(simCode)%>
   <%externalFunctionIncludes(externalFunctionIncludes)%>
+  #include "<%fileNamePrefix%>_functions.cpp"
   #ifdef _OMC_MEASURE_TIME
   int measure_time_flag = 1;
   #else
@@ -1021,6 +1022,7 @@ case EXTOBJINFO(__) then
   }
   >>
 end functionDeInitializeDataStruc;
+
 
 template functionInput(ModelInfo modelInfo)
  "Generates function in simulation file."
@@ -2303,7 +2305,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   
   .PHONY: <%fileNamePrefix%>
   <%fileNamePrefix%>: $(MAINFILE) <%fileNamePrefix%>_functions.cpp <%fileNamePrefix%>_functions.h <%fileNamePrefix%>_records.c
-  <%\t%> $(CXX) -I. -o <%fileNamePrefix%>$(EXEEXT) $(MAINFILE) <%fileNamePrefix%>_functions.cpp <%dirExtra%> <%libsPos1%> <%libsPos2%> -lsim -linteractive $(CFLAGS) $(SENDDATALIBS) $(LDFLAGS) <%match System.os() case "OSX" then "-lf2c" else "-Wl,-Bstatic -lf2c -Wl,-Bdynamic"%> <%fileNamePrefix%>_records.c 
+  <%\t%> $(CXX) -I. -o <%fileNamePrefix%>$(EXEEXT) $(MAINFILE) <%dirExtra%> <%libsPos1%> <%libsPos2%> -lsim -linteractive $(CFLAGS) $(SENDDATALIBS) $(LDFLAGS) <%match System.os() case "OSX" then "-lf2c" else "-Wl,-Bstatic -lf2c -Wl,-Bdynamic"%> <%fileNamePrefix%>_records.c 
   <%fileNamePrefix%>.conv.cpp: <%fileNamePrefix%>.cpp
   <%\t%> $(PERL) <%makefileParams.omhome%>/share/omc/scripts/convert_lines.pl $< $@.tmp
   <%\t%> @mv $@.tmp $@
@@ -2419,10 +2421,10 @@ template functionsHeaderFile(String filePrefix,
   extern "C" {
   #endif
   
-  <%externalFunctionIncludes(includes)%>
   <%extraRecordDecls |> rd => recordDeclarationHeader(rd) ;separator="\n"%>
   <%match mainFunction case SOME(fn) then functionHeader(fn,true)%>
   <%functionHeaders(functions)%>
+  <%externalFunctionIncludes(includes)%>
 
   #ifdef __cplusplus
   }
