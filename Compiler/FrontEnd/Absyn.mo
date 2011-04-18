@@ -2662,6 +2662,15 @@ algorithm
   s := pathString2(path, ".");
 end pathString;
 
+public function pathStringNoQual
+  "Converts a Path to a String, but does not add a dot in front of fully
+  qualified paths."
+  input Path inPath;
+  output String outString;
+algorithm
+  outString := pathString2(makeNotFullyQualified(inPath), ".");
+end pathStringNoQual;
+
 public function pathHashMod "Hashes a path."
   input Path path;
   input Integer mod;
@@ -2710,7 +2719,7 @@ algorithm
         ss;
     case(FULLYQUALIFIED(path=n),str)
       equation
-        ss = pathString2(n,str);
+        ss = "." +& pathString2(n,str);
       then ss;
   end match;
 end pathString2;
@@ -5052,6 +5061,17 @@ algorithm
     else inCref;
   end match;
 end unqualifyCref;
+
+public function pathIsFullyQualified
+  "Returns true of the given path is fully qualified, otherwise false."
+  input Path inPath;
+  output Boolean outIsQualified;
+algorithm
+  outIsQualified := match(inPath)
+    case FULLYQUALIFIED(path = _) then true;
+    else false;
+  end match;
+end pathIsFullyQualified;
 
 public function joinWithinPath
   input Within within_;

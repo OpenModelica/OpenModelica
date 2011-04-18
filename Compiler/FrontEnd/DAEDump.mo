@@ -124,11 +124,11 @@ algorithm
       
      case DAE.FUNCTION(path = fpath)
        equation
-         res = Absyn.pathString(fpath);
+         res = Absyn.pathStringNoQual(fpath);
        then res;
      case DAE.RECORD_CONSTRUCTOR(path = fpath)
        equation
-         res = Absyn.pathString(fpath);
+         res = Absyn.pathStringNoQual(fpath);
        then res;
      case _ then "";
   end matchcontinue;
@@ -1231,14 +1231,14 @@ algorithm
 
     case(DAE.FUNCTION(path=p)::fs)
       equation
-        s1 = Absyn.pathString(p);
+        s1 = Absyn.pathStringNoQual(p);
         names = dumpFunctionNames(fs);
       then
         s1::names;
 
     case(DAE.RECORD_CONSTRUCTOR(path=p)::fs)
       equation
-        s1 = Absyn.pathString(p);
+        s1 = Absyn.pathStringNoQual(p);
         names = dumpFunctionNames(fs);
       then
         s1::names;
@@ -1332,7 +1332,7 @@ algorithm
     case DAE.FUNCTION(path = fpath,inlineType=inlineType,functions = (DAE.FUNCTION_DEF(body = daeElts)::_),type_ = t)
       equation
         Print.printBuf("function ");
-        fstr = Absyn.pathString(fpath);
+        fstr = Absyn.pathStringNoQual(fpath);
         Print.printBuf(fstr);
         inlineTypeStr = dumpInlineTypeStr(inlineType);
         Print.printBuf(inlineTypeStr);
@@ -1351,7 +1351,7 @@ algorithm
     case DAE.FUNCTION(path = fpath,inlineType=inlineType,functions = (DAE.FUNCTION_EXT(body = daeElts, externalDecl = DAE.EXTERNALDECL(language=lang))::_),type_ = t)
       equation
         Print.printBuf("function ");
-        fstr = Absyn.pathString(fpath);
+        fstr = Absyn.pathStringNoQual(fpath);
         Print.printBuf(fstr);
         inlineTypeStr = dumpInlineTypeStr(inlineType);
         Print.printBuf(inlineTypeStr);
@@ -1368,7 +1368,7 @@ algorithm
     case DAE.RECORD_CONSTRUCTOR(path = fpath,type_=t)
       equation
         Print.printBuf("function ");
-        fstr = Absyn.pathString(fpath);
+        fstr = Absyn.pathStringNoQual(fpath);
         Print.printBuf(fstr);
         Print.printBuf(" \"Automatically generated record constructor for "+&fstr+&"\"\n");
         Print.printBuf(printRecordConstructorInputsStr(t));
@@ -2571,7 +2571,7 @@ algorithm
       Types.Type bc_tp;
 
     case((DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)),SOME(path))) equation
-      name = Absyn.pathString(path);
+      name = Absyn.pathStringNoQual(path);
     then name;
 
     case((DAE.T_COMPLEX(complexTypeOption = SOME(bc_tp)),_)) then Types.unparseType(bc_tp);
@@ -3334,7 +3334,7 @@ algorithm
       
     case (DAE.FUNCTION(path = fpath,inlineType=inlineType,functions = (DAE.FUNCTION_DEF(body = daeElts)::_),type_ = t), str)
       equation
-        fstr = Absyn.pathString(fpath);
+        fstr = Absyn.pathStringNoQual(fpath);
         str = IOStream.append(str, "function ");
         str = IOStream.append(str, fstr);
         str = IOStream.append(str, dumpInlineTypeStr(inlineType));
@@ -3352,7 +3352,7 @@ algorithm
 
       case (DAE.FUNCTION(path = fpath,inlineType=inlineType,functions = (DAE.FUNCTION_EXT(body = daeElts, externalDecl = DAE.EXTERNALDECL(language=lang))::_),type_ = t), str)
       equation
-        fstr = Absyn.pathString(fpath);
+        fstr = Absyn.pathStringNoQual(fpath);
         str = IOStream.append(str, "function ");
         str = IOStream.append(str, fstr);
         str = IOStream.append(str, dumpInlineTypeStr(inlineType));
@@ -3364,7 +3364,7 @@ algorithm
 
     case (DAE.RECORD_CONSTRUCTOR(path = fpath,type_=tp), str)
       equation
-        fstr = Absyn.pathString(fpath);
+        fstr = Absyn.pathStringNoQual(fpath);
         str = IOStream.append(str, "function ");
         str = IOStream.append(str, fstr);
         str = IOStream.append(str, " \"Automatically generated record constructor for " +& fstr +& "\"\n");

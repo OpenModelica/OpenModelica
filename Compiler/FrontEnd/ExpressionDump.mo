@@ -714,7 +714,7 @@ algorithm
     
     case (e as DAE.CALL(path = fcn,expLst = args), _, _, _)
       equation
-        fs = Absyn.pathString(fcn);
+        fs = Absyn.pathString(Absyn.makeNotFullyQualified(fcn));
         argstr = Util.stringDelimitList(
           Util.listMap3(args, printExp2Str, stringDelimiter, opcreffunc, opcallfunc), ",");
         s = stringAppendList({fs, "(", argstr, ")"});
@@ -723,7 +723,7 @@ algorithm
 
     case (DAE.PARTEVALFUNCTION(path = fcn, expList = args), _, _, _)
       equation
-        fs = Absyn.pathString(fcn);
+        fs = Absyn.pathString(Absyn.makeNotFullyQualified(fcn));
         argstr = Util.stringDelimitList(
           Util.listMap3(args, printExp2Str, stringDelimiter, opcreffunc, opcallfunc), ",");
         s = stringAppendList({"function ", fs, "(", argstr, ")"});
@@ -828,7 +828,7 @@ algorithm
     
     case (DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(path = fcn),expr = exp,iterators = riters), _, _, _)
       equation
-        fs = Absyn.pathString(fcn);
+        fs = Absyn.pathStringNoQual(fcn);
         expstr = printExp2Str(exp, stringDelimiter, opcreffunc, opcallfunc);
         iterstr = Util.stringDelimitList(Util.listMap(riters, reductionIteratorStr),",");
         str = stringAppendList({"<reduction>",fs,"(",expstr," for ",iterstr,")"});
@@ -1956,7 +1956,7 @@ algorithm
     
     case (DAE.CALL(path = fcn,expLst = args),_)
       equation
-        fs = Absyn.pathString(fcn);
+        fs = Absyn.pathString(Absyn.makeNotFullyQualified(fcn));
         Print.printBuf(fs);
         Print.printBuf("(");
         printList(args, printExp, ",");
@@ -1966,7 +1966,7 @@ algorithm
     
     case (DAE.PARTEVALFUNCTION(path = fcn, expList = args),_)
       equation
-        fs = Absyn.pathString(fcn);
+        fs = Absyn.pathString(Absyn.makeNotFullyQualified(fcn));
         Print.printBuf("function ");
         Print.printBuf(fs);
         Print.printBuf("(");

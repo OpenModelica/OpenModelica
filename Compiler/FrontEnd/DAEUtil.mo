@@ -2064,6 +2064,7 @@ algorithm
   outElement := matchcontinue (path,functions)
     local
       String msg;
+
     case (path,functions) then Util.getOption(avlTreeGet(functions, path));
     case (path,functions)
       equation
@@ -4892,14 +4893,14 @@ algorithm
     // hash func Search to the right
     case (DAE.AVLTREENODE(value = SOME(DAE.AVLTREEVALUE(rkey,rval))),key)
       equation
-        0 = stringCompare(Absyn.pathString(key),Absyn.pathString(rkey));
+        0 = stringCompare(Absyn.pathStringNoQual(key),Absyn.pathStringNoQual(rkey));
       then
         rval;
 
     // Search to the right
     case (DAE.AVLTREENODE(value = SOME(DAE.AVLTREEVALUE(rkey,rval)),right = SOME(right)),key)
       equation
-        1 = stringCompare(Absyn.pathString(key),Absyn.pathString(rkey));
+        1 = stringCompare(Absyn.pathStringNoQual(key),Absyn.pathStringNoQual(rkey));
         res = avlTreeGet(right, key);
       then
         res;
@@ -4907,7 +4908,7 @@ algorithm
     // Search to the left
     case (DAE.AVLTREENODE(value = SOME(DAE.AVLTREEVALUE(rkey,rval)),left = SOME(left)),key)
       equation
-        -1 = stringCompare(Absyn.pathString(key),Absyn.pathString(rkey));
+        -1 = stringCompare(Absyn.pathStringNoQual(key),Absyn.pathStringNoQual(rkey));
         res = avlTreeGet(left, key);
       then
         res;

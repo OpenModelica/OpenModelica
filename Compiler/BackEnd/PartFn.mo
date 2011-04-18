@@ -1071,8 +1071,8 @@ protected function makeNewFnPath
   output Absyn.Path newPath;
   String s1,s2,s;
 algorithm
-  s1 := Absyn.pathString(inCaller);
-  s2 := Absyn.pathString(inCallee);
+  s1 := Absyn.pathStringNoQual(inCaller);
+  s2 := Absyn.pathStringNoQual(inCallee);
   s := s1 +& "_" +& s2;
   newPath := Absyn.makeIdentPathFromString(s);
 end makeNewFnPath;
@@ -1212,7 +1212,7 @@ algorithm
          dae,numArgs,current)
       equation
         inputs = Util.listSelect(smallparts,isInput);
-        s = Absyn.pathString(p);
+        s = Absyn.pathStringNoQual(p);
         inputs = Util.listMap1(inputs,renameInput,s);
         inputs = listReverse(getFirstNInputs(listReverse(inputs),numArgs));
         res = insertAfterInputs(parts,inputs);

@@ -1019,13 +1019,13 @@ algorithm
           ("timeBackend",  Values.REAL(timeBackend)),
           ("timeFrontend", Values.REAL(timeFrontend))
           };
-        resstr = Absyn.pathString(className);
+          resstr = Absyn.pathStringNoQual(className);
         resstr = stringAppendList({"SimCode: The model ",resstr," has been translated to FMU"});
       then
         (cache,Values.STRING(resstr),st,indexed_dlow_1,libs,file_dir, resultValues);
     case (_,_,className,_,_,_, _)
       equation        
-        resstr = Absyn.pathString(className);
+        resstr = Absyn.pathStringNoQual(className);
         resstr = stringAppendList({"SimCode: The model ",resstr," could not been translated to FMU"});
         Error.addMessage(Error.INTERNAL_ERROR, {resstr});
       then
@@ -1097,13 +1097,13 @@ algorithm
           ("timeBackend",  Values.REAL(timeBackend)),
           ("timeFrontend", Values.REAL(timeFrontend))
           };
-        resstr = Absyn.pathString(className);
+        resstr = Absyn.pathStringNoQual(className);
         resstr = stringAppendList({"SimCode: The model ",resstr," has been translated to cpp"});
       then
         (cache,Values.STRING(resstr),st,indexed_dlow_1,libs,file_dir, resultValues);
     case (_,_,className,_,_,_, _)
       equation        
-        resstr = Absyn.pathString(className);
+        resstr = Absyn.pathStringNoQual(className);
         resstr = stringAppendList({"SimCode: The model ",resstr," could not been translated to cpp"});
         Error.addMessage(Error.INTERNAL_ERROR, {resstr});
       then
@@ -1274,7 +1274,7 @@ algorithm
           ("timeBackend",  Values.REAL(timeBackend)),
           ("timeFrontend", Values.REAL(timeFrontend))
           };
-        resstr = Util.if_(RTOpts.debugFlag("failtrace"),Absyn.pathString(className),"");
+        resstr = Util.if_(RTOpts.debugFlag("failtrace"),Absyn.pathStringNoQual(className),"");
         resstr = stringAppendList({"SimCode: The model ",resstr," has been translated"});
         //        resstr = "SimCode: The model has been translated";
       then
@@ -1282,7 +1282,7 @@ algorithm
     case (_,_,className,_,_,_, _)
       equation        
         true = RTOpts.debugFlag("failtrace");
-        resstr = Absyn.pathString(className);
+        resstr = Absyn.pathStringNoQual(className);
         resstr = stringAppendList({"SimCode: The model ",resstr," could not been translated"});
         Error.addMessage(Error.INTERNAL_ERROR, {resstr});
       then
@@ -2115,7 +2115,7 @@ algorithm
       
     case (functionTree,dlow,ass1,ass2,m,mt,comps,class_,filenamePrefix,fileDir,functions,externalFunctionIncludes,libs,simSettingsOpt,recordDecls)
       equation
-        cname = Absyn.pathString(class_);
+        cname = Absyn.pathStringNoQual(class_);
         
         (blt_states, blt_no_states) = BackendDAEUtil.generateStatePartition(comps, dlow, ass1, ass2, m, mt);
         
@@ -2278,7 +2278,7 @@ algorithm
       
     case (functionTree,dlow,ass1,ass2,m,mt,comps,class_,filenamePrefix,fileDir,functions,externalFunctionIncludes,libs,simSettingsOpt,recordDecls)
       equation
-        cname = Absyn.pathString(class_);
+        cname = Absyn.pathStringNoQual(class_);
         
         (blt_states, blt_no_states) = BackendDAEUtil.generateStatePartition(comps, dlow, ass1, ass2, m, mt);
         
@@ -3107,7 +3107,6 @@ algorithm
       
     case ((DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(name), complexVarLst = varlst),SOME(path)), accRecDecls, rt)
       equation
-        sname = Absyn.pathString(name);
         sname = ModUtil.pathStringReplaceDot(name, "_");
         false = listMember(sname,rt);
         vars = Util.listMap(varlst, typesVar);
@@ -6111,7 +6110,7 @@ algorithm
       Integer na_bool,ny_string,np_string,na_string;
     case (class_, dlow, functions, numHelpVars, numResiduals, fileDir)
       equation
-        //name = Absyn.pathString(class_);
+        //name = Absyn.pathStringNoQual(class_);
         directory = System.trim(fileDir, "\"");
         vars = createVars(dlow);
         SIMVARS(stateVars=stateVars,algVars=algVars,intAlgVars=intAlgVars,boolAlgVars=boolAlgVars,
@@ -6185,7 +6184,7 @@ algorithm
       list<SimVar> states_2,derivatives_2,derivative;
     case (class_, dlow, functions, numHelpVars, numResiduals, fileDir)
       equation
-        //name = Absyn.pathString(class_);
+        //name = Absyn.pathStringNoQual(class_);
         directory = System.trim(fileDir, "\"");
         (vars as SIMVARS(stateVars=stateVars,derivativeVars=derivative,algVars=algVars,intAlgVars=intAlgVars,boolAlgVars=boolAlgVars,
                        inputVars=inputVars,outputVars=outputVars,aliasVars=aliasVars,intAliasVars=intAliasVars,boolAliasVars=boolAliasVars,
@@ -8556,7 +8555,7 @@ algorithm
     case ({},ht,funcs) then ht;
     case (path::rest,ht,funcs)
       equation
-        ht = getCalledFunctionsInFunction2(path, Absyn.pathString(path), ht, funcs);
+        ht = getCalledFunctionsInFunction2(path, Absyn.pathStringNoQual(path), ht, funcs);
         ht = getCalledFunctionsInFunctions(rest, ht, funcs);
       then ht;
   end match;
@@ -8573,7 +8572,7 @@ protected
   HashTableStringToPath.HashTable ht;
 algorithm
   ht := HashTableStringToPath.emptyHashTable();
-  ht := getCalledFunctionsInFunction2(path,Absyn.pathString(path),ht,funcs);
+  ht := getCalledFunctionsInFunction2(path,Absyn.pathStringNoQual(path),ht,funcs);
   outPaths := BaseHashTable.hashTableValueList(ht);
 end getCalledFunctionsInFunction;
 
@@ -8597,7 +8596,7 @@ algorithm
       
     case (path,pathstr,ht,_)
       equation
-        _ = BaseHashTable.get(Absyn.pathString(path), ht);
+        _ = BaseHashTable.get(Absyn.pathStringNoQual(path), ht);
       then ht;
         
     case (path,pathstr,ht,funcs)
@@ -9080,6 +9079,7 @@ algorithm
       list<Absyn.Path> acc,filter;
     case ((e as DAE.CALL(path = path, builtin = false),(acc,filter)))
       equation
+        path = Absyn.makeNotFullyQualified(path);
         false = Util.listContainsWithCompareFunc(path,filter,Absyn.pathEqual);
       then ((e,(path::acc,filter)));
     case ((e as DAE.CREF(ty = DAE.ET_FUNCTION_REFERENCE_FUNC(builtin = false)),(acc,filter)))
@@ -9171,7 +9171,7 @@ algorithm
       then libs;
     case (path,_,_,libs)
       equation
-        str = "modelica://" +& Absyn.pathString(path) +& "/Resources/Include";
+        str = "modelica://" +& Absyn.pathStringNoQual(path) +& "/Resources/Include";
         str = CevalScript.getFullPathFromUri(str,false);
         str = "\"-I"+&str+&"\"";
         // Yes, we have to append lists here so they appear in the correct order in the Makefile...
@@ -9206,7 +9206,7 @@ algorithm
       then libs;
     case (path,_,libs)
       equation
-        str = "modelica://" +& Absyn.pathString(path) +& "/Resources/Library";
+        str = "modelica://" +& Absyn.pathStringNoQual(path) +& "/Resources/Library";
         str = CevalScript.getFullPathFromUri(str,false);
         platform1 = System.openModelicaPlatform();
         platform2 = System.modelicaPlatform();

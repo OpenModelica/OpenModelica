@@ -2182,7 +2182,7 @@ algorithm
         res;
     case (((t as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_),complexVarLst = vs,complexTypeOption = bc)),SOME(path)))
       equation
-        name = Absyn.pathString(path);
+        name = Absyn.pathStringNoQual(path);
         vars = Util.listMap(vs, unparseVar);
         vstr = stringAppendList(vars);
         res = stringAppendList({"record ",name,"\n",vstr,"end ", name, ";"});
@@ -2253,14 +2253,14 @@ algorithm
         /* MetaModelica uniontype */
     case ((DAE.T_UNIONTYPE(_),SOME(p)))
       equation
-        res = Absyn.pathString(p);
+        res = Absyn.pathStringNoQual(p);
       then
         res;
 
         /* MetaModelica uniontype (but we know which record in the UT it is) */
     case ((DAE.T_METARECORD(utPath=_, fields = vs),SOME(p)))
       equation
-        str = Absyn.pathString(p);
+        str = Absyn.pathStringNoQual(p);
         vars = Util.listMap(vs, unparseVar);
         vstr = stringAppendList(vars);
         res = stringAppendList({"metarecord ",str,"\n",vstr,"end ", str, ";"});
@@ -2481,7 +2481,7 @@ algorithm
     // Uniontype, Metarecord
     case ((_,SOME(path)))
       equation
-         s1 = Absyn.pathString(path);
+         s1 = Absyn.pathStringNoQual(path);
          str = "#" +& s1 +& "#";
       then
         str;
