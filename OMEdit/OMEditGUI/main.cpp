@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
 {
     Q_INIT_RESOURCE(resource_omedit);
     // read the second argument if specified by user.
-    QString fileName = argv[1];
+    QString fileName = QString();
     // adding style sheet
     argc++;
     argv[(argc - 1)] = "-stylesheet=:/Resources/css/stylesheet.qss";
@@ -54,6 +54,8 @@ int main(int argc, char *argv[])
 
     MainWindow mainwindow(&splashScreen);
     // if user has requested to open the file by passing it in argument then,
+    if (a.arguments().size() > 1)
+        fileName = a.arguments().at(1);
     if (!fileName.isEmpty())
     {
         // if path is relative make it absolute
