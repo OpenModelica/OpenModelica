@@ -1449,6 +1449,7 @@ algorithm
     case DAE.ICONST(_) then ();
     case DAE.BCONST(_) then ();
     case DAE.RCONST(_) then ();
+    case DAE.ENUM_LITERAL(index = _) then ();
     case DAE.LIST(valList={}) then ();
     case DAE.META_OPTION(NONE()) then ();
     case DAE.SHARED_LITERAL(index=_) then ();
@@ -1468,6 +1469,7 @@ algorithm
     case DAE.ICONST(_) then ();
     case DAE.RCONST(_) then ();
     case DAE.BCONST(_) then ();
+    case DAE.ENUM_LITERAL(index = _) then ();
     case DAE.META_OPTION(NONE()) then ();
     case DAE.META_OPTION(SOME(exp)) equation isLiteralExp(exp); then ();
     case DAE.BOX(exp) equation isLiteralExp(exp); then ();
@@ -8952,6 +8954,8 @@ algorithm
     case (SOME(DAE.ICONST(_)),_) then ();
     case (SOME(DAE.SCONST(_)),_) then ();
     case (SOME(DAE.BCONST(_)),_) then ();
+    // adrpo, 2011-04-18 -> enumeration literal is OK also
+    case (SOME(DAE.ENUM_LITERAL(index = _)),_) then ();
     case (SOME(exp),DAE.SOURCE(info=info))
       equation
         str = "Initial value of unknown type: " +& ExpressionDump.printExpStr(exp);
