@@ -222,6 +222,9 @@ void cmpData(char* varname, DataField *time, DataField *reftime, DataField *data
         j += 1;
         tr = reftime->data[j];
         increased = 1;
+        if (tr == t) {
+          break;
+        }
         // fprintf(stderr, "j: %d tr:%.6g\n",j,tr);
       }
       else

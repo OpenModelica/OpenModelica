@@ -97,7 +97,7 @@ algorithm
       array<BackendDAE.MultiDimEquation> ae,ae1;
       list<DAE.Exp> crefOrDerCref,crefOrDerCref1,crefOrDerCref11,crefOrDerCref2,crefOrDerCref21,crefOrDerCref3,derCref1,derCref2;
       list<Integer> dimSize;
-      String msg;
+      String msg,se1,se2;
     
     // equations
     case (BackendDAE.EQUATION(exp = e1,scalar = e2,source=source),timevars,inFunctions,al,inDerivedAlgs,ae,inDerivedMultiEqn) /* time varying variables */
@@ -161,9 +161,11 @@ algorithm
        then
         (BackendDAE.ALGORITHM(index,in_1,out1,source),a1,derivedAlgs,ae,inDerivedMultiEqn,add);
     
-    case (BackendDAE.COMPLEX_EQUATION(index = _, source = source),_,_,_,_,_,_)
+    case (BackendDAE.COMPLEX_EQUATION(index = _,lhs=e1,rhs=e2,source = source),_,_,_,_,_,_)
       equation
-        msg = "- Derive.differentiateEquationTime on complex equations not impl yet.";
+        se1 = ExpressionDump.printExpStr(e1);
+        se2 = ExpressionDump.printExpStr(e2);
+        msg = stringAppendList({"- Derive.differentiateEquationTime on complex equations not impl yet. ",se1," = ",se2});
         Error.addSourceMessage(Error.INTERNAL_ERROR, {msg}, DAEUtil.getElementSourceFileInfo(source));
       then
         fail();

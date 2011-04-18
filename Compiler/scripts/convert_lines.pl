@@ -6,6 +6,7 @@
 # make GCC errors spit out Modelica line numbers instead of C lines, which helps a lot.
 # -- martin.sjolund@liu.se
 
+use Cwd;
 use Cwd 'abs_path';
 
 $inf = $ARGV[0];
@@ -20,7 +21,13 @@ $inStmtLine = 0;
 while( $line = <INP> ){
   # regex is fun
   if ($line =~ /^ *..#modelicaLine .([A-Za-z.\/]*):([0-9]*):[0-9]*-[0-9]*:[0-9]*...$/) {
-    $inStmtFile = abs_path($1); # Absolute paths makes GDB a _lot_ happier
+    eval { 
+	   $inStmtFile = abs_path($1); # Absolute paths makes GDB a _lot_ happier;
+	};
+	if ($@) {
+	  $dir = getcwd(); 
+	  $inStmtFile = $dir + "/" + $1;
+	}
     $inStmtLine = $2;
     $inStmt = 1;
   } elsif ($line =~ /^ *..#endModelicaLine/) {

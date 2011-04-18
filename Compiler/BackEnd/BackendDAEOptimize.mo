@@ -1535,6 +1535,12 @@ algorithm
       (m1,extArg1) = traverseIncidenceMatrixList(eqns1,m,func,arrayLength(m),pos,extArg);
       (m2,extArg2) = traverseIncidenceMatrix1(m1,func,pos+1,len,extArg1);
     then (m2,extArg2);
+      
+    case (_,_,_,_,_)
+      equation
+        Debug.fprintln("failtrace", "- BackendDAEOptimize.traverseIncidenceMatrix1 failed");
+      then
+        fail();       
   end matchcontinue;
 end traverseIncidenceMatrix1;
 
@@ -1574,6 +1580,18 @@ algorithm
       alleqns = Util.listListUnionOnTrue({rest, eqns1},intEq);
       (m1,extArg1) = traverseIncidenceMatrixList(alleqns,m,func,len,maxpos,extArg);
     then (m1,extArg1);
+
+    case(pos::rest,inM,func,len,maxpos,inTypeA) equation
+      // do not leave the list
+      true = intLt(pos,len+1);
+      (m,extArg) = traverseIncidenceMatrixList(rest,inM,func,len,maxpos,inTypeA);
+    then (m,extArg);
+      
+    case (_,_,_,_,_,_)
+      equation
+        Debug.fprintln("failtrace", "- BackendDAEOptimize.traverseIncidenceMatrixList failed");
+      then
+        fail();      
   end matchcontinue;
 end traverseIncidenceMatrixList;
 
