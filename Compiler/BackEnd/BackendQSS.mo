@@ -192,9 +192,9 @@ algorithm
                 
         dumpDEVSstructs(DEVS_structure);       
         
-        //conns = generateConnections(QSSINFO(stateEq_blt, DEVS_structure,eqs,varlst));
-        //print("CONNECTIONS");
-        //printListOfLists(conns);        
+        conns = generateConnections(QSSINFO(stateEq_blt, DEVS_structure,eqs,varlst));
+        print("CONNECTIONS");
+        printListOfLists(conns);        
         
       then
         QSSINFO(stateEq_blt, DEVS_structure,eqs,varlst);
@@ -488,8 +488,10 @@ algorithm
       equation
         nIntegr = listLength(stateIndices);
         nZeroCross = listLength(zeroCrossList);
+        nBlocks = nIntegr + nStatic + 2*nZeroCross;
         startZeroCrossInd = nStatic + nIntegr + 1;
         startCrossDetectInd = nStatic + nIntegr + nZeroCross + 1;
+        
         //Resolve dependencies between inputs/outputs excluding events      
         (DEVS_structure_temp) = generateStructFromInOutVars(1,stateIndices,DEVS_blocks_outVars, DEVS_blocks_inVars, DEVS_structure_temp);
         //Add the connections between zero-crossings and cross-detectors
@@ -497,6 +499,10 @@ algorithm
         //Add the cross-detector blocks outputs
         (DEVS_structure_temp) = addCrossDetectBlocksOut(startCrossDetectInd, zeroCrossList, mappedEquationsMat, DEVS_structure_temp);
         
+        // Resolve dependencies for EVENTS
+        // Already we should have resolved the dependencies between DEVS blocks concerning the variables.
+        DEVS_structure_temp = updateEventsAsInputs(startCrossDetectInd, nBlocks, DEVS_structure_temp);  
+        dumpDEVSstructs(DEVS_structure_temp); 
       then
         (DEVS_structure_temp);
     case (_,_,_,_,_,_,_)
@@ -506,6 +512,120 @@ algorithm
         fail();
   end matchcontinue;
 end generateDEVSstruct;
+
+protected function updateEventsAsInputs
+"function: updateEventsAsInputs
+  
+  author: florosx
+" 
+  input Integer startBlockInd;
+  input Integer endBlockInd;
+  input DevsStruct DEVS_structureIn;
+  
+  output DevsStruct DEVS_structureOut;
+ 
+algorithm
+  (DEVS_structureOut):=
+  matchcontinue (startBlockInd, endBlockInd, DEVS_structureIn)
+    local
+      list<list<Integer>> curBlock_outLinks, curBlock_outVars, curBlock_inLinks, curBlock_inVars;
+      array<list<list<Integer>>> DEVS_struct_outLinks, DEVS_struct_outVars, DEVS_struct_inLinks, DEVS_struct_inVars;
+      DevsStruct DEVS_structure_temp;
+      list<Integer> curBlock_outLinks_flat;
+      
+    case (startBlockInd, endBlockInd, DEVS_structure_temp)
+      equation
+        true = startBlockInd > endBlockInd;
+      then
+        (DEVS_structure_temp);
+      
+    case (startBlockInd, endBlockInd, DEVS_STRUCT(outLinks=DEVS_struct_outLinks, outVars=DEVS_struct_outVars, inLinks=DEVS_struct_inLinks, inVars=DEVS_struct_inVars))
+      equation
+       // Find to which blocks the events go and add them as inputs to the last port
+       curBlock_outLinks = DEVS_struct_outLinks[startBlockInd];
+       curBlock_outLinks_flat = Util.listFlatten(curBlock_outLinks);
+       (DEVS_struct_inLinks, DEVS_struct_inVars) = updateEventsAsInputs2(startBlockInd, curBlock_outLinks_flat, DEVS_struct_inLinks, DEVS_struct_inVars);
+       DEVS_structure_temp = DEVS_STRUCT(DEVS_struct_outLinks, DEVS_struct_outVars, DEVS_struct_inLinks, DEVS_struct_inVars);
+       DEVS_structure_temp = updateEventsAsInputs(startBlockInd+1, endBlockInd, DEVS_structure_temp);
+      then
+        (DEVS_structure_temp);
+    case (_,_,_)
+      equation
+        print("- BackendQSS.updateEventsAsInputs failed\n");
+      then
+        fail();
+  end matchcontinue;
+end updateEventsAsInputs;
+
+protected function updateEventsAsInputs2
+"function: updateEventsAsInputs
+  
+  author: florosx
+" 
+  input Integer eventBlockInd;
+  input list<Integer> inBlocksInd;
+  input array<list<list<Integer>>> DEVS_struct_inLinks;
+  input array<list<list<Integer>>> DEVS_struct_inVars;
+  output array<list<list<Integer>>> DEVS_struct_inLinksOut;
+  output array<list<list<Integer>>> DEVS_struct_inVarsOut;
+
+ 
+algorithm
+  (DEVS_struct_inLinksOut, DEVS_struct_inVarsOut):=
+  matchcontinue (eventBlockInd, inBlocksInd, DEVS_struct_inLinks, DEVS_struct_inVars )
+    local
+      list<list<Integer>> curBlock_inLinks, curBlock_inVars;
+      list<Integer> tempList, restBlocks;
+      Integer curBlockIn, portIn;
+      
+    case (eventBlockInd, {}, DEVS_struct_inLinks, DEVS_struct_inVars)
+      equation
+      then
+        (DEVS_struct_inLinks, DEVS_struct_inVars);
+      
+    case (eventBlockInd, curBlockIn::restBlocks, DEVS_struct_inLinks, DEVS_struct_inVars)
+      equation
+       curBlock_inLinks = DEVS_struct_inLinks[curBlockIn];
+       curBlock_inVars = DEVS_struct_inVars[curBlockIn];
+       portIn = findInputPort(0, curBlock_inVars, 0);
+       //Check if the curBlockIn has already an event port. If yes, add the startBlockInd, otherwise create an event port.
+       true = portIn == -1 ; // If there exists no event port 
+       curBlock_inVars = listAppend(curBlock_inVars, {{0}});
+       curBlock_inLinks = listAppend(curBlock_inLinks, {{eventBlockInd}});
+       DEVS_struct_inLinks = arrayUpdate(DEVS_struct_inLinks, curBlockIn, curBlock_inLinks);
+       DEVS_struct_inVars = arrayUpdate(DEVS_struct_inVars, curBlockIn, curBlock_inVars);
+       (DEVS_struct_inLinks, DEVS_struct_inVars) = updateEventsAsInputs2(eventBlockInd, restBlocks, DEVS_struct_inLinks, DEVS_struct_inVars);
+       then
+        (DEVS_struct_inLinks, DEVS_struct_inVars);
+        
+    case (eventBlockInd, curBlockIn::restBlocks, DEVS_struct_inLinks, DEVS_struct_inVars)
+      equation
+       curBlock_inLinks = DEVS_struct_inLinks[curBlockIn];
+       curBlock_inVars = DEVS_struct_inVars[curBlockIn];
+       portIn = findInputPort(0, curBlock_inVars, 0);
+       //Check if the curBlockIn has already an event port. If yes, add the startBlockInd, otherwise create an event port.
+       false = portIn == -1 ;// If there already exists an event port 
+       tempList = listNth(curBlock_inLinks, portIn);
+       tempList = listAppend(tempList, {eventBlockInd});
+       curBlock_inLinks = Util.listReplaceAt(tempList, portIn, curBlock_inLinks);
+       DEVS_struct_inLinks = arrayUpdate(DEVS_struct_inLinks, curBlockIn, curBlock_inLinks);
+       (DEVS_struct_inLinks, DEVS_struct_inVars) = updateEventsAsInputs2(eventBlockInd, restBlocks, DEVS_struct_inLinks, DEVS_struct_inVars);
+       then
+        (DEVS_struct_inLinks, DEVS_struct_inVars);
+      
+    case (_,_,_,_)
+      equation
+        print("- BackendQSS.updateEventsAsInputs2 failed\n");
+      then
+        fail();
+  end matchcontinue;
+end updateEventsAsInputs2;
+
+
+
+
+
+
 
 protected function addZeroCrossOut_CrossDetectIn
 "function: addZeroCrossOut_CrossDetectIn
@@ -598,7 +718,7 @@ algorithm
         
        DEVS_struct_outLinks = arrayUpdate(DEVS_struct_outLinks, startBlockInd, curBlock_outLinks);
        DEVS_struct_outVars = arrayUpdate(DEVS_struct_outVars, startBlockInd, curBlock_outVars);
-       
+      
        DEVS_structure_temp = DEVS_STRUCT(DEVS_struct_outLinks, DEVS_struct_outVars, DEVS_struct_inLinks, DEVS_struct_inVars);
        
        DEVS_structure_temp = addCrossDetectBlocksOut(startBlockInd+1, restZC, mappedEquationsMat, DEVS_structure_temp);
@@ -611,6 +731,9 @@ algorithm
         fail();
   end matchcontinue;
 end addCrossDetectBlocksOut;
+
+
+
 
 protected function findEqInBlocks
 "function: findEqInBlocks
@@ -747,13 +870,7 @@ algorithm
              DEVS_STRUCT(outLinks=DEVS_struct_outLinks, outVars=DEVS_struct_outVars, inLinks=DEVS_struct_inLinks, inVars=DEVS_struct_inVars) )
       equation
         blocksToBeChecked = findOutVarsInAllInputsHelper(curOutVar, stateIndices,DEVS_blocks_inVars,outBlockIndex);          
-        /*print("\nCur out var ");
-        print(intString(curOutVar));
-        print("\noutBlockIndex ");
-        print(intString(outBlockIndex));
-        print("\n Blocks to be checked: \n");
-        printList(blocksToBeChecked, "start"); 
-        */
+       
         (curOutVarLinks, DEVS_struct_inLinks, DEVS_struct_inVars) = 
                    findWhereOutVarIsNeeded(curOutVar, outBlockIndex, blocksToBeChecked, DEVS_blocks_inVars, DEVS_struct_inLinks, DEVS_struct_inVars,{});
         true = Util.isListNotEmpty(curOutVarLinks) "If the current output var is needed somewhere";
@@ -2398,10 +2515,14 @@ algorithm
         
       case (QSSINFO(DEVSstructure=DEVS_STRUCT(outLinks=outLinks, outVars=outVars, inLinks=inLinks, inVars = inVars)))
         equation 
-          //conns = {{0,0,1,0},{1,0,0,0}};
           nBlocks = arrayLength(outLinks);
           conns = generateConnections2((outLinks, outVars, inLinks, inVars), 1, nBlocks, {});  
         then conns; 
+      case (_)
+        equation
+         print("- BackendQSS.generateConnections\n");
+       then
+         fail();
     end match;
 end generateConnections;
 
@@ -2421,16 +2542,20 @@ algorithm
       case (_, _, 0, conns_temp)
         equation 
         then conns_temp;
+      // Find the out-connections for the current block indexed by blockIndex    
       case ((outLinks, outVars, inLinks, inVars), blockIndex, nBlocks, conns_temp)
         equation          
           curBlock_outEdges = arrayGet(outLinks, blockIndex);
-          curBlock_outVars = arrayGet(outVars, blockIndex);
-          
+          curBlock_outVars = arrayGet(outVars, blockIndex);        
           curBlock_conns =  getDEVSblock_conns(blockIndex, curBlock_outEdges, curBlock_outVars, inVars, 1, {});
-          
           conns_temp = listAppend(conns_temp, curBlock_conns);
           conns_temp = generateConnections2((outLinks, outVars, inLinks, inVars), blockIndex+1, nBlocks-1, conns_temp);            
-        then conns_temp; 
+        then conns_temp;
+      case (_,_,_,_)
+        equation
+         print("- BackendQSS.generateConnections2\n");
+       then
+         fail();
     end match;
 end generateConnections2;
 
@@ -2450,15 +2575,13 @@ protected function getDEVSblock_conns
 algorithm
   (curBlock_conns_out):=
   matchcontinue (blockIndex, curBlock_outEdges, curBlock_outVars, inVars, loopIndex, curBlock_conns_temp)
-    local
-      
+    local 
       Integer blockOut, portOut, curOutVar;
       list<Integer> cur_out_edges, cur_out_names, in_edges, blocksIn;
       list<list<Integer>> rest_out_edges, rest_out_names, curOutVarConnections;
             
     case(blockIndex, {}, {}, inVars, loopIndex, curBlock_conns_temp)
       equation
-       
       then (curBlock_conns_temp);
       
     case (blockIndex, cur_out_edges::rest_out_edges, cur_out_names::rest_out_names, inVars, loopIndex, curBlock_conns_temp)
@@ -2467,17 +2590,22 @@ algorithm
         portOut = loopIndex-1 "Current output port index"; 
         curOutVar = listNth(cur_out_names,0);
         blocksIn = cur_out_edges;
-        
-        curOutVarConnections = getDEVSblock_connections2(curOutVar, blockOut, portOut, blocksIn, inVars, {});      
+        curOutVarConnections = getDEVSblock_conns2(curOutVar, blockOut, portOut, blocksIn, inVars, {});      
         curBlock_conns_temp = listAppend(curBlock_conns_temp, curOutVarConnections);
         curBlock_conns_temp = getDEVSblock_conns(blockIndex, rest_out_edges, rest_out_names, inVars, loopIndex+1, curBlock_conns_temp);
       then
         (curBlock_conns_temp);
+      
+      case (_,_,_,_,_,_)
+        equation
+         print("- BackendQSS.getDEVSblock_conns failed\n");
+       then
+         fail();
   end matchcontinue;
 end getDEVSblock_conns;
 
-protected function getDEVSblock_connections2
-"function: getDEVSblock_connections is a helper function for printDEVSstruct_connections
+protected function getDEVSblock_conns2
+"function: getDEVSblock_conns
  and produces the outgoing edges given in row of a specific block indexed by blockIndex
   author: XF
 " 
@@ -2492,19 +2620,20 @@ protected function getDEVSblock_connections2
 algorithm
   (curOutVar_conns_out):=
   matchcontinue (curOutVar, blockOut, portOut, blocksIn, inVars, curOutVar_conns_temp)
-    local
-      
-      Integer portIn, curBlockIn;
-       
+    local     
+      Integer portIn, curBlockIn;       
       array<Integer> row;
       list<Integer> out_edges, out_edges_names, restOutVars,restBlocksIn, unique_inputNames, inNames;
       Integer curOutVar, nInputs;
-      
       list<list<Integer>> column;
+    
+    // If the current output variable is an EVENT (0)
+    //case(0, _, _, _, _, curOutVar_conns_temp)
+    //  equation
+    //  then (curOutVar_conns_temp);
             
     case(curOutVar, blockOut, portOut, {}, inVars, curOutVar_conns_temp)
       equation
-       
       then (curOutVar_conns_temp);
               
     case (curOutVar, blockOut, portOut, curBlockIn::restBlocksIn, inVars, curOutVar_conns_temp)
@@ -2514,14 +2643,21 @@ algorithm
         portIn = findInputPort(0, column, curOutVar);
         curBlockIn = curBlockIn - 1;
         curOutVar_conns_temp = listAppend(curOutVar_conns_temp, {{blockOut, portOut, curBlockIn, portIn}});      
-        curOutVar_conns_temp = getDEVSblock_connections2(curOutVar, blockOut, portOut, restBlocksIn, inVars, curOutVar_conns_temp);
+        curOutVar_conns_temp = getDEVSblock_conns2(curOutVar, blockOut, portOut, restBlocksIn, inVars, curOutVar_conns_temp);
       then
         (curOutVar_conns_temp);
+     
+    case (_,_,_,_,_,_)
+      equation
+        print("- BackendQSS.getDEVSblock_conns2 failed\n");
+      then
+        fail();
   end matchcontinue;
-end getDEVSblock_connections2;
+end getDEVSblock_conns2;
 
 protected function findInputPort
-"function: findInputPort takes as input a list of lists with input variables and looks for a specific one in order to identify the input port.
+"function: findInputPort takes as input a list of lists with input variables and looks
+ for a specific one in order to identify the input port.
   author: XF
 " 
   input Integer loopIndex;
@@ -2536,7 +2672,12 @@ algorithm
     local
       list<Integer> cur_port_inputs;
       list<list<Integer>> rest_inputs;
-      
+    
+    // IF you don't find the inVar return -1 by default
+    case(loopIndex, {}, inVar)
+      equation 
+      then (-1);
+    
     case(loopIndex, cur_port_inputs::rest_inputs, inVar)
       equation
        true = Util.listContains(inVar, cur_port_inputs); 
@@ -2547,7 +2688,11 @@ algorithm
        false = Util.listContains(inVar, cur_port_inputs); 
        portIn = findInputPort(loopIndex+1, rest_inputs, inVar);
       then (portIn);
-    
+    case (_,_,_)
+      equation
+        print("- BackendQSS.findInputPort failed\n");
+      then
+        fail();
   end matchcontinue;
 end findInputPort;
 
