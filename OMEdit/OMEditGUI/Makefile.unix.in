@@ -17,8 +17,6 @@ clean:
 	test -f Makefile && make -f Makefile clean
 
 build: $(NAME)
-	ln -sf ../OMNotebook/3Dpkg ../
-	ln -sf ../OMNotebook/Pltpkg2 ../
 	$(MAKE) -f Makefile
 Makefile: OMEditGUI.pro OMEdit.config
 	$(QMAKE)
