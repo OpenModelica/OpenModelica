@@ -567,6 +567,9 @@ algorithm
     case Absyn.R_PREDEFINED_STRING() then "String";
     case Absyn.R_PREDEFINED_BOOLEAN() then "Boolean";
     case Absyn.R_METARECORD(_,_) then "metarecord";
+    case Absyn.R_OPERATOR() then "operator";
+    case Absyn.R_OPERATOR_FUNCTION() then "operator function";
+    case Absyn.R_OPERATOR_RECORD() then "operator record";
     case _ then "*unknown*";
   end matchcontinue;
 end unparseRestrictionStr;
