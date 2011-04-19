@@ -65,6 +65,8 @@ public:
     static QString unparse(QString value);
     // Returns empty list if the string is not a standard Modelica string-array. Else it unparses it into normal form.
     static QStringList unparseStrings(QString value);
+    // Returns false on failure
+    static bool unparseBool(QString value);
 };
 
 #endif // STRINGHANDLER_H

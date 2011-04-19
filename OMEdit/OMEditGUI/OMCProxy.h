@@ -93,7 +93,7 @@ public:
     QString getAnnotationVersion();
     bool setEnvironmentVar(QString name, QString value);
     QString getEnvironmentVar(QString name);
-    void loadStandardLibrary();
+    QStringList loadStandardLibrary();
     bool isStandardLibraryLoaded();
     QStringList getClassNames(QString className = QString());
     QStringList getClassNamesRecursive(QString className);

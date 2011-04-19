@@ -409,3 +409,10 @@ QStringList StringHandler::unparseStrings(QString value)
   }
   return lst; // ERROR?
 }
+
+
+bool StringHandler::unparseBool(QString value)
+{
+  value = value.trimmed();
+  return value == "true";
+}

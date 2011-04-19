@@ -497,22 +497,18 @@ void LibraryTree::createActions()
 void LibraryTree::addModelicaStandardLibrary()
 {
     // load Modelica Standard Library.
-    mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->loadStandardLibrary();
+    QStringList libs = mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->loadStandardLibrary();
     if (mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->isStandardLibraryLoaded())
     {
-        // It should be possible to load multiple libraries in OMEdit...
-        const int numLib=2;
-        const char *libs[numLib] = {"Modelica", "ModelicaServices"};
-        for (int i=0; i<numLib; i++) {
-            LibraryTreeNode *newTreePost = new LibraryTreeNode(QString(libs[i]), QString(""), QString(libs[i]),
-                                                               this);
-            int classType = mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->getClassRestriction(QString(libs[i]));
+        foreach (QString lib, libs) {
+            LibraryTreeNode *newTreePost = new LibraryTreeNode(lib, QString(""), lib, this);
+            int classType = mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->getClassRestriction(lib);
             newTreePost->mType = classType;
             newTreePost->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
             insertTopLevelItem(0, newTreePost);
 
             // get the Icon for Modelica tree node
-            LibraryLoader *libraryLoader = new LibraryLoader(newTreePost, tr(libs[i]), this);
+            LibraryLoader *libraryLoader = new LibraryLoader(newTreePost, lib, this);
             libraryLoader->start(QThread::HighestPriority);
             while (libraryLoader->isRunning())
                 qApp->processEvents();

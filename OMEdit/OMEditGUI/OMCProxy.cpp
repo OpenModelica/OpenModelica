@@ -475,20 +475,25 @@ QString OMCProxy::getEnvironmentVar(QString name)
 }
 
 //! Loads the OpenModelica Standard Library.
-void OMCProxy::loadStandardLibrary()
+QStringList OMCProxy::loadStandardLibrary()
 {
+    QStringList res;
     sendCommand("loadModel(Modelica)");
-    sendCommand("loadModel(ModelicaServices)");
-
-    //! @todo Remove it once we have support for Media and Fluid.
-    // just added to remove Fluid and Media Library...
-    deleteClass("Modelica.Media");
-    deleteClass("Modelica.Fluid");
-
-    if (getResult().contains("true"))
-    {
+    if (StringHandler::unparseBool(getResult())) {
+        res.append("Modelica");
         mIsStandardLibraryLoaded = true;
+        //! @todo Remove it once we have support for Media and Fluid.
+        // just added to remove Fluid and Media Library...
+        deleteClass("Modelica.Media");
+        deleteClass("Modelica.Fluid");
+        sendCommand("loadModel(ModelicaServices) /* Required for MultiBody */");
+        if (StringHandler::unparseBool(getResult())) {
+            res.append("ModelicaServices");
+            sendCommand("loadModel(Complex) /* Used in MSL 3.2; ignore the false return-value if you use MSL 3.1 */");
+            if (StringHandler::unparseBool(getResult())) res.append("Complex");
+        }
     }
+    return res;
 }
 
 //! Checks whether the OpenModelica Standard Library is loaded or not.
