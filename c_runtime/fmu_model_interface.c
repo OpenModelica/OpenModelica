@@ -1,6 +1,9 @@
 #ifndef __FMU_MODEL_INTERFACE_C__
 #define __FMU_MODEL_INTERFACE_C__
 
+#include <string>
+#include "solver_main.h"
+
 extern "C" {
 
 // array of value references of states
@@ -559,6 +562,7 @@ fmiStatus fmiGetEventIndicators(fmiComponent c, fmiReal eventIndicators[], size_
 
 fmiStatus fmiInitialize(fmiComponent c, fmiBoolean toleranceControlled, fmiReal relativeTolerance,
             fmiEventInfo* eventInfo) {
+              int sampleEvent_actived = 0;
               ModelInstance* comp = (ModelInstance *)c;
               if (invalidState(comp, "fmiInitialize", modelInstantiated))
                 return fmiError;
@@ -581,59 +585,42 @@ fmiStatus fmiInitialize(fmiComponent c, fmiBoolean toleranceControlled, fmiReal 
               if (initializeEventData()) return fmiError;
 
               if(bound_parameters())  return fmiError;
-              globalData->init=1;
-              initial_function(); // calculates e.g. start values depending on e.g parameters.
-              saveall(); // adrpo: -> save the initial values to have them in pre(var);
-              storeExtrapolationData();
-              storeExtrapolationData();
 
-              int sampleEvent_actived = 0;
-              int needToIterate = 0;
-              int IterationNum = 0;
-              functionDAE(&needToIterate);
+              // Evaluate all constant equations
               functionAliasEquations();
 
-              while (checkForDiscreteChanges() || needToIterate)
-              {
+              std::string init_method = std::string("simplex");
+
+              try{
+                if (main_initialize(&init_method))
+                  {
+                    return fmiError;
+                  }
+
+                SaveZeroCrossings();
                 saveall();
-                functionDAE(&needToIterate);
-                IterationNum++;
-                if (IterationNum > IterationMax) return fmiError;
-              }
 
-              if (initialize(NULL))  return fmiError;
-
-              SaveZeroCrossings();
-              saveall();
-
-              // Calculate stable discrete state
-              // and initial ZeroCrossings
-              if (globalData->curSampleTimeIx < globalData->nSampleTimes)
-              {
-                sampleEvent_actived = checkForSampleEvent();
-                activateSampleEvents();
-              }
-              //Activate sample and evaluate again
-              needToIterate = 0;
-              IterationNum = 0;
-              functionDAE(&needToIterate);
-
-              while (checkForDiscreteChanges() || needToIterate)
-              {
+                //Activate sample and evaluate again
+                if (globalData->curSampleTimeIx < globalData->nSampleTimes)
+                  {
+                    sampleEvent_actived = checkForSampleEvent();
+                    activateSampleEvents();
+                  }
+                update_DAEsystem();
+                SaveZeroCrossings();
+                if (sampleEvent_actived)
+                  {
+                    deactivateSampleEventsandEquations();
+                    sampleEvent_actived = 0;
+                  }
                 saveall();
-                functionDAE(&needToIterate);
-                IterationNum++;
-                if (IterationNum > IterationMax) return fmiError;
-                }
-              functionAliasEquations();
-              SaveZeroCrossings();
-              if (sampleEvent_actived)
-              {
-                deactivateSampleEventsandEquations();
-                sampleEvent_actived = 0;
+                storeExtrapolationData();
+                storeExtrapolationData();
               }
-
-              saveall();
+              catch (TerminateSimulationException &e)
+              {
+                return fmiError;
+              }
               // Initialization complete
 
               comp->state = modelInitialized;

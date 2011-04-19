@@ -583,10 +583,13 @@ algorithm
       Option<SCode.Comment> comment;
       BackendDAE.BinTree states;
       DAE.Type t;
+      DAE.VarVisibility protection;
+      Boolean b;
 
     case (DAE.VAR(componentRef = name,
                   kind = kind,
                   direction = dir,
+                  protection = protection,
                   ty = t,
                   binding = bind,
                   dims = dims,
@@ -600,6 +603,8 @@ algorithm
         tp = lowerType(t);
         minmax = lowerMinMax(dae_var_attr,name,source,kind_1);
         nominal = lowerNominal(dae_var_attr,name,source,kind_1);
+        b = DAEUtil.boolVarVisibility(protection);
+        dae_var_attr = DAEUtil.setProtectedAttr(dae_var_attr,b);
       then
         (BackendDAE.VAR(name,kind_1,dir,tp,NONE(),NONE(),dims,-1,source,dae_var_attr,comment,flowPrefix,streamPrefix), bind, states, minmax, nominal);
   end match;
@@ -628,10 +633,13 @@ algorithm
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
       DAE.Type t;
+      DAE.VarVisibility protection;
+      Boolean b;      
 
     case (DAE.VAR(componentRef = name,
                   kind = kind,
                   direction = dir,
+                  protection = protection,
                   ty = t,
                   binding = bind,
                   dims = dims,
@@ -646,6 +654,8 @@ algorithm
         tp = lowerType(t);
         minmax = lowerMinMax(dae_var_attr,name,source,kind_1);
         nominal = lowerNominal(dae_var_attr,name,source,kind_1);
+        b = DAEUtil.boolVarVisibility(protection);
+        dae_var_attr = DAEUtil.setProtectedAttr(dae_var_attr,b);
       then
         (BackendDAE.VAR(name,kind_1,dir,tp,bind,NONE(),dims,-1,source,dae_var_attr,comment,flowPrefix,streamPrefix), minmax, nominal);
 
