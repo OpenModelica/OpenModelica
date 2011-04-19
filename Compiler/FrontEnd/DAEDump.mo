@@ -3369,7 +3369,7 @@ algorithm
         str = IOStream.append(str, fstr);
         str = IOStream.append(str, " \"Automatically generated record constructor for " +& fstr +& "\"\n");
         str = IOStream.append(str, printRecordConstructorInputsStr(tp));
-        str = IOStream.append(str, "output "+&Absyn.pathLastIdent(fpath) +& " res;\n");
+        str = IOStream.append(str, "  output "+&Absyn.pathLastIdent(fpath) +& " res;\n");
         str = IOStream.append(str, "end ");
         str = IOStream.append(str, fstr);
         str = IOStream.append(str, ";\n\n");
