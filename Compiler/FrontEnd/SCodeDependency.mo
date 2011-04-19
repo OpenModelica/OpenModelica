@@ -45,7 +45,10 @@ public import SCodeEnv;
 
 public type Env = SCodeEnv.Env;
 
+protected import Debug;
 protected import Error;
+protected import RTOpts;
+protected import SCodeFlattenRedeclare;
 protected import SCodeLookup;
 protected import SCodeUtil;
 protected import Util;
@@ -83,9 +86,29 @@ protected
   Item item;
   Env env;
 algorithm
-  (item, env) := lookupClass(inClassName, inEnv, inInfo, true);
-  checkItemIsClass(item);
-  analyseItem(item, env);
+  _ := matchcontinue(inClassName, inEnv, inInfo)
+    local
+      Item item;
+      Env env;
+
+    case (_, _, _)
+      equation
+        (item, env) = lookupClass(inClassName, inEnv, inInfo, true);
+        checkItemIsClass(item);
+        analyseItem(item, env);
+      then
+        ();
+
+    else
+      equation
+        true = RTOpts.debugFlag("failtrace");
+        Debug.traceln("- SCodeDependency.analyseClass failed for " +& 
+          Absyn.pathString(inClassName) +& " in " +& 
+          SCodeEnv.getEnvName(inEnv));
+      then
+        fail();
+
+  end matchcontinue;
 end analyseClass;
 
 protected function lookupClass
@@ -153,6 +176,14 @@ algorithm
         (item, env) = lookupNameInItem(rest_path, item, env, inPrintError);
       then  
         (item, env);
+
+    case (Absyn.FULLYQUALIFIED(path = rest_path), _, _, _)
+      equation
+        env = SCodeEnv.getEnvTopScope(inEnv);
+        (item, env) = lookupClass2(rest_path, env, inInfo, inPrintError);
+      then
+        (item, env);
+
   end match;
 end lookupClass2;
 
@@ -179,11 +210,11 @@ algorithm
     case (_, SCodeEnv.VAR(var = SCode.COMPONENT(typeSpec = 
       Absyn.TPATH(path = type_path), modifications = mods, info = info)), _, _)
       equation
-        (item, type_env) = lookupClass(type_path, inEnv, info,
-          inPrintError);
-        redeclares = SCodeEnv.extractRedeclaresFromModifier(mods);
-        (item, type_env) =
-          SCodeEnv.replaceRedeclaredClassesInEnv(redeclares, item, type_env, inEnv);
+        (item, type_env) = lookupClass(type_path, inEnv, info, inPrintError);
+        redeclares = SCodeFlattenRedeclare.extractRedeclaresFromModifier(
+          mods, inEnv);
+        (item, type_env) = SCodeFlattenRedeclare.replaceRedeclaredClassesInEnv(
+          redeclares, item, type_env, inEnv);
         (item, env) = lookupNameInItem(inName, item, type_env, inPrintError);
       then
         (item, env);
@@ -233,6 +264,7 @@ algorithm
       Absyn.Info info;
       SCode.Ident name;
       SCode.Restriction res;
+      SCode.Element cls;
 
     // Check if the item is already marked as used, then we can stop here.
     case (_, _)
@@ -254,15 +286,26 @@ algorithm
 
     // A normal class, mark it and it's environment as used, and recursively
     // analyse it's contents.
-    case (SCodeEnv.CLASS(cls = SCode.CLASS(classDef =
-        cdef, restriction = res, info = info), env = {cls_env}), env)
+    case (SCodeEnv.CLASS(cls = cls as SCode.CLASS(classDef = cdef, 
+        restriction = res, info = info), env = {cls_env}), env)
       equation
         markItemAsUsed(inItem, env);
         env = SCodeEnv.enterFrame(cls_env, env);
         analyseClassDef(cdef, res, env, info);
         analyseMetaType(res, env, info);
+        _ :: env = env;
+        //analyseRedeclaredClass(cls, env);
       then
         ();
+
+    else
+      equation
+        true = RTOpts.debugFlag("failtrace");
+        Debug.traceln("- SCodeDependency.analyseItem failed on " +&
+          SCodeEnv.getItemName(inItem) +& " in " +&
+          SCodeEnv.getEnvName(inEnv));
+      then
+        fail();
 
   end matchcontinue;
 end analyseItem;
@@ -401,26 +444,31 @@ algorithm
         ();
 
     // A class extends.
-    case (SCode.CLASS_EXTENDS(baseClassName = bc, modifications = mods,
-        composition = SCode.PARTS(elementLst = el, normalEquationLst = nel, initialEquationLst = iel,
-        normalAlgorithmLst = nal, initialAlgorithmLst = ial, 
-        externalDecl = ext_decl, annotationLst = annl, comment = cmt)), _, _, _)
+    case (SCode.CLASS_EXTENDS(baseClassName = bc), _, _, _)
       equation
-        analyseClass(Absyn.IDENT(bc), inEnv, inInfo);
-        (ty_item, _, ty_env) =
-          SCodeLookup.lookupBaseClassName(Absyn.IDENT(bc), inEnv, inInfo);
-        ty_env = SCodeEnv.mergeItemEnv(ty_item, ty_env);
-        analyseModifier(mods, inEnv, ty_env, inInfo);
-        Util.listMap02(el, analyseElement, inEnv, inRestriction);
-        Util.listMap01(nel, inEnv, analyseEquation);
-        Util.listMap01(iel, inEnv, analyseEquation);
-        Util.listMap01(nal, inEnv, analyseAlgorithm);
-        Util.listMap01(ial, inEnv, analyseAlgorithm);
-        analyseExternalDecl(ext_decl, inEnv, inInfo);
-        Util.listMap02(annl, analyseAnnotation, inEnv, inInfo);
-        analyseComment(cmt, inEnv, inInfo);
+        Error.addSourceMessage(Error.INTERNAL_ERROR, 
+          {"SCodeDependency.analyseClassDef failed on CLASS_EXTENDS"}, inInfo);
       then
-        ();
+        fail();
+    //case (SCode.CLASS_EXTENDS(baseClassName = bc, modifications = mods,
+    //    elementLst = el, normalEquationLst = nel, initialEquationLst = iel,
+    //    normalAlgorithmLst = nal, initialAlgorithmLst = ial, 
+    //    annotationLst = annl, comment = cmt), _, _, _)
+    //  equation
+    //    analyseClass(Absyn.IDENT(bc), inEnv, inInfo);
+    //    (ty_item, _, ty_env) =
+    //      SCodeLookup.lookupBaseClassName(Absyn.IDENT(bc), inEnv, inInfo);
+    //    ty_env = SCodeEnv.mergeItemEnv(ty_item, ty_env);
+    //    analyseModifier(mods, inEnv, ty_env, inInfo);
+    //    Util.listMap02(el, analyseElement, inEnv, inRestriction);
+    //    Util.listMap01(nel, inEnv, analyseEquation);
+    //    Util.listMap01(iel, inEnv, analyseEquation);
+    //    Util.listMap01(nal, inEnv, analyseAlgorithm);
+    //    Util.listMap01(ial, inEnv, analyseAlgorithm);
+    //    Util.listMap02(annl, analyseAnnotation, inEnv, inInfo);
+    //    analyseComment(cmt, inEnv, inInfo);
+    //  then
+    //    ();
 
     // A derived class definition.
     case (SCode.DERIVED(typeSpec = ty, modifications = mods, attributes = attr, comment = cmt),
@@ -439,6 +487,7 @@ algorithm
     case (SCode.ENUMERATION(enumLst = _), _, _, _) then ();
     case (SCode.OVERLOAD(pathLst = _), _, _, _) then ();
     case (SCode.PDER(functionPath = _), _, _, _) then ();
+
   end matchcontinue;
 end analyseClassDef;
 
@@ -576,7 +625,73 @@ algorithm
     else then ();
   end match;
 end analyseMetaType;
+ 
+protected function analyseRedeclaredClass
+  "If a class is a redeclaration of an inherited class we need to also analyse
+  the inherited class."
+  input SCode.Element inClass;
+  input Env inEnv;
+algorithm
+  _ := match(inClass, inEnv)
+    local
+      Item item;
+      String name;
 
+    case (SCode.CLASS(name = _), _) 
+      equation
+        false = SCode.isElementRedeclare(inClass);
+      then ();
+
+    case (SCode.CLASS(name = name), _)
+      equation
+        item = SCodeEnv.CLASS(inClass, SCodeEnv.emptyEnv, SCodeEnv.USERDEFINED());
+        analyseRedeclaredClass2(item, inEnv);
+      then
+        ();
+
+  end match;
+end analyseRedeclaredClass;
+        
+protected function analyseRedeclaredClass2
+  input Item inItem;
+  input Env inEnv;
+algorithm
+  _ := matchcontinue(inItem, inEnv)
+    local
+      String name;
+      Item item;
+      Env env;
+      SCode.Element cls;
+
+    case (SCodeEnv.CLASS(cls = cls as SCode.CLASS(name = _)), _)
+      equation
+        false = SCode.isElementRedeclare(cls); 
+        markItemAsUsed(inItem, inEnv);
+      then
+        ();
+
+    case (SCodeEnv.CLASS(cls = cls as SCode.CLASS(name = name)), _)
+      equation
+        true = SCode.isElementRedeclare(cls);
+        //(item, _, _, env) = SCodeLookup.lookupInBaseClasses(name, inEnv, false);
+        (SOME(item), _, SOME(env)) = SCodeLookup.lookupInLocalScope(name, inEnv);
+        //analyseRedeclaredClass2(item, env);
+        markItemAsUsed(item, env);
+      then
+        ();
+
+    else
+      equation
+        true = RTOpts.debugFlag("failtrace");
+        Debug.traceln("- SCodeDependency.analyseRedeclaredClass2 failed for " +&
+          SCodeEnv.getItemName(inItem) +& " in " +&
+          SCodeEnv.getEnvName(inEnv));
+      then
+        fail();
+
+  end matchcontinue;
+end analyseRedeclaredClass2; 
+        
 protected function analyseElement
   "Analyses an element."
   input SCode.Element inElement;
@@ -633,9 +748,9 @@ algorithm
 
     // equalityConstraints may not be explicitly used but might be needed anyway
     // (if the record is used in a connect for example), so always mark it as used.
-    case (SCode.CLASS(name = "equalityConstraint", info = info), _, _)
+    case (SCode.CLASS(name = name as "equalityConstraint", info = info), _, _)
       equation
-        analyseClass(Absyn.IDENT("equalityConstraint"), inEnv, info);
+        analyseClass(Absyn.IDENT(name), inEnv, info);
       then
         ();
 
@@ -700,7 +815,7 @@ algorithm
     case (_, _, _)
       equation
         id = Absyn.pathFirstIdent(inBaseClass);
-        bc = SCodeLookup.lookupBaseClass(id, inEnv, inInfo);
+        (bc, _) = SCodeLookup.lookupBaseClass(id, inEnv, inInfo);
         bc_name = Absyn.pathString(bc);
         Error.addSourceMessage(Error.EXTENDS_INHERITED_FROM_LOCAL_EXTENDS,
           {bc_name, id}, inInfo);
@@ -1408,8 +1523,6 @@ algorithm
       String cls_name;
       Env env;
 
-    // TODO! analyse ALL extends not just the first one (which might not be the case)
-    //       as it could be the second or third, etc.
     case (SCode.CLASS(name = cls_name, classDef = 
           SCode.PARTS(elementLst = SCode.EXTENDS(baseClassPath = bc) :: _), 
           info = info), SCodeEnv.CLASS_EXTENDS(), _)
@@ -1420,6 +1533,17 @@ algorithm
         // Ok, the base is used, analyse the class extends to mark it and it's
         // dependencies as used.
         _ :: env = inEnv;
+        analyseClass(Absyn.IDENT(cls_name), env, info);
+      then
+        ();
+
+    case (SCode.CLASS(name = cls_name, info = info), SCodeEnv.USERDEFINED(), _)
+      equation
+        true = SCode.isElementRedeclare(inClass);
+        _ :: env = inEnv;
+        item = SCodeEnv.CLASS(inClass, SCodeEnv.emptyEnv, inClassType);
+        (item, _) = SCodeLookup.lookupRedeclaredClassByItem(item, env, info);
+        true = SCodeEnv.isItemUsed(item);
         analyseClass(Absyn.IDENT(cls_name), env, info);
       then
         ();
@@ -1737,15 +1861,16 @@ protected
   SCodeEnv.FrameType ty;
   SCodeEnv.AvlTree cls_and_vars;
   list<SCodeEnv.Extends> bcl;
-  list<SCode.Element> ce;
+  list<SCode.Element> re;
+  Option<SCode.Element> cei;
   SCodeEnv.ImportTable imps;
   Util.StatefulBoolean is_used;
 algorithm
-  {SCodeEnv.FRAME(name, ty, cls_and_vars, SCodeEnv.EXTENDS_TABLE(bcl, ce), 
+  {SCodeEnv.FRAME(name, ty, cls_and_vars, SCodeEnv.EXTENDS_TABLE(bcl, re, cei), 
     imps, is_used)} := inEnv;
   bcl := Util.listMap1(bcl, removeUnusedRedeclares2, cls_and_vars);
   outEnv := {SCodeEnv.FRAME(name, ty, cls_and_vars, 
-    SCodeEnv.EXTENDS_TABLE(bcl, ce), imps, is_used)};
+    SCodeEnv.EXTENDS_TABLE(bcl, re, cei), imps, is_used)};
 end removeUnusedRedeclares;
 
 protected function removeUnusedRedeclares2

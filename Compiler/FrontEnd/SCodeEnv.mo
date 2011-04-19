@@ -46,8 +46,9 @@ public import Util;
 
 protected import Debug;
 protected import Error;
-protected import RTOpts;
+protected import SCodeFlattenRedeclare;
 protected import SCodeLookup;
+protected import SCodeCheck;
 protected import SCodeUtil;
 
 
@@ -77,7 +78,8 @@ end Extends;
 public uniontype ExtendsTable
   record EXTENDS_TABLE
     list<Extends> baseClasses;
-    list<SCode.Element> classExtends;
+    list<SCode.Element> redeclaredElements;
+    Option<SCode.Element> classExtendsInfo;
   end EXTENDS_TABLE;
 end ExtendsTable;
 
@@ -119,166 +121,6 @@ end Item;
 
 public type Env = list<Frame>;
 public constant Env emptyEnv = {};
-
-protected function qualifyRedeclare
-  "Since a modifier might redeclare an element in a variable with a type that
-  is not reachable from the component type we need to fully qualify the element. 
-    Ex:
-      A a(redeclare package P = P1)
-  where P1 is not reachable from A."
-  input SCode.Element inElement;
-  input Env inEnv;
-  output SCode.Element outElement;
-algorithm
-  outElement := match(inElement, inEnv)
-    local
-      SCode.Ident name, name2;
-      Absyn.Ident id;
-      SCode.Partial pp;
-      SCode.Encapsulated ep;
-      SCode.Prefixes prefixes;
-      Option<Absyn.ConstrainClass> cc;
-      Option<Absyn.ArrayDim> ad;
-      Absyn.Path path;
-      SCode.Mod mods;
-      Option<SCode.Comment> cmt;
-      Env env;
-      SCode.Restriction res;
-      Absyn.Info info;
-      Absyn.InnerOuter io;
-      SCode.Attributes attr;
-      Option<Absyn.Exp> cond;
-      Option<Absyn.ArrayDim> array_dim;
-
-    case (SCode.CLASS(
-          name = name,
-          prefixes = prefixes,
-          encapsulatedPrefix = ep, 
-          partialPrefix = pp,
-          restriction = res,
-          classDef = SCode.DERIVED(
-              typeSpec = Absyn.TPATH(path, ad),
-              modifications = mods, 
-              attributes = attr, 
-              comment = cmt),
-            info = info
-          ), _)
-      equation
-        path = qualifyPath(path, inEnv, info, SOME(Error.LOOKUP_ERROR));
-      then
-        SCode.CLASS(name, prefixes, ep, pp, res,
-            SCode.DERIVED(Absyn.TPATH(path, ad), mods, attr, cmt),
-            info);
-
-    case (SCode.CLASS(name = _), _) then inElement;
-
-    case (SCode.COMPONENT(name, prefixes, attr, 
-        Absyn.TPATH(path, array_dim), mods, cmt, cond, info), _)
-      equation
-        path = qualifyPath(path, inEnv, info, SOME(Error.LOOKUP_ERROR));
-      then
-        SCode.COMPONENT(name, prefixes, attr, 
-          Absyn.TPATH(path, array_dim), mods, cmt, cond, info);
-
-    else
-      equation
-        true = RTOpts.debugFlag("failtrace");
-        Debug.traceln("- SCodeFlatten.qualifyRedeclare failed on " +&
-          SCode.printElementStr(inElement) +& " in " +&
-          Absyn.pathString(getEnvPath(inEnv)));
-      then
-        fail();
-  end match;
-end qualifyRedeclare;
-
-protected function qualifyPath
-  "Qualifies a path by looking up a path in the environment, and merging the
-  resulting path with it's environment."
-  input Absyn.Path inPath;
-  input Env inEnv;
-  input Absyn.Info inInfo;
-  input Option<Error.ErrorID> inErrorType;
-  output Absyn.Path outPath;
-protected
-algorithm
-  outPath := matchcontinue(inPath, inEnv, inInfo, inErrorType)
-    local
-      Absyn.Path path;
-      Env env;
-
-    case (_, _, _, _)
-      equation
-        (_, path, env) = SCodeLookup.lookupName(inPath, inEnv, inInfo,
-          inErrorType);
-        path = mergePathWithEnvPath(path, env);
-      then
-        path;
-
-    else
-      equation
-        true = RTOpts.debugFlag("failtrace");
-        Debug.traceln("- SCodeFlatten.qualifyPath failed on " +&
-          Absyn.pathString(inPath) +& " in " +&
-          getEnvName(inEnv));
-      then
-        fail();
-  end matchcontinue;
-end qualifyPath;
-
-protected function mergePathWithEnvPath
-  "Merges a path with the environment path."
-  input Absyn.Path inPath;
-  input Env inEnv;
-  output Absyn.Path outPath;
-algorithm
-  outPath := matchcontinue(inPath, inEnv)
-    local
-      Absyn.Path path;
-      Absyn.Ident id;
-
-    // Try to merge the last identifier in the path with the environment path.
-    case (_, _)
-      equation
-        id = Absyn.pathLastIdent(inPath);
-        path = Absyn.joinPaths(getEnvPath(inEnv), Absyn.IDENT(id));
-      then
-        path;
-
-    // If the previous case failed (which will happen at the top-scope when
-    // getEnvPath fails), just return the path as it is.
-    else then inPath;
-  end matchcontinue;
-end mergePathWithEnvPath;
-
-public function joinPaths
-  "Joins two paths. This functions is similar to Absyn.joinPaths, but with
-  different semantics for fully qualified paths."
-  input Absyn.Path inPath1;
-  input Absyn.Path inPath2;
-  output Absyn.Path outPath;
-algorithm
-  outPath := match(inPath1, inPath2)
-    local
-      Absyn.Ident id;
-      Absyn.Path path;
-
-    // The second path is fully qualified, return only that path.
-    case (_, Absyn.FULLYQUALIFIED(path = _)) then inPath2;
-    case (Absyn.IDENT(name = id), _) then Absyn.QUALIFIED(id, inPath2);
-    case (Absyn.QUALIFIED(name = id, path = path), _)
-      equation
-        path = joinPaths(path, inPath2);
-      then
-        Absyn.QUALIFIED(id, path);
-
-    // The first path is fully qualified, merge it with the second path.
-    case (Absyn.FULLYQUALIFIED(path = path), _)
-      equation
-        path = joinPaths(path, inPath2);
-      then
-        Absyn.FULLYQUALIFIED(path);
-  end match;
-end joinPaths;
 
 public function newEnvironment
   "Returns a new environment with only one frame."
@@ -331,76 +173,6 @@ public function enterFrame
 algorithm
   outEnv := inFrame :: inEnv;
 end enterFrame;
-  
-protected function qualifyExtends
-  input Extends inExtends;
-  input Env inEnv;
-  output Extends outExtends;
-algorithm
-  outExtends := matchcontinue(inExtends, inEnv)
-    local
-      Absyn.Path bc;
-      list<SCode.Element> redecl;
-      Absyn.Info info;
-      Env env;
-      Absyn.Ident id;
-
-    case (EXTENDS(baseClass = Absyn.FULLYQUALIFIED(path = _)), _)
-      then inExtends;
-
-    case (EXTENDS(Absyn.IDENT(name = id), _, _), _)
-      equation
-        _ = SCodeLookup.lookupBuiltinType(id);
-      then
-        inExtends;
-
-    case (EXTENDS(bc, redecl, info), _)
-      equation
-        bc = qualifyExtends2(bc, info, inEnv);
-        bc = Absyn.FULLYQUALIFIED(bc);
-      then
-        EXTENDS(bc, redecl, info);
-
-    case (EXTENDS(baseClass = bc), _)
-      equation
-        true = RTOpts.debugFlag("failtrace");
-        Debug.traceln("- SCodeFlatten.qualifyExtends failed on " +&
-          Absyn.pathString(bc) +& " in " +&
-          getEnvName(inEnv));
-      then
-        fail();
-
-    else inExtends;
-  end matchcontinue;
-end qualifyExtends;
-
-protected function qualifyExtends2
-  input Absyn.Path inBaseClass;
-  input Absyn.Info inInfo;
-  input Env inEnv;
-  output Absyn.Path outBaseClass;
-algorithm
-  outBaseClass := matchcontinue(inBaseClass, inInfo, inEnv)
-    local
-      Absyn.Path bc;
-      Absyn.Info info;
-      Env env;
-
-    case (_, _, _)
-      equation
-        (_, bc, env) = SCodeLookup.lookupNameInPackage(inBaseClass, inEnv);
-        bc = mergePathWithEnvPath(bc, env);
-      then
-        bc;
-
-    case (_, _, _)
-      equation
-        bc = Absyn.removePartialPrefix(getEnvPath(inEnv), inBaseClass);
-        bc = qualifyPath(bc, inEnv, inInfo, NONE());
-      then
-        bc;
-  end matchcontinue;
-end qualifyExtends2;
 
 public function getEnvTopScope
   "Returns the top scope, i.e. last frame in the environment."
@@ -455,7 +227,7 @@ protected function newExtendsTable
   "Creates a new extends table."
   output ExtendsTable outExtends;
 algorithm
-  outExtends := EXTENDS_TABLE({}, {});
+  outExtends := EXTENDS_TABLE({}, {}, NONE());
 end newExtendsTable;
 
 public function newClassItem
@@ -498,7 +270,7 @@ algorithm
   outEnv := extendEnvWithClassDef(inClass, inEnv);
 end extendEnvWithClass;
 
-protected function getClassType
+public function getClassType
   "Returns a class's type."
   input SCode.ClassDef inClassDef;
   output ClassType outType;
@@ -516,6 +288,17 @@ algorithm
     else then USERDEFINED();
   end match;
 end getClassType;
+
+public function printClassType
+  input ClassType inClassType;
+  output String outString;
+algorithm
+  outString := match(inClassType)
+    case BUILTIN() then "BUILTIN";
+    case CLASS_EXTENDS() then "CLASS_EXTENDS";
+    case USERDEFINED() then "USERDEFINED";
+  end match;
+end printClassType;
 
 public function removeExtendsFromLocalScope
   "Removes all extends from the local scope, i.e. inserts a new empty
@@ -634,16 +417,18 @@ algorithm
       Absyn.Path cls_path;
       Option<Absyn.ExternalDecl> ext_decl;
       ClassType cls_type;
+      SCode.Element cdef_el;
 
-    // Class extends are added to the extends table for later use.
+    // A class extends.
     case (SCode.CLASS(classDef = SCode.CLASS_EXTENDS(baseClassName = _)), _)
-      then addClassExtendsToEnvExtendsTable(inClassDefElement, inEnv);
+      then
+        SCodeFlattenRedeclare.extendEnvWithClassExtends(inClassDefElement, inEnv);
 
     // A normal class.
     case (SCode.CLASS(name = cls_name, classDef = cdef), _)
       equation
         // Create a new environment and add the class's components to it.
-        class_env = makeClassEnvironment(inClassDefElement);
+        class_env = makeClassEnvironment(inClassDefElement, false);
         cls_type = getClassType(cdef);
         // Add the class with it's environment to the environment.
         env = extendEnvWithItem(newClassItem(inClassDefElement, class_env, cls_type), 
@@ -653,19 +438,22 @@ algorithm
   end match;
 end extendEnvWithClassDef;
 
-protected function makeClassEnvironment
+public function makeClassEnvironment
   input SCode.Element inClassDefElement;
+  input Boolean inInModifierScope;
   output Env outClassEnv;
 protected
   SCode.ClassDef cdef;
   SCode.Element cls;
   String cls_name;
-  Env env;
+  Env env, enclosing_env;
   Absyn.Info info;
 algorithm
   SCode.CLASS(name = cls_name, classDef = cdef, info = info) := inClassDefElement;
   env := openScope(emptyEnv, inClassDefElement);
-  outClassEnv := extendEnvWithClassComponents(cls_name, cdef, env, info);
+  enclosing_env := Util.if_(inInModifierScope, emptyEnv, env);
+  outClassEnv := 
+    extendEnvWithClassComponents(cls_name, cdef, env, enclosing_env, info);
 end makeClassEnvironment;
 
 protected function extendEnvWithVar
@@ -766,7 +554,7 @@ algorithm
   end match;
 end translateQualifiedImportToNamed;
 
-protected function extendEnvWithExtends
+public function extendEnvWithExtends
   "Extends the environment with an extends-clause."
   input SCode.Element inExtends;
   input Env inEnv;
@@ -776,101 +564,164 @@ protected
   SCode.Mod mods;
   list<SCode.Element> redecls;
   Absyn.Info info;
+  Env env;
 algorithm
   SCode.EXTENDS(baseClassPath = bc, modifications = mods, info = info) := 
     inExtends;
-  redecls := extractRedeclaresFromModifier(mods);
+  redecls := SCodeFlattenRedeclare.extractRedeclaresFromModifier(mods, inEnv);
   outEnv := addExtendsToEnvExtendsTable(EXTENDS(bc, redecls, info), inEnv);
 end extendEnvWithExtends;
 
-public function replaceRedeclaredClassesInEnv
-  "If a variable has modifications that redeclare classes in it's instance we
-  need to replace those classes in the environment so that the lookup finds the
-  right classes. This function takes a list of redeclares from a variables
-  modifications and applies them to the environment of the variables type."
-  input list<SCode.Element> inRedeclares "The redeclares from the modifications.";
-  input Item inItem "The type of the variable.";
-  input Env inTypeEnv "The enclosing scopes of the type.";
-  input Env inVarEnv "The environment in which the variable was declared.";
-  output Item outItem;
-  output Env outEnv;
+protected function qualifyExtendsList
+  input list<Extends> inExtends;
+  input ClassType inClassType;
+  input Env inEnv;
+  output list<Extends> outExtends;
 algorithm
-  (outItem, outEnv) := matchcontinue(inRedeclares, inItem, inTypeEnv, inVarEnv)
+  outExtends := match(inExtends, inClassType, inEnv)
     local
-      list<SCode.Element> redeclares;
-      SCode.Element cls;
-      Env env;
-      Frame item_env;
-      ClassType cls_ty;
+      Extends ext;
+      list<Extends> extl;
 
-    case (_, VAR(var = _), _, _) then (inItem, inTypeEnv);
-
-    case (_, CLASS(cls = cls, env = {item_env}, classType = cls_ty), _, _)
+    case (ext :: extl, CLASS_EXTENDS(), _)
       equation
-        redeclares = Util.listMap1(inRedeclares, qualifyRedeclare, inVarEnv);
-        // Merge the types environment with it's enclosing scopes to get the
-        // enclosing scopes of the classes we need to replace.
-        env = enterFrame(item_env, inTypeEnv);
-        env = Util.listFold(redeclares, replaceRedeclaredElementInEnv, env);
-        item_env :: env = env;
+        //ext = qualifyExtends(ext, inEnv, CLASS_EXTENDS());
+        extl = Util.listMap2(extl, qualifyExtends, inEnv, USERDEFINED());
       then
-        (CLASS(cls, {item_env}, cls_ty), env);
+        ext :: extl;
 
     else
       equation
-        true = RTOpts.debugFlag("failtrace");
-        Debug.trace("- SCodeFlatten.replaceRedeclaredClassesInEnv failed for ");
-        Debug.traceln(getItemName(inItem) +& " in " +& getEnvName(inVarEnv));
+        extl = Util.listMap2(inExtends, qualifyExtends, inEnv, inClassType);
       then
-        fail();
-  end matchcontinue;
-end replaceRedeclaredClassesInEnv;
+        extl;
+  end match;
+end qualifyExtendsList;
 
-public function extractRedeclaresFromModifier
-  "Returns a list of redeclare elements given a redeclaration modifier."
-  input SCode.Mod inMod;
-  output list<SCode.Element> outRedeclares;
-algorithm
-  outRedeclares := match(inMod)
-    local
-      list<SCode.SubMod> sub_mods;
-      list<SCode.Element> redeclares;
+protected function qualifyExtends
+  "Fully qualifies the base class name in an extends clause. This is done to
+  avoid some cases where the lookup might exhibit exponential complexity with
+  regards to the nesting depth of classes. One such case is the pattern used in
+  the MSL, where every class extends from a class in Modelica.Icons:
     
-    case (SCode.MOD(subModLst = sub_mods))
-      equation
-        redeclares = Util.listFold(sub_mods, extractRedeclareFromSubMod, {});
-      then
-        redeclares;
-
-    else then {};
-  end match;
-end extractRedeclaresFromModifier;
-
-protected function extractRedeclareFromSubMod
-  "Checks a submodifier and adds the redeclare element to the list of redeclares
-  if the modifier is a redeclaration modifier."
-  input SCode.SubMod inMod;
-  input list<SCode.Element> inRedeclares;
-  output list<SCode.Element> outRedeclares;
+    package Modelica
+      package Icons end Icons;
+      
+      package A
+        extends Modelica.Icons.foo;
+        package B
+          extends Modelica.Icons.bar;
+          package C
+            ...
+          end C;
+       end B;
+     end A;
+     
+   To look a name up in C that references a name in the top scope we need to
+   first look in C. When the name is not found there we look in B, which extends
+   Modelica.Icons.bar. We then need to look for Modelica in B, and then Modelica
+   in A, which extends Modelica.Icons.foo. We then need to follow that extends,
+   and look for Modelica in A, etc. This means that we need to look up 2^n
+   extends to find a relative name at the top scope. By fully qualifying the
+   base class names we avoid these problems."
+  input Extends inExtends;
+  input Env inEnv;
+  input ClassType inClassType;
+  output Extends outExtends;
 algorithm
-  outRedeclares := match(inMod, inRedeclares)
+  outExtends := matchcontinue(inExtends, inEnv, inClassType)
     local
-      SCode.Element redecl;
+      Absyn.Path bc;
+      list<SCode.Element> redecl;
+      Absyn.Ident id;
+      Absyn.Info info;
+      Option<Absyn.Path> qbc;
+      Option<Item> opt_item;
 
-    // Redeclaration of a class definition.
-    case (SCode.NAMEMOD(A = SCode.REDECL(elementLst = 
-        {redecl as SCode.CLASS(name = _)})), _)
-      then redecl :: inRedeclares;
+    // Check if we're extending a builtin type such as Real, in which case we
+    // don't need to do anything.
+    case (EXTENDS(baseClass = Absyn.IDENT(name = id), 
+        redeclareModifiers = redecl), _, _)
+      equation
+        _ = SCodeLookup.lookupBuiltinType(id);
+      then
+        inExtends;
 
-    // Redeclaration of a component.
-    case (SCode.NAMEMOD(A = SCode.REDECL(elementLst =
-        {redecl as SCode.COMPONENT(name = _)})), _)
-      then redecl :: inRedeclares;
+    case (EXTENDS(baseClass = bc, 
+        redeclareModifiers = redecl, info = info), _, _)
+      equation
+        (qbc, opt_item) = qualifyExtends2(bc, info, inEnv);
+      then
+        qualifyExtends3(qbc, opt_item, inExtends, inClassType, inEnv);
 
-    // Not a redeclaration.
-    else then inRedeclares;
+  end matchcontinue;
+end qualifyExtends;
+
+protected function qualifyExtends2
+  "Tries to look up the given base class, and returns the full path and
+  environment item if it succeeds. If it fails to find the class it returns
+  NONE() for these arguments instead."
+  input Absyn.Path inBaseClass;
+  input Absyn.Info inInfo;
+  input Env inEnv;
+  output Option<Absyn.Path> outBaseClass;
+  output Option<Item> outItem;
+algorithm
+  (outBaseClass, outItem) := matchcontinue(inBaseClass, inInfo, inEnv)
+    local
+      Absyn.Path bc;
+      Absyn.Info info;
+      Env env;
+      Item item;
+
+    case (_, _, _)
+      equation
+        false = Absyn.pathIsFullyQualified(inBaseClass);
+        (item, bc, env) = SCodeLookup.lookupNameInPackage(inBaseClass, inEnv);
+        bc = mergePathWithEnvPath(bc, env);
+      then
+        (SOME(bc), SOME(item));
+
+    case (_, _, _)
+      equation
+        bc = Absyn.removePartialPrefix(getEnvPath(inEnv), inBaseClass);
+        (item, bc, env) = 
+          SCodeLookup.lookupName(inBaseClass, inEnv, inInfo, NONE());
+        bc = mergePathWithEnvPath(bc, env);
+      then
+        (SOME(bc), SOME(item));
+
+    else (NONE(), NONE());
+  end matchcontinue;
+end qualifyExtends2;
+
+protected function qualifyExtends3
+  input Option<Absyn.Path> inQualifiedBC;
+  input Option<Item> inItem;
+  input Extends inExtends;
+  input ClassType inClassType;
+  input Env inEnv;
+  output Extends outExtends;
+algorithm
+  outExtends := match(inQualifiedBC, inItem, inExtends, inClassType, inEnv)
+    local
+      Absyn.Path bc, obc;
+      Item item;
+      list<SCode.Element> rl;
+      Absyn.Info info;
+
+    case (SOME(bc), SOME(item), EXTENDS(obc, rl, info), _, _)
+      equation
+        SCodeCheck.checkExtendsReplaceability(item, obc, info);
+        bc = Absyn.makeFullyQualified(bc);
+        rl = Util.listMap1(rl, SCodeFlattenRedeclare.qualifyRedeclare, inEnv);
+        Util.listMap02(rl, SCodeCheck.checkRedeclareModifier, bc, inEnv);
+      then
+        EXTENDS(bc, rl, info);
+
+    else inExtends;
   end match;
-end extractRedeclareFromSubMod;
+end qualifyExtends3;
 
 protected function addExtendsToEnvExtendsTable
   "Adds an Extents to the environment."
@@ -878,73 +729,93 @@ protected function addExtendsToEnvExtendsTable
   input Env inEnv;
   output Env outEnv;
 protected
-  Option<String> name;
-  FrameType ty;
-  AvlTree tree;
-  ImportTable imps;
   list<Extends> exts;
-  list<SCode.Element> ce;
-  Env rest_env;
-  Util.StatefulBoolean is_used;
+  list<SCode.Element> re;
+  Option<SCode.Element> cei;
 algorithm
-  FRAME(name, ty, tree, EXTENDS_TABLE(exts, ce), imps, is_used) :: rest_env := inEnv;
+  EXTENDS_TABLE(exts, re, cei) := getEnvExtendsTable(inEnv);
   exts := inExtends :: exts;
-  outEnv := FRAME(name, ty, tree, EXTENDS_TABLE(exts, ce), imps, is_used) :: rest_env;
+  outEnv := setEnvExtendsTable(EXTENDS_TABLE(exts, re, cei), inEnv);
 end addExtendsToEnvExtendsTable;
 
-protected function addClassExtendsToEnvExtendsTable
+protected function addElementRedeclarationToEnvExtendsTable
+  input SCode.Element inRedeclare;
+  input Env inEnv;
+  output Env outEnv;
+protected
+  list<Extends> exts;
+  list<SCode.Element> re;
+  Option<SCode.Element> cei;
+algorithm
+  EXTENDS_TABLE(exts, re, cei) := getEnvExtendsTable(inEnv);
+  re := inRedeclare :: re;
+  outEnv := setEnvExtendsTable(EXTENDS_TABLE(exts, re, cei), inEnv);
+end addElementRedeclarationToEnvExtendsTable;
+  
+public function addClassExtendsInfoToEnv
   "Adds a class extends to the environment."
   input SCode.Element inClassExtends;
   input Env inEnv;
   output Env outEnv;
-protected
-  Option<String> name;
-  FrameType ty;
-  AvlTree tree;
-  ImportTable imps;
-  list<Extends> exts;
-  list<SCode.Element> ce;
-  Env rest_env;
-  Util.StatefulBoolean is_used;
 algorithm
-  FRAME(name, ty, tree, EXTENDS_TABLE(exts, ce), imps, is_used) :: rest_env := inEnv;
-  ce := inClassExtends :: ce;
-  outEnv := FRAME(name, ty, tree, EXTENDS_TABLE(exts, ce), imps, is_used) :: rest_env;
-end addClassExtendsToEnvExtendsTable;
+  outEnv := matchcontinue(inClassExtends, inEnv)
+    local
+      list<Extends> bcl;
+      list<SCode.Element> re;
+      String estr;
+
+    case (_, _)
+      equation
+        EXTENDS_TABLE(bcl, re, NONE()) = getEnvExtendsTable(inEnv);
+      then
+        setEnvExtendsTable(EXTENDS_TABLE(bcl, re, SOME(inClassExtends)), inEnv);
+
+    else
+      equation
+        estr = "- SCodeEnv.addClassExtendsInfoToEnv: Trying to overwrite " +& 
+               "existing class extends information, this should not happen!.";
+        Error.addMessage(Error.INTERNAL_ERROR, {estr});
+      then
+        fail();
+
+  end matchcontinue;
+end addClassExtendsInfoToEnv;
 
 protected function extendEnvWithClassComponents
   "Extends the environment with a class's components."
   input String inClassName;
   input SCode.ClassDef inClassDef;
   input Env inEnv;
+  input Env inEnclosingScope;
   input Absyn.Info inInfo;
   output Env outEnv;
 algorithm
-  outEnv := match(inClassName, inClassDef, inEnv, inInfo)
+  outEnv := match(inClassName, inClassDef, inEnv, inEnclosingScope, inInfo)
     local
       list<SCode.Element> el;
       list<SCode.Enum> enums;
-      Absyn.TypeSpec enum_type;
+      Absyn.TypeSpec ty, enum_type;
       Env env;
-      Absyn.Path path;
       SCode.Mod mods;
-      Absyn.TypeSpec ty;
+      Absyn.Path path;
 
-    case (_, SCode.PARTS(elementLst = el), _, _)
+    case (_, SCode.PARTS(elementLst = el), _, _, _)
       equation
         env = Util.listFold(el, extendEnvWithElement, inEnv);
       then
         env;
 
     case (_, SCode.DERIVED(typeSpec = ty as Absyn.TPATH(path = path),
-        modifications = mods), _, _)
+        modifications = mods), _, _, _)
       equation
-        env = extendEnvWithExtends(SCode.EXTENDS(path, SCode.PUBLIC(), mods, NONE(),
-          inInfo), inEnv);
+        SCodeCheck.checkRecursiveShortDefinition(ty, inClassName,
+          inEnclosingScope, inInfo);
+        env = extendEnvWithExtends(SCode.EXTENDS(path, SCode.PUBLIC(), mods, 
+          NONE(), inInfo), inEnv);
       then
         env;
 
-    case (_, SCode.ENUMERATION(enumLst = enums), _, _)
+    case (_, SCode.ENUMERATION(enumLst = enums), _, _, _)
       equation
         enum_type = Absyn.TPATH(Absyn.IDENT(inClassName), NONE());
         env = Util.listFold1(enums, extendEnvWithEnum, enum_type, inEnv);
@@ -976,7 +847,7 @@ algorithm
     case (SCode.CLASS(name = name, prefixes = SCode.PREFIXES(redeclarePrefix = SCode.REDECLARE())), _)
       equation
         false = isClassExtends(inElement);
-        env = addClassExtendsToEnvExtendsTable(inElement, inEnv);
+        env = addElementRedeclarationToEnvExtendsTable(inElement, inEnv);
         env = extendEnvWithClassDef(inElement, env);
       then
         env;
@@ -1155,13 +1026,22 @@ algorithm
 end extendEnvWithElementItem;
 
 public function updateExtendsInEnv
-  "While building the environment we store all class extends in the extends
+  "Wrapper for updateExtendsInEnv2"
+  input Env inEnv;
+  output Env outEnv;
+algorithm
+  outEnv := updateExtendsInEnv2(inEnv, USERDEFINED());
+end updateExtendsInEnv;
+
+public function updateExtendsInEnv2
+  /*"While building the environment we store all class extends in the extends
   table. This function will go through the environment and insert all class
   extends into the environment instead. This is done because we need to know
   which class is extended (see comment in extendsEnvWithClassExtends), which
   means we need a complete environment to be able to do look up before this can
-  be done."
+  be done."*/
   input Env inEnv;
+  input ClassType inClassType;
   output Env outEnv;
 protected
   Env env, rest_env;
@@ -1169,24 +1049,24 @@ protected
   FrameType ty;
   AvlTree tree;
   list<Extends> bcl;
-  list<SCode.Element> ce;
+  list<SCode.Element> re;
+  Option<SCode.Element> cei;
   ImportTable imps;
   Util.StatefulBoolean is_used;
   ExtendsTable ex;
 algorithm
-  FRAME(extendsTable = EXTENDS_TABLE(classExtends = ce)) :: _ := inEnv;
-  env := Util.listFold(ce, extendEnvWithClassExtends, inEnv);
-  FRAME(name, ty, tree, EXTENDS_TABLE(bcl, _), imps, is_used) :: rest_env := env;
+  FRAME(name, ty, tree, EXTENDS_TABLE(bcl, re, _), imps, is_used) :: rest_env := inEnv;
   ex := newExtendsTable();
   env := enterFrame(FRAME(name, ty, tree, ex, imps, is_used), rest_env);
-  bcl := Util.listMap1(bcl, qualifyExtends, env);
-  SOME(tree) := insertClassExtendsIntoClassEnv(SOME(tree), inEnv);
-  outEnv := FRAME(name, ty, tree, EXTENDS_TABLE(bcl, {}), imps, is_used) :: rest_env;
-end updateExtendsInEnv;
+  bcl := qualifyExtendsList(bcl, inClassType, env);
+  env := FRAME(name, ty, tree, EXTENDS_TABLE(bcl, {}, NONE()), imps, is_used) :: rest_env;
+  SOME(tree) := updateExtendsInEnv3(SOME(tree), env);
+  env := FRAME(name, ty, tree, EXTENDS_TABLE(bcl, {}, NONE()), imps, is_used) :: rest_env;
+  outEnv := env;
+  //outEnv := SCodeFlattenRedeclare.addElementRedeclarationsToEnv(re, env);
+end updateExtendsInEnv2;
 
-protected function insertClassExtendsIntoClassEnv
-  "Helper function to insertClassExtendsIntoEnv. Recurses through the class tree
-  and insert class extends into the environment with insertClassExtendsIntoEnv."
+protected function updateExtendsInEnv3
   input Option<AvlTree> inTree;
   input Env inEnv;
   output Option<AvlTree> outTree;
@@ -1211,9 +1091,10 @@ algorithm
         height = h, left = left, right = right)), _)
       equation
         env = enterFrame(class_frame, inEnv);
-        class_frame :: rest_env = updateExtendsInEnv(env);
-        left = insertClassExtendsIntoClassEnv(left, inEnv);
-        right = insertClassExtendsIntoClassEnv(right, inEnv);
+        (cls, env) = SCodeFlattenRedeclare.updateClassExtends(cls, env, cls_ty);
+        class_frame :: rest_env = updateExtendsInEnv2(env, cls_ty);
+        left = updateExtendsInEnv3(left, inEnv);
+        right = updateExtendsInEnv3(right, inEnv);
         item = CLASS(cls, {class_frame}, cls_ty);
       then
         SOME(AVLTREENODE(SOME(AVLTREEVALUE(name, item)), h, left, right));
@@ -1221,369 +1102,12 @@ algorithm
     case (SOME(AVLTREENODE(value = value, height = h, 
         left = left, right = right)), _)
       equation
-        left = insertClassExtendsIntoClassEnv(left, inEnv);
-        right = insertClassExtendsIntoClassEnv(right, inEnv);
+        left = updateExtendsInEnv3(left, inEnv);
+        right = updateExtendsInEnv3(right, inEnv);
       then
         SOME(AVLTREENODE(value, h, left, right));
   end match;
-end insertClassExtendsIntoClassEnv;
-
-protected function replaceRedeclaredElementInEnv
-  "Replaces a redeclared element in the environment."
-  input SCode.Element inRedeclare;
-  input Env inEnv;
-  output Env outEnv;
-algorithm
-  outEnv := matchcontinue(inRedeclare, inEnv)
-    local
-      SCode.Ident name;
-      SCode.Element cls;
-      Env env;
-      Absyn.Path path;
-      Option<Env> opt_env;
-      Absyn.Info info;
-
-    // A redeclared class definition.
-    case (SCode.CLASS(name = name, info = info), _)
-      equation
-        (_, path, env) = 
-          SCodeLookup.lookupClassName(Absyn.IDENT(name), inEnv, info);
-        path = joinPaths(getEnvPath(env), path);
-        env = replaceElementInEnv(path, inRedeclare, inEnv);
-      then
-        env;
-
-    // A redeclared component.
-    case (SCode.COMPONENT(name = name, info = info), _)
-      equation
-        (_, path, env) = 
-          SCodeLookup.lookupVariableName(Absyn.IDENT(name), inEnv, info);
-        path = joinPaths(getEnvPath(env), path);
-        env = replaceElementInEnv(path, inRedeclare, inEnv);
-      then
-        env;
-
-    else
-      equation
-        true = RTOpts.debugFlag("failtrace");
-        Debug.traceln("- SCodeEnv.replaceRedeclaredElementInEnv failed on " +&
-          SCode.elementName(inRedeclare) +& " in " +& getEnvName(inEnv));
-      then
-        fail();
-
-  end matchcontinue;
-end replaceRedeclaredElementInEnv;
-
-protected function replaceElementInEnv
-  "Replaces an element in the environment with another element, which is needed
-  for redeclare. There are two cases here: either the element we want to replace
-  is in the current path or it's somewhere else in the environment. If it's in
-  the current path we can just go through the frames until we find the right
-  frame to replace the element in. If it's not we need to look up the correct
-  class in the environment and continue into the class's environment."
-  input Absyn.Path inPath;
-  input SCode.Element inElement;
-  input Env inEnv;
-  output Env outEnv;
-protected
-  Env env;
-  Boolean next_scope_available;
-  Frame f;
-algorithm
-  // Reverse the frame order so that the frames are in the same order as the path.
-  env := listReverse(inEnv);
-  // Make the redeclare in both the current environment and the global.
-  // TODO: do this in a better way.
-  f :: env := replaceElementInEnv2(inPath, inElement, env);
-  {f} := replaceElementInEnv2(inPath, inElement, {f});
-  outEnv := listReverse(f :: env);
-end replaceElementInEnv;
-
-protected function checkNextScopeAvailability
-  "Checks if the next scope in the environment is the scope we are looking for
-  next. If the first identifier in the path has the same name as the next scope
-  it returns true, otherwise false."
-  input Absyn.Path inPath;
-  input Env inEnv;
-  output Boolean isAvailable;
-algorithm
-  isAvailable := match(inPath, inEnv)
-    local
-      String name, scope_name;
-
-    case (Absyn.QUALIFIED(name = name), _ :: FRAME(name = SOME(scope_name)) :: _)
-      then stringEqual(name, scope_name);
-
-    else then false;
-  end match;
-end checkNextScopeAvailability;
-
-protected function replaceElementInEnv2
-  "Helper function to replaceClassInEnv."
-  input Absyn.Path inPath;
-  input SCode.Element inElement;
-  input Env inEnv;
-  output Env outEnv;
-algorithm
-  outEnv := replaceElementInEnv3(inPath, inElement, inEnv,
-    checkNextScopeAvailability(inPath, inEnv));
-end replaceElementInEnv2;
-
-protected function replaceElementInEnv3
-  "Helper function to replaceClassInEnv."
-  input Absyn.Path inPath;
-  input SCode.Element inElement;
-  input Env inEnv;
-  input Boolean inNextScopeAvailable;
-  output Env outEnv;
-algorithm
-  outEnv := matchcontinue(inPath, inElement, inEnv, inNextScopeAvailable)
-    local
-      String name, scope_name;
-      Absyn.Path path;
-      Env env, rest_env;
-      Frame f;
-
-    // A simple identifier means that the element should be replaced in the
-    // current scope.
-    case (Absyn.IDENT(name = name), _, _, _)
-      equation
-        env = replaceElementInScope(name, inElement, inEnv);
-      then
-        env;
-
-    // If the next frame is the next scope we want to reach we can just continue
-    // into it.
-    case (Absyn.QUALIFIED(path = path), _, f :: rest_env, true)
-      equation
-        rest_env = replaceElementInEnv2(path, inElement, rest_env);
-        env = f :: rest_env;
-      then
-        env;
-
-    // If there are no more scopes available in the environment we need to start
-    // going into classes in the environment instead.
-    case (Absyn.QUALIFIED(name = name, path = path), _, _, false)
-      equation
-        env = replaceElementInClassEnv(inPath, inElement, inEnv);
-      then
-        env;
-
-    else
-      equation
-        true = RTOpts.debugFlag("failtrace");
-        Debug.traceln("- SCodeFlatten.replaceElementInEnv3 failed.");
-      then
-        fail();
-
-  end matchcontinue;
-end replaceElementInEnv3;
-
-protected function replaceElementInScope
-  "Replaces an element in the current scope."
-  input SCode.Ident inElementName;
-  input SCode.Element inElement;
-  input Env inEnv;
-  output Env outEnv;
-algorithm
-  outEnv := match(inElementName, inElement, inEnv)
-    local
-      Option<String> name;
-      FrameType ty;
-      AvlTree tree;
-      ExtendsTable exts;
-      ImportTable imps;
-      Env env, class_env;
-      Util.StatefulBoolean is_used;
-
-    case (_, SCode.CLASS(name = _), 
-        FRAME(name, ty, tree, exts, imps, is_used) :: env)
-      equation
-        class_env = makeClassEnvironment(inElement);
-        tree = avlTreeReplace(tree, inElementName, 
-          newClassItem(inElement, class_env, USERDEFINED()));
-      then
-        FRAME(name, ty, tree, exts, imps, is_used) :: env;
-
-    case (_, SCode.COMPONENT(name = _),
-        FRAME(name, ty, tree, exts, imps, is_used) :: env)
-      equation
-        tree = avlTreeReplace(tree, inElementName, newVarItem(inElement, false));
-      then
-        FRAME(name, ty, tree, exts, imps, is_used) :: env;
-
-  end match;
-end replaceElementInScope;
-
-protected function replaceElementInClassEnv
-  "Replaces an element in the environment of a class."
-  input Absyn.Path inClassPath;
-  input SCode.Element inElement;
-  input Env inEnv;
-  output Env outEnv;
-algorithm
-  outEnv := match(inClassPath, inElement, inEnv)
-    local
-      Option<String> frame_name;
-      FrameType ty;
-      AvlTree tree;
-      ExtendsTable exts;
-      ImportTable imps;
-      Env rest_env, class_env, env;
-      Item item;
-      String name;
-      Absyn.Path path;
-      SCode.Element cls;
-      Util.StatefulBoolean is_used;
-      ClassType cls_ty;
-
-    // A simple identifier means that we have reached the environment in which
-    // the element should be replaced.
-    case (Absyn.IDENT(name = name), _, _)
-      equation
-        env = replaceElementInScope(name, inElement, inEnv);
-      then
-        env;
-
-    // A qualified path means that we should look up the first identifier and
-    // continue into the found class's environment.
-    case (Absyn.QUALIFIED(name = name, path = path), _,
-        FRAME(frame_name, ty, tree, exts, imps, is_used) :: rest_env)
-      equation
-        CLASS(cls = cls, env = class_env, classType = cls_ty) = 
-          avlTreeGet(tree, name);
-        class_env = replaceElementInClassEnv(path, inElement, class_env);
-        tree = avlTreeReplace(tree, name, CLASS(cls, class_env, cls_ty));
-      then
-        FRAME(frame_name, ty, tree, exts, imps, is_used) :: rest_env;
-
-  end match;
-end replaceElementInClassEnv;
-
-protected function extendEnvWithClassExtends
-  input SCode.Element inClassExtends;
-  input Env inEnv;
-  output Env outEnv;
-algorithm
-  outEnv := matchcontinue(inClassExtends, inEnv)
-    local
-      SCode.Ident bc, cls_name;
-      list<SCode.Element> el;
-      Absyn.Path path;
-      SCode.Partial pp;
-      SCode.Encapsulated ep;
-      SCode.Restriction res;
-      SCode.Prefixes prefixes;
-      Absyn.Info info;
-      Env env;
-      SCode.Mod mods;
-      Option<Absyn.ExternalDecl> ext_decl;
-      list<SCode.Equation> nel, iel;
-      list<SCode.AlgorithmSection> nal, ial;
-
-    // When a 'redeclare class extends X' is encountered we insert a 'class X
-    // extends BaseClass.X' into the environment, with the same elements as the
-    // class extends clause. BaseClass is the class that class X is inherited
-    // from. This allows use to look up elements in class extends, because
-    // lookup can handle normal extends. To be able to differentiate between
-    // normal classes and classes added by this function we mark them as
-    // 'external "class_extends"'.
-    case (SCode.CLASS(
-        prefixes = prefixes,
-        encapsulatedPrefix = ep,
-        partialPrefix = pp,
-        restriction = res,
-        classDef = SCode.CLASS_EXTENDS(
-          baseClassName = bc, 
-          modifications = mods,
-          composition = SCode.PARTS(
-          elementLst = el,
-          normalEquationLst = nel,
-          initialEquationLst = iel,
-          normalAlgorithmLst = nal,
-          initialAlgorithmLst = ial)),
-        info = info), _)
-      equation
-        // Look up which extends the base class comes from and add it to the
-        // base class name.
-        path = SCodeLookup.lookupBaseClass(bc, inEnv, info);
-        path = Absyn.joinPaths(path, Absyn.IDENT(bc));
-        // Insert a 'class bc extends path' into the environment.
-        el = SCode.EXTENDS(path, SCode.PUBLIC(), mods, NONE(), info) :: el;
-        ext_decl = SOME(Absyn.EXTERNALDECL(NONE(), SOME("class_extends"), 
-          NONE(), {}, NONE()));
-        env = extendEnvWithClass(SCode.CLASS(bc, prefixes, ep, pp, res, 
-          SCode.PARTS(el, nel, iel, nal, ial, ext_decl, {}, NONE()), info), inEnv);
-      then env;
-
-    case (SCode.CLASS(classDef = SCode.CLASS_EXTENDS(baseClassName = bc), info = info), _)
-      equation
-        Error.addSourceMessage(Error.INVALID_REDECLARATION_OF_CLASS,
-          {bc}, info);
-      then
-        fail();
-
-    case (SCode.CLASS(name = cls_name, info = info), _)
-      equation
-        path = SCodeLookup.lookupBaseClass(cls_name, inEnv, info);
-        env = addRedeclareToEnvExtendsTable(inClassExtends, path, inEnv, info);
-      then
-        env;
-
-  end matchcontinue;
-end extendEnvWithClassExtends;
-
-protected function addRedeclareToEnvExtendsTable
-  input SCode.Element inClass;
-  input Absyn.Path inBaseClass;
-  input Env inEnv;
-  input Absyn.Info inInfo;
-  output Env outEnv;
-protected
-  Option<String> name;
-  FrameType ty;
-  AvlTree tree;
-  ImportTable imps;
-  Util.StatefulBoolean iu;
-  list<Extends> bcl;
-  list<SCode.Element> ce;
-  Env rest_env;
-algorithm
-  FRAME(name, ty, tree, EXTENDS_TABLE(bcl, ce), imps, iu) :: rest_env := inEnv;
-  bcl := addRedeclareToEnvExtendsTable2(inClass, inBaseClass, bcl);
-  outEnv := FRAME(name, ty, tree, EXTENDS_TABLE(bcl, ce), imps, iu) :: rest_env;
-end addRedeclareToEnvExtendsTable;
-
-protected function addRedeclareToEnvExtendsTable2
-  input SCode.Element inClass;
-  input Absyn.Path inBaseClass;
-  input list<Extends> inExtends;
-  output list<Extends> outExtends;
-algorithm
-  outExtends := matchcontinue(inClass, inBaseClass, inExtends)
-    local
-      Extends ex;
-      list<Extends> exl;
-      Absyn.Path bc;
-      list<SCode.Element> el;
-      Absyn.Info info;
-      SCode.Ident cls_name;
-
-    case (SCode.CLASS(name = cls_name), _, (ex as EXTENDS(bc, el, info)) :: exl)
-      equation
-        true = Absyn.pathEqual(inBaseClass, bc);
-        ex = EXTENDS(bc, inClass :: el, info);
-      then
-        ex :: exl;
-
-    case (_, _, ex :: exl)
-      equation
-        exl = addRedeclareToEnvExtendsTable2(inClass, inBaseClass, exl);
-      then
-        ex :: exl;
-    
-  end matchcontinue;
-end addRedeclareToEnvExtendsTable2;
+end updateExtendsInEnv3;
 
 public function getEnvName
   "Returns the environment path as a string."
@@ -1634,7 +1158,7 @@ algorithm
   end match;
 end getEnvPath;
 
-protected function getItemInfo
+public function getItemInfo
   "Returns the Absyn.Info of an environment item."
   input Item inItem;
   output Absyn.Info outInfo;
@@ -1648,7 +1172,7 @@ algorithm
   end match;
 end getItemInfo;
 
-protected function getItemName
+public function getItemName
   "Returns the name of an environment item."
   input Item inItem;
   output String outName;
@@ -1688,6 +1212,98 @@ algorithm
     else then inEnv;
   end match;
 end mergeItemEnv;
+
+public function getItemPrefixes
+  input Item inItem;
+  output SCode.Prefixes outPrefixes;
+algorithm
+  outPrefixes := match(inItem)
+    local
+      SCode.Prefixes pf;
+
+    case CLASS(cls = SCode.CLASS(prefixes = pf)) then pf;
+    case VAR(var = SCode.COMPONENT(prefixes = pf)) then pf;
+  end match;
+end getItemPrefixes;
+
+public function getEnvExtendsTable
+  input Env inEnv;
+  output ExtendsTable outExtendsTable;
+algorithm
+  FRAME(extendsTable = outExtendsTable) :: _ := inEnv;
+end getEnvExtendsTable;
+
+public function setEnvExtendsTable
+  input ExtendsTable inExtendsTable;
+  input Env inEnv;
+  output Env outEnv;
+protected
+  Option<String> name;
+  FrameType ty;
+  AvlTree tree;
+  ExtendsTable ext;
+  ImportTable imps;
+  Util.StatefulBoolean is_used;
+  Env rest_env;
+algorithm
+  FRAME(name, ty, tree, _, imps, is_used) :: rest_env := inEnv;
+  outEnv := FRAME(name, ty, tree, inExtendsTable, imps, is_used) :: rest_env;
+end setEnvExtendsTable;
+
+public function mergePathWithEnvPath
+  "Merges a path with the environment path."
+  input Absyn.Path inPath;
+  input Env inEnv;
+  output Absyn.Path outPath;
+algorithm
+  outPath := matchcontinue(inPath, inEnv)
+    local
+      Absyn.Path path;
+      Absyn.Ident id;
+
+    // Try to merge the last identifier in the path with the environment path.
+    case (_, _)
+      equation
+        id = Absyn.pathLastIdent(inPath);
+        path = Absyn.joinPaths(getEnvPath(inEnv), Absyn.IDENT(id));
+      then
+        path;
+
+    // If the previous case failed (which will happen at the top-scope when
+    // getEnvPath fails), just return the path as it is.
+    else then inPath;
+  end matchcontinue;
+end mergePathWithEnvPath;
+
+public function joinPaths
+  "Joins two paths. This functions is similar to Absyn.joinPaths, but with
+  different semantics for fully qualified paths."
+  input Absyn.Path inPath1;
+  input Absyn.Path inPath2;
+  output Absyn.Path outPath;
+algorithm
+  outPath := match(inPath1, inPath2)
+    local
+      Absyn.Ident id;
+      Absyn.Path path;
+
+    // The second path is fully qualified, return only that path.
+    case (_, Absyn.FULLYQUALIFIED(path = _)) then inPath2;
+    case (Absyn.IDENT(name = id), _) then Absyn.QUALIFIED(id, inPath2);
+    case (Absyn.QUALIFIED(name = id, path = path), _)
+      equation
+        path = joinPaths(path, inPath2);
+      then
+        Absyn.QUALIFIED(id, path);
+
+    // The first path is fully qualified, merge it with the second path.
+    case (Absyn.FULLYQUALIFIED(path = path), _)
+      equation
+        path = joinPaths(path, inPath2);
+      then
+        Absyn.FULLYQUALIFIED(path);
+  end match;
+end joinPaths;
 
 public function buildInitialEnv
   "Build a new environment that contains some things that can't be represented
@@ -1893,7 +1509,7 @@ algorithm
   outString := "\t\t" +& qual_str +& unqual_str;
 end printImportTableStr;
 
-protected function avlTreeAdd
+public function avlTreeAdd
   "Inserts a new value into the tree."
   input AvlTree inAvlTree;
   input AvlKey inKey;
@@ -2006,7 +1622,7 @@ algorithm
   end match;
 end avlTreeGet2;
 
-protected function avlTreeReplace
+public function avlTreeReplace
   "Replaces the value of an already existing node in the tree with a new value."
   input AvlTree inAvlTree;
   input AvlKey inKey;

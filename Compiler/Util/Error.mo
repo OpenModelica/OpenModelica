@@ -256,6 +256,9 @@ public constant ErrorID METARECORD_CONTAINS_METARECORD_MEMBER=168;
 public constant ErrorID INVALID_EXTERNAL_OBJECT=169;
 public constant ErrorID CIRCULAR_COMPONENTS=170;
 public constant ErrorID FAILURE_TO_DEDUCE_DIMS_FROM_MOD=171;
+public constant ErrorID REPLACEABLE_BASE_CLASS=172;
+public constant ErrorID NON_REPLACEABLE_CLASS_EXTENDS=173;
+public constant ErrorID ERROR_FROM_HERE=174;
 
 public constant ErrorID UNBOUND_PARAMETER_WITH_START_VALUE_WARNING=499;
 public constant ErrorID UNBOUND_PARAMETER_WARNING=500;
@@ -418,7 +421,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (REDECLARE_CLASS_AS_VAR,TRANSLATION(),ERROR(),
           "Trying to redeclare the class %s as a variable"),
           (REDECLARE_NON_REPLACEABLE,TRANSLATION(),ERROR(),
-          "Trying to redeclare class %s but class not declared as repleacable"),
+          "Trying to redeclare class %s but class not declared as replaceable"),
           (COMPONENT_INPUT_OUTPUT_MISMATCH,TRANSLATION(),ERROR(),
           "Component declared as %s when having the variable %s declared as input"),
           (ARRAY_DIMENSION_MISMATCH,TRANSLATION(),ERROR(),
@@ -722,6 +725,12 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           "Cyclically dependent constants or parameters found in scope %s: %s"),
           (FAILURE_TO_DEDUCE_DIMS_FROM_MOD,TRANSLATION(),WARNING(),
           "Failed to deduce dimensions of %s due to unknown dimensions of modifier %s."),
+          (REPLACEABLE_BASE_CLASS,TRANSLATION(),ERROR(),
+          "Base class %s is replaceable."),
+          (NON_REPLACEABLE_CLASS_EXTENDS,TRANSLATION(),ERROR(),
+          "Non-replaceable base class %s in class extends."),
+          (ERROR_FROM_HERE,TRANSLATION(),NOTIFICATION(),
+          "From here:"),
           (MATCHCONTINUE_TO_MATCH_OPTIMIZATION,TRANSLATION(),NOTIFICATION(),"This matchcontinue expression has no overlapping patterns and should be using match instead of matchcontinue."),
           (META_DEAD_CODE,TRANSLATION(),NOTIFICATION(),"Dead code elimination: %s."),
           (META_UNUSED_DECL,TRANSLATION(),NOTIFICATION(),"Unused local variable: %s."),

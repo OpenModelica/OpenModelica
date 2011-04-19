@@ -123,19 +123,19 @@ algorithm
       equation
         true = RTOpts.debugFlag("scodeFlatten");
         
-        System.startTimer();
+        //System.startTimer();
 
         env = SCodeEnv.buildInitialEnv();
         env = SCodeEnv.extendEnvWithClasses(prog, env);
         env = SCodeEnv.updateExtendsInEnv(env);
+
         (prog, env) = SCodeDependency.analyse(inClassName, env, prog);
         prog = SCodeFlattenImports.flattenProgram(prog, env);
         prog = SCodeFlattenExtends.flattenProgram(prog, env);
-        prog = SCodeFlattenRedeclare.flattenProgram(prog, env);
         
-        System.stopTimer();
-        Debug.traceln("SCodeFlatten.flattenClassInProgram took " +& 
-          realString(System.getTimerIntervalTime()) +& " seconds");
+        //System.stopTimer();
+        //Debug.traceln("SCodeFlatten.flattenClassInProgram took " +& 
+        //  realString(System.getTimerIntervalTime()) +& " seconds");
         
       then
         prog;

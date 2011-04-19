@@ -166,7 +166,6 @@ algorithm
              r_1,
              d_1,
              file_info);
-        SCodeCheck.checkRecursiveShortDefinition(scodeClass);
       then
         scodeClass;
 
@@ -1029,7 +1028,7 @@ algorithm
 
     case (Absyn.ELEMENT(name = name, constrainClass = cc,finalPrefix = f,innerOuter = io, redeclareKeywords = repl,specification = s,info = info),vis)
       equation
-        es = translateElementspec(cc, f, io, repl,  vis, s, false, info);
+        es = translateElementspec(cc, f, io, repl,  vis, s, info);
       then
         es;
 
@@ -1081,11 +1080,10 @@ protected function translateElementspec
   input Option<Absyn.RedeclareKeywords> inAbsynRedeclareKeywordsOption2;
   input SCode.Visibility inVisibility;
   input Absyn.ElementSpec inElementSpec4;
-  input Boolean inRedeclareModifier "true if the elementspec comes from a redeclare modifier, otherwise false.";
   input Absyn.Info info;
   output list<SCode.Element> outElementLst;
 algorithm
-  outElementLst := match (cc,finalPrefix,io,inAbsynRedeclareKeywordsOption2,inVisibility,inElementSpec4,inRedeclareModifier,info)
+  outElementLst := match (cc,finalPrefix,io,inAbsynRedeclareKeywordsOption2,inVisibility,inElementSpec4,info)
     local
       SCode.ClassDef de_1;
       SCode.Restriction re_1;
@@ -1125,7 +1123,7 @@ algorithm
       SCode.Flow sFl;
       SCode.Stream sSt;
 
-    case (cc,finalPrefix,_,repl,vis, Absyn.CLASSDEF(replaceable_ = rp, class_ = (cl as Absyn.CLASS(name = n,partialPrefix = pa,finalPrefix = fi,encapsulatedPrefix = e,restriction = re,body = de,info = i))),_,_)
+    case (cc,finalPrefix,_,repl,vis, Absyn.CLASSDEF(replaceable_ = rp, class_ = (cl as Absyn.CLASS(name = n,partialPrefix = pa,finalPrefix = fi,encapsulatedPrefix = e,restriction = re,body = de,info = i))),_)
       equation
         // Debug.fprintln("translate", "translating local class: " +& n);
         re_1 = translateRestriction(cl, re); // uniontype will not get translated!
@@ -1140,19 +1138,17 @@ algorithm
           n, 
           SCode.PREFIXES(vis,sRed,sFin,io,sRep), 
           sEnc, sPar, re_1, de_1, i);
-        Debug.bcall(not inRedeclareModifier, 
-          SCodeCheck.checkRecursiveShortDefinition, cls);
       then
         {cls};
 
-    case (cc,finalPrefix,_,repl,vis,Absyn.EXTENDS(path = path,elementArg = args,annotationOpt = NONE()),_,info)
+    case (cc,finalPrefix,_,repl,vis,Absyn.EXTENDS(path = path,elementArg = args,annotationOpt = NONE()),info)
       equation
         // Debug.fprintln("translate", "translating extends: " +& Absyn.pathString(n));
         mod = translateMod(SOME(Absyn.CLASSMOD(args,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH());
       then
         {SCode.EXTENDS(path,vis,mod,NONE(),info)};
 
-    case (cc,finalPrefix,_,repl,vis,Absyn.EXTENDS(path = path,elementArg = args,annotationOpt = SOME(absann)),_,info)
+    case (cc,finalPrefix,_,repl,vis,Absyn.EXTENDS(path = path,elementArg = args,annotationOpt = SOME(absann)),info)
       equation
         // Debug.fprintln("translate", "translating extends: " +& Absyn.pathString(n));
         mod = translateMod(SOME(Absyn.CLASSMOD(args,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH());
@@ -1160,17 +1156,17 @@ algorithm
       then
         {SCode.EXTENDS(path,vis,mod,SOME(ann),info)};
 
-    case (cc,_,_,_,_,Absyn.COMPONENTS(components = {}),_,info) then {};
+    case (cc,_,_,_,_,Absyn.COMPONENTS(components = {}),info) then {};
 
     case (cc,finalPrefix,io,repl,vis,Absyn.COMPONENTS(attributes =
       (attr as Absyn.ATTR(flowPrefix = fl,streamPrefix=st,variability = variability,direction = di,arrayDim = ad)),typeSpec = t,
-      components = (Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = n,arrayDim = d,modification = m),comment = comment,condition=cond) :: xs)),_,info)
+      components = (Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = n,arrayDim = d,modification = m),comment = comment,condition=cond) :: xs)),info)
       equation
         // Debug.fprintln("translate", "translating component: " +& n +& " final: " +& SCode.finalStr(SCode.boolFinal(finalPrefix)));
         setHasInnerOuterDefinitionsHandler(io); // signal the external flag that we have inner/outer definitions
         setHasStreamConnectorsHandler(st);      // signal the external flag that we have stream connectors
         xs_1 = translateElementspec(cc, finalPrefix, io, repl, vis,
-          Absyn.COMPONENTS(attr,t,xs), inRedeclareModifier, info);
+          Absyn.COMPONENTS(attr,t,xs), info);
         mod = translateMod(m, SCode.NOT_FINAL(), SCode.NOT_EACH());
         pa_1 = translateVariability(variability);
         // PR. This adds the arraydimension that may be specified together with the type of the component. 
@@ -1188,7 +1184,7 @@ algorithm
           SCode.ATTR(tot_dim,sFl,sSt,SCode.RW(),pa_1,di),
           t,mod,comment_1,cond,info) :: xs_1);
 
-    case (cc,finalPrefix,_,repl,vis,Absyn.IMPORT(import_ = imp, info = info),_,_)
+    case (cc,finalPrefix,_,repl,vis,Absyn.IMPORT(import_ = imp, info = info),_)
       equation
         // Debug.fprintln("translate", "translating import: " +& Dump.unparseImportStr(imp));
         xs_1 = translateImports(imp,vis,info);
@@ -1626,7 +1622,7 @@ algorithm
       equation
         subs = translateArgs(xs);
         n = Absyn.elementSpecName(spec);
-        elist = translateElementspec(constropt, finalPrefix, Absyn.NOT_INNER_OUTER(), NONE(), SCode.PUBLIC(), spec, true, info)
+        elist = translateElementspec(constropt, finalPrefix, Absyn.NOT_INNER_OUTER(), NONE(), SCode.PUBLIC(), spec, info)
         "LS:: do not know what to use for *protected*, so using false
          LS:: do not know what to use for *replaceable*, so using false";
         scodeFinalPrefix = SCode.boolFinal(finalPrefix);

@@ -53,7 +53,10 @@ public type FrameType = SCodeEnv.FrameType;
 public type AvlTree = SCodeEnv.AvlTree;
 public type Import = Absyn.Import;
 
-protected import SCodeFlattenImports;
+public uniontype RedeclareReplaceStrategy
+  record INSERT_REDECLARES end INSERT_REDECLARES;
+  record IGNORE_REDECLARES end IGNORE_REDECLARES;
+end RedeclareReplaceStrategy;
 
 public constant Item BUILTIN_REAL = SCodeEnv.CLASS(
   SCode.CLASS("Real", SCode.defaultPrefixes, 
@@ -90,6 +93,12 @@ public constant Item BUILTIN_EXTERNALOBJECT = SCodeEnv.CLASS(
       SCode.NOT_ENCAPSULATED(), SCode.PARTIAL(), SCode.R_CLASS(),
       SCode.PARTS({}, {}, {}, {}, {}, NONE(), {}, NONE()),
       Absyn.dummyInfo), SCodeEnv.emptyEnv, SCodeEnv.BUILTIN());
+
+protected import Debug;
+protected import RTOpts;
+protected import SCodeCheck;
+protected import SCodeFlattenImports;
+protected import SCodeFlattenRedeclare;
 
 public function lookupSimpleName
   "Looks up a simple identifier in the environment and returns the environment
@@ -206,7 +215,8 @@ algorithm
     // Look among the inherited components.
     case (_, _)
       equation
-        (item, path, _, env) = lookupInBaseClasses(inName, inEnv);
+        (item, path, _, env) = 
+          lookupInBaseClasses(inName, inEnv, INSERT_REDECLARES());
       then
         (SOME(item), SOME(path), SOME(env));
 
@@ -243,6 +253,7 @@ public function lookupInBaseClasses
   "Looks up an identifier by following the extends clauses in a scope."
   input Absyn.Ident inName;
   input Env inEnv;
+  input RedeclareReplaceStrategy inReplaceRedeclares;
   output Item outItem;
   output Absyn.Path outPath;
   output Absyn.Path outBaseClass;
@@ -259,7 +270,7 @@ algorithm
   env := SCodeEnv.removeExtendsFromLocalScope(inEnv);
   env := SCodeEnv.setImportTableHidden(env, false);
   (outItem, outPath, outBaseClass, outEnv) := 
-    lookupInBaseClasses2(inName, bcl, env);
+    lookupInBaseClasses2(inName, bcl, env, inReplaceRedeclares);
 end lookupInBaseClasses;
 
 public function lookupInBaseClasses2
@@ -268,13 +279,14 @@ public function lookupInBaseClasses2
   input Absyn.Ident inName;
   input list<Extends> inBaseClasses;
   input Env inEnv;
+  input RedeclareReplaceStrategy inReplaceRedeclares;
   output Item outItem;
   output Absyn.Path outPath;
   output Absyn.Path outBaseClass;
   output Env outEnv;
 algorithm
   (outItem, outPath, outBaseClass, outEnv) := 
-  matchcontinue(inName, inBaseClasses, inEnv)
+  matchcontinue(inName, inBaseClasses, inEnv, inReplaceRedeclares)
     local
       Absyn.Path bc, path;
       list<Extends> rest_bc;
@@ -285,23 +297,25 @@ algorithm
 
     // Look in the first base class.
     case (_, SCodeEnv.EXTENDS(baseClass = bc, redeclareModifiers = redecls, 
-        info = info) :: _, inEnv)
+        info = info) :: _, _, _)
       equation
         // Find the base class.
-        (item, _, env) = lookupBaseClassName(bc, inEnv, info);
+        (item, path, env) = lookupBaseClassName(bc, inEnv, info);
         // Hide the imports to make sure that we don't find the name via them
         // (imports are not inherited).
         item = SCodeEnv.setImportsInItemHidden(item, true);
         // Look in the base class.
-        (item, env) = SCodeEnv.replaceRedeclaredClassesInEnv(redecls, item, env, inEnv);
+        (item, env) = SCodeFlattenRedeclare.replaceRedeclares(redecls, bc, 
+          item, env, inEnv, inReplaceRedeclares);
         (item, path, env) = lookupNameInItem(Absyn.IDENT(inName), item, env);
       then
         (item, path, bc, env);
 
     // No match, check the rest of the base classes.
-    case (_, _ :: rest_bc, _)
+    case (_, _ :: rest_bc, _, _)
       equation
-        (item, path, bc, env) = lookupInBaseClasses2(inName, rest_bc, inEnv);
+        (item, path, bc, env) = 
+          lookupInBaseClasses2(inName, rest_bc, inEnv, inReplaceRedeclares);
       then
         (item, path, bc, env);
 
@@ -535,9 +549,9 @@ algorithm
         // Look up the variable type.
         (item, type_env) = lookupTypeSpec(type_spec, env, info);
         // Apply redeclares to the type and look for the name inside the type.
-        redeclares = SCodeEnv.extractRedeclaresFromModifier(mods);
-        (item, type_env) = 
-          SCodeEnv.replaceRedeclaredClassesInEnv(redeclares, item, type_env, inEnv);
+        redeclares = SCodeFlattenRedeclare.extractRedeclaresFromModifier(mods, env);
+        (item, type_env) = SCodeFlattenRedeclare.replaceRedeclaredClassesInEnv(
+          redeclares, item, type_env, inEnv);
         (item, path, env) = lookupNameInItem(inName, item, type_env);
       then
         (item, path, env);
@@ -581,8 +595,10 @@ algorithm
         // Look up the variables' type.
         (item, type_env) = lookupTypeSpec(type_spec, inEnv, info);
         // Apply redeclares to the type and look for the name inside the type.
-        redeclares = SCodeEnv.extractRedeclaresFromModifier(mods);
-        (item, type_env) = SCodeEnv.replaceRedeclaredClassesInEnv(redeclares, item, type_env, inEnv);
+        redeclares = SCodeFlattenRedeclare.extractRedeclaresFromModifier(
+          mods, inEnv);
+        (item, type_env) = SCodeFlattenRedeclare.replaceRedeclaredClassesInEnv(
+          redeclares, item, type_env, inEnv);
         (item, cref) = lookupCrefInItem(inCref, item, type_env);
       then
         (item, cref);
@@ -606,9 +622,113 @@ public function lookupBaseClass
   input Env inEnv;
   input Absyn.Info inInfo;
   output Absyn.Path outBaseClass;
+  output Item outItem;
 algorithm
-  (_, _, outBaseClass, _) := lookupInBaseClasses(inClass, inEnv);
+  (outItem, _, outBaseClass, _) := lookupInBaseClasses(inClass, inEnv,
+    INSERT_REDECLARES());
 end lookupBaseClass;
+
+public function lookupRedeclaredClassByItem
+  input Item inItem;
+  input Env inEnv;
+  input Absyn.Info inInfo;
+  output Item outItem;
+  output Env outEnv;
+algorithm
+  (outItem, outEnv) := matchcontinue(inItem, inEnv, inInfo)
+    local
+      SCode.Ident name;
+      Item item;
+      Env env;
+      SCode.Redeclare rdp;
+      SCode.Replaceable rpp;
+
+    case (SCodeEnv.CLASS(cls = SCode.CLASS(name = name)), _, _)
+      equation
+        (item, _, _, env) = lookupInBaseClasses(name, inEnv, IGNORE_REDECLARES());
+        SCode.PREFIXES(redeclarePrefix = rdp, replaceablePrefix = rpp) =
+          SCodeEnv.getItemPrefixes(item);
+        (item, env) = lookupRedeclaredClass2(item, rdp, rpp, env, inInfo);
+      then
+        (item, env);
+
+    // No error message is output if the previous case fails. This is because
+    // lookupInBaseClasses is used by SCodeEnv.extendEnvWithClassExtends when
+    // adding the redeclaration to the environment, and lookupRedeclaredClass2
+    // outputs its own errors.
+    else
+      equation
+        true = RTOpts.debugFlag("failtrace");  
+        Debug.traceln("- SCodeLookup.lookupRedeclaredClass2 failed on " +&
+            SCodeEnv.getItemName(inItem) +& " in " +&
+            SCodeEnv.getEnvName(inEnv));
+      then
+        fail();
+  end matchcontinue;
+end lookupRedeclaredClassByItem;
+
+protected function lookupRedeclaredClass2
+  input Item inItem;
+  input SCode.Redeclare inRedeclarePrefix;
+  input SCode.Replaceable inReplaceablePrefix;
+  input Env inEnv;
+  input Absyn.Info inInfo;
+  output Item outItem;
+  output Env outEnv;
+algorithm
+  (outItem, outEnv) := 
+    matchcontinue(inItem, inRedeclarePrefix, inReplaceablePrefix, inEnv, inInfo)
+    local
+      SCode.Ident name;
+      String scope_str;
+      Item item;
+      Env env;
+      Absyn.Info info;
+      SCode.Redeclare rdp;
+      SCode.Replaceable rpp;
+ 
+    // Replaceable element which is not a redeclaration => return the element.
+    case (_, SCode.NOT_REDECLARE(), SCode.REPLACEABLE(cc = _), _, _)
+      then (inItem, inEnv);
+
+    // Replaceable element which is a redeclaration => continue.
+    case (SCodeEnv.CLASS(cls = SCode.CLASS(name = name)),
+        SCode.REDECLARE(), SCode.REPLACEABLE(cc = _), _, _)
+      equation
+        (item, _, _, env) = lookupInBaseClasses(name, inEnv, IGNORE_REDECLARES());
+        SCode.PREFIXES(redeclarePrefix = rdp, replaceablePrefix = rpp) = 
+          SCodeEnv.getItemPrefixes(item);
+        (item, env) = lookupRedeclaredClass2(item, rdp, rpp, env, inInfo);
+      then
+        (item, env);
+
+    // Non-replaceable element => error.
+    case (SCodeEnv.CLASS(cls = SCode.CLASS(name = name, info = info)), 
+        _, SCode.NOT_REPLACEABLE(), _, _)
+      equation
+        Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inInfo);
+        Error.addSourceMessage(Error.REDECLARE_NON_REPLACEABLE, {name}, info);
+      then
+        fail();
+
+    // Redeclaration of class to component => error.
+    case (SCodeEnv.VAR(var = SCode.COMPONENT(name = name, info = info)), _, _, _, _)
+      equation
+        Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inInfo);
+        Error.addSourceMessage(Error.REDECLARE_CLASS_AS_VAR, {name}, info);
+      then
+        fail();
+
+    else
+      equation
+        true = RTOpts.debugFlag("failtrace");
+        Debug.traceln("- SCodeLookup.lookupRedeclaredClass2 failed on " +&
+            SCodeEnv.getItemName(inItem) +& " in " +&
+            SCodeEnv.getEnvName(inEnv));
+      then
+        fail();
+  end matchcontinue;
+end lookupRedeclaredClass2;
 
 public function lookupBuiltinType
   "Checks if a name references a builtin type, and returns an environment item
@@ -976,5 +1096,38 @@ algorithm
     SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
     SCode.PARTS({}, {}, {}, {}, {}, NONE(), {}, NONE()), Absyn.dummyInfo);
 end makeDummyMetaType;
+
+public function qualifyPath
+  "Qualifies a path by looking up a path in the environment, and merging the
+  resulting path with it's environment."
+  input Absyn.Path inPath;
+  input Env inEnv;
+  input Absyn.Info inInfo;
+  input Option<Error.ErrorID> inErrorType;
+  output Absyn.Path outPath;
+algorithm
+  outPath := matchcontinue(inPath, inEnv, inInfo, inErrorType)
+    local
+      Absyn.Path path;
+      Env env;
+
+    case (_, _, _, _)
+      equation
+        (_, path, env) = lookupName(inPath, inEnv, inInfo, inErrorType);
+        path = SCodeEnv.mergePathWithEnvPath(path, env);
+        path = Absyn.makeFullyQualified(path);
+      then
+        path;
+
+    else
+      equation
+        true = RTOpts.debugFlag("failtrace");
+        Debug.traceln("- SCodeLookup.qualifyPath failed on " +&
+          Absyn.pathString(inPath) +& " in " +&
+          SCodeEnv.getEnvName(inEnv));
+      then
+        fail();
+  end matchcontinue;
+end qualifyPath;
 
 end SCodeLookup;

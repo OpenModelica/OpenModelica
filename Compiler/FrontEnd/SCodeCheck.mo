@@ -40,6 +40,7 @@ encapsulated package SCodeCheck
 
 public import Absyn;
 public import SCode;
+public import SCodeEnv;
 
 protected import Debug;
 protected import Dump;
@@ -85,51 +86,37 @@ algorithm
 end checkForDuplicateClassesInTopScope;
 
 public function checkRecursiveShortDefinition
-  input SCode.Element inClass;
-algorithm
-  _ := match(inClass)
-    local
-      String name;
-      Absyn.TypeSpec ts;
-      Absyn.Info info;
-
-    case SCode.CLASS(name = name, classDef = SCode.DERIVED(typeSpec = ts), 
-        info = info)
-      equation
-        checkRecursiveShortDefinition2(name, ts, info);
-      then
-        ();
-
-    else ();
-  end match;
-end checkRecursiveShortDefinition;
-
-public function checkRecursiveShortDefinition2
-  input String inName;
   input Absyn.TypeSpec inTypeSpec;
+  input String inTypeName;
+  input SCodeEnv.Env inTypeEnv;
   input Absyn.Info inInfo;
 algorithm
-  _ := matchcontinue(inName, inTypeSpec, inInfo)
+  _ := matchcontinue(inTypeSpec, inTypeName, inTypeEnv, inInfo)
     local
-      String ty;
-      
-    case (_ , _, _)
+      Absyn.Path ts_path, ty_path;
+      String ty, id;
+
+    case (_, _, {}, _) then ();
+
+    case (_, _, _ :: _, _)
       equation
-        false = isSelfReference(inName, inTypeSpec);
+        ts_path = Absyn.typeSpecPath(inTypeSpec); 
+        ty_path = SCodeEnv.getEnvPath(inTypeEnv);
+        false = isSelfReference(inTypeName, ty_path, ts_path);
       then
         ();
 
     else
       equation
         ty = Dump.unparseTypeSpec(inTypeSpec);
-        Error.addSourceMessage(Error.RECURSIVE_SHORT_CLASS_DEFINITION, 
-          {inName, ty}, inInfo);
+        Error.addSourceMessage(Error.RECURSIVE_SHORT_CLASS_DEFINITION,
+          {inTypeName, ty}, inInfo);
       then
         fail();
-    
-  end matchcontinue;
-end checkRecursiveShortDefinition2;
 
+  end matchcontinue;
+end checkRecursiveShortDefinition;
+        
 public function checkDuplicateElements
   input list<SCode.Element> inElements;
 algorithm
@@ -165,31 +152,119 @@ algorithm
 end checkDuplicateEnums;
 
 protected function isSelfReference
-  input String name;
-  input Absyn.TypeSpec ts;
+  input String inTypeName;
+  input Absyn.Path inTypePath;
+  input Absyn.Path inReferencedName;
   output Boolean selfRef;
 algorithm
-  selfRef := matchcontinue(name, ts)
+  selfRef := match(inTypeName, inTypePath, inReferencedName)
     local
-      Absyn.Path p;
+      Absyn.Path p1, p2;
     
-    // a simple type path  
-    case (name, Absyn.TPATH(path = p))
-      equation
-        true = stringEqual(name, Absyn.pathFirstIdent(p));
-      then
-        true;
-    
-    // a complex type path 
-    case (name, Absyn.TCOMPLEX(path = p))
-      equation
-        true = stringEqual(name, Absyn.pathFirstIdent(p));
-      then
-        true;
-    
-    // anything else returns false
-    case (_, _) then false;
-  end matchcontinue;
+    case (_, p1, Absyn.FULLYQUALIFIED(p2))
+      then Absyn.pathEqual(Absyn.joinPaths(p1, Absyn.IDENT(inTypeName)), p2);
+
+    case (_, p1, p2)
+      then stringEqual(Absyn.pathLastIdent(inTypePath), Absyn.pathFirstIdent(p2));
+
+  end match;
 end isSelfReference;
 
+public function checkExtendsReplaceability
+  input SCodeEnv.Item inBaseClass;
+  input Absyn.Path inPath;
+  input Absyn.Info inOriginInfo;
+algorithm
+  _ := match(inBaseClass, inPath, inOriginInfo)
+    local
+      Absyn.Info info;
+      String err_str;
+
+    case (SCodeEnv.CLASS(cls = SCode.CLASS(prefixes = SCode.PREFIXES(
+        replaceablePrefix = SCode.NOT_REPLACEABLE()))), _, _)
+      then ();
+
+    case (SCodeEnv.CLASS(cls = SCode.CLASS(prefixes = SCode.PREFIXES(
+        replaceablePrefix = SCode.REPLACEABLE(cc = _)), info = info)), _, _)
+      equation
+        err_str = Absyn.pathString(inPath);
+        Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inOriginInfo);
+        Error.addSourceMessage(Error.REPLACEABLE_BASE_CLASS, {err_str}, info);
+      then
+        ();
+  end match;
+end checkExtendsReplaceability;
+
+public function checkClassExtendsReplaceability
+  input SCodeEnv.Item inBaseClass;
+  input Absyn.Info inOriginInfo;
+algorithm
+  _ := match(inBaseClass, inOriginInfo)
+    local
+      Absyn.Info info;
+      String name;
+
+    case (SCodeEnv.CLASS(cls = SCode.CLASS(prefixes = SCode.PREFIXES(
+        replaceablePrefix = SCode.REPLACEABLE(cc = _)))), _)
+      then ();
+
+    case (SCodeEnv.CLASS(cls = SCode.CLASS(name = name, prefixes = SCode.PREFIXES(
+        replaceablePrefix = SCode.NOT_REPLACEABLE()), info = info)), _)
+      equation
+        Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inOriginInfo);
+        Error.addSourceMessage(Error.NON_REPLACEABLE_CLASS_EXTENDS,
+          {name}, info);
+      then
+        fail();
+  end match;
+end checkClassExtendsReplaceability;
+
+public function checkRedeclareModifier
+  input SCode.Element inModifier;
+  input Absyn.Path inBaseClass;
+  input SCodeEnv.Env inEnv;
+algorithm
+  _ := match(inModifier, inBaseClass, inEnv)
+    case (SCode.CLASS(classDef = SCode.DERIVED(typeSpec = _)), _, _)
+      equation
+        checkRedeclareModifier2(inModifier, inBaseClass, inEnv);
+      then
+        ();
+
+    else ();
+  end match;
+end checkRedeclareModifier;
+
+public function checkRedeclareModifier2
+  input SCode.Element inModifier;
+  input Absyn.Path inBaseClass;
+  input SCodeEnv.Env inEnv;
+algorithm
+  _ := matchcontinue(inModifier, inBaseClass, inEnv)
+    local
+      Absyn.TypeSpec ty;
+      Absyn.Info info;
+      String name, ty_str;
+      Absyn.Path ty_path;
+
+    case (SCode.CLASS(name = name, 
+        classDef = SCode.DERIVED(typeSpec = ty)), _, _)
+      equation
+        ty_path = Absyn.typeSpecPath(ty);
+        false = isSelfReference(name, inBaseClass, ty_path);
+      then
+        ();
+
+    case (SCode.CLASS(name = name, 
+        classDef = SCode.DERIVED(typeSpec = ty), info = info), _, _)
+      equation
+        ty_str = Dump.unparseTypeSpec(ty);
+        Error.addSourceMessage(Error.RECURSIVE_SHORT_CLASS_DEFINITION,
+          {name, ty_str}, info);
+      then
+        fail();
+        
+  end matchcontinue;
+end checkRedeclareModifier2;
+        
 end SCodeCheck;

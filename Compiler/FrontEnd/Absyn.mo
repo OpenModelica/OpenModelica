@@ -5063,7 +5063,6 @@ algorithm
 end unqualifyCref;
 
 public function pathIsFullyQualified
-  "Returns true of the given path is fully qualified, otherwise false."
   input Path inPath;
   output Boolean outIsQualified;
 algorithm

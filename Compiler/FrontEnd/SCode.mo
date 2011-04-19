@@ -3743,6 +3743,42 @@ algorithm
   end match;
 end getStatementInfo;
 
+public function addElementToClass
+  "Adds a given element to a class definition. Only implemented for PARTS."
+  input Element inElement;
+  input Element inClassDef;
+  output Element outClassDef;
+protected
+  Ident n;
+  Prefixes pf;
+  Encapsulated ep;
+  Partial pp;
+  Restriction r;
+  ClassDef cdef;
+  Absyn.Info i;
+algorithm
+  CLASS(n, pf, ep, pp, r, cdef, i) := inClassDef;
+  cdef := addElementToCompositeClassDef(inElement, cdef);
+  outClassDef := CLASS(n, pf, ep, pp, r, cdef, i);
+end addElementToClass;
+
+public function addElementToCompositeClassDef
+  "Adds a given element to a PARTS class definition."
+  input Element inElement;
+  input ClassDef inClassDef;
+  output ClassDef outClassDef;
+protected
+  list<Element> el;
+  list<Equation> nel, iel;
+  list<AlgorithmSection> nal, ial;
+  Option<Absyn.ExternalDecl> ed;
+  list<Annotation> annl;
+  Option<Comment> c;
+algorithm
+  PARTS(el, nel, iel, nal, ial, ed, annl, c) := inClassDef;
+  outClassDef := PARTS(inElement :: el, nel, iel, nal, ial, ed, annl, c);
+end addElementToCompositeClassDef;
+
 public function flowStr
   input Flow inFlow;
   output String str;
@@ -3845,6 +3881,12 @@ algorithm
   end match;
 end boolEach;
 
+public function prefixesRedeclare
+  input Prefixes inPrefixes;
+  output Redeclare outRedeclare;
+algorithm
+  PREFIXES(redeclarePrefix = outRedeclare) := inPrefixes;
+end prefixesRedeclare;
 
 public function redeclareStr
   input Redeclare inRedeclare;
@@ -4235,6 +4277,39 @@ algorithm
     
   end matchcontinue;
 end prefixesStr;
+
+public function elementPrefixes
+  input Element inElement;
+  output Prefixes outPrefixes;
+algorithm
+  outPrefixes := match(inElement)
+    local
+      Prefixes pf;
+
+    case CLASS(prefixes = pf) then pf;
+    case COMPONENT(prefixes = pf) then pf;
+  end match;
+end elementPrefixes;
+
+public function isElementReplaceable
+  input Element inElement;
+  output Boolean isReplaceable;
+protected
+  Prefixes pf;
+algorithm
+  pf := elementPrefixes(inElement);
+  isReplaceable := replaceableBool(prefixesReplaceable(pf));
+end isElementReplaceable;
+
+public function isElementRedeclare
+  input Element inElement;
+  output Boolean isRedeclare;
+protected
+  Prefixes pf;
+algorithm
+  pf := elementPrefixes(inElement);
+  isRedeclare := redeclareBool(prefixesRedeclare(pf));
+end isElementRedeclare;
 
 end SCode;
 

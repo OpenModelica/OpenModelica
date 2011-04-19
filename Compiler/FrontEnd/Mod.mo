@@ -1748,14 +1748,11 @@ algorithm
 end merge2;
 
 // - Merging
-// 
-// The merge function merges to modifications to one. 
-// The first argument is the *outer* modification that 
-// should take precedence over the *inner* modifications.
 
 protected function doMerge "function: merge 
-  This function merges to modificiations into one.
-  The first modifications takes precedence over the second."
+  This function merges two modifications into one.
+  The first argument is the *outer* modification that 
+  should take precedence over the *inner* modification."
   input DAE.Mod inMod1;
   input DAE.Mod inMod2;
   input Env.Env inEnv3;
@@ -1782,9 +1779,13 @@ algorithm
       Option<DAE.EqMod> ass,ass1,ass2;
       SCode.Each each1,each2;
       Option<Absyn.Exp> cond;
-      Option<Absyn.ConstrainClass> cc;
       Absyn.Info info;
       SCode.Element celm,elementOne;
+      SCode.ClassDef cdef;
+      SCode.Encapsulated ep;
+      SCode.Partial pp;
+      SCode.Restriction res;
+      SCode.Prefixes pf;
     
     //case (inMod1,inMod2,_,_)
     //  equation
@@ -1806,12 +1807,25 @@ algorithm
         comment = comment2),_)}),env,pre)
       equation
         true = stringEq(id1, id2);
-        m1_1 = elabUntypedMod(m2, env, pre);
+        m1_1 = elabUntypedMod(m1, env, pre);
         m2_1 = elabUntypedMod(m2, env, pre);
         m_2 = merge(m1_1, m2_1, env, pre);
       then
         DAE.REDECL(f1,each1,{(SCode.COMPONENT(id1,SCode.PREFIXES(vis, redecl, f, io, r),attr,tp,SCode.NOMOD(),comment,cond,info),m_2)});
 
+    // Redeclaring same class.
+    case (DAE.REDECL(finalPrefix = f1, eachPrefix = each1, tplSCodeElementModLst = 
+            {(SCode.CLASS(name = id1, prefixes = pf, encapsulatedPrefix = ep, 
+            partialPrefix = pp, restriction = res, classDef = cdef, info = info), 
+            m1_1)}), 
+          DAE.REDECL(finalPrefix = f2, eachPrefix = each2, tplSCodeElementModLst = 
+            {(SCode.CLASS(name = id2), m2_1)}), env, pre)
+      equation
+        true = stringEq(id1, id2);
+        m = merge(m1_1, m2_1, env, pre);
+      then
+        DAE.REDECL(f1, each1, {(SCode.CLASS(id1, pf, ep, pp, res, cdef, info), m)});
+      
     // luc_pop : this shoud return the first mod because it have been merged in merge_subs
     case ((mod as DAE.REDECL(finalPrefix = f1,tplSCodeElementModLst = (els as {(SCode.COMPONENT(name = id1),_)}))),(mods as DAE.MOD(subModLst = subs)),env,pre) then mod;
     
