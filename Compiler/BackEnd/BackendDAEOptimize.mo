@@ -1606,8 +1606,14 @@ algorithm
       Boolean b,b1,b2;
       BackendDAE.Variables vars,knvars;
       DAE.ComponentRef cr;
+      BackendDAE.Var var;
     
     case((e as DAE.CREF(DAE.CREF_IDENT(ident = "time",subscriptLst = {}),_), (_,vars,knvars)))
+      then ((e,false,(true,vars,knvars)));
+    case((e as DAE.CREF(cr,_), (_,vars,knvars)))
+      equation
+        (var::_,_::_)= BackendVariable.getVar(cr, knvars) "input variables stored in known variables are input on top level" ;
+        true = BackendVariable.isVarOnTopLevelAndInput(var);
       then ((e,false,(true,vars,knvars)));
     case((e as DAE.CALL(path = Absyn.IDENT(name = "sample"), expLst = {_,_}), (_,vars,knvars))) then ((e,false,(true,vars,knvars) ));
     case((e as DAE.CALL(path = Absyn.IDENT(name = "pre"), expLst = {_}), (_,vars,knvars))) then ((e,false,(true,vars,knvars) ));

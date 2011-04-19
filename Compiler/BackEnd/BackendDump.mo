@@ -1153,11 +1153,10 @@ algorithm
   match (inExp,inString)
     local
        Boolean e;
-       String s,se,str;
-    case (SOME(e),s)
+       String s,str;
+    case (SOME(true),s)
       equation
-         se = boolString(e);
-         str = stringAppendList({s," = ",se," "});
+         str = stringAppendList({s," = true "});
          print(str);
      then ();
     else ();
