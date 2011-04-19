@@ -146,6 +146,8 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(varInfo=varInfo as  VARINFO(__))) 
     EXIT(retVal);
   }
   #endif
+
+  #define condition_rettype bool
   void init_ompd();
   void clean_ompd();
 
@@ -157,7 +159,7 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(varInfo=varInfo as  VARINFO(__))) 
   //for QSS solver 
   double rel_accuracy = 1e-5;
   double abs_accuracy = 1e-5;
-  char* method = "QSS3";
+  char* method = (char*)"QSS3";
 
   double state_values(int state) 
   {
@@ -194,6 +196,7 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(varInfo=varInfo as  VARINFO(__))) 
       init=true;
       init_ompd();
     }
+    return 0;
   }
 
   void clean_runtime()
@@ -274,7 +277,7 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(varInfo=varInfo as  VARINFO(__))) 
   {
     <%generateIntegrators(varInfo.numStateVars)%>
     <%generateStaticBlocks(qssInfo,varInfo.numStateVars)%>
-    <%generateZeroCrossingFunctions(zeroCrossings,qssInfo)%>
+    <%generateZeroCrossingFunctions(zeroCrossings,qssInfo,varInfo.numStateVars)%>
     <%generateCrossingDetector(zeroCrossings,qssInfo)%>
     <%generateWhenBlocks(whenClauses,helpVarInfo)%>
     Simulator
@@ -290,7 +293,7 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(varInfo=varInfo as  VARINFO(__))) 
       }
     IC
       {
-        <%connections%>
+        <% connections %>
       }
   }
   
@@ -356,7 +359,7 @@ template functionQssWhen(list<SimWhenClause> whenClauses, list<HelpVarInfo> help
     {
  	  <% whenCases %>
     }
-    restore_memory_state(mem_state);
+    return false;
   }
   >>
 end functionQssWhen;
@@ -379,9 +382,11 @@ template functionQssWhen2(list<SimWhenClause> whenClauses, list<HelpVarInfo> hel
     if (<% cond %>) {
       <% equations %>
 			<%saves%>
+      restore_memory_state(mem_state);
       return true;
     } else {
 			<%saves%>
+      restore_memory_state(mem_state);
       return false;
     }
     break;
@@ -440,8 +445,8 @@ template functionQssStaticBlocks(list<SimEqSystem> derivativEquations,list<ZeroC
 	case BackendQSS.QSSINFO(__) then
   	let &varDecls = buffer "" /*BUFD*/
 		let numStatic = listLength(eqs)
-		let zeroCross = generateZeroCrossingsEq(listLength(eqs),zeroCrossings,varDecls)
 		let staticFun = generateStaticFunc(derivativEquations,zeroCrossings,varDecls,DEVSstructure,eqs,outVarLst,nStates)
+		let zeroCross = generateZeroCrossingsEq(listLength(eqs),zeroCrossings,varDecls,DEVSstructure,outVarLst,nStates)
 
   <<
   int staticBlocks = <% numStatic %>;
@@ -479,7 +484,7 @@ end generateOutputs;
 template generateInputs(BackendQSS.DevsStruct devsst, Integer index, list<BackendDAE.Var> varLst, Integer nStates)
 "Generate inputs for static blocks"
 ::= 
-	(BackendQSS.getInputs(devsst,intAdd(index,intAdd(1,nStates))) |> i hasindex i0 =>
+	(BackendQSS.getInputs(devsst,index) |> i hasindex i0 =>
 	<<
 	// Input <% i0 %> is var <% i %>
 	<% SimCodeC.cref(BackendVariable.varCref(listNth(varLst,intAdd(i,-1)))) %> = in[<% i0 %>];
@@ -495,9 +500,10 @@ template generateStaticFunc(list<SimEqSystem> odeEq,list<ZeroCrossing> zeroCross
     <<
 
     case <% i0 %>:
+      {
       // Read inputs from in[]
       #ifdef _OMC_OMPD
-      <% generateInputs(devsst,i0,varLst,nStates) %>
+      <% generateInputs(devsst,intAdd(intAdd(i0,nStates),1),varLst,nStates) %>
       #endif
 
       // Evalute the static function
@@ -508,17 +514,44 @@ template generateStaticFunc(list<SimEqSystem> odeEq,list<ZeroCrossing> zeroCross
       <% generateOutputs(devsst,i0,varLst,nStates) %>
       #endif
       break;
+      }
     >>
   ;separator="\n")
 end generateStaticFunc;
 
+template generateRelation(DAE.Operator op, String e1, String e2)
+::=
+  match op
+  case LESS(__) then '<% e1 %> - <% e2 %>'
+  case LESSEQ(__) then '<% e1 %> - <% e2 %>'
+  case GREATER(__) then '<% e2 %> - <% e1 %>'
+  case GREATEREQ(__) then '<% e2 %> - <% e1 %>'
+  case EQUAL(__) then '<% e1 %> - <% e2 %>'
+  case NEQUAL(__) then '<% e2 %> - <% e1 %>'
+end generateRelation;
 
-template generateZeroCrossingsEq(Integer offset,list<ZeroCrossing> zeroCrossings,Text &varDecls /*BUFP*/)
+template generateZCExp(DAE.Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/)
+"Generate the  ZC exp by substracting both arguments
+  author: fbergero"
+::=
+  match exp
+  case e as RELATION(__) then
+    let e1 = SimCodeC.daeExp(exp1, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+    let e2 = SimCodeC.daeExp(exp2, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+    let sub = generateRelation(operator,e1,e2)
+  <<
+  <% sub %>
+  >>
+  else SimCodeC.error(sourceInfo(), 'Unhandled expression in SimCodeQSS.generateZCExp: <%ExpressionDump.printExpStr(exp)%>')
+end generateZCExp;
+
+template generateZeroCrossingsEq(Integer offset,list<ZeroCrossing> zeroCrossings,Text &varDecls /*BUFP*/, 
+                                 BackendQSS.DevsStruct devsst,list<BackendDAE.Var> varLst,Integer nStates)
 "Generate the cases for the zero crossings"
 ::= 
   (zeroCrossings |> ZERO_CROSSING(__) hasindex i0 =>
    let &preExp = buffer "" /*BUFD*/
-   let zcExp = SimCodeC.daeExp(relation_, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+   let zcExp = generateZCExp(relation_, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)
 	 match relation_
 	 case CALL(path=IDENT(name="sample")) then
   <<
@@ -531,14 +564,17 @@ template generateZeroCrossingsEq(Integer offset,list<ZeroCrossing> zeroCrossings
   <<
 
   case <%intAdd(i0,offset)%>:
+    {
     #ifdef _OMC_OMPD
     // Read inputs from in[]
+    <% generateInputs(devsst,intAdd(offset,intAdd(i0,intAdd(1,nStates))),varLst,nStates) %>
     #endif
     // Evalute the ZeroCrossing function
     <%preExp%>
     // Write outputs to out[]
     out[0] = <% zcExp %>;
     break;
+    }
   >>
   ;separator="\n")
 end generateZeroCrossingsEq;
@@ -549,7 +585,7 @@ template functionQssUpdateDiscrete(list<SimEqSystem> allEquationsPlusWhen,list<Z
   let &varDecls = buffer "" /*BUFD*/
   let eqs = (allEquationsPlusWhen |> eq => generateDiscUpdate(BackendQSS.replaceZC(eq,zeroCrossings), zeroCrossings, &varDecls); separator="\n")
   <<
-  void functionQssUpdateDiscrete(double t)
+  void function_updateDepend(double t, int index)
   {
     state mem_state;
     time = t;
@@ -622,7 +658,7 @@ template generateStaticBlocks(QSSinfo qssInfo, Integer nStates)
 	;separator="\n")
 end generateStaticBlocks;
 
-template generateZeroCrossingFunctions(list<ZeroCrossing> zeroCrossings,QSSinfo qssInfo)
+template generateZeroCrossingFunctions(list<ZeroCrossing> zeroCrossings,QSSinfo qssInfo,Integer nStates)
 "Function to generate the crossing functions atomics for the DEVS structure"
 ::= 
   match qssInfo
@@ -631,10 +667,10 @@ template generateZeroCrossingFunctions(list<ZeroCrossing> zeroCrossings,QSSinfo 
   let numStatic = listLength(eqs)
   let &preExp = buffer "" /*BUFD*/
   (zeroCrossings |> ZERO_CROSSING(relation_ = DAE.RELATION()) hasindex i0 =>
-  <<Simulator
+  <<Simulator // Block # <% intAdd(intAdd(listLength(eqs),nStates),i0) %>
     {
       Path = modelica/modelica_qss_static.h // Crossing function <%i0%> for <% SimCodeC.daeExp(relation_, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/) %>
-      Parameters = 2.0, 1.0, <% intAdd(i0,listLength(eqs))%>.0 // Inputs, Outputs, Index
+      Parameters = <% BackendQSS.numInputs(qssInfo,intAdd(i0,intAdd(listLength(eqs),intAdd(nStates,1)))) %>.0, 1.0, <% intAdd(i0,listLength(eqs))%>.0 // Inputs, Outputs, Index
     }
   >>
   ;separator="\n")
@@ -651,7 +687,7 @@ template generateCrossingDetector(list<ZeroCrossing> zeroCrossings,QSSinfo qssIn
   (zeroCrossings |> ZERO_CROSSING(relation_ = DAE.RELATION()) hasindex i0 =>
   <<Simulator
     {
-      Path = modelica/modelica_qss_crossdetect.h // Crossing detector <%i0%> for <% SimCodeC.daeExp(relation_, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/) %>
+      Path = modelica/modelica_qss_cross_detect.h // Crossing detector <%i0%> for <% SimCodeC.daeExp(relation_, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/) %>
       Parameters = <% i0 %>.0
     }
   >>

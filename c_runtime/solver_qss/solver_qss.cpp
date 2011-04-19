@@ -285,13 +285,7 @@ main_qss(int argc, char**argv)
   if (initRuntimeAndSimulation(argc, argv)) //initRuntimeAndSimulation returns 1 if an error occurs
     return 1;
 
-  if (interactiveSimuation) {
-    //cout << "startInteractiveSimulation: " << version << endl;
-    retVal = startInteractiveSimulation(argc, argv);
-  } else {
-    //cout << "startNonInteractiveSimulation: " << version << endl;
-    retVal = startNonInteractiveSimulation(argc, argv);
-  }
+  retVal = startNonInteractiveSimulation(argc, argv);
 
   deInitializeDataStruc(globalData);
   free(globalData);

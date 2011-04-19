@@ -192,9 +192,13 @@ algorithm
                 
         dumpDEVSstructs(DEVS_structure);       
         
+        //conns = generateConnections(QSSINFO(stateEq_blt, DEVS_structure,eqs,varlst));
+        //print("CONNECTIONS\n");
+        //printListOfLists(conns);        
         conns = generateConnections(QSSINFO(stateEq_blt, DEVS_structure,eqs,varlst));
         print("CONNECTIONS");
         printListOfLists(conns);        
+        //print("\n");
         
       then
         QSSINFO(stateEq_blt, DEVS_structure,eqs,varlst);
@@ -2404,6 +2408,20 @@ algorithm
     end match;
 end generateEqFromBlt;
 
+protected function isPositive
+  input Integer i;
+algorithm
+  _ := 
+    match i
+      local 
+      case _
+        equation
+          true = i > 0;
+          then ();
+      case _
+        then fail();
+    end match;
+end isPositive;
 
 public function getInputs
   input DevsStruct st;
@@ -2418,6 +2436,7 @@ algorithm
       case (DEVS_STRUCT(inVars=inVars),_)
       equation
         vars = Util.listMap(Util.listFlatten(inVars[index]),intAbs);
+        vars = Util.listFilter(vars,isPositive);
         then vars;
     end match;
 end getInputs;
@@ -2556,6 +2575,11 @@ algorithm
          print("- BackendQSS.generateConnections2\n");
        then
          fail();
+      case (_,_,_,_)
+        equation
+          print("Fail in generateConnections2\n");
+          then
+            fail();
     end match;
 end generateConnections2;
 
@@ -2595,7 +2619,7 @@ algorithm
         curBlock_conns_temp = getDEVSblock_conns(blockIndex, rest_out_edges, rest_out_names, inVars, loopIndex+1, curBlock_conns_temp);
       then
         (curBlock_conns_temp);
-      
+     
       case (_,_,_,_,_,_)
         equation
          print("- BackendQSS.getDEVSblock_conns failed\n");
