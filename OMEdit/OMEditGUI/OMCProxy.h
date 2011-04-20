@@ -99,6 +99,7 @@ public:
     QStringList getClassNamesRecursive(QString className);
     QStringList getPackages(QString packageName);
     bool isPackage(QString className);
+    bool isBuiltinType(QString typeName);
     bool isWhat(int type, QString className);
     int getClassRestriction(QString modelName);
     QList<IconParameters*> getParameters(QString modelName, QString className, QString name);

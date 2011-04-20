@@ -859,6 +859,15 @@ void Component::getClassComponents(QString className, int type)
     for(int i = 1 ; i <= inheritanceCount ; i++)
     {
         QString inheritedClass = mpOMCProxy->getNthInheritedClass(className, i);
+
+        // If the inherited class is one of the builtin type such as Real we can
+        // stop here, because the class can not contain any components, etc.
+        if(this->mpOMCProxy->isBuiltinType(inheritedClass))
+        {
+          mpInheritanceList.append(new Component("", inheritedClass, this));
+          return;
+        }
+
         QString annotationString = mpOMCProxy->getIconAnnotation(inheritedClass);
 
         Component *inheritance;
