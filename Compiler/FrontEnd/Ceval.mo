@@ -1155,7 +1155,7 @@ algorithm
       String fNew,fOld;
       Real buildTime, edit, build;
       AbsynDep.Depends aDep;
-      list<SCode.Element> a;
+      Option<list<SCode.Element>> a;
       list<Interactive.InstantiatedClass> b;
       list<Interactive.InteractiveVariable> c;
       list<Interactive.CompiledCFunction> cf;

@@ -230,7 +230,7 @@ algorithm
      */
     case (str,
     (isymb as Interactive.SYMBOLTABLE(
-      ast = iprog,depends=aDep,explodedAst = a,instClsLst = b,
+      ast = iprog,depends=aDep,instClsLst = b,
       lstVarVal = vars,compiledFunctions = cf,
       loadedFiles = lf)))
       equation
@@ -252,7 +252,7 @@ algorithm
         res_1 = makeClassDefResult(p_1) "return vector of toplevel classnames";
         res_1 = makeDebugResult("dump", res_1);
         res = makeDebugResult("dumpgraphviz", res_1);
-        isymb = Interactive.SYMBOLTABLE(newprog,aDep,a,b,vars_1,cf_1,lf);
+        isymb = Interactive.SYMBOLTABLE(newprog,aDep,NONE(),b,vars_1,cf_1,lf);
         // Interactive.typeCheckFunction(p, isymb); // You need the new environment before you can check the added functions
       then
         (true,res,isymb);
@@ -461,24 +461,24 @@ algorithm
    case ({}, st) then st;
 
    // A .mo-file.
-   case (f :: rest, st as Interactive.SYMBOLTABLE(p, aDep, sp, ic, iv, cf, lf))
+   case (f :: rest, st as Interactive.SYMBOLTABLE(p, aDep, _, ic, iv, cf, lf))
      equation
        isModelicaFile(f);
        pnew = Parser.parse(f);
        pnew = Interactive.updateProgram(pnew, p);
-       newst = Interactive.SYMBOLTABLE(pnew, aDep, sp, ic, iv, cf, lf);
+       newst = Interactive.SYMBOLTABLE(pnew, aDep, NONE(), ic, iv, cf, lf);
        newst = loadLibs(rest, newst);
      then
       newst;
 
    // some libs present
-   case (lib::rest, st as Interactive.SYMBOLTABLE(p,aDep,sp,ic,iv,cf,lf))
+   case (lib::rest, st as Interactive.SYMBOLTABLE(p,aDep,_,ic,iv,cf,lf))
      equation
        path = parsePathFromString(lib);
        mp = Settings.getModelicaPath();
        pnew = ClassLoader.loadClass(path, mp);
        pnew = Interactive.updateProgram(pnew, p);
-       newst = Interactive.SYMBOLTABLE(pnew,aDep,sp,ic,iv,cf,lf);
+       newst = Interactive.SYMBOLTABLE(pnew,aDep,NONE(),ic,iv,cf,lf);
        newst = loadLibs(rest, newst); // load the remaining
      then
        newst;

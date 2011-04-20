@@ -155,7 +155,7 @@ uniontype InteractiveSymbolTable "- Interactive Symbol Table"
   record SYMBOLTABLE
     Absyn.Program ast "ast ; The ast" ;
     AbsynDep.Depends depends "the dependency information";
-    SCode.Program explodedAst "explodedAst ; The exploded ast" ;
+    Option<SCode.Program> explodedAst "the explodedAst is invalidated every time the program is updated";
     list<InstantiatedClass> instClsLst "instClsLst ;  List of instantiated classes" ;
     list<InteractiveVariable> lstVarVal "lstVarVal ; List of variables with values" ;
     list<CompiledCFunction> compiledFunctions "compiledFunctions ; List of compiled functions, F.Q name + type + functionhandler" ;
@@ -237,7 +237,7 @@ protected import RTOpts;
 public constant InteractiveSymbolTable emptySymboltable =
      SYMBOLTABLE(Absyn.PROGRAM({},Absyn.TOP(),Absyn.dummyTimeStamp),
                  AbsynDep.DEPENDS(AbsynDep.AVLTREENODE(NONE(),0,NONE(),NONE()),AbsynDep.AVLTREENODE(NONE(),0,NONE(),NONE())),
-                 {},
+                 NONE(),
                  {},
                  {},
                  {},
@@ -1117,7 +1117,7 @@ algorithm
       Values.Value v;
       DAE.Type t;
       Absyn.Program p;
-      list<SCode.Element> sp;
+      Option<list<SCode.Element>> sp;
       list<InstantiatedClass> id;
       list<CompiledCFunction> cf;
       list<LoadedFile> lf;
@@ -1159,7 +1159,7 @@ algorithm
       Values.Value v;
       DAE.Type t;
       Absyn.Program p;
-      list<SCode.Element> sp;
+      Option<list<SCode.Element>> sp;
       list<InstantiatedClass> id;
       list<CompiledCFunction> cf;
       list<LoadedFile> lf;
@@ -1192,7 +1192,7 @@ algorithm
       list<InteractiveVariable> vars_1,vars;
       String ident;
       Absyn.Program p;
-      list<SCode.Element> sp;
+      Option<list<SCode.Element>> sp;
       list<InstantiatedClass> id;
       list<CompiledCFunction> cf;
       list<LoadedFile> lf;
@@ -1288,7 +1288,14 @@ algorithm
       list<InstantiatedClass> ic;
       list<InteractiveVariable> vars;
       list<CompiledCFunction> cf;
-    case (SYMBOLTABLE(ast = p, explodedAst = sp, instClsLst = ic, lstVarVal = vars, compiledFunctions = cf))
+    case (SYMBOLTABLE(explodedAst = SOME(p_1), lstVarVal = vars))
+      equation
+        (_,env) = Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT(""));
+        env_1 = addVarsToEnv(vars, env);
+      then
+        env_1;
+      
+    case (SYMBOLTABLE(ast = p, lstVarVal = vars))
       equation
         p_1 = SCodeUtil.translateAbsyn2SCode(p);
         (_,env) = Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT(""));
@@ -1848,11 +1855,11 @@ algorithm
       then
         (resstr,st);
 
-    case (istmts, st as SYMBOLTABLE(ast = p))
+    case (istmts, st)
       equation
         matchApiFunction(istmts, "getComponents");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
-        resstr = getComponents(cr, p);
+        (resstr,st) = getComponents(cr, st);
       then
         (resstr,st);
 
@@ -1897,12 +1904,12 @@ algorithm
       then
         (resstr,st);
 
-    case (istmts, st as SYMBOLTABLE(ast = p))
+    case (istmts, st)
       equation
         matchApiFunction(istmts, "getNthInheritedClass");
         {Absyn.CREF(componentRef = cr),Absyn.INTEGER(value = n)} = 
           getApiFunctionArgs(istmts);
-        resstr = getNthInheritedClass(cr, n, p);
+        (resstr,st) = getNthInheritedClass(cr, n, st);
       then
         (resstr,st);
 
@@ -2407,9 +2414,9 @@ algorithm
      and what must be thrown out" ;
         s_1 = SCodeUtil.translateAbsyn2SCode(p_1);
       then
-        (res,SYMBOLTABLE(p_1,aDep,s_1,{},{},{},lf));
+        (res,SYMBOLTABLE(p_1,aDep,SOME(s_1),{},{},{},lf));
 
-    case (istmts, st as SYMBOLTABLE(ast = p, depends = aDep, explodedAst = s, loadedFiles = lf))
+    case (istmts, st as SYMBOLTABLE(ast = p, depends = aDep, loadedFiles = lf))
       equation
         matchApiFunction(istmts, "renameComponent");
         {Absyn.CREF(componentRef = cname),
@@ -2417,9 +2424,9 @@ algorithm
          Absyn.CREF(componentRef = to_ident)} = getApiFunctionArgs(istmts);
         (res_str,p_1) = renameComponent(p, cname, from_ident, to_ident);
       then
-        (res_str,SYMBOLTABLE(p_1,aDep,s,{},{},{},lf));
+        (res_str,SYMBOLTABLE(p_1,aDep,NONE(),{},{},{},lf));
 
-    case (istmts, st as SYMBOLTABLE(ast = p, depends = aDep, explodedAst = s, loadedFiles = lf))
+    case (istmts, st as SYMBOLTABLE(ast = p, depends = aDep, loadedFiles = lf))
       equation
         matchApiFunction(istmts, "renameComponentInClass");
         {Absyn.CREF(componentRef = cname),
@@ -2427,7 +2434,7 @@ algorithm
          Absyn.CREF(componentRef = to_ident)} = getApiFunctionArgs(istmts);
         (res_str,p_1) = renameComponentOnlyInClass(p, cname, from_ident, to_ident);
       then
-        (res_str,SYMBOLTABLE(p_1,aDep,s,{},{},{},lf));
+        (res_str,SYMBOLTABLE(p_1,aDep,NONE(),{},{},{},lf));
 
     case (istmts, st as SYMBOLTABLE(ast = p)) /* adrpo added 2005-11-03 */
       equation
@@ -10255,10 +10262,11 @@ protected function getNthInheritedClass
   the nth inherited class in the class referenced by the ComponentRef."
   input Absyn.ComponentRef inComponentRef;
   input Integer inInteger;
-  input Absyn.Program inProgram;
+  input InteractiveSymbolTable st;
   output String outString;
+  output InteractiveSymbolTable outSt;
 algorithm
-  outString := matchcontinue (inComponentRef,inInteger,inProgram)
+  (outString,outSt) := matchcontinue (inComponentRef,inInteger,st)
     local
       Absyn.Path modelpath,path;
       Absyn.Class cdef;
@@ -10274,17 +10282,17 @@ algorithm
       list<Absyn.ElementSpec> extends_;
       Env.Cache cache;
 
-    case (model_,n,p)
+    case (model_,n,st as SYMBOLTABLE(ast=p))
       equation
         modelpath = Absyn.crefToPath(model_);
         cdef = getPathedClassInProgram(modelpath, p);
-        p_1 = SCodeUtil.translateAbsyn2SCode(p);
+        (p_1,st) = symbolTableToSCode(st);
         (cache,env) = Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT(""));
         (_,(c as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1) = Lookup.lookupClass(cache,env, modelpath, false);
         str = getNthInheritedClass2(c, cdef, n, env_1);
       then
-        str;
-    case (model_,n,p) /* if above fails, baseclass not defined. return its name */
+        (str,st);
+    case (model_,n,st as SYMBOLTABLE(ast=p)) /* if above fails, baseclass not defined. return its name */
       equation
         modelpath = Absyn.crefToPath(model_);
         cdef = getPathedClassInProgram(modelpath, p);
@@ -10293,8 +10301,8 @@ algorithm
         Absyn.EXTENDS(path,_,_) = listNth(extends_, n_1);
         s = Absyn.pathString(path);
       then
-        s;
-    case (_,_,_) then "Error";
+        (s,st);
+    else ("Error",st);
   end matchcontinue;
 end getNthInheritedClass;
 
@@ -10767,10 +10775,11 @@ public function getComponents
    This function takes a `ComponentRef\', a `Program\' and an int and  returns
    a list of all components, as returned by get_nth_component."
   input Absyn.ComponentRef inComponentRef;
-  input Absyn.Program inProgram;
+  input InteractiveSymbolTable st;
   output String outString;
+  output InteractiveSymbolTable outSt;
 algorithm
-  outString := matchcontinue (inComponentRef,inProgram)
+  (outString,outSt) := matchcontinue (inComponentRef,st)
     local
       Absyn.Path modelpath;
       Absyn.Class cdef;
@@ -10786,11 +10795,11 @@ algorithm
       Absyn.Program p;
       Env.Cache cache;
 
-    case (model_,p)
+    case (model_,st as SYMBOLTABLE(ast=p))
       equation
         modelpath = Absyn.crefToPath(model_);
         cdef = getPathedClassInProgram(modelpath, p);
-        p_1 = SCodeUtil.translateAbsyn2SCode(p);
+        (p_1,st) = symbolTableToSCode(st);
         (cache,env) = Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT(""));
         (cache,(c as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1) = Lookup.lookupClass(cache,env, modelpath, false);
         env2 = Env.openScope(env_1, encflag, SOME(id), Env.restrictionToScopeType(restr));
@@ -10805,8 +10814,8 @@ algorithm
         str = Util.stringDelimitListNonEmptyElts({s1,s2}, ",");
         res = stringAppendList({"{",str,"}"});
       then
-        res;
-    case (_,_) then "Error";
+        (res,st);
+    case (_,_) then ("Error",st);
   end matchcontinue;
 end getComponents;
 
@@ -17947,17 +17956,17 @@ algorithm
       AbsynDep.Depends aDep;
 
     // See that the file exists
-    case (file, s as SYMBOLTABLE(pAst,aDep,eAst,ic,iv,cf,lf))
+    case (file, s as SYMBOLTABLE(ast = _))
       equation
         false = System.regularFileExists(file);
       then
         ("error",s);
     // check if we have the stuff in the loadedFiles!
-    case (file, s as SYMBOLTABLE(pAst,aDep,eAst,ic,iv,cf,lf))
+    case (file, s as SYMBOLTABLE(pAst,aDep,_,ic,iv,cf,lf))
       equation
         (topNamesStr,newLF,newP) = checkLoadedFiles(file, lf, pAst, true);
       then
-        (topNamesStr, SYMBOLTABLE(newP,aDep,eAst,ic,iv,cf,lf));
+        (topNamesStr, SYMBOLTABLE(newP,aDep,NONE(),ic,iv,cf,lf));
   end matchcontinue;
 end loadFileInteractiveQualified;
 
@@ -18268,25 +18277,24 @@ algorithm
       InteractiveSymbolTable s  "The symboltable where to load the file";
       String topNamesStr;
       Absyn.Program pAst,newP;
-      list<SCode.Element> eAst;
       list<InstantiatedClass> ic;
       list<InteractiveVariable> iv;
       list<LoadedFile> lf, newLF;
       list<CompiledCFunction> cf;
       AbsynDep.Depends aDep;
     // See that the file exists
-    case (file, s as SYMBOLTABLE(pAst,aDep,eAst,ic,iv,cf,lf))
+    case (file, s as SYMBOLTABLE(ast = _))
       equation
         false = System.regularFileExists(file);
       then
         ("error",s);
     // check if we have the stuff in the loadedFiles!
-    case (file, s as SYMBOLTABLE(pAst,aDep,eAst,ic,iv,cf,lf))
+    case (file, s as SYMBOLTABLE(pAst,aDep,_,ic,iv,cf,lf))
       equation
         (topNamesStr,newLF,newP) = checkLoadedFiles(file, lf, pAst, false);
       then
         /* shouldn't newLF be used here? */
-        (topNamesStr, SYMBOLTABLE(newP,aDep,eAst,ic,iv,cf,lf));
+        (topNamesStr, SYMBOLTABLE(newP,aDep,NONE(),ic,iv,cf,lf));
   end matchcontinue;
 end parseFile;
 
@@ -18754,14 +18762,13 @@ algorithm
   outSymTab := match(inSymTab, inAST)
     local
       AbsynDep.Depends d;
-      SCode.Program e;
       list<InstantiatedClass> i;
       list<InteractiveVariable> v;
       list<CompiledCFunction> c;
       list<LoadedFile> l;
-    case (SYMBOLTABLE(depends = d, explodedAst = e, instClsLst = i, 
+    case (SYMBOLTABLE(depends = d, instClsLst = i, 
                       lstVarVal = v, compiledFunctions = c, loadedFiles = l), _)
-      then SYMBOLTABLE(inAST, d, e, i, v, c, l);
+      then SYMBOLTABLE(inAST, d, NONE(), i, v, c, l);
   end match;
 end setSymbolTableAST;
 
@@ -18814,5 +18821,30 @@ algorithm
     case (_) then {};
   end matchcontinue;
 end getAllClassesInClass;
+
+public function symbolTableToSCode
+"Similar to SCodeUtil.translateAbsyn2SCode
+  But this updates the symboltable to cache the translation."
+  input InteractiveSymbolTable st;
+  output SCode.Program program;
+  output InteractiveSymbolTable outSt;
+algorithm
+  (program,outSt) := match st
+    local
+      Absyn.Program ast;
+      AbsynDep.Depends depends;
+      Option<SCode.Program> explodedAst;
+      list<InstantiatedClass> instClsLst;
+      list<InteractiveVariable> lstVarVal;
+      list<CompiledCFunction> compiledFunctions;
+      list<LoadedFile> loadedFiles;
+      
+    case SYMBOLTABLE(explodedAst=SOME(program)) then (program,st);
+    case SYMBOLTABLE(ast,depends,_,instClsLst,lstVarVal,compiledFunctions,loadedFiles)
+      equation
+        program = SCodeUtil.translateAbsyn2SCode(ast);
+      then (program,SYMBOLTABLE(ast,depends,SOME(program),instClsLst,lstVarVal,compiledFunctions,loadedFiles));
+  end match;
+end symbolTableToSCode;
 
 end Interactive;

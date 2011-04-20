@@ -634,7 +634,8 @@ algorithm
   matchcontinue (inCache,inEnv,functionName,vals,st,msg)
     local
       Absyn.Path path,p1,classpath,className;
-      list<SCode.Element> scodeP,sp,fp;
+      list<SCode.Element> scodeP,sp;
+      Option<list<SCode.Element>> fp;
       list<Env.Frame> env;
       SCode.Element c;
       String s1,str,str1,str2,str3,re,token,varid,cmd,executable,method_str,outputFormat_str,initfilename,cit,pd,executableSuffixedExe,sim_call,result_file,filename_1,filename,omhome_1,plotCmd,tmpPlotFile,call,str_1,mp,pathstr,name,cname,fileNamePrefix_s,errMsg,errorStr,uniqueStr,interpolation,title,xLabel,yLabel,filename2,varNameStr,xml_filename,xml_contents,visvar_str,pwd,omhome,omlib,omcpath,os,platform,usercflags,senddata,res,workdir,gcc,confcmd,touch_file,uname,filenameprefix;
@@ -778,7 +779,7 @@ algorithm
     
     case (cache,env,"jacobian",{Values.CODE(Absyn.C_TYPENAME(path))},
           (st as Interactive.SYMBOLTABLE(
-            ast = p,depends=aDep,explodedAst = sp,instClsLst = ic,
+            ast = p,depends=aDep,explodedAst = fp,instClsLst = ic,
             lstVarVal = iv,compiledFunctions = cf,
             loadedFiles = lf)),msg)
       equation
@@ -797,51 +798,27 @@ algorithm
         jac = BackendDAEUtil.calculateJacobian(vars, eqnarr, ae, m, mt,false);
         res = BackendDump.dumpJacobianStr(jac);
       then
-        (cache,Values.STRING(res),Interactive.SYMBOLTABLE(p,aDep,sp,ic_1,iv,cf,lf));
+        (cache,Values.STRING(res),Interactive.SYMBOLTABLE(p,aDep,fp,ic_1,iv,cf,lf));
     
-    case (cache,env,"translateModel",{Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(filenameprefix)},
-          (st as Interactive.SYMBOLTABLE(
-            ast = p,
-            explodedAst = sp,
-            instClsLst = ic,
-            lstVarVal = iv,
-            compiledFunctions = cf)),msg)
+    case (cache,env,"translateModel",{Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(filenameprefix)},st,msg)
       equation
         (cache,ret_val,st_1,_,_,_,_) = translateModel(cache,env, className, st, filenameprefix,true,NONE());
       then
         (cache,ret_val,st_1);
    
-     case (cache,env,"translateModelCPP",{Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(filenameprefix)},
-          (st as Interactive.SYMBOLTABLE(
-            ast = p,
-            explodedAst = sp,
-            instClsLst = ic,
-            lstVarVal = iv,
-            compiledFunctions = cf)),msg)
+     case (cache,env,"translateModelCPP",{Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(filenameprefix)},st,msg)
       equation
         (cache,ret_val,st_1,_,_,_,_) = translateModelCPP(cache,env, className, st, filenameprefix,true,NONE());
       then
         (cache,ret_val,st_1);
         
-    case (cache,env,"translateModelFMU",{Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(filenameprefix)},
-          (st as Interactive.SYMBOLTABLE(
-            ast = p,
-            explodedAst = sp,
-            instClsLst = ic,
-            lstVarVal = iv,
-            compiledFunctions = cf)),msg)
+    case (cache,env,"translateModelFMU",{Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(filenameprefix)},st,msg)
       equation
         (cache,ret_val,st_1) = translateModelFMU(cache,env, className, st, filenameprefix, true, NONE());
       then
         (cache,ret_val,st_1);
     
-    case (cache,env,"exportDAEtoMatlab",{Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(filenameprefix)},
-          (st as Interactive.SYMBOLTABLE(
-            ast = p,
-            explodedAst = sp,
-            instClsLst = ic,
-            lstVarVal = iv,
-            compiledFunctions = cf)),msg)
+    case (cache,env,"exportDAEtoMatlab",{Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(filenameprefix)},st,msg)
       equation
         (cache,ret_val,st_1,_) = getIncidenceMatrix(cache,env, className, st, msg, filenameprefix);
       then
@@ -1075,7 +1052,7 @@ algorithm
         
     case (cache,env,"instantiateModel",{Values.CODE(Absyn.C_TYPENAME(className))},
           (st as Interactive.SYMBOLTABLE(
-            ast = p,depends=aDep,explodedAst = sp,instClsLst = ic,
+            ast = p,depends=aDep,explodedAst = fp,instClsLst = ic,
             lstVarVal = iv,compiledFunctions = cf,
             loadedFiles = lf)),msg)
       equation
@@ -1115,24 +1092,16 @@ algorithm
         // System.stopTimer();
         // print("\nFlatModelica: " +& realString(System.getTimerIntervalTime()));
       then
-        (cache,Values.STRING(str),Interactive.SYMBOLTABLE(p,aDep,sp,ic_1,iv,cf,lf));
+        (cache,Values.STRING(str),Interactive.SYMBOLTABLE(p,aDep,fp,ic_1,iv,cf,lf));
         
-    case (cache,env,"instantiateModel",{Values.CODE(Absyn.C_TYPENAME(className))},
-          (st as Interactive.SYMBOLTABLE(
-            ast = p,depends=aDep,explodedAst = sp,instClsLst = ic,
-            lstVarVal = iv,compiledFunctions = cf,
-            loadedFiles = lf)),msg) /* model does not exist */
+    case (cache,env,"instantiateModel",{Values.CODE(Absyn.C_TYPENAME(className))},st as Interactive.SYMBOLTABLE(ast=p),msg)
       equation
         cr_1 = Absyn.pathToCref(className);
         false = Interactive.existClass(cr_1, p);
       then
-        (cache,Values.STRING("Unknown model.\n"),Interactive.SYMBOLTABLE(p,aDep,sp,ic,iv,cf,lf));
+        (cache,Values.STRING("Unknown model.\n"),st);
         
-    case (cache,env,"instantiateModel",{Values.CODE(Absyn.C_TYPENAME(path))},
-          (st as Interactive.SYMBOLTABLE(
-            ast = p,depends=aDep,explodedAst = sp,instClsLst = ic,
-            lstVarVal = iv,compiledFunctions = cf,
-            loadedFiles = lf)),msg)
+    case (cache,env,"instantiateModel",{Values.CODE(Absyn.C_TYPENAME(path))},st as Interactive.SYMBOLTABLE(ast=p),msg)
       equation
         ptot = Dependency.getTotalProgram(path,p);
         scodeP = SCodeUtil.translateAbsyn2SCode(ptot);
@@ -1143,7 +1112,7 @@ algorithm
         Print.printErrorBuf(str);
         str = Print.getErrorString();
       then
-        (cache,Values.STRING(str),Interactive.SYMBOLTABLE(p,aDep,sp,ic,iv,cf,lf));
+        (cache,Values.STRING(str),st);
 
     case (cache,env,"setDataPort",{Values.INTEGER(i)},st,msg)
       equation
@@ -1306,7 +1275,7 @@ algorithm
 
     case (cache,env,"loadModel",{Values.CODE(Absyn.C_TYPENAME(path))},
           (st as Interactive.SYMBOLTABLE(
-            ast = p,depends=aDep,explodedAst = sp,instClsLst = ic,
+            ast = p,depends=aDep,instClsLst = ic,
             lstVarVal = iv,compiledFunctions = cf,
             loadedFiles = lf)),msg) /* add path to symboltable for compiled functions
             Interactive.SYMBOLTABLE(p,sp,ic,iv,(path,t)::cf),
@@ -1316,7 +1285,7 @@ algorithm
         pnew = ClassLoader.loadClass(path, mp);
         p = Interactive.updateProgram(pnew, p);
         str = Print.getString();
-        newst = Interactive.SYMBOLTABLE(p,aDep,sp,{},iv,cf,lf);
+        newst = Interactive.SYMBOLTABLE(p,aDep,NONE(),{},iv,cf,lf);
       then
         (Env.emptyCache(),Values.BOOL(true),newst);
         
@@ -1332,28 +1301,28 @@ algorithm
         
     case (cache,env,"loadFile",{Values.STRING(name)},
           (st as Interactive.SYMBOLTABLE(
-            ast = p,depends=aDep,explodedAst = sp,instClsLst = ic,
+            ast = p,depends=aDep,instClsLst = ic,
             lstVarVal = iv,compiledFunctions = cf,
             loadedFiles = lf)),msg)
       equation
         newp = ClassLoader.loadFile(name);
         newp = Interactive.updateProgram(newp, p);
       then
-        (Env.emptyCache(),Values.BOOL(true),Interactive.SYMBOLTABLE(newp,aDep,sp,ic,iv,cf,lf));
+        (Env.emptyCache(),Values.BOOL(true),Interactive.SYMBOLTABLE(newp,aDep,NONE(),ic,iv,cf,lf));
         
     case (cache,env,"loadFile",{Values.STRING(name)},st,msg)
     then (cache,Values.BOOL(false),st);
         
     case (cache,env,"loadString",{Values.STRING(str),Values.STRING(name)},
           (st as Interactive.SYMBOLTABLE(
-            ast = p,depends=aDep,explodedAst = sp,instClsLst = ic,
+            ast = p,depends=aDep,instClsLst = ic,
             lstVarVal = iv,compiledFunctions = cf,
             loadedFiles = lf)),msg)
       equation
         newp = Parser.parsestring(str,name);
         newp = Interactive.updateProgram(newp, p);
       then
-        (Env.emptyCache(),Values.BOOL(true),Interactive.SYMBOLTABLE(newp,aDep,sp,ic,iv,cf,lf));
+        (Env.emptyCache(),Values.BOOL(true),Interactive.SYMBOLTABLE(newp,aDep,NONE(),ic,iv,cf,lf));
         
     case (cache,env,"loadString",_,st,msg)
     then (cache,Values.BOOL(false),st);
@@ -1394,7 +1363,7 @@ algorithm
         (cache,Values.BOOL(true),st);
         
     case (cache,env,"saveModel",{Values.STRING(name),Values.CODE(Absyn.C_TYPENAME(classpath))},
-        (st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+        (st as Interactive.SYMBOLTABLE(ast = p)),msg)
       equation
         absynClass = Interactive.getPathedClassInProgram(classpath, p);
         str = Dump.unparseStr(Absyn.PROGRAM({absynClass},Absyn.TOP(),Absyn.TIMESTAMP(0.0,0.0)),true);
@@ -1705,11 +1674,7 @@ algorithm
         
         // he-mag, visualize
         // visualize(model, x)
-    case (cache,env,"visualize",{Values.CODE(Absyn.C_TYPENAME(className))},
-        (st as Interactive.SYMBOLTABLE(
-          ast = p,explodedAst = sp,instClsLst = ic,
-          lstVarVal = iv,compiledFunctions = cf,
-          loadedFiles = lf)),msg)
+    case (cache,env,"visualize",{Values.CODE(Absyn.C_TYPENAME(className))},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
       equation
         //Jag måste få readptol att skicka alla variabler i .plt-filen, och en ide är
         //att göra en egen enkel funktion som i princip är en grep på DataSet: i filen..
@@ -1966,7 +1931,7 @@ algorithm
       Integer elimLevel;
       String flatModelicaStr;
 
-    case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg,filenameprefix) /* mo file directory */
+    case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg,filenameprefix) /* mo file directory */
       equation
         p_1 = SCodeUtil.translateAbsyn2SCode(p);
         (cache,env,_,dae_1) =
@@ -2144,7 +2109,7 @@ algorithm
       Absyn.Program p1;
       Boolean strEmpty;
 
-    case (cache,env,className,(st as Interactive.SYMBOLTABLE(p as Absyn.PROGRAM(globalBuildTimes=ts),aDep,sp,ic,iv,cf,lf)),msg)
+    case (cache,env,className,(st as Interactive.SYMBOLTABLE(p as Absyn.PROGRAM(globalBuildTimes=ts),aDep,_,ic,iv,cf,lf)),msg)
       equation
         cls = Interactive.getPathedClassInProgram(className, p);
         refactoredClass = Refactor.refactorGraphicalAnnotation(p, cls);
@@ -2153,7 +2118,7 @@ algorithm
         s1 = Absyn.pathString(className);
         retStr=stringAppendList({"Translation of ",s1," successful.\n"});
       then
-        (cache,Values.STRING(retStr),Interactive.SYMBOLTABLE(p1,aDep,sp,ic,iv,cf,lf));
+        (cache,Values.STRING(retStr),Interactive.SYMBOLTABLE(p1,aDep,NONE(),ic,iv,cf,lf));
 
     case (cache,_,_,st,_)
       equation
@@ -2252,7 +2217,7 @@ algorithm
       
     // do not recompile.
     case (cache,env,{Values.CODE(Absyn.C_TYPENAME(classname)),starttime,stoptime,interval,tolerance,Values.STRING(method_str),Values.STRING(filenameprefix),Values.BOOL(cdToTemp),_,options,Values.STRING(outputFormat_str),_,_},
-          (st as Interactive.SYMBOLTABLE(ast = p as Absyn.PROGRAM(globalBuildTimes=Absyn.TIMESTAMP(_,edit)),explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+          (st as Interactive.SYMBOLTABLE(ast = p as Absyn.PROGRAM(globalBuildTimes=Absyn.TIMESTAMP(_,edit)))),msg)
       // If we already have an up-to-date version of the binary file, we don't need to recompile.
       equation
         //cdef = Interactive.getPathedClassInProgram(classname,p);
@@ -2271,7 +2236,7 @@ algorithm
       (cache,filenameprefix,method_str,outputFormat_str,st,init_filename,zeroAdditionalSimulationResultValues);
     
     // compile the model
-    case (cache,env,vals as {Values.CODE(Absyn.C_TYPENAME(classname)),starttime,stoptime,interval,tolerance,method,Values.STRING(filenameprefix),Values.BOOL(cdToTemp),noClean,options,outputFormat,variableFilter,_,_},(st_1 as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+    case (cache,env,vals as {Values.CODE(Absyn.C_TYPENAME(classname)),starttime,stoptime,interval,tolerance,method,Values.STRING(filenameprefix),Values.BOOL(cdToTemp),noClean,options,outputFormat,variableFilter,_,_},(st_1 as Interactive.SYMBOLTABLE(ast = p)),msg)
       equation
         (cdef as Absyn.CLASS(info = Absyn.INFO(buildTimes=ts as Absyn.TIMESTAMP(_,globalEdit)))) = Interactive.getPathedClassInProgram(classname,p);
         Absyn.PROGRAM(_,_,Absyn.TIMESTAMP(globalBuild,_)) = p;
@@ -2481,35 +2446,15 @@ end winCitation;
 protected function extractFilePrefix "function extractFilePrefix
   author: x02lucpo
   extracts the file prefix from DAE.Exp as string"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input DAE.Exp inExp;
-  input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
-  input Ceval.Msg inMsg;
+  input Env.Cache cache;
+  input Env.Env env;
+  input DAE.Exp filenameprefix;
+  input Interactive.InteractiveSymbolTable st;
+  input Ceval.Msg msg;
   output Env.Cache outCache;
   output String outString;
 algorithm
-  (outCache,outString):=
-  match (inCache,inEnv,inExp,inInteractiveSymbolTable,inMsg)
-    local
-      String prefix_str;
-      Interactive.InteractiveSymbolTable st;
-      list<Env.Frame> env;
-      DAE.Exp filenameprefix;
-      Absyn.Program p;
-      list<SCode.Element> sp;
-      list<Interactive.InstantiatedClass> ic;
-      list<Interactive.InteractiveVariable> iv;
-      list<Interactive.CompiledCFunction> cf;
-      Ceval.Msg msg;
-      Env.Cache cache;
-    case (cache,env,filenameprefix,(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
-      equation
-        (cache,Values.STRING(prefix_str),SOME(st)) = Ceval.ceval(cache,env, filenameprefix, true, SOME(st),NONE(), msg);
-      then
-        (cache,prefix_str);
-    case (_,_,_,_,_) then fail();
-  end match;
+  (outCache,Values.STRING(outString),_) := Ceval.ceval(cache, env, filenameprefix, true, SOME(st),NONE(), msg);
 end extractFilePrefix;
 
 public function cevalAstExp
@@ -3010,7 +2955,7 @@ algorithm
       BackendDAE.Variables vars;
     
     // handle partial models
-    case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+    case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p)),msg)
       equation
         ptot = Dependency.getTotalProgram(className,p);
         // see if class is partial
@@ -3081,7 +3026,7 @@ algorithm
         (cache,Values.STRING(retStr),st);
 
     // handle normal models
-    case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+    case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p)),msg)
       equation
         ptot = Dependency.getTotalProgram(className,p);
         // non-partial non-functions
@@ -3127,7 +3072,7 @@ algorithm
         (cache,Values.STRING(retStr),st);
 
     // handle functions
-    case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+    case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p)),msg)
       equation
         ptot = Dependency.getTotalProgram(className,p);
         Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(),_,_) = Interactive.getPathedClassInProgram(className, p);
@@ -3529,7 +3474,7 @@ algorithm
       String ret;
       list<Env.Frame> env;
     
-    case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+    case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p)),msg)
       equation
         allClassPaths = getAllClassPathsRecursive(className, p);
         // allClassPaths = Util.listSelect(allClassPaths, filterLib);
@@ -3541,7 +3486,7 @@ algorithm
       then
         (cache,Values.STRING(ret),st);
     
-    case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+    case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p)),msg)
       equation
         ret = stringAppend("Error checking: ", Absyn.pathString(className));
     then
@@ -3593,7 +3538,7 @@ algorithm
       Absyn.Class c;
     case (cache,env,{},_,_) then ();
 
-    case (cache,env,className::rest,(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+    case (cache,env,className::rest,(st as Interactive.SYMBOLTABLE(ast = p)),msg)
       equation
         c = Interactive.getPathedClassInProgram(className, p);
         // filter out partial classes
@@ -3618,7 +3563,7 @@ algorithm
       then
         ();
 
-    case (cache,env,className::rest,(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+    case (cache,env,className::rest,(st as Interactive.SYMBOLTABLE(ast = p)),msg)
       equation
         c = Interactive.getPathedClassInProgram(className, p);
         print("Checking skipped: " +& Dump.unparseClassAttributesStr(c) +& " " +& Absyn.pathString(className) +& "... \n");
@@ -3667,7 +3612,7 @@ algorithm
       Absyn.TimeStamp ts;
     
     // normal call
-    case (cache,env,vals as {Values.CODE(Absyn.C_TYPENAME(classname)),starttime,stoptime,interval,tolerance, method,Values.STRING(filenameprefix),Values.BOOL(cdToTemp),noClean,options},(st as Interactive.SYMBOLTABLE(ast = p  as Absyn.PROGRAM(globalBuildTimes=ts),explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+    case (cache,env,vals as {Values.CODE(Absyn.C_TYPENAME(classname)),starttime,stoptime,interval,tolerance, method,Values.STRING(filenameprefix),Values.BOOL(cdToTemp),noClean,options},(st as Interactive.SYMBOLTABLE(ast = p  as Absyn.PROGRAM(globalBuildTimes=ts))),msg)
       equation
         cdef = Interactive.getPathedClassInProgram(classname,p);
         _ = Error.getMessagesStr() "Clear messages";
