@@ -201,7 +201,7 @@ void ModelicaTree::addNode(QString name, int type, QString parentName, QString p
     LibraryLoader *libraryLoader = new LibraryLoader(newTreePost, parentStructure + name, this);
     libraryLoader->start(QThread::HighestPriority);
     while (libraryLoader->isRunning())
-        qApp->processEvents();
+        qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
 
     setCurrentItem(newTreePost);
     mModelicaTreeNodesList.append(newTreePost);
@@ -519,7 +519,7 @@ void LibraryTree::addModelicaStandardLibrary()
             LibraryLoader *libraryLoader = new LibraryLoader(newTreePost, lib, this);
             libraryLoader->start(QThread::HighestPriority);
             while (libraryLoader->isRunning())
-                qApp->processEvents();
+                qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
         }
 
 //        addClass("Ground", "", "Modelica.Electrical.Analog.Basic.", true);
@@ -635,7 +635,7 @@ void LibraryTree::addClass(QList<LibraryTreeNode *> *tempPackageNodesList,
         LibraryLoader *libraryLoader = new LibraryLoader(newTreePost, parentStructure + className, this);
         libraryLoader->start(QThread::HighestPriority);
         while (libraryLoader->isRunning())
-            qApp->processEvents();
+            qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
     }
 }
 
@@ -1126,7 +1126,7 @@ void SearchMSLWidget::searchMSL()
         LibraryLoader *libraryLoader = new LibraryLoader(newTreePost, foundedItem, mpSearchedItemsTree);
         libraryLoader->start(QThread::HighestPriority);
         while (libraryLoader->isRunning())
-            qApp->processEvents();
+            qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
     }
 }
 
