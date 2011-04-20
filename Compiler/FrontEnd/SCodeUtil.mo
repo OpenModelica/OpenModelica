@@ -104,7 +104,6 @@ algorithm
         // retrieve the expandable connector presence external flag
         // hasExpandableConnectors = System.getHasExpandableConnectors();
         // (ih, sp) = ExpandableConnectors.elaborateExpandableConnectors(sp, hasExpandableConnectors);
-        // sp = SCodeFlatten.flatten(sp);
       then
         sp;
   end match;

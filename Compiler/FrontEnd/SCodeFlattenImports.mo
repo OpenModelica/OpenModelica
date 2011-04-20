@@ -46,7 +46,9 @@ public import SCodeEnv;
 
 public type Env = SCodeEnv.Env;
 
+protected import Debug;
 protected import Error;
+protected import RTOpts;
 protected import SCodeLookup;
 protected import Util;
 
@@ -59,28 +61,49 @@ public function flattenProgram
   input SCode.Program inProgram;
   input Env inEnv;
   output SCode.Program outProgram;
+  output Env outEnv;
 algorithm
-  outProgram := Util.listMap1(inProgram, flattenClass, inEnv);
+  (outProgram, outEnv) := Util.listMapAndFold(inProgram, flattenClass, inEnv);
 end flattenProgram;
 
 public function flattenClass
   input SCode.Element inClass;
   input Env inEnv;
   output SCode.Element outClass;
-protected
-  SCode.Ident name;
-  SCode.Partial part_pre;
-  SCode.Encapsulated encap_pre;
-  SCode.Prefixes prefixes;
-  SCode.Restriction restriction;
-  SCode.ClassDef cdef;
-  Absyn.Info info;
-  Env env;
+  output Env outEnv;
 algorithm
-  SCode.CLASS(name, prefixes, encap_pre, part_pre, restriction, cdef, info) := inClass;
-  env := SCodeEnv.enterScope(inEnv, name);
-  cdef := flattenClassDef(cdef, env, info);
-  outClass := SCode.CLASS(name, prefixes, encap_pre, part_pre, restriction, cdef, info);
+  (outClass, outEnv) := matchcontinue(inClass, inEnv)
+    local
+      SCode.Ident name;
+      SCode.ClassDef cdef;
+      Absyn.Info info;
+      Item item;
+      Env env;
+      SCodeEnv.Frame cls_env;
+      SCode.Element cls;
+      SCodeEnv.ClassType cls_ty;
+
+    case (SCode.CLASS(name = name, classDef = cdef, info = info), _)
+      equation
+        SCodeEnv.CLASS(env = {cls_env}, classType = cls_ty) = 
+          SCodeEnv.getItemInEnv(name, inEnv);
+        env = SCodeEnv.enterFrame(cls_env, inEnv);
+
+        (cdef, cls_env :: env) = flattenClassDef(cdef, env, info);
+        cls = SCode.setElementClassDefinition(cdef, inClass);
+        item = SCodeEnv.newClassItem(cls, {cls_env}, cls_ty);
+        env = SCodeEnv.updateItemInEnv(item, env, name);
+      then
+        (cls, env);
+
+    else
+      equation
+        true = RTOpts.debugFlag("failtrace");
+        Debug.traceln("- SCodeFlattenImports.flattenClass failed on " +&
+          SCode.elementName(inClass) +& " in " +& SCodeEnv.getEnvName(inEnv));
+      then
+        fail();
+  end matchcontinue;
 end flattenClass;
 
 protected function flattenClassDef
@@ -88,8 +111,9 @@ protected function flattenClassDef
   input Env inEnv;
   input Absyn.Info inInfo;
   output SCode.ClassDef outClassDef;
+  output Env outEnv;
 algorithm
-  outClassDef := match(inClassDef, inEnv, inInfo)
+  (outClassDef, outEnv) := match(inClassDef, inEnv, inInfo)
     local
       list<SCode.Element> el, ex, cl, im, co, ud;
       list<SCode.Equation> neql, ieql;
@@ -102,37 +126,29 @@ algorithm
       SCode.Attributes attr;
       Env env;
       SCode.Ident bc;
+      SCode.ClassDef cdef;
 
     case (SCode.PARTS(el, neql, ieql, nal, ial, extdecl, annl, cmt), _, _)
       equation
         // Lookup elements.
-        el = Util.listMap1(el, flattenElement, inEnv);
         el = Util.listFilter(el, isNotImport);
+        (el, env) = Util.listMapAndFold(el, flattenElement, inEnv);
 
         // Lookup equations and algorithm names.
-        neql = Util.listMap1(neql, flattenEquation, inEnv);
-        ieql = Util.listMap1(ieql, flattenEquation, inEnv);
-        nal = Util.listMap1(nal, flattenAlgorithm, inEnv);
-        ial = Util.listMap1(ial, flattenAlgorithm, inEnv);
+        neql = Util.listMap1(neql, flattenEquation, env);
+        ieql = Util.listMap1(ieql, flattenEquation, env);
+        nal = Util.listMap1(nal, flattenAlgorithm, env);
+        ial = Util.listMap1(ial, flattenAlgorithm, env);
       then
-        SCode.PARTS(el, neql, ieql, nal, ial, extdecl, annl, cmt);
+        (SCode.PARTS(el, neql, ieql, nal, ial, extdecl, annl, cmt), env);
 
-    case (SCode.CLASS_EXTENDS(bc, mods, SCode.PARTS(el, neql, ieql, nal, ial, extdecl, annl, cmt)), _, _)
+    case (SCode.CLASS_EXTENDS(bc, mods, cdef), _, _)
       equation
-        // Lookup elements.
-        el = Util.listMap1(el, flattenElement, inEnv);
-        el = Util.listFilter(el, isNotImport);
-
-        // Lookup equations and algorithm names.
-        neql = Util.listMap1(neql, flattenEquation, inEnv);
-        ieql = Util.listMap1(ieql, flattenEquation, inEnv);
-        nal = Util.listMap1(nal, flattenAlgorithm, inEnv);
-        ial = Util.listMap1(ial, flattenAlgorithm, inEnv);
-
-        mods = flattenModifier(mods, inEnv, inInfo);
+        (cdef, env) = flattenClassDef(cdef, inEnv, inInfo);
+        mods = flattenModifier(mods, env, inInfo);
       then
-        SCode.CLASS_EXTENDS(bc, mods, SCode.PARTS(el, neql, ieql, nal, ial, extdecl, annl, cmt));
-        
+        (SCode.CLASS_EXTENDS(bc, mods, cdef), env);
+
     case (SCode.DERIVED(ty, mods, attr, cmt), env, _)
       equation
         mods = flattenModifier(mods, env, inInfo);
@@ -141,9 +157,9 @@ algorithm
         env = SCodeEnv.removeExtendsFromLocalScope(env);
         ty = flattenTypeSpec(ty, env, inInfo);
       then
-        SCode.DERIVED(ty, mods, attr, cmt);
+        (SCode.DERIVED(ty, mods, attr, cmt), inEnv);
 
-    else then inClassDef;
+    else then (inClassDef, inEnv);
   end match;
 end flattenClassDef;
 
@@ -177,36 +193,38 @@ protected function flattenElement
   input SCode.Element inElement;
   input Env inEnv;
   output SCode.Element outElement;
+  output Env outEnv;
 algorithm
-  outElement := match(inElement, inEnv)
+  (outElement, outEnv) := match(inElement, inEnv)
+    local
+      Env env;
+      SCode.Element elem;
+      String name;
+      Item item;
+
     // Lookup component types, modifications and conditions.
-    case (SCode.COMPONENT(name = _), _)
-      then flattenComponent(inElement, inEnv);
+    case (SCode.COMPONENT(name = name), _)
+      equation
+        elem = flattenComponent(inElement, inEnv);
+        item = SCodeEnv.newVarItem(elem, true);
+        env = SCodeEnv.updateItemInEnv(item, inEnv, name);
+      then
+        (elem, env);
 
     // Lookup class definitions.
     case (SCode.CLASS(name = _), _)
-      then flattenClassDefElements(inElement, inEnv);
+      equation
+        (elem, env) = flattenClass(inElement, inEnv);
+      then
+        (elem, env);
 
     // Lookup base class and modifications in extends clauses.
     case (SCode.EXTENDS(baseClassPath = _), _)
-      then flattenExtends(inElement, inEnv);
+      then (flattenExtends(inElement, inEnv), inEnv);
 
-    else then inElement;
+    else then (inElement, inEnv);
   end match;
 end flattenElement;
-    
-protected function flattenClassDefElements
-  input SCode.Element inClassDefElement;
-  input Env inEnv;
-  output SCode.Element outClassDefElement;
-protected
-  SCode.Ident name;
-  SCode.Element cls;
-algorithm
-  SCode.CLASS(name = _) := inClassDefElement;
-  cls := flattenClass(inClassDefElement, inEnv);
-  outClassDefElement := cls;
-end flattenClassDefElements;
 
 protected function flattenComponent
   input SCode.Element inComponent;

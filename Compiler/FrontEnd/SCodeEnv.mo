@@ -490,6 +490,37 @@ algorithm
   outEnv := FRAME(name, ty, tree, exts, imps, is_used) :: rest;
 end extendEnvWithItem;
 
+public function updateItemInEnv
+  "Updates an item in the environment by replacing an existing item."
+  input Item inItem;
+  input Env inEnv;
+  input String inItemName;
+  output Env outEnv;
+protected
+  Option<String> name;
+  AvlTree tree;
+  ExtendsTable exts;
+  ImportTable imps;
+  FrameType ty;
+  Env rest;
+  Util.StatefulBoolean is_used;
+algorithm
+  FRAME(name, ty, tree, exts, imps, is_used) :: rest := inEnv;
+  tree := avlTreeReplace(tree, inItemName, inItem);
+  outEnv := FRAME(name, ty, tree, exts, imps, is_used) :: rest;
+end updateItemInEnv;
+
+public function getItemInEnv
+  input String inItemName;
+  input Env inEnv;
+  output Item outItem;
+protected
+  AvlTree tree;
+algorithm
+  FRAME(clsAndVars = tree) :: _ := inEnv;
+  outItem := avlTreeGet(tree, inItemName);
+end getItemInEnv;
+
 protected function extendEnvWithImport
   "Extends the environment with an import element."
   input SCode.Element inImport;

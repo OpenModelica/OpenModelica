@@ -3749,17 +3749,11 @@ public function addElementToClass
   input Element inClassDef;
   output Element outClassDef;
 protected
-  Ident n;
-  Prefixes pf;
-  Encapsulated ep;
-  Partial pp;
-  Restriction r;
   ClassDef cdef;
-  Absyn.Info i;
 algorithm
-  CLASS(n, pf, ep, pp, r, cdef, i) := inClassDef;
+  CLASS(classDef = cdef) := inClassDef;
   cdef := addElementToCompositeClassDef(inElement, cdef);
-  outClassDef := CLASS(n, pf, ep, pp, r, cdef, i);
+  outClassDef := setElementClassDefinition(cdef, inClassDef);
 end addElementToClass;
 
 public function addElementToCompositeClassDef
@@ -3778,6 +3772,22 @@ algorithm
   PARTS(el, nel, iel, nal, ial, ed, annl, c) := inClassDef;
   outClassDef := PARTS(inElement :: el, nel, iel, nal, ial, ed, annl, c);
 end addElementToCompositeClassDef;
+
+public function setElementClassDefinition
+  input ClassDef inClassDef;
+  input Element inElement;
+  output Element outElement;
+protected
+  Ident n;
+  Prefixes pf;
+  Partial pp;
+  Encapsulated ep;
+  Restriction r;
+  Absyn.Info i;
+algorithm
+  CLASS(n, pf, ep, pp, r, _, i) := inElement;
+  outElement := CLASS(n, pf, ep, pp, r, inClassDef, i);
+end setElementClassDefinition;
 
 public function flowStr
   input Flow inFlow;

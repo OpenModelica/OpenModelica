@@ -130,7 +130,7 @@ algorithm
         env = SCodeEnv.updateExtendsInEnv(env);
 
         (prog, env) = SCodeDependency.analyse(inClassName, env, prog);
-        prog = SCodeFlattenImports.flattenProgram(prog, env);
+        (prog, env) = SCodeFlattenImports.flattenProgram(prog, env);
         prog = SCodeFlattenExtends.flattenProgram(prog, env);
         
         //System.stopTimer();
