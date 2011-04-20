@@ -21,19 +21,19 @@ Makefile.lib: Makefile OMPlotLib.pro OMPlotGUI.config
 	$(QMAKE) OMPlotLib.pro -o $@
 
 clean:
-	test ! -f Makefile || make -f Makefile clean
-	test ! -f Makefile.lib || make -f Makefile.lib clean
+	test ! -f Makefile || $(MAKE) -f Makefile clean
+	test ! -f Makefile.lib || $(MAKE) -f Makefile.lib clean
 	rm -rf $(NAME) $(NAME)$(EXE) Makefile
 
 $(NAME)$(EXE): Makefile
-	make -f Makefile
+	$(MAKE) -f Makefile
 ifeq ($(EXE),.app)
 $(NAME): $(NAME)$(EXE) always
 	cp -p ../bin/$</Contents/MacOS/$(NAME) ../bin/$@
 endif
 
 $(LIB): Makefile.lib
-	make -f $<
+	$(MAKE) -f $<
 
 build: $(NAME) $(LIB)
 	cp -p ../bin/$(NAME) $(builddir_bin)
