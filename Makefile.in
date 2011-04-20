@@ -42,31 +42,31 @@ qtclients:
 qtclean: qtclean-common
 else
 omnotebook: mkbuilddirs
-	make -C OMNotebook/OMNotebookGUI -f Makefile.unix 
+	$(MAKE) -C OMNotebook/OMNotebookGUI -f Makefile.unix 
 omshell: mkbuilddirs
-	make -C OMShell/OMShellGUI -f Makefile.unix
+	$(MAKE) -C OMShell/OMShellGUI -f Makefile.unix
 omplotwindow: mkbuilddirs
-	make -C OMNotebook/OMPlotWindow -f Makefile.unix
+	$(MAKE) -C OMNotebook/OMPlotWindow -f Makefile.unix
 omplot: mkbuilddirs
-	make -C OMPlot/OMPlotGUI -f Makefile.unix
+	$(MAKE) -C OMPlot/OMPlotGUI -f Makefile.unix
 omedit: mkbuilddirs omplot
-	make -C OMEdit/OMEditGUI -f Makefile.unix
+	$(MAKE) -C OMEdit/OMEditGUI -f Makefile.unix
 ifeq (@with_paradiseo@,)
 omoptim:
 	@echo "*** OpenModelica configured without support for OMOptim (--without-paradisEO)"
 else
 omoptim: mkbuilddirs
-	make -C OMOptim/build -f Makefile.unix
+	$(MAKE) -C OMOptim/build -f Makefile.unix
 endif
 
 qtclients: omnotebook omshell omplotwindow omedit omplot omoptim
 
 qtclean: qtclean-common
-	make -C OMShell/OMShellGUI -f Makefile.unix clean
-	make -C OMNotebook/OMPlotWindow -f Makefile.unix clean
-	make -C OMNotebook/OMNotebookGUI -f Makefile.unix clean
-	make -C OMEdit/OMEditGUI -f Makefile.unix clean
-	make -C OMPlot/OMPlotGUI -f Makefile.unix clean
+	$(MAKE) -C OMShell/OMShellGUI -f Makefile.unix clean
+	$(MAKE) -C OMNotebook/OMPlotWindow -f Makefile.unix clean
+	$(MAKE) -C OMNotebook/OMNotebookGUI -f Makefile.unix clean
+	$(MAKE) -C OMEdit/OMEditGUI -f Makefile.unix clean
+	$(MAKE) -C OMPlot/OMPlotGUI -f Makefile.unix clean
 endif
 
 fix-svn-eol-style:
