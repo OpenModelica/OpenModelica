@@ -1046,10 +1046,12 @@ algorithm
     local
       Absyn.Annotation ann;
       SCode.Annotation sann;
+      list<Absyn.Exp> args;
 
     // An external declaration might have an annotation that we need to analyse.
-    case (SOME(Absyn.EXTERNALDECL(annotation_ = SOME(ann))), _, _)
+    case (SOME(Absyn.EXTERNALDECL(args = args, annotation_ = SOME(ann))), _, _)
       equation
+        Util.listMap02(args, analyseExp, inEnv, inInfo);
         sann = SCodeUtil.translateAnnotation(ann);
         analyseAnnotation(sann, inEnv, inInfo);
       then
