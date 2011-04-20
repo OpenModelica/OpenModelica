@@ -112,8 +112,8 @@ algorithm
   (vars,eqns) := addDummyState(vars, eqns, shouldAddDummyDerivative);
        
   //(aeqns,vars) := addFunctionRetVar(aeqns,vars);
-  ((aeqns,eqns)) := Util.listFold(aeqns,splitArrayEqn,({},eqns));
-  ((iaeqns,ieqns)) := Util.listFold(iaeqns,splitArrayEqn,({},ieqns));
+  ((aeqns,eqns,_)) := Util.listFold(aeqns,splitArrayEqn,({},eqns,functionTree));
+  ((iaeqns,ieqns,_)) := Util.listFold(iaeqns,splitArrayEqn,({},ieqns,functionTree));
   whenclauses_1 := listReverse(whenclauses);
   (algeqns,algeqns1,ialgeqns) := lowerAlgorithms(vars, algs, ialgs);
   (multidimeqns,imultidimeqns) := lowerMultidimeqns(vars, aeqns, iaeqns);
@@ -242,7 +242,7 @@ algorithm
       list<BackendDAE.WhenClause> whenclauses,whenclauses_1,whenclauses_2;
       list<BackendDAE.Equation> eqns,reqns,ieqns,eqns2,re,eqsComplex;
       list<BackendDAE.MultiDimEquation> aeqns,aeqns1,aeqns2,iaeqns,iaeqns1,iaeqns2;
-      list<DAE.Algorithm> algs,ialgs,algs1,ialgs1,minmax,nominal;
+      list<DAE.Algorithm> algs,ialgs,algs1,ialgs1;
       BackendDAE.ExternalObjectClasses extObjCls;
       BackendDAE.ExternalObjectClass extObjCl;
       DAE.Element daeEl;
@@ -304,44 +304,32 @@ algorithm
         // adrpo 2009-09-07 - according to MathCore
         // add the binding as an equation and remove the binding from variable!
         true = isStateOrAlgvar(daeEl);
-        (backendVar1,SOME(e1),states,minmax,nominal) = lowerVar(daeEl, states);
+        (backendVar1,SOME(e1),states) = lowerVar(daeEl, states);
         SOME(backendVar2) = Inline.inlineVarOpt(SOME(backendVar1),(SOME(functionTree),{DAE.NORM_INLINE()}));
         (e2,source) = Inline.inlineExp(e1,(SOME(functionTree),{DAE.NORM_INLINE()}),source);
         vars = BackendVariable.addVar(backendVar2, vars);
         e1 = Expression.crefExp(cr);
-        //algs1 = listAppend(algs,minmax);
-        //ialgs1 = listAppend(ialgs,nominal);
-        algs1 = algs;
-        ialgs1 = ialgs;
       then
-        (vars,knvars,extVars,BackendDAE.EQUATION(e1, e2, source)::eqns,reqns,ieqns,aeqns,iaeqns,algs1,ialgs1,whenclauses_1,extObjCls,states);
+        (vars,knvars,extVars,BackendDAE.EQUATION(e1, e2, source)::eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,whenclauses_1,extObjCls,states);
     
     // variables: states and algebraic variables with NO binding equation
     case (daeEl as DAE.VAR(componentRef = cr, source = source),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,whenclauses_1,extObjCls,states)
       equation
         true = isStateOrAlgvar(daeEl);
-        (backendVar1,NONE(),states,minmax,nominal) = lowerVar(daeEl, states);
+        (backendVar1,NONE(),states) = lowerVar(daeEl, states);
         SOME(backendVar2) = Inline.inlineVarOpt(SOME(backendVar1),(SOME(functionTree),{DAE.NORM_INLINE()}));
         vars = BackendVariable.addVar(backendVar2, vars);
-        //algs1 = listAppend(algs,minmax);
-        //ialgs1 = listAppend(ialgs,nominal);
-        algs1 = algs;
-        ialgs1 = ialgs;
       then
-        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs1,ialgs1,whenclauses_1,extObjCls,states);
+        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,whenclauses_1,extObjCls,states);
     
     // known variables: parameters and constants
     case (daeEl as DAE.VAR(componentRef = _),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,whenclauses_1,extObjCls,states)
       equation
-        (backendVar1,minmax,nominal) = lowerKnownVar(daeEl) "in previous rule, lower_var failed." ;
+        backendVar1 = lowerKnownVar(daeEl) "in previous rule, lower_var failed." ;
         SOME(backendVar2) = Inline.inlineVarOpt(SOME(backendVar1),(SOME(functionTree),{DAE.NORM_INLINE()}));
         knvars = BackendVariable.addVar(backendVar2, knvars);
-        //ialgs1 = listAppend(ialgs,minmax);
-        //ialgs1 = listAppend(ialgs1,nominal);
-        algs1 = algs;
-        ialgs1 = ialgs;
       then
-        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs1,whenclauses_1,extObjCls,states);
+        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,whenclauses_1,extObjCls,states);
     
     // tuple equations are rewritten to algorithm tuple assign.
     case (daeEl as DAE.EQUATION(exp = e1,scalar = e2),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,whenclauses_1,extObjCls,states)
@@ -455,7 +443,7 @@ algorithm
     // assert in equation section is converted to ALGORITHM
     case (DAE.ASSERT(cond,msg,source),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,whenclauses_1,extObjCls,states)
       equation
-        checkAssertCondition(cond,msg);
+        BackendDAEUtil.checkAssertCondition(cond,msg);
         a = Inline.inlineAlgorithm(DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond,msg,source)}),(SOME(functionTree),{DAE.NORM_INLINE()}));
       then
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,a::algs,ialgs,whenclauses_1,extObjCls,states);
@@ -564,10 +552,8 @@ protected function lowerVar
   output BackendDAE.Var outVar;
   output Option<DAE.Exp> outBinding;
   output BackendDAE.BinTree outBinTree;
-  output list<DAE.Algorithm> minmax;
-  output list<DAE.Algorithm> nominal;
 algorithm
-  (outVar,outBinding,outBinTree,minmax,nominal) := match (inElement,inBinTree)
+  (outVar,outBinding,outBinTree) := match (inElement,inBinTree)
     local
       list<DAE.Subscript> dims;
       DAE.ComponentRef name;
@@ -601,12 +587,12 @@ algorithm
       equation
         (kind_1,states) = lowerVarkind(kind, t, name, dir, flowPrefix, streamPrefix, states, dae_var_attr);
         tp = lowerType(t);
-        minmax = lowerMinMax(dae_var_attr,name,source,kind_1);
-        nominal = lowerNominal(dae_var_attr,name,source,kind_1);
         b = DAEUtil.boolVarVisibility(protection);
         dae_var_attr = DAEUtil.setProtectedAttr(dae_var_attr,b);
+        _ = BackendVariable.getMinMaxAsserts(dae_var_attr,name,source,kind_1);
+        _ = BackendVariable.getNominalAssert(dae_var_attr,name,source,kind_1);        
       then
-        (BackendDAE.VAR(name,kind_1,dir,tp,NONE(),NONE(),dims,-1,source,dae_var_attr,comment,flowPrefix,streamPrefix), bind, states, minmax, nominal);
+        (BackendDAE.VAR(name,kind_1,dir,tp,NONE(),NONE(),dims,-1,source,dae_var_attr,comment,flowPrefix,streamPrefix), bind, states);
   end match;
 end lowerVar;
 
@@ -615,10 +601,8 @@ protected function lowerKnownVar
   Helper function to lower2"
   input DAE.Element inElement;
   output BackendDAE.Var outVar;
-  output list<DAE.Algorithm> minmax;
-  output list<DAE.Algorithm> nominal;
 algorithm
-  (outVar, minmax, nominal) := matchcontinue (inElement)
+  outVar := matchcontinue (inElement)
     local
       list<DAE.Subscript> dims;
       DAE.ComponentRef name;
@@ -652,12 +636,12 @@ algorithm
         kind_1 = lowerKnownVarkind(kind, name, dir, flowPrefix);
         bind = fixParameterStartBinding(bind,dae_var_attr,kind_1);
         tp = lowerType(t);
-        minmax = lowerMinMax(dae_var_attr,name,source,kind_1);
-        nominal = lowerNominal(dae_var_attr,name,source,kind_1);
         b = DAEUtil.boolVarVisibility(protection);
         dae_var_attr = DAEUtil.setProtectedAttr(dae_var_attr,b);
+        _ = BackendVariable.getMinMaxAsserts(dae_var_attr,name,source,kind_1);
+        _ = BackendVariable.getNominalAssert(dae_var_attr,name,source,kind_1);
       then
-        (BackendDAE.VAR(name,kind_1,dir,tp,bind,NONE(),dims,-1,source,dae_var_attr,comment,flowPrefix,streamPrefix), minmax, nominal);
+        BackendDAE.VAR(name,kind_1,dir,tp,bind,NONE(),dims,-1,source,dae_var_attr,comment,flowPrefix,streamPrefix);
 
     case (_)
       equation
@@ -874,97 +858,6 @@ algorithm
   end match;
 end lowerExtObjVarkind;
 
-protected function lowerMinMax
-"Author: Frenkel TUD 2011-03"
-  input Option<DAE.VariableAttributes> attr;
-  input DAE.ComponentRef name;
-  input DAE.ElementSource source;
-  input BackendDAE.VarKind kind;
-  output list<DAE.Algorithm> minmax;
-algorithm
-  minmax :=
-  matchcontinue (attr,name,source,kind)
-    local
-      DAE.Exp e,cond,msg;
-      list<Option<DAE.Exp>> ominmax;
-      String str;
-      DAE.ExpType tp;
-    case(_,_,_,BackendDAE.CONST()) then {};
-    case (attr,name,source,_)
-      equation 
-        ominmax = DAEUtil.getMinMax(attr);
-        str = ComponentReference.crefStr(name);
-        str = stringAppendList({"Variable ",str," out of limit"});
-        msg = DAE.SCONST(str);
-        e = Expression.crefExp(name);
-        tp = Expression.typeof(e);
-        cond = lowerMinMax1(ominmax,e,tp);
-        (cond,_) = ExpressionSimplify.simplify(cond);
-        // do not add if const true
-        false = Expression.isConstTrue(cond);
-        checkAssertCondition(cond,msg);
-      then 
-        {DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond,msg,source)})};
-    case(_,_,_,_) then {};
-  end matchcontinue;
-end lowerMinMax;
-
-protected function lowerMinMax1
-"Author: Frenkel TUD 2011-03"
-  input list<Option<DAE.Exp>> ominmax;
-  input DAE.Exp e;
-  input DAE.ExpType tp;
-  output DAE.Exp cond;
-algorithm
-  cond :=
-  match (ominmax,e,tp)
-    local
-      DAE.Exp min,max;
-    case (SOME(min)::(SOME(max)::{}),e,tp)
-      then DAE.LBINARY(DAE.RELATION(e,DAE.GREATEREQ(tp),min,-1,NONE()),
-                            DAE.AND(),
-                            DAE.RELATION(e,DAE.LESSEQ(tp),max,-1,NONE()));
-    case (SOME(min)::(NONE()::{}),e,tp)
-      then DAE.RELATION(e,DAE.GREATEREQ(tp),min,-1,NONE());
-    case (NONE()::(SOME(max)::{}),e,tp)
-      then DAE.RELATION(e,DAE.LESSEQ(tp),max,-1,NONE());
-  end match;
-end lowerMinMax1;
-
-protected function lowerNominal
-"Author: Frenkel TUD 2011-03"
-  input Option<DAE.VariableAttributes> attr;
-  input DAE.ComponentRef name;
-  input DAE.ElementSource source;
-  input BackendDAE.VarKind kind;
-  output list<DAE.Algorithm> nominal;
-algorithm
-  nominal :=
-  matchcontinue (attr,name,source,kind)
-    local
-      DAE.Exp e,cond,msg;
-      list<Option<DAE.Exp>> ominmax;
-      String str;
-      DAE.ExpType tp;
-      Boolean b;
-    case(_,_,_,BackendDAE.CONST()) then {};
-    case (attr as SOME(DAE.VAR_ATTR_REAL(nominal=SOME(e))),name,source,_)
-      equation 
-        ominmax = DAEUtil.getMinMax(attr);
-        str = ComponentReference.crefStr(name);
-        str = stringAppendList({"Nominal ",str," out of limit"});
-        msg = DAE.SCONST(str);
-        tp = Expression.typeof(e);
-        cond = lowerMinMax1(ominmax,e,tp);
-        (cond,_) = ExpressionSimplify.simplify(cond);
-        // do not add if const true
-        false = Expression.isConstTrue(cond);
-        checkAssertCondition(cond,msg);
-      then 
-        {DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond,msg,source)})};
-    case(_,_,_,_) then {};
-  end matchcontinue;
-end lowerNominal;
 
 /*
  *  lower all equation types
@@ -1084,8 +977,8 @@ end lowerArrEqn;
 protected function splitArrayEqn"
 Author: Frenkel TUD 2011-02"
   input  BackendDAE.MultiDimEquation inAEqn;
-  input  tuple<list<BackendDAE.MultiDimEquation>,list<BackendDAE.Equation>> inTpl;
-  output tuple<list<BackendDAE.MultiDimEquation>,list<BackendDAE.Equation>> outTpl;
+  input  tuple<list<BackendDAE.MultiDimEquation>,list<BackendDAE.Equation>,DAE.FunctionTree> inTpl;
+  output tuple<list<BackendDAE.MultiDimEquation>,list<BackendDAE.Equation>,DAE.FunctionTree> outTpl;
 algorithm
   outTpl := 
   matchcontinue (inAEqn,inTpl)
@@ -1094,10 +987,11 @@ algorithm
       list<BackendDAE.MultiDimEquation> aeqs;
       list<BackendDAE.Equation> eqns,eqns1,re;
       DAE.ElementSource source;
-      DAE.Exp e1,e2;
+      DAE.Exp e1,e2,e1_1,e2_1;
       list<DAE.Exp> ea1,ea2;
       list<tuple<DAE.Exp,DAE.Exp>> ealst;
-    case (BackendDAE.MULTIDIM_EQUATION(left=e1,right=e2,source=source),(aeqs,eqns))
+      DAE.FunctionTree funcs;
+    case (BackendDAE.MULTIDIM_EQUATION(left=e1,right=e2,source=source),(aeqs,eqns,funcs))
       equation
         true = Expression.isArray(e1) or Expression.isMatrix(e1);
         true = Expression.isArray(e2) or Expression.isMatrix(e2);
@@ -1107,8 +1001,30 @@ algorithm
         re = Util.listMap1(ealst,BackendEquation.generateEQUATION,source);
         eqns1 = listAppend(eqns,re);
       then
-        ((aeqs,eqns1));
-    case (aeqn,(aeqs,eqns)) then ((aeqn::aeqs,eqns));
+        ((aeqs,eqns1,funcs));
+    case (BackendDAE.MULTIDIM_EQUATION(left=e1 as DAE.CREF(componentRef =_),right=e2,source=source),(aeqs,eqns,funcs))
+      equation
+        true = Expression.isArray(e2) or Expression.isMatrix(e2);
+        ((e1_1,_)) = BackendDAEUtil.extendArrExp((e1,SOME(funcs)));
+        ea1 = Expression.flattenArrayExpToList(e1_1);
+        ea2 = Expression.flattenArrayExpToList(e2);
+        ealst = Util.listThreadTuple(ea1,ea2);
+        re = Util.listMap1(ealst,BackendEquation.generateEQUATION,source);
+        eqns1 = listAppend(eqns,re);
+      then
+        ((aeqs,eqns1,funcs)); 
+    case (BackendDAE.MULTIDIM_EQUATION(left=e1,right=e2 as DAE.CREF(componentRef =_),source=source),(aeqs,eqns,funcs))
+      equation
+        true = Expression.isArray(e1) or Expression.isMatrix(e1);
+        ((e2_1,_)) = BackendDAEUtil.extendArrExp((e2,SOME(funcs)));
+        ea1 = Expression.flattenArrayExpToList(e1);
+        ea2 = Expression.flattenArrayExpToList(e2_1);
+        ealst = Util.listThreadTuple(ea1,ea2);
+        re = Util.listMap1(ealst,BackendEquation.generateEQUATION,source);
+        eqns1 = listAppend(eqns,re);
+      then
+        ((aeqs,eqns1,funcs));      
+    case (aeqn,(aeqs,eqns,funcs)) then ((aeqn::aeqs,eqns,funcs));
   end matchcontinue;
 end splitArrayEqn;
 
@@ -3850,8 +3766,8 @@ algorithm
   // array types to array equations  
   case ((e1 as DAE.CREF(componentRef=cr1,ty=DAE.ET_ARRAY(arrayDimensions=ad)),e2),source,inFuncs)
     equation 
-      ((e1_1,_)) = extendArrExp((e1,SOME(inFuncs)));
-      ((e2_1,_)) = extendArrExp((e2,SOME(inFuncs)));
+      ((e1_1,_)) = BackendDAEUtil.extendArrExp((e1,SOME(inFuncs)));
+      ((e2_1,_)) = BackendDAEUtil.extendArrExp((e2,SOME(inFuncs)));
       (e2_2,_) = ExpressionSimplify.simplify(e2_1);
       ds = Util.listMap(ad, Expression.dimensionSize);
     then
@@ -3861,8 +3777,8 @@ algorithm
     equation 
       tp = Expression.typeof(e1);
       false = DAEUtil.expTypeComplex(tp);
-      ((e1_1,_)) = extendArrExp((e1,SOME(inFuncs)));
-      ((e2_1,_)) = extendArrExp((e2,SOME(inFuncs)));
+      ((e1_1,_)) = BackendDAEUtil.extendArrExp((e1,SOME(inFuncs)));
+      ((e2_1,_)) = BackendDAEUtil.extendArrExp((e2,SOME(inFuncs)));
       (e2_2,_) = ExpressionSimplify.simplify(e2_1);
       eqn = BackendEquation.generateEQUATION((e1_1,e2_2),source);
     then
@@ -3927,30 +3843,6 @@ algorithm
     case (itpl) then BackendDAEUtil.extendArrExp(itpl);
   end matchcontinue;
 end extendArrExp;
-
-protected function checkAssertCondition "Succeds if condition of assert is not constant false"
-  input DAE.Exp cond;
-  input DAE.Exp message;
-algorithm
-  _ := matchcontinue(cond,message)
-    local 
-      String messageStr;
-    case(_, _)
-      equation
-        // Don't check assertions when checking models
-        true = OptManager.getOption("checkModel");
-      then ();
-    case(cond,message) equation
-      false = Expression.isConstFalse(cond);
-      then ();
-    case(cond,message)
-      equation
-        true = Expression.isConstFalse(cond);
-        messageStr = ExpressionDump.printExpStr(message);
-        Error.addMessage(Error.ASSERT_CONSTANT_FALSE_ERROR,{messageStr});
-      then fail();
-  end matchcontinue;
-end checkAssertCondition;
 
 protected function whenEquationsIndices "Returns all equation-indices that contain a when clause"
   input BackendDAE.EquationArray eqns;

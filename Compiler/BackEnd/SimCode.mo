@@ -5769,8 +5769,8 @@ algorithm
       BackendDAE.Variables knvars,extobj,v,kn;
       array<Algorithm.Algorithm> algs;
       BackendDAE.EquationArray ie,pe,emptyeqns;
-      list<SimEqSystem> inalgs;
-      list<DAE.Algorithm> ialgs;
+      list<SimEqSystem> inalgs,simvarasserts;
+      list<DAE.Algorithm> ialgs,varasserts;
       BackendDAE.BackendDAE paramdlow,paramdlow1;
       array<BackendDAE.MultiDimEquation> arrayEqs;
       BackendDAE.ExternalObjectClasses extObjClasses;
@@ -5812,6 +5812,10 @@ algorithm
         
         ialgs = BackendEquation.getUsedAlgorithmsfromEquations(ie,algs);
         inalgs = Util.listMap(ialgs,dlowAlgToSimEqSystem);
+        // get minmax and nominal asserts
+        varasserts = BackendVariable.traverseBackendDAEVars(knvars,createVarAsserts,{});
+        simvarasserts = Util.listMap(varasserts,dlowAlgToSimEqSystem);
+        
         parameterEquations = listAppend(parameterEquations, inalgs);
       then
         parameterEquations;
@@ -5891,6 +5895,34 @@ algorithm
       then ((var,(eqns,v,var1::kn,v1,v2,pos)));
   end matchcontinue;
 end createInitialParamAssignments;
+
+protected function createVarAsserts
+  input tuple<BackendDAE.Var, list<DAE.Algorithm>> inTpl;
+  output tuple<BackendDAE.Var, list<DAE.Algorithm>> outTpl;
+algorithm
+  outTpl:=
+  matchcontinue (inTpl) 
+    local
+      BackendDAE.Var var;
+      list<DAE.Algorithm> asserts,asserts1,asserts2,minmax,nominal;
+      DAE.ComponentRef name;
+      DAE.ElementSource source;
+      BackendDAE.VarKind kind;
+      Option<DAE.VariableAttributes> attr;
+      
+    case ((var as BackendDAE.VAR(varName=name, varKind=kind, values = attr, source = source),asserts))
+      equation
+        minmax = BackendVariable.getMinMaxAsserts(attr,name,source,kind);
+        nominal = BackendVariable.getNominalAssert(attr,name,source,kind);
+        asserts1 = listAppend(minmax,nominal);
+        asserts2 = listAppend(asserts,asserts1);
+      then
+        ((var,asserts2));
+        
+    case inTpl
+      then inTpl;
+  end matchcontinue;
+end createVarAsserts;
 
 protected function createSampleConditions
 " function filter sample events 

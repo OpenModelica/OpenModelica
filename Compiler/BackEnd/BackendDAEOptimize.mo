@@ -319,7 +319,7 @@ algorithm
         repl = VarTransform.emptyReplacements();
         extendrepl = VarTransform.emptyReplacements();
         // check equations
-        (m_1,(dlow,mT_1,repl_1,extendrepl1,movedVars,movedAVars,meqns)) = traverseIncidenceMatrix(m,removeSimpleEquationsFinder,(dlow,mT,repl,extendrepl,BackendDAE.emptyBintree,BackendDAE.emptyBintree,{}));
+        (m_1,(dlow,_,mT_1,repl_1,extendrepl1,movedVars,movedAVars,meqns)) = traverseIncidenceMatrix(m,removeSimpleEquationsFinder,(dlow,funcs,mT,repl,extendrepl,BackendDAE.emptyBintree,BackendDAE.emptyBintree,{}));
         Debug.fcall("dumprepl", VarTransform.dumpReplacements, repl_1);
         Debug.fcall("dumpextendrepl", VarTransform.dumpReplacements, extendrepl1);
         BackendDAE.DAE(ordvars,knvars,exobj,aliasVars,eqns,remeqns,inieqns,arreqns,algorithms,BackendDAE.EVENT_INFO(whenClauseLst,zeroCrossingLst),eoc) = dlow;
@@ -412,24 +412,29 @@ algorithm
   outTpl:=
   match (inTpl)
     local 
-      DAE.Exp e1,e2,e1_1,e2_1,e1_2,e2_2;
+      DAE.Exp e1,e2,e1_1,e2_1,e1_2,e2_2,e1_3,e2_3;
       list<Integer> dims;
       DAE.ElementSource source;
       VarTransform.VariableReplacements repl,extendrepl;
       list<list<DAE.Exp>> crefOrDerCreflst;
       list<DAE.Exp> expl1,expl2,expl;
       BackendDAE.Variables vars;
+      Boolean b1,b2;
     case ((BackendDAE.MULTIDIM_EQUATION(dims,e1,e2,source),(repl,extendrepl,vars,crefOrDerCreflst)))
       equation
         (e1_1,_) = VarTransform.replaceExp(e1, extendrepl,NONE());
         (e1_2,_) = VarTransform.replaceExp(e1_1, repl,NONE());
         (e2_1,_) = VarTransform.replaceExp(e2, extendrepl,NONE());
         (e2_2,_) = VarTransform.replaceExp(e2_1, repl,NONE());
-        expl1 = BackendDAEUtil.statesAndVarsExp(e1_2, vars);
-        expl2 = BackendDAEUtil.statesAndVarsExp(e2_2, vars);
+        (e1_3,b1) = ExpressionSimplify.simplify(e1_2);
+        (e2_3,b2) = ExpressionSimplify.simplify(e2_2);
+        source = DAEUtil.addSymbolicTransformationSimplify(b1,source,e1,e1_3);
+        source = DAEUtil.addSymbolicTransformationSimplify(b2,source,e2,e2_3);        
+        expl1 = BackendDAEUtil.statesAndVarsExp(e1_3, vars);
+        expl2 = BackendDAEUtil.statesAndVarsExp(e2_3, vars);
         expl = listAppend(expl1, expl2);
       then
-        ((BackendDAE.MULTIDIM_EQUATION(dims,e1_2,e2_2,source),(repl,extendrepl,vars,expl::crefOrDerCreflst)));
+        ((BackendDAE.MULTIDIM_EQUATION(dims,e1_3,e2_3,source),(repl,extendrepl,vars,expl::crefOrDerCreflst)));
   end match;
 end replaceArrayEquationTraverser;
 
@@ -512,8 +517,8 @@ end updateEquationWrapper;
 
 protected function removeSimpleEquationsFinder
 "autor: Frenkel TUD 2010-12"
- input tuple<BackendDAE.IncidenceMatrixElement,Integer,BackendDAE.IncidenceMatrix, tuple<BackendDAE.BackendDAE,BackendDAE.IncidenceMatrixT,VarTransform.VariableReplacements,VarTransform.VariableReplacements,BackendDAE.BinTree,BackendDAE.BinTree,list<Integer>>> inTpl;
- output tuple<list<Integer>,BackendDAE.IncidenceMatrix, tuple<BackendDAE.BackendDAE,BackendDAE.IncidenceMatrixT,VarTransform.VariableReplacements,VarTransform.VariableReplacements,BackendDAE.BinTree,BackendDAE.BinTree,list<Integer>>> outTpl;
+ input tuple<BackendDAE.IncidenceMatrixElement,Integer,BackendDAE.IncidenceMatrix, tuple<BackendDAE.BackendDAE,DAE.FunctionTree,BackendDAE.IncidenceMatrixT,VarTransform.VariableReplacements,VarTransform.VariableReplacements,BackendDAE.BinTree,BackendDAE.BinTree,list<Integer>>> inTpl;
+ output tuple<list<Integer>,BackendDAE.IncidenceMatrix, tuple<BackendDAE.BackendDAE,DAE.FunctionTree,BackendDAE.IncidenceMatrixT,VarTransform.VariableReplacements,VarTransform.VariableReplacements,BackendDAE.BinTree,BackendDAE.BinTree,list<Integer>>> outTpl;
 algorithm
   outTpl:=
   matchcontinue (inTpl)
@@ -530,8 +535,9 @@ algorithm
       BackendDAE.Var var;
       DAE.ComponentRef cr;
       DAE.Exp exp,e1,e2;
+      DAE.FunctionTree funcs;
       
-    case ((elem,pos,m,(dae,mT,repl,extendrepl,mvars,mavars,meqns)))
+    case ((elem,pos,m,(dae,funcs,mT,repl,extendrepl,mvars,mavars,meqns)))
       equation
         // check number of vars in eqns
         l = listLength(elem);
@@ -541,8 +547,8 @@ algorithm
         BackendDAE.EQUATION(exp=e1,scalar=e2) = BackendDAEUtil.equationNth(eqns,pos_1);
         true = Expression.isConst(e1);
         true = Expression.expEqual(e1,e2);
-      then (({},m,(dae,mT,repl,extendrepl,mvars,mavars,pos_1::meqns)));      
-    case ((elem,pos,m,(dae,mT,repl,extendrepl,mvars,mavars,meqns)))
+      then (({},m,(dae,funcs,mT,repl,extendrepl,mvars,mavars,pos_1::meqns)));      
+    case ((elem,pos,m,(dae,funcs,mT,repl,extendrepl,mvars,mavars,meqns)))
       equation
         // check number of vars in eqns
         l = listLength(elem);
@@ -550,10 +556,10 @@ algorithm
         true = intGt(l,0);
         (cr,i,exp,dae1,mvars_1,mavars_1,eqnType) = simpleEquation(elem,l,pos,dae,mvars,mavars);
         // replace equation if necesarry
-        (vareqns,dae2,repl_1,extendrepl1,m1,mT1,meqns1) = replacementsInEqns(eqnType,cr,i,exp,pos,repl,extendrepl,dae1,m,mT,meqns);
-      then ((vareqns,m1,(dae2,mT1,repl_1,extendrepl1,mvars_1,mavars_1,meqns1)));
-    case ((elem,pos,m,(dae,mT,repl,extendrepl,mvars,mavars,meqns)))
-      then (({},m,(dae,mT,repl,extendrepl,mvars,mavars,meqns))); 
+        (vareqns,dae2,repl_1,extendrepl1,m1,mT1,meqns1) = replacementsInEqns(eqnType,cr,i,exp,pos,repl,extendrepl,dae1,m,mT,meqns,funcs);
+      then ((vareqns,m1,(dae2,funcs,mT1,repl_1,extendrepl1,mvars_1,mavars_1,meqns1)));
+    case ((elem,pos,m,(dae,funcs,mT,repl,extendrepl,mvars,mavars,meqns)))
+      then (({},m,(dae,funcs,mT,repl,extendrepl,mvars,mavars,meqns))); 
   end matchcontinue;
 end removeSimpleEquationsFinder;
 
@@ -563,66 +569,115 @@ protected function addExtendReplacement
   checks if the parents of cref from type array or record
   and add a rule to extend them."
   input VarTransform.VariableReplacements extendrepl;
+  input DAE.FunctionTree inFuncs;
   input DAE.ComponentRef cr;
   input Option<DAE.ComponentRef> preCr;
   output VarTransform.VariableReplacements outExtendrepl;
 algorithm
   outExtendrepl:=
-  matchcontinue (extendrepl,cr,preCr)
+  matchcontinue (extendrepl,inFuncs,cr,preCr)
     local
       VarTransform.VariableReplacements erepl,erepl1;
-      DAE.ComponentRef cr,subcr,precr,precr1,pcr;
+      DAE.ComponentRef cr,subcr,precr,precr1,pcr,precrn,precrn1;
       DAE.Ident ident;
       DAE.ExpType ty;
       list<DAE.Subscript> subscriptLst;
       DAE.Exp exp,crexp;
-    case (extendrepl,DAE.CREF_IDENT(ident=_),_) then extendrepl;
-    case (extendrepl,cr as DAE.CREF_QUAL(ident=ident,identType=ty as DAE.ET_ARRAY(ty=_),subscriptLst=subscriptLst,componentRef=subcr),NONE())
+    case (extendrepl,inFuncs,cr as DAE.CREF_IDENT(ident=ident,identType=ty as DAE.ET_ARRAY(ty=_),subscriptLst=subscriptLst),NONE())
       equation
-        precr = ComponentReference.makeCrefIdent(ident,ty,subscriptLst);
+        precr = ComponentReference.makeCrefIdent(ident,ty,{});
+        failure(_ = VarTransform.getReplacement(extendrepl,precr));
         crexp = Expression.crefExp(precr);
-        ((exp,_)) = BackendDAEUtil.extendArrExp((crexp,NONE()));
+        ((exp,_)) = BackendDAEUtil.extendArrExp((crexp,SOME(inFuncs)));
         // update Replacements
         erepl = VarTransform.addReplacement(extendrepl, precr, exp);
-        erepl1 = addExtendReplacement(erepl,subcr,SOME(precr));
-      then erepl1;
-    case (extendrepl,cr as DAE.CREF_QUAL(ident=ident,identType=ty as DAE.ET_COMPLEX(complexClassType=ClassInf.RECORD(_)),subscriptLst=subscriptLst,componentRef=subcr),NONE())
+      then erepl;
+    case (extendrepl,inFuncs,cr as DAE.CREF_IDENT(ident=ident,identType=ty as DAE.ET_ARRAY(ty=_),subscriptLst=subscriptLst),SOME(pcr))
       equation
-        precr = ComponentReference.makeCrefIdent(ident,ty,subscriptLst);
+        precr = ComponentReference.makeCrefIdent(ident,ty,{});
+        precr1 = ComponentReference.joinCrefs(pcr,precr);
+        failure(_ = VarTransform.getReplacement(extendrepl,precr1));
+        crexp = Expression.crefExp(precr1);
+        ((exp,_)) = BackendDAEUtil.extendArrExp((crexp,SOME(inFuncs)));
+        // update Replacements
+        erepl = VarTransform.addReplacement(extendrepl, precr1, exp);
+      then erepl;
+    case (extendrepl,inFuncs,cr as DAE.CREF_IDENT(ident=ident,identType=ty as DAE.ET_COMPLEX(complexClassType=ClassInf.RECORD(_)),subscriptLst=subscriptLst),NONE())
+      equation
+        failure(_ = VarTransform.getReplacement(extendrepl,cr));
+        crexp = Expression.crefExp(cr);
+        ((exp,_)) = BackendDAEUtil.extendArrExp((crexp,SOME(inFuncs)));
+        // update Replacements
+        erepl = VarTransform.addReplacement(extendrepl, cr, exp);
+      then erepl;
+    case (extendrepl,inFuncs,cr as DAE.CREF_IDENT(ident=ident,identType=ty as DAE.ET_COMPLEX(complexClassType=ClassInf.RECORD(_)),subscriptLst=subscriptLst),SOME(pcr))
+      equation
+        precr1 = ComponentReference.joinCrefs(pcr,cr);
+        failure(_ = VarTransform.getReplacement(extendrepl,precr1));
+        crexp = Expression.crefExp(precr1);
+        ((exp,_)) = BackendDAEUtil.extendArrExp((crexp,SOME(inFuncs)));
+        // update Replacements
+        erepl = VarTransform.addReplacement(extendrepl, precr1, exp);
+      then erepl;        
+    case (extendrepl,inFuncs,DAE.CREF_IDENT(ident=_),_) then extendrepl;
+    case (extendrepl,inFuncs,cr as DAE.CREF_QUAL(ident=ident,identType=ty as DAE.ET_ARRAY(ty=_),subscriptLst=subscriptLst,componentRef=subcr),NONE())
+      equation
+        precr = ComponentReference.makeCrefIdent(ident,ty,{});
+        failure(_ = VarTransform.getReplacement(extendrepl,precr));
         crexp = Expression.crefExp(precr);
-        ((exp,_)) = BackendDAEUtil.extendArrExp((crexp,NONE()));
+        ((exp,_)) = BackendDAEUtil.extendArrExp((crexp,SOME(inFuncs)));
         // update Replacements
         erepl = VarTransform.addReplacement(extendrepl, precr, exp);
-        erepl1 = addExtendReplacement(erepl,subcr,SOME(precr));
+        precrn = ComponentReference.makeCrefIdent(ident,ty,subscriptLst);
+        erepl1 = addExtendReplacement(erepl,inFuncs,subcr,SOME(precrn));
       then erepl1;
-    case (extendrepl,cr as DAE.CREF_QUAL(ident=ident,identType=ty as DAE.ET_ARRAY(ty=_),subscriptLst=subscriptLst,componentRef=subcr),SOME(pcr))
+    case (extendrepl,inFuncs,cr as DAE.CREF_QUAL(ident=ident,identType=ty as DAE.ET_COMPLEX(complexClassType=ClassInf.RECORD(_)),subscriptLst=subscriptLst,componentRef=subcr),NONE())
+      equation
+        precr = ComponentReference.makeCrefIdent(ident,ty,subscriptLst);
+        failure(_ = VarTransform.getReplacement(extendrepl,precr));
+        crexp = Expression.crefExp(precr);
+        ((exp,_)) = BackendDAEUtil.extendArrExp((crexp,SOME(inFuncs)));
+        // update Replacements
+        erepl = VarTransform.addReplacement(extendrepl, precr, exp);
+        erepl1 = addExtendReplacement(erepl,inFuncs,subcr,SOME(precr));
+      then erepl1;
+    case (extendrepl,inFuncs,cr as DAE.CREF_QUAL(ident=ident,identType=ty as DAE.ET_ARRAY(ty=_),subscriptLst=subscriptLst,componentRef=subcr),SOME(pcr))
+      equation
+        precr = ComponentReference.makeCrefIdent(ident,ty,{});
+        precr1 = ComponentReference.joinCrefs(pcr,precr);
+        failure(_ = VarTransform.getReplacement(extendrepl,precr1));
+        crexp = Expression.crefExp(precr1);
+        ((exp,_)) = BackendDAEUtil.extendArrExp((crexp,SOME(inFuncs)));
+        // update Replacements
+        erepl = VarTransform.addReplacement(extendrepl, precr1, exp);
+        precrn = ComponentReference.makeCrefIdent(ident,ty,subscriptLst);
+        precrn1 = ComponentReference.joinCrefs(pcr,precrn);
+        erepl1 = addExtendReplacement(erepl,inFuncs,subcr,SOME(precrn1));
+      then erepl1;
+    case (extendrepl,inFuncs,cr as DAE.CREF_QUAL(ident=ident,identType=ty as DAE.ET_COMPLEX(complexClassType=ClassInf.RECORD(_)),subscriptLst=subscriptLst,componentRef=subcr),SOME(pcr))
       equation
         precr = ComponentReference.makeCrefIdent(ident,ty,subscriptLst);
         precr1 = ComponentReference.joinCrefs(pcr,precr);
+        failure(_ = VarTransform.getReplacement(extendrepl,precr1));
         crexp = Expression.crefExp(precr1);
-        ((exp,_)) = BackendDAEUtil.extendArrExp((crexp,NONE()));
+        ((exp,_)) = BackendDAEUtil.extendArrExp((crexp,SOME(inFuncs)));
         // update Replacements
         erepl = VarTransform.addReplacement(extendrepl, precr1, exp);
-        erepl1 = addExtendReplacement(erepl,subcr,SOME(precr));
-      then erepl1;
-    case (extendrepl,cr as DAE.CREF_QUAL(ident=ident,identType=ty as DAE.ET_COMPLEX(complexClassType=ClassInf.RECORD(_)),subscriptLst=subscriptLst,componentRef=subcr),SOME(pcr))
-      equation
-        precr = ComponentReference.makeCrefIdent(ident,ty,subscriptLst);
-        precr1 = ComponentReference.joinCrefs(pcr,precr);
-        crexp = Expression.crefExp(precr1);
-        ((exp,_)) = BackendDAEUtil.extendArrExp((crexp,NONE()));
-        // update Replacements
-        erepl = VarTransform.addReplacement(extendrepl, precr1, exp);
-        erepl1 = addExtendReplacement(erepl,subcr,SOME(precr));
+        erepl1 = addExtendReplacement(erepl,inFuncs,subcr,SOME(precr1));
       then erepl1;
     // all other
-    case (extendrepl,cr as DAE.CREF_QUAL(ident=ident,identType=ty,subscriptLst=subscriptLst,componentRef=subcr),SOME(pcr))
+    case (extendrepl,inFuncs,cr as DAE.CREF_QUAL(ident=ident,identType=ty,subscriptLst=subscriptLst,componentRef=subcr),NONE())
       equation
-        precr = ComponentReference.makeCrefIdent(ident,ty,subscriptLst);
-        precr1 = ComponentReference.joinCrefs(pcr,precr);
-        erepl = addExtendReplacement(extendrepl,subcr,SOME(precr1));
+        precrn = ComponentReference.makeCrefIdent(ident,ty,subscriptLst);
+        erepl = addExtendReplacement(extendrepl,inFuncs,subcr,SOME(precrn));
       then erepl;
-    case (extendrepl,cr,_)
+    case (extendrepl,inFuncs,cr as DAE.CREF_QUAL(ident=ident,identType=ty,subscriptLst=subscriptLst,componentRef=subcr),SOME(pcr))
+      equation
+        precrn = ComponentReference.makeCrefIdent(ident,ty,subscriptLst);
+        precrn1 = ComponentReference.joinCrefs(pcr,precrn);
+        erepl = addExtendReplacement(extendrepl,inFuncs,subcr,SOME(precrn1));
+      then erepl;
+    case (extendrepl,inFuncs,cr,_)
       equation
         Debug.fprintln("failtrace", "- BackendDAEOptimize.addExtendReplacement failed");
       then extendrepl;
@@ -643,6 +698,7 @@ protected function replacementsInEqns
   input BackendDAE.IncidenceMatrix m;
   input BackendDAE.IncidenceMatrixT mT;
   input list<Integer> inMeqns;
+  input DAE.FunctionTree inFuncs;
   output list<Integer> outVareqns;
   output BackendDAE.BackendDAE outDAE;
   output VarTransform.VariableReplacements outRepl;
@@ -652,7 +708,7 @@ protected function replacementsInEqns
   output list<Integer> outMeqns;
 algorithm
   (outVareqns,outDAE,outRepl,outExtendrepl,outM,outMT,outMeqns):=
-  match (eqnType,cr,i,exp,pos,repl,extendrepl,inDAE,m,mT,inMeqns)
+  match (eqnType,cr,i,exp,pos,repl,extendrepl,inDAE,m,mT,inMeqns,inFuncs)
     local
       BackendDAE.BackendDAE dae;
       BackendDAE.Variables ordvars,knvars,exobj,ordvars1,knvars1;
@@ -668,7 +724,7 @@ algorithm
       list<Integer> vareqns,vareqns1,vareqns2,meqns;
       VarTransform.VariableReplacements repl_1,extendrepl1;
       BackendDAE.Var v;
-    case (0,cr,i,exp,pos,repl,extendrepl,BackendDAE.DAE(ordvars,knvars,exobj,aliasVars,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc),m,mT,meqns)
+    case (0,cr,i,exp,pos,repl,extendrepl,BackendDAE.DAE(ordvars,knvars,exobj,aliasVars,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc),m,mT,meqns,inFuncs)
       equation
         // equations of var
         vareqns = mT[i];
@@ -681,14 +737,14 @@ algorithm
         (m1,mT1) = BackendDAEUtil.updateIncidenceMatrix(dae,m,mT,vareqns);
         pos_1 = pos - 1;
       then (vareqns1,dae,repl,extendrepl,m1,mT1,pos_1::meqns);
-    case (1,cr,i,exp,pos,repl,extendrepl,BackendDAE.DAE(ordvars,knvars,exobj,aliasVars,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc),m,mT,meqns)
+    case (1,cr,i,exp,pos,repl,extendrepl,BackendDAE.DAE(ordvars,knvars,exobj,aliasVars,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc),m,mT,meqns,inFuncs)
       equation
         // equations of var
         vareqns = mT[i];
         vareqns1 = Util.listRemoveOnTrue(pos,intEq,vareqns);
         // update Replacements
         repl_1 = VarTransform.addReplacement(repl, cr, exp);
-        extendrepl1 = addExtendReplacement(extendrepl, cr, NONE());
+        extendrepl1 = addExtendReplacement(extendrepl,inFuncs, cr, NONE());
         // replace var=exp in vareqns
         eqns1 = replacementsInEqns1(vareqns1,repl_1,extendrepl1,eqns);
         // set eqn to 0=0 to avoid next call
@@ -698,7 +754,7 @@ algorithm
         dae = BackendDAE.DAE(ordvars,knvars,exobj,aliasVars,eqns2,remeqns,inieqns,arreqns,algorithms,einfo,eoc);
         (m1,mT1) = BackendDAEUtil.updateIncidenceMatrix(dae,m,mT,vareqns);    
       then (vareqns1,dae,repl_1,extendrepl1,m1,mT1,pos_1::meqns);
-    case (2,cr,i,exp,pos,repl,extendrepl,BackendDAE.DAE(ordvars,knvars,exobj,aliasVars,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc),m,mT,meqns)
+    case (2,cr,i,exp,pos,repl,extendrepl,BackendDAE.DAE(ordvars,knvars,exobj,aliasVars,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc),m,mT,meqns,inFuncs)
       equation
         // equations of var
         vareqns = mT[i];

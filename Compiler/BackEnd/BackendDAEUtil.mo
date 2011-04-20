@@ -387,6 +387,29 @@ algorithm
   end matchcontinue;
 end checkEquationSize;
 
+public function checkAssertCondition "Succeds if condition of assert is not constant false"
+  input DAE.Exp cond;
+  input DAE.Exp message;
+algorithm
+  _ := matchcontinue(cond,message)
+    local 
+      String messageStr;
+    case(_, _)
+      equation
+        // Don't check assertions when checking models
+        true = OptManager.getOption("checkModel");
+      then ();
+    case(cond,message) equation
+      false = Expression.isConstFalse(cond);
+      then ();
+    case(cond,message)
+      equation
+        true = Expression.isConstFalse(cond);
+        messageStr = ExpressionDump.printExpStr(message);
+        Error.addMessage(Error.ASSERT_CONSTANT_FALSE_ERROR,{messageStr});
+      then fail();
+  end matchcontinue;
+end checkAssertCondition;
 
 /*************************************************
  * Initialisation and stuff 
@@ -3386,6 +3409,8 @@ algorithm outExp := matchcontinue(inExp)
   case( (DAE.CREF(componentRef=cr,ty= t as DAE.ET_COMPLEX(name=name,varLst=varLst,complexClassType=ClassInf.RECORD(_))), funcs) )
     equation
         expl = Util.listMap1(varLst,Expression.generateCrefsExpFromExpVar,cr);
+        i = listLength(expl);
+        true = intGt(i,0);
         e_new = DAE.CALL(name,expl,false,false,t,DAE.NO_INLINE());
         restpl = Expression.traverseExp(e_new, traversingextendArrExp, funcs);
     then 

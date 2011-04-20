@@ -44,7 +44,7 @@ MACRO(BUILDMODEL model dir Flags CSRC)
                  ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.cpp
                  ${CMAKE_CURRENT_BINARY_DIR}/${model}_init.txt)
   SET(OMC_OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${model}.cpp
-                  ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.cpp
+  #               ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.cpp
 				  ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.h
 				  ${CMAKE_CURRENT_BINARY_DIR}/${model}_records.c)
 
@@ -71,6 +71,44 @@ MACRO(BUILDMODEL model dir Flags CSRC)
 ENDMACRO(BUILDMODEL)
 
 # MACRO BUILDMODEL
+MACRO(BUILDMODELMOS model mos Flags CSRC)
+
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/c_runtime)
+
+  SET(OMC_MODELNAME ${model})  
+  # generate model.mos 
+  
+  # Variablen fuer openmodelica2sarturis
+  SET(OMC_CODE   ${CMAKE_CURRENT_BINARY_DIR}/${model}.cpp
+                 ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.cpp
+                 ${CMAKE_CURRENT_BINARY_DIR}/${model}_init.txt)
+  SET(OMC_OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${model}.cpp
+  #                ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.cpp
+				  ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.h
+				  ${CMAKE_CURRENT_BINARY_DIR}/${model}_records.c)
+  # custom command fuer openmodelicacompiler
+  ADD_CUSTOM_COMMAND(OUTPUT ${OMC_OUTPUT}
+                     COMMAND ${OMC_DEBUG} ${Flags} ${mos}
+                     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+                     COMMENT "Erzeuge Code fuer ${model} with ${OMC_DEBUG}")
+  # target fuer OM_OUTPUT
+  ADD_CUSTOM_TARGET(${model}codegen ALL DEPENDS ${OMC_OUTPUT})
+
+ 
+  ADD_EXECUTABLE(${model} ${OMC_OUTPUT} ${CSRC})
+  TARGET_LINK_LIBRARIES(${model} sim c_runtime f2c sendData ModelicaExternalC)
+
+  # Dependencies
+  ADD_DEPENDENCIES(${model} ${model}codegen)
+  
+  IF(MODELS_INSTALL)
+    INSTALL(TARGETS ${model} RUNTIME DESTINATION ${MODELS_INSTALL_PATH})
+    INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/modelDescription.xml DESTINATION ${MODELS_INSTALL_PATH})
+  ENDIF(MODELS_INSTALL)
+#ENDFOREACH(model ${model_sources})
+ENDMACRO(BUILDMODELMOS)
+
+# MACRO BUILDMODEL
 MACRO(BUILDMODELFMU model dir Flags CSRC)
 
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/c_runtime)
@@ -87,7 +125,7 @@ MACRO(BUILDMODELFMU model dir Flags CSRC)
                  ${CMAKE_CURRENT_BINARY_DIR}/${model}_init.txt)
   SET(OMC_OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${model}.cpp
                   ${CMAKE_CURRENT_BINARY_DIR}/${model}_FMU.cpp
-                  ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.cpp
+  #               ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.cpp
 				  ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.h
 				  ${CMAKE_CURRENT_BINARY_DIR}/${model}_records.c)
   # custom command fuer openmodelicacompiler
@@ -129,7 +167,7 @@ MACRO(BUILDMODELFMUMOS model mos Flags CSRC)
                  ${CMAKE_CURRENT_BINARY_DIR}/${model}_init.txt)
   SET(OMC_OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${model}.cpp
                   ${CMAKE_CURRENT_BINARY_DIR}/${model}_FMU.cpp
-                  ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.cpp
+  #               ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.cpp
 				  ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.h
 				  ${CMAKE_CURRENT_BINARY_DIR}/${model}_records.c)
   # custom command fuer openmodelicacompiler
