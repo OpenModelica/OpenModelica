@@ -126,15 +126,7 @@ void OMCProxy::addExpressionInCommandMap(QString expression, QString result)
 
 QString OMCProxy::getCommandFromMap(QString expression)
 {
-    QMap<QString, QString>::iterator it;
-    for (it = mCommandsMap.begin(); it != mCommandsMap.end(); ++it)
-    {
-        if (it.key().compare(expression) == 0)
-        {
-            return it.value();
-        }
-    }
-    return QString();
+    return mCommandsMap.value(expression, QString());
 }
 
 void OMCProxy::setExpression(QString expression)
