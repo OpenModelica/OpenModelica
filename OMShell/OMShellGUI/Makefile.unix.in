@@ -21,7 +21,7 @@ omc_communication.cc omc_communication.h: $(runtimedir)/omc_communication.idl
 	@IDLCMD@ $<
 
 $(NAME): Makefile OMShell.config omc_communication.cc
-	make -f Makefile
+	$(MAKE) -f Makefile
 
 build: $(NAME)
 	mkdir -p $(builddir_share)/omshell/
