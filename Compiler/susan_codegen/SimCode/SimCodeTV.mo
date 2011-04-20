@@ -1867,6 +1867,10 @@ package ExpressionDump
     input DAE.Exp e;
     output String s;
   end printExpStr;
+  function typeString
+    input DAE.ExpType et;
+    output String s;
+  end typeString;
 end ExpressionDump;
 
 package RTOpts

@@ -2924,7 +2924,7 @@ template extType(ExpType type)
   case ET_COMPLEX(complexClassType=RECORD(path=rname))
                       then 'struct <%underscorePath(rname)%>'
   case ET_METATYPE(__) case ET_BOXED(__)    then "modelica_metatype"
-  else "OTHER_EXT_TYPE"
+  else error(sourceInfo(), 'Unknown external type <%typeString(type)%>')
 end extType;
 
 template extTypeF77(ExpType type)
@@ -2941,7 +2941,7 @@ template extTypeF77(ExpType type)
   case ET_COMPLEX(complexClassType=RECORD(path=rname))
                       then 'struct <%underscorePath(rname)%>'
   case ET_METATYPE(__) case ET_BOXED(__)    then "void*"
-  else "OTHER_EXT_TYPE"
+  else error(sourceInfo(), 'Unknown external type <%typeString(type)%>')
 end extTypeF77;
   
 template extFunDefArg(SimExtArg extArg)
