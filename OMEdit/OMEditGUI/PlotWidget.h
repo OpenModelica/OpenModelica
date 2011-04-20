@@ -75,6 +75,7 @@ class PlotWidget : public QWidget
     Q_OBJECT
 public:
     PlotWidget(MainWindow *pParent);
+    void createActions();
     QList<QString> readPlotVariables(QString fileName);
     void addPlotVariablestoTree(QString fileName, QList<QString> plotVariablesList);
     void addPlotVariableToTree(QString fileName, QString parentStructure, QString childName, QString fullStructure = QString(), bool derivative = false);
@@ -85,13 +86,15 @@ private:
     QVBoxLayout *mpVerticalLayout;
     QList<QStringList> mPlotParametricVariables;
     QString mFileName;
+    PlotTreeItem *mSelectedPlotTreeItem;
+    QAction *mpDeleteResultAction;
 signals:
     void removePlotFile(PlotTreeItem *item);
 public slots:
     void plotVariables(QTreeWidgetItem *item, int column);
     void updatePlotVariablesTree(QMdiSubWindow *window);
-protected:
-    void contextMenuEvent(QContextMenuEvent *event);
+    void showContextMenu(QPoint point);
+    void deletePlotTreeItem();
 };
 
 #endif // PLOTWIDGET_H

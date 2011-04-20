@@ -263,11 +263,11 @@ void MainWindow::createActions()
 
     undoAction = new QAction(QIcon(":/Resources/icons/undo.png"), tr("Undo"), this);
     undoAction->setShortcut(QKeySequence("Ctrl+z"));
-    undoAction->setStatusTip(tr("Undo Action"));
+    undoAction->setStatusTip(tr("Undo last activity"));
 
     redoAction = new QAction(QIcon(":/Resources/icons/redo.png"), tr("Redo"), this);
     redoAction->setShortcut(QKeySequence("Ctrl+y"));
-    redoAction->setStatusTip(tr("Redo Action"));
+    redoAction->setStatusTip(tr("Redo last activity"));
 
     cutAction = new QAction(QIcon(":/Resources/icons/cut.png"), tr("Cut"), this);
     cutAction->setShortcut(QKeySequence("Ctrl+x"));
@@ -280,21 +280,27 @@ void MainWindow::createActions()
     pasteAction->setShortcut(QKeySequence("Ctrl+v"));
 
     gridLinesAction = new QAction(QIcon(":/Resources/icons/grid.png"), tr("Grid Lines"), this);
+    gridLinesAction->setStatusTip(tr("Show/Hide the grid lines"));
     gridLinesAction->setCheckable(true);
 
     resetZoomAction = new QAction(QIcon(":/Resources/icons/zoom100.png"), tr("Reset Zoom"), this);
+    resetZoomAction->setStatusTip(tr("Resets the zoom"));
     resetZoomAction->setShortcut(QKeySequence("Ctrl+0"));
 
     zoomInAction = new QAction(QIcon(":/Resources/icons/zoomIn.png"), tr("Zoom In"), this);
+    zoomInAction->setStatusTip(tr("Zoom in"));
     zoomInAction->setShortcut(QKeySequence("Ctrl++"));
 
     zoomOutAction = new QAction(QIcon(":/Resources/icons/zoomOut.png"), tr("Zoom Out"), this);
+    zoomOutAction->setStatusTip(tr("Zoom out"));
     zoomOutAction->setShortcut(QKeySequence("Ctrl+-"));
 
     checkModelAction = new QAction(QIcon(":/Resources/icons/check.png"), tr("Check Model"), this);
+    checkModelAction->setStatusTip(tr("Check the modelica model"));
     connect(checkModelAction, SIGNAL(triggered()), SLOT(checkModel()));
 
     flatModelAction = new QAction(QIcon(":/Resources/icons/flatmodel.png"), tr("Instantiate Model"), this);
+    flatModelAction->setStatusTip(tr("Instantiates/Flatten the modelica model"));
     connect(flatModelAction, SIGNAL(triggered()), SLOT(flatModel()));
 
     omcLoggerAction = new QAction(QIcon(":/Resources/icons/console.png"), tr("OMC Logger"), this);
@@ -314,15 +320,17 @@ void MainWindow::createActions()
     importFromOMNotebookAction->setStatusTip(tr("Imports the models from OMNotebook"));
     connect(importFromOMNotebookAction, SIGNAL(triggered()), SLOT(importModelfromOMNotebook()));
 
-    exportAsImage = new QAction(tr("Export as Image (png)"), this);
+    exportAsImage = new QAction(QIcon(":/Resources/icons/bitmap-shape.png"), tr("Export as Image (png)"), this);
     exportAsImage->setStatusTip(tr("Exports the current model to Image (png)"));
     exportAsImage->setEnabled(false);
     connect(exportAsImage, SIGNAL(triggered()), SLOT(exportModelAsImage()));
 
     openOptions = new QAction(tr("Options"), this);
+    openOptions->setStatusTip(tr("Shows the options window"));
     connect(openOptions, SIGNAL(triggered()), SLOT(openConfigurationOptions()));
 
     closeAction = new QAction(QIcon(":/Resources/icons/close.png"), tr("Close"), this);
+    closeAction->setStatusTip(tr("Exits the ").append(Helper::applicationIntroText));
     closeAction->setShortcut(QKeySequence("Ctrl+q"));
     connect(this->closeAction,SIGNAL(triggered()), SLOT(close()));
 
@@ -331,6 +339,7 @@ void MainWindow::createActions()
     connect(simulationAction, SIGNAL(triggered()), SLOT(openSimulation()));
 
     plotAction = plotdock->toggleViewAction();
+    plotAction->setStatusTip(tr("Show/Hide the plot variables window"));
     plotAction->setIcon(QIcon(":/Resources/icons/plot.png"));
     plotAction->setText(tr("Plot Variables"));
 
@@ -339,11 +348,12 @@ void MainWindow::createActions()
     connect(interactiveSimulationAction, SIGNAL(triggered()), SLOT(openInteractiveSimulation()));
 
     documentationAction = documentationdock->toggleViewAction();
+    documentationAction->setStatusTip(tr("Show/Hide the documentation window"));
     documentationAction->setIcon(QIcon(":/Resources/icons/info-icon.png"));
     documentationAction->setText(tr("View Documentation"));
 
     userManualAction = new QAction(tr("User Manual"), this);
-    userManualAction->setStatusTip(tr("Open the User Manual"));
+    userManualAction->setStatusTip(tr("Opens the User Manual"));
     userManualAction->setShortcut(QKeySequence(Qt::Key_F1));
     connect(userManualAction, SIGNAL(triggered()), SLOT(openUserManual()));
 

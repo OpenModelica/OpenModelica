@@ -111,15 +111,19 @@ ModelicaTree::~ModelicaTree()
 void ModelicaTree::createActions()
 {
     mpRenameAction = new QAction(QIcon(":/Resources/icons/rename.png"), tr("Rename"), this);
+    mpRenameAction->setStatusTip(tr("Rename the modelica model"));
     connect(mpRenameAction, SIGNAL(triggered()), SLOT(renameClass()));
 
-    mpCheckModelAction = new QAction(QIcon(":/Resources/icons/check.png"), tr("Check"), this);
+    mpCheckModelAction = new QAction(QIcon(":/Resources/icons/check.png"), tr("Check Model"), this);
+    mpCheckModelAction->setStatusTip(tr("Check the modelica model"));
     connect(mpCheckModelAction, SIGNAL(triggered()), SLOT(checkModelicaModel()));
 
     mpFlatModelAction = new QAction(QIcon(":/Resources/icons/flatmodel.png"), tr("Instantiate Model"), this);
+    mpFlatModelAction->setStatusTip(tr("Instantiates/Flatten the modelica model"));
     connect(mpFlatModelAction, SIGNAL(triggered()), SLOT(flatModel()));
 
     mpDeleteAction = new QAction(QIcon(":/Resources/icons/delete.png"), tr("Delete"), this);
+    mpDeleteAction->setStatusTip(tr("Delete the modelica model"));
     connect(mpDeleteAction, SIGNAL(triggered()), SLOT(deleteNodeTriggered()));
 }
 
@@ -265,8 +269,8 @@ void ModelicaTree::showContextMenu(QPoint point)
         QMenu menu(mpParentLibraryWidget);
         menu.addAction(mpRenameAction);
         menu.addAction(mpDeleteAction);
-        menu.addAction(mpFlatModelAction);
         menu.addAction(mpCheckModelAction);
+        menu.addAction(mpFlatModelAction);
         point.setY(point.y() + adjust);
         menu.exec(mapToGlobal(point));
     }
@@ -481,15 +485,19 @@ LibraryTree::~LibraryTree()
 void LibraryTree::createActions()
 {
     mpShowComponentAction = new QAction(QIcon(":/Resources/icons/model.png"), tr("Show Component"), this);
+    mpShowComponentAction->setStatusTip(tr("Show the component"));
     connect(mpShowComponentAction, SIGNAL(triggered()), SLOT(showComponent()));
 
     mpViewDocumentationAction = new QAction(QIcon(":/Resources/icons/info-icon.png"), tr("View Documentation"), this);
+    mpViewDocumentationAction->setStatusTip(tr("View component documentation"));
     connect(mpViewDocumentationAction, SIGNAL(triggered()), SLOT(viewDocumentation()));
 
-    mpCheckModelAction = new QAction(QIcon(":/Resources/icons/check.png"), tr("Check"), this);
+    mpCheckModelAction = new QAction(QIcon(":/Resources/icons/check.png"), tr("Check Model"), this);
+    mpCheckModelAction->setStatusTip(tr("Check the modelica model"));
     connect(mpCheckModelAction, SIGNAL(triggered()), SLOT(checkLibraryModel()));
 
-    mpFlatModelAction = new QAction(QIcon(":/Resources/icons/check.png"), tr("Instantiate"), this);
+    mpFlatModelAction = new QAction(QIcon(":/Resources/icons/flatmodel.png"), tr("Instantiate Model"), this);
+    mpFlatModelAction->setStatusTip(tr("Instantiates/Flatten the modelica model"));
     connect(mpFlatModelAction, SIGNAL(triggered()), SLOT(flatModel()));
 }
 
@@ -731,9 +739,32 @@ void LibraryTree::showComponent(QTreeWidgetItem *item, int column)
 
 void LibraryTree::showComponent()
 {
+    bool isFound = false;
     ProjectTabWidget *pProjectTabs = mpParentLibraryWidget->mpParentMainWindow->mpProjectTabs;
     setCursor(Qt::WaitCursor);
-    pProjectTabs->addDiagramViewTab(mpParentLibraryWidget->mSelectedLibraryNode, 0);
+    ProjectTab *pCurrentTab = pProjectTabs->getTabByName(dynamic_cast<LibraryTreeNode*>(mpParentLibraryWidget->mSelectedLibraryNode)->mNameStructure);
+    if (pCurrentTab)
+    {
+        pProjectTabs->setCurrentWidget(pCurrentTab);
+        isFound = true;
+    }
+    // if the tab is closed by user then reopen it and set it as current tab
+    if (!isFound)
+    {
+        pCurrentTab = pProjectTabs->getRemovedTabByName(dynamic_cast<LibraryTreeNode*>(mpParentLibraryWidget->mSelectedLibraryNode)->mNameStructure);
+        if (pCurrentTab)
+        {
+            pProjectTabs->addTab(pCurrentTab, pCurrentTab->mModelName);
+            pProjectTabs->setCurrentWidget(pCurrentTab);
+            pProjectTabs->mRemovedTabsList.removeOne(pCurrentTab);
+            isFound = true;
+        }
+    }
+    // if the tab is not found in current tabs and removed tabs then user has loaded a new model, just open it then
+    if (!isFound)
+    {
+        pProjectTabs->addDiagramViewTab(mpParentLibraryWidget->mSelectedLibraryNode, 0);
+    }
     unsetCursor();
 }
 

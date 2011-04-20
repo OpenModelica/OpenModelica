@@ -249,6 +249,8 @@ CheckModelWidget::CheckModelWidget(QString name, QString nameStructure, MainWind
 
     mpCheckResultLabel = new QTextEdit(tr(""));
     mpCheckResultLabel->setReadOnly(true);
+    mpCheckResultLabel->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+    mpCheckResultLabel->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
     mpCheckResultLabel->setText(StringHandler::removeFirstLastQuotes(
                                 mpParentMainWindow->mpOMCProxy->checkModel(mNameStructure)));
     // Create the button
@@ -278,6 +280,8 @@ FlatModelWidget::FlatModelWidget(QString name, QString nameStructure, MainWindow
     setModal(true);
 
     mpText = new QTextEdit(tr(""));
+    mpText->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+    mpText->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
     QString str = mpParentMainWindow->mpOMCProxy->instantiateModel(mNameStructure);
     ModelicaTextHighlighter *highlighter = new ModelicaTextHighlighter(pParent->mpOptionsWidget->mpModelicaTextSettings,mpText->document());
     mpText->setPlainText(str.length() ? str : "Instantiation of " + name + " failed");

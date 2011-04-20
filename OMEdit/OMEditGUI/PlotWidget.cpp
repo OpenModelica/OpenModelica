@@ -101,6 +101,8 @@ PlotTree::PlotTree(PlotWidget *pParent)
     setHeaderHidden(true);
     setColumnCount(1);
     setIndentation(Helper::treeIndentation);
+    setContextMenuPolicy(Qt::CustomContextMenu);
+    setExpandsOnDoubleClick(false);
 }
 
 PlotTreeItem* PlotTree::getTreeItem(QString name)
@@ -134,13 +136,22 @@ PlotWidget::PlotWidget(MainWindow *pParent)
     mpVerticalLayout->setContentsMargins(0, 0, 0, 0);
     mpVerticalLayout->addWidget(mpPlotTree);
 
+    createActions();
     setLayout(mpVerticalLayout);
 
     connect(mpPlotTree, SIGNAL(itemChanged(QTreeWidgetItem*,int)), SLOT(plotVariables(QTreeWidgetItem*,int)));
+    connect(mpPlotTree, SIGNAL(customContextMenuRequested(QPoint)), SLOT(showContextMenu(QPoint)));
     connect(pParent->mpPlotWindowContainer, SIGNAL(subWindowActivated(QMdiSubWindow*)),
             this, SLOT(updatePlotVariablesTree(QMdiSubWindow*)));
     connect(this, SIGNAL(removePlotFile(PlotTreeItem*)), pParent->mpPlotWindowContainer,
             SLOT(updatePlotWindows(PlotTreeItem*)));
+}
+
+void PlotWidget::createActions()
+{
+    mpDeleteResultAction = new QAction(QIcon(":/Resources/icons/delete.png"), tr("Delete Result"), this);
+    mpDeleteResultAction->setStatusTip(tr("Delete the result"));
+    connect(mpDeleteResultAction, SIGNAL(triggered()), SLOT(deletePlotTreeItem()));
 }
 
 QList<QString> PlotWidget::readPlotVariables(QString fileName)
@@ -318,7 +329,7 @@ void PlotWidget::plotVariables(QTreeWidgetItem *item, int column)
                 pPlotWindow->setVariablesList(QStringList(pItem->getPlotVariable()));
                 pPlotWindow->plot();
                 pPlotWindow->fitInView();
-                pPlotWindow->getPlot()->updateLayout();
+                pPlotWindow->getPlot()->updateGeometry();
                 pPlotWindow->getPlot()->getPlotZoomer()->setZoomBase(false);
             }
             // if user unchecks the variable then remove it from the plot
@@ -332,7 +343,7 @@ void PlotWidget::plotVariables(QTreeWidgetItem *item, int column)
                         pPlotWindow->getPlot()->removeCurve(pPlotCurve);
                         pPlotCurve->detach();
                         pPlotWindow->fitInView();
-                        pPlotWindow->getPlot()->updateLayout();
+                        pPlotWindow->getPlot()->updateGeometry();
                         pPlotWindow->getPlot()->getPlotZoomer()->setZoomBase(false);
                         break;
                     }
@@ -374,7 +385,7 @@ void PlotWidget::plotVariables(QTreeWidgetItem *item, int column)
                             pPlotWindow->setYLabel(tr(""));
                         }
                         pPlotWindow->fitInView();
-                        pPlotWindow->getPlot()->updateLayout();
+                        pPlotWindow->getPlot()->updateGeometry();
                         pPlotWindow->getPlot()->getPlotZoomer()->setZoomBase(false);
                     }
                     else
@@ -423,7 +434,7 @@ void PlotWidget::plotVariables(QTreeWidgetItem *item, int column)
                                     pPlotWindow->getPlot()->removeCurve(pPlotCurve);
                                     pPlotCurve->detach();
                                     pPlotWindow->fitInView();
-                                    pPlotWindow->getPlot()->updateLayout();
+                                    pPlotWindow->getPlot()->updateGeometry();
                                     pPlotWindow->getPlot()->getPlotZoomer()->setZoomBase(false);
                                     break;
                                 }
@@ -508,7 +519,24 @@ void PlotWidget::updatePlotVariablesTree(QMdiSubWindow *window)
     mpPlotTree->blockSignals(false);
 }
 
-void PlotWidget::contextMenuEvent(QContextMenuEvent *event)
+void PlotWidget::showContextMenu(QPoint point)
 {
-    //QMessageBox::warning(0, "teststs", "sdcsdsdsdv", "OK");
+    QTreeWidgetItem *item = 0;
+    item = mpPlotTree->itemAt(point);
+
+    // check if we have item at point and if the item is toplevelitem....because you can only delete toplevel items
+    if (item and !item->parent())
+    {
+        mSelectedPlotTreeItem = dynamic_cast<PlotTreeItem*>(item);
+        QMenu menu(this);
+        menu.addAction(mpDeleteResultAction);
+        menu.exec(mapToGlobal(point));
+    }
+}
+
+void PlotWidget::deletePlotTreeItem()
+{
+    emit removePlotFile(mSelectedPlotTreeItem);
+    qDeleteAll(mSelectedPlotTreeItem->takeChildren());
+    delete mSelectedPlotTreeItem;
 }

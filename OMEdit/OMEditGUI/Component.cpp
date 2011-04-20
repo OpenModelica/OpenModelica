@@ -375,10 +375,12 @@ void Component::createSelectionBox()
 void Component::createActions()
 {
     // Icon Attributes Action
-    mpIconAttributesAction = new QAction(tr("Attributes"), this);
+    mpIconAttributesAction = new QAction(tr("Attributes"), mpGraphicsView);
+    mpIconAttributesAction->setStatusTip(tr("Shows the item attributes"));
     connect(mpIconAttributesAction, SIGNAL(triggered()), SLOT(openIconAttributes()));
     // Icon Properties Action
-    mpIconPropertiesAction = new QAction(QIcon(":/Resources/icons/tool.png"), tr("Properties"), this);
+    mpIconPropertiesAction = new QAction(QIcon(":/Resources/icons/tool.png"), tr("Properties"), mpGraphicsView);
+    mpIconPropertiesAction->setStatusTip(tr("Shows the item properties"));
     connect(mpIconPropertiesAction, SIGNAL(triggered()), SLOT(openIconProperties()));
 }
 
@@ -447,7 +449,6 @@ void Component::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
     // get the root component, it could be either icon or diagram
     Component *pComponent = getRootParentComponent();
 
-    this->setSelected(true);
     QMenu menu(pComponent->mpGraphicsView->mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow);
     menu.addAction(pComponent->mpGraphicsView->mpRotateIconAction);
     menu.addAction(pComponent->mpGraphicsView->mpRotateAntiIconAction);

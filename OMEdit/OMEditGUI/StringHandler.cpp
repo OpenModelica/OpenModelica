@@ -321,6 +321,12 @@ QList<QString> StringHandler::getSimulationResultVars(QString value)
                     list.append(str.remove((str.length() - 1), 1));
                     str.clear();
                 }
+                else if (value.at(i+1) == '}')
+                {
+                    startReading = false;
+                    list.append(str.remove((str.length() - 1), 1));
+                    str.clear();
+                }
             }
             else
                 startReading = true;

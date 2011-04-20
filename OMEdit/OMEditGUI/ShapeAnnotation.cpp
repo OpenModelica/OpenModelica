@@ -111,6 +111,7 @@ void ShapeAnnotation::initializeFields()
 void ShapeAnnotation::createActions()
 {
     mpShapePropertiesAction = new QAction(QIcon(":/Resources/icons/tool.png"), tr("Properties"), this);
+    mpShapePropertiesAction->setStatusTip(tr("Shows the shape properties"));
     connect(mpShapePropertiesAction, SIGNAL(triggered()), SLOT(openShapeProperties()));
 }
 
@@ -374,6 +375,11 @@ QVariant ShapeAnnotation::itemChange(GraphicsItemChange change, const QVariant &
 
 void ShapeAnnotation::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
 {
+    if (!mIsCustomShape)
+    {
+        QGraphicsItem::contextMenuEvent(event);
+        return;
+    }
 //    if (!mpGraphicsView)
 //    {
 //        QGraphicsItem::contextMenuEvent(event);

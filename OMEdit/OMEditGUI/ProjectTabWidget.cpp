@@ -613,19 +613,24 @@ void GraphicsView::createActions()
     // Connection Delete Action
     mpCancelConnectionAction = new QAction(QIcon(":/Resources/icons/delete.png"),
                                           tr("Cancel Connection"), this);
+    mpCancelConnectionAction->setStatusTip(tr("Cancels the current connection"));
     connect(mpCancelConnectionAction, SIGNAL(triggered()), SLOT(removeConnector()));    
     // Icon Rotate ClockWise Action
     mpRotateIconAction = new QAction(QIcon(":/Resources/icons/rotateclockwise.png"),
                                     tr("Rotate Clockwise"), this);
+    mpRotateIconAction->setStatusTip(tr("Rotate the item clockwise"));
     mpRotateIconAction->setShortcut(QKeySequence("Ctrl+r"));
     // Icon Rotate Anti-ClockWise Action
     mpRotateAntiIconAction = new QAction(QIcon(":/Resources/icons/rotateanticlockwise.png"),
                                         tr("Rotate Anticlockwise"), this);
+    mpRotateAntiIconAction->setStatusTip(tr("Rotate the item anticlockwise"));
     mpRotateAntiIconAction->setShortcut(QKeySequence("Ctrl+Shift+r"));
     // Icon Reset Rotation Action
     mpResetRotation = new QAction(tr("Reset Rotation"), this);
+    mpResetRotation->setStatusTip(tr("Reset the item rotation"));
     // Icon Delete Action
     mpDeleteIconAction = new QAction(QIcon(":/Resources/icons/delete.png"), tr("Delete"), this);
+    mpDeleteIconAction->setStatusTip(tr("Delete the item"));
     mpDeleteIconAction->setShortcut(QKeySequence::Delete);
 }
 
