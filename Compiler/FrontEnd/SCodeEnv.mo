@@ -280,10 +280,6 @@ algorithm
     case (SCode.PARTS(externalDecl = SOME(Absyn.EXTERNALDECL(
         lang = SOME("builtin"))))) 
       then BUILTIN();
-    // A class added by extendEnvWithClassExtends.
-    case (SCode.PARTS(externalDecl = SOME(Absyn.EXTERNALDECL(
-        lang = SOME("class_extends")))))
-      then CLASS_EXTENDS();
     // A user-defined class (i.e. not builtin).
     else then USERDEFINED();
   end match;
@@ -782,35 +778,6 @@ algorithm
   re := inRedeclare :: re;
   outEnv := setEnvExtendsTable(EXTENDS_TABLE(exts, re, cei), inEnv);
 end addElementRedeclarationToEnvExtendsTable;
-  
-public function addClassExtendsInfoToEnv
-  "Adds a class extends to the environment."
-  input SCode.Element inClassExtends;
-  input Env inEnv;
-  output Env outEnv;
-algorithm
-  outEnv := matchcontinue(inClassExtends, inEnv)
-    local
-      list<Extends> bcl;
-      list<SCode.Element> re;
-      String estr;
-
-    case (_, _)
-      equation
-        EXTENDS_TABLE(bcl, re, NONE()) = getEnvExtendsTable(inEnv);
-      then
-        setEnvExtendsTable(EXTENDS_TABLE(bcl, re, SOME(inClassExtends)), inEnv);
-
-    else
-      equation
-        estr = "- SCodeEnv.addClassExtendsInfoToEnv: Trying to overwrite " +& 
-               "existing class extends information, this should not happen!.";
-        Error.addMessage(Error.INTERNAL_ERROR, {estr});
-      then
-        fail();
-
-  end matchcontinue;
-end addClassExtendsInfoToEnv;
 
 protected function extendEnvWithClassComponents
   "Extends the environment with a class's components."

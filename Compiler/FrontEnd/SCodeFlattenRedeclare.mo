@@ -36,8 +36,41 @@ encapsulated package SCodeFlattenRedeclare
 
   RCS: $Id$
 
-  This module flattens the SCode representation by removing all extends, imports
-  and redeclares, and fully qualifying class names.
+  This module contains redeclare-specific functions used by SCodeFlatten to
+  handle redeclares. There are three different types of redeclares that are
+  handled: redeclare modifiers, element redeclares and class extends.
+
+  Redeclare modifiers are redeclarations given as modifiers on an extends
+  clause. When an extends clause is added to the environment with
+  SCodeEnv.extendEnvWithExtends these modifiers are extracted with
+  extractRedeclareFromModifier as a list of elements, and then stored in the
+  SCodeEnv.EXTENDS representation. When SCodeLookup.lookupInBaseClasses is used
+  to search for an identifier in a base class, these elements are replaced in
+  the environment prior to searching in it by the replaceRedeclares function.
+
+  Element redeclares are similar to redeclare modifiers, but they are declared
+  as standalone elements that redeclare an inherited element. When the
+  environment is built they are initially added to a list of elements in the
+  extends tables by SCodeEnv.addElementRedeclarationToEnvExtendsTable. When the
+  environment is complete and SCodeEnv.updateExtendsInEnv is used to update the
+  extends these redeclares are handled by addElementRedeclarationsToEnv, which
+  looks up which base class each redeclare is redeclaring in. The element
+  redeclares are then added to the list of redeclarations in the correct
+  SCodeEnv.EXTENDS, and handled in the same way as redeclare modifiers.
+
+  Class extends are handled by adding them to the environment with
+  extendEnvWithClassExtends. This function adds the given class as a normal
+  class to the environment, and sets the class extends information field in
+  the class's environment. This information is the base class and modifiers of
+  the class extends. This information is later used when extends are updated
+  with SCodeEnv.updateExtendsInEnv, and updateClassExtends is called.
+  updateClassExtends looks up the full path to the base class of the class
+  extends, and adds an extends clause to the class that extends from the base
+  class. Class extends on the form 'redeclare class extends X' are thus
+  translated to 'class X extends BaseClass.X', and then mostly handled like a
+  normal class. Some care is needed in the dependency analysis to make sure
+  that nothing important is removed, see comment in
+  SCodeDependency.analyseClassExtends.  
 "
 
 public import Absyn;
@@ -73,6 +106,8 @@ algorithm
       Env env, cls_env;
       SCode.Mod mods;
       Option<Absyn.ExternalDecl> ext_decl;
+      list<SCode.Annotation> annl;
+      Option<SCode.Comment> cmt;
       list<SCode.Equation> nel, iel;
       list<SCode.AlgorithmSection> nal, ial;
       Option<Absyn.ConstrainClass> cc;
@@ -97,25 +132,24 @@ algorithm
           baseClassName = bc, 
           modifications = mods,
           composition = SCode.PARTS(
-          elementLst = el,
-          normalEquationLst = nel,
-          initialEquationLst = iel,
-          normalAlgorithmLst = nal,
-          initialAlgorithmLst = ial)),
+            elementLst = el,
+            normalEquationLst = nel,
+            initialEquationLst = iel,
+            normalAlgorithmLst = nal,
+            initialAlgorithmLst = ial,
+            externalDecl = ext_decl,
+            annotationLst = annl,
+            comment = cmt)),
         info = info), _)
       equation
-        // Mark the class so that we know it's generated from a class extends.
-        ext_decl = SOME(Absyn.EXTERNALDECL(NONE(), SOME("class_extends"), 
-          NONE(), {}, NONE()));
-
         // Construct a PARTS from the CLASS_EXTENDS.
-        cdef = SCode.PARTS(el, nel, iel, nal, ial, ext_decl, {}, NONE());
+        cdef = SCode.PARTS(el, nel, iel, nal, ial, ext_decl, annl, cmt);
         cls = SCode.CLASS(bc, prefixes, ep, pp, res, cdef, info);
 
         // Construct the class environment and add the new extends to it.
         cls_env = SCodeEnv.makeClassEnvironment(cls, false);
         ext = SCode.EXTENDS(Absyn.IDENT(bc), SCode.PUBLIC(), mods, NONE(), info);
-        cls_env = SCodeEnv.addClassExtendsInfoToEnv(ext, cls_env);
+        cls_env = addClassExtendsInfoToEnv(ext, cls_env);
 
         // Finally add the class to the environment.
         env = SCodeEnv.extendEnvWithItem(
@@ -138,6 +172,38 @@ algorithm
 
   end matchcontinue;
 end extendEnvWithClassExtends;
+  
+protected function addClassExtendsInfoToEnv
+  "Adds a class extends to the environment."
+  input SCode.Element inClassExtends;
+  input Env inEnv;
+  output Env outEnv;
+algorithm
+  outEnv := matchcontinue(inClassExtends, inEnv)
+    local
+      list<Extends> bcl;
+      list<SCode.Element> re;
+      String estr;
+      SCodeEnv.ExtendsTable ext;
+
+    case (_, _)
+      equation
+        SCodeEnv.EXTENDS_TABLE(bcl, re, NONE()) = 
+          SCodeEnv.getEnvExtendsTable(inEnv);
+        ext = SCodeEnv.EXTENDS_TABLE(bcl, re, SOME(inClassExtends));
+      then
+        SCodeEnv.setEnvExtendsTable(ext, inEnv);
+
+    else
+      equation
+        estr = "- SCodeFlattenRedeclare.addClassExtendsInfoToEnv: Trying to overwrite " +& 
+               "existing class extends information, this should not happen!.";
+        Error.addMessage(Error.INTERNAL_ERROR, {estr});
+      then
+        fail();
+
+  end matchcontinue;
+end addClassExtendsInfoToEnv;
 
 public function updateClassExtends
   input SCode.Element inClass;
