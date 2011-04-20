@@ -5004,7 +5004,7 @@ algorithm
       BackendDAE.IncidenceMatrix m;
       BackendDAE.IncidenceMatrixT mT;
       list<SimEqSystem> eqns,reqns,alleqns;
-      VarTransform.VariableReplacements repl,repl_1;
+      BackendVarTransform.VariableReplacements repl,repl_1;
       
     case (mixedEvent,m,mT,ass1,ass2,block_,r,t,
         daelow as BackendDAE.DAE(orderedVars=v,knownVars=kv,externalObjects=exv,aliasVars=av,orderedEqs=eqn,removedEqs=reeqn,initialEqs=ineq,arrayEqs=ae,algorithms=algorithms,eventInfo=eventInfo,extObjClasses=extObjClasses),helpVarInfo) 
@@ -5018,7 +5018,7 @@ algorithm
         crefs = BackendVariable.getAllCrefFromVariables(v);
         crefs = listReverse(crefs);
         // generade replacement from non residual eqns           
-        repl = VarTransform.emptyReplacements();
+        repl = BackendVarTransform.emptyReplacements();
         (repl_1,eqns) = getRelaxationReplacements(block_1,ass2,crefs,eqn_lst,repl);
         // replace non tearing vars in residual eqns
         (reqn_lst,tvar_lst) = getRelaxedResidualEqns(r,ass2,crefs,var_lst,eqn_lst,repl_1);
@@ -5050,8 +5050,8 @@ Author: Frenkel TUD 2010-09 function getRelaxationReplacements
   input array<Integer> inAss2;
   input list<DAE.ComponentRef> inCrefs;
   input list<BackendDAE.Equation> inEqnLst;
-  input VarTransform.VariableReplacements inRepl;
-  output VarTransform.VariableReplacements outRepl;
+  input BackendVarTransform.VariableReplacements inRepl;
+  output BackendVarTransform.VariableReplacements outRepl;
   output list<SimEqSystem> outEqns;
 algorithm
   (outRepl,outEqns) := match (inBlock,inAss2,inCrefs,inEqnLst,inRepl)
@@ -5063,7 +5063,7 @@ algorithm
       DAE.ComponentRef c;
       list<BackendDAE.Equation> eqnLst;
       BackendDAE.Equation eqn;
-      VarTransform.VariableReplacements repl,repl1,repl2;
+      BackendVarTransform.VariableReplacements repl,repl1,repl2;
       DAE.Exp exp,varexp,exps;
       list<SimEqSystem> seqns;
       DAE.ElementSource source;
@@ -5077,8 +5077,8 @@ algorithm
         eqn = listNth(eqnLst,e-1);
         varexp = Expression.crefExp(c);
         (exp,_) = solveEquation(eqn, varexp);
-        (exps,_) = VarTransform.replaceExp(exp,repl,NONE());
-        repl1 = VarTransform.addReplacement(repl, c, exps);
+        (exps,_) = BackendVarTransform.replaceExp(exp,repl,NONE());
+        repl1 = BackendVarTransform.addReplacement(repl, c, exps);
         source = BackendEquation.equationSource(eqn);
         (repl2,seqns) = getRelaxationReplacements(block_,ass2,crefs,eqnLst,repl1);
       then 
@@ -5138,7 +5138,7 @@ Author: Frenkel TUD 2010-09 function getRelaxedResidualEqns
   input list<DAE.ComponentRef> inCrefs;
   input list<BackendDAE.Var> inVarLst;
   input list<BackendDAE.Equation> inEqnLst;
-  input VarTransform.VariableReplacements inRepl;
+  input BackendVarTransform.VariableReplacements inRepl;
   output list<BackendDAE.Equation> outEqnLst;
   output list<BackendDAE.Var> outVarLst;
 algorithm
@@ -5151,7 +5151,7 @@ algorithm
       DAE.ComponentRef c;
       list<BackendDAE.Equation> eqnLst,eqnLst1;
       BackendDAE.Equation eqn,eqn1;
-      VarTransform.VariableReplacements repl;
+      BackendVarTransform.VariableReplacements repl;
       list<BackendDAE.Var> varlst,varlst1;
       BackendDAE.Var var;
       

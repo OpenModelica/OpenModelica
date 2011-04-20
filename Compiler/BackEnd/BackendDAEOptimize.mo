@@ -56,7 +56,6 @@ protected import BackendEquation;
 protected import BackendVarTransform;
 protected import BackendVariable;
 protected import Builtin;
-protected import ClassInf;
 protected import ComponentReference;
 protected import DAEUtil;
 protected import Debug;
@@ -69,7 +68,6 @@ protected import Error;
 protected import Inline;
 protected import RTOpts;
 protected import Util;
-protected import VarTransform;
 protected import Values;
 protected import ValuesUtil;
 
@@ -297,7 +295,7 @@ algorithm
       DAE.FunctionTree funcs;
       BackendDAE.IncidenceMatrix m,m_1;
       BackendDAE.IncidenceMatrixT mT,mT_1;
-      VarTransform.VariableReplacements repl,repl_1,extendrepl,extendrepl1;
+      BackendVarTransform.VariableReplacements repl,repl_1;
       BackendDAE.BinTree movedVars,movedAVars;
       list<Integer> meqns;
       BackendDAE.Variables ordvars,knvars,exobj,ordvars1,knvars1,ordvars2,knvars2,ordvars3;
@@ -316,12 +314,10 @@ algorithm
     case (dlow,funcs,inM,inMT)
       equation
         (m,mT) = BackendDAEUtil.getIncidenceMatrixfromOption(dlow,inM,inMT);
-        repl = VarTransform.emptyReplacements();
-        extendrepl = VarTransform.emptyReplacements();
+        repl = BackendVarTransform.emptyReplacements();
         // check equations
-        (m_1,(dlow,_,mT_1,repl_1,extendrepl1,movedVars,movedAVars,meqns)) = traverseIncidenceMatrix(m,removeSimpleEquationsFinder,(dlow,funcs,mT,repl,extendrepl,BackendDAE.emptyBintree,BackendDAE.emptyBintree,{}));
-        Debug.fcall("dumprepl", VarTransform.dumpReplacements, repl_1);
-        Debug.fcall("dumpextendrepl", VarTransform.dumpReplacements, extendrepl1);
+        (m_1,(dlow,_,mT_1,repl_1,movedVars,movedAVars,meqns)) = traverseIncidenceMatrix(m,removeSimpleEquationsFinder,(dlow,funcs,mT,repl,BackendDAE.emptyBintree,BackendDAE.emptyBintree,{}));
+        Debug.fcall("dumprepl", BackendVarTransform.dumpReplacements, repl_1);
         BackendDAE.DAE(ordvars,knvars,exobj,aliasVars,eqns,remeqns,inieqns,arreqns,algorithms,BackendDAE.EVENT_INFO(whenClauseLst,zeroCrossingLst),eoc) = dlow;
         // delete alias variables from orderedVars
         ordvars1 = BackendVariable.deleteVars(movedAVars,ordvars);
@@ -330,17 +326,17 @@ algorithm
         // remove changed eqns
         eqns1 = BackendEquation.equationDelete(eqns,meqns);
         // replace moved vars in vars,knvars,aliasVars,ineqns,remeqns
-        (ordvars3,(_,_)) = BackendVariable.traverseBackendDAEVarsWithUpdate(ordvars2,replaceVarTraverser,(repl_1,extendrepl1));
-        (knvars2,(_,_)) = BackendVariable.traverseBackendDAEVarsWithUpdate(knvars1,replaceVarTraverser,(repl_1,extendrepl1));
+        (ordvars3,_) = BackendVariable.traverseBackendDAEVarsWithUpdate(ordvars2,replaceVarTraverser,repl_1);
+        (knvars2,_) = BackendVariable.traverseBackendDAEVarsWithUpdate(knvars1,replaceVarTraverser,repl_1);
         // update arrayeqns and algorithms, collect info for wrappers
-        (arreqns1,(_,_,_,crefOrDerCreflst)) = Util.arrayMapNoCopy_1(arreqns,replaceArrayEquationTraverser,(repl_1,extendrepl1,ordvars3,{}));
+        (arreqns1,(_,_,crefOrDerCreflst)) = Util.arrayMapNoCopy_1(arreqns,replaceArrayEquationTraverser,(repl_1,ordvars3,{}));
         crefOrDerCrefarray = listArray(listReverse(crefOrDerCreflst));
-        (algorithms1,(_,_,_,inouttpllst)) = Util.arrayMapNoCopy_1(algorithms,replaceAlgorithmTraverser,(repl_1,extendrepl1,ordvars3,{}));
+        (algorithms1,(_,_,inouttpllst)) = Util.arrayMapNoCopy_1(algorithms,replaceAlgorithmTraverser,(repl_1,ordvars3,{}));
         inouttplarray = listArray(listReverse(inouttpllst));
-        (eqns2,(_,_,_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(eqns1,replaceEquationTraverser,(repl_1,extendrepl1,crefOrDerCrefarray,inouttplarray));
-        (inieqns1,(_,_,_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(inieqns,replaceEquationTraverser,(repl_1,extendrepl1,crefOrDerCrefarray,inouttplarray));
-        (remeqns1,(_,_,_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(remeqns,replaceEquationTraverser,(repl_1,extendrepl1,crefOrDerCrefarray,inouttplarray));
-        (whenClauseLst1,(_,_)) = BackendDAETransform.traverseBackendDAEExpsWhenClauseLst(whenClauseLst,replaceWhenClauseTraverser,(repl_1,extendrepl1));
+        (eqns2,(_,_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(eqns1,replaceEquationTraverser,(repl_1,crefOrDerCrefarray,inouttplarray));
+        (inieqns1,(_,_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(inieqns,replaceEquationTraverser,(repl_1,crefOrDerCrefarray,inouttplarray));
+        (remeqns1,(_,_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(remeqns,replaceEquationTraverser,(repl_1,crefOrDerCrefarray,inouttplarray));
+        (whenClauseLst1,_) = BackendDAETransform.traverseBackendDAEExpsWhenClauseLst(whenClauseLst,replaceWhenClauseTraverser,repl_1);
         // update array eqn wrapper
       then (BackendDAE.DAE(ordvars3,knvars2,exobj,aliasVars,eqns2,remeqns1,inieqns1,arreqns1,algorithms1,BackendDAE.EVENT_INFO(whenClauseLst1,zeroCrossingLst),eoc),NONE(),NONE());
   end match;
@@ -348,57 +344,53 @@ end removeSimpleEquations;
 
 protected function replaceVarTraverser
 "autor: Frenkel TUD 2011-03"
- input tuple<BackendDAE.Var, tuple<VarTransform.VariableReplacements,VarTransform.VariableReplacements>> inTpl;
- output tuple<BackendDAE.Var, tuple<VarTransform.VariableReplacements,VarTransform.VariableReplacements>> outTpl;
+ input tuple<BackendDAE.Var, BackendVarTransform.VariableReplacements> inTpl;
+ output tuple<BackendDAE.Var, BackendVarTransform.VariableReplacements> outTpl;
 algorithm
   outTpl:=
   matchcontinue (inTpl)
     local
       BackendDAE.Var v,v1;
-      VarTransform.VariableReplacements repl,extendrepl;
-      DAE.Exp e,e1,e2;
-      Boolean b1,b2;
-    case ((v as BackendDAE.VAR(bindExp=SOME(e)),(repl,extendrepl)))
+      BackendVarTransform.VariableReplacements repl;
+      DAE.Exp e,e1;
+    case ((v as BackendDAE.VAR(bindExp=SOME(e)),repl))
       equation
-        (e1,b1) = VarTransform.replaceExp(e, extendrepl, NONE());
-        (e2,b2) = VarTransform.replaceExp(e1, repl, NONE());
-        true = b1 or b2;
-        v1 = BackendVariable.setBindExp(v,e2);
-      then ((v1,(repl,extendrepl)));
+        (e1,true) = BackendVarTransform.replaceExp(e, repl, NONE());
+        v1 = BackendVariable.setBindExp(v,e1);
+      then ((v1,repl));
     case inTpl then inTpl;
   end matchcontinue;
 end replaceVarTraverser;
 
 protected function replaceEquationTraverser
   "Help function to e.g. removeSimpleEquations"
-  input tuple<BackendDAE.Equation,tuple<VarTransform.VariableReplacements,VarTransform.VariableReplacements,array<list<DAE.Exp>>,array<tuple<list<DAE.Exp>,list<DAE.Exp>>>>> inTpl;
-  output tuple<BackendDAE.Equation,tuple<VarTransform.VariableReplacements,VarTransform.VariableReplacements,array<list<DAE.Exp>>,array<tuple<list<DAE.Exp>,list<DAE.Exp>>>>> outTpl;
+  input tuple<BackendDAE.Equation,tuple<BackendVarTransform.VariableReplacements,array<list<DAE.Exp>>,array<tuple<list<DAE.Exp>,list<DAE.Exp>>>>> inTpl;
+  output tuple<BackendDAE.Equation,tuple<BackendVarTransform.VariableReplacements,array<list<DAE.Exp>>,array<tuple<list<DAE.Exp>,list<DAE.Exp>>>>> outTpl;
 algorithm
   outTpl:=  
   matchcontinue (inTpl)
     local 
-      BackendDAE.Equation e,e1,e2;
-      VarTransform.VariableReplacements repl,extendrepl;
+      BackendDAE.Equation e,e1;
+      BackendVarTransform.VariableReplacements repl;
       array<list<DAE.Exp>> crefOrDerCrefarray;
       array<tuple<list<DAE.Exp>,list<DAE.Exp>>> inouttplarray;
       Integer index;
       list<DAE.Exp> in_,out,crefOrDerCref;
       DAE.ElementSource source;
-    case ((BackendDAE.ARRAY_EQUATION(index=index,source=source),(repl,extendrepl,crefOrDerCrefarray,inouttplarray)))
+    case ((BackendDAE.ARRAY_EQUATION(index=index,source=source),(repl,crefOrDerCrefarray,inouttplarray)))
       equation
         crefOrDerCref = crefOrDerCrefarray[index+1];
       then
-        ((BackendDAE.ARRAY_EQUATION(index,crefOrDerCref,source),(repl,extendrepl,crefOrDerCrefarray,inouttplarray)));
-    case ((BackendDAE.ALGORITHM(index=index,source=source),(repl,extendrepl,crefOrDerCrefarray,inouttplarray)))
+        ((BackendDAE.ARRAY_EQUATION(index,crefOrDerCref,source),(repl,crefOrDerCrefarray,inouttplarray)));
+    case ((BackendDAE.ALGORITHM(index=index,source=source),(repl,crefOrDerCrefarray,inouttplarray)))
       equation
         ((in_,out)) = inouttplarray[index+1];
       then
-        ((BackendDAE.ALGORITHM(index,in_,out,source),(repl,extendrepl,crefOrDerCrefarray,inouttplarray)));
-    case ((e,(repl,extendrepl,crefOrDerCrefarray,inouttplarray)))
+        ((BackendDAE.ALGORITHM(index,in_,out,source),(repl,crefOrDerCrefarray,inouttplarray)));
+    case ((e,(repl,crefOrDerCrefarray,inouttplarray)))
       equation
-        {e1} = BackendVarTransform.replaceEquations({e},extendrepl);
-        {e2} = BackendVarTransform.replaceEquations({e1},repl);
-      then ((e2,(repl,extendrepl,crefOrDerCrefarray,inouttplarray)));
+        {e1} = BackendVarTransform.replaceEquations({e},repl);
+      then ((e1,(repl,crefOrDerCrefarray,inouttplarray)));
   end matchcontinue;
 end replaceEquationTraverser;
 
@@ -406,35 +398,33 @@ protected function replaceArrayEquationTraverser "function: replaceArrayEquation
   author: Frenkel TUD 2010-04
   It is possible to change the equation.
 "
-  input tuple<BackendDAE.MultiDimEquation,tuple<VarTransform.VariableReplacements,VarTransform.VariableReplacements,BackendDAE.Variables,list<list<DAE.Exp>>>> inTpl;
-  output tuple<BackendDAE.MultiDimEquation,tuple<VarTransform.VariableReplacements,VarTransform.VariableReplacements,BackendDAE.Variables,list<list<DAE.Exp>>>> outTpl;
+  input tuple<BackendDAE.MultiDimEquation,tuple<BackendVarTransform.VariableReplacements,BackendDAE.Variables,list<list<DAE.Exp>>>> inTpl;
+  output tuple<BackendDAE.MultiDimEquation,tuple<BackendVarTransform.VariableReplacements,BackendDAE.Variables,list<list<DAE.Exp>>>> outTpl;
 algorithm
   outTpl:=
   match (inTpl)
     local 
-      DAE.Exp e1,e2,e1_1,e2_1,e1_2,e2_2,e1_3,e2_3;
+      DAE.Exp e1,e2,e1_1,e2_1,e1_2,e2_2;
       list<Integer> dims;
       DAE.ElementSource source;
-      VarTransform.VariableReplacements repl,extendrepl;
+      BackendVarTransform.VariableReplacements repl;
       list<list<DAE.Exp>> crefOrDerCreflst;
       list<DAE.Exp> expl1,expl2,expl;
       BackendDAE.Variables vars;
       Boolean b1,b2;
-    case ((BackendDAE.MULTIDIM_EQUATION(dims,e1,e2,source),(repl,extendrepl,vars,crefOrDerCreflst)))
+    case ((BackendDAE.MULTIDIM_EQUATION(dims,e1,e2,source),(repl,vars,crefOrDerCreflst)))
       equation
-        (e1_1,_) = VarTransform.replaceExp(e1, extendrepl,NONE());
-        (e1_2,_) = VarTransform.replaceExp(e1_1, repl,NONE());
-        (e2_1,_) = VarTransform.replaceExp(e2, extendrepl,NONE());
-        (e2_2,_) = VarTransform.replaceExp(e2_1, repl,NONE());
-        (e1_3,b1) = ExpressionSimplify.simplify(e1_2);
-        (e2_3,b2) = ExpressionSimplify.simplify(e2_2);
-        source = DAEUtil.addSymbolicTransformationSimplify(b1,source,e1,e1_3);
-        source = DAEUtil.addSymbolicTransformationSimplify(b2,source,e2,e2_3);        
-        expl1 = BackendDAEUtil.statesAndVarsExp(e1_3, vars);
-        expl2 = BackendDAEUtil.statesAndVarsExp(e2_3, vars);
+        (e1_1,_) = BackendVarTransform.replaceExp(e1, repl,NONE());
+        (e2_1,_) = BackendVarTransform.replaceExp(e2, repl,NONE());
+        (e1_2,b1) = ExpressionSimplify.simplify(e1_1);
+        (e2_2,b2) = ExpressionSimplify.simplify(e2_1);
+        source = DAEUtil.addSymbolicTransformationSimplify(b1,source,e1,e1_2);
+        source = DAEUtil.addSymbolicTransformationSimplify(b2,source,e2,e2_2);        
+        expl1 = BackendDAEUtil.statesAndVarsExp(e1_2, vars);
+        expl2 = BackendDAEUtil.statesAndVarsExp(e2_2, vars);
         expl = listAppend(expl1, expl2);
       then
-        ((BackendDAE.MULTIDIM_EQUATION(dims,e1_3,e2_3,source),(repl,extendrepl,vars,expl::crefOrDerCreflst)));
+        ((BackendDAE.MULTIDIM_EQUATION(dims,e1_2,e2_2,source),(repl,vars,expl::crefOrDerCreflst)));
   end match;
 end replaceArrayEquationTraverser;
 
@@ -442,21 +432,20 @@ protected function replaceWhenClauseTraverser "function: replaceWhenClauseTraver
   author: Frenkel TUD 2010-04
   It is possible to change the when clause.
 "
-  input tuple<DAE.Exp,tuple<VarTransform.VariableReplacements,VarTransform.VariableReplacements>> inTpl;
-  output tuple<DAE.Exp,tuple<VarTransform.VariableReplacements,VarTransform.VariableReplacements>> outTpl;
+  input tuple<DAE.Exp,BackendVarTransform.VariableReplacements> inTpl;
+  output tuple<DAE.Exp,BackendVarTransform.VariableReplacements> outTpl;
 algorithm
   outTpl:=
   match (inTpl)
     local 
-      DAE.Exp e,e1,e2;
+      DAE.Exp e,e1;
       DAE.ElementSource source;      
-      VarTransform.VariableReplacements repl,extendrepl;
-    case ((e,(repl,extendrepl)))
+      BackendVarTransform.VariableReplacements repl;
+    case ((e,repl))
       equation
-        (e1,_) = VarTransform.replaceExp(e, extendrepl, NONE());
-        (e2,_) = VarTransform.replaceExp(e1, repl, NONE());
+        (e1,_) = BackendVarTransform.replaceExp(e, repl, NONE());
       then
-        ((e2,(repl,extendrepl)));
+        ((e1,repl));
     case inTpl then inTpl;
   end match;
 end replaceWhenClauseTraverser;
@@ -465,26 +454,25 @@ protected function replaceAlgorithmTraverser "function: replaceAlgorithmTraverse
   author: Frenkel TUD 2010-04
   It is possible to change the algorithm.
 "
-  input tuple<DAE.Algorithm,tuple<VarTransform.VariableReplacements,VarTransform.VariableReplacements,BackendDAE.Variables,list<tuple<list<DAE.Exp>,list<DAE.Exp>>>>> inTpl;
-  output tuple<DAE.Algorithm,tuple<VarTransform.VariableReplacements,VarTransform.VariableReplacements,BackendDAE.Variables,list<tuple<list<DAE.Exp>,list<DAE.Exp>>>>> outTpl;
+  input tuple<DAE.Algorithm,tuple<BackendVarTransform.VariableReplacements,BackendDAE.Variables,list<tuple<list<DAE.Exp>,list<DAE.Exp>>>>> inTpl;
+  output tuple<DAE.Algorithm,tuple<BackendVarTransform.VariableReplacements,BackendDAE.Variables,list<tuple<list<DAE.Exp>,list<DAE.Exp>>>>> outTpl;
 algorithm
   outTpl:=
   match (inTpl)
     local 
-      list<DAE.Statement> statementLst,statementLst_1,statementLst_2;
-      VarTransform.VariableReplacements repl,extendrepl;
+      list<DAE.Statement> statementLst,statementLst_1;
+      BackendVarTransform.VariableReplacements repl;
       list<tuple<list<DAE.Exp>,list<DAE.Exp>>> inouttpllst;
       tuple<list<DAE.Exp>,list<DAE.Exp>> inouttpl;
       BackendDAE.Variables vars;
       DAE.Algorithm alg;
-    case ((DAE.ALGORITHM_STMTS(statementLst=statementLst),(repl,extendrepl,vars,inouttpllst)))
+    case ((DAE.ALGORITHM_STMTS(statementLst=statementLst),(repl,vars,inouttpllst)))
       equation
-        (statementLst_1,_) = BackendVarTransform.replaceStatementLst(statementLst,extendrepl);
-        (statementLst_2,_) = BackendVarTransform.replaceStatementLst(statementLst_1,repl);
-        alg = DAE.ALGORITHM_STMTS(statementLst_2);
+        (statementLst_1,_) = BackendVarTransform.replaceStatementLst(statementLst,repl);
+        alg = DAE.ALGORITHM_STMTS(statementLst_1);
         inouttpl = BackendDAECreate.lowerAlgorithmInputsOutputs(vars,alg);
       then
-        ((alg,(repl,extendrepl,vars,inouttpl::inouttpllst)));
+        ((alg,(repl,vars,inouttpl::inouttpllst)));
   end match;
 end replaceAlgorithmTraverser;
 
@@ -517,8 +505,8 @@ end updateEquationWrapper;
 
 protected function removeSimpleEquationsFinder
 "autor: Frenkel TUD 2010-12"
- input tuple<BackendDAE.IncidenceMatrixElement,Integer,BackendDAE.IncidenceMatrix, tuple<BackendDAE.BackendDAE,DAE.FunctionTree,BackendDAE.IncidenceMatrixT,VarTransform.VariableReplacements,VarTransform.VariableReplacements,BackendDAE.BinTree,BackendDAE.BinTree,list<Integer>>> inTpl;
- output tuple<list<Integer>,BackendDAE.IncidenceMatrix, tuple<BackendDAE.BackendDAE,DAE.FunctionTree,BackendDAE.IncidenceMatrixT,VarTransform.VariableReplacements,VarTransform.VariableReplacements,BackendDAE.BinTree,BackendDAE.BinTree,list<Integer>>> outTpl;
+ input tuple<BackendDAE.IncidenceMatrixElement,Integer,BackendDAE.IncidenceMatrix, tuple<BackendDAE.BackendDAE,DAE.FunctionTree,BackendDAE.IncidenceMatrixT,BackendVarTransform.VariableReplacements,BackendDAE.BinTree,BackendDAE.BinTree,list<Integer>>> inTpl;
+ output tuple<list<Integer>,BackendDAE.IncidenceMatrix, tuple<BackendDAE.BackendDAE,DAE.FunctionTree,BackendDAE.IncidenceMatrixT,BackendVarTransform.VariableReplacements,BackendDAE.BinTree,BackendDAE.BinTree,list<Integer>>> outTpl;
 algorithm
   outTpl:=
   matchcontinue (inTpl)
@@ -527,7 +515,7 @@ algorithm
       Integer pos,l,i,eqnType,pos_1;
       BackendDAE.IncidenceMatrix m,m1,mT,mT1;
       BackendDAE.BackendDAE dae,dae1,dae2;
-      VarTransform.VariableReplacements repl,repl_1,extendrepl,extendrepl1;
+      BackendVarTransform.VariableReplacements repl,repl_1;
       BackendDAE.BinTree mvars,mvars_1,mavars,mavars_1;
       list<Integer> meqns,meqns1,vareqns;
       BackendDAE.Variables v,kn,v1,v2;
@@ -537,7 +525,7 @@ algorithm
       DAE.Exp exp,e1,e2;
       DAE.FunctionTree funcs;
       
-    case ((elem,pos,m,(dae,funcs,mT,repl,extendrepl,mvars,mavars,meqns)))
+    case ((elem,pos,m,(dae,funcs,mT,repl,mvars,mavars,meqns)))
       equation
         // check number of vars in eqns
         l = listLength(elem);
@@ -547,8 +535,8 @@ algorithm
         BackendDAE.EQUATION(exp=e1,scalar=e2) = BackendDAEUtil.equationNth(eqns,pos_1);
         true = Expression.isConst(e1);
         true = Expression.expEqual(e1,e2);
-      then (({},m,(dae,funcs,mT,repl,extendrepl,mvars,mavars,pos_1::meqns)));      
-    case ((elem,pos,m,(dae,funcs,mT,repl,extendrepl,mvars,mavars,meqns)))
+      then (({},m,(dae,funcs,mT,repl,mvars,mavars,pos_1::meqns)));      
+    case ((elem,pos,m,(dae,funcs,mT,repl,mvars,mavars,meqns)))
       equation
         // check number of vars in eqns
         l = listLength(elem);
@@ -556,133 +544,12 @@ algorithm
         true = intGt(l,0);
         (cr,i,exp,dae1,mvars_1,mavars_1,eqnType) = simpleEquation(elem,l,pos,dae,mvars,mavars);
         // replace equation if necesarry
-        (vareqns,dae2,repl_1,extendrepl1,m1,mT1,meqns1) = replacementsInEqns(eqnType,cr,i,exp,pos,repl,extendrepl,dae1,m,mT,meqns,funcs);
-      then ((vareqns,m1,(dae2,funcs,mT1,repl_1,extendrepl1,mvars_1,mavars_1,meqns1)));
-    case ((elem,pos,m,(dae,funcs,mT,repl,extendrepl,mvars,mavars,meqns)))
-      then (({},m,(dae,funcs,mT,repl,extendrepl,mvars,mavars,meqns))); 
+        (vareqns,dae2,repl_1,m1,mT1,meqns1) = replacementsInEqns(eqnType,cr,i,exp,pos,repl,dae1,m,mT,meqns,funcs);
+      then ((vareqns,m1,(dae2,funcs,mT1,repl_1,mvars_1,mavars_1,meqns1)));
+    case ((elem,pos,m,(dae,funcs,mT,repl,mvars,mavars,meqns)))
+      then (({},m,(dae,funcs,mT,repl,mvars,mavars,meqns))); 
   end matchcontinue;
 end removeSimpleEquationsFinder;
-
-protected function addExtendReplacement
-"function: addExtendReplacement
-  author: Frenkel TUD 2011-04
-  checks if the parents of cref from type array or record
-  and add a rule to extend them."
-  input VarTransform.VariableReplacements extendrepl;
-  input DAE.FunctionTree inFuncs;
-  input DAE.ComponentRef cr;
-  input Option<DAE.ComponentRef> preCr;
-  output VarTransform.VariableReplacements outExtendrepl;
-algorithm
-  outExtendrepl:=
-  matchcontinue (extendrepl,inFuncs,cr,preCr)
-    local
-      VarTransform.VariableReplacements erepl,erepl1;
-      DAE.ComponentRef cr,subcr,precr,precr1,pcr,precrn,precrn1;
-      DAE.Ident ident;
-      DAE.ExpType ty;
-      list<DAE.Subscript> subscriptLst;
-      DAE.Exp exp,crexp;
-    case (extendrepl,inFuncs,cr as DAE.CREF_IDENT(ident=ident,identType=ty as DAE.ET_ARRAY(ty=_),subscriptLst=subscriptLst),NONE())
-      equation
-        precr = ComponentReference.makeCrefIdent(ident,ty,{});
-        failure(_ = VarTransform.getReplacement(extendrepl,precr));
-        crexp = Expression.crefExp(precr);
-        ((exp,_)) = BackendDAEUtil.extendArrExp((crexp,SOME(inFuncs)));
-        // update Replacements
-        erepl = VarTransform.addReplacement(extendrepl, precr, exp);
-      then erepl;
-    case (extendrepl,inFuncs,cr as DAE.CREF_IDENT(ident=ident,identType=ty as DAE.ET_ARRAY(ty=_),subscriptLst=subscriptLst),SOME(pcr))
-      equation
-        precr = ComponentReference.makeCrefIdent(ident,ty,{});
-        precr1 = ComponentReference.joinCrefs(pcr,precr);
-        failure(_ = VarTransform.getReplacement(extendrepl,precr1));
-        crexp = Expression.crefExp(precr1);
-        ((exp,_)) = BackendDAEUtil.extendArrExp((crexp,SOME(inFuncs)));
-        // update Replacements
-        erepl = VarTransform.addReplacement(extendrepl, precr1, exp);
-      then erepl;
-    case (extendrepl,inFuncs,cr as DAE.CREF_IDENT(ident=ident,identType=ty as DAE.ET_COMPLEX(complexClassType=ClassInf.RECORD(_)),subscriptLst=subscriptLst),NONE())
-      equation
-        failure(_ = VarTransform.getReplacement(extendrepl,cr));
-        crexp = Expression.crefExp(cr);
-        ((exp,_)) = BackendDAEUtil.extendArrExp((crexp,SOME(inFuncs)));
-        // update Replacements
-        erepl = VarTransform.addReplacement(extendrepl, cr, exp);
-      then erepl;
-    case (extendrepl,inFuncs,cr as DAE.CREF_IDENT(ident=ident,identType=ty as DAE.ET_COMPLEX(complexClassType=ClassInf.RECORD(_)),subscriptLst=subscriptLst),SOME(pcr))
-      equation
-        precr1 = ComponentReference.joinCrefs(pcr,cr);
-        failure(_ = VarTransform.getReplacement(extendrepl,precr1));
-        crexp = Expression.crefExp(precr1);
-        ((exp,_)) = BackendDAEUtil.extendArrExp((crexp,SOME(inFuncs)));
-        // update Replacements
-        erepl = VarTransform.addReplacement(extendrepl, precr1, exp);
-      then erepl;        
-    case (extendrepl,inFuncs,DAE.CREF_IDENT(ident=_),_) then extendrepl;
-    case (extendrepl,inFuncs,cr as DAE.CREF_QUAL(ident=ident,identType=ty as DAE.ET_ARRAY(ty=_),subscriptLst=subscriptLst,componentRef=subcr),NONE())
-      equation
-        precr = ComponentReference.makeCrefIdent(ident,ty,{});
-        failure(_ = VarTransform.getReplacement(extendrepl,precr));
-        crexp = Expression.crefExp(precr);
-        ((exp,_)) = BackendDAEUtil.extendArrExp((crexp,SOME(inFuncs)));
-        // update Replacements
-        erepl = VarTransform.addReplacement(extendrepl, precr, exp);
-        precrn = ComponentReference.makeCrefIdent(ident,ty,subscriptLst);
-        erepl1 = addExtendReplacement(erepl,inFuncs,subcr,SOME(precrn));
-      then erepl1;
-    case (extendrepl,inFuncs,cr as DAE.CREF_QUAL(ident=ident,identType=ty as DAE.ET_COMPLEX(complexClassType=ClassInf.RECORD(_)),subscriptLst=subscriptLst,componentRef=subcr),NONE())
-      equation
-        precr = ComponentReference.makeCrefIdent(ident,ty,subscriptLst);
-        failure(_ = VarTransform.getReplacement(extendrepl,precr));
-        crexp = Expression.crefExp(precr);
-        ((exp,_)) = BackendDAEUtil.extendArrExp((crexp,SOME(inFuncs)));
-        // update Replacements
-        erepl = VarTransform.addReplacement(extendrepl, precr, exp);
-        erepl1 = addExtendReplacement(erepl,inFuncs,subcr,SOME(precr));
-      then erepl1;
-    case (extendrepl,inFuncs,cr as DAE.CREF_QUAL(ident=ident,identType=ty as DAE.ET_ARRAY(ty=_),subscriptLst=subscriptLst,componentRef=subcr),SOME(pcr))
-      equation
-        precr = ComponentReference.makeCrefIdent(ident,ty,{});
-        precr1 = ComponentReference.joinCrefs(pcr,precr);
-        failure(_ = VarTransform.getReplacement(extendrepl,precr1));
-        crexp = Expression.crefExp(precr1);
-        ((exp,_)) = BackendDAEUtil.extendArrExp((crexp,SOME(inFuncs)));
-        // update Replacements
-        erepl = VarTransform.addReplacement(extendrepl, precr1, exp);
-        precrn = ComponentReference.makeCrefIdent(ident,ty,subscriptLst);
-        precrn1 = ComponentReference.joinCrefs(pcr,precrn);
-        erepl1 = addExtendReplacement(erepl,inFuncs,subcr,SOME(precrn1));
-      then erepl1;
-    case (extendrepl,inFuncs,cr as DAE.CREF_QUAL(ident=ident,identType=ty as DAE.ET_COMPLEX(complexClassType=ClassInf.RECORD(_)),subscriptLst=subscriptLst,componentRef=subcr),SOME(pcr))
-      equation
-        precr = ComponentReference.makeCrefIdent(ident,ty,subscriptLst);
-        precr1 = ComponentReference.joinCrefs(pcr,precr);
-        failure(_ = VarTransform.getReplacement(extendrepl,precr1));
-        crexp = Expression.crefExp(precr1);
-        ((exp,_)) = BackendDAEUtil.extendArrExp((crexp,SOME(inFuncs)));
-        // update Replacements
-        erepl = VarTransform.addReplacement(extendrepl, precr1, exp);
-        erepl1 = addExtendReplacement(erepl,inFuncs,subcr,SOME(precr1));
-      then erepl1;
-    // all other
-    case (extendrepl,inFuncs,cr as DAE.CREF_QUAL(ident=ident,identType=ty,subscriptLst=subscriptLst,componentRef=subcr),NONE())
-      equation
-        precrn = ComponentReference.makeCrefIdent(ident,ty,subscriptLst);
-        erepl = addExtendReplacement(extendrepl,inFuncs,subcr,SOME(precrn));
-      then erepl;
-    case (extendrepl,inFuncs,cr as DAE.CREF_QUAL(ident=ident,identType=ty,subscriptLst=subscriptLst,componentRef=subcr),SOME(pcr))
-      equation
-        precrn = ComponentReference.makeCrefIdent(ident,ty,subscriptLst);
-        precrn1 = ComponentReference.joinCrefs(pcr,precrn);
-        erepl = addExtendReplacement(extendrepl,inFuncs,subcr,SOME(precrn1));
-      then erepl;
-    case (extendrepl,inFuncs,cr,_)
-      equation
-        Debug.fprintln("failtrace", "- BackendDAEOptimize.addExtendReplacement failed");
-      then extendrepl;
-  end matchcontinue;
-end addExtendReplacement;
 
 protected function replacementsInEqns
 "function: replacementsInEqns
@@ -692,8 +559,7 @@ protected function replacementsInEqns
   input Integer i;
   input DAE.Exp exp;
   input Integer pos;
-  input VarTransform.VariableReplacements repl;
-  input VarTransform.VariableReplacements extendrepl;
+  input BackendVarTransform.VariableReplacements repl;
   input BackendDAE.BackendDAE inDAE;
   input BackendDAE.IncidenceMatrix m;
   input BackendDAE.IncidenceMatrixT mT;
@@ -701,14 +567,13 @@ protected function replacementsInEqns
   input DAE.FunctionTree inFuncs;
   output list<Integer> outVareqns;
   output BackendDAE.BackendDAE outDAE;
-  output VarTransform.VariableReplacements outRepl;
-  output VarTransform.VariableReplacements outExtendrepl;
+  output BackendVarTransform.VariableReplacements outRepl;
   output BackendDAE.IncidenceMatrix outM;
   output BackendDAE.IncidenceMatrixT outMT;
   output list<Integer> outMeqns;
 algorithm
-  (outVareqns,outDAE,outRepl,outExtendrepl,outM,outMT,outMeqns):=
-  match (eqnType,cr,i,exp,pos,repl,extendrepl,inDAE,m,mT,inMeqns,inFuncs)
+  (outVareqns,outDAE,outRepl,outM,outMT,outMeqns):=
+  match (eqnType,cr,i,exp,pos,repl,inDAE,m,mT,inMeqns,inFuncs)
     local
       BackendDAE.BackendDAE dae;
       BackendDAE.Variables ordvars,knvars,exobj,ordvars1,knvars1;
@@ -722,9 +587,9 @@ algorithm
       BackendDAE.IncidenceMatrixT mT1;
       Integer pos_1;
       list<Integer> vareqns,vareqns1,vareqns2,meqns;
-      VarTransform.VariableReplacements repl_1,extendrepl1;
+      BackendVarTransform.VariableReplacements repl_1;
       BackendDAE.Var v;
-    case (0,cr,i,exp,pos,repl,extendrepl,BackendDAE.DAE(ordvars,knvars,exobj,aliasVars,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc),m,mT,meqns,inFuncs)
+    case (0,cr,i,exp,pos,repl,BackendDAE.DAE(ordvars,knvars,exobj,aliasVars,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc),m,mT,meqns,inFuncs)
       equation
         // equations of var
         vareqns = mT[i];
@@ -736,25 +601,24 @@ algorithm
         dae = BackendDAE.DAE(ordvars1,knvars1,exobj,aliasVars,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc);
         (m1,mT1) = BackendDAEUtil.updateIncidenceMatrix(dae,m,mT,vareqns);
         pos_1 = pos - 1;
-      then (vareqns1,dae,repl,extendrepl,m1,mT1,pos_1::meqns);
-    case (1,cr,i,exp,pos,repl,extendrepl,BackendDAE.DAE(ordvars,knvars,exobj,aliasVars,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc),m,mT,meqns,inFuncs)
+      then (vareqns1,dae,repl,m1,mT1,pos_1::meqns);
+    case (1,cr,i,exp,pos,repl,BackendDAE.DAE(ordvars,knvars,exobj,aliasVars,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc),m,mT,meqns,inFuncs)
       equation
         // equations of var
         vareqns = mT[i];
         vareqns1 = Util.listRemoveOnTrue(pos,intEq,vareqns);
         // update Replacements
-        repl_1 = VarTransform.addReplacement(repl, cr, exp);
-        extendrepl1 = addExtendReplacement(extendrepl,inFuncs, cr, NONE());
+        repl_1 = BackendVarTransform.addReplacement(repl, cr, exp);
         // replace var=exp in vareqns
-        eqns1 = replacementsInEqns1(vareqns1,repl_1,extendrepl1,eqns);
+        eqns1 = replacementsInEqns1(vareqns1,repl_1,eqns);
         // set eqn to 0=0 to avoid next call
         pos_1 = pos-1;
         eqns2 =  BackendEquation.equationSetnth(eqns1,pos_1,BackendDAE.EQUATION(DAE.RCONST(0.0),DAE.RCONST(0.0),DAE.emptyElementSource));
         // update IncidenceMatrix
         dae = BackendDAE.DAE(ordvars,knvars,exobj,aliasVars,eqns2,remeqns,inieqns,arreqns,algorithms,einfo,eoc);
         (m1,mT1) = BackendDAEUtil.updateIncidenceMatrix(dae,m,mT,vareqns);    
-      then (vareqns1,dae,repl_1,extendrepl1,m1,mT1,pos_1::meqns);
-    case (2,cr,i,exp,pos,repl,extendrepl,BackendDAE.DAE(ordvars,knvars,exobj,aliasVars,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc),m,mT,meqns,inFuncs)
+      then (vareqns1,dae,repl_1,m1,mT1,pos_1::meqns);
+    case (2,cr,i,exp,pos,repl,BackendDAE.DAE(ordvars,knvars,exobj,aliasVars,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc),m,mT,meqns,inFuncs)
       equation
         // equations of var
         vareqns = mT[i];
@@ -765,7 +629,7 @@ algorithm
         // update IncidenceMatrix
         dae = BackendDAE.DAE(ordvars,knvars,exobj,aliasVars,eqns1,remeqns,inieqns,arreqns1,algorithms1,einfo1,eoc);
         (m1,mT1) = BackendDAEUtil.updateIncidenceMatrix(dae,m,mT,vareqns);
-      then (vareqns2,dae,repl,extendrepl,m1,mT1,meqns);        
+      then (vareqns2,dae,repl,m1,mT1,meqns);        
   end match;
 end replacementsInEqns;
 
@@ -773,27 +637,25 @@ protected function replacementsInEqns1
 "function: replacementsInEqns1
   author: Frenkel TUD 2011-04"
   input list<Integer> inEqsLst;
-  input VarTransform.VariableReplacements repl;
-  input VarTransform.VariableReplacements extendrepl;
+  input BackendVarTransform.VariableReplacements repl;
   input BackendDAE.EquationArray inEqns;
   output BackendDAE.EquationArray outEqns;
 algorithm
   outEqns:=
-  match (inEqsLst,repl,extendrepl,inEqns)
+  match (inEqsLst,repl,inEqns)
     local
       BackendDAE.EquationArray eqns,eqns1,eqns2;
-      BackendDAE.Equation eqn,eqn1,eqn2;
+      BackendDAE.Equation eqn,eqn1;
       Integer pos,pos_1;
       list<Integer> rest;
-    case ({},_,_,eqns) then eqns;
-    case (pos::rest,repl,extendrepl,eqns)
+    case ({},_,eqns) then eqns;
+    case (pos::rest,repl,eqns)
       equation
         pos_1 = pos-1;
         eqn = BackendDAEUtil.equationNth(eqns,pos_1);
-        {eqn1} = BackendVarTransform.replaceEquations({eqn},extendrepl);
-        {eqn2} = BackendVarTransform.replaceEquations({eqn1},repl);
-        eqns1 =  BackendEquation.equationSetnth(eqns,pos_1,eqn2);
-        eqns2 = replacementsInEqns1(rest,repl,extendrepl,eqns1);
+        {eqn1} = BackendVarTransform.replaceEquations({eqn},repl);
+        eqns1 =  BackendEquation.equationSetnth(eqns,pos_1,eqn1);
+        eqns2 = replacementsInEqns1(rest,repl,eqns1);
       then eqns2;
   end match;
 end replacementsInEqns1;
@@ -1727,20 +1589,20 @@ algorithm
       array<DAE.Algorithm> algorithms,algorithms1;
       BackendDAE.EventInfo einfo;
       BackendDAE.ExternalObjectClasses eoc;
-      VarTransform.VariableReplacements repl,repl1,repl2;
+      BackendVarTransform.VariableReplacements repl,repl1,repl2;
       list<BackendDAE.Equation> eqns_1,seqns,lsteqns,reqns,ieqns;
       list<BackendDAE.MultiDimEquation> lstarreqns,lstarreqns1;
       list<DAE.Algorithm> algs,algs_1;
       
     case (BackendDAE.DAE(vars,knvars,exobj,av,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc),funcs,m,mT)
       equation      
-        repl = VarTransform.emptyReplacements();
+        repl = BackendVarTransform.emptyReplacements();
         lsteqns = BackendDAEUtil.equationList(eqns);
         lstarreqns = arrayList(arreqns);
         algs = arrayList(algorithms);
         ((repl1,_)) = BackendVariable.traverseBackendDAEVars(knvars,removeFinalParametersFinder,(repl,knvars));
         (knvars1,repl2) = replaceFinalVars(1,knvars,repl1);
-        Debug.fcall("dumpFPrepl", VarTransform.dumpReplacements, repl2);
+        Debug.fcall("dumpFPrepl", BackendVarTransform.dumpReplacements, repl2);
         eqns_1 = BackendVarTransform.replaceEquations(lsteqns, repl2);
         lstarreqns1 = BackendVarTransform.replaceMultiDimEquations(lstarreqns, repl2);
         (algs_1,_) = BackendVarTransform.replaceAlgorithms(algs,repl2);
@@ -1754,15 +1616,15 @@ end removeFinalParameters;
 
 protected function removeFinalParametersFinder
 "autor: Frenkel TUD 2011-03"
- input tuple<BackendDAE.Var, tuple<VarTransform.VariableReplacements,BackendDAE.Variables>> inTpl;
- output tuple<BackendDAE.Var, tuple<VarTransform.VariableReplacements,BackendDAE.Variables>> outTpl;
+ input tuple<BackendDAE.Var, tuple<BackendVarTransform.VariableReplacements,BackendDAE.Variables>> inTpl;
+ output tuple<BackendDAE.Var, tuple<BackendVarTransform.VariableReplacements,BackendDAE.Variables>> outTpl;
 algorithm
   outTpl:=
   matchcontinue (inTpl)
     local
       BackendDAE.Variables vars;
       BackendDAE.Var v;
-      VarTransform.VariableReplacements repl,repl_1;
+      BackendVarTransform.VariableReplacements repl,repl_1;
       DAE.ComponentRef varName;
       Option< .DAE.VariableAttributes> values;
       DAE.Exp exp,exp1;
@@ -1771,13 +1633,13 @@ algorithm
       equation
         true = BackendVariable.isFinalVar(v);
         ((exp1, _)) = Expression.traverseExp(exp, BackendDAEUtil.replaceCrefsWithValues, vars);
-        repl_1 = VarTransform.addReplacement(repl, varName, exp1);
+        repl_1 = BackendVarTransform.addReplacement(repl, varName, exp1);
       then ((v,(repl_1,vars)));
     case ((v as BackendDAE.VAR(varName=varName,varKind=BackendDAE.PARAM(),bindValue=SOME(bindValue),values=values),(repl,vars)))
       equation
         true = BackendVariable.isFinalVar(v);
         exp = ValuesUtil.valueExp(bindValue);
-        repl_1 = VarTransform.addReplacement(repl, varName, exp);
+        repl_1 = BackendVarTransform.addReplacement(repl, varName, exp);
       then ((v,(repl_1,vars)));
     case inTpl then inTpl;
   end matchcontinue;
@@ -1788,15 +1650,15 @@ protected function replaceFinalVars
   autor: Frenkel TUD 2011-04"
   input Integer inNumRepl;
   input BackendDAE.Variables inVars;
-  input VarTransform.VariableReplacements inRepl;
+  input BackendVarTransform.VariableReplacements inRepl;
   output BackendDAE.Variables outVars;
-  output VarTransform.VariableReplacements outRepl;
+  output BackendVarTransform.VariableReplacements outRepl;
 algorithm
   (outVars,outRepl) := matchcontinue(inNumRepl,inVars,inRepl)
     local 
       Integer numrepl;
       BackendDAE.Variables knvars,knvars1,knvars2;
-      VarTransform.VariableReplacements repl,repl1,repl2;
+      BackendVarTransform.VariableReplacements repl,repl1,repl2;
     
     case(numrepl,knvars,repl)
       equation
@@ -1813,27 +1675,27 @@ end replaceFinalVars;
 
 protected function replaceFinalVarTraverser
 "autor: Frenkel TUD 2011-04"
- input tuple<BackendDAE.Var, tuple<VarTransform.VariableReplacements,Integer>> inTpl;
- output tuple<BackendDAE.Var, tuple<VarTransform.VariableReplacements,Integer>> outTpl;
+ input tuple<BackendDAE.Var, tuple<BackendVarTransform.VariableReplacements,Integer>> inTpl;
+ output tuple<BackendDAE.Var, tuple<BackendVarTransform.VariableReplacements,Integer>> outTpl;
 algorithm
   outTpl:=
   matchcontinue (inTpl)
     local
       BackendDAE.Var v,v1;
-      VarTransform.VariableReplacements repl,repl_1;
+      BackendVarTransform.VariableReplacements repl,repl_1;
       Integer numrepl;
       DAE.Exp e,e1;
       DAE.ComponentRef cr;
     case ((v as BackendDAE.VAR(varName=cr,bindExp=SOME(e)),(repl,numrepl)))
       equation
-        (e1,true) = VarTransform.replaceExp(e, repl, NONE());
+        (e1,true) = BackendVarTransform.replaceExp(e, repl, NONE());
         v1 = BackendVariable.setBindExp(v,e1);
         true = Expression.isConst(e1);
-        repl_1 = VarTransform.addReplacement(repl, cr, e1);
+        repl_1 = BackendVarTransform.addReplacement(repl, cr, e1);
       then ((v1,(repl_1,numrepl+1)));
     case ((v as BackendDAE.VAR(bindExp=SOME(e)),(repl,numrepl)))
       equation
-        (e1,true) = VarTransform.replaceExp(e, repl, NONE());
+        (e1,true) = BackendVarTransform.replaceExp(e, repl, NONE());
         v1 = BackendVariable.setBindExp(v,e1);
       then ((v1,(repl,numrepl)));
     case inTpl then inTpl;
@@ -1867,20 +1729,19 @@ algorithm
       array<DAE.Algorithm> algorithms,algorithms1;
       BackendDAE.EventInfo einfo;
       BackendDAE.ExternalObjectClasses eoc;
-      VarTransform.VariableReplacements repl,repl1;
+      BackendVarTransform.VariableReplacements repl,repl1;
       list<BackendDAE.Equation> eqns_1,seqns,lsteqns,reqns,ieqns;
       list<BackendDAE.MultiDimEquation> lstarreqns,lstarreqns1;
       list<DAE.Algorithm> algs,algs_1;
       
     case (BackendDAE.DAE(vars,knvars,exobj,av,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc),funcs,m,mT)
       equation      
-        repl = VarTransform.emptyReplacements();
+        repl = BackendVarTransform.emptyReplacements();
         lsteqns = BackendDAEUtil.equationList(eqns);
         lstarreqns = arrayList(arreqns);
         algs = arrayList(algorithms);
         repl1 = BackendVariable.traverseBackendDAEVars(knvars,protectedParametersFinder,repl);
-
-        Debug.fcall("dumpPPrepl", VarTransform.dumpReplacements, repl1);
+        Debug.fcall("dumpPPrepl", BackendVarTransform.dumpReplacements, repl1);
         eqns_1 = BackendVarTransform.replaceEquations(lsteqns, repl1);
         lstarreqns1 = BackendVarTransform.replaceMultiDimEquations(lstarreqns, repl1);
         (algs_1,_) = BackendVarTransform.replaceAlgorithms(algs,repl1);
@@ -1894,14 +1755,14 @@ end removeProtectedParameters;
 
 protected function protectedParametersFinder
 "autor: Frenkel TUD 2011-03"
- input tuple<BackendDAE.Var, VarTransform.VariableReplacements> inTpl;
- output tuple<BackendDAE.Var, VarTransform.VariableReplacements> outTpl;
+ input tuple<BackendDAE.Var, BackendVarTransform.VariableReplacements> inTpl;
+ output tuple<BackendDAE.Var, BackendVarTransform.VariableReplacements> outTpl;
 algorithm
   outTpl:=
   matchcontinue (inTpl)
     local
       BackendDAE.Var v;
-      VarTransform.VariableReplacements repl,repl_1;
+      BackendVarTransform.VariableReplacements repl,repl_1;
       DAE.ComponentRef varName;
       Option< .DAE.VariableAttributes> values;
       DAE.Exp exp;
@@ -1909,14 +1770,14 @@ algorithm
     case ((v as BackendDAE.VAR(varName=varName,varKind=BackendDAE.PARAM(),bindExp=SOME(exp),values=values),repl))
       equation
         true = DAEUtil.getProtectedAttr(values);
-        repl_1 = VarTransform.addReplacement(repl, varName, exp);
+        repl_1 = BackendVarTransform.addReplacement(repl, varName, exp);
       then ((v,repl_1));
     case ((v as BackendDAE.VAR(varName=varName,varKind=BackendDAE.PARAM(),bindValue=SOME(bindValue),values=values),repl))
       equation
         true = DAEUtil.getProtectedAttr(values);
         true = BackendVariable.varFixed(v);
         exp = ValuesUtil.valueExp(bindValue);
-        repl_1 = VarTransform.addReplacement(repl, varName, exp);
+        repl_1 = BackendVarTransform.addReplacement(repl, varName, exp);
       then ((v,repl_1));
     case inTpl then inTpl;
   end matchcontinue;
@@ -1973,7 +1834,7 @@ algorithm
       DAE.FunctionTree funcs;
       BackendDAE.IncidenceMatrix m,m_1,m_2;
       BackendDAE.IncidenceMatrixT mT,mT_1,mT_2;
-      VarTransform.VariableReplacements repl,extendrepl;
+      BackendVarTransform.VariableReplacements repl;
       BackendDAE.Variables vars,knvars,exobj;
       BackendDAE.AliasVariables aliasVars;
       BackendDAE.EquationArray eqns,remeqns,inieqns,eqns1;
@@ -1989,16 +1850,15 @@ algorithm
     case (dae as BackendDAE.DAE(vars,knvars,exobj,aliasVars,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc),funcs,inM,inMT)
       equation
         (m,mT) = BackendDAEUtil.getIncidenceMatrixfromOption(dae,inM,inMT);
-        repl = VarTransform.emptyReplacements();
-        extendrepl = VarTransform.emptyReplacements();
+        repl = BackendVarTransform.emptyReplacements();
         // check equations
         (m_1,(mT_1,_,eqns1,arreqns1,algorithms1,einfo1,changed)) = traverseIncidenceMatrix(m,removeEqualFunctionCallFinder,(mT,vars,eqns,arreqns,algorithms,einfo,{}));
         // update arrayeqns and algorithms, collect info for wrappers
-        (_,(_,_,_,crefOrDerCreflst)) = Util.arrayMapNoCopy_1(arreqns1,replaceArrayEquationTraverser,(repl,extendrepl,vars,{}));
+        (_,(_,_,crefOrDerCreflst)) = Util.arrayMapNoCopy_1(arreqns1,replaceArrayEquationTraverser,(repl,vars,{}));
         crefOrDerCrefarray = listArray(listReverse(crefOrDerCreflst));
-        (_,(_,_,_,inouttpllst)) = Util.arrayMapNoCopy_1(algorithms1,replaceAlgorithmTraverser,(repl,extendrepl,vars,{}));
+        (_,(_,_,inouttpllst)) = Util.arrayMapNoCopy_1(algorithms1,replaceAlgorithmTraverser,(repl,vars,{}));
         inouttplarray = listArray(listReverse(inouttpllst));
-        (eqns1,(_,_,_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(eqns,replaceEquationTraverser,(repl,extendrepl,crefOrDerCrefarray,inouttplarray));
+        (eqns1,(_,_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(eqns,replaceEquationTraverser,(repl,crefOrDerCrefarray,inouttplarray));
         dae1 = BackendDAE.DAE(vars,knvars,exobj,aliasVars,eqns1,remeqns,inieqns,arreqns1,algorithms1,einfo1,eoc);
         (m_2,mT_2) = BackendDAEUtil.updateIncidenceMatrix(dae1,m_1,mT_1,changed);
       then (dae1,SOME(m_2),SOME(mT_2));
