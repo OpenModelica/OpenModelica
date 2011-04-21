@@ -1108,6 +1108,7 @@ algorithm
     case(DAE.RCONST(r)) then r;
     case(DAE.ICONST(i)) then intReal(i);
     case(DAE.CAST(_,DAE.ICONST(i))) then intReal(i);
+    case (DAE.ENUM_LITERAL(index = i)) then intReal(i);
   end matchcontinue;
 end expReal;
 
@@ -2711,6 +2712,35 @@ algorithm
   op := Util.if_(b,DAE.MUL_ARR(tp),DAE.MUL(tp));
   outExp := DAE.BINARY(e1,op,e2);
 end expMul;
+
+public function expMaxScalar
+"function: expMin
+  author: Frenkel TUD 2011-04
+  returns min(e1,e2)."
+  input DAE.Exp e1;
+  input DAE.Exp e2;
+  output DAE.Exp outExp;
+protected
+  Type tp;
+algorithm
+  tp := typeof(e1);
+  outExp := DAE.CALL(Absyn.IDENT("max"),{e1,e2},false,true,tp,DAE.NO_INLINE());
+end expMaxScalar;
+
+public function expMinScalar
+"function: expMin
+  author: Frenkel TUD 2011-04
+  returns min(e1,e2)."
+  input DAE.Exp e1;
+  input DAE.Exp e2;
+  output DAE.Exp outExp;
+protected
+  Type tp;
+  Boolean b;
+algorithm
+  tp := typeof(e1);
+  outExp := DAE.CALL(Absyn.IDENT("min"),{e1,e2},false,true,tp,DAE.NO_INLINE());
+end expMinScalar;
 
 public function makeProductVector "takes and expression e1 and a list of expressisions {v1,v2,...,vn} and returns
 {e1*v1,e1*v2,...,e1*vn}"

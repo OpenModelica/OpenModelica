@@ -3405,10 +3405,19 @@ algorithm
     local
       BackendDAE.EquationArray r;
       array<Algorithm.Algorithm> algs;
+      BackendDAE.Variables vars;
+      list<DAE.Algorithm> varasserts;
+      list<SimEqSystem> simvarasserts;
       
-    case (BackendDAE.DAE(removedEqs=r,algorithms=algs))
+    case (BackendDAE.DAE(orderedVars = vars, removedEqs=r,algorithms=algs))
       equation
         ((removedEquations,_)) = BackendEquation.traverseBackendDAEEqns(r,traversedlowEqToSimEqSystem,({},algs));
+        
+        // get minmax and nominal asserts
+        varasserts = BackendVariable.traverseBackendDAEVars(vars,createVarMinMaxAssert,{});
+        simvarasserts = Util.listMap(varasserts,dlowAlgToSimEqSystem);
+        removedEquations = listAppend(removedEquations, simvarasserts);
+        
       then removedEquations;
   end match;
 end createRemovedEquations;
@@ -5766,11 +5775,11 @@ algorithm
   parameterEquations := matchcontinue (dlow)
     local
       list<BackendDAE.Equation> parameterEquationsTmp;
-      BackendDAE.Variables knvars,extobj,v,kn;
+      BackendDAE.Variables vars,knvars,extobj,v,kn;
       array<Algorithm.Algorithm> algs;
       BackendDAE.EquationArray ie,pe,emptyeqns;
       list<SimEqSystem> inalgs,simvarasserts;
-      list<DAE.Algorithm> ialgs,varasserts;
+      list<DAE.Algorithm> ialgs,varasserts,varasserts1;
       BackendDAE.BackendDAE paramdlow,paramdlow1;
       array<BackendDAE.MultiDimEquation> arrayEqs;
       BackendDAE.ExternalObjectClasses extObjClasses;
@@ -5783,7 +5792,7 @@ algorithm
       list<BackendDAE.Var> lv,lkn;
       list<HelpVarInfo> helpVarInfo;
       
-    case (BackendDAE.DAE(knownVars=knvars,externalObjects=extobj,initialEqs=ie,algorithms=algs,arrayEqs=arrayEqs,extObjClasses=extObjClasses))
+    case (BackendDAE.DAE(orderedVars=vars,knownVars=knvars,externalObjects=extobj,initialEqs=ie,algorithms=algs,arrayEqs=arrayEqs,extObjClasses=extObjClasses))
       equation
         // kvars params
         ((parameterEquationsTmp,lv,lkn,lv1,lv2,_)) = BackendVariable.traverseBackendDAEVars(knvars,createInitialParamAssignments,({},{},{},{},{},1));
@@ -5814,9 +5823,11 @@ algorithm
         inalgs = Util.listMap(ialgs,dlowAlgToSimEqSystem);
         // get minmax and nominal asserts
         varasserts = BackendVariable.traverseBackendDAEVars(knvars,createVarAsserts,{});
-        simvarasserts = Util.listMap(varasserts,dlowAlgToSimEqSystem);
+        varasserts1 = BackendVariable.traverseBackendDAEVars(vars,createVarNominalAssert,varasserts);
+        simvarasserts = Util.listMap(varasserts1,dlowAlgToSimEqSystem);
         
         parameterEquations = listAppend(parameterEquations, inalgs);
+        parameterEquations = listAppend(parameterEquations, simvarasserts);
       then
         parameterEquations;
         
@@ -5904,7 +5915,7 @@ algorithm
   matchcontinue (inTpl) 
     local
       BackendDAE.Var var;
-      list<DAE.Algorithm> asserts,asserts1,asserts2,minmax,nominal;
+      list<DAE.Algorithm> asserts,asserts1,asserts2;
       DAE.ComponentRef name;
       DAE.ElementSource source;
       BackendDAE.VarKind kind;
@@ -5912,10 +5923,8 @@ algorithm
       
     case ((var as BackendDAE.VAR(varName=name, varKind=kind, values = attr, source = source),asserts))
       equation
-        minmax = BackendVariable.getMinMaxAsserts(attr,name,source,kind);
-        nominal = BackendVariable.getNominalAssert(attr,name,source,kind);
-        asserts1 = listAppend(minmax,nominal);
-        asserts2 = listAppend(asserts,asserts1);
+        ((_,asserts1)) = createVarMinMaxAssert((var,asserts));
+        ((_,asserts2)) = createVarNominalAssert((var,asserts1));
       then
         ((var,asserts2));
         
@@ -5923,6 +5932,61 @@ algorithm
       then inTpl;
   end matchcontinue;
 end createVarAsserts;
+
+protected function createVarNominalAssert
+  input tuple<BackendDAE.Var, list<DAE.Algorithm>> inTpl;
+  output tuple<BackendDAE.Var, list<DAE.Algorithm>> outTpl;
+algorithm
+  outTpl:=
+  matchcontinue (inTpl) 
+    local
+      BackendDAE.Var var;
+      list<DAE.Algorithm> asserts,asserts1,nominal;
+      DAE.ComponentRef name;
+      DAE.ElementSource source;
+      BackendDAE.VarKind kind;
+      Option<DAE.VariableAttributes> attr;
+      BackendDAE.Type varType;
+      
+    case ((var as BackendDAE.VAR(varName=name, varKind=kind, values = attr, varType=varType, source = source),asserts))
+      equation
+        nominal = BackendVariable.getNominalAssert(attr,name,source,kind,varType);
+        asserts1 = listAppend(asserts,nominal);
+      then
+        ((var,asserts1));
+        
+    case inTpl
+      then inTpl;
+  end matchcontinue;
+end createVarNominalAssert;
+
+protected function createVarMinMaxAssert
+  input tuple<BackendDAE.Var, list<DAE.Algorithm>> inTpl;
+  output tuple<BackendDAE.Var, list<DAE.Algorithm>> outTpl;
+algorithm
+  outTpl:=
+  matchcontinue (inTpl) 
+    local
+      BackendDAE.Var var;
+      list<DAE.Algorithm> asserts,asserts1,minmax;
+      DAE.ComponentRef name;
+      DAE.ElementSource source;
+      BackendDAE.VarKind kind;
+      Option<DAE.VariableAttributes> attr;
+      BackendDAE.Type varType;
+      
+    case ((var as BackendDAE.VAR(varName=name, varKind=kind, values = attr, varType=varType, source = source),asserts))
+      equation
+        minmax = BackendVariable.getMinMaxAsserts(attr,name,source,kind,varType);
+        asserts1 = listAppend(asserts,minmax);
+      then
+        ((var,asserts1));
+        
+    case inTpl
+      then inTpl;
+  end matchcontinue;
+end createVarMinMaxAssert;
+
 
 protected function createSampleConditions
 " function filter sample events 

@@ -712,6 +712,30 @@ algorithm oExps := matchcontinue(inVariableAttributesOption)
   end matchcontinue;
 end getMinMax;
 
+public function setMinMax "
+  sets the minmax attribute. If NONE(), assumes Real attributes."
+  input Option<DAE.VariableAttributes> attr;
+  input tuple<Option<DAE.Exp>, Option<DAE.Exp>> minMax;
+  output Option<DAE.VariableAttributes> outAttr;
+algorithm
+  outAttr:=
+  match (attr,minMax)
+    local
+      Option<DAE.Exp> q,u,du,f,n,i;
+      Option<DAE.StateSelect> ss;
+      Option<DAE.Exp> eb;
+      Option<Boolean> ip,fn;
+    case (SOME(DAE.VAR_ATTR_REAL(q,u,du,_,i,f,n,ss,eb,ip,fn)),minMax)
+    then SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,i,f,n,ss,eb,ip,fn));
+    case (SOME(DAE.VAR_ATTR_INT(q,_,i,f,eb,ip,fn)),minMax)
+    then SOME(DAE.VAR_ATTR_INT(q,minMax,i,f,eb,ip,fn));
+    case (SOME(DAE.VAR_ATTR_ENUMERATION(q,_,u,du,eb,ip,fn)),minMax)
+    then SOME(DAE.VAR_ATTR_ENUMERATION(q,minMax,u,du,eb,ip,fn));
+    case (NONE(),minMax)
+      then SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),minMax,NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE()));
+  end match;
+end setMinMax;
+
 public function getStartAttr "
   Return the start attribute."
   input Option<DAE.VariableAttributes> inVariableAttributesOption;

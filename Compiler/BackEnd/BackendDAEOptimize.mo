@@ -1197,7 +1197,7 @@ protected function mergeAliasVars
   input Boolean negate;
   output BackendDAE.Var outVar;
 protected
-  BackendDAE.Var v,va,v1,v2,v3;
+  BackendDAE.Var v,va,v1,v2;
   Boolean fixeda, fixed,fixeda,f;
   Option<DAE.Exp> sv,sva;
   DAE.Exp start;
@@ -1211,7 +1211,9 @@ algorithm
   sva := BackendVariable.varStartValueOption(inAVar);
   (v1) := mergeStartFixed(inVar,fixed,sv,inAVar,fixeda,sva,negate);
   // nominal
-  outVar := mergeNomnialAttribute(inAVar,v1,negate);
+  v2 := mergeNomnialAttribute(inAVar,v1,negate);
+  // minmax
+  outVar := mergeMinMaxAttribute(inAVar,v2,negate);
 end mergeAliasVars;
 
 protected function mergeStartFixed
@@ -1382,9 +1384,8 @@ algorithm
   matchcontinue (inAVar,inVar,negate)
     local
       BackendDAE.Var v,var,var1;
-      Option<DAE.VariableAttributes> attr,attr1;
       DAE.Exp e,e_1,e1,esum,eaverage;
-    case (v as BackendDAE.VAR(values = attr),var as BackendDAE.VAR(values = attr1),negate)
+    case (v,var,negate)
       equation 
         // nominal
         e = BackendVariable.varNominalValue(v);
@@ -1395,7 +1396,7 @@ algorithm
         (eaverage,_) = ExpressionSimplify.simplify(eaverage); 
         var1 = BackendVariable.setVarNominalValue(var,eaverage);
       then var1;
-    case (v as BackendDAE.VAR(values = attr),var as BackendDAE.VAR(values = attr1),negate)
+    case (v,var,negate)
       equation 
         // nominal
         e = BackendVariable.varNominalValue(v);
@@ -1405,6 +1406,188 @@ algorithm
     case(_,inVar,_) then inVar;
   end matchcontinue;
 end mergeNomnialAttribute;
+
+protected function mergeMinMaxAttribute
+  input BackendDAE.Var inAVar;
+  input BackendDAE.Var inVar;
+  input Boolean negate;
+  output BackendDAE.Var outVar;
+algorithm
+  outVar :=
+  matchcontinue (inAVar,inVar,negate)
+    local
+      BackendDAE.Var v,var,var1;
+      Option<DAE.VariableAttributes> attr,attr1;
+      list<Option<DAE.Exp>> ominmax,ominmax1;
+      tuple<Option<DAE.Exp>, Option<DAE.Exp>> minMax;
+      DAE.ComponentRef cr,cr1;
+    case (v as BackendDAE.VAR(values = attr),var as BackendDAE.VAR(values = attr1),negate)
+      equation 
+        // minmax
+        ominmax = DAEUtil.getMinMax(attr);
+        ominmax1 = DAEUtil.getMinMax(attr1);
+        cr = BackendVariable.varCref(v);
+        cr1 = BackendVariable.varCref(var);
+        minMax = mergeMinMax(negate,ominmax,ominmax1,cr,cr1);
+        var1 = BackendVariable.setVarMinMax(var,minMax);
+      then var1;
+    case(_,inVar,_) then inVar;
+  end matchcontinue;
+end mergeMinMaxAttribute;
+
+protected function mergeMinMax
+  input Boolean negate;
+  input list<Option<DAE.Exp>> ominmax;
+  input list<Option<DAE.Exp>> ominmax1;
+  input DAE.ComponentRef cr;
+  input DAE.ComponentRef cr1;
+  output tuple<Option<DAE.Exp>, Option<DAE.Exp>> outMinMax;
+algorithm
+  outMinMax :=
+  match (negate,ominmax,ominmax1,cr,cr1)
+    local
+      Option<DAE.Exp> omin1,omax1,omin2,omax2;
+      DAE.Exp min,max,min1,max1;
+      tuple<Option<DAE.Exp>, Option<DAE.Exp>> minMax;
+    case (false,{omin1,omax1},{omin2,omax2},cr,cr1)
+      equation
+        minMax = mergeMinMax1({omin1,omax1},{omin2,omax2});
+        checkMinMax(minMax,cr,cr1,negate);
+      then
+        minMax;
+    // in case of a=-b, min and max have to be changed and negated
+    case (true,{SOME(min),SOME(max)},{omin2,omax2},cr,cr1)
+      equation
+        min1 = Expression.negate(min);
+        max1 = Expression.negate(max);
+        minMax = mergeMinMax1({SOME(max1),SOME(min1)},{omin2,omax2});
+        checkMinMax(minMax,cr,cr1,negate);
+      then
+        minMax;        
+    case (true,{NONE(),SOME(max)},{omin2,omax2},cr,cr1)
+      equation
+        max1 = Expression.negate(max);
+        minMax = mergeMinMax1({SOME(max1),NONE()},{omin2,omax2});
+        checkMinMax(minMax,cr,cr1,negate);
+      then
+        minMax;        
+    case (true,{SOME(min),NONE()},{omin2,omax2},cr,cr1)
+      equation
+        min1 = Expression.negate(min);
+        minMax = mergeMinMax1({NONE(),SOME(min1)},{omin2,omax2});
+        checkMinMax(minMax,cr,cr1,negate);
+      then
+        minMax;        
+  end match;
+end mergeMinMax;
+
+protected function checkMinMax
+  input tuple<Option<DAE.Exp>, Option<DAE.Exp>> minmax;
+  input DAE.ComponentRef cr1;
+  input DAE.ComponentRef cr2;
+  input Boolean negate;
+algorithm
+  _ :=
+  matchcontinue (minmax,cr1,cr2,negate)
+    local
+      DAE.Exp min,max;
+      String s,s1,s2,s3,s4,s5;
+      Real rmin,rmax;
+    case ((SOME(min),SOME(max)),cr1,cr2,negate)
+      equation
+        rmin = Expression.expReal(min);
+        rmax = Expression.expReal(max);
+        true = realGt(rmin,rmax);
+        s1 = ComponentReference.printComponentRefStr(cr1);
+        s2 = Util.if_(negate," = -"," = ");
+        s3 = ComponentReference.printComponentRefStr(cr2);
+        s4 = ExpressionDump.printExpStr(min);
+        s5 = ExpressionDump.printExpStr(max);
+        s = stringAppendList({"Alias variables ",s1,s2,s3," with invalid limits min ",s4," > max ",s5});
+        Error.addMessage(Error.COMPILER_WARNING,{s});        
+      then ();
+    // no error
+    else
+      ();
+  end matchcontinue;
+end checkMinMax;
+
+protected function mergeMinMax1
+  input list<Option<DAE.Exp>> ominmax;
+  input list<Option<DAE.Exp>> ominmax1;
+  output tuple<Option<DAE.Exp>, Option<DAE.Exp>> minMax;
+algorithm
+  minMax :=
+  match (ominmax,ominmax1)
+    local
+      DAE.Exp min,max,min1,max1,min_2,max_2,smin,smax;
+    // (min,max),()
+    case ({SOME(min),SOME(max)},{})
+      then ((SOME(min),SOME(max)));
+    case ({SOME(min),SOME(max)},{NONE(),NONE()})
+      then ((SOME(min),SOME(max)));
+    // (min,),()
+    case ({SOME(min),NONE()},{})
+      then ((SOME(min),NONE()));
+    case ({SOME(min),NONE()},{NONE(),NONE()})
+      then ((SOME(min),NONE()));
+    // (,max),()
+    case ({NONE(),SOME(max)},{})
+      then ((NONE(),SOME(max)));
+    case ({NONE(),SOME(max)},{NONE(),NONE()})
+      then ((NONE(),SOME(max)));
+    // (min,),(min,)
+    case ({SOME(min),NONE()},{SOME(min1),NONE()})
+      equation
+        min_2 = Expression.expMaxScalar(min,min1);
+        (smin,_) = ExpressionSimplify.simplify(min_2);
+      then ((SOME(smin),NONE()));
+    // (,max),(,max)
+    case ({NONE(),SOME(max)},{NONE(),SOME(max1)})
+      equation
+        max_2 = Expression.expMinScalar(max,max1);
+        (smax,_) = ExpressionSimplify.simplify(max_2);
+      then ((NONE(),SOME(smax)));
+    // (min,),(,max)
+    case ({SOME(min),NONE()},{NONE(),SOME(max1)})
+      then ((SOME(min),SOME(max1))); 
+    // (,max),(min,)
+    case ({NONE(),SOME(max)},{SOME(min1),NONE()})
+      then ((SOME(min1),SOME(max)));               
+    // (,max),(min,max)
+    case ({NONE(),SOME(max)},{SOME(min1),SOME(max1)})
+      equation
+        max_2 = Expression.expMinScalar(max,max1);
+        (smax,_) = ExpressionSimplify.simplify(max_2);
+      then ((SOME(min1),SOME(smax)));
+    // (min,max),(,max)
+    case ({SOME(min),SOME(max)},{NONE(),SOME(max1)})
+      equation
+        max_2 = Expression.expMinScalar(max,max1);
+        (smax,_) = ExpressionSimplify.simplify(max_2);
+      then ((SOME(min),SOME(smax)));
+    // (min,),(min,max)
+    case ({SOME(min),NONE()},{SOME(min1),SOME(max1)})
+      equation
+        min_2 = Expression.expMaxScalar(min,min1);
+        (smin,_) = ExpressionSimplify.simplify(min_2);
+      then ((SOME(smin),SOME(max1)));
+    // (min,max),(min,)
+    case ({SOME(min),SOME(max)},{SOME(min1),NONE()})
+      equation
+        min_2 = Expression.expMaxScalar(min,min1);
+        (smin,_) = ExpressionSimplify.simplify(min_2);
+      then ((SOME(smin),SOME(max)));
+    // (min,max),(min,max)
+    case ({SOME(min),SOME(max)},{SOME(min1),SOME(max1)})
+      equation
+        min_2 = Expression.expMaxScalar(min,min1);
+        max_2 = Expression.expMinScalar(max,max1);
+        (smin,_) = ExpressionSimplify.simplify(min_2);
+        (smax,_) = ExpressionSimplify.simplify(max_2);
+      then ((SOME(smin),SOME(smax)));
+  end match;
+end mergeMinMax1;
 
 protected function mergeDirection
   input BackendDAE.Var inAVar;

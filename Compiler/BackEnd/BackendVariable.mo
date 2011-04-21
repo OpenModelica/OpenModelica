@@ -478,6 +478,49 @@ algorithm
   end matchcontinue;
 end varStateSelect;
 
+public function setVarMinMax
+"function: setVarMinMax
+  author: Frenkel TUD
+  Sets the minmax attribute of a variable."
+  input BackendDAE.Var inVar;
+  input tuple<Option<DAE.Exp>, Option<DAE.Exp>> minMax;
+  output BackendDAE.Var outVar;
+algorithm
+  outVar := match (inVar,minMax)
+    local
+      DAE.ComponentRef a;
+      BackendDAE.VarKind b;
+      DAE.VarDirection c;
+      BackendDAE.Type d;
+      Option<DAE.Exp> e;
+      Option<Values.Value> f;
+      list<DAE.Subscript> g;
+      BackendDAE.Value i;
+      DAE.ElementSource source;
+      DAE.VariableAttributes attr;
+      Option<DAE.VariableAttributes> oattr,oattr1;
+      Option<SCode.Comment> s;
+      DAE.Flow t;
+      DAE.Stream streamPrefix;
+
+    case (BackendDAE.VAR(varName = a,
+              varKind = b,
+              varDirection = c,
+              varType = d,
+              bindExp = e,
+              bindValue = f,
+              arryDim = g,
+              index = i,
+              source = source,
+              values = SOME(attr),
+              comment = s,
+              flowPrefix = t,
+              streamPrefix = streamPrefix),minMax)
+      equation
+        oattr1 = DAEUtil.setMinMax(SOME(attr),minMax);
+    then BackendDAE.VAR(a,b,c,d,e,f,g,i,source,oattr1,s,t,streamPrefix);
+  end match;
+end setVarMinMax;
 
 public function varNominalValue
 "function varHasNominal
@@ -1425,32 +1468,31 @@ algorithm
   end match;
 end getVarSource;
 
-
-
 public function getMinMaxAsserts
 "Author: Frenkel TUD 2011-03"
   input Option<DAE.VariableAttributes> attr;
   input DAE.ComponentRef name;
   input DAE.ElementSource source;
   input BackendDAE.VarKind kind;
+  input BackendDAE.Type vartype;
   output list<DAE.Algorithm> minmax;
 algorithm
   minmax :=
-  matchcontinue (attr,name,source,kind)
+  matchcontinue (attr,name,source,kind,vartype)
     local
       DAE.Exp e,cond,msg;
       list<Option<DAE.Exp>> ominmax;
       String str;
       DAE.ExpType tp;
-    case(_,_,_,BackendDAE.CONST()) then {};
-    case (attr,name,source,_)
+    case(_,_,_,BackendDAE.CONST(),_) then {};
+    case (attr,name,source,_,vartype)
       equation 
         ominmax = DAEUtil.getMinMax(attr);
         str = ComponentReference.crefStr(name);
         str = stringAppendList({"Variable ",str," out of limit"});
         msg = DAE.SCONST(str);
         e = Expression.crefExp(name);
-        tp = Expression.typeof(e);
+        tp = BackendDAEUtil.makeExpType(vartype);
         cond = getMinMaxAsserts1(ominmax,e,tp);
         (cond,_) = ExpressionSimplify.simplify(cond);
         // do not add if const true
@@ -1458,7 +1500,7 @@ algorithm
         BackendDAEUtil.checkAssertCondition(cond,msg);
       then 
         {DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond,msg,source)})};
-    case(_,_,_,_) then {};
+    case(_,_,_,_,_) then {};
   end matchcontinue;
 end getMinMaxAsserts;
 
@@ -1490,24 +1532,25 @@ public function getNominalAssert
   input DAE.ComponentRef name;
   input DAE.ElementSource source;
   input BackendDAE.VarKind kind;
+  input BackendDAE.Type vartype;
   output list<DAE.Algorithm> nominal;
 algorithm
   nominal :=
-  matchcontinue (attr,name,source,kind)
+  matchcontinue (attr,name,source,kind,vartype)
     local
       DAE.Exp e,cond,msg;
       list<Option<DAE.Exp>> ominmax;
       String str;
       DAE.ExpType tp;
       Boolean b;
-    case(_,_,_,BackendDAE.CONST()) then {};
-    case (attr as SOME(DAE.VAR_ATTR_REAL(nominal=SOME(e))),name,source,_)
+    case(_,_,_,BackendDAE.CONST(),_) then {};
+    case (attr as SOME(DAE.VAR_ATTR_REAL(nominal=SOME(e))),name,source,_,vartype)
       equation 
         ominmax = DAEUtil.getMinMax(attr);
         str = ComponentReference.crefStr(name);
         str = stringAppendList({"Nominal ",str," out of limit"});
         msg = DAE.SCONST(str);
-        tp = Expression.typeof(e);
+        tp = BackendDAEUtil.makeExpType(vartype);
         cond = getMinMaxAsserts1(ominmax,e,tp);
         (cond,_) = ExpressionSimplify.simplify(cond);
         // do not add if const true
@@ -1515,7 +1558,7 @@ algorithm
         BackendDAEUtil.checkAssertCondition(cond,msg);
       then 
         {DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond,msg,source)})};
-    case(_,_,_,_) then {};
+    case(_,_,_,_,_) then {};
   end matchcontinue;
 end getNominalAssert;
 

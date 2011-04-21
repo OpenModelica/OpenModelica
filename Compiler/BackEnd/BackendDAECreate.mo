@@ -589,8 +589,8 @@ algorithm
         tp = lowerType(t);
         b = DAEUtil.boolVarVisibility(protection);
         dae_var_attr = DAEUtil.setProtectedAttr(dae_var_attr,b);
-        _ = BackendVariable.getMinMaxAsserts(dae_var_attr,name,source,kind_1);
-        _ = BackendVariable.getNominalAssert(dae_var_attr,name,source,kind_1);        
+        _ = BackendVariable.getMinMaxAsserts(dae_var_attr,name,source,kind_1,tp);
+        _ = BackendVariable.getNominalAssert(dae_var_attr,name,source,kind_1,tp);        
       then
         (BackendDAE.VAR(name,kind_1,dir,tp,NONE(),NONE(),dims,-1,source,dae_var_attr,comment,flowPrefix,streamPrefix), bind, states);
   end match;
@@ -638,8 +638,8 @@ algorithm
         tp = lowerType(t);
         b = DAEUtil.boolVarVisibility(protection);
         dae_var_attr = DAEUtil.setProtectedAttr(dae_var_attr,b);
-        _ = BackendVariable.getMinMaxAsserts(dae_var_attr,name,source,kind_1);
-        _ = BackendVariable.getNominalAssert(dae_var_attr,name,source,kind_1);
+        _ = BackendVariable.getMinMaxAsserts(dae_var_attr,name,source,kind_1,tp);
+        _ = BackendVariable.getNominalAssert(dae_var_attr,name,source,kind_1,tp);
       then
         BackendDAE.VAR(name,kind_1,dir,tp,bind,NONE(),dims,-1,source,dae_var_attr,comment,flowPrefix,streamPrefix);
 
