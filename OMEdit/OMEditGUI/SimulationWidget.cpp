@@ -38,7 +38,7 @@ SimulationWidget::SimulationWidget(MainWindow *pParent)
     : QDialog(pParent, Qt::WindowTitleHint)
 {
     setWindowTitle(QString(Helper::applicationName).append(" - Simulation"));
-    setMinimumSize(375, 350);
+    setMinimumSize(375, 440);
     mpParentMainWindow = pParent;
 
     setUpForm();
@@ -84,7 +84,7 @@ void SimulationWidget::setUpForm()
     gridOutputIntervalLayout->addWidget(mpNumberofIntervalsTextBox, 0, 1);
     mpOutputIntervalGroup->setLayout(gridOutputIntervalLayout);
 
-    // Integration Interval
+    // Integration
     QGridLayout *gridIntegrationLayout = new QGridLayout;
     mpIntegrationGroup = new QGroupBox(tr("Integration"));
     mpMethodLabel = new QLabel(tr("Method:"));
@@ -111,6 +111,15 @@ void SimulationWidget::setUpForm()
     gridIntegrationLayout->addWidget(mpCflagsLabel, 4, 0);
     gridIntegrationLayout->addWidget(mpCflagsTextBox, 4, 1);
     mpIntegrationGroup->setLayout(gridIntegrationLayout);
+
+    // save simulations options
+    QGridLayout *gridSaveSimulationLayout = new QGridLayout;
+    mpSaveSimulationGroup = new QGroupBox(tr("Save Simulation"));
+    mpSaveSimulationCheckbox = new QCheckBox(tr("Save simulation settings inside model"));
+    mpSaveSimulationCheckbox->setChecked(true);
+
+    gridSaveSimulationLayout->addWidget(mpSaveSimulationCheckbox, 0, 0);
+    mpSaveSimulationGroup->setLayout(gridSaveSimulationLayout);
 
     // Add the validators
     QDoubleValidator *doubleValidator = new QDoubleValidator(this);
@@ -142,7 +151,8 @@ void SimulationWidget::setUpForm()
     mainLayout->addWidget(mpSimulationIntervalGroup, 2, 0);
     mainLayout->addWidget(mpOutputIntervalGroup, 3, 0);
     mainLayout->addWidget(mpIntegrationGroup, 4, 0);
-    mainLayout->addWidget(mpButtonBox, 5, 0);
+    mainLayout->addWidget(mpSaveSimulationGroup, 5, 0);
+    mainLayout->addWidget(mpButtonBox, 6, 0);
 
     setLayout(mainLayout);
 }
@@ -256,6 +266,8 @@ void SimulationWidget::simulate()
             accept();
             return;
         }
+        // before simulating save the simulation options
+        saveSimulationOptions();
         // show the progress bar
         mpProgressDialog->setText(Helper::running_Simulation);
         mpProgressDialog->show();
@@ -401,6 +413,24 @@ void SimulationWidget::buildModel(QString simulationParameters)
             mpParentMainWindow->mpInteractiveSimualtionTabWidget->addNewInteractiveSimulationTab(pInteractiveSimulationTab,
                                                                                                  mpFileNameTextBox->text());
     }
+}
+
+void SimulationWidget::saveSimulationOptions()
+{
+    if (!mpSaveSimulationCheckbox->isChecked())
+        return;
+
+    ProjectTab *projectTab = mpParentMainWindow->mpProjectTabs->getCurrentTab();
+    QString annotationString;
+
+    // create simulations options annotation
+    annotationString.append("annotate=experiment(");
+    annotationString.append("StartTime=").append(mpStartTimeTextBox->text()).append(",");
+    annotationString.append("StopTime=").append(mpStopTimeTextBox->text()).append(",");
+    annotationString.append("Tolerance=").append(mpToleranceTextBox->text());
+    annotationString.append(")");
+    // send the simulations options annotation to OMC
+    mpParentMainWindow->mpOMCProxy->addClassAnnotation(projectTab->mModelNameStructure, annotationString);
 }
 
 ProgressDialog::ProgressDialog(SimulationWidget *pParent)

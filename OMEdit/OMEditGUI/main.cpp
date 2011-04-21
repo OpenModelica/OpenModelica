@@ -55,19 +55,25 @@ int main(int argc, char *argv[])
     MainWindow mainwindow(&splashScreen);
     // if user has requested to open the file by passing it in argument then,
     if (a.arguments().size() > 1)
-        fileName = a.arguments().at(1);
-    if (!fileName.isEmpty())
     {
-        // if path is relative make it absolute
-        QFileInfo file (fileName);
-        if (file.isRelative())
+        for (int i = 1; i < a.arguments().size(); i++)
         {
-            fileName.prepend(QString(QDir::currentPath()).append("/"));
+            fileName = a.arguments().at(i);
+            if (!fileName.isEmpty())
+            {
+                // if path is relative make it absolute
+                QFileInfo file (fileName);
+                if (file.isRelative())
+                {
+                    fileName.prepend(QString(QDir::currentPath()).append("/"));
+                }
+                mainwindow.mpProjectTabs->openFile(fileName);
+            }
         }
-        mainwindow.mpProjectTabs->openFile(fileName);
     }
+    // finally show the main window
     mainwindow.showMaximized();
-
+    // hide the splash screen
     splashScreen.finish(&mainwindow);
     if (mainwindow.mExitApplication)        // if there is some issue in running the application.
         return 1;

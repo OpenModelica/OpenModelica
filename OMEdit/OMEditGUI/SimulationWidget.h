@@ -51,6 +51,7 @@ public:
     void initializeFields();
     void simulateModel(QString simulationParameters);
     void buildModel(QString simulationParameters);
+    void saveSimulationOptions();
 
     MainWindow *mpParentMainWindow;
 private:
@@ -75,6 +76,8 @@ private:
     QLineEdit *mpFileNameTextBox;
     QLabel *mpCflagsLabel;
     QLineEdit *mpCflagsTextBox;
+    QGroupBox *mpSaveSimulationGroup;
+    QCheckBox *mpSaveSimulationCheckbox;
     QPushButton *mpCancelButton;
     QPushButton *mpSimulateButton;
     QDialogButtonBox *mpButtonBox;
