@@ -1024,6 +1024,17 @@ algorithm
         eqns1 = listAppend(eqns,re);
       then
         ((aeqs,eqns1,funcs));      
+    case (BackendDAE.MULTIDIM_EQUATION(left=e1 as DAE.CREF(componentRef =_),right=e2 as DAE.CREF(componentRef =_),source=source),(aeqs,eqns,funcs))
+      equation
+        ((e1_1,_)) = BackendDAEUtil.extendArrExp((e1,SOME(funcs)));
+        ((e2_1,_)) = BackendDAEUtil.extendArrExp((e2,SOME(funcs)));
+        ea1 = Expression.flattenArrayExpToList(e1_1);
+        ea2 = Expression.flattenArrayExpToList(e2_1);
+        ealst = Util.listThreadTuple(ea1,ea2);
+        re = Util.listMap1(ealst,BackendEquation.generateEQUATION,source);
+        eqns1 = listAppend(eqns,re);
+      then
+        ((aeqs,eqns1,funcs)); 
     case (aeqn,(aeqs,eqns,funcs)) then ((aeqn::aeqs,eqns,funcs));
   end matchcontinue;
 end splitArrayEqn;

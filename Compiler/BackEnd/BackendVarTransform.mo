@@ -591,8 +591,6 @@ algorithm
       
       // Note: Most of these functions check if a subexpression did a replacement.
       // If it did not, we do not create a new copy of the expression (to save some memory). 
-            
-            
     case ((e as DAE.CREF(componentRef = cr,ty = t)),repl,cond)
       equation
         true = replaceExpCond(cond, e);

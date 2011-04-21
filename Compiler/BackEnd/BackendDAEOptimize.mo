@@ -170,7 +170,7 @@ algorithm
       BackendDAE.MultiDimEquation aeqn;
       list<BackendDAE.Equation> eqns;
       DAE.ElementSource source;
-      DAE.Exp e1,e2;
+      DAE.Exp e1,e2,e1_1,e2_1;
       list<DAE.Exp> ea1,ea2;
       list<tuple<DAE.Exp,DAE.Exp>> ealst;
     case BackendDAE.MULTIDIM_EQUATION(left=e1,right=e2,source=source)
@@ -183,6 +183,36 @@ algorithm
         eqns = Util.listMap1(ealst,BackendEquation.generateEQUATION,source);
       then
         eqns;
+    case BackendDAE.MULTIDIM_EQUATION(left=e1 as DAE.CREF(componentRef =_),right=e2,source=source)
+      equation
+        true = Expression.isArray(e2) or Expression.isMatrix(e2);
+        ((e1_1,_)) = BackendDAEUtil.extendArrExp((e1,NONE()));
+        ea1 = Expression.flattenArrayExpToList(e1_1);
+        ea2 = Expression.flattenArrayExpToList(e2);
+        ealst = Util.listThreadTuple(ea1,ea2);
+        eqns = Util.listMap1(ealst,BackendEquation.generateEQUATION,source);
+      then
+        eqns; 
+    case BackendDAE.MULTIDIM_EQUATION(left=e1,right=e2 as DAE.CREF(componentRef =_),source=source)
+      equation
+        true = Expression.isArray(e1) or Expression.isMatrix(e1);
+        ((e2_1,_)) = BackendDAEUtil.extendArrExp((e2,NONE()));
+        ea1 = Expression.flattenArrayExpToList(e1);
+        ea2 = Expression.flattenArrayExpToList(e2_1);
+        ealst = Util.listThreadTuple(ea1,ea2);
+        eqns = Util.listMap1(ealst,BackendEquation.generateEQUATION,source);
+      then
+        eqns;     
+    case BackendDAE.MULTIDIM_EQUATION(left=e1 as DAE.CREF(componentRef =_),right=e2 as DAE.CREF(componentRef =_),source=source)
+      equation
+        ((e1_1,_)) = BackendDAEUtil.extendArrExp((e1,NONE()));
+        ((e2_1,_)) = BackendDAEUtil.extendArrExp((e2,NONE()));
+        ea1 = Expression.flattenArrayExpToList(e1_1);
+        ea2 = Expression.flattenArrayExpToList(e2_1);
+        ealst = Util.listThreadTuple(ea1,ea2);
+        eqns = Util.listMap1(ealst,BackendEquation.generateEQUATION,source);
+      then
+        eqns;             
     case aeqn then {};
   end matchcontinue;
 end getScalarArrayEqns;
