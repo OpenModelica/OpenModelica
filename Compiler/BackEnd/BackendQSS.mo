@@ -98,7 +98,7 @@ algorithm
        list<BackendDAE.WhenClause> whenClausesList;
        list<list<SimCode.SimEqSystem>> eqs;
        
-       list<Integer> whenEqClausesInd, whenReinitClausesInd, whenEqInd, whenReinitClausesInd, varsSolvedInEqsList, whenReinitOutVars;       
+       list<Integer> whenEqClausesInd, whenReinitClausesInd, whenEqInd, varsSolvedInEqsList, whenReinitOutVars;       
        Integer nStatic, nIntegr, nBlocks, nZeroCross, nCrossDetect, nEquations, nWhens, ind_whenBlocks_start;
        list<Integer> variableIndicesList,ass1List, ass2List, stateIndices, zcSamplesInd;
        list<list<Integer>> blt_states,blt_no_states, stateEq_flat, globalIncidenceList, comps, mappedEquations, whenEqIncidenceMatList, whenReinitIncidenceMatList, mappedEqReinitMatList;

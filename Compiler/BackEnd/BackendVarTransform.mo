@@ -595,7 +595,7 @@ algorithm
       equation
         true = replaceExpCond(cond, e);
         e1 = getExtendReplacement(repl, cr);
-        ((e2,_)) = BackendDAEUtil.extendArrExp((e,NONE()));
+        ((e2,(_,true))) = BackendDAEUtil.extendArrExp((e,(NONE(),false)));
         (e3,_) = replaceExp(e2,repl,cond);
       then
         (e3,true);

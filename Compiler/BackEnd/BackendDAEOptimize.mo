@@ -186,7 +186,7 @@ algorithm
     case BackendDAE.MULTIDIM_EQUATION(left=e1 as DAE.CREF(componentRef =_),right=e2,source=source)
       equation
         true = Expression.isArray(e2) or Expression.isMatrix(e2);
-        ((e1_1,_)) = BackendDAEUtil.extendArrExp((e1,NONE()));
+        ((e1_1,(_,_))) = BackendDAEUtil.extendArrExp((e1,(NONE(),false)));
         ea1 = Expression.flattenArrayExpToList(e1_1);
         ea2 = Expression.flattenArrayExpToList(e2);
         ealst = Util.listThreadTuple(ea1,ea2);
@@ -196,7 +196,7 @@ algorithm
     case BackendDAE.MULTIDIM_EQUATION(left=e1,right=e2 as DAE.CREF(componentRef =_),source=source)
       equation
         true = Expression.isArray(e1) or Expression.isMatrix(e1);
-        ((e2_1,_)) = BackendDAEUtil.extendArrExp((e2,NONE()));
+        ((e2_1,(_,_))) = BackendDAEUtil.extendArrExp((e2,(NONE(),false)));
         ea1 = Expression.flattenArrayExpToList(e1);
         ea2 = Expression.flattenArrayExpToList(e2_1);
         ealst = Util.listThreadTuple(ea1,ea2);
@@ -205,8 +205,8 @@ algorithm
         eqns;     
     case BackendDAE.MULTIDIM_EQUATION(left=e1 as DAE.CREF(componentRef =_),right=e2 as DAE.CREF(componentRef =_),source=source)
       equation
-        ((e1_1,_)) = BackendDAEUtil.extendArrExp((e1,NONE()));
-        ((e2_1,_)) = BackendDAEUtil.extendArrExp((e2,NONE()));
+        ((e1_1,(_,_))) = BackendDAEUtil.extendArrExp((e1,(NONE(),false)));
+        ((e2_1,(_,_))) = BackendDAEUtil.extendArrExp((e2,(NONE(),false)));
         ea1 = Expression.flattenArrayExpToList(e1_1);
         ea2 = Expression.flattenArrayExpToList(e2_1);
         ealst = Util.listThreadTuple(ea1,ea2);

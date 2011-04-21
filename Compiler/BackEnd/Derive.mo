@@ -381,7 +381,7 @@ algorithm
     // case for arrays
     case ((e as DAE.CREF(componentRef = cr,ty = tp as DAE.ET_ARRAY(arrayDimensions=_))),(timevars,functions))
       equation
-        ((e1,_)) = BackendDAEUtil.extendArrExp((e,SOME(functions)));
+        ((e1,(_,true))) = BackendDAEUtil.extendArrExp((e,(SOME(functions),false)));
       then
         differentiateExpTime(e1,(timevars,functions));
 

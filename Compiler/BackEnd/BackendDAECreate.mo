@@ -948,8 +948,8 @@ algorithm
       equation
         (e1_1,source) = Inline.inlineExp(e1,(SOME(funcs),{DAE.NORM_INLINE()}),source);
         (e2_1,source) = Inline.inlineExp(e2,(SOME(funcs),{DAE.NORM_INLINE()}),source);
-        ((e1_2,_)) = extendArrExp((e1_1,SOME(funcs)));
-        ((e2_2,_)) = extendArrExp((e2_1,SOME(funcs)));
+        ((e1_2,(_,true))) = extendArrExp((e1_1,(SOME(funcs),false)));
+        ((e2_2,(_,true))) = extendArrExp((e2_1,(SOME(funcs),false)));
         (e1_3,b1) = ExpressionSimplify.simplify(e1_2);
         (e2_3,b2) = ExpressionSimplify.simplify(e2_2);
         source = DAEUtil.addSymbolicTransformationSimplify(b1,source,e1,e1_3);
@@ -962,8 +962,8 @@ algorithm
       equation
         (e1_1,source) = Inline.inlineExp(e1,(SOME(funcs),{DAE.NORM_INLINE()}),source);
         (e2_1,source) = Inline.inlineExp(e2,(SOME(funcs),{DAE.NORM_INLINE()}),source);
-        ((e1_2,_)) = extendArrExp((e1_1,SOME(funcs)));
-        ((e2_2,_)) = extendArrExp((e2_1,SOME(funcs)));
+        ((e1_2,(_,true))) = extendArrExp((e1_1,(SOME(funcs),false)));
+        ((e2_2,(_,true))) = extendArrExp((e2_1,(SOME(funcs),false)));
         (e1_3,b1) = ExpressionSimplify.simplify(e1_2);
         (e2_3,b2) = ExpressionSimplify.simplify(e2_2);
         source = DAEUtil.addSymbolicTransformationSimplify(b1,source,e1,e1_3);
@@ -1005,7 +1005,7 @@ algorithm
     case (BackendDAE.MULTIDIM_EQUATION(left=e1 as DAE.CREF(componentRef =_),right=e2,source=source),(aeqs,eqns,funcs))
       equation
         true = Expression.isArray(e2) or Expression.isMatrix(e2);
-        ((e1_1,_)) = BackendDAEUtil.extendArrExp((e1,SOME(funcs)));
+        ((e1_1,(_,true))) = BackendDAEUtil.extendArrExp((e1,(SOME(funcs),false)));
         ea1 = Expression.flattenArrayExpToList(e1_1);
         ea2 = Expression.flattenArrayExpToList(e2);
         ealst = Util.listThreadTuple(ea1,ea2);
@@ -1016,7 +1016,7 @@ algorithm
     case (BackendDAE.MULTIDIM_EQUATION(left=e1,right=e2 as DAE.CREF(componentRef =_),source=source),(aeqs,eqns,funcs))
       equation
         true = Expression.isArray(e1) or Expression.isMatrix(e1);
-        ((e2_1,_)) = BackendDAEUtil.extendArrExp((e2,SOME(funcs)));
+        ((e2_1,(_,true))) = BackendDAEUtil.extendArrExp((e2,(SOME(funcs),false)));
         ea1 = Expression.flattenArrayExpToList(e1);
         ea2 = Expression.flattenArrayExpToList(e2_1);
         ealst = Util.listThreadTuple(ea1,ea2);
@@ -1026,8 +1026,8 @@ algorithm
         ((aeqs,eqns1,funcs));      
     case (BackendDAE.MULTIDIM_EQUATION(left=e1 as DAE.CREF(componentRef =_),right=e2 as DAE.CREF(componentRef =_),source=source),(aeqs,eqns,funcs))
       equation
-        ((e1_1,_)) = BackendDAEUtil.extendArrExp((e1,SOME(funcs)));
-        ((e2_1,_)) = BackendDAEUtil.extendArrExp((e2,SOME(funcs)));
+        ((e1_1,(_,true))) = extendArrExp((e1,(SOME(funcs),false)));
+        ((e2_1,(_,true))) = extendArrExp((e2,(SOME(funcs),false)));
         ea1 = Expression.flattenArrayExpToList(e1_1);
         ea2 = Expression.flattenArrayExpToList(e2_1);
         ealst = Util.listThreadTuple(ea1,ea2);
@@ -1176,7 +1176,7 @@ algorithm
       btp = expTypeToBackendType(tp1);
       varlst = Util.listMap1(crlst,makeVariable,btp);
       vars_1 = BackendVariable.addVars(varlst, vars);
-      ((left1,_)) = BackendDAEUtil.extendArrExp((left,NONE()));
+      ((left1,(_,_))) = BackendDAEUtil.extendArrExp((left,(NONE(),false)));
     then ((left1,(vars_1,i+1,BackendDAE.MULTIDIM_EQUATION(dimSize,left,e1,source)::aeqs,source)));
     case tpl then tpl;
   end matchcontinue;
@@ -3777,8 +3777,8 @@ algorithm
   // array types to array equations  
   case ((e1 as DAE.CREF(componentRef=cr1,ty=DAE.ET_ARRAY(arrayDimensions=ad)),e2),source,inFuncs)
     equation 
-      ((e1_1,_)) = BackendDAEUtil.extendArrExp((e1,SOME(inFuncs)));
-      ((e2_1,_)) = BackendDAEUtil.extendArrExp((e2,SOME(inFuncs)));
+      ((e1_1,(_,_))) = BackendDAEUtil.extendArrExp((e1,(SOME(inFuncs),false)));
+      ((e2_1,(_,_))) = BackendDAEUtil.extendArrExp((e2,(SOME(inFuncs),false)));
       (e2_2,_) = ExpressionSimplify.simplify(e2_1);
       ds = Util.listMap(ad, Expression.dimensionSize);
     then
@@ -3788,8 +3788,8 @@ algorithm
     equation 
       tp = Expression.typeof(e1);
       false = DAEUtil.expTypeComplex(tp);
-      ((e1_1,_)) = BackendDAEUtil.extendArrExp((e1,SOME(inFuncs)));
-      ((e2_1,_)) = BackendDAEUtil.extendArrExp((e2,SOME(inFuncs)));
+      ((e1_1,(_,_))) = BackendDAEUtil.extendArrExp((e1,(SOME(inFuncs),false)));
+      ((e2_1,(_,_))) = BackendDAEUtil.extendArrExp((e2,(SOME(inFuncs),false)));
       (e2_2,_) = ExpressionSimplify.simplify(e2_1);
       eqn = BackendEquation.generateEQUATION((e1_1,e2_2),source);
     then
@@ -3832,7 +3832,7 @@ algorithm
       then inAlg;
     case(DAE.ALGORITHM_STMTS(statementLst=statementLst),funcs)
       equation
-        (statementLst,_) = DAEUtil.traverseDAEEquationsStmts(statementLst, BackendDAEUtil.extendArrExp, funcs);
+        (statementLst,(_,true)) = DAEUtil.traverseDAEEquationsStmts(statementLst, BackendDAEUtil.extendArrExp, (funcs,false));
       then
         DAE.ALGORITHM_STMTS(statementLst);
     case(inAlg,funcs) then inAlg;
@@ -3841,8 +3841,8 @@ end extendAlgorithm;
 
 protected function extendArrExp "
 Author: Frenkel TUD 2010-12"
-  input tuple<DAE.Exp,Option<DAE.FunctionTree>> itpl;
-  output tuple<DAE.Exp,Option<DAE.FunctionTree>> otpl;
+  input tuple<DAE.Exp,tuple<Option<DAE.FunctionTree>,Boolean>> itpl;
+  output tuple<DAE.Exp,tuple<Option<DAE.FunctionTree>,Boolean>> otpl;
 algorithm 
   otpl := matchcontinue itpl
     local

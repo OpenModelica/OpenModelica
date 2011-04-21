@@ -294,7 +294,7 @@ algorithm
     // Special Case for Arrays
     case ((e as DAE.CREF(ty = DAE.ET_ARRAY(ty=_)),(vars,crefs)))
       equation
-        ((e1,_)) = extendArrExp((e,NONE()));
+        ((e1,(_,true))) = extendArrExp((e,(NONE(),false)));
         ((_,(vars1,crefs1))) = Expression.traverseExp(e1,traversecheckBackendDAEExp,(vars,crefs));
       then
         ((e, (vars1,crefs1)));
@@ -2074,7 +2074,7 @@ algorithm
     // Special Case for unextended arrays
     case (((e as DAE.CREF(componentRef = cr,ty = DAE.ET_ARRAY(arrayDimensions=_))),(vars,expl)))
       equation
-        ((e1,_)) = extendArrExp((e,NONE()));
+        ((e1,(_,true))) = extendArrExp((e,(NONE(),false)));
         res = statesAndVarsExp(e1, vars);
       then
         ((e,true,(vars,res)));
@@ -3312,14 +3312,15 @@ end bintreeDepth;
 
 public function extendArrExp "
 Author: Frenkel TUD 2010-07"
-  input tuple<DAE.Exp,Option<DAE.FunctionTree>> itpl;
-  output tuple<DAE.Exp,Option<DAE.FunctionTree>> otpl;
+  input tuple<DAE.Exp,tuple<Option<DAE.FunctionTree>,Boolean>> itpl;
+  output tuple<DAE.Exp,tuple<Option<DAE.FunctionTree>,Boolean>> otpl;
 algorithm 
   otpl := matchcontinue itpl
     local
       DAE.Exp e;
       Option<DAE.FunctionTree> funcs;
-    case ((e,funcs)) then Expression.traverseExp(e, traversingextendArrExp, funcs);
+      Boolean b;
+    case ((e,(funcs,_))) then Expression.traverseExp(e, traversingextendArrExp, (funcs,false));
     case _ then itpl;
   end matchcontinue;
 end extendArrExp;
@@ -3329,8 +3330,8 @@ Author: Frenkel TUD 2010-07.
   This function extend all array and record componentrefs to there
   elements. This is necessary for BLT and substitution of simple 
   equations."
-  input tuple<DAE.Exp, Option<DAE.FunctionTree> > inExp;
-  output tuple<DAE.Exp, Option<DAE.FunctionTree> > outExp;
+  input tuple<DAE.Exp, tuple<Option<DAE.FunctionTree>,Boolean> > inExp;
+  output tuple<DAE.Exp, tuple<Option<DAE.FunctionTree>,Boolean> > outExp;
 algorithm outExp := matchcontinue(inExp)
   local
     Option<DAE.FunctionTree> funcs;
@@ -3345,11 +3346,12 @@ algorithm outExp := matchcontinue(inExp)
     DAE.Exp e_new;
     list<DAE.ExpVar> varLst;
     Absyn.Path name;
-    tuple<DAE.Exp, Option<DAE.FunctionTree> > restpl;
+    tuple<DAE.Exp, tuple<Option<DAE.FunctionTree>,Boolean> > restpl;
     list<list<tuple<DAE.Exp, Boolean>>> scalar;
+    Boolean b;
     
   // CASE for Matrix    
-  case( (DAE.CREF(componentRef=cr,ty= t as DAE.ET_ARRAY(ty=ty,arrayDimensions=ad as {id, jd})), funcs) )
+  case( (DAE.CREF(componentRef=cr,ty= t as DAE.ET_ARRAY(ty=ty,arrayDimensions=ad as {id, jd})), (funcs,_)) )
     equation
         i = Expression.dimensionSize(id);
         j = Expression.dimensionSize(jd);
@@ -3359,12 +3361,12 @@ algorithm outExp := matchcontinue(inExp)
         expl = Util.listMap1(crlst,Expression.makeCrefExp,ty);
         scalar = makeMatrix(expl,j,j,{});
         e_new = DAE.MATRIX(t,i,scalar);
-        restpl = Expression.traverseExp(e_new, traversingextendArrExp, funcs);
+        restpl = Expression.traverseExp(e_new, traversingextendArrExp, (funcs,true));
     then
       (restpl);
   
   // CASE for Matrix and checkModel is on    
-  case( (DAE.CREF(componentRef=cr,ty= t as DAE.ET_ARRAY(ty=ty,arrayDimensions=ad as {id, jd})), funcs) )
+  case( (DAE.CREF(componentRef=cr,ty= t as DAE.ET_ARRAY(ty=ty,arrayDimensions=ad as {id, jd})), (funcs,_)) )
     equation
         true = OptManager.getOption("checkModel");
         // consider size 1
@@ -3376,24 +3378,24 @@ algorithm outExp := matchcontinue(inExp)
         expl = Util.listMap1(crlst,Expression.makeCrefExp,ty);
         scalar = makeMatrix(expl,j,j,{});
         e_new = DAE.MATRIX(t,i,scalar);
-        restpl = Expression.traverseExp(e_new, traversingextendArrExp, funcs);
+        restpl = Expression.traverseExp(e_new, traversingextendArrExp, (funcs,true));
     then
       (restpl);
   
   // CASE for Array
-  case( (DAE.CREF(componentRef=cr,ty= t as DAE.ET_ARRAY(ty=ty,arrayDimensions=ad)), funcs) )
+  case( (DAE.CREF(componentRef=cr,ty= t as DAE.ET_ARRAY(ty=ty,arrayDimensions=ad)), (funcs,_)) )
     equation
         subslst = dimensionsToRange(ad);
         subslst1 = rangesToSubscripts(subslst);
         crlst = Util.listMap1r(subslst1,ComponentReference.subscriptCref,cr);
         expl = Util.listMap1(crlst,Expression.makeCrefExp,ty);
         e_new = DAE.ARRAY(t,true,expl);
-        restpl = Expression.traverseExp(e_new, traversingextendArrExp, funcs);
+        restpl = Expression.traverseExp(e_new, traversingextendArrExp, (funcs,true));
     then
       (restpl);
 
   // CASE for Array and checkModel is on
-  case( (DAE.CREF(componentRef=cr,ty= t as DAE.ET_ARRAY(ty=ty,arrayDimensions=ad)), funcs) )
+  case( (DAE.CREF(componentRef=cr,ty= t as DAE.ET_ARRAY(ty=ty,arrayDimensions=ad)), (funcs,b)) )
     equation
         true = OptManager.getOption("checkModel");
         // consider size 1      
@@ -3402,17 +3404,17 @@ algorithm outExp := matchcontinue(inExp)
         crlst = Util.listMap1r(subslst1,ComponentReference.subscriptCref,cr);
         expl = Util.listMap1(crlst,Expression.makeCrefExp,ty);
         e_new = DAE.ARRAY(t,true,expl);
-        restpl = Expression.traverseExp(e_new, traversingextendArrExp, funcs);
+        restpl = Expression.traverseExp(e_new, traversingextendArrExp, (funcs,true));
     then
       (restpl);
   // CASE for Records
-  case( (DAE.CREF(componentRef=cr,ty= t as DAE.ET_COMPLEX(name=name,varLst=varLst,complexClassType=ClassInf.RECORD(_))), funcs) )
+  case( (DAE.CREF(componentRef=cr,ty= t as DAE.ET_COMPLEX(name=name,varLst=varLst,complexClassType=ClassInf.RECORD(_))), (funcs,_)) )
     equation
         expl = Util.listMap1(varLst,Expression.generateCrefsExpFromExpVar,cr);
         i = listLength(expl);
         true = intGt(i,0);
         e_new = DAE.CALL(name,expl,false,false,t,DAE.NO_INLINE());
-        restpl = Expression.traverseExp(e_new, traversingextendArrExp, funcs);
+        restpl = Expression.traverseExp(e_new, traversingextendArrExp, (funcs,true));
     then 
       (restpl);
   case(inExp) then inExp;
@@ -3638,28 +3640,28 @@ algorithm outExp := matchcontinue(inExp)
     case ((e as DAE.MATRIX(ty=ty,integer=i,scalar=(((e1 as DAE.CREF(componentRef = cr)),_)::_)::_),funcs))
       equation
         e1_1 = Expression.expStripLastSubs(e1);
-        ((e1_2,_)) = extendArrExp((e1_1,funcs));
+        ((e1_2,(_,true))) = extendArrExp((e1_1,(funcs,false)));
         true = Expression.expEqual(e,e1_2);
       then     
         ((e1_1,funcs));
     case ((e as DAE.MATRIX(ty=ty,integer=i,scalar=(((e1 as DAE.UNARY(exp = DAE.CREF(componentRef = cr))),_)::_)::_),funcs))
       equation
         e1_1 = Expression.expStripLastSubs(e1);
-        ((e1_2,_)) = extendArrExp((e1_1,funcs));
+        ((e1_2,(_,true))) = extendArrExp((e1_1,(funcs,false)));
         true = Expression.expEqual(e,e1_2);
       then     
         ((e1_1,funcs));
     case ((e as DAE.ARRAY(ty=ty,scalar=b,array=(e1 as DAE.CREF(componentRef = cr))::_),funcs))
       equation
         e1_1 = Expression.expStripLastSubs(e1);
-        ((e1_2,_)) = extendArrExp((e1_1,funcs));
+        ((e1_2,(_,true))) = extendArrExp((e1_1,(funcs,false)));
         true = Expression.expEqual(e,e1_2);
       then     
         ((e1_1,funcs));
     case ((e as DAE.ARRAY(ty=ty,scalar=b,array=(e1 as DAE.UNARY(exp = DAE.CREF(componentRef = cr)))::_),funcs))
       equation
         e1_1 = Expression.expStripLastSubs(e1);
-        ((e1_2,_)) = extendArrExp((e1_1,funcs));
+        ((e1_2,(_,true))) = extendArrExp((e1_1,(funcs,false)));
         true = Expression.expEqual(e,e1_2);
       then     
         ((e1_1,funcs));
