@@ -299,7 +299,7 @@ end generateStructureCodeQSS;
 
 protected function fillZeroCrossIncidenceMat
 "function: fillZeroCrossIncidenceMat 
- generates an Incidence Matrix only for the zero-crossing equations.	
+ generates an Incidence Matrix only for the zero-crossing equations.
  author: XF
 "
   input list<BackendDAE.ZeroCrossing> zc1;
@@ -344,7 +344,7 @@ end fillZeroCrossIncidenceMat;
 public function getWhenReinitClausesInfo
 "function: getListOfWhenClauses 
  extracts the list of when-clauses in the model (equivalently the number of when blocks in the 
- DEVS structure.	
+ DEVS structure.
  author: XF
 "
   input Integer loopIndex;
@@ -362,7 +362,7 @@ public function getWhenReinitClausesInfo
   output list<Integer> whenReinitOutVars;
   
 algorithm
-  (whensWithReinits, whenReinitIncidenceMatList, mappedEqReinitList,whenReinitOutVars) :=
+  (whenReinitClausesInd, whenReinitIncidenceMatList, mappedEqReinitMatList, whenReinitOutVars) :=
   matchcontinue (loopIndex, ind_whenBlocks_start, wcIn, vars, tempOutListWhens, tempOutIncidenceMat, tempOutMapped,tempOutVars)
     local
       
@@ -409,7 +409,7 @@ end getWhenReinitClausesInfo;
 public function getWhenReinitClausesInfo2
 "function: getListOfWhenClauses 
  extracts the list of when-clauses in the model (equivalently the number of when blocks in the 
- DEVS structure.	
+ DEVS structure.
  author: XF
 "
   input Integer whenIndex;
@@ -424,7 +424,7 @@ public function getWhenReinitClausesInfo2
   output list<Integer> whenReinitOutVars;
   
 algorithm
-  (whensWithReinits, whenReinitIncidenceMatList, mappedEqReinitList,whenReinitOutVars) :=
+  (whenReinitIncidenceMatList, mappedEqReinitMatList,whenReinitOutVars) :=
   matchcontinue (whenIndex, cur_ReinitList, vars, tempOutIncidenceMat, tempOutMapped, tempOutVars)
     local   
       list<BackendDAE.WhenOperator> rest_reinits;
@@ -470,7 +470,7 @@ end getWhenReinitClausesInfo2;
 public function getWhenEqClausesInfo 
 "function: getWhenClausesInfo
  returns the indices of equations inside whens (when-clauses), the corresponding indices 
- of the when-clauses and the modified incidenceMat for the when-clauses.	
+ of the when-clauses and the modified incidenceMat for the when-clauses.
  author: XF
 "
   input BackendDAE.BackendDAE dlow;
@@ -507,7 +507,7 @@ algorithm
     matchcontinue(eqns, vars)
      case(eqns,vars)
        equation
-       	(eqInd, whenClauseInd, whenIncidenceMatList) = whenEquationsIndices2(1,BackendDAEUtil.equationSize(eqns),eqns, vars,{});
+         (eqInd, whenClauseInd, whenIncidenceMatList) = whenEquationsIndices2(1,BackendDAEUtil.equationSize(eqns),eqns, vars,{});
        then (eqInd, whenClauseInd, whenIncidenceMatList);
    end matchcontinue;
 end whenEquationsIndices;
