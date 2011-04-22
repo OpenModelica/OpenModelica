@@ -948,8 +948,8 @@ algorithm
       equation
         (e1_1,source) = Inline.inlineExp(e1,(SOME(funcs),{DAE.NORM_INLINE()}),source);
         (e2_1,source) = Inline.inlineExp(e2,(SOME(funcs),{DAE.NORM_INLINE()}),source);
-        ((e1_2,(_,true))) = extendArrExp((e1_1,(SOME(funcs),false)));
-        ((e2_2,(_,true))) = extendArrExp((e2_1,(SOME(funcs),false)));
+        ((e1_2,(_,_))) = extendArrExp((e1_1,(SOME(funcs),false)));
+        ((e2_2,(_,_))) = extendArrExp((e2_1,(SOME(funcs),false)));
         (e1_3,b1) = ExpressionSimplify.simplify(e1_2);
         (e2_3,b2) = ExpressionSimplify.simplify(e2_2);
         source = DAEUtil.addSymbolicTransformationSimplify(b1,source,e1,e1_3);
@@ -962,8 +962,8 @@ algorithm
       equation
         (e1_1,source) = Inline.inlineExp(e1,(SOME(funcs),{DAE.NORM_INLINE()}),source);
         (e2_1,source) = Inline.inlineExp(e2,(SOME(funcs),{DAE.NORM_INLINE()}),source);
-        ((e1_2,(_,true))) = extendArrExp((e1_1,(SOME(funcs),false)));
-        ((e2_2,(_,true))) = extendArrExp((e2_1,(SOME(funcs),false)));
+        ((e1_2,(_,_))) = extendArrExp((e1_1,(SOME(funcs),false)));
+        ((e2_2,(_,_))) = extendArrExp((e2_1,(SOME(funcs),false)));
         (e1_3,b1) = ExpressionSimplify.simplify(e1_2);
         (e2_3,b2) = ExpressionSimplify.simplify(e2_2);
         source = DAEUtil.addSymbolicTransformationSimplify(b1,source,e1,e1_3);
