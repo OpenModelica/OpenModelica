@@ -1244,11 +1244,8 @@ bool OMCProxy::simulate(QString modelName, QString simualtionParameters)
 bool OMCProxy::buildModel(QString modelName, QString simualtionParameters)
 {
     sendCommand("buildModel(" + modelName + "," + simualtionParameters + ")");
-
-    if (getErrorString().isEmpty())
-        return true;
-    else
-        return false;
+    bool res = getResult() != "{\"\",\"\"}";
+    return res;
 }
 
 QList<QString> OMCProxy::readSimulationResultVars(QString fileName)
