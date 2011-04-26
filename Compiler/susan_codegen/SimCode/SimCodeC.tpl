@@ -858,9 +858,9 @@ case EXTOBJINFO(__) then
   let &preExp = buffer "" /*BUFD*/
   let ctorCalls = (constructors |> (var, fnName, args) =>
       let argsStr = (args |> arg =>
-          daeExp(arg, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+          daeExternalCExp(arg, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/)
         ;separator=", ")
-      let typesStr = (args |> arg => extType(typeof(arg)) ; separator=", ")
+      let typesStr = (args |> arg => extType(typeof(arg),true,false) ; separator=", ")
       let &funDecls += 'extern void* <%fnName%>(<%typesStr%>);<%\n%>'
       <<
       <%cref(var)%> = <%fnName%>(<%argsStr%>);
@@ -1555,7 +1555,7 @@ template crefType(ComponentRef cr)
  "Like cref but with cast if type is integer."
 ::=
   match cr
-  case CREF_IDENT(__) then '<%extType(identType)%>'
+  case CREF_IDENT(__) then '<%expTypeModelica(identType)%>'
   case CREF_QUAL(__)  then '<%crefType(componentRef)%>'
   else "crefType:ERROR"
 end crefType;
@@ -2915,44 +2915,49 @@ template extReturnType(SimExtArg extArg)
  "Generates return type for external function."
 ::=
   match extArg
-  case SIMEXTARG(__)   then extType(type_)
-  case SIMNOEXTARG(__) then "void"
+  case ex as SIMEXTARG(__)    then extType(type_,true /*Treat this as an input (pass by value)*/,false)
+  case SIMNOEXTARG(__)  then "void"
+  case SIMEXTARGEXP(__) then error(sourceInfo(), 'Expression types are unsupported as return arguments <%printExpStr(exp)%>')
+  else error(sourceInfo(), "Unsupported return argument")
 end extReturnType;
 
 
-template extType(ExpType type)
+template extType(ExpType type, Boolean isInput, Boolean isArray)
  "Generates type for external function argument or return value."
 ::=
-  match type
+  let s = match type
   case ET_INT(__)         then "int"
   case ET_REAL(__)        then "double"
   case ET_STRING(__)      then "const char*"
   case ET_BOOL(__)        then "int"
-  case ET_ENUMERATION(__) then "int"  
-  case ET_ARRAY(__)       then extType(ty)
+  case ET_ENUMERATION(__) then "int"
+  case ET_ARRAY(__)       then extType(ty,isInput,true)
   case ET_COMPLEX(complexClassType=EXTERNAL_OBJ(__))
                       then "void *"
   case ET_COMPLEX(complexClassType=RECORD(path=rname))
                       then 'struct <%underscorePath(rname)%>'
   case ET_METATYPE(__) case ET_BOXED(__)    then "modelica_metatype"
-  else error(sourceInfo(), 'Unknown external type <%typeString(type)%>')
+  else error(sourceInfo(), 'Unknown external C type <%typeString(type)%>')
+  match type case ET_ARRAY(__) then s else if isInput then (if isArray then '<%match s case "const char*" then "" else "const "%><%s%>*' else s) else '<%s%>*'
 end extType;
 
-template extTypeF77(ExpType type)
+template extTypeF77(ExpType type, Boolean isReference)
   "Generates type for external function argument or return value for F77."
 ::=
-  match type
-  case ET_INT(__)         then "int *"
-  case ET_REAL(__)        then "double *"
-  case ET_STRING(__)      then "const char *"
-  case ET_BOOL(__)        then "int *"
-  case ET_ENUMERATION(__) then "int *"
+  let s = match type
+  case ET_INT(__)         then "int"
+  case ET_REAL(__)        then "double"
+  case ET_STRING(__)      then "char*"
+  case ET_BOOL(__)        then "int"
+  case ET_ENUMERATION(__) then "int"
+  case ET_ARRAY(__)       then extTypeF77(ty, true)
   case ET_COMPLEX(complexClassType=EXTERNAL_OBJ(__))
-                      then "void *"
+                      then "void*"
   case ET_COMPLEX(complexClassType=RECORD(path=rname))
                       then 'struct <%underscorePath(rname)%>'
   case ET_METATYPE(__) case ET_BOXED(__)    then "void*"
-  else error(sourceInfo(), 'Unknown external type <%typeString(type)%>')
+  else error(sourceInfo(), 'Unknown external F77 type <%typeString(type)%>')
+  match type case ET_ARRAY(__) then s else if isReference then '<%s%>*' else s
 end extTypeF77;
   
 template extFunDefArg(SimExtArg extArg)
@@ -2962,22 +2967,12 @@ template extFunDefArg(SimExtArg extArg)
   match extArg
   case SIMEXTARG(cref=c, isInput=ii, isArray=ia, type_=t) then
     let name = contextCref(c,contextFunction)
-    let typeStr = if ii then
-        if ia then
-          match extType(t) 
-          case "const char*" then // For string arrays
-            'const char* const *'
-          else
-            'const <%extType(t)%> *'
-        else
-          '<%extType(t)%>'
-      else
-        '<%extType(t)%>*'
+    let typeStr = extType(t,ii,ia)
     <<
     <%typeStr%> /*<%name%>*/
     >>
   case SIMEXTARGEXP(__) then
-    let typeStr = extType(type_)
+    let typeStr = extType(type_,true,false)
     <<
     <%typeStr%>
     >>
@@ -2990,13 +2985,12 @@ end extFunDefArg;
 template extFunDefArgF77(SimExtArg extArg)
 ::= 
   match extArg
-  case SIMEXTARG(cref=c, isInput = true, type_=t) then
+  case SIMEXTARG(cref=c, isInput = isInput, type_=t) then
     let name = contextCref(c,contextFunction)
-    let typeStr = 'const <%extType(t)%> *'
+    let typeStr = '<%extTypeF77(t,true)%>'
     '<%typeStr%> /*<%name%>*/'
-  case SIMEXTARG(__) then extFunDefArg(extArg)
 
-  case SIMEXTARGEXP(__) then '<%extTypeF77(type_)%>'
+  case SIMEXTARGEXP(__) then '<%extTypeF77(type_,true)%>'
   case SIMEXTARGSIZE(__) then 'int const *'
 end extFunDefArgF77;
 
@@ -3646,15 +3640,15 @@ template extFunCallVardecl(SimExtArg arg, Text &varDecls /*BUFP*/)
     match ty case ET_STRING(__) then
       ""
     else
-      let &varDecls += '<%extType(ty)%> <%extVarName(c)%>;<%\n%>'
+      let &varDecls += '<%extType(ty,true,false)%> <%extVarName(c)%>;<%\n%>'
       <<
-      <%extVarName(c)%> = (<%extType(ty)%>)<%contextCref(c,contextFunction)%>;
+      <%extVarName(c)%> = (<%extType(ty,true,false)%>)<%contextCref(c,contextFunction)%>;
       >>
   case SIMEXTARG(outputIndex=oi, isArray=false, type_=ty, cref=c) then
     match oi case 0 then
       ""
     else
-      let &varDecls += '<%extType(ty)%> <%extVarName(c)%>;<%\n%>'
+      let &varDecls += '<%extType(ty,true,false)%> <%extVarName(c)%>;<%\n%>'
       ""
 end extFunCallVardecl;
 
@@ -3670,13 +3664,13 @@ template extFunCallVardeclF77(SimExtArg arg, Text &varDecls)
         case false then
           let default_val = typeDefaultValue(ty)
           let default_exp = match default_val case "" then "" else ' = <%default_val%>'
-          let &varDecls += '<%extType(ty)%> <%extVarName(c)%><%default_exp%>;<%\n%>'
+          let &varDecls += '<%extTypeF77(ty,false)%> <%extVarName(c)%><%default_exp%>;<%\n%>'
           ""
         else
           let &varDecls += '<%expTypeArrayIf(ty)%> <%extVarName(c)%>;<%\n%>'
           'convert_alloc_<%expTypeArray(ty)%>_to_f77(&out.targ<%oi%>, &<%extVarName(c)%>);'
   case SIMEXTARG(type_ = ty, cref = c) then
-    let &varDecls += '<%extType(ty)%> <%extVarName(c)%>;<%\n%>'
+    let &varDecls += '<%extTypeF77(ty,false)%> <%extVarName(c)%>;<%\n%>'
     ""
 end extFunCallVardeclF77;
 
@@ -3686,6 +3680,7 @@ template typeDefaultValue(DAE.ExpType ty)
   case ty as ET_INT(__) then '0'
   case ty as ET_REAL(__) then '0.0'
   case ty as ET_BOOL(__) then '0'
+  case ty as ET_STRING(__) then '0' /* Always segfault is better than only sometimes segfault :) */
   else ""
 end typeDefaultValue;
 
@@ -3757,7 +3752,7 @@ template extArg(SimExtArg extArg, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/
   case SIMEXTARG(cref=c, outputIndex=oi, isArray=true, type_=t) then
     let name = if oi then 'out.targ<%oi%>' else contextCref(c,contextFunction)
     let shortTypeStr = expTypeShort(t)
-    'data_of_<%shortTypeStr%>_array(&(<%name%>))'
+    '(<%extType(t,isInput,true)%>) data_of_<%shortTypeStr%>_array(&(<%name%>))'
   case SIMEXTARG(cref=c, isInput=ii, outputIndex=0, type_=t) then
     let cr = '<%contextCref(c,contextFunction)%>'
     if acceptMetaModelicaGrammar() then
@@ -3767,7 +3762,7 @@ template extArg(SimExtArg extArg, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/
   case SIMEXTARG(cref=c, isInput=ii, outputIndex=oi, type_=t) then
     '&<%extVarName(c)%>'
   case SIMEXTARGEXP(__) then
-    daeExp(exp, contextFunction, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+    daeExternalCExp(exp, contextFunction, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   case SIMEXTARGSIZE(cref=c) then
     let typeStr = expTypeShort(type_)
     let name = if outputIndex then 'out.targ<%outputIndex%>' else contextCref(c,contextFunction)
@@ -4535,6 +4530,16 @@ template daeExp(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls 
   else error(sourceInfo(), 'Unknown expression: <%ExpressionDump.printExpStr(exp)%>')
 end daeExp;
 
+
+template daeExternalCExp(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/)
+  "Like daeExp, but also converts the type to external C"
+::=
+  match typeof(exp)
+    case ET_ARRAY(__) then  // Array-expressions
+      let shortTypeStr = expTypeShort(typeof(exp))
+      '(<%extType(typeof(exp),true,true)%>) data_of_<%shortTypeStr%>_array(&<%daeExp(exp, context, &preExp, &varDecls)%>)'
+    else daeExp(exp, context, &preExp, &varDecls)
+end daeExternalCExp;
 
 template daeExpSconst(String string, Context context, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/)
  "Generates code for a string constant."
@@ -6527,7 +6532,6 @@ let() = Tpl.addTemplateError(errMessage)
 #error "<% errMessage %>"<%\n%>
 >>
 end errorMsg;
-
 
 end SimCodeC;
 
