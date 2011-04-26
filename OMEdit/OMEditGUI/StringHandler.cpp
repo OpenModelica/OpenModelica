@@ -422,3 +422,15 @@ bool StringHandler::unparseBool(QString value)
   value = value.trimmed();
   return value == "true";
 }
+
+QString StringHandler::getSaveFileName(QWidget* parent, const QString &caption, const QString &dir, const QString &filter, QString * selectedFilter, const QString &defaultSuffix)
+{
+  QFileDialog fileDialog(parent, caption, dir, filter);
+  
+  if (selectedFilter) fileDialog.selectNameFilter(*selectedFilter);
+  if (defaultSuffix.length()) fileDialog.setDefaultSuffix(defaultSuffix);
+  fileDialog.setFileMode(QFileDialog::AnyFile);
+  fileDialog.setAcceptMode(QFileDialog::AcceptSave);
+  if (fileDialog.exec()) { QStringList fileNames = fileDialog.selectedFiles(); if ( fileNames.count() ) return fileNames.at(0); }
+  return QString();
+}

@@ -42,7 +42,7 @@ QString Helper::OpenModelicaLibrary = QString();
 QString Helper::omcServerName = "OMEdit";
 QString Helper::omFileTypes = "Modelica Files (*.mo)";
 QString Helper::omnotebookFileTypes = "OMNotebook Files (*.onb *.onbz *.nb)";
-QString Helper::imageFileTypes = "Image Files (*.png)";
+QString Helper::imageFileTypes = "Image Files (*.png *.bmp)";
 #ifdef WIN32
 QString Helper::tmpPath = QString(getenv("OPENMODELICAHOME")).replace("\\", "/").append(QString("/tmp/OMEdit"));
 #else

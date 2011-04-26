@@ -739,9 +739,9 @@ void MainWindow::exportModelToOMNotebook()
 {
     QDir fileDialogSaveDir;
 
-    QString omnotebookFileName = QFileDialog::getSaveFileName(this, tr("Export to OMNotebook"),
-                                                             fileDialogSaveDir.currentPath(),
-                                                             Helper::omnotebookFileTypes);
+    QString omnotebookFileName = StringHandler::getSaveFileName(this, tr("Export to OMNotebook"),
+                                                                fileDialogSaveDir.currentPath(),
+                                                                Helper::omnotebookFileTypes, NULL, "onb");
 
     // if user cancels the operation. or closes the export dialog box.
     if (omnotebookFileName.isEmpty())
@@ -925,8 +925,8 @@ void MainWindow::exportModelAsImage()
 {
     QDir fileDialogSaveDir;
 
-    QString imageFileName = QFileDialog::getSaveFileName(this, tr("Export as Image"), fileDialogSaveDir.currentPath(),
-                                                         Helper::imageFileTypes);
+    QString imageFileName = StringHandler::getSaveFileName(this, tr("Export as Image"), fileDialogSaveDir.currentPath(),
+                                                           Helper::imageFileTypes, NULL, "png");
 
     // if user cancels the operation. or closes the export dialog box.
     if (imageFileName.isEmpty())

@@ -2366,25 +2366,14 @@ bool ProjectTabWidget::saveModel(bool saveAs)
     {
         QDir fileDialogSaveDir;
 
-        if (saveAs)
-        {
-            modelFileName = QFileDialog::getSaveFileName(this, tr("Save File As"),
-                                                         fileDialogSaveDir.currentPath(),
-                                                         Helper::omFileTypes);
-        }
-        else
-        {
-            modelFileName = QFileDialog::getSaveFileName(this, tr("Save File"),
-                                                         fileDialogSaveDir.currentPath(),
-                                                         Helper::omFileTypes);
-        }
+        modelFileName = StringHandler::getSaveFileName(this, tr(saveAs ? "Save File As" : "Save File"),
+                                                       fileDialogSaveDir.currentPath(),
+                                                       Helper::omFileTypes, NULL, "mo");
 
         if (modelFileName.isEmpty())
         {
             return false;
-        }
-        else
-        {            
+        } else {
             // set the source file in OMC
             pMainWindow->mpOMCProxy->setSourceFile(pCurrentTab->mModelNameStructure, modelFileName);
             // if opened tab is a package save all of its child models
