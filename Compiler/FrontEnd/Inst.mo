@@ -10242,13 +10242,21 @@ algorithm
                      
     // To make a class fully qualified, the class path is looked up in the environment.
     // The FQ path consist of the simple class name appended to the environment path of the looked up class. 
-    case (cache,env,path) 
+    case (cache,env,path)
       equation 
         (cache,cl,env_1) = Lookup.lookupClass(cache, env, path, false);
         path_2 = makeFullyQualified2(env_1,SCode.className(cl));
       then
         (cache,Absyn.FULLYQUALIFIED(path_2));
     
+    // Needed to make external objects fully-qualified
+    case (cache,env as (Env.FRAME(optName=SOME(name))::_),Absyn.IDENT(s)) 
+      equation 
+        true = name ==& s;
+        SOME(path_2) = Env.getEnvPath(env);
+      then
+        (cache,Absyn.FULLYQUALIFIED(path_2));
+
     // A type can exist without a class (i.e. builtin functions)  
     case (cache,env,Absyn.IDENT(s)) 
       equation 
@@ -14768,8 +14776,9 @@ algorithm
   path := matchcontinue(env,className)
     local
       Absyn.Path scope;
-    case(env,className) equation
-      SOME(scope) = Env.getEnvPath(env);
+    case(env,className)
+      equation
+        SOME(scope) = Env.getEnvPath(env);
         path = Absyn.joinPaths(scope, Absyn.IDENT(className));
       then path;
     case(env,className)

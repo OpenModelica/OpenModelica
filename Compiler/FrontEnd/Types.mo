@@ -2126,7 +2126,7 @@ algorithm
   outString:=
   match (inType)
     local
-      Ident s1,s2,str,dims,res,vstr,name,st_str,bc_tp_str,paramstr,restypestr,tystr;
+      Ident s1,s2,str,dims,res,vstr,name,st_str,bc_tp_str,paramstr,restypestr,tystr,funcstr;
       list<Ident> l,vars,paramstrs,tystrs;
       Type ty,bc_tp,restype;
       list<DAE.Dimension> dimlst;
@@ -2138,6 +2138,7 @@ algorithm
       Absyn.Path path,p;
       list<Type> tys;
       DAE.CodeType codeType;
+      Option<Absyn.Path> op;
 
     case ((DAE.T_INTEGER(varLstInt = {}),_)) then "Integer";
     case ((DAE.T_REAL(varLstReal = {}),_)) then "Real";
@@ -2203,12 +2204,13 @@ algorithm
         res = stringAppendList({res," ",st_str});
       then
         res;
-    case ((DAE.T_FUNCTION(funcArg = params,funcResultType = restype),_))
+    case ((DAE.T_FUNCTION(funcArg = params,funcResultType = restype),op))
       equation
+        funcstr = Absyn.pathString(Util.getOptionOrDefault(op, Absyn.IDENT("")));
         paramstrs = Util.listMap(params, unparseParam);
         paramstr = Util.stringDelimitList(paramstrs, ", ");
         restypestr = unparseType(restype);
-        res = stringAppendList({"function(",paramstr,") => ",restypestr});
+        res = stringAppendList({funcstr,"<function>(",paramstr,") => ",restypestr});
       then
         res;
     case ((DAE.T_TUPLE(tupleType = tys),_))
