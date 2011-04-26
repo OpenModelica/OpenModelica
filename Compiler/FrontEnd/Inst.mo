@@ -4285,9 +4285,9 @@ algorithm
 
     case (cache,env,ih,cl)
       equation
-        (cache,env1,ih,{fn}) = implicitFunctionInstantiation2(cache,env,ih, DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cl, {});
-    then
-      (cache,ih,fn);
+        (cache,env1,ih,{fn}) = implicitFunctionInstantiation2(cache,env,ih,DAE.NOMOD(),Prefix.NOPRE(),Connect.emptySet,cl,{});
+      then
+        (cache,ih,fn);
     // failure
     case (cache,env,ih,cl)
       equation
@@ -4308,7 +4308,7 @@ protected function instantiateExternalObjectConstructor
   output DAE.Type tp;
 algorithm
   (outCache,outIH,fn,tp) := matchcontinue (inCache,env,inIH,cl)
-  local
+    local
       Env.Cache cache;
       Env.Env env1;
       DAE.Type funcTp;
@@ -4317,14 +4317,14 @@ algorithm
     case (cache,env,ih,cl)
       equation
         (cache,env1,ih,{fn as DAE.FUNCTION(type_ = funcTp, functions=(DAE.FUNCTION_EXT(body=_)::_))})
-             = implicitFunctionInstantiation2(cache,env,ih, DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cl, {}) ;
-    then
-      (cache,ih,fn,funcTp);
+          = implicitFunctionInstantiation2(cache,env,ih, DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cl, {}) ;
+      then
+        (cache,ih,fn,funcTp);
     case (cache,env,ih,cl)
       equation
         print("Inst.instantiateExternalObjectConstructor failed\n");
-    then fail();
-      end matchcontinue;
+      then fail();
+  end matchcontinue;
 end instantiateExternalObjectConstructor;
 
 public function classIsExternalObject

@@ -853,16 +853,24 @@ template functionCallExternalObjectConstructors(ExtObjInfo extObjInfo)
 ::=
 match extObjInfo
 case EXTOBJINFO(__) then
+  let &funDecls = buffer "" /*BUFD*/
   let &varDecls = buffer "" /*BUFD*/
   let &preExp = buffer "" /*BUFD*/
   let ctorCalls = (constructors |> (var, fnName, args) =>
       let argsStr = (args |> arg =>
           daeExp(arg, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/)
         ;separator=", ")
-      '<%cref(var)%> = <%fnName%>(<%argsStr%>);'
+      let typesStr = (args |> arg => extType(typeof(arg)) ; separator=", ")
+      let &funDecls += 'extern void* <%fnName%>(<%typesStr%>);<%\n%>'
+      <<
+      <%cref(var)%> = <%fnName%>(<%argsStr%>);
+      >>
     ;separator="\n")
   <<
   /* Has to be performed after _init.txt file has been read */
+  extern "C" {
+    <%funDecls%>
+  }
   void callExternalObjectConstructors(DATA* localData) {
     <%varDecls%>
     <%preExp%>
@@ -880,6 +888,9 @@ template functionDeInitializeDataStruc(ExtObjInfo extObjInfo)
 match extObjInfo
 case EXTOBJINFO(__) then
   <<
+  extern "C" {
+    <%destructors |> (fnName, _) => 'extern void <%fnName%>(void*);' ;separator="\n"%>
+  }
   void deInitializeDataStruc(DATA* data)
   {
     if(!data)
