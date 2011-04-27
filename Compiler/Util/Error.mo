@@ -259,6 +259,9 @@ public constant ErrorID FAILURE_TO_DEDUCE_DIMS_FROM_MOD=171;
 public constant ErrorID REPLACEABLE_BASE_CLASS=172;
 public constant ErrorID NON_REPLACEABLE_CLASS_EXTENDS=173;
 public constant ErrorID ERROR_FROM_HERE=174;
+public constant ErrorID EXTERNAL_FUNCTION_RESULT_NOT_CREF=175;
+public constant ErrorID EXTERNAL_FUNCTION_RESULT_NOT_VAR=176;
+public constant ErrorID EXTERNAL_FUNCTION_RESULT_ARRAY_TYPE=177;
 
 public constant ErrorID UNBOUND_PARAMETER_WITH_START_VALUE_WARNING=499;
 public constant ErrorID UNBOUND_PARAMETER_WARNING=500;
@@ -741,6 +744,9 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (METARECORD_CONTAINS_METARECORD_MEMBER,TRANSLATION(),ERROR(),"The called uniontype record (%s) contains a member (%s) that has a uniontype record as its type instead of a uniontype."),
           (REDUCTION_TYPE_ERROR,TRANSLATION(),ERROR(),"Reductions require the types of the %s and %s to be %s, but got: %s and %s."),
           (UNSUPPORTED_REDUCTION_TYPE,TRANSLATION(),ERROR(),"Expected a reduction function with type signature ('A,'B) => 'B, but got %s."),
+          (EXTERNAL_FUNCTION_RESULT_NOT_CREF,TRANSLATION(),ERROR(),"The lhs (result) of the external function declaration is not a component reference: %s"),
+          (EXTERNAL_FUNCTION_RESULT_NOT_VAR,TRANSLATION(),ERROR(),"The lhs (result) of the external function declaration is not a variable"),
+          (EXTERNAL_FUNCTION_RESULT_ARRAY_TYPE,TRANSLATION(),ERROR(),"The lhs (result) of the external function declaration has array type (%s), but this is not allowed in the specification. You need to pass it as an input to the function (preferably also with a size()-expression to avoid out-of-bounds errors in the external call)."),
 
           (COMPILER_NOTIFICATION,TRANSLATION(),NOTIFICATION(),"%s"),
           (COMPILER_WARNING,TRANSLATION(),WARNING(),"%s"),
