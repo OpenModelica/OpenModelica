@@ -281,42 +281,68 @@ void cmpData(char* varname, DataField *time, DataField *reftime, DataField *data
       }
     }
     interpolate = 0;
-    if (absdouble((t-tr)/tr) > reltol) {
+    // fprintf(stderr, "interpolate? %d %.6g:%.6g  %.6g:%.6g\n",i,t,tr,absdouble((t-tr)/tr),abstol);
+    if (absdouble(t-tr) > abstol) {
       interpolate = 1;
     }
 
     dr = refdata->data[j]; 
     if (interpolate==1){
-      // fprintf(stderr, "interpolate %.6g:%.6g ",t,dr);
+      // fprintf(stderr, "interpolate %.6g:%.6g  %.6g:%.6g %d",t,d,tr,dr,j);
+      unsigned int jj = j;
       // look for interpolation partner
-      if (j+1<reftime->n) {
-          unsigned int jj = j+1;
+      if (tr > t) {
+        if (j-1>0) {
           char te=0;
+          jj = j-1;
           increased = 0;
-        if (reftime->data[j+1] == tr){
-          te = 1;
-          increased = 1;
-        }
-        while(te==1){
-          jj += 1;
-          te = 0;
-            if (jj<reftime->n) {
-              if (reftime->data[jj] == tr){
+          if (reftime->data[jj] == tr){
+            te = 1;
+            increased = 1;
+          }
+          while(te==1){
+            jj -= 1;
+            te = 0;
+            if (jj>0) {
+              if (reftime->data[jj] == tr) {
                 te = 1;
               }
             }
+          }
         }
-        if (increased == 1){
-            jj -= 1;
-        }
-        //fprintf(stderr, "-> %d %.6g %.6g\n",jj,reftime->data[jj],tr);
+        // fprintf(stderr, "-> %d %.6g %.6g\n",jj,reftime->data[jj],tr);
         if (reftime->data[jj] != tr){
-          dr = dr + ((refdata->data[jj] - dr)/(reftime->data[jj] - tr))*absdouble(t-tr);
+         dr = refdata->data[jj] + ((dr-refdata->data[jj])/(tr-reftime->data[jj]))*(t-reftime->data[jj]);
         }
-      }
       // fprintf(stderr, "-> dr:%.6g\n",dr);
+      }
+      else {
+        if (j+1<reftime->n) {
+          char te=0;
+          jj = j+1;
+          increased = 0;
+          if (reftime->data[jj] == tr){
+            te = 1;
+            increased = 1;
+          }
+          while(te==1){
+            jj += 1;
+            te = 0;
+            if (jj>0) {
+              if (reftime->data[jj] == tr) {
+                te = 1;
+              }
+            }
+          }
+        }
+        // fprintf(stderr, "-> %d %.6g %.6g\n",jj,reftime->data[jj],tr);
+        if (reftime->data[jj] != tr){
+          dr = dr + ((refdata->data[jj] - dr)/(reftime->data[jj] - tr))*(t-tr);
+        }
+        // fprintf(stderr, "-> dr:%.6g\n",dr);
+      }
     }
-    // fprintf(stderr, "j: %d tr: %.6g  dr:%.6g\n",j,tr,dr);
+    // fprintf(stderr, "j: %d tr: %.6g  dr:%.6g  t:%.6g  d:%.6g\n",j,tr,dr,t,d);
 
     if (dr != 0){
       delta = absdouble(d-dr)/dr;
