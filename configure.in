@@ -354,9 +354,9 @@ fi
 
 if test -n "$QMAKE"; then
   AC_MSG_CHECKING([for qwt])
-  AC_ARG_WITH(qwt, [  --with-qwt        Compile plotting libraries using qwt. Default searches PREFIX/include/{qwt,qwt-qt4}], [], [with_qwt=check])
+  AC_ARG_WITH(qwt, [  --with-qwt        Compile plotting libraries using qwt. Default searches PREFIX/include/{qwt,qwt-qt4}], [], [with_qwt=yes])
 
-  if test x"$with_qwt" = "xcheck"; then
+  if test x"$with_qwt" = "xyes"; then
     with_qwt_checked=""
     with_qwt_suffix=""
     for f in {/usr,/opt,$PREFIX}/include/{qwt,qwt-qt4}/; do
@@ -368,7 +368,7 @@ if test -n "$QMAKE"; then
   if test x"$with_qwt" = "xno"; then
     QMAKE=""
     AC_MSG_RESULT([disabled])
-  elif test x"$with_qwt" = "xcheck"; then
+  elif test x"$with_qwt" = "xyes"; then
     AC_MSG_ERROR([not found (searched $with_qwt_checked)])
   else
     AC_MSG_RESULT($with_qwt)
