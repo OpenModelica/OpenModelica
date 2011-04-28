@@ -353,6 +353,22 @@ void cmpData(char* varname, DataField *time, DataField *reftime, DataField *data
 
     if ((absdouble(delta) > reltol) && (absdouble(d-dr) > abstol)){
 
+      if (j+1<reftime->n) {
+        if (reftime->data[j+1] == tr) {
+          dr = refdata->data[j+1];
+          if (dr != 0){
+            delta = absdouble(d-dr)/dr;
+          }
+          else
+            delta = d;
+        }
+      }
+
+      if ((absdouble(delta) < reltol) && (absdouble(d-dr) < abstol)){
+        continue;
+      }
+
+
       diffdatafild = (DiffData*) malloc(sizeof(DiffData)*(ddf->n+1));
       for (k=0;k<ddf->n;k++)
         diffdatafild[k] = ddf->data[k];
