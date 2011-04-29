@@ -717,6 +717,12 @@ algorithm
         e1 = simplifyBuiltinConstantDer(e);
       then e1;
     
+    // pre(constant) ==> constant
+    case (DAE.CALL(path=Absyn.IDENT("pre"),expLst ={e}))
+      equation
+        true = Expression.isConst(e);
+      then e;
+
     // sqrt function
     case(DAE.CALL(path=Absyn.IDENT("sqrt"),expLst={e})) 
       equation
