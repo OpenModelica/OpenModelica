@@ -1253,6 +1253,10 @@ package DAE
       Exp before;
       Exp after;
     end OP_INLINE;
+    record NEW_DUMMY_DER
+      ComponentRef chosen;
+      list<ComponentRef> candidates;
+    end NEW_DUMMY_DER;
   end SymbolicOperation;
 end DAE;
 

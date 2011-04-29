@@ -1168,13 +1168,13 @@ algorithm
 
         // Collect the states in the equations that are singular, i.e. composing a constraint between states.
         // Note that states are collected from -all- marked equations, not only the differentiated ones.
-        (states,stateindx) = statesInEqns(eqns, dae, m, mt) "" ;
+        (states,stateindx) = statesInEqns(eqns, dae, m, mt);
         (dae,m,mt,nv,nf,deqns,derivedAlgs1,derivedMultiEqn1) = differentiateEqns(dae, m, mt, nv, nf, eqns_1,inFunctions,derivedAlgs,derivedMultiEqn);
         (state,stateno) = selectDummyState(states, stateindx, dae, m, mt);
         // print("Selected ");print(ComponentReference.printComponentRefStr(state));print(" as dummy state\n");
         // print(" From candidates:");print(Util.stringDelimitList(Util.listMap(states,ComponentReference.printComponentRefStr),", "));print("\n");
         // dae = propagateDummyFixedAttribute(dae, eqns_1, state, stateno);
-        (dummy_der,dae) = newDummyVar(state, dae)  ;
+        (dummy_der,dae) = newDummyVar(state, dae, DAE.NEW_DUMMY_DER(state,states));
         // print("Chosen dummy: ");print(ComponentReference.printComponentRefStr(dummy_der));print("\n");
         reqns = BackendDAEUtil.eqnsForVarWithStates(mt, stateno);
         changedeqns = Util.listUnionOnTrue(deqns, reqns, intEq);
@@ -1843,15 +1843,17 @@ protected function traverereplaceAliasVarsBindExp
  output tuple<BackendDAE.Var, tuple<DAE.Exp,DAE.Exp,BackendDAE.AliasVariables>> outTpl;
 algorithm
   outTpl := matchcontinue(inTpl)
-    local 
-      DAE.Exp e,e1,e2;
+    local
+      Integer i;
+      DAE.Exp e,en,e1,e2;
       BackendDAE.Var v;
       BackendDAE.AliasVariables av;
     case((v,(e1,e2,av)))
       equation
         e = BackendVariable.varBindExp(v);
-        ((e,_)) = Expression.replaceExp(e, e1,e2);
-        v = BackendVariable.setBindExp(v,e);
+        ((en,i)) = Expression.replaceExp(e,e1,e2);
+        v = BackendVariable.setBindExp(v,en);
+        v = BackendVariable.mergeVariableOperations(v,Util.if_(i>0,{DAE.SUBSTITUTION(e,en)},{}));
         av = BackendDAEUtil.addAliasVariables({v},av);
       then ((v,(e1,e2,av)));
     case inTpl then inTpl;
@@ -1922,11 +1924,12 @@ protected function newDummyVar
   der+<varname> and adds it to the dae."
   input DAE.ComponentRef inComponentRef;
   input BackendDAE.BackendDAE inBackendDAE;
+  input DAE.SymbolicOperation op;
   output DAE.ComponentRef outComponentRef;
   output BackendDAE.BackendDAE outBackendDAE;
 algorithm
   (outComponentRef,outBackendDAE):=
-  matchcontinue (inComponentRef,inBackendDAE)
+  matchcontinue (inComponentRef,inBackendDAE,op)
     local
       BackendDAE.VarKind kind;
       DAE.VarDirection dir;
@@ -1950,11 +1953,12 @@ algorithm
       BackendDAE.ExternalObjectClasses eoc;
       BackendDAE.Var dummyvar;
 
-    case (var,BackendDAE.DAE(vars, kv, ev, av, eqns, seqns, ie, ae, al, wc,eoc))
+    case (var,BackendDAE.DAE(vars, kv, ev, av, eqns, seqns, ie, ae, al, wc,eoc),op)
       equation
         ((BackendDAE.VAR(name,kind,dir,tp,bind,value,dim,idx,source,dae_var_attr,comment,flowPrefix,streamPrefix) :: _),_) = BackendVariable.getVar(var, vars);
         dummyvar_cr = ComponentReference.crefPrefixDer(name);
         /* start value is not the same */
+        source = DAEUtil.addSymbolicTransformation(source,op);
         dummyvar = BackendDAE.VAR(dummyvar_cr,BackendDAE.DUMMY_DER(),dir,tp,NONE(),NONE(),dim,0,source,NONE(),comment,flowPrefix,streamPrefix);
         /* Dummy variables are algebraic variables, hence fixed = false */
         dummyvar = BackendVariable.setVarFixed(dummyvar,false);
@@ -1962,9 +1966,9 @@ algorithm
       then
         (dummyvar_cr,BackendDAE.DAE(vars_1,kv,ev,av,eqns,seqns,ie,ae,al,wc,eoc));
 
-    case (_,_)
+    else
       equation
-        print("-BackendDAE.newDummyVar failed!\n");
+        Error.addMessage(Error.INTERNAL_ERROR, {"BackendDAE.newDummyVar failed!"});
       then
         fail();
   end matchcontinue;

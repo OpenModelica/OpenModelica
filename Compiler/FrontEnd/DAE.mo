@@ -125,6 +125,10 @@ public uniontype SymbolicOperation
     Exp before;
     Exp after;
   end OP_INLINE;
+  record NEW_DUMMY_DER
+    ComponentRef chosen;
+    list<ComponentRef> candidates;
+  end NEW_DUMMY_DER;
 end SymbolicOperation;
 
 public constant ElementSource emptyElementSource = SOURCE(Absyn.dummyInfo,{},{},{},{},{});
