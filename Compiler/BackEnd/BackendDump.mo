@@ -622,7 +622,7 @@ algorithm
   end match;
 end dump;
 
-protected function dumpAlgorithms "Help function to dump, prints algorithms to stdout"
+public function dumpAlgorithms "Help function to dump, prints algorithms to stdout"
   input list<DAE.Algorithm> algs;
   input Integer indx;
 algorithm
@@ -1769,6 +1769,17 @@ algorithm
   (a,b,c,d,e) := inTpl;
   print(a +& ComponentReference.printComponentRefStr(b) +& c +& intString(d) +& e);
 end debugStrCrefStrIntStr;
+
+public function debugStrCrefStrRealStrRealStrRealStr
+  input tuple<String,DAE.ComponentRef,String,Real,String,Real,String,Real,String> inTpl;
+protected
+  String a,c,e,g,i;
+  DAE.ComponentRef b;
+  Real d,f,h;
+algorithm
+  (a,b,c,d,e,f,g,h,i) := inTpl;
+  print(a +& ComponentReference.printComponentRefStr(b) +& c +& realString(d) +& e +& realString(f) +& g +& realString(h) +& i);
+end debugStrCrefStrRealStrRealStrRealStr;
 
 public function debugStrCrefStrExpStr
   input tuple<String,DAE.ComponentRef,String,DAE.Exp,String> inTpl;

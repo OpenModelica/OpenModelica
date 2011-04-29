@@ -554,7 +554,6 @@ algorithm
       DAE.ComponentRef cr;
       DAE.Exp exp,e1,e2;
       DAE.FunctionTree funcs;
-      
     case ((elem,pos,m,(dae,funcs,mT,repl,mvars,mavars,meqns)))
       equation
         // check number of vars in eqns
@@ -646,7 +645,7 @@ algorithm
         eqns2 =  BackendEquation.equationSetnth(eqns1,pos_1,BackendDAE.EQUATION(DAE.RCONST(0.0),DAE.RCONST(0.0),DAE.emptyElementSource));
         // update IncidenceMatrix
         dae = BackendDAE.DAE(ordvars,knvars,exobj,aliasVars,eqns2,remeqns,inieqns,arreqns,algorithms,einfo,eoc);
-        (m1,mT1) = BackendDAEUtil.updateIncidenceMatrix(dae,m,mT,vareqns);    
+        (m1,mT1) = BackendDAEUtil.updateIncidenceMatrix(dae,m,mT,vareqns); 
       then (vareqns1,dae,repl_1,m1,mT1,pos_1::meqns);
     case (2,cr,i,exp,pos,repl,BackendDAE.DAE(ordvars,knvars,exobj,aliasVars,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc),m,mT,meqns,inFuncs)
       equation
@@ -2110,7 +2109,7 @@ algorithm
         // BackendDump.debugStrExpStrExpStr(("Test ",e1," = ",e2,"\n"));
         (ecr,exp) = functionCallEqn(e1,e2,vars);
         // BackendDump.debugStrExpStrExpStr(("Found ",ecr," = ",exp,"\n"));
-        expvars = BackendDAEUtil.incidenceRowExp(exp,vars);
+        expvars = BackendDAEUtil.incidenceRowExp(exp,vars, {});
         // print("expvars "); BackendDump.debuglst((expvars,intString)); print("\n");
         (expvars1::expvarseqns) = Util.listMap1(expvars,varEqns,(pos,mT));
         // print("expvars1 "); BackendDump.debuglst((expvars1,intString)); print("\n");

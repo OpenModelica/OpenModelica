@@ -3259,7 +3259,6 @@ algorithm
       list<BackendDAE.CrefIndex> indexes;
       BackendDAE.Var v;
       DAE.ComponentRef cr2,cr;
-      DAE.Flow flowPrefix;
       array<list<BackendDAE.CrefIndex>> hashvec;
       array<list<BackendDAE.StringIndex>> oldhashvec;
       BackendDAE.VariableArray varr;
@@ -3268,7 +3267,7 @@ algorithm
         hashindx = HashTable2.hashFunc(cr, bsize);
         indexes = hashvec[hashindx + 1];
         indx = getVar3(cr, indexes, getVar4(cr,indexes));
-        ((v as BackendDAE.VAR(varName = cr2, flowPrefix = flowPrefix))) = vararrayNth(varr, indx);
+        ((v as BackendDAE.VAR(varName = cr2))) = vararrayNth(varr, indx);
         true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
         indx_1 = indx + 1;
       then

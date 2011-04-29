@@ -2084,11 +2084,9 @@ algorithm
       prios = calculateVarPriorities(varCrefs,varIndices,vars,eqns,m,mt);
       (v::_,_) = BackendVariable.getVar(varCref,vars);
       prio1 = varStateSelectPrio(v);
-      Debug.fcall("dummyselect",print," Prio StateSelect : " +& realString(prio1) +& "\n");
       prio2 = varStateSelectHeuristicPrio(v,vars,eqns,m,mt);
-      Debug.fcall("dummyselect",print," Prio Heuristik : " +& realString(prio2) +& "\n");
       prio = prio1 +. prio2;
-      Debug.fcall("dummyselect",print," ### Prio Result : " +& realString(prio) +& "\n");
+      Debug.fcall("dummyselect",BackendDump.debugStrCrefStrRealStrRealStrRealStr,("Calc Prio for ",varCref,"\n Prio StateSelect : ",prio1,"\n Prio Heuristik : ",prio2,"\n ### Prio Result : ",prio,"\n"));
     then ((varCref,varIndx,prio)::prios);
   end match;
 end calculateVarPriorities;

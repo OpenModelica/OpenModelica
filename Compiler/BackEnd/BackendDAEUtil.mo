@@ -74,6 +74,7 @@ protected import HashTable4;
 protected import OptManager;
 protected import RTOpts;
 protected import SCode;
+protected import System;
 protected import Util;
 protected import Values;
 protected import VarTransform;
@@ -3987,26 +3988,23 @@ algorithm
     // EQUATION
     case (vars,BackendDAE.EQUATION(exp = e1,scalar = e2),_)
       equation
-        lst1 = incidenceRowExp(e1, vars);
-        lst2 = incidenceRowExp(e2, vars);
-        res = Util.listListUnionOnTrue({lst1, lst2},intEq);
+        lst1 = incidenceRowExp(e1, vars, {});
+        res = incidenceRowExp(e2, vars, lst1);
       then
         res;
     
     // COMPLEX_EQUATION
     case (vars,BackendDAE.COMPLEX_EQUATION(lhs = e1,rhs = e2),_)
       equation
-        lst1 = incidenceRowExp(e1, vars);
-        lst2 = incidenceRowExp(e2, vars);
-        res = Util.listListUnionOnTrue({lst1, lst2},intEq);
+        lst1 = incidenceRowExp(e1, vars, {});
+        res = incidenceRowExp(e2, vars, lst1);
       then
         res;
     
     // ARRAY_EQUATION
     case (vars,BackendDAE.ARRAY_EQUATION(crefOrDerCref = expl),_)
       equation
-        lstlst3 = Util.listMap1(expl, incidenceRowExp, vars);
-        res = Util.listListUnionOnTrue(lstlst3,intEq);
+        res = incidenceRow1(expl, incidenceRowExp, vars, {});
       then
         res;
     
@@ -4014,16 +4012,15 @@ algorithm
     case (vars,BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e),_)
       equation
         expCref = Expression.crefExp(cr);
-        lst1 = incidenceRowExp(expCref, vars);
-        lst2 = incidenceRowExp(e, vars);
-        res = Util.listListUnionOnTrue({lst1, lst2},intEq);
+        lst1 = incidenceRowExp(expCref, vars, {});
+        res = incidenceRowExp(e, vars, lst1);
       then
         res;
     
     // RESIDUAL_EQUATION
     case (vars,BackendDAE.RESIDUAL_EQUATION(exp = e),_)
       equation
-        res = incidenceRowExp(e, vars);
+        res = incidenceRowExp(e, vars, {});
       then
         res;
     
@@ -4031,13 +4028,11 @@ algorithm
     case (vars,BackendDAE.WHEN_EQUATION(whenEquation = we as BackendDAE.WHEN_EQ(index=wc_index)),wc)
       equation
         expl = BackendEquation.getWhenCondition(wc,wc_index);
-        lstlst3 = Util.listMap1(expl, incidenceRowExp, vars);
-        lst1 = Util.listFlatten(lstlst3);
+        lst1 = incidenceRow1(expl, incidenceRowExp, vars, {});
         (cr,e2) = BackendEquation.getWhenEquationExpr(we);
         e1 = Expression.crefExp(cr);
-        lst2 = incidenceRowExp(e1, vars);
-        res = incidenceRowExp(e2, vars);
-        res = Util.listListUnionOnTrue({lst1, lst2, res},intEq);
+        lst2 = incidenceRowExp(e1, vars, lst1);
+        res = incidenceRowExp(e2, vars, lst2);
       then
         res;
     
@@ -4048,10 +4043,8 @@ algorithm
     // analysis of algorithm itself needs to be implemented.
     case (vars,BackendDAE.ALGORITHM(index = indx,in_ = inputs,out = outputs),_)
       equation
-        lstlst1 = Util.listMap1(inputs, incidenceRowExp, vars);
-        lstlst2 = Util.listMap1(outputs, incidenceRowExp, vars);
-        lstres = listAppend(lstlst1, lstlst2);
-        res = Util.listListUnionOnTrue(lstres,intEq);
+        lst1 = incidenceRow1(inputs, incidenceRowExp, vars, {});
+        res = incidenceRow1(outputs, incidenceRowExp, vars, lst1);
       then
         res;
     
@@ -4066,6 +4059,40 @@ algorithm
   end matchcontinue;
 end incidenceRow;
 
+public function incidenceRow1
+  "Tail recursive implementation."
+  input list<Type_a> inList;
+  input FuncType inFunc;
+  input Type_b inArg;
+  input Type_c inArg1;
+  output Type_c outArg1;
+
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+
+  partial function FuncType
+    input Type_a inElem;
+    input Type_b inArg;
+    input Type_c inArg1;
+    output Type_c outArg1;
+  end FuncType;
+algorithm
+  outArg1 := match(inList, inFunc, inArg, inArg1)
+    local
+      Type_a e1;
+      list<Type_a> rest_e1;
+      Type_c res,res1;
+    case ({}, _, _, _) then inArg1;
+    case (e1 :: rest_e1, _, _, _)
+      equation
+        res = inFunc(e1, inArg, inArg1);
+        res1 = incidenceRow1(rest_e1, inFunc, inArg, res);
+      then
+        res1;
+  end match;
+end incidenceRow1;
+
 public function incidenceRowExp
 "function: incidenceRowExp
   author: PA
@@ -4073,14 +4100,15 @@ public function incidenceRowExp
   variables, returning variable indexes."
   input DAE.Exp inExp;
   input BackendDAE.Variables inVariables;
+  input list<BackendDAE.Value> inIntegerLst;
   output list<BackendDAE.Value> outIntegerLst;
 algorithm
-  outIntegerLst := match (inExp,inVariables)
+  outIntegerLst := match (inExp,inVariables,inIntegerLst)
     local
       list<BackendDAE.Value> vallst;
-  case(inExp,inVariables)      
+  case(inExp,inVariables,inIntegerLst)      
     equation
-      ((_,(_,vallst))) = Expression.traverseExpTopDown(inExp, traversingincidenceRowExpFinder, (inVariables,{}));
+      ((_,(_,vallst))) = Expression.traverseExpTopDown(inExp, traversingincidenceRowExpFinder, (inVariables,inIntegerLst));
       then
         vallst;
   end match;
@@ -4103,16 +4131,14 @@ algorithm
     case (((e as DAE.CREF(componentRef = cr),(vars,pa))))
       equation
         (varslst,p) = BackendVariable.getVar(cr, vars);
-        p_1 = incidenceRowExp1(varslst,p,true);
-        res = Util.listListUnionOnTrue({pa,p_1},intEq);
+        res = incidenceRowExp1(varslst,p,pa,true);
       then
         ((e,false,(vars,res)));
     
     case (((e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),(vars,pa))))
       equation
         (varslst,p) = BackendVariable.getVar(cr, vars);
-        p_1 = incidenceRowExp1(varslst,p,false);
-        res = Util.listListUnionOnTrue({pa,p_1},intEq);
+        res = incidenceRowExp1(varslst,p,pa,false);
       then
         ((e,false,(vars,res)));
     
@@ -4120,8 +4146,7 @@ algorithm
       equation
         cr = ComponentReference.makeCrefQual("$DER", DAE.ET_REAL(), {}, cr);
         (varslst,p) = BackendVariable.getVar(cr, vars);
-        p_1 = incidenceRowExp1(varslst,p,false);
-        res = Util.listListUnionOnTrue({pa,p_1},intEq);
+        res = incidenceRowExp1(varslst,p,pa,false);
       then
         ((e,false,(vars,res)));
     /* pre(v) is considered a known variable */
@@ -4134,47 +4159,54 @@ end traversingincidenceRowExpFinder;
 protected function incidenceRowExp1
   input list<BackendDAE.Var> inVarLst;
   input list<Integer> inIntegerLst;
+  input list<Integer> inIntegerLst1;
   input Boolean notinder;
   output list<Integer> outIntegerLst;
 algorithm
-  outIntegerLst := matchcontinue (inVarLst,inIntegerLst,notinder)
+  outIntegerLst := matchcontinue (inVarLst,inIntegerLst,inIntegerLst1,notinder)
     local
        list<BackendDAE.Var> rest;
-       list<Integer> irest,res;
+       list<Integer> irest,res,vars;
        Integer i,i1;
        Boolean b;
-    case ({},{},_) then {};
+    case ({},{},vars,_) then vars;
     /*If variable x is a state, der(x) is a variable in incidence matrix,
          x is inserted as negative value, since it is needed by debugging and
          index reduction using dummy derivatives */ 
-    case (BackendDAE.VAR(varKind = BackendDAE.STATE()) :: rest,i::irest,b)
+    case (BackendDAE.VAR(varKind = BackendDAE.STATE()) :: rest,i::irest,vars,b)
       equation
-        res = incidenceRowExp1(rest,irest,b);
         i1 = Util.if_(b,-i,i);
-      then (i1::res);
-    case (BackendDAE.VAR(varKind = BackendDAE.STATE_DER()) :: rest,i::irest,b)
+        failure(_ = Util.listGetMemberOnTrue(i1, vars, intEq));
+        res = incidenceRowExp1(rest,irest,i1::vars,b);
+      then res;
+    case (BackendDAE.VAR(varKind = BackendDAE.STATE_DER()) :: rest,i::irest,vars,b)
       equation
-        res = incidenceRowExp1(rest,irest,b);
-      then (i::res);
-    case (BackendDAE.VAR(varKind = BackendDAE.VARIABLE()) :: rest,i::irest,b)
+        failure(_ = Util.listGetMemberOnTrue(i, vars, intEq));
+        res = incidenceRowExp1(rest,irest,i::vars,b);
+      then res;
+    case (BackendDAE.VAR(varKind = BackendDAE.VARIABLE()) :: rest,i::irest,vars,b)
       equation
-        res = incidenceRowExp1(rest,irest,b);
-      then (i::res);
-    case (BackendDAE.VAR(varKind = BackendDAE.DISCRETE()) :: rest,i::irest,b)
+        failure(_ = Util.listGetMemberOnTrue(i, vars, intEq));
+        res = incidenceRowExp1(rest,irest,i::vars,b);
+      then res;
+    case (BackendDAE.VAR(varKind = BackendDAE.DISCRETE()) :: rest,i::irest,vars,b)
       equation
-        res = incidenceRowExp1(rest,irest,b);
-      then (i::res);
-    case (BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER()) :: rest,i::irest,b)
+        failure(_ = Util.listGetMemberOnTrue(i, vars, intEq));
+        res = incidenceRowExp1(rest,irest,i::vars,b);
+      then res;
+    case (BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER()) :: rest,i::irest,vars,b)
       equation
-        res = incidenceRowExp1(rest,irest,b);
-      then (i::res);
-    case (BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE()) :: rest,i::irest,b)
+        failure(_ = Util.listGetMemberOnTrue(i, vars, intEq));
+        res = incidenceRowExp1(rest,irest,i::vars,b);
+      then res;
+    case (BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE()) :: rest,i::irest,vars,b)
       equation
-        res = incidenceRowExp1(rest,irest,b);
-      then (i::res);
-    case (_ :: rest,_::irest,b)
+        failure(_ = Util.listGetMemberOnTrue(i, vars, intEq));
+        res = incidenceRowExp1(rest,irest,i::vars,b);
+      then res;
+    case (_ :: rest,_::irest,vars,b)
       equation
-        res = incidenceRowExp1(rest,irest,b);
+        res = incidenceRowExp1(rest,irest,vars,b);
       then res;
   end matchcontinue;
 end incidenceRowExp1;
@@ -6134,5 +6166,54 @@ algorithm
       then fail();
   end matchcontinue;
 end selectOptModules1;
+
+/*************************************************
+ * profiler stuff 
+ ************************************************/
+
+public function profilerinit
+algorithm
+   setGlobalRoot(5, 0.0);
+   setGlobalRoot(6, 0.0);
+   System.realtimeTick(8);
+end profilerinit;
+
+public function profilerresults
+protected
+   Real tg,t1,t2;
+algorithm
+   tg := System.realtimeTock(8);
+   t1 := getGlobalRoot(5);
+   t2 := getGlobalRoot(6);
+   print("Time all: "); print(realString(tg)); print("\n");
+   print("Time t1: "); print(realString(t1)); print("\n");
+   print("Time t2: "); print(realString(t2)); print("\n");   
+end profilerresults;
+
+public function profilerstart1
+algorithm
+   System.realtimeTick(9);
+end profilerstart1;
+
+public function profilerstart2
+algorithm
+   System.realtimeTick(10);
+end profilerstart2;
+
+public function profilerstop1
+protected
+   Real t;
+algorithm
+   t := System.realtimeTock(9);
+   setGlobalRoot(5, realAdd(getGlobalRoot(5),t));
+end profilerstop1;
+
+public function profilerstop2
+protected
+   Real t;
+algorithm
+   t := System.realtimeTock(10);
+   setGlobalRoot(6, realAdd(getGlobalRoot(6),t));
+end profilerstop2;
 
 end BackendDAEUtil;
