@@ -5101,11 +5101,11 @@ $as_echo_n "checking for paradisEO... " >&6; }
 if test "${with_paradiseo+set}" = set; then :
   withval=$with_paradiseo;
 else
-  with_paradiseo=check
+  with_paradiseo=yes
 fi
 
 
-  if test x"$with_paradiseo" = "xcheck"; then
+  if test x"$with_paradiseo" = "xyes"; then
     with_paradiseo_checked=""
     for f in /{usr,opt,$PREFIX}; do
       test -d "$f/include/paradiseo/" -a -d "$f/lib/paradiseo/" && with_paradiseo="$f" || with_paradiseo_checked="$with_paradiseo_checked $f"
@@ -5116,7 +5116,7 @@ fi
     with_paradiseo=""
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
 $as_echo "disabled" >&6; }
-  elif test x"$with_paradiseo" = "xcheck"; then
+  elif test x"$with_paradiseo" = "xyes"; then
     as_fn_error $? "not found (searched $with_paradiseo_checked)" "$LINENO" 5
   else
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_paradiseo" >&5
