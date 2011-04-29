@@ -4348,45 +4348,6 @@ algorithm
   (outIncidenceMatrix,outIncidenceMatrixT):=
   matchcontinue (inBackendDAE,inIncidenceMatrix,inIncidenceMatrixT,inIntegerLst)
     local
-      array<list<BackendDAE.Value>> m_1,mt_1,m,mt;
-      list<list<BackendDAE.Value>> changedvars;
-      list<BackendDAE.Value> changedvars_1,eqns;
-      BackendDAE.BackendDAE dae;
-
-    case (dae,m,mt,eqns)
-      equation
-        (m_1,mt_1) = updateIncidenceMatrix2(dae, m, eqns, mt);
-        //changedvars_1 = Util.listListUnionOnTrue(changedvars,intEq);
-        //mt_1 = updateTransposedMatrix(changedvars_1, m_1, mt);
-      then
-        (m_1,mt_1);
-
-    case (dae,m,mt,eqns)
-      equation
-        print("- BackendDAE.updateIncidenceMatrix failed\n");
-      then
-        fail();
-  end matchcontinue;
-end updateIncidenceMatrix;
-
-protected function updateIncidenceMatrix2
-"function: updateIncidenceMatrix2
-  author: PA
-  Helper function to updateIncidenceMatrix
-  inputs:  (BackendDAE,
-            IncidenceMatrix,
-            int list /* list of equations to update */)
-  outputs: (IncidenceMatrix, int list list /* changed vars */)"
-  input BackendDAE.BackendDAE inBackendDAE;
-  input BackendDAE.IncidenceMatrix inIncidenceMatrix;
-  input list<Integer> inIntegerLst;
-  input BackendDAE.IncidenceMatrixT inIncidenceMatrixT;
-  output BackendDAE.IncidenceMatrix outIncidenceMatrix;
-  output BackendDAE.IncidenceMatrixT outIncidenceMatrixT;
-algorithm
-  (outIncidenceMatrix,outIncidenceMatrixT):=
-  matchcontinue (inBackendDAE,inIncidenceMatrix,inIntegerLst,inIncidenceMatrixT)
-    local
       BackendDAE.BackendDAE dae;
       BackendDAE.IncidenceMatrix m,m_1,m_2;
       BackendDAE.IncidenceMatrixT mt,mt_1,mt_2,mt_3;
@@ -4398,9 +4359,9 @@ algorithm
       BackendDAE.EquationArray daeeqns,daeseqns;
       list<BackendDAE.WhenClause> wc;
 
-    case (dae,m,{},mt) then (m,mt);
+    case (dae,m,mt,{}) then (m,mt);
 
-    case ((dae as BackendDAE.DAE(orderedVars = vars,knownVars = knvars,orderedEqs = daeeqns,removedEqs = daeseqns,eventInfo = BackendDAE.EVENT_INFO(whenClauseLst = wc))),m,(e :: eqns),mt)
+    case ((dae as BackendDAE.DAE(orderedVars = vars,knownVars = knvars,orderedEqs = daeeqns,removedEqs = daeseqns,eventInfo = BackendDAE.EVENT_INFO(whenClauseLst = wc))),m,mt,(e :: eqns))
       equation
         abse = intAbs(e);
         e_1 = abse - 1;
@@ -4411,18 +4372,18 @@ algorithm
         (_,outvars,invars) = Util.listIntersectionOnTrue1(oldvars,row,intEq);
         mt_1 = removeValuefromMatrix(outvars,abse,mt);
         mt_2 = addValuetoMatrix(invars,abse,mt_1);
-        (m_2,mt_3) = updateIncidenceMatrix2(dae, m_1, eqns,mt_2);
+        (m_2,mt_3) = updateIncidenceMatrix(dae, m_1, mt_2, eqns);
       then
         (m_2,mt_3);
 
     case (_,_,_,_)
       equation
-        print("- BackendDAEUtil.updateIncididenceMatrix2 failed\n");
+        print("- BackendDAEUtil.updateIncididenceMatrix failed\n");
       then
         fail();
 
   end matchcontinue;
-end updateIncidenceMatrix2;
+end updateIncidenceMatrix;
 
 protected function getOldVars
   input array<list<BackendDAE.Value>> m;
@@ -4522,44 +4483,6 @@ algorithm
         fail();
   end matchcontinue;
 end addValuetoMatrix;
-
-protected function updateTransposedMatrix
-"function: updateTransposedMatrix
-  author: PA
-  Takes a list of variables and the transposed
-  IncidenceMatrix, and updates the variable rows.
-  inputs:  (int list /* var list */,
-              IncidenceMatrix,
-              IncidenceMatrixT)
-  outputs:  IncidenceMatrixT"
-  input list<Integer> inIntegerLst;
-  input BackendDAE.IncidenceMatrix inIncidenceMatrix;
-  input BackendDAE.IncidenceMatrixT inIncidenceMatrixT;
-  output BackendDAE.IncidenceMatrixT outIncidenceMatrixT;
-algorithm
-  outIncidenceMatrixT:=
-  matchcontinue (inIntegerLst,inIncidenceMatrix,inIncidenceMatrixT)
-    local
-      array<list<BackendDAE.Value>> m,mt,mt_1,mt_2;
-      list<list<BackendDAE.Value>> mlst;
-      list<BackendDAE.Value> row_1,vars;
-      BackendDAE.Value v;
-    case ({},m,mt) then mt;
-    case ((v :: vars),m,mt)
-      equation
-        mlst = arrayList(m);
-        row_1 = transposeRow(mlst, v, 1);
-        mt_1 = Util.arrayReplaceAtWithFill(row_1, intAbs(v), mt, {});
-        mt_2 = updateTransposedMatrix(vars, m, mt_1);
-      then
-        mt_2;
-    case (_,_,_)
-      equation
-        print("- BackendDAE.updateTransposedMatrix failed\n");
-      then
-        fail();
-  end matchcontinue;
-end updateTransposedMatrix;
 
 public function getIncidenceMatrixfromOption "function getIncidenceMatrixfromOption"
   input BackendDAE.BackendDAE inDAE;
