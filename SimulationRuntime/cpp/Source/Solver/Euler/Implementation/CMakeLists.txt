@@ -7,8 +7,6 @@ target_link_libraries (Euler  Solver)
 #target_link_libraries( Euler ${Boost_serialization_LIBRARY})
 target_link_libraries( Euler ${Boost_LIBRARIES})
 target_link_libraries( Euler ${LAPACK_LIBRARIES})
-MESSAGE("boost libs = ${Boost_LIBRARIES}")
-MESSAGE("lapack libs = ${LAPACK_LIBRARIES}")
 
 
 

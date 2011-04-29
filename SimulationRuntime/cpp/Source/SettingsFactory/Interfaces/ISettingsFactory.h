@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../Interfaces/IGlobalSettings.h"
-#include "../../Solver/Interfaces/ISolverSettings.h"
+#include "SettingsFactory/Interfaces/IGlobalSettings.h"
+#include "Solver/Interfaces/ISolverSettings.h"
 
 class ISettingsFactory
 {

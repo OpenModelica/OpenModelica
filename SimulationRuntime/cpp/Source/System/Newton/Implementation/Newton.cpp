@@ -2,8 +2,8 @@
 #include "Newton.h"
 #include "NewtonSettings.h"
 
-#include "../../Math/Interfaces/ILapack.h"				// needed for solution of linear system with Lapack
-#include "../../Math/Implementation/Constants.h"		// definition of constants like uround
+#include "Math/Interfaces/ILapack.h"				// needed for solution of linear system with Lapack
+#include "Math/Implementation/Constants.h"		// definition of constants like uround
 
 Newton::Newton(IAlgLoop* algLoop, INewtonSettings* settings)
 : _algLoop			(algLoop)

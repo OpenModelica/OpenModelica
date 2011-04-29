@@ -1,9 +1,9 @@
 #pragma once
-#include "../SettingsFactory/Interfaces/IGlobalSettings.h"
-#include "../Solver/Interfaces/ISolverSettings.h"
-#include "../Solver/Interfaces/IDAESolver.h"
-#include "../System/Interfaces/IDAESystem.h"
-#include "../SettingsFactory/Interfaces/ISettingsFactory.h"
+#include "SettingsFactory/Interfaces/IGlobalSettings.h"
+#include "Solver/Interfaces/ISolverSettings.h"
+#include "Solver/Interfaces/IDAESolver.h"
+#include "System/Interfaces/IDAESystem.h"
+#include "SettingsFactory/Interfaces/ISettingsFactory.h"
 
 class Configuration
 {

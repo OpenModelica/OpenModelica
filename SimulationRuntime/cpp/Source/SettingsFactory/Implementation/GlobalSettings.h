@@ -1,5 +1,5 @@
 #pragma once
-#include "../Interfaces/IGlobalSettings.h"
+#include "SettingsFactory/Interfaces/IGlobalSettings.h"
 //#include "../Interfaces/APi.h"
 
 class  /*BOOST_EXTENSION_GLOBALSETTINGS_DECL*/ GlobalSettings : public IGlobalSettings

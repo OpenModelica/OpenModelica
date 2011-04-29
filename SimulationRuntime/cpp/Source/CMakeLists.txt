@@ -12,6 +12,8 @@ ENDIF( WIN32 )
 SET(Boost_USE_STATIC_LIBS OFF)
 SET(Boost_USE_MULTITHREADED ON)
 SET(Boost_USE_STATIC_RUNTIME OFF)
+SET(MODELICA_MODEL "ModelicaSystem")
+
 find_package(Boost 1.45.0 COMPONENTS serialization REQUIRED )
 find_package( Lapack REQUIRED)
 
@@ -33,16 +35,24 @@ add_subdirectory (SettingsFactory/Implementation)
 #add  simmanager project
 add_subdirectory (SimManager)
 #add  system default implementation project
+
 add_subdirectory (System/Implementation)
-  
+add_subdirectory (System/Modelica)
+#include_directories ("${PROJECT_SOURCE_DIR}/System/Modelica/Implementation")
+
+ 
 
 GET_TARGET_PROPERTY(libEuler Euler LOCATION)
 GET_FILENAME_COMPONENT(libEulerName ${libEuler} NAME)
 
 GET_TARGET_PROPERTY(libSetFactory SettingsFactory LOCATION)
 GET_FILENAME_COMPONENT(libSetFactoryName ${libSetFactory} NAME)
+
+GET_TARGET_PROPERTY(libModelica Modelica LOCATION)
+GET_FILENAME_COMPONENT(libModelicaName ${libModelica} NAME)
 set (EULER_LIB ${libEulerName})
 set (SETTINGSFACTORY_LIB ${libSetFactoryName})
+set (MODELICASYSTEM_LIB ${libModelicaName})
 # configure a header file to pass some library names
 # to the source code which are used to dynamic load and instantiate 
 configure_file (
@@ -50,3 +60,5 @@ configure_file (
   "${PROJECT_BINARY_DIR}/LibrariesConfig.h"
   )
 
+install (FILES "DataExchange/Interfaces/IHistory.h" 
+  DESTINATION include/DataExchange/Interfaces)

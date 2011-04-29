@@ -1,10 +1,10 @@
 #pragma once
 
-#include "../../System/Interfaces/IDAESystem.h"		// System interface
-#include "../../System/Interfaces/IContinous.h"		
-#include "../../System/Interfaces/IEvent.h"
-#include "../Interfaces/IDAESolver.h"				// Solver interface
-#include "../Interfaces/ISolverSettings.h"			// SolverSettings interface
+#include "System/Interfaces/IDAESystem.h"		// System interface
+#include "System/Interfaces/IContinous.h"		
+#include "System/Interfaces/IEvent.h"
+#include "Solver/Interfaces/IDAESolver.h"				// Solver interface
+#include "Solver/Interfaces/ISolverSettings.h"			// SolverSettings interface
 
 /// typedef to hand over (callback) functions to fortran routines
 typedef int (*U_fp)(...);

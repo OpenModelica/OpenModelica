@@ -1,11 +1,11 @@
 #pragma once
 
-#include "../Interfaces/IAlgLoop.h"				// Interface for algebraic loops
-#include "../Interfaces/IAlgLoopSolver.h"		// Interface for algebraic loops
+#include "System/Interfaces/IAlgLoop.h"				// Interface for algebraic loops
+#include "System/Interfaces/IAlgLoopSolver.h"		// Interface for algebraic loops
 
 
 
-#include "../Newton/Interfaces/INewtonSettings.h"
+#include "System/Newton/Interfaces/INewtonSettings.h"
 
 /*****************************************************************************/
 /**

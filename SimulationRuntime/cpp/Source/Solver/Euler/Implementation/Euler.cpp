@@ -2,8 +2,8 @@
 
 #include "Euler.h"
 #include "EulerSettings.h"
-#include "../../../Math/Implementation/Functions.h"
-#include "../../../System/Interfaces/ISystemProperties.h"
+#include "Math/Implementation/Functions.h"
+#include "System/Interfaces/ISystemProperties.h"
 Euler::Euler(IDAESystem* system, ISolverSettings* settings)
 : SolverDefaultImplementation(system, settings)
 , _eulerSettings		(dynamic_cast<IEulerSettings*>(_settings))

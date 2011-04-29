@@ -1,6 +1,6 @@
 #pragma once
-#include "../../Settingsfactory/Interfaces/IGlobalSettings.h"
-//#include "../../Math/Implementation/Constants.h"
+#include "Settingsfactory/Interfaces/IGlobalSettings.h"
+//#include "Math/Implementation/Constants.h"
 /*****************************************************************************/
 /**
 

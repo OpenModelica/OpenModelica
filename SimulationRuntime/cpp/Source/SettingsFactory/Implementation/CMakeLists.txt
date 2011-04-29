@@ -9,7 +9,8 @@ target_link_libraries( SettingsFactory ${Boost_LIBRARIES})
 install (TARGETS SettingsFactory DESTINATION bin)
 install (FILES "../Interfaces/GlobalSettings.xml" 
   DESTINATION bin/config)
-
+install (FILES "../Interfaces/IGlobalSettings.h" 
+  DESTINATION include/SettingsFactory/Interfaces)
 
   
   

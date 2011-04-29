@@ -1,10 +1,10 @@
 #pragma once
 
-#include "../Interfaces/IDAESystem.h"				// System interface
-#include "../Interfaces/IContinous.h"				// System interface
-#include "../Interfaces/IEvent.h"				// System interface
-#include "../Interfaces/ISystemProperties.h"				// System interface
-#include "../../Math/Implementation/Functions.h"	// Include for use of abs
+#include "System/Interfaces/IDAESystem.h"				// System interface
+#include "System/Interfaces/IContinous.h"				// System interface
+#include "System/Interfaces/IEvent.h"				// System interface
+#include "System/Interfaces/ISystemProperties.h"				// System interface
+#include "Math/Implementation/Functions.h"	// Include for use of abs
 
 
 

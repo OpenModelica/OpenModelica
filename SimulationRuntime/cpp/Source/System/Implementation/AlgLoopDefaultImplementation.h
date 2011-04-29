@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../Interfaces/IAlgLoop.h"					// Interface for algebraic loop
+#include "System/Interfaces/IAlgLoop.h"					// Interface for algebraic loop
 
-#include "../../Math/Implementation/Functions.h"	// Include for use of abs
+#include "Math/Implementation/Functions.h"	// Include for use of abs
 
 
 

@@ -3,7 +3,7 @@
 //#define BOOST_EXTENSION_GLOBALSETTINGS_DECL BOOST_EXTENSION_EXPORT_DECL
 #include "Factory.h"
 #include "GlobalSettings.h"
-#include "../../Solver/Interfaces/ISolverSettings.h"
+#include "Solver/Interfaces/ISolverSettings.h"
 #include "LibrariesConfig.h"
 
 SettingsFactory::SettingsFactory(void)

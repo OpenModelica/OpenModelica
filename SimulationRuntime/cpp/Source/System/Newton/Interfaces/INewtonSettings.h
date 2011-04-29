@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../../Solver/Interfaces/ISolverSettings.h"
+#include "Solver/Interfaces/ISolverSettings.h"
 
 
 

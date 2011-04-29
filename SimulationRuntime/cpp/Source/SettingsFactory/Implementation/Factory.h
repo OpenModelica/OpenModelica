@@ -1,7 +1,7 @@
 #pragma once
 
 
-#include "../Interfaces/ISettingsFactory.h"
+#include "SettingsFactory/Interfaces/ISettingsFactory.h"
 
 class /*BOOST_EXTENSION_SETTINGSFACTORY_DECL*/ SettingsFactory : public ISettingsFactory
 {

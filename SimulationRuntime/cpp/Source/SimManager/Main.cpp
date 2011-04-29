@@ -1,8 +1,8 @@
 
 #include "stdafx.h"
 #include "Configuration.h"
-#include "../System/Interfaces/ISystemproperties.h"
-
+#include "System/Interfaces/ISystemproperties.h"
+#include "LibrariesConfig.h"
 
 #if defined(_MSC_VER) || defined(__MINGW32__)
 #include <tchar.h>
@@ -21,7 +21,8 @@ int main(int argc, const char* argv[])
 		IGlobalSettings* global_settings = config.getGlobalSettings();
 		//Load Modelica sytem library
 		type_map types;
-		if(!load_single_library(types, "ModelicaSystem.dll"))
+		std::string modelica_name(MODELICASYSTEM_LIB);
+		if(!load_single_library(types, modelica_name))
 			throw std::invalid_argument("ModelicaSystem library could not be loaded");
 		std::map<std::string, factory<IDAESystem,IGlobalSettings&> >::iterator iter;
 		std::map<std::string, factory<IDAESystem,IGlobalSettings&> >& factories(types.get());

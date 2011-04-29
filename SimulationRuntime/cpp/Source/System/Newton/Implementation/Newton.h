@@ -1,10 +1,10 @@
 
 #pragma once
 
-#include "../../Interfaces/IAlgLoop.h"				// Interface to AlgLoop
-#include "../../Interfaces/IAlgLoopSolver.h"		// Export function from dll
+#include "System/Interfaces/IAlgLoop.h"				// Interface to AlgLoop
+#include "System/Interfaces/IAlgLoopSolver.h"		// Export function from dll
 
-#include "../Interfaces/INewtonSettings.h"
+#include "System/Newton/Interfaces/INewtonSettings.h"
 
 
 

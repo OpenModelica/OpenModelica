@@ -6,8 +6,15 @@ add_library(System SHARED AlgLoopDefaultImplementation AlgLoopSolverFactory.cpp 
 
 
 install (TARGETS System DESTINATION bin)
-
- 
+install (FILES SystemDefaultImplementation.h EventHandling.h DESTINATION include/System/Implementation)
+install (FILES ../Interfaces/IAlgLoop.h 
+				../Interfaces/IAlgLoopSolver.h 
+				../Interfaces/IContinous.h
+				../Interfaces/IDAESystem.h
+				../Interfaces/IDataExchange.h 
+				../Interfaces/IEvent.h
+				../Interfaces/ISystemProperties.h
+			DESTINATION include/System/Interfaces)
 
 
   

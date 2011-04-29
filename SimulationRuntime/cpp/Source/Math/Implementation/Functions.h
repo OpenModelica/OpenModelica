@@ -2,7 +2,7 @@
 
 #include <math.h>						///< mathematical expressions
 #include <stdlib.h>
-#include "../Interfaces/ILapack.h"		///< For the use of DGESV, etc.
+#include "Math/Interfaces/ILapack.h"		///< For the use of DGESV, etc.
 #include <limits>
 /*****************************************************************************/
 /**
