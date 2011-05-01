@@ -30,7 +30,7 @@ vpath %.mo $(MAIN_DIR)
 	time $(RMLHOME)/bin/rml $(RML_INCLUDE_ALL_DIRS) -fdump-depends $(SRCMO) > .depend
 
 $(SRCO): %.o : %.c %.h
-	$(RMLC) $(RMLCFLAGS) -c $<
+	$(CC) $(CFLAGS) $(RMLINC) -c $<
 
 %.c %.h : %.mo
 	$(RMLC) $(RMLCFLAGS) +C $<

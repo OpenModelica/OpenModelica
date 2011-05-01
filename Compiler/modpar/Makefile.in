@@ -38,7 +38,7 @@ libmodparomc.a: TaskGraphExt_stub_omc.o
 
 INCFLAGS =-I$(RMLINCLUDE) -I$(BOOST_HOME) -I$(top_builddir)/mosh/src
 
-CFLAGS = $(INCFLAGS) -g -Wall -DUNIX=1
+CFLAGS = @CFLAGS@ $(INCFLAGS) -Wall -DUNIX=1
 CXXFLAGS = $(CFLAGS)
 LIBS =
 

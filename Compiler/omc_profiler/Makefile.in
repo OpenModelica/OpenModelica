@@ -9,7 +9,7 @@ LIBLPSOLVE55 = @LIBLPSOLVE55@
 
 SHELL	= /bin/sh
 CC	= gcc
-CFLAGS	= $(USE_CORBA) -O3 -pg
+CFLAGS	= $(USE_CORBA) @CFLAGS@ -pg
 RMLHOME	= @rmlhome@
 RMLINC  = -I$(RMLHOME)/include/plain
 

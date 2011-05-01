@@ -7,7 +7,7 @@
 USE_CORBA = @USE_CORBA@
 
 RMLINCLUDE = @rmlinc@
-CFLAGS = @DEFS@ $(USE_CORBA)
+CFLAGS = @CFLAGS@ @DEFS@ $(USE_CORBA)
 
 ifdef USE_CORBA
   CORBASRC = omc_communication.cc omc_communication_impl.cpp Corba_rml.cpp
@@ -23,7 +23,6 @@ SHELL	= /bin/sh
 CC	= @CC@
 CXX	= @CXX@
 IDL	= @IDLCMD@
-CFLAGS	+=  @CFLAGS@
 CXXFLAGS = $(CFLAGS)
 CPPFLAGS = -I$(RMLINCLUDE) -I$(top_builddir)/c_runtime -I$(srcdir) -I. $(CORBAINCL) -Ilpsolve
 
