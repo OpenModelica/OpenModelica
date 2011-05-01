@@ -2,6 +2,12 @@ interface package SimCodeTV
 
 package builtin
   
+  function listReverse
+    replaceable type TypeVar subtypeof Any;    
+    input list<TypeVar> lst;
+    output list<TypeVar> result;
+  end listReverse;
+
   function listLength "Return the length of the list"
     replaceable type TypeVar subtypeof Any;    
     input list<TypeVar> lst;
@@ -1234,9 +1240,9 @@ package DAE
       Exp before;
       Exp after;
     end SIMPLIFY;
-    record SUBSTITUTION
+    record SUBSTITUTION "A chain of substitutions"
+      list<Exp> substitutions;
       Exp source;
-      Exp target;
     end SUBSTITUTION;
     record SOLVE
       ComponentRef cr;
@@ -1257,6 +1263,11 @@ package DAE
       ComponentRef chosen;
       list<ComponentRef> candidates;
     end NEW_DUMMY_DER;
+    record OP_DERIVE
+      ComponentRef cr;
+      Exp before;
+      Exp after;
+    end OP_DERIVE;
   end SymbolicOperation;
 end DAE;
 

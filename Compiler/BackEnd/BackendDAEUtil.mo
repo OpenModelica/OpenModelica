@@ -1472,7 +1472,7 @@ algorithm
           (exp2,_) = ExpressionSimplify.simplify1(exp2);
           Debug.fcall("debugAlias",BackendDump.debugStrExpStrExpStr,("*** replace : ",exp," = ",exp2,"\n"));
           v = BackendVariable.setBindExp(v,exp2);
-          v = BackendVariable.mergeVariableOperations(v,{DAE.SUBSTITUTION(exp,exp2)});
+          v = BackendVariable.mergeVariableOperations(v,Util.if_(Expression.expEqual(exp,exp2),{},{DAE.SUBSTITUTION({exp2},exp)}));
           aliasVariables = addAliasVariables({v},inAliases);
           Debug.fcall("debugAlias",BackendDump.debugStrCrefStrExpStr,("RES *** ComponentRef : ",cref," = Exp : ",exp2,"\n"));
           aliasVariables =  updateAliasVars(rest,inExp1,inExp2,aliasVariables);

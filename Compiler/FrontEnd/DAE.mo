@@ -106,9 +106,9 @@ public uniontype SymbolicOperation
     Exp before;
     Exp after;
   end SIMPLIFY;
-  record SUBSTITUTION
+  record SUBSTITUTION "A chain of substitutions"
+    list<Exp> substitutions;
     Exp source;
-    Exp target;
   end SUBSTITUTION;
   record SOLVE
     ComponentRef cr;
@@ -129,6 +129,11 @@ public uniontype SymbolicOperation
     ComponentRef chosen;
     list<ComponentRef> candidates;
   end NEW_DUMMY_DER;
+  record OP_DERIVE
+    ComponentRef cr;
+    Exp before;
+    Exp after;
+  end OP_DERIVE;
 end SymbolicOperation;
 
 public constant ElementSource emptyElementSource = SOURCE(Absyn.dummyInfo,{},{},{},{},{});
@@ -1472,6 +1477,8 @@ uniontype ComponentRef "- Component references
   record WILD end WILD;
 
 end ComponentRef;
+
+public constant ComponentRef crefTime = CREF_IDENT("time",ET_REAL(),{});
 
 public
 uniontype Subscript "The `Subscript\' and `ComponentRef\' datatypes are simple

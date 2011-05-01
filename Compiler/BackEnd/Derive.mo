@@ -98,6 +98,7 @@ algorithm
       list<DAE.Exp> crefOrDerCref,crefOrDerCref1,crefOrDerCref11,crefOrDerCref2,crefOrDerCref21,crefOrDerCref3,derCref1,derCref2;
       list<Integer> dimSize;
       String msg,se1,se2;
+      DAE.SymbolicOperation op1,op2;
     
     // equations
     case (BackendDAE.EQUATION(exp = e1,scalar = e2,source=source),timevars,inFunctions,al,inDerivedAlgs,ae,inDerivedMultiEqn) /* time varying variables */
@@ -106,6 +107,9 @@ algorithm
         e2_1 = differentiateExpTime(e2, (timevars,inFunctions));
         (e1_2,_) = ExpressionSimplify.simplify(e1_1);
         (e2_2,_) = ExpressionSimplify.simplify(e2_1);
+        op1 = DAE.OP_DERIVE(DAE.crefTime,e1,e1_2);
+        op2 = DAE.OP_DERIVE(DAE.crefTime,e2,e2_2);
+        source = Util.listFoldR({op1,op2},DAEUtil.addSymbolicTransformation,source);
       then
         (BackendDAE.EQUATION(e1_2,e2_2,source),al,inDerivedAlgs,ae,inDerivedMultiEqn,true);
     
@@ -117,7 +121,7 @@ algorithm
         e2_1 = differentiateExpTime(e2, (timevars,inFunctions));
         // e1_2 = ExpressionSimplify.simplify(e1_1);
         // e2_2 = ExpressionSimplify.simplify(e2_1);
-       then
+      then
         // because der(Record) is not jet implemented -> fail()
         //(BackendDAE.COMPLEX_EQUATION(index,e1_1,e2_1,source),al,inDerivedAlgs,ae,inDerivedMultiEqn,true);
         fail();
@@ -137,11 +141,14 @@ algorithm
         crefOrDerCref11 = removeCrefFromDerCref(crefOrDerCref1,derCref1);
         crefOrDerCref21 = removeCrefFromDerCref(crefOrDerCref2,derCref2);
         crefOrDerCref3 = Util.listUnionOnTrue(crefOrDerCref11,crefOrDerCref21,Expression.expEqual);
+        op1 = DAE.OP_DERIVE(DAE.crefTime,e1,e1_2);
+        op2 = DAE.OP_DERIVE(DAE.crefTime,e2,e2_2);
+        source = Util.listFoldR({op1,op2},DAEUtil.addSymbolicTransformation,source);
         // only add algorithm if it is not already derived 
         (index1,ae1,derivedMultiEqn,add) = addArray(index,ae,BackendDAE.MULTIDIM_EQUATION(dimSize,e1_2,e2_2,source1),1,inDerivedMultiEqn);
-       then
+      then
         //(BackendDAE.ARRAY_EQUATION(index1,{e1_1},source),al,inDerivedAlgs,ae1,derivedMultiEqn,add);
-         // Until the array equations will be unrolled we should return true to add an equation for every element
+        // Until the array equations will be unrolled we should return true to add an equation for every element
         (BackendDAE.ARRAY_EQUATION(index1,crefOrDerCref3,source),al,inDerivedAlgs,ae1,derivedMultiEqn,true);
     
     // diverivative of function with multiple outputs
@@ -152,6 +159,8 @@ algorithm
         e1_1 = differentiateFunctionTime(e1,(timevars,inFunctions));
         (e1_2,source) = Inline.inlineExp(e1_1,(SOME(inFunctions),{DAE.NORM_INLINE()}),source);
         (e2,_) = ExpressionSimplify.simplify(e1_2);
+        op1 = DAE.OP_DERIVE(DAE.crefTime,e1,e2);
+        source = DAEUtil.addSymbolicTransformation(source,op1);
         // outputs
         (expExpLst1,out1) = differentiateFunctionTimeOutputs(e1,e2,expExpLst,out,(timevars,inFunctions));
         // inputs

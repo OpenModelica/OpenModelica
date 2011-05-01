@@ -105,17 +105,38 @@ template dumpElementSource(ElementSource source)
       partOfLst: <%s.partOfLst |> w => dumpWithin(w)%>
       instanceOptLst: <%s.instanceOptLst |> SOME(cr) => crefStr(cr)%>
       connectEquationOptLst: <%s.connectEquationOptLst |> p => "w"%>
-      typeLst: <%s.typeLst |> p => "w"%>
-      operations: <%s.operations |> op => dumpOperation(op,s.info) %>
+      typeLst: <%s.typeLst |> p => dotPath(p) ; separator = "," %>
+      operations (<%listLength(s.operations)%>): <%s.operations |> op => dumpOperation(op,s.info) %>
       >>
 end dumpElementSource;
 
 template dumpOperation(SymbolicOperation op, Info info)
 ::=
   match op
-    case SIMPLIFY(__) then '<%\n%>  simplify: <%printExpStr(before)%> => <%printExpStr(after)%>'
-    case SUBSTITUTION(__) then '<%\n%>  subst: <%printExpStr(source)%> => <%printExpStr(target)%>'
-    case op as OP_INLINE(__) then '<%\n%>  inline: <%printExpStr(op.before)%> = <%printExpStr(op.after)%>'
+    case SIMPLIFY(__) then
+      <<<%\n%>
+        simplify:
+          <%printExpStr(before)%>
+          =>
+          <%printExpStr(after)%>
+      >>
+    case SUBSTITUTION(__) then
+      <<<%\n%>
+        subst:
+          <%printExpStr(source)%>
+          <%listReverse(substitutions) |> target =>
+          <<
+          =>
+          <%printExpStr(target)%>
+          >> ; separator = "\n" %>
+      >>
+    case op as OP_INLINE(__) then
+      <<<%\n%>
+        inline:
+          <%printExpStr(op.before)%>
+          =>
+          <%printExpStr(op.after)%>
+      >>
     case op as SOLVED(__) then '<%\n%>  simple equation: <%crefStr(op.cr)%> = <%printExpStr(op.exp)%>'
     case op as SOLVE(__) then
       <<<%\n%>
@@ -125,6 +146,13 @@ template dumpOperation(SymbolicOperation op, Info info)
           <%crefStr(op.cr)%> = <%printExpStr(op.res)%>
         added assertions:
           <%op.assertConds |> cond => printExpStr(cond); separator="\n"%>
+      >>
+    case op as OP_DERIVE(__) then
+      <<<%\n%>
+        derive:
+          d/d<%crefStr(op.cr)%> <%printExpStr(op.before)%>
+          =>
+          <%printExpStr(op.after)%>
       >>
     case op as NEW_DUMMY_DER(__) then '<%\n%>  dummy derivative: <%crefStr(op.chosen)%> from candidates: <%op.candidates |> cr => crefStr(cr) ; separator = ","%>'
     else Tpl.addSourceTemplateError("Unknown operation",info)

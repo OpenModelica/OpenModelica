@@ -1853,7 +1853,7 @@ algorithm
         e = BackendVariable.varBindExp(v);
         ((en,i)) = Expression.replaceExp(e,e1,e2);
         v = BackendVariable.setBindExp(v,en);
-        v = BackendVariable.mergeVariableOperations(v,Util.if_(i>0,{DAE.SUBSTITUTION(e,en)},{}));
+        v = BackendVariable.mergeVariableOperations(v,Util.if_(i>0,{DAE.SUBSTITUTION({en},e)},{}));
         av = BackendDAEUtil.addAliasVariables({v},av);
       then ((v,(e1,e2,av)));
     case inTpl then inTpl;

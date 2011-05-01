@@ -5495,7 +5495,7 @@ public function addSymbolicTransformation
   input DAE.SymbolicOperation op;
   output DAE.ElementSource outSource;
 algorithm
-  outSource := match (source,op)
+  outSource := matchcontinue (source,op)
     local
       Absyn.Info info "the line and column numbers of the equations and algorithms this element came from";
       list<Absyn.Path> typeLst "the absyn type of the element" ;
@@ -5503,10 +5503,21 @@ algorithm
       list<Option<DAE.ComponentRef>> instanceOptLst "the instance this element is part of" ;
       list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectEquationOptLst "this element came from this connect" ;
       list<DAE.SymbolicOperation> operations;
+      DAE.Exp h1,t1,t2;
+      list<DAE.Exp> es1,es2,es;
+
+    case (DAE.SOURCE(info, partOfLst, instanceOptLst, connectEquationOptLst, typeLst, DAE.SUBSTITUTION(es1 as (h1::_),t1)::operations),DAE.SUBSTITUTION(es2,t2))
+      equation
+        // The tail of the new substitution chain is the same as the head of the old one...
+        true = Expression.expEqual(t2,h1);
+        // Reference equality would be fine as otherwise it is not really a chain... But replaceExp is stupid :(
+        // true = referenceEq(t2,h1);
+        es = listAppend(es2,es1);
+      then DAE.SOURCE(info, partOfLst, instanceOptLst, connectEquationOptLst, typeLst, DAE.SUBSTITUTION(es,t1)::operations);
 
     case (DAE.SOURCE(info, partOfLst, instanceOptLst, connectEquationOptLst, typeLst, operations),op)
       then DAE.SOURCE(info, partOfLst, instanceOptLst, connectEquationOptLst, typeLst, op::operations);
-  end match;
+  end matchcontinue;
 end addSymbolicTransformation;
 
 public function condAddSymbolicTransformation
@@ -5516,16 +5527,8 @@ public function condAddSymbolicTransformation
   output DAE.ElementSource outSource;
 algorithm
   outSource := match (cond,source,op)
-    local
-      Absyn.Info info "the line and column numbers of the equations and algorithms this element came from";
-      list<Absyn.Path> typeLst "the absyn type of the element" ;
-      list<Absyn.Within> partOfLst "the models this element came from" ;
-      list<Option<DAE.ComponentRef>> instanceOptLst "the instance this element is part of" ;
-      list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectEquationOptLst "this element came from this connect" ;
-      list<DAE.SymbolicOperation> operations;
-
-    case (true,DAE.SOURCE(info, partOfLst, instanceOptLst, connectEquationOptLst, typeLst, operations),op)
-      then DAE.SOURCE(info, partOfLst, instanceOptLst, connectEquationOptLst, typeLst, op::operations);
+    case (true,source,op)
+      then addSymbolicTransformation(source,op);
     else source;
   end match;
 end condAddSymbolicTransformation;
@@ -5537,19 +5540,7 @@ public function addSymbolicTransformationSubstitution
   input DAE.Exp exp2;
   output DAE.ElementSource outSource;
 algorithm
-  outSource := match (add,source,exp1,exp2)
-    local
-      Absyn.Info info "the line and column numbers of the equations and algorithms this element came from";
-      list<Absyn.Path> typeLst "the absyn type of the element" ;
-      list<Absyn.Within> partOfLst "the models this element came from" ;
-      list<Option<DAE.ComponentRef>> instanceOptLst "the instance this element is part of" ;
-      list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectEquationOptLst "this element came from this connect" ;
-      list<DAE.SymbolicOperation> operations;
-
-    case (false,source,_,_) then source;
-    case (_,DAE.SOURCE(info, partOfLst, instanceOptLst, connectEquationOptLst, typeLst, operations),exp1,exp2)
-      then DAE.SOURCE(info, partOfLst, instanceOptLst, connectEquationOptLst, typeLst, DAE.SUBSTITUTION(exp1,exp2)::operations);
-  end match;
+  outSource := condAddSymbolicTransformation(add,source,DAE.SUBSTITUTION({exp2},exp1));
 end addSymbolicTransformationSubstitution;
 
 public function addSymbolicTransformationSimplify
@@ -5559,19 +5550,7 @@ public function addSymbolicTransformationSimplify
   input DAE.Exp exp2;
   output DAE.ElementSource outSource;
 algorithm
-  outSource := match (add,source,exp1,exp2)
-    local
-      Absyn.Info info "the line and column numbers of the equations and algorithms this element came from";
-      list<Absyn.Path> typeLst "the absyn type of the element" ;
-      list<Absyn.Within> partOfLst "the models this element came from" ;
-      list<Option<DAE.ComponentRef>> instanceOptLst "the instance this element is part of" ;
-      list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectEquationOptLst "this element came from this connect" ;
-      list<DAE.SymbolicOperation> operations;
-
-    case (false,source,_,_) then source;
-    case (_,DAE.SOURCE(info, partOfLst, instanceOptLst, connectEquationOptLst, typeLst, operations),exp1,exp2)
-      then DAE.SOURCE(info, partOfLst, instanceOptLst, connectEquationOptLst, typeLst, DAE.SIMPLIFY(exp1,exp2)::operations);
-  end match;
+  outSource := condAddSymbolicTransformation(add,source,DAE.SIMPLIFY(exp1,exp2));
 end addSymbolicTransformationSimplify;
 
 public function addSymbolicTransformationSolve
@@ -5583,23 +5562,11 @@ public function addSymbolicTransformationSolve
   input DAE.Exp exp;
   input list<DAE.Statement> asserts;
   output DAE.ElementSource outSource;
+protected
+  list<DAE.Exp> assertExps;
 algorithm
-  outSource := match (add,source,cr,exp1,exp2,exp,asserts)
-    local
-      Absyn.Info info "the line and column numbers of the equations and algorithms this element came from";
-      list<Absyn.Path> typeLst "the absyn type of the element" ;
-      list<Absyn.Within> partOfLst "the models this element came from" ;
-      list<Option<DAE.ComponentRef>> instanceOptLst "the instance this element is part of" ;
-      list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectEquationOptLst "this element came from this connect" ;
-      list<DAE.SymbolicOperation> operations;
-      list<DAE.Exp> assertExps;
-
-    case (false,source,_,_,_,_,_) then source;
-    case (_,DAE.SOURCE(info, partOfLst, instanceOptLst, connectEquationOptLst, typeLst, operations),cr,exp1,exp2,exp,asserts)
-      equation
-        assertExps = Util.listMap(asserts,Algorithm.getAssertCond);
-      then DAE.SOURCE(info, partOfLst, instanceOptLst, connectEquationOptLst, typeLst, DAE.SOLVE(cr,exp1,exp2,exp,assertExps)::operations);
-  end match;
+  assertExps := Util.listMap(asserts,Algorithm.getAssertCond);
+  outSource := condAddSymbolicTransformation(add,source,DAE.SOLVE(cr,exp1,exp2,exp,assertExps));
 end addSymbolicTransformationSolve;
 
 public function getSymbolicTransformations
