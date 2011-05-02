@@ -44,7 +44,6 @@ public import Values;
 public import HashTable2;
 public import HashTable4;
 
-public constant String derivativeNamePrefix=DAE.derivativeNamePrefix;
 public constant String partialDerivativeNamePrefix="$pDER";
 
 public uniontype Type "

@@ -9846,7 +9846,7 @@ algorithm
     local DAE.Ident ident; Boolean b;
     case (DAE.CREF_QUAL(ident = ident))
       equation
-        b = stringEq(ident,BackendDAE.derivativeNamePrefix);
+        b = stringEq(ident,DAE.derivativeNamePrefix);
       then b;
     case (_) then false;
   end matchcontinue;
@@ -11211,14 +11211,14 @@ algorithm
     case(SIMVAR(name,varKind,comment,unit,displayUnit,0,initialValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,variable_index)) 
       equation
         name_str = ComponentReference.printComponentRefStr(name);
-        id_str = stringAppendList({BackendDAE.derivativeNamePrefix,"." ,name_str});
+        id_str = stringAppendList({DAE.derivativeNamePrefix,"." ,name_str});
         cr_1 = ComponentReference.makeCrefIdent(id_str,DAE.ET_REAL(),{});
       then
         SIMVAR(cr_1,varKind,comment,unit,displayUnit,0,initialValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,variable_index);
     case(SIMVAR(name,varKind,comment,unit,displayUnit,1,initialValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,variable_index)) 
       equation
         name_str = ComponentReference.printComponentRefStr(name);
-        id_str = stringAppendList({BackendDAE.derivativeNamePrefix,".",name_str});
+        id_str = stringAppendList({DAE.derivativeNamePrefix,".",name_str});
         cr_1 = ComponentReference.makeCrefIdent(id_str,DAE.ET_REAL(),{});
       then
         SIMVAR(cr_1,varKind,comment,unit,displayUnit,1,initialValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,variable_index);
@@ -11226,7 +11226,7 @@ algorithm
     case(SIMVAR(name,varKind,comment,unit,displayUnit,2,initialValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,variable_index)) 
       equation
         name_str = ComponentReference.printComponentRefStr(name);
-        id_str = stringAppendList({BackendDAE.derivativeNamePrefix,".",name_str});
+        id_str = stringAppendList({DAE.derivativeNamePrefix,".",name_str});
         cr_1 = ComponentReference.makeCrefIdent(id_str,DAE.ET_REAL(),{});
       then
         SIMVAR(cr_1,varKind,comment,unit,displayUnit,2,initialValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,variable_index);
