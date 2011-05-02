@@ -59,7 +59,7 @@ static long lexerFailed;
 
 static void lexNoRecover(pANTLR3_LEXER lexer)
 {
-  pANTLR3_INT_STREAM inputStream = NULL;
+  pANTLR3_INT_STREAM inputStream = (pANTLR3_INT_STREAM) NULL;
   lexer->rec->state->error = ANTLR3_TRUE;
   lexer->rec->state->failed = ANTLR3_TRUE;
   inputStream = lexer->input->istream;
@@ -98,7 +98,7 @@ static void* noRecoverFromMismatchedToken(pANTLR3_BASE_RECOGNIZER recognizer, AN
   case  ANTLR3_TYPE_PARSER:
 
     parser  = (pANTLR3_PARSER) (recognizer->super);
-    tparser  = NULL;
+    tparser = (pANTLR3_TREE_PARSER) NULL;
     is  = parser->tstream->istream;
 
     break;
@@ -106,7 +106,7 @@ static void* noRecoverFromMismatchedToken(pANTLR3_BASE_RECOGNIZER recognizer, AN
   case  ANTLR3_TYPE_TREE_PARSER:
 
     tparser = (pANTLR3_TREE_PARSER) (recognizer->super);
-    parser  = NULL;
+    parser  = (pANTLR3_PARSER) NULL;
     is  = tparser->ctnstream->tnstream->istream;
 
     break;
@@ -202,7 +202,7 @@ static void handleParseError(pANTLR3_BASE_RECOGNIZER recognizer, pANTLR3_UINT8 *
 
   // Retrieve some info for easy reading.
   ex      =    recognizer->state->exception;
-  ttext   =    NULL;
+  ttext   =    (pANTLR3_STRING) NULL;
 
   switch  (recognizer->type)
   {
@@ -316,9 +316,9 @@ static void* parseStream(pANTLR3_INPUT_STREAM input)
   if (lexerFailed || pLexer->rec->state->failed || psr->pParser->rec->state->failed) // Some parts of the AST are NULL if errors are used...
     res = NULL;
   psr->free(psr);
-  psr = NULL;
+  psr = (pModelicaParser) NULL;
   tstream->free(tstream);
-  tstream = NULL;
+  tstream = (pANTLR3_COMMON_TOKEN_STREAM) NULL;
   if (ModelicaParser_flags & PARSE_META_MODELICA) {
     ((pMetaModelica_Lexer)lxr)->free((pMetaModelica_Lexer)lxr);
   } else {
@@ -326,7 +326,7 @@ static void* parseStream(pANTLR3_INPUT_STREAM input)
   }
   lxr = NULL;
   input->close(input);
-  input = NULL;
+  input = (pANTLR3_INPUT_STREAM) NULL;
 
   return res;
 }
