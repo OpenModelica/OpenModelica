@@ -75,15 +75,16 @@ fi
 
 dnl Simulations spin forever unless -msse2 -mfpmath=sse is set
 dnl Or if -ffloat-store  is set
-AC_MSG_CHECKING([for floating point bugs])
-if echo $CFLAGS | grep -q -- -ffloat-store; then
-  AC_MSG_RESULT([have -ffloat-store])
-elif echo $CFLAGS | grep -q -- -msse2 && echo $CFLAGS | grep -q -- -mfpmath=sse; then
-  AC_MSG_RESULT([have SSE2])
-else
-  CFLAGS+=" -msse2 -mfpmath=sse"
-  AC_MSG_RESULT([adding -msse2 -mfpmath=sse])
-fi
+dnl With the new solver interface, this seems to work even with -mpfpath=387
+#AC_MSG_CHECKING([for floating point bugs])
+#if echo $CFLAGS | grep -q -- -ffloat-store; then
+#  AC_MSG_RESULT([have -ffloat-store])
+#elif echo $CFLAGS | grep -q -- -msse2 && echo $CFLAGS | grep -q -- -mfpmath=sse; then
+#  AC_MSG_RESULT([have SSE2])
+#else
+#  CFLAGS+=" -msse2 -mfpmath=sse"
+#  AC_MSG_RESULT([adding -msse2 -mfpmath=sse])
+#fi
 
 fi # End x86-specific CFLAGS
 

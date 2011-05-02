@@ -148,6 +148,12 @@ libf2c/libf2c.a :
 meta_modelica_catch.o : meta_modelica_catch.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c -g $<
 
+# Requires IEEE floating-point precision
+simulation_input.o : simulation_input.cpp
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -mfpmath=sse -c -g $<
+simulation_events.o : simulation_events.cpp
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -mfpmath=sse -c -g $<
+
 install: libc_runtime.a libsim.a libsim_ompd.a $(LIBF2C) interactive/libinteractive.a $(LIBSENDDATA) omdevinstall ModelicaExternalC/libModelicaExternalC.a
 	cp $(HFILES) $(builddir_inc)/
 	cp fmu_model_interface.c $(builddir_inc)/
