@@ -566,12 +566,16 @@ public constant Prefixes defaultPrefixes =
     Absyn.NOT_INNER_OUTER(), 
     NOT_REPLACEABLE()); 
 
+public constant Attributes defaultConstAttr =
+  ATTR({}, NOT_FLOW(), NOT_STREAM(), RO(), CONST(), Absyn.BIDIR());
+
 // .......... functionality .........
 protected import Util;
 protected import Dump;
 protected import ModUtil;
 protected import Print;
 protected import Error;
+protected import SCodeCheck;
 
 protected function elseWhenEquationStr
 "@author: adrpo
@@ -2619,38 +2623,19 @@ end printInitialStr;
 public function makeEnumType
   "Creates an EnumType element from an enumeration literal and an optional
   comment."
-  input Enum enum;
-  input Absyn.Info info;
-  output Element enum_type;
+  input Enum inEnum;
+  input Absyn.Info inInfo;
+  output Element outEnumType;
+protected
+  String literal;
+  Option<Comment> comment;
 algorithm
-  enum_type := matchcontinue(enum, info)
-    local
-      String literal,info_str;
-      Option<Comment> comment;
-    case (ENUM(literal = literal, comment = comment), _)
-      equation
-        isValidEnumLiteral(literal);
-      then 
-        COMPONENT(
-          literal, 
-          PREFIXES(PUBLIC(), NOT_REDECLARE(), FINAL(), Absyn.NOT_INNER_OUTER(), NOT_REPLACEABLE()),
-          ATTR({}, NOT_FLOW(), NOT_STREAM(), RO(), CONST(), Absyn.BIDIR()),
-          Absyn.TPATH(Absyn.IDENT("EnumType"),NONE()), 
-          NOMOD(), comment, NONE(), info);
-    case (ENUM(literal = literal), _)
-      equation
-        info_str = Error.infoStr(info);
-        Error.addMessage(Error.INVALID_ENUM_LITERAL, {info_str, literal});
-      then fail();
-  end matchcontinue;
+  ENUM(literal = literal, comment = comment) := inEnum;
+  SCodeCheck.checkValidEnumLiteral(literal, inInfo);
+  outEnumType := COMPONENT(literal, defaultPrefixes, defaultConstAttr,
+    Absyn.TPATH(Absyn.IDENT("EnumType"), NONE()), 
+    NOMOD(), comment, NONE(), inInfo);
 end makeEnumType;
-
-public function isValidEnumLiteral
-  "Checks if a string is a valid enumeration literal."
-  input String literal;
-algorithm
-  true := Util.listNotContains(literal, {"quantity", "min", "max", "start", "fixed"});
-end isValidEnumLiteral;
 
 public function variabilityOr 
 "returns the more constant of two Variabilities (considers VAR() < DISCRETE() < PARAM() < CONST() ), similarly to Types.constOr"

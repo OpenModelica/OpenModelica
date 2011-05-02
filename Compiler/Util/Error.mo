@@ -464,7 +464,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (NESTED_WHEN, TRANSLATION(), ERROR(),
           "Nested when statements are not allowed."),
           (INVALID_ENUM_LITERAL, TRANSLATION(), ERROR(),
-          "%s Invalid use of reserved attribute name %s as enumeration literal."),
+          "Invalid use of reserved attribute name %s as enumeration literal."),
           (UNEXCPECTED_FUNCTION_INPUTS_WARNING,TRANSLATION(), WARNING(),
           "Function %s has not the expected inputs. Expected inputs are %s."), 
           (RESTRICTION_VIOLATION,TRANSLATION(),ERROR(),"Restriction violation: %s is a %s, not a %s"),

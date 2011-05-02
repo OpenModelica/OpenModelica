@@ -268,4 +268,24 @@ algorithm
   end matchcontinue;
 end checkRedeclareModifier2;
         
+public function checkValidEnumLiteral
+  input String inLiteral;
+  input Absyn.Info inInfo;
+algorithm
+  _ := matchcontinue(inLiteral, inInfo)
+    case (_, _)
+      equation
+        true = Util.listNotContains(inLiteral, 
+          {"quantity", "min", "max", "start", "fixed"});
+      then
+        ();
+
+    else
+      equation
+        Error.addSourceMessage(Error.INVALID_ENUM_LITERAL, {inLiteral}, inInfo);
+      then
+        fail();
+  end matchcontinue;
+end checkValidEnumLiteral;
+
 end SCodeCheck;
