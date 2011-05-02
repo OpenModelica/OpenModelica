@@ -1108,8 +1108,16 @@ public function qualifyPath
 algorithm
   outPath := matchcontinue(inPath, inEnv, inInfo, inErrorType)
     local
+      Absyn.Ident id;
       Absyn.Path path;
       Env env;
+
+    // Never fully qualify builtin types.
+    case (Absyn.IDENT(name = id), _, _, _)
+      equation
+        _ = lookupBuiltinType(id);
+      then
+        inPath;
 
     case (_, _, _, _)
       equation

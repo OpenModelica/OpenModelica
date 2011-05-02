@@ -503,7 +503,7 @@ algorithm
   // Remove all 'extends ExternalObject'.
   el := Util.listFilter(inElements, isNotExternalObject);
   // Check if length of the new list is different to the old, i.e. if we
-  // actually found an removed any 'extends ExternalObject'.
+  // actually found and removed any 'extends ExternalObject'.
   false := (listLength(el) == listLength(inElements));
   // Ok, we have an external object, check that it's valid.
   el_names := Util.listMap(el, SCode.elementName);

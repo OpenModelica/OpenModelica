@@ -187,9 +187,10 @@ algorithm
     case (SCodeEnv.CLASS(cls = SCode.CLASS(prefixes = SCode.PREFIXES(
         replaceablePrefix = SCode.REPLACEABLE(cc = _)), info = info)), _, _)
       equation
-        err_str = Absyn.pathString(inPath);
-        Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inOriginInfo);
-        Error.addSourceMessage(Error.REPLACEABLE_BASE_CLASS, {err_str}, info);
+        // Disabled until it's decided whether this is an error or not.
+        //err_str = Absyn.pathString(inPath);
+        //Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inOriginInfo);
+        //Error.addSourceMessage(Error.REPLACEABLE_BASE_CLASS, {err_str}, info);
       then
         ();
   end match;

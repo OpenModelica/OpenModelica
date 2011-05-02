@@ -49,19 +49,34 @@ public import SCodeHashTable;
 
 protected import BaseHashTable;
 protected import Debug;
+protected import RTOpts;
 
 public function flattenProgram
   "Flattens the last class in a program."
   input SCode.Program inProgram;
   input SCodeEnv.Env inEnv;
   output SCode.Program outProgram;
-protected 
-    SCodeHashTable.HashTable hashTable;
 algorithm
-  SOME(hashTable) := SCodeHashTable.hashTableFromProgram(inProgram, inEnv, NONE(), 1);
-  SOME(hashTable) := handleExtends(SOME(hashTable), inEnv);
-  Debug.fcall("scodeHash", BaseHashTable.dumpHashTable, hashTable);
-  outProgram := SCodeHashTable.programFromHashTable(hashTable);
+  outProgram := matchcontinue(inProgram, inEnv)
+    local
+      SCodeHashTable.HashTable hashTable;
+
+    case (_, _)
+      equation
+        false = RTOpts.debugFlag("scodeFlatten");
+      then
+        inProgram;
+
+    else
+      equation
+        SOME(hashTable) = SCodeHashTable.hashTableFromProgram(inProgram, inEnv, NONE(), 1);
+        SOME(hashTable) = handleExtends(SOME(hashTable), inEnv);
+        Debug.fcall("scodeHash", BaseHashTable.dumpHashTable, hashTable);
+        outProgram = SCodeHashTable.programFromHashTable(hashTable);
+      then
+        outProgram;
+
+  end matchcontinue;
 end flattenProgram;
 
 protected function handleExtends

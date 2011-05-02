@@ -113,16 +113,8 @@ algorithm
       Env env;
       SCode.Program prog;
 
-    case (_, _)
-      equation
-        false = RTOpts.debugFlag("scodeFlatten");
-      then
-        inProgram;
-
     case (_, prog)
       equation
-        true = RTOpts.debugFlag("scodeFlatten");
-        
         //System.startTimer();
 
         env = SCodeEnv.buildInitialEnv();
