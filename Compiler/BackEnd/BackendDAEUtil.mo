@@ -4144,7 +4144,7 @@ algorithm
     
     case (((e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),(vars,pa))))
       equation
-        cr = ComponentReference.makeCrefQual("$DER", DAE.ET_REAL(), {}, cr);
+        cr = ComponentReference.crefPrefixDer(cr);
         (varslst,p) = BackendVariable.getVar(cr, vars);
         res = incidenceRowExp1(varslst,p,pa,false);
       then

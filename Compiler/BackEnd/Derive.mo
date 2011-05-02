@@ -1373,7 +1373,7 @@ algorithm
     
     case (DAE.CALL(path = Absyn.IDENT("der"), expLst = {DAE.CREF(componentRef = cr)}), crx, differentiateIfExp)
       equation
-        cr = ComponentReference.makeCrefQual("$DER", DAE.ET_REAL(), {}, cr);
+        cr = ComponentReference.crefPrefixDer(cr);
         true = ComponentReference.crefEqual(cr, crx);
         rval = intReal(1);
       then
