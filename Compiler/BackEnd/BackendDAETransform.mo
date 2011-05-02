@@ -2117,7 +2117,7 @@ protected
   list<Integer> vEqns;
   DAE.ComponentRef vCr;
   Integer vindx;
-  Real prio1,prio2,prio3,prio4;
+  Real prio1,prio2,prio3,prio4,prio5;
 algorithm
   (_,vindx::_) := BackendVariable.getVar(BackendVariable.varCref(v),vars); // Variable index not stored in var itself => lookup required
   vEqns := BackendDAEUtil.eqnsForVarWithStates(mt,vindx);
@@ -2130,9 +2130,28 @@ algorithm
   Debug.fcall("dummyselect",print," Prio 3 : " +& realString(prio3) +& "\n");
  // prio4 := varStateSelectHeuristicPrio4(v);
   //Debug.fcall("dummyselect",print," Prio 4 : " +& realString(prio4) +& "\n");
-  prio:= prio1 +. prio2 +. prio3;// +. prio4;
+  prio5 := varStateSelectHeuristicPrio5(v);
+  Debug.fcall("dummyselect",print," Prio 5 : " +& realString(prio5) +& "\n");
+  prio:= prio1 +. prio2 +. prio3 +. prio5;// +. prio4;
 end varStateSelectHeuristicPrio;
 
+protected function varStateSelectHeuristicPrio5
+"function varStateSelectHeuristicPrio5
+  author: Frenkel TUD 2011-05
+  Helper function to varStateSelectHeuristicPrio.
+  added prio for variables with fixed = true "
+  input BackendDAE.Var v;
+  output Real prio;
+algorithm
+  prio := matchcontinue(v)
+    local Integer i; Real c;
+    case(v)
+      equation
+        true = BackendVariable.varFixed(v);
+      then 1.0;
+    case (_) then 0.0;
+  end matchcontinue;
+end varStateSelectHeuristicPrio5;
 
 protected function varStateSelectHeuristicPrio4
 "function varStateSelectHeuristicPrio4
