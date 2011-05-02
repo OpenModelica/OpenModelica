@@ -2859,7 +2859,7 @@ algorithm
       equation
         ((e,(nhelpvars1,helpvars))) = Expression.traverseExp(e, findSampleInExps, (nhelpvars,helpvars));
         b = nhelpvars1 > nhelpvars;
-      then ((e,b,(nhelpvars,helpvars)));
+      then ((e,b,(nhelpvars1,helpvars)));
   end match;
 end sampleFinder;
 
