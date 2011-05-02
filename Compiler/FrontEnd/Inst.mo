@@ -6163,7 +6163,7 @@ algorithm
       equation
         ((classmod as DAE.REDECL(finalPrefix,_,{(_,_)}))) = Mod.lookupModificationP(mods, Absyn.IDENT(n))
         "Redeclare of class definition, replaceable is false" ;
-        Error.addSourceMessage(Error.REDECLARE_NON_REPLACEABLE, {n}, info);
+        Error.addSourceMessage(Error.REDECLARE_NON_REPLACEABLE, {"class", n}, info);
       then
         fail();
 

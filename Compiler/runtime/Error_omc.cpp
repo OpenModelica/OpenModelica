@@ -36,7 +36,7 @@ extern "C" {
 
 void Error_addMessage(int errorID, const char* msg_type, const char* severity, const char* message, modelica_metatype tokenlst)
 {
-  std::list<std::string> tokens;
+  ErrorMessage::TokenList tokens;
   if (error_on) {
     while(MMC_GETHDR(tokenlst) != MMC_NILHDR) {
       const char* token = MMC_STRINGDATA(MMC_CAR(tokenlst));
@@ -59,7 +59,7 @@ extern const char* Error_printMessagesStr()
 
 extern void Error_addSourceMessage(int _id, const char* _msg_type, const char* _msg_severity, int _sline, int _scol, int _eline, int _ecol, int _read_only, const char* _filename, const char* _msg, void* tokenlst)
 {
-  std::list<std::string> tokens;
+  ErrorMessage::TokenList tokens;
   if (error_on) {
     while(MMC_GETHDR(tokenlst) != MMC_NILHDR) {
       tokens.push_back(string(MMC_STRINGDATA(MMC_CAR(tokenlst))));

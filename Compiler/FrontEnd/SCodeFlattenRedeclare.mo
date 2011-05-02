@@ -670,11 +670,12 @@ algorithm
       Absyn.Path path;
       Option<Env> opt_env;
       Absyn.Info info;
+      Item item;
 
     // A redeclared class definition.
     case (SCode.CLASS(name = name, info = info), _)
       equation
-        (_, path, env) = 
+        (item, path, env) = 
           SCodeLookup.lookupClassName(Absyn.IDENT(name), inEnv, info);
         path = SCodeEnv.joinPaths(SCodeEnv.getEnvPath(env), path);
         env = replaceElementInEnv(path, inRedeclare, inEnv);
@@ -684,8 +685,9 @@ algorithm
     // A redeclared component.
     case (SCode.COMPONENT(name = name, info = info), _)
       equation
-        (_, path, env) = 
+        (item, path, env) = 
           SCodeLookup.lookupVariableName(Absyn.IDENT(name), inEnv, info);
+        SCodeCheck.checkRedeclaredComponentPrefix(item, info);
         path = SCodeEnv.joinPaths(SCodeEnv.getEnvPath(env), path);
         env = replaceElementInEnv(path, inRedeclare, inEnv);
       then

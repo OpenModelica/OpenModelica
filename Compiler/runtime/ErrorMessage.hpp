@@ -31,29 +31,31 @@
 #ifndef ERRORMESSAGE_HPP
 #define ERRORMESSAGE_HPP
 
-#include <list>
+#include <vector>
 #include <string>
 
 class ErrorMessage {
 
 public:
-  ErrorMessage(long errorID,
-         std::string type,
-         std::string severity,
-         std::string message,
-         std::list<std::string> &tokens);
+  typedef std::vector<std::string> TokenList;
 
   ErrorMessage(long errorID,
-         std::string type,
-         std::string severity, 
-         std::string message,
-         std::list<std::string> &tokens,
+         const std::string &type,
+         const std::string &severity,
+         const std::string &message,
+         const TokenList &tokens);
+
+  ErrorMessage(long errorID,
+         const std::string &type,
+         const std::string &severity, 
+         const std::string &message,
+         const TokenList &tokens,
          long startLineNo,
          long startColumnNo,
          long endLineNo,
          long endColumnNo,
          bool isReadOnly,         
-         std::string filename);
+         const std::string &filename);
 
   long getID() const { return errorID_; };
   
@@ -76,13 +78,13 @@ public:
   long getEndColumnNo() const { return endColumnNo_; };
   bool getIsFileReadOnly() const { return isReadOnly_; };
   std::string getFileName() const { return filename_; };
-  std::list<std::string> getTokens() const { return tokens_; };
+  TokenList getTokens() const { return tokens_; };
 private:
   long errorID_;
   std::string messageType_;
   std::string severity_;
   std::string message_;
-  std::list<std::string> tokens_;
+  TokenList tokens_;
   std::string shortMessage;
   std::string fullMessage;
   

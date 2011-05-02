@@ -88,7 +88,7 @@ extern void add_message(int errorID,
      const char* type,
      const char* severity,
      const char* message,
-     std::list<std::string> tokens)
+     ErrorMessage::TokenList tokens)
 {
   std::string tmp("");
   if(currVariable.length()>0) {
@@ -108,7 +108,7 @@ void add_source_message(int errorID,
       const char* type,
       const char* severity,
       const char* message,
-      std::list<std::string> tokens,
+      ErrorMessage::TokenList tokens,
       int startLine,
       int startCol,
       int endLine,
@@ -299,7 +299,7 @@ static const char* ErrorImpl__getLastDeletedCheckpoint()
 
 extern void c_add_message(int errorID, const char* type, const char* severity, const char* message, const char** ctokens, int nTokens)
 {
-  std::list<std::string> tokens;
+  ErrorMessage::TokenList tokens;
   for (int i=nTokens-1; i>=0; i--) {
     tokens.push_back(std::string(ctokens[i]));
   }
@@ -308,7 +308,7 @@ extern void c_add_message(int errorID, const char* type, const char* severity, c
 
 extern void c_add_source_message(int errorID, const char* type, const char* severity, const char* message, const char** ctokens, int nTokens, int startLine, int startCol, int endLine, int endCol, int isReadOnly, const char* filename)
 {
-  std::list<std::string> tokens;
+  ErrorMessage::TokenList tokens;
   for (int i=nTokens-1; i>=0; i--) {
     tokens.push_back(std::string(ctokens[i]));
   }

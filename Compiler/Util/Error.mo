@@ -37,7 +37,35 @@ encapsulated package Error
 
   RCS: $Id$
 
-  This file contains the Error handling for the Compiler."
+  This file contains the Error handling for the Compiler. The following steps
+  are used to add a new error message:
+  
+    1) Add a new ErrorID constant below with an unique id.
+
+    2) Add a new entry in the errorTable. Each entry is a tuple consisting of
+       the ErrorID, a MessageType, a Severity and a message string. See the
+       MessageType and Severity uniontypes below for more information about 
+       them.
+
+      The message string is the error message that should be displayed, which 
+      may contain directives to insert tokens given when the message is used. 
+      These directives are:
+      
+        %s: Inserts the next token in the list.
+        %n: Inserts token number n in the list, where n is a number from 1 to 9.
+       
+      Note that these two directives do not affect each other. I.e. %s will move
+      to the next token in the list regardless of any positional directives, and
+      %1 will always point to the first token regardless of any %s before it.
+      An example:
+
+        Message: '%2: This is a %s of %2 %s and %1'
+        Tokens: {'test', 'error', 'directives', 'messages'}
+        Result: 'error: This is a test of error messages and directives'
+
+    3) Use the new error message by calling addSourceMessage or addMessage with
+       it's ErrorID.
+"
 
 
 public
@@ -76,8 +104,7 @@ public
 type MessageTokens = list<String>   "\"Tokens\" to insert into message at
             positions identified by
             - %s for string
-            - %l for line no.
-            - %c for col. no." ;
+            - %n for string number n" ;
 
 public import Absyn;
 
@@ -262,6 +289,7 @@ public constant ErrorID ERROR_FROM_HERE=174;
 public constant ErrorID EXTERNAL_FUNCTION_RESULT_NOT_CREF=175;
 public constant ErrorID EXTERNAL_FUNCTION_RESULT_NOT_VAR=176;
 public constant ErrorID EXTERNAL_FUNCTION_RESULT_ARRAY_TYPE=177;
+public constant ErrorID REDECLARE_FINAL=178;
 
 public constant ErrorID UNBOUND_PARAMETER_WITH_START_VALUE_WARNING=499;
 public constant ErrorID UNBOUND_PARAMETER_WARNING=500;
@@ -424,7 +452,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (REDECLARE_CLASS_AS_VAR,TRANSLATION(),ERROR(),
           "Trying to redeclare the class %s as a variable"),
           (REDECLARE_NON_REPLACEABLE,TRANSLATION(),ERROR(),
-          "Trying to redeclare class %s but class not declared as replaceable"),
+          "Trying to redeclare %1 %2 but %1 not declared as replaceable"),
           (COMPONENT_INPUT_OUTPUT_MISMATCH,TRANSLATION(),ERROR(),
           "Component declared as %s when having the variable %s declared as input"),
           (ARRAY_DIMENSION_MISMATCH,TRANSLATION(),ERROR(),
@@ -734,6 +762,8 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           "Non-replaceable base class %s in class extends."),
           (ERROR_FROM_HERE,TRANSLATION(),NOTIFICATION(),
           "From here:"),
+          (REDECLARE_FINAL,TRANSLATION(),ERROR(),
+          "Redeclaration of final %s %s is not allowed."),
           (MATCHCONTINUE_TO_MATCH_OPTIMIZATION,TRANSLATION(),NOTIFICATION(),"This matchcontinue expression has no overlapping patterns and should be using match instead of matchcontinue."),
           (META_DEAD_CODE,TRANSLATION(),NOTIFICATION(),"Dead code elimination: %s."),
           (META_UNUSED_DECL,TRANSLATION(),NOTIFICATION(),"Unused local variable: %s."),

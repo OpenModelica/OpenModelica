@@ -4027,6 +4027,13 @@ algorithm
   end match;
 end boolPartial;
 
+public function prefixesFinal
+  input Prefixes inPrefixes;
+  output Final outFinal;
+algorithm
+  PREFIXES(finalPrefix = outFinal) := inPrefixes;
+end prefixesFinal;
+
 public function finalBool
   input Final inFinal;
   output Boolean bFinal;

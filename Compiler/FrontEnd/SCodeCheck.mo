@@ -268,6 +268,42 @@ algorithm
   end matchcontinue;
 end checkRedeclareModifier2;
         
+public function checkRedeclaredComponentPrefix
+  input SCodeEnv.Item inItem;
+  input Absyn.Info inInfo;
+algorithm
+  _ := matchcontinue(inItem, inInfo)
+    local
+      SCode.Prefixes pf;
+      SCode.Ident name;
+
+    case (SCodeEnv.VAR(var = SCode.COMPONENT(prefixes = pf)), _)
+      equation
+        true = SCode.replaceableBool(SCode.prefixesReplaceable(pf));
+        false = SCode.finalBool(SCode.prefixesFinal(pf));
+      then
+        ();
+
+    case (SCodeEnv.VAR(var = SCode.COMPONENT(name = name, prefixes = pf)), _)
+      equation
+        false = SCode.replaceableBool(SCode.prefixesReplaceable(pf));
+        Error.addSourceMessage(Error.REDECLARE_NON_REPLACEABLE,
+          {"component", name}, inInfo);
+      then
+        fail();
+
+    case (SCodeEnv.VAR(var = SCode.COMPONENT(name = name, prefixes = pf)), _)
+      equation
+        true = SCode.finalBool(SCode.prefixesFinal(pf));
+        Error.addSourceMessage(Error.REDECLARE_FINAL,
+          {"component", name}, inInfo);
+      then
+        fail();
+
+    case (SCodeEnv.CLASS(cls = _), _) then ();
+  end matchcontinue;
+end checkRedeclaredComponentPrefix;
+
 public function checkValidEnumLiteral
   input String inLiteral;
   input Absyn.Info inInfo;

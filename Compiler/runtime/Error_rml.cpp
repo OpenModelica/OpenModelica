@@ -114,7 +114,7 @@ RML_BEGIN_LABEL(ErrorExt__addMessage)
   char* severity = RML_STRINGDATA(rmlA2);
   char* message = RML_STRINGDATA(rmlA3);
   void* tokenlst = rmlA4;
-  std::list<std::string> tokens;
+  ErrorMessage::TokenList tokens;
   if (error_on) {
     while(RML_GETHDR(tokenlst) != RML_NILHDR) {
 tokens.push_back(string(RML_STRINGDATA(RML_CAR(tokenlst))));
@@ -140,7 +140,7 @@ RML_BEGIN_LABEL(ErrorExt__addSourceMessage)
   char* filename = RML_STRINGDATA(rmlA8);
   char* message = RML_STRINGDATA(rmlA9);
   void* tokenlst = rmlA10;
-  std::list<std::string> tokens;
+  ErrorMessage::TokenList tokens;
 
   if (error_on) {
     while(RML_GETHDR(tokenlst) != RML_NILHDR) {

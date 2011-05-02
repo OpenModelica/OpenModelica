@@ -39,10 +39,10 @@
 
 
   ErrorMessage::ErrorMessage(long errorID,
-           std::string type,
-           std::string severity,
-           std::string message,
-           std::list<std::string>& tokens)
+           const std::string &type,
+           const std::string &severity,
+           const std::string &message,
+           const TokenList &tokens)
     : errorID_(errorID),
       messageType_(type),
       severity_(severity),
@@ -61,16 +61,16 @@
 }
 
 ErrorMessage::ErrorMessage(long errorID,
-         std::string type,
-         std::string severity,
-         std::string message,
-         std::list<std::string> &tokens,
+         const std::string &type,
+         const std::string &severity,
+         const std::string &message,
+         const TokenList &tokens,
          long startLineNo,
          long startColumnNo,
          long endLineNo,
          long endColumnNo,
          bool isReadOnly,
-         std::string filename)
+         const std::string &filename)
     :
     errorID_(errorID),
     messageType_(type),
@@ -88,37 +88,64 @@ ErrorMessage::ErrorMessage(long errorID,
   fullMessage = getFullMessage_();
 }
 
-/*
- * adrpo, 2006-02-05 changed position handling
- */
 std::string ErrorMessage::getMessage_()
 {
-  std::list<std::string>::iterator tok;
-  std::string::size_type str_pos;
-  for (tok=tokens_.begin(); tok != tokens_.end(); tok++) {
-    str_pos=message_.find("%s");
-    if (str_pos < message_.size())
+  std::string::size_type str_pos = 0;
+  TokenList::iterator tok = tokens_.begin();
+  char index_symbol;
+  int index;
+
+  while((str_pos = message_.find('%', str_pos)) != std::string::npos)
+  {
+    index_symbol = message_[str_pos + 1];
+
+    if(index_symbol == 's')
     {
-      message_.replace(str_pos,2,*tok);
+      if(tok == tokens_.end())
+      {
+        std::cerr << "Internal error: no tokens left to replace %s with.\n";
+        std::cerr << "Given message was: " << message_ << "\n";
+        return "";
+      }
+      message_.replace(str_pos, 2, *tok);
+      str_pos += tok->size() + 1; 
+      *tok++;
     }
-    else
+    else if(index_symbol >= '0' || index_symbol <= '9')
     {
-      std::cerr << "Internal error in error handling, no %s left to replace "<< *tok << " with." << std::endl;
+      index = index_symbol - '0' - 1;
+
+      if(index >= tokens_.size() || index < 0)
+      {
+        std::cerr << "Internal error: Invalid positional index %" << index + 1 
+          << " in error message.\n";
+        std::cerr << "Given message was: " << message_ << "\n";
+        return "";
+      }
+
+      message_.replace(str_pos, 2, tokens_[index]);
+      str_pos += tokens_[index].size() + 1;
     }
   }
-  std::stringstream str;
-  str << "["<< filename_ << ":" << startLineNo_ << ":" << startColumnNo_ << "-" <<
-  endLineNo_ << ":" << endColumnNo_ << ":" << (isReadOnly_?"readonly":"writable") << "] " << severity_ << ": ";
-  std::string positionInfo = str.str();
-  if (filename_ == "" && startLineNo_ == 0 && startColumnNo_ == 0 &&
-      endLineNo_ == 0 && endColumnNo_ == 0 /*&& isReadOnly_ == false*/)
+
+  std::string ret_msg;
+
+  if(filename_ == "" && startLineNo_ == 0 && startColumnNo_ == 0 &&
+      endLineNo_ == 0 && endColumnNo_ == 0)
   {
-    return severity_+": "+message_;
+    ret_msg = severity_ + ": " + message_;
   }
   else
   {
-    return positionInfo + message_;
+    std::stringstream str;
+    str << "[" << filename_ << ":" << startLineNo_ << ":" << startColumnNo_ <<
+      "-" << endLineNo_ << ":" << endColumnNo_ << ":" <<
+      (isReadOnly_ ? "readonly" : "writable") << "] " << severity_ << ": ";
+    std::string positionInfo = str.str();
+    ret_msg = positionInfo + message_;
   }
+
+  return ret_msg;
 }
 
 std::string ErrorMessage::getFullMessage_()
