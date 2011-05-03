@@ -1507,87 +1507,27 @@ public function traverseBackendDAEExpsEqn
     output tuple<DAE.Exp, Type_a> outTpl;
   end FuncExpType;
 algorithm
-  (outEquation,outAlgs,outMultiDimEquationArray,outWhenClauseLst,outTypeA) := matchcontinue (inEquation,inAlgs,inMultiDimEquationArray,inWhenClauseLst,func,inTypeA)
-    local
-      DAE.Exp e1_1,e2_1,e1,e2;
-      DAE.ComponentRef cr,cr1;
-      BackendDAE.Value ds,indx,i;
-      list<DAE.Exp> expl,expl1,in_,in_1,out,out1;
-      BackendDAE.Equation res;
-      BackendDAE.WhenEquation elsepartRes;
-      BackendDAE.WhenEquation elsepart;
-      DAE.ElementSource source,source1;
-      array<DAE.Algorithm> algs;
-      array<BackendDAE.MultiDimEquation> ae,ae1;
-      list<BackendDAE.WhenClause> wclst,wclst1,wclst2;
-      list<Integer> dimSize;
-      Type_a ext_arg_1,ext_arg_2,ext_arg_3;
-    case (BackendDAE.EQUATION(exp = e1,scalar = e2,source = source),inAlgs,ae,wclst,func,inTypeA)
-      equation
-        ((e1_1,ext_arg_1)) = func((e1,inTypeA));
-        ((e2_1,ext_arg_2)) = func((e2,ext_arg_1));
-      then
-        (BackendDAE.EQUATION(e1_1,e2_1,source),inAlgs,ae,wclst,ext_arg_2);
-    case (BackendDAE.ARRAY_EQUATION(index = ds,crefOrDerCref = expl,source = source),inAlgs,ae,wclst,func,inTypeA)
-      equation
-        (expl1,ext_arg_1) = BackendEquation.traverseBackendDAEExpList(expl,func,inTypeA);
-        i = ds+1;
-        BackendDAE.MULTIDIM_EQUATION(dimSize=dimSize,left=e1,right = e2,source=source1) = ae[i];
-        ((e1_1,ext_arg_2)) = func((e1,ext_arg_1));
-        ((e2_1,ext_arg_3)) = func((e2,ext_arg_2));
-        ae1 = arrayUpdate(ae,i,BackendDAE.MULTIDIM_EQUATION(dimSize,e1_1,e2_1,source1));
-      then (BackendDAE.ARRAY_EQUATION(ds,expl1,source),inAlgs,ae1,wclst,ext_arg_3);  /* array equation */
-    case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2,source=source),inAlgs,ae,wclst,func,inTypeA)
-      equation
-        e1 = Expression.crefExp(cr);
-        ((DAE.CREF(cr1,_),ext_arg_1)) = func((e1,inTypeA));
-        ((e2_1,ext_arg_2)) = func((e2,ext_arg_1));
-      then
-        (BackendDAE.SOLVED_EQUATION(cr1,e2_1,source),inAlgs,ae,wclst,ext_arg_1);
-    case (BackendDAE.RESIDUAL_EQUATION(exp = e1,source=source),inAlgs,ae,wclst,func,inTypeA)
-      equation
-        ((e1_1,ext_arg_1)) = func((e1,inTypeA));
-      then
-        (BackendDAE.RESIDUAL_EQUATION(e1_1,source),inAlgs,ae,wclst,ext_arg_1);
-    case (BackendDAE.ALGORITHM(index = indx,in_ = in_,out = out,source = source),inAlgs,ae,wclst,func,inTypeA)
-      equation
-        (in_1,ext_arg_1) = BackendEquation.traverseBackendDAEExpList(in_,func,inTypeA);
-        (out1,ext_arg_2) = BackendEquation.traverseBackendDAEExpList(out,func,ext_arg_1);
-        (algs,ext_arg_3) = traverseBackendDAEExpsEqnAlgs(indx,inAlgs,func,ext_arg_2);
-      then (BackendDAE.ALGORITHM(indx,in_1,out1,source),algs,ae,wclst,ext_arg_3);  /* Algorithms */
-    case (BackendDAE.WHEN_EQUATION(whenEquation =
-          BackendDAE.WHEN_EQ(index = i,left = cr,right = e1,elsewhenPart=NONE()),source = source),inAlgs,ae,wclst,func,inTypeA)
-      equation
-        e2 = Expression.crefExp(cr);
-        ((e1_1,ext_arg_1)) = func((e1,inTypeA));
-        ((DAE.CREF(cr1,_),ext_arg_2)) = func((e2,ext_arg_1));
-        res = BackendDAE.WHEN_EQUATION(BackendDAE.WHEN_EQ(i,cr1,e1_1,NONE()),source);
-        (wclst1,ext_arg_3) = traverseBackendDAEExpsWhenClause(SOME(i),wclst,func,ext_arg_2);
-      then
-        (res,inAlgs,ae,wclst1,ext_arg_3);
-
-    case (BackendDAE.WHEN_EQUATION(whenEquation =
-          BackendDAE.WHEN_EQ(index = i,left = cr,right = e1,elsewhenPart=SOME(elsepart)),source = source),inAlgs,ae,wclst,func,inTypeA)
-      equation
-        ((e1_1,ext_arg_1)) = func((e1,inTypeA));
-        (BackendDAE.WHEN_EQUATION(elsepartRes,source),algs,ae1,wclst1,ext_arg_2) = traverseBackendDAEExpsEqn(BackendDAE.WHEN_EQUATION(elsepart,source),inAlgs,ae,wclst,func,ext_arg_1);
-        res = BackendDAE.WHEN_EQUATION(BackendDAE.WHEN_EQ(i,cr,e1_1,SOME(elsepartRes)),source);
-        (wclst2,ext_arg_3) = traverseBackendDAEExpsWhenClause(SOME(i),wclst1,func,ext_arg_2);
-      then
-        (res,algs,ae1,wclst2,ext_arg_3);
-    case (BackendDAE.COMPLEX_EQUATION(index=i,lhs = e1,rhs = e2,source = source),inAlgs,ae,wclst,func,inTypeA)
-      equation
-        ((e1_1,ext_arg_1)) = func((e1,inTypeA));
-        ((e2_1,ext_arg_2)) = func((e2,ext_arg_1));
-      then
-        (BackendDAE.COMPLEX_EQUATION(i,e1_1,e2_1,source),inAlgs,ae,wclst,ext_arg_2);
-     case (_,_,_,_,_,_)
-      equation
-        print("-BackendDAETransform.traverseBackendDAEExpsEqn failed\n");
-      then
-        fail();
-  end matchcontinue;
+  (outEquation,outAlgs,outMultiDimEquationArray,outWhenClauseLst,(_,outTypeA)) := traverseBackendDAEExpsEqnWithSymbolicOperation(inEquation,inAlgs,inMultiDimEquationArray,inWhenClauseLst,traverseBackendDAEExpsEqnWithoutSymbolicOperationHelper,(func,inTypeA));
 end traverseBackendDAEExpsEqn;
+
+protected function traverseBackendDAEExpsEqnWithoutSymbolicOperationHelper
+  replaceable type Type_a subtypeof Any;
+  input tuple<DAE.Exp, tuple<list<DAE.SymbolicOperation>,tuple<FuncExpType,Type_a>>> inTpl;
+  output tuple<DAE.Exp, tuple<list<DAE.SymbolicOperation>,tuple<FuncExpType,Type_a>>> outTpl;
+  partial function FuncExpType
+    input tuple<DAE.Exp, Type_a> inTpl;
+    output tuple<DAE.Exp, Type_a> outTpl;
+  end FuncExpType;
+protected
+  FuncExpType func;
+  Type_a arg;
+  list<DAE.SymbolicOperation> ops;
+  DAE.Exp exp;
+algorithm
+  (exp,(ops,(func,arg))) := inTpl;
+  ((exp,arg)) := func((exp,arg));
+  outTpl := (exp,(ops,(func,arg)));
+end traverseBackendDAEExpsEqnWithoutSymbolicOperationHelper;
 
 public function traverseBackendDAEExpsEqnWithSymbolicOperation
 "Traverse all expressions of a list of Equations. It is possible to change the equations
