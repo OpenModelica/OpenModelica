@@ -951,6 +951,37 @@ algorithm
   end match;
 end restrString;
 
+public function restrictionStringPP
+  "Translates a Restriction to a String."
+  input Restriction inRestriction;
+  output String outString;
+algorithm
+  outString := match(inRestriction)
+    case R_CLASS() then "class";
+    case R_OPTIMIZATION() then "optimization";
+    case R_MODEL() then "model";
+    case R_RECORD() then "record";
+    case R_BLOCK() then "block";
+    case R_CONNECTOR(true) then "expandable connector";
+    case R_CONNECTOR(false) then "connector";
+    case R_OPERATOR(true) then "operator function";
+    case R_OPERATOR(false) then "operator";
+    case R_TYPE() then "type";
+    case R_PACKAGE() then "package";
+    case R_FUNCTION() then "function";
+    case R_EXT_FUNCTION() then "external function";
+    case R_ENUMERATION() then "enumeration";
+    case R_PREDEFINED_INTEGER() then "IntegerType";
+    case R_PREDEFINED_REAL() then "RealType";
+    case R_PREDEFINED_STRING() then "StringType";
+    case R_PREDEFINED_BOOLEAN() then "BooleanType";
+    case R_PREDEFINED_ENUMERATION() then "EnumType";
+    case R_METARECORD(name = _) then "record";
+    case R_UNIONTYPE() then "uniontype";
+    else "#Internal error: missing case in SCode.restrictionStringPP#";
+  end match;
+end restrictionStringPP;
+
 public function printRestr
 "function: printRestr
   Prints Restriction to the Print buffer."
@@ -3835,6 +3866,18 @@ algorithm
     case (false) then PROTECTED();
   end match;
 end boolVisibility;
+
+public function visibilityEqual
+  input Visibility inVisibility1;
+  input Visibility inVisibility2;
+  output Boolean outEqual;
+algorithm
+  outEqual := match(inVisibility1, inVisibility2)
+    case (PUBLIC(), PUBLIC()) then true;
+    case (PROTECTED(), PROTECTED()) then true;
+    else false;
+  end match;
+end visibilityEqual;
 
 public function finalStr
   input Final inFinal;

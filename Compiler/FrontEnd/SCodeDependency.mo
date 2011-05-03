@@ -48,6 +48,7 @@ public type Env = SCodeEnv.Env;
 protected import Debug;
 protected import Error;
 protected import RTOpts;
+protected import SCodeCheck;
 protected import SCodeFlattenRedeclare;
 protected import SCodeLookup;
 protected import SCodeUtil;
@@ -896,7 +897,7 @@ algorithm
     // A redeclaration modifier, analyse the redeclarations.
     case (SCode.REDECL(elementLst = el), _, _, _)
       equation
-        Util.listMap01(el, inEnv, analyseRedeclare);
+        Util.listMap02(el, analyseRedeclare, inEnv, inTypeEnv);
       then
         ();
   end match;
@@ -906,18 +907,22 @@ protected function analyseRedeclare
   "Analyses a redeclaration element."
   input SCode.Element inElement;
   input Env inEnv;
+  input Env inTypeEnv;
 algorithm
-  _ := match(inElement, inEnv)
+  _ := match(inElement, inEnv, inTypeEnv)
     local
       SCode.ClassDef cdef;
       Option<Absyn.ConstrainClass> cc;
       Absyn.Info info;
       SCode.Restriction restr;
       SCode.Prefixes prefixes;
+      SCode.Ident name;
+      Item item;
 
     // Class definitions are not analysed in analyseElement but are needed here
     // in case a class is redeclared.
-    case (SCode.CLASS(prefixes = prefixes, classDef = cdef,restriction = restr, info = info), _)
+    case (SCode.CLASS(prefixes = prefixes, classDef = cdef,
+        restriction = restr, info = info), _, _)
       equation
         analyseClassDef(cdef, restr, inEnv, info);
         analyseConstrainClass(SCode.replaceableOptConstraint(SCode.prefixesReplaceable(prefixes)), inEnv, info);
@@ -961,16 +966,7 @@ algorithm
 
     case (SCode.NAMEMOD(ident = ident, A = m), (env, ty_env), _)
       equation
-        (item, _, env2) = SCodeLookup.lookupName(Absyn.IDENT(ident),
-          ty_env, inInfo, NONE());
-        analyseItem(item, env2);
-        analyseModifier(m, env, ty_env, inInfo);
-      then
-        ();
-
-    case (SCode.NAMEMOD(ident = ident, A = m), (env, ty_env), _)
-      equation
-        analyseModifier(m, env, ty_env, inInfo);
+        analyseNameMod(ident, env, ty_env, m, inInfo);
       then
         ();
 
@@ -981,6 +977,71 @@ algorithm
         ();
   end matchcontinue;
 end analyseSubMod;
+
+protected function analyseNameMod
+  input SCode.Ident inIdent;
+  input Env inEnv;
+  input Env inTypeEnv;
+  input SCode.Mod inMod;
+  input Absyn.Info inInfo;
+protected
+  Option<Item> item;
+  Option<Env> env;
+algorithm
+  (item, env) := lookupNameMod(Absyn.IDENT(inIdent), inTypeEnv, inInfo);
+  analyseNameMod2(item, env, inEnv, inTypeEnv, inMod, inInfo);
+end analyseNameMod;
+
+protected function analyseNameMod2
+  input Option<Item> inItem;
+  input Option<Env> inItemEnv;
+  input Env inEnv;
+  input Env inTypeEnv;
+  input SCode.Mod inModifier;
+  input Absyn.Info inInfo;
+algorithm
+  _ := match(inItem, inItemEnv, inEnv, inTypeEnv, inModifier, inInfo)
+    local
+      Item item;
+      Env env;
+
+    case (SOME(item), SOME(env), _, _, _, _)
+      equation
+        SCodeCheck.checkModifierIfRedeclare(item, inModifier, inInfo);
+        analyseItem(item, env);
+        analyseModifier(inModifier, inEnv, inTypeEnv, inInfo);
+      then
+        ();
+
+    else
+      equation
+        analyseModifier(inModifier, inEnv, inTypeEnv, inInfo);
+      then
+        ();
+  end match;
+end analyseNameMod2;
+
+protected function lookupNameMod
+  input Absyn.Path inPath;
+  input Env inEnv;
+  input Absyn.Info inInfo;
+  output Option<Item> outItem;
+  output Option<Env> outEnv;
+algorithm
+  (outItem, outEnv) := matchcontinue(inPath, inEnv, inInfo)
+    local
+      Item item;
+      Env env;
+
+    case (_, _, _)
+      equation
+        (item, _, env) = SCodeLookup.lookupName(inPath, inEnv, inInfo, NONE());
+      then
+        (SOME(item), SOME(env));
+
+    else (NONE(), NONE());
+  end matchcontinue;
+end lookupNameMod;
 
 protected function analyseSubscript
   "Analyses a subscript."
