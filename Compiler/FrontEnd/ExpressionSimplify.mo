@@ -95,6 +95,7 @@ algorithm
         (eNew,b) = simplify1(e); // Basic local simplifications
         // Debug.fprintln("simplify","SIMPLIFY INTERMEDIATE->" +& printExpStr(eNew));
         eNew = simplify2(eNew); // Advanced (global) simplifications
+        b = not Debug.bcallret2(b,Expression.expEqual,e,eNew,not b);
         // Debug.fprintln("simplify","SIMPLIFY FINAL->" +& printExpStr(eNew));
       then (eNew,b);
   end matchcontinue;
