@@ -445,7 +445,7 @@ algorithm
     else
       equation
         true = RTOpts.debugFlag("failtrace");
-        Debug.traceln("- SCodeFlatten.qualifyRedeclare failed on " +&
+        Debug.traceln("- SCodeFlattenRedeclare.qualifyRedeclare failed on " +&
           SCode.printElementStr(inElement) +& " in " +&
           Absyn.pathString(SCodeEnv.getEnvPath(inEnv)));
       then
@@ -460,10 +460,10 @@ public function replaceRedeclares
   input Env inBaseClassEnv;
   input Env inEnv;
   input SCodeLookup.RedeclareReplaceStrategy inReplaceRedeclares;
-  output Item outItem;
-  output Env outEnv;
+  output Option<Item> outItem;
+  output Option<Env> outEnv;
 algorithm
-  (outItem, outEnv) := match(inRedeclares, inBaseClassName, inBaseClassItem,
+  (outItem, outEnv) := matchcontinue(inRedeclares, inBaseClassName, inBaseClassItem,
       inBaseClassEnv, inEnv, inReplaceRedeclares)
     local
       Item item;
@@ -471,7 +471,7 @@ algorithm
       Absyn.Path bc;
 
     case (_, _, _, _, _, SCodeLookup.IGNORE_REDECLARES()) 
-      then (inBaseClassItem, inEnv);
+      then (SOME(inBaseClassItem), SOME(inEnv));
 
     case (_, bc, _, _, _, SCodeLookup.INSERT_REDECLARES())
       equation
@@ -479,8 +479,10 @@ algorithm
           inBaseClassItem, inBaseClassEnv, inEnv);
         (item, env) = replaceRedeclares2(bc, inEnv, item, env);
       then
-        (item, env);
-  end match;
+        (SOME(item), SOME(env));
+
+    else (NONE(), NONE());
+  end matchcontinue;
 end replaceRedeclares;
 
 protected function replaceRedeclares2
@@ -600,7 +602,7 @@ algorithm
     else
       equation
         true = RTOpts.debugFlag("failtrace");
-        Debug.trace("- SCodeFlatten.replaceRedeclaredClassesInEnv failed for ");
+        Debug.trace("- SCodeFlattenRedeclare.replaceRedeclaredClassesInEnv failed for ");
         Debug.traceln(SCodeEnv.getItemName(inItem) +& " in " +& 
           SCodeEnv.getEnvName(inVarEnv));
       then
@@ -677,6 +679,7 @@ algorithm
       equation
         (item, path, env) = 
           SCodeLookup.lookupClassName(Absyn.IDENT(name), inEnv, info);
+        SCodeCheck.checkRedeclaredElementPrefix(item, info);
         path = SCodeEnv.joinPaths(SCodeEnv.getEnvPath(env), path);
         env = replaceElementInEnv(path, inRedeclare, inEnv);
       then
@@ -687,7 +690,7 @@ algorithm
       equation
         (item, path, env) = 
           SCodeLookup.lookupVariableName(Absyn.IDENT(name), inEnv, info);
-        SCodeCheck.checkRedeclaredComponentPrefix(item, info);
+        SCodeCheck.checkRedeclaredElementPrefix(item, info);
         path = SCodeEnv.joinPaths(SCodeEnv.getEnvPath(env), path);
         env = replaceElementInEnv(path, inRedeclare, inEnv);
       then
@@ -803,7 +806,7 @@ algorithm
     else
       equation
         true = RTOpts.debugFlag("failtrace");
-        Debug.traceln("- SCodeFlatten.replaceElementInEnv3 failed.");
+        Debug.traceln("- SCodeFlattenRedeclare.replaceElementInEnv3 failed.");
       then
         fail();
 

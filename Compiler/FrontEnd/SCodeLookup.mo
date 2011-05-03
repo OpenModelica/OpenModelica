@@ -215,10 +215,10 @@ algorithm
     // Look among the inherited components.
     case (_, _)
       equation
-        (item, path, _, env) = 
+        (opt_item, opt_path, _, opt_env) = 
           lookupInBaseClasses(inName, inEnv, INSERT_REDECLARES());
       then
-        (SOME(item), SOME(path), SOME(env));
+        (opt_item, opt_path, opt_env);
 
     // Look among the qualified imports.
     case (_, SCodeEnv.FRAME(importTable = 
@@ -254,10 +254,10 @@ public function lookupInBaseClasses
   input Absyn.Ident inName;
   input Env inEnv;
   input RedeclareReplaceStrategy inReplaceRedeclares;
-  output Item outItem;
-  output Absyn.Path outPath;
+  output Option<Item> outItem;
+  output Option<Absyn.Path> outPath;
   output Absyn.Path outBaseClass;
-  output Env outEnv;
+  output Option<Env> outEnv;
 protected
   Env env;
   list<Extends> bcl;
@@ -280,10 +280,10 @@ public function lookupInBaseClasses2
   input list<Extends> inBaseClasses;
   input Env inEnv;
   input RedeclareReplaceStrategy inReplaceRedeclares;
-  output Item outItem;
-  output Absyn.Path outPath;
+  output Option<Item> outItem;
+  output Option<Absyn.Path> outPath;
   output Absyn.Path outBaseClass;
-  output Env outEnv;
+  output Option<Env> outEnv;
 algorithm
   (outItem, outPath, outBaseClass, outEnv) := 
   matchcontinue(inName, inBaseClasses, inEnv, inReplaceRedeclares)
@@ -294,6 +294,9 @@ algorithm
       Env env;
       list<SCode.Element> redecls;
       Absyn.Info info;
+      Option<Absyn.Path> opt_path;
+      Option<Item> opt_item;
+      Option<Env> opt_env;
 
     // Look in the first base class.
     case (_, SCodeEnv.EXTENDS(baseClass = bc, redeclareModifiers = redecls, 
@@ -305,22 +308,48 @@ algorithm
         // (imports are not inherited).
         item = SCodeEnv.setImportsInItemHidden(item, true);
         // Look in the base class.
-        (item, env) = SCodeFlattenRedeclare.replaceRedeclares(redecls, bc, 
-          item, env, inEnv, inReplaceRedeclares);
-        (item, path, env) = lookupNameInItem(Absyn.IDENT(inName), item, env);
+        (opt_item, opt_env) = SCodeFlattenRedeclare.replaceRedeclares(redecls, 
+          bc, item, env, inEnv, inReplaceRedeclares);
+        (opt_item, opt_path, opt_env) = 
+          lookupInBaseClasses3(Absyn.IDENT(inName), opt_item, opt_env);
       then
-        (item, path, bc, env);
+        (opt_item, opt_path, bc, opt_env);
 
     // No match, check the rest of the base classes.
     case (_, _ :: rest_bc, _, _)
       equation
-        (item, path, bc, env) = 
+        (opt_item, opt_path, bc, opt_env) = 
           lookupInBaseClasses2(inName, rest_bc, inEnv, inReplaceRedeclares);
       then
-        (item, path, bc, env);
+        (opt_item, opt_path, bc, opt_env);
 
   end matchcontinue;
 end lookupInBaseClasses2;
+
+protected function lookupInBaseClasses3
+  input Absyn.Path inName;
+  input Option<Item> inItem;
+  input Option<Env> inEnv;
+  output Option<Item> outItem;
+  output Option<Absyn.Path> outPath;
+  output Option<Env> outEnv;
+algorithm
+  (outItem, outPath, outEnv) := match(inName, inItem, inEnv)
+    local
+      Item item;
+      Absyn.Path path;
+      Env env;
+      
+    case (_, NONE(), NONE()) then (NONE(), NONE(), NONE());
+
+    case (_, SOME(item), SOME(env))
+      equation
+        (item, path, env) = lookupNameInItem(inName, item, env);
+      then
+        (SOME(item), SOME(path), SOME(env));
+  end match;
+
+end lookupInBaseClasses3;
 
 public function lookupInQualifiedImports
   "Looks up a name through the qualified imports in a scope. If it finds the
@@ -624,7 +653,7 @@ public function lookupBaseClass
   output Absyn.Path outBaseClass;
   output Item outItem;
 algorithm
-  (outItem, _, outBaseClass, _) := lookupInBaseClasses(inClass, inEnv,
+  (SOME(outItem), _, outBaseClass, _) := lookupInBaseClasses(inClass, inEnv,
     INSERT_REDECLARES());
 end lookupBaseClass;
 
@@ -645,7 +674,8 @@ algorithm
 
     case (SCodeEnv.CLASS(cls = SCode.CLASS(name = name)), _, _)
       equation
-        (item, _, _, env) = lookupInBaseClasses(name, inEnv, IGNORE_REDECLARES());
+        (SOME(item), _, _, SOME(env)) = lookupInBaseClasses(name, inEnv,
+          IGNORE_REDECLARES());
         SCode.PREFIXES(redeclarePrefix = rdp, replaceablePrefix = rpp) =
           SCodeEnv.getItemPrefixes(item);
         (item, env) = lookupRedeclaredClass2(item, rdp, rpp, env, inInfo);
@@ -695,7 +725,8 @@ algorithm
     case (SCodeEnv.CLASS(cls = SCode.CLASS(name = name)),
         SCode.REDECLARE(), SCode.REPLACEABLE(cc = _), _, _)
       equation
-        (item, _, _, env) = lookupInBaseClasses(name, inEnv, IGNORE_REDECLARES());
+        (SOME(item), _, _, SOME(env)) = lookupInBaseClasses(name, inEnv, 
+          IGNORE_REDECLARES());
         SCode.PREFIXES(redeclarePrefix = rdp, replaceablePrefix = rpp) = 
           SCodeEnv.getItemPrefixes(item);
         (item, env) = lookupRedeclaredClass2(item, rdp, rpp, env, inInfo);

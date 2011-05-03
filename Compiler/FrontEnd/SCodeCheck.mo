@@ -268,41 +268,71 @@ algorithm
   end matchcontinue;
 end checkRedeclareModifier2;
         
-public function checkRedeclaredComponentPrefix
+public function checkRedeclaredElementPrefix
+  "Checks that an element that is being redeclared is declared as replaceable
+  and non-final, otherwise an error is printed."
   input SCodeEnv.Item inItem;
   input Absyn.Info inInfo;
 algorithm
-  _ := matchcontinue(inItem, inInfo)
+  _ := match(inItem, inInfo)
     local
-      SCode.Prefixes pf;
+      SCode.Replaceable repl;
+      SCode.Final fin;
       SCode.Ident name;
+      Absyn.Info info;
 
-    case (SCodeEnv.VAR(var = SCode.COMPONENT(prefixes = pf)), _)
+    case (SCodeEnv.VAR(var = SCode.COMPONENT(
+        name = name, 
+        prefixes = SCode.PREFIXES(finalPrefix = fin, replaceablePrefix = repl),
+        info = info)), _)
       equation
-        true = SCode.replaceableBool(SCode.prefixesReplaceable(pf));
-        false = SCode.finalBool(SCode.prefixesFinal(pf));
+        checkRedeclaredElementPrefix2(name, "component", fin, repl, inInfo, info);
       then
         ();
 
-    case (SCodeEnv.VAR(var = SCode.COMPONENT(name = name, prefixes = pf)), _)
+    case (SCodeEnv.CLASS(cls = SCode.CLASS(
+        name = name,
+        prefixes = SCode.PREFIXES(finalPrefix = fin, replaceablePrefix = repl),
+        info = info)), _)
       equation
-        false = SCode.replaceableBool(SCode.prefixesReplaceable(pf));
+        checkRedeclaredElementPrefix2(name, "class", fin, repl, inInfo, info);
+      then
+        ();
+
+    else ();
+  end match;
+end checkRedeclaredElementPrefix;
+
+protected function checkRedeclaredElementPrefix2
+  input SCode.Ident inName;
+  input String inType;
+  input SCode.Final inFinal;
+  input SCode.Replaceable inReplaceable;
+  input Absyn.Info inOriginInfo;
+  input Absyn.Info inInfo;
+algorithm
+  _ := matchcontinue(inName, inType, inFinal, inReplaceable, inOriginInfo, inInfo)
+    case (_, _, SCode.NOT_FINAL(), SCode.REPLACEABLE(cc = _), _, _) then ();
+
+    // Trying to redeclare a non-replaceable element.
+    case (_, _, _, SCode.NOT_REPLACEABLE(), _, _)
+      equation
+        Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inOriginInfo);
         Error.addSourceMessage(Error.REDECLARE_NON_REPLACEABLE,
-          {"component", name}, inInfo);
+          {inType, inName}, inInfo);
       then
         fail();
 
-    case (SCodeEnv.VAR(var = SCode.COMPONENT(name = name, prefixes = pf)), _)
+    // Trying to replace a final element.
+    case (_, _, SCode.FINAL(), _, _, _)
       equation
-        true = SCode.finalBool(SCode.prefixesFinal(pf));
+        Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inOriginInfo);
         Error.addSourceMessage(Error.REDECLARE_FINAL,
-          {"component", name}, inInfo);
+          {inType, inName}, inInfo);
       then
         fail();
-
-    case (SCodeEnv.CLASS(cls = _), _) then ();
   end matchcontinue;
-end checkRedeclaredComponentPrefix;
+end checkRedeclaredElementPrefix2;
 
 public function checkValidEnumLiteral
   input String inLiteral;
