@@ -479,13 +479,13 @@ public function valueArrayList
   replaceable type Value subtypeof Any;
   type ValueArray = tuple<Integer,Integer,array<Option<tuple<Key,Value>>>>;
 algorithm
-  tplLst :=
-  matchcontinue (valueArray)
+  tplLst := matchcontinue (valueArray)
     local
       array<Option<tuple<Key,Value>>> arr;
       tuple<Key,Value> elt;
       Integer lastpos,n,size;
       list<tuple<Key,Value>> lst;
+    
     case ((0,_,arr)) then {};
     case ((1,_,arr))
       equation
@@ -495,7 +495,7 @@ algorithm
     case ((n,size,arr))
       equation
         lastpos = n - 1;
-        lst = valueArrayList2(arr, 0, lastpos);
+        lst = valueArrayList2(arr, 0, lastpos, {});
       then
         lst;
   end matchcontinue;
@@ -505,38 +505,42 @@ protected function valueArrayList2 "Helper function to valueArrayList"
   input array<Option<tuple<Key,Value>>> inVarOptionArray1;
   input Integer inInteger2;
   input Integer inInteger3;
+  input list<tuple<Key,Value>> acc;
   output list<tuple<Key,Value>> outVarLst;
 
   replaceable type Key subtypeof Any;
   replaceable type Value subtypeof Any;
 algorithm
-  outVarLst:=
-  matchcontinue (inVarOptionArray1,inInteger2,inInteger3)
+  outVarLst := matchcontinue (inVarOptionArray1,inInteger2,inInteger3, acc)
     local
       tuple<Key,Value> v;
       array<Option<tuple<Key,Value>>> arr;
       Integer pos,lastpos,pos_1;
       list<tuple<Key,Value>> res;
-    case (arr,pos,lastpos)
+    
+    case (arr,pos,lastpos,acc)
       equation
         (pos == lastpos) = true;
         SOME(v) = arr[pos + 1];
+        acc = listReverse(v::acc);
       then
-        {v};
-    case (arr,pos,lastpos)
+        acc;
+    
+    case (arr,pos,lastpos,acc)
       equation
         pos_1 = pos + 1;
         SOME(v) = arr[pos + 1];
-        res = valueArrayList2(arr, pos_1, lastpos);
+        res = valueArrayList2(arr, pos_1, lastpos, v::acc);
       then
-        (v :: res);
-    case (arr,pos,lastpos)
+        res;
+    
+    case (arr,pos,lastpos,acc)
       equation
         pos_1 = pos + 1;
         NONE() = arr[pos + 1];
-        res = valueArrayList2(arr, pos_1, lastpos);
+        res = valueArrayList2(arr, pos_1, lastpos, acc);
       then
-        (res);
+        res;
   end matchcontinue;
 end valueArrayList2;
 
