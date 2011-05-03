@@ -1775,6 +1775,120 @@ algorithm
   end matchcontinue;
 end setbindValue;
 
+
+public function countSimpleEquations
+"function: countSimpleEquations
+  autor: Frenkel TUD 2011-05
+  This function count the simple equations on the form a=b and a=const and a=f(not time)
+  in BackendDAE.BackendDAE. Note this functions does not use variable replacements, because
+  of this the number of simple equations is maybe smaller than using variable replacements."
+  input BackendDAE.BackendDAE inDlow;
+  input BackendDAE.IncidenceMatrix inM;
+  output Integer outSimpleEqns;
+algorithm
+  outSimpleEqns:=
+  match (inDlow,inM)
+    local
+      BackendDAE.BackendDAE dlow;
+      BackendDAE.EquationArray eqns;
+      Integer n;
+    case (dlow,inM)
+      equation
+        // check equations
+       (_,(_,n)) = traverseIncidenceMatrix(inM,countSimpleEquationsFinder,(dlow,0));
+      then n;
+  end match;
+end countSimpleEquations;
+
+protected function countSimpleEquationsFinder
+"autor: Frenkel TUD 2011-05"
+ input tuple<BackendDAE.IncidenceMatrixElement,Integer,BackendDAE.IncidenceMatrix, tuple<BackendDAE.BackendDAE,Integer>> inTpl;
+ output tuple<list<Integer>,BackendDAE.IncidenceMatrix, tuple<BackendDAE.BackendDAE,Integer>> outTpl;
+algorithm
+  outTpl:=
+  matchcontinue (inTpl)
+    local
+      BackendDAE.IncidenceMatrixElement elem;
+      Integer pos,l,i,n,n_1;
+      BackendDAE.IncidenceMatrix m;
+      BackendDAE.BackendDAE dae;
+    case ((elem,pos,m,(dae,n)))
+      equation
+        // check number of vars in eqns
+        l = listLength(elem);
+        true = intLt(l,3);
+        true = intGt(l,0);
+        countsimpleEquation(elem,l,pos,dae);
+        n_1 = n+1;
+      then (({},m,(dae,n_1)));
+    case ((elem,pos,m,(dae,n)))
+      then (({},m,(dae,n))); 
+  end matchcontinue;
+end countSimpleEquationsFinder;
+
+protected function countsimpleEquation 
+" function: countsimpleEquation
+  autor: Frenkel TUD 2011-05"
+  input BackendDAE.IncidenceMatrixElement elem;
+  input Integer length;
+  input Integer pos;
+  input BackendDAE.BackendDAE dae;
+algorithm
+  _ := matchcontinue(elem,length,pos,dae)
+    local 
+      DAE.ComponentRef cr,cr2;
+      Integer i,j,pos_1,k,eqTy;
+      DAE.Exp es,cre,e1,e2;
+      BackendDAE.BinTree newvars,newvars1;
+      BackendDAE.Variables vars,knvars;
+      BackendDAE.Var var,var2,var3;
+      BackendDAE.BackendDAE dae1;
+      BackendDAE.EquationArray eqns;
+      BackendDAE.Equation eqn;
+      Boolean negate;
+      DAE.ElementSource source;
+    // a = const
+    case ({i},length,pos,dae)
+      equation 
+        vars = BackendVariable.daeVars(dae);
+        var = BackendVariable.getVarAt(vars,intAbs(i));
+        // no State
+        false = BackendVariable.isStateorStateDerVar(var);
+        // try to solve the equation
+        pos_1 = pos-1;
+        eqns = BackendEquation.daeEqns(dae);
+        eqn = BackendDAEUtil.equationNth(eqns,pos_1);
+        BackendDAE.EQUATION(exp=e1,scalar=e2,source=source) = eqn;
+        // variable time not there
+        knvars = BackendVariable.daeKnVars(dae);
+        ((_,(false,_,_))) = Expression.traverseExpTopDown(e1, traversingTimeEqnsFinder, (false,vars,knvars));
+        ((_,(false,_,_))) = Expression.traverseExpTopDown(e2, traversingTimeEqnsFinder, (false,vars,knvars));
+        cr = BackendVariable.varCref(var);
+        cre = Expression.crefExp(cr);
+        (_,{}) = ExpressionSolve.solve(e1,e2,cre);
+      then ();
+    // a = der(b) 
+    case ({i,j},length,pos,dae)
+      equation
+        pos_1 = pos-1;
+        eqns = BackendEquation.daeEqns(dae);
+        eqn = BackendDAEUtil.equationNth(eqns,pos_1);
+        (cr,_,_,_,_) = derivativeEquation(eqn);
+        // select candidate
+        vars = BackendVariable.daeVars(dae);
+        ((_::_),(_::_)) = BackendVariable.getVar(cr,vars);
+      then ();
+    // a = b 
+    case ({i,j},length,pos,dae)
+      equation
+        pos_1 = pos-1;
+        eqns = BackendEquation.daeEqns(dae);
+        (eqn as BackendDAE.EQUATION(source=source)) = BackendDAEUtil.equationNth(eqns,pos_1);
+        (_,_,_,_,_) = aliasEquation(eqn);
+      then ();
+  end matchcontinue;
+end countsimpleEquation;
+
 /*  
  * remove final paramters stuff 
  */ 
