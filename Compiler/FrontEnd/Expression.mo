@@ -4081,10 +4081,9 @@ algorithm
       Type ty;
       DAE.Exp e;
     
-    case((DAE.CREF(cr,ty), crefs))
+    case((e as DAE.CREF(cr,ty), crefs))
       equation
         crefs = Util.listUnionEltOnTrue(cr,crefs,ComponentReference.crefEqual);
-        e = makeCrefExp(cr,ty);
       then
         ((e, crefs ));
     
@@ -4092,6 +4091,59 @@ algorithm
     
   end matchcontinue;
 end traversingComponentRefFinder;
+
+public function traverseCrefsFromExp "
+Author: Frenkel TUD 2011-05, traverses all ComponentRef from an Expression."
+  input DAE.Exp inExp;
+  input FuncCrefTypeA inFunc;
+  input Type_a inArg;
+  output Type_a outArg;
+  partial function FuncCrefTypeA
+    input ComponentRef inCref;
+    input Type_a inArg;
+    output Type_a outArg;
+  end FuncCrefTypeA;  
+  replaceable type Type_a subtypeof Any;
+algorithm 
+  outArg := match(inExp,inFunc,inArg)
+   local Type_a arg;
+    case(inExp,inFunc,inArg)
+      equation
+        ((_,(_,arg))) = traverseExp(inExp, traversingCrefFinder, (inFunc,inArg));
+      then
+        arg;
+  end match;
+end traverseCrefsFromExp;
+
+protected function traversingCrefFinder "
+Author: Frenkel TUD 2011-05"
+  input tuple<DAE.Exp, tuple<FuncCrefTypeA,Type_a> > inExp;
+  output tuple<DAE.Exp, tuple<FuncCrefTypeA,Type_a> > outExp;
+  partial function FuncCrefTypeA
+    input ComponentRef inCref;
+    input Type_a inArg;
+    output Type_a outArg;
+  end FuncCrefTypeA;   
+  replaceable type Type_a subtypeof Any; 
+algorithm 
+  outExp := matchcontinue(inExp)
+    local
+      Type_a arg,arg1;
+      FuncCrefTypeA func;
+      ComponentRef cr;
+      Type ty;
+      DAE.Exp e;
+    
+    case((e as DAE.CREF(cr,ty),(func,arg)))
+      equation
+        arg1 = func(cr,arg);
+      then
+        ((e, (func,arg1) ));
+    
+    case(inExp) then inExp;
+    
+  end matchcontinue;
+end traversingCrefFinder;
 
 public function extractDivExpFromExp "
 Author: Frenkel TUD 2010-02, Extracts all Division DAE.Exp from an Expression."

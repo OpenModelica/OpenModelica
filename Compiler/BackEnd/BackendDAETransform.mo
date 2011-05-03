@@ -2050,16 +2050,16 @@ algorithm
     local
       DAE.ComponentRef s;
       BackendDAE.Value sn;
-      BackendDAE.Variables vars;
+      BackendDAE.Variables vars,knvars;
       BackendDAE.IncidenceMatrix m;
       BackendDAE.IncidenceMatrixT mt;
       BackendDAE.EquationArray eqns;
       list<tuple<DAE.ComponentRef,Integer,Real>> prioTuples;
       BackendDAE.BackendDAE dae;
 
-    case (varCrefs,varIndices,BackendDAE.DAE(orderedVars=vars,orderedEqs = eqns),m,mt)
+    case (varCrefs,varIndices,BackendDAE.DAE(orderedVars=vars,knownVars=knvars,orderedEqs = eqns),m,mt)
       equation
-        prioTuples = calculateVarPriorities(varCrefs,varIndices,vars,eqns,m,mt);
+        prioTuples = calculateVarPriorities(varCrefs,varIndices,vars,knvars,eqns,m,mt);
         //print("priorities:");print(Util.stringDelimitList(Util.listMap(prioTuples,printPrioTuplesStr),","));print("\n");
         (s,sn) = selectMinPrio(prioTuples);
       then (s,sn);
@@ -2119,23 +2119,24 @@ protected function calculateVarPriorities
   input list<DAE.ComponentRef> varCrefs;
   input list<Integer> varIndices;
   input BackendDAE.Variables vars;
+  input BackendDAE.Variables knvars;
   input BackendDAE.EquationArray eqns;
   input BackendDAE.IncidenceMatrix m;
   input BackendDAE.IncidenceMatrixT mt;
   output list<tuple<DAE.ComponentRef,Integer,Real>> tuples;
 algorithm
-  tuples := match(varCrefs,varIndices,vars,eqns,m,mt)
+  tuples := match(varCrefs,varIndices,vars,knvars,eqns,m,mt)
   local DAE.ComponentRef varCref;
     Integer varIndx;
     BackendDAE.Var v;
     Real prio,prio1,prio2;
     list<tuple<DAE.ComponentRef,Integer,Real>> prios;
-    case({},{},_,_,_,_) then {};
-    case (varCref::varCrefs,varIndx::varIndices,vars,eqns,m,mt) equation
-      prios = calculateVarPriorities(varCrefs,varIndices,vars,eqns,m,mt);
+    case({},{},_,_,_,_,_) then {};
+    case (varCref::varCrefs,varIndx::varIndices,vars,knvars,eqns,m,mt) equation
+      prios = calculateVarPriorities(varCrefs,varIndices,vars,knvars,eqns,m,mt);
       (v::_,_) = BackendVariable.getVar(varCref,vars);
       prio1 = varStateSelectPrio(v);
-      prio2 = varStateSelectHeuristicPrio(v,vars,eqns,m,mt);
+      prio2 = varStateSelectHeuristicPrio(v,vars,knvars,eqns,m,mt);
       prio = prio1 +. prio2;
       Debug.fcall("dummyselect",BackendDump.debugStrCrefStrRealStrRealStrRealStr,("Calc Prio for ",varCref,"\n Prio StateSelect : ",prio1,"\n Prio Heuristik : ",prio2,"\n ### Prio Result : ",prio,"\n"));
     then ((varCref,varIndx,prio)::prios);
@@ -2160,6 +2161,7 @@ protected function varStateSelectHeuristicPrio
      then sd.s_rel should have lower priority than the others."
   input BackendDAE.Var v;
   input BackendDAE.Variables vars;
+  input BackendDAE.Variables knvars;
   input BackendDAE.EquationArray eqns;
   input BackendDAE.IncidenceMatrix m;
   input BackendDAE.IncidenceMatrixT mt;
@@ -2173,7 +2175,7 @@ algorithm
   (_,vindx::_) := BackendVariable.getVar(BackendVariable.varCref(v),vars); // Variable index not stored in var itself => lookup required
   vEqns := BackendDAEUtil.eqnsForVarWithStates(mt,vindx);
   vCr := BackendVariable.varCref(v);
-  prio1 := varStateSelectHeuristicPrio1(vCr,vEqns,vars,eqns);
+  prio1 := varStateSelectHeuristicPrio1(vCr,vEqns,vars,knvars,eqns);
   Debug.fcall("dummyselect",print," Prio 1 : " +& realString(prio1) +& "\n");
   prio2 := varStateSelectHeuristicPrio2(vCr,vars);
   Debug.fcall("dummyselect",print," Prio 2 : " +& realString(prio2) +& "\n");
@@ -2312,25 +2314,31 @@ protected function varStateSelectHeuristicPrio1
   input DAE.ComponentRef cr;
   input list<Integer> eqnLst;
   input BackendDAE.Variables vars;
+  input BackendDAE.Variables knvars;
   input BackendDAE.EquationArray eqns;
   output Real prio;
 algorithm
-  prio := matchcontinue(cr,eqnLst,vars,eqns)
+  prio := matchcontinue(cr,eqnLst,vars,knvars,eqns)
     local Integer e; BackendDAE.Equation eqn;
-    case(cr,{},_,_) then 0.0;
-    case(cr,e::eqnLst,vars,eqns)
+    case(cr,{},_,_,_) then 0.0;
+    case(cr,e::eqnLst,vars,_,eqns)
       equation
         eqn = BackendDAEUtil.equationNth(eqns,e-1);
         true = isStateConstraintEquation(cr,eqn,vars);
       then -1.0;
-    case(cr,_::eqnLst,vars,eqns) then varStateSelectHeuristicPrio1(cr,eqnLst,vars,eqns);
+    case(cr,e::eqnLst,vars,knvars,eqns)
+      equation
+        eqn = BackendDAEUtil.equationNth(eqns,e-1);
+        true = isStateAssignEquation(cr,eqn,vars,knvars);
+      then -0.5;
+    case(cr,_::eqnLst,vars,knvars,eqns) then varStateSelectHeuristicPrio1(cr,eqnLst,vars,knvars,eqns);
  end matchcontinue;
 end varStateSelectHeuristicPrio1;
 
 protected function isStateConstraintEquation
 "function isStateConstraintEquation
   author: PA
-  Help function to varStateSelectHeuristicPrio2
+  Help function to varStateSelectHeuristicPrio1
   Returns true if an equation is on the form cr = expr(s1,s2...sn) for states cr, s1,s2..,sn"
   input DAE.ComponentRef cr;
   input BackendDAE.Equation eqn;
@@ -2366,6 +2374,41 @@ algorithm
     else false;
   end matchcontinue;
 end isStateConstraintEquation;
+
+protected function isStateAssignEquation
+"function isStateAssignEquation
+  author: Frenkel TUD 2011-04
+  Help function to varStateSelectHeuristicPrio1
+  Returns true if an equation is on the form cr = expr(s1,s2...sn,pv1,...,pvn) for states cr, s1,s2..,sn, and parameters pv1,...,pvn "
+  input DAE.ComponentRef cr;
+  input BackendDAE.Equation eqn;
+  input BackendDAE.Variables vars;
+  input BackendDAE.Variables knvars;
+  output Boolean res;
+algorithm
+  res := matchcontinue(cr,eqn,vars,knvars)
+    local
+      DAE.ComponentRef cr2;
+      list<DAE.ComponentRef> crs;
+      list<list<BackendDAE.Var>> crVars,prVars;
+      DAE.Exp e2;
+      Boolean b1,b2,b;
+
+    case(cr,BackendDAE.EQUATION(exp = DAE.CREF(cr2,_), scalar = e2),vars,knvars)
+      equation
+        true = ComponentReference.crefEqualNoStringCompare(cr,cr2);
+        _::_::_ = Expression.terms(e2);
+      then true;
+
+    case(cr,BackendDAE.EQUATION(exp = e2, scalar = DAE.CREF(cr2,_)),vars,knvars)
+      equation
+        true = ComponentReference.crefEqualNoStringCompare(cr,cr2);
+        _::_::_ = Expression.terms(e2);
+      then true;
+
+    else false;
+  end matchcontinue;
+end isStateAssignEquation;
 
 protected function varStateSelectPrio
 "function varStateSelectPrio
