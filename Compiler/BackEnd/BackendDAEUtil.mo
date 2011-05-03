@@ -5329,7 +5329,7 @@ algorithm
   end matchcontinue;
 end traverseBackendDAEExps;
 
-protected function traverseBackendDAEExpsVars "function: traverseBackendDAEExpsVars
+public function traverseBackendDAEExpsVars "function: traverseBackendDAEExpsVars
   author: Frenkel TUD
 
   Helper for traverseBackendDAEExps
@@ -5517,35 +5517,52 @@ algorithm
   outTypeA:=
   matchcontinue (inVar,func,inTypeA)
     local
-      DAE.Exp e1, expCref;
+      DAE.Exp e1, expCref, sv, n;
       DAE.ComponentRef cref;
       list<DAE.Subscript> instdims;
-      Type_a ext_arg_1,ext_arg_2,ext_arg_3;
+      Option<DAE.VariableAttributes> attr;
+      list<Option<DAE.Exp>> ominmax;
+      list<DAE.Exp> minmax;
+      Type_a ext_arg_1,ext_arg_2,ext_arg_3,ext_arg_4,ext_arg_5,ext_arg_6;
     
     case (NONE(),func,inTypeA) then inTypeA;
     
     case (SOME(BackendDAE.VAR(varName = cref,
              bindExp = SOME(e1),
-             arryDim = instdims
-             )),func,inTypeA)
+             arryDim = instdims,
+             values = attr)),func,inTypeA)
       equation
         ((_,ext_arg_1)) = func((e1,inTypeA));
         ext_arg_2 = Util.listFold1(instdims,traverseBackendDAEExpsSubscript,func,ext_arg_1);
-        expCref = Expression.crefExp(cref);
-        ((_,ext_arg_3)) = func((expCref,ext_arg_2));
+        //expCref = Expression.crefExp(cref);
+        //((_,ext_arg_3)) = func((expCref,ext_arg_2));
+        ominmax = DAEUtil.getMinMax(attr);
+        minmax = Util.listMap1(ominmax,Util.getOptionOrDefault,DAE.RCONST(0.0));
+        ((_,ext_arg_4)) = Expression.traverseExpList(minmax,func,ext_arg_2);
+        sv = DAEUtil.getStartAttr(attr);
+        ((_,ext_arg_5)) = func((sv,ext_arg_4));
+        n = DAEUtil.getNominalAttr(attr);
+        ((_,ext_arg_6)) = func((n,ext_arg_5));
       then
-        ext_arg_3;
+        ext_arg_6;
     
     case (SOME(BackendDAE.VAR(varName = cref,
              bindExp = NONE(),
-             arryDim = instdims
-             )),func,inTypeA)
+             arryDim = instdims,
+             values = attr)),func,inTypeA)
       equation
         ext_arg_2 = Util.listFold1(instdims,traverseBackendDAEExpsSubscript,func,inTypeA);
-        expCref = Expression.crefExp(cref);
-        ((_,ext_arg_3)) = func((expCref,ext_arg_2));
+        //expCref = Expression.crefExp(cref);
+        //((_,ext_arg_3)) = func((expCref,ext_arg_2));
+        ominmax = DAEUtil.getMinMax(attr);
+        minmax = Util.listMap1(ominmax,Util.getOptionOrDefault,DAE.RCONST(0.0));
+        ((_,ext_arg_4)) = Expression.traverseExpList(minmax,func,ext_arg_2);
+        sv = DAEUtil.getStartAttr(attr);
+        ((_,ext_arg_5)) = func((sv,ext_arg_4));
+        n = DAEUtil.getNominalAttr(attr);
+        ((_,ext_arg_6)) = func((n,ext_arg_5));
       then
-        ext_arg_3;
+        ext_arg_6;
     
     case (_,_,_)
       equation
@@ -5640,7 +5657,7 @@ algorithm
   end match;
 end traverseBackendDAEExpsOptEqn;
 
-protected function traverseBackendDAEExpsArrayEqn "function: traverseBackendDAEExpsArrayEqn
+public function traverseBackendDAEExpsArrayEqn "function: traverseBackendDAEExpsArrayEqn
   author: Frenkel TUD
 
   Helper function to traverseBackendDAEExpsEqn
@@ -6051,6 +6068,8 @@ algorithm
           (BackendDAEOptimize.removeFinalParameters,"removeFinalParameters"),
           (BackendDAEOptimize.removeEqualFunctionCalls,"removeEqualFunctionCalls"),
           (BackendDAEOptimize.removeProtectedParameters,"removeProtectedParameters"),
+          (BackendDAEOptimize.removeUnusedParameter,"removeUnusedParameter"),
+          (BackendDAEOptimize.removeUnusedVariables,"removeUnusedVariables"),
           (BackendDAECreate.expandDerOperator,"expandDerOperator")};
  strPreOptModules := getPreOptModulesString();
  strPreOptModules := Util.getOptionOrDefault(ostrPreOptModules,strPreOptModules);
@@ -6093,6 +6112,8 @@ algorithm
   (BackendDAEOptimize.removeSimpleEquationsPast,"removeSimpleEquations"),
   (BackendDAEOptimize.removeEqualFunctionCallsPast,"removeEqualFunctionCalls"),
   (BackendDAEOptimize.inlineArrayEqnPast,"inlineArrayEqn"),
+  (BackendDAEOptimize.removeUnusedParameterPast,"removeUnusedParameter"),
+  (BackendDAEOptimize.removeUnusedVariablesPast,"removeUnusedVariables"),
   (BackendDump.dumpComponentsGraphStr,"dumpComponentsGraphStr")};
   strPastOptModules := getPastOptModulesString();
   strPastOptModules := Util.getOptionOrDefault(ostrPastOptModules,strPastOptModules);

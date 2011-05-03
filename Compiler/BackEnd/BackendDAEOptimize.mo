@@ -56,6 +56,7 @@ protected import BackendEquation;
 protected import BackendVarTransform;
 protected import BackendVariable;
 protected import Builtin;
+protected import ClassInf;
 protected import ComponentReference;
 protected import DAEUtil;
 protected import Debug;
@@ -2000,7 +2001,7 @@ end protectedParametersFinder;
  */
 
 public function removeEqualFunctionCallsPast
-"function lateInlineDAE"
+"function removeEqualFunctionCallsPast"
     input BackendDAE.BackendDAE inDAE;
     input DAE.FunctionTree inFunctionTree;
     input BackendDAE.IncidenceMatrix inM;
@@ -2273,6 +2274,333 @@ algorithm
   // BackendDump.debugStrExpStrExpStr(("Old ",e," new ",e1,"\n"));
   outTpl := ((e1,(ops,(se,te,i+j))));
 end replaceExp;
+
+/* 
+ * remove unused parameter
+ */
+
+public function removeUnusedParameterPast
+"function removeUnusedParameterPast"
+    input BackendDAE.BackendDAE inDAE;
+    input DAE.FunctionTree inFunctionTree;
+    input BackendDAE.IncidenceMatrix inM;
+    input BackendDAE.IncidenceMatrix inMT;
+    input array<Integer> inAss1;  
+    input array<Integer> inAss2;  
+    input list<list<Integer>> inComps;  
+    output BackendDAE.BackendDAE outDAE;
+    output BackendDAE.IncidenceMatrix outM;
+    output BackendDAE.IncidenceMatrix outMT;
+    output array<Integer> outAss1;  
+    output array<Integer> outAss2;  
+    output list<list<Integer>> outComps; 
+    output Boolean outRunMatching;
+protected
+  Option<BackendDAE.IncidenceMatrix> om,omT;
+algorithm
+  (outDAE,om,omT) := removeUnusedParameter(inDAE,inFunctionTree,SOME(inM),SOME(inMT));
+  (outM,outMT) := BackendDAEUtil.getIncidenceMatrixfromOption(outDAE,om,omT);
+  outAss1 := inAss1;
+  outAss2 := inAss2;
+  outComps := inComps;   
+  outRunMatching := false;   
+end removeUnusedParameterPast;
+
+public function removeUnusedParameter
+"function: removeUnusedParameter
+  autor: Frenkel TUD 2011-04
+  This function remove unused parameters  
+  in BackendDAE.BackendDAE to get speed up for compilation of
+  target code"
+  input BackendDAE.BackendDAE inDlow;
+  input DAE.FunctionTree inFunctionTree;
+  input Option<BackendDAE.IncidenceMatrix> inM;
+  input Option<BackendDAE.IncidenceMatrixT> inMT;
+  output BackendDAE.BackendDAE outDlow;
+  output Option<BackendDAE.IncidenceMatrix> outM;
+  output Option<BackendDAE.IncidenceMatrixT> outMT;
+algorithm
+  (outDlow,outM,outMT):=
+  match (inDlow,inFunctionTree,inM,inMT)
+    local
+      BackendDAE.BackendDAE dae,dae1;
+      DAE.FunctionTree funcs;
+      BackendDAE.Variables vars,knvars,exobj,avars,knvars1;
+      BackendDAE.AliasVariables aliasVars;
+      BackendDAE.EquationArray eqns,remeqns,inieqns;
+      array<BackendDAE.MultiDimEquation> arreqns;
+      array<DAE.Algorithm> algorithms;
+      BackendDAE.EventInfo einfo;
+      BackendDAE.ExternalObjectClasses eoc;
+    case (dae as BackendDAE.DAE(vars,knvars,exobj,aliasVars as BackendDAE.ALIASVARS(aliasVars=avars),eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc),funcs,inM,inMT)
+      equation
+        knvars1 = BackendDAEUtil.emptyVars();
+        ((knvars,knvars1)) = BackendVariable.traverseBackendDAEVars(knvars,copyNonParamVariables,(knvars,knvars1));
+        ((_,knvars1)) = BackendDAEUtil.traverseBackendDAEExpsVars(vars,checkUnusedParameter,(knvars,knvars1));
+        ((_,knvars1)) = BackendDAEUtil.traverseBackendDAEExpsVars(knvars,checkUnusedParameter,(knvars,knvars1));
+        ((_,knvars1)) = BackendDAEUtil.traverseBackendDAEExpsVars(avars,checkUnusedParameter,(knvars,knvars1));
+        ((_,knvars1)) = BackendDAEUtil.traverseBackendDAEExpsEqns(eqns,checkUnusedParameter,(knvars,knvars1));
+        ((_,knvars1)) = BackendDAEUtil.traverseBackendDAEExpsEqns(remeqns,checkUnusedParameter,(knvars,knvars1));
+        ((_,knvars1)) = BackendDAEUtil.traverseBackendDAEExpsEqns(inieqns,checkUnusedParameter,(knvars,knvars1));
+        ((_,knvars1)) = BackendDAEUtil.traverseBackendDAEArrayNoCopy(arreqns,checkUnusedParameter,BackendDAEUtil.traverseBackendDAEExpsArrayEqn,1,arrayLength(arreqns),(knvars,knvars1));
+        ((_,knvars1)) = BackendDAEUtil.traverseBackendDAEArrayNoCopy(algorithms,checkUnusedParameter,BackendDAEUtil.traverseAlgorithmExps,1,arrayLength(algorithms),(knvars,knvars1));
+
+        dae1 = BackendDAE.DAE(vars,knvars1,exobj,aliasVars,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc);
+      then (dae1,inM,inMT);
+  end match;
+end removeUnusedParameter;
+
+protected function copyNonParamVariables
+"autor: Frenkel TUD 2011-05"
+ input tuple<BackendDAE.Var, tuple<BackendDAE.Variables,BackendDAE.Variables>> inTpl;
+ output tuple<BackendDAE.Var, tuple<BackendDAE.Variables,BackendDAE.Variables>> outTpl;
+algorithm
+  outTpl:=
+  matchcontinue (inTpl)
+    local
+      BackendDAE.Var v;
+      BackendDAE.Variables vars,vars1;
+      DAE.ComponentRef cr,dcr;
+    case ((v as BackendDAE.VAR(varName = cr,varKind = BackendDAE.PARAM()),(vars,vars1)))
+      then
+        ((v,(vars,vars1)));
+    case ((v as BackendDAE.VAR(varName = cr),(vars,vars1)))
+      equation
+        vars1 = BackendVariable.addVar(v,vars1);
+      then
+        ((v,(vars,vars1)));
+  end matchcontinue;
+end copyNonParamVariables;
+
+protected function checkUnusedParameter
+  input tuple<DAE.Exp, tuple<BackendDAE.Variables,BackendDAE.Variables>> inTpl;
+  output tuple<DAE.Exp, tuple<BackendDAE.Variables,BackendDAE.Variables>> outTpl;
+algorithm
+  outTpl :=
+  matchcontinue inTpl
+    local  
+      DAE.Exp exp;
+      BackendDAE.Variables vars,vars1;
+    case ((exp,(vars,vars1)))
+      equation
+         ((_,(_,vars1))) = Expression.traverseExp(exp,checkUnusedParameterExp,(vars,vars1));
+       then
+        ((exp,(vars,vars1)));
+    case inTpl then inTpl;
+  end matchcontinue;
+end checkUnusedParameter;
+
+protected function checkUnusedParameterExp
+  input tuple<DAE.Exp, tuple<BackendDAE.Variables,BackendDAE.Variables>> inTuple;
+  output tuple<DAE.Exp, tuple<BackendDAE.Variables,BackendDAE.Variables>> outTuple;
+algorithm
+  outTuple := matchcontinue(inTuple)
+    local
+      DAE.Exp e,e1;
+      BackendDAE.Variables vars,vars1;
+      DAE.ComponentRef cr;
+      list<DAE.Exp> expl;
+      list<DAE.ExpVar> varLst;
+      DAE.Ident ident;
+      list<BackendDAE.Var> backendVars;
+      BackendDAE.Var var;
+      DAE.ReductionIterators riters;
+    
+    // special case for time, it is never part of the equation system  
+    case ((e as DAE.CREF(componentRef = DAE.CREF_IDENT(ident="time")),(vars,vars1)))
+      then ((e, (vars,vars1)));
+    
+    // Special Case for Records
+    case ((e as DAE.CREF(componentRef = cr,ty= DAE.ET_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_))),(vars,vars1)))
+      equation
+        expl = Util.listMap1(varLst,Expression.generateCrefsExpFromExpVar,cr);
+        ((_,(vars,vars1))) = Expression.traverseExpList(expl,checkUnusedParameterExp,(vars,vars1));
+      then
+        ((e, (vars,vars1)));
+
+    // Special Case for Arrays
+    case ((e as DAE.CREF(ty = DAE.ET_ARRAY(ty=_)),(vars,vars1)))
+      equation
+        ((e1,(_,true))) = BackendDAEUtil.extendArrExp((e,(NONE(),false)));
+        ((_,(vars,vars1))) = Expression.traverseExp(e1,checkUnusedParameterExp,(vars,vars1));
+      then
+        ((e, (vars,vars1)));
+    
+    // case for functionpointers    
+    case ((e as DAE.CREF(ty=DAE.ET_FUNCTION_REFERENCE_FUNC(builtin=_)),(vars,vars1)))
+      then
+        ((e, (vars,vars1)));
+
+    // already there
+    case ((e as DAE.CREF(componentRef = cr),(vars,vars1)))
+      equation
+         (_,_) = BackendVariable.getVar(cr, vars1);
+      then
+        ((e, (vars,vars1)));
+
+    // add it
+    case ((e as DAE.CREF(componentRef = cr),(vars,vars1)))
+      equation
+         (var::_,_) = BackendVariable.getVar(cr, vars);
+         vars1 = BackendVariable.addVar(var,vars1);
+      then
+        ((e, (vars,vars1)));
+    
+    case inTuple then inTuple;
+  end matchcontinue;
+end checkUnusedParameterExp;
+
+/* 
+ * remove unused variables
+ */
+
+public function removeUnusedVariablesPast
+"function removeUnusedVariablesPast"
+    input BackendDAE.BackendDAE inDAE;
+    input DAE.FunctionTree inFunctionTree;
+    input BackendDAE.IncidenceMatrix inM;
+    input BackendDAE.IncidenceMatrix inMT;
+    input array<Integer> inAss1;  
+    input array<Integer> inAss2;  
+    input list<list<Integer>> inComps;  
+    output BackendDAE.BackendDAE outDAE;
+    output BackendDAE.IncidenceMatrix outM;
+    output BackendDAE.IncidenceMatrix outMT;
+    output array<Integer> outAss1;  
+    output array<Integer> outAss2;  
+    output list<list<Integer>> outComps; 
+    output Boolean outRunMatching;
+protected
+  Option<BackendDAE.IncidenceMatrix> om,omT;
+algorithm
+  (outDAE,om,omT) := removeUnusedVariables(inDAE,inFunctionTree,SOME(inM),SOME(inMT));
+  (outM,outMT) := BackendDAEUtil.getIncidenceMatrixfromOption(outDAE,om,omT);
+  outAss1 := inAss1;
+  outAss2 := inAss2;
+  outComps := inComps;   
+  outRunMatching := false;   
+end removeUnusedVariablesPast;
+
+public function removeUnusedVariables
+"function: removeUnusedVariables
+  autor: Frenkel TUD 2011-04
+  This function remove unused variables  
+  from BackendDAE.BackendDAE to get speed up for compilation of
+  target code"
+  input BackendDAE.BackendDAE inDlow;
+  input DAE.FunctionTree inFunctionTree;
+  input Option<BackendDAE.IncidenceMatrix> inM;
+  input Option<BackendDAE.IncidenceMatrixT> inMT;
+  output BackendDAE.BackendDAE outDlow;
+  output Option<BackendDAE.IncidenceMatrix> outM;
+  output Option<BackendDAE.IncidenceMatrixT> outMT;
+algorithm
+  (outDlow,outM,outMT):=
+  match (inDlow,inFunctionTree,inM,inMT)
+    local
+      BackendDAE.BackendDAE dae,dae1;
+      DAE.FunctionTree funcs;
+      BackendDAE.Variables vars,knvars,exobj,avars,knvars1;
+      BackendDAE.AliasVariables aliasVars;
+      BackendDAE.EquationArray eqns,remeqns,inieqns;
+      array<BackendDAE.MultiDimEquation> arreqns;
+      array<DAE.Algorithm> algorithms;
+      BackendDAE.EventInfo einfo;
+      BackendDAE.ExternalObjectClasses eoc;
+    case (dae as BackendDAE.DAE(vars,knvars,exobj,aliasVars as BackendDAE.ALIASVARS(aliasVars=avars),eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc),funcs,inM,inMT)
+      equation
+        knvars1 = BackendDAEUtil.emptyVars();
+        ((_,knvars1)) = BackendDAEUtil.traverseBackendDAEExpsVars(vars,checkUnusedVariables,(knvars,knvars1));
+        ((_,knvars1)) = BackendDAEUtil.traverseBackendDAEExpsVars(knvars,checkUnusedVariables,(knvars,knvars1));
+        ((_,knvars1)) = BackendDAEUtil.traverseBackendDAEExpsVars(avars,checkUnusedVariables,(knvars,knvars1));
+        ((_,knvars1)) = BackendDAEUtil.traverseBackendDAEExpsEqns(eqns,checkUnusedVariables,(knvars,knvars1));
+        ((_,knvars1)) = BackendDAEUtil.traverseBackendDAEExpsEqns(remeqns,checkUnusedVariables,(knvars,knvars1));
+        ((_,knvars1)) = BackendDAEUtil.traverseBackendDAEExpsEqns(inieqns,checkUnusedVariables,(knvars,knvars1));
+        ((_,knvars1)) = BackendDAEUtil.traverseBackendDAEArrayNoCopy(arreqns,checkUnusedVariables,BackendDAEUtil.traverseBackendDAEExpsArrayEqn,1,arrayLength(arreqns),(knvars,knvars1));
+        ((_,knvars1)) = BackendDAEUtil.traverseBackendDAEArrayNoCopy(algorithms,checkUnusedVariables,BackendDAEUtil.traverseAlgorithmExps,1,arrayLength(algorithms),(knvars,knvars1));
+
+        dae1 = BackendDAE.DAE(vars,knvars1,exobj,aliasVars,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc);
+      then (dae1,inM,inMT);
+  end match;
+end removeUnusedVariables;
+
+protected function checkUnusedVariables
+  input tuple<DAE.Exp, tuple<BackendDAE.Variables,BackendDAE.Variables>> inTpl;
+  output tuple<DAE.Exp, tuple<BackendDAE.Variables,BackendDAE.Variables>> outTpl;
+algorithm
+  outTpl :=
+  matchcontinue inTpl
+    local  
+      DAE.Exp exp;
+      BackendDAE.Variables vars,vars1;
+    case ((exp,(vars,vars1)))
+      equation
+         ((_,(_,vars1))) = Expression.traverseExp(exp,checkUnusedVariablesExp,(vars,vars1));
+       then
+        ((exp,(vars,vars1)));
+    case inTpl then inTpl;
+  end matchcontinue;
+end checkUnusedVariables;
+
+protected function checkUnusedVariablesExp
+  input tuple<DAE.Exp, tuple<BackendDAE.Variables,BackendDAE.Variables>> inTuple;
+  output tuple<DAE.Exp, tuple<BackendDAE.Variables,BackendDAE.Variables>> outTuple;
+algorithm
+  outTuple := matchcontinue(inTuple)
+    local
+      DAE.Exp e,e1;
+      BackendDAE.Variables vars,vars1;
+      DAE.ComponentRef cr;
+      list<DAE.Exp> expl;
+      list<DAE.ExpVar> varLst;
+      DAE.Ident ident;
+      list<BackendDAE.Var> backendVars;
+      BackendDAE.Var var;
+      DAE.ReductionIterators riters;
+    
+    // special case for time, it is never part of the equation system  
+    case ((e as DAE.CREF(componentRef = DAE.CREF_IDENT(ident="time")),(vars,vars1)))
+      then ((e, (vars,vars1)));
+    
+    // Special Case for Records
+    case ((e as DAE.CREF(componentRef = cr,ty= DAE.ET_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_))),(vars,vars1)))
+      equation
+        expl = Util.listMap1(varLst,Expression.generateCrefsExpFromExpVar,cr);
+        ((_,(vars,vars1))) = Expression.traverseExpList(expl,checkUnusedVariablesExp,(vars,vars1));
+      then
+        ((e, (vars,vars1)));
+
+    // Special Case for Arrays
+    case ((e as DAE.CREF(ty = DAE.ET_ARRAY(ty=_)),(vars,vars1)))
+      equation
+        ((e1,(_,true))) = BackendDAEUtil.extendArrExp((e,(NONE(),false)));
+        ((_,(vars,vars1))) = Expression.traverseExp(e1,checkUnusedVariablesExp,(vars,vars1));
+      then
+        ((e, (vars,vars1)));
+    
+    // case for functionpointers    
+    case ((e as DAE.CREF(ty=DAE.ET_FUNCTION_REFERENCE_FUNC(builtin=_)),(vars,vars1)))
+      then
+        ((e, (vars,vars1)));
+
+    // already there
+    case ((e as DAE.CREF(componentRef = cr),(vars,vars1)))
+      equation
+         (_,_) = BackendVariable.getVar(cr, vars1);
+      then
+        ((e, (vars,vars1)));
+
+    // add it
+    case ((e as DAE.CREF(componentRef = cr),(vars,vars1)))
+      equation
+         (var::_,_) = BackendVariable.getVar(cr, vars);
+         vars1 = BackendVariable.addVar(var,vars1);
+      then
+        ((e, (vars,vars1)));
+    
+    case inTuple then inTuple;
+  end matchcontinue;
+end checkUnusedVariablesExp;
 
 /*  
  * tearing system of equations stuff 

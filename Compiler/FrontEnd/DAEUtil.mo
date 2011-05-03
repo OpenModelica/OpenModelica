@@ -816,6 +816,20 @@ algorithm
   end match;
 end setStartAttr;
 
+public function getNominalAttr "
+  returns the nominal attribute. If NONE(), assumes Real attributes."
+  input Option<DAE.VariableAttributes> attr;
+  output DAE.Exp nominal;
+algorithm
+  nominal:=
+  match (attr)
+    local
+      DAE.Exp n;
+    case (SOME(DAE.VAR_ATTR_REAL(nominal=SOME(n)))) then n;
+    case (_) then DAE.RCONST(1.0);
+  end match;
+end getNominalAttr;
+
 public function setNominalAttr "
   sets the nominal attribute. If NONE(), assumes Real attributes."
   input Option<DAE.VariableAttributes> attr;
