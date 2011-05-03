@@ -67,6 +67,7 @@ uniontype HashValue
     Integer seqNo "the element number inside the class";
     SCode.Element element "the element";
     list<SCode.Mod> outsideMods "the outside modifiers";
+    Option<SCode.Element> replacedElement "the element replaced (extends/derived/class_extends)";   
     Option<HashTable> optChildren;
   end VALUE;
 end HashValue; 
@@ -150,32 +151,39 @@ algorithm
                 ", ") +& "}" +&
               ", Kids: (" +& 
               Util.stringDelimitList(
-                Util.listMap(BaseHashTable.hashTableValueList(hashTable), 
-                hashValueString), ", ") +& ")";
+                Util.listMap(BaseHashTable.hashTableList(hashTable), 
+                hashItemString), ", ") +& ")";
       then
         str;
   end matchcontinue;
 end hashValueString;
 
+public function hashItemString
+  input tuple<Key,Value> tpl;
+  output String str;
+protected
+  Key k;
+  Value v;
+algorithm
+  (k, v) := tpl;
+  str := "{" +& Dump.printComponentRefStr(k) +& ",{" +& hashValueString(v) +& "}}";  
+end hashItemString;
+
 public function emptyHashTable
-"
-  Returns an empty HashTable.
-  Using the bucketsize 1000 and array size 100.
-"
+"Returns an empty HashTable.
+ Using the default bucketsize.."
   output HashTable hashTable;
 algorithm
   hashTable := emptyHashTableSized(BaseHashTable.defaultBucketSize);
 end emptyHashTable;
 
 public function emptyHashTableSized
-"
-  Returns an empty HashTable.
-  Using the bucketsize size and arraysize size/10.
-"
+"Returns an empty HashTable.
+ Using the bucketsize size."
   input Integer size;
   output HashTable hashTable;
 algorithm
-  hashTable := BaseHashTable.emptyHashTableWork(size,intDiv(size,10),(hashFunc,Absyn.crefEqual,Dump.printComponentRefStr,hashValueString));
+  hashTable := BaseHashTable.emptyHashTableWork(size,(hashFunc,Absyn.crefEqual,Dump.printComponentRefStr,hashValueString));
 end emptyHashTableSized;
 
 public function getHasValueElement
@@ -344,10 +352,10 @@ algorithm
         element = cl;
         fullCref = joinCrefs(inParent, Absyn.CREF_IDENT(className, {}));
         env = SCodeEnv.enterScope(env, className);
-        optHT = hashTableFromClassDef(fullCref, cDef, env, NONE(), 1, info);
+        optHT = hashTableFromClassDef(fullCref, cl, cDef, env, NONE(), 1, info);
         hashTable = 
           add(
-            (fullCref, VALUE(seqNo, element, {}, optHT)),
+            (fullCref, VALUE(seqNo, element, {}, NONE(), optHT)),
             hashTable);
       then 
         hashTable;
@@ -357,6 +365,7 @@ end hashTableFromClass;
 protected function hashTableFromClassDef
   "Flattens a classdef."
   input Absyn.ComponentRef inParent;
+  input SCode.Element inElementParent;  
   input SCode.ClassDef inClassDef;
   input SCodeEnv.Env inEnv;
   input Option<HashTable> inHashTable;
@@ -364,10 +373,10 @@ protected function hashTableFromClassDef
   input Absyn.Info info;
   output Option<HashTable> outHashTable;
 algorithm
-  outHashTable := matchcontinue(inParent, inClassDef, inEnv, inHashTable, seqNo, info)
+  outHashTable := matchcontinue(inParent, inElementParent, inClassDef, inEnv, inHashTable, seqNo, info)
     local
       SCodeEnv.Env env;
-      SCode.Element cl, newCls;
+      SCode.Element cl, newCls, parentElement;
       SCode.Program rest;
       Option<HashTable> hashTable, optHT;
       SCode.Element el;
@@ -378,22 +387,22 @@ algorithm
       SCodeEnv.ClassType classType;
     
     // handle parts  
-    case (inParent, SCode.PARTS(elementLst = els), env, hashTable, seqNo, info)
+    case (inParent, parentElement, SCode.PARTS(elementLst = els), env, hashTable, seqNo, info)
       equation        
         hashTable = hashTableAddElements(inParent, els, env, hashTable, 1);
       then 
         hashTable;
     
     // handle class extends   
-    case (inParent, SCode.CLASS_EXTENDS(baseClassName = baseClassName, composition = SCode.PARTS(elementLst = els)), env, hashTable, seqNo, info)
+    case (inParent, parentElement, SCode.CLASS_EXTENDS(baseClassName = baseClassName, composition = SCode.PARTS(elementLst = els)), env, hashTable, seqNo, info)
       equation
-        fullCref = joinCrefs(inParent, Absyn.CREF_IDENT(baseClassName, {}));
-        hashTable = hashTableAddElements(fullCref, els, env, hashTable, 1);
+        fullCref = joinCrefs(inParent, Absyn.CREF_QUAL("$cextends", {}, Absyn.CREF_IDENT(baseClassName, {})));
+        hashTable = hashTableAddElements(fullCref, els, env, NONE(), 1);
       then 
         hashTable;
     
     // handle derived not builtin!
-    case (inParent, SCode.DERIVED(typeSpec = Absyn.TPATH(path = path)), env, hashTable, seqNo, info)
+    case (inParent, parentElement, SCode.DERIVED(typeSpec = Absyn.TPATH(path = path)), env, hashTable, seqNo, info)
       equation
         // Remove the extends from the local scope before flattening the derived
         // type, because the type should not be looked up via itself.
@@ -409,17 +418,17 @@ algorithm
         fullCref = joinCrefs(inParent,
           Absyn.CREF_QUAL("$derived", {}, Absyn.CREF_IDENT(name, {})));
         
-        optHT = hashTableAddElement(fullCref, el, env, NONE(), 1);
+        optHT = hashTableAddElement(Absyn.crefStripLast(fullCref), el, env, NONE(), 1);
         
         hashTable =
           add(
-            (fullCref, VALUE(seqNo, el, {}, optHT)),
+            (fullCref, VALUE(seqNo, el, {}, SOME(parentElement), optHT)),
             hashTable);
       then 
         hashTable;
     
     // handle derived builtin!
-    case (inParent, SCode.DERIVED(typeSpec = Absyn.TPATH(path = path)), env, hashTable, seqNo, info)
+    case (inParent, parentElement, SCode.DERIVED(typeSpec = Absyn.TPATH(path = path)), env, hashTable, seqNo, info)
       equation
         // Remove the extends from the local scope before flattening the derived
         // type, because the type should not be looked up via itself.
@@ -437,23 +446,23 @@ algorithm
         
         hashTable =
           add(
-            (fullCref, VALUE(seqNo, el, {}, NONE())),
+            (fullCref, VALUE(seqNo, el, {}, SOME(parentElement), NONE())),
             hashTable);
       then 
         hashTable;
     
     // handle enumeration
-    case (inParent, SCode.ENUMERATION(enumLst = _), env, hashTable, seqNo, info)
+    case (inParent, parentElement, SCode.ENUMERATION(enumLst = _), env, hashTable, seqNo, info)
       then 
         hashTable;
     
     // handle overload
-    case (inParent, SCode.OVERLOAD(pathLst = _), env, hashTable, seqNo, info)
+    case (inParent, parentElement, SCode.OVERLOAD(pathLst = _), env, hashTable, seqNo, info)
       then 
         hashTable;
     
     // handle pder
-    case (inParent, SCode.PDER(functionPath = _), env, hashTable, seqNo, info)
+    case (inParent, parentElement, SCode.PDER(functionPath = _), env, hashTable, seqNo, info)
       then 
         hashTable;
   end matchcontinue; 
@@ -512,21 +521,23 @@ algorithm
       Absyn.Info info;
       SCodeEnv.Item item;
       SCode.ClassDef cDef;
+      SCode.Mod mod;
+      SCode.Visibility vis;
     
     // handle extends
-    case (inParent, el as SCode.EXTENDS(baseClassPath = path, info = info), env, hashTable, seqNo)
+    case (inParent, el as SCode.EXTENDS(baseClassPath = path, modifications = mod, visibility = vis, info = info), env, hashTable, seqNo)
       equation
         // Remove the extends from the local scope before flattening the extends
         // type, because the type should not be looked up via itself.
         env = SCodeEnv.removeExtendsFromLocalScope(env);
-        (SCodeEnv.CLASS(cls = el), path, env) = SCodeLookup.lookupBaseClassName(path, env, info);
+        (SCodeEnv.CLASS(cls = cl), path, env) = SCodeLookup.lookupBaseClassName(path, env, info);
         name = Absyn.pathString(path);
         fullCref = joinCrefs(inParent, 
           Absyn.CREF_QUAL("$extends", {}, Absyn.CREF_IDENT(name, {})));
-        optHT = hashTableAddElement(fullCref, el, env, NONE(), 1);
+        optHT = hashTableAddElement(Absyn.crefStripLast(fullCref), cl, env, NONE(), 1);
         hashTable = 
           add(
-            (fullCref, VALUE(seqNo, el, {}, optHT)),
+            (fullCref, VALUE(seqNo, cl, {mod}, SOME(el), optHT)),
             hashTable);
       then 
         hashTable;
@@ -536,10 +547,10 @@ algorithm
       equation
         fullCref = joinCrefs(inParent, Absyn.CREF_IDENT(name, {}));
         env = SCodeEnv.enterScope(env, name);
-        optHT = hashTableFromClassDef(fullCref, cDef, env, NONE(), 1, info);
+        optHT = hashTableFromClassDef(fullCref, el, cDef, env, NONE(), 1, info);
         hashTable = 
           add(
-            (fullCref, VALUE(seqNo, el, {}, optHT)),
+            (fullCref, VALUE(seqNo, el, {}, NONE(), optHT)),
             hashTable);
       then 
         hashTable;
@@ -552,7 +563,7 @@ algorithm
            Absyn.CREF_QUAL("$import", {}, Absyn.CREF_IDENT(name, {})));
         hashTable = 
           add(
-            (fullCref, VALUE(seqNo, el, {}, NONE())),
+            (fullCref, VALUE(seqNo, el, {}, NONE(), NONE())),
             hashTable);
       then 
         hashTable;
@@ -563,7 +574,7 @@ algorithm
         fullCref = joinCrefs(inParent, Absyn.CREF_IDENT(name, {}));
         hashTable = 
           add(
-            (fullCref, VALUE(seqNo, el, {}, NONE())),
+            (fullCref, VALUE(seqNo, el, {}, NONE(), NONE())),
             hashTable);
       then 
         hashTable;
@@ -574,7 +585,7 @@ algorithm
         fullCref = joinCrefs(inParent, Absyn.CREF_IDENT(name, {}));
         hashTable = 
           add(
-            (fullCref, VALUE(seqNo, el, {}, NONE())),
+            (fullCref, VALUE(seqNo, el, {}, NONE(), NONE())),
             hashTable);
       then 
         hashTable;
