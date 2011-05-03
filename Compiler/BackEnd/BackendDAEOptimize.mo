@@ -2108,6 +2108,9 @@ algorithm
         BackendDAE.EQUATION(exp=e1,scalar=e2) = BackendDAEUtil.equationNth(eqns,pos_1);
         // BackendDump.debugStrExpStrExpStr(("Test ",e1," = ",e2,"\n"));
         (ecr,exp) = functionCallEqn(e1,e2,vars);
+        // TODO: Handle this with alias-equations instead?; at least they don't replace back to the original expression...
+        // failure(DAE.CREF(componentRef=_) = exp);
+        // failure(DAE.UNARY(operator=DAE.UMINUS(ty=_),exp=DAE.CREF(componentRef=_)) = exp);
         // BackendDump.debugStrExpStrExpStr(("Found ",ecr," = ",exp,"\n"));
         expvars = BackendDAEUtil.incidenceRowExp(exp,vars, {});
         // print("expvars "); BackendDump.debuglst((expvars,intString)); print("\n");
@@ -2238,7 +2241,7 @@ algorithm
         eqn = BackendDAEUtil.equationNth(eqns,pos_1);
         //BackendDump.dumpEqns({eqn});
         //BackendDump.debugStrExpStrExpStr(("Repalce ",inExp," with ",inECr,"\n"));
-        (eqn1,al1,ae1,wclst1,(_,_,i)) = BackendDAETransform.traverseBackendDAEExpsEqn(eqn, inAlgs, inArreqns, wclst, replaceExp,(inECr,inExp,0));
+        (eqn1,al1,ae1,wclst1,(_,_,i)) = BackendDAETransform.traverseBackendDAEExpsEqnWithSymbolicOperation(eqn, inAlgs, inArreqns, wclst, replaceExp, (inECr,inExp,0));
         //BackendDump.dumpEqns({eqn1});
         //print("i="); print(intString(i)); print("\n");
         true = intGt(i,0);
@@ -2256,17 +2259,19 @@ end removeEqualFunctionCall;
 public function replaceExp
 "function: replaceAliasDer
   author: Frenkel TUD"
-  input tuple<DAE.Exp,tuple<DAE.Exp,DAE.Exp,Integer>> inTpl;
-  output tuple<DAE.Exp,tuple<DAE.Exp,DAE.Exp,Integer>> outTpl;
+  input tuple<DAE.Exp,tuple<list<DAE.SymbolicOperation>,tuple<DAE.Exp,DAE.Exp,Integer>>> inTpl;
+  output tuple<DAE.Exp,tuple<list<DAE.SymbolicOperation>,tuple<DAE.Exp,DAE.Exp,Integer>>> outTpl;
 protected
   DAE.Exp e,e1,se,te;
   Integer i,j;
+  list<DAE.SymbolicOperation> ops;
 algorithm
-  (e,(se,te,i)) := inTpl;
+  (e,(ops,(se,te,i))) := inTpl;
   // BackendDump.debugStrExpStrExpStr(("Repalce ",se," with ",te,"\n"));
   ((e1,j)) := Expression.replaceExp(e,se,te);
+  ops := Util.if_(j>0, DAE.SUBSTITUTION({e1},e)::ops, ops);
   // BackendDump.debugStrExpStrExpStr(("Old ",e," new ",e1,"\n"));
-  outTpl := ((e1,(se,te,i+j)));
+  outTpl := ((e1,(ops,(se,te,i+j))));
 end replaceExp;
 
 /*  
