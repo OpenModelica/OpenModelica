@@ -62,9 +62,10 @@ public import Values;
 // protected imports
 protected import AbsynDep;
 protected import BackendDump;
-protected import BackendDAEUtil;
 protected import BackendDAECreate;
+protected import BackendDAEOptimize;
 protected import BackendDAETransform;
+protected import BackendDAEUtil;
 protected import BackendEquation;
 protected import BackendVariable;
 protected import ClassInf;
@@ -2953,6 +2954,7 @@ algorithm
       Absyn.Info info;
       DAE.FunctionTree funcs;
       BackendDAE.Variables vars;
+      BackendDAE.IncidenceMatrix m;
     
     // handle partial models
     case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p)),msg)
@@ -3004,17 +3006,14 @@ algorithm
         elimLevel = RTOpts.eliminationLevel();
         funcs = Env.getFunctionTree(cache);
         dlow = BackendDAECreate.lower(dae, funcs, false) "no dummy state" ;
+        Debug.fcall("dumpdaelow", BackendDump.dump, dlow);
         eqns = BackendEquation.daeEqns(dlow);
         eqnSize = BackendDAEUtil.equationSize(eqns);
         vars = BackendVariable.daeVars(dlow);
         varSize = BackendVariable.varsSize(vars);
-        (dlow1,_,_) = BackendDAEUtil.preOptimiseBackendDAE(dlow,funcs,
-            SOME({"removeSimpleEquations","expandDerOperator"}),NONE(),NONE());
-        Debug.fcall("dumpdaelow", BackendDump.dump, dlow1);
-        eqns1 = BackendEquation.daeEqns(dlow1);
-        eqnSize1 = BackendDAEUtil.equationSize(eqns1);
         (eqnSize,varSize) = subtractDummy(vars,eqnSize,varSize);
-        simpleEqnSize = eqnSize-eqnSize1;
+        (m,_) = BackendDAEUtil.incidenceMatrix(dlow, BackendDAE.NORMAL());
+        simpleEqnSize = BackendDAEOptimize.countSimpleEquations(dlow,m);
         eqnSizeStr = intString(eqnSize);
         varSizeStr = intString(varSize);
         simpleEqnSizeStr = intString(simpleEqnSize);
@@ -3049,17 +3048,14 @@ algorithm
         elimLevel = RTOpts.eliminationLevel();
         funcs = Env.getFunctionTree(cache);
         dlow = BackendDAECreate.lower(dae, funcs, false) "no dummy state" ;
+        Debug.fcall("dumpdaelow", BackendDump.dump, dlow);
         eqns = BackendEquation.daeEqns(dlow);
         eqnSize = BackendDAEUtil.equationSize(eqns);
         vars = BackendVariable.daeVars(dlow);
         varSize = BackendVariable.varsSize(vars);
-        (dlow1,_,_) = BackendDAEUtil.preOptimiseBackendDAE(dlow,funcs,
-            SOME({"removeSimpleEquations","expandDerOperator"}),NONE(),NONE());
-        Debug.fcall("dumpdaelow", BackendDump.dump, dlow1);
-        eqns1 = BackendEquation.daeEqns(dlow1);
-        eqnSize1 = BackendDAEUtil.equationSize(eqns1);
         (eqnSize,varSize) = subtractDummy(vars,eqnSize,varSize);
-        simpleEqnSize = eqnSize-eqnSize1;
+        (m,_) = BackendDAEUtil.incidenceMatrix(dlow, BackendDAE.NORMAL());
+        simpleEqnSize = BackendDAEOptimize.countSimpleEquations(dlow,m);
         eqnSizeStr = intString(eqnSize);
         varSizeStr = intString(varSize);
         simpleEqnSizeStr = intString(simpleEqnSize);
