@@ -436,7 +436,7 @@ namespace IAEX
     // 2006-03-14 AF, added: expandable, enumeration
     mappings_.insert( QString("\\b(a(lgorithm|nd)|for|i(f|mport|n)|loop|not|or") +
       "|e(lse(if|when)?|quation|numeration|x(tends|pandable))|then" +
-      "|p(rotected|ublic)|w(h(en|ile)|ithin))\\b",
+      "|p(rotected|ublic)|w(h(en|ile)|ithin)|uniontype|local|case|match|matchcontinue|guard|_)\\b",
       keywordFormat_ );
 
     // FUNCTION NAME
