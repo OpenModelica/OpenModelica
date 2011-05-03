@@ -2139,21 +2139,22 @@ algorithm
         DAE.ComponentRef cr;
         DAE.Exp e;
         Integer k;
+        DAE.Operator op;
       // a = -f(...);
-      case (e1 as DAE.CREF(componentRef = cr),e2 as DAE.UNARY(operator=DAE.UMINUS(ty=_)),inVars)
+      case (e1 as DAE.CREF(componentRef = cr),DAE.UNARY(operator=op as DAE.UMINUS(ty=_),exp=e2),inVars)
         equation
           ((_::_),(_::_)) = BackendVariable.getVar(cr,inVars);
-        then (e1,e2);
+        then (DAE.UNARY(op,e1),e2);
       // a = f(...);
       case (e1 as DAE.CREF(componentRef = cr),e2,inVars)
         equation
           ((_::_),(_::_)) = BackendVariable.getVar(cr,inVars);
         then (e1,e2);
       // a = -f(...);
-      case (e1 as DAE.UNARY(operator=DAE.UMINUS(ty=_)),e2 as DAE.CREF(componentRef = cr),inVars)
+      case (DAE.UNARY(operator=op as DAE.UMINUS(ty=_),exp=e1),e2 as DAE.CREF(componentRef = cr),inVars)
         equation
           ((_::_),(_::_)) = BackendVariable.getVar(cr,inVars);
-        then (e2,e1);
+        then (DAE.UNARY(op,e2),e1);
       // f(...)=a;
       case (e1,e2 as DAE.CREF(componentRef = cr),inVars)
         equation
