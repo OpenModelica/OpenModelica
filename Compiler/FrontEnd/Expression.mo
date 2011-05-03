@@ -4067,12 +4067,50 @@ algorithm
   end match;
 end extractCrefsFromExp;
 
+public function expHasCrefs "
+@author: adrpo 2011-04-29
+ returns true if the expression contains crefs"
+  input DAE.Exp inExp;
+  output Boolean hasCrefs;
+algorithm 
+  hasCrefs := match(inExp) 
+    local
+      Boolean b;
+      
+    case(inExp)
+      equation
+        ((_,b)) = traverseExp(inExp, traversingComponentRefPresent, false);
+      then
+        b;
+  end match;
+end expHasCrefs;
+
+public function traversingComponentRefPresent "
+@author: adrpo 2011-04
+Returns a true if the exp is a componentRef"
+  input tuple<DAE.Exp, Boolean> inExp;
+  output tuple<DAE.Exp, Boolean> outExp;
+algorithm 
+  outExp := matchcontinue(inExp)
+    local
+      Boolean b;
+      DAE.Exp e;
+    
+    case((e as DAE.CREF(componentRef = _), b))
+      then
+        ((e, true));
+    
+    case(inExp) then inExp;
+    
+  end matchcontinue;
+end traversingComponentRefPresent;
+
 public function traversingComponentRefFinder "
 Author: BZ 2008-06
 Exp traverser that Union the current ComponentRef with list if it is already there.
 Returns a list containing, unique, all componentRef in an Expression."
-  input tuple<DAE.Exp, list<ComponentRef> > inExp;
-  output tuple<DAE.Exp, list<ComponentRef> > outExp;
+  input tuple<DAE.Exp, list<ComponentRef>> inExp;
+  output tuple<DAE.Exp, list<ComponentRef>> outExp;
 algorithm 
   outExp := matchcontinue(inExp)
     local
@@ -4084,6 +4122,7 @@ algorithm
     case((e as DAE.CREF(cr,ty), crefs))
       equation
         crefs = Util.listUnionEltOnTrue(cr,crefs,ComponentReference.crefEqual);
+        // e = makeCrefExp(cr,ty);
       then
         ((e, crefs ));
     

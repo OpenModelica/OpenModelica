@@ -353,7 +353,7 @@ algorithm
         name = ComponentReference.printComponentRefStr(cr) "  Util.string_append_list({\"xd{\",indxs,\"}\"}) => id &" ;
         //c_name = Util.modelicaStringToCStr(name,true);
         c_name = name;
-        //id = stringAppendList({BackendDAE.derivativeNamePrefix,c_name});
+        //id = stringAppendList({DAE.derivativeNamePrefix,c_name});
         id = c_name;
         cr_1 = ComponentReference.makeCrefIdent(id,DAE.ET_REAL(),{});
         varexp = Expression.crefExp(cr_1);
@@ -388,7 +388,7 @@ algorithm
         name = ComponentReference.printComponentRefStr(cr) "  Util.string_append_list({\"xd{\",indxs,\"}\"}) => id &" ;
         //c_name = Util.modelicaStringToCStr(name,true);
         c_name = name;
-        //id = stringAppendList({BackendDAE.derivativeNamePrefix,c_name});
+        //id = stringAppendList({DAE.derivativeNamePrefix,c_name});
         id = c_name;
         cr_1 = ComponentReference.makeCrefIdent(id,DAE.ET_REAL(),{});
         varexp = Expression.crefExp(cr_1);

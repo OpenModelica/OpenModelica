@@ -79,7 +79,7 @@ end hashFunc;
 public function emptyHashTable
 "
   Returns an empty HashTable.
-  Using the bucketsize 1000 and array size 100.
+  Using the default bucketsize..
 "
   output HashTable hashTable;
 algorithm
@@ -87,14 +87,12 @@ algorithm
 end emptyHashTable;
 
 public function emptyHashTableSized
-"
-  Returns an empty HashTable.
-  Using the bucketsize size and arraysize size/10.
-"
+"Returns an empty HashTable.
+ Using the bucketsize size."
   input Integer size;
   output HashTable hashTable;
 algorithm
-  hashTable := BaseHashTable.emptyHashTableWork(size,intDiv(size,10),(hashFunc,Expression.expEqual,ExpressionDump.printExpStr,ComponentReference.printComponentRefStr));
+  hashTable := BaseHashTable.emptyHashTableWork(size,(hashFunc,Expression.expEqual,ExpressionDump.printExpStr,ComponentReference.printComponentRefStr));
 end emptyHashTableSized;
 
 end HashTable4;

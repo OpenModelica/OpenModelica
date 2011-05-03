@@ -1313,7 +1313,11 @@ algorithm
     case (name, SOME(daeMainFunction), daeElements, metarecordTypes, includes)
       equation
         // Create FunctionCode
-        (daeElements,(_,(_,_,literals))) = DAEUtil.traverseDAEFunctions(daeMainFunction::daeElements,Expression.traverseSubexpressionsHelper,(replaceLiteralExp,(0,HashTableExpToIndex.emptyHashTableSized(24971),{})));
+        (daeElements,(_,(_,_,literals))) = 
+          DAEUtil.traverseDAEFunctions(
+            daeMainFunction::daeElements,
+            Expression.traverseSubexpressionsHelper,
+            (replaceLiteralExp,(0,HashTableExpToIndex.emptyHashTableSized(BaseHashTable.bigBucketSize),{})));
         literals = listReverse(literals);
         (mainFunction::fns, extraRecordDecls, includes, libs) = elaborateFunctions(daeElements, metarecordTypes, literals, includes);
         checkValidMainFunction(name, mainFunction);
@@ -1326,7 +1330,11 @@ algorithm
     case (name, NONE(), daeElements, metarecordTypes, includes)
       equation
         // Create FunctionCode
-        (daeElements,(_,(_,_,literals))) = DAEUtil.traverseDAEFunctions(daeElements,Expression.traverseSubexpressionsHelper,(replaceLiteralExp,(0,HashTableExpToIndex.emptyHashTableSized(24971),{})));
+        (daeElements,(_,(_,_,literals))) = 
+          DAEUtil.traverseDAEFunctions(
+            daeElements,
+            Expression.traverseSubexpressionsHelper,
+            (replaceLiteralExp,(0,HashTableExpToIndex.emptyHashTableSized(BaseHashTable.bigBucketSize),{})));
         literals = listReverse(literals);
         (fns, extraRecordDecls, includes, libs) = elaborateFunctions(daeElements, metarecordTypes, literals, includes);
         makefileParams = createMakefileParams(libs);

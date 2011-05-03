@@ -15074,7 +15074,7 @@ end opaqVal;
 public function emptyInstHashTable
 "
   Returns an empty HashTable.
-  Using the bucketsize 1000 and array size 100.
+  Using the default bucketsize..
 "
   output InstHashTable hashTable;
 algorithm
@@ -15082,14 +15082,12 @@ algorithm
 end emptyInstHashTable;
 
 public function emptyInstHashTableSized
-"
-  Returns an empty HashTable.
-  Using the bucketsize size and arraysize size/10.
-"
+"Returns an empty HashTable.
+  Using the bucketsize size"
   input Integer size;
   output InstHashTable hashTable;
 algorithm
-  hashTable := BaseHashTable.emptyHashTableWork(size,intDiv(size,10),(Absyn.pathHashMod,Absyn.pathEqual,Absyn.pathString,opaqVal));
+  hashTable := BaseHashTable.emptyHashTableWork(size,(Absyn.pathHashMod,Absyn.pathEqual,Absyn.pathString,opaqVal));
 end emptyInstHashTableSized;
 
 /* end HashTable */

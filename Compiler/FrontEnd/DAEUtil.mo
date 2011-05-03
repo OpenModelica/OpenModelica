@@ -2547,7 +2547,7 @@ algorithm
       then e;
     case (e,_)
       equation
-        {} = Expression.extractCrefsFromExp(e);
+        false = Expression.expHasCrefs(e); // {} = Expression.extractCrefsFromExp(e);
       then e;
     case (e,pv)
       equation

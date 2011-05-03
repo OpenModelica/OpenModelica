@@ -94,14 +94,11 @@ algorithm
 end emptyReplacements;
 
 public function emptyReplacementsSized "function: emptyReplacements
-
-  Returns an empty set of replacement rules, giving a size of hashtables to allocate
-"
+  Returns an empty set of replacement rules, giving a size of hashtables to allocate"
   input Integer size;
   output VariableReplacements outVariableReplacements;
 algorithm
-  outVariableReplacements:=
-  match (size)
+  outVariableReplacements := match (size)
       local HashTable2.HashTable ht,eht;
         HashTable3.HashTable invHt;
     case (size)
