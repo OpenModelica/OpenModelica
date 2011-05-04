@@ -38,6 +38,8 @@ libmodparomc.a: TaskGraphExt_stub_omc.o
 
 INCFLAGS =-I$(RMLINCLUDE) -I$(BOOST_HOME) -I$(top_builddir)/mosh/src
 
+CC = @CC@
+CXX = @CXX@
 CFLAGS = @CFLAGS@ $(INCFLAGS) -Wall -DUNIX=1
 CXXFLAGS = $(CFLAGS)
 LIBS =
@@ -54,7 +56,7 @@ MergeAllParents.o: MergeAllParents.cpp MergeAllParents.hpp MergeRule.hpp
 Schedule.o: Schedule.cpp Schedule.hpp
 
 clean:
-	rm -rf *.a $(OBJECTS)
+	rm -rf *.a $(OBJECTS) libmodparomc.a TaskGraphExt_stub_omc.o
 
 reallyclean: clean
 
