@@ -6158,15 +6158,6 @@ algorithm
       then
         (cache,env_1,ih,store,dae,csets,ci_state,{},graph);
 
-    /* non replaceable class definition */
-    case (cache,env,ih,store,mods,pre,csets,ci_state,(SCode.CLASS(name = n,prefixes=SCode.PREFIXES(replaceablePrefix = SCode.NOT_REPLACEABLE()),info=info),_),inst_dims,impl,_,_)
-      equation
-        ((classmod as DAE.REDECL(finalPrefix,_,{(_,_)}))) = Mod.lookupModificationP(mods, Absyn.IDENT(n))
-        "Redeclare of class definition, replaceable is false" ;
-        Error.addSourceMessage(Error.REDECLARE_NON_REPLACEABLE, {"class", n}, info);
-      then
-        fail();
-
     // Classdefinition without redeclaration
     case (cache,env,ih,store,mods,pre,csets,ci_state,(comp as SCode.CLASS(name = n),cmod),inst_dims,impl,_,graph)
       equation
