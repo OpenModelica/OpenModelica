@@ -2777,25 +2777,17 @@ algorithm
       Ident str;
       Boolean b_isZero,b1,b2;
     case ({}) then DAE.RCONST(1.0);
-    case ({e1})
-      equation
-        b_isZero = isZero(e1);
-        res = Util.if_(b_isZero,makeConstZero(typeof(e1)),e1);
-      then res;
+    case ({e1}) then e1;
     case ((e :: es)) /* to prevent infinite recursion, disregard constant 1. */
       equation
         true = isConstOne(e);
         res = makeProductLst(es);
-        b_isZero = isZero(res);
-        res = Util.if_(b_isZero,makeConstZero(typeof(e)),res);
       then
         res;
      case ((e :: es)) /* to prevent infinite recursion, disregard constant 0. */
       equation
         true = isZero(e);
-        res = makeConstZero(typeof(e));
-      then
-        res;
+      then e;
     case ({DAE.BINARY(exp1 = e1,operator = DAE.DIV(ty = tp),exp2 = e),e2})
       equation
         true = isConstOne(e1);
