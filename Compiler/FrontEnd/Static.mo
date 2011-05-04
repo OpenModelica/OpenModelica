@@ -301,6 +301,7 @@ algorithm
       Absyn.ForIterators iterators;
       Prefix.Prefix pre;
       list<list<Absyn.Exp>> ess;
+      list<list<DAE.Exp>> dess;
       Absyn.CodeNode cn;
       list<DAE.Type> typeList;
       list<DAE.Const> constList;
@@ -500,13 +501,13 @@ algorithm
 
     case (cache,env,Absyn.MATRIX(matrix = ess),impl,st,doVect,pre,info,_)
       equation
-        (cache,_,tps,_) = elabExpListList(cache, env, ess, impl, st,doVect,pre,info) "matrix expressions, e.g. {1,0;0,1} with elements of simple type." ;
+        (cache,dess,tps,_) = elabExpListList(cache, env, ess, impl, st,doVect,pre,info) "matrix expressions, e.g. {1,0;0,1} with elements of simple type." ;
         tps_1 = Util.listListMap(tps, Types.getPropType);
         tps_2 = Util.listFlatten(tps_1);
         nmax = matrixConstrMaxDim(tps_2);
         havereal = Types.containReal(tps_2);
         (cache,mexp,DAE.PROP(t,c),dim1,dim2)
-        = elabMatrixSemi(cache,env, ess, impl, st, havereal, nmax,doVect,pre,info);
+        = elabMatrixSemi(cache,env, dess, tps, impl, st, havereal, nmax,doVect,pre,info);
         mexp = Util.if_(havereal,DAE.CAST(DAE.ET_ARRAY(DAE.ET_REAL(),{dim1,dim2}),mexp),mexp);
         (mexp,_) = ExpressionSimplify.simplify1(mexp); // to propagate cast down to scalar elts
         mexp_1 = elabMatrixToMatrixExp(mexp);
@@ -1544,6 +1545,7 @@ algorithm
       Env.Cache cache;
       Prefix.Prefix pre;
       list<list<Absyn.Exp>> ess;
+      list<list<DAE.Exp>> dess;
 
     case (cache,_,Absyn.INTEGER(value = i),impl,_,info) then (cache,DAE.ICONST(i),DAE.PROP(DAE.T_INTEGER_DEFAULT,DAE.C_CONST()));  /* impl */
     case (cache,_,Absyn.REAL(value = r),impl,_,info)
@@ -1666,12 +1668,12 @@ algorithm
         (cache,DAE.ARRAY(at,a,es_1),DAE.PROP((DAE.T_ARRAY(DAE.DIM_INTEGER(l),t),NONE()),const));
     case (cache,env,Absyn.MATRIX(matrix = ess),impl,pre,info)
       equation
-        (cache,_,tps,_) = elabExpListList(cache,env,ess,impl,NONE(),true,pre,info);
+        (cache,dess,tps,_) = elabExpListList(cache,env,ess,impl,NONE(),true,pre,info);
         tps_1 = Util.listListMap(tps, Types.getPropType);
         tps_2 = Util.listFlatten(tps_1);
         nmax = matrixConstrMaxDim(tps_2);
         havereal = Types.containReal(tps_2);
-        (cache,mexp,DAE.PROP(t,c),dim1,dim2) = elabMatrixSemi(cache,env,ess,impl,NONE(),havereal,nmax,true,pre,info);
+        (cache,mexp,DAE.PROP(t,c),dim1,dim2) = elabMatrixSemi(cache,env,dess,tps,impl,NONE(),havereal,nmax,true,pre,info);
         at = Types.elabType(t);
         mexp_1 = elabMatrixToMatrixExp(mexp);
         t_1 = Types.unliftArray(t);
@@ -2513,7 +2515,8 @@ protected function elabMatrixComma "function elabMatrixComma
   It elaborates one matrix row of a matrix."
   input Env.Cache inCache;
   input Env.Env inEnv1;
-  input list<Absyn.Exp> inAbsynExpLst2;
+  input list<DAE.Exp> es;
+  input list<DAE.Properties> props;
   input Boolean inBoolean3;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption4;
   input Boolean inBoolean5;
@@ -2528,25 +2531,22 @@ protected function elabMatrixComma "function elabMatrixComma
   output DAE.Dimension outInteger4;
 algorithm
   (outCache,outExp1,outProperties2,outInteger3,outInteger4):=
-  matchcontinue (inCache,inEnv1,inAbsynExpLst2,inBoolean3,inInteractiveInteractiveSymbolTableOption4,inBoolean5,inInteger6,performVectorization,inPrefix,info)
+  matchcontinue (inCache,inEnv1,es,props,inBoolean3,inInteractiveInteractiveSymbolTableOption4,inBoolean5,inInteger6,performVectorization,inPrefix,info)
     local
-      DAE.Exp el_1,el_2;
-      DAE.Properties prop,prop1,prop1_1,prop2,props;
+      DAE.Exp el,el_1,el_2;
+      DAE.Properties prop,prop1,prop1_1,prop2;
       tuple<DAE.TType, Option<Absyn.Path>> t1,t1_1;
       Integer t1_dim1,nmax_2,nmax,t1_ndims;
       DAE.Dimension t1_dim1_1,t1_dim2_1,dim1,dim2,dim2_1;
       Boolean array,impl,havereal,a,scalar,doVect;
       DAE.ExpType at;
       list<Env.Frame> env;
-      Absyn.Exp el;
       Option<Interactive.InteractiveSymbolTable> st;
-      list<DAE.Exp> els_1;
-      list<Absyn.Exp> els;
+      list<DAE.Exp> els_1,els;
       Env.Cache cache;
       Prefix.Prefix pre;
-    case (cache,env,{el},impl,st,havereal,nmax,doVect,pre,info) /* implicit inst. have real nmax dim1 dim2 */
+    case (cache,env,{el_1},{prop as DAE.PROP(t1,_)},impl,st,havereal,nmax,doVect,pre,info) /* implicit inst. have real nmax dim1 dim2 */
       equation
-        (cache,el_1,(prop as DAE.PROP(t1,_)),_) = elabExp(cache,env, el, impl, st,doVect,pre,info);
         t1_dim1 = Types.numberOfDimensions(t1);
         nmax_2 = nmax - t1_dim1;
         (el_2,(prop as DAE.PROP(t1_1,_))) = promoteExp(el_1, prop, nmax_2);
@@ -2557,22 +2557,21 @@ algorithm
         at = Expression.liftArrayLeft(at, DAE.DIM_INTEGER(1));
       then
         (cache,DAE.ARRAY(at,scalar,{el_2}),prop,t1_dim1_1,t1_dim2_1);
-    case (cache,env,(el :: els),impl,st,havereal,nmax,doVect,pre,info)
+    case (cache,env,(el_1 :: els),(prop1 as DAE.PROP(t1,_))::props,impl,st,havereal,nmax,doVect,pre,info)
       equation
-        (cache,el_1,(prop1 as DAE.PROP(t1,_)),_) = elabExp(cache,env, el, impl, st,doVect,pre,info);
         t1_ndims = Types.numberOfDimensions(t1);
         nmax_2 = nmax - t1_ndims;
         (el_2,(prop1_1 as DAE.PROP(t1_1,_))) = promoteExp(el_1, prop1, nmax_2);
          (_,t1_dim1_1 :: (t1_dim2_1 :: _)) = Types.flattenArrayTypeOpt(t1_1);
-        (cache,el_1 as DAE.ARRAY(at,a,els_1),prop2,dim1,dim2) = elabMatrixComma(cache,env, els, impl, st, havereal, nmax,doVect,pre,info);
+        (cache,el_1 as DAE.ARRAY(at,a,els_1),prop2,dim1,dim2) = elabMatrixComma(cache,env, els, props, impl, st, havereal, nmax,doVect,pre,info);
         dim2_1 = Expression.dimensionsAdd(t1_dim2_1,dim2)"comma between matrices => concatenation along second dimension" ;
-        props = Types.matchWithPromote(prop1_1, prop2, havereal);
+        prop = Types.matchWithPromote(prop1_1, prop2, havereal);
         el_1 = Expression.arrayAppend(el_2, el_1);
         //dim = listLength((el :: els));
         //at = Expression.liftArrayLeft(at, DAE.DIM_INTEGER(dim));
       then
-        (cache, el_1, props, dim1, dim2_1);
-    case (_,_,_,_,_,_,_,_,_,_)
+        (cache, el_1, prop, dim1, dim2_1);
+    else
       equation
         Debug.fprint("failtrace", "- Static.elabMatrixComma failed\n");
       then
@@ -2860,7 +2859,8 @@ protected function elabMatrixSemi
   A row is elaborated with elabMatrixComma."
   input Env.Cache inCache;
   input Env.Env inEnv1;
-  input list<list<Absyn.Exp>> inAbsynExpLstLst2;
+  input list<list<DAE.Exp>> expss;
+  input list<list<DAE.Properties>> propss;
   input Boolean inBoolean3;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption4;
   input Boolean inBoolean5;
@@ -2875,71 +2875,65 @@ protected function elabMatrixSemi
   output DAE.Dimension outInteger4;
 algorithm
   (outCache,outExp1,outProperties2,outInteger3,outInteger4) :=
-  matchcontinue (inCache,inEnv1,inAbsynExpLstLst2,inBoolean3,inInteractiveInteractiveSymbolTableOption4,inBoolean5,inInteger6,performVectorization,inPrefix,info)
+  matchcontinue (inCache,inEnv1,expss,propss,inBoolean3,inInteractiveInteractiveSymbolTableOption4,inBoolean5,inInteger6,performVectorization,inPrefix,info)
     local
-      DAE.Exp el_1,el_2,els_1,els_2;
-      DAE.Properties props,props1,props2;
+      DAE.Exp exp,el,el_1,el_2;
+      DAE.Properties prop,prop1,prop2;
       tuple<DAE.TType, Option<Absyn.Path>> t,t1,t2;
       Integer maxn,dim;
       DAE.Dimension dim1,dim2,dim1_1,dim2_1,dim1_2;
       DAE.ExpType at;
       Boolean a,impl,havereal;
       list<Env.Frame> env;
-      list<Absyn.Exp> el;
       Option<Interactive.InteractiveSymbolTable> st;
-      list<list<Absyn.Exp>> els;
+      list<DAE.Exp> els,els_1,els_2;
+      list<list<DAE.Exp>> elss;
       Ident el_str,t1_str,t2_str,dim1_str,dim2_str,el_str1,pre_str;
       Env.Cache cache;
       Boolean doVect;
       Prefix.Prefix pre;
+      list<DAE.Properties> props;
 
-    case (cache,env,{el},impl,st,havereal,maxn,doVect,pre,info) /* implicit inst. contain real maxn */
+    case (cache,env,{els},{props},impl,st,havereal,maxn,doVect,pre,info) /* implicit inst. contain real maxn */
       equation
-        (cache,el_1,(props as DAE.PROP(t,_)),dim1,dim2) = elabMatrixComma(cache,env, el, impl, st, havereal, maxn,doVect,pre,info);
-        at = Types.elabType(t);
-        a = Types.isPropArray(props);
-        el_2 = elabMatrixCatTwoExp(el_1);
+        (cache,exp,prop,dim1,dim2) = elabMatrixComma(cache,env, els, props, impl, st, havereal, maxn,doVect,pre,info);
+        exp = elabMatrixCatTwoExp(exp);
       then
-        (cache,el_2,props,dim1,dim2);
-    case (cache,env,(el :: els),impl,st,havereal,maxn,doVect,pre,info)
+        (cache,exp,prop,dim1,dim2);
+    case (cache,env,els::elss,props::propss,impl,st,havereal,maxn,doVect,pre,info)
       equation
-        dim = listLength((el :: els));
-        (cache,el_1,props1,dim1,dim2) = elabMatrixComma(cache,env, el, impl, st, havereal, maxn,doVect,pre,info);
+        dim = listLength((els :: elss));
+        (cache,el_1,prop1,dim1,dim2) = elabMatrixComma(cache,env, els, props, impl, st, havereal, maxn,doVect,pre,info);
         el_2 = elabMatrixCatTwoExp(el_1);
-        (cache,els_1,props2,dim1_1,dim2_1) = elabMatrixSemi(cache,env, els, impl, st, havereal, maxn,doVect,pre,info);
-        els_2 = elabMatrixCatOne({el_2,els_1});
+        (cache,el_1,prop2,dim1_1,dim2_1) = elabMatrixSemi(cache,env, elss, propss, impl, st, havereal, maxn,doVect,pre,info);
+        exp = elabMatrixCatOne({el_2,el_1});
         true = Expression.dimensionsEqual(dim2,dim2_1) "semicoloned values a;b must have same no of columns" ;
         dim1_2 = Expression.dimensionsAdd(dim1, dim1_1) "number of rows added." ;
-        (props) = Types.matchWithPromote(props1, props2, havereal);
+        prop = Types.matchWithPromote(prop1, prop2, havereal);
       then
-        (cache,els_2,props,dim1_2,dim2);
+        (cache,exp,prop,dim1_2,dim2);
 
-    case (_,_,_,_,_,_,_,_,_,_)
+    case (cache,env,els::elss,props::propss,impl,st,havereal,maxn,doVect,pre,info) /* Error messages */
       equation
-        Debug.fprint("failtrace", "- Static.elabMatrixSemi failed\n");
-      then
-        fail();
-    case (cache,env,(el :: els),impl,st,havereal,maxn,doVect,pre,info) /* Error messages */
-      equation
-        (cache,el_1,DAE.PROP(t1,_),_,_) = elabMatrixComma(cache,env, el, impl, st, havereal, maxn,doVect,pre,info);
-        (cache,els_1,DAE.PROP(t2,_),_,_) = elabMatrixSemi(cache,env, els, impl, st, havereal, maxn,doVect,pre,info);
+        (cache,_,DAE.PROP(t1,_),_,_) = elabMatrixComma(cache,env, els, props, impl, st, havereal, maxn,doVect,pre,info);
+        (cache,_,DAE.PROP(t2,_),_,_) = elabMatrixSemi(cache,env, elss, propss, impl, st, havereal, maxn,doVect,pre,info);
         failure(equality(t1 = t2));
         pre_str = PrefixUtil.printPrefixStr3(inPrefix);
-        el_str = ExpressionDump.printListStr(el, Dump.printExpStr, ", ");
+        el_str = ExpressionDump.printListStr(els, ExpressionDump.printExpStr, ", ");
         t1_str = Types.unparseType(t1);
         t2_str = Types.unparseType(t2);
         Error.addSourceMessage(Error.TYPE_MISMATCH_MATRIX_EXP, {pre_str,el_str,t1_str,t2_str}, info);
       then
         fail();
-    case (cache,env,(el :: els),impl,st,havereal,maxn,doVect,pre,info)
+    case (cache,env,(els :: elss),props::propss,impl,st,havereal,maxn,doVect,pre,info)
       equation
-        (cache,el_1,DAE.PROP(t1,_),dim1,_) = elabMatrixComma(cache,env, el, impl, st, havereal, maxn,doVect,pre,info);
-        (cache,els_1,props2,_,dim2) = elabMatrixSemi(cache,env, els, impl, st, havereal, maxn,doVect,pre,info);
+        (cache,_,DAE.PROP(t1,_),dim1,_) = elabMatrixComma(cache,env, els, props, impl, st, havereal, maxn,doVect,pre,info);
+        (cache,_,prop2,_,dim2) = elabMatrixSemi(cache,env, elss, propss, impl, st, havereal, maxn,doVect,pre,info);
         false = Expression.dimensionsEqual(dim1,dim2);
         dim1_str = ExpressionDump.dimensionString(dim1);
         dim2_str = ExpressionDump.dimensionString(dim2);
         pre_str = PrefixUtil.printPrefixStr3(inPrefix);
-        el_str = ExpressionDump.printListStr(el, Dump.printExpStr, ", ");
+        el_str = ExpressionDump.printListStr(els, ExpressionDump.printExpStr, ", ");
         el_str1 = stringAppendList({"[",el_str,"]"});
         Error.addSourceMessage(Error.MATRIX_EXP_ROW_SIZE, {pre_str,el_str1,dim1_str,dim2_str},info);
       then
