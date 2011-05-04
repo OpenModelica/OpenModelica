@@ -4368,7 +4368,7 @@ algorithm
     local
       list<BackendDAE.Equation> eqn_lst,cont_eqn,disc_eqn;
       list<BackendDAE.Var> var_lst,cont_var,disc_var,var_lst_1,cont_var1;
-      BackendDAE.Variables vars_1,vars,knvars,exvars,evars;
+      BackendDAE.Variables vars_1,vars,knvars,exvars,knvars_1;
       BackendDAE.AliasVariables av,ave;
       BackendDAE.EquationArray eqns_1,eqns,se,ie,eeqns,eieqns;
       BackendDAE.BackendDAE cont_subsystem_dae,daelow,subsystem_dae,dlow;
@@ -4411,7 +4411,10 @@ algorithm
         // is  twisted, simple reverse one list
         eqn_lst = listReverse(eqn_lst);
         eqns_1 = BackendDAEUtil.listEquation(eqn_lst);
-        subsystem_dae = BackendDAE.DAE(vars_1,knvars,exvars,av,eqns_1,se,ie,ae1,al,ev,eoc);
+        ave = BackendDAEUtil.emptyAliasVariables();
+        eeqns = BackendDAEUtil.listEquation({});
+        knvars_1 = BackendEquation.equationsVars(eqns_1,knvars);
+        subsystem_dae = BackendDAE.DAE(vars_1,knvars_1,exvars,ave,eqns_1,eeqns,eeqns,ae1,al,ev,eoc);
         (m,mt) = BackendDAEUtil.incidenceMatrix(subsystem_dae, BackendDAE.ABSOLUTE());
         //mt = BackendDAEUtil.transposeMatrix(m);
         // calculate jacobian. If constant, linear system of equations. Otherwise nonlinear
@@ -4441,7 +4444,10 @@ algorithm
         // is  twisted, simple reverse one list
         eqn_lst = listReverse(eqn_lst);
         eqns_1 = BackendDAEUtil.listEquation(cont_eqn);
-        cont_subsystem_dae = BackendDAE.DAE(vars_1,knvars,exvars,av,eqns_1,se,ie,ae1,al,ev,eoc);
+        ave = BackendDAEUtil.emptyAliasVariables();
+        eeqns = BackendDAEUtil.listEquation({});
+        knvars_1 = BackendEquation.equationsVars(eqns_1,knvars);
+        cont_subsystem_dae = BackendDAE.DAE(vars_1,knvars_1,exvars,ave,eqns_1,eeqns,eeqns,ae1,al,ev,eoc);
         (m,mt) = BackendDAEUtil.incidenceMatrix(cont_subsystem_dae, BackendDAE.ABSOLUTE());
         //mt = BackendDAEUtil.transposeMatrix(m);
         // calculate jacobian. If constant, linear system of equations. Otherwise nonlinear
@@ -4468,7 +4474,10 @@ algorithm
         // is  twisted, simple reverse one list
         eqn_lst = listReverse(eqn_lst);
         eqns_1 = BackendDAEUtil.listEquation(cont_eqn);
-        cont_subsystem_dae = BackendDAE.DAE(vars_1,knvars,exvars,av,eqns_1,se,ie,ae1,al,ev,eoc);
+        ave = BackendDAEUtil.emptyAliasVariables();
+        eeqns = BackendDAEUtil.listEquation({});
+        knvars_1 = BackendEquation.equationsVars(eqns_1,knvars);
+        cont_subsystem_dae = BackendDAE.DAE(vars_1,knvars_1,exvars,ave,eqns_1,eeqns,eeqns,ae1,al,ev,eoc);
         (m,mt) = BackendDAEUtil.incidenceMatrix(cont_subsystem_dae, BackendDAE.ABSOLUTE());
         //mt = BackendDAEUtil.transposeMatrix(m);
         // calculate jacobian. If constant, linear system of equations.
@@ -4502,10 +4511,9 @@ algorithm
         eqn_lst = listReverse(eqn_lst);
         eqns_1 = BackendDAEUtil.listEquation(eqn_lst);
         ave = BackendDAEUtil.emptyAliasVariables();
-        evars = BackendDAEUtil.emptyVars();
         eeqns = BackendDAEUtil.listEquation({});
-        eieqns = BackendDAEUtil.listEquation({});
-        subsystem_dae = BackendDAE.DAE(vars_1,evars,exvars,ave,eqns_1,eeqns,eieqns,ae1,al,ev,eoc);
+        knvars_1 = BackendEquation.equationsVars(eqns_1,knvars);
+        subsystem_dae = BackendDAE.DAE(vars_1,knvars_1,exvars,ave,eqns_1,eeqns,eeqns,ae1,al,ev,eoc);
         (m,mt) = BackendDAEUtil.incidenceMatrix(subsystem_dae, BackendDAE.ABSOLUTE());
         //mt = BackendDAEUtil.transposeMatrix(m);
         (v1,v2,subsystem_dae_1,m_2,mT_2) = BackendDAETransform.matchingAlgorithm(subsystem_dae, m, mt, (BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT(), BackendDAE.KEEP_SIMPLE_EQN()),DAEUtil.avlTreeNew());
@@ -4537,7 +4545,10 @@ algorithm
         // is  twisted, simple reverse one list
         eqn_lst = listReverse(eqn_lst);
         eqns_1 = BackendDAEUtil.listEquation(eqn_lst);
-        subsystem_dae = BackendDAE.DAE(vars_1,knvars,exvars,av,eqns_1,se,ie,ae1,al,ev,eoc);
+        ave = BackendDAEUtil.emptyAliasVariables();
+        eeqns = BackendDAEUtil.listEquation({});
+        knvars_1 = BackendEquation.equationsVars(eqns_1,knvars);
+        subsystem_dae = BackendDAE.DAE(vars_1,knvars_1,exvars,ave,eqns_1,eeqns,eeqns,ae1,al,ev,eoc);
         (m,mt) = BackendDAEUtil.incidenceMatrix(subsystem_dae, BackendDAE.ABSOLUTE());
         //mt = BackendDAEUtil.transposeMatrix(m);
         // calculate jacobian. If constant, linear system of equations. Otherwise nonlinear
@@ -4787,7 +4798,7 @@ algorithm
         // constant jacobians. Linear system of equations (A x = b) where
         // A and b are constants. TODO: implement symbolic gaussian elimination
         // here. Currently uses dgesv as for next case
-    case (mixedEvent,genDiscrete,skipDiscInAlgorithm,(d as BackendDAE.DAE(orderedVars = v,knownVars = kv,orderedEqs = eqn)),SOME(jac),BackendDAE.JAC_CONSTANT(),block_,helpVarInfo)
+    case (mixedEvent,genDiscrete,skipDiscInAlgorithm,(d as BackendDAE.DAE(orderedEqs = eqn)),SOME(jac),BackendDAE.JAC_CONSTANT(),block_,helpVarInfo)
       equation
         eqn_size = BackendDAEUtil.equationSize(eqn);
         // NOTE: Not impl. yet, use time_varying...

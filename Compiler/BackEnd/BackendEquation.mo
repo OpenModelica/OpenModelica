@@ -43,6 +43,8 @@ public import BackendDAE;
 public import DAE;
 
 protected import BackendDAEUtil;
+protected import BackendVariable;
+protected import ClassInf;
 protected import ComponentReference;
 protected import DAEUtil;
 protected import Debug;
@@ -136,6 +138,97 @@ algorithm
         fail();
   end matchcontinue;
 end getZeroCrossingIndicesFromWhenClause2;
+
+public function equationsVars
+"function: equationsVars
+  author: Frenkel TUD 2011-05
+  From the equations and a variable array return all
+  occuring variables form the array."
+  input BackendDAE.EquationArray inEquations;
+  input BackendDAE.Variables inVars;
+  output BackendDAE.Variables outVars;
+algorithm
+  outVars := BackendDAEUtil.emptyVars();
+  ((_,outVars)) := BackendDAEUtil.traverseBackendDAEExpsEqns(inEquations,checkEquationsVars,(inVars,outVars));
+end equationsVars;
+
+protected function checkEquationsVars
+  input tuple<DAE.Exp, tuple<BackendDAE.Variables,BackendDAE.Variables>> inTpl;
+  output tuple<DAE.Exp, tuple<BackendDAE.Variables,BackendDAE.Variables>> outTpl;
+algorithm
+  outTpl :=
+  matchcontinue inTpl
+    local  
+      DAE.Exp exp;
+      BackendDAE.Variables vars,vars1;
+    case ((exp,(vars,vars1)))
+      equation
+         ((_,(_,vars1))) = Expression.traverseExp(exp,checkEquationsVarsExp,(vars,vars1));
+       then
+        ((exp,(vars,vars1)));
+    case inTpl then inTpl;
+  end matchcontinue;
+end checkEquationsVars;
+
+protected function checkEquationsVarsExp
+  input tuple<DAE.Exp, tuple<BackendDAE.Variables,BackendDAE.Variables>> inTuple;
+  output tuple<DAE.Exp, tuple<BackendDAE.Variables,BackendDAE.Variables>> outTuple;
+algorithm
+  outTuple := matchcontinue(inTuple)
+    local
+      DAE.Exp e,e1;
+      BackendDAE.Variables vars,vars1;
+      DAE.ComponentRef cr;
+      list<DAE.Exp> expl;
+      list<DAE.ExpVar> varLst;
+      DAE.Ident ident;
+      list<BackendDAE.Var> backendVars;
+      BackendDAE.Var var;
+      DAE.ReductionIterators riters;
+    
+    // special case for time, it is never part of the equation system  
+    case ((e as DAE.CREF(componentRef = DAE.CREF_IDENT(ident="time")),(vars,vars1)))
+      then ((e, (vars,vars1)));
+    
+    // Special Case for Records
+    case ((e as DAE.CREF(componentRef = cr,ty= DAE.ET_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_))),(vars,vars1)))
+      equation
+        expl = Util.listMap1(varLst,Expression.generateCrefsExpFromExpVar,cr);
+        ((_,(vars,vars1))) = Expression.traverseExpList(expl,checkEquationsVarsExp,(vars,vars1));
+      then
+        ((e, (vars,vars1)));
+
+    // Special Case for Arrays
+    case ((e as DAE.CREF(ty = DAE.ET_ARRAY(ty=_)),(vars,vars1)))
+      equation
+        ((e1,(_,true))) = BackendDAEUtil.extendArrExp((e,(NONE(),false)));
+        ((_,(vars,vars1))) = Expression.traverseExp(e1,checkEquationsVarsExp,(vars,vars1));
+      then
+        ((e, (vars,vars1)));
+    
+    // case for functionpointers    
+    case ((e as DAE.CREF(ty=DAE.ET_FUNCTION_REFERENCE_FUNC(builtin=_)),(vars,vars1)))
+      then
+        ((e, (vars,vars1)));
+
+    // already there
+    case ((e as DAE.CREF(componentRef = cr),(vars,vars1)))
+      equation
+         (_,_) = BackendVariable.getVar(cr, vars1);
+      then
+        ((e, (vars,vars1)));
+
+    // add it
+    case ((e as DAE.CREF(componentRef = cr),(vars,vars1)))
+      equation
+         (var::_,_) = BackendVariable.getVar(cr, vars);
+         vars1 = BackendVariable.addVar(var,vars1);
+      then
+        ((e, (vars,vars1)));
+    
+    case inTuple then inTuple;
+  end matchcontinue;
+end checkEquationsVarsExp;
 
 public function equationsCrefs
 "function: equationsCrefs
