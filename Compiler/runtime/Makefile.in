@@ -7,7 +7,7 @@
 USE_CORBA = @USE_CORBA@
 
 RMLINCLUDE = @rmlinc@
-CFLAGS = @CFLAGS@ @DEFS@ $(USE_CORBA)
+CFLAGS = @CFLAGS@ $(USE_CORBA)
 
 ifdef USE_CORBA
   CORBASRC = omc_communication.cc omc_communication_impl.cpp Corba_rml.cpp

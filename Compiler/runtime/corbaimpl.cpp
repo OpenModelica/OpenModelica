@@ -441,11 +441,8 @@ void CorbaImpl__close()
     cerr << "Error shutting down." << endl;
   }
   remove(objref_file.str().c_str());
-#ifdef HAVE_PTHREAD_YIELD  
   pthread_yield(); // Allowing other thread to shutdown.
-#else  
-  sched_yield(); // use as backup (in cygwin)
-#endif
+  // sched_yield(); // use as backup (in cygwin)
 
 #endif
 #endif // NOMICO

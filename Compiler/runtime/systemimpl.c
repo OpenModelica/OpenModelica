@@ -94,9 +94,10 @@ extern "C" {
 #ifndef __APPLE_CC__
 #include <malloc.h>
 #else
-#define HAVE_SCANDIR
 #include <sys/malloc.h>
 #endif
+
+#define HAVE_SCANDIR
 
 #ifndef _IFDIR
 # ifdef S_IFDIR
