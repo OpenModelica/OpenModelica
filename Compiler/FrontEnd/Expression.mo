@@ -3252,14 +3252,14 @@ algorithm
       tuple<DAE.Exp,Type_a> res;
       list<String> fieldNames;
       DAE.InlineType  inl;
-      list<DAE.MatchCase> cases;
+      list<DAE.MatchCase> cases,cases_1;
       DAE.MatchType matchTy;
       Integer index_;
       Option<tuple<DAE.Exp,Integer,Integer>> isExpisASUB;
       Option<DAE.Exp> oe1,foldExp;
       Option<Values.Value> v;
       DAE.ReductionInfo reductionInfo;
-      DAE.ReductionIterators riters;
+      DAE.ReductionIterators riters,riters_1;
     
     case ((e as DAE.ICONST(_)),rel,ext_arg)
       equation
@@ -3295,7 +3295,8 @@ algorithm
     case ((e as DAE.UNARY(operator = op,exp = e1)),rel,ext_arg)
       equation
         ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
-        ((e,ext_arg_2)) = rel((DAE.UNARY(op,e1_1),ext_arg_1));
+        e = Util.if_(referenceEq(e1,e1_1),e,DAE.UNARY(op,e1_1));
+        ((e,ext_arg_2)) = rel((e,ext_arg_1));
       then
         ((e,ext_arg_2));
     
@@ -3304,7 +3305,8 @@ algorithm
       equation
         ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
         ((e2_1,ext_arg_2)) = traverseExp(e2, rel, ext_arg_1);
-        ((e,ext_arg_3)) = rel((DAE.BINARY(e1_1,op,e2_1),ext_arg_2));
+        e = Util.if_(referenceEq(e1,e1_1) and referenceEq(e2,e2_1),e,DAE.BINARY(e1_1,op,e2_1));
+        ((e,ext_arg_3)) = rel((e,ext_arg_2));
       then
         ((e,ext_arg_3));
     
@@ -3312,7 +3314,8 @@ algorithm
     case ((e as DAE.LUNARY(operator = op,exp = e1)),rel,ext_arg)
       equation
         ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
-        ((e,ext_arg_2)) = rel((DAE.LUNARY(op,e1_1),ext_arg_1));
+        e = Util.if_(referenceEq(e1,e1_1),e,DAE.LUNARY(op,e1_1));
+        ((e,ext_arg_2)) = rel((e,ext_arg_1));
       then
         ((e,ext_arg_2));
     
@@ -3321,7 +3324,8 @@ algorithm
       equation
         ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
         ((e2_1,ext_arg_2)) = traverseExp(e2, rel, ext_arg_1);
-        ((e,ext_arg_3)) = rel((DAE.LBINARY(e1_1,op,e2_1),ext_arg_2));
+        e = Util.if_(referenceEq(e1,e1_1) and referenceEq(e2,e2_1),e,DAE.LBINARY(e1_1,op,e2_1));
+        ((e,ext_arg_3)) = rel((e,ext_arg_2));
       then
         ((e,ext_arg_3));
     
@@ -3330,7 +3334,8 @@ algorithm
       equation
         ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
         ((e2_1,ext_arg_2)) = traverseExp(e2, rel, ext_arg_1);
-        ((e,ext_arg_3)) = rel((DAE.RELATION(e1_1,op,e2_1,index_,isExpisASUB),ext_arg_2));
+        e = Util.if_(referenceEq(e1,e1_1) and referenceEq(e2,e2_1),e,DAE.RELATION(e1_1,op,e2_1,index_,isExpisASUB));
+        ((e,ext_arg_3)) = rel((e,ext_arg_2));
       then
         ((e,ext_arg_3));
     
@@ -3340,35 +3345,40 @@ algorithm
         ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
         ((e2_1,ext_arg_2)) = traverseExp(e2, rel, ext_arg_1);
         ((e3_1,ext_arg_3)) = traverseExp(e3, rel, ext_arg_2);
-        ((e,ext_arg_4)) = rel((DAE.IFEXP(e1_1,e2_1,e3_1),ext_arg_3));
+        e = Util.if_(referenceEq(e1,e1_1) and referenceEq(e2,e2_1) and referenceEq(e3,e3_1),e,DAE.IFEXP(e1_1,e2_1,e3_1));
+        ((e,ext_arg_4)) = rel((e,ext_arg_3));
       then
         ((e,ext_arg_4));
     
     case ((e as DAE.CALL(path = fn,expLst = expl,tuple_ = t,builtin = built,ty=tp,inlineType = inl)),rel,ext_arg)
       equation
         ((expl_1,ext_arg_1)) = traverseExpList(expl, rel, ext_arg);
-        ((e,ext_arg_2)) = rel((DAE.CALL(fn,expl_1,t,built,tp,inl),ext_arg_1));
+        e = Util.if_(referenceEq(expl,expl_1),e,DAE.CALL(fn,expl_1,t,built,tp,inl));
+        ((e,ext_arg_2)) = rel((e,ext_arg_1));
       then
         ((e,ext_arg_2));
     
     case ((e as DAE.PARTEVALFUNCTION(path = fn, expList = expl, ty = tp)),rel,ext_arg)
       equation
         ((expl_1,ext_arg_1)) = traverseExpList(expl, rel, ext_arg);
-        ((e,ext_arg_2)) = rel((DAE.PARTEVALFUNCTION(fn,expl_1,tp),ext_arg_1));
+        e = Util.if_(referenceEq(expl,expl_1),e,DAE.PARTEVALFUNCTION(fn,expl_1,tp));
+        ((e,ext_arg_2)) = rel((e,ext_arg_1));
       then
         ((e,ext_arg_2));
     
     case ((e as DAE.ARRAY(ty = tp,scalar = scalar,array = expl)),rel,ext_arg)
       equation
         ((expl_1,ext_arg_1)) = traverseExpList(expl, rel, ext_arg);
-        ((e,ext_arg_2)) = rel((DAE.ARRAY(tp,scalar,expl_1),ext_arg_1));
+        e = Util.if_(referenceEq(expl,expl_1),e,DAE.ARRAY(tp,scalar,expl_1));
+        ((e,ext_arg_2)) = rel((e,ext_arg_1));
       then
         ((e,ext_arg_2));
     
     case ((e as DAE.MATRIX(ty = tp,integer = iscalar,scalar = lstexpl)),rel,ext_arg)
       equation
         (lstexpl_1,ext_arg_1) = traverseExpMatrix(lstexpl, rel, ext_arg);
-        ((e,ext_arg_2)) = rel((DAE.MATRIX(tp,iscalar,lstexpl_1),ext_arg_1));
+        e = Util.if_(referenceEq(lstexpl,lstexpl_1),e,DAE.MATRIX(tp,iscalar,lstexpl_1));
+        ((e,ext_arg_2)) = rel((e,ext_arg_1));
       then
         ((e,ext_arg_2));
     
@@ -3376,7 +3386,8 @@ algorithm
       equation
         ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
         ((e2_1,ext_arg_2)) = traverseExp(e2, rel, ext_arg_1);
-        ((e,ext_arg_3)) = rel((DAE.RANGE(tp,e1_1,NONE(),e2_1),ext_arg_2));
+        e = Util.if_(referenceEq(e1,e1_1) and referenceEq(e2,e2_1),e,DAE.RANGE(tp,e1_1,NONE(),e2_1));
+        ((e,ext_arg_3)) = rel((e,ext_arg_2));
       then
         ((e,ext_arg_3));
     
@@ -3385,36 +3396,41 @@ algorithm
         ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
         ((e2_1,ext_arg_2)) = traverseExp(e2, rel, ext_arg_1);
         ((e3_1,ext_arg_3)) = traverseExp(e3, rel, ext_arg_2);
-        ((e,ext_arg_4)) = rel((DAE.RANGE(tp,e1_1,SOME(e2_1),e3_1),ext_arg_3));
+        e = Util.if_(referenceEq(e1,e1_1) and referenceEq(e2,e2_1) and referenceEq(e3,e3_1),e,DAE.RANGE(tp,e1_1,SOME(e2_1),e3_1));
+        ((e,ext_arg_4)) = rel((e,ext_arg_3));
       then
         ((e,ext_arg_4));
     
     case ((e as DAE.TUPLE(PR = expl)),rel,ext_arg)
       equation
         ((expl_1,ext_arg_1)) = traverseExpList(expl, rel, ext_arg);
-        ((e,ext_arg_2)) = rel((DAE.TUPLE(expl_1),ext_arg_1));
+        e = Util.if_(referenceEq(expl,expl_1),e,DAE.TUPLE(expl_1));
+        ((e,ext_arg_2)) = rel((e,ext_arg_1));
       then
         ((e,ext_arg_2));
     
     case ((e as DAE.CAST(ty = tp,exp = e1)),rel,ext_arg)
       equation
         ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
-        ((e,ext_arg_2)) = rel((DAE.CAST(tp,e1_1),ext_arg_1));
+        e = Util.if_(referenceEq(e1,e1_1),e,DAE.CAST(tp,e1_1));
+        ((e,ext_arg_2)) = rel((e,ext_arg_1));
       then
         ((e,ext_arg_2));
     
-    case ((e as DAE.ASUB(exp = e1,sub = expl_1)),rel,ext_arg)
+    case ((e as DAE.ASUB(exp = e1,sub = expl)),rel,ext_arg)
       equation
         ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
-        ((expl_1,ext_arg_2)) = traverseExpList(expl_1, rel, ext_arg_1);
-        ((e,ext_arg_2)) = rel((makeASUB(e1_1,expl_1),ext_arg_2));
+        ((expl_1,ext_arg_2)) = traverseExpList(expl, rel, ext_arg_1);
+        e = Util.if_(referenceEq(e1,e1_1) and referenceEq(expl,expl_1),e,makeASUB(e1_1,expl_1));
+        ((e,ext_arg_2)) = rel((e,ext_arg_2));
       then
         ((e,ext_arg_2));
     
     case ((e as DAE.SIZE(exp = e1,sz = NONE())),rel,ext_arg)
       equation
         ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
-        ((e,ext_arg_2)) = rel((DAE.SIZE(e1_1,NONE()),ext_arg_1));
+        e = Util.if_(referenceEq(e1,e1_1),e,DAE.SIZE(e1_1,NONE()));
+        ((e,ext_arg_2)) = rel((e,ext_arg_1));
       then
         ((e,ext_arg_2));
     
@@ -3422,15 +3438,17 @@ algorithm
       equation
         ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
         ((e2_1,ext_arg_2)) = traverseExp(e2, rel, ext_arg_1);
-        ((e,ext_arg_3)) = rel((DAE.SIZE(e1_1,SOME(e2_1)),ext_arg_2));
+        e = Util.if_(referenceEq(e1,e1_1) and referenceEq(e2,e2_1),e,DAE.SIZE(e1_1,SOME(e2_1)));
+        ((e,ext_arg_3)) = rel((e,ext_arg_2));
       then
         ((e,ext_arg_3));
     
     case ((e as DAE.REDUCTION(reductionInfo=reductionInfo,expr = e1,iterators = riters)),rel,ext_arg)
       equation
-        ((e1,ext_arg)) = traverseExp(e1, rel, ext_arg);
-        (riters,ext_arg) = traverseReductionIterators(riters, rel, ext_arg);
-        ((e,ext_arg)) = rel((DAE.REDUCTION(reductionInfo,e1,riters),ext_arg));
+        ((e1_1,ext_arg)) = traverseExp(e1, rel, ext_arg);
+        (riters_1,ext_arg) = traverseReductionIterators(riters, rel, ext_arg);
+        e = Util.if_(referenceEq(e1,e1_1) and referenceEq(riters,riters_1),e,DAE.REDUCTION(reductionInfo,e1_1,riters_1));
+        ((e,ext_arg)) = rel((e,ext_arg));
       then
         ((e,ext_arg));
     
@@ -3439,21 +3457,24 @@ algorithm
       equation
         ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
         ((e2_1,ext_arg_2)) = traverseExp(e2, rel, ext_arg_1);
-        ((e,ext_arg_3)) = rel((DAE.CONS(e1_1,e2_1),ext_arg_2));
+        e = Util.if_(referenceEq(e1,e1_1) and referenceEq(e2,e2_1),e,DAE.CONS(e1_1,e2_1));
+        ((e,ext_arg_3)) = rel((e,ext_arg_2));
       then
         ((e,ext_arg_3));
 
     case ((e as DAE.LIST(expl)),rel,ext_arg)
       equation
         ((expl_1,ext_arg_1)) = traverseExpList(expl, rel, ext_arg);
-        ((e,ext_arg_2)) = rel((DAE.LIST(expl_1),ext_arg_1));
+        e = Util.if_(referenceEq(expl,expl_1),e,DAE.LIST(expl_1));
+        ((e,ext_arg_2)) = rel((e,ext_arg_1));
       then
         ((e,ext_arg_2));
 
     case ((e as DAE.META_TUPLE(expl)),rel,ext_arg)
       equation
         ((expl_1,ext_arg_1)) = traverseExpList(expl, rel, ext_arg);
-        ((e,ext_arg_2)) = rel((DAE.META_TUPLE(expl_1),ext_arg_1));
+        e = Util.if_(referenceEq(expl,expl_1),e,DAE.META_TUPLE(expl_1));
+        ((e,ext_arg_2)) = rel((e,ext_arg_1));
       then
         ((e,ext_arg_2));
 
@@ -3466,28 +3487,32 @@ algorithm
     case ((e as DAE.META_OPTION(SOME(e1))),rel,ext_arg)
       equation
         ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
-        ((e,ext_arg_2)) = rel((DAE.META_OPTION(SOME(e1_1)),ext_arg_1));
+        e = Util.if_(referenceEq(e1,e1_1),e,DAE.META_OPTION(SOME(e1_1)));
+        ((e,ext_arg_2)) = rel((e,ext_arg_1));
       then
         ((e,ext_arg_2));
 
     case ((e as DAE.BOX(e1)),rel,ext_arg)
       equation
         ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
-        ((e,ext_arg_2)) = rel((DAE.BOX(e1_1),ext_arg_1));
+        e = Util.if_(referenceEq(e1,e1_1),e,DAE.BOX(e1_1));
+        ((e,ext_arg_2)) = rel((e,ext_arg_1));
       then
         ((e,ext_arg_2));
 
     case ((e as DAE.UNBOX(e1,tp)),rel,ext_arg)
       equation
         ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
-        ((e,ext_arg_2)) = rel((DAE.UNBOX(e1_1,tp),ext_arg_1));
+        e = Util.if_(referenceEq(e1,e1_1),e,DAE.UNBOX(e1_1,tp));
+        ((e,ext_arg_2)) = rel((e,ext_arg_1));
       then
         ((e,ext_arg_2));
 
     case ((e as DAE.METARECORDCALL(fn,expl,fieldNames,i)),rel,ext_arg)
       equation
         ((expl_1,ext_arg_1)) = traverseExpList(expl, rel, ext_arg);
-        ((e,ext_arg_2)) = rel((DAE.METARECORDCALL(fn,expl_1,fieldNames,i),ext_arg_1));
+        e = Util.if_(referenceEq(expl,expl_1),e,DAE.METARECORDCALL(fn,expl_1,fieldNames,i));
+        ((e,ext_arg_2)) = rel((e,ext_arg_1));
       then
         ((e,ext_arg_2));
     // ---------------------
@@ -3496,8 +3521,9 @@ algorithm
       equation
         // Don't traverse the local declarations; we don't store bindings there (yet)
         ((expl_1,ext_arg_1)) = traverseExpList(expl, rel, ext_arg);
-        (cases,ext_arg_2) = Patternm.traverseCases(cases,rel,ext_arg_1);
-        ((e,ext_arg_3)) = rel((DAE.MATCHEXPRESSION(matchTy,expl_1,localDecls,cases,tp),ext_arg_2));
+        (cases_1,ext_arg_2) = Patternm.traverseCases(cases,rel,ext_arg_1);
+        e = Util.if_(referenceEq(expl,expl_1) and referenceEq(cases,cases_1),e,DAE.MATCHEXPRESSION(matchTy,expl_1,localDecls,cases_1,tp));
+        ((e,ext_arg_3)) = rel((e,ext_arg_2));
       then
         ((e,ext_arg_3));
 
@@ -3511,6 +3537,7 @@ algorithm
         res = rel((e,ext_arg));
       then res;
 
+    // Why don't we call rel() for these expressions?
     case (e as DAE.CODE(code = _),rel,ext_arg) then ((e,ext_arg));
       
     case (DAE.END(),_,ext_arg) then ((DAE.END(),ext_arg));
@@ -3620,7 +3647,7 @@ public function traverseExpList
  author PA:
  Calls traverseExp for each element of list."
   replaceable type Type_a subtypeof Any;
-  input list<DAE.Exp> expl;
+  input list<DAE.Exp> inExpl;
   input funcType rel;
   input Type_a ext_arg;
   output tuple<list<DAE.Exp>, Type_a> outTpl;
@@ -3629,18 +3656,20 @@ public function traverseExpList
     output tuple<DAE.Exp, Type_a> tpl2;
   end funcType;
 algorithm
-  outTpl := match(expl,rel,ext_arg)
+  outTpl := match(inExpl,rel,ext_arg)
     local 
       DAE.Exp e,e1;
-      list<DAE.Exp> expl1;
+      list<DAE.Exp> expl,expl1;
     
-    case({},_,ext_arg) then (({},ext_arg));
+    case({},_,ext_arg) then ((inExpl,ext_arg));
     
-    case(e::expl,rel,ext_arg) equation
-      ((e1,ext_arg)) = traverseExp(e, rel, ext_arg);
-      ((expl1,ext_arg)) = traverseExpList(expl,rel,ext_arg);
-    then 
-      ((e1::expl1,ext_arg));
+    case(e::expl,rel,ext_arg)
+      equation
+        ((e1,ext_arg)) = traverseExp(e, rel, ext_arg);
+        ((expl1,ext_arg)) = traverseExpList(expl,rel,ext_arg);
+        expl = Util.if_(referenceEq(e,e1) and referenceEq(expl,expl1),inExpl,e1::expl1);
+      then
+        ((expl,ext_arg));
   end match;
 end traverseExpList;
 
