@@ -48,12 +48,12 @@ function terminal
 external "builtin";
 end terminal;
 
-type AssertionLevel_ = enumeration(error, warning);
+type AssertionLevel = enumeration(error, warning);
 
 function assert
   input Boolean condition;
   input String message;
-  input AssertionLevel_ level;
+  input AssertionLevel level;
 external "builtin";
 end assert;
 
