@@ -91,12 +91,12 @@ algorithm
       then (eNew,b);
     case (e)
       equation
-        // Debug.fprintln("simplify","SIMPLIFY BEFORE->" +& printExpStr(e));
+        //print("SIMPLIFY BEFORE->" +& ExpressionDump.printExpStr(e) +& "\n");
         (eNew,b) = simplify1(e); // Basic local simplifications
-        // Debug.fprintln("simplify","SIMPLIFY INTERMEDIATE->" +& printExpStr(eNew));
+        //print("SIMPLIFY INTERMEDIATE->" +& ExpressionDump.printExpStr(eNew) +& "\n");
         eNew = simplify2(eNew); // Advanced (global) simplifications
         b = not Debug.bcallret2(b,Expression.expEqual,e,eNew,not b);
-        // Debug.fprintln("simplify","SIMPLIFY FINAL->" +& printExpStr(eNew));
+        //print("SIMPLIFY FINAL->" +& ExpressionDump.printExpStr(eNew) +& "\n");
       then (eNew,b);
   end matchcontinue;
 end simplify;
@@ -1883,6 +1883,7 @@ algorithm
         e_lst = Expression.factors(e);
         e_lst_1 = simplifyMul(e_lst);
         res = Expression.makeProductLst(e_lst_1);
+        (res,_) = simplify1(res);
       then
         res;
     
@@ -1894,6 +1895,7 @@ algorithm
         e_lst = listAppend(e1_lst, e2_lst_1);
         e_lst_1 = simplifyMul(e_lst);
         res = Expression.makeProductLst(e_lst_1);
+        (res,_) = simplify1(res);
       then
         res;
     
@@ -3050,7 +3052,7 @@ algorithm
   end match;
 end safeIntOp;
 
-protected function simplifyBinary
+public function simplifyBinary
 "function: simplifyBinary
   This function simplifies binary expressions."
   input Operator inOperator2;
@@ -3124,7 +3126,7 @@ algorithm
       then
         e1;
     
-    // a/b/c => (ac)/b)
+    // a/(b/c) => (ac)/b)
     case (DAE.DIV(ty = tp),e1,DAE.BINARY(exp1 = e2,operator = DAE.DIV(ty = tp2),exp2 = e3))
       equation
         e = DAE.BINARY(DAE.BINARY(e1,DAE.MUL(tp),e3),DAE.DIV(tp2),e2);
