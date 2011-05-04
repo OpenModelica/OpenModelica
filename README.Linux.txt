@@ -35,14 +35,8 @@ The latest OpenModelica uses Qt for potting and 3D functionality. You will also 
     Qt 4.x.x (http://trolltech.com - >= 4.6)
     Coin3D   (http://www.coin3d.org - tested with 3.0.0; deprecated)
     SoQt     (http://www.coin3d.org - tested with 1.4.1; deprecated)
-        Note: for Ubuntu 8.10 you will need to change the code
-              in src/Inventor/Qt/SoQtComponent.cpp from:
-               static void delete_dict_value(unsigned long key, void * value)
-              to
-               static void delete_dict_value(uintptr_t key, void * value)
 OMOptim uses some packages for its optimization algorithms
     paradisEO (http://paradiseo.gforge.inria.fr/ - tested with 1.3)
-      or sudo apt-get install paradiseo (using the OpenModelica repository)
 
 
 How to compile on Ubuntu Linux (using available binary packages for dependencies)
@@ -65,11 +59,13 @@ You need:
     Qt+Coin3D+SoQt
         you need readline and Qt dev stuff to compile omc and mosh (OMShell)
         $ sudo apt-get install libreadline5-dev libsoqt4-dev
+    paradiseo
+      sudo apt-get install paradiseo (using the OpenModelica repository)
+    sqlite3
+        $ sudo apt-get install sqlite3 libsqlite3-dev
     liblpsolve55
       You can now use the version from the Ubuntu repository
         $ sudo apt-get install liblpsolve55-dev
-    sqlite3
-        $ sudo apt-get install sqlite3 libsqlite3-dev
         
       It is also possible to copy this library from the Compiler runtime:
         For 32-bit OSX:
