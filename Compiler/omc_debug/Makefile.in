@@ -8,7 +8,7 @@ LIBSOCKET = @LIBSOCKET@
 LIBLPSOLVE55 = @LIBLPSOLVE55@
 
 SHELL	= /bin/sh
-CC	= gcc
+CC	= @CC@
 CFLAGS	= $(USE_CORBA) @CFLAGS@
 RMLHOME	= @rmlhome@
 RMLINC  = -I$(RMLHOME)/include/plain
