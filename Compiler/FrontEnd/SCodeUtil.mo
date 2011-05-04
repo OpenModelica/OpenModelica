@@ -60,6 +60,7 @@ protected import System;
 protected import Types;
 protected import Util;
 protected import SCodeCheck;
+protected import SCodeFlatten;
 
 public function translateAbsyn2SCode
 "function: translateAbsyn2SCode
@@ -96,6 +97,7 @@ algorithm
         // set the external flag that signals the presence of expandable connectors in the model
         System.setHasStreamConnectors(false);
         sp = Util.listFold(initialClasses, translate2, {});
+        sp = SCodeFlatten.flattenCompleteProgram(sp);
         sp = Util.listFold(inClasses, translate2, sp);
         sp = listReverse(sp);
         SCodeCheck.checkDuplicateClasses(sp);

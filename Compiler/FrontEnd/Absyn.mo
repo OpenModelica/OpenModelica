@@ -2017,6 +2017,9 @@ algorithm
       then
         (LIST(expl), tup);
 
+    case (CODE(code = _), tup)
+      then (inExp, tup);
+
     else
       equation
         error_msg = "in Absyn.traverseExpBidirSubExps - Unknown expression: ";

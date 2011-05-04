@@ -104,9 +104,6 @@ public function flattenClassInProgram
   input Absyn.Path inClassName;
   input SCode.Program inProgram;
   output SCode.Program outProgram;
-protected
-  Env env;
-  SCode.Program prog;
 algorithm
   outProgram := matchcontinue(inClassName, inProgram)
     local
@@ -141,5 +138,34 @@ algorithm
 
   end matchcontinue;
 end flattenClassInProgram;
+
+public function flattenCompleteProgram
+  input SCode.Program inProgram;
+  output SCode.Program outProgram;
+algorithm
+  outProgram := matchcontinue(inProgram)
+    local
+      Env env;
+      SCode.Program prog;
+
+    case (prog)
+      equation
+        env = SCodeEnv.buildInitialEnv();
+        env = SCodeEnv.extendEnvWithClasses(prog, env);
+        env = SCodeEnv.updateExtendsInEnv(env);
+
+        (prog, env) = SCodeFlattenImports.flattenProgram(prog, env);
+        prog = SCodeFlattenExtends.flattenProgram(prog, env);
+      then
+        prog;
+
+    else
+      equation
+        Debug.fprintln("failtrace", "SCodeFlatten.flattenCompleteProgram failed");
+      then
+        fail();
+
+  end matchcontinue;
+end flattenCompleteProgram;
 
 end SCodeFlatten;
