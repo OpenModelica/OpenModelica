@@ -2445,8 +2445,9 @@ algorithm
       array<BackendDAE.MultiDimEquation> arreqns;
       array<DAE.Algorithm> algorithms;
       BackendDAE.EventInfo einfo;
+      list<BackendDAE.WhenClause> whenClauseLst;
       BackendDAE.ExternalObjectClasses eoc;
-    case (dae as BackendDAE.DAE(vars,knvars,exobj,aliasVars as BackendDAE.ALIASVARS(aliasVars=avars),eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc),funcs,inM,inMT)
+    case (dae as BackendDAE.DAE(vars,knvars,exobj,aliasVars as BackendDAE.ALIASVARS(aliasVars=avars),eqns,remeqns,inieqns,arreqns,algorithms,einfo as BackendDAE.EVENT_INFO(whenClauseLst=whenClauseLst),eoc),funcs,inM,inMT)
       equation
         knvars1 = BackendDAEUtil.emptyVars();
         ((knvars,knvars1)) = BackendVariable.traverseBackendDAEVars(knvars,copyNonParamVariables,(knvars,knvars1));
@@ -2458,7 +2459,7 @@ algorithm
         ((_,knvars1)) = BackendDAEUtil.traverseBackendDAEExpsEqns(inieqns,checkUnusedParameter,(knvars,knvars1));
         ((_,knvars1)) = BackendDAEUtil.traverseBackendDAEArrayNoCopy(arreqns,checkUnusedParameter,BackendDAEUtil.traverseBackendDAEExpsArrayEqn,1,arrayLength(arreqns),(knvars,knvars1));
         ((_,knvars1)) = BackendDAEUtil.traverseBackendDAEArrayNoCopy(algorithms,checkUnusedParameter,BackendDAEUtil.traverseAlgorithmExps,1,arrayLength(algorithms),(knvars,knvars1));
-
+        (_,(_,knvars1)) = BackendDAETransform.traverseBackendDAEExpsWhenClauseLst(whenClauseLst,checkUnusedParameter,(knvars,knvars1));
         dae1 = BackendDAE.DAE(vars,knvars1,exobj,aliasVars,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc);
       then (dae1,inM,inMT);
   end match;
@@ -2620,8 +2621,9 @@ algorithm
       array<BackendDAE.MultiDimEquation> arreqns;
       array<DAE.Algorithm> algorithms;
       BackendDAE.EventInfo einfo;
+      list<BackendDAE.WhenClause> whenClauseLst;
       BackendDAE.ExternalObjectClasses eoc;
-    case (dae as BackendDAE.DAE(vars,knvars,exobj,aliasVars as BackendDAE.ALIASVARS(aliasVars=avars),eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc),funcs,inM,inMT)
+    case (dae as BackendDAE.DAE(vars,knvars,exobj,aliasVars as BackendDAE.ALIASVARS(aliasVars=avars),eqns,remeqns,inieqns,arreqns,algorithms,einfo as BackendDAE.EVENT_INFO(whenClauseLst=whenClauseLst),eoc),funcs,inM,inMT)
       equation
         knvars1 = BackendDAEUtil.emptyVars();
         ((_,knvars1)) = BackendDAEUtil.traverseBackendDAEExpsVars(vars,checkUnusedVariables,(knvars,knvars1));
@@ -2632,7 +2634,7 @@ algorithm
         ((_,knvars1)) = BackendDAEUtil.traverseBackendDAEExpsEqns(inieqns,checkUnusedVariables,(knvars,knvars1));
         ((_,knvars1)) = BackendDAEUtil.traverseBackendDAEArrayNoCopy(arreqns,checkUnusedVariables,BackendDAEUtil.traverseBackendDAEExpsArrayEqn,1,arrayLength(arreqns),(knvars,knvars1));
         ((_,knvars1)) = BackendDAEUtil.traverseBackendDAEArrayNoCopy(algorithms,checkUnusedVariables,BackendDAEUtil.traverseAlgorithmExps,1,arrayLength(algorithms),(knvars,knvars1));
-
+        (_,(_,knvars1)) = BackendDAETransform.traverseBackendDAEExpsWhenClauseLst(whenClauseLst,checkUnusedVariables,(knvars,knvars1));
         dae1 = BackendDAE.DAE(vars,knvars1,exobj,aliasVars,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc);
       then (dae1,inM,inMT);
   end match;
@@ -3144,11 +3146,11 @@ algorithm
         assign1 = BackendDAETransform.assignmentsCreate(nvars, memsize, 0);
         assign2 = BackendDAETransform.assignmentsCreate(nvars, memsize, 0);
         // try matching
-        BackendDAETransform.checkMatching(dlow_1, (BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT(), BackendDAE.KEEP_SIMPLE_EQN()));
+        BackendDAETransform.checkMatching(dlow_1, (BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT()));
         Debug.fcall("tearingdump", BackendDump.dumpIncidenceMatrix, m_1);
         Debug.fcall("tearingdump", BackendDump.dumpIncidenceMatrixT, mT_1);
         Debug.fcall("tearingdump", BackendDump.dump, dlow_1);
-        (ass1,ass2,dlow_2,m_2,mT_2,_,_) = BackendDAETransform.matchingAlgorithm2(dlow_1, m_1, mT_1, nvars, neqns, 1, assign1, assign2, (BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT(), BackendDAE.KEEP_SIMPLE_EQN()),DAEUtil.avlTreeNew(),{},{});
+        (ass1,ass2,dlow_2,m_2,mT_2,_,_) = BackendDAETransform.matchingAlgorithm2(dlow_1, m_1, mT_1, nvars, neqns, 1, assign1, assign2, (BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT()),DAEUtil.avlTreeNew(),{},{});
         v1_1 = BackendDAETransform.assignmentsVector(ass1);
         v2_1 = BackendDAETransform.assignmentsVector(ass2);
         (comps) = BackendDAETransform.strongComponents(m_2, mT_2, v1_1, v2_1);
@@ -3583,7 +3585,7 @@ algorithm
         Debug.fcall("execJacstat",print, "*** analytical Jacobians -> removed simply equations: " +& realString(clock()) +& "\n" );
         // figure out new matching and the strong components  
         (m,mT) = BackendDAEUtil.getIncidenceMatrixfromOption(dlow,om,omT);
-        (v1,v2,dlow,m,mT) = BackendDAETransform.matchingAlgorithm(dlow, m, mT, (BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT(), BackendDAE.KEEP_SIMPLE_EQN()),functionTree);
+        (v1,v2,dlow,m,mT) = BackendDAETransform.matchingAlgorithm(dlow, m, mT, (BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT()),functionTree);
         Debug.fcall("jacdump2", BackendDump.dumpIncidenceMatrix, m);
         Debug.fcall("jacdump2", BackendDump.dumpIncidenceMatrixT, mT);
         Debug.fcall("jacdump2", BackendDump.dump, dlow);
@@ -3628,7 +3630,7 @@ algorithm
         Debug.fcall("execJacstat",print, "*** analytical Jacobians -> removed simply equations: " +& realString(clock()) +& "\n" );
         // figure out new matching and the strong components  
         (m,mT) = BackendDAEUtil.getIncidenceMatrixfromOption(dlow,om,omT);
-        (v1,v2,dlow,m,mT) = BackendDAETransform.matchingAlgorithm(dlow, m, mT, (BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT(), BackendDAE.KEEP_SIMPLE_EQN()),functionTree);
+        (v1,v2,dlow,m,mT) = BackendDAETransform.matchingAlgorithm(dlow, m, mT, (BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT()),functionTree);
         Debug.fcall("jacdump2", BackendDump.dumpIncidenceMatrix, m);
         Debug.fcall("jacdump2", BackendDump.dumpIncidenceMatrixT, mT);
         Debug.fcall("jacdump2", BackendDump.dump, dlow);

@@ -109,13 +109,11 @@ algorithm
       String ns,ne;
       BackendDAE.Assignments assign1,assign2,ass1,ass2;
       BackendDAE.BackendDAE dae;
-      BackendDAE.Variables vars;
-      BackendDAE.EquationArray eqns;
       array<list<BackendDAE.Value>> m,mt,m_1,mt_1;
       array<BackendDAE.Value> vec1,vec2;
       BackendDAE.MatchingOptions match_opts;
     /* fail case if daelow is empty */
-    case ((dae as BackendDAE.DAE(orderedVars = vars,orderedEqs = eqns)),m,mt,match_opts,inFunctions)
+    case (dae,m,mt,_,_)
       equation
         nvars = arrayLength(m);
         neqns = arrayLength(mt);
@@ -125,7 +123,7 @@ algorithm
         vec2 = listArray({});
       then
         (vec1,vec2,dae,m,mt);
-    case ((dae as BackendDAE.DAE(orderedVars = vars,orderedEqs = eqns)),m,mt,(match_opts as (_,_,BackendDAE.REMOVE_SIMPLE_EQN())),inFunctions)
+    case (dae,m,mt,match_opts,inFunctions)
       equation
         BackendDAEEXT.clearDifferentiated();
         checkMatching(dae, match_opts);
@@ -144,23 +142,6 @@ algorithm
       then
         (vec1,vec2,dae,m_1,mt_1);
 
-    case ((dae as BackendDAE.DAE(orderedVars = vars,orderedEqs = eqns)),m,mt,(match_opts as (_,_,BackendDAE.KEEP_SIMPLE_EQN())),inFunctions)
-      equation
-        checkMatching(dae, match_opts);
-        nvars = arrayLength(m);
-        neqns = arrayLength(mt);
-        ns = intString(nvars);
-        ne = intString(neqns);
-        (nvars > 0) = true;
-        (neqns > 0) = true;
-        memsize = nvars + nvars "Worst case, all eqns are differentiated once. Create nvars2 assignment elements" ;
-        assign1 = assignmentsCreate(nvars, memsize, 0);
-        assign2 = assignmentsCreate(nvars, memsize, 0);
-        (ass1,ass2,dae,m,mt,_,_) = matchingAlgorithm2(dae, m, mt, nvars, neqns, 1, assign1, assign2, match_opts, inFunctions,{},{});
-        vec1 = assignmentsVector(ass1);
-        vec2 = assignmentsVector(ass2);
-      then
-        (vec1,vec2,dae,m,mt);
     case (_,_,_,_,_)
       equation
         Debug.fprint("failtrace", "- BackendDAE.MatchingAlgorithm failed\n");
@@ -186,7 +167,7 @@ algorithm
       BackendDAE.Value esize,vars_size;
       BackendDAE.EquationArray eqns;
       String esize_str,vsize_str;
-    case (_,(_,BackendDAE.ALLOW_UNDERCONSTRAINED(),_)) then ();
+    case (_,(_,BackendDAE.ALLOW_UNDERCONSTRAINED())) then ();
     case (BackendDAE.DAE(orderedVars = BackendDAE.VARIABLES(numberOfVars = vars_size),orderedEqs = eqns),_)
       equation
         esize = BackendDAEUtil.equationSize(eqns);
@@ -418,7 +399,6 @@ algorithm
       BackendDAE.MatchingOptions match_opts;
       BackendDAE.EquationArray eqns;
       BackendDAE.EquationConstraints eq_cons;
-      BackendDAE.EquationReduction r_simple;
       list<BackendDAE.Value> eqn_lst,var_lst;
       String eqn_str,var_str;
       list<tuple<Integer,Integer,Integer>> derivedAlgs,derivedAlgs1,derivedAlgs2;
@@ -441,7 +421,7 @@ algorithm
       then
         (ass1_2,ass2_2,dae,m,mt,derivedAlgs1,derivedMultiEqn1);
 
-    case (dae,m,mt,nv,nf,i,ass1,ass2,(BackendDAE.INDEX_REDUCTION(),eq_cons,r_simple),inFunctions,derivedAlgs,derivedMultiEqn)
+    case (dae,m,mt,nv,nf,i,ass1,ass2,(BackendDAE.INDEX_REDUCTION(),eq_cons),inFunctions,derivedAlgs,derivedMultiEqn)
       equation
         (dae,m,mt,derivedAlgs1,derivedMultiEqn1) = reduceIndexDummyDer(dae, m, mt, nv, nf, inFunctions,derivedAlgs,derivedMultiEqn) 
         "path_found failed, Try index reduction using dummy derivatives.
@@ -468,7 +448,7 @@ algorithm
         nvd = nv_1 - nv;
         ass1_1 = assignmentsExpand(ass1, nvd);
         ass2_1 = assignmentsExpand(ass2, nvd);
-        (ass1_2,ass2_2,dae,m,mt,derivedAlgs2,derivedMultiEqn2) = matchingAlgorithm2(dae, m, mt, nv_1, nf_1, i, ass1_1, ass2_1, (BackendDAE.INDEX_REDUCTION(),eq_cons,r_simple),inFunctions,derivedAlgs1,derivedMultiEqn1);
+        (ass1_2,ass2_2,dae,m,mt,derivedAlgs2,derivedMultiEqn2) = matchingAlgorithm2(dae, m, mt, nv_1, nf_1, i, ass1_1, ass2_1, (BackendDAE.INDEX_REDUCTION(),eq_cons),inFunctions,derivedAlgs1,derivedMultiEqn1);
       then
         (ass1_2,ass2_2,dae,m,mt,derivedAlgs2,derivedMultiEqn2);
 

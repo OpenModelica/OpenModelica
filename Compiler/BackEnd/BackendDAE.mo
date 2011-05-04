@@ -429,15 +429,7 @@ uniontype EquationConstraints "- Equation Constraints"
 end EquationConstraints;
 
 public
-uniontype EquationReduction
-  record REMOVE_SIMPLE_EQN end REMOVE_SIMPLE_EQN;
-
-  record KEEP_SIMPLE_EQN "removes simple equation after index reduction does not remove simple equations after index reduction" end KEEP_SIMPLE_EQN;
-
-end EquationReduction;
-
-public
-type MatchingOptions = tuple<IndexReduction, EquationConstraints, EquationReduction> "- Matching Options" ;
+type MatchingOptions = tuple<IndexReduction, EquationConstraints> "- Matching Options" ;
 
 public
 uniontype DivZeroExpReplace "- Should the division operator replaced by a operator with check of the denominator"

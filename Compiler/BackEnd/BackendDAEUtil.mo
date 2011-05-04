@@ -210,12 +210,14 @@ algorithm
       BackendDAE.EquationArray eqns,reqns,ieqns;
       array<BackendDAE.MultiDimEquation> ae;
       array<DAE.Algorithm> algs;
+      BackendDAE.EventInfo einfo;
+      list<BackendDAE.WhenClause> whenClauseLst;      
       list<BackendDAE.Var> varlst1,varlst2,allvarslst;
-      list<tuple<DAE.Exp,list<DAE.ComponentRef>>> expcrefs,expcrefs1,expcrefs2,expcrefs3,expcrefs4,expcrefs5;
+      list<tuple<DAE.Exp,list<DAE.ComponentRef>>> expcrefs,expcrefs1,expcrefs2,expcrefs3,expcrefs4,expcrefs5,expcrefs7;
       list<BackendDAE.Equation> wrongEqns,wrongEqns1,wrongEqns2;
     
     case (BackendDAE.DAE(orderedVars = vars1,knownVars = vars2,orderedEqs = eqns,removedEqs = reqns,
-          initialEqs = ieqns,arrayEqs = ae,algorithms = algs))
+          initialEqs = ieqns,arrayEqs = ae,algorithms = algs, eventInfo = BackendDAE.EVENT_INFO(whenClauseLst=whenClauseLst)))
       equation
         varlst1 = varList(vars1);
         varlst2 = varList(vars2);
@@ -228,12 +230,12 @@ algorithm
         ((_,expcrefs4)) = traverseBackendDAEExpsEqns(ieqns,checkBackendDAEExp,(allvars,expcrefs3));
         ((_,expcrefs5)) = traverseBackendDAEArrayNoCopy(ae,checkBackendDAEExp,traverseBackendDAEExpsArrayEqn,1,arrayLength(ae),(allvars,expcrefs4));
         //((_,expcrefs6)) = traverseBackendDAEArrayNoCopy(algs,checkBackendDAEExp,traverseAlgorithmExps,1,arrayLength(algs),(allvars,expcrefs5));
-        
+        (_,(_,expcrefs7)) = BackendDAETransform.traverseBackendDAEExpsWhenClauseLst(whenClauseLst,checkBackendDAEExp,(allvars,expcrefs5));
         wrongEqns = BackendEquation.traverseBackendDAEEqns(eqns,checkEquationSize,{});
         wrongEqns1 = BackendEquation.traverseBackendDAEEqns(reqns,checkEquationSize,wrongEqns);
         wrongEqns2 = BackendEquation.traverseBackendDAEEqns(ieqns,checkEquationSize,wrongEqns1);
       then
-        (expcrefs5,wrongEqns2);
+        (expcrefs7,wrongEqns2);
     
     case (_)
       equation
@@ -435,7 +437,7 @@ algorithm
       array<BackendDAE.MultiDimEquation> arrayEqs;
       BackendDAE.EventInfo eventInfo;
       BackendDAE.ExternalObjectClasses extObjClasses;
-      Integer nie,nie1,nie2,unfixed,unfixed1,unfixed2,sizealias;
+      Integer nie,nie1,nie2,unfixed,unfixed1;
       BackendDAE.BackendDAE dae,dae1;
       list<BackendDAE.WhenClause> whenClauseLst;
       list<DAE.ComponentRef> vars,varsws,states,statesws;
@@ -449,9 +451,6 @@ algorithm
         ((vars,varsws,states,statesws,unfixed)) = BackendVariable.traverseBackendDAEVars(variables,countInitialVars,({},{},{},{},0));
         // kvars
         ((vars,varsws,states,statesws,unfixed1)) = BackendVariable.traverseBackendDAEVars(knvars,countInitialVars,(vars,varsws,states,statesws,unfixed));
-        //BackendDAE.ALIASVARS(aliasVars = aliasVars) = av;
-        //sizealias = BackendVariable.varsSize(aliasVars);
-        //unfixed2 = unfixed1 - sizealias;
         /* count the equations */
         nie = equationSize(initialEqs);
         BackendDAE.EVENT_INFO(whenClauseLst=whenClauseLst) = eventInfo;
@@ -5928,7 +5927,7 @@ algorithm
         (m,mT) = getIncidenceMatrixfromOption(dae,om,omT);
         // matching algorithm
         Debug.fcall("execstat",print, "*** BackendMain -> transformDAE get matching at time: " +& realString(clock()) +& "\n" );
-        (v1,v2,ode,m1,mT1) = BackendDAETransform.matchingAlgorithm(dae, m, mT, (BackendDAE.INDEX_REDUCTION(), BackendDAE.EXACT(), BackendDAE.REMOVE_SIMPLE_EQN()),funcs);
+        (v1,v2,ode,m1,mT1) = BackendDAETransform.matchingAlgorithm(dae, m, mT, (BackendDAE.INDEX_REDUCTION(), BackendDAE.EXACT()),funcs);
         // sorting algorithm
         Debug.fcall("execstat",print, "*** BackendMain -> transformDAE sort components at time: " +& realString(clock()) +& "\n" );
         (comps) = BackendDAETransform.strongComponents(m1, mT1, v1, v2);
