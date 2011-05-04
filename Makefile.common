@@ -1,4 +1,4 @@
-.PHONY : all omc omcd debug release mosh clean .testvariables mkbuilddirs all omc omcd debug release mosh clean qtclean qtclean-common
+.PHONY : all omc omcd debug release mosh clean .testvariables mkbuilddirs all omc omcd debug release mosh clean qtclean qtclean-common difftool
 
 top_builddir = .
 builddir_app=$(top_builddir)/build/Applications/

@@ -22,10 +22,12 @@ include Makefile.common
 .testvariables:
 settings:
 
-omc: c_runtime docs
+difftool:
+	$(MAKE) -C testsuite/difftool
+omc: difftool c_runtime docs
 	(cd Compiler && $(MAKE) -f Makefile release)
 
-omcd: c_runtime docs
+omcd: difftool c_runtime docs
 	(cd Compiler && $(MAKE) -f Makefile debug)
 
 qtclean-common:
