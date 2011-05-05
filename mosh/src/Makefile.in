@@ -6,8 +6,8 @@ builddir_inc=$(top_builddir)/build/include
 builddir_doc=$(top_builddir)/build/doc
 
 
-CC=gcc
-CXX=g++
+CC=@CC@
+CXX=@CXX@
 
 EXEEXT=@EXEEXT@
 
