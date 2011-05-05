@@ -343,10 +343,9 @@ if test -n "$QMAKE"; then
     echo 'if test -z "$MAKEFILE"; then MAKEFILE=Makefile; fi' >> ./qmake.sh
     # echo 'echo $MAKEFILE' >> ./qmake.sh
     echo 'cat $MAKEFILE | \
-      sed "s/-arch i386/OMC_ARCH_i386/g" | \
-      sed "s/-arch x86_64/OMC_ARCH_x86_64/g" | \
-      sed "s/-arch//g" | \
-      sed "s/OMC_ARCH_/-arch /" > $MAKEFILE.fixed && \
+      sed "s/-arch i386//g" | \
+      sed "s/-arch x86_64//g" | \
+      sed "s/-arch//g" > $MAKEFILE.fixed && \
       mv $MAKEFILE.fixed $MAKEFILE' >> qmake.sh
     QMAKE="sh `pwd`/qmake.sh"
   fi
