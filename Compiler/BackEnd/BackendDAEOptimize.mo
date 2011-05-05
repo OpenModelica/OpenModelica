@@ -97,12 +97,11 @@ autor: Frenkel TUD 2011-3"
 protected
   Option<BackendDAE.IncidenceMatrix> om,omT;
 algorithm
-  (outDAE,om,omT) := inlineArrayEqn(inDAE,inFunctionTree,SOME(inM),SOME(inMT));
+  (outDAE,om,omT,outRunMatching) := inlineArrayEqn1(inDAE,inFunctionTree,SOME(inM),SOME(inMT));
   (outM,outMT) := BackendDAEUtil.getIncidenceMatrixfromOption(outDAE,om,omT);
   outAss1 := inAss1;
   outAss2 := inAss2;
   outComps := inComps;
-  outRunMatching := true;
 end inlineArrayEqnPast;
 
 public function inlineArrayEqn
@@ -116,7 +115,22 @@ autor: Frenkel TUD 2011-3"
   output Option<BackendDAE.IncidenceMatrix> outM;
   output Option<BackendDAE.IncidenceMatrix> outMT;
 algorithm
-  (outDAE,outM,outMT):=
+  (outDAE,outM,outMT,_):= inlineArrayEqn1(inDAE,inFunctionTree,inM,inMT);
+end inlineArrayEqn;
+
+protected function inlineArrayEqn1
+"function: inlineArrayEqn1
+autor: Frenkel TUD 2011-5"
+  input BackendDAE.BackendDAE inDAE;
+  input DAE.FunctionTree inFunctionTree;
+  input Option<BackendDAE.IncidenceMatrix> inM;
+  input Option<BackendDAE.IncidenceMatrix> inMT;
+  output BackendDAE.BackendDAE outDAE;
+  output Option<BackendDAE.IncidenceMatrix> outM;
+  output Option<BackendDAE.IncidenceMatrix> outMT;
+  output Boolean optimized;
+algorithm
+  (outDAE,outM,outMT,optimized):=
   match (inDAE,inFunctionTree,inM,inMT)
     local
       DAE.FunctionTree funcs;
@@ -131,34 +145,73 @@ algorithm
       list<DAE.Algorithm> algs;
       array<list<BackendDAE.Equation>> arraylisteqns;
       list<Integer> updateeqns;
+      BackendDAE.BackendDAE dae,dae1;
+      Boolean b;
+      
+    case (dae as BackendDAE.DAE(arrayEqs = arreqns),funcs,SOME(m),SOME(mT))
+      equation      
+        // get scalar array eqs list
+        arraylisteqns = Util.arrayMap(arreqns,getScalarArrayEqns);
+        // replace them
+        (dae1,updateeqns,b) = doReplaceScalarArrayEqns(arraylisteqns,dae);
+        // update Incidence matrix
+        (m1,mT1) = BackendDAEUtil.updateIncidenceMatrix(dae1,m,mT,updateeqns);
+      then
+        (dae1,SOME(m1),SOME(mT1),b);
+    case (dae as BackendDAE.DAE(arrayEqs = arreqns),funcs,_,_)
+      equation      
+        // get scalar array eqs list
+        arraylisteqns = Util.arrayMap(arreqns,getScalarArrayEqns);
+        // replace them
+        (dae1,_,b) = doReplaceScalarArrayEqns(arraylisteqns,dae);
+      then
+        (dae1,NONE(),NONE(),b);
+  end match;
+end inlineArrayEqn1;
+
+protected function doReplaceScalarArrayEqns
+"function: doReplaceScalarArrayEqns
+autor: Frenkel TUD 2011-5"
+  input array<list<BackendDAE.Equation>> arraylisteqns;
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
+  output list<Integer> outupdateeqns;
+  output Boolean optimized;
+algorithm
+  (outDAE,outupdateeqns,optimized):=
+  matchcontinue (arraylisteqns,inDAE)
+    local
+      Integer len;
+      BackendDAE.Variables vars,knvars,exobj;
+      BackendDAE.AliasVariables av;
+      BackendDAE.EquationArray eqns,eqns1,remeqns,remeqns1,inieqns,inieqns1;
+      array<BackendDAE.MultiDimEquation> arreqns;
+      array<DAE.Algorithm> algorithms;
+      BackendDAE.EventInfo einfo;
+      BackendDAE.ExternalObjectClasses eoc;
+      list<DAE.Algorithm> algs;
+      list<Integer> updateeqns;
       BackendDAE.BackendDAE dae;
       
-    case (BackendDAE.DAE(vars,knvars,exobj,av,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc),funcs,SOME(m),SOME(mT))
+    case (arraylisteqns,BackendDAE.DAE(vars,knvars,exobj,av,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc))
       equation      
-        // get scalar array eqs list
-        arraylisteqns = Util.arrayMap(arreqns,getScalarArrayEqns);
-        // replace them
-        (eqns1,(arraylisteqns,_,updateeqns)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(eqns,replaceScalarArrayEqns,(arraylisteqns,1,{}));
-        (remeqns1,(arraylisteqns,_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(remeqns,replaceScalarArrayEqns,(arraylisteqns,1,{}));
-        (inieqns1,(_,_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(inieqns,replaceScalarArrayEqns,(arraylisteqns,1,{}));
-        // update Incidence matrix
-        dae = BackendDAE.DAE(vars,knvars,exobj,av,eqns1,remeqns1,inieqns1,arreqns,algorithms,einfo,eoc);
-        (m1,mT1) = BackendDAEUtil.updateIncidenceMatrix(dae,m,mT,updateeqns);
-      then
-        (dae,SOME(m1),SOME(mT1));
-    case (BackendDAE.DAE(vars,knvars,exobj,av,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc),funcs,_,_)
-      equation      
-        // get scalar array eqs list
-        arraylisteqns = Util.arrayMap(arreqns,getScalarArrayEqns);
+        len = arrayLength(arraylisteqns);
+        true = intGt(len,0);
         // replace them
         (eqns1,(arraylisteqns,_,updateeqns)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(eqns,replaceScalarArrayEqns,(arraylisteqns,1,{}));
         (remeqns1,(arraylisteqns,_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(remeqns,replaceScalarArrayEqns,(arraylisteqns,1,{}));
         (inieqns1,(_,_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(inieqns,replaceScalarArrayEqns,(arraylisteqns,1,{}));
         dae = BackendDAE.DAE(vars,knvars,exobj,av,eqns1,remeqns1,inieqns1,arreqns,algorithms,einfo,eoc);
       then
-        (dae,NONE(),NONE());
-  end match;
-end inlineArrayEqn;
+        (dae,updateeqns,true);
+    case (arraylisteqns,dae)
+      equation      
+        len = arrayLength(arraylisteqns);
+        false = intGt(len,0);
+      then
+        (dae,{},false);
+  end matchcontinue;
+end doReplaceScalarArrayEqns;
 
 protected function getScalarArrayEqns"
 Author: Frenkel TUD 2011-02"
@@ -297,13 +350,14 @@ public function removeSimpleEquationsPast
     output Boolean outRunMatching;
 protected
   Option<BackendDAE.IncidenceMatrix> om,omT;
+  Boolean b;
 algorithm
-  (outDAE,om,omT) := removeSimpleEquations(inDAE,inFunctionTree,SOME(inM),SOME(inMT));
+  (outDAE,om,omT,b) := removeSimpleEquations1(inDAE,inFunctionTree,SOME(inM),SOME(inMT));
   (outM,outMT) := BackendDAEUtil.getIncidenceMatrixfromOption(outDAE,om,omT);
   outAss1 := inAss1;
   outAss2 := inAss2;
   outComps := inComps;   
-  outRunMatching := true; // until remove simple equations does not update incidence assignments and comps  
+  outRunMatching := b; // until remove simple equations does not update assignments and comps  
 end removeSimpleEquationsPast;
 
 public function removeSimpleEquations
@@ -319,16 +373,65 @@ public function removeSimpleEquations
   output Option<BackendDAE.IncidenceMatrix> outM;
   output Option<BackendDAE.IncidenceMatrixT> outMT;
 algorithm
-  (outDlow,outM,outMT):=
+  (outDlow,outM,outMT,_):= removeSimpleEquations1(inDlow,inFunctionTree,inM,inMT);
+end removeSimpleEquations;
+
+protected function removeSimpleEquations1
+"function: removeSimpleEquations1
+  autor: Frenkel TUD 2011-05
+  This function moves simple equations on the form a=b and a=const and a=f(not time)
+  in BackendDAE.BackendDAE to get speed up"
+  input BackendDAE.BackendDAE inDlow;
+  input DAE.FunctionTree inFunctionTree;
+  input Option<BackendDAE.IncidenceMatrix> inM;
+  input Option<BackendDAE.IncidenceMatrixT> inMT;
+  output BackendDAE.BackendDAE outDlow;
+  output Option<BackendDAE.IncidenceMatrix> outM;
+  output Option<BackendDAE.IncidenceMatrixT> outMT;
+  output Boolean optimized;
+algorithm
+  (outDlow,outM,outMT,optimized):=
   match (inDlow,inFunctionTree,inM,inMT)
     local
-      BackendDAE.BackendDAE dlow;
+      BackendDAE.BackendDAE dlow,dlow1,dlow2;
       DAE.FunctionTree funcs;
       BackendDAE.IncidenceMatrix m,m_1;
       BackendDAE.IncidenceMatrixT mT,mT_1;
+      Option<BackendDAE.IncidenceMatrix> om;
+      Option<BackendDAE.IncidenceMatrixT> omT;
       BackendVarTransform.VariableReplacements repl,repl_1;
       BackendDAE.BinTree movedVars,movedAVars;
       list<Integer> meqns;
+      Boolean b;
+    case (dlow,funcs,inM,inMT)
+      equation
+        (m,mT) = BackendDAEUtil.getIncidenceMatrixfromOption(dlow,inM,inMT);
+        repl = BackendVarTransform.emptyReplacements();
+        // check equations
+        (m_1,(dlow1,_,mT_1,repl_1,movedVars,movedAVars,meqns,b)) = traverseIncidenceMatrix(m,removeSimpleEquationsFinder,(dlow,funcs,mT,repl,BackendDAE.emptyBintree,BackendDAE.emptyBintree,{},false));
+        // replace vars in arrayeqns and algorithms, move vars to knvars and aliasvars, remove eqns
+        (dlow2,om,omT) = removeSimpleEquations2(b,dlow1,m,mT,repl_1,movedVars,movedAVars,meqns);
+      then (dlow2,om,omT,b);
+  end match;
+end removeSimpleEquations1;
+
+protected function removeSimpleEquations2
+"function: removeSimpleEquations2"
+  input Boolean b;
+  input BackendDAE.BackendDAE inDlow;
+  input BackendDAE.IncidenceMatrix inM;
+  input BackendDAE.IncidenceMatrixT inMT;
+  input BackendVarTransform.VariableReplacements repl;
+  input BackendDAE.BinTree movedVars;
+  input BackendDAE.BinTree movedAVars;
+  input list<Integer> meqns;
+  output BackendDAE.BackendDAE outDlow;
+  output Option<BackendDAE.IncidenceMatrix> outM;
+  output Option<BackendDAE.IncidenceMatrixT> outMT;
+algorithm
+  (outDlow,outM,outMT):=
+  match (b,inDlow,inM,inMT,repl,movedVars,movedAVars,meqns)
+    local
       BackendDAE.Variables ordvars,knvars,exobj,ordvars1,knvars1,ordvars2,knvars2,ordvars3;
       BackendDAE.AliasVariables aliasVars;
       BackendDAE.EquationArray eqns,remeqns,inieqns,eqns1,inieqns1,remeqns1,eqns2;
@@ -342,14 +445,11 @@ algorithm
       array<tuple<list<DAE.Exp>,list<DAE.Exp>>> inouttplarray;
       list<BackendDAE.WhenClause> whenClauseLst,whenClauseLst1;
       list<BackendDAE.ZeroCrossing> zeroCrossingLst;
-    case (dlow,funcs,inM,inMT)
+      Boolean b;
+    case (false,inDlow,inM,inMT,_,_,_,_) then (inDlow,SOME(inM),SOME(inMT));
+    case (true,BackendDAE.DAE(ordvars,knvars,exobj,aliasVars,eqns,remeqns,inieqns,arreqns,algorithms,BackendDAE.EVENT_INFO(whenClauseLst,zeroCrossingLst),eoc),_,_,repl,movedVars,movedAVars,meqns)
       equation
-        (m,mT) = BackendDAEUtil.getIncidenceMatrixfromOption(dlow,inM,inMT);
-        repl = BackendVarTransform.emptyReplacements();
-        // check equations
-        (m_1,(dlow,_,mT_1,repl_1,movedVars,movedAVars,meqns)) = traverseIncidenceMatrix(m,removeSimpleEquationsFinder,(dlow,funcs,mT,repl,BackendDAE.emptyBintree,BackendDAE.emptyBintree,{}));
-        Debug.fcall("dumprepl", BackendVarTransform.dumpReplacements, repl_1);
-        BackendDAE.DAE(ordvars,knvars,exobj,aliasVars,eqns,remeqns,inieqns,arreqns,algorithms,BackendDAE.EVENT_INFO(whenClauseLst,zeroCrossingLst),eoc) = dlow;
+        Debug.fcall("dumprepl", BackendVarTransform.dumpReplacements, repl);
         // delete alias variables from orderedVars
         ordvars1 = BackendVariable.deleteVars(movedAVars,ordvars);
         // move changed variables 
@@ -357,21 +457,21 @@ algorithm
         // remove changed eqns
         eqns1 = BackendEquation.equationDelete(eqns,meqns);
         // replace moved vars in vars,knvars,aliasVars,ineqns,remeqns
-        (ordvars3,_) = BackendVariable.traverseBackendDAEVarsWithUpdate(ordvars2,replaceVarTraverser,repl_1);
-        (knvars2,_) = BackendVariable.traverseBackendDAEVarsWithUpdate(knvars1,replaceVarTraverser,repl_1);
+        (ordvars3,_) = BackendVariable.traverseBackendDAEVarsWithUpdate(ordvars2,replaceVarTraverser,repl);
+        (knvars2,_) = BackendVariable.traverseBackendDAEVarsWithUpdate(knvars1,replaceVarTraverser,repl);
         // update arrayeqns and algorithms, collect info for wrappers
-        (arreqns1,(_,_,crefOrDerCreflst)) = Util.arrayMapNoCopy_1(arreqns,replaceArrayEquationTraverser,(repl_1,ordvars3,{}));
+        (arreqns1,(_,_,crefOrDerCreflst)) = Util.arrayMapNoCopy_1(arreqns,replaceArrayEquationTraverser,(repl,ordvars3,{}));
         crefOrDerCrefarray = listArray(listReverse(crefOrDerCreflst));
-        (algorithms1,(_,_,inouttpllst)) = Util.arrayMapNoCopy_1(algorithms,replaceAlgorithmTraverser,(repl_1,ordvars3,{}));
+        (algorithms1,(_,_,inouttpllst)) = Util.arrayMapNoCopy_1(algorithms,replaceAlgorithmTraverser,(repl,ordvars3,{}));
         inouttplarray = listArray(listReverse(inouttpllst));
-        (eqns2,(_,_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(eqns1,replaceEquationTraverser,(repl_1,crefOrDerCrefarray,inouttplarray));
-        (inieqns1,(_,_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(inieqns,replaceEquationTraverser,(repl_1,crefOrDerCrefarray,inouttplarray));
-        (remeqns1,(_,_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(remeqns,replaceEquationTraverser,(repl_1,crefOrDerCrefarray,inouttplarray));
-        (whenClauseLst1,_) = BackendDAETransform.traverseBackendDAEExpsWhenClauseLst(whenClauseLst,replaceWhenClauseTraverser,repl_1);
+        (eqns2,(_,_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(eqns1,replaceEquationTraverser,(repl,crefOrDerCrefarray,inouttplarray));
+        (inieqns1,(_,_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(inieqns,replaceEquationTraverser,(repl,crefOrDerCrefarray,inouttplarray));
+        (remeqns1,(_,_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(remeqns,replaceEquationTraverser,(repl,crefOrDerCrefarray,inouttplarray));
+        (whenClauseLst1,_) = BackendDAETransform.traverseBackendDAEExpsWhenClauseLst(whenClauseLst,replaceWhenClauseTraverser,repl);
         // update array eqn wrapper
       then (BackendDAE.DAE(ordvars3,knvars2,exobj,aliasVars,eqns2,remeqns1,inieqns1,arreqns1,algorithms1,BackendDAE.EVENT_INFO(whenClauseLst1,zeroCrossingLst),eoc),NONE(),NONE());
   end match;
-end removeSimpleEquations;
+end removeSimpleEquations2;
 
 protected function replaceVarTraverser
 "autor: Frenkel TUD 2011-03"
@@ -536,8 +636,8 @@ end updateEquationWrapper;
 
 protected function removeSimpleEquationsFinder
 "autor: Frenkel TUD 2010-12"
- input tuple<BackendDAE.IncidenceMatrixElement,Integer,BackendDAE.IncidenceMatrix, tuple<BackendDAE.BackendDAE,DAE.FunctionTree,BackendDAE.IncidenceMatrixT,BackendVarTransform.VariableReplacements,BackendDAE.BinTree,BackendDAE.BinTree,list<Integer>>> inTpl;
- output tuple<list<Integer>,BackendDAE.IncidenceMatrix, tuple<BackendDAE.BackendDAE,DAE.FunctionTree,BackendDAE.IncidenceMatrixT,BackendVarTransform.VariableReplacements,BackendDAE.BinTree,BackendDAE.BinTree,list<Integer>>> outTpl;
+ input tuple<BackendDAE.IncidenceMatrixElement,Integer,BackendDAE.IncidenceMatrix, tuple<BackendDAE.BackendDAE,DAE.FunctionTree,BackendDAE.IncidenceMatrixT,BackendVarTransform.VariableReplacements,BackendDAE.BinTree,BackendDAE.BinTree,list<Integer>,Boolean>> inTpl;
+ output tuple<list<Integer>,BackendDAE.IncidenceMatrix, tuple<BackendDAE.BackendDAE,DAE.FunctionTree,BackendDAE.IncidenceMatrixT,BackendVarTransform.VariableReplacements,BackendDAE.BinTree,BackendDAE.BinTree,list<Integer>,Boolean>> outTpl;
 algorithm
   outTpl:=
   matchcontinue (inTpl)
@@ -555,7 +655,8 @@ algorithm
       DAE.ComponentRef cr;
       DAE.Exp exp,e1,e2;
       DAE.FunctionTree funcs;
-    case ((elem,pos,m,(dae,funcs,mT,repl,mvars,mavars,meqns)))
+      Boolean b;
+    case ((elem,pos,m,(dae,funcs,mT,repl,mvars,mavars,meqns,_)))
       equation
         // check number of vars in eqns
         l = listLength(elem);
@@ -565,8 +666,8 @@ algorithm
         BackendDAE.EQUATION(exp=e1,scalar=e2) = BackendDAEUtil.equationNth(eqns,pos_1);
         true = Expression.isConst(e1);
         true = Expression.expEqual(e1,e2);
-      then (({},m,(dae,funcs,mT,repl,mvars,mavars,pos_1::meqns)));      
-    case ((elem,pos,m,(dae,funcs,mT,repl,mvars,mavars,meqns)))
+      then (({},m,(dae,funcs,mT,repl,mvars,mavars,pos_1::meqns,true)));      
+    case ((elem,pos,m,(dae,funcs,mT,repl,mvars,mavars,meqns,_)))
       equation
         // check number of vars in eqns
         l = listLength(elem);
@@ -575,9 +676,9 @@ algorithm
         (cr,i,exp,dae1,mvars_1,mavars_1,eqnType) = simpleEquation(elem,l,pos,dae,mvars,mavars);
         // replace equation if necesarry
         (vareqns,dae2,repl_1,m1,mT1,meqns1) = replacementsInEqns(eqnType,cr,i,exp,pos,repl,dae1,m,mT,meqns,funcs);
-      then ((vareqns,m1,(dae2,funcs,mT1,repl_1,mvars_1,mavars_1,meqns1)));
-    case ((elem,pos,m,(dae,funcs,mT,repl,mvars,mavars,meqns)))
-      then (({},m,(dae,funcs,mT,repl,mvars,mavars,meqns))); 
+      then ((vareqns,m1,(dae2,funcs,mT1,repl_1,mvars_1,mavars_1,meqns1,true)));
+    case ((elem,pos,m,(dae,funcs,mT,repl,mvars,mavars,meqns,b)))
+      then (({},m,(dae,funcs,mT,repl,mvars,mavars,meqns,b))); 
   end matchcontinue;
 end removeSimpleEquationsFinder;
 
@@ -2132,13 +2233,14 @@ public function removeEqualFunctionCallsPast
     output Boolean outRunMatching;
 protected
   Option<BackendDAE.IncidenceMatrix> om,omT;
+  Boolean b;
 algorithm
-  (outDAE,om,omT) := removeEqualFunctionCalls(inDAE,inFunctionTree,SOME(inM),SOME(inMT));
+  (outDAE,om,omT,b) := removeEqualFunctionCalls1(inDAE,inFunctionTree,SOME(inM),SOME(inMT));
   (outM,outMT) := BackendDAEUtil.getIncidenceMatrixfromOption(outDAE,om,omT);
   outAss1 := inAss1;
   outAss2 := inAss2;
   outComps := inComps;   
-  outRunMatching := true; // until does not update incidence assignments and comps  
+  outRunMatching := b; // until does not update assignments and comps  
 end removeEqualFunctionCallsPast;
 
 public function removeEqualFunctionCalls
@@ -2154,13 +2256,64 @@ public function removeEqualFunctionCalls
   output Option<BackendDAE.IncidenceMatrix> outM;
   output Option<BackendDAE.IncidenceMatrixT> outMT;
 algorithm
-  (outDlow,outM,outMT):=
+  (outDlow,outM,outMT,_) := removeEqualFunctionCalls1(inDlow,inFunctionTree,inM,inMT);
+end removeEqualFunctionCalls;
+
+protected function removeEqualFunctionCalls1
+"function: removeEqualFunctionCalls
+  autor: Frenkel TUD 2011-04
+  This function detect equal function call on the form a=f(b) and c=f(b) 
+  in BackendDAE.BackendDAE to get speed up"
+  input BackendDAE.BackendDAE inDlow;
+  input DAE.FunctionTree inFunctionTree;
+  input Option<BackendDAE.IncidenceMatrix> inM;
+  input Option<BackendDAE.IncidenceMatrixT> inMT;
+  output BackendDAE.BackendDAE outDlow;
+  output Option<BackendDAE.IncidenceMatrix> outM;
+  output Option<BackendDAE.IncidenceMatrixT> outMT;
+  output Boolean optimized;
+algorithm
+  (outDlow,outM,outMT,optimized):=
   match (inDlow,inFunctionTree,inM,inMT)
     local
       BackendDAE.BackendDAE dae,dae1;
       DAE.FunctionTree funcs;
       BackendDAE.IncidenceMatrix m,m_1,m_2;
       BackendDAE.IncidenceMatrixT mT,mT_1,mT_2;
+      BackendDAE.Variables vars;
+      BackendDAE.EquationArray eqns,eqns1;
+      array<BackendDAE.MultiDimEquation> arreqns,arreqns1;
+      array<DAE.Algorithm> algorithms,algorithms1;
+      BackendDAE.EventInfo einfo,einfo1;
+      list<Integer> changed;
+      Boolean b;
+    case (dae as BackendDAE.DAE(orderedVars=vars,orderedEqs=eqns,arrayEqs=arreqns,algorithms=algorithms,eventInfo=einfo),funcs,inM,inMT)
+      equation
+        (m,mT) = BackendDAEUtil.getIncidenceMatrixfromOption(dae,inM,inMT);
+        // check equations
+        (m_1,(mT_1,_,eqns1,arreqns1,algorithms1,einfo1,changed)) = traverseIncidenceMatrix(m,removeEqualFunctionCallFinder,(mT,vars,eqns,arreqns,algorithms,einfo,{}));
+        b = intGt(listLength(changed),0);
+        // update arrayeqns and algorithms, collect info for wrappers
+        dae1 = removeEqualFunctionCalls2(b,dae,eqns1,arreqns1,algorithms1,einfo1);
+        (m_2,mT_2) = BackendDAEUtil.updateIncidenceMatrix(dae1,m_1,mT_1,changed);
+      then (dae1,SOME(m_2),SOME(mT_2),b);
+  end match;
+end removeEqualFunctionCalls1;
+
+protected function removeEqualFunctionCalls2
+"function: removeEqualFunctionCalls2
+  autor: Frenkel TUD 2011-05"
+  input Boolean b;
+  input BackendDAE.BackendDAE inDlow;
+  input BackendDAE.EquationArray eqns;
+  input array<BackendDAE.MultiDimEquation> arreqns;
+  input array<DAE.Algorithm> algorithms;
+  input BackendDAE.EventInfo einfo;
+  output BackendDAE.BackendDAE outDlow;
+algorithm
+  outDlow:=
+  match (b,inDlow,eqns,arreqns,algorithms,einfo)
+    local
       BackendVarTransform.VariableReplacements repl;
       BackendDAE.Variables vars,knvars,exobj;
       BackendDAE.AliasVariables aliasVars;
@@ -2173,24 +2326,19 @@ algorithm
       array<list<DAE.Exp>> crefOrDerCrefarray;
       list<tuple<list<DAE.Exp>,list<DAE.Exp>>> inouttpllst;
       array<tuple<list<DAE.Exp>,list<DAE.Exp>>> inouttplarray;
-      list<Integer> changed;
-    case (dae as BackendDAE.DAE(vars,knvars,exobj,aliasVars,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc),funcs,inM,inMT)
+    case (false,inDlow,_,_,_,_) then inDlow;
+    case (true,BackendDAE.DAE(vars,knvars,exobj,aliasVars,_,remeqns,inieqns,_,_,_,eoc),eqns,arreqns,algorithms,einfo)
       equation
-        (m,mT) = BackendDAEUtil.getIncidenceMatrixfromOption(dae,inM,inMT);
         repl = BackendVarTransform.emptyReplacements();
-        // check equations
-        (m_1,(mT_1,_,eqns1,arreqns1,algorithms1,einfo1,changed)) = traverseIncidenceMatrix(m,removeEqualFunctionCallFinder,(mT,vars,eqns,arreqns,algorithms,einfo,{}));
         // update arrayeqns and algorithms, collect info for wrappers
-        (_,(_,_,crefOrDerCreflst)) = Util.arrayMapNoCopy_1(arreqns1,replaceArrayEquationTraverser,(repl,vars,{}));
+        (_,(_,_,crefOrDerCreflst)) = Util.arrayMapNoCopy_1(arreqns,replaceArrayEquationTraverser,(repl,vars,{}));
         crefOrDerCrefarray = listArray(listReverse(crefOrDerCreflst));
-        (_,(_,_,inouttpllst)) = Util.arrayMapNoCopy_1(algorithms1,replaceAlgorithmTraverser,(repl,vars,{}));
+        (_,(_,_,inouttpllst)) = Util.arrayMapNoCopy_1(algorithms,replaceAlgorithmTraverser,(repl,vars,{}));
         inouttplarray = listArray(listReverse(inouttpllst));
         (eqns1,(_,_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(eqns,replaceEquationTraverser,(repl,crefOrDerCrefarray,inouttplarray));
-        dae1 = BackendDAE.DAE(vars,knvars,exobj,aliasVars,eqns1,remeqns,inieqns,arreqns1,algorithms1,einfo1,eoc);
-        (m_2,mT_2) = BackendDAEUtil.updateIncidenceMatrix(dae1,m_1,mT_1,changed);
-      then (dae1,SOME(m_2),SOME(mT_2));
+      then BackendDAE.DAE(vars,knvars,exobj,aliasVars,eqns1,remeqns,inieqns,arreqns,algorithms,einfo,eoc);
   end match;
-end removeEqualFunctionCalls;
+end removeEqualFunctionCalls2;
 
 protected function removeEqualFunctionCallFinder
 "autor: Frenkel TUD 2010-12"
@@ -2361,7 +2509,7 @@ algorithm
         //print("i="); print(intString(i)); print("\n");
         true = intGt(i,0);
         eqns1 =  BackendEquation.equationSetnth(eqns,pos_1,eqn1);
-        changed = Util.if_(listMember(pos,changed),changed,pos::changed);
+        changed = Util.listConsOnTrue(not listMember(pos,changed),pos,changed);
         (eqns2,ae2,al2,einfo,changed) = removeEqualFunctionCall(rest,inExp,inECr,eqns1,ae1,al1,BackendDAE.EVENT_INFO(wclst1,zcl),changed);
       then (eqns2,ae2,al2,einfo,changed);
     case (pos::rest,inExp,inECr,eqns,inArreqns,inAlgs,eifo,changed)
