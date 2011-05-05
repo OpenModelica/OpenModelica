@@ -521,6 +521,7 @@ OMPlot/OMPlotGUI/Makefile.unix \
 OMPlot/OMPlotGUI/OMPlotGUI.config \
 OMOptim/build/Makefile.unix \
 OMOptim/build/OMOptim.config \
+testsuite/bootstrapping/LinkMain.makefile \
 "
 
 AC_CONFIG_COMMANDS([config.unix.h.fix],[./configure-post.sh $ac_cs_config])
