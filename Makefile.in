@@ -22,7 +22,7 @@ include Makefile.common
 .testvariables:
 settings:
 
-difftool:
+difftool: mkbuilddirs
 	$(MAKE) -C testsuite/difftool
 omc: difftool c_runtime docs
 	(cd Compiler && $(MAKE) -f Makefile release)
