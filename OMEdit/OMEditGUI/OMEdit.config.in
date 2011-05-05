@@ -1,5 +1,6 @@
 QMAKE_CC  = @CC@
 QMAKE_CXX = @CXX@
+QMAKE_LINK = @CXX@
 
 LIBS += @CORBALIBS@ -lqwt@with_qwt_suffix@ -L../../OMPlot/bin/ -lOMPlot
 INCLUDEPATH += @with_qwt@ @CORBA_QMAKE_INCLUDES@ ../../OMPlot/OMPlotGUI
