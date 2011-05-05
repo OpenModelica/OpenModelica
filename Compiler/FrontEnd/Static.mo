@@ -522,9 +522,11 @@ algorithm
        (cache,exp,prop,st) = elabExp(cache,env,Absyn.LIST({}),impl,st,doVect,pre,info);
      then (cache,exp,prop,st);
 
+      // array expressions, e.g. {1,2,3}
     case (cache,env,Absyn.ARRAY(arrayExp = es),impl,st,doVect,pre,info,_)
       equation
-        (cache,es_1,DAE.PROP(t,const)) = elabArray(cache,env, es, impl, st,doVect,pre,info) "array expressions, e.g. {1,2,3}" ;
+        (cache,es_1,props,_) = elabExpList(cache, env, es, impl, st, doVect, pre, info);
+        (es_1,DAE.PROP(t,const)) = elabArray(es_1,props,pre,info); // type-checking the array
         l = listLength(es_1);
         arrtp = (DAE.T_ARRAY(DAE.DIM_INTEGER(l),t),NONE());
         at = Types.elabType(arrtp);
@@ -2113,43 +2115,35 @@ protected function elabArray
   All types of an array should be equivalent. However, mixed Integer and Real
   elements are allowed in an array and in that case the Integer elements
   are converted to Real elements."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input list<Absyn.Exp> inAbsynExpLst;
-  input Boolean inBoolean;
-  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Boolean performVectorization;
-  input Prefix.Prefix inPrefix;
+  input list<DAE.Exp> expl;
+  input list<DAE.Properties> props;
+  input Prefix.Prefix pre;
   input Absyn.Info info;
-  output Env.Cache outCache;
   output list<DAE.Exp> outExpExpLst;
   output DAE.Properties outProperties;
 algorithm
-  (outCache,outExpExpLst,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,performVectorization,inPrefix,info)
+  (outExpExpLst,outProperties):=
+  matchcontinue (expl,props,pre,info)
     local
-      list<DAE.Exp> expl_1;
+      list<DAE.Exp> expl_1,expl_2;
       DAE.Properties prop;
-      list<Env.Frame> env;
-      list<Absyn.Exp> expl;
-      Boolean impl;
-      Option<Interactive.InteractiveSymbolTable> st;
-      Env.Cache cache;
-      Boolean doVect;
-      DAE.Type t; DAE.Const c;
-      Prefix.Prefix pre;
+      DAE.Type t;
+      DAE.Const c;
+      list<DAE.Type> types;
 
-    case (cache,env,expl,impl,st,doVect,pre,info) /* impl array contains mixed Integer and Real types */
+    case (expl,props,pre,info) /* impl array contains mixed Integer and Real types */
       equation
-        elabArrayHasMixedIntReals(cache,env, expl, impl, st,doVect,pre,info);
-        (cache,expl_1,prop) = elabArrayReal(cache,env, expl, impl, st,doVect,pre,info);
+        t = elabArrayHasMixedIntReals(props);
+        c = elabArrayConst(props);
+        types = Util.listMap(props, Types.getPropType);
+        expl_1 = elabArrayReal2(expl, types, t);
       then
-        (cache,expl_1,prop);
-    case (cache,env,expl,impl,st,doVect,pre,info)
+        (expl_1,DAE.PROP(t,c));
+    case (expl,props,pre,info)
       equation
-        (cache,expl_1,prop as DAE.PROP(t,c)) = elabArray2(cache,env, expl, impl, st,doVect,pre,info);
+        (expl_1,prop) = elabArray2(expl,props,pre,info);
       then
-        (cache,expl_1,DAE.PROP(t,c));
+        (expl_1,prop);
   end matchcontinue;
 end elabArray;
 
@@ -2157,151 +2151,34 @@ protected function elabArrayHasMixedIntReals
 "function: elabArrayHasMixedIntReals
   Helper function to elab_array, checks if expression list contains both
   Integer and Real types."
-  input Env.Cache inCache;
-  input Env.Env env;
-  input list<Absyn.Exp> expl;
-  input Boolean impl;
-  input Option<Interactive.InteractiveSymbolTable> st;
-  input Boolean performVectorization;
-  input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input list<DAE.Properties> props;
+  output DAE.Type ty;
 algorithm
-  elabArrayHasInt(inCache,env, expl, impl, st, performVectorization,inPrefix,info);
-  elabArrayHasReal(inCache,env, expl, impl, st, performVectorization,inPrefix,info);
+  elabArrayHasInt(props);
+  ty := elabArrayFirstPropsReal(props);
 end elabArrayHasMixedIntReals;
 
 protected function elabArrayHasInt
 "function: elabArrayHasInt
   author :PA
   Helper function to elabArray."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input list<Absyn.Exp> inAbsynExpLst;
-  input Boolean inBoolean;
-  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Boolean performVectorization;
-  input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input list<DAE.Properties> props;
 algorithm
-  _ := matchcontinue (inCache,inEnv,inAbsynExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,performVectorization,inPrefix,info)
+  _ := matchcontinue (props)
     local
-      DAE.Exp e_1;
-      tuple<DAE.TType, Option<Absyn.Path>> tp;
-      list<Env.Frame> env;
-      Absyn.Exp e;
-      list<Absyn.Exp> expl;
-      Boolean impl;
-      Option<Interactive.InteractiveSymbolTable> st;
-      Env.Cache cache;
-      Boolean doVect;
-      Prefix.Prefix pre;
-    case (cache,env,(e :: expl),impl,st,doVect,pre,info) /* impl */
+      DAE.Type tp;
+    case (DAE.PROP(tp,_) :: props)
       equation
-        (cache,e_1,DAE.PROP(tp,_),_) = elabExp(cache,env, e, impl, st,doVect,pre,info);
         ((DAE.T_INTEGER(_),_)) = Types.arrayElementType(tp);
       then
         ();
-    case (cache,env,(e :: expl),impl,st,doVect,pre,info)
+    case (_::props)
       equation
-        elabArrayHasInt(cache,env, expl, impl, st,doVect,pre,info);
+        elabArrayHasInt(props);
       then
         ();
   end matchcontinue;
 end elabArrayHasInt;
-
-protected function elabArrayHasReal
-"function: elabArrayHasReal
-  author :PA
-  Helper function to elabArray."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input list<Absyn.Exp> inAbsynExpLst;
-  input Boolean inBoolean;
-  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Boolean performVectorization;
-  input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
-algorithm
-  _ := matchcontinue (inCache,inEnv,inAbsynExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,performVectorization,inPrefix,info)
-    local
-      DAE.Exp e_1;
-      tuple<DAE.TType, Option<Absyn.Path>> tp;
-      list<Env.Frame> env;
-      Absyn.Exp e;
-      list<Absyn.Exp> expl;
-      Boolean impl;
-      Option<Interactive.InteractiveSymbolTable> st;
-      Env.Cache cache;
-      Boolean doVect;
-      Prefix.Prefix pre;
-    case (cache,env,(e :: expl),impl,st,doVect,pre,info) /* impl */
-      equation
-        (cache,e_1,DAE.PROP(tp,_),_) = elabExp(cache,env, e, impl, st,doVect,pre,info);
-        ((DAE.T_REAL(_),_)) = Types.arrayElementType(tp);
-      then
-        ();
-    case (cache,env,(e :: expl),impl,st,doVect,pre,info)
-      equation
-        elabArrayHasReal(cache,env, expl, impl, st,doVect,pre,info);
-      then
-        ();
-  end matchcontinue;
-end elabArrayHasReal;
-
-protected function elabArrayReal
-"function: elabArrayReal
-  Helper function to elabArray, converts all elements to Real"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input list<Absyn.Exp> inAbsynExpLst;
-  input Boolean inBoolean;
-  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Boolean performVectorization;
-  input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
-  output Env.Cache outCache;
-  output list<DAE.Exp> outExpExpLst;
-  output DAE.Properties outProperties;
-algorithm
-  (outCache,outExpExpLst,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,performVectorization,inPrefix,info)
-    local
-      list<DAE.Exp> expl_1,expl_2;
-      list<DAE.Properties> props;
-      tuple<DAE.TType, Option<Absyn.Path>> real_tp,real_tp_1;
-      Ident s;
-      DAE.Const const;
-      list<tuple<DAE.TType, Option<Absyn.Path>>> types;
-      list<Env.Frame> env;
-      list<Absyn.Exp> expl;
-      Boolean impl;
-      Option<Interactive.InteractiveSymbolTable> st;
-      Env.Cache cache;
-      Boolean doVect;
-      Prefix.Prefix pre;
-
-    case (cache,env,expl,impl,st,doVect,pre,info) /* impl elaborate each expression, pick first realtype
-      and type_convert all expressions to that type */
-      equation
-        (cache,expl_1,props,_) = elabExpList(cache,env, expl, impl, st,doVect,pre,info);
-        real_tp = elabArrayFirstPropsReal(props);
-        s = Types.unparseType(real_tp);
-        const = elabArrayConst(props);
-        types = Util.listMap(props, Types.getPropType);
-        (expl_2,real_tp_1) = elabArrayReal2(expl_1, types, real_tp,pre);
-      then
-        (cache,expl_2,DAE.PROP(real_tp_1,const));
-    case (cache,env,expl,impl,st,doVect,pre,info)
-      equation
-        Debug.fprint("failtrace", "-elab_array_real failed, prefix=");
-        Debug.fprint("failtrace", PrefixUtil.printPrefixStr(pre));
-        Debug.fprint("failtrace", ", expl=");
-        Debug.fprint("failtrace", Util.stringDelimitList(Util.listMap(expl,Dump.printExpStr),","));
-        Debug.fprint("failtrace", "\n");
-      then
-        fail();
-  end matchcontinue;
-end elabArrayReal;
 
 protected function elabArrayFirstPropsReal
 "function: elabArrayFirstPropsReal
@@ -2360,128 +2237,79 @@ protected function elabArrayReal2
   input list<DAE.Exp> inExpExpLst;
   input list<DAE.Type> inTypesTypeLst;
   input DAE.Type inType;
-  input Prefix.Prefix inPrefix;
   output list<DAE.Exp> outExpExpLst;
-  output DAE.Type outType;
 algorithm
-  (outExpExpLst,outType):=
-  matchcontinue (inExpExpLst,inTypesTypeLst,inType,inPrefix)
+  outExpExpLst :=
+  matchcontinue (inExpExpLst,inTypesTypeLst,inType)
     local
       tuple<DAE.TType, Option<Absyn.Path>> tp,res_type,t,to_type;
       list<DAE.Exp> res,es;
       DAE.Exp e,e_1;
       list<tuple<DAE.TType, Option<Absyn.Path>>> ts;
       Ident s,s2,s3,sp;
-      Prefix.Prefix pre;
-    case ({},{},tp,_) then ({},tp);  /* expl to_type new_expl res_type */
-    case ((e :: es),(t :: ts),to_type,pre) /* No need for type conversion. */
+    case ({},{},_) then {};  /* expl to_type new_expl res_type */
+    case ((e :: es),(t :: ts),to_type) /* No need for type conversion. */
       equation
         true = Types.equivtypes(t, to_type);
-        (res,res_type) = elabArrayReal2(es, ts, to_type,pre);
+        res = elabArrayReal2(es, ts, to_type);
       then
-        ((e :: res),res_type);
-    case ((e :: es),(t :: ts),to_type,pre) /* type conversion */
+        (e :: res);
+    case ((e :: es),(t :: ts),to_type) /* type conversion */
       equation
-        (e_1,res_type) = Types.matchType(e, t, to_type, true);
-        (res,_) = elabArrayReal2(es, ts, to_type,pre);
+        (e_1,_) = Types.matchType(e, t, to_type, true);
+        res = elabArrayReal2(es, ts, to_type);
       then
-        ((e_1 :: res),res_type);
-    case ((e :: es),(t :: ts),to_type,pre)
-      equation
-        print("elab_array_real2 failed\n");
-        s = ExpressionDump.printExpStr(e);
-        s2 = Types.unparseType(t);
-        sp = PrefixUtil.printPrefixStr(pre);
-        print("exp = ");
-        print(s);
-        print("prefix = ");
-        print(sp);
-        print(" type:");
-        print(s2);
-        print("\n");
-        s3 = Types.unparseType(to_type);
-        print(" to type :");
-        print(s3);
-        print("\n");
-      then
-        fail();
+        (e_1 :: res);
   end matchcontinue;
 end elabArrayReal2;
 
 protected function elabArray2
 "function: elabArray2
   Helper function to elabArray, checks that all elements are equivalent."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input list<Absyn.Exp> inAbsynExpLst;
-  input Boolean inBoolean;
-  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Boolean performVectorization;
-  input Prefix.Prefix inPrefix;
+  input list<DAE.Exp> es;
+  input list<DAE.Properties> props;
+  input Prefix.Prefix pre;
   input Absyn.Info info;
-  output Env.Cache outCache;
   output list<DAE.Exp> outExpExpLst;
   output DAE.Properties outProperties;
 algorithm
-  (outCache,outExpExpLst,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,performVectorization,inPrefix,info)
+  (outExpExpLst,outProperties):=
+  matchcontinue (es,props,pre,info)
     local
       DAE.Exp e_1;
       DAE.Properties prop;
-      list<Env.Frame> env;
-      Absyn.Exp e;
-      Boolean impl;
-      Option<Interactive.InteractiveSymbolTable> st;
       tuple<DAE.TType, Option<Absyn.Path>> t1,t2;
       DAE.Const c1,c2,c;
       list<DAE.Exp> es_1;
-      list<Absyn.Exp> es,expl;
       Ident e_str,str,elt_str,t1_str,t2_str,sp;
       list<Ident> strs;
-      Env.Cache cache;
-      Boolean doVect;
       Prefix.Prefix pre;
 
-    case (cache, _, {}, _, _, _,_,_)
-      then (cache, {}, DAE.PROP(DAE.T_REAL_DEFAULT, DAE.C_CONST()));
+    case ({}, {}, _, _)
+      then ({}, DAE.PROP(DAE.T_REAL_DEFAULT, DAE.C_CONST()));
 
-    case (cache,env,{e},impl,st,doVect,pre,info)
-      equation
-        (cache,e_1,prop,_) = elabExp(cache,env, e, impl, st,doVect,pre,info);
-      then
-        (cache,{e_1},prop);
+    case ({e_1},{prop},pre,info) then ({e_1},prop);
 
-    case (cache,env,(e :: es),impl,st,doVect,pre,info)
+    case (e_1::es_1,DAE.PROP(t1,c1)::props,pre,info)
       equation
-        (cache,e_1,DAE.PROP(t1,c1),_) = elabExp(cache,env, e, impl, st,doVect,pre,info);
-        (cache,es_1,DAE.PROP(t2,c2)) = elabArray2(cache,env, es, impl, st,doVect,pre,info);
+        (es_1,DAE.PROP(t2,c2)) = elabArray2(es_1,props,pre,info);
         true = Types.equivtypes(t1, t2);
         c = Types.constAnd(c1, c2);
       then
-        (cache,(e_1 :: es_1),DAE.PROP(t1,c));
+        ((e_1 :: es_1),DAE.PROP(t1,c));
 
-    case (cache,env,(e :: es),impl,st,doVect,pre,info)
+    case (e_1::es_1,DAE.PROP(t1,c1)::props,pre,info)
       equation
-        (cache,e_1,DAE.PROP(t1,c1),_) = elabExp(cache,env, e, impl, st,doVect,pre,info);
-        (cache,es_1,DAE.PROP(t2,c2)) = elabArray2(cache,env, es, impl, st,doVect,pre,info);
+        (es_1,DAE.PROP(t2,c2)) = elabArray2(es_1,props,pre,info);
         false = Types.equivtypes(t1, t2);
         sp = PrefixUtil.printPrefixStr3(pre);
-        e_str = Dump.printExpStr(e);
-        strs = Util.listMap(es, Dump.printExpStr);
+        e_str = ExpressionDump.printExpStr(e_1);
+        strs = Util.listMap(es, ExpressionDump.printExpStr);
         str = Util.stringDelimitList(strs, ",");
         elt_str = stringAppendList({"[",str,"]"});
         t1_str = Types.unparseType(t1);
         t2_str = Types.unparseType(t2);
         Error.addSourceMessage(Error.TYPE_MISMATCH_ARRAY_EXP, {sp,e_str,t1_str,elt_str,t2_str}, info);
-      then
-        fail();
-    case (cache,_,expl,_,_,_,_,_)
-      equation
-        // We can't use this failtrace when elaborating lists since they may
-        // contain types that are not equivalent. This only happens when
-        // using MetaModelica grammar.
-        false = RTOpts.acceptMetaModelicaGrammar();
-        Debug.fprint("failtrace", "elab_array failed\n");
       then
         fail();
   end matchcontinue;
