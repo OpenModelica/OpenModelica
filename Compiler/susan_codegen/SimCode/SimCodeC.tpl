@@ -2402,18 +2402,13 @@ template functionsFile(String filePrefix,
 ::=
   <<
   #include "<%filePrefix%>.h"
-  #include <algorithm>
   #define MODELICA_ASSERT(info,msg) { printInfo(stderr,info); fprintf(stderr,"Modelica Assert: %s!\n", msg); }
   #define MODELICA_TERMINATE(msg) { fprintf(stderr,"Modelica Terminate: %s!\n", msg); fflush(stderr); }
 
-  extern "C" {
-  
   <%literals |> literal hasindex i0 fromindex 0 => literalExpConst(literal,i0) ; separator="\n"%>
   
   <%match mainFunction case SOME(fn) then functionBody(fn,true)%>
   <%functionBodies(functions)%>
-  }
-  
   >>
 end functionsFile;
 
@@ -4123,7 +4118,8 @@ case RANGE(__) then
   if (!<%stepVar%>) {
     MODELICA_ASSERT(omc_dummyFileInfo, "assertion range step != 0 failed");
   } else if (!(((<%stepVar%> > 0) && (<%startVar%> > <%stopVar%>)) || ((<%stepVar%> < 0) && (<%startVar%> < <%stopVar%>)))) {
-    for(<%type%> <%iterName%> = <%startValue%>; in_range_<%shortType%>(<%iterName%>, <%startVar%>, <%stopVar%>); <%iterName%> += <%stepVar%>) { 
+    <%type%> <%iterName%>;
+    for (<%iterName%> = <%startValue%>; in_range_<%shortType%>(<%iterName%>, <%startVar%>, <%stopVar%>); <%iterName%> += <%stepVar%>) { 
       <%if not acceptMetaModelicaGrammar() then '<%stateVar%> = get_memory_state();'%>
       <%body%>
       <%if not acceptMetaModelicaGrammar() then 'restore_memory_state(<%stateVar%>);'%>
@@ -5245,6 +5241,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
             path=IDENT(name="anyString"),
             expLst={e1}) then
     'mmc_anyString(<%daeExp(e1, context, &preExp, &varDecls)%>)'
+
   
   case CALL(tuple_=false, builtin=true,
             path=IDENT(name="mmc_get_field"),
@@ -6277,7 +6274,7 @@ template patternMatch(Pattern pat, Text rhs, Text onPatternFail, Text &varDecls,
         case c as SCONST(__) then
           let escstr = Util.escapeModelicaStringToCString(c.string)
           'if (<%unescapedStringLength(escstr)%> != MMC_STRLEN(<%urhs%>) || strcmp("<%escstr%>", MMC_STRINGDATA(<%urhs%>)) != 0) <%onPatternFail%>;<%\n%>'
-        case c as BCONST(__) then 'if (<%c.bool%> != <%urhs%>) <%onPatternFail%>;<%\n%>'
+        case c as BCONST(__) then 'if (<%if c.bool then 1 else 0%> != <%urhs%>) <%onPatternFail%>;<%\n%>'
         case c as LIST(valList = {}) then 'if (!listEmpty(<%urhs%>)) <%onPatternFail%>;<%\n%>'
         case c as META_OPTION(exp = NONE()) then 'if (!optionNone(<%urhs%>)) <%onPatternFail%>;<%\n%>'
 
@@ -6347,7 +6344,7 @@ end patternMatch;
 template infoArgs(Info info)
 ::=
   match info
-  case INFO(__) then '"<%fileName%>",<%lineNumberStart%>,<%columnNumberStart%>,<%lineNumberEnd%>,<%columnNumberEnd%>,<%isReadOnly%>'
+  case INFO(__) then '"<%fileName%>",<%lineNumberStart%>,<%columnNumberStart%>,<%lineNumberEnd%>,<%columnNumberEnd%>,<%if isReadOnly then 1 else 0%>'
 end infoArgs;
 
 template assertCommon(Exp condition, Exp message, Context context, Text &varDecls, Info info)
@@ -6376,16 +6373,17 @@ template literalExpConst(Exp lit, Integer index) "These should all be declared s
   case SCONST(__) then
     let escstr = Util.escapeModelicaStringToCString(string)
     if acceptMetaModelicaGrammar() then
+      /* TODO: Change this when OMC takes constant input arguments (so we cannot write to them)
+               The cost of not doing this properly is small (<257 bytes of constants)
       match unescapedStringLength(escstr)
       case 0 then '#define <%name%> mmc_emptystring'
-
       case 1 then '#define <%name%> mmc_strings_len1["<%escstr%>"[0]]'
-      else
+      else */
       <<
       #define <%name%>_data "<%escstr%>"
       static const size_t <%name%>_strlen = <%unescapedStringLength(escstr)%>;
-      static const MMC_DEFSTRINGLIT(<%tmp%>,<%name%>_strlen,<%name%>_data);
-      <%meta%> = MMC_REFSTRINGLIT(<%tmp%>);
+      static const MMC_DEFSTRINGLIT(<%tmp%>,<%unescapedStringLength(escstr)%>,<%name%>_data);
+      #define <%name%> MMC_REFSTRINGLIT(<%tmp%>)
       >>
     else
       <<
@@ -6402,30 +6400,35 @@ template literalExpConst(Exp lit, Integer index) "These should all be declared s
     <%meta%> = MMC_IMMEDIATE(MMC_TAGFIXNUM(<%if exp.bool then 1 else 0%>));
     >>
   case BOX(exp=exp as RCONST(__)) then
+    /* We need to use #define's to be C-compliant. Yea, total crap :) */
     <<
     static const MMC_DEFREALLIT(<%tmp%>,<%exp.real%>);
-    <%meta%> = MMC_REFREALLIT(<%tmp%>);
+    #define <%name%> MMC_REFREALLIT(<%tmp%>)
     >>
   case CONS(__) then
+    /* We need to use #define's to be C-compliant. Yea, total crap :) */
     <<
     static const MMC_DEFSTRUCTLIT(<%tmp%>,2,1) {<%literalExpConstBoxedVal(car)%>,<%literalExpConstBoxedVal(cdr)%>}};
-    <%meta%> = MMC_REFSTRUCTLIT(<%tmp%>);
+    #define <%name%> MMC_REFSTRUCTLIT(<%tmp%>)
     >>
   case META_TUPLE(__) then
+    /* We need to use #define's to be C-compliant. Yea, total crap :) */
     <<
     static const MMC_DEFSTRUCTLIT(<%tmp%>,<%listLength(listExp)%>,0) {<%listExp |> exp => literalExpConstBoxedVal(exp); separator=","%>}};
-    <%meta%> = MMC_REFSTRUCTLIT(<%tmp%>);
+    #define <%name%> MMC_REFSTRUCTLIT(<%tmp%>)
     >>
   case META_OPTION(exp=SOME(exp)) then
+    /* We need to use #define's to be C-compliant. Yea, total crap :) */
     <<
     static const MMC_DEFSTRUCTLIT(<%tmp%>,1,1) {<%literalExpConstBoxedVal(exp)%>}};
-    <%meta%> = MMC_REFSTRUCTLIT(<%tmp%>);
+    #define <%name%> MMC_REFSTRUCTLIT(<%tmp%>)
     >>
   case METARECORDCALL(__) then
+    /* We need to use #define's to be C-compliant. Yea, total crap :) */
     let newIndex = getValueCtor(index)
     <<
     static const MMC_DEFSTRUCTLIT(<%tmp%>,<%intAdd(1,listLength(args))%>,<%newIndex%>) {&<%underscorePath(path)%>__desc,<%args |> exp => literalExpConstBoxedVal(exp); separator=","%>}};
-    <%meta%> = MMC_REFSTRUCTLIT(<%tmp%>);
+    #define <%name%> MMC_REFSTRUCTLIT(<%tmp%>)
     >>
   else error(sourceInfo(), 'literalExpConst failed: <%printExpStr(lit)%>')
 end literalExpConst;
@@ -6434,7 +6437,7 @@ template literalExpConstBoxedVal(Exp lit)
 ::=
   match lit
   case ICONST(__) then 'MMC_IMMEDIATE(MMC_TAGFIXNUM(<%integer%>))'
-  case BCONST(__) then 'MMC_IMMEDIATE(MMC_TAGFIXNUM(<%bool%>))'
+  case lit as BCONST(__) then 'MMC_IMMEDIATE(MMC_TAGFIXNUM(<%if lit.bool then 1 else 0%>))'
   case LIST(valList={}) then
     <<
     MMC_REFSTRUCTLIT(mmc_nil)
