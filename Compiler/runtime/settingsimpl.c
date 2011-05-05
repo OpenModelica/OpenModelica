@@ -149,7 +149,7 @@ static const char* SettingsImpl__getCompileCommand()
     // Get a default command
     const char *res = getenv("MC_DEFAULT_COMPILE_CMD");
     if (res == NULL)
-      return "g++";
+      return DEFAULT_CXX;
     return res;
   }
   return compileCommand;
