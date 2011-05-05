@@ -1717,56 +1717,63 @@ algorithm
     case(-1, _) then computeHeight(bt);
     case( 0, _) then computeHeight(bt);
     case( 1, _) then computeHeight(bt);
-    /* d < -1 or d > 1 */
-    else then doBalance2(difference, bt);
+    // d < -1 or d > 1
+    else doBalance2(difference < 0, bt);
   end match;
 end doBalance;
 
 protected function doBalance2 
 "help function to doBalance"
-  input Integer difference;
+  input Boolean inDiffIsNegative;
   input AvlTree bt;
   output AvlTree outBt;
 algorithm
-  outBt := matchcontinue(difference,bt)
-    case(difference,bt) 
+  outBt := match(inDiffIsNegative,bt)
+    case(true,bt) 
       equation
-        true = difference < 0;
         bt = doBalance3(bt);
         bt = rotateLeft(bt);
       then bt;
-    case(difference,bt) 
+    case(false,bt) 
       equation
-        true = difference > 0;
         bt = doBalance4(bt);
         bt = rotateRight(bt);
       then bt;
-    else then bt;
-  end matchcontinue;
+  end match;
 end doBalance2;
 
-protected function doBalance3 
-  "help function to doBalance2"
+protected function doBalance3 "help function to doBalance2"
   input AvlTree bt;
   output AvlTree outBt;
-protected
-  AvlTree rr;
 algorithm
-  true := differenceInHeight(Util.getOption(rightNode(bt))) > 0;
-  rr := rotateRight(Util.getOption(rightNode(bt)));
-  outBt := setRight(bt,SOME(rr));
+  outBt := matchcontinue(bt)
+    local
+      AvlTree rr;
+    case(bt)
+      equation
+        true = differenceInHeight(Util.getOption(rightNode(bt))) > 0;
+        rr = rotateRight(Util.getOption(rightNode(bt)));
+        bt = setRight(bt,SOME(rr));
+      then bt;
+    else bt;
+  end matchcontinue;
 end doBalance3;
 
-protected function doBalance4 
-  "help function to doBalance2"
+protected function doBalance4 "help function to doBalance2"
   input AvlTree bt;
   output AvlTree outBt;
-protected
-  AvlTree rl;
 algorithm
-  true := differenceInHeight(Util.getOption(leftNode(bt))) < 0;
-  rl := rotateLeft(Util.getOption(leftNode(bt)));
-  outBt := setLeft(bt,SOME(rl));
+  outBt := matchcontinue(bt)
+    local
+      AvlTree rl;
+    case (bt)
+      equation
+        true = differenceInHeight(Util.getOption(leftNode(bt))) < 0;
+        rl = rotateLeft(Util.getOption(leftNode(bt)));
+        bt = setLeft(bt,SOME(rl));
+      then bt;
+    else bt;
+  end matchcontinue;
 end doBalance4;
 
 protected function setRight 
@@ -1897,5 +1904,45 @@ algorithm
     case(SOME(AVLTREENODE(height = height))) then height;
   end match;
 end getHeight;
+
+public function printAvlTreeStrPP
+  input AvlTree inTree;
+  output String outString;
+algorithm
+  outString := printAvlTreeStrPP2(SOME(inTree), "");
+end printAvlTreeStrPP;
+
+protected function printAvlTreeStrPP2
+  input Option<AvlTree> inTree;
+  input String inIndent;
+  output String outString;
+algorithm
+  outString := match(inTree, inIndent)
+    local
+      AvlKey rkey;
+      Option<AvlTree> l, r;
+      String s1, s2, res, indent;
+
+    case (NONE(), _) then "";
+
+    case (SOME(AVLTREENODE(value = SOME(AVLTREEVALUE(key = rkey)), left = l, right = r)), _)
+      equation
+        indent = inIndent +& "  ";
+        s1 = printAvlTreeStrPP2(l, indent);
+        s2 = printAvlTreeStrPP2(r, indent);
+        res = "\n" +& inIndent +& rkey +& s1 +& s2;
+      then
+        res;
+
+    case (SOME(AVLTREENODE(value = NONE(), left = l, right = r)), _)
+      equation
+        indent = inIndent +& "  ";
+        s1 = printAvlTreeStrPP2(l, indent);
+        s2 = printAvlTreeStrPP2(r, indent);
+        res = "\n" +& s1 +& s2;
+      then
+        res;
+  end match;
+end printAvlTreeStrPP2;
 
 end SCodeEnv;

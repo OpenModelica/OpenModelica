@@ -2449,5 +2449,45 @@ algorithm
   end match;
 end checkCachedInstFuncGuard;
 
+public function printAvlTreeStrPP
+  input AvlTree inTree;
+  output String outString;
+algorithm
+  outString := printAvlTreeStrPP2(SOME(inTree), "");
+end printAvlTreeStrPP;
+
+protected function printAvlTreeStrPP2
+  input Option<AvlTree> inTree;
+  input String inIndent;
+  output String outString;
+algorithm
+  outString := match(inTree, inIndent)
+    local
+      AvlKey rkey;
+      Option<AvlTree> l, r;
+      String s1, s2, res, indent;
+
+    case (NONE(), _) then "";
+
+    case (SOME(AVLTREENODE(value = SOME(AVLTREEVALUE(key = rkey)), left = l, right = r)), _)
+      equation
+        indent = inIndent +& "  ";
+        s1 = printAvlTreeStrPP2(l, indent);
+        s2 = printAvlTreeStrPP2(r, indent);
+        res = "\n" +& inIndent +& rkey +& s1 +& s2;
+      then
+        res;
+
+    case (SOME(AVLTREENODE(value = NONE(), left = l, right = r)), _)
+      equation
+        indent = inIndent +& "  ";
+        s1 = printAvlTreeStrPP2(l, indent);
+        s2 = printAvlTreeStrPP2(r, indent);
+        res = "\n" +& s1 +& s2;
+      then
+        res;
+  end match;
+end printAvlTreeStrPP2;
+
 end Env;
 
