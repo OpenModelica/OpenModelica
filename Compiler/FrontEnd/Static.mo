@@ -129,7 +129,26 @@ public function elabExpList "Expression elaboration of Absyn.Exp list, i.e. list
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outExpExpLst,outTypesPropertiesLst,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inAbsynExpLst,inImplicit,inInteractiveInteractiveSymbolTableOption,performVectorization,inPrefix,info)
+  elabExpList2(inCache,inEnv,inAbsynExpLst,DAE.T_NOTYPE_DEFAULT,inImplicit,inInteractiveInteractiveSymbolTableOption,performVectorization,inPrefix,info);
+end elabExpList;
+
+protected function elabExpList2 "Expression elaboration of Absyn.Exp list, i.e. lists of expressions."
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<Absyn.Exp> inAbsynExpLst;
+  input DAE.Type ty "The type of the last evaluated expression; used to speed up instantiation of enumerations :)";
+  input Boolean inImplicit;
+  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Boolean performVectorization;
+  input Prefix.Prefix inPrefix;
+  input Absyn.Info info;
+  output Env.Cache outCache;
+  output list<DAE.Exp> outExpExpLst;
+  output list<DAE.Properties> outTypesPropertiesLst;
+  output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
+algorithm
+  (outCache,outExpExpLst,outTypesPropertiesLst,outInteractiveInteractiveSymbolTableOption):=
+  matchcontinue (inCache,inEnv,inAbsynExpLst,ty,inImplicit,inInteractiveInteractiveSymbolTableOption,performVectorization,inPrefix,info)
     local
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st,st_1,st_2;
@@ -143,15 +162,31 @@ algorithm
       Env.Cache cache;
       Boolean doVect;
       Prefix.Prefix pre;
-    case (cache,_,{},impl,st,doVect,_,_) then (cache,{},{},st);
-    case (cache,env,(e :: rest),impl,st,doVect,pre,info)
+      Absyn.ComponentRef cr;
+      Absyn.Path path,path1,path2;
+      String name;
+      list<String> names;
+      Integer ix;
+    case (cache,_,{},_,impl,st,doVect,_,_) then (cache,{},{},st);
+      // Hack to make enumeration arrays elaborate a _lot_ faster
+    case (cache,env,(Absyn.CREF(cr as Absyn.CREF_FULLYQUALIFIED(componentRef=_)) :: rest),(DAE.T_ENUMERATION(path=path2,names=names),_),impl,st,doVect,pre,info)
+      equation
+        path = Absyn.crefToPath(cr);
+        (path1,Absyn.IDENT(name)) = Absyn.splitQualAndIdentPath(path);
+        true = Absyn.pathEqual(path1,path2);
+        ix = Util.listPosition(name,names);
+        exp = DAE.ENUM_LITERAL(path,ix);
+        p = DAE.PROP(ty,DAE.C_CONST());
+        (cache,exps,props,st_2) = elabExpList2(cache,env, rest, ty, impl, st,doVect,pre,info);
+      then (cache,exp :: exps,p :: props, st_2);
+    case (cache,env,(e :: rest),ty,impl,st,doVect,pre,info)
       equation
         (cache,exp,p,st_1) = elabExp(cache,env, e, impl, st,doVect,pre,info);
-        (cache,exps,props,st_2) = elabExpList(cache,env, rest, impl, st_1,doVect,pre,info);
+        (cache,exps,props,st_2) = elabExpList2(cache,env, rest, Types.getPropType(p), impl, st_1,doVect,pre,info);
       then
         (cache,(exp :: exps),(p :: props),st_2);
-  end match;
-end elabExpList;
+  end matchcontinue;
+end elabExpList2;
 
 public function elabExpListList
 "function: elabExpListList
@@ -160,21 +195,22 @@ public function elabExpListList
   input Env.Cache inCache;
   input Env.Env inEnv;
   input list<list<Absyn.Exp>> inAbsynExpLstLst;
+  input DAE.Type ty "The type of the last evaluated expression; used to speed up instantiation of enumerations :)";
   input Boolean inBoolean;
-  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<Interactive.InteractiveSymbolTable> st;
   input Boolean performVectorization;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output list<list<DAE.Exp>> outExpExpLstLst;
   output list<list<DAE.Properties>> outTypesPropertiesLstLst;
-  output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
+  output Option<Interactive.InteractiveSymbolTable> outST;
 algorithm
-  (outCache,outExpExpLstLst,outTypesPropertiesLstLst,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inAbsynExpLstLst,inBoolean,inInteractiveInteractiveSymbolTableOption,performVectorization,inPrefix,info)
+  (outCache,outExpExpLstLst,outTypesPropertiesLstLst,outST):=
+  match (inCache,inEnv,inAbsynExpLstLst,ty,inBoolean,st,performVectorization,inPrefix,info)
     local
       Boolean impl;
-      Option<Interactive.InteractiveSymbolTable> st,st_1,st_2;
+      Option<Interactive.InteractiveSymbolTable> st_1,st_2;
       list<DAE.Exp> exp;
       list<DAE.Properties> p;
       list<list<DAE.Exp>> exps;
@@ -185,12 +221,13 @@ algorithm
       Env.Cache cache;
       Boolean doVect;
       Prefix.Prefix pre;
+      DAE.Properties p1;
 
-    case (cache,_,{},impl,st,doVect,_,_) then (cache,{},{},st);
-    case (cache,env,(e :: rest),impl,st,doVect,pre,info)
+    case (cache,_,{},_,impl,st,doVect,_,_) then (cache,{},{},st);
+    case (cache,env,(e :: rest),ty,impl,st,doVect,pre,info)
       equation
-        (cache,exp,p,st_1) = elabExpList(cache,env, e, impl, st,doVect,pre,info);
-        (cache,exps,props,st_2) = elabExpListList(cache,env, rest, impl, st_1,doVect,pre,info);
+        (cache,exp,p as p1::_,st_1) = elabExpList2(cache,env,e,ty,impl,st,doVect,pre,info);
+        (cache,exps,props,st_2) = elabExpListList(cache,env,rest,Types.getPropType(p1),impl,st_1,doVect,pre,info);
       then
         (cache,(exp :: exps),(p :: props),st_2);
   end match;
@@ -501,7 +538,7 @@ algorithm
 
     case (cache,env,Absyn.MATRIX(matrix = ess),impl,st,doVect,pre,info,_)
       equation
-        (cache,dess,tps,_) = elabExpListList(cache, env, ess, impl, st,doVect,pre,info) "matrix expressions, e.g. {1,0;0,1} with elements of simple type." ;
+        (cache,dess,tps,_) = elabExpListList(cache, env, ess, DAE.T_NOTYPE_DEFAULT, impl, st,doVect,pre,info) "matrix expressions, e.g. {1,0;0,1} with elements of simple type." ;
         tps_1 = Util.listListMap(tps, Types.getPropType);
         tps_2 = Util.listFlatten(tps_1);
         nmax = matrixConstrMaxDim(tps_2);
@@ -1668,7 +1705,7 @@ algorithm
         (cache,DAE.ARRAY(at,a,es_1),DAE.PROP((DAE.T_ARRAY(DAE.DIM_INTEGER(l),t),NONE()),const));
     case (cache,env,Absyn.MATRIX(matrix = ess),impl,pre,info)
       equation
-        (cache,dess,tps,_) = elabExpListList(cache,env,ess,impl,NONE(),true,pre,info);
+        (cache,dess,tps,_) = elabExpListList(cache,env,ess,DAE.T_NOTYPE_DEFAULT,impl,NONE(),true,pre,info);
         tps_1 = Util.listListMap(tps, Types.getPropType);
         tps_2 = Util.listFlatten(tps_1);
         nmax = matrixConstrMaxDim(tps_2);
